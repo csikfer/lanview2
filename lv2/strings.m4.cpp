@@ -1,0 +1,13 @@
+#include "lv2_global.h"
+#include "strings.h"
+
+define(`__SDEF',`
+const char   __s$1[] = "$1";
+const QString _s$1(__s$1);')
+
+define(`STRDEF',`
+const char   __s$1[] = $2;
+const QString _s$1(__s$1);')
+
+include(strings.m4)
+

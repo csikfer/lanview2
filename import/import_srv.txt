@@ -1,0 +1,126 @@
+
+SERVICE local       "local service"         { NIL;      PROP ":PROTOCOL:"; }
+SERVICE snmp        snmp                    { UDP 161;  PROP ":PROTOCOL:"; }
+SERVICE "tcp.rs"    "TCP serial port gateway"{TCP 4001; PROP ":PROTOCOL:"; }
+SERVICE ssh         ssh                     { TCP 22;   CMD "check_ssh $address";          }
+SERVICE telnet      telnet                  { TCP 23;   CMD "check_tcp 23  $address";      }
+SERVICE http        http                    { TCP 80;   CMD "check_http $address";         }
+SERVICE https       https                   { TCP 443;  }
+SERVICE munin       "munin-node"            { TCP 4949; }
+
+
+SERVICE "dhcp.conf" "DHCP config fájl, local vagy ssh-n keresztül"      { NIL;      PROP ":file=/etc/dhcp/dhcpd.conf:"; }
+SERVICE "arp.proc"  "ARP fájl a proc-ban, local vagy ssh-n keresztül"   { NIL;      PROP ":file=/proc/net/arp:"; }
+//--------------------------------------------------------
+
+SERVICE arpd        "Arp daemon" {
+    NIL;
+    PROP ":daemon=continue:inspector=timed:superior:";
+    COMMAND "icontsrv";
+    NORMAL CHECK INTERVAL  600;
+    RETRY CHECK INTERVAL   600;
+}
+
+SERVICE "arp" "ARP tábla lekérdezése" {
+    NIL;
+    PROP ":inspector=timed:";
+    MAX CHECK ATTEMPTS     3;
+    NORMAL CHECK INTERVAL 300;
+    RETRY CHECK INTERVAL   60;
+}
+
+//--------------------------------------------------------
+
+SERVICE lv2d "Lanview2 super server" {
+    NIL;
+    PROP ":daemon=contimue:inspector=timed:superior:";
+    NORMAL CHECK INTERVAL  60;
+    RETRY CHECK INTERVAL   60;
+}
+
+SERVICE icontsrv "icontsrv daemon" {
+    NIL;
+    PROP ":daemon=continue:inspector=timed:superior:";
+    COMMAND "icontsrv";
+    NORMAL CHECK INTERVAL  60;
+    RETRY CHECK INTERVAL   60;
+}
+
+SERVICE import "import daemon" {
+    NIL;
+    PROP ":daemon=respawn:";
+    COMMAND "import -D";
+    NORMAL CHECK INTERVAL 300;
+    RETRY CHECK INTERVAL  300;
+}
+
+SERVICE portstat "Device port status query daemon" {
+    NIL;
+    PROP ":daemon=contimue:inspector=timed:superior:";
+    COMMAND "portstat";
+    NORMAL CHECK INTERVAL 300;
+    RETRY CHECK INTERVAL  300;
+}
+
+//---------------------------------------------------------
+
+SERVICE "pstat" "Query port status by <protocol>" {
+    NIL;
+    SUPERIOR SERVICE MASK "portstat";
+    PROP ":inspector=timed:superior=custom:";
+    MAX CHECK ATTEMPTS     2;
+    NORMAL CHECK INTERVAL 30;
+    RETRY CHECK INTERVAL  30;
+}
+
+SERVICE rlinkstat "Jelenlét, a switch port állapota alapján" {
+    NIL;
+    SUPERIOR SERVICE MASK "pstat";
+    PROP ":inspector=passive:iftype=ethernet:";
+    MAX CHECK ATTEMPTS      2;
+}
+
+//---------------------------------------------------------
+
+SERVICE "rs485" "RS485 BUS interface or gateway" {
+    SUPERIOR SERVICE MASK icontsrv;
+    NORMAL CHECK INTERVAL 10;
+    RETRY CHECK INTERVAL  10;
+    PROP ":inspector=thread:superior:";
+}
+
+// IndaContakt interface V1 master
+SERVICE indalarmif1ma "IndAlarm Contact V1 Master" {
+    NIL;
+    SUPERIOR SERVICE MASK rs485;
+    MAX CHECK ATTEMPTS     3;
+    NORMAL CHECK INTERVAL 10;
+    RETRY CHECK INTERVAL  10;
+    PROP ":iftype=rs485:inspector=timed:superior=custom:";
+}
+// IndaContakt interface V1 slave
+SERVICE indalarmif1sl "IndAlarm Contact V1 Slave"{
+    NIL;
+    MAX CHECK ATTEMPTS     3;
+    NORMAL CHECK INTERVAL 10;
+    RETRY CHECK INTERVAL  10;
+    SUPERIOR SERVICE MASK indalarmif1ma;
+    PROP ":iftype=iic:inspector=timed:superior:";
+}
+// IndaContakt interface V2
+SERVICE indalarmif2 "IndAlarm Contact V2" {
+    NIL;
+    SUPERIOR SERVICE MASK rs485;
+    MAX CHECK ATTEMPTS     3;
+    NORMAL CHECK INTERVAL 10;
+    RETRY CHECK INTERVAL  10;
+    PROP ":iftype=rs485:inspector=timed:";
+}
+
+// Pseudo services
+SERVICE attached "IndAlarm Contact védett eszköz" {
+    NIL;
+    SUPERIOR SERVICE MASK "indalarmif%";
+    PROP ":inspector=passive:iftype=attach:";
+    MAX CHECK ATTEMPTS      1;
+}

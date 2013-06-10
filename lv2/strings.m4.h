@@ -1,0 +1,16 @@
+#ifndef STRINGS_H_INCLUDED
+
+#include "lv2_global.h"
+#include <QString>
+
+define(`__SDEF',`
+extern LV2SHARED_EXPORT const char   __s$1[];
+extern LV2SHARED_EXPORT const QString _s$1;')
+
+define(`STRDEF',`
+extern LV2SHARED_EXPORT const char   __s$1[];
+extern LV2SHARED_EXPORT const QString _s$1;')
+
+include(strings.m4)
+
+#endif

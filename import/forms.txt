@@ -1,0 +1,367 @@
+
+DELETE ENUM TITLE dayofweek;
+ENUM dayofweek      sunday          TITLE "vasárnap";
+ENUM dayofweek      monday          TITLE "hétfő";
+ENUM dayofweek      tuesday         TITLE "kedd";
+ENUM dayofweek      wednesday       TITLE "szerda";
+ENUM dayofweek      thursday        TITLE "csütörtök";
+ENUM dayofweek      friday          TITLE "péntek";
+ENUM dayofweek      saturday        TITLE "szombat";
+
+DELETE ENUM TITLE notifswitch;
+ENUM notifswitch    on              TITLE "rendben";
+ENUM notifswitch    recovered       TITLE "helyreállt";
+ENUM notifswitch    warning         TITLE "figyelmeztetés";
+ENUM notifswitch    critical        TITLE "kritikus";
+ENUM notifswitch    unreachable     TITLE "nem válaszol";
+ENUM notifswitch    down            TITLE "kikapcsolva";
+ENUM notifswitch    flapping        TITLE "ki-be kapcsol";
+ENUM notifswitch    unknown         TITLE "ismeretlen";
+
+DELETE ENUM TITLE rights;
+ENUM rights         none            TITLE "jogosulatlan";
+ENUM rights         viewer          TITLE "megfigyelő";
+ENUM rights         indalarm        TITLE "riasztás figyelő";
+ENUM rights         operator        TITLE "operátor";
+ENUM rights         admin           TITLE "adminisztrátor";
+ENUM rights         system          TITLE "rendszer";
+
+DELETE ENUM TITLE filtertype;
+ENUM filtertype     begin           TITLE "Szó eleji egyezés";
+ENUM filtertype     like            TITLE "Minta illesztés a LIKE operátorral";
+ENUM filtertype     similar         TITLE "Minta illesztés a SIMILAR operátorral";
+ENUM filtertype     regexp          TITLE "Minta illesztés reguláris kifelyezéssel, nahybetű érzékeny";
+ENUM filtertype     regexpi         TITLE "Minta illesztés reguláris kifelyezéssel, nem nagybetű érzékeny";
+ENUM filtertype     big             TITLE "Csak egy értéknél nagyobbakat";
+ENUM filtertype     litle           TITLE "Csak egy értéknél kisebbeket";
+ENUM filtertype     interval        TITLE "Csak a megadott lét érték közöttiek";
+ENUM filtertype     proc            TITLE "Szűrés egy magadott SQL föggvénnyel";
+ENUM filtertype     SQL             TITLE "A szürési feltétel megadása SQL nyelven";
+
+// ***************************************************************************************
+// Objects:
+
+DELETE TABLE SHAPE pports;
+TABLE SHAPE pports "Pach panel és fali csatlakozó portok" {
+    SET DEFAULTS;
+    TABLE TYPE child;
+    TABLE INHERIT TYPE "only";
+    FIELD iftype_id HIDE;
+    FIELD iftype_id READ ONLY;
+    FIELD iftype_id DEFAULT VALUE STRING(ID IFTYPE(patch));
+    TABLE VIEW   RIGHTS operator;
+    TABLE EDIT   RIGHTS admin;
+    TABLE DELETE RIGHTS admin;
+    TABLE INSERT RIGHTS admin;
+}
+
+DELETE TABLE SHAPE patchs;
+TABLE SHAPE patchs "Pach panelek és fali csatlakozók" {
+    SET DEFAULTS;
+    TABLE TYPE owner;
+    TABLE INHERIT TYPE "only";
+    RIGHT SHAPE pports;
+    TABLE VIEW   RIGHTS operator;
+    TABLE EDIT   RIGHTS admin;
+    TABLE DELETE RIGHTS admin;
+    TABLE INSERT RIGHTS admin;
+}
+
+DELETE TABLE SHAPE nports;
+TABLE SHAPE nports "Passzív portok" {
+    SET DEFAULTS;
+    TABLE TYPE child;
+    TABLE INHERIT TYPE only;
+    FIELD iftype_id PROPERTIES ":ComboBoxList=attach,eport:";
+    TABLE VIEW   RIGHTS operator;
+    TABLE EDIT   RIGHTS admin;
+    TABLE DELETE RIGHTS admin;
+    TABLE INSERT RIGHTS admin;
+    FIELD node_id HIDE;
+}
+
+DELETE TABLE SHAPE hubs;
+TABLE SHAPE hubs "Hub-ok, nem menedzselhető switch-ek" {
+    SET DEFAULTS;
+    TABLE TYPE owner;
+    RIGHT SHAPE nports;
+}
+
+DELETE TABLE SHAPE nodes;
+TABLE SHAPE nodes "Passzív ill, nem menedzselhető elemek" {
+    SET DEFAULTS;
+    TABLE TYPE owner;
+    TABLE INHERIT TYPE only;
+    RIGHT SHAPE nports;
+    FIELD iftype_id PROPERTIES ":ComboBoxList=attach,eport:";
+    FIELD port_id, port_name, port_descr, port_tag, iftype_id, port_index, deleted HIDE;
+    TABLE VIEW   RIGHTS operator;
+    TABLE EDIT   RIGHTS admin;
+    TABLE DELETE RIGHTS admin;
+    TABLE INSERT RIGHTS admin;
+}
+
+DELETE TABLE SHAPE ipaddresses;
+TABLE SHAPE ipaddresses "IP címek" {
+    SET DEFAULTS;
+    TABLE TYPE child;
+    TABLE INHERIT TYPE only;
+    FIELD port_id HIDE;
+    TABLE VIEW   RIGHTS operator;
+    TABLE EDIT   RIGHTS admin;
+    TABLE DELETE RIGHTS admin;
+    TABLE INSERT RIGHTS admin;
+}
+
+DELETE TABLE SHAPE host_ifs;
+TABLE iface_addrs SHAPE host_ifs "Hálózati interfészek" {
+    SET DEFAULTS;
+    TABLE TYPE child, owner;
+    RIGHT SHAPE ipaddresses;
+    TABLE INHERIT TYPE listed_rev;
+    INHERIT TABLE NAMES interfaces,nports;
+    FIELD port_ostat, port_astat READ ONLY;
+    FIELD node_id, ip_address_id HIDE;
+    TABLE VIEW   RIGHTS operator;
+    TABLE EDIT   RIGHTS admin;
+    TABLE DELETE RIGHTS admin;
+    TABLE INSERT RIGHTS admin;
+}
+
+DELETE TABLE SHAPE iface_addrs;
+TABLE SHAPE iface_addrs "Hálózati interfész, IP cím" {
+    SET DEFAULTS;
+    TABLE TYPE no;
+    FIELD iftype_id PROPERTIES ":ComboBoxList=sensor,rs485,iic,ethernet,wireless,ppp,virtual,multiplexor,adsl,tunnel,digitalPowerline:";
+    FIELD port_ostat,port_astat READ ONLY;
+    FIELD ip_address_id HIDE;
+    TABLE VIEW   RIGHTS operator;
+    TABLE EDIT   RIGHTS admin;
+    TABLE DELETE RIGHTS admin;
+    TABLE INSERT RIGHTS admin;
+}
+
+DELETE TABLE SHAPE interfaces;
+TABLE SHAPE interfaces "Hálózati interfész, IP cím" {
+    SET DEFAULTS;
+    TABLE TYPE no;
+    FIELD iftype_id PROPERTIES ":ComboBoxList=sensor,rs485,iic,ethernet,wireless,virtual,multiplexor,adsl,tunnel,digitalPowerline,usb:";
+    FIELD port_ostat READ ONLY;
+    FIELD port_astat READ ONLY;
+    TABLE VIEW   RIGHTS operator;
+    TABLE EDIT   RIGHTS admin;
+    TABLE DELETE RIGHTS admin;
+    TABLE INSERT RIGHTS admin;
+}
+
+DELETE TABLE SHAPE allhosts;
+TABLE snmpdevices SHAPE allhosts "Hálózati elemek" {
+    SET DEFAULTS;
+    TABLE TYPE owner;
+    TABLE INHERIT TYPE listed_rev;
+    INHERIT TABLE NAMES hosts;
+    RIGHT SHAPE host_ifs;
+    FIELD port_id HIDE;
+    FIELD port_ostat,port_astat READ ONLY;
+    FIELD port_id, port_name, port_descr, port_tag, iftype_id, port_index, deleted,
+          ip_address_id, ip_address_descr, ip_address_type  HIDE;
+    FIELD * ORD no;
+    FIELD node_name ORD asc,desc,no;
+    FIELD node_descr, place_id, hwaddress, address, subnet_id ORD 10 no, asc, desc;
+    FIELD node_name, node_descr, place_id, hwaddress, subnet_id ADD FILTERS begin, like, similar, regexp, regexpi;
+    TABLE VIEW   RIGHTS operator;
+    TABLE EDIT   RIGHTS admin;
+    TABLE DELETE RIGHTS admin;
+    TABLE INSERT RIGHTS admin;
+}
+
+DELETE TABLE SHAPE hosts;
+TABLE SHAPE hosts "Host" {
+    SET DEFAULTS;
+    TABLE TYPE no;
+    FIELD iftype_id PROPERTIES ":ComboBoxList=sensor,rs485,iic,ethernet,wireless,ppp,virtual,multiplexor,adsl,tunnel,digitalPowerline:";
+    FIELD port_ostat,port_astat READ ONLY;
+    TABLE VIEW   RIGHTS operator;
+    TABLE EDIT   RIGHTS admin;
+    TABLE DELETE RIGHTS admin;
+    TABLE INSERT RIGHTS admin;
+}
+
+DELETE TABLE SHAPE snmpdevices;
+TABLE SHAPE snmpdevices "SNMP hosts" {
+    SET DEFAULTS;
+    TABLE TYPE no;
+    FIELD iftype_id PROPERTIES ":ComboBoxList=sensor,rs485,iic,ethernet,wireless,ppp,virtual,multiplexor,adsl,tunnel,digitalPowerline:";
+    FIELD port_ostat,port_astat READ ONLY;
+    TABLE VIEW   RIGHTS operator;
+    TABLE EDIT   RIGHTS admin;
+    TABLE DELETE RIGHTS admin;
+    TABLE INSERT RIGHTS admin;
+}
+
+DELETE TABLE SHAPE places;
+TABLE SHAPE places "Helyiségek" {
+    SET DEFAULTS;
+    TABLE TYPE simple;
+    TABLE VIEW   RIGHTS viewer;
+    TABLE EDIT   RIGHTS admin;
+    TABLE DELETE RIGHTS admin;
+    TABLE INSERT RIGHTS admin;
+}
+
+DELETE TABLE SHAPE host_services;
+TABLE SHAPE host_services "A hostkokhoz rendelt szervíz példányok" {
+    SET DEFAULTS;
+    TABLE TYPE simple;
+    FIELD node_id, service_id, prime_service_id, proto_service_id ADD FILTERS begin, like, similar, regexp, regexpi;
+    FIELD * ORD no;
+    FIELD node_id, service_id, port_id ORD asc,desc,no;
+    FIELD prime_service_id, proto_service_id, superior_host_service_id, host_service_state, soft_state, hard_state, last_changed, last_touched ORD 30 no,asc,desc;
+}
+
+DELETE TABLE SHAPE services;
+TABLE SHAPE services "Szervíz típusok" {
+    SET DEFAULTS;
+    TABLE TYPE simple;
+    FIELD * ORD no;
+    FIELD service_name ORD asc,desc,no;
+    FIELD service_name ADD FILTERS begin, like, similar, regexp, regexpi;
+}
+
+// ***************************************************************************************
+// events
+
+DELETE TABLE SHAPE alarms;
+TABLE SHAPE alarms "Riasztások" {
+    SET DEFAULTS;
+    TABLE TYPE simple;
+    TABLE READ ONLY;
+    TABLE VIEW   RIGHTS viewer;
+    FIELD alarm_id      TITLE "ID"            "Riasztás egyedi azonosító kódja";
+    FIELD host_service_id TITLE "host:service" "Szolgálltatás példány";
+    FIELD daemon_id     TITLE "daemon"        "Lekérdező daemon";
+    FIELD first_status  TITLE "kezdő áll."    "Állapot a risztás kezdetekor";
+    FIELD max_status    TITLE "crit. áll."    "Legkritikusabb állapot a riasztás alatt";
+    FIELD begin_time    TITLE "kezdete"       "A kritikus esemény kezdete";
+    FIELD event_descr   TITLE "üzenet"        "A riasztást dezektáló folyamat üzenete";
+    FIELD superior_alarm TITLE  "?"            "?";
+    FIELD noalarm       TITLE "letiltva"      "Az értesítés letiltása";
+    FIELD end_time      TITLE "vége"          "A kritikus esemény vége";
+    FIELD msg_time      TITLE "uzenet küldve" "A riasztási üzenet elküldésének az időpontja";
+    FIELD alarm_time    TITLE "on-line ért."  "Az on-line riasztás időpontja";
+    FIELD notice_time   TITLE "megnézte"      "Az első on-line riasztás állapot lekérdezésének az ideje.";
+    FIELD notice_user   TITLE "aki megnézte"  "Az első on-line riasztási állapot lekérdezéső felhasználó";
+    FIELD ack_time      TITLE "nyugtázva"     "A riasztás nyugtázásának az időpontja";
+    FIELD ack_user      TITLE "aki nyugtázta" "A riasztást nyugtázó felhasználó";
+    FIELD ack_msg       TITLE "megjegyzés"    "A nyugtázó megjegyzése";
+
+    FIELD host_service_id, daemon_id, max_status, event_descr, noalarm, notice_user, ack_user, ack_msg ADD FILTERS begin, like, similar, regexp, regexpi;
+    FIELD begin_time, end_time, msg_time, alarm_time, notice_time, ack_time ADD FILTERS big, litle, interval;
+    FIELD * ORD no;
+    FIELD begin_time ORD desc, asc, no;
+    FIELD end_time, msg_time, alarm_time, notice_time, notice_user, ack_time, ack_user, ack_msg ORD 10 no, desc, asc;
+}
+
+DELETE TABLE SHAPE app_errs;
+TABLE SHAPE app_errs "Applikáció hiba napló" {
+    SET DEFAULTS;
+    TABLE READ ONLY;
+    TABLE VIEW   RIGHTS operator;
+}
+
+// ***************************************************************************************
+// Others:
+
+DELETE TABLE SHAPE arps;
+TABLE SHAPE arps "ARP tábla" {
+    SET DEFAULTS;
+    TABLE TYPE simple;
+    FIELD ipaddress  TITLE "IP"     "IP cím";
+    FIELD hwaddress  TITLE "MAC"    "MAC cím";
+    FIELD first_time TITLE first    "Első detektálás ideje";
+    FIELD last_time  TITLE last     "Utoló detektálás ideje";
+    TABLE VIEW   RIGHTS operator;
+    TABLE EDIT   RIGHTS system;
+    TABLE DELETE RIGHTS admin;
+    TABLE INSERT RIGHTS system;
+}
+
+// ***************************************************************************************
+// GUI
+
+
+DELETE TABLE SHAPE table_shape_filters;
+TABLE SHAPE table_shape_filters "Szűrési lehetőséget a mezőkre" {
+    SET DEFAULTS;
+    TABLE TYPE child;
+    FIELD table_shape_field_id HIDE;
+    TABLE VIEW   RIGHTS operator;
+    TABLE EDIT   RIGHTS admin;
+    TABLE DELETE RIGHTS admin;
+    TABLE INSERT RIGHTS admin;
+}
+
+DELETE TABLE SHAPE table_shape_fields;
+TABLE SHAPE table_shape_fields "Tábla mezők megjelenítése" {
+    SET DEFAULTS;
+    TABLE TYPE child, owner;
+    RIGHT SHAPE table_shape_filters;
+    FIELD table_shape_id HIDE;
+    TABLE VIEW   RIGHTS operator;
+    TABLE EDIT   RIGHTS admin;
+    TABLE DELETE RIGHTS admin;
+    TABLE INSERT RIGHTS admin;
+}
+
+DELETE TABLE SHAPE table_shapes;
+TABLE SHAPE table_shapes "Táblák megjelenítése" {
+    SET DEFAULTS;
+    TABLE TYPE owner;
+    RIGHT SHAPE table_shape_fields;
+    TABLE VIEW   RIGHTS operator;
+    TABLE EDIT   RIGHTS admin;
+    TABLE DELETE RIGHTS admin;
+    TABLE INSERT RIGHTS admin;
+}
+
+DELETE TABLE SHAPE menu_items;
+TABLE SHAPE menu_items "Menu elemek" {
+    SET DEFAULTS;
+    TABLE TYPE simple; // tree
+}
+
+DELETE TABLE SHAPE enum_vals;
+TABLE SHAPE enum_vals "Enumerációs értékek" {
+    SET DEFAULTS;
+    TABLE TYPE simple;
+}
+
+DELETE GUI lv2gui MENU;
+
+GUI lv2gui {
+  file MENU "fájl" {
+    setup OWN setup "Beállítások";
+    restart EXEC restart "Ujraindítás";
+    exit EXEC exit "Kilép";
+  }
+  objects MENU "Objektumok" {
+    patchs   SHAPE patchs "Patch panelek";
+    hubs     SHAPE hubs "Hubok, switch-ek";
+    nodes    SHAPE allhosts "Hálózati elemek";
+    places   SHAPE places "Helyek, helyiségek";
+    services SHAPE services "Szolgáltatás típusok";
+    host_services SHAPE host_services "Szolgáltatás példányok";
+  }
+  events MENU "Események" {
+    alarms   SHAPE alarms "Riasztások";
+    app_errs SHAPE app_errs "Program hibák";
+  }
+  others MENU "Egyéb táblák" {
+    arps   SHAPE arps "ARP tábla";
+  }
+  gui MENU "Megjelenítés" {
+    shapes SHAPE table_shapes "Táblák megjelenítése";
+    enums  SHAPE enum_vals "Enumerációs értékek";
+    menus  SHAPE menu_items "GUI menük";
+  }
+}

@@ -1,0 +1,1561 @@
+%{
+#include <math.h>
+#include "import.h"
+#include "others.h"
+#include "ping.h"
+#include "import_parser_yacc.h"
+
+unsigned long yyflags = 0;
+
+QString fileNm;
+unsigned int lineNo = 0;     // Sor Számláló
+QTextStream*       yyif = NULL;       //Source file descriptor
+
+cTemplateMapMap   templates;
+QString  macbuff;
+
+qlonglong    actVlanId = -1;
+QString      actVlanName;
+QString      actVlanDescr;
+enum eSubNetType netType = NT_INVALID; // firstSubNet = ;
+cPatch *     pPatch = NULL;
+cImage *     pImage = NULL;
+cUser *      pUser = NULL;
+cGroup *     pGroup = NULL;
+cHub *       pHub   = NULL;
+cNode *      pNode  = NULL;
+cLink      * pLink = NULL;
+cService   * pService = NULL;
+cHostService*pHostService = NULL;
+cTableShape *pTableShape = NULL;
+qlonglong           alertServiceId = NULL_ID;
+QMap<QString, qlonglong>    ivars;
+QMap<QString, QString>      svars;
+// QMap<QString, duble>        rvars;
+QString       sPortIx = "PI";   // Port index
+QString       sPortNm = "PN";   // Port név
+
+QString lastLine;
+
+void insertCode(const QString& __txt)
+{
+    _DBGFN() << quotedString(__txt) << " + " << quotedString(macbuff) << endl;
+    macbuff = __txt + macbuff;
+}
+
+int yyerror(const char * em)
+{
+    QString msg = QString("Parse error %1 in %2 file %3 line; ").arg(QString(em)).arg(fileNm).arg(lineNo)
+        + "lastLine: " + quotedString(lastLine) + "; macbuff : " + quotedString(macbuff);
+    EXCEPTION(EPARSE, -1, msg);
+    return -1;
+}
+int yyerror(QString em)
+{
+    return yyerror(em.toStdString().c_str());
+}
+QString errorSysMsg(void)
+{
+    return QString::fromUtf8(strerror(errno));
+}
+
+inline QChar yyget()
+{
+    QChar c;
+
+    if (!macbuff.size()) {
+        do {
+            ++lineNo;
+            lastLine = macbuff  = yyif->readLine();
+            PDEB(INFO) << "YYLine : \"" << lastLine << "\"" << endl;
+            if (macbuff.isNull()) {
+                if (c_yyFile::size() > 0) {
+                    c_yyFile::eoi();
+                    continue;
+                }
+                return c; // return NULL
+            }
+        } while (macbuff.isEmpty());
+        macbuff += QChar('\n');
+    }
+    if (macbuff.size()) {
+        c = *(macbuff.data());      // Get first character in macbuff
+        macbuff.remove(0,1);        // Delete first character in macbuff
+    }
+    return c;
+}
+
+inline void yyunget(const QChar& _c) {
+    macbuff.insert(0,_c);
+}
+
+static int yylex(void);
+static void forLoopMac(QString *_in, QVariantList *_lst);
+static void forLoop(QString *_in, QVariantList *_lst);
+static void forLoop(QString *m, qlonglong fr, qlonglong to, qlonglong st);
+static QStringList *listLoop(QString *m, qlonglong fr, qlonglong to, qlonglong st);
+static intList *listLoop(qlonglong fr, qlonglong to, qlonglong st);
+
+
+static inline QVariant *sp2vp(QString * __s)
+{
+    QVariant *p = new QVariant(*__s);
+    delete __s;
+    return p;
+}
+
+static inline QVariant *v2p(const QVariant& __v)
+{
+    return new QVariant(__v);
+}
+
+static inline const QString& sp2s(QString * sp, int i = 0)
+{
+    static QString	s[10];
+    if (i < 0 || i > 10) EXCEPTION(EPROGFAIL, i);
+    s[i] = *sp;
+    delete sp;
+    return s[i];
+}
+
+static inline const QVariant& sp2v(QString * sp, int i = 0)
+{
+    static QVariant	v[10];
+    if (i < 0 || i > 10) EXCEPTION(EPROGFAIL, i);
+    v[i] = *sp;
+    delete sp;
+    return v[i];
+}
+
+static inline const QVariant& vp2v(QVariant * vp, int i = 0)
+{
+    static QVariant     v[10];
+    if (i < 0 || i > 10) EXCEPTION(EPROGFAIL, i);
+    v[i] = *vp;
+    delete vp;
+    return v[i];
+}
+
+static const QVariantList& vlp2vl(QVariantList * vlp)
+{
+    _DBGFN() << list2string(*vlp) << endl;
+    static QVariantList	  vl;
+    vl = *vlp;
+    delete vlp;
+    _DBGFNL() << list2string(vl) << endl;
+    return vl;
+}
+
+static const QVariantList& slp2vl(QStringList * slp)
+{
+    _DBGFN() << list2string(*slp) << endl;
+    static QVariantList   vl;
+    vl.clear();
+    foreach (QString s, *slp) vl << QVariant(s);
+    delete slp;
+    _DBGFNL() << list2string(vl) << endl;
+    return vl;
+}
+
+static const QStringList& slp2sl(QStringList * slp)
+{
+    static QStringList   sl;
+    sl = *slp;
+    delete slp;
+    return sl;
+}
+
+static inline const cMac& mp2m(cMac * mp)
+{
+    static cMac      m;
+    m = *mp;
+    delete mp;
+    return m;
+}
+
+
+static QString * sTime(qlonglong h, qlonglong m, qlonglong s = 0)
+{
+    if (h < 0 || h >  24) yyerror("Invalid hour value");
+    if (m < 0 || m >= 60) yyerror("Invalid min value");
+    if (s < 0 || s >= 60) yyerror("Invalid sec value");
+    if (h == 24 && (m > 0 || s > 0)) yyerror("Invalid time value");
+    QString *p = new QString();
+    *p = QString("%1:%2:%3").arg(h).arg(m).arg(s);
+    return p;
+}
+
+static enum eShare s2share(QString * __ps)
+{
+    QString s;
+    if (__ps != NULL) {
+        s = *__ps;
+        delete __ps;
+    }
+    if (s == "")   return ES_;
+    if (s == "A")  return ES_A;
+    if (s == "AA") return ES_AA;
+    if (s == "AB") return ES_AB;
+    if (s == "B")  return ES_B;
+    if (s == "BA") return ES_BA;
+    if (s == "BB") return ES_BB;
+    if (s == "C")  return ES_C;
+    if (s == "D")  return ES_D;
+    yyerror(QString(QObject::trUtf8("Helytelen megosztás típus : %1")).arg(s));
+    return ES_;     // Hogy ne pofázzon a fordító
+}
+
+static void portShare(intList *pil, QStringList *psl)
+{
+    intList     il = *pil;
+    QStringList sl = *psl;
+    delete pil;
+    delete psl;
+    int siz = il.size();
+    QString e = QObject::trUtf8("Helytelen megosztás megadás.");
+    if (siz != sl.size())  yyerror(e);
+    switch (siz) {
+    case 2:
+        if      (sl[0] == "A" && sl[1] == "B") pPatch->setShare((int)il[0], NULL_IX, (int)il[1]);
+        else if (sl[0] == "B" && sl[1] == "A") pPatch->setShare((int)il[1], NULL_IX, (int)il[0]);
+        else yyerror(e);
+        break;
+    case 3:
+        if      (sl[0] == "A"  && sl[1] == "BA" && sl[2] == "BB") pPatch->setShare((int)il[0], NULL_IX, (int)il[1], (int)il[2]);
+        else if (sl[0] == "AA" && sl[1] == "AB" && sl[2] == "B" ) pPatch->setShare((int)il[0], (int)il[1], (int)il[2]);
+        else    yyerror(e);
+        break;
+    case 4:
+        if      (sl[0] == "AA" && sl[1] == "AB" && sl[2] == "BA" && sl[3] == "BB") pPatch->setShare((int)il[0], (int)il[1], (int)il[2], (int)il[3]);
+        else if (sl[0] == "AA" && sl[1] == "C"  && sl[2] == "D"  && sl[3] == "BB") pPatch->setShare((int)il[0], (int)il[1], (int)il[2], (int)il[3], true);
+        else    yyerror(e);
+        break;
+    default:
+        yyerror(e);
+    }
+}
+
+
+static QString *toddef(QString * name, QString *  day, QString * fr, QString *  to, QString *descr)
+{
+    cTpow t;
+    t.setName(*name);
+    t[_sTpowDescr] = *descr;
+    t[_sDow]       = *day;
+    t[_sBeginTime] = *fr;
+    t[_sEndTime]   = *to;
+    t.insert(qq());
+    delete day; delete fr; delete to; delete descr;
+    return name;
+}
+
+static void setMainPort(qlonglong ix, QString *ifType, QString *name, QString *descr)
+{
+    pNode->setMainPortType(*ifType);
+    pNode->setName(_sPortName, *name);
+    pNode->setName(_sPortDescr, *descr);
+    if (ix != NULL_ID) pNode->setId(_sPortIndex, ix);
+    delete ifType;
+    delete name;
+    delete descr;
+}
+
+#define NEWOBJ(p, t, args...) \
+    if (p != NULL) yyerror(_STR(p) " is not null"); \
+    p = new t(args)
+//  if (p->stat == ES_DEFECTIVE) yyerror("Nincs elegendő adat, vagy kétértelműség.")
+
+#define INSERTANDDEL(p) \
+    if (p == NULL) yyerror(_STR(p) " is null"); \
+    p->insert(qq()); \
+    delete p; p = NULL; \
+    setLastPort(NULL, NULL_IX)
+
+#define DELOBJ(p) \
+    if (p == NULL) yyerror(_STR(p) " is null"); \
+    delete p; p = NULL
+
+#define INSREC(T, dn, n, d) \
+    T  o; o.setName(*n)[dn] = *d; \
+    o.insert(qq()); delete n; delete d;
+
+%}
+
+%union {
+    void *          u;
+    qlonglong       i;
+    intList *      il;
+    QList<qlonglong> *idl;
+    bool            b;
+    QString *       s;
+    QStringList *  sl;
+    cMac *        mac;
+    double          r;
+    QHostAddress * ip;
+    netAddress *    n;
+    QVariant *      v;
+    QVariantList * vl;
+    QPointF *     pnt;
+    QPolygonF *   pol;
+    QStringPair *  ss;
+    QStringPairList *ssl;
+    cSnmpDevice *  sh;
+}
+
+%token      MACRO_T FOR_T DO_T TO_T SET_T CLEAR_T BEGIN_T END_T ROLLBACK_T
+%token      VLAN_T SUBNET_T PORTS_T PORT_T NAME_T SHARED_T SENSORS_T
+%token      PLACE_T PATCH_T HUB_T SWITCH_T NODE_T HOST_T SNMPDEV_T ADDRESS_T
+%token      PARENT_T IMAGE_T FRAME_T TEL_T DESCR_T MESSAGE_T ALARM_T
+%token      MAIN_T PARAM_T TEMPLATE_T COPY_T FROM_T NULL_T VIRTUAL_T
+%token      INCLUDE_T PSEUDO_T OFFS_T IFTYPE_T WRITE_T RE_T
+%token      ADD_T READ_T UPDATE_T ARPS_T ARP_T SERVER_T FILE_T BY_T
+%token      SNMP_T SSH_T COMMUNITY_T DHCPD_T LOCAL_T PROC_T CONFIG_T
+%token      ATTACHED_T LOOKUP_T WORKSTATION_T LINKS_T BACK_T FRONT_T
+%token      TCP_T UDP_T ICMP_T IP_T NIL_T COMMAND_T SERVICE_T PRIME_T
+%token      MAX_T CHECK_T ATTEMPTS_T NORMAL_T INTERVAL_T RETRY_T 
+%token      FLAPPING_T CHANGE_T TRUE_T FALSE_T ON_T OFF_T YES_T NO_T
+%token      DELEGATE_T STATE_T SUPERIOR_T TIME_T PERIODS_T LINE_T GROUP_T
+%token      USER_T DAY_T OF_T PERIOD_T PROTOCOL_T ALERT_T INTEGER_T FLOAT_T
+%token      DELETE_T ONLY_T PATTERN_T STRING_T SAVE_T TYPE_T INDEX_T STEP_T
+%token      MASK_T LIST_T VLANS_T ID_T DYNAMIC_T FIXIP_T PRIVATE_T PING_T
+%token      NOTIF_T ALL_T RIGHTS_T REMOVE_T SUB_T PROPERTIES_T MAC_T EXTERNAL_T
+%token      LINK_T LLDP_T SCAN_T TABLE_T FIELD_T SHAPE_T TITLE_T REFINE_T
+%token      LEFT_T DEFAULTS_T ENUM_T RIGHT_T VIEW_T INSERT_T EDIT_T
+%token      INHERIT_T NAMES_T HIDE_T VALUE_T DEFAULT_T FILTER_T FILTERS_T
+%token      ORD_T SEQUENCE_T MENU_T GUI_T OWN_T TOOL_T TIP_T WHATS_T THIS_T
+%token      EXEC_T
+
+%token <i>  INTEGER_V
+%token <r>  FLOAT_V
+%token <s>  STRING_V NAME_V
+%token <mac> MAC_V 
+%token <ip> IPV4_V IPV6_V
+%type  <i>  int int_ iexpr lnktype shar ipprotp ipprot offs htyp ix_z vlan_t set_t
+%type  <i>  vlan_id place_id iptype pix pix_ iptype_a step timep image_id tmod int0
+%type  <il> list_i pixs // ints
+%type  <b>  bool bool_on pattern
+%type  <r>  /* real */ num fexpr
+%type  <s>  str str_ str_z name_q time tod _toddef sexpr pnm mac_q ha nsw
+%type  <sl> strs strs_z alert list_m nsws nsws_
+%type  <v>  value mac_qq
+%type  <vl> vals
+%type  <n>  subnet
+%type  <ip> ip
+%type  <pnt> point
+%type  <pol> frame points
+%type  <idl> vlan_ids
+%type  <ss>  ip_qq ip_q ip_a hs
+%type  <ssl> hss
+%type  <mac> mac
+%type  <sh>  snmph
+
+%left  '^'
+%left  '+' '-' '|'
+%left  '*' '/' '&'
+%left  NEG
+
+%%
+
+conf    :   commands            { ; }
+        ;
+commands:   command
+        |   command commands
+        ;
+command : macro
+        | trans
+        | user
+        | timeper
+        | vlan
+        | image
+        | place
+        | nodes
+        | ppar
+        | arp
+        | link
+        | srv
+        | delete
+        | eqs
+        | scan
+        | gui
+        ;
+macro   : INCLUDE_T str ';'                                 { c_yyFile::inc($2); }
+        | MACRO_T              NAME_V str ';'               { templates.set (_sMacros,     sp2s($2), sp2s($3,1));     }
+        | MACRO_T              NAME_V str SAVE_T str_z ';'  { templates.save(_sMacros,     sp2s($2), sp2s($3,1), sp2s($5,2)); }
+        | PATCH_T   TEMPLATE_T NAME_V str ';'               { templates.set (_sPatchs,     sp2s($3), sp2s($4,1));     }
+        | PATCH_T   TEMPLATE_T NAME_V str SAVE_T str_z ';'  { templates.save(_sPatchs,     sp2s($3), sp2s($4,1), sp2s($6,2)); }
+        | HUB_T     TEMPLATE_T NAME_V str ';'               { templates.set (_sHubs,       sp2s($3), sp2s($4,1));     }
+        | SWITCH_T  TEMPLATE_T NAME_V str ';'               { templates.set (_sHubs,       sp2s($3), sp2s($4,1));     }
+        | HUB_T     TEMPLATE_T NAME_V str SAVE_T str_z ';'  { templates.save(_sHubs,       sp2s($3), sp2s($4,1), sp2s($6,2)); }
+        | SWITCH_T  TEMPLATE_T NAME_V str SAVE_T str_z ';'  { templates.save(_sHubs,       sp2s($3), sp2s($4,1), sp2s($6,2)); }
+        | NODE_T    TEMPLATE_T NAME_V str ';'               { templates.set (_sNodes,      sp2s($3), sp2s($4,1));     }
+        | NODE_T    TEMPLATE_T NAME_V str SAVE_T str_z ';'  { templates.save(_sNodes,      sp2s($3), sp2s($4,1), sp2s($6,2)); }
+        | HOST_T    TEMPLATE_T NAME_V str ';'               { templates.set (_sHosts,      sp2s($3), sp2s($4,1));     }
+        | HOST_T    TEMPLATE_T NAME_V str SAVE_T str_z ';'  { templates.save(_sHosts,      sp2s($3), sp2s($4,1), sp2s($6,2)); }
+        | SNMPDEV_T TEMPLATE_T NAME_V str ';'               { templates.set (_sSnmpDevices,sp2s($3), sp2s($4,1));     }
+        | SNMPDEV_T TEMPLATE_T NAME_V str SAVE_T str_z ';'  { templates.save(_sSnmpDevices,sp2s($3), sp2s($4,1), sp2s($6,2)); }
+        | for_m
+        ;
+for_m   : FOR_T vals  DO_T MACRO_T NAME_V ';'               { forLoopMac($5, $2); }
+        | FOR_T vals  DO_T str ';'                          { forLoop($4, $2); }
+        | FOR_T iexpr TO_T iexpr step MASK_T str ';'        { forLoop($7, $2, $4, $5); }
+        ;
+step    :                                                   { $$ = 1; }
+        | STEP_T iexpr                                      { $$ = $2; }
+        ;
+list_m  : LIST_T iexpr TO_T iexpr MASK_T str                { $$ = listLoop($6, $2, $4, 1);  }
+        | LIST_T iexpr TO_T iexpr STEP_T iexpr MASK_T str   { $$ = listLoop($8, $2, $4, $6); }
+        ;
+trans   : BEGIN_T ';'   { if (!qq().exec("BEGIN TRANSACTION"))    yyerror("Error BEGIN sql command"); PDEB(INFO) << "BEGIN TRANSACTION" << endl; }
+        | END_T ';'     { if (!qq().exec("END TRANSACTION"))      yyerror("Error END sql command");   PDEB(INFO) << "END TRANSACTION" << endl; }
+        | ROLLBACK_T ';'{ if (!qq().exec("ROLLBACK TRANSACTION")) yyerror("Error END sql command");   PDEB(INFO) << "ROLLBACK TRANSACTION" << endl; }
+        ;
+eqs     : '#' NAME_V '=' iexpr ';'  { ivars[*$2] = $4; delete $2; }
+        | '&' NAME_V '=' sexpr ';'  { svars[*$2] = *$4; delete $2; delete $4; }
+        ;
+str_    : STRING_V                  { $$ = $1; }
+        | NAME_V                    { $$ = $1; }
+        | NULL_T                    { $$ = new QString(); }
+        | STRING_T '(' iexpr ')'    { $$ = new QString(QString::number($3)); }
+        | STRING_T '(' sexpr ')'    { $$ = $3; }
+        | MASK_T '(' sexpr ',' iexpr ')' { $$ = new QString(nameAndNumber(sp2s($3), (int)$5)); }
+        | MACRO_T  '(' sexpr ')'    { $$ = new QString(templates._get(_sMacros, sp2s($3))); }
+        | PATCH_T TEMPLATE_T  '(' sexpr ')'     { $$ = new QString(templates._get(_sPatchs,      sp2s($4))); }
+        | HUB_T TEMPLATE_T     '(' sexpr ')'    { $$ = new QString(templates._get(_sHubs,        sp2s($4))); }
+        | SWITCH_T TEMPLATE_T  '(' sexpr ')'    { $$ = new QString(templates._get(_sHubs,        sp2s($4))); }
+        | NODE_T TEMPLATE_T    '(' sexpr ')'    { $$ = new QString(templates._get(_sNodes,       sp2s($4))); }
+        | HOST_T TEMPLATE_T    '(' sexpr ')'    { $$ = new QString(templates._get(_sHosts,       sp2s($4))); }
+        | SNMPDEV_T TEMPLATE_T '(' sexpr ')'    { $$ = new QString(templates._get(_sSnmpDevices, sp2s($4))); }
+        ;
+str     : str_                      { $$ = $1; }
+        | '&' '[' sexpr ']'         { $$ = $3; }
+        | '&' NAME_V                { *($$ = $2) = vstr(*$2); }
+        ;
+sexpr   : str_                      { $$ = $1; }
+        | '(' sexpr ')'             { $$ = $2; }
+        | sexpr '+' sexpr           { *$$ += *$3; delete $3; }
+        | iexpr '*' sexpr           { *$$ = $3->repeated($1); }
+        ;
+str_z   : str                       { $$ = $1; }
+        |                           { $$ = new QString(); }
+        ;
+strs    : str                       { $$ = new QStringList(*$1); delete $1; }
+        | list_m                    { $$ = $1; }
+        | strs ',' str              { $$ = $1;   *$$ << *$3;     delete $3; }
+        | strs ',' list_m           { $$ = $1;   *$$ << *$3;     delete $3; }
+        ;
+strs_z  : str_z                     { $$ = new QStringList(*$1); delete $1; }
+        | strs_z ',' str_z          { $$ = $1;   *$$ << *$3;     delete $3; }
+        ;
+
+int_    : INTEGER_V                     { $$ = $1; }
+        | ID_T NODE_T '(' str ')'       { $$ = cPatch().getIdByName(qq(), sp2s($4)); }
+        | ID_T PLACE_T '(' place_id ')' { $$ = $4;  }
+        | ID_T TIME_T PERIOD_T '(' str ')'   { $$ = cTimePeriod().getIdByName(qq(), sp2s($5)); }
+        | ID_T SUBNET_T '(' str ')'     { $$ = cSubNet().getIdByName(qq(), sp2s($4)); }
+        | ID_T IFTYPE_T '(' str ')'     { $$ = cIfType().getIdByName(qq(), sp2s($4)); }
+        | ID_T VLAN_T '(' vlan_id ')'   { $$ =  $4; }
+        | '#' NAME_V                    { $$ = vint(*$2); delete $2; }
+        | '#' '+' NAME_V                { $$ = (vint(*$3) += 1); delete $3; }
+        ;
+int     : int_                      { $$ = $1; }
+        | '-' INTEGER_V             { $$ = -$2; }
+        | '#' '[' iexpr ']'         { $$ = $3; }
+        ;
+vlan_id : str                       { $$ = cVLan().getIdByName(qq(), *$1); delete $1; }
+        | int                       { $$ = $1; }
+        ;
+place_id: str                       { $$ = cPlace().getIdByName(qq(), *$1); delete $1; }
+        ;
+iexpr   : int_                       { $$ = $1; }
+        | '-' iexpr  %prec NEG      { $$ = -$2; }
+        | iexpr '+' iexpr           { $$ = $1 + $3; }
+        | iexpr '-' iexpr           { $$ = $1 - $3; }
+        | iexpr '|' iexpr           { $$ = $1 | $3; }
+        | iexpr '*' iexpr           { $$ = $1 * $3; }
+        | iexpr '/' iexpr           { $$ = $1 / $3; }
+        | iexpr '&' iexpr           { $$ = $1 & $3; }
+        | '(' iexpr ')'             { $$ = $2; }
+        | INTEGER_T '(' fexpr ')'   { $$ = $3; }
+        ;
+ix_z    :                           { $$ = NULL_IX; }
+        | int                       { $$ = $1; }
+        ;
+/*ints    : int                       { $$ = new intList; *$$ << $1; }
+        | list_i                    { $$ = $1; }
+        | ints ',' int              { *$$ << $3; }
+        | ints ',' list_i           { *$$ << *$3; delete $3; }
+        ;*/
+list_i  : LIST_T iexpr TO_T iexpr                { $$ = listLoop($2, $4, 1);  }
+        | LIST_T iexpr TO_T iexpr STEP_T iexpr   { $$ = listLoop($2, $4, $6); }
+        ;
+/*real    : FLOAT_V                   { $$ = $1; }
+        | '[' fexpr ']'             { $$ = $2; }
+        ;*/
+fexpr   : FLOAT_V                   { $$ = $1; }
+        | '-' fexpr  %prec NEG      { $$ = -$2; }
+        | fexpr '+' fexpr           { $$ = $1 + $3; }
+        | fexpr '-' fexpr           { $$ = $1 - $3; }
+        | fexpr '*' fexpr           { $$ = $1 * $3; }
+        | fexpr '/' fexpr           { $$ = $1 / $3; }
+        | iexpr '^' iexpr           { $$ = pow((double)$1, (double)$3); }
+        | '(' fexpr ')'             { $$ = $2; }
+        | FLOAT_T '(' iexpr ')'     { $$ = $3; }
+        ;
+value   : iexpr                     { $$ = new QVariant($1); }
+        | fexpr                     { $$ = new QVariant($1); }
+        | str                       { $$ = sp2vp($1);}
+        | ip                        { $$ = new QVariant(); $$->setValue(*$1); delete $1; }
+        | bool                      { $$ = new QVariant($1); }
+        | mac                       { $$ = new QVariant(); $$->setValue(*$1); delete $1; }
+        | subnet                    { $$ = new QVariant(); $$->setValue(*$1); delete $1; }
+        | frame                     { $$ = new QVariant(); $$->setValue(*$1); delete $1; }
+        | point                     { $$ = new QVariant(); $$->setValue(*$1); delete $1; }
+        ;
+vals    : value                     { $$ = new QVariantList(); *$$ << *$1; delete $1; }
+        | list_m                    { $$ = new QVariantList(slp2vl($1)); }
+        | list_i                    { $$ = new QVariantList(); foreach (qlonglong i, *$1) *$$ << QVariant(i); delete $1; }
+        | vals ',' value            { $$ = $1;                 *$$ << *$3; delete $3; }
+        | vals ',' list_m           { $$ = $1;                 *$$ << slp2vl($3); }
+        | vals ',' list_i           { $$ = $1; foreach (qlonglong i, *$3) *$$ << QVariant(i); delete $3; }
+        ;
+num     : iexpr                     { $$ = $1; }
+        | fexpr                     { $$ = $1; }
+        ;
+bool    : ON_T      { $$ = true; }  | YES_T     { $$ = true; }  | TRUE_T    { $$ = true; }
+        | OFF_T     { $$ = false; } | NO_T      { $$ = false; } | FALSE_T   { $$ = false; }
+        ;
+bool_on :                           { $$ = true; }
+        | bool                      { $$ = $1; }
+        ;
+user    : USER_T str str_z          { NEWOBJ(pUser, cUser); pUser->setName(*$2).setName(_sUserDescr, *$3); delete $2; delete $3; }
+            user_e                  { INSERTANDDEL(pUser); }
+        | USER_T GROUP_T str str_z  { NEWOBJ(pGroup, cGroup); pGroup->setName(*$3).setName(_sGroupDescr, *$4); delete $3; delete $4; }
+            ugrp_e                  { INSERTANDDEL(pGroup); }
+        | USER_T GROUP_T str ADD_T str ';'      { cGroupUser gu(qq(), *$3, *$5); if (!gu.test(qq())) gu.insert(qq()); delete $3; delete $5; }
+        | USER_T GROUP_T str REMOVE_T str ';'   { cGroupUser gu(qq(), *$3, *$5); if (gu.test(qq())) gu.remove(qq()); delete $3; delete $5; }
+        ;
+user_e  : ';'
+        | '{' user_ps '}'
+        ;
+user_ps :
+        | user_ps user_p
+        ;
+user_p  : HOST_T NOTIF_T PERIOD_T timep ';'     { pUser->setId(_sHostNotifPeriod, $4); }
+        | SERVICE_T NOTIF_T PERIOD_T timep ';'  { pUser->setId(_sServNotifPeriod, $4); }
+        | HOST_T NOTIF_T SWITCH_T nsws ';'      { pUser->set(_sHostNotifSwitchs, QVariant(*$4)); delete $4; }
+        | SERVICE_T NOTIF_T SWITCH_T nsws ';'   { pUser->set(_sServNotifSwitchs, QVariant(*$4)); delete $4; }
+        | HOST_T NOTIF_T COMMAND_T str ';'      { pUser->setName(_sHostNotifCmd, *$4); delete $4; }
+        | SERVICE_T NOTIF_T COMMAND_T str ';'   { pUser->setName(_sServNotifCmd, *$4); delete $4; }
+        | TEL_T strs ';'                        { pUser->set(_sTel, QVariant(*$2)); delete $2; }
+        | ADDRESS_T strs ';'                    { pUser->set(_sAddresses, QVariant(*$2)); delete $2; }
+        | PLACE_T place_id ';'                  { pUser->setId(_sPlaceId, $2); }
+        ;
+timep   : str                                   { $$ = cTimePeriod().fetchByName(*$1); delete $1; }
+        ;
+nsws    : ALL_T                                 { $$ = new QStringList(allNotifSwitchs); }
+        |                                       { $$ = new QStringList(); }
+        | nsws_                                 { $$ = $1; }
+        ;
+nsws_   : nsw                                   { $$ = new QStringList(*$1); delete $1; }
+        | nsws_ ',' nsw                         { *($$ = $1) << *$3; delete $3; }
+        ; 
+nsw     : str                                   { $$ = $1; if (!allNotifSwitchs.contains(*$1)) yyerror("Ivalis notif swich value."); delete $1; }
+        ;
+ugrp_e  : ';'
+        | '{' ugrp_ps '}'
+        ;
+ugrp_ps :
+        | ugrp_ps ugrp_p
+        ;
+ugrp_p  : RIGHTS_T str ';'                      { pGroup->setName(_sGroupRights, *$2); delete $2; }
+        | PLACE_T place_id ';'                  { pGroup->setId(_sPlaceId, $2); }
+        ; 
+timeper : TIME_T PERIOD_T str str_z ';'         { INSREC(cTimePeriod, _sTimePeriodDescr, $3, $4); }
+        | tod ADD_T TIME_T PERIOD_T str ';'     { cTimePeriodTpow(qq(), *$5, *$1).insert(qq()); delete $1; delete $5; }
+        | toddef
+        ;
+tod     : _toddef                   { $$ = $1; }
+        | TIME_T OF_T DAY_T str     { $$ = $4; }
+        ;
+time    : INTEGER_V ':' INTEGER_V               { $$ = sTime($1, $3); }
+        | INTEGER_V ':' INTEGER_V ':' INTEGER_V { $$ = sTime($1, $3, $5); }
+        ;
+_toddef : TIME_T OF_T DAY_T str str FROM_T time TO_T time str_z	{ $$ = toddef($4, $5, $7, $9, $10); }
+        ;
+toddef  : _toddef ';'               { delete $1; }
+        ;
+ppar    : PORT_T PARAM_T str str str str_z ';'  { cPortParam::insertNew(*$3, *$4, *$5, *$6); delete $3; delete $4; delete $5; delete $6; }
+        ;
+vlan    : VLAN_T int str str_z      {
+                                        actVlanId = cVLan::insertNew($2, actVlanName = *$3, actVlanDescr = *$4, true);
+                                        delete $3; delete $4;
+                                        netType = NT_PRIMARY;
+                                    }
+            '{' subnets '}'         { actVlanId = -1; }
+        | PRIVATE_T SUBNET_T        { actVlanId = -1; netType = NT_PRIVATE; }  subnet { netType = NT_INVALID; }
+        | PSEUDO_T  SUBNET_T        { actVlanId = -1; netType = NT_PSEUDO;  }  subnet { netType = NT_INVALID; }
+        ;
+subnets : subnet                    { actVlanName.clear(); actVlanDescr.clear(); }
+        | subnets subnet
+        ;
+subnet  : ip '/' INTEGER_V ';'
+                {
+                    if (netType != NT_PRIMARY) yyerror("no name");
+                    cSubNet::insertNew(actVlanName, actVlanDescr, netAddress(*$1, (int)$3), actVlanId, _sPrimary);
+                    delete $1;
+                }
+        | ip '/' IPV4_V ';'
+                {
+                    if (netType != NT_PRIMARY) yyerror("no name"); if ($1->protocol() != QAbstractSocket::IPv4Protocol) yyerror("Invalid net address");
+                    cSubNet::insertNew(actVlanName, actVlanDescr, netAddress(*$1, toIPv4Mask(*$3)), actVlanId, _sPrimary);
+                    delete $1; delete $3;
+                }
+        | ip '/' int str str_z ';'
+                {
+                    cSubNet::insertNew(*$4, *$5, netAddress(*$1, (int)$3), actVlanId, nextNetType());
+                    delete $1;
+                }
+        | ip '/' IPV4_V str str_z ';'
+                {
+                    if ($1->protocol() != QAbstractSocket::IPv4Protocol) yyerror("Invalid net address");
+                    cSubNet::insertNew(*$4, *$5, netAddress(*$1, toIPv4Mask(*$3)), actVlanId, nextNetType());
+                    delete $1; delete $3;
+                }
+        ;
+ip      : IPV4_V                    { $$ = $1; PDEB(VVERBOSE) << "ip(IPV4):" << $$->toString() << endl; }
+        | IPV6_V                    { $$ = $1; PDEB(VVERBOSE) << "ip(IPV6):" << $$->toString() << endl; }
+        | IP_T '(' sexpr ')'        { $$ = new QHostAddress(); if (!$$->setAddress(*$3)) yyerror("Invalid address"); }
+        ;
+image   : IMAGE_T str str_z         { NEWOBJ(pImage, cImage); pImage->setName(*$2).setName(_sImageDescr, *$3); delete $2; delete $3; }
+            image_e                 { INSERTANDDEL(pImage); }
+        ;
+image_e : '{' image_ps '}'
+        ;
+image_ps: image_p
+        | image_ps image_p
+        ;
+image_p : TYPE_T str ';'            { pImage->setName(_sImageType, *$2); delete $2; }
+        | SUB_T TYPE_T str ';'      { pImage->setName(_sImageSubType, *$3); delete $3; }
+        | IMAGE_T FILE_T str ';'    { pImage->load(*$3); delete $3; }
+        ;
+image_id: str                       { $$ = cImage().getIdByName(sp2s($1)); }
+        ;
+place   : PLACE_T str str_z         { place.clear().setName(*$2).set(_sPlaceDescr, *$3); delete $2; delete $3; }
+          place_e                   { place.insert(qq()); }
+        | SET_T PLACE_T place_id ';'{ globalPlaceId = $3; }
+        | CLEAR_T PLACE_T ';'       { globalPlaceId = NULL_ID; }
+        | PLACE_T GROUP_T str str_z ';' { cPlaceGroup::insertNew(sp2s($3,1), sp2s($4, 2)); }
+        | PLACE_T GROUP_T str ADD_T str ';'     { cGroupPlace gp(qq(), *$3, *$5); if (!gp.test(qq())) gp.insert(qq()); delete $3; delete $5; }
+        | PLACE_T GROUP_T str REMOVE_T str ';'  { cGroupPlace gp(qq(), *$3, *$5); if (gp.test(qq())) gp.remove(qq()); delete $3; delete $5; }
+        ;
+place_e : ';'
+        | '{' plac_ps '}'
+        ;
+plac_ps : place_p
+        | plac_ps place_p
+        ;
+place_p : DESCR_T str ';'           { place.set(_sPlaceDescr, *$2);     delete $2; }
+        | PARENT_T place_id ';'     { place.set(_sParentId, $2); }
+        | IMAGE_T image_id ';'      { place.set(_sImageId,  $2); }
+        | FRAME_T frame ';'         { place.set(_sFrame, QVariant::fromValue(*$2)); delete $2; }
+        | TEL_T strs ';'            { place.set(_sTel, *$2);            delete $2; }
+        | ALARM_T MESSAGE_T str ';' { place.set(_sPlaceAlarmMsg, *$3);  delete $3; }
+        ;
+frame   : '{' points  '}'           { $$ = $2; }
+        ;
+points  : point                     { $$ = new QPolygonF(); *$$ << *$1;  delete $1; }
+        | points ',' point          { $$ = $1;              *$$ << *$3;  delete $3; }
+        ;
+point   : '[' num ',' num ']'       { $$ = new QPointF($2, $4); }
+        ;
+nodes   : patch
+        | hub
+        | node
+        | host
+        | snmpdev
+        ;
+patch   : patch_h { pPatch->setId(_sPlaceId, gPlace()); } patch_e { INSERTANDDEL(pPatch); }
+        ;
+patch_h : PATCH_T str str_z                     { NEWOBJ(pPatch, cPatch, sp2s($2), sp2s($3,1)); }
+        | PATCH_T str str_z COPY_T FROM_T str   { NEWOBJ(pPatch, cPatch, sp2s($2), sp2s($3,1)); templates.get(_sPatchs, sp2s($6)); }
+                patch_ps
+        ;
+patch_e : '{' patch_ps '}'
+        | ';'
+        ;
+patch_ps: patch_p patch_ps
+        |
+        ;
+patch_p : DESCR_T str ';'                       { pPatch->setName(_sNodeDescr, sp2s($2)); }
+        | PLACE_T place_id ';'                  { pPatch->set(_sPlaceId, $2); }
+        | ADD_T PORT_T int str str_z ';'        { setLastPort(pPatch->addPort(sp2s($4), sp2s($5,1), $3)); }
+        | ADD_T PORTS_T offs FROM_T int TO_T int offs str ';'
+                                                { setLastPort(pPatch->addPorts(sp2s($9), $8, $5, $7, $3)); }
+        | PORT_T pix DESCR_T strs ';'           { setLastPort(pPatch->portSet($2, _sPortDescr, slp2vl($4))); }
+        | PORT_T pnm DESCR_T str ';'            { setLastPort(pPatch->portSet(sp2s($2), _sPortDescr, sp2v($4,1))); }
+        | PORT_T pix SET_T str '=' vals ';'     { setLastPort(pPatch->portSet($2, sp2s($4), vlp2vl($6))); }
+        | PORT_T str SET_T str '=' value ';'    { setLastPort(pPatch->portSet(sp2s($2), sp2s($4, 1), vp2v($6))); }
+        | PORTS_T pixs SHARED_T strs ';'        { int _pix = $2->last();
+                                                  setLastPort(pPatch->ports.get(_sPortIndex, QVariant(_pix))->getName(_sPortName), _pix);
+                                                  portShare($2, $4);
+                                                }
+        | for_m
+        | eqs
+        ;
+offs    : OFFS_T int                            { $$ = $2; }
+        |                                       { $$ = 0; }
+        ;
+pix     : int
+        | '#' '@'                               { $$ = vint(sPortIx); }
+        ;
+pnm     : str                                   { $$ = $1; }
+        | '&' '@'                               { $$ = new QString(vstr(sPortNm)); }
+        ;
+pixs    : pix_                                  { $$ = new intList; *$$ << $1; }
+        | pixs ',' pix_                         { *$$ << $3; }
+        ;
+pix_    : int                                   { $$ = vint(sPortIx) = $1; }
+        | '#' '+' '@'                           { $$ = (vint(sPortIx) += 1); }
+        | str                                   { $$ = vint(sPortIx) = pPatch->ports.get(_sPortName, *$1)->getId(_sPortIndex); delete $1; }
+        ;
+hub     : hub_h { pHub->setId(_sPlaceId, gPlace()); } hub_e { INSERTANDDEL(pHub); }
+        ;
+hub_h   : htyp str str_z                        { NEWOBJ(pHub, cHub, sp2s($2), sp2s($3, 1), (enum cHub::eType)$1); }
+        | htyp str str_z COPY_T FROM_T str      { NEWOBJ(pHub, cHub, sp2s($2), sp2s($3, 1), (enum cHub::eType)$1); templates.get(_sHubs, sp2s($6)); }
+                hub_ps
+        ;
+htyp    : HUB_T                                 { $$ = cHub::T_HUB; }
+        | VIRTUAL_T HUB_T                       { $$ = cHub::T_VIRTUAL_HUB; }
+        | SWITCH_T                              { $$ = cHub::T_SWITCH; }
+        | VIRTUAL_T SWITCH_T                    { $$ = cHub::T_VIRTUAL_SWITCH; }
+        ;
+hub_e   : '{' hub_ps '}'
+        | ';'
+        ;
+hub_ps  : hub_p hub_ps
+        |
+        ;
+hub_p   : DESCR_T str ';'                       { pHub->setName(_sNodeDescr, sp2s($2)); }
+        | PLACE_T place_id ';'                  { pHub->set(_sPlaceId, $2); }
+
+        | ADD_T PORT_T ix_z str str_z ';'       { setLastPort(pHub->addPort(sp2s($4), sp2s($5,1), $3)); }
+        | ADD_T PORTS_T offs FROM_T int TO_T int offs str ';'
+                                                { setLastPort(pHub->addPorts(sp2s($9), $8, $5, $7, $3)); }
+        | PORT_T pix NAME_T strs ';'            { setLastPort(pHub->portSet($2, _sPortName, slp2vl($4)));  }
+        | PORT_T pix DESCR_T strs ';'           { setLastPort(pHub->portSet($2, _sPortDescr, slp2vl($4))); }
+        | PORT_T pnm NAME_T str ';'             { setLastPort(pHub->portSet(sp2s($2), _sPortName, sp2v($4,1))); }
+        | PORT_T pnm DESCR_T str ';'            { setLastPort(pHub->portSet(sp2s($2), _sPortDescr, sp2v($4,1))); }
+        | PORT_T pix SET_T str '=' vals ';'     { setLastPort(pHub->portSet($2, sp2s($4), vlp2vl($6))); }
+        | PORT_T str SET_T str '=' value ';'    { setLastPort(pHub->portSet(sp2s($2), sp2s($4, 1), vp2v($6))); }
+        | for_m
+        | eqs
+        ;
+node    : NODE_T str str_z                      { NEWOBJ(pNode, cNode, sp2s($2), sp2s($3, 1)); setLastPort(pNode); { pNode->setId(_sPlaceId, gPlace()); } }
+                node_cf node_e                  { INSERTANDDEL(pNode); }
+        | ATTACHED_T str str_z ';'              { newAttachedNode(*$2, *$3); delete $2; delete $3; }
+        | ATTACHED_T str str_z FROM_T int TO_T int ';'
+                                                { newAttachedNodes(*$2, *$3, $5, $7); delete $2; delete $3; }
+        ;
+node_e  : '{' node_ps '}'
+        | ';'
+        ;
+node_ps : node_p node_ps
+        | 
+        ; 
+node_cf :
+        | COPY_T FROM_T str                     { templates.get(_sNodes, sp2s($3)); }
+                node_ps
+        ;
+node_p  : DESCR_T str ';'                       { pNode->setName(sp2s($2)); }
+        | PLACE_T place_id ';'                  { pNode->setId(_sPlaceId, $2); }
+        | ALARM_T MESSAGE_T str ';'             { pNode->setName(_sNodeAlarmMsg, sp2s($3)); }
+        | ALARM_T PLACE_T GROUP_T str ';'       { host().setId(_sAlarmPlaceGroupId, cPlaceGroup().getIdByName(qq(), sp2s($4))); }
+        | SET_T str '=' value ';'               { pNode->set(sp2s($2), vp2v($4)); }
+        | MAIN_T PORT_T ix_z str str str_z ';'  { setMainPort($3, $4, $5, $6); setLastPort(pNode); }
+        | MAIN_T PORT_T TYPE_T str ';'          { pNode->setMainPortType(sp2s($4)); setLastPort(pNode); }
+        | MAIN_T PORT_T NAME_T str ';'          { pNode->setName(_sPortName, sp2s($4)); setLastPort(pNode); }
+        | MAIN_T PORT_T DESCR_T str ';'         { pNode->setName(_sPortDescr, sp2s($4)); setLastPort(pNode);}
+        | MAIN_T PORT_T INDEX_T int ';'         { pNode->setId(_sPortIndex, $4); setLastPort(pNode); }
+        | MAIN_T PORT_T PARAM_T str '=' value ';'{ pNode->params[sp2s($4)] = $6->toString(); delete $6; setLastPort(pNode); }
+        | ADD_T PORTS_T str offs FROM_T int TO_T int offs str ';'
+                                                { setLastPort(pNode->addPorts(cIfType::ifType(sp2s($3)), sp2s($10,1), $9, $6, $8, $4)); }
+        | ADD_T PORT_T ix_z str str str_z ';'   { setLastPort(pNode->addPort(cIfType::ifType(sp2s($4)), 0, sp2s($5, 1), sp2s($6, 2), $3)); }
+        | PORT_T pnm DESCR_T str ';'            { setLastPort(pNode->portSet(sp2s($2), _sPortDescr, sp2s($4, 2))); }
+        | PORT_T pix DESCR_T strs ';'           { setLastPort(pNode->portSet($2, _sPortDescr, slp2vl($4))); }
+        | PORT_T pnm SET_T str '=' value ';'    { setLastPort(pNode->portSet(sp2s($2), sp2s($4, 1), vp2v($6))); }
+        | PORT_T pix SET_T str '=' vals ';'     { setLastPort(pNode->portSet($2, sp2s($4), vlp2vl($6)));; }
+        | PORT_T pnm PARAM_T str '=' str ';'    { setLastPort(pNode->portSetParam(sp2s($2), sp2s($4,1), sp2s($6,2))); }
+        | PORT_T pix PARAM_T str '=' strs ';'   { setLastPort(pNode->portSetParam($2, sp2s($4), slp2sl($6))); }
+        /* host_p: a Shift reduce conflict-ok miatt az összes port definíciós sor egy szabályban szerepel, a host() függvény szűr */
+        | MAIN_T PORT_T ADD_T ADDRESS_T ip_a str_z ';' { hostAddAddress($5, $6); setLastPort(pNode); }
+        | ADD_T PORT_T ix_z str str ip_qq mac_qq str_z ';'  { setLastPort(hostAddPort((int)$3, $4,$5,$6,$7,$8)); }
+        | PORT_T pnm ADD_T ADDRESS_T ip_a str_z ';'         { setLastPort(portAddAddress($2, $5, $6)); }
+        | PORT_T pix ADD_T ADDRESS_T ip_a str_z ';'         { setLastPort(portAddAddress((int)$2, $5, $6)); }
+        | ADD_T SENSORS_T offs FROM_T int TO_T int offs str ip ';'  /* index offset ... név offset */
+                                                            { setLastPort(host().addSensors(sp2s($9,1), $8, $5, $7, $3, *$10)); delete $10; }
+        | PORT_T pnm VLAN_T vlan_id vlan_t set_t ';'        { setLastPort(host().portSetVlan(sp2s($2), $4, (enum eVlanType)$5, (enum eSetType)$6)); }
+        | PORT_T pix VLAN_T vlan_id vlan_t set_t ';'        { setLastPort(host().portSetVlan(     $2,  $4, (enum eVlanType)$5, (enum eSetType)$6)); }
+        | PORT_T pnm VLAN_T vlan_id ';'                     { setLastPort(host().portSetVlan(sp2s($2), $4, VT_HARD, ST_MANUAL)); }
+        | PORT_T pix VLAN_T vlan_id ';'                     { setLastPort(host().portSetVlan(     $2,  $4, VT_HARD, ST_MANUAL)); }
+        | PORT_T pnm VLANS_T vlan_ids ';'                   { setLastPort(host().portSetVlans(sp2s($2), *$4)); delete $4; }
+        | PORT_T pix VLANS_T vlan_ids ';'                   { setLastPort(host().portSetVlans(     $2,  *$4)); delete $4; }
+        /* snmpdev: a Shift reduce conflict-ok miatt az összes port definíciós sor egy szabályban szerepel, a snmpdev() függvény szűr  */
+        | PORTS_T BY_T SNMP_T str_z ';'             { snmpdev().setBySnmp(sp2s($4)); setLastPort(_sNul, NULL_IX); }
+        | COMMUNITY_T str ';'                       { snmpdev().setName(_sCommunityRd, sp2s($2)); }
+        | READ_T COMMUNITY_T str ';'                { snmpdev().setName(_sCommunityRd, sp2s($3)); }
+        | WRITE_T COMMUNITY_T str ';'               { snmpdev().setName(_sCommunityWr, sp2s($3)); }
+        | for_m
+        | eqs
+        ;
+ip_q    : ip iptype                             { $$ = new QStringPair($1->toString(), addrType($2)); delete $1; }
+        | DYNAMIC_T                             { $$ = new QStringPair(QString(),      _sDynamic); }
+        | LOOKUP_T                              { $$ = new QStringPair(_sLOOKUP,       _sFixIp); }
+        | ARP_T                                 { $$ = new QStringPair(_sARP,          _sFixIp); }
+        ;
+ip_qq   : ip iptype                             { $$ = new QStringPair($1->toString(), addrType($2)); delete $1; }
+        | DYNAMIC_T                             { $$ = new QStringPair(QString(),      _sDynamic); }
+        | NULL_T                                { $$ = NULL; }
+        | ARP_T                                 { $$ = new QStringPair(_sARP, _sFixIp); }
+        ;
+ip_a    : ip iptype_a                           { $$ = new QStringPair($1->toString(), addrType($2)); delete $1; }
+        ;
+mac     : MAC_V                                 { $$ = $1; }
+        | MAC_T '(' sexpr ')'                   { $$ = new cMac(sp2s($3)); if (!$$->isValid()) yyerror("Invalid MAC."); }
+        ;
+mac_q   : mac                                   { $$ = new QString($1->toString()); delete $1; }
+        | ARP_T                                 { $$ = new QString(_sARP); }
+        ;
+mac_qq  : mac                                   { $$ = new QVariant($1->toString()); delete $1; }       // MAC mint literal
+        | '<' '@'                               { $$ = new QVariant(vint(sPortIx)); }                   // MAC azonos az előző port MAC-jával
+        | '<' int                               { $$ = new QVariant($2); }                              // Azonos egy megadott indexű port MAC-jával
+        | ARP_T                                 { $$ = new QVariant(_sARP); }                           // Az IP címbőé kell kitalálni az "ARP"-al
+        | NULL_T                                { $$ = NULL; }                                          // A MAC NULL lessz
+        ;
+iptype  :                                       { $$ = AT_FIXIP;   }
+        | '/' FIXIP_T                           { $$ = AT_FIXIP;   }
+        | '/' PRIVATE_T                         { $$ = AT_PRIVATE; }
+        | '/' DYNAMIC_T                         { $$ = AT_DYNAMIC; }
+        | '/' PSEUDO_T                          { $$ = AT_PSEUDO;  }
+        | '/' EXTERNAL_T                        { $$ = AT_EXTERNAL;}
+        ;
+iptype_a:                                       { $$ = AT_FIXIP; }
+        | '/' FIXIP_T                           { $$ = AT_FIXIP; }
+        | '/' PRIVATE_T                         { $$ = AT_PRIVATE; }
+        | '/' PSEUDO_T                          { $$ = AT_PSEUDO; }
+        ;
+vlan_t  : str                                   { $$ = (qlonglong)vlanType(sp2s($1)); }
+        ;
+set_t   : str                                   { $$ = (qlonglong)setType(sp2s($1)); }
+        |                                       { $$ = (qlonglong)ST_MANUAL; }
+        ;
+vlan_ids: vlan_id                               { *($$ = new QList<qlonglong>()) << $1; }
+        | vlan_ids ',' vlan_id                  { *($$ = $1) << $3; }
+        ;
+host    : HOST_T name_q ip_q mac_q str_z        { pNode = newHost<cHost>($2, $3, $4, $5); }
+            host_cf host_e                      { chkHost(); INSERTANDDEL(pNode); }
+        | VIRTUAL_T HOST_T name_q ip_q mac_q str_z { pNode = newHost<cHost>($3, $4, $5, $6); pNode->set(_sIsVirtual, true); }
+            host_cf host_e                      { chkHost(); INSERTANDDEL(pNode); }
+        | WORKSTATION_T str mac str_z ';'       { newWorkstation(*$2,*$3,*$4); delete $2; delete $3; delete $4; }
+        ;
+host_cf :
+        | COPY_T FROM_T str                     { templates.get(_sHosts, sp2s($3)); }
+                host_ps
+        ;
+name_q  : str                                   { $$ = $1; }
+        | LOOKUP_T                              { $$ = new QString(); }
+        ;
+host_e  :  '{' host_ps '}'
+        |  ';'
+        ;
+host_ps : host_p host_ps
+        |
+        ;
+host_p  : node_p
+        ;
+arp     : READ_T ARPS_T ';'                     { pArpTable->getFromDb(qq()); }
+        | ADD_T ARP_T SERVER_T ip BY_T SNMP_T COMMUNITY_T str ';'    {
+                    pArpServerDefs->append(cArpServerDef(cArpServerDef::SNMP, $4->toString(), QString(), *$8), *pArpTable);
+                    delete $4;
+                    delete $8;
+                }
+        | ADD_T ARP_T SERVER_T ip BY_T SSH_T PROC_T FILE_T str_z ';' {
+                    pArpServerDefs->append(cArpServerDef(cArpServerDef::PROC_SSH, $4->toString(), *$9), *pArpTable);
+                    delete $4;
+                    delete $9;
+                }
+        | ADD_T ARP_T SERVER_T ip BY_T SSH_T DHCPD_T CONFIG_T str_z ';' {
+                    pArpServerDefs->append(cArpServerDef(cArpServerDef::DHCPD_SSH, $4->toString(), *$9), *pArpTable);
+                    delete $4;
+                    delete $9;
+                }
+        | ADD_T ARP_T LOCAL_T BY_T PROC_T FILE_T str_z ';'   {
+                    pArpServerDefs->append(cArpServerDef(cArpServerDef::PROC_LOCAL, QString(), *$7), *pArpTable);
+                    delete $7;
+                }
+        | ADD_T ARP_T LOCAL_T BY_T DHCPD_T CONFIG_T str_z ';'       {
+                    pArpServerDefs->append(cArpServerDef(cArpServerDef::DHCPD_LOCAL, QString(), *$7), *pArpTable);
+                    delete $7;
+                }
+        | UPDATE_T ARPS_T ';'                   { cArp::replaces(qq(), *pArpTable); }
+        | RE_T UPDATE_T ARPS_T ';'              { pArpServerDefs->reUpdateArpTable(*pArpTable); cArp::replaces(qq(), *pArpTable); }
+        | PING_T ha ';'                         { QProcess::execute(QString("ping -c1 %1").arg(*$2)); delete $2; } //{ Pinger().ping(*$2, 1); delete $2; }
+        ;
+ha      : str                                   { $$ = $1; }
+        | ip                                    { $$ = new QString($1->toString()); delete $1; }
+        ;
+snmpdev : SNMPDEV_T name_q ip_q mac_q str_z     { pNode = newHost<cSnmpDevice>($2, $3, $4, $5); setLastPort(pNode); }
+                snmpd_cf
+                snmpd_e                         { chkHost(); INSERTANDDEL(pNode); }
+        ;
+snmpd_e : '{' snmpd_ps '}'
+        | ';'
+        ;
+snmpd_ps: snmpd_p snmpd_ps
+        |
+        ;
+snmpd_cf:
+        | COPY_T FROM_T str                     { templates.get(_sSnmpDevices, sp2s($3)); }
+                snmpd_ps
+        ;
+snmpd_p : host_p
+        ;
+link    : LINKS_T lnktype str_z TO_T lnktype str_z  { NEWOBJ(pLink, cLink, $2, $3, $5, $6); }
+         '{' links '}'                              { DELOBJ(pLink); }
+        ;
+lnktype : BACK_T                                    { $$ = -1; }
+        | FRONT_T                                   { $$ =  1; }
+        | END_T                                     { $$ =  0; }
+        ;
+links   : lnk
+        | links lnk
+        ;
+lnk     : lport '&' rport alert str_z ';'           { pLink->insert($5, $4); }
+        | int '*' str_z ':' int '&' str_z ':' int ';'   { pLink->insert($3, $5, $7, $9, $1); }
+        | for_m
+        ;
+lport   : str_z ':' str shar                        { pLink->left($1, $3, $4); }
+        | str_z ':' int shar                        { pLink->left($1, $3, $4); }
+        | str shar                                  { pLink->left($1, NULL_IX, $2); }
+        ;
+rport   : str_z ':' str shar                        { pLink->right($1, $3, $4); }
+        | str_z ':' int shar                        { pLink->right($1, $3, $4); }
+        | str shar                                  { pLink->right($1, NULL_IX, $2); }
+        | WORKSTATION_T '(' str mac str_z ')'       { pLink->workstation($3,$4, $5); }
+        | ATTACHED_T '(' str str_z ')'              { pLink->attached($3, $4); }
+        ;
+alert   :                                           { $$ = NULL; }
+        /* ALERT [(<service_name> [, <host_service_descr>[, <host_service_alarm_msg>[, <node_alarm:msg>]]])] */
+//        | ALERT_T '('  ')'                          { $$ = new QStringList(); }
+        | ALERT_T '(' strs_z ')'                    { $$ = $3; }
+        ;
+shar    :                                           { $$ = ES_; }
+        | '/' NAME_V                                { $$ = s2share($2);  }
+        ;
+srv     : service
+        | hostsrv
+        ;
+service : SERVICE_T str str_z    { NEWOBJ(pService, cService);
+                                      pService->setName(*$2);
+                                      pService->set(_sServiceDescr, *$3);
+                                      delete $2; delete $3; }
+          srvend                    { pService->insert(qq()); DELOBJ(pService); }
+        | SET_T ALERT_T SERVICE_T str ';'    { alertServiceId = cService().getIdByName(qq(), *$4); delete $4; }
+        ;
+srvend  : '{' srv_ps '}'
+        | ';'
+        ;
+srv_ps  : srv_p
+        | srv_ps srv_p
+        ;
+srv_p   : ipprotp int ';'                       { (*pService)[_sProtocolId] = $1; (*pService)[_sPort] = $2; }
+        | ipprot ix_z ';'                       { (*pService)[_sProtocolId] = $1; if ($2 >= 0) (*pService)[_sPort] = $2; }
+        | SUPERIOR_T SERVICE_T MASK_T str ';'   { (*pService)[_sSuperiorServiceMask] = *$4; delete $4; }
+        | COMMAND_T str  ';'                    { (*pService)[_sCheckCmd]   = *$2; delete $2; }
+        | PROPERTIES_T str ';'                  { (*pService)[_sProperties] = *$2; delete $2; }
+        | MAX_T CHECK_T ATTEMPTS_T int ';'      { (*pService)[_sMaxCheckAttempts]    = $4; }
+        | NORMAL_T CHECK_T INTERVAL_T int ';'   { (*pService)[_sNormalCheckInterval] = $4; }
+        | RETRY_T CHECK_T INTERVAL_T int ';'    { (*pService)[_sRetryCheckInterval]  = $4; }
+        | FLAPPING_T INTERVAL_T str ';'         { (*pService)[_sFlappingInterval]    = *$3; delete $3; }
+        | FLAPPING_T MAX_T CHANGE_T int ';'     { (*pService)[_sFlappingMaxChange]   = $4; }
+        | SET_T str '=' value ';'               { (*pService)[*$2] = *$4; delete $2; delete $4; }
+        | ALARM_T MESSAGE_T str ';'             { (*pService)[_sServiceAlarmMsg] = *$3; delete $3; }
+        ;
+ipprotp : TCP_T                     { $$ = EP_TCP; }
+        | UDP_T                     { $$ = EP_UDP; }
+        ;
+ipprot  : ICMP_T                    { $$ = EP_ICMP; }
+        | IP_T                      { $$ = EP_IP; }
+        | NIL_T                     { $$ = EP_NIL; }
+        | PROTOCOL_T str            { $$ = cIpProtocol().getIdByName(qq(), *$2, true); delete $2; }
+        ;
+hostsrv : HOST_T str SERVICE_T str str_z  { NEWOBJ(pHostService, cHostService);
+                                                      (*pHostService)[_sNodeId]    = cNode().cRecord::getIdByName(qq(),*$2, true);  delete $2;
+                                                      (*pHostService)[_sServiceId] = cService().getIdByName(qq(),*$4);              delete $4;
+                                                      (*pHostService)[_sHostServiceDescr] =  *$5;                                   delete $5;
+                                                }
+          hsrvend                               { pHostService->insert(qq(), true); DELOBJ(pHostService); }
+        | SET_T SUPERIOR_T hs TO_T hss ';'      { setSuperior($3, $5); }
+        ;
+hsrvend : '{' hsrv_ps '}'
+        | ';'
+        ;
+hsrv_ps : hsrv_p
+        | hsrv_ps hsrv_p
+        ;
+hsrv_p  : PRIME_T SERVICE_T str ';'             { (*pHostService)[_sPrimeServiceId] = cService().getIdByName(qq(),*$3); delete $3; }
+        | PROTOCOL_T SERVICE_T str ';'          { (*pHostService)[_sProtoServiceId] = cService().getIdByName(qq(),*$3); delete $3; }
+        | PORT_T str ';'                        { (*pHostService)[_sPortId] = cNPort().getPortIdByName(qq(), *$2, pHostService->get(_sNodeId).toLongLong(), true); delete $2; }
+        | DELEGATE_T HOST_T STATE_T bool_on ';' { (*pHostService)[_sDelegateHostState]  = $4; }
+        | COMMAND_T str ';'                     { (*pHostService)[_sCheckCmd] = *$2; delete $2; }
+        | PROPERTIES_T str ';'                  { (*pHostService)[_sProperties] = *$2; delete $2; }
+        | SUPERIOR_T SERVICE_T str_z ';'                    { setSuperiorHostService(pHostService, $3); }
+        | SUPERIOR_T SERVICE_T str_z ':' str ';'            { setSuperiorHostService(pHostService, $3, $5); }
+        | SUPERIOR_T SERVICE_T str_z ':' str ':' str ';'    { setSuperiorHostService(pHostService, $3, $5, $7); }
+        | MAX_T CHECK_T ATTEMPTS_T int ';'      { (*pHostService)[_sMaxCheckAttempts]    = $4; }
+        | NORMAL_T CHECK_T INTERVAL_T int ';'   { (*pHostService)[_sNormalCheckInterval] = $4; }
+        | RETRY_T CHECK_T INTERVAL_T int ';'    { (*pHostService)[_sRetryCheckInterval]  = $4; }
+        | TIME_T PERIODS_T str ';'              { (*pHostService)[_sTimePeriodId]  = cTimePeriod().getIdByName(qq(), *$3); delete $3; }
+        | OFF_T LINE_T GROUP_T str ';'          { (*pHostService)[_sOffLineGroupId] = cGroup().getIdByName(qq(), *$4); delete $4; }
+        | ON_T LINE_T GROUP_T str ';'           { (*pHostService)[_sOnLineGroupId] = cGroup().getIdByName(qq(), *$4); delete $4; }
+        | SET_T str '=' value ';'               { (*pHostService)[*$2] = *$4; delete $2; delete $4; }
+        | ALARM_T MESSAGE_T str ';'             { (*pService)[_sHostServiceAlarmMsg] = *$3; delete $3; }
+        ;
+hs      : str ':' str                           { $$ = new QStringPair(sp2s($1,1), sp2s($3,2)); }
+        | str ':' '@'                           { $$ = new QStringPair(sp2s($1), _sNul); }
+        ;
+hss     : hs                                    { *($$ = new QStringPairList) << *$1; delete $1; }
+        | hss ',' hs                            { *($$ = $1) << *$3; delete $3; }
+        ;
+delete  : DELETE_T PLACE_T pattern str ';'      { cPlace().     delByName(qq(), *$4, $3);        delete $4; }
+        | DELETE_T PATCH_T pattern str ';'      { cPatch().     delByName(qq(), *$4, $3, true);  delete $4; }
+        | DELETE_T HUB_T pattern str ';'        { cHub().       delByName(qq(), *$4, $3);        delete $4; }
+        | DELETE_T NODE_T pattern str ';'       { cNode().      delByName(qq(), *$4, $3, false); delete $4; }
+        | DELETE_T ONLY_T NODE_T pattern str ';'{ cNode().      delByName(qq(), *$5, $4, true);  delete $5; }
+        /* Shift-reduce konflikt miatt, nem használható a pattern szabály */
+        | DELETE_T HOST_T str ';'               { cHost().      delByName(qq(), *$3, false, false); delete $3; }
+        | DELETE_T HOST_T PATTERN_T str ';'     { cHost().      delByName(qq(), *$4, true, false); delete $4; }
+        | DELETE_T ONLY_T HOST_T pattern str ';'{ cHost().      delByName(qq(), *$5, $4, true);  delete $5; }
+        | DELETE_T SNMPDEV_T pattern str ';'    { cSnmpDevice().delByName(qq(), *$4, $3);        delete $4; }
+        | DELETE_T SUBNET_T pattern str ';'     { cSubNet().    delByName(qq(), *$4, $3);        delete $4; }
+        | DELETE_T VLAN_T pattern str ';'       { cVLan().      delByName(qq(), *$4, $3);        delete $4; }
+        | DELETE_T HOST_T str SERVICE_T pattern str ';'
+                                                { cHostService().delByNames(qq(), sp2s($3, 1), sp2s($6, 2), $5); }
+        | DELETE_T MACRO_T str ';'              { templates.del(_sMacros,     sp2s($3)); }
+        | DELETE_T PATCH_T TEMPLATE_T str ';'   { templates.del(_sPatchs,     sp2s($4)); }
+        | DELETE_T HUB_T TEMPLATE_T str ';'     { templates.del(_sHubs,       sp2s($4)); }
+        | DELETE_T NODE_T TEMPLATE_T str ';'    { templates.del(_sNodes,      sp2s($4)); }
+        | DELETE_T HOST_T TEMPLATE_T str ';'    { templates.del(_sHosts,      sp2s($4)); }
+        | DELETE_T SNMPDEV_T TEMPLATE_T str ';' { templates.del(_sSnmpDevices,sp2s($4)); }
+        | DELETE_T LINK_T str pattern str ';'   { cPhsLink().unlink(qq(), sp2s($3,1), sp2s($5, 2), $4); }
+        | DELETE_T LINK_T str int ix_z ';'      { cPhsLink().unlink(qq(), sp2s($3,1), $4, $5); }
+        | DELETE_T TABLE_T SHAPE_T pattern str ';'
+                                                { cTableShape().delByName(qq(), *$5, $4, false); delete $5; }
+        | DELETE_T ENUM_T TITLE_T  str ';'      { cEnumVal().delByTypeName(qq(), sp2s($4), false); }
+        | DELETE_T ENUM_T TITLE_T  PATTERN_T str ';'
+                                                { cEnumVal().delByTypeName(qq(), sp2s($5), true); }
+        | DELETE_T ENUM_T TITLE_T  str str ';'  { cEnumVal().delByNames(qq(), sp2s($4, 1), sp2s($5, 2)); }
+        | DELETE_T GUI_T pattern str MENU_T ';' { cMenuItem().delByAppName(qq(), sp2s($4), $3); }
+        ;
+pattern :                                       { $$ = false; }
+        | PATTERN_T                             { $$ = true;  }
+        ;
+scan    : SCAN_T LLDP_T snmph ';'               { scabByLldp(*$3, qq()); delete $3; }
+        ;
+snmph   : str                                   { if (!($$ = new cSnmpDevice())->fetchByName(qq(), sp2s($1))) yyerror("ismeretlen SNMP eszköz név"); }
+        ;
+gui     : tblmod
+        | ENUM_T str str TITLE_T str  ';'       { cEnumVal().setName(_sEnumValName, sp2s($3,1)).setName(_sEnumTypeName, sp2s($2,2)).setName(_sEnumValDescr, sp2s($5,3)).insert(qq()); }
+        | appmenu
+        ;
+tblmod  : TABLE_T str_z SHAPE_T str str_z '{'   { pTableShape = newTableShape($2, $4, $5); }
+            tmodps
+          '}'                                   { pTableShape->insert(qq()); }
+        ;
+tmodps  : tmodp
+        | tmodps tmodp
+        ;
+tmodp   : SET_T DEFAULTS_T ';'                  { pTableShape->setDefaults(qq()); }
+        | SET_T str '=' value ';'               { pTableShape->set(sp2s($2), vp2v($4)); }
+        | TABLE_T TYPE_T strs ';'               { pTableShape->set(_sTableShapeType, slp2sl($3)); }
+        | TABLE_T TITLE_T str ';'               { pTableShape->set(_sTableShapeTitle, sp2s($3)); }
+        | TABLE_T READ_T ONLY_T bool_on ';'     { pTableShape->set(_sIsReadOnly, $4); }
+        | TABLE_T PROPERTIES_T str ';'          { pTableShape->set(_sProperties, sp2s($3)); }
+        | LEFT_T SHAPE_T tmod ';'               { pTableShape->setId(_sLeftShapeId, $3); }
+        | RIGHT_T SHAPE_T tmod ';'              { pTableShape->setId(_sRightShapeId, $3); }
+        | REFINE_T str ';'                      { pTableShape->setName(_sRefine, sp2s($2)); }
+        | SET_T str '.' str '=' value ';'       { pTableShape->fset(sp2s($2, 1), sp2s($4, 2), vp2v($6)); }
+        | SET_T '(' strs ')' '.' str '=' value ';'{ pTableShape->fsets(slp2sl($3), sp2s($6), vp2v($8)); }
+        | FIELD_T str TITLE_T str ';'           { pTableShape->fset(sp2s($2, 1),_sTableShapeFieldTitle, sp2s($4, 2)); }
+        | FIELD_T str DESCR_T str ';'           { pTableShape->fset(sp2s($2, 1),_sTableShapeFieldDescr, sp2s($4, 2)); }
+        | FIELD_T str TITLE_T str str ';'       { pTableShape->fset(    *$2,    _sTableShapeFieldTitle, sp2s($4)   );
+                                                  pTableShape->fset(sp2s($2, 1),_sTableShapeFieldDescr, sp2s($5, 2)); }
+        | TABLE_T INHERIT_T TYPE_T str ';'      { pTableShape->setName(_sTableInheritType, sp2s($4)); }
+        | INHERIT_T TABLE_T NAMES_T strs ';'    { pTableShape->set(_sInheritTableNames, slp2vl($4)); }
+        | TABLE_T VIEW_T RIGHTS_T str ';'       { pTableShape->setName(_sViewRights, sp2s($4)); }
+        | TABLE_T EDIT_T RIGHTS_T str ';'       { pTableShape->setName(_sEditRights, sp2s($4)); }
+        | TABLE_T DELETE_T RIGHTS_T str ';'     { pTableShape->setName(_sRemoveRights, sp2s($4)); }
+        | TABLE_T INSERT_T RIGHTS_T str ';'     { pTableShape->setName(_sInsertRights, sp2s($4)); }
+        | FIELD_T strs VIEW_T RIGHTS_T str ';'  { pTableShape->fsets(slp2sl($2), _sViewRights, sp2s($5)); }
+        | FIELD_T strs EDIT_T RIGHTS_T str ';'  { pTableShape->fsets(slp2sl($2), _sEditRights, sp2s($5)); }
+        | FIELD_T strs PROPERTIES_T str ';'     { pTableShape->fsets(slp2sl($2), _sProperties, sp2s($4)); }
+        | FIELD_T strs HIDE_T bool_on ';'       { pTableShape->fsets(slp2sl($2), _sIsHide, $4); }
+        | FIELD_T strs DEFAULT_T VALUE_T str ';'{ pTableShape->fsets(slp2sl($2), _sDefaultValue, sp2s($5)); }
+        | FIELD_T strs READ_T ONLY_T bool_on ';'{ pTableShape->fsets(slp2sl($2), _sIsReadOnly, $5); }
+        | FIELD_T strs ADD_T FILTER_T str str_z ';' { pTableShape->addFilter(slp2sl($2), sp2s($5,1), sp2s($5, 2)); }
+        | FIELD_T strs ADD_T FILTERS_T strs ';'     { pTableShape->addFilter(slp2sl($2), *$5); delete $5; }
+        | FIELD_T SEQUENCE_T int0 strs ';'      { pTableShape->setFieldSeq(slp2sl($4), $3); }
+        | FIELD_T strs ORD_T int0 strs ';'      { pTableShape->setOrders(*$2, *$5, $4); delete $2; delete $5; }
+        | FIELD_T '*'  ORD_T int0 strs ';'      { pTableShape->setAllOrders(*$5, $4); delete $5; }
+        | FIELD_T ORD_T SEQUENCE_T int0 strs ';'{ pTableShape->setOrdSeq(slp2sl($5), $4); }
+        ;
+int0    : int                                   { $$ = $1; }
+        |                                       { $$ = 0; }
+        ;
+tmod    : str                                   { $$ = cTableShape().getIdByName(sp2s($1)); }
+        ;
+appmenu : GUI_T str                             { pMenuApp = $2;}
+            '{' menus '}'                       { pDelete(pMenuApp); }
+        ;
+menus   : menu
+        | menu menus
+        ;
+menu    : str MENU_T str_z                      { newMenuMenu(sp2s($1), sp2s($3,2)); }
+            miops  '{' mitems '}'               { delMenuItem(); }
+        ;
+mitems  : mitem mitems
+        |
+        ;
+mitem   : str SHAPE_T str str_z                 { newMenuItem(sp2s($1), sp2s($3,2), sp2s($4, 3), ":shape=%1:"); }
+            miops ';'                           { delMenuItem(); }
+        | str EXEC_T str str_z                  { newMenuItem(sp2s($1), sp2s($3,2), sp2s($4, 3), ":exec=%1:"); }
+            miops ';'                           { delMenuItem(); }
+        | str OWN_T str str_z                   { newMenuItem(sp2s($1), sp2s($3,2), sp2s($4, 3), ":own=%1:"); }
+            miops ';'                           { delMenuItem(); }
+        | str MENU_T str_z                      { newMenuMenu(sp2s($1), sp2s($3,2)); }
+            miops  '{' mitems '}'               { delMenuItem(); }
+        ;
+miops   : miop miops
+        |
+        ;
+miop    : TOOL_T TIP_T str                      { setToolTip(sp2s($3)); }
+        | WHATS_T THIS_T str                    { setWhatsThis(sp2s($3)); }
+        ;
+%%
+
+inline bool isXDigit(QChar __c) {
+    int cc;
+    if (__c.isDigit())  return true;
+    if (!__c.isLetter()) return false;
+    cc = __c.toLatin1();
+    return (cc >= 'A' && cc <= 'F') || (cc >= 'a' && cc <= 'f');
+}
+inline int digit2num(QChar c) { return c.toLatin1() - '0'; }
+inline int xdigit2num(QChar c) { return c.isDigit() ? digit2num(c) : (c.toUpper().toLatin1() - 'A' + 10); }
+inline bool isOctal(QChar __c) {
+    if (!__c.isDigit()) return false;
+    int c = __c.toLatin1();
+    return c < '8';
+}
+
+static QString *yygetstr()
+{
+    QString *ps = new QString;
+    QChar c;
+    while (QChar('\"') != (c = yyget())) {
+        if (c == QChar('\\')) switch ((c = yyget()).toLatin1()) {
+            case '\\':              break;
+            case 'e':  c = QChar::fromLatin1('\x1b');  break;
+            case 'n':  c = QChar::fromLatin1('\n');    break;
+            case 't':  c = QChar::fromLatin1('\t');    break;
+            case 'r':  c = QChar::fromLatin1('\r');    break;
+            case 'x':  {
+                int n = 0;
+                for (char i = 0; i < 2; i++) {
+                    if (!isXDigit(c = yyget())) { yyunget(c); break; }
+                    n *= 16;
+                    n = xdigit2num(c);
+                }
+                c = QChar(n);
+                break;
+            }
+            case '0':   case '1':   case '2':   case '3':
+            case '4':   case '5':   case '6':   case '7': {
+                int n = 0;
+                for (char i = 0; i < 3; i++) {
+                    if (!isOctal(c = yyget())) { yyunget(c); break; }
+                    n *= 8;
+                    n = digit2num(c);
+                }
+                c = QChar(n);
+                break;
+            }
+        }
+        else if (c.isNull()) {
+            delete ps;
+            yyerror("EOF in text literal.");
+            break;
+        }
+        *ps += c;
+    }
+    return ps;
+}
+
+static QString *yygetstr2(const QString& mn)
+{
+    static const QString ee = "EOF in str litaeral";
+    QString *ps = new QString;
+    QChar c;
+    while (!((c = yyget()).isNull())) {
+        if (c != QChar('$')) {  // Lehet a str vége?
+            *ps += c;           // nem
+            continue;
+        }
+        int i;
+        for (i = 0; i < mn.size(); i++) {
+            if (mn[i] != (c = yyget())) {
+                if (c.isNull()) break;
+                *ps += QChar('$');
+                if (i) *ps += mn.mid(0, i);
+                i = -1;  // Nincs találat, ez tuti nem egyenlő mn.size() -vel.
+            }
+        }
+        if (c.isNull()) break;
+        if (i == mn.size()) {       // A literal stimmel, de a végén is kell egy '$'
+            if (QChar('$') == (c = yyget())) {
+                return ps;
+            }
+            *ps += QChar('$');
+            *ps += mn;
+            *ps += c;
+        }
+    }
+    PDEB(VVERBOSE) << ee << _sSpace << *ps;
+    delete ps;
+    yyerror(ee);    // az yyerror() olyan mintha visszatérne, pedig dehogy.
+    return NULL;
+}
+
+/*
+static QString toString(const QStringList& sl) {
+    QString r = "[";
+    foreach(QString s, sl) { r += " \"" + s + "\","; }
+    r.chop(1);
+    return r + "]";
+}
+*/
+
+static int isAddress(const QString& __s)
+{
+    //_DBGFN() << " @(" << __s << ") macbuff = " << macbuff << endl;
+    if (__s.indexOf("0x", 0, Qt::CaseInsensitive) ==  0) return 0;
+    if (__s.contains(QRegExp("[g-zG-Z_]"))) return 0;
+    QChar c;
+    QString as = __s;
+    while (1) {
+        c = yyget();
+        if (c.isNull()) break;
+        if (!isXDigit(c) && c != QChar(':')) break;
+        as += c;
+    }
+    yyunget(c);
+    // Ha csak egy sima szám
+    bool ok;
+    yylval.i = as.toLongLong(&ok);
+    if (ok) {
+        PDEB(VVERBOSE) << "INTEGER : " << as << endl;
+        return INTEGER_V;
+    }
+    // MAC ?
+    yylval.mac = new cMac(as);
+    if (yylval.mac->isValid()) {
+        PDEB(VVERBOSE) << "MAC : " << as << endl;
+        return MAC_V;
+    }
+    delete yylval.mac;
+    // IP ADDRESS ?
+    int n = as.count(QChar(':'));
+    if (n > 2 || (n > 1 && as.contains("::"))) {
+        yylval.ip = new QHostAddress();
+        if (yylval.ip->setAddress(as)) {
+            PDEB(VVERBOSE) << "IPV6 : " << as << endl;
+            return IPV6_V;
+        }
+        delete yylval.ip;
+    }
+    // Egyik sem
+    if (__s.size() < as.size()) macbuff.insert(0, as.right(as.size() - __s.size()));    // yyunget
+    // _DBGFNL() << " __s = " << __s << ", macbuff = " << macbuff << endl;
+    return 0;
+}
+
+#define TOK(t)  { #t, t##_T },
+static int yylex(void)
+{
+    static const char cToken[] = "=+-*(),;|&<>^{}[]:.#@";
+    static const struct token {
+        const char *name;
+        int         value;
+    } sToken[] = {
+        TOK(MACRO) TOK(FOR) TOK(DO) TOK(TO) TOK(SET) TOK(CLEAR) TOK(BEGIN) TOK(END) TOK(ROLLBACK)
+        TOK(VLAN) TOK(SUBNET) TOK(PORTS) TOK(PORT) TOK(NAME) TOK(SHARED) TOK(SENSORS)
+        TOK(PLACE) TOK(PATCH) TOK(HUB) TOK(SWITCH) TOK(NODE) TOK(HOST) TOK(SNMPDEV) TOK(ADDRESS)
+        TOK(PARENT) TOK(IMAGE) TOK(FRAME) TOK(TEL) TOK(DESCR) TOK(MESSAGE) TOK(ALARM)
+        TOK(MAIN) TOK(PARAM) TOK(TEMPLATE) TOK(COPY) TOK(FROM) TOK(NULL) TOK(VIRTUAL)
+        TOK(INCLUDE) TOK(PSEUDO) TOK(OFFS) TOK(IFTYPE) TOK(WRITE) TOK(RE)
+        TOK(ADD) TOK(READ) TOK(UPDATE) TOK(ARPS) TOK(ARP) TOK(SERVER) TOK(FILE) TOK(BY)
+        TOK(SNMP) TOK(SSH) TOK(COMMUNITY) TOK(DHCPD) TOK(LOCAL) TOK(PROC) TOK(CONFIG)
+        TOK(ATTACHED) TOK(LOOKUP) TOK(WORKSTATION) TOK(LINKS) TOK(BACK) TOK(FRONT)
+        TOK(TCP) TOK(UDP) TOK(ICMP) TOK(IP) TOK(NIL) TOK(COMMAND) TOK(SERVICE) TOK(PRIME)
+        TOK(MAX) TOK(CHECK) TOK(ATTEMPTS) TOK(NORMAL) TOK(INTERVAL) TOK(RETRY)
+        TOK(FLAPPING) TOK(CHANGE) { "TRUE", TRUE_T },{ "FALSE", FALSE_T }, TOK(ON) TOK(OFF) TOK(YES) TOK(NO)
+        TOK(DELEGATE) TOK(STATE) TOK(SUPERIOR) TOK(TIME) TOK(PERIODS) TOK(LINE) TOK(GROUP)
+        TOK(USER) TOK(DAY) TOK(OF) TOK(PERIOD) TOK(PROTOCOL) TOK(ALERT) TOK(INTEGER) TOK(FLOAT)
+        TOK(DELETE) TOK(ONLY) TOK(PATTERN) TOK(STRING) TOK(SAVE) TOK(TYPE) TOK(INDEX) TOK(STEP)
+        TOK(MASK) TOK(LIST) TOK(VLANS) TOK(ID) TOK(DYNAMIC) TOK(FIXIP) TOK(PRIVATE) TOK(PING)
+        TOK(NOTIF) TOK(ALL) TOK(RIGHTS) TOK(REMOVE) TOK(SUB) TOK(PROPERTIES) TOK(MAC) TOK(EXTERNAL)
+        TOK(LINK) TOK(LLDP) TOK(SCAN) TOK(TABLE) TOK(FIELD) TOK(SHAPE) TOK(TITLE) TOK(REFINE)
+        TOK(LEFT) TOK(DEFAULTS) TOK(ENUM) TOK(RIGHT) TOK(VIEW) TOK(INSERT) TOK(EDIT)
+        TOK(INHERIT) TOK(NAMES) TOK(HIDE) TOK(VALUE) TOK(DEFAULT) TOK(FILTER) TOK(FILTERS)
+        TOK(ORD) TOK(SEQUENCE) TOK(MENU) TOK(GUI) TOK(OWN) TOK(TOOL) TOK(TIP) TOK(WHATS) TOK(THIS)
+        TOK(EXEC)
+        { "WST", WORKSTATION_T }, // rövidítések
+        { "ATT", ATTACHED_T },
+        { "INT", INTEGER_T },
+        { "MSG", MESSAGE_T },
+        { "CMD", COMMAND_T },
+        { "PROP", PROPERTIES_T },
+        { "PROTO", PROTOCOL_T },
+        { "SEQ", SEQUENCE_T },
+        { NULL, 0 }
+    };
+    // DBGFN();
+recall:
+    yylval.u = NULL;
+    QChar     c;
+    // Elvalaszto karakterek és kommentek atlepese
+    // Fajl vege eseten vege
+    while((c = yyget()).isNull() || c.isSpace() || c == QChar('\n') || c == QChar('/')) {
+        if (c.isNull()) return 0;   // EOF, vége
+        if (c == QChar('/')) {      // comment jel első karaktere?
+            QChar c2 = yyget();
+            if (c2 == QChar('/')) { // commwnt '//'
+                while (!(c = yyget()).isNull() && c != QChar('\n'));
+                if (c.isNull()) return 0;
+                continue;
+            }
+            if (c2 == QChar('*')) { // commwnt '/*'
+                find_comment_end:
+                while (!(c = yyget()).isNull() && c != QChar('*'));
+                if (c.isNull() || (c = yyget()).isNull()) yyerror("EOF in commment.");
+                if (c == QChar('/')) continue;  // comment végét megtaláltuk
+                goto find_comment_end;          // keressük tövább
+            }
+            if (!c2.isNull()) yyunget(c2);  // A feleslegesen beolvasott karaktert vissza
+            PDEB(VVERBOSE) << "C TOKEN : /" << endl;
+            return c.toLatin1();             // nem komment, hanem a '/' token
+        }
+    }
+    // MACRO: $NAME
+    if (c == QChar('$')) {
+        QString mn = "";    // A makró neve
+        while ((c = yyget()).isLetterOrNumber() || c == QChar('_')) mn += c;
+        if (mn.size() == 0 && c != QChar('$')) // Ez nem makró, és nem is string, token
+            return '$';
+        if (c == QChar('$')) {  // Ez nem is makró, hanem string literál : $$ bla.bla $$, vagy $aa$ bla.bla $aa$
+            yylval.s = yygetstr2(mn);
+            PDEB(VVERBOSE) << "ylex : $$ STRING : " << *(yylval.s) << endl;
+            return STRING_V;
+        }
+        if (!c.isNull() && c.isSpace()) c = yyget();
+        QStringList    parms;
+        //PDEB(VVERBOSE) << "yylex: exec macro: " << mn << endl;
+        if (c == QChar('(')) { // Makró paraméterek
+            static const char me[] = "EOF in macro parameter list.";
+            //static const char mi[] = "Invalid char in macro parameter list.";
+            QString parm;
+            do {
+                c = yyget();
+                // QStdErr << "Macro parms, yyget() = " << c << endl;
+                if (c.isNull()) yyerror(me);
+                if (c.isSpace()) {
+                    if (parm.isEmpty()) continue;   // Vezető space eldobása
+                    while (!c.isNull() && c.isSpace()) c = yyget();
+                    if (c.isNull()) yyerror(me);
+                    if (c != QChar(',') && c != QChar(')')) yyerror("Macro parameter contain space chars.");
+                }
+                if (c == QChar(',') || c == QChar(')')) {
+                    parms << parm;
+                    parm = "";
+                    if (c == QChar(')')) break;
+                    continue;   // if c == ','
+                }
+                if (c == QChar('"')) {
+                    if (parm != "") yyerror(QString("Macro parameter contain quote chars, and is not first character. Prefix : %1").arg(parm));
+                    QString *p = yygetstr();
+                    parms << *p;
+                    delete p;
+                    while ((c = yyget()).isSpace() && !c.isNull());
+                    if (c == QChar(')')) break;
+                    if (c == QChar(',')) continue;
+                    if (c.isNull())      yyerror(me);
+                    yyerror("Incoplet string in macro parameter");
+                }
+                parm += c;
+            } while (true);
+            //PDEB(VVERBOSE) << "Macro params : " << toString(parms);
+        }
+        else {
+            yyunget(c);
+        }
+        QString mm;                         // Kifejtett makró
+        const QString& mt(templates._get(_sMacros, mn));     // Makró törzs
+        for (int i = 0; i < mt.size(); i++) {
+            QChar c = mt[i];
+            if (c == QChar('%') && mt[i +1].isDigit()) { // Macro parameter
+                int n = mt[++i].toLatin1() - '1';
+                if (parms.size() > n) {
+                    mm += parms[n];
+                }
+            }
+            else mm += c;
+        }
+        //PDEB(VVERBOSE) << "Macro Body : \"" << mm << "\"" << endl;
+        insertCode(mm);
+        goto recall;
+    }
+    // VALUE INT
+    if (c.isDigit()) {
+        QChar cf = c;    // Meg kelleni fog
+        QString sn = cf;
+        while (((c = yyget()).isDigit())
+           || (QChar('x') == c.toLower() && cf == QChar('0') && sn.size() == 1)
+           || (isXDigit(c)     && sn.indexOf("0x", 0, Qt::CaseInsensitive) == 0)
+           || (c == QChar('.') && sn.indexOf("0x", 0, Qt::CaseInsensitive) != 0)) {
+            sn += c;
+        }
+        // PDEB(VVERBOSE) << "INT U : " << c << endl;
+        yyunget(c);
+        bool ok;
+        switch (sn.count(QChar('.'))) {
+        case 1:  // Float
+            yylval.r = sn.toDouble(&ok);
+            if (!ok) {   // Ez nem float
+                yyerror("Invalid float number.");
+            }
+            PDEB(VVERBOSE) << "ylex : FLOAT : " << yylval.r << endl;
+            return FLOAT_V;
+        case 3:  // IP
+            yylval.ip = new QHostAddress();
+            if (!yylval.ip->setAddress(sn)) {
+                yyerror("Invalid IP number.");
+            }
+            PDEB(VVERBOSE) << "ylex : IPV4 : " << yylval.ip->toString() << endl;
+            return IPV4_V;
+            break;
+        case 0: // Int
+            break;
+        default:
+            yyerror("Invalid number, too many point.");
+        }
+        int r;
+        if (0 != (r = isAddress(sn))) return r;
+        if (cf == QChar('0')) {
+            char cn = sn.size() > 1 ? sn[1].toLatin1() : 0;
+            if (cn == 'x' || cn == 'X') {   // HEXA
+                yylval.i = sn.toLongLong(&ok, 16);
+            }
+            else {                          // OCTAL
+                yylval.i = sn.toLongLong(&ok, 8);
+            }
+        }
+        else {
+            yylval.i = sn.toLongLong(&ok, 10);
+        }
+        if (!ok) yyerror("Pprogram error");
+        PDEB(VVERBOSE) << "ylex : INTEGER : " << yylval.i << endl;
+        return INTEGER_V;
+    }
+    // VALUE STRING tipusu
+    if (c == QChar('\"')) {
+        yylval.s = yygetstr();
+        PDEB(VVERBOSE) << "ylex : STRING : " << *(yylval.s) << endl;
+        return STRING_V;
+    }
+    // Egybetus tokenek
+    if (strchr(cToken, c.toLatin1())) {
+        int r;
+        if (c == QChar(':') && 0 != (r = isAddress(":"))) return r;
+        int ct = c.toLatin1();
+        PDEB(VVERBOSE) << "ylex : char token : '" << c << "' (" <<  ct << _sABraE << endl;
+        return ct;
+    }
+    QString *sp = new QString();
+    while (c.isLetterOrNumber() || c == QChar('_')) {
+        *sp += c;
+        c = yyget();
+    }
+    int r;
+    if (!c.isNull()) yyunget(c);
+    if (0 != (r = isAddress(*sp))) return r;
+    if (sp->isEmpty()) yyerror("Invalid character");
+    for (const struct token *p = sToken; p->name; p++) {
+        if (p->name == *sp) {
+            PDEB(VVERBOSE) << "ylex TOKEN : " << *sp << endl;
+            delete sp;
+            return p->value;
+        }
+    }
+    yylval.s = sp;
+    PDEB(VVERBOSE) << "ylex : NAME : " << *sp << endl;
+    return NAME_V;
+}
+
+/* */
+static void forLoopMac(QString *_in, QVariantList *_lst)
+{
+    QString s;
+    foreach (QVariant v, *_lst) {
+        s += _sDollar + *_in + _sABraB + v.toString() + _sABraE + _sSpace;
+    }
+    PDEB(VVERBOSE) << "forLoopMac inserted : \"" << s << _sDQuote << endl;
+    insertCode(s);
+    delete _in; delete _lst;
+}
+
+static void forLoop(QString *_in, QVariantList *_lst)
+{
+    QString *pmm = new QString("__");
+    templates.set (_sMacros, *pmm, *_in);
+    delete _in;
+    forLoopMac(pmm, _lst);
+}
+
+static void forLoop(QString *m, qlonglong fr, qlonglong to, qlonglong st)
+{
+    QString s;
+    for (qlonglong i = fr; i <= to; i += st) {
+        s += nameAndNumber(*m, i) + _sSpace;
+    }
+    insertCode(s);
+    delete m;
+}
+
+static QStringList *listLoop(QString *m, qlonglong fr, qlonglong to, qlonglong st)
+{
+    QStringList *psl = new QStringList();
+    for (qlonglong i = fr; i <= to; i += st) {
+        *psl << nameAndNumber(*m, i);
+    }
+    delete m;
+    return psl;
+}
+
+static intList *listLoop(qlonglong fr, qlonglong to, qlonglong st)
+{
+    intList *ilp = new intList();
+    for (qlonglong i = fr; i <= to; i += st) {
+        *ilp << i;
+    }
+    return ilp;
+}
+

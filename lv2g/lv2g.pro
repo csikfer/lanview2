@@ -1,0 +1,50 @@
+#-------------------------------------------------
+#
+# Project created by QtCreator 2012-12-22T10:22:13
+#
+#-------------------------------------------------
+
+QT       += network sql gui xml widgets
+
+TARGET = lv2g
+TEMPLATE = lib
+win32:CONFIG += debug_and_release
+unix:CONFIG += debug
+#kell ahhoz, hogy a debug dll neveben ott legyen a d a vegen
+CONFIG(debug, debug|release) {
+     win32: TARGET = $$join(TARGET,,,d)
+}
+DEFINES += LV2G_LIBRARY
+
+SOURCES += \
+    lv2g.cpp \
+    record_dialog.cpp \
+    lv2widgets.cpp \
+    lv2models.cpp \
+    lv2validator.cpp \
+    record_table.cpp \
+    record_table_model.cpp \
+    cerrormessagebox.cpp
+
+HEADERS +=\
+        lv2g_global.h \
+    lv2g.h \
+    record_table_model.h \
+    record_dialog.h \
+    lv2widgets.h \
+    lv2models.h \
+    lv2validator.h \
+    record_table.h \
+    cerrormessagebox.h
+
+FORMS += \
+    column_filter.ui
+INCLUDEPATH += ../lv2
+unix:LIBS += -lsnmp
+LIBS += -L../lv2 -llv2
+
+
+ TRANSLATIONS    = lv2glib_hu.ts \
+                   lv2glib_en.ts
+
+ CODECFORSRC     = UTF-8

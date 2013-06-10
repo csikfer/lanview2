@@ -1,0 +1,166 @@
+#include "lanview.h"
+#include "others.h"
+#include <QCoreApplication>
+
+/*!
+@file lv2datab.h
+Máshova nem sorolt objektumok, adat definíciók, ill. eljérésok.
+*/
+
+qlonglong enum2set(int (&f)(const QString &, bool), const QStringList &el, bool __ex)
+{
+    qlonglong r = 0;
+    foreach (QString e, el) r |= enum2set(f, e, __ex);
+    return r;
+}
+
+const QString   nullString;
+
+QString nameAndNumber(const QString& __pat, int __num, char __c)
+{
+    _DBGFN() << " @(" << __pat << _sComma << __num << _sComma << QChar(__c) << ")" << endl;
+    QString n;
+    if (__pat.contains(__c)) {
+        QChar   c(__c);
+        int first = __pat.indexOf(c);
+        int last  = __pat.lastIndexOf(c);
+        QString n = QString::number(__num);
+        if (n.size() < (last - first +1)) n = QString(last - first +1 - n.size(), QChar('0')) + n;
+        n = __pat.mid(0, first) + n + __pat.mid(last + 1);
+        _DBGFNL() << " Retturn : " << n << endl;
+        return n;
+    }
+    else {
+        n = __pat + QString::number(__num);
+        _DBGFNL() << " Retturn : " << n << endl;
+        return n;
+    }
+}
+
+/******************************************************************************/
+
+tMagicMap splitMagic(const QString& __ms, const tMagicMap &__map, bool __ex)
+{
+    tMagicMap   r(__map);
+    QString msg = QString(QObject::trUtf8("Invalid magic string : %1")).arg(quotedString(__ms));
+    if (__ms.isEmpty()) return r;
+    QStringList sl = __ms.split(QChar(':'));
+    // Első és utolsó karakter a szeparátor, tehát at első és utolsó elem üres
+    if (sl.isEmpty() || !(sl.first().isEmpty() && sl.last().isEmpty())) {
+        if (__ex) EXCEPTION(EDATA, -1, msg);
+        DERR() << msg << endl;
+        return __map;
+    }
+    sl.pop_back();  // utolsó ures elem
+    if (sl.isEmpty()) return r; // űres
+    sl.pop_front(); // első üres elem
+    foreach (QString s, sl) {
+        QStringList pv = s.split(QChar('='));
+        if (pv.count()  > 2) {
+            if (__ex) EXCEPTION(EDATA, -1, msg);
+            DERR() << msg << endl;
+            return __map;
+        }
+        if (pv.count() == 2) r[pv[0].toLower()] = pv[1];
+        else                 r[s.toLower()]     = _sNul;
+    }
+    return r;
+}
+
+const QString& magicParam(const QString &_nm, const tMagicMap __map)
+{
+    tMagicMapConstIteraeor i = __map.find(_nm.toLower());
+    if (i == __map.constEnd()) return nullString;
+    return i.value();
+}
+
+QString joinMagic(const tMagicMap __map)
+{
+    QString r = _sColon;
+    for (tMagicMapConstIteraeor i = __map.constBegin(); i != __map.constEnd(); ++i) {
+        r += i.key();
+        if (!i.value().isEmpty()) r +=  _sEqu + i.value();
+        r += _sColon;
+    }
+    return r;
+}
+
+/******************************************************************************/
+
+qlonglong variantToId(const QVariant& v, bool _ex, qlonglong def)
+{
+    if (v.isNull()) {
+        if (_ex) EXCEPTION(EDATA, -1, QObject::trUtf8("Hiányzó numerikus adat."));
+        return def;
+    }
+    bool    ok;
+    qlonglong n = v.toLongLong(&ok);
+    if (!ok) EXCEPTION(EDATA, -1, QObject::trUtf8("Nem numerikus adat."));
+    return n;
+}
+
+qlonglong stringToId(const QString& v, bool _ex, qlonglong def)
+{
+    if (v.isEmpty()) {
+        if (_ex) EXCEPTION(EDATA, -1, QObject::trUtf8("Hiányzó numerikus adat."));
+        return def;
+    }
+    bool    ok;
+    qlonglong n = v.toLongLong(&ok);
+    if (!ok) EXCEPTION(EDATA, -1, QObject::trUtf8("Nem numerikus adat."));
+    return n;
+}
+
+qlonglong lko(qlonglong a, qlonglong b)
+{
+    if (a < 1 || b < 1) EXCEPTION(EDATA);
+    while (a != b) {
+        if (a>b) { a -= b; }
+        else     { b -= a; }
+    }
+    return a;
+}
+
+/* ************************************************************************************** */
+
+QString getEnvVar(const char * cnm)
+{
+#if   defined(Q_CC_MSVC)
+    char *val;
+    size_t requiredSize;
+    getenv_s( &requiredSize, NULL, 0, cnm);
+    if (requiredSize == 0) return QString();
+    val = (char*) malloc(requiredSize * sizeof(char));
+    if (!val) EXCEPTION(ESTD, ENOMEM);
+    getenv_s(&requiredSize, val, requiredSize, cnm );
+    QString r = QString::fromLatin1(val);
+    free(val);
+    return r;
+#elif defined(Q_CC_GNU)
+    const char * v = getenv(cnm);
+    if (v == NULL) return QString();
+    return QString::fromLatin1(v);
+#endif
+}
+
+/* ************************************************************************************** */
+
+
+QString getSysError(int eCode)
+{
+#if   defined(Q_CC_MSVC)
+    static char buff[256];
+    strerror_s(buff, 256, eCode);
+
+    return QString::fromUtf8(buff);
+#elif defined(Q_CC_GNU)
+    return QString::fromUtf8(strerror(eCode));
+#endif
+}
+
+
+void appReStart()
+{
+    QProcess::startDetached(QCoreApplication::applicationFilePath(), qApp->arguments());
+    exit(123);
+}
