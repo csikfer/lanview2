@@ -57,7 +57,7 @@ superior    Alárendelteket ellenörző eljárásokat hív, szolgál ki (passive
     <üres>      Alárendelt viszony,autómatikus
     custom      egyedileg kezelt (a cInspector objektum nem ovassa be az alárendelteket, azok egyedileg kezelendőek)
 protocol    Protokol, módszer a szolgáltatás végrehajtásához
-ifType      A szolgáltatás hierarhia mely port típus linkjável azonos (paraméter: interface típus neve)
+ifType      A szolgáltatás hierarhia mely port típus linkjével azonos (paraméter: interface típus neve)
 disabled    service_name = icontsrv , csak a host_services rekordban, a szolgáltatás (riasztás) tiltva.
 reversed    service_name = icontsrv , csak a host_services rekordban, a port fordított bekötését jelzi.
 serial      Serial port paraméterei pl.: "serial=19200 7E1 No"

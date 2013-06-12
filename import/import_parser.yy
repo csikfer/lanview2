@@ -416,14 +416,13 @@ str_    : STRING_V                  { $$ = $1; }
         | NAME_V                    { $$ = $1; }
         | NULL_T                    { $$ = new QString(); }
         | STRING_T '(' iexpr ')'    { $$ = new QString(QString::number($3)); }
-        | STRING_T '(' sexpr ')'    { $$ = $3; }
-        | MASK_T '(' sexpr ',' iexpr ')' { $$ = new QString(nameAndNumber(sp2s($3), (int)$5)); }
-        | MACRO_T  '(' sexpr ')'    { $$ = new QString(templates._get(_sMacros, sp2s($3))); }
-        | PATCH_T TEMPLATE_T  '(' sexpr ')'     { $$ = new QString(templates._get(_sPatchs,      sp2s($4))); }
-        | HUB_T TEMPLATE_T     '(' sexpr ')'    { $$ = new QString(templates._get(_sHubs,        sp2s($4))); }
-        | SWITCH_T TEMPLATE_T  '(' sexpr ')'    { $$ = new QString(templates._get(_sHubs,        sp2s($4))); }
-        | NODE_T TEMPLATE_T    '(' sexpr ')'    { $$ = new QString(templates._get(_sNodes,       sp2s($4))); }
-        | HOST_T TEMPLATE_T    '(' sexpr ')'    { $$ = new QString(templates._get(_sHosts,       sp2s($4))); }
+        | MASK_T  '(' sexpr ',' iexpr ')' { $$ = new QString(nameAndNumber(sp2s($3), (int)$5)); }
+        | MACRO_T '(' sexpr ')'     { $$ = new QString(templates._get(_sMacros, sp2s($3))); }
+        | PATCH_T   TEMPLATE_T '(' sexpr ')'    { $$ = new QString(templates._get(_sPatchs,      sp2s($4))); }
+        | HUB_T     TEMPLATE_T '(' sexpr ')'    { $$ = new QString(templates._get(_sHubs,        sp2s($4))); }
+        | SWITCH_T  TEMPLATE_T '(' sexpr ')'    { $$ = new QString(templates._get(_sHubs,        sp2s($4))); }
+        | NODE_T    TEMPLATE_T '(' sexpr ')'    { $$ = new QString(templates._get(_sNodes,       sp2s($4))); }
+        | HOST_T    TEMPLATE_T '(' sexpr ')'    { $$ = new QString(templates._get(_sHosts,       sp2s($4))); }
         | SNMPDEV_T TEMPLATE_T '(' sexpr ')'    { $$ = new QString(templates._get(_sSnmpDevices, sp2s($4))); }
         ;
 str     : str_                      { $$ = $1; }
@@ -769,7 +768,6 @@ node_cf :
 node_p  : DESCR_T str ';'                       { pNode->setName(sp2s($2)); }
         | PLACE_T place_id ';'                  { pNode->setId(_sPlaceId, $2); }
         | ALARM_T MESSAGE_T str ';'             { pNode->setName(_sNodeAlarmMsg, sp2s($3)); }
-        | ALARM_T PLACE_T GROUP_T str ';'       { host().setId(_sAlarmPlaceGroupId, cPlaceGroup().getIdByName(qq(), sp2s($4))); }
         | SET_T str '=' value ';'               { pNode->set(sp2s($2), vp2v($4)); }
         | MAIN_T PORT_T ix_z str str str_z ';'  { setMainPort($3, $4, $5, $6); setLastPort(pNode); }
         | MAIN_T PORT_T TYPE_T str ';'          { pNode->setMainPortType(sp2s($4)); setLastPort(pNode); }
@@ -787,7 +785,7 @@ node_p  : DESCR_T str ';'                       { pNode->setName(sp2s($2)); }
         | PORT_T pnm PARAM_T str '=' str ';'    { setLastPort(pNode->portSetParam(sp2s($2), sp2s($4,1), sp2s($6,2))); }
         | PORT_T pix PARAM_T str '=' strs ';'   { setLastPort(pNode->portSetParam($2, sp2s($4), slp2sl($6))); }
         /* host_p: a Shift reduce conflict-ok miatt az összes port definíciós sor egy szabályban szerepel, a host() függvény szűr */
-        | MAIN_T PORT_T ADD_T ADDRESS_T ip_a str_z ';' { hostAddAddress($5, $6); setLastPort(pNode); }
+        | ALARM_T PLACE_T GROUP_T str ';'       { host().setId(_sAlarmPlaceGroupId, cPlaceGroup().getIdByName(qq(), sp2s($4))); }
         | ADD_T PORT_T ix_z str str ip_qq mac_qq str_z ';'  { setLastPort(hostAddPort((int)$3, $4,$5,$6,$7,$8)); }
         | PORT_T pnm ADD_T ADDRESS_T ip_a str_z ';'         { setLastPort(portAddAddress($2, $5, $6)); }
         | PORT_T pix ADD_T ADDRESS_T ip_a str_z ';'         { setLastPort(portAddAddress((int)$2, $5, $6)); }
@@ -1008,9 +1006,9 @@ hsrv_p  : PRIME_T SERVICE_T str ';'             { (*pHostService)[_sPrimeService
         | DELEGATE_T HOST_T STATE_T bool_on ';' { (*pHostService)[_sDelegateHostState]  = $4; }
         | COMMAND_T str ';'                     { (*pHostService)[_sCheckCmd] = *$2; delete $2; }
         | PROPERTIES_T str ';'                  { (*pHostService)[_sProperties] = *$2; delete $2; }
-        | SUPERIOR_T SERVICE_T str_z ';'                    { setSuperiorHostService(pHostService, $3); }
-        | SUPERIOR_T SERVICE_T str_z ':' str ';'            { setSuperiorHostService(pHostService, $3, $5); }
-        | SUPERIOR_T SERVICE_T str_z ':' str ':' str ';'    { setSuperiorHostService(pHostService, $3, $5, $7); }
+        | SUPERIOR_T SERVICE_T str ';'                  { setSuperiorHostService(pHostService, new QString(), $3); }
+        | SUPERIOR_T SERVICE_T str ':' str ';'          { setSuperiorHostService(pHostService, $3, $5); }
+        | SUPERIOR_T SERVICE_T str ':' str ':' str ';'  { setSuperiorHostService(pHostService, $3, $7, $5); }
         | MAX_T CHECK_T ATTEMPTS_T int ';'      { (*pHostService)[_sMaxCheckAttempts]    = $4; }
         | NORMAL_T CHECK_T INTERVAL_T int ';'   { (*pHostService)[_sNormalCheckInterval] = $4; }
         | RETRY_T CHECK_T INTERVAL_T int ';'    { (*pHostService)[_sRetryCheckInterval]  = $4; }
@@ -1083,18 +1081,18 @@ tmodp   : SET_T DEFAULTS_T ';'                  { pTableShape->setDefaults(qq())
         | LEFT_T SHAPE_T tmod ';'               { pTableShape->setId(_sLeftShapeId, $3); }
         | RIGHT_T SHAPE_T tmod ';'              { pTableShape->setId(_sRightShapeId, $3); }
         | REFINE_T str ';'                      { pTableShape->setName(_sRefine, sp2s($2)); }
-        | SET_T str '.' str '=' value ';'       { pTableShape->fset(sp2s($2, 1), sp2s($4, 2), vp2v($6)); }
-        | SET_T '(' strs ')' '.' str '=' value ';'{ pTableShape->fsets(slp2sl($3), sp2s($6), vp2v($8)); }
-        | FIELD_T str TITLE_T str ';'           { pTableShape->fset(sp2s($2, 1),_sTableShapeFieldTitle, sp2s($4, 2)); }
-        | FIELD_T str DESCR_T str ';'           { pTableShape->fset(sp2s($2, 1),_sTableShapeFieldDescr, sp2s($4, 2)); }
-        | FIELD_T str TITLE_T str str ';'       { pTableShape->fset(    *$2,    _sTableShapeFieldTitle, sp2s($4)   );
-                                                  pTableShape->fset(sp2s($2, 1),_sTableShapeFieldDescr, sp2s($5, 2)); }
         | TABLE_T INHERIT_T TYPE_T str ';'      { pTableShape->setName(_sTableInheritType, sp2s($4)); }
         | INHERIT_T TABLE_T NAMES_T strs ';'    { pTableShape->set(_sInheritTableNames, slp2vl($4)); }
         | TABLE_T VIEW_T RIGHTS_T str ';'       { pTableShape->setName(_sViewRights, sp2s($4)); }
         | TABLE_T EDIT_T RIGHTS_T str ';'       { pTableShape->setName(_sEditRights, sp2s($4)); }
         | TABLE_T DELETE_T RIGHTS_T str ';'     { pTableShape->setName(_sRemoveRights, sp2s($4)); }
         | TABLE_T INSERT_T RIGHTS_T str ';'     { pTableShape->setName(_sInsertRights, sp2s($4)); }
+        | SET_T str '.' str '=' value ';'       { pTableShape->fset(sp2s($2, 1), sp2s($4, 2), vp2v($6)); }
+        | SET_T '(' strs ')' '.' str '=' value ';'{ pTableShape->fsets(slp2sl($3), sp2s($6), vp2v($8)); }
+        | FIELD_T str TITLE_T str ';'           { pTableShape->fset(sp2s($2, 1),_sTableShapeFieldTitle, sp2s($4, 2)); }
+        | FIELD_T str DESCR_T str ';'           { pTableShape->fset(sp2s($2, 1),_sTableShapeFieldDescr, sp2s($4, 2)); }
+        | FIELD_T str TITLE_T str str ';'       { pTableShape->fset(    *$2,    _sTableShapeFieldTitle, sp2s($4)   );
+                                                  pTableShape->fset(sp2s($2, 1),_sTableShapeFieldDescr, sp2s($5, 2)); }
         | FIELD_T strs VIEW_T RIGHTS_T str ';'  { pTableShape->fsets(slp2sl($2), _sViewRights, sp2s($5)); }
         | FIELD_T strs EDIT_T RIGHTS_T str ';'  { pTableShape->fsets(slp2sl($2), _sEditRights, sp2s($5)); }
         | FIELD_T strs PROPERTIES_T str ';'     { pTableShape->fsets(slp2sl($2), _sProperties, sp2s($4)); }
@@ -1137,8 +1135,8 @@ mitem   : str SHAPE_T str str_z                 { newMenuItem(sp2s($1), sp2s($3,
 miops   : miop miops
         |
         ;
-miop    : TOOL_T TIP_T str                      { setToolTip(sp2s($3)); }
-        | WHATS_T THIS_T str                    { setWhatsThis(sp2s($3)); }
+miop    : TOOL_T TIP_T str ';'                  { setToolTip(sp2s($3)); }
+        | WHATS_T THIS_T str ';'                { setWhatsThis(sp2s($3)); }
         ;
 %%
 

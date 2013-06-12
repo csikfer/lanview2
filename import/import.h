@@ -140,7 +140,7 @@ public:
 // Rekord ID lekérdezése név alapján, a névre mutató pointert felszabadítja.
 extern qlonglong placeId(const QString *__np);
 extern cIfType *ifType(const QString *__np);
-extern void setSuperiorHostService(cHostService * phs, QString * phn, QString * psn = NULL, QString *ppo = NULL);
+extern void setSuperiorHostService(cHostService * phs, QString * phn, QString * psn, QString *ppo = NULL);
 
 extern cNPort *hostAddPort(int ix, QString *pt, QString *pn, QStringPair *ip, QVariant *mac, QString *d);
 extern void    hostAddAddress(QStringPair *ip, QString *d);

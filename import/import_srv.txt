@@ -16,7 +16,7 @@ SERVICE "arp.proc"  "ARP fájl a proc-ban, local vagy ssh-n keresztül"   { NIL;
 SERVICE arpd        "Arp daemon" {
     NIL;
     PROP ":daemon=continue:inspector=timed:superior:";
-    COMMAND "icontsrv";
+    COMMAND "arpd";
     NORMAL CHECK INTERVAL  600;
     RETRY CHECK INTERVAL   600;
 }
@@ -33,7 +33,7 @@ SERVICE "arp" "ARP tábla lekérdezése" {
 
 SERVICE lv2d "Lanview2 super server" {
     NIL;
-    PROP ":daemon=contimue:inspector=timed:superior:";
+    PROP ":daemon=continue:inspector=timed:superior:";
     NORMAL CHECK INTERVAL  60;
     RETRY CHECK INTERVAL   60;
 }

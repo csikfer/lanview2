@@ -639,19 +639,26 @@ qlonglong placeId(const QString *__np)
     return id;
 }
 
+/// A superior_host_service_id beállítása
+/// @param phs A módosítandó objektum pointere.
+/// @param phn A keresett host_services rekordban hivatkozott host neve, vagy üres.
+/// @param phs A keresett host_services rekordban hivatkozott szervíz típus név
+/// @param ppo A keresett host_services rekordban hivatkozott port neve, vagy NULL pointer. Ha phn üres, akkor NULL.
 void setSuperiorHostService(cHostService * phs, QString * phn, QString * psn, QString *ppo)
 {
     cHostService shs;
-    if (phn != NULL) {
-        shs.setId(_sNodeId, cNode().getIdByName(qq(), *phn));
-        delete phn;
+    if (!phn->isEmpty()) {
+        qlonglong   nid = cNode().getIdByName(qq(), *phn);
+        shs.setId(_sNodeId, nid);
         if (ppo != NULL) {
-            shs.setId(_sPortId, cNPort().getIdByName(qq(), *ppo));
+            qlonglong pid = cNPort().getPortIdByName(qq(), *ppo, nid);
+            shs.setId(_sPortId, pid);
             delete ppo;
         }
     }
     shs.setId(_sServiceId, cService().getIdByName(qq(), *psn));
     delete psn;
+    delete phn;
     int n = shs.completion(qq());
     if (n == 0) yyerror("horst_services record not found.");
     if (n >  1) yyerror("horst_services record ambigouos.");

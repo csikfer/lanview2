@@ -36,7 +36,7 @@ HEADERS += import.h \
     import_parser_yacc.h
 
 INCLUDEPATH += ../lv2
-LIBS += -lsnmp -L../lv2-Debug -llv2
+LIBS += -lsnmp -L../lv2 -llv2
 
  TRANSLATIONS    = import_hu.ts \
                    import_en.ts

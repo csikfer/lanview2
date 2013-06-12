@@ -371,14 +371,14 @@ public:
     virtual bool toEnd(int i);
     virtual void clearToEnd();
     /// Egy port rekord beolvasása
-    bool fetchPortByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, bool __ex);
-    qlonglong getPortIdByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, bool __ex) const;
+    bool fetchPortByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, bool __ex = true);
+    qlonglong getPortIdByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, bool __ex = true) const;
 
     bool fetchPortByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, bool __ex);
-    qlonglong getPortIdByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, bool __ex) const;
+    qlonglong getPortIdByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, bool __ex = true) const;
 
-    bool fetchPortByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id, bool __ex);
-    qlonglong getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id, bool __ex) const;
+    bool fetchPortByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id, bool __ex = true);
+    qlonglong getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id, bool __ex = true) const;
     /// Megallokál egy új cNPort, cInterface vagy cIfaceAddr objektumot, a megadott cIfType objektum szerint.
     /// Az objektum típust a cIfType (egy adatbázisból beolvasott iftypes rekord alapján) az iftype_obj_type
     /// tömb mező értéke adja meg. Ha itt nem egy érték (objektum név) szerepel, akkor ha nem adtuk meg az opcionális

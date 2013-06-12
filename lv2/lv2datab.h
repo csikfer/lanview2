@@ -1036,7 +1036,7 @@ public:
     const QString& nameName(bool __ex = true) const { return descr().nameName(__ex); }
     /// A név alapján visszaadja a rekord ID-t, feltéve, ha van név és id mező, egyébként dob egy kizárást.
     /// Nem static, mivel virtuális függvénytagokat hív, bár az objektum aktuális értéke nem befojásolja a
-    /// működését.
+    /// működését. És az objektum értéke nem változik.
     qlonglong getIdByName(QSqlQuery& __q, const QString& __n, bool __ex = true) const { return descr().getIdByName(__q, __n, __ex); }
     /// A név alapján visszaadja a rekord ID-t, feltéve, ha van név és id mező, egyébként dob egy kizárást.
     /// Nem static, mivel virtuális függvénytagokat hív, bár az objektum aktuális értéke nem befojásolja a
