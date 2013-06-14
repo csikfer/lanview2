@@ -65,6 +65,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+COMMENT ON FUNCTION alarm_id2name(integer) IS '
+Álltatános is2name függvény.
+Az alarms.alarm_id érték alapján egy megjeleníthető stringgel tér vissza.
+Ha nem létezik az azonosító szerinti rekord, akkor hibát dob.
+';
+
 -- //////////////////////////////////////////////////
 -- HELPER FÜGGVÉNYEk
 -- //////////////////////////////////////////////////

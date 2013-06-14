@@ -1,10 +1,20 @@
 CREATE TYPE execstate AS ENUM ('wait', 'execute', 'ok', 'faile', 'aborted');
 ALTER TYPE  execstate OWNER TO lanview2;
 
+COMMENT ON TYPE execstate IS '
+Az importnak küldött üzenet feldolgozásának az állapota:
+wait    Feldolgozásra várakozik.
+execute Felgolgozás alatt.
+ok      Feldolgozva, nem volt hiba.
+faile   A feldolgozás sikertelen.
+aborted Az import az üzenetet eldobta
+';
+
 CREATE TABLE imports (
     import_id       serial      PRIMARY KEY,
     date_of         timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    auth_user_id    integer     DEFAULT NULL,
+    auth_id         integer     DEFAULT NULL
+        REFERENCES users(user_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
     import_text     text        NOT NULL,
     exec_state      execstate   NOT NULL DEFAULT 'wait',
     pid             integer     DEFAULT NULL,
@@ -16,12 +26,31 @@ CREATE TABLE imports (
 );
 ALTER TABLE imports OWNER TO lanview2;
 
+COMMENT ON TABLE imports IS 'Az import számára küldött feldolgozandó források táblája.';
+COMMENT ON COLUMN imports.import_id IS 'Egyedi rekord azonosító.';
+COMMENT ON COLUMN imports.date_of IS 'A rekord létrehozásának az időpontja.';
+COMMENT ON COLUMN imports.user_id IS 'Felhasználói azonosító, aki a feldolgozást kezdeményezte.';
+COMMENT ON COLUMN imports.import_text IS 'A feldolgozandó szöveg';
+COMMENT ON COLUMN imports.exec_state IS 'A feldolgozás állapota';
+COMMENT ON COLUMN imports.pid IS 'A feldolgozást végző import példány PID-je.';
+COMMENT ON COLUMN imports.started IS 'A feldolgozás megkezdésének az időpontja.';
+COMMENT ON COLUMN imports.ended IS 'A feldolgozás befejezésének az időpontja.';
+COMMENT ON COLUMN imports.result_msg IS 'Az import válasza a feldolgozásra (hibaüzenet, megjegyzés, stb.).';
+COMMENT ON COLUMN imports.applog_id IS 'Ha feldolgozáskor hiba rekord készült, akkor annak az azonosítója.';
+
 CREATE TABLE import_templates (
-    import_template_id	serial		PRIMARY KEY,
+    import_template_id	serial	PRIMARY KEY,
     template_type	varchar(32)	NOT NULL,
     template_name	varchar(32)	NOT NULL,
     template_descr	varchar(255)	DEFAULT NULL,
-    template_text	text		NOT NULL,
+    template_text	text		    NOT NULL,
     UNIQUE (template_type, template_name)
 );
 ALTER TABLE import_templates OWNER TO lanview2;
+
+COMMENT ON TABLE import_template_id IS 'Az importban mentett makrók és egyébb minták táblája.';
+COMMENT ON COLUMN import_templates.import_template_id IS 'Egyedi rekord azonosító.';
+COMMENT ON COLUMN import_templates.template_type IS 'A template típusa (macros, patchs,...)';
+COMMENT ON COLUMN import_templates.template_name IS 'A minta vagy makró neve';
+COMMENT ON COLUMN import_templates.template_descr IS 'Opcionális megjegyzés';
+COMMENT ON COLUMN import_templates.template_text IS 'A makró vagy minta tartalma.';
