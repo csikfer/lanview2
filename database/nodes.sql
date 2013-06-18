@@ -401,6 +401,20 @@ CREATE TABLE port_vlans (
 ALTER TABLE port_vlans OWNER TO lanview2;
 COMMENT ON TABLE port_vlans IS 'port és vlan összerendelések táblája';
 
+CREATE TYPE portmactype AS ENUM ('suspect', 'arp', 'uplink', 'static');
+
+CREATE TABLE port_macs (
+    port_mac_id    serial      PRIMARY KEY,
+    port_id         integer     NOT NULL, -- REFERENCES interfaces(port_id) ON DELETE CASCADE ON UPDATE RESTRICT,
+    hwaddress       macaddr     DEFAULT NULL,
+    first_time      timestamp   DEFAULT CURRENT_TIMESTAMP,
+    last_time       timestamp   DEFAULT CURRENT_TIMESTAMP,
+    port_mac_type   portmactype[] NOT NULL DEFAULT '{}',
+    set_type        settype NOT NULL DEFAULT 'manual'
+);
+CREATE UNIQUE INDEX port_macs_hwaddress ON port_macs(hwaddress) WHERE port_mac_type <> '{uplink}';
+ALTER TABLE port_vlans OWNER TO lanview2;
+COMMENT ON TABLE port_vlans IS 'port cím tábla lekérdezés eredménye';
 -- //// IPADDRESS
 
 CREATE TYPE addresstype AS ENUM ('fixip', 'private', 'external', 'dynamic', 'pseudo');
