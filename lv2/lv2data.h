@@ -138,7 +138,7 @@ public:
     /// A toEnd(int _i) metódust hívja a image_type idexével.
     virtual void toEnd();
     /// További műveletek az egy mező kitöltése után:
-    /// Az image typust ellenörzi, ill. konvertálja, ha ..
+    /// Az image típust ellenörzi, ill. konvertálja, ha ..
     virtual bool toEnd(int _i);
     bool load(const QString& __fn, bool __ex = true);
     bool save(const QString& __fn, bool __ex = true);
@@ -394,7 +394,7 @@ public:
     /// Megallokál egy új cNPort, cInterface vagy cIfaceAddr objektumot, a meghatározott cIfType objektum szerint.
     /// Ld.: static cNPort *newObject(const cIfType& __t)
     /// @param __q Az cIfType objektum lekérdezéséhez használt QSqlQuery objektum.
-    /// @param __ifTypeName Az interfész typus neve (iftypes rekord iftype:name mező értéke)
+    /// @param __ifTypeName Az interfész típus neve (iftypes rekord iftype:name mező értéke)
     /// @return A megallokált objektum pointere.
     static cNPort *newPort(QSqlQuery& __q, const QString& __ifTypeName, int __i = -1) {
         cIfType t;
@@ -403,7 +403,7 @@ public:
     }
     /// Megallokál egy új cNPort, cInterface vagy cIfaceAddr objektumot, a meghatározott cIfType objektum szerint.
     /// Ld.: static cNPort *newObject(const cIfType& __t)
-    /// @param __ifTypeName Az interfész typus neve (iftypes rekord iftype:name mező értéke)
+    /// @param __ifTypeName Az interfész típus neve (iftypes rekord iftype:name mező értéke)
     /// @return A megallokált objektum pointere.
     static cNPort *newPort(const QString& __ifTypeName, int __i = -1) {
         QSqlQuery   q = getQuery();
@@ -598,7 +598,7 @@ public:
     /// Copy operátor. Mivel ellenörzi az értékeket az öres objektum nem másolható.
     cShareBack& operator=(const cShareBack& __o) { return set(__o.a, __o.b, __o.ab, __o.bb, __o.cd); }
     /// Az objektum feltöltése, két azonos index nem adható meg, mindegyik index nem lehet NULL_IX.
-    /// Az A ill AA typusú megosztású port indexe nem lehet NULL_IX!
+    /// Az A ill AA típusú megosztású port indexe nem lehet NULL_IX!
     cShareBack& set(int __a, int __b, int __ab = NULL_IX, int __bb = NULL_IX, bool __cd = false);
     /// Copy konstruktor. Nem ellenöriz.
     cShareBack(const cShareBack& __o)            { a = __o.a; ab = __o.ab; b = __o.b; bb = __o.bb; cd = __o.cd; }
@@ -1231,7 +1231,7 @@ public:
     void save(QSqlQuery& __q, const QString& __name, const QString& __cont, const QString& __descr);
     /// Egy adott nevű template törlése a konténerből, és az adatbázisból.
     void del(QSqlQuery& __q, const QString &__name);
-    /// A temlate rekordok typusa (template_type mező megkövetelt értéke / szűrési feltétel)
+    /// A temlate rekordok típusa (template_type mező megkövetelt értéke / szűrési feltétel)
     const QString type;
 };
 

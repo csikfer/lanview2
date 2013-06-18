@@ -270,7 +270,7 @@ public:
             (*i)->setId(__n, __id);
         }
     }
-    /// Egy text typusú mező értékének a beállítása az összes elemnél a megadott értékre
+    /// Egy text típusú mező értékének a beállítása az összes elemnél a megadott értékre
     /// @param __i A beállítandó mező indexe
     /// @param __v A mező új értéke
     void setName(int __i, const QString& __v) {
@@ -279,7 +279,7 @@ public:
             (*i)->setName(__i, __v);
         }
     }
-    /// Egy text typusú mező értékének a beállítása az összes elemnél a megadott értékre
+    /// Egy text típusú mező értékének a beállítása az összes elemnél a megadott értékre
     /// @param __n A beállítandó mező neve
     /// @param __v A mező új értéke
     void setName(const QString& __n, const QString& __v) {

@@ -242,7 +242,7 @@ public:
         return service();
     }
     /// A szolgáltatás cService objektumára mutató pointert állítja be
-    /// @param _ps A szolgálltatás typus objektumra mutató pointer
+    /// @param _ps A szolgálltatás típus objektumra mutató pointer
     /// @return A szolgáltatás objektum referenciája.
     const cService& service(const cService * _ps)  { return *(pService = _ps); }
     ///

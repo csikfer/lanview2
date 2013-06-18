@@ -1,0 +1,3183 @@
+Trying 172.20.128.110...
+Connected to 172.20.128.110.
+Escape character is '^]'.
+[2J[?7l[3;23r[?6l[1;1H[?25l[1;1HProCurve J9049A Switch 2900-24G
+Software revision T.13.68
+
+Copyright (C) 1991-2009 Hewlett-Packard Co.  All Rights Reserved.
+
+                           RESTRICTED RIGHTS LEGEND
+
+ Use, duplication, or disclosure by the Government is subject to restrictions
+ as set forth in subdivision (b) (3) (ii) of the Rights in Technical Data and
+ Computer Software clause at 52.227-7013.
+
+         HEWLETT-PACKARD COMPANY, 3000 Hanover St., Palo Alto, CA 94303
+
+We'd like to keep you up to date about:
+  * Software feature updates
+  * New product announcements
+  * Special events
+
+Please register your products now at:  www.ProCurve.com
+
+
+[24;1HPress any key to continue[1;1H[?25h[24;27H[2J[?7l[3;23r[?6l[24;27H[?25h[24;27H[?6l[1;53r[?7l[2J[24;27H[1;53r[24;27H[2J[?7l[1;53r[?6l[53;1H[1;53r[53;1H[53;1H[2K[53;1H[?25h[53;1H[53;1HProCurve Switch 2900-24G# [53;1H[53;27H[53;1H[?25h[53;27H[53;27Hs[53;27H[?25h[53;28H[53;28Hh[53;28H[?25h[53;29H[53;29Ho[53;29H[?25h[53;30H[53;30Hw[53;30H[?25h[53;31H[53;31H [53;31H[?25h[53;32H[53;32Ht[53;32H[?25h[53;33H[53;33He[53;33H[?25h[53;34H[53;34Hc[53;34H[?25h[53;35H[53;35Hh[53;35H[?25h[53;36H[53;0HE[53;1H[53;36H[53;1H[2K[53;1H[?25h[53;1H[1;53r[53;1H
+show system
+
+ Status and Counters - General System Information
+
+  System Name        : ProCurve Switch 2900-24G                        
+  System Contact     : 
+  System Location    : d3
+
+  MAC Age Time (sec) : 300    
+
+  Time Zone          : 1    
+  Daylight Time Rule : Middle-Europe-and-Portugal
+
+
+  Software revision  : T.13.68          Base MAC Addr      : 0016b9-0dea40
+  ROM Version        : K.12.12          Serial Number      : SG651KI06V  
+
+  Up Time            : 23 hours         Memory   - Total   : 152,241,936 
+  CPU Util (%)       : 5                           Free    : 109,865,104 
+
+  IP Mgmt  - Pkts Rx : 592,530          Packet   - Total   : 6750        
+             Pkts Tx : 506,571          Buffers    Free    : 5085        
+                                                   Lowest  : 4996        
+                                                   Missed  : 0           
+
+
+show flash
+Image           Size(Bytes)   Date   Version
+-----           ----------  -------- -------
+Primary Image   : 6786623   07/30/09 T.13.68 
+Secondary Image : 6234196   11/15/07 T.12.51 
+Boot Rom Version: K.12.12
+Default Boot    : Primary
+
+
+show running-config
+
+Running configuration:
+
+; J9049A Configuration Editor; Created on release #T.13.68
+
+hostname "ProCurve Switch 2900-24G" 
+max-vlans 32 
+time timezone 1 
+time daylight-time-rule Middle-Europe-and-Portugal 
+module 1 type J86xxA 
+module 3 type J90XXA 
+interface 1 
+   unknown-vlans Block 
+exit
+interface 2 
+[53;1H[2K[53;1H[1;53r[53;1H   unknown-vlans Block 
+exit
+interface 3 
+   unknown-vlans Block 
+exit
+interface 4 
+   unknown-vlans Block 
+exit
+interface 5 
+   unknown-vlans Block 
+exit
+interface 6 
+   unknown-vlans Block 
+exit
+interface 7 
+   unknown-vlans Block 
+exit
+interface 8 
+   unknown-vlans Block 
+exit
+interface 9 
+   unknown-vlans Block 
+exit
+interface 10 
+   unknown-vlans Block 
+exit
+interface 11 
+   unknown-vlans Block 
+exit
+interface 12 
+   unknown-vlans Block 
+exit
+interface 13 
+   unknown-vlans Block 
+exit
+interface 14 
+   unknown-vlans Block 
+exit
+interface 15 
+   unknown-vlans Block 
+exit
+interface 16 
+   unknown-vlans Block 
+exit
+interface 17 
+   unknown-vlans Block 
+exit
+interface 18 
+   unknown-vlans Block 
+exit
+interface A1 
+   unknown-vlans Block 
+[53;1H[2K[53;1H[1;53r[53;1Hexit
+interface A2 
+   unknown-vlans Block 
+exit
+interface A3 
+   unknown-vlans Block 
+exit
+interface A4 
+   unknown-vlans Block 
+exit
+trunk 19-20 Trk2 Trunk 
+Trk2 
+   unknown-vlans Block 
+exit
+trunk 21-22 Trk1 Trunk 
+Trk1 
+   unknown-vlans Block 
+exit
+trunk 23-24 Trk3 Trunk 
+Trk3 
+   unknown-vlans Block 
+exit
+ip default-gateway 172.20.128.1 
+vlan 1 
+   name "DEFAULT_VLAN" 
+   untagged 7,9,15-17,A1-A4,Trk1-Trk3 
+   ip address 172.20.128.110 255.255.255.0 
+   no untagged 1-6,8,10-14,18 
+   ip igmp 
+   exit 
+vlan 51 
+   name "wifiin" 
+   tagged 18 
+   no ip address 
+   exit 
+vlan 52 
+   name "wifiout" 
+   tagged 18 
+   no ip address 
+   exit 
+vlan 3001 
+   name "devices" 
+   untagged 14 
+   tagged 7,9,16 
+   no ip address 
+   exit 
+vlan 3003 
+   name "TH" 
+   tagged 7 
+   no ip address 
+   exit 
+vlan 3005 
+[53;1H[2K[53;1H[1;53r[53;1H   name "KVT" 
+   no ip address 
+   exit 
+vlan 3013 
+   name "DF" 
+   no ip address 
+   exit 
+vlan 3014 
+   name "D1" 
+   untagged 1-2,5-6,10-13 
+   tagged 9,16 
+   no ip address 
+   exit 
+vlan 3015 
+   name "D2" 
+   no ip address 
+   exit 
+vlan 3016 
+   name "HALLGDEV" 
+   tagged 7 
+   no ip address 
+   exit 
+vlan 3026 
+   name "HALLG10" 
+   no ip address 
+   exit 
+vlan 3027 
+   name "HALLG11" 
+   no ip address 
+   exit 
+vlan 3028 
+   name "HALLG12" 
+   tagged 9,16 
+   no ip address 
+   exit 
+vlan 3029 
+   name "HALLG13" 
+   untagged 3,8 
+   no ip address 
+   exit 
+vlan 3030 
+   name "HALLG14" 
+   no ip address 
+   exit 
+vlan 3031 
+   name "HALLG15" 
+   tagged 7 
+   no ip address 
+   exit 
+vlan 3032 
+   name "kolldev" 
+   no ip address 
+[53;1H[2K[53;1H[1;53r[53;1H   exit 
+vlan 3033 
+   name "kollf" 
+   no ip address 
+   exit 
+vlan 3034 
+   name "koll1" 
+   no ip address 
+   exit 
+vlan 3035 
+   name "koll2" 
+   no ip address 
+   exit 
+vlan 3036 
+   name "koll3" 
+   no ip address 
+   exit 
+vlan 3037 
+   name "koll4" 
+   no ip address 
+   exit 
+vlan 3038 
+   name "kollkt" 
+   no ip address 
+   exit 
+vlan 3048 
+   name "vendeg" 
+   untagged 4 
+   tagged 9,16 
+   no ip address 
+   exit 
+vlan 3050 
+   name "wifidev" 
+   untagged 18 
+   no ip address 
+   exit 
+vlan 3061 
+   name "tclientsedu" 
+   tagged 9,16 
+   no ip address 
+   exit 
+vlan 3134 
+   name "voip" 
+   no ip address 
+   exit 
+vlan 3135 
+   name "alarm" 
+   no ip address 
+   exit 
+vlan 3999 
+   name "internet" 
+   tagged 7,9 
+[53;1H[2K[53;1H[1;53r[53;1H   no ip address 
+   exit 
+fault-finder bad-driver sensitivity high 
+fault-finder bad-transceiver sensitivity high 
+fault-finder bad-cable sensitivity high 
+fault-finder too-long-cable sensitivity high 
+fault-finder over-bandwidth sensitivity high 
+fault-finder broadcast-storm sensitivity high 
+fault-finder loss-of-link sensitivity high 
+fault-finder duplex-mismatch-HDx sensitivity high 
+fault-finder duplex-mismatch-FDx sensitivity high 
+gvrp 
+sntp unicast
+sntp server priority 1 172.20.1.254
+timesync sntp
+ip authorized-managers 172.20.0.0 255.255.240.0 access Manager
+ip authorized-managers 172.20.128.0 255.255.255.0 access Manager
+no ip ssh
+snmp-server community "public"
+snmp-server location "d3"
+spanning-tree
+spanning-tree Trk1 priority 4
+spanning-tree Trk2 priority 4
+spanning-tree Trk3 priority 4
+
+
+show config status
+
+Running configuration is same as the startup configuration.
+
+
+
+show modules
+
+ Status and Counters - Module Information
+
+  Chassis: 2900-24G J9049A         Serial Number:   SG651KI06V
+  Slot  Module Description                       Serial Number 
+  ----- ---------------------------------------- --------------
+  A     ProCurve J9049A yl X2/CX4 10-GbE Module  SG905FM09Q    
+ 
+
+
+show ip
+
+ Internet (IP) Service
+
+  IP Routing : Disabled
+
+  Default Gateway : 172.20.128.1   
+  Default TTL     : 64   
+  Arp Age         : 20  
+[53;1H[2K[53;1H[1;53r[53;1H  Domain Suffix   :                               
+  DNS server      :                                         
+
+  VLAN                 | IP Config  IP Address      Subnet Mask     Proxy ARP
+  -------------------- + ---------- --------------- --------------- ---------
+  DEFAULT_VLAN         | Manual     172.20.128.110  255.255.255.0   No
+  wifiin               | Disabled 
+  wifiout              | Disabled 
+  devices              | Disabled 
+  TH                   | Disabled 
+  KVT                  | Disabled 
+  DF                   | Disabled 
+  D1                   | Disabled 
+  D2                   | Disabled 
+  HALLGDEV             | Disabled 
+  HALLG10              | Disabled 
+  HALLG11              | Disabled 
+  HALLG12              | Disabled 
+  HALLG13              | Disabled 
+  HALLG14              | Disabled 
+  HALLG15              | Disabled 
+  kolldev              | Disabled 
+  kollf                | Disabled 
+  koll1                | Disabled 
+  koll2                | Disabled 
+  koll3                | Disabled 
+  koll4                | Disabled 
+  kollkt               | Disabled 
+  vendeg               | Disabled 
+  wifidev              | Disabled 
+  tclientsedu          | Disabled 
+  voip                 | Disabled 
+  alarm                | Disabled 
+  internet             | Disabled 
+ 
+
+
+show trunks
+
+ Load Balancing
+
+  Port | Name                             Type      | Group Type 
+  ---- + -------------------------------- --------- + ----- -----
+  19   |                                  100/1000T | Trk2  Trunk
+  20   |                                  100/1000T | Trk2  Trunk
+  21   |                                  100/1000T | Trk1  Trunk
+  22   |                                  100/1000T | Trk1  Trunk
+  23   |                                  100/1000T | Trk3  Trunk
+  24   |                                  100/1000T | Trk3  Trunk
+ 
+
+
+[53;1H[2K[53;1H[1;53r[53;1Hshow vlans
+
+ Status and Counters - VLAN Information
+
+  Maximum VLANs to support : 32                   
+  Primary VLAN : DEFAULT_VLAN
+  Management VLAN :             
+
+  VLAN ID Name                 | Status     Voice Jumbo
+  ------- -------------------- + ---------- ----- -----
+  1       DEFAULT_VLAN         | Port-based No    No   
+  51      wifiin               | Port-based No    No   
+  52      wifiout              | Port-based No    No   
+  3001    devices              | Port-based No    No   
+  3003    TH                   | Port-based No    No   
+  3005    KVT                  | Port-based No    No   
+  3013    DF                   | Port-based No    No   
+  3014    D1                   | Port-based No    No   
+  3015    D2                   | Port-based No    No   
+  3016    HALLGDEV             | Port-based No    No   
+  3026    HALLG10              | Port-based No    No   
+  3027    HALLG11              | Port-based No    No   
+  3028    HALLG12              | Port-based No    No   
+  3029    HALLG13              | Port-based No    No   
+  3030    HALLG14              | Port-based No    No   
+  3031    HALLG15              | Port-based No    No   
+  3032    kolldev              | Port-based No    No   
+  3033    kollf                | Port-based No    No   
+  3034    koll1                | Port-based No    No   
+  3035    koll2                | Port-based No    No   
+  3036    koll3                | Port-based No    No   
+  3037    koll4                | Port-based No    No   
+  3038    kollkt               | Port-based No    No   
+  3048    vendeg               | Port-based No    No   
+  3050    wifidev              | Port-based No    No   
+  3061    tclientsedu          | Port-based No    No   
+  3134    voip                 | Port-based No    No   
+  3135    alarm                | Port-based No    No   
+  3999    internet             | Port-based No    No   
+ 
+
+
+show boot-history
+Master -- Saved Crash Information (most recent first):
+======================================================
+
+
+CRASHLogfileshow
+
+...Crash Log File Header..........................
+Product:   ProCurve J9
+Name:      ProCurve Switch 2900-24G
+[53;1H[2K[53;1H[1;53r[53;1HDate:      Jul 30 2009 00:38:48
+Build:     113
+Version:   T.13.68
+Directory: /sw/code/build/mbm(t3a)
+CPU:       PPC85XX
+   crash index  = 0
+   boot type    = POWER ON
+   willBootType = UNKNOWN BOOT
+..................................................
+  No Saved Crash Information
+
+
+CRASHData
+                                       Length 25
+                                       Rec Ptr 0xffcee5c
+No Crash data available!
+
+show workaround-nic-82566dm
+
+ Workaround NIC-82566dm : Enabled
+
+
+Slot 1
+
+CRASHLogfileshow
+
+slot a:
+-------
+
+...Crash Log File Header..........................
+Product:   Procurve CA
+Name:      Procurve Switch card id:08
+Date:      Jul 29 2009 23:45:44
+Build:     111
+Version:   T.13.68
+Directory: /sw/code/build/mbs(t3a)
+CPU:       ARMARCH5
+   crash index  = 0
+   boot type    = POWER ON
+   willBootType = UNKNOWN BOOT
+..................................................
+  No Saved Crash Information
+
+
+CRASHData
+
+slot a:
+-------
+                                       Length 25
+                                       Rec Ptr 0x40002ca0
+No Crash data available!
+
+[53;1H[2K[53;1H[1;53r[53;1HworkaroundNicDmShow
+
+slot a:
+-------
+Workaround 82566dm
+Needed? Yes
+Detects         :          0     Fast Enables     :          0
+Slow Enables    :          0     Slow Time        :          0
+Recoveries      :          0
+chipPort:          0, FB:          0, IPT: 00000000 Time:          0
+chipPort:          0, FB:          0, IPT: 00000000 Time:          0
+chipPort:          0, FB:          0, IPT: 00000000 Time:          0
+chipPort:          0, FB:          0, IPT: 00000000 Time:          0
+chipPort:          0, FB:          0, IPT: 00000000 Time:          0
+chipPort:          0, FB:          0, IPT: 00000000 Time:          0
+chipPort:          0, FB:          0, IPT: 00000000 Time:          0
+chipPort:          0, FB:          0, IPT: 00000000 Time:          0
+
+Slot 3
+
+CRASHLogfileshow
+
+slot c:
+-------
+
+...Crash Log File Header..........................
+Product:   Procurve CA
+Name:      Procurve Switch card id:38
+Date:      Jul 29 2009 23:45:44
+Build:     111
+Version:   T.13.68
+Directory: /sw/code/build/mbs(t3a)
+CPU:       ARMARCH5
+   crash index  = 0
+   boot type    = POWER ON
+   willBootType = UNKNOWN BOOT
+..................................................
+  No Saved Crash Information
+
+
+CRASHData
+
+slot c:
+-------
+                                       Length 25
+                                       Rec Ptr 0x40002ca0
+No Crash data available!
+
+workaroundNicDmShow
+
+slot c:
+-------
+[53;1H[2K[53;1H[1;53r[53;1HWorkaround 82566dm
+Needed? No
+Detects         :          0     Fast Enables     :          0
+Slow Enables    :          0     Slow Time        :          0
+Recoveries      :          0
+chipPort:          0, FB:          0, IPT: 00000000 Time:          0
+chipPort:          0, FB:          0, IPT: 00000000 Time:          0
+chipPort:          0, FB:          0, IPT: 00000000 Time:          0
+chipPort:          0, FB:          0, IPT: 00000000 Time:          0
+chipPort:          0, FB:          0, IPT: 00000000 Time:          0
+chipPort:          0, FB:          0, IPT: 00000000 Time:          0
+chipPort:          0, FB:          0, IPT: 00000000 Time:          0
+chipPort:          0, FB:          0, IPT: 00000000 Time:          0
+
+show logging -a
+ Keys:   W=Warning   I=Information
+         M=Major     D=Debug E=Error
+----  Event Log listing: All Events Recorded  ----
+M 05/22/12 08:45:55 sys: 'System reboot due to Power Failure'
+I 05/22/12 08:45:55 00061 system: ----------------------------------------------
+I 05/22/12 08:45:55 00062 system: System went down without saving crash
+            information
+I 05/22/12 08:45:55 00291 igmp: DEFAULT_VLAN: IGMP feature enabled
+I 05/22/12 08:45:55 00296 igmp: DEFAULT_VLAN: Querier Election feature enabled
+I 05/22/12 08:45:55 00690 udpf: DHCP relay agent feature enabled
+I 05/22/12 08:45:55 00068 chassis: Ports 1-24 Inserted
+I 05/22/12 08:45:56 00399 stack: Stack Protocol enabled
+I 05/22/12 08:45:56 00362 gvrp: GVRP Protocol enabled
+I 05/22/12 08:45:56 00056 stp: Spanning Tree Protocol enabled
+I 05/22/12 08:45:56 00128 tftp: Enable succeeded
+I 05/22/12 08:45:56 00417 cdp: CDP enabled
+I 05/22/12 08:45:56 00688 lldp: LLDP - enabled
+I 05/22/12 08:45:56 00066 system: System Booted
+I 05/22/12 08:46:02 00375 chassis: Ports 1-24 Downloading
+I 05/22/12 08:46:03 00376 chassis: Ports 1-24 Download Complete
+I 05/22/12 08:46:23 00422 chassis: Ports 1-24 Ready
+I 05/22/12 08:46:23 00068 chassis: Slot A Inserted
+I 05/22/12 08:46:27 00435 ports: port 18 is Blocked by STP
+I 05/22/12 08:46:27 00435 ports: port 6 is Blocked by STP
+I 05/22/12 08:46:27 00435 ports: port 14 is Blocked by STP
+I 05/22/12 08:46:27 00435 ports: port 16 is Blocked by STP
+I 05/22/12 08:46:28 00435 ports: port 19 is Blocked by STP
+I 05/22/12 08:46:28 00078 ports: trunk Trk2 is now active
+I 05/22/12 08:46:28 00435 ports: port 20 is Blocked by STP
+I 05/22/12 08:46:28 00435 ports: port 21 is Blocked by STP
+I 05/22/12 08:46:28 00078 ports: trunk Trk1 is now active
+I 05/22/12 08:46:28 00435 ports: port 22 is Blocked by STP
+I 05/22/12 08:46:28 00435 ports: port 23 is Blocked by STP
+I 05/22/12 08:46:28 00078 ports: trunk Trk3 is now active
+I 05/22/12 08:46:28 00839 stp: CST Root changed from 32768:0016b9-0dea40 to
+            32768:000352-0e8cc4
+I 05/22/12 08:46:28 00076 ports: port 18 is now on-line
+[53;1H[2K[53;1H[1;53r[53;1HI 05/22/12 08:46:28 00001 vlan: wifiin virtual LAN enabled
+I 05/22/12 08:46:28 00001 vlan: wifiout virtual LAN enabled
+I 05/22/12 08:46:28 00001 vlan: wifidev virtual LAN enabled
+I 05/22/12 08:46:29 00375 chassis: Slot A Downloading
+I 05/22/12 08:46:30 00376 chassis: Slot A Download Complete
+I 05/22/12 08:46:30 00076 ports: port 19 in Trk2 is now on-line
+I 05/22/12 08:46:30 00076 ports: port 20 in Trk2 is now on-line
+I 05/22/12 08:46:30 00001 vlan: DEFAULT_VLAN virtual LAN enabled
+I 05/22/12 08:46:30 00001 vlan: devices virtual LAN enabled
+I 05/22/12 08:46:30 00001 vlan: DF virtual LAN enabled
+I 05/22/12 08:46:30 00001 vlan: D1 virtual LAN enabled
+I 05/22/12 08:46:30 00001 vlan: D2 virtual LAN enabled
+I 05/22/12 08:46:30 00001 vlan: HALLG10 virtual LAN enabled
+I 05/22/12 08:46:30 00001 vlan: HALLG13 virtual LAN enabled
+I 05/22/12 08:46:30 00001 vlan: HALLG14 virtual LAN enabled
+I 05/22/12 08:46:30 00001 vlan: vendeg virtual LAN enabled
+I 05/22/12 08:46:30 00001 vlan: tclientsedu virtual LAN enabled
+I 05/22/12 08:46:30 00001 vlan: internet virtual LAN enabled
+I 05/22/12 08:46:30 00002 vlan: devices virtual LAN disabled
+I 05/22/12 08:46:30 00002 vlan: DF virtual LAN disabled
+I 05/22/12 08:46:30 00002 vlan: D1 virtual LAN disabled
+I 05/22/12 08:46:30 00002 vlan: D2 virtual LAN disabled
+I 05/22/12 08:46:30 00002 vlan: HALLG10 virtual LAN disabled
+I 05/22/12 08:46:30 00002 vlan: HALLG13 virtual LAN disabled
+I 05/22/12 08:46:30 00002 vlan: HALLG14 virtual LAN disabled
+I 05/22/12 08:46:30 00002 vlan: vendeg virtual LAN disabled
+I 05/22/12 08:46:30 00002 vlan: tclientsedu virtual LAN disabled
+I 05/22/12 08:46:30 00002 vlan: internet virtual LAN disabled
+I 05/22/12 08:46:30 00076 ports: port 21 in Trk1 is now on-line
+I 05/22/12 08:46:30 00076 ports: port 22 in Trk1 is now on-line
+I 05/22/12 08:46:30 00001 vlan: HALLGDEV virtual LAN enabled
+I 05/22/12 08:46:30 00001 vlan: HALLG11 virtual LAN enabled
+I 05/22/12 08:46:30 00001 vlan: HALLG14 virtual LAN enabled
+I 05/22/12 08:46:30 00001 vlan: vendeg virtual LAN enabled
+I 05/22/12 08:46:30 00002 vlan: HALLGDEV virtual LAN disabled
+I 05/22/12 08:46:30 00002 vlan: HALLG11 virtual LAN disabled
+I 05/22/12 08:46:30 00002 vlan: HALLG14 virtual LAN disabled
+I 05/22/12 08:46:30 00002 vlan: vendeg virtual LAN disabled
+I 05/22/12 08:46:30 00076 ports: port 23 in Trk3 is now on-line
+I 05/22/12 08:46:30 00001 vlan: devices virtual LAN enabled
+I 05/22/12 08:46:30 00001 vlan: KVT virtual LAN enabled
+I 05/22/12 08:46:30 00001 vlan: DF virtual LAN enabled
+I 05/22/12 08:46:30 00001 vlan: D1 virtual LAN enabled
+I 05/22/12 08:46:30 00001 vlan: D2 virtual LAN enabled
+I 05/22/12 08:46:30 00001 vlan: HALLGDEV virtual LAN enabled
+I 05/22/12 08:46:30 00001 vlan: HALLG10 virtual LAN enabled
+I 05/22/12 08:46:30 00001 vlan: HALLG12 virtual LAN enabled
+I 05/22/12 08:46:30 00001 vlan: HALLG13 virtual LAN enabled
+I 05/22/12 08:46:30 00001 vlan: HALLG14 virtual LAN enabled
+I 05/22/12 08:46:30 00001 vlan: kollf virtual LAN enabled
+I 05/22/12 08:46:30 00001 vlan: vendeg virtual LAN enabled
+I 05/22/12 08:46:30 00001 vlan: tclientsedu virtual LAN enabled
+[53;1H[2K[53;1H[1;53r[53;1HI 05/22/12 08:46:30 00001 vlan: internet virtual LAN enabled
+I 05/22/12 08:46:30 00001 vlan: HALLG11 virtual LAN enabled
+I 05/22/12 08:46:30 00435 ports: port 7 is Blocked by STP
+I 05/22/12 08:46:31 00076 ports: port 6 is now on-line
+I 05/22/12 08:46:31 00076 ports: port 14 is now on-line
+I 05/22/12 08:46:31 00076 ports: port 16 is now on-line
+I 05/22/12 08:46:31 00435 ports: port 24 is Blocked by STP
+I 05/22/12 08:46:31 00076 ports: port 24 in Trk3 is now on-line
+I 05/22/12 08:46:33 00076 ports: port 7 is now on-line
+I 05/22/12 08:46:33 00001 vlan: TH virtual LAN enabled
+I 05/22/12 08:46:33 00001 vlan: HALLG15 virtual LAN enabled
+I 05/22/12 08:46:45 00422 chassis: Slot A Ready
+I 05/22/12 08:46:47 00435 ports: port A1 is Blocked by STP
+I 05/22/12 08:46:48 00435 ports: port A4 is Blocked by STP
+I 05/22/12 08:46:48 00839 stp: CST Root changed from 32768:000352-0e8cc4 to
+            32768:000352-0e86e4
+I 05/22/12 08:46:48 00076 ports: port A1 is now on-line
+I 05/22/12 08:46:48 00001 vlan: kolldev virtual LAN enabled
+I 05/22/12 08:46:48 00001 vlan: koll1 virtual LAN enabled
+I 05/22/12 08:46:48 00001 vlan: koll2 virtual LAN enabled
+I 05/22/12 08:46:48 00001 vlan: koll3 virtual LAN enabled
+I 05/22/12 08:46:48 00001 vlan: koll4 virtual LAN enabled
+I 05/22/12 08:46:48 00001 vlan: kollkt virtual LAN enabled
+I 05/22/12 08:46:48 00001 vlan: voip virtual LAN enabled
+I 05/22/12 08:46:48 00001 vlan: alarm virtual LAN enabled
+I 05/22/12 08:46:51 00076 ports: port A4 is now on-line
+I 05/22/12 08:48:29 00301 igmp: DEFAULT_VLAN: Other Querier detected
+I 05/22/12 08:48:29 00302 igmp: DEFAULT_VLAN: This switch is no longer Querier
+I 05/22/12 08:57:46 00435 ports: port 13 is Blocked by STP
+I 05/22/12 08:57:49 00076 ports: port 13 is now on-line
+I 05/22/12 08:58:23 00413 SNTP: updated time by 4 seconds
+I 05/22/12 09:07:04 00435 ports: port 1 is Blocked by STP
+I 05/22/12 09:07:07 00076 ports: port 1 is now on-line
+I 05/22/12 09:07:26 00077 ports: port 1 is now off-line
+I 05/22/12 09:07:36 00435 ports: port 1 is Blocked by STP
+I 05/22/12 09:07:39 00076 ports: port 1 is now on-line
+I 05/22/12 09:10:40 00435 ports: port 3 is Blocked by STP
+I 05/22/12 09:10:43 00076 ports: port 3 is now on-line
+I 05/22/12 09:10:52 00077 ports: port 13 is now off-line
+I 05/22/12 09:13:08 00077 ports: port 3 is now off-line
+I 05/22/12 09:13:18 00435 ports: port 4 is Blocked by STP
+I 05/22/12 09:13:20 00076 ports: port 4 is now on-line
+I 05/22/12 09:14:38 00077 ports: port 4 is now off-line
+I 05/22/12 09:14:47 00435 ports: port 3 is Blocked by STP
+I 05/22/12 09:14:50 00076 ports: port 3 is now on-line
+I 05/22/12 09:15:54 00435 ports: port 13 is Blocked by STP
+I 05/22/12 09:15:56 00076 ports: port 13 is now on-line
+I 05/22/12 09:16:25 00179 mgr: SME TELNET from 172.20.128.8 - MANAGER Mode
+I 05/22/12 09:19:06 00077 ports: port 13 is now off-line
+I 05/22/12 09:19:12 00435 ports: port 2 is Blocked by STP
+I 05/22/12 09:19:15 00076 ports: port 2 is now on-line
+I 05/22/12 10:54:35 00077 ports: port 14 is now off-line
+[53;1H[2K[53;1H[1;53r[53;1HI 05/22/12 10:54:38 00435 ports: port 14 is Blocked by STP
+I 05/22/12 10:54:41 00076 ports: port 14 is now on-line
+I 05/22/12 10:54:53 00077 ports: port 14 is now off-line
+I 05/22/12 14:48:10 00077 ports: port 6 is now off-line
+I 05/22/12 15:01:31 00077 ports: port 2 is now off-line
+I 05/22/12 15:01:33 00435 ports: port 2 is Blocked by STP
+I 05/22/12 15:01:36 00076 ports: port 2 is now on-line
+I 05/22/12 17:39:22 00077 ports: port 3 is now off-line
+I 05/22/12 17:39:24 00435 ports: port 3 is Blocked by STP
+I 05/22/12 17:39:27 00076 ports: port 3 is now on-line
+I 05/23/12 07:03:40 00435 ports: port 6 is Blocked by STP
+I 05/23/12 07:03:42 00076 ports: port 6 is now on-line
+I 05/23/12 07:27:44 00179 mgr: SME TELNET from 172.20.128.8 - MANAGER Mode
+I 05/23/12 07:29:45 00131 tftp: Transfer completed
+I 05/23/12 07:30:12 00131 tftp: Transfer completed
+I 05/23/12 07:44:02 00077 ports: port 2 is now off-line
+I 05/23/12 07:44:05 00435 ports: port 2 is Blocked by STP
+I 05/23/12 07:44:08 00076 ports: port 2 is now on-line
+I 05/23/12 07:48:07 00179 mgr: SME TELNET from 172.20.128.8 - MANAGER Mode
+----  Bottom of Log : Events Listed = 154  ----
+
+show interfaces brief
+
+ Status and Counters - Port Status
+
+                    | Intrusion                           MDI   Flow  Bcast 
+  Port    Type      | Alert     Enabled Status Mode       Mode  Ctrl  Limit 
+  ------- --------- + --------- ------- ------ ---------- ----- ----- ------
+  1       100/1000T | No        Yes     Up     1000FDx    MDI   off   0     
+  2       100/1000T | No        Yes     Up     1000FDx    MDIX  off   0     
+  3       100/1000T | No        Yes     Up     10FDx      MDI   off   0     
+  4       100/1000T | No        Yes     Down   1000FDx    MDI   off   0     
+  5       100/1000T | No        Yes     Down   1000FDx    Auto  off   0     
+  6       100/1000T | No        Yes     Up     1000FDx    MDI   off   0     
+  7       100/1000T | No        Yes     Up     1000FDx    MDI   off   0     
+  8       100/1000T | No        Yes     Down   1000FDx    Auto  off   0     
+  9       100/1000T | No        Yes     Down   1000FDx    NA    off   0     
+  10      100/1000T | No        Yes     Down   1000FDx    NA    off   0     
+  11      100/1000T | No        Yes     Down   1000FDx    NA    off   0     
+  12      100/1000T | No        Yes     Down   1000FDx    NA    off   0     
+  13      100/1000T | No        Yes     Down   1000FDx    MDIX  off   0     
+  14      100/1000T | No        Yes     Down   1000FDx    MDIX  off   0     
+  15      100/1000T | No        Yes     Down   1000FDx    Auto  off   0     
+  16      100/1000T | No        Yes     Up     1000FDx    MDI   off   0     
+  17      100/1000T | No        Yes     Down   1000FDx    Auto  off   0     
+  18      100/1000T | No        Yes     Up     100FDx     MDIX  off   0     
+  19-Trk2 100/1000T | No        Yes     Up     1000FDx    MDI   off   0     
+  20-Trk2 100/1000T | No        Yes     Up     1000FDx    MDI   off   0     
+  21-Trk1 100/1000T | No        Yes     Up     1000FDx    MDIX  off   0     
+  22-Trk1 100/1000T | No        Yes     Up     1000FDx    MDIX  off   0     
+  23-Trk3 100/1000T | No        Yes     Up     1000FDx    MDI   off   0     
+  24-Trk3 100/1000T | No        Yes     Up     1000FDx    MDIX  off   0     
+[53;1H[2K[53;1H[1;53r[53;1H  A1      10GbE-LRM | No        Yes     Up     10GigFD          off   0     
+  A2      10GbE-CX4 | No        Yes     Down   10GigFD          off   0     
+  A3      10GbE-CX4 | No        Yes     Down   10GigFD          off   0     
+  A4      10GbE-SR  | No        Yes     Up     10GigFD          off   0     
+ 
+
+show interfaces config
+
+ Port Settings
+
+  Port    Type      | Enabled Mode         Flow Ctrl MDI 
+  ------- --------- + ------- ------------ --------- ----
+  1       100/1000T | Yes     Auto         Disable   Auto
+  2       100/1000T | Yes     Auto         Disable   Auto
+  3       100/1000T | Yes     Auto         Disable   Auto
+  4       100/1000T | Yes     Auto         Disable   Auto
+  5       100/1000T | Yes     Auto         Disable   Auto
+  6       100/1000T | Yes     Auto         Disable   Auto
+  7       100/1000T | Yes     Auto         Disable   Auto
+  8       100/1000T | Yes     Auto         Disable   Auto
+  9       100/1000T | Yes     Auto         Disable   Auto
+  10      100/1000T | Yes     Auto         Disable   Auto
+  11      100/1000T | Yes     Auto         Disable   Auto
+  12      100/1000T | Yes     Auto         Disable   Auto
+  13      100/1000T | Yes     Auto         Disable   Auto
+  14      100/1000T | Yes     Auto         Disable   Auto
+  15      100/1000T | Yes     Auto         Disable   Auto
+  16      100/1000T | Yes     Auto         Disable   Auto
+  17      100/1000T | Yes     Auto         Disable   Auto
+  18      100/1000T | Yes     Auto         Disable   Auto
+  19-Trk2 100/1000T | Yes     Auto         Disable   Auto
+  20-Trk2 100/1000T | Yes     Auto         Disable   Auto
+  21-Trk1 100/1000T | Yes     Auto         Disable   Auto
+  22-Trk1 100/1000T | Yes     Auto         Disable   Auto
+  23-Trk3 100/1000T | Yes     Auto         Disable   Auto
+  24-Trk3 100/1000T | Yes     Auto         Disable   Auto
+  A1      10GbE-LRM | Yes     Auto         Disable   0   
+  A2      10GbE-CX4 | Yes     Auto         Disable   0   
+  A3      10GbE-CX4 | Yes     Auto         Disable   0   
+  A4      10GbE-SR  | Yes     Auto         Disable   0   
+ 
+
+show interfaces
+
+ Status and Counters - Port Counters
+
+                                                                  Flow  Bcast 
+  Port    Total Bytes    Total Frames   Errors Rx    Drops Tx     Ctrl  Limit 
+  ------- -------------- -------------- ------------ ------------ ----- ------
+  1       8,481,740      65,918         0            0            off   0     
+  2       747,856,684    918,026        0            0            off   0     
+  3       512,555,635    747,286        0            0            off   0     
+[53;1H[2K[53;1H[1;53r[53;1H  4       89,674         581            0            0            off   0     
+  5       0              0              0            0            off   0     
+  6       757,113,278    895,275        0            0            off   0     
+  7       200,084,750    1,576,125      0            0            off   0     
+  8       0              0              0            0            off   0     
+  9       0              0              0            0            off   0     
+  10      0              0              0            0            off   0     
+  11      0              0              0            0            off   0     
+  12      0              0              0            0            off   0     
+  13      425,458,428    431,573        0            0            off   0     
+  14      5,372,510      68,613         0            0            off   0     
+  15      0              0              0            0            off   0     
+  16      1,001,967,878  1,936,523      0            0            off   0     
+  17      0              0              0            0            off   0     
+  18      170,550,171    881,784        0            0            off   0     
+  19-Trk2 2,883,364,739  4,883,284      0            0            off   0     
+  20-Trk2 2,299,881,154  2,840,489      0            0            off   0     
+  21-Trk1 20,092,095     167,681        0            0            off   0     
+  22-Trk1 64,706,956     726,424        0            0            off   0     
+  23-Trk3 1,645,957,998  2,779,256      0            0            off   0     
+  24-Trk3 4,187,314,612  6,430,871      0            0            off   0     
+  A1      895,930,539    349,499,802    0            0            off   0     
+  A2      0              0              0            0            off   0     
+  A3      0              0              0            0            off   0     
+  A4      3,587,318,919  328,634,952    0            0            off   0     
+ 
+
+show interfaces all
+
+ Status and Counters - Port Counters for port 1                       
+
+  Name  :                                                                 
+  MAC Address      : 0016b9-0dea7f
+  Link Status      : Up  
+  Totals (Since boot or last clear) :                                    
+   Bytes Rx        : 303,409            Bytes Tx        : 8,178,331         
+   Unicast Rx      : 1                  Unicast Tx      : 95                
+   Bcast/Mcast Rx  : 2719               Bcast/Mcast Tx  : 63,103            
+  Errors (Since boot or last clear) :                                    
+   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+  Rates (5 minute weighted average) :
+   Total Rx  (bps) : 640344    		Total Tx  (bps) : 5001152   
+   Unicast Rx (Pkts/sec) : 0         	Unicast Tx (Pkts/sec) : 0         
+   B/Mcast Rx (Pkts/sec) : 0         	B/Mcast Tx (Pkts/sec) : 1         
+   Utilization Rx  : 00.06 %		Utilization Tx  : 00.50 %
+[53;1H[2K[53;1H[1;53r[53;1H
+
+ Status and Counters - Port Counters for port 2                       
+
+  Name  :                                                                 
+  MAC Address      : 0016b9-0dea7e
+  Link Status      : Up  
+  Totals (Since boot or last clear) :                                    
+   Bytes Rx        : 32,449,836         Bytes Tx        : 715,406,992       
+   Unicast Rx      : 318,465            Unicast Tx      : 537,065           
+   Bcast/Mcast Rx  : 515                Bcast/Mcast Tx  : 61,982            
+  Errors (Since boot or last clear) :                                    
+   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+  Rates (5 minute weighted average) :
+   Total Rx  (bps) : 1259792   		Total Tx  (bps) : 2787960   
+   Unicast Rx (Pkts/sec) : 2         	Unicast Tx (Pkts/sec) : 2         
+   B/Mcast Rx (Pkts/sec) : 0         	B/Mcast Tx (Pkts/sec) : 0         
+   Utilization Rx  : 00.12 %		Utilization Tx  : 00.27 %
+
+
+ Status and Counters - Port Counters for port 3                       
+
+  Name  :                                                                 
+  MAC Address      : 0016b9-0dea7d
+  Link Status      : Up  
+  Totals (Since boot or last clear) :                                    
+   Bytes Rx        : 34,076,585         Bytes Tx        : 478,479,237       
+   Unicast Rx      : 248,045            Unicast Tx      : 392,896           
+   Bcast/Mcast Rx  : 2544               Bcast/Mcast Tx  : 103,803           
+  Errors (Since boot or last clear) :                                    
+   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+  Rates (5 minute weighted average) :
+   Total Rx  (bps) : 0         		Total Tx  (bps) : 51168     
+   Unicast Rx (Pkts/sec) : 0         	Unicast Tx (Pkts/sec) : 0         
+   B/Mcast Rx (Pkts/sec) : 0         	B/Mcast Tx (Pkts/sec) : 1         
+   Utilization Rx  :     0 %		Utilization Tx  : 00.51 %
+
+
+[53;1H[2K[53;1H[1;53r[53;1H Status and Counters - Port Counters for port 4                       
+
+  Name  :                                                                 
+  MAC Address      : 0016b9-0dea7c
+  Link Status      : Down
+  Totals (Since boot or last clear) :                                    
+   Bytes Rx        : 55,813             Bytes Tx        : 33,861            
+   Unicast Rx      : 190                Unicast Tx      : 112               
+   Bcast/Mcast Rx  : 220                Bcast/Mcast Tx  : 59                
+  Errors (Since boot or last clear) :                                    
+   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+  Rates (5 minute weighted average) :
+   Total Rx  (bps) : 0         		Total Tx  (bps) : 0         
+   Unicast Rx (Pkts/sec) : 0         	Unicast Tx (Pkts/sec) : 0         
+   B/Mcast Rx (Pkts/sec) : 0         	B/Mcast Tx (Pkts/sec) : 0         
+   Utilization Rx  :     0 %		Utilization Tx  :     0 %
+
+
+ Status and Counters - Port Counters for port 5                       
+
+  Name  :                                                                 
+  MAC Address      : 0016b9-0dea7b
+  Link Status      : Down
+  Totals (Since boot or last clear) :                                    
+   Bytes Rx        : 0                  Bytes Tx        : 0                 
+   Unicast Rx      : 0                  Unicast Tx      : 0                 
+   Bcast/Mcast Rx  : 0                  Bcast/Mcast Tx  : 0                 
+  Errors (Since boot or last clear) :                                    
+   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+  Rates (5 minute weighted average) :
+   Total Rx  (bps) : 0         		Total Tx  (bps) : 0         
+   Unicast Rx (Pkts/sec) : 0         	Unicast Tx (Pkts/sec) : 0         
+   B/Mcast Rx (Pkts/sec) : 0         	B/Mcast Tx (Pkts/sec) : 0         
+   Utilization Rx  :     0 %		Utilization Tx  :     0 %
+
+
+ Status and Counters - Port Counters for port 6                       
+
+[53;1H[2K[53;1H[1;53r[53;1H  Name  :                                                                 
+  MAC Address      : 0016b9-0dea7a
+  Link Status      : Up  
+  Totals (Since boot or last clear) :                                    
+   Bytes Rx        : 41,221,009         Bytes Tx        : 715,892,269       
+   Unicast Rx      : 332,463            Unicast Tx      : 540,090           
+   Bcast/Mcast Rx  : 144                Bcast/Mcast Tx  : 22,578            
+  Errors (Since boot or last clear) :                                    
+   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+  Rates (5 minute weighted average) :
+   Total Rx  (bps) : 4238784   		Total Tx  (bps) : 7164840   
+   Unicast Rx (Pkts/sec) : 70        	Unicast Tx (Pkts/sec) : 157       
+   B/Mcast Rx (Pkts/sec) : 0         	B/Mcast Tx (Pkts/sec) : 0         
+   Utilization Rx  : 00.42 %		Utilization Tx  : 00.71 %
+
+
+ Status and Counters - Port Counters for port 7                       
+
+  Name  :                                                                 
+  MAC Address      : 0016b9-0dea79
+  Link Status      : Up  
+  Totals (Since boot or last clear) :                                    
+   Bytes Rx        : 28,460,712         Bytes Tx        : 171,624,705       
+   Unicast Rx      : 183,480            Unicast Tx      : 202,501           
+   Bcast/Mcast Rx  : 54,686             Bcast/Mcast Tx  : 1,135,465         
+  Errors (Since boot or last clear) :                                    
+   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+  Rates (5 minute weighted average) :
+   Total Rx  (bps) : 4138808   		Total Tx  (bps) : 5014432   
+   Unicast Rx (Pkts/sec) : 1         	Unicast Tx (Pkts/sec) : 1         
+   B/Mcast Rx (Pkts/sec) : 0         	B/Mcast Tx (Pkts/sec) : 14        
+   Utilization Rx  : 00.41 %		Utilization Tx  : 00.50 %
+
+
+ Status and Counters - Port Counters for port 8                       
+
+  Name  :                                                                 
+  MAC Address      : 0016b9-0dea78
+[53;1H[2K[53;1H[1;53r[53;1H  Link Status      : Down
+  Totals (Since boot or last clear) :                                    
+   Bytes Rx        : 0                  Bytes Tx        : 0                 
+   Unicast Rx      : 0                  Unicast Tx      : 0                 
+   Bcast/Mcast Rx  : 0                  Bcast/Mcast Tx  : 0                 
+  Errors (Since boot or last clear) :                                    
+   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+  Rates (5 minute weighted average) :
+   Total Rx  (bps) : 0         		Total Tx  (bps) : 0         
+   Unicast Rx (Pkts/sec) : 0         	Unicast Tx (Pkts/sec) : 0         
+   B/Mcast Rx (Pkts/sec) : 0         	B/Mcast Tx (Pkts/sec) : 0         
+   Utilization Rx  :     0 %		Utilization Tx  :     0 %
+
+
+ Status and Counters - Port Counters for port 9                       
+
+  Name  :                                                                 
+  MAC Address      : 0016b9-0dea77
+  Link Status      : Down
+  Totals (Since boot or last clear) :                                    
+   Bytes Rx        : 0                  Bytes Tx        : 0                 
+   Unicast Rx      : 0                  Unicast Tx      : 0                 
+   Bcast/Mcast Rx  : 0                  Bcast/Mcast Tx  : 0                 
+  Errors (Since boot or last clear) :                                    
+   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+  Rates (5 minute weighted average) :
+   Total Rx  (bps) : 0         		Total Tx  (bps) : 0         
+   Unicast Rx (Pkts/sec) : 0         	Unicast Tx (Pkts/sec) : 0         
+   B/Mcast Rx (Pkts/sec) : 0         	B/Mcast Tx (Pkts/sec) : 0         
+   Utilization Rx  :     0 %		Utilization Tx  :     0 %
+
+
+ Status and Counters - Port Counters for port 10                      
+
+  Name  :                                                                 
+  MAC Address      : 0016b9-0dea76
+  Link Status      : Down
+  Totals (Since boot or last clear) :                                    
+[53;1H[2K[53;1H[1;53r[53;1H   Bytes Rx        : 0                  Bytes Tx        : 0                 
+   Unicast Rx      : 0                  Unicast Tx      : 0                 
+   Bcast/Mcast Rx  : 0                  Bcast/Mcast Tx  : 0                 
+  Errors (Since boot or last clear) :                                    
+   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+  Rates (5 minute weighted average) :
+   Total Rx  (bps) : 0         		Total Tx  (bps) : 0         
+   Unicast Rx (Pkts/sec) : 0         	Unicast Tx (Pkts/sec) : 0         
+   B/Mcast Rx (Pkts/sec) : 0         	B/Mcast Tx (Pkts/sec) : 0         
+   Utilization Rx  :     0 %		Utilization Tx  :     0 %
+
+
+ Status and Counters - Port Counters for port 11                      
+
+  Name  :                                                                 
+  MAC Address      : 0016b9-0dea75
+  Link Status      : Down
+  Totals (Since boot or last clear) :                                    
+   Bytes Rx        : 0                  Bytes Tx        : 0                 
+   Unicast Rx      : 0                  Unicast Tx      : 0                 
+   Bcast/Mcast Rx  : 0                  Bcast/Mcast Tx  : 0                 
+  Errors (Since boot or last clear) :                                    
+   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+  Rates (5 minute weighted average) :
+   Total Rx  (bps) : 0         		Total Tx  (bps) : 0         
+   Unicast Rx (Pkts/sec) : 0         	Unicast Tx (Pkts/sec) : 0         
+   B/Mcast Rx (Pkts/sec) : 0         	B/Mcast Tx (Pkts/sec) : 0         
+   Utilization Rx  :     0 %		Utilization Tx  :     0 %
+
+
+ Status and Counters - Port Counters for port 12                      
+
+  Name  :                                                                 
+  MAC Address      : 0016b9-0dea74
+  Link Status      : Down
+  Totals (Since boot or last clear) :                                    
+   Bytes Rx        : 0                  Bytes Tx        : 0                 
+   Unicast Rx      : 0                  Unicast Tx      : 0                 
+[53;1H[2K[53;1H[1;53r[53;1H   Bcast/Mcast Rx  : 0                  Bcast/Mcast Tx  : 0                 
+  Errors (Since boot or last clear) :                                    
+   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+  Rates (5 minute weighted average) :
+   Total Rx  (bps) : 0         		Total Tx  (bps) : 0         
+   Unicast Rx (Pkts/sec) : 0         	Unicast Tx (Pkts/sec) : 0         
+   B/Mcast Rx (Pkts/sec) : 0         	B/Mcast Tx (Pkts/sec) : 0         
+   Utilization Rx  :     0 %		Utilization Tx  :     0 %
+
+
+ Status and Counters - Port Counters for port 13                      
+
+  Name  :                                                                 
+  MAC Address      : 0016b9-0dea73
+  Link Status      : Down
+  Totals (Since boot or last clear) :                                    
+   Bytes Rx        : 10,709,847         Bytes Tx        : 414,748,581       
+   Unicast Rx      : 149,486            Unicast Tx      : 281,203           
+   Bcast/Mcast Rx  : 124                Bcast/Mcast Tx  : 760               
+  Errors (Since boot or last clear) :                                    
+   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+  Rates (5 minute weighted average) :
+   Total Rx  (bps) : 0         		Total Tx  (bps) : 0         
+   Unicast Rx (Pkts/sec) : 0         	Unicast Tx (Pkts/sec) : 0         
+   B/Mcast Rx (Pkts/sec) : 0         	B/Mcast Tx (Pkts/sec) : 0         
+   Utilization Rx  :     0 %		Utilization Tx  :     0 %
+
+
+ Status and Counters - Port Counters for port 14                      
+
+  Name  :                                                                 
+  MAC Address      : 0016b9-0dea72
+  Link Status      : Down
+  Totals (Since boot or last clear) :                                    
+   Bytes Rx        : 54,212             Bytes Tx        : 5,318,298         
+   Unicast Rx      : 365                Unicast Tx      : 430               
+   Bcast/Mcast Rx  : 97                 Bcast/Mcast Tx  : 67,721            
+  Errors (Since boot or last clear) :                                    
+[53;1H[2K[53;1H[1;53r[53;1H   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+  Rates (5 minute weighted average) :
+   Total Rx  (bps) : 0         		Total Tx  (bps) : 0         
+   Unicast Rx (Pkts/sec) : 0         	Unicast Tx (Pkts/sec) : 0         
+   B/Mcast Rx (Pkts/sec) : 0         	B/Mcast Tx (Pkts/sec) : 0         
+   Utilization Rx  :     0 %		Utilization Tx  :     0 %
+
+
+ Status and Counters - Port Counters for port 15                      
+
+  Name  :                                                                 
+  MAC Address      : 0016b9-0dea71
+  Link Status      : Down
+  Totals (Since boot or last clear) :                                    
+   Bytes Rx        : 0                  Bytes Tx        : 0                 
+   Unicast Rx      : 0                  Unicast Tx      : 0                 
+   Bcast/Mcast Rx  : 0                  Bcast/Mcast Tx  : 0                 
+  Errors (Since boot or last clear) :                                    
+   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+  Rates (5 minute weighted average) :
+   Total Rx  (bps) : 0         		Total Tx  (bps) : 0         
+   Unicast Rx (Pkts/sec) : 0         	Unicast Tx (Pkts/sec) : 0         
+   B/Mcast Rx (Pkts/sec) : 0         	B/Mcast Tx (Pkts/sec) : 0         
+   Utilization Rx  :     0 %		Utilization Tx  :     0 %
+
+
+ Status and Counters - Port Counters for port 16                      
+
+  Name  :                                                                 
+  MAC Address      : 0016b9-0dea70
+  Link Status      : Up  
+  Totals (Since boot or last clear) :                                    
+   Bytes Rx        : 36,230,528         Bytes Tx        : 965,780,861       
+   Unicast Rx      : 391,579            Unicast Tx      : 638,999           
+   Bcast/Mcast Rx  : 5072               Bcast/Mcast Tx  : 900,947           
+  Errors (Since boot or last clear) :                                    
+   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+[53;1H[2K[53;1H[1;53r[53;1H   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+  Rates (5 minute weighted average) :
+   Total Rx  (bps) : 4093416   		Total Tx  (bps) : 5046248   
+   Unicast Rx (Pkts/sec) : 0         	Unicast Tx (Pkts/sec) : 0         
+   B/Mcast Rx (Pkts/sec) : 0         	B/Mcast Tx (Pkts/sec) : 10        
+   Utilization Rx  : 00.40 %		Utilization Tx  : 00.50 %
+
+
+ Status and Counters - Port Counters for port 17                      
+
+  Name  :                                                                 
+  MAC Address      : 0016b9-0dea6f
+  Link Status      : Down
+  Totals (Since boot or last clear) :                                    
+   Bytes Rx        : 0                  Bytes Tx        : 0                 
+   Unicast Rx      : 0                  Unicast Tx      : 0                 
+   Bcast/Mcast Rx  : 0                  Bcast/Mcast Tx  : 0                 
+  Errors (Since boot or last clear) :                                    
+   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+  Rates (5 minute weighted average) :
+   Total Rx  (bps) : 0         		Total Tx  (bps) : 0         
+   Unicast Rx (Pkts/sec) : 0         	Unicast Tx (Pkts/sec) : 0         
+   B/Mcast Rx (Pkts/sec) : 0         	B/Mcast Tx (Pkts/sec) : 0         
+   Utilization Rx  :     0 %		Utilization Tx  :     0 %
+
+
+ Status and Counters - Port Counters for port 18                      
+
+  Name  :                                                                 
+  MAC Address      : 0016b9-0dea6e
+  Link Status      : Up  
+  Totals (Since boot or last clear) :                                    
+   Bytes Rx        : 100,817,499        Bytes Tx        : 69,732,911        
+   Unicast Rx      : 503,883            Unicast Tx      : 174,961           
+   Bcast/Mcast Rx  : 8573               Bcast/Mcast Tx  : 194,369           
+  Errors (Since boot or last clear) :                                    
+   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+[53;1H[2K[53;1H[1;53r[53;1H   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+  Rates (5 minute weighted average) :
+   Total Rx  (bps) : 453456    		Total Tx  (bps) : 503848    
+   Unicast Rx (Pkts/sec) : 2         	Unicast Tx (Pkts/sec) : 0         
+   B/Mcast Rx (Pkts/sec) : 0         	B/Mcast Tx (Pkts/sec) : 1         
+   Utilization Rx  : 00.45 %		Utilization Tx  : 00.50 %
+
+
+ Status and Counters - Port Counters for port 19                      
+
+  Name  :                                                                 
+  MAC Address      : 0016b9-0dea6d
+  Link Status      : Up  
+  Totals (Since boot or last clear) :                                    
+   Bytes Rx        : 230,037,080        Bytes Tx        : 2,653,406,795     
+   Unicast Rx      : 1,840,886          Unicast Tx      : 2,538,128         
+   Bcast/Mcast Rx  : 16,425             Bcast/Mcast Tx  : 488,977           
+  Errors (Since boot or last clear) :                                    
+   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+  Rates (5 minute weighted average) :
+   Total Rx  (bps) : 5067704   		Total Tx  (bps) : 5571520   
+   Unicast Rx (Pkts/sec) : 81        	Unicast Tx (Pkts/sec) : 49        
+   B/Mcast Rx (Pkts/sec) : 0         	B/Mcast Tx (Pkts/sec) : 6         
+   Utilization Rx  : 00.50 %		Utilization Tx  : 00.55 %
+
+
+ Status and Counters - Port Counters for port 20                      
+
+  Name  :                                                                 
+  MAC Address      : 0016b9-0dea6c
+  Link Status      : Up  
+  Totals (Since boot or last clear) :                                    
+   Bytes Rx        : 110,674,660        Bytes Tx        : 2,192,964,841     
+   Unicast Rx      : 700,539            Unicast Tx      : 1,566,047         
+   Bcast/Mcast Rx  : 6147               Bcast/Mcast Tx  : 570,295           
+  Errors (Since boot or last clear) :                                    
+   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+[53;1H[2K[53;1H[1;53r[53;1H   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+  Rates (5 minute weighted average) :
+   Total Rx  (bps) : 4671712   		Total Tx  (bps) : 6554544   
+   Unicast Rx (Pkts/sec) : 3         	Unicast Tx (Pkts/sec) : 118       
+   B/Mcast Rx (Pkts/sec) : 0         	B/Mcast Tx (Pkts/sec) : 6         
+   Utilization Rx  : 00.46 %		Utilization Tx  : 00.65 %
+
+
+ Status and Counters - Port Counters for port 21                      
+
+  Name  :                                                                 
+  MAC Address      : 0016b9-0dea6b
+  Link Status      : Up  
+  Totals (Since boot or last clear) :                                    
+   Bytes Rx        : 1,481,238          Bytes Tx        : 18,611,160        
+   Unicast Rx      : 278                Unicast Tx      : 2240              
+   Bcast/Mcast Rx  : 16,189             Bcast/Mcast Tx  : 148,976           
+  Errors (Since boot or last clear) :                                    
+   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+  Rates (5 minute weighted average) :
+   Total Rx  (bps) : 2623384   		Total Tx  (bps) : 5002296   
+   Unicast Rx (Pkts/sec) : 0         	Unicast Tx (Pkts/sec) : 0         
+   B/Mcast Rx (Pkts/sec) : 0         	B/Mcast Tx (Pkts/sec) : 1         
+   Utilization Rx  : 00.26 %		Utilization Tx  : 00.50 %
+
+
+ Status and Counters - Port Counters for port 22                      
+
+  Name  :                                                                 
+  MAC Address      : 0016b9-0dea6a
+  Link Status      : Up  
+  Totals (Since boot or last clear) :                                    
+   Bytes Rx        : 20,325,126         Bytes Tx        : 44,382,317        
+   Unicast Rx      : 210,445            Unicast Tx      : 209,308           
+   Bcast/Mcast Rx  : 2762               Bcast/Mcast Tx  : 303,913           
+  Errors (Since boot or last clear) :                                    
+   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+[53;1H[2K[53;1H[1;53r[53;1H  Rates (5 minute weighted average) :
+   Total Rx  (bps) : 1808304   		Total Tx  (bps) : 5005328   
+   Unicast Rx (Pkts/sec) : 0         	Unicast Tx (Pkts/sec) : 0         
+   B/Mcast Rx (Pkts/sec) : 0         	B/Mcast Tx (Pkts/sec) : 1         
+   Utilization Rx  : 00.18 %		Utilization Tx  : 00.50 %
+
+
+ Status and Counters - Port Counters for port 23                      
+
+  Name  :                                                                 
+  MAC Address      : 0016b9-0dea69
+  Link Status      : Up  
+  Totals (Since boot or last clear) :                                    
+   Bytes Rx        : 143,648,357        Bytes Tx        : 1,502,310,372     
+   Unicast Rx      : 981,372            Unicast Tx      : 1,092,990         
+   Bcast/Mcast Rx  : 6914               Bcast/Mcast Tx  : 697,988           
+  Errors (Since boot or last clear) :                                    
+   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+  Rates (5 minute weighted average) :
+   Total Rx  (bps) : 3242968   		Total Tx  (bps) : 5021712   
+   Unicast Rx (Pkts/sec) : 3         	Unicast Tx (Pkts/sec) : 0         
+   B/Mcast Rx (Pkts/sec) : 0         	B/Mcast Tx (Pkts/sec) : 7         
+   Utilization Rx  : 00.32 %		Utilization Tx  : 00.50 %
+
+
+ Status and Counters - Port Counters for port 24                      
+
+  Name  :                                                                 
+  MAC Address      : 0016b9-0dea68
+  Link Status      : Up  
+  Totals (Since boot or last clear) :                                    
+   Bytes Rx        : 325,461,528        Bytes Tx        : 3,861,859,331     
+   Unicast Rx      : 1,993,624          Unicast Tx      : 3,494,211         
+   Bcast/Mcast Rx  : 23,036             Bcast/Mcast Tx  : 920,034           
+  Errors (Since boot or last clear) :                                    
+   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+  Rates (5 minute weighted average) :
+   Total Rx  (bps) : 5095408   		Total Tx  (bps) : 7809240   
+[53;1H[2K[53;1H[1;53r[53;1H   Unicast Rx (Pkts/sec) : 99        	Unicast Tx (Pkts/sec) : 215       
+   B/Mcast Rx (Pkts/sec) : 0         	B/Mcast Tx (Pkts/sec) : 10        
+   Utilization Rx  : 00.50 %		Utilization Tx  : 00.78 %
+
+
+ Status and Counters - Port Counters for port A1                      
+
+  Name  :                                                                 
+  MAC Address      : 0016b9-0dea4f
+  Link Status      : Up  
+  Totals (Since boot or last clear) :                                    
+   Bytes Rx        : 2,811,429,050      Bytes Tx        : 2,385,763,268     
+   Unicast Rx      : 203,455,807        Unicast Tx      : 143,024,679       
+   Bcast/Mcast Rx  : 1,418,359          Bcast/Mcast Tx  : 1,609,551         
+  Errors (Since boot or last clear) :                                    
+   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+  Rates (5 minute weighted average) :
+   Total Rx (Kbps) : 68320     		Total Tx (Kbps) : 58912     
+   Unicast Rx (Pkts/sec) : 2083      	Unicast Tx (Pkts/sec) : 1756      
+   B/Mcast Rx (Pkts/sec) : 16        	B/Mcast Tx (Pkts/sec) : 14        
+   Utilization Rx  : 00.68 %		Utilization Tx  : 00.58 %
+
+
+ Status and Counters - Port Counters for port A2                      
+
+  Name  :                                                                 
+  MAC Address      : 0016b9-0dea4e
+  Link Status      : Down
+  Totals (Since boot or last clear) :                                    
+   Bytes Rx        : 0                  Bytes Tx        : 0                 
+   Unicast Rx      : 0                  Unicast Tx      : 0                 
+   Bcast/Mcast Rx  : 0                  Bcast/Mcast Tx  : 0                 
+  Errors (Since boot or last clear) :                                    
+   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+  Rates (5 minute weighted average) :
+   Total Rx (Kbps) : 0         		Total Tx (Kbps) : 0         
+   Unicast Rx (Pkts/sec) : 0         	Unicast Tx (Pkts/sec) : 0         
+   B/Mcast Rx (Pkts/sec) : 0         	B/Mcast Tx (Pkts/sec) : 0         
+[53;1H[2K[53;1H[1;53r[53;1H   Utilization Rx  :     0 %		Utilization Tx  :     0 %
+
+
+ Status and Counters - Port Counters for port A3                      
+
+  Name  :                                                                 
+  MAC Address      : 0016b9-0dea4d
+  Link Status      : Down
+  Totals (Since boot or last clear) :                                    
+   Bytes Rx        : 0                  Bytes Tx        : 0                 
+   Unicast Rx      : 0                  Unicast Tx      : 0                 
+   Bcast/Mcast Rx  : 0                  Bcast/Mcast Tx  : 0                 
+  Errors (Since boot or last clear) :                                    
+   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+  Rates (5 minute weighted average) :
+   Total Rx (Kbps) : 0         		Total Tx (Kbps) : 0         
+   Unicast Rx (Pkts/sec) : 0         	Unicast Tx (Pkts/sec) : 0         
+   B/Mcast Rx (Pkts/sec) : 0         	B/Mcast Tx (Pkts/sec) : 0         
+   Utilization Rx  :     0 %		Utilization Tx  :     0 %
+
+
+ Status and Counters - Port Counters for port A4                      
+
+  Name  :                                                                 
+  MAC Address      : 0016b9-0dea4c
+  Link Status      : Up  
+  Totals (Since boot or last clear) :                                    
+   Bytes Rx        : 1,220,547,624      Bytes Tx        : 2,368,984,600     
+   Unicast Rx      : 134,661,080        Unicast Tx      : 191,290,987       
+   Bcast/Mcast Rx  : 1,530,208          Bcast/Mcast Tx  : 1,155,434         
+  Errors (Since boot or last clear) :                                    
+   FCS Rx          : 0                  Drops Tx        : 0                 
+   Alignment Rx    : 0                  Collisions Tx   : 0                 
+   Runts Rx        : 0                  Late Colln Tx   : 0                 
+   Giants Rx       : 0                  Excessive Colln : 0                 
+   Total Rx Errors : 0                  Deferred Tx     : 0                 
+  Others (Since boot or last clear) :                                    
+   Discard Rx      : 0                  Out Queue Len   : 0                 
+   Unknown Protos  : 0                 
+  Rates (5 minute weighted average) :
+   Total Rx (Kbps) : 58568     		Total Tx (Kbps) : 60904     
+   Unicast Rx (Pkts/sec) : 1409      	Unicast Tx (Pkts/sec) : 1415      
+   B/Mcast Rx (Pkts/sec) : 11        	B/Mcast Tx (Pkts/sec) : 13        
+   Utilization Rx  : 00.58 %		Utilization Tx  : 00.60 %
+
+[53;1H[2K[53;1H[1;53r[53;1H
+
+walkmib ifInDiscards
+ifInDiscards.1 = 0
+ifInDiscards.2 = 0
+ifInDiscards.3 = 0
+ifInDiscards.4 = 0
+ifInDiscards.5 = 0
+ifInDiscards.6 = 0
+ifInDiscards.7 = 0
+ifInDiscards.8 = 0
+ifInDiscards.9 = 0
+ifInDiscards.10 = 0
+ifInDiscards.11 = 0
+ifInDiscards.12 = 0
+ifInDiscards.13 = 0
+ifInDiscards.14 = 0
+ifInDiscards.15 = 0
+ifInDiscards.16 = 0
+ifInDiscards.17 = 0
+ifInDiscards.18 = 0
+ifInDiscards.19 = 0
+ifInDiscards.20 = 0
+ifInDiscards.21 = 0
+ifInDiscards.22 = 0
+ifInDiscards.23 = 0
+ifInDiscards.24 = 0
+ifInDiscards.49 = 0
+ifInDiscards.50 = 0
+ifInDiscards.51 = 0
+ifInDiscards.52 = 0
+ifInDiscards.289 = 0
+ifInDiscards.290 = 0
+ifInDiscards.291 = 0
+ifInDiscards.409 = 0
+ifInDiscards.459 = 0
+ifInDiscards.460 = 0
+ifInDiscards.3409 = 0
+ifInDiscards.3411 = 0
+ifInDiscards.3413 = 0
+ifInDiscards.3421 = 0
+ifInDiscards.3422 = 0
+ifInDiscards.3423 = 0
+ifInDiscards.3424 = 0
+ifInDiscards.3434 = 0
+ifInDiscards.3435 = 0
+ifInDiscards.3436 = 0
+ifInDiscards.3437 = 0
+ifInDiscards.3438 = 0
+ifInDiscards.3439 = 0
+ifInDiscards.3440 = 0
+ifInDiscards.3441 = 0
+[53;1H[2K[53;1H[1;53r[53;1HifInDiscards.3442 = 0
+ifInDiscards.3443 = 0
+ifInDiscards.3444 = 0
+ifInDiscards.3445 = 0
+ifInDiscards.3446 = 0
+ifInDiscards.3456 = 0
+ifInDiscards.3458 = 0
+ifInDiscards.3469 = 0
+ifInDiscards.3542 = 0
+ifInDiscards.3543 = 0
+ifInDiscards.4407 = 0
+ifInDiscards.4503 = 0
+ifInDiscards.4504 = 0
+ifInDiscards.4505 = 0
+ifInDiscards.4506 = 0
+ifInDiscards.4507 = 0
+ifInDiscards.4508 = 0
+ifInDiscards.4509 = 0
+ifInDiscards.4510 = 0
+
+walkmib ifOutDiscards
+ifOutDiscards.1 = 0
+ifOutDiscards.2 = 0
+ifOutDiscards.3 = 0
+ifOutDiscards.4 = 0
+ifOutDiscards.5 = 0
+ifOutDiscards.6 = 0
+ifOutDiscards.7 = 0
+ifOutDiscards.8 = 0
+ifOutDiscards.9 = 0
+ifOutDiscards.10 = 0
+ifOutDiscards.11 = 0
+ifOutDiscards.12 = 0
+ifOutDiscards.13 = 0
+ifOutDiscards.14 = 0
+ifOutDiscards.15 = 0
+ifOutDiscards.16 = 0
+ifOutDiscards.17 = 0
+ifOutDiscards.18 = 0
+ifOutDiscards.19 = 0
+ifOutDiscards.20 = 0
+ifOutDiscards.21 = 0
+ifOutDiscards.22 = 0
+ifOutDiscards.23 = 0
+ifOutDiscards.24 = 0
+ifOutDiscards.49 = 0
+ifOutDiscards.50 = 0
+ifOutDiscards.51 = 0
+ifOutDiscards.52 = 0
+ifOutDiscards.289 = 0
+ifOutDiscards.290 = 0
+ifOutDiscards.291 = 0
+[53;1H[2K[53;1H[1;53r[53;1HifOutDiscards.409 = 0
+ifOutDiscards.459 = 0
+ifOutDiscards.460 = 0
+ifOutDiscards.3409 = 0
+ifOutDiscards.3411 = 0
+ifOutDiscards.3413 = 0
+ifOutDiscards.3421 = 0
+ifOutDiscards.3422 = 0
+ifOutDiscards.3423 = 0
+ifOutDiscards.3424 = 0
+ifOutDiscards.3434 = 0
+ifOutDiscards.3435 = 0
+ifOutDiscards.3436 = 0
+ifOutDiscards.3437 = 0
+ifOutDiscards.3438 = 0
+ifOutDiscards.3439 = 0
+ifOutDiscards.3440 = 0
+ifOutDiscards.3441 = 0
+ifOutDiscards.3442 = 0
+ifOutDiscards.3443 = 0
+ifOutDiscards.3444 = 0
+ifOutDiscards.3445 = 0
+ifOutDiscards.3446 = 0
+ifOutDiscards.3456 = 0
+ifOutDiscards.3458 = 0
+ifOutDiscards.3469 = 0
+ifOutDiscards.3542 = 0
+ifOutDiscards.3543 = 0
+ifOutDiscards.4407 = 0
+ifOutDiscards.4503 = 0
+ifOutDiscards.4504 = 0
+ifOutDiscards.4505 = 0
+ifOutDiscards.4506 = 0
+ifOutDiscards.4507 = 0
+ifOutDiscards.4508 = 0
+ifOutDiscards.4509 = 0
+ifOutDiscards.4510 = 0
+
+show spanning-tree
+
+ Multiple Spanning Tree (MST) Information
+
+  STP Enabled   : Yes
+  Force Version : MSTP-operation
+  IST Mapped VLANs : 1-4094
+  Switch MAC Address : 0016b9-0dea40
+  Switch Priority    : 32768
+  Max Age  : 20
+  Max Hops : 20
+  Forward Delay : 0 
+
+  Topology Change Count  : 53          
+[53;1H[2K[53;1H[1;53r[53;1H  Time Since Last Change : 23 hours    
+
+  CST Root MAC Address : 000352-0e86e4
+  CST Root Priority    : 32768       
+  CST Root Path Cost   : 222000      
+  CST Root Port        : A1                 
+
+  IST Regional Root MAC Address : 0016b9-0dea40
+  IST Regional Root Priority    : 32768       
+  IST Regional Root Path Cost   : 0           
+  IST Remaining Hops            : 20          
+
+  Root Guard Ports     : 
+  TCN Guard Ports      : 
+  BPDU Protected Ports :                                         
+  BPDU Filtered Ports  :                                         
+  PVST Protected Ports :                                         
+  PVST Filtered Ports  :                                         
+
+                  |           Prio             | Designated    Hello         
+  Port  Type      | Cost      rity  State      | Bridge        Time  PtP Edge
+  ----- --------- + --------- ----- ---------- + ------------- ----- --- ----
+  1     100/1000T | 20000     128   Forwarding | 0016b9-0dea40 2     Yes Yes 
+  2     100/1000T | 20000     128   Forwarding | 0016b9-0dea40 2     Yes Yes 
+  3     100/1000T | 2000000   128   Forwarding | 0016b9-0dea40 2     Yes Yes 
+  4     100/1000T | Auto      128   Disabled   |
+  5     100/1000T | Auto      128   Disabled   |
+  6     100/1000T | 20000     128   Forwarding | 0016b9-0dea40 2     Yes Yes 
+  7     100/1000T | 20000     128   Forwarding | 0016b9-0dea40 2     Yes Yes 
+  8     100/1000T | Auto      128   Disabled   |
+  9     100/1000T | Auto      128   Disabled   |
+  10    100/1000T | Auto      128   Disabled   |
+  11    100/1000T | Auto      128   Disabled   |
+  12    100/1000T | Auto      128   Disabled   |
+  13    100/1000T | Auto      128   Disabled   |
+  14    100/1000T | Auto      128   Disabled   |
+  15    100/1000T | Auto      128   Disabled   |
+  16    100/1000T | 20000     128   Forwarding | 0016b9-0dea40 2     Yes Yes 
+  17    100/1000T | Auto      128   Disabled   |
+  18    100/1000T | 200000    128   Forwarding | 0016b9-0dea40 2     Yes No  
+  A1    10GbE-LRM | 2000      128   Forwarding | 0021f7-df2100 2     Yes No  
+  A2    10GbE-CX4 | Auto      128   Disabled   |
+  A3    10GbE-CX4 | Auto      128   Disabled   |
+  A4    10GbE-SR  | 2000      128   Forwarding | 0016b9-0dea40 2     Yes No  
+  Trk1            | 20000     64    Forwarding | 0016b9-0dea40 2     Yes No  
+  Trk2            | 20000     64    Forwarding | 0016b9-0dea40 2     Yes No  
+  Trk3            | 20000     64    Forwarding | 0016b9-0dea40 2     Yes No  
+ 
+
+show spanning-tree config
+
+ Multiple Spanning Tree (MST) Configuration Information
+[53;1H[2K[53;1H[1;53r[53;1H
+  STP Enabled [No] : Yes
+  Force Version [MSTP-operation] : MSTP-operation
+  Default Path Costs [802.1t] : 802.1t              
+  MST Configuration Name : 0016b90dea40                    
+  MST Configuration Revision : 0        Switch Priority : 32768
+  Forward Delay [15] : 15               Hello Time [2] : 2 
+  Max Age [20] : 20                     Max Hops [20] : 20
+
+                  | Path      Prio  Admin Auto  Admin Hello  Root   TCN    BPDU
+  Port  Type      | Cost      rity  Edge  Edge  PtP   Time   Guard  Guard  Flt 
+  ----- --------- + --------- ----- ----- ----- ----- ------ ------ ------ ----
+  1     100/1000T | Auto      128   No    Yes   True  Global No     No     No  
+  2     100/1000T | Auto      128   No    Yes   True  Global No     No     No  
+  3     100/1000T | Auto      128   No    Yes   True  Global No     No     No  
+  4     100/1000T | Auto      128   No    Yes   True  Global No     No     No  
+  5     100/1000T | Auto      128   No    Yes   True  Global No     No     No  
+  6     100/1000T | Auto      128   No    Yes   True  Global No     No     No  
+  7     100/1000T | Auto      128   No    Yes   True  Global No     No     No  
+  8     100/1000T | Auto      128   No    Yes   True  Global No     No     No  
+  9     100/1000T | Auto      128   No    Yes   True  Global No     No     No  
+  10    100/1000T | Auto      128   No    Yes   True  Global No     No     No  
+  11    100/1000T | Auto      128   No    Yes   True  Global No     No     No  
+  12    100/1000T | Auto      128   No    Yes   True  Global No     No     No  
+  13    100/1000T | Auto      128   No    Yes   True  Global No     No     No  
+  14    100/1000T | Auto      128   No    Yes   True  Global No     No     No  
+  15    100/1000T | Auto      128   No    Yes   True  Global No     No     No  
+  16    100/1000T | Auto      128   No    Yes   True  Global No     No     No  
+  17    100/1000T | Auto      128   No    Yes   True  Global No     No     No  
+  18    100/1000T | Auto      128   No    Yes   True  Global No     No     No  
+  A1    10GbE-LRM | Auto      128   No    Yes   True  Global No     No     No  
+  A2    10GbE-CX4 | Auto      128   No    Yes   True  Global No     No     No  
+  A3    10GbE-CX4 | Auto      128   No    Yes   True  Global No     No     No  
+  A4    10GbE-SR  | Auto      128   No    Yes   True  Global No     No     No  
+  Trk1            | Auto      64    No    Yes   True  Global No     No     No  
+  Trk2            | Auto      64    No    Yes   True  Global No     No     No  
+  Trk3            | Auto      64    No    Yes   True  Global No     No     No  
+ 
+
+show spanning-tree mst-config
+
+ MST Configuration Identifier Information
+
+  MST Configuration Name : 0016b90dea40                    
+  MST Configuration Revision : 0    
+  MST Configuration Digest : 0xAC36177F50283CD4B83821D8AB26DE62
+
+  IST Mapped VLANs : 1-4094
+
+  Instance ID Mapped VLANs                                             
+  ----------- ---------------------------------------------------------
+ 
+[53;1H[2K[53;1H[1;53r[53;1H
+show spanning-tree detail
+
+ Status and Counters - CST Port(s) Detailed Information
+
+  Port                      : 1    
+  Status                    : Up  
+  BPDU Protection           : No 
+  BPDU Filtering            : No 
+  PVST Protection           : No 
+  PVST Filtering            : No 
+  Errant BPDU Count         : 0           
+  Root Guard                : No 
+  TCN Guard                 : No 
+  MST Region Boundary       : Yes
+  External Path Cost        : 20000       
+  External Root Path Cost   : 222000      
+  Administrative Hello Time : Global      
+  Operational Hello Time    : 2           
+  AdminEdgePort             : No 
+  Auto Edge Port            : Yes         
+  OperEdgePort              : Yes
+  AdminPointToPointMAC      : True 
+  OperPointToPointMAC       : Yes
+  Aged BPDUs Count          : 0           
+  Loop-back BPDUs Count     : 0         
+  TC ACK Flag Transmitted   : 0         
+  TC ACK Flag Received      : 0         
+
+  MST        MST        CFG        CFG        TCN        TCN       
+  BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx  
+  ---------- ---------- ---------- ---------- ---------- ----------
+  40834      0          0          0          0          0         
+
+  Port                      : 2    
+  Status                    : Up  
+  BPDU Protection           : No 
+  BPDU Filtering            : No 
+  PVST Protection           : No 
+  PVST Filtering            : No 
+  Errant BPDU Count         : 0           
+  Root Guard                : No 
+  TCN Guard                 : No 
+  MST Region Boundary       : Yes
+  External Path Cost        : 20000       
+  External Root Path Cost   : 222000      
+  Administrative Hello Time : Global      
+  Operational Hello Time    : 2           
+  AdminEdgePort             : No 
+  Auto Edge Port            : Yes         
+  OperEdgePort              : Yes
+  AdminPointToPointMAC      : True 
+[53;1H[2K[53;1H[1;53r[53;1H  OperPointToPointMAC       : Yes
+  Aged BPDUs Count          : 0           
+  Loop-back BPDUs Count     : 0         
+  TC ACK Flag Transmitted   : 0         
+  TC ACK Flag Received      : 0         
+
+  MST        MST        CFG        CFG        TCN        TCN       
+  BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx  
+  ---------- ---------- ---------- ---------- ---------- ----------
+  40473      0          0          0          0          0         
+
+  Port                      : 3    
+  Status                    : Up  
+  BPDU Protection           : No 
+  BPDU Filtering            : No 
+  PVST Protection           : No 
+  PVST Filtering            : No 
+  Errant BPDU Count         : 0           
+  Root Guard                : No 
+  TCN Guard                 : No 
+  MST Region Boundary       : Yes
+  External Path Cost        : 20000       
+  External Root Path Cost   : 222000      
+  Administrative Hello Time : Global      
+  Operational Hello Time    : 2           
+  AdminEdgePort             : No 
+  Auto Edge Port            : Yes         
+  OperEdgePort              : Yes
+  AdminPointToPointMAC      : True 
+  OperPointToPointMAC       : Yes
+  Aged BPDUs Count          : 0           
+  Loop-back BPDUs Count     : 0         
+  TC ACK Flag Transmitted   : 0         
+  TC ACK Flag Received      : 0         
+
+  MST        MST        CFG        CFG        TCN        TCN       
+  BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx  
+  ---------- ---------- ---------- ---------- ---------- ----------
+  40681      0          0          0          0          0         
+
+  Port                      : 4    
+  Status                    : Down
+  BPDU Protection           : No 
+  BPDU Filtering            : No 
+  PVST Protection           : No 
+  PVST Filtering            : No 
+  Errant BPDU Count         : 0           
+  Root Guard                : No 
+  TCN Guard                 : No 
+  MST Region Boundary       : Yes
+  External Path Cost        : 20000       
+  External Root Path Cost   : 222000      
+[53;1H[2K[53;1H[1;53r[53;1H  Administrative Hello Time : Global      
+  Operational Hello Time    : 2           
+  AdminEdgePort             : No 
+  Auto Edge Port            : Yes         
+  OperEdgePort              : No 
+  AdminPointToPointMAC      : True 
+  OperPointToPointMAC       : Yes
+  Aged BPDUs Count          : 0           
+  Loop-back BPDUs Count     : 0         
+  TC ACK Flag Transmitted   : 0         
+  TC ACK Flag Received      : 0         
+
+  MST        MST        CFG        CFG        TCN        TCN       
+  BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx  
+  ---------- ---------- ---------- ---------- ---------- ----------
+  41         0          0          0          0          0         
+
+  Port                      : 5    
+  Status                    : Down
+  BPDU Protection           : No 
+  BPDU Filtering            : No 
+  PVST Protection           : No 
+  PVST Filtering            : No 
+  Errant BPDU Count         : 0           
+  Root Guard                : No 
+  TCN Guard                 : No 
+  MST Region Boundary       : Yes
+  External Path Cost        : 20000       
+  External Root Path Cost   : 0           
+  Administrative Hello Time : Global      
+  Operational Hello Time    : 2           
+  AdminEdgePort             : No 
+  Auto Edge Port            : Yes         
+  OperEdgePort              : No 
+  AdminPointToPointMAC      : True 
+  OperPointToPointMAC       : Yes
+  Aged BPDUs Count          : 0           
+  Loop-back BPDUs Count     : 0         
+  TC ACK Flag Transmitted   : 0         
+  TC ACK Flag Received      : 0         
+
+  MST        MST        CFG        CFG        TCN        TCN       
+  BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx  
+  ---------- ---------- ---------- ---------- ---------- ----------
+  0          0          0          0          0          0         
+
+  Port                      : 6    
+  Status                    : Up  
+  BPDU Protection           : No 
+  BPDU Filtering            : No 
+  PVST Protection           : No 
+  PVST Filtering            : No 
+[53;1H[2K[53;1H[1;53r[53;1H  Errant BPDU Count         : 0           
+  Root Guard                : No 
+  TCN Guard                 : No 
+  MST Region Boundary       : Yes
+  External Path Cost        : 20000       
+  External Root Path Cost   : 222000      
+  Administrative Hello Time : Global      
+  Operational Hello Time    : 2           
+  AdminEdgePort             : No 
+  Auto Edge Port            : Yes         
+  OperEdgePort              : Yes
+  AdminPointToPointMAC      : True 
+  OperPointToPointMAC       : Yes
+  Aged BPDUs Count          : 0           
+  Loop-back BPDUs Count     : 0         
+  TC ACK Flag Transmitted   : 0         
+  TC ACK Flag Received      : 0         
+
+  MST        MST        CFG        CFG        TCN        TCN       
+  BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx  
+  ---------- ---------- ---------- ---------- ---------- ----------
+  12192      0          0          0          0          0         
+
+  Port                      : 7    
+  Status                    : Up  
+  BPDU Protection           : No 
+  BPDU Filtering            : No 
+  PVST Protection           : No 
+  PVST Filtering            : No 
+  Errant BPDU Count         : 0           
+  Root Guard                : No 
+  TCN Guard                 : No 
+  MST Region Boundary       : Yes
+  External Path Cost        : 20000       
+  External Root Path Cost   : 222000      
+  Administrative Hello Time : Global      
+  Operational Hello Time    : 2           
+  AdminEdgePort             : No 
+  Auto Edge Port            : Yes         
+  OperEdgePort              : Yes
+  AdminPointToPointMAC      : True 
+  OperPointToPointMAC       : Yes
+  Aged BPDUs Count          : 0           
+  Loop-back BPDUs Count     : 0         
+  TC ACK Flag Transmitted   : 0         
+  TC ACK Flag Received      : 0         
+
+  MST        MST        CFG        CFG        TCN        TCN       
+  BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx  
+  ---------- ---------- ---------- ---------- ---------- ----------
+  41453      0          0          0          0          0         
+
+[53;1H[2K[53;1H[1;53r[53;1H  Port                      : 8    
+  Status                    : Down
+  BPDU Protection           : No 
+  BPDU Filtering            : No 
+  PVST Protection           : No 
+  PVST Filtering            : No 
+  Errant BPDU Count         : 0           
+  Root Guard                : No 
+  TCN Guard                 : No 
+  MST Region Boundary       : Yes
+  External Path Cost        : 20000       
+  External Root Path Cost   : 0           
+  Administrative Hello Time : Global      
+  Operational Hello Time    : 2           
+  AdminEdgePort             : No 
+  Auto Edge Port            : Yes         
+  OperEdgePort              : No 
+  AdminPointToPointMAC      : True 
+  OperPointToPointMAC       : Yes
+  Aged BPDUs Count          : 0           
+  Loop-back BPDUs Count     : 0         
+  TC ACK Flag Transmitted   : 0         
+  TC ACK Flag Received      : 0         
+
+  MST        MST        CFG        CFG        TCN        TCN       
+  BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx  
+  ---------- ---------- ---------- ---------- ---------- ----------
+  0          0          0          0          0          0         
+
+  Port                      : 9    
+  Status                    : Down
+  BPDU Protection           : No 
+  BPDU Filtering            : No 
+  PVST Protection           : No 
+  PVST Filtering            : No 
+  Errant BPDU Count         : 0           
+  Root Guard                : No 
+  TCN Guard                 : No 
+  MST Region Boundary       : Yes
+  External Path Cost        : 20000       
+  External Root Path Cost   : 0           
+  Administrative Hello Time : Global      
+  Operational Hello Time    : 2           
+  AdminEdgePort             : No 
+  Auto Edge Port            : Yes         
+  OperEdgePort              : No 
+  AdminPointToPointMAC      : True 
+  OperPointToPointMAC       : Yes
+  Aged BPDUs Count          : 0           
+  Loop-back BPDUs Count     : 0         
+  TC ACK Flag Transmitted   : 0         
+  TC ACK Flag Received      : 0         
+[53;1H[2K[53;1H[1;53r[53;1H
+  MST        MST        CFG        CFG        TCN        TCN       
+  BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx  
+  ---------- ---------- ---------- ---------- ---------- ----------
+  0          0          0          0          0          0         
+
+  Port                      : 10   
+  Status                    : Down
+  BPDU Protection           : No 
+  BPDU Filtering            : No 
+  PVST Protection           : No 
+  PVST Filtering            : No 
+  Errant BPDU Count         : 0           
+  Root Guard                : No 
+  TCN Guard                 : No 
+  MST Region Boundary       : Yes
+  External Path Cost        : 20000       
+  External Root Path Cost   : 0           
+  Administrative Hello Time : Global      
+  Operational Hello Time    : 2           
+  AdminEdgePort             : No 
+  Auto Edge Port            : Yes         
+  OperEdgePort              : No 
+  AdminPointToPointMAC      : True 
+  OperPointToPointMAC       : Yes
+  Aged BPDUs Count          : 0           
+  Loop-back BPDUs Count     : 0         
+  TC ACK Flag Transmitted   : 0         
+  TC ACK Flag Received      : 0         
+
+  MST        MST        CFG        CFG        TCN        TCN       
+  BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx  
+  ---------- ---------- ---------- ---------- ---------- ----------
+  0          0          0          0          0          0         
+
+  Port                      : 11   
+  Status                    : Down
+  BPDU Protection           : No 
+  BPDU Filtering            : No 
+  PVST Protection           : No 
+  PVST Filtering            : No 
+  Errant BPDU Count         : 0           
+  Root Guard                : No 
+  TCN Guard                 : No 
+  MST Region Boundary       : Yes
+  External Path Cost        : 20000       
+  External Root Path Cost   : 0           
+  Administrative Hello Time : Global      
+  Operational Hello Time    : 2           
+  AdminEdgePort             : No 
+  Auto Edge Port            : Yes         
+  OperEdgePort              : No 
+[53;1H[2K[53;1H[1;53r[53;1H  AdminPointToPointMAC      : True 
+  OperPointToPointMAC       : Yes
+  Aged BPDUs Count          : 0           
+  Loop-back BPDUs Count     : 0         
+  TC ACK Flag Transmitted   : 0         
+  TC ACK Flag Received      : 0         
+
+  MST        MST        CFG        CFG        TCN        TCN       
+  BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx  
+  ---------- ---------- ---------- ---------- ---------- ----------
+  0          0          0          0          0          0         
+
+  Port                      : 12   
+  Status                    : Down
+  BPDU Protection           : No 
+  BPDU Filtering            : No 
+  PVST Protection           : No 
+  PVST Filtering            : No 
+  Errant BPDU Count         : 0           
+  Root Guard                : No 
+  TCN Guard                 : No 
+  MST Region Boundary       : Yes
+  External Path Cost        : 20000       
+  External Root Path Cost   : 0           
+  Administrative Hello Time : Global      
+  Operational Hello Time    : 2           
+  AdminEdgePort             : No 
+  Auto Edge Port            : Yes         
+  OperEdgePort              : No 
+  AdminPointToPointMAC      : True 
+  OperPointToPointMAC       : Yes
+  Aged BPDUs Count          : 0           
+  Loop-back BPDUs Count     : 0         
+  TC ACK Flag Transmitted   : 0         
+  TC ACK Flag Received      : 0         
+
+  MST        MST        CFG        CFG        TCN        TCN       
+  BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx  
+  ---------- ---------- ---------- ---------- ---------- ----------
+  0          0          0          0          0          0         
+
+  Port                      : 13   
+  Status                    : Down
+  BPDU Protection           : No 
+  BPDU Filtering            : No 
+  PVST Protection           : No 
+  PVST Filtering            : No 
+  Errant BPDU Count         : 0           
+  Root Guard                : No 
+  TCN Guard                 : No 
+  MST Region Boundary       : Yes
+  External Path Cost        : 20000       
+[53;1H[2K[53;1H[1;53r[53;1H  External Root Path Cost   : 222000      
+  Administrative Hello Time : Global      
+  Operational Hello Time    : 2           
+  AdminEdgePort             : No 
+  Auto Edge Port            : Yes         
+  OperEdgePort              : No 
+  AdminPointToPointMAC      : True 
+  OperPointToPointMAC       : Yes
+  Aged BPDUs Count          : 0           
+  Loop-back BPDUs Count     : 0         
+  TC ACK Flag Transmitted   : 0         
+  TC ACK Flag Received      : 0         
+
+  MST        MST        CFG        CFG        TCN        TCN       
+  BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx  
+  ---------- ---------- ---------- ---------- ---------- ----------
+  489        0          0          0          0          0         
+
+  Port                      : 14   
+  Status                    : Down
+  BPDU Protection           : No 
+  BPDU Filtering            : No 
+  PVST Protection           : No 
+  PVST Filtering            : No 
+  Errant BPDU Count         : 0           
+  Root Guard                : No 
+  TCN Guard                 : No 
+  MST Region Boundary       : Yes
+  External Path Cost        : 20000       
+  External Root Path Cost   : 222000      
+  Administrative Hello Time : Global      
+  Operational Hello Time    : 2           
+  AdminEdgePort             : No 
+  Auto Edge Port            : Yes         
+  OperEdgePort              : No 
+  AdminPointToPointMAC      : True 
+  OperPointToPointMAC       : Yes
+  Aged BPDUs Count          : 0           
+  Loop-back BPDUs Count     : 0         
+  TC ACK Flag Transmitted   : 0         
+  TC ACK Flag Received      : 0         
+
+  MST        MST        CFG        CFG        TCN        TCN       
+  BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx  
+  ---------- ---------- ---------- ---------- ---------- ----------
+  3851       0          0          0          0          0         
+
+  Port                      : 15   
+  Status                    : Down
+  BPDU Protection           : No 
+  BPDU Filtering            : No 
+  PVST Protection           : No 
+[53;1H[2K[53;1H[1;53r[53;1H  PVST Filtering            : No 
+  Errant BPDU Count         : 0           
+  Root Guard                : No 
+  TCN Guard                 : No 
+  MST Region Boundary       : Yes
+  External Path Cost        : 20000       
+  External Root Path Cost   : 0           
+  Administrative Hello Time : Global      
+  Operational Hello Time    : 2           
+  AdminEdgePort             : No 
+  Auto Edge Port            : Yes         
+  OperEdgePort              : No 
+  AdminPointToPointMAC      : True 
+  OperPointToPointMAC       : Yes
+  Aged BPDUs Count          : 0           
+  Loop-back BPDUs Count     : 0         
+  TC ACK Flag Transmitted   : 0         
+  TC ACK Flag Received      : 0         
+
+  MST        MST        CFG        CFG        TCN        TCN       
+  BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx  
+  ---------- ---------- ---------- ---------- ---------- ----------
+  0          0          0          0          0          0         
+
+  Port                      : 16   
+  Status                    : Up  
+  BPDU Protection           : No 
+  BPDU Filtering            : No 
+  PVST Protection           : No 
+  PVST Filtering            : No 
+  Errant BPDU Count         : 0           
+  Root Guard                : No 
+  TCN Guard                 : No 
+  MST Region Boundary       : Yes
+  External Path Cost        : 20000       
+  External Root Path Cost   : 222000      
+  Administrative Hello Time : Global      
+  Operational Hello Time    : 2           
+  AdminEdgePort             : No 
+  Auto Edge Port            : Yes         
+  OperEdgePort              : Yes
+  AdminPointToPointMAC      : True 
+  OperPointToPointMAC       : Yes
+  Aged BPDUs Count          : 0           
+  Loop-back BPDUs Count     : 0         
+  TC ACK Flag Transmitted   : 0         
+  TC ACK Flag Received      : 0         
+
+  MST        MST        CFG        CFG        TCN        TCN       
+  BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx  
+  ---------- ---------- ---------- ---------- ---------- ----------
+  41455      0          0          0          0          0         
+[53;1H[2K[53;1H[1;53r[53;1H
+  Port                      : 17   
+  Status                    : Down
+  BPDU Protection           : No 
+  BPDU Filtering            : No 
+  PVST Protection           : No 
+  PVST Filtering            : No 
+  Errant BPDU Count         : 0           
+  Root Guard                : No 
+  TCN Guard                 : No 
+  MST Region Boundary       : Yes
+  External Path Cost        : 20000       
+  External Root Path Cost   : 0           
+  Administrative Hello Time : Global      
+  Operational Hello Time    : 2           
+  AdminEdgePort             : No 
+  Auto Edge Port            : Yes         
+  OperEdgePort              : No 
+  AdminPointToPointMAC      : True 
+  OperPointToPointMAC       : Yes
+  Aged BPDUs Count          : 0           
+  Loop-back BPDUs Count     : 0         
+  TC ACK Flag Transmitted   : 0         
+  TC ACK Flag Received      : 0         
+
+  MST        MST        CFG        CFG        TCN        TCN       
+  BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx  
+  ---------- ---------- ---------- ---------- ---------- ----------
+  0          0          0          0          0          0         
+
+  Port                      : 18   
+  Status                    : Up  
+  BPDU Protection           : No 
+  BPDU Filtering            : No 
+  PVST Protection           : No 
+  PVST Filtering            : No 
+  Errant BPDU Count         : 0           
+  Root Guard                : No 
+  TCN Guard                 : No 
+  MST Region Boundary       : Yes
+  External Path Cost        : 20000       
+  External Root Path Cost   : 222000      
+  Administrative Hello Time : Global      
+  Operational Hello Time    : 2           
+  AdminEdgePort             : No 
+  Auto Edge Port            : Yes         
+  OperEdgePort              : No 
+  AdminPointToPointMAC      : True 
+  OperPointToPointMAC       : Yes
+  Aged BPDUs Count          : 0           
+  Loop-back BPDUs Count     : 0         
+  TC ACK Flag Transmitted   : 1         
+[53;1H[2K[53;1H[1;53r[53;1H  TC ACK Flag Received      : 3         
+
+  MST        MST        CFG        CFG        TCN        TCN       
+  BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx  
+  ---------- ---------- ---------- ---------- ---------- ----------
+  2          0          41444      13         3          1         
+
+  Port                      : A1   
+  Status                    : Up  
+  BPDU Protection           : No 
+  BPDU Filtering            : No 
+  PVST Protection           : No 
+  PVST Filtering            : No 
+  Errant BPDU Count         : 0           
+  Root Guard                : No 
+  TCN Guard                 : No 
+  MST Region Boundary       : Yes
+  External Path Cost        : 2000        
+  External Root Path Cost   : 220000      
+  Administrative Hello Time : Global      
+  Operational Hello Time    : 2           
+  AdminEdgePort             : No 
+  Auto Edge Port            : Yes         
+  OperEdgePort              : No 
+  AdminPointToPointMAC      : True 
+  OperPointToPointMAC       : Yes
+  Aged BPDUs Count          : 0           
+  Loop-back BPDUs Count     : 0         
+  TC ACK Flag Transmitted   : 0         
+  TC ACK Flag Received      : 0         
+
+  MST        MST        CFG        CFG        TCN        TCN       
+  BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx  
+  ---------- ---------- ---------- ---------- ---------- ----------
+  5          41452      0          0          0          0         
+
+  Port                      : A2   
+  Status                    : Down
+  BPDU Protection           : No 
+  BPDU Filtering            : No 
+  PVST Protection           : No 
+  PVST Filtering            : No 
+  Errant BPDU Count         : 0           
+  Root Guard                : No 
+  TCN Guard                 : No 
+  MST Region Boundary       : Yes
+  External Path Cost        : 2000        
+  External Root Path Cost   : 0           
+  Administrative Hello Time : Global      
+  Operational Hello Time    : 2           
+  AdminEdgePort             : No 
+  Auto Edge Port            : Yes         
+[53;1H[2K[53;1H[1;53r[53;1H  OperEdgePort              : No 
+  AdminPointToPointMAC      : True 
+  OperPointToPointMAC       : Yes
+  Aged BPDUs Count          : 0           
+  Loop-back BPDUs Count     : 0         
+  TC ACK Flag Transmitted   : 0         
+  TC ACK Flag Received      : 0         
+
+  MST        MST        CFG        CFG        TCN        TCN       
+  BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx  
+  ---------- ---------- ---------- ---------- ---------- ----------
+  0          0          0          0          0          0         
+
+  Port                      : A3   
+  Status                    : Down
+  BPDU Protection           : No 
+  BPDU Filtering            : No 
+  PVST Protection           : No 
+  PVST Filtering            : No 
+  Errant BPDU Count         : 0           
+  Root Guard                : No 
+  TCN Guard                 : No 
+  MST Region Boundary       : Yes
+  External Path Cost        : 2000        
+  External Root Path Cost   : 0           
+  Administrative Hello Time : Global      
+  Operational Hello Time    : 2           
+  AdminEdgePort             : No 
+  Auto Edge Port            : Yes         
+  OperEdgePort              : No 
+  AdminPointToPointMAC      : True 
+  OperPointToPointMAC       : Yes
+  Aged BPDUs Count          : 0           
+  Loop-back BPDUs Count     : 0         
+  TC ACK Flag Transmitted   : 0         
+  TC ACK Flag Received      : 0         
+
+  MST        MST        CFG        CFG        TCN        TCN       
+  BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx  
+  ---------- ---------- ---------- ---------- ---------- ----------
+  0          0          0          0          0          0         
+
+  Port                      : A4   
+  Status                    : Up  
+  BPDU Protection           : No 
+  BPDU Filtering            : No 
+  PVST Protection           : No 
+  PVST Filtering            : No 
+  Errant BPDU Count         : 0           
+  Root Guard                : No 
+  TCN Guard                 : No 
+  MST Region Boundary       : Yes
+[53;1H[2K[53;1H[1;53r[53;1H  External Path Cost        : 2000        
+  External Root Path Cost   : 222000      
+  Administrative Hello Time : Global      
+  Operational Hello Time    : 2           
+  AdminEdgePort             : No 
+  Auto Edge Port            : Yes         
+  OperEdgePort              : No 
+  AdminPointToPointMAC      : True 
+  OperPointToPointMAC       : Yes
+  Aged BPDUs Count          : 0           
+  Loop-back BPDUs Count     : 0         
+  TC ACK Flag Transmitted   : 0         
+  TC ACK Flag Received      : 0         
+
+  MST        MST        CFG        CFG        TCN        TCN       
+  BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx  
+  ---------- ---------- ---------- ---------- ---------- ----------
+  41453      3          0          0          0          0         
+
+  Port                      : Trk1 
+  Status                    : Up  
+  BPDU Protection           : No 
+  BPDU Filtering            : No 
+  PVST Protection           : No 
+  PVST Filtering            : No 
+  Errant BPDU Count         : 0           
+  Root Guard                : No 
+  TCN Guard                 : No 
+  MST Region Boundary       : Yes
+  External Path Cost        : 2000000     
+  External Root Path Cost   : 222000      
+  Administrative Hello Time : Global      
+  Operational Hello Time    : 2           
+  AdminEdgePort             : No 
+  Auto Edge Port            : Yes         
+  OperEdgePort              : No 
+  AdminPointToPointMAC      : True 
+  OperPointToPointMAC       : Yes
+  Aged BPDUs Count          : 0           
+  Loop-back BPDUs Count     : 0         
+  TC ACK Flag Transmitted   : 0         
+  TC ACK Flag Received      : 0         
+
+  MST        MST        CFG        CFG        TCN        TCN       
+  BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx  
+  ---------- ---------- ---------- ---------- ---------- ----------
+  41467      0          0          0          0          0         
+
+  Port                      : Trk2 
+  Status                    : Up  
+  BPDU Protection           : No 
+  BPDU Filtering            : No 
+[53;1H[2K[53;1H[1;53r[53;1H  PVST Protection           : No 
+  PVST Filtering            : No 
+  Errant BPDU Count         : 0           
+  Root Guard                : No 
+  TCN Guard                 : No 
+  MST Region Boundary       : Yes
+  External Path Cost        : 2000000     
+  External Root Path Cost   : 222000      
+  Administrative Hello Time : Global      
+  Operational Hello Time    : 2           
+  AdminEdgePort             : No 
+  Auto Edge Port            : Yes         
+  OperEdgePort              : No 
+  AdminPointToPointMAC      : True 
+  OperPointToPointMAC       : Yes
+  Aged BPDUs Count          : 0           
+  Loop-back BPDUs Count     : 0         
+  TC ACK Flag Transmitted   : 0         
+  TC ACK Flag Received      : 0         
+
+  MST        MST        CFG        CFG        TCN        TCN       
+  BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx  
+  ---------- ---------- ---------- ---------- ---------- ----------
+  41467      0          0          0          0          0         
+
+  Port                      : Trk3 
+  Status                    : Up  
+  BPDU Protection           : No 
+  BPDU Filtering            : No 
+  PVST Protection           : No 
+  PVST Filtering            : No 
+  Errant BPDU Count         : 0           
+  Root Guard                : No 
+  TCN Guard                 : No 
+  MST Region Boundary       : Yes
+  External Path Cost        : 2000000     
+  External Root Path Cost   : 222000      
+  Administrative Hello Time : Global      
+  Operational Hello Time    : 2           
+  AdminEdgePort             : No 
+  Auto Edge Port            : Yes         
+  OperEdgePort              : No 
+  AdminPointToPointMAC      : True 
+  OperPointToPointMAC       : Yes
+  Aged BPDUs Count          : 0           
+  Loop-back BPDUs Count     : 0         
+  TC ACK Flag Transmitted   : 0         
+  TC ACK Flag Received      : 0         
+
+  MST        MST        CFG        CFG        TCN        TCN       
+  BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx   BPDUs Tx   BPDUs Rx  
+  ---------- ---------- ---------- ---------- ---------- ----------
+[53;1H[2K[53;1H[1;53r[53;1H  41467      4          0          0          0          0         
+
+
+show management
+
+ Status and Counters - Management Address Information
+
+  Time Server Address : Disabled                  
+
+  Priority SNTP Server Address                            Protocol Version
+  -------- ---------------------------------------------- ----------------
+  1        172.20.1.254                                   3               
+ 
+
+  Default Gateway     : 172.20.128.1   
+
+  VLAN Name    MAC Address         | IP Address         
+  ------------ ------------------- + -------------------
+  DEFAULT_VLAN 0016b9-0dea40       | 172.20.128.110     
+  wifiin       0016b9-0dea40       | Disabled           
+  wifiout      0016b9-0dea40       | Disabled           
+  devices      0016b9-0dea40       | Disabled           
+  TH           0016b9-0dea40       | Disabled           
+  KVT          0016b9-0dea40       | Disabled           
+  DF           0016b9-0dea40       | Disabled           
+  D1           0016b9-0dea40       | Disabled           
+  D2           0016b9-0dea40       | Disabled           
+  HALLGDEV     0016b9-0dea40       | Disabled           
+  HALLG10      0016b9-0dea40       | Disabled           
+  HALLG11      0016b9-0dea40       | Disabled           
+  HALLG12      0016b9-0dea40       | Disabled           
+  HALLG13      0016b9-0dea40       | Disabled           
+  HALLG14      0016b9-0dea40       | Disabled           
+  HALLG15      0016b9-0dea40       | Disabled           
+  kolldev      0016b9-0dea40       | Disabled           
+  kollf        0016b9-0dea40       | Disabled           
+  koll1        0016b9-0dea40       | Disabled           
+  koll2        0016b9-0dea40       | Disabled           
+  koll3        0016b9-0dea40       | Disabled           
+  koll4        0016b9-0dea40       | Disabled           
+  kollkt       0016b9-0dea40       | Disabled           
+  vendeg       0016b9-0dea40       | Disabled           
+  wifidev      0016b9-0dea40       | Disabled           
+  tclientsedu  0016b9-0dea40       | Disabled           
+  voip         0016b9-0dea40       | Disabled           
+  alarm        0016b9-0dea40       | Disabled           
+  internet     0016b9-0dea40       | Disabled           
+ 
+
+
+addrmgrmovelist
+mac address     vid    old port   new port   timestamp
+[53;1H[2K[53;1H[1;53r[53;1H-------------   ----   --------   --------   -----------------
+cc55ad-74b194   3050      18         A1      05/22/12 14:07:46
+cc55ad-74b194   3050      A1         18      05/22/12 14:07:53
+cc55ad-74b194   3050      18         A1      05/22/12 14:08:17
+ccf9e8-3fa6a0   3050      18         A1      05/22/12 14:08:23
+0026b0-7c91c5   3050      18         A1      05/22/12 14:22:00
+0026b0-7c91c5   3050      A1         18      05/22/12 14:22:04
+145a05-5f3ecb   3050      A1         18      05/22/12 14:27:42
+0c771a-de7544   3050      18         A1      05/22/12 14:42:40
+0c771a-de7544   3050      A1         18      05/22/12 14:42:53
+cc55ad-74b194   3050      A1         18      05/22/12 14:46:14
+ccf9e8-3fa6a0     52      A1         18      05/22/12 14:46:33
+cc55ad-74b194   3050      18         A1      05/22/12 14:46:50
+ccf9e8-3fa6a0     52      18         A1      05/22/12 14:46:58
+cc55ad-74b194   3050      A1         18      05/22/12 14:47:05
+ccf9e8-3fa6a0     52      A1         18      05/22/12 14:47:17
+ccf9e8-3fa6a0     52      18         A1      05/22/12 14:47:33
+ccf9e8-3fa6a0     52      A1         18      05/22/12 14:47:52
+e4b021-102111     52      18         A1      05/22/12 14:52:37
+e4b021-102111     52      A1         18      05/22/12 14:54:03
+e4b021-102111     52      18         A1      05/22/12 14:56:06
+e4b021-102111     52      A1         18      05/22/12 14:56:27
+182032-12fc0c     52      18         A1      05/22/12 15:26:53
+182032-12fc0c     52      A1         18      05/22/12 15:27:14
+182032-12fc0c     52      18         A1      05/22/12 16:31:20
+182032-12fc0c     52      A1         18      05/22/12 16:46:48
+
+show ip igmp
+
+ Status and Counters - IP Multicast (IGMP) Status
+
+ VLAN ID : 1
+ VLAN Name : DEFAULT_VLAN
+ Querier Address : 172.20.128.100
+
+  Active Group Addresses Reports Queries Querier Access Port
+  ---------------------- ------- ------- -------------------
+  239.255.255.250        17      14      A1                 
+ 
+ VLAN ID : 51
+ VLAN Name : wifiin
+  IGMP is not enabled
+
+ VLAN ID : 52
+ VLAN Name : wifiout
+  IGMP is not enabled
+
+ VLAN ID : 3001
+ VLAN Name : devices
+  IGMP is not enabled
+
+ VLAN ID : 3003
+[53;1H[2K[53;1H[1;53r[53;1H VLAN Name : TH
+  IGMP is not enabled
+
+ VLAN ID : 3005
+ VLAN Name : KVT
+  IGMP is not enabled
+
+ VLAN ID : 3013
+ VLAN Name : DF
+  IGMP is not enabled
+
+ VLAN ID : 3014
+ VLAN Name : D1
+  IGMP is not enabled
+
+ VLAN ID : 3015
+ VLAN Name : D2
+  IGMP is not enabled
+
+ VLAN ID : 3016
+ VLAN Name : HALLGDEV
+  IGMP is not enabled
+
+ VLAN ID : 3026
+ VLAN Name : HALLG10
+  IGMP is not enabled
+
+ VLAN ID : 3027
+ VLAN Name : HALLG11
+  IGMP is not enabled
+
+ VLAN ID : 3028
+ VLAN Name : HALLG12
+  IGMP is not enabled
+
+ VLAN ID : 3029
+ VLAN Name : HALLG13
+  IGMP is not enabled
+
+ VLAN ID : 3030
+ VLAN Name : HALLG14
+  IGMP is not enabled
+
+ VLAN ID : 3031
+ VLAN Name : HALLG15
+  IGMP is not enabled
+
+ VLAN ID : 3032
+ VLAN Name : kolldev
+  IGMP is not enabled
+
+ VLAN ID : 3033
+[53;1H[2K[53;1H[1;53r[53;1H VLAN Name : kollf
+  IGMP is not enabled
+
+ VLAN ID : 3034
+ VLAN Name : koll1
+  IGMP is not enabled
+
+ VLAN ID : 3035
+ VLAN Name : koll2
+  IGMP is not enabled
+
+ VLAN ID : 3036
+ VLAN Name : koll3
+  IGMP is not enabled
+
+ VLAN ID : 3037
+ VLAN Name : koll4
+  IGMP is not enabled
+
+ VLAN ID : 3038
+ VLAN Name : kollkt
+  IGMP is not enabled
+
+ VLAN ID : 3048
+ VLAN Name : vendeg
+  IGMP is not enabled
+
+ VLAN ID : 3050
+ VLAN Name : wifidev
+  IGMP is not enabled
+
+ VLAN ID : 3061
+ VLAN Name : tclientsedu
+  IGMP is not enabled
+
+ VLAN ID : 3134
+ VLAN Name : voip
+  IGMP is not enabled
+
+ VLAN ID : 3135
+ VLAN Name : alarm
+  IGMP is not enabled
+
+ VLAN ID : 3999
+ VLAN Name : internet
+  IGMP is not enabled
+
+
+
+show ip igmp config
+
+ IGMP Service
+[53;1H[2K[53;1H[1;53r[53;1H
+  VLAN ID VLAN NAME    IGMP Enabled Forward with High Priority Querier Allowed
+  ------- ------------ ------------ -------------------------- ---------------
+  1       DEFAULT_VLAN Yes          No                         Yes            
+  51      wifiin       No           No                         Yes            
+  52      wifiout      No           No                         Yes            
+  3001    devices      No           No                         Yes            
+  3003    TH           No           No                         Yes            
+  3005    KVT          No           No                         Yes            
+  3013    DF           No           No                         Yes            
+  3014    D1           No           No                         Yes            
+  3015    D2           No           No                         Yes            
+  3016    HALLGDEV     No           No                         Yes            
+  3026    HALLG10      No           No                         Yes            
+  3027    HALLG11      No           No                         Yes            
+  3028    HALLG12      No           No                         Yes            
+  3029    HALLG13      No           No                         Yes            
+  3030    HALLG14      No           No                         Yes            
+  3031    HALLG15      No           No                         Yes            
+  3032    kolldev      No           No                         Yes            
+  3033    kollf        No           No                         Yes            
+  3034    koll1        No           No                         Yes            
+  3035    koll2        No           No                         Yes            
+  3036    koll3        No           No                         Yes            
+  3037    koll4        No           No                         Yes            
+  3038    kollkt       No           No                         Yes            
+  3048    vendeg       No           No                         Yes            
+  3050    wifidev      No           No                         Yes            
+  3061    tclientsedu  No           No                         Yes            
+  3134    voip         No           No                         Yes            
+  3135    alarm        No           No                         Yes            
+  3999    internet     No           No                         Yes            
+ 
+
+
+show stack
+
+ Stacking - Stacking Status (This Switch)
+  Stack State           : Candidate
+  Transmission Interval : 60          
+  Auto Join             : Yes         
+
+
+show stack all
+
+ Stacking - Stacking Status (All)
+
+  Stack Name      MAC Address   System Name               Status              
+  --------------- ------------- ------------------------- --------------------
+  Others:         0016b9-0dea40 ProCurve Switch 2900-24G  Candidate Auto-join 
+                  001f28-eec600 ProCurve Switch 2610-24   Candidate Auto-join 
+                  c09134-951f80 E4R2 Switch 2 2610-48     Candidate Auto-join 
+[53;1H[2K[53;1H[1;53r[53;1H                  c09134-977600 ProCurve Switch 2610-48   Candidate Auto-join 
+                  000d9d-765100 HP Switch 2650 E4         Candidate           
+                  001279-747180 HP Switch 2650 D4/4       Candidate           
+                  001279-754200 HP Switch 2650 D4/3       Candidate           
+                  001560-1bb100 HP Switch 2650 D4/5       Candidate           
+                  001560-1ce280 HP Sw. 2650 KOLL1         Candidate           
+                  0016b9-aaa9c0 ProCurve Switch 2626      Candidate           
+                  001b3f-6a0280 HP Switch 2650 D1/2       Candidate           
+                  001c2e-089240 D3-2626-3                 Candidate           
+                  001c2e-c1c4e0 E1 HP Sw. 2810-24G        Candidate           
+                  001db3-e3fd40 HP Sw. 2610-24 KollKt     Candidate           
+                  001db3-fcde00 D3/1 Switch 2610-48       Candidate           
+                  001db3-fe2e00 HP Sw. 2610-48 koll3      Candidate           
+                  001db3-fe6b00 HP Sw. 2610-48 kollf      Candidate           
+                  001db3-feee80 HP Sw. 2610-48 koll2      Candidate           
+                  001db3-ff5280 HP Sw. 2610-48 koll4      Candidate           
+                  001f28-eea8c0 DF47F-2610                Candidate           
+                  001ffe-b7bc00 ProCurve Switch 2610-24   Candidate           
+                  001ffe-b7dc80 ProCurve Switch 2610-24   Candidate           
+                  001ffe-d3de00 ProCurve Switch 2610-48   Candidate           
+                  0021f7-17e700 D2 ProCurve 2900-24G      Candidate           
+                  0021f7-1e2c00 D1 ProCurve 2900-24G      Candidate           
+                  002347-4dcc80 K1 ProCurve 2900-24G      Candidate           
+                  002347-4de840 E4 ProCurve Sw 2900-24G   Candidate           
+                  002347-5056c0 K2 ProCurve Sw 2900-24G   Candidate           
+                  002561-3ad080 ProCurve Switch 2610-24   Candidate           
+                  00306e-df0600 HP Switch 2650 K2         Candidate           
+                  00306e-e09480 HP Switch 2650 D4/1       Candidate           
+                  00306e-e0c780 HP Switch 2650 K1         Candidate           
+                  00306e-e2f780 HP Switch 2650 E3         Candidate           
+                  00306e-e52680 HP Switch 2650 D2/1.      Candidate           
+                  00306e-e54580 HP Switch 2650 D4/2       Candidate           
+                  00306e-e58480 HP Switch 2650 D1/1       Candidate           
+                  00306e-e59600 d4-2650-6 HP Switch 2650  Candidate           
+                  00306e-e5a300 HP Switch 2650 D3/2       Candidate           
+ 
+
+
+show gvrp
+
+ GVRP support
+
+  Maximum VLANs to support [256] : 32                   
+  Primary VLAN : DEFAULT_VLAN
+  GVRP Enabled [No] : Yes
+
+
+  Port Type      | Unknown VLAN Join  Leave Leaveall
+  ---- --------- + ------------ ----- ----- --------
+  1    100/1000T | Block        20    300   1000    
+  2    100/1000T | Block        20    300   1000    
+  3    100/1000T | Block        20    300   1000    
+[53;1H[2K[53;1H[1;53r[53;1H  4    100/1000T | Block        20    300   1000    
+  5    100/1000T | Block        20    300   1000    
+  6    100/1000T | Block        20    300   1000    
+  7    100/1000T | Block        20    300   1000    
+  8    100/1000T | Block        20    300   1000    
+  9    100/1000T | Block        20    300   1000    
+  10   100/1000T | Block        20    300   1000    
+  11   100/1000T | Block        20    300   1000    
+  12   100/1000T | Block        20    300   1000    
+  13   100/1000T | Block        20    300   1000    
+  14   100/1000T | Block        20    300   1000    
+  15   100/1000T | Block        20    300   1000    
+  16   100/1000T | Block        20    300   1000    
+  17   100/1000T | Block        20    300   1000    
+  18   100/1000T | Block        20    300   1000    
+  A1   10GbE-LRM | Block        20    300   1000    
+  A2   10GbE-CX4 | Block        20    300   1000    
+  A3   10GbE-CX4 | Block        20    300   1000    
+  A4   10GbE-SR  | Block        20    300   1000    
+  Trk1 Trunk     | Block        20    300   1000    
+  Trk2 Trunk     | Block        20    300   1000    
+  Trk3 Trunk     | Block        20    300   1000    
+ 
+
+
+show lacp
+
+                           LACP
+
+no LACP ports found.
+
+
+
+show authentication
+
+ Status and Counters - Authentication Information
+
+  Login Attempts : 3 
+  Respect Privilege : Disabled 
+
+               | Login      Login      Enable     Enable    
+  Access Task  | Primary    Secondary  Primary    Secondary 
+  ------------ + ---------- ---------- ---------- ----------
+  Console      | Local      None       Local      None      
+  Telnet       | Local      None       Local      None      
+  Port-Access  | Local      None                          
+  Webui        | Local      None       Local      None      
+  SSH          | Local      None       Local      None      
+  Web-Auth     | ChapRadius None                          
+  MAC-Auth     | ChapRadius None                          
+ 
+
+[53;1H[2K[53;1H[1;53r[53;1H
+show cdp neighbors detail
+
+ CDP neighbors information
+
+  Port : 1   
+  Device ID : 00 16 b9 c8 34 90                                             
+  Address Type : IP          
+  Address      : 172.20.14.21                                                
+  Platform     : PROCURVE J9079A - VA.02.00                                 
+  Capability   : Switch                                                     
+  Device Port  : 8                                                          
+  Version      : PROCURVE J9079A - VA.02.00                                 
+
+------------------------------------------------------------------------------
+
+  Port : 7   
+  Device ID : 00 1b 3f a0 a9 80                                             
+  Address Type : IP          
+  Address      : 172.20.128.115                                              
+  Platform     : PROCURVE J9080A - VB.02.04                                 
+  Capability   : Switch                                                     
+  Device Port  : 24                                                         
+  Version      : PROCURVE J9080A - VB.02.04                                 
+
+------------------------------------------------------------------------------
+
+  Port : 16  
+  Device ID : 00 16 b9 c8 f4 a0                                             
+  Address Type : IP          
+  Address      : 172.20.128.218                                              
+  Platform     : PROCURVE J9079A - VA.02.00                                 
+  Capability   : Switch                                                     
+  Device Port  : 8                                                          
+  Version      : PROCURVE J9079A - VA.02.00                                 
+
+------------------------------------------------------------------------------
+
+  Port : 18  
+  Device ID : 00 03 52 0e 8c c4                                             
+  Address Type : IP          
+  Address      : 172.20.50.83                                                
+  Platform     : HP AP Controlled,K159-07325,50-00-1024-01:24-A,5.5.4.0-0...
+  Capability   :                                                            
+  Device Port  : 00 03 52 0e 8c c5                                          
+  Version      : HP AP Controlled,K159-07325,50-00-1024-01:24-A,5.5.4.0-0...
+
+------------------------------------------------------------------------------
+
+  Port : 18  
+  Device ID : K159-07325                                                    
+  Address Type : IP          
+[53;1H[2K[53;1H[1;53r[53;1H  Address      : 172.20.50.83                                                
+  Platform     : 5.5.4.0-01-10665MSM320                                     
+  Capability   :                                                            
+  Device Port  : eth1                                                       
+  Version      : 5.5.4.0-01-10665MSM320                                     
+
+------------------------------------------------------------------------------
+
+  Port : 19  
+  Device ID : 00 30 6e e5 a3 00                                             
+  Address Type : IP          
+  Address      : 172.20.128.112                                              
+  Platform     : ProCurve J4899A Switch 2650, revision H.10.83, ROM H.08....
+  Capability   : Switch                                                     
+  Device Port  : 50                                                         
+  Version      : ProCurve J4899A Switch 2650, revision H.10.83, ROM H.08....
+
+------------------------------------------------------------------------------
+
+  Port : 20  
+  Device ID : 00 30 6e e5 a3 00                                             
+  Address Type : IP          
+  Address      : 172.20.128.112                                              
+  Platform     : ProCurve J4899A Switch 2650, revision H.10.83, ROM H.08....
+  Capability   : Switch                                                     
+  Device Port  : 49                                                         
+  Version      : ProCurve J4899A Switch 2650, revision H.10.83, ROM H.08....
+
+------------------------------------------------------------------------------
+
+  Port : 21  
+  Device ID : 00 1c 2e 08 92 40                                             
+  Address Type : IP          
+  Address      : 172.20.128.113                                              
+  Platform     : ProCurve J4900B Switch 2626, revision H.10.83, ROM H.08....
+  Capability   : Switch                                                     
+  Device Port  : 26                                                         
+  Version      : ProCurve J4900B Switch 2626, revision H.10.83, ROM H.08....
+
+------------------------------------------------------------------------------
+
+  Port : 22  
+  Device ID : 00 1c 2e 08 92 40                                             
+  Address Type : IP          
+  Address      : 172.20.128.113                                              
+  Platform     : ProCurve J4900B Switch 2626, revision H.10.83, ROM H.08....
+  Capability   : Switch                                                     
+  Device Port  : 25                                                         
+  Version      : ProCurve J4900B Switch 2626, revision H.10.83, ROM H.08....
+
+------------------------------------------------------------------------------
+
+[53;1H[2K[53;1H[1;53r[53;1H  Port : 23  
+  Device ID : 00 1d b3 fc de 00                                             
+  Address Type : IP          
+  Address      : 172.20.128.111                                              
+  Platform     : ProCurve J9088A Switch 2610-48, revision R.11.54, ROM R....
+  Capability   : Switch                                                     
+  Device Port  : 49                                                         
+  Version      : ProCurve J9088A Switch 2610-48, revision R.11.54, ROM R....
+
+------------------------------------------------------------------------------
+
+  Port : 24  
+  Device ID : 00 1d b3 fc de 00                                             
+  Address Type : IP          
+  Address      : 172.20.128.111                                              
+  Platform     : ProCurve J9088A Switch 2610-48, revision R.11.54, ROM R....
+  Capability   : Switch                                                     
+  Device Port  : 50                                                         
+  Version      : ProCurve J9088A Switch 2610-48, revision R.11.54, ROM R....
+
+------------------------------------------------------------------------------
+
+  Port : A1  
+  Device ID : 00 21 f7 df 21 00                                             
+  Address Type : IP          
+  Address      : 172.20.1.1                                                  
+  Platform     : ProCurve J8697A Switch 5406zl, revision K.14.65, ROM K.1...
+  Capability   : Router Switch                                              
+  Device Port  : 1                                                          
+  Version      : ProCurve J8697A Switch 5406zl, revision K.14.65, ROM K.1...
+
+------------------------------------------------------------------------------
+
+  Port : A4  
+  Device ID : 00 30 6e a3 36 00                                             
+  Address Type : IP          
+  Address      : 172.20.128.200                                              
+  Platform     : ProCurve J4850A Switch 5304XL, revision E.11.21, ROM E.0...
+  Capability   : Switch                                                     
+  Device Port  : 1                                                          
+  Version      : ProCurve J4850A Switch 5304XL, revision E.11.21, ROM E.0...
+
+
+show LLDP info remote-device
+
+ LLDP Remote Devices Information
+
+  LocalPort | ChassisId                 PortId PortDescr SysName               
+  --------- + ------------------------- ------ --------- ----------------------
+  1         | 00 16 b9 c8 34 90         8      Port #8   PROCURVE J9079A       
+  7         | 00 1b 3f a0 a9 80         24     Port #24  PROCURVE J9080A       
+  16        | 00 16 b9 c8 f4 a0         8      Port #8   PROCURVE J9079A       
+[53;1H[2K[53;1H[1;53r[53;1H  18        | 00 03 52 0e 8c c4         00 ... Port 1    ProCurve Switch 290...
+  18        | K159-07325                eth1                                   
+  19        | 00 30 6e e5 a3 00         50     50        HP Switch 2650 D3/2   
+  20        | 00 30 6e e5 a3 00         49     49        HP Switch 2650 D3/2   
+  21        | 00 1c 2e 08 92 40         26     26        D3-2626-3             
+  22        | 00 1c 2e 08 92 40         25     25        D3-2626-3             
+  23        | 00 1d b3 fc de 00         49     49        D3/1 Switch 2610-48   
+  24        | 00 1d b3 fc de 00         50     50        D3/1 Switch 2610-48   
+  A1        | 00 21 f7 df 21 00         1      A1        D4-5406zl-1           
+  A4        | 00 30 6e a3 36 00         1      A1        kolic ProCurve 5304xl 
+ 
+
+
+show LLDP config
+
+ LLDP Global Configuation
+
+  LLDP Enabled [Yes] : Yes
+  LLDP Transmit Interval    [30] : 30    
+  LLDP Hold time Multiplier  [4] : 4     
+  LLDP Delay Interval        [2] : 2     
+  LLDP Reinit Interval       [2] : 2     
+  LLDP Notification Interval [5] : 5     
+  LLDP Fast Start Count      [5] : 5     
+
+
+ LLDP Port Configuration
+
+  Port  | AdminStatus NotificationEnabled Med Topology Trap Enabled
+  ----- + ----------- ------------------- -------------------------
+  1     | Tx_Rx       False               False                    
+  2     | Tx_Rx       False               False                    
+  3     | Tx_Rx       False               False                    
+  4     | Tx_Rx       False               False                    
+  5     | Tx_Rx       False               False                    
+  6     | Tx_Rx       False               False                    
+  7     | Tx_Rx       False               False                    
+  8     | Tx_Rx       False               False                    
+  9     | Tx_Rx       False               False                    
+  10    | Tx_Rx       False               False                    
+  11    | Tx_Rx       False               False                    
+  12    | Tx_Rx       False               False                    
+  13    | Tx_Rx       False               False                    
+  14    | Tx_Rx       False               False                    
+  15    | Tx_Rx       False               False                    
+  16    | Tx_Rx       False               False                    
+  17    | Tx_Rx       False               False                    
+  18    | Tx_Rx       False               False                    
+  19    | Tx_Rx       False               False                    
+  20    | Tx_Rx       False               False                    
+  21    | Tx_Rx       False               False                    
+  22    | Tx_Rx       False               False                    
+[53;1H[2K[53;1H[1;53r[53;1H  23    | Tx_Rx       False               False                    
+  24    | Tx_Rx       False               False                    
+  A1    | Tx_Rx       False               False                    
+  A2    | Tx_Rx       False               False                    
+  A3    | Tx_Rx       False               False                    
+  A4    | Tx_Rx       False               False                    
+ 
+
+show arp
+
+ IP ARP table
+
+  IP Address       MAC Address       Type    Port
+  ---------------  ----------------- ------- ----
+  172.20.128.1     000423-a88ecf     dynamic A1  
+  172.20.128.8     1c6f65-4c841a     dynamic A1  
+  172.20.128.254   000e0c-3cb800     dynamic A1  
+
+
+
+show port-access authenticator
+
+ Port Access Authenticator Status
+
+  Port-access authenticator activated [No] : No 
+  Allow RADIUS-assigned dynamic (GVRP) VLANs [No] : No 
+
+       Auth     Unauth   Untagged Tagged           Cntrl
+  Port Clients  Clients  VLAN     VLANs  Port COS  Dir  
+  ---- -------- -------- -------- ------ --------- -----
+ 
+
+
+show sflow agent
+  Version       : 1.3;HP;T.13.68                   
+  Agent Address : 172.20.128.110                   
+
+show sflow 1 destination
+  Destination Instance      : 1
+  sflow                     : Disabled
+  Datagrams Sent            : 0
+  Destination Address       :                     
+  Receiver Port             : 6343                             
+  Owner                     :                                      
+  Timeout (seconds)         : 0                                
+  Max Datagram Size         : 1400                             
+  Datagram Version Support  : 5                                
+
+show sflow 1 sampling-polling
+
+ Port  | Sampling                 Dropped    | Polling           
+       | Enabled  Rate     Header Samples    | Enabled Interval  
+[53;1H[2K[53;1H[1;53r[53;1H ----- + -------  -------- ------ ---------- + ------- --------  
+
+
+show sflow 2 destination
+  Destination Instance      : 2
+  sflow                     : Disabled
+  Datagrams Sent            : 0
+  Destination Address       :                     
+  Receiver Port             : 6343                             
+  Owner                     :                                      
+  Timeout (seconds)         : 0                                
+  Max Datagram Size         : 1400                             
+  Datagram Version Support  : 5                                
+
+show sflow 2 sampling-polling
+
+ Port  | Sampling                 Dropped    | Polling           
+       | Enabled  Rate     Header Samples    | Enabled Interval  
+ ----- + -------  -------- ------ ---------- + ------- --------  
+
+
+show sflow 3 destination
+  Destination Instance      : 3
+  sflow                     : Disabled
+  Datagrams Sent            : 0
+  Destination Address       :                     
+  Receiver Port             : 6343                             
+  Owner                     :                                      
+  Timeout (seconds)         : 0                                
+  Max Datagram Size         : 1400                             
+  Datagram Version Support  : 5                                
+
+show sflow 3 sampling-polling
+
+ Port  | Sampling                 Dropped    | Polling           
+       | Enabled  Rate     Header Samples    | Enabled Interval  
+ ----- + -------  -------- ------ ---------- + ------- --------  
+
+[1;53r[53;1H[53;1H[2K[53;1H[?25h[53;1H[53;1HProCurve Switch 2900-24G# [53;1H[53;27H[53;1H[?25h[53;27H[53;27Hl[53;27H[?25h[53;28H[53;28Ho[53;28H[?25h[53;29H[53;29Hg[53;29H[?25h[53;30H[53;30Ho[53;30H[?25h[53;31H[53;31Hu[53;31H[?25h[53;32H[53;32Ht[53;32H[?25h[53;33H[53;0HE[53;1H[53;33H[53;1H[2K[53;1H[?25h[53;1H[1;53r[53;1H[1;53r[53;1H[53;1H[2K[53;1H[?25h[53;1H[53;1HDo you want to log out [y/n]? [53;1H[53;31H[53;1H[?25h[53;31H[53;31Hy[53;31H[?25h[53;32H[53;0HE[53;1H[53;32H[53;1H[2K[53;1H[?25h[53;1H[1;53r[53;1H[2J[?7l[1;53r[?6l[53;1H[?25h[53;1H[?6l[1;0r[?7l[2J[53;1H[1;1H[2K[53;1HConnection closed by foreign host.

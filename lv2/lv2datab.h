@@ -141,7 +141,7 @@ public:
     bool        isNullable;
     /// Enumerációs típus esetén az értékkészlet
     QStringList enumVals;
-    /// A mező (oszlop) typusa. A fordítónál szabadabb értelmezésben a member típusa: eFieldType
+    /// A mező (oszlop) típusa. A fordítónál szabadabb értelmezésben a member típusa: eFieldType
     int         eColType;
     /// Ha a mező módosítható, akkor értéke true
     bool        isUpdatable;

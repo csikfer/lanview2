@@ -1,6 +1,6 @@
 CREATE TYPE  linktype AS ENUM ( 'ptp', 'bus', 'patch', 'logical', 'wireless', 'unknown');
 COMMENT ON TYPE linktype IS
-'A port típus a link alapján :
+'A port typus a link alapján :
     ptp         Point to point /pecselhető
     bus         BUS (egyenlőre ugyanúgy kezeljük mint a ptp -t)
     patch       Patch port Frot<-->Back / pecselhető az előlap és a hátlap is
@@ -31,7 +31,7 @@ COMMENT ON COLUMN iftypes.iftype_name   IS 'Interface type''s name';
 COMMENT ON COLUMN iftypes.iftype_descr  IS 'Interface type''s description';
 COMMENT ON COLUMN iftypes.iftype_iana_id IS 'Protocoll Types id assigned by IANA';
 COMMENT ON COLUMN iftypes.iftype_link_type IS 'A porton értelmezhető link típusa';
-COMMENT ON COLUMN iftypes.iftype_obj_type IS 'A portot reprezentáló API objektum típusa. Ha két elem van, akkor a második az érvényes, ha cím is van a porthoz rendelve';
+COMMENT ON COLUMN iftypes.iftype_obj_type IS 'A portot reprezentáló API objektum typusa. Ha két elem van, akkor a második az érvényes, ha cím is van a porthoz rendelve';
 
 INSERT INTO iftypes
     (iftype_id, iftype_name, iftype_descr,           iftype_iana_id, iftype_link_type, iftype_obj_type) VALUES

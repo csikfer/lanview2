@@ -521,7 +521,7 @@ Ha a paraméter típusa qlonglong, akkor a NULL_ID, ha int, akkor a NULL_IX is n
 Ha a konverzió nem lehetséges, akkor a visszaadott érték egy üres objektum lessz, és a
 statusban a ES_DEFECTIVE bit be lessz billentve (ha nincs hiba, akkor a bit nem törlődik).
 Ha üres objektumot adunk meg, és isNullable értéke false, akkor szintén be lessz állítva a hiba bit.
-Ha a paraméter és a tárolási typus is QVariantList, akkor a lista elemeket nem ellenőrzi.
+Ha a paraméter és a tárolási típus is QVariantList, akkor a lista elemeket nem ellenőrzi.
 @param _f A konvertálandó érték
 @param str A status referenciája
 @return A konvertált érték
@@ -1521,7 +1521,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
                         columnDescr.fKeyType = cColStaticDescr::FT_SELF;
                     else
                         columnDescr.fKeyType = cColStaticDescr::FT_PROPERTY;
-                    // FT_OWNER typus esetén kötelező definiáni a typust egy fkey_types vagy unusual_fkeys rekorddal !
+                    // FT_OWNER típus esetén kötelező definiáni a típust egy fkey_types vagy unusual_fkeys rekorddal !
                 }
                 else if (!t.compare("property", Qt::CaseInsensitive)) {
                     columnDescr.fKeyType = cColStaticDescr::FT_PROPERTY;

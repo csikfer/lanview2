@@ -228,7 +228,7 @@ void cInspector::setSubs(QSqlQuery& q, const QString& qs)
     if (!q.exec(ssi(sql, qs, hostServiceId()))) SQLPREPERR(q, sql);
     if (q.first()) do {
         qlonglong       hsid = q.value(0).toLongLong();  // host_service_id      A szervíz rekord amit be kell olvasni
-        qlonglong       hoid = q.value(1).toLongLong();  // node tableoid        A node typusa
+        qlonglong       hoid = q.value(1).toLongLong();  // node tableoid        A node típusa
         cInspector *p = newSubordinate(q2, hsid, hoid, this);
         if (p != NULL) {
             p->postInit(q2);  // ??
