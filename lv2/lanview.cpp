@@ -388,6 +388,11 @@ void lanView::uSigSlot(int __i)
     }
 }
 
+void    lanView::dbNotif(QString __s)
+{
+    DERR() << "Database notifycation : " << __s << endl;
+}
+
 void lanView::insertStart(QSqlQuery& q)
 {
     DBGFN();
@@ -406,6 +411,7 @@ bool lanView::subsDbNotif(const QString& __n, bool __ex)
     if (pDb != NULL && pDb->driver()->hasFeature(QSqlDriver::EventNotifications)) {
         QString name = __n.isEmpty() ? appName : __n;
         pDb->driver()->subscribeToNotification(name);
+        connect(pDb->driver(), SIGNAL(notification(QString)), SLOT(dbNotif(QString)));
         return true;
     }
     else {

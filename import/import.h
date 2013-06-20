@@ -22,8 +22,8 @@ class lv2import : public lanView {
     QString     fileNm;
     QFile       in;
     bool        daemonMode;
-private slots:
-    void dbNotif(QString __s);
+protected slots:
+    virtual void dbNotif(QString __s);
 };
 
 inline static QSqlQuery& qq(void) {  return *((lv2import *)lanView::getInstance())->pq; }

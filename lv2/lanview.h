@@ -28,9 +28,10 @@ Az API obkeltum kezelése
     setAppHelp(); \
 }
 
-// Find program switch.
+/// Find program switch.
 EXT_ int findArg(const QChar& __c, const QString& __s, const QStringList &args);
-// QApplication elött (is) hivható, nem használl Qt objektumot.
+/// Find program switch.
+/// QApplication elött (is) hivható, nem használl Qt objektumot.
 EXT_ int findArg(char __c, const char * __s, int argc, char * argv[]);
 
 static inline QString langFileName(const QString& an, const QString& ln)
@@ -55,6 +56,99 @@ enum eIPV4Pol {
     IPV4_STRICT
 };
 
+/*!
+@class lanView
+@brief "main" bázis objektum. Minden az API-t hasznéló alkalmazásnak létre kell hoznia a saját példányát.
+
+Minden az API-t haszáló alkalmazásnak induláskor létre kell hoznia a saját a lanView objektumból származtatott példányát.
+Egy példa a main() -re (a saját származtatott osztály a myLanVuew) :
+@code
+#define VERSION_MAJOR   0
+#define VERSION_MINOR   01
+#define VERSION_STR     _STR(VERSION_MAJOR) "." _STR(VERSION_MINOR)
+
+// Saját kiegészítés a help üzenethez (jelenleg egy üres string)
+const QString& setAppHelp()
+{
+    return _sNul;
+}
+
+int main (int argc, char * argv[])
+{
+    QCoreApplication app(argc, argv);
+
+    SETAPP();
+    lanView::snmpNeeded = true;     // Ha az SNMP objektumokat szeretnénk használni
+    lanView::sqlNeeded  = true;     // Ha szükség van az adatbázis kapcsolatra, és nem magunk nyitjuk meg a kapcsolatot
+    lanView::gui        = false;    // Ha ez nem egy GUI alkalmazás
+
+    myLanView   mo; // A saját példány létrehozása
+
+    if (mo.lastError) {  // Ha hiba volt, vagy vége
+        return mo.lastError->mErrorCode; // a mo destruktora majd kiírja a hibaüzenetet.
+    }
+    int r = app.exec();
+    exit(mo.lastError == NULL ? r : mo.lastError->mErrorCode);
+}
+@endcode
+A headerben is szükség van néhány definícióra. A header első néhány sora :
+@code
+#include "QtCore"
+
+#include "lanview.h"
+
+#define APPNAME "myapp"
+#undef  __MODUL_NAME__
+#define __MODUL_NAME__  MYAPP
+@endcode
+A megadott modul névnek szerepelnie kell a cDebug::eMask enumerációs értékek között. Ez alapján dönti el a cDebug objektum, hogy milyen
+üzeneteket kell kiírni. Vitatható módszer, valószínüleg ki kell találni helyette valami mást.
+A származtatott objektum konstruktorában meg kell viszgállni, hogy a labView konstruktora ne dobott-e hibát pl.:
+@code
+lv2ArpD::lv2ArpD() : lanView()
+{
+    if (lastError == NULL) {
+        try {
+            setup(); // saját init
+        } CATCH(lastError)
+    }
+}
+@endcode
+Ha a lanView konstruktora olyan parancs paramétert dolgoz fel, ami után ki kell lépnie a programnak (pl. a verzió kiírása),
+akkor dob egy kizárást, egy olyan cError objektummal, melyben a hibakód az EOK, vagyis a nincs hiba.
+Az API hiba esetén dob egy kizárást a cError objektum pointerével. Ezt a Qt eseménykezelője nem támogatja.
+Ezért, ha ezeket a kizárásokat rendesen le szeretnénk kezelni, akkor a QApplication objektumból származtatnunk kell
+egy osztályt, ahhol újra implementáljuk a notify metódust. Pl. egy GUI-s alkalmazás esetén a következőkeppen:
+@code
+class myApp : public QApplication {
+public:
+    myApp(int& argc, char ** argv) : QApplication(argc, argv) { ; }
+    ~myApp();
+    virtual bool notify(QObject * receiver, QEvent * event);
+};
+
+bool myApp::notify(QObject * receiver, QEvent * event)
+{
+    static cError *lastError = NULL;
+    try {
+        return QApplication::notify(receiver, event);
+    }
+    catch(no_init_&) { // Már letiltottuk a cError dobálást
+        PDEB(VERBOSE) << "Dropped cError..." << endl;
+        return false;
+    }
+    CATCHS(lastError)
+    PDEB(DERROR) << "Error in " << __PRETTY_FUNCTION__ << endl;
+    PDEB(DERROR) << "Receiver : " << receiver->objectName() << "::" << typeid(*receiver).name() << endl;
+    PDEB(DERROR) << "Event : " << typeid(*event).name() << endl;
+    cError::mDropAll = true;    // A további hiba dobálások nem kellenek (dobja, de ezentul egy no_init_ objektummal)
+    cErrorMessageBox::messageBox(lastError);
+    QApplication::exit(lastError->mErrorCode);  // kilépünk,
+    return false;
+}
+@endcode
+Természetesen a main() függvényunkben nem a QApplication objektumot, hanemn a saját myApp objetumunkat kell használni.
+*/
 class LV2SHARED_EXPORT lanView  : public QObject {
 #ifdef MUST_USIGNAL
     friend void unixSignalHandler(int __i);
@@ -63,22 +157,48 @@ class LV2SHARED_EXPORT lanView  : public QObject {
     friend LV2SHARED_EXPORT void dropThreadDb(const QString &tn, bool __ex);
    Q_OBJECT
 public:
+    /// Konstruktor. Inicializálja az API-t. Az objektum csak egy példányban hozható létre.
+    /// Ha az inicializálás sikeres, akkor a lastError adattag értéke NULL lessz, egyébként az
+    /// egy hiba adatatit tartalmazó cError objektumra fog mutatni.
     lanView();
+    /// Destruktor
+    /// Ha a lastError pointer nem null, és a cError objektumban a hiba kós nem EOK, akkor kiírja a
+    /// hibaüzenetet a debug rendszeren keresztül a DERROR paraméterrel, és megkisérli rögzíteni a hoba
+    /// rekordot az adatbázisban, vagyis hívja a sendError metódust.
+    /// Minden általa inicializált objektumot felszabadít.
     ~lanView();
+    /// Egy UNIX signal-t kezelő virtuális metódus.
+    /// Windows esetén egy üres függvény.
     virtual bool uSigRecv(int __i);
+    /// Az alapértelmezett program paraméterek értelmezése
     void parseArg(void);
     /// A hiba objektum tartalmának a kiírása a app_errs táblába.
     /// @param pe A hiba objektum pointere
     /// @param __t A hibát generáló thread neve. Opcionális
     /// @return Ha kiírta az adatbázisba a rekordot, akkor a rekord id-vel tér vissza, egyébként NULL_ID-vel
     qlonglong sendError(const cError *pe, const QString& __t = QString());
+    /// Az adatbázisban inzertál egy applikáció hiba rekordot, ahol a hiba kód a 'Start' lessz.
+    /// Ha a művelet sikertelen, akkor dob egy kizárást.
     void insertStart(QSqlQuery& q);
+    /// Az adatbázisban inzertál egy applikáció hiba rekordot, ahol a hiba kód a 'ReStart' lessz.
+    /// Ha a művelet sikertelen, akkor dob egy kizárást.
     void insertReStart(QSqlQuery& q);
+    /// Az adatbázis "notification" fogadásának az inicilizálása.
+    /// Az adatbázis szerver NOTIFY <csatorna> parancsának hatására a dbNotif() virtuális slot lessz meghívva.
+    /// @param __n csatorna név, ha üres, akkor a csatorna név az applikáció neve.
+    /// @param __ex Ha értéke true (alapértelmezés), akkor ha az adatbázis nem támogatja ezt a funkciót dob egy kizárást.
+    /// @return Ha minden rendben akkor true, hiba esetén (és ha __ex nem true), akkor false.
     bool subsDbNotif(const QString& __n = QString(), bool __ex = true);
+    /// Az adatbázis megnyitása.
+    /// @param __ex ha értéke true, és nem sikerült az adatbázis megnyitása, akkor dob egy kizárást.
+    /// @return Ha sikeresen megnyitotta az adatbázist, akkor true.
     bool openDatabase(bool __ex = true);
+    /// Az adatbázis bezárása.
     void closeDatabase();
-
+    /// Ha létre lett hozva a lanView (vagy laszármazotjának) a példánya, akkor annak a pointervel tér vissza, ha nem
+    /// akkor dob egy kizárást.
     static lanView*    getInstance(void) { if (instance == NULL) EXCEPTION(EPROGFAIL); return instance; }
+    /// Ha létre lett hozva a lanView (vagy laszármazotjának) a példánya, akkor true-val egyébként false-val tér vissza.
     static bool        exist(void) { return instance != NULL; }
 
     const QString   libName;
@@ -88,15 +208,15 @@ public:
     QString         binPath;    ///< Bin kereső path
     QSettings      *pSet;       ///< Pointer to applicaton settings object
     cError *        lastError;  ///< Pointer to last error object or NULL
-    QStringList     args;
-    QString         lang;
-    QTranslator    *libTranslator;
-    QTranslator    *appTranslator;
+    QStringList     args;       ///< Argumentum lista
+    QString         lang;       ///< nyelv
+    QTranslator    *libTranslator;  ///< translator az API-hoz
+    QTranslator    *appTranslator;  ///< translator az APP-hoz
 
-    static QString    appName;
-    static short      appVersionMinor;
-    static short      appVersionMajor;
-    static QString    appVersion;
+    static QString    appName;          ///< Az APP neve
+    static short      appVersionMinor;  ///< Az APP al verzió száma
+    static short      appVersionMajor;  ///< Az APP fő verzió száma
+    static QString    appVersion;       ///< APP verzioó string
     static void setApp(short _vMajor, short _vMinor, const char * _name) {
         appVersionMajor = _vMajor;
         appVersionMinor = _vMinor;
@@ -106,15 +226,15 @@ public:
     }
     static const QString    orgName;
     static const QString    orgDomain;
-    static const short      libVersionMinor;
-    static const short      libVersionMajor;
-    static const QString    libVersion;
-    static QString          appHelp;
-    static bool             gui;
-    static bool             snmpNeeded;
-    static bool             sqlNeeded;
-    static qlonglong        debugDefault;
-    static const QString    homeDefault;
+    static const short      libVersionMinor;    ///< API al verziószám
+    static const short      libVersionMajor;    ///< API fő verzió szám
+    static const QString    libVersion;         ///< API verzió string
+    static QString          appHelp;            ///< Az applikáció help string kiegészítésa
+    static bool             gui;                ///< Ha GUI alkalmazás, akkor true
+    static bool             snmpNeeded;         ///< Ha kell az SNMP akkor true
+    static bool             sqlNeeded;          ///< Ha a konstruktor nyissa meg az adatbázist, akkor true
+    static qlonglong        debugDefault;       ///< Debug maszk alapértelmezett értéke.
+    static const QString    homeDefault;        ///< a home mappa alapértelmezett értéke.
 
     static eIPV4Pol         ipv4Pol;    ///< IPV4 cím kezelési policy (nincs kifejtve!)
     static eIPV6Pol         ipv6Pol;    ///< IPV6 cím kezelési policy (nincs kifejtve!)
@@ -130,7 +250,8 @@ public:
 #endif // MUST_USIGNAL
     static lanView *   instance;
     void            instAppTransl();
-   public slots:
+protected slots:
+    virtual void    dbNotif(QString __s);
     void            uSigSlot(int __i);
 };
 
@@ -160,7 +281,7 @@ typedef int (*tS2E)(const QString& n, bool __ex);
 /// @param A mező leíró objektum referenciája
 /// @param Az enumerációból stringgé konvertáló függvény pointere
 /// @param A stringból enumerációs konstanba konvertáló függvény pointere.
-/// @return true, ha nem sikerült eltérést detektálni a kétféle enum értELMEZÉS között, és true, ha eltérés van
+/// @return true, ha nem sikerült eltérést detektálni a kétféle enum értELMEZÉS között, és false, ha eltérés van
 EXT_ bool checkEnum(const cColStaticDescr& descr, tE2S e2s, tS2E s2e);
 
 #endif // LANVIEW_H

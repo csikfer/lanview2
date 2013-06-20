@@ -64,7 +64,7 @@ COMMENT ON COLUMN place_groups.place_group_descr    IS '';
 -- //// LOC.PLACE_GROUPS_MEMBERS
 
 CREATE TABLE place_group_places (
-    place_group_member_id   serial  PRIMARY KEY,
+    place_group_place_id   serial  PRIMARY KEY,
     place_group_id          integer REFERENCES place_groups(place_group_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     place_id                integer REFERENCES places(place_id)             MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     UNIQUE(place_group_id, place_id)

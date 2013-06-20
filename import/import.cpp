@@ -187,9 +187,7 @@ lv2import::lv2import() : lanView(), fileNm(), in()
         args.removeAt(i);;
         PDEB(INFO) << trUtf8("Set daemon mode.") << endl;
         daemonMode = true;
-        if (subsDbNotif()) {
-            connect(pDb->driver(), SIGNAL(notification(QString)), SLOT(dbNotif(QString)));
-        }
+        subsDbNotif();
     }
     if (args.count() > 1) DWAR() << trUtf8("Invalid arguments : ") << args.join(_sSpace) << endl;
     pq = newQuery();
