@@ -1,6 +1,12 @@
 #ifndef LANVIEW_H
 #define LANVIEW_H
 
+/*!
+@file lanview.h
+@author Csiki Ferenc
+@brief Az API init objektuma
+*/
+
 #include "lv2_global.h"
 #include <signal.h>
 #include "cdebug.h"
@@ -13,11 +19,6 @@
 #include "lv2user.h"
 #include "lv2xml.h"
 #include "scan.h"
-
-/*!
-@file lanview.h
-Az API obkeltum kezelése
-*/
 
 #define ORGNAME     "LanView"
 #define ORGDOMAIN   ""
