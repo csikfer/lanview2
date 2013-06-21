@@ -61,7 +61,7 @@ enum eIPV4Pol {
 @brief "main" bázis objektum. Minden az API-t hasznéló alkalmazásnak létre kell hoznia a saját példányát.
 
 Minden az API-t haszáló alkalmazásnak induláskor létre kell hoznia a saját a lanView objektumból származtatott példányát.
-Egy példa a main() -re (a saját származtatott osztály a myLanVuew) :
+Egy példa a main() -re (a saját származtatott osztály a myLanView) :
 @code
 #define VERSION_MAJOR   0
 #define VERSION_MINOR   01
