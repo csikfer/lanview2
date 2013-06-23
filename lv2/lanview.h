@@ -185,7 +185,7 @@ public:
     /// Ha a művelet sikertelen, akkor dob egy kizárást.
     void insertReStart(QSqlQuery& q);
     /// Az adatbázis "notification" fogadásának az inicilizálása.
-    /// Az adatbázis szerver NOTIFY <csatorna> parancsának hatására a dbNotif() virtuális slot lessz meghívva.
+    /// Az adatbázis szerver NOTIFY \<csatorna\> parancsának hatására a dbNotif() virtuális slot lessz meghívva.
     /// @param __n csatorna név, ha üres, akkor a csatorna név az applikáció neve.
     /// @param __ex Ha értéke true (alapértelmezés), akkor ha az adatbázis nem támogatja ezt a funkciót dob egy kizárást.
     /// @return Ha minden rendben akkor true, hiba esetén (és ha __ex nem true), akkor false.
@@ -279,10 +279,10 @@ typedef int (*tS2E)(const QString& n, bool __ex);
 /// enumerációs értékek megfeleljenek az adatbázisban a megfelelő enumerációs érték sorrendjének.
 /// A vizsgálat csak az adatbázis szerini értékek irányából ellenőriz, ha a konverziós függvények
 /// több értéket is kezelnének, azt nem képes detektálni.
-/// @param A mező leíró objektum referenciája
-/// @param Az enumerációból stringgé konvertáló függvény pointere
-/// @param A stringból enumerációs konstanba konvertáló függvény pointere.
-/// @return true, ha nem sikerült eltérést detektálni a kétféle enum értELMEZÉS között, és false, ha eltérés van
+/// @param descr A mező leíró objektum referenciája
+/// @param e2s Az enumerációból stringgé konvertáló függvény pointere
+/// @param s2e A stringból enumerációs konstanba konvertáló függvény pointere.
+/// @return true, ha nem sikerült eltérést detektálni a kétféle enum értelmezés között, és false, ha eltérés van
 EXT_ bool checkEnum(const cColStaticDescr& descr, tE2S e2s, tS2E s2e);
 
 #endif // LANVIEW_H

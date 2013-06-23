@@ -44,7 +44,7 @@ private:
 
 /// @class cINetValidator
 /// @brief Input validátor a INET adattípushoz.
-/// Az adatbázisban az INET típus hosz és net címet is jelenthet, jelen esetben csak a hoszt cím van engedélyezve.
+/// Az adatbázisban az INET típus host és net címet is jelenthet, jelen esetben csak a hoszt cím van engedélyezve.
 class cINetValidator : public QValidator {
 public:
     /// Konstruktor

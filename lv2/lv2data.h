@@ -222,8 +222,8 @@ public:
     /// Hiba esetén dob egy kizárást
     /// @param __i A VLAN id
     /// @param __n Az új vlan neve
-    /// @var __d Az új vlan description
-    /// @var __s Az új vlan statusa
+    /// @param __d Az új vlan description
+    /// @param __s Az új vlan statusa
     /// @return Az beillesztett új rekord ID-je.
     static long insertNew(long _i, const QString& __n, const QString& __d, bool _s);
 };
@@ -1133,16 +1133,19 @@ public:
 /// @param o Az objektum, melyhez tartozó táblából törölni szeretnénk
 /// @return true, ha törölt egy rekordot, false, ha nem
 EXT_ bool LinkUnlink(QSqlQuery& q, cRecord& o, qlonglong __pid);
-/// Csak a cPhsLink, cLogLink és cLldpLink objektumokka használható
+/// Csak a cPhsLink, cLogLink és cLldpLink objektumokkal használható
 /// Megadja, hogy az ID alapján megadott port, mely másik porttal van link-be
 /// @param q Az SQL lekérdezéshez használt objektum.
 /// @param o Az objektum, melyhez tartozó táblában keresni szeretnénk
+/// @param __pid port ID
 /// @return A talált port ID-je, vagy NULL_ID
 EXT_ qlonglong LinkGetLinked(QSqlQuery& q, cRecord& o, qlonglong __pid);
 /// Csak a cPhsLink, cLogLink és cLldpLink objektumokka használható
 /// Megadja, hogy az ID alapján megadott két port, link-be van-e
 /// @param q Az SQL lekérdezéshez használt objektum.
 /// @param o Az objektum, melyhez tartozó táblában keresni szeretnénk
+/// @param __pid1 az egyik port ID
+/// @param __pid2 a másik port ID
 /// @return A talált port ID-je, vagy NULL_ID
 EXT_ bool LinkIsLinked(QSqlQuery& q, cRecord& o, qlonglong __pid1, qlonglong __pid2);
 

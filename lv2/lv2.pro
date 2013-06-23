@@ -53,7 +53,8 @@ HEADERS += lanview.h \
     lv2data.h \
     lv2user.h \
     guidata.h \
-    lv2cont.h
+    lv2cont.h \
+    doxydoc.h
 FORMS += 
 OTHER_FILES +=
 unix:LIBS += -lsnmp

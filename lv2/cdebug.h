@@ -80,7 +80,7 @@ EXT_ QString quotedString(const QString& __s, const QChar &__q = QChar('"'));
 /// @relates cDebug
 #define _DBGOBJ()    PDEB(OBJECT) << __PRETTY_FUNCTION__
 
-/// @def DBGOBJL()
+/// @def DBGOBJ()
 /// Debug üzenet kiírása egy nyomkövetendő konstruktor vagy destruktor meghívásakor, az üzenet le van zárva.
 /// @relates cDebug
 #define DBGOBJ()    PDEB(OBJECT) << __PRETTY_FUNCTION__ << endl

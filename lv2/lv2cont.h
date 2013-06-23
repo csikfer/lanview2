@@ -6,8 +6,8 @@
 Adatbázis kezelő objektum kontéberek ill. template-k
 */
 
-
 #include <QList>
+
 /*!
 @class tRecordList
 Template osztály. Rekord lista konténer.
@@ -63,7 +63,7 @@ public:
         append(p);
         return *this;
     }
-        /// Copy operátor.
+    /// Copy operátor.
     /// A konténer összes objektumát újra allokálja (a dup(() metódus hívásával), és ezek kerülnek a másolat konténer objektumba.
     tRecordList& operator=(const tRecordList& __o)
     {
@@ -446,10 +446,8 @@ public:
         return !member.isEmpty();
     }
     /// A fetchMembers(QSqlQuery& __q) metódus hívása után a további member rekordok beolvasása
-    /// @param __q Az adabázisművelethez használt QSqlQuery objektum, amit a fetchMeber() metődusnál is használltunk,
-    ///          ill. ami au ott kezdeményezett lekérdezés eredményét tartalmazza.
-    /// @return Ha be tudott olvasni további member rekordot, akkor true, egyébként false.
-/** @example
+    /// Egy példa a metódus használatára:
+/*! @code
     // A "mindenki" nevű felhasználói csoport összest tagjának a nevének a kiírása a debug -ra:
     tGroup<cGroup, cUser>   ugSw;
     QSqlQuery   q = getQuery();
@@ -457,14 +455,18 @@ public:
     else {
         if (ugSw.fetchMembers(q) {
             do {
-                PDEB(VERNOSE) << ugSw.user.getName() << endl;
+                PDEB(VERBOSE) << ugSw.user.getName() << endl;
             while (ugSw.nextMembers(q));
         }
         else {
-            DERR("Nincs egyetlen tagja sem a,imdenki nevű csoportnak.");
+            DERR("Nincs egyetlen tagja sem a, imdenki nevű csoportnak.");
         }
     }
+    @endcode
  **/
+    /// @param __q Az adabázisművelethez használt QSqlQuery objektum, amit a fetchMeber() metődusnál is használltunk,
+    ///          ill. ami au ott kezdeményezett lekérdezés eredményét tartalmazza.
+    /// @return Ha be tudott olvasni további member rekordot, akkor true, egyébként false.
     bool nextMember(QSqlQuery& __q) {
         if (__q.next()) member.set(__q);
         else            member.set();

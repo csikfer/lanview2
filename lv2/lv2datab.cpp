@@ -223,10 +223,10 @@ QVariant cColStaticDescr::toSql(const QVariant& _f) const
     return _f; // Tfh. ez igy jó
 }
 /**
-A megadott értéket konvertálja a tárolási típussá, ami :\n
-- eColType == FT_INTGER esetén qlonglong\n
-- eColType == FT_REAL esetén double\n
-- eColType == FT_TEXT esetén QString\n
+A megadott értéket konvertálja a tárolási típussá, ami :
+- eColType == FT_INTGER esetén qlonglong
+- eColType == FT_REAL esetén double
+- eColType == FT_TEXT esetén QString
 Ha a paraméter típusa qlonglong, akkor a NULL_ID, ha int, akkor a NULL_IX is null objektumot jelent.
 Ha a konverzió nem lehetséges, akkor a visszaadott érték egy üres objektum lessz, és a
 statusban a ES_DEFECTIVE bit be lessz billentve (ha nincs hiba, akkor a bit nem törlődik).
@@ -286,7 +286,7 @@ QString cColStaticDescr::toView(QSqlQuery& q, const QVariant &_f) const
     if (_f.isNull()) return rNul;
     if (eColType == FT_INTEGER) {
         qlonglong id = toId(_f);
-        if (id == NULL_ID) return rNul;
+        if (id == NULL_ID) return rNul; //?!
         QString r = QString::number(id);
         QString h = "#";
         if (fnToName.isEmpty() == false) {
@@ -1330,7 +1330,7 @@ cRecStaticDescr::cRecStaticDescr(const QString &__t, const QString &__s)
     _isUpdatable    = false;
     _set(__t,__s);
     addMap();
-    /// Csak most tudjuk rendesen előszedni, esetleg megkreálni az id->name konverziós függvényeket
+    // Csak most tudjuk rendesen előszedni, esetleg megkreálni az id->name konverziós függvényeket
     int i, n = cols();
     QSqlQuery *pq = NULL;
     for (i = 0; i < n; ++i) {
