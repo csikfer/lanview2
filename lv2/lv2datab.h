@@ -632,27 +632,133 @@ TSTREAMO(cRecStaticDescr)
 /* ******************************************************************************************************
    *                                              cRecord                                               *
    ******************************************************************************************************/
-/// @class cRecord
-/// @brief Az adat rekord objektumok tisztán virtuális ős objektuma.
-///
-/// Az objektum leszármazottai egy-egy megfeletetést végeznek az adatbázis adattábláival. Ez az egy-egy
-/// nem mindig végezhető el, ill. nem mindíg eredményez teljes az ős objektumban definiált funkcionalitást.
-/// Egy adat rekord objektum, az adattábla leíró cRecStaticDescr objektum pointerét statikus adattagként tartalmazza.
-/// Az objektum egy rekordot tárolhat,  a _fields adattagban, ami egy QVariant lista. A mező adatok
-/// a táblában definiált mező adattípusa szerint kötött, az adatkonverziók a mező leíró cColStaticDescr osztályon
-/// keresztül valósul meg.
-/// A _fields adattag ha nem üres. mindig annyi mezőt tartalmaz, mint az adattábla, a mező neveket,
-/// ill. annak tulajdonságait az objektum szempontjából statikus cRecStaticDescr típusú objektum tartalmazza.
-/// Az adatkezelés általában virtuális metódusokon keresztül történik, azok a metódusok, amik
-/// nem virtuálisak, '_' karakterrel kezdődnek, ebben az esetben ha szükség van a leíró
-/// objektumra, akkor azt is paraméterként kell megadni. Ha a metódus nem hív virtuális metódust,
-/// és nem '_'-al kezdődik, de alapvető jelentőségű metódus, akkor az általában inline metódusként
-/// újra van definiálva '_' előtaggal.
-/// Az adat _stat adattagja a legtöbb az objektumon végrehajtott műveletet követ, annak megfelelően áll be, de
-/// az összetettebb vizsgálatot kívánó állapotokat nem képes autómatikusan követni.
-/// Ezért bizonyos állapot lekérdező metódusoknak két változata van, az alap metódus, csak a _stat adattagot vizsgálja, míg a másik változat
-/// átvizsgálja az objektumot, beállítja a _stat-ot, és ez alapján tér vissza, ilyen esetekben az a metódus,
-/// mely csak a _stat alapján ad vissza értéket '_' karakterrel végződik, ha van értelme megkülönböztetésnek.
+/*!
+@class cRecord
+@brief Az adat rekord objektumok tisztán virtuális ős objektuma.
+
+Az objektum leszármazottai egy-egy megfeletetést végeznek az adatbázis adattábláival. Ez az egy-egy megfeleltetés
+nem mindig végezhető el, ill. nem mindíg eredményez teljes az ős objektumban definiált funkcionalitást.
+Az adatkezelés általában virtuális metódusokon keresztül történik, azok a metódusok, amik
+nem virtuálisak, '_' karakterrel kezdődnek, ebben az esetben ha szükség van a leíró
+objektumra, akkor azt is paraméterként kell megadni. Ha a metódus nem hív virtuális metódust,
+és nem '_'-al kezdődik, de alapvető jelentőségű metódus, akkor az általában inline metódusként
+újra van definiálva '_' előtaggal.
+Az adat _stat adattagja a legtöbb az objektumon végrehajtott műveletet követ, annak megfelelően áll be, de
+az összetettebb vizsgálatot kívánó állapotokat nem képes autómatikusan követni.
+Ezért bizonyos állapot lekérdező metódusoknak két változata van, az alap metódus, csak a _stat adattagot vizsgálja, míg a másik változat
+átvizsgálja az objektumot, beállítja a _stat-ot, és ez alapján tér vissza, ilyen esetekben az a metódus,
+mely csak a _stat alapján ad vissza értéket '_' karakterrel végződik, ha van értelme megkülönböztetésnek.
+
+A cRecord objektum működésének alapja egy leíró objektum a cRecStaticDescr, mely a tábla tulajdonságait tartalmazza.
+Ez az objektum minden leszármazott osztályhoz, a leszármazott osztályban egy statikus pointeren keresztül kapcsolódik,
+mint egy típus leíró. (egy kivétellel, a cAlternate ezt a pointert nem statikusan tartalmazza, vagyis annak „típusa”
+dinamikus). Így minden leszármazott definíciójakor az egyedi tulajdonságoknak csak egy részét kell implementálni,
+azok a tulajdonságok, melyek az adatbázisból is kiolvashatóak, a tábla azonosításával automatikusan érvényesülnek.
+
+Sok metódusa a cRecord, és a belőle származtatott osztályoknak csak egy teljesen, vagy részben átlátszó interfész a
+leíró osztályok, a cRecStaticDescr és a cColStaticDescr osztályok metódusai, ill. adattagjai felé. Ilyenek a tábla
+vagy mező tulajdonságait visszaadó metódusok, vagy az ezekkel összefüggő adatszerkezetek előállítása. Ezek mindegyike
+egy tisztán virtuális függvényen a descr() keresztül valósul meg, ami egy konstans referenciát ad vissza a
+cRecStaticDescr leíró objektumra. Ezen metódusok:schemaName(), tableName(),
+fullTableName(), fullTableNameQ(), columName(), columnNameQ(), fullColumName(), fullColumnNameQ(),
+isIndex(), toIndex(), chkIndex(), cols(), columnDescrs(), primaryKey(), uniques(), autoIncrement(), idIndex(),
+isName(), nameIndex(), nameName(), descrIndex(), deletedIndex(), isParent(), isUpdatable(), isUpdatable(),
+tableoid(), isNullable(), mask(), iTab()
+
+A cRecord objektum egy rekord adatait tartalmazhatja, a _fields adattagban, mely közvetlenül nem elérhető.
+A _fields egy QVarinat lista, és a rekord mezőinek értékét mindíg a táblában definiált sorrendben tartalmazza.
+Az egyes mező értékeket reprezentáló QVariant objektum a mező típusának megfelelően adott típusú adatot tartalmaz,
+vagy „invalid”, ha a mező értéke NULL. A mező adatok kezelése a cColStaticDescr, és a belőle származtatott
+objektumokon keresztül történik, melyet a cRecStaticDescr tartalmaz. A kezelt típusok a következők lehetnek:
+- Egész számok\n
+  SQL típusok: smallint, integer, bigint, serial, bigserial. Más egész típus nem támogatott.
+  A tárolási típus a qlonglong, az adatkonverziókat az  cColStaticDescr osztály végzi.
+- Lebegőpontos számok\n
+  SQL típusok: real, double precision. Más lebegőpontos típus nem támogatott.
+  A tárolási típus a double, az adatkonverziókat az  cColStaticDescr osztály végzi.
+- Szöveges adat\n
+  SQL típusok: character varying(n) , varchar(n), character(n), char(n), text
+  A tárolási typus a QString, z adatkonverziókat a cColStaticDescr osztály végzi.
+- Tömbök\n
+  A fentebb felsorol három típuscsoport tömbje támogatott. (az enumerációs tömböt az API nem tömbként kezeli, lásd később).
+  A tárolási típus numerikus tömb esetén QVariantList , ahol a lista elemek típusa qlonglong ill. double, szöveges tömb esetén pedig QStringList. Tömbök esetén a konverziókat a cColStaticDescrArray osztály végzi.
+- Enumerációk\n
+  Az enumerációs típusnál tárolási típus a QString. A konverziókat pedig a cColStaticDescrEnum osztály végzi. Az enumeráció mind egész mind string formában használható. Ha egész számként adjuk meg, ill. egész számmá konvertáljuk, akkor az adatbázisbeli enumeráció neveknek a numerikus értéke a definícióban szereplő sorszámuk lesz: 0, 1, 2,... .
+  Mivel az enumerációs adattípusokat nem tudjuk az SQL típusok alapján automatikusan létrehozni, ugyanígy a numerikus érték és string konverziókat sem, ezért az API tartalmaz egy ellenőrző mechanizmust, hogy a kétféleképpen leírt, de azonos jelentésű adatok valóban egyezzenek. Ehhez a string – numerikus érték közötti konverziós függvényeknek megadott prototípusa kell legyen, és ebben az esetben a két értelmezés szerinti értékeknek az egyezését a CHKENUM() makróval tudjuk ellenőrizni lásd az API dokumentációt.
+- Set vagy enumerációs tömb\n
+  A MySQL-ben létező set típust a PostgreSQL nem támogatja, de helyette használható az enumerációs tömb. A tárolási típus a QStringList, a konverziókat pedig a cColStaticDescrSet osztály végzi. Hasonlóan az enumerációs típushoz a set típus használható string ill. string lista, és numerikus formában. Ebben az esetben egy enumerációs érték és az értéknek a definícióbeli sorszáma a numerikus értékben a megfelelő sorszámú bitjével egyenértékű.
+- Poligon\n
+  SQL típus a polygon.
+  A tárolási típus a QPolygonF, az adatkonverziókat az  cColStaticDescrPolygon osztály végzi.
+- IP cím\n
+  SQL típus az inet.
+  A tárolási típus a netAddress, az adatkonverziókat az  cColStaticDescrAddr osztály végzi. Értékadásnál használható még a QHostAddress típus is, mivel ezeket a típusokat közvetlenül a QVariant nem támogatja, az API regisztrálja a hiányzó típusokat, valamint a típuskonverziós lehetőségek is szűkebbek, ill. azok nem mindig autómatikusak, lásd a QVariant dokumentációját. Bár az SQL-ben az inet typus címtartomány tárolására is alkalmas, és az API sem tesz szigorú különbséget a cím és címtartományok között a cRecord szintjén, az inet típust mindig csak IP cím tárolására használjuk.
+  IP címtartományok
+  SQL típus az cidr.
+  A tárolási típus a netAddress, az adatkonverziókat az  cColStaticDescrAddr osztály végzi. A cRecord osztály nem tesz különbséget a cím és címtartomány között.
+- MAC cím\n
+  SQL típus a macaddr.
+  A tárolási típus a cMac, az adatkonverziókat az  cColStaticDescrAddr osztály végzi. A QVariant közvetlenül nem támogatja a cMac osztályt, a típust az API regisztrálja, lásd a QVariant dokumentációját is.
+- Időpont (egy napon belül)
+  SQL típus a time. Időzóna kezelés (egyelőre) nincs.
+  A tárolási típus a QTime, az adatkonverziókat az  cColStaticDescrTime osztály végzi.
+- Dátum\n
+  SQL típus a date. Időzóna kezelés (egyelőre) nincs.
+  A tárolási típus a QDate, az adatkonverziókat az  cColStaticDescrDate osztály végzi.
+- Dátum és idő\n
+  SQL típusok a timestamp. Időzóna kezelés (egyelőre) nincs.
+  A tárolási típus a QTimeDate, az adatkonverziókat az  cColStaticDescrDateTime osztály végzi.
+- Időintervallum\n
+  SQL típusok az interval.
+  A tárolási típus a qlonglong, az időintervallum ezredmásodpercben értendő, az adatkonverziókat az  cColStaticDescrInterval osztály végzi.. Nem támogatja az összes formátumát a PostgreSQL-beli időintervallumnak, csak a nap, óra, perc, másodperc adható meg (a másodperc mint lebegőpontos érték).
+- Logikai\n
+  SQL típus a boolean.
+  A tárolási típus a bool, az adatkonverziókat az  cColStaticDescrBool osztály végzi.
+- Bináris adatok\n
+  SQL típus a bytea.
+  Tárolási típus a QByteArray, nincsenek adat konverziók.
+Más mező adat típust nem támogat a cRecord osztály.
+
+A mező adatokhoz a set() és get() metódusokkal ill. az operator[]() -on keresztül tudunk hozzáférni.
+Van néhány speciális mező (nem kötelező, a rendszer ezeket csak akkor detektálja, ha azok megfelelnek a szabályoknak),
+ilyen az ID, a név, és a 'descr' mező (nem keverendő a *Descr nevű objektumokkal). Ezek esetén nem kell megadni
+a mező nevét vagy indexét: getId(), getName(), getDescr(), setId(i), setName(n). És van néhány metódus, ami elvégez
+helyettünk néhány gyakoribb adat konverziót getId(const QString&), getName(const QString&), getBool(const QString&), getId(int), getName(int),
+getBool(int), view(), setId(const QString&,qlonglong), setName(const QString&, const QString&), setId(int,qlonglong), setName(int, const QString&).
+
+A set metódus csoport további tagjai:
+- set()	NULL mezőkkel tölti fel az objektumot
+- set(const cRecord &  	__o)	Ahol egy QSqlRecord objektumból tölti fel a mező adatokat.
+- set(const QSqlQuery & __q, int * __fromp, int	__size)	Ahol egy QSqlQuery objektum a forrás, továbbá lehetőség van több tábla rekordját tartalmazó lekérdezést használni forrásként,
+  és több objektumot célként (ismételt hívásával).
+
+További adatmanipuláló metódus a clear(), ami kiüríti az egész mező adat konténert, és a clear(c,f) ami egy mező
+értékét állítja NULL ill. „invalid” értékre.
+
+Egyszerű adatbázis műveletekre, adat beszúrására, módosítására használható metódusok: fetch(), rows(), completion(),
+fetchById(), setById() fetchByName(), setByName(), fetchTableOid(), getIdByName(), getNameById(), insert(), update(),
+remove(), delByName().
+És az SQL string összeállítását, és az adatbázis műveleteket segítő metódusok a: query(),
+first(), next(), getSetMap(), whereString().
+
+Az osztály állapot lekérdező metódusai: checkData(), isNull(), isNull(c), _isNull(), _isNull(), isEmpty(), isEmpty(),
+isEmpty_(), isIdent(), isModify_(), isNullId(), isNullName() ezen felül a _state adattag közvetlenül is elérhető.
+Van egy állapot lekérdezés, ami csak a cAlternate osztály esetén ad nem „hamis” eredményt, ez az isFacesess().
+
+A cRecord leszármazott osztályainál járulékos adattagok kezelését segítik a következő virtuális metóduaok, melyek
+a cRecord ősben üres függvényként vannak definiálva: toEnd(), toEnd(c), clearToEnd(). Ezen függvények
+újraimplementálásával elvégezhetjük azokat a műveleteket, melyek az mező adatok megváltozásakor el kell végeznünk.
+A népes cRecord objektum család tagjai közti konverziókat ill. ellenőrzéseket segítő metódusok a chkObjeType()
+és a reconvert(). Egyes esetekben jelentősen leegyszerűsíti az objektumcsalád használatát pl. konténerekben két
+további virtuális metódus, a newObj() és a dup(), ezeket makrók segítségével definiálhatjuk. Az objektum klónozásakor,
+nem teljesen azonos az így létrehozott objektum, mivel a QObject is ős, és ez a művelet a QObject esetén nem
+támogatott, vagyis a QObject-hez tartozó tulajdonságok nem kerülnek az új objektumba.
+
+Ha nyomkövetéshez ki kell írni egy objektum értékét, akkor a toString(), ha a leíró objektumok tartalmát is látni
+akarjuk, akkor a toAllString() metódust használhatjuk, aminek az eredménye a kiírandó string. Az API nyomkövető
+(cDebug) esetén csak az objetumot kell megadni, a kiírt string a toString() metódus által generált string lesz.
+
+*/
 class LV2SHARED_EXPORT cRecord : public QObject {
     template <class T> friend class tRecordList;
     friend class cRecordFieldConstRef;

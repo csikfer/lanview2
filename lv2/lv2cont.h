@@ -11,7 +11,18 @@ Adatbázis kezelő objektum kontéberek ill. template-k
 /*!
 @class tRecordList
 Template osztály. Rekord lista konténer.
-A konténer elemek objektum pointerek.
+
+A konténer az objektumok pointereit tárolja, azok a konténer objektum „tulajdonába” kerülnek, vagyis azokat a destruktor felszabadítja.
+A konténer másolásakor az összes elem klónozva lesz, ezért ez a művelet, főleg nagyobb listák esetén kerülendő, és lásd még a klónozásnál
+leírtakat is cRecord::dup() .
+Az ős QList konténer metódusain kívül mit nyújt a tRecordList konténer?
+A pointer elemeket az elem törlésekor felszabadítja, továbbá ha referenciával adjuk meg a konténerbe elhelyezendő objektumot (pointer helyett),
+akkor klónozza azt, és a klónt helyezi a konténerbe.
+Egy elem kereshető, ill. elérhető egy mező értéke alapján: contains() és indexOff(), get() metódusok.
+Lehetőség van egy mező értékének beállítására az összes elemnél: set(), setId(), setName().
+
+...
+
 */
 template <class T>
         class tRecordList : public QList<T *>

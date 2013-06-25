@@ -1,13 +1,13 @@
 ﻿/*!
 @file doxydoc.h
-@author Csiki Ferenc
+@author Csiki Ferenc <csikfer@gmail.com>
 @brief Nem igazi fejállomány. Az API dokumentáció része, csak megjegyzéseket tartalmaz.
 */
 
 /*!
-@mainpage Indalarm API
-@author Csiki Ferenc
-@section lanview Inicializálás, a lanView osztály
+@mainpage LanView2 API
+@author Csiki Ferenc <csikfer@gmail.com>
+@section A LanView API Inicializálása, a lanView osztály
 Az API-nak hasonlóan a Qt-ben a QApplication osztályhoz van egy „globálisan” használt objektuma,
 amit egy példányban mindig létre kell hozni. A példány létrehozásakor inicializáljuk az API-t,
 és ez a példány teszi lehetővé pl. az adatbázis elérését.
@@ -67,14 +67,10 @@ Továbbá néhány string függvény:
 - static inline QString unDQuoted(const QString& name)
 - static inline QString dQuotedCat(const QString& a, const QString& b)
 
-@subsection cRecord A cRecord bázis osztály
-A cRecord egy összetett bázis osztály, amely egy sablont biztosít az adatbázis adattáblái és a C++ objektumok közötti megfeleltetéshez.
-Az osztály által biztosított egy-egy megfeleltetésnek természetesen csak egyes tábla típusoknál van értelme, tipikusan azoknál,
-melyek maguk is objektum jellegűek, pl. konkrét tárgyakat reprezentálnak.
-A cRecord-ban a legtöbb művelet egy tisztán virtuális függvényen keresztül valósul meg, mely egy leíró objektum referenciáját adja vissza:
-@code
-virtual const cRecStaticDescr&  descr() const = 0;
-@endcode
+@subsection crec A cRecord bázis osztály
+A cRecord egy összetett bázis osztály, amely egy sablont biztosít az adatbázis adattáblái és a C++ objektumok
+közötti megfeleltetéshez. Az osztály által biztosított egy-egy megfeleltetésnek természetesen csak egyes tábla
+típusoknál van értelme, tipikusan azoknál, melyek maguk is objektum jellegűek, pl. konkrét tárgyakat reprezentálnak.
 
 @subsection  cRecStaticDescr A cRecStaticDescr leíró objektum
 Az adatkezelést vezérlő a tábla tulajdonságait tartalmazó cRecStaticDescr osztály teszi lehetővé a cRecord leszármazott osztály
@@ -124,7 +120,6 @@ A GUI-val kapcsolatos osztályok az lv2-ven:
 - cMac  Ethernet cím (MAC)
 - netAddress Hálózati címtartomány (IP/mask)
 - netAddressList    Hálózati címtartományok konténere
-
 
 */
 
