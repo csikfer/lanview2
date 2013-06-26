@@ -44,17 +44,13 @@ static inline QString quoted(const QString& __s)
 }
 
 /*!
+Törli a idézőjelet, ha van. Az idézőjeleket csak az elő és utolsó karakterben keresi,
+és az lehet egyszeres és kéttős idézőjel is, de csak azonos.
  */
 static inline QString unQuoted(const QString& name)
 {
-    if (name.startsWith(QChar('\'')) && name.endsWith(QChar('\''))) return name.mid(1, name.size() -2);
-    return name;
-}
-/*!
- */
-static inline QString unDQuoted(const QString& name)
-{
-    if (name.startsWith(QChar('"')) && name.endsWith(QChar('"'))) return name.mid(1, name.size() -2);
+    if      (name.startsWith(QChar('\'')) && name.endsWith(QChar('\''))) return name.mid(1, name.size() -2);
+    else if (name.startsWith(QChar('"'))  && name.endsWith(QChar('"')))  return name.mid(1, name.size() -2);
     return name;
 }
 
@@ -71,6 +67,19 @@ QString c = dQuoted(a);  // c = "\"aaa.bbb\""
 static inline QString dQuotedCat(const QString& a, const QString& b)
 {
     return mCat(dQuoted(a), dQuoted(b));
+}
+
+/*!
+Zárójelbe teszi a kapott stringet
+@par Például.:
+@code
+QString a = "aaa";
+QString c = parentheses(a);  // c = "(aaa)"
+@endcode
+ */
+static inline QString parentheses(const QString& __s)
+{
+    return QChar('(') + __s  + QChar(')');
 }
 
 /*!

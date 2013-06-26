@@ -18,8 +18,8 @@ BISONSOURCES += import_parser.yy
 
 OTHER_FILES += $$BISONSOURCES
 
-
-QT       += core sql xml network
+# nem mintha kéne nekünk widget, de elszáll a QPolygonF típusnál, ha ki akarjuk szedni egy QVariant-ból
+QT       += core gui sql xml network widgets
 
 #QT       -= gui
 

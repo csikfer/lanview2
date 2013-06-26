@@ -153,7 +153,6 @@ CREATE TABLE users (    -- contacts
     addresses           varchar(128)[]  DEFAULT NULL,
     place_id            integer         DEFAULT NULL REFERENCES places(place_id) MATCH SIMPLE
                                             ON DELETE RESTRICT ON UPDATE RESTRICT
-    -- auth_user_id -> auth_user.id
 );
 ALTER TABLE users OWNER TO lanview2;
 COMMENT ON TABLE  users                 IS 'Users and contact table';

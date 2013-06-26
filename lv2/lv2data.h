@@ -88,7 +88,7 @@ enum eImageType {
     IT_BMP,             ///< Windows bit map
     IT_GIF,             ///< GIF
     IT_JPG,             ///< Jpeg
-    IT_JPEG = IT_JPG,   ///< Jpeg
+    IT_JPEG,            ///< Jpeg
     IT_PNG,             ///< PNG
     IT_PBM,
     IT_PGM,

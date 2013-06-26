@@ -1,7 +1,7 @@
 #ifndef IMPORT_H
 #define IMPORT_H
 
-#include <QtCore>
+#include <Qt>
 #include <QPoint>
 #include "lanview.h"
 #include "ping.h"

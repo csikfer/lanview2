@@ -13,7 +13,7 @@ aborted Az import az üzenetet eldobta
 CREATE TABLE imports (
     import_id       serial      PRIMARY KEY,
     date_of         timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    auth_id         integer     DEFAULT NULL
+    user_id         integer     DEFAULT NULL
         REFERENCES users(user_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
     import_text     text        NOT NULL,
     exec_state      execstate   NOT NULL DEFAULT 'wait',
@@ -26,7 +26,7 @@ CREATE TABLE imports (
 );
 ALTER TABLE imports OWNER TO lanview2;
 
-COMMENT ON TABLE imports IS 'Az import számára küldött feldolgozandó források táblája.';
+COMMENT ON TABLE  imports IS 'Az import számára küldött feldolgozandó források táblája.';
 COMMENT ON COLUMN imports.import_id IS 'Egyedi rekord azonosító.';
 COMMENT ON COLUMN imports.date_of IS 'A rekord létrehozásának az időpontja.';
 COMMENT ON COLUMN imports.user_id IS 'Felhasználói azonosító, aki a feldolgozást kezdeményezte.';
@@ -48,7 +48,7 @@ CREATE TABLE import_templates (
 );
 ALTER TABLE import_templates OWNER TO lanview2;
 
-COMMENT ON TABLE import_template_id IS 'Az importban mentett makrók és egyébb minták táblája.';
+COMMENT ON TABLE  import_templates IS 'Az importban mentett makrók és egyébb minták táblája.';
 COMMENT ON COLUMN import_templates.import_template_id IS 'Egyedi rekord azonosító.';
 COMMENT ON COLUMN import_templates.template_type IS 'A template típusa (macros, patchs,...)';
 COMMENT ON COLUMN import_templates.template_name IS 'A minta vagy makró neve';

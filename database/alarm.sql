@@ -19,9 +19,11 @@ CREATE TABLE alarms (
     msg_time        timestamp   DEFAULT NULL,
     alarm_time      timestamp   DEFAULT NULL,
     notice_time     timestamp   DEFAULT NULL,
-    notice_user     integer     DEFAULT NULL,
+    notice_user     integer     DEFAULT NULL
+        REFERENCES users(user_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
     ack_time        timestamp   DEFAULT NULL,
-    ack_user        integer     DEFAULT NULL,
+    ack_user        integer     DEFAULT NULL
+        REFERENCES users(user_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
     ack_msg         varchar(255)
 );
 CREATE INDEX alarms_begin_time_index ON alarms (begin_time);

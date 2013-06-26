@@ -227,6 +227,7 @@ A megadott értéket konvertálja a tárolási típussá, ami :
 - eColType == FT_INTGER esetén qlonglong
 - eColType == FT_REAL esetén double
 - eColType == FT_TEXT esetén QString
+- eColType == FT_BYNARY esetén QByteArray
 Ha a paraméter típusa qlonglong, akkor a NULL_ID, ha int, akkor a NULL_IX is null objektumot jelent.
 Ha a konverzió nem lehetséges, akkor a visszaadott érték egy üres objektum lessz, és a
 statusban a ES_DEFECTIVE bit be lessz billentve (ha nincs hiba, akkor a bit nem törlődik).
@@ -259,6 +260,10 @@ QVariant cColStaticDescr::set(const QVariant& _f, int &str) const
         ok = _f.canConvert<QString>();
         r = _f.toString();
         break;
+    case FT_BINARY:
+        ok = _f.canConvert<QByteArray>();
+        r = _f.toByteArray();
+        break;
     default:
         EXCEPTION(EPROGFAIL);
         break;
@@ -283,14 +288,16 @@ qlonglong cColStaticDescr::toId(const QVariant& _f) const
 QString cColStaticDescr::toView(QSqlQuery& q, const QVariant &_f) const
 {
     static QString  rNul = QObject::trUtf8("[NULL]");
-    if (_f.isNull()) return rNul;
-    if (eColType == FT_INTEGER) {
+    static QString  rBin = QObject::trUtf8("[BINARY]");
+    if (_f.isNull())           return rNul;
+    if (eColType == FT_BINARY) return rBin;
+    if (eColType == FT_INTEGER && fKeyType != FT_NONE) {
         qlonglong id = toId(_f);
         if (id == NULL_ID) return rNul; //?!
         QString r = QString::number(id);
         QString h = "#";
         if (fnToName.isEmpty() == false) {
-            QString sql = "SELECT " + fnToName + _sABraB + r + _sABraE;
+            QString sql = "SELECT " + fnToName + parentheses(r);
             if (!q.exec(sql)) SQLPREPERR(q, sql);
             if (q.first()) return q.value(0).toString();
             return h + r;
@@ -298,6 +305,8 @@ QString cColStaticDescr::toView(QSqlQuery& q, const QVariant &_f) const
         if (fKeyTable.isEmpty() == false) {
             if (pFRec == NULL) {
                 // Sajnos itt trükközni kell, mivel ezt máskor nem tehetjük meg, ill veszélyes, macerás, de itt meg konstans a pointer
+                // A következő sor az objektum feltöltésekor, ahol még írható, akár végtelen rekurzióhoz is vezethet.
+                // A rekurzió detektálása megvan, de kivédeni kellene, nem elég eszrevenni.
                 *const_cast<cAlternate **>(&pFRec) = new cAlternate(fKeyTable, fKeySchema);
             }
             QString n = pFRec->getNameById(q, id , false);
@@ -332,12 +341,12 @@ void cColStaticDescr::typeDetect()
     TYPEDETUDT("timestamp",FT_DATE_TIME)
     TYPEDETUDT("interval", FT_INTERVAL)
     if      (enumVals.count() > 0)                         eColType = FT_ENUM;
-    else if (udtName.contains("int",Qt::CaseInsensitive))  eColType = FT_INTEGER;
+    else if (udtName.contains("int", Qt::CaseInsensitive)) eColType = FT_INTEGER;
     else if (udtName.contains("real",Qt::CaseInsensitive)) eColType = FT_REAL;
     else if (udtName.contains("char",Qt::CaseInsensitive)) eColType = FT_TEXT;
+    else if (!udtName.compare("text",Qt::CaseInsensitive)) eColType = FT_TEXT;
     else {
-        DERR() << "Unknown field type : " << colType << _sSlash << udtName << endl;
-        eColType = FT_ANY;
+        EXCEPTION(ENOTSUPP, -1, QObject::trUtf8("Unknown %1 field type %2/%3 ").arg(colName(), colType, udtName));
     }
     if (colType == _sARRAY) eColType |= FT_ARRAY;
     return;
@@ -825,22 +834,26 @@ QVariant  cColStaticDescrPolygon::fromSql(const QVariant& _f) const
 QVariant  cColStaticDescrPolygon::toSql(const QVariant& _f) const
 {
     if (_f.isNull()) EXCEPTION(EDATA,-1,"Data is NULL");
+    int t = _f.userType();
     bool    empty = true;
-        QPolygonF    pol = _f.value<QPolygonF>();    // = _f;
-        if (pol.isEmpty()) return QVariant();
-        QString     s = _sABraB;
-        foreach(const QPointF& pt, pol) {
-            s += _sABraB + QString::number(pt.x()) + _sComma + QString::number(pt.y()) + _sABraE + _sComma;
-            empty = false;
-        }
-        if (empty == false) s.chop(1);
-        s += _sABraE;
-        //PDEB(VVERBOSE) << "_toSql() polygon -> string : " << s << endl;
-        return QVariant(s);
-    return _f; // Tfh. ez igy jó
+    if (t != QMetaType::QPolygonF) {
+        EXCEPTION(EDATA, t, debVariantToString(_f));
+    }
+    QPolygonF    pol = _f.value<QPolygonF>();
+    if (pol.isEmpty()) return QVariant();
+    QString     s = _sABraB;
+    foreach(const QPointF& pt, pol) {
+        s += parentheses(QString::number(pt.x()) + _sComma + QString::number(pt.y())) + _sComma;
+        empty = false;
+    }
+    if (empty == false) s.chop(1);
+    s += _sABraE;
+    //PDEB(VVERBOSE) << "_toSql() polygon -> string : " << s << endl;
+    return QVariant(s);
 }
 QVariant  cColStaticDescrPolygon::set(const QVariant& _f, int& str) const
 {
+    _DBGFN() << _sSpace << debVariantToString(_f);
     int t = _f.userType();
     if ((QMetaType::LongLong == t && NULL_ID == _f.toLongLong())
      || (QMetaType::Int      == t && NULL_IX == _f.toInt())
@@ -848,26 +861,23 @@ QVariant  cColStaticDescrPolygon::set(const QVariant& _f, int& str) const
         if (!isNullable && colDefault.isEmpty()) str |= cRecord::ES_DEFECTIVE;
         return QVariant();
     }
+    QPolygonF   pol;
     switch (t) {
-    case QMetaType::QPolygon: {
-        QPolygonF   pol;
+    case QMetaType::QPolygon:
         foreach (QPoint p, _f.value<QPolygon>()) {
             pol << QPointF(p);
         }
         return QVariant::fromValue(pol);
-    }
     case QMetaType::QPolygonF:
+        pol = _f.value<QPolygonF>();
+        PDEB(VVERBOSE) << "Type QPolygonF : size = " << pol.size() << endl;
         return _f;
-    case QMetaType::QPoint:{
-        QPolygonF   pol;
+    case QMetaType::QPoint:
         pol << QPointF(_f.value<QPoint>());
         return QVariant::fromValue(pol);
-    }
-    case QMetaType::QPointF:{
-        QPolygonF   pol;
+    case QMetaType::QPointF:
         pol << _f.value<QPointF>();
         return QVariant::fromValue(pol);
-    }
     }
     str |= cRecord::ES_DEFECTIVE;
     return QVariant();
@@ -1670,29 +1680,29 @@ int cRecStaticDescr::toIndex(const QString& __n, bool __ex) const
     // Ha megvan adva schema név
     if (m.size() == 3) {
         QString sn = _schemaName;
-        if (sn == unDQuoted(m.first())) {
+        if (sn == unQuoted(m.first())) {
             m.pop_front();  // Schema név ok, eldobjuk
         }
         else{
-            if (__ex) EXCEPTION(EDATA, -1, "Invalid frield name (other schema name) " + __n);
+            if (__ex) EXCEPTION(EDATA, -1, "Invalid field name (other schema name) " + __n);
             DERR() << "Invalid index : -1 / mismatch shema : my schema is " << schemaName() << endl;
             return NULL_IX; // Másik schemarol van szó
         }
     }
     // Ha megvan adva tábla név
     if (m.size() == 2) {
-        if (_tableName == unDQuoted(m.first())
-         || (_viewName.size() > 0 &&_viewName  == unDQuoted(m.first()))) {
+        if (_tableName == unQuoted(m.first())
+         || (_viewName.size() > 0 &&_viewName  == unQuoted(m.first()))) {
             m.pop_front();  // Tábla név ok, eldobjuk
         }
         else {
-            if (__ex) EXCEPTION(EDATA, -1, "Invalid frield name (other table name) " + __n);
+            if (__ex) EXCEPTION(EDATA, -1, "Invalid field name (other table name) " + __n);
             DERR() << "Invalid index : -1 / mismatch table : my table is " << tableName() << endl;
             return NULL_IX; // Másik tábláról van szó
         }
     }
     // maradt a mező név, keressük a listűban
-    QString name = unDQuoted(m.first());
+    QString name = unQuoted(m.first());
     return _columnDescrs.toIndex(name, __ex);
 }
 

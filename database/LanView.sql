@@ -68,11 +68,13 @@ CREATE DATABASE lanview2
 SET client_encoding   = 'UTF8';
 SET default_with_oids = 'FALSE';
 
--- //////////////////// 1 - PUBLIC SCHEMA ////////////////////
+CREATE OR REPLACE LANGUAGE plpgsql;
+CREATE OR REPLACE LANGUAGE plperl;
 
 CREATE EXTENSION IF NOT EXISTS dblink;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
-CREATE EXTENSION IF NOT EXISTS plperl;
+
+-- //////////////////// 1 - PUBLIC SCHEMA ////////////////////
 
 BEGIN;
 
@@ -110,9 +112,6 @@ $$ LANGUAGE plpgsql;
 \i imports.sql
 -- //////////////////// ALARM  ////////////////////
 \i alarm.sql
--- ///// Alarm view a jangohoz
--- \i alarm_view.sql
---
 \i indalarm.sql
 
 CREATE TYPE unusualfkeytype AS ENUM ('property', 'self', 'owner');

@@ -102,7 +102,7 @@ int imageType(const QString& __n, bool __ex)
     if (__n == _sBMP) return IT_BMP;
     if (__n == _sGIF) return IT_GIF;
     if (__n == _sJPG) return IT_JPG;
-    if (__n == _sJPEG)return IT_JPG;
+    if (__n == _sJPEG)return IT_JPEG;
     if (__n == _sPNG) return IT_PNG;
     if (__n == _sPBM) return IT_PBM;
     if (__n == _sPGM) return IT_PGM;
@@ -117,9 +117,10 @@ int imageType(const QString& __n, bool __ex)
 const QString&  imageType(int __e, bool __ex)
 {
     switch (__e) {
-    case IT_BMP:        return _sJPG;
+    case IT_BMP:        return _sBMP;
     case IT_GIF:        return _sGIF;
     case IT_JPG:        return _sJPG;
+    case IT_JPEG:       return _sJPEG;
     case IT_PNG:        return _sPNG;
     case IT_PBM:        return _sPBM;
     case IT_PGM:        return _sPGM;
