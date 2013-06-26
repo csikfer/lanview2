@@ -21,7 +21,7 @@ void setAppHelp()
 
 int main (int argc, char * argv[])
 {
-    // Ha csak CORE van, akkor elszáll a QPolygonF típusnál, ha ki akarjuk szedni egy QVariant-ból
+    // Ha csak CORE van, akkor elszáll (Sig 11) a QPolygonF típusnál, ha ki akarjuk szedni egy QVariant-ból
     QApplication app(argc, argv);
     SETAPP();
     lanView::snmpNeeded = true;

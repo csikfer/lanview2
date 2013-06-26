@@ -39,7 +39,7 @@ EXT_  bool variantIsNum(const QVariant & _v);
 /// Egy stringet bool-lá konvertál:
 /// Ha a string (b) értéke "t", "true", "y", "yes", "on" vagy "1", akkor true-val tér vissza,
 /// Ha a string (b) értéke "f", "false", "n", "no", "off" vagy "0", akkor false-val tér vissza,
-/// Egyébb értékeknél, ha __ex true, akkor dob egy kizárást, ha viszont __ex értéke hamis, akkor
+/// Egyéb értékeknél, ha __ex true, akkor dob egy kizárást, ha viszont __ex értéke hamis, akkor
 /// üres string esetén false, ellenkező esetben true a visszaadott érték.
 bool str2bool(const QString& _b, bool __ex = true);
 /// A bool-ból stringet csinál, a nyelvi beállításoknak megfelelően.
@@ -681,24 +681,40 @@ objektumokon keresztül történik, melyet a cRecStaticDescr tartalmaz. A kezelt
   A tárolási typus a QString, z adatkonverziókat a cColStaticDescr osztály végzi.
 - Tömbök\n
   A fentebb felsorol három típuscsoport tömbje támogatott. (az enumerációs tömböt az API nem tömbként kezeli, lásd később).
-  A tárolási típus numerikus tömb esetén QVariantList , ahol a lista elemek típusa qlonglong ill. double, szöveges tömb esetén pedig QStringList. Tömbök esetén a konverziókat a cColStaticDescrArray osztály végzi.
+  A tárolási típus numerikus tömb esetén QVariantList , ahol a lista elemek típusa qlonglong ill. double, szöveges tömb esetén pedig QStringList.
+  Tömbök esetén a konverziókat a cColStaticDescrArray osztály végzi.
 - Enumerációk\n
-  Az enumerációs típusnál tárolási típus a QString. A konverziókat pedig a cColStaticDescrEnum osztály végzi. Az enumeráció mind egész mind string formában használható. Ha egész számként adjuk meg, ill. egész számmá konvertáljuk, akkor az adatbázisbeli enumeráció neveknek a numerikus értéke a definícióban szereplő sorszámuk lesz: 0, 1, 2,... .
-  Mivel az enumerációs adattípusokat nem tudjuk az SQL típusok alapján automatikusan létrehozni, ugyanígy a numerikus érték és string konverziókat sem, ezért az API tartalmaz egy ellenőrző mechanizmust, hogy a kétféleképpen leírt, de azonos jelentésű adatok valóban egyezzenek. Ehhez a string – numerikus érték közötti konverziós függvényeknek megadott prototípusa kell legyen, és ebben az esetben a két értelmezés szerinti értékeknek az egyezését a CHKENUM() makróval tudjuk ellenőrizni lásd az API dokumentációt.
+  Az enumerációs típusnál tárolási típus a QString. A konverziókat pedig a cColStaticDescrEnum osztály végzi. Az enumeráció mind egész mind string
+  formában használható. Ha egész számként adjuk meg, ill. egész számmá konvertáljuk, akkor az adatbázisbeli enumeráció neveknek a numerikus értéke
+  a definícióban szereplő sorszámuk lesz: 0, 1, 2,... .
+  Mivel az enumerációs adattípusokat nem tudjuk az SQL típusok alapján automatikusan létrehozni, ugyanígy a numerikus érték és string konverziókat
+  sem, ezért az API tartalmaz egy ellenőrző mechanizmust, hogy a kétféleképpen leírt, de azonos jelentésű adatok valóban egyezzenek. Ehhez a
+  string – numerikus érték közötti konverziós függvényeknek megadott prototípusa kell legyen, és ebben az esetben a két értelmezés szerinti értékeknek
+  az egyezését a CHKENUM() makróval tudjuk ellenőrizni lásd az API dokumentációt.
 - Set vagy enumerációs tömb\n
-  A MySQL-ben létező set típust a PostgreSQL nem támogatja, de helyette használható az enumerációs tömb. A tárolási típus a QStringList, a konverziókat pedig a cColStaticDescrSet osztály végzi. Hasonlóan az enumerációs típushoz a set típus használható string ill. string lista, és numerikus formában. Ebben az esetben egy enumerációs érték és az értéknek a definícióbeli sorszáma a numerikus értékben a megfelelő sorszámú bitjével egyenértékű.
+  A MySQL-ben létező set típust a PostgreSQL nem támogatja, de helyette használható az enumerációs tömb. A tárolási típus a QStringList, a konverziókat
+  pedig a cColStaticDescrSet osztály végzi. Hasonlóan az enumerációs típushoz a set típus használható string ill. string lista, és numerikus formában.
+  Ebben az esetben egy enumerációs érték és az értéknek a definícióbeli sorszáma a numerikus értékben a megfelelő sorszámú bitjével egyenértékű.
 - Poligon\n
   SQL típus a polygon.
   A tárolási típus a QPolygonF, az adatkonverziókat az  cColStaticDescrPolygon osztály végzi.
+  @note Mivel a QPolygonF a Qt GUI modul része, ezért, ha az applikációnk nem GUI-val fordítottuk, ill. a QCoreApplication -t példányosítottuk a
+  main() -ben, akkor a QPolygonF használatakor elszállhat a programunk.
+
 - IP cím\n
   SQL típus az inet.
-  A tárolási típus a netAddress, az adatkonverziókat az  cColStaticDescrAddr osztály végzi. Értékadásnál használható még a QHostAddress típus is, mivel ezeket a típusokat közvetlenül a QVariant nem támogatja, az API regisztrálja a hiányzó típusokat, valamint a típuskonverziós lehetőségek is szűkebbek, ill. azok nem mindig autómatikusak, lásd a QVariant dokumentációját. Bár az SQL-ben az inet typus címtartomány tárolására is alkalmas, és az API sem tesz szigorú különbséget a cím és címtartományok között a cRecord szintjén, az inet típust mindig csak IP cím tárolására használjuk.
+  A tárolási típus a netAddress, az adatkonverziókat az  cColStaticDescrAddr osztály végzi. Értékadásnál használható még a QHostAddress típus is,
+  mivel ezeket a típusokat közvetlenül a QVariant nem támogatja, az API regisztrálja a hiányzó típusokat, valamint a típuskonverziós lehetőségek is
+  szűkebbek, ill. azok nem mindig autómatikusak, lásd a QVariant dokumentációját. Bár az SQL-ben az inet typus címtartomány tárolására is alkalmas,
+  és az API sem tesz szigorú különbséget a cím és címtartományok között a cRecord szintjén, az inet típust mindig csak IP cím tárolására használjuk.
   IP címtartományok
   SQL típus az cidr.
-  A tárolási típus a netAddress, az adatkonverziókat az  cColStaticDescrAddr osztály végzi. A cRecord osztály nem tesz különbséget a cím és címtartomány között.
+  A tárolási típus a netAddress, az adatkonverziókat az  cColStaticDescrAddr osztály végzi. A cRecord osztály nem tesz különbséget a cím és címtartomány
+  között.
 - MAC cím\n
   SQL típus a macaddr.
-  A tárolási típus a cMac, az adatkonverziókat az  cColStaticDescrAddr osztály végzi. A QVariant közvetlenül nem támogatja a cMac osztályt, a típust az API regisztrálja, lásd a QVariant dokumentációját is.
+  A tárolási típus a cMac, az adatkonverziókat az  cColStaticDescrAddr osztály végzi. A QVariant közvetlenül nem támogatja a cMac osztályt, a típust az
+  API regisztrálja, lásd a QVariant dokumentációját is.
 - Időpont (egy napon belül)
   SQL típus a time. Időzóna kezelés (egyelőre) nincs.
   A tárolási típus a QTime, az adatkonverziókat az  cColStaticDescrTime osztály végzi.
@@ -710,13 +726,15 @@ objektumokon keresztül történik, melyet a cRecStaticDescr tartalmaz. A kezelt
   A tárolási típus a QTimeDate, az adatkonverziókat az  cColStaticDescrDateTime osztály végzi.
 - Időintervallum\n
   SQL típusok az interval.
-  A tárolási típus a qlonglong, az időintervallum ezredmásodpercben értendő, az adatkonverziókat az  cColStaticDescrInterval osztály végzi.. Nem támogatja az összes formátumát a PostgreSQL-beli időintervallumnak, csak a nap, óra, perc, másodperc adható meg (a másodperc mint lebegőpontos érték).
+  A tárolási típus a qlonglong, az időintervallum ezredmásodpercben értendő, az adatkonverziókat az  cColStaticDescrInterval osztály végzi.
+  Nem támogatja az összes formátumát a PostgreSQL-beli időintervallumnak, csak a nap, óra, perc, másodperc adható meg (a másodperc mint lebegőpontos
+  érték).
 - Logikai\n
   SQL típus a boolean.
   A tárolási típus a bool, az adatkonverziókat az  cColStaticDescrBool osztály végzi.
 - Bináris adatok\n
   SQL típus a bytea.
-  Tárolási típus a QByteArray, nincsenek adat konverziók.
+  Tárolási típus a QByteArray, az adatkonverziókat az  cColStaticDescrBool osztály végzi.
 Más mező adat típust nem támogat a cRecord osztály.
 
 A mező adatokhoz a set() és get() metódusokkal ill. az operator[]() -on keresztül tudunk hozzáférni.
@@ -1046,33 +1064,42 @@ public:
     /// Ha a név mező NULL, akkor true-val tér vissza
     /// Virtuális metódust hív, konstruktorban nem használható.
     bool isNullName() const                         { return isNull(nameIndex()); }
-    /// Beinzertál egy rekordot a megfelelő adattáblába. Az inzert utasításban azok a mezők
-    /// lesznek megadva, melyek nem nem NULL az értékük.
+    /// Beszúr egy rekordot a megfelelő adattáblába. Az inzert utasításban azok a mezők
+    /// lesznek megadva, melyeknek nem NULL az értékük.
     /// Ha sikeres volt az inzert, akkor az objektumot újra tölti, az adatbázisban keletkezett új rekord alapján.
-    /// A rekord kiírását, és visszaolvasását egy paranccsal valósítja meg "INSERT ... RETURNING *"
+    /// A rekord kiírását, és visszaolvasását egy SQL paranccsal valósítja meg "INSERT ... RETURNING *"
     /// @param __q Az inzert utasítás ezel az objektummal lesz kiadva
     /// @param __ex Ha értéke true (ez az alapértelmezés), akkor kizárást dob, ha adat hiba van, ill. nem történt meg az insert
-    /// @exception cError* Hiba esetén dob egy kizárást
+    /// @exception cError* Hiba esetén dob egy kizárást, ha _ex értéke true
     /// @return ha történt változás az adatbázisban, akkor true.
     virtual bool insert(QSqlQuery& __q, bool __ex = true);
-    /// Egy WHERE stringet állít össze.
-    QString whereString(QBitArray& __fm);
+    /// Egy WHERE stringet állít össze a következőképpen.
+    /// A feltételben azok a mezők fognak szerepelni, melyek indexének megfelelő bit az __fm tömbben igaz.
+    /// A feltétel, ha a mező NULL, akkor <mező név> IS NULL, ha nem NULL, akkor ha isLike() a mező indexére igaz,
+    /// akkor <mező név> LIKE <érték>, ha hamis, akkor <mező név> = <érték> lessz.
+    /// Ezután ha _deletedBehavior adattagban a FILTERED bit igaz, és van deleted mező, és az nem szerepelt az alöbbi mezők között,
+    /// akkor kiegészíti a feltételeket a deleted = FALSE feltétellel.
+    /// A feltételek közé az AND operátort teszi. És a visszaadott string, ha volt feltétel, akkor a ' WHERE ' stringgel fog kezdődni, egyébként
+    /// üres stringgel tér vissza.
+    QString whereString(QBitArray& __fm) const;
     /// Végrehajt egy query-t a megadott sql query stringgel, és az objektum mezőivel (bind) az __arg-ban megadott sorrendben.
-    /// @arg __q A QSqlQuery objektum, amin keresztül a lekérdezést a metódus elvégzi
-    /// @arg sql A SQL query string
-    /// @arg __arg A vektor elemei a mező indexei, amit bind-elni kell a lekérdezéshez.
-    /// @arg __ex Ha értéke true, és az exec hibával tér vissza, akkor dob egy kizárást
-    /// @exception Ha a QSqlQuery::prepare() metódus sikertelen, akkor dob egy kizárást
+    /// A mező adatok bind-elése a mezők sorrendje szerint történik, attol nem lehet eltérni, egy mező egyszer szerepelhet.
+    /// @param __q A QSqlQuery objektum, amin keresztül a lekérdezést a metódus elvégzi
+    /// @param sql A SQL query string
+    /// @param __arg A vektor elemei a mező indexei, amit bind-elni kell a lekérdezéshez.
+    /// @param __ex Ha értéke true, és az exec hibával tér vissza, akkor dob egy kizárást
+    /// @exception Ha a QSqlQuery::prepare() metódus sikertelen, akkor dob egy kizárást, feltéve, hogy __ex igaz.
     /// @return Az QSqlQuery::exec() metódus által visszaadott érték.
-    bool query(QSqlQuery& __q, const QString& sql, const tIntVector& __arg, bool __ex = true);
+    bool query(QSqlQuery& __q, const QString& sql, const tIntVector& __arg, bool __ex = true) const;
     /// Végrehajt egy query-t a megadott sql query stringgel, és az objektum mezőivel ...
-    /// @arg __q A QSqlQuery objektum, amin keresztül a lekérdezést a metódus elvégzi
-    /// @arg sql A SQL query string
-    /// @arg __fm Bit vektor, ha a vektor elem true, akkor az azonos indexű mezőt kell bind-olni
-    /// @arg __ex Ha értéke true, és az exec hibával tér vissza, akkor dob egy kizárást
-    /// @exception Ha a QSqlQuery::prepare() metódus sikertelen, akkor dob egy kizárást
-    /// @return Az QSqlQuery::exec() metódus által visszaadott érték. ha __ex = tru, akkor ha visszatér, akkor true.
-    bool query(QSqlQuery& __q, const QString& sql, const QBitArray& __fm, bool __ex = true);
+    /// A mező adatok bind-elése a magadott sorrendben szerint történik, egy mező többször is szerepelhet.
+    /// @param __q A QSqlQuery objektum, amin keresztül a lekérdezést a metódus elvégzi
+    /// @param sql A SQL query string
+    /// @param __fm Bit vektor, ha a vektor elem true, akkor az azonos indexű mezőt kell bind-olni
+    /// @param __ex Ha értéke true, és az exec hibával tér vissza, akkor dob egy kizárást
+    /// @exception Ha a QSqlQuery::prepare() metódus sikertelen, akkor dob egy kizárást, feltéve, hogy __ex igaz.
+    /// @return Az QSqlQuery::exec() metódus által visszaadott érték. ha __ex = true, akkor ha visszatér, akkor true.
+    bool query(QSqlQuery& __q, const QString& sql, const QBitArray& __fm, bool __ex = true) const;
     /// Összeálít egy lekérdezést a beállított, ill. a megadott adatok alapján. A leérdeklést végrehajtja,
     /// Az eredmény a a paraméterként megadott QSqlQuery objektumban.
     /// @param __q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.
@@ -1083,7 +1110,7 @@ public:
     /// @param __off Offset. Ha értéke 0, akkor nincs.
     /// @param __s A SELECT kulcs szó utáni lista. Ha nincs megadva (vagy NULL), akkor az alapértelmezés a "*"
     /// @param __w A WHERE kulcs szó utáni feltétel, Feltéve, hogy nem üres string, __fn nem alapértelmezés szerinti, és nincs benne egy 1-es bit sem.
-    void fetchQuery(QSqlQuery& __q, bool __only = false, const QBitArray& __fm = QBitArray(), const tIntVector& __ord = tIntVector(), int __lim = 0, int __off = 0, QString __s = QString(), QString __w = QString());
+    void fetchQuery(QSqlQuery& __q, bool __only = false, const QBitArray& __fm = QBitArray(), const tIntVector& __ord = tIntVector(), int __lim = 0, int __off = 0, QString __s = QString(), QString __w = QString()) const;
     /// Beolvassa az adatbázisból azt a rekordot/rekordokat, amik a megadott mező maszk esetén egyeznek az
     /// objektumban tárolt mező(k) érték(ek)kel.
     /// Az első rekordot beolvassa az objektumba, ill ha nincs egyetlen rekord, akkor törli az objektumot.
@@ -1097,16 +1124,39 @@ public:
     /// @param __off Ofszet. Ha értéke 0, akkor nincs.
     /// @return true, ha a feltételnek megfelelt legalább egy rekord, és azt beolvasta. false, ha nincs egyetlen rekord sem
     virtual bool fetch(QSqlQuery& __q, bool __only = false, const QBitArray& __fm = QBitArray(), const tIntVector& __ord = tIntVector(), int __lim = 0, int __off = 0);
+    /// Beolvassa az adatbázisból azt a rekordot/rekordokat, amik a megadott mező maszk esetén egyeznek az
+    /// objektumban tárolt mező(k) érték(ek)kel.
+    /// Az első rekordot beolvassa az objektumba, ill ha nincs egyetlen rekord, akkor törli az objektumot.
+    /// Kilépés után a lekérdezés eredménye elveszik, kivéve az első rekordot, amit az objektum tartalmaz.
+    /// @param __only Ha megadjuk és értéke true, akkor a származtatott táblákban nem keres.
+    /// @param __fn A mező(k) maszk, alapértelmezése üres, ekkor a használt maszk az elsődleges kulcs mező(k).
+    /// @param __ord Mely mezők szerint legyenek rendezve a találatok ( a vektor elemei mező indexek, a záró elem -1)
+    /// @param __lim Limit. Ha értéke 0, akkor nincs.
+    /// @param __off Ofszet. Ha értéke 0, akkor nincs.
+    /// @return true, ha a feltételnek megfelelt legalább egy rekord, és azt beolvasta. false, ha nincs egyetlen rekord sem
     bool fetch(bool __only = false, const QBitArray& __fm = QBitArray(), const tIntVector& __ord = tIntVector(), int __lim = 0, int __off = 0)
             { QSqlQuery q = getQuery(); return fetch(q, __only, __fm, __ord, __lim, __off); }
-    /// Beolvas egy rekordot a megadott id alapján. Ld.: fetch(QSqlQuery& __q, int __fn) metódust
+    /// Beolvas egy rekordot a megadott id alapján. Ld.: fetch() metódust
     /// Ha nincs, vagy nem ismert az ID mező, akkor dob egy kizárást
     /// @param __q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.
     /// @param __id Opcionális ID paraméter, ha nem adjuk meg, akkor az objektum aktuális ID alapján olvassa be a rekordot.
     /// @return Ha sikerült beolvasni legalább egy rekordot, akkor true.
     bool fetchById(QSqlQuery& __q, qlonglong __id = NULL_ID)    { if (__id != NULL_ID) setId(__id); return fetch(__q, false, _bit(idIndex())); }
+    /// Beolvas egy rekordot a megadott id alapján. Ld.: fetch() metódust
+    /// Ha nincs, vagy nem ismert az ID mező, akkor dob egy kizárást
+    /// @param __id Opcionális ID paraméter, ha nem adjuk meg, akkor az objektum aktuális ID alapján olvassa be a rekordot.
+    /// @return Ha sikerült beolvasni legalább egy rekordot, akkor true.
     bool fetchById(qlonglong __id = NULL_ID)                    { if (__id != NULL_ID) setId(__id); return fetch(false, _bit(idIndex())); }
+    /// Beolvas egy rekordot a megadott id alapján. Ld.: fetchById(QSqlQuery& __q, qlonglong __id) metódust,
+    /// de azzal ellentétben, ha nem találja a keresett rekordot, akkor dob egy kizárást.
+    /// @param __q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.
+    /// @param __id Opcionális ID paraméter, ha nem adjuk meg, akkor az objektum aktuális ID alapján olvassa be a rekordot.
+    /// @return a (bázis!) objektum referenciájával tér vissza
     cRecord& setById(QSqlQuery& __q, qlonglong __id = NULL_ID)  { if (!fetchById(__q, __id)) EXCEPTION(EFOUND, __id, descr()._tableName); return *this; }
+    /// Beolvas egy rekordot a megadott id alapján. Ld.: fetchById(qlonglong __id) metódust,
+    /// de azzal ellentétben, ha nem találja a keresett rekordot, akkor dob egy kizárást.
+    /// @param __id Opcionális ID paraméter, ha nem adjuk meg, akkor az objektum aktuális ID alapján olvassa be a rekordot.
+    /// @return a (bázis!) objektum referenciájával tér vissza
     cRecord& setById(qlonglong __id = NULL_ID)                  { if (!fetchById(__id)) EXCEPTION(EFOUND, __id, descr()._tableName); return *this; }
     /// Beolvas egy rekordot a megadott név alapján. Ld.: fetch(QSqlQuery& __q, int __fn) metódust
     /// Ha nincs vagy nem ismert a név mező, akkor dob egy kizárást
@@ -1114,11 +1164,23 @@ public:
     /// @param __name Opcionális név paraméter, ha nem adjuk meg, akkor az objektum aktuális neve alapján olvassa be a rekordot.
     /// @return Ha sikerült beolvasni legalább egy rekordot, akkor true.
     bool fetchByName(QSqlQuery& __q, const QString& __name = QString()) { if (!__name.isEmpty()) setName(__name); return fetch(__q, false, _bit(nameIndex())); }
+    /// Beolvas egy rekordot a megadott név alapján. Ld.: fetch() metódust
+    /// Ha nincs vagy nem ismert a név mező, akkor dob egy kizárást
+    /// @param __name Opcionális név paraméter, ha nem adjuk meg, akkor az objektum aktuális neve alapján olvassa be a rekordot.
+    /// @return Ha sikerült beolvasni legalább egy rekordot, akkor true.
     bool fetchByName(const QString& __name = QString())                 { if (!__name.isEmpty()) setName(__name); return fetch(false, _bit(nameIndex())); }
-    /// Hasonló, mint a fetchByName hívás, de ha nem tudott beolvasni rekordot, akkor dob egy kizárást.
+    /// Beolvas egy rekordot a megadott név alapján. Ld.: fetchByName(QSqlQuery& __q, const QString& __name) metódust,
+    /// de azzal ellentétben, ha nem találja a keresett rekordot, akkor dob egy kizárást.
+    /// @param __q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.
+    /// @param __name Opcionális név paraméter, ha nem adjuk meg, akkor az objektum aktuális neve alapján olvassa be a rekordot.
+    /// @return a (bázis!) objektum referenciájával tér vissza
     cRecord& setByName(QSqlQuery& __q, const QString& __name = QString())   { if (!fetchByName(__q, __name)) EXCEPTION(EFOUND,-1, __name); return *this; }
+    /// Beolvas egy rekordot a megadott név alapján. Ld.: fetchByName(const QString& __name) metódust,
+    /// de azzal ellentétben, ha nem találja a keresett rekordot, akkor dob egy kizárást.
+    /// @param __name Opcionális név paraméter, ha nem adjuk meg, akkor az objektum aktuális neve alapján olvassa be a rekordot.
+    /// @return a (bázis!) objektum referenciájával tér vissza
     cRecord& setByName(const QString& __name = QString())                   { if (!fetchByName(__name)) EXCEPTION(EFOUND,-1, __name); return *this; }
-    /// A tábla egy rekord módosítása az adatbázisban
+    /// A tábla egy rekord módosítása az adatbázisban. Az első rekordot visszaolvassa.
     /// @param __q A művelethez használt QSqlQuery objektum.
     /// @param __only A módosításokat csak a megadott táblában, a leszármazottakban nem, ha true
     /// @param __set Bitmap, a módosítandó mezőkkel azonos indexű biteket 1-be kell állítani. Ha üres, ill nincs benne egyetlen true sem, akkor a where bitek negáltja.
@@ -1126,13 +1188,20 @@ public:
     ///                ha egy üres tömböt adunk át, ha viszont nem üres, de egyetlen true értéket sem tartalmazó tömböt adunk meg, akkor az a tábla
     ///                összes elemét kiválasztja.
     bool update(QSqlQuery& __q, bool __only, const QBitArray& __set = QBitArray(), const QBitArray& __where = QBitArray(), bool __ex = true);
-    ///
+    /// Törli az adatbázisból azokat a rekordot/rekordokat, amik a megadott mező maszk esetén egyeznek az
+    /// objektumban tárolt mező(k) érték(ek)kel. Ha csak logikailag töröl, akkor az első mezőt visszaolvassa.
+    /// @param __q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.
+    /// @param __only Ha megadjuk és értéke true, akkor a származtatott táblákban nem keres.
+    /// @param __fn A mező(k) maszk, alapértelmezése üres, ekkor a használt maszk az elsődleges kulcs mező(k).
+    /// @param __ex Ha értéke true, és az exec hibával tér vissza, akkor dob egy kizárást
+    /// @exception Ha a QSqlQuery::prepare() metódus sikertelen, akkor dob egy kizárást, feltéve, hogy __ex igaz.
+    /// @return true, ha a feltételnek megfelelt legalább egy rekord, és azt törölte. false, ha nincs egyetlen rekord sem
     bool remove(QSqlQuery& __q, bool __only = false, const QBitArray& __fm = QBitArray(), bool __ex = true);
     /// Adat ellenőrzést végez
     /// Beállítja _stat értékét
     virtual bool checkData();
     /// Egy bitvektort ad vissza, ahol minden bit 1, mellyel azonos indexű mező nem null az objektumban.
-    QBitArray getSetMap();
+    QBitArray getSetMap() const;
     /// Hasonló a fetch-hez. A lekérdezésben az összes nem null mezőt (és értékét) megadja a WHERE után.
     /// Az első rekord, ha volt legalább egy, akkor beolvasásra kerül az objektumba. A többi a next() metódussal
     /// érhető el.
@@ -1150,26 +1219,28 @@ public:
     /// @return true, ha feltöltötte az objektumot, ha nincs több adat, akkor tue.
     bool next(QSqlQuery& __q);
     /// Hasonló a fetch metódushoz, de csak a rekordok számát kérdezi le
-    int rows(QSqlQuery& __q, bool __only = false, const QBitArray& __fm = QBitArray()) {
+    int rows(QSqlQuery& __q, bool __only = false, const QBitArray& __fm = QBitArray()) const {
         fetchQuery(__q, __only, __fm, tIntVector(), 0,0,QString("count(*)"));
         return __q.value(0).toInt();
     }
-    int rows(bool __only = false, const QBitArray& __fm = QBitArray()) { QSqlQuery q = getQuery(); return rows(q, __only, __fm);  }
-    /// Az objektum típusnak megfelelő tableoid-vel tér vissza. Ez nem feltétlenül azonos azzal a tableoid-vel, amely táblából beolvastuk a rekordot, ha beolvastuk.
-    /// A rekord tárolására használt eredeti objektum típust azonosítja.
-    qlonglong tableoid()        { return descr().tableoid(); }
+    /// Hasonló a fetch metódushoz, de csak a rekordok számát kérdezi le
+    int rows(bool __only = false, const QBitArray& __fm = QBitArray()) const { QSqlQuery q = getQuery(); return rows(q, __only, __fm);  }
+    /// Az objektum típusnak megfelelő tableoid-vel tér vissza.
+    /// Ez nem feltétlenül azonos azzal a tableoid-vel, amely táblából beolvastuk a rekordot, ha beolvastuk.
+    qlonglong tableoid() const  { return descr().tableoid(); }
     /// Csak a tableoid mezőt olvassa be, a megadott mezők alapján.
     /// Ha a megadott/értékkel rendelkező mezők nem egyértelműen azonosítanak egy rekordot,
     /// akkor ha __ex igaz dob egy kizárást, ill. ha __ex hamis, akkor NULL_ID-vel tér vissza.
-    qlonglong fetchTableOId(QSqlQuery& __q, bool __ex = true);
+    qlonglong fetchTableOId(QSqlQuery& __q, bool __ex = true) const;
     /// Megvizsgálja, hogy a kitöltött mezők alapján a hozzá tartozó rekord egyértelműen meghatározott-e.
     /// Vagyis ki kell töltve lennie legalább egy kulcs mező csoportnak, vagy a primary kulcs mező(k)nek.
+    /// Ha egy leszármazott tábla rekordját azonosítjuk, akkor a visszaadott érték nem lessz azonos a tableoid() álltal vissaadottal.
     /// @return ha az objektum adattartalma csak egy rekordot jelenthet, akkor true
-    bool isIdent();
+    bool isIdent() const;
     /// Megvizsgálja, hogy a megadott mezők nem null értéküek-e
     /// @param __m A bit mezőben a viszgálandó mezővel azonos indexű bitek 1-es értéküek.
     /// @return Ha egyik jelzett érték sem null, akkor true.
-    bool isIdent(const QBitArray& __m);
+    bool isIdent(const QBitArray& __m) const;
     /// A forrásból átmásol minden olyan mezőt, amelyik mindkét rekordban létezik, és a melyik a forrásban nem NULL
     /// A mező adatokat nem törli a másolás előtt. Hasonló a _copy metódushoz, de ez virtuális metódust is hív.
     /// A másolási művelet után meghívja a checkData() metódust, hogy beállítsa a _stat értékét
@@ -1328,7 +1399,7 @@ protected:
     /// Nem hív virtuális metódust, így a toEnd() metódusokat sem, így egyéb adatott nem módosít, a státust sem.
     cRecord& _set(int __i, const QVariant& __v) { if (isNull()) EXCEPTION(EPROGFAIL); _fields[__i] =  __v; return *this; }
     /// Megvizsgálja, hogy a megadott indexű bit a likeMask-ban milyen értékű, és azzal tér vissza, ha nincs ilyen elem, akkor false-val.
-    bool _isLike(int __ix) { return __ix < 0 || _likeMask.size() <= __ix ? false : _likeMask[__ix]; }
+    bool _isLike(int __ix) const { return __ix < 0 || _likeMask.size() <= __ix ? false : _likeMask[__ix]; }
     /// Hasonló a get(int __i) metódushoz, de nincs index ellenőrzés, ha nincs a keresett mező dob egy kizárást.
     /// A visszaadott érték nem konstans referencia. Csak kellő körültekintéssel használható !
     QVariant& _get(int __i)  { if (__i < 0 || __i >=  _fields.size()) EXCEPTION(EPROGFAIL,__i); return _fields[__i]; }

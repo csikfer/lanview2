@@ -2122,14 +2122,14 @@ bool cRecord::_copy(const cRecord &__o, const cRecStaticDescr &d)
     return m;
 }
 
-bool cRecord::isIdent()
+bool cRecord::isIdent() const
 {
     if (isIdent(primaryKey())) return true;
     foreach (const QBitArray& m, uniques()) if (isIdent(m)) return true;
     return false;
 }
 
-bool cRecord::isIdent(const QBitArray& __m)
+bool cRecord::isIdent(const QBitArray& __m) const
 {
     for (int i = 0; i < __m.size(); ++i) if (__m[i] && isNull(i)) return false;
     return true;
@@ -2244,7 +2244,7 @@ bool cRecord::insert(QSqlQuery& __q, bool _ex)
     return r;
 }
 
-bool cRecord::query(QSqlQuery& __q, const QString& sql, const tIntVector& __arg, bool __ex)
+bool cRecord::query(QSqlQuery& __q, const QString& sql, const tIntVector& __arg, bool __ex) const
 {
     if (!__q.prepare(sql)) SQLPREPERR(__q, sql);
     for (int i = 0; i < __arg.size(); ++i) {
@@ -2262,7 +2262,7 @@ bool cRecord::query(QSqlQuery& __q, const QString& sql, const tIntVector& __arg,
     return r;
 }
 
-bool cRecord::query(QSqlQuery& __q, const QString& sql, const QBitArray& _fm, bool __ex)
+bool cRecord::query(QSqlQuery& __q, const QString& sql, const QBitArray& _fm, bool __ex) const
 {
     if (!__q.prepare(sql)) SQLPREPERR(__q, sql);
     int i,j;
@@ -2281,7 +2281,7 @@ bool cRecord::query(QSqlQuery& __q, const QString& sql, const QBitArray& _fm, bo
     return r;
 }
 
-QString cRecord::whereString(QBitArray& _fm)
+QString cRecord::whereString(QBitArray& _fm) const
 {
     QString where;
     if (_fm.size() == 0) _fm = descr().primaryKey();
@@ -2304,7 +2304,7 @@ QString cRecord::whereString(QBitArray& _fm)
     return where;
 }
 
-void cRecord::fetchQuery(QSqlQuery& __q, bool __only, const QBitArray& _fm, const tIntVector& __ord, int __lim, int __off, QString __s, QString __w)
+void cRecord::fetchQuery(QSqlQuery& __q, bool __only, const QBitArray& _fm, const tIntVector& __ord, int __lim, int __off, QString __s, QString __w) const
 {
     // _DBGFN() << " @(" << _fm << _sCommaSp << __ord << _sCommaSp << __lim << _sCommaSp << __off <<  _sCommaSp << __s << _sABraE << endl;
     // PDEB(VVERBOSE) << "Record value : " << toString() << endl;
@@ -2346,7 +2346,7 @@ bool cRecord::fetch(QSqlQuery& __q, bool __only, const QBitArray& _fm, const tIn
     return false;
 }
 
-QBitArray cRecord::getSetMap()
+QBitArray cRecord::getSetMap() const
 {
     int i, n = cols();
     QBitArray m(n);
@@ -2383,7 +2383,7 @@ bool cRecord::next(QSqlQuery& __q)
 
 }
 
-qlonglong cRecord::fetchTableOId(QSqlQuery& __q, bool __ex)
+qlonglong cRecord::fetchTableOId(QSqlQuery& __q, bool __ex) const
 {
     QBitArray m = getSetMap();              // Mit ismerünk ?
     if (m.count(true) == 0) {
