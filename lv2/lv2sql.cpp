@@ -168,3 +168,35 @@ bool sqlRollback(QSqlQuery& q, bool __ex)
     SQLPREPERRDEB(q, _sROLLBACK);
     return false;
 }
+
+EXT_ void execSqlFunction(QSqlQuery& q, const QString& fn, const QVariant v1, const QVariant v2, const QVariant v3, const QVariant v4)
+{
+    QString sql = "SELECT " + fn + _sABraB;
+    if (!v1.isValid()) {
+        sql += _sQuery;
+        if (v2.isValid()) {
+            sql += _sQuery + _sComma;
+            if (v3.isValid()) {
+                sql += _sQuery + _sComma;
+                if (v4.isValid()) {
+                    sql += _sQuery + _sComma;
+                }
+            }
+        }
+    }
+    sql += _sABraE;
+    if (!q.prepare(sql)) SQLPREPERR(q, sql);
+    if (!v1.isValid()) {
+        q.bindValue(0,v1);
+        if (v2.isValid()) {
+            q.bindValue(1,v2);
+            if (v3.isValid()) {
+                q.bindValue(2,v3);
+                if (v4.isValid()) {
+                    q.bindValue(3,v4);
+                }
+            }
+        }
+    }
+    if (q.exec()) SQLQUERYERR(q);
+}

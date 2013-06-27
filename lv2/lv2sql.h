@@ -95,6 +95,10 @@ Allokál egy új QSqlQuery objektumot, a megadott vagy a getSqlDb() által vissz
 @relates lanView
  */
 static inline QSqlQuery  *newQuery(QSqlDatabase *pDb = NULL) { return new QSqlQuery(*(pDb == NULL ? getSqlDb() : pDb)); }
+/*!
+Visszaad egy új QSqlQuery objektumot, a megadott vagy a getSqlDb() által visszaadott QSqlDatabase objektumhoz.
+@relates lanView
+ */
 static inline QSqlQuery   getQuery(QSqlDatabase *pDb = NULL) { return     QSqlQuery(*(pDb == NULL ? getSqlDb() : pDb)); }
 
 /// A thread-okhoz rendelt adatbázis objektumok körül törli a megadott nevű elemet
@@ -124,5 +128,13 @@ EXT_ bool sqlEnd(QSqlQuery& q, bool __ex = true);
 /// Tranzakció visszagörgetése
 EXT_ bool sqlRollback(QSqlQuery& q, bool __ex = true);
 
+/// Végrehajt ill összeállít és végrehajt egy query-t ami egy SQL függvényhívás.
+/// @param q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.
+/// @param fn Az SQL függvény neve. Maximum négy paramétert tudunk átadni.
+/// @param v1 A hívott függvény első paramétere, ha megadtuk, ha nem, akkor a függvénynek nincs egy paramétere sem.
+/// @param v2 A hívott függvény második paramétere, ha megadtuk, ha nem, akkor a függvénynek egy paramétere van.
+/// @param v3 A hívott függvény harmadik paramétere, ha megadtuk, ha nem, akkor a függvénynek kettő paramétere van.
+/// @param v4 A hívott függvény negyedik paramétere, ha megadtuk, ha nem, akkor a függvénynek három paramétere van.
+EXT_ void execSqlFunction(QSqlQuery& q, const QString& fn, const QVariant v1 = QVariant(), const QVariant v2 = QVariant(), const QVariant v3 = QVariant(), const QVariant v4 = QVariant());
 
 #endif // LV2SQL_H

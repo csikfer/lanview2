@@ -128,7 +128,7 @@ class LV2SHARED_EXPORT cTimePeriod : public cRecord {
     CRECORD(cTimePeriod);
 };
 
-typedef tGroup<cTimePeriod, cTpow> cTimePeriodTpow;
+typedef tGroup<cTimePeriod, cTpow> tTimePeriodTpow;
 
 /* ******************************  ****************************** */
 
@@ -139,18 +139,20 @@ typedef tGroup<cTimePeriod, cTpow> cTimePeriodTpow;
 class LV2SHARED_EXPORT cImage : public cRecord {
     CRECORD(cImage);
 public:
-    /// További műveletek az objektum rekord kitöltése után:
-    /// A toEnd(int _i) metódust hívja a image_type idexével.
-    virtual void toEnd();
-    /// További műveletek az egy mező kitöltése után:
-    /// Az image típust ellenörzi, ill. konvertálja, ha ..
-    virtual bool toEnd(int _i);
+    /// Betölt az objektumba egy képet
+    /// @param __fn A kép fájl neve
     bool load(const QString& __fn, bool __ex = true);
+    /// Kiír egy képet egy fájlba
+    /// @param __fn A kép fájl neve
     bool save(const QString& __fn, bool __ex = true);
-    QByteArray getImage() const     { return get(_sImageData).toByteArray(); }
-    void setImage(QByteArray __a)   { set(_sImageData, QVariant(__a)); }
+    /// A bianaris adatot adja vissza
+    QByteArray getImage() const     { return get(_ixImageData).toByteArray(); }
+    /// A bináris adattartalmat állítja be
+    void setImage(QByteArray __a)   { set(_ixImageData, QVariant(__a)); }
+    /// Az kép típusának a nevét adja vissza
     const char * getType() const    { return _imageType(getId(_ixImageType)); }
 protected:
+    static int  _ixImageData;
     static int  _ixImageType;
 };
 
@@ -160,6 +162,8 @@ protected:
 */
 class LV2SHARED_EXPORT cPlace : public cRecord {
     CRECORD(cPlace);
+public:
+    qlonglong parentImageId(QSqlQuery& q);
 };
 
 /*!
@@ -169,6 +173,10 @@ class LV2SHARED_EXPORT cPlace : public cRecord {
 class LV2SHARED_EXPORT cPlaceGroup : public cRecord {
     CRECORD(cPlaceGroup);
 public:
+    /// Egy új rekord beszúrása.
+    /// @param __n A név mező értéke
+    /// @param __d A descr mező értéke
+    /// @return Az új rekord id-je.
     static qlonglong insertNew(const QString& __n, const QString& __d);
 };
 
@@ -184,14 +192,12 @@ class LV2SHARED_EXPORT cSubNet : public cRecord {
     CRECORD(cSubNet);
 public:
     /// További műveletek az objektum rekord kitöltése után:
-    /// A toEnd(int _i) metódust hívja a "netaddr" idexével.
+    /// A toEnd(int _i) metódust hívja a "vlan_id" idexével.
     virtual void toEnd();
     /// További műveletek az egy mező kitöltése után:
-    /// Ha a "netaddr" idexével hívják, akkor beállítja az addr adattagot.
-    /// Ha az érték nem konvertálható valós IP címre, akkor a stat adattagot ES_DEFECTIVE -re állítja.
+    /// Ha a "vlan_id" idexével hívják, akkor ellenörzi a VLAN ID-t
+    /// A negatív vagy 0 értékett NULL-ra állírja.
     virtual bool toEnd(int _i);
-    /// Törli az addr adattagot.
-    virtual void clearToEnd();
     /// A "netaddr" mezőt állítja a megadott címbe.
     cSubNet& operator=(const netAddress& __a) { set(_ixNetAddr, QVariant::fromValue(__a)); return *this; }
     /// Az addr adattag aktuális értékével tér vissza (a NULL ??)

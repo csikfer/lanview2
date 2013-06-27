@@ -41,38 +41,15 @@ CRECCNTR(cImage)
 CRECDEFD(cImage)
 
 int  cImage::_ixImageType = NULL_IX;
+int  cImage::_ixImageData = NULL_IX;
 const cRecStaticDescr&  cImage::descr() const
 {
     if (initPDescr<cImage>(_sImages)) {
         _ixImageType = _pRecordDescr->toIndex(_sImageType);
+        _ixImageData = _pRecordDescr->toIndex(_sImageData);
         CHKENUM(_ixImageType, imageType);
     }
     return *_pRecordDescr;
-}
-
-bool cImage::toEnd(int __i)
-{
-    if (__i == _ixImageType) {
-        if (_isNull(__i)) return true;
-        QVariant& t = _get(__i);
-        bool    b;
-        qlonglong i = t.toLongLong(&b);
-        if (b) {
-            QString s = imageType(i, false);
-            if (s.isEmpty()) _stat = ES_DEFECTIVE;
-            else t = s;
-        }
-        else {
-            if (IT_INVALID == imageType(t.toString(), false)) _stat = ES_DEFECTIVE;
-        }
-        return true;
-    }
-    return false;
-}
-
-void cImage::toEnd()
-{
-    toEnd(_ixImageType);
 }
 
 bool cImage::load(const QString& __fn, bool __ex)
@@ -153,9 +130,15 @@ const char *   _imageType(int __e, bool __ex)
     return __sNul;
 }
 
-
 /* ------------------------------ places ------------------------------ */
 DEFAULTCRECDEF(cPlace, _sPlaces)
+
+qlonglong cPlace::parentImageId(QSqlQuery& q)
+{
+    execSqlFunction(q, "get_parent_image", getId());
+    QVariant iid = q.value(0);
+    return iid.isNull() ? NULL_ID : iid.toLongLong();
+}
 
 DEFAULTCRECDEF(cPlaceGroup, _sPlaceGroups)
 
@@ -200,10 +183,6 @@ bool cSubNet::toEnd(int __i)
     }
     //DBGFNL();
     return false;
-}
-void cSubNet::clearToEnd()
-{
-    ;
 }
 
 qlonglong cSubNet::insertNew(const QString& _n, const QString& _d, const netAddress& _a, qlonglong _v, const QString& __t)
