@@ -63,6 +63,11 @@ qlonglong tableoid(QSqlQuery q, const QString& __t, qlonglong __sid = NULL_ID, b
 /// @return A first adattag a tábla neve, a second pedig a séma név.
 QStringPair tableoid2name(QSqlQuery q, qlonglong toid);
 
+/// Az enumerációs típus (int) stringgé konvertáló függvény pointerének a típusa.
+typedef const QString& (*tE2S)(int e, bool __ex);
+/// A stringet enumerációs típussá (int) konvertáló függvény pointerének a típusa.
+typedef int (*tS2E)(const QString& n, bool __ex);
+
 class cRecord;
 class cRecordFieldRef;
 class cRecordFieldConstRef;
@@ -158,6 +163,17 @@ public:
     virtual QString toView(QSqlQuery& q, const QVariant& _f) const;
     /// Clone object
     virtual cColStaticDescr *dup() const;
+    /// Az enumeráció kezelés konzisztenciájának ellenörzése.
+    /// Enumeráció esetén a numerikus érték az adatbázisban az enum típusban megadott listabeli sorszáma (0,1 ...)
+    /// SET esetén pedig a numerikus értékben a megadott sorszámú bit reprezentál egy enumerációs értéket.
+    /// Az API-ban lévő sring - enumeráció kovertáló függvényeknél ügyelni kell, hogy a C-ben definiált
+    /// enumerációs értékek megfeleljenek az adatbázisban a megfelelő enumerációs érték sorrendjének.
+    /// A vizsgálat csak az adatbázis szerini értékek irányából ellenőriz, ha a konverziós függvények
+    /// több értéket is kezelnének, azt nem képes detektálni.
+    /// @param e2s Az enumerációból stringgé konvertáló függvény pointere
+    /// @param s2e A stringból enumerációs konstanba konvertáló függvény pointere.
+    /// @return true, ha nem sikerült eltérést detektálni a kétféle enum értelmezés között, és false, ha eltérés van
+    bool checkEnum(tE2S e2s, tS2E s2e) const;
     // Adattagok
     /// A mező pozíciója, nem zéró pozitív szám (1,2,3...)
     int         pos;
@@ -373,7 +389,9 @@ protected:
     QString             _schemaName;
     /// Az adattábla neve
     QString             _tableName;
-    /// Opcionális nézet tábla neve. Ha nem null. akkor a fetch-ek erre a táblára vonatkoznak.
+    /// Opcionális nézet tábla neve. Ha nincs VIEW tábla, ill. csak az van, akkor azonos a _tableName értékével.
+    /// A fetch-ek erre a tábla névre vonatkoznak. Ha a két tábla név nem azonos, akkor feltételezés, hogy a két tábla
+    /// rekord szerkezete azonos. Ezt a rendszer nem ellenörzi, de hibás működéshez vezethet.
     QString             _viewName;
     /// A tábla OID-je
     qlonglong           _tableOId;
@@ -490,14 +508,19 @@ public:
     const cColStaticDescrList& columnDescrs() const { return _columnDescrs; }
     /// A tábla OID értékkel tér vissza
     qlonglong tableoid() const                      { return _tableOId; }
-    /// A tábla teljes nevével (ha szükséges, akkor a séma névvel kiegészített) tér vissza, a tábla és séma név nincs idézőjelbe rakva.
+    /// A tábla teljes nevével tér vissza, amit ha a séma név nem a "public" kiegészít azzal is, a tábla és séma név nincs idézőjelbe rakva.
     QString fullTableName() const                   { return _schemaName == _sPublic ? _tableName : mCat(_schemaName, _tableName); }
-    QString fullViewName() const                    { return  _viewName.isNull() ? fullTableName() : _schemaName == _sPublic ? _viewName : mCat(_schemaName, _viewName); }
+    /// A view tábla teljes nevével tér vissza, amit ha a séma név nem a "public" kiegészít azzal is, a tábla és séma név nincs idézőjelbe rakva.
+    /// Lásd még a _viewName adattagot.
+    QString fullViewName() const                    { return _schemaName == _sPublic ? _viewName : mCat(_schemaName, _viewName); }
     /// A teljes mező névvel (tábla és ha szükséges a séma névvel kiegészített) tér vissza. a nevek nincsenek idézőjelbe rakva.
     /// @param _c (rövid) mező név
     QString fullColumnName(const QString& _c) const{ return mCat(fullTableName(), _c); }
     /// A tábla teljes nevével (ha szükséges a séma névvel kiegészített) tér vissza, a tábla és séma név idézőjelbe van rakva.
     QString fullTableNameQ() const                   { return _schemaName == _sPublic ? dQuoted(_tableName) : dQuotedCat(_schemaName, _tableName); }
+    /// A view tábla teljes nevével (ha szükséges a séma névvel kiegészített) tér vissza, a tábla és séma név idézőjelbe van rakva.
+    /// Lásd még a _viewName adattagot.
+    QString fullViewNameQ() const                   { return _schemaName == _sPublic ? dQuoted(_viewName) : dQuotedCat(_schemaName, _viewName); }
     /// A teljes mező névvel (tábla és ha sükséges a séma névvel kiegészített) tér vissza. a nevek idézőjelbe vannak rakva.
     /// @param i a mező indexe
     QString fullColumnNameQ(int i) const             { return mCat(fullTableNameQ(), dQuoted(columnName(i))); }
@@ -553,11 +576,14 @@ public:
     /// @param 1 a keresett mező indexe (0,1,...).
     const cColStaticDescr& operator[](int __i) const                { return _columnDescrs[__i]; }
     /// Az id mező nevével tér vissza, ha van id mező, egyébként dob egy kizárást
-    const QString& idName() const   { return columnName(idIndex()); }
+    /// @param __ex Ha értéke hamis és nincs id mező, akkor nem dob kizárást, hanem egy üres stringgel tér vissza.
+    const QString& idName(bool __ex = true) const   { return columnName(idIndex(__ex), __ex); }
     /// Az név mező nevével tér vissza, ha van név mező, egyébként dob egy kizárást
+    /// @param __ex Ha értéke hamis és nincs név mező, akkor nem dob kizárást, hanem egy üres stringgel tér vissza.
     const QString& nameName(bool __ex = true) const { return columnName(nameIndex(__ex), __ex); }
     /// Az descr mező nevével tér vissza, ha van descr mező, egyébként dob egy kizárást
-    const QString& descrName() const { return columnName(descrIndex()); }
+    /// @param __ex Ha értéke hamis és nincs descr mező, akkor nem dob kizárást, hanem egy üres stringgel tér vissza.
+    const QString& descrName(bool __ex = true) const { return columnName(descrIndex(__ex), __ex); }
     /// A név alapján visszaadja a rekord ID-t, feltéve, ha van név és id.
     /// Hiba esetén, vagy ha nincs meg a a keresett ID, és __ex értéke true, akkor dob egy kizárást,
     /// Ha viszont __ex értéke false, és hiba van, vagy nincs ID akkor NULL_ID-vel tér vissza.
@@ -1068,6 +1094,8 @@ public:
     /// lesznek megadva, melyeknek nem NULL az értékük.
     /// Ha sikeres volt az inzert, akkor az objektumot újra tölti, az adatbázisban keletkezett új rekord alapján.
     /// A rekord kiírását, és visszaolvasását egy SQL paranccsal valósítja meg "INSERT ... RETURNING *"
+    /// Ha van név és deleted mező, és létezik egy azonos nevű de deleted = true rekord, akkor azt az
+    /// update metódussal fellülírja. (teszelni kéne, hogy ez így valóban jól müködik-e)
     /// @param __q Az inzert utasítás ezel az objektummal lesz kiadva
     /// @param __ex Ha értéke true (ez az alapértelmezés), akkor kizárást dob, ha adat hiba van, ill. nem történt meg az insert
     /// @exception cError* Hiba esetén dob egy kizárást, ha _ex értéke true
@@ -1076,11 +1104,13 @@ public:
     /// Egy WHERE stringet állít össze a következőképpen.
     /// A feltételben azok a mezők fognak szerepelni, melyek indexének megfelelő bit az __fm tömbben igaz.
     /// A feltétel, ha a mező NULL, akkor <mező név> IS NULL, ha nem NULL, akkor ha isLike() a mező indexére igaz,
-    /// akkor <mező név> LIKE <érték>, ha hamis, akkor <mező név> = <érték> lessz.
+    /// akkor <mező név> LIKE ?, ha hamis, akkor <mező név> = ? lessz.
     /// Ezután ha _deletedBehavior adattagban a FILTERED bit igaz, és van deleted mező, és az nem szerepelt az alöbbi mezők között,
     /// akkor kiegészíti a feltételeket a deleted = FALSE feltétellel.
     /// A feltételek közé az AND operátort teszi. És a visszaadott string, ha volt feltétel, akkor a ' WHERE ' stringgel fog kezdődni, egyébként
     /// üres stringgel tér vissza.
+    /// A _likeMask alapértelmezése üres (ami alapján az isLike() visszatér), ha értéket adunk neki a feltétel összeállítás megváltoztatásához, akkor
+    /// ne felejtsük el a lekérdezés után törölni azt, mert a késöbbi lekérdezések viselkedését is befolyásolni fogja.
     QString whereString(QBitArray& __fm) const;
     /// Végrehajt egy query-t a megadott sql query stringgel, és az objektum mezőivel (bind) az __arg-ban megadott sorrendben.
     /// A mező adatok bind-elése a mezők sorrendje szerint történik, attol nem lehet eltérni, egy mező egyszer szerepelhet.
@@ -1103,13 +1133,16 @@ public:
     /// Összeálít egy lekérdezést a beállított, ill. a megadott adatok alapján. A leérdeklést végrehajtja,
     /// Az eredmény a a paraméterként megadott QSqlQuery objektumban.
     /// @param __q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.
-    /// @param __only Ha megadjuk és értéke true, akkor a származtatott táblákan nem keres.
-    /// @param __fn A mező(k) maszk, alapértelmezése üres, ekkor a használt maszk az elsődleges kulcs mező(k).
+    /// @param __only Ha megadjuk és értéke true, akkor a származtatott táblákban nem keres.
+    /// @param __fn A mező(k) maszk, alapértelmezése üres, ekkor a használt maszk az elsődleges kulcs mező(k). Ez alapján lessz
+    ///             összeállítva a WHERE string a whereString() metódussal, kivéve, ha __w nem üres string.
     /// @param __ord Mely mezők szerint legyenek rendezve a találatok ( a vektor elemei mező indexek, a záró elem -1)
     /// @param __lim Limit. Ha értéke 0, akkor nincs.
     /// @param __off Offset. Ha értéke 0, akkor nincs.
     /// @param __s A SELECT kulcs szó utáni lista. Ha nincs megadva (vagy NULL), akkor az alapértelmezés a "*"
-    /// @param __w A WHERE kulcs szó utáni feltétel, Feltéve, hogy nem üres string, __fn nem alapértelmezés szerinti, és nincs benne egy 1-es bit sem.
+    /// @param __w A WHERE kulcs szó utáni feltétel, Feltéve, hogy nem üres string. Ebben az esetben a feltételre nincs hatással
+    ///            az __fn paraméter, de ez alapján lessznek bind-elve a mező értékek. Tehát a megadott feltételnek annyi paraméter
+    ///            kell várnia, ahány igaz bit van az __fn-ben, és a mező értékek sorrendje a rekordban lévő sorrendjük szerinti.
     void fetchQuery(QSqlQuery& __q, bool __only = false, const QBitArray& __fm = QBitArray(), const tIntVector& __ord = tIntVector(), int __lim = 0, int __off = 0, QString __s = QString(), QString __w = QString()) const;
     /// Beolvassa az adatbázisból azt a rekordot/rekordokat, amik a megadott mező maszk esetén egyeznek az
     /// objektumban tárolt mező(k) érték(ek)kel.
@@ -1129,7 +1162,7 @@ public:
     /// Az első rekordot beolvassa az objektumba, ill ha nincs egyetlen rekord, akkor törli az objektumot.
     /// Kilépés után a lekérdezés eredménye elveszik, kivéve az első rekordot, amit az objektum tartalmaz.
     /// @param __only Ha megadjuk és értéke true, akkor a származtatott táblákban nem keres.
-    /// @param __fn A mező(k) maszk, alapértelmezése üres, ekkor a használt maszk az elsődleges kulcs mező(k).
+    /// @param __fn A mező(k) maszk, alapértelmezése üres, ekkor a használt maszk az elsődleges kulcs mező(k). Lásd még a whereString() metódust.
     /// @param __ord Mely mezők szerint legyenek rendezve a találatok ( a vektor elemei mező indexek, a záró elem -1)
     /// @param __lim Limit. Ha értéke 0, akkor nincs.
     /// @param __off Ofszet. Ha értéke 0, akkor nincs.
@@ -1142,7 +1175,7 @@ public:
     /// @param __id Opcionális ID paraméter, ha nem adjuk meg, akkor az objektum aktuális ID alapján olvassa be a rekordot.
     /// @return Ha sikerült beolvasni legalább egy rekordot, akkor true.
     bool fetchById(QSqlQuery& __q, qlonglong __id = NULL_ID)    { if (__id != NULL_ID) setId(__id); return fetch(__q, false, _bit(idIndex())); }
-    /// Beolvas egy rekordot a megadott id alapján. Ld.: fetch() metódust
+    /// Beolvas egy rekordot a megadott id alapján. Lásd még a fetch() metódust.
     /// Ha nincs, vagy nem ismert az ID mező, akkor dob egy kizárást
     /// @param __id Opcionális ID paraméter, ha nem adjuk meg, akkor az objektum aktuális ID alapján olvassa be a rekordot.
     /// @return Ha sikerült beolvasni legalább egy rekordot, akkor true.
@@ -1164,7 +1197,7 @@ public:
     /// @param __name Opcionális név paraméter, ha nem adjuk meg, akkor az objektum aktuális neve alapján olvassa be a rekordot.
     /// @return Ha sikerült beolvasni legalább egy rekordot, akkor true.
     bool fetchByName(QSqlQuery& __q, const QString& __name = QString()) { if (!__name.isEmpty()) setName(__name); return fetch(__q, false, _bit(nameIndex())); }
-    /// Beolvas egy rekordot a megadott név alapján. Ld.: fetch() metódust
+    /// Beolvas egy rekordot a megadott név alapján. Lásd még a fetch() metódust.
     /// Ha nincs vagy nem ismert a név mező, akkor dob egy kizárást
     /// @param __name Opcionális név paraméter, ha nem adjuk meg, akkor az objektum aktuális neve alapján olvassa be a rekordot.
     /// @return Ha sikerült beolvasni legalább egy rekordot, akkor true.
@@ -1181,6 +1214,7 @@ public:
     /// @return a (bázis!) objektum referenciájával tér vissza
     cRecord& setByName(const QString& __name = QString())                   { if (!fetchByName(__name)) EXCEPTION(EFOUND,-1, __name); return *this; }
     /// A tábla egy rekord módosítása az adatbázisban. Az első rekordot visszaolvassa.
+    /// Lásd még a whereString(QBitArray& __fm) metódust is.
     /// @param __q A művelethez használt QSqlQuery objektum.
     /// @param __only A módosításokat csak a megadott táblában, a leszármazottakban nem, ha true
     /// @param __set Bitmap, a módosítandó mezőkkel azonos indexű biteket 1-be kell állítani. Ha üres, ill nincs benne egyetlen true sem, akkor a where bitek negáltja.
@@ -1190,6 +1224,7 @@ public:
     bool update(QSqlQuery& __q, bool __only, const QBitArray& __set = QBitArray(), const QBitArray& __where = QBitArray(), bool __ex = true);
     /// Törli az adatbázisból azokat a rekordot/rekordokat, amik a megadott mező maszk esetén egyeznek az
     /// objektumban tárolt mező(k) érték(ek)kel. Ha csak logikailag töröl, akkor az első mezőt visszaolvassa.
+    /// Lásd még a whereString(QBitArray& __fm) metódust is.
     /// @param __q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.
     /// @param __only Ha megadjuk és értéke true, akkor a származtatott táblákban nem keres.
     /// @param __fn A mező(k) maszk, alapértelmezése üres, ekkor a használt maszk az elsődleges kulcs mező(k).
@@ -1200,14 +1235,16 @@ public:
     /// Adat ellenőrzést végez
     /// Beállítja _stat értékét
     virtual bool checkData();
-    /// Egy bitvektort ad vissza, ahol minden bit 1, mellyel azonos indexű mező nem null az objektumban.
+    /// Egy bitvektort ad vissza, ahol minden bit 1, mellyel azonos indexű mező nem NULL az objektumban.
     QBitArray getSetMap() const;
     /// Hasonló a fetch-hez. A lekérdezésben az összes nem null mezőt (és értékét) megadja a WHERE után.
+    /// Lásd még a whereString(QBitArray& __fm) metódust is.
     /// Az első rekord, ha volt legalább egy, akkor beolvasásra kerül az objektumba. A többi a next() metódussal
     /// érhető el.
     /// @return A feltételeknek megfelelő rekordok száma.
     int completion(QSqlQuery& __q);
     /// Hasonló a másik completion() metódushoz, de a metódus egy saját QsqlQuery objektumot kér, és azt
+    /// Lásd még a whereString(QBitArray& __fm) metódust is.
     /// visszatérés előtt felszabadítja, így további rekordok beolvasására nincs lehetőeég.
     int completion()                { QSqlQuery q = getQuery(); return completion(q); }
     /// A fetch() vagy complation() vagy más metódus által elvégzett lekérdezés eredményének első rekordját
@@ -1218,23 +1255,23 @@ public:
     /// betölti az objektumba.
     /// @return true, ha feltöltötte az objektumot, ha nincs több adat, akkor tue.
     bool next(QSqlQuery& __q);
-    /// Hasonló a fetch metódushoz, de csak a rekordok számát kérdezi le
+    /// Hasonló a fetch() metódushoz, de csak a rekordok számát kérdezi le, konstans metódus.
     int rows(QSqlQuery& __q, bool __only = false, const QBitArray& __fm = QBitArray()) const {
         fetchQuery(__q, __only, __fm, tIntVector(), 0,0,QString("count(*)"));
         return __q.value(0).toInt();
     }
-    /// Hasonló a fetch metódushoz, de csak a rekordok számát kérdezi le
+    /// Hasonló a fetch() metódushoz, de csak a rekordok számát kérdezi le, konstans metódus
     int rows(bool __only = false, const QBitArray& __fm = QBitArray()) const { QSqlQuery q = getQuery(); return rows(q, __only, __fm);  }
     /// Az objektum típusnak megfelelő tableoid-vel tér vissza.
     /// Ez nem feltétlenül azonos azzal a tableoid-vel, amely táblából beolvastuk a rekordot, ha beolvastuk.
     qlonglong tableoid() const  { return descr().tableoid(); }
     /// Csak a tableoid mezőt olvassa be, a megadott mezők alapján.
-    /// Ha a megadott/értékkel rendelkező mezők nem egyértelműen azonosítanak egy rekordot,
+    /// Ha a megadott, vagyis értékkel rendelkező mezők nem egyértelműen azonosítanak egy rekordot,
     /// akkor ha __ex igaz dob egy kizárást, ill. ha __ex hamis, akkor NULL_ID-vel tér vissza.
+    /// Ha egy leszármazott tábla rekordját azonosítjuk, akkor a visszaadott érték nem lessz azonos a tableoid() álltal visszaadottal.
     qlonglong fetchTableOId(QSqlQuery& __q, bool __ex = true) const;
     /// Megvizsgálja, hogy a kitöltött mezők alapján a hozzá tartozó rekord egyértelműen meghatározott-e.
     /// Vagyis ki kell töltve lennie legalább egy kulcs mező csoportnak, vagy a primary kulcs mező(k)nek.
-    /// Ha egy leszármazott tábla rekordját azonosítjuk, akkor a visszaadott érték nem lessz azonos a tableoid() álltal vissaadottal.
     /// @return ha az objektum adattartalma csak egy rekordot jelenthet, akkor true
     bool isIdent() const;
     /// Megvizsgálja, hogy a megadott mezők nem null értéküek-e
@@ -1249,30 +1286,43 @@ public:
     /// A mező adatokat nem törli a másolás előtt. Hasonló a _copy metódushoz, de ez virtuális metódust is hív.
     /// A _stat értékére ugyanaz igaz, mint ami a _copy() metódusban le van írva.
     cRecord& set_(const cRecord& __o) { _copy(__o, descr()); return *this; }
-    /// Mező érték, ill. referencia az index alapján.
+    /// Mező érték, ill. referencia az index alapján. Nem valódi referenciával tér vissza,
+    /// hanem egy cRecordFieldRef példánnyal. Valódi, a mező értékre mutató referencia használata ebben az estben potesnciálisan
+    /// veszályes lenne, valamit kikerülné a konverziós függvényeket is, ami nem cél.
     /// @param __i A mező indexe
     /// @return A megadott mezőre mutató referencia objektummal tér vissza
     /// @exception Ha a megadott index érték nem egy valós mező indexe.
     cRecordFieldRef operator[](int __i);
-    /// Mező érték, ill. referencia az index alapján.
+    /// Mező érték, ill. referencia az index alapján. Nem valódi referenciával tér vissza,
+    /// hanem egy cRecordFieldConstRef példánnyal. Valódi, a mező értékre mutató referencia használata ebben az estben potesnciálisan
+    /// veszályes lenne, valamit kikerülné a konverziós függvényeket, ami nem cél.
     /// @param __i A mező indexe
     /// @return A megadott mezőre mutató konstans referencia objektummal tér vissza
     /// @exception Ha a megadott index érték nem egy valós mező indexe.
     cRecordFieldConstRef operator[](int __i) const;
-    /// Mező érték, ill. referencia az mező név alapján.
+    /// Mező érték, ill. referencia az mező név alapján. Nem valódi referenciával tér vissza,
+    /// hanem egy cRecordFieldRef példánnyal. Valódi, a mező értékre mutató referencia használata ebben az estben potesnciálisan
+    /// veszályes lenne, valamit kikerülné a konverziós függvényeket, ami nem cél.
     /// @param __i A mező neve
     /// @return A megadott mezőre mutató referencia objektummal tér vissza
     /// @exception Ha a megadott név nem egy valós mező neve.
     cRecordFieldRef operator[](const QString& __fn);
-    /// Mező érték, ill. referencia az mező név alapján.
+    /// Mező érték, ill. referencia az mező név alapján.  Nem valódi referenciával tér vissza,
+    /// hanem egy cRecordFieldConstRef példánnyal. Valódi, a mező értékre mutató referencia használata ebben az estben potesnciálisan
+    /// veszályes lenne, valamit kikerülné a konverziós függvényeket, ami nem cél.
     /// @param __i A mező neve
     /// @return A megadott mezőre mutató konstans referencia objektummal tér vissza
     /// @exception Ha a megadott név nem egy valós mező neve.
     cRecordFieldConstRef operator[](const QString& __fn) const;
     /// Az id mező nevével tér vissza, ha van id mező, egyébként dob egy kizárást
-    const QString& idName() const   { return columnName(idIndex()); }
+    /// @param __ex Ha értéke hamis és nincs id mező, akkor nem dob kizárást, hanem egy üres stringgel tér vissza.
+    const QString& idName(bool __ex = true) const   { return descr().idName(__ex); }
     /// Az név mező nevével tér vissza, ha van név mező, egyébként dob egy kizárást
+    /// @param __ex Ha értéke hamis és nincs név mező, akkor nem dob kizárást, hanem egy üres stringgel tér vissza.
     const QString& nameName(bool __ex = true) const { return descr().nameName(__ex); }
+    /// Az descr mező nevével tér vissza, ha van név mező, egyébként dob egy kizárást
+    /// @param __ex Ha értéke hamis és nincs descr mező, akkor nem dob kizárást, hanem egy üres stringgel tér vissza.
+    const QString& descrName(bool __ex = true) const { return descr().descrName(__ex); }
     /// A név alapján visszaadja a rekord ID-t, feltéve, ha van név és id mező, egyébként dob egy kizárást.
     /// Nem static, mivel virtuális függvénytagokat hív, bár az objektum aktuális értéke nem befolyásolja a
     /// működését. És az objektum értéke nem változik.
@@ -1289,10 +1339,13 @@ public:
     /// Nem static, mivel virtuális függvénytagokat hív, bár az objektum aktuális értéke nem befolyásolja a
     /// működését.
     QString getNameById(qlonglong __id, bool __ex = true) const { return descr().getNameById(__id, __ex); }
-    ///
+    /// Egy mask előállítása, ahol a paraméterrel megadott indexű bit igaz, a többi hamis. A bitek száma azonos a mezők számával.
     QBitArray mask(int __i1) const                              { return descr().mask(__i1); }
+    /// Egy mask előállítása, ahol a paraméterrekkel megadott indexű bitek igazak, a többi hamis. A bitek száma azonos a mezők számával.
     QBitArray mask(int __i1, int __i2) const                    { return descr().mask(__i1, __i2); }
+    /// Egy mask előállítása, ahol a paraméterrekkel megadott indexű bitek igazak, a többi hamis. A bitek száma azonos a mezők számával.
     QBitArray mask(int __i1, int __i2, int __i3) const          { return descr().mask(__i1, __i2, __i3); }
+    /// Egy mask előállítása, ahol a paraméterrekkel megadott indexű bitek igazak, a többi hamis. A bitek száma azonos a mezők számával.
     QBitArray mask(int __i1, int __i2, int __i3, int __i4) const{ return descr().mask(__i1, __i2, __i3, __i4); }
     /// Mező bit maszk előállítása, mező nevek szerint.
     /// A bit vektornak annyi eleme lessz, ahány mező van a táblában, és a megadott mezőnevekkel azonos indexű bitek 1-be lesznek állítva.
@@ -1306,9 +1359,13 @@ public:
     /// Mező bit maszk előállítása, mező nevek szerint.
     /// A bit vektornak annyi eleme lesz, ahány mező van a táblában, és a megadott mezőnevekkel azonos indexű bitek 1-be lesznek állítva.
     QBitArray mask(const QString& __n1, const QString& __n2, const QString& __n3, const QString& __n4) const { return descr().mask(__n1, __n2, __n3, __n4); }
+    /// Egy egész szám vektort állít elő, ahol a vektor elemei a név szzerint megadott mező indexe, lezárva egy -1 -értékkel.
     tIntVector   iTab(const QString __n1)                        { return descr().iTab(__n1); }
+    /// Egy egész szám vektort állít elő, ahol a vektor elemei a név szzerint megadott mezők indexe, lezárva egy -1 -értékkel.
     tIntVector   iTab(const QString __n1, const QString __n2)    { return descr().iTab(__n1, __n2); }
+    /// Egy egész szám vektort állít elő, ahol a vektor elemei a név szzerint megadott mezők indexe, lezárva egy -1 -értékkel.
     tIntVector   iTab(const QString __n1, const QString __n2, const QString __n3)    { return descr().iTab(__n1, __n2, __n3); }
+    /// Egy egész szám vektort állít elő, ahol a vektor elemei a név szzerint megadott mezők indexe, lezárva egy -1 -értékkel.
     tIntVector   iTab(const QString __n1, const QString __n2, const QString __n3, const QString __n4)    { return descr().iTab(__n1, __n2, __n3, __n4); }
     /// Az objektumot (csak az adattartalmát) stringé konvertálja.
     QString toString() const;
@@ -1317,7 +1374,7 @@ public:
     /// Rekord(ok) törlésa a név alapján
     /// @param  q
     /// @param __n A név mező értéke, vagy minta a név mezőre
-    /// @param __pat Ha értéke true, akkor az __n paraméter minta stringnek tekintendő.
+    /// @param __pat Ha értéke true, akkor az __n paraméter minta stringnek tekintendő (LIKE).
     /// @param __only Ha értéke true, ekkor a származtatott táblákban nincs törlés.
     /// @return a törölt rekordok száma
     int delByName(QSqlQuery& q, const QString& __n, bool __pat = false, bool __only = false);
@@ -1331,7 +1388,7 @@ public:
     bool isNullable(const QString& __nm) const  { return descr()[__nm].isNullable; }
     /// Ellenőrzi, hogy az objektum eredeti típusa megegyezik-e a megadott típussal.
     /// A statikus leíró _tableOId adattagjait hasonlítja össze.
-    /// !!! Ellenőrizni !!! valami nem OK
+    /// A metódus feltételezi, hogy az öröklődési láncok ekvivalensek, de ez jelenleg nem mindíg igaz!
     /// @param __eq ha false, akkor az eredeti típus leszármazottja is lehet a megadott típusnak
     /// @param __ex ha értéke true, és nincs egyezés, akkor dob egy kizárást.
     /// @return true, ha eggyezés van, flase ha nincs eggyezés, és __ex false.
@@ -1341,7 +1398,7 @@ public:
         if (__ex == true) EXCEPTION(EDATA, -1, QString(QObject::trUtf8("Invalid object type, %1 ~ %2").arg(descr().tableoid()).arg(T::_descr().tableoid())));
         return false;
     }
-    /// Az objektum pointert visszaalakítja az eredeti és megadott típusba.
+    /// Az objektum pointert visszaalakítja az eredeti és megadott típusba. Lást még a chkObjType<T>() -t.
     /// Ha az eredeti, és a megadott típus nem eggyezik, vagy az eredeti típusnak nem szülője a megadott típus, akkor dob egy kizárást
     template <class T> T * reconvert() {
         chkObjType<T>();
@@ -1355,6 +1412,8 @@ public:
     bool isEmpty();
     /// Azonos az IsEmpty() hívással. Mivel nem hív virtuális metódust, le lett definiálva ezen a néven is.
     bool _isEmpty()                        { return isEmpty(); }
+    /// Megvizsgálja, hogy a megadott indexű bit a likeMask-ban milyen értékű, és azzal tér vissza, ha nincs ilyen elem, akkor false-val.
+    bool _isLike(int __ix) const { return __ix < 0 || _likeMask.size() <= __ix ? false : _likeMask[__ix]; }
 protected:
     /// Copy constructor. Nem támogatott konstruktor. Dob egy kizárást.
     cRecord(const cRecord& __o);
@@ -1382,7 +1441,6 @@ protected:
     /// _stat-ban bebillenti az ES_MODIFY bitet.
     cRecord& _clear(int __ix);
     /// Törli az adatmezőket, és újra létrehozza üres tartalommal. A _stat-ot ES_EMPTY-re állítja.
-    /// Konstruktorból is hívható.
     /// @param __d Tábla leíró objektum
     cRecord& _set(const cRecStaticDescr& __d);
     /// Létrehozza az összes mezőt sorrendben, és feltölti (a mezőnevek alapján) az __r-ben lévő tartalommal.
@@ -1398,8 +1456,6 @@ protected:
     /// Beállítja a megadott sorszámú mező értékét. Az objektum, ill. a _field konténer nem lehet üres, egyébként dob egy kizárást.
     /// Nem hív virtuális metódust, így a toEnd() metódusokat sem, így egyéb adatott nem módosít, a státust sem.
     cRecord& _set(int __i, const QVariant& __v) { if (isNull()) EXCEPTION(EPROGFAIL); _fields[__i] =  __v; return *this; }
-    /// Megvizsgálja, hogy a megadott indexű bit a likeMask-ban milyen értékű, és azzal tér vissza, ha nincs ilyen elem, akkor false-val.
-    bool _isLike(int __ix) const { return __ix < 0 || _likeMask.size() <= __ix ? false : _likeMask[__ix]; }
     /// Hasonló a get(int __i) metódushoz, de nincs index ellenőrzés, ha nincs a keresett mező dob egy kizárást.
     /// A visszaadott érték nem konstans referencia. Csak kellő körültekintéssel használható !
     QVariant& _get(int __i)  { if (__i < 0 || __i >=  _fields.size()) EXCEPTION(EPROGFAIL,__i); return _fields[__i]; }
@@ -1413,11 +1469,14 @@ signals:
 };
 TSTREAMO(cRecord)
 
-/// Hash készítése egy cRecord objektumból, a hash-t az ID-ből képzi.
-inline static uint qHash(const cRecord& key) { return qHash(key.getId()); }
+/// Hash készítése egy cRecord objektumból, a hash-t az első mező intté konvertált értékéből képzi, mely álltalában az ID.
+inline static uint qHash(const cRecord& key) { return qHash(key.getId(0)); }
 
-/// A statikus rekord leíró objektum pointer inicializálása
-/// @related cRecord
+/// A statikus rekord leíró objektum pointer inicializálása.
+/// Ha a _pRecordDescr adattag NULL, akkor a cRecStaticDescr::get(const QString&, const QString&) hívással
+/// kér egyet, és ez lessz _pRecordDescr új értéke, és ekkor true-val tér vissza.
+/// Ha a _pRecordDescr adattag nem NULL, akkor visszatér egy false értékkel.
+/// @relates cRecord
 /// @return Ha inicializálni kellett a pointert, akkor true.
 template <class R> bool initPDescr(const QString& _tn, const QString& _sn = _sPublic)
 {
@@ -1429,7 +1488,8 @@ template <class R> bool initPDescr(const QString& _tn, const QString& _sn = _sPu
 }
 
 /// A statikus rekord leíró objektum pointer inicializálása, ha ez még nem történt meg
-/// @related cRecord
+/// Hívja az initPDescr<R>(const QString&, const QString&) függvényt.
+/// @relates cRecord
 /// @return A leíró pointere
 template <class R> const cRecStaticDescr *getPDescr(const QString& _tn, const QString& _sn = _sPublic)
 {
@@ -1438,7 +1498,8 @@ template <class R> const cRecStaticDescr *getPDescr(const QString& _tn, const QS
 }
 
 /// @def CRECORD(R)
-/// @related cRecord
+/// @relates cRecord
+/// @param R Az osztály név
 /// Egy cRecord leszármazottban néhány feltétlenül szükséges deklaráció
 #define CRECORD(R) \
         friend bool initPDescr<R>(const QString& _tn, const QString& _sn); \
@@ -1455,13 +1516,15 @@ template <class R> const cRecStaticDescr *getPDescr(const QString& _tn, const QS
         static const cRecStaticDescr * _pRecordDescr
 
 /// @def CRECCNTR(R)
-/// @related cRecord
-/// Egy alapértelmezett ill. egyszerű cRecord leszármazott objektum konstruktorai
+/// @relates cRecord
+/// @param R Az osztály neve, melyhez a metódusok tartoznak
+/// Egy alapértelmezett ill. egyszerű cRecord leszármazott objektum konstruktorainak a definiciói.
 #define CRECCNTR(R) \
     R::R()             : cRecord() { _set(R::descr()); } \
     R::R(const R& __o) : cRecord() { _cp(__o); }
 
 /// @def CRECDEF(R)
+/// @relates cRecord
 /// A cRecord leszármazottakban a newObj() és dup() virtuális metódusokat definiáló makró
 /// @param R Az osztály neve, melyhez a metódusok tartoznak
 #define CRECDEF(R) \
@@ -1470,102 +1533,142 @@ template <class R> const cRecStaticDescr *getPDescr(const QString& _tn, const QS
     cRecord *R::dup()const     { return new R(*this); }
 
 /// @def  CRECDDCR(R, tn)
-/// @related cRecord
+/// @relates cRecord
+/// Az alapértelmezett descr() metódus definiciója.
+/// @param R Az osztály neve
 #define CRECDDCR(R, tn)     const cRecStaticDescr&  R::descr() const { return *getPDescr<R>(tn); }
 
 /// @def CRECDEFD(R)
-/// @related cRecord
+/// @relates cRecord
 /// A cRecord leszármazottakban a destruktort, a newObj() és dup() virtuális metódusokat definiáló makró
 /// @param R Az osztály neve, melyhez a metódusok tartoznak
 #define CRECDEFD(R)    CRECDEF(R) R::~R() { ; }
 
 /// @def DEFAULTCRECDEF(R)
-/// @related cRecord
+/// @relates cRecord
+/// @param R Az osztály neve
+/// @param tn Az adatbázis tábla neve
 /// Egy alapértelmezett cRecord leszármazott objektum teljes definíciója
 #define DEFAULTCRECDEF(R, tn)   CRECCNTR(R) CRECDEFD(R) CRECDDCR(R, tn)
 
-/// Az objektum egy referencia, valamely cRecord leszármazott példány egy mezőjére.
+/// Egy konstans referencia jellegű objektum, valamely cRecord leszármazott példány egy mezőjére.
+/// @relates cRecord
 class LV2SHARED_EXPORT cRecordFieldConstRef {
     friend class cRecord;
     friend class cRecordFieldRef;
 protected:
+    /// A hivatkozott objektum referenciája
     const cRecord&  _record;
+    /// A hivatkozott mező indexe
     int             _index;
+    /// Konstruktor a mező indexével
     cRecordFieldConstRef(const cRecord& __r, int __ix) : _record(__r) {
         _index = __ix;
         _record.chkIndex(_index);
     }
+    /// Konstruktor a mező nevével
     cRecordFieldConstRef(const cRecord& __r,const QString& __n)  : _record(__r) {
         _index = __r.toIndex(__n);
         _record.chkIndex(_index);
     }
 public:
-    cRecordFieldConstRef(const cRecordFieldConstRef& __r) : _record(__r._record) {
-        _index = __r._index;
-    }
+    /// Copy konstruktor
+    cRecordFieldConstRef(const cRecordFieldConstRef& __r) : _record(__r._record) { _index = __r._index; }
+    /// A hivatkozott mező értéke. Vigyázat a függvény egy referencsiát ad vissza, ami potenciálisan veszályes lehet,
+    /// ha megváltozik a cDecord::_field adattagja.
     operator const QVariant&() const   { return _record.get(_index); }
+    /// A hivatkozott mező értéke egész számként
     operator qlonglong() const  { return _record.getId(_index); }
+    /// A hivatkozott mező értéke stringként
     operator QString() const    { return _record.getName(_index); }
+    /// A hivatkozott mező értéke stringként
     QString toString() const    { return *this; }
+    /// A hivatkozott objektum statuszának a referenciája
     const int& stat() { return _record._stat; }
+    /// A hivatkozott objektum referenciája
     const cRecord& record() const           { return _record; }
+    /// A hivatkozott mező leíró objektumának a referenciája
     const cRecStaticDescr& recDescr() const { return _record.descr(); }
+    /// A hivatkozott objektum leíró objektumának a referenciája
     const cColStaticDescr& descr() const    { return _record.descr().colDescr(_index); }
+    /// A hivatkozott mező indexe
     int index()                             { return _index; }
 };
 TSTREAMO(cRecordFieldConstRef)
 
-/// Az objektum egy konstans referencia, valamely cRecord leszármazott példány egy mezőjére.
+/// Egy referencia jellegű objektum, valamely cRecord leszármazott példány egy mezőjére.
+/// @relates cRecord
 class LV2SHARED_EXPORT cRecordFieldRef {
     friend  class cRecord;
 protected:
+    /// A hivatkozott objektum referenciája
     cRecord&    _record;
+    /// A hivatkozott mező indexe
     int         _index;
+    /// Konstruktor a mező indexével
     cRecordFieldRef(cRecord& __r, int __ix) : _record(__r) {
         _index = __ix;
         _record.chkIndex(_index);
     }
+    /// Konstruktor a mező nevével
     cRecordFieldRef(cRecord& __r,const QString& __n)  : _record(__r) {
         _index = __r.toIndex(__n);
         _record.chkIndex(_index);
     }
 public:
-    cRecordFieldRef(const cRecordFieldRef& __r) : _record(__r._record) {
-        _index = __r._index;
-    }
+    /// Copy konstruktor
+    cRecordFieldRef(const cRecordFieldRef& __r) : _record(__r._record) { _index = __r._index; }
+    /// Értékadás a hivatkozott mezőnek, lásd a cRecord::set(int, const QVariant&)
     cRecordFieldRef operator=(const QVariant& __v) const {
         _record.set(_index, __v);
         return *this;
     }
-    cRecordFieldRef operator=(const cRecordFieldRef& __r) {
+    /// Értékadás a hivatkozott mezőnek, lásd a cRecord::set(int, const QVariant&)
+    cRecordFieldRef operator=(const cRecordFieldRef& __r) const {
         _record.set(_index, __r);
         return *this;
     }
-    cRecordFieldRef operator=(const cRecordFieldConstRef& __r) {
+    /// Értékadás a hivatkozott mezőnek, lásd a cRecord::set(int, const QVariant&)
+    cRecordFieldRef operator=(const cRecordFieldConstRef& __r) const {
         _record.set(_index, __r);
         return *this;
     }
+    /// Értékadás a hivatkozott mezőnek, lásd a cRecord::setId(int, qlonglong)
     cRecordFieldRef operator=(qlonglong __v) const {
         _record.setId(_index, __v);
         return *this;
     }
+    /// Értékadás a hivatkozott mezőnek, lásd a cRecord::setName(int, const QString&)
     cRecordFieldRef operator=(const QString& __v) const {
         _record.setName(_index, __v);
         return *this;
     }
+    /// A hivatkozott mező értéke. Vigyázat a függvény egy referencsiát ad vissza, ami potenciálisan veszályes lehet,
+    /// ha megváltozik a cDecord::_field adattagja.
     operator const QVariant&() const   { return _record.get(_index); }
+    /// A hivatkozott mező értéke egész számként, lásd még a cRecord::getId(int) metódust.
     operator qlonglong() const  { return _record.getId(_index); }
+    /// A hivatkozott mező értéke stringként, lásd még a cRecord::getName(int) metódust.
     operator QString() const    { return _record.getName(_index); }
+    /// Törli a hivatkozott mezőt, lásd még a cRecord::clear(int) metódust.
     cRecordFieldRef& clear()    { _record.clear(_index); return *this; }
+    /// A hivatkozott mező értéke stringként, lásd még a cRecord::getName(int) metódust.
     QString toString() const    { return *this; }
+    /// A hivatkozott mező értéke stringként, lásd még a cRecord::view(QSqlQuery&, int) metódust.
     QString view(QSqlQuery& q)  { return _record.view(q, _index); }
-    int& stat()                 { return _record._stat; }
+    /// A hivatkozott objektum statuszának a referenciája
+    const int& stat() const { return _record._stat; }
+    /// Frissíti a hivatkozott mező értéket az adatbázisban, a rekordot az elsődleges kulcs azonosítja, lásd méga a cRecord::update() metódust.
     bool update(QSqlQuery& q, bool __ex = true) const {
         return _record.update(q, false, _record.mask(_index), _record.primaryKey(), __ex);
     }
+    /// A hivatkozott objektum referenciája
     const cRecord& record() const           { return _record; }
+    /// A hivatkozott mező leíró objektumának a referenciája
     const cRecStaticDescr& recDescr() const { return _record.descr(); }
+    /// A hivatkozott objektum leíró objektumának a referenciája
     const cColStaticDescr& descr() const    { return _record.descr().colDescr(_index); }
+    /// A hivatkozott mező indexe
     int index()                             { return _index; }
 };
 TSTREAMO(cRecordFieldRef)
@@ -1576,7 +1679,7 @@ inline cRecordFieldConstRef cRecord::operator[](const QString& __fn) const  { re
 /*!
 @class cAlternate
 @brief Általános interfész osztály.
-Azt hogy melyik adattáblát kezeli az a konstruktorban, vagy a setType() metódusokban kell beállítani.
+Azt hogy melyik adattáblát kezeli azt a konstruktorban, vagy a setType() metódusokban kell beállítani.
 Természetesen csak az alapfunkciókra képes, amik a cRecord-ban meg lettek valósítva.
  */
 class cAlternate : public cRecord {
@@ -1616,7 +1719,7 @@ public:
     virtual ~cAlternate();
     /// Egy új objektum allokálása. Az új objektum örökli a hívó descriptorát.
     virtual cRecord *newObj() const;
-    /// Másolatot készít az objektumról.
+    /// Az objektumr klónozása
     virtual cRecord *dup()const;
     /// Másoló operátor. Átmásolja a forrás objektum descriptor mutatóját (típusát) és a mező adatokat.
     cAlternate& operator=(const cRecord& __o);
@@ -1625,13 +1728,24 @@ protected:
 };
 
 /// Template függvény a "properties" mező felbontására
+/// A sablon föggvény számít arra, hogy az objektumnak van egy
+/// _pMagicMap konténere, ahova az eredményt helyezi, továbbá egy _ixProperties adattagja, ami a properties mező indexe.
+/// @param S Egy cRecord leszármazott osztály
+/// @param o Az objektumpéldány
+/// @param __ex ha értéke true, akkor hiba esetén dob egy kizárást.
+/// @relates cRecord
 template <class S> void _SplitMagicT(S& o, bool __ex)
 {
     if (o._pMagicMap == NULL) o._pMagicMap = new tMagicMap();
     else                      o._pMagicMap->clear();
     *o._pMagicMap = splitMagic(o.getName(S::_ixProperties), *o._pMagicMap, __ex);
 }
-/// Egy módosított map visszaírása a "properties" mezőbe.
+/// Egy módosított map visszaírása a "properties" mezőbe. Nem hiívja az cRecord::atEnd(int) metódust.
+/// A sablon föggvény számít arra, hogy az objektumnak van egy
+/// _pMagicMap konténere, továbbá egy _ixProperties adattagja, ami a properties mező indexe.
+/// @param S Egy cRecord leszármazott osztály
+/// @param o Az objektumpéldány
+/// @relates cRecord
 template <class S> void _Magic2PropT(S& o)
 {
     QString prop;

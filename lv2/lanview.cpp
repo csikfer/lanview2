@@ -464,20 +464,3 @@ int IPV6Pol(const QString& n, bool __ex)
 }
 
 
-bool checkEnum(const cColStaticDescr& descr, tE2S e2s, tS2E s2e)
-{
-    int n = descr.enumVals.size();
-    for (int i = 0; i < n; ++i) {
-        const QString& s = descr.enumVals[i];
-        if (i != (*s2e)(s, false)) {
-            DERR() << "#" << i << "/" << s << " : " << "s2e(" << s << ") = " << (*s2e)(s, false) << endl;
-            return false;
-        }
-        if (s != (*e2s)(i, false)) {
-            DERR() << "#" << i << "/" << s << " : " << "e2s(" << i << ") = " << (*e2s)(i, false) << endl;
-            return false;
-        }
-    }
-    return true;
-}
-

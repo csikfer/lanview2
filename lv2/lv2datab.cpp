@@ -352,6 +352,24 @@ void cColStaticDescr::typeDetect()
     return;
 }
 
+bool cColStaticDescr::checkEnum(tE2S e2s, tS2E s2e) const
+{
+    int n = enumVals.size();
+    if (n == 0) EXCEPTION(EPROGFAIL);
+    for (int i = 0; i < n; ++i) {
+        const QString& s = enumVals[i];
+        if (i != (*s2e)(s, false)) {
+            DERR() << "#" << i << "/" << s << " : " << "s2e(" << s << ") = " << (*s2e)(s, false) << endl;
+            return false;
+        }
+        if (s != (*e2s)(i, false)) {
+            DERR() << "#" << i << "/" << s << " : " << "e2s(" << i << ") = " << (*e2s)(i, false) << endl;
+            return false;
+        }
+    }
+    return true;
+}
+
 /* ------------------------------------------------------------------------------------------------------- */
 
 QVariant  cColStaticDescrBool::fromSql(const QVariant& _f) const
@@ -678,7 +696,7 @@ QString   cColStaticDescrEnum::toName(const QVariant& _f) const
 /// Enumeráció esetén a numerikus érték az adatbázisban az enum típusban megadott listabeli sorszáma (0,1 ...)
 /// Az API-ban lévő sring - enumeráció kovertáló függvényeknél ügyelni kell, hogy a C-ben definiált
 /// enumerációs értékek megfeleljenek az adatbázisban a megfelelő enumerációs érték sorrendjének.
-/// Az enumerációk konzisztens kezelése a bool checkEnum(const cColStaticDescr& descr, tE2S e2s, tS2E s2e);
+/// Az enumerációk konzisztens kezelése a bool checkEnum(tE2S e2s, tS2E s2e);
 /// függvénnyel vagy a CHKENUM makróval ellenőrizhető le.
 qlonglong cColStaticDescrEnum::toId(const QVariant& _f) const
 {
@@ -1383,6 +1401,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
     // Set table and schema name
     _schemaName     = __s.isEmpty() ? _sPublic : __s;
     _tableName      = __t;
+    _viewName       = __t;
 
     QString baseName = __t.endsWith('s') ? __t.mid(0, __t.size() -1) : _sNul;
 
@@ -1421,7 +1440,6 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
         _tableType = BASE_TABLE;
     else if (n == "VIEW") {
         _tableType = VIEW_TABLE;
-        _viewName = _tableName;
         // Ha egy link tábláról van szó, akkor annak itt a view tábláját kell megadni, és ebben az estenben
         // a tábla név az a view név kiegészítve a "_table" uótaggal.
         QString tn = _viewName + "_table";
@@ -2313,7 +2331,7 @@ void cRecord::fetchQuery(QSqlQuery& __q, bool __only, const QBitArray& _fm, cons
     QString     sql;    // sql parancs
     sql  = "SELECT " + (__s.isEmpty() ? "*" : __s) + " FROM ";
     if (__only) sql += "ONLY ";
-    sql += descr().fullViewName();
+    sql += descr().fullViewNameQ();
     if (__w.isEmpty()) {
         sql += whereString(fm);
     }
@@ -2449,18 +2467,7 @@ bool cRecord::update(QSqlQuery& __q, bool __only, const QBitArray& __set, const 
         }
     }
     sql.chop(1);
-    QString w;
-    for (i = 0; i < where.size(); i++) {
-        if (where[i]) {
-            if (w.size() > 0) w += " AND";
-            w += _sSpace + columnNameQ(i);
-            if (get(i).isNull()) w += _sIsNull;
-            else                 w += _sCondW;
-            w += _sSpace;
-        }
-    }
-    w.chop(1);
-    if (w.size()) sql += " WHERE" + w + " RETURNING *";
+    sql += whereString(where) + " RETURNING *";
     if (!__q.prepare(sql)) SQLPREPERR(__q, sql)
     for (j = i = 0; i < bset.size(); i++) {
         if (bset[i] && false == get(i).isNull()) {
@@ -2565,7 +2572,7 @@ QString cRecord::toString() const
     return s;
 }
 
-// NEM KEZELI AZ ESETLEGES DELETED MEZŐT !!!!
+/// NEM KEZELI AZ ESETLEGES DELETED MEZŐT !!!!
 int cRecord::delByName(QSqlQuery& q, const QString& __n, bool __pat, bool __only)
 {
     QString sql = "DELETE FROM ";

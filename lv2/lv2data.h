@@ -4,16 +4,21 @@
 #include "lv2datab.h"
 #include "lv2cont.h"
 
+/*!
+@file lv2data.h
+Az adatbázis interfész objektumok.
+*/
+
 /// @def CHKENUM
-/// Makró, a chkEnum hívására egy cRecord leszármazottban a statikus rekord leíró inicializálása után.
+/// Makró, a chkEnum() hívására egy cRecord leszármazottban a statikus rekord leíró inicializálása után.
 /// A rekord leíró objektum példány neve _staticDescr.
 /// A makró feltételezi, hogy a két konverziós függvény neve azonos (ellenörzendő, hogy ez nem okoz galibát!!)
 /// Ha az enumeráció kezelés a hívás szerint hibás, akkor dob egy kizárást.
 /// @param n Az enumeráció típusú mező neve, vagy indexe
-/// @param f A konverziós függvény(ek) neve.
+/// @param f A konverziós függvény(ek) neve. Lást az
 #define CHKENUM(n, f)   { \
     const cRecStaticDescr& r = *_pRecordDescr; \
-    if (false == checkEnum( r[n],f, f)) \
+    if (false == r[n].checkEnum( f, f)) \
         EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("Enumeráció %1 konverziós hiba!").arg(r[n].udtName)); \
 }
 

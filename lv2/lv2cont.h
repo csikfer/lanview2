@@ -12,7 +12,7 @@ Adatbázis kezelő objektum kontéberek ill. template-k
 @class tRecordList
 Template osztály. Rekord lista konténer.
 
-A konténer az objektumok pointereit tárolja, azok a konténer objektum „tulajdonába” kerülnek, vagyis azokat a destruktor felszabadítja.
+A konténer az objektumok pointereit tárolja, amik a konténer objektum „tulajdonába” kerülnek, vagyis azokat a destruktor felszabadítja.
 A konténer másolásakor az összes elem klónozva lesz, ezért ez a művelet, főleg nagyobb listák esetén kerülendő, és lásd még a klónozásnál
 leírtakat is cRecord::dup() .
 Az ős QList konténer metódusain kívül mit nyújt a tRecordList konténer?
@@ -20,9 +20,10 @@ A pointer elemeket az elem törlésekor felszabadítja, továbbá ha referenciá
 akkor klónozza azt, és a klónt helyezi a konténerbe.
 Egy elem kereshető, ill. elérhető egy mező értéke alapján: contains() és indexOff(), get() metódusok.
 Lehetőség van egy mező értékének beállítására az összes elemnél: set(), setId(), setName().
+Az osztály biztosít néhání adatbázis műveletet végző metódust: fetch(), insert()
 
-...
-
+Azokat a metódusokat, melyek a mező indexe alapján azonosítanak egy mezőt, csak akkor használhatjuk, ha a konténerben tárolt
+objektumok valóban azonos típusuak, ill. ugyan az a cRecStaticDescr objektum a leírójuk.
 */
 template <class T>
         class tRecordList : public QList<T *>
@@ -314,7 +315,7 @@ public:
     /// A konténer egy elemének a lekérése az név alapján
     /// Ha nincs név mező, vagy nem ismert az indexe, akkor dob egy kizárást
     /// @param __nm a keresett név értéke
-    /// @param __ex Ha értéke true, akkor ha nem találja az elemet, akkor dob egy kizárást, egyébként NULL pointerrel visszatár.
+    /// @param __ex Ha értéke true, akkor ha nem találja az elemet, akkor dob egy kizárást, egyébként NULL pointerrel visszatér.
     T *get(const QString& __nm, bool __ex = true) {
         int i = indexOf(__nm);
         if (i < 0) {
@@ -327,7 +328,7 @@ public:
     /// Ha nincs ilyen nevű mező, akkor dob egy kizárást
     /// @param __nm A mező neve, ami alapján keresünk
     /// @param __v A keresett érték
-    /// @param __ex Ha értéke true, akkor ha nem találja az elemet, akkor dob egy kizárást, egyébként NULL pointerrel visszatár.
+    /// @param __ex Ha értéke true, akkor ha nem találja az elemet, akkor dob egy kizárást, egyébként NULL pointerrel visszatér.
     T *get(const QString& __fn, const QVariant& __v, bool __ex = true) {
         int i = indexOf(__fn, __v);
         if (i < 0) {
@@ -340,7 +341,7 @@ public:
     /// Ha nincs ilyen mező, akkor dob egy kizárást
     /// @param __ix A mező sorszáma, ami alapján keresünk
     /// @param __v A keresett érték
-    /// @param __ex Ha értéke true, akkor ha nem találja az elemet, akkor dob egy kizárást, egyébként NULL pointerrel visszatár.
+    /// @param __ex Ha értéke true, akkor ha nem találja az elemet, akkor dob egy kizárást, egyébként NULL pointerrel visszatér.
     T *get(int __ix, const QVariant& __v, bool __ex = true) {
         int i = indexOf(__ix, __v);
         if (i < 0) {
@@ -349,10 +350,28 @@ public:
         }
         return this->at(i);
     }
-    ///
-    T *pop_back()  { T *p = QList<T *>::back();  QList<T *>::pop_back();  return p; }
-    ///
-    T *pop_front() { T *p = QList<T *>::front(); QList<T *>::pop_front(); return p; }
+    /// A konténer utolsó pointerét törli a konténerből, de a pointert nem szabadítja föl, hanem azzal tér vissza.
+    /// Ha a konténer üres, akkor dob egy kizárást, ha __ex igaz, vagy NULL pointerrel tér vissza, ha __ex hamis.
+    T *pop_back(bool __ex = true)  {
+        if (list().size() < 1) {
+            if (__ex == false) return NULL;
+            EXCEPTION(EFOUND, 0);
+        }
+        T *p = QList<T *>::back();
+        QList<T *>::pop_back();
+        return p;
+    }
+    /// A konténer első pointerét törli a konténerből, de a pointert nem szabadítja föl, hanem azzal tér vissza.
+    /// Ha a konténer üres, akkor dob egy kizárást, ha __ex igaz, vagy NULL pointerrel tér vissza, ha __ex hamis.
+    T *pop_front(bool __ex = true) {
+        if (list().size() < 1) {
+            if (__ex == false) return NULL;
+            EXCEPTION(EFOUND, 0);
+        }
+        T *p = QList<T *>::front();
+        QList<T *>::pop_front();
+        return p;
+    }
 };
 
 template<class T> QTextStream& operator<<(QTextStream& __t, const tRecordList<T>& __v) { return __t << toString(__v); }

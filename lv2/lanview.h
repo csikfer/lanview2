@@ -269,20 +269,4 @@ EXT_ int IPV4Pol(const QString& n, bool __ex = true);
 EXT_ const QString& IPV6Pol(int e, bool __ex = true);
 EXT_ int IPV6Pol(const QString& n, bool __ex = true);
 
-typedef const QString& (*tE2S)(int e, bool __ex);
-typedef int (*tS2E)(const QString& n, bool __ex);
-
-/// Az enumeráció kezelés konzisztenciájának ellenörzése.
-/// Enumeráció esetén a numerikus érték az adatbázisban az enum típusban megadott listabeli sorszáma (0,1 ...)
-/// SET esetén pedig a numerikus értékben a megadott sorszámú bit reprezentál egy enumerációs értéket.
-/// Az API-ban lévő sring - enumeráció kovertáló függvényeknél ügyelni kell, hogy a C-ben definiált
-/// enumerációs értékek megfeleljenek az adatbázisban a megfelelő enumerációs érték sorrendjének.
-/// A vizsgálat csak az adatbázis szerini értékek irányából ellenőriz, ha a konverziós függvények
-/// több értéket is kezelnének, azt nem képes detektálni.
-/// @param descr A mező leíró objektum referenciája
-/// @param e2s Az enumerációból stringgé konvertáló függvény pointere
-/// @param s2e A stringból enumerációs konstanba konvertáló függvény pointere.
-/// @return true, ha nem sikerült eltérést detektálni a kétféle enum értelmezés között, és false, ha eltérés van
-EXT_ bool checkEnum(const cColStaticDescr& descr, tE2S e2s, tS2E s2e);
-
 #endif // LANVIEW_H
