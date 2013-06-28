@@ -14,11 +14,8 @@ int touch(QSqlQuery& q, cRecord& o)
     QBitArray bset  = o.mask(iLastTime);
     o.clear(iLastTime);
     QBitArray where = o.getSetMap();
-    if ((where & o.primaryKey()) == o.primaryKey()) where = o.primaryKey();
-    else foreach (QBitArray u, o.uniques()) {
-        if ((where & u) == u) { where = u; break; }
-    }
-
+    if (where.isEmpty()) return -1; //
+    if (where.size() > iLastTime && where[iLastTime]) where.clearBit(iLastTime);
     QString sql = QString("UPDATE %1 SET last_time = NOW() ").arg(o.fullTableNameQ());
     sql += o.whereString(where);
     sql += " RETURNING *";
@@ -378,7 +375,7 @@ bool cPortParamValue::toEnd(int i)
         }
         else {
             QSqlQuery q = getQuery();
-            portParam.fetchById(q, id);
+            if (!portParam.fetchById(q, id)) _stat |= ES_DEFECTIVE;
         }
         return true;
     }
@@ -541,7 +538,7 @@ void cNPort::toEnd()
 bool cNPort::toEnd(int i)
 {
     if (_ixPortId == i) {
-        params.clear();
+        atEndCont(params, _sPortId);
         return true;
     }
     return false;
@@ -556,7 +553,7 @@ cNPort * cNPort::newPort(const cIfType& __t, int __i)
 {
     cNPort *r = NULL;
     QStringList portobjtypes = __t.get(_sIfTypeObjType).toStringList();
-    if (portobjtypes.size() == 0) EXCEPTION(EDATA, 0, "port_obj_type is empty");
+    if (portobjtypes.isEmpty()) EXCEPTION(EDATA, 0, "port_obj_type is empty");
     QString portobjtype = portobjtypes[0];
     if (portobjtypes.size() > 1) {
         if (__i == -1) EXCEPTION(AMBIGUOUS);
@@ -740,6 +737,7 @@ cPPort::cPPort(const cPPort& __o) : cRecord(), cNPort(_no_init_)
 
 // -- virtual
 int             cPPort::_ixIfTypeId  = NULL_IX;
+int             cPPort::_ixNodeId    = NULL_IX;
 int             cPPort::_ixPortIndex = NULL_IX;
 qlonglong       cPPort::_ifTypePatch = NULL_ID;
 const cRecStaticDescr&  cPPort::descr() const
@@ -748,6 +746,7 @@ const cRecStaticDescr&  cPPort::descr() const
         _ixIfTypeId  = _pRecordDescr->toIndex(_sIfTypeId);
         _ifTypePatch = cIfType::ifTypeId(_sPatch);
         _ixPortIndex = _pRecordDescr->toIndex(_sPortIndex);
+        _ixNodeId    = _pRecordDescr->toIndex(_sNodeId);
     }
     return *_pRecordDescr;
 }
@@ -758,7 +757,7 @@ CRECDEFD(cPPort)
 cInterface::cInterface() : cNPort(_no_init_), trunkMembers()
 {
     _set(cInterface::descr());
-    _initInterface(cInterface::_descr_cInterface());
+    _initInterface(_descr_cInterface());
 }
 cInterface::cInterface(const cInterface& __o) : cRecord(), cNPort(_no_init_), trunkMembers()
 {
@@ -770,7 +769,13 @@ cInterface::cInterface(const cInterface& __o) : cRecord(), cNPort(_no_init_), tr
     vlans        = __o.vlans;
 }
 // -- virtual
-CRECDDCR(cInterface, _sInterfaces)
+const cRecStaticDescr&  cInterface::descr() const
+{
+    if (initPDescr<cInterface>(_sInterfaces)) {
+        CHKENUM(_sPortOStat, ifStatus);
+    }
+    return *_pRecordDescr;
+}
 
 bool cInterface::insert(QSqlQuery &__q, bool __ex)
 {
@@ -844,6 +849,42 @@ int cInterface::fetchByMac(QSqlQuery& q, const cMac& a)
     clear();
     set(_sHwAddress, QVariant::fromValue(a));
     return completion(q);
+}
+
+int ifStatus(const QString& _n, bool __ex)
+{
+    if (0 == _n.compare(_sUp,             Qt::CaseInsensitive)) return cInterface::UP;
+    if (0 == _n.compare(_sDown,           Qt::CaseInsensitive)) return cInterface::DOWN;
+    if (0 == _n.compare(_sTesting,        Qt::CaseInsensitive)) return cInterface::TESTING;
+    if (0 == _n.compare(_sUnknown,        Qt::CaseInsensitive)) return cInterface::UNKNOWN;
+    if (0 == _n.compare(_sDormant,        Qt::CaseInsensitive)) return cInterface::DORMANT;
+    if (0 == _n.compare(_sNotPresent,     Qt::CaseInsensitive)) return cInterface::NOTPRESENT;
+    if (0 == _n.compare(_sLowerLayerDown, Qt::CaseInsensitive)) return cInterface::LOWERLAYERDOWN;
+    if (0 == _n.compare(_sInvert,         Qt::CaseInsensitive)) return cInterface::IA_INVERT;
+    if (0 == _n.compare(_sInvert,         Qt::CaseInsensitive)) return cInterface::IA_SHORT;
+    if (0 == _n.compare(_sBroken,         Qt::CaseInsensitive)) return cInterface::IA_BROKEN;
+    if (0 == _n.compare(_sError,          Qt::CaseInsensitive)) return cInterface::IA_ERROR;
+    if (__ex) EXCEPTION(EDATA, -1, _n);
+    return cInterface::PS_INVALID;
+}
+
+const QString& ifStatus(int _i, bool __ex)
+{
+    switch (_i) {
+    case cInterface::UP:                return _sUp;
+    case cInterface::DOWN:              return _sDown;
+    case cInterface::TESTING:           return _sTesting;
+    case cInterface::UNKNOWN:           return _sUnknown;
+    case cInterface::DORMANT:           return _sDormant;
+    case cInterface::NOTPRESENT:        return _sNotPresent;
+    case cInterface::LOWERLAYERDOWN:    return _sLowerLayerDown;
+    case cInterface::IA_INVERT:         return _sInvert;
+    case cInterface::IA_SHORT:          return _sInvert;
+    case cInterface::IA_BROKEN:         return _sBroken;
+    case cInterface::IA_ERROR:          return _sError;
+    default: if (__ex) EXCEPTION(EDATA, _i);
+    }
+    return _sNul;
 }
 
 /* ------------------------------ cIfaceAddr ------------------------------ */
@@ -994,15 +1035,7 @@ void cPatch::toEnd()
 bool cPatch::toEnd(int i)
 {
     if (i == idIndex()) {
-        // Ha üres nem töröljük, mert minek,
-        if (ports.isEmpty()
-        // ha a prortoknál nincs kitöltve az ID, akkor is békénhagyjuk. (csak az első elemet vizsgáljuk
-         || ports.first()->getId() == NULL_ID
-        // ha stimmel a node_id akkor sem töröljük
-         || ports.first()->getId(_sNodeId) == getId())
-            return true;
-        ports.clear();
-        clearShares();
+        if (atEndCont(ports, cPPort::_ixNodeId)) clearShares();
         return true;
     }
     return false;
@@ -1108,8 +1141,8 @@ bool cPatch::updateShares(QSqlQuery& __q, bool __clr, bool __ex)
         }
     }
     if (shares.isEmpty()) return true;
-    QBitArray um = cPPort::_descr().mask(_sSharedCable, _sSharedPortId);
-    QBitArray wm = cPPort::_descr().primaryKey();
+    QBitArray um = DESCR(cPPort).mask(_sSharedCable, _sSharedPortId);
+    QBitArray wm = DESCR(cPPort).primaryKey();
     QString ss;
     foreach (const cShareBack& s, shares) {
         cPPort *p = ports.get(cPPort::_ixPortIndex, QVariant(s.getA()));   // A bázis port A vagy AA megosztás
@@ -1178,14 +1211,7 @@ void cHub::toEnd()
 bool cHub::toEnd(int i)
 {
     if (i == idIndex()) {
-        // Ha üres nem töröljük, mert minek,
-        if (ports.isEmpty()
-        // ha a portoknál nincs kitöltve az ID, akkor is békénhagyjuk. (csak az első elemet vizsgáljuk
-         || ports.first()->getId() == NULL_ID
-        // ha stimmel a node_id akkor sem töröljük
-         || ports.first()->getId(_sNodeId) == getId())
-            return true;
-        ports.clear();
+        atEndCont(ports, _sNodeId);
         return true;
     }
     return false;
@@ -1346,14 +1372,7 @@ void cNode::toEnd()
 bool cNode::toEnd_NoMainPort(int i)
 {
     if (i == idIndex()) {
-        // Ha üres nem töröljük, mert minek,
-        if (ports.isEmpty()
-        // ha a prortoknál nincs kitöltve az ID, akkor is békénhagyjuk. (csak az első elemet vizsgáljuk
-         || ports.first()->getId() == NULL_ID
-        // ha stimmel a node_id akkor sem töröljük
-         || ports.first()->getId(_sNodeId) == getId())
-            return true;
-        ports.clear();
+        atEndCont(ports, _sNodeId);
         return true;
     }
     return false;

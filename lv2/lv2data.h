@@ -10,12 +10,14 @@ Az adatbázis interfész objektumok.
 */
 
 /// @def CHKENUM
-/// Makró, a chkEnum() hívására egy cRecord leszármazottban a statikus rekord leíró inicializálása után.
-/// A rekord leíró objektum példány neve _staticDescr.
-/// A makró feltételezi, hogy a két konverziós függvény neve azonos (ellenörzendő, hogy ez nem okoz galibát!!)
+/// @rief Egy enumerációs típus konverziós függvényeinek az ellenörzése.
+///
+/// Makró, a chkEnum() hívására egy cRecord leszármazot egy metódusában, pl. a statikus rekord leíró inicializálása után.
+/// A rekord leíró objektum példányra mutató pointer neve _pRecordDescr.
+/// A makró feltételezi, hogy a két konverziós függvény neve azonos, és csak a típusuk különböző (tE2S és tS2E)
 /// Ha az enumeráció kezelés a hívás szerint hibás, akkor dob egy kizárást.
 /// @param n Az enumeráció típusú mező neve, vagy indexe
-/// @param f A konverziós függvény(ek) neve. Lást az
+/// @param f A konverziós függvény(ek) neve.
 #define CHKENUM(n, f)   { \
     const cRecStaticDescr& r = *_pRecordDescr; \
     if (false == r[n].checkEnum( f, f)) \
@@ -58,6 +60,9 @@ enum eAddressType {
 /// @return A típus string, ha nem megengedett konstanssal hívtuk, és __ex false volt, akkor a NULL string.
 EXT_ const QString& addrType(int __at, bool __ex = true);
 /// Cím típus konstanssal tér vissza, a megadott név alapján
+/// @param __at A típus név.
+/// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást.
+/// @return A típus konstans, ha nem megengedett névvel hívtuk, és __ex false volt, akkor -1
 EXT_ int addrType(const QString& __at, bool __ex = true);
 
 /// Port - VLAN összerendelés típusa
@@ -73,7 +78,15 @@ enum eVlanType {
     VT_HARD             ///< Az eszköz által nem kezelt összeremdelés
 };
 
+/// VLAN típus névvel tér vissza, a megadott konstans alapján.
+/// @param __at A típus konstans.
+/// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást.
+/// @return A típus string, ha nem megengedett konstanssal hívtuk, és __ex false volt, akkor a NULL string.
 EXT_ int vlanType(const QString& __n, bool __ex = true);
+/// VLAN típus konstanssal tér vissza, a megadott név alapján
+/// @param __at A típus név.
+/// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást.
+/// @return A típus konstans, ha nem megengedett névvel hívtuk, és __ex false volt, akkor -1
 EXT_ const QString& vlanType(int __e, bool __ex = true);
 
 /// Port - VLAN összerendelés forrása
@@ -84,7 +97,15 @@ enum eSetType  {
     ST_MANUAL           ///< Manuális összerendelés
 };
 
+/// port - VLAN összerendelés típus névvel tér vissza, a megadott konstans alapján.
+/// @param __at A típus konstans.
+/// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást.
+/// @return A típus string, ha nem megengedett konstanssal hívtuk, és __ex false volt, akkor a NULL string.
 EXT_ int  setType(const QString& __n, bool __ex = true);
+/// ort - VLAN összerendelés típus konstanssal tér vissza, a megadott név alapján
+/// @param __at A típus név.
+/// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást.
+/// @return A típus konstans, ha nem megengedett névvel hívtuk, és __ex false volt, akkor -1
 EXT_ const QString& setType(int __e, bool __ex = true);
 
 /// Image types
@@ -103,13 +124,27 @@ enum eImageType {
     IT_BIN              ///< Other binary
 };
 
+/// kép típus névvel tér vissza, a megadott konstans alapján.
+/// @param __at A típus konstans.
+/// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást.
+/// @return A típus string, ha nem megengedett konstanssal hívtuk, és __ex false volt, akkor a NULL string.
 EXT_ int  imageType(const QString& __n, bool __ex = true);
+/// Kép típus konstanssal tér vissza, a megadott név alapján
+/// @param __at A típus név.
+/// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást.
+/// @return A típus konstans, ha nem megengedett névvel hívtuk, és __ex false volt, akkor -1
 EXT_ const QString&   imageType(int __e, bool __ex = true);
+/// Kép típus konstanssal tér vissza, a megadott név alapján
+/// @param __at A típus név. Egyes Qt függvények ezt a tíoust vátják.
+/// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást.
+/// @return A típus konstans, ha nem megengedett névvel hívtuk, és __ex false volt, akkor -1
 EXT_ const char *    _imageType(int __e, bool __ex = true);
 
-/// Az aktuális időt írja a last_time nevű mezőbe, a rekord aktuális tartalmát visszaolvassa
+/// Az aktuális időt írja a last_time nevű mezőbe, az első módosított rekord aktuális tartalmát visszaolvassa.
 /// Azt, hogy mely rekordokat kell módosítani, az o adattartalma határorra meg
-/// A last_time nevű mező törlése után azok a rekordok lesznek módosítva, melyeket az o.completion() beolvasna.
+/// A last_time nevű mező törlése után azok a rekordok lesznek módosítva, melyeket az o.completion() beolvasna, de a
+/// last_time kihagyva a feltételből.
+/// @return A módosított rekordok száma. Ha üres objektummal hívjuk, akkor -1
 EXT_  int touch(QSqlQuery& q, cRecord& o);
 /* ------------------------------------------------------------------ */
 /*!
@@ -243,17 +278,26 @@ public:
 /*!
 @class cIpAddress
 @brief A ipaddresses tábla egy rekordját reprezentáló osztály.
-Az objektum autómatikusan kezeli a subnet_id mezőt (és subNet adattagot). Vagyis az IP cím megadásánál
+Az objektum automatikusan kezeli a subnet_id mezőt (és subNet adattagot). Vagyis az IP cím megadásánál
 kitölti azt is, ill. ha ez nem lehetséges, akkor törli azt.
 */
 class LV2SHARED_EXPORT cIpAddress : public virtual cRecord {
     CRECORD(cIpAddress);
-public:
+protected:
+    /// Konstruktor
+    /// Nem inicializálja a belső adattagjait, feltételezi, hogy egy leszármazott konstruktorból hívják
+    /// @param __dummy A paraméter csak jelzés értékű, a paraméter nélküli konstruktor már definiálva van/foglalt.
     explicit cIpAddress(no_init_& __dummy) : cRecord()
-            { __dummy = __dummy; _ixSubNetId = _ixAddress = _ixIpAddressType = -1; cIpAddress::descr(); }
+            { (void)__dummy; _ixSubNetId = _ixAddress = _ixIpAddressType = -1; cIpAddress::descr(); }
+public:
+    /// Konstruktor
+    /// Kitölti a paraméter alapján a cím és típus nezőt
     cIpAddress(const QHostAddress& __a, const QString& __t = _sFixIp);
+    /// Érték adás a cím mezőnek
     cIpAddress& operator=(const QHostAddress& __a) { set(_ixAddress, QVariant::fromValue(__a)); return *this; }
+    /// Érték adás a cím mezőnek, és a típus mezőnek.
     cIpAddress& setAddress(const QHostAddress& __a, const QString& __t = _sNul);
+    /// A cím mező értékének a lekérése.
     QHostAddress address() const;
     /// Ha nincs subnet a megadott címhez, akkor a típust 'external'-ra állítja
     /// Ha nincs valós cím az objektumban akkor nem csinál semmit.
@@ -273,11 +317,16 @@ protected:
 
 typedef tRecordList<cIpAddress> cIpAddresses;
 /* ******************************  ****************************** */
+class cPortParamValue;
 /// Port paraméter típus leíró rekord
 class LV2SHARED_EXPORT cPortParam : public cRecord {
+    friend class cPortParamValue;
     CRECORD(cPortParam);
+protected:
+    /// Konstruktor, csak a leg szükségesebb inicilizálást végzi el, leszármazottak konstruktorábol hívható;
+    /// @param __dummy A paraméter csak jelzés értékű, a paraméter nélküli konstruktor már definiálva van/foglalt.
+    cPortParam(no_init_ __dummy) : cRecord() { (void)__dummy; cPortParam::descr(); }
 public:
-    cPortParam(no_init_ __dummy) : cRecord() { cPortParam::descr(); __dummy = __dummy; }
     /// Egy új port_params rekord beinzertálása (port paraméter név/típus/dimenzió objektumlétrehozása).
     /// Hiba esetén dob egy kizárást
     /// @param __n A paraméter neve
@@ -299,41 +348,56 @@ protected:
     static int _ixPortParamId;  // Nincs öröklés, az index állandó
 public:
     cPortParamValue(no_init_ __dummy) : portParam(__dummy) { cPortParamValue::descr(); }
-    virtual void   clearToEnd();
+    /// Törli a portParam adattagot.
+    virtual void    clearToEnd();
+    /// A toEnd(int i) metódust hívja a port paraméter (típus) rekord id mező indexével.
     virtual void 	toEnd ();
+    /// Ha megváltozik a port param (típus) id, akkor betölti, vagy törli a megfelelp értéket a portParam adattagba.
+    /// Nincs ilyen id-vel port_params rekord (és nem NULL az id), akkor a statusban bebillenti az ES_DEFECZIVE bitet.
     virtual bool 	toEnd (int i);
     /// A port paraméter nevével tér vissza
     QString name()   const { return portParam.getName(); }
     /// A port paraméter típus nevével tér vissza
     QString type()   const { return portParam.get(_sPortParamType).toString(); }
-    /// A port paraméter dimenzió nevével tér vissza
+    /// A port paraméter dimenzió ill. mértékegység nevével tér vissza
     QString dim()    const { return portParam.get(_sPortParamDim).toString(); }
     /// A port paraméter értékére mutató referencia objektummal tér vissza.
     cRecordFieldConstRef value() const { return (*this)[_sParamValue]; }
+    /// A port paraméter értékére mutató referencia objektummal tér vissza.
     cRecordFieldRef      value()       { return (*this)[_sParamValue]; }
     /// A paraméter típusának a beállítása
     /// @param __id A paraméter típus rekord ID-je
     cPortParamValue& setType(qlonglong __id)        { set(_ixPortParamId, __id); return *this; }
     /// @param __id A paraméter típus rekord név mezőjenek az értéke
     cPortParamValue& setType(const QString& __n)    { portParam.fetchByName(__n); _set(_ixPortParamId, portParam.getId()); return *this; }
-    ///
-    // cPortParamValue& operator=(const cPortParamValue& __o) { *(cRecord *)this = *(cRecord *)&__o; return *this; }
+    /// Értékadás az érték mezőnek.
     cPortParamValue& operator=(const QString& __v)  { setName(_sParamValue, __v); return *this; }
 };
 
-/// Port paraméter értékek
+/// Port paraméter értékek listája
 class LV2SHARED_EXPORT cPortParamValues : public tRecordList<cPortParamValue> {
 protected:
+    /// Az port_param_values mezőben a port_id mező indexe.
     static int _ixPortId;
 public:
+    /// Konstruktor. Üres listát készít.
     cPortParamValues();
+    /// Konstruktor. A listának egy eleme lessz, a megadott objektum klónja.
     cPortParamValues(const cPortParamValue& __v);
+    /// Konstruktor. A listét feltölti az adatbázisból, hogy a megadott porthoz (ID) tartozó összes paramétert tartalmazza.
     cPortParamValues(QSqlQuery& __q, qlonglong __port_id);
+    /// Copy konstrultor. A konténer összes elemét klónozza.
     cPortParamValues(const cPortParamValues& __o);
+    /// Másoló operátor. A konténer összes elemét klónozza.
     cPortParamValues& operator=(const cPortParamValues& __o);
+    /// A listét feltölti az adatbázisból, hogy a megadott porthoz (ID) tartozó összes paramétert tartalmazza.
     int fetch(QSqlQuery& __q, qlonglong __port_id) { return tRecordList<cPortParamValue>::fetch(__q, false, _ixPortId, __port_id); }
+    /// Index operátor: egy elem a paraméter név alapján
     const cPortParamValue& operator[](const QString& __n) const;
+    /// Index operátor: egy elem a paraméter név alapján
     cPortParamValue&       operator[](const QString& __n);
+    /// Az összes elem kiírása az adatbázisba.
+    /// @return A kiírt rekordok száma
     int       insert(QSqlQuery &__q, qlonglong __port_id, bool __ex = true);
 };
 /* ------------------------------------------------------------------------ */
@@ -341,7 +405,7 @@ class LV2SHARED_EXPORT cIfType : public cRecord {
     CRECORD(cIfType);
 protected:
     /// Az összes if_types rekordot tartalmazó konténer
-    /// Nem frissül autómatikusan, ha változik az adattábla.
+    /// Nem frissül automatikusan, ha változik az adattábla.
     static tRecordList<cIfType> ifTypes;
     /// Egy üres objektumra mutató pointer.
     /// Az ifTypes feltöltésekor hozza létre az abjektumot a fetchIfTypes();
@@ -350,12 +414,16 @@ public:
     /// Feltölti az adatbázisból az ifTypes adattagot, elötte törli.
     static void fetchIfTypes(QSqlQuery& __q);
     /// Egy ifTypes objektumot ad vissza a név alapján, ha nincs ilyen nevű típus, akkor dob egy kizárást.
+    /// Az ifTypes adattagban keres, ha ifTypes üres, akkor feltölti az adatbázisból
     static const cIfType& ifType(const QString& __nm, bool __ex = true);
     /// Egy ifTypes objektumot ad vissza az ID alapján, ha nincs ilyen nevű típus, akkor dob egy kizárást.
+    /// Az ifTypes adattagban keres, ha ifTypes üres, akkor feltölti az adatbázisból
     static const cIfType& ifType(qlonglong __id, bool __ex = true);
     /// Egy ifTypes objektum Azonosítóját adja vissza a név alapján, ha nincs ilyen nevű típus, akkor dob egy kizárást.
+    /// Az ifTypes adattagban keres, ha ifTypes üres, akkor feltölti az adatbázisból
     static qlonglong ifTypeId(const QString& __nm, bool __ex = true) { return ifType(__nm, __ex).getId(); }
     /// Egy ifTypes objektum nevét adja vissza az ID alapján, ha nincs ilyen azonosítójú típus, akkor dob egy kizárást.
+    /// Az ifTypes adattagban keres, ha ifTypes üres, akkor feltölti az adatbázisból
     static QString   ifTypeName(qlonglong __id, bool __ex = true)    { return ifType(__id, __ex).getName(); }
 protected:
     /// Ha nincs feltöltve az ifTypes adattag , akkor feltölti az adatbázisból,
@@ -367,35 +435,43 @@ protected:
 
 /*!
 @class cNPort
-@brief A nports tábla egy rekordját reprezentáló osztály. Ős tábla, töbszörösen öröklődik.
+@brief A nports tábla egy rekordját reprezentáló osztály. Töbszörösen öröklődik.
  */
 class LV2SHARED_EXPORT cNPort : public virtual cRecord {
     friend class cNode;
     friend class cHost;
     friend class cSnmpDevice;
     CRECORD(cNPort);
-public:
+protected:
     /// Konstruktor a leszámazottak számára.
     explicit cNPort(no_init_& __dummy) : cRecord() { __dummy = __dummy; cNPort::descr(); }
+public:
+    /// Beszúr egy port rekordot az adatbázisba a járulékos adatokkal (rekordokkal) együtt.
     virtual bool insert(QSqlQuery &__q, bool __ex = false);
+    /// A port id indexével hívja a toEnd(int i) metódust (leszármazottakban ez nem biztos hogy ez a rekord ID)
     virtual void toEnd();
+    /// Ha a port id indexével hívtuk, akkor ha szükséges törli a params konténert, lásd az atEndCont() metódust.
     virtual bool toEnd(int i);
+    /// Törli a params konténert is.
     virtual void clearToEnd();
-    /// Egy port rekord beolvasása
+    /// Egy port rekord beolvasása a port név és a node_id alapján.
     bool fetchPortByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, bool __ex = true);
+    /// Egy port id  lekérése a port név és a node_id alapján.
     qlonglong getPortIdByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, bool __ex = true) const;
-
+    /// Egy port rekord beolvasása a port név és a node neve alapján.
     bool fetchPortByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, bool __ex);
+    /// Egy port id  lekérése a port név és a node név alapján.
     qlonglong getPortIdByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, bool __ex = true) const;
-
+    /// Egy port rekord beolvasása a port index és a node_id alapján.
     bool fetchPortByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id, bool __ex = true);
+    /// Egy port id  lekérése a port index és a node_id alapján.
     qlonglong getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id, bool __ex = true) const;
     /// Megallokál egy új cNPort, cInterface vagy cIfaceAddr objektumot, a megadott cIfType objektum szerint.
     /// Az objektum típust a cIfType (egy adatbázisból beolvasott iftypes rekord alapján) az iftype_obj_type
     /// tömb mező értéke adja meg. Ha itt nem egy érték (objektum név) szerepel, akkor ha nem adtuk meg az opcionális
     /// __i paramétert (alapértelmezett en -1), akkor kizárást generál a hívás, továbbá szintén kizárást kapunk,
-    /// ha __i értéke nem egy objektum típus paramétere a tömbben (ha a tömb egy elemű, __i értéke érdektelem).
-    /// "pport" érték szintén kizárást eredményez, így a metődus annak pointerét nem tudja visszaadni.
+    /// ha __i értéke nem egy objektum típus paramétere a tömbben (ha a tömb egy elemű, __i értéke 0, vagy negatív lehet).
+    /// "pport" érték szintén kizárást eredményez, így a metódus annak pointerét nem tudja visszaadni.
     /// A megangedett tömb elem értékek: "nport", "interface" vagy "iface_addr". Más értékek esetén egy kizárás generál a hívás.
     /// A megallokát objektumban beállítja az iftype_id mezőt.
     /// @param __t cIfType objektum, egy beolvasott iftypes rekordal.
@@ -404,56 +480,53 @@ public:
     static cNPort *newPort(const cIfType& __t, int __i = -1);
     /// Megallokál egy új cNPort, cInterface vagy cIfaceAddr objektumot, a meghatározott cIfType objektum szerint.
     /// Ld.: static cNPort *newObject(const cIfType& __t)
-    /// @param __q Az cIfType objektum lekérdezéséhez használt QSqlQuery objektum.
-    /// @param __ifTypeName Az interfész típus neve (iftypes rekord iftype:name mező értéke)
-    /// @return A megallokált objektum pointere.
-    static cNPort *newPort(QSqlQuery& __q, const QString& __ifTypeName, int __i = -1) {
-        cIfType t;
-        t.fetchByName(__q, __ifTypeName);
-        return newPort(t, __i);
-    }
-    /// Megallokál egy új cNPort, cInterface vagy cIfaceAddr objektumot, a meghatározott cIfType objektum szerint.
-    /// Ld.: static cNPort *newObject(const cIfType& __t)
     /// @param __ifTypeName Az interfész típus neve (iftypes rekord iftype:name mező értéke)
     /// @return A megallokált objektum pointere.
     static cNPort *newPort(const QString& __ifTypeName, int __i = -1) {
-        QSqlQuery   q = getQuery();
-        return newPort(q, __ifTypeName, __i);
+        return newPort(cIfType::ifType(__ifTypeName), __i);
     }
     /// A port_id mező értékével tér vissza.
     /// A cNPort, cInterface és cIfaceAddr osztályoknál ez azonos a getId() hívás eredményével.
     /// A cNode, cHost és cSnmpDevices osztályoknál viszont nem a port_id az ID mező.
-    qlonglong getPortId() const { if (isNull(_ixPortId)) return NULL_ID; return get(_ixPortId).toLongLong(); }
+    qlonglong getPortId() const { return getId(_ixPortId); }
     /// Beállítja a port_id értékét.
-    void setPortId(qlonglong __id) { set(_ixPortId, QVariant(__id)); }
+    void setPortId(qlonglong __id) { setId(_ixPortId, __id); }
     /// A port_name mező értékével tér vissza.
     /// A cNPort, cInterface és cIfaceAddr osztályoknál ez azonos a getName() hívás eredményével.
     /// A cNode, cHost és cSnmpDevices osztályoknál viszont nem a port_name a név mező.
-    QString getPortName() const { return get(_ixPortName).toString(); }
+    QString getPortName() const { return getName(_ixPortName); }
     /// Allokál és beolvas egy port objektumot a megadott port_id alapján.
-    /// Az allokált objektum típusa megfelel a táblának, ha a rekor az nports, pports, interfaces vagy iface_addrs táblában van.
+    /// Az allokált objektum típusa megfelel a táblának, ha a rekord az nports, pports, interfaces vagy iface_addrs táblában van.
     /// Ha a rekord a nodes táblában van, akkor a visszaadott objektum a cNPort, ha pedig a hosts vagy snmp_devices
-    /// táblában, akkor a cIfaceAddr objektum pointerét adja vissza.
+    /// táblában, akkor egy cIfaceAddr objektum pointerét adja vissza.
     /// @param __port_id A port rekord id-je (port_id)
     /// @param __ex Ha értéke true, és nem találja a rekordot, tableoid-t akkor dob egy kizárást. Egyébként NULL-lal tér vissza
     static cNPort * getPortObjById(QSqlQuery& q, qlonglong __port_id, bool __ex = true);
+    /// Allokál és beolvas egy port objektumot a megadott port_id alapján.
+    /// Az allokált objektum típusa megfelel a megadott tábla OID-nek, ha a tábla az nports, pports, interfaces vagy iface_addrs.
+    /// Ha a tábla a nodes, akkor a visszaadott objektum a cNPort, ha pedig a hosts vagy snmp_devices,
+    /// akkor egy cIfaceAddr objektum pointerét adja vissza.
+    /// @param __port_id A port rekord id-je (port_id)
+    /// @param __tableoid A típus azonosító tábla OID
+    /// @param __ex Ha értéke true, és nem találja a rekordot, tableoid-t akkor dob egy kizárást. Egyébként NULL-lal tér vissza
     static cNPort * getPortObjById(QSqlQuery& q, qlonglong __tableoid, qlonglong __port_id, bool __ex);
     /// Az objektum iftpes rekordjával tér vissza. Ha az iftype_id mező null, vagy nem egy létező iftpes rekord ID-je,
     /// akkor dob egy kizárást, vagy üres objektummal tér vissza.
     /// @param __ex Hiba esetén nem üres objektummal tér vissza, hanem dob egy kizárást, ha értéke igaz (ez az alapértelmezés).
     const cIfType& ifType(bool __ex = true) const { return cIfType::ifType(getId(_sIfTypeId), __ex); }
-    /// Az iftype hívással lekéri az iftpes rekordot, és összehasonlítja a megadott névvel, a rekord név mezőjét,
+    /// Az iftype hívással lekéri az iftypes rekordot, és összehasonlítja a megadott névvel, a rekord név mezőjét,
     /// Ha azonos true-val tér vissza.
     /// @param q Az adatbázis lekérdezéshez használt query objektum.
     /// @param __iftypename A keresett név.
     /// @param __ex Hiba esetén dob egy kizárást, ha igaz (ez az alapértelmezés). Ha false, akkor hiba esetén false-vel tér vissza,
     ///           hacsak az __iftypename nem null.
     bool isIfType(const QString& __iftypename, bool __ex = true) const { return ifType(__ex).getName() == __iftypename; }
-    static const cRecStaticDescr& _descr() { if (_pRecordDescr == NULL) EXCEPTION(EPROGFAIL); return *_pRecordDescr; }
-    /// Port paraméterek, nincs autómatikusan feltöltve
+    /// Feltölti az adatbázisból a params konténert.
+    int fetchParams(QSqlQuery& q) { return params.fetch(q, getId()); q.finish(); }
+    /// Port paraméterek, nincs automatikusan feltöltve
     cPortParamValues   params;
 protected:
-    /// A port_id mező indexe. Öröklödés után ez nem biztos, hogy ID, és értéke is változik!
+    /// A port_id mező indexe. Öröklödés esetén ez nem biztos, hogy ID, és értéke is változik!
     int                     _ixPortId;
     int                     _ixPortName;
     void _initNPort(const cRecStaticDescr& d) {
@@ -469,7 +542,6 @@ class cPatch;
 @class cPPort
 @brief A pports tábla egy rekordját reprezentáló osztály.
 
-A pports az nports -ból öröklődik, de az osztálhierarhia ezt nem követi.
  */
 class LV2SHARED_EXPORT cPPort : public cNPort {
     CRECORD(cPPort);
@@ -499,7 +571,6 @@ public:
     }
     /// Beállítja a port alapértelmezett (kötelező?) típusát
     cPPort& setDefaultType() { set(_ixIfTypeId, _ifTypePatch); return *this; }
-    static const cRecStaticDescr& _descr() { if (_pRecordDescr == NULL) EXCEPTION(EPROGFAIL); return *_pRecordDescr; }
 protected:
     /// Patch port iftype_id field index
     static int _ixIfTypeId;
@@ -507,7 +578,12 @@ protected:
     static qlonglong _ifTypePatch;
     /// A port_index mező indexe
     static int _ixPortIndex;
+    /// A tulajdonos patchs rekordra mutató id mező indexe
+    static int _ixNodeId;
 };
+
+EXT_ int ifStatus(const QString& _n, bool __ex);
+EXT_ const QString& ifStatus(int _i, bool __ex);
 
 class cPortVlan;
 /*!
@@ -517,8 +593,20 @@ class cPortVlan;
 class LV2SHARED_EXPORT cInterface : public virtual cNPort {
     CRECORD(cInterface);
 public:
+    /// Interfész állapotok
     typedef enum {
-        UP, DOWN, TESTING, UNKNOWN, DORMANT, NOTPRESENT, LOWERLAYERDOWN
+        PS_INVALID = -1,    ///< Csak hibajelzésre
+        UP,                 ///< SNMP interfész státusz up
+        DOWN,               ///< SNMP interfész státusz down
+        TESTING,            ///< SNMP interfész státusz teszt
+        UNKNOWN,            ///< SNMP interfész státusz ismeretlen
+        DORMANT,            ///< SNMP interfész státusz
+        NOTPRESENT,         ///< SNMP interfész státusz
+        LOWERLAYERDOWN,     ///< SNMP interfész státusz
+        IA_INVERT,          ///< IndAlarm szenzor státusz fordított bekötés (down)
+        IA_SHORT,           ///< IndAlarm szenzor státusz rövidzár (down)
+        IA_BROKEN,          ///< IndAlarm szenzor státusz szakadás (down)
+        IA_ERROR            ///< IndAlarm szenzor státusz hiba (down)
     }   eIfStatus;
     explicit cInterface(no_init_& __dummy) : cNPort(__dummy) { cInterface::descr(); }
     ///
@@ -529,7 +617,6 @@ public:
     void addTrunkMember(int __ix) { trunkMembers << __ix;  }
     int updateTrunkMembers(QSqlQuery& q, bool __ex);
     const tIntVector& getTrunkMembers() const { return trunkMembers; }
-    static const cRecStaticDescr& _descr() { if (_pRecordDescr == NULL) EXCEPTION(EPROGFAIL); return *_pRecordDescr; }
     void joinVlan(qlonglong __id, enum eVlanType __t, enum eSetType __st = ST_MANUAL);
     /// VLAN hozzárendejések, nincs autómatikus feltöltés
     tRecordList<cPortVlan> vlans;
@@ -575,8 +662,6 @@ public:
     cIfaceAddr &setAddress(const cMac& __mac, const QHostAddress& __a, const QString& __t = _sNul, const QString &__d = _sNul);
     /// További IP címek, a benfoglalt ip cím nem eleme a listának, nincs autómatikus feltöltés
     cIpAddresses addresses;
-    /// Statikus metódus a statikus leíró eléréséhez.
-    static const cRecStaticDescr& _descr() { if (_pRecordDescr == NULL) EXCEPTION(EPROGFAIL); return *_pRecordDescr; }
     /// Beolvas egy objektumot/rekordot az IP alapján
     /// @param q Az adatbázisműveletekhez használt objektum
     /// @param a A keresett IP cím
@@ -645,10 +730,10 @@ public:
     virtual void clearToEnd();
     virtual bool insert(QSqlQuery &__q, bool __ex = true);
     /// Az objektum portjai, nincs automatikus feltöltés
-    /// Ha módosítjuk az ID-t akkor törlődik.
+    /// Ha módosítjuk az ID-t akkor törlődhet lésd az atEndCont() metódust
     tRecordList<cPPort> ports;
     /// Megosztások konténer.
-    /// Nincs autómatikusan feltöltve, de a clearToEnd(); törli.
+    /// Nincs automatikusan feltöltve, de a clearToEnd(); törli, ill. az atEnd() törölheti.
     QSet<cShareBack>    shares;
     /// Kitölti a ports adattagot, hiba esetén dob egy kizárást.
     int fetchPorts(QSqlQuery& __q) { return ports.fetch(__q, true, _sNodeId, getId()); }
@@ -845,7 +930,6 @@ public:
     /// @param __par A paraméter neve
     /// @param __val A paraméter új értékei, rendre a következő surszámú porthoz rendelve.
     cNPort *portSetParam(int __port_index, const QString& __par, const QStringList& __val);
-    static const cRecStaticDescr& _descr() { if (_pRecordDescr == NULL) EXCEPTION(EPROGFAIL); return *_pRecordDescr; }
     /// A port keresése az index mező értéke alapján, beleértve a gebfoglat portot is.
     cNPort * getPort(int __ix, bool __ex = true);
     /// A port keresése a port név alapján, beleértve a gebfoglat portot is.
@@ -920,7 +1004,6 @@ public:
     ///
     cInterface *portSetVlans(const QString& __port, const QList<qlonglong>& _ids);
     cInterface *portSetVlans(int __port_index, const QList<qlonglong>& _ids);
-    static const cRecStaticDescr& _descr() { if (_pRecordDescr == NULL) EXCEPTION(EPROGFAIL); return *_pRecordDescr; }
     /// Beolvas egy objektumot/rekordot az IP alapján. Nem feltétlenül tartalmazza a beolvasott
     /// objektum a megadott címet. A metódus elöbb megkeresi a megadott IP címmel rendelkező iface_addrs rekordot,
     /// és az ehhez tartozó host-ot olvassa be. Ha esetleg cSnmpDevice objektummal hívjuk, és a beolvasandó rekord
@@ -960,8 +1043,6 @@ public:
     int snmpVersion() const;
     ///
     bool setBySnmp(const QString& __com = _sNul, bool __ex = true);
-    /// A statikus leíró referenciáját adja vissza, mint static metódus.
-    static const cRecStaticDescr& _descr() { if (_pRecordDescr == NULL) EXCEPTION(EPROGFAIL); return *_pRecordDescr; }
     ///
     int open(cSnmp& snmp, bool __ex = true) const;
 };
@@ -1003,7 +1084,7 @@ protected:
     cIpProtocol             _protocol;
     tMagicMap              *_pMagicMap;
     /// Konténer ill. gyorstár a cService rekordoknak.
-    /// Nem frissül autómatikusan, ha változik az adattábla.
+    /// Nem frissül automatikusan, ha változik az adattábla.
     static tRecordList<cService> services;
     /// Egy üres objektumra mutató pointer. Az első használat alkalmával jön létre ld,: _nul()
     static cService *pNull;
@@ -1135,7 +1216,6 @@ public:
     static int replaces(QSqlQuery& __q, const cArpTable& __t);
     static QList<QHostAddress> mac2ips(QSqlQuery& __q, const cMac& __m);
     static cMac ip2mac(QSqlQuery& __q, const QHostAddress& __a);
-    static const cRecStaticDescr& _descr() { if (_pRecordDescr == NULL) EXCEPTION(EPROGFAIL); return *_pRecordDescr; }
 };
 
 /// Csak a cPhsLink és cLldpLink objektumokkal használható

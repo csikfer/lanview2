@@ -54,7 +54,7 @@ public:
         fetch(__q, __only, __fi, __id);
     }
     ///
-    QList<T *>& list() { return *(QList<T *> *)this; }
+    QList<T *>& list()  { return *(QList<T *> *)this; }
     const QList<T *>& list() const { return *(const QList<T *> *)this; }
     /// Kiüríti a konténert, az összes elemet (pointerek) felszabadítja
     tRecordList& clear()
@@ -153,7 +153,7 @@ public:
     int fetch(QSqlQuery& __q, bool __only, const QString& __fn, qlonglong __id)
     {
         T   *p = new T();
-        QBitArray fm = _bit(p->toIndex(__fn));
+        QBitArray fm =  _bit(p->toIndex(__fn));
         p->set(__fn, QVariant(__id));
         return fetch(__q, __only, fm, p);
     }

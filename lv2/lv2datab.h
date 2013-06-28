@@ -71,6 +71,7 @@ typedef int (*tS2E)(const QString& n, bool __ex);
 class cRecord;
 class cRecordFieldRef;
 class cRecordFieldConstRef;
+template <class T> class tRecordList;
 class cAlternate;
 
 /* ******************************************************************************************************
@@ -1388,18 +1389,19 @@ public:
     bool isNullable(const QString& __nm) const  { return descr()[__nm].isNullable; }
     /// Ellenőrzi, hogy az objektum eredeti típusa megegyezik-e a megadott típussal.
     /// A statikus leíró _tableOId adattagjait hasonlítja össze.
-    /// A metódus feltételezi, hogy az öröklődési láncok ekvivalensek, de ez jelenleg nem mindíg igaz!
+    /// A metódus feltételezi, hogy az öröklődési láncok ekvivalensek!
     /// @param __eq ha false, akkor az eredeti típus leszármazottja is lehet a megadott típusnak
     /// @param __ex ha értéke true, és nincs egyezés, akkor dob egy kizárást.
     /// @return true, ha eggyezés van, flase ha nincs eggyezés, és __ex false.
     template <class T> bool chkObjType(bool __eq = false, bool __ex = true) {
-        if (descr().tableoid() == T::_descr().tableoid()) return true;                  // Azonos
-        if (__eq == false && descr().tableoid() > T::_descr().tableoid()) return true;  // Nem azonos, de konvertálható
-        if (__ex == true) EXCEPTION(EDATA, -1, QString(QObject::trUtf8("Invalid object type, %1 ~ %2").arg(descr().tableoid()).arg(T::_descr().tableoid())));
+        T o;
+        if (descr().tableoid() == o.descr().tableoid()) return true;  // Azonos
+        if (__eq == false && descr() > o.descr()) return true;        // Nem azonos, de konvertálható
+        if (__ex == true) EXCEPTION(EDATA, -1, QString(QObject::trUtf8("Invalid object type, %1 ~ %2").arg(descr().tableoid()).arg(o.descr().tableoid())));
         return false;
     }
     /// Az objektum pointert visszaalakítja az eredeti és megadott típusba. Lást még a chkObjType<T>() -t.
-    /// Ha az eredeti, és a megadott típus nem eggyezik, vagy az eredeti típusnak nem szülője a megadott típus, akkor dob egy kizárást
+    /// Ha az eredeti, és a megadott típus nem eggyezik, vagy az eredeti típusnak nem leszármazottja a megadott típus, akkor dob egy kizárást
     template <class T> T * reconvert() {
         chkObjType<T>();
         return dynamic_cast<T *>(this);
@@ -1459,6 +1461,30 @@ protected:
     /// Hasonló a get(int __i) metódushoz, de nincs index ellenőrzés, ha nincs a keresett mező dob egy kizárást.
     /// A visszaadott érték nem konstans referencia. Csak kellő körültekintéssel használható !
     QVariant& _get(int __i)  { if (__i < 0 || __i >=  _fields.size()) EXCEPTION(EPROGFAIL,__i); return _fields[__i]; }
+    /// Ellenőrzi, hogy egy az objektum "tulajdonában lévő" rekordok listáját törölni kell-e. (pl. egy node esetén a port lista)
+    /// Üres konténert nem töröl.
+    /// A konténernek csak az elő elemét vizsgálja. Ha az ID mező nincs kitöltve, akkor feltételezi, hogy a rekordok
+    /// még nincsenek rögzítve, és nem törli a konténert.
+    /// Ha az első vizsgállt elemben a tulajdonos id-je megegyezik az objektum id-vel szintén nem törli a konténert.
+    /// Minden egyébb esetben törli a konténer tartalmát.
+    /// @param Ch A konténerben tárolt adatok típusa
+    /// @param It Az index paraméter típusa (int vagy QString lehet)
+    /// @param c A konténer referenciája
+    /// @param ixOwnerId A konténer elemeiben a tulajdonos rekord id-jét tartalmazó mezőt azonosító index, vagy név.
+    /// @return Ha törölte a konténert, akkor true, egyébként false;
+    template <class Ch, class It> bool atEndCont(tRecordList<Ch>& c, It ixOwnerId)
+    {
+           // Ha üres nem töröljük, mert minek,
+           if (c.isEmpty()) return false;
+           // Az első elemet fogjuk vizsgálni
+           Ch& ch = *c.first();
+           // ha az elemeknél nincs kitöltve az ID, akkor is békénhagyjuk. Az még nincs rögzítve az adatbázisban.
+           if (ch.getId() == NULL_ID) return false;
+           // ha stimmel az owner id-je akkor sem töröljük
+           if (ch.getId(ixOwnerId) == getId()) return false;
+           c.clear();
+           return true;
+    }
 signals:
     /// Signal: Ha egy mező értéke megváltozott (A modified szignált hívó metódus nem hívja ezt a szignált mezőnként)
     void fieldModified(int ix);
@@ -1499,8 +1525,8 @@ template <class R> const cRecStaticDescr *getPDescr(const QString& _tn, const QS
 
 /// @def CRECORD(R)
 /// @relates cRecord
-/// @param R Az osztály név
 /// Egy cRecord leszármazottban néhány feltétlenül szükséges deklaráció
+/// @param R Az osztály név
 #define CRECORD(R) \
         friend bool initPDescr<R>(const QString& _tn, const QString& _sn); \
         friend const cRecStaticDescr *getPDescr<R>(const QString& _tn, const QString& _sn); \
@@ -1514,6 +1540,14 @@ template <class R> const cRecStaticDescr *getPDescr(const QString& _tn, const QS
         static const cRecStaticDescr& _descr_##R() { if (R::_pRecordDescr == NULL) EXCEPTION(EPROGFAIL); return *R::_pRecordDescr; } \
     protected: \
         static const cRecStaticDescr * _pRecordDescr
+
+/// @def DESCR(R)
+/// @relates cRecord
+/// Egy cRecord-ból származtatott osztály statikus leíró objektumának a referenciája.
+/// A cAlternate -nál nem alkalmazható, a makró feltételezi, hogy az osztály statikus
+/// leíró statikus pointerének a neve a CRECORD() makróval, vagy annak megfelelően lett deklarálva.
+/// @param az osztály név, melynek a statikus leíróját kérjük.
+#define DESCR(R)    R::_descr_##R()
 
 /// @def CRECCNTR(R)
 /// @relates cRecord
