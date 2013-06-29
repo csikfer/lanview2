@@ -570,123 +570,72 @@ cNPort * cNPort::newPort(const cIfType& __t, int __i)
     return r;
 }
 
-bool cNPort::fetchPortByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, bool __ex) {
+bool cNPort::fetchPortByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id)
+{
     clear();
     set(_sNodeId,   QVariant(__node_id));
     set(_sPortName, __port_name);
     int n = completion(__q);
-    if (__ex && n > 1) EXCEPTION(AMBIGUOUS, __node_id, __port_name);
-    if (__ex && n < 1) EXCEPTION(EFOUND,    __node_id, __port_name);
+    __q.finish();
     return n == 1;
 }
 qlonglong cNPort::getPortIdByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, bool ex) const
 {
-    QString sql = QString("SELECT port_id FROM nports WHERE port_name = '%1' AND node_id = %2")
-                  .arg(__port_name).arg(__node_id);
-    // PDEB(VVERBOSE) << __PRETTY_FUNCTION__ << " SQL : " << sql << endl;
-    if (!__q.exec(sql)) {
-        if (ex == false && __q.lastError().type() == QSqlError::StatementError) SQLQUERYERRDEB(__q)
-        else                                                                    SQLQUERYERR(__q)
-        return NULL_ID;
-    }
-    __q.first();
-    QVariant id = __q.value(0);
-    if (id.isNull()) {
-        if (ex) EXCEPTION(EDATA, 1);
-        return NULL_ID;
-    }
-    bool    ok;
-    qlonglong i =  id.toLongLong(&ok);
-    if (!ok) {
-        if (ex) EXCEPTION(EDATA, 2, id.toString());
-        return NULL_ID;
-    }
-    if (__q.next()) {
-        if (ex) EXCEPTION(AMBIGUOUS, 2, id.toString());
-        return NULL_ID;
-    }
-    return i;
+    cNPort p;
+    if (!p.fetchPortByName(__q, __port_name, __node_id) && ex)
+        EXCEPTION(EDATA, __node_id, __port_name);
+    return p.getId();
 }
 
 bool cNPort::fetchPortByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, bool __ex)
 {
     clear();
+    // A patch a közös ős
     qlonglong nid = cPatch().getIdByName(__q, __node_name, __ex);
     if (nid == NULL_ID) return false;
     setId(_sNodeId, nid);
     setName(_sPortName, __port_name);
     int n = completion(__q);
-    if (__ex && n > 1) EXCEPTION(AMBIGUOUS, nid, __port_name);
-    if (__ex && n < 1) EXCEPTION(EFOUND,    nid, __port_name);
+    __q.finish();
     return n == 1;
 }
 qlonglong cNPort::getPortIdByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, bool ex) const
 {
-    QString sql = QString("SELECT port_id FROM nports JOIN patchs USING(node_id) WHERE port_name = '%1' AND node_name = '%2'")
-                  .arg(__port_name).arg(__node_name);
-    // PDEB(VVERBOSE) << __PRETTY_FUNCTION__ << " SQL : " << sql << endl;
-    if (!__q.exec(sql)) {
-        if (ex == false && __q.lastError().type() == QSqlError::StatementError) SQLQUERYERRDEB(__q)
-        else                                                                    SQLQUERYERR(__q)
-        return NULL_ID;
-    }
-    __q.first();
-    QVariant id = __q.value(0);
-    if (id.isNull()) {
-        if (ex) EXCEPTION(EDATA, 1);
-        return NULL_ID;
-    }
-    bool    ok;
-    qlonglong i =  id.toLongLong(&ok);
-    if (!ok) {
-        if (ex) EXCEPTION(EDATA, 2, id.toString());
-        return NULL_ID;
-    }
-    if (__q.next()) {
-        if (ex) EXCEPTION(AMBIGUOUS, 2, id.toString());
-        return NULL_ID;
-    }
-    return i;
+    cNPort p;
+    if (!p.fetchPortByName(__q, __port_name, __node_name, ex) && ex)
+        EXCEPTION(EDATA, -1, QString("%1:%2").arg(__node_name, __port_name));
+    return p.getId();
 }
 
-bool cNPort::fetchPortByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id, bool __ex)
+bool cNPort::fetchPortByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id)
 {
     clear();
     set(_sNodeId,   QVariant(__node_id));
     set(_sPortIndex, QVariant(__port_index));
     int n = completion(__q);
-    if (__ex && n > 1) EXCEPTION(AMBIGUOUS, __node_id, QString::number(__port_index));
-    if (__ex && n < 1) EXCEPTION(EFOUND,    __node_id, QString::number(__port_index));
     return n == 1;
 }
 
+bool cNPort::fetchPortByIndex(QSqlQuery& __q, qlonglong __port_index, const QString& __node_name, bool __ex)
+{
+    clear();
+    // A patch a közös ős
+    qlonglong nid = cPatch().getIdByName(__q, __node_name, __ex);
+    if (nid == NULL_ID) return false;
+    setId(_sNodeId, nid);
+    setId(_sPortIndex, __port_index);
+    int n = completion(__q);
+    __q.finish();
+    return n == 1;
+}
+
+
 qlonglong cNPort::getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id, bool ex) const
 {
-    QString sql = QString("SELECT port_id FROM nports WHERE port_index = %1 AND node_id = %2")
-                  .arg(__port_index).arg(__node_id);
-    // PDEB(VVERBOSE) << __PRETTY_FUNCTION__ << " SQL : " << sql << endl;
-    if (!__q.exec(sql)) {
-        if (ex == false && __q.lastError().type() == QSqlError::StatementError) SQLQUERYERRDEB(__q)
-        else                                                                    SQLQUERYERR(__q)
-        return NULL_ID;
-    }
-    __q.first();
-    QVariant id = __q.value(0);
-    if (id.isNull()) {
-        if (ex) EXCEPTION(EDATA, 1);
-        return NULL_ID;
-    }
-    bool    ok;
-    qlonglong i =  id.toLongLong(&ok);
-    if (!ok) {
-        if (ex) EXCEPTION(EDATA, 2, id.toString());
-        return NULL_ID;
-    }
-    if (__q.next()) {
-        if (ex) EXCEPTION(AMBIGUOUS, 2, id.toString());
-        return NULL_ID;
-    }
-    return i;
+    cNPort p;
+    if (!p.fetchPortByIndex(__q, __port_index, __node_id) && ex)
+        EXCEPTION(EDATA, __port_index, QString::number(__node_id));
+    return p.getId();
 }
 
 template<class P> static inline P * getPortObjByIdT(QSqlQuery& q, qlonglong  __id, bool __ex)

@@ -71,7 +71,7 @@ enum eVlanType {
     VT_NO      =  0,    ///< Nincs összerendelés
     VT_NOTKNOWN,        ///< Ismeretlen
     VT_FORBIDDEN,       ///< Tiltott
-    VT_AUTO,            ///< Autómatikus
+    VT_AUTO,            ///< automatikus
     VT_TAGGED,          ///< Tagged (802.1q)
     VT_UNTAGGED,        ///< Untagged
     VT_VIRTUAL,         ///< Virtuális interfész a VLAN-hoz létrehozva
@@ -92,7 +92,7 @@ EXT_ const QString& vlanType(int __e, bool __ex = true);
 /// Port - VLAN összerendelés forrása
 enum eSetType  {
     ST_INVALID = -1,    ///< Csak hiba jelzésre
-    ST_AUTO,            ///< Autómatikus
+    ST_AUTO,            ///< automatikus
     ST_QUERY,           ///< Egy lekérdezés eredménye
     ST_MANUAL           ///< Manuális összerendelés
 };
@@ -454,16 +454,49 @@ public:
     virtual bool toEnd(int i);
     /// Törli a params konténert is.
     virtual void clearToEnd();
-    /// Egy port rekord beolvasása a port név és a node_id alapján.
-    bool fetchPortByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, bool __ex = true);
+    /// Egy port rekord beolvasása a port név és a node id alapján.
+    /// @return Ha egy rekordot beolvasott akkor true
+    bool fetchPortByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id);
+    /// Egy port rekord beolvasása a port név és a node id alapján.
+    /// Ha nem tudja beolvasni a rekordot, akkor dob egy kizárást.
+    /// @return Ha egy rekordot beolvasott akkor true
+    cNPort& setPortByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id) {
+        if (!fetchPortByName(__q, __port_name, __node_id)) EXCEPTION(EDATA,__node_id,__port_name);
+        return *this;
+    }
     /// Egy port id  lekérése a port név és a node_id alapján.
     qlonglong getPortIdByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, bool __ex = true) const;
     /// Egy port rekord beolvasása a port név és a node neve alapján.
-    bool fetchPortByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, bool __ex);
+    /// @param __ex Ha értéke false, és a megadott nevű node nem létezik, akkor dob egy kizárást, egyébként visszatér false-val.
+    /// @return Ha egy rekordot beolvasott akkor true
+    bool fetchPortByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, bool __ex = true);
+    /// Egy port rekord beolvasása a port név és a node neve alapján.
+    /// Ha nem tudja beolvasni a rekordot, akkor dob egy kizárást.
+    cNPort& setPortByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name) {
+        if (!fetchPortByName(__q, __port_name, __node_name))
+            EXCEPTION(EDATA, -1,QString("%1:%2").arg(__node_name,__port_name));
+        return *this;
+    }
     /// Egy port id  lekérése a port név és a node név alapján.
     qlonglong getPortIdByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, bool __ex = true) const;
     /// Egy port rekord beolvasása a port index és a node_id alapján.
-    bool fetchPortByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id, bool __ex = true);
+    bool fetchPortByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id);
+    /// Egy port rekord beolvasása a port index és a node_id alapján.
+    /// Ha nem tudja beolvasni a rekordot, akkor dob egy kizárást.
+    cNPort& setPortByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id) {
+        if (!fetchPortByIndex(__q, __port_index, __node_id))
+            EXCEPTION(EDATA, __port_index, QString::number(__node_id));
+        return *this;
+    }
+    /// Egy port rekord beolvasása a port index és a node név alapján.
+    bool fetchPortByIndex(QSqlQuery& __q, qlonglong __port_index, const QString& __node_name, bool __ex = true);
+    /// Egy port rekord beolvasása a port index és a node_id alapján.
+    /// Ha nem tudja beolvasni a rekordot, akkor dob egy kizárást.
+    cNPort& setPortByIndex(QSqlQuery& __q, qlonglong __port_index, const QString& __node_name) {
+        if (!fetchPortByIndex(__q, __port_index, __node_name))
+            EXCEPTION(EDATA, __port_index, __node_name);
+        return *this;
+    }
     /// Egy port id  lekérése a port index és a node_id alapján.
     qlonglong getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id, bool __ex = true) const;
     /// Megallokál egy új cNPort, cInterface vagy cIfaceAddr objektumot, a megadott cIfType objektum szerint.
@@ -526,15 +559,19 @@ public:
     /// Port paraméterek, nincs automatikusan feltöltve
     cPortParamValues   params;
 protected:
-    /// A port_id mező indexe. Öröklödés esetén ez nem biztos, hogy ID, és értéke is változik!
+    /// A port_id mező indexe. Öröklödés esetén ez nem biztos, hogy rekord ID, és értéke is változik!
     int                     _ixPortId;
+    /// A port_name mező indexe. Öröklödés esetén ez nem biztos, hogy rekord név, és értéke is változik!
     int                     _ixPortName;
+    /// Az index afattagok inicializálása
+    /// @param d Az objektum leírója
     void _initNPort(const cRecStaticDescr& d) {
         _ixPortId   = d.idIndex();
         _ixPortName = d.nameIndex();
     }
 public:
-    int ixPortId() { return _ixPortId; }
+    int ixPortId()  { return _ixPortId; }
+    int ixPortName(){ return _ixPortName; }
 };
 
 class cPatch;
@@ -547,28 +584,6 @@ class LV2SHARED_EXPORT cPPort : public cNPort {
     CRECORD(cPPort);
     friend class cPatch;
 public:
-    /// Egy pports rekord beolvasása a node_id és a port_index alapján
-    /// @param __q A QSqlQuery objektum, amivel a műveletet elvégezzük.
-    /// @param __port_index A beolvasandó port indexe
-    /// @param __node_id A node (patch panel) ID-je amelyikhez a port tartozik.
-    /// @return true, ha beolvasot egy és csakis egy rekordot.
-    bool getByIndex(QSqlQuery& __q, int __port_index, qlonglong __node_id) {
-        clear();
-        set(_sNodeId,    QVariant(__node_id));
-        set(_sPortIndex, QVariant(__port_index));
-        return completion(__q) == 1;
-    }
-    /// Egy pports rekord beolvasása a node_id és a port_name alapján
-    /// @param __q A QSqlQuery objektum, amivel a műveletet elvégezzük.
-    /// @param __port_name A beolvasandó port neve
-    /// @param __node_id A node (patch panel) ID-je amelyikhez a port tartozik.
-    /// @return true, ha beolvasot egy és csakis egy rekordot.
-    bool getByName(QSqlQuery& __q, const QString __port_name, qlonglong __node_id) {
-        clear();
-        set(_sNodeId,   QVariant(__node_id));
-        set(_sPortName, QVariant(__port_name));
-        return completion(__q) == 1;
-    }
     /// Beállítja a port alapértelmezett (kötelező?) típusát
     cPPort& setDefaultType() { set(_ixIfTypeId, _ifTypePatch); return *this; }
 protected:
@@ -618,7 +633,7 @@ public:
     int updateTrunkMembers(QSqlQuery& q, bool __ex);
     const tIntVector& getTrunkMembers() const { return trunkMembers; }
     void joinVlan(qlonglong __id, enum eVlanType __t, enum eSetType __st = ST_MANUAL);
-    /// VLAN hozzárendejések, nincs autómatikus feltöltés
+    /// VLAN hozzárendejések, nincs automatikus feltöltés
     tRecordList<cPortVlan> vlans;
     /// Beolvas egy objektumot/rekordot a MAC alapján
     /// A konkrét objektum típushoz rendelt táblát olvassa, vagyis a parentbe nem keres pl, az ifnterfaces -ben nem keress,
@@ -660,7 +675,7 @@ public:
     virtual cIpAddress& addIpAddress(const QHostAddress& __a, const QString& __t = _sFixIp, const QString& __d = _sNul);
     /// Beállítja az ip és mac címeket.
     cIfaceAddr &setAddress(const cMac& __mac, const QHostAddress& __a, const QString& __t = _sNul, const QString &__d = _sNul);
-    /// További IP címek, a benfoglalt ip cím nem eleme a listának, nincs autómatikus feltöltés
+    /// További IP címek, a benfoglalt ip cím nem eleme a listának, nincs automatikus feltöltés
     cIpAddresses addresses;
     /// Beolvas egy objektumot/rekordot az IP alapján
     /// @param q Az adatbázisműveletekhez használt objektum
@@ -1265,9 +1280,9 @@ public:
 class LV2SHARED_EXPORT cLogLink : public cRecord {
     CRECORD(cLogLink);
 public:
-    /// A tábla írása autómatikus, az insert metódus tiltott
+    /// A tábla írása automatikus, az insert metódus tiltott
     virtual bool insert(QSqlQuery &, bool);
-    /// A tábla írása autómatikus, az update metódus tiltott
+    /// A tábla írása automatikus, az update metódus tiltott
     virtual bool update(QSqlQuery &, bool, const QBitArray &, const QBitArray &, bool);
     /// A logikai link tábla alapján megadja, hogy a megadott id-jű port mely másik portal van összekötve
     /// Az aktuális link rekordot beolvassa, ha van találat.
