@@ -8,57 +8,56 @@ COMMENT ON TYPE linktype IS
     wireless    Nincs link / nem pecselhető
     unknown     Nincs link / nem pecselhető';
 
-CREATE TYPE portobjtype AS ENUM ('nport', 'pport', 'interface', 'iface_addr', 'unknown');
+CREATE TYPE portobjtype AS ENUM ('nport', 'pport', 'interface', 'unknown');
 COMMENT ON TYPE portobjtype IS
 'Az API-ban a rekordot reprezentáló port objektumot definiálja_
     nport,        A port objektum típusa cNPort, tábla nports (passzív port)
     pport,        A port objektum típusa cPPort, tábla pport (patch ports)
     interface,    A port objektum típusa cInterface, tábla interfaces (aktív port)
-    iface_addr,   A port objektum típusa cIfaceAddr, tábla iface_addrs (aktív port +ip cím)
     unknown       Ismeretlen (az api kizárást fog dobni!)';
 CREATE TABLE iftypes (
     iftype_id           serial          PRIMARY KEY,
     iftype_name         varchar(64)     NOT NULL UNIQUE,
-    iftype_descr        varchar(255)    DEFAULT NULL,
+    iftype_note        varchar(255)    DEFAULT NULL,
     iftype_iana_id      integer         NOT NULL DEFAULT 1, -- 'other'
     iftype_link_type    linktype        NOT NULL DEFAULT 'ptp',
-    iftype_obj_type     portobjtype[]   NOT NULL
+    iftype_obj_type     portobjtype     NOT NULL
 );
 ALTER TABLE iftypes OWNER TO lanview2;
 COMMENT ON TABLE  iftypes               IS 'Network Interfaces (ports) típus leíró rekord.';
 COMMENT ON COLUMN iftypes.iftype_id     IS 'Unique ID for interface''s type';
 COMMENT ON COLUMN iftypes.iftype_name   IS 'Interface type''s name';
-COMMENT ON COLUMN iftypes.iftype_descr  IS 'Interface type''s description';
+COMMENT ON COLUMN iftypes.iftype_note  IS 'Interface type''s description';
 COMMENT ON COLUMN iftypes.iftype_iana_id IS 'Protocoll Types id assigned by IANA';
 COMMENT ON COLUMN iftypes.iftype_link_type IS 'A porton értelmezhető link típusa';
-COMMENT ON COLUMN iftypes.iftype_obj_type IS 'A portot reprezentáló API objektum típusa. Ha két elem van, akkor a második az érvényes, ha cím is van a porthoz rendelve';
+COMMENT ON COLUMN iftypes.iftype_obj_type IS 'A portot reprezentáló API objektum típusa.';
 
 INSERT INTO iftypes
-    (iftype_id, iftype_name, iftype_descr,           iftype_iana_id, iftype_link_type, iftype_obj_type) VALUES
-    ( 0,        'unknown',   'Unknown pseudo type',  1,              'unknown',        '{"unknown"}');
+    (iftype_id, iftype_name,    iftype_note,              iftype_iana_id, iftype_link_type, iftype_obj_type) VALUES
+    ( 0,        'unknown',      'Unknown pseudo type',    1,              'unknown',        'unknown');
 INSERT INTO iftypes
-    (iftype_name,               iftype_descr,              iftype_iana_id, iftype_link_type, iftype_obj_type) VALUES
+    (iftype_name,               iftype_note,              iftype_iana_id, iftype_link_type, iftype_obj_type) VALUES
 -- Pseudo types
-    ( 'attach',                 'Érzékelő kapcsolódási pont',            1,     'ptp',      '{"nport"}' ),
-    ( 'bus',                    'hub port',                              1,     'bus',      '{"nport"}' ),
-    ( 'sensor',                 'Sensor port',                           1,     'ptp',      '{"interface","iface_addr"}' ),
-    ( 'patch',                  'Patch port (UTP)',                      1,     'patch',    '{"pport"}' ),
-    ( 'rs485',                  'RS-485 Serial bus interface',           1,     'bus',      '{"interface","iface_addr"}' ),
-    ( 'iic',                    'IIC Serial bus interface',              1,     'bus',      '{"interface","iface_addr"}' ),
-    ( 'eport',                  'unmanagement ethernet',                 1,     'ptp',      '{"nport"}' ),
+    ( 'attach',                 'Érzékelő kapcsolódási pont',            1,     'ptp',      'nport' ),
+    ( 'bus',                    'hub port',                              1,     'bus',      'nport' ),
+    ( 'sensor',                 'Sensor port',                           1,     'ptp',      'interface' ),
+    ( 'patch',                  'Patch port (UTP)',                      1,     'patch',    'pport' ),
+    ( 'rs485',                  'RS-485 Serial bus interface',           1,     'bus',      'interface' ),
+    ( 'iic',                    'IIC Serial bus interface',              1,     'bus',      'interface' ),
+    ( 'eport',                  'unmanagement ethernet',                 1,     'ptp',      'nport' ),
 
 -- IANA iftype_id
-    ( 'ethernet',               'Ethernet Interface (UTP)',              6,     'ptp',      '{"interface","iface_addr"}' ),
-    ( 'wireless',               'Wireless ethernet interface',           6,     'wireless', '{"interface","iface_addr"}' ),
-    ( 'ppp',                    'Point to Point protcol interface',     23,     'logical',  '{"iface_addr"}' ),
-    ( 'softwareloopback',       'Software loopback interface',          24,     'logical',  '{"iface_addr"}' ),
-    ( 'rs232',                  'RS232 Interface',                      33,     'ptp',      '{"interface"}'  ),
-    ( 'virtual',                'VLan',                                 53,     'logical',  '{"interface","iface_addr"}' ),
-    ( 'multiplexor',            'Trunk',                                54,     'logical',  '{"interface","iface_addr"}' ),
-    ( 'adsl',                   'Asymmetric Digital Subscriber Loop',   94,     'logical',  '{"interface","iface_addr"}' ),
-    ( 'tunnel',                 'Encapsulation interface',             131,     'logical',  '{"interface","iface_addr"}' ),
-    ( 'digitalPowerline',       'IP over Power Lines',                 138,     'bus',      '{"interface","iface_addr"}' ),
-    ( 'usb',                    'USB Interface',                       160,     'ptp',      '{"interface"}'  );
+    ( 'ethernet',               'Ethernet Interface (UTP)',              6,     'ptp',      'interface' ),
+    ( 'wireless',               'Wireless ethernet interface',           6,     'wireless', 'interface' ),
+    ( 'ppp',                    'Point to Point protcol interface',     23,     'logical',  'interface' ),
+    ( 'softwareloopback',       'Software loopback interface',          24,     'logical',  'unknown' ),
+    ( 'rs232',                  'RS232 Interface',                      33,     'ptp',      'interface'  ),
+    ( 'virtual',                'VLan',                                 53,     'logical',  'interface' ),
+    ( 'multiplexor',            'Trunk',                                54,     'logical',  'interface' ),
+    ( 'adsl',                   'Asymmetric Digital Subscriber Loop',   94,     'logical',  'interface' ),
+    ( 'tunnel',                 'Encapsulation interface',             131,     'logical',  'interface' ),
+    ( 'digitalPowerline',       'IP over Power Lines',                 138,     'bus',      'interface' ),
+    ( 'usb',                    'USB Interface',                       160,     'ptp',      'interface'  );
 -- //// LAN.NPORTS
 
 CREATE TYPE ifstatus AS ENUM (
@@ -97,11 +96,11 @@ IndaContact port stáruszok kifelytése:
 CREATE TABLE nports (
     port_id     serial          PRIMARY KEY,
     port_name   varchar(32)     NOT NULL,
-    port_descr  varchar(255)    DEFAULT NULL,
+    port_note  varchar(255)    DEFAULT NULL,
     port_tag    varchar(32)     DEFAULT NULL,
     iftype_id   integer         DEFAULT 0   -- Default type is 'unknown'
                         REFERENCES iftypes(iftype_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
-    node_id     integer         NOT NULL,   -- REFERENCES (patch, hubs, nodes, hosts, snmp_devs)
+    node_id     integer         NOT NULL,   -- REFERENCES (patch, nodes, snmp_devs)
     port_index  integer         DEFAULT NULL,   -- added 2011.09.05
     deleted     boolean         DEFAULT false,
     UNIQUE(node_id, port_name)
@@ -110,7 +109,7 @@ ALTER TABLE nports OWNER TO lanview2;
 COMMENT ON TABLE  nports            IS 'Passzív portok táblája, az összes port típus őse';
 COMMENT ON COLUMN nports.port_id    IS 'Egyedi port azonosító, az összes port típusra (leszármazottra) egyedi';
 COMMENT ON COLUMN nports.port_name  IS 'A port neve, csak egy nodon bellül (azonos node_id) kell egyedinek lennie';
-COMMENT ON COLUMN nports.port_descr IS 'Description for network port';
+COMMENT ON COLUMN nports.port_note IS 'Description for network port';
 COMMENT ON COLUMN nports.port_tag   IS 'Opcionális cimke ill. név.';
 COMMENT ON COLUMN nports.iftype_id  IS 'A típus leíró rekord azonosítója.';
 COMMENT ON COLUMN nports.node_id    IS 'Csomópont azonosító, idegen kulcs a tulajdonos nodes vagy bármelyi leszármazottja rekordjára';
@@ -120,7 +119,7 @@ COMMENT ON COLUMN nports.deleted    IS 'Ha igaz, akkor a port logikailag töröl
 CREATE TABLE port_params (
     port_param_id       serial          NOT NULL PRIMARY KEY,
     port_param_name     varchar(32)     NOT NULL UNIQUE,
-    port_param_descr    varchar(255)    DEFAULT NULL,
+    port_param_note    varchar(255)    DEFAULT NULL,
     port_param_type     varchar(32)     DEFAULT NULL,
     port_param_dim      varchar(32)     DEFAULT NULL
 );
@@ -128,7 +127,7 @@ ALTER TABLE port_params OWNER TO lanview2;
 COMMENT ON TABLE port_params IS 'Port extra paraméterek deklarálása (név, típus, dimenzió) értékek a port_param_values -ben';
 COMMENT ON COLUMN port_params.port_param_id IS 'A port paraméter leíró egyedi azonosítója.';
 COMMENT ON COLUMN port_params.port_param_name IS 'A paraméter neve.';
-COMMENT ON COLUMN port_params.port_param_descr IS 'A paraméterhez egy magyarázó szöveg';
+COMMENT ON COLUMN port_params.port_param_note IS 'A paraméterhez egy magyarázó szöveg';
 COMMENT ON COLUMN port_params.port_param_type IS 'Egy opcionális típus azonosító';
 COMMENT ON COLUMN port_params.port_param_dim IS 'Egy opcionális dimenzió';
 
@@ -150,26 +149,17 @@ COMMENT ON COLUMN port_param_values.param_value IS 'A parméter érték.';
 CREATE TABLE patchs (
     node_id     serial          PRIMARY KEY,    -- Sequence: patchs_node_id_seq
     node_name   varchar(32)     NOT NULL UNIQUE,
-    node_descr  varchar(255)    DEFAULT NULL,
+    node_note   varchar(255)    DEFAULT NULL,
     place_id    integer         DEFAULT 0   -- place = 'unknown'
-                REFERENCES places(place_id) MATCH FULL ON DELETE SET DEFAULT ON UPDATE RESTRICT
+                REFERENCES places(place_id) MATCH FULL ON DELETE SET DEFAULT ON UPDATE RESTRICT,
+    deleted     boolean         NOT NULL DEFAULT false
 );
 ALTER TABLE patchs OWNER TO lanview2;
 COMMENT ON TABLE  patchs            IS 'Patch panel/csatlakozók/kapcsolódási pont tábla';
 COMMENT ON COLUMN patchs.node_id    IS 'Unique ID for node. Az összes leszármazottra és az ősre is egyedi.';
 COMMENT ON COLUMN patchs.node_name  IS 'Unique Name of the node. Az összes leszármazottra és az ősre is egyedi.';
-COMMENT ON COLUMN patchs.node_descr IS 'Descrition of the node';
+COMMENT ON COLUMN patchs.node_note IS 'Descrition of the node';
 COMMENT ON COLUMN patchs.place_id   IS 'Az eszköz helyét azonosító "opcionális" távoli kulcs. Alapértelmezett hely a ''unknown''.';
-
-CREATE TABLE hubs (
-    is_virtual  boolean NOT NULL DEFAULT TRUE,
-    is_switch   boolean NOT NULL DEFAULT FALSE,
-    PRIMARY KEY (node_id),
-    UNIQUE (node_name)
-)INHERITS (patchs);
-COMMENT ON TABLE  hubs            IS 'Virtual or physical HUBs, unmanaged switchs';
-COMMENT ON COLUMN hubs.is_virtual IS 'Ha az eszköz virtuális, akkor értéke igaz.';
-COMMENT ON COLUMN hubs.is_switch IS  'Ha az eszköz egy switchs, akkor értéke igaz.';
 
 -- //// LAN.PPORT S  Pach Ports
 CREATE TYPE portshare AS ENUM ('',      -- 1,2,3,4,5,6,7,8  / nincs megosztás
@@ -265,22 +255,6 @@ COMMENT ON COLUMN pports.port_index IS 'A port sorszáma a panelon, csatlakozón
 COMMENT ON COLUMN pports.shared_cable IS 'Ha az UTP fali kábel megosztva van bekötve. Hátlapon!';
 COMMENT ON COLUMN pports.shared_port_id IS 'Melyik másik porttal van megosztva a fali kábel bekötése. Hátlapon! Az "A" ill. "AA" megosztások esetén NULL, a többi erre mutat.';
 
-
-CREATE TABLE nodes (
-    node_stat       notifswitch     DEFAULT NULL,
-    node_alarm_msg  varchar(255)    DEFAULT NULL,
-    PRIMARY KEY (node_id),
-    UNIQUE (node_name),
-    UNIQUE (port_id),
-    CONSTRAINT nodes_place_id_fkey FOREIGN KEY (place_id)
-      REFERENCES places (place_id) MATCH FULL
-      ON UPDATE CASCADE ON DELETE SET DEFAULT
-)
-INHERITS(patchs, nports);
-ALTER TABLE nodes OWNER TO lanview2;
-COMMENT ON TABLE  nodes         IS 'Passzív hálózati elemek táblája';
-COMMENT ON COLUMN nodes.node_stat IS 'Az eszköz állapota.';
-COMMENT ON COLUMN nodes.node_alarm_msg IS 'Riasztás esetén az eszközhöz rendelt opcionális hiba üzenet.';
 -- //// LAN.INTERFACES
 
 CREATE TABLE interfaces (
@@ -309,14 +283,14 @@ COMMENT ON COLUMN interfaces.dualface_type IS 'Dualface port esetén a másik t�
 CREATE TABLE vlans (
     vlan_id     integer         PRIMARY KEY,
     vlan_name   varchar(32)     NOT NULL UNIQUE,
-    vlan_descr  varchar(255)    DEFAULT NULL,
+    vlan_note  varchar(255)    DEFAULT NULL,
     vlan_stat   boolean         NOT NULL DEFAULT 'on'
 );
 ALTER TABLE vlans OWNER TO lanview2;
 COMMENT ON TABLE  vlans            IS 'VLANs Table';
 COMMENT ON COLUMN vlans.vlan_id    IS 'Unique ID for vlans. (802,1q ID)';
 COMMENT ON COLUMN vlans.vlan_name  IS 'Name of VLAN';
-COMMENT ON COLUMN vlans.vlan_descr IS 'Description for VLAN';
+COMMENT ON COLUMN vlans.vlan_note IS 'Description for VLAN';
 COMMENT ON COLUMN vlans.vlan_stat  IS 'State of VLAN (On/Off)';
 
 -- //// SUBNET
@@ -332,7 +306,7 @@ COMMENT ON TYPE subnettype IS
 CREATE TABLE subnets (
     subnet_id       serial          PRIMARY KEY,
     subnet_name     varchar(32)     NOT NULL UNIQUE,
-    subnet_descr    varchar(255)    DEFAULT NULL,
+    subnet_note    varchar(255)    DEFAULT NULL,
     netaddr         cidr            NOT NULL,
     vlan_id         integer         DEFAULT NULL
             REFERENCES vlans(vlan_id) MATCH SIMPLE ON DELETE RESTRICT ON UPDATE RESTRICT,
@@ -342,7 +316,7 @@ ALTER TABLE subnets OWNER TO lanview2;
 COMMENT ON TABLE subnets IS 'Alhálózatok táblája.';
 COMMENT ON COLUMN subnets.subnet_id IS 'Alhálózat egyedi azonosító.';
 COMMENT ON COLUMN subnets.subnet_name IS 'Az alhálózat egyedi neve.';
-COMMENT ON COLUMN subnets.subnet_descr IS 'Az alhálózat leírása, ill. megjegyzés';
+COMMENT ON COLUMN subnets.subnet_note IS 'Az alhálózat leírása, ill. megjegyzés';
 COMMENT ON COLUMN subnets.netaddr IS 'A hálózati cím és maszk.';
 COMMENT ON COLUMN subnets.vlan_id IS 'A VLAN azonosítója, ha az alhálózat VLAN-hoz rendelhető.';
 COMMENT ON COLUMN subnets.subnet_type IS 'Az alhálózat típusa.';
@@ -423,56 +397,36 @@ ALTER TYPE addresstype OWNER TO lanview2;
 
 CREATE TABLE ipaddresses (
     ip_address_id   serial      PRIMARY KEY,
-    ip_address_descr varchar(255) DEFAULT NULL,
+    ip_address_note varchar(255) DEFAULT NULL,
     address         inet        DEFAULT NULL,
     ip_address_type addresstype DEFAULT 'dynamic',
     subnet_id       integer     DEFAULT NULL REFERENCES subnets(subnet_id) MATCH SIMPLE
-                                    ON DELETE RESTRICT
-                                    ON UPDATE RESTRICT,
-    port_id         integer     NOT NULL -- REFERENCES iface_addrs(port_id)
+                                    ON DELETE RESTRICT ON UPDATE RESTRICT,
+    port_id         integer     NOT NULL REFERENCES interfaces(port_id) MATCH FULL
+				    ON DELETE CASCADE ON UPDATE RESTRICT
 );
 ALTER TABLE ipaddresses OWNER TO lanview2;
 
+-- //// NODES
 
-CREATE TABLE iface_addrs (
-    PRIMARY KEY (port_id),
-    UNIQUE(node_id, port_name),
-    UNIQUE(port_name, hwaddress),
-    UNIQUE(ip_address_id),
-    CONSTRAINT iface_addrs_iftype_id_fkey FOREIGN KEY (iftype_id)
-        REFERENCES iftypes(iftype_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
-    CONSTRAINT iface_addrs_dualface_type_fkey FOREIGN KEY (dualface_type)
-        REFERENCES iftypes(iftype_id) MATCH SIMPLE ON DELETE RESTRICT ON UPDATE RESTRICT,
-    CONSTRAINT iface_addrs_subnet_id_fkey FOREIGN KEY (subnet_id)
-        REFERENCES subnets(subnet_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT
-)
-INHERITS (interfaces, ipaddresses);
-ALTER TABLE iface_addrs OWNER TO lanview2;
+CREATE TYPE nodetype AS ENUM ('node', 'host', 'switch', 'hub', 'virtual', 'snmp');
+ALTER TYPE nodetype OWNER TO lanview2;
 
-COMMENT ON TABLE iface_addrs IS 'Interfész egy IP címmel.';
-
--- //// LAN.HOSTS
-
-CREATE TABLE hosts (
-    is_virtual              boolean NOT NULL DEFAULT FALSE,
-    alarm_place_group_id    integer DEFAULT NULL
-        REFERENCES place_groups(place_group_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
+CREATE TABLE nodes (
+    node_stat       notifswitch     DEFAULT NULL,
+    node_alarm_msg  varchar(255)    DEFAULT NULL,
+    node_type       nodetype[]      NOT NULL,
+    alarm_place_group_id    integer DEFAULT NULL,
     PRIMARY KEY (node_id),
     UNIQUE (node_name),
-    UNIQUE (port_id),
-    CONSTRAINT hosts_place_id_fkey FOREIGN KEY (place_id)
-        REFERENCES places (place_id) MATCH FULL ON UPDATE RESTRICT ON DELETE SET DEFAULT,
-    CONSTRAINT hosts_iftype_id_fkey FOREIGN KEY (iftype_id)
-        REFERENCES iftypes(iftype_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
-    CONSTRAINT hosts_subnet_id_fkey FOREIGN KEY (subnet_id)
-        REFERENCES subnets(subnet_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
-    CONSTRAINT hosts_dualface_type_fkey FOREIGN KEY (dualface_type)
-        REFERENCES iftypes(iftype_id) MATCH SIMPLE ON DELETE RESTRICT ON UPDATE RESTRICT,
-    UNIQUE (ip_address_id),
-    UNIQUE (hwaddress)
+    CONSTRAINT nodes_place_id_fkey FOREIGN KEY (place_id)
+      REFERENCES places (place_id) MATCH FULL  ON UPDATE CASCADE ON DELETE SET DEFAULT
 )
-INHERITS (nodes,iface_addrs);
-ALTER TABLE hosts OWNER TO lanview2;
+INHERITS(patchs);
+ALTER TABLE nodes OWNER TO lanview2;
+COMMENT ON TABLE  nodes         IS 'Passzív hálózati elemek táblája';
+COMMENT ON COLUMN nodes.node_stat IS 'Az eszköz állapota.';
+COMMENT ON COLUMN nodes.node_alarm_msg IS 'Riasztás esetén az eszközhöz rendelt opcionális hiba üzenet.';
 
 -- //// LAN.SNMPDEVICES
 CREATE TYPE snmpver AS ENUM ('1'/*, '2'*/, '2c'/*, '3'*/);
@@ -492,19 +446,10 @@ CREATE TABLE snmpdevices (
     vendorname      varchar(255),
     PRIMARY KEY (node_id),
     UNIQUE (node_name),
-    UNIQUE (port_id),
     CONSTRAINT snmpdevices_place_id_fkey FOREIGN KEY (place_id)
-        REFERENCES places (place_id) MATCH FULL ON UPDATE RESTRICT ON DELETE SET DEFAULT,
-    CONSTRAINT snmpdevices_iftype_id_fkey FOREIGN KEY (iftype_id)
-        REFERENCES iftypes(iftype_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
-    CONSTRAINT snmpdevices_subnet_id_fkey FOREIGN KEY (subnet_id)
-        REFERENCES subnets(subnet_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
-    CONSTRAINT snmpdevices_dualface_type_fkey FOREIGN KEY (dualface_type)
-        REFERENCES iftypes(iftype_id) MATCH SIMPLE ON DELETE RESTRICT ON UPDATE RESTRICT,
-    UNIQUE (ip_address_id),
-    UNIQUE (hwaddress)
+        REFERENCES places (place_id) MATCH FULL ON UPDATE RESTRICT ON DELETE SET DEFAULT
 )
-INHERITS (hosts);
+INHERITS (nodes);
 ALTER TABLE snmpdevices OWNER TO lanview2;
 
 -- -------------------------------
@@ -515,7 +460,7 @@ ALTER TABLE snmpdevices OWNER TO lanview2;
 --
 
 -- A megadott hálózati node névhez visszaadja a node ID-t
--- Az összes patchs tábla leszármazotjában keres (tahát a nodes, hosts, snmpdevices-ben is).
+-- Az összes patchs tábla leszármazotjában keres (tahát a nodes, snmpdevices-ben is).
 -- Ha nincs ilyen nevű hálózati node akkor dob egy kizárást.
 CREATE OR REPLACE FUNCTION node_name2id(varchar(32)) RETURNS integer AS $$
 DECLARE
@@ -530,7 +475,7 @@ END
 $$ LANGUAGE plpgsql;
 
 -- A megadott hálózati node ID-hez visszaadja a node nevét
--- Az összes patchs tábla leszármazotjában keres (tahát a nodes, hosts, snmpdevices-ben is).
+-- Az összes patchs tábla leszármazotjában keres (tahát a nodes, snmpdevices-ben is).
 -- Ha nincs ilyen nevű hálózati node ID akkor dob egy kizárást.
 CREATE OR REPLACE FUNCTION node_id2name(integer) RETURNS varchar(32) AS $$
 DECLARE
@@ -558,8 +503,6 @@ CREATE OR REPLACE FUNCTION port_nn2id(varchar(32), varchar(32)) RETURNS integer 
 DECLARE
     id integer;
 BEGIN
-/*    id = node_name2id($2);
-    SELECT port_id INTO id FROM nports WHERE port_name = $1 AND node_id = id;*/
     SELECT port_id INTO id FROM nports JOIN patchs USING (node_id) WHERE node_name = $2 AND port_name = $1;
     IF NOT FOUND THEN
         PERFORM error('NameNotFound', -1, $2 || ':' || $1, 'port_nn2id()', 'nports');
@@ -620,48 +563,18 @@ $$ LANGUAGE plpgsql;
 -- Ha szükséges, módosítja a szekvenciát is, mert annak csak egy tulajdonosa lehet, voszont logikailag az
 -- összes leszármazott a tulajdonosa.
 -- Port tábla hierarhia:
--- nport +--> pports
---       +--> nodes ----------------------> hosts ---> snmpdevices
---       +--> interfaces ---> iface_addrs --^
--- Egyben ha az iftype_id = 0 ('unknown') ad neki egy jobb(nak tűnő) default értéket.
+-- nport --> pports --> interfaces
 
 -- Check unique port_id for all inherited tables and modify sequence if necessary
 CREATE OR REPLACE FUNCTION check_port_id_before_insert() RETURNS TRIGGER AS $$
 DECLARE
     n integer;
     t text;
+    node nodes;
 BEGIN
     SELECT COUNT(*) INTO n FROM nports WHERE port_id = NEW.port_id;
     IF n > 0 THEN
         PERFORM error('IdNotUni', NEW.port_id, 'port_id', 'port_check_before_insert()', TG_TABLE_NAME, TG_OP);
-    END IF;
---    n := currval('nports_port_id_seq');
---  RAISE INFO 'SEQUENCE nports_port_id_seq = %', n;
---    IF NEW.port_id > n THEN
---      RAISE INFO 'Modify nports_port_id_seq from % to %', n, NEW.port_id;
---        PERFORM setval('nports_port_id_seq', NEW.port_id);
---    END IF;
-    IF NEW.iftype_id = 0 THEN   -- if iftype is unknown
-        t := node_id2table_name(NEW.node_id);
-        CASE TG_TABLE_NAME
-            WHEN 'pports' THEN
-                NEW.iftype_id := iftype_id FROM iftypes WHERE iftype_name = 'patch';
-            WHEN 'nports' THEN
-                CASE t
-                    WHEN 'nodes' THEN
-                        NEW.iftype_id := iftype_id FROM iftypes WHERE iftype_name = 'attach';
-                    WHEN 'hubs' THEN
-                        NEW.iftype_id := iftype_id FROM iftypes WHERE iftype_name = 'bus';
-                    ELSE
-                        PERFORM error('DataError', 1, t, 'check_port_id_before_insert()', TG_TABLE_NAME, TG_OP);
-                END CASE;
-            WHEN 'nodes' THEN
-                NEW.iftype_id := iftype_id FROM iftypes WHERE iftype_name = 'attach';
-            WHEN 'interfaces', 'iface_addrs', 'hosts', 'snmpdevices'  THEN
-                NEW.iftype_id := iftype_id FROM iftypes WHERE iftype_name = 'ethernet';
-            ELSE
-                PERFORM error('DataError', 2, 'TG_TABLE_NAME', 'check_port_id_before_insert()', TG_TABLE_NAME, TG_OP);
-        END CASE;
     END IF;
     RETURN NEW;
 END;
@@ -719,7 +632,6 @@ CREATE OR REPLACE FUNCTION delete_port_post() RETURNS TRIGGER AS $$
 BEGIN
     DELETE FROM port_param_values WHERE port_id = OLD.port_id;
     DELETE FROM host_services     WHERE port_id = OLD.port_id;
-    DELETE FROM ipaddresses       WHERE port_id = OLD.port_id;
     DELETE FROM port_vlans        WHERE port_id = OLD.port_id;
     DELETE FROM mactab            WHERE port_id = OLD.port_id;
     DELETE FROM phs_links_table   WHERE port_id1 = OLD.port_id OR port_id2 = OLD.port_id;
@@ -733,28 +645,18 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER nports_check_port_id_before_insert               BEFORE INSERT ON nports      FOR EACH ROW EXECUTE PROCEDURE check_port_id_before_insert();
 CREATE TRIGGER pports_check_port_id_before_insert               BEFORE INSERT ON pports      FOR EACH ROW EXECUTE PROCEDURE check_port_id_before_insert();
 CREATE TRIGGER interfaces_check_port_id_before_insert           BEFORE INSERT ON interfaces  FOR EACH ROW EXECUTE PROCEDURE check_port_id_before_insert();
-CREATE TRIGGER iface_addrs_check_port_id_before_insert          BEFORE INSERT ON iface_addrs FOR EACH ROW EXECUTE PROCEDURE check_port_id_before_insert();
-CREATE TRIGGER nodes_check_port_id_before_insert                BEFORE INSERT ON nodes       FOR EACH ROW EXECUTE PROCEDURE check_port_id_before_insert();
-CREATE TRIGGER hosts_check_port_id_before_insert                BEFORE INSERT ON hosts       FOR EACH ROW EXECUTE PROCEDURE check_port_id_before_insert();
-CREATE TRIGGER snmpdevices_check_port_id_before_insert          BEFORE INSERT ON snmpdevices FOR EACH ROW EXECUTE PROCEDURE check_port_id_before_insert();
 -- port_id módosításának a megelőzése az összes nports leszármazottban
 CREATE TRIGGER nports_restrict_modfy_port_id_before_update      BEFORE UPDATE ON nports      FOR EACH ROW EXECUTE PROCEDURE restrict_modfy_port_id_before_update();
 CREATE TRIGGER pports_restrict_modfy_port_id_before_update      BEFORE UPDATE ON pports      FOR EACH ROW EXECUTE PROCEDURE restrict_modfy_port_id_before_update();
 CREATE TRIGGER interfaces_restrict_modfy_port_id_before_update  BEFORE UPDATE ON interfaces  FOR EACH ROW EXECUTE PROCEDURE restrict_modfy_port_id_before_update();
-CREATE TRIGGER iface_addrs_restrict_modfy_port_id_before_update BEFORE UPDATE ON iface_addrs FOR EACH ROW EXECUTE PROCEDURE restrict_modfy_port_id_before_update();
-CREATE TRIGGER nodes_restrict_modfy_port_id_before_update       BEFORE UPDATE ON nodes       FOR EACH ROW EXECUTE PROCEDURE restrict_modfy_port_id_before_update();
-CREATE TRIGGER hosts_restrict_modfy_port_id_before_update       BEFORE UPDATE ON hosts       FOR EACH ROW EXECUTE PROCEDURE restrict_modfy_port_id_before_update();
-CREATE TRIGGER snmpdevices_restrict_modfy_port_id_before_update BEFORE UPDATE ON snmpdevices FOR EACH ROW EXECUTE PROCEDURE restrict_modfy_port_id_before_update();
 -- port_id idegen kulcs hivatkozások ellenözése (létrehozás, és módosítás)
 CREATE TRIGGER port_param_values_check_reference_port_id BEFORE UPDATE OR INSERT ON port_param_values FOR EACH ROW EXECUTE PROCEDURE check_reference_port_id();
 CREATE TRIGGER port_vlans_check_reference_port_id        BEFORE UPDATE OR INSERT ON port_vlans        FOR EACH ROW EXECUTE PROCEDURE check_reference_port_id('false', 'interfaces');
-CREATE TRIGGER ipaddresses_check_reference_port_id       BEFORE UPDATE OR INSERT ON ipaddresses       FOR EACH ROW EXECUTE PROCEDURE check_reference_port_id('false', 'iface_addrs');
 CREATE TRIGGER port_param_value_check_reference_port_id  BEFORE UPDATE OR INSERT ON port_param_values FOR EACH ROW EXECUTE PROCEDURE check_reference_port_id('false', 'nports', 'pports');
 -- Port rekord törlésekor szükséges  kaszkád törlések !!!!!!!
 CREATE TRIGGER pports_delete_port_post      AFTER DELETE ON pports      FOR EACH ROW EXECUTE PROCEDURE delete_port_post();
 CREATE TRIGGER nports_delete_port_post      AFTER DELETE ON nports      FOR EACH ROW EXECUTE PROCEDURE delete_port_post();
 CREATE TRIGGER interfaces_delete_port_post  AFTER DELETE ON interfaces  FOR EACH ROW EXECUTE PROCEDURE delete_port_post();
-CREATE TRIGGER iface_addrs_delete_port_post AFTER DELETE ON iface_addrs FOR EACH ROW EXECUTE PROCEDURE delete_port_post();
 
 -- Ellenörzi az id egyediségét, nem engedi megváltoztatni.
 -- Ellenőrzi, hogy a address (ip cím) mező rendben van-e
@@ -769,15 +671,6 @@ BEGIN
             PERFORM error('Constant', -1, 'ip_address_id', 'check_ip_address()', TG_TABLE_NAME, TG_OP);
         END IF;
     END IF;
---  IF NEW.address = '0.0.0.0' THEN -- A django nem tudd NULL-t átadni, helyette 0.0.0.0-t küld.
---      NEW.address := NULL;
---  END IF;
-    -- A dinamikus cím mindenképpen NULL  ???!!!
-    -- IF NEW.ip_address_type = 'dynamic' AND NEW.address IS NOT NULL THEN
-    --     PERFORM error('DropData', NEW.ip_address_id, 'dynamic IP : ' || CAST(NEW.address AS TEXT), 'check_ip_address()', TG_TABLE_NAME, TG_OP);
-    --    NEW.address := NULL;
-    -- END IF;
-    -- ip cím és subnet ellenörzése
     IF NEW.address IS NOT NULL THEN     -- Az új rekordban van ip cím
         IF NEW.subnet_id IS NULL AND NEW.ip_address_type <> 'external' THEN   -- Nincs subnet (id), keresünk egyet
             BEGIN
@@ -825,9 +718,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER ipaddresses_check_before_modify_trigger       BEFORE INSERT OR UPDATE ON ipaddresses FOR EACH ROW EXECUTE PROCEDURE check_ip_address();
-CREATE TRIGGER iface_addrs_check_before_modify_trigger       BEFORE INSERT OR UPDATE ON iface_addrs FOR EACH ROW EXECUTE PROCEDURE check_ip_address();
-CREATE TRIGGER hosts_addrs_check_before_modify_trigger       BEFORE INSERT OR UPDATE ON hosts       FOR EACH ROW EXECUTE PROCEDURE check_ip_address();
-CREATE TRIGGER snmpdevices_addrs_check_before_modify_trigger BEFORE INSERT OR UPDATE ON snmpdevices FOR EACH ROW EXECUTE PROCEDURE check_ip_address();
 
 -- **************************************************************************
 -- Check host_id
@@ -835,8 +725,7 @@ CREATE TRIGGER snmpdevices_addrs_check_before_modify_trigger BEFORE INSERT OR UP
 -- Ha szükséges, módosítja a szekvenciát is, mert annak csak egy tulajdonosa lehet, voszont logikailag az
 -- összes leszármazott a tulajdonosa.
 -- host tábla hierarhia:
--- patchs+--> nodes --> hosts --> snmpdevices
---       +--> hubs
+-- patchs --> nodes --> --> snmpdevices
 -- Check unique host_id for all inherited tables and modify sequence if necessary
 
 CREATE OR REPLACE FUNCTION node_check_before_insert() RETURNS TRIGGER AS $$
@@ -848,12 +737,6 @@ BEGIN
     IF n > 0 THEN
         PERFORM error('IdNotUni', NEW.node_id, 'node_id', 'node_check_before_insert()', TG_TABLE_NAME, TG_OP);
     END IF;
---    n := currval('patchs_node_id_seq');
---  RAISE INFO 'SEQUENCE patchs_node_id_seq = %', n;
---    IF NEW.node_id > n THEN
---        RAISE INFO 'Modify patchs_node_id_seq from % to %', n, NEW.node_id;
---        PERFORM setval('patchs_node_id_seq', NEW.node_id);
---    END IF;
     SELECT COUNT(*) INTO n FROM patchs WHERE node_name = NEW.node_name;
     IF n > 0 THEN
         PERFORM error('NameNotUni', -1, 'node_name = ' || NEW.node_name, 'node_check_before_insert()', TG_TABLE_NAME, TG_OP);
@@ -904,22 +787,10 @@ CREATE OR REPLACE FUNCTION check_reference_node_id() RETURNS TRIGGER AS $$
     return;
 $$ LANGUAGE plperl;
 
-CREATE OR REPLACE FUNCTION delete_patch_post() RETURNS TRIGGER AS $$
-BEGIN
-    DELETE FROM nports            WHERE node_id = OLD.node_id;
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
-
 CREATE OR REPLACE FUNCTION delete_node_post() RETURNS TRIGGER AS $$
 BEGIN
     DELETE FROM nports            WHERE node_id = OLD.node_id;
     DELETE FROM host_services     WHERE node_id = OLD.node_id;
-    DELETE FROM port_param_values WHERE port_id = OLD.port_id;
-    DELETE FROM ipaddresses       WHERE port_id = OLD.port_id;
-    DELETE FROM port_vlans        WHERE port_id = OLD.port_id;
-    DELETE FROM mactab            WHERE port_id = OLD.port_id;
-    DELETE FROM phs_links_table   WHERE port_id1 = OLD.port_id OR port_id2 = OLD.port_id;
     RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -927,370 +798,17 @@ $$ LANGUAGE plpgsql;
 -- ///// TRIGGERS AND RULES for node_id key
 -- node_id egyediség ellenörzése az összes patchs leszármazottban
 CREATE TRIGGER patchs_check_node_id_before_insert               BEFORE INSERT ON patchs      FOR EACH ROW EXECUTE PROCEDURE node_check_before_insert();
-CREATE TRIGGER hubs_check_node_id_before_insert                 BEFORE INSERT ON hubs        FOR EACH ROW EXECUTE PROCEDURE node_check_before_insert();
 CREATE TRIGGER nodes_check_node_id_before_insert                BEFORE INSERT ON nodes       FOR EACH ROW EXECUTE PROCEDURE node_check_before_insert();
-CREATE TRIGGER hosts_check_node_id_before_insert                BEFORE INSERT ON hosts       FOR EACH ROW EXECUTE PROCEDURE node_check_before_insert();
 CREATE TRIGGER snmpdevices_check_node_id_before_insert          BEFORE INSERT ON snmpdevices FOR EACH ROW EXECUTE PROCEDURE node_check_before_insert();
 -- node_id módosításának a megelőzése az összes patchs leszármazottban
 CREATE TRIGGER patchs_restrict_modfy_node_id_before_update      BEFORE UPDATE ON patchs      FOR EACH ROW EXECUTE PROCEDURE restrict_modfy_node_id_before_update();
-CREATE TRIGGER hubs_restrict_modfy_node_id_before_update        BEFORE UPDATE ON hubs        FOR EACH ROW EXECUTE PROCEDURE restrict_modfy_node_id_before_update();
 CREATE TRIGGER nodes_restrict_modfy_node_id_before_update       BEFORE UPDATE ON nodes       FOR EACH ROW EXECUTE PROCEDURE restrict_modfy_node_id_before_update();
-CREATE TRIGGER hosts_restrict_modfy_node_id_before_update       BEFORE UPDATE ON hosts       FOR EACH ROW EXECUTE PROCEDURE restrict_modfy_node_id_before_update();
 CREATE TRIGGER snmpdevices_restrict_modfy_node_id_before_update BEFORE UPDATE ON snmpdevices FOR EACH ROW EXECUTE PROCEDURE restrict_modfy_node_id_before_update();
 -- node_id idegen kulcs hivatkozások ellenözése (létrehozás, és módosítás)
 CREATE TRIGGER nports_check_reference_node_id        BEFORE UPDATE OR INSERT ON nports        FOR EACH ROW EXECUTE PROCEDURE check_reference_node_id('false', 'patchs', 'patchs');
 CREATE TRIGGER interfaces_check_reference_node_id    BEFORE UPDATE OR INSERT ON interfaces    FOR EACH ROW EXECUTE PROCEDURE check_reference_node_id('false', 'nodes');
-CREATE TRIGGER iface_addrs_check_reference_node_id   BEFORE UPDATE OR INSERT ON iface_addrs   FOR EACH ROW EXECUTE PROCEDURE check_reference_node_id('false', 'hosts');
 -- Kaszkád törlések
-CREATE TRIGGER patchs_delete_patch_post     AFTER DELETE ON patchs      FOR EACH ROW EXECUTE PROCEDURE delete_patch_post();
-CREATE TRIGGER hubs_delete_patch_post       AFTER DELETE ON hubs        FOR EACH ROW EXECUTE PROCEDURE delete_patch_post();
+CREATE TRIGGER patchs_delete_patch_post     AFTER DELETE ON patchs      FOR EACH ROW EXECUTE PROCEDURE delete_node_post();
 CREATE TRIGGER nodes_delete_node_post       AFTER DELETE ON nodes       FOR EACH ROW EXECUTE PROCEDURE delete_node_post();
-CREATE TRIGGER hosts_delete_node_post       AFTER DELETE ON hosts       FOR EACH ROW EXECUTE PROCEDURE delete_node_post();
 CREATE TRIGGER snmpdevices_delete_node_post AFTER DELETE ON snmpdevices FOR EACH ROW EXECUTE PROCEDURE delete_node_post();
-
--- // Nézetek
-
---------------------------------------------------------
--- Egy nézet, ami csak a patch típusú nod-okat mutatja
-CREATE OR REPLACE VIEW only_patchs AS SELECT * FROM ONLY patchs;
-
-ALTER VIEW only_patchs OWNER TO lanview2;
-
-CREATE OR REPLACE RULE only_patchs_ins AS ON INSERT TO only_patchs DO INSTEAD
-    INSERT INTO patchs(node_name,     node_descr,     place_id )
-          VALUES ( NEW.node_name, NEW.node_descr, NEW.place_id );
-
-CREATE OR REPLACE RULE only_patchs_del AS ON DELETE TO only_patchs DO INSTEAD
-    DELETE FROM patchs WHERE node_id = OLD.node_id;
-
-CREATE OR REPLACE RULE only_patchs_upd AS ON UPDATE TO only_patchs DO INSTEAD
-    UPDATE patchs SET
-        node_id    = NEW.node_id,
-        node_name  = NEW.node_name,
-        node_descr = NEW.node_descr,
-        place_id   = NEW.place_id
-    WHERE node_id = OLD.node_id;
-
-CREATE OR REPLACE VIEW pports_named AS SELECT * FROM pports JOIN only_patchs USING(node_id);
-
---------------------------------------------------------
--- A DJangónak kell egy nézet az interfaces -ről, amiből kiderül, hogy valójában melyik táblában van a rekord.
-CREATE OR REPLACE VIEW only_interfaces AS
-    SELECT port_id, port_name, port_descr, iftype_id, node_id, port_index, hwaddress, port_ostat, port_astat
-    FROM ONLY interfaces;
-
-ALTER VIEW only_interfaces OWNER TO lanview2;
-ALTER TABLE only_interfaces ALTER COLUMN port_ostat SET DEFAULT 'unknown';
-
-CREATE OR REPLACE RULE only_interfaces_ins AS ON INSERT TO only_interfaces DO INSTEAD
-    INSERT INTO interfaces (port_name, port_descr, iftype_id, node_id, port_index, hwaddress, port_ostat, port_astat)
-        VALUES (NEW.port_name, NEW.port_descr, NEW.iftype_id, NEW.node_id, NEW.port_index, NEW.hwaddress, NEW.port_ostat, NEW.port_astat);
-
-
-CREATE OR REPLACE RULE only_interfaces_del AS ON DELETE TO only_interfaces DO INSTEAD
-    DELETE FROM interfaces WHERE port_id = OLD.port_id;
-
-CREATE OR REPLACE RULE only_interfaces_upd AS ON UPDATE TO only_interfaces DO INSTEAD
-    UPDATE interfaces SET
-        port_id     = NEW.port_id,
-        port_name   = NEW.port_name,
-        port_descr  = NEW.port_descr,
-        iftype_id   = NEW.iftype_id,
-        node_id     = NEW.node_id,
-        port_index  = NEW.port_index,
-        hwaddress   = NEW.hwaddress,
-        port_ostat  = NEW.port_ostat,
-        port_astat  = NEW.port_astat
-    WHERE port_id = OLD.port_id;
-
---------------------------------------------------------
--- A DJangónak kell egy nézet az iface_addrs -ről, amiből kiderül, hogy valójában melyik táblában van a rekord.
-CREATE OR REPLACE VIEW iface_addrs_tn AS
-    SELECT port_id, port_name, port_descr, iftype_id, node_id, port_index, hwaddress, port_ostat, port_astat,
-            ip_address_descr, address, ip_address_type, subnet_id, relname
-    FROM iface_addrs JOIN pg_class ON iface_addrs.tableoid = pg_class.oid;
-
-ALTER VIEW iface_addrs_tn OWNER TO lanview2;
-ALTER TABLE iface_addrs_tn ALTER COLUMN port_ostat SET DEFAULT 'unknown';
-
-CREATE OR REPLACE RULE iface_addrs_tn_ins AS ON INSERT TO iface_addrs_tn DO INSTEAD
-    INSERT INTO iface_addrs (port_name, port_descr, iftype_id, node_id, port_index, hwaddress, port_ostat, port_astat,
-            ip_address_descr, address, ip_address_type, subnet_id)
-        VALUES (NEW.port_name, NEW.port_descr, NEW.iftype_id, NEW.node_id, NEW.port_index, NEW.hwaddress, NEW.port_ostat, NEW.port_astat,
-            NEW.ip_address_descr, NEW.address, NEW.ip_address_type, NEW.subnet_id);
-
-CREATE OR REPLACE RULE iface_addrs_tn_del AS ON DELETE TO iface_addrs_tn DO INSTEAD
-    DELETE FROM iface_addrs WHERE port_id = OLD.port_id;
-
-CREATE OR REPLACE RULE iface_addrs_tn_upd AS ON UPDATE TO iface_addrs_tn DO INSTEAD
-    UPDATE iface_addrs SET
-        port_id     = NEW.port_id,
-        port_name   = NEW.port_name,
-        port_descr  = NEW.port_descr,
-        iftype_id   = NEW.iftype_id,
-        node_id     = NEW.node_id,
-        port_index  = NEW.port_index,
-        hwaddress   = NEW.hwaddress,
-        port_ostat  = NEW.port_ostat,
-        port_astat  = NEW.port_astat,
-        ip_address_descr = NEW.ip_address_descr,
-        address     = NEW.address,
-        ip_address_type = NEW.ip_address_type,
-        subnet_id   = NEW.subnet_id
-    WHERE port_id = OLD.port_id;
-
---------------------------------------------------------
--- Egy nézet, ami csak a node típusú nod-okat mutatja
-CREATE OR REPLACE VIEW only_nodes AS
-    SELECT node_id, node_name, node_descr, place_id, port_name, port_descr, node_stat, node_alarm_msg
-    FROM ONLY nodes;
-
-ALTER VIEW only_nodes OWNER TO lanview2;
-
-CREATE OR REPLACE RULE only_nodes_ins AS ON INSERT TO only_nodes DO INSTEAD
-    INSERT INTO nodes( node_name, node_descr, place_id, port_name, port_descr, node_stat, node_alarm_msg,
-                    iftype_id, port_index )
-          VALUES (NEW.node_name, NEW.node_descr, NEW.place_id, NEW.port_name, NEW.port_descr, NEW.node_stat, NEW.node_alarm_msg,
-            (SELECT iftype_id FROM iftypes WHERE iftype_name = 'attach'), 1);
-
-CREATE OR REPLACE RULE only_nodes_del AS ON DELETE TO only_nodes DO INSTEAD
-    DELETE FROM nodes WHERE node_id = OLD.node_id;
-
-CREATE OR REPLACE RULE only_nodes_upd AS ON UPDATE TO only_nodes DO INSTEAD
-    UPDATE nodes SET
-        node_id    = NEW.node_id,
-        node_name  = NEW.node_name,
-        node_descr = NEW.node_descr,
-        place_id   = NEW.place_id,
-        port_name  = NEW.port_name,
-        port_descr = NEW.port_descr,
-        node_stat  = NEW.node_stat,
-        node_alarm_msg = NEW.node_alarm_msg
-    WHERE node_id = OLD.node_id;
-
---------------------------------------------------------
-
-CREATE OR REPLACE VIEW only_hosts AS
- SELECT node_id, node_name, node_descr, place_id,
-        port_name, port_descr, iftype_id, port_index,
-        node_stat, node_alarm_msg,
-        hwaddress, port_ostat, port_astat,
-        -- port_staple_id, hosts.dualface_type,
-        ip_address_descr, address, ip_address_type, subnet_id
-   FROM ONLY hosts;
-
-ALTER TABLE only_hosts OWNER TO lanview2;
-
-CREATE OR REPLACE RULE only_hosts_ins AS ON INSERT TO only_hosts DO INSTEAD
-    INSERT INTO hosts(node_name, node_descr, place_id,
-            port_name, port_descr, iftype_id, port_index,
-            node_stat, node_alarm_msg,
-            hwaddress, port_ostat, port_astat,
-            ip_address_descr, address, ip_address_type, subnet_id)
-          VALUES (NEW.node_name, NEW.node_descr, NEW.place_id,
-            NEW.port_name, NEW.port_descr, NEW.iftype_id, NEW.port_index,
-            NEW.node_stat, NEW.node_alarm_msg,
-            NEW.hwaddress, NEW.port_ostat, NEW.port_astat,
-            NEW.ip_address_descr, NEW.address, NEW.ip_address_type, NEW.subnet_id);
-
-CREATE OR REPLACE RULE only_hosts_del AS ON DELETE TO only_hosts DO INSTEAD
-    DELETE FROM hosts WHERE node_id = OLD.node_id;
-
-CREATE OR REPLACE RULE only_hosts_upd AS ON UPDATE TO only_hosts DO INSTEAD
-    UPDATE hosts SET
-        node_id     = NEW.node_id,
-        node_name   = NEW.node_name,
-        node_descr  = NEW.node_descr,
-        place_id    = NEW.place_id,
-        port_name   = NEW.port_name,
-        port_descr  = NEW.port_descr,
-        iftype_id   = NEW.iftype_id,
-        port_index  = NEW.port_index,
-        node_stat   = NEW.node_stat,
-        node_alarm_msg = NEW.node_alarm_msg,
-        hwaddress   = NEW.hwaddress,
-        port_ostat  = NEW.port_ostat,
-        port_astat  = NEW.port_astat,
-        ip_address_descr = NEW.ip_address_descr,
-        address     = NEW.address,
-        ip_address_type = NEW.ip_address_type,
-        subnet_id   = NEW.subnet_id
-    WHERE node_id = OLD.node_id;
-
---------------------------------------------------------
-
-CREATE OR REPLACE VIEW only_hubs AS
- SELECT hubs.node_id, hubs.node_name, hubs.node_descr, hubs.place_id, hubs.is_virtual
-   FROM hubs WHERE is_switch = FALSE;
-
-ALTER TABLE only_hubs OWNER TO lanview2;
-
---------------------------------------------------------
-CREATE OR REPLACE VIEW hports AS
-    SELECT port_id, port_name, port_descr, node_id, port_index
-     FROM ONLY nports JOIN iftypes USING(iftype_id)
-     WHERE iftype_name = 'bus';
-ALTER VIEW hports OWNER TO lanview2;
-
-CREATE OR REPLACE RULE hports_ins AS ON INSERT TO hports DO INSTEAD
-    INSERT INTO nports(port_name, port_descr, node_id, port_index, iftype_id )
-          VALUES ( NEW.port_name,  NEW.port_descr,  NEW.node_id,  NEW.port_index,
-            (SELECT iftype_id FROM iftypes WHERE iftype_name = 'bus')  );
-
-CREATE OR REPLACE RULE hports_del AS ON DELETE TO hports DO INSTEAD
-    DELETE FROM nports WHERE port_id = OLD.port_id;
-
-CREATE OR REPLACE RULE hports_upd AS ON UPDATE TO hports DO INSTEAD
-    UPDATE nports SET
-        port_id    = NEW.port_id,
-        port_name  = NEW.port_name,
-        port_descr = NEW.port_descr,
-        node_id    = NEW.node_id,
-        port_index = NEW.port_index
-    WHERE port_id = OLD.port_id;
-
---------------------------------------------------------
--- Egy nézet, ami csak a nports típusú port-okat mutatja
-CREATE OR REPLACE VIEW only_nports AS
-   SELECT port_id, port_name, port_descr, iftype_id, node_id, port_index
-        FROM ONLY nports JOIN iftypes USING(iftype_id)
-     WHERE iftype_name <> 'bus';
-ALTER TABLE only_nports OWNER TO lanview2;
-
-CREATE OR REPLACE RULE only_nports_ins AS ON INSERT TO only_nports DO INSTEAD
-    INSERT INTO nports (port_name, port_descr, iftype_id, node_id, port_index)
-        VALUES (NEW.port_name, NEW.port_descr, NEW.iftype_id, NEW.node_id, NEW.port_index);
-
-CREATE OR REPLACE RULE only_nports_del AS ON DELETE TO only_nports DO INSTEAD
-    DELETE FROM nports WHERE port_id = OLD.port_id;
-
-CREATE OR REPLACE RULE only_nports_upd AS ON UPDATE TO only_nports DO INSTEAD
-    UPDATE nports SET
-        port_id    = NEW.port_id,
-        port_name  = NEW.port_name,
-        port_descr = NEW.port_descr,
-        node_id    = NEW.node_id,
-        port_index = NEW.port_index
-    WHERE port_id = OLD.port_id;
---------------------------------------------------------
-
-CREATE OR REPLACE VIEW only_snmpdevices AS
-    SELECT node_id, node_name, node_descr, place_id, port_name, port_descr, iftype_id,
-               port_index, node_stat, node_alarm_msg, hwaddress, port_ostat, port_astat, ip_address_descr, address,
-               ip_address_type, subnet_id,
-               community_rd, community_wr, snmp_ver, sysdescr, sysobjectid, sysuptime, syscontact, sysname, syslocation, sysservices, vendorname
-FROM snmpdevices;
-
-ALTER TABLE only_snmpdevices OWNER TO lanview2;
-
-
-CREATE OR REPLACE RULE only_snmpdevices_ins AS
-    ON INSERT TO only_snmpdevices DO INSTEAD
-    INSERT INTO snmpdevices
-        (node_name, node_descr, place_id, port_name, port_descr, iftype_id, port_index, node_stat, node_alarm_msg, hwaddress, port_ostat, port_astat, ip_address_descr, address,
-                 ip_address_type, subnet_id, community_rd, community_wr, snmp_ver, sysdescr, sysobjectid, sysuptime, syscontact, sysname, syslocation, sysservices, vendorname)
-    VALUES (NEW.node_name, NEW.node_descr, NEW.place_id, NEW.port_name, NEW.port_descr, NEW.iftype_id, NEW.port_index, NEW.node_stat, NEW.node_alarm_msg, NEW.hwaddress, NEW.port_ostat, NEW.port_astat, NEW.ip_address_descr, NEW.address,
-             NEW.ip_address_type, NEW.subnet_id, NEW.community_rd, NEW.community_wr, NEW.snmp_ver, NEW.sysdescr, NEW.sysobjectid, NEW.sysuptime, NEW.syscontact, NEW.sysname, NEW.syslocation, NEW.sysservices, NEW.vendorname);
-
-CREATE OR REPLACE RULE only_snmpdevices_del AS
-    ON DELETE TO only_snmpdevices DO INSTEAD
-    DELETE FROM snmpdevices WHERE snmpdevices.node_id = old.node_id;
-
-CREATE OR REPLACE RULE only_snmpdevices_upd AS
-    ON UPDATE TO only_snmpdevices DO INSTEAD
-    UPDATE snmpdevices SET
-        node_name = NEW.node_name, node_descr = NEW.node_descr, place_id = NEW.place_id, port_name = NEW.port_name, port_descr = NEW.port_descr,
-        iftype_id = NEW.iftype_id, port_index = NEW.port_index, node_stat = NEW.node_stat, hwaddress = NEW.hwaddress, port_ostat = NEW.port_ostat,
-        port_astat = NEW.port_astat, node_alarm_msg = NEw.node_alarm_msg, ip_address_descr = NEW.ip_address_descr, address = NEW.address, ip_address_type = NEW.ip_address_type, subnet_id = NEW.subnet_id, community_rd = NEW.community_rd, community_wr =          NEW.community_wr, snmp_ver = NEW.snmp_ver, sysdescr = NEW.sysdescr, sysobjectid = NEW.sysobjectid, sysuptime = NEW.sysuptime, syscontact = NEW.syscontact, sysname = NEW.sysname,
-        syslocation = NEW.syslocation, sysservices = NEW.sysservices, vendorname = NEW.vendorname
-    WHERE snmpdevices.node_id = old.node_id;
-
-
-create or replace view porstat as
- select n.node_name, n.node_stat, i.port_name, i.port_index, i.port_astat, i.port_ostat
- FROM interfaces i JOIN nodes n USING(node_id)
- ORDER BY n.node_name, i.port_name;
-
--- Az összes nodes, hosts, snmpdevices rekord lekérdezése, az összes lehetséges paraméterével
--- A mezőkhöz hozáadbva a tablename és tableoid mezőket.
-CREATE OR REPLACE VIEW all_nodes AS
- SELECT node_id, node_name, node_descr, place_id,				-- patchs
-	port_id, port_name, port_descr, iftype_id, port_index,			-- nports
-	node_stat, node_alarm_msg,						-- nodes
-	NULL::macaddr AS hwaddress, NULL::ifstatus AS port_ostat, NULL::ifstatus AS port_astat, NULL::integer AS port_staple_id, NULL::integer AS dualface_type,		-- interfaces
-	NULL::integer AS ip_address_id, NULL AS ip_address_descr, NULL::inet AS address, NULL::addresstype AS ip_address_type, NULL::integer AS subnet_id,		-- addresses
-	NULL AS community_rd, NULL AS community_wr, NULL::snmpver AS snmp_ver, NULL AS sysdescr, NULL AS sysobjectid,			-- snmpdevices
-	NULL::integer AS sysuptime, NULL AS syscontact, NULL AS sysname, NULL AS syslocation, NULL::smallint AS sysservices, NULL AS vendorname,	-- snmpdevices
-	tableoid, 'nodes' AS tablename,
-	deleted									-- nports
-  FROM ONLY nodes
-UNION
- SELECT node_id, node_name, node_descr, place_id,				-- patchs
-	port_id, port_name, port_descr, iftype_id, port_index,			-- nports
-	node_stat, node_alarm_msg,						-- nodes
-	hwaddress, port_ostat, port_astat, port_staple_id, dualface_type,	-- interfaces
-	ip_address_id, ip_address_descr, address, ip_address_type, subnet_id,	-- addresses
-	NULL AS community_rd, NULL AS community_wr, NULL::snmpver AS snmp_ver, NULL AS sysdescr, NULL AS sysobjectid,			-- snmpdevices
-	NULL::integer AS sysuptime, NULL AS syscontact, NULL AS sysname, NULL AS syslocation, NULL::smallint AS sysservices, NULL AS vendorname,	-- snmpdevices
-	tableoid, 'hosts' AS tablename,
-	deleted									-- nports
-  FROM ONLY hosts
-UNION
- SELECT node_id, node_name, node_descr, place_id,				-- patchs
-	port_id, port_name, port_descr, iftype_id, port_index,			-- nports
-	node_stat, node_alarm_msg,						-- nodes
-	hwaddress, port_ostat, port_astat, port_staple_id, dualface_type,	-- interfaces
-	ip_address_id, ip_address_descr, address, ip_address_type, subnet_id,	-- addresses
-	community_rd, community_wr, snmp_ver, sysdescr, sysobjectid,		-- snmpdevices
-	sysuptime, syscontact, sysname, syslocation, sysservices, vendorname,	-- snmpdevices
-	tableoid, 'snmpdevices' AS tablename,
-	deleted									-- nports
-  FROM ONLY snmpdevices;
-
--- Az összes nodes, hosts, snmpdevices -rekordhoz papcsolódó port rekord lekérdezése, az összes lehetséges paraméterével
--- A mezőkhöz hozáadbva a tablename, tableoid és is_node mezőket.
-CREATE OR REPLACE VIEW all_nports AS
- SELECT port_id, port_name, port_descr, iftype_id, port_index, node_id,		-- nports
-	NULL::macaddr AS hwaddress, NULL::ifstatus AS port_ostat, NULL::ifstatus AS port_astat, NULL::integer AS port_staple_id, NULL::integer AS dualface_type,	-- interfaces
-	NULL::integer AS ip_address_id, NULL AS ip_address_descr, NULL::inet AS address, NULL::addresstype AS ip_address_type, NULL::integer AS subnet_id,	-- addresses
-	tableoid, 'nports' AS tablename, FALSE AS is_node,
-	deleted									-- nports
-  FROM ONLY nports WHERE NOT node_id IN (SELECT node_id FROM hubs)
-UNION
- SELECT port_id, port_name, port_descr, iftype_id, port_index, node_id,		-- nports
-	NULL::macaddr AS hwaddress, NULL::ifstatus AS port_ostat, NULL::ifstatus AS port_astat, NULL::integer AS port_staple_id, NULL::integer AS dualface_type,	-- interfaces
-	NULL::integer AS ip_address_id, NULL AS ip_address_descr, NULL::inet AS address, NULL::addresstype AS ip_address_type, NULL::integer AS subnet_id,	-- addresses
-	tableoid, 'nodes' AS tablename, TRUE AS is_node,
-	deleted									-- nports
-  FROM ONLY nodes
-UNION
- SELECT port_id, port_name, port_descr, iftype_id, port_index, node_id,		-- nports
-	hwaddress, port_ostat, port_astat, port_staple_id, dualface_type,	-- interfaces
-	NULL::integer AS ip_address_id, NULL AS ip_address_descr, NULL::inet AS address, NULL::addresstype AS ip_address_type, NULL::integer AS subnet_id,	-- addresses
-	tableoid, 'iterfaces' AS tablename, FALSE AS is_node,
-	deleted									-- nports
-  FROM ONLY interfaces
-UNION
- SELECT port_id, port_name, port_descr, iftype_id, port_index, node_id,		-- nports
-	hwaddress, port_ostat, port_astat, port_staple_id, dualface_type,	-- interfaces
-	ip_address_id, ip_address_descr, address, ip_address_type, subnet_id,	-- addresses
-	tableoid, 'iface_addrs' AS tablename, FALSE AS is_node,
-	deleted									-- nports
-  FROM ONLY iface_addrs
-UNION
- SELECT port_id, port_name, port_descr, iftype_id, port_index, node_id,		-- nports
-	hwaddress, port_ostat, port_astat, port_staple_id, dualface_type,	-- interfaces
-	ip_address_id, ip_address_descr, address, ip_address_type, subnet_id,	-- addresses
-	tableoid, 'hosts' AS tablename, TRUE AS is_node,
-	deleted									-- nports
-  FROM ONLY hosts
-UNION
- SELECT port_id, port_name, port_descr, iftype_id, port_index, node_id,		-- nports
-	hwaddress, port_ostat, port_astat, port_staple_id, dualface_type,	-- interfaces
-	ip_address_id, ip_address_descr, address, ip_address_type, subnet_id,	-- addresses
-	tableoid, 'snmpdevices' AS tablename, TRUE AS is_node,
-	deleted									-- nports
-  FROM ONLY snmpdevices;
-
-
 

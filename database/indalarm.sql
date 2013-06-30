@@ -14,7 +14,7 @@ CREATE OR REPLACE VIEW public.indalarm_view_groups(
     place_id)
 AS
   SELECT g.group_name AS "Név",
-         g.group_descr AS "Leírás",
+         g.group_note AS "Leírás",
          g.group_rights AS "Jogkör",
          CASE
            WHEN g.place_id IS NULL THEN 'Nincs helyiség beállítva' ::character
@@ -48,7 +48,7 @@ CREATE OR REPLACE VIEW public.indalarm_view_users(
     enabled)
 AS
   SELECT u.user_name AS "Felhasználónév",
-         u.user_descr AS "Név",
+         u.user_note AS "Név",
          CASE
            WHEN u.enabled = true THEN 'Igen' ::text
            ELSE 'Nem' ::text
@@ -84,21 +84,21 @@ CREATE OR REPLACE VIEW public.indalarm_view_activealarms(
     host_service_id,
     begin_time,
     end_time,
-    event_descr,
+    event_note ,
     noalarm,
-    host_service_descr,
+    host_service_note,
     host_service_alarm_msg,
     service_id,
     service_name,
-    service_descr,
+    service_note,
     service_alarm_msg,
     node_id,
     node_name,
-    node_descr,
+    node_note,
     node_alarm_msg,
     place_id,
     place_name,
-    place_descr,
+    place_note,
     orig_image_id,
     parent_id,
     frame,
@@ -115,21 +115,21 @@ AS
          arec.host_service_id,
          arec.begin_time,
          arec.end_time,
-         arec.event_descr,
+         arec.event_note,
          arec.noalarm,
-         arec.host_service_descr,
+         arec.host_service_note,
          arec.host_service_alarm_msg,
          arec.service_id,
          arec.service_name,
-         arec.service_descr,
+         arec.service_note,
          arec.service_alarm_msg,
          arec.node_id,
          arec.node_name,
-         arec.node_descr,
+         arec.node_note,
          arec.node_alarm_msg,
          arec.place_id,
          arec.place_name,
-         arec.place_descr,
+         arec.place_note,
          arec.image_id AS orig_image_id,
          arec.parent_id,
          arec.frame,
@@ -188,14 +188,14 @@ COMMENT ON VIEW indalarm_view_usertypes
 -- DROP VIEW public.indalarm_view_host_service_alarmtype_list;
 
 CREATE OR REPLACE VIEW public.indalarm_view_host_service_alarmtype_list AS 
- SELECT pl.place_name, pl.place_descr, n.node_name, n.node_descr, 
+ SELECT pl.place_name, pl.place_note, n.node_name, n.node_note, 
         CASE
             WHEN hs.noalarm_flag = 'off'::noalarmtype THEN 'aktív'::text
             ELSE 'kikapcsolva'::text
         END AS noalarmtext, 
 		hs.noalarm_from, hs.noalarm_to, 
 		s.service_name, hs.host_service_id, 
-		hs.host_service_descr, hs.node_id, 
+		hs.host_service_note, hs.node_id, 
 		hs.service_id, hs.port_id, 
 		p.port_name, hs.delegate_host_state, 
 		pl.place_id, hs.noalarm_flag

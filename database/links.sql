@@ -6,7 +6,7 @@ CREATE TABLE log_links_table (
     --  REFERENCES interfaces(port_id) ON DELETE CASCADE ON UPDATE RESTRICT,
     port_id2        integer         NOT NULL UNIQUE,
     --  REFERENCES interfaces(port_id) ON DELETE CASCADE ON UPDATE RESTRICT,
-    log_link_descr  varchar(255)    DEFAULT NULL,                   -- Description
+    log_link_note  varchar(255)    DEFAULT NULL,                   -- Description
     link_type       linktype        NOT NULL,
 --    first_time    timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP, -- First time discovered the logical link
 --    last_time     timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Last time discovered the logical link
@@ -20,16 +20,16 @@ COMMENT ON TABLE  log_links_table                   IS 'Logical Links Table';
 COMMENT ON COLUMN log_links_table.log_link_id       IS 'Unique ID for logical links';
 COMMENT ON COLUMN log_links_table.port_id1          IS 'Interface''s ID which connects to logical links';
 COMMENT ON COLUMN log_links_table.port_id2          IS 'Interface''s ID which connects to logical links';
-COMMENT ON COLUMN log_links_table.log_link_descr    IS 'Description';
+COMMENT ON COLUMN log_links_table.log_link_note    IS 'Description';
 -- COMMENT ON COLUMN log_links_table.first_time        IS 'First time discovered the logical link';
 -- COMMENT ON COLUMN log_links_table.last_time         IS 'Last time discovered the logical link';
 
 -- //// LAN.LLINKS VIEW
 
 CREATE VIEW log_links AS
-    SELECT log_link_id,             port_id1,             port_id2, log_link_descr, link_type, /*first_time, last_time, source_id,*/ phs_link_chain, share_result FROM log_links_table
+    SELECT log_link_id,             port_id1,             port_id2, log_link_note, link_type, /*first_time, last_time, source_id,*/ phs_link_chain, share_result FROM log_links_table
     UNION
-    SELECT log_link_id, port_id2 AS port_id1, port_id1 AS port_id2, log_link_descr, link_type, /*first_time, last_time, source_id,*/ phs_link_chain, share_result FROM log_links_table;
+    SELECT log_link_id, port_id2 AS port_id1, port_id1 AS port_id2, log_link_note, link_type, /*first_time, last_time, source_id,*/ phs_link_chain, share_result FROM log_links_table;
 ALTER TABLE log_links OWNER TO lanview2;
 COMMENT ON VIEW log_links IS 'Symmetric View Table for logical links';
 
@@ -64,7 +64,7 @@ CREATE TABLE phs_links_table (
     port_id2        integer, -- REFERENCES nports(port_id) ON DELETE CASCADE ON UPDATE RESTRICT,
     phs_link_type1  phslinktype     NOT NULL,
     phs_link_type2  phslinktype     NOT NULL,
-    phs_link_descr  varchar(255)    DEFAULT NULL,
+    phs_link_note  varchar(255)    DEFAULT NULL,
     port_shared     portshare       NOT NULL DEFAULT '',
     link_type       linktype        NOT NULL,
     create_time     timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -81,7 +81,7 @@ COMMENT ON COLUMN phs_links_table.phs_link_type1    IS $$Link típusa(1), végpo
 COMMENT ON COLUMN phs_links_table.port_id2          IS 'Port''s ID(2) which connects to physical link';
 COMMENT ON COLUMN phs_links_table.phs_link_type2    IS $$Link típusa(2), végpont 'Term', patch panel előlap 'Front', vagy hátlap 'Back'$$;
 COMMENT ON COLUMN phs_links_table.port_shared       IS $$Mindíg a 'Front' patch portra vonatkozik, ha mindkettő 'Front' patch port, akkor csak '' lehet, vagyis a megosztás tiltott$$;
-COMMENT ON COLUMN phs_links_table.phs_link_descr    IS 'Description';
+COMMENT ON COLUMN phs_links_table.phs_link_note    IS 'Description';
 COMMENT ON COLUMN phs_links_table.create_time       IS 'Time setting up the physical link';
 COMMENT ON COLUMN phs_links_table.create_user_id    IS 'User ID for who set this physical link';
 COMMENT ON COLUMN phs_links_table.modify_time       IS 'Time modified the physical link';
@@ -92,11 +92,11 @@ COMMENT ON COLUMN phs_links_table.forward           IS 'értéke mindíg true, a
 
 CREATE OR REPLACE VIEW phs_links AS
     SELECT phs_link_id,             port_id1,            port_id2,                   phs_link_type1,                    phs_link_type2,
-           phs_link_descr, port_shared, link_type, create_time, create_user_id, modify_time, modify_user_id, forward
+           phs_link_note, port_shared, link_type, create_time, create_user_id, modify_time, modify_user_id, forward
        FROM phs_links_table
     UNION
     SELECT phs_link_id, port_id2 AS port_id1, port_id1 AS port_id2, phs_link_type2 AS phs_link_type1, phs_link_type1 AS phs_link_type2,
-           phs_link_descr, port_shared, link_type, create_time, create_user_id, modify_time, modify_user_id, 'f'
+           phs_link_note, port_shared, link_type, create_time, create_user_id, modify_time, modify_user_id, 'f'
        FROM phs_links_table
 ;
 ALTER TABLE phs_links OWNER TO lanview2;
@@ -107,7 +107,7 @@ COMMENT ON VIEW phs_links IS 'Symmetric View Table for physical links';
 CREATE OR REPLACE VIEW log_named_links AS
     SELECT log_link_id, port_id1, n1.node_name AS node_name1, p1.port_name AS port_name1,
                         port_id2, n2.node_name AS node_name2, p2.port_name AS port_name2,
-                        log_link_descr, link_type, phs_link_chain, share_result
+                        log_link_note, link_type, phs_link_chain, share_result
     FROM log_links JOIN ( nports AS p1 JOIN patchs AS n1 USING(node_id)) ON p1.port_id = port_id1
                    JOIN ( nports AS p2 JOIN patchs AS n2 USING(node_id)) ON p2.port_id = port_id2;
 COMMENT ON VIEW log_named_links IS 'Symmetric View Table for logical links with name fields';
@@ -116,7 +116,7 @@ COMMENT ON VIEW log_named_links IS 'Symmetric View Table for logical links with 
 CREATE OR REPLACE VIEW phs_named_links AS
     SELECT phs_link_id, port_id1, n1.node_name AS node_name1, p1.port_name AS port_name1, phs_link_type1,
                         port_id2, n2.node_name AS node_name2, p2.port_name AS port_name2, phs_link_type2,
-                        phs_link_descr, port_shared, link_type,
+                        phs_link_note, port_shared, link_type,
                         create_time, create_user_id, modify_time, modify_user_id, forward
     FROM phs_links JOIN ( nports AS p1 JOIN patchs AS n1 USING(node_id)) ON p1.port_id = port_id1
                    JOIN ( nports AS p2 JOIN patchs AS n2 USING(node_id)) ON p2.port_id = port_id2;
@@ -564,7 +564,7 @@ DECLARE
     n integer;
 BEGIN
     IF TG_OP = 'UPDATE' THEN
-        -- Csak a log_link_descr mező módisítása megengedett
+        -- Csak a log_link_note mező módisítása megengedett
         IF (NEW.port_id1  <> OLD.port_id1 OR NEW.port_id2 <> OLD.port_id2 OR
             NEW.link_type <> OLD.link_type OR
             NEW.phs_link_chain <> OLD.phs_link_chain OR

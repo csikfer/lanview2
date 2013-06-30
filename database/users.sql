@@ -8,7 +8,7 @@ COMMENT ON TYPE dayofweek IS 'Date of week enumeration.';
 CREATE TABLE tpows (
     tpow_id     serial          PRIMARY KEY,
     tpow_name   varchar(32)     NOT NULL UNIQUE,
-    tpow_descr  varchar(255)    DEFAULT NULL,
+    tpow_note  varchar(255)    DEFAULT NULL,
     dow         dayofweek       NOT NULL,
     begin_time  time            NOT NULL DEFAULT  '0:00',
     end_time    time            NOT NULL DEFAULT '24:00'
@@ -26,7 +26,7 @@ COMMENT ON COLUMN tpows.end_time    IS 'End time';
 CREATE TABLE timeperiods (
     timeperiod_id       serial          PRIMARY KEY,
     timeperiod_name     varchar(32)     NOT NULL UNIQUE,
-    timeperiod_descr    varchar(255)    DEFAULT NULL
+    timeperiod_note    varchar(255)    DEFAULT NULL
 );
 ALTER TABLE timeperiods OWNER TO lanview2;
 COMMENT ON TABLE  timeperiods                  IS 'Time periods';
@@ -104,7 +104,7 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-INSERT INTO tpows(tpow_name, tpow_descr, dow) VALUES
+INSERT INTO tpows(tpow_name, tpow_note, dow) VALUES
     ('all_sun', 'On Sundays all day',    'sunday'   ),
     ('all_mon', 'On Mondays all day',    'monday'   ),
     ('all_tue', 'On Tuesdays all day',   'tuesday'  ),
@@ -113,7 +113,7 @@ INSERT INTO tpows(tpow_name, tpow_descr, dow) VALUES
     ('all_fri', 'On Fridays all day',    'friday'   ),
     ('all_sat', 'On Saturdays all day',  'saturday' );
 
-INSERT INTO timeperiods(timeperiod_id, timeperiod_name, timeperiod_descr) VALUES
+INSERT INTO timeperiods(timeperiod_id, timeperiod_name, timeperiod_note) VALUES
     ( -1, 'never',  'At no time'   ),
     ( 0,  'always', 'All the time' );
 
@@ -136,7 +136,7 @@ COMMENT ON TYPE notifswitch IS 'Notification switch, or host or service status';
 CREATE TABLE users (    -- contacts
     user_id             serial          PRIMARY KEY,
     user_name           varchar(32)     NOT NULL UNIQUE,
-    user_descr          varchar(255)    DEFAULT NULL,
+    user_note          varchar(255)    DEFAULT NULL,
     passwd              varchar(64),
     enabled             boolean         DEFAULT TRUE,
     host_notif_period   integer         DEFAULT 0 REFERENCES timeperiods(timeperiod_id) MATCH FULL
@@ -164,7 +164,7 @@ ALTER TYPE  rights OWNER TO lanview2;
 CREATE TABLE groups (
     group_id        serial          PRIMARY KEY,
     group_name      varchar(32)     NOT NULL UNIQUE,
-    group_descr     varchar(255)    DEFAULT NULL,
+    group_note     varchar(255)    DEFAULT NULL,
     group_rights    rights          DEFAULT 'viewer',
     place_id        integer         DEFAULT NULL REFERENCES places(place_id) MATCH SIMPLE
                                             ON DELETE RESTRICT ON UPDATE RESTRICT
@@ -173,7 +173,7 @@ ALTER TABLE groups OWNER TO lanview2;
 COMMENT ON TABLE  groups            IS 'User groups';
 COMMENT ON COLUMN groups.group_id   IS 'Group ID';
 COMMENT ON COLUMN groups.group_name IS 'Group name';
-COMMENT ON COLUMN groups.group_descr IS '';
+COMMENT ON COLUMN groups.group_note IS '';
 COMMENT ON COLUMN groups.group_rights IS 'User rights';
 COMMENT ON COLUMN groups.place_id   IS 'Place type group, (parent)place id';
 
@@ -194,7 +194,7 @@ COMMENT ON TABLE  group_users           IS 'Group members table';
 COMMENT ON COLUMN group_users.group_id  IS 'Group ID';
 COMMENT ON COLUMN group_users.user_id   IS 'User ID';
 
-INSERT INTO groups(group_id, group_name, group_descr, group_rights) VALUES
+INSERT INTO groups(group_id, group_name, group_note, group_rights) VALUES
     ( 0, 'system',  'system',           'system'  ),
     ( 1, 'admin',   'Administrators',   'admin'   ),
     ( 2, 'operator','Operators',        'operator'),
@@ -203,7 +203,7 @@ INSERT INTO groups(group_id, group_name, group_descr, group_rights) VALUES
 
 SELECT setval('groups_group_id_seq', 5);
 
-INSERT INTO users(user_id, user_name, user_descr, passwd) VALUES
+INSERT INTO users(user_id, user_name, user_note, passwd) VALUES
     ( 0, 'nobody',  'Unknown user', NULL),
     ( 1, 'system',  'system',       NULL),
     ( 2, 'admin',   'Administrator',crypt('admin',gen_salt('md5'))),

@@ -41,6 +41,8 @@ Név string literállá konvertálása.
  */
 #define _STR(s)     __STR(s)
 
+/// Hiba string
+EXT_ QString sInvalidEnum();
 /*!
 A QProcess::ProcessError érték nevével tér vissza
  */

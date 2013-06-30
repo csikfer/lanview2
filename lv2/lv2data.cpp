@@ -7,28 +7,6 @@
 EXT_ const QString& notifSwitch(int _ns, bool __ex = true);
 EXT_ int notifSwitch(const QString& _nm, bool __ex = true);
 
-
-int touch(QSqlQuery& q, cRecord& o)
-{
-    int iLastTime = o.toIndex(_sLastTime);
-    QBitArray bset  = o.mask(iLastTime);
-    o.clear(iLastTime);
-    QBitArray where = o.getSetMap();
-    if (where.isEmpty()) return -1; //
-    if (where.size() > iLastTime && where[iLastTime]) where.clearBit(iLastTime);
-    QString sql = QString("UPDATE %1 SET last_time = NOW() ").arg(o.fullTableNameQ());
-    sql += o.whereString(where);
-    sql += " RETURNING *";
-    o.query(q, sql, where, true);
-    if (q.first()) {
-        o.set(q.record());
-        o._stat |= cRecord::ES_EXIST;
-        return q.size();
-    }
-    o.set();
-    return 0;
-}
-
 /* ------------------------------ tpows ------------------------------ */
 DEFAULTCRECDEF(cTpow, _sTpows)
 /* ------------------------------ timeperiods ------------------------------ */
@@ -836,94 +814,8 @@ const QString& ifStatus(int _i, bool __ex)
     return _sNul;
 }
 
-/* ------------------------------ cIfaceAddr ------------------------------ */
 
-cIfaceAddr::cIfaceAddr() : cInterface(_no_init_), cIpAddress(_no_init_), addresses()
-{
-    _set(cIfaceAddr::descr());
-    _initIfaceAddr(_descr_cIfaceAddr());
-}
-cIfaceAddr::cIfaceAddr(const cIfaceAddr& __o) : cRecord(), cNPort(_no_init_), cInterface(_no_init_), cIpAddress(_no_init_), addresses()
-{
-    _set(cIfaceAddr::descr());
-    _initIfaceAddr(_descr_cIfaceAddr());
-    __cp(__o);
-    _copy(__o, _descr_cIfaceAddr());
-    params       = __o.params;
-    trunkMembers = __o.trunkMembers;
-}
-// -- virtual
-CRECDDCR(cIfaceAddr, _sIfaceAddrs)
-CRECDEFD(cIfaceAddr)
-
-void cIfaceAddr::toEnd()
-{
-    cInterface::toEnd();
-}
-
-bool cIfaceAddr::toEnd(int i)
-{
-    return cInterface::toEnd(i);
-}
-
-void cIfaceAddr::clearToEnd()
-{
-    cInterface::toEnd();
-}
-
-bool cIfaceAddr::insert(QSqlQuery &__q, bool __ex)
-{
-    // DBGFN();
-    bool r = cNPort::insert(__q, __ex);    // Beállítja a port_id -t is
-    if (!r) return false;
-    int i, n = addresses.size();
-    //PDEB(VERBOSE) << "Alias addresses " << n << endl;
-    if (n == 0) return true;
-    qlonglong id = getId();
-    if (id == NULL_ID) EXCEPTION(EPROGFAIL);
-    for (i = 0; i < n && r; ++i) r = addresses[i]->setId(_sPortId, id).insert(__q, __ex);
-    return r;
-}
-
-cIpAddress& cIfaceAddr::addIpAddress(const QHostAddress& __a, const QString& __t, const QString &__d)
-{
-    // _DBGFN() << " @(" << __a.toString() << ")" << endl;
-    if (address() == __a || addresses.indexOf(cIpAddress::_ixAddress, __a.toString())) EXCEPTION(EDATA);
-    cIpAddress *p = new cIpAddress();
-    *p = __a;
-    p->setName(_sIpAddressType, __t);
-    p->setName(_sIpAddressDescr, __d);
-    addresses <<  p;
-    //PDEB(VERBOSE) << "Added : " << p->toString() << " size : " << addresses.size();
-    return *p;
-}
-
-cIpAddress& cIfaceAddr::addIpAddress(const cIpAddress& __a) {
-    _DBGFN() << " @(" << __a.toString() << ")" << endl;
-    if (address() == __a.address() || addresses.indexOf(cIpAddress::_ixAddress, __a.get(_ixAddress))) EXCEPTION(EDATA);
-    cIpAddress *p = new cIpAddress(__a);
-    addresses << p;
-    PDEB(VERBOSE) << "Added, size : " << addresses.size();
-    return *p;
-}
-
-cIfaceAddr& cIfaceAddr::setAddress(const cMac& __mac, const QHostAddress& __a, const QString& __t, const QString &__d)
-{
-    cIpAddress::setAddress(__a, __t);
-    set(_ixHwAddress, QVariant::fromValue(__mac));
-    setName(_sIpAddressDescr, __d);
-    return *this;
-}
-
-bool cIfaceAddr::fetchByAddr(QSqlQuery& q, const QHostAddress& a)
-{
-    clear();
-    set(_sAddress, QVariant::fromValue(a));
-    return completion(q);
-}
-
-
-/* ****************************** NODES (patch, nodes, hosts, snmphosts ****************************** */
+/* ****************************** NODES (patch, nodes, snmphosts ****************************** */
 /* ----------------------------- PATCHS : cPatch ----------------------------- */
 
 
@@ -952,21 +844,21 @@ bool cShareBack::operator==(int __ix) const
     return __ix == a || __ix == b || __ix == ab || __ix == bb;
 }
 
-/* */
+/* -------------------------------------------------------------------------- */
 
-cPatch::cPatch() : cRecord(), ports()
+cPatch::cPatch() : cRecord(), ports(), pShares(new QSet<cShareBack>)
 {
     //_DBGFN() << VDEBPTR(this) << endl;
     _set(cPatch::descr());
 }
 
-cPatch::cPatch(const cPatch& __o) : cRecord(), ports()
+cPatch::cPatch(const cPatch& __o) : cRecord(), ports(), pShares(new QSet<cShareBack>)
 {
     _cp(__o);
     ports = __o.ports;
 }
 
-cPatch::cPatch(const QString& __name, const QString& __descr) : cRecord(), ports()
+cPatch::cPatch(const QString& __name, const QString& __descr) : cRecord(), ports(), pShares(new QSet<cShareBack>)
 {
     _set(cPatch::descr());
     _set(_descr_cPatch().nameIndex(),  __name);
@@ -976,6 +868,12 @@ cPatch::cPatch(const QString& __name, const QString& __descr) : cRecord(), ports
 CRECDDCR(cPatch, _sPatchs)
 CRECDEFD(cPatch)
 
+void cPatch::clearToEnd()
+{
+    ports.clear();
+    clearShares();
+}
+
 void cPatch::toEnd()
 {
     toEnd(idIndex());
@@ -984,16 +882,10 @@ void cPatch::toEnd()
 bool cPatch::toEnd(int i)
 {
     if (i == idIndex()) {
-        if (atEndCont(ports, cPPort::_ixNodeId)) clearShares();
+        if (atEndCont(ports, _sNodeId)) clearShares();
         return true;
     }
     return false;
-}
-
-void cPatch::clearToEnd()
-{
-    ports.clear();
-    clearShares();
 }
 
 bool cPatch::insert(QSqlQuery &__q, bool __ex)
@@ -1009,64 +901,19 @@ bool cPatch::insert(QSqlQuery &__q, bool __ex)
     return true;
 }
 
-cPPort *cPatch::addPorts(const QString& __n, int __noff, int __from, int __to, int __off)
+int cPatch::fetchPorts(QSqlQuery& __q)
 {
-    cPPort *p = NULL;
-    for (int i = __from; i <= __to; ++i) {
-        p = addPort(nameAndNumber(__n, i + __noff), _sNul, i + __off);
-    }
-    if (p == NULL) EXCEPTION(EDATA);
-    return p;
+    return ports.fetch(__q, false, _sNodeId, getId());
 }
 
-cPPort *cPatch::addPort(const QString& __name, const QString& __descr, int __ix)
+void cPatch::clearShares()
 {
-    if (ports.count()) {
-        if (0 <= ports.indexOf(__name))
-            EXCEPTION(EDATA, -1, QString("Ilyen port név már létezik: %1").arg(__name));
-        if (0 <= ports.indexOf(cPPort::_ixPortIndex, QVariant(__ix)))
-            EXCEPTION(EDATA, __ix, QString("Ilyen port index már létezik."));
-    }
-    cPPort  *p = new cPPort();
-    p->setName(__name);
-    p->setId(cPPort::_ixPortIndex, __ix);
-    p->setName(_sPortDescr, __descr);
-    ports.append(p);
-    return p;
-}
-
-cPPort *cPatch::portSet(const QString& __name, const QString& __fn, const QVariant& __v)
-{
-    int i = ports.indexOf(cPPort::_ixPortIndex, __name);
-    if (i < 0) EXCEPTION(ENONAME, -1, QString(QObject::trUtf8("%1 port name not found.")).arg(__name));
-    cPPort * p = ports[i];
-    p->set(__fn, __v);
-    return p;
-}
-
-cPPort *cPatch::portSet(int __ix, const QString& __fn, const QVariant& __v)
-{
-    int i = ports.indexOf(cPPort::_ixPortIndex, __ix);
-    if (i < 0) EXCEPTION(ENOINDEX, __ix, QObject::trUtf8("Port index not found"));
-    cPPort *p = ports[i];
-    p->set(__fn, __v);
-    return p;
-}
-
-cPPort *cPatch::portSet(int __ix, const QString& __fn, const QVariantList& __v)
-{
-    int ix = __ix;
-    cPPort *p = NULL;
-    foreach (const QVariant& v, __v) {
-        p = portSet(ix, __fn, v);
-        ++ix;
-    }
-    if (p == NULL) EXCEPTION(EDATA);
-    return p;
+    shares().clear();
 }
 
 bool cPatch::setShare(int __a, int __ab, int __b, int __bb, bool __cd)
 {
+    int
     // Csak létező portra lehet megosztást csinálni
     if ((__a  != NULL_IX && 0 > ports.indexOf(cPPort::_ixPortIndex, QVariant(__a)))
      || (__b  != NULL_IX && 0 > ports.indexOf(cPPort::_ixPortIndex, QVariant(__b)))
@@ -1075,8 +922,8 @@ bool cPatch::setShare(int __a, int __ab, int __b, int __bb, bool __cd)
     // A konstruktor is ellenőriz, egy port csak egyszer mind nem lehet NULL_IX, ha mégis dob egy kizárást.
     cShareBack  s(__a, __b, __ab, __bb, __cd);
     // Egy port csak egy megosztásban szerepelhet
-    if (shares.contains(s)) return false;
-    shares << s;
+    if (shares().contains(s)) return false;
+    shares() << s;
     return true;
 }
 bool cPatch::updateShares(QSqlQuery& __q, bool __clr, bool __ex)
@@ -1118,74 +965,10 @@ bool cPatch::updateShares(QSqlQuery& __q, bool __clr, bool __ex)
     return true;
 }
 
-/* ----------------------------- HUBS : cHub ----------------------------- */
 
-cHub::cHub() : cRecord()
+cNPort *cPatch::addPorts(const QString& __n, int __noff, int __from, int __to, int __off)
 {
-    //_DBGFN() << VDEBPTR(this) << endl;
-    _set(cHub::descr());
-}
-
-cHub::cHub(const cHub& __o) : cRecord(), ports()
-{
-    _cp(__o);
-    ports = __o.ports;
-}
-cHub::cHub(const QString& __name, const QString& __descr, eType __t) : cRecord(), ports()
-{
-    _set(cHub::descr());
-    _set(_descr_cHub().nameIndex(),  __name);
-    _set(_descr_cHub().descrIndex(), __descr);
-    _set(_ixIsVirtual, QVariant((bool)(__t & T_VIRTUAL)));
-    _set(_ixIsSwitch,  QVariant((bool)(__t & T_SWITCH)));
-}
-
-int cHub::_ixIsVirtual = NULL_IX;
-int cHub::_ixIsSwitch  = NULL_IX;
-
-const cRecStaticDescr&  cHub::descr() const
-{
-    if (initPDescr<cHub>(_sHubs)) {
-        _ixIsVirtual = _descr_cHub().toIndex(_sIsVirtual);
-        _ixIsSwitch  = _descr_cHub().toIndex(_sIsSwitch);
-    }
-    return *_pRecordDescr;
-}
-
-void cHub::toEnd()
-{
-    toEnd(idIndex());
-}
-
-bool cHub::toEnd(int i)
-{
-    if (i == idIndex()) {
-        atEndCont(ports, _sNodeId);
-        return true;
-    }
-    return false;
-}
-
-void cHub::clearToEnd()
-{
-    ports.clear();
-}
-
-bool cHub::insert(QSqlQuery &__q, bool __ex)
-{
-    if (!cRecord::insert(__q, __ex)) return false;
-    if (ports.count()) {
-        ports.clearId();
-        ports.setId(_sNodeId, getId());
-        int i = ports.insert(__q, __ex);
-        return i == ports.count();
-    }
-    return true;
-}
-
-cNPort *cHub::addPorts(const QString& __n, int __noff, int __from, int __to, int __off)
-{
-    cNPort *p = NULL;
+    cPPort *p = NULL;
     for (int i = __from; i <= __to; ++i) {
         p = addPort(nameAndNumber(__n, i + __noff), _sNul, i + __off);
     }
@@ -1193,51 +976,44 @@ cNPort *cHub::addPorts(const QString& __n, int __noff, int __from, int __to, int
     return p;
 }
 
-cNPort *cHub::addPort(const QString& __name, const QString& __descr, int __ix)
+cNPort *cPatch::addPort(const QString& __name, const QString& __descr, int __ix)
 {
-    static int ixPortIndex = NULL_IX;   // Ez konstans, de nem tudjuk csak az adatbázisból inicializálni.
-    if (ixPortIndex == NULL_IX) ixPortIndex = cNPort().toIndex(_sPortIndex);
     if (ports.count()) {
         if (0 <= ports.indexOf(__name))
             EXCEPTION(EDATA, -1, QString("Ilyen port név már létezik: %1").arg(__name));
-        if (__ix != NULL_IX) {
-            if (0 <= ports.indexOf(ixPortIndex, QVariant(__ix)))
-                EXCEPTION(EDATA, __ix, QString("Ilyen port index már létezik."));
-        }
+        if (0 <= ports.indexOf(cPPort::_ixPortIndex, QVariant(__ix)))
+            EXCEPTION(EDATA, __ix, QString("Ilyen port index már létezik."));
     }
-    cNPort  *p = new cNPort();
+    cPPort  *p = new cPPort();
     p->setName(__name);
-    if (__ix != NULL_IX) p->setId(ixPortIndex, __ix);
+    p->setId(cPPort::_ixPortIndex, __ix);
     p->setName(_sPortDescr, __descr);
-    p->setId(_sIfTypeId, cIfType::ifTypeId(getBool(_ixIsSwitch) ? _sEPort : _sBus));
     ports.append(p);
     return p;
 }
 
-cNPort *cHub::portSet(const QString& __name, const QString& __fn, const QVariant& __v)
+cNPort *cPatch::portSet(const QString& __name, const QString& __fn, const QVariant& __v)
 {
-    int i = ports.indexOf(__name);
+    int i = ports.indexOf(cPPort::_ixPortIndex, __name);
     if (i < 0) EXCEPTION(ENONAME, -1, QString(QObject::trUtf8("%1 port name not found.")).arg(__name));
-    cNPort *p = ports[i];
+    cPPort * p = ports[i];
     p->set(__fn, __v);
     return p;
 }
 
-cNPort *cHub::portSet(int __ix, const QString& __fn, const QVariant& __v)
+cNPort *cPatch::portSet(int __ix, const QString& __fn, const QVariant& __v)
 {
-    static int ixPortIndex = NULL_IX;   // Ez konstans, de nem tudjuk csak az adatbázisból inicializálni.
-    if (ixPortIndex == NULL_IX) ixPortIndex = cNPort().toIndex(_sPortIndex);
-    int i = ports.indexOf(ixPortIndex, __ix);
+    int i = ports.indexOf(cPPort::_ixPortIndex, __ix);
     if (i < 0) EXCEPTION(ENOINDEX, __ix, QObject::trUtf8("Port index not found"));
-    cNPort * p = ports[i];
+    cPPort *p = ports[i];
     p->set(__fn, __v);
     return p;
 }
 
-cNPort *cHub::portSet(int __ix, const QString& __fn, const QVariantList& __v)
+cNPort *cPatch::portSet(int __ix, const QString& __fn, const QVariantList& __v)
 {
-    cNPort *p = NULL;
     int ix = __ix;
+    cPPort *p = NULL;
     foreach (const QVariant& v, __v) {
         p = portSet(ix, __fn, v);
         ++ix;
@@ -1246,7 +1022,7 @@ cNPort *cHub::portSet(int __ix, const QString& __fn, const QVariantList& __v)
     return p;
 }
 
-CRECDEFD(cHub)
+
 /* ------------------------------ NODES : cNode ------------------------------ */
 
 cNode::cNode() : cRecord(), cNPort(_no_init_), ports(), _mainPortType(_sNPort)
@@ -1337,6 +1113,24 @@ void cNode::clearToEnd()
 {
     cNPort::clearToEnd();
     ports.clear();
+}
+
+void cNode::clearShares()
+{
+    EXCEPTION(EPROGFAIL);
+}
+
+bool cNode::setShare(int, int, int , int, bool)
+{
+    EXCEPTION(EPROGFAIL);
+    return false;
+}
+
+bool cNode::updateShares(QSqlQuery&, bool, bool)
+{
+    EXCEPTION(EPROGFAIL);
+    return false;
+
 }
 
 CRECDEFD(cNode)

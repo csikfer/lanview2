@@ -71,21 +71,21 @@ Ok      Nem hiba, ''Info''
 CREATE TABLE errors (
     error_id    serial      PRIMARY KEY,
     error_name  varchar(32) UNIQUE,
-    error_descr varchar(255),
+    error_note varchar(255),
     error_type  errtype     NOT NULL
 );
 ALTER TABLE errors OWNER TO lanview2;
 COMMENT ON TABLE  errors            IS 'Adatbázis műveletek közben keletkező hiba típusok táblája.';
 COMMENT ON COLUMN errors.error_id   IS 'Hiba típus ID.';
 COMMENT ON COLUMN errors.error_name IS 'Hiba típus név.';
-COMMENT ON COLUMN errors.error_descr IS 'Hiba típus leírása, hiba üzenet szövege.';
+COMMENT ON COLUMN errors.error_note IS 'Hiba típus leírása, hiba üzenet szövege.';
 COMMENT ON COLUMN errors.error_type IS 'Hiba sújossága.';
 
 INSERT INTO errors
-    ( error_id, error_name, error_type, error_descr) VALUES
+    ( error_id, error_name, error_type, error_note) VALUES
     (  0,   'Ok',           'Ok',       'O.K.');
 INSERT INTO errors
-    ( error_name,     error_type, error_descr) VALUES
+    ( error_name,     error_type, error_note) VALUES
     ( 'Start',        'Ok',       'Start program or service '),
     ( 'ReStart',      'Ok',       'Restart program or service '),
     ( 'Info',         'Ok',       'Info '),
@@ -201,7 +201,7 @@ BEGIN
         IF NOT FOUND THEN
             RAISE EXCEPTION 'Sytem data error in errors table, original error code is %', $1;
         END IF;
-        err.error_descr := err.error_descr || ' #' || $1;
+        err.error_note := err.error_note || ' #' || $1;
     END IF;
     RETURN err;
 END;
@@ -241,7 +241,7 @@ DECLARE
     err errors%ROWTYPE;
 BEGIN
     err := error_by_name($1);
-    return err.error_descr;
+    return err.error_note;
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION error_name2descr(varchar(32)) IS 'Hiba tipus leírás a név alapján';
@@ -294,12 +294,12 @@ BEGIN
     -- dblink vége
     CASE er.error_type
         WHEN 'Ok' THEN
-            RAISE INFO 'Info %, #% %',       $1, subc, (er.error_descr || subm);
+            RAISE INFO 'Info %, #% %',       $1, subc, (er.error_note || subm);
         WHEN 'Warning', 'Ok' THEN
-            RAISE WARNING 'WARNING %, #% %', $1, subc, (er.error_descr || subm);
+            RAISE WARNING 'WARNING %, #% %', $1, subc, (er.error_note || subm);
      -- WHEN 'Fatal', 'Error' THEN
         ELSE
-            RAISE EXCEPTION 'ERROR %, #% %', $1, subc, (er.error_descr || subm);
+            RAISE EXCEPTION 'ERROR %, #% %', $1, subc, (er.error_note || subm);
     END CASE;
     RETURN true;
 END;
@@ -316,7 +316,7 @@ Ha a megadott hiba név típusa nem  ''Ok'', vagy ''Warning'', akkor dob egy kiz
     text    DEFAULT ''no''    TRIGGER típusa vagy ''no''';
 
 CREATE OR REPLACE VIEW db_errors AS
-    SELECT date_of, reapeat, error_name, error_type, error_descr,
+    SELECT date_of, reapeat, error_name, error_type, error_note,
            user_id, tablename, trigger_op, err_subcode, err_submsg, src_name
     FROM db_errs JOIN errors USING(error_id);
 

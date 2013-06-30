@@ -5,7 +5,7 @@ CREATE TYPE imagetype AS ENUM ('BMP', 'GIF', 'JPG', 'JPEG', 'PNG', 'PBM', 'PGM',
 CREATE TABLE images (
     image_id        serial          PRIMARY KEY,
     image_name      varchar(32)     NOT NULL UNIQUE,
-    image_descr     varchar(255)    DEFAULT NULL,
+    image_note     varchar(255)    DEFAULT NULL,
     image_type      imagetype       NOT NULL DEFAULT 'PNG',
     image_sub_type  varchar(32)     DEFAULT NULL,
     image_data      bytea           NOT NULL
@@ -14,23 +14,27 @@ ALTER TABLE images OWNER TO lanview2;
 COMMENT ON TABLE  images             IS 'Bináris adatokat, tipikusan képeket tartalmazó tábla';
 COMMENT ON COLUMN images.image_id    IS 'A kép ill bináris adathamaz egyedi azonosítója';
 COMMENT ON COLUMN images.image_name  IS 'A kép ill bináris adathamaz egyedi neve';
-COMMENT ON COLUMN images.image_descr IS 'A kép ill bináris adathamaz opcionális megjegyzés, leírás';
+COMMENT ON COLUMN images.image_note IS 'A kép ill bináris adathamaz opcionális megjegyzés, leírás';
 COMMENT ON COLUMN images.image_type  IS 'A kép ill bináris adathamaz típusa, a kezelt kép formátumok, vagy BIN';
 COMMENT ON COLUMN images.image_sub_type IS 'Bináris adathamaz esetén (image_type = BIN) egy opcionális típus azonosító string';
 COMMENT ON COLUMN images.image_data  IS 'A kép ill bináris adathamaz.';
 
-CREATE TYPE locationtypes AS ENUM ('root',      -- Mindenki (nem unknown, vagy root) őse
-                                   'unknown',   -- Ha nem ismert
-                                   'real'       -- Valódi hely ill helyiség
-);
-ALTER TYPE locationtypes OWNER TO lanview2;
+
+CREATE TYPE placetype AS ENUM ('root', 'unknown', 'real');
+COMMENT ON TYPE placetype IS '
+A places rekord típus
+''root''	Mindenki őse (Az unknown típusnak, és önmagának nem)
+''unknown''    Ha nem ismert
+''real''       Valódi hely ill helyiség
+';
+ALTER TYPE placetype OWNER TO lanview2;
 
 CREATE TABLE places (
     place_id    serial              PRIMARY KEY,
     place_name  varchar(32)         NOT NULL UNIQUE,
-    place_descr varchar(255)        DEFAULT NULL,
+    place_note varchar(255)         DEFAULT NULL,
     place_alarm_msg varchar(255)    DEFAULT NULL,
-    place_type  locationtypes       DEFAULT 'real',
+    place_type  placetype           DEFAULT 'real',
     parent_id   integer             DEFAULT NULL REFERENCES places(place_id) MATCH SIMPLE
                                         ON DELETE RESTRICT ON UPDATE RESTRICT,
     image_id    integer             DEFAULT NULL REFERENCES images(image_id) MATCH SIMPLE
@@ -42,7 +46,7 @@ ALTER TABLE places OWNER TO lanview2;
 COMMENT ON TABLE  places            IS 'Helyiségek, helyek leírói a térképen ill. alaprajzon';
 COMMENT ON COLUMN places.place_id   IS 'A térkép ill. alaprajz azososítója ID';
 COMMENT ON COLUMN places.place_name IS 'A térkép ill. alaprajz azososítója név';
-COMMENT ON COLUMN places.place_descr IS '';
+COMMENT ON COLUMN places.place_note IS '';
 COMMENT ON COLUMN places.image_id   IS 'Opcionális térkép/alaprajz kép ID';
 COMMENT ON COLUMN places.frame      IS 'Határoló poligon/pozició a szülőn';
 COMMENT ON COLUMN places.tel        IS 'Telefonszámok a helyiségben';
@@ -53,13 +57,13 @@ COMMENT ON COLUMN places.parent_id  IS 'A térkép ill. alaprajz szülő, ha nin
 CREATE TABLE place_groups (
     place_group_id      serial          PRIMARY KEY,
     place_group_name    varchar(32)     NOT NULL UNIQUE,
-    place_group_descr   varchar(255)    DEFAULT NULL
+    place_group_note   varchar(255)    DEFAULT NULL
 );
 ALTER TABLE place_groups OWNER TO lanview2;
 COMMENT ON TABLE  place_groups                      IS 'Helyiségek, helyek csoportjai';
 COMMENT ON COLUMN place_groups.place_group_id       IS 'Csoport azososítója ID';
 COMMENT ON COLUMN place_groups.place_group_name     IS 'Csoport azososító neve';
-COMMENT ON COLUMN place_groups.place_group_descr    IS '';
+COMMENT ON COLUMN place_groups.place_group_note     IS '';
 
 -- //// LOC.PLACE_GROUPS_MEMBERS
 
@@ -73,7 +77,7 @@ ALTER TABLE place_group_places OWNER TO lanview2;
 
 -- ///
 
-INSERT INTO place_groups(place_group_id, place_group_name, place_group_descr) VALUES
+INSERT INTO place_groups(place_group_id, place_group_name, place_group_note) VALUES
     ( 0, 'none',    'No any location'   ),
     ( 1, 'all',     'All locations'     );
 -- Inkrementálunk egyet, mert PostgreSql egy barom
@@ -101,7 +105,7 @@ $$ LANGUAGE plperl;
 CREATE TRIGGER add_place_to_all_group AFTER INSERT ON places
     FOR EACH ROW EXECUTE PROCEDURE add_member_to_all_group('place_group_places', 'place_id', 'place_group_id', 1);
 
-INSERT INTO places(place_id, place_name, place_descr, place_type, parent_id) VALUES
+INSERT INTO places(place_id, place_name, place_note, place_type, parent_id) VALUES
     ( 0, 'unknown', 'unknown pseudo location',  'unknown',  NULL),
     ( 1, 'root',    'root pseudo location',     'root',     NULL);
 -- Inkrementálunk egyet, mert PostgreSql egy barom (az első új rekord ütközni fog enélkül)

@@ -18,7 +18,7 @@ INSERT INTO ipprotocols (protocol_id, protocol_name) VALUES
 CREATE TABLE services (
     service_id              serial          PRIMARY KEY,
     service_name            varchar(32)     NOT NULL,
-    service_descr           varchar(255)    DEFAULT NULL,
+    service_note           varchar(255)    DEFAULT NULL,
     service_alarm_msg       varchar(255)    DEFAULT NULL,
     protocol_id             integer         DEFAULT -1  -- nil
         REFERENCES ipprotocols(protocol_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
@@ -37,7 +37,7 @@ ALTER TABLE services OWNER TO lanview2;
 COMMENT ON TABLE  services                  IS 'Services table';
 COMMENT ON COLUMN services.service_id       IS 'Egyedi azonosító';
 COMMENT ON COLUMN services.service_name     IS '';
-COMMENT ON COLUMN services.service_descr    IS '';
+COMMENT ON COLUMN services.service_note    IS '';
 COMMENT ON COLUMN services.protocol_id      IS 'Ip protocol id (-1 : nil, if no ip protocol)';
 COMMENT ON COLUMN services.port             IS 'Default port number. or NULL';
 COMMENT ON COLUMN services.check_cmd        IS 'Default check command';
@@ -114,7 +114,7 @@ CREATE TABLE host_services (
     service_id          integer         NOT NULL
         REFERENCES services(service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     port_id             integer         DEFAULT NULL,
-    host_service_descr  varchar(255)    DEFAULT NULL,
+    host_service_note  varchar(255)    DEFAULT NULL,
     host_service_alarm_msg varchar(255) DEFAULT NULL,
     prime_service_id    integer         DEFAULT NULL
         REFERENCES services(service_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE RESTRICT,
@@ -156,7 +156,7 @@ CREATE UNIQUE INDEX host_services_node_id_service_id ON host_services(node_id, s
 
 COMMENT ON TABLE host_services IS 'A szolgáltatás-node összerendelések, ill. a konkrét szolgáltatások vagy ellenörzés utasítások táblája';
 COMMENT ON COLUMN host_services.host_service_id IS 'Egyedi azonosító';
-COMMENT ON COLUMN host_services.host_service_descr IS 'Megjegyzés / leírás.';
+COMMENT ON COLUMN host_services.host_service_note IS 'Megjegyzés / leírás.';
 COMMENT ON COLUMN host_services.host_service_alarm_msg IS 'Riasztás esetén egy megjelnítendő üzenet ill. magyarázó szöveg.';
 COMMENT ON COLUMN host_services.node_id IS 'A node ill. host azonosítója, amin a szolgáltatás, vagy az ellenörzés fut.';
 COMMENT ON COLUMN host_services.service_id IS 'A szolgáltatást, vagy az ellenörzés típusát azonosító ID';
@@ -213,7 +213,7 @@ CREATE TABLE host_service_logs (
     new_state           notifswitch     NOT NULL,
     new_soft_state      notifswitch     NOT NULL,
     new_hard_state      notifswitch     NOT NULL,
-    event_descr         varchar(255)    DEFAULT NULL,
+    event_note         varchar(255)    DEFAULT NULL,
     superior_alarm      integer         DEFAULT NULL,
     noalarm             boolean         NOT NULL,
     service_name        varchar(32)     NOT NULL DEFAULT '',
@@ -269,7 +269,7 @@ ALTER TYPE drawtype OWNER TO lanview2;
 CREATE TABLE host_service_vars (
     service_var_id      serial          PRIMARY KEY,
     service_var_name    varchar(32)     NOT NULL,
-    service_var_descr   varchar(255)    DEFAULT NULL,
+    service_var_note   varchar(255)    DEFAULT NULL,
     host_service_id     integer         NOT NULL
         REFERENCES host_services(host_service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     color               integer         DEFAULT 0,
@@ -519,7 +519,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE VIEW view_host_services AS
     SELECT
         hs.host_service_id          AS host_service_id,
-        hs.host_service_descr       AS host_service_descr,
+        hs.host_service_note       AS host_service_note,
         hs.host_service_alarm_msg   AS host_service_alarm_msg,
         hs.node_id                  AS node_id,
         n.node_name                 AS node_name,

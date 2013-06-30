@@ -2584,6 +2584,27 @@ int cRecord::delByName(QSqlQuery& q, const QString& __n, bool __pat, bool __only
     return  n;
 }
 
+int cRecord::touch(QSqlQuery& q)
+{
+    int iLastTime = o.toIndex(_sLastTime);
+    QBitArray bset  = o.mask(iLastTime);
+    clear(iLastTime);
+    QBitArray where = getSetMap();
+    if (where.isEmpty()) return -1;
+    if (where.size() > iLastTime && where[iLastTime]) where.clearBit(iLastTime);
+    QString sql = QString("UPDATE %1 SET last_time = NOW() ").arg(fullTableNameQ());
+    sql += whereString(where);
+    sql += " RETURNING *";
+    query(q, sql, where, true);
+    if (q.first()) {
+        set(q.record());
+        _stat |= ES_EXIST;
+        return q.size();
+    }
+    set();
+    return 0;
+}
+
 /* ******************************************************************************************************* */
 // Dummy osztály dummy példány
 no_init_ _no_init_;

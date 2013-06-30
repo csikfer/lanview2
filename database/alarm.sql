@@ -11,7 +11,7 @@ CREATE TABLE alarms (
     max_status      notifswitch NOT NULL,
     last_status     notifswitch NOT NULL,
     begin_time      timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    event_descr     varchar(255),
+    event_note     varchar(255),
     superior_alarm  integer     DEFAULT NULL
             REFERENCES alarms(alarm_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
     noalarm         boolean     NOT NULL,
@@ -35,7 +35,7 @@ COMMENT ON COLUMN alarms.first_status IS 'A riasztás keletkezésekori státusz'
 COMMENT ON COLUMN alarms.max_status IS 'A riasztás ideje alatti legsújosabb státusz.';
 COMMENT ON COLUMN alarms.last_status IS 'Az utolsó statusz a riastás vége elött';
 COMMENT ON COLUMN alarms.begin_time IS 'A riasztás kezdetánek az időpontja';
-COMMENT ON COLUMN alarms.event_descr IS 'A risztást létrehozó üzenete, ha van';
+COMMENT ON COLUMN alarms.event_note IS 'A risztást létrehozó üzenete, ha van';
 COMMENT ON COLUMN alarms.superior_alarm IS 'A egy függő szervíz, vagy hoszt is riastásban van, akkor értéke true';
 COMMENT ON COLUMN alarms.noalarm    IS 'Ha az értesítés riasztásról le van tíltva, akkor értéke true.';
 COMMENT ON COLUMN alarms.end_time   IS 'A riasztás végének az időpontja';
@@ -227,7 +227,7 @@ BEGIN
        hs.hard_state         <> old_hs.hard_state OR
        hs.soft_state         <> old_hs.soft_state THEN
         INSERT INTO host_service_logs(host_service_id, old_state, old_soft_state, old_hard_state,
-                           new_state, new_soft_state, new_hard_state, event_descr, superior_alarm, noalarm,
+                           new_state, new_soft_state, new_hard_state, event_note, superior_alarm, noalarm,
                            service_name, node_name)
             VALUES  (hsid, old_hs.host_service_state, old_hs.soft_state, old_hs.hard_state,
                            hs.host_service_state, hs.soft_state, hs.hard_state, note, sup, na = 'on',
@@ -256,7 +256,7 @@ BEGIN
         WHEN (old_hs.host_service_state < 'warning' OR old_hs.host_service_state = 'unknown')
          AND hs.host_service_state >= 'warning' THEN
             RAISE INFO 'New alarms record';
-            INSERT INTO alarms (host_service_id, daemon_id, first_status, max_status, last_status, event_descr, superior_alarm, noalarm)
+            INSERT INTO alarms (host_service_id, daemon_id, first_status, max_status, last_status, event_note, superior_alarm, noalarm)
                 VALUES(hsid, dmid, hs.host_service_state, hs.host_service_state, hs.host_service_state, note, sup, na = 'on' )
                 RETURNING alarm_id INTO hs.act_alarm_log_id;
         -- A helyzet fokozódik

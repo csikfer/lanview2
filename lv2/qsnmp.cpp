@@ -607,12 +607,12 @@ bool cSnmp::checkOId(const cOId& __o)
     if (__o.size() > MAX_OID_LEN) EXCEPTION(EPROGFAIL);
     if (__o.status != 0) {
         status = __o.status;
-        emsg   = __o.emsg.isEmpty() ? _sOIdInv : __o.emsg;
+        emsg   = __o.emsg.isEmpty() ? QObject::trUtf8("Invalid OID") : __o.emsg;
         return false;
     }
     if (__o.size() < MIN_OID_LEN) {
         status = 1;
-        emsg   = _sOIdNull;
+        emsg   = QObject::trUtf8("OID is NULL");
         return false;
     }
     return true;

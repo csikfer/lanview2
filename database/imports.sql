@@ -38,12 +38,14 @@ COMMENT ON COLUMN imports.ended IS 'A feldolgozás befejezésének az időpontja
 COMMENT ON COLUMN imports.result_msg IS 'Az import válasza a feldolgozásra (hibaüzenet, megjegyzés, stb.).';
 COMMENT ON COLUMN imports.applog_id IS 'Ha feldolgozáskor hiba rekord készült, akkor annak az azonosítója.';
 
+CREATE TYPE templatetype AS ENUM ('macros', 'patchs', 'nodes', 'snmpdevices');
+
 CREATE TABLE import_templates (
-    import_template_id	serial	PRIMARY KEY,
-    template_type	varchar(32)	NOT NULL,
+    import_template_id	serial		PRIMARY KEY,
     template_name	varchar(32)	NOT NULL,
-    template_descr	varchar(255)	DEFAULT NULL,
-    template_text	text		    NOT NULL,
+    template_type	templatetype	NOT NULL,
+    template_note	varchar(255)	DEFAULT NULL,
+    template_text	text		NOT NULL,
     UNIQUE (template_type, template_name)
 );
 ALTER TABLE import_templates OWNER TO lanview2;
@@ -52,5 +54,5 @@ COMMENT ON TABLE  import_templates IS 'Az importban mentett makrók és egyébb 
 COMMENT ON COLUMN import_templates.import_template_id IS 'Egyedi rekord azonosító.';
 COMMENT ON COLUMN import_templates.template_type IS 'A template típusa (macros, patchs,...)';
 COMMENT ON COLUMN import_templates.template_name IS 'A minta vagy makró neve';
-COMMENT ON COLUMN import_templates.template_descr IS 'Opcionális megjegyzés';
+COMMENT ON COLUMN import_templates.template_note IS 'Opcionális megjegyzés';
 COMMENT ON COLUMN import_templates.template_text IS 'A makró vagy minta tartalma.';

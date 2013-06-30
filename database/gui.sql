@@ -29,7 +29,7 @@ listed_all  Csak a felsorolt leszármazottak és ősök megjelenítése';
 CREATE TABLE table_shapes (
     table_shape_id      serial          PRIMARY KEY,
     table_shape_name    varchar(32)     NOT NULL UNIQUE,
-    table_shape_descr   varchar(255)    DEFAULT NULL,
+    table_shape_note   varchar(255)    DEFAULT NULL,
     table_shape_title   varchar(255)    DEFAULT NULL,
     table_shape_type    tableshapetype[] DEFAULT '{simple}',
     table_name          varchar(32)     NOT NULL,
@@ -51,7 +51,7 @@ ALTER TABLE table_shapes OWNER TO lanview2;
 COMMENT ON TABLE  table_shapes                      IS 'Tábla megjelenítő lírók (Qt GUI) táblája';
 COMMENT ON COLUMN table_shapes.table_shape_id       IS 'Egyedi azonosító ID';
 COMMENT ON COLUMN table_shapes.table_shape_name     IS 'A shape neve, egyedi azonosító';
-COMMENT ON COLUMN table_shapes.table_shape_descr    IS 'A shape leírása ill. megjegyzés.';
+COMMENT ON COLUMN table_shapes.table_shape_note    IS 'A shape leírása ill. megjegyzés.';
 COMMENT ON COLUMN table_shapes.table_shape_title    IS 'A shape megjelenítésekor megjelenő táblázat cím.';
 COMMENT ON COLUMN table_shapes.table_shape_type     IS 'A listázandó objektum típusa.';
 COMMENT ON COLUMN table_shapes.table_name           IS 'A shape álltal megjelenítendő tábla neve';
@@ -75,7 +75,7 @@ desc    Csökkenő sorrend.';
 CREATE TABLE table_shape_fields (
     table_shape_field_id    serial          PRIMARY KEY,
     table_shape_field_name  varchar(32)     NOT NULL,
-    table_shape_field_descr varchar(255)    DEFAULT NULL,
+    table_shape_field_note varchar(255)    DEFAULT NULL,
     table_shape_field_title varchar(32)     DEFAULT NULL,
     table_shape_id          integer         NOT NULL REFERENCES table_shapes(table_shape_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     field_sequence_number   integer         NOT NULL,
@@ -96,7 +96,7 @@ ALTER TABLE table_shape_fields OWNER TO lanview2;
 COMMENT ON TABLE  table_shape_fields                         IS 'Tábla shape oszlop leíró tábla';
 COMMENT ON COLUMN table_shape_fields.table_shape_field_id    IS 'Egyedi azonosító ID';
 COMMENT ON COLUMN table_shape_fields.table_shape_field_name  IS 'Mező név, a query-ben használt név.';
-COMMENT ON COLUMN table_shape_fields.table_shape_field_descr IS 'A mező dialog box-ban megjelenő neve';
+COMMENT ON COLUMN table_shape_fields.table_shape_field_note IS 'A mező dialog box-ban megjelenő neve';
 COMMENT ON COLUMN table_shape_fields.table_shape_field_title IS 'Megjelenített mező (oszlop) név';
 COMMENT ON COLUMN table_shape_fields.table_shape_id          IS 'Távoli kulcs a tulajdonos rekordra.';
 COMMENT ON COLUMN table_shape_fields.field_sequence_number   IS 'A mező sorrendje a táblázatban / dialog boxban';
@@ -129,7 +129,7 @@ SQL	    egy WHERE feltétel megadása';
 
 CREATE TABLE table_shape_filters (
     table_shape_filter_id       serial          PRIMARY KEY,
-    table_shape_filter_descr    varchar(255)    DEFAULT NULL,
+    table_shape_filter_note    varchar(255)    DEFAULT NULL,
     table_shape_field_id        integer         REFERENCES table_shape_fields(table_shape_field_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     filter_type                 filtertype      NOT NULL
 );
@@ -143,7 +143,7 @@ COMMENT ON COLUMN table_shape_filters.filter_type   IS 'Alkalmazható filter tí
 CREATE TABLE enum_vals (
     enum_val_id         serial      PRIMARY KEY,
     enum_val_name       varchar(32) NOT NULL,
-    enum_val_descr      varchar(255),
+    enum_val_note      varchar(255),
     enum_type_name      varchar(32) NOT NULL,
     UNIQUE (enum_type_name, enum_val_name)
 );
@@ -151,7 +151,7 @@ ALTER TABLE enum_vals OWNER TO lanview2;
 
 COMMENT ON TABLE  enum_vals IS 'Enumerációs értékek megjelenítését segítő tábla.';
 COMMENT ON COLUMN enum_vals.enum_val_name IS 'Az enumerációs típus egy lehetséges értéke';
-COMMENT ON COLUMN enum_vals.enum_val_descr IS 'Az enumerációs értékhez tartozó leírás, megjelenítednó szöveg';
+COMMENT ON COLUMN enum_vals.enum_val_note IS 'Az enumerációs értékhez tartozó leírás, megjelenítednó szöveg';
 COMMENT ON COLUMN enum_vals.enum_type_name IS 'Az enumerációs típusnak a neve';
 
 
@@ -185,7 +185,7 @@ DECLARE
 BEGIN
     IF $2 IS NULL THEN
         BEGIN
-            SELECT enum_val_descr INTO descr FROM enum_vals WHERE enum_val_name = $1;
+            SELECT enum_val_note INTO descr FROM enum_vals WHERE enum_val_name = $1;
             EXCEPTION
                 WHEN NO_DATA_FOUND THEN     -- nem találtunk
                     descr = $1;
@@ -193,7 +193,7 @@ BEGIN
                     PERFORM error('Ambiguous', -1, $1, 'enum_name2descr()', 'enum_vals');
         END;
     ELSE 
-        SELECT enum_val_descr INTO descr FROM enum_vals WHERE enum_val_name = $1 AND enum_type_name = $2;
+        SELECT enum_val_note INTO descr FROM enum_vals WHERE enum_val_name = $1 AND enum_type_name = $2;
         IF NOT FOUND THEN
             descr = $1;
         END IF;
@@ -207,7 +207,7 @@ COMMENT ON FUNCTION enum_name2descr(varchar(32), varchar(32)) IS
 Paraméterek:
     $1 Az enumerációs érték.
     $2 Az enumerációs típus neve opcionális.
-Ha van megfelelő rekord enum_vals táblában, akkor enum_val_descr értékével tér vissza, ha nem akkor az első paraméter értékével.
+Ha van megfelelő rekord enum_vals táblában, akkor enum_val_note értékével tér vissza, ha nem akkor az első paraméter értékével.
 Ha nem adtuk meg az enumerációs típust, és az enumerációs értékre több találatot is kapunk, akkor a függvény hibát dob.';
 
 

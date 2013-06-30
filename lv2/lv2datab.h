@@ -1416,6 +1416,11 @@ public:
     bool _isEmpty()                        { return isEmpty(); }
     /// Megvizsgálja, hogy a megadott indexű bit a likeMask-ban milyen értékű, és azzal tér vissza, ha nincs ilyen elem, akkor false-val.
     bool _isLike(int __ix) const { return __ix < 0 || _likeMask.size() <= __ix ? false : _likeMask[__ix]; }
+    /// Az aktuális időt írja a last_time nevű mezőbe, az első módosított rekord aktuális tartalmát visszaolvassa.
+    /// Azt, hogy mely rekordokat kell módosítani, az objektum adattartalma határorra meg
+    /// A last_time nevű mező törlése után azok a rekordok lesznek módosítva, melyeket az o.completion() beolvasna, de a
+    /// @return A módosított rekordok száma. Ha üres objektummal hívjuk, akkor -1
+    int touch(QSqlQuery& q);
 protected:
     /// Copy constructor. Nem támogatott konstruktor. Dob egy kizárást.
     cRecord(const cRecord& __o);

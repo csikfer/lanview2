@@ -1,6 +1,6 @@
 -- //////////////////// 0 - MAIN DATABASE /////////////////////
 -- PostgreSQL Config:
--- APPEND: /etc/postgresql/8.4/main/postgresql.conf
+-- APPEND: /etc/postgresql/.../main/postgresql.conf
 /*
 custom_variable_classes = 'lanview2'
 # Session actual user name (lanview2 user name)
@@ -209,80 +209,3 @@ BEGIN;
 SELECT error('Ok', 0, 'First log message / Init lanview2 database ...');
 END;
 
-/*
--- **** TEST ****
-INSERT INTO patchs (node_name) VALUES ('patch1'), ('patch2');
-INSERT INTO nodes  (node_name, port_name) VALUES ('node1', 'N1:0'), ('node2', 'N2:0');
-INSERT INTO pports (port_name, port_index, node_id) VALUES
-    ('P1:1', 1, node_name2id('patch1')),
-    ('P1:2', 2, node_name2id('patch1')),
-    ('P1:3', 3, node_name2id('patch1')),
-    ('P2:1', 1, node_name2id('patch2')),
-    ('P2:2', 2, node_name2id('patch2')),
-    ('P2:3', 3, node_name2id('patch2'));
-INSERT INTO nports (port_name, node_id) VALUES
-    ('N1:1', node_name2id('node1')),
-    ('N1:2', node_name2id('node1')),
-    ('N1:3', node_name2id('node1')),
-    ('N1:4', node_name2id('node1')),
-    ('N1:5', node_name2id('node1')),
-    ('N2:1', node_name2id('node2')),
-    ('N2:2', node_name2id('node2')),
-    ('N2:3', node_name2id('node2')),
-    ('N2:4', node_name2id('node2')),
-    ('N2:5', node_name2id('node2'));
-
-INSERT INTO phs_links_table(port_id1, phs_link_type1, port_id2, phs_link_type2, port_shared) VALUES ( port_nn2id('N1:1', 'node1'),  NULL,   port_nn2id('N2:1', 'node2'),  NULL, '');    -- N1:1 <-> N2:1
-INSERT INTO phs_links_table(port_id1, phs_link_type1, port_id2, phs_link_type2, port_shared) VALUES ( port_nn2id('P1:1', 'patch1'), 'Back', port_nn2id('P2:1', 'patch2'),'Back', '');   -- P1:1 [-] P2:1
-INSERT INTO phs_links_table(port_id1, phs_link_type1, port_id2, phs_link_type2, port_shared) VALUES ( port_nn2id('P1:2', 'patch1'), 'Back', port_nn2id('P2:2', 'patch2'),'Back', '');   -- P1:2 [-] P2:2
-INSERT INTO phs_links_table(port_id1, phs_link_type1, port_id2, phs_link_type2, port_shared) VALUES ( port_nn2id('P1:1', 'patch1'), 'Front',port_nn2id('N1:2', 'node1'),  NULL, '');    -- P1:1 ]-> N1:2
-INSERT INTO phs_links_table(port_id1, phs_link_type1, port_id2, phs_link_type2, port_shared) VALUES ( port_nn2id('P1:2', 'patch1'), 'Front',port_nn2id('N1:3', 'node1'),  NULL, 'A');   -- P1:2A]-> N1:3
-INSERT INTO phs_links_table(port_id1, phs_link_type1, port_id2, phs_link_type2, port_shared) VALUES ( port_nn2id('P1:2', 'patch1'), 'Front',port_nn2id('N1:4', 'node1'),  NULL, 'B');   -- P1:2B]-> N1:4
-INSERT INTO phs_links_table(port_id1, phs_link_type1, port_id2, phs_link_type2, port_shared) VALUES ( port_nn2id('P2:1', 'patch2'), 'Front',port_nn2id('N2:2', 'node2'),  NULL, '');    -- P2:1 ]-> N2:2 !
-INSERT INTO phs_links_table(port_id1, phs_link_type1, port_id2, phs_link_type2, port_shared) VALUES ( port_nn2id('P2:2', 'patch2'), 'Front',port_nn2id('N2:4', 'node2'),  NULL, 'B');
-INSERT INTO phs_links_table(port_id1, phs_link_type1, port_id2, phs_link_type2, port_shared) VALUES ( port_nn2id('P2:2', 'patch2'), 'Front',port_nn2id('N2:3', 'node2'),  NULL, 'A');
-
-END; */
-/*
--- Ennek nem kéne mennie (ha kész lessznek a triggerek)
-INSERT INTO nports (port_name, iftype_id, node_id) VALUES
-    ('P2:4', 1, node_name2id('patch2')),
-    ('P2:5', 1, node_name2id('patch2')),
-    ('P1:4', 1, node_name2id('patch1'));
-
-INSERT INTO patchs (node_id, node_name) VALUES (5,'patch3'), (6,'patch4');
-INSERT INTO nodes  (node_id, node_name, port_name) VALUES (7, 'node3', 'N3:0'), (8, 'node4', 'N4:0');
-
-INSERT INTO patchs (node_name) VALUES ('patch5'), ('patch6');
-INSERT INTO nodes  (node_name, port_name) VALUES ('node5', 'N5:0'), ('node6', 'N6:0');
-
-INSERT INTO host_services
- (node_id, service_id, port_id) VALUES
- (node_name2id('node1'), 1, port_name2id('N1:1'));     -- jó
-INSERT INTO host_services
- (node_id, service_id, port_id) VALUES
- (node_name2id('node2'), 1, port_name2id('P1:1'));     -- nem jó
-*/
--- /////// TEST DATA ....
-/*
-INSERT INTO vlans ( vlan_id, vlan_name, vlan_descr, vlan_stat ) VALUES
-    (    1, 'admdev',   'Network devices',              'on'),
-    ( 3001, 'DEVICES',  'KKFK Server and Devices',      'on'),
-    ( 3016, 'HALLGDEV', 'KKFKEDU Server and Devices',   'on');
-
-INSERT INTO subnets ( subnet_id, subnet_name, subnet_descr, netaddr, vlan_id, is_primary) VALUES
-    (    1, 'admdev',   'Network devices',              '172.20.128.0/24',     1, 'on'),
-    (    2, 'DEVICES',  'KKFK Server and Devices',      '172.20.1.0/24',    3001, 'on'),
-    (    3, 'HALLGDEV', 'KKFKEDU Server and Devices',   '172.20.16.0/24',   3016, 'on');
-
-INSERT INTO snmpdevices
- ( node_id, node_name, node_stat, port_name, port_index, iftype_id, hwaddress, address, subnet_id, sysname) VALUES
- ( 1,       'moxa1',   'On',    'Moxa Ethernet',  1,     6,  '0090e80a10f8','172.20.128.46', 1,  'WLANCGW' );
-
-INSERT INTO interfaces
- (port_name,   port_index, iftype_id, node_id) VALUES
- ('Moxa serial port 01',2, 1,      1 );
-*/
-
-
--- SELECT * FROM db_errs JOIN errors USING (error_id);
