@@ -225,12 +225,10 @@ long cVLan::insertNew(long __i, const QString& __n, const QString& __d, bool __s
 cIpAddress::cIpAddress() : cRecord()
 {
     _set(cIpAddress::descr());
-    _initIpAddress(*cIpAddress::_pRecordDescr);
 }
 
 cIpAddress::cIpAddress(const cIpAddress& __o) : cRecord()
 {
-    _initIpAddress(*cIpAddress::_pRecordDescr);
     __cp(__o);
     _copy(__o, *_pRecordDescr);
 }
@@ -238,7 +236,6 @@ cIpAddress::cIpAddress(const cIpAddress& __o) : cRecord()
 cIpAddress::cIpAddress(const QHostAddress& __a, const QString& __t)  : cRecord()
 {
     _set(cIpAddress::descr());
-    _initIpAddress(*cIpAddress::_pRecordDescr);
     _set(_ixAddress, QVariant::fromValue(netAddress(__a)));
     _set(cIpAddress::_pRecordDescr->toIndex(_sIpAddressType), QVariant(__t));
 }
@@ -246,10 +243,19 @@ cIpAddress::cIpAddress(const QHostAddress& __a, const QString& __t)  : cRecord()
 CRECDEFD(cIpAddress)
 
 // -- virtual
+int cIpAddress::_ixPortId = NULL_IX;
+int cIpAddress::_ixAddress = NULL_IX;
+int cIpAddress::_ixSubNetId = NULL_IX;
+int cIpAddress::_ixIpAddressType = NULL_IX;
+
 const cRecStaticDescr&  cIpAddress::descr() const
 {
     if (initPDescr<cIpAddress>(_sIpAddresses)) {
-        CHKENUM(_sIpAddressType, addrType);
+        _ixPortId        = _pRecordDescr->toIndex(_sPortId);
+        _ixAddress       = _pRecordDescr->toIndex(_sAddress);
+        _ixSubNetId      = _pRecordDescr->toIndex(_sSubNetId);
+        _ixIpAddressType = _pRecordDescr->toIndex(_sIpAddressType);
+        CHKENUM(_ixIpAddressType, addrType);
     }
     return *_pRecordDescr;
 }
@@ -330,11 +336,13 @@ long cPortParam::insertNew(const QString& __n, const QString& __de, const QStrin
 CRECCNTR(cPortParamValue)
 CRECDEFD(cPortParamValue)
 
-int              cPortParamValue::_ixPortParamId = -1;
+int cPortParamValue::_ixPortParamId = NULL_ID;
+int cPortParamValue::_ixPortId = NULL_ID;
 const cRecStaticDescr&  cPortParamValue::descr() const
 {
     if (initPDescr<cPortParamValue>(_sPortParamValues)) {
         _ixPortParamId = _pRecordDescr->toIndex(_sPortParamId);
+        _ixPortId      = _pRecordDescr->toIndex(_sPortId);
     }
     return *_pRecordDescr;
 }
@@ -369,24 +377,17 @@ void    cPortParamValue::clearToEnd()
 
 cPortParamValues::cPortParamValues() : tRecordList<cPortParamValue>()
 {
-    if (_ixPortId < 0) {
-        _ixPortId = cPortParamValue(_no_init_).descr().toIndex(_sPortId);
-    }
+    ;
 }
 
 cPortParamValues::cPortParamValues(const cPortParamValue& __v) : tRecordList<cPortParamValue>(__v)
 {
-    if (_ixPortId < 0) {
-        _ixPortId = cPortParamValue(_no_init_).descr().toIndex(_sPortId);
-    }
+    ;
 }
 
 cPortParamValues::cPortParamValues(QSqlQuery& __q, qlonglong __port_id) : tRecordList<cPortParamValue>()
 {
-    if (_ixPortId < 0) {
-        _ixPortId = cPortParamValue(_no_init_).descr().toIndex(_sPortId);
-    }
-    fetch(__q, __port_id);
+    ;
 }
 
 cPortParamValues::cPortParamValues(const cPortParamValues& __o) : tRecordList<cPortParamValue>()
@@ -403,8 +404,6 @@ cPortParamValues& cPortParamValues::operator=(const cPortParamValues& __o)
     }
     return *this;
 }
-
-int cPortParamValues::_ixPortId = -1;
 
 const cPortParamValue& cPortParamValues::operator[](const QString& __n) const
 {
@@ -433,7 +432,7 @@ int       cPortParamValues::insert(QSqlQuery &__q, qlonglong __port_id, bool __e
 {
     iterator i;
     for (i = begin(); i < end(); i++) {
-        (*i)->set(_sPortId, QVariant(__port_id));
+        (*i)->set(cPortParamValue::_ixPortId, QVariant(__port_id));
     }
     return tRecordList<cPortParamValue>::insert(__q, __ex);
 }
@@ -481,45 +480,30 @@ cNPort::cNPort() : cRecord()
 {
     // _DBGFN() << VDEBPTR(this) << endl;
     _set(cNPort::descr());
-    _initNPort(_descr_cNPort());
 }
 
 cNPort::cNPort(const cNPort& __o) : cRecord()
 {
-    _initNPort(_descr_cNPort());
     __cp(__o);
     _copy(__o, _descr_cNPort());
     params = __o.params;
 }
 
 CRECDEFD(cNPort)
-CRECDDCR(cNPort, _sNPorts)
+
 // -- virtual
 
-bool cNPort::insert(QSqlQuery &__q, bool __ex)
+int cNPort::_ixNodeId = NULL_ID;
+int cNPort::_ixPortIndex = NULL_ID;
+int cNPort::_ixIfTypeId = NULL_ID;
+const cRecStaticDescr&  cNPort::descr() const
 {
-    bool r = cRecord::insert(__q, __ex);
-    if (r) {
-        qlonglong id = getPortId();
-        // PDEB(VVERBOSE) << __PRETTY_FUNCTION__ << " new port_id = " << id << endl;
-        cPortParamValues ps = params;
-        return ps.insert(__q, id, __ex) == ps.size();
+    if (initPDescr<cNPort>(_sNPorts)) {
+        _ixNodeId = _pRecordDescr->toIndex(_sNodeId);
+        _ixPortIndex = _pRecordDescr->toIndex(_sPortIndex);
+        _ixIfTypeId  = _pRecordDescr->toIndex(_sIfTypeId);
     }
-    return false;
-}
-
-void cNPort::toEnd()
-{
-    toEnd(_ixPortId);
-}
-
-bool cNPort::toEnd(int i)
-{
-    if (_ixPortId == i) {
-        atEndCont(params, _sPortId);
-        return true;
-    }
-    return false;
+    return *_pRecordDescr;
 }
 
 void cNPort::clearToEnd()
@@ -527,36 +511,42 @@ void cNPort::clearToEnd()
     params.clear();
 }
 
-cNPort * cNPort::newPort(const cIfType& __t, int __i)
+void cNPort::toEnd()
 {
-    cNPort *r = NULL;
-    QStringList portobjtypes = __t.get(_sIfTypeObjType).toStringList();
-    if (portobjtypes.isEmpty()) EXCEPTION(EDATA, 0, "port_obj_type is empty");
-    QString portobjtype = portobjtypes[0];
-    if (portobjtypes.size() > 1) {
-        if (__i == -1) EXCEPTION(AMBIGUOUS);
-        if (__i < 0 || __i >= portobjtypes.size()) EXCEPTION(ENOINDEX, __i);
-        portobjtype = portobjtypes[__i];
-    }
-    else if (__i > 0) EXCEPTION(ENOINDEX, __i);
-    // PDEB(VVERBOSE) <<  __PRETTY_FUNCTION__ << " allocated: " << portobjtype << endl;
-    if      (portobjtype == _sNPort)      r = new cNPort();
-    else if (portobjtype == _sInterface)  r = new cInterface();
-    else if (portobjtype == _sIfaceAddr)  r = new cIfaceAddr();
-    else                                  EXCEPTION(EDATA, __t.getId(), portobjtype);
-    r->set(_sIfTypeId, __t.getId());
-    return r;
+    toEnd(idIndex());
 }
+
+bool cNPort::toEnd(int i)
+{
+    if (idIndex() == i) {
+        atEndCont(params, cPortParamValue::_ixPortId);
+        return true;
+    }
+    return false;
+}
+
+bool cNPort::insert(QSqlQuery &__q, bool __ex)
+{
+    bool r = cRecord::insert(__q, __ex);
+    if (r) {
+        qlonglong id = getId();
+        return params.insert(__q, id, __ex) == params.size();
+    }
+    return false;
+}
+
+// --
 
 bool cNPort::fetchPortByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id)
 {
     clear();
-    set(_sNodeId,   QVariant(__node_id));
-    set(_sPortName, __port_name);
+    set(_ixNodeId,   QVariant(__node_id));
+    set(nameIndex(), __port_name);
     int n = completion(__q);
     __q.finish();
     return n == 1;
 }
+
 qlonglong cNPort::getPortIdByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, bool ex) const
 {
     cNPort p;
@@ -571,12 +561,13 @@ bool cNPort::fetchPortByName(QSqlQuery& __q, const QString& __port_name, const Q
     // A patch a közös ős
     qlonglong nid = cPatch().getIdByName(__q, __node_name, __ex);
     if (nid == NULL_ID) return false;
-    setId(_sNodeId, nid);
-    setName(_sPortName, __port_name);
+    setId(_ixNodeId, nid);
+    setName(nameIndex(), __port_name);
     int n = completion(__q);
     __q.finish();
     return n == 1;
 }
+
 qlonglong cNPort::getPortIdByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, bool ex) const
 {
     cNPort p;
@@ -588,25 +579,12 @@ qlonglong cNPort::getPortIdByName(QSqlQuery& __q, const QString& __port_name, co
 bool cNPort::fetchPortByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id)
 {
     clear();
-    set(_sNodeId,   QVariant(__node_id));
-    set(_sPortIndex, QVariant(__port_index));
-    int n = completion(__q);
-    return n == 1;
-}
-
-bool cNPort::fetchPortByIndex(QSqlQuery& __q, qlonglong __port_index, const QString& __node_name, bool __ex)
-{
-    clear();
-    // A patch a közös ős
-    qlonglong nid = cPatch().getIdByName(__q, __node_name, __ex);
-    if (nid == NULL_ID) return false;
-    setId(_sNodeId, nid);
-    setId(_sPortIndex, __port_index);
+    setId(_ixNodeId,   __node_id);
+    setId(_ixPortIndex, __port_index);
     int n = completion(__q);
     __q.finish();
     return n == 1;
 }
-
 
 qlonglong cNPort::getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id, bool ex) const
 {
@@ -616,10 +594,45 @@ qlonglong cNPort::getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, qlong
     return p.getId();
 }
 
+bool cNPort::fetchPortByIndex(QSqlQuery& __q, qlonglong __port_index, const QString& __node_name, bool __ex)
+{
+    clear();
+    // A patch a közös ős
+    qlonglong nid = cPatch().getIdByName(__q, __node_name, __ex);
+    if (nid == NULL_ID) return false;
+    setId(_ixNodeId, nid);
+    setId(_ixPortIndex, __port_index);
+    int n = completion(__q);
+    __q.finish();
+    return n == 1;
+}
+
+
+qlonglong cNPort::getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, const QString& __node_name, bool ex) const
+{
+    cNPort p;
+    if (!p.fetchPortByIndex(__q, __port_index, __node_name, ex) && ex)
+        EXCEPTION(EDATA, __port_index, __node_name);
+    return p.getId();
+}
+
+cNPort * cNPort::newPortObj(const cIfType& __t)
+{
+    cNPort *r = NULL;
+    QString portobjtype = __t.get(_sIfTypeObjType).toString();
+    // PDEB(VVERBOSE) <<  __PRETTY_FUNCTION__ << " allocated: " << portobjtype << endl;
+    if      (portobjtype == _sNPort)        r = new cNPort();
+    else if (portobjtype == _sPPort)        r = new cPPort();
+    else if (portobjtype == _sInterface)    r = new cInterface();
+    else                                    EXCEPTION(EDATA, __t.getId(), portobjtype);
+    r->set(_sIfTypeId, __t.getId());
+    return r;
+}
+
 template<class P> static inline P * getPortObjByIdT(QSqlQuery& q, qlonglong  __id, bool __ex)
 {
     P *p = new P();
-    p->setPortId(__id);
+    p->setId(__id);
     if (p->completion(q) != 1) {
         delete p;
         if (__ex) EXCEPTION(EDATA);
@@ -633,10 +646,6 @@ cNPort * cNPort::getPortObjById(QSqlQuery& q, qlonglong __tableoid, qlonglong __
     if      (__tableoid == cNPort().      tableoid()) return getPortObjByIdT<cNPort>       (q, __port_id, __ex);
     else if (__tableoid == cPPort().      tableoid()) return getPortObjByIdT<cPPort>       (q, __port_id, __ex);
     else if (__tableoid == cInterface().  tableoid()) return getPortObjByIdT<cInterface>   (q, __port_id, __ex);
-    else if (__tableoid == cIfaceAddr().  tableoid()) return getPortObjByIdT<cIfaceAddr>   (q, __port_id, __ex);
-    else if (__tableoid == cNode().       tableoid()) return getPortObjByIdT<cNPort>       (q, __port_id, __ex);
-    else if (__tableoid == cHost().       tableoid()) return getPortObjByIdT<cIfaceAddr>   (q, __port_id, __ex);
-    else if (__tableoid == cSnmpDevice(). tableoid()) return getPortObjByIdT<cIfaceAddr>   (q, __port_id, __ex);
     else                                            EXCEPTION(EDATA);
     return NULL;
 }
@@ -659,21 +668,17 @@ cPPort::cPPort() : cNPort(_no_init_)
 
 cPPort::cPPort(const cPPort& __o) : cRecord(), cNPort(_no_init_)
 {
-    _cp(__o);
+    __cp(__o);
+    _copy(__o, _descr_cPPort());
+    params = __o.params;
 }
 
 // -- virtual
-int             cPPort::_ixIfTypeId  = NULL_IX;
-int             cPPort::_ixNodeId    = NULL_IX;
-int             cPPort::_ixPortIndex = NULL_IX;
 qlonglong       cPPort::_ifTypePatch = NULL_ID;
 const cRecStaticDescr&  cPPort::descr() const
 {
     if (initPDescr<cPPort>(_sPPorts)) {
-        _ixIfTypeId  = _pRecordDescr->toIndex(_sIfTypeId);
         _ifTypePatch = cIfType::ifTypeId(_sPatch);
-        _ixPortIndex = _pRecordDescr->toIndex(_sPortIndex);
-        _ixNodeId    = _pRecordDescr->toIndex(_sNodeId);
     }
     return *_pRecordDescr;
 }
@@ -684,11 +689,9 @@ CRECDEFD(cPPort)
 cInterface::cInterface() : cNPort(_no_init_), trunkMembers()
 {
     _set(cInterface::descr());
-    _initInterface(_descr_cInterface());
 }
 cInterface::cInterface(const cInterface& __o) : cRecord(), cNPort(_no_init_), trunkMembers()
 {
-    _initInterface(_descr_cInterface());
     __cp(__o);
     _copy(__o, _descr_cInterface());
     params       = __o.params;
@@ -696,12 +699,40 @@ cInterface::cInterface(const cInterface& __o) : cRecord(), cNPort(_no_init_), tr
     vlans        = __o.vlans;
 }
 // -- virtual
+int cInterface::_ixHwAddress = NULL_IX;
 const cRecStaticDescr&  cInterface::descr() const
 {
     if (initPDescr<cInterface>(_sInterfaces)) {
+        _ixHwAddress = _pRecordDescr->toIndex(_sHwAddress);
         CHKENUM(_sPortOStat, ifStatus);
     }
     return *_pRecordDescr;
+}
+
+void cInterface::clearToEnd()
+{
+    cNPort::clearToEnd();
+    vlans.clear();
+    trunkMembers.clear();
+}
+
+void cInterface::toEnd()
+{
+    cNPort::toEnd();
+    cInterface::toEnd(idIndex());
+}
+
+bool cInterface::toEnd(int i)
+{
+    if (idIndex() == i) {
+        bool f;
+        f = atEndCont(params,    cPortParamValue::_ixPortId);
+        f = atEndCont(vlans,     cPortVlan::_ixPortId)       || f;
+        f = atEndCont(addresses, cIpAddress::_ixPortId)      || f;
+        if (f) trunkMembers.clear();    // Pontatlan, de nincs elég adat ...
+        return true;
+    }
+    return false;
 }
 
 bool cInterface::insert(QSqlQuery &__q, bool __ex)
@@ -710,29 +741,11 @@ bool cInterface::insert(QSqlQuery &__q, bool __ex)
     if (vlans.isEmpty()) return true;
     vlans.setId(cPortVlan::_ixPortId, getId());
     vlans.setName(cPortVlan::_ixSetType, _sManual);
-    return vlans.size() == vlans.insert(__q, __ex);
-}
-
-void cInterface::toEnd()
-{
-    cNPort::toEnd();
-    cInterface::toEnd(_ixPortId);
-}
-
-bool cInterface::toEnd(int i)
-{
-    if (cNPort::toEnd(i)) {
-        if (i == _ixPortId && vlans.size()) {
-            if (!(vlans.first()->isNull(cPortVlan::_ixPortId) || vlans.first()->getId(cPortVlan::_ixPortId) == getId(_ixPortId))) vlans.clear();
-        }
-        return true;
-    }
-    return false;
-}
-
-void cInterface::clearToEnd()
-{
-    vlans.clear();
+    bool r;
+    r = vlans.insert(__q, __ex) == vlans.size();
+    addresses.setId(cIpAddress::_ixPortId, getId());
+    r = addresses.insert(__q, __ex) == addresses.size() && r;
+    return r;
 }
 
 CRECDEFD(cInterface)
@@ -776,6 +789,48 @@ int cInterface::fetchByMac(QSqlQuery& q, const cMac& a)
     clear();
     set(_sHwAddress, QVariant::fromValue(a));
     return completion(q);
+}
+
+bool cInterface::fetchByIp(QSqlQuery& q, const QHostAddress& a)
+{
+    clear();
+    QString sql = "SELECT interfaces.* FROM interfaces JOIN ipadresses USING(port_id) WHERE address = ?";
+    if (execSql(q, sql, a.toString())) {
+        set(q);
+        return true;
+    }
+    return false;
+}
+
+int cInterface::fetchVlans(QSqlQuery& q)
+{
+    return vlans.fetch(q, false, cPortVlan::_ixPortId, getId());
+}
+
+int cInterface::fetchAddressess(QSqlQuery& q)
+{
+    return addresses.fetch(q, false, cIpAddress::_ix, getId());
+}
+
+cIpAddress& cInterface::addIpAddress(const cIpAddress& __a) {
+    _DBGFN() << " @(" << __a.toString() << ")" << endl;
+    if (addresses.indexOf(cIpAddress::_ixAddress, __a.get(cIpAddress::_ixAddress))) EXCEPTION(EDATA);
+    addresses << __a;
+    PDEB(VERBOSE) << "Added, size : " << addresses.size();
+    return *p;
+}
+
+cIpAddress& cInterface::addIpAddress(const QHostAddress& __a, const QString& __t, const QString &__d)
+{
+    // _DBGFN() << " @(" << __a.toString() << ")" << endl;
+    if (addresses.indexOf(cIpAddress::_ixAddress, __a.get(cIpAddress::_ixAddress))) EXCEPTION(EDATA);
+    cIpAddress *p = new cIpAddress();
+    *p = __a;
+    p->setName(_sIpAddressType, __t);
+    p->setName(_sIpAddressDescr, __d);
+    addresses <<  p;
+    //PDEB(VERBOSE) << "Added : " << p->toString() << " size : " << addresses.size();
+    return *p;
 }
 
 int ifStatus(const QString& _n, bool __ex)
@@ -871,7 +926,7 @@ CRECDEFD(cPatch)
 void cPatch::clearToEnd()
 {
     ports.clear();
-    clearShares();
+    if (pShares != NULL) clearShares();
 }
 
 void cPatch::toEnd()
@@ -882,7 +937,7 @@ void cPatch::toEnd()
 bool cPatch::toEnd(int i)
 {
     if (i == idIndex()) {
-        if (atEndCont(ports, _sNodeId)) clearShares();
+        if (atEndCont(ports, _sNodeId) && pShares != NULL) clearShares();
         return true;
     }
     return false;
@@ -896,7 +951,8 @@ bool cPatch::insert(QSqlQuery &__q, bool __ex)
         ports.setId(_sNodeId, getId());
         int i = ports.insert(__q, __ex);
         if (i != ports.count()) return false;
-        updateShares(__q, false, __ex);
+        if (pShares == NULL) return true;
+        return updateShares(__q, false, __ex);
     }
     return true;
 }
@@ -965,8 +1021,23 @@ bool cPatch::updateShares(QSqlQuery& __q, bool __clr, bool __ex)
     return true;
 }
 
+cPPort *cPatch::addPort(const QString& __name, const QString& __note, int __ix)
+{
+    if (ports.count()) {
+        if (0 <= ports.indexOf(__name))
+            EXCEPTION(EDATA, -1, trUtf8("Ilyen port név már létezik: %1").arg(__name));
+        if (0 <= ports.indexOf(cNPort::_ixPortIndex, QVariant(__ix)))
+            EXCEPTION(EDATA, __ix, trUtf8("Ilyen port index már létezik."));
+    }
+    cPPort  *p = new cPPort();
+    p->setName(__name);
+    p->setId(cNPort::_ixPortIndex, __ix);
+    p->setName(_sPortNote, __note);
+    ports << p;
+    return p;
+}
 
-cNPort *cPatch::addPorts(const QString& __n, int __noff, int __from, int __to, int __off)
+cPPort *cPatch::addPorts(const QString& __n, int __noff, int __from, int __to, int __off)
 {
     cPPort *p = NULL;
     for (int i = __from; i <= __to; ++i) {
@@ -976,273 +1047,50 @@ cNPort *cPatch::addPorts(const QString& __n, int __noff, int __from, int __to, i
     return p;
 }
 
-cNPort *cPatch::addPort(const QString& __name, const QString& __descr, int __ix)
-{
-    if (ports.count()) {
-        if (0 <= ports.indexOf(__name))
-            EXCEPTION(EDATA, -1, QString("Ilyen port név már létezik: %1").arg(__name));
-        if (0 <= ports.indexOf(cPPort::_ixPortIndex, QVariant(__ix)))
-            EXCEPTION(EDATA, __ix, QString("Ilyen port index már létezik."));
-    }
-    cPPort  *p = new cPPort();
-    p->setName(__name);
-    p->setId(cPPort::_ixPortIndex, __ix);
-    p->setName(_sPortDescr, __descr);
-    ports.append(p);
-    return p;
-}
-
 cNPort *cPatch::portSet(const QString& __name, const QString& __fn, const QVariant& __v)
 {
-    int i = ports.indexOf(cPPort::_ixPortIndex, __name);
+    int i = ports.indexOf(cNPort().nameIndex(), __name);
     if (i < 0) EXCEPTION(ENONAME, -1, QString(QObject::trUtf8("%1 port name not found.")).arg(__name));
-    cPPort * p = ports[i];
+    cNPort * p = ports[i];
     p->set(__fn, __v);
     return p;
 }
 
 cNPort *cPatch::portSet(int __ix, const QString& __fn, const QVariant& __v)
 {
-    int i = ports.indexOf(cPPort::_ixPortIndex, __ix);
+    int i = ports.indexOf(cNPort::_ixPortIndex, __ix);
     if (i < 0) EXCEPTION(ENOINDEX, __ix, QObject::trUtf8("Port index not found"));
-    cPPort *p = ports[i];
+    cNPort *p = ports[i];
     p->set(__fn, __v);
     return p;
 }
 
-cNPort *cPatch::portSet(int __ix, const QString& __fn, const QVariantList& __v)
+cNPort *cPatch::portSet(int __ix, const QString& __fn, const QVariantList& __vl)
 {
     int ix = __ix;
-    cPPort *p = NULL;
-    foreach (const QVariant& v, __v) {
+    cNPort *p = NULL;
+    foreach (const QVariant& v, __vl) {
         p = portSet(ix, __fn, v);
         ++ix;
     }
-    if (p == NULL) EXCEPTION(EDATA);
     return p;
 }
 
-
-/* ------------------------------ NODES : cNode ------------------------------ */
-
-cNode::cNode() : cRecord(), cNPort(_no_init_), ports(), _mainPortType(_sNPort)
-{
-    _set(cNode::descr());
-    _initNode(_descr_cNode());
-}
-
-cNode::cNode(const cNode& __o) : cRecord(), cNPort(_no_init_), ports(), _mainPortType()
-{
-    _initNode(_descr_cNode());
-    __cp(__o);
-    _copy(__o, _descr_cNode());
-    _mainPortType = __o._mainPortType; // !!!
-    if (_mainPortType != _sNPort) EXCEPTION(EDATA, -1, _mainPortType);
-    ports         = __o.ports;
-    params        = __o.params;
-}
-
-cNode::cNode(const QString& __name, const QString& __descr) : cRecord(), cNPort(_no_init_), ports(), _mainPortType(_sNPort)
-{
-    _set(cNode::descr());
-    _initNode(_descr_cNode());
-    _set(_descr_cNode().nameIndex(),  __name);
-    _set(_descr_cNode().descrIndex(), __descr);
-}
-
-cNode& cNode::operator=(const cNode& __o)
-{
-    __cp(__o);
-    _copy(__o, _descr_cNode());
-    _mainPortType = __o._mainPortType; // !!!
-    if (_mainPortType != _sNPort) _stat |= ES_DEFECTIVE;
-    ports         = __o.ports;
-    params        = __o.params;
-    return *this;
-}
-
-// -- virtual
-const cRecStaticDescr&  cNode::descr() const
-{
-    if (initPDescr<cNode>(_sNodes)) {
-        CHKENUM(_sNodeStat, notifSwitch);
-    }
-    return *_pRecordDescr;
-}
-bool cNode::insert(QSqlQuery &__q, bool __ex)
-{
-    return cNPort::insert(__q, __ex);
-
-    if (!cNPort::insert(__q, __ex)) return false;
-    if (ports.count()) {
-        ports.clearId();
-        ports.setId(_sNodeId, getId());
-        int i = ports.insert(__q, __ex);
-        return i == ports.count();
-    }
-    return true;
-}
-
-void cNode::toEnd_NoMainPort()
-{
-    toEnd(idIndex());
-}
-
-void cNode::toEnd()
-{
-    cNPort::toEnd();
-    toEnd_NoMainPort();
-}
-
-bool cNode::toEnd_NoMainPort(int i)
-{
-    if (i == idIndex()) {
-        atEndCont(ports, _sNodeId);
-        return true;
-    }
-    return false;
-}
-
-bool cNode::toEnd(int i)
-{
-    if (cNPort::toEnd(i)) return true;
-    return toEnd_NoMainPort(i);
-}
-
-void cNode::clearToEnd()
-{
-    cNPort::clearToEnd();
-    ports.clear();
-}
-
-void cNode::clearShares()
-{
-    EXCEPTION(EPROGFAIL);
-}
-
-bool cNode::setShare(int, int, int , int, bool)
-{
-    EXCEPTION(EPROGFAIL);
-    return false;
-}
-
-bool cNode::updateShares(QSqlQuery&, bool, bool)
-{
-    EXCEPTION(EPROGFAIL);
-    return false;
-
-}
-
-CRECDEFD(cNode)
-
-int  cNode::fetchPorts(QSqlQuery& __q, bool __ex) {
-    QSqlQuery q = getQuery(); // A copy construktor vagy másolás az nem jó!!
-    qlonglong myPortId = getPortId();
-    // Összeszedjük, a port ID-ket, és hogy milyen objektum típusok (tableoid), a benfoglalt portot kihagyjuk
-    QString sql = QString("SELECT tableoid, port_id FROM nports WHERE node_id = %1 AND port_id <> %2").arg(getId()).arg(myPortId);
-    if (!__q.exec(sql)) {
-        if (__ex == false && __q.lastError().type() == QSqlError::StatementError) SQLQUERYERRDEB(__q)
-        else                                                                      SQLQUERYERR(__q)
-        return -1;
-    }
-
-    if (__q.first()) do {
-        bool ok;
-        qlonglong tableoid = __q.value(0).toLongLong(&ok);
-        if (!ok) EXCEPTION(EDATA, -1, QString(QObject::trUtf8("Invalid table OID : %1")).arg(__q.value(0).toString()));
-        qlonglong port_id  = __q.value(1).toLongLong(&ok);
-        if (!ok) EXCEPTION(EDATA, -1, QString(QObject::trUtf8("Invalid port_id : %1")).arg(__q.value(1).toString()));
-        cNPort *p = cNPort::getPortObjById(q, tableoid, port_id, __ex);
-        if (p == NULL) return -1;
-        ports << p;
-    } while (__q.next());
-    return ports.count();
-}
-
-cNPort *cNode::addPorts(const cIfType& __t, const QString& __np, int __noff, int __from, int __to, int __off)
-{
-    cNPort *p = NULL;
-    for (int i = __from; i <= __to; ++i) {
-        p = addPort(__t, 0, nameAndNumber(__np, i + __noff), _sNul, i + __off);
-    }
-    if (p == NULL) EXCEPTION(EDATA);
-    return p;
-}
-
-cNPort *cNode::addPort(const cIfType& __t, int n, const QString& __name, const QString& __descr, int __ix)
-{
-    if (ports.count()) {
-        if (NULL != getPort(__name, false)) EXCEPTION(EDATA, -1, QString("Ilyen port név már létezik: %1").arg(__name));
-        if (NULL != getPort(__ix,   false)) EXCEPTION(EDATA, __ix, QString("Ilyen port index már létezik."));
-    }
-    cNPort  *p = cNPort::newPort(__t, n);
-    p->setName(__name);
-    if (__ix != NULL_IX) p->setId(_sPortIndex, __ix);
-    p->setName(_sPortDescr, __descr);
-    ports.append(p);
-    return p;
-}
-
-cNPort *cNode::portSet(const QString& __name,  const QString& __fn, const QVariant& __v)
-{
-    if (__fn == _sNodeId || !cNPort::descr().isFieldName(__fn)) EXCEPTION(ENOFIELD, -1, __fn);
-    cNPort *pp = getPort(__name);
-    pp->set(__fn, __v);
-    return pp;
-}
-
-cNPort *cNode::portSet(int __ix, const QString& __fn, const QVariant& __v)
-{
-    if (__fn == _sNodeId || !cNPort::descr().isFieldName(__fn)) EXCEPTION(ENOFIELD, -1, __fn);
-    cNPort *pp = getPort(__ix);
-    pp->set(__fn, __v);
-    return pp;
-}
-
-cNPort *cNode::portSet(int __ix, const QString& __fn, const QVariantList& __v)
-{
-    cNPort *p = NULL;
-    int ix = __ix;
-    foreach (const QVariant& v, __v) {
-        p = portSet(ix, __fn, v);
-        ++ix;
-    }
-    if (p == NULL) EXCEPTION(EDATA);
-    return p;
-}
-
-bool cNode::setMainPortType(const cIfType& __t, bool __ex)
-{
-    QStringList tl = __t.get(_sIfTypeObjType).toStringList();
-    if (tl.empty()) {
-        if (__ex) return false;
-        EXCEPTION(EDATA, __t.getId(), QObject::trUtf8("Invalid ifType object, empty object type list."));
-    }
-    foreach (const QString& s, tl) {
-        if (_mainPortType == s) {
-            setId(_sIfTypeId, __t.getId());
-            return true;
-        }
-    }
-    if (__ex) EXCEPTION(EDATA, __t.getId(), QObject::trUtf8("SET invalid ifType object."));
-    return false;
-}
-
-cNPort *cNode::portSetParam(const QString& __name, const QString& __par, const QString& __val)
+cNPort *cPatch::portSetParam(const QString& __name, const QString& __par, const QString& __val)
 {
     cNPort *p = getPort(__name);
     p->params[__par] = __val;
     return p;
 }
 
-cNPort *cNode::portSetParam(int __ix, const QString& __par, const QString& __val)
+cNPort *cPatch::portSetParam(int __ix, const QString& __par, const QString& __val)
 {
     cNPort *p = getPort(__ix);
     p->params[__par] = __val;
     return p;
 }
 
-cNPort *cNode::portSetParam(int __ix, const QString& __par, const QStringList& __val)
+cNPort *cPatch::portSetParam(int __ix, const QString& __par, const QStringList& __val)
 {
     cNPort *p = NULL;
     int ix = __ix;
@@ -1257,8 +1105,7 @@ cNPort *cNode::portSetParam(int __ix, const QString& __par, const QStringList& _
 cNPort * cNode::getPort(int __ix, bool __ex)
 {
     if (__ix != NULL_IX) {
-        if (__ix == getId(_sPortIndex)) return this;
-        int i = ports.indexOf(_sPortIndex, __ix);
+        int i = ports.indexOf(cNPort::_ixPortIndex, __ix);
         if (i >= 0) return ports[i];
     }
     if (__ex) EXCEPTION(ENONAME, -1, QString(QObject::trUtf8("%1 port index not found.")).arg(__ix))
@@ -1267,8 +1114,7 @@ cNPort * cNode::getPort(int __ix, bool __ex)
 
 cNPort * cNode::getPort(const QString& __pn, bool __ex)
 {
-    if (__pn == getName(_sPortName)) return this;
-    int i = ports.indexOf(_sPortName, __pn);
+    int i = ports.indexOf(cNPort().nameIndex(), __pn);
     if (i >= 0) return ports[i];
     if (__ex) EXCEPTION(ENONAME, -1, QString(QObject::trUtf8("%1 port name not found.")).arg(__pn));
     return NULL;
@@ -1286,156 +1132,108 @@ template<class P> static inline P * getNodeObjByIdT(QSqlQuery& q, qlonglong  __i
     return p;
 }
 
-cNode * cNode::getNodeObjById(QSqlQuery& q, qlonglong __tableoid, qlonglong __node_id, bool __ex)
+cPatch * cPatch::getNodeObjById(QSqlQuery& q, qlonglong __tableoid, qlonglong __node_id, bool __ex)
 {
-    if      (__tableoid == cNode().       tableoid()) return getNodeObjByIdT<cNode>      (q, __node_id, __ex);
-    else if (__tableoid == cHost().       tableoid()) return getNodeObjByIdT<cHost>      (q, __node_id, __ex);
+    if      (__tableoid == cPatch().      tableoid()) return getNodeObjByIdT<cPatch>     (q, __node_id, __ex);
+    else if (__tableoid == cNode().       tableoid()) return getNodeObjByIdT<cNode>      (q, __node_id, __ex);
     else if (__tableoid == cSnmpDevice(). tableoid()) return getNodeObjByIdT<cSnmpDevice>(q, __node_id, __ex);
-    else                                              EXCEPTION(EDATA);
+    else if (__ex)                                    EXCEPTION(EDATA);
     return NULL;
 }
 
-cNode * cNode::getNodeObjById(QSqlQuery& q, qlonglong __node_id, bool __ex)
+cPatch * cPatch::getNodeObjById(QSqlQuery& q, qlonglong __node_id, bool __ex)
 {
-    qlonglong tableoid = cNode().setId(__node_id).fetchTableOId(q, __ex);
+    qlonglong tableoid = cPatch().setId(__node_id).fetchTableOId(q, __ex);
     if (tableoid < 0LL) return NULL;
     return getNodeObjById(q, tableoid, __node_id, __ex);
 }
 
-// --
-/* ------------------------------ HOSTS : cHost ------------------------------ */
+/* ------------------------------ NODES : cNode ------------------------------ */
 
-cHost::cHost() : cNode(_no_init_), cIfaceAddr(_no_init_)
+cNode::cNode() : cRecord(), cNPort(_no_init_), ports(), _mainPortType(_sNPort)
 {
-    _set(cHost::descr());
-    _initHost(_descr_cHost());
+    _set(cNode::descr());
 }
 
-cHost::cHost(const cHost& __o) : cRecord(), cNPort(), cNode(_no_init_), cIfaceAddr(_no_init_)
+cNode::cNode(const cNode& __o) : cRecord(), cNPort(_no_init_), ports(), _mainPortType()
 {
-    _set(cHost::descr());
-    _initHost(_descr_cHost());
     __cp(__o);
-    _copy(__o, _descr_cHost());
-    _mainPortType = __o._mainPortType; // !!!
-    if (_mainPortType != _sIfaceAddr)  _stat |= ES_DEFECTIVE;
+    _copy(__o, _descr_cNode());
     ports         = __o.ports;
-    params        = __o.params;
-    vlans         = __o.vlans;
-    trunkMembers  = __o.trunkMembers;
 }
 
-cHost::cHost(const QString& __n, const QString &__d)
- : cRecord(), cNPort(), cNode(_no_init_), cIfaceAddr(_no_init_)
+cNode::cNode(const QString& __name, const QString& __descr) : cRecord(), cNPort(_no_init_), ports(), _mainPortType(_sNPort)
 {
-    _set(cHost::descr());
-    _initHost(_descr_cHost());
-    _set(_descr_cHost().nameIndex(),  __n);
-    _set(_descr_cHost().descrIndex(), __d);
+    _set(cNode::descr());
+    _set(_descr_cNode().nameIndex(),  __name);
+    _set(_descr_cNode().descrIndex(), __descr);
 }
 
-cHost& cHost::operator=(const cHost& __o)
+cNode& cNode::operator=(const cNode& __o)
 {
-    set();
     __cp(__o);
-    _copy(__o, _descr_cHost());
-    _mainPortType = __o._mainPortType; // !!!
-    if (_mainPortType != _sIfaceAddr) EXCEPTION(EDATA, -1, _mainPortType);
+    _copy(__o, _descr_cNode());
     ports         = __o.ports;
-    params        = __o.params;
-    vlans         = __o.vlans;
-    trunkMembers  = __o.trunkMembers;
     return *this;
 }
 
 // -- virtual
-CRECDDCR(cHost, _sHosts)
-CRECDEFD(cHost)
-
-bool cHost::insert(QSqlQuery &__q, bool __ex)
+const cRecStaticDescr&  cNode::descr() const
 {
-    if (!cIfaceAddr::insert(__q, __ex)) return false;
+    if (initPDescr<cNode>(_sNodes)) {
+        CHKENUM(_sNodeStat, notifSwitch);
+    }
+    return *_pRecordDescr;
+}
+
+void cNode::clearShares()                                       { EXCEPTION(ENOTSUPP); }
+bool cNode::setShare(int, int, int , int, bool)                 { EXCEPTION(ENOTSUPP); return false; }
+bool cNode::updateShares(QSqlQuery&, bool, bool)                { EXCEPTION(ENOTSUPP); return false; }
+cPPort *cNode::addPort(const QString&, const QString &, int)    { EXCEPTION(ENOTSUPP); return NULL; }
+cPPort *cNode::addPorts(const QString&, int , int , int , int ) { EXCEPTION(ENOTSUPP); return NULL; }
+
+CRECDEFD(cNode)
+
+int  cNode::fetchPorts(QSqlQuery& __q, bool __ex) {
+    QSqlQuery q = getQuery(); // A copy construktor vagy másolás az nem jó!!
+    QString sql = "SELECT tableoid, port_id FROM nports WHERE node_id = ?";
+    if (execSql(__q, sql, getId())) do {
+        qlonglong tableoid = __q.value(0).toLongLong(&ok);
+        qlonglong port_id  = __q.value(1).toLongLong(&ok);
+        cNPort *p = cNPort::getPortObjById(q, tableoid, port_id, __ex);
+        q.finish();
+        if (p == NULL) return -1;
+        ports << p;
+    } while (__q.next());
+    __q.finish();
+    return ports.count();
+}
+
+cNPort *cNode::addPort(const cIfType& __t, const QString& __name, const QString& __note, int __ix)
+{
     if (ports.count()) {
-        ports.clearId();
-        ports.setId(_sNodeId, getId());
-        int i = ports.insert(__q, __ex);
-        return i == ports.count();
+        if (NULL != getPort(__name, false)) EXCEPTION(EDATA, -1, QString("Ilyen port név már létezik: %1").arg(__name));
+        if (__ix != NULL_IX && NULL != getPort(__ix,   false)) EXCEPTION(EDATA, __ix, QString("Ilyen port index már létezik."));
     }
-    return true;
-}
-void cHost::toEnd()
-{
-    cNode::toEnd_NoMainPort();
-    cIfaceAddr::toEnd();
-}
-
-bool cHost::toEnd(int i)
-{
-    if (cNode::toEnd_NoMainPort(i)) return true;
-    if (cIfaceAddr::toEnd(i)) return true;
-    return false;
+    cNPort  *p = cNPort::newPortObj(__t);
+    p->setName(__name);
+    if (__ix != NULL_IX) p->setId(_sPortIndex, __ix);
+    p->setName(_sPortNote, __note);
+    ports << p;
+    return p;
 }
 
-void cHost::clearToEnd()
+cNPort *cNode::addPorts(const cIfType& __t, const QString& __np, int __noff, int __from, int __to, int __off)
 {
-    cNode::clearToEnd();
-    cIfaceAddr::clearToEnd();
-}
-
-cNPort *cHost::portSet(const QString& __name,  const QString& __fn, const QVariant& __v)
-{
-    if (__fn == _sNodeId || !cIfaceAddr::descr().isFieldName(__fn)) EXCEPTION(ENOFIELD, -1, __fn);
-    cNPort *pp = getPort(__name);
-    pp->set(__fn, __v);
-    return pp;
-}
-
-cNPort *cHost::portSet(int __ix, const QString& __fn, const QVariant& __v)
-{
-    if (__fn == _sNodeId || !cIfaceAddr::descr().isFieldName(__fn)) EXCEPTION(ENOFIELD, -1, __fn);
-    cNPort *pp = getPort(__ix);
-    pp->set(__fn, __v);
-    return pp;
-}
-
-// --
-
-bool cHost::fetchSelf(QSqlQuery& q, bool __ex)
-{
-    QString name = getEnvVar("HOSTNAME");
-    if (!name.isEmpty()) {
-        setName(name);
-        if (fetch(q, false, mask(_sNodeName))) return true;
+    cNPort *p = NULL;
+    for (int i = __from; i <= __to; ++i) {
+        p = addPort(__t, nameAndNumber(__np, i + __noff), _sNul, i + __off);
     }
-    QList<QNetworkInterface> ii = QNetworkInterface::allInterfaces();
-    foreach (QNetworkInterface i, ii) {
-        cMac m = i.hardwareAddress();
-        if (!m) continue;
-        PDEB(VVERBOSE) << "My MAC : " << m.toString() << endl;
-        cInterface in;
-        in.set(_sHwAddress, QVariant::fromValue(m));
-        if (in.completion(q)) {
-            clear();
-            setId(in.getId(_sNodeId));
-            if (1 != completion(q)) {
-                if (__ex) { EXCEPTION(EDATA); }
-                else      { continue; }
-            }
-            return true;
-        }
-    }
-    QList<QHostAddress>  aa = QNetworkInterface::allAddresses();
-    foreach (QHostAddress a, aa) {
-        PDEB(VVERBOSE) << "My adress : " << a.toString() << endl;
-        if (a.isNull() || a.isLoopback()) continue;
-        set(_sAddress, QVariant::fromValue(a));
-        if (fetch(q, false, mask(_sAddress))) return true;
-    }
-    if (__ex) EXCEPTION(EFOUND, -1, QObject::trUtf8("Self host record"));
-    return false;
+    if (p == NULL) EXCEPTION(EDATA);
+    return p;
 }
 
-cNPort *cHost::addSensors(const QString& __np, int __noff, int __from, int __to, int __off, const QHostAddress& __pip)
+cNPort *cNode::addSensors(const QString& __np, int __noff, int __from, int __to, int __off, const QHostAddress& __pip)
 {
     const cIfType&  t = cIfType::ifType(_sSensor);
     QStringList a = __pip.toString().split(QChar('.'));
@@ -1445,58 +1243,92 @@ cNPort *cHost::addSensors(const QString& __np, int __noff, int __from, int __to,
     if (!ok) EXCEPTION(EDATA);
     cNPort *p = NULL;
     for (int i = __from; i <= __to; ++i) {
-        p = addPort(t, 1, nameAndNumber(__np, i + __noff), _sNul, i + __off);
+        p = addPort(t, nameAndNumber(__np, i + __noff), _sNul, i + __off);
+        cInterface *pIf = p->reconvert<cInterface>();
         a[3] = QString::number(d++);
-        p->setName(_sAddress, a.join(_sPoint));
-        p->setName(_sIpAddressType, _sPseudo);
+        QHostAddress ha(a.join(_sPoint));
+        if (ha.isNull()) EXCEPTION(EDATA);
+        pIf->addIpAddress(ha, _sPseudo);
     }
-    if (p == NULL) EXCEPTION(EDATA);
     return p;
 }
 
-
-cHost& cHost::portSetAddress(const QString& __port, const cMac& __mac, const QHostAddress& __a, const QString& __t, const QString &__d)
+bool cNode::fetchByIp(QSqlQuery& q, const QHostAddress& a)
 {
-    ports.get(_sPortName, __port)->reconvert<cIfaceAddr>()->setAddress(__mac, __a, __t, __d);
-    return *this;
+    clear();
+    QString sql = "SELECT nodes.* FROM nodes JOIN USING(node_id) interfaces JOIN ipadresses USING(port_id) WHERE address = ?";
+    if (execSql(q, sql, a.toString())) {
+        set(q);
+        return true;
+    }
+    return false;
 }
 
-cHost& cHost::portSetAddress(int __port_index, const cMac& __mac, const QHostAddress& __a, const QString& __t, const QString &__d)
+int cNode::fetchByMac(QSqlQuery& q, const cMac& a)
 {
-    ports.get(_sPortIndex, __port_index)->reconvert<cIfaceAddr>()->setAddress(__mac, __a, __t, __d);
-    return *this;
+    clear();
+    QString sql = "SELECT nodes.* FROM nodes JOIN USING(node_id) interfaces WHERE hwaddress = ?";
+    if (execSql(q, sql, a.toString())) {
+        set(q);
+        return true;
+    }
+    return false;
+}
+
+bool cNode::fetchSelf(QSqlQuery& q, bool __ex)
+{
+    QString name = getEnvVar("HOSTNAME");
+    if (!name.isEmpty()) {
+        setName(name);
+        if (fetch(q, false, mask(_sNodeName))) return true;
+    }
+    QList<QHostAddress>  aa = QNetworkInterface::allAddresses();
+    foreach (QHostAddress a, aa) {
+        PDEB(VVERBOSE) << "My adress : " << a.toString() << endl;
+        if (a.isNull() || a.isLoopback()) continue;
+        if (fetchByIp(q, a)) return true;
+    }
+    QList<QNetworkInterface> ii = QNetworkInterface::allInterfaces();
+    foreach (QNetworkInterface i, ii) {
+        cMac m = i.hardwareAddress();
+        if (!m) continue;
+        PDEB(VVERBOSE) << "My MAC : " << m.toString() << endl;
+        if (fetchByMac(q, m)) return true;
+    }
+    if (__ex) EXCEPTION(EFOUND, -1, trUtf8("Self host record"));
+    return false;
 }
 
 
-cIfaceAddr *cHost::portAddAddress(const QString& __port, const QHostAddress& __a, const QString& __t, const QString &__d)
+cInterface *cNode::portAddAddress(const QString& __port, const QHostAddress& __a, const QString& __t, const QString &__d)
 {
-    cIfaceAddr * p = getPort(__port)->reconvert<cIfaceAddr>();
+    cInterface * p = getPort(__port)->reconvert<cInterface>();
     p->addIpAddress(__a, __t, __d);
     return p;
 }
 
-cIfaceAddr *cHost::portAddAddress(int __port_index, const QHostAddress& __a, const QString& __t, const QString &__d)
+cInterface *cNode::portAddAddress(int __port_index, const QHostAddress& __a, const QString& __t, const QString &__d)
 {
-    cIfaceAddr *p = getPort(__port_index)->reconvert<cIfaceAddr>();
+    cInterface *p = getPort(__port_index)->reconvert<cInterface>();
     p->addIpAddress(__a, __t, __d);
     return p;
 }
 
-cInterface *cHost::portSetVlan(const QString& __port, qlonglong __vlanId, enum eVlanType __t, enum eSetType __st)
+cInterface *cNode::portSetVlan(const QString& __port, qlonglong __vlanId, enum eVlanType __t, enum eSetType __st)
 {
     cInterface *p = getPort(__port)->reconvert<cInterface>();
     p->joinVlan(__vlanId, __t, __st);
     return p;
 }
 
-cInterface * cHost::portSetVlan(int __port_index, qlonglong __vlanId, enum eVlanType __t, enum eSetType __st)
+cInterface * cNode::portSetVlan(int __port_index, qlonglong __vlanId, enum eVlanType __t, enum eSetType __st)
 {
     cInterface *p = getPort(__port_index)->reconvert<cInterface>();
     p->joinVlan(__vlanId, __t, __st);
     return p;
 }
 
-cInterface *cHost::portSetVlans(const QString& __port, const QList<qlonglong>& _ids)
+cInterface *cNode::portSetVlans(const QString& __port, const QList<qlonglong>& _ids)
 {
     cInterface *p = getPort(__port)->reconvert<cInterface>();
     enum eVlanType t = VT_UNTAGGED;
@@ -1507,7 +1339,7 @@ cInterface *cHost::portSetVlans(const QString& __port, const QList<qlonglong>& _
     return p;
 }
 
-cInterface *cHost::portSetVlans(int __port_index, const QList<qlonglong>& _ids)
+cInterface *cNode::portSetVlans(int __port_index, const QList<qlonglong>& _ids)
 {
     cInterface *p = getPort(__port_index)->reconvert<cInterface>();
     enum eVlanType t = VT_UNTAGGED;
@@ -1517,52 +1349,26 @@ cInterface *cHost::portSetVlans(int __port_index, const QList<qlonglong>& _ids)
     }
     return p;
 }
-
-bool cHost::fetchByAddr(QSqlQuery& q, const QHostAddress& a)
-{
-    clear();
-    cIfaceAddr  ia;
-    if (0 == ia.fetchByAddr(q, a)) return 0;
-    setId(ia.getId(_sNodeId));
-    return completion(q);
-}
-
-int cHost::fetchByMac(QSqlQuery& q, const cMac& a)
-{
-    clear();
-    cInterface  ia;
-    if (0 == ia.fetchByMac(q, a)) return 0;
-    setId(ia.getId(_sNodeId));
-    return completion(q);
-}
-
 
 /* ------------------------------ SNMPDEVICES : cSnmpDevice -----------setMainPort(ifType($3), $4, $5);------------------- */
 
-cSnmpDevice::cSnmpDevice() : cHost(_no_init_)
+cSnmpDevice::cSnmpDevice() : cNode(_no_init_)
 {
     _set(cSnmpDevice::descr());
-    _initHost(_descr_cSnmpDevice());
 }
 
-cSnmpDevice::cSnmpDevice(const cSnmpDevice& __o) : cRecord(), cNPort(), cHost(_no_init_)
+cSnmpDevice::cSnmpDevice(const cSnmpDevice& __o) : cNode(_no_init_)
 {
     _set(cSnmpDevice::descr());
-    _initHost(_descr_cSnmpDevice());
     __cp(__o);
     _copy(__o, _descr_cSnmpDevice());
-    _mainPortType = __o._mainPortType; // !!!
-    if (_mainPortType != _sIfaceAddr) _stat |= ES_DEFECTIVE;
     ports         = __o.ports;
-    params        = __o.params;
-    trunkMembers  = __o.trunkMembers;
 }
 
 cSnmpDevice::cSnmpDevice(const QString& __n, const QString &__d)
- : cRecord(), cNPort(), cHost(_no_init_)
+ : cNode(_no_init_)
 {
     _set(cSnmpDevice::descr());
-    _initHost(_descr_cSnmpDevice());
     _set(_descr_cSnmpDevice().nameIndex(),  __n);
     _set(_descr_cSnmpDevice().descrIndex(), __d);
 }
@@ -1574,7 +1380,7 @@ CRECDEFD(cSnmpDevice)
 cNPort *cSnmpDevice::addPort(const cIfType& __t, int n, const QString& __name, const QString& __descr, int __ix)
 {
     if (__ix < 0) EXCEPTION(EDATA, __ix);
-    return cNode::addPort(__t, n, __name, __descr, __ix);
+    return cNode::addPort(__t, __name, __descr, __ix);
 }
 
 int cSnmpDevice::snmpVersion() const
@@ -1600,7 +1406,6 @@ bool cSnmpDevice::setBySnmp(const QString& __com, bool __ex)
         }
     }
     setName(_sCommunityRd, community);
-    // if (!assAddr()) EXCEPTION(EFOUND, -1, _sAddress);
     return getSysBySnmp(*this) && getPortsBySnmp(*this, __ex);
 #else // MUST_SCAN
     (void)__com;

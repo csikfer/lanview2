@@ -298,15 +298,10 @@ public:
     /// @return true, ha a típust 'external'-ba állította, egyébként false.
     bool thisIsExternal(QSqlQuery &q);
 protected:
-    int _ixAddress;     // öröklődik az osztály, változhat az index
-    int _ixSubNetId;
-    int _ixIpAddressType;
-    /// Az index adattagokat inivializálja, konstruktorból is hívható, paraméterben kell átadni a leírót, mert nem lehet virtualis.
-    void _initIpAddress(const cRecStaticDescr& d) {
-        _ixAddress       = d.toIndex(_sAddress);
-        _ixSubNetId      = d.toIndex(_sSubNetId);
-        _ixIpAddressType = d.toIndex(_sIpAddressType);
-    }
+    static int _ixPortId;
+    static int _ixAddress;
+    static int _ixSubNetId;
+    static int _ixIpAddressType;
 };
 
 typedef tRecordList<cIpAddress> cIpAddresses;
@@ -316,10 +311,6 @@ class cPortParamValue;
 class LV2SHARED_EXPORT cPortParam : public cRecord {
     friend class cPortParamValue;
     CRECORD(cPortParam);
-protected:
-    /// Konstruktor, csak a leg szükségesebb inicilizálást végzi el, leszármazottak konstruktorábol hívható;
-    /// @param __dummy A paraméter csak jelzés értékű, a paraméter nélküli konstruktor már definiálva van/foglalt.
-    cPortParam(no_init_ __dummy) : cRecord() { (void)__dummy; cPortParam::descr(); }
 public:
     /// Egy új port_params rekord beinzertálása (port paraméter név/típus/dimenzió objektumlétrehozása).
     /// Hiba esetén dob egy kizárást
@@ -331,15 +322,14 @@ public:
     static long insertNew(const QString& __n, const QString& __de, const QString __t, const QString __di = QString());
 };
 
-/// Port paraméter érték
 class cPortParamValues;
+class cNPort;
+
+/// Port paraméter érték
 class LV2SHARED_EXPORT cPortParamValue : public cRecord {
     friend class cPortParamValues;
+    friend class cNPort;
     CRECORD(cPortParamValue);
-protected:
-    /// A port paraméter értékhez tartozó típus rekord/objektum
-    cPortParam  portParam;
-    static int _ixPortParamId;  // Nincs öröklés, az index állandó
 public:
     cPortParamValue(no_init_ __dummy) : portParam(__dummy) { cPortParamValue::descr(); }
     /// Törli a portParam adattagot.
@@ -366,13 +356,15 @@ public:
     cPortParamValue& setType(const QString& __n)    { portParam.fetchByName(__n); _set(_ixPortParamId, portParam.getId()); return *this; }
     /// Értékadás az érték mezőnek.
     cPortParamValue& operator=(const QString& __v)  { setName(_sParamValue, __v); return *this; }
+protected:
+    /// A port paraméter értékhez tartozó típus rekord/objektum
+    cPortParam  portParam;
+    static int _ixPortParamId;
+    static int _ixPortId;
 };
 
 /// Port paraméter értékek listája
 class LV2SHARED_EXPORT cPortParamValues : public tRecordList<cPortParamValue> {
-protected:
-    /// Az port_param_values mezőben a port_id mező indexe.
-    static int _ixPortId;
 public:
     /// Konstruktor. Üres listát készít.
     cPortParamValues();
@@ -385,7 +377,7 @@ public:
     /// Másoló operátor. A konténer összes elemét klónozza.
     cPortParamValues& operator=(const cPortParamValues& __o);
     /// A listét feltölti az adatbázisból, hogy a megadott porthoz (ID) tartozó összes paramétert tartalmazza.
-    int fetch(QSqlQuery& __q, qlonglong __port_id) { return tRecordList<cPortParamValue>::fetch(__q, false, _ixPortId, __port_id); }
+    int fetch(QSqlQuery& __q, qlonglong __port_id) { return tRecordList<cPortParamValue>::fetch(__q, false, cPortParamValue::_ixPortId, __port_id); }
     /// Index operátor: egy elem a paraméter név alapján
     const cPortParamValue& operator[](const QString& __n) const;
     /// Index operátor: egy elem a paraméter név alapján
@@ -429,7 +421,7 @@ protected:
 
 /*!
 @class cNPort
-@brief A nports tábla egy rekordját reprezentáló osztály. Töbszörösen öröklődik.
+@brief A nports tábla egy rekordját reprezentáló osztály.
  */
 class LV2SHARED_EXPORT cNPort : public cRecord {
     friend class cNode;
@@ -439,14 +431,15 @@ protected:
     /// Konstruktor a leszámazottak számára.
     explicit cNPort(no_init_& __dummy) : cRecord() { __dummy = __dummy; cNPort::descr(); }
 public:
-    /// Beszúr egy port rekordot az adatbázisba a járulékos adatokkal (rekordokkal) együtt.
-    virtual bool insert(QSqlQuery &__q, bool __ex = false);
-    /// A port id indexével hívja a toEnd(int i) metódust (leszármazottakban ez nem biztos hogy ez a rekord ID)
-    virtual void toEnd();
-    /// Ha a port id indexével hívtuk, akkor ha szükséges törli a params konténert, lásd az atEndCont() metódust.
-    virtual bool toEnd(int i);
     /// Törli a params konténert is.
     virtual void clearToEnd();
+    /// A port id indexével hívja a toEnd(int i) metódust
+    virtual void toEnd(class LV2SHARED_EXPORT cNPort);
+    /// Ha a port id indexével hívtuk, akkor ha szükséges törli a params konténert, lásd az atEndCont() metódust.
+    virtual bool toEnd(int i);
+    /// Beszúr egy port rekordot az adatbázisba a járulékos adatokkal (rekordokkal) együtt.
+    virtual bool insert(QSqlQuery &__q, bool __ex = false);
+
     /// Egy port rekord beolvasása a port név és a node id alapján.
     /// @return Ha egy rekordot beolvasott akkor true
     bool fetchPortByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id);
@@ -481,6 +474,8 @@ public:
             EXCEPTION(EDATA, __port_index, QString::number(__node_id));
         return *this;
     }
+    /// Egy port id  lekérése a port index és a node_id alapján.
+    qlonglong getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id, bool __ex = true) const;
     /// Egy port rekord beolvasása a port index és a node név alapján.
     bool fetchPortByIndex(QSqlQuery& __q, qlonglong __port_index, const QString& __node_name, bool __ex = true);
     /// Egy port rekord beolvasása a port index és a node_id alapján.
@@ -491,31 +486,26 @@ public:
         return *this;
     }
     /// Egy port id  lekérése a port index és a node_id alapján.
-    qlonglong getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id, bool __ex = true) const;
+    qlonglong getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, const QString& __node_name, bool ex = true) const;
+
     /// Megallokál egy új cNPort, cInterface vagy cIfaceAddr objektumot, a megadott cIfType objektum szerint.
     /// Az objektum típust a cIfType (egy adatbázisból beolvasott iftypes rekord alapján) az iftype_obj_type
-    /// tömb mező értéke adja meg. Ha itt nem egy érték (objektum név) szerepel, akkor ha nem adtuk meg az opcionális
-    /// __i paramétert (alapértelmezett en -1), akkor kizárást generál a hívás, továbbá szintén kizárást kapunk,
-    /// ha __i értéke nem egy objektum típus paramétere a tömbben (ha a tömb egy elemű, __i értéke 0, vagy negatív lehet).
-    /// "pport" érték szintén kizárást eredményez, így a metódus annak pointerét nem tudja visszaadni.
-    /// A megangedett tömb elem értékek: "nport", "interface" vagy "iface_addr". Más értékek esetén egy kizárás generál a hívás.
+    /// mező értéke adja meg.
     /// A megallokát objektumban beállítja az iftype_id mezőt.
     /// @param __t cIfType objektum, egy beolvasott iftypes rekordal.
     /// @param __i Opcionális index.
     /// @return A megallokált objektum pointere.
-    static cNPort *newPort(const cIfType& __t, int __i = -1);
+    static cNPort *newPortObj(const cIfType& __t);
     /// Megallokál egy új cNPort, cInterface vagy cIfaceAddr objektumot, a meghatározott cIfType objektum szerint.
     /// Ld.: static cNPort *newObject(const cIfType& __t)
     /// @param __ifTypeName Az interfész típus neve (iftypes rekord iftype:name mező értéke)
     /// @return A megallokált objektum pointere.
-    static cNPort *newPort(const QString& __ifTypeName, int __i = -1) {
-        return newPort(cIfType::ifType(__ifTypeName), __i);
+    static cNPort *newPortObj(const QString& __ifTypeName) {
+        return newPortObj(cIfType::ifType(__ifTypeName), __i);
     }
     static cNPort * getPortObjById(QSqlQuery& q, qlonglong __port_id, bool __ex = true);
     /// Allokál és beolvas egy port objektumot a megadott port_id alapján.
-    /// Az allokált objektum típusa megfelel a megadott tábla OID-nek, ha a tábla az nports, pports, interfaces vagy iface_addrs.
-    /// Ha a tábla a nodes, akkor a visszaadott objektum a cNPort, ha pedig a hosts vagy snmp_devices,
-    /// akkor egy cIfaceAddr objektum pointerét adja vissza.
+    /// Az allokált objektum típusa megfelel a megadott tábla OID-nek, ha a tábla az nports, pports vagy interfaces.
     /// @param __port_id A port rekord id-je (port_id)
     /// @param __tableoid A típus azonosító tábla OID
     /// @param __ex Ha értéke true, és nem találja a rekordot, tableoid-t akkor dob egy kizárást. Egyébként NULL-lal tér vissza
@@ -536,19 +526,12 @@ public:
     /// Port paraméterek, nincs automatikusan feltöltve
     cPortParamValues   params;
 protected:
-    /// A port_id mező indexe. Öröklödés esetén ez nem biztos, hogy rekord ID, és értéke is változik!
-    int                     _ixPortId;
-    /// A port_name mező indexe. Öröklödés esetén ez nem biztos, hogy rekord név, és értéke is változik!
-    int                     _ixPortName;
-    /// Az index afattagok inicializálása
-    /// @param d Az objektum leírója
-    void _initNPort(const cRecStaticDescr& d) {
-        _ixPortId   = d.idIndex();
-        _ixPortName = d.nameIndex();
-    }
-public:
-    int ixPortId()  { return _ixPortId; }
-    int ixPortName(){ return _ixPortName; }
+    /// A tulajdonos patchs rekordra mutató id mező indexe
+    static int _ixNodeId;
+    /// A port_index mező indexe
+    static int _ixPortIndex;
+    /// Port iftype_id field index
+    static int _ixIfTypeId;
 };
 
 class cPatch;
@@ -564,14 +547,8 @@ public:
     /// Beállítja a port alapértelmezett (kötelező?) típusát
     cPPort& setDefaultType() { set(_ixIfTypeId, _ifTypePatch); return *this; }
 protected:
-    /// Patch port iftype_id field index
-    static int _ixIfTypeId;
     /// Patch port iftype_id default value
     static qlonglong _ifTypePatch;
-    /// A port_index mező indexe
-    static int _ixPortIndex;
-    /// A tulajdonos patchs rekordra mutató id mező indexe
-    static int _ixNodeId;
 };
 
 EXT_ int ifStatus(const QString& _n, bool __ex);
@@ -600,32 +577,49 @@ public:
         IA_BROKEN,          ///< IndAlarm szenzor státusz szakadás (down)
         IA_ERROR            ///< IndAlarm szenzor státusz hiba (down)
     }   eIfStatus;
-    explicit cInterface(no_init_& __dummy) : cNPort(__dummy) { cInterface::descr(); }
-    ///
-    virtual bool insert(QSqlQuery &__q, bool __ex = true);
+    //
+    virtual void clearToEnd();
     virtual void toEnd();
     virtual bool toEnd(int i);
-    virtual void clearToEnd();
+    virtual bool insert(QSqlQuery &__q, bool __ex = true);
+    //
     void addTrunkMember(int __ix) { trunkMembers << __ix;  }
     int updateTrunkMembers(QSqlQuery& q, bool __ex);
     const tIntVector& getTrunkMembers() const { return trunkMembers; }
     void joinVlan(qlonglong __id, enum eVlanType __t, enum eSetType __st = ST_MANUAL);
-    /// VLAN hozzárendejések, nincs automatikus feltöltés
-    tRecordList<cPortVlan> vlans;
     /// Beolvas egy objektumot/rekordot a MAC alapján
-    /// A konkrét objektum típushoz rendelt táblát olvassa, vagyis a parentbe nem keres pl, az ifnterfaces -ben nem keress,
-    /// ha pl.egy cIfaceAddr típusú objektumból hívjuk a metódust
     /// @param q Az adatbázisműveletekhez használt objektum
     /// @param a A keresett MAC
     /// @return a találatok száma, ha nulla, akkor az objektum üres lessz, egyébként az első rekorddal lessz feltöltve.
-    virtual int fetchByMac(QSqlQuery& q, const cMac& a);
+    int fetchByMac(QSqlQuery& q, const cMac& a);
+    /// Beolvas egy objektumot/rekordot a IP cím alapján
+    /// @param q Az adatbázisműveletekhez használt objektum
+    /// @param a A keresett cím
+    /// @return true, ha beolvasott egy rekordot, ill. false, ha nem atálta a megadott címet.
+    bool fetchByIp(QSqlQuery& q, const QHostAddress& a)
+    /// Feltölti a vlans konténert
+    int fetchVlans(QSqlQuery& q);
+    /// Feltölti at addresses konténert.
+    int fetchAddressess(QSqlQuery& q);
+    /// Egy cím hozzáadása az interfészhez.
+    /// @param __a A cím objektum (rekord)
+    cIpAddress& addIpAddress(const cIpAddress& __a);
+    /// Egy cím hozzáadása az interfészhez.
+    /// @param __a Az ip cím.
+    /// @param __t Az IP cím típusa, alapértelmezett a _sFixIp
+    /// @param __d Cím rekord megjegyzés mező (alapértelmezetten üres)
+    cIpAddress& addIpAddress(const QHostAddress& __a, const QString& __t = _sFixIp, const QString& __d = _sNul);
+
+
+    /// VLAN hozzárendejések, nincs automatikus feltöltés
+    tRecordList<cPortVlan> vlans;
+    /// Ip címek listája (nincs automatikus feltöltés
+    cIpAddresses    addresses;
 protected:
-    tIntVector      trunkMembers;
-    int _ixHwAddress;
-    void _initInterface(const cRecStaticDescr& d) {
-        _initNPort(d);
-        _ixHwAddress = d.toIndex(_sHwAddress);
-    }
+    /// Trubk port esetén a trunk tagjainak az indexe (port_index mező)
+    /// Nincs automatikusan feltöltve.
+    tIntVector trunkMembers;
+    static int _ixHwAddress;
 };
 
 /* ****************************** NODES (patchs, nodes, hosts, snmphosts ****************************** */
@@ -676,8 +670,8 @@ protected:
 public:
     /// A létrehozott üres objektumban kitölti a port_name és port_descr mezőket.
     //! @param __name a port_name mező új értéke.
-    /// @param __descr a port_descr mező új értéke.
-    cPatch(const QString& __name, const QString& __descr = QString());
+    /// @param __note a port_descr mező új értéke.
+    cPatch(const QString& __name, const QString& __note = QString());
     virtual void clearToEnd();
     virtual void toEnd();
     virtual bool toEnd(int i);
@@ -698,22 +692,18 @@ public:
     /// A megosztásokat is kiírja az adatbázisba.
     /// Feltételezi, hogy a ports és az adatbázis tartalma megeggyezik
     virtual bool updateShares(QSqlQuery& __q, bool __clr = false, bool __ex = true);
-
-    /// Lista bővítése egy elemmel.
-    /// @param __t A port típusát definiáló objektum referenciája
-    /// @param n Ha több objektum típust definiál a __t, akkor a típus indexe (0,1), illetve érdektelen
-    /// @param __name port_name
-    /// @param __descr port_descr
+    /// A ports konténer bővítése egy patch port objektummal.
+    /// @param __name port neve
+    /// @param __note megjegyzés, leírás
     /// @param __ix Port_index, ha értéke NULL_IX, akkor az index mező NULL lessz.
-    virtual cNPort *addPort(const cIfType& __t, int n, const QString& __name, const QString &__descr, int __ix);
-    /// A port liasta bővítése egy sorozattal.
-    /// @param __t A port típusát definiáló objektum referenciája
+    virtual cPPort *addPort(const QString& __name, const QString &__note, int __ix);
+    /// A port liasta bővítése egy patch port sorozattal.
     /// @param __pref Port név minta.
     /// @param __noff Egy eltolás a név kébzéséhez
     /// @param __from Legkisebb idex
     /// @param __to Legnagyobb idex
     /// @param __off Egy eltolás a port indexhez
-    cNPort *addPorts(const cIfType& __t, const QString& __np, int __noff, int __from, int __to, int __off);
+    virtual cPPort *addPorts(const QString& __np, int __noff, int __from, int __to, int __off);
 
     /// A megadott port paraméter beállítása, ha nem találja a portot, akkor dob egy kizárást.
     /// @param __name Port neve
@@ -729,7 +719,7 @@ public:
     /// @param __ix port_index (kezdő érték)
     /// @param __fn Megváltoztatandó mező neve (NEM POINTER!)
     /// @param __v Az új érték(ek)
-    cNPort *portSet(int __ix, const QString& __fn, const QVariantList& __v);
+    cNPort *portSet(int __ix, const QString& __fn, const QVariantList& __vl);
 
     /// A név szerint megadott port paraméter hozzáadása ill. modosítása
     /// @param __port A port neve
@@ -747,9 +737,9 @@ public:
     /// @param __val A paraméter új értékei, rendre a következő surszámú porthoz rendelve.
     cNPort *portSetParam(int __port_index, const QString& __par, const QStringList& __val);
 
-    /// A port keresése az index mező értéke alapján, beleértve a gebfoglat portot is.
+    /// A port keresése az index mező értéke alapján.
     cNPort * getPort(int __ix, bool __ex = true);
-    /// A port keresése a port név alapján, beleértve a gebfoglat portot is.
+    /// A port keresése a port név alapján.
     cNPort * getPort(const QString& __pn, bool __ex = true);
     /// Allokál és beolvas egy node objektumot a megadott node_id alapján.
     /// Az allokált objektum típusa megfelel a táblának, ha a rekor az nodes, hosts, snmpdevices táblában van.
@@ -767,7 +757,7 @@ public:
     /// Ha pShare értéke NULL, akkor ezt egy leszármazottból hívtuk, ahol ez a hívás nem támogatott,
     /// ezért a metódus dob egy kizárást.
     QSet<cShareBack>& shares() {
-        if (pShares == NULL) EXCEPTION(EPROGFAIL);
+        if (pShares == NULL) EXCEPTION(ENOTSUPP);
         return *pShares;
     }
 
@@ -794,22 +784,62 @@ néhány felesleges komponenst, de igy nem kell eltérni az adatbázisban defini
 class LV2SHARED_EXPORT cNode : public cPatch {
     CRECORD(cNode);
 protected:
-    cNode(_no_init_ _dummy) : cPatch(_dummy) { cNode::descr(); }
+    explicit cNode(_no_init_ _dummy) : cPatch(_dummy) { cNode::descr(); }
 public:
-    cNode(const QString& __name, const QString& __descr);
-    explicit cNode(no_init_&) : cRecord(), cNPort(_no_init_), ports(), _mainPortType() { cNode::descr(); }
+    cNode(const QString& __name, const QString& __note);
     cNode& operator=(const cNode& __o);
-    virtual bool insert(QSqlQuery &__q, bool __ex = true);
-    virtual void toEnd();
-    virtual bool toEnd(int i);
-    virtual void clearToEnd();
-    /// Hibát dob, ebben az osztályban nincs értelme
+    // virtual void clearToEnd();
+    // virtual void toEnd();
+    // virtual bool toEnd(int i);
+    // virtual bool insert(QSqlQuery &__q, bool __ex = true);
+    /// Kitölti a ports adattagot, hiba esetén dob egy kizárást.
+    virtual int fetchPorts(QSqlQuery& __q) { return ports.fetch(__q, true, _sNodeId, getId()); }
+    /// Hibát dob, ebben az osztályban nem támogatott
     virtual void clearShares();
-    /// Hibát dob, ebben az osztályban nincs értelme
+    /// Hibát dob, ebben az osztályban nem támogatott
     virtual bool setShare(int __a, int __ab = NULL_IX, int __b = NULL_IX, int __bb = NULL_IX, bool __cd = false);
-    /// Hibát dob, ebben az osztályban nincs értelme
+    /// Hibát dob, ebben az osztályban nem támogatott
     virtual bool updateShares(QSqlQuery& __q, bool __clr = false, bool __ex = true);
+    /// Hibát dob, ebben az osztályban nem támogatott
+    virtual cPPort *addPort(const QString& __name, const QString &__note, int __ix);
+    /// Hibát dob, ebben az osztályban nem támogatott
+    virtual cPPort *addPorts(const QString& __np, int __noff, int __from, int __to, int __off);
 
+    /// portok lista bővítése egy elemmel.
+    /// @param __t A port típusát definiáló objektum referenciája
+    /// @param n Ha több objektum típust definiál a __t, akkor a típus indexe (0,1), illetve érdektelen
+    /// @param __name port_name
+    /// @param __note port_descr
+    /// @param __ix Port_index, ha értéke NULL_IX, akkor az index mező NULL lessz.
+    cNPort *addPort(const cIfType& __t, const QString& __name, const QString &__note, int __ix);
+    /// A port liasta bővítése egy sorozattal.
+    /// @param __t A port típusát definiáló objektum referenciája
+    /// @param __pref Port név minta.
+    /// @param __noff Egy eltolás a név kébzéséhez
+    /// @param __from Legkisebb idex
+    /// @param __to Legnagyobb idex
+    /// @param __off Egy eltolás a port indexhez
+    cNPort *addPorts(const cIfType& __t, const QString& __np, int __noff, int __from, int __to, int __off);
+    /// Hasonló mint az addPorts hívás, de a létrehozott portok típusa "sensor", továbbá kitölti az ip címet.
+    /// A MAC NULL lessz, az ip cím típusa pedig "pseudo", és csak IPV4 formályú cím lehet
+    cNPort *addSensors(const QString& __np, int __noff, int __from, int __to, int __off, const QHostAddress& __pip);
+
+    /// Beolvas egy objektumot/rekordot az IP alapján. Nem feltétlenül tartalmazza a beolvasott
+    /// objektum a megadott címet. A metódus elöbb megkeresi a megadott IP címmel rendelkező iface_addrs rekordot,
+    /// és az ehhez tartozó host-ot olvassa be. Ha esetleg cSnmpDevice objektummal hívjuk, és a beolvasandó rekord
+    /// csak a parentben szerepel, akkor nem fog beolvasni semmit, vagyis nem lessz találat.
+    /// @param q Az adatbázisműveletekhez használt objektum
+    /// @param a A keresett IP cím
+    /// @return Ha van találat, ill. beolvasott rekord, akkor true, egyébként false
+    bool fetchByIp(QSqlQuery& q, const QHostAddress& a);
+    /// Beolvas egy objektumot/rekordot a MAC alapján.  Nem feltétlenül tartalmazza a beolvasott
+    /// objektum a megadott címet. A metódus elöbb megkeresi a megadott MAC címmel rendelkező interfaces rekordot,
+    /// és az ehhez tartozó host-ot olvassa be. Ha esetleg cSnmpDevice objektummal hívjuk, és a beolvasandó rekord
+    /// csak a parentben szerepel, akkor nem fog beolvasni semmit, vagyis nem lessz találat.
+    /// @param q Az adatbázisműveletekhez használt objektum
+    /// @param a A keresett MAC
+    /// @return a találatok száma, egy vagy nulla lehet csak.
+    int fetchByMac(QSqlQuery& q, const cMac& a);
     /// A saját cHost objektum adatait tölti be az adatbázisból.
     /// Ha meg van adva a HOSTNAME környezeti változó, akkor az ebben megadott nevű rekordot próbálja meg beolvasni.
     /// Ha nincs megadva a környezeti változó, vagy neincs ilyen nevű rekord, akkor lekérdezi a saját ip címeket,
@@ -819,11 +849,6 @@ public:
     /// @return Ha nem találja a saját host rekordot, akkor ha __ex értéke hamis, akkor false-val tér vissza,
     ///         ha __ex értéke true, akkor dob egy kizárást. Ha beolvasta a keresett rekordot, akkor true-val tér vissza
     bool fetchSelf(QSqlQuery& q, bool __ex = true);
-    /// Hasonéó mint az addPorts hívás, de a létrehozott portok típusa "sensor", továbbá kitölti az ip címet.
-    /// A MAC NULL lessz, az ip cím típusa pedif "pseudo"
-    cNPort *addSensors(const QString& __np, int __noff, int __from, int __to, int __off, const QHostAddress& __pip);
-    cHost &portSetAddress(const QString& __port, const cMac &__mac, const QHostAddress &__a, const QString &__t, const QString &__d);
-    cHost& portSetAddress(int __port_index, const cMac &__mac, const QHostAddress &__a, const QString &__t, const QString &__d = _sNul);
     cIfaceAddr *portAddAddress(const QString& __port, const QHostAddress& __a, const QString& __t, const QString &__d = _sNul);
     cIfaceAddr *portAddAddress(int __port_index, const QHostAddress& __a, const QString& __t, const QString &__d = _sNul);
     /// A megadott porthoz hozzáad egy VLAN összerendelést.
@@ -832,38 +857,19 @@ public:
     ///
     cInterface *portSetVlans(const QString& __port, const QList<qlonglong>& _ids);
     cInterface *portSetVlans(int __port_index, const QList<qlonglong>& _ids);
-    /// Beolvas egy objektumot/rekordot az IP alapján. Nem feltétlenül tartalmazza a beolvasott
-    /// objektum a megadott címet. A metódus elöbb megkeresi a megadott IP címmel rendelkező iface_addrs rekordot,
-    /// és az ehhez tartozó host-ot olvassa be. Ha esetleg cSnmpDevice objektummal hívjuk, és a beolvasandó rekord
-    /// csak a parentben szerepel, akkor nem fog beolvasni semmit, vagyis nem lessz találat.
-    /// @param q Az adatbázisműveletekhez használt objektum
-    /// @param a A keresett IP cím
-    /// @return Ha van találat, ill. beolvasott rekord, akkor true, egyébként false
-    virtual bool fetchByAddr(QSqlQuery& q, const QHostAddress& a);
-    /// Beolvas egy objektumot/rekordot a MAC alapján.  Nem feltétlenül tartalmazza a beolvasott
-    /// objektum a megadott címet. A metódus elöbb megkeresi a megadott MAC címmel rendelkező interfaces rekordot,
-    /// és az ehhez tartozó host-ot olvassa be. Ha esetleg cSnmpDevice objektummal hívjuk, és a beolvasandó rekord
-    /// csak a parentben szerepel, akkor nem fog beolvasni semmit, vagyis nem lessz találat.
-    /// @param q Az adatbázisműveletekhez használt objektum
-    /// @param a A keresett MAC
-    /// @return a találatok száma, egy vagy nulla lehet csak.
-    virtual int fetchByMac(QSqlQuery& q, const cMac& a);
-
 };
 
 
-class LV2SHARED_EXPORT cSnmpDevice : public cHost {
+class LV2SHARED_EXPORT cSnmpDevice : public cNode {
     CRECORD(cSnmpDevice);
 public:
     cSnmpDevice(const QString& __n, const QString& __d);
     /// Lista bővítése egy elemmel.
     /// @param __t A port típusát definiáló objektum referenciája
-    /// @param n szelektor, ha a port típushoz két objektum típus is illeszkedik, akkor ennek a kiválasztása 0, vagy 1,
-    ///          Ha csak egy objektum típus lehetséges, akkor kötelezően 0.
     /// @param __name port_name
-    /// @param __descr port_descr
+    /// @param __note port_descr
     /// @param __ix Port_index, A NULL_IX érték nem megengedett (kötelező az egyedi index)
-    virtual cNPort * addPort(const cIfType& __t, int n, const QString& __name, const QString &__descr, int __ix);
+    virtual cNPort * addPort(const cIfType& __t, const QString& __name, const QString &__note, int __ix);
     /// Az SNMP verzió konstanst adja vissza (net-snmp híváshoz)
     int snmpVersion() const;
     ///
@@ -1147,7 +1153,7 @@ public:
     /// Egy adott nevű template elhelyezése a konténerbe, de az adatbázisban nem.
     void set(const QString& __name, const QString& __cont);
     /// Egy adott nevű template elhelyezése a konténerbe, és az adatbázisban.
-    void save(QSqlQuery& __q, const QString& __name, const QString& __cont, const QString& __descr);
+    void save(QSqlQuery& __q, const QString& __name, const QString& __cont, const QString& __note);
     /// Egy adott nevű template törlése a konténerből, és az adatbázisból.
     void del(QSqlQuery& __q, const QString &__name);
     /// A temlate rekordok típusa (template_type mező megkövetelt értéke / szűrési feltétel)

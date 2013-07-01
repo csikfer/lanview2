@@ -213,7 +213,7 @@ CREATE TABLE host_service_logs (
     new_state           notifswitch     NOT NULL,
     new_soft_state      notifswitch     NOT NULL,
     new_hard_state      notifswitch     NOT NULL,
-    event_note         varchar(255)    DEFAULT NULL,
+    event_note          varchar(255)    DEFAULT NULL,
     superior_alarm      integer         DEFAULT NULL,
     noalarm             boolean         NOT NULL,
     service_name        varchar(32)     NOT NULL DEFAULT '',
@@ -269,7 +269,7 @@ ALTER TYPE drawtype OWNER TO lanview2;
 CREATE TABLE host_service_vars (
     service_var_id      serial          PRIMARY KEY,
     service_var_name    varchar(32)     NOT NULL,
-    service_var_note   varchar(255)    DEFAULT NULL,
+    service_var_note    varchar(255)    DEFAULT NULL,
     host_service_id     integer         NOT NULL
         REFERENCES host_services(host_service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     color               integer         DEFAULT 0,
@@ -328,7 +328,10 @@ ALTER TYPE mactabstate OWNER TO lanview2;
 CREATE TABLE mactab (
     hwaddress       macaddr PRIMARY KEY,
     port_id         integer NOT NULL,     -- REFERENCES nports(port_id),
-    status          mactabstate DEFAULT 'likely'
+    status          mactabstate[] DEFAULT 'likely'
+    last_time       timestamp   DEFAULT CURRENT_TIMESTAMP,
+    port_mac_type   portmactype[] NOT NULL DEFAULT '{}',
+    set_type        settype NOT NULL DEFAULT 'manual'
 );
 CREATE TRIGGER mactab_check_reference_port_id            BEFORE UPDATE OR INSERT ON mactab            FOR EACH ROW EXECUTE PROCEDURE check_reference_port_id('false', 'interfaces');
 

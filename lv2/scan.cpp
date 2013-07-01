@@ -439,7 +439,7 @@ bool getPortsBySnmp(cSnmpDevice& node, bool __ex)
             continue;
         }
         cIfType         ifType = cIfType::ifType(ifTypeName);
-        cNPort *pPort = cNPort::newPort(ifType, addr.isNull() ? 0 : 1);
+        cNPort *pPort = cNPort::newPortObj(ifType, addr.isNull() ? 0 : 1);
         if (pPort->descr().tableName() == _sIfaceAddrs && addr.isNull()) {
             EX(EDATA, -1, "Address is required.");
         }

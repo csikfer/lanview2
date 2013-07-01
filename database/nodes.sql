@@ -348,7 +348,7 @@ COMMENT ON TYPE vlantype IS
 no          nincs hozzárendelés
 unknown     ismeretlen
 forbidden   Tiltott
-autó        autómatikus hozzárendelés
+auto        autómatikus hozzárendelés
 tagged      címkézett
 untagged    nem címkézett, közvetlen
 virtual     
@@ -358,7 +358,7 @@ CREATE TYPE settype AS ENUM ('auto', 'query', 'manual');
 ALTER TYPE settype OWNER TO lanview2;
 COMMENT ON TYPE settype IS
 'Egy paraméter megállapításának módja:
-autó    autómatikus
+auto    autómatikus
 query   lekérdező program töltötte ki
 manual  kézzel megadva';
 
@@ -375,20 +375,6 @@ CREATE TABLE port_vlans (
 ALTER TABLE port_vlans OWNER TO lanview2;
 COMMENT ON TABLE port_vlans IS 'port és vlan összerendelések táblája';
 
-CREATE TYPE portmactype AS ENUM ('suspect', 'arp', 'uplink', 'static');
-
-CREATE TABLE port_macs (
-    port_mac_id    serial      PRIMARY KEY,
-    port_id         integer     NOT NULL, -- REFERENCES interfaces(port_id) ON DELETE CASCADE ON UPDATE RESTRICT,
-    hwaddress       macaddr     DEFAULT NULL,
-    first_time      timestamp   DEFAULT CURRENT_TIMESTAMP,
-    last_time       timestamp   DEFAULT CURRENT_TIMESTAMP,
-    port_mac_type   portmactype[] NOT NULL DEFAULT '{}',
-    set_type        settype NOT NULL DEFAULT 'manual'
-);
-CREATE UNIQUE INDEX port_macs_hwaddress ON port_macs(hwaddress) WHERE port_mac_type <> '{uplink}';
-ALTER TABLE port_vlans OWNER TO lanview2;
-COMMENT ON TABLE port_vlans IS 'port cím tábla lekérdezés eredménye';
 -- //// IPADDRESS
 
 CREATE TYPE addresstype AS ENUM ('fixip', 'private', 'external', 'dynamic', 'pseudo');
@@ -400,10 +386,11 @@ CREATE TABLE ipaddresses (
     ip_address_note varchar(255) DEFAULT NULL,
     address         inet        DEFAULT NULL,
     ip_address_type addresstype DEFAULT 'dynamic',
+    preferred       boolean     DEFAULT NULL,
     subnet_id       integer     DEFAULT NULL REFERENCES subnets(subnet_id) MATCH SIMPLE
                                     ON DELETE RESTRICT ON UPDATE RESTRICT,
     port_id         integer     NOT NULL REFERENCES interfaces(port_id) MATCH FULL
-				    ON DELETE CASCADE ON UPDATE RESTRICT
+                                    ON DELETE CASCADE ON UPDATE RESTRICT
 );
 ALTER TABLE ipaddresses OWNER TO lanview2;
 
@@ -658,21 +645,17 @@ CREATE TRIGGER pports_delete_port_post      AFTER DELETE ON pports      FOR EACH
 CREATE TRIGGER nports_delete_port_post      AFTER DELETE ON nports      FOR EACH ROW EXECUTE PROCEDURE delete_port_post();
 CREATE TRIGGER interfaces_delete_port_post  AFTER DELETE ON interfaces  FOR EACH ROW EXECUTE PROCEDURE delete_port_post();
 
--- Ellenörzi az id egyediségét, nem engedi megváltoztatni.
 -- Ellenőrzi, hogy a address (ip cím) mező rendben van-e
 -- Nem ütközik más címmel
 CREATE OR REPLACE FUNCTION check_ip_address() RETURNS TRIGGER AS $$
 DECLARE
     n   cidr;
 BEGIN
-    -- RAISE INFO 'check_ip_address() %/% NEW = %',TG_TABLE_NAME, TG_OP , NEW;
-    IF TG_OP = 'UPDATE' THEN
-        IF NEW.ip_address_id <> OLD.ip_address_id THEN
-            PERFORM error('Constant', -1, 'ip_address_id', 'check_ip_address()', TG_TABLE_NAME, TG_OP);
-        END IF;
-    END IF;
-    IF NEW.address IS NOT NULL THEN     -- Az új rekordban van ip cím
-        IF NEW.subnet_id IS NULL AND NEW.ip_address_type <> 'external' THEN   -- Nincs subnet (id), keresünk egyet
+ -- RAISE INFO 'check_ip_address() %/% NEW = %',TG_TABLE_NAME, TG_OP , NEW;
+    -- Az új rekordban van ip cím
+    IF NEW.address IS NOT NULL THEN
+        -- Nincs subnet (id), keresünk egyet
+        IF NEW.subnet_id IS NULL AND NEW.ip_address_type <> 'external' THEN
             BEGIN
                 SELECT subnet_id INTO STRICT NEW.subnet_id FROM subnets WHERE netaddr >> NEW.address;
                 EXCEPTION
@@ -682,7 +665,8 @@ BEGIN
                         PERFORM error('Ambiguous',-1, 'subnet address for : ' || CAST(NEW.address AS TEXT), 'check_ip_address()', TG_TABLE_NAME, TG_OP);
             END;
             -- RAISE INFO 'Set subnet id : %', NEW.subnet_id;
-        ELSIF NEW.ip_address_type <> 'external' THEN                        -- Ha megadtuk a subnet id-t is, akkor a címnek benne kell lennie
+        -- Ha megadtuk a subnet id-t is, akkor a címnek benne kell lennie
+        ELSIF NEW.ip_address_type <> 'external' THEN
             SELECT netaddr INTO n FROM subnets WHERE subnet_id = NEW.subnet_id;
             IF NOT FOUND THEN
                 PERFORM error('InvRef', NEW.subnet_id, 'subnet_id', 'check_ip_address()', TG_TABLE_NAME, TG_OP);
@@ -691,6 +675,7 @@ BEGIN
                 PERFORM error('InvalidNAddr', NEW.subnet_id, CAST(n AS TEXT) || '>>' || CAST(NEW.address AS TEXT), 'check_ip_address()', TG_TABLE_NAME, TG_OP);
             END IF;
         ELSE
+            -- external típusnál mindíg NULL a subnet_id
             NEW.subnet_id := NULL;
         END IF;
         -- Ha van már ilyen fix vagy pseudo ip cím, az hiba, de privat címneknél nincs ütközés
@@ -704,6 +689,10 @@ BEGIN
             IF NEW.ip_address_type = 'dynamic' THEN
                 UPDATE ipaddresses SET address = NULL WHERE address = NEW.address AND ip_address_type = 'dynamic' AND ip_address_id <> NEW.ip_address_id;
             END IF;
+        END IF;
+        -- Ha a preferred nincs megadva, akkor az elsőnek megadott cím a preferált
+        IF NEW.preferred IS NULL THEN
+            NEW.prefferd := 0 = COUNT(*) FROM ipaddresses WHERE port_id = NEW.port_id AND prefferd;
         END IF;
     ELSE
         -- Cím ként a NULL csak a dynamic típusnál megengedett

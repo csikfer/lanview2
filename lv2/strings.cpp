@@ -84,7 +84,6 @@ const QString _sCondW(__sCondW);
 const char   __sIsNull[] = " IS NULL";
 const QString _sIsNull(__sIsNull);
 
-
 const char   __sA[] = "A";
 const QString _sA(__sA);
 
@@ -139,9 +138,6 @@ const char   __sIgnored[] = "ignored";
 const QString _sIgnored(__sIgnored);
 
 
-const char   __sMain[] = "main";
-const QString _sMain(__sMain);
-
 const char   __sMainThread[] = "mainThread";
 const QString _sMainThread(__sMainThread);
 
@@ -149,18 +145,8 @@ const char   __sAnonimousThread[] = "anonimousThread";
 const QString _sAnonimousThread(__sAnonimousThread);
 
 
-const char   __sInvalidEnumValue[] = "Invalid enum value";
-const QString _sInvalidEnumValue(__sInvalidEnumValue);
-
 const char   __sPublic[] = "public";
-const QString _sPublic(__sPublic);
-
-const char   __sOIdInv[] = "Invalid OID";
-const QString _sOIdInv(__sOIdInv);
-
-const char   __sOIdNull[] = "Invalid or NULL OID";
-const QString _sOIdNull(__sOIdNull);
-
+const QString _sPublic(__sPublic);	
 
 const char   __sQHostAddress[] = "QHostAddress";
 const QString _sQHostAddress(__sQHostAddress);
@@ -175,12 +161,6 @@ const char   __sNetAddressList[] = "netAddressList";
 const QString _sNetAddressList(__sNetAddressList);
 
 
-const char   __sSetup[] = "setup";
-const QString _sSetup(__sSetup);
-
-const char   __sGui[] = "gui";
-const QString _sGui(__sGui);
-
 const char   __sLibVersion[] = "lib-version";
 const QString _sLibVersion(__sLibVersion);
 
@@ -190,14 +170,12 @@ const QString _sVersion(__sVersion);
 const char   __sHelp[] = "help";
 const QString _sHelp(__sHelp);
 
-const char   __sVerbose[] = "verbose";
-const QString _sVerbose(__sVerbose);
-
 const char   __sDebugLevel[] = "debug-level";
 const QString _sDebugLevel(__sDebugLevel);
 
 const char   __sLogFile[] = "log-file";
 const QString _sLogFile(__sLogFile);
+
 
 const char   __sLocalHost[] = "localhost";
 const QString _sLocalHost(__sLocalHost);
@@ -210,9 +188,6 @@ const QString _sLang(__sLang);
 
 const char   __sLocal[] = "local";
 const QString _sLocal(__sLocal);
-
-const char   __sSerial[] = "serial";
-const QString _sSerial(__sSerial);
 
 const char   __sInit[] = "init";
 const QString _sInit(__sInit);
@@ -316,9 +291,6 @@ const QString _sBin(__sBin);
 const char   __sLanView2[] = "lanview2";
 const QString _sLanView2(__sLanView2);
 
-const char   __sDiscover[] = "discover";
-const QString _sDiscover(__sDiscover);
-
 
 const char   __sARRAY[] = "ARRAY";
 const QString _sARRAY(__sARRAY);                  
@@ -342,8 +314,8 @@ const QString _sTpowId(__sTpowId);
 const char   __sTpowName[] = "tpow_name";
 const QString _sTpowName(__sTpowName);
  
-const char   __sTpowDescr[] = "tpow_descr";
-const QString _sTpowDescr(__sTpowDescr);
+const char   __sTpowNote[] = "tpow_note";
+const QString _sTpowNote(__sTpowNote);
  
 const char   __sDow[] = "dow";
 const QString _sDow(__sDow);
@@ -363,8 +335,8 @@ const QString _sTimePeriodId(__sTimePeriodId);
 const char   __sTimePeriodName[] = "timeperiod_name";
 const QString _sTimePeriodName(__sTimePeriodName);
  
-const char   __sTimePeriodDescr[] = "timeperiod_descr";
-const QString _sTimePeriodDescr(__sTimePeriodDescr);
+const char   __sTimePeriodNote[] = "timeperiod_note";
+const QString _sTimePeriodNote(__sTimePeriodNote);
 
 const char   __sImages[] = "images";
 const QString _sImages(__sImages);
@@ -375,8 +347,8 @@ const QString _sImageId(__sImageId);
 const char   __sImageName[] = "image_name";
 const QString _sImageName(__sImageName);
  
-const char   __sImageDescr[] = "image_descr";
-const QString _sImageDescr(__sImageDescr);
+const char   __sImageNote[] = "image_note";
+const QString _sImageNote(__sImageNote);
  
 const char   __sImageType[] = "image_type";
 const QString _sImageType(__sImageType);
@@ -429,8 +401,8 @@ const QString _sPlaceId(__sPlaceId);
 const char   __sPlaceName[] = "place_name";
 const QString _sPlaceName(__sPlaceName);
  
-const char   __sPlaceDescr[] = "place_descr";
-const QString _sPlaceDescr(__sPlaceDescr);
+const char   __sPlaceNote[] = "place_note";
+const QString _sPlaceNote(__sPlaceNote);
  
 const char   __sPlaceAlarmMsg[] = "place_alarm_msg";
 const QString _sPlaceAlarmMsg(__sPlaceAlarmMsg);
@@ -444,6 +416,9 @@ const QString _sParentId(__sParentId);
 const char   __sRoot[] = "root";
 const QString _sRoot(__sRoot);
   
+const char   __sReal[] = "real";
+const QString _sReal(__sReal);
+   
 const char   __sFrame[] = "frame";
 const QString _sFrame(__sFrame);
  
@@ -459,8 +434,8 @@ const QString _sPlaceGroupId(__sPlaceGroupId);
 const char   __sPlaceGroupName[] = "place_group_name";
 const QString _sPlaceGroupName(__sPlaceGroupName);
  
-const char   __sPlaceGroupDescr[] = "place_group_descr";
-const QString _sPlaceGroupDescr(__sPlaceGroupDescr);
+const char   __sPlaceGroupNote[] = "place_group_note";
+const QString _sPlaceGroupNote(__sPlaceGroupNote);
 
 const char   __sUsers[] = "users";
 const QString _sUsers(__sUsers);
@@ -471,8 +446,8 @@ const QString _sUserId(__sUserId);
 const char   __sUserName[] = "user_name";
 const QString _sUserName(__sUserName);
  
-const char   __sUserDescr[] = "user_descr";
-const QString _sUserDescr(__sUserDescr);
+const char   __sUserNote[] = "user_note";
+const QString _sUserNote(__sUserNote);
  
 const char   __sPasswd[] = "passwd";
 const QString _sPasswd(__sPasswd);
@@ -497,10 +472,10 @@ const QString _sHostNotifCmd(__sHostNotifCmd);
  
 const char   __sServNotifCmd[] = "serv_notif_cmd";
 const QString _sServNotifCmd(__sServNotifCmd);
- 
+  
 const char   __sAddresses[] = "addresses";
 const QString _sAddresses(__sAddresses);
-
+ 
 const char   __sGroups[] = "groups";
 const QString _sGroups(__sGroups);
  
@@ -510,27 +485,103 @@ const QString _sGroupId(__sGroupId);
 const char   __sGroupName[] = "group_name";
 const QString _sGroupName(__sGroupName);
  
-const char   __sGroupDescr[] = "group_descr";
-const QString _sGroupDescr(__sGroupDescr);
+const char   __sGroupNote[] = "group_note";
+const QString _sGroupNote(__sGroupNote);
  
 const char   __sGroupRights[] = "group_rights";
 const QString _sGroupRights(__sGroupRights);
+ 
+ 
+const char   __sIfTypes[] = "iftypes";
+const QString _sIfTypes(__sIfTypes);
+    
+const char   __sIfTypeName[] = "iftype_name";
+const QString _sIfTypeName(__sIfTypeName);
+      
+const char   __sAttach[] = "attach";
+const QString _sAttach(__sAttach);
+      
+const char   __sSensor[] = "sensor";
+const QString _sSensor(__sSensor);
+   
+const char   __sPatch[] = "patch";
+const QString _sPatch(__sPatch);
+   
+const char   __sRS485[] = "rs485";
+const QString _sRS485(__sRS485);
+   
+const char   __sIIC[] = "iic";
+const QString _sIIC(__sIIC);
+   
+const char   __sEPort[] = "eport";
+const QString _sEPort(__sEPort);
+   
+const char   __sEthernet[] = "ethernet";
+const QString _sEthernet(__sEthernet);
+   
+const char   __sWireless[] = "wireless";
+const QString _sWireless(__sWireless);
+   
+const char   __sPPP[] = "ppp";
+const QString _sPPP(__sPPP);
+   
+const char   __sRS232[] = "rs232";
+const QString _sRS232(__sRS232);
+   
+const char   __sVirtual[] = "virtual";
+const QString _sVirtual(__sVirtual);
+   
+const char   __sMultiplexor[] = "multiplexor";
+const QString _sMultiplexor(__sMultiplexor);
+   
+const char   __sADSL[] = "adsl";
+const QString _sADSL(__sADSL);
+   
+const char   __sTunnel[] = "tunnel";
+const QString _sTunnel(__sTunnel);
+   
+const char   __sDigitalPowerline[] = "digitalPowerline";
+const QString _sDigitalPowerline(__sDigitalPowerline);
+   
+const char   __sUSB[] = "usb";
+const QString _sUSB(__sUSB);
+ 
+const char   __sIfTypeNote[] = "iftype_note";
+const QString _sIfTypeNote(__sIfTypeNote);
+ 
+const char   __sIfTypeIanaId[] = "iftype_iana_id";
+const QString _sIfTypeIanaId(__sIfTypeIanaId);
+ 
+const char   __sIfTypeLinkType[] = "iftype_link_type";
+const QString _sIfTypeLinkType(__sIfTypeLinkType);
+  
+const char   __sPTP[] = "ptp";
+const QString _sPTP(__sPTP);
+  
+const char   __sBus[] = "bus";
+const QString _sBus(__sBus);
+    
+const char   __sLogical[] = "logical";
+const QString _sLogical(__sLogical);
+    
+const char   __sUnknown[] = "unknown";
+const QString _sUnknown(__sUnknown);
+ 
+const char   __sIfTypeObjType[] = "iftype_obj_type";
+const QString _sIfTypeObjType(__sIfTypeObjType);
+  
+const char   __sNPort[] = "nport";
+const QString _sNPort(__sNPort);
+  
+const char   __sPPort[] = "pport";
+const QString _sPPort(__sPPort);
+  
+const char   __sInterface[] = "interface";
+const QString _sInterface(__sInterface);
 
 
 const char   __sPatchs[] = "patchs";
 const QString _sPatchs(__sPatchs);
-
-const char   __sHubs[] = "hubs";
-const QString _sHubs(__sHubs);
-
-const char   __sIsVirtual[] = "is_virtual";
-const QString _sIsVirtual(__sIsVirtual);
-
-const char   __sIsSwitch[] = "is_switch";
-const QString _sIsSwitch(__sIsSwitch);
-
-const char   __sNodes[] = "nodes";
-const QString _sNodes(__sNodes);
  
 const char   __sNodeId[] = "node_id";
 const QString _sNodeId(__sNodeId);
@@ -538,105 +589,51 @@ const QString _sNodeId(__sNodeId);
 const char   __sNodeName[] = "node_name";
 const QString _sNodeName(__sNodeName);
  
-const char   __sNodeDescr[] = "node_descr";
-const QString _sNodeDescr(__sNodeDescr);
- 
-const char   __sPortId[] = "port_id";
-const QString _sPortId(__sPortId);
- 
-const char   __sPortName[] = "port_name";
-const QString _sPortName(__sPortName);
- 
-const char   __sPortDescr[] = "port_descr";
-const QString _sPortDescr(__sPortDescr);
- 
-const char   __sPortTag[] = "port_tag";
-const QString _sPortTag(__sPortTag);
- 
-const char   __sIfTypeId[] = "iftype_id";
-const QString _sIfTypeId(__sIfTypeId);
+const char   __sNodeNote[] = "node_note";
+const QString _sNodeNote(__sNodeNote);
+  
+const char   __sNodes[] = "nodes";
+const QString _sNodes(__sNodes);
  
 const char   __sNodeStat[] = "node_stat";
 const QString _sNodeStat(__sNodeStat);
- 
+  
+const char   __sOn[] = "on";
+const QString _sOn(__sOn);
+  
+const char   __sRecovered[] = "recovered";
+const QString _sRecovered(__sRecovered);
+  
+const char   __sWarning[] = "warning";
+const QString _sWarning(__sWarning);
+  
+const char   __sCritical[] = "critical";
+const QString _sCritical(__sCritical);
+  
+const char   __sUnreachable[] = "unreachable";
+const QString _sUnreachable(__sUnreachable);
+    
+const char   __sFlapping[] = "flapping";
+const QString _sFlapping(__sFlapping);
+   
 const char   __sNodeAlarmMsg[] = "node_alarm_msg";
 const QString _sNodeAlarmMsg(__sNodeAlarmMsg);
  
-const char   __sUnreachable[] = "unreachable";
-const QString _sUnreachable(__sUnreachable);
- 
-const char   __sRecovered[] = "recovered";
-const QString _sRecovered(__sRecovered);
- 
-const char   __sFlapping[] = "flapping";
-const QString _sFlapping(__sFlapping);
- 
-const char   __sCritical[] = "critical";
-const QString _sCritical(__sCritical);
- 
-const char   __sWarning[] = "warning";
-const QString _sWarning(__sWarning);
- 
-const char   __sOn[] = "on";
-const QString _sOn(__sOn);
-
-const char   __sHosts[] = "hosts";
-const QString _sHosts(__sHosts);
- 
-const char   __sHwAddress[] = "hwaddress";
-const QString _sHwAddress(__sHwAddress);
- 
-const char   __sPortIndex[] = "port_index";
-const QString _sPortIndex(__sPortIndex);
- 
-const char   __sPortOStat[] = "port_ostat";
-const QString _sPortOStat(__sPortOStat);
- 
-const char   __sPortAStat[] = "port_astat";
-const QString _sPortAStat(__sPortAStat);
+const char   __sNodeType[] = "node_type";
+const QString _sNodeType(__sNodeType);
   
-const char   __sUp[] = "up";
-const QString _sUp(__sUp);
+const char   __sNode[] = "node;
+const QString _sNode(__sNode);
   
-const char   __sDown[] = "down";
-const QString _sDown(__sDown);
+const char   __sHost[] = "host";
+const QString _sHost(__sHost);
   
-const char   __sTesting[] = "testing";
-const QString _sTesting(__sTesting);
+const char   __sSwitch[] = "switch";
+const QString _sSwitch(__sSwitch);
   
-const char   __sDormant[] = "dormant";
-const QString _sDormant(__sDormant);
-  
-const char   __sNotPresent[] = "notpresent";
-const QString _sNotPresent(__sNotPresent);
-  
-const char   __sLowerLayerDown[] = "lowerlayerdown";
-const QString _sLowerLayerDown(__sLowerLayerDown);
-  
-const char   __sInvert[] = "invert";
-const QString _sInvert(__sInvert);
-  
-const char   __sShort[] = "short";
-const QString _sShort(__sShort);
-  
-const char   __sBroken[] = "broken";
-const QString _sBroken(__sBroken);
-  
-const char   __sError[] = "error";
-const QString _sError(__sError);
- 
-const char   __sPortStapleId[] = "port_staple_id";
-const QString _sPortStapleId(__sPortStapleId);
- 
-const char   __sDualFaceType[] = "dualface_type";
-const QString _sDualFaceType(__sDualFaceType);
- 
-const char   __sAddress[] = "address";
-const QString _sAddress(__sAddress);
- 
-const char   __sSubnetId[] = "subnet_id";
-const QString _sSubnetId(__sSubnetId);
- 
+const char   __sHub[] = "hub";
+const QString _sHub(__sHub);
+   
 const char   __sAlarmPlaceGroupId[] = "alarm_place_group_id";
 const QString _sAlarmPlaceGroupId(__sAlarmPlaceGroupId);
 
@@ -676,82 +673,28 @@ const QString _sSysServices(__sSysServices);
 const char   __sVendorName[] = "vendorname";
 const QString _sVendorName(__sVendorName);
 
-const char   __sIfTypes[] = "iftypes";
-const QString _sIfTypes(__sIfTypes);
- 
-const char   __sIfTypeName[] = "iftype_name";
-const QString _sIfTypeName(__sIfTypeName);
-  
-const char   __sAttach[] = "attach";
-const QString _sAttach(__sAttach);
-  
-const char   __sSensor[] = "sensor";
-const QString _sSensor(__sSensor);
-  
-const char   __sPatch[] = "patch";
-const QString _sPatch(__sPatch);
-  
-const char   __sRS485[] = "rs485";
-const QString _sRS485(__sRS485);
-  
-const char   __sIIC[] = "iic";
-const QString _sIIC(__sIIC);
-  
-const char   __sEPort[] = "eport";
-const QString _sEPort(__sEPort);
-  
-const char   __sEthernet[] = "ethernet";
-const QString _sEthernet(__sEthernet);
-  
-const char   __sWireless[] = "wireless";
-const QString _sWireless(__sWireless);
-  
-const char   __sVirtual[] = "virtual";
-const QString _sVirtual(__sVirtual);
-  
-const char   __sMultiplexor[] = "multiplexor";
-const QString _sMultiplexor(__sMultiplexor);
-  
-const char   __sTunnel[] = "tunnel";
-const QString _sTunnel(__sTunnel);
- 
-const char   __sIfTypeDescr[] = "iftype_descr";
-const QString _sIfTypeDescr(__sIfTypeDescr);
- 
-const char   __sIfTypeLinkType[] = "iftype_link_type";
-const QString _sIfTypeLinkType(__sIfTypeLinkType);
-  
-const char   __sPTP[] = "ptp";
-const QString _sPTP(__sPTP);
-  
-const char   __sBus[] = "bus";
-const QString _sBus(__sBus);
-  
-const char   __sLogical[] = "logical";
-const QString _sLogical(__sLogical);
-  
-const char   __sUnknown[] = "unknown";
-const QString _sUnknown(__sUnknown);
- 
-const char   __sIfTypeObjType[] = "iftype_obj_type";
-const QString _sIfTypeObjType(__sIfTypeObjType);
-  
-const char   __sNPort[] = "nport";
-const QString _sNPort(__sNPort);
-  
-const char   __sPPort[] = "pport";
-const QString _sPPort(__sPPort);
-  
-const char   __sInterface[] = "interface";
-const QString _sInterface(__sInterface);
-  
-const char   __sIfaceAddr[] = "iface_addr";
-const QString _sIfaceAddr(__sIfaceAddr);
-
 
 const char   __sNPorts[] = "nports";
 const QString _sNPorts(__sNPorts);
-
+ 
+const char   __sPortId[] = "port_id";
+const QString _sPortId(__sPortId);
+ 
+const char   __sPortName[] = "port_name";
+const QString _sPortName(__sPortName);
+ 
+const char   __sPortNote[] = "port_note";
+const QString _sPortNote(__sPortNote);
+ 
+const char   __sPortTag[] = "port_tag";
+const QString _sPortTag(__sPortTag);
+ 
+const char   __sIfTypeId[] = "iftype_id";
+const QString _sIfTypeId(__sIfTypeId);
+  
+const char   __sPortIndex[] = "port_index";
+const QString _sPortIndex(__sPortIndex);
+ 
 const char   __sPPorts[] = "pports";
 const QString _sPPorts(__sPPorts);
  
@@ -763,6 +706,52 @@ const QString _sSharedPortId(__sSharedPortId);
 
 const char   __sInterfaces[] = "interfaces";
 const QString _sInterfaces(__sInterfaces);
+ 
+const char   __sHwAddress[] = "hwaddress";
+const QString _sHwAddress(__sHwAddress);
+ 
+const char   __sPortOStat[] = "port_ostat";
+const QString _sPortOStat(__sPortOStat);
+ 
+const char   __sPortAStat[] = "port_astat";
+const QString _sPortAStat(__sPortAStat);
+  
+const char   __sUp[] = "up";
+const QString _sUp(__sUp);
+  
+const char   __sDown[] = "down";
+const QString _sDown(__sDown);
+  
+const char   __sTesting[] = "testing";
+const QString _sTesting(__sTesting);
+    
+const char   __sDormant[] = "dormant";
+const QString _sDormant(__sDormant);
+  
+const char   __sNotPresent[] = "notpresent";
+const QString _sNotPresent(__sNotPresent);
+  
+const char   __sLowerLayerDown[] = "lowerlayerdown";
+const QString _sLowerLayerDown(__sLowerLayerDown);
+  
+const char   __sInvert[] = "invert";
+const QString _sInvert(__sInvert);
+  
+const char   __sShort[] = "short";
+const QString _sShort(__sShort);
+  
+const char   __sBroken[] = "broken";
+const QString _sBroken(__sBroken);
+  
+const char   __sError[] = "error";
+const QString _sError(__sError);
+ 
+const char   __sPortStapleId[] = "port_staple_id";
+const QString _sPortStapleId(__sPortStapleId);
+ 
+const char   __sDualFaceType[] = "dualface_type";
+const QString _sDualFaceType(__sDualFaceType);
+ 
 
 const char   __sIpAddresses[] = "ipaddresses";
 const QString _sIpAddresses(__sIpAddresses);
@@ -770,26 +759,30 @@ const QString _sIpAddresses(__sIpAddresses);
 const char   __sIpAddressId[] = "ip_address_ip";
 const QString _sIpAddressId(__sIpAddressId);
  
-const char   __sIpAddressDescr[] = "ip_address_descr";
-const QString _sIpAddressDescr(__sIpAddressDescr);
- 
+const char   __sIpAddressNote[] = "ip_address_note";
+const QString _sIpAddressNote(__sIpAddressNote);
+  
 const char   __sIpAddressType[] = "ip_address_type";
 const QString _sIpAddressType(__sIpAddressType);
   
 const char   __sFixIp[] = "fixip";
 const QString _sFixIp(__sFixIp);
   
-const char   __sDynamic[] = "dynamic";
-const QString _sDynamic(__sDynamic);
-  
 const char   __sPrivate[] = "private";
 const QString _sPrivate(__sPrivate);
   
 const char   __sExternal[] = "external";
 const QString _sExternal(__sExternal);
-
-const char   __sIfaceAddrs[] = "iface_addrs";
-const QString _sIfaceAddrs(__sIfaceAddrs);
+  
+const char   __sDynamic[] = "dynamic";
+const QString _sDynamic(__sDynamic);
+  
+const char   __sPseudo[] = "pseudo";
+const QString _sPseudo(__sPseudo);
+ 
+const char   __sAddress[] = "address";
+const QString _sAddress(__sAddress);
+  
 
 const char   __sVLans[] = "vlans";
 const QString _sVLans(__sVLans);
@@ -800,8 +793,8 @@ const QString _sVlanId(__sVlanId);
 const char   __sVlanName[] = "vlan_name";
 const QString _sVlanName(__sVlanName);
  
-const char   __sVlanDescr[] = "vlan_descr";
-const QString _sVlanDescr(__sVlanDescr);
+const char   __sVlanNote[] = "vlan_note";
+const QString _sVlanNote(__sVlanNote);
  
 const char   __sVlanStat[] = "vlan_stat";
 const QString _sVlanStat(__sVlanStat);
@@ -815,12 +808,12 @@ const QString _sSubNetId(__sSubNetId);
 const char   __sSubNetName[] = "subnet_name";
 const QString _sSubNetName(__sSubNetName);
  
-const char   __sSubNetDescr[] = "subnet_descr";
-const QString _sSubNetDescr(__sSubNetDescr);
+const char   __sSubNetNote[] = "subnet_note";
+const QString _sSubNetNote(__sSubNetNote);
  
 const char   __sNetAddr[] = "netaddr";
 const QString _sNetAddr(__sNetAddr);
- 
+  
 const char   __sSubnetType[] = "subnet_type";
 const QString _sSubnetType(__sSubnetType);
   
@@ -829,10 +822,7 @@ const QString _sPrimary(__sPrimary);
   
 const char   __sSecondary[] = "secondary";
 const QString _sSecondary(__sSecondary);
-  
-const char   __sPseudo[] = "pseudo";
-const QString _sPseudo(__sPseudo);
-
+    
 const char   __sPortParams[] = "port_params";
 const QString _sPortParams(__sPortParams);
  
@@ -842,8 +832,8 @@ const QString _sPortParamId(__sPortParamId);
 const char   __sPortParamName[] = "port_param_name";
 const QString _sPortParamName(__sPortParamName);
  
-const char   __sPortParamDescr[] = "port_param_descr";
-const QString _sPortParamDescr(__sPortParamDescr);
+const char   __sPortParamNote[] = "port_param_note";
+const QString _sPortParamNote(__sPortParamNote);
  
 const char   __sPortParamType[] = "port_param_type";
 const QString _sPortParamType(__sPortParamType);
@@ -854,6 +844,9 @@ const QString _sPortParamDim(__sPortParamDim);
 const char   __sPortParamValues[] = "port_param_values";
 const QString _sPortParamValues(__sPortParamValues);
  
+const char   __sPortParamValueId[] = "port_param_value_id";
+const QString _sPortParamValueId(__sPortParamValueId);
+   
 const char   __sParamValue[] = "param_value";
 const QString _sParamValue(__sParamValue);
 
@@ -889,6 +882,12 @@ const QString _sServiceId(__sServiceId);
  
 const char   __sServiceName[] = "service_name";
 const QString _sServiceName(__sServiceName);
+    
+const char   __sSnmp[] = "snmp";
+const QString _sSnmp(__sSnmp);
+  
+const char   __sTcpRs[] = "tcp.rs";
+const QString _sTcpRs(__sTcpRs);
   
 const char   __sSsh[] = "ssh";
 const QString _sSsh(__sSsh);
@@ -904,31 +903,13 @@ const QString _sHttps(__sHttps);
   
 const char   __sMunin[] = "munin";
 const QString _sMunin(__sMunin);
-  
-const char   __sSnmp[] = "snmp";
-const QString _sSnmp(__sSnmp);
-  
-const char   __sCpu[] = "cpu";
-const QString _sCpu(__sCpu);
-  
-const char   __sMem[] = "mem";
-const QString _sMem(__sMem);
-  
-const char   __sRLinkStat[] = "rlinkstat";
-const QString _sRLinkStat(__sRLinkStat);
-  
-const char   __sIndAlarmIf1[] = "indalarmif1";
-const QString _sIndAlarmIf1(__sIndAlarmIf1);
-  
-const char   __sAttached[] = "attached";
-const QString _sAttached(__sAttached);
  
-const char   __sServiceDescr[] = "service_descr";
-const QString _sServiceDescr(__sServiceDescr);
+const char   __sServiceNote[] = "service_note";
+const QString _sServiceNote(__sServiceNote);
  
 const char   __sServiceAlarmMsg[] = "service_alarm_msg";
 const QString _sServiceAlarmMsg(__sServiceAlarmMsg);
- 
+  
 const char   __sPort[] = "port";
 const QString _sPort(__sPort);
  
@@ -961,22 +942,25 @@ const QString _sTimed(__sTimed);
    
 const char   __sThread[] = "thread";
 const QString _sThread(__sThread);
-   
+      
 const char   __sPassive[] = "passive";
 const QString _sPassive(__sPassive);
   
 const char   __sSuperior[] = "superior";
 const QString _sSuperior(__sSuperior);
    
+const char   __sCustom[] = "custom";
+const QString _sCustom(__sCustom);
+   
 const char   __sPeer[] = "peer";
 const QString _sPeer(__sPeer);
-  
+      
 const char   __sDisabled[] = "disabled";
 const QString _sDisabled(__sDisabled);
   
-const char   __sRversed[] = "reversed";
-const QString _sRversed(__sRversed);
- 
+const char   __sReversed[] = "reversed";
+const QString _sReversed(__sReversed);
+    
 const char   __sFlappingInterval[] = "flapping_interval";
 const QString _sFlappingInterval(__sFlappingInterval);
  
@@ -988,9 +972,9 @@ const QString _sHostServices(__sHostServices);
  
 const char   __sHostServiceId[] = "host_service_id";
 const QString _sHostServiceId(__sHostServiceId);
- 
-const char   __sHostServiceDescr[] = "host_service_descr";
-const QString _sHostServiceDescr(__sHostServiceDescr);
+  
+const char   __sHostServiceNote[] = "host_service_note";
+const QString _sHostServiceNote(__sHostServiceNote);
  
 const char   __sHostServiceAlarmMsg[] = "host_service_alarm_msg";
 const QString _sHostServiceAlarmMsg(__sHostServiceAlarmMsg);
@@ -1001,6 +985,9 @@ const QString _sPrimeServiceId(__sPrimeServiceId);
 const char   __sProtoServiceId[] = "proto_service_id";
 const QString _sProtoServiceId(__sProtoServiceId);
  
+const char   __sDelegateHostState[] = "delegate_host_state";
+const QString _sDelegateHostState(__sDelegateHostState);
+  
 const char   __sSuperiorHostServiceId[] = "superior_host_service_id";
 const QString _sSuperiorHostServiceId(__sSuperiorHostServiceId);
  
@@ -1012,7 +999,7 @@ const QString _sNormalCheckInterval(__sNormalCheckInterval);
  
 const char   __sRetryCheckInterval[] = "retry_check_interval";
 const QString _sRetryCheckInterval(__sRetryCheckInterval);
- 
+  
 const char   __sNoalarmFlag[] = "noalarm_flag";
 const QString _sNoalarmFlag(__sNoalarmFlag);
   
@@ -1052,8 +1039,17 @@ const QString _sHardState(__sHardState);
 const char   __sCheckAttempts[] = "check_attempts";
 const QString _sCheckAttempts(__sCheckAttempts);
  
-const char   __sDelegateHostState[] = "delegate_host_state";
-const QString _sDelegateHostState(__sDelegateHostState);
+const char   __sLastChanged[] = last_changed;
+const QString _sLastChanged(__sLastChanged);
+ 
+const char   __sLastTouched[] = last_touched;
+const QString _sLastTouched(__sLastTouched);
+ 
+const char   __sActAlarmLogId[] = "act_alarm_log_id";
+const QString _sActAlarmLogId(__sActAlarmLogId);
+ 
+const char   __sLastAlarmLogId[] = "last_alarm_log_id";
+const QString _sLastAlarmLogId(__sLastAlarmLogId);
  
 const char   __sDeleted[] = "deleted";
 const QString _sDeleted(__sDeleted);
@@ -1063,12 +1059,75 @@ const QString _sHostServiceCharts(__sHostServiceCharts);
  
 const char   __sRrdFileName[] = "rrd_file_name";
 const QString _sRrdFileName(__sRrdFileName);
-
+ 
 const char   __sArps[] = "arps";
 const QString _sArps(__sArps);
  
 const char   __sIpAddress[] = "ipaddress";
 const QString _sIpAddress(__sIpAddress);
+ 
+
+const char   __sPortVlans[] = "port_vlans";
+const QString _sPortVlans(__sPortVlans);
+ 
+const char   __sPortVlanId[] = "port_vlan_id";
+const QString _sPortVlanId(__sPortVlanId);
+  
+const char   __sFirstTime[] = "first_time";
+const QString _sFirstTime(__sFirstTime);
+ 
+const char   __sLastTime[] = "last_time";
+const QString _sLastTime(__sLastTime);
+ 
+const char   __sVlanType[] = "vlan_type";
+const QString _sVlanType(__sVlanType);
+  
+const char   __sNo[] = "no";
+const QString _sNo(__sNo);
+    
+const char   __sForbidden[] = "forbidden";
+const QString _sForbidden(__sForbidden);
+  
+const char   __sAuto[] = "auto";
+const QString _sAuto(__sAuto);
+  
+const char   __sTagged[] = "tagged";
+const QString _sTagged(__sTagged);
+  
+const char   __sUntagged[] = "untagged";
+const QString _sUntagged(__sUntagged);
+    
+const char   __sHard[] = "hard";
+const QString _sHard(__sHard);
+ 
+const char   __sSetType[] = "set_type";
+const QString _sSetType(__sSetType);
+    
+const char   __sQuery[] = "query";
+const QString _sQuery(__sQuery);
+  
+const char   __sManual[] = "manual";
+const QString _sManual(__sManual);
+
+
+const char   __sMacTab[] = "mactab";
+const QString _sMacTab(__sMacTab);
+  
+const char   __sStatus[] = "status";
+const QString _sStatus(__sStatus);
+  
+const char   __sLikely[] = "likely";
+const QString _sLikely(__sLikely);
+  
+const char   __sNoArp[] = "noarp";
+const QString _sNoArp(__sNoArp);
+  
+const char   __sNoOid[] = "nooid";
+const QString _sNoOid(__sNoOid);
+  
+const char   __sSuspect[] = "suspect";
+const QString _sSuspect(__sSuspect);
+ 
 
 const char   __sPhsLinksTable[] = "phs_links_table";
 const QString _sPhsLinksTable(__sPhsLinksTable);
@@ -1100,14 +1159,29 @@ const QString _sFront(__sFront);
 const char   __sPhsLinkType2[] = "phs_link_type2";
 const QString _sPhsLinkType2(__sPhsLinkType2);
  
-const char   __sPhsLinkDescr[] = "phs_link_descr";
-const QString _sPhsLinkDescr(__sPhsLinkDescr);
+const char   __sPhsLinkNote[] = "phs_link_note";
+const QString _sPhsLinkNote(__sPhsLinkNote);
  
 const char   __sPortShared[] = "port_shared";
 const QString _sPortShared(__sPortShared);
  
 const char   __sLinkType[] = "link_type";
 const QString _sLinkType(__sLinkType);
+ 
+const char   __sCreateTime[] = "create_time";
+const QString _sCreateTime(__sCreateTime);
+ 
+const char   __sCreateUserId[] = "create_user_id";
+const QString _sCreateUserId(__sCreateUserId);
+ 
+const char   __sModifyTime[] = "modify_time";
+const QString _sModifyTime(__sModifyTime);
+ 
+const char   __sModifyUserId[] = "modify_user_id";
+const QString _sModifyUserId(__sModifyUserId);
+ 
+const char   __sForward[] = "forward";
+const QString _sForward(__sForward);
 
 const char   __sLogLinksTable[] = "log_links_table";
 const QString _sLogLinksTable(__sLogLinksTable);
@@ -1121,15 +1195,6 @@ const QString _sLldpLinksTable(__sLldpLinksTable);
 const char   __sLldpLinks[] = "lldp_links";
 const QString _sLldpLinks(__sLldpLinks);
 
-const char   __sAlarmNodes[] = "alarm_nodes";
-const QString _sAlarmNodes(__sAlarmNodes);
- 
-const char   __sMsg[] = "msg";
-const QString _sMsg(__sMsg);
- 
-const char   __sDelay[] = "delay";
-const QString _sDelay(__sDelay);
-
 
 const char   __sImports[] = "imports";
 const QString _sImports(__sImports);
@@ -1139,10 +1204,7 @@ const QString _sImportId(__sImportId);
  
 const char   __sDateOf[] = "date_of";
 const QString _sDateOf(__sDateOf);
- 
-const char   __sAuthUserId[] = "auth_user_id";
-const QString _sAuthUserId(__sAuthUserId);
- 
+  
 const char   __sImportText[] = "import_text";
 const QString _sImportText(__sImportText);
  
@@ -1191,58 +1253,15 @@ const QString _sTemplateType(__sTemplateType);
   
 const char   __sMacros[] = "macros";
 const QString _sMacros(__sMacros);
- 
+   
 const char   __sTemplateName[] = "template_name";
 const QString _sTemplateName(__sTemplateName);
  
-const char   __sTemplateDescr[] = "template_descr";
-const QString _sTemplateDescr(__sTemplateDescr);
+const char   __sTemplateNote[] = "template_note";
+const QString _sTemplateNote(__sTemplateNote);
  
 const char   __sTemplateText[] = "template_text";
 const QString _sTemplateText(__sTemplateText);
-
-
-const char   __sPortVlans[] = "port_vlans";
-const QString _sPortVlans(__sPortVlans);
- 
-const char   __sPortVlanId[] = "port_vlan_id";
-const QString _sPortVlanId(__sPortVlanId);
- 
-const char   __sVlanType[] = "vlan_type";
-const QString _sVlanType(__sVlanType);
-  
-const char   __sNo[] = "no";
-const QString _sNo(__sNo);
-  
-const char   __sForbidden[] = "forbidden";
-const QString _sForbidden(__sForbidden);
-  
-const char   __sAuto[] = "auto";
-const QString _sAuto(__sAuto);
-  
-const char   __sTagged[] = "tagged";
-const QString _sTagged(__sTagged);
-  
-const char   __sUntagged[] = "untagged";
-const QString _sUntagged(__sUntagged);
-  
-const char   __sHard[] = "hard";
-const QString _sHard(__sHard);
- 
-const char   __sSetType[] = "set_type";
-const QString _sSetType(__sSetType);
-  
-const char   __sQuery[] = "query";
-const QString _sQuery(__sQuery);
-  
-const char   __sManual[] = "manual";
-const QString _sManual(__sManual);
- 
-const char   __sFirstTime[] = "first_time";
-const QString _sFirstTime(__sFirstTime);
- 
-const char   __sLastTime[] = "last_time";
-const QString _sLastTime(__sLastTime);
 
 
 const char   __sTableShapes[] = "table_shapes";
@@ -1254,15 +1273,15 @@ const QString _sTableShapeId(__sTableShapeId);
 const char   __sTableShapeName[] = "table_shape_name";
 const QString _sTableShapeName(__sTableShapeName);
  
-const char   __sTableShapeDescr[] = "table_shape_descr";
-const QString _sTableShapeDescr(__sTableShapeDescr);
+const char   __sTableShapeNote[] = "table_shape_note";
+const QString _sTableShapeNote(__sTableShapeNote);
  
 const char   __sTableShapeTitle[] = "table_shape_title";
 const QString _sTableShapeTitle(__sTableShapeTitle);
  
 const char   __sTableShapeType[] = "table_shape_type";
 const QString _sTableShapeType(__sTableShapeType);
-  
+    
 const char   __sSimple[] = "simple";
 const QString _sSimple(__sSimple);
   
@@ -1274,10 +1293,7 @@ const QString _sOwner(__sOwner);
   
 const char   __sChild[] = "child";
 const QString _sChild(__sChild);
-  
-const char   __sSwitch[] = "switch";
-const QString _sSwitch(__sSwitch);
-  
+    
 const char   __sLink[] = "link";
 const QString _sLink(__sLink);
  
@@ -1344,8 +1360,8 @@ const QString _sTableShapeFieldId(__sTableShapeFieldId);
 const char   __sTableShapeFieldName[] = "table_shape_field_name";
 const QString _sTableShapeFieldName(__sTableShapeFieldName);
  
-const char   __sTableShapeFieldDescr[] = "table_shape_field_descr";
-const QString _sTableShapeFieldDescr(__sTableShapeFieldDescr);
+const char   __sTableShapeFieldNote[] = "table_shape_field_note";
+const QString _sTableShapeFieldNote(__sTableShapeFieldNote);
  
 const char   __sTableShapeFieldTitle[] = "table_shape_field_title";
 const QString _sTableShapeFieldTitle(__sTableShapeFieldTitle);
@@ -1372,7 +1388,7 @@ const char   __sIsHide[] = "is_hide";
 const QString _sIsHide(__sIsHide);
  
 const char   __sDefaultValue[] = "default_value";
-const QString _sDefaultValue(__sDefaultValue);;
+const QString _sDefaultValue(__sDefaultValue);
 
 const char   __sTableShapeFilters[] = "table_shape_filters";
 const QString _sTableShapeFilters(__sTableShapeFilters);
@@ -1380,8 +1396,8 @@ const QString _sTableShapeFilters(__sTableShapeFilters);
 const char   __sTableShapeFilterId[] = "table_shape_filter_id";
 const QString _sTableShapeFilterId(__sTableShapeFilterId);
  
-const char   __sTableShapeFilterDescr[] = "table_shape_filter_descr";
-const QString _sTableShapeFilterDescr(__sTableShapeFilterDescr);
+const char   __sTableShapeFilterNote[] = "table_shape_filter_note";
+const QString _sTableShapeFilterNote(__sTableShapeFilterNote);
  
 const char   __sFilterType[] = "filter_type";
 const QString _sFilterType(__sFilterType);
@@ -1417,13 +1433,13 @@ const char   __sEnumVals[] = "enum_vals";
 const QString _sEnumVals(__sEnumVals);
  
 const char   __sEnumValId[] = "enum_val_id";
-const QString _sEnumValId(__sEnumValId);;
+const QString _sEnumValId(__sEnumValId);
  
 const char   __sEnumValName[] = "enum_val_name";
 const QString _sEnumValName(__sEnumValName);
  
-const char   __sEnumValDescr[] = "enum_val_descr";
-const QString _sEnumValDescr(__sEnumValDescr);
+const char   __sEnumValNote[] = "enum_val_note";
+const QString _sEnumValNote(__sEnumValNote);
  
 const char   __sEnumTypeName[] = "enum_type_name";
 const QString _sEnumTypeName(__sEnumTypeName);
@@ -1472,8 +1488,8 @@ const QString _sType(__sType);
 const char   __sId[] = "id";
 const QString _sId(__sId);
 
-const char   __sHost[] = "host";
-const QString _sHost(__sHost);
+const char   __sNote[] = "note";
+const QString _sNote(__sNote);
 
 const char   __sAddr[] = "addr";
 const QString _sAddr(__sAddr);

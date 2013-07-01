@@ -2,7 +2,7 @@
 DROP TABLE IF EXISTS table_shape_filters, table_shape_fields, table_shapes, enum_vals, id_view_procs CASCADE;
 DROP TYPE  IF EXISTS tableshapetype, filtertype, filterdatatype, ordtype, tableinherittype;
 
-CREATE TYPE tableshapetype AS ENUM ('no', 'simple', 'tree', 'owner', 'child', 'switch');
+CREATE TYPE tableshapetype AS ENUM ('no', 'simple', 'tree', 'owner', 'child', 'switch', 'link');
 ALTER TYPE tableshapetype OWNER TO lanview2;
 COMMENT ON TYPE tableshapetype IS
 'table shape típusa:
@@ -11,7 +11,8 @@ simple      Egyszerű tála.
 tree        Fa struktúrájú objektumok
 owner       A tábla egy másik tábla tulajdonosa (pl a ''nodes'' az ''nports'' -nak)
 child       A tábla egy owner táblához tartozik
-switch      Kapcsoló tábla (csak 3 id mezőt tartalmaz)';
+switch      Kapcsoló tábla
+link        Link tábla';
 
 CREATE TYPE tableinherittype AS ENUM ('no', 'only', 'on', 'all', 'reverse', 'listed', 'listed_rev', 'listed_all');
 ALTER TYPE tableinherittype OWNER TO lanview2;

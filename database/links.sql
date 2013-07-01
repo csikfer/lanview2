@@ -6,7 +6,7 @@ CREATE TABLE log_links_table (
     --  REFERENCES interfaces(port_id) ON DELETE CASCADE ON UPDATE RESTRICT,
     port_id2        integer         NOT NULL UNIQUE,
     --  REFERENCES interfaces(port_id) ON DELETE CASCADE ON UPDATE RESTRICT,
-    log_link_note  varchar(255)    DEFAULT NULL,                   -- Description
+    log_link_note  varchar(255)     DEFAULT NULL,                   -- Description
     link_type       linktype        NOT NULL,
 --    first_time    timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP, -- First time discovered the logical link
 --    last_time     timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Last time discovered the logical link

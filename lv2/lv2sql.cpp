@@ -169,7 +169,7 @@ bool sqlRollback(QSqlQuery& q, bool __ex)
     return false;
 }
 
-EXT_ void execSqlFunction(QSqlQuery& q, const QString& fn, const QVariant v1, const QVariant v2, const QVariant v3, const QVariant v4)
+EXT_ bool execSqlFunction(QSqlQuery& q, const QString& fn, const QVariant v1, const QVariant v2, const QVariant v3, const QVariant v4)
 {
     QString sql = "SELECT " + fn + _sABraB;
     if (!v1.isValid()) {
@@ -185,6 +185,11 @@ EXT_ void execSqlFunction(QSqlQuery& q, const QString& fn, const QVariant v1, co
         }
     }
     sql += _sABraE;
+    return execSql(q, sql,v1, v2, v3, v4);
+}
+
+EXT_ bool execSql(QSqlQuery& q, const QString& sql, const QVariant v1, const QVariant v2, const QVariant v3, const QVariant v4)
+{
     if (!q.prepare(sql)) SQLPREPERR(q, sql);
     if (!v1.isValid()) {
         q.bindValue(0,v1);
@@ -199,4 +204,5 @@ EXT_ void execSqlFunction(QSqlQuery& q, const QString& fn, const QVariant v1, co
         }
     }
     if (q.exec()) SQLQUERYERR(q);
+    return q.first();
 }
