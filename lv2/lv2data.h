@@ -622,7 +622,7 @@ protected:
     static int _ixHwAddress;
 };
 
-/* ****************************** NODES (patchs, nodes, hosts, snmphosts ****************************** */
+/* ****************************** NODES (patchs, nodes, snmphosts ****************************** */
 
 
 /// @class cShareBack
@@ -867,7 +867,7 @@ public:
     /// Lista bővítése egy elemmel.
     /// @param __t A port típusát definiáló objektum referenciája
     /// @param __name port_name
-    /// @param __note port_descr
+    /// @param __note port_
     /// @param __ix Port_index, A NULL_IX érték nem megengedett (kötelező az egyedi index)
     virtual cNPort * addPort(const cIfType& __t, const QString& __name, const QString &__note, int __ix);
     /// Az SNMP verzió konstanst adja vissza (net-snmp híváshoz)
