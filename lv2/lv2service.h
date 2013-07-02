@@ -156,8 +156,8 @@ public:
     /// @return találat esetén true.
     bool findMagic(const QString &_nm, bool __ex = true)      { return ::findMagic(_nm, magicMap(__ex)); }
     /// Saját adatok beállítása. Hiba esetén dob egy kizárást.
-    /// A pNode adattag egy cHost objektumra fog mutatni, ami a sajátgép adatait fogja tartalmazni, feltéve, hogy az adatbázis ezt tartalmazza.
-    /// Akkor is cHost lessz az adattípus, ha a sajátgép történetesen egy SNMP eszközként szerepel az adatbázisban.
+    /// A pNode adattag egy cNode objektumra fog mutatni, ami a sajátgép adatait fogja tartalmazni, feltéve, hogy az adatbázis ezt tartalmazza.
+    /// Akkor is cNode lessz az adattípus, ha a sajátgép történetesen egy SNMP eszközként szerepel az adatbázisban.
     /// A saját géphez természetesen bejegyezve kell lennie a megadott nevű szolgáltatásnak.
     /// @param __q Az adatbázis művelethez használható QSqlQuery objektum referenciája
     /// @param __sn Szolgálltatás neve
@@ -248,8 +248,8 @@ public:
     ///
     const cNode& node() const           { if (pNode == NULL) EXCEPTION(EDATA); return *pNode; }
     cNode& node()                       { if (pNode == NULL) EXCEPTION(EDATA); return *pNode; }
-    const cHost& host() const           { if (pNode == NULL || !(pNode->descr() >= cHost().descr()) ) EXCEPTION(EDATA); return *(dynamic_cast<const cHost*>(pNode)); }
-    cHost& host()                       { if (pNode == NULL || !(pNode->descr() >= cHost().descr()) ) EXCEPTION(EDATA); return *(dynamic_cast<cHost*>(pNode)); }
+    const cNode& host() const           { if (pNode == NULL || !(pNode->descr() >= cNode().descr()) ) EXCEPTION(EDATA); return *(dynamic_cast<const cNode*>(pNode)); }
+    cNode& host()                       { if (pNode == NULL || !(pNode->descr() >= cNode().descr()) ) EXCEPTION(EDATA); return *(dynamic_cast<cNode*>(pNode)); }
     const cSnmpDevice& snmpDev() const  { if (pNode == NULL || !(pNode->descr() >= cSnmpDevice().descr()) ) EXCEPTION(EDATA); return *(dynamic_cast<const cSnmpDevice*>(pNode)); }
     cSnmpDevice& snmpDev()              { if (pNode == NULL || !(pNode->descr() >= cSnmpDevice().descr()) ) EXCEPTION(EDATA); return *(dynamic_cast<cSnmpDevice*>(pNode)); }
     const cInspector& parent() const{if (pParent == NULL) EXCEPTION(EDATA); return *pParent; }
@@ -263,10 +263,8 @@ public:
     }
     const cNPort& nPort() const         { if (pPort == NULL) EXCEPTION(EDATA); return *pPort; }
     cNPort& nPort()                     { if (pPort == NULL) EXCEPTION(EDATA); return *pPort; }
-    const cInterface& interface() const { if (pPort == NULL || !(pPort->descr() >= cInterface().descr()) ) EXCEPTION(EDATA); return *(dynamic_cast<const cInterface*>(pPort)); }
-    cInterface& interface()             { if (pPort == NULL || !(pPort->descr() >= cInterface().descr()) ) EXCEPTION(EDATA); return *(dynamic_cast<cInterface*>(pPort)); }
-    const cIfaceAddr& ifaceAddr() const { if (pPort == NULL || !(pPort->descr() >= cIfaceAddr().descr()) ) EXCEPTION(EDATA); return *(dynamic_cast<const cIfaceAddr*>(pPort)); }
-    cIfaceAddr& ifaceAddr()             { if (pPort == NULL || !(pPort->descr() >= cIfaceAddr().descr()) ) EXCEPTION(EDATA); return *(dynamic_cast<cIfaceAddr*>(pPort)); }
+    const cInterface& interface() const { if (pPort == NULL) EXCEPTION(EDATA); return *pPort->creconvert<cInterface>(); }
+    cInterface& interface()             { if (pPort == NULL) EXCEPTION(EDATA); return *pPort->reconvert<cInterface>(); }
     qlonglong nodeId(bool __ex = true) const     { return getIdT<cNode>(pNode, __ex); }
     qlonglong serviceId(bool __ex = true) const  { return getIdT<cService>(pService, __ex); }
     qlonglong hostServiceId() const              { return hostService.getId(); }
@@ -297,13 +295,11 @@ public:
     static void initStatic() {
         if (nodeOid == NULL_ID) {   // Ha még nincsenek inicializálva az OID-k
             nodeOid = cNode().tableoid();
-            hostOid = cHost().tableoid();
             sdevOid = cSnmpDevice().tableoid();
         }
     }
     /// A lehetséges node típusok tableoid értékei
     static qlonglong nodeOid;
-    static qlonglong hostOid;
     static qlonglong sdevOid;
 protected:
     /// Az időzítés módosítása

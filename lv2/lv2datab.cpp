@@ -2584,10 +2584,12 @@ int cRecord::delByName(QSqlQuery& q, const QString& __n, bool __pat, bool __only
     return  n;
 }
 
-int cRecord::touch(QSqlQuery& q)
+int cRecord::touch(QSqlQuery& q, const QString& _fn)
 {
-    int iLastTime = o.toIndex(_sLastTime);
-    QBitArray bset  = o.mask(iLastTime);
+    QString fn = _fn;
+    if (fn.isEmpty()) fn = _sLastTime;
+    int iLastTime = toIndex(fn);
+    QBitArray bset  = mask(iLastTime);
     clear(iLastTime);
     QBitArray where = getSetMap();
     if (where.isEmpty()) return -1;

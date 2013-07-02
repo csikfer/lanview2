@@ -327,13 +327,12 @@ ALTER TYPE mactabstate OWNER TO lanview2;
 
 CREATE TABLE mactab (
     hwaddress       macaddr PRIMARY KEY,
-    port_id         integer NOT NULL,     -- REFERENCES nports(port_id),
-    status          mactabstate[] DEFAULT 'likely'
+    port_id         integer NOT NULL REFERENCES interfaces(port_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    mactab_state    mactabstate[] DEFAULT '{}',
+    first_time      timestamp   DEFAULT CURRENT_TIMESTAMP,
     last_time       timestamp   DEFAULT CURRENT_TIMESTAMP,
-    port_mac_type   portmactype[] NOT NULL DEFAULT '{}',
     set_type        settype NOT NULL DEFAULT 'manual'
 );
-CREATE TRIGGER mactab_check_reference_port_id            BEFORE UPDATE OR INSERT ON mactab            FOR EACH ROW EXECUTE PROCEDURE check_reference_port_id('false', 'interfaces');
 
 CREATE TYPE isnoalarm AS ENUM ('on', 'expired', 'off');
 ALTER TYPE isnoalarm OWNER TO lanview2;

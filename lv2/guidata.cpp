@@ -227,7 +227,7 @@ bool cTableShape::setDefaults(QSqlQuery& q)
         const cColStaticDescr& cDescr = rDescr.colDescr(i);
         cTableShapeField fm;
         fm.setName(cDescr);
-        fm.setName(_sTableShapeFieldDescr, cDescr);
+        fm.setName(_sTableShapeFieldNote, cDescr);
         fm.setName(_sTableShapeFieldTitle, cDescr);
         fm.setId(_sFieldSequenceNumber, (i + 1) * 10);
         bool ro = (!fm.isUpdatable()) || rDescr.primaryKey()[i] || rDescr.autoIncrement()[i];
@@ -539,7 +539,7 @@ bool cTableShapeField::addFilter(const QString& _t, const QString& _d, bool __ex
     }
     cTableShapeFilter *pF = new cTableShapeFilter();
     pF->setName(_sFilterType, _t);
-    if (!_d.isEmpty()) pF->setName(_sTableShapeFieldDescr);
+    if (!_d.isEmpty()) pF->setName(_sTableShapeFieldNote);
     shapeFilters << pF;
     return true;
 }

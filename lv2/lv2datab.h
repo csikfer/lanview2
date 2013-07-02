@@ -1393,7 +1393,7 @@ public:
     /// @param __eq ha false, akkor az eredeti típus leszármazottja is lehet a megadott típusnak
     /// @param __ex ha értéke true, és nincs egyezés, akkor dob egy kizárást.
     /// @return true, ha eggyezés van, flase ha nincs eggyezés, és __ex false.
-    template <class T> bool chkObjType(bool __eq = false, bool __ex = true) {
+    template <class T> bool chkObjType(bool __eq = false, bool __ex = true) const {
         T o;
         if (descr().tableoid() == o.descr().tableoid()) return true;  // Azonos
         if (__eq == false && descr() > o.descr()) return true;        // Nem azonos, de konvertálható
@@ -1402,10 +1402,8 @@ public:
     }
     /// Az objektum pointert visszaalakítja az eredeti és megadott típusba. Lást még a chkObjType<T>() -t.
     /// Ha az eredeti, és a megadott típus nem eggyezik, vagy az eredeti típusnak nem leszármazottja a megadott típus, akkor dob egy kizárást
-    template <class T> T * reconvert() {
-        chkObjType<T>();
-        return dynamic_cast<T *>(this);
-    }
+    template <class T> T * reconvert() { chkObjType<T>(); return dynamic_cast<T *>(this); }
+    template <class T> const T * creconvert() const { chkObjType<T>(); return dynamic_cast<const T *>(this); }
     /// Megvizsgálja, rendeben van-e a kitöltött objektum, és nem üres-e.
     /// @return Ha az objektum üres, vagy a státusz változó szerint nincs rendben, akkor true-val tér vissza
     bool operator !() { return _stat <= ES_EMPTY || ((_stat & (ES_INCOMPLETE || ES_DEFECTIVE)) != 0); }
@@ -1417,10 +1415,14 @@ public:
     /// Megvizsgálja, hogy a megadott indexű bit a likeMask-ban milyen értékű, és azzal tér vissza, ha nincs ilyen elem, akkor false-val.
     bool _isLike(int __ix) const { return __ix < 0 || _likeMask.size() <= __ix ? false : _likeMask[__ix]; }
     /// Az aktuális időt írja a last_time nevű mezőbe, az első módosított rekord aktuális tartalmát visszaolvassa.
-    /// Azt, hogy mely rekordokat kell módosítani, az objektum adattartalma határorra meg
+    /// Azt, hogy mely rekordokat kell módosítani, az objektum adattartalma határozza meg
     /// A last_time nevű mező törlése után azok a rekordok lesznek módosítva, melyeket az o.completion() beolvasna, de a
+    /// módosítandó mező ki van zárva a feltételből.
+    /// @param q Az adatbázis művelethez használható query objektum.
+    /// @param _fn Opcionális paraméter, ha megadjuk akkor nem a last_time lessz módosítva, hanem a megadott nevű mező.
     /// @return A módosított rekordok száma. Ha üres objektummal hívjuk, akkor -1
-    int touch(QSqlQuery& q);
+    int touch(QSqlQuery& q, const QString &_fn = _sNul);
+    int touch(QSqlQuery& q, int _fi) { return touch(q, columnName(_fi)); }
 protected:
     /// Copy constructor. Nem támogatott konstruktor. Dob egy kizárást.
     cRecord(const cRecord& __o);

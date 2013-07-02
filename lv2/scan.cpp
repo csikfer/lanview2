@@ -381,9 +381,9 @@ cArpTable& cArpTable::getFromDb(QSqlQuery& __q)
 #define EX(ec,ei,es) { if (__ex) { DERR() << "Error " << cError::errorMsg(eError::ec) << " msg : " << es << endl; return false; } \
                        else      { EXCEPTION(ec, ei, es) } }
 
-bool getPortsBySnmp(cSnmpDevice& node, bool __ex)
+bool getPortsBySnmp(cSnmpDevice& node, const QString &ma, bool __ex)
 {
-    cSnmp   snmp(node.getName(_sAddress),node.getName(_sCommunityRd));
+    cSnmp   snmp(ma, node.getName(_sCommunityRd));
 
     if (!snmp.isOpened()) EX(ESNMP, 0, node.getName(_sAddress));
     cTable      tab;    // Interface table container
@@ -439,13 +439,9 @@ bool getPortsBySnmp(cSnmpDevice& node, bool __ex)
             continue;
         }
         cIfType         ifType = cIfType::ifType(ifTypeName);
-        cNPort *pPort = cNPort::newPortObj(ifType, addr.isNull() ? 0 : 1);
-        if (pPort->descr().tableName() == _sIfaceAddrs && addr.isNull()) {
-            EX(EDATA, -1, "Address is required.");
-        }
-        if (pPort->descr().tableName() != _sIfaceAddrs && !addr.isNull()) {
-            DWAR() << "Interface " << name << " Drop ip address " << addr.toString() << endl;
-            addr.clear();
+        cNPort *pPort = cNPort::newPortObj(ifType);
+        if (pPort->descr().tableName() != _sInterface) {
+            EX(EDATA, -1, QObject::trUtf8("Invalid port object type"));
         }
         cMac            mac(tab[_sIfPhysAddress][i].toByteArray());
         if (pPort->descr().tableName() == _sNPorts && mac.isValid()) {
@@ -458,16 +454,12 @@ bool getPortsBySnmp(cSnmpDevice& node, bool __ex)
         pPort->set(_sIfTypeId, ifType.getId());
         if (mac.isValid())  pPort->set(_sHwAddress, mac.toString());
         if (!addr.isNull()) {
-            pPort->set(_sAddress, addr.toString());
-            pPort->set(_sIpAddressType, _sFixIp);
-            pPort->reconvert<cIfaceAddr>()->thisIsExternal(q);    // Ez lehet külső cím is !!
-            // Van IP címe, ez akár a MAIN port is lehet
-            QHostAddress mainIp;
-            mainIp.setAddress(node.getName(_sAddress));
-            if (addr == mainIp) {   // Ez a main port !!
-                node.set(*pPort);
-                delete pPort;
-                continue;
+            cIpAddress& pa = pPort->reconvert<cInterface>()->addIpAddress(addr, _sFixIp);
+            pa.thisIsExternal(q);    // Ez lehet külső cím is !!
+            // A paraméterként megadott címet preferáltnak vesszük
+            QHostAddress mainIp(ma);
+            if (addr == mainIp) {   // Ez az
+                pa.setId(_sPreferred, 0);
             }
         }
 
@@ -509,9 +501,10 @@ bool getPortsBySnmp(cSnmpDevice& node, bool __ex)
                             node.setId(f, snmp.value().toLongLong()); \
                         }
 
-bool getSysBySnmp(cSnmpDevice &node)
+bool getSysBySnmp(cSnmpDevice &node, const QString &ma)
 {
     bool r = true;
+    QString a = ma;
     cSnmp   snmp(node.getName(_sAddress),node.getName(_sCommunityRd));
 
     if (!snmp.isOpened()) return false;
@@ -544,7 +537,7 @@ QString lookup(const QHostAddress& ha, bool __ex)
 /// @class cLldpScan
 /// Az LLDP felderítést végző osztály
 class cLldpScan {
-    friend void scabByLldp(const cSnmpDevice& __dev, QSqlQuery q);
+    friend void scabByLldp(QSqlQuery q, const cSnmpDevice& __dev);
 protected:
     cLldpScan(QSqlQuery& _q);
     /// LLDP felderítés
@@ -568,12 +561,12 @@ protected:
     QSqlQuery&  q;              ///< Az adatbázis műveletekhez használt SQL Query objektum
     cMac        rMac;           ///< Aktuális távoli eszköz MAC
     cSnmpDevice rDev;           ///< Aktuális távoli device, azonos rHost-al vagy üres
-    cHost       rHost;          ///< Aktuális távoli hoszt
+    cNode       rHost;          ///< Aktuális távoli hoszt
     int         rPortIx;
     cInterface  rPort;
     int         lPortIx;        ///< Lokális port indexe
     cInterface  lPort;          ///< A lokális port objektum
-    cLldpLink   lnk;
+    cLldpLink   lnk;            ///< Link objektum
     int RemChassisIdSubtype;
     int RemPortIdSubtype;
     QString RemPortId;
@@ -659,7 +652,7 @@ bool cLldpScan::createSnmpDev()
     if (al.isEmpty()) return false;                             // Nincs hozzá IP cím
     foreach (QHostAddress a, al) {                              // Végigzongozázzuk a talált IP címeket
         // Van ilyen IP ?
-        if (rHost.fetchByAddr(q, a)) {                          // Mégis csak van ilyenünk
+        if (rHost.fetchByIp(q, a)) {                            // Mégis csak van ilyenünk
             PDEB(VERBOSE) << "Found an existing host by " << a.toString() << " address : " << rHost.toString() << endl;
             if (rDev.tableoid() == rHost.fetchTableOId(q)) {    // és SNMP Device is
                 if (!rDev.fetchByMac(q, rMac)) EXCEPTION(EPROGFAIL);
@@ -669,15 +662,14 @@ bool cLldpScan::createSnmpDev()
             else rDev.clear();
             return true;        // Nem kreáltunk, de találtunk egyet
         }
-        rDev.clear();
-        rDev.set(_sAddress, QVariant::fromValue(a));
-        QString rName = lookup(a, false);
-        if (rName.isEmpty()) return false;
+    }
+    foreach (QHostAddress a, al) {                              // Végigzongozázzuk a talált IP címeket
+        rDev.clear();                       // Akkor ezt kell kitölteni, majd kiírni
+        QString rName = lookup(a, false);   // Neve a cím alapján
+        if (rName.isEmpty()) return false;  // Név nélkül nem megy
         PDEB(VERBOSE) << "Attempts to create the remote device rocords : " << rName << _sSlash << a.toString() << endl;
         rDev.setName(rName);
-        rDev.set(_sAddress, QVariant::fromValue(a));
-        rDev.set(_sHwAddress, QVariant::fromValue(rMac));
-        if (rDev.setBySnmp(_sNul, false)
+        if (rDev.setBySnmp(a.toString(), _sNul, false)      // Objektum kitöltése
          && rDev.insert(q, false)) {                        // Sikerült létrehozni az objektumot
             PDEB(INFO) << "Created SNMP Device : " << rDev.toString() << endl;
             queued << rDev;                                 // Ezt majd lekérdezzük
@@ -695,25 +687,25 @@ void cLldpScan::scanByLldpDevRow(cSnmp& snmp)
     rDev.clear();
     cOId d = snmp.name() - oids.first();
     if (d.isEmpty()) { DERR() << "Invalid OID, program error ?" << endl; return; }
-    lPortIx = d.first();
+    lPortIx = d.first();    // A port index a "név"-ben
 
     // Az eredmény első tagját már ellenőriztük.
-    RemChassisIdSubtype = snmp.value().toInt();
+    RemChassisIdSubtype = snmp.value().toInt(); // lldpRemChassisIdSubtype
 
     if (NULL == snmp.next())  { DERR() << "no data #1 " << oidss[1] << endl; return; }
-    rMac.set(snmp.value().toByteArray());
+    rMac.set(snmp.value().toByteArray());       // lldpRemChassisId
 
     if (NULL == snmp.next())  { DERR() << "no data #2 " << oidss[2] << endl; return; }
-    RemPortIdSubtype = snmp.value().toInt();
+    RemPortIdSubtype = snmp.value().toInt();    // lldpRemPortIdSubtype
 
     if (NULL == snmp.next())  { DERR() << "no data #3 " << oidss[3] << endl; return; }
-    RemPortId = snmp.value().toString();
+    RemPortId = snmp.value().toString();        // lldpRemPortId
     bool ok;
     rPortIx = RemPortId.toInt(&ok);
     if (!ok) rPortIx = -1;
 
     if (NULL == snmp.next())  { DERR() << "no data #4 " << oidss[4] << endl; return; }
-    RemPortDesc = snmp.value().toString();
+    RemPortDesc = snmp.value().toString();      // lldpRemPortDesc
 
     PDEB(VERBOSE) << "SNMP row : " << VDEB(lPortIx) << VDEB(RemChassisIdSubtype) << " rMac = "
                   << rMac.toString() << VDEB(RemPortIdSubtype)  << VDEB(RemPortId) << VDEB(rPortIx) << VDEB(RemPortDesc) << endl;
@@ -725,9 +717,9 @@ void cLldpScan::scanByLldpDevRow(cSnmp& snmp)
         return;
     }
 
-    if (rHost.fetchByMac(q, rMac)) {                        // Ismert host
+    if (rHost.fetchByMac(q, rMac)) {                        // Ismert host ?
         PDEB(VERBOSE) << "Found an existing host : " << rHost.toString() << endl;
-        if (rDev.tableoid() == rHost.fetchTableOId(q)) {    // Ismert SNMP Device
+        if (rDev.tableoid() == rHost.fetchTableOId(q)) {    // Ismert SNMP Device ?
             if (!rDev.fetchByMac(q, rMac)) EXCEPTION(EPROGFAIL);
             PDEB(VERBOSE) << "This host is snmp device. Push queued container." << endl;
             queued << rDev;                                 // Ezt majd lekérdezzük
@@ -773,17 +765,17 @@ void cLldpScan::scanByLldpDev()
 void cLldpScan::scanByLldp(const cSnmpDevice& __dev)
 {
     queued << __dev;
-    while (queued.size() > 0) {
+    while (queued.size() > 0) {     // Amíg van mit lekérdezni
         pDev = queued.pop_back();
-        if (!scanned.contains(pDev->getId())) {
-            scanByLldpDev();
-            scanned << pDev;
+        if (!scanned.contains(pDev->getId())) { // Ha már lekérdeztuk, akkor eldobjuk
+            scanByLldpDev();        // Lekérdezés
+            scanned << pDev;        // Lekérdezve
         }
         else delete pDev;
     }
 }
 
-void scabByLldp(const cSnmpDevice& __dev, QSqlQuery q)
+void scabByLldp(QSqlQuery q, const cSnmpDevice& __dev)
 {
     cLldpScan   lldp(q);
     lldp.scanByLldp(__dev);

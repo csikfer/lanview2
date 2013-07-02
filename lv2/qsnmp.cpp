@@ -741,6 +741,13 @@ int cSnmp::getTable(const cOIdVector& Ids, const QStringList& columns, cTable& r
     return 1;
 }
 
+QString snmpNotSupMsg()
+{
+    EXCEPTION(EPROGFAIL);
+    return _sNul;
+}
+
+#else  // MUST_SNMP
 
 /*
 cSnmp::async::async()
@@ -773,5 +780,10 @@ int cSnmp::async::asyncResponse(init __op, snmp_session *__ss, int __id, snmp_pd
     s.response = pdu;
 }
 */
+
+QString snmpNotSupMsg()
+{
+    return QObject::trUtf8("Az snmp modul nincs engedélyezve");
+}
 
 #endif // MUST_SNMP

@@ -622,7 +622,7 @@ const QString _sNodeAlarmMsg(__sNodeAlarmMsg);
 const char   __sNodeType[] = "node_type";
 const QString _sNodeType(__sNodeType);
   
-const char   __sNode[] = "node;
+const char   __sNode[] = "node";
 const QString _sNode(__sNode);
   
 const char   __sHost[] = "host";
@@ -761,7 +761,10 @@ const QString _sIpAddressId(__sIpAddressId);
  
 const char   __sIpAddressNote[] = "ip_address_note";
 const QString _sIpAddressNote(__sIpAddressNote);
-  
+ 
+const char   __sAddress[] = "address";
+const QString _sAddress(__sAddress);
+ 
 const char   __sIpAddressType[] = "ip_address_type";
 const QString _sIpAddressType(__sIpAddressType);
   
@@ -780,8 +783,8 @@ const QString _sDynamic(__sDynamic);
 const char   __sPseudo[] = "pseudo";
 const QString _sPseudo(__sPseudo);
  
-const char   __sAddress[] = "address";
-const QString _sAddress(__sAddress);
+const char   __sPreferred[] = "preferred";
+const QString _sPreferred(__sPreferred);
   
 
 const char   __sVLans[] = "vlans";
@@ -1039,10 +1042,10 @@ const QString _sHardState(__sHardState);
 const char   __sCheckAttempts[] = "check_attempts";
 const QString _sCheckAttempts(__sCheckAttempts);
  
-const char   __sLastChanged[] = last_changed;
+const char   __sLastChanged[] = "last_changed";
 const QString _sLastChanged(__sLastChanged);
  
-const char   __sLastTouched[] = last_touched;
+const char   __sLastTouched[] = "last_touched";
 const QString _sLastTouched(__sLastTouched);
  
 const char   __sActAlarmLogId[] = "act_alarm_log_id";

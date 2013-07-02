@@ -18,7 +18,7 @@ COMMENT ON TYPE portobjtype IS
 CREATE TABLE iftypes (
     iftype_id           serial          PRIMARY KEY,
     iftype_name         varchar(64)     NOT NULL UNIQUE,
-    iftype_note        varchar(255)    DEFAULT NULL,
+    iftype_note         varchar(255)    DEFAULT NULL,
     iftype_iana_id      integer         NOT NULL DEFAULT 1, -- 'other'
     iftype_link_type    linktype        NOT NULL DEFAULT 'ptp',
     iftype_obj_type     portobjtype     NOT NULL
@@ -386,15 +386,19 @@ CREATE TABLE ipaddresses (
     ip_address_note varchar(255) DEFAULT NULL,
     address         inet        DEFAULT NULL,
     ip_address_type addresstype DEFAULT 'dynamic',
-    preferred       boolean     DEFAULT NULL,
+    preferred       integer     DEFAULT NULL,
     subnet_id       integer     DEFAULT NULL REFERENCES subnets(subnet_id) MATCH SIMPLE
                                     ON DELETE RESTRICT ON UPDATE RESTRICT,
     port_id         integer     NOT NULL REFERENCES interfaces(port_id) MATCH FULL
                                     ON DELETE CASCADE ON UPDATE RESTRICT
 );
 ALTER TABLE ipaddresses OWNER TO lanview2;
-
--- //// NODES
+COMMENT ON TABLE ipaddresses IS 'IP címek';
+COMMENT ON COLUMN ipaddresses.address IS 'Az IP cím (nem tartomány)';
+COMMENT ON COLUMN ipaddresses.ip_address_type IS 'A cím típusa';
+COMMENT ON COLUMN ipaddresses.preferred IS 'Cím keresésnél egy opcionális sorrendet definiál, a kisebb érték az preferált.';
+COMMENT ON COLUMN ipaddresses.port_id IS 'A tulajdonos port, melyhez a cím tartozik';
+-- //// NODES;
 
 CREATE TYPE nodetype AS ENUM ('node', 'host', 'switch', 'hub', 'virtual', 'snmp');
 ALTER TYPE nodetype OWNER TO lanview2;
@@ -692,7 +696,7 @@ BEGIN
         END IF;
         -- Ha a preferred nincs megadva, akkor az elsőnek megadott cím a preferált
         IF NEW.preferred IS NULL THEN
-            NEW.prefferd := 0 = COUNT(*) FROM ipaddresses WHERE port_id = NEW.port_id AND prefferd;
+            SELECT 1 + COUNT(*) INTO NEW.preferred FROM interfaces JOIN ipaddresses USING(port_id) WHERE port_id = NEW.port_id AND preferred IS NOT NULL AND address IS NOT NULL;
         END IF;
     ELSE
         -- Cím ként a NULL csak a dynamic típusnál megengedett

@@ -21,10 +21,13 @@
 #ifndef QSNMP_H
 #define QSNMP_H
 #include <Qt>
+#include <lv2_global.h>
 
 #if defined(Q_OS_UNIX) || defined(Q_OS_LINUX)
 #define MUST_SNMP
 #endif
+
+EXT_ QString snmpNotSupMsg();
 
 #ifdef MUST_SNMP
 
@@ -32,11 +35,11 @@
 #include <net-snmp/net-snmp-includes.h>
 #include <string.h>
 
-const QString&  snmpIfStatus(int __i);
-int             snmpIfStatus(const QString& __s);
+EXT_ const QString&  snmpIfStatus(int __i);
+EXT_ int             snmpIfStatus(const QString& __s);
 
 typedef QVector<QVariant> QVariantVector;
-class cTable : public QMap<QString, QVariantVector >
+class LV2SHARED_EXPORT cTable : public QMap<QString, QVariantVector >
 {
    public:
     cTable() : QMap<QString, QVector<QVariant> >() { ; }
@@ -55,9 +58,9 @@ class cTable : public QMap<QString, QVariantVector >
 /// Bit string konvertálása QBitArray-ba
 /// @param __bs Bit string pointerek
 /// @param __os A bit string mérete byte-ban (__os*8 == bitek száma)
-QBitArray   bitString2Array(u_char *__bs, size_t __os);
+EXT_ QBitArray   bitString2Array(u_char *__bs, size_t __os);
 
-class netSnmp {
+class LV2SHARED_EXPORT netSnmp {
    protected:
     netSnmp();
     ~netSnmp();
@@ -94,7 +97,7 @@ class netSnmp {
     static bool     inited;
 };
 
-class cOId : public QVector<oid>, public netSnmp {
+class LV2SHARED_EXPORT cOId : public QVector<oid>, public netSnmp {
    private:
     static const oid  zero;
     size_t  oidSize;
@@ -162,7 +165,7 @@ class cOId : public QVector<oid>, public netSnmp {
     bool    chkSize(size_t __len);
 };
 
-class cOIdVector : public QVector<cOId> {
+class LV2SHARED_EXPORT cOIdVector : public QVector<cOId> {
    public:
     cOIdVector() : QVector<cOId>() { ; }
     cOIdVector(int n) : QVector<cOId>(n) { ; }
@@ -176,7 +179,7 @@ class cOIdVector : public QVector<cOId> {
 @brief SNMP kliens osztály
 
  */
-class cSnmp : public netSnmp {
+class LV2SHARED_EXPORT cSnmp : public netSnmp {
    public:
 /*    class async {
         async();
@@ -310,9 +313,10 @@ enum eSnmp {
     SNMP_VERSION_2c,
     SNMP_VERSION_3
 };
-class cSnmp {
+class LV2SHARED_EXPORT cSnmp {
 public:
     cSnmp() { EXCEPTION(ENOTSUPP); }
 };
+
 #endif // MAST_SNMP
 #endif // QSNMP_H

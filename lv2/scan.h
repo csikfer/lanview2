@@ -116,12 +116,19 @@ protected:
     const QString& token(QIODevice& __f);
 };
 
-extern bool getPortsBySnmp(cSnmpDevice &node, bool __ex = true);
-extern bool getSysBySnmp(cSnmpDevice &node);
+extern bool getPortsBySnmp(cSnmpDevice &node, const QString &ma, bool __ex = true);
+extern bool getSysBySnmp(cSnmpDevice &node, const QString& ma);
 
 extern QString lookup(const QHostAddress& ha, bool __ex = true);
 
-extern void scabByLldp(const cSnmpDevice& __dev, QSqlQuery q);
+/// Az LLDP protokol alapján felfedezi a hálózati switch-eket, és a kapcsolódásukat.
+/// Az újonnan felfedezett switch-eket SNMP protokollal lekérdezi
+/// lásd :cSnmpDevice::setBySnmp(const QString& __addr, const QString& __com, bool __ex)
+/// és felveszi az adatbázisba, ha még ott nem szerepelnek.
+/// Az objektum neve az IP cím alapján a DNS-szerver álltal visszaadott név.
+/// @param q Az adatbázis műveletekhez használlható query objektum
+/// @param __dev A kiíndulási eszköz, adatbázisban rögzített, onnen feltöltött objektum.
+extern void scabByLldp(QSqlQuery q, const cSnmpDevice& __dev);
 
 #else  // MUST_SCAN
 

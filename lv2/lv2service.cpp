@@ -34,7 +34,6 @@ void cInspectorThread::timerEvent(QTimerEvent * e)
 }
 
 qlonglong cInspector::nodeOid = NULL_ID;    // "inicializálatlan"! Az első alkalommal hívott konstruktor inicializálja: initStaric().
-qlonglong cInspector::hostOid = NULL_ID;
 qlonglong cInspector::sdevOid = NULL_ID;
 
 void cInspector::preInit()
@@ -86,9 +85,8 @@ cInspector::cInspector(QSqlQuery& q, qlonglong __host_service_id, qlonglong __ta
     preInit();
     pParent = __par;
     // Megallokáljuk a megfelelő típusú node objektumot
-    if      (__tableoid == nodeOid) pNode = new cNode();
-    else if (__tableoid == hostOid
-          || __tableoid == NULL_ID) pNode = new cHost();
+    if      (__tableoid == nodeOid
+          || __tableoid == NULL_ID) pNode = new cNode();
     else if (__tableoid == sdevOid) pNode = new cSnmpDevice();
     else    EXCEPTION(EDATA, __tableoid, QObject::trUtf8("Invalid node tableOID."));
     // Ha a host_service_id NULL, akkor már be van olvasva a két (host_services, nodes/hosts/..) rekord !!!
@@ -266,9 +264,8 @@ void cInspector::self(QSqlQuery& q, const QString& __sn)
     // Előkotorjuk a szolgáltatás típus rekordot.
     pService = &cService::service(q, __sn);
     // Jelenleg feltételezzük, hogy a node az egy host
-    cHost *pHost = new cHost();
-    pHost->fetchSelf(q);
-    pNode = pHost;
+    pNode = new cNode();
+    pNode->fetchSelf(q);
     // És a host_services rekordot is előszedjük.
     hostService.fetchByIds(q, pNode->getId(), service().getId());
 }

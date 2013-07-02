@@ -22,7 +22,7 @@ QString ProcessError2String(QProcess::ProcessError __e)
         case QProcess::UnknownError:    s = QObject::trUtf8("UnknownError");     break;
         default:
             s = sInvalidEnum();
-            DERR() << "QProcess::ProcessError : " << (int)_e << _sSlash << s << endl;
+            DERR() << "QProcess::ProcessError : " << (int)__e << _sSlash << s << endl;
             break;
     }
     return s;

@@ -763,7 +763,10 @@ extern LV2SHARED_EXPORT const QString _sIpAddressId;
  
 extern LV2SHARED_EXPORT const char   __sIpAddressNote[];
 extern LV2SHARED_EXPORT const QString _sIpAddressNote;
-  
+ 
+extern LV2SHARED_EXPORT const char   __sAddress[];
+extern LV2SHARED_EXPORT const QString _sAddress;
+ 
 extern LV2SHARED_EXPORT const char   __sIpAddressType[];
 extern LV2SHARED_EXPORT const QString _sIpAddressType;
   
@@ -782,8 +785,8 @@ extern LV2SHARED_EXPORT const QString _sDynamic;
 extern LV2SHARED_EXPORT const char   __sPseudo[];
 extern LV2SHARED_EXPORT const QString _sPseudo;
  
-extern LV2SHARED_EXPORT const char   __sAddress[];
-extern LV2SHARED_EXPORT const QString _sAddress;
+extern LV2SHARED_EXPORT const char   __sPreferred[];
+extern LV2SHARED_EXPORT const QString _sPreferred;
   
 
 extern LV2SHARED_EXPORT const char   __sVLans[];
