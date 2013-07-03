@@ -279,10 +279,7 @@ QString cColStaticDescr::toName(const QVariant& _f) const
 
 qlonglong cColStaticDescr::toId(const QVariant& _f) const
 {
-    if (_f.isNull()) return NULL_ID;
-    bool ok;
-    qlonglong r = _f.toLongLong(&ok);
-    return ok ? r : NULL_ID;
+    return variantToId(_f, false, NULL_ID);
 }
 
 QString cColStaticDescr::toView(QSqlQuery& q, const QVariant &_f) const
@@ -1223,7 +1220,7 @@ QVariant  cColStaticDescrInterval::toSql(const QVariant& _f) const
     _DBGFN() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
     if (_f.isNull()) EXCEPTION(EDATA,-1,"Data is NULL");
     QString is;
-    qlonglong i = _f.toLongLong();
+    qlonglong i = variantToId(_f);
     qlonglong j = i % 1000;
     i /= 1000;
     if (j) is = _sPoint + QString::number(j);
@@ -1268,7 +1265,7 @@ QString   cColStaticDescrInterval::toName(const QVariant& _f) const
 qlonglong cColStaticDescrInterval::toId(const QVariant& _f) const
 {
     _DBGFN() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
-    return _f.toLongLong();
+    return variantToId(_f);
 }
 
 CDDUPDEF(cColStaticDescrInterval)
@@ -1820,21 +1817,11 @@ qlonglong cRecStaticDescr::getIdByName(QSqlQuery& __q, const QString& __n, bool 
         return NULL_ID;
     }
     QVariant id = __q.value(0);
-    if (id.isNull()) {
-        if (ex) EXCEPTION(EDATA, 1);
-        return NULL_ID;
-    }
-    bool    ok;
-    qlonglong i =  id.toLongLong(&ok);
-    if (!ok) {
-        if (ex) EXCEPTION(EDATA, 2, id.toString());
-        return NULL_ID;
-    }
     if (__q.next()) {
         if (ex) EXCEPTION(AMBIGUOUS, 2, id.toString());
         return NULL_ID;
     }
-    return i;
+    return variantToId(id, ex, NULL_ID);
 }
 
 QString cRecStaticDescr::getNameById(QSqlQuery& __q, qlonglong __id, bool ex) const
@@ -2420,13 +2407,7 @@ qlonglong cRecord::fetchTableOId(QSqlQuery& __q, bool __ex) const
     fetchQuery(__q, false, m, tIntVector(),0,0,QString("tableoid"));
     if (__q.first()) {
         if (__q.size() == 1) {
-            bool ok;
-            qlonglong r = __q.value(0).toLongLong(&ok);
-            if (!ok) {
-                if (__ex) EXCEPTION(EDATA);
-                return NULL_ID;
-            }
-            return r;
+            return variantToId(__q.value(0), __ex, NULL_ID);
         }
         else {
             if (__ex) EXCEPTION(AMBIGUOUS);

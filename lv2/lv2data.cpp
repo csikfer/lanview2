@@ -112,7 +112,7 @@ qlonglong cPlace::parentImageId(QSqlQuery& q)
 {
     execSqlFunction(q, "get_parent_image", getId());
     QVariant iid = q.value(0);
-    return iid.isNull() ? NULL_ID : iid.toLongLong();
+    return iid.isNull() ? NULL_ID : variantToId(iid);
 }
 
 DEFAULTCRECDEF(cPlaceGroup, _sPlaceGroups)
@@ -355,7 +355,7 @@ void    cPortParamValue::toEnd()
 bool cPortParamValue::toEnd(int i)
 {
     if (i == _ixPortParamId) {
-        qlonglong id = _isNull(i) ? NULL_ID : _get(i).toLongLong();
+        qlonglong id = _isNull(i) ? NULL_ID : variantToId(_get(i));
         if (id == NULL_ID) {
             portParam.clear();
         }
@@ -1199,8 +1199,8 @@ int  cNode::fetchPorts(QSqlQuery& __q, bool __ex) {
     QSqlQuery q = getQuery(); // A copy construktor vagy másolás az nem jó!!
     QString sql = "SELECT tableoid, port_id FROM nports WHERE node_id = ?";
     if (execSql(__q, sql, getId())) do {
-        qlonglong tableoid = __q.value(0).toLongLong();
-        qlonglong port_id  = __q.value(1).toLongLong();
+        qlonglong tableoid = variantToId(__q.value(0));
+        qlonglong port_id  = variantToId(__q.value(1));
         cNPort *p = cNPort::getPortObjById(q, tableoid, port_id, __ex);
         q.finish();
         if (p == NULL) return -1;
@@ -1370,6 +1370,39 @@ QList<QHostAddress> cNode::allIpAddress(qlonglong __id) const
     return r;
 }
 
+cNode& cNode::asmbAttached(const QString& __n, const QString& __d, qlonglong __place)
+{
+    clear();
+    setName(__n);
+    setName(_sNodeNote, __d);
+    setId(_sPlaceId, __place);
+    addPort(_sAttach, _sAttach, 1);
+    return *this;
+}
+
+cNode& cNode::asmbWorkstation(const QString& __n, const cMac& __mac, const QString& __d, qlonglong __place)
+{
+    setName(__n);
+    setName(_sNodeNote, __d);
+    setId(_sPlaceId, __place);
+    addPort(cIfType::ifType(_sEthernet), _sEthernet, _sNul, 1);
+    cInterface *pi = ports.first()->reconvert<cInterface>();
+    *pi = __mac;
+    QHostAddress ha;
+    QSqlQuery q = getQuery();
+    QList<QHostAddress> al = cArp().mac2ips(q, __mac);
+    if (al.size() == 1) ha = al[0];
+    if (ha.isNull()) {
+        QHostInfo hi = QHostInfo::fromName(__n);         // Név alapján lekérdezzük az IP címet
+        al = hi.addresses();
+        if (al.size() == 1) ha = al[0];
+    }
+    if (!ha.isNull()) {     // Ha van ip, akkor beállítjuk
+        pi->addIpAddress(ha, _sDynamic);
+    }
+    return *this;
+}
+
 /* ------------------------------ SNMPDEVICES : cSnmpDevice ------------------------------ */
 
 cSnmpDevice::cSnmpDevice() : cNode(_no_init_)
@@ -1509,7 +1542,7 @@ bool cService::toEnd(int i)
 {
     if (i == _ixProtocolId) {
         if (get(i).isValid()) {
-            _protocol.fetchById(get(i).toLongLong());
+            _protocol.fetchById(getId(i));
         }
         else _protocol.set();
         return true;
@@ -1701,7 +1734,7 @@ int cHostService::delByNames(QSqlQuery& q, const QString& __nn, const QString& _
     QList<qlonglong>    idl;
     if (q.first()) {
         do {
-            idl << q.value(0).toLongLong();
+            idl << variantToId(q.value(0));
         } while (q.next());
         foreach (qlonglong id, idl) {
             setId(id);
@@ -1912,7 +1945,7 @@ int cPhsLink::unlink(QSqlQuery &q, const QString& __nn, const QString& __pn, boo
     QList<qlonglong>    idl;
     if (q.first()) {
         do {
-            idl << q.value(0).toLongLong();
+            idl << variantToId(q.value(0));
         } while (q.next());
         foreach (qlonglong id, idl) {
             setId(id);
@@ -1947,7 +1980,7 @@ int cPhsLink::unlink(QSqlQuery &q, const QString& __nn, int __ix, int __ei)
     QList<qlonglong>    idl;
     if (q.first()) {
         do {
-            idl << q.value(0).toLongLong();
+            idl << variantToId(q.value(0));
         } while (q.next());
         foreach (qlonglong id, idl) {
             setId(id);

@@ -7,7 +7,7 @@
 #bison definition
 bison.name = Bison
 bison.input = BISONSOURCES
-bison.output = ${QMAKE_FILE_BASE}.cpp
+bison.output = ${QMAKE_FILE_BASE}_yy.cpp
 bison.commands = bison -d -o ${QMAKE_FILE_OUT} -v --report-file=bison_report.txt ${QMAKE_FILE_IN}
 bison.clean =
 bison.CONFIG += target_predeps
@@ -31,9 +31,9 @@ CONFIG += debug
 TEMPLATE = app
 
 
-SOURCES += import.cpp
-HEADERS += import.h \
-    import_parser_yacc.h
+SOURCES += import.cpp import_parser.c \
+    import_parser.cpp
+HEADERS += import.h import_parser.h
 
 INCLUDEPATH += ../lv2
 LIBS += -lsnmp -L../lv2 -llv2

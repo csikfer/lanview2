@@ -3,13 +3,13 @@
 #include "import.h"
 #include "others.h"
 #include "ping.h"
-#include "import_parser_yacc.h"
+#include "import_parser.h"
 
 unsigned long yyflags = 0;
 
 QString fileNm;
-unsigned int lineNo = 0;     // Sor Számláló
-QTextStream*       yyif = NULL;       //Source file descriptor
+unsigned int lineNo = 0;            // Sor Számláló
+QTextStream*       yyif = NULL;     //Source file descriptor
 
 cTemplateMapMap   templates;
 QString  macbuff;
@@ -22,7 +22,6 @@ cPatch *     pPatch = NULL;
 cImage *     pImage = NULL;
 cUser *      pUser = NULL;
 cGroup *     pGroup = NULL;
-cHub *       pHub   = NULL;
 cNode *      pNode  = NULL;
 cLink      * pLink = NULL;
 cService   * pService = NULL;
@@ -54,12 +53,8 @@ int yyerror(QString em)
 {
     return yyerror(em.toStdString().c_str());
 }
-QString errorSysMsg(void)
-{
-    return QString::fromUtf8(strerror(errno));
-}
 
-inline QChar yyget()
+QChar yyget()
 {
     QChar c;
 
@@ -330,7 +325,7 @@ static void setMainPort(qlonglong ix, QString *ifType, QString *name, QString *d
 %token <s>  STRING_V NAME_V
 %token <mac> MAC_V 
 %token <ip> IPV4_V IPV6_V
-%type  <i>  int int_ iexpr lnktype shar ipprotp ipprot offs htyp ix_z vlan_t set_t
+%type  <i>  int int_ iexpr lnktype shar ipprotp ipprot offs ix_z vlan_t set_t
 %type  <i>  vlan_id place_id iptype pix pix_ iptype_a step timep image_id tmod int0
 %type  <il> list_i pixs // ints
 %type  <b>  bool bool_on pattern
@@ -379,20 +374,12 @@ command : macro
         | gui
         ;
 macro   : INCLUDE_T str ';'                                 { c_yyFile::inc($2); }
-        | MACRO_T              NAME_V str ';'               { templates.set (_sMacros,     sp2s($2), sp2s($3,1));     }
-        | MACRO_T              NAME_V str SAVE_T str_z ';'  { templates.save(_sMacros,     sp2s($2), sp2s($3,1), sp2s($5,2)); }
-        | PATCH_T   TEMPLATE_T NAME_V str ';'               { templates.set (_sPatchs,     sp2s($3), sp2s($4,1));     }
-        | PATCH_T   TEMPLATE_T NAME_V str SAVE_T str_z ';'  { templates.save(_sPatchs,     sp2s($3), sp2s($4,1), sp2s($6,2)); }
-        | HUB_T     TEMPLATE_T NAME_V str ';'               { templates.set (_sHubs,       sp2s($3), sp2s($4,1));     }
-        | SWITCH_T  TEMPLATE_T NAME_V str ';'               { templates.set (_sHubs,       sp2s($3), sp2s($4,1));     }
-        | HUB_T     TEMPLATE_T NAME_V str SAVE_T str_z ';'  { templates.save(_sHubs,       sp2s($3), sp2s($4,1), sp2s($6,2)); }
-        | SWITCH_T  TEMPLATE_T NAME_V str SAVE_T str_z ';'  { templates.save(_sHubs,       sp2s($3), sp2s($4,1), sp2s($6,2)); }
-        | NODE_T    TEMPLATE_T NAME_V str ';'               { templates.set (_sNodes,      sp2s($3), sp2s($4,1));     }
-        | NODE_T    TEMPLATE_T NAME_V str SAVE_T str_z ';'  { templates.save(_sNodes,      sp2s($3), sp2s($4,1), sp2s($6,2)); }
-        | HOST_T    TEMPLATE_T NAME_V str ';'               { templates.set (_sHosts,      sp2s($3), sp2s($4,1));     }
-        | HOST_T    TEMPLATE_T NAME_V str SAVE_T str_z ';'  { templates.save(_sHosts,      sp2s($3), sp2s($4,1), sp2s($6,2)); }
-        | SNMPDEV_T TEMPLATE_T NAME_V str ';'               { templates.set (_sSnmpDevices,sp2s($3), sp2s($4,1));     }
-        | SNMPDEV_T TEMPLATE_T NAME_V str SAVE_T str_z ';'  { templates.save(_sSnmpDevices,sp2s($3), sp2s($4,1), sp2s($6,2)); }
+        | MACRO_T            NAME_V str ';'               { templates.set (_sMacros,     sp2s($2), sp2s($3,1));     }
+        | MACRO_T            NAME_V str SAVE_T str_z ';'  { templates.save(_sMacros,     sp2s($2), sp2s($3,1), sp2s($5,2)); }
+        | TEMPLATE_T PATCH_T NAME_V str ';'               { templates.set (_sPatchs,     sp2s($3), sp2s($4,1));     }
+        | TEMPLATE_T PATCH_T NAME_V str SAVE_T str_z ';'  { templates.save(_sPatchs,     sp2s($3), sp2s($4,1), sp2s($6,2)); }
+        | TEMPLATE_T NODE_T  NAME_V str ';'               { templates.set (_sNodes,      sp2s($3), sp2s($4,1));     }
+        | TEMPLATE_T NODE_T  NAME_V str SAVE_T str_z ';'  { templates.save(_sNodes,      sp2s($3), sp2s($4,1), sp2s($6,2)); }
         | for_m
         ;
 for_m   : FOR_T vals  DO_T MACRO_T NAME_V ';'               { forLoopMac($5, $2); }
@@ -418,12 +405,8 @@ str_    : STRING_V                  { $$ = $1; }
         | STRING_T '(' iexpr ')'    { $$ = new QString(QString::number($3)); }
         | MASK_T  '(' sexpr ',' iexpr ')' { $$ = new QString(nameAndNumber(sp2s($3), (int)$5)); }
         | MACRO_T '(' sexpr ')'     { $$ = new QString(templates._get(_sMacros, sp2s($3))); }
-        | PATCH_T   TEMPLATE_T '(' sexpr ')'    { $$ = new QString(templates._get(_sPatchs,      sp2s($4))); }
-        | HUB_T     TEMPLATE_T '(' sexpr ')'    { $$ = new QString(templates._get(_sHubs,        sp2s($4))); }
-        | SWITCH_T  TEMPLATE_T '(' sexpr ')'    { $$ = new QString(templates._get(_sHubs,        sp2s($4))); }
-        | NODE_T    TEMPLATE_T '(' sexpr ')'    { $$ = new QString(templates._get(_sNodes,       sp2s($4))); }
-        | HOST_T    TEMPLATE_T '(' sexpr ')'    { $$ = new QString(templates._get(_sHosts,       sp2s($4))); }
-        | SNMPDEV_T TEMPLATE_T '(' sexpr ')'    { $$ = new QString(templates._get(_sSnmpDevices, sp2s($4))); }
+        | TEMPLATE_T PATCH_T '(' sexpr ')'    { $$ = new QString(templates._get(_sPatchs,      sp2s($4))); }
+        | TEMPLATE_T NODE_T  '(' sexpr ')'    { $$ = new QString(templates._get(_sNodes,       sp2s($4))); }
         ;
 str     : str_                      { $$ = $1; }
         | '&' '[' sexpr ']'         { $$ = $3; }
@@ -668,10 +651,7 @@ points  : point                     { $$ = new QPolygonF(); *$$ << *$1;  delete 
 point   : '[' num ',' num ']'       { $$ = new QPointF($2, $4); }
         ;
 nodes   : patch
-        | hub
         | node
-        | host
-        | snmpdev
         ;
 patch   : patch_h { pPatch->setId(_sPlaceId, gPlace()); } patch_e { INSERTANDDEL(pPatch); }
         ;
@@ -704,7 +684,7 @@ patch_p : DESCR_T str ';'                       { pPatch->setName(_sNodeDescr, s
 offs    : OFFS_T int                            { $$ = $2; }
         |                                       { $$ = 0; }
         ;
-pix     : int
+pix     : int                                   { $$ = $1; }
         | '#' '@'                               { $$ = vint(sPortIx); }
         ;
 pnm     : str                                   { $$ = $1; }
@@ -717,43 +697,30 @@ pix_    : int                                   { $$ = vint(sPortIx) = $1; }
         | '#' '+' '@'                           { $$ = (vint(sPortIx) += 1); }
         | str                                   { $$ = vint(sPortIx) = pPatch->ports.get(_sPortName, *$1)->getId(_sPortIndex); delete $1; }
         ;
-hub     : hub_h { pHub->setId(_sPlaceId, gPlace()); } hub_e { INSERTANDDEL(pHub); }
+node_h  : NODE_T                                { newNode(QStringList(_sNode); }
+        | NODE_T SWITCH_T                       { newNode(QStringList(_sNode, _sSwitch)); }
+        | NODE_T VIRTUAL_T                      { newNode(QStringList(_sNode, _sVirtual)); }
+        | NODE_T VIRTUAL_T SWITCH_T             { newNode(QStringList(_sNode, _sVirtual, _sSwitch)); }
+        | HUB_T                                 { newNode(QStringList(_sHub)); }
+        | HUB_T VIRTUAL_T                       { newNode(QStringList(_sHub, _sVirtual)); }
         ;
-hub_h   : htyp str str_z                        { NEWOBJ(pHub, cHub, sp2s($2), sp2s($3, 1), (enum cHub::eType)$1); }
-        | htyp str str_z COPY_T FROM_T str      { NEWOBJ(pHub, cHub, sp2s($2), sp2s($3, 1), (enum cHub::eType)$1); templates.get(_sHubs, sp2s($6)); }
-                hub_ps
+host_h  : HOST_T                                { newNode(QStringList(_sHost)); }
+        | HOST_T VIRTUAL_T                      { newNode(QStringList(_sHost, _sVirtual)); }
+        | HOST_T SWITCH_T                       { newNode(QStringList(_sHost, _sSwitch)); }
+        | HOST_T VIRTUAL_T SWITCH_T             { newNode(QStringList(_sHost, _sVirtual, _sSwitch)); }
+        | HOST_T SNMP_T                         { newNode(QStringList(_sHost, _sSnmp)); }
+        | HOST_T VIRTUAL_T SNMP_T               { newNode(QStringList(_sHost, _sVirtual, _sSnmp)); }
+        | HOST_T SNMP_T SWITCH_T                { newNode(QStringList(_sHost, _sSnmp, _sSwitch)); }
+        | HOST_T VIRTUAL_T SNMP_T SWITCH_T      { newNode(QStringList(_sHost, _sVirtual, _sSnmp, _sSwitch)); }
         ;
-htyp    : HUB_T                                 { $$ = cHub::T_HUB; }
-        | VIRTUAL_T HUB_T                       { $$ = cHub::T_VIRTUAL_HUB; }
-        | SWITCH_T                              { $$ = cHub::T_SWITCH; }
-        | VIRTUAL_T SWITCH_T                    { $$ = cHub::T_VIRTUAL_SWITCH; }
-        ;
-hub_e   : '{' hub_ps '}'
-        | ';'
-        ;
-hub_ps  : hub_p hub_ps
-        |
-        ;
-hub_p   : DESCR_T str ';'                       { pHub->setName(_sNodeDescr, sp2s($2)); }
-        | PLACE_T place_id ';'                  { pHub->set(_sPlaceId, $2); }
-
-        | ADD_T PORT_T ix_z str str_z ';'       { setLastPort(pHub->addPort(sp2s($4), sp2s($5,1), $3)); }
-        | ADD_T PORTS_T offs FROM_T int TO_T int offs str ';'
-                                                { setLastPort(pHub->addPorts(sp2s($9), $8, $5, $7, $3)); }
-        | PORT_T pix NAME_T strs ';'            { setLastPort(pHub->portSet($2, _sPortName, slp2vl($4)));  }
-        | PORT_T pix DESCR_T strs ';'           { setLastPort(pHub->portSet($2, _sPortDescr, slp2vl($4))); }
-        | PORT_T pnm NAME_T str ';'             { setLastPort(pHub->portSet(sp2s($2), _sPortName, sp2v($4,1))); }
-        | PORT_T pnm DESCR_T str ';'            { setLastPort(pHub->portSet(sp2s($2), _sPortDescr, sp2v($4,1))); }
-        | PORT_T pix SET_T str '=' vals ';'     { setLastPort(pHub->portSet($2, sp2s($4), vlp2vl($6))); }
-        | PORT_T str SET_T str '=' value ';'    { setLastPort(pHub->portSet(sp2s($2), sp2s($4, 1), vp2v($6))); }
-        | for_m
-        | eqs
-        ;
-node    : NODE_T str str_z                      { NEWOBJ(pNode, cNode, sp2s($2), sp2s($3, 1)); setLastPort(pNode); { pNode->setId(_sPlaceId, gPlace()); } }
+node    : node_h str str_z                      { pNode->setId(_sPlaceId, gPlace()).setName(sp2s($2)).setName(sp2s($3, 1)); }
                 node_cf node_e                  { INSERTANDDEL(pNode); }
         | ATTACHED_T str str_z ';'              { newAttachedNode(*$2, *$3); delete $2; delete $3; }
         | ATTACHED_T str str_z FROM_T int TO_T int ';'
                                                 { newAttachedNodes(*$2, *$3, $5, $7); delete $2; delete $3; }
+        | host_h name_q ip_q mac_q str_z        { pNode = newHost<cHost>($2, $3, $4, $5); }
+            node_cf node_e                      { chkHost(); INSERTANDDEL(pNode); }
+        | WORKSTATION_T str mac str_z ';'       { newWorkstation(*$2,*$3,*$4); delete $2; delete $3; delete $4; }
         ;
 node_e  : '{' node_ps '}'
         | ';'
@@ -849,26 +816,8 @@ set_t   : str                                   { $$ = (qlonglong)setType(sp2s($
 vlan_ids: vlan_id                               { *($$ = new QList<qlonglong>()) << $1; }
         | vlan_ids ',' vlan_id                  { *($$ = $1) << $3; }
         ;
-host    : HOST_T name_q ip_q mac_q str_z        { pNode = newHost<cHost>($2, $3, $4, $5); }
-            host_cf host_e                      { chkHost(); INSERTANDDEL(pNode); }
-        | VIRTUAL_T HOST_T name_q ip_q mac_q str_z { pNode = newHost<cHost>($3, $4, $5, $6); pNode->set(_sIsVirtual, true); }
-            host_cf host_e                      { chkHost(); INSERTANDDEL(pNode); }
-        | WORKSTATION_T str mac str_z ';'       { newWorkstation(*$2,*$3,*$4); delete $2; delete $3; delete $4; }
-        ;
-host_cf :
-        | COPY_T FROM_T str                     { templates.get(_sHosts, sp2s($3)); }
-                host_ps
-        ;
 name_q  : str                                   { $$ = $1; }
         | LOOKUP_T                              { $$ = new QString(); }
-        ;
-host_e  :  '{' host_ps '}'
-        |  ';'
-        ;
-host_ps : host_p host_ps
-        |
-        ;
-host_p  : node_p
         ;
 arp     : READ_T ARPS_T ';'                     { pArpTable->getFromDb(qq()); }
         | ADD_T ARP_T SERVER_T ip BY_T SNMP_T COMMUNITY_T str ';'    {
@@ -900,22 +849,6 @@ arp     : READ_T ARPS_T ';'                     { pArpTable->getFromDb(qq()); }
         ;
 ha      : str                                   { $$ = $1; }
         | ip                                    { $$ = new QString($1->toString()); delete $1; }
-        ;
-snmpdev : SNMPDEV_T name_q ip_q mac_q str_z     { pNode = newHost<cSnmpDevice>($2, $3, $4, $5); setLastPort(pNode); }
-                snmpd_cf
-                snmpd_e                         { chkHost(); INSERTANDDEL(pNode); }
-        ;
-snmpd_e : '{' snmpd_ps '}'
-        | ';'
-        ;
-snmpd_ps: snmpd_p snmpd_ps
-        |
-        ;
-snmpd_cf:
-        | COPY_T FROM_T str                     { templates.get(_sSnmpDevices, sp2s($3)); }
-                snmpd_ps
-        ;
-snmpd_p : host_p
         ;
 link    : LINKS_T lnktype str_z TO_T lnktype str_z  { NEWOBJ(pLink, cLink, $2, $3, $5, $6); }
          '{' links '}'                              { DELOBJ(pLink); }
@@ -986,10 +919,10 @@ ipprot  : ICMP_T                    { $$ = EP_ICMP; }
         | NIL_T                     { $$ = EP_NIL; }
         | PROTOCOL_T str            { $$ = cIpProtocol().getIdByName(qq(), *$2, true); delete $2; }
         ;
-hostsrv : HOST_T str SERVICE_T str str_z  { NEWOBJ(pHostService, cHostService);
-                                                      (*pHostService)[_sNodeId]    = cNode().cRecord::getIdByName(qq(),*$2, true);  delete $2;
-                                                      (*pHostService)[_sServiceId] = cService().getIdByName(qq(),*$4);              delete $4;
-                                                      (*pHostService)[_sHostServiceDescr] =  *$5;                                   delete $5;
+hostsrv : HOST_T SERVICE_T str ':' str str_z    { NEWOBJ(pHostService, cHostService);
+                                                      (*pHostService)[_sNodeId]    = cNode().cRecord::getIdByName(qq(),*$3, true);  delete $3;
+                                                      (*pHostService)[_sServiceId] = cService().getIdByName(qq(),*$5);              delete $5;
+                                                      (*pHostService)[_sHostServiceNote] =  *$6;                                    delete $6;
                                                 }
           hsrvend                               { pHostService->insert(qq(), true); DELOBJ(pHostService); }
         | SET_T SUPERIOR_T hs TO_T hss ';'      { setSuperior($3, $5); }
@@ -1026,24 +959,14 @@ hss     : hs                                    { *($$ = new QStringPairList) <<
         ;
 delete  : DELETE_T PLACE_T pattern str ';'      { cPlace().     delByName(qq(), *$4, $3);        delete $4; }
         | DELETE_T PATCH_T pattern str ';'      { cPatch().     delByName(qq(), *$4, $3, true);  delete $4; }
-        | DELETE_T HUB_T pattern str ';'        { cHub().       delByName(qq(), *$4, $3);        delete $4; }
         | DELETE_T NODE_T pattern str ';'       { cNode().      delByName(qq(), *$4, $3, false); delete $4; }
         | DELETE_T ONLY_T NODE_T pattern str ';'{ cNode().      delByName(qq(), *$5, $4, true);  delete $5; }
-        /* Shift-reduce konflikt miatt, nem használható a pattern szabály */
-        | DELETE_T HOST_T str ';'               { cHost().      delByName(qq(), *$3, false, false); delete $3; }
-        | DELETE_T HOST_T PATTERN_T str ';'     { cHost().      delByName(qq(), *$4, true, false); delete $4; }
-        | DELETE_T ONLY_T HOST_T pattern str ';'{ cHost().      delByName(qq(), *$5, $4, true);  delete $5; }
-        | DELETE_T SNMPDEV_T pattern str ';'    { cSnmpDevice().delByName(qq(), *$4, $3);        delete $4; }
-        | DELETE_T SUBNET_T pattern str ';'     { cSubNet().    delByName(qq(), *$4, $3);        delete $4; }
         | DELETE_T VLAN_T pattern str ';'       { cVLan().      delByName(qq(), *$4, $3);        delete $4; }
         | DELETE_T HOST_T str SERVICE_T pattern str ';'
                                                 { cHostService().delByNames(qq(), sp2s($3, 1), sp2s($6, 2), $5); }
         | DELETE_T MACRO_T str ';'              { templates.del(_sMacros,     sp2s($3)); }
-        | DELETE_T PATCH_T TEMPLATE_T str ';'   { templates.del(_sPatchs,     sp2s($4)); }
-        | DELETE_T HUB_T TEMPLATE_T str ';'     { templates.del(_sHubs,       sp2s($4)); }
-        | DELETE_T NODE_T TEMPLATE_T str ';'    { templates.del(_sNodes,      sp2s($4)); }
-        | DELETE_T HOST_T TEMPLATE_T str ';'    { templates.del(_sHosts,      sp2s($4)); }
-        | DELETE_T SNMPDEV_T TEMPLATE_T str ';' { templates.del(_sSnmpDevices,sp2s($4)); }
+        | DELETE_T TEMPLATE_T PATCH_T str ';'   { templates.del(_sPatchs,     sp2s($4)); }
+        | DELETE_T TEMPLATE_T NODE_T str ';'    { templates.del(_sNodes,      sp2s($4)); }
         | DELETE_T LINK_T str pattern str ';'   { cPhsLink().unlink(qq(), sp2s($3,1), sp2s($5, 2), $4); }
         | DELETE_T LINK_T str int ix_z ';'      { cPhsLink().unlink(qq(), sp2s($3,1), $4, $5); }
         | DELETE_T TABLE_T SHAPE_T pattern str ';'

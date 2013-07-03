@@ -490,15 +490,7 @@ bool getPortsBySnmp(cSnmpDevice& node, const QString &ma, bool __ex)
                             node.clear(f); \
                             r = false; \
                         } else { \
-                            node.setName(f, snmp.value().toString()); \
-                        }
-
-#define SNMPSETI(s, f)  if (0 != (e = snmp.get(n = s))) { \
-                            DERR() << "cSnmp::get(" << n << ") error : " << snmp.emsg << endl;\
-                            node.clear(f); \
-                            r = false; \
-                        } else { \
-                            node.setId(f, snmp.value().toLongLong()); \
+                            node.set(f, snmp.value()); \
                         }
 
 bool getSysBySnmp(cSnmpDevice &node, const QString &ma)
@@ -515,7 +507,7 @@ bool getSysBySnmp(cSnmpDevice &node, const QString &ma)
     SNMPSET("SNMPv2-MIB::sysContact.0",     _sSysContact);
     SNMPSET("SNMPv2-MIB::sysName.0",        _sSysName);
     SNMPSET("SNMPv2-MIB::sysLocation.0",    _sSysLocation);
-    SNMPSETI("SNMPv2-MIB::sysServices.0",   _sSysServices);
+    SNMPSET("SNMPv2-MIB::sysServices.0",    _sSysServices);
     return r;
 }
 

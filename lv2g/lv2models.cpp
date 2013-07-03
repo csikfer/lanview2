@@ -245,7 +245,7 @@ bool cRecordListModel::setFilter(const QString& _par, enum eOrderType __o, enum 
     if (!pq->exec(sql)) SQLPREPERR(*pq, sql);
     bool r = pq->first();
     if (r) do {
-        idList     << pq->value(0).toLongLong();
+        idList     << variantToId(pq->value(0));
         stringList << pq->value(1).toString();
     } while (pq->next());
     PDEB(VVERBOSE) << "name list :" << stringList.join(_sCommaSp) << endl;

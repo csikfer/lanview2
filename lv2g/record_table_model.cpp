@@ -284,7 +284,7 @@ int cRecordTableModelSql::qView()
         extLines.clear();
     }
     if (q.seek(qpos)) do {
-        qlonglong tableoid = q.value(0).toLongLong();
+        qlonglong tableoid = variantToId(q.value(0));
         cAlternate *p = NULL;
         if (tableoid == recDescr.tableoid()) {
             p = new cAlternate(&recDescr);

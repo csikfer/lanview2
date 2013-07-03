@@ -610,7 +610,8 @@ public:
     /// @param __t Az IP cím típusa, alapértelmezett a _sFixIp
     /// @param __d Cím rekord megjegyzés mező (alapértelmezetten üres)
     cIpAddress& addIpAddress(const QHostAddress& __a, const QString& __t = _sFixIp, const QString& __d = _sNul);
-
+    /// Értékadása a hwaddress mezőnek.
+    cInterface& operator=(const cMac& _m) { set(_sHwAddress, QVariant::fromValue(_m)); return *this; }
 
     /// VLAN hozzárendejések, nincs automatikus feltöltés
     tRecordList<cPortVlan> vlans;
@@ -861,6 +862,21 @@ public:
     cInterface *portSetVlans(int __port_index, const QList<qlonglong>& _ids);
 
     QList<QHostAddress> allIpAddress(qlonglong __id = NULL_ID) const;
+    /// Összeállít egy nodes és egy nports rekordot
+    /// A port neve és típusa is 'attach" lessz.
+    /// @param __n A node neve
+    /// @param __d A node megjegyzés/leírás
+    /// @param __place Az eszköz helyét azonosító place_id
+    /// @return Az objektum referenciája
+    cNode& asmbAttached(const QString& __n, const QString& __d, qlonglong __place = 0);
+    /// összeállít egy nodes és egy hozzá tartozó interfaces rekordot
+    /// A portok neve és típusa is 'ethernet" lessz.
+    /// @param __n Node neve
+    /// @param __mac MAC cím
+    /// @param __d megjegyzés/leírás mező értéke.
+    /// @param __place Az eszköz helyét azonosító place_id
+    /// @return Az objektum referenciája
+    cNode& asmbWorkstation(const QString& __n, const cMac& __mac, const QString& __d, qlonglong __place = 0);
 };
 
 

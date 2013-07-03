@@ -447,7 +447,7 @@ public:
     const QString& groupIdName()    { return group.idName() ; }
     /// A member tábla ID mezőjének a nevével tér vissza.
     const QString& memberIdName()   { return member.idName() ; }
-    /// A metődus feltételezi, hogy a group és member objektumoknak ki van töltve az ID mezőjük, és ez alapján keresi a kapcsoló rekordot.
+    /// A metdus feltételezi, hogy a group és member objektumoknak ki van töltve az ID mezőjük, és ez alapján keresi a kapcsoló rekordot.
     /// @param __q Az adabázisművelethez használt QSqlQuery objektum.
     /// @return Ha létezik a kapcsoló rekord (a member tagja a group-nak) akkor a kapcsoló rekord ID-vel tér vissza, ha nem akkor NULL_ID-vel.
     qlonglong test(QSqlQuery& __q) {
@@ -456,7 +456,7 @@ public:
                 .arg(groupIdName()).arg(group.getId())
                 .arg(memberIdName()).arg(member.getId());
         if (!__q.exec(sql)) SQLPREPERR(__q, sql);
-        if (__q.first()) return __q.value(0).toLongLong();
+        if (__q.first()) return variantToId(__q.value(0));
         return NULL_ID;
     }
     /// Feltételezi, hogy a group objektumnak az ID mezője ki van töltve.

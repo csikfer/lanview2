@@ -47,7 +47,7 @@ bool cImageWindow::setImage(const cImage& __o, const QString& __t)
 {
     if (image != NULL) image = new QPixmap();
     if (!image->loadFromData(__o.getImage(), __o.getType())) return false;
-    setWindowTitle(__t.isEmpty() ? __o.getName(_sImageDescr) : __t);
+    setWindowTitle(__t.isEmpty() ? __o.getName(_sImageNote) : __t);
     setPixmap(*image);
     show();
     return true;
@@ -80,7 +80,7 @@ QString fieldWidgetType(int _t)
     case FEW_INTERVAL:      return "cIntervalWidget";
     case FEW_BINARY:        return "cBinaryWidget";
     case FEW_RO_LINE:       return "ReadOnly LineEdit";
-    default:                return _sInvalidEnumValue;
+    default:                return sInvalidEnum();
     }
 }
 

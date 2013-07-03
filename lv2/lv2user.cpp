@@ -29,5 +29,5 @@ bool cUser::checkPassword(const QString &__passwd) const
     q.bindValue(":uid", getId());
     q.bindValue(":pass", __passwd);
     if ( !q.exec() || !q.next() )   return false;
-    return (q.value(_sUserId).toLongLong() == getId());
+    return (variantToId(q.value(0)) == getId());
 }

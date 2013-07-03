@@ -290,7 +290,7 @@ void lanView::parseArg(void)
      && (i + 1) < args.count()) {
         bool ok;
         debug = args[i + 1].toLongLong(&ok, 0);
-        if (!ok) DERR() << QString(trUtf8("Invalid numeric argument parameter : %1 %2")).arg(args[i]).arg(args[i + 1])  << endl;
+        if (!ok) DERR() << trUtf8("Invalid numeric argument parameter : %1 %2").arg(args[i]).arg(args[i + 1])  << endl;
         args.removeAt(i);
         args.removeAt(i);
     }
@@ -351,7 +351,7 @@ qlonglong lanView::sendError(const cError *pe, const QString& __t)
         return NULL_ID;
     }
     qlonglong   eid = NULL_ID;
-    if (q.first()) eid = q.value(0).toLongLong();
+    if (q.first()) eid = variantToId(q.value(0));
     DBGFNL();
     // sqlEnd(q);
     return eid;

@@ -368,7 +368,7 @@ void cRecordTableFODialog::setFilterDialog()
             pForm->textEdit_FiltParam->setPlainText(filter().param1.toString());
             break;
         }
-        QString title = filter().shapeFilter().getName(_sTableShapeFilterDescr);
+        QString title = filter().shapeFilter().getName(_sTableShapeFilterNote);
         if (title.isEmpty()) title = cEnumVal::title(*recordTable.pq, filter().shapeFilter().getName(_sFilterType), "filtertype");
         pForm->lineEdit_typeTitle->setText(title);
     }
