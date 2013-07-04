@@ -534,9 +534,9 @@ protected:
     cLldpScan(QSqlQuery& _q);
     /// LLDP felderítés
     /// @param __dev A kiindulási SNMP eszköz
-    void scanByLldp(const cSnmpDevice& __dev);
+    void scanByLldp(QSqlQuery &q, const cSnmpDevice& __dev);
     /// LLDP felderítés, egy eszköz, a pDev lekérdezése
-    void scanByLldpDev();
+    void scanByLldpDev(QSqlQuery &q);
     /// LLDP felderítés, Az SNMP lekérdezés "egy sorának" a feldolgozása
     void scanByLldpDevRow(cSnmp &snmp);
     /// Egy a MAC alapján nem talált, de felderített eszköz keresése vagy létrehozása.
@@ -724,10 +724,10 @@ void cLldpScan::scanByLldpDevRow(cSnmp& snmp)
     updateLink();
 }
 
-void cLldpScan::scanByLldpDev()
+void cLldpScan::scanByLldpDev(QSqlQuery& q)
 {
     cSnmp snmp;
-    pDev->open(snmp);
+    pDev->open(q, snmp);
     // ----- Egy eszköz lekérdezése
     bool first = true;
     int  r;
@@ -754,13 +754,13 @@ void cLldpScan::scanByLldpDev()
     }
 }
 
-void cLldpScan::scanByLldp(const cSnmpDevice& __dev)
+void cLldpScan::scanByLldp(QSqlQuery& q, const cSnmpDevice& __dev)
 {
     queued << __dev;
     while (queued.size() > 0) {     // Amíg van mit lekérdezni
         pDev = queued.pop_back();
         if (!scanned.contains(pDev->getId())) { // Ha már lekérdeztuk, akkor eldobjuk
-            scanByLldpDev();        // Lekérdezés
+            scanByLldpDev(q);        // Lekérdezés
             scanned << pDev;        // Lekérdezve
         }
         else delete pDev;
@@ -770,7 +770,7 @@ void cLldpScan::scanByLldp(const cSnmpDevice& __dev)
 void scabByLldp(QSqlQuery q, const cSnmpDevice& __dev)
 {
     cLldpScan   lldp(q);
-    lldp.scanByLldp(__dev);
+    lldp.scanByLldp(q, __dev);
 }
 
 #endif // MUST_SCAN

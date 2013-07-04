@@ -452,7 +452,7 @@ public:
         return *this;
     }
     /// Egy port id  lekérése a port név és a node_id alapján.
-    qlonglong getPortIdByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, bool __ex = true) const;
+    static qlonglong getPortIdByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, bool __ex = true);
     /// Egy port rekord beolvasása a port név és a node neve alapján.
     /// @param __ex Ha értéke false, és a megadott nevű node nem létezik, akkor dob egy kizárást, egyébként visszatér false-val.
     /// @return Ha egy rekordot beolvasott akkor true
@@ -465,7 +465,7 @@ public:
         return *this;
     }
     /// Egy port id  lekérése a port név és a node név alapján.
-    qlonglong getPortIdByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, bool __ex = true) const;
+    static qlonglong getPortIdByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, bool __ex = true);
     /// Egy port rekord beolvasása a port index és a node_id alapján.
     bool fetchPortByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id);
     /// Egy port rekord beolvasása a port index és a node_id alapján.
@@ -476,7 +476,7 @@ public:
         return *this;
     }
     /// Egy port id  lekérése a port index és a node_id alapján.
-    qlonglong getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id, bool __ex = true) const;
+    static qlonglong getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id, bool __ex = true);
     /// Egy port rekord beolvasása a port index és a node név alapján.
     bool fetchPortByIndex(QSqlQuery& __q, qlonglong __port_index, const QString& __node_name, bool __ex = true);
     /// Egy port rekord beolvasása a port index és a node_id alapján.
@@ -487,7 +487,7 @@ public:
         return *this;
     }
     /// Egy port id  lekérése a port index és a node_id alapján.
-    qlonglong getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, const QString& __node_name, bool ex = true) const;
+    static qlonglong getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, const QString& __node_name, bool ex = true);
 
     /// Megallokál egy új cNPort, cInterface vagy cIfaceAddr objektumot, a megadott cIfType objektum szerint.
     /// Az objektum típust a cIfType (egy adatbázisból beolvasott iftypes rekord alapján) az iftype_obj_type
@@ -755,6 +755,11 @@ public:
     /// @param __ex Ha értéke true, és nem találja a rekordot, tableoid-t akkor dob egy kizárást. Egyébként NULL-lal tér vissza
     static cPatch * getNodeObjById(QSqlQuery& q, qlonglong __tableoid, qlonglong __node_id, bool __ex);
 
+    /// Egy node neve alapján visszaadja az id-t
+    static qlonglong getNodeIdByName(QSqlQuery& q, const QString& _n, bool __ex = true) {
+        return cPatch().getIdByName(q, _n, __ex);
+    }
+
     /// A konténer referenciáját adja vissza, amire a pShare mutat.
     /// Ha pShare értéke NULL, akkor ezt egy leszármazottból hívtuk, ahol ez a hívás nem támogatott,
     /// ezért a metódus dob egy kizárást.
@@ -861,7 +866,7 @@ public:
     cInterface *portSetVlans(const QString& __port, const QList<qlonglong>& _ids);
     cInterface *portSetVlans(int __port_index, const QList<qlonglong>& _ids);
 
-    QList<QHostAddress> allIpAddress(qlonglong __id = NULL_ID) const;
+    QList<QHostAddress> allIpAddress(QSqlQuery &q, qlonglong __id = NULL_ID) const;
     /// Összeállít egy nodes és egy nports rekordot
     /// A port neve és típusa is 'attach" lessz.
     /// @param __n A node neve
@@ -876,7 +881,27 @@ public:
     /// @param __d megjegyzés/leírás mező értéke.
     /// @param __place Az eszköz helyét azonosító place_id
     /// @return Az objektum referenciája
-    cNode& asmbWorkstation(const QString& __n, const cMac& __mac, const QString& __d, qlonglong __place = 0);
+    cNode& asmbWorkstation(QSqlQuery &q, const QString& __n, const cMac& __mac, const QString& __d, qlonglong __place = 0);
+    /// Egy új port összeállítása
+    /// @param ix Port index, vagy NULL_IX, ha az index NULL lessz-
+    /// @param pt port típus név string.
+    /// @param pn Port neve
+    /// @param ip Pointer egy string pár, az első elem az IP cím, vagy az "ARP" string, ha az ip címet a MAC címéből kell meghatározni.
+    ///           A második elem az ip cím típus neve. Ha a pointer NULL, akkor nincs IP cím.
+    /// @param mac Ha NULL nincs mac, ha a variant egy string, akkor az a MAC cím stringgé konvertélva, vagy az "ARP" string,
+    ///           ha variant egy int, akkor az annak a Portnak az indexe (port_index érték!), melynek ugyanez a MAC cíne.
+    /// @param d Port leírás/megjegyzés szöveg, üres string esetén az NULL lessz.
+    /// @return Az új port objektum pointere
+    cNPort& asmbHostPort(QSqlQuery& q, int ix, const QString& pt, const QString& pn, const QStringPair *ip, const QVariant *mac, const  QString& d);
+    /// Egy új host vagy snmp eszköz összeállítása
+    /// @param name Az eszköz neve, vagy a "LOOKUP" string
+    /// @param pp port neve/port typusa, vagy NULL, ha default.
+    /// @param ip Pointer egy string pár, az első elem az IP cím, vagy az "ARP" ill. "LOOKUP" string, ha az ip címet a MAC címből ill.
+    ///            a névből kell meghatározni.A második elem az ip cím típus neve.
+    /// @param mac Vagy a MAC stringgé konvertálva, vagy az "ARP" string, ha az IP címből kell meghatározni.
+    /// @param d node secriptorra/megjegyzés
+    cNode& asmbNode(QSqlQuery& q, const QString& name, const QStringPair* pp, const QStringPair *ip, const QString *mac, const QString &d, qlonglong __place);
+
 };
 
 
@@ -895,7 +920,7 @@ public:
     ///
     bool setBySnmp(const QString &__addr, const QString& __com = _sNul, bool __ex = true);
     ///
-    int open(cSnmp& snmp, bool __ex = true) const;
+    int open(QSqlQuery &q, cSnmp& snmp, bool __ex = true) const;
 };
 
 class LV2SHARED_EXPORT cIpProtocol : public cRecord {
@@ -1060,10 +1085,13 @@ public:
     cArp& operator = (const cMac __m)           { set(_ixHwAddress, __m.toString()); return *this; }
     operator QHostAddress() const;
     operator cMac()         const;
-    /// Inzertálja, vagy mőrosítja az ip cím, mint kulcs alapján a rekordot.
+    /// Inzertálja, vagy morosítja az ip cím, mint kulcs alapján a rekordot.
     /// A funkciót egy PGPLSQL fúggvény (insert_or_update_arp) valósítja meg.
     /// @return A insert_or_update_arp függvény vissatérési értéke. Ld.: enum eReplaceResult
     enum eReplaceResult replace(QSqlQuery& __q);
+    /// Inzertálja, vagy morosítja az ip cím, mint kulcs alapján a rekordokat
+    /// @param __t A módosításokat tartalmazó konténer
+    /// @return a kiírt, vagy módosított rekordok száma
     static int replaces(QSqlQuery& __q, const cArpTable& __t);
     static QList<QHostAddress> mac2ips(QSqlQuery& __q, const cMac& __m);
     static cMac ip2mac(QSqlQuery& __q, const QHostAddress& __a);

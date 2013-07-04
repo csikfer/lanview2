@@ -5,12 +5,12 @@
 #include "import_parser.h"
 
 
-int sImportParse(const QString& text)
+int sImportParse(QString& text)
 {
     fileNm = "[stream]";
     yyif = new QTextStream(&text);
     PDEB(INFO) << "Start parser ..." << endl;
-    int i = yyparse();
+    int r = yyparse();
     PDEB(INFO) << "End parser." << endl;
     pDelete(yyif);
     return r;
@@ -32,10 +32,6 @@ int fImportParse(const QString& fn)
     PDEB(INFO) << "End parser." << endl;
     return r;
 }
-
-
-cArpTable *pArpTable = NULL;
-cArpServerDefs * pArpServerDefs = NULL;
 
 bool srcOpen(QFile& f)
 {
@@ -80,236 +76,164 @@ void c_yyFile::eoi()
 
 
 /* ---------------------------------------------------------------------------------------------------- */
-QStringList allNotifSwitchs;
 
-qlonglong globalPlaceId = NULL_ID; // ID of none
+QStringList     allNotifSwitchs;
+qlonglong       globalPlaceId = NULL_ID; // ID of none
+cArpServerDefs *pArpServerDefs = NULL;
 
-qlonglong newAttachedNode(const QString& __n, const QString& __d)
+qlonglong newAttachedNode(QSqlQuery &q, const QString& __n, const QString& __d)
 {
     cNode   node;
-    node.asmbAttached(__n, __d, gPlace()).
-    node.insert(qq(), true);
+    node.asmbAttached(__n, __d, gPlace());
+    node.insert(q, true);
     return node.ports.first()->getId();
 }
 
-void newAttachedNodes(const QString& __np, const QString& __dp, int __from, int __to)
+void newAttachedNodes(QSqlQuery &q, const QString& __np, const QString& __dp, int __from, int __to)
 {
     QString name, descr;
     for (int i = __from; i <= __to; i++) {
         name  = nameAndNumber(__np, i);
         descr = nameAndNumber(__dp, i);
-        newAttachedNode(name, descr);
+        newAttachedNode(q, name, descr);
     }
 }
 
-qlonglong newWorkstation(const QString& __n, const cMac& __mac, const QString& __d)
+qlonglong newWorkstation(QSqlQuery& q, const QString& __n, const cMac& __mac, const QString& __d)
 {
     cNode host;
-    host.asmbWorkstation(__n, __mac, __d, gPlace());
-    host.insert(qq(), true);
+    host.asmbWorkstation(q, __n, __mac, __d, gPlace());
+    host.insert(q, true);
     return host.ports.first()->getId();
 }
 
 /* ************************************************************************************************ */
-
-void cArpServerDef::updateArpTable(cArpTable& __at) const
+bool cArpServerDef::firstTime = true;
+void cArpServerDef::updateArpTable(QSqlQuery& q) const
 {
     DBGFN();
+    cArpTable at;
     switch (type) {
     case UNKNOWN:       break;
     case SNMP: {
             cSnmp snmp(server.toString(), community, SNMP_VERSION_2c);
-            __at.getBySnmp(snmp);
+            at.getBySnmp(snmp);
             break;
         }
-    case DHCPD_LOCAL:   __at.getByLocalDhcpdConf(file);                                         break;
-    case DHCPD_SSH:     __at.getBySshDhcpdConf(server.toString(), file);                        break;
-    case PROC_LOCAL:    __at.getByLocalProcFile(file);                                          break;
-    case PROC_SSH:      __at.getBySshProcFile(server.toString(), file);                         break;
+    case DHCPD_LOCAL:   if (firstTime) at.getByLocalDhcpdConf(file);                          break;
+    case DHCPD_SSH:     if (firstTime) at.getBySshDhcpdConf(server.toString(), file);         break;
+    case PROC_LOCAL:    at.getByLocalProcFile(file);                                          break;
+    case PROC_SSH:      at.getBySshProcFile(server.toString(), file);                         break;
     default: EXCEPTION(EPROGFAIL);
     }
-}
-
-void cArpServerDef::reUpdateArpTable(cArpTable& __at) const
-{
-    DBGFN();
-    switch (type) {
-    case UNKNOWN:       break;
-    case SNMP: {
-            cSnmp snmp(server.toString(), community, SNMP_VERSION_2c);
-            __at.getBySnmp(snmp);
-            break;
-        }
-    case DHCPD_LOCAL:   break;
-    case DHCPD_SSH:     break;
-    case PROC_LOCAL:    __at.getByLocalProcFile(file);                                          break;
-    case PROC_SSH:      __at.getBySshProcFile(server.toString(), file);                         break;
-    default: EXCEPTION(EPROGFAIL);
-    }
+    firstTime = false;
+    cArp::replaces(q, at);
 }
 
 /* --------------------------------------------------------------------------------------------------- */
 
-
-cLink::cLink(int __t1, QString *__n1, int __t2, QString *__n2)
+cLink::cLink(QSqlQuery& q, int __t1, QString *__n1, int __t2, QString *__n2)
     : phsLinkType1(i2LinkType(__t1))
     , phsLinkType2(i2LinkType(__t2))
 {
-    cPatch  n;
-    nodeId1 = __n1->isNull() ? NULL_ID : n.getIdByName(qq(), *__n1);
-    nodeId2 = __n2->isNull() ? NULL_ID : n.getIdByName(qq(), *__n2);
+    nodeId1 = __n1->isEmpty() ? NULL_ID : cPatch::getNodeIdByName(q, *__n1);
+    nodeId2 = __n2->isEmpty() ? NULL_ID : cPatch::getNodeIdByName(q, *__n2);
     delete __n1;
     delete __n2;
     newNode = false;
 }
 
-void cLink::left(QString * __n, QString *__p, int  __s)
+qlonglong& cLink::nodeId(eSide __e)
 {
-    cNPort  p; // Bár a cPPort-nak nem őse, de csak az ID kell, így elég ha csak az adatbázisban az.
-    qlonglong   nid;
-    p.setName(*__p);
-    if (__n->size() > 0) {  // Ha megadtun node-ot
-        nid = cPatch().getIdByName(qq(), *__n);
+    switch (__e) {
+    case LEFT:  return nodeId1;
+    case RIGHT: return nodeId2;
+    default:    EXCEPTION(EPROGFAIL);
     }
-    else {
-        if (nodeId1 == NULL_ID) EXCEPTION(EDATA, -1, "Nincs megadva node!");
-        nid = nodeId1;
+}
+qlonglong& cLink::portId(eSide __e)
+{
+    switch (__e) {
+    case LEFT:  return portId1;
+    case RIGHT: return portId2;
+    default:    EXCEPTION(EPROGFAIL);
     }
-    p[_sNodeId] = nid;
-    if (1 != p.completion()) yyerror(QString(QObject::trUtf8("Invalid left port specification, node_id = %1, port_name = %2"))
-                                     .arg(nid). arg(*__p));
-    portId1 = p.getId();
-    if (__s != 0) {
-        if (share.size() > 0) yyerror(QObject::trUtf8("Multiple share defined"));
-        share = chkShare(__s);
-    }
-    delete __n;
-    delete __p;
-    _DBGFNL() << _sSpace << portId1 << endl;
 }
 
-void cLink::right(QString * __n, QString *__p, int  __s)
-{
-    cNPort  p; // Bár a cPPort-nak nem őse, de csak az ID kell, így elég ha csak az adatbázisban az.
-    qlonglong   nid;
-    p.setName(*__p);
-    if (__n->size() > 0) {  // Ha megadtun node-ot
-        nid = cPatch().getIdByName(qq(), *__n);
-    }
-    else {
-        if (nodeId2 == NULL_ID) EXCEPTION(EDATA, -1, "Nincs megadva node!");
-        nid = nodeId2;
-    }
-    p[_sNodeId] = nid;
-    if (1 != p.completion()) yyerror(QString(QObject::trUtf8("Invalid right port specification, node_id = %1, port_name = %2"))
-                                     .arg(nid). arg(*__p));
-    portId2 = p.getId();
-    if (__s != 0) {
-        if (share.size() > 0) yyerror(QObject::trUtf8("Multiple share defined"));
-        share = chkShare(__s);
-    }
-    delete __n;
-    delete __p;
-    _DBGFNL() << _sSpace << portId2 << endl;
-}
+qlonglong& cLink::portId(eSide __e);
 
-void cLink::left(QString * __n, int __p, int  __s)
+void cLink::side(eSide __e, QSqlQuery &q, QString * __n, QString *__p, int __s)
 {
-    cNPort  p;      // Az adatbázisban ez a bazis tábla
-    qlonglong   nid;
-    p.set(_sPortIndex, QVariant(__p));
+    qlonglong   nid;    // Node id
     if (__n->size() > 0) {  // Ha megadtunk node-ot
-        nid = cPatch().getIdByName(qq(), *__n); // Az adatbázis szerinti bázist használjuk, nam bázis osztály !!!
-        if (__p == NULL_IX) {
-            cNPort n;
-            n.set(_sNodeId, nid);   // megkeressük a node egyetlen portját
-            if (n.completion(qq()) != 1) yyerror("Insufficient or invalid data.");  // Pont egynek kell lennie
-            p.clear(_sPortIndex);       // Az index mégsem ismert
-            p.setId(n.getId(_sPortId)); // ID azonosítja
+        nid = cPatch::getNodeIdByName(q, *__n);
+    }
+    else {
+        nid = nodeId(__e);
+        if (nid == NULL_ID) EXCEPTION(EDATA, -1, "Nincs megadva node!");
+    }
+    portId(__e) = cNPort::getPortIdByName(q, *__p, nid, false);
+    if (portId(__e) == NULL_ID) yyerror(QObject::trUtf8("Invalid left port specification, #%1:%2").arg(nid). arg(*__p));
+    if (__s != 0) {
+        if (share.size() > 0) yyerror(QObject::trUtf8("Multiple share defined"));
+        share = chkShare(__s);
+    }
+    delete __n;
+    delete __p;
+    _DBGFNL() << _sSpace << portId(__e) << endl;
+}
+
+void cLink::side(eSide __e, QSqlQuery &q, QString * __n, int __p, int __s)
+{
+    qlonglong   nid;
+    if (__n->size() > 0) {  // Ha megadtunk node-ot
+        nid = cPatch::getNodeIdByName(q, *__n);
+        if (__p == NULL_IX) {   // Ha megadtuk a node-t akkor lehet null, de akkor csak egy portja lehet
+            cNPort ep;
+            ep.set(_sNodeId, nid);   // megkeressük a node egyetlen portját
+            if (ep.completion(qq()) != 1) yyerror("Insufficient or invalid data.");  // Pont egynek kell lennie
+            portId(__e) = ep.getId();
+        }
+        else {
+            portId(__e) = cNPort::getPortIdByIndex(q, __p, nid, false);
         }
     }
     else {
-        if (nodeId1 == NULL_ID) EXCEPTION(EDATA, -1, "Nincs megadva node!");
-        nid = nodeId1;
+        nid = nodeId(__e);
+        if (nid == NULL_ID) EXCEPTION(EDATA, -1, "Nincs megadva node!");
+        portId(__e) = cNPort::getPortIdByIndex(q, __p, nid, false);
     }
-    p[_sNodeId] = nid;
-    if (0 == p.completion()) {
-        yyerror(QString(QObject::trUtf8("Invalid left port specification, port_index = %1, node_id = %2"))
-                .arg(__p).arg(nid));
+    if (portId(__e) == NULL_ID) {
+        yyerror(QObject::trUtf8("Invalid port index, #%1:#%2").arg(nid).arg(__p));
     }
-    if (1  < p.completion()) {
-        yyerror(QString(QObject::trUtf8("Redundant left port specification"))
-                .arg(__p).arg(nid));
-    }
-    portId1 = p.getId();
     if (__s != 0) {
         if (share.size() > 0) yyerror(QObject::trUtf8("Multiple share defined"));
         share = chkShare(__s);;
     }
     delete __n;
-    _DBGFNL() << _sSpace << portId1 << endl;
+    _DBGFNL() << _sSpace << portId(__e) << endl;
 }
 
-void cLink::right(QString * __n, int __p, int  __s)
+void cLink::workstation(QSqlQuery &q, QString * __n, cMac * __mac, QString * __d)
 {
-    cNPort  p;
-    qlonglong   nid;
-    p.set(_sPortIndex, QVariant(__p));
-    if (__n->size() > 0) {  // Ha megadtun node-ot
-        nid = cPatch().getIdByName(qq(), *__n);  // Az adatbázis szerinti bázist használjuk, nam bázis osztály !!!
-        if (__p == NULL_IX) {
-            cNPort n;
-            n.set(_sNodeId, nid);   // megkeressük a node egyetlen portját
-            if (n.completion(qq()) != 1) yyerror("Insufficient or invalid data.");  // Pont egynek kell lennie
-            p.clear(_sPortIndex);       // Az index mégsem ismert
-            p.setId(n.getId(_sPortId)); // ID azonosítja
-        }
-    }
-    else {
-        if (nodeId2 == NULL_ID) EXCEPTION(EDATA, -1, "Nincs megadva node!");
-        nid = nodeId2;
-    }
-    p[_sNodeId] = nid;
-    if (0 == p.completion()) {
-        yyerror(QString(QObject::trUtf8("Invalid right port specification, port_index = %1, node_id = %2"))
-                .arg(__p).arg(nid));
-    }
-    if (1  < p.completion()) {
-        yyerror(QString(QObject::trUtf8("Redundant right port specification"))
-                .arg(__p).arg(nid));
-    }
-    portId2 = p.getId();
-    if (__s != 0) {
-        if (share.size() > 0) yyerror(QObject::trUtf8("Multiple share defined"));
-        share = chkShare(__s);
-    }
-    delete __n;
-    _DBGFNL() << _sSpace << portId2 << endl;
-}
-
-void cLink::workstation(QString * __n, cMac * __mac, QString * __d)
-{
-    // Host objektum kitöltése, és inzert
-    cHost   h = newWorkstation(*__n, *__mac, *__d);
+    portId2 = newWorkstation(q, *__n, *__mac, *__d);
     delete __n;
     delete __mac;
     delete __d;
-    portId2 = h.get(_sPortId).toLongLong(); // Az egy ethernet port van linkelve (ha mégse, majd javítjuk)
     newNode = true;
     _DBGFNL() << _sSpace << portId2 << endl;
 }
 
-void cLink::attached(QString * __n, QString * __d)
+void cLink::attached(QSqlQuery &q, QString * __n, QString * __d)
 {
-    cNode   h = newAttachedNode(*__n, *__d);
+    portId2 = newAttachedNode(q, *__n, *__d);;
     delete __n;
     delete __d;
-    portId2 = h.getId(_sPortId);
     newNode = true;
     _DBGFNL() << _sSpace << portId2 << endl;
 }
 
-void cLink::insert(QString * __d, QStringList * __srv)
+void cLink::insert(QSqlQuery &q, QString * __d, QStringList * __srv)
 {
     cPhsLink    lnk;
     lnk[_sPortId1]      = portId1;
@@ -317,40 +241,40 @@ void cLink::insert(QString * __d, QStringList * __srv)
     lnk[_sPortId2]      = portId2;
     lnk[_sPhsLinkType2] = phsLinkType2;
     lnk[_sPortShared]   = share;
-    lnk[_sPhsLinkDescr] = *__d;
+    lnk[_sPhsLinkNote]  = *__d;
     if (__srv != NULL) {    // Volt Alert
         cHostService    hose;
         cService        se;
         cNode           ho;
         cNPort          po;
+        // Szervíz: megadták, vagy default
         if (__srv->size() > 0 && __srv->at(0).size() > 0) { if (!se.fetchByName(__srv->at(0))) yyerror("Invalis alert service name."); }
         else                                              { if (!se.fetchById(alertServiceId)) yyerror("Nothing default alert service."); }
         po.setById(qq(), portId2);   // A jobb oldali port a mienk
         ho.setById(qq(), po.getId(_sNodeId));
-        if (__srv->size() > 1 && __srv->at(1).size() > 0) hose.setName(_sHostServiceDescr, __srv->at(1));
+        // Volt megjegyzés ?
+        if (__srv->size() > 1 && __srv->at(1).size() > 0) hose.setName(_sHostServiceNote, __srv->at(1));
         hose.setId(_sServiceId,  se.getId());
         hose.setId(_sNodeId,     ho.getId());
         hose.setId(_sPortId,     po.getId());
         hose[_sDelegateHostState] = true;
         QString it = se.magicParam(_sIfType);
-        if (it.isEmpty()) {
+        if (it.isEmpty()) { //??
             DWAR() << "Invalid or empty service magic param : iftype" << endl;
         }
-        else if (it == _sEthernet) {     // A megasott szolgáltatás az ethernethez tartozik
-            cIfType eth;
-            eth.setByName(qq(), _sEthernet);
-            if (po.getId(_sIfTypeId) != eth.getId()) yyerror("Invalid port type");
+        else if (it == _sEthernet) {     // A megadott szolgáltatás az ethernethez tartozik
+            if (po.getId(_sIfTypeId) != cIfType::ifTypeId(_sEthernet)) yyerror("Invalid port type");
         }
         else if (it == _sAttach) {
             cIfType att;
             att.setByName(qq(), _sAttach);
-            if (po.getId(_sIfTypeId) != att.getId()) {
+            if (po.getId(_sIfTypeId) != cIfType::ifTypeId(_sAttach)) {
                 if (!newNode) yyerror("Invalid port type");
                 po.set();
                 po.setName(__sAttach);
                 po.setId(_sNodeId, ho.getId());
-                po.setId(_sIfTypeId, att.getId());
-                po.insert(qq());
+                po.setId(_sIfTypeId, cIfType::ifTypeId(_sAttach));
+                po.insert(q);
                 lnk[_sPortId2] = po.getId();
                 hose.setId(_sPortId,     po.getId());
             }
@@ -358,12 +282,12 @@ void cLink::insert(QString * __d, QStringList * __srv)
         else {
             DWAR() << "iftype = " << it << " not supported." << endl;
         }
-        lnk.insert(qq());
-        hose.insert(qq());
+        lnk.insert(q);
+        hose.insert(q);
         delete __srv;
     }
     else {
-        lnk.insert(qq());
+        lnk.insert(q);
     }
     share.clear();
     portId1 = portId2 = NULL_ID;
@@ -396,21 +320,20 @@ const QString&  cLink::chkShare(int __s)
     return shares[__s];
 }
 
-void cLink::insert(QString *__hn1, qlonglong __pi1, QString *__hn2, qlonglong __pi2, qlonglong __n)
+void cLink::insert(QSqlQuery &q, QString *__hn1, qlonglong __pi1, QString *__hn2, qlonglong __pi2, qlonglong __n)
 {
     cPhsLink    lnk;
-    cNPort      np;
     lnk[_sPhsLinkType1] = phsLinkType1;
     lnk[_sPhsLinkType2] = phsLinkType2;
     lnk[_sPortShared]   = _sNul;
-    qlonglong nid1 = __hn1->size() > 0 ? cPatch().getIdByName(qq(), *__hn1) : nodeId1;
-    qlonglong nid2 = __hn2->size() > 0 ? cPatch().getIdByName(qq(), *__hn2) : nodeId2;
+    qlonglong nid1 = __hn1->size() > 0 ? cPatch::getNodeIdByName(q, *__hn1) : nodeId1;
+    qlonglong nid2 = __hn2->size() > 0 ? cPatch::getNodeIdByName(q, *__hn2) : nodeId2;
     while (__n--) {
-        lnk[_sPortId1] = np.getPortIdByIndex(qq(), __pi1, nid1, true);
-        lnk[_sPortId2] = np.getPortIdByIndex(qq(), __pi2, nid2, true);
-        lnk.insert(qq());
-        lnk.clear(lnk.idIndex());
-        __pi1++;
+        lnk[_sPortId1] = cNPort::getPortIdByIndex(q, __pi1, nid1, true);
+        lnk[_sPortId2] = cNPort::getPortIdByIndex(q, __pi2, nid2, true);
+        lnk.insert(q);
+        lnk.clear(lnk.idIndex());   // töröljük az id-t mert a köv insert-nél baj lessz.
+        __pi1++;                    // Léptetjük az indexeket
         __pi2++;
     }
     delete __hn1;
@@ -419,10 +342,10 @@ void cLink::insert(QString *__hn1, qlonglong __pi1, QString *__hn2, qlonglong __
 
 
 //-----------------------------------------------------------------------------------------------------
-qlonglong placeId(const QString *__np)
+qlonglong placeId(QSqlQuery &q, const QString *__np)
 {
-    qlonglong id = cPlace().getIdByName(qq(), *__np, true);
-    if (id == NULL_ID) yyerror(QString(QObject::trUtf8("Place %1 not found.")).arg(*__np));
+    qlonglong id = cPlace().getIdByName(q, *__np, true);
+    if (id == NULL_ID) yyerror(QObject::trUtf8("Place %1 not found.").arg(*__np));
     delete __np;
     return id;
 }
@@ -457,80 +380,30 @@ static QString e1 = "Redefined port name or index.";
 static QString e2 = "There is insufficient data.";
 
 /// Egy új port létrehozása (a paraméterként megadott pointereket felszabadítja)
+/// @param h A node objektum, amihez hozzáadjuk a portot
 /// @param ix Port index, vagy NULL_IX, ha az index NULL lessz-
-/// @param pt Pointer az port típus név stringre.
+/// @param pt Pointer a port típus név stringre.
 /// @param pn Port nevére mutató pointer
-/// @param ip Pointer egy string pár, az első elem az IP cím, vagy az ARP string, ha az ip címet a MAC címéből kell meghatározni.
-///           A második elem az ip cím típus neve. Ha a pointer NULL, akkor nincs IP cím (ez befolyásolja a port objektum típusát!)
-///           Ha first, vagyis az IP cím egy öres string, akkor nincs IP, de az az objektum változat kell, amiben van (lehet) ip cím.
-/// @param mac Ha NULL nincs mac, ha a variant egy string, akkor az a MAC cím stringgé konvertélva, vagy az "ARP" string, ha variant egy int,
-///           akkor az abbak a Portnak az indexe, melynek ugyanez a MAC cíne.
-/// @param d Port secriptorra/megjegyzés  mutató pointer, üres string esetln az NULL lessz.
+/// @param ip Pointer egy string pár, az első elem az IP cím, vagy az "ARP" string, ha az ip címet a MAC címéből kell meghatározni.
+///           A második elem az ip cím típus neve. Ha a pointer NULL, akkor nincs IP cím.
+/// @param mac Ha NULL nincs mac, ha a variant egy string, akkor az a MAC cím stringgé konvertélva, vagy az "ARP" string,
+///           ha variant egy int, akkor az annak a Portnak az indexe, melynek ugyanez a MAC cíne.
+/// @param d Port leírás/megjegyzés szövegre mutató pointer, üres string esetén az NULL lessz.
 /// @return Az új port objektum pointere
-cNPort *hostAddPort(int ix, QString *pt, QString *pn, QStringPair *ip, QVariant *mac, QString *d)
+cNPort *hostAddPort(QSqlQuery& q, cNode& h, int ix, QString *pt, QString *pn, QStringPair *ip, QVariant *mac, QString *d)
 {
-    cHost& h = host();
-    QHostAddress a;
-    cMac m;
-    if (h.getPort(ix, false) != NULL || h.getPort(*pn, false) != NULL) yyerror(e1);
-    cNPort *p = cNPort::newPort(cIfType::ifType(*pt), ip == NULL ? 0 : 1);
-    h.ports << p;
-    p->setName(_sPortName, *pn);
-    if (ix != NULL_IX) p->setId(_sPortIndex, ix);
-    if (d->size()) p->setName(_sPortDescr, *d);
-    if (ip != NULL) {
-        QString type = ip->second;
-        QString sip  = ip->first;
-        if (sip == _sARP) {
-            if (mac != NULL && mac->type() == QVariant::String) m.set(mac->toString());
-            if (!m) yyerror(e2);                    // Nincs megadva MAC / nem OK
-            QList<QHostAddress> al = (*pArpTable)[m];
-            if (al.size() != 1) yyerror(e2);        // Nem talált címet, vagy több is van
-            a = al.first();
-        }
-        else if (!sip.isEmpty()) {
-            a.setAddress(sip);
-        }
-        if (!a.isNull()) p->set(_sAddress, QVariant::fromValue(a));
-        p->setName(_sIpAddressType, type);
-        delete ip;
-    }
-    if (mac != NULL) {
-        switch (mac->type()) {
-        case QVariant::String:
-            if (mac->toString() == _sARP) {
-                if (!a.isNull()) yyerror(e2);
-                m = (*pArpTable)[a];
-                if (!m) yyerror(e2);
-            }
-            else {
-                m.set(mac->toString());
-            }
-            break;
-        case QVariant::LongLong:
-            m = h.getPort(mac->toInt())->get(_sHwAddress).value<cMac>();
-            break;
-        default:
-            EXCEPTION(EPROGFAIL);
-        }
-        if (!m) yyerror("Invalid MAC");
-        p->set(_sHwAddress, QVariant::fromValue(m));
-        delete mac;
-    }
-    delete pt; delete pn; delete d;
-    return p;
-}
-
-void    hostAddAddress(QStringPair *ip, QString *d)
-{
-    cHost& h = host();
-    h.addIpAddress(QHostAddress(ip->first), ip->second, *d);
-    delete ip; delete d;
+    cNPort& p = h.asmbHostPort(q, ix, *pt, *pn, ip, mac, *d);
+    pDelete(pt);
+    pDelete(pn);
+    pDelete(ip);
+    pDelete(mac);
+    pDelete(d);
+    return &p;
 }
 
 static cNPort *portAddAddress(cNPort *_p, QStringPair *ip, QString *d)
 {
-    cIfaceAddr *p = _p->reconvert<cIfaceAddr>();
+    cInterface *p = _p->reconvert<cInterface>();
     p->addIpAddress(QHostAddress(ip->first), ip->second, *d);
     delete ip; delete d;
     return _p;
@@ -548,19 +421,6 @@ cNPort *portAddAddress(int ix, QStringPair *ip, QString *d)
 {
     cNPort *p = host().getPort(ix);
     return portAddAddress(p, ip, d);
-}
-
-static QHostAddress mac2addr(const cMac& mac)
-{
-    QList<QHostAddress> la = (*pArpTable)[mac];
-    if (la.count() != 1) yyerror("A IP cím nem állapítható meg a MAC címből.");
-    return la[0];
-}
-
-static cMac addr2mac(const QHostAddress& ha)
-{
-    if (pArpTable->find(ha) == pArpTable->end()) yyerror("A MAC cím nem állapítható meg a IP címből.");
-    return (*pArpTable)[ha];
 }
 
 static QString yylookup(const QHostAddress& ha)

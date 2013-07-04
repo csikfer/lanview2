@@ -5,7 +5,7 @@
 #include "lv2user.h"
 
 
-extern int sImportParse(const QString& text);
+extern int sImportParse(QString &text);
 extern int fImportParse(const QString& fn);
 
 
@@ -20,25 +20,21 @@ static inline qlonglong gPlace() { return globalPlaceId == NULL_ID ? UNKNOWN_PLA
 /// @param __n A node neve
 /// @param __d A node megjegyzés/leírás
 /// @return Az nports rekord id-je
-extern qlonglong newAttachedNode(const QString& __n, const QString&  __d);
+extern qlonglong newAttachedNode(QSqlQuery &q, const QString &__n, const QString &__d);
 /// Létrehoz az adatbázisban egy nodes és egy hozzá tartozó nports rekord sorozatot
 /// A portok neve és típusa is 'attach" lessz.
 /// @param __np Egy minta a node nevekhez
 /// @param __dp Egy minta a node megjegyzés/leírás -okhoz
 /// @param __from Futó index első érték
 /// @param __to Futó index utolsó érték
-extern void newAttachedNodes(const QString& __np, const QString& __dp, int __from, int __to);
+extern void newAttachedNodes(QSqlQuery &q, const QString& __np, const QString& __dp, int __from, int __to);
 /// Létrehoz az adatbázisban egy nodes és egy hozzá tartozó interfaces rekordot
 /// A portok neve és típusa is 'ethernet" lessz.
 /// @param __n Node neve
 /// @param __mac MAC cím
 /// @param __d megjegyzés/leírás mező értéke.
 /// @return Az interfaces rekord id-je
-extern qlonglong newWorkstation(const QString& __n, const cMac& __mac, const QString& __d);
-
-extern cArpTable *pArpTable;
-class  cArpServerDefs;
-extern cArpServerDefs * pArpServerDefs;
+extern qlonglong newWorkstation(QSqlQuery &q, const QString& __n, const cMac& __mac, const QString& __d);
 
 extern bool srcOpen(QFile& f);
 
@@ -61,7 +57,8 @@ private:
     static QStack<c_yyFile> stack;
 };
 
-// typedef QPair<QString,QString>  QStringPair;
+class  cArpServerDefs;
+extern cArpServerDefs * pArpServerDefs;
 
 class cArpServerDef {
 public:
@@ -74,30 +71,27 @@ public:
     QString         file;
     /// Community név
     QString         community;
+    ///
+    static bool firstTime;
     cArpServerDef() : server(), file(), community() { type = UNKNOWN; }
     cArpServerDef(const cArpServerDef& __o)
         : server(__o.server), file(__o.file), community(__o.community) { type = __o.type; }
     cArpServerDef(enum eType __t, const QString& __s, const QString& __f = QString(), const QString& __c = QString())
         : server(__s), file(__f), community(__c) { type = __t; }
-    void updateArpTable(cArpTable& __at) const;
-    void reUpdateArpTable(cArpTable& __at) const;
+    void updateArpTable(QSqlQuery &q) const;
 };
 
 class cArpServerDefs : public QVector<cArpServerDef> {
 public:
     cArpServerDefs() : QVector<cArpServerDef>() { ; }
-    void append(const cArpServerDef& __asd, cArpTable& __at) {
-        __asd.updateArpTable(__at);
+    void append(QSqlQuery &q, const cArpServerDef& __asd) {
+        __asd.updateArpTable(q);
         *(cArpServerDefs *)this << __asd;
     }
 
-    void updateArpTable(cArpTable& __at) {
+    void updateArpTable(QSqlQuery &q) {
         ConstIterator i, n = constEnd();
-        for (i = constBegin(); i != n; ++i) { i->updateArpTable(__at); }
-    }
-    void reUpdateArpTable(cArpTable& __at) {
-        ConstIterator i, n = constEnd();
-        for (i = constBegin(); i != n; ++i) { i->reUpdateArpTable(__at); }
+        for (i = constBegin(); i != n; ++i) { i->updateArpTable(q); }
     }
 };
 
@@ -110,21 +104,55 @@ enum eShare {
 
 extern qlonglong    alertServiceId;
 
+/// A fizikai linkeket definiáló blokk adatait tartalmazó, ill. a blokkon
+/// belüli definíciókat rögzítő metódusok osztálya.
+/// Az objektumban épül fel a rögzítendő rekord.
 class cLink {
+private:
+    enum eSide { LEFT = 1, RIGHT = 2};
+    void side(eSide __e, QSqlQuery &q, QString * __n, QString *__p, int __s);
+    void side(eSide __e, QSqlQuery &q, QString * __n, int __p, int __s);
+    qlonglong& nodeId(eSide __e);
+    qlonglong& portId(eSide __e);
 public:
-    cLink(int __t1, QString *__n1, int __t2, QString *__n2);
-    void left(QString * __n, QString *__p, int __s);
-    void right(QString * __n, QString *__p, int __s);
-    void left(QString * __n, int __p, int __s);
-    void right(QString * __n, int __p, int __s);
+    /// Konstruktor
+    /// @param __t1 A bal oldali elemen értelmezett link típusa (-1,0,1)
+    /// @param __n1 Az alapértelmezett bal oldali elem neve, vagy egy üres string
+    /// @param __t2 A jobb oldali elemen értelmezett link típusa (-1,0,1)
+    /// @param __n2 Az alapértelmezett jobb oldali elem neve, vagy egy üres string
+    cLink(QSqlQuery &q, int __t1, QString *__n1, int __t2, QString *__n2);
+    /// A link baloldali portjának a megadása
+    /// @param q
+    /// @param __n Opcionális eszköz (node/patch) név. A pointert felszabadítja.
+    /// @param __p Port név. A pointert felszabadítja.
+    /// @param __s Az esetleges megosztás típusának az indexe (0 = nincs megosztás
+    void left(QSqlQuery &q, QString * __n, QString *__p, int __s = 0)   { side(LEFT, q, __n,__p, __s); }
+    /// A link jobboldali portjának a megadása
+    /// @param q
+    /// @param __n Opcionális eszköz (node/patch) név. A pointert felszabadítja.
+    /// @param __p Port név. A pointert felszabadítja.
+    /// @param __s Az esetleges megosztás típusának az indexe (0 = nincs megosztás
+    void right(QSqlQuery &q, QString * __n, QString *__p, int __s = 0)  { side(RIGHT, q, __n,__p, __s); }
+    /// A link baloldali portjának a megadása
+    /// @param q
+    /// @param __n Opcionális eszköz (node/patch) név. A pointert felszabadítja.
+    /// @param __p Port index, vagy NULL_ID, ha a kötelezően megadott node egyetlen portját jelöltük ki.
+    /// @param __s Az esetleges megosztás típusának az indexe (0 = nincs megosztás)
+    void left(QSqlQuery &q, QString * __n, int __p, int __s)  { side(LEFT, q, __n, __p, __s); }
+    /// A link jobboldali portjának a megadása
+    /// @param q
+    /// @param __n Opcionális eszköz (node/patch) név. A pointert felszabadítja.
+    /// @param __p Port index, vagy NULL_ID, ha a kötelezően megadott node egyetlen portját jelöltük ki.
+    /// @param __s Az esetleges megosztás típusának az indexe (0 = nincs megosztás)
+    void right(QSqlQuery &q, QString * __n, int __p, int __s) { side(RIGHT, q, __n, __p, __s); }
     /// 'jobb' oldali link egy röptében felvett workstationra.
     /// @arg __n A munkaállomás neve
     /// @arg __mac A munkaáééomás MAC címe
     /// @arg __d node_descr értéke
-    void workstation(QString * __n, cMac * __mac, QString * __d);
-    void attached(QString * __n, QString * __d);
-    void insert(QString * __d, QStringList * __srv);
-    void insert(QString *__hn1, qlonglong __pi1, QString *__hn2, qlonglong __pi2, qlonglong __n);
+    void workstation(QSqlQuery &q, QString * __n, cMac * __mac, QString * __d);
+    void attached(QSqlQuery &q, QString * __n, QString * __d);
+    void insert(QSqlQuery &q, QString * __d, QStringList * __srv);
+    void insert(QSqlQuery &q, QString *__hn1, qlonglong __pi1, QString *__hn2, qlonglong __pi2, qlonglong __n);
     static const QString& i2LinkType(int __i);
     static const QString& chkShare(int __s);
     const QString&  phsLinkType1;
@@ -138,11 +166,11 @@ public:
 };
 
 // Rekord ID lekérdezése név alapján, a névre mutató pointert felszabadítja.
-extern qlonglong placeId(const QString *__np);
+extern qlonglong placeId(QSqlQuery &q, const QString *__np);
 extern cIfType *ifType(const QString *__np);
 extern void setSuperiorHostService(cHostService * phs, QString * phn, QString * psn, QString *ppo = NULL);
 
-extern cNPort *hostAddPort(int ix, QString *pt, QString *pn, QStringPair *ip, QVariant *mac, QString *d);
+extern cNPort *hostAddPort(cNode *pNode, int ix, QString *pt, QString *pn, QStringPair *ip, QVariant *mac, QString *d);
 extern void    hostAddAddress(QStringPair *ip, QString *d);
 extern cNPort *portAddAddress(QString *pn, QStringPair *ip, QString *d);
 extern cNPort *portAddAddress(int ix, QStringPair *ip, QString *d);
@@ -263,23 +291,9 @@ inline static const QString& nextNetType() {
     return subNetType(r);
 }
 
-inline static cHost& host() {
-    if (pNode == NULL) EXCEPTION(EPROGFAIL);
-    if (pNode->tableoid() != cHost::_descr().tableoid() && pNode->tableoid() != cSnmpDevice::_descr().tableoid()) yyerror("Invalid contex.");
-    return *(cHost *)pNode;
-}
-
 inline static cSnmpDevice& snmpdev() {
     if (pNode == NULL) EXCEPTION(EPROGFAIL);
-    if (pNode->tableoid() != cSnmpDevice::_descr().tableoid()) yyerror("Invalid contex.");
-    return *(cSnmpDevice *)pNode;
-}
-
-inline static void chkHost()
-{
-    cHost& h = host();
-    // Ha nincs main port név, akkor az alapértelmezett az "ethernet"
-    if (h.isNull(_sPortName)) h.setName(_sPortName,_sEthernet);
+    return *pNode->reconvert<cSnmpDevice>();
 }
 
 enum {

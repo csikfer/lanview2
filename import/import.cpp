@@ -35,8 +35,6 @@ int main (int argc, char * argv[])
     }
     PDEB(VVERBOSE) << "Saved original current dir : " << actDir << "; actDir : " << QDir::currentPath() << endl;
 
-    pArpTable = new cArpTable();
-    pArpTable->getFromDb(qq());
     pArpServerDefs = new cArpServerDefs();
     // notifswitch tömb = SET, minden on-ba, visszaolvasás listaként
     allNotifSwitchs = cUser().set(_sHostNotifSwitchs, QVariant(0xffff)).get(_sHostNotifSwitchs).toStringList();
@@ -73,7 +71,6 @@ int main (int argc, char * argv[])
             PDEB(DERROR) << "**** OK ****" << endl;
         }
 
-        if (pArpTable)      delete pArpTable;
         if (pArpServerDefs) delete pArpServerDefs;
         cDebug::end();
         return mo.lastError == NULL ? 0 : mo.lastError->mErrorCode;
@@ -110,10 +107,10 @@ void lv2import::dbNotif(QString __s)
         imp.update(*pq, false, imp.mask(_sExecState, _sStarted, _sPid));
         sqlEnd(*pq);
         sqlBegin(*pq);
-        sImportParse(imp.getName(_sImportText))
+        sImportParse(imp.getName(_sImportText));
     }
-    catch(cError *e) {  lastError = e; }
-    catch(...)       {  lastError = NEWCERROR(EUNKNOWN); }
+    CATCHS(lastError)
+
     if (lastError == NULL) {
         imp.setName(_sExecState, _sOk);
         imp.setName(_sResultMsg, _sOk);

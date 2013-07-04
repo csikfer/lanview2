@@ -547,11 +547,10 @@ bool cNPort::fetchPortByName(QSqlQuery& __q, const QString& __port_name, qlonglo
     return n == 1;
 }
 
-qlonglong cNPort::getPortIdByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, bool ex) const
+qlonglong cNPort::getPortIdByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, bool ex)
 {
     cNPort p;
-    if (!p.fetchPortByName(__q, __port_name, __node_id) && ex)
-        EXCEPTION(EDATA, __node_id, __port_name);
+    if (!p.fetchPortByName(__q, __port_name, __node_id) && ex) EXCEPTION(EDATA, __node_id, __port_name);
     return p.getId();
 }
 
@@ -568,7 +567,7 @@ bool cNPort::fetchPortByName(QSqlQuery& __q, const QString& __port_name, const Q
     return n == 1;
 }
 
-qlonglong cNPort::getPortIdByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, bool ex) const
+qlonglong cNPort::getPortIdByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, bool ex)
 {
     cNPort p;
     if (!p.fetchPortByName(__q, __port_name, __node_name, ex) && ex)
@@ -586,7 +585,7 @@ bool cNPort::fetchPortByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong 
     return n == 1;
 }
 
-qlonglong cNPort::getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id, bool ex) const
+qlonglong cNPort::getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id, bool ex)
 {
     cNPort p;
     if (!p.fetchPortByIndex(__q, __port_index, __node_id) && ex)
@@ -608,7 +607,7 @@ bool cNPort::fetchPortByIndex(QSqlQuery& __q, qlonglong __port_index, const QStr
 }
 
 
-qlonglong cNPort::getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, const QString& __node_name, bool ex) const
+qlonglong cNPort::getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, const QString& __node_name, bool ex)
 {
     cNPort p;
     if (!p.fetchPortByIndex(__q, __port_index, __node_name, ex) && ex)
@@ -1351,14 +1350,13 @@ cInterface *cNode::portSetVlans(int __port_index, const QList<qlonglong>& _ids)
     return p;
 }
 
-QList<QHostAddress> cNode::allIpAddress(qlonglong __id) const
+QList<QHostAddress> cNode::allIpAddress(QSqlQuery& q, qlonglong __id) const
 {
     QString sql =
             "SELECT address FROM interfaces JOIN ipaddressess USING(port_id)"
                " WHERE node_id = ?"
                " ORDER BY preferred ASC";
     QList<QHostAddress> r;
-    QSqlQuery q = getQuery();
     qlonglong id = __id < 0 ? getId() : __id;
     if (execSql(q, sql, id)) do {
         QVariant v = q.value(0);
@@ -1380,7 +1378,7 @@ cNode& cNode::asmbAttached(const QString& __n, const QString& __d, qlonglong __p
     return *this;
 }
 
-cNode& cNode::asmbWorkstation(const QString& __n, const cMac& __mac, const QString& __d, qlonglong __place)
+cNode& cNode::asmbWorkstation(QSqlQuery& q, const QString& __n, const cMac& __mac, const QString& __d, qlonglong __place)
 {
     setName(__n);
     setName(_sNodeNote, __d);
@@ -1389,7 +1387,6 @@ cNode& cNode::asmbWorkstation(const QString& __n, const cMac& __mac, const QStri
     cInterface *pi = ports.first()->reconvert<cInterface>();
     *pi = __mac;
     QHostAddress ha;
-    QSqlQuery q = getQuery();
     QList<QHostAddress> al = cArp().mac2ips(q, __mac);
     if (al.size() == 1) ha = al[0];
     if (ha.isNull()) {
@@ -1402,6 +1399,149 @@ cNode& cNode::asmbWorkstation(const QString& __n, const cMac& __mac, const QStri
     }
     return *this;
 }
+
+cNPort& cNode::asmbHostPort(QSqlQuery& q, int ix, const QString& pt, const QString& pn, const QStringPair *ip, const QVariant *mac, const  QString& d)
+{
+    QHostAddress a;
+    cMac m;
+    if (ix != NULL_IX && getPort(ix, false) != NULL) EXCEPTION(EDATA, ix, trUtf8("Nem egyedi port index"));
+    if (                 getPort(pn, false) != NULL) EXCEPTION(EDATA, -1, trUtf8("Nem egyedi portnév: %1").arg(pn));
+    if (mac != NULL) {
+        if (variantIsInteger(*mac)) {
+            int i = ports.indexOf(cPPort::_ixPortIndex, *mac);
+            if (i < 0) EXCEPTION(EDATA, mac->toInt(), trUtf8("Hibás port index hivatkozás"));
+            m = ports[i]->getId(_sHwAddress);
+        }
+        else if (variantIsString(*mac)) {
+            QString sm = mac->toString();
+            if (sm != _sARP && !m.set(sm)) EXCEPTION(EDATA, -1, trUtf8("Nem értelmezhető MAC : %1").arg(sm))
+        }
+        else EXCEPTION(EDATA);
+    }
+
+    cNPort *p = cNPort::newPortObj(pt); // Létrehozzuk a port objektumot
+    ports << p;
+    p->setName(_sPortName, pn);
+    if (ix != NULL_IX) p->setId(_sPortIndex, ix);
+    if (!d.isEmpty()) p->setName(_sPortNote, d);
+    if (ip != NULL) {   // Hozzá kell adni egy IP címet
+        cInterface *pIf = p->reconvert<cInterface>();    // de akkor a port cInterface kell legyen
+        QString sip  = ip->first;   // cím
+        QString type = ip->second;  // típusa
+        if (sip == _sARP) {     // A címet az ARP adatbázisból kell előkotorni
+            if (!m) EXCEPTION(EDATA, -1, trUtf8("Az ip cím felderítéséhez nincs megadva MAC."));
+            QList<QHostAddress> al = cArp::mac2ips(q, m);
+            if (al.size() < 1) EXCEPTION(EDATA, -1, trUtf8("Az ip cím felderítés sikertelen."));
+            if (al.size() > 1) EXCEPTION(EDATA, -1, trUtf8("Az ip cím felderítés nem egyértelmű."));
+            a = al.first();
+        }
+        else if (!sip.isEmpty()) {
+            a.setAddress(sip);
+        }
+        pIf->addIpAddress(a, type);
+    }
+    if (mac != NULL) {
+        if (mac->toString() == _sARP) {
+            if (!a.isNull()) EXCEPTION(EDATA, -1, trUtf8("Az ip cím hányában a MAC nem felderíthető."));
+            m = cArp::ip2mac(q, a);
+            if (!m) EXCEPTION(EDATA, -1, trUtf8("A MAC cím felderítés sikertelen."));
+        }
+        if (!m) EXCEPTION(EPROGFAIL);
+        p->set(_sHwAddress, QVariant::fromValue(m));
+    }
+    return p;
+}
+
+
+cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const QStringPair *pp, const QStringPair *ip, const QString *mac, const QString& d, qlonglong __place)
+{
+    QString name = __name;
+    clear();
+    setName(_sNodeNote, d);
+    setId(__place);
+    QString ips, ipt, ifType, pnm;
+    if (ip != NULL) { ips = ip->first; ipt = ip->second; }      // IP cím és típus
+    if (pp != NULL) { pnm = pp->first; ifType = pp->second; }   // port név és típus
+    if (ifType.isEmpty()) ifType = _sEthernet;
+    if (pnm.isEmpty())    pnm    = _sEthernet;
+    QList<QHostAddress> hal;
+    QHostAddress ha;
+    cMac ma;
+    if (mac != NULL) {
+        if (*mac != _sARP && !ma.set(*mac)) EXCEPTION(EDATA, -1, trUtf8("Nem értelmezhető MAC : %1").arg(*mac))
+    }
+
+    if (name == _sLOOKUP) {     // Ki kell deríteni a nevet, van címe és portja
+        if (ips == _sARP) {     // sőt az ip-t is
+            if (!ma) EXCEPTION(EDATA, -1, trUtf8("A név nem deríthető ki, nincs adat."));
+            hal = cArp::mac2ips(ma);
+            if (hal.size() < 1) EXCEPTION(EDATA, 0, trUtf8("A név nem deríthető ki, a %1 MAC-hez nincs IP cím").arg(*mac));
+            if (hal.size() < 1) EXCEPTION(EDATA, hal.size(), trUtf8("A név nem deríthető ki, a %1 MAC-hez több IP cím tartozik").arg(mac));
+            ha = hal.first();
+        }
+        else {
+            if (!ha.setAddress(ips)) EXCEPTION(EDATA, -1, trUtf8("Nem értelmezhatő IP cím %1.").arg(ips));
+            if (!ma) {  // Nincs MAC, van IP
+                if (mac == NULL) EXCEPTION(EDATA, -1, "Hiányzó MAC cím.");
+                if (*mac == _sARP) ma = cArp::ip2mac(ha);
+                if (!ma) EXCEPTION(EDATA, -1, "A cím alapján nem deríthatő ki a MAC.");
+            }
+        }
+        QHostInfo hi = QHostInfo::fromName(ha.toString());
+        if (hi.error() != QHostInfo::NoError)
+            EXCEPTION(EDATA, -1, trUtf8("A host név nem állapítható meg a %1 cím alapján").arg(ha.toString()));
+        name = hi.hostName();
+        setName(name);
+        cInterface *p = addPort(ifType, pnm, _sNul, 1)->reconvert<cInterface>();
+        if (ipt.isEmpty()) ipt = _sFixIp;
+        p->addIpAddress(ha, ipt);
+        return *this;
+    }
+    //
+    setName(name);
+    if (ip == NULL) {                   // Nincs IP címe
+        QString em = trUtf8("Ebben a kontexusban a MAC nem kideríthető");
+        if (pp == NULL && mac == NULL) {    // Portja sincs
+            return *this;                   // Akkor kész
+        }
+        if (pp == NULL) {              // Van MAC, default port ip nélkül.
+            if (!ma) EXCEPTION(EDATA, -1, em);
+            addPort(_sEthernet, _sEthernet);
+            retutn *this;
+        }
+        if (pnm.isEmpty()) pnm = ifType;
+        cNPort *p = addPort(ifType, pnm, _sNul, 1);
+        if (mac == NULL) return *this;      // Ha nem adtunk meg MAC-et
+        if (!ma) EXCEPTION(EDATA, -1, em);  // ARP volt, az itt nem ok,
+        *p->reconvert<cInterface>() = ma;   // A MAC-et is beállítjuk.
+        return *this;
+    }
+    //
+    if (ips == _sLOOKUP) { // A név OK, de a névből kell az IP
+        ha = yylookup(*name);
+        if (*mac == _sARP) ma = addr2mac(ha);
+        else if (!ma.set(*mac)) yyerror("Nem értelmezhatő MAC cím.");
+    }
+        else if (ips == _sARP) {    // Az IP a MAC-ból derítebdő ki
+            if (!ma.set(*mac)) yyerror("Az IP csak helyes MAC-ból deríthető ki.");
+            ha = mac2addr(ma);
+        }
+        else if (*mac == _sARP) {   // Név és ip renddben kéne legyenek, MAC kidertendő
+            if (!ha.setAddress(ips)) yyerror("Nem értelmezhatő IP cím.");
+            ma = addr2mac(ha);
+        }
+        else {
+            if (!ha.setAddress(ips)) yyerror("Nem értelmezhatő IP cím.");
+            if (!ma.set(*mac)) yyerror("Nem értelmezhatő MAC cím.");
+        }
+    }
+    p->set(_sAddress, QVariant::fromValue(ha));
+    p->set(_sHwAddress, QVariant::fromValue(ma));
+
+    delete name; delete ip; delete mac;
+    return p;
+}
+
 
 /* ------------------------------ SNMPDEVICES : cSnmpDevice ------------------------------ */
 
@@ -1467,10 +1607,10 @@ bool cSnmpDevice::setBySnmp(const QString& __addr, const QString& __com, bool __
 #endif // MUST_SCAN
 }
 
-int cSnmpDevice::open(cSnmp& snmp, bool __ex) const
+int cSnmpDevice::open(QSqlQuery& q, cSnmp& snmp, bool __ex) const
 {
 #ifdef MUST_SCAN
-    QList<QHostAddress> la = allIpAddress();
+    QList<QHostAddress> la = allIpAddress(q);
     if (la.isEmpty()) {
         QString em = trUtf8("A %1 SNMP eszköznek nincs IP címe").arg(getName());
         if (__ex) EXCEPTION(EDATA, -1, em);
@@ -1489,6 +1629,7 @@ int cSnmpDevice::open(cSnmp& snmp, bool __ex) const
 #else // MUST_SCAN
     (void)__ex;
     (void)snmp;
+    (void)q;
     if (__ex) EXCEPTION(ENOTSUPP, -1, snmpNotSupMsg());
     return -1;
 #endif // MUST_SCAN
