@@ -298,6 +298,10 @@ public:
     /// Ha nincs valós cím az objektumban akkor nem csinál semmit.
     /// @return true, ha a típust 'external'-ba állította, egyébként false.
     bool thisIsExternal(QSqlQuery &q);
+    static QList<QHostAddress> lookupAll(const QString& hn, bool __ex = true);
+    static QString lookup(const QHostAddress& ha, bool __ex = true);
+    static QHostAddress lookup(const QString& hn, bool __ex = true);
+    QHostAddress setIpByName(const QString& _hn, const QString &_t = _sNul, bool __ex = true);
 protected:
     static int _ixPortId;
     static int _ixAddress;
@@ -820,14 +824,29 @@ public:
     /// @param __note port_descr
     /// @param __ix Port_index, ha értéke NULL_IX, akkor az index mező NULL lessz.
     cNPort *addPort(const cIfType& __t, const QString& __name, const QString &__note, int __ix);
-    /// A port liasta bővítése egy sorozattal.
+    cNPort *addPort(const QString& __t, const QString& __name, const QString &__note, int __ix) {
+        return addPort(cIfType::ifType(__t), __name, __note, __ix);
+    }
+
+    /// A port liasta bővítése egy sorozattal. Ha nem vesz fel egy portot sem, akkor dob egy kizárást.
     /// @param __t A port típusát definiáló objektum referenciája
     /// @param __pref Port név minta.
     /// @param __noff Egy eltolás a név kébzéséhez
     /// @param __from Legkisebb idex
     /// @param __to Legnagyobb idex
     /// @param __off Egy eltolás a port indexhez
+    /// @return Az utolsó objektum pointere
     cNPort *addPorts(const cIfType& __t, const QString& __np, int __noff, int __from, int __to, int __off);
+    /// A port liasta bővítése egy sorozattal. Ha nem vesz fel egy portot sem, akkor dob egy kizárást.
+    /// @param __t A port típusát definiáló típus név
+    /// @param __pref Port név minta.
+    /// @param __noff Egy eltolás a név kébzéséhez
+    /// @param __from Legkisebb idex
+    /// @param __to Legnagyobb idex
+    /// @param __off Egy eltolás a port indexhez
+    /// @return Az utolsó objektum pointere
+    cNPort *addPorts(const QString& __t, const QString& __np, int __noff, int __from, int __to, int __off)
+        { return addPorts(cIfType::ifType(__t), __np, __noff, __from, __to, __off); }
     /// Hasonló mint az addPorts hívás, de a létrehozott portok típusa "sensor", továbbá kitölti az ip címet.
     /// A MAC NULL lessz, az ip cím típusa pedig "pseudo", és csak IPV4 formályú cím lehet
     cNPort *addSensors(const QString& __np, int __noff, int __from, int __to, int __off, const QHostAddress& __pip);
@@ -901,7 +920,6 @@ public:
     /// @param mac Vagy a MAC stringgé konvertálva, vagy az "ARP" string, ha az IP címből kell meghatározni.
     /// @param d node secriptorra/megjegyzés
     cNode& asmbNode(QSqlQuery& q, const QString& name, const QStringPair* pp, const QStringPair *ip, const QString *mac, const QString &d, qlonglong __place);
-
 };
 
 
@@ -1094,7 +1112,8 @@ public:
     /// @return a kiírt, vagy módosított rekordok száma
     static int replaces(QSqlQuery& __q, const cArpTable& __t);
     static QList<QHostAddress> mac2ips(QSqlQuery& __q, const cMac& __m);
-    static cMac ip2mac(QSqlQuery& __q, const QHostAddress& __a);
+    static QHostAddress mac2ip(QSqlQuery& __q, const cMac& __m, bool __ex = true);
+    static cMac ip2mac(QSqlQuery& __q, const QHostAddress& __a, bool __ex = true);
 };
 
 /// Csak a cPhsLink és cLldpLink objektumokkal használható

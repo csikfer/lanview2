@@ -35,15 +35,10 @@ int main (int argc, char * argv[])
     }
     PDEB(VVERBOSE) << "Saved original current dir : " << actDir << "; actDir : " << QDir::currentPath() << endl;
 
-    pArpServerDefs = new cArpServerDefs();
-    // notifswitch tömb = SET, minden on-ba, visszaolvasás listaként
-    allNotifSwitchs = cUser().set(_sHostNotifSwitchs, QVariant(0xffff)).get(_sHostNotifSwitchs).toStringList();
-
     if (mo.lastError) {  // Ha hiba volt, vagy vége
         return mo.lastError->mErrorCode; // a mo destruktora majd kiírja a hibaüzenetet.
     }
     if (mo.daemonMode) {        // Daemon mód
-        fileNm = "<TEXT>";      // Nem fájlt dolgozunk fel
         // A beragadt rekordok kikukázása
         mo.abortOldRecords();
         return app.exec();
@@ -55,23 +50,22 @@ int main (int argc, char * argv[])
         try {
             if (mo.fileNm.isEmpty()) EXCEPTION(EDATA, -1, QObject::trUtf8("Nincs megadva forrás fájl!"));
             PDEB(VVERBOSE) << "BEGIN transaction ..." << endl;
-            sqlBegin(qq());
-            fImportParse(mo.fileNm);
+            sqlBegin(*mo.pq);
+            importParseFile(mo.fileNm);
         } catch(cError *e) {
             mo.lastError = e;
         } catch(...) {
             mo.lastError = NEWCERROR(EUNKNOWN);
         }
         if (mo.lastError) {
-            sqlRollback(qq());
+            sqlRollback(*mo.pq);
             PDEB(DERROR) << "**** ERROR ****\n" << mo.lastError->msg() << endl;
         }
         else {
-            sqlEnd(qq());
+            sqlEnd(*mo.pq);
             PDEB(DERROR) << "**** OK ****" << endl;
         }
 
-        if (pArpServerDefs) delete pArpServerDefs;
         cDebug::end();
         return mo.lastError == NULL ? 0 : mo.lastError->mErrorCode;
     }
@@ -107,7 +101,7 @@ void lv2import::dbNotif(QString __s)
         imp.update(*pq, false, imp.mask(_sExecState, _sStarted, _sPid));
         sqlEnd(*pq);
         sqlBegin(*pq);
-        sImportParse(imp.getName(_sImportText));
+        importParseText(imp.getName(_sImportText));
     }
     CATCHS(lastError)
 
@@ -198,5 +192,4 @@ lv2import::~lv2import()
     }
     DBGFNL();
 }
-
 

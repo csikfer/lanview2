@@ -529,7 +529,7 @@ QString lookup(const QHostAddress& ha, bool __ex)
 /// @class cLldpScan
 /// Az LLDP felderítést végző osztály
 class cLldpScan {
-    friend void scabByLldp(QSqlQuery q, const cSnmpDevice& __dev);
+    friend void scanByLldp(QSqlQuery q, const cSnmpDevice& __dev);
 protected:
     cLldpScan(QSqlQuery& _q);
     /// LLDP felderítés
@@ -767,7 +767,7 @@ void cLldpScan::scanByLldp(QSqlQuery& q, const cSnmpDevice& __dev)
     }
 }
 
-void scabByLldp(QSqlQuery q, const cSnmpDevice& __dev)
+void scanByLldp(QSqlQuery q, const cSnmpDevice& __dev)
 {
     cLldpScan   lldp(q);
     lldp.scanByLldp(q, __dev);

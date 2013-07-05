@@ -136,9 +136,24 @@ inline static QString debVariantToString(const QVariant v)
     return quotedString(v.toString()) + "::" + (tn == NULL ? _sNULL : QString(tn));
 }
 
-/// @def VDEBVAR(n)
-/// Kiíratásnál használható makró, egy objektum nevének és értékének a kiíratásához, az objektum toString() metődusát hivja
-#define VDEBVAR(n) " " #n " = " << debVariantToString(n)
+template <class T> QString debPToString(T *p) {
+    if (p == NULL) return "[NULL]";
+    return quotedString(p->toString());
+}
+inline static QString debPString(QString *p) { return p == NULL ? "[NULL]" : quotedString(*p); }
+
+/// @def VDEBPTOSTR(n)
+/// Kiíratásnál használható makró, egy pointer változó nevének és értékének a kiíratásához.
+/// A típust a toString() metódus konvertálja stringgé
+#define VDEBPTOSTR(n)     " " *#n " = " << debPToString(n)
+
+/// @def VDEBPSTR(n)
+/// Kiíratásnál használható makró, egy string pointer változó nevének és értékének a kiíratásához.
+#define VDEBPSTR(n)     " " *#n " = " << debPString(n)
+
+/// @def VDEBSTRPAIR(n)
+/// Kiíratásnál használható makró, egy string pointer változó nevének és értékének a kiíratásához.
+#define VDEBSTRPAIR(n)     " " *#n " = " << quotedString(n.first) << "&" << quotedString(n.second)
 
 /// @def __DMOD__
 /// Az aktuális modul debug maszk beli bitjét definiáló konstans nevét tartalmazza

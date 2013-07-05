@@ -291,6 +291,43 @@ bool cIpAddress::thisIsExternal(QSqlQuery& q)
     _set(_ixIpAddressType, QVariant(_sExternal));
     return true;
 }
+QString cIpAddress::lookup(const QHostAddress& ha, bool __ex)
+{
+    QHostInfo hi = QHostInfo::fromName(ha.toString());
+    if (hi.error() != QHostInfo::NoError) {
+        if (__ex) EXCEPTION(EDATA, hi.error(), trUtf8("A host név nem állapítható meg a cím alapján"));
+        return _sNul;
+    }
+    return hi.hostName();
+}
+
+QList<QHostAddress> cIpAddress::lookupAll(const QString& hn, bool __ex)
+{
+    QHostInfo hi = QHostInfo::fromName(hn);
+    if (hi.error() != QHostInfo::NoError) {
+        if (__ex) EXCEPTION(EDATA, hi.error(), trUtf8("Az IP cím nem állapítható meg a host név alapján"));
+        return QList<QHostAddress>();
+    }
+    return hi.addresses();
+}
+
+QHostAddress cIpAddress::lookup(const QString& hn, bool __ex)
+{
+    QList<QHostAddress> al = lookupAll(hn, __ex);
+    int n = al.count();
+    if (n != 1) {
+        if (__ex) EXCEPTION(AMBIGUOUS, n, trUtf8("A hoszt cím a név alapján nem egyértelmű."));
+        return QHostAddress();
+    }
+    return al.first();
+}
+
+QHostAddress cIpAddress::setIpByName(const QString& _hn, const QString& _t, bool __ex)
+{
+    QHostAddress a = lookup(_hn, __ex);
+    setAddress(a, _t);
+    return a;
+}
 
 const QString& addrType(int __at, bool __ex)
 {
@@ -1374,7 +1411,7 @@ cNode& cNode::asmbAttached(const QString& __n, const QString& __d, qlonglong __p
     setName(__n);
     setName(_sNodeNote, __d);
     setId(_sPlaceId, __place);
-    addPort(_sAttach, _sAttach, 1);
+    addPort(_sAttach, _sAttach, _sNul, 1);
     return *this;
 }
 
@@ -1383,7 +1420,7 @@ cNode& cNode::asmbWorkstation(QSqlQuery& q, const QString& __n, const cMac& __ma
     setName(__n);
     setName(_sNodeNote, __d);
     setId(_sPlaceId, __place);
-    addPort(cIfType::ifType(_sEthernet), _sEthernet, _sNul, 1);
+    addPort(_sEthernet, _sEthernet, _sNul, 1);
     cInterface *pi = ports.first()->reconvert<cInterface>();
     *pi = __mac;
     QHostAddress ha;
@@ -1449,7 +1486,7 @@ cNPort& cNode::asmbHostPort(QSqlQuery& q, int ix, const QString& pt, const QStri
         if (!m) EXCEPTION(EPROGFAIL);
         p->set(_sHwAddress, QVariant::fromValue(m));
     }
-    return p;
+    return *p;
 }
 
 
@@ -1474,74 +1511,64 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const QStringPair *p
     if (name == _sLOOKUP) {     // Ki kell deríteni a nevet, van címe és portja
         if (ips == _sARP) {     // sőt az ip-t is
             if (!ma) EXCEPTION(EDATA, -1, trUtf8("A név nem deríthető ki, nincs adat."));
-            hal = cArp::mac2ips(ma);
-            if (hal.size() < 1) EXCEPTION(EDATA, 0, trUtf8("A név nem deríthető ki, a %1 MAC-hez nincs IP cím").arg(*mac));
-            if (hal.size() < 1) EXCEPTION(EDATA, hal.size(), trUtf8("A név nem deríthető ki, a %1 MAC-hez több IP cím tartozik").arg(mac));
+            hal = cArp::mac2ips(q, ma);
+            int n = hal.size();
+            if (n < 1) EXCEPTION(EFOUND,   0, trUtf8("A név nem deríthető ki, a %1 MAC-hez nincs IP cím").arg(*mac));
+            if (n > 1) EXCEPTION(AMBIGUOUS,n, trUtf8("A név nem deríthető ki, a %1 MAC-hez több IP cím tartozik").arg(*mac));
             ha = hal.first();
         }
         else {
             if (!ha.setAddress(ips)) EXCEPTION(EDATA, -1, trUtf8("Nem értelmezhatő IP cím %1.").arg(ips));
             if (!ma) {  // Nincs MAC, van IP
                 if (mac == NULL) EXCEPTION(EDATA, -1, "Hiányzó MAC cím.");
-                if (*mac == _sARP) ma = cArp::ip2mac(ha);
-                if (!ma) EXCEPTION(EDATA, -1, "A cím alapján nem deríthatő ki a MAC.");
+                if (*mac == _sARP) ma = cArp::ip2mac(q, ha);
+                if (!ma) EXCEPTION(EDATA, -1, trUtf8("A %1 cím alapján nem deríthatő ki a MAC.").arg(ips));
             }
         }
-        QHostInfo hi = QHostInfo::fromName(ha.toString());
-        if (hi.error() != QHostInfo::NoError)
-            EXCEPTION(EDATA, -1, trUtf8("A host név nem állapítható meg a %1 cím alapján").arg(ha.toString()));
-        name = hi.hostName();
+        name = cIpAddress::lookup(ha);
         setName(name);
         cInterface *p = addPort(ifType, pnm, _sNul, 1)->reconvert<cInterface>();
         if (ipt.isEmpty()) ipt = _sFixIp;
         p->addIpAddress(ha, ipt);
         return *this;
     }
-    //
+    // Van név
     setName(name);
     if (ip == NULL) {                   // Nincs IP címe
-        QString em = trUtf8("Ebben a kontexusban a MAC nem kideríthető");
         if (pp == NULL && mac == NULL) {    // Portja sincs
             return *this;                   // Akkor kész
         }
-        if (pp == NULL) {              // Van MAC, default port ip nélkül.
-            if (!ma) EXCEPTION(EDATA, -1, em);
-            addPort(_sEthernet, _sEthernet);
-            retutn *this;
-        }
-        if (pnm.isEmpty()) pnm = ifType;
+        if (mac != NULL && *mac == _sARP) EXCEPTION(EDATA, -1, trUtf8("Ebben a kontexusban a MAC nem kideríthető"));
+        if (ifType.isEmpty()) ifType = _sEthernet;
+        if (pnm.isEmpty())    pnm    = ifType;
         cNPort *p = addPort(ifType, pnm, _sNul, 1);
         if (mac == NULL) return *this;      // Ha nem adtunk meg MAC-et
-        if (!ma) EXCEPTION(EDATA, -1, em);  // ARP volt, az itt nem ok,
+        if (!ma) EXCEPTION(EPROGFAIL);
         *p->reconvert<cInterface>() = ma;   // A MAC-et is beállítjuk.
         return *this;
     }
-    //
+    // Van név, kell port is, és ip cím is
     if (ips == _sLOOKUP) { // A név OK, de a névből kell az IP
-        ha = yylookup(*name);
-        if (*mac == _sARP) ma = addr2mac(ha);
-        else if (!ma.set(*mac)) yyerror("Nem értelmezhatő MAC cím.");
+        ha = cIpAddress::lookup(name);
     }
-        else if (ips == _sARP) {    // Az IP a MAC-ból derítebdő ki
-            if (!ma.set(*mac)) yyerror("Az IP csak helyes MAC-ból deríthető ki.");
-            ha = mac2addr(ma);
-        }
-        else if (*mac == _sARP) {   // Név és ip renddben kéne legyenek, MAC kidertendő
-            if (!ha.setAddress(ips)) yyerror("Nem értelmezhatő IP cím.");
-            ma = addr2mac(ha);
-        }
-        else {
-            if (!ha.setAddress(ips)) yyerror("Nem értelmezhatő IP cím.");
-            if (!ma.set(*mac)) yyerror("Nem értelmezhatő MAC cím.");
-        }
+    else if (ips == _sARP) {    // Az IP a MAC-ból derítendő ki
+        if (!ma) EXCEPTION(EDATA, -1, trUtf8("Az IP csak helyes MAC-ból deríthető ki."));
+        ha = cArp::mac2ip(q, ma);
     }
-    p->set(_sAddress, QVariant::fromValue(ha));
-    p->set(_sHwAddress, QVariant::fromValue(ma));
-
-    delete name; delete ip; delete mac;
-    return p;
+    else if (!ips.isEmpty()) {
+        ha.setAddress(ips);
+        if (ha.isNull()) EXCEPTION(EIP,-1,ips);
+    }
+    if (mac != NULL && *mac == _sARP) {
+        ma = cArp::ip2mac(q, ha);
+    }
+    if (ifType.isEmpty()) ifType = _sEthernet;
+    if (pnm.isEmpty())    pnm    = ifType;
+    cInterface *p = addPort(ifType, pnm, _sNul, 1)->reconvert<cInterface>();
+    if (ma) *p = ma;
+    p->addIpAddress(ha, ipt);
+    return *this;
 }
-
 
 /* ------------------------------ SNMPDEVICES : cSnmpDevice ------------------------------ */
 
@@ -2027,11 +2054,30 @@ QList<QHostAddress> cArp::mac2ips(QSqlQuery& __q, const cMac& __m)
     return r;
 }
 
-cMac cArp::ip2mac(QSqlQuery& __q, const QHostAddress& __a)
+QHostAddress cArp::mac2ip(QSqlQuery& __q, const cMac& __m, bool __ex)
+{
+    QList<QHostAddress> al = mac2ips(__q, __m);
+    int n = al.size();
+    if (n == 1) return al.first();
+    if (__ex) {
+        QString m = __m.toString();
+        if (n > 1) {
+            EXCEPTION(AMBIGUOUS, n, trUtf8("A %1 MAC alapján az IP nem egyértelmű.").arg(m));
+        }
+        else {
+            EXCEPTION(EFOUND,    n, trUtf8("A %1 MAC-hez nincs IP cím.").arg(m));
+        }
+    }
+    return QHostAddress();
+}
+
+
+cMac cArp::ip2mac(QSqlQuery& __q, const QHostAddress& __a, bool __ex)
 {
     cArp arp;
     arp = __a;
     if (arp.fetch(__q, false, arp.mask(_ixIpAddress))) return arp;
+    if (__ex) EXCEPTION(EFOUND, 0, trUtf8("A IP címhez-hez nincs MAC."));
     return cMac();
 }
 

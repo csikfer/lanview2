@@ -5,18 +5,227 @@
 #include "ping.h"
 #include "import_parser.h"
 
+class  cArpServerDefs;
+static  cArpServerDefs *pArpServerDefs = NULL;
+static void insertCode(const QString& __txt);
+static QString  macbuff;
+static QString lastLine;
+
+int yyerror(const char * em)
+{
+    QString msg = QString("Parse error %1 in %2 file %3 line; ").arg(QString(em)).arg(importFileNm).arg(importLineNo)
+        + "lastLine: " + quotedString(lastLine) + "; macbuff : " + quotedString(macbuff);
+    EXCEPTION(EPARSE, -1, msg);
+    return -1;
+}
+int yyerror(QString em)
+{
+    return yyerror(em.toStdString().c_str());
+}
+
+class cArpServerDef {
+public:
+    enum eType { UNKNOWN, SNMP, DHCPD_LOCAL, DHCPD_SSH,  PROC_LOCAL, PROC_SSH  };
+    /// A lekérdezés típusa
+    enum eType      type;
+    /// A szerver címe
+    QHostAddress    server;
+    /// Fájl paraméter
+    QString         file;
+    /// Community név
+    QString         community;
+    ///
+    static bool firstTime;
+    cArpServerDef() : server(), file(), community() { type = UNKNOWN; }
+    cArpServerDef(const cArpServerDef& __o)
+        : server(__o.server), file(__o.file), community(__o.community) { type = __o.type; }
+    cArpServerDef(enum eType __t, const QString& __s, const QString& __f = QString(), const QString& __c = QString())
+        : server(__s), file(__f), community(__c) { type = __t; }
+    void updateArpTable(QSqlQuery &q) const;
+};
+
+class cArpServerDefs : public QVector<cArpServerDef> {
+public:
+    cArpServerDefs() : QVector<cArpServerDef>() { ; }
+    void append(QSqlQuery &q, const cArpServerDef& __asd) {
+        __asd.updateArpTable(q);
+        *(cArpServerDefs *)this << __asd;
+    }
+
+    void updateArpTable(QSqlQuery &q) {
+        ConstIterator i, n = constEnd();
+        for (i = constBegin(); i != n; ++i) { i->updateArpTable(q); }
+    }
+};
+
+enum eShare {
+    ES_     = 0,
+    ES_A,   ES_AA, ES_AB,
+    ES_B,   ES_BA, ES_BB,
+    ES_C,   ES_D
+};
+
+QStringList     allNotifSwitchs;
+QSqlQuery      *piq = NULL;
+void initImportParser()
+{
+    if (pArpServerDefs == NULL)
+        pArpServerDefs = new cArpServerDefs();
+    // notifswitch tömb = SET, minden on-ba, visszaolvasás listaként
+    if (allNotifSwitchs.isEmpty())
+        allNotifSwitchs = cUser().set(_sHostNotifSwitchs, QVariant(0xffff)).get(_sHostNotifSwitchs).toStringList();
+    if (piq == NULL)
+        piq = newQuery();
+}
+
+void downImportParser()
+{
+    pDelete(pArpServerDefs);
+    pDelete(piq);
+}
+
+static inline QSqlQuery& qq() { if (piq == NULL) EXCEPTION(EPROGFAIL); return *piq; }
+
+#define UNKNOWN_PLACE_ID 0LL
+
+class c_yyFile {
+public:
+    c_yyFile(const c_yyFile& __o) : oldFileName(__o.oldFileName) {
+        oldStream = __o.oldStream;
+        newFile = __o.newFile;
+        oldPos = __o.oldPos;
+    }
+    c_yyFile() : oldFileName() { oldStream = NULL; newFile = NULL; }
+    static void inc(QString *__f);
+    static void eoi();
+    static int size() { return stack.size(); }
+private:
+    QTextStream*    oldStream;
+    QFile *         newFile;
+    QString         oldFileName;
+    unsigned int    oldPos;
+    static QStack<c_yyFile> stack;
+};
+
+/// A fizikai linkeket definiáló blokk adatait tartalmazó, ill. a blokkon
+/// belüli definíciókat rögzítő metódusok osztálya.
+/// Az objektumban épül fel a rögzítendő rekord.
+class cLink {
+private:
+    enum eSide { LEFT = 1, RIGHT = 2};
+    void side(eSide __e, QString * __n, QString *__p, int __s);
+    void side(eSide __e, QString * __n, int __p, int __s);
+    qlonglong& nodeId(eSide __e);
+    qlonglong& portId(eSide __e);
+public:
+    /// Konstruktor
+    /// @param __t1 A bal oldali elemen értelmezett link típusa (-1,0,1)
+    /// @param __n1 Az alapértelmezett bal oldali elem neve, vagy egy üres string
+    /// @param __t2 A jobb oldali elemen értelmezett link típusa (-1,0,1)
+    /// @param __n2 Az alapértelmezett jobb oldali elem neve, vagy egy üres string
+    cLink(int __t1, QString *__n1, int __t2, QString *__n2);
+    /// A link baloldali portjának a megadása
+    /// @param q
+    /// @param __n Opcionális eszköz (node/patch) név. A pointert felszabadítja.
+    /// @param __p Port név. A pointert felszabadítja.
+    /// @param __s Az esetleges megosztás típusának az indexe (0 = nincs megosztás
+    void left(QString * __n, QString *__p, int __s = 0)   { side(LEFT, __n,__p, __s); }
+    /// A link jobboldali portjának a megadása
+    /// @param q
+    /// @param __n Opcionális eszköz (node/patch) név. A pointert felszabadítja.
+    /// @param __p Port név. A pointert felszabadítja.
+    /// @param __s Az esetleges megosztás típusának az indexe (0 = nincs megosztás
+    void right(QString * __n, QString *__p, int __s = 0)  { side(RIGHT,__n,__p, __s); }
+    /// A link baloldali portjának a megadása
+    /// @param q
+    /// @param __n Opcionális eszköz (node/patch) név. A pointert felszabadítja.
+    /// @param __p Port index, vagy NULL_ID, ha a kötelezően megadott node egyetlen portját jelöltük ki.
+    /// @param __s Az esetleges megosztás típusának az indexe (0 = nincs megosztás)
+    void left(QString * __n, int __p, int __s)  { side(LEFT, __n, __p, __s); }
+    /// A link jobboldali portjának a megadása
+    /// @param q
+    /// @param __n Opcionális eszköz (node/patch) név. A pointert felszabadítja.
+    /// @param __p Port index, vagy NULL_ID, ha a kötelezően megadott node egyetlen portját jelöltük ki.
+    /// @param __s Az esetleges megosztás típusának az indexe (0 = nincs megosztás)
+    void right(QString * __n, int __p, int __s) { side(RIGHT, __n, __p, __s); }
+    /// 'jobb' oldali link egy röptében felvett workstationra.
+    /// @arg __n A munkaállomás neve
+    /// @arg __mac A munkaáééomás MAC címe
+    /// @arg __d node_descr értéke
+    void workstation(QString * __n, cMac * __mac, QString * __d);
+    void attached(QString * __n, QString * __d);
+    void insert(QString * __d, QStringList * __srv);
+    void insert(QString *__hn1, qlonglong __pi1, QString *__hn2, qlonglong __pi2, qlonglong __n);
+    static const QString& i2LinkType(int __i);
+    static const QString& chkShare(int __s);
+    const QString&  phsLinkType1;
+    qlonglong       nodeId1;
+    qlonglong       portId1;
+    const QString&  phsLinkType2;
+    qlonglong       nodeId2;
+    qlonglong       portId2;
+    QString         share;
+    bool            newNode;
+};
+
+typedef QList<QStringPair> QStringPairList;
+
+typedef QList<qlonglong> intList;
+
+class cTemplateMapMap : public QMap<QString, cTemplateMap> {
+ public:
+    /// Konstruktor
+    cTemplateMapMap() : QMap<QString, cTemplateMap>() { ; }
+    ///
+    cTemplateMap& operator[](const QString __t) {
+        if (contains(__t)) {
+            return  (*(QMap<QString, cTemplateMap> *)this)[__t];
+        }
+        return *insert(__t, cTemplateMap(__t));
+    }
+
+    /// Egy megadott nevű template lekérése, ha nincs a konténerben, akkor beolvassa az adatbázisból.
+    /// Az eredményt stringgel tér vissza
+    const QString& _get(const QString& __type, const QString&  __name) {
+        const QString& r = (*this)[__type].get(qq(), __name);
+        return r;
+    }
+    /// Egy megadott nevű template lekérése, ha nincs a konténerben, akkor beolvassa az adatbázisból.
+    /// Az eredményt a macro bufferbe tölti
+    void get(const QString& __type, const QString&  __name) {
+        insertCode(_get(__type, __name));
+    }
+    /// Egy adott nevű template elhelyezése a konténerbe, de az adatbázisban nem.
+    void set(const QString& __type, const QString& __name, const QString& __cont) {
+        (*this)[__type].set(__name, __cont);
+    }
+    /// Egy adott nevű template elhelyezése a konténerbe, és az adatbázisban.
+    void save(const QString& __type, const QString& __name, const QString& __cont, const QString& __descr) {
+        (*this)[__type].save(qq(), __name, __cont, __descr);
+    }
+    /// Egy adott nevű template törlése a konténerből, és az adatbázisból.
+    void del(const QString& __type, const QString& __name) {
+        (*this)[__type].del(qq(), __name);
+    }
+};
+
+
+enum {
+    EP_NIL = -1,
+    EP_IP  = 0,
+    EP_ICMP = 1,
+    EP_TCP = 6,
+    EP_UDP = 17
+};
+
+/* */
+
 unsigned long yyflags = 0;
 
-QString fileNm;
-unsigned int lineNo = 0;            // Sor Számláló
-QTextStream*       yyif = NULL;     //Source file descriptor
-
 cTemplateMapMap   templates;
-QString  macbuff;
-
 qlonglong    actVlanId = -1;
 QString      actVlanName;
-QString      actVlanDescr;
+QString      actVlanNote;
 enum eSubNetType netType = NT_INVALID; // firstSubNet = ;
 cPatch *     pPatch = NULL;
 cImage *     pImage = NULL;
@@ -34,25 +243,518 @@ QMap<QString, QString>      svars;
 QString       sPortIx = "PI";   // Port index
 QString       sPortNm = "PN";   // Port név
 
-QString lastLine;
+QStack<c_yyFile> c_yyFile::stack;
 
-void insertCode(const QString& __txt)
+qlonglong       globalPlaceId = NULL_ID; // ID of none
+
+/* ---------------------------------------------------------------------------------------------------- */
+
+static inline qlonglong gPlace() { return globalPlaceId == NULL_ID ? UNKNOWN_PLACE_ID : globalPlaceId; }
+static inline cPlace& rPlace(void) {  return *((lv2import *)lanView::getInstance())->pPlace; }
+#define place   rPlace()
+
+static inline qlonglong& vint(const QString& n){
+    if (!ivars.contains(n)) yyerror(QString("Integer variable %1 not found").arg(n));
+    return ivars[n];
+}
+
+static inline QString& vstr(const QString& n){
+    if (!svars.contains(n)) yyerror(QString("String variable %1 not found").arg(n));
+    return svars[n];
+}
+
+static inline const QString& nextNetType() {
+    enum eSubNetType r = netType;
+    switch (r) {
+    case NT_PRIMARY:    netType = NT_SECONDARY;      break;
+    case NT_SECONDARY:  break;
+    case NT_PRIVATE:
+    case NT_PSEUDO:     netType = NT_INVALID;        break;
+    default:            yyerror("Compiler error.");
+    }
+    return subNetType(r);
+}
+
+static inline cSnmpDevice& snmpdev() {
+    if (pNode == NULL) EXCEPTION(EPROGFAIL);
+    return *pNode->reconvert<cSnmpDevice>();
+}
+
+void c_yyFile::inc(QString *__f)
+{
+    c_yyFile    o;
+    o.newFile = new QFile(*__f);
+    if (!importSrcOpen(*o.newFile)) yyerror(QObject::trUtf8("include: file open error."));
+    o.oldStream = importInputStream;
+    importInputStream = new QTextStream(o.newFile);
+    o.oldFileName = importFileNm;
+    importFileNm = *__f;
+    delete __f;
+    o.oldPos = importLineNo;
+    importLineNo = 0;
+    stack.push(o);
+}
+
+void c_yyFile::eoi()
+{
+    c_yyFile    o = stack.pop();
+    delete importInputStream;
+    delete o.newFile;
+    importInputStream = o.oldStream;
+    importFileNm = o.oldFileName;
+    importLineNo = o.oldPos;
+}
+
+
+/* ************************************************************************************************ */
+bool cArpServerDef::firstTime = true;
+void cArpServerDef::updateArpTable(QSqlQuery& q) const
+{
+    DBGFN();
+    cArpTable at;
+    switch (type) {
+    case UNKNOWN:       break;
+    case SNMP: {
+            cSnmp snmp(server.toString(), community, SNMP_VERSION_2c);
+            at.getBySnmp(snmp);
+            break;
+        }
+    case DHCPD_LOCAL:   if (firstTime) at.getByLocalDhcpdConf(file);                          break;
+    case DHCPD_SSH:     if (firstTime) at.getBySshDhcpdConf(server.toString(), file);         break;
+    case PROC_LOCAL:    at.getByLocalProcFile(file);                                          break;
+    case PROC_SSH:      at.getBySshProcFile(server.toString(), file);                         break;
+    default: EXCEPTION(EPROGFAIL);
+    }
+    firstTime = false;
+    cArp::replaces(q, at);
+}
+
+/* --------------------------------------------------------------------------------------------------- */
+qlonglong newAttachedNode(const QString& __n, const QString& __d)
+{
+    cNode   node;
+    node.asmbAttached(__n, __d, gPlace());
+    node.insert(qq(), true);
+    return node.ports.first()->getId();
+}
+
+void newAttachedNodes(const QString& __np, const QString& __dp, int __from, int __to)
+{
+    QString name, descr;
+    for (int i = __from; i <= __to; i++) {
+        name  = nameAndNumber(__np, i);
+        descr = nameAndNumber(__dp, i);
+        newAttachedNode(name, descr);
+    }
+}
+
+qlonglong newWorkstation(const QString& __n, const cMac& __mac, const QString& __d)
+{
+    cNode host;
+    host.asmbWorkstation(qq(), __n, __mac, __d, gPlace());
+    host.insert(qq(), true);
+    return host.ports.first()->getId();
+}
+
+/* --------------------------------------------------------------------------------------------------- */
+
+cLink::cLink(int __t1, QString *__n1, int __t2, QString *__n2)
+    : phsLinkType1(i2LinkType(__t1))
+    , phsLinkType2(i2LinkType(__t2))
+{
+    nodeId1 = __n1->isEmpty() ? NULL_ID : cPatch::getNodeIdByName(qq(), *__n1);
+    nodeId2 = __n2->isEmpty() ? NULL_ID : cPatch::getNodeIdByName(qq(), *__n2);
+    delete __n1;
+    delete __n2;
+    newNode = false;
+}
+
+qlonglong& cLink::nodeId(eSide __e)
+{
+    if (__e == LEFT) return nodeId1;
+    if (__e != RIGHT) EXCEPTION(EPROGFAIL);
+    return nodeId2;
+}
+
+qlonglong& cLink::portId(eSide __e)
+{
+    if (__e == LEFT) return portId1;
+    if (__e != RIGHT) EXCEPTION(EPROGFAIL);
+    return portId2;
+}
+
+qlonglong& cLink::portId(eSide __e);
+
+void cLink::side(eSide __e, QString * __n, QString *__p, int __s)
+{
+    qlonglong   nid;    // Node id
+    if (__n->size() > 0) {  // Ha megadtunk node-ot
+        nid = cPatch::getNodeIdByName(qq(), *__n);
+    }
+    else {
+        nid = nodeId(__e);
+        if (nid == NULL_ID) EXCEPTION(EDATA, -1, "Nincs megadva node!");
+    }
+    portId(__e) = cNPort::getPortIdByName(qq(), *__p, nid, false);
+    if (portId(__e) == NULL_ID) yyerror(QObject::trUtf8("Invalid left port specification, #%1:%2").arg(nid). arg(*__p));
+    if (__s != 0) {
+        if (share.size() > 0) yyerror(QObject::trUtf8("Multiple share defined"));
+        share = chkShare(__s);
+    }
+    delete __n;
+    delete __p;
+    _DBGFNL() << _sSpace << portId(__e) << endl;
+}
+
+void cLink::side(eSide __e, QString * __n, int __p, int __s)
+{
+    qlonglong   nid;
+    if (__n->size() > 0) {  // Ha megadtunk node-ot
+        nid = cPatch::getNodeIdByName(qq(), *__n);
+        if (__p == NULL_IX) {   // Ha megadtuk a node-t akkor lehet null, de akkor csak egy portja lehet
+            cNPort ep;
+            ep.set(_sNodeId, nid);   // megkeressük a node egyetlen portját
+            if (ep.completion(qq()) != 1) yyerror("Insufficient or invalid data.");  // Pont egynek kell lennie
+            portId(__e) = ep.getId();
+        }
+        else {
+            portId(__e) = cNPort::getPortIdByIndex(qq(), __p, nid, false);
+        }
+    }
+    else {
+        nid = nodeId(__e);
+        if (nid == NULL_ID) EXCEPTION(EDATA, -1, "Nincs megadva node!");
+        portId(__e) = cNPort::getPortIdByIndex(qq(), __p, nid, false);
+    }
+    if (portId(__e) == NULL_ID) {
+        yyerror(QObject::trUtf8("Invalid port index, #%1:#%2").arg(nid).arg(__p));
+    }
+    if (__s != 0) {
+        if (share.size() > 0) yyerror(QObject::trUtf8("Multiple share defined"));
+        share = chkShare(__s);;
+    }
+    delete __n;
+    _DBGFNL() << _sSpace << portId(__e) << endl;
+}
+
+void cLink::workstation(QString * __n, cMac * __mac, QString * __d)
+{
+    portId2 = newWorkstation(*__n, *__mac, *__d);
+    delete __n;
+    delete __mac;
+    delete __d;
+    newNode = true;
+    _DBGFNL() << _sSpace << portId2 << endl;
+}
+
+void cLink::attached(QString * __n, QString * __d)
+{
+    portId2 = newAttachedNode(*__n, *__d);;
+    delete __n;
+    delete __d;
+    newNode = true;
+    _DBGFNL() << _sSpace << portId2 << endl;
+}
+
+void cLink::insert(QString * __d, QStringList * __srv)
+{
+    cPhsLink    lnk;
+    lnk[_sPortId1]      = portId1;
+    lnk[_sPhsLinkType1] = phsLinkType1;
+    lnk[_sPortId2]      = portId2;
+    lnk[_sPhsLinkType2] = phsLinkType2;
+    lnk[_sPortShared]   = share;
+    lnk[_sPhsLinkNote]  = *__d;
+    if (__srv != NULL) {    // Volt Alert
+        cHostService    hose;
+        cService        se;
+        cNode           ho;
+        cNPort          po;
+        // Szervíz: megadták, vagy default
+        if (__srv->size() > 0 && __srv->at(0).size() > 0) { if (!se.fetchByName(__srv->at(0))) yyerror("Invalis alert service name."); }
+        else                                              { if (!se.fetchById(alertServiceId)) yyerror("Nothing default alert service."); }
+        po.setById(qq(), portId2);   // A jobb oldali port a mienk
+        ho.setById(qq(), po.getId(_sNodeId));
+        // Volt megjegyzés ?
+        if (__srv->size() > 1 && __srv->at(1).size() > 0) hose.setName(_sHostServiceNote, __srv->at(1));
+        hose.setId(_sServiceId,  se.getId());
+        hose.setId(_sNodeId,     ho.getId());
+        hose.setId(_sPortId,     po.getId());
+        hose[_sDelegateHostState] = true;
+        QString it = se.magicParam(_sIfType);
+        if (it.isEmpty()) { //??
+            DWAR() << "Invalid or empty service magic param : iftype" << endl;
+        }
+        else if (it == _sEthernet) {     // A megadott szolgáltatás az ethernethez tartozik
+            if (po.getId(_sIfTypeId) != cIfType::ifTypeId(_sEthernet)) yyerror("Invalid port type");
+        }
+        else if (it == _sAttach) {
+            cIfType att;
+            att.setByName(qq(), _sAttach);
+            if (po.getId(_sIfTypeId) != cIfType::ifTypeId(_sAttach)) {
+                if (!newNode) yyerror("Invalid port type");
+                po.set();
+                po.setName(__sAttach);
+                po.setId(_sNodeId, ho.getId());
+                po.setId(_sIfTypeId, cIfType::ifTypeId(_sAttach));
+                po.insert(qq());
+                lnk[_sPortId2] = po.getId();
+                hose.setId(_sPortId,     po.getId());
+            }
+        }
+        else {
+            DWAR() << "iftype = " << it << " not supported." << endl;
+        }
+        lnk.insert(qq());
+        hose.insert(qq());
+        delete __srv;
+    }
+    else {
+        lnk.insert(qq());
+    }
+    share.clear();
+    portId1 = portId2 = NULL_ID;
+    delete __d;
+    newNode = false;
+}
+
+
+const QString& cLink::i2LinkType(int __i)
+{
+    switch (__i) {
+    case  1:    return _sFront;
+    case -1:    return _sBack;
+    case  0:    return _sTerm;
+    default:    EXCEPTION(EDATA, __i);
+    }
+    return _sNul;   // Inaktív kód, csak hogy nem pampogjon a fordító
+}
+
+const QString&  cLink::chkShare(int __s)
+{
+    static QStringList  shares;
+    if (shares.size() == 0) {
+        shares << _sNul;
+        shares << QString("A") << QString("AA") << QString("AB");
+        shares << QString("B") << QString("BA") << QString("BB");
+        shares << QString("C") << QString("D");
+    }
+    if (__s >= shares.size() || __s < 0 ) yyerror(QObject::trUtf8("Invalid share value."));
+    return shares[__s];
+}
+
+void cLink::insert(QString *__hn1, qlonglong __pi1, QString *__hn2, qlonglong __pi2, qlonglong __n)
+{
+    cPhsLink    lnk;
+    lnk[_sPhsLinkType1] = phsLinkType1;
+    lnk[_sPhsLinkType2] = phsLinkType2;
+    lnk[_sPortShared]   = _sNul;
+    qlonglong nid1 = __hn1->size() > 0 ? cPatch::getNodeIdByName(qq(), *__hn1) : nodeId1;
+    qlonglong nid2 = __hn2->size() > 0 ? cPatch::getNodeIdByName(qq(), *__hn2) : nodeId2;
+    while (__n--) {
+        lnk[_sPortId1] = cNPort::getPortIdByIndex(qq(), __pi1, nid1, true);
+        lnk[_sPortId2] = cNPort::getPortIdByIndex(qq(), __pi2, nid2, true);
+        lnk.insert(qq());
+        lnk.clear(lnk.idIndex());   // töröljük az id-t mert a köv insert-nél baj lessz.
+        __pi1++;                    // Léptetjük az indexeket
+        __pi2++;
+    }
+    delete __hn1;
+    delete __hn2;
+}
+
+
+//-----------------------------------------------------------------------------------------------------
+/// A superior_host_service_id beállítása
+/// @param phs A módosítandó objektum pointere.
+/// @param phn A keresett host_services rekordban hivatkozott host neve, vagy üres.
+/// @param phs A keresett host_services rekordban hivatkozott szervíz típus név
+/// @param ppo A keresett host_services rekordban hivatkozott port neve, vagy NULL pointer. Ha phn üres, akkor NULL.
+static void setSuperiorHostService(cHostService * phs, QString * phn, QString * psn, QString *ppo = NULL)
+{
+    cHostService shs;
+    if (!phn->isEmpty()) {
+        qlonglong   nid = cNode().getIdByName(qq(), *phn);
+        shs.setId(_sNodeId, nid);
+        if (ppo != NULL) {
+            qlonglong pid = cNPort().getPortIdByName(qq(), *ppo, nid);
+            shs.setId(_sPortId, pid);
+            delete ppo;
+        }
+    }
+    shs.setId(_sServiceId, cService().getIdByName(qq(), *psn));
+    delete psn;
+    delete phn;
+    int n = shs.completion(qq());
+    if (n == 0) yyerror("horst_services record not found.");
+    if (n >  1) yyerror("horst_services record ambigouos.");
+    (*phs)[_sSuperiorHostServiceId] = shs.getId();
+}
+
+static QString e1 = "Redefined port name or index.";
+static QString e2 = "There is insufficient data.";
+
+/// Egy új port létrehozása (a paraméterként megadott pointereket felszabadítja)
+/// @param h A node objektum, amihez hozzáadjuk a portot
+/// @param ix Port index, vagy NULL_IX, ha az index NULL lessz-
+/// @param pt Pointer a port típus név stringre.
+/// @param pn Port nevére mutató pointer
+/// @param ip Pointer egy string pár, az első elem az IP cím, vagy az "ARP" string, ha az ip címet a MAC címéből kell meghatározni.
+///           A második elem az ip cím típus neve. Ha a pointer NULL, akkor nincs IP cím.
+/// @param mac Ha NULL nincs mac, ha a variant egy string, akkor az a MAC cím stringgé konvertélva, vagy az "ARP" string,
+///           ha variant egy int, akkor az annak a Portnak az indexe, melynek ugyanez a MAC cíne.
+/// @param d Port leírás/megjegyzés szövegre mutató pointer, üres string esetén az NULL lessz.
+/// @return Az új port objektum pointere
+cNPort *hostAddPort(int ix, QString *pt, QString *pn, QStringPair *ip, QVariant *mac, QString *d)
+{
+    if (pNode == NULL) EXCEPTION(EPROGFAIL);
+    cNPort& p = pNode->asmbHostPort(qq(), ix, *pt, *pn, ip, mac, *d);
+    pDelete(pt);
+    pDelete(pn);
+    pDelete(ip);
+    pDelete(mac);
+    pDelete(d);
+    return &p;
+}
+
+static cNPort *portAddAddress(cNPort *_p, QStringPair *ip, QString *d)
+{
+    cInterface *p = _p->reconvert<cInterface>();
+    p->addIpAddress(QHostAddress(ip->first), ip->second, *d);
+    delete ip; delete d;
+    return _p;
+}
+
+cNPort *portAddAddress(QString *pn, QStringPair *ip, QString *d)
+{
+    cNPort *p = pNode->getPort(*pn);
+    delete pn;
+    return portAddAddress(p, ip, d);
+
+}
+
+cNPort *portAddAddress(int ix, QStringPair *ip, QString *d)
+{
+    cNPort *p = pNode->getPort(ix);
+    return portAddAddress(p, ip, d);
+}
+
+void setSuperior(QStringPair *pshs, QStringPairList * pshl)
+{
+    QSqlQuery q = getQuery();
+    QSqlQuery q2 = getQuery();
+    cHostService hs;
+    int r  = hs.fetchByNames(q, pshs->first, pshs->second, false);
+    delete pshs;
+    if (r != 1) yyerror("Ismeretlen, vagy nem eggyértelmű host_services rekord megadása.");
+    qlonglong id = hs.getId();
+    QString sn;
+    foreach (QStringPair sp, *pshl) {
+        if (!sp.second.isEmpty()) sn = sp.second;
+        if (sn.isEmpty()) yyerror("Nincs megadva szervice név.");
+        r = hs.fetchByNames(q, sp.first, sn, false);
+        if (r == 0) {   // Nincs, csinálunk egyet
+            cNode n;
+            if (!n.fetchByName(q2, sp.first)) yyerror("A megadott node nem létezik.");
+            hs.clear();
+            hs.setId(_sNodeId, n.getId());
+            hs.setId(_sServiceId, cService::service(q2, sn).getId());
+            hs.setId(_sSuperiorHostServiceId, id);
+            hs.insert(q2);
+        }
+        else while (1) {    // Van egy, vagy több
+            hs.setId(_sSuperiorHostServiceId, id);
+            hs.update(q2, false, hs.mask(_sSuperiorHostServiceId));
+            if (q.next()) {
+                hs.set(q);
+            }
+            else break;
+        }
+    }
+    delete pshl;
+}
+
+
+cTableShape * newTableShape(QString *pTbl, QString * pMod, const QString *pDescr)
+{
+    cTableShape *p = new cTableShape();
+    p->setName(*pMod);
+    p->setName(_sTableName, pTbl->isEmpty() ? *pMod : *pTbl);
+    p->setName(_sTableShapeNote, *pDescr);
+    delete pTbl;
+    delete pMod;
+    delete pDescr;
+    return p;
+}
+
+
+QString *pMenuApp = NULL;
+tRecordList<cMenuItem>   menuItems;
+
+cMenuItem& actMenuItem()
+{
+    if (menuItems.isEmpty()) EXCEPTION(EPROGFAIL);
+    return *menuItems.last();
+}
+
+void newMenuMenu(const QString& _n, const QString& _t)
+{
+    _DBGFN() << VDEB(_n) << VDEB(_t) << endl;
+    if (pMenuApp == NULL) EXCEPTION(EPROGFAIL);
+    cMenuItem *p = new cMenuItem;
+    p->setName(_n);
+    p->setName(_sAppName, *pMenuApp);
+    if (!menuItems.isEmpty()) {
+        p->setId(_sUpperMenuItemId, actMenuItem().getId());
+    }
+    if (!_t.isEmpty()) p->setName(_sMenuItemTitle, _t);
+    p->setName(_sProperties, ":sub:");
+    PDEB(VVERBOSE) << "Insert : " << p->allToString() << endl;
+    p->insert(qq());
+    menuItems << p;
+}
+
+void delMenuItem()
+{
+    cMenuItem *p = menuItems.pop_back();
+    delete p;
+}
+/// Egy menu_items rekord létrehozása
+/// @param _n Rekord név
+/// @param _sn paraméter
+/// @param _t Megjelenített név
+/// @param typ Minta string a properties mezőhöz (paraméter _n
+void newMenuItem(const QString& _n, const QString& _sn, const QString& _t, const char * typ)
+{
+    if (pMenuApp == NULL) EXCEPTION(EPROGFAIL);
+    cMenuItem *p = new cMenuItem;
+    p->setName(_n);
+    p->set(_sAppName, *pMenuApp);
+    p->setId(_sUpperMenuItemId, actMenuItem().getId());
+    if (!_t.isEmpty()) p->setName(_sMenuItemTitle, _t);
+    p->setName(_sProperties, QString(typ).arg(_sn));
+    p->insert(qq());
+    menuItems << p;
+}
+
+void setToolTip(const QString& _tt)
+{
+    actMenuItem().setName(_sToolTip, _tt);
+    actMenuItem().update(qq(), false, actMenuItem().mask(_sToolTip));
+}
+
+void setWhatsThis(const QString& _wt)
+{
+    actMenuItem().setName(_sWhatsThis, _wt);
+    actMenuItem().update(qq(), false, actMenuItem().mask(_sWhatsThis));
+}
+
+static void insertCode(const QString& __txt)
 {
     _DBGFN() << quotedString(__txt) << " + " << quotedString(macbuff) << endl;
     macbuff = __txt + macbuff;
 }
 
-int yyerror(const char * em)
-{
-    QString msg = QString("Parse error %1 in %2 file %3 line; ").arg(QString(em)).arg(fileNm).arg(lineNo)
-        + "lastLine: " + quotedString(lastLine) + "; macbuff : " + quotedString(macbuff);
-    EXCEPTION(EPARSE, -1, msg);
-    return -1;
-}
-int yyerror(QString em)
-{
-    return yyerror(em.toStdString().c_str());
-}
 
 QChar yyget()
 {
@@ -60,8 +762,8 @@ QChar yyget()
 
     if (!macbuff.size()) {
         do {
-            ++lineNo;
-            lastLine = macbuff  = yyif->readLine();
+            ++importLineNo;
+            lastLine = macbuff  = importInputStream->readLine();
             PDEB(INFO) << "YYLine : \"" << lastLine << "\"" << endl;
             if (macbuff.isNull()) {
                 if (c_yyFile::size() > 0) {
@@ -104,42 +806,20 @@ static inline QVariant *v2p(const QVariant& __v)
     return new QVariant(__v);
 }
 
-static inline const QString& sp2s(QString * sp, int i = 0)
-{
-    static QString	s[10];
-    if (i < 0 || i > 10) EXCEPTION(EPROGFAIL, i);
-    s[i] = *sp;
-    delete sp;
-    return s[i];
-}
+#define RRDSIZE 8
+#define RRD(T, n) \
+    static inline const T& n(T * p) { \
+        static T	rrd[RRDSIZE]; \
+        static int i = 0; \
+        i = (i + 1) % RRDSIZE; \
+        rrd[i] = *p; \
+        delete p; \
+        return rrd[i]; \
+    }
 
-static inline const QVariant& sp2v(QString * sp, int i = 0)
-{
-    static QVariant	v[10];
-    if (i < 0 || i > 10) EXCEPTION(EPROGFAIL, i);
-    v[i] = *sp;
-    delete sp;
-    return v[i];
-}
-
-static inline const QVariant& vp2v(QVariant * vp, int i = 0)
-{
-    static QVariant     v[10];
-    if (i < 0 || i > 10) EXCEPTION(EPROGFAIL, i);
-    v[i] = *vp;
-    delete vp;
-    return v[i];
-}
-
-static const QVariantList& vlp2vl(QVariantList * vlp)
-{
-    _DBGFN() << list2string(*vlp) << endl;
-    static QVariantList	  vl;
-    vl = *vlp;
-    delete vlp;
-    _DBGFNL() << list2string(vl) << endl;
-    return vl;
-}
+RRD(QString, sp2s)
+RRD(QVariant, vp2v)
+RRD(QVariantList, vlp2vl)
 
 static const QVariantList& slp2vl(QStringList * slp)
 {
@@ -235,7 +915,7 @@ static QString *toddef(QString * name, QString *  day, QString * fr, QString *  
 {
     cTpow t;
     t.setName(*name);
-    t[_sTpowDescr] = *descr;
+    t[_sTpowNote] = *descr;
     t[_sDow]       = *day;
     t[_sBeginTime] = *fr;
     t[_sEndTime]   = *to;
@@ -244,15 +924,54 @@ static QString *toddef(QString * name, QString *  day, QString * fr, QString *  
     return name;
 }
 
-static void setMainPort(qlonglong ix, QString *ifType, QString *name, QString *descr)
+static void setLastPort(QString * np, qlonglong ix) {
+    if (np != NULL && np->size() > 0) svars[sPortNm] = *np;
+    else                              svars.remove(sPortNm);
+    if (ix != NULL_IX)                ivars[sPortIx] = ix;
+    else                              ivars.remove(sPortIx);
+}
+
+static void setLastPort(const QString& n, qlonglong ix) {
+    if (n.size() > 0)   svars[sPortNm] = n;
+    else                svars.remove(sPortNm);
+    if (ix != NULL_IX)  ivars[sPortIx] = ix;
+    else                ivars.remove(sPortIx);
+}
+
+static void setLastPort(cNPort *p)
 {
-    pNode->setMainPortType(*ifType);
-    pNode->setName(_sPortName, *name);
-    pNode->setName(_sPortDescr, *descr);
-    if (ix != NULL_ID) pNode->setId(_sPortIndex, ix);
-    delete ifType;
-    delete name;
-    delete descr;
+    qlonglong ix = p->getId(_sPortIndex);
+    if (ix == NULL_ID) ix = NULL_IX;
+    setLastPort(p->getName(_sPortName), ix);
+}
+
+void newNode(QStringList * t, QString *name, QString *d)
+{
+    _DBGFN() << "@(" << *name << _sComma << *d << ")" << endl;
+    pNode = new cNode();
+    pNode->asmbNode(qq(), *name, NULL, NULL, NULL, *d, gPlace());
+    pNode->set(_sNodeType, *t);
+    pDelete(t);
+    pDelete(name); pDelete(d);
+}
+
+/// Egy új host vagy snmp eszköz létrehozása (a paraméterként megadott pointereket felszabadítja)
+/// @param name Az eszköz nevére mutató pointer, vagy a "LOOKUP" stringre mutató pointer
+/// @param ip Pointer egy string pár, az első elem az IP cím, vagy az ARP ill. LOOKUP string, ha az ip címet a MAC címből ill.
+///           a névből kell meghatározni. A második elem az ip cím típus neve.
+/// @param mac Vagy a MAC stringgé konvertálva, vagy az ARP string, ha az IP címből kell meghatározni.
+/// @param d Port secriptorra/megjegyzés  mutató pointer, üres string esetln az NULL lessz.
+/// @return Az új objektum pointere
+void newHost(QStringList * t, QString *name, QStringPair *ip, QString *mac, QString *d)
+{
+    _DBGFN() << "@(" << *name << _sComma << ip->first << "&" << ip->second << _sComma  << *mac << _sComma << *d << ")" << endl;
+    if (t->contains(_sSnmp, Qt::CaseInsensitive)) pNode = new cSnmpDevice();
+    else                                          pNode = new cNode();
+    pNode->asmbNode(qq(), *name, NULL, ip, mac, *d, gPlace());
+    pNode->set(_sNodeType, *t);
+    pDelete(t);
+    pDelete(name); pDelete(ip); pDelete(mac); pDelete(d);
+    setLastPort(pNode->ports.first());
 }
 
 #define NEWOBJ(p, t, args...) \
@@ -264,7 +983,7 @@ static void setMainPort(qlonglong ix, QString *ifType, QString *name, QString *d
     if (p == NULL) yyerror(_STR(p) " is null"); \
     p->insert(qq()); \
     delete p; p = NULL; \
-    setLastPort(NULL, NULL_IX)
+    setLastPort(NULL, NULL_IX)  // Törli
 
 #define DELOBJ(p) \
     if (p == NULL) yyerror(_STR(p) " is null"); \
@@ -301,7 +1020,7 @@ static void setMainPort(qlonglong ix, QString *ifType, QString *name, QString *d
 %token      VLAN_T SUBNET_T PORTS_T PORT_T NAME_T SHARED_T SENSORS_T
 %token      PLACE_T PATCH_T HUB_T SWITCH_T NODE_T HOST_T SNMPDEV_T ADDRESS_T
 %token      PARENT_T IMAGE_T FRAME_T TEL_T DESCR_T MESSAGE_T ALARM_T
-%token      MAIN_T PARAM_T TEMPLATE_T COPY_T FROM_T NULL_T VIRTUAL_T
+%token      PARAM_T TEMPLATE_T COPY_T FROM_T NULL_T VIRTUAL_T
 %token      INCLUDE_T PSEUDO_T OFFS_T IFTYPE_T WRITE_T RE_T
 %token      ADD_T READ_T UPDATE_T ARPS_T ARP_T SERVER_T FILE_T BY_T
 %token      SNMP_T SSH_T COMMUNITY_T DHCPD_T LOCAL_T PROC_T CONFIG_T
@@ -330,8 +1049,8 @@ static void setMainPort(qlonglong ix, QString *ifType, QString *name, QString *d
 %type  <il> list_i pixs // ints
 %type  <b>  bool bool_on pattern
 %type  <r>  /* real */ num fexpr
-%type  <s>  str str_ str_z name_q time tod _toddef sexpr pnm mac_q ha nsw
-%type  <sl> strs strs_z alert list_m nsws nsws_
+%type  <s>  str str_ str_z name_q time tod _toddef sexpr pnm mac_q ha nsw ips
+%type  <sl> strs strs_z alert list_m nsws nsws_ node_h host_h
 %type  <v>  value mac_qq
 %type  <vl> vals
 %type  <n>  subnet
@@ -374,12 +1093,12 @@ command : macro
         | gui
         ;
 macro   : INCLUDE_T str ';'                                 { c_yyFile::inc($2); }
-        | MACRO_T            NAME_V str ';'               { templates.set (_sMacros,     sp2s($2), sp2s($3,1));     }
-        | MACRO_T            NAME_V str SAVE_T str_z ';'  { templates.save(_sMacros,     sp2s($2), sp2s($3,1), sp2s($5,2)); }
-        | TEMPLATE_T PATCH_T NAME_V str ';'               { templates.set (_sPatchs,     sp2s($3), sp2s($4,1));     }
-        | TEMPLATE_T PATCH_T NAME_V str SAVE_T str_z ';'  { templates.save(_sPatchs,     sp2s($3), sp2s($4,1), sp2s($6,2)); }
-        | TEMPLATE_T NODE_T  NAME_V str ';'               { templates.set (_sNodes,      sp2s($3), sp2s($4,1));     }
-        | TEMPLATE_T NODE_T  NAME_V str SAVE_T str_z ';'  { templates.save(_sNodes,      sp2s($3), sp2s($4,1), sp2s($6,2)); }
+        | MACRO_T            NAME_V str ';'               { templates.set (_sMacros,     sp2s($2), sp2s($3));     }
+        | MACRO_T            NAME_V str SAVE_T str_z ';'  { templates.save(_sMacros,     sp2s($2), sp2s($3), sp2s($5)); }
+        | TEMPLATE_T PATCH_T NAME_V str ';'               { templates.set (_sPatchs,     sp2s($3), sp2s($4));     }
+        | TEMPLATE_T PATCH_T NAME_V str SAVE_T str_z ';'  { templates.save(_sPatchs,     sp2s($3), sp2s($4), sp2s($6)); }
+        | TEMPLATE_T NODE_T  NAME_V str ';'               { templates.set (_sNodes,      sp2s($3), sp2s($4));     }
+        | TEMPLATE_T NODE_T  NAME_V str SAVE_T str_z ';'  { templates.save(_sNodes,      sp2s($3), sp2s($4), sp2s($6)); }
         | for_m
         ;
 for_m   : FOR_T vals  DO_T MACRO_T NAME_V ';'               { forLoopMac($5, $2); }
@@ -509,9 +1228,9 @@ bool    : ON_T      { $$ = true; }  | YES_T     { $$ = true; }  | TRUE_T    { $$
 bool_on :                           { $$ = true; }
         | bool                      { $$ = $1; }
         ;
-user    : USER_T str str_z          { NEWOBJ(pUser, cUser); pUser->setName(*$2).setName(_sUserDescr, *$3); delete $2; delete $3; }
+user    : USER_T str str_z          { NEWOBJ(pUser, cUser); pUser->setName(*$2).setName(_sUserNote, *$3); delete $2; delete $3; }
             user_e                  { INSERTANDDEL(pUser); }
-        | USER_T GROUP_T str str_z  { NEWOBJ(pGroup, cGroup); pGroup->setName(*$3).setName(_sGroupDescr, *$4); delete $3; delete $4; }
+        | USER_T GROUP_T str str_z  { NEWOBJ(pGroup, cGroup); pGroup->setName(*$3).setName(_sGroupNote, *$4); delete $3; delete $4; }
             ugrp_e                  { INSERTANDDEL(pGroup); }
         | USER_T GROUP_T str ADD_T str ';'      { cGroupUser gu(qq(), *$3, *$5); if (!gu.test(qq())) gu.insert(qq()); delete $3; delete $5; }
         | USER_T GROUP_T str REMOVE_T str ';'   { cGroupUser gu(qq(), *$3, *$5); if (gu.test(qq())) gu.remove(qq()); delete $3; delete $5; }
@@ -552,8 +1271,8 @@ ugrp_ps :
 ugrp_p  : RIGHTS_T str ';'                      { pGroup->setName(_sGroupRights, *$2); delete $2; }
         | PLACE_T place_id ';'                  { pGroup->setId(_sPlaceId, $2); }
         ; 
-timeper : TIME_T PERIOD_T str str_z ';'         { INSREC(cTimePeriod, _sTimePeriodDescr, $3, $4); }
-        | tod ADD_T TIME_T PERIOD_T str ';'     { cTimePeriodTpow(qq(), *$5, *$1).insert(qq()); delete $1; delete $5; }
+timeper : TIME_T PERIOD_T str str_z ';'         { INSREC(cTimePeriod, _sTimePeriodNote, $3, $4); }
+        | tod ADD_T TIME_T PERIOD_T str ';'     { tTimePeriodTpow(qq(), *$5, *$1).insert(qq()); delete $1; delete $5; }
         | toddef
         ;
 tod     : _toddef                   { $$ = $1; }
@@ -569,7 +1288,7 @@ toddef  : _toddef ';'               { delete $1; }
 ppar    : PORT_T PARAM_T str str str str_z ';'  { cPortParam::insertNew(*$3, *$4, *$5, *$6); delete $3; delete $4; delete $5; delete $6; }
         ;
 vlan    : VLAN_T int str str_z      {
-                                        actVlanId = cVLan::insertNew($2, actVlanName = *$3, actVlanDescr = *$4, true);
+                                        actVlanId = cVLan::insertNew($2, actVlanName = *$3, actVlanNote = *$4, true);
                                         delete $3; delete $4;
                                         netType = NT_PRIMARY;
                                     }
@@ -577,19 +1296,19 @@ vlan    : VLAN_T int str str_z      {
         | PRIVATE_T SUBNET_T        { actVlanId = -1; netType = NT_PRIVATE; }  subnet { netType = NT_INVALID; }
         | PSEUDO_T  SUBNET_T        { actVlanId = -1; netType = NT_PSEUDO;  }  subnet { netType = NT_INVALID; }
         ;
-subnets : subnet                    { actVlanName.clear(); actVlanDescr.clear(); }
+subnets : subnet                    { actVlanName.clear(); actVlanNote.clear(); }
         | subnets subnet
         ;
 subnet  : ip '/' INTEGER_V ';'
                 {
                     if (netType != NT_PRIMARY) yyerror("no name");
-                    cSubNet::insertNew(actVlanName, actVlanDescr, netAddress(*$1, (int)$3), actVlanId, _sPrimary);
+                    cSubNet::insertNew(actVlanName, actVlanNote, netAddress(*$1, (int)$3), actVlanId, _sPrimary);
                     delete $1;
                 }
         | ip '/' IPV4_V ';'
                 {
                     if (netType != NT_PRIMARY) yyerror("no name"); if ($1->protocol() != QAbstractSocket::IPv4Protocol) yyerror("Invalid net address");
-                    cSubNet::insertNew(actVlanName, actVlanDescr, netAddress(*$1, toIPv4Mask(*$3)), actVlanId, _sPrimary);
+                    cSubNet::insertNew(actVlanName, actVlanNote, netAddress(*$1, toIPv4Mask(*$3)), actVlanId, _sPrimary);
                     delete $1; delete $3;
                 }
         | ip '/' int str str_z ';'
@@ -608,7 +1327,9 @@ ip      : IPV4_V                    { $$ = $1; PDEB(VVERBOSE) << "ip(IPV4):" << 
         | IPV6_V                    { $$ = $1; PDEB(VVERBOSE) << "ip(IPV6):" << $$->toString() << endl; }
         | IP_T '(' sexpr ')'        { $$ = new QHostAddress(); if (!$$->setAddress(*$3)) yyerror("Invalid address"); }
         ;
-image   : IMAGE_T str str_z         { NEWOBJ(pImage, cImage); pImage->setName(*$2).setName(_sImageDescr, *$3); delete $2; delete $3; }
+ips     : ip                        { $$ = new QString($1->toString()); delete $1; }
+        ;
+image   : IMAGE_T str str_z         { NEWOBJ(pImage, cImage); pImage->setName(*$2).setName(_sImageNote, *$3); delete $2; delete $3; }
             image_e                 { INSERTANDDEL(pImage); }
         ;
 image_e : '{' image_ps '}'
@@ -622,11 +1343,11 @@ image_p : TYPE_T str ';'            { pImage->setName(_sImageType, *$2); delete 
         ;
 image_id: str                       { $$ = cImage().getIdByName(sp2s($1)); }
         ;
-place   : PLACE_T str str_z         { place.clear().setName(*$2).set(_sPlaceDescr, *$3); delete $2; delete $3; }
+place   : PLACE_T str str_z         { place.clear().setName(*$2).set(_sPlaceNote, *$3); delete $2; delete $3; }
           place_e                   { place.insert(qq()); }
         | SET_T PLACE_T place_id ';'{ globalPlaceId = $3; }
         | CLEAR_T PLACE_T ';'       { globalPlaceId = NULL_ID; }
-        | PLACE_T GROUP_T str str_z ';' { cPlaceGroup::insertNew(sp2s($3,1), sp2s($4, 2)); }
+        | PLACE_T GROUP_T str str_z ';' { cPlaceGroup::insertNew(sp2s($3), sp2s($4)); }
         | PLACE_T GROUP_T str ADD_T str ';'     { cGroupPlace gp(qq(), *$3, *$5); if (!gp.test(qq())) gp.insert(qq()); delete $3; delete $5; }
         | PLACE_T GROUP_T str REMOVE_T str ';'  { cGroupPlace gp(qq(), *$3, *$5); if (gp.test(qq())) gp.remove(qq()); delete $3; delete $5; }
         ;
@@ -636,7 +1357,7 @@ place_e : ';'
 plac_ps : place_p
         | plac_ps place_p
         ;
-place_p : DESCR_T str ';'           { place.set(_sPlaceDescr, *$2);     delete $2; }
+place_p : DESCR_T str ';'           { place.set(_sPlaceNote, *$2);     delete $2; }
         | PARENT_T place_id ';'     { place.set(_sParentId, $2); }
         | IMAGE_T image_id ';'      { place.set(_sImageId,  $2); }
         | FRAME_T frame ';'         { place.set(_sFrame, QVariant::fromValue(*$2)); delete $2; }
@@ -655,8 +1376,8 @@ nodes   : patch
         ;
 patch   : patch_h { pPatch->setId(_sPlaceId, gPlace()); } patch_e { INSERTANDDEL(pPatch); }
         ;
-patch_h : PATCH_T str str_z                     { NEWOBJ(pPatch, cPatch, sp2s($2), sp2s($3,1)); }
-        | PATCH_T str str_z COPY_T FROM_T str   { NEWOBJ(pPatch, cPatch, sp2s($2), sp2s($3,1)); templates.get(_sPatchs, sp2s($6)); }
+patch_h : PATCH_T str str_z                     { NEWOBJ(pPatch, cPatch, sp2s($2), sp2s($3)); }
+        | PATCH_T str str_z COPY_T FROM_T str   { NEWOBJ(pPatch, cPatch, sp2s($2), sp2s($3)); templates.get(_sPatchs, sp2s($6)); }
                 patch_ps
         ;
 patch_e : '{' patch_ps '}'
@@ -665,15 +1386,15 @@ patch_e : '{' patch_ps '}'
 patch_ps: patch_p patch_ps
         |
         ;
-patch_p : DESCR_T str ';'                       { pPatch->setName(_sNodeDescr, sp2s($2)); }
+patch_p : DESCR_T str ';'                       { pPatch->setName(_sNodeNote, sp2s($2)); }
         | PLACE_T place_id ';'                  { pPatch->set(_sPlaceId, $2); }
-        | ADD_T PORT_T int str str_z ';'        { setLastPort(pPatch->addPort(sp2s($4), sp2s($5,1), $3)); }
+        | ADD_T PORT_T int str str_z ';'        { setLastPort(pPatch->addPort(sp2s($4), sp2s($5), $3)); }
         | ADD_T PORTS_T offs FROM_T int TO_T int offs str ';'
                                                 { setLastPort(pPatch->addPorts(sp2s($9), $8, $5, $7, $3)); }
-        | PORT_T pix DESCR_T strs ';'           { setLastPort(pPatch->portSet($2, _sPortDescr, slp2vl($4))); }
-        | PORT_T pnm DESCR_T str ';'            { setLastPort(pPatch->portSet(sp2s($2), _sPortDescr, sp2v($4,1))); }
+        | PORT_T pix DESCR_T strs ';'           { setLastPort(pPatch->portSet($2, _sPortNote, slp2vl($4))); }
+        | PORT_T pnm DESCR_T str ';'            { setLastPort(pPatch->portSet(sp2s($2), _sPortNote, sp2s($4))); }
         | PORT_T pix SET_T str '=' vals ';'     { setLastPort(pPatch->portSet($2, sp2s($4), vlp2vl($6))); }
-        | PORT_T str SET_T str '=' value ';'    { setLastPort(pPatch->portSet(sp2s($2), sp2s($4, 1), vp2v($6))); }
+        | PORT_T str SET_T str '=' value ';'    { setLastPort(pPatch->portSet(sp2s($2), sp2s($4), vp2v($6))); }
         | PORTS_T pixs SHARED_T strs ';'        { int _pix = $2->last();
                                                   setLastPort(pPatch->ports.get(_sPortIndex, QVariant(_pix))->getName(_sPortName), _pix);
                                                   portShare($2, $4);
@@ -697,29 +1418,29 @@ pix_    : int                                   { $$ = vint(sPortIx) = $1; }
         | '#' '+' '@'                           { $$ = (vint(sPortIx) += 1); }
         | str                                   { $$ = vint(sPortIx) = pPatch->ports.get(_sPortName, *$1)->getId(_sPortIndex); delete $1; }
         ;
-node_h  : NODE_T                                { newNode(QStringList(_sNode); }
-        | NODE_T SWITCH_T                       { newNode(QStringList(_sNode, _sSwitch)); }
-        | NODE_T VIRTUAL_T                      { newNode(QStringList(_sNode, _sVirtual)); }
-        | NODE_T VIRTUAL_T SWITCH_T             { newNode(QStringList(_sNode, _sVirtual, _sSwitch)); }
-        | HUB_T                                 { newNode(QStringList(_sHub)); }
-        | HUB_T VIRTUAL_T                       { newNode(QStringList(_sHub, _sVirtual)); }
+        node_h  : NODE_T                        { *($$ = new QStringList) << _sNode; }
+        | NODE_T SWITCH_T                       { *($$ = new QStringList) << _sNode << _sSwitch; }
+        | NODE_T VIRTUAL_T                      { *($$ = new QStringList) << _sNode << _sVirtual; }
+        | NODE_T VIRTUAL_T SWITCH_T             { *($$ = new QStringList) << _sNode << _sVirtual << _sSwitch; }
+        | HUB_T                                 { *($$ = new QStringList) << _sHub; }
+        | HUB_T VIRTUAL_T                       { *($$ = new QStringList) << _sHub << _sVirtual; }
         ;
-host_h  : HOST_T                                { newNode(QStringList(_sHost)); }
-        | HOST_T VIRTUAL_T                      { newNode(QStringList(_sHost, _sVirtual)); }
-        | HOST_T SWITCH_T                       { newNode(QStringList(_sHost, _sSwitch)); }
-        | HOST_T VIRTUAL_T SWITCH_T             { newNode(QStringList(_sHost, _sVirtual, _sSwitch)); }
-        | HOST_T SNMP_T                         { newNode(QStringList(_sHost, _sSnmp)); }
-        | HOST_T VIRTUAL_T SNMP_T               { newNode(QStringList(_sHost, _sVirtual, _sSnmp)); }
-        | HOST_T SNMP_T SWITCH_T                { newNode(QStringList(_sHost, _sSnmp, _sSwitch)); }
-        | HOST_T VIRTUAL_T SNMP_T SWITCH_T      { newNode(QStringList(_sHost, _sVirtual, _sSnmp, _sSwitch)); }
+host_h  : HOST_T                                { *($$ = new QStringList) << _sHost; }
+        | HOST_T VIRTUAL_T                      { *($$ = new QStringList) << _sHost <<_sVirtual; }
+        | HOST_T SWITCH_T                       { *($$ = new QStringList) << _sHost << _sSwitch; }
+        | HOST_T VIRTUAL_T SWITCH_T             { *($$ = new QStringList) << _sHost << _sVirtual << _sSwitch; }
+        | HOST_T SNMP_T                         { *($$ = new QStringList) << _sHost << _sSnmp; }
+        | HOST_T VIRTUAL_T SNMP_T               { *($$ = new QStringList) << _sHost << _sVirtual << _sSnmp; }
+        | HOST_T SNMP_T SWITCH_T                { *($$ = new QStringList) << _sHost << _sSnmp << _sSwitch; }
+        | HOST_T VIRTUAL_T SNMP_T SWITCH_T      { *($$ = new QStringList) << _sHost << _sVirtual << _sSnmp << _sSwitch; }
         ;
-node    : node_h str str_z                      { pNode->setId(_sPlaceId, gPlace()).setName(sp2s($2)).setName(sp2s($3, 1)); }
+node    : node_h str str_z                      { newNode($1, $2, $3); }
                 node_cf node_e                  { INSERTANDDEL(pNode); }
         | ATTACHED_T str str_z ';'              { newAttachedNode(*$2, *$3); delete $2; delete $3; }
         | ATTACHED_T str str_z FROM_T int TO_T int ';'
                                                 { newAttachedNodes(*$2, *$3, $5, $7); delete $2; delete $3; }
-        | host_h name_q ip_q mac_q str_z        { pNode = newHost<cHost>($2, $3, $4, $5); }
-            node_cf node_e                      { chkHost(); INSERTANDDEL(pNode); }
+        | host_h name_q ip_q mac_q str_z        { newHost($1, $2, $3, $4, $5); }
+            node_cf node_e                      { INSERTANDDEL(pNode); }
         | WORKSTATION_T str mac str_z ';'       { newWorkstation(*$2,*$3,*$4); delete $2; delete $3; delete $4; }
         ;
 node_e  : '{' node_ps '}'
@@ -736,34 +1457,28 @@ node_p  : DESCR_T str ';'                       { pNode->setName(sp2s($2)); }
         | PLACE_T place_id ';'                  { pNode->setId(_sPlaceId, $2); }
         | ALARM_T MESSAGE_T str ';'             { pNode->setName(_sNodeAlarmMsg, sp2s($3)); }
         | SET_T str '=' value ';'               { pNode->set(sp2s($2), vp2v($4)); }
-        | MAIN_T PORT_T ix_z str str str_z ';'  { setMainPort($3, $4, $5, $6); setLastPort(pNode); }
-        | MAIN_T PORT_T TYPE_T str ';'          { pNode->setMainPortType(sp2s($4)); setLastPort(pNode); }
-        | MAIN_T PORT_T NAME_T str ';'          { pNode->setName(_sPortName, sp2s($4)); setLastPort(pNode); }
-        | MAIN_T PORT_T DESCR_T str ';'         { pNode->setName(_sPortDescr, sp2s($4)); setLastPort(pNode);}
-        | MAIN_T PORT_T INDEX_T int ';'         { pNode->setId(_sPortIndex, $4); setLastPort(pNode); }
-        | MAIN_T PORT_T PARAM_T str '=' value ';'{ pNode->params[sp2s($4)] = $6->toString(); delete $6; setLastPort(pNode); }
         | ADD_T PORTS_T str offs FROM_T int TO_T int offs str ';'
-                                                { setLastPort(pNode->addPorts(cIfType::ifType(sp2s($3)), sp2s($10,1), $9, $6, $8, $4)); }
-        | ADD_T PORT_T ix_z str str str_z ';'   { setLastPort(pNode->addPort(cIfType::ifType(sp2s($4)), 0, sp2s($5, 1), sp2s($6, 2), $3)); }
-        | PORT_T pnm DESCR_T str ';'            { setLastPort(pNode->portSet(sp2s($2), _sPortDescr, sp2s($4, 2))); }
-        | PORT_T pix DESCR_T strs ';'           { setLastPort(pNode->portSet($2, _sPortDescr, slp2vl($4))); }
-        | PORT_T pnm SET_T str '=' value ';'    { setLastPort(pNode->portSet(sp2s($2), sp2s($4, 1), vp2v($6))); }
+                                                { setLastPort(pNode->addPorts(sp2s($3), sp2s($10), $9, $6, $8, $4)); }
+        | ADD_T PORT_T ix_z str str str_z ';'   { setLastPort(pNode->addPort(sp2s($4), sp2s($5), sp2s($6), $3)); }
+        | PORT_T pnm DESCR_T str ';'            { setLastPort(pNode->portSet(sp2s($2), _sPortNote, sp2s($4))); }
+        | PORT_T pix DESCR_T strs ';'           { setLastPort(pNode->portSet($2, _sPortNote, slp2vl($4))); }
+        | PORT_T pnm SET_T str '=' value ';'    { setLastPort(pNode->portSet(sp2s($2), sp2s($4), vp2v($6))); }
         | PORT_T pix SET_T str '=' vals ';'     { setLastPort(pNode->portSet($2, sp2s($4), vlp2vl($6)));; }
-        | PORT_T pnm PARAM_T str '=' str ';'    { setLastPort(pNode->portSetParam(sp2s($2), sp2s($4,1), sp2s($6,2))); }
+        | PORT_T pnm PARAM_T str '=' str ';'    { setLastPort(pNode->portSetParam(sp2s($2), sp2s($4), sp2s($6))); }
         | PORT_T pix PARAM_T str '=' strs ';'   { setLastPort(pNode->portSetParam($2, sp2s($4), slp2sl($6))); }
         /* host_p: a Shift reduce conflict-ok miatt az összes port definíciós sor egy szabályban szerepel, a host() függvény szűr */
-        | ALARM_T PLACE_T GROUP_T str ';'       { host().setId(_sAlarmPlaceGroupId, cPlaceGroup().getIdByName(qq(), sp2s($4))); }
+        | ALARM_T PLACE_T GROUP_T str ';'       { pNode->setId(_sAlarmPlaceGroupId, cPlaceGroup().getIdByName(qq(), sp2s($4))); }
         | ADD_T PORT_T ix_z str str ip_qq mac_qq str_z ';'  { setLastPort(hostAddPort((int)$3, $4,$5,$6,$7,$8)); }
         | PORT_T pnm ADD_T ADDRESS_T ip_a str_z ';'         { setLastPort(portAddAddress($2, $5, $6)); }
         | PORT_T pix ADD_T ADDRESS_T ip_a str_z ';'         { setLastPort(portAddAddress((int)$2, $5, $6)); }
         | ADD_T SENSORS_T offs FROM_T int TO_T int offs str ip ';'  /* index offset ... név offset */
-                                                            { setLastPort(host().addSensors(sp2s($9,1), $8, $5, $7, $3, *$10)); delete $10; }
-        | PORT_T pnm VLAN_T vlan_id vlan_t set_t ';'        { setLastPort(host().portSetVlan(sp2s($2), $4, (enum eVlanType)$5, (enum eSetType)$6)); }
-        | PORT_T pix VLAN_T vlan_id vlan_t set_t ';'        { setLastPort(host().portSetVlan(     $2,  $4, (enum eVlanType)$5, (enum eSetType)$6)); }
-        | PORT_T pnm VLAN_T vlan_id ';'                     { setLastPort(host().portSetVlan(sp2s($2), $4, VT_HARD, ST_MANUAL)); }
-        | PORT_T pix VLAN_T vlan_id ';'                     { setLastPort(host().portSetVlan(     $2,  $4, VT_HARD, ST_MANUAL)); }
-        | PORT_T pnm VLANS_T vlan_ids ';'                   { setLastPort(host().portSetVlans(sp2s($2), *$4)); delete $4; }
-        | PORT_T pix VLANS_T vlan_ids ';'                   { setLastPort(host().portSetVlans(     $2,  *$4)); delete $4; }
+                                                            { setLastPort(pNode->addSensors(sp2s($9), $8, $5, $7, $3, *$10)); delete $10; }
+        | PORT_T pnm VLAN_T vlan_id vlan_t set_t ';'        { setLastPort(pNode->portSetVlan(sp2s($2), $4, (enum eVlanType)$5, (enum eSetType)$6)); }
+        | PORT_T pix VLAN_T vlan_id vlan_t set_t ';'        { setLastPort(pNode->portSetVlan(     $2,  $4, (enum eVlanType)$5, (enum eSetType)$6)); }
+        | PORT_T pnm VLAN_T vlan_id ';'                     { setLastPort(pNode->portSetVlan(sp2s($2), $4, VT_HARD, ST_MANUAL)); }
+        | PORT_T pix VLAN_T vlan_id ';'                     { setLastPort(pNode->portSetVlan(     $2,  $4, VT_HARD, ST_MANUAL)); }
+        | PORT_T pnm VLANS_T vlan_ids ';'                   { setLastPort(pNode->portSetVlans(sp2s($2), *$4)); delete $4; }
+        | PORT_T pix VLANS_T vlan_ids ';'                   { setLastPort(pNode->portSetVlans(     $2,  *$4)); delete $4; }
         /* snmpdev: a Shift reduce conflict-ok miatt az összes port definíciós sor egy szabályban szerepel, a snmpdev() függvény szűr  */
         | PORTS_T BY_T SNMP_T str_z ';'             { snmpdev().setBySnmp(sp2s($4)); setLastPort(_sNul, NULL_IX); }
         | COMMUNITY_T str ';'                       { snmpdev().setName(_sCommunityRd, sp2s($2)); }
@@ -772,17 +1487,17 @@ node_p  : DESCR_T str ';'                       { pNode->setName(sp2s($2)); }
         | for_m
         | eqs
         ;
-ip_q    : ip iptype                             { $$ = new QStringPair($1->toString(), addrType($2)); delete $1; }
-        | DYNAMIC_T                             { $$ = new QStringPair(QString(),      _sDynamic); }
-        | LOOKUP_T                              { $$ = new QStringPair(_sLOOKUP,       _sFixIp); }
-        | ARP_T                                 { $$ = new QStringPair(_sARP,          _sFixIp); }
+ip_q    : ips iptype                            { $$ = new QStringPair(sp2s($1),  addrType($2)); }
+        | DYNAMIC_T                             { $$ = new QStringPair(QString(), _sDynamic); }
+        | LOOKUP_T                              { $$ = new QStringPair(_sLOOKUP,  _sFixIp); }
+        | ARP_T                                 { $$ = new QStringPair(_sARP,     _sFixIp); }
         ;
-ip_qq   : ip iptype                             { $$ = new QStringPair($1->toString(), addrType($2)); delete $1; }
-        | DYNAMIC_T                             { $$ = new QStringPair(QString(),      _sDynamic); }
+ip_qq   : ips iptype                            { $$ = new QStringPair(sp2s($1),  addrType($2)); delete $1; }
+        | DYNAMIC_T                             { $$ = new QStringPair(QString(), _sDynamic); }
         | NULL_T                                { $$ = NULL; }
-        | ARP_T                                 { $$ = new QStringPair(_sARP, _sFixIp); }
+        | ARP_T                                 { $$ = new QStringPair(_sARP,     _sFixIp); }
         ;
-ip_a    : ip iptype_a                           { $$ = new QStringPair($1->toString(), addrType($2)); delete $1; }
+ip_a    : ips iptype_a                          { $$ = new QStringPair(sp2s($1),  addrType($2)); delete $1; }
         ;
 mac     : MAC_V                                 { $$ = $1; }
         | MAC_T '(' sexpr ')'                   { $$ = new cMac(sp2s($3)); if (!$$->isValid()) yyerror("Invalid MAC."); }
@@ -819,33 +1534,19 @@ vlan_ids: vlan_id                               { *($$ = new QList<qlonglong>())
 name_q  : str                                   { $$ = $1; }
         | LOOKUP_T                              { $$ = new QString(); }
         ;
-arp     : READ_T ARPS_T ';'                     { pArpTable->getFromDb(qq()); }
-        | ADD_T ARP_T SERVER_T ip BY_T SNMP_T COMMUNITY_T str ';'    {
-                    pArpServerDefs->append(cArpServerDef(cArpServerDef::SNMP, $4->toString(), QString(), *$8), *pArpTable);
-                    delete $4;
-                    delete $8;
-                }
-        | ADD_T ARP_T SERVER_T ip BY_T SSH_T PROC_T FILE_T str_z ';' {
-                    pArpServerDefs->append(cArpServerDef(cArpServerDef::PROC_SSH, $4->toString(), *$9), *pArpTable);
-                    delete $4;
-                    delete $9;
-                }
-        | ADD_T ARP_T SERVER_T ip BY_T SSH_T DHCPD_T CONFIG_T str_z ';' {
-                    pArpServerDefs->append(cArpServerDef(cArpServerDef::DHCPD_SSH, $4->toString(), *$9), *pArpTable);
-                    delete $4;
-                    delete $9;
-                }
-        | ADD_T ARP_T LOCAL_T BY_T PROC_T FILE_T str_z ';'   {
-                    pArpServerDefs->append(cArpServerDef(cArpServerDef::PROC_LOCAL, QString(), *$7), *pArpTable);
-                    delete $7;
-                }
-        | ADD_T ARP_T LOCAL_T BY_T DHCPD_T CONFIG_T str_z ';'       {
-                    pArpServerDefs->append(cArpServerDef(cArpServerDef::DHCPD_LOCAL, QString(), *$7), *pArpTable);
-                    delete $7;
-                }
-        | UPDATE_T ARPS_T ';'                   { cArp::replaces(qq(), *pArpTable); }
-        | RE_T UPDATE_T ARPS_T ';'              { pArpServerDefs->reUpdateArpTable(*pArpTable); cArp::replaces(qq(), *pArpTable); }
-        | PING_T ha ';'                         { QProcess::execute(QString("ping -c1 %1").arg(*$2)); delete $2; } //{ Pinger().ping(*$2, 1); delete $2; }
+arp     : ADD_T ARP_T SERVER_T ips BY_T SNMP_T COMMUNITY_T str ';'
+                { pArpServerDefs->append(qq(), cArpServerDef(cArpServerDef::SNMP, sp2s($4), QString(), sp2s($8))); }
+        | ADD_T ARP_T SERVER_T ips BY_T SSH_T PROC_T FILE_T str_z ';'
+                { pArpServerDefs->append(qq(), cArpServerDef(cArpServerDef::PROC_SSH, sp2s($4), sp2s($9))); }
+        | ADD_T ARP_T SERVER_T ips BY_T SSH_T DHCPD_T CONFIG_T str_z ';'
+                { pArpServerDefs->append(qq(), cArpServerDef(cArpServerDef::DHCPD_SSH, sp2s($4), sp2s($9))); }
+        | ADD_T ARP_T LOCAL_T BY_T PROC_T FILE_T str_z ';'
+                { pArpServerDefs->append(qq(), cArpServerDef(cArpServerDef::PROC_LOCAL, QString(), sp2s($7))); }
+        | ADD_T ARP_T LOCAL_T BY_T DHCPD_T CONFIG_T str_z ';'
+                { pArpServerDefs->append(qq(), cArpServerDef(cArpServerDef::DHCPD_LOCAL, QString(), sp2s($7))); }
+        | RE_T UPDATE_T ARPS_T ';'              { pArpServerDefs->updateArpTable(qq()); }
+        | PING_T ha ';'                         { QProcess::execute(QString("ping -c1 %1").arg(*$2)); delete $2; }
+                                              //{ Pinger().ping(*$2, 1); delete $2; }
         ;
 ha      : str                                   { $$ = $1; }
         | ip                                    { $$ = new QString($1->toString()); delete $1; }
@@ -887,7 +1588,7 @@ srv     : service
         ;
 service : SERVICE_T str str_z    { NEWOBJ(pService, cService);
                                       pService->setName(*$2);
-                                      pService->set(_sServiceDescr, *$3);
+                                      pService->set(_sServiceNote, *$3);
                                       delete $2; delete $3; }
           srvend                    { pService->insert(qq()); DELOBJ(pService); }
         | SET_T ALERT_T SERVICE_T str ';'    { alertServiceId = cService().getIdByName(qq(), *$4); delete $4; }
@@ -951,7 +1652,7 @@ hsrv_p  : PRIME_T SERVICE_T str ';'             { (*pHostService)[_sPrimeService
         | SET_T str '=' value ';'               { (*pHostService)[*$2] = *$4; delete $2; delete $4; }
         | ALARM_T MESSAGE_T str ';'             { (*pService)[_sHostServiceAlarmMsg] = *$3; delete $3; }
         ;
-hs      : str ':' str                           { $$ = new QStringPair(sp2s($1,1), sp2s($3,2)); }
+hs      : str ':' str                           { $$ = new QStringPair(sp2s($1), sp2s($3)); }
         | str ':' '@'                           { $$ = new QStringPair(sp2s($1), _sNul); }
         ;
 hss     : hs                                    { *($$ = new QStringPairList) << *$1; delete $1; }
@@ -963,29 +1664,29 @@ delete  : DELETE_T PLACE_T pattern str ';'      { cPlace().     delByName(qq(), 
         | DELETE_T ONLY_T NODE_T pattern str ';'{ cNode().      delByName(qq(), *$5, $4, true);  delete $5; }
         | DELETE_T VLAN_T pattern str ';'       { cVLan().      delByName(qq(), *$4, $3);        delete $4; }
         | DELETE_T HOST_T str SERVICE_T pattern str ';'
-                                                { cHostService().delByNames(qq(), sp2s($3, 1), sp2s($6, 2), $5); }
+                                                { cHostService().delByNames(qq(), sp2s($3), sp2s($6), $5); }
         | DELETE_T MACRO_T str ';'              { templates.del(_sMacros,     sp2s($3)); }
         | DELETE_T TEMPLATE_T PATCH_T str ';'   { templates.del(_sPatchs,     sp2s($4)); }
         | DELETE_T TEMPLATE_T NODE_T str ';'    { templates.del(_sNodes,      sp2s($4)); }
-        | DELETE_T LINK_T str pattern str ';'   { cPhsLink().unlink(qq(), sp2s($3,1), sp2s($5, 2), $4); }
-        | DELETE_T LINK_T str int ix_z ';'      { cPhsLink().unlink(qq(), sp2s($3,1), $4, $5); }
+        | DELETE_T LINK_T str pattern str ';'   { cPhsLink().unlink(qq(), sp2s($3), sp2s($5), $4); }
+        | DELETE_T LINK_T str int ix_z ';'      { cPhsLink().unlink(qq(), sp2s($3), $4, $5); }
         | DELETE_T TABLE_T SHAPE_T pattern str ';'
                                                 { cTableShape().delByName(qq(), *$5, $4, false); delete $5; }
         | DELETE_T ENUM_T TITLE_T  str ';'      { cEnumVal().delByTypeName(qq(), sp2s($4), false); }
         | DELETE_T ENUM_T TITLE_T  PATTERN_T str ';'
                                                 { cEnumVal().delByTypeName(qq(), sp2s($5), true); }
-        | DELETE_T ENUM_T TITLE_T  str str ';'  { cEnumVal().delByNames(qq(), sp2s($4, 1), sp2s($5, 2)); }
+        | DELETE_T ENUM_T TITLE_T  str str ';'  { cEnumVal().delByNames(qq(), sp2s($4), sp2s($5)); }
         | DELETE_T GUI_T pattern str MENU_T ';' { cMenuItem().delByAppName(qq(), sp2s($4), $3); }
         ;
 pattern :                                       { $$ = false; }
         | PATTERN_T                             { $$ = true;  }
         ;
-scan    : SCAN_T LLDP_T snmph ';'               { scabByLldp(*$3, qq()); delete $3; }
+scan    : SCAN_T LLDP_T snmph ';'               { scanByLldp(qq(), *$3); delete $3; }
         ;
 snmph   : str                                   { if (!($$ = new cSnmpDevice())->fetchByName(qq(), sp2s($1))) yyerror("ismeretlen SNMP eszköz név"); }
         ;
 gui     : tblmod
-        | ENUM_T str str TITLE_T str  ';'       { cEnumVal().setName(_sEnumValName, sp2s($3,1)).setName(_sEnumTypeName, sp2s($2,2)).setName(_sEnumValDescr, sp2s($5,3)).insert(qq()); }
+        | ENUM_T str str TITLE_T str  ';'       { cEnumVal().setName(_sEnumValName, sp2s($3)).setName(_sEnumTypeName, sp2s($2)).setName(_sEnumValNote, sp2s($5)).insert(qq()); }
         | appmenu
         ;
 tblmod  : TABLE_T str_z SHAPE_T str str_z '{'   { pTableShape = newTableShape($2, $4, $5); }
@@ -1010,19 +1711,19 @@ tmodp   : SET_T DEFAULTS_T ';'                  { pTableShape->setDefaults(qq())
         | TABLE_T EDIT_T RIGHTS_T str ';'       { pTableShape->setName(_sEditRights, sp2s($4)); }
         | TABLE_T DELETE_T RIGHTS_T str ';'     { pTableShape->setName(_sRemoveRights, sp2s($4)); }
         | TABLE_T INSERT_T RIGHTS_T str ';'     { pTableShape->setName(_sInsertRights, sp2s($4)); }
-        | SET_T str '.' str '=' value ';'       { pTableShape->fset(sp2s($2, 1), sp2s($4, 2), vp2v($6)); }
+        | SET_T str '.' str '=' value ';'       { pTableShape->fset(sp2s($2), sp2s($4), vp2v($6)); }
         | SET_T '(' strs ')' '.' str '=' value ';'{ pTableShape->fsets(slp2sl($3), sp2s($6), vp2v($8)); }
-        | FIELD_T str TITLE_T str ';'           { pTableShape->fset(sp2s($2, 1),_sTableShapeFieldTitle, sp2s($4, 2)); }
-        | FIELD_T str DESCR_T str ';'           { pTableShape->fset(sp2s($2, 1),_sTableShapeFieldDescr, sp2s($4, 2)); }
+        | FIELD_T str TITLE_T str ';'           { pTableShape->fset(sp2s($2),_sTableShapeFieldTitle, sp2s($4)); }
+        | FIELD_T str DESCR_T str ';'           { pTableShape->fset(sp2s($2),_sTableShapeFieldNote, sp2s($4)); }
         | FIELD_T str TITLE_T str str ';'       { pTableShape->fset(    *$2,    _sTableShapeFieldTitle, sp2s($4)   );
-                                                  pTableShape->fset(sp2s($2, 1),_sTableShapeFieldDescr, sp2s($5, 2)); }
+                                                  pTableShape->fset(sp2s($2),_sTableShapeFieldNote, sp2s($5)); }
         | FIELD_T strs VIEW_T RIGHTS_T str ';'  { pTableShape->fsets(slp2sl($2), _sViewRights, sp2s($5)); }
         | FIELD_T strs EDIT_T RIGHTS_T str ';'  { pTableShape->fsets(slp2sl($2), _sEditRights, sp2s($5)); }
         | FIELD_T strs PROPERTIES_T str ';'     { pTableShape->fsets(slp2sl($2), _sProperties, sp2s($4)); }
         | FIELD_T strs HIDE_T bool_on ';'       { pTableShape->fsets(slp2sl($2), _sIsHide, $4); }
         | FIELD_T strs DEFAULT_T VALUE_T str ';'{ pTableShape->fsets(slp2sl($2), _sDefaultValue, sp2s($5)); }
         | FIELD_T strs READ_T ONLY_T bool_on ';'{ pTableShape->fsets(slp2sl($2), _sIsReadOnly, $5); }
-        | FIELD_T strs ADD_T FILTER_T str str_z ';' { pTableShape->addFilter(slp2sl($2), sp2s($5,1), sp2s($5, 2)); }
+        | FIELD_T strs ADD_T FILTER_T str str_z ';' { pTableShape->addFilter(slp2sl($2), sp2s($5), sp2s($5)); }
         | FIELD_T strs ADD_T FILTERS_T strs ';'     { pTableShape->addFilter(slp2sl($2), *$5); delete $5; }
         | FIELD_T SEQUENCE_T int0 strs ';'      { pTableShape->setFieldSeq(slp2sl($4), $3); }
         | FIELD_T strs ORD_T int0 strs ';'      { pTableShape->setOrders(*$2, *$5, $4); delete $2; delete $5; }
@@ -1040,19 +1741,19 @@ appmenu : GUI_T str                             { pMenuApp = $2;}
 menus   : menu
         | menu menus
         ;
-menu    : str MENU_T str_z                      { newMenuMenu(sp2s($1), sp2s($3,2)); }
+menu    : str MENU_T str_z                      { newMenuMenu(sp2s($1), sp2s($3)); }
             miops  '{' mitems '}'               { delMenuItem(); }
         ;
 mitems  : mitem mitems
         |
         ;
-mitem   : str SHAPE_T str str_z                 { newMenuItem(sp2s($1), sp2s($3,2), sp2s($4, 3), ":shape=%1:"); }
+mitem   : str SHAPE_T str str_z                 { newMenuItem(sp2s($1), sp2s($3), sp2s($4), ":shape=%1:"); }
             miops ';'                           { delMenuItem(); }
-        | str EXEC_T str str_z                  { newMenuItem(sp2s($1), sp2s($3,2), sp2s($4, 3), ":exec=%1:"); }
+        | str EXEC_T str str_z                  { newMenuItem(sp2s($1), sp2s($3), sp2s($4), ":exec=%1:"); }
             miops ';'                           { delMenuItem(); }
-        | str OWN_T str str_z                   { newMenuItem(sp2s($1), sp2s($3,2), sp2s($4, 3), ":own=%1:"); }
+        | str OWN_T str str_z                   { newMenuItem(sp2s($1), sp2s($3), sp2s($4), ":own=%1:"); }
             miops ';'                           { delMenuItem(); }
-        | str MENU_T str_z                      { newMenuMenu(sp2s($1), sp2s($3,2)); }
+        | str MENU_T str_z                      { newMenuMenu(sp2s($1), sp2s($3)); }
             miops  '{' mitems '}'               { delMenuItem(); }
         ;
 miops   : miop miops
@@ -1221,7 +1922,7 @@ static int yylex(void)
         TOK(VLAN) TOK(SUBNET) TOK(PORTS) TOK(PORT) TOK(NAME) TOK(SHARED) TOK(SENSORS)
         TOK(PLACE) TOK(PATCH) TOK(HUB) TOK(SWITCH) TOK(NODE) TOK(HOST) TOK(SNMPDEV) TOK(ADDRESS)
         TOK(PARENT) TOK(IMAGE) TOK(FRAME) TOK(TEL) TOK(DESCR) TOK(MESSAGE) TOK(ALARM)
-        TOK(MAIN) TOK(PARAM) TOK(TEMPLATE) TOK(COPY) TOK(FROM) TOK(NULL) TOK(VIRTUAL)
+        TOK(PARAM) TOK(TEMPLATE) TOK(COPY) TOK(FROM) TOK(NULL) TOK(VIRTUAL)
         TOK(INCLUDE) TOK(PSEUDO) TOK(OFFS) TOK(IFTYPE) TOK(WRITE) TOK(RE)
         TOK(ADD) TOK(READ) TOK(UPDATE) TOK(ARPS) TOK(ARP) TOK(SERVER) TOK(FILE) TOK(BY)
         TOK(SNMP) TOK(SSH) TOK(COMMUNITY) TOK(DHCPD) TOK(LOCAL) TOK(PROC) TOK(CONFIG)
