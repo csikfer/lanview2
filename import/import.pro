@@ -31,8 +31,7 @@ CONFIG += debug
 TEMPLATE = app
 
 
-SOURCES += import.cpp import_parser.cpp \
-    import_parser.cpp
+SOURCES += import.cpp import_parser.cpp
 HEADERS += import.h import_parser.h
 
 INCLUDEPATH += ../lv2
