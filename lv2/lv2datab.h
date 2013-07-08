@@ -403,7 +403,7 @@ protected:
     /// Az név mező indexe, vagy NULL_IX (negatív), ha nincs, vagy nem ismert
     int                 _nameIndex;
     /// Az descr (title) mező indexe, vagy NULL_IX (negatív), ha nincs, vagy nem ismert
-    int                 _descrIndex;
+    int                 _noteIndex;
     /// A deleted mező indexe, vagy NULL_IX (negatív), ha nincs ilyen mező
     int                 _deletedIndex;
     /// A tábla tulajdonságát leíró adatrekord kerül ide beolvasásra
@@ -544,7 +544,7 @@ public:
     /// Az NAME mező indexével tér vissza, ha nincs név, vagy nem ismert az indexe, és _ex értéke true, akkor dob egy kizárást.
     int nameIndex(bool _ex = true) const           { if (_ex && !isIndex(_nameIndex)) EXCEPTION(EFOUND, _nameIndex, "Nothing name field."); return _nameIndex; }
     /// Az DESCR mező indexével tér vissza, ha nincs név, vagy nem ismert az indexe, és _ex értéke true, akkor dob egy kizárást.
-    int descrIndex(bool _ex = true) const          { if (_ex && !isIndex(_descrIndex)) EXCEPTION(EFOUND, _descrIndex, "Nothing descr field."); return _descrIndex; }
+    int noteIndex(bool _ex = true) const           { if (_ex && !isIndex(_noteIndex)) EXCEPTION(EFOUND, _noteIndex, "Nothing descr field."); return _noteIndex; }
     /// Az DELETED mező indexével tér vissza, ha nincs deleted mező, vagy nem ismert az indexe, és _ex értéke true, akkor dob egy kizárást.
     int deletedIndex(bool _ex = true) const        { if (_ex && !isIndex(_deletedIndex)) EXCEPTION(EFOUND, _deletedIndex, "Nothing descr field."); return _deletedIndex; }
     /// A mezők számával tér vissza
@@ -584,7 +584,7 @@ public:
     const QString& nameName(bool __ex = true) const { return columnName(nameIndex(__ex), __ex); }
     /// Az descr mező nevével tér vissza, ha van descr mező, egyébként dob egy kizárást
     /// @param __ex Ha értéke hamis és nincs descr mező, akkor nem dob kizárást, hanem egy üres stringgel tér vissza.
-    const QString& descrName(bool __ex = true) const { return columnName(descrIndex(__ex), __ex); }
+    const QString& descrName(bool __ex = true) const { return columnName(noteIndex(__ex), __ex); }
     /// A név alapján visszaadja a rekord ID-t, feltéve, ha van név és id.
     /// Hiba esetén, vagy ha nincs meg a a keresett ID, és __ex értéke true, akkor dob egy kizárást,
     /// Ha viszont __ex értéke false, és hiba van, vagy nincs ID akkor NULL_ID-vel tér vissza.
@@ -689,7 +689,7 @@ egy tisztán virtuális függvényen a descr() keresztül valósul meg, ami egy 
 cRecStaticDescr leíró objektumra. Ezen metódusok:schemaName(), tableName(),
 fullTableName(), fullTableNameQ(), columName(), columnNameQ(), fullColumName(), fullColumnNameQ(),
 isIndex(), toIndex(), chkIndex(), cols(), columnDescrs(), primaryKey(), uniques(), autoIncrement(), idIndex(),
-isName(), nameIndex(), nameName(), descrIndex(), deletedIndex(), isParent(), isUpdatable(), isUpdatable(),
+isName(), nameIndex(), nameName(), noteIndex(), deletedIndex(), isParent(), isUpdatable(), isUpdatable(),
 tableoid(), isNullable(), mask(), iTab()
 
 A cRecord objektum egy rekord adatait tartalmazhatja, a _fields adattagban, mely közvetlenül nem elérhető.
@@ -955,7 +955,7 @@ public:
     /// Az NAME mező indexével tér vissza, ha nincs név, vagy nem ismert az indexe, és _ex értéke true, akkor dob egy kizárást.
     int nameIndex(bool _ex = true) const            { return descr().nameIndex(_ex); }
     /// Az DESCR mező indexével tér vissza, ha nincs név, vagy nem ismert az indexe, és _ex értéke true, akkor dob egy kizárást.
-    int descrIndex(bool _ex = true) const           { return descr().descrIndex(_ex); }
+    int noteIndex(bool _ex = true) const           { return descr().noteIndex(_ex); }
     /// Az deleted mező indexével tér vissza, ha nincs deleted, vagy nem ismert az indexe, és _ex értéke true, akkor dob egy kizárást.
     int deletedIndex(bool _ex = true) const         { return descr().deletedIndex(_ex); }
     ///
@@ -1039,7 +1039,7 @@ public:
     /// Az név (name) mező értékével tér vissza, ha van, egyébként dob egy kizárást
     QString getName() const                         { return getName(nameIndex()); }
     /// Az descriptor/cím mező értékével tér vissza, ha van, egyébként dob egy kizárást
-    QString getDescr() const                        { return getName(descrIndex()); }
+    QString getDescr() const                        { return getName(noteIndex()); }
     /// Egy mező értékével tér vissza, feltételezve, hogy az egyvoid t logikai érték, ill. annak értékét bool típusúvá konvertálja.
     bool getBool(int __i) const                     { return get(__i).toBool(); }
     /// Egy mező értékével tér vissza, feltételezve, hogy az egy logikai érték, ill. annak értékét bool típusúvá konvertálja.

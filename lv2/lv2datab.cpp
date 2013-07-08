@@ -1351,7 +1351,7 @@ cRecStaticDescr::cRecStaticDescr(const QString &__t, const QString &__s)
     _tableType      = UNKNOWN_TABLE;
     _columnsNum     = 0;
     _tableOId       = _schemaOId = NULL_ID;
-    _idIndex        = _nameIndex = _descrIndex = _deletedIndex = NULL_IX;
+    _idIndex        = _nameIndex = _noteIndex = _deletedIndex = NULL_IX;
     _isUpdatable    = false;
     _set(__t,__s);
     addMap();
@@ -1514,13 +1514,13 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
             #define NAME_INDEX  1
             #define DESCR_INDEX 2
             static QString nameSufix  = "_name";
-            static QString descrSufix = "_descr";
+            static QString descrSufix = "_note";
             if (!baseName.isEmpty()) {
-                if (_nameIndex  < 0 && 0 == columnDescr.colName().compare(baseName + nameSufix))  _nameIndex  = i -1;
-                if (_descrIndex < 0 && 0 == columnDescr.colName().compare(baseName + descrSufix)) _descrIndex = i -1;
+                if (_nameIndex < 0 && 0 == columnDescr.colName().compare(baseName + nameSufix))  _nameIndex  = i -1;
+                if (_noteIndex < 0 && 0 == columnDescr.colName().compare(baseName + descrSufix)) _noteIndex = i -1;
             }
-            if (_nameIndex   < 0 && i == (NAME_INDEX  +1) && columnDescr.colName().endsWith(nameSufix))  _nameIndex  = NAME_INDEX;
-            if (_descrIndex  < 0 && i == (DESCR_INDEX +1) && columnDescr.colName().endsWith(descrSufix)) _descrIndex = DESCR_INDEX;
+            if (_nameIndex  < 0 && i == (NAME_INDEX  +1) && columnDescr.colName().endsWith(nameSufix))  _nameIndex  = NAME_INDEX;
+            if (_noteIndex  < 0 && i == (DESCR_INDEX +1) && columnDescr.colName().endsWith(descrSufix)) _noteIndex = DESCR_INDEX;
         }
         // A távoli kulcs mezők detektálása:
         if (columnDescr.eColType == cColStaticDescr::FT_INTEGER) {  // Feltépelezzük, hogy távoli kulcs csak egész szám (ID) lehet
@@ -1895,7 +1895,7 @@ QString cRecStaticDescr::toString() const
     }
     s += _sSpace   + "_idIndex = "    + QString::number(_idIndex);
     s += _sCommaSp + "_nameIndex = "  + QString::number(_nameIndex);
-    s += _sCommaSp + "_descrIndex = " + QString::number(_descrIndex);
+    s += _sCommaSp + "_descrIndex = " + QString::number(_noteIndex);
     // s.chop(1);  // utolsó felesleges vesszőt lecsípjük
     s += _sABraE;
     if (_parents.size()) {

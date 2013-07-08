@@ -8,8 +8,6 @@ QString      importFileNm;
 unsigned int importLineNo = 0;
 QTextStream* importInputStream = NULL;
 
-int yyparse();
-
 bool importSrcOpen(QFile& f)
 {
     if (f.exists()) return f.open(QIODevice::ReadOnly);
@@ -29,7 +27,7 @@ int importParseText(QString text)
     importInputStream = new QTextStream(&text);
     PDEB(INFO) << "Start parser ..." << endl;
     initImportParser();
-    int r = yyparse();
+    int r = importParse();
     downImportParser();
     PDEB(INFO) << "End parser." << endl;
     pDelete(importInputStream);
@@ -38,22 +36,23 @@ int importParseText(QString text)
 
 int importParseFile(const QString& fn)
 {
+    QFile in(fn);
     importFileNm = fn;
     if (fn == _sMinus || fn == _sStdin) {
         importFileNm = _sStdin;
         importInputStream = new QTextStream(stdin, QIODevice::ReadOnly);
     }
     else {
-        QFile in(fn);
         if (!importSrcOpen(in)) EXCEPTION(EFOPEN, -1, in.fileName());
         importInputStream = new QTextStream(&in);
         importFileNm = in.fileName();
     }
     PDEB(INFO) << "Start parser ..." << endl;
     initImportParser();
-    int r = yyparse();
+    int r = importParse();
     downImportParser();
     PDEB(INFO) << "End parser." << endl;
     pDelete(importInputStream);
     return r;
 }
+

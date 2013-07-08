@@ -496,8 +496,7 @@ bool getPortsBySnmp(cSnmpDevice& node, const QString &ma, bool __ex)
 bool getSysBySnmp(cSnmpDevice &node, const QString &ma)
 {
     bool r = true;
-    QString a = ma;
-    cSnmp   snmp(node.getName(_sAddress),node.getName(_sCommunityRd));
+    cSnmp   snmp(ma,node.getName(_sCommunityRd));
 
     if (!snmp.isOpened()) return false;
     QString n;

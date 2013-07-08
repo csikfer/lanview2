@@ -30,18 +30,23 @@ QMap<int, QString>  cError::mErrorStringMap;
 
 cError::cError()
     : mFuncName(), mSrcName(), mErrorSubMsg(), mThreadName()
-    , mSqlErrType(), mSqlErrDrText(), mSqlErrDbText(), mSqlQuery(), mSqlBounds()
+    , mSqlErrDrText(), mSqlErrDbText(), mSqlQuery(), mSqlBounds()
 {
     //PDEB(IMINOR, 9) << "Call " << __PRETTY_FUNCTION__ << std::endl;
     mSrcLine = mErrorSubCode = mErrorCode = -1;
     mErrorSysCode = errno;
+    mSqlErrNum    = -1;
+    mSqlErrType   = QSqlError::NoError;
+    mDataLine     = -1;
+    mDataPos      = -1;
     circulation();
 }
 
 cError::cError(const char * _mSrcName, int _mSrcLine, const char * _mFuncName, int _mErrorCode,
            int _mErrorSubCode, const QString& _mErrorSubMsg)
     : mFuncName(_mFuncName), mSrcName(_mSrcName), mErrorSubMsg(), mThreadName()
-    , mSqlErrType(), mSqlErrDrText(), mSqlErrDbText(), mSqlQuery(), mSqlBounds()
+    , mSqlErrDrText(), mSqlErrDbText(), mSqlQuery(), mSqlBounds()
+    , mDataMsg(), mDataName()
 {
     if (mDropAll) {
 //      delete this;
@@ -52,6 +57,10 @@ cError::cError(const char * _mSrcName, int _mSrcLine, const char * _mFuncName, i
     mErrorCode    = _mErrorCode;
     mErrorSubCode = _mErrorSubCode;
     mErrorSubMsg  = _mErrorSubMsg;
+    mSqlErrNum    = -1;
+    mSqlErrType   = QSqlError::NoError;
+    mDataLine     = -1;
+    mDataPos      = -1;
     circulation();
 }
 
@@ -103,14 +112,15 @@ QString cError::msg(void) const
 {
     QString r;
     if (!mThreadName.isEmpty()) r = _sCBraB + mThreadName + _sCBraE;
-    if (mErrorCode == eError::EOK)
+    if (mErrorCode == eError::EOK) {
         r += QString("%1[%2]:%3: %4 #%5")
             .arg(mSrcName)
             .arg(mSrcLine)
             .arg(mFuncName)
             .arg(errorMsg())
             .arg(mErrorCode);
-    else
+    }
+    else {
         r += QString("%1[%2]:%3: %4 #%5(\"%6\" #%7 / errno = %8, %9)")
             .arg(mSrcName)
             .arg(mSrcLine)
@@ -118,9 +128,30 @@ QString cError::msg(void) const
             .arg(errorMsg())
             .arg(mErrorCode)
             .arg(mErrorSubMsg)
-            .arg(mErrorSubCode)
-            .arg(mErrorSysCode)
-            .arg(errorSysMsg());
+            .arg(mErrorSubCode);
+        if (mErrorSysCode == 0) {
+            r += QString(" / errno = %1, %2)")
+                .arg(mErrorSysCode)
+                .arg(errorSysMsg());
+        }
+        if (mSqlErrType != QSqlError::NoError) {
+            r += "\nSQL ERROR ";
+            if ( mSqlErrNum != -1) r +=  QChar('#') + QString::number(mSqlErrNum);
+            r += " : ";
+            r += "; type:" + SqlErrorTypeToString(mSqlErrType) + "\n";
+            r += "driverText   : " + mSqlErrDrText + "\n";
+            r += "databaseText : " + mSqlErrDbText + "\n";
+            if (!mSqlQuery.isEmpty()) {
+                r += "SQL string   : " + mSqlQuery + "\n";
+                if (!mSqlBounds.isEmpty()) {
+                     r += "SQL bounds   : " + mSqlBounds + "\n";
+                }
+            }
+        }
+        if (mDataLine >= 0) {
+            r += QString("DATA : %1[%2] :\n").arg(mDataName).arg(mDataLine) + mDataMsg;
+        }
+    }
     return r;
 }
 
@@ -141,7 +172,7 @@ void cError::init()
 #include "errcodes.h"
 }
 
-QString SqlErrorTypeToString(enum QSqlError::ErrorType __et)
+QString SqlErrorTypeToString(int __et)
 {
     switch (__et) {
     case QSqlError::NoError:            return "No error occurred.";

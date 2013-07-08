@@ -712,16 +712,19 @@ public:
     virtual cPPort *addPorts(const QString& __np, int __noff, int __from, int __to, int __off);
 
     /// A megadott port paraméter beállítása, ha nem találja a portot, akkor dob egy kizárást.
+    /// Csak a ports adattagot módosítja!
     /// @param __name Port neve
     /// @param __fn Megváltoztatandó mező neve
     /// @param __v Az új érték(ek)
     cNPort *portSet(const QString& __name,  const QString& __fn, const QVariant& __v);
     /// A megadott port paraméter beállítása, ha nem találja a portot, akkor dob egy kizárást.
+    /// Csak a ports adattagot módosítja!
     /// @param __ix port_index (kezdő érték)
     /// @param __fn Megváltoztatandó mező neve
     /// @param __v Az új érték
     cNPort *portSet(int __ix, const QString& __fn, const QVariant& __v);
     /// A megadott port paraméter beállítása, kezdő indextől, ha nem találja a portot, akkor dob egy kizárást.
+    /// Csak a ports adattagot módosítja!
     /// @param __ix port_index (kezdő érték)
     /// @param __fn Megváltoztatandó mező neve (NEM POINTER!)
     /// @param __v Az új érték(ek)
@@ -827,6 +830,21 @@ public:
     cNPort *addPort(const QString& __t, const QString& __name, const QString &__note, int __ix) {
         return addPort(cIfType::ifType(__t), __name, __note, __ix);
     }
+
+    /// A megadott port nevének és opcionálisan a megjegyzés módosítása, ha nem találja a portot, akkor dob egy kizárást.
+    /// Csak a ports adattagot módosítja!
+    /// @param __ix port_index (kezdő érték)
+    /// @param __name Megváltoztatandó név
+    /// @param __note Az új megjegyzés
+    cNPort *portModName(int __ix, const QString& __name, const QString& __note = _sNul);
+    /// A megadott port típusának, nevének és opcionálisan a megjegyzés módosítása, ha nem találja a portot, akkor dob egy kizárást.
+    /// Csak a ports adattagot módosítja!
+    /// @param __ix port_index (kezdő érték)
+    /// @param __type Típus név
+    /// @param __name Megváltoztatandó név
+    /// @param __note Az új megjegyzés, opcionális, ha üres (nincs megadva) akkor változatlan
+    /// @param __new_ix Az új index, opcionális, ha negatív (nincs megadva) akkor változatlan
+    cNPort *portModType(int __ix, const QString& __type, const QString& __name, const QString& __note = _sNul, int __new_ix = NULL_IX);
 
     /// A port liasta bővítése egy sorozattal. Ha nem vesz fel egy portot sem, akkor dob egy kizárást.
     /// @param __t A port típusát definiáló objektum referenciája

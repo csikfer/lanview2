@@ -880,7 +880,7 @@ int ifStatus(const QString& _n, bool __ex)
     if (0 == _n.compare(_sNotPresent,     Qt::CaseInsensitive)) return cInterface::NOTPRESENT;
     if (0 == _n.compare(_sLowerLayerDown, Qt::CaseInsensitive)) return cInterface::LOWERLAYERDOWN;
     if (0 == _n.compare(_sInvert,         Qt::CaseInsensitive)) return cInterface::IA_INVERT;
-    if (0 == _n.compare(_sInvert,         Qt::CaseInsensitive)) return cInterface::IA_SHORT;
+    if (0 == _n.compare(_sShort,          Qt::CaseInsensitive)) return cInterface::IA_SHORT;
     if (0 == _n.compare(_sBroken,         Qt::CaseInsensitive)) return cInterface::IA_BROKEN;
     if (0 == _n.compare(_sError,          Qt::CaseInsensitive)) return cInterface::IA_ERROR;
     if (__ex) EXCEPTION(EDATA, -1, _n);
@@ -898,7 +898,7 @@ const QString& ifStatus(int _i, bool __ex)
     case cInterface::NOTPRESENT:        return _sNotPresent;
     case cInterface::LOWERLAYERDOWN:    return _sLowerLayerDown;
     case cInterface::IA_INVERT:         return _sInvert;
-    case cInterface::IA_SHORT:          return _sInvert;
+    case cInterface::IA_SHORT:          return _sShort;
     case cInterface::IA_BROKEN:         return _sBroken;
     case cInterface::IA_ERROR:          return _sError;
     default: if (__ex) EXCEPTION(EDATA, _i);
@@ -954,7 +954,7 @@ cPatch::cPatch(const QString& __name, const QString& __descr) : cRecord(), ports
 {
     _set(cPatch::descr());
     _set(_descr_cPatch().nameIndex(),  __name);
-    _set(_descr_cPatch().descrIndex(), __descr);
+    _set(_descr_cPatch().noteIndex(), __descr);
 }
 
 CRECDDCR(cPatch, _sPatchs)
@@ -1203,7 +1203,7 @@ cNode::cNode(const QString& __name, const QString& __descr) : cPatch(_no_init_)
 {
     _set(cNode::descr());
     _set(_descr_cNode().nameIndex(),  __name);
-    _set(_descr_cNode().descrIndex(), __descr);
+    _set(_descr_cNode().noteIndex(), __descr);
 }
 
 cNode& cNode::operator=(const cNode& __o)
@@ -1267,6 +1267,32 @@ cNPort *cNode::addPorts(const cIfType& __t, const QString& __np, int __noff, int
         p = addPort(__t, nameAndNumber(__np, i + __noff), _sNul, i + __off);
     }
     if (p == NULL) EXCEPTION(EDATA);
+    return p;
+}
+
+cNPort *cNode::portModName(int __ix, const QString& __name, const QString& __note)
+{
+    int i = ports.indexOf(cNPort::_ixPortIndex, __ix);
+    if (i < 0) EXCEPTION(ENOINDEX, __ix, QObject::trUtf8("Port index not found"));
+    cNPort *p = ports[i];
+    p->setName(__name);
+    if (!__note.isNull()) p->setName(_sPortNote, __note);
+    return p;
+}
+
+cNPort *cNode::portModType(int __ix, const QString& __type, const QString& __name, const QString& __note, int __new_ix)
+{
+    int i = ports.indexOf(cNPort::_ixPortIndex, __ix);
+    if (i < 0) EXCEPTION(ENOINDEX, __ix, QObject::trUtf8("Port index not found"));
+    cNPort *p = ports[i];
+    const cIfType& ot = cIfType::ifType(p->getId(_sIfTypeId));
+    const cIfType& nt = cIfType::ifType(__type);
+    if (nt.getName(_sIfTypeObjType) != ot.getName(_sIfTypeObjType))
+        EXCEPTION(EDATA, -1, trUtf8("Invalid port type: %1 to %2").arg(ot.getName().arg(__type)));
+    p->setId(_sIfTypeId, nt.getId());
+    p->setName(__name);
+    if (!__note.isEmpty()) p->setName(_sPortNote, __note);
+    if (__new_ix < 0)      p->setId(_sPortIndex, __new_ix);
     return p;
 }
 
@@ -1590,7 +1616,7 @@ cSnmpDevice::cSnmpDevice(const QString& __n, const QString &__d)
 {
     _set(cSnmpDevice::descr());
     _set(_descr_cSnmpDevice().nameIndex(),  __n);
-    _set(_descr_cSnmpDevice().descrIndex(), __d);
+    _set(_descr_cSnmpDevice().noteIndex(), __d);
 }
 
 // -- virtual

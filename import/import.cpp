@@ -57,6 +57,7 @@ int main (int argc, char * argv[])
         } catch(...) {
             mo.lastError = NEWCERROR(EUNKNOWN);
         }
+        if (importLastError != NULL) mo.lastError = importLastError;
         if (mo.lastError) {
             sqlRollback(*mo.pq);
             PDEB(DERROR) << "**** ERROR ****\n" << mo.lastError->msg() << endl;
@@ -104,7 +105,7 @@ void lv2import::dbNotif(QString __s)
         importParseText(imp.getName(_sImportText));
     }
     CATCHS(lastError)
-
+    if (importLastError != NULL) lastError = importLastError;
     if (lastError == NULL) {
         imp.setName(_sExecState, _sOk);
         imp.setName(_sResultMsg, _sOk);

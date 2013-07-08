@@ -11,16 +11,33 @@ static void insertCode(const QString& __txt);
 static QString  macbuff;
 static QString lastLine;
 
-int yyerror(const char * em)
+static int yyparse();
+cError *importLastError = NULL;
+
+int importParse()
 {
-    QString msg = QString("Parse error %1 in %2 file %3 line; ").arg(QString(em)).arg(importFileNm).arg(importLineNo)
-        + "lastLine: " + quotedString(lastLine) + "; macbuff : " + quotedString(macbuff);
-    EXCEPTION(EPARSE, -1, msg);
+    int i = -1;
+    try {
+        i = yyparse();
+    }
+    CATCHS(importLastError);
+    if (importLastError != NULL) {
+        importLastError->mDataLine = importLineNo;
+        importLastError->mDataName = importFileNm;
+        importLastError->mDataMsg  = "lastLine : " + quotedString(lastLine) + "\n macbuff : " + quotedString(macbuff);
+    }
+    return i;
+}
+
+static int yyerror(QString em)
+{
+    EXCEPTION(EPARSE, -1, em);
     return -1;
 }
-int yyerror(QString em)
+
+static int yyerror(const char * em)
 {
-    return yyerror(em.toStdString().c_str());
+    return yyerror(QString(em));
 }
 
 class cArpServerDef {
@@ -65,8 +82,8 @@ enum eShare {
     ES_C,   ES_D
 };
 
-QStringList     allNotifSwitchs;
-QSqlQuery      *piq = NULL;
+static QStringList     allNotifSwitchs;
+static QSqlQuery      *piq = NULL;
 void initImportParser()
 {
     if (pArpServerDefs == NULL)
@@ -222,30 +239,30 @@ enum {
 
 unsigned long yyflags = 0;
 
-cTemplateMapMap   templates;
-qlonglong    actVlanId = -1;
-QString      actVlanName;
-QString      actVlanNote;
-enum eSubNetType netType = NT_INVALID; // firstSubNet = ;
-cPatch *     pPatch = NULL;
-cImage *     pImage = NULL;
-cUser *      pUser = NULL;
-cGroup *     pGroup = NULL;
-cNode *      pNode  = NULL;
-cLink      * pLink = NULL;
-cService   * pService = NULL;
-cHostService*pHostService = NULL;
-cTableShape *pTableShape = NULL;
-qlonglong           alertServiceId = NULL_ID;
-QMap<QString, qlonglong>    ivars;
-QMap<QString, QString>      svars;
+static cTemplateMapMap   templates;
+static qlonglong    actVlanId = -1;
+static QString      actVlanName;
+static QString      actVlanNote;
+static enum eSubNetType netType = NT_INVALID; // firstSubNet = ;
+static cPatch *     pPatch = NULL;
+static cImage *     pImage = NULL;
+static cUser *      pUser = NULL;
+static cGroup *     pGroup = NULL;
+static cNode *      pNode  = NULL;
+static cLink      * pLink = NULL;
+static cService   * pService = NULL;
+static cHostService*pHostService = NULL;
+static cTableShape *pTableShape = NULL;
+static qlonglong           alertServiceId = NULL_ID;
+static QMap<QString, qlonglong>    ivars;
+static QMap<QString, QString>      svars;
 // QMap<QString, duble>        rvars;
-QString       sPortIx = "PI";   // Port index
-QString       sPortNm = "PN";   // Port név
+static QString       sPortIx = "PI";   // Port index
+static QString       sPortNm = "PN";   // Port név
 
 QStack<c_yyFile> c_yyFile::stack;
 
-qlonglong       globalPlaceId = NULL_ID; // ID of none
+static qlonglong       globalPlaceId = NULL_ID; // ID of none
 
 /* ---------------------------------------------------------------------------------------------------- */
 
@@ -330,7 +347,7 @@ void cArpServerDef::updateArpTable(QSqlQuery& q) const
 }
 
 /* --------------------------------------------------------------------------------------------------- */
-qlonglong newAttachedNode(const QString& __n, const QString& __d)
+static qlonglong newAttachedNode(const QString& __n, const QString& __d)
 {
     cNode   node;
     node.asmbAttached(__n, __d, gPlace());
@@ -338,7 +355,7 @@ qlonglong newAttachedNode(const QString& __n, const QString& __d)
     return node.ports.first()->getId();
 }
 
-void newAttachedNodes(const QString& __np, const QString& __dp, int __from, int __to)
+static void newAttachedNodes(const QString& __np, const QString& __dp, int __from, int __to)
 {
     QString name, descr;
     for (int i = __from; i <= __to; i++) {
@@ -348,7 +365,7 @@ void newAttachedNodes(const QString& __np, const QString& __dp, int __from, int 
     }
 }
 
-qlonglong newWorkstation(const QString& __n, const cMac& __mac, const QString& __d)
+static qlonglong newWorkstation(const QString& __n, const cMac& __mac, const QString& __d)
 {
     cNode host;
     host.asmbWorkstation(qq(), __n, __mac, __d, gPlace());
@@ -605,7 +622,7 @@ static QString e2 = "There is insufficient data.";
 ///           ha variant egy int, akkor az annak a Portnak az indexe, melynek ugyanez a MAC cíne.
 /// @param d Port leírás/megjegyzés szövegre mutató pointer, üres string esetén az NULL lessz.
 /// @return Az új port objektum pointere
-cNPort *hostAddPort(int ix, QString *pt, QString *pn, QStringPair *ip, QVariant *mac, QString *d)
+static cNPort *hostAddPort(int ix, QString *pt, QString *pn, QStringPair *ip, QVariant *mac, QString *d)
 {
     if (pNode == NULL) EXCEPTION(EPROGFAIL);
     cNPort& p = pNode->asmbHostPort(qq(), ix, *pt, *pn, ip, mac, *d);
@@ -625,7 +642,7 @@ static cNPort *portAddAddress(cNPort *_p, QStringPair *ip, QString *d)
     return _p;
 }
 
-cNPort *portAddAddress(QString *pn, QStringPair *ip, QString *d)
+static cNPort *portAddAddress(QString *pn, QStringPair *ip, QString *d)
 {
     cNPort *p = pNode->getPort(*pn);
     delete pn;
@@ -633,13 +650,13 @@ cNPort *portAddAddress(QString *pn, QStringPair *ip, QString *d)
 
 }
 
-cNPort *portAddAddress(int ix, QStringPair *ip, QString *d)
+static cNPort *portAddAddress(int ix, QStringPair *ip, QString *d)
 {
     cNPort *p = pNode->getPort(ix);
     return portAddAddress(p, ip, d);
 }
 
-void setSuperior(QStringPair *pshs, QStringPairList * pshl)
+static void setSuperior(QStringPair *pshs, QStringPairList * pshl)
 {
     QSqlQuery q = getQuery();
     QSqlQuery q2 = getQuery();
@@ -675,7 +692,7 @@ void setSuperior(QStringPair *pshs, QStringPairList * pshl)
 }
 
 
-cTableShape * newTableShape(QString *pTbl, QString * pMod, const QString *pDescr)
+static cTableShape * newTableShape(QString *pTbl, QString * pMod, const QString *pDescr)
 {
     cTableShape *p = new cTableShape();
     p->setName(*pMod);
@@ -688,16 +705,16 @@ cTableShape * newTableShape(QString *pTbl, QString * pMod, const QString *pDescr
 }
 
 
-QString *pMenuApp = NULL;
-tRecordList<cMenuItem>   menuItems;
+static QString *pMenuApp = NULL;
+static tRecordList<cMenuItem>   menuItems;
 
-cMenuItem& actMenuItem()
+static cMenuItem& actMenuItem()
 {
     if (menuItems.isEmpty()) EXCEPTION(EPROGFAIL);
     return *menuItems.last();
 }
 
-void newMenuMenu(const QString& _n, const QString& _t)
+static void newMenuMenu(const QString& _n, const QString& _t)
 {
     _DBGFN() << VDEB(_n) << VDEB(_t) << endl;
     if (pMenuApp == NULL) EXCEPTION(EPROGFAIL);
@@ -714,7 +731,7 @@ void newMenuMenu(const QString& _n, const QString& _t)
     menuItems << p;
 }
 
-void delMenuItem()
+static void delMenuItem()
 {
     cMenuItem *p = menuItems.pop_back();
     delete p;
@@ -724,7 +741,7 @@ void delMenuItem()
 /// @param _sn paraméter
 /// @param _t Megjelenített név
 /// @param typ Minta string a properties mezőhöz (paraméter _n
-void newMenuItem(const QString& _n, const QString& _sn, const QString& _t, const char * typ)
+static void newMenuItem(const QString& _n, const QString& _sn, const QString& _t, const char * typ)
 {
     if (pMenuApp == NULL) EXCEPTION(EPROGFAIL);
     cMenuItem *p = new cMenuItem;
@@ -737,13 +754,13 @@ void newMenuItem(const QString& _n, const QString& _sn, const QString& _t, const
     menuItems << p;
 }
 
-void setToolTip(const QString& _tt)
+static void setToolTip(const QString& _tt)
 {
     actMenuItem().setName(_sToolTip, _tt);
     actMenuItem().update(qq(), false, actMenuItem().mask(_sToolTip));
 }
 
-void setWhatsThis(const QString& _wt)
+static void setWhatsThis(const QString& _wt)
 {
     actMenuItem().setName(_sWhatsThis, _wt);
     actMenuItem().update(qq(), false, actMenuItem().mask(_sWhatsThis));
@@ -756,7 +773,7 @@ static void insertCode(const QString& __txt)
 }
 
 
-QChar yyget()
+static QChar yyget()
 {
     QChar c;
 
@@ -782,7 +799,7 @@ QChar yyget()
     return c;
 }
 
-inline void yyunget(const QChar& _c) {
+static inline void yyunget(const QChar& _c) {
     macbuff.insert(0,_c);
 }
 
@@ -962,7 +979,7 @@ void newNode(QStringList * t, QString *name, QString *d)
 /// @param mac Vagy a MAC stringgé konvertálva, vagy az ARP string, ha az IP címből kell meghatározni.
 /// @param d Port secriptorra/megjegyzés  mutató pointer, üres string esetln az NULL lessz.
 /// @return Az új objektum pointere
-void newHost(QStringList * t, QString *name, QStringPair *ip, QString *mac, QString *d)
+static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *mac, QString *d)
 {
     _DBGFN() << "@(" << *name << _sComma << ip->first << "&" << ip->second << _sComma  << *mac << _sComma << *d << ")" << endl;
     if (t->contains(_sSnmp, Qt::CaseInsensitive)) pNode = new cSnmpDevice();
@@ -1461,6 +1478,8 @@ node_p  : DESCR_T str ';'                       { pNode->setName(sp2s($2)); }
                                                 { setLastPort(pNode->addPorts(sp2s($3), sp2s($10), $9, $6, $8, $4)); }
         | ADD_T PORT_T ix_z str str str_z ';'   { setLastPort(pNode->addPort(sp2s($4), sp2s($5), sp2s($6), $3)); }
         | PORT_T pnm DESCR_T str ';'            { setLastPort(pNode->portSet(sp2s($2), _sPortNote, sp2s($4))); }
+        | PORT_T pix TYPE_T ix_z str str str_z ';'   { setLastPort(pNode->portModType($2, sp2s($5), sp2s($6), sp2s($7))); }
+        | PORT_T pix NAME_T str str_z ';'       { setLastPort(pNode->portModName($2, sp2s($4), sp2s($5))); }
         | PORT_T pix DESCR_T strs ';'           { setLastPort(pNode->portSet($2, _sPortNote, slp2vl($4))); }
         | PORT_T pnm SET_T str '=' value ';'    { setLastPort(pNode->portSet(sp2s($2), sp2s($4), vp2v($6))); }
         | PORT_T pix SET_T str '=' vals ';'     { setLastPort(pNode->portSet($2, sp2s($4), vlp2vl($6)));; }
@@ -1764,16 +1783,16 @@ miop    : TOOL_T TIP_T str ';'                  { setToolTip(sp2s($3)); }
         ;
 %%
 
-inline bool isXDigit(QChar __c) {
+static inline bool isXDigit(QChar __c) {
     int cc;
     if (__c.isDigit())  return true;
     if (!__c.isLetter()) return false;
     cc = __c.toLatin1();
     return (cc >= 'A' && cc <= 'F') || (cc >= 'a' && cc <= 'f');
 }
-inline int digit2num(QChar c) { return c.toLatin1() - '0'; }
-inline int xdigit2num(QChar c) { return c.isDigit() ? digit2num(c) : (c.toUpper().toLatin1() - 'A' + 10); }
-inline bool isOctal(QChar __c) {
+static inline int digit2num(QChar c) { return c.toLatin1() - '0'; }
+static inline int xdigit2num(QChar c) { return c.isDigit() ? digit2num(c) : (c.toUpper().toLatin1() - 'A' + 10); }
+static inline bool isOctal(QChar __c) {
     if (!__c.isDigit()) return false;
     int c = __c.toLatin1();
     return c < '8';

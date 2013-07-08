@@ -246,11 +246,16 @@ Az adattagok inicializálása után hívja a circulation() metódust
     int     mErrorSysCode;          ///< Sytem error code (errno)
     QString mErrorSubMsg;           ///< Error sub message
     QString mThreadName;            ///< Thread name if available
-    QString mSqlErrType;            ///< SQL hiba esetén a hiba típusa
+    int     mSqlErrNum;
+    int     mSqlErrType;            ///< SQL hiba esetén a hiba típusa
     QString mSqlErrDrText;          ///< SQL hiba esetén a driver hiba szöveg
     QString mSqlErrDbText;          ///< SQL hiba esetén a adatbázis hiba szöveg
     QString mSqlQuery;              ///< SQL hiba esetén a query string
     QString mSqlBounds;             ///< SQL Query adatok
+    int     mDataLine;
+    int     mDataPos;
+    QString mDataMsg;              ///< Source file name
+    QString mDataName;              ///< Source file name
 
     static cError  *pLastError;     ///< Az utolsó hiba objektum pointere, vagy NULL
     cError         *pPrevError;     ///< Az előző hiba objektum pointere, vagy NULL
@@ -263,7 +268,7 @@ protected:
 };
 
 /// Egy SQL hiba típus konstanst stringgé kovertál.
-EXT_ QString SqlErrorTypeToString(enum QSqlError::ErrorType __et);
+EXT_ QString SqlErrorTypeToString(int __et);
 ///
 static inline QString _sql_err_bound(QSqlQuery& q)
 {
@@ -292,7 +297,8 @@ static inline void _sql_err_deb_(const QSqlError& le, const char * _fi, int _li,
 
 static inline void _sql_err_ex(cError *pe, const QSqlError& le, const QString& sql = QString(), const QString& bound = QString())
 {
-    pe->mSqlErrType   = SqlErrorTypeToString(le.type()); \
+    pe->mSqlErrNum    = le.number();
+    pe->mSqlErrType   = le.type();
     pe->mSqlErrDrText = le.driverText();
     pe->mSqlErrDbText = le.databaseText();
     pe->mSqlQuery     = sql;

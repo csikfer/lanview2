@@ -7,9 +7,11 @@
 extern QString importFileNm;
 extern unsigned int importLineNo;          // Sor Számláló
 extern QTextStream* importInputStream;     // Source stream
+extern cError *importLastError;
 
 extern int importParseText(QString text);
 extern int importParseFile(const QString& fn);
+extern int importParse();
 
 extern bool importSrcOpen(QFile& f);
 extern void initImportParser();
