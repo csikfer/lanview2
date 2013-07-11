@@ -24,4 +24,13 @@ template <class T, class V> static inline bool fromEdit(cRecord& __o, const T& _
 typedef QList<QHBoxLayout *> hBoxLayoutList;
 typedef QList<QLabel *>     labelList;
 
+static inline QWidget *newFrame(int _st, QWidget * p = NULL)
+{
+    QFrame *pFrame = new QFrame(p);
+    pFrame->setFrameStyle(_st);
+    return pFrame;
+}
+static inline QWidget *newHLine(QWidget * p = NULL) { return newFrame(QFrame::HLine, p); }
+static inline QWidget *newVLine(QWidget * p = NULL) { return newFrame(QFrame::VLine, p); }
+
 #endif // LV2G_H

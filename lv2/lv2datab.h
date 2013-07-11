@@ -988,6 +988,8 @@ public:
     bool isEmpty_() const                           { return isNull() || _stat == ES_EMPTY; }
     /// Ha a _stat adattag szerint módosítva lett az objektum, akkor true-val tér vissza.
     bool isModify_() const                          { return (_stat & ES_MODIFY) != 0; }
+    /// Ha a _stat adattag szerint hiba történt
+    bool isDefective() const                        { return (_stat & ES_DEFECTIVE) != 0; }
     /// Létrehozza az összes mezőt sorrendben null tartalommal. Előtte törli az objektumot
     /// Tisztán virtuális metódust hív, konstruktorból nem hívható.
     cRecord& set();

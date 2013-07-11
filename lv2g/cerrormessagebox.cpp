@@ -24,6 +24,7 @@ static inline QWidget *row(const QString& val, Qt::AlignmentFlag a = Qt::AlignLe
 #define NR(l, v)    if (v > 1) IR(l,v)
 #define PR(l, v)    if (v != -1) IR(l,v)
 #define ZR(l, v)    if (!v.isEmpty()) _R(l,v)
+#define LIN         pForm->addWidget(newHLine(this))
 
 cErrorMessageBox::cErrorMessageBox(cError *_pe, QWidget *parent) :
     QDialog(parent)
@@ -47,19 +48,30 @@ cErrorMessageBox::cErrorMessageBox(cError *_pe, QWidget *parent) :
     PR("Hiba alkód, vagy paraméter",            _pe->mErrorSubCode);
     ZR("Hiba altípus, vagy paraméter",          _pe->mErrorSubMsg);
     if (_pe->mErrorSysCode != 0) {
+        LIN;
         IR("Az utolsó rendszer hiba kód (errno)",   _pe->mErrorSysCode);
         _R("Az utoló rendszer hiba szöveg",         _pe->errorSysMsg());
     }
+    LIN;
     _R("A hibát dobó szál",                     _pe->mThreadName);
     _R("A hibát dobó föggvény",                 _pe->mFuncName);
     _R("A hibát dobó kód forrás neve",          _pe->mSrcName);
     IR("A hibát dobó kód forrás sor száma",     _pe->mSrcLine);
     NR("Hiba objektum számláló",                _pe->mErrCount);
-    ZR("SQL hiba típus",                        _pe->mSqlErrType);
-    ZR("SQL meghajtó üzenet",                   _pe->mSqlErrDrText);
-    ZR("SQL adatbázis üzenet",                  _pe->mSqlErrDbText);
-    ZR("SQL lekérdezés",                        _pe->mSqlQuery);
-    ZR("SQL adatok",                            _pe->mSqlBounds.split(QChar(';')).join(QChar('\n')));
+    if (_pe->mSqlErrType != QSqlError::NoError) {
+        LIN;
+        _R("SQL hiba típus",                        SqlErrorTypeToString(_pe->mSqlErrType));
+        ZR("SQL meghajtó üzenet",                   _pe->mSqlErrDrText);
+        ZR("SQL adatbázis üzenet",                  _pe->mSqlErrDbText);
+        ZR("SQL lekérdezés",                        _pe->mSqlQuery);
+        ZR("SQL adatok",                            _pe->mSqlBounds.split(QChar(';')).join(QChar('\n')));
+    }
+    if (_pe->mDataLine >= 0) {
+        LIN;
+        _R("Adat név", _pe->mDataName);
+        IR("Adat sor", _pe->mDataLine);
+        _R("Adat megjegyzés", _pe->mDataMsg);
+    }
 }
 
 void cErrorMessageBox::closeIt()

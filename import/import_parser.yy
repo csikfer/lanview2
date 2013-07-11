@@ -52,26 +52,26 @@ public:
     /// Community név
     QString         community;
     ///
-    static bool firstTime;
-    cArpServerDef() : server(), file(), community() { type = UNKNOWN; }
+    bool firstTime;
+    cArpServerDef() : server(), file(), community() { type = UNKNOWN; firstTime = true;}
     cArpServerDef(const cArpServerDef& __o)
-        : server(__o.server), file(__o.file), community(__o.community) { type = __o.type; }
+        : server(__o.server), file(__o.file), community(__o.community) { type = __o.type; firstTime = __o.firstTime; }
     cArpServerDef(enum eType __t, const QString& __s, const QString& __f = QString(), const QString& __c = QString())
-        : server(__s), file(__f), community(__c) { type = __t; }
-    void updateArpTable(QSqlQuery &q) const;
+        : server(__s), file(__f), community(__c) { type = __t; firstTime = true; }
+    void updateArpTable(QSqlQuery &q);
 };
 
 class cArpServerDefs : public QVector<cArpServerDef> {
 public:
     cArpServerDefs() : QVector<cArpServerDef>() { ; }
-    void append(QSqlQuery &q, const cArpServerDef& __asd) {
+    void append(QSqlQuery &q, cArpServerDef __asd) {
         __asd.updateArpTable(q);
         *(cArpServerDefs *)this << __asd;
     }
 
     void updateArpTable(QSqlQuery &q) {
-        ConstIterator i, n = constEnd();
-        for (i = constBegin(); i != n; ++i) { i->updateArpTable(q); }
+        iterator i, n = end();
+        for (i = begin(); i != n; ++i) { i->updateArpTable(q); }
     }
 };
 
@@ -324,8 +324,7 @@ void c_yyFile::eoi()
 
 
 /* ************************************************************************************************ */
-bool cArpServerDef::firstTime = true;
-void cArpServerDef::updateArpTable(QSqlQuery& q) const
+void cArpServerDef::updateArpTable(QSqlQuery& q)
 {
     DBGFN();
     cArpTable at;
@@ -1035,7 +1034,7 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
 
 %token      MACRO_T FOR_T DO_T TO_T SET_T CLEAR_T BEGIN_T END_T ROLLBACK_T
 %token      VLAN_T SUBNET_T PORTS_T PORT_T NAME_T SHARED_T SENSORS_T
-%token      PLACE_T PATCH_T HUB_T SWITCH_T NODE_T HOST_T SNMPDEV_T ADDRESS_T
+%token      PLACE_T PATCH_T HUB_T SWITCH_T NODE_T HOST_T ADDRESS_T
 %token      PARENT_T IMAGE_T FRAME_T TEL_T DESCR_T MESSAGE_T ALARM_T
 %token      PARAM_T TEMPLATE_T COPY_T FROM_T NULL_T VIRTUAL_T
 %token      INCLUDE_T PSEUDO_T OFFS_T IFTYPE_T WRITE_T RE_T
@@ -1047,7 +1046,7 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
 %token      FLAPPING_T CHANGE_T TRUE_T FALSE_T ON_T OFF_T YES_T NO_T
 %token      DELEGATE_T STATE_T SUPERIOR_T TIME_T PERIODS_T LINE_T GROUP_T
 %token      USER_T DAY_T OF_T PERIOD_T PROTOCOL_T ALERT_T INTEGER_T FLOAT_T
-%token      DELETE_T ONLY_T PATTERN_T STRING_T SAVE_T TYPE_T INDEX_T STEP_T
+%token      DELETE_T ONLY_T PATTERN_T STRING_T SAVE_T TYPE_T STEP_T
 %token      MASK_T LIST_T VLANS_T ID_T DYNAMIC_T FIXIP_T PRIVATE_T PING_T
 %token      NOTIF_T ALL_T RIGHTS_T REMOVE_T SUB_T PROPERTIES_T MAC_T EXTERNAL_T
 %token      LINK_T LLDP_T SCAN_T TABLE_T FIELD_T SHAPE_T TITLE_T REFINE_T
@@ -1062,7 +1061,7 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
 %token <mac> MAC_V 
 %token <ip> IPV4_V IPV6_V
 %type  <i>  int int_ iexpr lnktype shar ipprotp ipprot offs ix_z vlan_t set_t
-%type  <i>  vlan_id place_id iptype pix pix_ iptype_a step timep image_id tmod int0
+%type  <i>  vlan_id place_id iptype pix pix_z pix_ iptype_a step timep image_id tmod int0
 %type  <il> list_i pixs // ints
 %type  <b>  bool bool_on pattern
 %type  <r>  /* real */ num fexpr
@@ -1419,11 +1418,23 @@ patch_p : DESCR_T str ';'                       { pPatch->setName(_sNodeNote, sp
         | for_m
         | eqs
         ;
-offs    : OFFS_T int                            { $$ = $2; }
-        |                                       { $$ = 0; }
+offs    : OFFS_T int                    { $$ = $2; }
+        |                               { $$ = 0; }
         ;
-pix     : int                                   { $$ = $1; }
-        | '#' '@'                               { $$ = vint(sPortIx); }
+pix     : INTEGER_V                     { $$ = $1; }
+        | '#' NAME_V                    { $$ = vint(*$2); delete $2; }
+        | '#' '+' NAME_V                { $$ = (vint(*$3) += 1); delete $3; }
+        | '#' '[' iexpr ']'             { $$ = $3; }
+        | '#' '@'                       { $$ = vint(sPortIx); }
+        | '#' '+' '@'                   { $$ = (vint(sPortIx) += 1); }
+        ;
+pix_z   : INTEGER_V                     { $$ = $1; }
+        | '#' NAME_V                    { $$ = vint(*$2); delete $2; }
+        | '#' '+' NAME_V                { $$ = (vint(*$3) += 1); delete $3; }
+        | '#' '[' iexpr ']'             { $$ = $3; }
+        | '#' '@'                       { $$ = vint(sPortIx); }
+        | '#' '+' '@'                   { $$ = (vint(sPortIx) += 1); }
+        |                               { $$ = NULL_IX; }
         ;
 pnm     : str                                   { $$ = $1; }
         | '&' '@'                               { $$ = new QString(vstr(sPortNm)); }
@@ -1476,7 +1487,7 @@ node_p  : DESCR_T str ';'                       { pNode->setName(sp2s($2)); }
         | SET_T str '=' value ';'               { pNode->set(sp2s($2), vp2v($4)); }
         | ADD_T PORTS_T str offs FROM_T int TO_T int offs str ';'
                                                 { setLastPort(pNode->addPorts(sp2s($3), sp2s($10), $9, $6, $8, $4)); }
-        | ADD_T PORT_T ix_z str str str_z ';'   { setLastPort(pNode->addPort(sp2s($4), sp2s($5), sp2s($6), $3)); }
+        | ADD_T PORT_T pix_z str str str_z ';'    { setLastPort(pNode->addPort(sp2s($4), sp2s($5), sp2s($6), $3)); }
         | PORT_T pnm DESCR_T str ';'            { setLastPort(pNode->portSet(sp2s($2), _sPortNote, sp2s($4))); }
         | PORT_T pix TYPE_T ix_z str str str_z ';'   { setLastPort(pNode->portModType($2, sp2s($5), sp2s($6), sp2s($7))); }
         | PORT_T pix NAME_T str str_z ';'       { setLastPort(pNode->portModName($2, sp2s($4), sp2s($5))); }
@@ -1487,7 +1498,7 @@ node_p  : DESCR_T str ';'                       { pNode->setName(sp2s($2)); }
         | PORT_T pix PARAM_T str '=' strs ';'   { setLastPort(pNode->portSetParam($2, sp2s($4), slp2sl($6))); }
         /* host_p: a Shift reduce conflict-ok miatt az összes port definíciós sor egy szabályban szerepel, a host() függvény szűr */
         | ALARM_T PLACE_T GROUP_T str ';'       { pNode->setId(_sAlarmPlaceGroupId, cPlaceGroup().getIdByName(qq(), sp2s($4))); }
-        | ADD_T PORT_T ix_z str str ip_qq mac_qq str_z ';'  { setLastPort(hostAddPort((int)$3, $4,$5,$6,$7,$8)); }
+        | ADD_T PORT_T pix_z str str ip_qq mac_qq str_z ';' { setLastPort(hostAddPort((int)$3, $4,$5,$6,$7,$8)); }
         | PORT_T pnm ADD_T ADDRESS_T ip_a str_z ';'         { setLastPort(portAddAddress($2, $5, $6)); }
         | PORT_T pix ADD_T ADDRESS_T ip_a str_z ';'         { setLastPort(portAddAddress((int)$2, $5, $6)); }
         | ADD_T SENSORS_T offs FROM_T int TO_T int offs str ip ';'  /* index offset ... név offset */
@@ -1511,12 +1522,12 @@ ip_q    : ips iptype                            { $$ = new QStringPair(sp2s($1),
         | LOOKUP_T                              { $$ = new QStringPair(_sLOOKUP,  _sFixIp); }
         | ARP_T                                 { $$ = new QStringPair(_sARP,     _sFixIp); }
         ;
-ip_qq   : ips iptype                            { $$ = new QStringPair(sp2s($1),  addrType($2)); delete $1; }
+ip_qq   : ips iptype                            { $$ = new QStringPair(sp2s($1),  addrType($2)); }
         | DYNAMIC_T                             { $$ = new QStringPair(QString(), _sDynamic); }
         | NULL_T                                { $$ = NULL; }
         | ARP_T                                 { $$ = new QStringPair(_sARP,     _sFixIp); }
         ;
-ip_a    : ips iptype_a                          { $$ = new QStringPair(sp2s($1),  addrType($2)); delete $1; }
+ip_a    : ips iptype_a                          { $$ = new QStringPair(sp2s($1),  addrType($2)); }
         ;
 mac     : MAC_V                                 { $$ = $1; }
         | MAC_T '(' sexpr ')'                   { $$ = new cMac(sp2s($3)); if (!$$->isValid()) yyerror("Invalid MAC."); }
@@ -1939,7 +1950,7 @@ static int yylex(void)
     } sToken[] = {
         TOK(MACRO) TOK(FOR) TOK(DO) TOK(TO) TOK(SET) TOK(CLEAR) TOK(BEGIN) TOK(END) TOK(ROLLBACK)
         TOK(VLAN) TOK(SUBNET) TOK(PORTS) TOK(PORT) TOK(NAME) TOK(SHARED) TOK(SENSORS)
-        TOK(PLACE) TOK(PATCH) TOK(HUB) TOK(SWITCH) TOK(NODE) TOK(HOST) TOK(SNMPDEV) TOK(ADDRESS)
+        TOK(PLACE) TOK(PATCH) TOK(HUB) TOK(SWITCH) TOK(NODE) TOK(HOST) TOK(ADDRESS)
         TOK(PARENT) TOK(IMAGE) TOK(FRAME) TOK(TEL) TOK(DESCR) TOK(MESSAGE) TOK(ALARM)
         TOK(PARAM) TOK(TEMPLATE) TOK(COPY) TOK(FROM) TOK(NULL) TOK(VIRTUAL)
         TOK(INCLUDE) TOK(PSEUDO) TOK(OFFS) TOK(IFTYPE) TOK(WRITE) TOK(RE)
@@ -1951,7 +1962,7 @@ static int yylex(void)
         TOK(FLAPPING) TOK(CHANGE) { "TRUE", TRUE_T },{ "FALSE", FALSE_T }, TOK(ON) TOK(OFF) TOK(YES) TOK(NO)
         TOK(DELEGATE) TOK(STATE) TOK(SUPERIOR) TOK(TIME) TOK(PERIODS) TOK(LINE) TOK(GROUP)
         TOK(USER) TOK(DAY) TOK(OF) TOK(PERIOD) TOK(PROTOCOL) TOK(ALERT) TOK(INTEGER) TOK(FLOAT)
-        TOK(DELETE) TOK(ONLY) TOK(PATTERN) TOK(STRING) TOK(SAVE) TOK(TYPE) TOK(INDEX) TOK(STEP)
+        TOK(DELETE) TOK(ONLY) TOK(PATTERN) TOK(STRING) TOK(SAVE) TOK(TYPE) TOK(STEP)
         TOK(MASK) TOK(LIST) TOK(VLANS) TOK(ID) TOK(DYNAMIC) TOK(FIXIP) TOK(PRIVATE) TOK(PING)
         TOK(NOTIF) TOK(ALL) TOK(RIGHTS) TOK(REMOVE) TOK(SUB) TOK(PROPERTIES) TOK(MAC) TOK(EXTERNAL)
         TOK(LINK) TOK(LLDP) TOK(SCAN) TOK(TABLE) TOK(FIELD) TOK(SHAPE) TOK(TITLE) TOK(REFINE)

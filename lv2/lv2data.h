@@ -902,8 +902,10 @@ public:
     ///
     cInterface *portSetVlans(const QString& __port, const QList<qlonglong>& _ids);
     cInterface *portSetVlans(int __port_index, const QList<qlonglong>& _ids);
+    ///
+    QHostAddress getIpAddress() const;
 
-    QList<QHostAddress> allIpAddress(QSqlQuery &q, qlonglong __id = NULL_ID) const;
+    QList<QHostAddress> fetchAllIpAddress(QSqlQuery &q, qlonglong __id = NULL_ID) const;
     /// Összeállít egy nodes és egy nports rekordot
     /// A port neve és típusa is 'attach" lessz.
     /// @param __n A node neve
@@ -937,7 +939,8 @@ public:
     ///            a névből kell meghatározni.A második elem az ip cím típus neve.
     /// @param mac Vagy a MAC stringgé konvertálva, vagy az "ARP" string, ha az IP címből kell meghatározni.
     /// @param d node secriptorra/megjegyzés
-    cNode& asmbNode(QSqlQuery& q, const QString& name, const QStringPair* pp, const QStringPair *ip, const QString *mac, const QString &d, qlonglong __place);
+    /// @param __ex Ha értéke true, akkor hiba esetén dob egy kizárást, ha false, akkor hiba esetén a ES_DEFECTIVE bitet állítja be.
+    cNode& asmbNode(QSqlQuery& q, const QString& name, const QStringPair* pp, const QStringPair *ip, const QString *mac, const QString &d = _sNul, qlonglong __place = NULL_ID, bool __ex = true);
 };
 
 
@@ -954,7 +957,7 @@ public:
     /// Az SNMP verzió konstanst adja vissza (net-snmp híváshoz)
     int snmpVersion() const;
     ///
-    bool setBySnmp(const QString &__addr, const QString& __com = _sNul, bool __ex = true);
+    bool setBySnmp(const QString& __addr = _sNul, bool __ex = true);
     ///
     int open(QSqlQuery &q, cSnmp& snmp, bool __ex = true) const;
 };

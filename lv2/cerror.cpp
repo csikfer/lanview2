@@ -129,7 +129,7 @@ QString cError::msg(void) const
             .arg(mErrorCode)
             .arg(mErrorSubMsg)
             .arg(mErrorSubCode);
-        if (mErrorSysCode == 0) {
+        if (mErrorSysCode != 0) {
             r += QString(" / errno = %1, %2)")
                 .arg(mErrorSysCode)
                 .arg(errorSysMsg());

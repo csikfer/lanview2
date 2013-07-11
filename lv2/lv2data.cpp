@@ -1413,7 +1413,7 @@ cInterface *cNode::portSetVlans(int __port_index, const QList<qlonglong>& _ids)
     return p;
 }
 
-QList<QHostAddress> cNode::allIpAddress(QSqlQuery& q, qlonglong __id) const
+QList<QHostAddress> cNode::fetchAllIpAddress(QSqlQuery& q, qlonglong __id) const
 {
     QString sql =
             "SELECT address FROM interfaces JOIN ipaddressess USING(port_id)"
@@ -1429,6 +1429,18 @@ QList<QHostAddress> cNode::allIpAddress(QSqlQuery& q, qlonglong __id) const
         r << a;
     } while (q.next());
     return r;
+}
+
+QHostAddress cNode::getIpAddress() const
+{
+    QHostAddress a;
+    if (ports.isEmpty()) return a;
+    cNPort *pp = ports.first();
+    if (pp->tableoid() != cInterface::_descr_cInterface().tableoid()) return a;
+    cInterface *pi = (cInterface *)pp;
+    if (pi->addresses.isEmpty()) return a;
+    a = pi->addresses.first()->address();
+    return a;
 }
 
 cNode& cNode::asmbAttached(const QString& __n, const QString& __d, qlonglong __place)
@@ -1516,12 +1528,13 @@ cNPort& cNode::asmbHostPort(QSqlQuery& q, int ix, const QString& pt, const QStri
 }
 
 
-cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const QStringPair *pp, const QStringPair *ip, const QString *mac, const QString& d, qlonglong __place)
+cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const QStringPair *pp, const QStringPair *ip, const QString *mac, const QString& d, qlonglong __place, bool __ex)
 {
+    QString em;
     QString name = __name;
     clear();
     setName(_sNodeNote, d);
-    setId(__place);
+    setId(_sPlaceId, __place);
     QString ips, ipt, ifType, pnm;
     if (ip != NULL) { ips = ip->first; ipt = ip->second; }      // IP cím és típus
     if (pp != NULL) { pnm = pp->first; ifType = pp->second; }   // port név és típus
@@ -1531,24 +1544,59 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const QStringPair *p
     QHostAddress ha;
     cMac ma;
     if (mac != NULL) {
-        if (*mac != _sARP && !ma.set(*mac)) EXCEPTION(EDATA, -1, trUtf8("Nem értelmezhető MAC : %1").arg(*mac))
+        if (*mac != _sARP && !ma.set(*mac)) {
+            em = trUtf8("Nem értelmezhető MAC : %1").arg(*mac);
+            if (__ex) EXCEPTION(EDATA, -1, em);
+            DERR() << em << endl;
+            _stat |= ES_DEFECTIVE;
+            return *this;
+        }
     }
 
     if (name == _sLOOKUP) {     // Ki kell deríteni a nevet, van címe és portja
         if (ips == _sARP) {     // sőt az ip-t is
-            if (!ma) EXCEPTION(EDATA, -1, trUtf8("A név nem deríthető ki, nincs adat."));
+            if (!ma) {
+                em = trUtf8("A név nem deríthető ki, nincs adat.");
+                if (__ex) EXCEPTION(EDATA, -1, ma);
+                DERR() << em << endl;
+                _stat |= ES_DEFECTIVE;
+                return *this;
+            }
             hal = cArp::mac2ips(q, ma);
             int n = hal.size();
-            if (n < 1) EXCEPTION(EFOUND,   0, trUtf8("A név nem deríthető ki, a %1 MAC-hez nincs IP cím").arg(*mac));
-            if (n > 1) EXCEPTION(AMBIGUOUS,n, trUtf8("A név nem deríthető ki, a %1 MAC-hez több IP cím tartozik").arg(*mac));
+            if (n != 1) {
+                if (n < 1) {
+                    em = trUtf8("A név nem deríthető ki, a %1 MAC-hez nincs IP cím").arg(*mac);
+                    if (__ex) EXCEPTION(EFOUND, n, em);
+                }
+                else{
+                    em = trUtf8("A név nem deríthető ki, a %1 MAC-hez több IP cím tartozik").arg(*mac);
+                    if (__ex) EXCEPTION(AMBIGUOUS,n, em);
+                }
+                DERR() << em << endl;
+                _stat |= ES_DEFECTIVE;
+                return *this;
+            }
             ha = hal.first();
         }
         else {
-            if (!ha.setAddress(ips)) EXCEPTION(EDATA, -1, trUtf8("Nem értelmezhatő IP cím %1.").arg(ips));
-            if (!ma) {  // Nincs MAC, van IP
-                if (mac == NULL) EXCEPTION(EDATA, -1, "Hiányzó MAC cím.");
-                if (*mac == _sARP) ma = cArp::ip2mac(q, ha);
-                if (!ma) EXCEPTION(EDATA, -1, trUtf8("A %1 cím alapján nem deríthatő ki a MAC.").arg(ips));
+            if (!ha.setAddress(ips)) {
+                em = trUtf8("Nem értelmezhatő IP cím %1.").arg(ips);
+                if (__ex) EXCEPTION(EDATA, -1, em);
+            }
+            else if (!ma) {  // Nincs MAC, van IP
+                if (mac == NULL) {
+                    em = trUtf8("Hiányzó MAC cím.");
+                    if (__ex) EXCEPTION(EDATA, -1, em);
+                }
+                else if (*mac == _sARP) ma = cArp::ip2mac(q, ha);
+                if (!ma) {
+                    if (em.isEmpty()) em = trUtf8("A %1 cím alapján nem deríthatő ki a MAC.").arg(ips);
+                    if (__ex) EXCEPTION(EDATA, -1, em);
+                    DERR() << em << endl;
+                    _stat |= ES_DEFECTIVE;
+                    return *this;
+                }
             }
         }
         name = cIpAddress::lookup(ha);
@@ -1564,7 +1612,13 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const QStringPair *p
         if (pp == NULL && mac == NULL) {    // Portja sincs
             return *this;                   // Akkor kész
         }
-        if (mac != NULL && *mac == _sARP) EXCEPTION(EDATA, -1, trUtf8("Ebben a kontexusban a MAC nem kideríthető"));
+        if (mac != NULL && *mac == _sARP) {
+            em = trUtf8("Ebben a kontexusban a MAC nem kideríthető");
+            if (__ex) EXCEPTION(EDATA, -1, em);
+            DERR() << em << endl;
+            _stat |= ES_DEFECTIVE;
+            return *this;
+        }
         if (ifType.isEmpty()) ifType = _sEthernet;
         if (pnm.isEmpty())    pnm    = ifType;
         cNPort *p = addPort(ifType, pnm, _sNul, 1);
@@ -1578,12 +1632,24 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const QStringPair *p
         ha = cIpAddress::lookup(name);
     }
     else if (ips == _sARP) {    // Az IP a MAC-ból derítendő ki
-        if (!ma) EXCEPTION(EDATA, -1, trUtf8("Az IP csak helyes MAC-ból deríthető ki."));
+        if (!ma) {
+            em = trUtf8("Az IP csak helyes MAC-ból deríthető ki.");
+            EXCEPTION(EDATA, -1, em);
+            DERR() << em << endl;
+            _stat |= ES_DEFECTIVE;
+            return *this;
+        }
         ha = cArp::mac2ip(q, ma);
     }
     else if (!ips.isEmpty()) {
         ha.setAddress(ips);
-        if (ha.isNull()) EXCEPTION(EIP,-1,ips);
+        if (ha.isNull()) {
+            em = trUtf8("Nem értelmezhető ip cím : %1").arg(ips);
+            if (__ex) EXCEPTION(EIP,-1,em);
+            DERR() << em << endl;
+            _stat |= ES_DEFECTIVE;
+            return *this;
+        }
     }
     if (mac != NULL && *mac == _sARP) {
         ma = cArp::ip2mac(q, ha);
@@ -1640,7 +1706,7 @@ int cSnmpDevice::snmpVersion() const
     return -1;  // Inactive
 }
 
-bool cSnmpDevice::setBySnmp(const QString& __addr, const QString& __com, bool __ex)
+bool cSnmpDevice::setBySnmp(const QString& __com, bool __ex)
 {
 #ifdef MUST_SCAN
     QString community = __com;
@@ -1652,7 +1718,13 @@ bool cSnmpDevice::setBySnmp(const QString& __addr, const QString& __com, bool __
         }
     }
     setName(_sCommunityRd, community);
-    return getSysBySnmp(*this, __addr) && getPortsBySnmp(*this, __addr, __ex);
+    QHostAddress a = getIpAddress();
+    if (a.isNull()) {
+        if (__ex) EXCEPTION(EDATA,-1, trUtf8("Nincs beállítva IP cím."));
+        return false;
+    }
+    QString addr = a.toString();
+    return getSysBySnmp(*this, addr) && getPortsBySnmp(*this, addr, __ex);
 #else // MUST_SCAN
     (void)__com;
     if (__ex) EXCEPTION(ENOTSUPP, -1, snmpNotSupMsg());
@@ -1663,7 +1735,7 @@ bool cSnmpDevice::setBySnmp(const QString& __addr, const QString& __com, bool __
 int cSnmpDevice::open(QSqlQuery& q, cSnmp& snmp, bool __ex) const
 {
 #ifdef MUST_SCAN
-    QList<QHostAddress> la = allIpAddress(q);
+    QList<QHostAddress> la = fetchAllIpAddress(q);
     if (la.isEmpty()) {
         QString em = trUtf8("A %1 SNMP eszköznek nincs IP címe").arg(getName());
         if (__ex) EXCEPTION(EDATA, -1, em);

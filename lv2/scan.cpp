@@ -440,7 +440,7 @@ bool getPortsBySnmp(cSnmpDevice& node, const QString &ma, bool __ex)
         }
         cIfType         ifType = cIfType::ifType(ifTypeName);
         cNPort *pPort = cNPort::newPortObj(ifType);
-        if (pPort->descr().tableName() != _sInterface) {
+        if (pPort->descr().tableName() != _sInterfaces) {
             EX(EDATA, -1, QObject::trUtf8("Invalid port object type"));
         }
         cMac            mac(tab[_sIfPhysAddress][i].toByteArray());
@@ -655,12 +655,14 @@ bool cLldpScan::createSnmpDev()
         }
     }
     foreach (QHostAddress a, al) {                              // Végigzongozázzuk a talált IP címeket
-        rDev.clear();                       // Akkor ezt kell kitölteni, majd kiírni
-        QString rName = lookup(a, false);   // Neve a cím alapján
-        if (rName.isEmpty()) return false;  // Név nélkül nem megy
-        PDEB(VERBOSE) << "Attempts to create the remote device rocords : " << rName << _sSlash << a.toString() << endl;
-        rDev.setName(rName);
-        if (rDev.setBySnmp(a.toString(), _sNul, false)      // Objektum kitöltése
+        PDEB(VERBOSE) << "Attempts to create the remote device rocords : " << a.toString() << endl;
+        QStringPair ip;
+        QString     ma = rMac.toString();
+        ip.first = a.toString();
+        ip.second= _sFixIp;
+        rDev.asmbNode(q, _sLOOKUP, NULL, &ip, &ma, _sNul, NULL_ID, false);
+        if (rDev.isDefective()) return false;
+        if (rDev.setBySnmp(_sNul, false)      // Objektum kitöltése
          && rDev.insert(q, false)) {                        // Sikerült létrehozni az objektumot
             PDEB(INFO) << "Created SNMP Device : " << rDev.toString() << endl;
             queued << rDev;                                 // Ezt majd lekérdezzük
