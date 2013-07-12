@@ -72,7 +72,6 @@ TABLE SHAPE nports "Passzív portok" {
     SET DEFAULTS;
     TABLE TYPE child;
     TABLE INHERIT TYPE only;
-    FIELD iftype_id PROPERTIES ":ComboBoxList=attach,eport:";
     TABLE VIEW   RIGHTS operator;
     TABLE EDIT   RIGHTS admin;
     TABLE DELETE RIGHTS admin;
@@ -80,21 +79,13 @@ TABLE SHAPE nports "Passzív portok" {
     FIELD node_id HIDE;
 }
 
-DELETE TABLE SHAPE hubs;
-TABLE SHAPE hubs "Hub-ok, nem menedzselhető switch-ek" {
-    SET DEFAULTS;
-    TABLE TYPE owner;
-    RIGHT SHAPE nports;
-}
-
 DELETE TABLE SHAPE nodes;
-TABLE SHAPE nodes "Passzív ill, nem menedzselhető elemek" {
+TABLE SHAPE nodes "Passzív és menedzselhető elemek" {
     SET DEFAULTS;
     TABLE TYPE owner;
     TABLE INHERIT TYPE only;
     RIGHT SHAPE nports;
-    FIELD iftype_id PROPERTIES ":ComboBoxList=attach,eport:";
-    FIELD port_id, port_name, port_descr, port_tag, iftype_id, port_index, deleted HIDE;
+    FIELD deleted HIDE;
     TABLE VIEW   RIGHTS operator;
     TABLE EDIT   RIGHTS admin;
     TABLE DELETE RIGHTS admin;
@@ -105,7 +96,7 @@ DELETE TABLE SHAPE ipaddresses;
 TABLE SHAPE ipaddresses "IP címek" {
     SET DEFAULTS;
     TABLE TYPE child;
-    TABLE INHERIT TYPE only;
+    TABLE INHERIT TYPE no;
     FIELD port_id HIDE;
     TABLE VIEW   RIGHTS operator;
     TABLE EDIT   RIGHTS admin;
@@ -113,28 +104,15 @@ TABLE SHAPE ipaddresses "IP címek" {
     TABLE INSERT RIGHTS admin;
 }
 
-DELETE TABLE SHAPE host_ifs;
-TABLE iface_addrs SHAPE host_ifs "Hálózati interfészek" {
+DELETE TABLE SHAPE nodeports;
+TABLE interfaces SHAPE nodeports "Hálózati interfészek, portok" {
     SET DEFAULTS;
     TABLE TYPE child, owner;
     RIGHT SHAPE ipaddresses;
     TABLE INHERIT TYPE listed_rev;
-    INHERIT TABLE NAMES interfaces,nports;
+    INHERIT TABLE NAMES nports;
     FIELD port_ostat, port_astat READ ONLY;
-    FIELD node_id, ip_address_id HIDE;
-    TABLE VIEW   RIGHTS operator;
-    TABLE EDIT   RIGHTS admin;
-    TABLE DELETE RIGHTS admin;
-    TABLE INSERT RIGHTS admin;
-}
-
-DELETE TABLE SHAPE iface_addrs;
-TABLE SHAPE iface_addrs "Hálózati interfész, IP cím" {
-    SET DEFAULTS;
-    TABLE TYPE no;
-    FIELD iftype_id PROPERTIES ":ComboBoxList=sensor,rs485,iic,ethernet,wireless,ppp,virtual,multiplexor,adsl,tunnel,digitalPowerline:";
-    FIELD port_ostat,port_astat READ ONLY;
-    FIELD ip_address_id HIDE;
+    FIELD node_id HIDE;
     TABLE VIEW   RIGHTS operator;
     TABLE EDIT   RIGHTS admin;
     TABLE DELETE RIGHTS admin;
@@ -142,10 +120,9 @@ TABLE SHAPE iface_addrs "Hálózati interfész, IP cím" {
 }
 
 DELETE TABLE SHAPE interfaces;
-TABLE SHAPE interfaces "Hálózati interfész, IP cím" {
+TABLE SHAPE interfaces "Hálózati interfész" {
     SET DEFAULTS;
     TABLE TYPE no;
-    FIELD iftype_id PROPERTIES ":ComboBoxList=sensor,rs485,iic,ethernet,wireless,virtual,multiplexor,adsl,tunnel,digitalPowerline,usb:";
     FIELD port_ostat READ ONLY;
     FIELD port_astat READ ONLY;
     TABLE VIEW   RIGHTS operator;
@@ -154,33 +131,17 @@ TABLE SHAPE interfaces "Hálózati interfész, IP cím" {
     TABLE INSERT RIGHTS admin;
 }
 
-DELETE TABLE SHAPE allhosts;
-TABLE snmpdevices SHAPE allhosts "Hálózati elemek" {
+DELETE TABLE SHAPE allnodes;
+TABLE snmpdevices SHAPE allnodes "Hálózati elemek" {
     SET DEFAULTS;
     TABLE TYPE owner;
     TABLE INHERIT TYPE listed_rev;
-    INHERIT TABLE NAMES hosts;
-    RIGHT SHAPE host_ifs;
-    FIELD port_id HIDE;
-    FIELD port_ostat,port_astat READ ONLY;
-    FIELD port_id, port_name, port_descr, port_tag, iftype_id, port_index, deleted,
-          ip_address_id, ip_address_descr, ip_address_type  HIDE;
+    INHERIT TABLE NAMES nodes;
+    RIGHT SHAPE nodeports;
     FIELD * ORD no;
     FIELD node_name ORD asc,desc,no;
-    FIELD node_descr, place_id, hwaddress, address, subnet_id ORD 10 no, asc, desc;
-    FIELD node_name, node_descr, place_id, hwaddress, subnet_id ADD FILTERS begin, like, similar, regexp, regexpi;
-    TABLE VIEW   RIGHTS operator;
-    TABLE EDIT   RIGHTS admin;
-    TABLE DELETE RIGHTS admin;
-    TABLE INSERT RIGHTS admin;
-}
-
-DELETE TABLE SHAPE hosts;
-TABLE SHAPE hosts "Host" {
-    SET DEFAULTS;
-    TABLE TYPE no;
-    FIELD iftype_id PROPERTIES ":ComboBoxList=sensor,rs485,iic,ethernet,wireless,ppp,virtual,multiplexor,adsl,tunnel,digitalPowerline:";
-    FIELD port_ostat,port_astat READ ONLY;
+    FIELD node_note, place_id ORD 10 no, asc, desc;
+    FIELD node_name, node_note, place_id ADD FILTERS begin, like, similar, regexp, regexpi;
     TABLE VIEW   RIGHTS operator;
     TABLE EDIT   RIGHTS admin;
     TABLE DELETE RIGHTS admin;
@@ -191,8 +152,6 @@ DELETE TABLE SHAPE snmpdevices;
 TABLE SHAPE snmpdevices "SNMP hosts" {
     SET DEFAULTS;
     TABLE TYPE no;
-    FIELD iftype_id PROPERTIES ":ComboBoxList=sensor,rs485,iic,ethernet,wireless,ppp,virtual,multiplexor,adsl,tunnel,digitalPowerline:";
-    FIELD port_ostat,port_astat READ ONLY;
     TABLE VIEW   RIGHTS operator;
     TABLE EDIT   RIGHTS admin;
     TABLE DELETE RIGHTS admin;
@@ -243,7 +202,7 @@ TABLE SHAPE alarms "Riasztások" {
     FIELD first_status  TITLE "kezdő áll."    "Állapot a risztás kezdetekor";
     FIELD max_status    TITLE "crit. áll."    "Legkritikusabb állapot a riasztás alatt";
     FIELD begin_time    TITLE "kezdete"       "A kritikus esemény kezdete";
-    FIELD event_descr   TITLE "üzenet"        "A riasztást dezektáló folyamat üzenete";
+    FIELD event_note   TITLE "üzenet"        "A riasztást dezektáló folyamat üzenete";
     FIELD superior_alarm TITLE  "?"            "?";
     FIELD noalarm       TITLE "letiltva"      "Az értesítés letiltása";
     FIELD end_time      TITLE "vége"          "A kritikus esemény vége";
@@ -255,7 +214,7 @@ TABLE SHAPE alarms "Riasztások" {
     FIELD ack_user      TITLE "aki nyugtázta" "A riasztást nyugtázó felhasználó";
     FIELD ack_msg       TITLE "megjegyzés"    "A nyugtázó megjegyzése";
 
-    FIELD host_service_id, daemon_id, max_status, event_descr, noalarm, notice_user, ack_user, ack_msg ADD FILTERS begin, like, similar, regexp, regexpi;
+    FIELD host_service_id, daemon_id, max_status, event_note, noalarm, notice_user, ack_user, ack_msg ADD FILTERS begin, like, similar, regexp, regexpi;
     FIELD begin_time, end_time, msg_time, alarm_time, notice_time, ack_time ADD FILTERS big, litle, interval;
     FIELD * ORD no;
     FIELD begin_time ORD desc, asc, no;
@@ -346,8 +305,7 @@ GUI lv2gui {
   }
   objects MENU "Objektumok" {
     patchs   SHAPE patchs "Patch panelek";
-    hubs     SHAPE hubs "Hubok, switch-ek";
-    nodes    SHAPE allhosts "Hálózati elemek";
+    nodes    SHAPE allnodes "Hálózati elemek";
     places   SHAPE places "Helyek, helyiségek";
     services SHAPE services "Szolgáltatás típusok";
     host_services SHAPE host_services "Szolgáltatás példányok";

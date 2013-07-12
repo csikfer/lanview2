@@ -2157,25 +2157,35 @@ QHostAddress cArp::mac2ip(QSqlQuery& __q, const cMac& __m, bool __ex)
     QList<QHostAddress> al = mac2ips(__q, __m);
     int n = al.size();
     if (n == 1) return al.first();
-    if (__ex) {
-        QString m = __m.toString();
-        if (n > 1) {
-            EXCEPTION(AMBIGUOUS, n, trUtf8("A %1 MAC alapján az IP nem egyértelmű.").arg(m));
-        }
-        else {
-            EXCEPTION(EFOUND,    n, trUtf8("A %1 MAC-hez nincs IP cím.").arg(m));
-        }
+    QString em = __m.toString();
+    if (n > 1) {
+        em = trUtf8("A %1 MAC alapján az IP nem egyértelmű.").arg(em);
+        if (__ex) EXCEPTION(AMBIGUOUS, n, em);
     }
+    else {
+        em = trUtf8("A %1 MAC-hez nincs IP cím.").arg(em);
+        if (__ex) EXCEPTION(EFOUND,    n, em);
+    }
+    DERR() << em << endl;
     return QHostAddress();
 }
 
 
 cMac cArp::ip2mac(QSqlQuery& __q, const QHostAddress& __a, bool __ex)
 {
-    cArp arp;
-    arp = __a;
-    if (arp.fetch(__q, false, arp.mask(_ixIpAddress))) return arp;
-    if (__ex) EXCEPTION(EFOUND, 0, trUtf8("A IP címhez-hez nincs MAC."));
+    QString em;
+    if (__a.isNull()) {
+        em = trUtf8("MAC keresése érvénytelen IP címmel.");
+        if (__ex) EXCEPTION(EDATA, 0, em);
+    }
+    else {
+        cArp arp;
+        arp = __a;
+        if (arp.fetch(__q, false, arp.mask(_ixIpAddress))) return arp;
+        em = trUtf8("A %1 IP címhez-hez nincs MAC.").arg(__a.toString());
+        if (__ex) EXCEPTION(EFOUND, 0, em);
+    }
+    DERR() << em << endl;
     return cMac();
 }
 

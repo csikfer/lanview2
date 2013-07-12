@@ -10,7 +10,7 @@ cMainWindow::cMainWindow(bool _setupOnly, QWidget *parent) :
     // Central Widget
     setCentralWidget(pTabWidget);
     cMenuItem mi;
-    if (_setupOnly) {   /// Minimalista setup, nincs adatbázis
+    if (_setupOnly) {   /// Minimalista setup, nincs adatbázisunk
         pTabWidget = NULL;
         QAction *pFile = menuBar()->addAction(trUtf8("File"));
         QMenu   *pm    = new QMenu(menuBar());

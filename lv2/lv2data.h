@@ -1124,6 +1124,8 @@ public:
     cArp& operator = (const cMac __m)           { set(_ixHwAddress, __m.toString()); return *this; }
     operator QHostAddress() const;
     operator cMac()         const;
+    cMac getMac() const { return (cMac)*this; }
+    QHostAddress getIpAddress() const { return (QHostAddress)*this; }
     /// Inzertálja, vagy morosítja az ip cím, mint kulcs alapján a rekordot.
     /// A funkciót egy PGPLSQL fúggvény (insert_or_update_arp) valósítja meg.
     /// @return A insert_or_update_arp függvény vissatérési értéke. Ld.: enum eReplaceResult

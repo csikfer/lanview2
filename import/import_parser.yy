@@ -975,12 +975,11 @@ void newNode(QStringList * t, QString *name, QString *d)
 /// @param name Az eszköz nevére mutató pointer, vagy a "LOOKUP" stringre mutató pointer
 /// @param ip Pointer egy string pár, az első elem az IP cím, vagy az ARP ill. LOOKUP string, ha az ip címet a MAC címből ill.
 ///           a névből kell meghatározni. A második elem az ip cím típus neve.
-/// @param mac Vagy a MAC stringgé konvertálva, vagy az ARP string, ha az IP címből kell meghatározni.
+/// @param mac Vagy a MAC stringgé konvertálva, vagy az ARP string, ha az IP címből kell meghatározni, vagy NULL, ha nincs MAC
 /// @param d Port secriptorra/megjegyzés  mutató pointer, üres string esetln az NULL lessz.
 /// @return Az új objektum pointere
 static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *mac, QString *d)
 {
-    _DBGFN() << "@(" << *name << _sComma << ip->first << "&" << ip->second << _sComma  << *mac << _sComma << *d << ")" << endl;
     if (t->contains(_sSnmp, Qt::CaseInsensitive)) pNode = new cSnmpDevice();
     else                                          pNode = new cNode();
     pNode->asmbNode(qq(), *name, NULL, ip, mac, *d, gPlace());
@@ -1489,7 +1488,7 @@ node_p  : DESCR_T str ';'                       { pNode->setName(sp2s($2)); }
                                                 { setLastPort(pNode->addPorts(sp2s($3), sp2s($10), $9, $6, $8, $4)); }
         | ADD_T PORT_T pix_z str str str_z ';'    { setLastPort(pNode->addPort(sp2s($4), sp2s($5), sp2s($6), $3)); }
         | PORT_T pnm DESCR_T str ';'            { setLastPort(pNode->portSet(sp2s($2), _sPortNote, sp2s($4))); }
-        | PORT_T pix TYPE_T ix_z str str str_z ';'   { setLastPort(pNode->portModType($2, sp2s($5), sp2s($6), sp2s($7))); }
+        | PORT_T pix TYPE_T ix_z str str str_z ';' { setLastPort(pNode->portModType($2, sp2s($5), sp2s($6), sp2s($7))); }
         | PORT_T pix NAME_T str str_z ';'       { setLastPort(pNode->portModName($2, sp2s($4), sp2s($5))); }
         | PORT_T pix DESCR_T strs ';'           { setLastPort(pNode->portSet($2, _sPortNote, slp2vl($4))); }
         | PORT_T pnm SET_T str '=' value ';'    { setLastPort(pNode->portSet(sp2s($2), sp2s($4), vp2v($6))); }
@@ -1534,6 +1533,7 @@ mac     : MAC_V                                 { $$ = $1; }
         ;
 mac_q   : mac                                   { $$ = new QString($1->toString()); delete $1; }
         | ARP_T                                 { $$ = new QString(_sARP); }
+        | NULL_T                                { $$ = NULL; }
         ;
 mac_qq  : mac                                   { $$ = new QVariant($1->toString()); delete $1; }       // MAC mint literal
         | '<' '@'                               { $$ = new QVariant(vint(sPortIx)); }                   // MAC azonos az előző port MAC-jával
