@@ -5,8 +5,7 @@
 QT += network \
     sql \
     xml
-# A QPolygonF a GUI-ban van (bravo)
-#QT -= gui
+QT -= gui
 TARGET = lv2
 TEMPLATE = lib
 win32:CONFIG += debug_and_release

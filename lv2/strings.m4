@@ -57,6 +57,7 @@ STRDEF(QHostAddress, "QHostAddress")
 STRDEF(CMac, "cMac")
 STRDEF(NetAddress, "netAddress")
 STRDEF(NetAddressList, "netAddressList")
+STRDEF(TPolygonF, "tPolygonF")
 
 dnl program kapcsolók
 STRDEF(LibVersion, "lib-version")

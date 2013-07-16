@@ -338,7 +338,7 @@ protected:
     QPushButton *pDelButton;
     QPushButton *pClearButton;
 
-    QPolygonF   polygon;
+    tPolygonF   polygon;
     bool        xOk, yOk;
     QString     xPrev, yPrev;
     double      x,y;

@@ -160,6 +160,9 @@ const QString _sNetAddress(__sNetAddress);
 const char   __sNetAddressList[] = "netAddressList";
 const QString _sNetAddressList(__sNetAddressList);
 
+const char   __sTPolygonF[] = "tPolygonF";
+const QString _sTPolygonF(__sTPolygonF);
+
 
 const char   __sLibVersion[] = "lib-version";
 const QString _sLibVersion(__sLibVersion);

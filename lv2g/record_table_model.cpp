@@ -246,7 +246,7 @@ void cRecordTableModel::_removed(cAlternate *p)
 cRecordTableModelSql::cRecordTableModelSql(const cRecordTable& _rt)
     : cRecordTableModel(_rt)
 {
-    pEmbed          = NULL;
+    ;
 }
 
 cRecordTableModelSql::~cRecordTableModelSql()
@@ -255,12 +255,10 @@ cRecordTableModelSql::~cRecordTableModelSql()
 }
 
 
-int cRecordTableModelSql::setRecords(QSqlQuery& _q, cAlternate *pE, bool _first)
+int cRecordTableModelSql::setRecords(QSqlQuery& _q, bool _first)
 {
     DBGFN();
-    pDelete(pEmbed);
     extLines.clear();
-    pEmbed = pE;
     q = _q;
     int r = _first ? qFirst() : qView();
     _DBGFNL() << " = " << r << endl;
@@ -271,18 +269,10 @@ int cRecordTableModelSql::qView()
 {
     DBGFN();
     int qpos = _firstRowNumber;
-    if (qpos > 0 && pEmbed != 0) --qpos;    // Az első embedded rekord miatt a lekérdezésben egyel kevesebb rekord van
     _records.clear();
     beginResetModel();
     int cnt = 0;
-    if (pEmbed != NULL && q.at() <= 0) {
-        _records << *pEmbed;
-        extLines << 0;
-        cnt = 1;
-    }
-    else {
-        extLines.clear();
-    }
+    extLines.clear();
     if (q.seek(qpos)) do {
         qlonglong tableoid = variantToId(q.value(0));
         cAlternate *p = NULL;
@@ -333,7 +323,6 @@ int cRecordTableModelSql::qPrev()
 int cRecordTableModelSql::qLast()
 {
     int s = q.size();
-    if (pEmbed != NULL) ++s;
     if (s < 0) {
         DWAR() << "Query size is negative." << endl;
         return -1;
@@ -345,7 +334,6 @@ int cRecordTableModelSql::qLast()
 cRecordTableModel& cRecordTableModelSql::clear()
 {
     q.clear();
-    pDelete(pEmbed);
     return cRecordTableModel::clear();
 }
 

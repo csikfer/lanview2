@@ -2,7 +2,7 @@
 #include "import_parser.h"
 #include "lv2service.h"
 #include "others.h"
-#include <QApplication>
+#include <QCoreApplication>
 
 #define VERSION_MAJOR   0
 #define VERSION_MINOR   01
@@ -19,8 +19,7 @@ void setAppHelp()
 
 int main (int argc, char * argv[])
 {
-    // Ha csak CORE van, akkor elszáll (Sig 11) a QPolygonF típusnál, ha ki akarjuk szedni egy QVariant-ból
-    QApplication app(argc, argv);
+    QCoreApplication app(argc, argv);
     SETAPP();
     lanView::snmpNeeded = true;
     lanView::sqlNeeded  = true;

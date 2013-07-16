@@ -114,14 +114,14 @@ QVariant cPolygonTableModel::headerData(int section, Qt::Orientation orientation
     }
     return QVariant();
 }
-bool cPolygonTableModel::setPolygon(const QPolygonF &__pol)
+bool cPolygonTableModel::setPolygon(const tPolygonF &__pol)
 {
     beginResetModel();
     _polygon = __pol;
     endResetModel();
     return !_polygon.isEmpty();
 }
-const QPolygonF &cPolygonTableModel::polygon() const
+const tPolygonF &cPolygonTableModel::polygon() const
 {
     return _polygon;
 }

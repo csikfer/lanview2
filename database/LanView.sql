@@ -116,7 +116,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE TYPE unusualfkeytype AS ENUM ('property', 'self', 'owner');
 COMMENT ON TYPE unusualfkeytype IS
-'Az adatbázisban nem természetes módon definiált távoli kulcsok típusa:
+'Az adatbázisban nem természetes módon definiált távoli kulcsok/hivatkozások típusa:
 property    Normál, egy tulajdonségra mutató kulcs
 self        Nem igazi távoli kulcs, saját (esetleg a leszármazott) táblára mutat
 owner       Szülő objektumra mutató kulcs
@@ -135,22 +135,26 @@ CREATE TABLE unusual_fkeys (
     UNIQUE (table_schema, table_name, column_name)
 );
 
+COMMENT ON TABLE unusual_fkeys IS 'Az öröklödéshez kapcsolódó távoli kulcsok definíciói';
+COMMENT ON COLUMN unusual_fkeys.table_shema IS 'A tábla séma neve, melyben a hivatkozó mezőt definiáljuk';
+COMMENT ON COLUMN unusual_fkeys.table_name  IS 'A tábla neve, melyben a hivatkozó mezőt definiáljuk';
+COMMENT ON COLUMN unusual_fkeys.column_name IS 'A hivatkozó/mutató mező neve';
+COMMENT ON COLUMN unusual_fkeys.unusual_fkeys_type IS 'A hivatkozás típusa';
+COMMENT ON COLUMN unusual_fkeys.f_table_schema IS 'A hivatkozott tábla séma neve';
+COMMENT ON COLUMN unusual_fkeys.f_table_name IS 'A hivatkozott tábla neve';
+COMMENT ON COLUMN unusual_fkeys.f_table_schema IS 'A hivatkozott tábla elsődleges kulcsmezóje, ill. a hivatkozott mező';
+COMMENT ON COLUMN unusual_fkeys.f_inherited_tables IS 'Azon leszármazott táblák nevei, melyekre még vonatkozhat a hivatkozás (a séma név azonos)';
+
 INSERT INTO unusual_fkeys
-  ( table_name,     column_name,    unusual_fkeys_type, f_table_name,   f_column_name,  f_inherited_tables) VALUES
-  ( 'nports',       'node_id',      'owner',            'patchs',       'node_id',      '{hubs,nodes,hosts,snmpdevices}'),
-  ( 'port_param_values','port_id',  'owner',            'nports',       'port_id',      '{nports,interfaces,iface_addrs,nodes,hosts,snmpdevices}'),
-  ( 'interfaces',   'node_id',      'owner',            'nodes',        'node_id',      '{nodes,hosts,snmpdevices}'),
-  ( 'interfaces',   'port_staple_id','self',            'interfaces',   'port_id',      '{interfaces,iface_addrs,hosts,snmpdevices}'),
-  ( 'port_vlns',    'port_id',      'owner',            'interfaces',   'port_id',      '{interfaces,iface_addrs,hosts,snmpdevices}'),
-  ( 'ipaddresses',  'port_id',      'owner',            'iface_addrs',  'port_id',      '{iface_addrs,hosts,snmpdevices}'),
-  ( 'iface_addrs',  'node_id',      'owner',            'hosts',        'node_id',      '{hosts,snmpdevices}'),
-  ( 'host_services','node_id',      'property',         'nodes',        'node_id',      '{nodes,hosts,snmpdevices}'),
-  ( 'phs_links_table','port_id1',   'property',         'nports',       'port_id',      '{nports, pports,interfaces,iface_addrs,nodes,hosts,snmpdevices}'),
-  ( 'phs_links_table','port_id2',   'property',         'nports',       'port_id',      '{nports, pports,interfaces,iface_addrs,nodes,hosts,snmpdevices}'),
-  ( 'log_links_table','port_id1',   'property',         'nports',       'port_id',      '{nports, pports,interfaces,iface_addrs,nodes,hosts,snmpdevices}'),
-  ( 'log_links_table','port_id2',   'property',         'nports',       'port_id',      '{nports, pports,interfaces,iface_addrs,nodes,hosts,snmpdevices}'),
-  ( 'lldp_links_table','port_id1',  'property',         'nports',       'port_id',      '{nports, pports,interfaces,iface_addrs,nodes,hosts,snmpdevices}'),
-  ( 'lldp_links_table','port_id2',  'property',         'nports',       'port_id',      '{nports, pports,interfaces,iface_addrs,nodes,hosts,snmpdevices}');
+  ( table_name,         column_name,    unusual_fkeys_type, f_table_name,   f_column_name,  f_inherited_tables) VALUES
+  ( 'nports',           'node_id',      'owner',            'nodes',        'node_id',      '{nodes,snmpdevices}'),
+  ( 'port_param_values','port_id',      'owner',            'nports',       'port_id',      '{nports,pports,interfaces}'),
+  ( 'interfaces',       'node_id',      'owner',            'nodes',        'node_id',      '{nodes,snmpdevices}'),
+  ( 'host_services',    'node_id',      'property',         'nodes',        'node_id',      '{nodes,snmpdevices}'),
+  ( 'phs_links_table',  'port_id1',     'property',         'nports',       'port_id',      '{nports, pports,interfaces}'),
+  ( 'phs_links_table',  'port_id2',     'property',         'nports',       'port_id',      '{nports, pports,interfaces}'),
+  ( 'log_links_table',  'port_id1',     'property',         'nports',       'port_id',      '{nports, interfaces}'),
+  ( 'log_links_table',  'port_id2',     'property',         'nports',       'port_id',      '{nports, interfaces}');
 
 CREATE TABLE fkey_types (
     fkeys_types_id      serial          NOT NULL PRIMARY KEY,
@@ -161,9 +165,16 @@ CREATE TABLE fkey_types (
     UNIQUE (table_schema, table_name, column_name)
 );
 
+COMMENT ON TABLE fkey_types IS 'A távoli kulcsok típusát definiáló tábla (a nem property tíousoknál)';
+COMMENT ON COLUMN fkey_types.table_shema IS 'A tábla séma neve, melyben a hivatkozó mezőt definiáljuk';
+COMMENT ON COLUMN fkey_types.table_name  IS 'A tábla neve, melyben a hivatkozó mezőt definiáljuk';
+COMMENT ON COLUMN fkey_types.column_name IS 'A hivatkozó/mutató mező neve';
+COMMENT ON COLUMN fkey_types.unusual_fkeys_type IS 'A hivatkozás/távoli kulcs típusa';
+
 INSERT INTO fkey_types
   ( table_name,             column_name,            unusual_fkeys_type) VALUES
   ( 'pports',               'node_id',              'owner'         ),
+  ( 'ipadresses',           'port_id',              'owner'         ),
   ( 'table_shape_fields',   'table_shape_id',       'owner'         ),
   ( 'table_shape_filters',  'table_shape_field_id', 'owner'         );
 

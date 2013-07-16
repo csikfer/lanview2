@@ -741,25 +741,6 @@ void cRecordTable::_refresh(bool first)
     }
     if (!w.isEmpty()) sql += " WHERE " + w;
 
-    cAlternate *pEmbed = NULL;
-    if (flags & RTF_CHILD) {    // Child esetén megnézzük a benfoglaltat
-        if (pUpper == NULL) EXCEPTION(EPROGFAIL);
-        if (pUpper->actRecord() != NULL) {
-            cAlternate& o = *pUpper->actRecord();
-            if (o.descr() > recDescr()) {
-                pEmbed = new cAlternate(pRecDsecr);
-                pEmbed->set(o);
-            }
-            else foreach (QString tn, inheritTableList) {
-                const cRecStaticDescr& d = inhRecDescr(tn);
-                if (o.descr() > d) {
-                    pEmbed = new cAlternate(&d);
-                    pEmbed->set(o);
-                }
-            }
-        }
-    }
-
     QString ord = pFODialog->ord();
     if (!ord.isEmpty()) sql += " ORDER BY " + ord;
 
@@ -767,7 +748,7 @@ void cRecordTable::_refresh(bool first)
     int i = 0;
     foreach (QVariant v, qParams) pTabQuery->bindValue(i++, v);
     if (!pTabQuery->exec()) SQLQUERYERR(*pTabQuery);
-    pTableModel->setRecords(*pTabQuery, pEmbed, first);
+    pTableModel->setRecords(*pTabQuery, first);
 }
 
 void cRecordTable::remove()

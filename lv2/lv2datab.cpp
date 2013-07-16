@@ -818,7 +818,7 @@ QVariant  cColStaticDescrPolygon::fromSql(const QVariant& _f) const
     if (s.at(0) != QChar('(') || !s.endsWith(QChar(')'))) EXCEPTION(EDBDATA, 1, em);
     s = s.mid(1, s.size() -2);
     // PDEB(VVERBOSE) << "Point list : \"" << s << "\"" << endl;
-    QPolygonF    pol;
+    tPolygonF    pol;
     if (s.isEmpty() && isNullable) return QVariant();
     // A pontok, koordináta párok vesszővel vannak elválasztva
     QStringList sl = s.split(QChar(','),QString::KeepEmptyParts);
@@ -851,10 +851,10 @@ QVariant  cColStaticDescrPolygon::toSql(const QVariant& _f) const
     if (_f.isNull()) EXCEPTION(EDATA,-1,"Data is NULL");
     int t = _f.userType();
     bool    empty = true;
-    if (t != QMetaType::QPolygonF) {
+    if (t != _UMTID_tPolygonF) {
         EXCEPTION(EDATA, t, debVariantToString(_f));
     }
-    QPolygonF    pol = _f.value<QPolygonF>();
+    tPolygonF    pol = _f.value<tPolygonF>();
     if (pol.isEmpty()) return QVariant();
     QString     s = _sABraB;
     foreach(const QPointF& pt, pol) {
@@ -876,8 +876,11 @@ QVariant  cColStaticDescrPolygon::set(const QVariant& _f, int& str) const
         if (!isNullable && colDefault.isEmpty()) str |= cRecord::ES_DEFECTIVE;
         return QVariant();
     }
-    QPolygonF   pol;
-    switch (t) {
+    tPolygonF   pol;
+    if (t == _UMTID_tPolygonF) {
+        return _f;
+    }
+/*    switch (t) {
     case QMetaType::QPolygon:
         foreach (QPoint p, _f.value<QPolygon>()) {
             pol << QPointF(p);
@@ -894,6 +897,7 @@ QVariant  cColStaticDescrPolygon::set(const QVariant& _f, int& str) const
         pol << _f.value<QPointF>();
         return QVariant::fromValue(pol);
     }
+*/
     str |= cRecord::ES_DEFECTIVE;
     return QVariant();
 
@@ -904,7 +908,7 @@ QString   cColStaticDescrPolygon::toName(const QVariant& _f) const
 }
 qlonglong cColStaticDescrPolygon::toId(const QVariant& _f) const
 {
-    return _f.value<QPolygonF>().size();
+    return _f.value<tPolygonF>().size();
 }
 
 CDDUPDEF(cColStaticDescrPolygon)

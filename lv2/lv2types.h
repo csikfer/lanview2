@@ -23,7 +23,6 @@
 #include <QtCore>
 #include <QtNetwork>
 #include <QSqlRecord>
-#include <QPolygonF>
 
 /*! @file lv2types.h
   Az LV2-ben használlt néhény alap adat típus, osztály, ill. makró definíciója.
@@ -758,7 +757,10 @@ TSTREAMO(cMac)
 
 
 typedef QPair<QString, QString>     QStringPair;
-// typedef QVector<QPointF>            tPolygon;
+/// A QPolygonF osztály a GUI része, így nem használlható
+/// Mert vagy nem GUI-val fordítjuk, és akkor elszállhat (pl. a QVariant-ból való kikonvertáláskor)
+/// Vagy GUI-val fordítunk, de akkor meg nem fog elindulni tisztán konzolos módban
+typedef QList<QPointF>  tPolygonF;
 
 /// Egész szám (int/index) vektor
 typedef QVector<int>        tIntVector;
@@ -774,7 +776,7 @@ EXT_ tIntVector   iTab(int a = NULL_IX, int b = NULL_IX, int c = NULL_IX, int d 
 
 /* ------------------------------------------------------------------ */
 
-// Q_DECLARE_METATYPE(tPolygon)
+Q_DECLARE_METATYPE(tPolygonF)
 Q_DECLARE_METATYPE(QHostAddress)
 Q_DECLARE_METATYPE(cMac)
 Q_DECLARE_METATYPE(netAddress)
@@ -782,7 +784,7 @@ Q_DECLARE_METATYPE(netAddressList)
 
 // EXT_ int _UMTID_QPoint;
 // EXT_ int _UMTID_QPointF;
-// EXT_ int _UMTID_tPolygon;
+EXT_ int _UMTID_tPolygonF;
 EXT_ int _UMTID_QHostAddress;
 EXT_ int _UMTID_cMac;
 EXT_ int _UMTID_netAddress;
@@ -796,8 +798,7 @@ EXT_ QString QStringListToString(const QStringList& _v);
 EXT_ QString QVariantListToString(const QVariantList& _v, bool *pOk = NULL);
 EXT_ QString QPointTosString(const QPoint& p);
 EXT_ QString QPointFTosString(const QPointF& p);
-EXT_ QString QPolygonFToString(const QPolygonF& pol);
-EXT_ QString QPolygonToString(const QPolygon& pol);
+EXT_ QString tPolygonFToString(const tPolygonF& pol);
 EXT_ QString QVariantToString(const QVariant& _v, bool *pOk = NULL);
 
 TSTREAMF(tIntVector,  tIntVectorToString)
@@ -807,6 +808,6 @@ TSTREAMF(QStringList, QStringListToString)
 TSTREAMF(QVariantList,QVariantListToString)
 TSTREAMF(QPoint,      QPointTosString)
 TSTREAMF(QPointF,     QPointFTosString)
-TSTREAMF(QPolygonF,   QPolygonFToString)
+TSTREAMF(tPolygonF,   tPolygonFToString)
 
 #endif //LV2TYPES_H_INCLUDED

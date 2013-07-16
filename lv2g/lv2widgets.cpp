@@ -695,7 +695,7 @@ cPolygonWidget::cPolygonWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSy
         pDelButton->setDisabled(true);
         connect(pTable->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
     }
-    if (_value.isValid()) polygon = _value.value<QPolygonF>();
+    if (_value.isValid()) polygon = _value.value<tPolygonF>();
     pModel = new cPolygonTableModel(this);
     pModel->setPolygon(polygon);
     pTable->setModel(pModel);
@@ -722,7 +722,7 @@ int cPolygonWidget::set(const QVariant& v)
 {
     int r = cFieldEditBase::set(v);
     if (r == 1) {
-        polygon = _value.value<QPolygonF>();
+        polygon = _value.value<tPolygonF>();
         pModel->setPolygon(polygon);
         setButtons();
     }

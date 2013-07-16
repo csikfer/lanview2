@@ -261,8 +261,8 @@ CREATE TABLE interfaces (
     hwaddress       macaddr     DEFAULT NULL,
     port_ostat      ifstatus    NOT NULL DEFAULT 'unknown',
     port_astat      ifstatus    DEFAULT NULL,   -- The desired state of the interface
-    port_staple_id  integer     DEFAULT NULL,
-        -- REFERENCES interfaces(port_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
+    port_staple_id  integer     DEFAULT NULL
+        REFERENCES interfaces(port_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
     dualface_type   integer     DEFAULT NULL
         REFERENCES iftypes(iftype_id) MATCH SIMPLE ON DELETE RESTRICT ON UPDATE RESTRICT,
     PRIMARY KEY (port_id),
@@ -364,12 +364,12 @@ manual  kézzel megadva';
 
 CREATE TABLE port_vlans (
     port_vlan_id    serial      PRIMARY KEY,
-    port_id         integer     NOT NULL, -- REFERENCES interfaces(port_id) ON DELETE CASCADE ON UPDATE RESTRICT,
-    vlan_id         integer     REFERENCES vlans(vlan_id) MATCH FULL ON DELETE CASCADE ON UPDATE CASCADE,
+    port_id         integer     REFERENCES interfaces(port_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    vlan_id         integer     REFERENCES vlans(vlan_id)      MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     first_time      timestamp   DEFAULT CURRENT_TIMESTAMP,
     last_time       timestamp   DEFAULT CURRENT_TIMESTAMP,
-    vlan_type       vlantype NOT NULL DEFAULT 'untagged',
-    set_type        settype NOT NULL DEFAULT 'manual',
+    vlan_type       vlantype    NOT NULL DEFAULT 'untagged',
+    set_type        settype     NOT NULL DEFAULT 'manual',
     UNIQUE (port_id, vlan_id)
 );
 ALTER TABLE port_vlans OWNER TO lanview2;

@@ -724,9 +724,9 @@ objektumokon keresztül történik, melyet a cRecStaticDescr tartalmaz. A kezelt
   Ebben az esetben egy enumerációs érték és az értéknek a definícióbeli sorszáma a numerikus értékben a megfelelő sorszámú bitjével egyenértékű.
 - Poligon\n
   SQL típus a polygon.
-  A tárolási típus a QPolygonF, az adatkonverziókat az  cColStaticDescrPolygon osztály végzi.
+  A tárolási típus a tPolygonF, az adatkonverziókat az  cColStaticDescrPolygon osztály végzi.
   @note Mivel a QPolygonF a Qt GUI modul része, ezért, ha az applikációnk nem GUI-val fordítottuk, ill. a QCoreApplication -t példányosítottuk a
-  main() -ben, akkor a QPolygonF használatakor elszállhat a programunk.
+  main() -ben, akkor a QPolygonF használatakor elszállhat a programunk. Ezért az lv2 modul nem kezeli a QPolygonF osztályt.
 
 - IP cím\n
   SQL típus az inet.

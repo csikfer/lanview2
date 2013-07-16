@@ -35,10 +35,8 @@ COMMENT ON VIEW log_links IS 'Symmetric View Table for logical links';
 
 CREATE TABLE lldp_links_table (
     lldp_link_id serial         PRIMARY KEY,
-    port_id1    integer,
-    --  REFERENCES interfaces(port_id) ON DELETE CASCADE ON UPDATE RESTRICT,
-    port_id2    integer,
-    --  REFERENCES interfaces(port_id) ON DELETE CASCADE ON UPDATE RESTRICT,
+    port_id1    integer REFERENCES interfaces(port_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    port_id2    integer REFERENCES interfaces(port_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     first_time  timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP, -- First time discovered the logical link
     last_time   timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP  -- Last time discovered the logical link
 );
@@ -573,25 +571,13 @@ BEGIN
         END IF;
         RETURN new;
     END IF;
-    n := COUNT(*) FROM nports WHERE port_id = NEW.port_id1;
-    IF n = 0 THEN
-        PERFORM error('InvRef', NEW.port_id1, 'port_id1', 'check_log_links()', TG_TABLE_NAME, TG_OP);
-    ELSIF n > 1 THEN
-        PERFORM error('DataError', NEW.port_id1, 'port_id1', 'check_log_links()', TG_TABLE_NAME, TG_OP);
-    END IF;
-    n := COUNT(*) FROM nports WHERE port_id = NEW.port_id2;
-    IF n = 0 THEN
-        PERFORM error('InvRef', NEW.port_id1, 'port_id2', 'check_log_links()', TG_TABLE_NAME, TG_OP);
-    ELSIF n > 1 THEN
-        PERFORM error('DataError', NEW.port_id2, 'port_id2', 'check_log_links()', TG_TABLE_NAME, TG_OP);
-    END IF;
-    RETURN NEW;
     IF 0 < COUNT(*) FROM log_links WHERE port_id1 = NEW.port_id1 THEN
         PERFORM error('IdNotUni', NEW.port_id1, 'port_id1', 'check_log_links()', TG_TABLE_NAME, TG_OP);
     END IF;
     IF 0 < COUNT(*) FROM log_links WHERE port_id1 = NEW.port_id2 THEN
         PERFORM error('IdNotUni', NEW.port_id2, 'port_id2', 'check_log_links()', TG_TABLE_NAME, TG_OP);
     END IF;
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 

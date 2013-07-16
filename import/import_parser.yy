@@ -1025,7 +1025,7 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
     QVariant *      v;
     QVariantList * vl;
     QPointF *     pnt;
-    QPolygonF *   pol;
+    tPolygonF *   pol;
     QStringPair *  ss;
     QStringPairList *ssl;
     cSnmpDevice *  sh;
@@ -1381,7 +1381,7 @@ place_p : DESCR_T str ';'           { place.set(_sPlaceNote, *$2);     delete $2
         ;
 frame   : '{' points  '}'           { $$ = $2; }
         ;
-points  : point                     { $$ = new QPolygonF(); *$$ << *$1;  delete $1; }
+points  : point                     { $$ = new tPolygonF(); *$$ << *$1;  delete $1; }
         | points ',' point          { $$ = $1;              *$$ << *$3;  delete $3; }
         ;
 point   : '[' num ',' num ']'       { $$ = new QPointF($2, $4); }

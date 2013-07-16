@@ -744,7 +744,7 @@ QString QSqlRecordToString(const QSqlRecord& __r)
 
 // int _UMTID_QPoint        = QMetaType::UnknownType;
 // int _UMTID_QPointF       = QMetaType::UnknownType;
-// int _UMTID_tPolygon      = QMetaType::UnknownType;
+int _UMTID_tPolygonF     = QMetaType::UnknownType;
 int _UMTID_QHostAddress  = QMetaType::UnknownType;
 int _UMTID_cMac          = QMetaType::UnknownType;
 int _UMTID_netAddress    = QMetaType::UnknownType;
@@ -756,23 +756,23 @@ void initUserMetaTypes()
 
 //        qRegisterMetaType<QPoint>       (__sQPoint);
 //        qRegisterMetaType<QPointF>      (__sQPointF);
-//        qRegisterMetaType<tPolygon>     (__sTPolygon);
+        qRegisterMetaType<tPolygonF>     (__sTPolygonF);
         qRegisterMetaType<QHostAddress> (__sQHostAddress);
         qRegisterMetaType<cMac>         (__sCMac);
         qRegisterMetaType<netAddress>   (__sNetAddress);
         qRegisterMetaType<netAddressList>(__sNetAddressList);
 
-//        _UMTID_QPoint          =  QMetaType::type(__sQPoint);
-//        _UMTID_QPointF         =  QMetaType::type(__sQPointF);
-//        _UMTID_tPolygon        =  QMetaType::type(__sTPolygon);
+//      _UMTID_QPoint          =  QMetaType::type(__sQPoint);
+//      _UMTID_QPointF         =  QMetaType::type(__sQPointF);
+        _UMTID_tPolygonF       =  QMetaType::type(__sTPolygonF);
         _UMTID_QHostAddress    =  QMetaType::type(__sQHostAddress);
         _UMTID_cMac            =  QMetaType::type(__sCMac);
         _UMTID_netAddress      =  QMetaType::type(__sNetAddress);
         _UMTID_netAddressList  =  QMetaType::type(__sNetAddressList);
 
-//        if (_UMTID_QPoint         == QMetaType::UnknownType) EXCEPTION(EPROGFAIL, -1, "Nincs QMetaType ID a QPoint típushoz.");
-//        if (_UMTID_QPointF        == QMetaType::UnknownType) EXCEPTION(EPROGFAIL, -1, "Nincs QMetaType ID a QPointF típushoz.");
-//        if (_UMTID_tPolygon       == QMetaType::UnknownType) EXCEPTION(EPROGFAIL, -1, "Nincs QMetaType ID a tPolygon típushoz.");
+//      if (_UMTID_QPoint         == QMetaType::UnknownType) EXCEPTION(EPROGFAIL, -1, "Nincs QMetaType ID a QPoint típushoz.");
+//      if (_UMTID_QPointF        == QMetaType::UnknownType) EXCEPTION(EPROGFAIL, -1, "Nincs QMetaType ID a QPointF típushoz.");
+        if (_UMTID_tPolygonF      == QMetaType::UnknownType) EXCEPTION(EPROGFAIL, -1, "Nincs QMetaType ID a tPolygonF típushoz.");
         if (_UMTID_QHostAddress   == QMetaType::UnknownType) EXCEPTION(EPROGFAIL, -1, "Nincs QMetaType ID a QHostAddress típushoz.");
         if (_UMTID_cMac           == QMetaType::UnknownType) EXCEPTION(EPROGFAIL, -1, "Nincs QMetaType ID a cMac típushoz.");
         if (_UMTID_netAddress     == QMetaType::UnknownType) EXCEPTION(EPROGFAIL, -1, "Nincs QMetaType ID a netAddress típushoz.");
@@ -810,7 +810,7 @@ QString QPointFTosString(const QPointF& p)
     return QString("(%1,%2)").arg(p.x()).arg(p.y());
 }
 
-QString QPolygonFToString(const QPolygonF& pol)
+QString tPolygonFToString(const tPolygonF& pol)
 {
     QString r = _sABraB;
     if (pol.size() > 0) {
@@ -822,17 +822,6 @@ QString QPolygonFToString(const QPolygonF& pol)
     return r + _sABraE;
 }
 
-QString QPolygonToString(const QPolygon& pol)
-{
-    QString r = _sABraB;
-    if (pol.size() > 0) {
-        foreach (QPoint p, pol) {
-            r += QPointTosString(p) + _sComma;
-        }
-        r.chop(1);
-    }
-    return r + _sABraE;
-}
 
 QString QVariantToString(const QVariant& _v, bool *pOk)
 {
@@ -844,8 +833,8 @@ QString QVariantToString(const QVariant& _v, bool *pOk)
         case QMetaType::QVariantList:   return QVariantListToString(_v.toList(), pOk);
         case QMetaType::QPoint:         return QPointTosString(_v.toPoint());
         case QMetaType::QPointF:        return QPointFTosString(_v.toPointF());
-        case QMetaType::QPolygon:       return QPolygonToString(_v.value<QPolygon>());
-        case QMetaType::QPolygonF:      return QPolygonFToString(_v.value<QPolygonF>());
+/*      case QMetaType::QPolygon:       return QPolygonToString(_v.value<QPolygon>());
+        case QMetaType::QPolygonF:      return QPolygonFToString(_v.value<QPolygonF>()); */
         default:                        break;
         }
         if (pOk != NULL) *pOk = !_v.canConvert<QString>();
@@ -853,7 +842,7 @@ QString QVariantToString(const QVariant& _v, bool *pOk)
     }
 //    if (type == _UMTID_QPoint)          return QPointTosString(_v.value<QPoint>());
 //    if (type == _UMTID_QPointF)         return QPointFTosString(_v.value<QPointF>());
-//    if (type == _UMTID_tPolygon)        return tPolygonToString(_v.value<tPolygon>());
+    if (type == _UMTID_tPolygonF)       return tPolygonFToString(_v.value<tPolygonF>());
     if (type == _UMTID_QHostAddress)    return _v.value<QHostAddress>().toString();
     if (type == _UMTID_cMac)            return _v.value<cMac>().toString();
     if (type == _UMTID_netAddress)      return _v.value<netAddress>().toString();

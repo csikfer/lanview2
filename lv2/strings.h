@@ -162,6 +162,9 @@ extern LV2SHARED_EXPORT const QString _sNetAddress;
 extern LV2SHARED_EXPORT const char   __sNetAddressList[];
 extern LV2SHARED_EXPORT const QString _sNetAddressList;
 
+extern LV2SHARED_EXPORT const char   __sTPolygonF[];
+extern LV2SHARED_EXPORT const QString _sTPolygonF;
+
 
 extern LV2SHARED_EXPORT const char   __sLibVersion[];
 extern LV2SHARED_EXPORT const QString _sLibVersion;

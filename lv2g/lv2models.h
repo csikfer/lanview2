@@ -74,9 +74,9 @@ public:
     virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const;
     /// A megjelenítendő polygon megadása, a táblázat újra rajzolása
     /// @return Ha a megadott polygon üres, akkor false, egyébként true
-    bool setPolygon(const QPolygonF& __pol);
+    bool setPolygon(const tPolygonF &__pol);
     /// Az aktuális megjelenített polygon referenciáját adja vissza
-    const QPolygonF& polygon() const;
+    const tPolygonF& polygon() const;
     /// Az aktuális polygonnak a végéhez ad egy pontot
     cPolygonTableModel& operator<<(const QPointF& pt) {
         beginResetModel();
@@ -95,7 +95,7 @@ public:
     /// Törli a megadott indexű pontot a polygonból
     cPolygonTableModel& remove(int i) {
         beginResetModel();
-        _polygon.remove(i);
+        _polygon.removeAt(i);
         endResetModel();
         return *this;
     }
@@ -125,7 +125,7 @@ public:
     int isEmpty() const                         { return _polygon.isEmpty(); }
 private:
     /// A megjelenített polygon
-    QPolygonF   _polygon;
+    tPolygonF   _polygon;
     bool        _rowNumbers;
     bool        _viewHeader;
 };

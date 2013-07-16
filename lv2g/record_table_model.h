@@ -88,16 +88,15 @@ public:
     ~cRecordTableModelSql();
     /// A megjelenítendő record set megadása, a táblázat újra rajzolása
     /// @param _q A ,egjelenítendő lekérdezés eredménye, másolat készül róla a q adattagban.
-    /// @param pE Ha az owner tartalmaza egy chold objektumot is, akkor annak a pointere, ez lesz az első elem.
     /// @return A record set méretével tér vissza
-    int setRecords(QSqlQuery& _q, cAlternate *pE = NULL, bool _first = true);
+    int setRecords(QSqlQuery& _q, bool _first = true);
     int qView();
     int qFirst();
     int qNext();
     int qPrev();
     int qLast();
     /// Az aktuális lekérdezés teljes méretét adja vissza (az esetleges benfoglalt objektummal együtt).
-    int qSize()         { return q.size() + ((pEmbed == NULL) ? 0 : 1); }
+    int qSize()         { return q.size(); }
     bool qIsPaged()     { return q.isActive() && _maxRows < qSize(); }
     bool qNextResult()  { return (_firstRowNumber + _maxRows) <= qSize(); }
     bool qPrevResult()  { return _firstRowNumber > 0; }
@@ -106,8 +105,6 @@ public:
 protected:
     /// Shadow copy az aktuális lekérdezés eredményéről
     QSqlQuery   q;
-    /// Embedded record. Az owner-ben benfoglalt rekord, vagy NULL
-    cAlternate *pEmbed;
 };
 
 
