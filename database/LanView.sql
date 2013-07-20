@@ -136,7 +136,7 @@ CREATE TABLE unusual_fkeys (
 );
 
 COMMENT ON TABLE unusual_fkeys IS 'Az öröklödéshez kapcsolódó távoli kulcsok definíciói';
-COMMENT ON COLUMN unusual_fkeys.table_shema IS 'A tábla séma neve, melyben a hivatkozó mezőt definiáljuk';
+COMMENT ON COLUMN unusual_fkeys.table_schema IS 'A tábla séma neve, melyben a hivatkozó mezőt definiáljuk';
 COMMENT ON COLUMN unusual_fkeys.table_name  IS 'A tábla neve, melyben a hivatkozó mezőt definiáljuk';
 COMMENT ON COLUMN unusual_fkeys.column_name IS 'A hivatkozó/mutató mező neve';
 COMMENT ON COLUMN unusual_fkeys.unusual_fkeys_type IS 'A hivatkozás típusa';
@@ -166,7 +166,7 @@ CREATE TABLE fkey_types (
 );
 
 COMMENT ON TABLE fkey_types IS 'A távoli kulcsok típusát definiáló tábla (a nem property tíousoknál)';
-COMMENT ON COLUMN fkey_types.table_shema IS 'A tábla séma neve, melyben a hivatkozó mezőt definiáljuk';
+COMMENT ON COLUMN fkey_types.table_schema IS 'A tábla séma neve, melyben a hivatkozó mezőt definiáljuk';
 COMMENT ON COLUMN fkey_types.table_name  IS 'A tábla neve, melyben a hivatkozó mezőt definiáljuk';
 COMMENT ON COLUMN fkey_types.column_name IS 'A hivatkozó/mutató mező neve';
 COMMENT ON COLUMN fkey_types.unusual_fkeys_type IS 'A hivatkozás/távoli kulcs típusa';
@@ -174,7 +174,7 @@ COMMENT ON COLUMN fkey_types.unusual_fkeys_type IS 'A hivatkozás/távoli kulcs 
 INSERT INTO fkey_types
   ( table_name,             column_name,            unusual_fkeys_type) VALUES
   ( 'pports',               'node_id',              'owner'         ),
-  ( 'ipadresses',           'port_id',              'owner'         ),
+  ( 'ipaddresses',          'port_id',              'owner'         ),
   ( 'table_shape_fields',   'table_shape_id',       'owner'         ),
   ( 'table_shape_filters',  'table_shape_field_id', 'owner'         );
 
