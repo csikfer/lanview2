@@ -135,7 +135,6 @@ lv2import::lv2import() : lanView(), fileNm(), in()
     daemonMode = false;
     if (lastError != NULL) {
         pq     = NULL;
-        pPlace = NULL;
         return;
     }
 
@@ -169,7 +168,6 @@ lv2import::lv2import() : lanView(), fileNm(), in()
     }
     if (args.count() > 1) DWAR() << trUtf8("Invalid arguments : ") << args.join(_sSpace) << endl;
     pq = newQuery();
-    pPlace = new cPlace();
     if (daemonMode) return;
     insertStart(*pq);
     if (!userName.isNull()) {
@@ -182,10 +180,6 @@ lv2import::lv2import() : lanView(), fileNm(), in()
 lv2import::~lv2import()
 {
     DBGFN();
-    if (pPlace != NULL) {
-        PDEB(VVERBOSE) << "delete pPlace ..." << endl;
-        delete pPlace;
-    }
     if (pq     != NULL) {
         PDEB(VVERBOSE) << "delete pq ..." << endl;
         delete pq;

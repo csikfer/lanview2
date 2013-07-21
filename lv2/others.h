@@ -4,6 +4,7 @@
 #include "lv2_global.h"
 #include <QVariant>
 #include <QMap>
+#include <QBitArray>
 
 /// Létrehoz egy megadott méretű csupa 0 elemű bit tömböt, és annak egy megadot
 /// bitjét 1-be állítja.

@@ -3,6 +3,7 @@
 
 #include "lv2datab.h"
 #include "lv2cont.h"
+#include "qsnmp.h"
 
 /*!
 @file lv2data.h

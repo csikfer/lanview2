@@ -454,7 +454,8 @@ bool getPortsBySnmp(cSnmpDevice& node, const QString &ma, bool __ex)
         pPort->set(_sIfTypeId, ifType.getId());
         if (mac.isValid())  pPort->set(_sHwAddress, mac.toString());
         if (!addr.isNull()) {
-            cIpAddress& pa = pPort->reconvert<cInterface>()->addIpAddress(addr, _sFixIp);
+            cInterface *pIf = pPort->reconvert<cInterface>();
+            cIpAddress& pa = pIf->addIpAddress(addr, _sFixIp);
             pa.thisIsExternal(q);    // Ez lehet külső cím is !!
             // A paraméterként megadott címet preferáltnak vesszük
             QHostAddress mainIp(ma);

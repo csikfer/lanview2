@@ -1357,6 +1357,7 @@ cRecStaticDescr::cRecStaticDescr(const QString &__t, const QString &__s)
     _tableOId       = _schemaOId = NULL_ID;
     _idIndex        = _nameIndex = _noteIndex = _deletedIndex = NULL_IX;
     _isUpdatable    = false;
+    _isParent       = false;
     _set(__t,__s);
     addMap();
     // Csak most tudjuk rendesen előszedni, esetleg megkreálni az id->name konverziós függvényeket

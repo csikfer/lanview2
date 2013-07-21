@@ -2,6 +2,20 @@
 # Project created by QtCreator 2010-02-13T18:45:35
 # -------------------------------------------------
 
+#bison definition
+bison.name = Bison
+bison.input = BISONSOURCES
+bison.output = ${QMAKE_FILE_BASE}_yy.cpp
+bison.commands = bison -d -o ${QMAKE_FILE_OUT} -v --report-file=bison_report.txt ${QMAKE_FILE_IN}
+bison.clean =
+bison.CONFIG += target_predeps
+bison.variable_out = SOURCES
+QMAKE_EXTRA_COMPILERS += bison
+
+BISONSOURCES += import_parser.yy
+
+OTHER_FILES += $$BISONSOURCES
+
 QT += network \
     sql \
     xml
@@ -31,7 +45,8 @@ SOURCES += lanview.cpp \
     lv2service.cpp \
     others.cpp \
     qsnmp.cpp \
-    guidata.cpp
+    guidata.cpp \
+    import_parser.cpp
 HEADERS += lanview.h \
     lv2_global.h \
     strings.h \
@@ -53,9 +68,11 @@ HEADERS += lanview.h \
     lv2user.h \
     guidata.h \
     lv2cont.h \
-    doxydoc.h
+    doxydoc.h \
+    import_parser.h
 FORMS += 
-OTHER_FILES +=
+OTHER_FILES += \
+    import_parser.yy
 unix:LIBS += -lsnmp
 
 # CXXFLAGS += -Wconversion

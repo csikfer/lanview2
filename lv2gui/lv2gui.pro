@@ -25,7 +25,7 @@ FORMS    += \
     setup.ui
 
 INCLUDEPATH += ../lv2 ../lv2g
-LIBS += -lsnmp -L../lv2-Debug -L../lv2g-Debug -llv2 -llv2g
+LIBS += -lsnmp -L../lv2 -L../lv2g -llv2 -llv2g
 
 unix:LIBS += -lsnmp
 

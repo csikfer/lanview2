@@ -1,6 +1,7 @@
 %{
 #include <math.h>
-#include "import.h"
+#include "lanview.h"
+#include "guidata.h"
 #include "others.h"
 #include "ping.h"
 #include "import_parser.h"
@@ -11,11 +12,14 @@ static void insertCode(const QString& __txt);
 static QString  macbuff;
 static QString lastLine;
 
+static qlonglong       globalPlaceId = NULL_ID;
+
 static int yyparse();
 cError *importLastError = NULL;
 
 int importParse()
 {
+    globalPlaceId = NULL_ID;
     int i = -1;
     try {
         i = yyparse();
@@ -262,12 +266,15 @@ static QString       sPortNm = "PN";   // Port név
 
 QStack<c_yyFile> c_yyFile::stack;
 
-static qlonglong       globalPlaceId = NULL_ID; // ID of none
-
 /* ---------------------------------------------------------------------------------------------------- */
 
 static inline qlonglong gPlace() { return globalPlaceId == NULL_ID ? UNKNOWN_PLACE_ID : globalPlaceId; }
-static inline cPlace& rPlace(void) {  return *((lv2import *)lanView::getInstance())->pPlace; }
+static inline cPlace& rPlace(void)
+{
+    static cPlace *pPlace = NULL;
+    if (pPlace == NULL) pPlace = new cPlace();
+    return *pPlace;
+}
 #define place   rPlace()
 
 static inline qlonglong& vint(const QString& n){

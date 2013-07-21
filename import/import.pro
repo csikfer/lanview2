@@ -4,19 +4,6 @@
 #
 #-------------------------------------------------
 
-#bison definition
-bison.name = Bison
-bison.input = BISONSOURCES
-bison.output = ${QMAKE_FILE_BASE}_yy.cpp
-bison.commands = bison -d -o ${QMAKE_FILE_OUT} -v --report-file=bison_report.txt ${QMAKE_FILE_IN}
-bison.clean =
-bison.CONFIG += target_predeps
-bison.variable_out = SOURCES
-QMAKE_EXTRA_COMPILERS += bison
-
-BISONSOURCES += import_parser.yy
-
-OTHER_FILES += $$BISONSOURCES
 
 QT       += core sql xml network
 
@@ -30,9 +17,8 @@ CONFIG += debug
 TEMPLATE = app
 
 
-SOURCES += import.cpp import_parser.cpp
-HEADERS += import.h import_parser.h
-
+SOURCES += import.cpp
+HEADERS += import.h
 INCLUDEPATH += ../lv2
 LIBS += -lsnmp -L../lv2 -llv2
 
