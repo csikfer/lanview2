@@ -91,10 +91,12 @@ specifikus tulajdonságai hiányoznak.
 
 @section node Hálózati elemek, a "node"-ok
 A hálózati elemek az adatbázisban egy meglehetősen bonyolultra sikerült származási fát alkotnak a portokkal együtt.
-A velük egyenértékű osztályok ezt a leszármazási vonalat csak részben követik. A patch és hub egy kicsit
-jobban elkülönül ezen a szinten, a vagyis leszámítva a közös cRecord őst független osztályok.
+A velük egyenértékű osztályok ezt a leszármazási vonalat követik.
 
 @section topology A hálózati topológiák
+- Fizikai topológia
+- Logikai tokológia
+- Felfríthető topológiák
 
 @section service Szolgáltatások
 

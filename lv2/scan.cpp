@@ -381,10 +381,39 @@ cArpTable& cArpTable::getFromDb(QSqlQuery& __q)
 #define EX(ec,ei,es) { if (__ex) { DERR() << "Error " << cError::errorMsg(eError::ec) << " msg : " << es << endl; return false; } \
                        else      { EXCEPTION(ec, ei, es) } }
 
-bool getPortsBySnmp(cSnmpDevice& node, const QString &ma, bool __ex)
+bool setPortsBySnmp(cSnmpDevice& node, bool __ex)
 {
-    cSnmp   snmp(ma, node.getName(_sCommunityRd));
+    // Előszedjük a címet az ideiglenesen felvett, megadott egy port és egy cím alapján.
+    // A portot töröljük, az majd a lekérdezés teljes adatatartalommal felveszi
+    if (node.ports.size() != 1) {
+        if (__ex) EXCEPTION(EDATA,-1, QObject::trUtf8("Itt csak egy. és csakis egy ideiglenes portot lehet megadni."));
+        return false;
+    }
+    cInterface *pMainIf = node.ports.pop_back()->reconvert<cInterface>();
+    if (!pMainIf->isNullId()) {
+        delete pMainIf;
+        if (__ex) EXCEPTION(EDATA,-1, QObject::trUtf8("A megadott (ideiglenes) portnak nem lehet ID-je"));
+        return false;
+    }
+    if (pMainIf->addresses.size() != 1) {
+        delete pMainIf;
+        if (__ex) EXCEPTION(EDATA,-1, QObject::trUtf8("A megadott portnak egy és csakis egy címe lehet."));
+        return false;
+    }
+    if (!pMainIf->addresses[0]->isNullId()) {
+        delete pMainIf;
+        if (__ex) EXCEPTION(EDATA,-1, QObject::trUtf8("A megadott (ideiglenes) cím rekordnak nem lehet ID-je."));
+        return false;
+    }
 
+    QHostAddress mainAddr = pMainIf->addresses[0]->address();
+    delete pMainIf; // ez már nem kell.
+    if (mainAddr.isNull()) {
+        if (__ex) EXCEPTION(EDATA,-1, QObject::trUtf8("Nincs beállítva IP megfelelő IP cím"));
+        return false;
+    }
+
+    cSnmp   snmp(mainAddr.toString(), node.getName(_sCommunityRd));
     if (!snmp.isOpened()) EX(ESNMP, 0, node.getName(_sAddress));
     cTable      tab;    // Interface table container
     QStringList cols;   // Table col names container
@@ -392,9 +421,9 @@ bool getPortsBySnmp(cSnmpDevice& node, const QString &ma, bool __ex)
          << _sIfAdminStatus << _sIfOperStatus;
     int r = snmp.getTable(_sIfMib, cols, tab);
     if (r) EX(ESNMP, r, snmp.emsg);
-    // PDEB(VVERBOSE) << "*************************************************" << endl;
-    // PDEB(VVERBOSE) << "SNMP TABLE : " << endl << tab.toString() << endl;
-    // PDEB(VVERBOSE) << "*************************************************" << endl;
+    PDEB(VVERBOSE) << "*************************************************" << endl;
+    PDEB(VVERBOSE) << "SNMP TABLE : " << endl << tab.toString() << endl;
+    PDEB(VVERBOSE) << "*************************************************" << endl;
     tab << _sIpAdEntAddr; // Add ip address to table
     cOId oid(_sIpMib + _sIpAdEntIfIndex);
     bool ok;
@@ -415,9 +444,9 @@ bool getPortsBySnmp(cSnmpDevice& node, const QString &ma, bool __ex)
             p->setValue(sAddr);
         }
     } while (0 == snmp.getNext());
-    // PDEB(VVERBOSE) << "*************************************************" << endl;
-    // PDEB(VVERBOSE) << "SNMP TABLE+ : " << endl << tab.toString() << endl;
-    // PDEB(VVERBOSE) << "*************************************************" << endl;
+    PDEB(VVERBOSE) << "*************************************************" << endl;
+    PDEB(VVERBOSE) << "SNMP TABLE+ : " << endl << tab.toString() << endl;
+    PDEB(VVERBOSE) << "*************************************************" << endl;
     QSqlQuery q = getQuery();
     int n = tab.rows();
     int i;
@@ -437,6 +466,7 @@ bool getPortsBySnmp(cSnmpDevice& node, const QString &ma, bool __ex)
             DWAR() << "Unhandled interface type " << type << " : #" << tab[_sIfIndex][i]
                    << _sSpace << name << endl;
             continue;
+            return false;
         }
         cIfType         ifType = cIfType::ifType(ifTypeName);
         cNPort *pPort = cNPort::newPortObj(ifType);
@@ -453,17 +483,16 @@ bool getPortsBySnmp(cSnmpDevice& node, const QString &ma, bool __ex)
         pPort->set(_sPortIndex, ifIndex);
         pPort->set(_sIfTypeId, ifType.getId());
         if (mac.isValid())  pPort->set(_sHwAddress, mac.toString());
-        if (!addr.isNull()) {
+        if (!addr.isNull()) {   // Van IP címünk
             cInterface *pIf = pPort->reconvert<cInterface>();
             cIpAddress& pa = pIf->addIpAddress(addr, _sFixIp);
             pa.thisIsExternal(q);    // Ez lehet külső cím is !!
             // A paraméterként megadott címet preferáltnak vesszük
-            QHostAddress mainIp(ma);
-            if (addr == mainIp) {   // Ez az
+            if (addr == mainAddr) {   // Ez az
                 pa.setId(_sPreferred, 0);
             }
         }
-
+        PDEB(VVERBOSE) << "Insert port : " << pPort->toString() << endl;
         node.ports << pPort;
         // Trunk port hozzárendelések lekérdezése
         if (ifTypeName == _sMultiplexor) {
@@ -483,6 +512,7 @@ bool getPortsBySnmp(cSnmpDevice& node, const QString &ma, bool __ex)
             } while (!snmp.getNext());
         }
     }
+    PDEB(VVERBOSE) << "node : " << node.toString() << endl;
     return true;
 }
 
@@ -494,9 +524,10 @@ bool getPortsBySnmp(cSnmpDevice& node, const QString &ma, bool __ex)
                             node.set(f, snmp.value()); \
                         }
 
-bool getSysBySnmp(cSnmpDevice &node, const QString &ma)
+bool setSysBySnmp(cSnmpDevice &node)
 {
     bool r = true;
+    QString ma = node.getIpAddress().toString();
     cSnmp   snmp(ma,node.getName(_sCommunityRd));
 
     if (!snmp.isOpened()) return false;

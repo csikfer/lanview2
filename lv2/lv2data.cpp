@@ -774,13 +774,16 @@ bool cInterface::toEnd(int i)
 bool cInterface::insert(QSqlQuery &__q, bool __ex)
 {
     if (!(cNPort::insert(__q, __ex) && (trunkMembers.size() == updateTrunkMembers(__q, __ex)))) return false;
-    if (vlans.isEmpty()) return true;
-    vlans.setId(cPortVlan::_ixPortId, getId());
-    vlans.setName(cPortVlan::_ixSetType, _sManual);
-    bool r;
-    r = vlans.insert(__q, __ex) == vlans.size();
-    addresses.setId(cIpAddress::_ixPortId, getId());
-    r = addresses.insert(__q, __ex) == addresses.size() && r;
+    bool r = true;
+    if (!vlans.isEmpty()) {
+        vlans.setId(cPortVlan::_ixPortId, getId());
+        vlans.setName(cPortVlan::_ixSetType, _sManual);
+        r = vlans.insert(__q, __ex) == vlans.size();
+    }
+    if (!addresses.isEmpty()) {
+        addresses.setId(cIpAddress::_ixPortId, getId());
+        r = addresses.insert(__q, __ex) == addresses.size() && r;
+    }
     return r;
 }
 
@@ -1718,13 +1721,7 @@ bool cSnmpDevice::setBySnmp(const QString& __com, bool __ex)
         }
     }
     setName(_sCommunityRd, community);
-    QHostAddress a = getIpAddress();
-    if (a.isNull()) {
-        if (__ex) EXCEPTION(EDATA,-1, trUtf8("Nincs beállítva IP cím."));
-        return false;
-    }
-    QString addr = a.toString();
-    return getSysBySnmp(*this, addr) && getPortsBySnmp(*this, addr, __ex);
+    return setSysBySnmp(*this) && setPortsBySnmp(*this, __ex);
 #else // MUST_SCAN
     (void)__com;
     if (__ex) EXCEPTION(ENOTSUPP, -1, snmpNotSupMsg());
