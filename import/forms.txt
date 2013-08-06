@@ -187,6 +187,27 @@ TABLE SHAPE services "Szervíz típusok" {
     FIELD service_name ADD FILTERS begin, like, similar, regexp, regexpi;
 }
 
+
+DELETE TABLE SHAPE subnets;
+TABLE SHAPE subnets "Alhálózatok" {
+    SET DEFAULTS;
+    TABLE TYPE simple;
+    TABLE VIEW   RIGHTS viewer;
+    TABLE EDIT   RIGHTS admin;
+    TABLE DELETE RIGHTS admin;
+    TABLE INSERT RIGHTS admin;
+}
+
+DELETE TABLE SHAPE vlans;
+TABLE SHAPE vlans "VLAN-ok" {
+    SET DEFAULTS;
+    TABLE TYPE simple;
+    TABLE VIEW   RIGHTS viewer;
+    TABLE EDIT   RIGHTS admin;
+    TABLE DELETE RIGHTS admin;
+    TABLE INSERT RIGHTS admin;
+}
+
 // ***************************************************************************************
 // events
 
@@ -309,6 +330,8 @@ GUI lv2gui {
     places   SHAPE places "Helyek, helyiségek";
     services SHAPE services "Szolgáltatás típusok";
     host_services SHAPE host_services "Szolgáltatás példányok";
+    subnets  SHAPE subnets "Alhálózatok";
+    vlans    SHAPE vlans "VLAN-ok";
   }
   events MENU "Események" {
     alarms   SHAPE alarms "Riasztások";

@@ -48,14 +48,17 @@ lv2Gui::lv2Gui() : lanView()
     DBGFN();
     pMainWindow = NULL;
     if (!lastError) {
-        if (_titleWarning.isEmpty()) {
-            _titleWarning       = trUtf8("Figyelmeztetés");
-            _titleError         = trUtf8("Hiba");
-            _titleInfo          = trUtf8("Megjegyzés");
-        }
-        dbIsOpen = lanView::openDatabase(false);
-        pMainWindow = new cMainWindow(!dbIsOpen);
-        pMainWindow->show();
+        try {
+            if (_titleWarning.isEmpty()) {
+                _titleWarning       = trUtf8("Figyelmeztetés");
+                _titleError         = trUtf8("Hiba");
+                _titleInfo          = trUtf8("Megjegyzés");
+            }
+            dbIsOpen = lanView::openDatabase(false);
+            pMainWindow = new cMainWindow(!dbIsOpen);
+            pMainWindow->show();
+        } CATCHS(lastError)
+
     }
     DBGFNL();
 }

@@ -1856,7 +1856,7 @@ QString cRecStaticDescr::getNameById(QSqlQuery& __q, qlonglong __id, bool ex) co
 
 QString cRecStaticDescr::toString() const
 {
-    QString s = "CREATE TABLE " + fullTableNameQ() + _sSpace + _sABraB + '\n';
+    QString s = "TABLE " + fullTableNameQ() + _sSpace + _sABraB + '\n';
     cColStaticDescrList::ConstIterator i, n = columnDescrs().constEnd();
     for (i = columnDescrs().constBegin(); i != n; ++i) {
         const cColStaticDescr& fd = **i;
@@ -1889,19 +1889,18 @@ QString cRecStaticDescr::toString() const
         for (int i = 0; i < _columnsNum; i++) if (_primaryKeyMask[i]) {
             s += _sSpace + dQuoted(columnDescrs()[i].colName()) + _sComma;
         }
-        s += _sABraE + _sSColon;
+        s += _sABraE + '\n';
     }
     for (int i = 0; i < _uniqueMasks.size(); i++) if (_uniqueMasks[i].count(true) > 1) {
         s += _sSpace + "UNIQUE" + _sSpace + _sABraB;
         for (int j = 0; j < _uniqueMasks[i].size(); j++) if (_uniqueMasks[i][j]) {
             s += _sSpace + dQuoted(columnDescrs()[j].colName()) + _sComma;
         }
-        s += _sABraE + _sSColon;
+        s += _sABraE + '\n';
     }
-    s += _sSpace   + "_idIndex = "    + QString::number(_idIndex);
-    s += _sCommaSp + "_nameIndex = "  + QString::number(_nameIndex);
-    s += _sCommaSp + "_descrIndex = " + QString::number(_noteIndex);
-    // s.chop(1);  // utolsó felesleges vesszőt lecsípjük
+    if (_idIndex >= 0)   s += "-- _idIndex   = " + QString::number(_idIndex)   + '\n';
+    if (_nameIndex >= 0) s += "-- _nameIndex = " + QString::number(_nameIndex) + '\n';
+    if (_noteIndex >= 0) s += "-- _noteIndex = " + QString::number(_noteIndex) + '\n';
     s += _sABraE;
     if (_parents.size()) {
         s += _sSpace + "INHERITS(";
@@ -1910,9 +1909,9 @@ QString cRecStaticDescr::toString() const
             s += _sSpace + (*ii)->fullTableNameQ() + _sComma;
         }
         s.chop(1);
-        s += _sABraE;
+        s += _sABraE + '\n';
     }
-    s += _sSColon +  " -- Table type : ";
+    s += _sSColon +  "\n-- Table type : ";
     switch (_tableType) {
     case BASE_TABLE:    s += "Base";    break;
     case VIEW_TABLE:    s += "View";    break;
@@ -1921,7 +1920,7 @@ QString cRecStaticDescr::toString() const
     case CHILD_TABLE:   s += "Child";   break;
     default:            s += "?";       break;
     }
-    return s + _sSpace;
+    return s;
 }
 
 int cRecStaticDescr::ixToOwner(bool __ex) const
@@ -1933,7 +1932,7 @@ int cRecStaticDescr::ixToOwner(bool __ex) const
         if (t == cColStaticDescr::FT_OWNER) break;
     }
     if (fix >= _columnsNum) {
-        if (__ex) EXCEPTION(EDATA);
+        if (__ex) EXCEPTION(EDATA, -1, toString());
         return NULL_IX;
     }
     return fix;

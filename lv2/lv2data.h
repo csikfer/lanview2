@@ -809,7 +809,7 @@ public:
     // virtual bool toEnd(int i);
     // virtual bool insert(QSqlQuery &__q, bool __ex = true);
     /// Kitölti a ports adattagot, hiba esetén dob egy kizárást.
-    virtual int  fetchPorts(QSqlQuery& __q, bool __ex);
+    virtual int  fetchPorts(QSqlQuery& __q, bool __ex = true);
     /// Hibát dob, ebben az osztályban nem támogatott
     virtual void clearShares();
     /// Hibát dob, ebben az osztályban nem támogatott

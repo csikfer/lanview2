@@ -4,7 +4,7 @@
 
 static inline QWidget *row(const QString& val, Qt::AlignmentFlag a = Qt::AlignLeft)
 {
-    if (val.size() > 32 || val.contains('\n')) {
+    if (val.size() > 64 || val.contains('\n')) {
         QTextEdit   *pTE = new QTextEdit();
         pTE->setText(val);
         pTE->setReadOnly(true);

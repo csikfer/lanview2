@@ -45,14 +45,10 @@ lv2portStat::lv2portStat() : lanView()
                 connect(pDb->driver(), SIGNAL(notification(QString)), SLOT(dbNotif(QString)));
             }
 
-            cDevice::pRLinkStat = &cService::service(*pq, _sRLinkStat);
-            cDevice::pSrvSnmp   = &cService::service(*pq, _sSnmp);
+//            cDevice::pRLinkStat = &cService::service(*pq, _sRLinkStat);
+//            cDevice::pSrvSnmp   = &cService::service(*pq, _sSnmp);
             setup();
-        } catch(cError * e) {
-            lastError = e;
-        } catch(...) {
-            lastError = NEWCERROR(EUNKNOWN);
-        }
+        } CATCHS(lastError)
     }
 }
 
@@ -170,20 +166,20 @@ void cDevice::postInit(QSqlQuery &q, const QString&)
     pSubordinates = new QList<cInspector *>;
     /// A host eredeti objektum típusa
     cSnmpDevice& dev = snmpDev();
-    dev.open(snmp);
+    dev.open(q, snmp);
     dev.fetchPorts(q);
     tRecordList<cNPort>::iterator i, n = dev.ports.end();
     for (i = dev.ports.begin(); i != n; ++i) {
         cNPort *np = *i;
         cInspector *pnas = NULL;
-        if (np->descr() >= cInterface::_descr()) {      // interface-nél alacsonyabb típussal nem foglalkozunk
+        if (np->descr() >= cInterface::_descr_cInterface()) {      // interface-nél alacsonyabb típussal nem foglalkozunk
             cInterface *p = dynamic_cast<cInterface *>(np);
             qlonglong lpid = cLogLink().getLinked(q, p->getId()); // Mivel van linkelve?
             if (lpid != NULL_ID) {  // A linkelt port ID-je
                 pnas = new cInspector(this);
                 pnas->service(pRLinkStat);
                 pnas->pPort = cNPort::getPortObjById(q, lpid);
-                pnas->pNode = cNode::getNodeObjById(q, pnas->pPort->getId(_sNodeId), false); // Ez lehet HUB is !!!
+                pnas->pNode = cNode::getNodeObjById(q, pnas->pPort->getId(_sNodeId), false)->reconvert<cNode>();
                 if (pnas->pNode == NULL) {  // Bizonyára egy HUB, nem foglakozunk vele
                     delete pnas;
                     pnas = NULL;
@@ -207,8 +203,8 @@ void cDevice::postInit(QSqlQuery &q, const QString&)
                         hs.setId(_sServiceId, pnas->serviceId());
                         hs.setId(_sSuperiorHostServiceId, hostServiceId());
                         hs.setId(_sPortId, lpid);
-                        hs.setName(_sHostServiceDescr, QObject::trUtf8("Autómatikusan generálva a portstat által."));
-                        hs.setName(_sNoalarmFlag, _sOn);    // Nem kérünk riasztást az autómatikusan generált rekordhoz.
+                        hs.setName(_sHostServiceNote, QObject::trUtf8("Automatikusan generálva a portstat által."));
+                        hs.setName(_sNoalarmFlag, _sOn);    // Nem kérünk riasztást az automatikusan generált rekordhoz.
                         hs.insert(q);
                     }
                 }

@@ -4,9 +4,10 @@
 #
 #-------------------------------------------------
 
+
 QT       += core sql xml network
 
-#QT       -= gui
+QT       -= gui
 
 TARGET = portstat
 CONFIG += console
@@ -16,16 +17,13 @@ CONFIG += debug
 TEMPLATE = app
 
 
-SOURCES += \
-    portstat.cpp
-
+SOURCES +=  portstat.cpp
+HEADERS +=  portstat.h
 INCLUDEPATH += ../lv2
-LIBS += -lsnmp -L../lv2-Debug -llv2
+LIBS += -lsnmp -L../lv2 -llv2
 
  TRANSLATIONS    = portstat_hu.ts \
                    portstat_en.ts
 
  CODECFORSRC     = UTF-8
 
-HEADERS += \
-    portstat.h
