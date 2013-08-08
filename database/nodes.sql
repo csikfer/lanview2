@@ -48,6 +48,7 @@ INSERT INTO iftypes
 
 -- IANA iftype_id
     ( 'ethernet',               'Ethernet Interface (UTP)',              6,     'ptp',      'interface' ),
+    ( 'veth',                   'Virtual ethernet (brX, tapX, ...)',     6,     'logical',  'interface' ),
     ( 'wireless',               'Wireless ethernet interface',           6,     'wireless', 'interface' ),
     ( 'ppp',                    'Point to Point protcol interface',     23,     'logical',  'interface' ),
     ( 'softwareloopback',       'Software loopback interface',          24,     'logical',  'unknown' ),

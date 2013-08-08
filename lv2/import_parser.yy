@@ -1041,7 +1041,7 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
 %token      MACRO_T FOR_T DO_T TO_T SET_T CLEAR_T BEGIN_T END_T ROLLBACK_T
 %token      VLAN_T SUBNET_T PORTS_T PORT_T NAME_T SHARED_T SENSORS_T
 %token      PLACE_T PATCH_T HUB_T SWITCH_T NODE_T HOST_T ADDRESS_T
-%token      PARENT_T IMAGE_T FRAME_T TEL_T DESCR_T MESSAGE_T ALARM_T
+%token      PARENT_T IMAGE_T FRAME_T TEL_T NOTE_T MESSAGE_T ALARM_T
 %token      PARAM_T TEMPLATE_T COPY_T FROM_T NULL_T VIRTUAL_T
 %token      INCLUDE_T PSEUDO_T OFFS_T IFTYPE_T WRITE_T RE_T
 %token      ADD_T READ_T UPDATE_T ARPS_T ARP_T SERVER_T FILE_T BY_T
@@ -1379,7 +1379,7 @@ place_e : ';'
 plac_ps : place_p
         | plac_ps place_p
         ;
-place_p : DESCR_T str ';'           { place.set(_sPlaceNote, *$2);     delete $2; }
+place_p : NOTE_T str ';'           { place.set(_sPlaceNote, *$2);     delete $2; }
         | PARENT_T place_id ';'     { place.set(_sParentId, $2); }
         | IMAGE_T image_id ';'      { place.set(_sImageId,  $2); }
         | FRAME_T frame ';'         { place.set(_sFrame, QVariant::fromValue(*$2)); delete $2; }
@@ -1408,13 +1408,13 @@ patch_e : '{' patch_ps '}'
 patch_ps: patch_p patch_ps
         |
         ;
-patch_p : DESCR_T str ';'                       { pPatch->setName(_sNodeNote, sp2s($2)); }
+patch_p : NOTE_T str ';'                       { pPatch->setName(_sNodeNote, sp2s($2)); }
         | PLACE_T place_id ';'                  { pPatch->set(_sPlaceId, $2); }
         | ADD_T PORT_T int str str_z ';'        { setLastPort(pPatch->addPort(sp2s($4), sp2s($5), $3)); }
         | ADD_T PORTS_T offs FROM_T int TO_T int offs str ';'
                                                 { setLastPort(pPatch->addPorts(sp2s($9), $8, $5, $7, $3)); }
-        | PORT_T pix DESCR_T strs ';'           { setLastPort(pPatch->portSet($2, _sPortNote, slp2vl($4))); }
-        | PORT_T pnm DESCR_T str ';'            { setLastPort(pPatch->portSet(sp2s($2), _sPortNote, sp2s($4))); }
+        | PORT_T pix NOTE_T strs ';'           { setLastPort(pPatch->portSet($2, _sPortNote, slp2vl($4))); }
+        | PORT_T pnm NOTE_T str ';'            { setLastPort(pPatch->portSet(sp2s($2), _sPortNote, sp2s($4))); }
         | PORT_T pix SET_T str '=' vals ';'     { setLastPort(pPatch->portSet($2, sp2s($4), vlp2vl($6))); }
         | PORT_T str SET_T str '=' value ';'    { setLastPort(pPatch->portSet(sp2s($2), sp2s($4), vp2v($6))); }
         | PORTS_T pixs SHARED_T strs ';'        { int _pix = $2->last();
@@ -1487,22 +1487,22 @@ node_cf :
         | COPY_T FROM_T str                     { templates.get(_sNodes, sp2s($3)); }
                 node_ps
         ;
-node_p  : DESCR_T str ';'                       { pNode->setName(sp2s($2)); }
+node_p  : NOTE_T str ';'                       { pNode->setName(_sNodeNote, sp2s($2)); }
         | PLACE_T place_id ';'                  { pNode->setId(_sPlaceId, $2); }
         | ALARM_T MESSAGE_T str ';'             { pNode->setName(_sNodeAlarmMsg, sp2s($3)); }
         | SET_T str '=' value ';'               { pNode->set(sp2s($2), vp2v($4)); }
         | ADD_T PORTS_T str offs FROM_T int TO_T int offs str ';'
                                                 { setLastPort(pNode->addPorts(sp2s($3), sp2s($10), $9, $6, $8, $4)); }
         | ADD_T PORT_T pix_z str str str_z ';'    { setLastPort(pNode->addPort(sp2s($4), sp2s($5), sp2s($6), $3)); }
-        | PORT_T pnm DESCR_T str ';'            { setLastPort(pNode->portSet(sp2s($2), _sPortNote, sp2s($4))); }
+        | PORT_T pnm NOTE_T str ';'            { setLastPort(pNode->portSet(sp2s($2), _sPortNote, sp2s($4))); }
         | PORT_T pix TYPE_T ix_z str str str_z ';' { setLastPort(pNode->portModType($2, sp2s($5), sp2s($6), sp2s($7))); }
         | PORT_T pix NAME_T str str_z ';'       { setLastPort(pNode->portModName($2, sp2s($4), sp2s($5))); }
-        | PORT_T pix DESCR_T strs ';'           { setLastPort(pNode->portSet($2, _sPortNote, slp2vl($4))); }
+        | PORT_T pix NOTE_T strs ';'           { setLastPort(pNode->portSet($2, _sPortNote, slp2vl($4))); }
         | PORT_T pnm SET_T str '=' value ';'    { setLastPort(pNode->portSet(sp2s($2), sp2s($4), vp2v($6))); }
         | PORT_T pix SET_T str '=' vals ';'     { setLastPort(pNode->portSet($2, sp2s($4), vlp2vl($6)));; }
         | PORT_T pnm PARAM_T str '=' str ';'    { setLastPort(pNode->portSetParam(sp2s($2), sp2s($4), sp2s($6))); }
         | PORT_T pix PARAM_T str '=' strs ';'   { setLastPort(pNode->portSetParam($2, sp2s($4), slp2sl($6))); }
-        /* host_p: a Shift reduce conflict-ok miatt az összes port definíciós sor egy szabályban szerepel, a host() függvény szűr */
+        /* host */
         | ALARM_T PLACE_T GROUP_T str ';'       { pNode->setId(_sAlarmPlaceGroupId, cPlaceGroup().getIdByName(qq(), sp2s($4))); }
         | ADD_T PORT_T pix_z str str ip_qq mac_qq str_z ';' { setLastPort(hostAddPort((int)$3, $4,$5,$6,$7,$8)); }
         | PORT_T pnm ADD_T ADDRESS_T ip_a str_z ';'         { setLastPort(portAddAddress($2, $5, $6)); }
@@ -1515,7 +1515,7 @@ node_p  : DESCR_T str ';'                       { pNode->setName(sp2s($2)); }
         | PORT_T pix VLAN_T vlan_id ';'                     { setLastPort(pNode->portSetVlan(     $2,  $4, VT_HARD, ST_MANUAL)); }
         | PORT_T pnm VLANS_T vlan_ids ';'                   { setLastPort(pNode->portSetVlans(sp2s($2), *$4)); delete $4; }
         | PORT_T pix VLANS_T vlan_ids ';'                   { setLastPort(pNode->portSetVlans(     $2,  *$4)); delete $4; }
-        /* snmpdev: a Shift reduce conflict-ok miatt az összes port definíciós sor egy szabályban szerepel, a snmpdev() függvény szűr  */
+        /* snmpdev  */
         | PORTS_T BY_T SNMP_T str_z ';'             { snmpdev().setBySnmp(sp2s($4)); setLastPort(_sNul, NULL_IX); }
         | COMMUNITY_T str ';'                       { snmpdev().setName(_sCommunityRd, sp2s($2)); }
         | READ_T COMMUNITY_T str ';'                { snmpdev().setName(_sCommunityRd, sp2s($3)); }
@@ -1658,9 +1658,17 @@ ipprot  : ICMP_T                    { $$ = EP_ICMP; }
         | PROTOCOL_T str            { $$ = cIpProtocol().getIdByName(qq(), *$2, true); delete $2; }
         ;
 hostsrv : HOST_T SERVICE_T str ':' str str_z    { NEWOBJ(pHostService, cHostService);
-                                                      (*pHostService)[_sNodeId]    = cNode().cRecord::getIdByName(qq(),*$3, true);  delete $3;
-                                                      (*pHostService)[_sServiceId] = cService().getIdByName(qq(),*$5);              delete $5;
-                                                      (*pHostService)[_sHostServiceNote] =  *$6;                                    delete $6;
+                                                    (*pHostService)[_sNodeId]    = cNode().cRecord::getIdByName(qq(),*$3, true);  delete $3;
+                                                    (*pHostService)[_sServiceId] = cService().getIdByName(qq(),*$5);              delete $5;
+                                                    (*pHostService)[_sHostServiceNote] =  *$6;                                    delete $6;
+                                                }
+          hsrvend                               { pHostService->insert(qq(), true); DELOBJ(pHostService); }
+        | HOST_T SERVICE_T str ':' str ':' str str_z
+                                                { NEWOBJ(pHostService, cHostService);
+                                                    (*pHostService)[_sNodeId]    = cNode().cRecord::getIdByName(qq(),*$3, true);  delete $3;
+                                                    (*pHostService)[_sServiceId] = cService().getIdByName(qq(),*$5);              delete $5;
+                                                    (*pHostService)[_sHostServiceNote] =  *$8;                                    delete $8;
+                                                    (*pHostService)[_sPortId] = cNPort().getPortIdByName(qq(), *$7, pHostService->get(_sNodeId).toLongLong(), true); delete $7;
                                                 }
           hsrvend                               { pHostService->insert(qq(), true); DELOBJ(pHostService); }
         | SET_T SUPERIOR_T hs TO_T hss ';'      { setSuperior($3, $5); }
@@ -1695,25 +1703,27 @@ hs      : str ':' str                           { $$ = new QStringPair(sp2s($1),
 hss     : hs                                    { *($$ = new QStringPairList) << *$1; delete $1; }
         | hss ',' hs                            { *($$ = $1) << *$3; delete $3; }
         ;
-delete  : DELETE_T PLACE_T pattern str ';'      { cPlace().     delByName(qq(), *$4, $3);        delete $4; }
-        | DELETE_T PATCH_T pattern str ';'      { cPatch().     delByName(qq(), *$4, $3, true);  delete $4; }
-        | DELETE_T NODE_T pattern str ';'       { cNode().      delByName(qq(), *$4, $3, false); delete $4; }
-        | DELETE_T ONLY_T NODE_T pattern str ';'{ cNode().      delByName(qq(), *$5, $4, true);  delete $5; }
-        | DELETE_T VLAN_T pattern str ';'       { cVLan().      delByName(qq(), *$4, $3);        delete $4; }
-        | DELETE_T HOST_T str SERVICE_T pattern str ';'
-                                                { cHostService().delByNames(qq(), sp2s($3), sp2s($6), $5); }
-        | DELETE_T MACRO_T str ';'              { templates.del(_sMacros,     sp2s($3)); }
-        | DELETE_T TEMPLATE_T PATCH_T str ';'   { templates.del(_sPatchs,     sp2s($4)); }
-        | DELETE_T TEMPLATE_T NODE_T str ';'    { templates.del(_sNodes,      sp2s($4)); }
-        | DELETE_T LINK_T str pattern str ';'   { cPhsLink().unlink(qq(), sp2s($3), sp2s($5), $4); }
+delete  : DELETE_T PLACE_T pattern strs ';'     { foreach (QString s, *$4) { cPlace(). delByName(qq(), s, $3); }       delete $4; }
+        | DELETE_T PATCH_T pattern strs ';'     { foreach (QString s, *$4) { cPatch(). delByName(qq(), s, $3, true); } delete $4; }
+        | DELETE_T NODE_T pattern strs ';'      { foreach (QString s, *$4) { cNode().  delByName(qq(), s, $3, false); }delete $4; }
+        | DELETE_T ONLY_T NODE_T pattern strs ';'{foreach (QString s, *$5) { cNode().  delByName(qq(), s, $4, true); } delete $5; }
+        | DELETE_T VLAN_T pattern strs ';'      { foreach (QString s, *$4) { cVLan().  delByName(qq(), s, $3); }       delete $4; }
+        | DELETE_T SUBNET_T pattern strs ';'    { foreach (QString s, *$4) { cSubNet().delByName(qq(), s, $3); }       delete $4; }
+        | DELETE_T HOST_T str SERVICE_T pattern strs ';'
+                                                { foreach (QString s, *$6) { cHostService().delByNames(qq(), sp2s($3), s, $5); } delete $6; }
+        | DELETE_T MACRO_T strs ';'             { foreach (QString s, *$3) { templates.del(_sMacros, s); } delete $3; }
+        | DELETE_T TEMPLATE_T PATCH_T strs ';'  { foreach (QString s, *$4) { templates.del(_sPatchs, s); } delete $4; }
+        | DELETE_T TEMPLATE_T NODE_T strs ';'   { foreach (QString s, *$4) { templates.del(_sNodes,  s); } delete $4; }
+        | DELETE_T LINK_T strs ';'              { foreach (QString s, *$3) { cPhsLink().unlink(qq(), s, "%", true); } delete $3; }
+        | DELETE_T LINK_T str pattern strs ';'  { foreach (QString s, *$5) { cPhsLink().unlink(qq(), sp2s($3), s, $4); } delete $5; }
         | DELETE_T LINK_T str int ix_z ';'      { cPhsLink().unlink(qq(), sp2s($3), $4, $5); }
-        | DELETE_T TABLE_T SHAPE_T pattern str ';'
-                                                { cTableShape().delByName(qq(), *$5, $4, false); delete $5; }
-        | DELETE_T ENUM_T TITLE_T  str ';'      { cEnumVal().delByTypeName(qq(), sp2s($4), false); }
-        | DELETE_T ENUM_T TITLE_T  PATTERN_T str ';'
-                                                { cEnumVal().delByTypeName(qq(), sp2s($5), true); }
-        | DELETE_T ENUM_T TITLE_T  str str ';'  { cEnumVal().delByNames(qq(), sp2s($4), sp2s($5)); }
-        | DELETE_T GUI_T pattern str MENU_T ';' { cMenuItem().delByAppName(qq(), sp2s($4), $3); }
+        | DELETE_T TABLE_T SHAPE_T pattern strs ';'
+                                                { foreach (QString s, *$5) { cTableShape().delByName(qq(), s, $4, false); } delete $5; }
+        | DELETE_T ENUM_T TITLE_T  strs ';'     { foreach (QString s, *$4) { cEnumVal().delByTypeName(qq(), s, false); } delete $4; }
+        | DELETE_T ENUM_T TITLE_T  PATTERN_T strs ';'
+                                                { foreach (QString s, *$5) { cEnumVal().delByTypeName(qq(), s, true); } delete $5; }
+        | DELETE_T ENUM_T TITLE_T  str strs ';' { foreach (QString s, *$5) { cEnumVal().delByNames(qq(), sp2s($4), s); } delete $5; }
+        | DELETE_T GUI_T pattern strs MENU_T ';'{ foreach (QString s, *$4) { cMenuItem().delByAppName(qq(), s, $3); } delete $4; }
         ;
 pattern :                                       { $$ = false; }
         | PATTERN_T                             { $$ = true;  }
@@ -1751,7 +1761,7 @@ tmodp   : SET_T DEFAULTS_T ';'                  { pTableShape->setDefaults(qq())
         | SET_T str '.' str '=' value ';'       { pTableShape->fset(sp2s($2), sp2s($4), vp2v($6)); }
         | SET_T '(' strs ')' '.' str '=' value ';'{ pTableShape->fsets(slp2sl($3), sp2s($6), vp2v($8)); }
         | FIELD_T str TITLE_T str ';'           { pTableShape->fset(sp2s($2),_sTableShapeFieldTitle, sp2s($4)); }
-        | FIELD_T str DESCR_T str ';'           { pTableShape->fset(sp2s($2),_sTableShapeFieldNote, sp2s($4)); }
+        | FIELD_T str NOTE_T str ';'           { pTableShape->fset(sp2s($2),_sTableShapeFieldNote, sp2s($4)); }
         | FIELD_T str TITLE_T str str ';'       { pTableShape->fset(    *$2,    _sTableShapeFieldTitle, sp2s($4)   );
                                                   pTableShape->fset(sp2s($2),_sTableShapeFieldNote, sp2s($5)); }
         | FIELD_T strs VIEW_T RIGHTS_T str ';'  { pTableShape->fsets(slp2sl($2), _sViewRights, sp2s($5)); }
@@ -1958,7 +1968,7 @@ static int yylex(void)
         TOK(MACRO) TOK(FOR) TOK(DO) TOK(TO) TOK(SET) TOK(CLEAR) TOK(BEGIN) TOK(END) TOK(ROLLBACK)
         TOK(VLAN) TOK(SUBNET) TOK(PORTS) TOK(PORT) TOK(NAME) TOK(SHARED) TOK(SENSORS)
         TOK(PLACE) TOK(PATCH) TOK(HUB) TOK(SWITCH) TOK(NODE) TOK(HOST) TOK(ADDRESS)
-        TOK(PARENT) TOK(IMAGE) TOK(FRAME) TOK(TEL) TOK(DESCR) TOK(MESSAGE) TOK(ALARM)
+        TOK(PARENT) TOK(IMAGE) TOK(FRAME) TOK(TEL) TOK(NOTE) TOK(MESSAGE) TOK(ALARM)
         TOK(PARAM) TOK(TEMPLATE) TOK(COPY) TOK(FROM) TOK(NULL) TOK(VIRTUAL)
         TOK(INCLUDE) TOK(PSEUDO) TOK(OFFS) TOK(IFTYPE) TOK(WRITE) TOK(RE)
         TOK(ADD) TOK(READ) TOK(UPDATE) TOK(ARPS) TOK(ARP) TOK(SERVER) TOK(FILE) TOK(BY)
