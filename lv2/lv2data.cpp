@@ -175,7 +175,7 @@ qlonglong cSubNet::insertNew(const QString& _n, const QString& _d, const netAddr
 
 int cSubNet::getByAddress(QSqlQuery & __q, const QHostAddress& __addr)
 {
-    QString where = QString(" %1 << inet '%2' ").arg(dQuoted(_sNetAddr), __addr.toString());
+    QString where = QString(" %1 >> inet '%2' ").arg(dQuoted(_sNetAddr), __addr.toString());
     fetchQuery(__q, false, QBitArray(1), tIntVector(), 0, 0, QString(), where);
     if (!__q.first()) return 0;
     set(__q.record());

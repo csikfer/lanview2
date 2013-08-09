@@ -1059,7 +1059,7 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
 %token      LEFT_T DEFAULTS_T ENUM_T RIGHT_T VIEW_T INSERT_T EDIT_T
 %token      INHERIT_T NAMES_T HIDE_T VALUE_T DEFAULT_T FILTER_T FILTERS_T
 %token      ORD_T SEQUENCE_T MENU_T GUI_T OWN_T TOOL_T TIP_T WHATS_T THIS_T
-%token      EXEC_T
+%token      EXEC_T TAG_T
 
 %token <i>  INTEGER_V
 %token <r>  FLOAT_V
@@ -1408,13 +1408,15 @@ patch_e : '{' patch_ps '}'
 patch_ps: patch_p patch_ps
         |
         ;
-patch_p : NOTE_T str ';'                       { pPatch->setName(_sNodeNote, sp2s($2)); }
+patch_p : NOTE_T str ';'                        { pPatch->setName(_sNodeNote, sp2s($2)); }
         | PLACE_T place_id ';'                  { pPatch->set(_sPlaceId, $2); }
         | ADD_T PORT_T int str str_z ';'        { setLastPort(pPatch->addPort(sp2s($4), sp2s($5), $3)); }
         | ADD_T PORTS_T offs FROM_T int TO_T int offs str ';'
                                                 { setLastPort(pPatch->addPorts(sp2s($9), $8, $5, $7, $3)); }
-        | PORT_T pix NOTE_T strs ';'           { setLastPort(pPatch->portSet($2, _sPortNote, slp2vl($4))); }
-        | PORT_T pnm NOTE_T str ';'            { setLastPort(pPatch->portSet(sp2s($2), _sPortNote, sp2s($4))); }
+        | PORT_T pix NOTE_T strs ';'            { setLastPort(pPatch->portSet($2, _sPortNote, slp2vl($4))); }
+        | PORT_T pnm NOTE_T str ';'             { setLastPort(pPatch->portSet(sp2s($2), _sPortNote, sp2s($4))); }
+        | PORT_T pix TAG_T strs ';'             { setLastPort(pPatch->portSet($2, _sPortTag, slp2vl($4))); }
+        | PORT_T pnm TAG_T str ';'              { setLastPort(pPatch->portSet(sp2s($2), _sPortTag, sp2s($4))); }
         | PORT_T pix SET_T str '=' vals ';'     { setLastPort(pPatch->portSet($2, sp2s($4), vlp2vl($6))); }
         | PORT_T str SET_T str '=' value ';'    { setLastPort(pPatch->portSet(sp2s($2), sp2s($4), vp2v($6))); }
         | PORTS_T pixs SHARED_T strs ';'        { int _pix = $2->last();
@@ -1493,11 +1495,13 @@ node_p  : NOTE_T str ';'                       { pNode->setName(_sNodeNote, sp2s
         | SET_T str '=' value ';'               { pNode->set(sp2s($2), vp2v($4)); }
         | ADD_T PORTS_T str offs FROM_T int TO_T int offs str ';'
                                                 { setLastPort(pNode->addPorts(sp2s($3), sp2s($10), $9, $6, $8, $4)); }
-        | ADD_T PORT_T pix_z str str str_z ';'    { setLastPort(pNode->addPort(sp2s($4), sp2s($5), sp2s($6), $3)); }
-        | PORT_T pnm NOTE_T str ';'            { setLastPort(pNode->portSet(sp2s($2), _sPortNote, sp2s($4))); }
+        | ADD_T PORT_T pix_z str str str_z ';'  { setLastPort(pNode->addPort(sp2s($4), sp2s($5), sp2s($6), $3)); }
         | PORT_T pix TYPE_T ix_z str str str_z ';' { setLastPort(pNode->portModType($2, sp2s($5), sp2s($6), sp2s($7))); }
         | PORT_T pix NAME_T str str_z ';'       { setLastPort(pNode->portModName($2, sp2s($4), sp2s($5))); }
-        | PORT_T pix NOTE_T strs ';'           { setLastPort(pNode->portSet($2, _sPortNote, slp2vl($4))); }
+        | PORT_T pix NOTE_T strs ';'            { setLastPort(pNode->portSet($2, _sPortNote, slp2vl($4))); }
+        | PORT_T pnm NOTE_T str ';'             { setLastPort(pNode->portSet(sp2s($2), _sPortNote, sp2s($4))); }
+        | PORT_T pix TAG_T strs ';'             { setLastPort(pNode->portSet($2, _sPortTag, slp2vl($4))); }
+        | PORT_T pnm TAG_T str ';'              { setLastPort(pNode->portSet(sp2s($2), _sPortTag, sp2s($4))); }
         | PORT_T pnm SET_T str '=' value ';'    { setLastPort(pNode->portSet(sp2s($2), sp2s($4), vp2v($6))); }
         | PORT_T pix SET_T str '=' vals ';'     { setLastPort(pNode->portSet($2, sp2s($4), vlp2vl($6)));; }
         | PORT_T pnm PARAM_T str '=' str ';'    { setLastPort(pNode->portSetParam(sp2s($2), sp2s($4), sp2s($6))); }
@@ -1986,7 +1990,7 @@ static int yylex(void)
         TOK(LEFT) TOK(DEFAULTS) TOK(ENUM) TOK(RIGHT) TOK(VIEW) TOK(INSERT) TOK(EDIT)
         TOK(INHERIT) TOK(NAMES) TOK(HIDE) TOK(VALUE) TOK(DEFAULT) TOK(FILTER) TOK(FILTERS)
         TOK(ORD) TOK(SEQUENCE) TOK(MENU) TOK(GUI) TOK(OWN) TOK(TOOL) TOK(TIP) TOK(WHATS) TOK(THIS)
-        TOK(EXEC)
+        TOK(EXEC) TOK(TAG)
         { "WST", WORKSTATION_T }, // rövidítések
         { "ATT", ATTACHED_T },
         { "INT", INTEGER_T },
