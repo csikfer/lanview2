@@ -57,6 +57,7 @@ INSERT INTO iftypes
     ( 'multiplexor',            'Trunk',                                54,     'logical',  'interface' ),
     ( 'adsl',                   'Asymmetric Digital Subscriber Loop',   94,     'logical',  'interface' ),
     ( 'tunnel',                 'Encapsulation interface',             131,     'logical',  'interface' ),
+    ( 'l2vlan',                 'VLan',                                135,     'logical',  'interface' ),
     ( 'digitalPowerline',       'IP over Power Lines',                 138,     'bus',      'interface' ),
     ( 'usb',                    'USB Interface',                       160,     'ptp',      'interface'  );
 -- //// LAN.NPORTS

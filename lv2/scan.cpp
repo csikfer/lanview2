@@ -457,16 +457,16 @@ bool setPortsBySnmp(cSnmpDevice& node, bool __ex)
         int             type = tab[_sIfType][i].toInt(&ok);
         if (!ok) EX(EDATA, -1, QString("SNMP ifType: '%1'").arg(tab[_sIfType][i].toString()));
         switch(type) {  // IANA típusból következtetönk az objektum típusára és iftype_name -ra
-          // case   1: ifTypeName = _sUnknown;     break;  // Jobb híjján
-          case   6: ifTypeName = _sEthernet;    break;  // Ethernet
-          case  53: ifTypeName = _sVirtual;     break;  // VLan
-          case  54: ifTypeName = _sMultiplexor; break;  // Trunk
-          case  24: continue;  // loopback
-          default:
+      //case   1: ifTypeName = _sUnknown;       break;
+        case   6: ifTypeName = _sEthernet;      break;      // Ethernet
+        case  24:                               continue;   // loopback
+        case  53: ifTypeName = _sVirtual;       break;      // VLan
+        case  54: ifTypeName = _sMultiplexor;   break;      // Trunk
+        case 135: ifTypeName = _sL2Vlan;        break;      // VLan
+        default:
             DWAR() << "Unhandled interface type " << type << " : #" << tab[_sIfIndex][i]
                    << _sSpace << name << endl;
             continue;
-            return false;
         }
         cIfType         ifType = cIfType::ifType(ifTypeName);
         cNPort *pPort = cNPort::newPortObj(ifType);

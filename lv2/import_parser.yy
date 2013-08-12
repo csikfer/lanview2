@@ -1496,7 +1496,7 @@ node_p  : NOTE_T str ';'                       { pNode->setName(_sNodeNote, sp2s
         | ADD_T PORTS_T str offs FROM_T int TO_T int offs str ';'
                                                 { setLastPort(pNode->addPorts(sp2s($3), sp2s($10), $9, $6, $8, $4)); }
         | ADD_T PORT_T pix_z str str str_z ';'  { setLastPort(pNode->addPort(sp2s($4), sp2s($5), sp2s($6), $3)); }
-        | PORT_T pix TYPE_T ix_z str str str_z ';' { setLastPort(pNode->portModType($2, sp2s($5), sp2s($6), sp2s($7))); }
+        | PORT_T pix TYPE_T ix_z str str str_z ';' { setLastPort(pNode->portModType($2, sp2s($5), sp2s($6), sp2s($7), $4)); }
         | PORT_T pix NAME_T str str_z ';'       { setLastPort(pNode->portModName($2, sp2s($4), sp2s($5))); }
         | PORT_T pix NOTE_T strs ';'            { setLastPort(pNode->portSet($2, _sPortNote, slp2vl($4))); }
         | PORT_T pnm NOTE_T str ';'             { setLastPort(pNode->portSet(sp2s($2), _sPortNote, sp2s($4))); }

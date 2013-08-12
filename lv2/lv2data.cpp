@@ -1295,7 +1295,7 @@ cNPort *cNode::portModType(int __ix, const QString& __type, const QString& __nam
     p->setId(_sIfTypeId, nt.getId());
     p->setName(__name);
     if (!__note.isEmpty()) p->setName(_sPortNote, __note);
-    if (__new_ix < 0)      p->setId(_sPortIndex, __new_ix);
+    if (__new_ix >= 0)     p->setId(_sPortIndex, __new_ix);
     return p;
 }
 

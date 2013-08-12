@@ -12,9 +12,31 @@ bison.CONFIG += target_predeps
 bison.variable_out = SOURCES
 QMAKE_EXTRA_COMPILERS += bison
 
-BISONSOURCES += import_parser.yy
+#m4 definition
+m4h.name = m4h
+m4h.input = M4HEADERS
+m4h.output =${QMAKE_FILE_BASE}.h
+m4h.commands = m4 -s -I${QMAKE_FILE_IN_PATH} <${QMAKE_FILE_IN} >${QMAKE_FILE_OUT}
+m4h.clean = rm ${QMAKE_FILE_OUT}
+m4h.CONFIG += target_predeps
+m4h.variable_out = HEADERS
+QMAKE_EXTRA_COMPILERS += m4h
 
-OTHER_FILES += $$BISONSOURCES
+m4c.name = m4c
+m4c.input = M4SOURCES
+m4c.output =${QMAKE_FILE_BASE}.cpp
+m4c.commands = m4 -s -I${QMAKE_FILE_IN_PATH} <${QMAKE_FILE_IN} >${QMAKE_FILE_OUT}
+m4c.clean = rm ${QMAKE_FILE_OUT}
+m4c.CONFIG += target_predeps
+m4c.variable_out = SOURCES
+QMAKE_EXTRA_COMPILERS +=  m4c
+
+BISONSOURCES += import_parser.yy
+M4HEADERS    += strings.m4h
+M4SOURCES    += strings.m4c
+DEPENDPATH   += $$TARGETPATH
+
+OTHER_FILES += $$BISONSOURCES $$M4HEADERS $$M4SOURCES
 
 QT += network \
     sql \
@@ -30,7 +52,6 @@ CONFIG(debug, debug|release) {
 }
 DEFINES += LV2_LIBRARY
 SOURCES += lanview.cpp \
-    strings.cpp \
     cdebug.cpp \
     cerror.cpp \
     usignal.cpp \
@@ -49,7 +70,6 @@ SOURCES += lanview.cpp \
     import_parser.cpp
 HEADERS += lanview.h \
     lv2_global.h \
-    strings.h \
     qsnmp.h \
     errcodes.h \
     cerror.h \
@@ -69,10 +89,11 @@ HEADERS += lanview.h \
     guidata.h \
     lv2cont.h \
     doxydoc.h \
-    import_parser.h
+    import_parser.h \
+    strings.m4
+
 FORMS += 
-OTHER_FILES += \
-    import_parser.yy
+
 unix:LIBS += -lsnmp
 
 # CXXFLAGS += -Wconversion
