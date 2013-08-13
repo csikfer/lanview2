@@ -452,24 +452,18 @@ bool setPortsBySnmp(cSnmpDevice& node, bool __ex)
     int i;
     for (i = 0; i < n; i++) {
         QHostAddress    addr(tab[_sIpAdEntAddr][i].toString());
-        QString         ifTypeName;
         QString         name = tab[_sIfDescr][i].toString();
         int             type = tab[_sIfType][i].toInt(&ok);
         if (!ok) EX(EDATA, -1, QString("SNMP ifType: '%1'").arg(tab[_sIfType][i].toString()));
-        switch(type) {  // IANA típusból következtetönk az objektum típusára és iftype_name -ra
-      //case   1: ifTypeName = _sUnknown;       break;
-        case   6: ifTypeName = _sEthernet;      break;      // Ethernet
-        case  24:                               continue;   // loopback
-        case  53: ifTypeName = _sVirtual;       break;      // VLan
-        case  54: ifTypeName = _sMultiplexor;   break;      // Trunk
-        case 135: ifTypeName = _sL2Vlan;        break;      // VLan
-        default:
+        // IANA típusból következtetönk az objektum típusára és iftype_name -ra
+        const cIfType  *pIfType = cIfType::fromIana(type);
+        if (pIfType == NULL) {
             DWAR() << "Unhandled interface type " << type << " : #" << tab[_sIfIndex][i]
                    << _sSpace << name << endl;
             continue;
         }
-        cIfType         ifType = cIfType::ifType(ifTypeName);
-        cNPort *pPort = cNPort::newPortObj(ifType);
+        QString         ifTypeName = pIfType->getName();
+        cNPort *pPort = cNPort::newPortObj(*pIfType);
         if (pPort->descr().tableName() != _sInterfaces) {
             EX(EDATA, -1, QObject::trUtf8("Invalid port object type"));
         }
@@ -481,7 +475,7 @@ bool setPortsBySnmp(cSnmpDevice& node, bool __ex)
         pPort->setName(name);
         int ifIndex = tab[_sIfIndex][i].toInt();
         pPort->set(_sPortIndex, ifIndex);
-        pPort->set(_sIfTypeId, ifType.getId());
+        pPort->set(_sIfTypeId, pIfType->getId());
         if (mac.isValid())  pPort->set(_sHwAddress, mac.toString());
         if (!addr.isNull()) {   // Van IP címünk
             cInterface *pIf = pPort->reconvert<cInterface>();

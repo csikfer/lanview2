@@ -19,7 +19,7 @@ TEMPLATE = app
 
 SOURCES += import.cpp
 HEADERS += import.h
-INCLUDEPATH += ../lv2
+INCLUDEPATH += ../lv2 ${QMAKE_FILE_OUT_PATH}/../lv2
 LIBS += -lsnmp -L../lv2 -llv2
 
  TRANSLATIONS    = import_hu.ts \

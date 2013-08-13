@@ -417,6 +417,10 @@ public:
     /// Egy ifTypes objektum nevét adja vissza az ID alapján, ha nincs ilyen azonosítójú típus, akkor dob egy kizárást.
     /// Az ifTypes adattagban keres, ha ifTypes üres, akkor feltölti az adatbázisból
     static QString   ifTypeName(qlonglong __id, bool __ex = true)    { return ifType(__id, __ex).getName(); }
+    /// Visszakeresi az ifTypes konténer azon elemét, melynek az iftype_iana_id értéke megeggyezik a
+    /// a paraméterben magydott értékkel, és a preferred értéke true. Ha van ilyen objektum a
+    /// konténerben, akkor az első pointerével, ha nincs NULL pointerrel tér vissza.
+    static const cIfType *fromIana(int _iana_id);
 protected:
     /// Ha nincs feltöltve az ifTypes adattag , akkor feltölti az adatbázisból,
     /// Vagyis hívja a void fetchIfTypes(QSqlQuery& __q); metódust.

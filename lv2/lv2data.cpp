@@ -511,6 +511,17 @@ const cIfType& cIfType::ifType(qlonglong __id, bool __ex)
     return *(ifTypes[i]);
 }
 
+const cIfType *cIfType::fromIana(int _iana_id)
+{
+    checkIfTypes();
+    QList<cIfType *>::const_iterator    i;
+    for (i = ifTypes.constBegin(); i < ifTypes.constEnd(); i++) {
+        const cIfType *pift = *i;
+        if (pift->getBool(_sPreferred) && pift->getId() == _iana_id) return pift;
+    }
+    return NULL;
+}
+
 /* ------------------------------ cNPort ------------------------------ */
 
 cNPort::cNPort() : cRecord()

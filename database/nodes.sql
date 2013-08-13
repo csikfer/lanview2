@@ -22,6 +22,7 @@ CREATE TABLE iftypes (
     iftype_iana_id      integer         NOT NULL DEFAULT 1, -- 'other'
     iftype_link_type    linktype        NOT NULL DEFAULT 'ptp',
     iftype_obj_type     portobjtype     NOT NULL
+    preferred           bool            DEFAULT false
 );
 ALTER TABLE iftypes OWNER TO lanview2;
 COMMENT ON TABLE  iftypes               IS 'Network Interfaces (ports) típus leíró rekord.';
@@ -36,30 +37,31 @@ INSERT INTO iftypes
     (iftype_id, iftype_name,    iftype_note,              iftype_iana_id, iftype_link_type, iftype_obj_type) VALUES
     ( 0,        'unknown',      'Unknown pseudo type',    1,              'unknown',        'unknown');
 INSERT INTO iftypes
-    (iftype_name,               iftype_note,              iftype_iana_id, iftype_link_type, iftype_obj_type) VALUES
+    (iftype_name,               iftype_note,                iftype_iana_id, iftype_link_type, iftype_obj_type) VALUES
 -- Pseudo types
-    ( 'attach',                 'Érzékelő kapcsolódási pont',            1,     'ptp',      'nport' ),
-    ( 'bus',                    'hub port',                              1,     'bus',      'nport' ),
-    ( 'sensor',                 'Sensor port',                           1,     'ptp',      'interface' ),
-    ( 'patch',                  'Patch port (UTP)',                      1,     'patch',    'pport' ),
-    ( 'rs485',                  'RS-485 Serial bus interface',           1,     'bus',      'interface' ),
-    ( 'iic',                    'IIC Serial bus interface',              1,     'bus',      'interface' ),
-    ( 'eport',                  'unmanagement ethernet',                 1,     'ptp',      'nport' ),
-
+    ( 'attach',                 'Érzékelő kapcsolódási pont',            1,     'ptp',        'nport' ),
+    ( 'bus',                    'hub port',                              1,     'bus',        'nport' ),
+    ( 'sensor',                 'Sensor port',                           1,     'ptp',        'interface' ),
+    ( 'patch',                  'Patch port (UTP)',                      1,     'patch',      'pport' ),
+    ( 'rs485',                  'RS-485 Serial bus interface',           1,     'bus',        'interface' ),
+    ( 'iic',                    'IIC Serial bus interface',              1,     'bus',        'interface' ),
+    ( 'eport',                  'unmanagement ethernet',                 1,     'ptp',        'nport' );
 -- IANA iftype_id
-    ( 'ethernet',               'Ethernet Interface (UTP)',              6,     'ptp',      'interface' ),
-    ( 'veth',                   'Virtual ethernet (brX, tapX, ...)',     6,     'logical',  'interface' ),
-    ( 'wireless',               'Wireless ethernet interface',           6,     'wireless', 'interface' ),
-    ( 'ppp',                    'Point to Point protcol interface',     23,     'logical',  'interface' ),
-    ( 'softwareloopback',       'Software loopback interface',          24,     'logical',  'unknown' ),
-    ( 'rs232',                  'RS232 Interface',                      33,     'ptp',      'interface'  ),
-    ( 'virtual',                'VLan',                                 53,     'logical',  'interface' ),
-    ( 'multiplexor',            'Trunk',                                54,     'logical',  'interface' ),
-    ( 'adsl',                   'Asymmetric Digital Subscriber Loop',   94,     'logical',  'interface' ),
-    ( 'tunnel',                 'Encapsulation interface',             131,     'logical',  'interface' ),
-    ( 'l2vlan',                 'VLan',                                135,     'logical',  'interface' ),
-    ( 'digitalPowerline',       'IP over Power Lines',                 138,     'bus',      'interface' ),
-    ( 'usb',                    'USB Interface',                       160,     'ptp',      'interface'  );
+INSERT INTO iftypes
+    (iftype_name,               iftype_note,                iftype_iana_id, iftype_link_type, iftype_obj_type, preferred) VALUES
+    ( 'ethernet',               'Ethernet Interface (UTP)',              6,     'ptp',        'interface',      't' ),
+    ( 'veth',                   'Virtual ethernet (brX, tapX, ...)',     6,     'logical',    'interface',      'f' ),
+    ( 'wireless',               'Wireless ethernet interface',           6,     'wireless',   'interface',      'f' ),
+    ( 'ppp',                    'Point to Point protcol interface',     23,     'logical',    'interface',      't' ),
+    ( 'softwareloopback',       'Software loopback interface',          24,     'logical',    'unknown',        'f' ),
+    ( 'rs232',                  'RS232 Interface',                      33,     'ptp',        'interface',      'f' ),
+    ( 'virtual',                'VLan (ProCurve)',                      53,     'logical',    'interface',      't' ),
+    ( 'multiplexor',            'Trunk',                                54,     'logical',    'interface',      't' ),
+    ( 'adsl',                   'Asymmetric Digital Subscriber Loop',   94,     'logical',    'interface',      't' ),
+    ( 'tunnel',                 'Encapsulation interface',             131,     'logical',    'interface',      'f' ),
+    ( 'l2vlan',                 'VLan (SonicWall)',                    135,     'logical',    'interface',      't' ),
+    ( 'digitalPowerline',       'IP over Power Lines',                 138,     'bus',        'interface',      'f' ),
+    ( 'usb',                    'USB Interface',                       160,     'ptp',        'interface',      'f' );
 -- //// LAN.NPORTS
 
 CREATE TYPE ifstatus AS ENUM (
