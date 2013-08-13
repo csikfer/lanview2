@@ -383,6 +383,7 @@ cArpTable& cArpTable::getFromDb(QSqlQuery& __q)
 
 bool setPortsBySnmp(cSnmpDevice& node, bool __ex)
 {
+    QString sysdescr = node.getName(_sSysDescr);
     // Előszedjük a címet az ideiglenesen felvett, megadott egy port és egy cím alapján.
     // A portot töröljük, az majd a lekérdezés teljes adatatartalommal felveszi
     if (node.ports.size() != 1) {
@@ -471,6 +472,14 @@ bool setPortsBySnmp(cSnmpDevice& node, bool __ex)
         if (pPort->descr().tableName() == _sNPorts && mac.isValid()) {
             DWAR() << "Interface " << name << " Drop HW address " << mac.toString() << endl;
             mac.clear();
+        }
+        // A SonicWall használhatatlan portneveket ad vissza, lekapjuk róla a megjegyzés részt
+        if (sysdescr.contains("sonicwall", Qt::CaseInsensitive)) {
+            QStringList sl = name.split(QChar(' '));
+            if (sl.size() > 1) {
+                pPort->setName(_sPortNote, name);
+                name = sl[0];
+            }
         }
         pPort->setName(name);
         int ifIndex = tab[_sIfIndex][i].toInt();

@@ -517,7 +517,7 @@ const cIfType *cIfType::fromIana(int _iana_id)
     QList<cIfType *>::const_iterator    i;
     for (i = ifTypes.constBegin(); i < ifTypes.constEnd(); i++) {
         const cIfType *pift = *i;
-        if (pift->getBool(_sPreferred) && pift->getId() == _iana_id) return pift;
+        if (pift->getBool(_sPreferred) && pift->getId(_sIfTypeIanaId) == _iana_id) return pift;
     }
     return NULL;
 }
@@ -1333,7 +1333,7 @@ cNPort *cNode::addSensors(const QString& __np, int __noff, int __from, int __to,
 bool cNode::fetchByIp(QSqlQuery& q, const QHostAddress& a)
 {
     clear();
-    QString sql = "SELECT nodes.* FROM nodes JOIN USING(node_id) interfaces JOIN ipadresses USING(port_id) WHERE address = ?";
+    QString sql = "SELECT nodes.* FROM nodes JOIN interfaces USING(node_id) JOIN ipaddresses USING(port_id) WHERE address = ?";
     if (execSql(q, sql, a.toString())) {
         set(q);
         return true;
@@ -1344,7 +1344,7 @@ bool cNode::fetchByIp(QSqlQuery& q, const QHostAddress& a)
 int cNode::fetchByMac(QSqlQuery& q, const cMac& a)
 {
     clear();
-    QString sql = "SELECT nodes.* FROM nodes JOIN USING(node_id) interfaces WHERE hwaddress = ?";
+    QString sql = "SELECT nodes.* FROM nodes JOIN interfaces USING(node_id) WHERE hwaddress = ?";
     if (execSql(q, sql, a.toString())) {
         set(q);
         return true;
@@ -1430,7 +1430,7 @@ cInterface *cNode::portSetVlans(int __port_index, const QList<qlonglong>& _ids)
 QList<QHostAddress> cNode::fetchAllIpAddress(QSqlQuery& q, qlonglong __id) const
 {
     QString sql =
-            "SELECT address FROM interfaces JOIN ipaddressess USING(port_id)"
+            "SELECT address FROM interfaces JOIN ipaddresses USING(port_id)"
                " WHERE node_id = ?"
                " ORDER BY preferred ASC";
     QList<QHostAddress> r;

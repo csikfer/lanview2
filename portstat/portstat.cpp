@@ -45,8 +45,8 @@ lv2portStat::lv2portStat() : lanView()
                 connect(pDb->driver(), SIGNAL(notification(QString)), SLOT(dbNotif(QString)));
             }
 
-//            cDevice::pRLinkStat = &cService::service(*pq, _sRLinkStat);
-//            cDevice::pSrvSnmp   = &cService::service(*pq, _sSnmp);
+            cDevice::pRLinkStat = &cService::service(*pq, "rlinkstat");
+            cDevice::pSrvSnmp   = &cService::service(*pq, _sSnmp);
             setup();
         } CATCHS(lastError)
     }

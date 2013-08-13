@@ -191,7 +191,7 @@ EXT_ bool execSqlFunction(QSqlQuery& q, const QString& fn, const QVariant v1, co
 EXT_ bool execSql(QSqlQuery& q, const QString& sql, const QVariant v1, const QVariant v2, const QVariant v3, const QVariant v4)
 {
     if (!q.prepare(sql)) SQLPREPERR(q, sql);
-    if (!v1.isValid()) {
+    if (v1.isValid()) {
         q.bindValue(0,v1);
         if (v2.isValid()) {
             q.bindValue(1,v2);
@@ -203,6 +203,6 @@ EXT_ bool execSql(QSqlQuery& q, const QString& sql, const QVariant v1, const QVa
             }
         }
     }
-    if (q.exec()) SQLQUERYERR(q);
+    if (!q.exec()) SQLQUERYERR(q);
     return q.first();
 }

@@ -907,7 +907,7 @@ public:
     ///
     cInterface *portSetVlans(const QString& __port, const QList<qlonglong>& _ids);
     cInterface *portSetVlans(int __port_index, const QList<qlonglong>& _ids);
-    ///
+    /// A beolvasott port és cím rekoedokból kikeresi az első címet.
     QHostAddress getIpAddress() const;
 
     QList<QHostAddress> fetchAllIpAddress(QSqlQuery &q, qlonglong __id = NULL_ID) const;

@@ -181,7 +181,9 @@ QThread *cInspector::newThread()
 static inline QString ssi(const QString& s1, const QString& s2, qlonglong n)
 {
     QString r = s2.isEmpty() ? s1 : s2;
-    if (r.contains("%1")) return r.arg(n);
+    if (r.contains(QString("%1"))) {
+        return r.arg(n, 0, 10);
+    }
     return r;
 }
 
@@ -221,9 +223,10 @@ void cInspector::setSubs(QSqlQuery& q, const QString& qs)
     QSqlQuery q2 = getQuery();
     static QString sql =
             "SELECT hs.host_service_id, h.tableoid"
-            " FROM host_services AS hs JOIN hosts AS h USING(node_id) "
+            " FROM host_services AS hs JOIN nodes AS h USING(node_id) "
             " WHERE hs.superior_host_service_id = %1";
-    if (!q.exec(ssi(sql, qs, hostServiceId()))) SQLPREPERR(q, sql);
+    sql = ssi(sql, qs, hostServiceId());
+    if (!q.exec(sql)) SQLPREPERR(q, sql);
     if (q.first()) do {
         qlonglong       hsid = variantToId(q.value(0));  // host_service_id      A szervíz rekord amit be kell olvasni
         qlonglong       hoid = variantToId(q.value(1));  // node tableoid        A node típusa
