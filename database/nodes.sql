@@ -21,7 +21,7 @@ CREATE TABLE iftypes (
     iftype_note         varchar(255)    DEFAULT NULL,
     iftype_iana_id      integer         NOT NULL DEFAULT 1, -- 'other'
     iftype_link_type    linktype        NOT NULL DEFAULT 'ptp',
-    iftype_obj_type     portobjtype     NOT NULL
+    iftype_obj_type     portobjtype     NOT NULL,
     preferred           bool            DEFAULT false
 );
 ALTER TABLE iftypes OWNER TO lanview2;
