@@ -1,6 +1,6 @@
 %{
 #include <math.h>
-#include "lanview.h"
+#include <lanview.h>
 #include "guidata.h"
 #include "others.h"
 #include "ping.h"

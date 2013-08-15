@@ -21,7 +21,7 @@
 #ifndef QSNMP_H
 #define QSNMP_H
 #include <Qt>
-#include <lv2_global.h>
+#include "lv2_global.h"
 
 #if defined(Q_OS_UNIX) || defined(Q_OS_LINUX)
 #define MUST_SNMP

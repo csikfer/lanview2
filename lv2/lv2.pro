@@ -11,12 +11,13 @@ bison.clean =
 bison.CONFIG += target_predeps
 bison.variable_out = SOURCES
 QMAKE_EXTRA_COMPILERS += bison
+msvc:INCLUDEPATH += "."
 
 #m4 definition
 m4h.name = m4h
 m4h.input = M4HEADERS
-m4h.output =${QMAKE_FILE_IN_PATH}/${QMAKE_FILE_BASE}.h
-m4h.commands = m4 -s -I${QMAKE_FILE_IN_PATH} ${QMAKE_FILE_IN} >${QMAKE_FILE_OUT};
+m4h.output = ${QMAKE_FILE_IN_PATH}/${QMAKE_FILE_BASE}.h
+m4h.commands = m4 -I${QMAKE_FILE_IN_PATH} ${QMAKE_FILE_IN} >${QMAKE_FILE_OUT}
 m4h.clean = rm ${QMAKE_FILE_OUT}
 m4h.CONFIG += target_predeps
 m4h.variable_out = HEADERS
@@ -25,7 +26,7 @@ QMAKE_EXTRA_COMPILERS += m4h
 m4c.name = m4c
 m4c.input = M4SOURCES
 m4c.output =${QMAKE_FILE_BASE}.cpp
-m4c.commands = m4 -s -I${QMAKE_FILE_IN_PATH} ${QMAKE_FILE_IN} >${QMAKE_FILE_OUT}
+m4c.commands = m4 -I${QMAKE_FILE_IN_PATH} ${QMAKE_FILE_IN} >${QMAKE_FILE_OUT}
 m4c.clean = rm ${QMAKE_FILE_OUT}
 m4c.CONFIG += target_predeps
 m4c.variable_out = SOURCES
@@ -42,13 +43,16 @@ QT += network \
     sql \
     xml
 QT -= gui
+
 TARGET = lv2
 TEMPLATE = lib
-win32:CONFIG += debug_and_release
+
+msvc:CONFIG += debug_and_release
 unix:CONFIG += debug
+
 #kell ahhoz, hogy a debug dll neveben ott legyen a d a vegen
 CONFIG(debug, debug|release) {
-     win32: TARGET = $$join(TARGET,,,d)
+     msvc: TARGET = $$join(TARGET,,,d)
 }
 DEFINES += LV2_LIBRARY
 SOURCES += lanview.cpp \
@@ -96,9 +100,13 @@ FORMS +=
 
 unix:LIBS += -lsnmp
 
-# CXXFLAGS += -Wconversion
-
  TRANSLATIONS    = lv2lib_hu.ts \
                    lv2lib_en.ts
 
  CODECFORSRC     = UTF-8
+
+#message( $$CONFIG )
+#msvc: message( "msvc on" )
+#linux: message( "linux on" )
+#win32: message( "Win32 on" )
+message( $$INCLUDEPATH )

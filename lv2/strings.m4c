@@ -1,5 +1,5 @@
-#include "lv2_global.h"
-#include "strings.h"
+#include <lv2_global.h>
+#include <strings.h>
 
 define(`__SDEF',`
 const char   __s$1[] = "$1";
