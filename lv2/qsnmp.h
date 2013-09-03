@@ -316,6 +316,7 @@ enum eSnmp {
 class LV2SHARED_EXPORT cSnmp {
 public:
     cSnmp() { EXCEPTION(ENOTSUPP); }
+    cSnmp(const QString&, const QString& = _sNul, int = 0) { EXCEPTION(ENOTSUPP); }
 };
 
 #endif // MAST_SNMP

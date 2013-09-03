@@ -334,6 +334,7 @@ void c_yyFile::eoi()
 void cArpServerDef::updateArpTable(QSqlQuery& q)
 {
     DBGFN();
+#ifdef MUST_SCAN
     cArpTable at;
     switch (type) {
     case UNKNOWN:       break;
@@ -350,6 +351,9 @@ void cArpServerDef::updateArpTable(QSqlQuery& q)
     }
     firstTime = false;
     cArp::replaces(q, at);
+#endif
+    (void)q;
+    EXCEPTION(ENOTSUPP);
 }
 
 /* --------------------------------------------------------------------------------------------------- */
@@ -406,7 +410,7 @@ qlonglong& cLink::portId(eSide __e)
     return portId2;
 }
 
-qlonglong& cLink::portId(eSide __e);
+//qlonglong& cLink::portId(eSide __e);
 
 void cLink::side(eSide __e, QString * __n, QString *__p, int __s)
 {
@@ -996,9 +1000,9 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
     setLastPort(pNode->ports.first());
 }
 
-#define NEWOBJ(p, t, args...) \
+#define NEWOBJ(p, t, ...) \
     if (p != NULL) yyerror(_STR(p) " is not null"); \
-    p = new t(args)
+    p = new t(##__VA_ARGS__)
 //  if (p->stat == ES_DEFECTIVE) yyerror("Nincs elegendő adat, vagy kétértelműség.")
 
 #define INSERTANDDEL(p) \

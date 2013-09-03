@@ -139,6 +139,9 @@ public:
     }
 };
 
+
+inline void scanByLldp(QSqlQuery, const cSnmpDevice& ) { EXCEPTION(ENOTSUPP); }
+
 #endif // MUST_SCAN
 
 #endif // SCAN_H
