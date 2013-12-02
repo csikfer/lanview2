@@ -105,8 +105,8 @@ unix:LIBS += -lsnmp
 
  CODECFORSRC     = UTF-8
 
-#message( $$CONFIG )
-#msvc: message( "msvc on" )
-#linux: message( "linux on" )
-#win32: message( "Win32 on" )
-message( $$INCLUDEPATH )
+# message( $$CONFIG )
+# msvc: message( "msvc on" )
+# linux: message( "linux on" )
+# win32: message( "Win32 on" )
+# message( $$INCLUDEPATH )

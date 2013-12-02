@@ -1402,8 +1402,8 @@ nodes   : patch
         ;
 patch   : patch_h { pPatch->setId(_sPlaceId, gPlace()); } patch_e { INSERTANDDEL(pPatch); }
         ;
-patch_h : PATCH_T str str_z                     { NEWOBJ(pPatch, cPatch, sp2s($2), sp2s($3)); }
-        | PATCH_T str str_z COPY_T FROM_T str   { NEWOBJ(pPatch, cPatch, sp2s($2), sp2s($3)); templates.get(_sPatchs, sp2s($6)); }
+patch_h : PATCH_T str str_z                     { NEWOBJ(pPatch, cPatch, *$2, *$3); delete $2; delete $3; }
+        | PATCH_T str str_z COPY_T FROM_T str   { NEWOBJ(pPatch, cPatch, *$2, *$3); templates.get(_sPatchs, sp2s($6)); delete $2; delete $3; }
                 patch_ps
         ;
 patch_e : '{' patch_ps '}'
