@@ -108,6 +108,7 @@ $$ LANGUAGE plpgsql;
 -- ********************************************************
 \i nodes.sql
 \i services.sql
+\i mactab.sql
 \i links.sql
 \i imports.sql
 -- //////////////////// ALARM  ////////////////////

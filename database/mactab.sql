@@ -1,7 +1,21 @@
 -- //// mactab
 
+CREATE TABLE ouis (
+    oui		macaddr PRIMARY KEY,
+    oui_name	varchar(32)	NOT NULL,
+    oui_note	varchar(255)	DEFAULT NULL
+);
+ALTER TABLE ouis OWNER TO lanview2;
+
 CREATE TYPE mactabstate AS ENUM ('likely', 'noarp', 'nooid', 'suspect');
 ALTER TYPE mactabstate OWNER TO lanview2;
+COMMENT ON TYPE mactabstate IS
+'A cím információ minösítése:
+likely	Hihető, van ilyen című bejegyzett eszköz.
+noarp	Nem szerepel az arps táblában
+nooid	Nem azonosítható a cím alapján a gyártó (OUI)
+suspect	Gyanús, az észleléskor hibákat jelzett a port
+';
 
 CREATE TABLE mactab (
     hwaddress       macaddr PRIMARY KEY,
