@@ -58,7 +58,6 @@ lv2Gui::lv2Gui() : lanView()
             pMainWindow = new cMainWindow(!dbIsOpen);
             pMainWindow->show();
         } CATCHS(lastError)
-
     }
     DBGFNL();
 }

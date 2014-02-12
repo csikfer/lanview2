@@ -14,7 +14,7 @@ cSetupWidget::cSetupWidget(QSettings &__s, cMainWindow *par)
 
     connect(PBApplicateAndRestart,SIGNAL(clicked()),    this,   SLOT(applicateAndRestart()));
     connect(PBApplicateAndClose,  SIGNAL(clicked()),    this,   SLOT(applicateAndClose()));
-    connect(PBCancel,             SIGNAL(clicked()),    this,   SLOT(Close()));
+    connect(PBCancel,             SIGNAL(clicked()),    this,   SLOT(close()));
     PBCancel->setDisabled(forced);
     connect(PBClose,              SIGNAL(clicked()),    this,   SLOT(closeIt()));
     PBClose->setDisabled(forced);

@@ -135,6 +135,8 @@ enum eRecordTableFlags  {
     RTF_LEFT   = 0x0040     ///< A bal oldali link tábla
 };
 
+/// @class cRecordTable
+/// Egy adatbázis objektum megjelenítését végző objektum.
 class cRecordTable : public QObject {
     friend class cRecordTableColumn;
     friend class cRecordTableModel;

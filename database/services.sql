@@ -289,51 +289,6 @@ CREATE TABLE host_service_vars (
 );
 ALTER TABLE host_service_vars OWNER TO lanview2;
 
-CREATE TABLE arps (
-    ipaddress       inet        PRIMARY KEY,
-    hwaddress       macaddr     NOT NULL,
-    first_time      timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP, -- First time discovered
-    last_time       timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP  -- Last time discovered
-);
-ALTER TABLE host_service_vars OWNER TO lanview2;
-
-CREATE OR REPLACE FUNCTION insert_or_update_arp(inet, macaddr) RETURNS integer AS $$
-DECLARE
-    arp arps;
-BEGIN
-    SELECT * INTO arp FROM arps WHERE ipaddress = $1;
-    IF NOT FOUND THEN
-        INSERT INTO arps(ipaddress, hwaddress) VALUES ($1, $2);
-        RETURN 1;
-    ELSE
-        IF arp.hwaddress = $2 THEN
-            UPDATE arps SET last_time = CURRENT_TIMESTAMP WHERE ipaddress = arp.ipaddress;
-            RETURN 0;
-        ELSE
-            UPDATE arps
-                SET hwaddress = $2,  first_time = CURRENT_TIMESTAMP, last_time = CURRENT_TIMESTAMP
-                WHERE ipaddress = arp.ipaddress;
-            RETURN 2;
-        END IF;
-    END IF;
-END;
-$$ LANGUAGE plpgsql;
-
-
--- //// mactab
-
-CREATE TYPE mactabstate AS ENUM ('likely', 'noarp','nooid','suspect');
-ALTER TYPE mactabstate OWNER TO lanview2;
-
-CREATE TABLE mactab (
-    hwaddress       macaddr PRIMARY KEY,
-    port_id         integer NOT NULL REFERENCES interfaces(port_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    mactab_state    mactabstate[] DEFAULT '{}',
-    first_time      timestamp   DEFAULT CURRENT_TIMESTAMP,
-    last_time       timestamp   DEFAULT CURRENT_TIMESTAMP,
-    set_type        settype NOT NULL DEFAULT 'manual'
-);
-
 CREATE TYPE isnoalarm AS ENUM ('on', 'expired', 'off');
 ALTER TYPE isnoalarm OWNER TO lanview2;
 

@@ -156,7 +156,7 @@ cDevice::cDevice(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableo
     pRemoteUser = NULL;
     if (*pPSSnmp == protoService()) {
         pSnmp = new cSnmp();
-        snmpDev().open(*pSnmp);
+        snmpDev().open(__q, *pSnmp);
     }
     else {
         if (*pPSDhcpConf == primeService() || *pPSArpProc == primeService()) {
@@ -194,7 +194,7 @@ enum eNotifSwitch cDevice::run(QSqlQuery& q)
             at.getByLocalDhcpdConf(*pFileName);
         }
         else if (*pPSSsh == protoService()) {
-            at.getBySshDhcpdConf(host().address().toString(), *pFileName, *pRemoteUser);
+            at.getBySshDhcpdConf(host().getIpAddress().toString(), *pFileName, *pRemoteUser);
         }
         else EXCEPTION(EDATA);
     }
@@ -203,7 +203,7 @@ enum eNotifSwitch cDevice::run(QSqlQuery& q)
             at.getByLocalProcFile(*pFileName);
         }
         else if (*pPSSsh == protoService()) {
-            at.getBySshProcFile(host().address().toString(), *pFileName, *pRemoteUser);
+            at.getBySshProcFile(host().getIpAddress().toString(), *pFileName, *pRemoteUser);
         }
         else EXCEPTION(EDATA);
     }

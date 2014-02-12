@@ -1475,7 +1475,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
         columnDescr.colName() = pq->record().value("column_name").toString();
         columnDescr.pos       = i;
         columnDescr.ordPos    = pq->record().value("ordinal_position").toInt();
-        columnDescr.colDefault= pq->record().value("column_default").toString();
+        columnDescr.colDefault= pq->record().value("column_decRecStaticDescrfault").toString();
         columnDescr.colType   = pq->record().value("data_type").toString();
         columnDescr.udtName   = pq->record().value("udt_name").toString();
         columnDescr.isNullable= pq->record().value("is_nullable").toString() == QString("YES");
@@ -1627,7 +1627,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
         }
         cColStaticDescr *pp = ((cColStaticDescrList::list)_columnDescrs)[i -1];
         PDEB(VERBOSE) << "Field " << pp->colName() << " type is " << typeid(*pp).name() << endl;
-     } while(pq->next());
+    } while(pq->next());
     if (_columnsNum != i) EXCEPTION(EPROGFAIL, -1, "Nem egyértelmű mező szám");
 
     // ************************ get key_column_usage records

@@ -236,7 +236,8 @@ enum eNotifSwitch cDevice::run(QSqlQuery& q)
         if (!ok) EXCEPTION(ESNMP, -1, QString(QObject::trUtf8("ifIndex is not numeric : %1")).arg(tab[_sIfIndex][i].toString()));
 
         int ix = host().ports.indexOf(_sPortIndex, QVariant(ifIndex));
-        if (ix < 0) continue;   // Nincs ilyen indexű portunk, eldobjuk
+        if (ix < 0)
+            continue;   // Nincs ilyen indexű portunk, eldobjuk
 
         QString ifDescr = tab[_sIfDescr][i].toString();
 

@@ -1000,9 +1000,9 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
     setLastPort(pNode->ports.first());
 }
 
-#define NEWOBJ(p, t, ...) \
+#define NEWOBJ(p, t) \
     if (p != NULL) yyerror(_STR(p) " is not null"); \
-    p = new t(##__VA_ARGS__)
+    p = new t;
 //  if (p->stat == ES_DEFECTIVE) yyerror("Nincs elegendő adat, vagy kétértelműség.")
 
 #define INSERTANDDEL(p) \
@@ -1254,9 +1254,9 @@ bool    : ON_T      { $$ = true; }  | YES_T     { $$ = true; }  | TRUE_T    { $$
 bool_on :                           { $$ = true; }
         | bool                      { $$ = $1; }
         ;
-user    : USER_T str str_z          { NEWOBJ(pUser, cUser); pUser->setName(*$2).setName(_sUserNote, *$3); delete $2; delete $3; }
+user    : USER_T str str_z          { NEWOBJ(pUser, cUser()); pUser->setName(*$2).setName(_sUserNote, *$3); delete $2; delete $3; }
             user_e                  { INSERTANDDEL(pUser); }
-        | USER_T GROUP_T str str_z  { NEWOBJ(pGroup, cGroup); pGroup->setName(*$3).setName(_sGroupNote, *$4); delete $3; delete $4; }
+        | USER_T GROUP_T str str_z  { NEWOBJ(pGroup, cGroup()); pGroup->setName(*$3).setName(_sGroupNote, *$4); delete $3; delete $4; }
             ugrp_e                  { INSERTANDDEL(pGroup); }
         | USER_T GROUP_T str ADD_T str ';'      { cGroupUser gu(qq(), *$3, *$5); if (!gu.test(qq())) gu.insert(qq()); delete $3; delete $5; }
         | USER_T GROUP_T str REMOVE_T str ';'   { cGroupUser gu(qq(), *$3, *$5); if (gu.test(qq())) gu.remove(qq()); delete $3; delete $5; }
@@ -1355,7 +1355,7 @@ ip      : IPV4_V                    { $$ = $1; PDEB(VVERBOSE) << "ip(IPV4):" << 
         ;
 ips     : ip                        { $$ = new QString($1->toString()); delete $1; }
         ;
-image   : IMAGE_T str str_z         { NEWOBJ(pImage, cImage); pImage->setName(*$2).setName(_sImageNote, *$3); delete $2; delete $3; }
+image   : IMAGE_T str str_z         { NEWOBJ(pImage, cImage()); pImage->setName(*$2).setName(_sImageNote, *$3); delete $2; delete $3; }
             image_e                 { INSERTANDDEL(pImage); }
         ;
 image_e : '{' image_ps '}'
@@ -1402,8 +1402,8 @@ nodes   : patch
         ;
 patch   : patch_h { pPatch->setId(_sPlaceId, gPlace()); } patch_e { INSERTANDDEL(pPatch); }
         ;
-patch_h : PATCH_T str str_z                     { NEWOBJ(pPatch, cPatch, *$2, *$3); delete $2; delete $3; }
-        | PATCH_T str str_z COPY_T FROM_T str   { NEWOBJ(pPatch, cPatch, *$2, *$3); templates.get(_sPatchs, sp2s($6)); delete $2; delete $3; }
+patch_h : PATCH_T str str_z                     { NEWOBJ(pPatch, cPatch(*$2, *$3)); delete $2; delete $3; }
+        | PATCH_T str str_z COPY_T FROM_T str   { NEWOBJ(pPatch, cPatch(*$2, *$3)); templates.get(_sPatchs, sp2s($6)); delete $2; delete $3; }
                 patch_ps
         ;
 patch_e : '{' patch_ps '}'
@@ -1596,7 +1596,7 @@ arp     : ADD_T ARP_T SERVER_T ips BY_T SNMP_T COMMUNITY_T str ';'
 ha      : str                                   { $$ = $1; }
         | ip                                    { $$ = new QString($1->toString()); delete $1; }
         ;
-link    : LINKS_T lnktype str_z TO_T lnktype str_z  { NEWOBJ(pLink, cLink, $2, $3, $5, $6); }
+link    : LINKS_T lnktype str_z TO_T lnktype str_z  { NEWOBJ(pLink, cLink($2, $3, $5, $6)); }
          '{' links '}'                              { DELOBJ(pLink); }
         ;
 lnktype : BACK_T                                    { $$ = -1; }
@@ -1631,7 +1631,7 @@ shar    :                                           { $$ = ES_; }
 srv     : service
         | hostsrv
         ;
-service : SERVICE_T str str_z    { NEWOBJ(pService, cService);
+service : SERVICE_T str str_z    { NEWOBJ(pService, cService());
                                       pService->setName(*$2);
                                       pService->set(_sServiceNote, *$3);
                                       delete $2; delete $3; }
@@ -1665,14 +1665,14 @@ ipprot  : ICMP_T                    { $$ = EP_ICMP; }
         | NIL_T                     { $$ = EP_NIL; }
         | PROTOCOL_T str            { $$ = cIpProtocol().getIdByName(qq(), *$2, true); delete $2; }
         ;
-hostsrv : HOST_T SERVICE_T str ':' str str_z    { NEWOBJ(pHostService, cHostService);
+hostsrv : HOST_T SERVICE_T str ':' str str_z    { NEWOBJ(pHostService, cHostService());
                                                     (*pHostService)[_sNodeId]    = cNode().cRecord::getIdByName(qq(),*$3, true);  delete $3;
                                                     (*pHostService)[_sServiceId] = cService().getIdByName(qq(),*$5);              delete $5;
                                                     (*pHostService)[_sHostServiceNote] =  *$6;                                    delete $6;
                                                 }
           hsrvend                               { pHostService->insert(qq(), true); DELOBJ(pHostService); }
         | HOST_T SERVICE_T str ':' str ':' str str_z
-                                                { NEWOBJ(pHostService, cHostService);
+                                                { NEWOBJ(pHostService, cHostService());
                                                     (*pHostService)[_sNodeId]    = cNode().cRecord::getIdByName(qq(),*$3, true);  delete $3;
                                                     (*pHostService)[_sServiceId] = cService().getIdByName(qq(),*$5);              delete $5;
                                                     (*pHostService)[_sHostServiceNote] =  *$8;                                    delete $8;

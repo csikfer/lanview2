@@ -39,11 +39,19 @@ EXT_ const QString&  snmpIfStatus(int __i);
 EXT_ int             snmpIfStatus(const QString& __s);
 
 typedef QVector<QVariant> QVariantVector;
+/// @class cTable
+/// Egy táblázat konténer.
+/// A táblázat oszlopai név szerint érhatőek el, a sorok pedig sorszám alapján.
+/// A táblázat (mátrix) elemei QVariant-ok.
 class LV2SHARED_EXPORT cTable : public QMap<QString, QVariantVector >
 {
    public:
+    /// A konstruktor egy üres táblát hoz létre
     cTable() : QMap<QString, QVector<QVariant> >() { ; }
+    /// A táblában lévő oszlopok számával tér vissza
     int columns(void) const { return size(); }
+    /// A tábla sorainak számával tér vissza, feltételezve, hogy minden oszlop azonos számú elemet tartalmaz.
+    ///
     int rows(void) const    { return size() ? constBegin()->size() : 0; }
     /// Egy elem ketesése
     /// Ha van találat, akkor az elem pointere, egyébként NULL
@@ -51,7 +59,10 @@ class LV2SHARED_EXPORT cTable : public QMap<QString, QVariantVector >
     /// @param __ix Az index érték, az index oszlopban, megadja a keresett sort
     /// @param __com A keresett oszlop neve
     QVariant *find(const QString __in, QVariant __ix, const QString __col);
+    /// Egy üres oszlop hozzáadása a konténerhez.
+    /// @param __cn Az oszlop neve. Egyedi kell hogy legyen egy konténeren bellül.
     cTable& operator<<(const QString& __cn);
+    /// A konténer tartalmár striggé konvertálja.
     QString toString(void) const;
 };
 
