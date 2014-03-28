@@ -139,8 +139,8 @@ void cSupDaemon::postInit(QSqlQuery &q, const QString &)
     pSubordinates = new QList<cInspector *>;
     // Nem a host-service fán közlekedik, hanem az összes démont összeszedi, és a hierarhiát igazítja ehhez.
     QString sql = QString(
-            "SELECT host_services.*, hosts.* "
-                "FROM host_services JOIN hosts USING(node_id) JOIN services USING(service_id) "
+            "SELECT host_services.*, nodes.* "
+                "FROM host_services JOIN nodes USING(node_id) JOIN services USING(service_id) "
                 "  WHERE host_services.node_id = %1 AND services.properties LIKE '%:daemon=%' AND host_service_id <> %2"
                 ).arg(nodeId()).arg(hostServiceId());
     if (!q.exec(sql)) SQLPREPERR(q, sql);
