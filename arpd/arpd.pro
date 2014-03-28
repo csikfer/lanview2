@@ -7,7 +7,7 @@
 
 QT       += core sql xml network
 
-#QT       -= gui
+QT       -= gui
 
 TARGET = arpd
 CONFIG += console
@@ -21,7 +21,7 @@ SOURCES += \
     arpd.cpp
 
 INCLUDEPATH += ../lv2
-LIBS += -lsnmp -L../lv2-Debug -llv2
+LIBS += -lsnmp -L../lv2 -llv2
 
  TRANSLATIONS    = arpd_hu.ts \
                    arpd_en.ts
