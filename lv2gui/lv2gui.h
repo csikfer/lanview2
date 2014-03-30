@@ -13,7 +13,8 @@
 #undef  __MODUL_NAME__
 #define __MODUL_NAME__  LV2GUI
 
-/// @class lv2Gui LanView2 main object
+/// @class lv2Gui
+/// LanView2 GUI main object
 class lv2Gui : public lanView {
     Q_OBJECT
 public:
@@ -27,7 +28,8 @@ extern QString _titleWarning;
 extern QString _titleError;
 extern QString _titleInfo;
 
-/// @class cLv2App Saját QApplication osztály, a hiba kizárások elkapásához (újra definiált notify() metódus.)
+/// @class cLv2App
+/// Saját QApplication osztály, a hiba kizárások elkapásához (újra definiált notify() metódus.)
 class cLv2App : public QApplication {
 public:
     /// Konstruktor. Nincs saját inicilizálás, csak a QApplication konstrujtort hívja.

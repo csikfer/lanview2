@@ -45,8 +45,8 @@ lv2portStat::lv2portStat() : lanView()
                 connect(pDb->driver(), SIGNAL(notification(QString)), SLOT(dbNotif(QString)));
             }
 
-            cDevice::pRLinkStat = &cService::service(*pq, "rlinkstat");
-            cDevice::pSrvSnmp   = &cService::service(*pq, _sSnmp);
+            cDevicePSt::pRLinkStat = &cService::service(*pq, "rlinkstat");
+            cDevicePSt::pSrvSnmp   = &cService::service(*pq, _sSnmp);
             setup();
         } CATCHS(lastError)
     }
@@ -123,7 +123,7 @@ cPortStat::~cPortStat()
 
 cInspector * cPortStat::newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong hoid, cInspector *pid)
 {
-    return new cDevice(q, hsid, hoid, pid);
+    return new cDevicePSt(q, hsid, hoid, pid);
 }
 
 enum eNotifSwitch cPortStat::run(QSqlQuery &)
@@ -133,11 +133,11 @@ enum eNotifSwitch cPortStat::run(QSqlQuery &)
 
 /******************************************************************************/
 
-const cService *cDevice::pRLinkStat = NULL;
-const cService *cDevice::pSrvSnmp   = NULL;
+const cService *cDevicePSt::pRLinkStat = NULL;
+const cService *cDevicePSt::pSrvSnmp   = NULL;
 
 
-cDevice::cDevice(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector * _par)
+cDevicePSt::cDevicePSt(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector * _par)
     : cInspector(__q, __host_service_id, __tableoid, _par)
     , snmp()
 {
@@ -153,12 +153,12 @@ cDevice::cDevice(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableo
         EXCEPTION(EDATA, protoServiceId(), QObject::trUtf8("Nem megfelelő proto_service_id!"));
 }
 
-cDevice::~cDevice()
+cDevicePSt::~cDevicePSt()
 {
     ;
 }
 
-void cDevice::postInit(QSqlQuery &q, const QString&)
+void cDevicePSt::postInit(QSqlQuery &q, const QString&)
 {
     DBGFN();
     cInspector::postInit(q);
@@ -214,7 +214,7 @@ void cDevice::postInit(QSqlQuery &q, const QString&)
     }
 }
 
-enum eNotifSwitch cDevice::run(QSqlQuery& q)
+enum eNotifSwitch cDevicePSt::run(QSqlQuery& q)
 {
     _DBGFN() << _sSpace << name() << endl;
     if (!snmp.isOpened()) {

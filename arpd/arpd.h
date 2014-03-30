@@ -20,14 +20,14 @@ public:
     virtual enum eNotifSwitch run(QSqlQuery &q);
 };
 
-/// @class cDevice
+/// @class cDeviceArp
 /// Az egy lekérdezendő eszközt reprezentál
-class cDevice : public cInspector {
+class cDeviceArp : public cInspector {
 public:
     /// Konstruktor
-    cDevice(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector *_par);
+    cDeviceArp(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector *_par);
     /// Destruktor
-    ~cDevice();
+    ~cDeviceArp();
     /// A lekérdezést végző virtuális metódus.
     /// @par q A lekerdezés eredményét a q objetummal írja az adatbázisba.
     virtual enum eNotifSwitch run(QSqlQuery& q);

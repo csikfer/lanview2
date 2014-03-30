@@ -11,7 +11,7 @@ Az adatbázis interfész objektumok.
 */
 
 /// @def CHKENUM
-/// @rief Egy enumerációs típus konverziós függvényeinek az ellenörzése.
+/// @brief Egy enumerációs típus konverziós függvényeinek az ellenörzése.
 ///
 /// Makró, a chkEnum() hívására egy cRecord leszármazot egy metódusában, pl. a statikus rekord leíró inicializálása után.
 /// A rekord leíró objektum példányra mutató pointer neve _pRecordDescr.

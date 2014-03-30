@@ -29,14 +29,14 @@ public:
     cOId    mOId1, mOId2;
 };
 
-/// @class cDevice
+/// @class cDevicePMac
 /// Az egy lekérdezendő eszközt reprezentál
-class cDevice : public cInspector {
+class cDevicePMac : public cInspector {
 public:
     /// Konstruktor
-    cDevice(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector *_par);
+    cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector *_par);
     /// Destruktor
-    ~cDevice();
+    ~cDevicePMac();
     ///
     virtual void postInit(QSqlQuery &q, const QString &qs);
     /// A lekérdezést végző virtuális metódus.

@@ -45,11 +45,11 @@ lv2ArpD::lv2ArpD() : lanView()
                 connect(pDb->driver(), SIGNAL(notification(QString)), SLOT(dbNotif(QString)));
             }
 
-            cDevice::pPSLocal   = &cService::service(*pq, _sLocal);
-            cDevice::pPSSnmp    = &cService::service(*pq, _sSnmp);
-            cDevice::pPSSsh     = &cService::service(*pq, _sSsh);
-            cDevice::pPSArpProc = &cService::service(*pq, "arp.proc");
-            cDevice::pPSDhcpConf= &cService::service(*pq, "dhcp.conf");
+            cDeviceArp::pPSLocal   = &cService::service(*pq, _sLocal);
+            cDeviceArp::pPSSnmp    = &cService::service(*pq, _sSnmp);
+            cDeviceArp::pPSSsh     = &cService::service(*pq, _sSsh);
+            cDeviceArp::pPSArpProc = &cService::service(*pq, "arp.proc");
+            cDeviceArp::pPSDhcpConf= &cService::service(*pq, "dhcp.conf");
 
             setup();
         } catch(cError * e) {
@@ -131,7 +131,7 @@ cArpDaemon::~cArpDaemon()
 
 cInspector * cArpDaemon::newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong hoid, cInspector *pid)
 {
-    return new cDevice(q, hsid, hoid, pid);
+    return new cDeviceArp(q, hsid, hoid, pid);
 }
 
 enum eNotifSwitch cArpDaemon::run(QSqlQuery &)
@@ -141,14 +141,14 @@ enum eNotifSwitch cArpDaemon::run(QSqlQuery &)
 
 /******************************************************************************/
 
-const cService   *cDevice::pPSLocal     = NULL;
-const cService   *cDevice::pPSSnmp      = NULL;
-const cService   *cDevice::pPSSsh       = NULL;
-const cService   *cDevice::pPSDhcpConf  = NULL;
-const cService   *cDevice::pPSArpProc   = NULL;
+const cService   *cDeviceArp::pPSLocal     = NULL;
+const cService   *cDeviceArp::pPSSnmp      = NULL;
+const cService   *cDeviceArp::pPSSsh       = NULL;
+const cService   *cDeviceArp::pPSDhcpConf  = NULL;
+const cService   *cDeviceArp::pPSArpProc   = NULL;
 
 
-cDevice::cDevice(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector * _par)
+cDeviceArp::cDeviceArp(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector * _par)
     : cInspector(__q, __host_service_id, __tableoid, _par)
 {
     pSnmp = NULL;
@@ -174,14 +174,14 @@ cDevice::cDevice(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableo
     }
 }
 
-cDevice::~cDevice()
+cDeviceArp::~cDeviceArp()
 {
     if (pSnmp     != NULL) delete pSnmp;
     if (pFileName != NULL) delete pFileName;
 }
 
 
-enum eNotifSwitch cDevice::run(QSqlQuery& q)
+enum eNotifSwitch cDeviceArp::run(QSqlQuery& q)
 {
     _DBGFN() << _sSpace << name() << endl;
     cArpTable at;

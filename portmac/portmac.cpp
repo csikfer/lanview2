@@ -45,7 +45,7 @@ lv2portMac::lv2portMac() : lanView()
                 connect(pDb->driver(), SIGNAL(notification(QString)), SLOT(dbNotif(QString)));
             }
 
-            cDevice::pSrvSnmp   = &cService::service(*pq, _sSnmp);
+            cDevicePMac::pSrvSnmp   = &cService::service(*pq, _sSnmp);
             setup();
         } CATCHS(lastError)
     }
@@ -124,7 +124,7 @@ cPortMac::~cPortMac()
 
 cInspector * cPortMac::newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong hoid, cInspector *pid)
 {
-    return new cDevice(q, hsid, hoid, pid);
+    return new cDevicePMac(q, hsid, hoid, pid);
 }
 
 /// Ez ugye nem csinál semmit, a "SUB"-ok dolgoznak
@@ -135,10 +135,10 @@ enum eNotifSwitch cPortMac::run(QSqlQuery &)
 
 /******************************************************************************/
 
-const cService *cDevice::pSrvSnmp   = NULL;
+const cService *cDevicePMac::pSrvSnmp   = NULL;
 
 
-cDevice::cDevice(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector * _par)
+cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector * _par)
     : cInspector(__q, __host_service_id, __tableoid, _par)
     , snmp()
 {
@@ -154,12 +154,12 @@ cDevice::cDevice(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableo
         EXCEPTION(EDATA, protoServiceId(), QObject::trUtf8("Nem megfelelő proto_service_id!"));
 }
 
-cDevice::~cDevice()
+cDevicePMac::~cDevicePMac()
 {
     ;
 }
 
-void cDevice::postInit(QSqlQuery &q, const QString&)
+void cDevicePMac::postInit(QSqlQuery &q, const QString&)
 {
     DBGFN();
     cInspector::postInit(q);
@@ -217,7 +217,7 @@ void cDevice::postInit(QSqlQuery &q, const QString&)
     */
 }
 
-enum eNotifSwitch cDevice::run(QSqlQuery& q)
+enum eNotifSwitch cDevicePMac::run(QSqlQuery& q)
 {
     _DBGFN() << _sSpace << name() << endl;
     if (!snmp.isOpened()) {

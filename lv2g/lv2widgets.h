@@ -20,7 +20,8 @@
 #include "lv2models.h"
 
 
-/// @class cImageWindow Egy képet tartalmazó ablak objektum
+/// @class cImageWindow
+/// Egy képet tartalmazó ablak objektum
 class cImageWindow : public QLabel {
     Q_OBJECT
 public:

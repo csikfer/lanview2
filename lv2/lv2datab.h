@@ -1106,7 +1106,7 @@ public:
     virtual bool insert(QSqlQuery& __q, bool __ex = true);
     /// Egy WHERE stringet állít össze a következőképpen.
     /// A feltételben azok a mezők fognak szerepelni, melyek indexének megfelelő bit az __fm tömbben igaz.
-    /// A feltétel, ha a mező NULL, akkor <mező név> IS NULL, ha nem NULL, akkor ha isLike() a mező indexére igaz,
+    /// A feltétel, ha a mező NULL, akkor \<mező név\> IS NULL, ha nem NULL, akkor ha isLike() a mező indexére igaz,
     /// akkor <mező név> LIKE ?, ha hamis, akkor <mező név> = ? lessz.
     /// Ezután ha _deletedBehavior adattagban a FILTERED bit igaz, és van deleted mező, és az nem szerepelt az alöbbi mezők között,
     /// akkor kiegészíti a feltételeket a deleted = FALSE feltétellel.
