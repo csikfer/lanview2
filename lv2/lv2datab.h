@@ -18,7 +18,7 @@ Az adatbázis interfész bázis objektuma, és a rekord ill. mező leíró/kezel
 /// @param id A típushoz tartozó QmetaType::Type érték.
 EXT_  bool metaIsInteger(int id);
 /// Egy QVariant adat típusáról dönti el, hogy egész számként értelmezhető-e
-/// @param id Az adat referenciája
+/// @param _v Az adat referenciája
 EXT_  bool variantIsInteger(const QVariant & _v);
 /// Egy adat típusról dönti el, hogy string-ként értelmezhető-e
 /// @param id A típushoz tartozó QmetaType::Type érték.
@@ -30,10 +30,10 @@ EXT_  bool variantIsString(const QVariant & _v);
 /// @param id A típushoz tartozó QmetaType::Type érték.
 EXT_  bool metaIsFloat(int id);
 /// Egy QVariant adat típusáról dönti el, hogy lebegőpontos számként értelmezhető-e
-/// @param id Az adat referenciája
+/// @param _v Az adat referenciája
 EXT_  bool variantIsFloat(const QVariant & _v);
 /// Egy QVariant adat típusáról dönti el, hogy számként értelmezhető-e
-/// @param id Az adat referenciája
+/// @param _v Az adat referenciája
 EXT_  bool variantIsNum(const QVariant & _v);
 
 /// Egy stringet bool-lá konvertál:
@@ -1107,7 +1107,7 @@ public:
     /// Egy WHERE stringet állít össze a következőképpen.
     /// A feltételben azok a mezők fognak szerepelni, melyek indexének megfelelő bit az __fm tömbben igaz.
     /// A feltétel, ha a mező NULL, akkor \<mező név\> IS NULL, ha nem NULL, akkor ha isLike() a mező indexére igaz,
-    /// akkor <mező név> LIKE ?, ha hamis, akkor <mező név> = ? lessz.
+    /// akkor \<mező név\> LIKE ?, ha hamis, akkor \<mező név\> = ? lessz.
     /// Ezután ha _deletedBehavior adattagban a FILTERED bit igaz, és van deleted mező, és az nem szerepelt az alöbbi mezők között,
     /// akkor kiegészíti a feltételeket a deleted = FALSE feltétellel.
     /// A feltételek közé az AND operátort teszi. És a visszaadott string, ha volt feltétel, akkor a ' WHERE ' stringgel fog kezdődni, egyébként
@@ -1578,7 +1578,8 @@ template <class R> const cRecStaticDescr *getPDescr(const QString& _tn, const QS
 /// @def  CRECDDCR(R, tn)
 /// @relates cRecord
 /// Az alapértelmezett descr() metódus definiciója.
-/// @param R Az osztály neve
+/// @param R Az osztály neve (mely a tn nevű tábla kezelését végzi)
+/// @param tn Az adatbázis tábla neve
 #define CRECDDCR(R, tn)     const cRecStaticDescr&  R::descr() const { return *getPDescr<R>(tn); }
 
 /// @def CRECDEFD(R)
@@ -1589,12 +1590,12 @@ template <class R> const cRecStaticDescr *getPDescr(const QString& _tn, const QS
 
 /// @def DEFAULTCRECDEF(R)
 /// @relates cRecord
-/// @param R Az osztály neve
+/// @param R Az osztály neve (mely a tn nevű tábla kezelését végzi)
 /// @param tn Az adatbázis tábla neve
 /// Egy alapértelmezett cRecord leszármazott objektum teljes definíciója
 #define DEFAULTCRECDEF(R, tn)   CRECCNTR(R) CRECDEFD(R) CRECDDCR(R, tn)
 
-/// Egy konstans referencia jellegű objektum, valamely cRecord leszármazott példány egy mezőjére.
+/// Egy konstans referencia osztály, egy cRecord leszármazott példány egy mezőjére.
 /// @relates cRecord
 class LV2SHARED_EXPORT cRecordFieldConstRef {
     friend class cRecord;
@@ -1639,7 +1640,7 @@ public:
 };
 TSTREAMO(cRecordFieldConstRef)
 
-/// Egy referencia jellegű objektum, valamely cRecord leszármazott példány egy mezőjére.
+/// Egy referencia osztály, valamely cRecord leszármazott példány egy mezőjére.
 /// @relates cRecord
 class LV2SHARED_EXPORT cRecordFieldRef {
     friend  class cRecord;

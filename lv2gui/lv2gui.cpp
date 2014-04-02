@@ -49,11 +49,6 @@ lv2Gui::lv2Gui() : lanView()
     pMainWindow = NULL;
     if (!lastError) {
         try {
-            if (_titleWarning.isEmpty()) {
-                _titleWarning       = trUtf8("Figyelmeztetés");
-                _titleError         = trUtf8("Hiba");
-                _titleInfo          = trUtf8("Megjegyzés");
-            }
             dbIsOpen = lanView::openDatabase(false);
             pMainWindow = new cMainWindow(!dbIsOpen);
             pMainWindow->show();

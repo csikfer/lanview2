@@ -12,17 +12,12 @@ CONFIG += debug
 
 SOURCES += \
     lv2gui.cpp \
-    setup.cpp \
     mainwindow.cpp
 
 HEADERS  += \
     lv2gui.h \
-    setup.h \
     mainwindow.h
 
-FORMS    += \
-    setup_logl.ui \
-    setup.ui
 
 INCLUDEPATH += ../lv2 ../lv2g
 LIBS += -lsnmp -L../lv2 -L../lv2g -llv2 -llv2g

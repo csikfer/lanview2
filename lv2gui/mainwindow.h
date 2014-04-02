@@ -9,42 +9,6 @@
 class cMainWindow;
 class cMenuAction;
 
-class cOwnTab : public QWidget {
-    Q_OBJECT
-public:
-    cOwnTab(cMainWindow& _mw);
-    cMainWindow&    mainWindow;
-    virtual QWidget *pWidget();
-    virtual cOwnTab *closed(cMenuAction * pa);
-signals:
-    void closeIt();
-};
-
-/// @class cMenuAction
-/// A menu pontok funkcióit megvalósító objektum.
-class cMenuAction : public QObject {
-    Q_OBJECT
-public:
-    cMenuAction(cTableShape *ps, QAction *pa, cMainWindow *par);
-    cMenuAction(const QString&  ps, QAction *pa, cMainWindow * par);
-    cMenuAction(cOwnTab *po, QAction *pa, cMainWindow * par);
-    ~cMenuAction();
-    cMainWindow&     mainWindow;    ///< A szülő objektum, fő ablakra mutató referencia.
-    cOwnTab         *pOwnTab;       ///< ? A menüponthoz tartozó tab ?
-    cTableShape     *pTableShape;   ///<
-    cRecordTable    *pRecordTable;
-    QWidget         *pWidget;
-    QDialog         *pDialog;
-    QAction         *pAction;       ///< A menü elemhez tartozó QAction objektum
-private:
-    void initRecordTable();
-public slots:
-    void openIt();
-    void closeIt();
-    void exec();
-    void closed();
-};
-
 /// @class cMainWindow
 /// A fő ablak objektum
 /// Az objektumban nincs közvetlen hivatkozás a cMenuAction objektumokra, azoknak szülője.

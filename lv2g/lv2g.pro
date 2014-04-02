@@ -24,7 +24,9 @@ SOURCES += \
     lv2validator.cpp \
     record_table.cpp \
     record_table_model.cpp \
-    cerrormessagebox.cpp
+    cerrormessagebox.cpp \
+    menu.cpp \
+    setup.cpp
 
 HEADERS +=\
         lv2g_global.h \
@@ -35,10 +37,14 @@ HEADERS +=\
     lv2models.h \
     lv2validator.h \
     record_table.h \
-    cerrormessagebox.h
+    cerrormessagebox.h \
+    menu.h \
+    setup.h
 
 FORMS += \
-    column_filter.ui
+    column_filter.ui \
+    setup_logl.ui \
+    setup.ui
 INCLUDEPATH += ../lv2
 unix:LIBS += -lsnmp
 LIBS += -L../lv2 -llv2

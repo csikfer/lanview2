@@ -353,7 +353,7 @@ private slots:
 };
 
 /// @class cFKeyWidget
-/// Egy tömb adatmező megjelenítése és módosítása
+/// Egy távoli kulcs mező megjelenítése, és szerkesztése
 class LV2GSHARED_EXPORT cFKeyWidget : public cFieldEditBase {
     Q_OBJECT
 public:
@@ -375,7 +375,7 @@ private slots:
 };
 
 /// @class cDateWidget
-/// Egy dátun
+/// Egy dátun megjelenítése ill. szerkesztése
 class LV2GSHARED_EXPORT cDateWidget : public cFieldEditBase {
     Q_OBJECT
 public:
@@ -391,7 +391,7 @@ private slots:
 };
 
 /// @class cTimeWidget
-/// Egy dátun
+/// Egy időpont megjelenítése ill. szerkesztése
 class LV2GSHARED_EXPORT cTimeWidget : public cFieldEditBase {
     Q_OBJECT
 public:
@@ -407,7 +407,7 @@ private slots:
 };
 
 /// @class cDateTimeWidget
-/// Egy dátun
+/// Egy dátun, és idópont megjelenítése ill. szerkesztése
 class LV2GSHARED_EXPORT cDateTimeWidget : public cFieldEditBase {
     Q_OBJECT
 public:
@@ -447,7 +447,7 @@ private slots:
 };
 
 /// @class cBinaryWidget
-/// Egy dátun
+///
 class LV2GSHARED_EXPORT cBinaryWidget : public cFieldEditBase {
     Q_OBJECT
 public:

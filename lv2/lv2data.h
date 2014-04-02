@@ -80,12 +80,12 @@ enum eVlanType {
 };
 
 /// VLAN típus névvel tér vissza, a megadott konstans alapján.
-/// @param __at A típus konstans.
+/// @param __n A típus konstans.
 /// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást.
 /// @return A típus string, ha nem megengedett konstanssal hívtuk, és __ex false volt, akkor a NULL string.
 EXT_ int vlanType(const QString& __n, bool __ex = true);
 /// VLAN típus konstanssal tér vissza, a megadott név alapján
-/// @param __at A típus név.
+/// @param __e A típus név.
 /// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást.
 /// @return A típus konstans, ha nem megengedett névvel hívtuk, és __ex false volt, akkor -1
 EXT_ const QString& vlanType(int __e, bool __ex = true);
@@ -99,12 +99,12 @@ enum eSetType  {
 };
 
 /// port - VLAN összerendelés típus névvel tér vissza, a megadott konstans alapján.
-/// @param __at A típus konstans.
+/// @param __n A típus konstans.
 /// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást.
 /// @return A típus string, ha nem megengedett konstanssal hívtuk, és __ex false volt, akkor a NULL string.
 EXT_ int  setType(const QString& __n, bool __ex = true);
 /// ort - VLAN összerendelés típus konstanssal tér vissza, a megadott név alapján
-/// @param __at A típus név.
+/// @param __e A típus név.
 /// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást.
 /// @return A típus konstans, ha nem megengedett névvel hívtuk, és __ex false volt, akkor -1
 EXT_ const QString& setType(int __e, bool __ex = true);
@@ -126,17 +126,17 @@ enum eImageType {
 };
 
 /// kép típus névvel tér vissza, a megadott konstans alapján.
-/// @param __at A típus konstans.
+/// @param __n A típus konstans.
 /// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást.
 /// @return A típus string, ha nem megengedett konstanssal hívtuk, és __ex false volt, akkor a NULL string.
 EXT_ int  imageType(const QString& __n, bool __ex = true);
 /// Kép típus konstanssal tér vissza, a megadott név alapján
-/// @param __at A típus név.
+/// @param __e A típus név.
 /// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást.
 /// @return A típus konstans, ha nem megengedett névvel hívtuk, és __ex false volt, akkor -1
 EXT_ const QString&   imageType(int __e, bool __ex = true);
 /// Kép típus konstanssal tér vissza, a megadott név alapján
-/// @param __at A típus név. Egyes Qt függvények ezt a tíoust vátják.
+/// @param __e A típus név. Egyes Qt függvények ezt a tíoust vátják.
 /// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást.
 /// @return A típus konstans, ha nem megengedett névvel hívtuk, és __ex false volt, akkor -1
 EXT_ const char *    _imageType(int __e, bool __ex = true);
@@ -1122,20 +1122,26 @@ public:
     enum eReplaceResult {
         RR_NO_MODIFY =  0,  ///< Nincs változás (csak a last_time változott az aktuális időpontra)
         RR_INSERT    =  1,  ///< Új rekord beszúrása
-        RR_MODIFY    =  2,  ///< A rekord megváltozott ( az IP címhet egy másik mac lett hozzárendelve)
+        RR_MODIFY    =  2,  ///< A rekord megváltozott ( az IP címhez egy másik mac lett hozzárendelve)
         RR_ERROR     = -1   ///< nem értelmezhető a PGPLSQL függvény visszatérési értéke
     };
     cArp& operator = (const QHostAddress& __a)  { set(_ixIpAddress, __a.toString()); return *this; }
     cArp& operator = (const cMac __m)           { set(_ixHwAddress, __m.toString()); return *this; }
+    /// Az objektum (a beolvasott rekord) IP cím mezőjének az értékével tér vissza
     operator QHostAddress() const;
+    /// Az objektum (a beolvasott rekord) MAC mezőjének az értékével tér vissza
     operator cMac()         const;
+    /// Az objektum (a beolvasott rekord) MAC mezőjének az értékével tér vissza
     cMac getMac() const { return (cMac)*this; }
+    /// Az objektum (a beolvasott rekord) IP cím mezőjének az értékével tér vissza
     QHostAddress getIpAddress() const { return (QHostAddress)*this; }
     /// Inzertálja, vagy morosítja az ip cím, mint kulcs alapján a rekordot.
     /// A funkciót egy PGPLSQL fúggvény (insert_or_update_arp) valósítja meg.
+    /// @param __q Az adatbázis művelethez használt objektum.
     /// @return A insert_or_update_arp függvény vissatérési értéke. Ld.: enum eReplaceResult
     enum eReplaceResult replace(QSqlQuery& __q);
     /// Inzertálja, vagy morosítja az ip cím, mint kulcs alapján a rekordokat
+    /// @param __q Az adatbázis művelethez használt objektum.
     /// @param __t A módosításokat tartalmazó konténer
     /// @return a kiírt, vagy módosított rekordok száma
     static int replaces(QSqlQuery& __q, const cArpTable& __t);
@@ -1147,7 +1153,8 @@ public:
 /// Csak a cPhsLink és cLldpLink objektumokkal használható
 /// A megadott porthoz tartozó linket törli.
 /// @param q Az SQL lekérdezéshez használt objektum.
-/// @param o Az objektum, melyhez tartozó táblából törölni szeretnénk
+/// @param o Az objektum, melyhez tartozó táblából törölni szeretnénk (tartalma érdektelen, csak a táblát azonosítja)
+/// @param __pid Port id (port_id1)
 /// @return true, ha törölt egy rekordot, false, ha nem
 EXT_ bool LinkUnlink(QSqlQuery& q, cRecord& o, qlonglong __pid);
 /// Csak a cPhsLink, cLogLink és cLldpLink objektumokkal használható

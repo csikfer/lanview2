@@ -90,7 +90,7 @@ static inline qlonglong enum2set(int (&f)(const QString& e, bool __ex), const QS
 qlonglong enum2set(int (&f)(const QString& e, bool __ex), const QStringList& el, bool __ex = true);
 
 
-/// @define ENUM2SET
+/// @def ENUM2SET
 ///
 #define ENUM2SET(n)              (1LL << (n))
 #define ENUM2SET2(n,n2)         ((1LL << (n)) | (1LL << (n2)))
@@ -136,20 +136,22 @@ typedef QMap<QString, QString>::const_iterator     tMagicMapConstIteraeor;
 /// ':par1:par2=val2:par3:par4=val4:
 /// @param __ms A feldolgozandó magic string
 /// @param __map A konténer kiindulási értéke
+/// @param __ex Nem megfelelő formátumú string esetén kizárást dob.
 /// @return Az eredmény konténer
 EXT_ tMagicMap splitMagic(const QString& __ms, const tMagicMap& __map, bool __ex = true);
 /// Egy magic string elemból kiemeli a megadott nevű paraméter stringet, feltételezve, hogy csak egy adott nevű elem van
-/// @param __nm A paraméter neve
+/// @param _nm A paraméter neve
 /// @param __map A magic string szétvágásakor keletkező konténer.
 /// @return Egy string, a paraméter érték, ha nincs ijen paraméter, akkor a NULL string, ha nincs paramétere, akkor egy üres string
 EXT_ const QString& magicParam(const QString& _nm, const tMagicMap __map);
 /// A megadott __map konténerben keres egy a __k kulcshoz tartozó attributum nevet.
 /// A konténerben talállható tulajdonság nevekről az esetleges paramétereket leválasztja az összehasonlítás elött
-/// @param __nm A tulajdonság név (paraméterek nélkül)
+/// @param _nm A tulajdonság név (paraméterek nélkül)
 /// @param __map A konténer referenciája
 /// @return true, ha megtalálta az adott tulajdonságú elemet, egyébként false.
 static inline bool findMagic(const QString& _nm, const tMagicMap __map) { return __map.contains(_nm); }
 /// A properties mező értékének az előállítása a megadott konténer alapján.
+/// @param __map a forrás konténer
 /// @return Az eredmény string objektummal tér vissza
 EXT_ QString joinMagic(const tMagicMap __map);
 /// Egy QVariant érték konvertálása numerikussá (qlonglong).

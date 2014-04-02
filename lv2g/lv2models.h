@@ -36,12 +36,12 @@ public:
         endResetModel();
         return *this;
     }
-    /// Törli az utolsó sort, ha üres a polygon, akkor nem csinál semmit.
+    /// Törli az utolsó sort, ha üres a lista, akkor nem csinál semmit.
     cStringListModel& pop_back() {
         if (_stringList.isEmpty()) return *this;
         return remove(_stringList.size() -1);
     }
-    /// Törli az első sort, ha üres a polygon, akkor nem csinál semmit.
+    /// Törli az első sort, ha üres a lista, akkor nem csinál semmit.
     cStringListModel& pop_front() {
         if (_stringList.isEmpty()) return *this;
         return remove(0);

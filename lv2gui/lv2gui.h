@@ -3,6 +3,7 @@
 
 #include "lanview.h"
 #include "lv2g.h"
+#include "menu.h"
 #include "mainwindow.h"
 #include <QLabel>
 #include <QMouseEvent>
@@ -23,10 +24,6 @@ public:
     bool        dbIsOpen;       ///< Ha az adatbázis nyitva, akkor true, egyébként false
     cMainWindow *pMainWindow;
 };
-
-extern QString _titleWarning;
-extern QString _titleError;
-extern QString _titleInfo;
 
 /// @class cLv2App
 /// Saját QApplication osztály, a hiba kizárások elkapásához (újra definiált notify() metódus.)

@@ -201,6 +201,10 @@ public:
     static lanView*    getInstance(void) { if (instance == NULL) EXCEPTION(EPROGFAIL); return instance; }
     /// Ha létre lett hozva a lanView (vagy laszármazotjának) a példánya, akkor true-val egyébként false-val tér vissza.
     static bool        exist(void) { return instance != NULL; }
+    /// Megvizsgálja, hogy az adatbázist megnyitották-e.
+    static bool dbIsOpen() {
+        return instance != NULL && instance->pDb != NULL && instance->pDb->isOpen();
+    }
 
     const QString   libName;
     qlonglong       debug;      ///< Debug level

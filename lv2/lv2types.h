@@ -742,9 +742,10 @@ public:
 /*!
   @def TSTREAMF(type)
   QTextStream objektumba való kiírás inline operátorát definiáló makró,
-  A definiált inline fügvény a megadott típusú objektum paraméterként váró toString() függvénnyel stringé konvertálja
+  A definiált inline fügvény a megadott típusú objektum paraméterként váró függvénnyel stringé konvertálja
   az objektumkéldány értékét, majd ez küldi a QTextStream objektumba.
   @param type Az objektum típus, amihez a '<<' operátort definiálni kell.
+  @param fn A stringgé konvertálást végző függvény neve (vagy egy olyan konvertáló fügvényé, mely már közvetlenül kiíratható a \<\< operaátorral).
   */
 #define TSTREAMF(type, fn)  static inline QTextStream& operator<<(QTextStream& __t, const type& __v) { return __t << fn(__v); }
 

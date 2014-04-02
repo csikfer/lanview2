@@ -1,22 +1,25 @@
-#include "lv2gui.h"
+#include "setup.h"
+#include <QMessageBox>
+#include <QFileDialog>
 
 
-cSetupWidget::cSetupWidget(QSettings &__s, cMainWindow *par)
-: cOwnTab(*par)
+cSetupWidget::cSetupWidget(QSettings &__s, QWidget *par)
+: cOwnTab(par)
 , Ui::SetupWidget()
 , logFile()
 , qset(__s)
 {
     PDEB(OBJECT) << __PRETTY_FUNCTION__ << _sSpace << _sComma << VDEBPTR(this) << endl;
-    forced = false == ((lv2Gui *)lanView::getInstance())->dbIsOpen;
     pLl = NULL;
     setupUi(this);
+
+    bool forced = !lanView::dbIsOpen();
 
     connect(PBApplicateAndRestart,SIGNAL(clicked()),    this,   SLOT(applicateAndRestart()));
     connect(PBApplicateAndClose,  SIGNAL(clicked()),    this,   SLOT(applicateAndClose()));
     connect(PBCancel,             SIGNAL(clicked()),    this,   SLOT(close()));
     PBCancel->setDisabled(forced);
-    connect(PBClose,              SIGNAL(clicked()),    this,   SLOT(closeIt()));
+    connect(PBClose,              SIGNAL(clicked()),    this,   SLOT(removeTab()));
     PBClose->setDisabled(forced);
 
     connect(logLevelMore,   SIGNAL(clicked()),      this,   SLOT(logLevelMoreClicked()));

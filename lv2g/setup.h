@@ -1,7 +1,7 @@
 #ifndef SETUP_H
 #define SETUP_H
 
-#include "lv2gui.h"
+#include "lv2g.h"
 #include "ui_setup.h"
 #include "ui_setup_logl.h"
 #include <QDialog>
@@ -12,10 +12,8 @@ class cSetupWidget : public cOwnTab, public Ui::SetupWidget
 {
     Q_OBJECT
 public:
-    cSetupWidget(QSettings &__s, cMainWindow *par);
+    cSetupWidget(QSettings &__s, QWidget *par);
     ~cSetupWidget();
-signals:
-    void closeWidget();
 private slots:
     void applicateAndRestart();
     void applicateAndClose();

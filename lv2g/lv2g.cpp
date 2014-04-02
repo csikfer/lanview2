@@ -31,3 +31,12 @@ QList<int>&  modSelectedRows(QList<int>& rows, const QItemSelection& _on, const 
     }
     return rows;
 }
+
+void setTitles()
+{
+    if (_titleWarning.isEmpty()) {
+        _titleWarning       = QObject::trUtf8("Figyelmeztetés");
+        _titleError         = QObject::trUtf8("Hiba");
+        _titleInfo          = QObject::trUtf8("Megjegyzés");
+    }
+}
