@@ -12,7 +12,7 @@ class cMenuAction;
 /// @class cMainWindow
 /// A fő ablak objektum
 /// Az objektumban nincs közvetlen hivatkozás a cMenuAction objektumokra, azoknak szülője.
-class cMainWindow : public QMainWindow
+class LV2GSHARED_EXPORT cMainWindow : public QMainWindow
 {
     Q_OBJECT
 public:
@@ -26,12 +26,6 @@ public:
 private:
     ///
     void action(QAction *pa, cMenuItem& _mi, QSqlQuery *pq = NULL);
-    ///
-    void setShapeAction(QSqlQuery *pq, const QString mp, cMenuItem &_mi, QAction *_pa);
-    ///
-    void setOwnAction(QSqlQuery *pq, const QString mp, cMenuItem &_mi, QAction *_pa, const tMagicMap& _mm);
-    ///
-    void setExecAction(const QString mp, QAction *pa);
 };
 
 

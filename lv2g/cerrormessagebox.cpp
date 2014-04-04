@@ -34,7 +34,7 @@ cErrorMessageBox::cErrorMessageBox(cError *_pe, QWidget *parent) :
 
     QHBoxLayout *pHBox = new QHBoxLayout();
     QPushButton *pPush = new QPushButton(trUtf8("Bezár"));
-    connect(pPush, SIGNAL(clicked()), this, SLOT(closeIt()));
+    connect(pPush, SIGNAL(clicked()), this, SLOT(endIt()));
     pHBox->addStretch();
     pHBox->addWidget(pPush);
     pHBox->addStretch();
@@ -74,7 +74,7 @@ cErrorMessageBox::cErrorMessageBox(cError *_pe, QWidget *parent) :
     }
 }
 
-void cErrorMessageBox::closeIt()
+void cErrorMessageBox::endIt()
 {
     accept();
 }

@@ -22,7 +22,7 @@
 
 /// @class cImageWindow
 /// Egy képet tartalmazó ablak objektum
-class cImageWindow : public QLabel {
+class LV2GSHARED_EXPORT cImageWindow : public QLabel {
     Q_OBJECT
 public:
     /// Konstruktor
@@ -52,7 +52,7 @@ public:
     QPixmap *   image;
 signals:
     /// Szignál, ha kattintottak ez egérrel a képen.
-    /// @par A kattintáskori egér pozíció a képen.
+    /// @param A kattintáskori egér pozíció a képen.
     void mousePressed(const QPoint& __p);
 };
 
@@ -81,7 +81,7 @@ enum eFieldWidgetType {
 };
 /// Az enum eFieldWidgetType értékeket stringgé konvertálja.
 /// Vissza konverzió nincs, ez is csak nyomkövetési céllal.
-QString fieldWidgetType(int _t);
+_GEX QString fieldWidgetType(int _t);
 
 /// @class cFieldEditBase
 /// @brief Bázis objekktum a mező megjelenítő/módosító widget-ekhez

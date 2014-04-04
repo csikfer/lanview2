@@ -1,6 +1,15 @@
 #include "lv2g.h"
 
+void initLV2GUI()
+{
+    static bool inited = false;
+    if (!inited) {
+        _setGUITitles();
+        inited = true;
+    }
+}
 
+/* Ez valami régebbi visszamaradt kód
 QList<int>  selection2rows(const QItemSelection& _sel)
 {
     QModelIndex index;
@@ -31,12 +40,25 @@ QList<int>&  modSelectedRows(QList<int>& rows, const QItemSelection& _on, const 
     }
     return rows;
 }
+*/
 
-void setTitles()
+void _setGUITitles()
 {
     if (_titleWarning.isEmpty()) {
         _titleWarning       = QObject::trUtf8("Figyelmeztetés");
         _titleError         = QObject::trUtf8("Hiba");
         _titleInfo          = QObject::trUtf8("Megjegyzés");
     }
+}
+
+
+cOwnTab::cOwnTab(QWidget *par)
+    : QWidget(par)
+{
+    setVisible(false);
+}
+
+void cOwnTab::endIt()
+{
+    closeIt();
 }

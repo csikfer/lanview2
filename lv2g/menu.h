@@ -16,7 +16,7 @@ enum eMenuActionType {
 
 /// @class cMenuAction
 /// A menu pontok funkcióit megvalósító objektum.
-class cMenuAction : public QObject {
+class LV2GSHARED_EXPORT cMenuAction : public QObject {
     Q_OBJECT
 public:
     /// Konstruktor
@@ -38,7 +38,7 @@ public:
     /// @param ps A widget pointere
     /// @param pa A menü elem QAction objektuma
     /// @param par A QTab objektum, melynek egy tab-jában történik a megjelenítés
-    cMenuAction(QWidget *po, QAction *pa, QTabWidget * par);
+    cMenuAction(cOwnTab *po, QAction *pa, QTabWidget * par);
     /// Destruktor (üres)
     ~cMenuAction();
     /// Típus
@@ -66,10 +66,10 @@ private:
     void initRecordTable();
 public slots:
     /// Az objektumot meg kell jeleníteni
-    void openIt();
+    void displayIt();
     /// Az objektumot be kell zárni, ill. el kell tüntetni (megjelenítés vége)
-    void closeIt();
-    /// A gyerek objektum megszűnt
+    void removeIt();
+    /// A gyerek (megjelenített) objektum megszűnt
     void destroyedChild();
     /// Ha a pDialog pointer nem NULL, akkor a dialogus objektumnak az exec() metódusa kerül végrehajtásra.
     /// Ha a pDialog értéke NULL, akkor feltételezi, hogy egy parancs van az objektumhoz rendelve, és a parancsot végre kell hajtani.
@@ -77,7 +77,7 @@ public slots:
     /// - "reset" hívja az appRestart() függvényt, vagyis újraindul a program.
     /// - "exit" A program kilép
     /// - minden egyébb esetben EBDATA koddal hibaüzenetet kapunk
-    void exec();
+    void executeIt();
 };
 
 #endif // MENU_H

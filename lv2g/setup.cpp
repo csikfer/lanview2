@@ -19,7 +19,7 @@ cSetupWidget::cSetupWidget(QSettings &__s, QWidget *par)
     connect(PBApplicateAndClose,  SIGNAL(clicked()),    this,   SLOT(applicateAndClose()));
     connect(PBCancel,             SIGNAL(clicked()),    this,   SLOT(close()));
     PBCancel->setDisabled(forced);
-    connect(PBClose,              SIGNAL(clicked()),    this,   SLOT(removeTab()));
+    connect(PBClose,              SIGNAL(clicked()),    this,   SLOT(endIt()));
     PBClose->setDisabled(forced);
 
     connect(logLevelMore,   SIGNAL(clicked()),      this,   SLOT(logLevelMoreClicked()));

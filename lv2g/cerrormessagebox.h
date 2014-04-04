@@ -11,7 +11,7 @@ public:
     explicit cErrorMessageBox(cError * _pe, QWidget *parent = 0);
     static int messageBox(cError * _pe, QWidget *parent = 0) { return cErrorMessageBox(_pe, parent).exec(); }
 public slots:
-    void closeIt();
+    void endIt();
 };
 
 #endif // CERRORMESSAGEBOX_H

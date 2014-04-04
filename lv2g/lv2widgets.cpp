@@ -510,12 +510,6 @@ cArrayWidget::cArrayWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSyncTy
         pRightLayout->addWidget(pAddButton);
         pRightLayout->addWidget(pDelButton);
         pRightLayout->addWidget(pClearButton);
-
-        connect(pAddButton,   SIGNAL(pressed()), this, SLOT(addRow()));
-        connect(pDelButton,   SIGNAL(pressed()), this, SLOT(delRow()));
-        connect(pClearButton, SIGNAL(pressed()), this, SLOT(clearRows()));
-        connect(pLineEd,      SIGNAL(textChanged(QString)), this, SLOT(changed(QString)));
-        connect(pList->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
     }
     pModel = new cStringListModel(pWidget());
     pModel->setStringList(_value.toStringList());
@@ -527,6 +521,13 @@ cArrayWidget::cArrayWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSyncTy
     setButtons();
     pAddButton->setDisabled(true);
     pDelButton->setDisabled(true);
+    if (!_readOnly) {
+        connect(pAddButton,   SIGNAL(pressed()), this, SLOT(addRow()));
+        connect(pDelButton,   SIGNAL(pressed()), this, SLOT(delRow()));
+        connect(pClearButton, SIGNAL(pressed()), this, SLOT(clearRows()));
+        connect(pLineEd,      SIGNAL(textChanged(QString)), this, SLOT(changed(QString)));
+        connect(pList->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
+    }
 }
 
 cArrayWidget::~cArrayWidget()
@@ -965,7 +966,7 @@ cDateTimeWidget::cDateTimeWidget(const cTableShape& _tm, cRecordFieldRef __fr, e
     _wType = FEW_DATE_TIME;
     QDateTimeEdit * pDTE = new QDateTimeEdit(par);
     _pWidget = pDTE;
-    connect(pDTE, SIGNAL(DateTimeChanged(QTime)),  this, SLOT(_set(QDateTime)));
+    connect(pDTE, SIGNAL(dateTimeChanged(QDateTime)),  this, SLOT(_set(QDateTime)));
 }
 
 cDateTimeWidget::~cDateTimeWidget()

@@ -53,9 +53,13 @@ A könyvtár a következő osztályokat valósítja meg:\n
 
 #include "lv2g_global.h"
 #include "guidata.h"
-#include <QtWidgets/QLayout>
-#include <QtWidgets/QLabel>
+#include <QtWidgets>
 
+/// A GUI API inicializálása
+/// Legalább egyszer meg kell hívni, ismételt hívása esetén nem csinál semmit.
+_GEX void initLV2GUI();
+
+/* Ez valami régebbi visszamaradt kód
 /// A kiszelektált sorok listájával tér vissza
 /// @param _sel A Qt objektum, melyből a kiszelektált sorok indexeit ki kell nyerni.
 /// @return A kiszelektált sorok indexei, minden index csak egyszer szerepel.
@@ -85,6 +89,7 @@ template <class T, class V> static inline bool fromEdit(cRecord& __o, const T& _
     else                                      __o[__i] = __v;   // Egyébként megy bele az érték
     return true;
 }
+*/
 
 typedef QList<QHBoxLayout *> hBoxLayoutList;
 typedef QList<QLabel *>     labelList;
@@ -98,18 +103,22 @@ static inline QWidget *newFrame(int _st, QWidget * p = NULL)
 static inline QWidget *newHLine(QWidget * p = NULL) { return newFrame(QFrame::HLine, p); }
 static inline QWidget *newVLine(QWidget * p = NULL) { return newFrame(QFrame::VLine, p); }
 
-extern void setTitles();
-extern QString _titleWarning;
-extern QString _titleError;
-extern QString _titleInfo;
+_GEX void _setGUITitles();
+_GEX QString _titleWarning;
+_GEX QString _titleError;
+_GEX QString _titleInfo;
 
-// A tab-os megjelenítéshez egy segég osztály, csak annyi a szerepe, hogy van egy removeTab() szignálja
-class cOwnTab : public QWidget {
+// A tab-os megjelenítéshez egy segéd osztály, csak annyi a szerepe, hogy van egy removeTab() szignálja
+class LV2GSHARED_EXPORT cOwnTab : public QWidget {
+    Q_OBJECT
 public:
-    cOwnTab(QWidget *par = NULL) : QWidget(par) { ; }
+    cOwnTab(QWidget *par = NULL);
 signals:
-    // A widget-et el kel távolítani a TAB widgetről.
-    void removeTab();
+    // A widget-et be kell csukni, el kell távolítani ...
+    void closeIt();
+public slots:
+    // Egy closeIt() signál
+    void endIt();
 };
 
 

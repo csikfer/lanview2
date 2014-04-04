@@ -155,7 +155,7 @@ public:
     cTableShape& tableShape() { return *pTableShape; }
     const cTableShape& tableShape() const { return *pTableShape; }
     /// A megjelenítendő tábla rekord leíró objektum referenciáját adja vissza
-    const cRecStaticDescr& recDescr() const { return *pRecDsecr; }
+    const cRecStaticDescr& recDescr() const { return *pRecDescr; }
     /// A megadott sorszámú (a megjelenítő leíróban) mező megjelenítő leíró referenciáját adja vissza.
     const cRecordTableColumn& field(int i) const { return *fields[i]; }
     /// Az alapértelmezett paletta referenciáját adja vissza.
@@ -206,7 +206,7 @@ protected:
     /// A megjelenítendő mezők
     tRecordTableColumns  fields;
     /// A megjelenítendő tábla leíró pointere
-    const cRecStaticDescr*pRecDsecr;
+    const cRecStaticDescr*pRecDescr;
     /// A tábla model pointere
     cRecordTableModelSql *pTableModel;
     /// A fő widget, vagy dialog box objektum pointere

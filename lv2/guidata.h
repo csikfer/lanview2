@@ -9,7 +9,8 @@ A megjelenítéssel kapcsolatos adattáblákat kezelő objektumok.
 #include "lanview.h"
 #include "lv2datab.h"
 
-/// @enum eTableShapeType Tábla Shape típusok (set)
+/// @enum eTableShapeType
+/// Tábla Shape típusok (set)
 enum eTableShapeType {
     TS_UNKNOWN =-1, ///< ismeretlen, csak hibajelzésre
     TS_NO = 0,      ///< "no"       Csak diakógus (egy rekord megjelenítése, módosítása ill. beszúrása)
@@ -20,24 +21,43 @@ enum eTableShapeType {
     TS_SWITCH,      ///< "switch"   Kapcsoló tábla'
     TS_LINK         ///< "link"     Hasonló a kapcsoló táblához, de egy tábla (és leszármazottai) közötti kapcsolatot reprezentál (linkek)
 };
+/// Konverziós függvény a eTableShapeType enumerációs típushoz
+/// @param n Az enumerációs értéket reprezentáló string az adatbázisban
+/// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs név esetén kizárást dob.
+/// @return Az enumerációs névhez tartozó enumeráxiós konstans, vagy TS_UNKNOWN, ha ismeretlen a név, és __ex hamis.
 EXT_ int tableShapeType(const QString& n, bool __ex = true);
+/// Konverziós függvény a eTableShapeType enumerációs típushoz
+/// @param e Az enumerációs konstans
+/// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs konstans esetén kizárást dob.
+/// @return Az enumerációs konstanshoz tartozó enumeráxiós név, vagy üres string, ha ismeretlen a konstams, és __ex hamis.
 EXT_ const QString&       tableShapeType(int e, bool __ex = true);
 
+/// @enum eTableInheritType
+/// A tábla öröklés kezelése
 enum eTableInheritType {
-    TIT_UNKNOWN = -1,
-    TIT_NO = 0,
-    TIT_ONLY,
-    TIT_ON,
-    TIT_ALL,
-    TIT_REVERSE,
-    TIT_LISTED,
-    TIT_LISTED_REV,
-    TIT_LISTED_ALL
+    TIT_UNKNOWN = -1,   ///< Ismeretlen, csak hibajelzésre
+    TIT_NO = 0,         ///< A tábla nem vesz rész öröklésben (nincs ős és leszármazott)
+    TIT_ONLY,           ///< Vannak leszármazottak, de azok kizárva
+    TIT_ON,             ///< A leszármazottakat is meg kel jeleníteni
+    TIT_ALL,            ///< Az összes ös és leszármazott megjelenítése
+    TIT_REVERSE,        ///< Az ősöket is meg kell jeleníteni
+    TIT_LISTED,         ///< A listázott leszármazottakat is meg kell jeleníteni
+    TIT_LISTED_REV,     ///< A listázott ősöket is meg kell jeleníteni
+    TIT_LISTED_ALL      ///< A listázott ősöket ill. leszármazottakat is meg kell jeleníteni.
 };
+/// Konverziós függvény a eTableInheritType enumerációs típushoz
+/// @param n Az enumerációs értéket reprezentáló string az adatbázisban
+/// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs név esetén kizárást dob.
+/// @return Az enumerációs névhez tartozó enumeráxiós konstans, vagy TIT_UNKNOWN, ha ismeretlen a név, és __ex hamis.
 EXT_ int tableInheritType(const QString& n, bool __ex = true);
+/// Konverziós függvény a eTableInheritType enumerációs típushoz
+/// @param e Az enumerációs konstans
+/// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs konstans esetén kizárást dob.
+/// @return Az enumerációs konstanshoz tartozó enumeráxiós név, vagy üres string, ha ismeretlen a konstams, és __ex hamis.
 EXT_ const QString& tableInheritType(int e, bool __ex = true);
 
-/// @enum eOrderType Rendezési lehetőségek
+/// @enum eOrderType
+/// Rendezési lehetőségek
 enum eOrderType {
     OT_UNKNOWN =-1, ///< ismeretlen, csak hibajelzésre
     OT_NO = 0,   ///< Nincs rendezés
@@ -46,11 +66,20 @@ enum eOrderType {
     OT_DEFAULT,  ///< Az előző, vagy az alapértelmezett metódus megtartása (a string konvertáló függvény nem kezeli!)
     OT_NEXT      ///< A következő metódus (NO->INC->DEC) (a string konvertáló függvény nem kezeli!)
 };
+/// Konverziós függvény a eOrderType enumerációs típushoz
+/// @param n Az enumerációs értéket reprezentáló string az adatbázisban
+/// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs név esetén kizárást dob.
+/// @return Az enumerációs névhez tartozó enumeráxiós konstans, vagy OT_UNKNOWN, ha ismeretlen a név, és __ex hamis.
 EXT_ int orderType(const QString& n, bool __ex = true);
+/// Konverziós függvény a eOrderType enumerációs típushoz
+/// @param e Az enumerációs konstans
+/// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs konstans esetén kizárást dob.
+/// @return Az enumerációs konstanshoz tartozó enumeráxiós név, vagy üres string, ha ismeretlen a konstams, és __ex hamis.
 EXT_ const QString&  orderType(int e, bool __ex = true);
 
 
-/// @enum eFilterType Szűrési metódusok
+/// @enum eFilterType
+/// Szűrési metódusok
 enum eFilterType {
     FT_UNKNOWN = -1, ///< ismeretlen, csak hibajelzésre
     FT_BEGIN ,   ///< Szó eleji eggyezés (ua. mint az FF_LIKE, de a pattern végéhezhez hozzá lessz fűzve egy '%')
@@ -66,7 +95,15 @@ enum eFilterType {
     FT_DEFAULT,  ///< Az előző, vagy az alapértelmezett metódus megtartása (a string konvertáló függvény nem kezeli!)
     FT_NO        ///< nincs szűrés
 };
+/// Konverziós függvény a eFilterType enumerációs típushoz
+/// @param n Az enumerációs értéket reprezentáló string az adatbázisban
+/// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs név esetén kizárást dob.
+/// @return Az enumerációs névhez tartozó enumeráxiós konstans, vagy FT_UNKNOWN, ha ismeretlen a név, és __ex hamis.
 EXT_ int filterType(const QString& n, bool __ex = true);
+/// Konverziós függvény a eFilterType enumerációs típushoz
+/// @param e Az enumerációs konstans
+/// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs konstans esetén kizárást dob.
+/// @return Az enumerációs konstanshoz tartozó enumeráxiós név, vagy üres string, ha ismeretlen a konstams, és __ex hamis.
 EXT_ const QString&   filterType(int e, bool __ex = true);
 
 class cTableShapeField;

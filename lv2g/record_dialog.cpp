@@ -103,6 +103,7 @@ int cRecordDialogBase::exec(bool _close)
     return r;
 }
 
+/// Slot a megnyomtak egy gombot szignálra.
 void cRecordDialogBase::_pressed(int id)
 {
     if      (_pLoop != NULL) _pLoop->exit(id);
@@ -206,16 +207,18 @@ void cRecordDialog::set(const cRecord& _r)
 
 bool cRecordDialog::get(cRecord& _r)
 {
-    _errMsg.clear();
+    _errMsg.clear();    // Töröljük a hiba stringet
     if (_r.descr() != record.descr()) EXCEPTION(EDATA);
     int i, n = record.descr().cols();
-    _r.set();
-    for (i = 0; i < n; i++) {
-        int s = _r._stat;
-        _r._stat &= ~cRecord::ES_DEFECTIVE;
-        QVariant fv = fields[i]->get();
+    // _r.set();           // NEM !! Kinullázzuk a rekordot
+    for (i = 0; i < n; i++) {   // Végigszaladunk a mezőkön
+        cFieldEditBase& fe = *fields[i];
+        if (fe.isReadOnly()) continue;      // FEltételezzük, hogy RO esetén az van a mezőben aminek lennie kell.
+        int s = _r._stat;                   // Mentjük a hiba bitet,
+        _r._stat &= ~cRecord::ES_DEFECTIVE; // majd töröljük, mert mezőnkként kell
+        QVariant fv = fields[i]->get();     // A mező widget-jéből kivesszük az értéket
         PDEB(VERBOSE) << "Dialog -> obj. field " << _r.columnName(i) << " = " << debVariantToString(fv) << endl;
-        _r.set(i, fv);
+        _r.set(i, fv);                      // Az értéket bevéssük a rekordba
         if (_r._stat & cRecord::ES_DEFECTIVE) {
             DWAR() << "Invalid data : field " << _r.columnName(i) << " = " << debVariantToString(fv) << endl;
             _errMsg += trUtf8("Adat hiba a %1 mezőnél\n").arg(_r.columnName(i));
@@ -233,7 +236,7 @@ void cRecordDialog::restore()
 
 /* ***************************************************************************************************** */
 
-cRecordDialogTab::cRecordDialogTab(const cTableShape& _tm, tRecordList<cTableShape>& _tms, int _buttons, qlonglong _oid, bool dialog, QWidget * parent)
+cRecordDialogInh::cRecordDialogInh(const cTableShape& _tm, tRecordList<cTableShape>& _tms, int _buttons, qlonglong _oid, bool dialog, QWidget * parent)
     : cRecordDialogBase(_tm, _buttons, dialog, parent)
     , tabDescriptors(_tms)
     , recs()
@@ -247,7 +250,7 @@ cRecordDialogTab::cRecordDialogTab(const cTableShape& _tm, tRecordList<cTableSha
     init(_oid);
 }
 
-void cRecordDialogTab::init(qlonglong _oid)
+void cRecordDialogInh::init(qlonglong _oid)
 {
     DBGFN();
     pTabWidget = new QTabWidget;
@@ -275,20 +278,20 @@ void cRecordDialogTab::init(qlonglong _oid)
     DBGFNL();
 }
 
-int cRecordDialogTab::actTab()
+int cRecordDialogInh::actTab()
 {
     int i =  pTabWidget->currentIndex();
     if (!isContIx(tabs, i)) EXCEPTION(EPROGFAIL, i);
     return i;
 }
 
-void cRecordDialogTab::setActTab(int i)
+void cRecordDialogInh::setActTab(int i)
 {
     if (!isContIx(tabs, i)) EXCEPTION(EPROGFAIL, i);
     pTabWidget->setCurrentIndex(i);
 }
 
-bool cRecordDialogTab::get(cRecord& _r)
+bool cRecordDialogInh::get(cRecord& _r)
 {
     _errMsg.clear();
     bool  r = tabs[actTab()]->get(_r);

@@ -19,19 +19,19 @@ cMainWindow::cMainWindow(bool _setupOnly, QWidget *parent) :
 
         QString nm = trUtf8("Setup");
         pa = pm->addAction(nm);
-        cOwnTab *pot =  new cSetupWidget(*lanView::getInstance()->pSet, NULL;
+        cOwnTab *pot =  new cSetupWidget(*lanView::getInstance()->pSet, NULL);
         pot->setObjectName(nm);
-        po  = new cMenuAction(pot, pa, pTabWidget);
+        po  = new cMenuAction(pot, pa, NULL);
         po->setObjectName(nm);
 
         nm = trUtf8("Restart");
         pa = pm->addAction(nm);
-        po  = new cMenuAction(nm, pa, pTabWidget);
+        po  = new cMenuAction(nm, pa, NULL);
         po->setObjectName(nm);
 
         nm = trUtf8("Exit");
         pa = pm->addAction(nm);
-        po  = new cMenuAction(nm, pa, pTabWidget);
+        po  = new cMenuAction(nm, pa, NULL);
         po->setObjectName(nm);
     }
     else {
@@ -78,23 +78,8 @@ void cMainWindow::action(QAction *pa, cMenuItem& _mi, QSqlQuery *pq)
         else DWAR() << trUtf8("üres menü : ") << _mi.title() << endl;
     }
     else {
-        new cMenuAction(pq, );
+        new cMenuAction(pq, &_mi, pa, pTabWidget);
     }
     DBGFNL();
-}
-
-
-void cMainWindow::setOwnAction(QSqlQuery *pq, const QString mp, cMenuItem& _mi, QAction *_pa, const tMagicMap &_mm)
-{
-    DBGFN();
-    cOwnTab *pot = NULL;
-    if (0 == mp.compare("setup", Qt::CaseInsensitive)) {
-        (void)_mm; (void)pq;
-        pot = new cSetupWidget(*lanView::getInstance()->pSet, this);
-    }
-    else EXCEPTION(EDBDATA, -1, mp);
-    pot->setObjectName(mp);
-    cMenuAction *po  = new cMenuAction(pot, _pa, this);
-    po->setObjectName(_mi.getName());
 }
 

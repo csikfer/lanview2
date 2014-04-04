@@ -11,8 +11,6 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidge
     pDialog      = NULL;
     pAction      = pa;
 
-    setTitles();
-
     setObjectName(pmi->title()); // Ez lessz a TAB neve
     tMagicMap mm;
     mm = splitMagic(pmi->getName(_sProperties), mm);
@@ -23,14 +21,12 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidge
         pTableShape->setParent(this);
         pTableShape->setByName(*pq, mp);
         setType(MAT_SHAPE);
-        connect(pAction,      SIGNAL(triggered()), this, SLOT(openIt()));
-        connect(pRecordTable, SIGNAL(closeIt()),   this, SLOT(closeIt()));
-        connect(pRecordTable, SIGNAL(destroyed()), this, SLOT(destroyedChild()));
+        connect(pAction,      SIGNAL(triggered()), this, SLOT(displayIt()));
     }
     else if (!(mp = magicParam(QString("exec"),   mm)).isEmpty()) {
-        setObjectName(pmi->title()); // Nincs tab, a név a parancs lessz
+        setObjectName(mp); // Nincs tab, a név a parancs lessz
         setType(MAT_EXEC);
-        connect(pa, SIGNAL(triggered()), this, SLOT(exec()));
+        connect(pa, SIGNAL(triggered()), this, SLOT(executeIt()));
     }
     else if (!(mp = magicParam(QString("own"),    mm)).isEmpty()) {
         cOwnTab *pot =  NULL;
@@ -42,8 +38,8 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidge
             if (__ex) EXCEPTION(EDBDATA, -1, mp);
             return;
         }
-        connect(pAction,      SIGNAL(triggered()), this, SLOT(openIt()));
-        connect(pot,          SIGNAL(removeTab()), this, SLOT(closeIt()));
+        connect(pAction,      SIGNAL(triggered()), this, SLOT(displayIt()));
+        connect(pot,          SIGNAL(closeIt()),   this, SLOT(removeIt()));
         connect(pWidget,      SIGNAL(destroyed()), this, SLOT(destroyedChild()));
         setType(MAT_OWN);
     }
@@ -60,11 +56,9 @@ cMenuAction::cMenuAction(cTableShape *ps, const QString &nm, QAction *pa, QTabWi
     pDialog      = NULL;
     pAction      = pa;
 
-    setTitles();
-
     pTableShape->setParent(this);
-    connect(pAction,      SIGNAL(triggered()), this, SLOT(openIt()));
-    connect(pRecordTable, SIGNAL(closeIt()),   this, SLOT(closeIt()));
+    connect(pAction,      SIGNAL(triggered()), this, SLOT(displayIt()));
+    connect(pRecordTable, SIGNAL(closeIt()),   this, SLOT(removeIt()));
     setObjectName(nm);
 }
 
@@ -78,13 +72,11 @@ cMenuAction::cMenuAction(const QString&  ps, QAction *pa, QTabWidget * par)
     pDialog      = NULL;
     pAction      = pa;
 
-    setTitles();
-
     setObjectName(ps);
-    connect(pa, SIGNAL(triggered()), this, SLOT(exec()));
+    connect(pa, SIGNAL(triggered()), this, SLOT(executeIt()));
 }
 
-cMenuAction::cMenuAction(QWidget *po, QAction *pa, QTabWidget * par)
+cMenuAction::cMenuAction(cOwnTab *po, QAction *pa, QTabWidget * par)
     : QObject(par), type(MAT_WIDGET)
 {
     pTabWidget   = par;
@@ -94,9 +86,7 @@ cMenuAction::cMenuAction(QWidget *po, QAction *pa, QTabWidget * par)
     pDialog      = NULL;
     pAction      = pa;
 
-    setTitles();
-
-    connect(pAction, SIGNAL(triggered()), this, SLOT(openIt()));
+    connect(pAction, SIGNAL(triggered()), this, SLOT(displayIt()));
 }
 
 cMenuAction::~cMenuAction()
@@ -108,9 +98,11 @@ void cMenuAction::initRecordTable()
 {
     pRecordTable = new cRecordTable(pTableShape, false, pTabWidget);
     pWidget = pRecordTable->pWidget();
+    connect(pRecordTable, SIGNAL(closeIt()),   this, SLOT(removeIt()));
+    connect(pRecordTable, SIGNAL(destroyed()), this, SLOT(destroyedChild()));
 }
 
-void cMenuAction::openIt()
+void cMenuAction::displayIt()
 {
     switch (type) {
     case MAT_SHAPE:
@@ -126,6 +118,9 @@ void cMenuAction::openIt()
         EXCEPTION(EPROGFAIL,-1,"Invalid signal.");
         break;
     }
+    if (pTabWidget == NULL) {
+        EXCEPTION(EPROGFAIL, -1, trUtf8("pTabWidget is NULL"));
+    }
     int i = pTabWidget->indexOf(pWidget);
     if (i < 0) {
         i = pTabWidget->addTab(pWidget, objectName());
@@ -133,8 +128,12 @@ void cMenuAction::openIt()
     pTabWidget->setCurrentIndex(i);
 }
 
-void cMenuAction::closeIt()
+void cMenuAction::removeIt()
 {
+    if (pWidget == NULL) {
+        DWAR() << "pWidget is NULL." << endl;
+        return;
+    }
     int i = pTabWidget->indexOf(pWidget);
     if (i < 0) EXCEPTION(EPROGFAIL);
     pTabWidget->removeTab(i);
@@ -151,11 +150,12 @@ void cMenuAction::closeIt()
 
 void cMenuAction::destroyedChild()
 {
+    DBGFN();
     pWidget = NULL;         // A tab tényleg elitézi a többit?
     pRecordTable = NULL;
 }
 
-void  cMenuAction::exec()
+void  cMenuAction::executeIt()
 {
     switch (type) {
     case MAT_DIALOG: {

@@ -20,8 +20,8 @@ COMMENT ON TYPE tableinherittype IS
 'A tábla leszármazottainak és őseinek a kezelése
 no          Nincs leszármazott
 only        Vannak leszármazottak, de azokat nem jelenítjük meg
-on          A leszármazottakat is megjelenítése
-all         Az ősök és leszármazottak megjelenítése
+on          A leszármazottakat is meg kell jeleníteni
+all         Az ősök és leszármazottak kell megjeleníteni
 reverse     Az ősöket is meg kell jeleníteni
 listed      Csak a felsorolt leszármazottak megjelenítése
 listed_rev  Csak a felsorolt ősök megjelenítése

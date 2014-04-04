@@ -5,7 +5,7 @@
 #include <QAbstractTableModel>
 #include <QStringListModel>
 
-class cStringListModel: public QAbstractListModel {
+class LV2GSHARED_EXPORT cStringListModel: public QAbstractListModel {
 public:
     cStringListModel(QObject *__par = NULL);
     virtual int rowCount(const QModelIndex &parent) const;

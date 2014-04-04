@@ -22,6 +22,8 @@ int main(int argc, char * argv[])
     lanView::snmpNeeded = false;
     lanView::sqlNeeded  = false;    // Csak késöbb nyitunk adatbázist, hogy lehessen setup-olni.
 
+    initLV2GUI();
+
     lv2Gui   mo;
 
     if (mo.lastError) {  // Ha hiba volt, vagy vége

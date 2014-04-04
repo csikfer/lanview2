@@ -537,7 +537,7 @@ cRecordTable::~cRecordTable()
 void cRecordTable::init(QWidget *par)
 {
     flags = 0;
-    pRecDsecr = NULL;
+    pRecDescr = NULL;
     pTableModel = NULL;
     _pWidget = NULL;
     pButtons = NULL;
@@ -553,7 +553,7 @@ void cRecordTable::init(QWidget *par)
     if (pDefaultPalette == NULL) {
         pDefaultPalette = new QPalette();
     }
-    pRecDsecr = cRecStaticDescr::get(pTableShape->getName(_sTableName));
+    pRecDescr = cRecStaticDescr::get(pTableShape->getName(_sTableName));
     isReadOnly = pTableShape->getBool(_sIsReadOnly);
 
     tTableShapeFields::iterator i, n = pTableShape->shapeFields.end();
@@ -770,15 +770,15 @@ void cRecordTable::insert()
     switch (tit) {
     case TIT_NO:
     case TIT_ONLY: {
-        rec.setType(pRecDsecr);
+        rec.setType(pRecDescr);
         if (flags & RTF_CHILD) {
             int ofix = rec.descr().ixToOwner();
             rec[ofix] = owner_id;
         }
-        cRecordDialog   rd(rec, *pTableShape, buttons, pWidget());
+        cRecordDialog   rd(rec, *pTableShape, buttons, pWidget());  // A rekord szerkesztő dialógus
         while (1) {
             int r = rd.exec();
-            if (r == DBT_INSERT || r == DBT_OK) {
+            if (r == DBT_INSERT || r == DBT_OK) {   // Csak az OK, és Inser gombra csinálunk valamit
                 int ok;
                 cError *pe = NULL;
                 try {
@@ -791,8 +791,8 @@ void cRecordTable::insert()
                 switch (ok) {
                 case 1:                     // OK
                     refresh();
-                    if (r == DBT_OK) break;
-                    continue;
+                    if (r == DBT_OK) break; // Ha OK-t nyomott becsukjuk az dialóg-ot
+                    continue;               // Ha Insert-et, akkor folytathatja a következővel
                 case 0:
                     QMessageBox::warning(pWidget(), trUtf8("Az új rekord beszúrása sikertelen."), rd.errMsg());
                     continue;
@@ -813,7 +813,7 @@ void cRecordTable::insert()
         foreach (QString tableName, tableNames) {
             shapes << getInhShape(tableName);
         }
-        cRecordDialogTab rd(*pTableShape, shapes, buttons, owner_id, true, pWidget());
+        cRecordDialogInh rd(*pTableShape, shapes, buttons, owner_id, true, pWidget());
         while (1) {
             int r = rd.exec();
             if (r == DBT_INSERT || r == DBT_OK) {
@@ -871,7 +871,7 @@ void cRecordTable::modify()
     cAlternate *pRec = (cAlternate *)actRecord()->dup();
     int buttons = enum2set(DBT_OK, DBT_CANCEL, DBT_NEXT, DBT_PREV);
     cRecordDialog *    pRd  = NULL;
-    cRecordDialogTab * pRdt = NULL;
+    cRecordDialogInh * pRdt = NULL;
     cTableShape *    pShape = NULL;
     tRecordList<cTableShape> * pShapes = NULL;
 
@@ -890,7 +890,7 @@ void cRecordTable::modify()
             cTableShape *pTS = getInhShape(tableName);;
             *pShapes << pTS;
         }
-        pRdt = new cRecordDialogTab(*pTableShape, *pShapes, buttons, owner_id, true, pWidget());
+        pRdt = new cRecordDialogInh(*pTableShape, *pShapes, buttons, owner_id, true, pWidget());
     }   break;
     default:
         EXCEPTION(ENOTSUPP);
