@@ -148,6 +148,7 @@ cColStaticDescr::cColStaticDescr(int __t)
     , fKeyField()
     , fKeyTables()
     , fnToName()
+//    , defValue()
 {
     isNullable  = false;
     pos =  ordPos = -1;
@@ -168,6 +169,7 @@ cColStaticDescr::cColStaticDescr(const cColStaticDescr& __o)
     , fKeyField(__o.fKeyField)
     , fKeyTables(__o.fKeyTables)
     , fnToName(__o.fnToName)
+//    , defValue(__o.defValue)
 {
     isNullable  = __o.isNullable;
     ordPos      = __o.ordPos;
@@ -197,6 +199,7 @@ cColStaticDescr& cColStaticDescr::operator=(const cColStaticDescr __o)
     fKeyType    = __o.fKeyType;
     fnToName    = __o.fnToName;
     pFRec       = __o.pFRec;
+//    defValue    = __o.defValue;
     return *this;
 }
 
@@ -206,7 +209,10 @@ QString cColStaticDescr::toString() const
     r  = dQuoted((QString&)*this) + _sSpace + colType + "/" + udtName;
     if (enumVals.size())       r += _sCBraB + enumVals.join(_sComma) + _sCBraE;
     if (!isNullable)           r += " NOT NULL ";
-    if (!colDefault.isEmpty()) r += " DEFAULT " + colDefault;
+    if (!colDefault.isNull()) {
+        r += " DEFAULT " + colDefault;
+//        r += "(" + debVariantToString(defValue) + ")";
+    }
     r += (isUpdatable ? _sSpace : QString(" nem")) + " módosítható";
     return r;
 }
@@ -316,6 +322,32 @@ QString cColStaticDescr::toView(QSqlQuery& q, const QVariant &_f) const
 
 #define CDDUPDEF(T)     cColStaticDescr *T::dup() const { return new T(*this); }
 
+/*
+void cColStaticDescr::setDefValue()
+{
+    if (colDefault.isNull()) return;
+    bool ok = true;
+    switch (eColType) {
+    case FT_INTEGER:
+        defValue = colDefault.toLongLong(&ok);
+        break;
+    case FT_REAL:
+        defValue = colDefault.toDouble(&ok);
+        break;
+    case FT_TEXT:
+        defValue =colDefault;
+        break;
+    case FT_BINARY:
+        ok = false;
+        break;
+    default:
+        EXCEPTION(EPROGFAIL);
+        break;
+    }
+    if (!ok) EXCEPTION(EDATA, eColType, QObject::trUtf8("Nem értelmezhető DEFAULT érték: %1").arg(colDefault));
+    return;
+}
+*/
 CDDUPDEF(cColStaticDescr)
 
 /// @def TYPEDETECT
@@ -421,6 +453,7 @@ QString   cColStaticDescrBool::toName(const QVariant& _f) const
 }
 qlonglong cColStaticDescrBool::toId(const QVariant& _f) const
 {
+    if (isNull()) return NULL_ID;
     return _f.toBool() ? 1 : 0;
 }
 
@@ -433,6 +466,15 @@ void cColStaticDescrBool::init()
     enumVals << langBool(false);
     enumVals << langBool(true);
 }
+
+/*
+void cColStaticDescrBool::setDefValue()
+{
+    if (colDefault.isNull()) return;
+    defValue = str2bool(_f.toString(), false);
+
+}
+*/
 
 CDDUPDEF(cColStaticDescrBool)
 /* ....................................................................................................... */
@@ -619,6 +661,7 @@ QString   cColStaticDescrArray::toName(const QVariant& _f) const
 }
 qlonglong cColStaticDescrArray::toId(const QVariant& _f) const
 {
+    if (isNull()) return NULL_ID;
     return _f.toList().size();
 }
 
@@ -627,6 +670,16 @@ QString cColStaticDescrArray::toView(QSqlQuery &q, const QVariant &_f) const
     (void)q;
     return _f.toStringList().join(QChar(','));
 }
+
+/*
+void cColStaticDescrArray::setDefValue()
+{
+    if (colDefault.isNull()) return;
+    defValue = fromSql(QVariant(colDefault));   // ?
+
+}
+*/
+
 CDDUPDEF(cColStaticDescrArray)
 /* ....................................................................................................... */
 
@@ -706,6 +759,15 @@ qlonglong cColStaticDescrEnum::toId(const QVariant& _f) const
 }
 
 CDDUPDEF(cColStaticDescrEnum)
+
+/*
+void cColStaticDescrEnum::setDefValue()
+{
+    if (colDefault.isNull()) return;
+    defValue = colDefault;
+    if (!enumVals.contains(colDefault)) EXCEPTION(EDBDATA, -1, QObject::trUtf8("Invalid default enum value %1").arg(colDefault));
+}
+*/
 /* ....................................................................................................... */
 
 QVariant  cColStaticDescrSet::fromSql(const QVariant& _f) const
@@ -806,7 +868,16 @@ qlonglong cColStaticDescrSet::toId(const QVariant& _f) const
     return r;
 }
 
+/*
+void cColStaticDescrSet::setDefValue()
+{
+    if (colDefault.isNull()) return;
+    defValue = fromSql(QVariant(colDefault));   // ?
+}
+*/
+
 CDDUPDEF(cColStaticDescrSet)
+
 /* ....................................................................................................... */
 
 QVariant  cColStaticDescrPolygon::fromSql(const QVariant& _f) const
@@ -908,10 +979,20 @@ QString   cColStaticDescrPolygon::toName(const QVariant& _f) const
 }
 qlonglong cColStaticDescrPolygon::toId(const QVariant& _f) const
 {
+    if (isNull()) return NULL_ID;
     return _f.value<tPolygonF>().size();
 }
 
 CDDUPDEF(cColStaticDescrPolygon)
+
+/*
+void cColStaticDescrPolygon::setDefValue()
+{
+    if (colDefault.isNull()) return;
+    defValue = fromSql(QVariant(colDefault));   // ?
+}
+*/
+
 /* ....................................................................................................... */
 
 QVariant  cColStaticDescrAddr::fromSql(const QVariant& _f) const
@@ -995,6 +1076,7 @@ QString   cColStaticDescrAddr::toName(const QVariant& _f) const
 
 qlonglong cColStaticDescrAddr::toId(const QVariant& _f) const
 {
+    if (isNull()) return NULL_ID;
     switch (eColType) {
     case FT_MAC:
         if (_f.userType() == _UMTID_cMac) return _f.value<cMac>().toLongLong();
@@ -1010,6 +1092,31 @@ qlonglong cColStaticDescrAddr::toId(const QVariant& _f) const
 }
 
 CDDUPDEF(cColStaticDescrAddr)
+/*
+void cColStaticDescrSet::setDefValue()
+{
+    if (colDefault.isNull()) return;
+    netAddress a;
+    cMac mac;
+    switch (eColType) {
+    case FT_MAC:
+        mac.set(colDefault);
+        if (mac.isValid()) defValue = QVariant::fromValue(mac);
+        else               ok = false;
+        break;
+    case FT_INET:
+    case FT_CIDR:
+        a.set(as);
+        if (a.isValid()) defValue = QVariant::fromValue(a);
+        else             ok = false;
+        break;
+    default:
+        EXCEPTION(EPROGFAIL);
+    }
+    if (!ok) EXCEPTION(EDBDATA);
+}
+*/
+
 /* ....................................................................................................... */
 
 /// Tárolási adattípus QTime
@@ -1061,6 +1168,7 @@ QString   cColStaticDescrTime::toName(const QVariant& _f) const
 qlonglong cColStaticDescrTime::toId(const QVariant& _f) const
 {
     _DBGFN() << _f.typeName() << _sCommaSp << _f.toString() << endl;
+    if (isNull()) return NULL_ID;
     qlonglong r;
     QTime tm = _f.toTime();
     if (tm.isNull()) return NULL_ID;
@@ -1475,7 +1583,8 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
         columnDescr.colName() = pq->record().value("column_name").toString();
         columnDescr.pos       = i;
         columnDescr.ordPos    = pq->record().value("ordinal_position").toInt();
-        columnDescr.colDefault= pq->record().value("column_decRecStaticDescrfault").toString();
+        columnDescr.colDefault= pq->record().value("column_default").toString();
+        PDEB(VVERBOSE) << "colDefault : " <<  (columnDescr.colDefault.isNull() ? "NULL" : dQuoted(columnDescr.colDefault)) << endl;
         columnDescr.colType   = pq->record().value("data_type").toString();
         columnDescr.udtName   = pq->record().value("udt_name").toString();
         columnDescr.isNullable= pq->record().value("is_nullable").toString() == QString("YES");
@@ -1626,6 +1735,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
             break;
         }
         cColStaticDescr *pp = ((cColStaticDescrList::list)_columnDescrs)[i -1];
+
         PDEB(VERBOSE) << "Field " << pp->colName() << " type is " << typeid(*pp).name() << endl;
     } while(pq->next());
     if (_columnsNum != i) EXCEPTION(EPROGFAIL, -1, "Nem egyértelmű mező szám");
@@ -1757,6 +1867,15 @@ const cRecStaticDescr *cRecStaticDescr::get(const QString& _t, const QString& _s
     qlonglong tableOId = ::tableoid(*pq, _t, schemaoid(*pq, _s), !find_only);
     delete pq;
     return tableOId == NULL_ID ? NULL : get(tableOId, find_only);
+}
+
+bool cRecStaticDescr::isKey(int i) const
+{
+    chkIndex(i);
+    foreach (QBitArray a, uniques()) {
+        if (a[i]) return true;
+    }
+    return false;
 }
 
 QString cRecStaticDescr::checkId2Name(QSqlQuery& q, const QString& _tn, const QString& _sn, bool __ex)
@@ -2590,6 +2709,15 @@ int cRecord::touch(QSqlQuery& q, const QString& _fn)
     }
     set();
     return 0;
+}
+
+/* ******************************************************************************************************* */
+cRecordFieldRef::cRecordFieldRef(const cRecordFieldRef& __r)
+    : _record(__r._record)
+{
+    _DBGFN() << "Record " << __r._record.descr().fullTableName() << " index : " << __r._index << endl;
+    _index = __r._index;
+    _DBGFNL() << "Record " << _record.descr().fullTableName() << " index : " << _index << endl;
 }
 
 /* ******************************************************************************************************* */

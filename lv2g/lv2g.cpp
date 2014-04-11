@@ -1,12 +1,126 @@
 #include "lv2g.h"
 
-void initLV2GUI()
+void initLV2GUI(QObject * par)
 {
     static bool inited = false;
     if (!inited) {
-        _setGUITitles();
+        new lv2gDesign(par);
         inited = true;
     }
+}
+
+QPalette *colorAndFont::pal = NULL;
+
+colorAndFont::colorAndFont()
+{
+    fg = palette().color(QPalette::Text);
+    bg = palette().color(QPalette::Base);
+}
+
+QPalette& colorAndFont::palette()
+{
+    if (pal == NULL) pal = new QPalette;
+    return *pal;
+}
+
+lv2gDesign  *lv2gDesign::pDesign = NULL;
+
+lv2gDesign::lv2gDesign(QObject * par) : QObject(par)
+{
+    if (pDesign != NULL) EXCEPTION(EPROGFAIL);
+    pDesign = this;
+
+    titleError   = trUtf8("Hiba");
+    titleWarning = trUtf8("Figyelmeztetés");
+    titleInfo    = trUtf8("Megjegyzés");
+
+    valNull     = trUtf8("[NULL]");
+    valDefault  = trUtf8("[Default]");
+
+
+    head.font.setBold(true);
+    head.bg = colorAndFont::palette().color(QPalette::AlternateBase);
+
+    (void)data;
+
+    id.font.setBold(true);
+    id.font.setUnderline(true);
+    id.fg.setNamedColor("darkred");
+
+    name.font.setBold(true);
+    name.fg.setNamedColor("seagreen");
+
+    primary.font.setBold(true);
+    primary.font.setUnderline(true);
+
+    key.font.setBold(true);
+
+    fname.fg.setNamedColor("darkcyan");
+    fname.font.setItalic(true);
+
+    derived.fg = colorAndFont::palette().color(QPalette::Link);
+    derived.font.setItalic(true);
+
+    tree.fg.setNamedColor("darkblue");
+    tree.font.setItalic(true);
+
+    foreign.fg = colorAndFont::palette().color(QPalette::Link);
+
+    null.font.setItalic(true);
+    null.fg.setNamedColor("lightcoral");
+}
+
+lv2gDesign::~lv2gDesign()
+{
+    ;
+}
+
+const colorAndFont&   lv2gDesign::operator[](int role) const
+{
+    switch (role) {
+    case GDR_HEAD:      return head;
+    case GDR_DATA:      return data;
+    case GDR_ID:        return id;
+    case GDR_NAME:      return name;
+    case GDR_PRIMARY:   return primary;
+    case GDR_KEY:       return key;
+    case GDR_FNAME:     return fname;
+    case GDR_DERIVED:   return derived;
+    case GDR_FOREIGN:   return foreign;
+    case GDR_TREE:      return tree;
+    case GDR_NULL:      return null;
+    default:            EXCEPTION(ENOINDEX);
+    }
+    return *(colorAndFont *)NULL;     // Ez sosem hajtódik végre, de ha nincs return, warning-ol.
+}
+
+eDesignRole lv2gDesign::desRole(const cRecStaticDescr& __d, int __ix)
+{
+    __d.chkIndex(__ix);
+    if (__ix == __d.idIndex(false))      return GDR_ID;
+    if (__ix == __d.nameIndex(false))    return GDR_NAME;
+    if (__d.primaryKey()[__ix])     return GDR_PRIMARY;
+    const cColStaticDescr& cd = __d[__ix];
+    switch (cd.fKeyType) {
+    case cColStaticDescr::FT_SELF:
+        return GDR_TREE;
+    case cColStaticDescr::FT_PROPERTY:
+    case cColStaticDescr::FT_OWNER:
+    {
+        cAlternate *pF = cd.pFRec;
+        if (pF == NULL) pF = new cAlternate(cd.fKeyTable, cd.fKeySchema);
+        bool n = pF->isIndex(pF->nameIndex(false));
+        if (cd.pFRec == NULL) delete pF;
+        if (n) return GDR_FNAME;
+        if (!cd.fnToName.isEmpty())     return GDR_DERIVED;
+        return GDR_FOREIGN;
+    }
+        break;
+    default:
+        break;
+    }
+    if (__d.isKey(__ix)) return GDR_KEY;
+    return GDR_DATA;
 }
 
 /* Ez valami régebbi visszamaradt kód
@@ -42,13 +156,31 @@ QList<int>&  modSelectedRows(QList<int>& rows, const QItemSelection& _on, const 
 }
 */
 
-void _setGUITitles()
+QString _titleWarning;
+QString _titleError;
+QString _titleInfo;
+
+
+QPalette *pDefaultPalette = NULL;
+QColor   *pFgNullColor = NULL;
+
+
+void _setColors()
 {
-    if (_titleWarning.isEmpty()) {
-        _titleWarning       = QObject::trUtf8("Figyelmeztetés");
-        _titleError         = QObject::trUtf8("Hiba");
-        _titleInfo          = QObject::trUtf8("Megjegyzés");
-    }
+    pDefaultPalette = new QPalette();
+    pFgNullColor    = new QColor(QString("lightcoral"));
+}
+
+QFont    *pHeadFont = NULL;
+QFont    *pDataFont = NULL;
+QFont    *pNullFont = NULL;
+void _setFonts()
+{
+    pHeadFont = new QFont();
+    pDataFont = new QFont();
+    pNullFont = new QFont();
+    pHeadFont->setBold(true);
+    pNullFont->setItalic(true);
 }
 
 

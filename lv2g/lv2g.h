@@ -57,7 +57,75 @@ A könyvtár a következő osztályokat valósítja meg:\n
 
 /// A GUI API inicializálása
 /// Legalább egyszer meg kell hívni, ismételt hívása esetén nem csinál semmit.
-_GEX void initLV2GUI();
+_GEX void initLV2GUI(QObject *par = NULL);
+
+class lv2gDesign;
+inline static const lv2gDesign& design();
+
+class colorAndFont {
+    friend class lv2gDesign;
+public:
+    static QPalette& palette();
+    QFont   font;
+    QColor  fg;
+    QColor  bg;
+protected:
+    colorAndFont();
+    static QPalette *pal;
+};
+
+enum eDesignRole {
+    GDR_INVALID = -1,   ///< Csak hibajelzésre
+    GDR_HEAD = 0,       ///< Táblázat fejléve
+    GDR_DATA,           ///< egyébb adat mező
+    GDR_ID,             ///< ID mező
+    GDR_NAME,           ///< Név mező
+    GDR_PRIMARY,        ///< elsődleges kulcs (de nem ID vagy Név)
+    GDR_KEY,            ///< kulcs mező (de nem elsődleges, ID vagy Név)
+    GDR_FNAME,          ///< távoli kulcs, a hivatkozott rekord név mezője
+    GDR_DERIVED,        ///< távoli kulcs, a hivatkozott rekordból származtatott név jellegű adat
+    GDR_TREE,           ///< saját rekordra mutató távoli kulcs (ráf vagy fa)
+    GDR_FOREIGN,        ///< távoli kulcs érték
+    GDR_NULL            ///< NULL adat
+};
+
+class LV2GSHARED_EXPORT lv2gDesign : public QObject {
+    Q_OBJECT
+    friend  void initLV2GUI(QObject *par);
+    friend  const lv2gDesign& design();
+protected:
+    lv2gDesign(QObject *par);
+    ~lv2gDesign();
+private:
+    static lv2gDesign  *pDesign;
+public:
+    QString titleWarning;
+    QString titleError;
+    QString titleInfo;
+
+    QString valNull;
+    QString valDefault;
+
+    colorAndFont    head;
+    colorAndFont    data;
+    colorAndFont    name;
+    colorAndFont    id;
+    colorAndFont    primary;
+    colorAndFont    key;
+    colorAndFont    fname;
+    colorAndFont    derived;
+    colorAndFont    tree;
+    colorAndFont    foreign;
+    colorAndFont    null;
+    const colorAndFont&   operator[](int role) const;
+    static eDesignRole desRole(const cRecStaticDescr& __d, int __ix);
+};
+
+inline static const lv2gDesign& design()
+{
+    if (lv2gDesign::pDesign == NULL) EXCEPTION(EPROGFAIL);
+    return *lv2gDesign::pDesign;
+}
 
 /* Ez valami régebbi visszamaradt kód
 /// A kiszelektált sorok listájával tér vissza
@@ -102,11 +170,6 @@ static inline QWidget *newFrame(int _st, QWidget * p = NULL)
 }
 static inline QWidget *newHLine(QWidget * p = NULL) { return newFrame(QFrame::HLine, p); }
 static inline QWidget *newVLine(QWidget * p = NULL) { return newFrame(QFrame::VLine, p); }
-
-_GEX void _setGUITitles();
-_GEX QString _titleWarning;
-_GEX QString _titleError;
-_GEX QString _titleInfo;
 
 // A tab-os megjelenítéshez egy segéd osztály, csak annyi a szerepe, hogy van egy removeTab() szignálja
 class LV2GSHARED_EXPORT cOwnTab : public QWidget {

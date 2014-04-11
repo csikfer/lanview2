@@ -104,7 +104,11 @@ cFieldEditBase::cFieldEditBase(const cTableShape &_tm, cRecordFieldRef _fr, eSyn
         connect(pr, SIGNAL(fieldModified(int)), this, SLOT(modField(int)));
     }
     if (_syType & SY_TO_REC && _ro) _syType = (eSyncType)(_syType & ~SY_TO_REC);
-}
+    _nullable   = _fr.isNullable();
+    _hasDefault = _fr.descr().colDefault.isNull() == false;
+    _isInsert   = _fr.record().isEmpty_();
+    _DBGFNL() << VDEB(_nullable) << VDEB(_hasDefault) << VDEB(_isInsert) << " Index = " << _pFieldRef->index() << " _value = " << debVariantToString(_value) << endl;
+ }
 
 cFieldEditBase::~cFieldEditBase()
 {
@@ -163,17 +167,6 @@ void cFieldEditBase::_setv(QVariant v)
 }
 
 
-bool cFieldEditBase::initIfRo(QWidget *par)
-{
-    if (!_readOnly) return false;
-    _wType = FEW_RO_LINE;
-     QLineEdit *pLE = new QLineEdit(par);
-     _pWidget = pLE;
-     pLE->setText(_descr.toView(*pq, _value));
-     pLE->setReadOnly(true);
-     return true;
-}
-
 // SLOT
 void cFieldEditBase::modRec()
 {
@@ -194,26 +187,23 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, cRecor
 {
     int et = _fr.descr().eColType;
     bool ro = _ro || !(_fr.record().isUpdatable()) || !(_fr.descr().isUpdatable);
+    ro = ro || (et == cColStaticDescr::FT_INTEGER && _fr.record().autoIncrement()[_fr.index()]);    // Ha auto increment, akkor RO.
+    if (ro) {
+        switch (et) {
+        // ReadOnly esetén a felsoroltak kivételével egysoros megjelenítés
+        case cColStaticDescr::FT_POLYGON:
+        case cColStaticDescr::FT_INTEGER_ARRAY:
+        case cColStaticDescr::FT_REAL_ARRAY:
+        case cColStaticDescr::FT_TEXT_ARRAY:
+        case cColStaticDescr::FT_BINARY:
+        case cColStaticDescr::FT_INTERVAL:
+            break;
+        default:
+            return new cFieldLineWidget(_tm, _fr, _sy, true, _par);
+        }
+    }
     switch (et) {
     case cColStaticDescr::FT_INTEGER:
-        {
-            const cColStaticDescr& cd = _fr.descr();
-            int ek = cd.fKeyType;
-            switch (ek) {
-            case cColStaticDescr::FT_NONE:
-                break;
-            case cColStaticDescr::FT_OWNER:
-                return new cFieldLineWidget(_tm, _fr, _sy, true, _par);
-            case cColStaticDescr::FT_PROPERTY:
-            case cColStaticDescr::FT_SELF:
-                return new cFKeyWidget(_tm, _fr, _sy, ro, _par);
-            default:
-                EXCEPTION(EDATA, ek);
-                break;
-            }
-        }
-        ro |= _fr.record().autoIncrement()[_fr.index()];   // Ha auto increment, akkor RO.
-        // Nincs break !!
     case cColStaticDescr::FT_REAL:
     case cColStaticDescr::FT_TEXT:
     case cColStaticDescr::FT_MAC:
@@ -222,7 +212,7 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, cRecor
         return new cFieldLineWidget(_tm, _fr, _sy, ro, _par);
     case cColStaticDescr::FT_BOOLEAN:
     case cColStaticDescr::FT_ENUM:
-        return new cEnumComboWidget(_tm, _fr, _sy, ro, _par);
+        return new cEnumComboWidget(_tm, _fr, _sy, _par);
     case cColStaticDescr::FT_SET:
        return new cSetWidget(_tm, _fr, _sy, ro, _par);
     case cColStaticDescr::FT_POLYGON:
@@ -234,11 +224,11 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, cRecor
     case cColStaticDescr::FT_BINARY:
         return new cBinaryWidget(_tm, _fr, _sy, ro, _par);
     case cColStaticDescr::FT_TIME:
-        return new cTimeWidget(_tm, _fr, _sy, ro, _par);
+        return new cTimeWidget(_tm, _fr, _sy, _par);
     case cColStaticDescr::FT_DATE:
-        return new cDateWidget(_tm, _fr, _sy, ro, _par);
+        return new cDateWidget(_tm, _fr, _sy, _par);
     case cColStaticDescr::FT_DATE_TIME:
-        return new cDateTimeWidget(_tm, _fr, _sy, ro, _par);
+        return new cDateTimeWidget(_tm, _fr, _sy, _par);
     case cColStaticDescr::FT_INTERVAL:
         return new cIntervalWidget(_tm, _fr, _sy, ro, _par);
     default:
@@ -250,25 +240,41 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, cRecor
 /* **************************************** cSetWidget **************************************** */
 
 cSetWidget::cSetWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSyncType _sy, bool _ro, QWidget * par)
-    : cFieldEditBase(_tm, __fr,_sy,_ro, par)
+    : cFieldEditBase(_tm, __fr,_sy, _ro, par)
 {
     _wType = FEW_SET;
     _pWidget  = new QWidget(par);
     pButtons  = new QButtonGroup(pWidget());
     pLayout   = new QVBoxLayout;
-    pButtons->setExclusive(false);
+    pButtons->setExclusive(false);      // SET, több opció is kiválasztható
     widget().setLayout(pLayout);
     int id = 0;
     _bits = _descr.toId(_value);
-    QSqlQuery q = getQuery();
+    QString nd;
+    if (_isInsert && _hasDefault) {
+        nd = design().valDefault;
+    }
+    else if (_nullable) {
+        nd = design().valNull;
+    }
     foreach (QString e, _descr.enumVals) {
-        QString t = cEnumVal::title(q, e, _descr.udtName);
+        QString t = cEnumVal::title(*pq, e, _descr.udtName);
         QCheckBox *pCB = new QCheckBox(t, pWidget());
         pButtons->addButton(pCB, id);
         pLayout->addWidget(pCB);
         pCB->setChecked(enum2set(id) & _bits);
         pCB->setDisabled(_readOnly);
         ++id;
+    }
+    if (nd.isEmpty() == false) {
+        QCheckBox *pCB = new QCheckBox(nd, pWidget());
+        pCB->setFont(design().null.font);
+        QPalette p = pCB->palette();
+        p.setColor(QPalette::Active, QPalette::WindowText, design().null.fg);
+        pCB->setPalette(p);
+        pButtons->addButton(pCB, id);
+        pLayout->addWidget(pCB);
+        pCB->setChecked(__fr.isNull());
     }
     connect(pButtons, SIGNAL(buttonClicked(int)), this, SLOT(_set(int)));
 }
@@ -295,9 +301,21 @@ int cSetWidget::set(const QVariant& v)
 void cSetWidget::_set(int id)
 {
     _DBGFNL() << id << endl;
-    _bits ^= enum2set(id);
     int dummy;
-    _setv(_descr.set(QVariant(_bits), dummy));
+    int n =_pFieldRef->descr().enumVals.size();
+    if (id >= _pFieldRef->descr().enumVals.size()) {
+        for (int i = 0; i < n; ++i) {
+            if (_bits & enum2set(i)) pButtons->button(i)->setChecked(false);
+        }
+        _bits = 0;
+        _setv(_descr.set(QVariant(), dummy));
+    }
+    else {
+        _bits ^= enum2set(id);
+        _setv(_descr.set(QVariant(_bits), dummy));
+        QAbstractButton *p = pButtons->button(n);
+        if (p != NULL && p->isChecked()) p->setChecked(false);
+    }
 }
 
 
@@ -352,17 +370,16 @@ void cEnumRadioWidget::_set(int id)
 
 /* **************************************** cEnumComboWidget ****************************************  */
 
-cEnumComboWidget::cEnumComboWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSyncType _sy, bool _ro, QWidget * par)
-    : cFieldEditBase(_tm, __fr, _sy, _ro, par)
+cEnumComboWidget::cEnumComboWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSyncType _sy, QWidget * par)
+    : cFieldEditBase(_tm, __fr, _sy, false, par)
 {
     eval = getId();
-    if (initIfRo(par)) return;
     _wType = FEW_ENUM_COMBO;
     QComboBox *pCB = new QComboBox(par);
     _pWidget = pCB;
     pCB->addItems(_descr.enumVals);                 // A lehetséges értékek nevei
     pCB->addItem(_descr.toView(*pq, QVariant()));   // A NULL érték
-    pCB->setEditable(false);                        // Nem editálhatóm választás csak a listából
+    pCB->setEditable(false);                        // Nem editálható, választás csak a listából
     setWidget();
     connect(pCB, SIGNAL(activated(int)), this, SLOT(_set(int)));
 }
@@ -383,19 +400,9 @@ int cEnumComboWidget::set(const QVariant& v)
 {
     int r = cFieldEditBase::set(v);
     if (1 == r) {
-        switch (_wType) {
-        case FEW_RO_LINE:
-            setRoLine();
-            break;
-        case FEW_ENUM_COMBO: {
-            _setv(v);
-            eval = getId();
-            setWidget();
-        }   break;
-        default:
-            EXCEPTION(EPROGFAIL);
-            break;
-        }
+        _setv(v);
+        eval = getId();
+        setWidget();
     }
     return r;
 }
@@ -686,15 +693,9 @@ cPolygonWidget::cPolygonWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSy
         pRightLayout->addWidget(pDelButton);
         pRightLayout->addWidget(pClearButton);
 
-        connect(pAddButton,   SIGNAL(pressed()), this, SLOT(addRow()));
-        connect(pDelButton,   SIGNAL(pressed()), this, SLOT(delRow()));
-        connect(pClearButton, SIGNAL(pressed()), this, SLOT(clearRows()));
         xOk = yOk = false;
         pAddButton->setDisabled(true);
-        connect(pLineX, SIGNAL(textChanged(QString)), this, SLOT(xChanged(QString)));
-        connect(pLineY, SIGNAL(textChanged(QString)), this, SLOT(yChanged(QString)));
         pDelButton->setDisabled(true);
-        connect(pTable->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
     }
     if (_value.isValid()) polygon = _value.value<tPolygonF>();
     pModel = new cPolygonTableModel(this);
@@ -703,8 +704,16 @@ cPolygonWidget::cPolygonWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSy
     pTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     pTable->setSelectionMode(QAbstractItemView::ContiguousSelection);
     pTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    pTable->setAlternatingRowColors(true); //nem mükszik
+    pTable->setAlternatingRowColors(true); //nem mükszik ?
     setButtons();
+    if (!_readOnly) {
+        connect(pAddButton,   SIGNAL(pressed()), this, SLOT(addRow()));
+        connect(pDelButton,   SIGNAL(pressed()), this, SLOT(delRow()));
+        connect(pClearButton, SIGNAL(pressed()), this, SLOT(clearRows()));
+        connect(pLineX, SIGNAL(textChanged(QString)), this, SLOT(xChanged(QString)));
+        connect(pLineY, SIGNAL(textChanged(QString)), this, SLOT(yChanged(QString)));
+        connect(pTable->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
+    }
 }
 
 cPolygonWidget::~cPolygonWidget()
@@ -807,10 +816,9 @@ void cPolygonWidget::selectionChanged(QItemSelection,QItemSelection)
 
 /* **************************************** cFKeyWidget ****************************************  */
 
-cFKeyWidget::cFKeyWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSyncType _sy, bool _ro, QWidget * par)
-    : cFieldEditBase(_tm, __fr, _sy, _ro, par)
+cFKeyWidget::cFKeyWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSyncType _sy, QWidget * par)
+    : cFieldEditBase(_tm, __fr, _sy, false, par)
 {
-    if (initIfRo(par)) return;
     _wType = FEW_FKEY;
     QComboBox *pCB = new QComboBox(par);
     _pWidget = pCB;
@@ -818,6 +826,7 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSyncType
     pModel = new cRecordListModel(*pRDescr, pWidget());
     pModel->nullable = _descr.isNullable;
     pModel->setToNameF(_descr.fnToName);
+    /* Ez hülyeség, vagy nem értem
     if (_descr.fKeyTable == recDescr().tableName()) {   // saját táblára mutató kulcs
         if (_tableShape.typeIs(TS_CHILD)) {             // CHILD tábla, önagára mutató kulcsal,
             int fix = recDescr().ixToOwner();
@@ -836,7 +845,7 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSyncType
         }
 //      else {  // Ide kéne egy szűrés, hogy valóban rendes fa legyen
 //      }
-    }
+    }*/
     pModel->setFilter(_sNul, OT_ASC, FT_NO);
     pCB->setModel(pModel);
     pCB->setEditable(true);
@@ -864,8 +873,7 @@ bool cFKeyWidget::setWidget()
 {
     int r = cFieldEditBase::set(v);
     if (1 == r) {
-        if (_readOnly) setRoLine();
-        else if (!setWidget()) r = -1;
+        if (!setWidget()) r = -1;
     }
     return r;
 }
@@ -889,10 +897,9 @@ void cFKeyWidget::_edited(QString _txt)
 /* **************************************** cDateWidget ****************************************  */
 
 
-cDateWidget::cDateWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSyncType _sy, bool _ro, QWidget * par)
-    : cFieldEditBase(_tm, __fr, _sy, _ro, par)
+cDateWidget::cDateWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSyncType _sy, QWidget * par)
+    : cFieldEditBase(_tm, __fr, _sy, false, par)
 {
-    if (initIfRo(par)) return;
     _wType = FEW_DATE;
     QDateEdit * pDE = new QDateEdit(par);
     _pWidget = pDE;
@@ -908,11 +915,8 @@ int cDateWidget::set(const QVariant& v)
 {
     bool r = cFieldEditBase::set(v);
     if (r == 1) {
-        if (_readOnly) setRoLine();
-        else {
-            QDateEdit * pDE = (QDateEdit *)_pWidget;
-            pDE->setDate(_value.toDate());
-        }
+        QDateEdit * pDE = (QDateEdit *)_pWidget;
+        pDE->setDate(_value.toDate());
     }
     return r;
 }
@@ -924,10 +928,9 @@ void cDateWidget::_set(QDate d)
 
 /* **************************************** cTimeWidget ****************************************  */
 
-cTimeWidget::cTimeWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSyncType _sy, bool _ro, QWidget * par)
-    : cFieldEditBase(_tm, __fr, _sy, _ro, par)
+cTimeWidget::cTimeWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSyncType _sy, QWidget * par)
+    : cFieldEditBase(_tm, __fr, _sy, false, par)
 {
-    if (initIfRo(par)) return;
     _wType = FEW_TIME;
     QTimeEdit * pTE = new QTimeEdit(par);
     _pWidget = pTE;
@@ -943,11 +946,8 @@ int cTimeWidget::set(const QVariant& v)
 {
     bool r = cFieldEditBase::set(v);
     if (r == 1) {
-        if (_readOnly) setRoLine();
-        else {
-            QTimeEdit * pTE = (QTimeEdit *)_pWidget;
-            pTE->setTime(_value.toTime());
-        }
+        QTimeEdit * pTE = (QTimeEdit *)_pWidget;
+        pTE->setTime(_value.toTime());
     }
     return r;
 }
@@ -959,10 +959,9 @@ void cTimeWidget::_set(QTime d)
 
 /* **************************************** cDateTimeWidget ****************************************  */
 
-cDateTimeWidget::cDateTimeWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSyncType _sy, bool _ro, QWidget * par)
-    : cFieldEditBase(_tm, __fr, _sy, _ro, par)
+cDateTimeWidget::cDateTimeWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSyncType _sy, QWidget * par)
+    : cFieldEditBase(_tm, __fr, _sy,false, par)
 {
-    if (initIfRo(par)) return;
     _wType = FEW_DATE_TIME;
     QDateTimeEdit * pDTE = new QDateTimeEdit(par);
     _pWidget = pDTE;
@@ -978,11 +977,8 @@ int cDateTimeWidget::set(const QVariant& v)
 {
     bool r = cFieldEditBase::set(v);
     if (r == 1) {
-        if (_readOnly) setRoLine();
-        else {
-            QDateTimeEdit * pDTE = (QDateTimeEdit *)_pWidget;
-            pDTE->setDateTime(_value.toDateTime());
-        }
+        QDateTimeEdit * pDTE = (QDateTimeEdit *)_pWidget;
+        pDTE->setDateTime(_value.toDateTime());
     }
     return r;
 }

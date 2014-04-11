@@ -104,9 +104,9 @@ void cSetupWidget::applicate()
                 err = trUtf8("Invalid QSettings status : ") + QString::number((int)st);
                 break;
         }
-        QMessageBox::warning(this, _titleError, err);
+        QMessageBox::warning(this, design().titleError, err);
     }
-    else QMessageBox::information(this, _titleInfo, trUtf8("New settings accepted."));
+    else QMessageBox::information(this, design().titleInfo, trUtf8("New settings accepted."));
     DBGFNL();
 }
 
@@ -290,7 +290,7 @@ QSqlDatabase * cSetupWidget::SqlOpen()
         QString msg = QString("SQL DB ERROR #") + QString::number(le.number()) + "\n"
                     + "driverText   : " + le.driverText() + "\n"
                     + "databaseText : " + le.databaseText();
-        QMessageBox::warning(this,_titleError, msg);
+        QMessageBox::warning(this, design().titleError, msg);
         delete pDb;
         return NULL;
     }
@@ -304,7 +304,7 @@ QSqlDatabase * cSetupWidget::SqlOpen()
         QString msg = QString("SQL open ERROR #") + QString::number(le.number()) + "\n"
                     + "driverText   : " + le.driverText() + "\n"
                     + "databaseText : " + le.databaseText();
-        QMessageBox::warning(this, _titleError, msg);
+        QMessageBox::warning(this, design().titleError, msg);
         delete pDb;
         return NULL;
     }
@@ -316,7 +316,7 @@ void cSetupWidget::checkSqlLogin()
     PDEB(OBJECT) << __PRETTY_FUNCTION__ << _sSpace << _sComma << VDEBPTR(this) << endl;
     QSqlDatabase *pDb = SqlOpen();
     if (pDb == NULL) return;
-    QMessageBox::information(this, _titleInfo, trUtf8("Database open is successful."));
+    QMessageBox::information(this, design().titleInfo, trUtf8("Database open is successful."));
     pDb->close();
     delete pDb;
 }

@@ -54,38 +54,22 @@ QVariant cRecordTableModel::data(const QModelIndex &index, int role) const
     }
     int row = index.row();      // Sor index a táblázatban
     int col = index.column();   // oszlop index a táblázatban
-    QVariant r;
     if (row < _records.size() && col < _col2field.size()) {
         int fix = _col2field[col];  // Mező index a rekordbam
         int mix = _col2shape[col];  // Index a leíróban
         // _DBGFN() << VDEB(row) << VDEB(col) << VDEB(role) << endl;
+        if (role == Qt::DisplayRole)       return _records.at(row)->view(*pq, fix);
+        if (role == Qt::TextAlignmentRole) return columns[mix]->dataAlign;
+        const colorAndFont&   cf = _records.at(row)->isNull(fix)
+                ?   design().null
+                :   design()[columns[mix]->dataRole];
         switch (role) {
-        case Qt::DisplayRole:
-            r =  _records.at(row)->view(*pq, fix);
-            break;
-        case Qt::TextAlignmentRole:
-            r = columns[mix]->dataAlign;
-            break;
-        case Qt::ForegroundRole:
-            if (_records.at(row)->isNull(fix)) r = columns[mix]->fgNullColor;
-            else if (extLines.contains(row))   r = columns[mix]->fgExDataColor;
-            else                               r = columns[mix]->fgDataColor;
-            break;
-        case Qt::BackgroundRole:
-            if (extLines.contains(row))        r = columns[mix]->bgExDataColor;
-            else                               r = columns[mix]->bgDataColor;
-            break;
-        case Qt::FontRole:
-            if (_records.at(row)->isNull(fix)) r = columns[mix]->nullFont;
-            else                               r = columns[mix]->dataFont;
-            break;
+        case Qt::ForegroundRole:    return cf.fg;
+        case Qt::BackgroundRole:    return cf.bg;
+        case Qt::FontRole:          return cf.font;
         }
-        //_DBGFNL() << " = " << quotedString(r.toString()) << endl;
     }
- /*   else {
-        DWAR() << "Index out of range : " << VDEB(row) << VDEB(col) << endl;
-    }*/
-    return r;
+    return QVariant();
 }
 
 QVariant cRecordTableModel::headerData(int section, Qt::Orientation orientation, int role) const
@@ -116,13 +100,13 @@ QVariant cRecordTableModel::headerData(int section, Qt::Orientation orientation,
                 r = columns[mix]->headAlign;
                 break;
             case Qt::ForegroundRole:
-                r = columns[mix]->fgHeadColor;
+                r = design().head.fg;
                 break;
             case Qt::BackgroundRole:
-                r = columns[mix]->bgHeadColor;
+                r = design().head.bg;
                 break;
             case Qt::FontRole:
-                r = columns[mix]->headFont;
+                r = design().head.font;
                 break;
             }
         }

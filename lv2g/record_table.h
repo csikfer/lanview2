@@ -110,18 +110,21 @@ public:
     int                     fieldIndex;
     const cColStaticDescr&  colDescr;
     const QVariant&         header;
+    int                     dataAlign;      // Qt::AlignmentFlag
+    int                     headAlign;      // Qt::AlignmentFlag
+    eDesignRole             dataRole;
+    /*
     QColor                  fgHeadColor;
     QColor                  bgHeadColor;
     QFont                   headFont;
-    int                     headAlign;      // Qt::AlignmentFlag
     QColor                  fgDataColor;
     QColor                  bgDataColor;
-    QColor                  fgExDataColor;
+//  QColor                  fgExDataColor;
     QColor                  bgExDataColor;
     QFont                   dataFont;
-    int                     dataAlign;      // Qt::AlignmentFlag
-    QColor                  fgNullColor;
-    QFont                   nullFont;
+//    QColor                  fgNullColor;
+//    QFont                   nullFont;
+*/
 };
 
 /// A tábla viszonyát meghatározó flag értékek
@@ -158,8 +161,6 @@ public:
     const cRecStaticDescr& recDescr() const { return *pRecDescr; }
     /// A megadott sorszámú (a megjelenítő leíróban) mező megjelenítő leíró referenciáját adja vissza.
     const cRecordTableColumn& field(int i) const { return *fields[i]; }
-    /// Az alapértelmezett paletta referenciáját adja vissza.
-    static const QPalette& defPalette() { return *pDefaultPalette; }
     /// Ha a megjelínítés egy dialog box-ban történik, akkor értéke true.
     const bool      isDialog;
 protected:
@@ -226,8 +227,6 @@ protected:
     cRecordTable   *pRightTable;
     /// Szűrők és rendezés dialog box
     cRecordTableFODialog *  pFODialog;
-    /// Az alapértelmezett paletta objektum pointere (az első konstruktor inicializálja).
-    static QPalette *pDefaultPalette;
     /// Child tábla esetén a tulajdonos ID-je, ha ismert (csak egy rekord van kijelölve az owner táblázatban)
     qlonglong   owner_id;
 private:

@@ -109,7 +109,7 @@ template <class T> void pDelete(T *& p) {
 }
 
 /// Megvizsgálja, hogy egy konténer típusú objektumnak lehet-e a méret alapján az ix.
-/// @return Ha a cont objektumnak a mérete alapján lez ix indexe, akkor true.
+/// @return Ha a cont objektumnak a mérete alapján lehet ix indexe, akkor true.
 template <class T> bool isContIx(const T& cont, qlonglong ix) {
     return ix >= 0 && ix < cont.size();
 }

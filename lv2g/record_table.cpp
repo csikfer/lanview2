@@ -448,42 +448,15 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordTable& table
     , fieldIndex(recDescr.toIndex(shapeField.getName()))
     , colDescr(recDescr.colDescr(fieldIndex))
     , header(shapeField.get(_sTableShapeFieldTitle))
-    , fgHeadColor(cRecordTable::defPalette().color(QPalette::Text)) // ??
-    , bgHeadColor(cRecordTable::defPalette().color(QPalette::AlternateBase))
-    , headFont()
-    , fgDataColor(cRecordTable::defPalette().color(QPalette::Text))
-    , bgDataColor(cRecordTable::defPalette().color(QPalette::Base))
-    , fgExDataColor(cRecordTable::defPalette().color(QPalette::Link))
-    , bgExDataColor(cRecordTable::defPalette().color(QPalette::Base))
-    , dataFont()
-    , fgNullColor(QString("lightcoral"))
-    , nullFont()
 {
     headAlign = Qt::AlignVCenter | Qt::AlignHCenter;
     dataAlign = Qt::AlignVCenter;
     if (colDescr.eColType == cColStaticDescr::FT_INTEGER && colDescr.fKeyType == cColStaticDescr::FT_NONE) dataAlign |= Qt::AlignRight;
     else if (colDescr.eColType == cColStaticDescr::FT_REAL)                                                dataAlign |= Qt::AlignRight;
-    else                                                                                                   dataAlign |= Qt::AlignLeft;
-    nullFont.setItalic(true);
-    if (recDescr.primaryKey()[fieldIndex]) {
-        dataFont.setBold(true);
-        headFont.setBold(true);
-    }
-    if (colDescr.fKeyType != cColStaticDescr::FT_NONE) {
-        dataFont.setItalic(true);
-        headFont.setItalic(true);
-    }
-    if (recDescr.nameIndex(false) == fieldIndex) {
-        fgDataColor.setNamedColor("seagreen");
-        fgHeadColor.setNamedColor("seagreen");
-        dataFont.setBold(true);
-        headFont.setBold(true);
-    }
+    dataRole = lv2gDesign::desRole(recDescr, fieldIndex);
 }
 
 /* ***************************************************************************************************** */
-
-QPalette *cRecordTable::pDefaultPalette = NULL;
 
 cRecordTable::cRecordTable(const QString& _mn, bool _isDialog, QWidget * par)
     : QObject(par)
@@ -550,9 +523,7 @@ void cRecordTable::init(QWidget *par)
     pFODialog   = NULL;
     owner_id = NULL_ID;
     pInhRecDescr = NULL;
-    if (pDefaultPalette == NULL) {
-        pDefaultPalette = new QPalette();
-    }
+
     pRecDescr = cRecStaticDescr::get(pTableShape->getName(_sTableName));
     isReadOnly = pTableShape->getBool(_sIsReadOnly);
 

@@ -66,10 +66,6 @@ lv2Gui::~lv2Gui()
     DBGFNL();
 }
 
-QString _titleWarning;
-QString _titleError;
-QString _titleInfo;
-
 cLv2App::~cLv2App()
 {
     ;

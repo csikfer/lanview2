@@ -118,8 +118,8 @@ public:
     enum eFKeyType {
         FT_NONE     = 0,            ///< Nem távoli kulcs
         FT_PROPERTY = FT_NEXT_TYPE, ///< A távoli kulcs egy tulajdonságot reprezentáló rekordra mutat
-        FT_OWNER,                   /// A távoli kulcs egy tulajdonos objektumra mutat
-        FT_SELF                     /// Önmagára mutató távoli kulcs (pl. fa struktúrát reprezentál)
+        FT_OWNER,                   ///< A távoli kulcs egy tulajdonos objektumra mutat
+        FT_SELF                     ///< Önmagára mutató távoli kulcs (pl. fa struktúrát reprezentál)
     };
 
     /// Konstruktor, egy üres objektumot hoz létre
@@ -162,12 +162,14 @@ public:
     /// @param _f Forrás adat, a mező értéke.
     /// @return A strinngé konvertált érték.
     virtual QString toView(QSqlQuery& q, const QVariant& _f) const;
+/*    /// Ha van default érték, akkor azt konvertálja a megfelelő típusba, vagyis beállítja a defValue adattag értékét.
+    virtual void setDefValue(); */
     /// Clone object
     virtual cColStaticDescr *dup() const;
     /// Az enumeráció kezelés konzisztenciájának ellenörzése.
     /// Enumeráció esetén a numerikus érték az adatbázisban az enum típusban megadott listabeli sorszáma (0,1 ...)
     /// SET esetén pedig a numerikus értékben a megadott sorszámú bit reprezentál egy enumerációs értéket.
-    /// Az API-ban lévő sring - enumeráció kovertáló függvényeknél ügyelni kell, hogy a C-ben definiált
+    /// Az API-ban lévő sring - enumeráció kovertáló függvényeknél ügyelni kell arra, hogy a C-ben definiált
     /// enumerációs értékek megfeleljenek az adatbázisban a megfelelő enumerációs érték sorrendjének.
     /// A vizsgálat csak az adatbázis szerini értékek irányából ellenőriz, ha a konverziós függvények
     /// több értéket is kezelnének, azt nem képes detektálni.
@@ -208,6 +210,8 @@ public:
     QStringList fKeyTables;
     /// Egy opcionális függvény név, ami ID-k esetén elvégzi a stringgé (névvé) konvertálást
     QString     fnToName;
+/*    /// A mező alapértelmezett értéke, az adott típusra konvertálva (ha nincs akkor "invalid")
+    QVariant    defValue;*/
     /// Az objektum tartalmát striggé konvertálja pl. nyomkövetésnél használható.
     QString toString() const;
     /// Ha a mező egy távoli kulcs, és nem önmagára hivatkozik, akkor a hivatkozott objektumra mutat, egyébként NULL.
@@ -218,6 +222,7 @@ TSTREAMO(cColStaticDescr)
 /// @class cColStaticDescrBool
 /// Az ős cColStaticDescr osztályt a boolean típus konverziós függvényivel egészíti ki.
 class LV2SHARED_EXPORT cColStaticDescrBool : public cColStaticDescr {
+    friend class cRecStaticDescr;
 public:
     /// A konstruktor kitölti a enumVals konténert is, hogy enumerációként is kezelhető legyen
     cColStaticDescrBool(const cColStaticDescr& __o) : cColStaticDescr(__o) { init(); }
@@ -230,6 +235,7 @@ public:
     virtual qlonglong toId(const QVariant& _f) const;
     virtual QString toView(QSqlQuery&, const QVariant& _f) const;
     virtual cColStaticDescr *dup() const;
+//  virtual void setDefValue();
 private:
     void init();
 };
@@ -240,7 +246,7 @@ private:
 /// A makróban a class definíció nincs lezárva a '}' karakterrel!
 #define CSD_INHERITOR(T) \
     class LV2SHARED_EXPORT T : public cColStaticDescr { \
-        public: \
+      public: \
         T(int t) : cColStaticDescr(t) { ; } \
         T(const cColStaticDescr& __o) : cColStaticDescr(__o) { ; } \
         virtual QVariant  fromSql(const QVariant& __f) const; \
@@ -248,7 +254,8 @@ private:
         virtual QVariant  set(const QVariant& _f, int &rst) const; \
         virtual QString   toName(const QVariant& _f) const; \
         virtual qlonglong toId(const QVariant& _f) const; \
-        virtual cColStaticDescr *dup() const;
+        virtual cColStaticDescr *dup() const; \
+        /*virtual void setDefValue();*/
 
 /// @class cColStaticDescrAddr
 /// Az ős cColStaticDescr osztályt az macaddr, inet és cidr típus konverziós függvényivel egészíti ki.
@@ -479,6 +486,8 @@ public:
     /// @param __ex Ha értéke true, akkor a false visszatérési érték helyett dob egy kizárást, alapértelmezetten a paraméter false.
     /// @return ha i egy valós index, akkor true, ha nem false
     bool isIndex(int i, bool __ex = false) const { bool r = (i >= 0 && i < _columnsNum); if (__ex && !r) EXCEPTION(ENOINDEX, i, fullTableName()); return r; }
+    /// Megnézi, hogy a megadott indexű elem része-e egy egyedi kulcsnak (a primary key-t nem vizsgálja !)
+    bool isKey(int i) const;
     /// Ellenörzi, hogy a megadott név egy mezőnév-e
     /// @param __fn Az ellenőrizendő mező/oszlop név
     /// @return ha __fn egy valós mező név, akkor true, ha nem false
@@ -584,7 +593,7 @@ public:
     const QString& nameName(bool __ex = true) const { return columnName(nameIndex(__ex), __ex); }
     /// Az descr mező nevével tér vissza, ha van descr mező, egyébként dob egy kizárást
     /// @param __ex Ha értéke hamis és nincs descr mező, akkor nem dob kizárást, hanem egy üres stringgel tér vissza.
-    const QString& descrName(bool __ex = true) const { return columnName(noteIndex(__ex), __ex); }
+    const QString& noteName(bool __ex = true) const { return columnName(noteIndex(__ex), __ex); }
     /// A név alapján visszaadja a rekord ID-t, feltéve, ha van név és id.
     /// Hiba esetén, vagy ha nincs meg a a keresett ID, és __ex értéke true, akkor dob egy kizárást,
     /// Ha viszont __ex értéke false, és hiba van, vagy nincs ID akkor NULL_ID-vel tér vissza.
@@ -1325,7 +1334,7 @@ public:
     const QString& nameName(bool __ex = true) const { return descr().nameName(__ex); }
     /// Az descr mező nevével tér vissza, ha van név mező, egyébként dob egy kizárást
     /// @param __ex Ha értéke hamis és nincs descr mező, akkor nem dob kizárást, hanem egy üres stringgel tér vissza.
-    const QString& descrName(bool __ex = true) const { return descr().descrName(__ex); }
+    const QString& noteName(bool __ex = true) const { return descr().noteName(__ex); }
     /// A név alapján visszaadja a rekord ID-t, feltéve, ha van név és id mező, egyébként dob egy kizárást.
     /// Nem static, mivel virtuális függvénytagokat hív, bár az objektum aktuális értéke nem befolyásolja a
     /// működését. És az objektum értéke nem változik.
@@ -1636,7 +1645,13 @@ public:
     /// A hivatkozott objektum leíró objektumának a referenciája
     const cColStaticDescr& descr() const    { return _record.descr().colDescr(_index); }
     /// A hivatkozott mező indexe
-    int index()                             { return _index; }
+    int index() const           { return _index; }
+    /// Ha a mező értéke NULL, akkor true-val tér vissza
+    bool isNull() const         { return _record.isNull(_index); }
+    /// Ha a mező értéke az adatbázisban modosítható, akkor true-val tér vissza
+    bool isUpdatable() const    { return _record.isUpdatable(_index); }
+    /// Ha a mező értéke lehet NULL, akkor true-val tér vissza
+    bool isNullable() const     { return _record.isNullable(_index); }
 };
 TSTREAMO(cRecordFieldConstRef)
 
@@ -1661,7 +1676,7 @@ protected:
     }
 public:
     /// Copy konstruktor
-    cRecordFieldRef(const cRecordFieldRef& __r) : _record(__r._record) { _index = __r._index; }
+    cRecordFieldRef(const cRecordFieldRef& __r);
     /// Értékadás a hivatkozott mezőnek, lásd a cRecord::set(int, const QVariant&)
     cRecordFieldRef operator=(const QVariant& __v) const {
         _record.set(_index, __v);
@@ -1700,6 +1715,12 @@ public:
     QString toString() const    { return *this; }
     /// A hivatkozott mező értéke stringként, lásd még a cRecord::view(QSqlQuery&, int) metódust.
     QString view(QSqlQuery& q)  { return _record.view(q, _index); }
+    /// Ha a mező értéke NULL, akkor true-val tér vissza
+    bool isNull() const         { return _record.isNull(_index); }
+    /// Ha a mező értéke az adatbázisban modosítható, akkor true-val tér vissza
+    bool isUpdatable() const    { return _record.isUpdatable(_index); }
+    /// Ha a mező értéke lehet NULL, akkor true-val tér vissza
+    bool isNullable() const     { return _record.isNullable(_index); }
     /// A hivatkozott objektum statuszának a referenciája
     const int& stat() const { return _record._stat; }
     /// Frissíti a hivatkozott mező értéket az adatbázisban, a rekordot az elsődleges kulcs azonosítja, lásd méga a cRecord::update() metódust.

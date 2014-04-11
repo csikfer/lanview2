@@ -64,20 +64,20 @@ enum eSyncType {
 };
 
 enum eFieldWidgetType {
-    FEW_UNKNOWN = -1,   /// ismeretlen
-    FEW_SET     =  0,   /// cSetWidget
-    FEW_ENUM_COMBO,     /// cEnumComboWidget
-    FEW_ENUM_RADIO,     /// cEnumRadioWidget
-    FEW_LINE,           /// cFieldLineWidget
-    FEW_ARRAY,          /// cArrayWidget
-    FEW_POLYGON,        /// cPolygonWidget
-    FEW_FKEY,           /// cFKeyVideget
-    FEW_DATE,
-    FEW_TIME,
-    FEW_DATE_TIME,
-    FEW_INTERVAL,
-    FEW_BINARY,
-    FEW_RO_LINE
+    FEW_UNKNOWN = -1,   ///< ismeretlen/inicializálatlan/hibajelzés
+    FEW_SET     =  0,   ///< cSetWidget
+    FEW_ENUM_COMBO,     ///< cEnumComboWidget
+    FEW_ENUM_RADIO,     ///< cEnumRadioWidget
+    FEW_LINE,           ///< cFieldLineWidget
+    FEW_ARRAY,          ///< cArrayWidget
+    FEW_POLYGON,        ///< cPolygonWidget
+    FEW_FKEY,           ///< cFKeywideget
+    FEW_DATE,           ///< cDateWidget
+    FEW_TIME,           ///< cTimeWidget
+    FEW_DATE_TIME,      ///< cDateTimeWidget
+    FEW_INTERVAL,       ///< cIntervalWidget
+    FEW_BINARY,         ///< cBinaryWidget
+    FEW_RO_LINE         ///< c
 };
 /// Az enum eFieldWidgetType értékeket stringgé konvertálja.
 /// Vissza konverzió nincs, ez is csak nyomkövetési céllal.
@@ -85,6 +85,8 @@ _GEX QString fieldWidgetType(int _t);
 
 /// @class cFieldEditBase
 /// @brief Bázis objekktum a mező megjelenítő/módosító widget-ekhez
+/// Az objektum nem a QWidget leszármazotja, a konkrét megjelenítéshez létrehozott widget
+/// pointere egy adattag.
 class LV2GSHARED_EXPORT cFieldEditBase : public QObject {
     Q_OBJECT
 public:
@@ -93,6 +95,7 @@ public:
     /// @param _sy A szinkronizálás típusa, alapértelmezetten nincs szinkronizálás
     /// @param _ro Ha true nem szerkeszthető. Egyes leszármazottnál a true nem értelmezhető, ekkor kizárást dob a konstruktor
     ///            Ha értéke true, akkor a sync hívás csak értékadás a widget-re.
+    /// @param parent A parent widget pointere
     cFieldEditBase(const cTableShape& _tm, cRecordFieldRef __fr, eSyncType _sy = SY_NO, bool _ro = false, QWidget * _par = NULL);
     /// Destruktor
     ~cFieldEditBase();
@@ -120,7 +123,13 @@ public:
     ///
     QWidget&    widget()    { return *_pWidget; }
     QWidget    *pWidget()   { return  _pWidget; }
-    ///
+    /// Egy megfelelő típusú widget objektum létrehozása
+    /// @param _tm A tábla megjelenítését/szerkesztését leíró objektum
+    /// @param _fr A mező referencia objektuma
+    /// @param _sy A szinkronizálás típusa
+    /// @param _ro Ha a mező nem szerkeszthető, akkor true
+    /// @param _par A létrehozandó widget szülő widget je, vagy NULL
+    /// @return A létrehozott objektum pointere
     static cFieldEditBase *createFieldWidget(const cTableShape &_tm, cRecordFieldRef _fr, eSyncType _sy = SY_NO, bool _ro = false, QWidget * _par = NULL);
     /// A Widget-ben megjelenített értéket adja vissza. ld.: get() metódust.
     operator QVariant() const   { return get(); }
@@ -143,26 +152,19 @@ public:
     const cTableShape&      _tableShape;
 protected:
     void _setv(QVariant v);
-    /// Inicializálás csak olvasható widget esetén
-    bool initIfRo(QWidget *par = NULL);
-    /// Csak olvasható widget esetén a fó widget típusa QLineEdit ennek a pointerét adja vissza (konvertálva a _pWidget adattagot.
-    /// Nem ellenörzi, hogy a _pWidget valóban ilyen típusú-e, ill. hogy valóban csak olvasható a widget.
-    QLineEdit * pRoWidget() { return (QLineEdit *)_pWidget; }
-    /// Csak olvasható widget esetén beállítja a megjelenítendő értéket. Nincs ellenörzés.
-    void setRoLine()        { pRoWidget()->setText(_descr.toView(*pq, _value)); }
-
-    /// A mező referencia objektuma pointere
-    cRecordFieldRef       *_pFieldRef;
-    /// Ha nem szerkeszthető, akkor értéke true
-    bool                _readOnly;
-    eFieldWidgetType    _wType;
-    eSyncType           _syType;
-    QVariant            _value;
-    QWidget            *_pWidget;
-    QSqlQuery          *pq;
+    cRecordFieldRef    *_pFieldRef;     ///< A mező referencia objektum pointere
+    bool                _readOnly;      ///< Ha nem szerkeszthető, akkor értéke true
+    bool                _nullable;      ///< Amező értéke NULL is lehet
+    bool                _hasDefault;    ///< Ha a mezó rendelkezik alapértelmezett értékkel, akkor treu
+    bool                _isInsert;      ///< Ha egy új rekord, akkor true, ha modosítás, akkor false
+    eFieldWidgetType    _wType;         ///< A widget típusa (a leszármazott objektumot azonosítja)
+    eSyncType           _syType;        ///< A szinkronizálás típusa/módja
+    QVariant            _value;         ///< A mező aktuális értéke
+    QWidget            *_pWidget;       ///< A megjelenítéshez létrejozptt QWidget (valós widget objektumÜ pointere
+    QSqlQuery          *pq;             ///< Amennyiben szükslges a megjelenítéshez adatbázis hozzáférés, akkor a QSqlQuery objektum pointere.
 protected slots:
-    void modRec();
-    void modField(int ix);
+    void modRec();                  ///< A rekord módosult, aktualizálandó a megjelenítés
+    void modField(int ix);          ///< A mező módosult, aktualizálandó a megjelenítés
 };
 
 /// @class cSetWidget
@@ -202,7 +204,8 @@ public:
     /// Konstruktor
     /// @param _tm A megjelenítő leíró objektum referenciája.
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
-    /// @oaram _ro Ha true nem szerkeszthető
+    /// @param _sy A szinkronizálás típusa, alapértelmezetten nincs szinkronizálás
+    /// @param _ro Ha true nem szerkeszthető
     /// @param par A parent widget pointere
     cEnumRadioWidget(const cTableShape &_tm, cRecordFieldRef __fr, eSyncType _sy = SY_NO, bool _ro = false, QWidget * par = NULL);
     ~cEnumRadioWidget();
@@ -224,12 +227,12 @@ private slots:
 class LV2GSHARED_EXPORT cEnumComboWidget : public cFieldEditBase  {
     Q_OBJECT
 public:
-    /// Konstruktor, hívja a sync() metódust is.
-    /// A widget-en megjelenő értékeket szinkronizálja a hivatkozott mezőben.
+    /// Konstruktor (nincs csak olvasható mód)
+    /// @param _tm A megjelenítő leíró objektum referenciája.
+    /// @param _sy A szinkronizálás típusa, alapértelmezetten nincs szinkronizálás
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
-    /// @oaram _ro A true értéknek nincs értelme, kizárást dob
     /// @param parent A parent widget pointere
-    cEnumComboWidget(const cTableShape &_tm, cRecordFieldRef __fr, eSyncType _sy = SY_NO, bool _ro = false, QWidget * parent = NULL);
+    cEnumComboWidget(const cTableShape &_tm, cRecordFieldRef __fr, eSyncType _sy = SY_NO, QWidget * parent = NULL);
     ~cEnumComboWidget();
     virtual int set(const QVariant& v);
 protected:
@@ -277,6 +280,7 @@ public:
     /// Konstruktor, hívja a sync() metódust is.
     /// A widget-en megjelenő értékeket szinkronizálja a hivatkozott mezőben.
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
+    /// @param _sy Adat szinkronozálás típusa
     /// @param _ro Ha nem szerkeszthető, értéke true
     /// @param parent A parent widget pointere
     cArrayWidget(const cTableShape &_tm, cRecordFieldRef __fr, eSyncType _sy = SY_NO, bool _ro = false, QWidget * parent = NULL);
@@ -316,6 +320,7 @@ public:
     /// Konstruktor, hívja a sync() metódust is.
     /// A widget-en megjelenő értékeket szinkronizálja a hivatkozott mezőben.
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
+    /// @param _sy Adat szinkronozálás típusa
     /// @oaram _ro Ha nem szerkeszthető, értéke true
     /// @param parent A parent widget pointere
     cPolygonWidget(const cTableShape &_tm, cRecordFieldRef __fr, eSyncType _sy = SY_NO, bool _ro = false, QWidget * par = NULL);
@@ -357,11 +362,11 @@ private slots:
 class LV2GSHARED_EXPORT cFKeyWidget : public cFieldEditBase {
     Q_OBJECT
 public:
-    /// Konstruktor
-    /// A widget-en megjelenő értékeket szinkronizálja a hivatkozott mezőben.
+    /// Konstruktor Nincs readOnly mód
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
+    /// @param _sy Adat szinkronozálás típusa
     /// @param parent A parent widget pointere
-    cFKeyWidget(const cTableShape &_tm, cRecordFieldRef __fr, eSyncType _sy = SY_NO, bool _ro = false, QWidget * parent = NULL);
+    cFKeyWidget(const cTableShape &_tm, cRecordFieldRef __fr, eSyncType _sy = SY_NO, QWidget * parent = NULL);
     ~cFKeyWidget();
     virtual int set(const QVariant& v);
 protected:
@@ -382,8 +387,9 @@ public:
     /// Konstruktor, hívja a sync() metódust is.
     /// A widget-en megjelenő értékeket szinkronizálja a hivatkozott mezőben.
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
+    /// @param _sy Adat szinkronozálás típusa
     /// @param parent A parent widget pointere
-    cDateWidget(const cTableShape &_tm, cRecordFieldRef __fr, eSyncType _sy = SY_NO, bool _ro = false, QWidget * par = NULL);
+    cDateWidget(const cTableShape &_tm, cRecordFieldRef __fr, eSyncType _sy = SY_NO, QWidget * par = NULL);
     ~cDateWidget();
     virtual int set(const QVariant& v);
 private slots:
@@ -399,7 +405,7 @@ public:
     /// A widget-en megjelenő értékeket szinkronizálja a hivatkozott mezőben.
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
     /// @param parent A parent widget pointere
-    cTimeWidget(const cTableShape &_tm, cRecordFieldRef __fr, eSyncType _sy = SY_NO, bool _ro = false, QWidget * par = NULL);
+    cTimeWidget(const cTableShape &_tm, cRecordFieldRef __fr, eSyncType _sy = SY_NO, QWidget * par = NULL);
     ~cTimeWidget();
     virtual int set(const QVariant& v);
 private slots:
@@ -415,7 +421,7 @@ public:
     /// A widget-en megjelenő értékeket szinkronizálja a hivatkozott mezőben.
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
     /// @param parent A parent widget pointere
-    cDateTimeWidget(const cTableShape &_tm, cRecordFieldRef __fr, eSyncType _sy = SY_NO, bool _ro = false, QWidget * par = NULL);
+    cDateTimeWidget(const cTableShape &_tm, cRecordFieldRef __fr, eSyncType _sy = SY_NO, QWidget * par = NULL);
     ~cDateTimeWidget();
     virtual int set(const QVariant& v);
 private slots:
