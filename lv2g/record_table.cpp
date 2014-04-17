@@ -754,7 +754,7 @@ void cRecordTable::insert()
                 cError *pe = NULL;
                 try {
                     bool b;
-                    b = rd.get(rec);
+                    b = rd.accept();
                     b = b && rec.insert(*pq);
                     ok =  b ? 1 : 0;
                 } CATCHS(pe)
@@ -791,8 +791,7 @@ void cRecordTable::insert()
                 int ok;
                 cError *pe = NULL;
                 try {
-                    rec.setType(&rd.actType());
-                    ok = rd.get(rec) && rec.insert(*pq) ? 1 : 0;
+                    ok = rd.accept() && rd.record().insert(*pq) ? 1 : 0;
                 } CATCHS(pe)
                 if (pe != NULL) ok = -1;
                 switch (ok) {
@@ -869,11 +868,7 @@ void cRecordTable::modify()
 
     int id = DBT_NEXT;
     while (1) {
-        if (pRd != NULL) {
-            pRd->set(*pRec);
-            id = pRd->exec(false);
-        }
-        else if (pRdt != NULL) {
+        if (pRdt != NULL) {
             int i, n = pShapes->size();
             bool e = false;
             for (i = 0; i < n; i++) {   // Csak egy tabot engedélyezünk !
@@ -883,23 +878,27 @@ void cRecordTable::modify()
                 if (f) {
                     e = f;
                     pRdt->setActTab(i);
-                    pRdt->set(*pRec);
                 }
             }
             if (!e) EXCEPTION(EPROGFAIL);   // Ha egyet sem az is gáz
-            id = pRdt->exec(false);
+            pRd = pRdt->actPDialog();
         }
+        ((cAlternate&)pRd->record()) = *(cRecord *)pRec;
+        pRd->restore();
+        id = pRd->exec(false);
+
         switch(id) {
         case DBT_OK:
         case DBT_NEXT:
         case DBT_PREV: {
             // Update DB
-            bool r = pRd != NULL ? pRd->get( *pRec) : pRdt->get(*pRec);
+            bool r = pRd->accept();
             if (!r) {
-                QMessageBox::warning(pWidget(), trUtf8("Adat hiba"), trUtf8("Nem megfelelő adatok megadása, nincs módosítás."));
+                QMessageBox::warning(pWidget(), trUtf8("Adat hiba"), pRd->errMsg());
                 continue;
             }
             else {
+                *pRec = pRd->record();
                 PDEB(VERBOSE) << "Update record : " << pRec->toString() << endl;
                 pRec->update(*pq, true);
                 PDEB(VVERBOSE) << "Update returned : " << pRec->toString() << endl;
@@ -914,7 +913,7 @@ void cRecordTable::modify()
                         pRightTable->refresh();
                     }
                     // Nincs felszabadítva, de már nem a mienk
-                    pRec = NULL;
+                    pRec = NULL;    // ?!
                 }
             }
             pDelete(pRec);

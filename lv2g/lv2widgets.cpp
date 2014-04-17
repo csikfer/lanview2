@@ -107,6 +107,13 @@ cFieldEditBase::cFieldEditBase(const cTableShape &_tm, cRecordFieldRef _fr, eSyn
     _nullable   = _fr.isNullable();
     _hasDefault = _fr.descr().colDefault.isNull() == false;
     _isInsert   = _fr.record().isEmpty_();
+    if (_isInsert && _hasDefault) {
+        _nullView = design().valDefault;
+    }
+    else if (_nullable) {
+        _nullView = design().valNull;
+    }
+
     _DBGFNL() << VDEB(_nullable) << VDEB(_hasDefault) << VDEB(_isInsert) << " Index = " << _pFieldRef->index() << " _value = " << debVariantToString(_value) << endl;
  }
 
@@ -204,6 +211,8 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, cRecor
     }
     switch (et) {
     case cColStaticDescr::FT_INTEGER:
+        if (_fr.descr().fKeyType != cColStaticDescr::FT_NONE) return new cFKeyWidget(_tm, _fr, _sy, _par);
+        // Nincs break;
     case cColStaticDescr::FT_REAL:
     case cColStaticDescr::FT_TEXT:
     case cColStaticDescr::FT_MAC:
@@ -250,13 +259,6 @@ cSetWidget::cSetWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSyncType _
     widget().setLayout(pLayout);
     int id = 0;
     _bits = _descr.toId(_value);
-    QString nd;
-    if (_isInsert && _hasDefault) {
-        nd = design().valDefault;
-    }
-    else if (_nullable) {
-        nd = design().valNull;
-    }
     foreach (QString e, _descr.enumVals) {
         QString t = cEnumVal::title(*pq, e, _descr.udtName);
         QCheckBox *pCB = new QCheckBox(t, pWidget());
@@ -266,8 +268,8 @@ cSetWidget::cSetWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSyncType _
         pCB->setDisabled(_readOnly);
         ++id;
     }
-    if (nd.isEmpty() == false) {
-        QCheckBox *pCB = new QCheckBox(nd, pWidget());
+    if (_nullView.isEmpty() == false) {
+        QCheckBox *pCB = new QCheckBox(_nullView, pWidget());
         pCB->setFont(design().null.font);
         QPalette p = pCB->palette();
         p.setColor(QPalette::Active, QPalette::WindowText, design().null.fg);
@@ -289,9 +291,12 @@ int cSetWidget::set(const QVariant& v)
     _DBGFN() << debVariantToString(v) << endl;
     int r = 1 == cFieldEditBase::set(v);
     if (r) {
+        int nid = _descr.enumVals.size();
+        QAbstractButton *pAB = pButtons->button(nid);
+        if (pAB != NULL) pAB->setChecked(v.isNull());
         _bits = _descr.toId(v);
-        QAbstractButton *pAB;
-        for (int id = 0; NULL != (pAB = pButtons->button(id)) ; id++) {
+        if (_bits < 0) _bits = 0;
+        for (int id = 0; id < nid && NULL != (pAB = pButtons->button(id)) ; id++) {
             pAB->setChecked(enum2set(id) & _bits);
         }
     }
@@ -342,6 +347,13 @@ cEnumRadioWidget::cEnumRadioWidget(const cTableShape& _tm, cRecordFieldRef __fr,
         pRB->setDisabled(_readOnly);
         ++id;
     }
+    if (!_nullView.isEmpty()) {
+        QRadioButton *pRB = new QRadioButton(_nullView, pWidget());
+        pButtons->addButton(pRB, id);
+        pLayout->addWidget(pRB);
+        pRB->setChecked(eval < 0);
+        pRB->setDisabled(_readOnly);
+    }
     connect(pButtons, SIGNAL(buttonClicked(int)),  this, SLOT(_set(int)));
 }
 
@@ -354,18 +366,35 @@ int cEnumRadioWidget::set(const QVariant& v)
 {
     int r = cFieldEditBase::set(v);
     if (1 == r) {
+        pButtons->button(pButtons->checkedId())->setChecked(false);
         eval = _descr.toId(v);
         if (eval >= 0) pButtons->button(eval)->setChecked(true);
-        else pButtons->button(pButtons->checkedId())->setChecked(false);
+        else {
+            QAbstractButton *pRB = pButtons->button(_descr.enumVals.size());
+            if (pRB != NULL) pRB->setChecked(true);
+        }
     }
     return r;
 }
 
 void cEnumRadioWidget::_set(int id)
 {
-    if (eval == id) eval = NULL_ID;
+    QVariant v;
+    if (eval == id) {
+        if (pButtons->button(id)->isChecked() == false) pButtons->button(id)->setChecked(true);
+        return;
+    }
+    if (id == _descr.enumVals.size()) {
+        if (eval < 0) {
+            if (pButtons->button(id)->isChecked() == false) pButtons->button(id)->setChecked(true);
+            return;
+        }
+    }
+    else {
+        v = eval;
+    }
     int dummy;
-    _setv(_descr.set(QVariant(eval), dummy));
+    _setv(_descr.set(v, dummy));
 }
 
 /* **************************************** cEnumComboWidget ****************************************  */
@@ -378,7 +407,9 @@ cEnumComboWidget::cEnumComboWidget(const cTableShape& _tm, cRecordFieldRef __fr,
     QComboBox *pCB = new QComboBox(par);
     _pWidget = pCB;
     pCB->addItems(_descr.enumVals);                 // A lehetséges értékek nevei
-    pCB->addItem(_descr.toView(*pq, QVariant()));   // A NULL érték
+    if (_nullView.isEmpty() == false) {
+        pCB->addItem(_nullView);   // A NULL érték
+    }
     pCB->setEditable(false);                        // Nem editálható, választás csak a listából
     setWidget();
     connect(pCB, SIGNAL(activated(int)), this, SLOT(_set(int)));
@@ -439,10 +470,14 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, cRecordFieldRef _fr, 
         connect(pLE, SIGNAL(editingFinished()),  this, SLOT(_set()));
     }
     else {
-        pLE->setText(_fr.view(*pq));
+        QString tx = _fr.view(*pq);
+        if (_isInsert) {
+            if (recDescr().autoIncrement()[fldIndex()]) tx = design().valAuto;
+            else if (_hasDefault) tx = design().valDefault;
+        }
+        pLE->setText(tx);
         pLE->setReadOnly(true);
     }
-
 }
 
 cFieldLineWidget::~cFieldLineWidget()

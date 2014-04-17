@@ -105,6 +105,7 @@ public:
 
     QString valNull;
     QString valDefault;
+    QString valAuto;
 
     colorAndFont    head;
     colorAndFont    data;

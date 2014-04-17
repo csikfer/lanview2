@@ -83,11 +83,14 @@ enum eFieldWidgetType {
 /// Vissza konverzió nincs, ez is csak nyomkövetési céllal.
 _GEX QString fieldWidgetType(int _t);
 
+class cRecordDialog;
+
 /// @class cFieldEditBase
 /// @brief Bázis objekktum a mező megjelenítő/módosító widget-ekhez
 /// Az objektum nem a QWidget leszármazotja, a konkrét megjelenítéshez létrehozott widget
 /// pointere egy adattag.
 class LV2GSHARED_EXPORT cFieldEditBase : public QObject {
+    friend class cRecordDialog;
     Q_OBJECT
 public:
     /// Konstruktor
@@ -145,6 +148,8 @@ public:
     QString fieldToName()                   { if (_pFieldRef == NULL) EXCEPTION(EPROGFAIL); return (QString)*_pFieldRef; }
     /// A widgethez rendelt rekord objektum leíró objektumával tér vissza, ha nincs mező rendelve a widgethez, akkor dob egy kizárást.
     const cRecStaticDescr& recDescr() const { if (_pFieldRef == NULL) EXCEPTION(EPROGFAIL); return _pFieldRef->recDescr(); }
+    /// A widgethez rendelt mező objektum ibexével a rekordban tér vissza, ha nincs mező rendelve a widgethez, akkor dob egy kizárást.
+    int fldIndex() const { if (_pFieldRef == NULL) EXCEPTION(EPROGFAIL); return _pFieldRef->index(); }
 
     /// A mező leíró objektum referenciája
     const cColStaticDescr&  _descr;
@@ -157,6 +162,7 @@ protected:
     bool                _nullable;      ///< Amező értéke NULL is lehet
     bool                _hasDefault;    ///< Ha a mezó rendelkezik alapértelmezett értékkel, akkor treu
     bool                _isInsert;      ///< Ha egy új rekord, akkor true, ha modosítás, akkor false
+    QString             _nullView;      ///< Ha mefadható NULL érték, akkor annak a megjelenése (NULL vagy Default)
     eFieldWidgetType    _wType;         ///< A widget típusa (a leszármazott objektumot azonosítja)
     eSyncType           _syType;        ///< A szinkronizálás típusa/módja
     QVariant            _value;         ///< A mező aktuális értéke

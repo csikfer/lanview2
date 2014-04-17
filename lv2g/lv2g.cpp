@@ -36,6 +36,7 @@ lv2gDesign::lv2gDesign(QObject * par) : QObject(par)
 
     valNull     = trUtf8("[NULL]");
     valDefault  = trUtf8("[Default]");
+    valAuto     = trUtf8("[Auto]");
 
 
     head.font.setBold(true);

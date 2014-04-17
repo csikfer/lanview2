@@ -116,7 +116,7 @@ void cRecordDialogBase::_pressed(int id)
 
 cRecordDialog::cRecordDialog(cRecord &rec, cTableShape& __tm, int _buttons, bool dialog, QWidget *parent)
     : cRecordDialogBase(__tm, _buttons, dialog, parent)
-    , record(rec)
+    , _record(rec)
     , fields()
 {
     pVBoxLayout = NULL;
@@ -124,7 +124,7 @@ cRecordDialog::cRecordDialog(cRecord &rec, cTableShape& __tm, int _buttons, bool
     pSplitter = NULL;
     pSplittLayout = NULL;
     pFormLayout = NULL;
-    if (descriptor.getName(_sTableName) != record.tableName()) EXCEPTION(EDATA);
+    if (descriptor.getName(_sTableName) != _record.tableName()) EXCEPTION(EDATA);
     if (descriptor.shapeFields.size() == 0) EXCEPTION(EDATA);
     init();
 }
@@ -182,9 +182,9 @@ void cRecordDialog::init()
             pSplitter->addWidget(_frame(pFormLayout, _pWidget));
         }
         cTableShapeField& mf = **i;
-        int fieldIx = record.toIndex(mf.getName());
+        int fieldIx = _record.toIndex(mf.getName());
         bool setRo = isReadOnly || mf.getBool(_sIsReadOnly);
-        cFieldEditBase *pFW = cFieldEditBase::createFieldWidget(descriptor, record[fieldIx], SY_NO, setRo, _pWidget);
+        cFieldEditBase *pFW = cFieldEditBase::createFieldWidget(descriptor, _record[fieldIx], SY_NO, setRo, _pWidget);
         fields.append(pFW);
         QWidget * pw = pFW->pWidget();
         pw->setObjectName(mf.getName());
@@ -196,43 +196,42 @@ void cRecordDialog::init()
     DBGFNL();
 }
 
-void cRecordDialog::set(const cRecord& _r)
+cRecord& cRecordDialog::record()
 {
-    if (_r.descr() != record.descr()) EXCEPTION(EDATA);
-    int i, n = record.descr().cols();
-    for (i = 0; i < n; i++) {
-        fields[i]->set(_r.get(i));
-    }
+    return _record;
 }
-
-bool cRecordDialog::get(cRecord& _r)
-{
-    _errMsg.clear();    // Töröljük a hiba stringet
-    if (_r.descr() != record.descr()) EXCEPTION(EDATA);
-    int i, n = record.descr().cols();
-    // _r.set();           // NEM !! Kinullázzuk a rekordot
-    for (i = 0; i < n; i++) {   // Végigszaladunk a mezőkön
-        cFieldEditBase& fe = *fields[i];
-        if (fe.isReadOnly()) continue;      // FEltételezzük, hogy RO esetén az van a mezőben aminek lennie kell.
-        int s = _r._stat;                   // Mentjük a hiba bitet,
-        _r._stat &= ~cRecord::ES_DEFECTIVE; // majd töröljük, mert mezőnkként kell
-        QVariant fv = fields[i]->get();     // A mező widget-jéből kivesszük az értéket
-        PDEB(VERBOSE) << "Dialog -> obj. field " << _r.columnName(i) << " = " << debVariantToString(fv) << endl;
-        _r.set(i, fv);                      // Az értéket bevéssük a rekordba
-        if (_r._stat & cRecord::ES_DEFECTIVE) {
-            DWAR() << "Invalid data : field " << _r.columnName(i) << " = " << debVariantToString(fv) << endl;
-            _errMsg += trUtf8("Adat hiba a %1 mezőnél\n").arg(_r.columnName(i));
-        }
-        _r._stat |= s & cRecord::ES_DEFECTIVE;
-    }
-    return 0 == (_r._stat & cRecord::ES_DEFECTIVE);
-}
-
 
 void cRecordDialog::restore()
 {
-    set(record);
+    int i, n = _record.descr().cols();
+    for (i = 0; i < n; i++) {
+        fields[i]->set(_record.get(i));
+    }
 }
+
+bool cRecordDialog::accept()
+{
+    _errMsg.clear();    // Töröljük a hiba stringet
+    int i, n = _record.descr().cols();
+    // record.set();           // NEM !! Kinullázzuk a rekordot
+    for (i = 0; i < n; i++) {   // Végigszaladunk a mezőkön
+        cFieldEditBase& fe = *fields[i];
+        if (fe.isReadOnly()) continue;      // FEltételezzük, hogy RO esetén az van a mezőben aminek lennie kell.
+        int s = _record._stat;                   // Mentjük a hiba bitet,
+        _record._stat &= ~cRecord::ES_DEFECTIVE; // majd töröljük, mert mezőnkként kell
+        QVariant fv = fields[i]->get();     // A mező widget-jéből kivesszük az értéket
+        if (fv.isNull() && fe._isInsert && fe._hasDefault) continue;    // NULL, insert, van alapérték
+        PDEB(VERBOSE) << "Dialog -> obj. field " << _record.columnName(i) << " = " << debVariantToString(fv) << endl;
+        _record.set(i, fv);                      // Az értéket bevéssük a rekordba
+        if (_record._stat & cRecord::ES_DEFECTIVE) {
+            DWAR() << "Invalid data : field " << _record.columnName(i) << " = " << debVariantToString(fv) << endl;
+            _errMsg += trUtf8("Adat hiba a %1 mezőnél\n").arg(_record.columnName(i));
+        }
+        _record._stat |= s & cRecord::ES_DEFECTIVE;
+    }
+    return 0 == (_record._stat & cRecord::ES_DEFECTIVE);
+}
+
 
 /* ***************************************************************************************************** */
 
@@ -278,6 +277,12 @@ void cRecordDialogInh::init(qlonglong _oid)
     DBGFNL();
 }
 
+
+cRecord& cRecordDialogInh::record()
+{
+    return actDialog().record();
+}
+
 int cRecordDialogInh::actTab()
 {
     int i =  pTabWidget->currentIndex();
@@ -291,10 +296,11 @@ void cRecordDialogInh::setActTab(int i)
     pTabWidget->setCurrentIndex(i);
 }
 
-bool cRecordDialogInh::get(cRecord& _r)
+bool cRecordDialogInh::accept()
 {
     _errMsg.clear();
-    bool  r = tabs[actTab()]->get(_r);
-    if (!r) _errMsg = tabs[actTab()]->errMsg();
+    cRecordDialog *prd = tabs[actTab()];
+    bool  r = prd->accept();
+    if (!r) _errMsg = prd->errMsg();
     return r;
 }

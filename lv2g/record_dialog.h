@@ -59,6 +59,7 @@ public:
     cRecordDialogBase(const cTableShape &__tm, int _buttons, bool dialog = true, QWidget *par = NULL);
     /// destruktor
     ~cRecordDialogBase();
+    virtual cRecord& record() = 0;
     /// A dialógust megvalósító widget objektum referenciájával tér vissza
     QWidget& widget()   { return *_pWidget; }
     /// A dialógust megvalósító widget objektum pointerével tér vissza
@@ -75,6 +76,7 @@ public:
     int exec(bool _close = true);
     /// A tábla model rekord
     const cTableShape&      descriptor;
+    /// Az objektum neve
     const QString           name;
 public slots:
     bool close()        { return _pWidget->close(); }
@@ -115,13 +117,14 @@ public:
     /// @param dialog Ha a dialóus ablakot QDialog-ból kell létrehozni, akkor true, ha fals, akkor QWidget-ből.
     /// @param parent Az szülő widget opcionális parent pointere
     cRecordDialog(cRecord& rec, cTableShape &__tm, int _buttons, bool dialog = true, QWidget * parent = NULL);
-    /// A megjelenített értékek beállítása
-    void set(const cRecord& _r);
-    /// A megjelenített értékek kiolvasása
-    bool get(cRecord &_r);
     ///
+    virtual cRecord& record();
+    /// A rekord adattag tartalmának a megjelenítése/megjelenítés visszaállítása
+    void restore();
+    /// A megjelenített értékek kiolvasása
+    bool accept();
     /// Az adat rekord referenciája (konstansnak kellene lennie, de macerás)
-    cRecord&                record;
+    cRecord&                _record;
 protected:
     QVBoxLayout            *pVBoxLayout;
     //QHBoxLayout            *pHBoxLayout;
@@ -131,7 +134,6 @@ protected:
     QList<cFieldEditBase *> fields;
 private:
     void init();
-    void restore();
 };
 
 /// @class cRecordDialogInh
@@ -150,13 +152,17 @@ public:
     /// @param dialog Ha a dialóus ablakot QDialog-ból kell létrehozni, akkor true, ha fals, akkor QWidget-ből.
     /// @param parent Az szülő widget opcionális parent pointere
     cRecordDialogInh(const cTableShape &_tm, tRecordList<cTableShape>& _tms, int _buttons, qlonglong _oid, bool dialog = true, QWidget * parent = NULL);
+    ///
+    virtual cRecord& record();
     int actTab();
     void setActTab(int i);
+    cRecordDialog& actDialog()  { return *tabs[actTab()]; }
+    cRecordDialog *actPDialog() { return  tabs[actTab()]; }
 
-    /// A megjelenített értékek beállítása az aktuális tab-on
-    void set(const cRecord& _r) { tabs[actTab()]->set(_r); }
+/*    /// A megjelenített értékek beállítása az aktuális tab-on
+    void set(const cRecord& _r) { tabs[actTab()]->set(_r); }*/
     ///
-    bool get(cRecord& _r);
+    bool accept();
     const cRecStaticDescr& actType() { return recs[actTab()]->descr(); }
     void setTabEnabled(int index, bool enable) { pTabWidget->setTabEnabled(index, enable); }
     tRecordList<cTableShape>&tabDescriptors;

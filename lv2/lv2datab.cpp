@@ -2797,7 +2797,7 @@ cRecord *cAlternate::dup() const
 
 cAlternate& cAlternate::operator=(const cRecord& __o)
 {
-    if (isFaceless()) {
+    if (__o.isFaceless()) {
         clearType();
     }
     else {
