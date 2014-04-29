@@ -4,7 +4,7 @@
 /*
 custom_variable_classes = 'lanview2'
 # Session actual user name (lanview2 user name)
-lanview2.user_name = nobody
+# lanview2.user_name = nobody
 # Session actual user id (0 = unknown)
 lanview2.user_id = 0
 # Actual user rights
