@@ -3,7 +3,7 @@
 
 /*!
 @file lv2cont.h
-Adatbázis kezelő objektum kontéberek ill. template-k
+Adatbázis kezelő objektum konténerek ill. template-k
 */
 
 #include <QList>
@@ -41,7 +41,7 @@ public:
     tRecordList(const T& __o) : QList<T *>()
     {
         T * p =  dynamic_cast<T *>(__o.dup());
-        append(p);
+        this->append(p);
     }
     /// Konstruktor.
     /// Beolvassa az összes olyan rekordot, melynek a megadott sorszámú numerikus mezője egyezik a megadott id-vel
@@ -66,13 +66,13 @@ public:
     }
     /// Bővíti a listát egy elemmel. A megadott pointer helyezi el a konténerben, nem készít másolatot.
     tRecordList<T>& operator <<(T *p) {
-        append(p);
+        this->append(p);
         return *this;
     }
     /// Bővíti a listát egy elemmel. Az objektumról másolatot készít, és azt teszi be a konténerbe
     tRecordList<T>& operator <<(const T& _o) {
         T * p =  dynamic_cast<T *>(_o.dup());
-        append(p);
+        this->append(p);
         return *this;
     }
     /// Copy operátor.
@@ -84,7 +84,7 @@ public:
         typename QList<T *>::const_iterator    i;
         for (i = __o.constBegin(); i != __o.constEnd(); i++) {
             T * p =  dynamic_cast<T *>((*i)->dup());
-            append(p);
+            this->append(p);
         }
         DBGFNL();
         return *this;
@@ -119,11 +119,11 @@ public:
     int fetch(QSqlQuery& __q, bool __only, const QBitArray& fm, T *p)
     {
         if (p->fetch(__q, __only, fm)) {
-            append(p);
+            this->append(p);
             while (__q.next()) {
                 p = new T();
                 p->set(__q.record());
-                append(p);
+                this->append(p);
             }
         }
         else {

@@ -19,7 +19,7 @@ cMainWindow::cMainWindow(bool _setupOnly, QWidget *parent) :
 
         QString nm = trUtf8("Setup");
         pa = pm->addAction(nm);
-        cOwnTab *pot =  new cSetupWidget(*lanView::getInstance()->pSet, NULL);
+        cOwnTab *pot =  new cSetupWidget(*lanView::getInstance()->pSet, this);
         pot->setObjectName(nm);
         po  = new cMenuAction(pot, pa, NULL);
         po->setObjectName(nm);

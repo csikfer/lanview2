@@ -127,6 +127,7 @@ public:
     cColStaticDescr(int __t = FT_ANY);
     /// Copy konstruktor
     cColStaticDescr(const cColStaticDescr& __o);
+    virtual ~cColStaticDescr();
     /// Másoló operátor
     cColStaticDescr& operator=(const cColStaticDescr __o);
     /// A QString ős objektum referenciájával tér vissza, ami a mező neve

@@ -5,60 +5,60 @@
 
 cSetupWidget::cSetupWidget(QSettings &__s, QWidget *par)
 : cOwnTab(par)
-, Ui::SetupWidget()
 , logFile()
 , qset(__s)
 {
     PDEB(OBJECT) << __PRETTY_FUNCTION__ << _sSpace << _sComma << VDEBPTR(this) << endl;
     pLl = NULL;
-    setupUi(this);
+    pUi = new Ui::SetupWidget();
+    pUi->setupUi(this);
 
     bool forced = !lanView::dbIsOpen();
 
-    connect(PBApplicateAndRestart,SIGNAL(clicked()),    this,   SLOT(applicateAndRestart()));
-    connect(PBApplicateAndClose,  SIGNAL(clicked()),    this,   SLOT(applicateAndClose()));
-    connect(PBCancel,             SIGNAL(clicked()),    this,   SLOT(close()));
-    PBCancel->setDisabled(forced);
-    connect(PBClose,              SIGNAL(clicked()),    this,   SLOT(endIt()));
-    PBClose->setDisabled(forced);
+    connect(pUi->PBApplicateAndRestart,SIGNAL(clicked()),    this,   SLOT(applicateAndRestart()));
+    connect(pUi->PBApplicateAndClose,  SIGNAL(clicked()),    this,   SLOT(applicateAndClose()));
+    connect(pUi->PBCancel,             SIGNAL(clicked()),    this,   SLOT(close()));
+    pUi->PBCancel->setDisabled(forced);
+    connect(pUi->PBClose,              SIGNAL(clicked()),    this,   SLOT(endIt()));
+    pUi->PBClose->setDisabled(forced);
 
-    connect(logLevelMore,   SIGNAL(clicked()),      this,   SLOT(logLevelMoreClicked()));
-    connect(logToStdOutRB,  SIGNAL(clicked(bool)),  this,   SLOT(logToStdOutClicked(bool)));
-    connect(logToStdErrRB,  SIGNAL(clicked(bool)),  this,   SLOT(logToStdErrClicked(bool)));
-    connect(logToFileRB,    SIGNAL(clicked(bool)),  this,   SLOT(logToFileClicked(bool)));
-    connect(CheckSql,       SIGNAL(clicked(bool)),  this,   SLOT(checkSqlLogin()));
-    connect(MibPathPlus,    SIGNAL(clicked(bool)),  this,   SLOT(mibPathPlus()));
-    connect(MibPathMinus,   SIGNAL(clicked(bool)),  this,   SLOT(mibPathMinus()));
-    connect(SelectHome,     SIGNAL(clicked(bool)),  this,   SLOT(homeSelect()));
+    connect(pUi->logLevelMore,   SIGNAL(clicked()),      this,   SLOT(logLevelMoreClicked()));
+    connect(pUi->logToStdOutRB,  SIGNAL(clicked(bool)),  this,   SLOT(logToStdOutClicked(bool)));
+    connect(pUi->logToStdErrRB,  SIGNAL(clicked(bool)),  this,   SLOT(logToStdErrClicked(bool)));
+    connect(pUi->logToFileRB,    SIGNAL(clicked(bool)),  this,   SLOT(logToFileClicked(bool)));
+    connect(pUi->CheckSql,       SIGNAL(clicked(bool)),  this,   SLOT(checkSqlLogin()));
+    connect(pUi->MibPathPlus,    SIGNAL(clicked(bool)),  this,   SLOT(mibPathPlus()));
+    connect(pUi->MibPathMinus,   SIGNAL(clicked(bool)),  this,   SLOT(mibPathMinus()));
+    connect(pUi->SelectHome,     SIGNAL(clicked(bool)),  this,   SLOT(homeSelect()));
 
-    homeDirLE->setText(qset.value(_sHomeDir, lanView::homeDefault).toString());
-    sqlHostLE->setText(qset.value(_sSqlHost, _sLocalHost).toString());
-    sqlPortSB->setValue(qset.value(_sSqlPort, 5432).toInt());
-    sqlUserLE->setText(qset.value(_sSqlUser, _sLanView2) .toString());
-    sqlPassLE->setText(qset.value(_sSqlPass).toString());
-    dbNameLE-> setText(qset.value(_sDbName,  _sLanView2) .toString());
+    pUi->homeDirLE->setText(qset.value(_sHomeDir, lanView::homeDefault).toString());
+    pUi->sqlHostLE->setText(qset.value(_sSqlHost, _sLocalHost).toString());
+    pUi->sqlPortSB->setValue(qset.value(_sSqlPort, 5432).toInt());
+    pUi->sqlUserLE->setText(qset.value(_sSqlUser, _sLanView2) .toString());
+    pUi->sqlPassLE->setText(qset.value(_sSqlPass).toString());
+    pUi->dbNameLE-> setText(qset.value(_sDbName,  _sLanView2) .toString());
 
     QRegExp regExp("\\d+|0x[\\dA-Za-z]*");
-    debugLevelLE->setValidator(new QRegExpValidator(regExp, debugLevelLE));
-    debugLevelLE->setText(_sHex + QString::number(qset.value(_sDebugLevel, lanView::debugDefault).toLongLong(), 16));
+    pUi->debugLevelLE->setValidator(new QRegExpValidator(regExp, pUi->debugLevelLE));
+    pUi->debugLevelLE->setText(_sHex + QString::number(qset.value(_sDebugLevel, lanView::debugDefault).toLongLong(), 16));
     logFile = qset.value(_sLogFile, _sStdErr).toString();
     if (logFile == _sMinus || logFile == _sStdOut) {
         logFile = _sNul;
-        logToStdOutRB->setChecked(true);
+        pUi->logToStdOutRB->setChecked(true);
         logToStdOutClicked(true);
     }
     else if (logFile == _sStdErr) {
         logFile = _sNul;
-        logToStdErrRB->setChecked(true);
+        pUi->logToStdErrRB->setChecked(true);
         logToStdErrClicked(true);
     }
     else {
-        logToFileRB->setChecked(true);
+        pUi->logToFileRB->setChecked(true);
         logToFileClicked(true);
     }
     QStringList mibPathList = qset.value(_sMibPath).toString().split(_sColon);
     foreach (QString dir, mibPathList) {
-        MibPathLS->addItem(new QListWidgetItem(dir, MibPathLS));
+        pUi->MibPathLS->addItem(new QListWidgetItem(dir, pUi->MibPathLS));
     }
     DBGFNL();
 }
@@ -73,20 +73,20 @@ void cSetupWidget::applicate()
 {
     DBGFN();
     bool ok = false;
-    qset.setValue(_sHomeDir, homeDirLE->text());
-    qset.setValue(_sSqlHost, sqlHostLE->text());
-    qset.setValue(_sSqlPort, sqlPortSB->value());
-    qset.setValue(_sSqlUser, sqlUserLE->text());
-    qset.setValue(_sSqlPass, sqlPassLE->text());
-    qset.setValue(_sDbName,  dbNameLE->text());
-    qset.setValue(_sDebugLevel, debugLevelLE->text().toLongLong(&ok, 0));
-    if (!ok) DERR() << "Invalid log level : " << logFileNameLE->text() << endl;
-    qset.setValue(_sLogFile, logFileNameLE->text());
-    int i, n = MibPathLS->count();
+    qset.setValue(_sHomeDir, pUi->homeDirLE->text());
+    qset.setValue(_sSqlHost, pUi->sqlHostLE->text());
+    qset.setValue(_sSqlPort, pUi->sqlPortSB->value());
+    qset.setValue(_sSqlUser, pUi->sqlUserLE->text());
+    qset.setValue(_sSqlPass, pUi->sqlPassLE->text());
+    qset.setValue(_sDbName,  pUi->dbNameLE->text());
+    qset.setValue(_sDebugLevel, pUi->debugLevelLE->text().toLongLong(&ok, 0));
+    if (!ok) DERR() << "Invalid log level : " << pUi->logFileNameLE->text() << endl;
+    qset.setValue(_sLogFile, pUi->logFileNameLE->text());
+    int i, n = pUi->MibPathLS->count();
     QString mibPath;
     for (i = 0; i < n; i++) {
         if (mibPath.count()) mibPath += _sColon;
-        mibPath += MibPathLS->item(i)->text();
+        mibPath += pUi->MibPathLS->item(i)->text();
     }
     qset.setValue(_sMibPath, mibPath);
     qset.sync();
@@ -126,8 +126,8 @@ void cSetupWidget::logToStdOutClicked(bool __b)
 {
     DBGFN();
     if (__b) {
-        logFileNameLE->setEnabled(false);
-        logFileNameLE->setText(_sStdOut);
+        pUi->logFileNameLE->setEnabled(false);
+        pUi->logFileNameLE->setText(_sStdOut);
     }
     DBGFNL();
 }
@@ -135,8 +135,8 @@ void cSetupWidget::logToStdErrClicked(bool __b)
 {
     DBGFN();
     if (__b) {
-        logFileNameLE->setEnabled(false);
-        logFileNameLE->setText(_sStdErr);
+        pUi->logFileNameLE->setEnabled(false);
+        pUi->logFileNameLE->setText(_sStdErr);
     }
     DBGFNL();
 }
@@ -144,8 +144,8 @@ void cSetupWidget::logToFileClicked(bool __b)
 {
     DBGFN();
     if (__b) {
-        logFileNameLE->setEnabled(true);
-        logFileNameLE->setText(logFile);
+        pUi->logFileNameLE->setEnabled(true);
+        pUi->logFileNameLE->setText(logFile);
     }
     DBGFNL();
 }
@@ -153,8 +153,8 @@ void cSetupWidget::logLevelMoreClicked()
 {
     DBGFN();
     bool ok;
-    qlonglong l = debugLevelLE->text().toLongLong(&ok, 0);
-    if (!ok) DERR() << "Invalid log level : " << logFileNameLE->text() << endl;
+    qlonglong l = pUi->debugLevelLE->text().toLongLong(&ok, 0);
+    if (!ok) DERR() << "Invalid log level : " << pUi->logFileNameLE->text() << endl;
     if (pLl == NULL) {
         pLl = new cLogLevelDialog(l, this);
         connect(pLl,   SIGNAL(accepted()),this, SLOT(setLogLevel()));
@@ -170,7 +170,7 @@ void cSetupWidget::setLogLevel(void)
         DERR() << "Program error: cSetupWidget::pLl is NULL, ignored signal to " << __PRETTY_FUNCTION__ << " slot" << endl;
         return;
     }
-    debugLevelLE->setText(_sHex + QString::number(pLl->getLogLevel(), 16));
+    pUi->debugLevelLE->setText(_sHex + QString::number(pLl->getLogLevel(), 16));
 }
 
 void cSetupWidget::mibPathPlus()
@@ -178,9 +178,9 @@ void cSetupWidget::mibPathPlus()
     DBGFN();
     QString dir = QFileDialog::getExistingDirectory(this, trUtf8("Adja meg a MIB fájlok könyvtárát!"));
     if (dir.isEmpty() == false) {
-        QList<QListWidgetItem *> l = MibPathLS->findItems(dir, Qt::MatchFixedString);
+        QList<QListWidgetItem *> l = pUi->MibPathLS->findItems(dir, Qt::MatchFixedString);
         if (l.count() == 0) {
-            MibPathLS->addItem(new QListWidgetItem(dir, MibPathLS));
+            pUi->MibPathLS->addItem(new QListWidgetItem(dir, pUi->MibPathLS));
         }
     }
     DBGFNL();
@@ -189,14 +189,14 @@ void cSetupWidget::mibPathPlus()
 void cSetupWidget::mibPathMinus()
 {
     DBGFN();
-    QList<QListWidgetItem *>    selected =  MibPathLS->selectedItems();
+    QList<QListWidgetItem *>    selected =  pUi->MibPathLS->selectedItems();
     if (selected.count()) {
         QListWidgetItem *   p;
         foreach (p, selected) {
-            int row = MibPathLS->row(p);
+            int row = pUi->MibPathLS->row(p);
             PDEB(INFO) << "Remove #" << row << " row from list..." << endl;
             // MibPathLS->removeItemWidget(p);
-            if (p != MibPathLS->takeItem(row)) EXCEPTION(EPROGFAIL);
+            if (p != pUi->MibPathLS->takeItem(row)) EXCEPTION(EPROGFAIL);
             delete p;
         }
     }
@@ -207,9 +207,9 @@ void cSetupWidget::mibPathMinus()
 
 void cSetupWidget::homeSelect()
 {
-    PDEB(VVERBOSE) << VDEBPTR(homeDirLE) << _sSColon << _sSpace << " == " << homeDirLE->text() << endl;
-    homeDirLE->setText(QFileDialog::getExistingDirectory(this, tr("Alap könyvtár kiválasztása"), homeDirLE->text()));
-    PDEB(VVERBOSE) << VDEBPTR(homeDirLE) << _sSColon << _sSpace << " == " << homeDirLE->text() << endl;
+    PDEB(VVERBOSE) << VDEBPTR(pUi->homeDirLE) << _sSColon << _sSpace << " == " << pUi->homeDirLE->text() << endl;
+    pUi->homeDirLE->setText(QFileDialog::getExistingDirectory(this, tr("Alap könyvtár kiválasztása"), pUi->homeDirLE->text()));
+    PDEB(VVERBOSE) << VDEBPTR(pUi->homeDirLE) << _sSColon << _sSpace << " == " << pUi->homeDirLE->text() << endl;
 }
 
 cLogLevelDialog::cLogLevelDialog(qlonglong __logLev, QWidget *parent)
@@ -294,11 +294,11 @@ QSqlDatabase * cSetupWidget::SqlOpen()
         delete pDb;
         return NULL;
     }
-    pDb->setHostName(   sqlHostLE->text());
-    pDb->setPort(       sqlPortSB->value());
-    pDb->setUserName(   sqlUserLE->text());
-    pDb->setPassword(   sqlPassLE->text());
-    pDb->setDatabaseName(dbNameLE->text());
+    pDb->setHostName(   pUi->sqlHostLE->text());
+    pDb->setPort(       pUi->sqlPortSB->value());
+    pDb->setUserName(   pUi->sqlUserLE->text());
+    pDb->setPassword(   pUi->sqlPassLE->text());
+    pDb->setDatabaseName(pUi->dbNameLE->text());
     if (!pDb->open()) {
         QSqlError le = pDb->lastError();
         QString msg = QString("SQL open ERROR #") + QString::number(le.number()) + "\n"

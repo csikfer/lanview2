@@ -351,6 +351,9 @@ void cArpServerDef::updateArpTable(QSqlQuery& q)
     }
     firstTime = false;
     cArp::replaces(q, at);
+    return;
+/*#else
+    #warning "SCAN functions is not supported."*/
 #endif
     (void)q;
     EXCEPTION(ENOTSUPP);

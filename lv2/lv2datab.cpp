@@ -180,6 +180,11 @@ cColStaticDescr::cColStaticDescr(const cColStaticDescr& __o)
     pFRec       = __o.pFRec;
 }
 
+cColStaticDescr::~cColStaticDescr()
+{
+    ;
+}
+
 cColStaticDescr& cColStaticDescr::operator=(const cColStaticDescr __o)
 {
     *(QString *)this = __o;

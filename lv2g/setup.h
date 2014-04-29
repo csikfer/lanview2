@@ -2,18 +2,25 @@
 #define SETUP_H
 
 #include "lv2g.h"
+#if defined(LV2G_LIBRARY)
 #include "ui_setup.h"
 #include "ui_setup_logl.h"
+#else
+namespace Ui {
+    class SetupWidget;
+}
+#endif
 #include <QDialog>
 
 class cLogLevelDialog;
 
-class cSetupWidget : public cOwnTab, public Ui::SetupWidget
+class  LV2GSHARED_EXPORT cSetupWidget : public cOwnTab
 {
     Q_OBJECT
 public:
     cSetupWidget(QSettings &__s, QWidget *par);
     ~cSetupWidget();
+    Ui::SetupWidget *pUi;
 private slots:
     void applicateAndRestart();
     void applicateAndClose();
@@ -35,7 +42,9 @@ private:
     bool            forced;
 };
 
-class cLogLevelDialog : public QDialog, Ui::LogLevelDialog
+#if defined(LV2G_LIBRARY)
+
+class LV2GSHARED_EXPORT cLogLevelDialog : public QDialog, Ui::LogLevelDialog
 {
     Q_OBJECT
    public:
@@ -47,5 +56,6 @@ class cLogLevelDialog : public QDialog, Ui::LogLevelDialog
     void allOnClicked();
     void allOffClicked();
 };
+#endif
 
 #endif // SETUP_H

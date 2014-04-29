@@ -30,12 +30,12 @@ DELETE ENUM TITLE filtertype;
 ENUM filtertype     begin           TITLE "Szó eleji egyezés";
 ENUM filtertype     like            TITLE "Minta illesztés a LIKE operátorral";
 ENUM filtertype     similar         TITLE "Minta illesztés a SIMILAR operátorral";
-ENUM filtertype     regexp          TITLE "Minta illesztés reguláris kifelyezéssel, nahybetű érzékeny";
+ENUM filtertype     regexp          TITLE "Minta illesztés reguláris kifelyezéssel, nagybetű érzékeny";
 ENUM filtertype     regexpi         TITLE "Minta illesztés reguláris kifelyezéssel, nem nagybetű érzékeny";
 ENUM filtertype     big             TITLE "Csak egy értéknél nagyobbakat";
 ENUM filtertype     litle           TITLE "Csak egy értéknél kisebbeket";
-ENUM filtertype     interval        TITLE "Csak a megadott lét érték közöttiek";
-ENUM filtertype     proc            TITLE "Szűrés egy magadott SQL föggvénnyel";
+ENUM filtertype     interval        TITLE "Csak a megadott két érték közöttiek";
+ENUM filtertype     proc            TITLE "Szűrés egy magadott SQL függvénnyel";
 ENUM filtertype     SQL             TITLE "A szürési feltétel megadása SQL nyelven";
 
 // ***************************************************************************************
