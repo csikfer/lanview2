@@ -121,15 +121,17 @@ CREATE TABLE db_errs (
     date_of     timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     error_id    integer         NOT NULL
         REFERENCES errors(error_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
-    user_id     integer         , -- REFERENCES users(user_id) még nincs definiálva, NULL = system
+    user_id     integer         NOT NULL DEFAULT 0, -- REFERENCES users(user_id) még nincs definiálva, DEFAULT = nobody
     tablename   varchar(64)     DEFAULT NULL,
     trigger_op  varchar(8)      DEFAULT NULL,
     err_subcode integer         DEFAULT NULL,
     err_submsg  varchar(255)    DEFAULT NULL,
     src_name    varchar(255)    DEFAULT NULL,
-    reapeat      integer         DEFAULT 0
-);
-CREATE INDEX db_errs_date_of_index ON db_errs (date_of);
+    reapeat     integer         DEFAULT 0,
+    date_of_last timestamp 	NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    acknowledged boolean 	DEFAULT false);
+CREATE INDEX db_errs_date_of_index      ON db_errs (date_of);
+CREATE INDEX db_errs_date_of_last_index ON db_errs (date_of_last);
 ALTER TABLE db_errs OWNER TO lanview2;
 COMMENT ON TABLE db_errs IS
 'Adatbázis műveletek közben keletkező hiba események táblája.
@@ -142,7 +144,8 @@ COMMENT ON COLUMN db_errs.trigger_op IS 'Ha a hiba egy TRIGGER függvényben kel
 COMMENT ON COLUMN db_errs.err_subcode IS 'Másodlagos hiba kód, vagy numerikus hiba paraméter.';
 COMMENT ON COLUMN db_errs.err_submsg IS 'Másodlagos hiba üzenet, vagy szöveges hiba paraméter.';
 COMMENT ON COLUMN db_errs.src_name IS 'Az aktuális függvény neve, ahol a hiba történt.';
-COMMENT ON COLUMN db_errs.reapeat IS 'Ha kétszer egymás után keletkezne azonos rekord, akkor csak ez a számláló inkrementálódik.';
+COMMENT ON COLUMN db_errs.reapeat IS 'Ha kétszer nyugtázatlan azonos rekord keletkezne, akkor csak ez a számláló inkrementálódik.';
+COMMENT ON COLUMN db_errs.date_of_last IS 'Ha reapeat értéke 0, akkor azonos date_of-al, reapeat inkrementálásakor az aktuális idő kerül a mezőbe.';
 
 CREATE OR REPLACE FUNCTION db_err_id2name(integer) RETURNS TEXT AS $$
 DECLARE
@@ -166,18 +169,21 @@ CREATE OR REPLACE FUNCTION db_error_chk_reapeat() RETURNS TRIGGER AS $$
 DECLARE
     err db_errs; -- Időben az előző hiba rekord
 BEGIN
-    SELECT * INTO err FROM db_errs ORDER BY date_of DESC LIMIT 1;
-    IF NOT FOUND THEN
-        RETURN NEW;
+    IF NEW.acknowledged THEN
+	RETURN NEW;
     END IF;
-    IF NEW.error_id    = err.error_id   AND
-       NEW.user_id     = err.user_id    AND
-       NEW.tablename   = err.tablename  AND
-       NEW.trigger_op  = err.trigger_op AND
-       NEW.err_subcode = err.err_subcode AND
-       NEW.err_submsg  = err.err_submsg AND
-       NEW.src_name    = err.src_name   THEN
-        UPDATE db_errors SET reapeat = err.reapeat +1 WHERE dblog_id = err.dblog_id;
+    SELECT * INTO err FROM db_errs
+	WHERE NOT acknowledged
+	 AND error_id    = NEW.error_id
+	 AND user_id     = NEW.user_id
+	 AND tablename   = NEW.tablename
+	 AND trigger_op  = NEW.trigger_op
+	 AND err_subcode = NEW.err_subcode
+	 AND err_submsg  = NEW.err_submsg
+	 AND src_name    = NEW.src_name
+	ORDER BY date_of_last DESC LIMIT 1;
+    IF FOUND THEN
+        UPDATE db_errors SET reapeat = err.reapeat +1, date_of_last = NOW() WHERE dblog_id = err.dblog_id;
         RETURN NULL;
     END IF;
     RETURN NEW;
@@ -186,8 +192,10 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION db_error_chk_reapeat() IS 'Trigger függvény az db_ers táblához, hogy ne legyenek ismételt rekordok.';
 CREATE TRIGGER db_errors_before_insert BEFORE INSERT ON db_errs FOR EACH ROW EXECUTE PROCEDURE db_error_chk_reapeat();
 COMMENT ON TRIGGER db_errors_before_insert ON db_errs IS
-'Ha eggymás után két azonos rekordot kéne rögzíteni (date_of és reapeat mezők kivételével),
-akkor a megelőző rekordnak csak a reapeat mezője lessz inkrementálva, az új rekord viszont nem kerül rögzítésre.';
+'Ha két azonos nyugtázatlan rekordot kéne rögzíteni (date_of és reapeat mezők kivételével),
+akkor a megelőző rekordnak csak a reapeat mezője lessz inkrementálva, és a date_of_last aktualizálva,
+az új rekord viszont nem kerül rögzítésre.
+Ha az új rekordban az acknowledged mező igaz, akkor mindenképpen rógzítve lessz az új rekord';
 
 -- ERROR functions
 -- Get Error recod by name
@@ -256,7 +264,6 @@ CREATE OR REPLACE FUNCTION error (
 ) RETURNS boolean AS $$
 DECLARE
     er errors%ROWTYPE;
-    id integer;
     ui text;
     cmd text;
     con CONSTANT text := 'errlog';
@@ -273,19 +280,16 @@ BEGIN
     IF trgn IS NULL THEN trgn := 'no';  END IF;
     -- RAISE NOTICE 'called: error(%,%,%,%,%,%) ...', $1,subc,subm,srcn,tbln,trgn;
     er := error_by_name($1);
-    id := nextval('db_errs_dblog_id_seq');
     PERFORM set_config('lanview2.last_error_code', CAST(er.error_id AS text), false);
-    PERFORM set_config('lanview2.last_error_id',   CAST(id          AS text), false);
     SELECT current_setting('lanview2.user_id') INTO ui;
     IF ui = '-1' THEN
-        ui = 'NULL';
+        ui = '0';	-- nobody
     END IF;
     -- Tranzakción kívülröl kel (dblink-el) kiírni a log rekordot, mert visszagörgetheti
     PERFORM dblink_connect(con, 'dbname=lanview2');
-    -- RAISE NOTICE 'id = %,  er.error_id = %, ui = % .', id, er.error_id, ui;
     cmd := 'INSERT INTO db_errs'
-     || '(dblog_id, error_id, user_id, tablename, trigger_op, err_subcode, err_submsg, src_name) VALUES ('
-     || id || ',' || er.error_id   || ',' || ui || ',' || quote_nullable(tbln) || ','
+     || '(error_id, user_id, tablename, trigger_op, err_subcode, err_submsg, src_name) VALUES ('
+     || er.error_id   || ',' || ui || ',' || quote_nullable(tbln) || ','
      || quote_nullable(trgn) || ',' || subc || ',' || quote_nullable(subm) || ',' || quote_nullable(srcn)
      || ')';
     RAISE NOTICE 'Error log :  "%"', cmd;
@@ -320,3 +324,42 @@ CREATE OR REPLACE VIEW db_errors AS
            user_id, tablename, trigger_op, err_subcode, err_submsg, src_name
     FROM db_errs JOIN errors USING(error_id);
 
+
+CREATE OR REPLACE FUNCTION insert_error (
+    text,                   -- $1 Error name (errors.err_name)
+    integer DEFAULT -1,     -- $2 Error Sub code
+    text    DEFAULT 'nil',  -- $3 Error Sub Message
+    text    DEFAULT 'nil',  -- $4 Source name (function name, ...)
+    text    DEFAULT 'nil',  -- $5 Actual table name
+    text    DEFAULT 'ext'   -- $6 Actual TRIGGER type
+) RETURNS db_errs AS $$
+DECLARE
+    er errors%ROWTYPE;
+    ui   integer;
+    subc integer := $2;
+    subm text    := $3;
+    srcn text    := $4;
+    tbln text    := $5;
+    trgn text    := $6;
+    re  db_errs%ROWTYPE;
+BEGIN
+    IF subc IS NULL THEN subc := -1;    END IF;
+    IF subm IS NULL THEN subm := 'nil'; END IF;
+    IF srcn IS NULL THEN srcn := 'nil'; END IF;
+    IF tbln IS NULL THEN tbln := 'nil'; END IF;
+    IF trgn IS NULL THEN trgn := 'ext'; END IF;
+    er := error_by_name($1);
+    SELECT current_setting('lanview2.user_id') INTO ui;
+    IF ui = '-1' THEN
+        ui := 0;	-- nobody
+    END IF;
+    INSERT INTO db_errs
+	      (error_id, user_id, tablename, trigger_op, err_subcode, err_submsg, src_name)
+	   VALUES
+	      (er.error_id, ui, tbln, trgn, subc, subm, srcn)
+	   RETURNING * INTO re;
+    RETURN re;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION error (text,integer,text,text,text,text) IS
+'Egy hiba rekord rögzítése. Egy adatbázis tartalmi hiba rögzítése, ha az egy aplikációban derült ki, ill. azt az app a függvény hívással jelzi.';

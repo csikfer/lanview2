@@ -99,7 +99,7 @@ public:
     cInspector(QSqlQuery &q, const QString& sn);
     /// Az objektumot a megadott ID-k alapján tölti fel
     /// Ha a megadott host_servce_id értéke NULL (NULL_ID), akkor a szükséges mezők már le lettek kérdezve (first() metódust is meg lett hívva),
-    /// azokat a __q obpSubordinatesjektumból kell kinyerni, a rekord sorrend : host_services, nodes (ill. a tableoid-vel definiállt leszármazott).
+    /// azokat a __q objektumból kell kinyerni, a rekord sorrend : host_services, nodes (ill. a tableoid-vel definiállt leszármazott).
     /// @param q Az adatbázis művelethez használható QSqlQuery objektum referenciája, ill. a szükséges adatokat beolvasó lekérdezés eredménye.
     /// @param __host_service_id host_services rekord ID, vagy NULL, ha a szükséges mezőket már lekérdeztők a __q -val.
     /// @param __tableoid A node rekord tábla OID-je (node  tényleges típusát azonosítja), alapértelmezett (NULL_ID esetén) a hosts tábla.
@@ -108,9 +108,18 @@ public:
     /// Destruktor
     virtual ~cInspector();
 
-    /// Belső státusz beállítása. Virtuális metódus, a bázis osztály esetén au objektum belső státuszát vagyis az intStat adattagot állítja a megadott értékre.
+    /// Belső státusz beállítása. Virtuális metódus, a bázis osztály esetén az objektum belső státuszát vagyis az intStat adattagot állítja a megadott értékre.
     virtual void setInternalStat(enum eInternalStat is);
+    /// Az objektumhoz időzítéséhez tartozó metódus.
+    /// Ha az internalStat értéke nem IS_RUN, akkor nem csinál semmit.
+    /// Ha a szolgáltatás nem időzített, ill. az állapota alapján nem kéne óra eseménynek bekövetkeznie, akkor kizárást dob.
+    /// Futó (IS_RUN), és időzített szolgáltatás esetén egy try blokkban meghívja a run() virtuális metódust.
+    /// A rum metódus által visszaadott érték, vagy az esetleges hiba alapján beállítja az adatbázisban a szolgáltatáspéldány állapotát,
+    /// valamint állít az időzítésen, ha ez szükséges (normal/retry időzítés kezelése)
     virtual void timerEvent(QTimerEvent * );
+    /// A szolgáltatáshoz tartozó tevékenységet végrehajtó virtuális metódus.
+    /// A alap objektumban a metódus nem csinál semmit (egy debug üzenet feltéteées kiírásán túl), csak visszatér egy RS_ON értékkel.
+    /// @return A szolgáltatás állpota, ill. a tevékenység eredménye.
     virtual enum eNotifSwitch run(QSqlQuery& q);
     /// Futás időzítés indítása
     virtual void start();

@@ -173,8 +173,8 @@ public:
     /// @param __id A keresett id.
     /// @return A listában megtaéállt első lista elem sorszáma, vagy -1, ha nem talállt semmit.
     int indexOf(qlonglong __id) const {
-        typename QList<T *>::const_iterator    i;
-        for (i = QList<T *>::constBegin(); i < QList<T *>::constEnd(); i++) {
+        typename QList<T *>::const_iterator    i = QList<T *>::constBegin();
+        for (; i < QList<T *>::constEnd(); i++) {
             if ((*i)->isNullId() == false && (*i)->getId() == __id) return i - QList<T *>::constBegin();
         }
         return -1;
@@ -183,8 +183,8 @@ public:
     /// @param __name A keresett név.
     /// @return A listában megtaéállt első lista elem sorszáma, vagy -1, ha nem talállt semmit.
     int indexOf (const QString& __name) const {
-        typename QList<T *>::const_iterator    i;
-        for (i = QList<T *>::constBegin(); i < QList<T *>::constEnd(); i++) {
+        typename QList<T *>::const_iterator    i = QList<T *>::constBegin();
+        for (; i < QList<T *>::constEnd(); i++) {
             if ((*i)->isNullName() == false && (*i)->getName() == __name) return i - QList<T *>::constBegin();
         }
         return -1;
@@ -192,10 +192,16 @@ public:
     /// Keresés megadott mező érték alapján.
     /// @param __ix A mező indexe
     /// @param _val A keresett érték.
+    /// @param __st Kezdő index a kereséshez, opcionális, ha nem adjuk meg az első (0.) elemmel kezdi a keresést.
     /// @return A listában megtalált első lista elem sorszáma, vagy -1, ha nem talállt semmit.
-    int indexOf (int __ix, const QVariant& _val) const {
-        typename QList<T *>::const_iterator    i;
-        for (i = QList<T *>::constBegin(); i < QList<T *>::constEnd(); i++) {
+    int indexOf (int __ix, const QVariant& _val, int __st = 0) const {
+        typename QList<T *>::const_iterator    i = QList<T *>::constBegin();
+        if (__st != 0) {
+            if (__st < 0) return -1;
+            if (__st >= (int)this->size()) return -1;
+            i += __st;
+        }
+        for (; i < QList<T *>::constEnd(); i++) {
             if ((*i)->isNull(__ix) == false && (*i)->get(__ix) == _val) return i - QList<T *>::constBegin();
         }
         return -1;
@@ -203,10 +209,16 @@ public:
     /// Keresés megadott mező érték alapján.
     /// @param __name A mező neve
     /// @param _val A keresett érték.
+    /// @param __st Kezdő index a kereséshez, opcionális, ha nem adjuk meg az első (0.) elemmel kezdi a keresést.
     /// @return A listában megtaéállt első lista elem sorszáma, vagy -1, ha nem talállt semmit.
-    int indexOf (const QString&  __name, const QVariant& _val) const {
-        typename QList<T *>::const_iterator    i;
-        for (i = QList<T *>::constBegin(); i < QList<T *>::constEnd(); i++) {
+    int indexOf (const QString&  __name, const QVariant& _val, int __st = 0) const {
+        typename QList<T *>::const_iterator    i = QList<T *>::constBegin();
+        if (__st != 0) {
+            if (__st < 0) return -1;
+            if (__st >= (int)this->size()) return -1;
+            i += __st;
+        }
+        for (; i < QList<T *>::constEnd(); i++) {
             if ((*i)->isNull(__name) == false && (*i)->get(__name) == _val) return i - QList<T *>::constBegin();
         }
         return -1;

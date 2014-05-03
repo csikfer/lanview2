@@ -592,9 +592,11 @@ public:
     virtual void toEnd();
     virtual bool toEnd(int i);
     virtual bool insert(QSqlQuery &__q, bool __ex = true);
-    //
+    // A trunkMembers konténer adattaghoz hozzáad egy port indexet
     void addTrunkMember(int __ix) { trunkMembers << __ix;  }
     int updateTrunkMembers(QSqlQuery& q, bool __ex);
+    /// A trunkMembers adattag konstans referenciájával tér vissza.
+    /// Ha a trunkMembers fel van töltve, akkor a konténer TRUNK port esetén a trunk tagjainak az indexét tartalmazza (port_index mező értéke).
     const tIntVector& getTrunkMembers() const { return trunkMembers; }
     void joinVlan(qlonglong __id, enum eVlanType __t, enum eSetType __st = ST_MANUAL);
     /// Beolvas egy objektumot/rekordot a MAC alapján
@@ -630,6 +632,7 @@ protected:
     /// Trubk port esetén a trunk tagjainak az indexe (port_index mező)
     /// Nincs automatikusan feltöltve.
     tIntVector trunkMembers;
+    /// A MAC cím mező indexe
     static int _ixHwAddress;
 };
 

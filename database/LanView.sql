@@ -2,17 +2,13 @@
 -- PostgreSQL Config:
 -- APPEND: /etc/postgresql/.../main/postgresql.conf
 /*
-custom_variable_classes = 'lanview2'
-# Session actual user name (lanview2 user name)
-# lanview2.user_name = nobody
-# Session actual user id (0 = unknown)
+# custom_variable_classes = 'lanview2'
+# Session actual user id (0 = nobody)
 lanview2.user_id = 0
 # Actual user rights
 lanview2.sesion_rights = none
 # Last error code (errors.error_id)
-lanview2.last_error_code = 0
-# Last error log record id (db_errs.dblog_id)
-lanview2.last_error_id = -1
+lanview2.last_error_code = -1
 */
 -- CREATE Languages
 /*
