@@ -121,34 +121,19 @@ COMMENT ON COLUMN nports.port_index IS 'Opcionális port index. Egyes leszármaz
 COMMENT ON COLUMN nports.deleted    IS 'Ha igaz, akkor a port logikailag törölve lett.';
 
 CREATE TABLE port_params (
-    port_param_id       serial          NOT NULL PRIMARY KEY,
-    port_param_name     varchar(32)     NOT NULL UNIQUE,
-    port_param_note    varchar(255)    DEFAULT NULL,
-    port_param_type     varchar(32)     DEFAULT NULL,
-    port_param_dim      varchar(32)     DEFAULT NULL
-);
-ALTER TABLE port_params OWNER TO lanview2;
-COMMENT ON TABLE port_params IS 'Port extra paraméterek deklarálása (név, típus, dimenzió) értékek a port_param_values -ben';
-COMMENT ON COLUMN port_params.port_param_id IS 'A port paraméter leíró egyedi azonosítója.';
-COMMENT ON COLUMN port_params.port_param_name IS 'A paraméter neve.';
-COMMENT ON COLUMN port_params.port_param_note IS 'A paraméterhez egy magyarázó szöveg';
-COMMENT ON COLUMN port_params.port_param_type IS 'Egy opcionális típus azonosító';
-COMMENT ON COLUMN port_params.port_param_dim IS 'Egy opcionális dimenzió';
-
-CREATE TABLE port_param_values (
-    port_param_value_id serial          PRIMARY KEY,
-    port_param_id       integer         NOT NULL
-            REFERENCES port_params(port_param_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
+    port_param_id       serial          PRIMARY KEY,
+    param_type_id       integer         NOT NULL
+            REFERENCES param_types(param_type_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
     port_id             integer         NOT NULL,   -- REFERENCES nports(port_id) kivéve pports
     param_value         varchar(255)    DEFAULT NULL,
-    UNIQUE (port_param_id, port_id)
+    UNIQUE (param_type_id, port_id)
 );
-ALTER TABLE port_param_values OWNER TO lanview2;
-COMMENT ON TABLE  port_param_values IS 'Port extra paraméter értékek.';
-COMMENT ON COLUMN port_param_values.port_param_value_id IS 'A paraméter érték egyedi azonosítója.';
-COMMENT ON COLUMN port_param_values.port_param_id IS 'A paraméter tulajdonságait definiáló port_params rekord azonosítója.';
-COMMENT ON COLUMN port_param_values.port_id IS 'A tulajdonos port rekordjának az azonosítója.';
-COMMENT ON COLUMN port_param_values.param_value IS 'A parméter érték.';
+ALTER TABLE port_params OWNER TO lanview2;
+COMMENT ON TABLE  port_params IS 'Port extra paraméter értékek.';
+COMMENT ON COLUMN port_params.port_param_id IS 'A paraméter érték egyedi azonosítója.';
+COMMENT ON COLUMN port_params.param_type_id IS 'A paraméter tulajdonságait definiáló param_types rekord azonosítója.';
+COMMENT ON COLUMN port_params.port_id IS 'A tulajdonos port rekordjának az azonosítója.';
+COMMENT ON COLUMN port_params.param_value IS 'A parméter érték.';
 
 CREATE TABLE patchs (
     node_id     serial          PRIMARY KEY,    -- Sequence: patchs_node_id_seq

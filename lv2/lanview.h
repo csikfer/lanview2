@@ -17,6 +17,7 @@
 #include "lv2types.h"
 #include "lv2data.h"
 #include "lv2user.h"
+#include "lv2daterr.h"
 #include "lv2xml.h"
 #include "scan.h"
 

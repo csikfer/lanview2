@@ -319,6 +319,21 @@ QString cOId::toNumString() const
     return r;
 }
 
+cMac cOId::toMac() const
+{
+    cMac r;
+    if (oidSize >= 6) {
+        qlonglong v = 0;
+        for (int i = 0; i < 6; i++) {
+            uint b = (*this)[oidSize - i - 1];
+            if (b > 255) return r;  // invalid
+            v = (v << 8) + b;
+        }
+        r.set(v);
+    }
+    return r;
+}
+
 cOId& cOId::operator <<(int __i)
 {
     if (oidSize + 1 > MAX_OID_LEN) EXCEPTION(EOUTRANGE);

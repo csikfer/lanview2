@@ -141,6 +141,120 @@ EXT_ const QString&   imageType(int __e, bool __ex = true);
 /// @return A típus konstans, ha nem megengedett névvel hívtuk, és __ex false volt, akkor -1
 EXT_ const char *    _imageType(int __e, bool __ex = true);
 
+enum eParamType {
+    PT_INVALID = -1,
+    PT_ANY,
+    PT_BOOLEAN,
+    PT_INTEGER,
+    PT_REAL,
+    PT_CHAR,
+    PT_STRING,
+    PT_INTERVAL,
+    PT_IPADDRESS,
+    PT_URL
+};
+
+EXT_ int paramType(const QString& __n, bool __ex = true);
+EXT_ const QString& paramType(int __e, bool __ex = true);
+
+/* ------------------------------------------------------------------ */
+/// Port paraméter típus leíró rekord
+class LV2SHARED_EXPORT cParamType : public cRecord {
+    CRECORD(cParamType);
+public:
+    /// Egy új port_params rekord beinzertálása (paraméter név/típus/dimenzió objektumlétrehozása).
+    /// Hiba esetén, ha __ex igaz (vagy nincs megadva), akkor dob egy kizárást,
+    /// @param q Az adatbázis művelethet használt objektum
+    /// @param __n A paraméter neve
+    /// @param __de Egy megjegyzés a paraméter típushoz
+    /// @param __t A paraméter típusa
+    /// @param __di A paraméter dimenziója, opcionális
+    /// @return Az új rekord azonisítója (ID), hiba esetén, ha ::ex hamis volt, akkor NULL_ID-vel tér vissza.
+    static qlonglong insertNew(QSqlQuery &q, const QString& __n, const QString& __de, const QString __t, const QString __di = QString(), bool __ex = true);
+    /// Egy új port_params rekord beinzertálása (paraméter név/típus/dimenzió objektumlétrehozása).
+    /// Hiba esetén, ha __ex igaz (vagy nincs megadva), akkor dob egy kizárást,
+    /// @param q Az adatbázis művelethet használt objektum
+    /// @param __n A paraméter neve
+    /// @param __de Egy megjegyzés a paraméter típushoz
+    /// @param __t A paraméter típusa (lsd.: eParamType).
+    /// @param __di A paraméter dimenziója, opcionális
+    /// @return Az új rekord azonisítója (ID), hiba esetén, ha ::ex hamis volt, akkor NULL_ID-vel tér vissza.
+    static qlonglong insertNew(QSqlQuery &q, const QString& __n, const QString& __de, int __t, const QString __di = QString(), bool __ex = true);
+    /// Egy új port_params rekord beinzertálása (paraméter név/típus/dimenzió objektumlétrehozása).
+    /// Hiba esetén, ha __ex igaz (vagy nincs megadva), akkor dob egy kizárást,
+    /// @param __n A paraméter neve
+    /// @param __de Egy megjegyzés a paraméter típushoz
+    /// @param __t A paraméter típusa
+    /// @param __di A paraméter dimenziója, opcionális
+    /// @return Az új rekord azonisítója (ID), hiba esetén, ha ::ex hamis volt, akkor NULL_ID-vel tér vissza.
+    static qlonglong insertNew(const QString& __n, const QString& __de, const QString __t, const QString __di = QString(), bool __ex = true) {
+        QSqlQuery q = getQuery();
+        return insertNew(q, __n, __de, __t, __di, __ex);
+    }
+    /// Egy új port_params rekord beinzertálása (paraméter név/típus/dimenzió objektumlétrehozása).
+    /// Hiba esetén, ha __ex igaz (vagy nincs megadva), akkor dob egy kizárást,
+    /// @param __n A paraméter neve
+    /// @param __de Egy megjegyzés a paraméter típushoz
+    /// @param __t A paraméter típusa (lsd.: eParamType).
+    /// @param __di A paraméter dimenziója, opcionális
+    /// @return Az új rekord azonisítója (ID), hiba esetén, ha ::ex hamis volt, akkor NULL_ID-vel tér vissza.
+    static qlonglong insertNew(const QString& __n, const QString& __de, int __t, const QString __di = QString(), bool __ex = true) {
+        QSqlQuery q = getQuery();
+        return insertNew(q, __n, __de, __t, __di, __ex);
+    }
+};
+
+class LV2SHARED_EXPORT cSysParam  : public cRecord {
+    CRECORD(cSysParam);
+public:
+    /// Törli a paramType adattagot.
+    virtual void    clearToEnd();
+    /// A toEnd(int i) metódust hívja a port paraméter (típus) rekord id mező indexével.
+    virtual void 	toEnd ();
+    /// Ha megváltozik a port param (típus) id, akkor betölti, vagy törli a megfelelp értéket a paramType adattagba.
+    /// Nincs ilyen id-vel port_params rekord (és nem NULL az id), akkor a statusban bebillenti az ES_DEFECZIVE bitet.
+    virtual bool 	toEnd (int i);
+    /// A paraméter típus enumerációs értékkel tér vissza
+    qlonglong type()   const { return paramType.getId(_sParamTypeType); }
+    /// A paraméter dimenzió ill. mértékegység nevével tér vissza
+    QString dim()    const { return paramType.getName(__sParamTypeDim); }
+    ///
+    cRecordFieldConstRef value() const { return (*this)[_sParamValue]; }
+    /// A port paraméter értékére mutató referencia objektummal tér vissza.
+    cRecordFieldRef      value()       { return (*this)[_sParamValue]; }
+    /// A paraméter típusának a beállítása
+    /// @param __id A paraméter típus rekord ID-je
+    cSysParam& setType(qlonglong __id)        { set(_ixParamTypeId, __id); return *this; }
+    /// @param __n A paraméter típus rekord név mezőjenek az értéke
+    cSysParam& setType(const QString& __n)    { paramType.fetchByName(__n); _set(_ixParamTypeId, paramType.getId()); return *this; }
+    /// Értékadás az érték mezőnek.
+    cSysParam& operator=(const QString& __v)  { setName(_sParamValue, __v); return *this; }
+protected:
+    /// A port paraméter értékhez tartozó típus rekord/objektum
+    cParamType  paramType;
+    static int _ixParamTypeId;
+};
+
+EXT_ void initSysParams(QSqlQuery *__pq, bool __ex = true);
+EXT_ const cSysParam& getSysParam(const QString& __name);
+EXT_ bool setSysParam(cSysParam& __par);
+//EXT_ bool setSysParam(const QString&  __type, const QString& __name, const QVariant& __val, bool __ex = true);
+
+/// Rendszer paraméter értékek listája
+class LV2SHARED_EXPORT cSysParams : protected tRecordList<cSysParam> {
+    friend void initSysParams(QSqlQuery *__pq, bool __ex);
+    friend const cSysParam& getSysParam(const QString& __name);
+    friend bool setSysParam(cSysParam& __par);
+protected:
+    /// Konstruktor.
+    cSysParams(QSqlQuery *__pq);
+    QSqlQuery *pq;
+    static cSysParams * instance;
+    static cSysParam  * null;
+public:
+
+};
+
 /* ------------------------------------------------------------------ */
 /*!
 @class cTpow
@@ -312,82 +426,67 @@ protected:
 
 typedef tRecordList<cIpAddress> cIpAddresses;
 /* ******************************  ****************************** */
-class cPortParamValue;
-/// Port paraméter típus leíró rekord
-class LV2SHARED_EXPORT cPortParam : public cRecord {
-    friend class cPortParamValue;
-    CRECORD(cPortParam);
-public:
-    /// Egy új port_params rekord beinzertálása (port paraméter név/típus/dimenzió objektumlétrehozása).
-    /// Hiba esetén dob egy kizárást
-    /// @param __n A paraméter neve
-    /// @param __de Egy megjegyzés a paraméter típushoz
-    /// @param __t A paraméter típusa
-    /// @param __di A paraméter dimenziója, opcionális
-    /// @return Az új rekord azonisítója (ID)
-    static long insertNew(const QString& __n, const QString& __de, const QString __t, const QString __di = QString());
-};
 
-class cPortParamValues;
+class cPortParams;
 class cNPort;
 
 /// Port paraméter érték
-class LV2SHARED_EXPORT cPortParamValue : public cRecord {
-    friend class cPortParamValues;
+class LV2SHARED_EXPORT cPortParam : public cRecord {
+    friend class cPortParams;
     friend class cNPort;
     friend class cInterface;
-    CRECORD(cPortParamValue);
+    CRECORD(cPortParam);
 public:
-    /// Törli a portParam adattagot.
+    /// Törli a paramType adattagot.
     virtual void    clearToEnd();
     /// A toEnd(int i) metódust hívja a port paraméter (típus) rekord id mező indexével.
     virtual void 	toEnd ();
-    /// Ha megváltozik a port param (típus) id, akkor betölti, vagy törli a megfelelp értéket a portParam adattagba.
+    /// Ha megváltozik a port param (típus) id, akkor betölti, vagy törli a megfelelp értéket a paramType adattagba.
     /// Nincs ilyen id-vel port_params rekord (és nem NULL az id), akkor a statusban bebillenti az ES_DEFECZIVE bitet.
     virtual bool 	toEnd (int i);
     /// A port paraméter nevével tér vissza
-    QString name()   const { return portParam.getName(); }
-    /// A port paraméter típus nevével tér vissza
-    QString type()   const { return portParam.get(_sPortParamType).toString(); }
+    QString name()   const { return paramType.getName(); }
+    /// A port paraméter típus enumerációs értékkel tér vissza
+    qlonglong type()   const { return paramType.getId(_sParamTypeType); }
     /// A port paraméter dimenzió ill. mértékegység nevével tér vissza
-    QString dim()    const { return portParam.get(_sPortParamDim).toString(); }
+    QString dim()    const { return paramType.getName(__sParamTypeDim); }
     /// A port paraméter értékére mutató referencia objektummal tér vissza.
     cRecordFieldConstRef value() const { return (*this)[_sParamValue]; }
     /// A port paraméter értékére mutató referencia objektummal tér vissza.
     cRecordFieldRef      value()       { return (*this)[_sParamValue]; }
     /// A paraméter típusának a beállítása
     /// @param __id A paraméter típus rekord ID-je
-    cPortParamValue& setType(qlonglong __id)        { set(_ixPortParamId, __id); return *this; }
-    /// @param __id A paraméter típus rekord név mezőjenek az értéke
-    cPortParamValue& setType(const QString& __n)    { portParam.fetchByName(__n); _set(_ixPortParamId, portParam.getId()); return *this; }
+    cPortParam& setType(qlonglong __id)        { set(_ixParamTypeId, __id); return *this; }
+    /// @param __n A paraméter típus rekord név mezőjenek az értéke
+    cPortParam& setType(const QString& __n)    { paramType.fetchByName(__n); _set(_ixParamTypeId, paramType.getId()); return *this; }
     /// Értékadás az érték mezőnek.
-    cPortParamValue& operator=(const QString& __v)  { setName(_sParamValue, __v); return *this; }
+    cPortParam& operator=(const QString& __v)  { setName(_sParamValue, __v); return *this; }
 protected:
     /// A port paraméter értékhez tartozó típus rekord/objektum
-    cPortParam  portParam;
-    static int _ixPortParamId;
+    cParamType  paramType;
+    static int _ixParamTypeId;
     static int _ixPortId;
 };
 
 /// Port paraméter értékek listája
-class LV2SHARED_EXPORT cPortParamValues : public tRecordList<cPortParamValue> {
+class LV2SHARED_EXPORT cPortParams : public tRecordList<cPortParam> {
 public:
     /// Konstruktor. Üres listát készít.
-    cPortParamValues();
+    cPortParams();
     /// Konstruktor. A listának egy eleme lessz, a megadott objektum klónja.
-    cPortParamValues(const cPortParamValue& __v);
+    cPortParams(const cPortParam& __v);
     /// Konstruktor. A listét feltölti az adatbázisból, hogy a megadott porthoz (ID) tartozó összes paramétert tartalmazza.
-    cPortParamValues(QSqlQuery& __q, qlonglong __port_id);
+    cPortParams(QSqlQuery& __q, qlonglong __port_id);
     /// Copy konstrultor. A konténer összes elemét klónozza.
-    cPortParamValues(const cPortParamValues& __o);
+    cPortParams(const cPortParams& __o);
     /// Másoló operátor. A konténer összes elemét klónozza.
-    cPortParamValues& operator=(const cPortParamValues& __o);
+    cPortParams& operator=(const cPortParams& __o);
     /// A listét feltölti az adatbázisból, hogy a megadott porthoz (ID) tartozó összes paramétert tartalmazza.
-    int fetch(QSqlQuery& __q, qlonglong __port_id) { return tRecordList<cPortParamValue>::fetch(__q, false, cPortParamValue::_ixPortId, __port_id); }
+    int fetch(QSqlQuery& __q, qlonglong __port_id) { return tRecordList<cPortParam>::fetch(__q, false, cPortParam::_ixPortId, __port_id); }
     /// Index operátor: egy elem a paraméter név alapján
-    const cPortParamValue& operator[](const QString& __n) const;
+    const cPortParam& operator[](const QString& __n) const;
     /// Index operátor: egy elem a paraméter név alapján
-    cPortParamValue&       operator[](const QString& __n);
+    cPortParam&       operator[](const QString& __n);
     /// Az összes elem kiírása az adatbázisba.
     /// @return A kiírt rekordok száma
     int       insert(QSqlQuery &__q, qlonglong __port_id, bool __ex = true);
@@ -533,8 +632,13 @@ public:
     bool isIfType(const QString& __iftypename, bool __ex = true) const { return ifType(__ex).getName() == __iftypename; }
     /// Feltölti az adatbázisból a params konténert.
     int fetchParams(QSqlQuery& q) { return params.fetch(q, getId()); q.finish(); }
+    /// Egy névvel térvissza, mely alapján a port egyedileg azonosítható.
+    /// A nevet a node és a port nevéből állítja össze, szeparátor a ':' karakter
+    /// Az objektumnak csak a node_id mezője és a név mezője alapján állítja elő a visszaadott értéket.
+    /// @param q Az adatbázis lekérdezéshez használt query objektum.
+    QString getFullName(QSqlQuery& q, bool _ex = true);
     /// Port paraméterek, nincs automatikusan feltöltve
-    cPortParamValues   params;
+    cPortParams   params;
 protected:
     /// A tulajdonos patchs rekordra mutató id mező indexe
     static int _ixNodeId;

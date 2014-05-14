@@ -111,11 +111,11 @@ void lv2portMac::reSet()
 
 cPortMac::cPortMac(QSqlQuery& q, const QString& __sn)
     : cInspector(q, __sn)
-    , mOId1("SNMPv2-SMI::mib-2.17.4.3.1.2")
-    , mOId2("SNMPv2-SMI::mib-2.17.7.1.2.2.1.2")
 {
-    if (!mOId1) EXCEPTION(ESNMP, mOId1.status, mOId1.emsg);
-    if (!mOId2) EXCEPTION(ESNMP, mOId2.status, mOId2.emsg);
+    cDevicePMac::pOId1 = new cOId("SNMPv2-SMI::mib-2.17.4.3.1.2");
+    cDevicePMac::pOId2 = new cOId("SNMPv2-SMI::mib-2.17.7.1.2.2.1.2");
+    if (!*cDevicePMac::pOId1) EXCEPTION(ESNMP, cDevicePMac::pOId1->status, cDevicePMac::pOId1->emsg);
+    if (!*cDevicePMac::pOId2) EXCEPTION(ESNMP, cDevicePMac::pOId2->status, cDevicePMac::pOId2->emsg);
 }
 
 cPortMac::~cPortMac()
@@ -139,7 +139,8 @@ enum eNotifSwitch cPortMac::run(QSqlQuery &)
 /******************************************************************************/
 
 const cService *cDevicePMac::pSrvSnmp   = NULL;
-
+cOId    *cDevicePMac::pOId1 = NULL;
+cOId    *cDevicePMac::pOId2 = NULL;
 
 cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector * _par)
     : cInspector(__q, __host_service_id, __tableoid, _par)
@@ -168,16 +169,26 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
             // Ha ez egy TRUNK tagja, akkor nem érdekes.
             if (!np.isNull(_sPortStapleId)) continue;
             // Ki kéne még hajítani az uplinkeket
-            if (cLldpLink().getLinked(__q, np.getId())) continue; // Ez egy LLDP-vel felderített link
+            if (cLldpLink().getLinked(__q, np.getId())) continue; // Ez egy LLDP-vel felderített uplink
+            // meget a ports konténerbe az indexe
         }
         else if (ifTypeName != _sMultiplexor) {
             // TRUNK-nal a TRUNK tagjaihoz van rendelve az uplink
-            int ix = 0;
+            int ix = -1;
             bool first = true;
+            // Erre a node-ra megy a link (ha marad NULL_ID, akkor nincs uplink)
             qlonglong linkedNodeId = NULL_ID;
             while (true) {
-                ix = host().ports.indexOf(_sPortStapleId, np.get(_sPortId));
-                if (ix < 0) break;
+                int st = ix + 1;
+                // Keressük a trunk tagjait
+                ix = host().ports.indexOf(_sPortStapleId, np.get(_sPortId), ix);
+                if (ix < 0) {
+                    if (st == 0) {  // Üres trunk?
+                        QString msg = trUtf8("A %1 trunk-nek nincs egyetlen tagja sem.").arg(np.getFullName(__q));
+                        cDbErr::insertNew(__q, cDbErrType::_sNotFound, msg, np.getId(), np.tableName(), APPNAME);
+                    }
+                    break;  // Nincs, vagy nincs több
+                }
                 qlonglong pid = cLldpLink().getLinked(__q, ports[ix]->getId());
                 qlonglong hid = NULL_ID;
                 if (pid != NULL_ID) hid = cNode().setById(__q, pid);
@@ -187,11 +198,16 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
                 }
                 else {
                     if (linkedNodeId != hid) {
-                        // WARNING !!!!
+                        QString msg = trUtf8("A %1(%2) trunk tagjai nem azonos node-hoz csatlakoznak (%2 - %3) .")
+                                .arg(np.getFullName(__q))
+                                .arg(cNode().getNameById(linkedNodeId))
+                                .arg(cNode().getNameById(hid));
+                        cDbErr::insertNew(__q, cDbErrType::_sNotFound, msg, np.getId(), np.tableName(), APPNAME);
                     }
                 }
             }
-            if (linkedNodeId != NULL_ID) continue;
+            if (linkedNodeId != NULL_ID) continue;  // uplink, nem kell
+        }
         else {
             // Más típusű port nem érdekes.
             continue;
@@ -213,16 +229,64 @@ void cDevicePMac::postInit(QSqlQuery &q, const QString&)
     snmpDev().open(q, snmp);
 }
 
+
 enum eNotifSwitch cDevicePMac::run(QSqlQuery& q)
 {
     _DBGFN() << _sSpace << name() << endl;
     if (!snmp.isOpened()) {
         EXCEPTION(ESNMP,-1, trUtf8("SNMP open error : %1 in %2").arg(snmp.emsg).arg(name()));
     }
+    QMap<cMac, int> macs;
+    enum eNotifSwitch r;
 
+    if (RS_ON != (r = snmpQuery(*pOId1, macs))) return r;
+    if (RS_ON != (r = snmpQuery(*pOId2, macs))) return r;
+
+    QMap<cMac, int>::iterator   i;
+    for (i = macs.begin(); i <= macs.end(); ++i) {
+
+    }
 
     DBGFNL();
     return RS_ON;
 }
 
+enum eNotifSwitch cDevicePMac::snmpQuery(const cOId& __o, QMap<cMac, int>& macs)
+{
+    cOId    o = __o;
+    do {
+        int r = snmp.getNext(o);
+        if (!r) {
+            QString msg = trUtf8("A %1 node SNMP hiba. OID:%2")
+                    .arg(host().getName())
+                    .arg(pOId1->toString());
+            cDbErr::insertNew(__q, cDbErrType::_sRunTime, msg, r, _sNil, APPNAME);
+            break;
+        }
+        if (!(*pOId1 < snmp.name())) break;
+        bool ok;
+        int pix = snmp.value().toInt(&ok);
+        if (!ok) {
+            QString msg = trUtf8("A %1 node SNMP válasz: nem értelmezhető index. OID:%2 = %3")
+                    .arg(host().getName())
+                    .arg(pOId1->toString())
+                    .arg(snmp.value().toString());
+            cDbErr::insertNew(__q, cDbErrType::_sRunTime, msg, r, _sNil, APPNAME);
+            break;
+        }
+        if (!(ports.contains(pix))) continue;
+        cMac mac = snmp.name().toMac();
+        if (!mac) {
+            QString msg = trUtf8("A %1 node SNMP válasz: nem értelmezhető MAC. OID:%2 = %3")
+                    .arg(host().getName())
+                    .arg(pOId1->toString())
+                    .arg(snmp.value().toString());
+            cDbErr::insertNew(__q, cDbErrType::_sRunTime, msg, r, _sNil, APPNAME);
+            break;
+        }
+        macs.insert(pix, cMac); // inser or replace
+        o = snmp.name();
+    } while(true);
+    return RS_ON;
+}
 

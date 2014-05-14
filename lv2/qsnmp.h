@@ -22,6 +22,7 @@
 #define QSNMP_H
 #include <Qt>
 #include "lv2_global.h"
+#include "lv2types.h"
 
 #if defined(Q_OS_UNIX) || defined(Q_OS_LINUX)
 #define MUST_SNMP
@@ -154,6 +155,8 @@ class LV2SHARED_EXPORT cOId : public QVector<oid>, public netSnmp {
     /// Ha a jobb érték kisebb (lsd < operator), akkor a jobb érték balértékkel azonos eleje törlődik.
     /// Ha a jobb érték nem azonos a bal érték elejével, akkor az eredmény egy üres objrektum lessz.
     cOId& operator -=(const cOId& __o);
+    /// Ha a jobb oldali oerandus kisebb (lsd < operator), akkor az eredmény a baloldali operandus lessz a jobboldali operandussal azonos részt törölve.
+    /// Ha a jobb oldali operandus nem azonos a bal oldali operandus elejével, akkor az eredmény egy üres objrektum lessz.
     cOId  operator  -(const cOId& __o) const{ cOId r(*this); return r -= __o; }
     oid   pop_front() {
         oid r = at(0);
@@ -172,6 +175,9 @@ class LV2SHARED_EXPORT cOId : public QVector<oid>, public netSnmp {
     QString toString() const;
     QString description() const;
     QString toNumString() const;
+    /// Az utolsó hat elemet megpróbálja MAC-ként értelmezni.
+    /// Ha nincs 6 eleme az objektumnak, vagy az utolsó 6 elem nem a 0-255 tartományba esik, akkor egy üres objektummal tér vissza.
+    cMac toMac() const;
     // QString toFullString() const;
     bool    chkSize(size_t __len);
 };
@@ -250,15 +256,15 @@ class LV2SHARED_EXPORT cSnmp : public netSnmp {
     /// @param __oids  A lekérdezendő objektumok azonosítói (OID).
     /// @return A lekérdezés hibakódja. Ha nincs hiba, akkor 0.
     int get(const QStringList __ol)             { return get(cOIdVector(__ol)); }
-    /// A megadott snmp objektum lekérdezése, a legutóbbi open-el megnyitoot host-ról.
+    /// A megadott snmp objektum utáni objektum lekérdezése, a legutóbbi open-el megnyitoot host-ról.
     /// @param __oid  A megadot objektum utáni objektumot kérdezi le.
     /// @return A lekérdezés hibakódja. Ha nincs hiba, akkor 0.
     int getNext(const cOId& __oid);
-    /// A megadott snmp objektum lekérdezése, a legutóbbi open-el megnyitoot host-ról.
+    /// A megadott snmp objektum utáni objektum lekérdezése, a legutóbbi open-el megnyitoot host-ról.
     /// @param __oids Lekérdezi minden egyes a listában megadott objektum utáni objektumot.
     /// @return A lekérdezés hibakódja. Ha nincs hiba, akkor 0.
     int getNext(const cOIdVector& __oids);
-    /// A megadott snmp objektum lekérdezése, a legutóbbi open-el megnyitoot host-ról.
+    /// A megadott snmp objektum utáni objektum lekérdezése, a legutóbbi open-el megnyitoot host-ról.
     /// @param __oid  A megadot objektum utáni objektumot kérdezi le.
     /// @return A lekérdezés hibakódja. Ha nincs hiba, akkor 0.
     int getNext(const QString& __o)             { return getNext(cOId(__o)); }

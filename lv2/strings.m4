@@ -115,6 +115,26 @@ STRDEF(Boolean, "boolean")
 STRDEF(ByteA, "bytea")                  dnl bináris adat
 
 dnl Tábla és mező nevek
+STRDEF(ParamTypes, "param_types")
+ STRDEF(ParamTypeId, "param_type_id")
+ STRDEF(ParamTypeName, "param_type_name")
+ STRDEF(ParamTypeNote, "param_type_note")
+ STRDEF(ParamTypeType, "param_type_type")
+  STRDEF(Any, "any");
+  dnl boolean
+  STRDEF(Integer, "integer");
+  STRDEF(Real, "real")
+  STRDEF(Char, "char")
+  STRDEF(String, "string")
+  STRDEF(Interval, "interval")
+  STRDEF(Ipaddress, "ipaddress")
+  STRDEF(URL, "URL")
+ STRDEF(ParamTypeDim, "param_type_dim")
+STRDEF(SysParams, "sys_params")
+ STRDEF(SysParamId, "sys_param_id")
+ STRDEF(SysParamName, "sys_param_name")
+ STRDEF(ParamValue, "param_value")
+ dnl param_type_id
 STRDEF(Tpows, "tpows")
  STRDEF(TpowId, "tpow_id")
  STRDEF(TpowName, "tpow_name")
@@ -152,8 +172,7 @@ STRDEF(Places, "places")
  STRDEF(PlaceType, "place_type")
  STRDEF(ParentId, "parent_id")
   STRDEF(Root, "root")
-  STRDEF(Real, "real")
-  dnl unknown
+  dnl real, unknown
  STRDEF(Frame, "frame")
  STRDEF(Tel, "tel")
 STRDEF(PlaceGroups, "place_groups")
@@ -315,17 +334,9 @@ STRDEF(SubNets, "subnets")
   STRDEF(Secondary, "secondary")
   dnl pseudo
   dnl private
-STRDEF(PortParams, "port_params")
- STRDEF(PortParamId, "port_param_id")
- STRDEF(PortParamName, "port_param_name")
- STRDEF(PortParamNote, "port_param_note")
- STRDEF(PortParamType, "port_param_type")
- STRDEF(PortParamDim, "port_param_dim")
-STRDEF(PortParamValues, "port_param_values")
- STRDEF(PortParamValueId, "port_param_value_id")
- dnl port_param_id
- dnl port_id
- STRDEF(ParamValue, "param_value")
+STRDEF(PortParas, "port_params")
+ STRDEF(PortParamIdm, "port_param_id")
+ dnl param_type_id, port_id, param_value
 STRDEF(IpProtocols, "ipprotocols")
  STRDEF(ProtocolId, "protocol_id")
  STRDEF(ProtocolName, "protocol_name")
@@ -546,7 +557,7 @@ STRDEF(TableShapeFilters, "table_shape_filters")
   STRDEF(RegexpI, "regexpi")
   STRDEF(Big, "big")
   STRDEF(Litle, "litle")
-  STRDEF(Interval, "interval")
+  dnl interval
   STRDEF(Proc, "proc")
 STRDEF(EnumVals, "enum_vals")
  STRDEF(EnumValId, "enum_val_id")
@@ -615,4 +626,24 @@ STRDEF(UnKnown, "(?)")
 __SDEF(0)
 STRDEF(NullIpV4, "0.0.0.0")
 STRDEF(NullIpV6, "::")
+
+STRDEF(Errors, "Errors")
+ STRDEF(ErrorId, "error_id")
+ STRDEF(ErrorName, "error_name")
+ STRDEF(ErrorNote, "error_note")
+ STRDEF(ErrorType, "error_type")
+
+STRDEF(DbErrs, "db_errs")
+ STRDEF(DbLogId, "dblog_id")
+dnl date_of, error_id, user_id, table_name
+ STRDEF(TriggerOp, "trigger_op")
+ STRDEF(ErrSubcode, "erro_subcode")
+ STRDEF(FuncName, "func_name")
+ STRDEF(ErrMsg, "err_msg")
+ STRDEF(Reapeat, "reapeat")
+ STRDEF(DateOfLast, "date_of_last")
+ STRDEF(Acknowledged, "acknowledged")
+
+
+
 

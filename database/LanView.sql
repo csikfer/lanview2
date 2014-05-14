@@ -92,6 +92,45 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
+CREATE TYPE paramtype AS ENUM ( 'any', 'boolean', 'int', 'real', 'char', 'string', 'interval', 'ipaddress');
+
+CREATE TABLE param_types (
+    param_type_id       serial          NOT NULL PRIMARY KEY,
+    param_type_name     varchar(32)     NOT NULL UNIQUE,
+    param_type_note     varchar(255)    DEFAULT NULL,
+    param_type_type     paramtype       NOT NULL DEFAULT 'any',
+    param_type_dim      varchar(32)     DEFAULT NULL
+);
+ALTER TABLE param_types OWNER TO lanview2;
+COMMENT ON TABLE param_types IS 'Paraméterek deklarálása (név, típus, dimenzió)';
+COMMENT ON COLUMN param_types.param_type_id   IS 'A paraméter leíró egyedi azonosítója.';
+COMMENT ON COLUMN param_types.param_type_name IS 'A paraméter neve.';
+COMMENT ON COLUMN param_types.param_type_note IS 'A paraméterhez egy magyarázó szöveg';
+COMMENT ON COLUMN param_types.param_type_type IS 'Egy opcionális típus azonosító';
+COMMENT ON COLUMN param_types.param_type_dim  IS 'Egy opcionális dimenzió';
+
+INSERT INTO param_types(param_type_name, param_type_type) VALUES ('URL', 'URL');
+
+CREATE OR REPLACE FUNCTION param_type_name2id(varchar(32)) RETURNS integer AS $$
+DECLARE
+    id integer;
+BEGIN
+    SELECT param_type_id INTO id FROM param_types WHERE param_type_name = $1;
+    IF NOT FOUND THEN
+        PERFORM error('NameNotFound', -1, $1, 'param_type_name2id()', 'param_types');
+    END IF;
+    RETURN id;
+END
+$$ LANGUAGE plpgsql;
+
+CREATE TABLE sys_params (
+    sys_param_id        serial          PRIMARY KEY,
+    sys_param_name      varchar(32)     NOT NULL UNIQUE,
+    param_type_id       integer         NOT NULL
+            REFERENCES param_types(param_type_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
+    sys_param_value     text            DEFAULT NULL
+);
+
 -- //////////////////// ERROR LOGOK ////////////////////
 \i errlogs.sql
 -- //////////////////// Helyek/helyiségek ////////////////////
@@ -99,9 +138,6 @@ $$ LANGUAGE plpgsql;
 -- //////////////////// Felhasználók  ////////////////////
 \i users.sql
 
--- ********************************************************
--- ****                     LAN                        ****
--- ********************************************************
 \i nodes.sql
 \i services.sql
 \i mactab.sql

@@ -70,6 +70,7 @@ public:
         return *this;
     }
     /// Bővíti a listát egy elemmel. Az objektumról másolatot készít, és azt teszi be a konténerbe
+    /// @note A két << operátor lehet, hogy egy kicsit "beugratós", változtatni kéne ?
     tRecordList<T>& operator <<(const T& _o) {
         T * p =  dynamic_cast<T *>(_o.dup());
         this->append(p);
@@ -106,6 +107,7 @@ public:
     /// A konténer insert metódusának az újra definiálása
     void insert(int i, T *p)        { list().insert(i, p); }
     /// Hasonló a konténer insert metódusához, de az _o objektumot ujra allokálja a dup() metódus hívásával.
+    /// @note A két insert lehet, hogy egy kicsit "beugratós", változtatni kéne ?
     void insert(int i, const T& _o) { insert(i, dynamic_cast<T *>(_o.dup())); }
 
     /// Beolvassa az összes olyan rekordot, mely megfelel a pointerként átadott
@@ -382,6 +384,77 @@ public:
         }
         T *p = QList<T *>::front();
         QList<T *>::pop_front();
+        return p;
+    }
+    /// A megadott indexű pointert törli a konténerből, de a pointert nem szabadítja föl, hanem azzal tér vissza.
+    /// Ha a konténer nem tartalmazza a megadott indexű elemet, akkor dob egy kizárást, ha __ex igaz, vagy NULL pointerrel tér vissza, ha __ex hamis.
+    /// @param __ix A kiválasztott elem indexe a konténerben
+    /// @param __ex Opcionális flag, ha igaz (ez az alapértelmezés) akkor ha nincs találat, dob egy kizárást.
+    T *pullAt(int __ix, bool __ex = true) {
+        if (list().size() <= __ix) {
+            if (__ex == false) return NULL;
+            EXCEPTION(EFOUND, __ix);
+        }
+        T *p = QList<T *>::at(__ix);
+        QList<T *>::removeAt(__ix);
+        return p;
+    }
+    /// A megadott ID-jű objektumra mutató pointert törli a konténerből, de a pointert nem szabadítja föl, hanem azzal tér vissza.
+    /// Ha a konténer nem tartalmazza a megadott elemet, akkor dob egy kizárást, ha __ex igaz, vagy NULL pointerrel tér vissza, ha __ex hamis.
+    /// @param __id A keresett elem rekord azobosító ID-je
+    /// @param __ex Opcionális flag, ha igaz (ez az alapértelmezés) akkor ha nincs találat, dob egy kizárást.
+    T *pull(qlonglong __id, bool __ex = true) {
+        int ix = indexOf(__id);
+        if (0 > ix) {
+            if (__ex == false) return NULL;
+            EXCEPTION(EFOUND, __ex);
+        }
+        T *p = QList<T *>::at(ix);
+        QList<T *>::removeAt(ix);
+        return p;
+    }
+    /// A megadott nevű objektumra mutató pointert törli a konténerből, de a pointert nem szabadítja föl, hanem azzal tér vissza.
+    /// Ha a konténer nem tartalmazza a megadott elemet, akkor dob egy kizárást, ha __ex igaz, vagy NULL pointerrel tér vissza, ha __ex hamis.
+    /// @param __id A keresett elem rekord nevee
+    /// @param __ex Opcionális flag, ha igaz (ez az alapértelmezés) akkor ha nincs találat, dob egy kizárást.
+    T *pull(const QString __name, bool __ex = true) {
+        int ix = indexOf(__name);
+        if (0 > ix) {
+            if (__ex == false) return NULL;
+            EXCEPTION(EFOUND, __ex);
+        }
+        T *p = QList<T *>::at(ix);
+        QList<T *>::removeAt(ix);
+        return p;
+    }
+    /// A megadott nevű mező értékévlel egyezést mutató első objektumra mutató pointert törli a konténerből, de a pointert nem szabadítja föl, hanem azzal tér vissza.
+    /// Ha a konténer nem tartalmazza a megadott elemet, akkor dob egy kizárást, ha __ex igaz, vagy NULL pointerrel tér vissza, ha __ex hamis.
+    /// @param __fname Mező név
+    /// @param __val A keresett rekordban a megadott nevű mező értéke.
+    /// @param __ex Opcionális flag, ha igaz (ez az alapértelmezés) akkor ha nincs találat, dob egy kizárást.
+    T *pull(const QString __fname, const QVariant& __val, bool __ex = true) {
+        int ix = indexOf(__fname, __val);
+        if (0 > ix) {
+            if (__ex == false) return NULL;
+            EXCEPTION(EFOUND, __ex);
+        }
+        T *p = QList<T *>::at(ix);
+        QList<T *>::removeAt(ix);
+        return p;
+    }
+    /// A megadott nevű mező értékévlel egyezést mutató első objektumra mutató pointert törli a konténerből, de a pointert nem szabadítja föl, hanem azzal tér vissza.
+    /// Ha a konténer nem tartalmazza a megadott elemet, akkor dob egy kizárást, ha __ex igaz, vagy NULL pointerrel tér vissza, ha __ex hamis.
+    /// @param __fix Mező index
+    /// @param __val A keresett rekordban a megadott sorszámú mező értéke.
+    /// @param __ex Opcionális flag, ha igaz (ez az alapértelmezés) akkor ha nincs találat, dob egy kizárást.
+    T *pull(int __fix, const QVariant& __val, bool __ex = true) {
+        int ix = indexOf(__fix, __val);
+        if (0 > ix) {
+            if (__ex == false) return NULL;
+            EXCEPTION(EFOUND, __ex);
+        }
+        T *p = QList<T *>::at(ix);
+        QList<T *>::removeAt(ix);
         return p;
     }
 };

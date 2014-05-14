@@ -7,6 +7,185 @@
 EXT_ const QString& notifSwitch(int _ns, bool __ex = true);
 EXT_ int notifSwitch(const QString& _nm, bool __ex = true);
 
+/* ------------------------------ param_types ------------------------------ */
+int paramType(const QString& __n, bool __ex)
+{
+    if (__n == _sAny)       return PT_ANY;
+    if (__n == _sBoolean)   return PT_BOOLEAN;
+    if (__n == _sInteger)   return PT_INTEGER;
+    if (__n == _sReal)      return PT_REAL;
+    if (__n == _sChar)      return PT_CHAR;
+    if (__n == _sString)    return PT_STRING;
+    if (__n == _sInterval)  return PT_INTERVAL;
+    if (__n == _sIpaddress) return PT_IPADDRESS;
+    if (__n == _sURL)       return PT_URL;
+    if (__ex == true)       EXCEPTION(EDATA, -1, __n);
+    return PT_INVALID;
+}
+
+const QString& paramType(int __e, bool __ex)
+{
+    switch (__e) {
+    case PT_ANY:        return _sAny;
+    case PT_BOOLEAN:    return _sBoolean;
+    case PT_INTEGER:    return _sInteger;
+    case PT_REAL:       return _sReal;
+    case PT_CHAR:       return _sChar;
+    case PT_STRING:     return _sString;
+    case PT_INTERVAL:   return _sInterval;
+    case PT_IPADDRESS:  return _sIpaddress;
+    case PT_URL:        return _sURL;
+    }
+    if (__ex == true)   EXCEPTION(EDATA, __e);
+    return _sNul;
+}
+
+CRECCNTR(cParamType)
+CRECDEFD(cParamType)
+
+const cRecStaticDescr& cParamType::descr() const
+{
+    if (initPDescr<cParamType>(_sParamTypes)) {
+        CHKENUM(toIndex(_sParamTypeType), paramType)
+    }
+    return *_pRecordDescr;
+}
+
+qlonglong cParamType::insertNew(QSqlQuery& q, const QString& __n, const QString& __de, const QString __t, const QString __di, bool __ex)
+{
+    cParamType pp;
+    pp.setName(__n);
+    pp.set(_sParamTypeNote, __de);
+    pp.set(_sParamTypeType,  __t);
+    pp.set(_sParamTypeDim,   __di);
+    if (pp.isDefective()) {
+        if (__ex) EXCEPTION(EDATA, -1, __t);
+        return NULL_ID;
+    }
+    pp.insert(q, __ex);
+    return pp.getId();
+}
+
+qlonglong cParamType::insertNew(QSqlQuery& q, const QString& __n, const QString& __de, int __t, const QString __di, bool __ex)
+{
+    cParamType pp;
+    pp.setName(__n);
+    pp.set(_sParamTypeNote, __de);
+    pp.set(_sParamTypeType,  __t);
+    pp.set(_sParamTypeDim,   __di);
+    if (pp.isDefective()) {
+        if (__ex) EXCEPTION(EDATA, __t);
+        return NULL_ID;
+    }
+    pp.insert(q, __ex);
+    return pp.getId();
+}
+
+/*  */
+
+CRECCNTR(cSysParam)
+CRECDEFD(cSysParam)
+
+int cSysParam::_ixParamTypeId = NULL_IX;
+const cRecStaticDescr&  cSysParam::descr() const
+{
+    if (initPDescr<cSysParam>(_sSysParams)) {
+        _ixParamTypeId = _pRecordDescr->toIndex(_sParamTypeId);
+    }
+    return *_pRecordDescr;
+}
+
+void    cSysParam::toEnd()
+{
+    cSysParam::toEnd(_ixParamTypeId);
+}
+
+bool cSysParam::toEnd(int i)
+{
+    if (i == _ixParamTypeId) {
+        qlonglong id = _isNull(i) ? NULL_ID : variantToId(_get(i));
+        if (id == NULL_ID) {
+            paramType.clear();
+        }
+        else {
+            QSqlQuery q = getQuery();
+            if (!paramType.fetchById(q, id)) _stat |= ES_DEFECTIVE;
+        }
+        return true;
+    }
+    return false;
+}
+
+void    cSysParam::clearToEnd()
+{
+    paramType.clear();
+}
+
+/* ........................................................................ */
+
+cSysParams * cSysParams::instance = NULL;
+cSysParam  * cSysParams::null = NULL;
+
+cSysParams::cSysParams(QSqlQuery *__pq) : tRecordList<cSysParam>()
+{
+    pq = __pq;
+}
+
+void initSysParams(QSqlQuery *__pq, bool __ex)
+{
+    if (cSysParams::instance == NULL) {
+        cSysParams::instance = new cSysParams(__pq);
+        cSysParams::null     = new cSysParam();
+    }
+    else if (__ex) EXCEPTION(EPROGFAIL);
+}
+
+const cSysParam& getSysParam(const QString& __name)
+{
+    if (cSysParams::instance == NULL) EXCEPTION(EPROGFAIL);         // Nem volt még init, az gáz
+    int ix = cSysParams::instance->indexOf(__name);
+    if (ix < 0) {                                                   // Nincs a konténerbe
+        cSysParam *p = new cSysParam();
+        if (p->fetchByName(*cSysParams::instance->pq, __name)) {    // Ha sikerült beolvasni, az adatbázisból
+            cSysParams::instance->append(p);                        // betesszük a konténerbe
+            ix = cSysParams::instance->indexOf(__name);             // Mostmár a konténerbe kell(ene) lennie
+        }
+        else {
+            delete p;
+            return *cSysParams::instance->null;                                // Nincs ilyen, üres objektumal térünk vissza
+        }
+    }
+    if (ix < 0) EXCEPTION(EPROGFAIL);                               // Lehetetlen!!
+    return *cSysParams::instance->at(ix);                           // A keresett paraméter
+}
+
+bool setSysParam(cSysParam& __par)
+{
+    const cSysParam& o = getSysParam(__par.getName());
+    int idIndex = __par.idIndex();
+    if (o.isEmpty_()) {
+        __par[idIndex] = NULL_ID;
+        __par.insert(*cSysParams::instance->pq);          // Kiírjuk az adatbázisba
+        return false;
+    }
+    else {
+        __par[idIndex] = o[idIndex];
+        __par.update(*cSysParams::instance->pq, true);        // Módosítjuk a rekordot
+        delete cSysParams::instance->pull(__par.getName());   // A módosított elem régi értékét kihajítjuk a konténerből
+        return true;
+    }
+}
+/*
+bool setSysParam(const QString&  __type, const QString& __name, const QVariant& __val, bool __ex)
+{
+    cParamType  t;
+    t.fetchByName()
+    cSysParam   p;
+
+}
+*/
+/* ------------------------------ dxd_params ------------------------------ */
+
 /* ------------------------------ tpows ------------------------------ */
 DEFAULTCRECDEF(cTpow, _sTpows)
 /* ------------------------------ timeperiods ------------------------------ */
@@ -354,110 +533,95 @@ int addrType(const QString& __at, bool __ex)
 }
 
 /* ******************************  ****************************** */
-DEFAULTCRECDEF(cPortParam, _sPortParams)
 
-long cPortParam::insertNew(const QString& __n, const QString& __de, const QString __t, const QString __di)
+CRECCNTR(cPortParam)
+CRECDEFD(cPortParam)
+
+int cPortParam::_ixParamTypeId = NULL_IX;
+int cPortParam::_ixPortId = NULL_IX;
+const cRecStaticDescr&  cPortParam::descr() const
 {
-    cPortParam pp;
-    pp.setName(__n);
-    pp.set(_sPortParamNote, __de);
-    pp.set(_sPortParamType,  __t);
-    pp.set(_sPortParamDim,   __di);
-    QSqlQuery   *pq = newQuery();
-    pp.insert(*pq);
-    delete pq;
-    return pp.getId();
-}
-/* ........................................................................ */
-
-CRECCNTR(cPortParamValue)
-CRECDEFD(cPortParamValue)
-
-int cPortParamValue::_ixPortParamId = NULL_IX;
-int cPortParamValue::_ixPortId = NULL_IX;
-const cRecStaticDescr&  cPortParamValue::descr() const
-{
-    if (initPDescr<cPortParamValue>(_sPortParamValues)) {
-        _ixPortParamId = _pRecordDescr->toIndex(_sPortParamId);
+    if (initPDescr<cPortParam>(_sPortParas)) {
+        _ixParamTypeId = _pRecordDescr->toIndex(_sParamTypeId);
         _ixPortId      = _pRecordDescr->toIndex(_sPortId);
     }
     return *_pRecordDescr;
 }
 
-void    cPortParamValue::toEnd()
+void    cPortParam::toEnd()
 {
-    cPortParamValue::toEnd(_ixPortParamId);
+    cPortParam::toEnd(_ixParamTypeId);
 }
 
-bool cPortParamValue::toEnd(int i)
+bool cPortParam::toEnd(int i)
 {
-    if (i == _ixPortParamId) {
+    if (i == _ixParamTypeId) {
         qlonglong id = _isNull(i) ? NULL_ID : variantToId(_get(i));
         if (id == NULL_ID) {
-            portParam.clear();
+            paramType.clear();
         }
         else {
             QSqlQuery q = getQuery();
-            if (!portParam.fetchById(q, id)) _stat |= ES_DEFECTIVE;
+            if (!paramType.fetchById(q, id)) _stat |= ES_DEFECTIVE;
         }
         return true;
     }
     return false;
 }
 
-void    cPortParamValue::clearToEnd()
+void    cPortParam::clearToEnd()
 {
-    portParam.clear();
+    paramType.clear();
 }
 
 /* ........................................................................ */
 
-cPortParamValues::cPortParamValues() : tRecordList<cPortParamValue>()
+cPortParams::cPortParams() : tRecordList<cPortParam>()
 {
     ;
 }
 
-cPortParamValues::cPortParamValues(const cPortParamValue& __v) : tRecordList<cPortParamValue>(__v)
+cPortParams::cPortParams(const cPortParam& __v) : tRecordList<cPortParam>(__v)
 {
     ;
 }
 
-cPortParamValues::cPortParamValues(QSqlQuery& __q, qlonglong __port_id) : tRecordList<cPortParamValue>()
+cPortParams::cPortParams(QSqlQuery& __q, qlonglong __port_id) : tRecordList<cPortParam>()
 {
     fetch(__q, __port_id);
 }
 
-cPortParamValues::cPortParamValues(const cPortParamValues& __o) : tRecordList<cPortParamValue>()
+cPortParams::cPortParams(const cPortParams& __o) : tRecordList<cPortParam>()
 {
     *this = __o;
 }
 
-cPortParamValues& cPortParamValues::operator=(const cPortParamValues& __o)
+cPortParams& cPortParams::operator=(const cPortParams& __o)
 {   // Az ős template osztály ugyanezt definiálja (más a visszaadott érték típusa)
     clear();
     const_iterator i;
     for (i = __o.constBegin(); i < __o.constEnd(); i++) {
-        *this << new cPortParamValue(**i);
+        *this << new cPortParam(**i);
     }
     return *this;
 }
 
-const cPortParamValue& cPortParamValues::operator[](const QString& __n) const
+const cPortParam& cPortParams::operator[](const QString& __n) const
 {
-    cPortParam pp;
+    cParamType pp;
     if (!pp.fetchByName(__n)) EXCEPTION(EFOUND, 1, __n);
-    int i = indexOf(_sPortParamName, QVariant(__n));
+    int i = indexOf(_sParamTypeName, QVariant(__n));
     if (i < 0) EXCEPTION(EFOUND, 2, __n);
     return *at(i);
 }
 
-cPortParamValue&       cPortParamValues::operator[](const QString& __n)
+cPortParam&       cPortParams::operator[](const QString& __n)
 {
-    cPortParam pp;
+    cParamType pp;
     if (!pp.fetchByName(__n)) EXCEPTION(EFOUND, 1, __n);
-    int i = indexOf(_sPortParamName, QVariant(__n));
+    int i = indexOf(_sParamTypeName, QVariant(__n));
     if (i < 0) {
-        cPortParamValue * pr = new cPortParamValue();
+        cPortParam * pr = new cPortParam();
         pr->setType(pp.getId());
         append(pr);
         return *pr;
@@ -465,13 +629,13 @@ cPortParamValue&       cPortParamValues::operator[](const QString& __n)
     return *at(i);
 }
 
-int       cPortParamValues::insert(QSqlQuery &__q, qlonglong __port_id, bool __ex)
+int       cPortParams::insert(QSqlQuery &__q, qlonglong __port_id, bool __ex)
 {
     iterator i;
     for (i = begin(); i < end(); i++) {
-        (*i)->set(cPortParamValue::_ixPortId, QVariant(__port_id));
+        (*i)->set(cPortParam::_ixPortId, QVariant(__port_id));
     }
-    return tRecordList<cPortParamValue>::insert(__q, __ex);
+    return tRecordList<cPortParam>::insert(__q, __ex);
 }
 
 /* ------------------------------ cIfType ------------------------------ */
@@ -567,7 +731,7 @@ void cNPort::toEnd()
 bool cNPort::toEnd(int i)
 {
     if (idIndex() == i) {
-        atEndCont(params, cPortParamValue::_ixPortId);
+        atEndCont(params, cPortParam::_ixPortId);
         return true;
     }
     return false;
@@ -704,6 +868,11 @@ cNPort * cNPort::getPortObjById(QSqlQuery& q, qlonglong __port_id, bool __ex)
     return getPortObjById(q, tableoid, __port_id, __ex);
 }
 
+QString cNPort::getFullName(QSqlQuery& q, bool _ex)
+{
+    return cNode().getNameById(q, getId(), _ex) + ':' + getName();
+}
+
 /* ------------------------------ cPPort ------------------------------ */
 
 cPPort::cPPort() : cNPort(_no_init_)
@@ -773,7 +942,7 @@ bool cInterface::toEnd(int i)
 {
     if (idIndex() == i) {
         bool f;
-        f = atEndCont(params,    cPortParamValue::_ixPortId);
+        f = atEndCont(params,    cPortParam::_ixPortId);
         f = atEndCont(vlans,     cPortVlan::_ixPortId)       || f;
         f = atEndCont(addresses, cIpAddress::_ixPortId)      || f;
         if (f) trunkMembers.clear();    // Pontatlan, de nincs elég adat ...
@@ -1333,7 +1502,7 @@ cNPort *cNode::addSensors(const QString& __np, int __noff, int __from, int __to,
 bool cNode::fetchByIp(QSqlQuery& q, const QHostAddress& a)
 {
     clear();
-    QString sql = "SELECT nodes.* FROM nodes JOIN interfaces USING(node_id) JOIN ipaddresses USING(port_id) WHERE address = ?";
+    QString sql = QString("SELECT %1.* FROM %1 JOIN interfaces USING(node_id) JOIN ipaddresses USING(port_id) WHERE address = ?").arg(tableName());
     if (execSql(q, sql, a.toString())) {
         set(q);
         return true;
@@ -1344,7 +1513,7 @@ bool cNode::fetchByIp(QSqlQuery& q, const QHostAddress& a)
 int cNode::fetchByMac(QSqlQuery& q, const cMac& a)
 {
     clear();
-    QString sql = "SELECT nodes.* FROM nodes JOIN interfaces USING(node_id) WHERE hwaddress = ?";
+    QString sql = QString("SELECT %1.* FROM %1 JOIN interfaces USING(node_id) WHERE hwaddress = ?").arg(tableName());
     if (execSql(q, sql, a.toString())) {
         set(q);
         return true;

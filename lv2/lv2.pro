@@ -71,7 +71,8 @@ SOURCES += lanview.cpp \
     others.cpp \
     qsnmp.cpp \
     guidata.cpp \
-    import_parser.cpp
+    import_parser.cpp \
+    lv2daterr.cpp
 HEADERS += lanview.h \
     lv2_global.h \
     qsnmp.h \
@@ -94,7 +95,8 @@ HEADERS += lanview.h \
     lv2cont.h \
     doxydoc.h \
     import_parser.h \
-    strings.m4
+    strings.m4 \
+    lv2daterr.h
 
 FORMS += 
 

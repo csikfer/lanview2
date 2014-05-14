@@ -1,4 +1,12 @@
 -- ---------------------------------------------------------------------------
+
+CREATE TYPE reasons AS ENUM ('new', 'remove', 'expired', 'moved', 'updated', 'unchanged');
+ALTER TYPE reasons OWNER TO lanview2;
+COMMENT ON TYPE reasons IS
+'Okok
+';
+
+-- ---------------------------------------------------------------------------
 -- Apolication errors
 CREATE TABLE app_errs (
     applog_id   serial          PRIMARY KEY,
@@ -15,7 +23,7 @@ CREATE TABLE app_errs (
     err_msg     text            DEFAULT NULL,
     errno       integer         DEFAULT NULL,
     func_name   varchar(255)    DEFAULT NULL,
-    src_name    varchar(255)    DEFAULT NULL,
+    func_src    varchar(255)    DEFAULT NULL,
     src_line    integer         DEFAULT NULL
 );
 CREATE INDEX app_errs_date_of_index ON app_errs (date_of);
@@ -40,7 +48,7 @@ COMMENT ON COLUMN app_errs.err_subcode IS 'Error sub code, or integer parameter'
 COMMENT ON COLUMN app_errs.err_msg     IS 'Error message or string parameter';
 COMMENT ON COLUMN app_errs.errno       IS 'Sytem errno (errno actual value, nam feltétlenül kapcsolódik a hibához)';
 COMMENT ON COLUMN app_errs.func_name   IS 'Function full name.';
-COMMENT ON COLUMN app_errs.src_name    IS 'Code source name.';
+COMMENT ON COLUMN app_errs.func_src    IS 'Code source name.';
 COMMENT ON COLUMN app_errs.src_line    IS 'Code source line number.';
 
 CREATE OR REPLACE FUNCTION app_err_id2name(integer) RETURNS TEXT AS $$
@@ -94,6 +102,7 @@ INSERT INTO errors
     ( 'WDisabled',    'Warning',  'Warning, tiltott művelet '),
     ( 'DataWarn',     'Warning',  'Inconsisten data warning '),
     ( 'DropData',     'Warning',  'Az adat eldobásra került '),
+    ( 'RunTime',      'Warning',  'Futás idejű hiba '),
     ( 'SysDataErr',   'Fatal',    'System data Error in % table.'),
     ( 'UnknErrorId',  'Fatal',    'Unknown error id '),
     ( 'IdNotUni',     'Error',    'Record ID is not unique '),
@@ -122,11 +131,11 @@ CREATE TABLE db_errs (
     error_id    integer         NOT NULL
         REFERENCES errors(error_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
     user_id     integer         NOT NULL DEFAULT 0, -- REFERENCES users(user_id) még nincs definiálva, DEFAULT = nobody
-    tablename   varchar(64)     DEFAULT NULL,
+    table_name   varchar(64)     DEFAULT NULL,
     trigger_op  varchar(8)      DEFAULT NULL,
     err_subcode integer         DEFAULT NULL,
-    err_submsg  varchar(255)    DEFAULT NULL,
-    src_name    varchar(255)    DEFAULT NULL,
+    err_msg  varchar(255)    DEFAULT NULL,
+    func_name    varchar(255)    DEFAULT NULL,
     reapeat     integer         DEFAULT 0,
     date_of_last timestamp 	NOT NULL DEFAULT CURRENT_TIMESTAMP,
     acknowledged boolean 	DEFAULT false);
@@ -139,11 +148,11 @@ A rekord az erroer(...) függvénnyel hozható létre, függetlenül az aktuáli
 COMMENT ON COLUMN db_errs.date_of IS 'Az esemény bekövetkeztének az időpontja';
 COMMENT ON COLUMN db_errs.error_id IS 'A hiba azonosító';
 COMMENT ON COLUMN db_errs.user_id IS 'A hiba bekövetkezésekor az aktuális kapcsolathoz tartozó felhasználó azonosítója';
-COMMENT ON COLUMN db_errs.tablename IS 'A hib a eseményhez kapcsolódó tábla neve.';
+COMMENT ON COLUMN db_errs.table_name IS 'A hib a eseményhez kapcsolódó tábla neve.';
 COMMENT ON COLUMN db_errs.trigger_op IS 'Ha a hiba egy TRIGGER függvényben keletkezett, akko a triggert kiváltó esemény neve.';
 COMMENT ON COLUMN db_errs.err_subcode IS 'Másodlagos hiba kód, vagy numerikus hiba paraméter.';
-COMMENT ON COLUMN db_errs.err_submsg IS 'Másodlagos hiba üzenet, vagy szöveges hiba paraméter.';
-COMMENT ON COLUMN db_errs.src_name IS 'Az aktuális függvény neve, ahol a hiba történt.';
+COMMENT ON COLUMN db_errs.err_msg IS 'Másodlagos hiba üzenet, vagy szöveges hiba paraméter.';
+COMMENT ON COLUMN db_errs.func_name IS 'Az aktuális függvény neve, ahol a hiba történt.';
 COMMENT ON COLUMN db_errs.reapeat IS 'Ha kétszer nyugtázatlan azonos rekord keletkezne, akkor csak ez a számláló inkrementálódik.';
 COMMENT ON COLUMN db_errs.date_of_last IS 'Ha reapeat értéke 0, akkor azonos date_of-al, reapeat inkrementálásakor az aktuális idő kerül a mezőbe.';
 
@@ -151,7 +160,7 @@ CREATE OR REPLACE FUNCTION db_err_id2name(integer) RETURNS TEXT AS $$
 DECLARE
     name TEXT;
 BEGIN
-    SELECT src_name || ':' || err_name INTO name
+    SELECT func_name || ':' || err_name INTO name
         FROM db_errs JOIN errors USING(error_id)
         WHERE dblog_id = $1;
     IF NOT FOUND THEN
@@ -176,11 +185,11 @@ BEGIN
 	WHERE NOT acknowledged
 	 AND error_id    = NEW.error_id
 	 AND user_id     = NEW.user_id
-	 AND tablename   = NEW.tablename
+	 AND table_name   = NEW.table_name
 	 AND trigger_op  = NEW.trigger_op
 	 AND err_subcode = NEW.err_subcode
-	 AND err_submsg  = NEW.err_submsg
-	 AND src_name    = NEW.src_name
+	 AND err_msg  = NEW.err_msg
+	 AND func_name    = NEW.func_name
 	ORDER BY date_of_last DESC LIMIT 1;
     IF FOUND THEN
         UPDATE db_errors SET reapeat = err.reapeat +1, date_of_last = NOW() WHERE dblog_id = err.dblog_id;
@@ -288,7 +297,7 @@ BEGIN
     -- Tranzakción kívülröl kel (dblink-el) kiírni a log rekordot, mert visszagörgetheti
     PERFORM dblink_connect(con, 'dbname=lanview2');
     cmd := 'INSERT INTO db_errs'
-     || '(error_id, user_id, tablename, trigger_op, err_subcode, err_submsg, src_name) VALUES ('
+     || '(error_id, user_id, table_name, trigger_op, err_subcode, err_msg, func_name) VALUES ('
      || er.error_id   || ',' || ui || ',' || quote_nullable(tbln) || ','
      || quote_nullable(trgn) || ',' || subc || ',' || quote_nullable(subm) || ',' || quote_nullable(srcn)
      || ')';
@@ -321,7 +330,7 @@ Ha a megadott hiba név típusa nem  ''Ok'', vagy ''Warning'', akkor dob egy kiz
 
 CREATE OR REPLACE VIEW db_errors AS
     SELECT date_of, reapeat, error_name, error_type, error_note,
-           user_id, tablename, trigger_op, err_subcode, err_submsg, src_name
+           user_id, table_name, trigger_op, err_subcode, err_msg, func_name
     FROM db_errs JOIN errors USING(error_id);
 
 
@@ -354,7 +363,7 @@ BEGIN
         ui := 0;	-- nobody
     END IF;
     INSERT INTO db_errs
-	      (error_id, user_id, tablename, trigger_op, err_subcode, err_submsg, src_name)
+	      (error_id, user_id, table_name, trigger_op, err_subcode, err_msg, func_name)
 	   VALUES
 	      (er.error_id, ui, tbln, trgn, subc, subm, srcn)
 	   RETURNING * INTO re;

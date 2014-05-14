@@ -37,8 +37,6 @@ public:
     // snmp <vlan ix>.<client mac> => port snmp index
     $temp     = $snmp->walk('mib-2.17.7.1.2.2.1.2');
  */
-    /// Az SNMP lekérdezés OID-i.
-    cOId    mOId1, mOId2;
 };
 
 /// @class cDevicePMac
@@ -60,6 +58,11 @@ public:
     static const cService *pSrvSnmp;
     /// A releváns port objektumok pinterei, indexelve az SNMP id-re
     QMap<int, cInterface *>  ports;
+    /// Az SNMP lekérdezés OID-i.
+    static cOId    *pOId1;
+    static cOId    *pOId2;
+private:
+    enum eNotifSwitch snmpQuery(const cOId& __o, QMap<cMac, int>& macs);
 };
 
 

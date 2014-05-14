@@ -1066,7 +1066,7 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
 %token      LEFT_T DEFAULTS_T ENUM_T RIGHT_T VIEW_T INSERT_T EDIT_T
 %token      INHERIT_T NAMES_T HIDE_T VALUE_T DEFAULT_T FILTER_T FILTERS_T
 %token      ORD_T SEQUENCE_T MENU_T GUI_T OWN_T TOOL_T TIP_T WHATS_T THIS_T
-%token      EXEC_T TAG_T
+%token      EXEC_T TAG_T ANY_T BOOLEAN_T CHAR_T IPADDRESS_T REAL_T URL_T
 
 %token <i>  INTEGER_V
 %token <r>  FLOAT_V
@@ -1075,6 +1075,7 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
 %token <ip> IPV4_V IPV6_V
 %type  <i>  int int_ iexpr lnktype shar ipprotp ipprot offs ix_z vlan_t set_t
 %type  <i>  vlan_id place_id iptype pix pix_z pix_ iptype_a step timep image_id tmod int0
+%type  <i>  ptypen
 %type  <il> list_i pixs // ints
 %type  <b>  bool bool_on pattern
 %type  <r>  /* real */ num fexpr
@@ -1112,7 +1113,7 @@ command : macro
         | image
         | place
         | nodes
-        | ppar
+        | ptype
         | arp
         | link
         | srv
@@ -1314,7 +1315,20 @@ _toddef : TIME_T OF_T DAY_T str str FROM_T time TO_T time str_z	{ $$ = toddef($4
         ;
 toddef  : _toddef ';'               { delete $1; }
         ;
-ppar    : PORT_T PARAM_T str str str str_z ';'  { cPortParam::insertNew(*$3, *$4, *$5, *$6); delete $3; delete $4; delete $5; delete $6; }
+        /*
+ptype   : PARAM_T TYPE_T str str ptypen str_z ';'{ cParamType::insertNew(*$3, *$4, $5, *$6); delete $3; delete $4; delete $6; }
+        ;*/
+ptypen  : ANY_T                     { $$ = PT_ANY; }
+        | BOOLEAN_T                 { $$ = PT_BOOLEAN; }
+        | INTEGER_T                 { $$ = PT_INTEGER; }
+        | REAL_T                    { $$ = PT_REAL; }
+        | CHAR_T                    { $$ = PT_CHAR; }
+        | STRING_T                  { $$ = PT_STRING; }
+        | INTERVAL_T                { $$ = PT_INTERVAL; }
+        | IPADDRESS_T               { $$ = PT_IPADDRESS; }
+        | URL_T                     { $$ = PT_URL; }
+        ;
+syspar  : SYS_T PARAM_T str str '=' value   { setSysParam
         ;
 vlan    : VLAN_T int str str_z      {
                                         actVlanId = cVLan::insertNew($2, actVlanName = *$3, actVlanNote = *$4, true);
@@ -1997,7 +2011,7 @@ static int yylex(void)
         TOK(LEFT) TOK(DEFAULTS) TOK(ENUM) TOK(RIGHT) TOK(VIEW) TOK(INSERT) TOK(EDIT)
         TOK(INHERIT) TOK(NAMES) TOK(HIDE) TOK(VALUE) TOK(DEFAULT) TOK(FILTER) TOK(FILTERS)
         TOK(ORD) TOK(SEQUENCE) TOK(MENU) TOK(GUI) TOK(OWN) TOK(TOOL) TOK(TIP) TOK(WHATS) TOK(THIS)
-        TOK(EXEC) TOK(TAG)
+        TOK(EXEC) TOK(TAG) TOK(ANY) TOK(BOOLEAN) TOK(CHAR) TOK(IPADDRESS) TOK(REAL) TOK(URL)
         { "WST", WORKSTATION_T }, // rövidítések
         { "ATT", ATTACHED_T },
         { "INT", INTEGER_T },

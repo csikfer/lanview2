@@ -396,14 +396,16 @@ void    lanView::dbNotif(QString __s)
 void lanView::insertStart(QSqlQuery& q)
 {
     DBGFN();
-    if (!q.exec(QString("SELECT error('Start', %1, '%2')").arg(QCoreApplication::applicationPid()).arg(appName)))
-        SQLQUERYERR(q);
+    /* if (!q.exec(QString("SELECT error('Start', %1, '%2')").arg(QCoreApplication::applicationPid()).arg(appName)))
+        SQLQUERYERR(q);*/
+    cDbErr::insertNew(q, cDbErrType::_sStart, appName, QCoreApplication::applicationPid(), _sNil, _sNil);
 }
 
 void lanView::insertReStart(QSqlQuery& q) {
     DBGFN();
-    if (!q.exec(QString("SELECT error('ReStart', %1, '%2')").arg(QCoreApplication::applicationPid()).arg(appName)))
-        SQLQUERYERR(q);
+    /*if (!q.exec(QString("SELECT error('ReStart', %1, '%2')").arg(QCoreApplication::applicationPid()).arg(appName)))
+        SQLQUERYERR(q);*/
+    cDbErr::insertNew(q, cDbErrType::_sReStart, appName, QCoreApplication::applicationPid(), _sNil, _sNil);
 }
 
 bool lanView::subsDbNotif(const QString& __n, bool __ex)
