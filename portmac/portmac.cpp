@@ -170,7 +170,7 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
             if (!np.isNull(_sPortStapleId)) continue;
             // Ki kéne még hajítani az uplinkeket
             if (cLldpLink().getLinked(__q, np.getId())) continue; // Ez egy LLDP-vel felderített uplink
-            // meget a ports konténerbe az indexe
+            // mehet a ports konténerbe az indexe
         }
         else if (ifTypeName != _sMultiplexor) {
             // TRUNK-nal a TRUNK tagjaihoz van rendelve az uplink
@@ -191,7 +191,7 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
                 }
                 qlonglong pid = cLldpLink().getLinked(__q, ports[ix]->getId());
                 qlonglong hid = NULL_ID;
-                if (pid != NULL_ID) hid = cNode().setById(__q, pid);
+                if (pid != NULL_ID) hid = cNode().setById(__q, pid).getId();
                 if (first) {
                     first = false;
                     linkedNodeId = hid;
@@ -211,6 +211,13 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
         else {
             // Más típusű port nem érdekes.
             continue;
+        }
+        if (np.fetchParams(__q)) { // Ha van paraméter
+            static  qlonglong ptid = NULL_ID;
+            if (ptid == NULL_ID) ptid = cParamType().getIdByName(__q, _sSuspectedUplink);
+            int i = np.params.indexOf(_sParamTypeId, QVariant(ptid));
+            // Ha van "suspected_uplink" paraméter, és igaz, akkor nem foglalkozunk vele (csiki-csuki elkerülése)
+            if (i >= 0 && str2bool(np.params.at(i)->getName(_sParamValue))) continue;
         }
         ports.insert((int)np.getId(_sPortIndex), np.reconvert<cInterface>());
     }
@@ -243,8 +250,15 @@ enum eNotifSwitch cDevicePMac::run(QSqlQuery& q)
     if (RS_ON != (r = snmpQuery(*pOId2, macs))) return r;
 
     QMap<cMac, int>::iterator   i;
-    for (i = macs.begin(); i <= macs.end(); ++i) {
-
+    for (i = macs.begin(); i != macs.end(); ++i) {
+        const int   ix  = i.value();
+        QMap<int, cInterface *>::iterator pi = ports.find(ix);
+        if (pi == ports.end()) continue;    // Csak a konténerben lévő portok érdekesek
+        cMacTab mt;
+        mt.set(_sHwAddress, QVariant::fromValue(i.key()));
+        mt.setId(_sPortId, pi.value()->getId());
+        enum eReasons r = mt.replace(q);
+        if (r == R_DISCARD) ports.remove(ix);   // Lett neki egy "suspected_uplink" paramétere, igaz értékkel!
     }
 
     DBGFNL();
@@ -260,7 +274,7 @@ enum eNotifSwitch cDevicePMac::snmpQuery(const cOId& __o, QMap<cMac, int>& macs)
             QString msg = trUtf8("A %1 node SNMP hiba. OID:%2")
                     .arg(host().getName())
                     .arg(pOId1->toString());
-            cDbErr::insertNew(__q, cDbErrType::_sRunTime, msg, r, _sNil, APPNAME);
+            cDbErr::insertNew(cDbErrType::_sRunTime, msg, r, _sNil, APPNAME);
             break;
         }
         if (!(*pOId1 < snmp.name())) break;
@@ -271,7 +285,7 @@ enum eNotifSwitch cDevicePMac::snmpQuery(const cOId& __o, QMap<cMac, int>& macs)
                     .arg(host().getName())
                     .arg(pOId1->toString())
                     .arg(snmp.value().toString());
-            cDbErr::insertNew(__q, cDbErrType::_sRunTime, msg, r, _sNil, APPNAME);
+            cDbErr::insertNew(cDbErrType::_sRunTime, msg, r, _sNil, APPNAME);
             break;
         }
         if (!(ports.contains(pix))) continue;
@@ -281,10 +295,10 @@ enum eNotifSwitch cDevicePMac::snmpQuery(const cOId& __o, QMap<cMac, int>& macs)
                     .arg(host().getName())
                     .arg(pOId1->toString())
                     .arg(snmp.value().toString());
-            cDbErr::insertNew(__q, cDbErrType::_sRunTime, msg, r, _sNil, APPNAME);
+            cDbErr::insertNew(cDbErrType::_sRunTime, msg, r, _sNil, APPNAME);
             break;
         }
-        macs.insert(pix, cMac); // inser or replace
+        macs.insert(pix, mac); // inser or replace
         o = snmp.name();
     } while(true);
     return RS_ON;

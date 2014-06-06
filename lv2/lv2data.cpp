@@ -7,6 +7,45 @@
 EXT_ const QString& notifSwitch(int _ns, bool __ex = true);
 EXT_ int notifSwitch(const QString& _nm, bool __ex = true);
 
+int reasons(const QString& _r, bool __ex)
+{
+    if (_sNew      == _r) return R_NEW;
+    if (_sInsert   == _r) return R_INSERT;
+    if (_sRemove   == _r) return R_REMOVE;
+    if (_sExpired  == _r) return R_EXPIRED;
+    if (_sMove     == _r) return R_MOVE;
+    if (_sModify   == _r) return R_MODIFY;
+    if (_sUpdate   == _r) return R_UPDATE;
+    if (_sUnchange == _r) return R_UNCHANGE;
+    if (_sFound    == _r) return R_FOUND;
+    if (_sNotfound == _r) return R_NOTFOUND;
+    if (_sDiscard  == _r) return R_DISCARD;
+    if (_sError    == _r) return R_ERROR;
+    if (__ex == true)   EXCEPTION(EDATA, -1, _r);
+    return R_INVALID;
+}
+
+const QString& reasons(int _r, bool __ex)
+{
+    switch (_r) {
+    case R_NEW:         return _sNew;
+    case R_INSERT:      return _sInsert;
+    case R_REMOVE:      return _sRemove;
+    case R_EXPIRED:     return _sExpired;
+    case R_MOVE:        return _sMove;
+    case R_MODIFY:      return _sModify;
+    case R_UPDATE:      return _sUpdate;
+    case R_UNCHANGE:    return _sUnchange;
+    case R_FOUND:       return _sFound;
+    case R_NOTFOUND:    return _sNotfound;
+    case R_DISCARD:     return _sDiscard;
+    case R_ERROR:       return _sError;
+    }
+    if (__ex == true)   EXCEPTION(EDATA, _r);
+    return _sNul;
+
+}
+
 /* ------------------------------ param_types ------------------------------ */
 int paramType(const QString& __n, bool __ex)
 {
@@ -81,16 +120,128 @@ qlonglong cParamType::insertNew(QSqlQuery& q, const QString& __n, const QString&
     return pp.getId();
 }
 
+QString cParamType::paramToString(eParamType __t, const QVariant& __v, bool __ex)
+{
+    QString r;
+    bool ok = false;
+    if (__v.isNull()) {
+        if (__t == PT_BOOLEAN) return _sFalse;
+        ok = true;
+    }
+    else {
+        switch (__t) {
+        case PT_ANY:
+        case PT_STRING:
+        case PT_URL:
+            ok = __v.canConvert(QVariant::String);
+            if (ok) r = __v.toString();
+            break;
+        case PT_BOOLEAN: {
+            r = str2bool(__v.toString(), __ex) ? _sTrue : _sFalse;
+            ok = true;
+            break;
+        }
+        case PT_INTEGER:
+            ok = __v.canConvert(QVariant::LongLong);
+            if (ok) r = QString::number(__v.toLongLong());
+            break;
+        case PT_REAL:
+            ok = __v.canConvert(QVariant::Double);
+            if (ok) r = QString::number(__v.toDouble());
+            break;
+        case PT_CHAR:
+            ok = __v.canConvert(QVariant::Char);
+            if (ok) r = QString(1, __v.toChar());
+            break;
+        case PT_INTERVAL: {
+            qlonglong i;
+            if (__v.canConvert(QVariant::LongLong)) {
+                i = __v.toLongLong(&ok);
+            }
+            else {
+                if (__v.canConvert(QVariant::String)) {
+                    i = parseTimeInterval(__v.toString(), &ok);
+                }
+            }
+            if (ok) {
+                r = intervalToStr(i);
+            }
+            break;
+        }
+        case PT_IPADDRESS: {
+            int mtid = __v.userType();
+            if (mtid == _UMTID_netAddress) {
+                r = __v.value<netAddress>().toString();
+                ok = true;
+            }
+            else if (mtid == _UMTID_QHostAddress) {
+                r = __v.value<QHostAddress>().toString();
+                ok = true;
+            }
+            else if (metaIsString(mtid)) {
+                r = __v.toString();
+                ok = true;
+            }
+        }
+        case PT_INVALID:
+            break;
+        }
+    }
+    if (!ok && __ex) EXCEPTION(EDATA, __t, debVariantToString(__v));
+    return r;
+}
+
+QVariant cParamType::paramFromString(eParamType __t, QString& __v, bool __ex)
+{
+    QVariant r;
+    bool    ok = true;
+    if (__v.isNull()) {
+        if (__t == PT_BOOLEAN) r = QVariant(false);
+    }
+    else {
+        switch (__t) {
+        case PT_ANY:
+        case PT_STRING:
+        case PT_URL:        r = QVariant(__v);                   break;
+        case PT_BOOLEAN:    r = QVariant(str2bool(__v));         break;
+        case PT_INTEGER:    r = QVariant(__v.toLongLong(&ok));   break;
+        case PT_REAL:       r = QVariant(__v.toDouble(&ok));
+        case PT_INTERVAL:   r = QVariant(parseTimeInterval(__v, &ok));   break;
+        case PT_IPADDRESS: {
+            netAddress  na;
+            ok = na.setr(__v).isValid();
+            if (ok) r = QVariant::fromValue(na);
+            break;
+        }
+        case PT_CHAR:
+            if (__v.isEmpty()) { break; }       // NULL
+            if (__v.size() > 1){ ok = false; }
+            r = QVariant(__v.at(0));
+            break;
+        default:
+            ok = false;
+            break;
+        }
+    }
+    if (!ok) {
+        if (__ex) EXCEPTION(EDATA, (int)__t, __v);
+        r.clear();
+    }
+    return r;
+}
+
 /*  */
 
 CRECCNTR(cSysParam)
 CRECDEFD(cSysParam)
 
 int cSysParam::_ixParamTypeId = NULL_IX;
+int cSysParam::_ixSysParamValue = NULL_IX;
 const cRecStaticDescr&  cSysParam::descr() const
 {
     if (initPDescr<cSysParam>(_sSysParams)) {
-        _ixParamTypeId = _pRecordDescr->toIndex(_sParamTypeId);
+        _ixParamTypeId   = _pRecordDescr->toIndex(_sParamTypeId);
+        _ixSysParamValue = _pRecordDescr->toIndex(_sSysParamValue);
     }
     return *_pRecordDescr;
 }
@@ -121,70 +272,18 @@ void    cSysParam::clearToEnd()
     paramType.clear();
 }
 
-/* ........................................................................ */
-
-cSysParams * cSysParams::instance = NULL;
-cSysParam  * cSysParams::null = NULL;
-
-cSysParams::cSysParams(QSqlQuery *__pq) : tRecordList<cSysParam>()
+QVariant cSysParam::value(bool __ex) const
 {
-    pq = __pq;
+    QString v = getName(_ixSysParamValue);
+    return cParamType::paramFromString((enum eParamType)valueType(), v, __ex);
 }
 
-void initSysParams(QSqlQuery *__pq, bool __ex)
+cSysParam& cSysParam::setValue(const QVariant& __v, bool __ex)
 {
-    if (cSysParams::instance == NULL) {
-        cSysParams::instance = new cSysParams(__pq);
-        cSysParams::null     = new cSysParam();
-    }
-    else if (__ex) EXCEPTION(EPROGFAIL);
+    QString v = cParamType::paramToString((enum eParamType)valueType(), __v, __ex);
+    setName(_ixSysParamValue, v);
+    return *this;
 }
-
-const cSysParam& getSysParam(const QString& __name)
-{
-    if (cSysParams::instance == NULL) EXCEPTION(EPROGFAIL);         // Nem volt még init, az gáz
-    int ix = cSysParams::instance->indexOf(__name);
-    if (ix < 0) {                                                   // Nincs a konténerbe
-        cSysParam *p = new cSysParam();
-        if (p->fetchByName(*cSysParams::instance->pq, __name)) {    // Ha sikerült beolvasni, az adatbázisból
-            cSysParams::instance->append(p);                        // betesszük a konténerbe
-            ix = cSysParams::instance->indexOf(__name);             // Mostmár a konténerbe kell(ene) lennie
-        }
-        else {
-            delete p;
-            return *cSysParams::instance->null;                                // Nincs ilyen, üres objektumal térünk vissza
-        }
-    }
-    if (ix < 0) EXCEPTION(EPROGFAIL);                               // Lehetetlen!!
-    return *cSysParams::instance->at(ix);                           // A keresett paraméter
-}
-
-bool setSysParam(cSysParam& __par)
-{
-    const cSysParam& o = getSysParam(__par.getName());
-    int idIndex = __par.idIndex();
-    if (o.isEmpty_()) {
-        __par[idIndex] = NULL_ID;
-        __par.insert(*cSysParams::instance->pq);          // Kiírjuk az adatbázisba
-        return false;
-    }
-    else {
-        __par[idIndex] = o[idIndex];
-        __par.update(*cSysParams::instance->pq, true);        // Módosítjuk a rekordot
-        delete cSysParams::instance->pull(__par.getName());   // A módosított elem régi értékét kihajítjuk a konténerből
-        return true;
-    }
-}
-/*
-bool setSysParam(const QString&  __type, const QString& __name, const QVariant& __val, bool __ex)
-{
-    cParamType  t;
-    t.fetchByName()
-    cSysParam   p;
-
-}
-*/
-/* ------------------------------ dxd_params ------------------------------ */
 
 /* ------------------------------ tpows ------------------------------ */
 DEFAULTCRECDEF(cTpow, _sTpows)
@@ -2257,6 +2356,45 @@ cHostService& cHostService::magic2prop()
 }
 
 /* ----------------------------------------------------------------- */
+CRECCNTR(cMacTab);
+
+int cMacTab::_ixPortId    = NULL_IX;
+int cMacTab::_ixHwAddress = NULL_IX;
+int cMacTab::_ixSetType   = NULL_IX;
+int cMacTab::_ixMacTabState=NULL_IX;
+
+
+const cRecStaticDescr& cMacTab::descr() const
+{
+    if (initPDescr<cMacTab>(_sMacTab)) {
+        _ixHwAddress = _descr_cMacTab().toIndex(_sHwAddress);
+        _ixPortId    = _descr_cMacTab().toIndex(_sPortId);
+        _ixSetType   = _descr_cMacTab().toIndex(_sSetType);
+        _ixMacTabState=_descr_cMacTab().toIndex(_sMacTabState);
+    }
+    return *_pRecordDescr;
+}
+CRECDEFD(cMacTab)
+
+enum eReasons cMacTab::replace(QSqlQuery& __q)
+{
+    QString sql = "SELECT insert_or_update_mactab(?,?";
+    if (!isNull(_ixSetType))     sql += _sComaQ;
+    if (!isNull(_ixMacTabState)) sql += _sComaQ;
+    sql += _sABraE;
+    if (!__q.prepare(sql)) SQLPREPERR(__q, sql);
+    bind(_ixPortId,    __q, 0);
+    bind(_ixHwAddress, __q, 1);
+    int i = 2;
+    if (!isNull(_ixSetType))     bind(_ixSetType, __q, i++);
+    if (!isNull(_ixMacTabState)) bind(_ixMacTabState, __q, i);
+    if (!__q.exec()) SQLQUERYERR(__q);
+    __q.first();
+    enum eReasons r = (enum eReasons) reasons(__q.value(0).toString(), false);
+    return r;
+}
+
+/* ----------------------------------------------------------------- */
 CRECCNTR(cArp);
 
 int cArp::_ixIpAddress = NULL_IX;
@@ -2284,17 +2422,16 @@ cArp::operator cMac() const
     return get(_ixHwAddress).value<cMac>();
 }
 
-enum cArp::eReplaceResult cArp::replace(QSqlQuery& __q)
+enum eReasons cArp::replace(QSqlQuery& __q)
 {
     QString sql = "SELECT insert_or_update_arp(?,?)";
     if (!__q.prepare(sql)) SQLPREPERR(__q, sql);
-    __q.bindValue(0, descr().colDescr(_ixIpAddress).toSql(get(_ixIpAddress)));
-    __q.bindValue(1, descr().colDescr(_ixHwAddress).toSql(get(_ixHwAddress)));
+    bind(_ixIpAddress, __q, 0);
+    bind(_ixHwAddress, __q, 1);
     if (!__q.exec()) SQLQUERYERR(__q);
-    bool ok = false;
     __q.first();
-    enum eReplaceResult r = (enum eReplaceResult) __q.value(0).toInt(&ok);
-    return ok ? r : RR_ERROR;
+    enum eReasons r = (enum eReasons) reasons(__q.value(0).toString(), false);
+    return r;
 }
 
 #ifdef MUST_SCAN
@@ -2365,6 +2502,8 @@ cMac cArp::ip2mac(QSqlQuery& __q, const QHostAddress& __a, bool __ex)
     DERR() << em << endl;
     return cMac();
 }
+
+/* ----------------------------------------------------------------- */
 
 /* ----------------------------------------------------------------- */
 bool LinkUnlink(QSqlQuery& q, cRecord& o, qlonglong __pid)

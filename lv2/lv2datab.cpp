@@ -113,7 +113,7 @@ qlonglong tableoid(QSqlQuery q, const QString& __t, qlonglong __sid, bool __ex)
     q.bindValue(1, __sid);
     if (!q.exec()) SQLQUERYERR(q);
     if (!q.first()) {
-        if (__ex) EXCEPTION(EDBDATA, 0, QString("Table %1.%2 OID not found.").arg(__sid).arg(__t));
+        if (__ex) EXCEPTION(EDBDATA, 0, QString("Table [#%1].%2 OID not found.").arg(__sid).arg(__t));
         return NULL_ID;
     }
     return q.value(0).toInt();
@@ -1321,6 +1321,26 @@ qlonglong parseTimeInterval(const QString& s, bool *pOk)
     return ok ? r : NULL_ID;
 }
 
+/// Egy mSec-ben megadott időintervallum stringgé konvertálása
+QString intervalToStr(qlonglong i)
+{
+    QString is;
+    qlonglong j = i % 1000;
+    i /= 1000;
+    if (j) is = _sPoint + QString::number(j);
+    is = QString::number(i % 60) + is;
+    i /= 60;
+    is = QString::number(i % 60) + _sColon + is;
+    i /= 60;
+    is = QString::number(i % 24) + _sColon + is;
+    i /= 24;
+    if (i) {
+        is = (i == 1 ? "DAY " : "DAYS ") + QString::number(i) + _sSpace + is;
+    }
+    return is;
+
+}
+
 /// Az intervallum qlonglong-ban tárolódik, és mSec-ben értendő.
 /// Negatív tartomány nincs értelmezve, és az óra:perc:másodperc formán túl csak a napok megadása támogatott.
 QVariant  cColStaticDescrInterval::fromSql(const QVariant& _f) const
@@ -1336,21 +1356,8 @@ QVariant  cColStaticDescrInterval::toSql(const QVariant& _f) const
 {
     _DBGFN() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
     if (_f.isNull()) EXCEPTION(EDATA,-1,"Data is NULL");
-    QString is;
     qlonglong i = variantToId(_f);
-    qlonglong j = i % 1000;
-    i /= 1000;
-    if (j) is = _sPoint + QString::number(j);
-    is = QString::number(i % 60) + is;
-    i /= 60;
-    is = QString::number(i % 60) + _sColon + is;
-    i /= 60;
-    is = QString::number(i % 24) + _sColon + is;
-    i /= 24;
-    if (i) {
-        is = (i == 1 ? "DAY " : "DAYS ") + QString::number(i) + _sSpace + is;
-    }
-    return QVariant(is);
+    return QVariant(intervalToStr(i));
 
 }
 /// Egy időintervallum értéket konvertál, a tárolási tíousra (mSec)
@@ -2344,17 +2351,7 @@ bool cRecord::insert(QSqlQuery& __q, bool _ex)
     int i = 0;  // Nem null mezők indexe
     // PDEB(VVERBOSE) << "Insert cmd :" << sql << endl;
     for (int ix = 0; ix < recDescr.cols(); ++ix) {           // ix: mező index a rekordban
-        const cColStaticDescr& f = recDescr.colDescr(ix);
-        if (!isNull(ix)) {
-            QVariant v = f.toSql(get(ix));
-            // PDEB(VVERBOSE) << "bind #" << i << " value : " << v.toString() << endl;
-            QSql::ParamType t = QSql::In;
-            if (f.eColType == f.FT_BINARY) {
-                t |= QSql::Binary;
-            }
-            __q.bindValue(i, v, t);
-            ++i;
-        }
+        if (!isNull(ix)) bind(ix, __q, i++);
     }
     bool r;
     if (!(r = __q.exec())) {
@@ -2381,14 +2378,7 @@ bool cRecord::query(QSqlQuery& __q, const QString& sql, const tIntVector& __arg,
 {
     if (!__q.prepare(sql)) SQLPREPERR(__q, sql);
     for (int i = 0; i < __arg.size(); ++i) {
-        const cColStaticDescr f = descr().colDescr(__arg[i]);
-        const QVariant& v = f.toSql(get(__arg[i]));
-        // PDEB(VVERBOSE) << "bind #" << j << " value : " <<  v.toString() << endl;
-        QSql::ParamType t = QSql::In;
-        if (f.eColType == f.FT_BINARY) {
-            t |= QSql::Binary;
-        }
-        __q.bindValue(i, v, t);
+        bind(__arg[i], __q, i);
     }
     bool r = __q.exec();
     if (__ex && !r) SQLQUERYERR(__q);
@@ -2399,15 +2389,10 @@ bool cRecord::query(QSqlQuery& __q, const QString& sql, const QBitArray& _fm, bo
 {
     if (!__q.prepare(sql)) SQLPREPERR(__q, sql);
     int i,j;
-    for (i = j = 0; _fm.size() > i; i++) if (_fm.at(i) && false == get(i).isNull()) {
-        const cColStaticDescr& f = descr().colDescr(i);
-        const QVariant& v = f.toSql(get(i));
-        // PDEB(VVERBOSE) << "bind #" << j << " value : " <<  v.toString() << endl;
-        QSql::ParamType t = QSql::In;
-        if (f.colType == "bytea") {
-            t |= QSql::Binary;
+    for (i = j = 0; _fm.size() > i; i++) {
+        if (_fm.at(i) && false == get(i).isNull()) {
+            bind(i, __q, j++);
         }
-        __q.bindValue(j++, v, t);
     }
     bool r = __q.exec();
     if (__ex && !r) SQLQUERYERR(__q);
@@ -2580,17 +2565,14 @@ bool cRecord::update(QSqlQuery& __q, bool __only, const QBitArray& __set, const 
     if (!__q.prepare(sql)) SQLPREPERR(__q, sql)
     for (j = i = 0; i < bset.size(); i++) {
         if (bset[i] && false == get(i).isNull()) {
-            const cColStaticDescr& f = descr().colDescr(i);
-            QSql::ParamType t = QSql::In;
-            if (f.colType == "bytea") {
-                t |= QSql::Binary;
-            }
-            __q.bindValue(j++, f.toSql(get(i)), t);
+            bind(i, __q, j++);
         }
     }
-    for (i = 0; i < where.size(); i++)
-        if (where[i] && false == get(i).isNull())
-            __q.bindValue(j++, descr().colDescr(i).toSql(get(i)));
+    for (i = 0; i < where.size(); i++) {
+        if (where[i] && false == get(i).isNull()) {
+            bind(i, __q, j++);
+        }
+    }
     bool r;
 
     if (!(r = __q.exec())) {

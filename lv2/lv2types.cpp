@@ -313,6 +313,14 @@ netAddress& netAddress::set(const QString& __n, int __m )
     return *this;
 }
 
+netAddress& netAddress::setr(const QString& __n, int __m)
+{
+    if (set(__n, __m).    isValid()) return *this;
+    if (setNetByName(__n).isValid()) return *this;
+    return setAddressByName(__n);
+}
+
+
 netAddress& netAddress::setMask(int __m)
 {
     if (__m > 0) {

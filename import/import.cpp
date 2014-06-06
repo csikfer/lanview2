@@ -167,14 +167,16 @@ lv2import::lv2import() : lanView(), fileNm(), in()
         subsDbNotif();
     }
     if (args.count() > 1) DWAR() << trUtf8("Invalid arguments : ") << args.join(_sSpace) << endl;
-    pq = newQuery();
-    if (daemonMode) return;
-    insertStart(*pq);
-    if (!userName.isNull()) {
-        userId = cUser().getIdByName(userName);
-        if (userId == NULL_ID) EXCEPTION(EFOUND,-1,userName);
-        if (!pq->exec(QString("SELECT set_user_id(%1)").arg(userId))) SQLQUERYERR(*pq);
-    }
+    try {
+        pq = newQuery();
+        if (daemonMode) return;
+        insertStart(*pq);
+        if (!userName.isNull()) {
+            userId = cUser().getIdByName(userName);
+            if (userId == NULL_ID) EXCEPTION(EFOUND,-1,userName);
+            if (!pq->exec(QString("SELECT set_user_id(%1)").arg(userId))) SQLQUERYERR(*pq);
+        }
+    } CATCHS(lastError)
 }
 
 lv2import::~lv2import()

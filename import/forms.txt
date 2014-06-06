@@ -266,6 +266,15 @@ TABLE SHAPE arps "ARP tábla" {
     TABLE INSERT RIGHTS system;
 }
 
+DELETE TABLE SHAPE mactab;
+TABLE SHAPE mactab "Port címtábla" {
+    SET DEFAULTS;
+    TABLE VIEW   RIGHTS operator;
+    TABLE EDIT   RIGHTS admin;
+    TABLE DELETE RIGHTS admin;
+    TABLE INSERT RIGHTS admin;
+}
+
 // ***************************************************************************************
 // GUI
 
@@ -316,12 +325,26 @@ TABLE SHAPE enum_vals "Enumerációs értékek" {
     TABLE TYPE simple;
 }
 
+DELETE TABLE SHAPE param_types;
+TABLE SHAPE param_types "Paraméter típus leírók" {
+    SET DEFAULTS;
+    TABLE TYPE simple;
+}
+
+DELETE TABLE SHAPE sys_params;
+TABLE SHAPE sys_params "Rendszer paraméterek" {
+    SET DEFAULTS;
+    TABLE TYPE simple;
+}
+
 DELETE GUI lv2gui MENU;
 
 GUI lv2gui {
   file MENU "fájl" {
     setup OWN setup "Beállítások";
-    restart EXEC restart "Ujraindítás";
+    sys_params SHAPE sys_params "Rendszer paraméterek";
+    param_types SHAPE param_types "Paraméter típus leírók";
+    restart EXEC restart "Újraindítás";
     exit EXEC exit "Kilép";
   }
   objects MENU "Objektumok" {
@@ -339,6 +362,7 @@ GUI lv2gui {
   }
   others MENU "Egyéb táblák" {
     arps   SHAPE arps "ARP tábla";
+    mactab SHAPE mactab "Port címtáblák";
   }
   gui MENU "Megjelenítés" {
     shapes SHAPE table_shapes "Táblák megjelenítése";

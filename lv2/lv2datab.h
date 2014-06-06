@@ -320,6 +320,8 @@ inline static QString stringArrayFromSql(const QVariant& __f, const QString& __s
 /// @param __s Szeparátor a joint() híváshoz.
 inline static QString stringArrayFromSql(const QVariant& __f, const QChar& __s)     { return stringArrayFromSql(__f).join(__s); }
 
+qlonglong parseTimeInterval(const QString& s, bool *pOk);
+QString intervalToStr(qlonglong i);
 
 /* ******************************************************************************************************
    *                                         cColStaticDescrList                                        *
@@ -1428,13 +1430,107 @@ public:
     bool _isLike(int __ix) const { return __ix < 0 || _likeMask.size() <= __ix ? false : _likeMask[__ix]; }
     /// Az aktuális időt írja a last_time nevű mezőbe, az első módosított rekord aktuális tartalmát visszaolvassa.
     /// Azt, hogy mely rekordokat kell módosítani, az objektum adattartalma határozza meg
-    /// A last_time nevű mező törlése után azok a rekordok lesznek módosítva, melyeket az o.completion() beolvasna, de a
-    /// módosítandó mező ki van zárva a feltételből.
+    /// Azok a rekordok lesznek módosítva, melyeket az o.completion() beolvasna, de a módosítandó mező ki van zárva a feltételből.
     /// @param q Az adatbázis művelethez használható query objektum.
     /// @param _fn Opcionális paraméter, ha megadjuk akkor nem a last_time lessz módosítva, hanem a megadott nevű mező.
     /// @return A módosított rekordok száma. Ha üres objektummal hívjuk, akkor -1
     int touch(QSqlQuery& q, const QString &_fn = _sNul);
+    /// Az aktuális időt írja a megadott indexű mezőbe, az első módosított rekord aktuális tartalmát visszaolvassa.
+    /// Azt, hogy mely rekordokat kell módosítani, az objektum adattartalma határozza meg
+    /// Azok a rekordok lesznek módosítva, melyeket az o.completion() beolvasna, de a módosítandó mező ki van zárva a feltételből.
+    /// @param q Az adatbázis művelethez használható query objektum.
+    /// @param _fi A módosítandó mező indexe.
+    /// @return A módosított rekordok száma. Ha üres objektummal hívjuk, akkor -1
     int touch(QSqlQuery& q, int _fi) { return touch(q, columnName(_fi)); }
+
+    const cColStaticDescr& colDescr(int _ix) const { return descr().colDescr(_ix); }
+
+    /// Paraméter megadása (bind) egy SQL lekérdezéshez, ahol a paraméter érték a rekord objektum egy mezője.
+    /// @param _ix A mező indexe a rekord objektumban
+    /// @param __q A lekérdezéshez használt objektum.
+    /// @param _i  A paraméter indexe a lekérdezésben
+    const cRecord& bind(int _ix, QSqlQuery& __q, int _i) const {
+        const cColStaticDescr& f = colDescr(_ix);
+        QSql::ParamType t = f.eColType == cColStaticDescr::FT_BINARY ? QSql::In | QSql::Binary : QSql::In;
+        __q.bindValue(_i, f.toSql(get(_ix)), t);
+        return *this;
+    }
+    /// Paraméter megadása (bind) egy SQL lekérdezéshez, ahol a paraméter érték a rekord objektum egy mezője.
+    /// @param _fn A mező neve a rekord objektumban
+    /// @param __q A lekérdezéshez használt objektum.
+    /// @param _i  A paraméter indexe a lekérdezésben
+    const cRecord& bind(const QString& _fn, QSqlQuery& __q, int _i) const {
+        return bind(toIndex(_fn), __q, _i);
+    }
+    /// Paraméter megadása (bind) egy SQL lekérdezéshez, ahol a paraméter érték a rekord objektum egy mezője.
+    /// @param _ix A mező indexe a rekord objektumban
+    /// @param __q A lekérdezéshez használt objektum.
+    /// @param _ph  A paraméter neve a lekérdezésben
+    const cRecord& bind(int _ix, QSqlQuery& __q, const QString& _ph) const {
+        const cColStaticDescr& f = colDescr(_ix);
+        QSql::ParamType t = f.eColType == cColStaticDescr::FT_BINARY ? QSql::In | QSql::Binary : QSql::In;
+        __q.bindValue(_ph, f.toSql(get(_ix)), t);
+        return *this;
+    }
+    /// Paraméter megadása (bind) egy SQL lekérdezéshez, ahol a paraméter érték a rekord objektum egy mezője.
+    /// @param _fn A mező neve a rekord objektumban
+    /// @param __q A lekérdezéshez használt objektum.
+    /// @param _ph  A paraméter neve a lekérdezésben
+    const cRecord& bind(const QString _fn, QSqlQuery& __q, const QString& _ph) const {
+        return bind(toIndex(_fn), __q, _ph);
+    }
+    /// Paraméter megadása (bind) egy SQL lekérdezéshez, ahol a paraméter érték a rekord objektum egy mezője.
+    /// @param __q A lekérdezéshez használt objektum.
+    /// @param _i A mező indexe a rekord objektumban éa a paraméter indexe a lekérdezésben
+    const cRecord& bind(int _i,  QSqlQuery& __q) const {
+        return bind(_i, __q, _i);
+    }
+    /// Paraméter megadása (bind) egy SQL lekérdezéshez, ahol a paraméter érték a rekord objektum egy mezője.
+    /// @param __q A lekérdezéshez használt objektum.
+    /// @param _n A mező neve a rekord objektumban és a paraméter neve a lekérdezésben
+    const cRecord& bind(const QString _n,  QSqlQuery& __q) const {
+        return bind(_n, __q, _n);
+    }
+    /// Egy SQL lekérdezésből egy érték bemásolása a rekord objektum egy mezőjébe.
+    /// @param _ix A cél mező indexe
+    /// @param __q A lekérdezés eredményét tartalmazó objektum
+    /// @param _i Az adat indexe a lekérdezés eredményében
+    cRecord& setq(int _ix, QSqlQuery& __q, int _i) {
+        return set(_ix, descr().colDescr(_ix).fromSql(__q.value(_i)));
+    }
+    /// Egy SQL lekérdezésből egy érték bemásolása a rekord objektum egy mezőjébe.
+    /// @param _fn A cél mező neve
+    /// @param __q A lekérdezés eredményét tartalmazó objektum
+    /// @param _i Az adat indexe a lekérdezés eredményében
+    cRecord& setq(const QString& _fn, QSqlQuery& __q, int _i) {
+        return setq(toIndex(_fn), __q, _i);
+    }
+    /// Egy SQL lekérdezésből egy érték bemásolása a rekord objektum egy mezőjébe.
+    /// @param _ix A cél mező indexe
+    /// @param __q A lekérdezés eredményét tartalmazó objektum
+    /// @param _rn Az adat neve a lekérdezés eredményében
+    cRecord& setq(int _ix, QSqlQuery& __q, const QString& _rn) {
+        return set(_ix, descr().colDescr(_ix).fromSql(__q.value(_rn)));
+    }
+    /// Egy SQL lekérdezésből egy érték bemásolása a rekord objektum egy mezőjébe.
+    /// @param _fn A cél mező neve
+    /// @param __q A lekérdezés eredményét tartalmazó objektum
+    /// @param _rn Az adat neve a lekérdezés eredményében
+    cRecord& setq(const QString& _fn, QSqlQuery& __q, const QString& _rn) {
+        return setq(toIndex(_fn), __q, _rn);
+    }
+    /// Egy SQL lekérdezésből egy érték bemásolása a rekord objektum egy mezőjébe.
+    /// @param _ix A cél mező indexe és az adat indexe a lekérdezés eredményében
+    /// @param __q A lekérdezés eredményét tartalmazó objektum
+    cRecord& setq(int _ix, QSqlQuery& __q) {
+        return setq(_ix, __q, _ix);
+    }
+    /// Egy SQL lekérdezésből egy érték bemásolása a rekord objektum egy mezőjébe.
+    /// @param _fn A cél mező neve és az adat neve a lekérdezés eredményében
+    /// @param __q A lekérdezés eredményét tartalmazó objektum
+    cRecord& setq(const QString& _fn, QSqlQuery& __q) {
+        return setq(_fn, __q, _fn);
+    }
 protected:
     /// Copy constructor. Nem támogatott konstruktor. Dob egy kizárást.
     cRecord(const cRecord& __o);

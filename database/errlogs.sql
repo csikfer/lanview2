@@ -1,10 +1,3 @@
--- ---------------------------------------------------------------------------
-
-CREATE TYPE reasons AS ENUM ('new', 'remove', 'expired', 'moved', 'updated', 'unchanged');
-ALTER TYPE reasons OWNER TO lanview2;
-COMMENT ON TYPE reasons IS
-'Okok
-';
 
 -- ---------------------------------------------------------------------------
 -- Apolication errors

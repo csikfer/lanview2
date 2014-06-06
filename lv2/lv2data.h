@@ -10,6 +10,27 @@
 Az adatbázis interfész objektumok.
 */
 
+/// @enum eReasons
+/// @brief Okok ill. műveletek eredményei
+enum eReasons {
+    R_INVALID = -1, ///< Csak hiba jelzésre
+    R_NEW = 0,      ///< Új elem
+    R_INSERT,       ///< Új elem beszúrása/beszúrva.
+    R_REMOVE,       ///< Elem eltávolítása/eltávolítva
+    R_EXPIRED,      ///< Lejárt, elévült
+    R_MOVE,         ///< Az elem át-mozgatása/mozgatva
+    R_MODIFY,       ///< Az elem módosítva (összetetteb módosítás)
+    R_UPDATE,       ///< Az elem módosítva
+    R_UNCHANGE,     ///< Nincs változás
+    R_FOUND,        ///< Találat, az elem már létezik...
+    R_NOTFOUND,     ///< Nincs találat, valamelyik objektum hiányzik.
+    R_DISCARD,      ///< Nincs művelet, az adat eldobásra került.
+    R_ERROR         ///< Egyébb hiba
+};
+
+int reasons(const QString& _r, bool __ex = true);
+const QString& reasons(int _r, bool __ex = true);
+
 /// @def CHKENUM
 /// @brief Egy enumerációs típus konverziós függvényeinek az ellenörzése.
 ///
@@ -158,7 +179,7 @@ EXT_ int paramType(const QString& __n, bool __ex = true);
 EXT_ const QString& paramType(int __e, bool __ex = true);
 
 /* ------------------------------------------------------------------ */
-/// Port paraméter típus leíró rekord
+/// Paraméter típus leíró rekord
 class LV2SHARED_EXPORT cParamType : public cRecord {
     CRECORD(cParamType);
 public:
@@ -167,7 +188,7 @@ public:
     /// @param q Az adatbázis művelethet használt objektum
     /// @param __n A paraméter neve
     /// @param __de Egy megjegyzés a paraméter típushoz
-    /// @param __t A paraméter típusa
+    /// @param __t A paraméter adat típusa
     /// @param __di A paraméter dimenziója, opcionális
     /// @return Az új rekord azonisítója (ID), hiba esetén, ha ::ex hamis volt, akkor NULL_ID-vel tér vissza.
     static qlonglong insertNew(QSqlQuery &q, const QString& __n, const QString& __de, const QString __t, const QString __di = QString(), bool __ex = true);
@@ -176,7 +197,7 @@ public:
     /// @param q Az adatbázis művelethet használt objektum
     /// @param __n A paraméter neve
     /// @param __de Egy megjegyzés a paraméter típushoz
-    /// @param __t A paraméter típusa (lsd.: eParamType).
+    /// @param __t A paraméter adat típusa (lsd.: eParamType).
     /// @param __di A paraméter dimenziója, opcionális
     /// @return Az új rekord azonisítója (ID), hiba esetén, ha ::ex hamis volt, akkor NULL_ID-vel tér vissza.
     static qlonglong insertNew(QSqlQuery &q, const QString& __n, const QString& __de, int __t, const QString __di = QString(), bool __ex = true);
@@ -184,7 +205,7 @@ public:
     /// Hiba esetén, ha __ex igaz (vagy nincs megadva), akkor dob egy kizárást,
     /// @param __n A paraméter neve
     /// @param __de Egy megjegyzés a paraméter típushoz
-    /// @param __t A paraméter típusa
+    /// @param __t A paraméter adat típusa
     /// @param __di A paraméter dimenziója, opcionális
     /// @return Az új rekord azonisítója (ID), hiba esetén, ha ::ex hamis volt, akkor NULL_ID-vel tér vissza.
     static qlonglong insertNew(const QString& __n, const QString& __de, const QString __t, const QString __di = QString(), bool __ex = true) {
@@ -195,13 +216,17 @@ public:
     /// Hiba esetén, ha __ex igaz (vagy nincs megadva), akkor dob egy kizárást,
     /// @param __n A paraméter neve
     /// @param __de Egy megjegyzés a paraméter típushoz
-    /// @param __t A paraméter típusa (lsd.: eParamType).
+    /// @param __t A paraméter adat típusa (lsd.: eParamType).
     /// @param __di A paraméter dimenziója, opcionális
     /// @return Az új rekord azonisítója (ID), hiba esetén, ha ::ex hamis volt, akkor NULL_ID-vel tér vissza.
     static qlonglong insertNew(const QString& __n, const QString& __de, int __t, const QString __di = QString(), bool __ex = true) {
         QSqlQuery q = getQuery();
         return insertNew(q, __n, __de, __t, __di, __ex);
     }
+    ///
+    static QString paramToString(eParamType __t, const QVariant& __v, bool __ex = true);
+    ///
+    static QVariant paramFromString(eParamType __t, QString& __v, bool __ex = true);
 };
 
 class LV2SHARED_EXPORT cSysParam  : public cRecord {
@@ -214,45 +239,61 @@ public:
     /// Ha megváltozik a port param (típus) id, akkor betölti, vagy törli a megfelelp értéket a paramType adattagba.
     /// Nincs ilyen id-vel port_params rekord (és nem NULL az id), akkor a statusban bebillenti az ES_DEFECZIVE bitet.
     virtual bool 	toEnd (int i);
-    /// A paraméter típus enumerációs értékkel tér vissza
-    qlonglong type()   const { return paramType.getId(_sParamTypeType); }
+    /// A paraméter adat típus enumerációs értékkel tér vissza
+    qlonglong valueType()   const { return paramType.getId(_sParamTypeType); }
+    /// A paraméter adat típus névvel tér vissza
+    const QString& valueTypeName(bool __ex = true) const {return ::paramType(valueType(), __ex); }
     /// A paraméter dimenzió ill. mértékegység nevével tér vissza
-    QString dim()    const { return paramType.getName(__sParamTypeDim); }
-    ///
-    cRecordFieldConstRef value() const { return (*this)[_sParamValue]; }
-    /// A port paraméter értékére mutató referencia objektummal tér vissza.
-    cRecordFieldRef      value()       { return (*this)[_sParamValue]; }
+    QString valueDim()    const { return paramType.getName(__sParamTypeDim); }
+    /// A paraméter értékkel tér vissza
+    QVariant value(bool __ex = true) const;
     /// A paraméter típusának a beállítása
     /// @param __id A paraméter típus rekord ID-je
     cSysParam& setType(qlonglong __id)        { set(_ixParamTypeId, __id); return *this; }
     /// @param __n A paraméter típus rekord név mezőjenek az értéke
     cSysParam& setType(const QString& __n)    { paramType.fetchByName(__n); _set(_ixParamTypeId, paramType.getId()); return *this; }
     /// Értékadás az érték mezőnek.
-    cSysParam& operator=(const QString& __v)  { setName(_sParamValue, __v); return *this; }
+    cSysParam& setValue(const QVariant& __v, bool __ex = true);
+    /// Értékadás az érték mezőnek.
+    cSysParam& operator=(const QVariant& __v) { return setValue(__v); }
+    static enum eReasons setStrSysParam(QSqlQuery& _q, const QString& __nm, const QString& _val, const QString& _tn = _sString) {
+        execSqlFunction(_q, "set_str_sys_param", QVariant(__nm), QVariant(_val), QVariant(_tn));
+        return (enum eReasons)reasons(_q.value(0).toString());
+    }
+    static enum eReasons setBoolSysParam(QSqlQuery& _q, const QString& __nm, bool _val, const QString& _tn = _sString) {
+        execSqlFunction(_q, "set_bool_sys_param", QVariant(__nm), QVariant(_val), QVariant(_tn));
+        return (enum eReasons)reasons(_q.value(0).toString());
+    }
+    static enum eReasons setIntSysParam(QSqlQuery& _q, const QString& __nm, qlonglong _val, const QString& _tn = _sString) {
+        execSqlFunction(_q, "set_int_sys_param", QVariant(__nm), QVariant(_val), QVariant(_tn));
+        return (enum eReasons)reasons(_q.value(0).toString());
+    }
+    static enum eReasons setIntervalSysParam(QSqlQuery& _q, const QString& __nm, qlonglong _val, const QString& _tn = _sString) {
+        execSqlFunction(_q, "set_interval_sys_param", QVariant(__nm), QVariant(intervalToStr(_val)), QVariant(_tn));
+        return (enum eReasons)reasons(_q.value(0).toString());
+    }
+    static enum eReasons setSysParam(QSqlQuery& _q, const QString& __nm, const QVariant& _val, const QString& _tn, bool __ex = true) {
+        cSysParam   po;
+        po.setType(_tn);
+        po.setValue(_val, __ex);
+        enum eReasons r = setStrSysParam(_q, __nm, po.getName(_ixSysParamValue), _tn);
+        if (__ex && r == R_NOTFOUND) EXCEPTION(EFOUND, -1, _tn);
+        return r;
+    }
+    static QVariant getSysParam(QSqlQuery& _q, const QString& _nm, bool __ex = true) {
+        cSysParam   po;
+        if (po.fetchByName(_q, _nm)) {
+            return po.value(__ex);
+        }
+        if(__ex) EXCEPTION(EFOUND, -1, _nm);
+        return QVariant();
+    }
+
 protected:
     /// A port paraméter értékhez tartozó típus rekord/objektum
     cParamType  paramType;
     static int _ixParamTypeId;
-};
-
-EXT_ void initSysParams(QSqlQuery *__pq, bool __ex = true);
-EXT_ const cSysParam& getSysParam(const QString& __name);
-EXT_ bool setSysParam(cSysParam& __par);
-//EXT_ bool setSysParam(const QString&  __type, const QString& __name, const QVariant& __val, bool __ex = true);
-
-/// Rendszer paraméter értékek listája
-class LV2SHARED_EXPORT cSysParams : protected tRecordList<cSysParam> {
-    friend void initSysParams(QSqlQuery *__pq, bool __ex);
-    friend const cSysParam& getSysParam(const QString& __name);
-    friend bool setSysParam(cSysParam& __par);
-protected:
-    /// Konstruktor.
-    cSysParams(QSqlQuery *__pq);
-    QSqlQuery *pq;
-    static cSysParams * instance;
-    static cSysParam  * null;
-public:
-
+    static int _ixSysParamValue;
 };
 
 /* ------------------------------------------------------------------ */
@@ -1218,6 +1259,21 @@ protected:
     tMagicMap              *_pMagicMap;
 };
 
+class LV2SHARED_EXPORT cMacTab  : public cRecord {
+    CRECORD(cMacTab);
+protected:
+    static int _ixPortId;
+    static int _ixHwAddress;
+    static int _ixSetType;
+    static int _ixMacTabState;
+public:
+    /// Inzertálja, vagy modosítja az ip cím, mint kulcs alapján a rekordot.
+    /// A funkciót egy PGPLSQL fúggvény (insert_or_update_mactab) valósítja meg.
+    /// @param __q Az adatbázis művelethez használt objektum.
+    /// @return A insert_or_update_arp függvény vissatérési értéke. Ld.: enum eReasons
+    enum eReasons replace(QSqlQuery& __q);
+};
+
 class cArpTable;
 class LV2SHARED_EXPORT cArp : public cRecord {
     CRECORD(cArp);
@@ -1225,13 +1281,6 @@ protected:
     static int _ixIpAddress;
     static int _ixHwAddress;
 public:
-    /// A replace() metódus visszatérési értéke
-    enum eReplaceResult {
-        RR_NO_MODIFY =  0,  ///< Nincs változás (csak a last_time változott az aktuális időpontra)
-        RR_INSERT    =  1,  ///< Új rekord beszúrása
-        RR_MODIFY    =  2,  ///< A rekord megváltozott ( az IP címhez egy másik mac lett hozzárendelve)
-        RR_ERROR     = -1   ///< nem értelmezhető a PGPLSQL függvény visszatérési értéke
-    };
     cArp& operator = (const QHostAddress& __a)  { set(_ixIpAddress, __a.toString()); return *this; }
     cArp& operator = (const cMac __m)           { set(_ixHwAddress, __m.toString()); return *this; }
     /// Az objektum (a beolvasott rekord) IP cím mezőjének az értékével tér vissza
@@ -1242,11 +1291,11 @@ public:
     cMac getMac() const { return (cMac)*this; }
     /// Az objektum (a beolvasott rekord) IP cím mezőjének az értékével tér vissza
     QHostAddress getIpAddress() const { return (QHostAddress)*this; }
-    /// Inzertálja, vagy morosítja az ip cím, mint kulcs alapján a rekordot.
+    /// Inzertálja, vagy modosítja az ip cím, mint kulcs alapján a rekordot.
     /// A funkciót egy PGPLSQL fúggvény (insert_or_update_arp) valósítja meg.
     /// @param __q Az adatbázis művelethez használt objektum.
-    /// @return A insert_or_update_arp függvény vissatérési értéke. Ld.: enum eReplaceResult
-    enum eReplaceResult replace(QSqlQuery& __q);
+    /// @return A insert_or_update_arp függvény vissatérési értéke. Ld.: enum eReasons
+    enum eReasons replace(QSqlQuery& __q);
     /// Inzertálja, vagy morosítja az ip cím, mint kulcs alapján a rekordokat
     /// @param __q Az adatbázis művelethez használt objektum.
     /// @param __t A módosításokat tartalmazó konténer

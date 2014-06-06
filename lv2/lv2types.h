@@ -363,15 +363,27 @@ public:
     A megadott címmel, és maszk értékkel inicializálja az objektumot. Ha a QString paraméter tartalmazza a
     maszkot is, akkor a második paraméter figyelmen kívül lessz hagyva.
     A cím értelmezésekor cím név feloldás nincsen.
-    @par[in] IP cím vagy IP cím tartomány szöveges formában.
-    @par[in] opcionális maszk.
+    @param[in] IP cím vagy IP cím tartomány szöveges formában.
+    @param[in] opcionális maszk.
 
     Az ip címben a maszk alapján felesleges bitek törlődnek.
      */
     netAddress& set(const QString& __n, int __m = -1);
     /*!
+    A megadott címmel, és maszk értékkel inicializálja az objektumot. Ha a QString paraméter tartalmazza a
+    maszkot is, akkor a második paraméter figyelmen kívül lessz hagyva.
+    A cím értelmezésekor cím név feloldás is van, lsd.: netAddress& setNetByName(const QString& __nn) és;
+    netAddress& setAddressByName(const QString& __hn); metódusokat
+
+    @param[in] IP cím vagy IP cím tartomány szöveges formában, hoszt név, vagy net név.
+    @param[in] opcionális maszk.
+
+    Az ip címben a maszk alapján felesleges bitek törlődnek.
+     */
+    netAddress& setr(const QString& __n, int __m = -1);
+    /*!
     Módosítja a maszk értéket.
-    @par[in] __m Az új maszk érték.
+    @param[in] __m Az új maszk érték.
 
     Ha __m értéke negatív, vagy az objektum nem tartalmaz valós IP címet, akkor a függvény nem csinál semmit.
     Ha __m értéke nagyobb mint 32 ill 128, akkor csökkenti azt az aktuális cím tipus bitszámára.
@@ -528,42 +540,42 @@ public:
 /*!
  @def NAL_FNDMSK
   Egyes netAddressList metódusok visszatérési értéken egy maszk.
-  A visszatérési értékben a nem index jellefű részt vélasztja ki.
+  A visszatérési értékben a nem index jellegű részt vélasztja ki.
   @relates netAddressList
   */
 #define NAL_FNDMSK  0x60000000L
 /*!
  @def NAL_IDXMSK
   Egyes netAddressList metódusok visszatérési értéken egy maszk.
-  A visszatérési értékben az index jellefű részt vélasztja ki.
+  A visszatérési értékben az index jellegű részt vélasztja ki.
   @relates netAddressList
   */
 #define NAL_IDXMSK  0x1fffffffL
 /*!
  @def NAL_FNDHIT
   Egyes netAddressList metódusok visszatérési értékben lelentése:
-  A visszatérési értékbe kibálaszva a NAL_FNDMSK részt, keresett tartomány megeggyezik a találttal.
+  A visszatérési értékbe kiválaszva a NAL_FNDMSK részt, keresett tartomány megeggyezik a találttal.
   @relates netAddressList
   */
 #define NAL_FNDHIT  0x00000000L
 /*!
  @def NAL_FNDLIT
   Egyes netAddressList metódusok visszatérési értékben lelentése:
-  A visszatérési értékbe kibálaszva a NAL_FNDMSK részt, keresett tartomány nagyobb/kisebb mint a talált.
+  A visszatérési értékbe kiválaszva a NAL_FNDMSK részt, keresett tartomány nagyobb/kisebb mint a talált.
   @relates netAddressList
   */
 #define NAL_FNDLIT  0x40000000L
 /*!
  @def NAL_FNDBIG
   Egyes netAddressList metódusok visszatérési értékben lelentése:
-  A visszatérési értékbe kibálaszva a NAL_FNDMSK részt, keresett tartomány nagyobb/kisebb mint a talált.
+  A visszatérési értékbe kiválaszva a NAL_FNDMSK részt, keresett tartomány nagyobb/kisebb mint a talált.
   @relates netAddressList
   */
 #define NAL_FNDBIG  0x20000000L
 /*!
  @def NAL_REMREM
   Egyes netAddressList metódusok visszatérési értékben lelentése:
-  A visszatérési értékbe kibálaszva a NAL_FNDMSK részt, a megadott indexű elem törölve lett.
+  A visszatérési értékbe kiválaszva a NAL_FNDMSK részt, a megadott indexű elem törölve lett.
   @relates netAddressList
   */
 #define NAL_REMREM  0x40000000L

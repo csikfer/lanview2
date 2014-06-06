@@ -79,18 +79,21 @@ BEGIN
     RETURN 1 = COUNT(*) FROM information_schema.tables WHERE 'BASE TABLE' = table_type AND $1 = table_name;
 END
 $$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION table_is_exists(text) IS 'Ha a paraméterként megadott bevű tábla létezik, akkor igaz értékkel, egyébként hamis értékkel tér vissza';
 
 CREATE OR REPLACE FUNCTION view_is_exists(text) RETURNS boolean AS $$
 BEGIN
     RETURN 1 = COUNT(*) FROM information_schema.tables WHERE 'VIEW' = table_type AND $1 = table_name;
 END
 $$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION view_is_exists(text) IS 'Ha a paraméterként megadott bevű nézet tábla létezik, akkor igaz értékkel, egyébként hamis értékkel tér vissza';
 
 CREATE OR REPLACE FUNCTION table_or_view_is_exists(text) RETURNS boolean AS $$
 BEGIN
     RETURN 1 = COUNT(*) FROM information_schema.tables WHERE $1 = table_name;
 END
 $$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION table_or_view_is_exists(text) IS 'Ha a paraméterként megadott bevű tábla vagy nézet tábla létezik, akkor igaz értékkel, egyébként hamis értékkel tér vissza';
 
 CREATE TYPE paramtype AS ENUM ( 'any', 'boolean', 'int', 'real', 'char', 'string', 'interval', 'ipaddress');
 
@@ -103,13 +106,20 @@ CREATE TABLE param_types (
 );
 ALTER TABLE param_types OWNER TO lanview2;
 COMMENT ON TABLE param_types IS 'Paraméterek deklarálása (név, típus, dimenzió)';
-COMMENT ON COLUMN param_types.param_type_id   IS 'A paraméter leíró egyedi azonosítója.';
-COMMENT ON COLUMN param_types.param_type_name IS 'A paraméter neve.';
+COMMENT ON COLUMN param_types.param_type_id   IS 'A paraméter típus leíró egyedi azonosítója.';
+COMMENT ON COLUMN param_types.param_type_name IS 'A paraméter típus neve.';
 COMMENT ON COLUMN param_types.param_type_note IS 'A paraméterhez egy magyarázó szöveg';
-COMMENT ON COLUMN param_types.param_type_type IS 'Egy opcionális típus azonosító';
+COMMENT ON COLUMN param_types.param_type_type IS 'Típus azonosító';
 COMMENT ON COLUMN param_types.param_type_dim  IS 'Egy opcionális dimenzió';
 
-INSERT INTO param_types(param_type_name, param_type_type) VALUES ('URL', 'URL');
+INSERT INTO param_types
+    (param_type_name,   param_type_type)    VALUES
+    ('boolean',         'boolean'),
+    ('int',             'int'),
+    ('string',          'string'),
+    ('real',            'real'),
+    ('interval',        'interval'),
+    ('URL',             'string');
 
 CREATE OR REPLACE FUNCTION param_type_name2id(varchar(32)) RETURNS integer AS $$
 DECLARE
@@ -123,13 +133,111 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
+CREATE TYPE reasons AS ENUM ('new', 'insert', 'remove', 'expired', 'move', 'modify', 'update', 'unchange', 'found', 'notfound', 'discard', 'error');
+ALTER TYPE reasons OWNER TO lanview2;
+COMMENT ON TYPE reasons IS
+'Okok ill. műveletek eredményei
+';
+
 CREATE TABLE sys_params (
     sys_param_id        serial          PRIMARY KEY,
     sys_param_name      varchar(32)     NOT NULL UNIQUE,
+    sys_param_note      varchar(255)    DEFAULT NULL,
     param_type_id       integer         NOT NULL
             REFERENCES param_types(param_type_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
     sys_param_value     text            DEFAULT NULL
 );
+
+CREATE OR REPLACE FUNCTION set_str_sys_param(pname varchar(32), txtval text, tname varchar(32) DEFAULT 'string') RETURNS reasons AS $$
+DECLARE
+    type_id integer;
+    rec sys_params;
+BEGIN
+    SELECT param_type_id INTO type_id FROM param_types WHERE param_type_name = tname;
+    IF NOT FOUND THEN
+        RETURN 'notfound';
+    END IF;
+    SELECT * INTO rec FROM sys_params WHERE sys_param_name = pname;
+    IF NOT FOUND THEN
+        INSERT INTO sys_params(sys_param_name, param_type_id, sys_param_value) VALUES (pname, type_id, txtval);
+        RETURN 'insert';
+    END IF;
+    IF type_id = rec.param_type_id THEN
+        IF txtval = rec.sys_param_value THEN
+            RETURN 'found';
+        END IF;
+        UPDATE sys_params SET sys_param_value = txtval WHERE sys_param_name = pname;
+        RETURN 'update';
+    END IF;
+    UPDATE sys_params SET sys_param_value = txtval, param_type_id = type_id WHERE sys_param_name = pname;
+    RETURN 'modify';
+END
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION set_str_sys_param(pname varchar(32), txtval text, tname varchar(32)) IS '
+Egy rendszer paraméter (sys_params tábla egy rekordja) értékének, és adat típusának a megadása.
+A függvény paraméterei
+  pname   A paraméter neve
+  txtval  A paraméter értéke
+  tname   A paraméter típusleíró rekord neve. Opcionálís, ha nem adjuk meg, akkor "string".
+Visszatérési érték:
+  Ha a paraméter már létezik, és a megadott értékű és típusú, akkor "found".
+  Ha még nincs ilyen paraméter, akkor "insert"
+  Ha magadtuk a típus nevet, és nincs ilyen típus rekord, akkor "notfound".
+  Ha volt ilyen nevű paraméter, és csak az érték változott, akkor "update"
+  Ha volt ilyen paraméter, és a típus változott, akkor "modify".
+';
+
+CREATE OR REPLACE FUNCTION set_bool_sys_param(pname varchar(32), boolval boolean DEFAULT true, tname varchar(32) DEFAULT 'boolean') RETURNS reasons AS $$
+BEGIN
+    RETURN set_str_sys_param(pname, boolval::text, tname);
+END
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION set_int_sys_param(pname varchar(32), intval integer, tname varchar(32) DEFAULT 'int') RETURNS reasons AS $$
+BEGIN
+    RETURN set_str_sys_param(pname, intval::text, tname);
+END
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION set_interval_sys_param(pname varchar(32), ival interval, tname varchar(32) DEFAULT 'interval') RETURNS reasons AS $$
+BEGIN
+    RETURN set_str_sys_param(pname, ival::text, tname);
+END
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION get_str_sys_param(pname varchar(32)) RETURNS text AS $$
+DECLARE
+    res text;
+BEGIN
+    SELECT sys_param_value INTO res FROM sys_params WHERE sys_param_name = pname;
+    IF NOT FOUND THEN
+        RETURN NULL;
+    END IF;
+    RETURN res;
+END
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION get_bool_sys_param(pname varchar(32)) RETURNS boolean AS $$
+BEGIN
+    IF get_str_sys_param(pname)::boolean THEN
+        RETURN true;
+    ELSE
+        RETURN false;
+    END IF;
+END
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION get_int_sys_param(pname varchar(32)) RETURNS integer AS $$
+BEGIN
+    RETURN get_str_sys_param(pname)::integer;
+END
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION get_interval_sys_param(pname varchar(32)) RETURNS interval AS $$
+BEGIN
+    RETURN get_str_sys_param(pname)::interval;
+END
+$$ LANGUAGE plpgsql;
 
 -- //////////////////// ERROR LOGOK ////////////////////
 \i errlogs.sql
@@ -212,38 +320,6 @@ INSERT INTO fkey_types
   ( 'table_shape_filters',  'table_shape_field_id', 'owner'         );
 
 \i gui.sql
-
-/*
-
-CREATE TYPE logreasons AS ENUM ('deleted', 'modifyed', 'timeout');
-
-
-CREATE TYPE eventtype AS ENUM ('deleted', 'updated', 'moved', 'stale');
-ALTER TYPE eventtype OWNER TO lanview2;
-
-CREATE TABLE log_vlans (
-    time_of     timestamp       DEFAULT CURRENT_TIMESTAMP,
-    event_type  eventtype   NOT NULL,
-    vlan_id     integer         NOT NULL,
-    vlan_name   varchar(32)     NOT NULL,
-    vlan_descr  varchar(255)    DEFAULT NULL,
-    vlan_stat   boolean         NOT NULL
-);
-CREATE INDEX vlans_time_of_index ON log_vlans (time_of);
-ALTER TABLE log_vlans OWNER TO lanview2;
-
-CREATE TABLE log_port_vlans (
-    time_of     timestamp       DEFAULT CURRENT_TIMESTAMP,
-    event_type  eventtype   NOT NULL,
-    port_id     integer         NOT NULL,
-    vlan_id     integer         NOT NULL,
-    first_time  timestamp       NOT NULL,
-    last_time   timestamp       NOT NULL,
-    vlan_type   vlantype   NOT NULL DEFAULT 'Untagged'
-);
-CREATE INDEX port_vlans_time_of_index ON log_port_vlans (time_of);
-ALTER TABLE log_port_vlans OWNER TO lanview2;
-*/
 
 -- //////////////////// Initial Data ////////////////////
 

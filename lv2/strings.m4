@@ -24,7 +24,10 @@ STRDEF(SColon, ";")
 STRDEF(Dollar, "$")
 STRDEF(Memb, "%1.%2")
 STRDEF(CondW, " = ?")
+STRDEF(ComaQ, `", ?"')
 STRDEF(IsNull, " IS NULL")
+__SDEF(DEFAULT)
+
 dnl Megosztás típusok
 __SDEF(A)
 __SDEF(B)
@@ -114,10 +117,25 @@ STRDEF(Polygon,"polygon")
 STRDEF(Boolean, "boolean")
 STRDEF(ByteA, "bytea")                  dnl bináris adat
 
+dnl reasons enum typus nevek
+STRDEF(New, "new")
+STRDEF(Insert, "insert")
+STRDEF(Remove, "remove")
+STRDEF(Expired, "expired")
+STRDEF(Move, "move")
+STRDEF(Modify, "modify")
+STRDEF(Update, "update")
+STRDEF(Unchange, "unchange")
+STRDEF(Found, "found")
+STRDEF(Notfound, "notfound")
+STRDEF(Discard, "discard")
+ dnl error
+
 dnl Tábla és mező nevek
 STRDEF(ParamTypes, "param_types")
  STRDEF(ParamTypeId, "param_type_id")
  STRDEF(ParamTypeName, "param_type_name")
+  STRDEF(SuspectedUplink, "suspected_uplink")   dnl boolean (TABLE:mactab / APP:portmac)
  STRDEF(ParamTypeNote, "param_type_note")
  STRDEF(ParamTypeType, "param_type_type")
   STRDEF(Any, "any");
@@ -133,7 +151,7 @@ STRDEF(ParamTypes, "param_types")
 STRDEF(SysParams, "sys_params")
  STRDEF(SysParamId, "sys_param_id")
  STRDEF(SysParamName, "sys_param_name")
- STRDEF(ParamValue, "param_value")
+ STRDEF(SysParamValue, "sys_param_value")
  dnl param_type_id
 STRDEF(Tpows, "tpows")
  STRDEF(TpowId, "tpow_id")
@@ -336,7 +354,8 @@ STRDEF(SubNets, "subnets")
   dnl private
 STRDEF(PortParas, "port_params")
  STRDEF(PortParamIdm, "port_param_id")
- dnl param_type_id, port_id, param_value
+ dnl param_type_id, port_id
+ STRDEF(ParamValue, "param_value")
 STRDEF(IpProtocols, "ipprotocols")
  STRDEF(ProtocolId, "protocol_id")
  STRDEF(ProtocolName, "protocol_name")
@@ -445,12 +464,13 @@ STRDEF(PortVlans, "port_vlans")
 
 STRDEF(MacTab, "mactab")
  dnl hwaddress, port_id
+ STRDEF(MacTabState, "mactab_state")
  STRDEF(Status, "status")
   STRDEF(Likely, "likely")
   STRDEF(NoArp, "noarp")
   STRDEF(NoOid, "nooid")
   STRDEF(Suspect, "suspect")
- dnl first:time, last_time, set_type
+ dnl first_time, last_time, set_type
 
 STRDEF(PhsLinksTable, "phs_links_table")
 STRDEF(PhsLinks, "phs_links")
@@ -627,7 +647,7 @@ __SDEF(0)
 STRDEF(NullIpV4, "0.0.0.0")
 STRDEF(NullIpV6, "::")
 
-STRDEF(Errors, "Errors")
+STRDEF(Errors, "errors")
  STRDEF(ErrorId, "error_id")
  STRDEF(ErrorName, "error_name")
  STRDEF(ErrorNote, "error_note")
@@ -637,7 +657,7 @@ STRDEF(DbErrs, "db_errs")
  STRDEF(DbLogId, "dblog_id")
 dnl date_of, error_id, user_id, table_name
  STRDEF(TriggerOp, "trigger_op")
- STRDEF(ErrSubcode, "erro_subcode")
+ STRDEF(ErrSubcode, "err_subcode")
  STRDEF(FuncName, "func_name")
  STRDEF(ErrMsg, "err_msg")
  STRDEF(Reapeat, "reapeat")

@@ -1050,7 +1050,7 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
 %token      PLACE_T PATCH_T HUB_T SWITCH_T NODE_T HOST_T ADDRESS_T
 %token      PARENT_T IMAGE_T FRAME_T TEL_T NOTE_T MESSAGE_T ALARM_T
 %token      PARAM_T TEMPLATE_T COPY_T FROM_T NULL_T VIRTUAL_T
-%token      INCLUDE_T PSEUDO_T OFFS_T IFTYPE_T WRITE_T RE_T
+%token      INCLUDE_T PSEUDO_T OFFS_T IFTYPE_T WRITE_T RE_T SYS_T
 %token      ADD_T READ_T UPDATE_T ARPS_T ARP_T SERVER_T FILE_T BY_T
 %token      SNMP_T SSH_T COMMUNITY_T DHCPD_T LOCAL_T PROC_T CONFIG_T
 %token      ATTACHED_T LOOKUP_T WORKSTATION_T LINKS_T BACK_T FRONT_T
@@ -1113,7 +1113,7 @@ command : macro
         | image
         | place
         | nodes
-        | ptype
+        | params
         | arp
         | link
         | srv
@@ -1315,9 +1315,11 @@ _toddef : TIME_T OF_T DAY_T str str FROM_T time TO_T time str_z	{ $$ = toddef($4
         ;
 toddef  : _toddef ';'               { delete $1; }
         ;
-        /*
+params  : ptype
+        | syspar
+        ;
 ptype   : PARAM_T TYPE_T str str ptypen str_z ';'{ cParamType::insertNew(*$3, *$4, $5, *$6); delete $3; delete $4; delete $6; }
-        ;*/
+        ;
 ptypen  : ANY_T                     { $$ = PT_ANY; }
         | BOOLEAN_T                 { $$ = PT_BOOLEAN; }
         | INTEGER_T                 { $$ = PT_INTEGER; }
@@ -1328,7 +1330,12 @@ ptypen  : ANY_T                     { $$ = PT_ANY; }
         | IPADDRESS_T               { $$ = PT_IPADDRESS; }
         | URL_T                     { $$ = PT_URL; }
         ;
-syspar  : SYS_T PARAM_T str str '=' value   { setSysParam
+syspar  : SYS_T PARAM_T str str '=' str { cSysParam::setSysParam(qq(), *$4, *$6, *$3); delete $3; delete $4; delete $6; }
+        | SYS_T STRING_T str '=' str    { cSysParam::setStrSysParam(qq(), *$3, *$5); delete $3; delete $5; }
+        | SYS_T BOOLEAN_T str '=' bool  { cSysParam::setBoolSysParam(qq(), *$3, $5); delete $3; }
+        | SYS_T INTEGER_T str '=' int   { cSysParam::setIntSysParam(qq(), *$3, $5); delete $3; }
+        | SYS_T INTERVAL_T str '=' str  { cSysParam::setSysParam(qq(), *$3, *$5, _sInterval); delete $3; delete $5; }
+        | SYS_T INTERVAL_T str '=' int  { cSysParam::setSysParam(qq(), *$3, $5, _sInterval); delete $3; }
         ;
 vlan    : VLAN_T int str str_z      {
                                         actVlanId = cVLan::insertNew($2, actVlanName = *$3, actVlanNote = *$4, true);
@@ -1667,9 +1674,12 @@ srv_p   : ipprotp int ';'                       { (*pService)[_sProtocolId] = $1
         | COMMAND_T str  ';'                    { (*pService)[_sCheckCmd]   = *$2; delete $2; }
         | PROPERTIES_T str ';'                  { (*pService)[_sProperties] = *$2; delete $2; }
         | MAX_T CHECK_T ATTEMPTS_T int ';'      { (*pService)[_sMaxCheckAttempts]    = $4; }
+        | NORMAL_T CHECK_T INTERVAL_T str ';'   { (*pService)[_sNormalCheckInterval] = *$4; delete $4; }
         | NORMAL_T CHECK_T INTERVAL_T int ';'   { (*pService)[_sNormalCheckInterval] = $4; }
+        | RETRY_T CHECK_T INTERVAL_T str ';'    { (*pService)[_sRetryCheckInterval]  = *$4; delete $4; }
         | RETRY_T CHECK_T INTERVAL_T int ';'    { (*pService)[_sRetryCheckInterval]  = $4; }
         | FLAPPING_T INTERVAL_T str ';'         { (*pService)[_sFlappingInterval]    = *$3; delete $3; }
+        | FLAPPING_T INTERVAL_T int ';'         { (*pService)[_sFlappingInterval]    = $3; }
         | FLAPPING_T MAX_T CHANGE_T int ';'     { (*pService)[_sFlappingMaxChange]   = $4; }
         | SET_T str '=' value ';'               { (*pService)[*$2] = *$4; delete $2; delete $4; }
         | ALARM_T MESSAGE_T str ';'             { (*pService)[_sServiceAlarmMsg] = *$3; delete $3; }
@@ -1714,7 +1724,9 @@ hsrv_p  : PRIME_T SERVICE_T str ';'             { (*pHostService)[_sPrimeService
         | SUPERIOR_T SERVICE_T str ':' str ';'          { setSuperiorHostService(pHostService, $3, $5); }
         | SUPERIOR_T SERVICE_T str ':' str ':' str ';'  { setSuperiorHostService(pHostService, $3, $7, $5); }
         | MAX_T CHECK_T ATTEMPTS_T int ';'      { (*pHostService)[_sMaxCheckAttempts]    = $4; }
+        | NORMAL_T CHECK_T INTERVAL_T str ';'   { (*pHostService)[_sNormalCheckInterval] = *$4; delete $4; }
         | NORMAL_T CHECK_T INTERVAL_T int ';'   { (*pHostService)[_sNormalCheckInterval] = $4; }
+        | RETRY_T CHECK_T INTERVAL_T str ';'    { (*pHostService)[_sRetryCheckInterval]  = *$4; delete $4; }
         | RETRY_T CHECK_T INTERVAL_T int ';'    { (*pHostService)[_sRetryCheckInterval]  = $4; }
         | TIME_T PERIODS_T str ';'              { (*pHostService)[_sTimePeriodId]  = cTimePeriod().getIdByName(qq(), *$3); delete $3; }
         | OFF_T LINE_T GROUP_T str ';'          { (*pHostService)[_sOffLineGroupId] = cGroup().getIdByName(qq(), *$4); delete $4; }
@@ -1995,7 +2007,7 @@ static int yylex(void)
         TOK(PLACE) TOK(PATCH) TOK(HUB) TOK(SWITCH) TOK(NODE) TOK(HOST) TOK(ADDRESS)
         TOK(PARENT) TOK(IMAGE) TOK(FRAME) TOK(TEL) TOK(NOTE) TOK(MESSAGE) TOK(ALARM)
         TOK(PARAM) TOK(TEMPLATE) TOK(COPY) TOK(FROM) TOK(NULL) TOK(VIRTUAL)
-        TOK(INCLUDE) TOK(PSEUDO) TOK(OFFS) TOK(IFTYPE) TOK(WRITE) TOK(RE)
+        TOK(INCLUDE) TOK(PSEUDO) TOK(OFFS) TOK(IFTYPE) TOK(WRITE) TOK(RE) TOK(SYS)
         TOK(ADD) TOK(READ) TOK(UPDATE) TOK(ARPS) TOK(ARP) TOK(SERVER) TOK(FILE) TOK(BY)
         TOK(SNMP) TOK(SSH) TOK(COMMUNITY) TOK(DHCPD) TOK(LOCAL) TOK(PROC) TOK(CONFIG)
         TOK(ATTACHED) TOK(LOOKUP) TOK(WORKSTATION) TOK(LINKS) TOK(BACK) TOK(FRONT)
