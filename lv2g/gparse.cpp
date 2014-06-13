@@ -44,7 +44,7 @@ void cParseWidget::loadClicked()
         QMessageBox::warning(this, trUtf8("Hiba"), msg);
         return;
     }
-    pUi->plainTextEditSrc->setPlainText(QString::fromUtf8(file.readAll()));
+    pUi->textEditSrc->setText(QString::fromUtf8(file.readAll()));
 }
 
 void cParseWidget::saveCliecked()
@@ -60,13 +60,13 @@ void cParseWidget::saveCliecked()
         QMessageBox::warning(this, trUtf8("Hiba"), msg);
         return;
     }
-    file.write(pUi->plainTextEditSrc->toPlainText().toUtf8());
+    file.write(pUi->textEditSrc->toPlainText().toUtf8());
 }
 
 void cParseWidget::parseClicked()
 {
-    QString src = pUi->plainTextEditSrc->toPlainText().simplified();
-    if (src.isEmpty()) {
+    QString src = pUi->textEditSrc->toPlainText();
+    if (src.simplified().isEmpty()) {
         pUi->textEditResult->setText(trUtf8("Üres szöveget adott át feldolgozásra, nincs művelet."));
         return;
     }
@@ -95,6 +95,14 @@ void cParseWidget::localParse(const QString& src)
         pD->setGui(false);
         disconnect(pDS, SIGNAL(readyDebugLine()), this, SLOT(debugLine()));
     } CATCHS(pe);
+    if (importLastError != NULL) {
+        if (pe != NULL) {
+            pUi->textEditResult->append(trUtf8("<p><b> Tbbszörös hiba. <p> %1.").arg(pe->msg()));
+            delete pe;
+        }
+        pe = importLastError;
+        importLastError = NULL;
+    }
     if (pe != NULL) {
         if (pq != NULL) {
             if (transaction) sqlRollback(*pq);
@@ -109,6 +117,7 @@ void cParseWidget::localParse(const QString& src)
             pUi->textEditResult->append(trUtf8("<p><b> A fordító kizárást dobott. <p> %1.").arg(pe->msg()));
             cErrorMessageBox::messageBox(pe, this);
         }
+        delete pe;
     }
     else {
         pUi->textEditResult->append(trUtf8("<p><b> O.K."));

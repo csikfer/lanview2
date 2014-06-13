@@ -69,7 +69,7 @@ const QString lanView::libVersion(_STR(VERSION_MAJOR) "." _STR(VERSION_MINOR));
 #ifdef Q_OS_WIN
 const QString lanView::homeDefault("C:\\lanview2");
 #else
-const QString lanView::homeDefault("/home/lanview2");
+const QString lanView::homeDefault("/var/local/lanview2");
 #endif
 QString    lanView::appHelp;
 QString    lanView::appName;

@@ -239,6 +239,7 @@ QStack<c_yyFile> c_yyFile::stack;
 
 void initImportParser()
 {
+    pDelete(importLastError);
     if (pArpServerDefs == NULL)
         pArpServerDefs = new cArpServerDefs();
     // notifswitch tömb = SET, minden on-ba, visszaolvasás listaként
@@ -258,7 +259,6 @@ void downImportParser()
     macbuff.clear();
     lastLine.clear();
     globalPlaceId = NULL_ID;
-    pDelete(importLastError);
 
     yyflags = 0;
 
@@ -1132,10 +1132,11 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
 
 %%
 
-conf    :   commands            { ; }
+main    :
+        | commands
         ;
-commands:   command
-        |   command commands
+commands: command
+        | command commands
         ;
 command : macro
         | trans

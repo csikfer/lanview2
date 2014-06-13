@@ -10,7 +10,6 @@ cMainWindow::cMainWindow(bool _setupOnly, QWidget *parent) :
     // Central Widget
     setCentralWidget(pTabWidget);
     if (_setupOnly) {   /// Minimalista setup, nincs adatbázisunk
-        pTabWidget = NULL;
         QAction *pFile = menuBar()->addAction(trUtf8("File"));
         QMenu   *pm    = new QMenu(menuBar());
         pFile->setMenu(pm);
@@ -21,17 +20,17 @@ cMainWindow::cMainWindow(bool _setupOnly, QWidget *parent) :
         pa = pm->addAction(nm);
         cOwnTab *pot =  new cSetupWidget(*lanView::getInstance()->pSet, this);
         pot->setObjectName(nm);
-        po  = new cMenuAction(pot, pa, NULL);
+        po  = new cMenuAction(pot, pa, pTabWidget);
         po->setObjectName(nm);
 
         nm = trUtf8("Restart");
         pa = pm->addAction(nm);
-        po  = new cMenuAction(nm, pa, NULL);
+        po  = new cMenuAction(nm, pa, pTabWidget);
         po->setObjectName(nm);
 
         nm = trUtf8("Exit");
         pa = pm->addAction(nm);
-        po  = new cMenuAction(nm, pa, NULL);
+        po  = new cMenuAction(nm, pa, pTabWidget);
         po->setObjectName(nm);
     }
     else {
