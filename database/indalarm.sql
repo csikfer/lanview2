@@ -246,14 +246,14 @@ COMMENT ON VIEW public.indalarm_view_group_users
 
 -- functions
 
--- Function: public.indalarm_set_alarm_acknowledged(userid integer, alarmid integer, note text)
+-- Function: public.indalarm_set_alarm_acknowledged(userid bigint, alarmid bigint, note text)
 
--- DROP FUNCTION public.indalarm_set_alarm_acknowledged(userid integer, alarmid integer, note text);
+-- DROP FUNCTION public.indalarm_set_alarm_acknowledged(userid bigint, alarmid bigint, note text);
 
   
 CREATE OR REPLACE FUNCTION public.indalarm_set_alarm_acknowledged (
-  userid integer,
-  alarmid integer,
+  userid bigint,
+  alarmid bigint,
   note text
 )
 RETURNS boolean AS'
@@ -272,20 +272,20 @@ VOLATILE
 CALLED ON NULL INPUT
 SECURITY INVOKER
 COST 100;
-ALTER FUNCTION public.indalarm_set_alarm_acknowledged(userid integer, alarmid integer, note text)
+ALTER FUNCTION public.indalarm_set_alarm_acknowledged(userid bigint, alarmid bigint, note text)
   OWNER TO lanview2;
 
-COMMENT ON FUNCTION public.indalarm_set_alarm_acknowledged(userid integer, alarmid integer, note text)
+COMMENT ON FUNCTION public.indalarm_set_alarm_acknowledged(userid bigint, alarmid bigint, note text)
 IS 'Bejegyzi az érintett alarm rekordba a notice_time és notice_user értékeket.';
 
--- Function: public.indalarm_set_alarm_noticed(userid integer, alarmid integer)
+-- Function: public.indalarm_set_alarm_noticed(userid bigint, alarmid bigint)
 
--- DROP FUNCTION public.indalarm_set_alarm_noticed(userid integer, alarmid integer);
+-- DROP FUNCTION public.indalarm_set_alarm_noticed(userid bigint, alarmid bigint);
 
 
 CREATE OR REPLACE FUNCTION public.indalarm_set_alarm_noticed (
-  userid integer,
-  alarmid integer
+  userid bigint,
+  alarmid bigint
 )
 RETURNS boolean AS'
 DECLARE 
@@ -303,10 +303,10 @@ VOLATILE
 CALLED ON NULL INPUT
 SECURITY INVOKER
 COST 100;
-ALTER FUNCTION public.indalarm_set_alarm_noticed(userid integer, alarmid integer)
+ALTER FUNCTION public.indalarm_set_alarm_noticed(userid bigint, alarmid bigint)
   OWNER TO lanview2;
 
-COMMENT ON FUNCTION public.indalarm_set_alarm_noticed(userid integer, alarmid integer)
+COMMENT ON FUNCTION public.indalarm_set_alarm_noticed(userid bigint, alarmid bigint)
 IS 'Bejegyzi az érintett alarm rekordba a notice_time és notice_user értékeket.';
 
 
@@ -341,11 +341,11 @@ CREATE TRIGGER indalarm_on_alarm_insert
   EXECUTE PROCEDURE public.indalarm_alarm_notification();
   
 
--- Function: indalarm_update_password(integer, character varying)
+-- Function: indalarm_update_password(bigint, character varying)
 
--- DROP FUNCTION indalarm_update_password(integer, character varying);
+-- DROP FUNCTION indalarm_update_password(bigint, character varying);
 
-CREATE OR REPLACE FUNCTION indalarm_update_password(uid integer, newpasswd character varying)
+CREATE OR REPLACE FUNCTION indalarm_update_password(uid bigint, newpasswd character varying)
   RETURNS users AS
 $BODY$
 DECLARE 
@@ -361,9 +361,9 @@ END
 $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
-ALTER FUNCTION indalarm_update_password(integer, character varying)
+ALTER FUNCTION indalarm_update_password(bigint, character varying)
   OWNER TO lanview2;
 
-COMMENT ON FUNCTION public.indalarm_update_password(uid integer, newpasswd character varying)
+COMMENT ON FUNCTION public.indalarm_update_password(uid bigint, newpasswd character varying)
 IS 'Módosítja a uid azonosítójú felhasználó jelszavát';
 

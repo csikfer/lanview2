@@ -215,6 +215,9 @@ public:
     QVariant    defValue;*/
     /// Az objektum tartalmát striggé konvertálja pl. nyomkövetésnél használható.
     QString toString() const;
+    /// Az objektum tartalmát striggé konvertálja pl. nyomkövetésnél használható.
+    /// Részletesebb mint a toString() metódus.
+    QString allToString() const;
     /// Ha a mező egy távoli kulcs, és nem önmagára hivatkozik, akkor a hivatkozott objektumra mutat, egyébként NULL.
     cAlternate *pFRec;
 };
@@ -1052,6 +1055,8 @@ public:
     QString getName(const QString& __n) const       { return getName(toIndex(__n)); }
     /// Az név (name) mező értékével tér vissza, ha van, egyébként dob egy kizárást
     QString getName() const                         { return getName(nameIndex()); }
+    cMac    getMac(int __i, bool __ex = true) const;
+    cMac    getMac(const QString& __n, bool __ex = true) const { return getMac(toIndex(__n, __ex)); }
     /// Az descriptor/cím mező értékével tér vissza, ha van, egyébként dob egy kizárást
     QString getDescr() const                        { return getName(noteIndex()); }
     /// Egy mező értékével tér vissza, feltételezve, hogy az egyvoid t logikai érték, ill. annak értékét bool típusúvá konvertálja.
@@ -1074,10 +1079,12 @@ public:
     /// Az megadott mező értékét állítja be, feltételezve, hogy az egy string, ill. az új érték egy string lessz.
     /// @param __i A mező neve
     /// @param __n Az mező új értéke, ha null stringet adunk át, akkor NULL lessz.
-    cRecord& setName(const QString& __i, const QString& __n)    { if (__n.isNull()) clear(__i); else set(__i, QVariant(__n)); return *this; }
+    cRecord& setName(const QString& __i, const QString& __n)    { return setName(toIndex(__i), __n); }
     /// Az név (name) mező értékét állítja be
     /// @param __n Az név új értéke, ha null stringet adunk át, akkor NULL lessz.
-    cRecord& setName(const QString& __n)            { return setName(nameIndex(), __n); }
+    cRecord& setName(const QString& __n)        { return setName(nameIndex(), __n); }
+    cRecord& setMac(int __i, const cMac& __a, bool __ex = true);
+    cRecord& setMac(const QString& __n, const cMac& __a, bool __ex = true)   { return setMac(toIndex(__n), __a, __ex); }
     /// Az ID mezőket hasonlítja össze. Ha nincs vagy nem ismert az ID mező, akkor dob egy kizárást.
     /// Nem ellenőrzi, hogy a két objektum valójában milyen típusú, akkor is elvégzi az összehasonlítást, ha ez logikailag értelmetlen.
     /// Ha az ID értéke NULL, akkor az kisebb minden lehetséges ID értéknél.
@@ -1749,6 +1756,10 @@ public:
     bool isUpdatable() const    { return _record.isUpdatable(_index); }
     /// Ha a mező értéke lehet NULL, akkor true-val tér vissza
     bool isNullable() const     { return _record.isNullable(_index); }
+    /// A mező névvel tár vissza
+    QString columnName() const { return descr().colName(); }
+    /// A teljes (tábla névvel kiegészített) mező névvel tér vissza
+    QString fullColumnName() const { return recDescr().fullColumnName(columnName()); }
 };
 TSTREAMO(cRecordFieldConstRef)
 
@@ -1832,6 +1843,10 @@ public:
     const cColStaticDescr& descr() const    { return _record.descr().colDescr(_index); }
     /// A hivatkozott mező indexe
     int index()                             { return _index; }
+    /// A mező névvel tár vissza
+    QString columnName() const { return descr().colName(); }
+    /// A teljes (tábla névvel kiegészített) mező névvel tér vissza
+    QString fullColumnName() const { return recDescr().fullColumnName(columnName()); }
 };
 TSTREAMO(cRecordFieldRef)
 

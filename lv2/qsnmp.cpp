@@ -324,8 +324,8 @@ cMac cOId::toMac() const
     cMac r;
     if (oidSize >= 6) {
         qlonglong v = 0;
-        for (int i = 0; i < 6; i++) {
-            uint b = (*this)[oidSize - i - 1];
+        for (int i = 6; i > 0; i--) {
+            uint b = (*this)[oidSize - i];
             if (b > 255) return r;  // invalid
             v = (v << 8) + b;
         }

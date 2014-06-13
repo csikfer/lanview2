@@ -26,7 +26,8 @@ SOURCES += \
     record_table_model.cpp \
     cerrormessagebox.cpp \
     menu.cpp \
-    setup.cpp
+    setup.cpp \
+    gparse.cpp
 
 HEADERS +=\
         lv2g_global.h \
@@ -39,12 +40,14 @@ HEADERS +=\
     record_table.h \
     cerrormessagebox.h \
     menu.h \
-    setup.h
+    setup.h \
+    gparse.h
 
 FORMS += \
     column_filter.ui \
     setup_logl.ui \
-    setup.ui
+    setup.ui \
+    gparse.ui
 INCLUDEPATH += ../lv2
 unix:LIBS += -lsnmp
 LIBS += -L../lv2 -llv2

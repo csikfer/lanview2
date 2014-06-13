@@ -3,6 +3,7 @@
 #include "lv2data.h"
 //#include "scan.h"
 #include "lv2service.h"
+#include "time.h"
 
 
 cInspectorThread::cInspectorThread(cInspector *pp)
@@ -119,6 +120,20 @@ cInspector::~cInspector()
     _DBGFN() << n << endl;
     down();
     _DBGFNL() << n << endl;
+}
+
+qlonglong cInspector::rnd(qlonglong i, qlonglong m)
+{
+    static time_t t = 0;
+    if (t == 0) {
+        t = time(NULL);
+        srand((unsigned int)t);
+    }
+    double r = i;
+    r *= rand();
+    r /= RAND_MAX;
+    if (r < m) return m;
+    return (qlonglong)r;
 }
 
 void cInspector::down()
@@ -285,6 +300,7 @@ void cInspector::timerEvent(QTimerEvent *)
              << "Thread: " << (isMainThread() ? "Main" : objectName()) <<  endl;
     if (!isTimed()) EXCEPTION(EPROGFAIL, (int)inspectorType, name());
     if (isThread() && isMainThread()) EXCEPTION(EPROGFAIL, (int)inspectorType, name());
+    if (timerStat == TS_FIRST) toNormalInterval();  // Ha az első esetleg túl rövid, ne legyen felesleges event.
     enum eNotifSwitch retStat = RS_UNKNOWN;
     bool statIsSet    = false;
     bool statSetRetry = false;
@@ -323,7 +339,7 @@ void cInspector::timerEvent(QTimerEvent *)
     // Ha ugyan nem volt hiba, de sokat tököltünk
     else if (retStat < RS_WARNING && (lastRun.hasExpired(interval) || lastElapsedTime > ((interval*3)/2))) {
         QString msg = QString(QObject::trUtf8("Idő tullépés, futási idö %1 ezred másodperc")).arg(lastRun.elapsed());
-        hostService.setState(*pq, notifSwitch(RS_WARNING), msg, parentId());
+        hostService.setState(*pq, notifSwitch(RS_WARNING), msg, parentId(false));
     }
     else {  // A lekérdezés O.K.
         if (!statIsSet) {   // Ha nem volt status állítás
@@ -364,8 +380,10 @@ bool cInspector::threadPrelude(QThread &)
     bool r = isTimed();
     // Időzített
     if (r) {
-        PDEB(VERBOSE) << "Start timer in new thread..." << endl;
-        timerId = startTimer(interval);
+        qlonglong t = rnd(interval);
+        PDEB(VERBOSE) << "Start timer " << interval << _sSlash << t << "ms in new thread..." << endl;
+        timerStat = TS_FIRST;
+        timerId = startTimer(t);
     }
     startSubs();
     internalStat = IS_RUN;
@@ -395,10 +413,10 @@ void cInspector::start()
         return;
     }
     if (isTimed()) {
-        PDEB(VERBOSE) << "Start timer in defailt thread..." << endl;
-        timerId = startTimer(interval);
-        timerStat = TS_NORMAL;
-        PDEB(VERBOSE) << name() << " timer started, interval : " << interval << "ms" << endl;
+        qlonglong t = rnd(interval);
+        PDEB(VERBOSE) << "Start timer " << interval << _sSlash << t << "ms in defailt thread..." << endl;
+        timerId = startTimer(t);
+        timerStat = TS_FIRST;
     }
     startSubs();
     internalStat = IS_RUN;
@@ -461,6 +479,7 @@ void cInspector::stop(bool __ex)
 void cInspector::toRetryInterval()
 {
     DBGFN();
+    if (timerStat == TS_RETRY) return;
     timerStat = TS_RETRY;
     if (timerId < 0) EXCEPTION(EPROGFAIL);
     killTimer(timerId);
@@ -470,6 +489,7 @@ void cInspector::toRetryInterval()
 void cInspector::toNormalInterval()
 {
     DBGFN();
+    if (timerStat == TS_NORMAL) return;
     timerStat = TS_NORMAL;
     if (timerId < 0) EXCEPTION(EPROGFAIL);
     killTimer(timerId);

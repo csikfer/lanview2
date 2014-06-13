@@ -50,8 +50,10 @@ A könyvtár a következő osztályokat valósítja meg:\n
 - cDialogButtons
 
 */
-
+#include "lanview.h"
 #include "lv2g_global.h"
+#undef  __MODUL_NAME__
+#define __MODUL_NAME__  LV2G
 #include "guidata.h"
 #include <QtWidgets>
 
@@ -127,38 +129,6 @@ inline static const lv2gDesign& design()
     if (lv2gDesign::pDesign == NULL) EXCEPTION(EPROGFAIL);
     return *lv2gDesign::pDesign;
 }
-
-/* Ez valami régebbi visszamaradt kód
-/// A kiszelektált sorok listájával tér vissza
-/// @param _sel A Qt objektum, melyből a kiszelektált sorok indexeit ki kell nyerni.
-/// @return A kiszelektált sorok indexei, minden index csak egyszer szerepel.
-_GEX QList<int> selection2rows(const QItemSelection& _sel);
-/// A kiszelektált sorok listályának a modosítása
-/// @param rows Az eredeti szelektált sorok listája.
-/// @param _on Qt objektum, a új szelektált elemek
-/// @param _off Qt objektum, a már nem szelektált elemek
-/// @return egy a rows-ra mutató referencia.
-_GEX QList<int>& modSelectedRows(QList<int>& rows, const QItemSelection& _on, const QItemSelection& _off);
-
-
-/// Egy mező érték átmásolása a rekordba
-/// @tparam T A mező azonosító típusa: QString, vagy const * (név), vagy egész szám (index)
-/// @tparam V a mező érték típusa
-/// @param __o a cél rekord objektum.
-/// @param __i A mező azonosító
-/// @param __v A mező új értéke
-/// @return Hiba esetén false, egyébként true
-template <class T, class V> static inline bool fromEdit(cRecord& __o, const T& __i, const V&  __v)
-{
-    if (!__o.isIndex(__i)) {
-        if (__v.isEmpty()) return true;    // Nincs ilyen mező, és nem rakunk bele semmit, OK
-        else               return false;   // Nincs ilyen mező, de raknánk bele valamit az már gáz
-    }
-    if (__v.isEmpty() && __o.isNullable(__i)) __o.clear(__i);   // Ures string esetén, ha lehet NULL, akkor NULL-ra állítjuk
-    else                                      __o[__i] = __v;   // Egyébként megy bele az érték
-    return true;
-}
-*/
 
 typedef QList<QHBoxLayout *> hBoxLayoutList;
 typedef QList<QLabel *>     labelList;

@@ -252,7 +252,7 @@ protected:
 signals:
     /// Ha GUI módban vagyunk, akkor itt jelezzük, hogy kész egy debug üzenet sor.
     void readyDebugLine();
-    /// Egy mellék szálhoz tartozó debugStream objektum ezzel a szignállal jelzi a fő szálnak, hogy ban egy üzenet sora.
+    /// Egy mellék szálhoz tartozó debugStream objektum ezzel a szignállal jelzi a fő szálnak, hogy vban egy kész üzenet sora.
     void redyLineFromThread();
 private slots:
     void sRedyLineFromThread();
@@ -367,15 +367,16 @@ class LV2SHARED_EXPORT cDebug {
         ADDRESS    =  0x00000400,   ///< Debug mask bit: A címkezeléssel kapcsolatos debug üzenetek kiírása
         ALL        =  0xffffffff,   ///< Debug mask érték: Minden üzenet kiírása
         LV2        =  0x80000000,   ///< Debug mask bit: Az lv2 modul üzeneteinek a kiírása
+        LV2G       =  0x40000000,   ///< Debug mask bit: Az lv2g modul üzeneteinek a kiírása
         TEST       =  LV2,          ///< Debug mask bit: A teszt alkalmazáshoz, nincs külön bit azonos az LV2-vel.
-        LV2D       =  0x40000000,   ///< Debug mask bit: Az lanview superserver  üzeneteinek a kiírása
-        LV2GUI     =  0x20000000,   ///< Debug mask bit: Az admin GUI üzeneteinek a kiírása
-        ICONTSRV   =  0x10000000,   ///< Debug mask bit: Az icontsrv üzeneteinek a kiírása
-        IMPORT     =  0x08000000,   ///< Debug mask bit: Az import üzeneteinek a kiírása
-        PORTSTAT   =  0x04000000,   ///< Debug mask bit: Az portstat üzeneteinek a kiírása
-        IAGUI      =  0x02000000,   ///< Debug mask bit: Az indalarm GUI üzeneteinek a kiírása
-        ARPD       =  0x01000000,
-        PORTMAC    =  0x02000000
+        LV2D       =  0x08000000,   ///< Debug mask bit: Az lanview superserver  üzeneteinek a kiírása
+        LV2GUI     =  0x04000000,   ///< Debug mask bit: Az admin GUI üzeneteinek a kiírása
+        ICONTSRV   =  0x02000000,   ///< Debug mask bit: Az icontsrv üzeneteinek a kiírása
+        IMPORT     =  0x01000000,   ///< Debug mask bit: Az import üzeneteinek a kiírása
+        PORTSTAT   =  0x00800000,   ///< Debug mask bit: Az portstat üzeneteinek a kiírása
+        IAGUI      =  0x00400000,   ///< Debug mask bit: Az indalarm GUI üzeneteinek a kiírása
+        ARPD       =  0x00200000,
+        PORTMAC    =  0x00100000
     }   eMask;
 
     /*! @brief A debug rendszer inicializálása, ill. újra inicializálása.
@@ -396,11 +397,11 @@ class LV2SHARED_EXPORT cDebug {
      *  @return true ha a megadott maszk alapján az üzenetet ki kell írni.
      */
     static bool pDeb(qlonglong mask);
-    /// Az aktuális debug objektum, fő szálához tartozó debugStream objektumának a referenciájával tér vissza
+    /// Az aktuális debug objektum, fő szálához tartozó debugStream objektumának a pointerével tér vissza
     /// @throw cError*  Feltételezi, hogy van cDebug objektum (cDebug::instance != NULL).
     ///                 Valamint mCout nem NULL pointer.
     ///                 Ellenkerő esetben dob egy kizárást (hibakód : EPROGFAIL)
-    static debugStream& _cout(void);
+    static debugStream * pCout(void);
     /// Az aktuális debug objektum egy debugStream objektumának a referenciájával tér vissza.
     /// Ha a fő szálban vagyunk, akkor a fő szálhoz tartozó objektum referenciával @sa _cout(void)
     /// Ha nem a fő szálban vagyunk, akkor megkeresi a szálhoz tartozó debugStream objektumot, ill.

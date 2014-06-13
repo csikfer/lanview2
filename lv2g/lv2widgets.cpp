@@ -192,6 +192,9 @@ void cFieldEditBase::modField(int ix)
 
 cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, cRecordFieldRef _fr, eSyncType _sy, bool _ro, QWidget * _par)
 {
+    _DBGFN() << _sSpace << _tm.tableName() << _sCommaSp << _fr.fullColumnName() << " ..." << endl;
+    PDEB(VVERBOSE) << "Field value = " << debVariantToString(_fr) << endl;
+    PDEB(VVERBOSE) << "Field descr = " << _fr.descr().allToString() << endl;
     int et = _fr.descr().eColType;
     bool ro = _ro || !(_fr.record().isUpdatable()) || !(_fr.descr().isUpdatable);
     ro = ro || (et == cColStaticDescr::FT_INTEGER && _fr.record().autoIncrement()[_fr.index()]);    // Ha auto increment, akkor RO.
@@ -205,41 +208,78 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, cRecor
         case cColStaticDescr::FT_BINARY:
         case cColStaticDescr::FT_INTERVAL:
             break;
-        default:
-            return new cFieldLineWidget(_tm, _fr, _sy, true, _par);
+        default: {
+            cFieldLineWidget *p =  new cFieldLineWidget(_tm, _fr, _sy, true, _par);
+            _DBGFNL() << " new cFieldLineWidget" << endl;
+            return  p;
+        }
         }
     }
     switch (et) {
     case cColStaticDescr::FT_INTEGER:
-        if (_fr.descr().fKeyType != cColStaticDescr::FT_NONE) return new cFKeyWidget(_tm, _fr, _sy, _par);
-        // Nincs break;
+        if (_fr.descr().fKeyType != cColStaticDescr::FT_NONE) {
+            cFKeyWidget *p = new cFKeyWidget(_tm, _fr, _sy, _par);
+            _DBGFNL() << " new cFKeyWidget" << endl;
+            return p;
+        }
+        // Nincs break; !!
     case cColStaticDescr::FT_REAL:
     case cColStaticDescr::FT_TEXT:
     case cColStaticDescr::FT_MAC:
     case cColStaticDescr::FT_INET:
-    case cColStaticDescr::FT_CIDR:
-        return new cFieldLineWidget(_tm, _fr, _sy, ro, _par);
+    case cColStaticDescr::FT_CIDR: {
+        cFieldLineWidget *p = new cFieldLineWidget(_tm, _fr, _sy, ro, _par);
+        _DBGFNL() << " new cFieldLineWidget" << endl;
+        return p;
+    }
     case cColStaticDescr::FT_BOOLEAN:
-    case cColStaticDescr::FT_ENUM:
-        return new cEnumComboWidget(_tm, _fr, _sy, _par);
-    case cColStaticDescr::FT_SET:
-       return new cSetWidget(_tm, _fr, _sy, ro, _par);
-    case cColStaticDescr::FT_POLYGON:
-        return new cPolygonWidget(_tm, _fr, _sy, ro, _par);
+    case cColStaticDescr::FT_ENUM: {
+        cEnumComboWidget *p = new cEnumComboWidget(_tm, _fr, _sy, _par);
+        _DBGFNL() << " new cEnumComboWidget" << endl;
+        return p;
+    }
+    case cColStaticDescr::FT_SET: {
+        cSetWidget *p = new cSetWidget(_tm, _fr, _sy, ro, _par);
+        _DBGFNL() << " new cSetWidget" << endl;
+        return p;
+    }
+    case cColStaticDescr::FT_POLYGON: {
+        cPolygonWidget *p = new cPolygonWidget(_tm, _fr, _sy, ro, _par);
+        _DBGFNL() << " new cPolygonWidget" << endl;
+        return p;
+    }
     case cColStaticDescr::FT_INTEGER_ARRAY:
     case cColStaticDescr::FT_REAL_ARRAY:
-    case cColStaticDescr::FT_TEXT_ARRAY:
-        return new cArrayWidget(_tm, _fr, _sy, ro, _par);
-    case cColStaticDescr::FT_BINARY:
-        return new cBinaryWidget(_tm, _fr, _sy, ro, _par);
-    case cColStaticDescr::FT_TIME:
-        return new cTimeWidget(_tm, _fr, _sy, _par);
-    case cColStaticDescr::FT_DATE:
-        return new cDateWidget(_tm, _fr, _sy, _par);
-    case cColStaticDescr::FT_DATE_TIME:
-        return new cDateTimeWidget(_tm, _fr, _sy, _par);
-    case cColStaticDescr::FT_INTERVAL:
-        return new cIntervalWidget(_tm, _fr, _sy, ro, _par);
+    case cColStaticDescr::FT_TEXT_ARRAY: {
+         cArrayWidget *p = new cArrayWidget(_tm, _fr, _sy, ro, _par);
+        _DBGFNL() << " new cArrayWidget" << endl;
+        return p;
+    }
+    case cColStaticDescr::FT_BINARY: {
+        cBinaryWidget *p = new cBinaryWidget(_tm, _fr, _sy, ro, _par);
+        _DBGFNL() << " new cBinaryWidget" << endl;
+        return p;
+    }
+    case cColStaticDescr::FT_TIME: {
+        cTimeWidget *p = new cTimeWidget(_tm, _fr, _sy, _par);
+        _DBGFNL() << " new cTimeWidget" << endl;
+        return p;
+    }
+    case cColStaticDescr::FT_DATE: {
+        cDateWidget *p = new cDateWidget(_tm, _fr, _sy, _par);
+        _DBGFNL() << " new cDateWidget" << endl;
+        return p;
+    }
+    case cColStaticDescr::FT_DATE_TIME: {
+        cDateTimeWidget *p = new cDateTimeWidget(_tm, _fr, _sy, _par);
+        _DBGFNL() << " new cDateTimeWidget" << endl;
+        return p;
+    }
+    case cColStaticDescr::FT_INTERVAL: {
+        cIntervalWidget *p = new cIntervalWidget(_tm, _fr, _sy, ro, _par);
+        _DBGFNL() << " new cIntervalWidget" << endl;
+        return p;
+    }
     default:
         EXCEPTION(EDATA, et);
         return NULL;

@@ -3,7 +3,7 @@
 CREATE TYPE imagetype AS ENUM ('BMP', 'GIF', 'JPG', 'JPEG', 'PNG', 'PBM', 'PGM', 'PPM', 'XBM', 'XPM', 'BIN');
 
 CREATE TABLE images (
-    image_id        serial          PRIMARY KEY,
+    image_id        bigserial          PRIMARY KEY,
     image_name      varchar(32)     NOT NULL UNIQUE,
     image_note     varchar(255)    DEFAULT NULL,
     image_type      imagetype       NOT NULL DEFAULT 'PNG',
@@ -30,14 +30,14 @@ A places rekord típus
 ALTER TYPE placetype OWNER TO lanview2;
 
 CREATE TABLE places (
-    place_id    serial              PRIMARY KEY,
+    place_id    bigserial              PRIMARY KEY,
     place_name  varchar(32)         NOT NULL UNIQUE,
     place_note varchar(255)         DEFAULT NULL,
     place_alarm_msg varchar(255)    DEFAULT NULL,
     place_type  placetype           DEFAULT 'real',
-    parent_id   integer             DEFAULT NULL REFERENCES places(place_id) MATCH SIMPLE
+    parent_id   bigint             DEFAULT NULL REFERENCES places(place_id) MATCH SIMPLE
                                         ON DELETE RESTRICT ON UPDATE RESTRICT,
-    image_id    integer             DEFAULT NULL REFERENCES images(image_id) MATCH SIMPLE
+    image_id    bigint             DEFAULT NULL REFERENCES images(image_id) MATCH SIMPLE
                                         ON DELETE RESTRICT ON UPDATE RESTRICT,
     frame       polygon             DEFAULT NULL,
     tel         varchar(20)[]       DEFAULT NULL
@@ -55,7 +55,7 @@ COMMENT ON COLUMN places.parent_id  IS 'A térkép ill. alaprajz szülő, ha nin
 -- //// LOC.PLACE_GROUPS
 
 CREATE TABLE place_groups (
-    place_group_id      serial          PRIMARY KEY,
+    place_group_id      bigserial          PRIMARY KEY,
     place_group_name    varchar(32)     NOT NULL UNIQUE,
     place_group_note   varchar(255)    DEFAULT NULL
 );
@@ -68,9 +68,9 @@ COMMENT ON COLUMN place_groups.place_group_note     IS '';
 -- //// LOC.PLACE_GROUPS_MEMBERS
 
 CREATE TABLE place_group_places (
-    place_group_place_id   serial  PRIMARY KEY,
-    place_group_id          integer REFERENCES place_groups(place_group_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    place_id                integer REFERENCES places(place_id)             MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    place_group_place_id   bigserial  PRIMARY KEY,
+    place_group_id          bigint REFERENCES place_groups(place_group_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    place_id                bigint REFERENCES places(place_id)             MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     UNIQUE(place_group_id, place_id)
 );
 ALTER TABLE place_group_places OWNER TO lanview2;
@@ -113,9 +113,9 @@ SELECT nextval('places_place_id_seq');
 
 -- A megadott hely névhez visszaadja a hely ID-t
 -- Ha nincs ilyen nevű hely akkor dob egy kizárást.
-CREATE OR REPLACE FUNCTION place_name2id(varchar(32)) RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION place_name2id(varchar(32)) RETURNS bigint AS $$
 DECLARE
-    id integer;
+    id bigint;
 BEGIN
     SELECT place_id INTO id FROM places WHERE place_name = $1;
     IF NOT FOUND THEN
@@ -125,10 +125,10 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 -- Lekérdezi, hogy az idr azonosítójú places rekord parentje-e az idq-azonosítójúnak.
-CREATE OR REPLACE FUNCTION is_parent_place(idr integer, idq integer) RETURNS boolean AS $$
+CREATE OR REPLACE FUNCTION is_parent_place(idr bigint, idq bigint) RETURNS boolean AS $$
 DECLARE
-    n integer;
-    id integer := idr;
+    n bigint;
+    id bigint := idr;
 BEGIN
     n := 0;
     LOOP
@@ -147,11 +147,11 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION get_parent_image(idr integer) RETURNS images AS $$
+CREATE OR REPLACE FUNCTION get_parent_image(idr bigint) RETURNS images AS $$
 DECLARE
-    n integer;
-    pid integer := idr;
-    iid integer;
+    n bigint;
+    pid bigint := idr;
+    iid bigint;
     ret images;
 BEGIN
     n := 0;

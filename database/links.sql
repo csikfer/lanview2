@@ -1,18 +1,18 @@
 -- //// LAN.LLINKS_TABLE
 
 CREATE TABLE log_links_table (
-    log_link_id     serial          PRIMARY KEY,
-    port_id1        integer         NOT NULL UNIQUE,
+    log_link_id     bigserial          PRIMARY KEY,
+    port_id1        bigint         NOT NULL UNIQUE,
     --  REFERENCES interfaces(port_id) ON DELETE CASCADE ON UPDATE RESTRICT,
-    port_id2        integer         NOT NULL UNIQUE,
+    port_id2        bigint         NOT NULL UNIQUE,
     --  REFERENCES interfaces(port_id) ON DELETE CASCADE ON UPDATE RESTRICT,
     log_link_note  varchar(255)     DEFAULT NULL,                   -- Description
     link_type       linktype        NOT NULL,
 --    first_time    timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP, -- First time discovered the logical link
 --    last_time     timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Last time discovered the logical link
---    source_id       integer         NOT NULL
+--    source_id       bigint         NOT NULL
 --        REFERENCES users(user_id) MATCH SIMPLE ON DELETE RESTRICT ON UPDATE RESTRICT,
-    phs_link_chain  integer[]       NOT NULL,   -- phs-link-id chains
+    phs_link_chain  bigint[]       NOT NULL,   -- phs-link-id chains
     share_result    portshare       NOT NULL DEFAULT ''-- Ha az útvonalban megsoztás van, megadja az összeköttetés milyenségét
 );
 ALTER TABLE log_links_table OWNER TO lanview2;
@@ -34,9 +34,9 @@ ALTER TABLE log_links OWNER TO lanview2;
 COMMENT ON VIEW log_links IS 'Symmetric View Table for logical links';
 
 CREATE TABLE lldp_links_table (
-    lldp_link_id serial         PRIMARY KEY,
-    port_id1    integer REFERENCES interfaces(port_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    port_id2    integer REFERENCES interfaces(port_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    lldp_link_id bigserial         PRIMARY KEY,
+    port_id1    bigint REFERENCES interfaces(port_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    port_id2    bigint REFERENCES interfaces(port_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     first_time  timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP, -- First time discovered the logical link
     last_time   timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP  -- Last time discovered the logical link
 );
@@ -57,18 +57,18 @@ CREATE TYPE  phslinktype AS ENUM (
 );
 ALTER TYPE phslinktype OWNER TO lanview2;
 CREATE TABLE phs_links_table (
-    phs_link_id     serial          PRIMARY KEY,
-    port_id1        integer, -- REFERENCES nports(port_id) ON DELETE CASCADE ON UPDATE RESTRICT,
-    port_id2        integer, -- REFERENCES nports(port_id) ON DELETE CASCADE ON UPDATE RESTRICT,
+    phs_link_id     bigserial          PRIMARY KEY,
+    port_id1        bigint, -- REFERENCES nports(port_id) ON DELETE CASCADE ON UPDATE RESTRICT,
+    port_id2        bigint, -- REFERENCES nports(port_id) ON DELETE CASCADE ON UPDATE RESTRICT,
     phs_link_type1  phslinktype     NOT NULL,
     phs_link_type2  phslinktype     NOT NULL,
     phs_link_note  varchar(255)    DEFAULT NULL,
     port_shared     portshare       NOT NULL DEFAULT '',
     link_type       linktype        NOT NULL,
     create_time     timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    create_user_id  integer         DEFAULT NULL,
+    create_user_id  bigint         DEFAULT NULL,
     modify_time     timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    modify_user_id  integer         DEFAULT NULL,
+    modify_user_id  bigint         DEFAULT NULL,
     forward         boolean         DEFAULT true
 );
 ALTER TABLE phs_links_table OWNER TO lanview2;
@@ -142,7 +142,7 @@ COMMENT ON VIEW lldp_named_links IS 'Symmetric View Table for lldp links with na
 -- Mivel kell az iftypes rekord, ezért mellékesen ellenörzi a port_id-t is.
 -- Busz típusu interface-k nél sem engedünk meg töbszörös csatlakozást, mert nehezen követhető,
 --  valós, vagy fiktív "elosztó dobozokat" kell betenni, a korlátozás megkerüléséhez.
-CREATE OR REPLACE FUNCTION phs_link_type(integer, phslinktype) RETURNS phslinktype AS
+CREATE OR REPLACE FUNCTION phs_link_type(bigint, phslinktype) RETURNS phslinktype AS
 -- $1 port_id
 -- $2 phs_link_type
 $$
@@ -177,16 +177,16 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION check_phs_shared(integer, portshare, phslinktype, integer)
+CREATE OR REPLACE FUNCTION check_phs_shared(bigint, portshare, phslinktype, bigint)
 -- $1 port_id
 -- $2 port_shared
 -- $3 phs_link_type
 -- $4 OLD.phs_link_id OR -1
     RETURNS void AS $$
 DECLARE
-    n integer;
+    n bigint;
     ps portshare;
-    id integer := $4;
+    id bigint := $4;
 BEGIN
     IF $2 = '' OR $3 <> 'Front' THEN     -- Nincs SHARE
         IF $3 = 'Term' OR $3 = 'Back' THEN
@@ -223,7 +223,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION link_type(integer, integer, linktype) RETURNS linktype AS
+CREATE OR REPLACE FUNCTION link_type(bigint, bigint, linktype) RETURNS linktype AS
 -- $1 port_id1
 -- $2 port_id2
 -- $3 link_type
@@ -262,8 +262,8 @@ $$ LANGUAGE plpgsql;
 -- Új fizikai link felvitele elötti ellenörzések, esetleges kiegészítések
 CREATE OR REPLACE FUNCTION check_insert_phs_links() RETURNS TRIGGER AS $$
 DECLARE
-    n integer;
-    old_id integer := -1; -- ilyen ID nincs, de kezelhetőbb min a NULL
+    n bigint;
+    old_id bigint := -1; -- ilyen ID nincs, de kezelhetőbb min a NULL
     uid text;
 BEGIN
     IF TG_OP = 'UPDATE' THEN
@@ -301,7 +301,7 @@ BEGIN
     IF NEW.create_user_id IS NULL THEN
         SELECT current_setting('lanview2.user_id') INTO uid;
         IF uid <> 'NULL' THEN
-            NEW.create_user_id := CAST(uid AS integer);
+            NEW.create_user_id := CAST(uid AS bigint);
         END IF;
     END IF;
     NEW.forward := CAST('f' AS boolean);
@@ -320,8 +320,8 @@ CREATE OR REPLACE FUNCTION next_phs_link(
 )   RETURNS phs_links AS  -- A visszaadott rekordban van tárolva az eredő megosztás, tehát ez a mező nem a rekordbeli értéket tartalmazza.
 $$
 DECLARE
-    lid         integer;        -- phs_link_id
-    pid         integer;        -- port_id a megadott irányban
+    lid         bigint;        -- phs_link_id
+    pid         bigint;        -- port_id a megadott irányban
     link_type   phslinktype;    -- link/csatlakozás típusa a megadott irányban
     port        pports;         -- port rekord a megadott irányban
     osh         portshare;      -- eredő share
@@ -411,17 +411,17 @@ CREATE OR REPLACE FUNCTION post_insert_phs_links()
 $BODY$
 DECLARE
     modif       boolean := FALSE;   -- UPDATE esetén, ha érdemi változtatás történt
-    lid         integer;            -- phs_link_id
-    pid         integer;            -- port_id a lánc elején
+    lid         bigint;            -- phs_link_id
+    pid         bigint;            -- port_id a lánc elején
     lrec_r      phs_links;          -- phs_links rekord jobra menet / végpont felöli menet
     lrec_l      phs_links;          -- phs_links rekord balra menet
     psh         portshare;          -- Eredő share
     psh_r       portshare;          -- Mentett eredő share a jobramenet végén
     dir         linkdirection;      -- Végig járási (kezdő) irány
-    path_r      integer[];          -- Linkek (id) lánca, jobra menet, vagy végpontrol menet
-    path_l      integer[];          -- Linkek (id) lánca, barla menet
+    path_r      bigint[];          -- Linkek (id) lánca, jobra menet, vagy végpontrol menet
+    path_l      bigint[];          -- Linkek (id) lánca, barla menet
     shares      portshare[];
-    shix        integer;            -- Index a fenti tömbön
+    shix        bigint;            -- Index a fenti tömbön
     lt          linktype;
     logl    log_links_table;
 BEGIN
@@ -495,7 +495,7 @@ BEGIN
         shares := ARRAY['','A','B','AA','AB','BA','BB','C','D'];    -- A lehetséges, végig próbálandó share-ek
         WHILE array_length(shares, 1) > 0 LOOP
             path_r := ARRAY[NEW.phs_link_id];           -- A path tömb a jobra bejáráshoz, és a kiíndulópont
-            path_l := ARRAY[]::integer[];               -- A path tömb a balra bejáráshoz
+            path_l := ARRAY[]::bigint[];               -- A path tömb a balra bejáráshoz
             psh    := shares[1];                        -- az első elemmel dolgozunk
             shares := shares[2:array_upper(shares,1)];  -- és ki is kapjuk az első elemet a tömbből
             lrec_r := NEW;                              -- Kiindulási pont az új rekord, elöszőr jobra
@@ -559,7 +559,7 @@ CREATE TRIGGER post_insert_phs_links  AFTER  INSERT OR UPDATE OR DELETE ON phs_l
 -- A trigger függvény a log_links_table ellenörzésére szolgál
 CREATE OR REPLACE FUNCTION check_log_links() RETURNS TRIGGER AS $$
 DECLARE
-    n integer;
+    n bigint;
 BEGIN
     IF TG_OP = 'UPDATE' THEN
         -- Csak a log_link_note mező módisítása megengedett

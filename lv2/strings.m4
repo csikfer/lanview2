@@ -138,21 +138,21 @@ STRDEF(ParamTypes, "param_types")
   STRDEF(SuspectedUplink, "suspected_uplink")   dnl boolean (TABLE:mactab / APP:portmac)
  STRDEF(ParamTypeNote, "param_type_note")
  STRDEF(ParamTypeType, "param_type_type")
-  STRDEF(Any, "any");
   dnl boolean
-  STRDEF(Integer, "integer");
-  STRDEF(Real, "real")
-  STRDEF(Char, "char")
-  STRDEF(String, "string")
+  STRDEF(BigInt, "bigint");
+  STRDEF(DoublePrecision, "double precision")
+  STRDEF(Text, "text")
   STRDEF(Interval, "interval")
-  STRDEF(Ipaddress, "ipaddress")
-  STRDEF(URL, "URL")
+  STRDEF(Date, "date")
+  STRDEF(Time, "time")
+  STRDEF(Timestamp, "timestamp")
+  STRDEF(INet, "inet")
+  dnl ByteA
  STRDEF(ParamTypeDim, "param_type_dim")
 STRDEF(SysParams, "sys_params")
  STRDEF(SysParamId, "sys_param_id")
  STRDEF(SysParamName, "sys_param_name")
- STRDEF(SysParamValue, "sys_param_value")
- dnl param_type_id
+ dnl param_value, param_type_id
 STRDEF(Tpows, "tpows")
  STRDEF(TpowId, "tpow_id")
  STRDEF(TpowName, "tpow_name")
@@ -352,7 +352,7 @@ STRDEF(SubNets, "subnets")
   STRDEF(Secondary, "secondary")
   dnl pseudo
   dnl private
-STRDEF(PortParas, "port_params")
+STRDEF(PortParams, "port_params")
  STRDEF(PortParamIdm, "port_param_id")
  dnl param_type_id, port_id
  STRDEF(ParamValue, "param_value")

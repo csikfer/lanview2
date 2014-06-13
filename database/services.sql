@@ -1,7 +1,7 @@
 -- //// LAN.IPPROTOCOLLS
 
 CREATE TABLE ipprotocols (
-    protocol_id     integer     PRIMARY KEY,    -- == protocol number
+    protocol_id     bigint     PRIMARY KEY,    -- == protocol number
     protocol_name   varchar(32) NOT NULL UNIQUE
 );
 ALTER TABLE ipprotocols OWNER TO lanview2;
@@ -16,21 +16,21 @@ INSERT INTO ipprotocols (protocol_id, protocol_name) VALUES
 -- //// LAN.SERVICES
 
 CREATE TABLE services (
-    service_id              serial          PRIMARY KEY,
+    service_id              bigserial          PRIMARY KEY,
     service_name            varchar(32)     NOT NULL,
     service_note           varchar(255)    DEFAULT NULL,
     service_alarm_msg       varchar(255)    DEFAULT NULL,
-    protocol_id             integer         DEFAULT -1  -- nil
+    protocol_id             bigint         DEFAULT -1  -- nil
         REFERENCES ipprotocols(protocol_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
-    port                    integer         DEFAULT NULL,
+    port                    bigint         DEFAULT NULL,
     superior_service_mask   varchar(32)     DEFAULT NULL,
     check_cmd               varchar(255)    DEFAULT NULL,
     properties              varchar(255)    DEFAULT ':',
-    max_check_attempts      integer         DEFAULT NULL,
-    normal_check_interval   integer         DEFAULT NULL,
-    retry_check_interval    integer         DEFAULT NULL,
+    max_check_attempts      bigint         DEFAULT NULL,
+    normal_check_interval   bigint         DEFAULT NULL,
+    retry_check_interval    bigint         DEFAULT NULL,
     flapping_interval       interval        NOT NULL DEFAULT '30 minutes',
-    flapping_max_change     integer         NOT NULL DEFAULT 15,
+    flapping_max_change     bigint         NOT NULL DEFAULT 15,
     UNIQUE (service_name, protocol_id)
 );
 ALTER TABLE services OWNER TO lanview2;
@@ -67,9 +67,9 @@ tcp         Alternatív TCP port megadása, paraméter a port száma
 udp         Alternatív UDP port megadása, paraméter a port száma
 ';
 
-CREATE OR REPLACE FUNCTION service_name2id(varchar(32)) RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION service_name2id(varchar(32)) RETURNS bigint AS $$
 DECLARE
-    id integer;
+    id bigint;
 BEGIN
     SELECT service_id INTO id FROM services WHERE service_name = $1;
     IF NOT FOUND THEN
@@ -80,7 +80,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION service_id2name(integer) RETURNS TEXT AS $$
+CREATE OR REPLACE FUNCTION service_id2name(bigint) RETURNS TEXT AS $$
 DECLARE
     name TEXT;
 BEGIN
@@ -108,44 +108,44 @@ Riasztás tiltási állapotok:
 "from_to" Az alarmok egy tőintervallumban le lesznek/vannak/voltak tiltva';
 
 CREATE TABLE host_services (
-    host_service_id     serial          PRIMARY KEY,
-    node_id             integer,
+    host_service_id     bigserial          PRIMARY KEY,
+    node_id             bigint         NOT NULL,
     --  REFERENCES nodess(node_id) MATCH FULL ON DELETE CASCADE ON UPDATE CASCADE,
-    service_id          integer         NOT NULL
+    service_id          bigint         NOT NULL
         REFERENCES services(service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    port_id             integer         DEFAULT NULL,
+    port_id             bigint         DEFAULT NULL,
     host_service_note  varchar(255)    DEFAULT NULL,
     host_service_alarm_msg varchar(255) DEFAULT NULL,
-    prime_service_id    integer         DEFAULT NULL
+    prime_service_id    bigint         DEFAULT NULL
         REFERENCES services(service_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE RESTRICT,
-    proto_service_id    integer         DEFAULT NULL
+    proto_service_id    bigint         DEFAULT NULL
         REFERENCES services(service_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE RESTRICT,
     --  REFERENCES interfaces(port_id) MATCH SIMPLE
     delegate_host_state boolean         NOT NULL DEFAULT FALSE,
     check_cmd           varchar(255)    DEFAULT NULL,
     properties          varchar(255)    DEFAULT NULL,
-    superior_host_service_id integer    DEFAULT NULL
+    superior_host_service_id bigint    DEFAULT NULL
         REFERENCES host_services(host_service_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
-    max_check_attempts  integer         DEFAULT NULL,
-    normal_check_interval integer       DEFAULT NULL,
-    retry_check_interval integer        DEFAULT NULL,
-    timeperiod_id       integer         NOT NULL DEFAULT 0   -- DEFAULT 'always'
+    max_check_attempts  bigint         DEFAULT NULL,
+    normal_check_interval bigint       DEFAULT NULL,
+    retry_check_interval bigint        DEFAULT NULL,
+    timeperiod_id       bigint         NOT NULL DEFAULT 0   -- DEFAULT 'always'
         REFERENCES timeperiods(timeperiod_id) MATCH FULL ON DELETE SET DEFAULT ON UPDATE RESTRICT,
     noalarm_flag        noalarmtype     NOT NULL DEFAULT 'off',
     noalarm_from        timestamp       DEFAULT NULL,
     noalarm_to          timestamp       DEFAULT NULL,
-    offline_group_id    integer[]       DEFAULT NULL,
-    online_group_id     integer[]       DEFAULT NULL,
+    offline_group_id    bigint[]       DEFAULT NULL,
+    online_group_id     bigint[]       DEFAULT NULL,
 -- Állapot
     host_service_state  notifswitch     NOT NULL DEFAULT 'unknown',
     soft_state          notifswitch     NOT NULL DEFAULT 'unknown',
     hard_state          notifswitch     NOT NULL DEFAULT 'unknown',
     superior_service    boolean         NOT NULL DEFAULT TRUE,
-    check_attempts      integer         NOT NULL DEFAULT 0,
+    check_attempts      bigint         NOT NULL DEFAULT 0,
     last_changed        TIMESTAMP       DEFAULT NULL,
     last_touched        TIMESTAMP       DEFAULT NULL,
-    act_alarm_log_id    integer         DEFAULT NULL,   -- REFERENCES alarms(alarm_id)
-    last_alarm_log_id   integer         DEFAULT NULL,   -- REFERENCES alarms(alarm_id)
+    act_alarm_log_id    bigint         DEFAULT NULL,   -- REFERENCES alarms(alarm_id)
+    last_alarm_log_id   bigint         DEFAULT NULL,   -- REFERENCES alarms(alarm_id)
 -- Állapot vége
     deleted             boolean         NOT NULL DEFAULT FALSE,
     UNIQUE (node_id, service_id, port_id)
@@ -184,7 +184,7 @@ COMMENT ON COLUMN host_services.last_touched IS 'Utolsó ellenözzés időpontja
 COMMENT ON COLUMN host_services.act_alarm_log_id IS 'Riasztási állapot esetén az aktuális riasztás log rekord ID-je';
 COMMENT ON COLUMN host_services.last_alarm_log_id IS 'Az utolsó riasztás log rekord ID-je';
 
-CREATE OR REPLACE FUNCTION host_service_id2name(integer) RETURNS TEXT AS $$
+CREATE OR REPLACE FUNCTION host_service_id2name(bigint) RETURNS TEXT AS $$
 DECLARE
     name TEXT;
 BEGIN
@@ -203,8 +203,8 @@ $$ LANGUAGE plpgsql;
 
 
 CREATE TABLE host_service_logs (
-    host_service_log_id serial      PRIMARY KEY,
-    host_service_id     integer
+    host_service_log_id bigserial      PRIMARY KEY,
+    host_service_id     bigint
         REFERENCES host_services(host_service_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
     date_of             timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     old_state           notifswitch     NOT NULL,
@@ -214,7 +214,7 @@ CREATE TABLE host_service_logs (
     new_soft_state      notifswitch     NOT NULL,
     new_hard_state      notifswitch     NOT NULL,
     event_note          varchar(255)    DEFAULT NULL,
-    superior_alarm      integer         DEFAULT NULL,
+    superior_alarm      bigint         DEFAULT NULL,
     noalarm             boolean         NOT NULL,
     service_name        varchar(32)     NOT NULL DEFAULT '',
     node_name           varchar(32)     NOT NULL DEFAULT ''
@@ -224,13 +224,13 @@ ALTER TABLE host_service_logs OWNER TO lanview2;
 COMMENT ON TABLE host_service_logs IS 'Hoszt szervízek státusz változásainak a log táblája';
 
 CREATE TABLE host_service_noalarms (
-    host_service_noalarm_id serial      PRIMARY KEY,
+    host_service_noalarm_id bigserial      PRIMARY KEY,
     date_of                 timestamp   DEFAULT CURRENT_TIMESTAMP,
-    host_service_id         integer     REFERENCES host_services(host_service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    host_service_id         bigint     REFERENCES host_services(host_service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     noalarm_flag            noalarmtype NOT NULL,
     noalarm_from            timestamp   DEFAULT NULL,
     noalarm_to              timestamp   DEFAULT NULL,
-    user_id                 integer     DEFAULT NULL REFERENCES users(user_id) MATCH SIMPLE
+    user_id                 bigint     DEFAULT NULL REFERENCES users(user_id) MATCH SIMPLE
 );
 CREATE INDEX host_service_noalarms_date_of_index ON host_service_noalarms (date_of);
 ALTER TABLE host_service_noalarms OWNER TO lanview2;
@@ -243,18 +243,18 @@ COMMENT ON COLUMN host_service_noalarms.noalarm_to IS 'Ha a tíltás időhöz k�
 COMMENT ON COLUMN host_service_noalarms.user_id IS 'A tíltást kiadó felhasználó azonosítója.';
 
 CREATE TABLE host_service_charts (
-    host_service_chart_id serial        PRIMARY KEY,
-    host_service_id     integer         REFERENCES host_services(host_service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    host_service_chart_id bigserial        PRIMARY KEY,
+    host_service_id     bigint         REFERENCES host_services(host_service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     rrd_file_name       varchar(255)    DEFAULT NULL,
-    graph_order         integer[]       DEFAULT NULL,
+    graph_order         bigint[]       DEFAULT NULL,
     graph_args          varchar(255)    DEFAULT NULL,
     graph_vlabel        varchar(255)    DEFAULT NULL,
     graph_scale         boolean         DEFAULT NULL,   -- ??
     graph_info          varchar(255)    DEFAULT NULL,   -- ??
     graph_category      varchar(255)    DEFAULT NULL,   -- ??
     graph_period        varchar(255)    DEFAULT NULL,   -- ??
-    graph_height        integer         DEFAULT 300,
-    graph_width         integer         DEFAULT 600,
+    graph_height        bigint         DEFAULT 300,
+    graph_width         bigint         DEFAULT 600,
     deleted             boolean         NOT NULL DEFAULT FALSE
 );
 ALTER TABLE host_service_charts OWNER TO lanview2;
@@ -267,12 +267,12 @@ CREATE TYPE drawtype AS ENUM ('LINE', 'AREA', 'STACK');
 ALTER TYPE drawtype OWNER TO lanview2;
 
 CREATE TABLE host_service_vars (
-    service_var_id      serial          PRIMARY KEY,
+    service_var_id      bigserial          PRIMARY KEY,
     service_var_name    varchar(32)     NOT NULL,
     service_var_note    varchar(255)    DEFAULT NULL,
-    host_service_id     integer         NOT NULL
+    host_service_id     bigint         NOT NULL
         REFERENCES host_services(host_service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    color               integer         DEFAULT 0,
+    color               bigint         DEFAULT 0,
     service_var_type    servicevartype  DEFAULT 'GAUGE',
     draw_type           drawtype        DEFAULT 'LINE',
     cdef                varchar(255)    DEFAULT NULL,
@@ -308,7 +308,7 @@ $$ LANGUAGE plpgsql;
 -- host_services rekord ellenörzése
 CREATE OR REPLACE FUNCTION check_host_services() RETURNS TRIGGER AS $$
 DECLARE
-    id      integer;
+    id      bigint;
     psma    text;
     scmd    text;
     cset    boolean := FALSE;
@@ -363,7 +363,7 @@ BEGIN
             END IF;
             IF NEW.noalarm_flag <> 'off' THEN
                 INSERT INTO host_service_noalarms (host_service_id, noalarm_flag, noalarm_from, noalarm_to, user_id)
-                    VALUES(NEW.host_service_id, NEW.noalarm_flag, NEW.noalarm_from, NEW.noalarm_to, current_setting('lanview2.user_id')::integer);
+                    VALUES(NEW.host_service_id, NEW.noalarm_flag, NEW.noalarm_from, NEW.noalarm_to, current_setting('lanview2.user_id')::bigint);
             END IF;
         END IF;
     END IF;
@@ -387,8 +387,8 @@ DECLARE
     hsnm varchar(32) := _hsnm;
     ptyp varchar(64) := _ptyp;
     serv varchar(32);
-    rres integer;
-    nid  integer;
+    rres bigint;
+    nid  bigint;
 BEGIN
     IF hsnm IS NULL THEN
         hsnm := superior_service_mask FROM services WHERE service_id = hsrv.service_id;
@@ -442,7 +442,7 @@ END
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION set_superior(
-    hsid  integer,            -- Az frissítendő host_services rekord
+    hsid  bigint,            -- Az frissítendő host_services rekord
     hsnm varchar(32) DEFAULT NULL, -- Superior service_name
     ptyp varchar(64) DEFAULT NULL  -- A host port típusa ami linkel a superior_host -hoz
 ) RETURNS boolean AS $$

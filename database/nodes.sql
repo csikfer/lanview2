@@ -16,10 +16,10 @@ COMMENT ON TYPE portobjtype IS
     interface,    A port objektum típusa cInterface, tábla interfaces (aktív port)
     unknown       Ismeretlen (az api kizárást fog dobni!)';
 CREATE TABLE iftypes (
-    iftype_id           serial          PRIMARY KEY,
+    iftype_id           bigserial          PRIMARY KEY,
     iftype_name         varchar(64)     NOT NULL UNIQUE,
     iftype_note         varchar(255)    DEFAULT NULL,
-    iftype_iana_id      integer         NOT NULL DEFAULT 1, -- 'other'
+    iftype_iana_id      bigint         NOT NULL DEFAULT 1, -- 'other'
     iftype_link_type    linktype        NOT NULL DEFAULT 'ptp',
     iftype_obj_type     portobjtype     NOT NULL,
     preferred           bool            DEFAULT false
@@ -98,14 +98,14 @@ IndaContact port stáruszok kifelytése:
     error   Error                                       E           unknown';
 
 CREATE TABLE nports (
-    port_id     serial          PRIMARY KEY,
+    port_id     bigserial          PRIMARY KEY,
     port_name   varchar(32)     NOT NULL,
     port_note  varchar(255)    DEFAULT NULL,
     port_tag    varchar(32)     DEFAULT NULL,
-    iftype_id   integer         DEFAULT 0   -- Default type is 'unknown'
+    iftype_id   bigint         DEFAULT 0   -- Default type is 'unknown'
                         REFERENCES iftypes(iftype_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
-    node_id     integer         NOT NULL,   -- REFERENCES (patch, nodes, snmp_devs)
-    port_index  integer         DEFAULT NULL,   -- added 2011.09.05
+    node_id     bigint         NOT NULL,   -- REFERENCES (patch, nodes, snmp_devs)
+    port_index  bigint         DEFAULT NULL,   -- added 2011.09.05
     deleted     boolean         DEFAULT false,
     UNIQUE(node_id, port_name)
 );
@@ -121,10 +121,10 @@ COMMENT ON COLUMN nports.port_index IS 'Opcionális port index. Egyes leszármaz
 COMMENT ON COLUMN nports.deleted    IS 'Ha igaz, akkor a port logikailag törölve lett.';
 
 CREATE TABLE port_params (
-    port_param_id       serial          PRIMARY KEY,
-    param_type_id       integer         NOT NULL
+    port_param_id       bigserial          PRIMARY KEY,
+    param_type_id       bigint         NOT NULL
             REFERENCES param_types(param_type_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
-    port_id             integer         NOT NULL,   -- REFERENCES nports(port_id) kivéve pports
+    port_id             bigint         NOT NULL,   -- REFERENCES nports(port_id) kivéve pports
     param_value         varchar(255)    DEFAULT NULL,
     UNIQUE (param_type_id, port_id)
 );
@@ -135,9 +135,9 @@ COMMENT ON COLUMN port_params.param_type_id IS 'A paraméter tulajdonságait def
 COMMENT ON COLUMN port_params.port_id IS 'A tulajdonos port rekordjának az azonosítója.';
 COMMENT ON COLUMN port_params.param_value IS 'A parméter érték.';
 
-CREATE OR REPLACE FUNCTION set_str_port_param(pid integer, txtval text, tname varchar(32)) RETURNS reasons AS $$
+CREATE OR REPLACE FUNCTION set_str_port_param(pid bigint, txtval text, tname varchar(32)) RETURNS reasons AS $$
 DECLARE
-    type_id integer;
+    type_id bigint;
 BEGIN
     SELECT param_type_id INTO type_id FROM param_types WHERE param_type_name = tname;
     IF NOT FOUND THEN
@@ -155,28 +155,28 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION set_bool_port_param(pid integer, boolval boolean, tname varchar(32) ) RETURNS reasons AS $$
+CREATE OR REPLACE FUNCTION set_bool_port_param(pid bigint, boolval boolean, tname varchar(32) ) RETURNS reasons AS $$
 BEGIN
     RETURN set_str_port_param(pid, boolval::text, tname);
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION set_int_port_param(pid integer, intval integer, tname varchar(32)) RETURNS reasons AS $$
+CREATE OR REPLACE FUNCTION set_int_port_param(pid bigint, intval bigint, tname varchar(32)) RETURNS reasons AS $$
 BEGIN
     RETURN set_str_port_param(pname, intval::text, tname);
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION set_interval_port_param(pid integer, ival interval, tname varchar(32)) RETURNS reasons AS $$
+CREATE OR REPLACE FUNCTION set_interval_port_param(pid bigint, ival interval, tname varchar(32)) RETURNS reasons AS $$
 BEGIN
     RETURN set_str_port_param(pid, ival::text, tname);
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION get_str_port_param(pid integer, tname varchar(32)) RETURNS text AS $$
+CREATE OR REPLACE FUNCTION get_str_port_param(pid bigint, tname varchar(32)) RETURNS text AS $$
 DECLARE
     res text;
-    type_id integer;
+    type_id bigint;
 BEGIN
     SELECT param_type_id INTO type_id FROM param_types WHERE param_type_name = tname;
     IF NOT FOUND THEN
@@ -190,7 +190,7 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION get_bool_port_param(pid integer, tname varchar(32)) RETURNS boolean AS $$
+CREATE OR REPLACE FUNCTION get_bool_port_param(pid bigint, tname varchar(32)) RETURNS boolean AS $$
 BEGIN
     IF get_str_port_param(pid,tname)::boolean THEN
         RETURN true;
@@ -200,13 +200,13 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION get_int_port_param(pid integer, tname varchar(32)) RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION get_int_port_param(pid bigint, tname varchar(32)) RETURNS bigint AS $$
 BEGIN
-    RETURN get_str_port_param(pid,tname)::integer;
+    RETURN get_str_port_param(pid,tname)::bigint;
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION get_interval_port_param(pid integer, tname varchar(32)) RETURNS interval AS $$
+CREATE OR REPLACE FUNCTION get_interval_port_param(pid bigint, tname varchar(32)) RETURNS interval AS $$
 BEGIN
     RETURN get_str_port_param(pname,tname)::interval;
 END
@@ -214,10 +214,10 @@ $$ LANGUAGE plpgsql;
 
 
 CREATE TABLE patchs (
-    node_id     serial          PRIMARY KEY,    -- Sequence: patchs_node_id_seq
+    node_id     bigserial          PRIMARY KEY,    -- Sequence: patchs_node_id_seq
     node_name   varchar(32)     NOT NULL UNIQUE,
     node_note   varchar(255)    DEFAULT NULL,
-    place_id    integer         DEFAULT 0   -- place = 'unknown'
+    place_id    bigint         DEFAULT 0   -- place = 'unknown'
                 REFERENCES places(place_id) MATCH FULL ON DELETE SET DEFAULT ON UPDATE RESTRICT,
     deleted     boolean         NOT NULL DEFAULT false
 );
@@ -290,7 +290,7 @@ COMMENT ON FUNCTION min_shared(portshare, portshare) IS 'Legkisebb SHARE meghat�
 CREATE OR REPLACE FUNCTION shares_filt(shares portshare[], sh portshare) RETURNS portshare[] AS $$
 DECLARE
     oshs    portshare[];
-    i       integer;
+    i       bigint;
 BEGIN
     FOR i IN 0 .. array_length(shares, 1) LOOP
         IF check_shared(shares[i], sh) THEN
@@ -304,7 +304,7 @@ COMMENT ON FUNCTION shares_filt(portshare[], portshare) IS 'Egy portshare tömbn
 
 CREATE TABLE pports (
     shared_cable    portshare   NOT NULL DEFAULT '',
-    shared_port_id  integer     DEFAULT NULL REFERENCES pports(port_id) MATCH SIMPLE,
+    shared_port_id  bigint     DEFAULT NULL REFERENCES pports(port_id) MATCH SIMPLE,
     PRIMARY KEY (port_id),
     CONSTRAINT patchports FOREIGN KEY (node_id)
         REFERENCES patchs(node_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
@@ -328,9 +328,9 @@ CREATE TABLE interfaces (
     hwaddress       macaddr     DEFAULT NULL,
     port_ostat      ifstatus    NOT NULL DEFAULT 'unknown',
     port_astat      ifstatus    DEFAULT NULL,   -- The desired state of the interface
-    port_staple_id  integer     DEFAULT NULL
+    port_staple_id  bigint     DEFAULT NULL
         REFERENCES interfaces(port_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
-    dualface_type   integer     DEFAULT NULL
+    dualface_type   bigint     DEFAULT NULL
         REFERENCES iftypes(iftype_id) MATCH SIMPLE ON DELETE RESTRICT ON UPDATE RESTRICT,
     PRIMARY KEY (port_id),
     UNIQUE(node_id, port_name),
@@ -348,7 +348,7 @@ COMMENT ON COLUMN interfaces.dualface_type IS 'Dualface port esetén a másik t�
 -- /////
 
 CREATE TABLE vlans (
-    vlan_id     integer         PRIMARY KEY,
+    vlan_id     bigint         PRIMARY KEY,
     vlan_name   varchar(32)     NOT NULL UNIQUE,
     vlan_note  varchar(255)    DEFAULT NULL,
     vlan_stat   boolean         NOT NULL DEFAULT 'on'
@@ -371,11 +371,11 @@ COMMENT ON TYPE subnettype IS
     private     privát nem routolt tartomány (más tartományokkal ütközhet)';
 
 CREATE TABLE subnets (
-    subnet_id       serial          PRIMARY KEY,
+    subnet_id       bigserial          PRIMARY KEY,
     subnet_name     varchar(32)     NOT NULL UNIQUE,
     subnet_note    varchar(255)    DEFAULT NULL,
     netaddr         cidr            NOT NULL,
-    vlan_id         integer         DEFAULT NULL
+    vlan_id         bigint         DEFAULT NULL
             REFERENCES vlans(vlan_id) MATCH SIMPLE ON DELETE RESTRICT ON UPDATE RESTRICT,
     subnet_type     subnettype      NOT NULL DEFAULT 'primary'
 );
@@ -430,9 +430,9 @@ query   lekérdező program töltötte ki
 manual  kézzel megadva';
 
 CREATE TABLE port_vlans (
-    port_vlan_id    serial      PRIMARY KEY,
-    port_id         integer     REFERENCES interfaces(port_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    vlan_id         integer     REFERENCES vlans(vlan_id)      MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    port_vlan_id    bigserial      PRIMARY KEY,
+    port_id         bigint     REFERENCES interfaces(port_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    vlan_id         bigint     REFERENCES vlans(vlan_id)      MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     first_time      timestamp   DEFAULT CURRENT_TIMESTAMP,
     last_time       timestamp   DEFAULT CURRENT_TIMESTAMP,
     vlan_type       vlantype    NOT NULL DEFAULT 'untagged',
@@ -449,14 +449,14 @@ ALTER TYPE addresstype OWNER TO lanview2;
 
 
 CREATE TABLE ipaddresses (
-    ip_address_id   serial      PRIMARY KEY,
+    ip_address_id   bigserial      PRIMARY KEY,
     ip_address_note varchar(255) DEFAULT NULL,
     address         inet        DEFAULT NULL,
     ip_address_type addresstype DEFAULT 'dynamic',
-    preferred       integer     DEFAULT NULL,
-    subnet_id       integer     DEFAULT NULL REFERENCES subnets(subnet_id) MATCH SIMPLE
+    preferred       bigint     DEFAULT NULL,
+    subnet_id       bigint     DEFAULT NULL REFERENCES subnets(subnet_id) MATCH SIMPLE
                                     ON DELETE RESTRICT ON UPDATE RESTRICT,
-    port_id         integer     NOT NULL REFERENCES interfaces(port_id) MATCH FULL
+    port_id         bigint     NOT NULL REFERENCES interfaces(port_id) MATCH FULL
                                     ON DELETE CASCADE ON UPDATE RESTRICT
 );
 ALTER TABLE ipaddresses OWNER TO lanview2;
@@ -474,7 +474,7 @@ CREATE TABLE nodes (
     node_stat       notifswitch     DEFAULT NULL,
     node_alarm_msg  varchar(255)    DEFAULT NULL,
     node_type       nodetype[]      NOT NULL,
-    alarm_place_group_id    integer DEFAULT NULL,
+    alarm_place_group_id    bigint DEFAULT NULL,
     PRIMARY KEY (node_id),
     UNIQUE (node_name),
     CONSTRAINT nodes_place_id_fkey FOREIGN KEY (place_id)
@@ -496,7 +496,7 @@ CREATE TABLE snmpdevices (
     snmp_ver        snmpver        NOT NULL DEFAULT '2c',
     sysdescr        varchar(255),
     sysobjectid     varchar(32),        -- OID tárolása milyen változóban lehetne még?
-    sysuptime       integer,    -- ez itt egy integer, ami a másodperceket jelöli
+    sysuptime       bigint,    -- ez itt egy bigint, ami a másodperceket jelöli
     syscontact      varchar(255),
     sysname         varchar(255),
     syslocation     varchar(255),
@@ -520,9 +520,9 @@ ALTER TABLE snmpdevices OWNER TO lanview2;
 -- A megadott hálózati node névhez visszaadja a node ID-t
 -- Az összes patchs tábla leszármazotjában keres (tahát a nodes, snmpdevices-ben is).
 -- Ha nincs ilyen nevű hálózati node akkor dob egy kizárást.
-CREATE OR REPLACE FUNCTION node_name2id(varchar(32)) RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION node_name2id(varchar(32)) RETURNS bigint AS $$
 DECLARE
-    id integer;
+    id bigint;
 BEGIN
     SELECT node_id INTO id FROM patchs WHERE node_name = $1;
     IF NOT FOUND THEN
@@ -535,7 +535,7 @@ $$ LANGUAGE plpgsql;
 -- A megadott hálózati node ID-hez visszaadja a node nevét
 -- Az összes patchs tábla leszármazotjában keres (tahát a nodes, snmpdevices-ben is).
 -- Ha nincs ilyen nevű hálózati node ID akkor dob egy kizárást.
-CREATE OR REPLACE FUNCTION node_id2name(integer) RETURNS varchar(32) AS $$
+CREATE OR REPLACE FUNCTION node_id2name(bigint) RETURNS varchar(32) AS $$
 DECLARE
     id varchar(32);
 BEGIN
@@ -548,7 +548,7 @@ END
 $$ LANGUAGE plpgsql;
 
 -- A node_id alapján visszaadja a tábla nevet
-CREATE OR REPLACE FUNCTION node_id2table_name(integer) RETURNS text AS $$
+CREATE OR REPLACE FUNCTION node_id2table_name(bigint) RETURNS text AS $$
 BEGIN
     RETURN relname FROM patchs JOIN pg_class ON patchs.tableoid = pg_class.oid WHERE node_id = $1;
 END
@@ -557,9 +557,9 @@ $$ LANGUAGE plpgsql;
 -- Néhány port_id -vel kapcsolatos helper függvény
 --
 -- Port neve és a node neve alapján visszaadja az ID-t, ha a név nem létezik, dob egy kizárást+hiba rekord
-CREATE OR REPLACE FUNCTION port_nn2id(varchar(32), varchar(32)) RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION port_nn2id(varchar(32), varchar(32)) RETURNS bigint AS $$
 DECLARE
-    id integer;
+    id bigint;
 BEGIN
     SELECT port_id INTO id FROM nports JOIN patchs USING (node_id) WHERE node_name = $2 AND port_name = $1;
     IF NOT FOUND THEN
@@ -569,9 +569,9 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 -- Port neve és a node_id alapján visszaadja az ID-t, ha a név nem létezik, dob egy kizárást+hiba rekord
-CREATE OR REPLACE FUNCTION port_name2id(varchar(32), integer) RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION port_name2id(varchar(32), bigint) RETURNS bigint AS $$
 DECLARE
-    id integer;
+    id bigint;
 BEGIN
     SELECT port_id INTO id FROM nports WHERE port_name = $1 AND node_id = $2;
     IF NOT FOUND THEN
@@ -581,7 +581,7 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 -- Port ID-je alapján visszaadja az nevét, ha az ID nem létezik, dob egy kizárást+hiba rekord
-CREATE OR REPLACE FUNCTION port_id2name(integer) RETURNS varchar(32) AS $$
+CREATE OR REPLACE FUNCTION port_id2name(bigint) RETURNS varchar(32) AS $$
 DECLARE
     id varchar(32);
 BEGIN
@@ -593,7 +593,7 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION port_id2full_name(integer) RETURNS varchar(32) AS $$
+CREATE OR REPLACE FUNCTION port_id2full_name(bigint) RETURNS varchar(32) AS $$
 DECLARE
     nm varchar(32);
 BEGIN
@@ -606,7 +606,7 @@ END
 $$ LANGUAGE plpgsql;
 
 -- A port_id alapján visszaadja a tábla nevet
-CREATE OR REPLACE FUNCTION port_id2table_name(integer) RETURNS text AS $$
+CREATE OR REPLACE FUNCTION port_id2table_name(bigint) RETURNS text AS $$
 BEGIN
     RETURN relname FROM nports JOIN pg_class ON nports.tableoid = pg_class.oid WHERE port_id = $1;
 END
@@ -626,7 +626,7 @@ $$ LANGUAGE plpgsql;
 -- Check unique port_id for all inherited tables and modify sequence if necessary
 CREATE OR REPLACE FUNCTION check_port_id_before_insert() RETURNS TRIGGER AS $$
 DECLARE
-    n integer;
+    n bigint;
     t text;
     node nodes;
 BEGIN
@@ -790,7 +790,7 @@ CREATE TRIGGER ipaddresses_check_before_modify_trigger       BEFORE INSERT OR UP
 
 CREATE OR REPLACE FUNCTION node_check_before_insert() RETURNS TRIGGER AS $$
 DECLARE
-    n integer;
+    n bigint;
 BEGIN
 --  RAISE INFO 'Insert NODE, new id = %', NEW.node_id;
     SELECT COUNT(*) INTO n FROM patchs WHERE node_id = NEW.node_id;

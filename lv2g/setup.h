@@ -20,6 +20,7 @@ class  LV2GSHARED_EXPORT cSetupWidget : public cOwnTab
 public:
     cSetupWidget(QSettings &__s, QWidget *par);
     ~cSetupWidget();
+private:
     Ui::SetupWidget *pUi;
 private slots:
     void applicateAndRestart();

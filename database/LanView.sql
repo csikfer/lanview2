@@ -95,13 +95,13 @@ END
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION table_or_view_is_exists(text) IS 'Ha a paraméterként megadott bevű tábla vagy nézet tábla létezik, akkor igaz értékkel, egyébként hamis értékkel tér vissza';
 
-CREATE TYPE paramtype AS ENUM ( 'any', 'boolean', 'int', 'real', 'char', 'string', 'interval', 'ipaddress');
+CREATE TYPE paramtype AS ENUM ( 'boolean', 'bigint', 'double precision', 'text', 'interval', 'date', 'time', 'timestamp', 'inet', 'bytea' );
 
 CREATE TABLE param_types (
-    param_type_id       serial          NOT NULL PRIMARY KEY,
+    param_type_id       bigserial       NOT NULL PRIMARY KEY,
     param_type_name     varchar(32)     NOT NULL UNIQUE,
     param_type_note     varchar(255)    DEFAULT NULL,
-    param_type_type     paramtype       NOT NULL DEFAULT 'any',
+    param_type_type     paramtype       NOT NULL,
     param_type_dim      varchar(32)     DEFAULT NULL
 );
 ALTER TABLE param_types OWNER TO lanview2;
@@ -115,15 +115,19 @@ COMMENT ON COLUMN param_types.param_type_dim  IS 'Egy opcionális dimenzió';
 INSERT INTO param_types
     (param_type_name,   param_type_type)    VALUES
     ('boolean',         'boolean'),
-    ('int',             'int'),
-    ('string',          'string'),
-    ('real',            'real'),
+    ('bigint',          'bigint'),
+    ('double precision','double precision'),
+    ('text',            'text'),
     ('interval',        'interval'),
-    ('URL',             'string');
+    ('date',            'date'),
+    ('time',            'time'),
+    ('timestamp',       'timestamp'),
+    ('inet',            'inet'),
+    ('bytea',           'bytea');
 
-CREATE OR REPLACE FUNCTION param_type_name2id(varchar(32)) RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION param_type_name2id(varchar(32)) RETURNS bigint AS $$
 DECLARE
-    id integer;
+    id bigint;
 BEGIN
     SELECT param_type_id INTO id FROM param_types WHERE param_type_name = $1;
     IF NOT FOUND THEN
@@ -140,17 +144,17 @@ COMMENT ON TYPE reasons IS
 ';
 
 CREATE TABLE sys_params (
-    sys_param_id        serial          PRIMARY KEY,
+    sys_param_id        bigserial       PRIMARY KEY,
     sys_param_name      varchar(32)     NOT NULL UNIQUE,
     sys_param_note      varchar(255)    DEFAULT NULL,
-    param_type_id       integer         NOT NULL
+    param_type_id       bigint          NOT NULL
             REFERENCES param_types(param_type_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
-    sys_param_value     text            DEFAULT NULL
+    param_value         text            DEFAULT NULL
 );
 
-CREATE OR REPLACE FUNCTION set_str_sys_param(pname varchar(32), txtval text, tname varchar(32) DEFAULT 'string') RETURNS reasons AS $$
+CREATE OR REPLACE FUNCTION set_text_sys_param(pname varchar(32), txtval text, tname varchar(32) DEFAULT 'text') RETURNS reasons AS $$
 DECLARE
-    type_id integer;
+    type_id bigint;
     rec sys_params;
 BEGIN
     SELECT param_type_id INTO type_id FROM param_types WHERE param_type_name = tname;
@@ -159,26 +163,26 @@ BEGIN
     END IF;
     SELECT * INTO rec FROM sys_params WHERE sys_param_name = pname;
     IF NOT FOUND THEN
-        INSERT INTO sys_params(sys_param_name, param_type_id, sys_param_value) VALUES (pname, type_id, txtval);
+        INSERT INTO sys_params(sys_param_name, param_type_id, param_value) VALUES (pname, type_id, txtval);
         RETURN 'insert';
     END IF;
     IF type_id = rec.param_type_id THEN
-        IF txtval = rec.sys_param_value THEN
+        IF txtval = rec.param_value THEN
             RETURN 'found';
         END IF;
-        UPDATE sys_params SET sys_param_value = txtval WHERE sys_param_name = pname;
+        UPDATE sys_params SET param_value = txtval WHERE sys_param_name = pname;
         RETURN 'update';
     END IF;
-    UPDATE sys_params SET sys_param_value = txtval, param_type_id = type_id WHERE sys_param_name = pname;
+    UPDATE sys_params SET param_value = txtval, param_type_id = type_id WHERE sys_param_name = pname;
     RETURN 'modify';
 END
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION set_str_sys_param(pname varchar(32), txtval text, tname varchar(32)) IS '
+COMMENT ON FUNCTION set_text_sys_param(pname varchar(32), txtval text, tname varchar(32)) IS '
 Egy rendszer paraméter (sys_params tábla egy rekordja) értékének, és adat típusának a megadása.
 A függvény paraméterei
   pname   A paraméter neve
   txtval  A paraméter értéke
-  tname   A paraméter típusleíró rekord neve. Opcionálís, ha nem adjuk meg, akkor "string".
+  tname   A paraméter típusleíró rekord neve. Opcionálís, ha nem adjuk meg, akkor "text".
 Visszatérési érték:
   Ha a paraméter már létezik, és a megadott értékű és típusú, akkor "found".
   Ha még nincs ilyen paraméter, akkor "insert"
@@ -189,27 +193,27 @@ Visszatérési érték:
 
 CREATE OR REPLACE FUNCTION set_bool_sys_param(pname varchar(32), boolval boolean DEFAULT true, tname varchar(32) DEFAULT 'boolean') RETURNS reasons AS $$
 BEGIN
-    RETURN set_str_sys_param(pname, boolval::text, tname);
+    RETURN set_text_sys_param(pname, boolval::text, tname);
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION set_int_sys_param(pname varchar(32), intval integer, tname varchar(32) DEFAULT 'int') RETURNS reasons AS $$
+CREATE OR REPLACE FUNCTION set_int_sys_param(pname varchar(32), intval bigint, tname varchar(32) DEFAULT 'bigint') RETURNS reasons AS $$
 BEGIN
-    RETURN set_str_sys_param(pname, intval::text, tname);
+    RETURN set_text_sys_param(pname, intval::text, tname);
 END
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION set_interval_sys_param(pname varchar(32), ival interval, tname varchar(32) DEFAULT 'interval') RETURNS reasons AS $$
 BEGIN
-    RETURN set_str_sys_param(pname, ival::text, tname);
+    RETURN set_text_sys_param(pname, ival::text, tname);
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION get_str_sys_param(pname varchar(32)) RETURNS text AS $$
+CREATE OR REPLACE FUNCTION get_text_sys_param(pname varchar(32)) RETURNS text AS $$
 DECLARE
     res text;
 BEGIN
-    SELECT sys_param_value INTO res FROM sys_params WHERE sys_param_name = pname;
+    SELECT param_value INTO res FROM sys_params WHERE sys_param_name = pname;
     IF NOT FOUND THEN
         RETURN NULL;
     END IF;
@@ -219,7 +223,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION get_bool_sys_param(pname varchar(32)) RETURNS boolean AS $$
 BEGIN
-    IF get_str_sys_param(pname)::boolean THEN
+    IF get_text_sys_param(pname)::boolean THEN
         RETURN true;
     ELSE
         RETURN false;
@@ -227,15 +231,15 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION get_int_sys_param(pname varchar(32)) RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION get_int_sys_param(pname varchar(32)) RETURNS bigint AS $$
 BEGIN
-    RETURN get_str_sys_param(pname)::integer;
+    RETURN get_text_sys_param(pname)::bigint;
 END
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION get_interval_sys_param(pname varchar(32)) RETURNS interval AS $$
 BEGIN
-    RETURN get_str_sys_param(pname)::interval;
+    RETURN get_text_sys_param(pname)::interval;
 END
 $$ LANGUAGE plpgsql;
 
@@ -264,7 +268,7 @@ owner       Szülő objektumra mutató kulcs
 ';
 
 CREATE TABLE unusual_fkeys (
-    unusual_fkeys_id    serial          NOT NULL PRIMARY KEY,
+    unusual_fkeys_id    bigserial       NOT NULL PRIMARY KEY,
     table_schema        varchar(32)     NOT NULL DEFAULT 'public',
     table_name          varchar(32)     NOT NULL,
     column_name         varchar(32)     NOT NULL,
@@ -298,7 +302,7 @@ INSERT INTO unusual_fkeys
   ( 'log_links_table',  'port_id2',     'property',         'nports',       'port_id',      '{nports, interfaces}');
 
 CREATE TABLE fkey_types (
-    fkeys_types_id      serial          NOT NULL PRIMARY KEY,
+    fkeys_types_id      bigserial       NOT NULL PRIMARY KEY,
     table_schema        varchar(32)     NOT NULL DEFAULT 'public',
     table_name          varchar(32)     NOT NULL,
     column_name         varchar(32)     NOT NULL,

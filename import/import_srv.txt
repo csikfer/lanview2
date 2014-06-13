@@ -98,6 +98,26 @@ SERVICE indalarmif1ma "IndAlarm Contact V1 Master" {
     RETRY CHECK INTERVAL  10;
     PROP ":iftype=rs485:inspector=timed:superior=custom:";
 }
+//---------------------------------------------------------
+//---------------------------------------------------------
+SERVICE portmac "Device port address table query daemon" {
+    NIL;
+    PROP ":daemon=contimue:inspector=timed:superior:";
+    COMMAND "portmac";
+    NORMAL CHECK INTERVAL 300;
+    RETRY CHECK INTERVAL  300;
+}
+//---------------------------------------------------------
+SERVICE "pmac" "Query port address table by <protocol>" {
+    NIL;
+    SUPERIOR SERVICE MASK "portmac";
+    PROP ":inspector=timed:superior=custom:";
+    MAX CHECK ATTEMPTS     2;
+    NORMAL CHECK INTERVAL 300;
+    RETRY CHECK INTERVAL   60;
+}
+
+//---------------------------------------------------------
 // IndaContakt interface V1 slave
 SERVICE indalarmif1sl "IndAlarm Contact V1 Slave"{
     NIL;

@@ -95,6 +95,7 @@ void cError::circulation()
 
 void cError::exception(void)
 {
+
     if (cDebug::getInstance() != NULL) PDEB(EXCEPT) << "throw this : " << msg() << endl;
     throw(this);
 }

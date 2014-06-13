@@ -1,5 +1,6 @@
 #include "menu.h"
 #include "setup.h"
+#include "gparse.h"
 
 cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidget * par, bool __ex)
     : QObject(par), type(MAT_ERROR)
@@ -34,8 +35,12 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidge
             pot =  new cSetupWidget(*lanView::getInstance()->pSet, par);
             pWidget = (QWidget *)pot;
         }
+        else if (0 == mp.compare("parser", Qt::CaseInsensitive)) {
+            pot =  new cParseWidget(par);
+            pWidget = (QWidget *)pot;
+        }
         else {
-            if (__ex) EXCEPTION(EDBDATA, -1, mp);
+            if (__ex) EXCEPTION(ENONAME, -1, mp);
             return;
         }
         connect(pAction,      SIGNAL(triggered()), this, SLOT(displayIt()));

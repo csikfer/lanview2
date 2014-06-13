@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>450</width>
-    <height>376</height>
+    <height>402</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -187,6 +187,13 @@
           <widget class="QCheckBox" name="checkBoxPortstat">
            <property name="text">
             <string>app:portstat</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="checkBoxMacTab">
+           <property name="text">
+            <string>app:mactab</string>
            </property>
           </widget>
          </item>

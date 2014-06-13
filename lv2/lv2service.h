@@ -65,7 +65,8 @@ EXT_ eInspectorType inspectorType(const QString& __n, bool __ex = true);
 enum eTimerStat {
     TS_STOP,    ///< nincs időzítés
     TS_NORMAL,  ///< normál időzítés (normal_interval)
-    TS_RETRY    ///< Hiba miatt gyorsabb időzítés (retry_interval)
+    TS_RETRY,   ///< Hiba miatt gyorsabb időzítés (retry_interval)
+    TS_FIRST    ///< Első alkalom (egy a normal_interval -nal rövidebb véletlenszerű időzítés)
 };
 
 /// Belső status érték konvertálása stringgé, nem értelmezhető érték esetén dob egy kizárást
@@ -327,6 +328,8 @@ protected:
     virtual bool threadPrelude(QThread& t);
 private:
     void preInit();
+public:
+    static qlonglong rnd(qlonglong i, qlonglong m = 1000);
 };
 
 #endif // LV2SERVICE_H

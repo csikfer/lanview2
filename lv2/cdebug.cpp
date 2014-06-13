@@ -174,18 +174,18 @@ bool cDebug::pDeb(qlonglong mask)
     return mask && (instance->mMask & mask) == mask;
 }
 
-debugStream& cDebug::_cout(void)
+debugStream *cDebug::pCout(void)
 {
     // printf("cDebug::cout(void)\n");
     if (NULL == instance || NULL == instance->mCout) EXCEPTION(EPROGFAIL);
-    return *(instance->mCout);
+    return instance->mCout;
 }
 
 debugStream& cDebug::cout(void)
 {
     debugStream *pS;
     if (NULL == instance || NULL == instance->mCout) EXCEPTION(EPROGFAIL);
-    if (isMainThread()) return _cout();
+    if (isMainThread()) return *pCout();
     const QString&  n = currentThreadName();
     if (instance->mThreadStreamsMap == NULL) {
         instance->mThreadStreamsMapMutex = new QMutex();

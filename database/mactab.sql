@@ -19,7 +19,7 @@ suspect	Gyanús, az észleléskor hibákat jelzett a port
 
 CREATE TABLE mactab (
     hwaddress       macaddr PRIMARY KEY,
-    port_id         integer NOT NULL REFERENCES interfaces(port_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    port_id         bigint NOT NULL REFERENCES interfaces(port_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     mactab_state    mactabstate[] DEFAULT '{}',
     first_time      timestamp   DEFAULT CURRENT_TIMESTAMP,
     last_time       timestamp   DEFAULT CURRENT_TIMESTAMP,
@@ -28,17 +28,17 @@ CREATE TABLE mactab (
 ALTER TABLE mactab OWNER TO lanview2;
 
 CREATE TABLE mactab_logs (
-    mactab_log_id   serial      PRIMARY KEY,
+    mactab_log_id   bigserial      PRIMARY KEY,
     hwaddress       macaddr     NOT NULL,
     reason          reasons     NOT NULL,
     be_void         boolean     NOT NULL DEFAULT false,
     date_of         timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    port_id_old     integer DEFAULT NULL REFERENCES interfaces(port_id) MATCH SIMPLE ON DELETE CASCADE ON UPDATE RESTRICT,
+    port_id_old     bigint DEFAULT NULL REFERENCES interfaces(port_id) MATCH SIMPLE ON DELETE CASCADE ON UPDATE RESTRICT,
     mactab_state_old mactabstate[] DEFAULT NULL,
     first_time_old  timestamp   NOT NULL,
     last_time_old   timestamp   NOT NULL,
     set_type_old    settype     NOT NULL,
-    port_id_new     integer DEFAULT NULL REFERENCES interfaces(port_id) MATCH SIMPLE ON DELETE CASCADE ON UPDATE RESTRICT,
+    port_id_new     bigint DEFAULT NULL REFERENCES interfaces(port_id) MATCH SIMPLE ON DELETE CASCADE ON UPDATE RESTRICT,
     mactab_state_new mactabstate[] NOT NULL,
     set_type_new    settype     NOT NULL
 );
@@ -47,22 +47,22 @@ CREATE INDEX date_of_index   ON mactab_logs(date_of);
 ALTER TABLE mactab_logs OWNER TO lanview2;
 
 INSERT INTO sys_params
-    (sys_param_name,       param_type_id,                 sys_param_value, sys_param_note) VALUES
+    (sys_param_name,                param_type_id,                 param_value,    sys_param_note) VALUES
     ('mac_tab_move_check_interval', param_type_name2id('interval'),'01:00:00',     'Hibás topológia miatt mozgó MAC lokációk észlelési időintervalluma'),
-    ('mac_tab_move_check_count',    param_type_name2id('int'),     '8',            'Hibás topológia miatt mozgó MAC lokációk észlelési határértéke (látszólagos mozgások száma).');
+    ('mac_tab_move_check_count',    param_type_name2id('bigint'),  '6',            'Hibás topológia miatt mozgó MAC lokációk észlelési határértéke (látszólagos mozgások száma).');
 INSERT INTO param_types
-    (param_type_name, param_type_type, param_type_note)    VALUES
-    ('suspected_uplink', 'boolean', 'Feltételezhetően egy uplink, a portnak a mactab táblába való felvétele tiltott.');
+    (param_type_name,    param_type_type, param_type_note)    VALUES
+    ('suspected_uplink', 'boolean',      'Feltételezhetően egy uplink, a portnak a mactab táblába való felvétele tiltott.');
 
 CREATE OR REPLACE FUNCTION mactab_move(
     mt  mactab,
-    pid integer,
+    pid bigint,
     mac macaddr,        
     typ settype,
     mst mactabstate[]
 ) RETURNS void AS $$
 BEGIN
-    INSERT INTO mactab_log(hwaddress, reason, port_id_old, mactab_state_old, first_time_old, last_time_old, set_type_old, port_id_new, mactab_state_new, set_type_new)
+    INSERT INTO mactab_logs(hwaddress, reason, port_id_old, mactab_state_old, first_time_old, last_time_old, set_type_old, port_id_new, mactab_state_new, set_type_new)
            VALUES         (mac,       'move', mt.port_id,  mt.mactab_state,  mt.first_time,  mt.last_time,  mt.set_type,  pid,         mst,              typ);
     UPDATE mactab SET port_id = pid, mactab_state = mst, first_time = CURRENT_TIMESTAMP, last_time = CURRENT_TIMESTAMP
             WHERE hwaddress = mac;
@@ -70,7 +70,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION insert_or_update_mactab(
-    pid integer,
+    pid bigint,
     mac macaddr,        
     typ settype DEFAULT 'query',
     mst mactabstate[] DEFAULT '{}'
@@ -78,9 +78,9 @@ CREATE OR REPLACE FUNCTION insert_or_update_mactab(
 DECLARE
     mt          mactab;
     pname_di CONSTANT varchar(32) := 'suspected_uplink';
-    maxct    CONSTANT integer     := get_sys_int_param('mac_tab_move_check_count');
+    maxct    CONSTANT bigint     := get_int_sys_param('mac_tab_move_check_count');
     mv       CONSTANT reasons     := 'move';
-    btm      CONSTANT timestamp   := CURRENT_TIMESTAMP - get_sys_interval_param('mac_tab_move_check_interval');
+    btm      CONSTANT timestamp   := CURRENT_TIMESTAMP - get_interval_sys_param('mac_tab_move_check_interval');
 BEGIN
     IF get_bool_port_param(pid, pname_di) THEN
         RETURN 'discard';
@@ -90,9 +90,9 @@ BEGIN
         INSERT INTO mactab(hwaddress, port_id, mactab_state,set_type) VALUES (mac, pid, mst, typ);
         RETURN 'insert';
     ELSE
-        IF mactab.port_id = pid THEN
+        IF mt.port_id = pid THEN
             UPDATE mactab SET last_time = CURRENT_TIMESTAMP WHERE hwaddress = mac;
-            RETURN 'unchanged';
+            RETURN 'unchange';
         ELSE
             IF maxct < COUNT(*) FROM mactab_logs WHERE date_of > btm AND hwaddress = mac AND reason = mv THEN
                 -- Csiki-csuki van, az egyik port valójában uplink?
@@ -119,7 +119,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-COMMENT ON FUNCTION insert_or_update_mactab(pid integer, mac macaddr, typ settype, mst mactabstate[]) IS '
+COMMENT ON FUNCTION insert_or_update_mactab(pid bigint, mac macaddr, typ settype, mst mactabstate[]) IS '
 Egy (switch) port és mac (cím tábla) összerendelés létrehozása, vagy módosítása.
 Paraméterek:
   pid   A (switch) port ID.
@@ -149,7 +149,7 @@ CREATE TABLE arps (
 ALTER TABLE arps OWNER TO lanview2;
 
 CREATE TABLE arp_logs (
-    arp_log_id      serial      PRIMARY KEY,
+    arp_log_id      bigserial      PRIMARY KEY,
     reason          reasons     NOT NULL,
     date_of         timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     ipaddress_new   inet        DEFAULT NULL,

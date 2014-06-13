@@ -2,22 +2,22 @@
 -- ---------------------------------------------------------------------------
 -- Apolication errors
 CREATE TABLE app_errs (
-    applog_id   serial          PRIMARY KEY,
+    applog_id   bigserial          PRIMARY KEY,
     date_of     timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     app_name    varchar(32)     DEFAULT NULL,
-    node_id     integer         DEFAULT NULL,	-- Ezt nem tölti ki senki !!!
-    pid         integer         DEFAULT NULL,
+    node_id     bigint         DEFAULT NULL,	-- Ezt nem tölti ki senki !!!
+    pid         bigint         DEFAULT NULL,
     app_ver     varchar(32)     DEFAULT NULL,
     lib_ver     varchar(32)     DEFAULT NULL,
     thread_name varchar(32)     DEFAULT NULL,
-    err_code    integer         DEFAULT NULL,
+    err_code    bigint         DEFAULT NULL,
     err_name    varchar(32)     DEFAULT NULL,
-    err_subcode integer         DEFAULT NULL,
+    err_subcode bigint         DEFAULT NULL,
     err_msg     text            DEFAULT NULL,
-    errno       integer         DEFAULT NULL,
+    errno       bigint         DEFAULT NULL,
     func_name   varchar(255)    DEFAULT NULL,
     func_src    varchar(255)    DEFAULT NULL,
-    src_line    integer         DEFAULT NULL
+    src_line    bigint         DEFAULT NULL
 );
 CREATE INDEX app_errs_date_of_index ON app_errs (date_of);
 ALTER TABLE app_errs OWNER TO lanview2;
@@ -44,7 +44,7 @@ COMMENT ON COLUMN app_errs.func_name   IS 'Function full name.';
 COMMENT ON COLUMN app_errs.func_src    IS 'Code source name.';
 COMMENT ON COLUMN app_errs.src_line    IS 'Code source line number.';
 
-CREATE OR REPLACE FUNCTION app_err_id2name(integer) RETURNS TEXT AS $$
+CREATE OR REPLACE FUNCTION app_err_id2name(bigint) RETURNS TEXT AS $$
 DECLARE
     name TEXT;
 BEGIN
@@ -70,7 +70,7 @@ Ok      Nem hiba, ''Info''
 ';
 
 CREATE TABLE errors (
-    error_id    serial      PRIMARY KEY,
+    error_id    bigserial      PRIMARY KEY,
     error_name  varchar(32) UNIQUE,
     error_note varchar(255),
     error_type  errtype     NOT NULL
@@ -119,17 +119,17 @@ INSERT INTO errors
 
 -- CREATE SEQUENCE db_errs_dblog_id_seq;
 CREATE TABLE db_errs (
-    dblog_id    serial          PRIMARY KEY,
+    dblog_id    bigserial          PRIMARY KEY,
     date_of     timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    error_id    integer         NOT NULL
+    error_id    bigint         NOT NULL
         REFERENCES errors(error_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
-    user_id     integer         NOT NULL DEFAULT 0, -- REFERENCES users(user_id) még nincs definiálva, DEFAULT = nobody
+    user_id     bigint         NOT NULL DEFAULT 0, -- REFERENCES users(user_id) még nincs definiálva, DEFAULT = nobody
     table_name   varchar(64)     DEFAULT NULL,
     trigger_op  varchar(8)      DEFAULT NULL,
-    err_subcode integer         DEFAULT NULL,
+    err_subcode bigint         DEFAULT NULL,
     err_msg  varchar(255)    DEFAULT NULL,
     func_name    varchar(255)    DEFAULT NULL,
-    reapeat     integer         DEFAULT 0,
+    reapeat     bigint         DEFAULT 0,
     date_of_last timestamp 	NOT NULL DEFAULT CURRENT_TIMESTAMP,
     acknowledged boolean 	DEFAULT false);
 CREATE INDEX db_errs_date_of_index      ON db_errs (date_of);
@@ -149,7 +149,7 @@ COMMENT ON COLUMN db_errs.func_name IS 'Az aktuális függvény neve, ahol a hib
 COMMENT ON COLUMN db_errs.reapeat IS 'Ha kétszer nyugtázatlan azonos rekord keletkezne, akkor csak ez a számláló inkrementálódik.';
 COMMENT ON COLUMN db_errs.date_of_last IS 'Ha reapeat értéke 0, akkor azonos date_of-al, reapeat inkrementálásakor az aktuális idő kerül a mezőbe.';
 
-CREATE OR REPLACE FUNCTION db_err_id2name(integer) RETURNS TEXT AS $$
+CREATE OR REPLACE FUNCTION db_err_id2name(bigint) RETURNS TEXT AS $$
 DECLARE
     name TEXT;
 BEGIN
@@ -185,7 +185,7 @@ BEGIN
 	 AND func_name    = NEW.func_name
 	ORDER BY date_of_last DESC LIMIT 1;
     IF FOUND THEN
-        UPDATE db_errors SET reapeat = err.reapeat +1, date_of_last = NOW() WHERE dblog_id = err.dblog_id;
+        UPDATE db_errs SET reapeat = err.reapeat +1, date_of_last = NOW() WHERE dblog_id = err.dblog_id;
         RETURN NULL;
     END IF;
     RETURN NEW;
@@ -219,7 +219,7 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION error_by_name(varchar(32)) IS 'Egy hiba típus rekord beolvasása a hiba típus név alapján';
 
 -- Get Error recod by ID
-CREATE OR REPLACE FUNCTION error_by_id(integer) RETURNS errors AS $$
+CREATE OR REPLACE FUNCTION error_by_id(bigint) RETURNS errors AS $$
 DECLARE
     err errors%ROWTYPE;
 BEGIN
@@ -233,10 +233,10 @@ BEGIN
     RETURN err;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION error_by_id(integer) IS 'Egy hiba tipus rekord beolvasása a hiba tipus azonosító alapján';
+COMMENT ON FUNCTION error_by_id(bigint) IS 'Egy hiba tipus rekord beolvasása a hiba tipus azonosító alapján';
 
 -- Get Error ID by name
-CREATE OR REPLACE FUNCTION error_name2id(varchar(32)) RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION error_name2id(varchar(32)) RETURNS bigint AS $$
 DECLARE
     err errors%ROWTYPE;
 BEGIN
@@ -258,7 +258,7 @@ COMMENT ON FUNCTION error_name2descr(varchar(32)) IS 'Hiba tipus leírás a név
 
 CREATE OR REPLACE FUNCTION error (
     text,                   -- $1 Error name (errors.err_name)
-    integer DEFAULT -1,     -- $2 Error Sub code
+    bigint DEFAULT -1,     -- $2 Error Sub code
     text    DEFAULT 'nil',  -- $3 Error Sub Message
     text    DEFAULT 'nil',  -- $4 Source name (function name, ...)
     text    DEFAULT 'nil',  -- $5 Actual table name
@@ -269,7 +269,7 @@ DECLARE
     ui text;
     cmd text;
     con CONSTANT text := 'errlog';
-    subc integer := $2;
+    subc bigint := $2;
     subm text    := $3;
     srcn text    := $4;
     tbln text    := $5;
@@ -310,12 +310,12 @@ BEGIN
     RETURN true;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION error (text,integer,text,text,text,text) IS
+COMMENT ON FUNCTION error (text,bigint,text,text,text,text) IS
 'Adatbázis műveleti hiba rekord generálása.
 Létrehoz egy db_errs rekordot a megadott paraméterek, és lanview2 konfigurációs változók aktuális értéke alapján.
 Ha a megadott hiba név típusa nem  ''Ok'', vagy ''Warning'', akkor dob egy kizárást. egyébként true-val visszatér.
     text,                   Hiba típus neve
-    integer DEFAULT -1,     Másodlagos hiba kód, vagy numerikus paraméter
+    bigint DEFAULT -1,     Másodlagos hiba kód, vagy numerikus paraméter
     text    DEFAULT ''nil'',  Másodlagos hiba üzenet, vagy szöveges paraméter
     text    DEFAULT ''nil'',  A forrás azonosítója pl. függvény neve
     text    DEFAULT ''nil'',  Az aktuális tábla neve
@@ -329,7 +329,7 @@ CREATE OR REPLACE VIEW db_errors AS
 
 CREATE OR REPLACE FUNCTION insert_error (
     text,                   -- $1 Error name (errors.err_name)
-    integer DEFAULT -1,     -- $2 Error Sub code
+    bigint DEFAULT -1,     -- $2 Error Sub code
     text    DEFAULT 'nil',  -- $3 Error Sub Message
     text    DEFAULT 'nil',  -- $4 Source name (function name, ...)
     text    DEFAULT 'nil',  -- $5 Actual table name
@@ -337,8 +337,8 @@ CREATE OR REPLACE FUNCTION insert_error (
 ) RETURNS db_errs AS $$
 DECLARE
     er errors%ROWTYPE;
-    ui   integer;
-    subc integer := $2;
+    ui   bigint;
+    subc bigint := $2;
     subm text    := $3;
     srcn text    := $4;
     tbln text    := $5;
@@ -363,5 +363,5 @@ BEGIN
     RETURN re;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION error (text,integer,text,text,text,text) IS
+COMMENT ON FUNCTION error (text,bigint,text,text,text,text) IS
 'Egy hiba rekord rögzítése. Egy adatbázis tartalmi hiba rögzítése, ha az egy aplikációban derült ki, ill. azt az app a függvény hívással jelzi.';

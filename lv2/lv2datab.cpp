@@ -210,18 +210,35 @@ cColStaticDescr& cColStaticDescr::operator=(const cColStaticDescr __o)
 
 QString cColStaticDescr::toString() const
 {
-    QString r;
-    r  = dQuoted((QString&)*this) + _sSpace + colType + "/" + udtName;
-    if (enumVals.size())       r += _sCBraB + enumVals.join(_sComma) + _sCBraE;
+    QString r = dQuoted((QString&)*this);
+    r += _sSBraB + QString::number(pos) + _sSlash + QString::number(ordPos) + _sSBraE;
+    r += _sSpace + colType + "/" + udtName;
+    if (enumVals.size())       r += _sCBraB + enumVals.join(_sCommaSp) + _sCBraE;
     if (!isNullable)           r += " NOT NULL ";
     if (!colDefault.isNull()) {
         r += " DEFAULT " + colDefault;
-//        r += "(" + debVariantToString(defValue) + ")";
     }
     r += (isUpdatable ? _sSpace : QString(" nem")) + " módosítható";
     return r;
 }
 
+QString cColStaticDescr::allToString() const
+{
+    QString r = toString() + '\n';
+    r +=   "eColType = " + QString::number(eColType, 16);
+    r += ", fKeyType = " + QString::number(fKeyType, 16);
+    if (fKeyField.size() > 0) {
+        QString k = mCat(fKeyTable, fKeyField);
+        if (fKeySchema.size() > 0) k = mCat(fKeySchema, k);
+        r += _sCommaSp + k;
+        if (fKeyTables.size() > 0) {
+            k += _sABraB + fKeyTables.join(_sCommaSp) + _sABraE;
+        }
+    }
+    if (fnToName.size() > 0) ", fnToName = " + fnToName;
+    if (pFRec != NULL) ", pFRec : " + pFRec->tableName();
+    return r;
+}
 QVariant cColStaticDescr::fromSql(const QVariant& _f) const
 {
     if (_f.isNull()) return _f;
@@ -1910,7 +1927,7 @@ QString cRecStaticDescr::checkId2Name(QSqlQuery& q, const QString& _tn, const QS
     const QString& sTableName  = pDescr->tableName();
     DWAR() << "Function : " << sFnToName << " not found, create ..." << endl;
     sql = QString(
-         "CREATE OR REPLACE FUNCTION %1(integer) RETURNS varchar(32) AS $$"
+         "CREATE OR REPLACE FUNCTION %1(bigint) RETURNS varchar(32) AS $$"
         " DECLARE"
             " name varchar(32);"
         " BEGIN"
@@ -2311,6 +2328,31 @@ QString cRecord::view(QSqlQuery& q, int __i) const
 {
     if (isIndex(__i) == false) return QObject::trUtf8("[nincs]");
     return descr()[__i].toView(q, get(__i));
+}
+
+cMac    cRecord::getMac(int __i, bool __ex) const
+{
+    int t = colDescr(__i).eColType;
+    cMac r;
+    if (t != cColStaticDescr::FT_MAC) {
+        if (!isNull(__i)) r = get(__i).value<cMac>();
+        return r;
+    }
+    if (__ex) EXCEPTION(EDATA, t, trUtf8("A %1 mező típusa nem MAC.").arg(fullColumnName(columnName(__i))));
+    return r;
+}
+
+cRecord& cRecord::setMac(int __i, const cMac& __a, bool __ex)
+{
+    int t = colDescr(__i).eColType;
+    if (t != cColStaticDescr::FT_MAC) {
+        if (__ex) EXCEPTION(EDATA, t, trUtf8("A %1 mező típusa nem MAC.").arg(fullColumnName(columnName(__i))));
+    }
+    else {
+        if (!__a) clear(__i);
+        else      set(__i, QVariant::fromValue(__a));
+    }
+    return *this;
 }
 
 bool cRecord::insert(QSqlQuery& __q, bool _ex)

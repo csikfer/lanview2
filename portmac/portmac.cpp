@@ -161,7 +161,7 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
     host().fetchPorts(__q);
     tRecordList<cNPort>::iterator   i;
     // Csinálunk a releváns portokhoz egy index táblát
-    for (i = host().ports.begin(); i <= host().ports.end(); ++i) {
+    for (i = host().ports.begin(); i < host().ports.end(); ++i) {
         cNPort  &np = **i;
         if (np.descr() < cInterface::_descr_cInterface()) continue; // buta portok érdektelenek
         QString ifTypeName = np.ifType().getName();
@@ -169,7 +169,7 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
             // Ha ez egy TRUNK tagja, akkor nem érdekes.
             if (!np.isNull(_sPortStapleId)) continue;
             // Ki kéne még hajítani az uplinkeket
-            if (cLldpLink().getLinked(__q, np.getId())) continue; // Ez egy LLDP-vel felderített uplink
+            if (NULL_ID != cLldpLink().getLinked(__q, np.getId())) continue; // Ez egy LLDP-vel felderített uplink
             // mehet a ports konténerbe az indexe
         }
         else if (ifTypeName != _sMultiplexor) {
@@ -213,9 +213,9 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
             continue;
         }
         if (np.fetchParams(__q)) { // Ha van paraméter
-            static  qlonglong ptid = NULL_ID;
-            if (ptid == NULL_ID) ptid = cParamType().getIdByName(__q, _sSuspectedUplink);
-            int i = np.params.indexOf(_sParamTypeId, QVariant(ptid));
+            static  qlonglong suspectrdUpLinkTypeId = NULL_ID;
+            if (suspectrdUpLinkTypeId == NULL_ID) suspectrdUpLinkTypeId = cParamType().getIdByName(__q, _sSuspectedUplink);
+            int i = np.params.indexOf(_sParamTypeId, QVariant(suspectrdUpLinkTypeId));
             // Ha van "suspected_uplink" paraméter, és igaz, akkor nem foglalkozunk vele (csiki-csuki elkerülése)
             if (i >= 0 && str2bool(np.params.at(i)->getName(_sParamValue))) continue;
         }
@@ -255,7 +255,8 @@ enum eNotifSwitch cDevicePMac::run(QSqlQuery& q)
         QMap<int, cInterface *>::iterator pi = ports.find(ix);
         if (pi == ports.end()) continue;    // Csak a konténerben lévő portok érdekesek
         cMacTab mt;
-        mt.set(_sHwAddress, QVariant::fromValue(i.key()));
+        cMac mac = i.key();
+        mt.setMac(_sHwAddress, mac);
         mt.setId(_sPortId, pi.value()->getId());
         enum eReasons r = mt.replace(q);
         if (r == R_DISCARD) ports.remove(ix);   // Lett neki egy "suspected_uplink" paramétere, igaz értékkel!
@@ -267,25 +268,29 @@ enum eNotifSwitch cDevicePMac::run(QSqlQuery& q)
 
 enum eNotifSwitch cDevicePMac::snmpQuery(const cOId& __o, QMap<cMac, int>& macs)
 {
+    _DBGFN() << _sSpace << __o.toString() << endl;
     cOId    o = __o;
     do {
         int r = snmp.getNext(o);
-        if (!r) {
+        if (r) {
             QString msg = trUtf8("A %1 node SNMP hiba. OID:%2")
                     .arg(host().getName())
                     .arg(pOId1->toString());
+            DERR() << msg << ", #" << r << endl;
             cDbErr::insertNew(cDbErrType::_sRunTime, msg, r, _sNil, APPNAME);
             break;
         }
         if (!(*pOId1 < snmp.name())) break;
+        o = snmp.name();
         bool ok;
         int pix = snmp.value().toInt(&ok);
         if (!ok) {
             QString msg = trUtf8("A %1 node SNMP válasz: nem értelmezhető index. OID:%2 = %3")
                     .arg(host().getName())
                     .arg(pOId1->toString())
-                    .arg(snmp.value().toString());
-            cDbErr::insertNew(cDbErrType::_sRunTime, msg, r, _sNil, APPNAME);
+                    .arg(debVariantToString(snmp.value()));
+            DERR() << msg << endl;
+            cDbErr::insertNew(cDbErrType::_sRunTime, msg, 0, _sNil, APPNAME);
             break;
         }
         if (!(ports.contains(pix))) continue;
@@ -295,12 +300,14 @@ enum eNotifSwitch cDevicePMac::snmpQuery(const cOId& __o, QMap<cMac, int>& macs)
                     .arg(host().getName())
                     .arg(pOId1->toString())
                     .arg(snmp.value().toString());
-            cDbErr::insertNew(cDbErrType::_sRunTime, msg, r, _sNil, APPNAME);
+            DERR() << msg << endl;
+            cDbErr::insertNew(cDbErrType::_sRunTime, msg, 0, _sNil, APPNAME);
             break;
         }
-        macs.insert(pix, mac); // inser or replace
-        o = snmp.name();
+        macs.insert(mac, pix); // inser or replace
+        PDEB(VVERBOSE) << "#" << pix << ":" << mac.toString() << endl;
     } while(true);
+    DBGFNL();
     return RS_ON;
 }
 

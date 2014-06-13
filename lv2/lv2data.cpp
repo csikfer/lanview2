@@ -49,15 +49,16 @@ const QString& reasons(int _r, bool __ex)
 /* ------------------------------ param_types ------------------------------ */
 int paramType(const QString& __n, bool __ex)
 {
-    if (__n == _sAny)       return PT_ANY;
-    if (__n == _sBoolean)   return PT_BOOLEAN;
-    if (__n == _sInteger)   return PT_INTEGER;
-    if (__n == _sReal)      return PT_REAL;
-    if (__n == _sChar)      return PT_CHAR;
-    if (__n == _sString)    return PT_STRING;
-    if (__n == _sInterval)  return PT_INTERVAL;
-    if (__n == _sIpaddress) return PT_IPADDRESS;
-    if (__n == _sURL)       return PT_URL;
+    if (__n == _sBoolean)           return PT_BOOLEAN;
+    if (__n == _sBigInt)            return PT_BIGINT;
+    if (__n == _sDoublePrecision)   return PT_DOUBLE_PRECISION;
+    if (__n == _sText)              return PT_TEXT;
+    if (__n == _sInterval)          return PT_INTERVAL;
+    if (__n == _sDate)              return PT_DATE;
+    if (__n == _sTime)              return PT_TIME;
+    if (__n == _sTimestamp)         return PT_TIMESTAMP;
+    if (__n == _sINet)              return PT_INET;
+    if (__n == _sByteA)             return PT_BYTEA;
     if (__ex == true)       EXCEPTION(EDATA, -1, __n);
     return PT_INVALID;
 }
@@ -65,15 +66,16 @@ int paramType(const QString& __n, bool __ex)
 const QString& paramType(int __e, bool __ex)
 {
     switch (__e) {
-    case PT_ANY:        return _sAny;
-    case PT_BOOLEAN:    return _sBoolean;
-    case PT_INTEGER:    return _sInteger;
-    case PT_REAL:       return _sReal;
-    case PT_CHAR:       return _sChar;
-    case PT_STRING:     return _sString;
-    case PT_INTERVAL:   return _sInterval;
-    case PT_IPADDRESS:  return _sIpaddress;
-    case PT_URL:        return _sURL;
+    case PT_BOOLEAN:            return _sBoolean;
+    case PT_BIGINT:             return _sBigInt;
+    case PT_DOUBLE_PRECISION:   return _sDoublePrecision;
+    case PT_TEXT:               return _sText;
+    case PT_INTERVAL:           return _sInterval;
+    case PT_DATE:               return _sDate;
+    case PT_TIME:               return _sTime;
+    case PT_TIMESTAMP:          return _sTimestamp;
+    case PT_INET:               return _sINet;
+    case PT_BYTEA:              return _sByteA;
     }
     if (__ex == true)   EXCEPTION(EDATA, __e);
     return _sNul;
@@ -129,10 +131,8 @@ QString cParamType::paramToString(eParamType __t, const QVariant& __v, bool __ex
         ok = true;
     }
     else {
-        switch (__t) {
-        case PT_ANY:
-        case PT_STRING:
-        case PT_URL:
+        switch ((int)__t) {
+        case PT_TEXT:
             ok = __v.canConvert(QVariant::String);
             if (ok) r = __v.toString();
             break;
@@ -141,17 +141,13 @@ QString cParamType::paramToString(eParamType __t, const QVariant& __v, bool __ex
             ok = true;
             break;
         }
-        case PT_INTEGER:
+        case PT_BIGINT:
             ok = __v.canConvert(QVariant::LongLong);
             if (ok) r = QString::number(__v.toLongLong());
             break;
-        case PT_REAL:
+        case PT_DOUBLE_PRECISION:
             ok = __v.canConvert(QVariant::Double);
             if (ok) r = QString::number(__v.toDouble());
-            break;
-        case PT_CHAR:
-            ok = __v.canConvert(QVariant::Char);
-            if (ok) r = QString(1, __v.toChar());
             break;
         case PT_INTERVAL: {
             qlonglong i;
@@ -168,7 +164,7 @@ QString cParamType::paramToString(eParamType __t, const QVariant& __v, bool __ex
             }
             break;
         }
-        case PT_IPADDRESS: {
+        case PT_INET: {
             int mtid = __v.userType();
             if (mtid == _UMTID_netAddress) {
                 r = __v.value<netAddress>().toString();
@@ -184,7 +180,7 @@ QString cParamType::paramToString(eParamType __t, const QVariant& __v, bool __ex
             }
         }
         case PT_INVALID:
-            break;
+            EXCEPTION(ENOTSUPP, __t);
         }
     }
     if (!ok && __ex) EXCEPTION(EDATA, __t, debVariantToString(__v));
@@ -199,32 +195,25 @@ QVariant cParamType::paramFromString(eParamType __t, QString& __v, bool __ex)
         if (__t == PT_BOOLEAN) r = QVariant(false);
     }
     else {
-        switch (__t) {
-        case PT_ANY:
-        case PT_STRING:
-        case PT_URL:        r = QVariant(__v);                   break;
-        case PT_BOOLEAN:    r = QVariant(str2bool(__v));         break;
-        case PT_INTEGER:    r = QVariant(__v.toLongLong(&ok));   break;
-        case PT_REAL:       r = QVariant(__v.toDouble(&ok));
-        case PT_INTERVAL:   r = QVariant(parseTimeInterval(__v, &ok));   break;
-        case PT_IPADDRESS: {
+        switch ((int)__t) {
+        case PT_TEXT:               r = QVariant(__v);                   break;
+        case PT_BOOLEAN:            r = QVariant(str2bool(__v));         break;
+        case PT_BIGINT:             r = QVariant(__v.toLongLong(&ok));   break;
+        case PT_DOUBLE_PRECISION:   r = QVariant(__v.toDouble(&ok));
+        case PT_INTERVAL:           r = QVariant(parseTimeInterval(__v, &ok));   break;
+        case PT_INET: {
             netAddress  na;
             ok = na.setr(__v).isValid();
             if (ok) r = QVariant::fromValue(na);
             break;
         }
-        case PT_CHAR:
-            if (__v.isEmpty()) { break; }       // NULL
-            if (__v.size() > 1){ ok = false; }
-            r = QVariant(__v.at(0));
-            break;
         default:
             ok = false;
             break;
         }
     }
     if (!ok) {
-        if (__ex) EXCEPTION(EDATA, (int)__t, __v);
+        if (__ex) EXCEPTION(ENOTSUPP, (int)__t, __v);
         r.clear();
     }
     return r;
@@ -236,12 +225,12 @@ CRECCNTR(cSysParam)
 CRECDEFD(cSysParam)
 
 int cSysParam::_ixParamTypeId = NULL_IX;
-int cSysParam::_ixSysParamValue = NULL_IX;
+int cSysParam::_ixParamValue  = NULL_IX;
 const cRecStaticDescr&  cSysParam::descr() const
 {
     if (initPDescr<cSysParam>(_sSysParams)) {
-        _ixParamTypeId   = _pRecordDescr->toIndex(_sParamTypeId);
-        _ixSysParamValue = _pRecordDescr->toIndex(_sSysParamValue);
+        _ixParamTypeId = _pRecordDescr->toIndex(_sParamTypeId);
+        _ixParamValue  = _pRecordDescr->toIndex(_sParamValue);
     }
     return *_pRecordDescr;
 }
@@ -274,14 +263,14 @@ void    cSysParam::clearToEnd()
 
 QVariant cSysParam::value(bool __ex) const
 {
-    QString v = getName(_ixSysParamValue);
+    QString v = getName(_ixParamValue);
     return cParamType::paramFromString((enum eParamType)valueType(), v, __ex);
 }
 
 cSysParam& cSysParam::setValue(const QVariant& __v, bool __ex)
 {
     QString v = cParamType::paramToString((enum eParamType)valueType(), __v, __ex);
-    setName(_ixSysParamValue, v);
+    setName(_ixParamValue, v);
     return *this;
 }
 
@@ -640,7 +629,7 @@ int cPortParam::_ixParamTypeId = NULL_IX;
 int cPortParam::_ixPortId = NULL_IX;
 const cRecStaticDescr&  cPortParam::descr() const
 {
-    if (initPDescr<cPortParam>(_sPortParas)) {
+    if (initPDescr<cPortParam>(_sPortParams)) {
         _ixParamTypeId = _pRecordDescr->toIndex(_sParamTypeId);
         _ixPortId      = _pRecordDescr->toIndex(_sPortId);
     }
@@ -969,7 +958,7 @@ cNPort * cNPort::getPortObjById(QSqlQuery& q, qlonglong __port_id, bool __ex)
 
 QString cNPort::getFullName(QSqlQuery& q, bool _ex)
 {
-    return cNode().getNameById(q, getId(), _ex) + ':' + getName();
+    return cNode().getNameById(q, getId(_ixNodeId), _ex) + ':' + getName();
 }
 
 /* ------------------------------ cPPort ------------------------------ */
@@ -2645,7 +2634,41 @@ const cRecStaticDescr&  cLldpLink::descr() const
 CRECDEFD(cLldpLink)
 
 /* ----------------------------------------------------------------- */
-DEFAULTCRECDEF(cImport, _sImports)
+int execState(const QString& _n, bool __ex)
+{
+    if (0 == _n.compare(_sWait,     Qt::CaseInsensitive)) return ES_WAIT;
+    if (0 == _n.compare(_sExecute,  Qt::CaseInsensitive)) return ES_EXECUTE;
+    if (0 == _n.compare(_sOk,       Qt::CaseInsensitive)) return ES_OK;
+    if (0 == _n.compare(_sFaile,    Qt::CaseInsensitive)) return ES_FAILE;
+    if (0 == _n.compare(_sAborted,  Qt::CaseInsensitive)) return ES_ABORTED;
+    if (__ex) EXCEPTION(EDATA, -1, _n);
+    return ES_INVALID;
+}
+
+const QString& execState(int _e, bool __ex)
+{
+    switch (_e) {
+    case ES_WAIT:       return _sWait;
+    case ES_EXECUTE:    return _sExecute;
+    case ES_OK:         return _sOk;
+    case ES_FAILE:      return _sFaile;
+    case ES_ABORTED:    return _sAborted;
+    default:            break;
+    }
+    if (__ex) EXCEPTION(EDATA, _e);
+    return _sNul;
+}
+
+CRECCNTR(cImport)
+CRECDEFD(cImport)
+const cRecStaticDescr& cImport::descr() const
+{
+    if (initPDescr<cImport>(_sImports)) {
+        CHKENUM(_sExecState, execState);
+    }
+    return *_pRecordDescr;
+}
+
 /* ---------------------------------------------------------------------------------------------------- */
 DEFAULTCRECDEF(cImportTemplate, _sImportTemplates)
 

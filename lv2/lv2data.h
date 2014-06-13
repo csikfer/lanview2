@@ -157,25 +157,36 @@ EXT_ int  imageType(const QString& __n, bool __ex = true);
 /// @return A típus konstans, ha nem megengedett névvel hívtuk, és __ex false volt, akkor -1
 EXT_ const QString&   imageType(int __e, bool __ex = true);
 /// Kép típus konstanssal tér vissza, a megadott név alapján
-/// @param __e A típus név. Egyes Qt függvények ezt a tíoust vátják.
+/// @param __e A típus név. Egyes Qt függvények ezt a típust vátják.
 /// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást.
 /// @return A típus konstans, ha nem megengedett névvel hívtuk, és __ex false volt, akkor -1
 EXT_ const char *    _imageType(int __e, bool __ex = true);
 
+/// @enum eParamType
+/// Paraméter adattípus konstansok
 enum eParamType {
-    PT_INVALID = -1,
-    PT_ANY,
-    PT_BOOLEAN,
-    PT_INTEGER,
-    PT_REAL,
-    PT_CHAR,
-    PT_STRING,
-    PT_INTERVAL,
-    PT_IPADDRESS,
-    PT_URL
+    PT_INVALID = -1,        ///< Nem valós típus, csak hibajelzésre
+    PT_BOOLEAN,             ///< boolean típus
+    PT_BIGINT,              ///< 8bype egész szám
+    PT_DOUBLE_PRECISION,    ///< duplapontosságú lebegőpontos szám
+    PT_TEXT,                ///< szöveg
+    PT_INTERVAL,            ///< idő intervallum
+    PT_DATE,                ///< dátum
+    PT_TIME,                ///< időpont (egy napon bellül)
+    PT_TIMESTAMP,           ///< időpont dátummal
+    PT_INET,                ///< Hálózati cím, vagy cím tartomány
+    PT_BYTEA                ///< bináris adat
 };
 
+/// Paraméter típus név konverzió
+/// @param __n A paraméter típus neve (SQL enumerációs érték)
+/// @param __ex Ha értéke true, és nem valós típusnevet adtunk meg, akkor dob egy kizárást.
+/// @return A típus konstanssal tér vissza, ha nincs ilyen típus, és __ex értéke false, akkor a PT_INVALID konstanssal.
 EXT_ int paramType(const QString& __n, bool __ex = true);
+/// Paraméter típus név konverzió
+/// @param __e A paraméter típus konstans
+/// @param __ex Ha értéke true, és nem valós típus konstanst adtunk meg, akkor dob egy kizárást.
+/// @return A típus névvel tér vissza, ha nincs ilyen típus, és __ex értéke false, akkor egy üres stringgel.
 EXT_ const QString& paramType(int __e, bool __ex = true);
 
 /* ------------------------------------------------------------------ */
@@ -256,19 +267,19 @@ public:
     cSysParam& setValue(const QVariant& __v, bool __ex = true);
     /// Értékadás az érték mezőnek.
     cSysParam& operator=(const QVariant& __v) { return setValue(__v); }
-    static enum eReasons setStrSysParam(QSqlQuery& _q, const QString& __nm, const QString& _val, const QString& _tn = _sString) {
-        execSqlFunction(_q, "set_str_sys_param", QVariant(__nm), QVariant(_val), QVariant(_tn));
+    static enum eReasons setTextSysParam(QSqlQuery& _q, const QString& __nm, const QString& _val, const QString& _tn = _sText) {
+        execSqlFunction(_q, "set_text_sys_param", QVariant(__nm), QVariant(_val), QVariant(_tn));
         return (enum eReasons)reasons(_q.value(0).toString());
     }
-    static enum eReasons setBoolSysParam(QSqlQuery& _q, const QString& __nm, bool _val, const QString& _tn = _sString) {
+    static enum eReasons setBoolSysParam(QSqlQuery& _q, const QString& __nm, bool _val, const QString& _tn = _sText) {
         execSqlFunction(_q, "set_bool_sys_param", QVariant(__nm), QVariant(_val), QVariant(_tn));
         return (enum eReasons)reasons(_q.value(0).toString());
     }
-    static enum eReasons setIntSysParam(QSqlQuery& _q, const QString& __nm, qlonglong _val, const QString& _tn = _sString) {
+    static enum eReasons setIntSysParam(QSqlQuery& _q, const QString& __nm, qlonglong _val, const QString& _tn = _sText) {
         execSqlFunction(_q, "set_int_sys_param", QVariant(__nm), QVariant(_val), QVariant(_tn));
         return (enum eReasons)reasons(_q.value(0).toString());
     }
-    static enum eReasons setIntervalSysParam(QSqlQuery& _q, const QString& __nm, qlonglong _val, const QString& _tn = _sString) {
+    static enum eReasons setIntervalSysParam(QSqlQuery& _q, const QString& __nm, qlonglong _val, const QString& _tn = _sText) {
         execSqlFunction(_q, "set_interval_sys_param", QVariant(__nm), QVariant(intervalToStr(_val)), QVariant(_tn));
         return (enum eReasons)reasons(_q.value(0).toString());
     }
@@ -276,7 +287,7 @@ public:
         cSysParam   po;
         po.setType(_tn);
         po.setValue(_val, __ex);
-        enum eReasons r = setStrSysParam(_q, __nm, po.getName(_ixSysParamValue), _tn);
+        enum eReasons r = setTextSysParam(_q, __nm, po.getName(_ixParamValue), _tn);
         if (__ex && r == R_NOTFOUND) EXCEPTION(EFOUND, -1, _tn);
         return r;
     }
@@ -293,7 +304,7 @@ protected:
     /// A port paraméter értékhez tartozó típus rekord/objektum
     cParamType  paramType;
     static int _ixParamTypeId;
-    static int _ixSysParamValue;
+    static int _ixParamValue;
 };
 
 /* ------------------------------------------------------------------ */
@@ -523,7 +534,11 @@ public:
     /// Másoló operátor. A konténer összes elemét klónozza.
     cPortParams& operator=(const cPortParams& __o);
     /// A listét feltölti az adatbázisból, hogy a megadott porthoz (ID) tartozó összes paramétert tartalmazza.
-    int fetch(QSqlQuery& __q, qlonglong __port_id) { return tRecordList<cPortParam>::fetch(__q, false, cPortParam::_ixPortId, __port_id); }
+    int fetch(QSqlQuery& __q, qlonglong __port_id) {
+        if (cPortParam::_ixPortId < 0) cPortParam();    // Ha még nem volt init.
+        PDEB(VVERBOSE) << "Call: tRecordList<cPortParam>::fetch(__q, false, " << cPortParam::_ixPortId << _sCommaSp << __port_id << _sABraE << endl;
+        return tRecordList<cPortParam>::fetch(__q, false, cPortParam::_ixPortId, __port_id);
+    }
     /// Index operátor: egy elem a paraméter név alapján
     const cPortParam& operator[](const QString& __n) const;
     /// Index operátor: egy elem a paraméter név alapján
@@ -1378,6 +1393,18 @@ public:
     qlonglong getLinked(QSqlQuery& q, qlonglong __pid) { return LinkGetLinked(q, *this, __pid); }
     bool isLinked(QSqlQuery& q, qlonglong __pid1, qlonglong __pid2) { return LinkIsLinked(q, *this, __pid1, __pid2); }
 };
+
+enum eExecState {
+    ES_INVALID = -1,
+    ES_WAIT    =  0,
+    ES_EXECUTE,
+    ES_OK,
+    ES_FAILE,
+    ES_ABORTED
+};
+
+int execState(const QString& _n, bool __ex = true);
+const QString& execState(int _e, bool __ex = true);
 
 class LV2SHARED_EXPORT cImport : public cRecord {
     CRECORD(cImport);

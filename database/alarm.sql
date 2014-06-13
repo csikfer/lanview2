@@ -2,27 +2,27 @@
 -- //// alarm.nodes
 
 CREATE TABLE alarms (
-    alarm_id        serial      PRIMARY KEY,
-    host_service_id integer
+    alarm_id        bigserial      PRIMARY KEY,
+    host_service_id bigint
             REFERENCES host_services(host_service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE,
-    daemon_id       integer     DEFAULT NULL
+    daemon_id       bigint     DEFAULT NULL
             REFERENCES host_services(host_service_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE CASCADE,
     first_status    notifswitch NOT NULL,
     max_status      notifswitch NOT NULL,
     last_status     notifswitch NOT NULL,
     begin_time      timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     event_note     varchar(255),
-    superior_alarm  integer     DEFAULT NULL
+    superior_alarm  bigint     DEFAULT NULL
             REFERENCES alarms(alarm_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
     noalarm         boolean     NOT NULL,
     end_time        timestamp   DEFAULT NULL,
     msg_time        timestamp   DEFAULT NULL,
     alarm_time      timestamp   DEFAULT NULL,
     notice_time     timestamp   DEFAULT NULL,
-    notice_user     integer     DEFAULT NULL
+    notice_user     bigint     DEFAULT NULL
         REFERENCES users(user_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
     ack_time        timestamp   DEFAULT NULL,
-    ack_user        integer     DEFAULT NULL
+    ack_user        bigint     DEFAULT NULL
         REFERENCES users(user_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
     ack_msg         varchar(255)
 );
@@ -52,7 +52,7 @@ ALTER TABLE host_services ADD FOREIGN KEY (act_alarm_log_id)
 ALTER TABLE host_services ADD FOREIGN KEY (last_alarm_log_id)
     REFERENCES alarms(alarm_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL;
 
-CREATE OR REPLACE FUNCTION alarm_id2name(integer) RETURNS TEXT AS $$
+CREATE OR REPLACE FUNCTION alarm_id2name(bigint) RETURNS TEXT AS $$
 DECLARE
     rname TEXT;
 BEGIN
@@ -67,7 +67,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-COMMENT ON FUNCTION alarm_id2name(integer) IS '
+COMMENT ON FUNCTION alarm_id2name(bigint) IS '
 Álltatános is2name függvény.
 Az alarms.alarm_id érték alapján egy megjeleníthető stringgel tér vissza.
 Ha nem létezik az azonosító szerinti rekord, akkor hibát dob.
@@ -91,10 +91,10 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION check_superior_service(_hs host_services) RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION check_superior_service(_hs host_services) RETURNS bigint AS $$
 DECLARE
     hs host_services;
-    n  integer;
+    n  bigint;
 BEGIN
     hs := _hs;
     n  := 0;
@@ -118,7 +118,7 @@ END
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION chk_flapping(
-    hsid        integer,
+    hsid        bigint,
     s           services)
 RETURNS boolean AS $$
 BEGIN
@@ -129,7 +129,7 @@ END
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION touch_host_service(
-    hsid        integer                 -- A host_services rekord id-je
+    hsid        bigint                 -- A host_services rekord id-je
 )
 RETURNS host_services AS $$
 DECLARE
@@ -146,17 +146,17 @@ $$ LANGUAGE plpgsql;
 
 
 CREATE OR REPLACE FUNCTION set_service_stat(
-    hsid        integer,                -- A host_services rekord id-je
+    hsid        bigint,                -- A host_services rekord id-je
     state       notifswitch,            -- Az új státusz
     note        varchar(255) DEFAULT '',-- Az eseményhez tartozó üzenet (opcionális)
-    dmid        integer DEFAULT NULL)   -- Daemon host_service_id
+    dmid        bigint DEFAULT NULL)   -- Daemon host_service_id
 RETURNS host_services AS $$
 DECLARE
     hs          host_services;
     old_hs      host_services;
     s           services;
     na          isnoalarm;
-    sup         integer;
+    sup         bigint;
 BEGIN
     hs := touch_host_service(hsid);
     SELECT * INTO  s FROM services      WHERE service_id = hs.service_id;

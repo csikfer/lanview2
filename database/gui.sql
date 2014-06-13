@@ -28,7 +28,7 @@ listed_rev  Csak a felsorolt ősök megjelenítése
 listed_all  Csak a felsorolt leszármazottak és ősök megjelenítése';
 
 CREATE TABLE table_shapes (
-    table_shape_id      serial          PRIMARY KEY,
+    table_shape_id      bigserial          PRIMARY KEY,
     table_shape_name    varchar(32)     NOT NULL UNIQUE,
     table_shape_note   varchar(255)    DEFAULT NULL,
     table_shape_title   varchar(255)    DEFAULT NULL,
@@ -40,8 +40,8 @@ CREATE TABLE table_shapes (
     is_read_only        boolean         DEFAULT 'f',
     refine              varchar(64)     DEFAULT NULL,
     properties          varchar(255)    DEFAULT NULL,
-    left_shape_id       integer         DEFAULT NULL REFERENCES table_shapes(table_shape_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
-    right_shape_id      integer         DEFAULT NULL REFERENCES table_shapes(table_shape_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
+    left_shape_id       bigint         DEFAULT NULL REFERENCES table_shapes(table_shape_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
+    right_shape_id      bigint         DEFAULT NULL REFERENCES table_shapes(table_shape_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
     view_rights         rights          DEFAULT 'operator',
     edit_rights         rights          DEFAULT 'admin',
     insert_rights       rights          DEFAULT 'admin',
@@ -74,15 +74,15 @@ asc     Növekvő sorrend.
 desc    Csökkenő sorrend.';
 
 CREATE TABLE table_shape_fields (
-    table_shape_field_id    serial          PRIMARY KEY,
+    table_shape_field_id    bigserial          PRIMARY KEY,
     table_shape_field_name  varchar(32)     NOT NULL,
     table_shape_field_note varchar(255)    DEFAULT NULL,
     table_shape_field_title varchar(32)     DEFAULT NULL,
-    table_shape_id          integer         NOT NULL REFERENCES table_shapes(table_shape_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    field_sequence_number   integer         NOT NULL,
+    table_shape_id          bigint         NOT NULL REFERENCES table_shapes(table_shape_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    field_sequence_number   bigint         NOT NULL,
     ord_types               ordtype[]       DEFAULT '{"no","asc","desc"}',
     ord_init_type           ordtype         DEFAULT NULL,
-    ord_init_sequence_number integer        DEFAULT NULL,
+    ord_init_sequence_number bigint        DEFAULT NULL,
     is_read_only            boolean         DEFAULT 'f',
     is_hide                 boolean         DEFAULT 'f',
     id2name                 varchar(32)     DEFAULT NULL,
@@ -129,9 +129,9 @@ proc    Szűrés egy függvényen leresztül.
 SQL	    egy WHERE feltétel megadása';
 
 CREATE TABLE table_shape_filters (
-    table_shape_filter_id       serial          PRIMARY KEY,
+    table_shape_filter_id       bigserial          PRIMARY KEY,
     table_shape_filter_note    varchar(255)    DEFAULT NULL,
-    table_shape_field_id        integer         REFERENCES table_shape_fields(table_shape_field_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    table_shape_field_id        bigint         REFERENCES table_shape_fields(table_shape_field_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     filter_type                 filtertype      NOT NULL
 );
 ALTER TABLE table_shape_filters OWNER TO lanview2;
@@ -142,7 +142,7 @@ COMMENT ON COLUMN table_shape_filters.filter_type   IS 'Alkalmazható filter tí
 
 
 CREATE TABLE enum_vals (
-    enum_val_id         serial      PRIMARY KEY,
+    enum_val_id         bigserial      PRIMARY KEY,
     enum_val_name       varchar(32) NOT NULL,
     enum_val_note      varchar(255),
     enum_type_name      varchar(32) NOT NULL,
@@ -156,9 +156,9 @@ COMMENT ON COLUMN enum_vals.enum_val_note IS 'Az enumerációs értékhez tartoz
 COMMENT ON COLUMN enum_vals.enum_type_name IS 'Az enumerációs típusnak a neve';
 
 
-CREATE OR REPLACE FUNCTION table_shape_name2id(varchar(32)) RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION table_shape_name2id(varchar(32)) RETURNS bigint AS $$
 DECLARE
-    id integer;
+    id bigint;
 BEGIN
     SELECT table_shape_id INTO id FROM table_shapes WHERE table_shape_name = $1;
     IF NOT FOUND THEN
@@ -168,9 +168,9 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION table_shape_field_name2id(varchar(32), varchar(32)) RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION table_shape_field_name2id(varchar(32), varchar(32)) RETURNS bigint AS $$
 DECLARE
-    id integer;
+    id bigint;
 BEGIN
     SELECT table_shape_field_id  INTO id FROM table_shape_fields JOIN table_shapes USING (table_shape_id) WHERE table_shape_name = $1 AND table_shape_field_name = $2;
     IF NOT FOUND THEN
@@ -214,12 +214,12 @@ Ha nem adtuk meg az enumerációs típust, és az enumerációs értékre több 
 
 DROP TABLE IF EXISTS menu_items;
 CREATE TABLE menu_items (
-    menu_item_id            serial          PRIMARY KEY,
+    menu_item_id            bigserial          PRIMARY KEY,
     menu_item_name          varchar(32)     NOT NULL,
-    item_sequence_number    integer         DEFAULT NULL,
+    item_sequence_number    bigint         DEFAULT NULL,
     menu_item_title         varchar(32)     DEFAULT NULL,
     app_name                varchar(32)     NOT NULL,
-    upper_menu_item_id      integer         DEFAULT NULL REFERENCES menu_items(menu_item_id) MATCH SIMPLE ON DELETE CASCADE ON UPDATE RESTRICT,
+    upper_menu_item_id      bigint         DEFAULT NULL REFERENCES menu_items(menu_item_id) MATCH SIMPLE ON DELETE CASCADE ON UPDATE RESTRICT,
     properties              varchar(255)    DEFAULT NULL,
     tool_tip                text            DEFAULT NULL,
     whats_this              text            DEFAULT NULL,
@@ -230,7 +230,7 @@ ALTER TABLE menu_items OWNER TO lanview2;
 
 CREATE OR REPLACE FUNCTION check_insert_menu_items() RETURNS TRIGGER AS $$
 DECLARE
-    n   integer;
+    n   bigint;
 BEGIN
     IF NEW.item_sequence_number IS NULL THEN
         IF NEW.upper_menu_item_id IS NULL THEN

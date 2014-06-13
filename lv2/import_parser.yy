@@ -7,7 +7,7 @@
 #include "import_parser.h"
 
 class  cArpServerDefs;
-static  cArpServerDefs *pArpServerDefs = NULL;
+static cArpServerDefs *pArpServerDefs = NULL;
 static void insertCode(const QString& __txt);
 static QString  macbuff;
 static QString lastLine;
@@ -86,28 +86,51 @@ enum eShare {
     ES_C,   ES_D
 };
 
-static QStringList     allNotifSwitchs;
+#define UNKNOWN_PLACE_ID 0LL
+
 static QSqlQuery      *piq = NULL;
-void initImportParser()
-{
-    if (pArpServerDefs == NULL)
-        pArpServerDefs = new cArpServerDefs();
-    // notifswitch tömb = SET, minden on-ba, visszaolvasás listaként
-    if (allNotifSwitchs.isEmpty())
-        allNotifSwitchs = cUser().set(_sHostNotifSwitchs, QVariant(0xffff)).get(_sHostNotifSwitchs).toStringList();
-    if (piq == NULL)
-        piq = newQuery();
-}
-
-void downImportParser()
-{
-    pDelete(pArpServerDefs);
-    pDelete(piq);
-}
-
 static inline QSqlQuery& qq() { if (piq == NULL) EXCEPTION(EPROGFAIL); return *piq; }
 
-#define UNKNOWN_PLACE_ID 0LL
+typedef QList<QStringPair> QStringPairList;
+
+typedef QList<qlonglong> intList;
+
+class cTemplateMapMap : public QMap<QString, cTemplateMap> {
+ public:
+    /// Konstruktor
+    cTemplateMapMap() : QMap<QString, cTemplateMap>() { ; }
+    ///
+    cTemplateMap& operator[](const QString __t) {
+        if (contains(__t)) {
+            return  (*(QMap<QString, cTemplateMap> *)this)[__t];
+        }
+        return *insert(__t, cTemplateMap(__t));
+    }
+
+    /// Egy megadott nevű template lekérése, ha nincs a konténerben, akkor beolvassa az adatbázisból.
+    /// Az eredményt stringgel tér vissza
+    const QString& _get(const QString& __type, const QString&  __name) {
+        const QString& r = (*this)[__type].get(qq(), __name);
+        return r;
+    }
+    /// Egy megadott nevű template lekérése, ha nincs a konténerben, akkor beolvassa az adatbázisból.
+    /// Az eredményt a macro bufferbe tölti
+    void get(const QString& __type, const QString&  __name) {
+        insertCode(_get(__type, __name));
+    }
+    /// Egy adott nevű template elhelyezése a konténerbe, de az adatbázisban nem.
+    void set(const QString& __type, const QString& __name, const QString& __cont) {
+        (*this)[__type].set(__name, __cont);
+    }
+    /// Egy adott nevű template elhelyezése a konténerbe, és az adatbázisban.
+    void save(const QString& __type, const QString& __name, const QString& __cont, const QString& __descr) {
+        (*this)[__type].save(qq(), __name, __cont, __descr);
+    }
+    /// Egy adott nevű template törlése a konténerből, és az adatbázisból.
+    void del(const QString& __type, const QString& __name) {
+        (*this)[__type].del(qq(), __name);
+    }
+};
 
 class c_yyFile {
 public:
@@ -120,6 +143,7 @@ public:
     static void inc(QString *__f);
     static void eoi();
     static int size() { return stack.size(); }
+    static void clear() { stack.clear(); }
 private:
     QTextStream*    oldStream;
     QFile *         newFile;
@@ -189,57 +213,8 @@ public:
     bool            newNode;
 };
 
-typedef QList<QStringPair> QStringPairList;
 
-typedef QList<qlonglong> intList;
-
-class cTemplateMapMap : public QMap<QString, cTemplateMap> {
- public:
-    /// Konstruktor
-    cTemplateMapMap() : QMap<QString, cTemplateMap>() { ; }
-    ///
-    cTemplateMap& operator[](const QString __t) {
-        if (contains(__t)) {
-            return  (*(QMap<QString, cTemplateMap> *)this)[__t];
-        }
-        return *insert(__t, cTemplateMap(__t));
-    }
-
-    /// Egy megadott nevű template lekérése, ha nincs a konténerben, akkor beolvassa az adatbázisból.
-    /// Az eredményt stringgel tér vissza
-    const QString& _get(const QString& __type, const QString&  __name) {
-        const QString& r = (*this)[__type].get(qq(), __name);
-        return r;
-    }
-    /// Egy megadott nevű template lekérése, ha nincs a konténerben, akkor beolvassa az adatbázisból.
-    /// Az eredményt a macro bufferbe tölti
-    void get(const QString& __type, const QString&  __name) {
-        insertCode(_get(__type, __name));
-    }
-    /// Egy adott nevű template elhelyezése a konténerbe, de az adatbázisban nem.
-    void set(const QString& __type, const QString& __name, const QString& __cont) {
-        (*this)[__type].set(__name, __cont);
-    }
-    /// Egy adott nevű template elhelyezése a konténerbe, és az adatbázisban.
-    void save(const QString& __type, const QString& __name, const QString& __cont, const QString& __descr) {
-        (*this)[__type].save(qq(), __name, __cont, __descr);
-    }
-    /// Egy adott nevű template törlése a konténerből, és az adatbázisból.
-    void del(const QString& __type, const QString& __name) {
-        (*this)[__type].del(qq(), __name);
-    }
-};
-
-
-enum {
-    EP_NIL = -1,
-    EP_IP  = 0,
-    EP_ICMP = 1,
-    EP_TCP = 6,
-    EP_UDP = 17
-};
-
-/* */
+static QStringList     allNotifSwitchs;
 
 unsigned long yyflags = 0;
 
@@ -260,11 +235,67 @@ static cTableShape *pTableShape = NULL;
 static qlonglong           alertServiceId = NULL_ID;
 static QMap<QString, qlonglong>    ivars;
 static QMap<QString, QString>      svars;
-// QMap<QString, duble>        rvars;
-static QString       sPortIx = "PI";   // Port index
-static QString       sPortNm = "PN";   // Port név
-
 QStack<c_yyFile> c_yyFile::stack;
+
+void initImportParser()
+{
+    if (pArpServerDefs == NULL)
+        pArpServerDefs = new cArpServerDefs();
+    // notifswitch tömb = SET, minden on-ba, visszaolvasás listaként
+    if (allNotifSwitchs.isEmpty()) {
+        /// egy notif_switch set típusú mezőn mindent on-ba teszünk, stringlisté konvertálva lessz egy teljes listánk.
+        allNotifSwitchs = cUser().set(_sHostNotifSwitchs, QVariant(0xffff)).get(_sHostNotifSwitchs).toStringList();
+    }
+    if (piq == NULL) {
+        piq = newQuery();
+    }
+}
+
+void downImportParser()
+{
+    pDelete(pArpServerDefs);
+    pDelete(piq);
+    macbuff.clear();
+    lastLine.clear();
+    globalPlaceId = NULL_ID;
+    pDelete(importLastError);
+
+    yyflags = 0;
+
+    templates.clear();
+    actVlanId = -1;
+    actVlanName.clear();
+    actVlanNote.clear();;
+    netType = NT_INVALID; // firstSubNet = ;
+    pDelete(pPatch);
+    pDelete(pImage);
+    pDelete(pUser);
+    pDelete(pGroup);
+    pDelete(pNode);
+    pDelete(pLink);
+    pDelete(pService);
+    pDelete(pHostService);
+    pDelete(pTableShape);
+    alertServiceId = NULL_ID;
+    ivars.clear();
+    svars.clear();
+    c_yyFile::clear();
+}
+
+enum {
+    EP_NIL = -1,
+    EP_IP  = 0,
+    EP_ICMP = 1,
+    EP_TCP = 6,
+    EP_UDP = 17
+};
+
+/* */
+
+// QMap<QString, duble>        rvars;
+static const QString       sPortIx = "PI";   // Port index
+static const QString       sPortNm = "PN";   // Port név
+
 
 /* ---------------------------------------------------------------------------------------------------- */
 
@@ -1067,6 +1098,7 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
 %token      INHERIT_T NAMES_T HIDE_T VALUE_T DEFAULT_T FILTER_T FILTERS_T
 %token      ORD_T SEQUENCE_T MENU_T GUI_T OWN_T TOOL_T TIP_T WHATS_T THIS_T
 %token      EXEC_T TAG_T ANY_T BOOLEAN_T CHAR_T IPADDRESS_T REAL_T URL_T
+%token      BYTEA_T DATE_T
 
 %token <i>  INTEGER_V
 %token <r>  FLOAT_V
@@ -1320,18 +1352,19 @@ params  : ptype
         ;
 ptype   : PARAM_T TYPE_T str str ptypen str_z ';'{ cParamType::insertNew(*$3, *$4, $5, *$6); delete $3; delete $4; delete $6; }
         ;
-ptypen  : ANY_T                     { $$ = PT_ANY; }
-        | BOOLEAN_T                 { $$ = PT_BOOLEAN; }
-        | INTEGER_T                 { $$ = PT_INTEGER; }
-        | REAL_T                    { $$ = PT_REAL; }
-        | CHAR_T                    { $$ = PT_CHAR; }
-        | STRING_T                  { $$ = PT_STRING; }
+ptypen  : BOOLEAN_T                 { $$ = PT_BOOLEAN; }
+        | INTEGER_T                 { $$ = PT_BIGINT; }
+        | REAL_T                    { $$ = PT_DOUBLE_PRECISION; }
+        | STRING_T                  { $$ = PT_TEXT; }
         | INTERVAL_T                { $$ = PT_INTERVAL; }
-        | IPADDRESS_T               { $$ = PT_IPADDRESS; }
-        | URL_T                     { $$ = PT_URL; }
+        | IPADDRESS_T               { $$ = PT_INET; }
+        | DATE_T                    { $$ = PT_DATE; }
+        | TIME_T                    { $$ = PT_TIME; }
+        | DATE_T  TIME_T            { $$ = PT_TIMESTAMP; }
+        | BYTEA_T                   { $$ = PT_BYTEA; }
         ;
 syspar  : SYS_T PARAM_T str str '=' str { cSysParam::setSysParam(qq(), *$4, *$6, *$3); delete $3; delete $4; delete $6; }
-        | SYS_T STRING_T str '=' str    { cSysParam::setStrSysParam(qq(), *$3, *$5); delete $3; delete $5; }
+        | SYS_T STRING_T str '=' str    { cSysParam::setTextSysParam(qq(), *$3, *$5); delete $3; delete $5; }
         | SYS_T BOOLEAN_T str '=' bool  { cSysParam::setBoolSysParam(qq(), *$3, $5); delete $3; }
         | SYS_T INTEGER_T str '=' int   { cSysParam::setIntSysParam(qq(), *$3, $5); delete $3; }
         | SYS_T INTERVAL_T str '=' str  { cSysParam::setSysParam(qq(), *$3, *$5, _sInterval); delete $3; delete $5; }
@@ -2024,6 +2057,7 @@ static int yylex(void)
         TOK(INHERIT) TOK(NAMES) TOK(HIDE) TOK(VALUE) TOK(DEFAULT) TOK(FILTER) TOK(FILTERS)
         TOK(ORD) TOK(SEQUENCE) TOK(MENU) TOK(GUI) TOK(OWN) TOK(TOOL) TOK(TIP) TOK(WHATS) TOK(THIS)
         TOK(EXEC) TOK(TAG) TOK(ANY) TOK(BOOLEAN) TOK(CHAR) TOK(IPADDRESS) TOK(REAL) TOK(URL)
+        TOK(BYTEA) TOK(DATE)
         { "WST", WORKSTATION_T }, // rövidítések
         { "ATT", ATTACHED_T },
         { "INT", INTEGER_T },

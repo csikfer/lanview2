@@ -52,6 +52,7 @@ int cDbErr::insertNew(QSqlQuery& q, const QString& type, const QString& msg, int
 
 int cDbErr::insertNew(const QString& type, const QString& msg, int code = -1, const QString& table = _sNil, const QString& func = _sNil)
 {
-    QSqlQuery   q = getQuery();
-    return insertNew(type, msg, code,  table, func);
+    QSqlQuery *pq = newQuery();
+    return insertNew(*pq, type, msg, code,  table, func);
+    delete pq;
 }

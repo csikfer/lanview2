@@ -1,7 +1,6 @@
 #ifndef LV2GUI_H
 #define LV2GUI_H
 
-#include "lanview.h"
 #include "lv2g.h"
 #include "menu.h"
 #include "mainwindow.h"
