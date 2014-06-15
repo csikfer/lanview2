@@ -7,7 +7,69 @@ CREATE TABLE ouis (
 );
 ALTER TABLE ouis OWNER TO lanview2;
 
-CREATE TYPE mactabstate AS ENUM ('likely', 'noarp', 'nooid', 'suspect');
+CREATE OR REPLACE FUNCTION find_oui(mac macaddr) RETURNS boolean AS $$
+BEGIN
+    RETURN 0 != COUNT(*) FROM ouis WHERE oui = trunc(mac);
+END;
+$$ LANGUAGE plpgsql;
+
+-- --------------------------------------------------------------------------------------------
+
+CREATE TABLE arps (
+    ipaddress       inet        PRIMARY KEY,
+    hwaddress       macaddr     NOT NULL,
+    first_time      timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP, -- First time discovered
+    last_time       timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP  -- Last time discovered
+);
+ALTER TABLE arps OWNER TO lanview2;
+
+CREATE TABLE arp_logs (
+    arp_log_id      bigserial   PRIMARY KEY,
+    reason          reasons     NOT NULL,
+    date_of         timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ipaddress_new   inet        DEFAULT NULL,
+    hwaddress_new   macaddr     DEFAULT NULL,
+    ipaddress_old   inet        DEFAULT NULL,
+    hwaddress_old   macaddr     DEFAULT NULL,
+    first_time_old  timestamp   DEFAULT NULL,
+    last_time_old   timestamp   DEFAULT NULL
+);
+ALTER TABLE arp_logs OWNER TO lanview2;
+
+CREATE OR REPLACE FUNCTION insert_or_update_arp(inet, macaddr) RETURNS reasons AS $$
+DECLARE
+    arp arps;
+BEGIN
+    SELECT * INTO arp FROM arps WHERE ipaddress = $1;
+    IF NOT FOUND THEN
+        INSERT INTO arps(ipaddress, hwaddress) VALUES ($1, $2);
+        RETURN 'insert';
+    ELSE
+        IF arp.hwaddress = $2 THEN
+            UPDATE arps SET last_time = CURRENT_TIMESTAMP WHERE ipaddress = arp.ipaddress;
+            RETURN 'found';
+        ELSE
+            UPDATE arps
+                SET hwaddress = $2,  first_time = CURRENT_TIMESTAMP, last_time = CURRENT_TIMESTAMP
+                WHERE ipaddress = arp.ipaddress;
+            INSERT INTO
+                arp_logs(reason, ipaddress_new, hwaddress_new, ipaddress_old, hwaddress_old, first_time_old, last_time_old)
+                VALUES( 'move',  $1,            $2,            arp.ipaddress, arp.hwaddress, arp.first_time, arp.last_time);
+            RETURN 'update';
+        END IF;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION find_arp(mac macaddr) RETURNS boolean AS $$
+BEGIN
+    RETURN 0 != COUNT(*) FROM arps WHERE hwaddress = mac;
+END;
+$$ LANGUAGE plpgsql;
+
+-- --------------------------------------------------------------------------------------------
+
+CREATE TYPE mactabstate AS ENUM ('likely', 'noarp', 'nooid', 'suspect', 'link', 'lldp');
 ALTER TYPE mactabstate OWNER TO lanview2;
 COMMENT ON TYPE mactabstate IS
 'A cím információ minösítése:
@@ -15,6 +77,8 @@ likely	Hihető, van ilyen című bejegyzett eszköz.
 noarp	Nem szerepel az arps táblában
 nooid	Nem azonosítható a cím alapján a gyártó (OUI)
 suspect	Gyanús, az észleléskor hibákat jelzett a port
+link	Megfeleltethető egy logikai linknek
+lldp	Megfeleltethető egy LLDP linknek.
 ';
 
 CREATE TABLE mactab (
@@ -78,7 +142,7 @@ CREATE OR REPLACE FUNCTION insert_or_update_mactab(
 DECLARE
     mt          mactab;
     pname_di CONSTANT varchar(32) := 'suspected_uplink';
-    maxct    CONSTANT bigint     := get_int_sys_param('mac_tab_move_check_count');
+    maxct    CONSTANT bigint      := get_int_sys_param('mac_tab_move_check_count');
     mv       CONSTANT reasons     := 'move';
     btm      CONSTANT timestamp   := CURRENT_TIMESTAMP - get_interval_sys_param('mac_tab_move_check_interval');
 BEGIN
@@ -140,48 +204,3 @@ Visszaadott érték:
   Ha a régebbi porton be van állítva a "suspected_uplink" nevű paraméter és értéke true, az egyenértékkű azzal az esettel, mintha azon lett volna több változás.
 ';
 
-CREATE TABLE arps (
-    ipaddress       inet        PRIMARY KEY,
-    hwaddress       macaddr     NOT NULL,
-    first_time      timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP, -- First time discovered
-    last_time       timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP  -- Last time discovered
-);
-ALTER TABLE arps OWNER TO lanview2;
-
-CREATE TABLE arp_logs (
-    arp_log_id      bigserial      PRIMARY KEY,
-    reason          reasons     NOT NULL,
-    date_of         timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    ipaddress_new   inet        DEFAULT NULL,
-    hwaddress_new   macaddr     DEFAULT NULL,
-    ipaddress_old   inet        DEFAULT NULL,
-    hwaddress_old   macaddr     DEFAULT NULL,
-    first_time_old  timestamp   DEFAULT NULL,
-    last_time_old   timestamp   DEFAULT NULL
-);
-ALTER TABLE arp_logs OWNER TO lanview2;
-
-CREATE OR REPLACE FUNCTION insert_or_update_arp(inet, macaddr) RETURNS reasons AS $$
-DECLARE
-    arp arps;
-BEGIN
-    SELECT * INTO arp FROM arps WHERE ipaddress = $1;
-    IF NOT FOUND THEN
-        INSERT INTO arps(ipaddress, hwaddress) VALUES ($1, $2);
-        RETURN 'insert';
-    ELSE
-        IF arp.hwaddress = $2 THEN
-            UPDATE arps SET last_time = CURRENT_TIMESTAMP WHERE ipaddress = arp.ipaddress;
-            RETURN 'found';
-        ELSE
-            UPDATE arps
-                SET hwaddress = $2,  first_time = CURRENT_TIMESTAMP, last_time = CURRENT_TIMESTAMP
-                WHERE ipaddress = arp.ipaddress;
-            INSERT INTO
-                arp_logs(reason, ipaddress_new, hwaddress_new, ipaddress_old, hwaddress_old, first_time_old, last_time_old)
-                VALUES( 'move',  $1,            $2,            arp.ipaddress, arp.hwaddress, arp.first_time, arp.last_time);
-            RETURN 'update';
-        END IF;
-    END IF;
-END;
-$$ LANGUAGE plpgsql;

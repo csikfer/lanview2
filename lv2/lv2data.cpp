@@ -9,18 +9,19 @@ EXT_ int notifSwitch(const QString& _nm, bool __ex = true);
 
 int reasons(const QString& _r, bool __ex)
 {
-    if (_sNew      == _r) return R_NEW;
-    if (_sInsert   == _r) return R_INSERT;
-    if (_sRemove   == _r) return R_REMOVE;
-    if (_sExpired  == _r) return R_EXPIRED;
-    if (_sMove     == _r) return R_MOVE;
-    if (_sModify   == _r) return R_MODIFY;
-    if (_sUpdate   == _r) return R_UPDATE;
-    if (_sUnchange == _r) return R_UNCHANGE;
-    if (_sFound    == _r) return R_FOUND;
-    if (_sNotfound == _r) return R_NOTFOUND;
-    if (_sDiscard  == _r) return R_DISCARD;
-    if (_sError    == _r) return R_ERROR;
+    if (0 == _r.compare(_sNew,      Qt::CaseInsensitive)) return R_NEW;
+    if (0 == _r.compare(_sInsert,   Qt::CaseInsensitive)) return R_INSERT;
+    if (0 == _r.compare(_sRemove,   Qt::CaseInsensitive)) return R_REMOVE;
+    if (0 == _r.compare(_sExpired,  Qt::CaseInsensitive)) return R_EXPIRED;
+    if (0 == _r.compare(_sMove,     Qt::CaseInsensitive)) return R_MOVE;
+    if (0 == _r.compare(_sModify,   Qt::CaseInsensitive)) return R_MODIFY;
+    if (0 == _r.compare(_sUpdate,   Qt::CaseInsensitive)) return R_UPDATE;
+    if (0 == _r.compare(_sUnchange, Qt::CaseInsensitive)) return R_UNCHANGE;
+    if (0 == _r.compare(_sFound,    Qt::CaseInsensitive)) return R_FOUND;
+    if (0 == _r.compare(_sNotfound, Qt::CaseInsensitive)) return R_NOTFOUND;
+    if (0 == _r.compare(_sDiscard,  Qt::CaseInsensitive)) return R_DISCARD;
+    if (0 == _r.compare(_sCaveat,   Qt::CaseInsensitive)) return R_CAVEAT;
+    if (0 == _r.compare(_sError,    Qt::CaseInsensitive)) return R_ERROR;
     if (__ex == true)   EXCEPTION(EDATA, -1, _r);
     return R_INVALID;
 }
@@ -49,17 +50,17 @@ const QString& reasons(int _r, bool __ex)
 /* ------------------------------ param_types ------------------------------ */
 int paramType(const QString& __n, bool __ex)
 {
-    if (__n == _sBoolean)           return PT_BOOLEAN;
-    if (__n == _sBigInt)            return PT_BIGINT;
-    if (__n == _sDoublePrecision)   return PT_DOUBLE_PRECISION;
-    if (__n == _sText)              return PT_TEXT;
-    if (__n == _sInterval)          return PT_INTERVAL;
-    if (__n == _sDate)              return PT_DATE;
-    if (__n == _sTime)              return PT_TIME;
-    if (__n == _sTimestamp)         return PT_TIMESTAMP;
-    if (__n == _sINet)              return PT_INET;
-    if (__n == _sByteA)             return PT_BYTEA;
-    if (__ex == true)       EXCEPTION(EDATA, -1, __n);
+    if (0 == __n.compare(_sBoolean,   Qt::CaseInsensitive))         return PT_BOOLEAN;
+    if (0 == __n.compare(_sBigInt,    Qt::CaseInsensitive))         return PT_BIGINT;
+    if (0 == __n.compare(_sDoublePrecision, Qt::CaseInsensitive))   return PT_DOUBLE_PRECISION;
+    if (0 == __n.compare(_sText,      Qt::CaseInsensitive))         return PT_TEXT;
+    if (0 == __n.compare(_sInterval,  Qt::CaseInsensitive))         return PT_INTERVAL;
+    if (0 == __n.compare(_sDate,      Qt::CaseInsensitive))         return PT_DATE;
+    if (0 == __n.compare(_sTime,      Qt::CaseInsensitive))         return PT_TIME;
+    if (0 == __n.compare(_sTimestamp, Qt::CaseInsensitive))         return PT_TIMESTAMP;
+    if (0 == __n.compare(_sINet,      Qt::CaseInsensitive))         return PT_INET;
+    if (0 == __n.compare(_sByteA,     Qt::CaseInsensitive))         return PT_BYTEA;
+    if (__ex == true)  EXCEPTION(EDATA, -1, __n);
     return PT_INVALID;
 }
 
@@ -2739,7 +2740,7 @@ const QString& vlanType(int __e, bool __ex)
 {
     switch (__e) {
     case VT_NO:         return _sNo;
-    case VT_NOTKNOWN:    return _sUnknown;
+    case VT_NOTKNOWN:   return _sUnknown;
     case VT_FORBIDDEN:  return _sForbidden;
     case VT_AUTO:       return _sAuto;
     case VT_TAGGED:     return _sTagged;

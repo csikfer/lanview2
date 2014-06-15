@@ -25,6 +25,7 @@ enum eReasons {
     R_FOUND,        ///< Találat, az elem már létezik...
     R_NOTFOUND,     ///< Nincs találat, valamelyik objektum hiányzik.
     R_DISCARD,      ///< Nincs művelet, az adat eldobásra került.
+    R_CAVEAT,       ///< Valamilyen ellentmondás van az adatok között
     R_ERROR         ///< Egyébb hiba
 };
 

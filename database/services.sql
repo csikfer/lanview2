@@ -37,26 +37,26 @@ ALTER TABLE services OWNER TO lanview2;
 COMMENT ON TABLE  services                  IS 'Services table';
 COMMENT ON COLUMN services.service_id       IS 'Egyedi azonosító';
 COMMENT ON COLUMN services.service_name     IS '';
-COMMENT ON COLUMN services.service_note    IS '';
+COMMENT ON COLUMN services.service_note     IS '';
 COMMENT ON COLUMN services.protocol_id      IS 'Ip protocol id (-1 : nil, if no ip protocol)';
 COMMENT ON COLUMN services.port             IS 'Default port number. or NULL';
 COMMENT ON COLUMN services.check_cmd        IS 'Default check command';
 COMMENT ON COLUMN services.properties       IS
 'Default magic string (szeparátor a kettőspont, paraméter szeparátor az ''='', első és utolsó karakter a szeparátor):
-MAGIC:
+MAGIC: (Ellenőrizni! Elavult?)
 daemon      Az szolgáltatás ellenörzése egy daemon program, paraméterek:
     respawn     DAEMON paraméter: a programot újra kell indítani, ha kilép. A kilépés nem hiba.
     continue    DAEMON paraméter: a program normál körülmények között nem lép ki, csak ha leállítják, vagy hiba van. (default)
     polling     DEEMON paraméter: a programot időzítve kell hívni. He elvégezte az ellenörzést, akkor kilép.
 inspector
     timed       Időzített
-    thread      Időzített, saját szállal
-    continue    Saját szál belső ütemezés ill. folyamatos
+    thread      Időzített, saját szállal (?!)
+    continue    Saját szál belső ütemezés ill. folyamatos (?!)
     passive     Valamilyen lekérdezés járulékos eredményeként
 superior    Alárendelteket ellenörző eljárásokat hív, szolgál ki (passive)
     <üres>      Alárendelt viszony,autómatikus
     custom      egyedileg kezelt (a cInspector objektum nem ovassa be az alárendelteket, azok egyedileg kezelendőek)
-protocol    Protokol, módszer a szolgáltatás végrehajtásához
+protocol    Protokol, módszer a szolgáltatás végrehajtásához (elavult ?)
 ifType      A szolgáltatás hierarhia mely port típus linkjével azonos (paraméter: interface típus neve)
 disabled    service_name = icontsrv , csak a host_services rekordban, a szolgáltatás (riasztás) tiltva.
 reversed    service_name = icontsrv , csak a host_services rekordban, a port fordított bekötését jelzi.
@@ -108,7 +108,7 @@ Riasztás tiltási állapotok:
 "from_to" Az alarmok egy tőintervallumban le lesznek/vannak/voltak tiltva';
 
 CREATE TABLE host_services (
-    host_service_id     bigserial          PRIMARY KEY,
+    host_service_id     bigserial      PRIMARY KEY,
     node_id             bigint         NOT NULL,
     --  REFERENCES nodess(node_id) MATCH FULL ON DELETE CASCADE ON UPDATE CASCADE,
     service_id          bigint         NOT NULL
@@ -121,9 +121,9 @@ CREATE TABLE host_services (
     proto_service_id    bigint         DEFAULT NULL
         REFERENCES services(service_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE RESTRICT,
     --  REFERENCES interfaces(port_id) MATCH SIMPLE
-    delegate_host_state boolean         NOT NULL DEFAULT FALSE,
-    check_cmd           varchar(255)    DEFAULT NULL,
-    properties          varchar(255)    DEFAULT NULL,
+    delegate_host_state boolean        NOT NULL DEFAULT FALSE,
+    check_cmd           varchar(255)   DEFAULT NULL,
+    properties          varchar(255)   DEFAULT NULL,
     superior_host_service_id bigint    DEFAULT NULL
         REFERENCES host_services(host_service_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
     max_check_attempts  bigint         DEFAULT NULL,
@@ -131,23 +131,23 @@ CREATE TABLE host_services (
     retry_check_interval bigint        DEFAULT NULL,
     timeperiod_id       bigint         NOT NULL DEFAULT 0   -- DEFAULT 'always'
         REFERENCES timeperiods(timeperiod_id) MATCH FULL ON DELETE SET DEFAULT ON UPDATE RESTRICT,
-    noalarm_flag        noalarmtype     NOT NULL DEFAULT 'off',
-    noalarm_from        timestamp       DEFAULT NULL,
-    noalarm_to          timestamp       DEFAULT NULL,
+    noalarm_flag        noalarmtype    NOT NULL DEFAULT 'off',
+    noalarm_from        timestamp      DEFAULT NULL,
+    noalarm_to          timestamp      DEFAULT NULL,
     offline_group_id    bigint[]       DEFAULT NULL,
     online_group_id     bigint[]       DEFAULT NULL,
 -- Állapot
-    host_service_state  notifswitch     NOT NULL DEFAULT 'unknown',
-    soft_state          notifswitch     NOT NULL DEFAULT 'unknown',
-    hard_state          notifswitch     NOT NULL DEFAULT 'unknown',
-    superior_service    boolean         NOT NULL DEFAULT TRUE,
+    host_service_state  notifswitch    NOT NULL DEFAULT 'unknown',
+    soft_state          notifswitch    NOT NULL DEFAULT 'unknown',
+    hard_state          notifswitch    NOT NULL DEFAULT 'unknown',
+    superior_service    boolean        NOT NULL DEFAULT TRUE,
     check_attempts      bigint         NOT NULL DEFAULT 0,
-    last_changed        TIMESTAMP       DEFAULT NULL,
-    last_touched        TIMESTAMP       DEFAULT NULL,
+    last_changed        TIMESTAMP      DEFAULT NULL,
+    last_touched        TIMESTAMP      DEFAULT NULL,
     act_alarm_log_id    bigint         DEFAULT NULL,   -- REFERENCES alarms(alarm_id)
     last_alarm_log_id   bigint         DEFAULT NULL,   -- REFERENCES alarms(alarm_id)
 -- Állapot vége
-    deleted             boolean         NOT NULL DEFAULT FALSE,
+    deleted             boolean        NOT NULL DEFAULT FALSE,
     UNIQUE (node_id, service_id, port_id)
 );
 ALTER TABLE host_services OWNER TO lanview2;
@@ -188,7 +188,7 @@ CREATE OR REPLACE FUNCTION host_service_id2name(bigint) RETURNS TEXT AS $$
 DECLARE
     name TEXT;
 BEGIN
-    SELECT node_name || ':' || service_name || CASE WHEN p.port_name IS NULL THEN '' ELSE ':' || p.port_name END INTO NAME
+    SELECT node_name || ':' || service_name || CASE WHEN p.port_name IS NULL THEN '' ELSE ':' || p.port_name END INTO name
         FROM host_services hs
         JOIN nodes n USING(node_id)
         JOIN services s USING(service_id)
@@ -214,7 +214,7 @@ CREATE TABLE host_service_logs (
     new_soft_state      notifswitch     NOT NULL,
     new_hard_state      notifswitch     NOT NULL,
     event_note          varchar(255)    DEFAULT NULL,
-    superior_alarm      bigint         DEFAULT NULL,
+    superior_alarm      bigint          DEFAULT NULL,
     noalarm             boolean         NOT NULL,
     service_name        varchar(32)     NOT NULL DEFAULT '',
     node_name           varchar(32)     NOT NULL DEFAULT ''
@@ -224,13 +224,13 @@ ALTER TABLE host_service_logs OWNER TO lanview2;
 COMMENT ON TABLE host_service_logs IS 'Hoszt szervízek státusz változásainak a log táblája';
 
 CREATE TABLE host_service_noalarms (
-    host_service_noalarm_id bigserial      PRIMARY KEY,
+    host_service_noalarm_id bigserial   PRIMARY KEY,
     date_of                 timestamp   DEFAULT CURRENT_TIMESTAMP,
-    host_service_id         bigint     REFERENCES host_services(host_service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    host_service_id         bigint      REFERENCES host_services(host_service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     noalarm_flag            noalarmtype NOT NULL,
     noalarm_from            timestamp   DEFAULT NULL,
     noalarm_to              timestamp   DEFAULT NULL,
-    user_id                 bigint     DEFAULT NULL REFERENCES users(user_id) MATCH SIMPLE
+    user_id                 bigint      DEFAULT NULL REFERENCES users(user_id) MATCH SIMPLE
 );
 CREATE INDEX host_service_noalarms_date_of_index ON host_service_noalarms (date_of);
 ALTER TABLE host_service_noalarms OWNER TO lanview2;
@@ -243,19 +243,19 @@ COMMENT ON COLUMN host_service_noalarms.noalarm_to IS 'Ha a tíltás időhöz k�
 COMMENT ON COLUMN host_service_noalarms.user_id IS 'A tíltást kiadó felhasználó azonosítója.';
 
 CREATE TABLE host_service_charts (
-    host_service_chart_id bigserial        PRIMARY KEY,
+    host_service_chart_id bigserial    PRIMARY KEY,
     host_service_id     bigint         REFERENCES host_services(host_service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    rrd_file_name       varchar(255)    DEFAULT NULL,
+    rrd_file_name       varchar(255)   DEFAULT NULL,
     graph_order         bigint[]       DEFAULT NULL,
-    graph_args          varchar(255)    DEFAULT NULL,
-    graph_vlabel        varchar(255)    DEFAULT NULL,
-    graph_scale         boolean         DEFAULT NULL,   -- ??
-    graph_info          varchar(255)    DEFAULT NULL,   -- ??
-    graph_category      varchar(255)    DEFAULT NULL,   -- ??
-    graph_period        varchar(255)    DEFAULT NULL,   -- ??
+    graph_args          varchar(255)   DEFAULT NULL,
+    graph_vlabel        varchar(255)   DEFAULT NULL,
+    graph_scale         boolean        DEFAULT NULL,   -- ??
+    graph_info          varchar(255)   DEFAULT NULL,   -- ??
+    graph_category      varchar(255)   DEFAULT NULL,   -- ??
+    graph_period        varchar(255)   DEFAULT NULL,   -- ??
     graph_height        bigint         DEFAULT 300,
     graph_width         bigint         DEFAULT 600,
-    deleted             boolean         NOT NULL DEFAULT FALSE
+    deleted             boolean        NOT NULL DEFAULT FALSE
 );
 ALTER TABLE host_service_charts OWNER TO lanview2;
 
@@ -267,12 +267,12 @@ CREATE TYPE drawtype AS ENUM ('LINE', 'AREA', 'STACK');
 ALTER TYPE drawtype OWNER TO lanview2;
 
 CREATE TABLE host_service_vars (
-    service_var_id      bigserial          PRIMARY KEY,
+    service_var_id      bigserial       PRIMARY KEY,
     service_var_name    varchar(32)     NOT NULL,
     service_var_note    varchar(255)    DEFAULT NULL,
-    host_service_id     bigint         NOT NULL
+    host_service_id     bigint          NOT NULL
         REFERENCES host_services(host_service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    color               bigint         DEFAULT 0,
+    color               bigint          DEFAULT 0,
     service_var_type    servicevartype  DEFAULT 'GAUGE',
     draw_type           drawtype        DEFAULT 'LINE',
     cdef                varchar(255)    DEFAULT NULL,
@@ -316,7 +316,7 @@ BEGIN
     IF TG_OP = 'UPDATE' THEN
        IF OLD.node_id = NEW.node_id AND
          (OLD.superior_host_service_id IS NOT NULL AND NEW.superior_host_service_id IS NULL) THEN
-            -- Update a suprior akármi törlése miatt, több rekord törlésénél előfordulhat,
+            -- Update a superior akármi törlése miatt, több rekord törlésénél előfordulhat,
             -- hogy már nincs meg a node vagy port amire a node_id ill. a prort_id mutat.
             -- késöbb ez a rekord törölve lessz, de ha hibát dobunk, akkor semmilyen törlés nem lessz.
             cset := TRUE;
@@ -476,7 +476,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE VIEW view_host_services AS
     SELECT
         hs.host_service_id          AS host_service_id,
-        hs.host_service_note       AS host_service_note,
+        hs.host_service_note        AS host_service_note,
         hs.host_service_alarm_msg   AS host_service_alarm_msg,
         hs.node_id                  AS node_id,
         n.node_name                 AS node_name,
