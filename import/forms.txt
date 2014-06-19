@@ -369,4 +369,7 @@ GUI lv2gui {
     enums  SHAPE enum_vals "Enumerációs értékek";
     menus  SHAPE menu_items "GUI menük";
   }
+  tools MENU "Eszközök" {
+    import OWN parser "Szöveges import";
+  }
 }

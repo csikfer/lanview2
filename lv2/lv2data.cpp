@@ -9,18 +9,19 @@ EXT_ int notifSwitch(const QString& _nm, bool __ex = true);
 
 int reasons(const QString& _r, bool __ex)
 {
-    if (_sNew      == _r) return R_NEW;
-    if (_sInsert   == _r) return R_INSERT;
-    if (_sRemove   == _r) return R_REMOVE;
-    if (_sExpired  == _r) return R_EXPIRED;
-    if (_sMove     == _r) return R_MOVE;
-    if (_sModify   == _r) return R_MODIFY;
-    if (_sUpdate   == _r) return R_UPDATE;
-    if (_sUnchange == _r) return R_UNCHANGE;
-    if (_sFound    == _r) return R_FOUND;
-    if (_sNotfound == _r) return R_NOTFOUND;
-    if (_sDiscard  == _r) return R_DISCARD;
-    if (_sError    == _r) return R_ERROR;
+    if (0 == _r.compare(_sNew,     Qt::CaseInsensitive)) return R_NEW;
+    if (0 == _r.compare(_sInsert,  Qt::CaseInsensitive)) return R_INSERT;
+    if (0 == _r.compare(_sRemove,  Qt::CaseInsensitive)) return R_REMOVE;
+    if (0 == _r.compare(_sExpired, Qt::CaseInsensitive)) return R_EXPIRED;
+    if (0 == _r.compare(_sMove,    Qt::CaseInsensitive)) return R_MOVE;
+    if (0 == _r.compare(_sRestore, Qt::CaseInsensitive)) return R_RESTORE;
+    if (0 == _r.compare(_sModify,  Qt::CaseInsensitive)) return R_MODIFY;
+    if (0 == _r.compare(_sUpdate,  Qt::CaseInsensitive)) return R_UPDATE;
+    if (0 == _r.compare(_sUnchange,Qt::CaseInsensitive)) return R_UNCHANGE;
+    if (0 == _r.compare(_sFound,   Qt::CaseInsensitive)) return R_FOUND;
+    if (0 == _r.compare(_sNotfound,Qt::CaseInsensitive)) return R_NOTFOUND;
+    if (0 == _r.compare(_sDiscard, Qt::CaseInsensitive)) return R_DISCARD;
+    if (0 == _r.compare(_sError,   Qt::CaseInsensitive)) return R_ERROR;
     if (__ex == true)   EXCEPTION(EDATA, -1, _r);
     return R_INVALID;
 }
@@ -33,6 +34,7 @@ const QString& reasons(int _r, bool __ex)
     case R_REMOVE:      return _sRemove;
     case R_EXPIRED:     return _sExpired;
     case R_MOVE:        return _sMove;
+    case R_RESTORE:     return _sRestore;
     case R_MODIFY:      return _sModify;
     case R_UPDATE:      return _sUpdate;
     case R_UNCHANGE:    return _sUnchange;

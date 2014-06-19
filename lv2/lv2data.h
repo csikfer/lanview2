@@ -19,6 +19,7 @@ enum eReasons {
     R_REMOVE,       ///< Elem eltávolítása/eltávolítva
     R_EXPIRED,      ///< Lejárt, elévült
     R_MOVE,         ///< Az elem át-mozgatása/mozgatva
+    R_RESTORE,      ///< Helyreálitás/helyreállítva
     R_MODIFY,       ///< Az elem módosítva (összetetteb módosítás)
     R_UPDATE,       ///< Az elem módosítva
     R_UNCHANGE,     ///< Nincs változás

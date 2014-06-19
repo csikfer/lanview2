@@ -137,7 +137,7 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE TYPE reasons AS ENUM ('new', 'insert', 'remove', 'expired', 'move', 'modify', 'update', 'unchange', 'found', 'notfound', 'discard', 'error');
+CREATE TYPE reasons AS ENUM ('new', 'insert', 'remove', 'expired', 'move', 'restore', 'modify', 'update', 'unchange', 'found', 'notfound', 'discard', 'error');
 ALTER TYPE reasons OWNER TO lanview2;
 COMMENT ON TYPE reasons IS
 'Okok ill. műveletek eredményei

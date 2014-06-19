@@ -476,7 +476,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE VIEW view_host_services AS
     SELECT
         hs.host_service_id          AS host_service_id,
-        hs.host_service_note       AS host_service_note,
+        hs.host_service_note        AS host_service_note,
         hs.host_service_alarm_msg   AS host_service_alarm_msg,
         hs.node_id                  AS node_id,
         n.node_name                 AS node_name,
