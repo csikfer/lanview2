@@ -39,7 +39,11 @@
     </layout>
    </item>
    <item>
-    <widget class="QPlainTextEdit" name="plainTextEditSrc"/>
+    <widget class="QTextEdit" name="textEditSrc">
+     <property name="acceptRichText">
+      <bool>false</bool>
+     </property>
+    </widget>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_4">
@@ -216,22 +220,6 @@
   <connection>
    <sender>pushButtonClear</sender>
    <signal>clicked()</signal>
-   <receiver>plainTextEditSrc</receiver>
-   <slot>clear()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>234</x>
-     <y>294</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>266</x>
-     <y>155</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>pushButtonClear</sender>
-   <signal>clicked()</signal>
    <receiver>textEditResult</receiver>
    <slot>clear()</slot>
    <hints>
@@ -242,6 +230,22 @@
     <hint type="destinationlabel">
      <x>266</x>
      <y>537</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButtonClear</sender>
+   <signal>clicked()</signal>
+   <receiver>textEditSrc</receiver>
+   <slot>clear()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>234</x>
+     <y>295</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>435</x>
+     <y>155</y>
     </hint>
    </hints>
   </connection>

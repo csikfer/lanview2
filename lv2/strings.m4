@@ -130,6 +130,7 @@ STRDEF(Unchange, "unchange")
 STRDEF(Found, "found")
 STRDEF(Notfound, "notfound")
 STRDEF(Discard, "discard")
+STRDEF(Caveat, "caveat")
  dnl error
 
 dnl Tábla és mező nevek

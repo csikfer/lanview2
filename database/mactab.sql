@@ -1,4 +1,3 @@
--- //// OUI
 
 -- Rendszer paraméter a insert_or_update_mactab(pid bigint, mac macaddr, typ settype, mst mactabstate[]) függvényhez:
 INSERT INTO sys_params
@@ -15,6 +14,7 @@ INSERT INTO param_types
     (param_type_name,    param_type_type, param_type_note)    VALUES
     ('suspected_uplink', 'boolean',      'Port paraméter: Feltételezhetően egy uplink, a portnak a mactab táblába való felvétele tiltott.');
 
+-- //// OUI
 
 CREATE TABLE ouis (
     oui		macaddr PRIMARY KEY,
@@ -141,16 +141,9 @@ COMMENT ON FUNCTION refresh_arps() IS
 A lejárati időintervallumot a "arps_expire_interval" rendszerváltozó tartalmazza.
 Visszatérési érték a törölt rekordok száma. A törlés oka "expired"lessz.';
 
-CREATE OR REPLACE FUNCTION is_content_arp(mac macaddr) RETURNS boolean AS $$
-BEGIN
-    RETURN 0 <> COUNT(*) FROM arps WHERE hwaddress = mac;
-END;
-$$ LANGUAGE plpgsql;
+-- --------------------------------------------------------------------------------------------
 
-
--- //// mactab
-
-CREATE TYPE mactabstate AS ENUM ('likely', 'arp', 'oid', 'port', 'suspect');
+CREATE TYPE mactabstate AS ENUM ('likely', 'arp', 'oid', 'suspect', 'link', 'lldp');
 ALTER TYPE mactabstate OWNER TO lanview2;
 COMMENT ON TYPE mactabstate IS
 'A cím információ minösítése:
@@ -158,6 +151,8 @@ likely	Hihető, van ilyen című bejegyzett eszköz.
 arp	Szerepel az arps táblában
 oid	Azonosítható a cím alapján a gyártó (OUI)
 suspect	Gyanús, az észleléskor hibákat jelzett a port
+link	Megfeleltethető egy logikai linknek
+lldp	Megfeleltethető egy LLDP linknek (?!).
 ';
 
 CREATE TABLE mactab (

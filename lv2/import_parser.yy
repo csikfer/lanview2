@@ -19,7 +19,6 @@ cError *importLastError = NULL;
 
 int importParse()
 {
-    globalPlaceId = NULL_ID;
     int i = -1;
     try {
         i = yyparse();
@@ -249,6 +248,16 @@ void initImportParser()
     if (piq == NULL) {
         piq = newQuery();
     }
+
+    yyflags = 0;
+    globalPlaceId = NULL_ID;
+    actVlanId = -1;
+    netType = NT_INVALID; // firstSubNet = ;
+    alertServiceId = NULL_ID;
+
+    pDelete(importLastError);
+    importLineNo = 0;
+    c_yyFile::clear();
 }
 
 void downImportParser()
@@ -257,16 +266,10 @@ void downImportParser()
     pDelete(piq);
     macbuff.clear();
     lastLine.clear();
-    globalPlaceId = NULL_ID;
-    pDelete(importLastError);
-
-    yyflags = 0;
 
     templates.clear();
-    actVlanId = -1;
     actVlanName.clear();
     actVlanNote.clear();;
-    netType = NT_INVALID; // firstSubNet = ;
     pDelete(pPatch);
     pDelete(pImage);
     pDelete(pUser);
@@ -276,10 +279,8 @@ void downImportParser()
     pDelete(pService);
     pDelete(pHostService);
     pDelete(pTableShape);
-    alertServiceId = NULL_ID;
     ivars.clear();
     svars.clear();
-    c_yyFile::clear();
 }
 
 enum {
@@ -1132,10 +1133,11 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
 
 %%
 
-conf    :   commands            { ; }
+main    :
+        | commands
         ;
-commands:   command
-        |   command commands
+commands: command
+        | command commands
         ;
 command : macro
         | trans
@@ -1896,6 +1898,7 @@ static inline bool isOctal(QChar __c) {
     return c < '8';
 }
 
+/// LEX: Idézőjeles string beolvasása
 static QString *yygetstr()
 {
     QString *ps = new QString;
@@ -1939,6 +1942,8 @@ static QString *yygetstr()
     return ps;
 }
 
+/// LEX:  $$ jeles string beolvasása
+/// @param mn A $ jelek közti név ami a string végét jelzi
 static QString *yygetstr2(const QString& mn)
 {
     static const QString ee = "EOF in str litaeral";
@@ -1974,15 +1979,7 @@ static QString *yygetstr2(const QString& mn)
     return NULL;
 }
 
-/*
-static QString toString(const QStringList& sl) {
-    QString r = "[";
-    foreach(QString s, sl) { r += " \"" + s + "\","; }
-    r.chop(1);
-    return r + "]";
-}
-*/
-
+/// LEX: Cím típusú adat beolvasása
 static int isAddress(const QString& __s)
 {
     //_DBGFN() << " @(" << __s << ") macbuff = " << macbuff << endl;
