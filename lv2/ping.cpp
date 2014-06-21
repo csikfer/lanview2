@@ -76,7 +76,7 @@ PingResult Pinger::ping(const char*, unsigned)
 #ifndef Q_OS_WIN
 #define ADDR_SIZE 39
     static char address[ADDR_SIZE +1];
-    _DBGFN() << "@(" << address << _sComma << time_limit << ")" << endl;
+    _DBGFN() << "@(" << address << QChar(',') << time_limit << ")" << endl;
     if (isalpha(address[0])) {
         QHostInfo hi = QHostInfo::fromName(QString(address));
         if (hi.addresses().isEmpty()) {

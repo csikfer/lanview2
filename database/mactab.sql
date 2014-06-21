@@ -2,6 +2,9 @@
 -- Rendszer paraméter a insert_or_update_mactab(pid bigint, mac macaddr, typ settype, mst mactabstate[]) függvényhez:
 INSERT INTO sys_params
     (sys_param_name,                    param_type_id,                 param_value,    sys_param_note) VALUES
+    ('oui_list_url_MA-L',               param_type_name2id('text'),     'http://standards.ieee.org/develop/regauth/oui/oui.txt',        'MA-L Public list'),
+    ('oui_list_url_MA-M',               param_type_name2id('text'),     'http://standards.ieee.org/develop/regauth/oui28/mam.txt',      'MA-M Public list'),
+    ('oui_list_url_MA-S',               param_type_name2id('text'),     'http://standards.ieee.org/develop/regauth/oui36/oui36.txt',    'MA-S Public list'),
     ('arps_expire_interval',            param_type_name2id('interval'),'21 days',      'Az arps táblában ennyi idő mulva törlődik egy rekord, ha nem frissül a last_time mező'),
     ('mactab_move_check_interval',      param_type_name2id('interval'),'01:00:00',     'Hibás topológia miatt mozgó MAC lokációk észlelési időintervalluma'),
     ('mactab_move_check_count',         param_type_name2id('bigint'),  '6',            'Hibás topológia miatt mozgó MAC lokációk észlelési határértéke (látszólagos mozgások száma).'),
@@ -33,6 +36,29 @@ COMMENT ON FUNCTION is_content_oui(mac macaddr) IS
 'Megvizsgálja, hogy a paraméterként megadott MAC első 3 byte-ja által azonosítptt OUI rekord létezik-e.
 Ha igen true-val, ellenkező esetben false-val tér vissza.';
 
+CREATE OR REPLACE FUNCTION replace_oui(noui macaddr, nname varchar(32), nnote varchar(255)) RETURNS reasons AS $$
+DECLARE
+    rec ouis;
+BEGIN
+    SELECT * INTO rec FROM ouis WHERE oui = noui;
+    IF NOT FOUND THEN
+        INSERT INTO oui VALUES(noui, nname, nnote);
+        RETURN 'insert';
+    END IF;
+    IF rec,oui_name == nname AND rec.oui_note == nnote THEN
+        RETURN 'unchange';
+    END IF;
+    UPDATE ouis SET oui_name = nname, oui_note = nnote WHERE oui = noui;
+    RETURN 'modify';
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION replace_oui(noui macaddr, nname varchar(32), nnote varchar(255)) IS
+'OUI rekord beszúrása, vagy modosítása.
+Visszatérési értékek:
+    Ha nem történt változás, akkor "unchange".
+    Ha módosítva lett egy rekord, akkor "modify".
+    Ha viszont be lett szúrva egy új rekord, akkor "insert".';
+
 -- //// ARP
 
 CREATE TABLE arps (
@@ -54,6 +80,15 @@ COMMENT ON COLUMN arps.ipaddress IS 'A MAC-hoz detektált ip cím, egyedi kulcs.
 COMMENT ON COLUMN arps.hwaddress IS 'Az ethernet cím, nem egyedi kulcs.';
 COMMENT ON COLUMN arps.first_time IS 'A rekord létrehozásának az ideje, ill. az első detektálás ideje.';
 COMMENT ON COLUMN arps.last_time IS 'Az legutóbbi detektálás ideje.';
+
+CREATE OR REPLACE FUNCTION is_content_arp(mac macaddr) RETURNS boolean AS $$
+BEGIN
+    RETURN 0 <> COUNT(*) FROM arps WHERE hwaddress = mac;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION is_content_arp(mac macaddr) IS
+'Megvizsgálja, hogy a paraméterként megadott MAC által azonosítptt arps rekord létezik-e.
+Ha igen true-val, ellenkező esetben false-val tér vissza.';
 
 CREATE TABLE arp_logs (
     arp_log_id      bigserial   PRIMARY KEY,
@@ -296,13 +331,13 @@ BEGIN
         ret := ARRAY['suspect'::mactabstate];
     END IF;
     IF is_content_oui(mac) THEN
-        ret = append_array(ret, 'oui::mactabstate');
+        ret = array_append(ret, 'oui::mactabstate');
     END IF;
     IF is_linked(pid, mac) THEN
-        ret := append_array(ret, 'likely::mactabstate');
+        ret := array_append(ret, 'likely::mactabstate');
     END IF;
     IF is_content_arp(mac) THEN
-        ret := append_array(ret, 'arp'::mactabstate);
+        ret := array_append(ret, 'arp'::mactabstate);
     END IF;
     RETURN ret;
 END;
@@ -325,7 +360,7 @@ BEGIN
     IF get_bool_port_param(pid, pname_di) THEN
         RETURN 'discard';
     END IF;
-    mst := current_mactab_stat(mst, pid, mac);
+    mst := current_mactab_stat(pid, mac, mst);
     SELECT * INTO mt FROM mactab WHERE hwaddress = mac;
     IF NOT FOUND THEN
         INSERT INTO mactab(hwaddress, port_id, mactab_state,set_type) VALUES (mac, pid, mst, typ);
@@ -386,9 +421,9 @@ DECLARE
     ret integer := 0;
 BEGIN
     FOR mt IN SELECT * FROM mactab
-        WHERE  state_updated_time (CURRENT_TIMESTAMP - get_interval_sys_param('mactab_check_stat_interval'))
+        WHERE  state_updated_time < (CURRENT_TIMESTAMP - get_interval_sys_param('mactab_check_stat_interval'))
     LOOP
-        IF 'update' = mactab_changestat(mt, current_mactab_stat(mt.port_id, hwaddress, mt.mactab_state)) THEN
+        IF 'update' = mactab_changestat(mt, current_mactab_stat(mt.port_id, mt.hwaddress, mt.mactab_state)) THEN
             ret := ret + 1;
         END IF;
     END LOOP;

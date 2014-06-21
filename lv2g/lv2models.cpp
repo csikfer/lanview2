@@ -175,7 +175,7 @@ void cRecordListModel::setConstFilter(const QString& _par, enum eFilterType __f)
         nn = descr.columnNameQ(descr.nameIndex());
     }
     else {
-        fn = toNameFName + _sABraB + in +_sABraE + _sSpace;
+        fn = toNameFName + QChar('(') + in +QChar(')') + QChar(' ');
         nn = _sName;
     }
     switch (__f) {
@@ -222,10 +222,10 @@ bool cRecordListModel::setFilter(const QString& _par, enum eOrderType __o, enum 
         nn = descr.columnNameQ(descr.nameIndex());
     }
     else {
-        fn = toNameFName + _sABraB + in +_sABraE + _sSpace;
+        fn = toNameFName + QChar('(') + in +QChar(')') + QChar(' ');
         nn = quotedString(_sName);
     }
-    QString sql = "SELECT " + in + _sComma + fn + nn + " FROM " + descr.tableName();
+    QString sql = "SELECT " + in + QChar(',') + fn + nn + " FROM " + descr.tableName();
     switch (filter) {
     case FT_NO:         sql += where();                                             break;
     case FT_LIKE:       sql += where(nn + " LIKE " + quoted(pattern));              break;

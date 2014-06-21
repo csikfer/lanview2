@@ -27,7 +27,7 @@ cRecordTableModel::cRecordTableModel(const cRecordTable& _rt)
         _col2field << recDescr.toIndex(column.shapeField.getName());
         PDEB(VVERBOSE) << "Visible field : " << column.shapeField.getName(_sTableShapeFieldName) << endl;
     }
-    PDEB(VVERBOSE) << "X tabs : " << tIntVectorToString(_col2field) << _sSpace << tIntVectorToString(_col2shape) << endl;
+    PDEB(VVERBOSE) << "X tabs : " << tIntVectorToString(_col2field) << QChar(' ') << tIntVectorToString(_col2shape) << endl;
 }
 
 cRecordTableModel::~cRecordTableModel()

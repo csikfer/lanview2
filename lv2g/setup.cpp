@@ -8,7 +8,7 @@ cSetupWidget::cSetupWidget(QSettings &__s, QWidget *par)
 , logFile()
 , qset(__s)
 {
-    PDEB(OBJECT) << __PRETTY_FUNCTION__ << _sSpace << _sComma << VDEBPTR(this) << endl;
+    PDEB(OBJECT) << __PRETTY_FUNCTION__ << QChar(' ') << QChar(',') << VDEBPTR(this) << endl;
     pLl = NULL;
     pUi = new Ui::SetupWidget();
     pUi->setupUi(this);
@@ -56,7 +56,7 @@ cSetupWidget::cSetupWidget(QSettings &__s, QWidget *par)
         pUi->logToFileRB->setChecked(true);
         logToFileClicked(true);
     }
-    QStringList mibPathList = qset.value(_sMibPath).toString().split(_sColon);
+    QStringList mibPathList = qset.value(_sMibPath).toString().split(QChar(','));
     foreach (QString dir, mibPathList) {
         pUi->MibPathLS->addItem(new QListWidgetItem(dir, pUi->MibPathLS));
     }
@@ -85,7 +85,7 @@ void cSetupWidget::applicate()
     int i, n = pUi->MibPathLS->count();
     QString mibPath;
     for (i = 0; i < n; i++) {
-        if (mibPath.count()) mibPath += _sColon;
+        if (mibPath.count()) mibPath += QChar(',');
         mibPath += pUi->MibPathLS->item(i)->text();
     }
     qset.setValue(_sMibPath, mibPath);
@@ -207,9 +207,9 @@ void cSetupWidget::mibPathMinus()
 
 void cSetupWidget::homeSelect()
 {
-    PDEB(VVERBOSE) << VDEBPTR(pUi->homeDirLE) << _sSColon << _sSpace << " == " << pUi->homeDirLE->text() << endl;
+    PDEB(VVERBOSE) << VDEBPTR(pUi->homeDirLE) << _sSColon << QChar(' ') << " == " << pUi->homeDirLE->text() << endl;
     pUi->homeDirLE->setText(QFileDialog::getExistingDirectory(this, tr("Alap könyvtár kiválasztása"), pUi->homeDirLE->text()));
-    PDEB(VVERBOSE) << VDEBPTR(pUi->homeDirLE) << _sSColon << _sSpace << " == " << pUi->homeDirLE->text() << endl;
+    PDEB(VVERBOSE) << VDEBPTR(pUi->homeDirLE) << _sSColon << QChar(' ') << " == " << pUi->homeDirLE->text() << endl;
 }
 
 cLogLevelDialog::cLogLevelDialog(qlonglong __logLev, QWidget *parent)
@@ -283,7 +283,7 @@ void cLogLevelDialog::allOffClicked() { setLogLevel(0);  }
 
 QSqlDatabase * cSetupWidget::SqlOpen()
 {
-    _DBGFNL() << _sSpace << _sComma << VDEBPTR(this) << endl;
+    _DBGFNL() << QChar(' ') << QChar(',') << VDEBPTR(this) << endl;
     QSqlDatabase *pDb = new  QSqlDatabase(QSqlDatabase::addDatabase(_sQPSql));
     if (!pDb->isValid()) {
         QSqlError le = pDb->lastError();
@@ -313,7 +313,7 @@ QSqlDatabase * cSetupWidget::SqlOpen()
 
 void cSetupWidget::checkSqlLogin()
 {
-    PDEB(OBJECT) << __PRETTY_FUNCTION__ << _sSpace << _sComma << VDEBPTR(this) << endl;
+    PDEB(OBJECT) << __PRETTY_FUNCTION__ << QChar(' ') << QChar(',') << VDEBPTR(this) << endl;
     QSqlDatabase *pDb = SqlOpen();
     if (pDb == NULL) return;
     QMessageBox::information(this, design().titleInfo, trUtf8("Database open is successful."));

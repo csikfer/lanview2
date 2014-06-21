@@ -97,7 +97,7 @@ QString cRecordTableFilter::where(QVariantList& qparams)
             qparams << param1 << param2;
             break;
         case FT_PROC:
-            r = param1.toString() + _sABraB + c + _sABraE;
+            r = param1.toString() + QChar('(') + c + QChar(')');
             break;
         case FT_SQL_WHERE:
             r = param1.toString();
@@ -153,7 +153,7 @@ QString cRecordTableOrd::ord()
     if (colDescr.fKeyType == cColStaticDescr::FT_NONE) r = colDescr.colNameQ() + r;
     else {
         if (colDescr.fnToName.isEmpty()) EXCEPTION(EDATA, -1, QObject::trUtf8("Az ID->név konverziós függvény nincs definiálva."));
-        r = colDescr.fnToName + _sABraB + colDescr.colNameQ() + _sABraE + r;
+        r = colDescr.fnToName + QChar('(') + colDescr.colNameQ() + QChar(')') + r;
     }
     return r;
 }

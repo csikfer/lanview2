@@ -294,9 +294,9 @@ void cInspector::timerEvent(QTimerEvent *)
         PDEB(VERBOSE) << __PRETTY_FUNCTION__ << " skip " << name() << ", internalStat = " << internalStatName() << endl;
         return;
     }
-    _DBGFN() << " Run: " << hostService.getId() << _sSpace
-             << host().getName()   << _sABraB << host().getId()    << _sABraE << _sColon
-             << service().getName()<< _sABraB << service().getId() << _sABraE << _sCommaSp
+    _DBGFN() << " Run: " << hostService.getId() << QChar(' ')
+             << host().getName()   << QChar('(') << host().getId()    << QChar(')') << QChar(',')
+             << service().getName()<< QChar('(') << service().getId() << QChar(')') << _sCommaSp
              << "Thread: " << (isMainThread() ? "Main" : objectName()) <<  endl;
     if (!isTimed()) EXCEPTION(EPROGFAIL, (int)inspectorType, name());
     if (isThread() && isMainThread()) EXCEPTION(EPROGFAIL, (int)inspectorType, name());
@@ -381,7 +381,7 @@ bool cInspector::threadPrelude(QThread &)
     // Időzített
     if (r) {
         qlonglong t = rnd(interval);
-        PDEB(VERBOSE) << "Start timer " << interval << _sSlash << t << "ms in new thread..." << endl;
+        PDEB(VERBOSE) << "Start timer " << interval << QChar('/') << t << "ms in new thread..." << endl;
         timerStat = TS_FIRST;
         timerId = startTimer(t);
     }
@@ -392,7 +392,7 @@ bool cInspector::threadPrelude(QThread &)
 
 void cInspector::start()
 {
-    _DBGFN() << _sSpace << name() << " internalStat = " << internalStatName() << endl;
+    _DBGFN() << QChar(' ') << name() << " internalStat = " << internalStatName() << endl;
     if (internalStat != IS_INIT && internalStat != IS_REINIT)
         EXCEPTION(EDATA, (int)internalStat, QObject::trUtf8("Nem megfelelő belső állapot"));
     if (timerId != -1)
@@ -409,18 +409,18 @@ void cInspector::start()
         if (thread() != pThread) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("A QObject::moveToThread() hívás sikertelen."));
         pThread->start();
         PDEB(VERBOSE) << name() << " thread started." << endl;
-        _DBGFNL() << _sSpace << name() << " internalStat = " << internalStatName() << endl;
+        _DBGFNL() << QChar(' ') << name() << " internalStat = " << internalStatName() << endl;
         return;
     }
     if (isTimed()) {
         qlonglong t = rnd(interval);
-        PDEB(VERBOSE) << "Start timer " << interval << _sSlash << t << "ms in defailt thread..." << endl;
+        PDEB(VERBOSE) << "Start timer " << interval << QChar('/') << t << "ms in defailt thread..." << endl;
         timerId = startTimer(t);
         timerStat = TS_FIRST;
     }
     startSubs();
     internalStat = IS_RUN;
-    _DBGFNL() << _sSpace << name() << " internalStat = " << internalStatName() << endl;
+    _DBGFNL() << QChar(' ') << name() << " internalStat = " << internalStatName() << endl;
 }
 
 void cInspector::startSubs()
@@ -502,8 +502,8 @@ QString cInspector::name()
     static const QString    qq("??");
     if (pNode != NULL && !node().isNull(node().nameIndex())) r = node().getName();
     else                                                     r = qq;
-    r +=  _sColon;
-    if (pPort != NULL) r += nPort().getName() + _sColon;
+    r +=  QChar(',');
+    if (pPort != NULL) r += nPort().getName() + QChar(',');
     if (pService != NULL) r += service().getName();
     else                  r += qq;
     return r;

@@ -166,7 +166,7 @@ lv2import::lv2import() : lanView(), fileNm(), in()
         daemonMode = true;
         subsDbNotif();
     }
-    if (args.count() > 1) DWAR() << trUtf8("Invalid arguments : ") << args.join(_sSpace) << endl;
+    if (args.count() > 1) DWAR() << trUtf8("Invalid arguments : ") << args.join(QChar(' ')) << endl;
     try {
         pq = newQuery();
         if (daemonMode) return;

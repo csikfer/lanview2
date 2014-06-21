@@ -2,22 +2,22 @@
 -- ---------------------------------------------------------------------------
 -- Apolication errors
 CREATE TABLE app_errs (
-    applog_id   bigserial          PRIMARY KEY,
+    applog_id   bigserial       PRIMARY KEY,
     date_of     timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     app_name    varchar(32)     DEFAULT NULL,
-    node_id     bigint         DEFAULT NULL,	-- Ezt nem tölti ki senki !!!
-    pid         bigint         DEFAULT NULL,
+    node_id     bigint          DEFAULT NULL,	-- Ezt nem tölti ki senki !!!
+    pid         bigint          DEFAULT NULL,
     app_ver     varchar(32)     DEFAULT NULL,
     lib_ver     varchar(32)     DEFAULT NULL,
     thread_name varchar(32)     DEFAULT NULL,
-    err_code    bigint         DEFAULT NULL,
+    err_code    bigint          DEFAULT NULL,
     err_name    varchar(32)     DEFAULT NULL,
-    err_subcode bigint         DEFAULT NULL,
+    err_subcode bigint          DEFAULT NULL,
     err_msg     text            DEFAULT NULL,
-    errno       bigint         DEFAULT NULL,
+    errno       bigint          DEFAULT NULL,
     func_name   varchar(255)    DEFAULT NULL,
     func_src    varchar(255)    DEFAULT NULL,
-    src_line    bigint         DEFAULT NULL
+    src_line    bigint          DEFAULT NULL
 );
 CREATE INDEX app_errs_date_of_index ON app_errs (date_of);
 ALTER TABLE app_errs OWNER TO lanview2;

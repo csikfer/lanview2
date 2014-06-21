@@ -10,7 +10,7 @@ cImageWindow::cImageWindow(QWidget *__par) : QLabel(__par)
     // Test
 /*    QList<QByteArray> lst = QImageReader::supportedImageFormats ();
     QString s;
-    foreach (QByteArray a, lst) { s += a + _sComma; }
+    foreach (QByteArray a, lst) { s += a + QChar(','); }
     s.chop(1);
     PDEB(INFO) << "QImageReader::supportedImageFormats() : " << s << endl;*/
 }
@@ -126,7 +126,7 @@ cFieldEditBase::~cFieldEditBase()
 
 QVariant cFieldEditBase::get() const
 {
-    _DBGFN() << _sSlash << _descr<< _sSpace <<  debVariantToString(_value) << endl;
+    _DBGFN() << QChar('/') << _descr<< QChar(' ') <<  debVariantToString(_value) << endl;
     return _value;
 }
 
@@ -142,7 +142,7 @@ qlonglong cFieldEditBase::getId() const
 
 int cFieldEditBase::set(const QVariant& _v)
 {
-    _DBGFN() << _sSlash << _descr<< _sSpace <<  debVariantToString(_v) << endl;
+    _DBGFN() << QChar('/') << _descr<< QChar(' ') <<  debVariantToString(_v) << endl;
     int st = 0;
     QVariant v = _descr.set(_v, st);
     if (st & cRecord::ES_DEFECTIVE) return -1;
@@ -163,10 +163,10 @@ int cFieldEditBase::setId(qlonglong v)
 void cFieldEditBase::_setv(QVariant v)
 {
     if (_value == v) {
-        _DBGFN() << _sSlash << _descr<< _sSpace <<  debVariantToString(v) << " dropped" << endl;
+        _DBGFN() << QChar('/') << _descr<< QChar(' ') <<  debVariantToString(v) << " dropped" << endl;
         return;
     }
-    _DBGFN() << _sSlash << _descr<< _sSpace <<  debVariantToString(v) << endl;
+    _DBGFN() << QChar('/') << _descr<< QChar(' ') <<  debVariantToString(v) << endl;
     _value = v;
     if (syncType() & SY_TO_REC) {
         if (_value != fieldValue()) (*_pFieldRef) = _value;
@@ -177,7 +177,7 @@ void cFieldEditBase::_setv(QVariant v)
 // SLOT
 void cFieldEditBase::modRec()
 {
-    _DBGFN() << _sSlash << _descr << endl;
+    _DBGFN() << QChar('/') << _descr << endl;
     if (_value != fieldValue()) {
         bool r = set(fieldValue());
         PDEB(VVERBOSE) << "Sync to widget field #" << _pFieldRef->index() << VDEB(_value) << " TO " << fieldToName() << (r ? " OK" : " FAILED") << endl;
@@ -186,13 +186,13 @@ void cFieldEditBase::modRec()
 
 void cFieldEditBase::modField(int ix)
 {
-    _DBGFN() << _sSlash << _descr << endl;
+    _DBGFN() << QChar('/') << _descr << endl;
     if (ix == _pFieldRef->index()) modRec();
 }
 
 cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, cRecordFieldRef _fr, eSyncType _sy, bool _ro, QWidget * _par)
 {
-    _DBGFN() << _sSpace << _tm.tableName() << _sCommaSp << _fr.fullColumnName() << " ..." << endl;
+    _DBGFN() << QChar(' ') << _tm.tableName() << _sCommaSp << _fr.fullColumnName() << " ..." << endl;
     PDEB(VVERBOSE) << "Field value = " << debVariantToString(_fr) << endl;
     PDEB(VVERBOSE) << "Field descr = " << _fr.descr().allToString() << endl;
     int et = _fr.descr().eColType;

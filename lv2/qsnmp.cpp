@@ -92,7 +92,7 @@ QString cTable::toString(void) const
     QStringList keylst = keys();
     QString     r, key;
     foreach (key, keylst) {
-        r += key + _sComma;
+        r += key + QChar(',');
     }
     r.chop(1);
     r += QChar('\n');
@@ -102,9 +102,9 @@ QString cTable::toString(void) const
             if (vv.size() <= i) EXCEPTION(EPROGFAIL);
             QVariant v = vv[i];
             if (v.type() == QVariant::ByteArray && v.toByteArray().contains((char)0)) {
-                r += dump(v.toByteArray()) + _sComma;
+                r += dump(v.toByteArray()) + QChar(',');
             }
-            else r += v.toString() + _sComma;
+            else r += v.toString() + QChar(',');
         }
         r.chop(1);
         r += QChar('\n');
@@ -140,7 +140,7 @@ void    netSnmp::implicitInit(void)
     // PDEB(INFO) << "Init SNMP (" << type << ")" << endl;
     init_snmp(type); // Initialize the SNMP library
     SOCK_STARTUP;
-    QStringList pl = lanView::getInstance()->pSet->value(_sMibPath).toString().split(_sColon);
+    QStringList pl = lanView::getInstance()->pSet->value(_sMibPath).toString().split(QChar(','));
     QString dir;
     bool first = true;
     foreach (dir, pl) {
@@ -203,7 +203,7 @@ int     netSnmp::setStat(bool __e, const QString& __em)
             status = 1;
             emsg = "[ERROR]";
         }
-        if (__em.isEmpty() == false) emsg += _sSlash + __em;
+        if (__em.isEmpty() == false) emsg += QChar('/') + __em;
     }
     return status;
 }
@@ -226,22 +226,22 @@ cOId::cOId() : QVector<oid>(MAX_OID_LEN, zero), netSnmp()
 }
 cOId::cOId(const oid *__oid, size_t __len) : QVector<oid>(MAX_OID_LEN), netSnmp()
 {
-    //PDEB(OBJECT) << __PRETTY_FUNCTION__ << _sABraB << __oid << _sCommaSp << __len << ") = " << VDEBPTR(this) << endl;
+    //PDEB(OBJECT) << __PRETTY_FUNCTION__ << QChar('(') << __oid << _sCommaSp << __len << ") = " << VDEBPTR(this) << endl;
     set(__oid, __len);
 }
 cOId::cOId(const char *__oid) : QVector<oid>(MAX_OID_LEN), netSnmp()
 {
-    //PDEB(OBJECT) << __PRETTY_FUNCTION__ << _sABraB << __oid << ") = " << VDEBPTR(this) << endl;
+    //PDEB(OBJECT) << __PRETTY_FUNCTION__ << QChar('(') << __oid << ") = " << VDEBPTR(this) << endl;
     set(__oid);
 }
 cOId::cOId(const QString& __oid) : QVector<oid>(MAX_OID_LEN), netSnmp()
 {
-    //PDEB(OBJECT) << __PRETTY_FUNCTION__ << _sABraB << __oid << ") = " << VDEBPTR(this) << endl;
+    //PDEB(OBJECT) << __PRETTY_FUNCTION__ << QChar('(') << __oid << ") = " << VDEBPTR(this) << endl;
     set(__oid);
 }
 cOId::cOId(const cOId& __oid) : QVector<oid>(MAX_OID_LEN), netSnmp()
 {
-    //PDEB(OBJECT) << __PRETTY_FUNCTION__ << _sABraB << __oid.toString() << ") = " << VDEBPTR(this) << endl;
+    //PDEB(OBJECT) << __PRETTY_FUNCTION__ << QChar('(') << __oid.toString() << ") = " << VDEBPTR(this) << endl;
     set(__oid);
 }
 cOId::~cOId()
@@ -393,7 +393,7 @@ QString cOIdVector::toString()
 {
     QString r = "[";
     for (int i = 0; i < size(); i++) {
-        r += (*this)[i].toString() + _sComma;
+        r += (*this)[i].toString() + QChar(',');
     }
     r.chop(1);
     return r + "]";
@@ -411,14 +411,14 @@ cSnmp::cSnmp() : netSnmp()
 
 cSnmp::cSnmp(const char * __host, const char * __com, int __ver) : netSnmp()
 {
-    PDEB(OBJECT) << __PRETTY_FUNCTION__ << _sABraB << __host << _sCommaSp << __ver << _sCommaSp << __ver << ") = " << (void *)this << endl;
+    PDEB(OBJECT) << __PRETTY_FUNCTION__ << QChar('(') << __host << _sCommaSp << __ver << _sCommaSp << __ver << ") = " << (void *)this << endl;
     _init();
     open(__host, __com, __ver);
 }
 
 cSnmp::cSnmp(const QString& __host, const QString& __com, int __ver) : netSnmp()
 {
-    PDEB(OBJECT) << __PRETTY_FUNCTION__ << _sABraB << __host << _sCommaSp << __ver << _sCommaSp << __ver << ") = " << (void *)this << endl;
+    PDEB(OBJECT) << __PRETTY_FUNCTION__ << QChar('(') << __host << _sCommaSp << __ver << _sCommaSp << __ver << ") = " << (void *)this << endl;
     _init();
     open(__host, __com, __ver);
 }
@@ -456,7 +456,7 @@ void  cSnmp::_clear(void)
 
 int cSnmp::open(const char * __host, const char * __com, int __ver)
 {
-    PDEB(VVERBOSE) << __PRETTY_FUNCTION__ << _sABraB << __host << _sCommaSp << __ver << _sCommaSp << __ver << ")" << endl;
+    PDEB(VVERBOSE) << __PRETTY_FUNCTION__ << QChar('(') << __host << _sCommaSp << __ver << _sCommaSp << __ver << ")" << endl;
     _clear();
     snmp_sess_init(&session);
     session.peername        = strdup(__host);

@@ -18,7 +18,7 @@ const QString   nullString;
 
 QString nameAndNumber(const QString& __pat, int __num, char __c)
 {
-    _DBGFN() << " @(" << __pat << _sComma << __num << _sComma << QChar(__c) << ")" << endl;
+    _DBGFN() << " @(" << __pat << QChar(',') << __num << QChar(',') << QChar(__c) << ")" << endl;
     QString n;
     if (__pat.contains(__c)) {
         QChar   c(__c);
@@ -76,11 +76,11 @@ const QString& magicParam(const QString &_nm, const tMagicMap __map)
 
 QString joinMagic(const tMagicMap __map)
 {
-    QString r = _sColon;
+    QString r = QChar(',');
     for (tMagicMapConstIteraeor i = __map.constBegin(); i != __map.constEnd(); ++i) {
         r += i.key();
-        if (!i.value().isEmpty()) r +=  _sEqu + i.value();
-        r += _sColon;
+        if (!i.value().isEmpty()) r +=  _sEquSp + i.value();
+        r += QChar(',');
     }
     return r;
 }

@@ -1,6 +1,6 @@
 %{
 #include <math.h>
-#include <lanview.h>
+#include "lanview.h"
 #include "guidata.h"
 #include "others.h"
 #include "ping.h"
@@ -465,7 +465,7 @@ void cLink::side(eSide __e, QString * __n, QString *__p, int __s)
     }
     delete __n;
     delete __p;
-    _DBGFNL() << _sSpace << portId(__e) << endl;
+    _DBGFNL() << QChar(' ') << portId(__e) << endl;
 }
 
 void cLink::side(eSide __e, QString * __n, int __p, int __s)
@@ -496,7 +496,7 @@ void cLink::side(eSide __e, QString * __n, int __p, int __s)
         share = chkShare(__s);;
     }
     delete __n;
-    _DBGFNL() << _sSpace << portId(__e) << endl;
+    _DBGFNL() << QChar(' ') << portId(__e) << endl;
 }
 
 void cLink::workstation(QString * __n, cMac * __mac, QString * __d)
@@ -506,7 +506,7 @@ void cLink::workstation(QString * __n, cMac * __mac, QString * __d)
     delete __mac;
     delete __d;
     newNode = true;
-    _DBGFNL() << _sSpace << portId2 << endl;
+    _DBGFNL() << QChar(' ') << portId2 << endl;
 }
 
 void cLink::attached(QString * __n, QString * __d)
@@ -515,7 +515,7 @@ void cLink::attached(QString * __n, QString * __d)
     delete __n;
     delete __d;
     newNode = true;
-    _DBGFNL() << _sSpace << portId2 << endl;
+    _DBGFNL() << QChar(' ') << portId2 << endl;
 }
 
 void cLink::insert(QString * __d, QStringList * __srv)
@@ -1009,7 +1009,7 @@ static void setLastPort(cNPort *p)
 
 void newNode(QStringList * t, QString *name, QString *d)
 {
-    _DBGFN() << "@(" << *name << _sComma << *d << ")" << endl;
+    _DBGFN() << "@(" << *name << QChar(',') << *d << ")" << endl;
     pNode = new cNode();
     pNode->asmbNode(qq(), *name, NULL, NULL, NULL, *d, gPlace());
     pNode->set(_sNodeType, *t);
@@ -1973,7 +1973,7 @@ static QString *yygetstr2(const QString& mn)
             *ps += c;
         }
     }
-    PDEB(VVERBOSE) << ee << _sSpace << *ps;
+    PDEB(VVERBOSE) << ee << QChar(' ') << *ps;
     delete ps;
     yyerror(ee);    // az yyerror() olyan mintha visszatérne, pedig dehogy.
     return NULL;
@@ -2223,7 +2223,7 @@ recall:
         int r;
         if (c == QChar(':') && 0 != (r = isAddress(":"))) return r;
         int ct = c.toLatin1();
-        PDEB(VVERBOSE) << "ylex : char token : '" << c << "' (" <<  ct << _sABraE << endl;
+        PDEB(VVERBOSE) << "ylex : char token : '" << c << "' (" <<  ct << QChar(')') << endl;
         return ct;
     }
     QString *sp = new QString();
@@ -2252,9 +2252,9 @@ static void forLoopMac(QString *_in, QVariantList *_lst)
 {
     QString s;
     foreach (QVariant v, *_lst) {
-        s += _sDollar + *_in + _sABraB + v.toString() + _sABraE + _sSpace;
+        s += QChar('$') + *_in + QChar('(') + v.toString() + ") ";
     }
-    PDEB(VVERBOSE) << "forLoopMac inserted : \"" << s << _sDQuote << endl;
+    PDEB(VVERBOSE) << "forLoopMac inserted : " << dQuoted(s) << endl;
     insertCode(s);
     delete _in; delete _lst;
 }
@@ -2271,7 +2271,7 @@ static void forLoop(QString *m, qlonglong fr, qlonglong to, qlonglong st)
 {
     QString s;
     for (qlonglong i = fr; i <= to; i += st) {
-        s += nameAndNumber(*m, i) + _sSpace;
+        s += nameAndNumber(*m, i) + QChar(' ');
     }
     insertCode(s);
     delete m;

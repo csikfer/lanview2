@@ -22,7 +22,7 @@ QString ProcessError2String(QProcess::ProcessError __e)
         case QProcess::UnknownError:    s = QObject::trUtf8("UnknownError");     break;
         default:
             s = sInvalidEnum();
-            DERR() << "QProcess::ProcessError : " << (int)__e << _sSlash << s << endl;
+            DERR() << "QProcess::ProcessError : " << (int)__e << QChar('/') << s << endl;
             break;
     }
     return s;
@@ -66,7 +66,7 @@ QString ProcessState2String(QProcess::ProcessState __e)
         case QProcess::Running:     s = QObject::trUtf8("Running");      break;
         default:
             s = sInvalidEnum();
-            DERR() << "QProcess::ProcessError : " << (int)__e << _sSlash << s << endl;
+            DERR() << "QProcess::ProcessError : " << (int)__e << QChar('/') << s << endl;
             break;
     }
     return s;
@@ -244,7 +244,7 @@ bool operator<(const QHostAddress& __a1, const QHostAddress& __a2)
 int toIPv4Mask(const QHostAddress& __a, bool __ex)
 {
     quint32 a = __a.toIPv4Address();
-    //_DBGFN() << "@(" << __a.toString() << " (" << hex << a <<  "), " << DBOOL(__ex) << _sABraE << endl;
+    //_DBGFN() << "@(" << __a.toString() << " (" << hex << a <<  "), " << DBOOL(__ex) << QChar(')') << endl;
     quint32 m = 0xffffffff;
     int     i = 32;
     for (;i >= 0; i--, m <<= 1) if (a == m) return i;
@@ -488,12 +488,21 @@ netAddress& netAddress::masking()
     return *this;
 }
 
+QString hostAddressToString(const QHostAddress& a)
+{
+    QString s = a.toString();
+    if (s.contains(QChar('%'))) {   // IPV6 címeknél megjelenhet az interface neve egy '%' után
+        s = s.section(QChar('%'), 0, 0);
+    }
+    return s;
+}
+
 QString netAddress::toString() const
 {
     QString r;
     if (!*this) return r;
-    r = addr().toString();
-    if (isSubnet()) r += _sSlash + QString::number(mask());
+    r = hostAddressToString(addr());
+    if (isSubnet()) r += QChar('/') + QString::number(mask());
     return r;
 }
 
@@ -688,10 +697,10 @@ int netAddressList::remove(const netAddress& __a)
 
 QString netAddressList::toString() const
 {
-    QString s = _sSBraB;
-    foreach (netAddress a, vec) s += _sSpace + a.toString() + _sComma;
+    QString s = QChar('[');
+    foreach (netAddress a, vec) s += QChar(' ') + a.toString() + QChar(',');
     if (s.size() > 1) s.chop(1);
-    return s + _sSpace + _sSBraE;
+    return s + QChar(' ') + QChar(']');
 }
 
 /* *********************************************************************************************************** */
@@ -723,30 +732,30 @@ tIntVector   iTab(int a, int b, int c, int d, int e, int f, int g, int h)
 
 QString tIntVectorToString(const tIntVector& __iv)
 {
-    QString s = _sSBraB;
-    foreach (int i, __iv) s += _sSpace + QString::number(i) + _sComma;
+    QString s = QChar('[');
+    foreach (int i, __iv) s += QChar(' ') + QString::number(i) + QChar(',');
     if (s.size() > 1) s.chop(1);
-    return s + _sSBraE;
+    return s + QChar(']');
 }
 
 QString QBitArrayToString(const QBitArray& __ba)
 {
-    QString s = _sSBraB;
+    QString s = QChar('[');
     for (int i = 0; i <__ba.size(); ++i) s += (__ba.at(i) ? '1' : '0');
-    return s + _sSBraE;
+    return s + QChar(']');
 }
 
 QString QSqlRecordToString(const QSqlRecord& __r)
 {
     int n = __r.count();
-    QString r = _sCBraB + _sSpace;
+    QString r = "{ ";
     for (int i = 0; i < n; ++i) {
         r += __r.field(i).name();
         if (__r.isNull(i)) r += " IS NULL, ";
-        else r += " = " + __r.value(i).toString() + ", ";
+        else r += " = " + __r.value(i).toString() + _sCommaSp;
     }
     r.chop(2);
-    return r + _sCBraE;
+    return r + QChar('}');
 }
  /* ***************************************************************************************************** */
 
@@ -790,22 +799,22 @@ void initUserMetaTypes()
 
 QString QStringListToString(const QStringList& _v)
 {
-    return _sCBraB + _v.join(QChar(',')) + _sCBraE;
+    return QChar('{') + _v.join(QChar(',')) + QChar('}');
 }
 
 QString QVariantListToString(const QVariantList& _v, bool *pOk)
 {
     if (pOk != NULL) *pOk = true;
-    QString r = _sCBraB;
+    QString r = QChar('{');
     if (_v.size() > 0) {
         bool ok = true;
         foreach (QVariant v, _v) {
-            r += QVariantToString(v, &ok) + _sComma;
+            r += QVariantToString(v, &ok) + QChar(',');
             if (!ok && pOk != NULL) *pOk = false;
         }
         if (r.size() > 1) r.chop(1);
     }
-    return r + _sCBraE;
+    return r + QChar('}');
 }
 
 QString QPointTosString(const QPoint& p)
@@ -820,14 +829,14 @@ QString QPointFTosString(const QPointF& p)
 
 QString tPolygonFToString(const tPolygonF& pol)
 {
-    QString r = _sABraB;
+    QString r = QChar('(');
     if (pol.size() > 0) {
         foreach (QPointF p, pol) {
-            r += QPointFTosString(p) + _sComma;
+            r += QPointFTosString(p) + QChar(',');
         }
         r.chop(1);
     }
-    return r + _sABraE;
+    return r + QChar(')');
 }
 
 

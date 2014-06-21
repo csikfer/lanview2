@@ -150,7 +150,7 @@ cDebug::~cDebug()
         instance = NULL;
     }
     else {
-        *mCout << "Remove debug object, this not equal instance." << VDEBPTR(instance) << _sComma << VDEBPTR(this) << endl;
+        *mCout << "Remove debug object, this not equal instance." << VDEBPTR(instance) << QChar(',') << VDEBPTR(this) << endl;
     }
     if (mMsgQueue) {
         delete mMsgQueue;
@@ -208,26 +208,26 @@ debugStream& cDebug::cout(void)
 QString cDebug::maskName(qlonglong __msk)
 {
     QString n;
-    if (__msk & cDebug::LV2)        n += _sLV2        + _sColon;
-    if (__msk & cDebug::LV2D)       n += _sLV2D       + _sColon;
-    if (__msk & cDebug::LV2GUI)     n += _sLV2GUI     + _sColon;
-    if (__msk & cDebug::ICONTSRV)   n += _sICONTSRV   + _sColon;
-    if (__msk & cDebug::IMPORT)     n += _sIMPORT     + _sColon;
-    if (__msk & cDebug::PORTSTAT)   n += _sPORTSTAT   + _sColon;
-    if (__msk & cDebug::EXCEPT)     n += _sEXCEPT     + _sColon;
-    if (__msk & cDebug::DERROR)      n += _sERROR      + _sColon;
-    if (__msk & cDebug::WARNING)    n += _sWARNING    + _sColon;
-    if (__msk & cDebug::INFO)       n += _sINFO       + _sColon;
-    if (__msk & cDebug::VERBOSE)    n += _sVERBOSE    + _sColon;
-    if (__msk & cDebug::VVERBOSE)   n += _sVVERBOSE   + _sColon;
-    if (__msk & cDebug::ENTERLEAVE) n += _sENTERLEAVE + _sColon;
-    if (__msk & cDebug::OBJECT)     n += _sOBJECT     + _sColon;
-    if (__msk & cDebug::PARSEARG)   n += _sPARSEARG   + _sColon;
-    if (__msk & cDebug::SQL)        n += _sSQL        + _sColon;
-    if (__msk & cDebug::OBJECT)     n += _sOBJECT     + _sColon;
-    if (__msk & cDebug::ADDRESS)    n += _sADDRESS    + _sColon;
+    if (__msk & cDebug::LV2)        n += _sLV2        + QChar(',');
+    if (__msk & cDebug::LV2D)       n += _sLV2D       + QChar(',');
+    if (__msk & cDebug::LV2GUI)     n += _sLV2GUI     + QChar(',');
+    if (__msk & cDebug::ICONTSRV)   n += _sICONTSRV   + QChar(',');
+    if (__msk & cDebug::IMPORT)     n += _sIMPORT     + QChar(',');
+    if (__msk & cDebug::PORTSTAT)   n += _sPORTSTAT   + QChar(',');
+    if (__msk & cDebug::EXCEPT)     n += _sEXCEPT     + QChar(',');
+    if (__msk & cDebug::DERROR)      n += _sERROR      + QChar(',');
+    if (__msk & cDebug::WARNING)    n += _sWARNING    + QChar(',');
+    if (__msk & cDebug::INFO)       n += _sINFO       + QChar(',');
+    if (__msk & cDebug::VERBOSE)    n += _sVERBOSE    + QChar(',');
+    if (__msk & cDebug::VVERBOSE)   n += _sVVERBOSE   + QChar(',');
+    if (__msk & cDebug::ENTERLEAVE) n += _sENTERLEAVE + QChar(',');
+    if (__msk & cDebug::OBJECT)     n += _sOBJECT     + QChar(',');
+    if (__msk & cDebug::PARSEARG)   n += _sPARSEARG   + QChar(',');
+    if (__msk & cDebug::SQL)        n += _sSQL        + QChar(',');
+    if (__msk & cDebug::OBJECT)     n += _sOBJECT     + QChar(',');
+    if (__msk & cDebug::ADDRESS)    n += _sADDRESS    + QChar(',');
     if (n.size()) n.chop(1);
-    return _sSBraB + n + _sSBraE + _sSpace;
+    return QChar('[') + n + QChar(']') + QChar(' ');
 }
 
 void cDebug::setGui(bool __f)
@@ -266,7 +266,7 @@ void cDebug::chk()
 
 QString cDebug::fNameCnv(const QString& _fn)
 {
-    if      (_fn == _sMinus || _fn.toLower() == _sStdOut) {
+    if   (_fn == QChar('-') || _fn.toLower() == _sStdOut) {
         return _sStdOut;
     }
     else if (_fn.isEmpty()  || _fn.toLower() == _sStdErr) {
@@ -393,11 +393,11 @@ void debugStream::sRedyLineFromThread()
 
 debugStream &  head(debugStream & __ds)
 {
-    __ds << QDateTime::currentDateTime().toString() << _sSpace
+    __ds << QDateTime::currentDateTime().toString() << QChar(' ')
          << QCoreApplication::applicationName()
-         << _sSBraB  << QString::number(QCoreApplication::applicationPid());
+         << QChar('[')  << QString::number(QCoreApplication::applicationPid());
     if (__ds.isMain() == false) {
-        __ds << _sColon << QThread::currentThread()->objectName();
+        __ds << QChar(',') << QThread::currentThread()->objectName();
     }
     __ds << QString("] ");
     return __ds;
@@ -405,7 +405,7 @@ debugStream &  head(debugStream & __ds)
 
 QString list2string(const QVariantList& __vl)
 {
-    QString r = _sCBraB;
+    QString r = QChar('{');
     foreach (QVariant v, __vl) {
         if (r.size() > 1) r += _sCommaSp;
         switch (v.type()) {
@@ -414,28 +414,28 @@ QString list2string(const QVariantList& __vl)
         case QVariant::StringList:  r += list2string(v.toStringList()); break;
         case QVariant::List:        r += list2string(v.toList());       break;
         case QVariant::BitArray:    r += list2string(v.toBitArray());   break;
-        default:                    r += v.toString() + _sSlash + v.typeName(); break;
+        default:                    r += v.toString() + QChar('/') + v.typeName(); break;
         }
     }
-    return r + _sCBraE;
+    return r + QChar('}');
 }
 
 QString list2string(const QBitArray& __vl)
 {
-    QString r = _sSBraB;
+    QString r = QChar('[');
     for (int i = 0; i < __vl.size(); ++i) {
         r += (__vl[i]) ? "1" : "0";
     }
-    return r + _sSBraE;
+    return r + QChar(']');
 }
 
 QString list2string(const QStringList& __vl)
 {
-    QString r = _sCBraB;
+    QString r = QChar('{');
     foreach (QString v, __vl) {
         if (r.size() > 1) r += _sCommaSp;
         r += quotedString(v);
     }
-    return r + _sCBraE;
+    return r + QChar('}');
 }
 

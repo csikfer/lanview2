@@ -263,7 +263,7 @@ void lanView::parseArg(void)
     if (ONDB(PARSEARG)) {
         cDebug::cout() << head << "arguments :";
         foreach (QString arg, args) {
-             cDebug::cout() << _sSpace << arg;
+             cDebug::cout() << QChar(' ') << arg;
         }
         cDebug::cout() << endl;
     }
@@ -321,8 +321,8 @@ qlonglong lanView::sendError(const cError *pe, const QString& __t)
     // sqlRollback(q, false);
     // sqlBegin(q);
     QString sql = "INSERT INTO app_errs"
-                 "(app_name, pid, app_ver, lib_ver, thread_name, err_code, err_name, err_subcode, err_msg, errno, func_name, src_name, src_line) "
-            "VALUES (?,"       "?," "?,"     "?,"     "?,"         "?,"      "?,"      "?,"         "?,"     "?,"   "?,"       "?,"      "?) "
+                 "(app_name, pid, app_ver, lib_ver, thread_name, err_code, err_name, err_subcode, err_msg, errno, func_name, func_src, src_line) "
+            "VALUES (?,"     "?," "?,"     "?,"     "?,"         "?,"      "?,"      "?,"         "?,"     "?,"   "?,"       "?,"      "?) "
             "RETURNING applog_id";
     PDEB(VVERBOSE) << "sendError() : Prepare ..." << endl;
     if (! q.prepare(sql)) {

@@ -240,6 +240,8 @@ EXT_ int toIPv4Mask(const QHostAddress& __a, bool __ex = true);
 
 EXT_ bool operator<(const QHostAddress& __a1, const QHostAddress& __a);
 
+EXT_ QString hostAddressToString(const QHostAddress& a);
+
 class netAddressList;
 /*!
 

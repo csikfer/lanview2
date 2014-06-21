@@ -245,13 +245,13 @@ public:
     bool contains(const QString&  __name, const QVariant& _val) const { return indexOf(__name, _val) >= 0; }
     /// A lista tartalmának a stringé konvertálása
     QString toString() const {
-        QString s = _sSBraB;
+        QString s = QChar('[');
         typename QList<T *>::const_iterator    i;
         for (i = QList<T *>::constBegin(); i < QList<T *>::constEnd(); i++) {
-            s += _sSpace + (*i)->toString() + _sComma;
+            s += QChar(' ') + (*i)->toString() + QChar(',');
         }
         if (s.size() > 1) s.chop(1);
-        return s + _sSpace + _sSBraE;
+        return s + QChar(' ') + QChar(']');
     }
     /// Az összes elem ID mezőjének a törlése
     void clearId() {
@@ -616,8 +616,8 @@ public:
     /// @return Ha sikerült az insert, akkor true, ha hiba történt, és __ex = false, akkor false.
     bool insert(QSqlQuery& __q, bool __ex = true) {
         QString sql = "INSERT INTO " + tableName() +
-                _sABraB + group.idName() + _sComma + member.idName() + _sABraE +
-                " VALUES(" + QString::number(group.getId()) + _sComma + QString::number(member.getId()) + _sABraE;
+                QChar('(') + group.idName() + QChar(',') + member.idName() + QChar(')') +
+                " VALUES(" + QString::number(group.getId()) + QChar(',') + QString::number(member.getId()) + QChar(')');
         _DBGFNL() << "SQL:" << sql << endl;
         if (!__q.exec(sql)) {
             // Pontosítani kéne, sajnos nincs hibakód!!

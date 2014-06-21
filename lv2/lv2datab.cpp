@@ -211,14 +211,14 @@ cColStaticDescr& cColStaticDescr::operator=(const cColStaticDescr __o)
 QString cColStaticDescr::toString() const
 {
     QString r = dQuoted((QString&)*this);
-    r += _sSBraB + QString::number(pos) + _sSlash + QString::number(ordPos) + _sSBraE;
-    r += _sSpace + colType + "/" + udtName;
-    if (enumVals.size())       r += _sCBraB + enumVals.join(_sCommaSp) + _sCBraE;
+    r += QChar('[') + QString::number(pos) + QChar('/') + QString::number(ordPos) + QChar(']');
+    r += QChar(' ') + colType + "/" + udtName;
+    if (enumVals.size())       r += QChar('{') + enumVals.join(_sCommaSp) + QChar('}');
     if (!isNullable)           r += " NOT NULL ";
     if (!colDefault.isNull()) {
         r += " DEFAULT " + colDefault;
     }
-    r += (isUpdatable ? _sSpace : QString(" nem")) + " módosítható";
+    r += (isUpdatable ? QChar(' ') : QString(" nem")) + " módosítható";
     return r;
 }
 
@@ -232,7 +232,7 @@ QString cColStaticDescr::allToString() const
         if (fKeySchema.size() > 0) k = mCat(fKeySchema, k);
         r += _sCommaSp + k;
         if (fKeyTables.size() > 0) {
-            k += _sABraB + fKeyTables.join(_sCommaSp) + _sABraE;
+            k += QChar('(') + fKeyTables.join(_sCommaSp) + QChar(')');
         }
     }
     if (fnToName.size() > 0) ", fnToName = " + fnToName;
@@ -560,39 +560,39 @@ QVariant  cColStaticDescrArray::toSql(const QVariant& _f) const
     switch (eColType) {
     case FT_INTEGER_ARRAY: {    // egész tömb
         QVariantList vl = _f.toList();
-        s = _sCBraB;
+        s = QChar('{');
         bool ok;
         foreach (const QVariant& vi, vl) {
-            s += QString::number(vi.toLongLong(&ok)) + _sComma;
+            s += QString::number(vi.toLongLong(&ok)) + QChar(',');
             if (!ok) EXCEPTION(EDATA,-1,"Invalid number");
             empty = false;
         }
         if (empty == false) s.chop(1);
-        s += _sCBraE;
+        s += QChar('}');
         return QVariant(s);
     }
     case FT_REAL_ARRAY:  {
         QVariantList vl = _f.toList();
-        s = _sCBraB;
+        s = QChar('{');
         bool ok;
         foreach (const QVariant& vi, vl) {
-            s += QString::number(vi.toDouble(&ok)) + _sComma;
+            s += QString::number(vi.toDouble(&ok)) + QChar(',');
             if (!ok) EXCEPTION(EDATA,-1,"Invalid number");
             empty = false;
         }
         if (empty == false) s.chop(1);
-        s += _sCBraE;
+        s += QChar('}');
         return QVariant(s);
     }
     case FT_TEXT_ARRAY: {
         QStringList sl = _f.toStringList();
-        s = _sCBraB;
+        s = QChar('{');
         foreach (const QString& si, sl) {
-            s += dQuoted(si) + _sComma;
+            s += dQuoted(si) + QChar(',');
             empty = false;
         }
         if (empty == false) s.chop(1);
-        s += _sCBraE;
+        s += QChar('}');
         return QVariant(s);
     }
     default:
@@ -810,7 +810,7 @@ QVariant  cColStaticDescrSet::toSql(const QVariant& _f) const
     if (_f.isNull()) EXCEPTION(EDATA,-1,"Data is NULL");
     QString s;
     QStringList sl = _f.toStringList();
-    s = _sCBraB + sl.join(_sComma) + _sCBraE;   // Feltételezzük, hogy nem kell idézőjelbe rakni
+    s = QChar('{') + sl.join(QChar(',')) + QChar('}');   // Feltételezzük, hogy nem kell idézőjelbe rakni
     //PDEB(VVERBOSE) << "_toSql() string list -> string : " << s << endl;
     return QVariant(s);
 }
@@ -850,7 +850,7 @@ QVariant  cColStaticDescrSet::set(const QVariant& _f, int & str) const
         return QVariant(sl);
     }
     else if (metaIsString(t)) {
-        sl = _f.toString().split(_sComma);
+        sl = _f.toString().split(QChar(','));
     }
     else if (QMetaType::QStringList == t || QMetaType::QVariantList == t) {
         sl = _f.toStringList();
@@ -868,7 +868,7 @@ QVariant  cColStaticDescrSet::set(const QVariant& _f, int & str) const
 
 QString   cColStaticDescrSet::toName(const QVariant& _f) const
 {
-    return _f.toStringList().join(_sComma);
+    return _f.toStringList().join(QChar(','));
 }
 /// A SET (ENUM ARRAY) esetén string listaként letárolt értéket egész számértékké konvertálja.
 /// A numerikus értékben a megadott sorszámú bit reprezentál egy enumerációs értéket.
@@ -949,19 +949,19 @@ QVariant  cColStaticDescrPolygon::toSql(const QVariant& _f) const
     }
     tPolygonF    pol = _f.value<tPolygonF>();
     if (pol.isEmpty()) return QVariant();
-    QString     s = _sABraB;
+    QString     s = QChar('(');
     foreach(const QPointF& pt, pol) {
-        s += parentheses(QString::number(pt.x()) + _sComma + QString::number(pt.y())) + _sComma;
+        s += parentheses(QString::number(pt.x()) + QChar(',') + QString::number(pt.y())) + QChar(',');
         empty = false;
     }
     if (empty == false) s.chop(1);
-    s += _sABraE;
+    s += QChar(')');
     //PDEB(VVERBOSE) << "_toSql() polygon -> string : " << s << endl;
     return QVariant(s);
 }
 QVariant  cColStaticDescrPolygon::set(const QVariant& _f, int& str) const
 {
-    _DBGFN() << _sSpace << debVariantToString(_f);
+    _DBGFN() << QChar(' ') << debVariantToString(_f);
     int t = _f.userType();
     if ((QMetaType::LongLong == t && NULL_ID == _f.toLongLong())
      || (QMetaType::Int      == t && NULL_IX == _f.toInt())
@@ -1344,15 +1344,15 @@ QString intervalToStr(qlonglong i)
     QString is;
     qlonglong j = i % 1000;
     i /= 1000;
-    if (j) is = _sPoint + QString::number(j);
+    if (j) is = QChar('.') + QString::number(j);
     is = QString::number(i % 60) + is;
     i /= 60;
-    is = QString::number(i % 60) + _sColon + is;
+    is = QString::number(i % 60) + QChar(',') + is;
     i /= 60;
-    is = QString::number(i % 24) + _sColon + is;
+    is = QString::number(i % 24) + QChar(',') + is;
     i /= 24;
     if (i) {
-        is = (i == 1 ? "DAY " : "DAYS ") + QString::number(i) + _sSpace + is;
+        is = (i == 1 ? "DAY " : "DAYS ") + QString::number(i) + QChar(' ') + is;
     }
     return is;
 
@@ -1534,7 +1534,7 @@ int cRecStaticDescr::_setReCallCnt = 0;
 
 void cRecStaticDescr::_set(const QString& __t, const QString& __s)
 {
-    _DBGFN() << " @(" << __t << _sCommaSp << __s << _sABraE << endl << dec; // Valahol valaki hex-re állítja :(
+    _DBGFN() << " @(" << __t << _sCommaSp << __s << QChar(')') << endl << dec; // Valahol valaki hex-re állítja :(
     if (_setReCallCnt) DWAR() << "******** RECURSION #" << _setReCallCnt << " ********" << endl;
     ++_setReCallCnt;
     // Set table and schema name
@@ -1584,7 +1584,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
         QString tn = _viewName + "_table";
         qlonglong toid = ::tableoid(*pq, tn, _schemaOId, false);
         if (NULL_ID != toid) {
-            PDEB(INFO) << "Table " << _viewName << _sSlash << _tableName << " table type : LINK_TABLE." << endl;
+            PDEB(INFO) << "Table " << _viewName << QChar('/') << _tableName << " table type : LINK_TABLE." << endl;
             _tableName = tn;
             _tableOId  = toid;
             _tableType = LINK_TABLE;
@@ -1619,12 +1619,12 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
         columnDescr.isNullable= pq->record().value("is_nullable").toString() == QString("YES");
         columnDescr.isUpdatable=pq->record().value("is_updatable").toString() == QString("YES");
         _isUpdatable = _isUpdatable || columnDescr.isUpdatable;
-        PDEB(INFO) << fullTableName() << " field #" << i << _sSlash << columnDescr.ordPos << " : " << columnDescr.toString() << endl;
+        PDEB(INFO) << fullTableName() << " field #" << i << QChar('/') << columnDescr.ordPos << " : " << columnDescr.toString() << endl;
         //Ez egy auto increment mező ?
         _autoIncrement.setBit(i -1, columnDescr.colDefault.indexOf("nextval('") == 0);
         // Megnézzük enum-e
         if (columnDescr.colType ==  _sUSER_DEFINED || columnDescr.colType ==  _sARRAY) {
-            if (columnDescr.colType ==  _sARRAY && columnDescr.udtName.startsWith(_sUnderscore)) {
+            if (columnDescr.colType ==  _sARRAY && columnDescr.udtName.startsWith(QChar('_'))) {
                 // Az ARRAY-nál a típus névhez, hozzá szokott bigyeszteni egy '_'-karakter (nem mindíg)
                 columnDescr.udtName = columnDescr.udtName.mid(1);   // Ha a sját típust keressük, az '_'-t törölni kell.
             }
@@ -1637,7 +1637,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
             } while(pq2->next());
             PDEB(VVERBOSE) << columnDescr.colName()
                            << (columnDescr.colType ==  _sARRAY ? " is set" : " is enum : ")
-                           << columnDescr.udtName << _sCBraB << columnDescr.enumVals.join(_sComma) << _sCBraE << endl;
+                           << columnDescr.udtName << QChar('{') << columnDescr.enumVals.join(QChar(',')) << QChar('}') << endl;
         }
         if (columnDescr.colName() == _sDeleted) {
             if (columnDescr.colType == "boolean") {
@@ -2004,25 +2004,25 @@ QString cRecStaticDescr::getNameById(QSqlQuery& __q, qlonglong __id, bool ex) co
 
 QString cRecStaticDescr::toString() const
 {
-    QString s = "TABLE " + fullTableNameQ() + _sSpace + _sABraB + '\n';
+    QString s = "TABLE " + fullTableNameQ() + QChar(' ') + QChar('(') + '\n';
     cColStaticDescrList::ConstIterator i, n = columnDescrs().constEnd();
     for (i = columnDescrs().constBegin(); i != n; ++i) {
         const cColStaticDescr& fd = **i;
-        s += _sSpace + fd.toString();
+        s += QChar(' ') + fd.toString();
         if (_primaryKeyMask.count(true) == 1 && _primaryKeyMask[fd.pos -1]) {
-            s += _sSpace + "PRIMARY KEY";
+            s += " PRIMARY KEY";
         }
         else {
             foreach (const QBitArray& um,  _uniqueMasks) {
                 if (um.count(true) == 1 && um[fd.pos -1]) {
-                    s += _sSpace + "UNIQUE";
+                    s += " UNIQUE";
                     break;
                 }
             }
         }
-        s += _sComma;
+        s += QChar(',');
         if (fd.fKeyType != cColStaticDescr::FT_NONE) {
-            s += " -- Foreign key to " + fd.fKeySchema + _sPoint + fd.fKeyTable + _sPoint + fd.fKeyField + _sSlash;
+            s += " -- Foreign key to " + fd.fKeySchema + QChar('.') + fd.fKeyTable + QChar('.') + fd.fKeyField + QChar('/');
             switch (fd.fKeyType) {
             case cColStaticDescr::FT_PROPERTY:  s += "Property";    break;
             case cColStaticDescr::FT_OWNER:     s += "Owner";       break;
@@ -2033,33 +2033,33 @@ QString cRecStaticDescr::toString() const
         s += '\n';
     }
     if (_primaryKeyMask.count(true) > 1) {
-        s += _sSpace + "PRIMARY KEY" + _sSpace + _sABraB;
+        s += " PRIMARY KEY (";
         for (int i = 0; i < _columnsNum; i++) if (_primaryKeyMask[i]) {
-            s += _sSpace + dQuoted(columnDescrs()[i].colName()) + _sComma;
+            s += QChar(' ') + dQuoted(columnDescrs()[i].colName()) + QChar(',');
         }
-        s += _sABraE + '\n';
+        s += ")\n";
     }
     for (int i = 0; i < _uniqueMasks.size(); i++) if (_uniqueMasks[i].count(true) > 1) {
-        s += _sSpace + "UNIQUE" + _sSpace + _sABraB;
+        s += " UNIQUE (";
         for (int j = 0; j < _uniqueMasks[i].size(); j++) if (_uniqueMasks[i][j]) {
-            s += _sSpace + dQuoted(columnDescrs()[j].colName()) + _sComma;
+            s += QChar(' ') + dQuoted(columnDescrs()[j].colName()) + QChar(',');
         }
-        s += _sABraE + '\n';
+        s += QChar(')') + '\n';
     }
     if (_idIndex >= 0)   s += "-- _idIndex   = " + QString::number(_idIndex)   + '\n';
     if (_nameIndex >= 0) s += "-- _nameIndex = " + QString::number(_nameIndex) + '\n';
     if (_noteIndex >= 0) s += "-- _noteIndex = " + QString::number(_noteIndex) + '\n';
-    s += _sABraE;
+    s += QChar(')');
     if (_parents.size()) {
-        s += _sSpace + "INHERITS(";
+        s += " INHERITS(";
         QVector<const cRecStaticDescr *>::ConstIterator ii, nn = parent().constEnd();
         for (ii = parent().constBegin(); ii != nn; ++ii) {
-            s += _sSpace + (*ii)->fullTableNameQ() + _sComma;
+            s += QChar(' ') + (*ii)->fullTableNameQ() + QChar(',');
         }
         s.chop(1);
-        s += _sABraE + '\n';
+        s += QChar(')') + '\n';
     }
-    s += _sSColon +  "\n-- Table type : ";
+    s += ";\n-- Table type : ";
     switch (_tableType) {
     case BASE_TABLE:    s += "Base";    break;
     case VIEW_TABLE:    s += "View";    break;
@@ -2091,7 +2091,7 @@ const QVariant  cRecord::_vNul;
 
 cRecord::cRecord() : QObject(), _fields(), _likeMask()
 {
-   // _DBGFN() << _sSpace << VDEBPTR(this) << endl;
+   // _DBGFN() << QChar(' ') << VDEBPTR(this) << endl;
     _deletedBehavior = NO_EFFECT ;
     _stat = ES_NULL;
 }
@@ -2104,7 +2104,7 @@ cRecord::cRecord(const cRecord&) : QObject(), _fields(), _likeMask()
 
 cRecord::~cRecord()
 {
-    // _DBGFN() << _sSpace << VDEBPTR(this) n0t0kaptus
+    // _DBGFN() << QChar(' ') << VDEBPTR(this) n0t0kaptus
 }
 
 cRecord& cRecord::_clear()
@@ -2302,7 +2302,7 @@ cRecord& cRecord::set(const QSqlRecord& __r, int* _fromp, int __size)
 
 cRecord& cRecord::set(int __i, const QVariant& __v)
 {
-    // _DBGFN() << " @(" << __i << _sCommaSp << __v.toString() << _sABraE << endl;
+    // _DBGFN() << " @(" << __i << _sCommaSp << __v.toString() << QChar(')') << endl;
     if (_fields.isEmpty()) set();
     _set(__i, descr()[__i].set(__v, _stat));
     _stat |= ES_MODIFY;
@@ -2466,7 +2466,7 @@ QString cRecord::whereString(QBitArray& _fm) const
 
 void cRecord::fetchQuery(QSqlQuery& __q, bool __only, const QBitArray& _fm, const tIntVector& __ord, int __lim, int __off, QString __s, QString __w) const
 {
-    // _DBGFN() << " @(" << _fm << _sCommaSp << __ord << _sCommaSp << __lim << _sCommaSp << __off <<  _sCommaSp << __s << _sABraE << endl;
+    // _DBGFN() << " @(" << _fm << _sCommaSp << __ord << _sCommaSp << __lim << _sCommaSp << __off <<  _sCommaSp << __s << QChar(')') << endl;
     // PDEB(VVERBOSE) << "Record value : " << toString() << endl;
     const cRecStaticDescr& recDescr = descr();
     QBitArray fm = _fm;
@@ -2484,7 +2484,7 @@ void cRecord::fetchQuery(QSqlQuery& __q, bool __only, const QBitArray& _fm, cons
         sql += " ORDER BY ";
         foreach (int i, __ord) {
             sql += recDescr.columnNameQ(qAbs(i));
-            sql += _sSpace + (i < 0 ? "DESC" : "ASC") + _sComma;
+            sql += (i < 0 ? " DESC," : " ASC,");
         }
         sql.chop(1);
     }
@@ -2495,7 +2495,7 @@ void cRecord::fetchQuery(QSqlQuery& __q, bool __only, const QBitArray& _fm, cons
 
 bool cRecord::fetch(QSqlQuery& __q, bool __only, const QBitArray& _fm, const tIntVector& __ord, int __lim, int __off)
 {
-    // _DBGFN() << " @(" << _fm << _sCommaSp << __ord << _sCommaSp << __lim << _sCommaSp << __off << _sABraE << endl;
+    // _DBGFN() << " @(" << _fm << _sCommaSp << __ord << _sCommaSp << __lim << _sCommaSp << __off << QChar(')') << endl;
     fetchQuery(__q,__only, _fm, __ord, __lim, __off);
     if (__q.first()) {
         set(__q.record());
@@ -2597,9 +2597,9 @@ bool cRecord::update(QSqlQuery& __q, bool __only, const QBitArray& __set, const 
     int i,j;
     for (i = 0; i < bset.size(); i++) {
         if (bset[i]) {
-            sql += _sSpace + columnNameQ(i);
+            sql += QChar(' ') + columnNameQ(i);
             if (get(i).isNull()) sql += " = DEFAULT,";
-            else                 sql += _sCondW + _sSpace + _sComma;
+            else                 sql += _sCondW + QChar(' ') + QChar(',');
         }
     }
     sql.chop(1);
@@ -2694,14 +2694,14 @@ cRecordFieldConstRef cRecord::operator[](int __i) const
 
 QString cRecord::toString() const
 {
-    QString s = _sCBraB;
+    QString s = QChar('{');
     for (int i = 0; isIndex(i); i++) {
-        s += _sSpace + columnNameQ(i);
+        s += QChar(' ') + columnNameQ(i);
         if (isNull(i)) s += " IS NULL, ";
-        else           s +=  " = " + getName(i) + QString("::") + QString(get(i).typeName()) + _sSColon + _sSpace;
+        else           s +=  " = " + getName(i) + QString("::") + QString(get(i).typeName()) + "; ";
     }
     s.chop(2);
-    s + _sCBraE;
+    s + QChar('}');
     return s;
 }
 

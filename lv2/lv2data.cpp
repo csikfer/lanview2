@@ -1584,7 +1584,7 @@ cNPort *cNode::addSensors(const QString& __np, int __noff, int __from, int __to,
         p = addPort(t, nameAndNumber(__np, i + __noff), _sNul, i + __off);
         cInterface *pIf = p->reconvert<cInterface>();
         a[3] = QString::number(d++);
-        QHostAddress ha(a.join(_sPoint));
+        QHostAddress ha(a.join(QChar('.')));
         if (ha.isNull()) EXCEPTION(EDATA);
         pIf->addIpAddress(ha, _sPseudo);
     }
@@ -1595,7 +1595,8 @@ bool cNode::fetchByIp(QSqlQuery& q, const QHostAddress& a)
 {
     clear();
     QString sql = QString("SELECT %1.* FROM %1 JOIN interfaces USING(node_id) JOIN ipaddresses USING(port_id) WHERE address = ?").arg(tableName());
-    if (execSql(q, sql, a.toString())) {
+    QString as = hostAddressToString(a);
+    if (execSql(q, sql, as)) {
         set(q);
         return true;
     }
@@ -2241,7 +2242,7 @@ int cHostService::fetchByNames(QSqlQuery& q, QString& __hn, const QString& __sn,
     (*this)[_sServiceId] = cService().descr().getIdByName(q, __sn, __ex);
     (*this)[_sDeleted]   = false;
     int r = completion(q);
-    if (__ex && !r) EXCEPTION(EFOUND, -1, __hn + _sColon + __sn);
+    if (__ex && !r) EXCEPTION(EFOUND, -1, __hn + QChar(',') + __sn);
     return r;
 }
 
@@ -2305,7 +2306,7 @@ QVariant cHostService::value(QSqlQuery& q, const cService& s, const QString& f)
 {
     if (isNull(f)) {
         if (s.isNull(f)) {
-            QString e = toString() + _sSlash + s.toString() + _sSlash + f;
+            QString e = toString() + QChar('/') + s.toString() + QChar('/') + f;
             q.clear();
             EXCEPTION(EFOUND, 0, e);
         }
@@ -2318,7 +2319,7 @@ QVariant cHostService::value(QSqlQuery& q, const cService& s, const QString& f)
 QString cHostService::names(QSqlQuery& q)
 {
     QString r = cNode().getNameById(q, getId(_sNodeId), false)
-              + _sColon
+              + QChar(',')
               + cService().getNameById(q, getId(_sServiceId), false);
     q.clear();
     return r;
@@ -2349,6 +2350,21 @@ cHostService& cHostService::magic2prop()
 }
 
 /* ----------------------------------------------------------------- */
+DEFAULTCRECDEF(cOui, _sOuis);
+
+enum eReasons cOui::replace(QSqlQuery& __q)
+{
+    (void)__q;
+    return R_ERROR;
+}
+
+int cOui::downloadOuis(QSqlQuery& __q)
+{
+    (void)__q;
+    return 0;
+}
+
+/* ----------------------------------------------------------------- */
 CRECCNTR(cMacTab);
 
 int cMacTab::_ixPortId    = NULL_IX;
@@ -2372,9 +2388,9 @@ CRECDEFD(cMacTab)
 enum eReasons cMacTab::replace(QSqlQuery& __q)
 {
     QString sql = "SELECT insert_or_update_mactab(?,?";
-    if (!isNull(_ixSetType))     sql += _sComaQ;
-    if (!isNull(_ixMacTabState)) sql += _sComaQ;
-    sql += _sABraE;
+    if (!isNull(_ixSetType))     sql += _sCommaQ;
+    if (!isNull(_ixMacTabState)) sql += _sCommaQ;
+    sql += QChar(')');
     if (!__q.prepare(sql)) SQLPREPERR(__q, sql);
     bind(_ixPortId,    __q, 0);
     bind(_ixHwAddress, __q, 1);
@@ -2385,6 +2401,14 @@ enum eReasons cMacTab::replace(QSqlQuery& __q)
     __q.first();
     enum eReasons r = (enum eReasons) reasons(__q.value(0).toString(), false);
     return r;
+}
+
+int cMacTab::refresStats(QSqlQuery& __q)
+{
+    bool r = execSqlFunction(__q, QString("refresh_mactab"));
+    int  n = __q.value(0).toInt();
+    PDEB(VERBOSE) << "cMacTab::refresStats() : " << DBOOL(r) << VDEB(n) << endl;
+    return n;
 }
 
 /* ----------------------------------------------------------------- */
@@ -2495,6 +2519,13 @@ cMac cArp::ip2mac(QSqlQuery& __q, const QHostAddress& __a, bool __ex)
     DERR() << em << endl;
     return cMac();
 }
+
+int cArp::checkExpired(QSqlQuery& __q)
+{
+    execSqlFunction(__q, QString("refresh_arps"));
+    return __q.value(0).toInt();
+}
+
 
 /* ----------------------------------------------------------------- */
 

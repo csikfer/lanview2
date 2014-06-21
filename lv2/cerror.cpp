@@ -86,7 +86,7 @@ void cError::circulation()
         cerr << "*** Error circulation **** Thread object name " << pThread->objectName() << endl;
         int n = 1;
         for (cError *p = this; p; p = p->pPrevError) {
-            cerr << _sSBraB << n++ << _sSBraE << _sSpace << p->msg() << endl;
+            cerr << QChar('[') << n++ << QChar(']') << QChar(' ') << p->msg() << endl;
         }
         exit(-1);
     }
@@ -112,7 +112,7 @@ QString cError::errorMsg(int __ErrorCode)
 QString cError::msg(void) const
 {
     QString r;
-    if (!mThreadName.isEmpty()) r = _sCBraB + mThreadName + _sCBraE;
+    if (!mThreadName.isEmpty()) r = QChar('{') + mThreadName + QChar('}');
     if (mErrorCode == eError::EOK) {
         r += QString("%1[%2]:%3: %4 #%5")
             .arg(mSrcName)

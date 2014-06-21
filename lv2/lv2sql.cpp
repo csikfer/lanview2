@@ -171,20 +171,20 @@ bool sqlRollback(QSqlQuery& q, bool __ex)
 
 EXT_ bool execSqlFunction(QSqlQuery& q, const QString& fn, const QVariant v1, const QVariant v2, const QVariant v3, const QVariant v4)
 {
-    QString sql = "SELECT " + fn + _sABraB;
-    if (!v1.isValid()) {
-        sql += _sQuery;
+    QString sql = "SELECT " + fn + QChar('(');
+    if (v1.isValid()) {
+        sql += QChar('?');
         if (v2.isValid()) {
-            sql += _sQuery + _sComma;
+            sql += _sCommaQ;
             if (v3.isValid()) {
-                sql += _sQuery + _sComma;
+                sql += _sCommaQ;
                 if (v4.isValid()) {
-                    sql += _sQuery + _sComma;
+                    sql += _sCommaQ;
                 }
             }
         }
     }
-    sql += _sABraE;
+    sql += QChar(')');
     return execSql(q, sql,v1, v2, v3, v4);
 }
 

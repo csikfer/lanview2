@@ -204,13 +204,13 @@ void cArpTable::getByProcFile(QIODevice& __f)
             // PDEB(VVERBOSE) << "Dropp NULL MAC..." << endl;
             continue;
         }
-        PDEB(INFO) << "insert(" << addr.toString() << _sComma << mac.toString() << ")" << endl;
+        PDEB(INFO) << "insert(" << addr.toString() << QChar(',') << mac.toString() << ")" << endl;
         insert(addr, mac);
     }
 }
 cArpTable& cArpTable::getByLocalProcFile(const QString& __f)
 {
-    _DBGFN() << "@(" << __f << _sComma << endl;
+    _DBGFN() << "@(" << __f << QChar(',') << endl;
     QFile procFile(__f.isEmpty() ? "/proc/net/arp" : __f);
     if (!procFile.open(QIODevice::ReadOnly | QIODevice::Text)) EXCEPTION(EFOPEN, -1, procFile.fileName());
     getByProcFile(procFile);
@@ -219,7 +219,7 @@ cArpTable& cArpTable::getByLocalProcFile(const QString& __f)
 
 cArpTable& cArpTable::getBySshProcFile(const QString& __h, const QString& __f, const QString& __ru)
 {
-    //_DBGFN() << " @(" << VDEB(__h) << _sComma << VDEB(__f) << _sComma << VDEB(__ru) << _sABraE << endl;
+    //_DBGFN() << " @(" << VDEB(__h) << QChar(',') << VDEB(__f) << QChar(',') << VDEB(__ru) << QChar(')') << endl;
     QString     ru;
     if (__ru.isEmpty() == false) ru = QString(" -l %1").arg(__ru);
     QString     cmd = QString("ssh %1%2 cat ").arg(__h, ru);
@@ -310,7 +310,7 @@ cArpTable& cArpTable::getByLocalDhcpdConf(const QString& __f)
 
 cArpTable& cArpTable::getBySshDhcpdConf(const QString& __h, const QString& __f, const QString& __ru)
 {
-    //_DBGFN() << " @(" << VDEB(__h) << _sComma << VDEB(__f) << _sComma << VDEB(__ru) << _sABraE << endl;
+    //_DBGFN() << " @(" << VDEB(__h) << QChar(',') << VDEB(__f) << QChar(',') << VDEB(__ru) << QChar(')') << endl;
     QString     ru;
     if (__ru.isEmpty() == false) ru = QString(" -l %1").arg(__ru);
     QString     cmd = QString("ssh %1%2 cat ").arg(__h, ru);
@@ -460,7 +460,7 @@ bool setPortsBySnmp(cSnmpDevice& node, bool __ex)
         const cIfType  *pIfType = cIfType::fromIana(type);
         if (pIfType == NULL) {
             DWAR() << "Unhandled interface type " << type << " : #" << tab[_sIfIndex][i]
-                   << _sSpace << name << endl;
+                   << QChar(' ') << name << endl;
             continue;
         }
         QString         ifTypeName = pIfType->getName();

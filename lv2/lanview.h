@@ -226,7 +226,7 @@ public:
     static void setApp(short _vMajor, short _vMinor, const char * _name) {
         appVersionMajor = _vMajor;
         appVersionMinor = _vMinor;
-        appVersion      = QString::number(_vMajor) + _sPoint + QString::number(_vMinor);
+        appVersion      = QString::number(_vMajor) + QChar('.') + QString::number(_vMinor);
         appName         = _name;
         QCoreApplication::setApplicationName(appName);
     }

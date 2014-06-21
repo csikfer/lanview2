@@ -38,7 +38,7 @@ int importParseFile(const QString& fn)
 {
     QFile in(fn);
     importFileNm = fn;
-    if (fn == _sMinus || fn == _sStdin) {
+    if (fn == QChar('-') || fn == _sStdin) {
         importFileNm = _sStdin;
         importInputStream = new QTextStream(stdin, QIODevice::ReadOnly);
     }

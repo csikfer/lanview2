@@ -572,7 +572,7 @@ DEFAULTCRECDEF(cEnumVal, _sEnumVals)
 QString cEnumVal::title(QSqlQuery& q, const QString& _ev, const QString& _tn)
 {
     QString sql = "SELECT enum_name2descr(" + quoted(_ev);
-    if (_tn.isEmpty() == false) sql += _sComma + quoted(_tn);
+    if (_tn.isEmpty() == false) sql += QChar(',') + quoted(_tn);
     sql += ")";
     if (!q.exec(sql)) SQLPREPERR(q, sql);
     if (!q.first()) EXCEPTION(EDBDATA); // Az SQL függvény akkor is ad értéket, ha nincs rekord.

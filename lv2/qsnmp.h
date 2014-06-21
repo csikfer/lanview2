@@ -94,7 +94,7 @@ class LV2SHARED_EXPORT netSnmp {
    public:
     static void setMibDirs(const char * __dl);
     static void setMibDirs(const QString& __dl)     { setMibDirs(__dl.toStdString().c_str()); }
-    static void setMibDirs(const QStringList& __dl) { setMibDirs(__dl.join(_sColon)); }
+    static void setMibDirs(const QStringList& __dl) { setMibDirs(__dl.join(QChar(','))); }
     static void init(void);
     static void down(void);
 

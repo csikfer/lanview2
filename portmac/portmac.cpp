@@ -128,13 +128,12 @@ cInspector * cPortMac::newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong ho
     return new cDevicePMac(q, hsid, hoid, pid);
 }
 
-/*
-/// Ez ugye nem csinál semmit, a "SUB"-ok dolgoznak
-enum eNotifSwitch cPortMac::run(QSqlQuery &)
+///
+enum eNotifSwitch cPortMac::run(QSqlQuery &__q)
 {
+    cMacTab::refresStats(__q);
     return RS_ON;
 }
-*/
 
 /******************************************************************************/
 
@@ -239,7 +238,7 @@ void cDevicePMac::postInit(QSqlQuery &q, const QString&)
 
 enum eNotifSwitch cDevicePMac::run(QSqlQuery& q)
 {
-    _DBGFN() << _sSpace << name() << endl;
+    _DBGFN() << QChar(' ') << name() << endl;
     if (!snmp.isOpened()) {
         EXCEPTION(ESNMP,-1, trUtf8("SNMP open error : %1 in %2").arg(snmp.emsg).arg(name()));
     }
@@ -268,7 +267,7 @@ enum eNotifSwitch cDevicePMac::run(QSqlQuery& q)
 
 enum eNotifSwitch cDevicePMac::snmpQuery(const cOId& __o, QMap<cMac, int>& macs)
 {
-    _DBGFN() << _sSpace << __o.toString() << endl;
+    _DBGFN() << QChar(' ') << __o.toString() << endl;
     cOId    o = __o;
     do {
         int r = snmp.getNext(o);

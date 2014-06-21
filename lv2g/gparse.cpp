@@ -7,7 +7,7 @@ cParseWidget::cParseWidget(QWidget *par)
 : cOwnTab(par)
 , fileFilter(trUtf8("Szöveg fájlok (*.txt *.src *.imp)"))
 {
-    PDEB(OBJECT) << __PRETTY_FUNCTION__ << _sSpace << _sComma << VDEBPTR(this) << endl;
+    PDEB(OBJECT) << __PRETTY_FUNCTION__ << QChar(' ') << QChar(',') << VDEBPTR(this) << endl;
     pUi = new Ui::GParseWidget();
     pUi->setupUi(this);
 

@@ -188,7 +188,7 @@ void cRecordDialog::init()
         fields.append(pFW);
         QWidget * pw = pFW->pWidget();
         pw->setObjectName(mf.getName());
-        PDEB(VVERBOSE) << "Add row to form : " << mf.getName() << " widget : " << typeid(*pFW).name() << _sSlash << fieldWidgetType(pFW->wType()) << endl;
+        PDEB(VVERBOSE) << "Add row to form : " << mf.getName() << " widget : " << typeid(*pFW).name() << QChar('/') << fieldWidgetType(pFW->wType()) << endl;
         pw->adjustSize();
         pFormLayout->addRow(mf.getDescr(), pw);
     }

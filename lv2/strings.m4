@@ -1,30 +1,14 @@
 dnl Gyakran használlt stringek
 STRDEF(Nul,   "")
-STRDEF(Space, " ")
-STRDEF(Minus, "-")
 STRDEF(MinusMinus, "--")
-STRDEF(Underscore, "_")
-STRDEF(Equ, "=")
 STRDEF(True,  "true")
 STRDEF(False, "false")
-STRDEF(CBraB, "{")
-STRDEF(CBraE, "}")
-STRDEF(SBraB, "[")
-STRDEF(SBraE, "]")
-STRDEF(ABraB, `"("')
-STRDEF(ABraE, `")"')
-STRDEF(Slash, "/")
-STRDEF(DQuote, "\"")
 STRDEF(Hex,   "0x")
-STRDEF(Comma, `","')
 STRDEF(CommaSp, `", "')
-STRDEF(Point, ".")
-STRDEF(Colon, ":")
-STRDEF(SColon, ";")
-STRDEF(Dollar, "$")
+STRDEF(EquSp, " = ")
 STRDEF(Memb, "%1.%2")
 STRDEF(CondW, " = ?")
-STRDEF(ComaQ, `", ?"')
+STRDEF(CommaQ, `", ?"')
 STRDEF(IsNull, " IS NULL")
 __SDEF(DEFAULT)
 
@@ -464,6 +448,11 @@ STRDEF(PortVlans, "port_vlans")
   STRDEF(Query, "query")
   STRDEF(Manual, "manual")
 
+STRDEF(Ouis, "ouis")
+ STRDEF(Oui, "oui")
+ STRDEF(OuiName, "oui_name")
+ STRDEF(OuiNote, "oui_note")
+
 STRDEF(MacTab, "mactab")
  dnl hwaddress, port_id
  STRDEF(MacTabState, "mactab_state")
@@ -665,7 +654,4 @@ dnl date_of, error_id, user_id, table_name
  STRDEF(Reapeat, "reapeat")
  STRDEF(DateOfLast, "date_of_last")
  STRDEF(Acknowledged, "acknowledged")
-
-
-
 

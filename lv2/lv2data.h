@@ -538,7 +538,7 @@ public:
     /// A listét feltölti az adatbázisból, hogy a megadott porthoz (ID) tartozó összes paramétert tartalmazza.
     int fetch(QSqlQuery& __q, qlonglong __port_id) {
         if (cPortParam::_ixPortId < 0) cPortParam();    // Ha még nem volt init.
-        PDEB(VVERBOSE) << "Call: tRecordList<cPortParam>::fetch(__q, false, " << cPortParam::_ixPortId << _sCommaSp << __port_id << _sABraE << endl;
+        PDEB(VVERBOSE) << "Call: tRecordList<cPortParam>::fetch(__q, false, " << cPortParam::_ixPortId << _sCommaSp << __port_id << QChar(')') << endl;
         return tRecordList<cPortParam>::fetch(__q, false, cPortParam::_ixPortId, __port_id);
     }
     /// Index operátor: egy elem a paraméter név alapján
@@ -1276,6 +1276,13 @@ protected:
     tMagicMap              *_pMagicMap;
 };
 
+class LV2SHARED_EXPORT cOui  : public cRecord {
+    CRECORD(cOui);
+public:
+    enum eReasons replace(QSqlQuery& __q);
+    static int downloadOuis(QSqlQuery& __q);
+};
+
 class LV2SHARED_EXPORT cMacTab  : public cRecord {
     CRECORD(cMacTab);
 protected:
@@ -1289,6 +1296,7 @@ public:
     /// @param __q Az adatbázis művelethez használt objektum.
     /// @return A insert_or_update_arp függvény vissatérési értéke. Ld.: enum eReasons
     enum eReasons replace(QSqlQuery& __q);
+    static int refresStats(QSqlQuery& __q);
 };
 
 class cArpTable;
@@ -1321,6 +1329,7 @@ public:
     static QList<QHostAddress> mac2ips(QSqlQuery& __q, const cMac& __m);
     static QHostAddress mac2ip(QSqlQuery& __q, const cMac& __m, bool __ex = true);
     static cMac ip2mac(QSqlQuery& __q, const QHostAddress& __a, bool __ex = true);
+    static int checkExpired(QSqlQuery& __q);
 };
 
 /// Csak a cPhsLink és cLldpLink objektumokkal használható

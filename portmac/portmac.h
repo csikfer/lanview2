@@ -28,7 +28,7 @@ public:
     /// @param hoid A node objektum típusát azonosító tableoid
     /// @param A parent host_service_id
     virtual cInspector * newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong hoid, cInspector *pid);
-//  virtual enum eNotifSwitch run(QSqlQuery &q);    // ugyan az lenne mit az ősé.
+    virtual enum eNotifSwitch run(QSqlQuery &q);
 /*  LanView (PHP):
     // snmp: klient mac => port snmp index  (on same switch only default_vlan's client)
     // mib-2.dot1dBridge.dot1dTp.dot1dTpFdbTable.dot1dTpFdbEntry.dot1dTpFdbPort = mib-2.17.4.3.1.2
