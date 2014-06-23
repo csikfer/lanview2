@@ -3,8 +3,6 @@
 INSERT INTO sys_params
     (sys_param_name,                    param_type_id,                 param_value,    sys_param_note) VALUES
     ('oui_list_url_MA-L',               param_type_name2id('text'),     'http://standards.ieee.org/develop/regauth/oui/oui.txt',        'MA-L Public list'),
-    ('oui_list_url_MA-M',               param_type_name2id('text'),     'http://standards.ieee.org/develop/regauth/oui28/mam.txt',      'MA-M Public list'),
-    ('oui_list_url_MA-S',               param_type_name2id('text'),     'http://standards.ieee.org/develop/regauth/oui36/oui36.txt',    'MA-S Public list'),
     ('arps_expire_interval',            param_type_name2id('interval'),'21 days',      'Az arps táblában ennyi idő mulva törlődik egy rekord, ha nem frissül a last_time mező'),
     ('mactab_move_check_interval',      param_type_name2id('interval'),'01:00:00',     'Hibás topológia miatt mozgó MAC lokációk észlelési időintervalluma'),
     ('mactab_move_check_count',         param_type_name2id('bigint'),  '6',            'Hibás topológia miatt mozgó MAC lokációk észlelési határértéke (látszólagos mozgások száma).'),
@@ -21,8 +19,8 @@ INSERT INTO param_types
 
 CREATE TABLE ouis (
     oui		macaddr PRIMARY KEY,
-    oui_name	varchar(32)	NOT NULL,
-    oui_note	varchar(255)	DEFAULT NULL
+    oui_name	text	NOT NULL,
+    oui_note	text	DEFAULT NULL
 );
 ALTER TABLE ouis OWNER TO lanview2;
 COMMENT ON TABLE ouis IS 'Organizational Unique Identifier';
@@ -36,23 +34,23 @@ COMMENT ON FUNCTION is_content_oui(mac macaddr) IS
 'Megvizsgálja, hogy a paraméterként megadott MAC első 3 byte-ja által azonosítptt OUI rekord létezik-e.
 Ha igen true-val, ellenkező esetben false-val tér vissza.';
 
-CREATE OR REPLACE FUNCTION replace_oui(noui macaddr, nname varchar(32), nnote varchar(255)) RETURNS reasons AS $$
+CREATE OR REPLACE FUNCTION replace_oui(noui macaddr, nname text, nnote text) RETURNS reasons AS $$
 DECLARE
     rec ouis;
 BEGIN
     SELECT * INTO rec FROM ouis WHERE oui = noui;
     IF NOT FOUND THEN
-        INSERT INTO oui VALUES(noui, nname, nnote);
+        INSERT INTO ouis VALUES(noui, nname, nnote);
         RETURN 'insert';
     END IF;
-    IF rec,oui_name == nname AND rec.oui_note == nnote THEN
+    IF rec.oui_name = nname AND rec.oui_note = nnote THEN
         RETURN 'unchange';
     END IF;
     UPDATE ouis SET oui_name = nname, oui_note = nnote WHERE oui = noui;
     RETURN 'modify';
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION replace_oui(noui macaddr, nname varchar(32), nnote varchar(255)) IS
+COMMENT ON FUNCTION replace_oui(noui macaddr, nname text, nnote text) IS
 'OUI rekord beszúrása, vagy modosítása.
 Visszatérési értékek:
     Ha nem történt változás, akkor "unchange".

@@ -1449,9 +1449,14 @@ public:
     /// @param _fi A módosítandó mező indexe.
     /// @return A módosított rekordok száma. Ha üres objektummal hívjuk, akkor -1
     int touch(QSqlQuery& q, int _fi) { return touch(q, columnName(_fi)); }
-
+    /// A megadott indexű mezőleíró objektum referenciájával tér vissza
     const cColStaticDescr& colDescr(int _ix) const { return descr().colDescr(_ix); }
-
+    /// A megadott indexű mező értékét adja vissza, konvertálva az SQL-nek átadható formára.
+    /// Hibás adat esetén kizárást dob!
+    QVariant toSql(int __ix) const { return colDescr(__ix).toSql(get(__ix)); }
+    /// A megadott nevű mező értékét adja vissza, konvertálva az SQL-nek átadható formára.
+    /// Hibás adat esetén kizárást dob!
+    QVariant toSql(const QString& __nm) const { return toSql(toIndex(__nm)); }
     /// Paraméter megadása (bind) egy SQL lekérdezéshez, ahol a paraméter érték a rekord objektum egy mezője.
     /// @param _ix A mező indexe a rekord objektumban
     /// @param __q A lekérdezéshez használt objektum.

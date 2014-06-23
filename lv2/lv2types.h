@@ -108,8 +108,8 @@ class LV2SHARED_EXPORT cMac {
     /// Regexp string a mac cím egy megengedett formájához: hexa szám byte-onként space karakterrel elválasztva
     static const char _sMacPattern5[];
    public:
-    /// Konstruktor. Null MAC értékkel (0) hozza létre az objektumot.
-    /// Ha val értéke 0, akkor isValid és az isNull metódusok true értékkel térnek vissza.
+    /// Konstruktor. Null MAC értékkel (-1LL) hozza létre az objektumot.
+    /// Ha val értéke negatív, akkor az isValid metódus true értékkel tér vissza.
     cMac();
     /// Konstruktor.
     /// @param __mac A stringet megpróbálja MAC címként értelmezni, és ezzel inicializálja az objektumot.
@@ -157,7 +157,7 @@ class LV2SHARED_EXPORT cMac {
     /// Ha nem értelmezhető, ill. nem támogatott az adat típus, akkor az objektum értéke invalid lessz (val = -1,
     /// és ekkor az isValid() metódus false-val tér vissza)
     cMac& set(const QVariant& __mac);
-    void clear()                            { val = 0LL; }
+    void clear()                            { val = -1LL; }
     /// Az objektum értékét, a MAC címet stringgé konverálja. Hexa szám byte-onként kettősponttal tagolva.
     /// Nincs ellenörzés, invalid érték esetén a felesleges biteket figyelmen kívül hagyja.
     /// Az alapértelmezett inicializálatlan, vagy invalid érték esetén az "FF:FF:FF:FF:FF:FF" értéket adja vissza.
@@ -172,7 +172,7 @@ class LV2SHARED_EXPORT cMac {
     bool isEmpty() const                    { return val == 0LL; }
     /// Ha a MAC 64 bites ábrázolásában (val adattag) a fölösleges bitek bármelyike nem nulla,
     /// akkor false-val tér vissza, egyébként true-val.
-    bool isValid() const                    { return val != 0LL && (val & ~mask) == 0LL; }
+    bool isValid() const                    { return (val & ~mask) == 0LL; }
     /// Ha a MAC 64 bites ábrázolásában (val adattag) a fölösleges bitek bármelyike nem nulla,
     /// akkor false-val tér vissza, egyébként true-val.
     operator bool() const                   { return isValid(); }
@@ -189,11 +189,11 @@ class LV2SHARED_EXPORT cMac {
     /// Nincs ellenörzés, invalid érték esetén a felesleges biteket figyelmen kívül hagyja. Lásd: toString() metódust.
     operator QString() const                { return toString(); }
     /// Ld.: set(qlonglong __mac)
-    cMac& operator=(qlonglong __mac)         { return set(__mac); }
+    cMac& operator=(qlonglong __mac)        { return set(__mac); }
     /// Ld.: set(const QString& __mac)
-    cMac& operator=(const QString& __mac)    { return set(__mac); }
+    cMac& operator=(const QString& __mac)   { return set(__mac); }
     /// ld.: set(const QVariant& __mac)
-    cMac& operator=(const QVariant& __mac)   { return set(__mac); }
+    cMac& operator=(const QVariant& __mac)  { return set(__mac); }
     /// Ha a két MAC azonos (val adattag) true-val tér vissza. A teljes 64 bites értéket hasonlítja össza.
     /// Az értékeket nem ellenörzi.
     bool  operator==(const cMac& __mac) const { return val == __mac.val; }

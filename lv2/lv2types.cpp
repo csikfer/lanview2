@@ -90,7 +90,7 @@ const qlonglong    cMac::mask = 0x0000ffffffffffffLL;
 cMac::cMac()
 {
     //PDEB(OBJECT) << "cMac::cMac(), this = " << QString().sprintf("%p", this) << endl;
-    val = 0LL;
+    val = -1LL;
 }
 cMac::cMac(const QString& __mac)
 {

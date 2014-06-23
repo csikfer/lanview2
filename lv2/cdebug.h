@@ -376,7 +376,8 @@ class LV2SHARED_EXPORT cDebug {
         PORTSTAT   =  0x00800000,   ///< Debug mask bit: Az portstat üzeneteinek a kiírása
         IAGUI      =  0x00400000,   ///< Debug mask bit: Az indalarm GUI üzeneteinek a kiírása
         ARPD       =  0x00200000,
-        PORTMAC    =  0x00100000
+        PORTMAC    =  0x00100000,
+        UPDT_OUI   =  0x00080000,
     }   eMask;
 
     /*! @brief A debug rendszer inicializálása, ill. újra inicializálása.

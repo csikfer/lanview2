@@ -2350,18 +2350,15 @@ cHostService& cHostService::magic2prop()
 }
 
 /* ----------------------------------------------------------------- */
-DEFAULTCRECDEF(cOui, _sOuis);
+DEFAULTCRECDEF(cOui, _sOuis)
 
 enum eReasons cOui::replace(QSqlQuery& __q)
 {
-    (void)__q;
-    return R_ERROR;
-}
-
-int cOui::downloadOuis(QSqlQuery& __q)
-{
-    (void)__q;
-    return 0;
+    if (!execSqlFunction(__q, "replace_oui", toSql(_sOui), toSql(_sOuiName), toSql(_sOuiNote))) {
+        EXCEPTION(EPROGFAIL);
+    }
+    QString r = __q.value(0).toString();
+    return (eReasons)reasons(r);
 }
 
 /* ----------------------------------------------------------------- */

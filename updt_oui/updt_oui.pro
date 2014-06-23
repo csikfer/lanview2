@@ -1,17 +1,17 @@
 #-------------------------------------------------
 #
-# Project created by QtCreator 2014-02-26T12:22:21
+# Project created by QtCreator 2014-06-23T08:44:10
 #
 #-------------------------------------------------
 
-# Buils debug:  ../../lanview2.debug/portmac
-# Build release:../../lanview2.release/portmac
+# Buils debug:  ../../lanview2.debug/updt_oui
+# Build release:../../lanview2.release/updt_oui
 
 QT       += core sql xml network
 
 QT       -= gui
 
-TARGET = portmac
+TARGET = updt_oui
 CONFIG   += console
 CONFIG   -= app_bundle
 
@@ -19,15 +19,14 @@ TEMPLATE = app
 
 
 SOURCES += \
-    portmac.cpp
-
+    updt_oui.cpp
 HEADERS += \
-    portmac.h
+    updt_oui.h
 INCLUDEPATH += ../lv2
-LIBS += -lsnmp -L../lv2 -llv2
+LIBS += -L../lv2 -llv2
 
-TRANSLATIONS    = portmac_hu.ts \
-                  portmac_en.ts
+TRANSLATIONS    = updt_oui_hu.ts \
+                  updt_oui_en.ts
 
 CODECFORSRC     = UTF-8
 

@@ -1280,7 +1280,6 @@ class LV2SHARED_EXPORT cOui  : public cRecord {
     CRECORD(cOui);
 public:
     enum eReasons replace(QSqlQuery& __q);
-    static int downloadOuis(QSqlQuery& __q);
 };
 
 class LV2SHARED_EXPORT cMacTab  : public cRecord {
