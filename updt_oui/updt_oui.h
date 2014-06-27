@@ -10,7 +10,7 @@
 
 #define APPNAME "updt_oui"
 #undef  __MODUL_NAME__
-#define __MODUL_NAME__  UPDT_OUI
+#define __MODUL_NAME__  APP
 
 class Downloader : public QObject
 {
@@ -21,6 +21,7 @@ public:
     void doDownload();
 private:
     QQueue<QUrl>& urlQueue;
+    void prelude();
 
 signals:
 

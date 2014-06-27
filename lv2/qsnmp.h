@@ -227,7 +227,7 @@ class LV2SHARED_EXPORT cSnmp : public netSnmp {
     /// Copy konstruktor. Nem támogatott, dob egy kizárást.
     cSnmp(const cSnmp& __o) { EXCEPTION(ENOTSUPP); __o.type(); }
     /// Destruktor
-    ~cSnmp();
+    virtual ~cSnmp();
     /// Inicializál egy kapcsolatot a megadott hoszt-hoz. Ha volt inicializálva kapcsolat (open), akkor törli azt.
     /// @param __host Az SNMP szerver címe vagy neve.
     /// @param __com Community név. Opcionális, ha nincs megadva, akkor az alapértelmezése "public"

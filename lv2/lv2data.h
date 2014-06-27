@@ -959,6 +959,20 @@ private:
 
 };
 
+/// A sablon metódus a megadott ID-vel és a típus paraméternek megfelelő típusú
+/// objektumot hozza létre (new) és tölti be az adatbázisból
+template<class P> static inline P * getObjByIdT(QSqlQuery& q, qlonglong  __id, bool __ex = true)
+{
+    P *p = new P();
+    p->setId(__id);
+    if (p->completion(q) != 1) {
+        delete p;
+        if (__ex) EXCEPTION(EDATA);
+        return NULL;
+    }
+    return p;
+}
+
 /*!
 @class cNode
 @brief A nodes tábla egy rekordját reprezentáló osztály.

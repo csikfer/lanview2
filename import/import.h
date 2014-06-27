@@ -9,7 +9,7 @@
 
 #define APPNAME "import"
 #undef  __MODUL_NAME__
-#define __MODUL_NAME__  IMPORT
+#define __MODUL_NAME__  APP
 
 class lv2import : public lanView {
     Q_OBJECT

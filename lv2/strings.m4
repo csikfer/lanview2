@@ -382,7 +382,7 @@ STRDEF(Services, "services")
   dnl ifType
   STRDEF(Disabled, "disabled")
   STRDEF(Reversed, "reversed")
-  dnl serial
+  STRDEF(Serial, "serial")
  dnl max_check_attempt, normal_check_interval, retry_check_interval
  STRDEF(FlappingInterval, "flapping_interval")
  STRDEF(FlappingMaxChange, "flapping_max_change")

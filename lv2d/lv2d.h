@@ -8,7 +8,7 @@
 
 #define APPNAME "lv2d"
 #undef  __MODUL_NAME__
-#define __MODUL_NAME__  LV2D
+#define __MODUL_NAME__  APP
 
 class lv2d;
 

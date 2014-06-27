@@ -1432,23 +1432,11 @@ cNPort * cPatch::getPort(const QString& __pn, bool __ex)
     return NULL;
 }
 
-template<class P> static inline P * getNodeObjByIdT(QSqlQuery& q, qlonglong  __id, bool __ex)
-{
-    P *p = new P();
-    p->setId(__id);
-    if (p->completion(q) != 1) {
-        delete p;
-        if (__ex) EXCEPTION(EDATA);
-        return NULL;
-    }
-    return p;
-}
-
 cPatch * cPatch::getNodeObjById(QSqlQuery& q, qlonglong __tableoid, qlonglong __node_id, bool __ex)
 {
-    if      (__tableoid == cPatch().      tableoid()) return getNodeObjByIdT<cPatch>     (q, __node_id, __ex);
-    else if (__tableoid == cNode().       tableoid()) return getNodeObjByIdT<cNode>      (q, __node_id, __ex);
-    else if (__tableoid == cSnmpDevice(). tableoid()) return getNodeObjByIdT<cSnmpDevice>(q, __node_id, __ex);
+    if      (__tableoid == cPatch().      tableoid()) return getObjByIdT<cPatch>     (q, __node_id, __ex);
+    else if (__tableoid == cNode().       tableoid()) return getObjByIdT<cNode>      (q, __node_id, __ex);
+    else if (__tableoid == cSnmpDevice(). tableoid()) return getObjByIdT<cSnmpDevice>(q, __node_id, __ex);
     else if (__ex)                                    EXCEPTION(EDATA);
     return NULL;
 }

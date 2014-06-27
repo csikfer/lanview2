@@ -183,7 +183,7 @@ cDeviceArp::~cDeviceArp()
 
 enum eNotifSwitch cDeviceArp::run(QSqlQuery& q)
 {
-    _DBGFN() << _sSpace << name() << endl;
+    _DBGFN() << QChar(' ') << name() << endl;
     cArpTable at;
     // SNMP lekérdezés:
     if (*pPSSnmp == protoService()) {

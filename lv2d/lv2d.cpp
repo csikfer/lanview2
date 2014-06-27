@@ -441,8 +441,8 @@ void cDaemon::procReadyStdOut()
         QString     old;
         QString     pre;
         for (int i = maxArcLog; i > 1; --i) {
-            old = actLogFile.fileName() + _sPoint + QString::number(i);
-            pre = actLogFile.fileName() + _sPoint + QString::number(i -1);
+            old = actLogFile.fileName() + QChar('.') + QString::number(i);
+            pre = actLogFile.fileName() + QChar('.') + QString::number(i -1);
             bool r = QFile::rename(pre, old);
             PDEB(VVERBOSE) << "Rename " << pre << " to " << old << " Result : " << DBOOL(r) << endl;
         }

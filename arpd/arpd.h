@@ -8,7 +8,7 @@
 
 #define APPNAME "arpd"
 #undef  __MODUL_NAME__
-#define __MODUL_NAME__  ARPD
+#define __MODUL_NAME__  APP
 
 class lv2ArpD;
 

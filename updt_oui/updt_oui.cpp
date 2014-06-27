@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 
     lv2UpdateOui   mo;
 
-    if (mo.lastError) {  // Ha hiba volt, vagy vége
+    if (mo.lastError) {  // Ha hiba volt
         return mo.lastError->mErrorCode; // a mo destruktora majd kiírja a hibaüzenetet.
     }
 
@@ -129,6 +129,7 @@ void Downloader::doDownload()
                 this, SLOT(replyFinished(QNetworkReply*)));
     }
     if (urlQueue.isEmpty()) {
+        prelude();
         QCoreApplication::exit();
     }
     else {
@@ -162,4 +163,12 @@ void Downloader::replyFinished (QNetworkReply *reply)
     }
     reply->deleteLater();
     doDownload();   // Next or exit
+}
+
+void Downloader::prelude()
+{
+    QString sql =
+            "UPDATE mactab SET mactab_state = array_append(mactab_state, 'oui'::mactabstate)"
+            "   WHERE 'oui'::mactabstate <> ALL (mactab_state) AND is_content_oui(hwaddress)";
+    execSql(*pq, sql);
 }
