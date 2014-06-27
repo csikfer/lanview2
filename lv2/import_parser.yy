@@ -4,6 +4,8 @@
 #include "guidata.h"
 #include "others.h"
 #include "ping.h"
+#undef  __MODUL_NAME__
+#define __MODUL_NAME__  PARSER
 #include "import_parser.h"
 
 class  cArpServerDefs;

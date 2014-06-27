@@ -313,11 +313,11 @@ qlonglong lanView::sendError(const cError *pe, const QString& __t)
     }
     PDEB(VVERBOSE) << "sendError() : " << pe->msg() << endl;
     // Ha van nyitott adatbázis, csinálunk egy hiba rekordot
-    if (pDb == NULL || !pDb->isOpen()) {
+    if (instance == NULL || instance->pDb == NULL || !instance->pDb->isOpen()) {
         DWAR() << trUtf8("Dropp error object, no database object or not open.") << endl;
         return NULL_ID;
     }
-    QSqlQuery   q(*pDb);
+    QSqlQuery   q(*instance->pDb);
     // sqlRollback(q, false);
     // sqlBegin(q);
     QString sql = "INSERT INTO app_errs"

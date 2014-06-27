@@ -90,21 +90,16 @@ void lv2portStat::setup()
 
 void lv2portStat::down()
 {
-    if (pSelf != NULL) delete pSelf;
-    pSelf = NULL;
+    pDelete(pSelf);
 }
 
 void lv2portStat::reSet()
 {
-    pSelf->setInternalStat(IS_REINIT);
     try {
+        pSelf->setInternalStat(IS_REINIT);
         down();
         setup();
-    } catch(cError * e) {
-        lastError = e;
-    } catch(...) {
-        lastError = NEWCERROR(EUNKNOWN);
-    }
+    } CATCHS(lastError);
     if (lastError != NULL) QCoreApplication::exit(lastError->mErrorCode);
 }
 
@@ -216,7 +211,7 @@ void cDevicePSt::postInit(QSqlQuery &q, const QString&)
 
 enum eNotifSwitch cDevicePSt::run(QSqlQuery& q)
 {
-    _DBGFN() << _sSpace << name() << endl;
+    _DBGFN() << QChar(' ') << name() << endl;
     if (!snmp.isOpened()) {
         EXCEPTION(ESNMP,-1, QString(QObject::trUtf8("SNMP open error : %1 in %2").arg(snmp.emsg).arg(name())));
     }
@@ -252,7 +247,7 @@ enum eNotifSwitch cDevicePSt::run(QSqlQuery& q)
         if (opstat != iface.getName(_sPortOStat) || adstat != iface.getName(_sPortAStat)) {
             iface.setName(_sPortOStat, opstat);
             iface.setName(_sPortAStat, adstat);
-            PDEB(VERBOSE) << "Update port stat: " << pNode->getName() << _sColon << ifDescr << endl;
+            PDEB(VERBOSE) << "Update port stat: " << pNode->getName() << QChar(':') << ifDescr << endl;
             if (!iface.update(q, false, iface.mask(_sPortOStat, _sPortAStat), iface.mask(_sNodeId, _sPortIndex), false)) {
                 DERR() << "Update error : host " << pNode->getName() << " port index : " << ifIndex << endl;
             }

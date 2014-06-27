@@ -8,7 +8,7 @@
 
 #define APPNAME "portstat"
 #undef  __MODUL_NAME__
-#define __MODUL_NAME__  PORTSTAT
+#define __MODUL_NAME__  APP
 
 class lv2portStat;
 

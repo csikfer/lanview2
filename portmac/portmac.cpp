@@ -95,15 +95,11 @@ void lv2portMac::down()
 
 void lv2portMac::reSet()
 {
-    pSelf->setInternalStat(IS_REINIT);
     try {
+        pSelf->setInternalStat(IS_REINIT);
         down();
         setup();
-    } catch(cError * e) {
-        lastError = e;
-    } catch(...) {
-        lastError = NEWCERROR(EUNKNOWN);
-    }
+    } CATCHS(lastError);
     if (lastError != NULL) QCoreApplication::exit(lastError->mErrorCode);
 }
 

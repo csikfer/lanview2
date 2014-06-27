@@ -320,15 +320,13 @@ void cInspector::timerEvent(QTimerEvent *)
         statIsSet    = retStat & RS_STAT_SETTED;
         statSetRetry = retStat & RS_SET_RETRY;
         retStat      = (enum eNotifSwitch)(retStat & RS_STAT_MASK);
-    }
-    catch (cError * e)  {   lastError = e;                  }
-    catch (...)         {   lastError = NEWCERROR(EUNKNOWN);}
+    } CATCHS(lastError);
     // Ha hívtuk a run metódust, és dobott egy hátast
     if (lastError != NULL) {
         sqlRollback(*pq, false);  // Hiba volt, inkább visszacsináljuk az egészet.
         // A hibárol LOG az adatbázisba, amugy töröljük a hibát
         lanView  *plv = lanView::getInstance();
-        qlonglong id = plv->sendError(lastError);
+        qlonglong id = lanView::sendError(lastError);
         delete lastError;
         if (plv->lastError == lastError) plv->lastError = NULL;
         lastError = NULL;

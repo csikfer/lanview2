@@ -176,13 +176,22 @@ Visszatérési érték a törölt rekordok száma. A törlés oka "expired"lessz
 
 -- --------------------------------------------------------------------------------------------
 
-CREATE TYPE mactabstate AS ENUM ('likely', 'arp', 'oid', 'suspect', 'link', 'lldp');
+DROP FUNCTION mactab_move(mactab, bigint, macaddr, settype, mactabstate[]);
+DROP FUNCTION mactab_remove(mactab, reasons);
+DROP FUNCTION mactab_changestat(mactab, mactabstate[], settype, boolean);
+DROP FUNCTION current_mactab_stat(bigint, macaddr, mactabstate[]);
+DROP FUNCTION insert_or_update_mactab(bigint, macaddr, settype, mactabstate[]);
+DROP TABLE mactab;
+DROP TABLE mactab_logs;
+DROP TYPE mactabstate;
+
+CREATE TYPE mactabstate AS ENUM ('likely', 'arp', 'oui', 'suspect', 'link', 'lldp');
 ALTER TYPE mactabstate OWNER TO lanview2;
 COMMENT ON TYPE mactabstate IS
 'A cím információ minösítése:
 likely	Hihető, van ilyen című bejegyzett eszköz.
 arp	Szerepel az arps táblában
-oid	Azonosítható a cím alapján a gyártó (OUI)
+oui	Azonosítható a cím alapján a gyártó (OUI)
 suspect	Gyanús, az észleléskor hibákat jelzett a port
 link	Megfeleltethető egy logikai linknek
 lldp	Megfeleltethető egy LLDP linknek (?!).
@@ -277,6 +286,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION mactab_remove(
+    mt  mactab,
+    re reasons DEFAULT 'remove'
+) RETURNS void AS $$
+BEGIN
+    INSERT INTO mactab_logs(hwaddress, reason, port_id_old, mactab_state_old, first_time_old, last_time_old, set_type_old)
+           VALUES       (mt.hwaddress, re,     mt.port_id,  mt.mactab_state,  mt.first_time,  mt.last_time,  mt.set_type);
+    DELETE FROM mactab WHERE hwaddress = mt.hwaddress;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE OR REPLACE FUNCTION mactab_changestat(
     mt  mactab,
     mst mactabstate[],
@@ -306,17 +326,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION mactab_remove(
-    mt  mactab,
-    re reasons DEFAULT 'remove'
-) RETURNS void AS $$
-BEGIN
-    INSERT INTO mactab_logs(hwaddress, reason, port_id_old, mactab_state_old, first_time_old, last_time_old, set_type_old)
-           VALUES       (mt.hwaddress, re,     mt.port_id,  mt.mactab_state,  mt.first_time,  mt.last_time,  mt.set_type);
-    DELETE FROM mactab WHERE hwaddress = mt.hwaddress;
-END;
-$$ LANGUAGE plpgsql;
-
 CREATE OR REPLACE FUNCTION current_mactab_stat(
     pid bigint,
     mac macaddr,        
@@ -329,10 +338,10 @@ BEGIN
         ret := ARRAY['suspect'::mactabstate];
     END IF;
     IF is_content_oui(mac) THEN
-        ret = array_append(ret, 'oui::mactabstate');
+        ret = array_append(ret, 'oui'::mactabstate);
     END IF;
     IF is_linked(pid, mac) THEN
-        ret := array_append(ret, 'likely::mactabstate');
+        ret := array_append(ret, 'likely'::mactabstate);
     END IF;
     IF is_content_arp(mac) THEN
         ret := array_append(ret, 'arp'::mactabstate);
@@ -427,7 +436,7 @@ BEGIN
     END LOOP;
     FOR mt IN SELECT * FROM mactab
         WHERE ( last_time < (CURRENT_TIMESTAMP - get_interval_sys_param('mactab_suspect_expire_interval'))  AND mactab_state && ARRAY['suspect']::mactabstate[] )
-           OR ( last_time < (CURRENT_TIMESTAMP - get_interval_sys_param('mactab_reliable_expire_interval')) AND mactab_state && ARRAY['likely', 'arp', 'oid']::mactabstate[] )
+           OR ( last_time < (CURRENT_TIMESTAMP - get_interval_sys_param('mactab_reliable_expire_interval')) AND mactab_state && ARRAY['likely', 'arp', 'oui']::mactabstate[] )
            OR ( last_time < (CURRENT_TIMESTAMP - get_interval_sys_param('mactab_expire_interval'))          AND mactab_state =  ARRAY[]::mactabstate[] )
     LOOP
         PERFORM mactab_remove(mt, 'expired');

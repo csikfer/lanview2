@@ -13,6 +13,10 @@ bison.variable_out = SOURCES
 QMAKE_EXTRA_COMPILERS += bison
 msvc:INCLUDEPATH += "."
 
+# Az M4-es makrók fordítása nem működik rendesen, kézzel kell fordítani!!!:
+#< m4 strings.m4c >../../lanview2.debug/lv2/strings.cpp
+#< m4 strings.m4h >strings.h
+
 #m4 definition
 m4h.name = m4h
 m4h.input = M4HEADERS

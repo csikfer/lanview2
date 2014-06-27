@@ -8,7 +8,7 @@
 
 #define APPNAME "portmac"
 #undef  __MODUL_NAME__
-#define __MODUL_NAME__  PORTMAC
+#define __MODUL_NAME__  APP
 
 class lv2portMac;
 

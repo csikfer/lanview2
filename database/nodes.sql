@@ -98,14 +98,14 @@ IndaContact port stáruszok kifelytése:
     error   Error                                       E           unknown';
 
 CREATE TABLE nports (
-    port_id     bigserial          PRIMARY KEY,
+    port_id     bigserial       PRIMARY KEY,
     port_name   varchar(32)     NOT NULL,
-    port_note  varchar(255)    DEFAULT NULL,
+    port_note   varchar(255)    DEFAULT NULL,
     port_tag    varchar(32)     DEFAULT NULL,
-    iftype_id   bigint         DEFAULT 0   -- Default type is 'unknown'
+    iftype_id   bigint          DEFAULT 0   -- Default type is 'unknown'
                         REFERENCES iftypes(iftype_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
-    node_id     bigint         NOT NULL,   -- REFERENCES (patch, nodes, snmp_devs)
-    port_index  bigint         DEFAULT NULL,   -- added 2011.09.05
+    node_id     bigint          NOT NULL,   -- REFERENCES (patch, nodes, snmp_devs)
+    port_index  bigint          DEFAULT NULL,   -- added 2011.09.05
     deleted     boolean         DEFAULT false,
     UNIQUE(node_id, port_name)
 );
@@ -113,7 +113,7 @@ ALTER TABLE nports OWNER TO lanview2;
 COMMENT ON TABLE  nports            IS 'Passzív portok táblája, az összes port típus őse';
 COMMENT ON COLUMN nports.port_id    IS 'Egyedi port azonosító, az összes port típusra (leszármazottra) egyedi';
 COMMENT ON COLUMN nports.port_name  IS 'A port neve, csak egy nodon bellül (azonos node_id) kell egyedinek lennie';
-COMMENT ON COLUMN nports.port_note IS 'Description for network port';
+COMMENT ON COLUMN nports.port_note  IS 'Description for network port';
 COMMENT ON COLUMN nports.port_tag   IS 'Opcionális cimke ill. név.';
 COMMENT ON COLUMN nports.iftype_id  IS 'A típus leíró rekord azonosítója.';
 COMMENT ON COLUMN nports.node_id    IS 'Csomópont azonosító, idegen kulcs a tulajdonos nodes vagy bármelyi leszármazottja rekordjára';

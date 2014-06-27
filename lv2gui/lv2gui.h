@@ -11,7 +11,7 @@
 
 #define APPNAME "lv2gui"
 #undef  __MODUL_NAME__
-#define __MODUL_NAME__  LV2GUI
+#define __MODUL_NAME__  APP
 
 /// @class lv2Gui
 /// LanView2 GUI main object

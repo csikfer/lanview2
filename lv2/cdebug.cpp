@@ -209,13 +209,11 @@ QString cDebug::maskName(qlonglong __msk)
 {
     QString n;
     if (__msk & cDebug::LV2)        n += _sLV2        + QChar(',');
-    if (__msk & cDebug::LV2D)       n += _sLV2D       + QChar(',');
-    if (__msk & cDebug::LV2GUI)     n += _sLV2GUI     + QChar(',');
-    if (__msk & cDebug::ICONTSRV)   n += _sICONTSRV   + QChar(',');
-    if (__msk & cDebug::IMPORT)     n += _sIMPORT     + QChar(',');
-    if (__msk & cDebug::PORTSTAT)   n += _sPORTSTAT   + QChar(',');
+    if (__msk & cDebug::LV2G)       n += _sLV2G       + QChar(',');
+    if (__msk & cDebug::PARSER)     n += _sPARSER     + QChar(',');
+    if (__msk & cDebug::APP)        n += _sAPP        + QChar(',');
     if (__msk & cDebug::EXCEPT)     n += _sEXCEPT     + QChar(',');
-    if (__msk & cDebug::DERROR)      n += _sERROR      + QChar(',');
+    if (__msk & cDebug::DERROR)     n += _sERROR      + QChar(',');
     if (__msk & cDebug::WARNING)    n += _sWARNING    + QChar(',');
     if (__msk & cDebug::INFO)       n += _sINFO       + QChar(',');
     if (__msk & cDebug::VERBOSE)    n += _sVERBOSE    + QChar(',');

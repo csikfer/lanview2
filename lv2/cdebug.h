@@ -368,16 +368,18 @@ class LV2SHARED_EXPORT cDebug {
         ALL        =  0xffffffff,   ///< Debug mask érték: Minden üzenet kiírása
         LV2        =  0x80000000,   ///< Debug mask bit: Az lv2 modul üzeneteinek a kiírása
         LV2G       =  0x40000000,   ///< Debug mask bit: Az lv2g modul üzeneteinek a kiírása
-        TEST       =  LV2,          ///< Debug mask bit: A teszt alkalmazáshoz, nincs külön bit azonos az LV2-vel.
-        LV2D       =  0x08000000,   ///< Debug mask bit: Az lanview superserver  üzeneteinek a kiírása
-        LV2GUI     =  0x04000000,   ///< Debug mask bit: Az admin GUI üzeneteinek a kiírása
-        ICONTSRV   =  0x02000000,   ///< Debug mask bit: Az icontsrv üzeneteinek a kiírása
-        IMPORT     =  0x01000000,   ///< Debug mask bit: Az import üzeneteinek a kiírása
-        PORTSTAT   =  0x00800000,   ///< Debug mask bit: Az portstat üzeneteinek a kiírása
-        IAGUI      =  0x00400000,   ///< Debug mask bit: Az indalarm GUI üzeneteinek a kiírása
-        ARPD       =  0x00200000,
-        PORTMAC    =  0x00100000,
-        UPDT_OUI   =  0x00080000,
+        PARSER     =  0x20000000,
+        APP        =  0x08000000,   ///< Debug mask bit: Az APP  üzeneteinek a kiírása
+/*        TEST       =  APP,
+        LV2D       =  APP,
+        LV2GUI     =  APP,
+        ICONTSRV   =  APP,
+        IMPORT     =  APP,
+        PORTSTAT   =  APP,
+        IAGUI      =  APP,
+        ARPD       =  APP,
+        PORTMAC    =  APP,
+        UPDT_OUI   =  APP,*/
     }   eMask;
 
     /*! @brief A debug rendszer inicializálása, ill. újra inicializálása.

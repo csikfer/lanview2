@@ -2,6 +2,8 @@
 #include "lanview.h"
 #include "others.h"
 #include "ping.h"
+#undef  __MODUL_NAME__
+#define __MODUL_NAME__  PARSER
 #include "import_parser.h"
 
 QString      importFileNm;

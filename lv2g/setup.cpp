@@ -42,7 +42,7 @@ cSetupWidget::cSetupWidget(QSettings &__s, QWidget *par)
     pUi->debugLevelLE->setValidator(new QRegExpValidator(regExp, pUi->debugLevelLE));
     pUi->debugLevelLE->setText(_sHex + QString::number(qset.value(_sDebugLevel, lanView::debugDefault).toLongLong(), 16));
     logFile = qset.value(_sLogFile, _sStdErr).toString();
-    if (logFile == _sMinus || logFile == _sStdOut) {
+    if (logFile == "-" || logFile == _sStdOut) {
         logFile = _sNul;
         pUi->logToStdOutRB->setChecked(true);
         logToStdOutClicked(true);
@@ -207,9 +207,9 @@ void cSetupWidget::mibPathMinus()
 
 void cSetupWidget::homeSelect()
 {
-    PDEB(VVERBOSE) << VDEBPTR(pUi->homeDirLE) << _sSColon << QChar(' ') << " == " << pUi->homeDirLE->text() << endl;
-    pUi->homeDirLE->setText(QFileDialog::getExistingDirectory(this, tr("Alap könyvtár kiválasztása"), pUi->homeDirLE->text()));
-    PDEB(VVERBOSE) << VDEBPTR(pUi->homeDirLE) << _sSColon << QChar(' ') << " == " << pUi->homeDirLE->text() << endl;
+    PDEB(VVERBOSE) << VDEBPTR(pUi->homeDirLE) << ": == " << pUi->homeDirLE->text() << endl;
+    pUi->homeDirLE->setText(QFileDialog::getExistingDirectory(this, trUtf8("Alap könyvtár kiválasztása"), pUi->homeDirLE->text()));
+    PDEB(VVERBOSE) << VDEBPTR(pUi->homeDirLE) << ": == " << pUi->homeDirLE->text() << endl;
 }
 
 cLogLevelDialog::cLogLevelDialog(qlonglong __logLev, QWidget *parent)
@@ -245,11 +245,9 @@ void cLogLevelDialog::setLogLevel(qlonglong __ll)
     checkBoxAddress->   setCheckState(checkState(__ll, cDebug::ADDRESS));
 
     checkBoxLv2->       setCheckState(checkState(__ll, cDebug::LV2));
-    checkBoxLv2d->      setCheckState(checkState(__ll, cDebug::LV2D));
-    checkBoxLv2gui->    setCheckState(checkState(__ll, cDebug::LV2GUI));
-    checkBoxIcontsrv->  setCheckState(checkState(__ll, cDebug::ICONTSRV));
-    checkBoxImport->    setCheckState(checkState(__ll, cDebug::IMPORT));
-    checkBoxPortstat->  setCheckState(checkState(__ll, cDebug::PORTSTAT));
+    checkBoxLv2g->      setCheckState(checkState(__ll, cDebug::LV2G));
+    checkBoxParser->    setCheckState(checkState(__ll, cDebug::PARSER));
+    checkBoxApp->       setCheckState(checkState(__ll, cDebug::APP));
 }
 inline void checkState(Qt::CheckState __st, qlonglong& __m, qlonglong __b) { if (__st ==  Qt::Checked) __m |= __b; }
 qlonglong cLogLevelDialog::getLogLevel()
@@ -269,11 +267,9 @@ qlonglong cLogLevelDialog::getLogLevel()
     checkState(checkBoxAddress->   checkState(), l, cDebug::ADDRESS);
 
     checkState(checkBoxLv2->       checkState(), l, cDebug::LV2);
-    checkState(checkBoxLv2d->      checkState(), l, cDebug::LV2D);
-    checkState(checkBoxLv2gui->    checkState(), l, cDebug::LV2GUI);
-    checkState(checkBoxIcontsrv->  checkState(), l, cDebug::ICONTSRV);
-    checkState(checkBoxImport->    checkState(), l, cDebug::IMPORT);
-    checkState(checkBoxPortstat->  checkState(), l, cDebug::PORTSTAT);
+    checkState(checkBoxLv2g->      checkState(), l, cDebug::LV2G);
+    checkState(checkBoxParser->    checkState(), l, cDebug::PARSER);
+    checkState(checkBoxApp->       checkState(), l, cDebug::APP);
 
     return l;
 }

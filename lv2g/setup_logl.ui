@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>450</width>
-    <height>402</height>
+    <height>413</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -156,44 +156,23 @@
           </widget>
          </item>
          <item>
-          <widget class="QCheckBox" name="checkBoxLv2d">
+          <widget class="QCheckBox" name="checkBoxLv2g">
            <property name="text">
-            <string>app: lv2d</string>
+            <string>library: lv2g</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QCheckBox" name="checkBoxLv2gui">
+          <widget class="QCheckBox" name="checkBoxParser">
            <property name="text">
-            <string>app: lv2gui</string>
+            <string>parser</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QCheckBox" name="checkBoxIcontsrv">
+          <widget class="QCheckBox" name="checkBoxApp">
            <property name="text">
-            <string>app:icontsrv</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="checkBoxImport">
-           <property name="text">
-            <string>app:import</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="checkBoxPortstat">
-           <property name="text">
-            <string>app:portstat</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="checkBoxMacTab">
-           <property name="text">
-            <string>app:mactab</string>
+            <string>app</string>
            </property>
           </widget>
          </item>
