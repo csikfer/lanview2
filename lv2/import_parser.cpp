@@ -27,11 +27,11 @@ int importParseText(QString text)
 {
     importFileNm = "[stream]";
     importInputStream = new QTextStream(&text);
-    PDEB(INFO) << "Start parser ..." << endl;
+    PDEB(INFO) << QObject::trUtf8("Start parser ...") << endl;
     initImportParser();
     int r = importParse();
     downImportParser();
-    PDEB(INFO) << "End parser." << endl;
+    PDEB(INFO) << QObject::trUtf8("End parser.") << endl;
     pDelete(importInputStream);
     return r;
 }
@@ -49,11 +49,11 @@ int importParseFile(const QString& fn)
         importInputStream = new QTextStream(&in);
         importFileNm = in.fileName();
     }
-    PDEB(INFO) << "Start parser ..." << endl;
+    PDEB(INFO) << QObject::trUtf8("Start parser ...") << endl;
     initImportParser();
     int r = importParse();
     downImportParser();
-    PDEB(INFO) << "End parser." << endl;
+    PDEB(INFO) << QObject::trUtf8("End parser.") << endl;
     pDelete(importInputStream);
     return r;
 }

@@ -140,11 +140,18 @@ enum eNotifSwitch cArpDaemon::run(QSqlQuery &)
 }
 
 /******************************************************************************/
-
+/// Protokol (local) azonosító objektum pointere
+/// ARP lekérdezés módja lokális álomány felolvasása
 const cService   *cDeviceArp::pPSLocal     = NULL;
+/// Protokol (SNMP) azonosító objektum pointere
+/// ARP lekérdezés módja SNMP lekérdezés
 const cService   *cDeviceArp::pPSSnmp      = NULL;
+/// Protokol (SSH) azonosító objektum pointere
+/// ARP lekérdezés módja SSH-n keresztül egy távoli állomány felolvasása
 const cService   *cDeviceArp::pPSSsh       = NULL;
+/// ARP lekérdezés módja a DHCP konfig állomány felolvasása
 const cService   *cDeviceArp::pPSDhcpConf  = NULL;
+/// ARP lekérdezés módja a proc fájlrendszer arp állományának a felolvasása
 const cService   *cDeviceArp::pPSArpProc   = NULL;
 
 
@@ -159,12 +166,17 @@ cDeviceArp::cDeviceArp(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __
         snmpDev().open(__q, *pSnmp);
     }
     else {
+        // Ha prime_service fájl felolvasását írja elő, akkor a service file paramétere, ill. ha ez üres,
+        // akkor a prime_service file paramétere tartalmazza a felovasandó fájl nevét.
         if (*pPSDhcpConf == primeService() || *pPSArpProc == primeService()) {
             static const QString _sFile("file");
             pFileName = new QString();
             *pFileName = hostService.magicParam(_sFile);
             if (pFileName->isEmpty()) *pFileName = primeService().magicParam(_sFile);
         }
+        // Ha az előírt protokol SSH, akkor a service user paramétere, ill. ha ez üres,
+        // akkor a proto_service user paramétere tartalmazza a távoli hoston az user nevet.
+        // A lekérdezés csak akkor műkösik, ha jelszó megadása nem szükséges.
         if (*pPSSsh == protoService()) {
             static const QString _sUser("user");
             pRemoteUser = new QString();

@@ -2029,7 +2029,9 @@ static int isAddress(const QString& __s)
 #define TOK(t)  { #t, t##_T },
 static int yylex(void)
 {
+    // Egy karakteres tokenek
     static const char cToken[] = "=+-*(),;|&<>^{}[]:.#@";
+    // Tokenek
     static const struct token {
         const char *name;
         int         value;

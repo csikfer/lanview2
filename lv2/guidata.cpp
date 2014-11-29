@@ -238,7 +238,7 @@ bool cTableShape::setDefaults(QSqlQuery& q)
             owner.setName(cDescr.fKeyTable);
             if (1 == owner.completion(q)) setId(_sLeftShapeId, owner.getId());
             else {
-                DWAR() << "Ovner " << cDescr.fKeyTable << " table Shape not found, or unequivocal." << endl;
+                DWAR() << QObject::trUtf8("Ovner %1 table Shape not found, or unequivocal.").arg(cDescr.fKeyTable) << endl;
                 r = false;
             }
         }
@@ -263,7 +263,7 @@ bool cTableShape::setDefaults(QSqlQuery& q)
         mod.setName(tn);
         if (1 == mod.completion(q)) setId(_sLeftShapeId, mod.getId());
         else {
-            DWAR() << "Member " << tn << " table Shape not found, or unequivocal for switch table." << endl;
+            DWAR() << QObject::trUtf8("Member %1 table Shape not found, or unequivocal for switch table.").arg(tn) << endl;
             r = false;
         }
         mod.clear();
@@ -271,7 +271,7 @@ bool cTableShape::setDefaults(QSqlQuery& q)
         mod.setName(tn);
         if (1 == mod.completion(q)) setId(_sRightShapeId, mod.getId());
         else {
-            DWAR() << "Group " << tn << " table Shape not found, or unequivocal for switch table." << endl;
+            DWAR() << QObject::trUtf8("Group %1 table Shape not found, or unequivocal for switch table.").arg(tn) << endl;
             r = false;
         }
     }
@@ -613,6 +613,6 @@ int cMenuItem::delByAppName(QSqlQuery &q, const QString &__n, bool __pat) const
     sql += tableName() + " WHERE " + dQuoted(_sAppName) + (__pat ? " LIKE " : " = ") + quoted(__n);
     if (!q.exec(sql)) SQLPREPERR(q, sql);
     int n = q.numRowsAffected();
-    PDEB(VVERBOSE) << "delByAppName SQL : " << sql << " removed " << n << " records." << endl;
+    PDEB(VVERBOSE) << QObject::trUtf8("delByAppName SQL : \"%1\" removed %2 records.").arg(sql).arg(n) << endl;
     return  n;
 }

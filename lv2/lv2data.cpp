@@ -750,7 +750,7 @@ const cIfType& cIfType::ifType(const QString& __nm, bool __ex)
     checkIfTypes();
     int i = ifTypes.indexOf(_descr_cIfType().nameIndex(), QVariant(__nm));
     if (i < 0) {
-        if (__ex) EXCEPTION(EDATA, -1,"Invalid iftype name or program error.");
+        if (__ex) EXCEPTION(EDATA, -1,QObject::trUtf8("Invalid iftype name %1 or program error.").arg(__nm));
         return *pNull;
     }
     return *(ifTypes[i]);
@@ -761,7 +761,7 @@ const cIfType& cIfType::ifType(qlonglong __id, bool __ex)
     checkIfTypes();
     int i = ifTypes.indexOf(_descr_cIfType().idIndex(), QVariant(__id));
     if (i < 0) {
-        if (__ex) EXCEPTION(EDATA, -1,"Invalid iftype name or program error.");
+        if (__ex) EXCEPTION(EDATA, __id,QObject::trUtf8("Invalid iftype id or program error."));
         return *pNull;
     }
     return *(ifTypes[i]);
@@ -1128,7 +1128,7 @@ cIpAddress& cInterface::addIpAddress(const cIpAddress& __a)
     _DBGFN() << " @(" << __a.toString() << ")" << endl;
     if (addresses.indexOf(cIpAddress::_ixAddress, __a.get(cIpAddress::_ixAddress))) EXCEPTION(EDATA);
     addresses << __a;
-    PDEB(VERBOSE) << "Added, size : " << addresses.size();
+    PDEB(VERBOSE) << QObject::trUtf8("Added, size : %1").arg(addresses.size());
     return *addresses.last();
 }
 

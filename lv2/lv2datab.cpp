@@ -86,7 +86,7 @@ static qlonglong __schemaoid(QSqlQuery q, const QString& __s)
     if (!q.prepare(sql)) SQLPREPERR(q, sql);
     q.bindValue(0, __s);
     if (!q.exec()) SQLQUERYERR(q);
-    if (!q.first()) EXCEPTION(EDBDATA, 0, QString("Schema %1 OID not found.").arg(__s));
+    if (!q.first()) EXCEPTION(EDBDATA, 0, QObject::trUtf8("Schema %1 OID not found.").arg(__s));
     return q.value(0).toInt();
 }
 
@@ -113,7 +113,7 @@ qlonglong tableoid(QSqlQuery q, const QString& __t, qlonglong __sid, bool __ex)
     q.bindValue(1, __sid);
     if (!q.exec()) SQLQUERYERR(q);
     if (!q.first()) {
-        if (__ex) EXCEPTION(EDBDATA, 0, QString("Table [#%1].%2 OID not found.").arg(__sid).arg(__t));
+        if (__ex) EXCEPTION(EDBDATA, 0, QObject::trUtf8("Table [#%1].%2 OID not found.").arg(__sid).arg(__t));
         return NULL_ID;
     }
     return q.value(0).toInt();
@@ -127,7 +127,7 @@ QStringPair tableoid2name(QSqlQuery q, qlonglong toid)
             " JOIN pg_namespace ON pg_namespace.oid = pg_class.relnamespace"
             " WHERE pg_class.oid = " + QString::number(toid);
     if (!q.exec(sql)) SQLPREPERR(q, sql);
-    if (!q.first()) EXCEPTION(EDBDATA, 0, QString("Table OID %1 not found.").arg(toid));
+    if (!q.first()) EXCEPTION(EDBDATA, 0, QObject::trUtf8("Table OID %1 not found.").arg(toid));
     QStringPair r;
     r.first  = q.value(0).toString();
     r.second = q.value(1).toString();
@@ -218,7 +218,7 @@ QString cColStaticDescr::toString() const
     if (!colDefault.isNull()) {
         r += " DEFAULT " + colDefault;
     }
-    r += (isUpdatable ? QChar(' ') : QString(" nem")) + " módosítható";
+    r += (isUpdatable ? QChar(' ') : QObject::trUtf8(" nem")) + QObject::trUtf8(" módosítható");
     return r;
 }
 
@@ -429,11 +429,11 @@ QVariant  cColStaticDescrBool::fromSql(const QVariant& _f) const
 }
 QVariant  cColStaticDescrBool::toSql(const QVariant& _f) const
 {
-    if (_f.isNull()) EXCEPTION(EDATA,-1,"Data is NULL");
+    if (_f.isNull()) EXCEPTION(EDATA,-1,QObject::trUtf8("Data is NULL"));
     if (_f.userType() == QMetaType::Bool) return QVariant(QString(_f.toBool() ? "true":"false"));
     bool ok;
     qlonglong i = _f.toLongLong(&ok);
-    if (!ok) EXCEPTION(EDATA,-1,"Az adat nem értelmezhető.");
+    if (!ok) EXCEPTION(EDATA,-1,QObject::trUtf8("Az adat nem értelmezhető."));
     return QVariant(QString(i ? "true":"false"));
 }
 
@@ -554,7 +554,7 @@ QVariant  cColStaticDescrArray::fromSql(const QVariant& _f) const
 
 QVariant  cColStaticDescrArray::toSql(const QVariant& _f) const
 {
-    if (_f.isNull()) EXCEPTION(EDATA,-1,"Data is NULL");
+    if (_f.isNull()) EXCEPTION(EDATA,-1,QObject::trUtf8("Data is NULL"));
     bool    empty = true;
     QString s;
     switch (eColType) {
@@ -564,7 +564,7 @@ QVariant  cColStaticDescrArray::toSql(const QVariant& _f) const
         bool ok;
         foreach (const QVariant& vi, vl) {
             s += QString::number(vi.toLongLong(&ok)) + QChar(',');
-            if (!ok) EXCEPTION(EDATA,-1,"Invalid number");
+            if (!ok) EXCEPTION(EDATA,-1,QObject::trUtf8("Invalid number"));
             empty = false;
         }
         if (empty == false) s.chop(1);
@@ -577,7 +577,7 @@ QVariant  cColStaticDescrArray::toSql(const QVariant& _f) const
         bool ok;
         foreach (const QVariant& vi, vl) {
             s += QString::number(vi.toDouble(&ok)) + QChar(',');
-            if (!ok) EXCEPTION(EDATA,-1,"Invalid number");
+            if (!ok) EXCEPTION(EDATA,-1,QObject::trUtf8("Invalid number"));
             empty = false;
         }
         if (empty == false) s.chop(1);
@@ -711,7 +711,7 @@ QVariant  cColStaticDescrEnum::fromSql(const QVariant& _f) const
 }
 QVariant  cColStaticDescrEnum::toSql(const QVariant& _f) const
 {
-    if (_f.isNull()) EXCEPTION(EDATA,-1,"Data is NULL");
+    if (_f.isNull()) EXCEPTION(EDATA, -1, QObject::trUtf8("Data is NULL"));
     return _f;
 }
 /**
@@ -753,7 +753,7 @@ QVariant  cColStaticDescrEnum::set(const QVariant& _f, int & str) const
         ok = false;
     }
     if (!ok) {
-        DWAR() << "Invalid enum value : " << debVariantToString(_f) << endl;
+        DWAR() << QObject::trUtf8("Invalid enum value : ") << debVariantToString(_f) << endl;
         str |= cRecord::ES_DEFECTIVE;
         r.clear();
     }
@@ -885,7 +885,7 @@ qlonglong cColStaticDescrSet::toId(const QVariant& _f) const
     foreach (const QString& v, vl) {
         int i = enumVals.indexOf(v);
         if (i >= 0) r |= enum2set(i);
-        else DWAR() << "Invalid enum " << udtName << " value : " << v << endl;
+        else DWAR() << QObject::trUtf8("Invalid enum %1 value %2").arg(udtName).arg(v) << endl;
     }
     return r;
 }
@@ -906,7 +906,7 @@ QVariant  cColStaticDescrPolygon::fromSql(const QVariant& _f) const
 {
     if (_f.isNull()) return _f;
     QString s = _f.toString();
-    QString em = QString("Polygon %1 = %2").arg(colName()).arg(s);
+    QString em = QObject::trUtf8("Polygon %1 = %2").arg(colName()).arg(s);
     // Az egésznek zárójelben kell lennie
     if (s.at(0) != QChar('(') || !s.endsWith(QChar(')'))) EXCEPTION(EDBDATA, 1, em);
     s = s.mid(1, s.size() -2);
@@ -941,7 +941,7 @@ QVariant  cColStaticDescrPolygon::fromSql(const QVariant& _f) const
 
 QVariant  cColStaticDescrPolygon::toSql(const QVariant& _f) const
 {
-    if (_f.isNull()) EXCEPTION(EDATA,-1,"Data is NULL");
+    if (_f.isNull()) EXCEPTION(EDATA,-1, QObject::trUtf8("Data is NULL"));
     int t = _f.userType();
     bool    empty = true;
     if (t != _UMTID_tPolygonF) {
@@ -1024,9 +1024,9 @@ QVariant  cColStaticDescrAddr::fromSql(const QVariant& _f) const
 }
 QVariant  cColStaticDescrAddr::toSql(const QVariant& _f) const
 {
-    if (_f.isNull()) EXCEPTION(EDATA,-1,"Data is NULL");
+    if (_f.isNull()) EXCEPTION(EDATA,-1,QObject::trUtf8("Data is NULL"));
     QVariant r = toName(_f);
-    if (r.toString().isEmpty()) EXCEPTION(EDATA,-1,"Invalid data type.");
+    if (r.toString().isEmpty()) EXCEPTION(EDATA,-1,QObject::trUtf8("Invalid data type."));
     return r;
 }
 QVariant  cColStaticDescrAddr::set(const QVariant& _f, int &str) const
@@ -1092,7 +1092,7 @@ QString   cColStaticDescrAddr::toName(const QVariant& _f) const
         break;
     default:        EXCEPTION(EPROGFAIL);
     }
-    if (!_f.isNull()) DERR() << "Invalid data type : " << _f.typeName() << endl;
+    if (!_f.isNull()) DERR() << QObject::trUtf8("Invalid data type : %1").arg(_f.typeName()) << endl;
     return QString();
 }
 
@@ -1109,7 +1109,7 @@ qlonglong cColStaticDescrAddr::toId(const QVariant& _f) const
         break;
     default:        EXCEPTION(EPROGFAIL);
     }
-    if (!_f.isNull()) DERR() << "Invalid data type : " << _f.typeName() << endl;
+    if (!_f.isNull()) DERR() << QObject::trUtf8("Invalid data type : %1").arg(_f.typeName()) << endl;
     return NULL_ID;
 }
 
@@ -1149,7 +1149,7 @@ QVariant  cColStaticDescrTime::fromSql(const QVariant& _f) const
 }
 QVariant  cColStaticDescrTime::toSql(const QVariant& _f) const
 {
-    if (_f.isNull()) EXCEPTION(EDATA,-1,"Data is NULL");
+    if (_f.isNull()) EXCEPTION(EDATA,-1,QObject::trUtf8("Data is NULL"));
     return _f;
 }
 QVariant  cColStaticDescrTime::set(const QVariant& _f, int& str) const
@@ -1213,7 +1213,7 @@ QVariant  cColStaticDescrDate::fromSql(const QVariant& _f) const
 QVariant  cColStaticDescrDate::toSql(const QVariant& _f) const
 {
     // _DBGFN() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
-    if (_f.isNull()) EXCEPTION(EDATA,-1,"Data is NULL");
+    if (_f.isNull()) EXCEPTION(EDATA,-1,QObject::trUtf8("Data is NULL"));
     return _f;
 }
 QVariant  cColStaticDescrDate::set(const QVariant& _f, int& str) const
@@ -1372,7 +1372,7 @@ QVariant  cColStaticDescrInterval::fromSql(const QVariant& _f) const
 QVariant  cColStaticDescrInterval::toSql(const QVariant& _f) const
 {
     _DBGFN() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
-    if (_f.isNull()) EXCEPTION(EDATA,-1,"Data is NULL");
+    if (_f.isNull()) EXCEPTION(EDATA,-1,QObject::trUtf8("Data is NULL"));
     qlonglong i = variantToId(_f);
     return QVariant(intervalToStr(i));
 
@@ -1435,7 +1435,7 @@ cColStaticDescrList& cColStaticDescrList::operator<<(cColStaticDescr * __o)
 int cColStaticDescrList::toIndex(const QString& __n, bool __ex) const
 {
     if (__n.isEmpty()) {
-        static QString msg = "Empty field name";
+        static QString msg = QObject::trUtf8("Empty field name");
         if (__ex) EXCEPTION(EDATA,-1, msg);
         DERR() << msg << endl;
         return NULL_IX;
@@ -1521,7 +1521,7 @@ bool cRecStaticDescr::addMap()
     _mapMutex.lock();
     if (_recDescrMap.contains(_tableOId)) {
         _mapMutex.unlock();
-        DWAR() << "Remap static descriptor : " << toString() << endl;
+        DWAR() << QObject::trUtf8("Remap static descriptor : %1").arg(toString()) << endl;
         return false;
     }
     _recDescrMap[_tableOId] = this;
@@ -1535,7 +1535,7 @@ int cRecStaticDescr::_setReCallCnt = 0;
 void cRecStaticDescr::_set(const QString& __t, const QString& __s)
 {
     _DBGFN() << " @(" << __t << _sCommaSp << __s << QChar(')') << endl << dec; // Valahol valaki hex-re állítja :(
-    if (_setReCallCnt) DWAR() << "******** RECURSION #" << _setReCallCnt << " ********" << endl;
+    if (_setReCallCnt) DWAR() << QObject::trUtf8("******** RECURSION #%1 ********").arg(_setReCallCnt) << endl;
     ++_setReCallCnt;
     // Set table and schema name
     _schemaName     = __s.isEmpty() ? _sPublic : __s;
@@ -1550,7 +1550,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
     // *********************** set scheam and Table  OID
     _schemaOId = ::schemaoid(*pq, __s);
     _tableOId  = ::tableoid(*pq, __t, _schemaOId);
-    PDEB(INFO) << "Table " << fullTableName() << " tableoid : " << _tableOId << endl;
+    PDEB(INFO) << QObject::trUtf8("Table %1 tableoid : %2").arg(fullTableName()).arg(_tableOId) << endl;
 
     // *********************** get Parents table(s) **********************
     sql = "SELECT inhparent FROM pg_inherits WHERE inhrelid = ? ORDER BY inhseqno";
@@ -1570,9 +1570,9 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
     pq->bindValue(0, _schemaName);
     pq->bindValue(1, _tableName);
     if (!pq->exec()) SQLQUERYERR(*pq);
-    if (!pq->first()) EXCEPTION(EDBDATA, 0, QString("Table %1.%2 not found.").arg(_schemaName, _tableName));
+    if (!pq->first()) EXCEPTION(EDBDATA, 0, QObject::trUtf8("Table %1.%2 not found.").arg(_schemaName, _tableName));
     _tableRecord = pq->record();
-    if (pq->next()) EXCEPTION(EDBDATA, 0, QString("Table : %1,%2.").arg(_schemaName, _tableName));
+    if (pq->next()) EXCEPTION(EDBDATA, 0, QObject::trUtf8("Table : %1,%2.").arg(_schemaName, _tableName));
 
     QString n = _tableRecord.value("table_type").toString();
     if      (n == "BASE TABLE")
@@ -1590,8 +1590,8 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
             _tableType = LINK_TABLE;
         }
     }
-    else EXCEPTION(EDBDATA, 0, QString("Invalid table type %1.%2 : %3").arg(_schemaName, _tableName, n));
-    PDEB(INFO) << fullTableName() << " table is " << n << endl;
+    else EXCEPTION(EDBDATA, 0, QObject::trUtf8("Invalid table type %1.%2 : %3").arg(_schemaName, _tableName, n));
+    PDEB(INFO) << QObject::trUtf8("%1 table is %2").arg(fullTableName()).arg(n) << endl;
 
     // ************************ get columns records
     sql = "SELECT * FROM information_schema.columns WHERE table_schema = ? AND table_name = ? ORDER BY ordinal_position";
@@ -1599,7 +1599,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
     pq->bindValue(0, _schemaName);
     pq->bindValue(1, _tableName);
     if (!pq->exec()) SQLQUERYERR(*pq);
-    if (!pq->first()) EXCEPTION(EDBDATA, 0, QString("Table columns %1,%2 not found.").arg(_schemaName).arg(_tableName));
+    if (!pq->first()) EXCEPTION(EDBDATA, 0, QObject::trUtf8("Table columns %1,%2 not found.").arg(_schemaName).arg(_tableName));
     _columnsNum = pq->size();
     if (_columnsNum < 1) EXCEPTION(EPROGFAIL, _columnsNum, "Invalid size.");
     _autoIncrement.resize(_columnsNum);
@@ -1643,10 +1643,10 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
             if (columnDescr.colType == "boolean") {
                 if (_deletedIndex >= 0) EXCEPTION(EPROGFAIL);
                 _deletedIndex = i -1;
-                PDEB(VVERBOSE) << "deleted field is found, index : " << _deletedIndex << endl;
+                PDEB(VVERBOSE) << QObject::trUtf8("deleted field is found, index : %1").arg(_deletedIndex) << endl;
             }
             else {
-                PDEB(VVERBOSE) << "deleted field is found, but type is not boolean, index : " << (i -1) << " type : " << columnDescr.colType << endl;
+                PDEB(VVERBOSE) << QObject::trUtf8("deleted field is found, but type is not boolean, index : %1, type : %2").arg(i -1).arg(columnDescr.colType) << endl;
             }
         }
         // Mező típus
@@ -1666,7 +1666,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
             if (_noteIndex  < 0 && i == (DESCR_INDEX +1) && columnDescr.colName().endsWith(descrSufix)) _noteIndex = DESCR_INDEX;
         }
         // A távoli kulcs mezők detektálása:
-        if (columnDescr.eColType == cColStaticDescr::FT_INTEGER) {  // Feltépelezzük, hogy távoli kulcs csak egész szám (ID) lehet
+        if (columnDescr.eColType == cColStaticDescr::FT_INTEGER) {  // Feltételezzük, hogy távoli kulcs csak egész szám (ID) lehet
             sql = QString(
                         "SELECT f.table_schema, f.table_name, f.column_name, t.unusual_fkeys_type"
                         "    FROM information_schema.referential_constraints r"
@@ -1765,7 +1765,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
         }
         cColStaticDescr *pp = ((cColStaticDescrList::list)_columnDescrs)[i -1];
 
-        PDEB(VERBOSE) << "Field " << pp->colName() << " type is " << typeid(*pp).name() << endl;
+        PDEB(VERBOSE) << QObject::trUtf8("Field %2 type is %2").arg(pp->colName()).arg(typeid(*pp).name()) << endl;
     } while(pq->next());
     if (_columnsNum != i) EXCEPTION(EPROGFAIL, -1, "Nem egyértelmű mező szám");
 
@@ -1788,7 +1788,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
             QString columnName     = pq->record().value("column_name").toString();
             QString constraintType = pq->record().value("constraint_type").toString();
             i = toIndex(columnName, false);
-            if (i < 0) EXCEPTION(EDBDATA,0, QString("Invalid column name : %1").arg(fullColumnName(columnName)));
+            if (i < 0) EXCEPTION(EDBDATA,0, QObject::trUtf8("Invalid column name : %1").arg(fullColumnName(columnName)));
             if     (constraintType == "PRIMARY KEY") {
                 //PDEB(VVERBOSE) << "Set _primaryKeyMask bit, index = " << i << endl;
                 _primaryKeyMask.setBit(i);
@@ -1832,7 +1832,7 @@ int cRecStaticDescr::toIndex(const QString& __n, bool __ex) const
     QStringList m = __n.split(QChar('.'));
     // csak három elem lehet: schema.table.field
     if (m.size() > 3) {
-        if (__ex) EXCEPTION(EDATA, -1, "Invalid field name " + __n);
+        if (__ex) EXCEPTION(EDATA, -1, QObject::trUtf8("Invalid field name %1").arg(__n));
         DERR() << "Invalid index : -1 / To many field in name"  << endl;
         return NULL_IX;
     }
@@ -1843,7 +1843,7 @@ int cRecStaticDescr::toIndex(const QString& __n, bool __ex) const
             m.pop_front();  // Schema név ok, eldobjuk
         }
         else{
-            if (__ex) EXCEPTION(EDATA, -1, "Invalid field name (other schema name) " + __n);
+            if (__ex) EXCEPTION(EDATA, -1, QObject::trUtf8("Invalid field name (other schema name) %1").arg(__n));
             DERR() << "Invalid index : -1 / mismatch shema : my schema is " << schemaName() << endl;
             return NULL_IX; // Másik schemarol van szó
         }
@@ -1855,8 +1855,8 @@ int cRecStaticDescr::toIndex(const QString& __n, bool __ex) const
             m.pop_front();  // Tábla név ok, eldobjuk
         }
         else {
-            if (__ex) EXCEPTION(EDATA, -1, "Invalid field name (other table name) " + __n);
-            DERR() << "Invalid index : -1 / mismatch table : my table is " << tableName() << endl;
+            if (__ex) EXCEPTION(EDATA, -1, QObject::trUtf8("Invalid field name (other table name) ") + __n);
+            DERR() << QObject::trUtf8("Invalid index : -1 / mismatch table : my table is %1").arg(tableName()) << endl;
             return NULL_IX; // Másik tábláról van szó
         }
     }
@@ -1873,18 +1873,20 @@ const cRecStaticDescr *cRecStaticDescr::get(qlonglong _oid, bool find_only)
     if ((i = _recDescrMap.find(_oid)) != _recDescrMap.end()) {
         p = *i;
         _mapMutex.unlock();
-        PDEB(VERBOSE) << "Találat. " << endl;
+        PDEB(VERBOSE) << QObject::trUtf8("Found rdescr %1").arg(p->tableName()) << endl;
         return *i;
     }
     QSqlQuery *pq = newQuery();
     QStringPair tsn = tableoid2name(*pq, _oid);
     delete pq;
     _mapMutex.unlock();
-    PDEB(VVERBOSE) << "Nincs találat." << endl;
     // Ha nem találjuk, létre kell hozni ?
-    if (find_only) return NULL;
+    if (find_only) {    // Nem. Csak kerestünk
+        PDEB(VVERBOSE) << QObject::trUtf8("Not found rdescr %1.%2").arg(tsn.first).arg(tsn.second) << endl;
+        return NULL;
+    }
     if (_setReCallCnt >= 10) EXCEPTION(EPROGFAIL);
-    PDEB(VERBOSE) << "Új objektum allokálása, és inicializálása." << endl;
+    PDEB(VERBOSE) << QObject::trUtf8("Init rdescr obj. %1.%2").arg(tsn.first).arg(tsn.second) << endl;
     p = new cRecStaticDescr(tsn.first, tsn.second);
     return p;
 }
@@ -1925,7 +1927,7 @@ QString cRecStaticDescr::checkId2Name(QSqlQuery& q, const QString& _tn, const QS
     if (!q.first() || q.value(0).toInt() == 1) return sFnToName;    // Definiálva van a keresett függvény, OK
     const QString& sNameName   = pDescr->nameName();
     const QString& sTableName  = pDescr->tableName();
-    DWAR() << "Function : " << sFnToName << " not found, create ..." << endl;
+    DWAR() << QObject::trUtf8("Function %1 not found, create ...").arg(sFnToName) << endl;
     sql = QString(
          "CREATE OR REPLACE FUNCTION %1(bigint) RETURNS varchar(32) AS $$"
         " DECLARE"
@@ -1940,7 +1942,7 @@ QString cRecStaticDescr::checkId2Name(QSqlQuery& q, const QString& _tn, const QS
         " $$ LANGUAGE plpgsql"
             ).arg(sFnToName).arg(sTableName).arg(sIdName).arg(sNameName);
     if (!q.exec(sql)) SQLPREPERR(q, sql);
-    PDEB(INFO) << "Created procedure : " << quotedString(sql) << endl;
+    PDEB(INFO) << QObject::trUtf8("Created procedure : %1").arg(quotedString(sql)) << endl;
     return sFnToName;
 }
 
@@ -2214,7 +2216,7 @@ cRecord& cRecord::_set(const QSqlRecord& __r, const cRecStaticDescr& __d, int* _
         // PDEB(VVERBOSE) << "*_fromp = " << *_fromp << " Selet : " << first << " - " << n << endl;
     }
     if (n > __r.count()) {          // A forrás végénél nem kéne tovább menni
-        DWAR() << "Rekord túlolvasási kisérlet, rekord méret : " << __r.count() << " ciklus határ : " << n << endl;
+        DWAR() << QObject::trUtf8("Rekord túlolvasási kisérlet, rekord méret %1 ciklushatár %2.").arg(__r.count()).arg(n) << endl;
         n = __r.count();
     }
     int ix;                 // Cél index    (_record)r
@@ -2227,7 +2229,7 @@ cRecord& cRecord::_set(const QSqlRecord& __r, const cRecStaticDescr& __d, int* _
     }
     _set(__d);  // isEmpty() == true
     if (ixv.count(invalid) == ixv.size()) {
-        DWAR() << "Nincs egy keresett mező sem a forrás rekordban." << endl;
+        DWAR() << QObject::trUtf8("Nincs egy keresett mező sem a forrás rekordban.") << endl;
         return *this;   // Nincs egy mező sem, üres rekordal térünk vissza
     }
     _stat = ES_EXIST;
@@ -2713,7 +2715,7 @@ int cRecord::delByName(QSqlQuery& q, const QString& __n, bool __pat, bool __only
     sql += tableName() + " WHERE " + dQuoted(nameName()) + (__pat ? " LIKE " : " = ") + quoted(__n);
     if (!q.exec(sql)) SQLPREPERR(q, sql);
     int n = q.numRowsAffected();
-    PDEB(VVERBOSE) << "delByName SQL : " << sql << " removed " << n << " records." << endl;
+    PDEB(VVERBOSE) << QObject::trUtf8("delByName SQL : \"%1\" removed %1 record(s).").arg(sql).arg(n) << endl;
     return  n;
 }
 
