@@ -32,7 +32,6 @@ cError::cError()
     : mFuncName(), mSrcName(), mErrorSubMsg(), mThreadName()
     , mSqlErrDrText(), mSqlErrDbText(), mSqlQuery(), mSqlBounds()
 {
-    //PDEB(IMINOR, 9) << "Call " << __PRETTY_FUNCTION__ << std::endl;
     mSrcLine = mErrorSubCode = mErrorCode = -1;
     mErrorSysCode = errno;
     mSqlErrNum    = -1;
@@ -83,7 +82,7 @@ void cError::circulation()
     }
     if (pPrevError && (pThread == pLastThread || ++mErrCount > mMaxErrCount)) {
         QTextStream cerr(stderr, QIODevice::WriteOnly);
-        cerr << "*** Error circulation **** Thread object name " << pThread->objectName() << endl;
+        cerr << QObject::trUtf8("*** Error circulation **** Thread object name %1").arg(pThread->objectName()) << endl;
         int n = 1;
         for (cError *p = this; p; p = p->pPrevError) {
             cerr << QChar('[') << n++ << QChar(']') << QChar(' ') << p->msg() << endl;
@@ -96,7 +95,7 @@ void cError::circulation()
 void cError::exception(void)
 {
 
-    if (cDebug::getInstance() != NULL) PDEB(EXCEPT) << "throw this : " << msg() << endl;
+    if (cDebug::getInstance() != NULL) PDEB(EXCEPT) << QObject::trUtf8("throw this : %1").arg(msg()) << endl;
     throw(this);
 }
 
@@ -176,11 +175,11 @@ void cError::init()
 QString SqlErrorTypeToString(int __et)
 {
     switch (__et) {
-    case QSqlError::NoError:            return "No error occurred.";
-    case QSqlError::ConnectionError:    return "Connection error.";
-    case QSqlError::StatementError:     return "SQL statement syntax error.";
-    case QSqlError::TransactionError:   return "Transaction failed error.";
-    case QSqlError::UnknownError:       return "Unknown error";
+    case QSqlError::NoError:            return QObject::trUtf8("No error occurred.");
+    case QSqlError::ConnectionError:    return QObject::trUtf8("Connection error.");
+    case QSqlError::StatementError:     return QObject::trUtf8("SQL statement syntax error.");
+    case QSqlError::TransactionError:   return QObject::trUtf8("Transaction failed error.");
+    case QSqlError::UnknownError:       return QObject::trUtf8("Unknown error");
     }
-    return "Unknown SQL Error type.";
+    return QObject::trUtf8("Unknown SQL Error type.");
 }

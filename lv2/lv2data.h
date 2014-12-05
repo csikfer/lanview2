@@ -1073,6 +1073,7 @@ public:
     /// Ha meg van adva a HOSTNAME környezeti változó, akkor az ebben megadott nevű rekordot próbálja meg beolvasni.
     /// Ha nincs megadva a környezeti változó, vagy neincs ilyen nevű rekord, akkor lekérdezi a saját ip címeket,
     /// és a címek alapján próbál keresni egy host rekordot.
+    /// Lásd még a lanView::testSelfName változót.
     /// @param q Az SQL müveletekhez használt query objektum.
     /// @param __ex Ha értéke true, és nem sikerült beolvasni ill. megtalálni a rekordot, akkor dob egy kizárást.
     /// @return Ha nem találja a saját host rekordot, akkor ha __ex értéke hamis, akkor false-val tér vissza,
@@ -1221,11 +1222,12 @@ public:
     bool fetchByIds(QSqlQuery& q, qlonglong __hid, qlonglong __sid, bool __ex = true);
     /// A megadott nevek alapján türli a megadott rekord(ok)at
     /// @param q Az adatbázis művelethez használlt objektum.
-    /// @param __nn A node neve (nem lehet minta)
-    /// @param __sn A szolgálltatás neve, vagy egy minta
-    /// @param __pat Ha értéke true, akkor az __sn paraméter egy minta, egyébként egy node neve.
+    /// @param __nn A node neve, vagy egy minta
+    /// @param __sn A szolgálltatás típus neve, vagy egy minta
+    /// @param __spat Ha értéke true, akkor az __sn paraméter egy minta, egyébként egy szervíz típus neve.
+    /// @param __npat Ha értéke true, akkor az __nn paraméter egy minta, egyébként egy node neve.
     /// @return A törölt rekordok számával tér vissza.
-    int delByNames(QSqlQuery& q, const QString& __nn, const QString& __sn, bool __pat = false);
+    int delByNames(QSqlQuery& q, const QString& __nn, const QString& __sn, bool __spat = false, bool __npat = false);
     /// Beolvassa a saját host és host_service rekordokat. Az __sn egy beolvasott servces rekordot kell tartalmazzon.
     /// A beolvasott host a saját host rekord lessz.
     /// @param q Az SQL lekérdezéshez használt objektum.

@@ -52,6 +52,7 @@ STRDEF(Version, "version")
 STRDEF(Help, "help")
 STRDEF(DebugLevel, "debug-level")
 STRDEF(LogFile,    "log-file")
+STRDEF(Lv2testSetSelfNname, "lv2test-set-self-name");
 
 STRDEF(LocalHost, "localhost")
 STRDEF(MibPath, "MIBPATH")

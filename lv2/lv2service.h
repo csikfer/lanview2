@@ -61,7 +61,7 @@ enum eInspectorType {
 EXT_ const QString& inspectorType(enum eInspectorType __t, bool __ex = true);
 EXT_ eInspectorType inspectorType(const QString& __n, bool __ex = true);
 
-/// Az időzítés típusa
+/// Az időzítés típusa ill. állapota
 enum eTimerStat {
     TS_STOP,    ///< nincs időzítés
     TS_NORMAL,  ///< normál időzítés (normal_interval)
@@ -119,7 +119,7 @@ public:
     /// valamint állít az időzítésen, ha ez szükséges (normal/retry időzítés kezelése)
     virtual void timerEvent(QTimerEvent * );
     /// A szolgáltatáshoz tartozó tevékenységet végrehajtó virtuális metódus.
-    /// A alap objektumban a metódus nem csinál semmit (egy debug üzenet feltéteées kiírásán túl), csak visszatér egy RS_ON értékkel.
+    /// A alap objektumban a metódus nem csinál semmit (egy debug üzenet feltételes kiírásán túl), csak visszatér egy RS_ON értékkel.
     /// @return A szolgáltatás állpota, ill. a tevékenység eredménye.
     virtual enum eNotifSwitch run(QSqlQuery& q);
     /// Futás időzítés indítása
@@ -169,8 +169,9 @@ public:
     /// A pNode adattag egy cNode objektumra fog mutatni, ami a sajátgép adatait fogja tartalmazni, feltéve, hogy az adatbázis ezt tartalmazza.
     /// Akkor is cNode lessz az adattípus, ha a sajátgép történetesen egy SNMP eszközként szerepel az adatbázisban.
     /// A saját géphez természetesen bejegyezve kell lennie a megadott nevű szolgáltatásnak.
+    /// Teszt opció: A tesztelés megkönnyítése érdekében
     /// @param __q Az adatbázis művelethez használható QSqlQuery objektum referenciája
-    /// @param __sn Szolgálltatás neve
+    /// @param __sn Szolgálltatás neve (lsd.: teszt opció fentebb!)
     void self(QSqlQuery& q, const QString& __sn);
     /// A belső statuszt konvertálja stringgé.
     const QString& internalStatName() { return ::internalStatName(internalStat); }

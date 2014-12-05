@@ -750,7 +750,7 @@ const cIfType& cIfType::ifType(const QString& __nm, bool __ex)
     checkIfTypes();
     int i = ifTypes.indexOf(_descr_cIfType().nameIndex(), QVariant(__nm));
     if (i < 0) {
-        if (__ex) EXCEPTION(EDATA, -1,"Invalid iftype name or program error.");
+        if (__ex) EXCEPTION(EDATA, -1,QObject::trUtf8("Invalid iftype name %1 or program error.").arg(__nm));
         return *pNull;
     }
     return *(ifTypes[i]);
@@ -761,7 +761,7 @@ const cIfType& cIfType::ifType(qlonglong __id, bool __ex)
     checkIfTypes();
     int i = ifTypes.indexOf(_descr_cIfType().idIndex(), QVariant(__id));
     if (i < 0) {
-        if (__ex) EXCEPTION(EDATA, -1,"Invalid iftype name or program error.");
+        if (__ex) EXCEPTION(EDATA, __id,QObject::trUtf8("Invalid iftype id or program error."));
         return *pNull;
     }
     return *(ifTypes[i]);
@@ -1128,7 +1128,7 @@ cIpAddress& cInterface::addIpAddress(const cIpAddress& __a)
     _DBGFN() << " @(" << __a.toString() << ")" << endl;
     if (addresses.indexOf(cIpAddress::_ixAddress, __a.get(cIpAddress::_ixAddress))) EXCEPTION(EDATA);
     addresses << __a;
-    PDEB(VERBOSE) << "Added, size : " << addresses.size();
+    PDEB(VERBOSE) << QObject::trUtf8("Added, size : %1").arg(addresses.size());
     return *addresses.last();
 }
 
@@ -1604,23 +1604,29 @@ int cNode::fetchByMac(QSqlQuery& q, const cMac& a)
 
 bool cNode::fetchSelf(QSqlQuery& q, bool __ex)
 {
-    QString name = getEnvVar("HOSTNAME");
-    if (!name.isEmpty()) {
-        setName(name);
+    if (lanView::testSelfName.isEmpty()) {
+        QString name = getEnvVar("HOSTNAME");
+        if (!name.isEmpty()) {
+            setName(name);
+            if (fetch(q, false, mask(_sNodeName))) return true;
+        }
+        QList<QHostAddress>  aa = QNetworkInterface::allAddresses();
+        foreach (QHostAddress a, aa) {
+            PDEB(VVERBOSE) << "My adress : " << a.toString() << endl;
+            if (a.isNull() || a.isLoopback()) continue;
+            if (fetchByIp(q, a)) return true;
+        }
+        QList<QNetworkInterface> ii = QNetworkInterface::allInterfaces();
+        foreach (QNetworkInterface i, ii) {
+            cMac m = i.hardwareAddress();
+            if (!m) continue;
+            PDEB(VVERBOSE) << "My MAC : " << m.toString() << endl;
+            if (fetchByMac(q, m)) return true;
+        }
+    }
+    else {
+        setName(lanView::testSelfName);
         if (fetch(q, false, mask(_sNodeName))) return true;
-    }
-    QList<QHostAddress>  aa = QNetworkInterface::allAddresses();
-    foreach (QHostAddress a, aa) {
-        PDEB(VVERBOSE) << "My adress : " << a.toString() << endl;
-        if (a.isNull() || a.isLoopback()) continue;
-        if (fetchByIp(q, a)) return true;
-    }
-    QList<QNetworkInterface> ii = QNetworkInterface::allInterfaces();
-    foreach (QNetworkInterface i, ii) {
-        cMac m = i.hardwareAddress();
-        if (!m) continue;
-        PDEB(VVERBOSE) << "My MAC : " << m.toString() << endl;
-        if (fetchByMac(q, m)) return true;
     }
     if (__ex) EXCEPTION(EFOUND, -1, trUtf8("Self host record"));
     return false;
@@ -2245,12 +2251,13 @@ bool cHostService::fetchByIds(QSqlQuery& q, qlonglong __hid, qlonglong __sid, bo
     return r == 1;
 }
 
-int cHostService::delByNames(QSqlQuery& q, const QString& __nn, const QString& __sn, bool __pat)
+int cHostService::delByNames(QSqlQuery& q, const QString& __nn, const QString& __sn, bool __spat, bool __npat)
 {
     QString sql =
             "SELECT host_service_id FROM host_services JOIN nodes USING(node_id) JOIN services USING(service_id)"
-            " WHERE node_name = ? AND service_name %1 ?";
-    sql = sql.arg(__pat ? "LIKE" : "=");
+            " WHERE node_name %1 ? AND service_name %2 ?";
+    sql = sql.arg(__npat ? "LIKE" : "=");
+    sql = sql.arg(__spat ? "LIKE" : "=");
     if (!q.prepare(sql)) SQLPREPERR(q, sql);
     q.bindValue(0, __nn);
     q.bindValue(1, __sn);

@@ -1783,8 +1783,8 @@ delete  : DELETE_T PLACE_T pattern strs ';'     { foreach (QString s, *$4) { cPl
         | DELETE_T ONLY_T NODE_T pattern strs ';'{foreach (QString s, *$5) { cNode().  delByName(qq(), s, $4, true); } delete $5; }
         | DELETE_T VLAN_T pattern strs ';'      { foreach (QString s, *$4) { cVLan().  delByName(qq(), s, $3); }       delete $4; }
         | DELETE_T SUBNET_T pattern strs ';'    { foreach (QString s, *$4) { cSubNet().delByName(qq(), s, $3); }       delete $4; }
-        | DELETE_T HOST_T str SERVICE_T pattern strs ';'
-                                                { foreach (QString s, *$6) { cHostService().delByNames(qq(), sp2s($3), s, $5); } delete $6; }
+        | DELETE_T HOST_T pattern str SERVICE_T pattern strs ';'
+                                                { foreach (QString s, *$7) { cHostService().delByNames(qq(), sp2s($4), s, $6, $3); } delete $7; }
         | DELETE_T MACRO_T strs ';'             { foreach (QString s, *$3) { templates.del(_sMacros, s); } delete $3; }
         | DELETE_T TEMPLATE_T PATCH_T strs ';'  { foreach (QString s, *$4) { templates.del(_sPatchs, s); } delete $4; }
         | DELETE_T TEMPLATE_T NODE_T strs ';'   { foreach (QString s, *$4) { templates.del(_sNodes,  s); } delete $4; }
@@ -2029,7 +2029,9 @@ static int isAddress(const QString& __s)
 #define TOK(t)  { #t, t##_T },
 static int yylex(void)
 {
+    // Egy karakteres tokenek
     static const char cToken[] = "=+-*(),;|&<>^{}[]:.#@";
+    // Tokenek
     static const struct token {
         const char *name;
         int         value;
