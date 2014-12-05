@@ -134,7 +134,7 @@ QString getEnvVar(const char * cnm)
     if (!val) EXCEPTION(ESTD, ENOMEM);
     getenv_s(&requiredSize, val, requiredSize, cnm );
     QString r = QString::fromLatin1(val);
-    free(val);
+    free(val);LV2TEST_SET_SELF_NAME
     return r;
 #elif defined(Q_CC_GNU)
     const char * v = getenv(cnm);

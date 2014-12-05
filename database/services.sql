@@ -16,27 +16,27 @@ INSERT INTO ipprotocols (protocol_id, protocol_name) VALUES
 -- //// LAN.SERVICES
 
 CREATE TABLE services (
-    service_id              bigserial          PRIMARY KEY,
-    service_name            varchar(32)     NOT NULL,
-    service_note           varchar(255)    DEFAULT NULL,
-    service_alarm_msg       varchar(255)    DEFAULT NULL,
+    service_id              bigserial      PRIMARY KEY,
+    service_name            varchar(32)    NOT NULL,
+    service_note            varchar(255)   DEFAULT NULL,
+    service_alarm_msg       varchar(255)   DEFAULT NULL,
     protocol_id             bigint         DEFAULT -1  -- nil
         REFERENCES ipprotocols(protocol_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
     port                    bigint         DEFAULT NULL,
-    superior_service_mask   varchar(32)     DEFAULT NULL,
-    check_cmd               varchar(255)    DEFAULT NULL,
-    properties              varchar(255)    DEFAULT ':',
+    superior_service_mask   varchar(32)    DEFAULT NULL,
+    check_cmd               varchar(255)   DEFAULT NULL,
+    properties              varchar(255)   DEFAULT ':',
     max_check_attempts      bigint         DEFAULT NULL,
     normal_check_interval   bigint         DEFAULT NULL,
     retry_check_interval    bigint         DEFAULT NULL,
-    flapping_interval       interval        NOT NULL DEFAULT '30 minutes',
+    flapping_interval       interval       NOT NULL DEFAULT '30 minutes',
     flapping_max_change     bigint         NOT NULL DEFAULT 15,
     UNIQUE (service_name, protocol_id)
 );
 ALTER TABLE services OWNER TO lanview2;
 COMMENT ON TABLE  services                  IS 'Services table';
 COMMENT ON COLUMN services.service_id       IS 'Egyedi azonosító';
-COMMENT ON COLUMN services.service_name     IS '';
+COMMENT ON COLUMN services.service_name     IS 'Szervice name';
 COMMENT ON COLUMN services.service_note     IS '';
 COMMENT ON COLUMN services.protocol_id      IS 'Ip protocol id (-1 : nil, if no ip protocol)';
 COMMENT ON COLUMN services.port             IS 'Default port number. or NULL';
@@ -66,6 +66,9 @@ lognull     A superior az stderr és stdout-ot a null-ba irányítja. A szolgál
 tcp         Alternatív TCP port megadása, paraméter a port száma
 udp         Alternatív UDP port megadása, paraméter a port száma
 ';
+
+INSERT INTO services (service_id, service_name, service_note) VALUES
+    ( -1, 'nil', 'A NULL-t reprezentálja, de összehasonlítható');
 
 CREATE OR REPLACE FUNCTION service_name2id(varchar(32)) RETURNS bigint AS $$
 DECLARE
@@ -116,10 +119,10 @@ CREATE TABLE host_services (
     port_id             bigint         DEFAULT NULL,
     host_service_note  varchar(255)    DEFAULT NULL,
     host_service_alarm_msg varchar(255) DEFAULT NULL,
-    prime_service_id    bigint         DEFAULT NULL
-        REFERENCES services(service_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE RESTRICT,
-    proto_service_id    bigint         DEFAULT NULL
-        REFERENCES services(service_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE RESTRICT,
+    prime_service_id    bigint         DEFAULT -1       -- nil
+        REFERENCES services(service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT,
+    proto_service_id    bigint         DEFAULT -1       -- nil
+        REFERENCES services(service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT,
     --  REFERENCES interfaces(port_id) MATCH SIMPLE
     delegate_host_state boolean        NOT NULL DEFAULT FALSE,
     check_cmd           varchar(255)   DEFAULT NULL,
@@ -148,7 +151,7 @@ CREATE TABLE host_services (
     last_alarm_log_id   bigint         DEFAULT NULL,   -- REFERENCES alarms(alarm_id)
 -- Állapot vége
     deleted             boolean        NOT NULL DEFAULT FALSE,
-    UNIQUE (node_id, service_id, port_id)
+    UNIQUE (node_id, service_id, COALESCE(port_id, -1), prime_service_id, proto_service_id)
 );
 ALTER TABLE host_services OWNER TO lanview2;
 
@@ -161,11 +164,11 @@ COMMENT ON COLUMN host_services.host_service_alarm_msg IS 'Riasztás esetén egy
 COMMENT ON COLUMN host_services.node_id IS 'A node ill. host azonosítója, amin a szolgáltatás, vagy az ellenörzés fut.';
 COMMENT ON COLUMN host_services.service_id IS 'A szolgáltatást, vagy az ellenörzés típusát azonosító ID';
 COMMENT ON COLUMN host_services.prime_service_id IS 'Az ellenőrzés elsődleges módszerét azonosító, szervíz típus ID';
-COMMENT ON COLUMN host_services.proto_service_id IS 'Az ellenőrzés módszerének opcionális további azonosítása, szervíz típus ID';
+COMMENT ON COLUMN host_services.proto_service_id IS 'Az ellenőrzés módszerének opcionális további azonosítása (protokol), szervíz típus ID';
 COMMENT ON COLUMN host_services.port_id IS 'Opcionális port azonosító, ha a szolgáltatás ill. ellenörzés egy porthoz rendelt.';
 COMMENT ON COLUMN host_services.delegate_host_state IS 'Értéke igaz, ha a szolgáltatás állapotát örökli a node is.';
 COMMENT ON COLUMN host_services.check_cmd IS 'Egy opcionális parancs.';
-COMMENT ON COLUMN host_services.properties IS 'További paraméterek. Ld.: services.properties .';
+COMMENT ON COLUMN host_services.properties IS 'További paraméterek. Ld.: services.properties . Ha értéke nem NULL, akkor fellülbírálja a service_id -hez tartozó services.properties értékét';
 COMMENT ON COLUMN host_services.superior_host_service_id IS 'Szülő szolgáltatás. Az ellenörzés a szülőn keresztül hajtódik végre, ill. az végzi.';
 COMMENT ON COLUMN host_services.max_check_attempts IS 'Hibás eredmények maximális száma, a riasztás kiadása elött.';
 COMMENT ON COLUMN host_services.normal_check_interval IS 'Ellenörzések ütemezése másodpercben, ha nincs hiba.';

@@ -241,6 +241,14 @@ public:
     static bool             sqlNeeded;          ///< Ha a konstruktor nyissa meg az adatbázist, akkor true
     static qlonglong        debugDefault;       ///< Debug maszk alapértelmezett értéke.
     static const QString    homeDefault;        ///< a home mappa alapértelmezett értéke.
+    /// Amennyiben be van állítva, akkor ezel a saját hosznévvel fog dolgozni a rendszer. Lsd.: class cInspector;
+    /// Akkor használható, ha egy teszt gépen akarjuk futtatni a programot a célgép helyett.
+    /// A lanview objektum létrehozásánál, ha értéke NULL string, és létezik a "LV2TEST_SET_SELF_NAME"
+    /// környezeti vagy konfigurációs változó, akkor annak értékét állítja be.
+    /// Beállítható az értéke a '-S' vagy '--lv2test-set-self-name' kapcsolókkal.
+    /// Elsődleges a kapcsolóval magadott érték, aztán lanview konstruktora előtt beállított,
+    /// majd a környezeti változóként megadott, végül a konfigurációs állományban megadott érték.
+    static QString          testSelfName;
 
     static eIPV4Pol         ipv4Pol;    ///< IPV4 cím kezelési policy (nincs kifejtve!)
     static eIPV6Pol         ipv6Pol;    ///< IPV6 cím kezelési policy (nincs kifejtve!)

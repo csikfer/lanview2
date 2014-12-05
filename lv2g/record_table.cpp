@@ -1091,6 +1091,7 @@ void cRecordTable::buttonPressed(int id)
 void cRecordTable::recordRemove(cAlternate * _pr)
 {
     PDEB(INFO) << "Remove : " << _pr->toString() << endl;
+    _pr->remove(*pq);
 }
 
 void cRecordTable::selectionChanged(QItemSelection,QItemSelection)

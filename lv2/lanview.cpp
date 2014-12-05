@@ -76,6 +76,7 @@ QString    lanView::appName;
 short      lanView::appVersionMinor;
 short      lanView::appVersionMajor;
 QString    lanView::appVersion;
+QString    lanView::testSelfName;
 eIPV4Pol   lanView::ipv4Pol = IPV4_STRICT;
 eIPV6Pol   lanView::ipv6Pol = IPV6_PERMISSIVE;
 
@@ -103,11 +104,18 @@ lanView::lanView()
         }
         cError::init(); // Hiba stringek feltöltése.
         initUserMetaTypes();
+
+        if (testSelfName.isEmpty()) {
+            testSelfName = getEnvVar("LV2TEST_SET_SELF_NAME");
+        }
         // Program settings
         pSet = new QSettings(orgName, libName);
         // Beállítjuk a DEBUG/LOG paramétereket
         debug   = pSet->value(_sDebugLevel, QVariant(debugDefault)).toLongLong();
         debFile = pSet->value(_sLogFile, QVariant(_sStdErr)).toString();
+        if (testSelfName.isEmpty()) {   // Csak ha még nincs beállítva
+            testSelfName = pSet->value(_sLv2testSetSelfNname).toString();
+        }
         homeDir = pSet->value(_sHomeDir, QVariant(homeDefault)).toString();
         ipv4Pol = (eIPV4Pol)IPV4Pol(pSet->value(_sIPV4Pol, QVariant(_sStrict)).toString());
         ipv6Pol = (eIPV6Pol)IPV6Pol(pSet->value(_sIPV6Pol, QVariant(_sPermissive)).toString());
@@ -297,6 +305,12 @@ void lanView::parseArg(void)
     if (0 < (i = findArg(QChar('L'), _sLogFile, args))
      && (i + 1) < args.count()) {
         debFile = args[i + 1];
+        args.removeAt(i);
+        args.removeAt(i);
+    }
+    if (0 < (i = findArg(QChar('S'), _sLv2testSetSelfNname, args))
+     && (i + 1) < args.count()) {
+        testSelfName = args[i + 1];
         args.removeAt(i);
         args.removeAt(i);
     }
