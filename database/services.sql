@@ -150,12 +150,12 @@ CREATE TABLE host_services (
     act_alarm_log_id    bigint         DEFAULT NULL,   -- REFERENCES alarms(alarm_id)
     last_alarm_log_id   bigint         DEFAULT NULL,   -- REFERENCES alarms(alarm_id)
 -- Állapot vége
-    deleted             boolean        NOT NULL DEFAULT FALSE,
-    UNIQUE (node_id, service_id, COALESCE(port_id, -1), prime_service_id, proto_service_id)
+    deleted             boolean        NOT NULL DEFAULT FALSE
 );
 ALTER TABLE host_services OWNER TO lanview2;
 
-CREATE UNIQUE INDEX host_services_node_id_service_id ON host_services(node_id, service_id) WHERE port_id IS NULL;
+CREATE UNIQUE INDEX host_services_port_subservices_key ON host_services (node_id, service_id, COALESCE(port_id, -1), prime_service_id, proto_service_id);
+-- CREATE UNIQUE INDEX host_services_node_id_service_id ON host_services(node_id, service_id) WHERE port_id IS NULL;
 
 COMMENT ON TABLE host_services IS 'A szolgáltatás-node összerendelések, ill. a konkrét szolgáltatások vagy ellenörzés utasítások táblája';
 COMMENT ON COLUMN host_services.host_service_id IS 'Egyedi azonosító';
