@@ -176,14 +176,14 @@ Visszatérési érték a törölt rekordok száma. A törlés oka "expired"lessz
 
 -- --------------------------------------------------------------------------------------------
 
-DROP FUNCTION mactab_move(mactab, bigint, macaddr, settype, mactabstate[]);
-DROP FUNCTION mactab_remove(mactab, reasons);
-DROP FUNCTION mactab_changestat(mactab, mactabstate[], settype, boolean);
-DROP FUNCTION current_mactab_stat(bigint, macaddr, mactabstate[]);
-DROP FUNCTION insert_or_update_mactab(bigint, macaddr, settype, mactabstate[]);
-DROP TABLE mactab;
-DROP TABLE mactab_logs;
-DROP TYPE mactabstate;
+-- DROP FUNCTION mactab_move(mactab, bigint, macaddr, settype, mactabstate[]);
+-- DROP FUNCTION mactab_remove(mactab, reasons);
+-- DROP FUNCTION mactab_changestat(mactab, mactabstate[], settype, boolean);
+-- DROP FUNCTION current_mactab_stat(bigint, macaddr, mactabstate[]);
+-- DROP FUNCTION insert_or_update_mactab(bigint, macaddr, settype, mactabstate[]);
+-- DROP TABLE mactab;
+-- DROP TABLE mactab_logs;
+-- DROP TYPE mactabstate;
 
 CREATE TYPE mactabstate AS ENUM ('likely', 'arp', 'oui', 'suspect', 'link', 'lldp');
 ALTER TYPE mactabstate OWNER TO lanview2;
