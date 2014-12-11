@@ -239,6 +239,8 @@ STRDEF(Groups, "groups")
   STRDEF(NPort, "nport")
   STRDEF(PPort, "pport")
   STRDEF(Interface, "interface")
+ dnl preferred
+ STRDEF(IanaIdLink, "iana_id_link")
 
 STRDEF(Patchs,"patchs")
  STRDEF(NodeId,"node_id")

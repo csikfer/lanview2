@@ -773,7 +773,10 @@ const cIfType *cIfType::fromIana(int _iana_id)
     QList<cIfType *>::const_iterator    i;
     for (i = ifTypes.constBegin(); i < ifTypes.constEnd(); i++) {
         const cIfType *pift = *i;
-        if (pift->getBool(_sPreferred) && pift->getId(_sIfTypeIanaId) == _iana_id) return pift;
+        if (pift->getBool(_sPreferred) && pift->getId(_sIfTypeIanaId) == _iana_id) {
+            if (pift->isNull(_sIanaIdLink)) return pift;
+            return fromIana(pift->getId(_sIanaIdLink));
+        }
     }
     return NULL;
 }

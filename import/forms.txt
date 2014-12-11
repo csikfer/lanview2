@@ -249,6 +249,14 @@ TABLE SHAPE app_errs "Applikáció hiba napló" {
     TABLE VIEW   RIGHTS operator;
 }
 
+DELETE TABLE SHAPE host_service_logs;
+TABLE SHAPE host_service_logs "A szervíz példányok log rekordjai" {
+    SET DEFAULTS;
+    TABLE TYPE simple;
+    FIELD host_service_id ADD FILTERS begin, like, similar, regexp, regexpi;
+    FIELD * ORD no;
+}
+
 // ***************************************************************************************
 // Others:
 
@@ -357,8 +365,9 @@ GUI lv2gui {
     vlans    SHAPE vlans "VLAN-ok";
   }
   events MENU "Események" {
-    alarms   SHAPE alarms "Riasztások";
-    app_errs SHAPE app_errs "Program hibák";
+    alarms                       SHAPE alarms                       "Riasztások";
+    app_errs                   SHAPE app_errs                   "Program hibák";
+    host_service_logs SHAPE host_service_logs "Szervíz log";
   }
   others MENU "Egyéb táblák" {
     arps   SHAPE arps "ARP tábla";

@@ -16,13 +16,14 @@ COMMENT ON TYPE portobjtype IS
     interface,    A port objektum típusa cInterface, tábla interfaces (aktív port)
     unknown       Ismeretlen (az api kizárást fog dobni!)';
 CREATE TABLE iftypes (
-    iftype_id           bigserial          PRIMARY KEY,
+    iftype_id           bigserial       PRIMARY KEY,
     iftype_name         varchar(64)     NOT NULL UNIQUE,
     iftype_note         varchar(255)    DEFAULT NULL,
-    iftype_iana_id      bigint         NOT NULL DEFAULT 1, -- 'other'
+    iftype_iana_id      integer         NOT NULL DEFAULT 1, -- 'other'
     iftype_link_type    linktype        NOT NULL DEFAULT 'ptp',
     iftype_obj_type     portobjtype     NOT NULL,
-    preferred           bool            DEFAULT false
+    preferred           bool            DEFAULT false,
+    iana_id_link        integer         DEFAULT NULL
 );
 ALTER TABLE iftypes OWNER TO lanview2;
 COMMENT ON TABLE  iftypes               IS 'Network Interfaces (ports) típus leíró rekord.';
@@ -32,6 +33,8 @@ COMMENT ON COLUMN iftypes.iftype_note  IS 'Interface type''s description';
 COMMENT ON COLUMN iftypes.iftype_iana_id IS 'Protocoll Types id assigned by IANA';
 COMMENT ON COLUMN iftypes.iftype_link_type IS 'A porton értelmezhető link típusa';
 COMMENT ON COLUMN iftypes.iftype_obj_type IS 'A portot reprezentáló API objektum típusa.';
+COMMENT ON COLUMN iftypes.preferred     IS 'Ha az iana id alapján keresünk, csak az ''f'' érték esetén van találat a rekordra.';
+COMMENT ON COLUMN iftypes.iana_id_link IS 'Elavult ID esetén a helyette használandü iana ID-t tartalmazza';
 
 INSERT INTO iftypes
     (iftype_id, iftype_name,    iftype_note,              iftype_iana_id, iftype_link_type, iftype_obj_type) VALUES
@@ -62,7 +65,10 @@ INSERT INTO iftypes
     ( 'l2vlan',                 'VLan (SonicWall)',                    135,     'logical',    'interface',      't' ),
     ( 'digitalPowerline',       'IP over Power Lines',                 138,     'bus',        'interface',      'f' ),
     ( 'usb',                    'USB Interface',                       160,     'ptp',        'interface',      'f' );
--- //// LAN.NPORTS
+-- IANA iftype_id obsoloted
+INSERT INTO iftypes
+    (iftype_name,               iftype_note,                iftype_iana_id, iftype_obj_type, preferred, iana_id_link) VALUES
+    ( 'gigabitEthernet',        'Obsolote',                 117,            'interface',      't',      6);
 
 CREATE TYPE ifstatus AS ENUM (
     -- States for SNMP

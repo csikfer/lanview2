@@ -190,17 +190,33 @@ COMMENT ON COLUMN host_services.last_alarm_log_id IS 'Az utolsó riasztás log r
 CREATE OR REPLACE FUNCTION host_service_id2name(bigint) RETURNS TEXT AS $$
 DECLARE
     name TEXT;
+    proto TEXT;
+    prime TEXT;
 BEGIN
-    SELECT node_name || ':' || service_name || CASE WHEN p.port_name IS NULL THEN '' ELSE ':' || p.port_name END INTO name
+    SELECT
+            n.node_name || ':' || s.service_name || CASE WHEN p.port_name IS NULL THEN '' ELSE ':' || p.port_name END,
+            sprime.service_name,
+            sproto.service_name
+          INTO name, prime, proto
         FROM host_services hs
         JOIN nodes n USING(node_id)
         JOIN services s USING(service_id)
         LEFT JOIN nports p ON hs.port_id = p.port_id
+        JOIN services sproto ON hs.proto_service_id = sproto.service_id
+        JOIN services sprime ON hs.prime_service_id = sprime.service_id
         WHERE host_service_id = $1;
     IF NOT FOUND THEN
         PERFORM error('IdNotFound', $1, 'host_service_id', 'host_service_id2name()', 'host_services');
     END IF;
-    RETURN name;
+    IF proto = 'nil' AND prime = 'nil' THEN
+        RETURN name;
+    ELSIF proto = 'nil' THEN
+        RETURN name || '(:' || prime || ')';
+    ELSIF prime = 'nil' THEN
+        RETURN name || '(' || proto || ':)';
+    ELSE
+        RETURN name || '(' || proto || ':' || prime || ')';
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
 
