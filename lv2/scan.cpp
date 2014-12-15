@@ -385,36 +385,36 @@ bool setPortsBySnmp(cSnmpDevice& node, bool __ex)
 {
     QString sysdescr = node.getName(_sSysDescr);
     // Előszedjük a címet az ideiglenesen felvett, megadott egy port és egy cím alapján.
-    // A portot töröljük, az majd a lekérdezés teljes adatatartalommal felveszi
+    // A portot töröljük, azt majd a lekérdezés teljes adatatartalommal felveszi
     if (node.ports.size() != 1) {
         if (__ex) EXCEPTION(EDATA,-1, QObject::trUtf8("Itt csak egy. és csakis egy ideiglenes portot lehet megadni."));
         return false;
     }
-    cInterface *pMainIf = node.ports.pop_back()->reconvert<cInterface>();
-    if (!pMainIf->isNullId()) {
-        delete pMainIf;
+    cInterface *pTempIf = node.ports.pop_back()->reconvert<cInterface>();
+    if (!pTempIf->isNullId()) {
+        delete pTempIf;
         if (__ex) EXCEPTION(EDATA,-1, QObject::trUtf8("A megadott (ideiglenes) portnak nem lehet ID-je"));
         return false;
     }
-    if (pMainIf->addresses.size() != 1) {
-        delete pMainIf;
-        if (__ex) EXCEPTION(EDATA,-1, QObject::trUtf8("A megadott portnak egy és csakis egy címe lehet."));
+    if (pTempIf->addresses.size() != 1) {
+        delete pTempIf;
+        if (__ex) EXCEPTION(EDATA,-1, QObject::trUtf8("A megadott (ideiglenes) portnak egy és csakis egy címe lehet."));
         return false;
     }
-    if (!pMainIf->addresses[0]->isNullId()) {
-        delete pMainIf;
+    if (!pTempIf->addresses[0]->isNullId()) {
+        delete pTempIf;
         if (__ex) EXCEPTION(EDATA,-1, QObject::trUtf8("A megadott (ideiglenes) cím rekordnak nem lehet ID-je."));
         return false;
     }
 
-    QHostAddress mainAddr = pMainIf->addresses[0]->address();
-    delete pMainIf; // ez már nem kell.
-    if (mainAddr.isNull()) {
-        if (__ex) EXCEPTION(EDATA,-1, QObject::trUtf8("Nincs beállítva IP megfelelő IP cím"));
+    QHostAddress hostAddr = pTempIf->addresses[0]->address();
+    delete pTempIf; // ez már nem kell.
+    if (hostAddr.isNull()) {
+        if (__ex) EXCEPTION(EDATA,-1, QObject::trUtf8("Nincs beállítva megfelelő IP cím"));
         return false;
     }
 
-    cSnmp   snmp(mainAddr.toString(), node.getName(_sCommunityRd));
+    cSnmp   snmp(hostAddr.toString(), node.getName(_sCommunityRd));
     if (!snmp.isOpened()) EX(ESNMP, 0, node.getName(_sAddress));
     cTable      tab;    // Interface table container
     QStringList cols;   // Table col names container
@@ -491,7 +491,7 @@ bool setPortsBySnmp(cSnmpDevice& node, bool __ex)
             cIpAddress& pa = pIf->addIpAddress(addr, _sFixIp);
             pa.thisIsExternal(q);    // Ez lehet külső cím is !!
             // A paraméterként megadott címet preferáltnak vesszük
-            if (addr == mainAddr) {   // Ez az
+            if (addr == hostAddr) {   // Ez az
                 pa.setId(_sPreferred, 0);
             }
         }

@@ -121,6 +121,7 @@ STRDEF(ParamTypes, "param_types")
  STRDEF(ParamTypeId, "param_type_id")
  STRDEF(ParamTypeName, "param_type_name")
   STRDEF(SuspectedUplink, "suspected_uplink")   dnl boolean (TABLE:mactab / APP:portmac)
+  STRDEF(SearchDomain, "search_domain")
  STRDEF(ParamTypeNote, "param_type_note")
  STRDEF(ParamTypeType, "param_type_type")
   dnl boolean

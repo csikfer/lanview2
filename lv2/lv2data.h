@@ -191,6 +191,28 @@ EXT_ int paramType(const QString& __n, bool __ex = true);
 /// @return A típus névvel tér vissza, ha nincs ilyen típus, és __ex értéke false, akkor egy üres stringgel.
 EXT_ const QString& paramType(int __e, bool __ex = true);
 
+/// @enum eNodeType
+/// Hálózati elemek típus azonosítók (set)
+enum eNodeType {
+    // NT_INVALID = -1,
+    NT_NODE = 0,
+    NT_HOST,
+    NT_SWITCH,
+    NT_VIRTUAL,
+    NT_SNMP
+};
+
+/// Node típus név konverzió
+/// @param __n A node típus neve (SQL enumerációs érték)
+/// @param __ex Ha értéke true, és nem valós típusnevet adtunk meg, akkor dob egy kizárást.
+/// @return A típus konstanssal tér vissza, ha nincs ilyen típus, és __ex értéke false, akkor a NT_INVALID konstanssal.
+EXT_ int nodeType(const QString& __n, bool __ex = true);
+/// Paraméter típus név konverzió
+/// @param __e A node típus konstans
+/// @param __ex Ha értéke true, és nem valós típus konstanst adtunk meg, akkor dob egy kizárást.
+/// @return A típus névvel tér vissza, ha nincs ilyen típus, és __ex értéke false, akkor egy üres stringgel.
+EXT_ const QString& nodeType(int __e, bool __ex = true);
+
 /* ------------------------------------------------------------------ */
 /// Paraméter típus leíró rekord
 class LV2SHARED_EXPORT cParamType : public cRecord {
@@ -995,6 +1017,12 @@ public:
     // virtual bool insert(QSqlQuery &__q, bool __ex = true);
     /// Kitölti a ports adattagot, hiba esetén dob egy kizárást.
     virtual int  fetchPorts(QSqlQuery& __q, bool __ex = true);
+    /// A név alapján visszaadja a rekord ID-t, az objektum értéke nem változik.
+    /// Ha a node típusban be lett állítva a host bit, akkor ha nincs találat a névre, akkor
+    /// a keresett nevet kiegészíti a kereső domain nevekkel, és az így kapott nevekkel végrehajt mégegy keresést.
+    /// A kereső domain nevek a sys_param táblában azok a rekordok, melyek típusának a neve "search domain".
+    /// Ez utobbi esetben ha több találat van, akkor a sys_param.sys_param_name alapján rendezett első találattal tér vissza.
+    virtual qlonglong getIdByName(QSqlQuery& __q, const QString& __n, bool __ex = true) const;
     /// Hibát dob, ebben az osztályban nem támogatott
     virtual void clearShares();
     /// Hibát dob, ebben az osztályban nem támogatott
@@ -1055,10 +1083,9 @@ public:
     /// A MAC NULL lessz, az ip cím típusa pedig "pseudo", és csak IPV4 formályú cím lehet
     cNPort *addSensors(const QString& __np, int __noff, int __from, int __to, int __off, const QHostAddress& __pip);
 
-    /// Beolvas egy objektumot/rekordot az IP alapján. Nem feltétlenül tartalmazza a beolvasott
-    /// objektum a megadott címet. A metódus elöbb megkeresi a megadott IP címmel rendelkező iface_addrs rekordot,
-    /// és az ehhez tartozó host-ot olvassa be. Ha esetleg cSnmpDevice objektummal hívjuk, és a beolvasandó rekord
-    /// csak a parentben szerepel, akkor nem fog beolvasni semmit, vagyis nem lessz találat.
+    /// Beolvas egy objektumot/rekordot az IP alapján. A metódus elöbb megkeresi a megadott IP címmel rendelkező
+    /// iface_addrs rekordot, és az ehhez tartozó host-ot olvassa be. Ha esetleg cSnmpDevice objektummal hívjuk,
+    /// és a beolvasandó rekord csak a parentben szerepel, akkor nem fog beolvasni semmit, vagyis nem lessz találat.
     /// @param q Az adatbázisműveletekhez használt objektum
     /// @param a A keresett IP cím
     /// @return Ha van találat, ill. beolvasott rekord, akkor true, egyébként false

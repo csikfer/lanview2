@@ -2357,6 +2357,11 @@ cRecord& cRecord::setMac(int __i, const cMac& __a, bool __ex)
     return *this;
 }
 
+qlonglong cRecord::getIdByName(QSqlQuery& __q, const QString& __n, bool __ex) const
+{
+    return descr().getIdByName(__q, __n, __ex);
+}
+
 bool cRecord::insert(QSqlQuery& __q, bool _ex)
 {
     // _DBGFN() << "@(," << DBOOL(_ex) << ") table : " << fullTableName() << endl;

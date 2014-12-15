@@ -1453,6 +1453,31 @@ cPatch * cPatch::getNodeObjById(QSqlQuery& q, qlonglong __node_id, bool __ex)
 
 /* ------------------------------ NODES : cNode ------------------------------ */
 
+int nodeType(const QString& __n, bool __ex)
+{
+    if (0 == __n.compare(_sNode,    Qt::CaseInsensitive)) return NT_NODE;
+    if (0 == __n.compare(_sHost,    Qt::CaseInsensitive)) return NT_HOST;
+    if (0 == __n.compare(_sSwitch,  Qt::CaseInsensitive)) return NT_SWITCH;
+    if (0 == __n.compare(_sVirtual, Qt::CaseInsensitive)) return NT_VIRTUAL;
+    if (0 == __n.compare(_sSnmp,    Qt::CaseInsensitive)) return NT_SNMP;
+    if (__ex == true)   EXCEPTION(EDATA, -1, __n);
+    return NT_INVALID;
+}
+
+const QString& nodeType(int __e, bool __ex)
+{
+    switch (__e) {
+    case NT_NODE:       return _sNode;
+    case NT_HOST:       return _sHost;
+    case NT_SWITCH:     return _sSwitch;
+    case NT_VIRTUAL:    return _sVirtual;
+    case NT_SNMP:       return _sSnmp;
+    }
+    if (__ex == true)   EXCEPTION(EDATA, __e);
+    return _sNul;
+}
+
+
 cNode::cNode() : cPatch(_no_init_)
 {
     _set(cNode::descr());
@@ -1485,6 +1510,7 @@ const cRecStaticDescr&  cNode::descr() const
 {
     if (initPDescr<cNode>(_sNodes)) {
         CHKENUM(_sNodeStat, notifSwitch);
+        CHKENUM(_sNodeType, nodeType);
     }
     return *_pRecordDescr;
 }
@@ -1510,6 +1536,26 @@ int  cNode::fetchPorts(QSqlQuery& __q, bool __ex) {
     } while (__q.next());
     __q.finish();
     return ports.count();
+}
+
+qlonglong cNode::getIdByName(QSqlQuery& __q, const QString& __n, bool __ex) const
+{
+    qlonglong id = descr().getIdByName(__q, __n, false);
+    if (id != NULL_ID) return id;
+    static qlonglong type_id = NULL_ID;
+    if (type_id == NULL_ID) type_id = cParamType().getIdByName(__q, _sSearchDomain);
+    QString sql =
+            "nodes.node_id FROM nodes WHERE "
+                "'host' = ANY (node_type) AND "
+                "node_name IN "
+                    "( SELECT ? || '.' || param_value FROM sys_params WHERE param_type_id = ? ORDER BY sys_param_name ) "
+                "LIMIT 1";
+    __q.bindValue(0,__n);
+    __q.bindValue(1,type_id);
+    if (!__q.exec()) SQLQUERYERR(__q);
+    if (__q.first()) return __q.value(0).toLongLong();
+    if (__ex) EXCEPTION(EFOUND,0,__n);
+    return NULL_ID;
 }
 
 cNPort *cNode::addPort(const cIfType& __t, const QString& __name, const QString& __note, int __ix)
@@ -1991,12 +2037,19 @@ bool cSnmpDevice::setBySnmp(const QString& __com, bool __ex)
         }
     }
     setName(_sCommunityRd, community);
-    return setSysBySnmp(*this) && setPortsBySnmp(*this, __ex);
+    if (setSysBySnmp(*this) && setPortsBySnmp(*this, __ex)) {
+        if (isNull(_sNodeType)) {   // Ha nics típus beállítva
+            qlonglong nt = enum2set(NT_HOST, NT_SNMP);
+            if (ports.size() > 7) nt |= enum2set(NT_SWITCH); // több mint 7 port, meghasaljuk, hogy switch
+            setId(_sNodeType, nt);
+        }
+        return true;
+    }
 #else // MUST_SCAN
     (void)__com;
     if (__ex) EXCEPTION(ENOTSUPP, -1, snmpNotSupMsg());
-    return false;
 #endif // MUST_SCAN
+    return false;
 }
 
 int cSnmpDevice::open(QSqlQuery& q, cSnmp& snmp, bool __ex) const

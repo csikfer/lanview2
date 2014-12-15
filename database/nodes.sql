@@ -475,11 +475,20 @@ COMMENT ON COLUMN ipaddresses.port_id IS 'A tulajdonos port, melyhez a cím tart
 
 CREATE TYPE nodetype AS ENUM ('node', 'host', 'switch', 'hub', 'virtual', 'snmp');
 ALTER TYPE nodetype OWNER TO lanview2;
+COMMENT ON TYPE nodetype IS '
+Típus azonosítók
+"node"          Passzív eszköz
+"host"          Aktív eszköz
+"switch"        Switch
+"hub"           HUB
+"virtual"       Virtuális eszköz
+"snmp"          SNMP képes eszköz
+';
 
 CREATE TABLE nodes (
     node_stat       notifswitch     DEFAULT NULL,
     node_alarm_msg  varchar(255)    DEFAULT NULL,
-    node_type       nodetype[]      NOT NULL,
+    node_type       nodetype[]      NOT NULL DEFAULT '{node}',
     alarm_place_group_id    bigint DEFAULT NULL,
     PRIMARY KEY (node_id),
     UNIQUE (node_name),
@@ -488,13 +497,18 @@ CREATE TABLE nodes (
 )
 INHERITS(patchs);
 ALTER TABLE nodes OWNER TO lanview2;
-COMMENT ON TABLE  nodes         IS 'Passzív hálózati elemek táblája';
+COMMENT ON TABLE  nodes         IS 'Passzív vagy aktív hálózati elemek táblája';
 COMMENT ON COLUMN nodes.node_stat IS 'Az eszköz állapota.';
 COMMENT ON COLUMN nodes.node_alarm_msg IS 'Riasztás esetén az eszközhöz rendelt opcionális hiba üzenet.';
+COMMENT ON COLUMN nodes.node_type IS 'Típus azonosítók.';
 
 -- //// LAN.SNMPDEVICES
 CREATE TYPE snmpver AS ENUM ('1'/*, '2'*/, '2c'/*, '3'*/);
 ALTER TYPE snmpver OWNER TO lanview2;
+
+INSERT INTO param_types
+    (param_type_name,    param_type_type,   param_type_note)    VALUES
+    ('search_domain',    'text',          'System paraméter: Search domain names(s)');
 
 CREATE TABLE snmpdevices (
     community_rd    varchar(16)    NOT NULL DEFAULT 'public',
