@@ -248,7 +248,8 @@ public:
         QString s = QChar('[');
         typename QList<T *>::const_iterator    i;
         for (i = QList<T *>::constBegin(); i < QList<T *>::constEnd(); i++) {
-            s += QChar(' ') + (*i)->toString() + QChar(',');
+            T *p = *i;
+            s += QChar(' ') + p->toString() + QChar(',');
         }
         if (s.size() > 1) s.chop(1);
         return s + QChar(' ') + QChar(']');

@@ -36,8 +36,18 @@ EXT_ QString snmpNotSupMsg();
 #include <net-snmp/net-snmp-includes.h>
 #include <string.h>
 
-EXT_ const QString&  snmpIfStatus(int __i);
-EXT_ int             snmpIfStatus(const QString& __s);
+enum eIfStatus {
+    IF_UP           = 1,
+    IF_DOWN         = 2,
+    IF_TESTING      = 3,
+    IF_UNKNOWN      = 4,
+    IF_DORMAT       = 5,
+    IF_NOTPRESENT   = 6,
+    IF_LOWERLAYERDOWN=7
+};
+
+EXT_ const QString&  snmpIfStatus(int __i, bool __ex = true);
+EXT_ int             snmpIfStatus(const QString& __s, bool __ex = true);
 
 typedef QVector<QVariant> QVariantVector;
 /// @class cTable

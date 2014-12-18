@@ -2701,7 +2701,7 @@ cRecordFieldConstRef cRecord::operator[](int __i) const
 
 QString cRecord::toString() const
 {
-    QString s = QChar('{');
+    QString s = QChar(' ') + tableName() + QChar('{');
     for (int i = 0; isIndex(i); i++) {
         s += QChar(' ') + columnNameQ(i);
         if (isNull(i)) s += " IS NULL, ";

@@ -198,6 +198,7 @@ enum eNodeType {
     NT_NODE = 0,
     NT_HOST,
     NT_SWITCH,
+    NT_HUB,
     NT_VIRTUAL,
     NT_SNMP
 };
@@ -778,6 +779,7 @@ public:
     virtual void toEnd();
     virtual bool toEnd(int i);
     virtual bool insert(QSqlQuery &__q, bool __ex = true);
+    virtual QString toString() const;
     // A trunkMembers konténer adattaghoz hozzáad egy port indexet
     void addTrunkMember(int __ix) { trunkMembers << __ix;  }
     int updateTrunkMembers(QSqlQuery& q, bool __ex);
@@ -1014,7 +1016,9 @@ public:
     // virtual void clearToEnd();
     // virtual void toEnd();
     // virtual bool toEnd(int i);
-    // virtual bool insert(QSqlQuery &__q, bool __ex = true);
+    /// A cPatch::insert(QSqlQuery &__q, bool __ex = true) hívása elött beállítja a
+    /// node_type értékét, ha az NULL.
+    virtual bool insert(QSqlQuery &__q, bool __ex = true);
     /// Kitölti a ports adattagot, hiba esetén dob egy kizárást.
     virtual int  fetchPorts(QSqlQuery& __q, bool __ex = true);
     /// A név alapján visszaadja a rekord ID-t, az objektum értéke nem változik.
@@ -1023,16 +1027,18 @@ public:
     /// A kereső domain nevek a sys_param táblában azok a rekordok, melyek típusának a neve "search domain".
     /// Ez utobbi esetben ha több találat van, akkor a sys_param.sys_param_name alapján rendezett első találattal tér vissza.
     virtual qlonglong getIdByName(QSqlQuery& __q, const QString& __n, bool __ex = true) const;
-    /// Hibát dob, ebben az osztályban nem támogatott
+    /// Hibát dob, ebben az osztályban nem támogatott, nem értelmezett
     virtual void clearShares();
-    /// Hibát dob, ebben az osztályban nem támogatott
+    /// Hibát dob, ebben az osztályban nem támogatott, nem értelmezett
     virtual bool setShare(int __a, int __ab = NULL_IX, int __b = NULL_IX, int __bb = NULL_IX, bool __cd = false);
-    /// Hibát dob, ebben az osztályban nem támogatott
+    /// Hibát dob, ebben az osztályban nem támogatott, nem értelmezett
     virtual bool updateShares(QSqlQuery& __q, bool __clr = false, bool __ex = true);
-    /// Hibát dob, ebben az osztályban nem támogatott
+    /// Hibát dob, ebben az osztályban nem támogatott, nem értelmezett
     virtual cPPort *addPort(const QString& __name, const QString &__note, int __ix);
-    /// Hibát dob, ebben az osztályban nem támogatott
+    /// Hibát dob, ebben az osztályban nem támogatott, nem értelmezett
     virtual cPPort *addPorts(const QString& __np, int __noff, int __from, int __to, int __off);
+    /// Kiírja a ports konténer tartalmát is
+    virtual QString toString() const;
 
     /// portok lista bővítése egy elemmel.
     /// @param __t A port típusát definiáló objektum referenciája
@@ -1162,6 +1168,9 @@ class LV2SHARED_EXPORT cSnmpDevice : public cNode {
     CRECORD(cSnmpDevice);
 public:
     cSnmpDevice(const QString& __n, const QString& __d);
+    /// A cPatch::insert(QSqlQuery &__q, bool __ex = true) hívása elött beállítja a
+    /// node_type értékét, ha az NULL.
+    virtual bool insert(QSqlQuery &__q, bool __ex = true);
     /// Lista bővítése egy elemmel.
     /// @param __t A port típusát definiáló objektum referenciája
     /// @param __name port_name

@@ -21,32 +21,32 @@
 
 #ifdef MUST_SNMP
 
-const QString&  snmpIfStatus(int __i)
+const QString&  snmpIfStatus(int __i, bool __ex)
 {
     switch(__i) {
-    case 1:     return _sUp;
-    case 2:     return _sDown;
-    case 3:     return _sTesting;
-    case 4:     return _sUnknown;
-    case 5:     return _sDormant;
-    case 6:     return _sNotPresent;
-    case 7:     return _sLowerLayerDown;
-    default:    EXCEPTION(EDATA);
+    case IF_UP:             return _sUp;
+    case IF_DOWN:           return _sDown;
+    case IF_TESTING:        return _sTesting;
+    case IF_UNKNOWN:        return _sUnknown;
+    case IF_DORMAT:         return _sDormant;
+    case IF_NOTPRESENT:     return _sNotPresent;
+    case IF_LOWERLAYERDOWN: return _sLowerLayerDown;
+    default:                if (__ex) EXCEPTION(EDATA);
     }
-    return _sNul;   // Inactive
+    return _sNul;
 }
 
-int  snmpIfStatus(const QString& __s)
+int  snmpIfStatus(const QString& __s, bool __ex)
 {
-    if (__s == _sUp)            return 1;
-    if (__s == _sDown)          return 2;
-    if (__s == _sTesting)       return 3;
-    if (__s == _sUnknown)       return 4;
-    if (__s == _sDormant)       return 5;
-    if (__s == _sNotPresent)    return 6;
-    if (__s == _sLowerLayerDown)return 7;
-    EXCEPTION(EDATA);
-    return 0;   // Inactive
+    if (!_sUp.compare(__s, Qt::CaseInsensitive))            return IF_UP;
+    if (!_sDown.compare(__s, Qt::CaseInsensitive))          return IF_DOWN;
+    if (!_sTesting.compare(__s, Qt::CaseInsensitive))       return IF_TESTING;
+    if (!_sUnknown.compare(__s, Qt::CaseInsensitive))       return IF_UNKNOWN;
+    if (!_sDormant.compare(__s, Qt::CaseInsensitive))       return IF_DORMAT;
+    if (!_sNotPresent.compare(__s, Qt::CaseInsensitive))    return IF_NOTPRESENT;
+    if (!_sLowerLayerDown.compare(__s, Qt::CaseInsensitive))return IF_LOWERLAYERDOWN;
+    if (__ex)  EXCEPTION(EDATA);
+    return 0;
 }
 
 /* *********************************************************************************************** */
@@ -456,6 +456,7 @@ void  cSnmp::_clear(void)
 
 int cSnmp::open(const char * __host, const char * __com, int __ver)
 {
+
     PDEB(VVERBOSE) << __PRETTY_FUNCTION__ << QChar('(') << __host << _sCommaSp << __ver << _sCommaSp << __ver << ")" << endl;
     _clear();
     snmp_sess_init(&session);

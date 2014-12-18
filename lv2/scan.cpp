@@ -531,6 +531,9 @@ bool setSysBySnmp(cSnmpDevice &node)
 {
     bool r = true;
     QString ma = node.getIpAddress().toString();
+    if (ma.isEmpty()) {
+        EXCEPTION(EDATA,-1,QObject::trUtf8("Hiányzó IP cím."));
+    }
     cSnmp   snmp(ma,node.getName(_sCommunityRd));
 
     if (!snmp.isOpened()) return false;

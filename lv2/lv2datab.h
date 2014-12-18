@@ -1082,7 +1082,15 @@ public:
     cRecord& setName(const QString& __i, const QString& __n)    { return setName(toIndex(__i), __n); }
     /// Az név (name) mező értékét állítja be
     /// @param __n Az név új értéke, ha null stringet adunk át, akkor NULL lessz.
-    cRecord& setName(const QString& __n)        { return setName(nameIndex(), __n); }
+    cRecord& setName(const QString& __n)            { return setName(nameIndex(), __n); }
+    ///
+    cRecord& setBool(int __i, bool __f)             { return set(__i, QVariant(__f)); }
+    cRecord& setBool(const QString __n, bool __f)   { return set(__n, QVariant(__f)); }
+    cRecord& setOn(int __i)                         { return setBool(__i, true); }
+    cRecord& setOn(const QString __n)               { return setBool(__n, true); }
+    cRecord& setOff(int __i)                        { return setBool(__i, false); }
+    cRecord& setOff(const QString __n)              { return setBool(__n, false); }
+    ///
     cRecord& setMac(int __i, const cMac& __a, bool __ex = true);
     cRecord& setMac(const QString& __n, const cMac& __a, bool __ex = true)   { return setMac(toIndex(__n), __a, __ex); }
     /// Az ID mezőket hasonlítja össze. Ha nincs vagy nem ismert az ID mező, akkor dob egy kizárást.
@@ -1390,7 +1398,7 @@ public:
     /// Egy egész szám vektort állít elő, ahol a vektor elemei a név szzerint megadott mezők indexe, lezárva egy -1 -értékkel.
     tIntVector   iTab(const QString __n1, const QString __n2, const QString __n3, const QString __n4)    { return descr().iTab(__n1, __n2, __n3, __n4); }
     /// Az objektumot (csak az adattartalmát) stringé konvertálja.
-    QString toString() const;
+    virtual QString toString() const;
     /// Az objektumot stringé konvertálja, a rekord leíróval együtt.
     QString allToString() const { return descr().toString() + " = " + toString(); }
     /// Rekord(ok) törlésa a név alapján

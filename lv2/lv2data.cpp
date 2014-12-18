@@ -1020,6 +1020,8 @@ const cRecStaticDescr&  cInterface::descr() const
     return *_pRecordDescr;
 }
 
+CRECDEFD(cInterface)
+
 void cInterface::clearToEnd()
 {
     cNPort::clearToEnd();
@@ -1062,7 +1064,10 @@ bool cInterface::insert(QSqlQuery &__q, bool __ex)
     return r;
 }
 
-CRECDEFD(cInterface)
+QString cInterface::toString() const
+{
+    return cRecord::toString() + " & adresses " + addresses.toString() + " ";
+}
 
 int cInterface::updateTrunkMembers(QSqlQuery& q, bool __ex)
 {
@@ -1458,6 +1463,7 @@ int nodeType(const QString& __n, bool __ex)
     if (0 == __n.compare(_sNode,    Qt::CaseInsensitive)) return NT_NODE;
     if (0 == __n.compare(_sHost,    Qt::CaseInsensitive)) return NT_HOST;
     if (0 == __n.compare(_sSwitch,  Qt::CaseInsensitive)) return NT_SWITCH;
+    if (0 == __n.compare(_sHub,     Qt::CaseInsensitive)) return NT_HUB;
     if (0 == __n.compare(_sVirtual, Qt::CaseInsensitive)) return NT_VIRTUAL;
     if (0 == __n.compare(_sSnmp,    Qt::CaseInsensitive)) return NT_SNMP;
     if (__ex == true)   EXCEPTION(EDATA, -1, __n);
@@ -1470,6 +1476,7 @@ const QString& nodeType(int __e, bool __ex)
     case NT_NODE:       return _sNode;
     case NT_HOST:       return _sHost;
     case NT_SWITCH:     return _sSwitch;
+    case NT_HUB:        return _sHub;
     case NT_VIRTUAL:    return _sVirtual;
     case NT_SNMP:       return _sSnmp;
     }
@@ -1523,6 +1530,25 @@ cPPort *cNode::addPorts(const QString&, int , int , int , int ) { EXCEPTION(ENOT
 
 CRECDEFD(cNode)
 
+bool cNode::insert(QSqlQuery &__q, bool __ex)
+{
+    int ixNodeType = toIndex(_sNodeType);
+    if (isNull(ixNodeType)) {
+        qlonglong nt = enum2set(NT_NODE);
+        foreach (const cNPort *pp, ports) {
+            if (pp->tableoid() == cInterface::_descr_cInterface().tableoid()) {
+                const cInterface *pi = (const cInterface *)pp;
+                if (!pi->addresses.isEmpty()) {
+                    nt = enum2set(NT_HOST);
+                    break;
+                }
+            }
+        }
+        setId(ixNodeType, nt);
+    }
+    return cPatch::insert(__q, __ex);
+}
+
 int  cNode::fetchPorts(QSqlQuery& __q, bool __ex) {
     QSqlQuery q = getQuery(); // A copy construktor vagy másolás az nem jó!!
     QString sql = "SELECT tableoid, port_id FROM nports WHERE node_id = ?";
@@ -1556,6 +1582,15 @@ qlonglong cNode::getIdByName(QSqlQuery& __q, const QString& __n, bool __ex) cons
     if (__q.first()) return __q.value(0).toLongLong();
     if (__ex) EXCEPTION(EFOUND,0,__n);
     return NULL_ID;
+}
+
+QString cNode::toString() const
+{
+    QString r;
+    r  = cRecord::toString();
+    r += " & ports ";
+    r += ports.toString();
+    return r + " ";
 }
 
 cNPort *cNode::addPort(const cIfType& __t, const QString& __name, const QString& __note, int __ix)
@@ -1752,14 +1787,27 @@ QList<QHostAddress> cNode::fetchAllIpAddress(QSqlQuery& q, qlonglong __id) const
 
 QHostAddress cNode::getIpAddress() const
 {
-    QHostAddress a;
-    if (ports.isEmpty()) return a;
-    cNPort *pp = ports.first();
-    if (pp->tableoid() != cInterface::_descr_cInterface().tableoid()) return a;
-    cInterface *pi = (cInterface *)pp;
-    if (pi->addresses.isEmpty()) return a;
-    a = pi->addresses.first()->address();
-    return a;
+    DBGFN();
+    if (ports.isEmpty()) {
+        _DBGFNL() << trUtf8(" A %1 elemnek nincsen portja, így IP címe sem.").arg(getName()) << endl;
+        return QHostAddress();
+    }
+    for (tRecordList<cNPort>::const_iterator pi = ports.constBegin(); pi < ports.constEnd(); ++pi) {
+        const cNPort *pp = *pi;
+        if (pp->tableoid() == cInterface::_descr_cInterface().tableoid()) {
+            const cInterface& i = *(const cInterface *)pp;
+            for (cIpAddresses::const_iterator ii = i.addresses.constBegin(); ii < i.addresses.constEnd(); ++ii) {
+                const cIpAddress& ip = **ii;
+                QHostAddress a = ip.address();
+                if (a.isNull()) {
+                    _DBGFNL() << trUtf8(" A %1 elemnek nincsen fix IP címe.").arg(getName()) << endl;
+                }
+                return a;
+            }
+        }
+    }
+    _DBGFNL() << trUtf8(" A %1 elemnek nincsen IP címe.").arg(getName()) << endl;
+    return QHostAddress();
 }
 
 cNode& cNode::asmbAttached(const QString& __n, const QString& __d, qlonglong __place)
@@ -1977,7 +2025,8 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const QStringPair *p
     if (pnm.isEmpty())    pnm    = ifType;
     cInterface *p = addPort(ifType, pnm, _sNul, 1)->reconvert<cInterface>();
     if (ma) *p = ma;
-    p->addIpAddress(ha, ipt);
+    p->addIpAddress(ha, ipt).setOn(_sPreferred);
+    PDEB(VERBOSE) << toString() << endl;
     return *this;
 }
 
@@ -2007,6 +2056,17 @@ cSnmpDevice::cSnmpDevice(const QString& __n, const QString &__d)
 // -- virtual
 CRECDDCR(cSnmpDevice, _sSnmpDevices)
 CRECDEFD(cSnmpDevice)
+
+bool cSnmpDevice::insert(QSqlQuery &__q, bool __ex)
+{
+    int ixNodeType = toIndex(_sNodeType);
+    if (isNull(ixNodeType)) {
+        qlonglong nt = enum2set(NT_HOST, NT_SNMP);
+        if (ports.size() > 8) nt |= enum2set(NT_SWITCH);
+        setId(ixNodeType, nt);
+    }
+    return cPatch::insert(__q, __ex);
+}
 
 cNPort *cSnmpDevice::addPort(const cIfType& __t, const QString& __name, const QString& __descr, int __ix)
 {

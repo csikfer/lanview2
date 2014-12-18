@@ -805,7 +805,7 @@ CREATE TRIGGER ipaddresses_check_before_modify_trigger       BEFORE INSERT OR UP
 -- Ha szükséges, módosítja a szekvenciát is, mert annak csak egy tulajdonosa lehet, voszont logikailag az
 -- összes leszármazott a tulajdonosa.
 -- host tábla hierarhia:
--- patchs --> nodes --> --> snmpdevices
+-- patchs --> nodes --> snmpdevices
 -- Check unique host_id for all inherited tables and modify sequence if necessary
 
 CREATE OR REPLACE FUNCTION node_check_before_insert() RETURNS TRIGGER AS $$
