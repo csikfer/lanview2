@@ -162,11 +162,11 @@ protected:
     bool                _nullable;      ///< Amező értéke NULL is lehet
     bool                _hasDefault;    ///< Ha a mezó rendelkezik alapértelmezett értékkel, akkor treu
     bool                _isInsert;      ///< Ha egy új rekord, akkor true, ha modosítás, akkor false
-    QString             _nullView;      ///< Ha mefadható NULL érték, akkor annak a megjelenése (NULL vagy Default)
+    QString             _nullView;      ///< Ha megadható NULL érték, akkor annak a megjelenése (NULL vagy Default)
     eFieldWidgetType    _wType;         ///< A widget típusa (a leszármazott objektumot azonosítja)
     eSyncType           _syType;        ///< A szinkronizálás típusa/módja
     QVariant            _value;         ///< A mező aktuális értéke
-    QWidget            *_pWidget;       ///< A megjelenítéshez létrejozptt QWidget (valós widget objektumÜ pointere
+    QWidget            *_pWidget;       ///< A megjelenítéshez létrejozptt QWidget (valós widget objektumÜ pointere)
     QSqlQuery          *pq;             ///< Amennyiben szükslges a megjelenítéshez adatbázis hozzáférés, akkor a QSqlQuery objektum pointere.
 protected slots:
     void modRec();                  ///< A rekord módosult, aktualizálandó a megjelenítés

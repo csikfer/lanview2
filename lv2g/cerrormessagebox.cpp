@@ -78,3 +78,11 @@ void cErrorMessageBox::endIt()
 {
     accept();
 }
+
+int cErrorMessageBox::condMsgBox(cError * _pe, QWidget *parent)
+{
+    if (_pe == NULL) return true;
+    cErrorMessageBox(_pe, parent).exec();
+    delete _pe;
+    return false;
+}

@@ -2646,6 +2646,16 @@ bool cRecord::update(QSqlQuery& __q, bool __only, const QBitArray& __set, const 
 
 }
 
+cError *cRecord::tryUpdate(QSqlQuery& __q, bool __only, const QBitArray& __set, const QBitArray& __where)
+{
+    cError *pe = NULL;
+    try {
+        update(__q, __only, __set, __where, true);
+    }
+    CATCHS(pe);
+    return pe;
+}
+
 bool cRecord::remove(QSqlQuery& __q, bool __only, const QBitArray& _fm, bool __ex)
 {
     QBitArray fm = _fm;

@@ -10,6 +10,7 @@ class cErrorMessageBox : public QDialog
 public:
     explicit cErrorMessageBox(cError * _pe, QWidget *parent = 0);
     static int messageBox(cError * _pe, QWidget *parent = 0) { return cErrorMessageBox(_pe, parent).exec(); }
+    static int condMsgBox(cError * _pe, QWidget *parent = 0);
 public slots:
     void endIt();
 };

@@ -492,11 +492,14 @@ void cEnumComboWidget::_set(int id)
 cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, cRecordFieldRef _fr, eSyncType _sy, bool _ro, QWidget * par)
     : cFieldEditBase(_tm, _fr, _sy, _ro, par)
 {
-    _wType = FEW_LINE;
+    _wType = FEW_LINE;  // Widget típus azonosító
     QLineEdit *pLE = new QLineEdit(par);
     _pWidget = pLE;
     bool nullable = _descr.isNullable;
+    QString tx;
     if (_readOnly == false) {
+        tx = _fr.toString();
+        _value = QVariant(tx);
         pLE->setText(_fr);
         switch (_descr.eColType) {
         case cColStaticDescr::FT_INTEGER:   pLE->setValidator(new cIntValidator( nullable, pLE));   break;
@@ -510,7 +513,7 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, cRecordFieldRef _fr, 
         connect(pLE, SIGNAL(editingFinished()),  this, SLOT(_set()));
     }
     else {
-        QString tx = _fr.view(*pq);
+        tx = _fr.view(*pq);
         if (_isInsert) {
             if (recDescr().autoIncrement()[fldIndex()]) tx = design().valAuto;
             else if (_hasDefault) tx = design().valDefault;

@@ -181,7 +181,7 @@ void cRecordDialog::init()
             pFormLayout = new QFormLayout;  // !!!
             pSplitter->addWidget(_frame(pFormLayout, _pWidget));
         }
-        cTableShapeField& mf = **i;
+        const cTableShapeField& mf = **i;
         int fieldIx = _record.toIndex(mf.getName());
         bool setRo = isReadOnly || mf.getBool(_sIsReadOnly);
         cFieldEditBase *pFW = cFieldEditBase::createFieldWidget(descriptor, _record[fieldIx], SY_NO, setRo, _pWidget);

@@ -883,7 +883,7 @@ void cRecordTable::modify()
             if (!e) EXCEPTION(EPROGFAIL);   // Ha egyet sem az is gáz
             pRd = pRdt->actPDialog();
         }
-        ((cAlternate&)pRd->record()) = *(cRecord *)pRec;
+        // ??!! // ((cAlternate&)pRd->record()) = *(cRecord *)pRec;
         pRd->restore();
         id = pRd->exec(false);
 
@@ -900,7 +900,9 @@ void cRecordTable::modify()
             else {
                 *pRec = pRd->record();
                 PDEB(VERBOSE) << "Update record : " << pRec->toString() << endl;
-                pRec->update(*pq, true);
+                if (!cErrorMessageBox::condMsgBox(pRec->tryUpdate(*pq, true))) {
+                    continue;   // Hiba volt hiba ablakkal, újra...
+                }
                 PDEB(VVERBOSE) << "Update returned : " << pRec->toString() << endl;
                 if (!pTableModel->update(row, pRec)) {  // Ha Ok ő szabadítja fel pRec-et
                     DERR() << "pTableModel->update(" << row << ", " << pRec->toString() << ") hívás sikertelen !" << endl;

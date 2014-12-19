@@ -1252,6 +1252,7 @@ public:
     ///                ha egy üres tömböt adunk át, ha viszont nem üres, de egyetlen true értéket sem tartalmazó tömböt adunk meg, akkor az a tábla
     ///                összes elemét kiválasztja.
     bool update(QSqlQuery& __q, bool __only, const QBitArray& __set = QBitArray(), const QBitArray& __where = QBitArray(), bool __ex = true);
+    cError *tryUpdate(QSqlQuery& __q, bool __only, const QBitArray& __set = QBitArray(), const QBitArray& __where = QBitArray());
     /// Törli az adatbázisból azokat a rekordot/rekordokat, amik a megadott mező maszk esetén egyeznek az
     /// objektumban tárolt mező(k) érték(ek)kel. Ha csak logikailag töröl, akkor az első mezőt visszaolvassa.
     /// Lásd még a whereString(QBitArray& __fm) metódust is.
