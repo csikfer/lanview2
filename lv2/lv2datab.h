@@ -1131,6 +1131,7 @@ public:
     /// @exception cError* Hiba esetén dob egy kizárást, ha _ex értéke true
     /// @return ha történt változás az adatbázisban, akkor true.
     virtual bool insert(QSqlQuery& __q, bool __ex = true);
+    cError *tryInsert(QSqlQuery& __q);
     /// Egy WHERE stringet állít össze a következőképpen.
     /// A feltételben azok a mezők fognak szerepelni, melyek indexének megfelelő bit az __fm tömbben igaz.
     /// A feltétel, ha a mező NULL, akkor \<mező név\> IS NULL, ha nem NULL, akkor ha isLike() a mező indexére igaz,
@@ -1263,6 +1264,7 @@ public:
     /// @exception Ha a QSqlQuery::prepare() metódus sikertelen, akkor dob egy kizárást, feltéve, hogy __ex igaz.
     /// @return true, ha a feltételnek megfelelt legalább egy rekord, és azt törölte. false, ha nincs egyetlen rekord sem
     bool remove(QSqlQuery& __q, bool __only = false, const QBitArray& __fm = QBitArray(), bool __ex = true);
+    cError *tryRemove(QSqlQuery& __q, bool __only = false, const QBitArray& __fm = QBitArray());
     /// Adat ellenőrzést végez
     /// Beállítja _stat értékét
     virtual bool checkData();

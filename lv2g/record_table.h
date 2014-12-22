@@ -14,6 +14,13 @@ class cRecordTable;
 class cRecordTableColumn;
 class cRecordTableFODialog;
 
+/*!
+@class cRecordTableFilter
+@brief
+A tábla megjelenítésnél a szűrő funkciókat ellátó objektum.
+
+Az objektum egy mezőre vonatkozó szűrési feltételt kezel
+ */
 class cRecordTableFilter : public QObject {
     friend class cRecordTableFODialog;
     Q_OBJECT
@@ -23,19 +30,26 @@ public:
     QString             where(QVariantList &qparams);
     void setFilter(int i);
     cTableShapeFilter& shapeFilter() { if (pFilter == NULL) EXCEPTION(EDATA); return *pFilter; }
-    int fieldType();
-    cRecordTableColumn& field;
-    cRecordTableFODialog &dialog;
-    cTableShapeFilter * pFilter;
+    int fieldType();                ///< A mező (oszlop) típusa
+    cRecordTableColumn& field;      ///< A megjelenítés mező (oszlop) leírója
+    cRecordTableFODialog &dialog;   ///< A szűrési feltétel megadásának a dialógusa
+    cTableShapeFilter * pFilter;    ///< A szűrő leíró objektuma
     int                 iFilter;
-    QVariant            param1;
-    bool                closed1;
-    QVariant            param2;
-    bool                closed2;
-    qlonglong           types;
-    QStringList         typeList;
+    QVariant            param1;     ///< Szűrés (opcionális) paramétere
+    bool                closed1;    ///< Ha a szűrési paraméter egy értékhatár, akkor ha true. akkor zárt intervallumként kell értelmezni.
+    QVariant            param2;     ///< Szűrés (opcionális) paramétere, ha két paraméter van
+    bool                closed2;    ///< Ha a második szűrési paraméter egy értékhatár, akkor ha true. akkor zárt intervallumként kell értelmezni.
+    qlonglong           types;      ///< A szűrés típusa, reláció a paraméter(ek)el
+    QStringList         typeList;   ///< A választható szűrés típusok (?)
 };
 
+/*!
+@class cRecordTableOrd
+@brief
+A tábla megjelenítésnél a rendezés funkciókat ellátó objektum.
+
+
+ */
 class cRecordTableOrd : public QObject {
     friend class cRecordTableFODialog;
     Q_OBJECT
@@ -113,18 +127,6 @@ public:
     int                     dataAlign;      // Qt::AlignmentFlag
     int                     headAlign;      // Qt::AlignmentFlag
     eDesignRole             dataRole;
-    /*
-    QColor                  fgHeadColor;
-    QColor                  bgHeadColor;
-    QFont                   headFont;
-    QColor                  fgDataColor;
-    QColor                  bgDataColor;
-//  QColor                  fgExDataColor;
-    QColor                  bgExDataColor;
-    QFont                   dataFont;
-//    QColor                  fgNullColor;
-//    QFont                   nullFont;
-*/
 };
 
 /// A tábla viszonyát meghatározó flag értékek
@@ -139,7 +141,7 @@ enum eRecordTableFlags  {
 };
 
 /// @class cRecordTable
-/// Egy adatbázis objektum megjelenítését végző objektum.
+/// Egy adatbázis tábla megjelenítését végző objektum.
 class cRecordTable : public QObject {
     friend class cRecordTableColumn;
     friend class cRecordTableModel;

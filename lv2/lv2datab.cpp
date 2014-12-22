@@ -2423,6 +2423,16 @@ bool cRecord::insert(QSqlQuery& __q, bool _ex)
     return r;
 }
 
+cError *cRecord::tryInsert(QSqlQuery &__q)
+{
+    cError *pe = NULL;
+    try {
+        insert(__q, true);
+    }
+    CATCHS(pe);
+    return pe;
+}
+
 bool cRecord::query(QSqlQuery& __q, const QString& sql, const tIntVector& __arg, bool __ex) const
 {
     if (!__q.prepare(sql)) SQLPREPERR(__q, sql);
@@ -2671,6 +2681,16 @@ bool cRecord::remove(QSqlQuery& __q, bool __only, const QBitArray& _fm, bool __e
     if (__only) sql += "ONLY ";
     sql += tableName() + whereString(fm);
     return query(__q, sql, fm, __ex) && __q.numRowsAffected() > 0;
+}
+
+cError *cRecord::tryRemove(QSqlQuery& __q, bool __only, const QBitArray& _fm)
+{
+    cError *pe = NULL;
+    try {
+        remove(__q, __only, _fm, true);
+    }
+    CATCHS(pe);
+    return pe;
 }
 
 bool cRecord::checkData()

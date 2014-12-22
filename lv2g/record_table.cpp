@@ -748,28 +748,17 @@ void cRecordTable::insert()
         }
         cRecordDialog   rd(rec, *pTableShape, buttons, pWidget());  // A rekord szerkesztő dialógus
         while (1) {
-            int r = rd.exec();
-            if (r == DBT_INSERT || r == DBT_OK) {   // Csak az OK, és Inser gombra csinálunk valamit
-                int ok;
-                cError *pe = NULL;
-                try {
-                    bool b;
-                    b = rd.accept();
-                    b = b && rec.insert(*pq);
-                    ok =  b ? 1 : 0;
-                } CATCHS(pe)
-                if (pe != NULL) ok = -1;
-                switch (ok) {
-                case 1:                     // OK
+            bool r = rd.exec();
+            if (r == DBT_INSERT || r == DBT_OK) {   // Csak az OK, és Insert gombra csinálunk valamit
+                int ok = rd.accept();
+                ok = ok && cErrorMessageBox::condMsgBox(rec.tryInsert(*pq));
+                if (ok) {
                     refresh();
                     if (r == DBT_OK) break; // Ha OK-t nyomott becsukjuk az dialóg-ot
                     continue;               // Ha Insert-et, akkor folytathatja a következővel
-                case 0:
+                }
+                else {
                     QMessageBox::warning(pWidget(), trUtf8("Az új rekord beszúrása sikertelen."), rd.errMsg());
-                    continue;
-                case -1:
-                    cErrorMessageBox::messageBox(pe);
-                    pDelete(pe);
                     continue;
                 }
             }
@@ -788,23 +777,15 @@ void cRecordTable::insert()
         while (1) {
             int r = rd.exec();
             if (r == DBT_INSERT || r == DBT_OK) {
-                int ok;
-                cError *pe = NULL;
-                try {
-                    ok = rd.accept() && rd.record().insert(*pq) ? 1 : 0;
-                } CATCHS(pe)
-                if (pe != NULL) ok = -1;
-                switch (ok) {
-                case 1:                     // OK
+                bool ok = rd.accept();
+                ok = ok && rd.record().tryInsert(*pq);
+                if (ok) {
                     refresh();
                     if (r == DBT_OK) break;
                     continue;
-                case 0:
+                }
+                else {
                     QMessageBox::warning(pWidget(), trUtf8("Az új rekord beszúrása sikertelen."), rd.errMsg());
-                    continue;
-                case -1:
-                    cErrorMessageBox::messageBox(pe);
-                    pDelete(pe);
                     continue;
                 }
             }
@@ -883,7 +864,6 @@ void cRecordTable::modify()
             if (!e) EXCEPTION(EPROGFAIL);   // Ha egyet sem az is gáz
             pRd = pRdt->actPDialog();
         }
-        // ??!! // ((cAlternate&)pRd->record()) = *(cRecord *)pRec;
         pRd->restore();
         id = pRd->exec(false);
 
@@ -898,7 +878,6 @@ void cRecordTable::modify()
                 continue;
             }
             else {
-                *pRec = pRd->record();
                 PDEB(VERBOSE) << "Update record : " << pRec->toString() << endl;
                 if (!cErrorMessageBox::condMsgBox(pRec->tryUpdate(*pq, true))) {
                     continue;   // Hiba volt hiba ablakkal, újra...
@@ -1093,7 +1072,7 @@ void cRecordTable::buttonPressed(int id)
 void cRecordTable::recordRemove(cAlternate * _pr)
 {
     PDEB(INFO) << "Remove : " << _pr->toString() << endl;
-    _pr->remove(*pq);
+    cErrorMessageBox::condMsgBox(_pr->tryRemove(*pq));
 }
 
 void cRecordTable::selectionChanged(QItemSelection,QItemSelection)
