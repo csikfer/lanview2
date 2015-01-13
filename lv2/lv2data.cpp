@@ -844,40 +844,42 @@ bool cNPort::insert(QSqlQuery &__q, bool __ex)
 
 // --
 
-bool cNPort::fetchPortByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id)
+bool cNPort::fetchPortByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, qlonglong __iftype_id)
 {
     clear();
     set(_ixNodeId,   QVariant(__node_id));
+    if (__iftype_id != NULL_ID) set(_sIfTypeId, __iftype_id);
     set(nameIndex(), __port_name);
     int n = completion(__q);
-    __q.finish();
+    if (n > 1) __q.finish();
     return n == 1;
 }
 
-qlonglong cNPort::getPortIdByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, bool ex)
+qlonglong cNPort::getPortIdByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, qlonglong __iftype_id, bool ex)
 {
     cNPort p;
-    if (!p.fetchPortByName(__q, __port_name, __node_id) && ex) EXCEPTION(EDATA, __node_id, __port_name);
+    if (!p.fetchPortByName(__q, __port_name, __node_id, __iftype_id) && ex) EXCEPTION(EDATA, __node_id, __port_name);
     return p.getId();
 }
 
-bool cNPort::fetchPortByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, bool __ex)
+bool cNPort::fetchPortByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, qlonglong __iftype_id, bool __ex)
 {
     clear();
     // A patch a közös ős
     qlonglong nid = cPatch().getIdByName(__q, __node_name, __ex);
     if (nid == NULL_ID) return false;
     setId(_ixNodeId, nid);
+    if (__iftype_id != NULL_ID) set(_sIfTypeId, __iftype_id);
     setName(nameIndex(), __port_name);
     int n = completion(__q);
-    __q.finish();
+    if (n > 1) __q.finish();
     return n == 1;
 }
 
-qlonglong cNPort::getPortIdByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, bool ex)
+qlonglong cNPort::getPortIdByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, qlonglong __iftype_id, bool ex)
 {
     cNPort p;
-    if (!p.fetchPortByName(__q, __port_name, __node_name, ex) && ex)
+    if (!p.fetchPortByName(__q, __port_name, __node_name, __iftype_id, ex) && ex)
         EXCEPTION(EDATA, -1, QString("%1:%2").arg(__node_name, __port_name));
     return p.getId();
 }

@@ -48,11 +48,7 @@ lv2d::lv2d()
             }
 
             setup();
-        } catch(cError * e) {
-            lastError = e;
-        } catch(...) {
-            lastError = NEWCERROR(EUNKNOWN);
-        }
+        } CATCHS(lastError)
     }
 }
 
@@ -103,11 +99,7 @@ void lv2d::reSet()
     try {
         down();
         setup();
-    } catch(cError * e) {
-        lastError = e;
-    } catch(...) {
-        lastError = NEWCERROR(EUNKNOWN);
-    }
+    } CATCHS(lastError)
     if (lastError != NULL) QCoreApplication::exit(lastError->mErrorCode);
 }
 
@@ -144,7 +136,7 @@ void cSupDaemon::postInit(QSqlQuery &q, const QString &)
                 "  WHERE host_services.node_id = %1 AND services.properties LIKE '%:daemon=%' AND host_service_id <> %2"
                 ).arg(nodeId()).arg(hostServiceId());
     if (!q.exec(sql)) SQLPREPERR(q, sql);
-    if (!q.first()) EXCEPTION(NOTODO);
+    if (!q.first())   EXCEPTION(NOTODO);
     do {
         cInspector *p = new cDaemon(q, this);
         if (p->hostService.getId(_sSuperiorHostServiceId) != hostServiceId()) {
@@ -176,7 +168,7 @@ enum eNotifSwitch cSupDaemon::run(QSqlQuery &q)
     bool to = false;
     QList<cInspector*>::Iterator i, n = pSubordinates->end();
     for (i = pSubordinates->begin(); i != n; ++i) {
-    cDaemon& d = *(cDaemon *)(*i);
+        cDaemon& d = *(cDaemon *)(*i);
         if (d.crashCnt >  d.maxCrashCnt)    continue;           // Ennek már annyi
         // if (d.crashCnt == d.oldCrashCnt)    d.crashCnt = 0;     // Ha sokáig nincs új elszállás, nullázzuk ?
         switch (d.daemonType) {
@@ -276,9 +268,13 @@ QString cDaemon::getParValue(const QString& n)
         if (  service().isIndex(n)) return   service().getName(n);
         if (     pNode->isIndex(n)) return      pNode->getName(n);
         if (n == "parent_id")       return QString::number(((lv2d *)lanView::getInstance())->pSelf->hostServiceId());
+        if (n == "S")   {
+            if (lanView::testSelfName.isNull()) return _sNul;
+            return "-S " + lanView::testSelfName;
+        }
         EXCEPTION(EDATA, 3, n);
     }
-    return QString();
+    return _sNul;
 }
 
 void cDaemon::getCmd()
@@ -302,8 +298,13 @@ void cDaemon::getCmd()
     if (cmd.isEmpty()) EXCEPTION(EDATA, -1, trUtf8("Insufficient command"));
     QString cmdFile;
     for (i = cmd.begin(); i != cmd.end() && !i->isSpace(); ++i) cmdFile += *i;
-    if (i == cmd.end()) cmd.clear();    // maradék a paraméterek
-    else                cmd.mid(i - cmd.begin());
+    if (i == cmd.end()) {
+        cmd.clear();    // nins a paraméter
+    }
+    else {
+        int n = i - cmd.begin();
+        cmd = cmd.mid(n);
+    }
     QFileInfo   f(cmdFile);
     if (f.isExecutable()) {
  //       if (f.path().isEmpty()) {

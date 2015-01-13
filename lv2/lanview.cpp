@@ -281,6 +281,7 @@ void lanView::parseArg(void)
         QStdOut << trUtf8("-d|--debug-level <level>    Set debug level") << endl;
         QStdOut << trUtf8("-L|--log-file <file name>   Set log file name") << endl;
         QStdOut << trUtf8("-V|--lib-version            Print lib version") << endl;
+        QStdOut << trUtf8("-S|--test-self-name         Test option") << endl;
         QStdOut << trUtf8("-h|--help                   Print help") << endl;
         EXCEPTION(EOK); // Exit program
     }

@@ -68,7 +68,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 COMMENT ON FUNCTION alarm_id2name(bigint) IS '
-Álltatános is2name függvény.
+Álltatános id2name függvény.
 Az alarms.alarm_id érték alapján egy megjeleníthető stringgel tér vissza.
 Ha nem létezik az azonosító szerinti rekord, akkor hibát dob.
 ';
@@ -227,11 +227,9 @@ BEGIN
        hs.hard_state         <> old_hs.hard_state OR
        hs.soft_state         <> old_hs.soft_state THEN
         INSERT INTO host_service_logs(host_service_id, old_state, old_soft_state, old_hard_state,
-                           new_state, new_soft_state, new_hard_state, event_note, superior_alarm, noalarm,
-                           service_name, node_name)
+                           new_state, new_soft_state, new_hard_state, event_note, superior_alarm, noalarm)
             VALUES  (hsid, old_hs.host_service_state, old_hs.soft_state, old_hs.hard_state,
-                           hs.host_service_state, hs.soft_state, hs.hard_state, note, sup, na = 'on',
-                           s.service_name, (SELECT node_name FROM nodes WHERE node_id = hs.node_id));
+                           hs.host_service_state, hs.soft_state, hs.hard_state, note, sup, na = 'on');
     END IF;
     -- Alarm
     CASE

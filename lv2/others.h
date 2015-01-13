@@ -198,5 +198,6 @@ private:
 /// Egy dummy osztály dummy példány, hogy lehessen referencia az osztályra.
 extern no_init_ _no_init_;
 
+static inline QString inParentheses(const QString& s) { return QString("(%1)").arg(s); }
 
 #endif // OTHERS_H

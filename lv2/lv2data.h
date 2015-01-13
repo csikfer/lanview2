@@ -623,7 +623,7 @@ protected:
     /// Konstruktor a leszámazottak számára.
     explicit cNPort(no_init_& __dummy) : cRecord() { __dummy = __dummy; cNPort::descr(); }
 public:
-    /// Törli a params konténert is.
+    /// Törli a params konténert.
     virtual void clearToEnd();
     /// A port id indexével hívja a toEnd(int i) metódust
     virtual void toEnd();
@@ -633,30 +633,47 @@ public:
     virtual bool insert(QSqlQuery &__q, bool __ex = false);
 
     /// Egy port rekord beolvasása a port név és a node id alapján.
-    /// @return Ha egy rekordot beolvasott akkor true
-    bool fetchPortByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id);
-    /// Egy port rekord beolvasása a port név és a node id alapján.
-    /// Ha nem tudja beolvasni a rekordot, akkor dob egy kizárást.
-    /// @return Ha egy rekordot beolvasott akkor true
-    cNPort& setPortByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id) {
-        if (!fetchPortByName(__q, __port_name, __node_id)) EXCEPTION(EDATA,__node_id,__port_name);
+    /// @param __q Az adatbázis műveletjez haszbált objektum.
+    /// @param __port_name A keresett port neve
+    /// @param __node_id A hálózati elem ID, melynek a portját keressük
+    /// @param __iftype_id Opcionális paraméter, a port típusa
+    /// @return Ha egy rekordot beolvasott akkor true. Ha nem adtunk meg a __port_type_id paramétert, ill. értéke NULL_ID,
+    ///     akkor több találat is lehet, akkor beolvasásra kerül az első port adatai, és a visszaadott érték false.
+    ///     Ez utobbi esetben a next() metódussal olvasható be a következő találat.
+    bool fetchPortByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, qlonglong __iftype_id = NULL_ID);
+    /// Egy port rekord beolvasása/objektum feltültése a port név és a node id, ill. opcionálisan a port típus alapján.
+    /// @param __q Az adatbázis műveletjez haszbált objektum.
+    /// @param __port_name A keresett port neve
+    /// @param __node_id A hálózati elem ID, melynek a portját keressük
+    /// @param __iftype_id Opcionális paraméter, a port típusa
+    /// @return Az objektum referencia
+    /// @exceptions Ha nincs ilyen port, vagy ha nem adtuk meg a típust, és a megadott név nen egyedi, akkor dob egy kizárást.
+    cNPort& setPortByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, qlonglong __iftype_id = NULL_ID) {
+        if (!fetchPortByName(__q, __port_name, __node_id, __iftype_id)) {
+            QString s = __port_name;
+            if (__iftype_id != NULL_ID) s += inParentheses(cIfType::ifTypeName(__iftype_id, false));
+            EXCEPTION(EDATA,__node_id, s);
+        }
         return *this;
     }
     /// Egy port id  lekérése a port név és a node_id alapján.
-    static qlonglong getPortIdByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, bool __ex = true);
+    static qlonglong getPortIdByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, qlonglong __iftype_id = NULL_ID, bool __ex = true);
     /// Egy port rekord beolvasása a port név és a node neve alapján.
     /// @param __ex Ha értéke false, és a megadott nevű node nem létezik, akkor dob egy kizárást, egyébként visszatér false-val.
     /// @return Ha egy rekordot beolvasott akkor true
-    bool fetchPortByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, bool __ex = true);
+    bool fetchPortByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, qlonglong __iftype_id = NULL_ID, bool __ex = true);
     /// Egy port rekord beolvasása a port név és a node neve alapján.
     /// Ha nem tudja beolvasni a rekordot, akkor dob egy kizárást.
-    cNPort& setPortByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name) {
-        if (!fetchPortByName(__q, __port_name, __node_name))
-            EXCEPTION(EDATA, -1,QString("%1:%2").arg(__node_name,__port_name));
+    cNPort& setPortByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, qlonglong __iftype_id = NULL_ID) {
+        if (!fetchPortByName(__q, __port_name, __node_name, __iftype_id)) {
+            QString s = QString("%1:%2").arg(__node_name,__port_name);
+            if (__iftype_id != NULL_ID) s += inParentheses(cIfType::ifTypeName(__iftype_id, false));
+            EXCEPTION(EDATA, -1, s);
+        }
         return *this;
     }
     /// Egy port id  lekérése a port név és a node név alapján.
-    static qlonglong getPortIdByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, bool __ex = true);
+    static qlonglong getPortIdByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, qlonglong __iftype_id = NULL_ID, bool __ex = true);
     /// Egy port rekord beolvasása a port index és a node_id alapján.
     bool fetchPortByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id);
     /// Egy port rekord beolvasása a port index és a node_id alapján.

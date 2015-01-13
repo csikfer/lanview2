@@ -1,22 +1,33 @@
 
-SERVICE local       "local service"         { NIL;      PROP ":PROTOCOL:"; }
-SERVICE snmp        snmp                    { UDP 161;  PROP ":PROTOCOL:"; }
-SERVICE "tcp.rs"    "TCP serial port gateway"{TCP 4001; PROP ":PROTOCOL:"; }
-SERVICE ssh         ssh                     { TCP 22;   CMD "check_ssh $address";          }
-SERVICE telnet      telnet                  { TCP 23;   CMD "check_tcp 23  $address";      }
-SERVICE http        http                    { TCP 80;   CMD "check_http $address";         }
-SERVICE https       https                   { TCP 443;  }
-SERVICE munin       "munin-node"            { TCP 4949; }
+SERVICE local       "local service"         { NIL;      PROP ":protocol:"; }
+SERVICE snmp        snmp                    { UDP 161;  PROP ":protocol:"; }
+SERVICE "tcp.rs"    "TCP serial port gateway"{TCP 4001; PROP ":protocol:"; }
 
+SERVICE munin       "munin-node"            { TCP 4949;  PROP ":protocol:";}
 
-SERVICE "dhcp.conf" "DHCP config fájl, local vagy ssh-n keresztül"      { NIL;      PROP ":file=/etc/dhcp/dhcpd.conf:"; }
-SERVICE "arp.proc"  "ARP fájl a proc-ban, local vagy ssh-n keresztül"   { NIL;      PROP ":file=/proc/net/arp:"; }
+SERVICE ssh         ssh                     { TCP 22;   CMD "check_ssh $address";          PROP ":protocol:system=nagios:"; }
+SERVICE telnet      telnet                  { TCP 23;   CMD "check_tcp 23  $address";      PROP ":protocol:system=nagios:"; }
+SERVICE http        http                    { TCP 80;   CMD "check_http $address";         PROP ":protocol:system=nagios:"; }
+SERVICE https       https                   { TCP 443;                                     PROP ":protocol:"; }
+
+SERVICE "dhcp.conf" "DHCP config fájl, local vagy ssh-n keresztül"      { NIL;      PROP ":mode:file=/etc/dhcp/dhcpd.conf:"; }
+SERVICE "arp.proc"  "ARP fájl a proc-ban, local vagy ssh-n keresztül"   { NIL;      PROP ":mode:file=/proc/net/arp:"; }
+
+//--------------------------------------------------------
+
+SERVICE lv2d "Lanview2 super server" {
+    NIL;
+    PROP ":daemon=continue:inspector=timed:superior:";
+    NORMAL CHECK INTERVAL  60;
+    RETRY CHECK INTERVAL   60;
+}
 //--------------------------------------------------------
 
 SERVICE arpd        "Arp daemon" {
     NIL;
     PROP ":daemon=continue:inspector=timed:superior:";
-    COMMAND "arpd";
+    SUPERIOR SERVICE MASK lv2d;
+    COMMAND "arpd $S";
     NORMAL CHECK INTERVAL  600;
     RETRY CHECK INTERVAL   600;
 }
@@ -31,17 +42,11 @@ SERVICE "arp" "ARP tábla lekérdezése" {
 
 //--------------------------------------------------------
 
-SERVICE lv2d "Lanview2 super server" {
-    NIL;
-    PROP ":daemon=continue:inspector=timed:superior:";
-    NORMAL CHECK INTERVAL  60;
-    RETRY CHECK INTERVAL   60;
-}
-
 SERVICE icontsrv "icontsrv daemon" {
     NIL;
     PROP ":daemon=continue:inspector=timed:superior:";
-    COMMAND "icontsrv";
+    SUPERIOR SERVICE MASK lv2d;
+    COMMAND "icontsrv $S";
     NORMAL CHECK INTERVAL  60;
     RETRY CHECK INTERVAL   60;
 }
@@ -49,7 +54,8 @@ SERVICE icontsrv "icontsrv daemon" {
 SERVICE import "import daemon" {
     NIL;
     PROP ":daemon=respawn:";
-    COMMAND "import -D";
+    SUPERIOR SERVICE MASK lv2d;
+    COMMAND "import $S -D";
     NORMAL CHECK INTERVAL 300;
     RETRY CHECK INTERVAL  300;
 }
@@ -57,7 +63,8 @@ SERVICE import "import daemon" {
 SERVICE portstat "Device port status query daemon" {
     NIL;
     PROP ":daemon=contimue:inspector=timed:superior:";
-    COMMAND "portstat";
+    SUPERIOR SERVICE MASK lv2d;
+    COMMAND "portstat $S";
     NORMAL CHECK INTERVAL 300;
     RETRY CHECK INTERVAL  300;
 }
@@ -66,7 +73,7 @@ SERVICE portstat "Device port status query daemon" {
 
 SERVICE "pstat" "Query port status by <protocol>" {
     NIL;
-    SUPERIOR SERVICE MASK "portstat";
+//    SUPERIOR SERVICE MASK "portstat"; // Autómatikus összerendelésre nincs mód, felesleges
     PROP ":inspector=timed:superior=custom:";
     MAX CHECK ATTEMPTS     2;
     NORMAL CHECK INTERVAL 30;
@@ -102,8 +109,9 @@ SERVICE indalarmif1ma "IndAlarm Contact V1 Master" {
 //---------------------------------------------------------
 SERVICE portmac "Device port address table query daemon" {
     NIL;
+    SUPERIOR SERVICE MASK lv2d;
     PROP ":daemon=contimue:inspector=timed:superior:";
-    COMMAND "portmac";
+    COMMAND "portmac $S";
     NORMAL CHECK INTERVAL 300;
     RETRY CHECK INTERVAL  300;
 }

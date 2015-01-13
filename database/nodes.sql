@@ -113,7 +113,7 @@ CREATE TABLE nports (
     node_id     bigint          NOT NULL,   -- REFERENCES (patch, nodes, snmp_devs)
     port_index  bigint          DEFAULT NULL,   -- added 2011.09.05
     deleted     boolean         DEFAULT false,
-    UNIQUE(node_id, port_name)
+    UNIQUE(node_id, iftype_id, port_name)
 );
 ALTER TABLE nports OWNER TO lanview2;
 COMMENT ON TABLE  nports            IS 'Passzív portok táblája, az összes port típus őse';
@@ -334,12 +334,12 @@ CREATE TABLE interfaces (
     hwaddress       macaddr     DEFAULT NULL,
     port_ostat      ifstatus    NOT NULL DEFAULT 'unknown',
     port_astat      ifstatus    DEFAULT NULL,   -- The desired state of the interface
-    port_staple_id  bigint     DEFAULT NULL
+    port_staple_id  bigint      DEFAULT NULL
         REFERENCES interfaces(port_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
-    dualface_type   bigint     DEFAULT NULL
+    dualface_type   bigint      DEFAULT NULL
         REFERENCES iftypes(iftype_id) MATCH SIMPLE ON DELETE RESTRICT ON UPDATE RESTRICT,
     PRIMARY KEY (port_id),
-    UNIQUE(node_id, port_name),
+    UNIQUE(node_id, iftype_id, port_name),
     UNIQUE(port_name,  hwaddress),	-- EZ ITT NEM JO !!!!! Trigger függvény kell hozzá !!!
     CONSTRAINT interfaces_iftype_id_fkey FOREIGN KEY (iftype_id)
         REFERENCES iftypes(iftype_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT
@@ -544,7 +544,7 @@ CREATE OR REPLACE FUNCTION node_name2id(varchar(32)) RETURNS bigint AS $$
 DECLARE
     id bigint;
 BEGIN
-    SELECT node_id INTO id FROM patchs WHERE node_name = $1;
+    SELECT node_id INTO id FROM patchs WHERE node_name = $1 AND deleted = false;
     IF NOT FOUND THEN
         PERFORM error('NameNotFound', -1, $1, 'node_name2id()', 'patchs');
     END IF;
@@ -576,30 +576,6 @@ $$ LANGUAGE plpgsql;
 --
 -- Néhány port_id -vel kapcsolatos helper függvény
 --
--- Port neve és a node neve alapján visszaadja az ID-t, ha a név nem létezik, dob egy kizárást+hiba rekord
-CREATE OR REPLACE FUNCTION port_nn2id(varchar(32), varchar(32)) RETURNS bigint AS $$
-DECLARE
-    id bigint;
-BEGIN
-    SELECT port_id INTO id FROM nports JOIN patchs USING (node_id) WHERE node_name = $2 AND port_name = $1;
-    IF NOT FOUND THEN
-        PERFORM error('NameNotFound', -1, $2 || ':' || $1, 'port_nn2id()', 'nports');
-    END IF;
-    RETURN id;
-END
-$$ LANGUAGE plpgsql;
--- Port neve és a node_id alapján visszaadja az ID-t, ha a név nem létezik, dob egy kizárást+hiba rekord
-CREATE OR REPLACE FUNCTION port_name2id(varchar(32), bigint) RETURNS bigint AS $$
-DECLARE
-    id bigint;
-BEGIN
-    SELECT port_id INTO id FROM nports WHERE port_name = $1 AND node_id = $2;
-    IF NOT FOUND THEN
-        PERFORM error('NameNotFound', -1, $1, 'port_name2id()', 'nports');
-    END IF;
-    RETURN id;
-END
-$$ LANGUAGE plpgsql;
 -- Port ID-je alapján visszaadja az nevét, ha az ID nem létezik, dob egy kizárást+hiba rekord
 CREATE OR REPLACE FUNCTION port_id2name(bigint) RETURNS varchar(32) AS $$
 DECLARE
@@ -610,18 +586,6 @@ BEGIN
         PERFORM error('IdNotFound', $1, 'port_id', 'port_id2name()', 'nports');
     END IF;
     RETURN id;
-END
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION port_id2full_name(bigint) RETURNS varchar(32) AS $$
-DECLARE
-    nm varchar(32);
-BEGIN
-    SELECT port_name || node_name INTO nm FROM nports JOIN patchs USING(node_id) WHERE port_id = $1;
-    IF NOT FOUND THEN
-        PERFORM error('IdNotFound', $1, 'port_id', 'port_id2full_name()', 'nports');
-    END IF;
-    RETURN nm;
 END
 $$ LANGUAGE plpgsql;
 

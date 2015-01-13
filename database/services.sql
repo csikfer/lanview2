@@ -42,12 +42,11 @@ COMMENT ON COLUMN services.protocol_id      IS 'Ip protocol id (-1 : nil, if no 
 COMMENT ON COLUMN services.port             IS 'Default port number. or NULL';
 COMMENT ON COLUMN services.check_cmd        IS 'Default check command';
 COMMENT ON COLUMN services.properties       IS
-'Default magic string (szeparátor a kettőspont, paraméter szeparátor az ''='', első és utolsó karakter a szeparátor):
-MAGIC: (Ellenőrizni! Elavult?)
+'Default paraméter lista (szeparátor a kettőspont, paraméter szeparátor az ''='', első és utolsó karakter a szeparátor):
 daemon      Az szolgáltatás ellenörzése egy daemon program, paraméterek:
-    respawn     DAEMON paraméter: a programot újra kell indítani, ha kilép. A kilépés nem hiba.
-    continue    DAEMON paraméter: a program normál körülmények között nem lép ki, csak ha leállítják, vagy hiba van. (default)
-    polling     DEEMON paraméter: a programot időzítve kell hívni. He elvégezte az ellenörzést, akkor kilép.
+    respawn     daemon paraméter: a programot újra kell indítani, ha kilép. A kilépés nem hiba.
+    continue    daemon paraméter: a program normál körülmények között nem lép ki, csak ha leállítják, vagy hiba van. (default)
+    polling     daemon paraméter: a programot időzítve kell hívni. He elvégezte az ellenörzést, akkor kilép.
 inspector
     timed       Időzített
     thread      Időzített, saját szállal (?!)
@@ -56,7 +55,11 @@ inspector
 superior    Alárendelteket ellenörző eljárásokat hív, szolgál ki (passive)
     <üres>      Alárendelt viszony,autómatikus
     custom      egyedileg kezelt (a cInspector objektum nem ovassa be az alárendelteket, azok egyedileg kezelendőek)
-protocol    Protokol, módszer a szolgáltatás végrehajtásához (elavult ?)
+protocol    Protokolt (is) definiál
+mode        Módszer, sablon, ...
+system
+    nagios      Egy Nagios plugin
+    munin       Egy Munin olugin
 ifType      A szolgáltatás hierarhia mely port típus linkjével azonos (paraméter: interface típus neve)
 disabled    service_name = icontsrv , csak a host_services rekordban, a szolgáltatás (riasztás) tiltva.
 reversed    service_name = icontsrv , csak a host_services rekordban, a port fordított bekötését jelzi.
@@ -143,7 +146,7 @@ CREATE TABLE host_services (
     host_service_state  notifswitch    NOT NULL DEFAULT 'unknown',
     soft_state          notifswitch    NOT NULL DEFAULT 'unknown',
     hard_state          notifswitch    NOT NULL DEFAULT 'unknown',
-    superior_service    boolean        NOT NULL DEFAULT TRUE,
+    state_msg           varchar(255)   DEFAULT NULL,
     check_attempts      bigint         NOT NULL DEFAULT 0,
     last_changed        TIMESTAMP      DEFAULT NULL,
     last_touched        TIMESTAMP      DEFAULT NULL,
@@ -157,7 +160,7 @@ ALTER TABLE host_services OWNER TO lanview2;
 CREATE UNIQUE INDEX host_services_port_subservices_key ON host_services (node_id, service_id, COALESCE(port_id, -1), prime_service_id, proto_service_id);
 -- CREATE UNIQUE INDEX host_services_node_id_service_id ON host_services(node_id, service_id) WHERE port_id IS NULL;
 
-COMMENT ON TABLE host_services IS 'A szolgáltatás-node összerendelések, ill. a konkrét szolgáltatások vagy ellenörzés utasítások táblája';
+COMMENT ON TABLE  host_services IS 'A szolgáltatás-node összerendelések, ill. a konkrét szolgáltatások vagy ellenörzés utasítások táblája, és azok állpota.';
 COMMENT ON COLUMN host_services.host_service_id IS 'Egyedi azonosító';
 COMMENT ON COLUMN host_services.host_service_note IS 'Megjegyzés / leírás.';
 COMMENT ON COLUMN host_services.host_service_alarm_msg IS 'Riasztás esetén egy megjelnítendő üzenet ill. magyarázó szöveg.';
@@ -180,7 +183,7 @@ COMMENT ON COLUMN host_services.noalarm_to IS 'Ha a tiltáshoz záró időpont t
 COMMENT ON COLUMN host_services.host_service_state IS 'A szolgáltatás állapota, álltalában azonos a hard_state-val, kiegészítve a recovered, és flapping állapottal.';
 COMMENT ON COLUMN host_services.hard_state IS 'A szolgálltatás elfogadott állapota.';
 COMMENT ON COLUMN host_services.soft_state IS 'A szolgálltatás utolsó ellenörzés szerinti állapota.';
-COMMENT ON COLUMN host_services.superior_service IS '???';
+COMMENT ON COLUMN host_services.state_msg IS 'Az aktuális állapothoz tartozó opcionális állapot üzenet';
 COMMENT ON COLUMN host_services.check_attempts IS 'Hiba számláló.';
 COMMENT ON COLUMN host_services.last_changed IS 'Utolsó állapot változás időpontja.';
 COMMENT ON COLUMN host_services.last_touched IS 'Utolsó ellenözzés időpontja';
@@ -219,12 +222,12 @@ BEGIN
     END IF;
 END;
 $$ LANGUAGE plpgsql;
-
+COMMENT ON FUNCTION host_service_id2name(bigint) IS 'A host_service_id -ből a hivatkozott rekord alapján előállít egy egyedi nevet.';
 
 CREATE TABLE host_service_logs (
     host_service_log_id bigserial      PRIMARY KEY,
     host_service_id     bigint
-        REFERENCES host_services(host_service_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
+        REFERENCES host_services(host_service_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
     date_of             timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     old_state           notifswitch     NOT NULL,
     old_soft_state      notifswitch     NOT NULL,
@@ -234,9 +237,7 @@ CREATE TABLE host_service_logs (
     new_hard_state      notifswitch     NOT NULL,
     event_note          varchar(255)    DEFAULT NULL,
     superior_alarm      bigint          DEFAULT NULL,
-    noalarm             boolean         NOT NULL,
-    service_name        varchar(32)     NOT NULL DEFAULT '',
-    node_name           varchar(32)     NOT NULL DEFAULT ''
+    noalarm             boolean         NOT NULL
 );
 CREATE INDEX host_service_logs_date_of_index ON host_service_logs (date_of);
 ALTER TABLE host_service_logs OWNER TO lanview2;
@@ -526,7 +527,6 @@ CREATE OR REPLACE VIEW view_host_services AS
         hs.host_service_state       AS host_service_state,
         hs.soft_state               AS soft_state,
         hs.hard_state               AS hard_state,
-        hs.superior_service         AS superior_service,
         hs.check_attempts           AS check_attempts,
         hs.last_changed             AS last_changed,
         hs.last_touched             AS last_touched,

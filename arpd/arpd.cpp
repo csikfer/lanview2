@@ -52,11 +52,7 @@ lv2ArpD::lv2ArpD() : lanView()
             cDeviceArp::pPSDhcpConf= &cService::service(*pq, "dhcp.conf");
 
             setup();
-        } catch(cError * e) {
-            lastError = e;
-        } catch(...) {
-            lastError = NEWCERROR(EUNKNOWN);
-        }
+        } CATCHS(lastError)
     }
 }
 
@@ -108,11 +104,7 @@ void lv2ArpD::reSet()
     try {
         down();
         setup();
-    } catch(cError * e) {
-        lastError = e;
-    } catch(...) {
-        lastError = NEWCERROR(EUNKNOWN);
-    }
+    } CATCHS(lastError)
     if (lastError != NULL) QCoreApplication::exit(lastError->mErrorCode);
 }
 
