@@ -566,7 +566,7 @@ QString cIpAddress::lookup(const QHostAddress& ha, bool __ex)
 {
     QHostInfo hi = QHostInfo::fromName(ha.toString());
     if (hi.error() != QHostInfo::NoError) {
-        if (__ex) EXCEPTION(EDATA, hi.error(), trUtf8("A host név nem állapítható meg a cím alapján"));
+        if (__ex) EXCEPTION(EDATA, hi.error(), trUtf8("A host név nem állapítható meg a cím: '%1' alapján").arg(ha.toString()));
         return _sNul;
     }
     return hi.hostName();
@@ -576,7 +576,7 @@ QList<QHostAddress> cIpAddress::lookupAll(const QString& hn, bool __ex)
 {
     QHostInfo hi = QHostInfo::fromName(hn);
     if (hi.error() != QHostInfo::NoError) {
-        if (__ex) EXCEPTION(EDATA, hi.error(), trUtf8("Az IP cím nem állapítható meg a host név alapján"));
+        if (__ex) EXCEPTION(EDATA, hi.error(), trUtf8("Az IP cím nem állapítható meg a host név: '%1' alapján; %2").arg(hn, hi.errorString()));
         return QList<QHostAddress>();
     }
     return hi.addresses();
@@ -587,7 +587,14 @@ QHostAddress cIpAddress::lookup(const QString& hn, bool __ex)
     QList<QHostAddress> al = lookupAll(hn, __ex);
     int n = al.count();
     if (n != 1) {
-        if (__ex) EXCEPTION(AMBIGUOUS, n, trUtf8("A hoszt cím a név alapján nem egyértelmű."));
+        if (__ex && n > 1) {
+            QString als;
+            foreach (QHostAddress a, al) {
+                als += a.toString() + ",";
+            }
+            als.chop(1);
+            EXCEPTION(AMBIGUOUS, n, trUtf8("A hoszt cím a név: '%1' alapján nem egyértelmű : %2").arg(hn, als));
+        }
         return QHostAddress();
     }
     return al.first();
