@@ -217,6 +217,14 @@ int cTableShape::fetchFields(QSqlQuery& q)
     return shapeFields.count();
 }
 
+/// A megjelenítés típusát elöször beállítja az alapértelmezett TS_SIMPLE típusra.
+/// Törli a shapeField konténert, majd feltölti azt:
+/// Felveszi a tábla összes mezőjét, a *note és *title mező értéke a mező neve lessz.
+/// A mező sorrendjét meghatározó "field_sequence_number" mező értéke a mező sorszám * 10 lessz.
+/// Ha talál olyan mezőt, ami távoli kulcs, és 'FT_OWNER'tulajdonságú, akkor a tábla megjelenítés típushoz hozzáadja az TS_CHILD jelzőt.
+/// Ha a távoli kulcs a saját táblára mutat és tulajdonságot jelöl, akkor a TS_SIMPLE tíoust lecseréli TS_TREE típusra.
+/// A fenti két esetben a mezőn beállítja az 'is_hide' mezőt true-ra.
+/// Kapcsoló tábla esetén :
 bool cTableShape::setDefaults(QSqlQuery& q)
 {
     bool r = true;
@@ -231,28 +239,25 @@ bool cTableShape::setDefaults(QSqlQuery& q)
         fm.setName(_sTableShapeFieldTitle, cDescr);
         fm.setId(_sFieldSequenceNumber, (i + 1) * 10);
         bool ro = (!fm.isUpdatable()) || rDescr.primaryKey()[i] || rDescr.autoIncrement()[i];
+        bool hide = false;
         if (cDescr.fKeyType == cColStaticDescr::FT_OWNER) {
-            ro = true;
+            ro   = true;
+            hide = true;
             type |= enum2set(TS_CHILD);
-            cTableShape owner;
-            owner.setName(cDescr.fKeyTable);
-            if (1 == owner.completion(q)) setId(_sLeftShapeId, owner.getId());
-            else {
-                DWAR() << QObject::trUtf8("Ovner %1 table Shape not found, or unequivocal.").arg(cDescr.fKeyTable) << endl;
-                r = false;
-            }
         }
         if (cDescr.fKeyType     == cColStaticDescr::FT_PROPERTY
          && rDescr.tableName()  == cDescr.fKeyTable
          && rDescr.schemaName() == cDescr.fKeySchema) {
             type = (type & ~enum2set(TS_SIMPLE)) | enum2set(TS_TREE);
+            hide = true;
         }
-        fm.set(_sIsReadOnly, ro);
+        fm.setBool(_sIsReadOnly, ro);
+        fm.setBool(_sIsHide, hide);
         shapeFields << fm;
     }
     // Kapcsoló tábla ?
     if (rDescr.cols() >= 3                                            // Legalább 3 mező
-     && rDescr.primaryKey().count(true) == 1 && rDescr.primaryKey()[0]  // Első elem egy prímary kulcs
+     && rDescr.primaryKey().count(true) == 1 && rDescr.primaryKey()[0]  // Első elem egy elsődleges kulcs
      && rDescr.colDescr(1).fKeyType == cColStaticDescr::FT_PROPERTY     // Masodik egy távoli kulcs
      && rDescr.colDescr(2).fKeyType == cColStaticDescr::FT_PROPERTY) {  // Harmadik is egy távoli kulcs
         if (rDescr.cols() == 3)  type &= ~enum2set(TS_SIMPLE);
@@ -263,7 +268,7 @@ bool cTableShape::setDefaults(QSqlQuery& q)
         mod.setName(tn);
         if (1 == mod.completion(q)) setId(_sLeftShapeId, mod.getId());
         else {
-            DWAR() << QObject::trUtf8("Member %1 table Shape not found, or unequivocal for switch table.").arg(tn) << endl;
+            DWAR() << QObject::trUtf8("A tag %1 tábla azonos nevű leírüja hiányzik.").arg(tn) << endl;
             r = false;
         }
         mod.clear();
@@ -271,7 +276,7 @@ bool cTableShape::setDefaults(QSqlQuery& q)
         mod.setName(tn);
         if (1 == mod.completion(q)) setId(_sRightShapeId, mod.getId());
         else {
-            DWAR() << QObject::trUtf8("Group %1 table Shape not found, or unequivocal for switch table.").arg(tn) << endl;
+            DWAR() << QObject::trUtf8("A csoport %1 tábla azonos nevű leírüja hiányzik.").arg(tn) << endl;
             r = false;
         }
     }
@@ -328,32 +333,68 @@ bool cTableShape::addFilter(const QStringList& _fnl, const QStringList& _ftl, bo
     return r;
 }
 
-bool cTableShape::setAllOrders( QStringList& _ord, int last, bool __ex)
+bool cTableShape::setAllOrders( QStringList& _ord, bool __ex)
 {
+    if (shapeFields.isEmpty()) {
+        QString msg = trUtf8("A shape Fields konténer üres.");
+        if (__ex) EXCEPTION(EPROGFAIL, -1, msg);
+        DERR() << msg << endl;
+        return false;
+    }
+    qlonglong deford;
     qlonglong s = enum2set(orderType, _ord, __ex);
-    if (s < 0LL) return false;
-    if (!s) s = enum2set(OT_NO);
-    int step = 10;
-    int seq = last + step;
+    if (s < 0LL) return false;  /// Hibás volt egy név az _ord listában, de __ex false, ezért nem dobot kizárást, vége
+    if (!s) {
+        s = enum2set(OT_NO);/// Üres lista esetén ez az alapértelnezés
+        deford = OT_NO;
+    }
+    else {
+        deford = enum2set(orderType, _ord[0]);
+    }
     tTableShapeFields::Iterator i, e = shapeFields.end();
+    int seq = 0;
     for (i = shapeFields.begin(); e != i; ++i) {
         cTableShapeField& f = **i;
         f.set(_sOrdTypes, _ord);
         if (s == enum2set(OT_NO)) continue;
-        f.set(_sOrdInitType, _ord.first());
-        f.set(_sOrdInitSequenceNumber, seq);
-        seq += step;
+        f.setId(_sOrdInitType, deford);
+        seq += 10;
+        f.setId(_sOrdInitSequenceNumber, deford);
     }
     return true;
 }
 
-bool cTableShape::setOrders(const QStringList& _fnl, QStringList& _ord, int last, bool __ex)
+bool cTableShape::setOrders(const QStringList& _fnl, QStringList& _ord, bool __ex)
 {
+    if (shapeFields.isEmpty()) {
+        QString msg = trUtf8("A shape Fields konténer üres.");
+        if (__ex) EXCEPTION(EPROGFAIL, -1, msg);
+        DERR() << msg << endl;
+        return false;
+    }
+    qlonglong deford;
     qlonglong s = enum2set(orderType, _ord, __ex);
     if (s < 0LL) return false;
-    if (!s) s = enum2set(OT_NO);
-    int step = 10;
-    int seq = last + step;
+    if (!s) {
+        s = enum2set(OT_NO);
+        deford = OT_NO;
+    }
+    else {
+        deford = enum2set(orderType, _ord[0]);
+    }
+    tTableShapeFields::Iterator i, e = shapeFields.end();
+    int seq = 0;
+    const int step = 10;
+    const int ixOrdInitSequenceNumber = shapeFields.front()->toIndex(_sOrdInitSequenceNumber);
+    // Keressük a legnagyob sorszámot, onnan folytatjuk
+    for (i = shapeFields.begin(); e != i; ++i) {
+        cTableShapeField& f = **i;
+        if (!f.isNull(ixOrdInitSequenceNumber)) {
+            int _seq = f.getId(ixOrdInitSequenceNumber);
+            if (_seq > seq) seq = _seq;
+        }
+    }
+
     foreach (QString fn, _fnl) {
         int i = shapeFields.indexOf(fn);
         if (i < 0) {
@@ -361,20 +402,35 @@ bool cTableShape::setOrders(const QStringList& _fnl, QStringList& _ord, int last
             return false;
         }
         cTableShapeField& f = *(shapeFields[i]);
-        f.set(_sOrdTypes, _ord);
-        if (s == enum2set(OT_NO)) continue;
-        f.set(_sOrdInitType, _ord.first());
-        f.set(_sOrdInitSequenceNumber, seq);
+        f.setId(_sOrdTypes, s);
+        f.setId(_sOrdInitType, deford);
         seq += step;
+        f.setId(ixOrdInitSequenceNumber, seq);
     }
     return true;
 }
 
 bool cTableShape::setFieldSeq(const QStringList& _fnl, int last, bool __ex)
 {
-    int step = 10;
+    if (shapeFields.isEmpty()) {
+        QString msg = trUtf8("A shape Fields konténer üres.");
+        if (__ex) EXCEPTION(EPROGFAIL, -1, msg);
+        DERR() << msg << endl;
+        return false;
+    }
+    const int step = 10;
     int seq = last + step;
-    foreach (QString fn, _fnl) {
+    QStringList fnl = _fnl;
+    for (int i = 0; i < shapeFields.size(); ++i) {
+        cTableShapeField& f = *(shapeFields[i]);
+        if (f.getId(_sFieldSequenceNumber) > last) {    // Ha last -nál kisebb, akkor nem bántjuk
+            QString fn = f.getName();
+            if (_fnl.indexOf(fn) < 0)  {              // Ha nem szerepel a felsorolásban, akkor a végére soroljzk
+                fnl << fn;
+            }
+        }
+    }
+    foreach (QString fn, fnl) {     // A last utániakat besoroljuk, elöször a felsoroltak, aztán a maradék
         int i = shapeFields.indexOf(fn);
         if (i < 0) {
             if (__ex) EXCEPTION(EDATA, -1, fn);
@@ -389,8 +445,26 @@ bool cTableShape::setFieldSeq(const QStringList& _fnl, int last, bool __ex)
 
 bool cTableShape::setOrdSeq(const QStringList& _fnl, int last, bool __ex)
 {
-    int step = 10;
+    if (shapeFields.isEmpty()) {
+        QString msg = trUtf8("A shape Fields konténer üres.");
+        if (__ex) EXCEPTION(EPROGFAIL, -1, msg);
+        DERR() << msg << endl;
+        return false;
+    }
+    const int step = 10;
+    const int ixOrdInitSequenceNumber = shapeFields.front()->toIndex(_sOrdInitSequenceNumber);
     int seq = last + step;
+    QStringList fnl = _fnl;
+    for (int i = 0; i < shapeFields.size(); ++i) {
+        cTableShapeField& f = *(shapeFields[i]);
+        if (f.getId(ixOrdInitSequenceNumber) > last) {    // Ha last -nál kisebb, akkor nem bántjuk
+            QString fn = f.getName();
+            if (_fnl.indexOf(fn) < 0)  {              // Ha nem szerepel a felsorolásban, akkor a végére soroljzk
+                fnl << fn;
+            }
+        }
+    }
+
     foreach (QString fn, _fnl) {
         int i = shapeFields.indexOf(fn);
         if (i < 0) {
@@ -398,7 +472,7 @@ bool cTableShape::setOrdSeq(const QStringList& _fnl, int last, bool __ex)
             return false;
         }
         cTableShapeField& f = *(shapeFields[i]);
-        f.set(_sOrdInitSequenceNumber, seq);
+        f.set(ixOrdInitSequenceNumber, seq);
         seq += step;
     }
     return true;

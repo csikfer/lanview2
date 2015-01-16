@@ -1,4 +1,5 @@
 #include "lanview.h"
+#include "lv2service.h"
 
 #define VERSION_MAJOR   0
 #define VERSION_MINOR   01
@@ -95,6 +96,11 @@ lanView::lanView()
 #endif // MUST_USIGNAL
     libTranslator= NULL;
     appTranslator = NULL;
+    pSelfNode = NULL;
+    pSelfService = NULL;
+    pSelfHostService = NULL;
+    setSelfStateF = false;
+
 
     try {
         lang = getEnvVar("LANG");
@@ -152,6 +158,29 @@ lanView::lanView()
         // Kapcsolódunk az adatbázishoz, ha kell
         if (sqlNeeded) {
             openDatabase();
+            // SELF:
+            QSqlQuery q = getQuery();
+            pSelfNode = new cNode;
+            if (pSelfNode->fetchSelf(q, false)) {
+                pSelfService = new cService;
+                if (pSelfService->fetchByName(q, appName)) {
+                    pSelfHostService = new cHostService();
+                    pSelfHostService->setId(_sNodeId,    pSelfNode->getId());
+                    pSelfHostService->setId(_sServiceId, pSelfService->getId());
+                    if (1 == pSelfHostService->completion(q)) {
+                        setSelfStateF = true;
+                    }
+                    else {// Nincs, vagy nem egyértelmű
+                        pDelete(pSelfHostService);
+                    }
+                }
+                else {
+                    pDelete(pSelfService);
+                }
+            }
+            else {
+                pDelete(pSelfNode);
+            }
         }
         // SNMP init, ha kell
         if (snmpNeeded) {
@@ -168,15 +197,51 @@ lanView::lanView()
 
 lanView::~lanView()
 {
-    instance = NULL;
+    instance = NULL;    // "Kifelé" már nincs objektum
     PDEB(OBJECT) << QObject::trUtf8("delete (lanView *)").arg((qulonglong)this) << endl;
     // Ha volt hiba objektumunk, töröljük. Elötte kiírjuk a hibaüzenetet, ha tényleg hiba volt
     if (lastError && lastError->mErrorCode != eError::EOK) {
         PDEB(DERROR) << lastError->msg();         // A Hiba üzenet
-        sendError(lastError);
+        qlonglong eid = sendError(lastError);
+        // Hibát kiírtuk, ki kell írni a staust is? (ha nem sikerült a hiba kiírása, kár a statussal próbálkozni)
+        if (eid != NULL_ID && setSelfStateF) {
+            if (pSelfHostService != NULL) {
+                QSqlQuery   q(*pDb);
+                try {
+                    pSelfHostService->setState(q, _sCritical, lastError->msg());
+                } catch(...) {
+                    DERR() << "!!!!" << endl;
+                }
+            }
+            else {
+                DERR() << trUtf8("A pSelfHostService pointer NULL.") << endl;
+            }
+        }
+        setSelfStateF = false;
     }
-    if (lastError) delete lastError;
-    lastError = NULL;
+    else if (setSelfStateF) {
+        if (pSelfHostService != NULL && pDb != NULL) {
+            QSqlQuery   q(*pDb);
+            try {
+                int rs = RS_ON;
+                QString n;
+                if (lastError != NULL) {
+                    rs = lastError->mErrorSubCode;      // Ide kéne rakni a kiírandó staust
+                    n  = lastError->mErrorSubMsg;       // A megjegyzés a status-hoz
+                }
+                if ((rs & RS_STAT_SETTED) == 0) {        // A stusban jelezheti, hogy már megvolt a kiírás!
+                    rs &= ~RS_STAT_MASK;
+                    pSelfHostService->setState(q, notifSwitch(rs), n);
+                }
+            } catch(...) {
+                DERR() << "!!!!" << endl;
+            }
+        }
+        else {
+            DERR() << trUtf8("A pSefHostService vagy a pDb pointer NULL.") << endl;
+        }
+    }
+    pDelete(lastError);
     // Lelőjük az összes Thread-et ...? Azoknak elvileg már nem szabadna mennie, sőt a konténernek is illik üresnek lennie
     // A thread-ek adatbázis objektumait töröljük.
     PDEB(INFO) << QObject::trUtf8("Lock by threadMutex, in lanView destructor ...") << endl;

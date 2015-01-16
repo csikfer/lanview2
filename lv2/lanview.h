@@ -30,10 +30,19 @@
     setAppHelp(); \
 }
 
-/// Find program switch.
+/// A paraméter listában megkeresi a megadott profram kapcsoló pozicióját
+/// @param __c A program kapcsoló egy karakteres változata (feltételezzük, hogy egy '-' karakter előzi meg
+/// @param __s A program kapcsoló string változata (feltételezzük, hogy egy '--' karakterpár előzi meg.
+/// @param args A program argumentum lista
+/// @return A két program kapcsoló változat valamelyikével megeggyező paraméter indexe a listában, vagy -1, ha nincs ilyen kapcsoló.
 EXT_ int findArg(const QChar& __c, const QString& __s, const QStringList &args);
 /// Find program switch.
 /// QApplication elött (is) hivható, nem használl Qt objektumot.
+/// @param __c A program kapcsoló egy karakteres változata (feltételezzük, hogy egy '-' karakter előzi meg
+/// @param __s A program kapcsoló string változata (feltételezzük, hogy egy '--' karakterpár előzi meg.
+/// @param argc A program argumentum lista hossza
+/// @param argv A program argumentum lista
+/// @return A két program kapcsoló változat valamelyikével megeggyező paraméter indexe a listában, vagy -1, ha nincs ilyen kapcsoló.
 EXT_ int findArg(char __c, const char * __s, int argc, char * argv[]);
 
 static inline QString langFileName(const QString& an, const QString& ln)
@@ -63,6 +72,10 @@ enum eIPV4Pol {
 @brief "main" bázis objektum. Minden az API-t hasznéló alkalmazásnak létre kell hoznia a saját példányát.
 
 Minden az API-t haszáló alkalmazásnak induláskor létre kell hoznia a saját a lanView objektumból származtatott példányát.
+A lanView leszármazott objektumból csak egy példány lehet. Ennek az egy példánynak a pointere elérhető a
+lanView::getInstance() statikus metódus hívásával, mely ha az objektum nem létezik dob egy kizárást.
+A program kilépésével kapcsolatos műveleteket a lanView destruktora végzi lsd.: ~lanView()
+
 Egy példa a main() -re (a saját származtatott osztály a myLanView) :
 @code
 #define VERSION_MAJOR   0
@@ -84,7 +97,7 @@ int main (int argc, char * argv[])
     lanView::sqlNeeded  = true;     // Ha szükség van az adatbázis kapcsolatra, és nem magunk nyitjuk meg a kapcsolatot
     lanView::gui        = false;    // Ha ez nem egy GUI alkalmazás
 
-    myLanView   mo; // A saját példány létrehozása
+    myLanView   mo; // A saját példány létrehozása. A myLanView osztály a lanView osztály leszármazotja.
 
     if (mo.lastError) {  // Ha hiba volt, vagy vége
         return mo.lastError->mErrorCode; // a mo destruktora majd kiírja a hibaüzenetet.
@@ -107,7 +120,7 @@ A megadott modul névnek szerepelnie kell a cDebug::eMask enumerációs értéke
 üzeneteket kell kiírni. Vitatható módszer, valószínüleg ki kell találni helyette valami mást.
 A származtatott objektum konstruktorában meg kell viszgállni, hogy a labView konstruktora ne dobott-e hibát pl.:
 @code
-lv2ArpD::lv2ArpD() : lanView()
+myLanView::myLanView() : lanView()
 {
     if (lastError == NULL) {
         try {
@@ -140,17 +153,17 @@ bool myApp::notify(QObject * receiver, QEvent * event)
         return false;
     }
     CATCHS(lastError)
-    PDEB(DERROR) << "Error in " << __PRETTY_FUNCTION__ << endl;
-    PDEB(DERROR) << "Receiver : " << receiver->objectName() << "::" << typeid(*receiver).name() << endl;
-    PDEB(DERROR) << "Event : " << typeid(*event).name() << endl;
+    DERR(DERROR) <<  PDEB(DERROR) << "Receiver : " << receiver->objectName() << "::" << typeid(*receiver).name() << endl
+                 << "Event : " << typeid(*event).name() << endl;
     cError::mDropAll = true;    // A további hiba dobálások nem kellenek (dobja, de ezentul egy no_init_ objektummal)
-    cErrorMessageBox::messageBox(lastError);
+    cErrorMessageBox::messageBox(lastError);    // Kiteszünk egy hiba ablakot
     QApplication::exit(lastError->mErrorCode);  // kilépünk,
     return false;
 }
 @endcode
 Természetesen a main() függvényunkben nem a QApplication objektumot, hanemn a saját myApp objetumunkat kell használni.
 */
+
 class LV2SHARED_EXPORT lanView  : public QObject {
 #ifdef MUST_USIGNAL
     friend void unixSignalHandler(int __i);
@@ -164,10 +177,18 @@ public:
     /// egy hiba adatatit tartalmazó cError objektumra fog mutatni.
     lanView();
     /// Destruktor
-    /// Ha a lastError pointer nem null, és a cError objektumban a hiba kós nem EOK, akkor kiírja a
-    /// hibaüzenetet a debug rendszeren keresztül a DERROR paraméterrel, és megkisérli rögzíteni a hoba
+    /// Ha a lastError pointer nem null, és a cError objektumban a hiba kód nem EOK, akkor kiírja a
+    /// hibaüzenetet a debug rendszeren keresztül a DERROR paraméterrel, és megkisérli rögzíteni a hiba
     /// rekordot az adatbázisban, vagyis hívja a sendError metódust.
-    /// Minden általa inicializált objektumot felszabadít.
+    ///
+    /// Ha setSelfStateF adattag igaz, és a pSelfHostService pointer nem NULL, akkor a következők történnek még:
+    /// Ha hiba volt, és sikerült kiírni a hiba rekordot, akkor megkísérli beállítani a szolgáltatás állapotát
+    /// cHostService::setState() metódus hívással, ahol az állapot 'critical' lessz a megjegyzés prdig a teljes hibaüzenet.
+    /// Ha nem volt hiba, és nem cError* kizárással léptünk ki, akkor egy 'on' status lessz kiírva.
+    /// Ha cError* kizárással és OK hibakóddal léptünk ki, akkor a status a cError objektum másodlagos hiba kódja lessz,
+    /// a megjegyzés pedig a másodlagos hiba üzenet. Feltéve, hogy a staus-ban nem jeleztük, hogy az állapot már ki van írva.
+    ///
+    /// A konstruktor minden általa inicializált objektumot megkísérel felszabadítani.
     ~lanView();
     /// Egy UNIX signal-t kezelő virtuális metódus.
     /// Windows esetén egy üres függvény.
@@ -218,6 +239,11 @@ public:
     QString         lang;       ///< nyelv
     QTranslator    *libTranslator;  ///< translator az API-hoz
     QTranslator    *appTranslator;  ///< translator az APP-hoz
+
+    cNode          *pSelfNode;          ///< Saját host objektum pointere, vagy NULL, ha nem ismeretlen
+    cService       *pSelfService;       ///< Saját service objektum pointere, vagy NULL, ha me, ismeretlen
+    cHostService   *pSelfHostService;   ///< Saját service példány objektum pointere, vagy NULL, ha nem ismeretlen
+    bool            setSelfStateF;      ///< Ha igaz, akkor kilépéskor (destruktor) be kell állítani az aktuális sservice példány állapotát.
 
     static QString    appName;          ///< Az APP neve
     static short      appVersionMinor;  ///< Az APP al verzió száma

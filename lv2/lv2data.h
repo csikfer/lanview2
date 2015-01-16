@@ -1262,7 +1262,7 @@ public:
     virtual bool toEnd(int i);
     virtual void clearToEnd();
     /// Státusz beállítása. A  set_service_stat() PL/pSQL függvényt hívja.
-    /// @param __q Az adatbázis művelethez jasznált objektum.
+    /// @param __q Az adatbázis művelethez használt objektum.
     /// @param __st A szolgáltatással kapcsolatos művelet eredménye. Nem az új status, azt a set_service_stat()
     ///             határozza majd meg a mostani eredmény és az előélet alapján.
     /// @param __note Egy megjegyzés, ami, bele kerül a log rekordba, ha van változás, ill. ha keletkezik üzenet,

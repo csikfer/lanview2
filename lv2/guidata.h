@@ -126,14 +126,14 @@ public:
     /// Ha a tábla nem létezik, akkor dob egy kizárást.
     bool setDefaults(QSqlQuery &q);
     /// Egy érték beállítása a megadott nevű mező leírójában
-    /// @param _fn A mező neve a táblában, melynek a leíróta az objektum
+    /// @param _fn A mező neve a (megjelenítendő) táblában.
     /// @param _fpn A mező leíró paraméterének a neve
     /// @param _v a beállítandó érték
     /// @param __ex Ha értéke true, akkor hiba esetén (nincs ilyen nevű mező, vagy paraméter) dob egy kizárást.
     /// @return Ha beállította az értéket, akkor true.
     bool fset(const QString& _fn, const QString& _fpn, const QVariant& _v, bool __ex = true);
     /// Egy érték beállítása a megadott mezők leíróiban
-    /// @param _fnl A mezők nevei a táblában, melynek a leíróta az objektum
+    /// @param _fnl A mezők nevei a (megjelenítendő) táblában.
     /// @param _fpn A mező leíró paraméterének a neve
     /// @param _v a beállítandó érték
     /// @param __ex Ha értéke true, akkor hiba esetén (nincs ilyen nevű mező, vagy paraméter) dob egy kizárást.
@@ -154,8 +154,13 @@ public:
     /// @return Ha beállította minden megadott mezőre az értéket, akkor true.
     bool addFilter(const QStringList& _fnl, const QString& _t, const QString& _d, bool __ex = true);
     bool addFilter(const QStringList& _fnl, const QStringList& _ftl, bool __ex = true);
-    bool setAllOrders(QStringList& _ord, int last = 0, bool __ex = true);
-    bool setOrders(const QStringList& _fnl, QStringList& _ord, int last = 0, bool __ex = true);
+    bool setAllOrders(QStringList& _ord, bool __ex = true);
+    bool setOrders(const QStringList& _fnl, QStringList& _ord, bool __ex = true);
+    /// A mazők megjelenítésési sorrendjének a megváltoztatása
+    /// @param _fnl A felsorolt nevű mezők sorrendjének a megadása
+    /// @param last Az utolsó sorszám, melyhez tartozó mező sorrrendje nem változik, ill. ahonnan folytatjuk a sorszámozást.
+    /// @param __ex Ha olyan mező nevet adunk meg, ami nem létezik, dob egy kizárást.
+    /// @return Hiba esetén false, egyébként true.
     bool setFieldSeq(const QStringList& _fnl, int last = 0, bool __ex = true);
     bool setOrdSeq(const QStringList& _fnl, int last = 0, bool __ex = true);
 

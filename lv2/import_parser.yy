@@ -1877,8 +1877,8 @@ tmodp   : SET_T DEFAULTS_T ';'                  { pTableShape->setDefaults(qq())
         | FIELD_T strs ADD_T FILTER_T str str_z ';' { pTableShape->addFilter(slp2sl($2), sp2s($5), sp2s($5)); }
         | FIELD_T strs ADD_T FILTERS_T strs ';'     { pTableShape->addFilter(slp2sl($2), *$5); delete $5; }
         | FIELD_T SEQUENCE_T int0 strs ';'      { pTableShape->setFieldSeq(slp2sl($4), $3); }
-        | FIELD_T strs ORD_T int0 strs ';'      { pTableShape->setOrders(*$2, *$5, $4); delete $2; delete $5; }
-        | FIELD_T '*'  ORD_T int0 strs ';'      { pTableShape->setAllOrders(*$5, $4); delete $5; }
+        | FIELD_T strs ORD_T strs ';'           { pTableShape->setOrders(*$2, *$4); delete $2; delete $4; }
+        | FIELD_T '*'  ORD_T strs ';'           { pTableShape->setAllOrders(*$4); delete $4; }
         | FIELD_T ORD_T SEQUENCE_T int0 strs ';'{ pTableShape->setOrdSeq(slp2sl($5), $4); }
         ;
 int0    : int                                   { $$ = $1; }

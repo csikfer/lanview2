@@ -472,19 +472,22 @@ cRecordTable::cRecordTable(const QString& _mn, bool _isDialog, QWidget * par)
     init(par);
 }
 
-cRecordTable::cRecordTable(qlonglong id, bool _isDialog, QWidget * par, cRecordTable * _upper)
+cRecordTable::cRecordTable(qlonglong id, bool _isDialog, cRecordTable * _upper, QWidget * par)
     : QObject(par)
     , isDialog(_isDialog)
     , viewName()
 {
     pMaster = pUpper = _upper;
-    if (pMaster != NULL && pMaster->pMaster != NULL) pMaster = pMaster->pMaster;
 
     pq = newQuery();
     pTabQuery = newQuery();
     pTableShape = new cTableShape();
     pTableShape->setParent(this);
     if (!pTableShape->fetchById(*pq, id) || 0 == pTableShape->fetchFields(*pq)) EXCEPTION(EDATA, id);
+    if (pMaster != NULL) {
+        if (pMaster->pMaster != NULL) pMaster = pMaster->pMaster;
+        pTableShape->enum2setOn(_sTableShapeType, TS_CHILD);// Ha nincs beállítva a tábla típusa
+    }
     init(par);
 }
 
@@ -553,6 +556,7 @@ void cRecordTable::init(QWidget *par)
         initOwner();
         break;
     case ENUM2SET(TS_CHILD):
+    case ENUM2SET2(TS_CHILD, TS_SIMPLE):
         if (pUpper == NULL) EXCEPTION(EDATA);
         flags = RTF_SLAVE | RTF_CHILD;
         initSimple(_pWidget);
@@ -560,7 +564,7 @@ void cRecordTable::init(QWidget *par)
     case ENUM2SET2(TS_OWNER, TS_CHILD):
         flags = RTF_OVNER | RTF_SLAVE | RTF_CHILD;
         initSimple(_pWidget);
-        pRightTable = new cRecordTable(pTableShape->getId(_sRightShapeId), false, _pWidget, this);
+        pRightTable = new cRecordTable(pTableShape->getId(_sRightShapeId), false, this, _pWidget);
         break;
     case ENUM2SET(TS_SWITCH):
     default:
@@ -623,7 +627,7 @@ void cRecordTable::initOwner()
     pMasterFrame = new QSplitter(Qt::Horizontal, _pWidget);
     pMasterLayout->addWidget(pMasterFrame);
     pMasterFrame->addWidget(pLeftWidget);
-    pRightTable = new cRecordTable(pTableShape->getId(_sRightShapeId), false, _pWidget, this);
+    pRightTable = new cRecordTable(pTableShape->getId(_sRightShapeId), false, this, _pWidget);
 }
 
 QDialog& cRecordTable::dialog()

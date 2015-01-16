@@ -1093,6 +1093,16 @@ public:
     ///
     cRecord& setMac(int __i, const cMac& __a, bool __ex = true);
     cRecord& setMac(const QString& __n, const cMac& __a, bool __ex = true)   { return setMac(toIndex(__n), __a, __ex); }
+    ///
+    cRecord& enum2setOn(int __ix, int __e)                      { setId(__ix, getId(__ix) | enum2set(__e)); return *this; }
+    cRecord& enum2setOn(int __ix, int _e1, int _e2)             { setId(__ix, getId(__ix) | enum2set(_e1, _e2)); return *this; }
+    cRecord& enum2setOn(const QString __n, int __e)             { enum2setOn(toIndex(__n), __e); return *this; }
+    cRecord& enum2setOn(const QString __n, int _e1, int _e2)    { enum2setOn(toIndex(__n), _e1, _e2); return *this; }
+    ///
+    cRecord& enum2setOff(int __ix, int __e)                     { setId(__ix, getId(__ix) & ~enum2set(__e)); return *this; }
+    cRecord& enum2setOff(int __ix, int _e1, int _e2)            { setId(__ix, getId(__ix) & ~enum2set(_e1, _e2)); return *this; }
+    cRecord& enum2setOff(const QString __n, int __e)            { enum2setOff(toIndex(__n), __e); return *this; }
+    cRecord& enum2setOff(const QString __n, int _e1, int _e2)   { enum2setOff(toIndex(__n), _e1, _e2); return *this; }
     /// Az ID mezőket hasonlítja össze. Ha nincs vagy nem ismert az ID mező, akkor dob egy kizárást.
     /// Nem ellenőrzi, hogy a két objektum valójában milyen típusú, akkor is elvégzi az összehasonlítást, ha ez logikailag értelmetlen.
     /// Ha az ID értéke NULL, akkor az kisebb minden lehetséges ID értéknél.

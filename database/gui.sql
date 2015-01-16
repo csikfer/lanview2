@@ -116,7 +116,6 @@ CREATE TYPE filtertype AS ENUM ('begin', 'like', 'similar', 'regexp', 'regexpi',
 ALTER TYPE filtertype OWNER TO lanview2;
 COMMENT ON TYPE filtertype IS
 'Opcionális filter típusa egy mezőre:
-equal   A megadott érték megegyezik a mező értékével
 begin   A megadott string illeszkedik a mező elejére.
 like    A megadott sztring illeszkedik a mezőre egy LIKE kifejezésben.
 similar A megadott sztring illeszkedik a mezőre egy SIMILAR kifejezésben.
@@ -126,7 +125,7 @@ big     Numerikus mező a magadott értéknél nagyobb
 litle   Numerikus mező a magadott kisebb nagyobb
 interval Numerikus mező értéke a magadott tartományban
 proc    Szűrés egy függvényen leresztül.
-SQL	    egy WHERE feltétel megadása';
+SQL	egy WHERE feltétel megadása';
 
 CREATE TABLE table_shape_filters (
     table_shape_filter_id       bigserial          PRIMARY KEY,

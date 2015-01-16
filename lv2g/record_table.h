@@ -149,8 +149,19 @@ class cRecordTable : public QObject {
     friend class cRecordTableFODialog;
     Q_OBJECT
 public:
+    /// Konstruktor
+    /// Fő ill. önálló tábla megjelenítése
+    /// @param _mn A tábla megjelenítését leíró rekord neve (table_shapes.table_shape_name)
+    /// @param _isDialog Ha igaz, akkor a megjelenítés egy dialog ablakban.
+    /// @param par A szülő widget pointere, vagy NULL
     cRecordTable(const QString& _mn, bool _isDialog, QWidget * par = NULL);
-    cRecordTable(qlonglong id, bool _isDialog, QWidget * par = NULL, cRecordTable *_master = NULL);
+    /// Konstruktor
+    /// Al tábla megjelenítése.
+    /// @param id A tábla megjelenítését leíró rekord ID (table_shapes.table_shape_id)
+    /// @param _isDialog Ha igaz, akkor a megjelenítés egy dialog ablakban.
+    /// @param _upper A tulajdonos táblát megjelenítő objektum pointere
+    /// @param par A szülő widget pointere, vagy NULL
+    cRecordTable(qlonglong id, bool _isDialog, cRecordTable *_upper, QWidget * par = NULL);
     cRecordTable(cTableShape *pts, bool _isDialog, QWidget * par = NULL);
     ~cRecordTable();
     QWidget& widget() const { return *_pWidget; }
@@ -202,7 +213,7 @@ protected:
     QSqlQuery      *pTabQuery;
     /// A megjelenítő leíró
     cTableShape    *pTableShape;
-    /// Ha ez egy al táblázat, akkor a felette lévő tábla megjelenítősének a pointere, egyébként NULL
+    /// Ha ez egy al táblázat, akkor a felette lévő tábla megjelenítőjének a pointere, egyébként NULL
     cRecordTable   *pUpper;
     /// A fő tábla, vagy NULL. Két tábla esetén azonos pUpper-rel
     cRecordTable   *pMaster;
