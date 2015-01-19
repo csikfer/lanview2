@@ -348,17 +348,17 @@ void lanView::parseArg(void)
         QStdOut << trUtf8("-V|--lib-version            Print lib version") << endl;
         QStdOut << trUtf8("-S|--test-self-name         Test option") << endl;
         QStdOut << trUtf8("-h|--help                   Print help") << endl;
-        EXCEPTION(EOK); // Exit program
+        EXCEPTION(EOK, RS_STAT_SETTED); // Exit program
     }
     if (0 < findArg(QChar('V'), _sLibVersion, args)) {
         QTextStream QStdOut(stdout);
         QStdOut << QString(trUtf8("LanView2 lib version ")).arg(libVersion) << endl;
-        EXCEPTION(EOK); // Exit program
+        EXCEPTION(EOK, RS_STAT_SETTED); // Exit program
     }
     if (0 < findArg(QChar('v'), _sVersion, args)) {
         QTextStream QStdOut(stdout);
         QStdOut << QString(trUtf8("%1 version %2")).arg(appName).arg(appVersion) << endl;
-        EXCEPTION(EOK); // Exit program
+        EXCEPTION(EOK, RS_STAT_SETTED); // Exit program
     }
     if (0 < (i = findArg(QChar('d'), _sDebugLevel, args))
      && (i + 1) < args.count()) {

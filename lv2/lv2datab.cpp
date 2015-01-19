@@ -1935,7 +1935,7 @@ QString cRecStaticDescr::checkId2Name(QSqlQuery& q, const QString& _tn, const QS
         " BEGIN"
             " IF $1 IS NULL THEN"
                 " RETURN NULL; "
-            " END IF"
+            " END IF;"
             " SELECT %4 INTO name FROM %2 WHERE %3 = $1;"
             " IF NOT FOUND THEN"
                 " PERFORM error('IdNotFound', $1, '%3', '%1', '%2');"

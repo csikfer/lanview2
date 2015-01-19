@@ -112,23 +112,15 @@ QString cError::msg(void) const
 {
     QString r;
     if (!mThreadName.isEmpty()) r = QChar('{') + mThreadName + QChar('}');
-    if (mErrorCode == eError::EOK) {
-        r += QString("%1[%2]:%3: %4 #%5")
-            .arg(mSrcName)
-            .arg(mSrcLine)
-            .arg(mFuncName)
-            .arg(errorMsg())
-            .arg(mErrorCode);
-    }
-    else {
-        r += QString("%1[%2]:%3: %4 #%5(\"%6\" #%7 / errno = %8, %9)")
-            .arg(mSrcName)
-            .arg(mSrcLine)
-            .arg(mFuncName)
-            .arg(errorMsg())
-            .arg(mErrorCode)
-            .arg(mErrorSubMsg)
-            .arg(mErrorSubCode);
+    r += QString("%1[%2]:%3: %4 #%5(\"%6\" #%7")
+        .arg(mSrcName)
+        .arg(mSrcLine)
+        .arg(mFuncName)
+        .arg(errorMsg())
+        .arg(mErrorCode)
+        .arg(mErrorSubMsg)
+        .arg(mErrorSubCode);
+    if (mErrorCode != eError::EOK) {
         if (mErrorSysCode != 0) {
             r += QString(" / errno = %1, %2)")
                 .arg(mErrorSysCode)

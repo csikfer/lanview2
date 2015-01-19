@@ -254,7 +254,7 @@ Az adattagok inicializálása után hívja a circulation() metódust
     QString mSqlBounds;             ///< SQL Query adatok
     int     mDataLine;
     int     mDataPos;
-    QString mDataMsg;              ///< Source file name
+    QString mDataMsg;               ///< Source file name
     QString mDataName;              ///< Source file name
 
     static cError  *pLastError;     ///< Az utolsó hiba objektum pointere, vagy NULL
