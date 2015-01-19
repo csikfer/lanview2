@@ -48,6 +48,9 @@ CREATE OR REPLACE FUNCTION app_err_id2name(bigint) RETURNS TEXT AS $$
 DECLARE
     name TEXT;
 BEGIN
+    IF $1 IS NULL THEN
+        return NULL;
+    END IF;
     SELECT app_name || ':' || err_name INTO name
         FROM app_errs
         WHERE applog_id = $1;

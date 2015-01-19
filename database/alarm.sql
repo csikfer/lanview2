@@ -56,6 +56,9 @@ CREATE OR REPLACE FUNCTION alarm_id2name(bigint) RETURNS TEXT AS $$
 DECLARE
     rname TEXT;
 BEGIN
+    IF $1 IS NULL THEN
+        return NULL;
+    END IF;
     SELECT host_service_id2name(host_service_id) || ':' || max_status INTO rname
         FROM alarms
         JOIN host_services USING(host_service_id)

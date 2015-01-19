@@ -90,6 +90,9 @@ CREATE OR REPLACE FUNCTION service_id2name(bigint) RETURNS TEXT AS $$
 DECLARE
     name TEXT;
 BEGIN
+    IF $1 IS NULL THEN
+        return NULL;
+    END IF;
     SELECT service_name INTO name FROM services WHERE service_id = $1;
     IF NOT FOUND THEN
         PERFORM error('IdNotFound', $1, 'service_id', 'service_id2name()', 'services');
@@ -196,6 +199,9 @@ DECLARE
     proto TEXT;
     prime TEXT;
 BEGIN
+    IF $1 IS NULL THEN
+        return NULL;
+    END IF;
     SELECT
             n.node_name || ':' || s.service_name || CASE WHEN p.port_name IS NULL THEN '' ELSE ':' || p.port_name END,
             sprime.service_name,

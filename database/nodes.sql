@@ -559,6 +559,9 @@ CREATE OR REPLACE FUNCTION node_id2name(bigint) RETURNS varchar(32) AS $$
 DECLARE
     id varchar(32);
 BEGIN
+    IF $1 IS NULL THEN
+        return NULL;
+    END IF;
     SELECT node_name INTO id FROM patchs WHERE node_id = $1;
     IF NOT FOUND THEN
         PERFORM error('IdNotFound', $1, 'node_id', 'node_id2name()', 'patchs');
@@ -581,6 +584,9 @@ CREATE OR REPLACE FUNCTION port_id2name(bigint) RETURNS varchar(32) AS $$
 DECLARE
     id varchar(32);
 BEGIN
+    IF $1 IS NULL THEN
+        return NULL;
+    END IF;
     SELECT port_name INTO id FROM nports WHERE port_id = $1;
     IF NOT FOUND THEN
         PERFORM error('IdNotFound', $1, 'port_id', 'port_id2name()', 'nports');

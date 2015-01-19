@@ -14,6 +14,10 @@ SERVICE "dhcp.conf" "DHCP config fájl, local vagy ssh-n keresztül"      { NIL;
 SERVICE "arp.proc"  "ARP fájl a proc-ban, local vagy ssh-n keresztül"   { NIL;      PROP ":mode:file=/proc/net/arp:"; }
 
 //--------------------------------------------------------
+SERVICE "updt_oui"  "Update OUI" {
+    NIL;
+}
+//--------------------------------------------------------
 
 SERVICE lv2d "Lanview2 super server" {
     NIL;
