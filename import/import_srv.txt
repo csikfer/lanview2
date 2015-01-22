@@ -15,6 +15,7 @@ SERVICE "arp.proc"  "ARP fájl a proc-ban, local vagy ssh-n keresztül"   { NIL;
 
 //--------------------------------------------------------
 SERVICE "updt_oui"  "Update OUI" {
+    SUPERIOR SERVICE MASK "";
     NIL;
 }
 //--------------------------------------------------------
@@ -39,6 +40,7 @@ SERVICE arpd        "Arp daemon" {
 SERVICE "arp" "ARP tábla lekérdezése" {
     NIL;
     PROP ":inspector=timed:";
+    SUPERIOR SERVICE MASK "arpd";
     MAX CHECK ATTEMPTS     3;
     NORMAL CHECK INTERVAL 300;
     RETRY CHECK INTERVAL   60;

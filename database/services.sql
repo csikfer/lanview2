@@ -22,41 +22,42 @@ CREATE TABLE services (
     service_alarm_msg       varchar(255)   DEFAULT NULL,
     protocol_id             bigint         DEFAULT -1  -- nil
         REFERENCES ipprotocols(protocol_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
-    port                    bigint         DEFAULT NULL,
-    superior_service_mask   varchar(32)    DEFAULT NULL,
+    port                    integer        DEFAULT NULL,
+    superior_service_mask   varchar(64)    DEFAULT NULL,
     check_cmd               varchar(255)   DEFAULT NULL,
     properties              varchar(255)   DEFAULT ':',
-    max_check_attempts      bigint         DEFAULT NULL,
-    normal_check_interval   bigint         DEFAULT NULL,
-    retry_check_interval    bigint         DEFAULT NULL,
+    max_check_attempts      integer        DEFAULT NULL,
+    normal_check_interval   interval       DEFAULT NULL,
+    retry_check_interval    interval       DEFAULT NULL,
+    timeperiod_id           bigint         NOT NULL DEFAULT 0,  -- DEFAULT 'always'
     flapping_interval       interval       NOT NULL DEFAULT '30 minutes',
-    flapping_max_change     bigint         NOT NULL DEFAULT 15,
+    flapping_max_change     integer        NOT NULL DEFAULT 15,
     UNIQUE (service_name, protocol_id)
 );
 ALTER TABLE services OWNER TO lanview2;
 COMMENT ON TABLE  services                  IS 'Services table';
 COMMENT ON COLUMN services.service_id       IS 'Egyedi azonosító';
 COMMENT ON COLUMN services.service_name     IS 'Szervice name';
-COMMENT ON COLUMN services.service_note     IS '';
+COMMENT ON COLUMN services.service_note     IS 'Megjegyzés';
 COMMENT ON COLUMN services.protocol_id      IS 'Ip protocol id (-1 : nil, if no ip protocol)';
-COMMENT ON COLUMN services.port             IS 'Default port number. or NULL';
+COMMENT ON COLUMN services.port             IS 'Default (TCO, UDP, ...) port number. or NULL';
 COMMENT ON COLUMN services.check_cmd        IS 'Default check command';
 COMMENT ON COLUMN services.properties       IS
-'Default paraméter lista (szeparátor a kettőspont, paraméter szeparátor az ''='', első és utolsó karakter a szeparátor):
-daemon      Az szolgáltatás ellenörzése egy daemon program, paraméterek:
-    respawn     daemon paraméter: a programot újra kell indítani, ha kilép. A kilépés nem hiba.
+'Default paraméter lista (szeparátor a kettőspont, paraméter szeparátor az ''='', első és utolsó karakter a szeparátor):\n
+daemon      Az szolgáltatás ellenörzése egy daemon program, paraméterek:\n
+    respawn     daemon paraméter: a programot újra kell indítani, ha kilép. A kilépés nem hiba.\n
     continue    daemon paraméter: a program normál körülmények között nem lép ki, csak ha leállítják, vagy hiba van. (default)
     polling     daemon paraméter: a programot időzítve kell hívni. He elvégezte az ellenörzést, akkor kilép.
 inspector
     timed       Időzített
     thread      Időzített, saját szállal (?!)
     continue    Saját szál belső ütemezés ill. folyamatos (?!)
-    passive     Valamilyen lekérdezés járulékos eredményeként
+    passive     Valamilyen lekérdezés (superior) járulékos eredményeként van állpota
 superior    Alárendelteket ellenörző eljárásokat hív, szolgál ki (passive)
     <üres>      Alárendelt viszony,autómatikus
     custom      egyedileg kezelt (a cInspector objektum nem ovassa be az alárendelteket, azok egyedileg kezelendőek)
-protocol    Protokolt (is) definiál
-mode        Módszer, sablon, ...
+protocol    Ez egy protokolt (is)
+mode        Ez egy módszer, sablon, ...
 system
     nagios      Egy Nagios plugin
     munin       Egy Munin olugin
@@ -69,6 +70,10 @@ lognull     A superior az stderr és stdout-ot a null-ba irányítja. A szolgál
 tcp         Alternatív TCP port megadása, paraméter a port száma
 udp         Alternatív UDP port megadása, paraméter a port száma
 ';
+COMMENT ON COLUMN services.max_check_attempts IS 'Hibás eredmények maximális száma, a riasztás kiadása elött. Alapértelmezett érték.';
+COMMENT ON COLUMN services.normal_check_interval IS 'Ellenörzések ütemezése, ha nincs hiba. Alapértelmezett érték.';
+COMMENT ON COLUMN services.retry_check_interval IS 'Ellenörzések ütemezése, hiba esetén a riasztás kiadásáig. Alapértelmezett érték.';
+
 
 INSERT INTO services (service_id, service_name, service_note) VALUES
     ( -1, 'nil', 'A NULL-t reprezentálja, de összehasonlítható');
@@ -117,46 +122,48 @@ Riasztás tiltási állapotok:
 "from_to" Az alarmok egy tőintervallumban le lesznek/vannak/voltak tiltva';
 
 CREATE TABLE host_services (
-    host_service_id     bigserial      PRIMARY KEY,
-    node_id             bigint         NOT NULL,
+    host_service_id         bigserial      PRIMARY KEY,
+    node_id                 bigint         NOT NULL,
     --  REFERENCES nodess(node_id) MATCH FULL ON DELETE CASCADE ON UPDATE CASCADE,
-    service_id          bigint         NOT NULL
+    service_id              bigint         NOT NULL
         REFERENCES services(service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    port_id             bigint         DEFAULT NULL,
-    host_service_note  varchar(255)    DEFAULT NULL,
-    host_service_alarm_msg varchar(255) DEFAULT NULL,
-    prime_service_id    bigint         DEFAULT -1       -- nil
+    port_id                 bigint         DEFAULT NULL,
+    host_service_note       varchar(255)   DEFAULT NULL,
+    host_service_alarm_msg  varchar(255) DEFAULT NULL,
+    prime_service_id        bigint         DEFAULT -1       -- nil
         REFERENCES services(service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT,
-    proto_service_id    bigint         DEFAULT -1       -- nil
+    proto_service_id        bigint         DEFAULT -1       -- nil
         REFERENCES services(service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT,
     --  REFERENCES interfaces(port_id) MATCH SIMPLE
-    delegate_host_state boolean        NOT NULL DEFAULT FALSE,
-    check_cmd           varchar(255)   DEFAULT NULL,
-    properties          varchar(255)   DEFAULT NULL,
-    superior_host_service_id bigint    DEFAULT NULL
+    delegate_host_state     boolean        NOT NULL DEFAULT FALSE,
+    check_cmd               varchar(255)   DEFAULT NULL,
+    properties              varchar(255)   DEFAULT NULL,
+    superior_host_service_id bigint        DEFAULT NULL
         REFERENCES host_services(host_service_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
-    max_check_attempts  bigint         DEFAULT NULL,
-    normal_check_interval bigint       DEFAULT NULL,
-    retry_check_interval bigint        DEFAULT NULL,
-    timeperiod_id       bigint         NOT NULL DEFAULT 0   -- DEFAULT 'always'
-        REFERENCES timeperiods(timeperiod_id) MATCH FULL ON DELETE SET DEFAULT ON UPDATE RESTRICT,
-    noalarm_flag        noalarmtype    NOT NULL DEFAULT 'off',
-    noalarm_from        timestamp      DEFAULT NULL,
-    noalarm_to          timestamp      DEFAULT NULL,
-    offline_group_id    bigint[]       DEFAULT NULL,
-    online_group_id     bigint[]       DEFAULT NULL,
+    max_check_attempts      integer        DEFAULT NULL,
+    normal_check_interval   interval       DEFAULT NULL,
+    retry_check_interval    interval       DEFAULT NULL,
+    timeperiod_id           bigint         DEFAULT NULL   -- DEFAULT 'always'
+        REFERENCES timeperiods(timeperiod_id) MATCH SIMPLE ON DELETE RESTRICT ON UPDATE RESTRICT,
+    flapping_interval       interval       DEFAULT NULL,
+    flapping_max_change     integer        DEFAULT NULL,
+    noalarm_flag            noalarmtype    NOT NULL DEFAULT 'off',
+    noalarm_from            timestamp      DEFAULT NULL,
+    noalarm_to              timestamp      DEFAULT NULL,
+    offline_group_id        bigint[]       DEFAULT NULL,
+    online_group_id         bigint[]       DEFAULT NULL,
 -- Állapot
-    host_service_state  notifswitch    NOT NULL DEFAULT 'unknown',
-    soft_state          notifswitch    NOT NULL DEFAULT 'unknown',
-    hard_state          notifswitch    NOT NULL DEFAULT 'unknown',
-    state_msg           varchar(255)   DEFAULT NULL,
-    check_attempts      bigint         NOT NULL DEFAULT 0,
-    last_changed        TIMESTAMP      DEFAULT NULL,
-    last_touched        TIMESTAMP      DEFAULT NULL,
-    act_alarm_log_id    bigint         DEFAULT NULL,   -- REFERENCES alarms(alarm_id)
-    last_alarm_log_id   bigint         DEFAULT NULL,   -- REFERENCES alarms(alarm_id)
+    host_service_state      notifswitch    NOT NULL DEFAULT 'unknown',
+    soft_state              notifswitch    NOT NULL DEFAULT 'unknown',
+    hard_state              notifswitch    NOT NULL DEFAULT 'unknown',
+    state_msg               varchar(255)   DEFAULT NULL,
+    check_attempts          integer        NOT NULL DEFAULT 0,
+    last_changed            TIMESTAMP      DEFAULT NULL,
+    last_touched            TIMESTAMP      DEFAULT NULL,
+    act_alarm_log_id        bigint         DEFAULT NULL,   -- REFERENCES alarms(alarm_id)
+    last_alarm_log_id       bigint         DEFAULT NULL,   -- REFERENCES alarms(alarm_id)
 -- Állapot vége
-    deleted             boolean        NOT NULL DEFAULT FALSE
+    deleted                 boolean        NOT NULL DEFAULT FALSE
 );
 ALTER TABLE host_services OWNER TO lanview2;
 
@@ -203,7 +210,7 @@ BEGIN
         return NULL;
     END IF;
     SELECT
-            n.node_name || ':' || s.service_name || CASE WHEN p.port_name IS NULL THEN '' ELSE ':' || p.port_name END,
+            n.node_name || ':' || CASE WHEN p.port_name IS NULL THEN '' ELSE ':' || p.port_name END || s.service_name,
             sprime.service_name,
             sproto.service_name
           INTO name, prime, proto
@@ -335,8 +342,8 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION check_host_services() RETURNS TRIGGER AS $$
 DECLARE
     id      bigint;
-    psma    text;
-    scmd    text;
+    msk     text;
+    sn      text;
     cset    boolean := FALSE;
 BEGIN
     IF TG_OP = 'UPDATE' THEN
@@ -393,12 +400,40 @@ BEGIN
             END IF;
         END IF;
     END IF;
-    IF cset = FALSE AND NEW.superior_host_service_id IS NULL THEN
-        NEW := find_superior(NEW);
-    END IF;
+    IF cset = FALSE THEN 
+        IF TG_OP = 'INSERT' AND NEW.superior_host_service_id IS NULL THEN
+            NEW := find_superior(NEW);
+        ELSIF NEW.superior_host_service_id IS NOT NULL AND (TG_OP = 'INSERT' OR NEW.superior_host_service_id <> OLD.superior_host_service_id) THEN
+            SELECT superior_service_mask INTO msk FROM services WHERE service_id = NEW.service_id;
+            IF msk IS NOT NULL THEN
+                SELECT  service_name INTO sn
+                    FROM host_services JOIN services USING(service_id)
+                    WHERE host_service_id = NEW.superior_host_service_id;
+                IF sn !~ msk THEN
+                    PERFORM error('Params', OLD.host_service_id, 'superior_host_service_id', 'check_host_services()', TG_TABLE_NAME, TG_OP);
+                    RETURN NULL;
+                END IF; -- 1
+            END IF; -- 2
+        END IF; -- 3
+    END IF; -- 4
     RETURN NEW;
 END
 $$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION check_host_services() IS '
+A host_services rekord ellenörző trigger függvény:
+A rekord ID-t nem engedi modosítani.
+Ellenörzi, hogy a node_id valóban egy nodes vagy snmpdevices rekordot azonosít-e.
+Ha port_id nem NULL, ellenörzi, hogy a node_id álltal azonosított objektum portja-e.
+Ellenörzi a noalarm_flag, noalarm_from és noalarm_to mezők konzisztenciáját. Ha a két
+időadat közöl valamelyik, felesleges, akkor törli azt, ha hiányos akkor kizárást generál.
+Ha az idöadatok alapján a noalarm_flag már lejárt, akkor a noalarm_flag "off" lessz, és törli
+mindkét időadatot.
+Insert esetén, ha a superior_host_service_host_name értéke NULL, akkor egy find_superior() hívással
+megkísérli kitölteni azt.
+Ha ha a superior_host_service_host_name értéke nem NULL, és rekord beszúrás történt, vagy superior_host_service_host_name
+megváltozott, akkor ellenörzi, hogy megfelel-e a services.superior_service_mask -mintának a hivatkozott szervíz neve.
+';
+
 
 CREATE TRIGGER host_services_check_reference_node_id BEFORE UPDATE OR INSERT ON host_services FOR EACH ROW EXECUTE PROCEDURE check_host_services();
 
@@ -437,7 +472,7 @@ BEGIN
         JOIN nports         maport    ON maport.port_id    = loglink.port_id2
         JOIN host_services  suphstsrv ON suphstsrv.node_id = maport.node_id
         JOIN services       supsrv    ON supsrv.service_id = suphstsrv.service_id
-      WHERE slport.node_id = nid AND slprtyp.iftype_name = ptyp AND supsrv.service_name LIKE hsnm;
+      WHERE slport.node_id = nid AND slprtyp.iftype_name = ptyp AND supsrv.service_name ~ hsnm;
     GET DIAGNOSTICS rres = ROW_COUNT;
     RAISE INFO '(symple) ROW_COUNT is %, FOUND is %', rres, FOUND;
     IF rres = 0 THEN
@@ -452,7 +487,7 @@ BEGIN
             JOIN nports         sp  ON sp.port_id  = sll.port_id2
             JOIN host_services  shs ON shs.node_id = sp.node_id
             JOIN services       ss  ON shs.service_id = ss.service_id
-            WHERE ap.node_id = nid AND apt.iftype_name = ptyp AND ss.service_name LIKE hsnm;
+            WHERE ap.node_id = nid AND apt.iftype_name = ptyp AND ss.service_name ~ hsnm;
         GET DIAGNOSTICS rres = ROW_COUNT;
         RAISE INFO '(complex) ROW_COUNT is %', rres;
     END IF;
@@ -513,16 +548,17 @@ CREATE OR REPLACE VIEW view_host_services AS
         hs.port_id                  AS port_id,
         p.port_name                 AS port_name,
         hs.delegate_host_state      AS delegate_host_state,
-        s.check_cmd                 AS default_check_cmd,
-        hs.check_cmd                AS check_cmd,
+        COALESCE(hs.check_cmd,             s.check_cmd)              AS check_cmd,
         s.properties                AS default_properties,
         hs.properties               AS properties,
         hs.superior_host_service_id AS superior_host_service_id,
         superior_hs_h.node_name     AS superior_host_service_host_name,
         superior_hs_s.service_name  AS superior_host_service_service_name,
-        hs.max_check_attempts       AS max_check_attempts,
-        hs.normal_check_interval    AS normal_check_interval,
-        hs.retry_check_interval     AS retry_check_interval,
+        COALESCE(hs.max_check_attempts,    s.max_check_attempts)     AS max_check_attempts,
+        COALESCE(hs.normal_check_interval, s.normal_check_interval)  AS normal_check_interval,
+        COALESCE(hs.retry_check_interval,  s.retry_check_interval)   AS retry_check_interval,
+        COALESCE(hs.flapping_interval,     s.flapping_interval)      AS flapping_interval,
+        COALESCE(hs.flapping_max_change,   s.flapping_max_change)    AS flapping_max_change,
         hs.timeperiod_id            AS timeperiod_id,
         tp.timeperiod_name          AS timeperiod_name,
         hs.noalarm_flag             AS noalarm_flag,

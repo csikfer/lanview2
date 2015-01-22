@@ -1344,12 +1344,15 @@ QString intervalToStr(qlonglong i)
     QString is;
     qlonglong j = i % 1000;
     i /= 1000;
-    if (j) is = QChar('.') + QString::number(j);
+    if (j) {
+        is = QString("00") + QString::number(j);
+        is = QChar('.')  + is.right(3);
+    }
     is = QString::number(i % 60) + is;
     i /= 60;
-    is = QString::number(i % 60) + QChar(',') + is;
+    is = QString::number(i % 60) + QChar(':') + is;
     i /= 60;
-    is = QString::number(i % 24) + QChar(',') + is;
+    is = QString::number(i % 24) + QChar(':') + is;
     i /= 24;
     if (i) {
         is = (i == 1 ? "DAY " : "DAYS ") + QString::number(i) + QChar(' ') + is;
@@ -1765,7 +1768,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
         }
         cColStaticDescr *pp = ((cColStaticDescrList::list)_columnDescrs)[i -1];
 
-        PDEB(VERBOSE) << QObject::trUtf8("Field %2 type is %2").arg(pp->colName()).arg(typeid(*pp).name()) << endl;
+        PDEB(VERBOSE) << QObject::trUtf8("Field %1 type is %2").arg(pp->colName()).arg(typeid(*pp).name()) << endl;
     } while(pq->next());
     if (_columnsNum != i) EXCEPTION(EPROGFAIL, -1, "Nem egyértelmű mező szám");
 

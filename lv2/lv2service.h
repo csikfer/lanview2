@@ -127,7 +127,8 @@ public:
     /// Futás/időzítés leállítása, ha nem futott, és __ex = true, akkor dob egy kizárást.
     virtual void stop(bool __ex = true);
     /// Egy alárendelt szolgáltatás objektum létrehozása. Az alapértelmezett metódus egy NULL pointert ad vissza.
-    /// Egy alternatív lehetőség a subordinates konténer elemeinek a feltöltésére, ezért nem tisztán virtuális.
+    /// Egy alternatív lehetőség a subordinates konténer elemeinek a feltöltésére, nem kötelező fellüldefiniálni,
+    /// mivel ha fellüldefiniáltuk a setSubs() metódust, akkor nem halytódik végre.
     /// @param q Az adatbázis műveletekhez használható objektum.
     /// @param hsid host_service_id
     /// @param hoid A node objektum típusát azonosító tableoid
@@ -136,11 +137,9 @@ public:
     /// A QThread objektum ill. az abból származtatott objektum allokálása. Az alap metódus egy QThread objektumot allokál.
     virtual QThread *newThread();
     /// Feltölti a subordinates konténert. Hiba esetén dob egy kizárást, de ha nincs mivel feltölteni a subordinatest, az nem hiba.
-    /// Hasonló a setSubsT() template metódushoz, csak itt az objektum típusa a newSubordinate() virtuáéis metódus által meghatározott.
+    /// Hasonló a setSubsT() template metódushoz, csak itt az objektum típusa a newSubordinate() virtuáéis éa fellüldefiniált metódus által meghatározott.
     /// @param q az adabázis művelethez használlható objektum.
     /// @param qs Opcionális query string, A stringben a %1 karakter a hostServiceId-vel helyettesítődik.
-    /// @param qsp Opcíonális query string, ha rekurzyvan meghívásra kerül a metódus superior=per paraméter miatt. A stringben a %1 az aktuális hostServiceId-vel helyettesítődik.
-    /// @param mp Kereső minta a services.properties mezőre (LIKE) opcionális
     virtual void setSubs(QSqlQuery& q, const QString& qs = _sNul);
     /// A pHost, pService és hostService adattagok feltöltése után az inicializálás befejezése
     /// @param Superior tulajdonság esetén az alárendeltek beolvasásához használt objektum, a setSubs-nak adja át

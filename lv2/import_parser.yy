@@ -1388,7 +1388,7 @@ syspar  : SYS_T PARAM_T str str '=' str { cSysParam::setSysParam(qq(), *$4, *$6,
         | SYS_T BOOLEAN_T str '=' bool  { cSysParam::setBoolSysParam(qq(), *$3, $5); delete $3; }
         | SYS_T INTEGER_T str '=' int   { cSysParam::setIntSysParam(qq(), *$3, $5); delete $3; }
         | SYS_T INTERVAL_T str '=' str  { cSysParam::setSysParam(qq(), *$3, *$5, _sInterval); delete $3; delete $5; }
-        | SYS_T INTERVAL_T str '=' int  { cSysParam::setSysParam(qq(), *$3, $5, _sInterval); delete $3; }
+        | SYS_T INTERVAL_T str '=' int  { cSysParam::setSysParam(qq(), *$3, $5 * 1000, _sInterval); delete $3; }
         ;
 vlan    : VLAN_T int str str_z      {
                                         actVlanId = cVLan::insertNew($2, actVlanName = *$3, actVlanNote = *$4, true);
@@ -1730,11 +1730,11 @@ srv_p   : ipprotp int ';'                       { (*pService)[_sProtocolId] = $1
         | PROPERTIES_T str ';'                  { (*pService)[_sProperties] = *$2; delete $2; }
         | MAX_T CHECK_T ATTEMPTS_T int ';'      { (*pService)[_sMaxCheckAttempts]    = $4; }
         | NORMAL_T CHECK_T INTERVAL_T str ';'   { (*pService)[_sNormalCheckInterval] = *$4; delete $4; }
-        | NORMAL_T CHECK_T INTERVAL_T int ';'   { (*pService)[_sNormalCheckInterval] = $4; }
+        | NORMAL_T CHECK_T INTERVAL_T int ';'   { (*pService)[_sNormalCheckInterval] = $4 * 1000; }
         | RETRY_T CHECK_T INTERVAL_T str ';'    { (*pService)[_sRetryCheckInterval]  = *$4; delete $4; }
-        | RETRY_T CHECK_T INTERVAL_T int ';'    { (*pService)[_sRetryCheckInterval]  = $4; }
+        | RETRY_T CHECK_T INTERVAL_T int ';'    { (*pService)[_sRetryCheckInterval]  = $4 * 1000; }
         | FLAPPING_T INTERVAL_T str ';'         { (*pService)[_sFlappingInterval]    = *$3; delete $3; }
-        | FLAPPING_T INTERVAL_T int ';'         { (*pService)[_sFlappingInterval]    = $3; }
+        | FLAPPING_T INTERVAL_T int ';'         { (*pService)[_sFlappingInterval]    = $3 * 1000; }
         | FLAPPING_T MAX_T CHANGE_T int ';'     { (*pService)[_sFlappingMaxChange]   = $4; }
         | SET_T str '=' value ';'               { (*pService)[*$2] = *$4; delete $2; delete $4; }
         | ALARM_T MESSAGE_T str ';'             { (*pService)[_sServiceAlarmMsg] = *$3; delete $3; }
@@ -1792,9 +1792,12 @@ hsrv_p  : PRIME_T SERVICE_T str ';'             { (*pHostService)[_sPrimeService
         | SUPERIOR_T SERVICE_T str ':' str '(' str ')' ':' str ';'  { setSuperiorHostService(pHostService, $3, $10, $5, $7); }
         | MAX_T CHECK_T ATTEMPTS_T int ';'      { (*pHostService)[_sMaxCheckAttempts]    = $4; }
         | NORMAL_T CHECK_T INTERVAL_T str ';'   { (*pHostService)[_sNormalCheckInterval] = *$4; delete $4; }
-        | NORMAL_T CHECK_T INTERVAL_T int ';'   { (*pHostService)[_sNormalCheckInterval] = $4; }
+        | NORMAL_T CHECK_T INTERVAL_T int ';'   { (*pHostService)[_sNormalCheckInterval] = $4 * 1000; }
         | RETRY_T CHECK_T INTERVAL_T str ';'    { (*pHostService)[_sRetryCheckInterval]  = *$4; delete $4; }
-        | RETRY_T CHECK_T INTERVAL_T int ';'    { (*pHostService)[_sRetryCheckInterval]  = $4; }
+        | RETRY_T CHECK_T INTERVAL_T int ';'    { (*pHostService)[_sRetryCheckInterval]  = $4 * 1000; }
+        | FLAPPING_T INTERVAL_T str ';'         { (*pHostService)[_sFlappingInterval]    = *$3; delete $3; }
+        | FLAPPING_T INTERVAL_T int ';'         { (*pHostService)[_sFlappingInterval]    = $3 * 1000; }
+        | FLAPPING_T MAX_T CHANGE_T int ';'     { (*pHostService)[_sFlappingMaxChange]   = $4; }
         | TIME_T PERIODS_T str ';'              { (*pHostService)[_sTimePeriodId]  = cTimePeriod().getIdByName(qq(), *$3); delete $3; }
         | OFF_T LINE_T GROUP_T str ';'          { (*pHostService)[_sOffLineGroupId] = cGroup().getIdByName(qq(), *$4); delete $4; }
         | ON_T LINE_T GROUP_T str ';'           { (*pHostService)[_sOnLineGroupId] = cGroup().getIdByName(qq(), *$4); delete $4; }

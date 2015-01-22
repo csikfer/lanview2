@@ -148,10 +148,10 @@ void cInspector::down()
         delete pThread;
         pThread = NULL;
     }
-    if (pq        != NULL) { delete pq;         pq = NULL; }
-    if (pPort     != NULL) { delete pPort;      pPort = NULL; }
-    if (pNode     != NULL) { delete pNode;      pNode = NULL; }
-    if (pMagicMap != NULL) { delete pMagicMap;  pMagicMap = NULL; }
+    pDelete(pq);
+    pDelete(pPort);
+    pDelete(pNode);
+    pDelete(pMagicMap);
 }
 
 void cInspector::dropSubs()
@@ -181,7 +181,7 @@ void cInspector::setInternalStat(enum eInternalStat is)
 
 cInspector *cInspector::newSubordinate(QSqlQuery&, qlonglong, qlonglong, cInspector *)
 {
-    DWAR() << "Called default dummy methode." << endl;
+    DWAR() << "Called " << name() << " default dummy methode." << endl;
     return NULL;
 }
 
@@ -205,8 +205,8 @@ static inline QString ssi(const QString& s1, const QString& s2, qlonglong n)
 void cInspector::postInit(QSqlQuery& q, const QString& qs)
 {
     _DBGFN() << name() << endl;
-    if (pSubordinates != NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("A pSubordinates pointer nem NULL!"));
-    if (pThread       != NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("A pThread pointer nem NULL!"));
+    if (pSubordinates != NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 pSubordinates pointer nem NULL!").arg(name()));
+    if (pThread       != NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 pThread pointer nem NULL!").arg(name()));
     // Az objektum típusa, a IT_TIMED az alapértelmezett
     QString s = magicParam(_sInspector);
     inspectorType = s.isEmpty() ? IT_TIMED : ::inspectorType(s);
@@ -214,12 +214,8 @@ void cInspector::postInit(QSqlQuery& q, const QString& qs)
     // Az időzítéssek, ha kellenek
     interval = variantToId(get(_sNormalCheckInterval), false, -1);
     retryInt = variantToId(get(_sRetryCheckInterval),  false, interval);
-    if (interval > 0) { // Átváltás sec -> msec, ha van mit
-        interval *= 1000;
-        retryInt *= 1000;
-    }
-    else if (isTimed()) {   // Időzített időzítés nélkül !
-        EXCEPTION(EDATA, interval, QObject::trUtf8("Időzített lekérdezés, időzítés nélkül."));
+    if (interval <=  0 && isTimed()) {   // Időzített időzítés nélkül !
+        EXCEPTION(EDATA, interval, QObject::trUtf8("%1 időzített lekérdezés, időzítés nélkül.").arg(name()));
     }
     // Saját szál ?
     if (isThread()) {
@@ -234,7 +230,8 @@ void cInspector::postInit(QSqlQuery& q, const QString& qs)
 
 void cInspector::setSubs(QSqlQuery& q, const QString& qs)
 {
-    if (pSubordinates == NULL) EXCEPTION(EPROGFAIL);
+    if (pSubordinates == NULL) EXCEPTION(EPROGFAIL, -1, name());
+    bool ok = true;
     QSqlQuery q2 = getQuery();
     static QString sql =
             "SELECT hs.host_service_id, h.tableoid"
@@ -245,12 +242,37 @@ void cInspector::setSubs(QSqlQuery& q, const QString& qs)
     if (q.first()) do {
         qlonglong       hsid = variantToId(q.value(0));  // host_service_id      A szervíz rekord amit be kell olvasni
         qlonglong       hoid = variantToId(q.value(1));  // node tableoid        A node típusa
-        cInspector *p = newSubordinate(q2, hsid, hoid, this);
+        cInspector *p  = NULL;
+        cError     *pe = NULL;
+        try {
+            p = newSubordinate(q2, hsid, hoid, this);
+            if (p != NULL) {
+                p->postInit(q2);  // ??
+            }
+        } CATCHS(pe);
+        if (pe != NULL) {
+            if (pe->mErrorCode == eError::EDATA) {  // Nem fatális hiba
+                ok = false;
+                cHostService hs;
+                QSqlQuery q3 = getQuery();
+                if (hs.fetchById(q3, hsid)) hs.setState(q3, _sCritical, pe->msg(), hostServiceId());
+                pDelete(p);
+                delete pe;
+            }
+            else {
+                pDelete(p);
+                pe->exception();
+            }
+        }
         if (p != NULL) {
-            p->postInit(q2);  // ??
+
             *pSubordinates << p;
         }
     } while (q.next());
+    // Ha nem vettünk fel egy elemet sem, és lett volna, de hiba miatt nem vettük fel, akkor kizárást dobunk.
+    if (!ok && pSubordinates->size() == 0) {
+        EXCEPTION(EDATA);
+    }
 }
 
 QVariant cInspector::get(const QString& __n) const
@@ -379,7 +401,7 @@ bool cInspector::threadPrelude(QThread &)
     // Időzített
     if (r) {
         qlonglong t = rnd(interval);
-        PDEB(VERBOSE) << "Start timer " << interval << QChar('/') << t << "ms in new thread..." << endl;
+        PDEB(VERBOSE) << "Start timer " << interval << QChar('/') << t << "ms in new thread " << name() << endl;
         timerStat = TS_FIRST;
         timerId = startTimer(t);
     }
@@ -392,19 +414,19 @@ void cInspector::start()
 {
     _DBGFN() << QChar(' ') << name() << " internalStat = " << internalStatName() << endl;
     if (internalStat != IS_INIT && internalStat != IS_REINIT)
-        EXCEPTION(EDATA, (int)internalStat, QObject::trUtf8("Nem megfelelő belső állapot"));
+        EXCEPTION(EDATA, (int)internalStat, QObject::trUtf8("%1 nem megfelelő belső állapot").arg(name()));
     if (timerId != -1)
-        EXCEPTION(EDATA, timerId, QObject::trUtf8("óra újra inicializálása."));
+        EXCEPTION(EDATA, timerId, QObject::trUtf8("%1 óra újra inicializálása.").arg(name()));
     if (isThread()) {
-        if (pThread == NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("A pThread egy NULL pointer."));
-        if (pThread->isRunning()) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("A szál már el lett idítva."));
+        if (pThread == NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 pThread egy NULL pointer.").arg(name()));
+        if (pThread->isRunning()) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 szál már el lett idítva.").arg(name()));
         if (pq != NULL) {
             delete pq;
             pq = NULL;
         }
         setParent(NULL);            // Nem lehet parentje
         moveToThread(pThread);
-        if (thread() != pThread) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("A QObject::moveToThread() hívás sikertelen."));
+        if (thread() != pThread) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 QObject::moveToThread() hívás sikertelen.").arg(name()));
         pThread->start();
         PDEB(VERBOSE) << name() << " thread started." << endl;
         _DBGFNL() << QChar(' ') << name() << " internalStat = " << internalStatName() << endl;
@@ -412,7 +434,7 @@ void cInspector::start()
     }
     if (isTimed()) {
         qlonglong t = rnd(interval);
-        PDEB(VERBOSE) << "Start timer " << interval << QChar('/') << t << "ms in defailt thread..." << endl;
+        PDEB(VERBOSE) << "Start timer " << interval << QChar('/') << t << "ms in defailt thread " << name() << endl;
         timerId = startTimer(t);
         timerStat = TS_FIRST;
     }
@@ -442,7 +464,7 @@ void cInspector::stop(bool __ex)
     if (internalStat != IS_DOWN && internalStat != IS_REINIT) setInternalStat(IS_DOWN);
     if (isTimed()) {
         if (timerId == -1) {
-            QString m = QObject::trUtf8("El sem indított óra leállítása.");
+            QString m = QObject::trUtf8("El sem indított %1 óra leállítása.").arg(name());
             if (__ex) EXCEPTION(EDATA, -1, m);
             DWAR() << m << endl;
         }
@@ -454,7 +476,7 @@ void cInspector::stop(bool __ex)
     }
     if (isThread()) {
         if (pThread == NULL) {
-            QString m = QObject::trUtf8("A pThread egy NULL pointer.");
+            QString m = QObject::trUtf8("%1 pThread egy NULL pointer.").arg(name());
             if(__ex) EXCEPTION(EPROGFAIL, -1, m);
             DWAR() << m << endl;
         }
@@ -479,7 +501,7 @@ void cInspector::toRetryInterval()
     DBGFN();
     if (timerStat == TS_RETRY) return;
     timerStat = TS_RETRY;
-    if (timerId < 0) EXCEPTION(EPROGFAIL);
+    if (timerId < 0) EXCEPTION(EPROGFAIL, -1, name());
     killTimer(timerId);
     timerId = startTimer(retryInt);
 }
@@ -489,7 +511,7 @@ void cInspector::toNormalInterval()
     DBGFN();
     if (timerStat == TS_NORMAL) return;
     timerStat = TS_NORMAL;
-    if (timerId < 0) EXCEPTION(EPROGFAIL);
+    if (timerId < 0) EXCEPTION(EPROGFAIL, -1, name());
     killTimer(timerId);
     timerId = startTimer(interval);
 }
@@ -500,10 +522,11 @@ QString cInspector::name()
     static const QString    qq("??");
     if (pNode != NULL && !node().isNull(node().nameIndex())) r = node().getName();
     else                                                     r = qq;
-    r +=  QChar(',');
-    if (pPort != NULL) r += nPort().getName() + QChar(',');
+    r +=  QChar(':');
+    if (pPort != NULL) r += nPort().getName() + QChar(':');
     if (pService != NULL) r += service().getName();
     else                  r += qq;
+    // A prime és proto services-t még esetleg ki kéne írni...
     return r;
 }
 

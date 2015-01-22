@@ -122,12 +122,13 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION chk_flapping(
     hsid        bigint,
-    s           services)
+    tflapp      interval,
+    iflapp      integer)
 RETURNS boolean AS $$
 BEGIN
-    RETURN s.flapping_max_change <  COUNT(*) FROM host_service_logs
+    RETURN iflapp <  COUNT(*) FROM host_service_logs
             WHERE host_service_id = hsid
-              AND date_of > (CURRENT_TIMESTAMP - s.flapping_interval);
+              AND date_of > (CURRENT_TIMESTAMP - tflapp);
 END
 $$ LANGUAGE plpgsql;
 
@@ -160,6 +161,8 @@ DECLARE
     s           services;
     na          isnoalarm;
     sup         bigint;
+    tflapp      interval;
+    iflapp      integer;
 BEGIN
     hs := touch_host_service(hsid);
     SELECT * INTO  s FROM services      WHERE service_id = hs.service_id;
@@ -210,7 +213,9 @@ BEGIN
         ELSE
             PERFORM error('Params', state, 'notifswitch', 'set_service_stat()');    -- kilép!
     END CASE;
-    IF chk_flapping(hsid, s) THEN
+    tflapp := COALESCE(hs.flapping_interval, s.flapping_interval);
+    iflapp := COALESCE(hs.flapping_max_change, s.flapping_max_change);
+    IF chk_flapping(hsid, tflapp, iflapp) THEN
         hs.host_service_state := 'flapping';
     END IF;
     PERFORM set_host_status(hs);
