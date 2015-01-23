@@ -11,17 +11,17 @@ aborted Az import az üzenetet eldobta
 ';
 
 CREATE TABLE imports (
-    import_id       bigserial      PRIMARY KEY,
+    import_id       bigserial   PRIMARY KEY,
     date_of         timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    user_id         bigint     DEFAULT NULL
+    user_id         bigint      DEFAULT NULL
         REFERENCES users(user_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
     import_text     text        NOT NULL,
     exec_state      execstate   NOT NULL DEFAULT 'wait',
-    pid             bigint     DEFAULT NULL,
+    pid             bigint      DEFAULT NULL,
     started         timestamp   DEFAULT NULL,
     ended           timestamp   DEFAULT NULL,
     result_msg      text        DEFAULT NULL,
-    applog_id       bigint     DEFAULT NULL
+    applog_id       bigint      DEFAULT NULL
         REFERENCES app_errs(applog_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE CASCADE
 );
 ALTER TABLE imports OWNER TO lanview2;
@@ -41,8 +41,8 @@ COMMENT ON COLUMN imports.applog_id IS 'Ha feldolgozáskor hiba rekord készült
 CREATE TYPE templatetype AS ENUM ('macros', 'patchs', 'nodes', 'snmpdevices');
 
 CREATE TABLE import_templates (
-    import_template_id	bigserial		PRIMARY KEY,
-    template_name	varchar(32)	NOT NULL,
+    import_template_id	bigserial       PRIMARY KEY,
+    template_name	varchar(32)     NOT NULL,
     template_type	templatetype	NOT NULL,
     template_note	varchar(255)	DEFAULT NULL,
     template_text	text		NOT NULL,

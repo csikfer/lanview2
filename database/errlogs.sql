@@ -73,10 +73,10 @@ Ok      Nem hiba, ''Info''
 ';
 
 CREATE TABLE errors (
-    error_id    bigserial      PRIMARY KEY,
-    error_name  varchar(32) UNIQUE,
+    error_id    bigserial       PRIMARY KEY,
+    error_name  varchar(32)     NOT NULL UNIQUE,
     error_note varchar(255),
-    error_type  errtype     NOT NULL
+    error_type  errtype         NOT NULL
 );
 ALTER TABLE errors OWNER TO lanview2;
 COMMENT ON TABLE  errors            IS 'Adatbázis műveletek közben keletkező hiba típusok táblája.';
@@ -122,17 +122,17 @@ INSERT INTO errors
 
 -- CREATE SEQUENCE db_errs_dblog_id_seq;
 CREATE TABLE db_errs (
-    dblog_id    bigserial          PRIMARY KEY,
+    dblog_id    bigserial       PRIMARY KEY,
     date_of     timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    error_id    bigint         NOT NULL
+    error_id    bigint          NOT NULL
         REFERENCES errors(error_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
-    user_id     bigint         NOT NULL DEFAULT 0, -- REFERENCES users(user_id) még nincs definiálva, DEFAULT = nobody
-    table_name   varchar(64)     DEFAULT NULL,
+    user_id     bigint          NOT NULL DEFAULT 0, -- REFERENCES users(user_id) még nincs definiálva, DEFAULT = nobody
+    table_name   varchar(64)    DEFAULT NULL,
     trigger_op  varchar(8)      DEFAULT NULL,
-    err_subcode bigint         DEFAULT NULL,
-    err_msg  varchar(255)    DEFAULT NULL,
-    func_name    varchar(255)    DEFAULT NULL,
-    reapeat     bigint         DEFAULT 0,
+    err_subcode bigint          DEFAULT NULL,
+    err_msg  varchar(255)       DEFAULT NULL,
+    func_name    varchar(255)   DEFAULT NULL,
+    reapeat     bigint          DEFAULT 0,
     date_of_last timestamp 	NOT NULL DEFAULT CURRENT_TIMESTAMP,
     acknowledged boolean 	DEFAULT false);
 CREATE INDEX db_errs_date_of_index      ON db_errs (date_of);

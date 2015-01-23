@@ -28,11 +28,11 @@ listed_rev  Csak a felsorolt ősök megjelenítése
 listed_all  Csak a felsorolt leszármazottak és ősök megjelenítése';
 
 CREATE TABLE table_shapes (
-    table_shape_id      bigserial          PRIMARY KEY,
+    table_shape_id      bigserial       PRIMARY KEY,
     table_shape_name    varchar(32)     NOT NULL UNIQUE,
-    table_shape_note   varchar(255)    DEFAULT NULL,
+    table_shape_note    varchar(255)    DEFAULT NULL,
     table_shape_title   varchar(255)    DEFAULT NULL,
-    table_shape_type    tableshapetype[] DEFAULT '{simple}',
+    table_shape_type   tableshapetype[] DEFAULT '{simple}',
     table_name          varchar(32)     NOT NULL,
     schema_name         varchar(32)     NOT NULL DEFAULT 'public',
     table_inherit_type tableinherittype DEFAULT 'no',
@@ -40,8 +40,8 @@ CREATE TABLE table_shapes (
     is_read_only        boolean         DEFAULT 'f',
     refine              varchar(64)     DEFAULT NULL,
     properties          varchar(255)    DEFAULT NULL,
-    left_shape_id       bigint         DEFAULT NULL REFERENCES table_shapes(table_shape_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
-    right_shape_id      bigint         DEFAULT NULL REFERENCES table_shapes(table_shape_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
+    left_shape_id       bigint          DEFAULT NULL REFERENCES table_shapes(table_shape_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
+    right_shape_id      bigint          DEFAULT NULL REFERENCES table_shapes(table_shape_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
     view_rights         rights          DEFAULT 'operator',
     edit_rights         rights          DEFAULT 'admin',
     insert_rights       rights          DEFAULT 'admin',
@@ -74,15 +74,15 @@ asc     Növekvő sorrend.
 desc    Csökkenő sorrend.';
 
 CREATE TABLE table_shape_fields (
-    table_shape_field_id    bigserial          PRIMARY KEY,
+    table_shape_field_id    bigserial       PRIMARY KEY,
     table_shape_field_name  varchar(32)     NOT NULL,
-    table_shape_field_note varchar(255)    DEFAULT NULL,
+    table_shape_field_note varchar(255)     DEFAULT NULL,
     table_shape_field_title varchar(32)     DEFAULT NULL,
-    table_shape_id          bigint         NOT NULL REFERENCES table_shapes(table_shape_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    field_sequence_number   bigint         NOT NULL,
+    table_shape_id          bigint          NOT NULL REFERENCES table_shapes(table_shape_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    field_sequence_number   bigint          NOT NULL,
     ord_types               ordtype[]       DEFAULT '{"no","asc","desc"}',
     ord_init_type           ordtype         DEFAULT NULL,
-    ord_init_sequence_number bigint        DEFAULT NULL,
+    ord_init_sequence_number bigint         DEFAULT NULL,
     is_read_only            boolean         DEFAULT 'f',
     is_hide                 boolean         DEFAULT 'f',
     id2name                 varchar(32)     DEFAULT NULL,
@@ -128,10 +128,10 @@ proc    Szűrés egy függvényen leresztül.
 SQL	egy WHERE feltétel megadása';
 
 CREATE TABLE table_shape_filters (
-    table_shape_filter_id       bigserial          PRIMARY KEY,
-    table_shape_filter_note    varchar(255)    DEFAULT NULL,
+    table_shape_filter_id       bigserial      PRIMARY KEY,
+    table_shape_filter_note     varchar(255)   DEFAULT NULL,
     table_shape_field_id        bigint         REFERENCES table_shape_fields(table_shape_field_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    filter_type                 filtertype      NOT NULL
+    filter_type                 filtertype     NOT NULL
 );
 ALTER TABLE table_shape_filters OWNER TO lanview2;
 
@@ -141,10 +141,10 @@ COMMENT ON COLUMN table_shape_filters.filter_type   IS 'Alkalmazható filter tí
 
 
 CREATE TABLE enum_vals (
-    enum_val_id         bigserial      PRIMARY KEY,
-    enum_val_name       varchar(32) NOT NULL,
-    enum_val_note      varchar(255),
-    enum_type_name      varchar(32) NOT NULL,
+    enum_val_id         bigserial       PRIMARY KEY,
+    enum_val_name       varchar(32)     NOT NULL,
+    enum_val_note       varchar(255),
+    enum_type_name      varchar(32)     NOT NULL,
     UNIQUE (enum_type_name, enum_val_name)
 );
 ALTER TABLE enum_vals OWNER TO lanview2;
@@ -213,12 +213,12 @@ Ha nem adtuk meg az enumerációs típust, és az enumerációs értékre több 
 
 DROP TABLE IF EXISTS menu_items;
 CREATE TABLE menu_items (
-    menu_item_id            bigserial          PRIMARY KEY,
+    menu_item_id            bigserial       PRIMARY KEY,
     menu_item_name          varchar(32)     NOT NULL,
-    item_sequence_number    bigint         DEFAULT NULL,
+    item_sequence_number    bigint          DEFAULT NULL,
     menu_item_title         varchar(32)     DEFAULT NULL,
     app_name                varchar(32)     NOT NULL,
-    upper_menu_item_id      bigint         DEFAULT NULL REFERENCES menu_items(menu_item_id) MATCH SIMPLE ON DELETE CASCADE ON UPDATE RESTRICT,
+    upper_menu_item_id      bigint          DEFAULT NULL REFERENCES menu_items(menu_item_id) MATCH SIMPLE ON DELETE CASCADE ON UPDATE RESTRICT,
     properties              varchar(255)    DEFAULT NULL,
     tool_tip                text            DEFAULT NULL,
     whats_this              text            DEFAULT NULL,

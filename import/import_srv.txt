@@ -15,13 +15,14 @@ SERVICE "arp.proc"  "ARP fájl a proc-ban, local vagy ssh-n keresztül"   { NIL;
 
 //--------------------------------------------------------
 SERVICE "updt_oui"  "Update OUI" {
-    SUPERIOR SERVICE MASK "";
     NIL;
+    SUPERIOR SERVICE MASK "~."; // Semmire sem illeszkedik
 }
 //--------------------------------------------------------
 
 SERVICE lv2d "Lanview2 super server" {
     NIL;
+    SUPERIOR SERVICE MASK "~."; // Semmire sem illeszkedik
     PROP ":daemon=continue:inspector=timed:superior:";
     NORMAL CHECK INTERVAL  60;
     RETRY CHECK INTERVAL   60;
@@ -79,7 +80,7 @@ SERVICE portstat "Device port status query daemon" {
 
 SERVICE "pstat" "Query port status by <protocol>" {
     NIL;
-//    SUPERIOR SERVICE MASK "portstat"; // Autómatikus összerendelésre nincs mód, felesleges
+    SUPERIOR SERVICE MASK "portstat";
     PROP ":inspector=timed:superior=custom:";
     MAX CHECK ATTEMPTS     2;
     NORMAL CHECK INTERVAL 30;
@@ -154,7 +155,7 @@ SERVICE indalarmif2 "IndAlarm Contact V2" {
 // Pseudo services
 SERVICE attached "IndAlarm Contact védett eszköz" {
     NIL;
-    SUPERIOR SERVICE MASK "indalarmif%";
+    SUPERIOR SERVICE MASK "indalarmif";
     PROP ":inspector=passive:iftype=attach:";
     MAX CHECK ATTEMPTS      1;
 }
