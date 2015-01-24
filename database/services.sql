@@ -33,6 +33,7 @@ CREATE TABLE services (
     timeperiod_id           bigint         NOT NULL DEFAULT 0,  -- DEFAULT 'always'
     flapping_interval       interval       NOT NULL DEFAULT '30 minutes',
     flapping_max_change     integer        NOT NULL DEFAULT 15,
+    deleted                 boolean        NOT NULL DEFAULT FALSE,
     UNIQUE (service_name, protocol_id)
 );
 ALTER TABLE services OWNER TO lanview2;
