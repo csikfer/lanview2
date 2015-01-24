@@ -1313,7 +1313,10 @@ CDDUPDEF(cColStaticDescrDateTime)
 /// @return A konvertált érték, vagy NULL_ID ha üres stringet adtunk meg, vagy nem sikerült a kovverzió.
 qlonglong parseTimeInterval(const QString& s, bool *pOk)
 {
-    if (s.isEmpty()) return NULL_ID;
+    if (s.isEmpty()) {
+        if (pOk != NULL) *pOk = false;
+        return NULL_ID;
+    }
     QStringList sl = s.split(QChar(' '));
     qlonglong   r = 0;
     bool ok = false;
@@ -1338,6 +1341,14 @@ qlonglong parseTimeInterval(const QString& s, bool *pOk)
     return ok ? r : NULL_ID;
 }
 
+inline static qlonglong __tconvs(qlonglong i, QString& s, int div)
+{
+    qlonglong j = i % div;
+    if (j < 10) s.prepend(QChar('0'));
+    s.prepend(QString::number(j));
+    return i / div;
+}
+
 /// Egy mSec-ben megadott időintervallum stringgé konvertálása
 QString intervalToStr(qlonglong i)
 {
@@ -1348,12 +1359,11 @@ QString intervalToStr(qlonglong i)
         is = QString("00") + QString::number(j);
         is = QChar('.')  + is.right(3);
     }
-    is = QString::number(i % 60) + is;
-    i /= 60;
-    is = QString::number(i % 60) + QChar(':') + is;
-    i /= 60;
-    is = QString::number(i % 24) + QChar(':') + is;
-    i /= 24;
+    i = __tconvs(i, is, 60);
+    is.prepend(QChar(':'));
+    i = __tconvs(i, is, 60);
+    is.prepend(QChar(':'));
+    i = __tconvs(i, is, 24);
     if (i) {
         is = (i == 1 ? "DAY " : "DAYS ") + QString::number(i) + QChar(' ') + is;
     }
@@ -1368,6 +1378,7 @@ QVariant  cColStaticDescrInterval::fromSql(const QVariant& _f) const
     _DBGFN() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
     bool ok = true;
     QString s = _f.toString();
+    if (s.isEmpty()) return QVariant(); // A NULL üres stringként jön.
     qlonglong r = parseTimeInterval(s, &ok);
     if (!ok) EXCEPTION(EPARSE, -1, s);
     return QVariant(r);
@@ -1403,7 +1414,7 @@ QVariant  cColStaticDescrInterval::set(const QVariant& _f, int& str) const
 QString   cColStaticDescrInterval::toName(const QVariant& _f) const
 {
     _DBGFN() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
-    if (_f.isValid()) return toSql(_f).toString();
+    if (_f.isValid()) return intervalToStr(variantToId(_f));
     return _sNul;
 }
 qlonglong cColStaticDescrInterval::toId(const QVariant& _f) const

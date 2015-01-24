@@ -119,12 +119,8 @@ void cSupDaemon::postInit(QSqlQuery &q, const QString &)
     // Az időzítéssek
     interval = variantToId(get(_sNormalCheckInterval), false, -1);
     retryInt = variantToId(get(_sRetryCheckInterval),  false, interval);
-    if (interval > 0) { // Átváltás sec -> msec, ha van mit
-        interval *= 1000;
-        retryInt *= 1000;
-    }
-    else if (isTimed()) {   // Időzített időzítés nélkül !
-        EXCEPTION(EDATA, interval, QObject::trUtf8("Időzített lekérdezés, időzítés nélkül."));
+    if (interval <= 0&& isTimed()) {   // Időzített időzítés nélkül !
+        EXCEPTION(EDATA, interval, QObject::trUtf8("%1 időzített lekérdezés, időzítés nélkül.").arg(name()));
     }
 
     QSqlQuery q2 = getQuery();
