@@ -93,9 +93,13 @@ cInspector::cInspector(QSqlQuery& q, qlonglong __host_service_id, qlonglong __ta
     // Ha a host_service_id NULL, akkor már be van olvasva a két (host_services, nodes/hosts/..) rekord !!!
     if (__host_service_id != NULL_ID) {
         QString sql = QString(
-            "SELECT hs.*, n.* FROM host_services AS hs JOIN %1 AS n USING (node_id) "
-                    "WHERE hs.host_service_id = %2")
-                .arg(pNode->tableName()).arg(__host_service_id);
+            "SELECT hs.*, n.* "
+                "FROM host_services AS hs JOIN %1 AS n USING (node_id) JOIN services AS s USING(service_id) "
+                "WHERE hs.host_service_id = %2 "
+                  "AND NOT s.disabled AND NOT hs.disabled "   // letiltott
+                  "AND NOT s.deleted  AND NOT hs.deleted "    // törölt
+
+            ).arg(pNode->tableName()).arg(__host_service_id);
         if (!q.exec(sql)) SQLPREPERR(q, sql);
         if (!q.first()) EXCEPTION(EDATA, __host_service_id, QObject::trUtf8("host_services record not found."));
     }
@@ -234,9 +238,12 @@ void cInspector::setSubs(QSqlQuery& q, const QString& qs)
     bool ok = true;
     QSqlQuery q2 = getQuery();
     static QString sql =
-            "SELECT hs.host_service_id, h.tableoid"
-            " FROM host_services AS hs JOIN nodes AS h USING(node_id) "
-            " WHERE hs.superior_host_service_id = %1";
+            "SELECT hs.host_service_id, h.tableoid "
+             "FROM host_services AS hs JOIN nodes AS h USING(node_id) JOIN services AS s USING(service_id) "
+             "WHERE hs.superior_host_service_id = %1 "
+               "AND NOT s.disabled AND NOT hs.disabled "   // letiltottak nem kellenek
+               "AND NOT s.deleted  AND NOT hs.deleted "    // töröltek sem kellenek
+            ;
     sql = ssi(sql, qs, hostServiceId());
     if (!q.exec(sql)) SQLPREPERR(q, sql);
     if (q.first()) do {

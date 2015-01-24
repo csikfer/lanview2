@@ -26,6 +26,7 @@ CREATE TABLE services (
     superior_service_mask   varchar(64)    DEFAULT NULL,
     check_cmd               varchar(255)   DEFAULT NULL,
     properties              varchar(255)   DEFAULT ':',
+    disabled                boolean        NOT NULL DEFAULT FALSE,
     max_check_attempts      integer        DEFAULT NULL,
     normal_check_interval   interval       DEFAULT NULL,
     retry_check_interval    interval       DEFAULT NULL,
@@ -59,8 +60,9 @@ superior    Alárendelteket ellenörző eljárásokat hív, szolgál ki (passive
 protocol    Ez egy protokolt (is)
 mode        Ez egy módszer, sablon, ...
 system
+    lanview2    Lanview2 modul
     nagios      Egy Nagios plugin
-    munin       Egy Munin olugin
+    munin       Egy Munin plugin
 ifType      A szolgáltatás hierarhia mely port típus linkjével azonos (paraméter: interface típus neve)
 disabled    service_name = icontsrv , csak a host_services rekordban, a szolgáltatás (riasztás) tiltva.
 reversed    service_name = icontsrv , csak a host_services rekordban, a port fordított bekötését jelzi.
@@ -138,6 +140,7 @@ CREATE TABLE host_services (
     delegate_host_state     boolean        NOT NULL DEFAULT FALSE,
     check_cmd               varchar(255)   DEFAULT NULL,
     properties              varchar(255)   DEFAULT NULL,
+    disabled                boolean        NOT NULL DEFAULT FALSE,
     superior_host_service_id bigint        DEFAULT NULL
         REFERENCES host_services(host_service_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
     max_check_attempts      integer        DEFAULT NULL,

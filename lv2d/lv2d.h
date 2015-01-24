@@ -16,6 +16,9 @@ class cSupDaemon : public cInspector {
 public:
     cSupDaemon(QSqlQuery& q, const QString& __sn, lv2d& _mo);
     ~cSupDaemon();
+    /// Az lv2d szolgáltatás teljes inicializálását végzi (az alap osztály inicializálásán túl).
+    /// Feltölti a pSubordinates konténert is, ezért sem a setSubs() sem a newSubordinate()
+    /// metódus fellüldefiniálása nem szükséges, és azok nem kerülnek meghívásra.
     virtual void postInit(QSqlQuery &q, const QString &qs = QString());
     virtual enum eNotifSwitch run(QSqlQuery &q);
     virtual void stop(bool __ex);

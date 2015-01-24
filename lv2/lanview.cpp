@@ -198,7 +198,7 @@ lanView::lanView()
 lanView::~lanView()
 {
     instance = NULL;    // "Kifelé" már nincs objektum
-    PDEB(OBJECT) << QObject::trUtf8("delete (lanView *)").arg((qulonglong)this) << endl;
+    PDEB(OBJECT) << QObject::trUtf8("delete (lanView *)%1").arg((qulonglong)this) << endl;
     // Ha volt hiba objektumunk, töröljük. Elötte kiírjuk a hibaüzenetet, ha tényleg hiba volt
     if (lastError && lastError->mErrorCode != eError::EOK) {
         PDEB(DERROR) << lastError->msg();         // A Hiba üzenet

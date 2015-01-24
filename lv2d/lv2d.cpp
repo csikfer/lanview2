@@ -125,11 +125,19 @@ void cSupDaemon::postInit(QSqlQuery &q, const QString &)
 
     QSqlQuery q2 = getQuery();
     pSubordinates = new QList<cInspector *>;
-    // Nem a host-service fán közlekedik, hanem az összes démont összeszedi, és a hierarhiát igazítja ehhez.
+    // Nem csak a host-service fán közlekedik, hanem az összes démont összeszedi, és a hierarhiát igazítja ehhez.
     QString sql = QString(
-            "SELECT host_services.*, nodes.* "
-                "FROM host_services JOIN nodes USING(node_id) JOIN services USING(service_id) "
-                "  WHERE host_services.node_id = %1 AND services.properties LIKE '%:daemon=%' AND host_service_id <> %2"
+            "SELECT hs.*, h.* "
+                "FROM host_services AS hs "
+                 "JOIN nodes AS h USING(node_id) "
+                 "JOIN services AS s USING(service_id) "
+                "WHERE ((hs.node_id = %1 "                      // A saját host
+                  "AND   (s.properties LIKE '%:daemon=%' "      // Csak azok amik a properties-ben van daemon paraméter
+                   "OR   hs.properties LIKE '%:daemon=%') "
+                  "AND   host_service_id <> %2) "               // saját rekord nem kell
+                 "OR    hs.superior_host_service_id = %2) "     // Vagy a szabályosan linkelt példányok
+                  "AND NOT s.disabled AND NOT hs.disabled "     // letiltottak nem kellenek
+                  "AND NOT s.deleted  AND NOT hs.deleted "      // töröltek sem kellenek
                 ).arg(nodeId()).arg(hostServiceId());
     if (!q.exec(sql)) SQLPREPERR(q, sql);
     if (!q.first())   EXCEPTION(NOTODO);
@@ -291,7 +299,7 @@ void cDaemon::getCmd()
             cmd += getParValue(n);
         }
     }
-    if (cmd.isEmpty()) EXCEPTION(EDATA, -1, trUtf8("Insufficient command"));
+    if (cmd.isEmpty()) EXCEPTION(EDATA, -1, trUtf8("Insufficient command in %1").arg(name()));
     QString cmdFile;
     for (i = cmd.begin(); i != cmd.end() && !i->isSpace(); ++i) cmdFile += *i;
     if (i == cmd.end()) {
@@ -322,10 +330,10 @@ void cDaemon::getCmd()
             f.setFile(d, cmdFile);
             if (f.isExecutable()) break;      // megtaláltuk
         }
-        if (!f.isExecutable()) EXCEPTION(ENOTFILE, -1, cmdFile);  // nem volt a path-on
+        if (!f.isExecutable()) EXCEPTION(ENOTFILE, -1, trUtf8("Ismeretlrn %1 parancs a %2 -ben").arg(cmdFile).arg(name()));  // nem volt a path-on sem
     }
     cmdFile = f.absoluteFilePath();
-    cmd = cmdFile + cmd;
+    cmd = cmdFile + cmd;    // A cmd-ben már csak az argumentumok vannak.
     _DBGFNL() << "cmd = " << quotedString(cmd) << endl;
 }
 

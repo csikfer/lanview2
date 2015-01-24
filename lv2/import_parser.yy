@@ -1117,7 +1117,7 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
 %token      INHERIT_T NAMES_T HIDE_T VALUE_T DEFAULT_T FILTER_T FILTERS_T
 %token      ORD_T SEQUENCE_T MENU_T GUI_T OWN_T TOOL_T TIP_T WHATS_T THIS_T
 %token      EXEC_T TAG_T ANY_T BOOLEAN_T CHAR_T IPADDRESS_T REAL_T URL_T
-%token      BYTEA_T DATE_T
+%token      BYTEA_T DATE_T DISABLE_T
 
 %token <i>  INTEGER_V
 %token <r>  FLOAT_V
@@ -1460,7 +1460,7 @@ place_e : ';'
 plac_ps : place_p
         | plac_ps place_p
         ;
-place_p : NOTE_T str ';'           { place.set(_sPlaceNote, *$2);     delete $2; }
+place_p : NOTE_T str ';'            { place.set(_sPlaceNote, *$2);     delete $2; }
         | PARENT_T place_id ';'     { place.set(_sParentId, $2); }
         | IMAGE_T image_id ';'      { place.set(_sImageId,  $2); }
         | FRAME_T frame ';'         { place.set(_sFrame, QVariant::fromValue(*$2)); delete $2; }
@@ -1738,6 +1738,7 @@ srv_p   : ipprotp int ';'                       { (*pService)[_sProtocolId] = $1
         | FLAPPING_T MAX_T CHANGE_T int ';'     { (*pService)[_sFlappingMaxChange]   = $4; }
         | SET_T str '=' value ';'               { (*pService)[*$2] = *$4; delete $2; delete $4; }
         | ALARM_T MESSAGE_T str ';'             { (*pService)[_sServiceAlarmMsg] = *$3; delete $3; }
+        | bool_on DISABLE_T ';'                 { (*pService)[_sDisabled] = $1; }
         ;
 ipprotp : TCP_T                     { $$ = EP_TCP; }
         | UDP_T                     { $$ = EP_UDP; }
@@ -1802,7 +1803,8 @@ hsrv_p  : PRIME_T SERVICE_T str ';'             { (*pHostService)[_sPrimeService
         | OFF_T LINE_T GROUP_T str ';'          { (*pHostService)[_sOffLineGroupId] = cGroup().getIdByName(qq(), *$4); delete $4; }
         | ON_T LINE_T GROUP_T str ';'           { (*pHostService)[_sOnLineGroupId] = cGroup().getIdByName(qq(), *$4); delete $4; }
         | SET_T str '=' value ';'               { (*pHostService)[*$2] = *$4; delete $2; delete $4; }
-        | ALARM_T MESSAGE_T str ';'             { (*pService)[_sHostServiceAlarmMsg] = *$3; delete $3; }
+        | ALARM_T MESSAGE_T str ';'             { (*pHostService)[_sHostServiceAlarmMsg] = *$3; delete $3; }
+        | bool_on DISABLE_T ';'                 { (*pHostService)[_sDisabled] = $1; }
         ;
 hs      : str ':' str                           { $$ = new QStringPair(sp2s($1), sp2s($3)); }
         | str ':' '@'                           { $$ = new QStringPair(sp2s($1), _sNul); }
@@ -1816,6 +1818,7 @@ delete  : DELETE_T PLACE_T pattern strs ';'     { foreach (QString s, *$4) { cPl
         | DELETE_T ONLY_T NODE_T pattern strs ';'{foreach (QString s, *$5) { cNode().  delByName(qq(), s, $4, true); } delete $5; }
         | DELETE_T VLAN_T pattern strs ';'      { foreach (QString s, *$4) { cVLan().  delByName(qq(), s, $3); }       delete $4; }
         | DELETE_T SUBNET_T pattern strs ';'    { foreach (QString s, *$4) { cSubNet().delByName(qq(), s, $3); }       delete $4; }
+        // NEM OK!!! Nem egyedi azonosító a két név !!!!!
         | DELETE_T HOST_T pattern str SERVICE_T pattern strs ';'
                                                 { foreach (QString s, *$7) { cHostService().delByNames(qq(), sp2s($4), s, $6, $3); } delete $7; }
         | DELETE_T MACRO_T strs ';'             { foreach (QString s, *$3) { templates.del(_sMacros, s); } delete $3; }
@@ -1831,6 +1834,7 @@ delete  : DELETE_T PLACE_T pattern strs ';'     { foreach (QString s, *$4) { cPl
                                                 { foreach (QString s, *$5) { cEnumVal().delByTypeName(qq(), s, true); } delete $5; }
         | DELETE_T ENUM_T TITLE_T  str strs ';' { foreach (QString s, *$5) { cEnumVal().delByNames(qq(), sp2s($4), s); } delete $5; }
         | DELETE_T GUI_T pattern strs MENU_T ';'{ foreach (QString s, *$4) { cMenuItem().delByAppName(qq(), s, $3); } delete $4; }
+///     | bool_on DISABLE_T HOST_T str SERVICE str ';' { ; }    // !!!???
         ;
 pattern :                                       { $$ = false; }
         | PATTERN_T                             { $$ = true;  }
@@ -2091,15 +2095,16 @@ static int yylex(void)
         TOK(INHERIT) TOK(NAMES) TOK(HIDE) TOK(VALUE) TOK(DEFAULT) TOK(FILTER) TOK(FILTERS)
         TOK(ORD) TOK(SEQUENCE) TOK(MENU) TOK(GUI) TOK(OWN) TOK(TOOL) TOK(TIP) TOK(WHATS) TOK(THIS)
         TOK(EXEC) TOK(TAG) TOK(ANY) TOK(BOOLEAN) TOK(CHAR) TOK(IPADDRESS) TOK(REAL) TOK(URL)
-        TOK(BYTEA) TOK(DATE)
-        { "WST", WORKSTATION_T }, // rövidítések
-        { "ATT", ATTACHED_T },
-        { "INT", INTEGER_T },
-        { "MSG", MESSAGE_T },
-        { "CMD", COMMAND_T },
-        { "PROP", PROPERTIES_T },
-        { "PROTO", PROTOCOL_T },
-        { "SEQ", SEQUENCE_T },
+        TOK(BYTEA) TOK(DATE) TOK(DISABLE)
+        { "WST",    WORKSTATION_T }, // rövidítések
+        { "ATC",    ATTACHED_T },
+        { "INT",    INTEGER_T },
+        { "MSG",    MESSAGE_T },
+        { "CMD",    COMMAND_T },
+        { "PROP",   PROPERTIES_T },
+        { "PROTO",  PROTOCOL_T },
+        { "SEQ",    SEQUENCE_T },
+        { "DEL",    DELETE_T },
         { NULL, 0 }
     };
     // DBGFN();

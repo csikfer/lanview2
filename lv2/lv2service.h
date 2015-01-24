@@ -87,7 +87,10 @@ protected:
 };
 
 /// @class cInspector
-/// Egy szolgáltatás példány adatai és időzítése
+/// Egy szolgáltatás példány adatai és időzítése, kezelése
+/// Az osztály közvetlenül nem használható, de nem klasszikus értelemben vett bázis osztály,
+/// mivel minden virtuális fügvénye definiált, és ezek közül csak néhányat kell fellüldefiniálni
+/// a feladattol föggően.
 class LV2SHARED_EXPORT cInspector : public QObject {
     friend class cInspectorThread;
     Q_OBJECT
@@ -308,7 +311,8 @@ public:
             sdevOid = cSnmpDevice().tableoid();
         }
     }
-    /// A lehetséges node típusok tableoid értékei
+    // A lehetséges node típusok tableoid értékei
+    // Erre ki kéne találni valamit, hogy ne lehessen elrontani
     static qlonglong nodeOid;
     static qlonglong sdevOid;
 protected:
@@ -327,6 +331,7 @@ protected:
     ///
     virtual bool threadPrelude(QThread& t);
 private:
+    /// Alaphelyzetbe állítja az adattagokat (a konstruktorokhoz)
     void preInit();
 public:
     static qlonglong rnd(qlonglong i, qlonglong m = 1000);
