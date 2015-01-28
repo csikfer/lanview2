@@ -143,7 +143,7 @@ void Downloader::replyFinished (QNetworkReply *reply)
     if(reply->error())
     {
         QString msg = trUtf8("A '%1' letöltése sikertelen. %2").arg(url.toString()).arg(reply->errorString());
-        cDbErr::insertNew(*pq, cDbErrType::_sDataWarn, msg, -1, cOui::_descr_cOui().tableName(), QString(__PRETTY_FUNCTION__));
+        cDbErr::insertNew(*pq, cDbErrType::_sDataWarn, msg, -1, cOui().descr().tableName(), QString(__PRETTY_FUNCTION__));
         DERR() << msg << endl;
     }
     else

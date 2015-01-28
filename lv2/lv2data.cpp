@@ -790,6 +790,10 @@ const cIfType *cIfType::fromIana(int _iana_id)
 
 /* ------------------------------ cNPort ------------------------------ */
 
+qlonglong cNPort::_tableoid_nports     = NULL_ID;
+qlonglong cNPort::_tableoid_pports     = NULL_ID;
+qlonglong cNPort::_tableoid_interfaces = NULL_ID;
+
 cNPort::cNPort() : cRecord()
 {
     // _DBGFN() << VDEBPTR(this) << endl;
@@ -816,6 +820,10 @@ const cRecStaticDescr&  cNPort::descr() const
         _ixNodeId = _pRecordDescr->toIndex(_sNodeId);
         _ixPortIndex = _pRecordDescr->toIndex(_sPortIndex);
         _ixIfTypeId  = _pRecordDescr->toIndex(_sIfTypeId);
+        _tableoid_nports     = _pRecordDescr->tableoid();
+        _tableoid_pports     = cPPort().tableoid();
+        _tableoid_interfaces = cInterface().tableoid();
+
     }
     return *_pRecordDescr;
 }
@@ -958,10 +966,11 @@ template<class P> static inline P * getPortObjByIdT(QSqlQuery& q, qlonglong  __i
 
 cNPort * cNPort::getPortObjById(QSqlQuery& q, qlonglong __tableoid, qlonglong __port_id, bool __ex)
 {
-    if      (__tableoid == cNPort().      tableoid()) return getPortObjByIdT<cNPort>       (q, __port_id, __ex);
-    else if (__tableoid == cPPort().      tableoid()) return getPortObjByIdT<cPPort>       (q, __port_id, __ex);
-    else if (__tableoid == cInterface().  tableoid()) return getPortObjByIdT<cInterface>   (q, __port_id, __ex);
-    else                                            EXCEPTION(EDATA);
+    if (_tableoid_nports == NULL_ID) cNPort();
+    if      (__tableoid == _tableoid_nports)     return getPortObjByIdT<cNPort>       (q, __port_id, __ex);
+    else if (__tableoid == _tableoid_pports)     return getPortObjByIdT<cPPort>       (q, __port_id, __ex);
+    else if (__tableoid == _tableoid_interfaces) return getPortObjByIdT<cInterface>   (q, __port_id, __ex);
+    else                                        EXCEPTION(EDATA);
     return NULL;
 }
 
@@ -1132,11 +1141,13 @@ bool cInterface::fetchByIp(QSqlQuery& q, const QHostAddress& a)
 
 int cInterface::fetchVlans(QSqlQuery& q)
 {
+    if (cPortVlan::_ixPortId < 0) cPortVlan();
     return vlans.fetch(q, false, cPortVlan::_ixPortId, getId());
 }
 
 int cInterface::fetchAddressess(QSqlQuery& q)
 {
+    if (cIpAddress::_ixPortId < 0) cIpAddress();
     return addresses.fetch(q, false, cIpAddress::_ixPortId, getId());
 }
 
@@ -1559,14 +1570,20 @@ bool cNode::insert(QSqlQuery &__q, bool __ex)
 }
 
 int  cNode::fetchPorts(QSqlQuery& __q, bool __ex) {
-    QSqlQuery q = getQuery(); // A copy construktor vagy másolás az nem jó!!
-    QString sql = "SELECT tableoid, port_id FROM nports WHERE node_id = ?";
+    QSqlQuery q = getQuery(); // A copy construktor vagy másolás az nem jó!! (shadow copy)
+    QString sql = "SELECT tableoid, port_id FROM nports WHERE node_id = ? AND NOT deleted";
     if (execSql(__q, sql, getId())) do {
         qlonglong tableoid = variantToId(__q.value(0));
         qlonglong port_id  = variantToId(__q.value(1));
         cNPort *p = cNPort::getPortObjById(q, tableoid, port_id, __ex);
         q.finish();
         if (p == NULL) return -1;
+        if (tableoid == cNPort::tableoid_interfaces()) {
+            cInterface *pi = p->reconvert<cInterface>();
+            pi->fetchAddressess(q);
+            pi->fetchVlans(q);
+            q.finish();
+        }
         ports << p;
     } while (__q.next());
     __q.finish();

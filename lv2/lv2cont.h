@@ -564,7 +564,7 @@ public:
     /// A fetchMembers(QSqlQuery& __q) metódus hívása után a további member rekordok beolvasása
     /// Egy példa a metódus használatára:
 /*! @code
-    // A "mindenki" nevű felhasználói csoport összest tagjának a nevének a kiírása a debug -ra:
+    // A "mindenki" nevű felhasználói csoport összes tagja nevének a kiírása a debug -ra:
     tGroup<cGroup, cUser>   ugSw;
     QSqlQuery   q = getQuery();
     if (!ugSw.group.fetchByName(q, "mindenki")) DERR("Nincs ,imdenki nevű csoport.");
@@ -575,7 +575,7 @@ public:
             while (ugSw.nextMembers(q));
         }
         else {
-            DERR("Nincs egyetlen tagja sem a, imdenki nevű csoportnak.");
+            DERR("Nincs egyetlen tagja sem a, midenki nevű csoportnak.");
         }
     }
     @endcode

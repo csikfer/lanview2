@@ -746,6 +746,15 @@ protected:
     static int _ixPortIndex;
     /// Port iftype_id field index
     static int _ixIfTypeId;
+    ///
+    static qlonglong _tableoid_nports;
+    static qlonglong _tableoid_pports;
+    static qlonglong _tableoid_interfaces;
+public:
+    static qlonglong tableoid_nports()      { return _tableoid_nports; }
+    static qlonglong tableoid_pports()      { return _tableoid_pports; }
+    static qlonglong tableoid_interfaces()  { return _tableoid_interfaces; }
+
 };
 
 class cPatch;
@@ -1037,6 +1046,7 @@ public:
     /// node_type értékét, ha az NULL.
     virtual bool insert(QSqlQuery &__q, bool __ex = true);
     /// Kitölti a ports adattagot, hiba esetén dob egy kizárást.
+    /// Ha a port típusa cInterface, akkor az IP címeket is.
     virtual int  fetchPorts(QSqlQuery& __q, bool __ex = true);
     /// A név alapján visszaadja a rekord ID-t, az objektum értéke nem változik.
     /// Ha a node típusban be lett állítva a host bit, akkor ha nincs találat a névre, akkor

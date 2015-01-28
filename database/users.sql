@@ -6,9 +6,9 @@ COMMENT ON TYPE dayofweek IS 'Date of week enumeration.';
 
 -- Idő intervallum definíciók egy megadott napon egy héten bellül
 CREATE TABLE tpows (
-    tpow_id     bigserial          PRIMARY KEY,
+    tpow_id     bigserial       PRIMARY KEY,
     tpow_name   varchar(32)     NOT NULL UNIQUE,
-    tpow_note  varchar(255)    DEFAULT NULL,
+    tpow_note   varchar(255)    DEFAULT NULL,
     dow         dayofweek       NOT NULL,
     begin_time  time            NOT NULL DEFAULT  '0:00',
     end_time    time            NOT NULL DEFAULT '24:00'
@@ -24,9 +24,9 @@ COMMENT ON COLUMN tpows.end_time    IS 'End time';
 -- //// TIMEPERIODS
 
 CREATE TABLE timeperiods (
-    timeperiod_id       bigserial          PRIMARY KEY,
+    timeperiod_id       bigserial       PRIMARY KEY,
     timeperiod_name     varchar(32)     NOT NULL UNIQUE,
-    timeperiod_note    varchar(255)    DEFAULT NULL
+    timeperiod_note     varchar(255)    DEFAULT NULL
 );
 ALTER TABLE timeperiods OWNER TO lanview2;
 COMMENT ON TABLE  timeperiods                  IS 'Time periods';
@@ -305,3 +305,26 @@ BEGIN
     END LOOP;
 END;
 $$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION update_user_password(uid bigint, newpasswd character varying)
+  RETURNS users AS
+$BODY$
+DECLARE 
+    usr users;
+BEGIN
+    UPDATE users set passwd = crypt(newpasswd, gen_salt('md5')) WHERE user_id = uid
+        RETURNING * INTO usr;
+    IF NOT FOUND THEN
+        PERFORM error('IdNotFound', uid, 'user_id', 'update_user_password()', 'users');
+    END IF;
+    RETURN usr;
+END
+$BODY$
+  LANGUAGE plpgsql VOLATILE
+  COST 100;
+ALTER FUNCTION update_user_password(bigint, character varying)
+  OWNER TO lanview2;
+
+COMMENT ON FUNCTION update_user_password(uid bigint, newpasswd character varying)
+IS 'Módosítja a uid azonosítójú felhasználó jelszavát';

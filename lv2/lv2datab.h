@@ -1734,7 +1734,6 @@ template <class R> const cRecStaticDescr *getPDescr(const QString& _tn, const QS
 /// Egy alapértelmezett cRecord leszármazott objektum teljes definíciója
 #define DEFAULTCRECDEF(R, tn)   CRECCNTR(R) CRECDEFD(R) CRECDDCR(R, tn)
 
-/// Egy konstans referencia osztály, egy cRecord leszármazott példány egy mezőjére.
 /// @relates cRecord
 class LV2SHARED_EXPORT cRecordFieldConstRef {
     friend class cRecord;

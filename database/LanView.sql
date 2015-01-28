@@ -280,7 +280,7 @@ CREATE TABLE unusual_fkeys (
     UNIQUE (table_schema, table_name, column_name)
 );
 
-COMMENT ON TABLE unusual_fkeys IS 'Az öröklödéshez kapcsolódó távoli kulcsok definíciói';
+COMMENT ON TABLE  unusual_fkeys IS 'Az öröklödéshez kapcsolódó távoli kulcsok definíciói';
 COMMENT ON COLUMN unusual_fkeys.table_schema IS 'A tábla séma neve, melyben a hivatkozó mezőt definiáljuk';
 COMMENT ON COLUMN unusual_fkeys.table_name  IS 'A tábla neve, melyben a hivatkozó mezőt definiáljuk';
 COMMENT ON COLUMN unusual_fkeys.column_name IS 'A hivatkozó/mutató mező neve';
@@ -292,12 +292,13 @@ COMMENT ON COLUMN unusual_fkeys.f_inherited_tables IS 'Azon leszármazott tábl�
 
 INSERT INTO unusual_fkeys
   ( table_name,         column_name,    unusual_fkeys_type, f_table_name,   f_column_name,  f_inherited_tables) VALUES
-  ( 'nports',           'node_id',      'owner',            'nodes',        'node_id',      '{nodes,snmpdevices}'),
-  ( 'port_param_values','port_id',      'owner',            'nports',       'port_id',      '{nports,pports,interfaces}'),
-  ( 'interfaces',       'node_id',      'owner',            'nodes',        'node_id',      '{nodes,snmpdevices}'),
-  ( 'host_services',    'node_id',      'property',         'nodes',        'node_id',      '{nodes,snmpdevices}'),
-  ( 'phs_links_table',  'port_id1',     'property',         'nports',       'port_id',      '{nports, pports,interfaces}'),
-  ( 'phs_links_table',  'port_id2',     'property',         'nports',       'port_id',      '{nports, pports,interfaces}'),
+  ( 'nports',           'node_id',      'owner',            'nodes',        'node_id',      '{nodes, snmpdevices}'),
+  ( 'port_param_values','port_id',      'owner',            'nports',       'port_id',      '{nports, pports, interfaces}'),
+  ( 'interfaces',       'node_id',      'owner',            'nodes',        'node_id',      '{nodes, snmpdevices}'),
+  ( 'host_services',    'node_id',      'property',         'nodes',        'node_id',      '{nodes, snmpdevices}'),
+  ( 'host_services',    'port_id',      'property',         'nports',       'port_id',      '{nports, interfaces}'),
+  ( 'phs_links_table',  'port_id1',     'property',         'nports',       'port_id',      '{nports, pports, interfaces}'),
+  ( 'phs_links_table',  'port_id2',     'property',         'nports',       'port_id',      '{nports, pports, interfaces}'),
   ( 'log_links_table',  'port_id1',     'property',         'nports',       'port_id',      '{nports, interfaces}'),
   ( 'log_links_table',  'port_id2',     'property',         'nports',       'port_id',      '{nports, interfaces}');
 

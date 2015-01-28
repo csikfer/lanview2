@@ -30,7 +30,8 @@ CREATE TABLE services (
     max_check_attempts      integer        DEFAULT NULL,
     normal_check_interval   interval       DEFAULT NULL,
     retry_check_interval    interval       DEFAULT NULL,
-    timeperiod_id           bigint         NOT NULL DEFAULT 0,  -- DEFAULT 'always'
+    timeperiod_id           bigint         NOT NULL DEFAULT 0  -- DEFAULT 'always'
+        REFERENCES timeperiods(timeperiod_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
     flapping_interval       interval       NOT NULL DEFAULT '30 minutes',
     flapping_max_change     integer        NOT NULL DEFAULT 15,
     deleted                 boolean        NOT NULL DEFAULT FALSE,
@@ -132,12 +133,11 @@ CREATE TABLE host_services (
         REFERENCES services(service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     port_id                 bigint         DEFAULT NULL,
     host_service_note       varchar(255)   DEFAULT NULL,
-    host_service_alarm_msg  varchar(255) DEFAULT NULL,
-    prime_service_id        bigint         DEFAULT -1       -- nil
+    host_service_alarm_msg  varchar(255)   DEFAULT NULL,
+    prime_service_id        bigint         NOT NULL DEFAULT -1       -- nil
         REFERENCES services(service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT,
-    proto_service_id        bigint         DEFAULT -1       -- nil
+    proto_service_id        bigint         NOT NULL DEFAULT -1       -- nil
         REFERENCES services(service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT,
-    --  REFERENCES interfaces(port_id) MATCH SIMPLE
     delegate_host_state     boolean        NOT NULL DEFAULT FALSE,
     check_cmd               varchar(255)   DEFAULT NULL,
     properties              varchar(255)   DEFAULT NULL,
@@ -147,7 +147,7 @@ CREATE TABLE host_services (
     max_check_attempts      integer        DEFAULT NULL,
     normal_check_interval   interval       DEFAULT NULL,
     retry_check_interval    interval       DEFAULT NULL,
-    timeperiod_id           bigint         DEFAULT NULL   -- DEFAULT 'always'
+    timeperiod_id           bigint         DEFAULT NULL
         REFERENCES timeperiods(timeperiod_id) MATCH SIMPLE ON DELETE RESTRICT ON UPDATE RESTRICT,
     flapping_interval       interval       DEFAULT NULL,
     flapping_max_change     integer        DEFAULT NULL,
@@ -164,8 +164,8 @@ CREATE TABLE host_services (
     check_attempts          integer        NOT NULL DEFAULT 0,
     last_changed            TIMESTAMP      DEFAULT NULL,
     last_touched            TIMESTAMP      DEFAULT NULL,
-    act_alarm_log_id        bigint         DEFAULT NULL,   -- REFERENCES alarms(alarm_id)
-    last_alarm_log_id       bigint         DEFAULT NULL,   -- REFERENCES alarms(alarm_id)
+    act_alarm_log_id        bigint         DEFAULT NULL,   -- REFERENCES alarms(alarm_id) lsd.: alarm.sql
+    last_alarm_log_id       bigint         DEFAULT NULL,   -- REFERENCES alarms(alarm_id) lsd.: alarm.sql
 -- Állapot vége
     deleted                 boolean        NOT NULL DEFAULT FALSE
 );
@@ -583,7 +583,7 @@ CREATE OR REPLACE VIEW view_host_services AS
         LEFT JOIN services      AS  s               ON hs.service_id            = s.service_id
         LEFT JOIN nodes         AS  n               ON hs.node_id               = n.node_id
         LEFT JOIN nports        AS  p               ON hs.port_id               = p.port_id
-        LEFT JOIN timeperiods   AS  tp              ON hs.timeperiod_id         = tp.timeperiod_id
+        LEFT JOIN timeperiods   AS  tp              ON COALESCE(hs.timeperiod_id, s.timeperiod_id)  = tp.timeperiod_id
         LEFT JOIN services      AS  prime_s         ON hs.prime_service_id      = prime_s.service_id
         LEFT JOIN host_services AS  superior_hs     ON hs.superior_host_service_id = superior_hs.host_service_id
         LEFT JOIN nodes         AS  superior_hs_h   ON superior_hs.node_id      = superior_hs_h.node_id

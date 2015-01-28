@@ -341,29 +341,3 @@ CREATE TRIGGER indalarm_on_alarm_insert
   EXECUTE PROCEDURE public.indalarm_alarm_notification();
   
 
--- Function: indalarm_update_password(bigint, character varying)
-
--- DROP FUNCTION indalarm_update_password(bigint, character varying);
-
-CREATE OR REPLACE FUNCTION indalarm_update_password(uid bigint, newpasswd character varying)
-  RETURNS users AS
-$BODY$
-DECLARE 
-    usr users;
-BEGIN
-    UPDATE users set passwd = crypt(newpasswd, gen_salt('md5')) WHERE user_id = uid
-        RETURNING * INTO usr;
-    IF NOT FOUND THEN
-        PERFORM error('IdNotFound', uid, 'user_id', 'indalarm_update_password()', 'users');
-    END IF;
-    RETURN usr;
-END
-$BODY$
-  LANGUAGE plpgsql VOLATILE
-  COST 100;
-ALTER FUNCTION indalarm_update_password(bigint, character varying)
-  OWNER TO lanview2;
-
-COMMENT ON FUNCTION public.indalarm_update_password(uid bigint, newpasswd character varying)
-IS 'Módosítja a uid azonosítójú felhasználó jelszavát';
-
