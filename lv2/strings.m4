@@ -242,6 +242,7 @@ STRDEF(Groups, "groups")
   STRDEF(Interface, "interface")
  dnl preferred
  STRDEF(IanaIdLink, "iana_id_link")
+ STRDEF(IfNamePrefix, "if_name_prefix")
 
 STRDEF(Patchs,"patchs")
  STRDEF(NodeId,"node_id")

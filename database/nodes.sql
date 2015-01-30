@@ -23,7 +23,8 @@ CREATE TABLE iftypes (
     iftype_link_type    linktype        NOT NULL DEFAULT 'ptp',
     iftype_obj_type     portobjtype     NOT NULL,
     preferred           bool            DEFAULT false,
-    iana_id_link        integer         DEFAULT NULL
+    iana_id_link        integer         DEFAULT NULL,
+    if_name_prefix      varchar(16)     DEFAULT NULL
 );
 ALTER TABLE iftypes OWNER TO lanview2;
 COMMENT ON TABLE  iftypes               IS 'Network Interfaces (ports) típus leíró rekord.';
@@ -35,6 +36,7 @@ COMMENT ON COLUMN iftypes.iftype_link_type IS 'A porton értelmezhető link típ
 COMMENT ON COLUMN iftypes.iftype_obj_type IS 'A portot reprezentáló API objektum típusa.';
 COMMENT ON COLUMN iftypes.preferred     IS 'Ha az iana id alapján keresünk, csak az ''f'' érték esetén van találat a rekordra.';
 COMMENT ON COLUMN iftypes.iana_id_link IS 'Elavult ID esetén a helyette használandü iana ID-t tartalmazza';
+COMMENT ON COLUMN iftypes.if_name_prefix IS 'Egy opcionális prefix az interfész nevekhez';
 
 INSERT INTO iftypes
     (iftype_id, iftype_name,    iftype_note,              iftype_iana_id, iftype_link_type, iftype_obj_type) VALUES
@@ -111,9 +113,9 @@ CREATE TABLE nports (
     iftype_id   bigint          DEFAULT 0   -- Default type is 'unknown'
                         REFERENCES iftypes(iftype_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
     node_id     bigint          NOT NULL,   -- REFERENCES (patch, nodes, snmp_devs)
-    port_index  bigint          DEFAULT NULL,   -- added 2011.09.05
+    port_index  integer         DEFAULT NULL,
     deleted     boolean         DEFAULT false,
-    UNIQUE(node_id, iftype_id, port_name)
+    UNIQUE(node_id, port_name)
 );
 ALTER TABLE nports OWNER TO lanview2;
 COMMENT ON TABLE  nports            IS 'Passzív portok táblája, az összes port típus őse';
@@ -231,7 +233,7 @@ ALTER TABLE patchs OWNER TO lanview2;
 COMMENT ON TABLE  patchs            IS 'Patch panel/csatlakozók/kapcsolódási pont tábla';
 COMMENT ON COLUMN patchs.node_id    IS 'Unique ID for node. Az összes leszármazottra és az ősre is egyedi.';
 COMMENT ON COLUMN patchs.node_name  IS 'Unique Name of the node. Az összes leszármazottra és az ősre is egyedi.';
-COMMENT ON COLUMN patchs.node_note IS 'Descrition of the node';
+COMMENT ON COLUMN patchs.node_note  IS 'Descrition of the node';
 COMMENT ON COLUMN patchs.place_id   IS 'Az eszköz helyét azonosító "opcionális" távoli kulcs. Alapértelmezett hely a ''unknown''.';
 
 -- //// LAN.PPORT S  Pach Ports
@@ -339,7 +341,7 @@ CREATE TABLE interfaces (
     dualface_type   bigint      DEFAULT NULL
         REFERENCES iftypes(iftype_id) MATCH SIMPLE ON DELETE RESTRICT ON UPDATE RESTRICT,
     PRIMARY KEY (port_id),
-    UNIQUE(node_id, iftype_id, port_name),
+    UNIQUE(node_id, port_name),
     UNIQUE(port_name,  hwaddress),	-- EZ ITT NEM JO !!!!! Trigger függvény kell hozzá !!!
     CONSTRAINT interfaces_iftype_id_fkey FOREIGN KEY (iftype_id)
         REFERENCES iftypes(iftype_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT
@@ -678,11 +680,12 @@ $$ LANGUAGE plperl;
 -- A pports, és patchs típusú node-k most nem játszanak
 CREATE OR REPLACE FUNCTION delete_port_post() RETURNS TRIGGER AS $$
 BEGIN
-    DELETE FROM port_params WHERE port_id = OLD.port_id;
+    DELETE FROM port_params       WHERE port_id = OLD.port_id;
     DELETE FROM host_services     WHERE port_id = OLD.port_id;
     DELETE FROM port_vlans        WHERE port_id = OLD.port_id;
     DELETE FROM mactab            WHERE port_id = OLD.port_id;
     DELETE FROM phs_links_table   WHERE port_id1 = OLD.port_id OR port_id2 = OLD.port_id;
+    DELETE FROM lldp_links_table  WHERE port_id1 = OLD.port_id OR port_id2 = OLD.port_id;
     RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

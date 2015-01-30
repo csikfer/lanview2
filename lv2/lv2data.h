@@ -636,44 +636,38 @@ public:
     /// @param __q Az adatbázis műveletjez haszbált objektum.
     /// @param __port_name A keresett port neve
     /// @param __node_id A hálózati elem ID, melynek a portját keressük
-    /// @param __iftype_id Opcionális paraméter, a port típusa
-    /// @return Ha egy rekordot beolvasott akkor true. Ha nem adtunk meg a __port_type_id paramétert, ill. értéke NULL_ID,
-    ///     akkor több találat is lehet, akkor beolvasásra kerül az első port adatai, és a visszaadott érték false.
-    ///     Ez utobbi esetben a next() metódussal olvasható be a következő találat.
-    bool fetchPortByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, qlonglong __iftype_id = NULL_ID);
+    /// @return Ha egy rekordot beolvasott akkor true.
+    bool fetchPortByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id);
     /// Egy port rekord beolvasása/objektum feltültése a port név és a node id, ill. opcionálisan a port típus alapján.
     /// @param __q Az adatbázis műveletjez haszbált objektum.
     /// @param __port_name A keresett port neve
     /// @param __node_id A hálózati elem ID, melynek a portját keressük
-    /// @param __iftype_id Opcionális paraméter, a port típusa
     /// @return Az objektum referencia
-    /// @exceptions Ha nincs ilyen port, vagy ha nem adtuk meg a típust, és a megadott név nen egyedi, akkor dob egy kizárást.
-    cNPort& setPortByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, qlonglong __iftype_id = NULL_ID) {
-        if (!fetchPortByName(__q, __port_name, __node_id, __iftype_id)) {
+    /// @exceptions Ha nincs ilyen port.
+    cNPort& setPortByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id) {
+        if (!fetchPortByName(__q, __port_name, __node_id)) {
             QString s = __port_name;
-            if (__iftype_id != NULL_ID) s += inParentheses(cIfType::ifTypeName(__iftype_id, false));
             EXCEPTION(EDATA,__node_id, s);
         }
         return *this;
     }
     /// Egy port id  lekérése a port név és a node_id alapján.
-    static qlonglong getPortIdByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, qlonglong __iftype_id = NULL_ID, bool __ex = true);
+    static qlonglong getPortIdByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, bool __ex = true);
     /// Egy port rekord beolvasása a port név és a node neve alapján.
     /// @param __ex Ha értéke false, és a megadott nevű node nem létezik, akkor dob egy kizárást, egyébként visszatér false-val.
     /// @return Ha egy rekordot beolvasott akkor true
-    bool fetchPortByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, qlonglong __iftype_id = NULL_ID, bool __ex = true);
+    bool fetchPortByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, bool __ex = true);
     /// Egy port rekord beolvasása a port név és a node neve alapján.
     /// Ha nem tudja beolvasni a rekordot, akkor dob egy kizárást.
-    cNPort& setPortByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, qlonglong __iftype_id = NULL_ID) {
-        if (!fetchPortByName(__q, __port_name, __node_name, __iftype_id)) {
+    cNPort& setPortByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name) {
+        if (!fetchPortByName(__q, __port_name, __node_name)) {
             QString s = QString("%1:%2").arg(__node_name,__port_name);
-            if (__iftype_id != NULL_ID) s += inParentheses(cIfType::ifTypeName(__iftype_id, false));
             EXCEPTION(EDATA, -1, s);
         }
         return *this;
     }
     /// Egy port id  lekérése a port név és a node név alapján.
-    static qlonglong getPortIdByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, qlonglong __iftype_id = NULL_ID, bool __ex = true);
+    static qlonglong getPortIdByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, bool __ex = true);
     /// Egy port rekord beolvasása a port index és a node_id alapján.
     bool fetchPortByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id);
     /// Egy port rekord beolvasása a port index és a node_id alapján.
@@ -1281,18 +1275,51 @@ public:
     /// @return Az objektum referenciája, aktualizálva az aktuális rekord értékkel.
     /// @exception Bármilyen hiba esetén dob egy kizázást cError * -al.
     cHostService& setState(QSqlQuery& __q, const QString& __st, const QString& __note = QString(), qlonglong __did = NULL_ID);
-    /// A nevek alapján olvassa be egy rekordot.
-    int fetchByNames(QSqlQuery& q, QString& __hn, const QString& __sn, bool __ex = true);
-    /// Az ID-k alapján olvas be egy rekordot
+    /// A hálózati elem, és a szolgáltatás típus neve alapján olvassa be egy rekordot.
+    /// Ha több rekord is létezik, akkor az első kerül beolvasásra.
+    /// @param q Az adatbázis művelethez használlt objektum.
+    /// @param __hn A hálózati elem (nodes) neve
+    /// @param __sn A szolgáltatás típus (services) neve
+    /// @param __ex Ha nincs ilyen rekord, vagy több van, és értéke true, akkor dob egy kizárást.
+    /// @return A megadott nevekkel azonosított szolgáltatáspéldányok száma.
+    int fetchByNames(QSqlQuery& q, const QString& __hn, const QString& __sn, bool __ex = true);
+    /// A hálózati elem, port és a szolgáltatás típus neve alapján olvassa be egy rekordot.
+    /// Ha több rekord is létezik, akkor az első kerül beolvasásra.
+    /// @param q Az adatbázis művelethez használlt objektum.
+    /// @param __hn A hálózati elem (nodes) neve
+    /// @param __sn A szolgáltatás típus (services) neve
+    /// @param __pn A szolgáltatáspéldányhoz rendelt port neve, az üres string esetén nincs definiálva a példányhoz port.
+    ///             Fugyelem az üres string olyan rekordot jelent amelyben a port_id éeréke NULL!
+    /// @param __ex Ha nincs ilyen rekord, vagy több van, és értéke true, akkor dob egy kizárást.
+    /// @return A megadott nevekkel azonosított szolgáltatáspéldányok száma.
+    int fetchByNames(QSqlQuery& q, const QString &__hn, const QString& __sn, const QString& __pn, bool __ex = NULL);
+    /// A hálózati elem, port,  szolgáltatás típus valamit a proto és prome szolgáltatás típus nevek alapján olvassa be egy rekordot.
+    /// Ha több rekord is létezik, akkor az első kerül beolvasásra.
+    /// @param q Az adatbázis művelethez használlt objektum.
+    /// @param __hn A hálózati elem (nodes) neve
+    /// @param __sn A szolgáltatás típus (services) neve
+    /// @param __pn A szolgáltatáspéldányhoz rendelt port neve, az üres string esetén nincs definiálva a példányhoz port.
+    ///             Fugyelem az üres string olyan rekordot jelent amelyben a port_id éeréke NULL!
+    /// @param __pron A szolgáltatáspéldányhoz rendelt protocol szolgáltatás neve, az üres string esetén nincs definiálva a példányhoz potokol.
+    /// @param __prin A szolgáltatáspéldányhoz rendelt prime szolgáltatás neve, az üres string esetén nincs definiálva a példányhoz rime sz..
+    /// @param __ex Ha nincs ilyen rekord, vagy több van, és értéke true, akkor dob egy kizárást.
+    /// @return A megadott nevekkel azonosított szolgáltatáspéldányok száma.
+    int fetchByNames(QSqlQuery& q, const QString& __hn, const QString& __sn, const QString& __pn, const QString& __pron, const QString& __prin, bool __ex = NULL);
+    /// A hálózati elem, és a szolgáltatás típus ID-k alapján olvas be egy rekordot
+    /// @param q Az adatbázis művelethez használlt objektum.
+    /// @param __hid A hálózati elem (nodes) ID
+    /// @param __sid A szolgáltatás típus (services) ID
+    /// @param __ex Ha nincs ilyen rekord, vagy több van, és értéke true, akkor dob egy kizárást.
+    /// @return true, ha van egy és csakis egy ilyen rekord.
     bool fetchByIds(QSqlQuery& q, qlonglong __hid, qlonglong __sid, bool __ex = true);
     /// A megadott nevek alapján türli a megadott rekord(ok)at
     /// @param q Az adatbázis művelethez használlt objektum.
     /// @param __nn A node neve, vagy egy minta
     /// @param __sn A szolgálltatás típus neve, vagy egy minta
-    /// @param __spat Ha értéke true, akkor az __sn paraméter egy minta, egyébként egy szervíz típus neve.
     /// @param __npat Ha értéke true, akkor az __nn paraméter egy minta, egyébként egy node neve.
+    /// @param __spat Ha értéke true, akkor az __sn paraméter egy minta, egyébként egy szervíz típus neve.
     /// @return A törölt rekordok számával tér vissza.
-    int delByNames(QSqlQuery& q, const QString& __nn, const QString& __sn, bool __spat = false, bool __npat = false);
+    int delByNames(QSqlQuery& q, const QString& __nn, const QString& __sn, bool __npat = false, bool __spat = false);
     /// Beolvassa a saját host és host_service rekordokat. Az __sn egy beolvasott servces rekordot kell tartalmazzon.
     /// A beolvasott host a saját host rekord lessz.
     /// @param q Az SQL lekérdezéshez használt objektum.
@@ -1301,8 +1328,6 @@ public:
     /// @param __ex Ha értéke true (ill nem adjuk meg), akkor hiba esetén, ill. ha nem létezik valamelyik keresett objektum, akkor dob egy kizárást.
     /// @return Ha sikerült beolvasni a rekordokat, akkor true, ha nem és __ex értéke true, akkor false.
     bool fetchSelf(QSqlQuery& q, cNode& __h, const cService& __s, bool __ex = true);
-    /// Az alárendelt szolgálltatások lekérdezése
-    int fetchSubs(QSqlQuery& __q, cHostService& __sup);
     /// Egy mező értékének a lekérdezése.
     /// Ha a mező értéke null, akkor annak alapértelmezett értéke a megadott s-objektum azonos nevű
     /// mezőjének értéke lessz. Ha az s objektumban is null az érték, akkor dob egy kizárást.

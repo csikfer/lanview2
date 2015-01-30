@@ -159,7 +159,7 @@ private:
 class cLink {
 private:
     enum eSide { LEFT = 1, RIGHT = 2};
-    void side(eSide __e, QString * __n, QString *__p, int __s, QString * __it = NULL);
+    void side(eSide __e, QString * __n, QString *__p, int __s);
     void side(eSide __e, QString * __n, int __p, int __s);
     qlonglong& nodeId(eSide __e);
     qlonglong& portId(eSide __e);
@@ -175,13 +175,13 @@ public:
     /// @param __n Opcionális eszköz (node/patch) név. A pointert felszabadítja.
     /// @param __p Port név. A pointert felszabadítja.
     /// @param __s Az esetleges megosztás típusának az indexe (0 = nincs megosztás
-    void left(QString * __n, QString *__p, int __s = 0, QString * __it = NULL)   { side(LEFT, __n,__p, __s, __it); }
+    void left(QString * __n, QString *__p, int __s = 0)   { side(LEFT, __n,__p, __s); }
     /// A link jobboldali portjának a megadása
     /// @param q
     /// @param __n Opcionális eszköz (node/patch) név. A pointert felszabadítja.
     /// @param __p Port név. A pointert felszabadítja.
     /// @param __s Az esetleges megosztás típusának az indexe (0 = nincs megosztás
-    void right(QString * __n, QString *__p, int __s = 0, QString * __it = NULL)  { side(RIGHT,__n,__p, __s, __it); }
+    void right(QString * __n, QString *__p, int __s = 0)  { side(RIGHT,__n,__p, __s); }
     /// A link baloldali portjának a megadása
     /// @param q
     /// @param __n Opcionális eszköz (node/patch) név. A pointert felszabadítja.
@@ -232,10 +232,12 @@ static cNode *      pNode  = NULL;
 static cLink      * pLink = NULL;
 static cService   * pService = NULL;
 static cHostService*pHostService = NULL;
+static cHostService*pHostService2 = NULL;
 static cTableShape *pTableShape = NULL;
 static qlonglong           alertServiceId = NULL_ID;
 static QMap<QString, qlonglong>    ivars;
 static QMap<QString, QString>      svars;
+static QSqlQuery  * pq2 = NULL;
 QStack<c_yyFile> c_yyFile::stack;
 
 void initImportParser()
@@ -280,9 +282,17 @@ void downImportParser()
     pDelete(pLink);
     pDelete(pService);
     pDelete(pHostService);
+    pDelete(pHostService);
     pDelete(pTableShape);
     ivars.clear();
     svars.clear();
+    pDelete(pq2);
+}
+
+QSqlQuery& qq2()
+{
+    if (pq2 == NULL) pq2 = newQuery();
+    return *pq2;
 }
 
 enum {
@@ -453,8 +463,7 @@ qlonglong& cLink::portId(eSide __e)
 /// @param __n Node name
 /// @param __p Port name
 /// @param __s Share type
-/// @param __it Port type (optional)
-void cLink::side(eSide __e, QString * __n, QString *__p, int __s, QString * __it)
+void cLink::side(eSide __e, QString * __n, QString *__p, int __s)
 {
     qlonglong   nid;    // Node id
     if (__n->size() > 0) {  // Ha megadtunk node-ot
@@ -464,12 +473,7 @@ void cLink::side(eSide __e, QString * __n, QString *__p, int __s, QString * __it
         nid = nodeId(__e);
         if (nid == NULL_ID) EXCEPTION(EDATA, -1, "Nincs megadva node!");
     }
-    qlonglong tid = NULL_ID;
-    if (__it != NULL) {
-        tid = cIfType::ifTypeId(*__it);
-        delete __it;
-    }
-    portId(__e) = cNPort::getPortIdByName(qq(), *__p, nid, tid, false);
+    portId(__e) = cNPort::getPortIdByName(qq(), *__p, nid, false);
     if (portId(__e) == NULL_ID) yyerror(QObject::trUtf8("Invalid left port specification, #%1:%2").arg(nid). arg(*__p));
     if (__s != 0) {
         if (share.size() > 0) yyerror(QObject::trUtf8("Multiple share defined"));
@@ -637,39 +641,6 @@ void cLink::insert(QString *__hn1, qlonglong __pi1, QString *__hn2, qlonglong __
     delete __hn2;
 }
 
-
-//-----------------------------------------------------------------------------------------------------
-/// A superior_host_service_id beállítása
-/// @param phs A módosítandó objektum pointere.
-/// @param phn A keresett host_services rekordban hivatkozott host neve, vagy üres.
-/// @param phs A keresett host_services rekordban hivatkozott szervíz típus név
-/// @param ppo A keresett host_services rekordban hivatkozott port neve, vagy NULL pointer. Ha phn üres, akkor NULL.
-/// @param ppt opcionális oort tíous
-static void setSuperiorHostService(cHostService * phs, QString * phn, QString * psn, QString *ppo = NULL, QString *ppt = NULL)
-{
-    cHostService shs;
-    if (!phn->isEmpty()) {
-        qlonglong   nid = cNode().getIdByName(qq(), *phn);
-        shs.setId(_sNodeId, nid);
-        if (ppo != NULL) {
-            qlonglong tid = NULL_ID;
-            if (ppt != NULL) {
-                tid = cIfType::ifTypeId(*ppt);
-                delete ppt;
-            }
-            qlonglong pid = cNPort().getPortIdByName(qq(), *ppo, nid, tid);
-            shs.setId(_sPortId, pid);
-            delete ppo;
-        }
-    }
-    shs.setId(_sServiceId, cService().getIdByName(qq(), *psn));
-    delete psn;
-    delete phn;
-    int n = shs.completion(qq());
-    if (n == 0) yyerror("horst_services record not found.");
-    if (n >  1) yyerror("horst_services record ambigouos.");
-    (*phs)[_sSuperiorHostServiceId] = shs.getId();
-}
 
 static QString e1 = "Redefined port name or index.";
 static QString e2 = "There is insufficient data.";
@@ -1126,7 +1097,7 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
 %token <ip> IPV4_V IPV6_V
 %type  <i>  int int_ iexpr lnktype shar ipprotp ipprot offs ix_z vlan_t set_t
 %type  <i>  vlan_id place_id iptype pix pix_z pix_ iptype_a step timep image_id tmod int0
-%type  <i>  ptypen
+%type  <i>  ptypen fhs hsid
 %type  <il> list_i pixs // ints
 %type  <b>  bool bool_on pattern
 %type  <r>  /* real */ num fexpr
@@ -1173,6 +1144,7 @@ command : macro
         | eqs
         | scan
         | gui
+        | modify
         ;
 macro   : INCLUDE_T str ';'                                 { c_yyFile::inc($2); }
         | MACRO_T            NAME_V str ';'               { templates.set (_sMacros,     sp2s($2), sp2s($3));     }
@@ -1688,12 +1660,10 @@ lnk     : lport '&' rport alert str_z ';'           { pLink->insert($5, $4); }
         | for_m
         ;
 lport   : str_z ':' str shar                        { pLink->left($1, $3, $4); }
-        | str_z ':' str '(' str ')'                 { pLink->left($1, $3, ES_, $5); }
         | str_z ':' int shar                        { pLink->left($1, $3, $4); }
         | str shar                                  { pLink->left($1, NULL_IX, $2); }
         ;
 rport   : str_z ':' str shar                        { pLink->right($1, $3, $4); }
-        | str_z ':' str '(' str ')'                 { pLink->right($1, $3, ES_, $5); }
         | str_z ':' int shar                        { pLink->right($1, $3, $4); }
         | str shar                                  { pLink->right($1, NULL_IX, $2); }
         | WORKSTATION_T '(' str mac str_z ')'       { pLink->workstation($3,$4, $5); }
@@ -1748,27 +1718,18 @@ ipprot  : ICMP_T                    { $$ = EP_ICMP; }
         | NIL_T                     { $$ = EP_NIL; }
         | PROTOCOL_T str            { $$ = cIpProtocol().getIdByName(qq(), *$2, true); delete $2; }
         ;
-hostsrv : HOST_T SERVICE_T str ':' str str_z    { NEWOBJ(pHostService, cHostService());
+hostsrv : HOST_T SERVICE_T str '.' str str_z    { NEWOBJ(pHostService, cHostService());
                                                     (*pHostService)[_sNodeId]    = cNode().cRecord::getIdByName(qq(),*$3, true);  delete $3;
                                                     (*pHostService)[_sServiceId] = cService().getIdByName(qq(),*$5);              delete $5;
                                                     (*pHostService)[_sHostServiceNote] =  *$6;                                    delete $6;
                                                 }
           hsrvend                               { pHostService->insert(qq(), true); DELOBJ(pHostService); }
-        | HOST_T SERVICE_T str ':' str ':' str str_z
+        | HOST_T SERVICE_T str ':' str '.' str str_z
                                                 { NEWOBJ(pHostService, cHostService());
                                                     (*pHostService)[_sNodeId]    = cNode().cRecord::getIdByName(qq(),*$3, true);  delete $3;
-                                                    (*pHostService)[_sServiceId] = cService().getIdByName(qq(),*$5);              delete $5;
+                                                    (*pHostService)[_sServiceId] = cService().getIdByName(qq(),*$7);              delete $7;
                                                     (*pHostService)[_sHostServiceNote] =  *$8;                                    delete $8;
-                                                    (*pHostService)[_sPortId] = cNPort().getPortIdByName(qq(), *$7, pHostService->get(_sNodeId).toLongLong()); delete $7;
-                                                }
-          hsrvend                               { pHostService->insert(qq(), true); DELOBJ(pHostService); }
-        | HOST_T SERVICE_T str ':' str ':' str '(' str ')' str_z
-                                                { NEWOBJ(pHostService, cHostService());
-                                                    (*pHostService)[_sNodeId]    = cNode().cRecord::getIdByName(qq(),*$3, true);  delete $3;
-                                                    (*pHostService)[_sServiceId] = cService().getIdByName(qq(),*$5);              delete $5;
-                                                    (*pHostService)[_sHostServiceNote] =  *$11;                                   delete $11;
-                                                    (*pHostService)[_sPortId] = cNPort().getPortIdByName(qq(), *$7, pHostService->get(_sNodeId).toLongLong(), cIfType::ifTypeId(*$9));
-                                                                delete $7; delete $9;
+                                                    (*pHostService)[_sPortId] = cNPort().getPortIdByName(qq(), *$5, pHostService->getId(_sNodeId)); delete $5;
                                                 }
           hsrvend                               { pHostService->insert(qq(), true); DELOBJ(pHostService); }
         | SET_T SUPERIOR_T hs TO_T hss ';'      { setSuperior($3, $5); }
@@ -1787,10 +1748,7 @@ hsrv_p  : PRIME_T SERVICE_T str ';'             { (*pHostService)[_sPrimeService
         | DELEGATE_T HOST_T STATE_T bool_on ';' { (*pHostService)[_sDelegateHostState]  = $4; }
         | COMMAND_T str ';'                     { (*pHostService)[_sCheckCmd] = *$2; delete $2; }
         | PROPERTIES_T str ';'                  { (*pHostService)[_sProperties] = *$2; delete $2; }
-        | SUPERIOR_T SERVICE_T str ';'                  { setSuperiorHostService(pHostService, new QString(), $3); }
-        | SUPERIOR_T SERVICE_T str ':' str ';'          { setSuperiorHostService(pHostService, $3, $5); }
-        | SUPERIOR_T SERVICE_T str ':' str ':' str ';'  { setSuperiorHostService(pHostService, $3, $7, $5); }
-        | SUPERIOR_T SERVICE_T str ':' str '(' str ')' ':' str ';'  { setSuperiorHostService(pHostService, $3, $10, $5, $7); }
+        | SUPERIOR_T SERVICE_T hsid ';'         { (*pHostService)[_sSuperiorHostServiceId] = $3; }
         | MAX_T CHECK_T ATTEMPTS_T int ';'      { (*pHostService)[_sMaxCheckAttempts]    = $4; }
         | NORMAL_T CHECK_T INTERVAL_T str ';'   { (*pHostService)[_sNormalCheckInterval] = *$4; delete $4; }
         | NORMAL_T CHECK_T INTERVAL_T int ';'   { (*pHostService)[_sNormalCheckInterval] = $4 * 1000; }
@@ -1812,15 +1770,39 @@ hs      : str ':' str                           { $$ = new QStringPair(sp2s($1),
 hss     : hs                                    { *($$ = new QStringPairList) << *$1; delete $1; }
         | hss ',' hs                            { *($$ = $1) << *$3; delete $3; }
         ;
+// host_services rekordok előkotrása, a kifelyezés értéke a kapott rekord szám, az első rekord a megallokált pHostService2-be
+// pHostService2-nek NULL-nak kell lennie. Több rekord a qq()-val kérhető be, ha el nem rontjuk a tartalmát.
+fhs
+// Csak az eszköz és a szervíz típus neve van megadva:  <host>.<service>
+        : str '.' str                           { NEWOBJ(pHostService2, cHostService());
+                                                  $$ = pHostService2->fetchByNames(qq(), sp2s($1), sp2s($3), false); }
+// Csak az eszköz és a szervíz típus neve van megadva:  <host>:<port>.<service>
+// Ha a port nevet elhagyjuk, akkor ott NULL-t vár
+        | str ':' str_z '.' str                 { NEWOBJ(pHostService2, cHostService());
+                                                  $$ = pHostService2->fetchByNames(qq(), sp2s($1), sp2s($5), sp2s($3), false); }
+// Az összes azonosító megadva:  <host>:<port>.<service>(<protokol srv.>:<prime.srv.>)
+// Ha a port nevet elhagyjuk, akkor ott NULL-t vár, a két utlsó paramétert elhagyva a 'nil' szolgáltatás típust jelenti
+        | str ':' str_z '.' str '(' str_z ':' str_z ')'
+                                                { NEWOBJ(pHostService2, cHostService());
+                                                  $$ = pHostService2->fetchByNames(qq(), sp2s($1), sp2s($5), sp2s($3), sp2s($7), sp2s($9), false); }
+        ;
+// A megadott host_services rekord ID-vel tér vissza, ha nem azonosítható be a rekord, akkor hívja yyyerror()-t.
+hsid    : fhs                                   { if ($$ == 0) yyerror("Not found");
+                                                  if ($$ != 1) yyerror("Ambiguous");
+                                                  $$ = pHostService2->getId();  DELOBJ(pHostService2); }
+        ;
 delete  : DELETE_T PLACE_T pattern strs ';'     { foreach (QString s, *$4) { cPlace(). delByName(qq(), s, $3); }       delete $4; }
         | DELETE_T PATCH_T pattern strs ';'     { foreach (QString s, *$4) { cPatch(). delByName(qq(), s, $3, true); } delete $4; }
         | DELETE_T NODE_T pattern strs ';'      { foreach (QString s, *$4) { cNode().  delByName(qq(), s, $3, false); }delete $4; }
         | DELETE_T ONLY_T NODE_T pattern strs ';'{foreach (QString s, *$5) { cNode().  delByName(qq(), s, $4, true); } delete $5; }
         | DELETE_T VLAN_T pattern strs ';'      { foreach (QString s, *$4) { cVLan().  delByName(qq(), s, $3); }       delete $4; }
         | DELETE_T SUBNET_T pattern strs ';'    { foreach (QString s, *$4) { cSubNet().delByName(qq(), s, $3); }       delete $4; }
-        // NEM OK!!! Nem egyedi azonosító a két név !!!!!
-        | DELETE_T HOST_T pattern str SERVICE_T pattern strs ';'
-                                                { foreach (QString s, *$7) { cHostService().delByNames(qq(), sp2s($4), s, $6, $3); } delete $7; }
+        | DELETE_T HOST_T  SERVICE_T fhs ';'    { if ($4) do { pHostService2->remove(qq2()); } while (pHostService2->next(qq())); DELOBJ(pHostService2); }
+        | DELETE_T HOST_T pattern strs SERVICE_T pattern strs ';'
+                                                { cHostService hs;
+                                                  foreach (QString h, *$4) { foreach (QString s, *$7) { hs.delByNames(qq(), h, s, $3, $6); }}
+                                                  delete $4; delete $7;
+                                                }
         | DELETE_T MACRO_T strs ';'             { foreach (QString s, *$3) { templates.del(_sMacros, s); } delete $3; }
         | DELETE_T TEMPLATE_T PATCH_T strs ';'  { foreach (QString s, *$4) { templates.del(_sPatchs, s); } delete $4; }
         | DELETE_T TEMPLATE_T NODE_T strs ';'   { foreach (QString s, *$4) { templates.del(_sNodes,  s); } delete $4; }
@@ -1834,7 +1816,6 @@ delete  : DELETE_T PLACE_T pattern strs ';'     { foreach (QString s, *$4) { cPl
                                                 { foreach (QString s, *$5) { cEnumVal().delByTypeName(qq(), s, true); } delete $5; }
         | DELETE_T ENUM_T TITLE_T  str strs ';' { foreach (QString s, *$5) { cEnumVal().delByNames(qq(), sp2s($4), s); } delete $5; }
         | DELETE_T GUI_T pattern strs MENU_T ';'{ foreach (QString s, *$4) { cMenuItem().delByAppName(qq(), s, $3); } delete $4; }
-///     | bool_on DISABLE_T HOST_T str SERVICE str ';' { ; }    // !!!???
         ;
 pattern :                                       { $$ = false; }
         | PATTERN_T                             { $$ = true;  }
@@ -1919,6 +1900,12 @@ miops   : miop miops
         ;
 miop    : TOOL_T TIP_T str ';'                  { setToolTip(sp2s($3)); }
         | WHATS_T THIS_T str ';'                { setWhatsThis(sp2s($3)); }
+        ;
+// Névvel azonosítható rekord egy mezőjének a modosítása az adatbázisban:
+// SET <tábla név>.<rekordot azonosító név>[<modosítandó mező neve>] = <új érték>;
+modify  : SET_T str '.' str '[' str ']' '=' value ';'   { cAlternate(sp2s($2)).setByName(qq(), sp2s($4)).set(sp2s($6), vp2v($9)).update(qq(), false); }
+        | bool_on DISABLE_T SERVICE_T str ';'           { cService().setByName(qq(), sp2s($4)).setBool(_sDisabled, $1).update(qq(), false); }
+        | bool_on DISABLE_T HOST_T SERVICE_T hsid ';'   { cHostService().setById(qq(), $5).setBool(_sDisabled, $1).update(qq(), false); }
         ;
 %%
 

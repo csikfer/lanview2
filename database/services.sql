@@ -214,7 +214,7 @@ BEGIN
         return NULL;
     END IF;
     SELECT
-            n.node_name || ':' || CASE WHEN p.port_name IS NULL THEN '' ELSE ':' || p.port_name END || s.service_name,
+            n.node_name || CASE WHEN p.port_name IS NULL THEN '' ELSE ':' || p.port_name END || '.' || s.service_name,
             sprime.service_name,
             sproto.service_name
           INTO name, prime, proto
