@@ -1202,15 +1202,17 @@ strs_z  : str_z                     { $$ = new QStringList(*$1); delete $1; }
         | strs_z ',' str_z          { $$ = $1;   *$$ << *$3;     delete $3; }
         ;
 
-int_    : INTEGER_V                     { $$ = $1; }
-        | ID_T NODE_T '(' str ')'       { $$ = cPatch().getIdByName(qq(), sp2s($4)); }
-        | ID_T PLACE_T '(' place_id ')' { $$ = $4;  }
-        | ID_T TIME_T PERIOD_T '(' str ')'   { $$ = cTimePeriod().getIdByName(qq(), sp2s($5)); }
-        | ID_T SUBNET_T '(' str ')'     { $$ = cSubNet().getIdByName(qq(), sp2s($4)); }
-        | ID_T IFTYPE_T '(' str ')'     { $$ = cIfType().getIdByName(qq(), sp2s($4)); }
-        | ID_T VLAN_T '(' vlan_id ')'   { $$ =  $4; }
-        | '#' NAME_V                    { $$ = vint(*$2); delete $2; }
-        | '#' '+' NAME_V                { $$ = (vint(*$3) += 1); delete $3; }
+int_    : INTEGER_V                         { $$ = $1; }
+        | ID_T NODE_T '(' str ')'           { $$ = cPatch().getIdByName(qq(), sp2s($4)); }
+        | ID_T PORT_T '(' str ':' str ')'   { $$ = cNPort().getPortIdByName(qq(), sp2s($4), sp2s($6)); }
+        | ID_T HOST_T SERVICE_T '(' hsid ')'{ $$ = $5; }
+        | ID_T PLACE_T '(' place_id ')'     { $$ = $4;  }
+        | ID_T TIME_T PERIOD_T '(' str ')'  { $$ = cTimePeriod().getIdByName(qq(), sp2s($5)); }
+        | ID_T SUBNET_T '(' str ')'         { $$ = cSubNet().getIdByName(qq(), sp2s($4)); }
+        | ID_T IFTYPE_T '(' str ')'         { $$ = cIfType().getIdByName(qq(), sp2s($4)); }
+        | ID_T VLAN_T '(' vlan_id ')'       { $$ =  $4; }
+        | '#' NAME_V                        { $$ = vint(*$2); delete $2; }
+        | '#' '+' NAME_V                    { $$ = (vint(*$3) += 1); delete $3; }
         ;
 int     : int_                      { $$ = $1; }
         | '-' INTEGER_V             { $$ = -$2; }
@@ -1902,8 +1904,9 @@ miop    : TOOL_T TIP_T str ';'                  { setToolTip(sp2s($3)); }
         | WHATS_T THIS_T str ';'                { setWhatsThis(sp2s($3)); }
         ;
 // Névvel azonosítható rekord egy mezőjének a modosítása az adatbázisban:
-// SET <tábla név>.<rekordot azonosító név>[<modosítandó mező neve>] = <új érték>;
-modify  : SET_T str '.' str '[' str ']' '=' value ';'   { cAlternate(sp2s($2)).setByName(qq(), sp2s($4)).set(sp2s($6), vp2v($9)).update(qq(), false); }
+// SET <tábla név>[<modosítandó mező neve>].<rekordot azonosító név> = <új érték>;
+modify  : SET_T str '[' str ']' '.' str '=' value ';'   { cAlternate(sp2s($2)).setByName(qq(), sp2s($4)).set(sp2s($7), vp2v($9)).update(qq(), false); }
+        | SET_T str '[' int ']' '.' str '=' value ';'   { cAlternate(sp2s($2)).setById(qq(), $4).set(sp2s($7), vp2v($9)).update(qq(), false); }
         | bool_on DISABLE_T SERVICE_T str ';'           { cService().setByName(qq(), sp2s($4)).setBool(_sDisabled, $1).update(qq(), false); }
         | bool_on DISABLE_T HOST_T SERVICE_T hsid ';'   { cHostService().setById(qq(), $5).setBool(_sDisabled, $1).update(qq(), false); }
         ;
