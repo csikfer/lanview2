@@ -1,4 +1,5 @@
 #include "lv2g.h"
+#include "cerrormessagebox.h"
 
 void initLV2GUI(QObject * par)
 {
@@ -194,4 +195,30 @@ cOwnTab::cOwnTab(QWidget *par)
 void cOwnTab::endIt()
 {
     closeIt();
+}
+
+
+cLv2QApp::~cLv2QApp()
+{
+    ;
+}
+
+bool cLv2QApp::notify(QObject * receiver, QEvent * event)
+{
+    static cError *lastError = NULL;
+    try {
+        return QApplication::notify(receiver, event);
+    }
+    catch(no_init_&) { // Már letiltottuk a cError dobálást
+        PDEB(VERBOSE) << "Dropped cError..." << endl;
+        return false;
+    }
+    CATCHS(lastError)
+    PDEB(DERROR) << "Error in " << __PRETTY_FUNCTION__ << endl;
+    PDEB(DERROR) << "Receiver : " << receiver->objectName() << "::" << typeid(*receiver).name() << endl;
+    PDEB(DERROR) << "Event : " << typeid(*event).name() << endl;
+    cError::mDropAll = true;                    // A továbbiakban nem *cError-al dobja a hibákat, hanem no_init_ -el
+    cErrorMessageBox::messageBox(lastError);    // Kitesszük a hibaüzenetet,
+    QApplication::exit(lastError->mErrorCode);  // kilépünk.
+    return false;
 }

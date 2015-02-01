@@ -24,19 +24,6 @@ public:
     cMainWindow *pMainWindow;
 };
 
-/// @class cLv2App
-/// Saját QApplication osztály, a hiba kizárások elkapásához (újra definiált notify() metódus.)
-class cLv2App : public QApplication {
-public:
-    /// Konstruktor. Nincs saját inicilizálás, csak a QApplication konstrujtort hívja.
-    cLv2App(int& argc, char ** argv) : QApplication(argc, argv) { /* pAppErr = NULL */; }
-    ~cLv2App();
-    /// Az újra definiált notify() metódus.
-    /// Az esetleges kizárásokat elkapja.
-    virtual bool notify(QObject * receiver, QEvent * event);
-    // cError *pAppErr;
-};
-
 #include "setup.h"
 
 #endif // LV2GUI_H

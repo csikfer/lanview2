@@ -155,5 +155,17 @@ public slots:
     void endIt();
 };
 
+/// @class cLv2QApp
+/// Saját QApplication osztály, a hiba kizárások elkapásához (újra definiált notify() metódus.)
+class cLv2QApp : public QApplication {
+public:
+    /// Konstruktor. Nincs saját inicilizálás, csak a QApplication konstrujtort hívja.
+    cLv2QApp(int& argc, char ** argv) : QApplication(argc, argv) { ; }
+    ~cLv2QApp();
+    /// Az újra definiált notify() metódus.
+    /// Az esetleges kizárásokat elkapja.
+    virtual bool notify(QObject * receiver, QEvent * event);
+};
+
 
 #endif // LV2G_H

@@ -15,7 +15,7 @@ void setAppHelp()
 int main(int argc, char * argv[])
 {
     cError * pe = NULL;
-    cLv2App app(argc, argv);
+    cLv2QApp app(argc, argv);
 
     SETAPP();
     lanView::gui = true;
@@ -66,28 +66,3 @@ lv2Gui::~lv2Gui()
     DBGFNL();
 }
 
-cLv2App::~cLv2App()
-{
-    ;
-}
-
-bool cLv2App::notify(QObject * receiver, QEvent * event)
-{
-    static cError *lastError = NULL;
-    try {
-        return QApplication::notify(receiver, event);
-    }
-    catch(no_init_&) { // Már letiltottuk a cError dobálást
-        PDEB(VERBOSE) << "Dropped cError..." << endl;
-        return false;
-    }
-    CATCHS(lastError)
-    PDEB(DERROR) << "Error in " << __PRETTY_FUNCTION__ << endl;
-    PDEB(DERROR) << "Receiver : " << receiver->objectName() << "::" << typeid(*receiver).name() << endl;
-    PDEB(DERROR) << "Event : " << typeid(*event).name() << endl;
-//    pAppErr = lastError;        // eltesszük, hogy ki tudjuk tenni az üzenetet
-    cError::mDropAll = true;    // A további hiba dobálások nem kellenek
-    cErrorMessageBox::messageBox(lastError);
-    QApplication::exit(lastError->mErrorCode);  // kilépünk,
-    return false;
-}
