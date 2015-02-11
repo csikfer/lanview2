@@ -32,4 +32,43 @@ extern void initImportParser();
 /// A parser hívás után az esetleg (pl. hiba esetén) fel nem szabadított pointereket felszabadítja, ill nullázza.
 extern void downImportParser();
 
+#if defined(LV2_LIBRARY)
+
+
+class cHostServices : public tRecordList<cHostService> {
+public:
+    cHostServices(QSqlQuery& q, QString * ph, QString * pp, QString * ps, QString * pn) : tRecordList<cHostService>(new cHostService)
+    {
+        cHostService& hs = *at(0);
+        hs[_sNodeId]    = cNode().   getIdByName(q, *ph, true);  delete ph;
+        hs[_sServiceId] = cService().getIdByName(q, *ps, true);  delete ps;
+        if (pn) { hs[_sHostServiceNote] =  *pn;                     delete pn; }
+        if (pp) { hs[_sPortId] = cNPort().getPortIdByName(q, *pp, hs.getId(_sNodeId)); delete pp; }
+    }
+    cHostServices(QSqlQuery& q, cHostService *&_p)  : tRecordList<cHostService>(_p)
+    {
+        _p = NULL;
+        while (true) {
+            cHostService *p = new cHostService;
+            if (!p->next(q)) {
+                delete p;
+                return;
+            }
+            this->append(p);
+        }
+    }
+    void setsPort(QSqlQuery& q, const QString& pn) {
+        for (int i = 0; i < size(); ++i) {
+            at(i)->set(_sPortId, cNPort().getPortIdByName(q, pn, at(i)->getId(_sNodeId)));
+        }
+    }
+    void cat(cHostServices *pp) {
+        cHostService *p;
+        while (NULL != (p = pp->pop_front(false))) pp->append(p);
+        delete pp;
+    }
+};
+
+#endif
+
 #endif // IMPORT_PARSER_H

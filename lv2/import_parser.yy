@@ -231,7 +231,7 @@ static cGroup *     pGroup = NULL;
 static cNode *      pNode  = NULL;
 static cLink      * pLink = NULL;
 static cService   * pService = NULL;
-static cHostService*pHostService = NULL;
+static cHostServices*pHostServices = NULL;
 static cHostService*pHostService2 = NULL;
 static cTableShape *pTableShape = NULL;
 static qlonglong           alertServiceId = NULL_ID;
@@ -239,6 +239,8 @@ static QMap<QString, qlonglong>    ivars;
 static QMap<QString, QString>      svars;
 static QSqlQuery  * pq2 = NULL;
 QStack<c_yyFile> c_yyFile::stack;
+
+static cTableShapeField *pTableShapeField;
 
 void initImportParser()
 {
@@ -281,8 +283,8 @@ void downImportParser()
     pDelete(pNode);
     pDelete(pLink);
     pDelete(pService);
-    pDelete(pHostService);
-    pDelete(pHostService);
+    pDelete(pHostServices);
+    pDelete(pHostService2);
     pDelete(pTableShape);
     ivars.clear();
     svars.clear();
@@ -690,41 +692,6 @@ static cNPort *portAddAddress(int ix, QStringPair *ip, QString *d)
     return portAddAddress(p, ip, d);
 }
 
-static void setSuperior(QStringPair *pshs, QStringPairList * pshl)
-{
-    QSqlQuery q = getQuery();
-    QSqlQuery q2 = getQuery();
-    cHostService hs;
-    int r  = hs.fetchByNames(q, pshs->first, pshs->second, false);
-    delete pshs;
-    if (r != 1) yyerror("Ismeretlen, vagy nem eggyértelmű host_services rekord megadása.");
-    qlonglong id = hs.getId();
-    QString sn;
-    foreach (QStringPair sp, *pshl) {
-        if (!sp.second.isEmpty()) sn = sp.second;
-        if (sn.isEmpty()) yyerror("Nincs megadva szervice név.");
-        r = hs.fetchByNames(q, sp.first, sn, false);
-        if (r == 0) {   // Nincs, csinálunk egyet
-            cNode n;
-            if (!n.fetchByName(q2, sp.first)) yyerror("A megadott node nem létezik.");
-            hs.clear();
-            hs.setId(_sNodeId, n.getId());
-            hs.setId(_sServiceId, cService::service(q2, sn).getId());
-            hs.setId(_sSuperiorHostServiceId, id);
-            hs.insert(q2);
-        }
-        else while (1) {    // Van egy, vagy több
-            hs.setId(_sSuperiorHostServiceId, id);
-            hs.update(q2, false, hs.mask(_sSuperiorHostServiceId));
-            if (q.next()) {
-                hs.set(q);
-            }
-            else break;
-        }
-    }
-    delete pshl;
-}
-
 
 static cTableShape * newTableShape(QString *pTbl, QString * pMod, const QString *pDescr)
 {
@@ -1064,6 +1031,7 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
     QStringPair *  ss;
     QStringPairList *ssl;
     cSnmpDevice *  sh;
+    cHostServices *hss;
 }
 
 %token      MACRO_T FOR_T DO_T TO_T SET_T CLEAR_T BEGIN_T END_T ROLLBACK_T
@@ -1080,7 +1048,7 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
 %token      FLAPPING_T CHANGE_T TRUE_T FALSE_T ON_T OFF_T YES_T NO_T
 %token      DELEGATE_T STATE_T SUPERIOR_T TIME_T PERIODS_T LINE_T GROUP_T
 %token      USER_T DAY_T OF_T PERIOD_T PROTOCOL_T ALERT_T INTEGER_T FLOAT_T
-%token      DELETE_T ONLY_T PATTERN_T STRING_T SAVE_T TYPE_T STEP_T
+%token      DELETE_T ONLY_T STRING_T SAVE_T TYPE_T STEP_T
 %token      MASK_T LIST_T VLANS_T ID_T DYNAMIC_T FIXIP_T PRIVATE_T PING_T
 %token      NOTIF_T ALL_T RIGHTS_T REMOVE_T SUB_T PROPERTIES_T MAC_T EXTERNAL_T
 %token      LINK_T LLDP_T SCAN_T TABLE_T FIELD_T SHAPE_T TITLE_T REFINE_T
@@ -1088,7 +1056,7 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
 %token      INHERIT_T NAMES_T HIDE_T VALUE_T DEFAULT_T FILTER_T FILTERS_T
 %token      ORD_T SEQUENCE_T MENU_T GUI_T OWN_T TOOL_T TIP_T WHATS_T THIS_T
 %token      EXEC_T TAG_T ANY_T BOOLEAN_T CHAR_T IPADDRESS_T REAL_T URL_T
-%token      BYTEA_T DATE_T DISABLE_T
+%token      BYTEA_T DATE_T DISABLE_T EXPRESSION_T
 
 %token <i>  INTEGER_V
 %token <r>  FLOAT_V
@@ -1097,9 +1065,9 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
 %token <ip> IPV4_V IPV6_V
 %type  <i>  int int_ iexpr lnktype shar ipprotp ipprot offs ix_z vlan_t set_t
 %type  <i>  vlan_id place_id iptype pix pix_z pix_ iptype_a step timep image_id tmod int0
-%type  <i>  ptypen fhs hsid
+%type  <i>  ptypen fhs hsid srvid grpid tmpid node_id port_id snet_id ift_id plg_id usr_id
 %type  <il> list_i pixs // ints
-%type  <b>  bool bool_on pattern
+%type  <b>  bool bool_on
 %type  <r>  /* real */ num fexpr
 %type  <s>  str str_ str_z name_q time tod _toddef sexpr pnm mac_q ha nsw ips
 %type  <sl> strs strs_z alert list_m nsws nsws_ node_h host_h
@@ -1110,10 +1078,10 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
 %type  <pnt> point
 %type  <pol> frame points
 %type  <idl> vlan_ids
-%type  <ss>  ip_qq ip_q ip_a hs
-%type  <ssl> hss
+%type  <ss>  ip_qq ip_q ip_a
 %type  <mac> mac
 %type  <sh>  snmph
+%type  <hss> hss hsss
 
 %left  '^'
 %left  '+' '-' '|'
@@ -1169,17 +1137,17 @@ trans   : BEGIN_T ';'   { if (!qq().exec("BEGIN TRANSACTION"))    yyerror("Error
         | END_T ';'     { if (!qq().exec("END TRANSACTION"))      yyerror("Error END sql command");   PDEB(INFO) << "END TRANSACTION" << endl; }
         | ROLLBACK_T ';'{ if (!qq().exec("ROLLBACK TRANSACTION")) yyerror("Error END sql command");   PDEB(INFO) << "ROLLBACK TRANSACTION" << endl; }
         ;
-eqs     : '#' NAME_V '=' iexpr ';'  { ivars[*$2] = $4; delete $2; }
-        | '&' NAME_V '=' sexpr ';'  { svars[*$2] = *$4; delete $2; delete $4; }
+eqs     : '#' NAME_V '=' iexpr ';'              { ivars[*$2] = $4; delete $2; }
+        | '&' NAME_V '=' sexpr ';'              { svars[*$2] = *$4; delete $2; delete $4; }
         ;
-str_    : STRING_V                  { $$ = $1; }
-        | NAME_V                    { $$ = $1; }
-        | NULL_T                    { $$ = new QString(); }
-        | STRING_T '(' iexpr ')'    { $$ = new QString(QString::number($3)); }
-        | MASK_T  '(' sexpr ',' iexpr ')' { $$ = new QString(nameAndNumber(sp2s($3), (int)$5)); }
-        | MACRO_T '(' sexpr ')'     { $$ = new QString(templates._get(_sMacros, sp2s($3))); }
-        | TEMPLATE_T PATCH_T '(' sexpr ')'    { $$ = new QString(templates._get(_sPatchs,      sp2s($4))); }
-        | TEMPLATE_T NODE_T  '(' sexpr ')'    { $$ = new QString(templates._get(_sNodes,       sp2s($4))); }
+str_    : STRING_V                              { $$ = $1; }
+        | NAME_V                                { $$ = $1; }
+        | NULL_T                                { $$ = new QString(); }
+        | STRING_T '(' iexpr ')'                { $$ = new QString(QString::number($3)); }
+        | MASK_T  '(' sexpr ',' iexpr ')'       { $$ = new QString(nameAndNumber(sp2s($3), (int)$5)); }
+        | MACRO_T '(' sexpr ')'                 { $$ = new QString(templates._get(_sMacros, sp2s($3))); }
+        | TEMPLATE_T PATCH_T '(' sexpr ')'      { $$ = new QString(templates._get(_sPatchs, sp2s($4))); }
+        | TEMPLATE_T NODE_T  '(' sexpr ')'      { $$ = new QString(templates._get(_sNodes,  sp2s($4))); }
         ;
 str     : str_                      { $$ = $1; }
         | '&' '[' sexpr ']'         { $$ = $3; }
@@ -1202,28 +1170,66 @@ strs_z  : str_z                     { $$ = new QStringList(*$1); delete $1; }
         | strs_z ',' str_z          { $$ = $1;   *$$ << *$3;     delete $3; }
         ;
 
-int_    : INTEGER_V                         { $$ = $1; }
-        | ID_T NODE_T '(' str ')'           { $$ = cPatch().getIdByName(qq(), sp2s($4)); }
-        | ID_T PORT_T '(' str ':' str ')'   { $$ = cNPort().getPortIdByName(qq(), sp2s($4), sp2s($6)); }
-        | ID_T HOST_T SERVICE_T '(' hsid ')'{ $$ = $5; }
-        | ID_T PLACE_T '(' place_id ')'     { $$ = $4;  }
-        | ID_T TIME_T PERIOD_T '(' str ')'  { $$ = cTimePeriod().getIdByName(qq(), sp2s($5)); }
-        | ID_T SUBNET_T '(' str ')'         { $$ = cSubNet().getIdByName(qq(), sp2s($4)); }
-        | ID_T IFTYPE_T '(' str ')'         { $$ = cIfType().getIdByName(qq(), sp2s($4)); }
-        | ID_T VLAN_T '(' vlan_id ')'       { $$ =  $4; }
-        | '#' NAME_V                        { $$ = vint(*$2); delete $2; }
-        | '#' '+' NAME_V                    { $$ = (vint(*$3) += 1); delete $3; }
+int_    : INTEGER_V                             { $$ = $1; }
+        | ID_T NODE_T '(' node_id ')'           { $$ = $4; }
+        | ID_T PORT_T '(' port_id ')'           { $$ = $4; }
+        | ID_T HOST_T SERVICE_T '(' hsid ')'    { $$ = $5; }
+        | ID_T SERVICE_T '(' srvid ')'          { $$ = $4; }
+        | ID_T PLACE_T '(' place_id ')'         { $$ = $4; }
+        | ID_T PLACE_T GROUP_T '(' plg_id ')'   { $$ = $5; }
+        | ID_T TIME_T PERIOD_T '(' tmpid ')'    { $$ = $5; }
+        | ID_T SUBNET_T '(' snet_id ')'         { $$ = $4; }
+        | ID_T IFTYPE_T '(' ift_id ')'          { $$ = $4; }
+        | ID_T VLAN_T '(' vlan_id ')'           { $$ = $4; }
+        | ID_T USER_T '(' usr_id ')'            { $$ = $4; }
+        | ID_T USER_T GROUP_T '(' grpid ')'     { $$ = $5; }
+        | ID_T GROUP_T '(' grpid ')'            { $$ = $4; }
+        | '#' NAME_V                            { $$ = vint(*$2); delete $2; }
+        | '#' '+' NAME_V                        { $$ = (vint(*$3) += 1); delete $3; }
         ;
-int     : int_                      { $$ = $1; }
-        | '-' INTEGER_V             { $$ = -$2; }
-        | '#' '[' iexpr ']'         { $$ = $3; }
+int     : int_                                  { $$ = $1; }
+        | '-' INTEGER_V                         { $$ =-$2; }
+        | '#' '[' iexpr ']'                     { $$ = $3; }
         ;
-vlan_id : str                       { $$ = cVLan().getIdByName(qq(), *$1); delete $1; }
-        | int                       { $$ = $1; }
+// Név alapján a patchss rekord ID-t adja vissza (node_id)
+node_id : str                                   { $$ = cPatch().getIdByName(qq(), *$1); delete $1; }
         ;
-place_id: str                       { $$ = cPlace().getIdByName(qq(), *$1); delete $1; }
+port_id : node_id ':' str                       { $$ = cNPort().setPortByName(qq(), *$3, $1).getId(); delete $3; }
+        | node_id ':' int                       { $$ = cNPort().setPortByIndex(qq(), $3, $1).getId(); }
         ;
-iexpr   : int_                       { $$ = $1; }
+// Név alapján a vlans rekord ID-t adja vissza
+vlan_id : str                                   { $$ = cVLan().getIdByName(qq(), *$1); delete $1; }
+// Az int-el azonos, de ellenörzi, hogy az érték egy vlan id-e
+        | int                                   { cVLan().getNameById(qq(), $$ = $1, true); }
+        ;
+// Név alapján a places rekord ID-t adja vissza
+place_id: str                                   { $$ = cPlace().getIdByName(qq(), *$1); delete $1; }
+        ;
+// Név alapján a services rekord ID-t adja vissza
+srvid   : str                                   { $$ = cService().getIdByName(qq(),*$1); delete $1; }
+        ;
+// Név alapján a timeperiods rekord ID-t adja vissza
+tmpid   : str                                   { $$ = cTimePeriod().getIdByName(qq(), *$1); delete $1; }
+        ;
+snet_id : str                                   { $$ = cSubNet().getIdByName(qq(), sp2s($1)); }
+        | ip                                    { cSubNet n; int i = n.getByAddress(qq(), *$1); delete $1;
+                                                  if (i < 0) yyerror("Not found.");
+                                                  if (i > 1) yyerror("Ambiguous.");
+                                                  $$ = n.getId(); }
+        ;
+ift_id  : str                                   { $$ = cIfType::ifTypeId(*$1); delete $1; }
+        ;
+image_id: str                                   { $$ = cImage().getIdByName(sp2s($1)); }
+        ;
+plg_id  : str                                   { $$ = cPlaceGroup().getIdByName(sp2s($1)); }
+        ;
+usr_id  : str                                   { $$ = cGroup().getIdByName(sp2s($1)); }
+        ;
+// Név alapján a groups (felhasználói csoport) rekord ID-t adja vissza
+grpid   : str                                   { $$ = cGroup().getIdByName(qq(), *$1); delete $1; }
+        ;
+/* */
+iexpr   : int_                      { $$ = $1; }
         | '-' iexpr  %prec NEG      { $$ = -$2; }
         | iexpr '+' iexpr           { $$ = $1 + $3; }
         | iexpr '-' iexpr           { $$ = $1 - $3; }
@@ -1290,6 +1296,8 @@ user    : USER_T str str_z          { NEWOBJ(pUser, cUser()); pUser->setName(*$2
             ugrp_e                  { INSERTANDDEL(pGroup); }
         | USER_T GROUP_T str ADD_T str ';'      { cGroupUser gu(qq(), *$3, *$5); if (!gu.test(qq())) gu.insert(qq()); delete $3; delete $5; }
         | USER_T GROUP_T str REMOVE_T str ';'   { cGroupUser gu(qq(), *$3, *$5); if (gu.test(qq())) gu.remove(qq()); delete $3; delete $5; }
+        | USER_T str bool_on DISABLE_T ';'      { cUser().setByName(qq(), sp2s($2)).setBool(_sDisabled, $3).update(qq(), true); }
+        | USER_T bool_on DISABLE_T str GROUP_T ':'
         ;
 user_e  : ';'
         | '{' user_ps '}'
@@ -1306,6 +1314,7 @@ user_p  : HOST_T NOTIF_T PERIOD_T timep ';'     { pUser->setId(_sHostNotifPeriod
         | TEL_T strs ';'                        { pUser->set(_sTel, QVariant(*$2)); delete $2; }
         | ADDRESS_T strs ';'                    { pUser->set(_sAddresses, QVariant(*$2)); delete $2; }
         | PLACE_T place_id ';'                  { pUser->setId(_sPlaceId, $2); }
+        | bool_on DISABLE_T ';'                 { pUser->setBool(_sDisabled, $1); }
         ;
 timep   : str                                   { $$ = cTimePeriod().fetchByName(*$1); delete $1; }
         ;
@@ -1417,8 +1426,6 @@ image_ps: image_p
 image_p : TYPE_T str ';'            { pImage->setName(_sImageType, *$2); delete $2; }
         | SUB_T TYPE_T str ';'      { pImage->setName(_sImageSubType, *$3); delete $3; }
         | IMAGE_T FILE_T str ';'    { pImage->load(*$3); delete $3; }
-        ;
-image_id: str                       { $$ = cImage().getIdByName(sp2s($1)); }
         ;
 place   : PLACE_T str str_z         { place.clear().setName(*$2).set(_sPlaceNote, *$3); delete $2; delete $3; }
           place_e                   { place.insert(qq()); }
@@ -1562,7 +1569,7 @@ node_p  : NOTE_T str ';'                       { pNode->setName(_sNodeNote, sp2s
         | PORT_T pnm PARAM_T str '=' str ';'    { setLastPort(pNode->portSetParam(sp2s($2), sp2s($4), sp2s($6))); }
         | PORT_T pix PARAM_T str '=' strs ';'   { setLastPort(pNode->portSetParam($2, sp2s($4), slp2sl($6))); }
         /* host */
-        | ALARM_T PLACE_T GROUP_T str ';'       { pNode->setId(_sAlarmPlaceGroupId, cPlaceGroup().getIdByName(qq(), sp2s($4))); }
+        | ALARM_T PLACE_T GROUP_T plg_id ';'    { pNode->setId(_sAlarmPlaceGroupId, $4); }
         | ADD_T PORT_T pix_z str str ip_qq mac_qq str_z ';' { setLastPort(hostAddPort((int)$3, $4,$5,$6,$7,$8)); }
         | PORT_T pnm ADD_T ADDRESS_T ip_a str_z ';'         { setLastPort(portAddAddress($2, $5, $6)); }
         | PORT_T pix ADD_T ADDRESS_T ip_a str_z ';'         { setLastPort(portAddAddress((int)$2, $5, $6)); }
@@ -1687,7 +1694,7 @@ service : SERVICE_T str str_z    { NEWOBJ(pService, cService());
                                       pService->set(_sServiceNote, *$3);
                                       delete $2; delete $3; }
           srvend                    { pService->insert(qq()); DELOBJ(pService); }
-        | SET_T ALERT_T SERVICE_T str ';'    { alertServiceId = cService().getIdByName(qq(), *$4); delete $4; }
+        | SET_T ALERT_T SERVICE_T srvid ';'    { alertServiceId = $4; }
         ;
 srvend  : '{' srv_ps '}'
         | ';'
@@ -1720,21 +1727,12 @@ ipprot  : ICMP_T                    { $$ = EP_ICMP; }
         | NIL_T                     { $$ = EP_NIL; }
         | PROTOCOL_T str            { $$ = cIpProtocol().getIdByName(qq(), *$2, true); delete $2; }
         ;
-hostsrv : HOST_T SERVICE_T str '.' str str_z    { NEWOBJ(pHostService, cHostService());
-                                                    (*pHostService)[_sNodeId]    = cNode().cRecord::getIdByName(qq(),*$3, true);  delete $3;
-                                                    (*pHostService)[_sServiceId] = cService().getIdByName(qq(),*$5);              delete $5;
-                                                    (*pHostService)[_sHostServiceNote] =  *$6;                                    delete $6;
-                                                }
-          hsrvend                               { pHostService->insert(qq(), true); DELOBJ(pHostService); }
+hostsrv : HOST_T SERVICE_T str '.' str str_z    { NEWOBJ(pHostServices, cHostServices(qq(), $3, NULL, $5, $6)); }
+          hsrvend                               { pHostServices->insert(qq()); DELOBJ(pHostServices); }
         | HOST_T SERVICE_T str ':' str '.' str str_z
-                                                { NEWOBJ(pHostService, cHostService());
-                                                    (*pHostService)[_sNodeId]    = cNode().cRecord::getIdByName(qq(),*$3, true);  delete $3;
-                                                    (*pHostService)[_sServiceId] = cService().getIdByName(qq(),*$7);              delete $7;
-                                                    (*pHostService)[_sHostServiceNote] =  *$8;                                    delete $8;
-                                                    (*pHostService)[_sPortId] = cNPort().getPortIdByName(qq(), *$5, pHostService->getId(_sNodeId)); delete $5;
-                                                }
-          hsrvend                               { pHostService->insert(qq(), true); DELOBJ(pHostService); }
-        | SET_T SUPERIOR_T hs TO_T hss ';'      { setSuperior($3, $5); }
+                                                { NEWOBJ(pHostServices, cHostServices(qq(), $3, $5, $7, $8));  }
+          hsrvend                               { pHostServices->insert(qq()); DELOBJ(pHostServices); }
+        | SET_T SUPERIOR_T hsid TO_T hsss ';'   { $5->sets(_sSuperiorHostServiceId, $3); delete $5; }
         ;
 hsrvend : '{' hsrv_ps '}'
         | ';'
@@ -1742,35 +1740,24 @@ hsrvend : '{' hsrv_ps '}'
 hsrv_ps : hsrv_p
         | hsrv_ps hsrv_p
         ;
-hsrv_p  : PRIME_T SERVICE_T str ';'             { (*pHostService)[_sPrimeServiceId] = cService().getIdByName(qq(),*$3); delete $3; }
-        | PROTOCOL_T SERVICE_T str ';'          { (*pHostService)[_sProtoServiceId] = cService().getIdByName(qq(),*$3); delete $3; }
-        | PORT_T str ';'                        { (*pHostService)[_sPortId] = cNPort().getPortIdByName(qq(), *$2, pHostService->get(_sNodeId).toLongLong()); delete $2; }
-        | PORT_T str '(' str ')' ';'            { (*pHostService)[_sPortId] = cNPort().getPortIdByName(qq(), *$2, pHostService->get(_sNodeId).toLongLong(), cIfType::ifTypeId(*$4));
-                                                    delete $2; delete $4; }
-        | DELEGATE_T HOST_T STATE_T bool_on ';' { (*pHostService)[_sDelegateHostState]  = $4; }
-        | COMMAND_T str ';'                     { (*pHostService)[_sCheckCmd] = *$2; delete $2; }
-        | PROPERTIES_T str ';'                  { (*pHostService)[_sProperties] = *$2; delete $2; }
-        | SUPERIOR_T SERVICE_T hsid ';'         { (*pHostService)[_sSuperiorHostServiceId] = $3; }
-        | MAX_T CHECK_T ATTEMPTS_T int ';'      { (*pHostService)[_sMaxCheckAttempts]    = $4; }
-        | NORMAL_T CHECK_T INTERVAL_T str ';'   { (*pHostService)[_sNormalCheckInterval] = *$4; delete $4; }
-        | NORMAL_T CHECK_T INTERVAL_T int ';'   { (*pHostService)[_sNormalCheckInterval] = $4 * 1000; }
-        | RETRY_T CHECK_T INTERVAL_T str ';'    { (*pHostService)[_sRetryCheckInterval]  = *$4; delete $4; }
-        | RETRY_T CHECK_T INTERVAL_T int ';'    { (*pHostService)[_sRetryCheckInterval]  = $4 * 1000; }
-        | FLAPPING_T INTERVAL_T str ';'         { (*pHostService)[_sFlappingInterval]    = *$3; delete $3; }
-        | FLAPPING_T INTERVAL_T int ';'         { (*pHostService)[_sFlappingInterval]    = $3 * 1000; }
-        | FLAPPING_T MAX_T CHANGE_T int ';'     { (*pHostService)[_sFlappingMaxChange]   = $4; }
-        | TIME_T PERIODS_T str ';'              { (*pHostService)[_sTimePeriodId]  = cTimePeriod().getIdByName(qq(), *$3); delete $3; }
-        | OFF_T LINE_T GROUP_T str ';'          { (*pHostService)[_sOffLineGroupId] = cGroup().getIdByName(qq(), *$4); delete $4; }
-        | ON_T LINE_T GROUP_T str ';'           { (*pHostService)[_sOnLineGroupId] = cGroup().getIdByName(qq(), *$4); delete $4; }
-        | SET_T str '=' value ';'               { (*pHostService)[*$2] = *$4; delete $2; delete $4; }
-        | ALARM_T MESSAGE_T str ';'             { (*pHostService)[_sHostServiceAlarmMsg] = *$3; delete $3; }
-        | bool_on DISABLE_T ';'                 { (*pHostService)[_sDisabled] = $1; }
-        ;
-hs      : str ':' str                           { $$ = new QStringPair(sp2s($1), sp2s($3)); }
-        | str ':' '@'                           { $$ = new QStringPair(sp2s($1), _sNul); }
-        ;
-hss     : hs                                    { *($$ = new QStringPairList) << *$1; delete $1; }
-        | hss ',' hs                            { *($$ = $1) << *$3; delete $3; }
+hsrv_p  : PRIME_T SERVICE_T srvid ';'           { pHostServices->sets(_sPrimeServiceId, $3); }
+        | PROTOCOL_T SERVICE_T srvid ';'        { pHostServices->sets(_sProtoServiceId, $3); }
+        | PORT_T str ';'                        { pHostServices->setsPort(qq(), *$2); delete $2; }
+        | DELEGATE_T HOST_T STATE_T bool_on ';' { pHostServices->sets(_sDelegateHostState, $4); }
+        | COMMAND_T str ';'                     { pHostServices->sets(_sCheckCmd, *$2); delete $2; }
+        | PROPERTIES_T str ';'                  { pHostServices->sets(_sProperties, *$2); delete $2; }
+        | SUPERIOR_T SERVICE_T hsid ';'         { pHostServices->sets(_sSuperiorHostServiceId,  $3); }
+        | MAX_T CHECK_T ATTEMPTS_T int ';'      { pHostServices->sets(_sMaxCheckAttempts, $4); }
+        | NORMAL_T CHECK_T INTERVAL_T value ';' { pHostServices->sets(_sNormalCheckInterval, *$4); delete $4; }
+        | RETRY_T CHECK_T INTERVAL_T value ';'  { pHostServices->sets(_sRetryCheckInterval, *$4); delete $4; }
+        | FLAPPING_T INTERVAL_T value ';'       { pHostServices->sets(_sFlappingInterval, *$3); delete $3; }
+        | FLAPPING_T MAX_T CHANGE_T int ';'     { pHostServices->sets(_sFlappingMaxChange,  $4); }
+        | TIME_T PERIODS_T tmpid ';'            { pHostServices->sets(_sTimePeriodId, $3); }
+        | OFF_T LINE_T GROUP_T grpid ';'        { pHostServices->sets(_sOffLineGroupId, $4); }
+        | ON_T LINE_T GROUP_T grpid ';'         { pHostServices->sets(_sOnLineGroupId, $4); }
+        | SET_T str '=' value ';'               { pHostServices->sets(*$2, *$4); delete $2; delete $4; }
+        | ALARM_T MESSAGE_T str ';'             { pHostServices->sets(_sHostServiceAlarmMsg, *$3); delete $3; }
+        | bool_on DISABLE_T ';'                 { pHostServices->sets(_sDisabled,  $1); }
         ;
 // host_services rekordok előkotrása, a kifelyezés értéke a kapott rekord szám, az első rekord a megallokált pHostService2-be
 // pHostService2-nek NULL-nak kell lennie. Több rekord a qq()-val kérhető be, ha el nem rontjuk a tartalmát.
@@ -1789,38 +1776,42 @@ fhs
                                                   $$ = pHostService2->fetchByNames(qq(), sp2s($1), sp2s($5), sp2s($3), sp2s($7), sp2s($9), false); }
         ;
 // A megadott host_services rekord ID-vel tér vissza, ha nem azonosítható be a rekord, akkor hívja yyyerror()-t.
-hsid    : fhs                                   { if ($$ == 0) yyerror("Not found");
-                                                  if ($$ != 1) yyerror("Ambiguous");
+hsid    : fhs                                   { if ($1 == 0) yyerror("Not found");
+                                                  if ($1 != 1) yyerror("Ambiguous");
                                                   $$ = pHostService2->getId();  DELOBJ(pHostService2); }
         ;
-delete  : DELETE_T PLACE_T pattern strs ';'     { foreach (QString s, *$4) { cPlace(). delByName(qq(), s, $3); }       delete $4; }
-        | DELETE_T PATCH_T pattern strs ';'     { foreach (QString s, *$4) { cPatch(). delByName(qq(), s, $3, true); } delete $4; }
-        | DELETE_T NODE_T pattern strs ';'      { foreach (QString s, *$4) { cNode().  delByName(qq(), s, $3, false); }delete $4; }
-        | DELETE_T ONLY_T NODE_T pattern strs ';'{foreach (QString s, *$5) { cNode().  delByName(qq(), s, $4, true); } delete $5; }
-        | DELETE_T VLAN_T pattern strs ';'      { foreach (QString s, *$4) { cVLan().  delByName(qq(), s, $3); }       delete $4; }
-        | DELETE_T SUBNET_T pattern strs ';'    { foreach (QString s, *$4) { cSubNet().delByName(qq(), s, $3); }       delete $4; }
-        | DELETE_T HOST_T  SERVICE_T fhs ';'    { if ($4) do { pHostService2->remove(qq2()); } while (pHostService2->next(qq())); DELOBJ(pHostService2); }
-        | DELETE_T HOST_T pattern strs SERVICE_T pattern strs ';'
+hss     : fhs                                   { if ($1 == 0) yyerror("Not found");
+                                                  $$ = new cHostServices(qq(), pHostService2);
+                                                }
+        ;
+hsss    : hss                                   { $$ = $1; }
+        | hsss ',' hss                          { ($$ = $1)->cat($3); }
+        ;
+delete  : DELETE_T PLACE_T strs ';'             { foreach (QString s, *$3) { cPlace(). delByName(qq(), s, true); }       delete $3; }
+        | DELETE_T PLACE_T GROUP_T strs ';'     { foreach (QString s, *$4) { cPlaceGroup(). delByName(qq(), s, true); }  delete $4; }
+        | DELETE_T USER_T strs ';'              { foreach (QString s, *$3) { cUser().  delByName(qq(), s, true); }       delete $3; }
+        | DELETE_T USER_T GROUP_T strs ';'      { foreach (QString s, *$4) { cGroup(). delByName(qq(), s, true); }       delete $4; }
+        | DELETE_T GROUP_T strs ';'             { foreach (QString s, *$3) { cGroup(). delByName(qq(), s, true); }       delete $3; }
+        | DELETE_T PATCH_T strs ';'             { foreach (QString s, *$3) { cPatch(). delByName(qq(), s, true, true); } delete $3; }
+        | DELETE_T NODE_T  strs ';'             { foreach (QString s, *$3) { cNode().  delByName(qq(), s, true, false); }delete $3; }
+        | DELETE_T VLAN_T  strs ';'             { foreach (QString s, *$3) { cVLan().  delByName(qq(), s, true); }       delete $3; }
+        | DELETE_T SUBNET_T strs ';'            { foreach (QString s, *$3) { cSubNet().delByName(qq(), s, true); }       delete $3; }
+        | DELETE_T HOST_T  SERVICE_T hsss ';'   { $4->remove(qq()); delete $4; }
+        | DELETE_T HOST_T strs SERVICE_T strs ';'
                                                 { cHostService hs;
-                                                  foreach (QString h, *$4) { foreach (QString s, *$7) { hs.delByNames(qq(), h, s, $3, $6); }}
-                                                  delete $4; delete $7;
+                                                  foreach (QString h, *$3) { foreach (QString s, *$5) { hs.delByNames(qq(), h, s, true, true); }}
+                                                  delete $3; delete $5;
                                                 }
         | DELETE_T MACRO_T strs ';'             { foreach (QString s, *$3) { templates.del(_sMacros, s); } delete $3; }
         | DELETE_T TEMPLATE_T PATCH_T strs ';'  { foreach (QString s, *$4) { templates.del(_sPatchs, s); } delete $4; }
         | DELETE_T TEMPLATE_T NODE_T strs ';'   { foreach (QString s, *$4) { templates.del(_sNodes,  s); } delete $4; }
         | DELETE_T LINK_T strs ';'              { foreach (QString s, *$3) { cPhsLink().unlink(qq(), s, "%", true); } delete $3; }
-        | DELETE_T LINK_T str pattern strs ';'  { foreach (QString s, *$5) { cPhsLink().unlink(qq(), sp2s($3), s, $4); } delete $5; }
+        | DELETE_T LINK_T str strs ';'          { foreach (QString s, *$4) { cPhsLink().unlink(qq(), sp2s($3), s, true); } delete $4; }
         | DELETE_T LINK_T str int ix_z ';'      { cPhsLink().unlink(qq(), sp2s($3), $4, $5); }
-        | DELETE_T TABLE_T SHAPE_T pattern strs ';'
-                                                { foreach (QString s, *$5) { cTableShape().delByName(qq(), s, $4, false); } delete $5; }
-        | DELETE_T ENUM_T TITLE_T  strs ';'     { foreach (QString s, *$4) { cEnumVal().delByTypeName(qq(), s, false); } delete $4; }
-        | DELETE_T ENUM_T TITLE_T  PATTERN_T strs ';'
-                                                { foreach (QString s, *$5) { cEnumVal().delByTypeName(qq(), s, true); } delete $5; }
+        | DELETE_T TABLE_T SHAPE_T strs ';'     { foreach (QString s, *$4) { cTableShape().delByName(qq(), s, true, false); } delete $4; }
+        | DELETE_T ENUM_T TITLE_T  strs ';'     { foreach (QString s, *$4) { cEnumVal().delByTypeName(qq(), s, true); } delete $4; }
         | DELETE_T ENUM_T TITLE_T  str strs ';' { foreach (QString s, *$5) { cEnumVal().delByNames(qq(), sp2s($4), s); } delete $5; }
-        | DELETE_T GUI_T pattern strs MENU_T ';'{ foreach (QString s, *$4) { cMenuItem().delByAppName(qq(), s, $3); } delete $4; }
-        ;
-pattern :                                       { $$ = false; }
-        | PATTERN_T                             { $$ = true;  }
+        | DELETE_T GUI_T strs MENU_T ';'        { foreach (QString s, *$3) { cMenuItem().delByAppName(qq(), s, true); } delete $3; }
         ;
 scan    : SCAN_T LLDP_T snmph ';'               { scanByLldp(qq(), *$3); delete $3; }
         ;
@@ -1855,12 +1846,13 @@ tmodp   : SET_T DEFAULTS_T ';'                  { pTableShape->setDefaults(qq())
         | SET_T str '.' str '=' value ';'       { pTableShape->fset(sp2s($2), sp2s($4), vp2v($6)); }
         | SET_T '(' strs ')' '.' str '=' value ';'{ pTableShape->fsets(slp2sl($3), sp2s($6), vp2v($8)); }
         | FIELD_T str TITLE_T str ';'           { pTableShape->fset(sp2s($2),_sTableShapeFieldTitle, sp2s($4)); }
-        | FIELD_T str NOTE_T str ';'           { pTableShape->fset(sp2s($2),_sTableShapeFieldNote, sp2s($4)); }
+        | FIELD_T str NOTE_T str ';'            { pTableShape->fset(sp2s($2),_sTableShapeFieldNote, sp2s($4)); }
         | FIELD_T str TITLE_T str str ';'       { pTableShape->fset(    *$2,    _sTableShapeFieldTitle, sp2s($4)   );
                                                   pTableShape->fset(sp2s($2),_sTableShapeFieldNote, sp2s($5)); }
         | FIELD_T strs VIEW_T RIGHTS_T str ';'  { pTableShape->fsets(slp2sl($2), _sViewRights, sp2s($5)); }
         | FIELD_T strs EDIT_T RIGHTS_T str ';'  { pTableShape->fsets(slp2sl($2), _sEditRights, sp2s($5)); }
         | FIELD_T strs PROPERTIES_T str ';'     { pTableShape->fsets(slp2sl($2), _sProperties, sp2s($4)); }
+        | FIELD_T str EXPRESSION_T str ';'      { pTableShape->fset(sp2s($2), _sExpression, sp2s($4)); }
         | FIELD_T strs HIDE_T bool_on ';'       { pTableShape->fsets(slp2sl($2), _sIsHide, $4); }
         | FIELD_T strs DEFAULT_T VALUE_T str ';'{ pTableShape->fsets(slp2sl($2), _sDefaultValue, sp2s($5)); }
         | FIELD_T strs READ_T ONLY_T bool_on ';'{ pTableShape->fsets(slp2sl($2), _sIsReadOnly, $5); }
@@ -1870,11 +1862,33 @@ tmodp   : SET_T DEFAULTS_T ';'                  { pTableShape->setDefaults(qq())
         | FIELD_T strs ORD_T strs ';'           { pTableShape->setOrders(*$2, *$4); delete $2; delete $4; }
         | FIELD_T '*'  ORD_T strs ';'           { pTableShape->setAllOrders(*$4); delete $4; }
         | FIELD_T ORD_T SEQUENCE_T int0 strs ';'{ pTableShape->setOrdSeq(slp2sl($5), $4); }
+        | ADD_T FIELD_T str str str_z ';'       { pTableShape->addField(sp2s($3), sp2s($4), sp2s($5)); }
+        | ADD_T FIELD_T str ';'                 { pTableShape->addField(sp2s($3)); }
+        | ADD_T FIELD_T str str str_z '{'       { pTableShapeField = pTableShape->addField(sp2s($3), sp2s($4), sp2s($5)); }
+            fmodps '}'
+        | ADD_T FIELD_T str '{'                 { pTableShapeField = pTableShape->addField(sp2s($3)); }
+            fmodps '}'
         ;
 int0    : int                                   { $$ = $1; }
         |                                       { $$ = 0; }
         ;
 tmod    : str                                   { $$ = cTableShape().getIdByName(sp2s($1)); }
+        ;
+fmodps  : fmodp
+        | fmodps fmodp
+        ;
+fmodp   : SET_T str '=' value ';'       { pTableShapeField->set(sp2s($2), vp2v($4)); }
+        | TITLE_T str ';'               { pTableShapeField->setName(_sTableShapeFieldTitle, sp2s($2)); }
+        | NOTE_T str ';'                { pTableShapeField->setName(_sTableShapeFieldNote, sp2s($2)); }
+        | TITLE_T str str ';'           { pTableShapeField->setName(_sTableShapeFieldTitle, sp2s($2)   );
+                                          pTableShapeField->setName(_sTableShapeFieldNote, sp2s($3)); }
+        | VIEW_T RIGHTS_T str ';'       { pTableShapeField->setName(_sViewRights, sp2s($3)); }
+        | EDIT_T RIGHTS_T str ';'       { pTableShapeField->setName(_sEditRights, sp2s($3)); }
+        | PROPERTIES_T str ';'          { pTableShapeField->setName(_sProperties, sp2s($2)); }
+        | EXPRESSION_T str ';'          { pTableShapeField->setName(_sExpression, sp2s($2)); }
+        | HIDE_T bool_on ';'            { pTableShapeField->setBool(_sIsHide, $2); }
+        | DEFAULT_T VALUE_T str ';'     { pTableShapeField->setName(_sDefaultValue, sp2s($3)); }
+        | READ_T ONLY_T bool_on ';'     { pTableShapeField->setBool(_sIsReadOnly, $3); }
         ;
 appmenu : GUI_T str                             { pMenuApp = $2;}
             '{' menus '}'                       { pDelete(pMenuApp); }
@@ -2077,7 +2091,7 @@ static int yylex(void)
         TOK(FLAPPING) TOK(CHANGE) { "TRUE", TRUE_T },{ "FALSE", FALSE_T }, TOK(ON) TOK(OFF) TOK(YES) TOK(NO)
         TOK(DELEGATE) TOK(STATE) TOK(SUPERIOR) TOK(TIME) TOK(PERIODS) TOK(LINE) TOK(GROUP)
         TOK(USER) TOK(DAY) TOK(OF) TOK(PERIOD) TOK(PROTOCOL) TOK(ALERT) TOK(INTEGER) TOK(FLOAT)
-        TOK(DELETE) TOK(ONLY) TOK(PATTERN) TOK(STRING) TOK(SAVE) TOK(TYPE) TOK(STEP)
+        TOK(DELETE) TOK(ONLY) TOK(STRING) TOK(SAVE) TOK(TYPE) TOK(STEP)
         TOK(MASK) TOK(LIST) TOK(VLANS) TOK(ID) TOK(DYNAMIC) TOK(FIXIP) TOK(PRIVATE) TOK(PING)
         TOK(NOTIF) TOK(ALL) TOK(RIGHTS) TOK(REMOVE) TOK(SUB) TOK(PROPERTIES) TOK(MAC) TOK(EXTERNAL)
         TOK(LINK) TOK(LLDP) TOK(SCAN) TOK(TABLE) TOK(FIELD) TOK(SHAPE) TOK(TITLE) TOK(REFINE)
@@ -2085,7 +2099,7 @@ static int yylex(void)
         TOK(INHERIT) TOK(NAMES) TOK(HIDE) TOK(VALUE) TOK(DEFAULT) TOK(FILTER) TOK(FILTERS)
         TOK(ORD) TOK(SEQUENCE) TOK(MENU) TOK(GUI) TOK(OWN) TOK(TOOL) TOK(TIP) TOK(WHATS) TOK(THIS)
         TOK(EXEC) TOK(TAG) TOK(ANY) TOK(BOOLEAN) TOK(CHAR) TOK(IPADDRESS) TOK(REAL) TOK(URL)
-        TOK(BYTEA) TOK(DATE) TOK(DISABLE)
+        TOK(BYTEA) TOK(DATE) TOK(DISABLE) TOK(EXPRESSION)
         { "WST",    WORKSTATION_T }, // rövidítések
         { "ATC",    ATTACHED_T },
         { "INT",    INTEGER_T },
@@ -2095,6 +2109,7 @@ static int yylex(void)
         { "PROTO",  PROTOCOL_T },
         { "SEQ",    SEQUENCE_T },
         { "DEL",    DELETE_T },
+        { "EXPR",   EXPRESSION_T },
         { NULL, 0 }
     };
     // DBGFN();

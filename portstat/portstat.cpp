@@ -11,12 +11,11 @@ const QString& setAppHelp()
 
 int main (int argc, char * argv[])
 {
-    QCoreApplication app(argc, argv);
+    cLv2QApp app(argc, argv);
 
     SETAPP();
     lanView::snmpNeeded = true;
     lanView::sqlNeeded  = true;
-    lanView::gui        = false;
 
     lv2portStat   mo;
 

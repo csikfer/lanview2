@@ -182,6 +182,14 @@ public:
     bool fetchLeft(QSqlQuery& q, cTableShape * _po, bool _ex) const;
     bool fetchRight(QSqlQuery& q, cTableShape * _po, bool _ex) const;
     const cRecStaticDescr * getRecDescr() const { return cRecStaticDescr::get(getName(_sTableName)); }
+    /// Létrehoz, és hozzáad egy mező onjekrumot a shapeFields konténerhez.
+    /// @param _name  A mező/oszlop neve
+    /// @param _title   A mező/oszlop fejlécen kiírt neve
+    /// @param _note Megjegyzés
+    /// @return Az új (konténerbe helyezett) objektum pointere.
+    /// @exception Ha már létezik ilyen nevű elem a konténerben.
+    cTableShapeField *addField(const QString& _name, const QString& _title = _sNul, const QString& _note = _sNul, bool __ex = true);
+
     tTableShapeFields       shapeFields;
 protected:
     static int              _ixProperties;

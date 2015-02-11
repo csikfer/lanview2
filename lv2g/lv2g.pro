@@ -27,7 +27,8 @@ SOURCES += \
     cerrormessagebox.cpp \
     menu.cpp \
     setup.cpp \
-    gparse.cpp
+    gparse.cpp \
+    logon.cpp
 
 HEADERS +=\
         lv2g_global.h \
@@ -41,13 +42,17 @@ HEADERS +=\
     cerrormessagebox.h \
     menu.h \
     setup.h \
-    gparse.h
+    gparse.h \
+    logon.h \
+    LV2G_errcodes.h
 
 FORMS += \
     column_filter.ui \
     setup_logl.ui \
     setup.ui \
-    gparse.ui
+    gparse.ui \
+    logindialog.ui \
+    groupeditordialog.ui
 INCLUDEPATH += ../lv2
 unix:LIBS += -lsnmp
 LIBS += -L../lv2 -llv2

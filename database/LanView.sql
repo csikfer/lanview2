@@ -257,7 +257,7 @@ $$ LANGUAGE plpgsql;
 \i imports.sql
 -- //////////////////// ALARM  ////////////////////
 \i alarm.sql
-\i indalarm.sql
+-- \i indalarm.sql
 
 CREATE TYPE unusualfkeytype AS ENUM ('property', 'self', 'owner');
 COMMENT ON TYPE unusualfkeytype IS

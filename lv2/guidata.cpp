@@ -195,8 +195,8 @@ bool cTableShape::insert(QSqlQuery &__q, bool __ex)
     if (!cRecord::insert(__q, __ex)) return false;
     if (shapeFields.count()) {
         shapeFields.clearId();
-        shapeFields.setId(_sTableShapeId, getId());
-        if (getBool(_sIsReadOnly)) shapeFields.set(_sIsReadOnly, QVariant(true));
+        shapeFields.setsId(_sTableShapeId, getId());
+        if (getBool(_sIsReadOnly)) shapeFields.sets(_sIsReadOnly, QVariant(true));
         int i = shapeFields.insert(__q, __ex);
         return i == shapeFields.count();
     }
@@ -509,6 +509,20 @@ bool cTableShape::fetchRight(QSqlQuery& q, cTableShape * _po, bool _ex = true) c
     return true;
 }
 
+cTableShapeField *cTableShape::addField(const QString& _name, const QString& _title, const QString& _note, bool __ex)
+{
+    if (0 <= shapeFields.indexOf(_name)) {
+        if (__ex) EXCEPTION(EUNOQUE, -1, _name);
+        return NULL;
+    }
+    cTableShapeField *p = new cTableShapeField();
+    p->setName(_name);
+    p->setName(_sTableShapeFieldTitle, _title.size() ? _title : _name);
+    p->setName(_sTableShapeFieldNote,  _note.size()  ? _note  : _name);
+    shapeFields << p;
+    return p;
+}
+
 /* ------------------------------ cTableShapeField ------------------------------ */
 
 cTableShapeField::cTableShapeField() : cRecord()
@@ -590,7 +604,7 @@ bool cTableShapeField::insert(QSqlQuery &__q, bool __ex)
     if (!cRecord::insert(__q, __ex)) return false;
     if (shapeFilters.count()) {
         shapeFilters.clearId();
-        shapeFilters.setId(_sTableShapeFieldId, getId());
+        shapeFilters.setsId(_sTableShapeFieldId, getId());
         int i = shapeFilters.insert(__q, __ex);
         return i == shapeFilters.count();
     }

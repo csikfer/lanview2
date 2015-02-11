@@ -20,8 +20,8 @@ CREATE TABLE iftypes (
     iftype_name         varchar(64)     NOT NULL UNIQUE,
     iftype_note         varchar(255)    DEFAULT NULL,
     iftype_iana_id      integer         NOT NULL DEFAULT 1, -- 'other'
-    iftype_link_type    linktype        NOT NULL DEFAULT 'ptp',
-    iftype_obj_type     portobjtype     NOT NULL,
+    iftype_link_type    linktype        NOT NULL DEFAULT 'unknown',
+    iftype_obj_type     portobjtype     NOT NULL DEFAULT 'unknown',
     preferred           bool            DEFAULT false,
     iana_id_link        integer         DEFAULT NULL,
     if_name_prefix      varchar(16)     DEFAULT NULL
@@ -39,8 +39,8 @@ COMMENT ON COLUMN iftypes.iana_id_link IS 'Elavult ID esetén a helyette haszná
 COMMENT ON COLUMN iftypes.if_name_prefix IS 'Egy opcionális prefix az interfész nevekhez';
 
 INSERT INTO iftypes
-    (iftype_id, iftype_name,    iftype_note,              iftype_iana_id, iftype_link_type, iftype_obj_type) VALUES
-    ( 0,        'unknown',      'Unknown pseudo type',    1,              'unknown',        'unknown');
+    (iftype_id, iftype_name,    iftype_note,              iftype_iana_id) VALUES
+    ( 0,        'unknown',      'Unknown pseudo type',    1             );
 INSERT INTO iftypes
     (iftype_name,               iftype_note,                iftype_iana_id, iftype_link_type, iftype_obj_type) VALUES
 -- Pseudo types
@@ -64,13 +64,15 @@ INSERT INTO iftypes
     ( 'multiplexor',            'Trunk',                                54,     'logical',    'interface',      't' ),
     ( 'adsl',                   'Asymmetric Digital Subscriber Loop',   94,     'logical',    'interface',      't' ),
     ( 'tunnel',                 'Encapsulation interface',             131,     'logical',    'interface',      'f' ),
-    ( 'l2vlan',                 'VLan (SonicWall)',                    135,     'logical',    'interface',      't' ),
     ( 'digitalPowerline',       'IP over Power Lines',                 138,     'bus',        'interface',      'f' ),
     ( 'usb',                    'USB Interface',                       160,     'ptp',        'interface',      'f' );
 -- IANA iftype_id obsoloted
 INSERT INTO iftypes
-    (iftype_name,               iftype_note,                iftype_iana_id, iftype_obj_type, preferred, iana_id_link) VALUES
-    ( 'gigabitEthernet',        'Obsolote',                 117,            'interface',      't',      6);
+    (iftype_name,               iftype_note,                iftype_iana_id, iana_id_link) VALUES
+    ( 'gigabitEthernet',        'Obsolote',                            117,          6 ),
+    ( 'l2vlan',                 'VLan (SonicWall)',                    135,         53 ),
+    ( 'l3vlan',                 'VLan (HP/3com)',                      136,         53 ),
+    ( 'ieee8023adLag',          'Bridge Aggregation (HP/3com)',        161,         54 );
 
 CREATE TYPE ifstatus AS ENUM (
     -- States for SNMP

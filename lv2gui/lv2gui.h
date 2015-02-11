@@ -15,13 +15,14 @@
 
 /// @class lv2Gui
 /// LanView2 GUI main object
-class lv2Gui : public lanView {
+class lv2Gui : public lv2g {
     Q_OBJECT
 public:
     lv2Gui();
     ~lv2Gui();
     bool        dbIsOpen;       ///< Ha az adatbázis nyitva, akkor true, egyébként false
     cMainWindow *pMainWindow;
+    static bool _setup;
 };
 
 #include "setup.h"

@@ -780,9 +780,13 @@ const cIfType *cIfType::fromIana(int _iana_id)
     QList<cIfType *>::const_iterator    i;
     for (i = ifTypes.constBegin(); i < ifTypes.constEnd(); i++) {
         const cIfType *pift = *i;
-        if (pift->getBool(_sPreferred) && pift->getId(_sIfTypeIanaId) == _iana_id) {
-            if (pift->isNull(_sIanaIdLink)) return pift;
-            return fromIana(pift->getId(_sIanaIdLink));
+        if (pift->getId(_sIfTypeIanaId) == _iana_id) {
+            if (pift->isNull(_sIanaIdLink)) {
+                if (pift->getBool(_sPreferred)) return pift;
+            }
+            else {
+                return fromIana(pift->getId(_sIanaIdLink));
+            }
         }
     }
     return NULL;
@@ -1069,12 +1073,12 @@ bool cInterface::insert(QSqlQuery &__q, bool __ex)
     if (!(cNPort::insert(__q, __ex) && (trunkMembers.size() == updateTrunkMembers(__q, __ex)))) return false;
     bool r = true;
     if (!vlans.isEmpty()) {
-        vlans.setId(cPortVlan::_ixPortId, getId());
-        vlans.setName(cPortVlan::_ixSetType, _sManual);
+        vlans.setsId(cPortVlan::_ixPortId, getId());
+        vlans.setsName(cPortVlan::_ixSetType, _sManual);
         r = vlans.insert(__q, __ex) == vlans.size();
     }
     if (!addresses.isEmpty()) {
-        addresses.setId(cIpAddress::_ixPortId, getId());
+        addresses.setsId(cIpAddress::_ixPortId, getId());
         r = addresses.insert(__q, __ex) == addresses.size() && r;
     }
     return r;
@@ -1286,7 +1290,7 @@ bool cPatch::insert(QSqlQuery &__q, bool __ex)
     if (!cRecord::insert(__q, __ex)) return false;
     if (ports.count()) {
         ports.clearId();
-        ports.setId(_sNodeId, getId());
+        ports.setsId(_sNodeId, getId());
         int i = ports.insert(__q, __ex);
         if (i != ports.count()) return false;
         if (pShares == NULL) return true;

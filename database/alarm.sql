@@ -1,6 +1,11 @@
 
 -- //// alarm.nodes
 
+ALTER TABLE host_services     DROP CONSTRAINT IF EXISTS host_services_act_alarm_log_id_fkey;
+ALTER TABLE host_services     DROP CONSTRAINT IF EXISTS host_services_last_alarm_log_id_fkey;
+ALTER TABLE host_service_logs DROP CONSTRAINT IF EXISTS host_service_logs_superior_alarm_id_fkey;
+DROP  TABLE                                   IF EXISTS alarms;
+
 CREATE TABLE alarms (
     alarm_id        bigserial      PRIMARY KEY,
     host_service_id bigint
@@ -11,18 +16,18 @@ CREATE TABLE alarms (
     max_status      notifswitch NOT NULL,
     last_status     notifswitch NOT NULL,
     begin_time      timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    event_note     varchar(255),
-    superior_alarm  bigint     DEFAULT NULL
+    event_note      varchar(255),
+    superior_alarm_id  bigint   DEFAULT NULL
             REFERENCES alarms(alarm_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
     noalarm         boolean     NOT NULL,
     end_time        timestamp   DEFAULT NULL,
     msg_time        timestamp   DEFAULT NULL,
     alarm_time      timestamp   DEFAULT NULL,
     notice_time     timestamp   DEFAULT NULL,
-    notice_user     bigint     DEFAULT NULL
+    notice_user_id  bigint     DEFAULT NULL
         REFERENCES users(user_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
     ack_time        timestamp   DEFAULT NULL,
-    ack_user        bigint     DEFAULT NULL
+    ack_user_id     bigint      DEFAULT NULL
         REFERENCES users(user_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
     ack_msg         varchar(255)
 );
@@ -30,26 +35,30 @@ CREATE INDEX alarms_begin_time_index ON alarms (begin_time);
 CREATE INDEX alarms_end_time_index   ON alarms (end_time);
 ALTER  TABLE alarms OWNER TO lanview2;
 
+COMMENT ON TABLE  alarms                 IS 'Riasztási események táblája';
 COMMENT ON COLUMN alarms.host_service_id IS 'A riasztást kiváltó szervíz azonosítója';
-COMMENT ON COLUMN alarms.first_status IS 'A riasztás keletkezésekori státusz';
-COMMENT ON COLUMN alarms.max_status IS 'A riasztás ideje alatti legsújosabb státusz.';
-COMMENT ON COLUMN alarms.last_status IS 'Az utolsó statusz a riastás vége elött';
-COMMENT ON COLUMN alarms.begin_time IS 'A riasztás kezdetánek az időpontja';
-COMMENT ON COLUMN alarms.event_note IS 'A risztást létrehozó üzenete, ha van';
-COMMENT ON COLUMN alarms.superior_alarm IS 'A egy függő szervíz, vagy hoszt is riastásban van, akkor értéke true';
-COMMENT ON COLUMN alarms.noalarm    IS 'Ha az értesítés riasztásról le van tíltva, akkor értéke true.';
-COMMENT ON COLUMN alarms.end_time   IS 'A riasztás végének az időpontja';
-COMMENT ON COLUMN alarms.msg_time   IS 'Az off-line üzenet(ek) elküldésének az időpontja';
-COMMENT ON COLUMN alarms.alarm_time IS 'Az első on line értesítés időpontja';
-COMMENT ON COLUMN alarms.notice_time IS 'On line felhasználó észrevette/lekérte a riasztás adatait';
-COMMENT ON COLUMN alarms.notice_user IS 'Az első on-line user, aki észrevette a riasztást';
-COMMENT ON COLUMN alarms.ack_time   IS 'A riasztás on-line nyugtázásának az időpontja';
-COMMENT ON COLUMN alarms.ack_user   IS 'Az user, aki a risztást nyugtázta';
-COMMENT ON COLUMN alarms.ack_msg    IS 'A nyugtázáshoz fűzött üzenet';
+COMMENT ON COLUMN alarms.first_status    IS 'A riasztás keletkezésekori állapot';
+COMMENT ON COLUMN alarms.max_status      IS 'A riasztás ideje alatti legsújosabb állapot.';
+COMMENT ON COLUMN alarms.last_status     IS 'Az utolsó statusz a riastás vége elött';
+COMMENT ON COLUMN alarms.begin_time      IS 'A riasztás kezdetánek az időpontja';
+COMMENT ON COLUMN alarms.event_note      IS 'A risztást létrehozó üzenete, ha van';
+COMMENT ON COLUMN alarms.superior_alarm_id  IS
+    'Ha egy függő szervíz váltotta ki a riasztást, és a felsőbb szintű szolgáltatás is roasztási állpotban van, akkor annak a riasztásnak az azonosítója.';
+COMMENT ON COLUMN alarms.noalarm         IS 'Ha az értesítés riasztásról le van tíltva, akkor értéke true.';
+COMMENT ON COLUMN alarms.end_time        IS 'A riasztás végének az időpontja';
+COMMENT ON COLUMN alarms.msg_time        IS 'Az off-line üzenet(ek) elküldésének az időpontja, ha volt ilyen';
+COMMENT ON COLUMN alarms.alarm_time      IS 'Az első on line értesítés időpontja, ill. mikor jelent meg a riasztás egy futó kliens applikáción';
+COMMENT ON COLUMN alarms.notice_time     IS 'On line felhasználó észrevette/lekérte a riasztás adatait';
+COMMENT ON COLUMN alarms.notice_user_id  IS 'Az első on-line user, aki észrevette a riasztást';
+COMMENT ON COLUMN alarms.ack_time        IS 'A riasztás on-line nyugtázásának az időpontja';
+COMMENT ON COLUMN alarms.ack_user_id     IS 'Az user, aki a risztást nyugtázta';
+COMMENT ON COLUMN alarms.ack_msg         IS 'A nyugtázáshoz fűzött üzenet';
 
 ALTER TABLE host_services ADD FOREIGN KEY (act_alarm_log_id)
     REFERENCES alarms(alarm_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL;
 ALTER TABLE host_services ADD FOREIGN KEY (last_alarm_log_id)
+    REFERENCES alarms(alarm_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL;
+ALTER TABLE host_service_logs ADD FOREIGN KEY (superior_alarm_id)
     REFERENCES alarms(alarm_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL;
 
 CREATE OR REPLACE FUNCTION alarm_id2name(bigint) RETURNS TEXT AS $$
@@ -59,9 +68,8 @@ BEGIN
     IF $1 IS NULL THEN
         return NULL;
     END IF;
-    SELECT host_service_id2name(host_service_id) || ':' || max_status INTO rname
+    SELECT host_service_id2name(host_service_id) || '/' || max_status INTO rname
         FROM alarms
-        JOIN host_services USING(host_service_id)
         WHERE alarm_id = $1;
     IF NOT FOUND THEN
         PERFORM error('IdNotFound', $1, 'alarm_id', 'alarm_id2name()', 'alarms');
@@ -84,20 +92,18 @@ CREATE OR REPLACE FUNCTION set_host_status(hs host_services) RETURNS VOID AS $$
 DECLARE
     st notifswitch;
 BEGIN
-    SELECT host_service_state INTO st FROM host_services
-        WHERE node_id = hs.node_id AND delegate_host_state
-        ORDER BY host_service_state DESC LIMIT 1;
-    IF NOT FOUND THEN
-        st = 'on';
+    IF hs.delegate_host_state THEN
+        UPDATE nodes SET node_stat = hs.hard_state WHERE node_id = hs.node_id;
     END IF;
-    UPDATE nodes SET node_stat = st WHERE node_id = hs.node_id;
 END
 $$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION set_host_status(host_services) IS
+'Beállítja a node állapotás a szervíz állapot (hard_state) alapján, amennyiben a szervíz rekordban a delegate_host_stat igaz.';
 
 CREATE OR REPLACE FUNCTION check_superior_service(_hs host_services) RETURNS bigint AS $$
 DECLARE
     hs host_services;
-    n  bigint;
+    n  integer;
 BEGIN
     hs := _hs;
     n  := 0;
@@ -119,6 +125,10 @@ BEGIN
     END LOOP;
 END
 $$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION check_superior_service(host_services) IS
+'Ha egy függő szervízről van szó, akkor a felsőbb szintű szolgáltatások között keres egy ismert és
+ warning-nál magsabszintű riasztási állapotút, és annak az azonosítójával tér vissza.
+ Egyébként ill. ha nincs találat, akkor NULL-al tér vissza.';
 
 CREATE OR REPLACE FUNCTION chk_flapping(
     hsid        bigint,
@@ -131,6 +141,10 @@ BEGIN
               AND date_of > (CURRENT_TIMESTAMP - tflapp);
 END
 $$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION chk_flapping(bigint, interval, integer) IS
+'Ellenörzi, hogy az állpotváltozások billegésnek (flapping) nubősülnek-e.
+ Vagyis a megadott időintervallumban (tflapp) a hsid azonosítójü szolgáltatás állpota
+ töbszőr változott mint iflapp. Ha igen igazzal, egyébként hamis értékkel tér vissza.';
 
 CREATE OR REPLACE FUNCTION touch_host_service(
     hsid        bigint                 -- A host_services rekord id-je
@@ -147,6 +161,9 @@ BEGIN
     RETURN hs;
 END
 $$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION touch_host_service(bigint) IS
+'A megadott azonosítójú host_services rekordban a last_touched mezőt az aktuális időpontra változtatja,
+ és a módosított rekord tartalomával tér vissza';
 
 
 CREATE OR REPLACE FUNCTION set_service_stat(
@@ -235,7 +252,7 @@ BEGIN
        hs.hard_state         <> old_hs.hard_state OR
        hs.soft_state         <> old_hs.soft_state THEN
         INSERT INTO host_service_logs(host_service_id, old_state, old_soft_state, old_hard_state,
-                           new_state, new_soft_state, new_hard_state, event_note, superior_alarm, noalarm)
+                           new_state, new_soft_state, new_hard_state, event_note, superior_alarm_id, noalarm)
             VALUES  (hsid, old_hs.host_service_state, old_hs.soft_state, old_hs.hard_state,
                            hs.host_service_state, hs.soft_state, hs.hard_state, note, sup, na = 'on');
     END IF;
@@ -262,7 +279,7 @@ BEGIN
         WHEN (old_hs.host_service_state < 'warning' OR old_hs.host_service_state = 'unknown')
          AND hs.host_service_state >= 'warning' THEN
             RAISE INFO 'New alarms record';
-            INSERT INTO alarms (host_service_id, daemon_id, first_status, max_status, last_status, event_note, superior_alarm, noalarm)
+            INSERT INTO alarms (host_service_id, daemon_id, first_status, max_status, last_status, event_note, superior_alarm_id, noalarm)
                 VALUES(hsid, dmid, hs.host_service_state, hs.host_service_state, hs.host_service_state, note, sup, na = 'on' )
                 RETURNING alarm_id INTO hs.act_alarm_log_id;
         -- A helyzet fokozódik
@@ -272,7 +289,7 @@ BEGIN
                     max_status  = hs.host_service_state,
                     last_status = hs.host_service_state,
                     noalarm     = (na = 'on'),
-                    superior_alarm = sup
+                    superior_alarm_id = sup
                 WHERE alarm_id = hs.act_alarm_log_id;
         -- Alacsonyabb szint, de marad a riasztás
         WHEN old_hs.host_service_state < hs.host_service_state THEN
@@ -280,7 +297,7 @@ BEGIN
             UPDATE alarms SET
                     last_status = hs.host_service_state,
                     noalarm     = (na = 'on'),
-                    superior_alarm = sup
+                    superior_alarm_id = sup
                 WHERE alarm_id = hs.act_alarm_log_id;
         ELSE
              RAISE INFO 'No mod alarms, old_hs = %, hs = %' ,old_hs, hs;
@@ -302,7 +319,8 @@ BEGIN
     RETURN hs;
 END
 $$ LANGUAGE plpgsql;
-
+COMMENT ON FUNCTION set_service_stat(hsid bigint, state notifswitch, note varchar(255), dmid bigint) IS
+'Adminisztrálja a megadott szolgáltatás megállpított új állapotát.';
 
 
 

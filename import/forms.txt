@@ -208,28 +208,28 @@ TABLE SHAPE alarms "Riasztások" {
     SET DEFAULTS;
     TABLE TYPE simple;
     TABLE READ ONLY;
-    FIELD alarm_id      TITLE "ID"            "Riasztás egyedi azonosító kódja";
-    FIELD host_service_id TITLE "host:service" "Szolgálltatás példány";
-    FIELD daemon_id     TITLE "daemon"        "Lekérdező daemon";
-    FIELD first_status  TITLE "kezdő áll."    "Állapot a risztás kezdetekor";
-    FIELD max_status    TITLE "crit. áll."    "Legkritikusabb állapot a riasztás alatt";
-    FIELD begin_time    TITLE "kezdete"       "A kritikus esemény kezdete";
-    FIELD event_note   TITLE "üzenet"        "A riasztást dezektáló folyamat üzenete";
-    FIELD superior_alarm TITLE  "?"            "?";
-    FIELD noalarm       TITLE "letiltva"      "Az értesítés letiltása";
-    FIELD end_time      TITLE "vége"          "A kritikus esemény vége";
-    FIELD msg_time      TITLE "uzenet küldve" "A riasztási üzenet elküldésének az időpontja";
-    FIELD alarm_time    TITLE "on-line ért."  "Az on-line riasztás időpontja";
-    FIELD notice_time   TITLE "megnézte"      "Az első on-line riasztás állapot lekérdezésének az ideje.";
-    FIELD notice_user   TITLE "aki megnézte"  "Az első on-line riasztási állapot lekérdezéső felhasználó";
-    FIELD ack_time      TITLE "nyugtázva"     "A riasztás nyugtázásának az időpontja";
-    FIELD ack_user      TITLE "aki nyugtázta" "A riasztást nyugtázó felhasználó";
-    FIELD ack_msg       TITLE "megjegyzés"    "A nyugtázó megjegyzése";
+    FIELD alarm_id          TITLE "ID"            "Riasztás egyedi azonosító kódja";
+    FIELD host_service_id   TITLE "host:service" "Szolgálltatás példány";
+    FIELD daemon_id         TITLE "daemon"        "Lekérdező daemon";
+    FIELD first_status      TITLE "kezdő áll."    "Állapot a risztás kezdetekor";
+    FIELD max_status        TITLE "crit. áll."    "Legkritikusabb állapot a riasztás alatt";
+    FIELD begin_time        TITLE "kezdete"       "A kritikus esemény kezdete";
+    FIELD event_note        TITLE "üzenet"        "A riasztást dezektáló folyamat üzenete";
+    FIELD superior_alarm_id TITLE  "Függ.Figy." "Felsőbb szintű riasztás";
+    FIELD noalarm           TITLE "letiltva"      "Az értesítés letiltása";
+    FIELD end_time          TITLE "vége"          "A kritikus esemény vége";
+    FIELD msg_time          TITLE "uzenet küldve" "A riasztási üzenet elküldésének az időpontja";
+    FIELD alarm_time        TITLE "on-line ért."  "Az on-line riasztás időpontja";
+    FIELD notice_time       TITLE "megnézte"      "Az első on-line riasztás állapot lekérdezésének az ideje.";
+    FIELD notice_user_id    TITLE "aki megnézte"  "Az első on-line riasztási állapot lekérdezéső felhasználó";
+    FIELD ack_time          TITLE "nyugtázva"     "A riasztás nyugtázásának az időpontja";
+    FIELD ack_user_id       TITLE "aki nyugtázta" "A riasztást nyugtázó felhasználó";
+    FIELD ack_msg           TITLE "megjegyzés"    "A nyugtázó megjegyzése";
 
-    FIELD host_service_id, daemon_id, max_status, event_note, noalarm, notice_user, ack_user, ack_msg ADD FILTERS begin, like, similar, regexp, regexpi;
+    FIELD host_service_id, daemon_id, max_status, event_note, noalarm, notice_user_id, ack_user_id, ack_msg ADD FILTERS begin, like, similar, regexp, regexpi;
     FIELD begin_time, end_time, msg_time, alarm_time, notice_time, ack_time ADD FILTERS big, litle, interval;
     FIELD begin_time ORD desc, asc, no;
-    FIELD end_time, msg_time, alarm_time, notice_time, notice_user, ack_time, ack_user, ack_msg ORD no, desc, asc;
+    FIELD end_time, msg_time, alarm_time, notice_time, notice_user_id, ack_time, ack_user_id, ack_msg ORD no, desc, asc;
     $DefRights
 }
 
@@ -327,6 +327,27 @@ TABLE SHAPE sys_params "Rendszer paraméterek" {
     $DefRights
 }
 
+DELETE TABLE SHAPE users;
+TABLE SHAPE users "felhasználók" {
+    SET DEFAULTS;
+    TABLE TYPE simple;
+    $DefRights
+}
+
+DELETE TABLE SHAPE groups;
+TABLE SHAPE groups "felhasználói csoportok" {
+    SET DEFAULTS;
+    TABLE TYPE simple;
+    $DefRights
+}
+
+DELETE TABLE SHAPE place_groups;
+TABLE SHAPE place_groups "Hely és helyiség csoportok / Zónák" {
+    SET DEFAULTS;
+    TABLE TYPE simple;
+    $DefRights
+}
+
 DELETE GUI lv2gui MENU;
 
 GUI lv2gui {
@@ -336,6 +357,11 @@ GUI lv2gui {
     param_types SHAPE   param_types     "Paraméter típus leírók";
     restart     EXEC    restart         "Újraindítás";
     exit        EXEC    exit            "Kilép";
+  }
+  userss MENU "Felhasználók" {
+      users     SHAPE   users           "Felhasználók";
+      groups    SHAPE   groups          "Felhasználói csoportok";
+      zones     SHAPE   place_groups    "Zónák";
   }
   objects MENU "Objektumok" {
     patchs      SHAPE   patchs          "Patch panelek";

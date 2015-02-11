@@ -20,6 +20,7 @@
 #include "lv2daterr.h"
 #include "lv2xml.h"
 #include "scan.h"
+#include "lv2user.h"
 
 #define ORGNAME     "LanView"
 #define ORGDOMAIN   ""
@@ -244,6 +245,7 @@ public:
     cService       *pSelfService;       ///< Saját service objektum pointere, vagy NULL, ha me, ismeretlen
     cHostService   *pSelfHostService;   ///< Saját service példány objektum pointere, vagy NULL, ha nem ismeretlen
     bool            setSelfStateF;      ///< Ha igaz, akkor kilépéskor (destruktor) be kell állítani az aktuális sservice példány állapotát.
+    cUser          *pUser;              ///< A felhasználót azonosító objektum pointere, vagy NULL
 
     static QString    appName;          ///< Az APP neve
     static short      appVersionMinor;  ///< Az APP al verzió száma
@@ -307,5 +309,17 @@ EXT_ int IPV4Pol(const QString& n, bool __ex = true);
 
 EXT_ const QString& IPV6Pol(int e, bool __ex = true);
 EXT_ int IPV6Pol(const QString& n, bool __ex = true);
+
+/// @class cLv2QApp
+/// Saját QApplication osztály, a hiba kizárások elkapásához (újra definiált notify() metódus.)
+class cLv2QApp : public QCoreApplication {
+public:
+    /// Konstruktor. Nincs saját inicilizálás, csak a QApplication konstrujtort hívja.
+    cLv2QApp(int& argc, char ** argv);
+    ~cLv2QApp();
+    /// Az újra definiált notify() metódus.
+    /// Az esetleges kizárásokat is elkapja.
+    virtual bool notify(QObject * receiver, QEvent * event);
+};
 
 #endif // LANVIEW_H

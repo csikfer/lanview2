@@ -59,7 +59,11 @@ int findArg(const QChar& __c, const QString& __s, const QStringList &args)
 /// Default debug level
 qlonglong lanView::debugDefault = cDebug::DERROR | cDebug::WARNING | cDebug::INFO | cDebug::VERBOSE | cDebug::LV2;
 lanView  *lanView::instance     = NULL;
+#if defined(Q_OS_UNIX) || defined(Q_OS_LINUX)
 bool      lanView::snmpNeeded   = true;
+#else
+bool      lanView::snmpNeeded   = false;
+#endif
 bool      lanView::sqlNeeded    = true;
 bool      lanView::gui          = false;
 const QString lanView::orgName(ORGNAME);
@@ -99,6 +103,7 @@ lanView::lanView()
     pSelfNode = NULL;
     pSelfService = NULL;
     pSelfHostService = NULL;
+    pUser = NULL;
     setSelfStateF = false;
 
 
@@ -545,4 +550,42 @@ int IPV6Pol(const QString& n, bool __ex)
     return IPV6_UNKNOWN;
 }
 
+cLv2QApp::cLv2QApp(int& argc, char ** argv) : QCoreApplication(argc, argv)
+{
+    lanView::gui = false;
+}
 
+
+cLv2QApp::~cLv2QApp()
+{
+    ;
+}
+
+bool cLv2QApp::notify(QObject * receiver, QEvent * event)
+{
+    static cError *lastError = NULL;
+    try {
+        return QCoreApplication::notify(receiver, event);
+    }
+    catch(no_init_&) { // Már letiltottuk a cError dobálást
+        PDEB(VERBOSE) << "Dropped cError..." << endl;
+        return false;
+    }
+    CATCHS(lastError)
+/*    PDEB(DERROR) << "Error in "
+                 << __PRETTY_FUNCTION__
+                 << endl;
+    PDEB(DERROR) << "Receiver : "
+                 << receiver->objectName()
+                 << "::"
+                 << typeid(*receiver).name()
+                 << endl;
+    PDEB(DERROR) << "Event : "
+                 << typeid(*event).name()
+                 << endl; Ettől kiakad :-O ! */
+    cError::mDropAll = true;                    // A továbbiakban nem *cError-al dobja a hibákat, hanem no_init_ -el
+    lanView::getInstance()->lastError = lastError;
+    DERR() << lastError->msg() << endl;
+    QCoreApplication::exit(lastError->mErrorCode);  // kilépünk.
+    return false;
+}

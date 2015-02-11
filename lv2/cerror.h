@@ -102,11 +102,11 @@ ebben a névtérben kell definiálni. Az alap hiba kódokat az LV2_errcodes.h fe
 @include "LV2_errcodes.h"
 A fejállományban az ERRCOD és ERRCODE makrók első paramétere a hiba kód enumerációs konstans, a második paraméter pedig a
 hozzá tartozó szöveges hiba string. A hiba kódokat tartalmazó fejállomány deklarációkor egy névtelen enumeráció törzsében
-lessz kifelytve. Ekkor a mésodik paramétert az aktuális ERRCOD ill. ERRCODE makró eldobja, és csak az enumerációs konstans
+lessz kifelytve. Ekkor a második paramétert az aktuális ERRCOD ill. ERRCODE makró eldobja, és csak az enumerációs konstans
 neve fejtődik ki az ERRCOD-ban, ill. az ERRCODE egy értékadást is tartalmaz az enumerációs értékre.
 A hibakódokat tartalmazó fejállományt az errcodes.h-n keresztül lehet behúzni. Ebben a __MODUL_NAME__ konstans
 alapján kerül behúzásra a hibakódokat tartalmazó állomány. Ha az errcodes.h állományt másodszor is behúzzuk,
-akkor az ERRCOD és ERRCODE máshogy fejtődnek ki (fefiníciós mód). Az állományt egy inicializáló fügvény törzsébe kell
+akkor az ERRCOD és ERRCODE máshogy fejtődnek ki (definíciós mód). Az állományt egy inicializáló fügvény törzsébe kell
 beilleszteni, ekkor a hibakódhosz tartozó hiba stringek beillesztődnek a cErrot objektum hibaüzenet konténerébe,
 lehetővé téve hiba esetén a új hibakód szöveges megjelenítését.
 Új hibakódok deklazációja (praktukusan egy fej állományban):
@@ -115,13 +115,16 @@ lehetővé téve hiba esetén a új hibakód szöveges megjelenítését.
 #include "cerror.h"
 #undef  __MODUL_NAME__
 #define __MODUL_NAME__  MODX
+
 #include "errcodes.h"
 @endcode
 A fenti esetben a modul név MODX, és a konkrét hiba kódokat és stringeket a MODX_errcodes.h fejállományba kell elhelyezni
 pl.:
 @code
-ERRCODE( MODX_HIBA_A,   "'A' hiba a MODX-ben", 101)
+ERRCODE( MODX_HIBA_A,   "'A' hiba a MODX-ben", __LAST_ERROR_CODE__ +1)
 ERRCOD(  MODX_HIBA_B,   "'B' hiba a MODX-ben")
+#undef  __LAST_ERROR_CODE__
+#define __LAST_ERROR_CODE__ MODX_HIBA_B
 @endcode
 Ezzel további két hiba konstan-t definiáltunk az eError névtérben.
 Ha azt akarjuk, hogy a cError objektum a fenti hiba kódoknál az ismeretlen hibakód helyett a fenti szövehget
@@ -145,9 +148,8 @@ Az ERRCODE és az ERRCOD két arcú makrók. Az errcodes.h első behúzásakor e
 Második alkalommal pedig egy függvényhívás, ami a CError objektum hiba string konténerébe beilleszti a hibakodhoz a
 hiba stringet.
 A cerror.h fejállomány egyszer behuzza a errcodes.h fejállományt, ekkor a __MODUL_NAME__ értéke LV2.
-Ugyanezzel a modul névvel mégegyszer nem szabad beilleszteni (csak a cerror.cpp-ben).
-Ujra definiálva a modul nevet, majd beillesztve az ercodes.h állományt az elöszőr megint egy enumerációt deklarációját
-fogja beilleszteni. És második (összesen ugye harmadik, de azonos modul névvel a második) beillesztésnél illeszti
+Ujra definiálva a modul nevet, és törölva a ERCODES_H_DEFINE makrót, majd beillesztve az ercodes.h állományt az elöszőr megint egy enumerációt deklarációját
+fogja beilleszteni. És második (összesen ugye harmadik, de töröltük ERCODES_H_DEFINE -t) beillesztésnél illeszti
 be a függvényhívásokat a hiba string konténerének az új hibastringekkel való kiegészítéséhez.
 @param  id  A hiba kód konstans neve (egy névtelen  enumeráció lista elemeként lessz deklarálva az eError névtérben).
 @param title    A hibakódhoz tartozó hiba szting (A numerikus kód mellett ez is belekerül a hiba üzenetbe, megkünyítve a hiba értelmezését.

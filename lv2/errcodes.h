@@ -8,23 +8,11 @@
  #error Az ercodes.h hibás használata. ERRCODES_H_DEFINE már definiálva van. Töbszörös beillesztés?
 #endif
 
-// Ha megváltorott a modul név, akkor 'reset'
-#ifdef ERRCODES_H_DECLARE
-  #if ERCODES_H_DECLARE_MOD != __MODUL_NAME__
-    #undef ERRCODES_H_DECLARE_MOD
-  #endif
-#endif
-
-#ifdef ERRCOD
-  #undef ERRCOD
-#endif
-
-#ifdef ERRCODE
-  #undef ERRCODE
-#endif
-
+#undef ERRCOD
+#undef ERRCODE
 
 #ifndef ERCODES_H_DECLARE
+  #undef ERCODES_H_DEFINE
   #define ERCODES_H_DECLARE_MOD __MODUL_NAME__
   #define ERRCOD(id, title)       id,
   #define ERRCODE(id, title, i)   id = i,
@@ -59,6 +47,8 @@
 
  #define ERCODES_H_DECLARE
 
+#else
+  #define ERCODES_H_DEFINE
 #endif
 
 #undef ERRCOD

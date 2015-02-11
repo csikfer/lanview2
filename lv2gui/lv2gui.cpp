@@ -9,20 +9,21 @@
 
 void setAppHelp()
 {
-    ;
+    lanView::appHelp += QObject::trUtf8("-s|--setup            Setup.\n");
 }
 
 int main(int argc, char * argv[])
 {
     cError * pe = NULL;
-    cLv2QApp app(argc, argv);
+    cLv2GQApp app(argc, argv);
 
     SETAPP();
     lanView::gui = true;
     lanView::snmpNeeded = false;
-    lanView::sqlNeeded  = false;    // Csak késöbb nyitunk adatbázist, hogy lehessen setup-olni.
-
-    initLV2GUI();
+    if (0 <= findArg(QChar('s'),QString("setup"), app.arguments())) {
+        lv2Gui::_setup = true;
+    }
+    lanView::sqlNeeded  = !lv2Gui::_setup;
 
     lv2Gui   mo;
 
@@ -35,7 +36,6 @@ int main(int argc, char * argv[])
             app.exec();
         } CATCHS(pe);
     }
-//  if (app.pAppErr != NULL) pe = app.pAppErr;
     if (pe != NULL) {
         PDEB(INFO) << "**** ERROR ****" << endl;
         cErrorMessageBox::messageBox(pe);
@@ -45,14 +45,14 @@ int main(int argc, char * argv[])
     exit(0);
 }
 
-lv2Gui::lv2Gui() : lanView()
+bool lv2Gui::_setup = false;
+lv2Gui::lv2Gui() : lv2g()
 {
     DBGFN();
     pMainWindow = NULL;
     if (!lastError) {
         try {
-            dbIsOpen = lanView::openDatabase(false);
-            pMainWindow = new cMainWindow(!dbIsOpen);
+            pMainWindow = new cMainWindow(_setup);
             pMainWindow->show();
         } CATCHS(lastError)
     }

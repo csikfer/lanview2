@@ -34,7 +34,7 @@ public:
     /// Konstruktor. Egy elemű rekord listát hoz létre (T a rekord objektum típus)
     tRecordList(T * __p) : QList<T *>()
     {
-        append(__p);
+        this->append(__p);
     }
     /// Konstruktor. Egy elemű listát hoz létre
     /// A paraméterként megadott objektumról másolatot készít.
@@ -111,7 +111,10 @@ public:
     void insert(int i, const T& _o) { insert(i, dynamic_cast<T *>(_o.dup())); }
 
     /// Beolvassa az összes olyan rekordot, mely megfelel a pointerként átadott
-    /// objektum megadott mezőinek. Csak egyenlőségre szűr.
+    /// objektum megadott mezőinek. Csak egyenlőségre szűr, kivébe, ha beállítjuk a *p objektumban a likeMask bitjeit.
+    /// A metódus akkor is használható, ha a template osztály onmagában nem azonosítja a kezelt adattáblát,
+    /// de csak olyan *p objektummal hívhatjuk, ami egyértelműen azonosítja azt. cAlternate esetén
+    /// ha a *p faceless, akkor hibát fog generálni a hívás.
     /// @param __q query objektum, amivel a lekérdezés elvégezhető.
     /// @param __only Ha a leszármazottakban nem kell keresni, akkor értéke true.
     /// @param fm Bit map a szűrésben réstvevő mezőkre.
@@ -123,7 +126,7 @@ public:
         if (p->fetch(__q, __only, fm)) {
             this->append(p);
             while (__q.next()) {
-                p = new T();
+                p = dynamic_cast<T *>(p->newObj());
                 p->set(__q.record());
                 this->append(p);
             }
@@ -133,8 +136,19 @@ public:
         }
         return QList<T *>::count();
     }
+    ///
+    int fetchByNamePattern(QSqlQuery& __q, const QString& __pat, bool __only = false, T *p = NULL)
+    {
+        if (!p) p = new T();
+        p->clear();
+        p->likeMask = p->mask(p->nameIndex());
+        p->setName(__pat);
+        return fetch(__q, __only, p->likeMask, p);
+
+    }
     /// Beolvassa az összes olyan rekordot, melynek a megadott indexű numerikus mezője egyezik a megadott id-vel
-    /// Az objektumot (konténert) elötte kiüríti.
+    /// Az objektumot (konténert) elötte kiüríti. A T template osztálynak egyértelműen azonosítania kell a
+    /// kezelt adattáblát, pl. a cAlternate osztály esetén hibát fog generálni a metódus.
     /// @param __q query objektum, amivel a lekérdezés elvégezhető.
     /// @param __only
     /// @param __fn A numerikus mező indexe.
@@ -147,7 +161,8 @@ public:
         return fetch(__q, __only, fm, p);
     }
     /// Beolvassa az összes olyan rekordot, melynek a megadott nevű numerikus mezője egyezik a megadott id-vel
-    /// Az objektumot (konténert) elötte kiüríti.
+    /// Az objektumot (konténert) elötte kiüríti. A T template osztálynak egyértelműen azonosítania kell a
+    /// kezelt adattáblát, pl. a cAlternate osztály esetén hibát fog generálni a metódus.
     /// @param __q query objektum, amivel a lekérdezés elvégezhető.
     /// @param __only
     /// @param __fn A numerikus mező neve.
@@ -159,7 +174,7 @@ public:
         p->set(__fn, QVariant(__id));
         return fetch(__q, __only, fm, p);
     }
-    /// Kiírja az adatbázisba az összes elemet az INSERT utasítással ld.: cRecord::insert(QSqlQuery& __q, bool __ex)
+    /// Kiírja az adatbázisba az összes elemet az INSERT utasítással ld.: cRecord::insert()
     /// @return A sikeresen kiírt rekordszámmal tér vissza.
     int insert(QSqlQuery& __q, bool __ex = true)  {
         int r = 0;
@@ -170,7 +185,17 @@ public:
         }
         return r;
     }
-
+    /// törli az adatbázisból az összes elemet az REMOVE utasítással ld.: cRecord::remove()
+    /// @return A sikeresen törölt rekordszámmal tér vissza.
+    int remove(QSqlQuery& __q, bool __ex = true)  {
+        int r = 0;
+        typename QList<T *>::const_iterator    i;
+        for (i = QList<T *>::constBegin(); i < QList<T *>::constEnd(); i++) {
+            PDEB(VERBOSE) << "Remove from db : " << (*i)->toString() << endl;
+            if ((*i)->remove(__q, false, QBitArray(), __ex)) ++r;
+        }
+        return r;
+    }
     /// Keresés ID alapján.
     /// @param __id A keresett id.
     /// @return A listában megtaéállt első lista elem sorszáma, vagy -1, ha nem talállt semmit.
@@ -264,7 +289,7 @@ public:
     /// Egy mező értékének a beállítása az összes elemnél a megadott értékre
     /// @param __i A beállítandó mező indexe
     /// @param __v A mező új értéke
-    void set(int __i, const QVariant& __v) {
+    void sets(int __i, const QVariant& __v) {
         typename QList<T *>::const_iterator    i;
         for (i = QList<T *>::constBegin(); i < QList<T *>::constEnd(); i++) {
             (*i)->set(__i, __v);
@@ -273,7 +298,7 @@ public:
     /// Egy mező értékének a beállítása az összes elemnél a megadott értékre
     /// @param __n A beállítandó mező neve
     /// @param __v A mező új értéke
-    void set(const QString& __n, const QVariant& __v) {
+    void sets(const QString& __n, const QVariant& __v) {
         typename QList<T *>::const_iterator    i;
         for (i = QList<T *>::constBegin(); i < QList<T *>::constEnd(); i++) {
             (*i)->set(__n, __v);
@@ -282,7 +307,7 @@ public:
     /// Egy ID típusú mező értékének a beállítása az összes elemnél a megadott értékre
     /// @param __i A beállítandó mező indexe
     /// @param __id A mező új értéke
-    void setId(int __i, qlonglong __id) {
+    void setsId(int __i, qlonglong __id) {
         typename QList<T *>::const_iterator    i;
         for (i = QList<T *>::constBegin(); i < QList<T *>::constEnd(); i++) {
             (*i)->setId(__i, __id);
@@ -291,7 +316,7 @@ public:
     /// Egy ID típusú mező értékének a beállítása az összes elemnél a megadott értékre
     /// @param __n A beállítandó mező neve
     /// @param __id A mező új értéke
-    void setId(const QString& __n, qlonglong __id) {
+    void setsId(const QString& __n, qlonglong __id) {
         typename QList<T *>::const_iterator    i;
         for (i = QList<T *>::constBegin(); i < QList<T *>::constEnd(); i++) {
             (*i)->setId(__n, __id);
@@ -300,7 +325,7 @@ public:
     /// Egy text típusú mező értékének a beállítása az összes elemnél a megadott értékre
     /// @param __i A beállítandó mező indexe
     /// @param __v A mező új értéke
-    void setName(int __i, const QString& __v) {
+    void setsName(int __i, const QString& __v) {
         typename QList<T *>::const_iterator    i;
         for (i = QList<T *>::constBegin(); i < QList<T *>::constEnd(); i++) {
             (*i)->setName(__i, __v);
@@ -309,7 +334,7 @@ public:
     /// Egy text típusú mező értékének a beállítása az összes elemnél a megadott értékre
     /// @param __n A beállítandó mező neve
     /// @param __v A mező új értéke
-    void setName(const QString& __n, const QString& __v) {
+    void setsName(const QString& __n, const QString& __v) {
         typename QList<T *>::const_iterator    i;
         for (i = QList<T *>::constBegin(); i < QList<T *>::constEnd(); i++) {
             (*i)->setName(__n, __v);
@@ -552,7 +577,7 @@ public:
     /// További member rekordokat a nextMember() metődussal olvashatunk be.
     /// @param __q Az adabázisművelethez használt QSqlQuery objektum.
     /// @return True, ha volt legalább egy meber, false, ha nem.
-    bool fetchMembers(QSqlQuery& __q) {
+    bool fetchFirstMember(QSqlQuery& __q) {
         QString sql = QString("SELECT * FROM %1 JOIN $2 USING($3) WHERE %4 = %5")
                 .arg(tableName()).arg(member.tableName).arg(memberIdName())
                 .arg(groupIdName()).arg(group.getId());
@@ -569,10 +594,10 @@ public:
     QSqlQuery   q = getQuery();
     if (!ugSw.group.fetchByName(q, "mindenki")) DERR("Nincs ,imdenki nevű csoport.");
     else {
-        if (ugSw.fetchMembers(q) {
+        if (ugSw.fetchFirstMember(q)) {
             do {
                 PDEB(VERBOSE) << ugSw.user.getName() << endl;
-            while (ugSw.nextMembers(q));
+            } while (ugSw.fetchNextMember(q));
         }
         else {
             DERR("Nincs egyetlen tagja sem a, midenki nevű csoportnak.");
@@ -583,7 +608,7 @@ public:
     /// @param __q Az adabázisművelethez használt QSqlQuery objektum, amit a fetchMeber() metődusnál is használltunk,
     ///          ill. ami au ott kezdeményezett lekérdezés eredményét tartalmazza.
     /// @return Ha be tudott olvasni további member rekordot, akkor true, egyébként false.
-    bool nextMember(QSqlQuery& __q) {
+    bool fetchNnextMember(QSqlQuery& __q) {
         if (__q.next()) member.set(__q);
         else            member.set();
         return !member.isEmpty();
@@ -594,7 +619,7 @@ public:
     /// Ha viszont nincsenek groupok, akkor törli a group adattagot.
     /// @param __q Az adabázisművelethez használt QSqlQuery objektum.
     /// @return True, ha volt legalább egy group, false, ha nem.
-    bool fetchGroups(QSqlQuery& __q) {
+    bool fetchFirstGroup(QSqlQuery& __q) {
         QString sql = QString("SELECT * FROM %1 JOIN $2 USING($3) WHERE %4 = %5")
                 .arg(tableName()).arg(group.tableName).arg(groupIdName())
                 .arg(groupIdName()).arg(member.getId());
@@ -606,7 +631,7 @@ public:
     /// A fetchGroup(QSqlQuery& __q) metódus hívása után a további group rekordok beolvasása
     /// @param __q Az adabázisművelethez használt QSqlQuery objektum.
     /// @return Ha be tudott olvasni további group rekordot, akkor true, egyébként false.
-    bool nextGroup(QSqlQuery& __q) {
+    bool fetchNextGroup(QSqlQuery& __q) {
         if (__q.next()) group.set(__q);
         else            group.set();
         return !member.isEmpty();
@@ -657,6 +682,50 @@ public:
         }
         return true;
     }
+    /// Beolvassa a megadott group objektum összes tagját
+    /// @param q Az adabázisművelethez használt QSqlQuery objektum.
+    /// @param g A group tíousú objektum lsd,: fetchFirstMember() metódust.
+    static tRecordList<M> fetchMembers(QSqlQuery& q, const G& g) {
+        tRecordList<M>  r;
+        tGroup<G, M>    gm;
+        gm = g;
+        if (gm.fetchFirstMember(q)) {
+            do {
+                r << gm.member;
+            } while (gm.fetchNnextMember(q));
+        }
+        return r;
+    }
+    /// Beolvassa a megadott group objektum összes tagját
+    /// @param q Az adabázisművelethez használt QSqlQuery objektum.
+    /// @param gid A group tíousú objektum ID-je.
+    static tRecordList<M> fetchMembers(QSqlQuery& q, qlonglong gid)     { return fetchMembers(q, G().setById(q, gid)); }
+    /// Beolvassa a megadott group objektum összes tagját
+    /// @param q Az adabázisművelethez használt QSqlQuery objektum.
+    /// @param gn A group tíousú objektum neve.
+    static tRecordList<M> fetchMembers(QSqlQuery& q, const QString& gn) { return fetchMembers(q, G().setByname(q, gn)); }
+    /// Beolvassa a megadott member objektum összes csoportját, aminek tagja
+    /// @param q Az adabázisművelethez használt QSqlQuery objektum.
+    /// @param m A member tíousú objektum lsd.: fetchFirstGroup() metüdust.
+    static tRecordList<G> fetchGroups(QSqlQuery& q, const M& m) {
+        tRecordList<G>  r;
+        tGroup<G, M>    gm;
+        gm = m;
+        if (gm.fetchFirstGroup(q)) {
+            do {
+                r << gm.group;
+            } while (gm.fetchNextGroup(q));
+        }
+        return r;
+    }
+    /// Beolvassa a megadott member objektum összes csoportját, aminek tagja
+    /// @param q Az adabázisművelethez használt QSqlQuery objektum.
+    /// @param mid A member tíousú objektum ID-je
+    static tRecordList<M> fetchGroups(QSqlQuery& q, qlonglong mid)     { return fetchGroups(q, G().setById(q, mid)); }
+    /// Beolvassa a megadott member objektum összes csoportját, aminek tagja
+    /// @param q Az adabázisművelethez használt QSqlQuery objektum.
+    /// @param mn A member tíousú objektum neve
+    static tRecordList<M> fetchGroups(QSqlQuery& q, const QString& mn) { return fetchGroups(q, G().setByname(q, mn)); }
 };
 
 

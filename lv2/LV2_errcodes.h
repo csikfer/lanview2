@@ -27,6 +27,7 @@ ERRCOD( ENOFIELD,    "Field is not found in table")
 ERRCOD( EDBDATA,     "Database content error"      )
 ERRCOD( EENUMVAL,    "Invalid enumeration vallue")
 ERRCOD( EOUTRANGE,   "Value out off range.")
+ERRCOD( EUNOQUE,     "Non-unique identifier.")
 ERRCOD( ETO,         "Time out"                )
 ERRCOD( EXML,        "XML error"                     )
 ERRCOD( EPROCCRE,    "Process crashed")
@@ -39,3 +40,5 @@ ERRCOD( AMBIGUOUS,   "Ambiguous")
 ERRCOD( NOTODO,      "Nothing to do.")
 ERRCOD( ENOENV,      "Environment variable not found.")
 ERRCOD( ESOCKET,     "Communication (socket). error.")
+
+#define __LAST_ERROR_CODE__  ESOCKET

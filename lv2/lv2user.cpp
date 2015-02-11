@@ -19,12 +19,22 @@ void cUser::updatePassword(QSqlQuery& q, const QString &__passwd)
 
 bool cUser::checkPassword(QSqlQuery& q, const QString &__passwd) const
 {
-    QString sql = "SELECT user_id FROM users WHERE user_id = :uid AND passwd = crypt(:pass, passwd) AND enabled";
-    if (!q.prepare(sql)) SQLPREPERR(q, sql);
-    q.bindValue(":uid", getId());
+    QString sql;
+    if (isNullId()) {
+        if (isNullName()) EXCEPTION(EDATA);
+        sql = "SELECT user_id FROM users WHERE user_name = :uname AND passwd = crypt(:pass, passwd) AND enabled";
+        if (!q.prepare(sql)) SQLPREPERR(q, sql);
+        q.bindValue(":uname", getName());
+
+    }
+    else {
+        sql = "SELECT user_id FROM users WHERE user_id = :uid AND passwd = crypt(:pass, passwd) AND enabled";
+        if (!q.prepare(sql)) SQLPREPERR(q, sql);
+        q.bindValue(":uid", getId());
+    }
     q.bindValue(":pass", __passwd);
     if (!q.exec()) SQLQUERYERR(q);
-    return q.first();
+    return q.first() && getId() == q.value(0).toLongLong();
 }
 
 bool cUser::checkPasswordAndFetch(QSqlQuery& q, const QString &__passwd, qlonglong __id)

@@ -253,12 +253,12 @@ CREATE TABLE host_service_logs (
     new_soft_state      notifswitch     NOT NULL,
     new_hard_state      notifswitch     NOT NULL,
     event_note          varchar(255)    DEFAULT NULL,
-    superior_alarm      bigint          DEFAULT NULL,
+    superior_alarm_id   bigint          DEFAULT NULL,
     noalarm             boolean         NOT NULL
 );
 CREATE INDEX host_service_logs_date_of_index ON host_service_logs (date_of);
 ALTER TABLE host_service_logs OWNER TO lanview2;
-COMMENT ON TABLE host_service_logs IS 'Hoszt szervízek státusz változásainak a log táblája';
+COMMENT ON TABLE host_service_logs IS 'Host szervízek státusz változásainak a log táblája';
 
 CREATE TABLE host_service_noalarms (
     host_service_noalarm_id bigserial   PRIMARY KEY,
@@ -271,7 +271,7 @@ CREATE TABLE host_service_noalarms (
 );
 CREATE INDEX host_service_noalarms_date_of_index ON host_service_noalarms (date_of);
 ALTER TABLE host_service_noalarms OWNER TO lanview2;
-COMMENT ON TABLE host_service_noalarms IS 'Hoszt szervízek riasztásainak a letiltását loggoló tábla';
+COMMENT ON TABLE host_service_noalarms IS 'Host szervízek riasztásainak a letiltását loggoló tábla';
 COMMENT ON COLUMN host_service_noalarms.date_of IS 'A tiltás megadásának az időpontja';
 COMMENT ON COLUMN host_service_noalarms.host_service_id IS 'A tiltott szolgáltatás azonosító';
 COMMENT ON COLUMN host_service_noalarms.noalarm_flag IS 'A tiltás típusa';

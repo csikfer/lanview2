@@ -7,12 +7,12 @@ ALTER TYPE tableshapetype OWNER TO lanview2;
 COMMENT ON TYPE tableshapetype IS
 'table shape típusa:
 no          Csak dialógus
-simple      Egyszerű tála.
+simple      Egyszerű tábla.
 tree        Fa struktúrájú objektumok
 owner       A tábla egy másik tábla tulajdonosa (pl a ''nodes'' az ''nports'' -nak)
 child       A tábla egy owner táblához tartozik
-switch      Kapcsoló tábla
-link        Link tábla';
+switch      Kapcsoló tábla (maga a kapcsoló tábla láthatatlan, csak a kapcsolatokat reprezentálja)
+link        Link tábla (Adattartalommal is rendelkező kapcsoló tábla)';
 
 CREATE TYPE tableinherittype AS ENUM ('no', 'only', 'on', 'all', 'reverse', 'listed', 'listed_rev', 'listed_all');
 ALTER TYPE tableinherittype OWNER TO lanview2;
@@ -52,7 +52,7 @@ ALTER TABLE table_shapes OWNER TO lanview2;
 COMMENT ON TABLE  table_shapes                      IS 'Tábla megjelenítő lírók (Qt GUI) táblája';
 COMMENT ON COLUMN table_shapes.table_shape_id       IS 'Egyedi azonosító ID';
 COMMENT ON COLUMN table_shapes.table_shape_name     IS 'A shape neve, egyedi azonosító';
-COMMENT ON COLUMN table_shapes.table_shape_note    IS 'A shape leírása ill. megjegyzés.';
+COMMENT ON COLUMN table_shapes.table_shape_note     IS 'A shape leírása ill. megjegyzés.';
 COMMENT ON COLUMN table_shapes.table_shape_title    IS 'A shape megjelenítésekor megjelenő táblázat cím.';
 COMMENT ON COLUMN table_shapes.table_shape_type     IS 'A listázandó objektum típusa.';
 COMMENT ON COLUMN table_shapes.table_name           IS 'A shape álltal megjelenítendő tábla neve';
@@ -85,7 +85,7 @@ CREATE TABLE table_shape_fields (
     ord_init_sequence_number bigint         DEFAULT NULL,
     is_read_only            boolean         DEFAULT 'f',
     is_hide                 boolean         DEFAULT 'f',
-    id2name                 varchar(32)     DEFAULT NULL,
+    expression              varchar(255)    DEFAULT NULL,
     default_value           varchar(255)    DEFAULT NULL,
     properties              varchar(255)    DEFAULT NULL,
     view_rights             rights          DEFAULT 'operator',
@@ -97,7 +97,7 @@ ALTER TABLE table_shape_fields OWNER TO lanview2;
 COMMENT ON TABLE  table_shape_fields                         IS 'Tábla shape oszlop leíró tábla';
 COMMENT ON COLUMN table_shape_fields.table_shape_field_id    IS 'Egyedi azonosító ID';
 COMMENT ON COLUMN table_shape_fields.table_shape_field_name  IS 'Mező név, a query-ben használt név.';
-COMMENT ON COLUMN table_shape_fields.table_shape_field_note IS 'A mező dialog box-ban megjelenő neve';
+COMMENT ON COLUMN table_shape_fields.table_shape_field_note  IS 'A mező dialog box-ban megjelenő neve';
 COMMENT ON COLUMN table_shape_fields.table_shape_field_title IS 'Megjelenített mező (oszlop) név';
 COMMENT ON COLUMN table_shape_fields.table_shape_id          IS 'Távoli kulcs a tulajdonos rekordra.';
 COMMENT ON COLUMN table_shape_fields.field_sequence_number   IS 'A mező sorrendje a táblázatban / dialog boxban';
@@ -107,7 +107,7 @@ COMMENT ON COLUMN table_shape_fields.ord_init_sequence_number IS 'Opcionális, a
 COMMENT ON COLUMN table_shape_fields.is_read_only            IS 'Mindenképpen csak olvasható mező, ha értéke true';
 COMMENT ON COLUMN table_shape_fields.is_hide                 IS 'A táblázatos megjelenítésnél rejtett';
 COMMENT ON COLUMN table_shape_fields.default_value           IS 'Egy opcionális default érték.';
-COMMENT ON COLUMN table_shape_fields.id2name                 IS 'Egy opcionális SQL függvény az ID mező stringgé konvertálásához';
+COMMENT ON COLUMN table_shape_fields.expression              IS 'Egy opcionális SQL kifelyezés a mező értékére';
 COMMENT ON COLUMN table_shape_fields.properties              IS 'További paraméterek.';
 COMMENT ON COLUMN table_shape_fields.view_rights             IS 'Minimális jogosultsági szint a mező megtekintéséhez';
 COMMENT ON COLUMN table_shape_fields.edit_rights             IS 'Minimális jogosultsági szint a mező szerkestéséhez';

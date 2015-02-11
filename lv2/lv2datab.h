@@ -642,14 +642,14 @@ public:
     QBitArray mask(const QString& __n1, const QString& __n2, const QString& __n3, const QString& __n4) const
         { QBitArray m = mask(__n1, __n2, __n3); m.setBit(chkIndex(toIndex(__n4))); return m; }
     /// Létrehoz egy tIntVector objektumot, egy elemmel, ami a megadott mező név indexe.
-    tIntVector   iTab(const QString __n1) const                      { return ::iTab(chkIndex(toIndex(__n1))); }
+    tIntVector   iTab(const QString& __n1) const                      { return ::iTab(chkIndex(toIndex(__n1))); }
     /// Létrehoz egy tIntVector objektumot, két elemmel, ami a megadott mező nevek indexei.
-    tIntVector   iTab(const QString __n1, const QString __n2) const  { return ::iTab(chkIndex(toIndex(__n1)), chkIndex(toIndex(__n2))); }
+    tIntVector   iTab(const QString& __n1, const QString& __n2) const { return ::iTab(chkIndex(toIndex(__n1)), chkIndex(toIndex(__n2))); }
     /// Létrehoz egy tIntVector objektumot, három elemmel, ami a megadott mező nevek indexei.
-    tIntVector   iTab(const QString __n1, const QString __n2, const QString __n3) const
+    tIntVector   iTab(const QString& __n1, const QString& __n2, const QString& __n3) const
         { return ::iTab(chkIndex(toIndex(__n1)), chkIndex(toIndex(__n2)), chkIndex(toIndex(__n3))); }
     /// Létrehoz egy tIntVector objektumot, négy elemmel, ami a megadott mező nevek indexei.
-    tIntVector   iTab(const QString __n1, const QString __n2, const QString __n3, const QString __n4) const
+    tIntVector   iTab(const QString& __n1, const QString& __n2, const QString& __n3, const QString& __n4) const
         { return ::iTab(chkIndex(toIndex(__n1)), chkIndex(toIndex(__n2)), chkIndex(toIndex(__n3)), chkIndex(toIndex(__n4))); }
     /// Megvizsgálja, hogy a mező értéke lehet-e NULL.
     /// @param __ix A mező indexe.
@@ -1085,24 +1085,24 @@ public:
     cRecord& setName(const QString& __n)            { return setName(nameIndex(), __n); }
     ///
     cRecord& setBool(int __i, bool __f)             { return set(__i, QVariant(__f)); }
-    cRecord& setBool(const QString __n, bool __f)   { return set(__n, QVariant(__f)); }
+    cRecord& setBool(const QString& __n, bool __f)  { return set(__n, QVariant(__f)); }
     cRecord& setOn(int __i)                         { return setBool(__i, true); }
-    cRecord& setOn(const QString __n)               { return setBool(__n, true); }
+    cRecord& setOn(const QString& __n)              { return setBool(__n, true); }
     cRecord& setOff(int __i)                        { return setBool(__i, false); }
-    cRecord& setOff(const QString __n)              { return setBool(__n, false); }
+    cRecord& setOff(const QString& __n)             { return setBool(__n, false); }
     ///
     cRecord& setMac(int __i, const cMac& __a, bool __ex = true);
     cRecord& setMac(const QString& __n, const cMac& __a, bool __ex = true)   { return setMac(toIndex(__n), __a, __ex); }
     ///
     cRecord& enum2setOn(int __ix, int __e)                      { setId(__ix, getId(__ix) | enum2set(__e)); return *this; }
     cRecord& enum2setOn(int __ix, int _e1, int _e2)             { setId(__ix, getId(__ix) | enum2set(_e1, _e2)); return *this; }
-    cRecord& enum2setOn(const QString __n, int __e)             { enum2setOn(toIndex(__n), __e); return *this; }
-    cRecord& enum2setOn(const QString __n, int _e1, int _e2)    { enum2setOn(toIndex(__n), _e1, _e2); return *this; }
+    cRecord& enum2setOn(const QString& __n, int __e)            { enum2setOn(toIndex(__n), __e); return *this; }
+    cRecord& enum2setOn(const QString& __n, int _e1, int _e2)   { enum2setOn(toIndex(__n), _e1, _e2); return *this; }
     ///
     cRecord& enum2setOff(int __ix, int __e)                     { setId(__ix, getId(__ix) & ~enum2set(__e)); return *this; }
     cRecord& enum2setOff(int __ix, int _e1, int _e2)            { setId(__ix, getId(__ix) & ~enum2set(_e1, _e2)); return *this; }
-    cRecord& enum2setOff(const QString __n, int __e)            { enum2setOff(toIndex(__n), __e); return *this; }
-    cRecord& enum2setOff(const QString __n, int _e1, int _e2)   { enum2setOff(toIndex(__n), _e1, _e2); return *this; }
+    cRecord& enum2setOff(const QString& __n, int __e)           { enum2setOff(toIndex(__n), __e); return *this; }
+    cRecord& enum2setOff(const QString& __n, int _e1, int _e2)  { enum2setOff(toIndex(__n), _e1, _e2); return *this; }
     /// Az ID mezőket hasonlítja össze. Ha nincs vagy nem ismert az ID mező, akkor dob egy kizárást.
     /// Nem ellenőrzi, hogy a két objektum valójában milyen típusú, akkor is elvégzi az összehasonlítást, ha ez logikailag értelmetlen.
     /// Ha az ID értéke NULL, akkor az kisebb minden lehetséges ID értéknél.
@@ -1403,13 +1403,13 @@ public:
     /// A bit vektornak annyi eleme lesz, ahány mező van a táblában, és a megadott mezőnevekkel azonos indexű bitek 1-be lesznek állítva.
     QBitArray mask(const QString& __n1, const QString& __n2, const QString& __n3, const QString& __n4) const { return descr().mask(__n1, __n2, __n3, __n4); }
     /// Egy egész szám vektort állít elő, ahol a vektor elemei a név szzerint megadott mező indexe, lezárva egy -1 -értékkel.
-    tIntVector   iTab(const QString __n1)                        { return descr().iTab(__n1); }
+    tIntVector   iTab(const QString& __n1)                        { return descr().iTab(__n1); }
     /// Egy egész szám vektort állít elő, ahol a vektor elemei a név szzerint megadott mezők indexe, lezárva egy -1 -értékkel.
-    tIntVector   iTab(const QString __n1, const QString __n2)    { return descr().iTab(__n1, __n2); }
+    tIntVector   iTab(const QString& __n1, const QString& __n2)    { return descr().iTab(__n1, __n2); }
     /// Egy egész szám vektort állít elő, ahol a vektor elemei a név szzerint megadott mezők indexe, lezárva egy -1 -értékkel.
-    tIntVector   iTab(const QString __n1, const QString __n2, const QString __n3)    { return descr().iTab(__n1, __n2, __n3); }
+    tIntVector   iTab(const QString& __n1, const QString& __n2, const QString& __n3)    { return descr().iTab(__n1, __n2, __n3); }
     /// Egy egész szám vektort állít elő, ahol a vektor elemei a név szzerint megadott mezők indexe, lezárva egy -1 -értékkel.
-    tIntVector   iTab(const QString __n1, const QString __n2, const QString __n3, const QString __n4)    { return descr().iTab(__n1, __n2, __n3, __n4); }
+    tIntVector   iTab(const QString& __n1, const QString& __n2, const QString& __n3, const QString& __n4)    { return descr().iTab(__n1, __n2, __n3, __n4); }
     /// Az objektumot (csak az adattartalmát) stringé konvertálja.
     virtual QString toString() const;
     /// Az objektumot stringé konvertálja, a rekord leíróval együtt.
@@ -1462,7 +1462,7 @@ public:
     /// @param q Az adatbázis művelethez használható query objektum.
     /// @param _fn Opcionális paraméter, ha megadjuk akkor nem a last_time lessz módosítva, hanem a megadott nevű mező.
     /// @return A módosított rekordok száma. Ha üres objektummal hívjuk, akkor -1
-    int touch(QSqlQuery& q, const QString &_fn = _sNul);
+    int touch(QSqlQuery& q, const QString&_fn = _sNul);
     /// Az aktuális időt írja a megadott indexű mezőbe, az első módosított rekord aktuális tartalmát visszaolvassa.
     /// Azt, hogy mely rekordokat kell módosítani, az objektum adattartalma határozza meg
     /// Azok a rekordok lesznek módosítva, melyeket az o.completion() beolvasna, de a módosítandó mező ki van zárva a feltételből.
@@ -1509,7 +1509,7 @@ public:
     /// @param _fn A mező neve a rekord objektumban
     /// @param __q A lekérdezéshez használt objektum.
     /// @param _ph  A paraméter neve a lekérdezésben
-    const cRecord& bind(const QString _fn, QSqlQuery& __q, const QString& _ph) const {
+    const cRecord& bind(const QString& _fn, QSqlQuery& __q, const QString& _ph) const {
         return bind(toIndex(_fn), __q, _ph);
     }
     /// Paraméter megadása (bind) egy SQL lekérdezéshez, ahol a paraméter érték a rekord objektum egy mezője.
@@ -1521,7 +1521,7 @@ public:
     /// Paraméter megadása (bind) egy SQL lekérdezéshez, ahol a paraméter érték a rekord objektum egy mezője.
     /// @param __q A lekérdezéshez használt objektum.
     /// @param _n A mező neve a rekord objektumban és a paraméter neve a lekérdezésben
-    const cRecord& bind(const QString _n,  QSqlQuery& __q) const {
+    const cRecord& bind(const QString& _n,  QSqlQuery& __q) const {
         return bind(_n, __q, _n);
     }
     /// Egy SQL lekérdezésből egy érték bemásolása a rekord objektum egy mezőjébe.

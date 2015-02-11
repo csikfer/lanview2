@@ -1,14 +1,35 @@
 #include "lv2g.h"
 #include "cerrormessagebox.h"
+#include "logon.h"
 
-void initLV2GUI(QObject * par)
+bool lv2g::logonNeeded = true;
+
+lv2g::lv2g() :
+    lanView(),
+    pDesign(0)
 {
-    static bool inited = false;
-    if (!inited) {
-        new lv2gDesign(par);
-        inited = true;
-    }
+    if (lastError != 0) return;
+    try {
+        #include "errcodes.h"
+        pDesign = new lv2gDesign(this);
+        if (logonNeeded) {
+            if (!dbIsOpen()) EXCEPTION(EPROGFAIL);
+            switch (cLogOn::logOn()) {
+            case LR_OK:         break;
+            case LR_INVALID:    EXCEPTION(ELOGON, LR_INVALID, trUtf8("Tul sok hibás bejelentkezési próbálkozás."));
+            case LR_CANCEL:     EXCEPTION(ELOGON, LR_CANCEL, trUtf8("Mégsem."));
+            default:            EXCEPTION(EPROGFAIL);
+            }
+        }
+    } CATCHS(lastError)
 }
+
+lv2g::~lv2g()
+{
+    ;
+}
+
+
 
 QPalette *colorAndFont::pal = NULL;
 
@@ -24,13 +45,9 @@ QPalette& colorAndFont::palette()
     return *pal;
 }
 
-lv2gDesign  *lv2gDesign::pDesign = NULL;
 
 lv2gDesign::lv2gDesign(QObject * par) : QObject(par)
 {
-    if (pDesign != NULL) EXCEPTION(EPROGFAIL);
-    pDesign = this;
-
     titleError   = trUtf8("Hiba");
     titleWarning = trUtf8("Figyelmeztetés");
     titleInfo    = trUtf8("Megjegyzés");
@@ -70,6 +87,9 @@ lv2gDesign::lv2gDesign(QObject * par) : QObject(par)
 
     null.font.setItalic(true);
     null.fg.setNamedColor("lightcoral");
+
+    warning.font.setItalic(true);
+    warning.fg.setNamedColor("red");
 }
 
 lv2gDesign::~lv2gDesign()
@@ -91,6 +111,7 @@ const colorAndFont&   lv2gDesign::operator[](int role) const
     case GDR_FOREIGN:   return foreign;
     case GDR_TREE:      return tree;
     case GDR_NULL:      return null;
+    case GDR_WARNING:   return warning;
     default:            EXCEPTION(ENOINDEX);
     }
     return *(colorAndFont *)NULL;     // Ez sosem hajtódik végre, de ha nincs return, warning-ol.
@@ -197,13 +218,18 @@ void cOwnTab::endIt()
     closeIt();
 }
 
+cLv2GQApp::cLv2GQApp(int& argc, char ** argv) : QApplication(argc, argv)
+{
+    lanView::gui = true;
+}
 
-cLv2QApp::~cLv2QApp()
+
+cLv2GQApp::~cLv2GQApp()
 {
     ;
 }
 
-bool cLv2QApp::notify(QObject * receiver, QEvent * event)
+bool cLv2GQApp::notify(QObject * receiver, QEvent * event)
 {
     static cError *lastError = NULL;
     try {
@@ -214,10 +240,12 @@ bool cLv2QApp::notify(QObject * receiver, QEvent * event)
         return false;
     }
     CATCHS(lastError)
+    /*
     PDEB(DERROR) << "Error in " << __PRETTY_FUNCTION__ << endl;
     PDEB(DERROR) << "Receiver : " << receiver->objectName() << "::" << typeid(*receiver).name() << endl;
-    PDEB(DERROR) << "Event : " << typeid(*event).name() << endl;
+    PDEB(DERROR) << "Event : " << typeid(*event).name() << endl;  Kiakad ?! */
     cError::mDropAll = true;                    // A továbbiakban nem *cError-al dobja a hibákat, hanem no_init_ -el
+    lanView::getInstance()->lastError = lastError;
     cErrorMessageBox::messageBox(lastError);    // Kitesszük a hibaüzenetet,
     QApplication::exit(lastError->mErrorCode);  // kilépünk.
     return false;

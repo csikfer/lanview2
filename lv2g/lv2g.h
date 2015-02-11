@@ -54,17 +54,34 @@ A könyvtár a következő osztályokat valósítja meg:\n
 #include "lv2g_global.h"
 #undef  __MODUL_NAME__
 #define __MODUL_NAME__  LV2G
+#undef ERCODES_H_DECLARE
+#include "errcodes.h"
 #include "guidata.h"
 #include <QtWidgets>
 
-/// A GUI API inicializálása
-/// Legalább egyszer meg kell hívni, ismételt hívása esetén nem csinál semmit.
-_GEX void initLV2GUI(QObject *par = NULL);
-
+class lv2g;
 class lv2gDesign;
+
+
 inline static const lv2gDesign& design();
 
-class colorAndFont {
+class LV2GSHARED_EXPORT lv2g : public lanView {
+    friend const lv2gDesign& design();
+public:
+    lv2g();
+    ~lv2g();
+    static lv2g*    getInstance(void) { return (lv2g *)lanView::getInstance(); }
+    static bool  logonNeeded;
+protected:
+    const lv2gDesign *pDesign;
+};
+
+inline static const lv2gDesign& design()
+{
+    return *(lv2g::getInstance()->pDesign);
+}
+
+class LV2GSHARED_EXPORT colorAndFont {
     friend class lv2gDesign;
 public:
     static QPalette& palette();
@@ -78,7 +95,7 @@ protected:
 
 enum eDesignRole {
     GDR_INVALID = -1,   ///< Csak hibajelzésre
-    GDR_HEAD = 0,       ///< Táblázat fejléve
+    GDR_HEAD = 0,       ///< Táblázat fejléce
     GDR_DATA,           ///< egyébb adat mező
     GDR_ID,             ///< ID mező
     GDR_NAME,           ///< Név mező
@@ -88,18 +105,16 @@ enum eDesignRole {
     GDR_DERIVED,        ///< távoli kulcs, a hivatkozott rekordból származtatott név jellegű adat
     GDR_TREE,           ///< saját rekordra mutató távoli kulcs (ráf vagy fa)
     GDR_FOREIGN,        ///< távoli kulcs érték
-    GDR_NULL            ///< NULL adat
+    GDR_NULL,           ///< NULL adat
+    GDR_WARNING         ///< Figyelmeztető üzenet
 };
 
 class LV2GSHARED_EXPORT lv2gDesign : public QObject {
     Q_OBJECT
-    friend  void initLV2GUI(QObject *par);
-    friend  const lv2gDesign& design();
 protected:
+    friend class lv2g;
     lv2gDesign(QObject *par);
     ~lv2gDesign();
-private:
-    static lv2gDesign  *pDesign;
 public:
     QString titleWarning;
     QString titleError;
@@ -120,15 +135,10 @@ public:
     colorAndFont    tree;
     colorAndFont    foreign;
     colorAndFont    null;
+    colorAndFont    warning;
     const colorAndFont&   operator[](int role) const;
     static eDesignRole desRole(const cRecStaticDescr& __d, int __ix);
 };
-
-inline static const lv2gDesign& design()
-{
-    if (lv2gDesign::pDesign == NULL) EXCEPTION(EPROGFAIL);
-    return *lv2gDesign::pDesign;
-}
 
 typedef QList<QHBoxLayout *> hBoxLayoutList;
 typedef QList<QLabel *>     labelList;
@@ -155,15 +165,15 @@ public slots:
     void endIt();
 };
 
-/// @class cLv2QApp
+/// @class cLv2GQApp
 /// Saját QApplication osztály, a hiba kizárások elkapásához (újra definiált notify() metódus.)
-class cLv2QApp : public QApplication {
+class cLv2GQApp : public QApplication {
 public:
     /// Konstruktor. Nincs saját inicilizálás, csak a QApplication konstrujtort hívja.
-    cLv2QApp(int& argc, char ** argv) : QApplication(argc, argv) { ; }
-    ~cLv2QApp();
+    cLv2GQApp(int& argc, char ** argv);
+    ~cLv2GQApp();
     /// Az újra definiált notify() metódus.
-    /// Az esetleges kizárásokat elkapja.
+    /// Az esetleges kizárásokat is elkapja.
     virtual bool notify(QObject * receiver, QEvent * event);
 };
 

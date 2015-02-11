@@ -463,7 +463,7 @@ bool setPortsBySnmp(cSnmpDevice& node, bool __ex)
                    << QChar(' ') << name << endl;
             continue;
         }
-        name += pIfType->getName(_sIfNamePrefix);       // Esetleges előtag, a név ütközések elkerülésére
+        name.prepend(pIfType->getName(_sIfNamePrefix));       // Esetleges előtag, a név ütközések elkerülésére
         QString         ifTypeName = pIfType->getName();
         cNPort *pPort = cNPort::newPortObj(*pIfType);
         if (pPort->descr().tableName() != _sInterfaces) {

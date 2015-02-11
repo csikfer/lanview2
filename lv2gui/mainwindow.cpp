@@ -23,10 +23,10 @@ cMainWindow::cMainWindow(bool _setupOnly, QWidget *parent) :
         po  = new cMenuAction(pot, pa, pTabWidget);
         po->setObjectName(nm);
 
-        nm = trUtf8("Restart");
+/*      nm = trUtf8("Restart");
         pa = pm->addAction(nm);
         po  = new cMenuAction(nm, pa, pTabWidget);
-        po->setObjectName(nm);
+        po->setObjectName(nm);*/
 
         nm = trUtf8("Exit");
         pa = pm->addAction(nm);
