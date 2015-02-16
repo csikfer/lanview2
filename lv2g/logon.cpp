@@ -25,14 +25,7 @@ cLogOn::~cLogOn()
 
 eLogOnResult    cLogOn::checkState()
 {
-    if (lanView::getInstance()->pUser == NULL) {
-        lanView::getInstance()->pUser = new cUser();
-    }
-    else {
-        lanView::getInstance()->pUser->clear();
-    }
-    cUser& user = *(lanView::getInstance()->pUser);
-    if (user.checkPasswordAndFetch(ui->passwLE->text(), ui->userLE->text())) {
+    if (NULL != lanView::setUser(ui->userLE->text(), ui->passwLE->text(), false)) {
         _state = LR_OK;
     }
     else {

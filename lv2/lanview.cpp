@@ -509,6 +509,56 @@ bool lanView::subsDbNotif(const QString& __n, bool __ex)
     }
 }
 
+const cUser *lanView::setUser(const QString& un, const QString& pw, bool __ex)
+{
+    if (instance == NULL) EXCEPTION(EPROGFAIL);
+    QSqlQuery q = getQuery();
+    if (instance->pUser != NULL) pDelete(instance->pUser);
+    instance->pUser = new cUser();
+    if (!instance->pUser->checkPasswordAndFetch(q, pw, un)) {
+        pDelete(instance->pUser);
+        if (__ex)  EXCEPTION(EFOUND,-1,trUtf8("Ismeretlen felhasználó, vagy nem megfelelő jelszó"));
+        return NULL;
+    }
+    if (!q.exec(QString("SELECT set_user_id(%1)").arg(instance->pUser->getId()))) SQLQUERYERR(q);
+    return instance->pUser;
+}
+
+const cUser *lanView::setUser(const QString& un, bool __ex)
+{
+    if (instance == NULL) EXCEPTION(EPROGFAIL);
+    QSqlQuery q = getQuery();
+    if (instance->pUser != NULL) pDelete(instance->pUser);
+    instance->pUser = new cUser();
+    if (!instance->pUser->fetchByName(q, un)) {
+        pDelete(instance->pUser);
+        if (__ex)  EXCEPTION(EFOUND,-1,trUtf8("Ismeretlen felhasználó : %1").arg(un));
+        return NULL;
+    }
+    if (q.exec(QString("SELECT set_user_id(%1)").arg(instance->pUser->getId()))) SQLQUERYERR(q);
+    return instance->pUser;
+}
+
+const cUser *lanView::setUser(qlonglong uid, bool __ex)
+{
+    if (instance == NULL) EXCEPTION(EPROGFAIL);
+    QSqlQuery q = getQuery();
+    if (instance->pUser != NULL) pDelete(instance->pUser);
+    instance->pUser = new cUser();
+    if (!instance->pUser->fetchById(q,uid)) {
+        pDelete(instance->pUser);
+        if (__ex)  EXCEPTION(EFOUND, uid, trUtf8("Ismeretlen felhasználó azonosító"));
+        return NULL;
+    }
+    if (!q.exec(QString("SELECT set_user_id(%1)").arg(uid))) SQLQUERYERR(q);
+    return instance->pUser;
+}
+
+const cUser& lanView::user()
+{
+    if (instance == NULL || instance->pUser == NULL) EXCEPTION(EPROGFAIL);
+    return *instance->pUser;
+}
 
 const QString& IPV4Pol(int e, bool __ex)
 {

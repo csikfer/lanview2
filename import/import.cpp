@@ -138,7 +138,6 @@ lv2import::lv2import() : lanView(), fileNm(), in()
     }
 
     int i;
-    qlonglong userId   = NULL_ID;
     QString   userName;
     if (0 < (i = findArg('u', "user-id", args)) && (i + 1) < args.count()) {
         // ???
@@ -170,11 +169,7 @@ lv2import::lv2import() : lanView(), fileNm(), in()
         pq = newQuery();
         if (daemonMode) return;
         insertStart(*pq);
-        if (!userName.isNull()) {
-            userId = cUser().getIdByName(userName);
-            if (userId == NULL_ID) EXCEPTION(EFOUND,-1,userName);
-            if (!pq->exec(QString("SELECT set_user_id(%1)").arg(userId))) SQLQUERYERR(*pq);
-        }
+        if (!userName.isNull()) setUser(userName);
     } CATCHS(lastError)
 }
 

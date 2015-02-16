@@ -495,6 +495,8 @@ STRDEF(Imports, "imports")
  STRDEF(ImportId, "import_id")
  STRDEF(DateOf, "date_of")
  dnl user_id
+ dnl node_id
+ dnl app_name
  STRDEF(ImportText,"import_text")
  STRDEF(ExecState, "exec_state")
   STRDEF(Wait, "wait")

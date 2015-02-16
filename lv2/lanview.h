@@ -228,7 +228,11 @@ public:
     static bool dbIsOpen() {
         return instance != NULL && instance->pDb != NULL && instance->pDb->isOpen();
     }
-
+    ///
+    static const cUser *setUser(const QString& un, const QString& pw, bool __ex = true);
+    static const cUser *setUser(const QString& un, bool __ex = true);
+    static const cUser *setUser(qlonglong uid, bool __ex = true);
+    static const cUser& user();
     const QString   libName;
     qlonglong       debug;      ///< Debug level
     QString         debFile;    ///< Debug/log file
