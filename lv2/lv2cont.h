@@ -140,10 +140,11 @@ public:
     int fetchByNamePattern(QSqlQuery& __q, const QString& __pat, bool __only = false, T *p = NULL)
     {
         if (!p) p = new T();
-        p->clear();
-        p->likeMask = p->mask(p->nameIndex());
+        else    p->clear();
         p->setName(__pat);
-        return fetch(__q, __only, p->likeMask, p);
+        p->_likeMask = p->mask(p->nameIndex());
+        PDEB(VVERBOSE) << __PRETTY_FUNCTION__ << "<" << p->tableName() << "> : " << __pat << " , " << list2string(p->_likeMask) << endl;
+        return fetch(__q, __only, p->_likeMask, p);
 
     }
     /// Beolvassa az összes olyan rekordot, melynek a megadott indexű numerikus mezője egyezik a megadott id-vel
@@ -177,12 +178,14 @@ public:
     /// Kiírja az adatbázisba az összes elemet az INSERT utasítással ld.: cRecord::insert()
     /// @return A sikeresen kiírt rekordszámmal tér vissza.
     int insert(QSqlQuery& __q, bool __ex = true)  {
+        DBGFN();
         int r = 0;
         typename QList<T *>::const_iterator    i;
         for (i = QList<T *>::constBegin(); i < QList<T *>::constEnd(); i++) {
             PDEB(VERBOSE) << "Insert : " << (*i)->toString() << endl;
             if ((*i)->insert(__q, __ex)) ++r;
         }
+        _DBGFNL() << " = " << r << endl;
         return r;
     }
     /// törli az adatbázisból az összes elemet az REMOVE utasítással ld.: cRecord::remove()

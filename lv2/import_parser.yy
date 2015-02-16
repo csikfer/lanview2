@@ -1762,27 +1762,30 @@ hsrv_p  : PRIME_T SERVICE_T srvid ';'           { pHostServices->sets(_sPrimeSer
 // host_services rekordok előkotrása, a kifelyezés értéke a kapott rekord szám, az első rekord a megallokált pHostService2-be
 // pHostService2-nek NULL-nak kell lennie. Több rekord a qq()-val kérhető be, ha el nem rontjuk a tartalmát.
 fhs
-// Csak az eszköz és a szervíz típus neve van megadva:  <host>.<service>
+// Csak az eszköz és a szervíz típus neve(minta) van megadva:  <host>.<service>
         : str '.' str                           { NEWOBJ(pHostService2, cHostService());
-                                                  $$ = pHostService2->fetchByNames(qq(), sp2s($1), sp2s($3), false); }
+                                                  $$ = pHostService2->fetchFirstByNamePatterns(qq(), sp2s($1), sp2s($3), false); }
 // Csak az eszköz és a szervíz típus neve van megadva:  <host>:<port>.<service>
 // Ha a port nevet elhagyjuk, akkor ott NULL-t vár
-        | str ':' str_z '.' str                 { NEWOBJ(pHostService2, cHostService());
+        | str ':' str '.' str                 { NEWOBJ(pHostService2, cHostService());
                                                   $$ = pHostService2->fetchByNames(qq(), sp2s($1), sp2s($5), sp2s($3), false); }
 // Az összes azonosító megadva:  <host>:<port>.<service>(<protokol srv.>:<prime.srv.>)
 // Ha a port nevet elhagyjuk, akkor ott NULL-t vár, a két utlsó paramétert elhagyva a 'nil' szolgáltatás típust jelenti
-        | str ':' str_z '.' str '(' str_z ':' str_z ')'
+        | str ':' str '.' str '(' str_z ':' str_z ')'
                                                 { NEWOBJ(pHostService2, cHostService());
                                                   $$ = pHostService2->fetchByNames(qq(), sp2s($1), sp2s($5), sp2s($3), sp2s($7), sp2s($9), false); }
+// A port kivételével az összes azonosító megadva:  <host>.<service>(<protokol srv.>:<prime.srv.>)
+// Ha a port nevet elhagyjuk, akkor ott NULL-t vár, a két utlsó paramétert elhagyva a 'nil' szolgáltatás típust jelenti
+        | str '.' str '(' str_z ':' str_z ')'
+                                                { NEWOBJ(pHostService2, cHostService());
+                                                  $$ = pHostService2->fetchByNames(qq(), sp2s($1), sp2s($3), _sNul, sp2s($5), sp2s($7), false); }
         ;
 // A megadott host_services rekord ID-vel tér vissza, ha nem azonosítható be a rekord, akkor hívja yyyerror()-t.
 hsid    : fhs                                   { if ($1 == 0) yyerror("Not found");
                                                   if ($1 != 1) yyerror("Ambiguous");
                                                   $$ = pHostService2->getId();  DELOBJ(pHostService2); }
         ;
-hss     : fhs                                   { if ($1 == 0) yyerror("Not found");
-                                                  $$ = new cHostServices(qq(), pHostService2);
-                                                }
+hss     : fhs                                   { $$ = new cHostServices(qq(), pHostService2); }
         ;
 hsss    : hss                                   { $$ = $1; }
         | hsss ',' hss                          { ($$ = $1)->cat($3); }

@@ -1305,6 +1305,13 @@ public:
     /// @param __ex Ha nincs ilyen rekord, vagy több van, és értéke true, akkor dob egy kizárást.
     /// @return A megadott nevekkel azonosított szolgáltatáspéldányok száma.
     int fetchByNames(QSqlQuery& q, const QString& __hn, const QString& __sn, const QString& __pn, const QString& __pron, const QString& __prin, bool __ex = NULL);
+    /// A hálózati elem, és a szolgáltatás típus név minták alapján olvassa be az első rekordot.
+    /// @param q Az adatbázis művelethez használlt objektum.
+    /// @param __hn A hálózati elem (nodes) neve
+    /// @param __sn A szolgáltatás típus (services) neve
+    /// @param __ex Ha nincs egy ilyen rekord sem, és értéke true, akkor dob egy kizárást.
+    /// @return A megadott név mintákkal azonosított szolgáltatáspéldányok száma.
+    int fetchFirstByNamePatterns(QSqlQuery& q, const QString& __hn, const QString& __sn, bool __ex = true);
     /// A hálózati elem, és a szolgáltatás típus ID-k alapján olvas be egy rekordot
     /// @param q Az adatbázis művelethez használlt objektum.
     /// @param __hid A hálózati elem (nodes) ID

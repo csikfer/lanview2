@@ -43,7 +43,7 @@ COMMENT ON COLUMN services.service_id       IS 'Egyedi azonosító';
 COMMENT ON COLUMN services.service_name     IS 'Szervice name';
 COMMENT ON COLUMN services.service_note     IS 'Megjegyzés';
 COMMENT ON COLUMN services.protocol_id      IS 'Ip protocol id (-1 : nil, if no ip protocol)';
-COMMENT ON COLUMN services.port             IS 'Default (TCO, UDP, ...) port number. or NULL';
+COMMENT ON COLUMN services.port             IS 'Default (TCP, UDP, ...) port number. or NULL';
 COMMENT ON COLUMN services.check_cmd        IS 'Default check command';
 COMMENT ON COLUMN services.properties       IS
 'Default paraméter lista (szeparátor a kettőspont, paraméter szeparátor az ''='', első és utolsó karakter a szeparátor):\n

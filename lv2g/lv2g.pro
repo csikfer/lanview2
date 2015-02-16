@@ -51,8 +51,7 @@ FORMS += \
     setup_logl.ui \
     setup.ui \
     gparse.ui \
-    logindialog.ui \
-    groupeditordialog.ui
+    logindialog.ui
 INCLUDEPATH += ../lv2
 unix:LIBS += -lsnmp
 LIBS += -L../lv2 -llv2

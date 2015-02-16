@@ -79,8 +79,8 @@ public:
     QString         cmd;
     /// A daemon típusa
     enum eDaemonType    daemonType;
-    /// Ha true, akkor a processz kimeneteit gyűjtő log fájlt "rotálni" kell
-    bool            logRot;
+    /// Ha true, akkor a processz önállóan loggol a kimenetét eldobjuk
+    bool            logNull;
     /// Rotálás esetén a maximális log fájl hossz (bype), ha ennél nagyobb új log fájlt kell nyitni
     qint64          maxLogSize;
     /// Hány log fájlt kell megtartani

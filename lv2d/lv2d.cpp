@@ -197,6 +197,10 @@ cDaemon::cDaemon(QSqlQuery& q,cSupDaemon *par) : cInspector(q, NULL_ID, NULL_ID,
 {
     inspectorType = IT_TIMED;   // Ez nem feltétlenül igaz, de egyedileg van kezelve a kegtöbb dolog, és így nem akad ki nem értelmezhető érték miatt
     crashCnt = 0;
+    oldCrashCnt = 0;
+    maxArcLog   = 4;
+    maxLogSize  = 10 * 1024 * 1204; // 10MiByte
+    logNull     = false;
 }
 
 
@@ -219,9 +223,25 @@ void cDaemon::postInit(QSqlQuery &, const QString &)
     process.setObjectName(name());
     process.setProcessChannelMode(QProcess::MergedChannels);    // stderr + stdout ==> stdout
 
-    actLogFile.setFileName(lanView::getInstance()->homeDir + "/log/" +  service().getName() + ".log");
-    if (!actLogFile.open(QIODevice::Append | QIODevice::WriteOnly)) {
-        EXCEPTION(EFOPEN, -1, actLogFile.fileName());
+    if (magicParam(_sLognull).isNull() == false) {
+        logNull = true;
+    }
+    else {
+        if ((s = magicParam(_sLogrot)).isEmpty() == false) {
+            QStringList ss = s.split(QRegExp("\\s*[,;]\\s*"));
+            int i;
+            bool ok;
+            if (ss.size() > 0 && ((i = ss.at(0).toInt(&ok)), ok)) {
+                maxLogSize = i;
+                if (ss.size() > 1 && ((i = ss.at(1).toInt(&ok)), ok)) {
+                    maxArcLog = i;
+                }
+            }
+        }
+        actLogFile.setFileName(lanView::getInstance()->homeDir + "/log/" +  service().getName() + ".log");
+        if (!actLogFile.open(QIODevice::Append | QIODevice::WriteOnly)) {
+            EXCEPTION(EFOPEN, -1, actLogFile.fileName());
+        }
     }
 
     connect(&process, SIGNAL(error(QProcess::ProcessError)),      SLOT(procError(QProcess::ProcessError)));
@@ -437,9 +457,12 @@ void cDaemon::procStarted()
 
 void cDaemon::procReadyStdOut()
 {
+    if (logNull) {
+        return;
+    }
     actLogFile.write(process.readAllStandardOutput());
     qint64 pos = actLogFile.pos();
-    if (logRot && maxLogSize < pos) {
+    if (maxLogSize < pos) {
         PDEB(VVERBOSE) << "LogRot : " << maxLogSize << " < " << pos << endl;
         actLogFile.close();
         QString     old;

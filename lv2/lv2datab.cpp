@@ -1344,8 +1344,8 @@ qlonglong parseTimeInterval(const QString& s, bool *pOk)
 inline static qlonglong __tconvs(qlonglong i, QString& s, int div)
 {
     qlonglong j = i % div;
-    if (j < 10) s.prepend(QChar('0'));
     s.prepend(QString::number(j));
+    if (j < 10) s.prepend(QChar('0'));
     return i / div;
 }
 
@@ -2190,8 +2190,9 @@ cRecord& cRecord::_set(const cRecStaticDescr& __d)
 
 cRecord& cRecord::set()
 {
-    clear();
     return _set(descr());
+    clearToEnd();
+    cleared();
 }
 
 cRecord& cRecord::clear()

@@ -142,7 +142,7 @@ EXT_ tMagicMap splitMagic(const QString& __ms, const tMagicMap& __map, bool __ex
 /// Egy magic string elemból kiemeli a megadott nevű paraméter stringet, feltételezve, hogy csak egy adott nevű elem van
 /// @param _nm A paraméter neve
 /// @param __map A magic string szétvágásakor keletkező konténer.
-/// @return Egy string, a paraméter érték, ha nincs ijen paraméter, akkor a NULL string, ha nincs paramétere, akkor egy üres string
+/// @return Egy string, a paraméter érték, ha nincs ilyen paraméter, akkor a NULL string, ha viszont nincs paraméternek értéke, akkor egy üres string
 EXT_ const QString& magicParam(const QString& _nm, const tMagicMap __map);
 /// A megadott __map konténerben keres egy a __k kulcshoz tartozó attributum nevet.
 /// A konténerben talállható tulajdonság nevekről az esetleges paramétereket leválasztja az összehasonlítás elött

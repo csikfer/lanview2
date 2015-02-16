@@ -162,7 +162,7 @@ public:
     tMagicMap& magicMap(bool __ex = true)                               { if (pMagicMap == NULL) splitMagic(__ex); return *pMagicMap; }
     /// A megadott kulcs alapján visszaadja a magicMap konténerből a paraméter értéket a név alapján. Ha a konténer nincs megallokálva, akkor megallokálja
     /// és feltölti.
-    /// @return ha a kulcshoz tartozik megadott néven paraméter, akkor az értéket adja vissza, vagy üres stringet.
+    /// @return Egy string, a paraméter érték, ha nincs ilyen paraméter, akkor a NULL string, ha viszont nincs paraméternek értéke, akkor egy üres string
     QString magicParam(const QString& __nm, bool __ex = true) { return ::magicParam(__nm, magicMap(__ex)); }
     /// Magadot kulcsal egy paraméter keresése.
     /// @return találat esetén true.

@@ -37,13 +37,26 @@ extern void downImportParser();
 
 class cHostServices : public tRecordList<cHostService> {
 public:
-    cHostServices(QSqlQuery& q, QString * ph, QString * pp, QString * ps, QString * pn) : tRecordList<cHostService>(new cHostService)
+    cHostServices(QSqlQuery& q, QString * ph, QString * pp, QString * ps, QString * pn) : tRecordList<cHostService>()
     {
-        cHostService& hs = *at(0);
-        hs[_sNodeId]    = cNode().   getIdByName(q, *ph, true);  delete ph;
-        hs[_sServiceId] = cService().getIdByName(q, *ps, true);  delete ps;
-        if (pn) { hs[_sHostServiceNote] =  *pn;                     delete pn; }
-        if (pp) { hs[_sPortId] = cNPort().getPortIdByName(q, *pp, hs.getId(_sNodeId)); delete pp; }
+        tRecordList<cNode> hl;
+        hl.fetchByNamePattern(q, *ph, false); delete ph;
+        tRecordList<cService> sl;
+        sl.fetchByNamePattern(q, *ps, false); delete ps;
+        for (tRecordList<cNode>::iterator i = hl.begin(); i < hl.end(); ++i) {
+            cNode &h = **i;
+            for (tRecordList<cService>::iterator j = sl.begin(); j < sl.end(); ++j) {
+                cService &s = **j;
+                cHostService *phs = new cHostService();
+                phs->setId(_sNodeId,    h.getId());
+                phs->setId(_sServiceId, s.getId());
+                if (pn) phs->setName(_sHostServiceNote, *pn);
+                if (pp) phs->setId(_sPortId, cNPort().getPortIdByName(q, *pp, h.getId()));
+                *this << phs;
+            }
+        }
+        pDelete(pn);
+        pDelete(pp);
     }
     cHostServices(QSqlQuery& q, cHostService *&_p)  : tRecordList<cHostService>(_p)
     {

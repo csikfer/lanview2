@@ -1599,13 +1599,13 @@ qlonglong cNode::getIdByName(QSqlQuery& __q, const QString& __n, bool __ex) cons
     static qlonglong type_id = NULL_ID;
     if (type_id == NULL_ID) type_id = cParamType().getIdByName(__q, _sSearchDomain);
     QString sql =
-            "nodes.node_id FROM nodes WHERE "
+            "SELECT nodes.node_id FROM nodes WHERE "
                 "'host' = ANY (node_type) AND "
                 "node_name IN "
                     "( SELECT ? || '.' || param_value FROM sys_params WHERE param_type_id = ? ORDER BY sys_param_name ) "
                 "LIMIT 1";
-    __q.bindValue(0,__n);
     __q.bindValue(1,type_id);
+    __q.bindValue(0,__n);
     if (!__q.exec()) SQLQUERYERR(__q);
     if (__q.first()) return __q.value(0).toLongLong();
     if (__ex) EXCEPTION(EFOUND,0,__n);
@@ -2463,6 +2463,29 @@ int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString&
         return r;
     }
     return 1;
+}
+
+int cHostService::fetchFirstByNamePatterns(QSqlQuery& q, const QString& __hn, const QString& __sn, bool __ex)
+{
+    QString sql =
+            "SELECT host_services.* "
+              "FROM host_services "
+              "JOIN nodes USING(node_id) "
+              "JOIN services USING(service_id) "
+              "WHERE node_name LIKE ? "
+                "AND service_name LIKE ?";
+    if (!q.prepare(sql)) SQLPREPERR(q, sql);
+    q.bindValue(0, __hn);
+    q.bindValue(1, __sn);
+    if (!q.exec()) SQLQUERYERR(q);
+    if (q.first()) {
+        set(q);
+        return q.size();
+    }
+    QString e = trUtf8("HostService not found, pattern: %1:%2").arg(__hn).arg(__sn);
+    if (__ex) EXCEPTION(EFOUND, 0, e);
+    DWAR() << e << endl;
+    return 0;
 }
 
 

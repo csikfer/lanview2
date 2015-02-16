@@ -383,6 +383,8 @@ STRDEF(Services, "services")
   STRDEF(Superior, "superior")
    STRDEF(Custom, "custom")
    STRDEF(Peer, "peer")
+  STRDEF(Logrot, "logrot")
+  STRDEF(Lognull, "lognull")
   dnl protocol
   dnl ifType
   STRDEF(Disabled, "disabled")
