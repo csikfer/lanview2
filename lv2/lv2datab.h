@@ -72,7 +72,7 @@ class cRecord;
 class cRecordFieldRef;
 class cRecordFieldConstRef;
 template <class T> class tRecordList;
-class cAlternate;
+class cRecordAny;
 
 /* ******************************************************************************************************
    *                                         cColStaticDescr                                            *
@@ -219,7 +219,7 @@ public:
     /// Részletesebb mint a toString() metódus.
     QString allToString() const;
     /// Ha a mező egy távoli kulcs, és nem önmagára hivatkozik, akkor a hivatkozott objektumra mutat, egyébként NULL.
-    cAlternate *pFRec;
+    cRecordAny *pFRec;
 };
 TSTREAMO(cColStaticDescr)
 
@@ -387,7 +387,7 @@ typedef enum {
     CHILD_TABLE     ///< A tábla olyan objektumot ír le, mely egy másik tulajdona
 }   eTableType;
 
-/// Egy rekord tulajdonságait leíró objektum. A rekord adat objektumban a pointere egy statikus adattag (kivéve cAlternate)
+/// Egy rekord tulajdonságait leíró objektum. A rekord adat objektumban a pointere egy statikus adattag (kivéve cRecordAny)
 /// Az összes létrehozott objektum a statikus _recDescrMap konténerben a tábla OID szerint van elhelyezve.
 /// Így egy táblához csak egy objektum készül, és csak akkor ha hivatkozás történik rá.
 class LV2SHARED_EXPORT cRecStaticDescr {
@@ -693,7 +693,7 @@ mely csak a _stat alapján ad vissza értéket '_' karakterrel végződik, ha va
 
 A cRecord objektum működésének alapja egy leíró objektum a cRecStaticDescr, mely a tábla tulajdonságait tartalmazza.
 Ez az objektum minden leszármazott osztályhoz, a leszármazott osztályban egy statikus pointeren keresztül kapcsolódik,
-mint egy típus leíró. (egy kivétellel, a cAlternate ezt a pointert nem statikusan tartalmazza, vagyis annak „típusa”
+mint egy típus leíró. (egy kivétellel, a cRecordAny ezt a pointert nem statikusan tartalmazza, vagyis annak „típusa”
 dinamikus). Így minden leszármazott definíciójakor az egyedi tulajdonságoknak csak egy részét kell implementálni,
 azok a tulajdonságok, melyek az adatbázisból is kiolvashatóak, a tábla azonosításával automatikusan érvényesülnek.
 
@@ -803,7 +803,7 @@ first(), next(), getSetMap(), whereString().
 
 Az osztály állapot lekérdező metódusai: checkData(), isNull(), isNull(c), _isNull(), _isNull(), isEmpty(), isEmpty(),
 isEmpty_(), isIdent(), isModify_(), isNullId(), isNullName() ezen felül a _state adattag közvetlenül is elérhető.
-Van egy állapot lekérdezés, ami csak a cAlternate osztály esetén ad nem „hamis” eredményt, ez az isFacesess().
+Van egy állapot lekérdezés, ami csak a cRecordAny osztály esetén ad nem „hamis” eredményt, ez az isFacesess().
 
 A cRecord leszármazott osztályainál járulékos adattagok kezelését segítik a következő virtuális metóduaok, melyek
 a cRecord ősben üres függvényként vannak definiálva: toEnd(), toEnd(c), clearToEnd(). Ezen függvények
@@ -833,7 +833,7 @@ public:
     /// @enum eStat
     /// Rekord státusz konstansok
     typedef enum {
-        ES_FACELESS     = -2,   ///< A rekord üres, és nincs típusa, ill nincs hozzárendelve adattáblához. Ez az állapot csak a cAlternate típusú objektumokban lehetséges.
+        ES_FACELESS     = -2,   ///< A rekord üres, és nincs típusa, ill nincs hozzárendelve adattáblához. Ez az állapot csak a cRecordAny típusú objektumokban lehetséges.
         ES_NULL         = -1,   ///< A rekord üres, a _fields adattagnak nincs egy eleme sem
         ES_EMPTY        =  0,   ///< A rekord üres, a _fields adattag feltöltve, de minden eleme null
         ES_EXIST        =  1,   ///< O.K. Az adatbázisban létező rekord
@@ -1692,7 +1692,7 @@ template <class R> const cRecStaticDescr *getPDescr(const QString& _tn, const QS
 /// @def DESCR(R)
 /// @relates cRecord
 /// Egy cRecord-ból származtatott osztály statikus leíró objektumának a referenciája.
-/// A cAlternate -nál nem alkalmazható, a makró feltételezi, hogy az osztály statikus
+/// A cRecordAny -nál nem alkalmazható, a makró feltételezi, hogy az osztály statikus
 /// leíró statikus pointerének a neve a CRECORD() makróval, vagy annak megfelelően lett deklarálva.
 /// @param az osztály név, melynek a statikus leíróját kérjük.
 #define DESCR(R)    R::_descr_##R()
@@ -1879,52 +1879,52 @@ inline cRecordFieldRef cRecord::operator[](const QString& __fn)             { re
 inline cRecordFieldConstRef cRecord::operator[](const QString& __fn) const  { return (*this)[chkIndex(toIndex(__fn))]; }
 
 /*!
-@class cAlternate
+@class cRecordAny
 @brief Általános interfész osztály.
 Azt hogy melyik adattáblát kezeli azt a konstruktorban, vagy a setType() metódusokban kell beállítani.
 Természetesen csak az alapfunkciókra képes, amik a cRecord-ban meg lettek valósítva.
  */
-class cAlternate : public cRecord {
+class cRecordAny : public cRecord {
 public:
     /// Üres konstruktor. Használat elütt hivni kell valamelyik setType() metódust.
     /// Ha nincs beállítva típus, akkor minden olyan hívásra, melynek szüksége van
     /// a descriptor objektumra egy kizárást fog dobni.
-    cAlternate();
+    cRecordAny();
     /// A konstruktor a megadott adattáblához rendeli, ill. annak kezelésére készíti fel az
     /// objektumot. Az objektum adatt tartalma (mező adat konténer) üres lessz.
     /// @param _tn Az adattáble neve
     /// @param _sn A schema név mely az adattáblát tartalmazza. Obcionális, alapértelmezett a "public".
-    cAlternate(const QString& _tn, const QString& _sn = _sNul);
+    cRecordAny(const QString& _tn, const QString& _sn = _sNul);
     /// A konstruktor a megadott adattáblához rendeli, ill. annak kezelésére készíti fel az
     /// Az objektum adatt tartalma (mező adat konténer) üres lessz.
     /// @param _p A leíró objektum pointere
-    cAlternate(const cRecStaticDescr * _p);
+    cRecordAny(const cRecStaticDescr * _p);
     /// Copy konstruktor
-    cAlternate(const cAlternate &__o);
+    cRecordAny(const cRecordAny &__o);
     /// "Univerzális" copy (szerű) konstruktor
-    cAlternate(const cRecord &__o);
+    cRecordAny(const cRecord &__o);
     /// A metódus a megadott adattáblához rendeli, ill. annak kezelésére készíti fel az
     /// objektumot. Az objektum adatt tartalma (mező adat konténer) üres lessz, ill. azt törli.
     /// @param _tn Az adattáble neve
     /// @param _sn A schema név mely az adattáblát tartalmazza. Obcionális, alapértelmezett a "public".
-    cAlternate& setType(const QString& _tn, const QString& _sn = _sNul);
+    cRecordAny& setType(const QString& _tn, const QString& _sn = _sNul);
     /// A metódus az __o -ban már megadott, vagy ezt implicite tartalmazó adattáblához rendeli, ill. annak kezelésére készíti fel.
     /// Ha __o-nál nincs megadva adattábla, ill. ismeretlen a descriptor objektum, akkor dobni fog egy kizárást.
-    cAlternate& setType(const cRecord& __o);
-    cAlternate& setType(const cRecStaticDescr *_pd);
+    cRecordAny& setType(const cRecord& __o);
+    cRecordAny& setType(const cRecStaticDescr *_pd);
     /// Alaphelyzetbe állítja az objektumot, mint az üres konstruktor után.
-    cAlternate& clearType();
+    cRecordAny& clearType();
     /// A descriptor objektum referenciájával tér vissza.
     /// Ha nem adtuk meg a kezelendő adattáblát, akkor dob egy kizárást.
     virtual const cRecStaticDescr& descr() const;
     /// destruktor. (üres metódus).
-    virtual ~cAlternate();
+    virtual ~cRecordAny();
     /// Egy új objektum allokálása. Az új objektum örökli a hívó descriptorát.
     virtual cRecord *newObj() const;
     /// Az objektumr klónozása
     virtual cRecord *dup()const;
     /// Másoló operátor. Átmásolja a forrás objektum descriptor mutatóját (típusát) és a mező adatokat.
-    cAlternate& operator=(const cRecord& __o);
+    cRecordAny& operator=(const cRecord& __o);
 protected:
     const cRecStaticDescr *pStaticDescr;
 };

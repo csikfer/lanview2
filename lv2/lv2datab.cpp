@@ -332,7 +332,7 @@ QString cColStaticDescr::toView(QSqlQuery& q, const QVariant &_f) const
                 // Sajnos itt trükközni kell, mivel ezt máskor nem tehetjük meg, ill veszélyes, macerás, de itt meg konstans a pointer
                 // A következő sor az objektum feltöltésekor, ahol még írható, akár végtelen rekurzióhoz is vezethet.
                 // A rekurzió detektálása megvan, de kivédeni kellene, nem elég eszrevenni.
-                *const_cast<cAlternate **>(&pFRec) = new cAlternate(fKeyTable, fKeySchema);
+                *const_cast<cRecordAny **>(&pFRec) = new cRecordAny(fKeyTable, fKeySchema);
             }
             QString n = pFRec->getNameById(q, id , false);
             if (n.isEmpty()) return h + r;
@@ -2354,7 +2354,7 @@ cMac    cRecord::getMac(int __i, bool __ex) const
 {
     int t = colDescr(__i).eColType;
     cMac r;
-    if (t != cColStaticDescr::FT_MAC) {
+    if (t == cColStaticDescr::FT_MAC) {
         if (!isNull(__i)) r = get(__i).value<cMac>();
         return r;
     }
@@ -2398,6 +2398,9 @@ bool cRecord::insert(QSqlQuery& __q, bool _ex)
             delete po;
             QBitArray   sets(cols(), true); // ???!!
             sets.clearBit(nameIndex());
+            if (isNullId()) {
+                sets.clearBit(idIndex());
+            }
             return update(__q, true, sets, mask(nameIndex()),_ex);
         }
         delete po;
@@ -2808,78 +2811,78 @@ cRecordFieldRef::cRecordFieldRef(const cRecordFieldRef& __r)
 // Dummy osztály dummy példány
 no_init_ _no_init_;
 /* ******************************************************************************************************* */
-cAlternate::cAlternate() : cRecord()
+cRecordAny::cRecordAny() : cRecord()
 {
     pStaticDescr = NULL;
     _stat = ES_FACELESS;
 }
 
-cAlternate::cAlternate(const QString& _tn, const QString& _sn) : cRecord()
+cRecordAny::cRecordAny(const QString& _tn, const QString& _sn) : cRecord()
 {
     pStaticDescr = cRecStaticDescr::get(_tn, _sn);
     _set(*pStaticDescr);
 }
 
-cAlternate::cAlternate(const cRecStaticDescr *_p) : cRecord()
+cRecordAny::cRecordAny(const cRecStaticDescr *_p) : cRecord()
 {
     pStaticDescr = _p;
     _set(*pStaticDescr);
 }
 
-cAlternate::cAlternate(const cAlternate &__o)  : cRecord()
+cRecordAny::cRecordAny(const cRecordAny &__o)  : cRecord()
 {
     *this = *(cRecord *)&__o;
 }
 
-cAlternate::cAlternate(const cRecord& __o) : cRecord()
+cRecordAny::cRecordAny(const cRecord& __o) : cRecord()
 {
     *this = __o;
 }
 
-cAlternate::~cAlternate()
+cRecordAny::~cRecordAny()
 {
     ;
 }
 
-cAlternate& cAlternate::setType(const QString& _tn, const QString& _sn)
+cRecordAny& cRecordAny::setType(const QString& _tn, const QString& _sn)
 {
     pStaticDescr = cRecStaticDescr::get(_tn, _sn);
     _set(*pStaticDescr);
     return *this;
 }
 
-cAlternate& cAlternate::setType(const cRecord& __o)
+cRecordAny& cRecordAny::setType(const cRecord& __o)
 {
     pStaticDescr = &__o.descr();
     _set(*pStaticDescr);
     return *this;
 }
 
-cAlternate& cAlternate::setType(const cRecStaticDescr *_pd)
+cRecordAny& cRecordAny::setType(const cRecStaticDescr *_pd)
 {
     pStaticDescr = _pd;
     _set(*pStaticDescr);
     return *this;
 }
 
-const cRecStaticDescr& cAlternate::descr() const
+const cRecStaticDescr& cRecordAny::descr() const
 {
     if (pStaticDescr == NULL) EXCEPTION(EPROGFAIL,-1,QObject::trUtf8("Nincs beállítva az adat típus."));
     return *pStaticDescr;
 }
 
-cRecord *cAlternate::newObj() const
+cRecord *cRecordAny::newObj() const
 {
-    cAlternate *p = new cAlternate();
+    cRecordAny *p = new cRecordAny();
     if (!isFaceless()) p->setType(*this);
     return p;
 }
-cRecord *cAlternate::dup() const
+cRecord *cRecordAny::dup() const
 {
-    return new cAlternate(*this);
+    return new cRecordAny(*this);
 }
 
-cAlternate& cAlternate::operator=(const cRecord& __o)
+cRecordAny& cRecordAny::operator=(const cRecord& __o)
 {
     if (__o.isFaceless()) {
         clearType();
@@ -2891,7 +2894,7 @@ cAlternate& cAlternate::operator=(const cRecord& __o)
     return *this;
 }
 
-cAlternate& cAlternate::clearType()
+cRecordAny& cRecordAny::clearType()
 {
     _clear();
     pStaticDescr = NULL;

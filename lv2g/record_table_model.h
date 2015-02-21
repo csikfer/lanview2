@@ -3,7 +3,7 @@
 
 #include "lv2g.h"
 
-typedef tRecordList<cAlternate>         tRecords;
+typedef tRecordList<cRecordAny>         tRecords;
 class   cRecordTableColumn;
 typedef tRecordList<cRecordTableColumn>  tRecordTableColumns;
 class   cRecordTable;
@@ -18,9 +18,9 @@ public:
     virtual QVariant data(const QModelIndex &index, int role) const;
     virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const;
     /// Az aktuális record set  a végéhez ad egy rekordot
-    virtual cRecordTableModel& operator<<(const cAlternate& _r);
+    virtual cRecordTableModel& operator<<(const cRecordAny& _r);
     /// Beszúr egy elemet a megadott indexű pont elé
-    virtual cRecordTableModel& insert(const cAlternate& _r, int i = -1);
+    virtual cRecordTableModel& insert(const cRecordAny& _r, int i = -1);
     /// Törli a megadott indexű recordot a record set-ből
     virtual cRecordTableModel& remove(int i);
     /// A megjelenítendő record set kiürítése, a táblázat újra rajzolása
@@ -41,7 +41,7 @@ public:
     /// A megadott sorhoz tartozó rekord objektum pointert lecseréli. A megjelenített táblát frissíti.
     /// A régi pointer felszabadítja, a paraméterként megadottat, pedig szintén ő szabadítja fel, ha már nem kell.
     /// @return ha elvégezte a műveletet true, ha olyan sort adunk meg, ami nem létezik, akkor false. ekkor a paraméterként kapott pointert nem szabadítja fel.
-    bool update(int row, cAlternate *pRec);
+    bool update(int row, cRecordAny *pRec);
     bool rowNumbers() const                     { return _viewRowNumbers; }
     void setRowNumers(bool b)                   { _viewRowNumbers = b; }
     bool viewHeader() const                     { return _viewHeader; }
@@ -60,7 +60,7 @@ public:
     /// Kiemelt sorok
     tIntVector                  extLines;
 protected:
-    virtual void _removed(cAlternate *p);
+    virtual void _removed(cRecordAny *p);
     /// A record set
     tRecords                    _records;
     /// Kereszt indexek
@@ -78,7 +78,7 @@ protected:
 signals:
     /// Egy rekord törlése a rekord set-ből.
     /// A signal kiadása után a pointer törlődik, aszinkron kapcsolat nem lehet !!!
-    void removed(cAlternate *_p);
+    void removed(cRecordAny *_p);
 };
 
 

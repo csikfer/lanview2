@@ -51,7 +51,8 @@ FORMS += \
     setup_logl.ui \
     setup.ui \
     gparse.ui \
-    logindialog.ui
+    logindialog.ui \
+    onlinealarm.ui
 INCLUDEPATH += ../lv2
 unix:LIBS += -lsnmp
 LIBS += -L../lv2 -llv2

@@ -491,7 +491,6 @@ Típus azonosítók
 
 CREATE TABLE nodes (
     node_stat       notifswitch     DEFAULT NULL,
-    node_alarm_msg  varchar(255)    DEFAULT NULL,
     node_type       nodetype[]      NOT NULL DEFAULT '{node}',
     alarm_place_group_id    bigint DEFAULT NULL,
     PRIMARY KEY (node_id),
@@ -503,7 +502,6 @@ INHERITS(patchs);
 ALTER TABLE nodes OWNER TO lanview2;
 COMMENT ON TABLE  nodes         IS 'Passzív vagy aktív hálózati elemek táblája';
 COMMENT ON COLUMN nodes.node_stat IS 'Az eszköz állapota.';
-COMMENT ON COLUMN nodes.node_alarm_msg IS 'Riasztás esetén az eszközhöz rendelt opcionális hiba üzenet.';
 COMMENT ON COLUMN nodes.node_type IS 'Típus azonosítók.';
 
 -- //// LAN.SNMPDEVICES

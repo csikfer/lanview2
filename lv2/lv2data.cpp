@@ -743,6 +743,35 @@ DEFAULTCRECDEF(cIfType, _sIfTypes)
 tRecordList<cIfType> cIfType::ifTypes;
 cIfType *cIfType::pNull = NULL;
 
+bool cIfType::insert(QSqlQuery &__q, bool __ex)
+{
+    if (cRecord::insert(__q, __ex)) {
+        ifTypes.clear();
+        return true;
+    }
+    return false;
+}
+
+bool cIfType::update(QSqlQuery &__q, bool __only, const QBitArray &__set, const QBitArray &__where, bool __ex)
+{
+    if (cRecord::update(__q, __only, __set, __where, __ex)) {
+        ifTypes.clear();
+        return true;
+    }
+    return false;
+}
+
+qlonglong cIfType::insertNew(QSqlQuery &__q, const QString& __nm, const QString& __no, int __iid, int __lid)
+{
+    cIfType it;
+    it.setName(                __nm);
+    it.setName(_sIfTypeNote,   __no);
+    it.setId(  _sIfTypeIanaId, __iid);
+    it.setId(  _sIanaIdLink,   __lid);
+    it.insert(__q);
+    return it.getId();
+}
+
 void cIfType::fetchIfTypes(QSqlQuery& __q)
 {
     if (pNull == NULL) pNull = new cIfType();
@@ -1596,15 +1625,13 @@ qlonglong cNode::getIdByName(QSqlQuery& __q, const QString& __n, bool __ex) cons
 {
     qlonglong id = descr().getIdByName(__q, __n, false);
     if (id != NULL_ID) return id;
-    static qlonglong type_id = NULL_ID;
-    if (type_id == NULL_ID) type_id = cParamType().getIdByName(__q, _sSearchDomain);
     QString sql =
             "SELECT nodes.node_id FROM nodes WHERE "
                 "'host' = ANY (node_type) AND "
                 "node_name IN "
-                    "( SELECT ? || '.' || param_value FROM sys_params WHERE param_type_id = ? ORDER BY sys_param_name ) "
+                    "( SELECT ? || '.' || param_value FROM sys_params JOIN param_types USING(param_type_id) WHERE param_type_name = ? ORDER BY sys_param_name ) "
                 "LIMIT 1";
-    __q.bindValue(1,type_id);
+    __q.bindValue(1,_sSearchDomain);
     __q.bindValue(0,__n);
     if (!__q.exec()) SQLQUERYERR(__q);
     if (__q.first()) return __q.value(0).toLongLong();
@@ -2172,6 +2199,42 @@ int cSnmpDevice::open(QSqlQuery& q, cSnmp& snmp, bool __ex) const
 /* ******************************  ****************************** */
 DEFAULTCRECDEF(cIpProtocol, _sIpProtocols)
 /* -------------------------------------------------------------- */
+DEFAULTCRECDEF(cServiceType, _sServiceTypes)
+
+qlonglong cServiceType::insertNew(QSqlQuery& __q, const QString& __name, const QString& __note, bool __ex)
+{
+    cServiceType    o;
+    o.setName(__name);
+    o.setName(_sServiceTypeNote, __note);
+    if (o.insert(__q, __ex)) {
+        return o.getId();
+    }
+    return NULL_ID;
+}
+
+/* -------------------------------------------------------------- */
+DEFAULTCRECDEF(cAlarmMsg, _sAlarmMessages)
+
+void cAlarmMsg::replace(QSqlQuery& __q, qlonglong __stid, const QString& __stat, const QString& __shortMsg, const QString& __msg)
+{
+    cAlarmMsg o;
+    o.setId(__stid);
+    o.setName(_sStatus, __stat);
+    bool e = o.completion(__q);
+    o.setName(_sMessage, __msg);
+    o.setName(_sShortMsg, __shortMsg);
+    if (e) o.update(__q, false);
+    else   o.insert(__q);
+}
+
+void cAlarmMsg::replaces(QSqlQuery& __q, qlonglong __stid, const QStringList& __stats, const QString& __shortMsg, const QString& __msg)
+{
+    foreach (QString st, __stats) {
+        replace(__q, __stid, st, __shortMsg, __msg);
+    }
+}
+
+/* -------------------------------------------------------------- */
 template void _SplitMagicT<cService>(cService& o, bool __ex);
 template void _SplitMagicT<cHostService>(cHostService& o, bool __ex);
 
@@ -2590,6 +2653,8 @@ cHostService& cHostService::magic2prop()
 }
 
 /* ----------------------------------------------------------------- */
+DEFAULTCRECDEF(cAlarm, _sAlarms)
+/* ----------------------------------------------------------------- */
 DEFAULTCRECDEF(cOui, _sOuis)
 
 enum eReasons cOui::replace(QSqlQuery& __q)
@@ -2954,14 +3019,17 @@ cTemplateMap::cTemplateMap(const cTemplateMap& __o) : QMap<QString, QString>(__o
     ;
 }
 
-const QString& cTemplateMap::get(QSqlQuery& __q, const QString& __name)
+const QString& cTemplateMap::get(QSqlQuery& __q, const QString& __name, bool __ex)
 {
     QMap<QString, QString>::iterator i = find(__name);
     if (i != end()) return i.value();
     cImportTemplate it;
     it[_sTemplateType] = type;
     it[_sTemplateName] = __name;
-    if (it.completion(__q) < 1) EXCEPTION(EFOUND, -1, QString(QObject::trUtf8("%1 template name %2 not found.")).arg(type, __name));
+    if (it.completion(__q) < 1) {
+        if (__ex) EXCEPTION(EFOUND, -1, QString(QObject::trUtf8("%1 template name %2 not found.")).arg(type, __name));
+        return _sNul;
+    }
     i = insert(__name, it.getName(_sTemplateText));
     return i.value();
 }

@@ -76,8 +76,8 @@ típusoknál van értelme, tipikusan azoknál, melyek maguk is objektum jellegű
 Az adatkezelést vezérlő a tábla tulajdonságait tartalmazó cRecStaticDescr osztály teszi lehetővé a cRecord leszármazott osztály
 tábla specifikus működését.
 
-@subsection alternate A cAlternate osztály
-A cAlternate egyolyan cRecord leszármazott, melyhez dinamikusan rendelhető egy adattáblához, vagyis a leíró cRecStaticDescr
+@subsection alternate A cRecordAny osztály
+A cRecordAny egyolyan cRecord leszármazott, melyhez dinamikusan rendelhető egy adattáblához, vagyis a leíró cRecStaticDescr
 pointere nem statikus. Az osztály természetesen nem egyenértékű a konkrétan egy adattáblához definiált osztállyal, mivel a
 specifikus tulajdonságai hiányoznak.
 

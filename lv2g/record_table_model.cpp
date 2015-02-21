@@ -130,7 +130,7 @@ bool cRecordTableModel::setRecords(const tRecords& __recs, int _firstNm)
 
 }
 
-bool cRecordTableModel::update(int row, cAlternate *pRec)
+bool cRecordTableModel::update(int row, cRecordAny *pRec)
 {
     if (row < 0 || row >= _records.size()) return false;
     beginResetModel();
@@ -140,7 +140,7 @@ bool cRecordTableModel::update(int row, cAlternate *pRec)
     return true;
 }
 
-cRecordTableModel& cRecordTableModel::operator<<(const cAlternate& _r)
+cRecordTableModel& cRecordTableModel::operator<<(const cRecordAny& _r)
 {
     beginResetModel();
     _records << _r;
@@ -148,7 +148,7 @@ cRecordTableModel& cRecordTableModel::operator<<(const cAlternate& _r)
     return *this;
 }
 
-cRecordTableModel& cRecordTableModel::insert(const cAlternate& _r, int i)
+cRecordTableModel& cRecordTableModel::insert(const cRecordAny& _r, int i)
 {
     // ?????!!!!!
     if (i < 0) i = _records.size();
@@ -163,7 +163,7 @@ cRecordTableModel& cRecordTableModel::remove(int i)
     // ?????!!!!!
     _DBGFN() << " #" << i << endl;
     beginResetModel();
-    cAlternate * p = _records.list().takeAt(i);
+    cRecordAny * p = _records.list().takeAt(i);
     endResetModel();
     _removed(p);
     return *this;
@@ -220,7 +220,7 @@ cRecordTableModel& cRecordTableModel::remove(QModelIndexList& mil)
 
 }
 
-void cRecordTableModel::_removed(cAlternate *p)
+void cRecordTableModel::_removed(cRecordAny *p)
 {
     removed(p);
     delete p;
@@ -259,12 +259,12 @@ int cRecordTableModelSql::qView()
     extLines.clear();
     if (q.seek(qpos)) do {
         qlonglong tableoid = variantToId(q.value(0));
-        cAlternate *p = NULL;
+        cRecordAny *p = NULL;
         if (tableoid == recDescr.tableoid()) {
-            p = new cAlternate(&recDescr);
+            p = new cRecordAny(&recDescr);
         }
         else {
-            p = new cAlternate(&recordTable.inhRecDescr(tableoid));
+            p = new cRecordAny(&recordTable.inhRecDescr(tableoid));
         }
         p->set(q);
         _records << p;

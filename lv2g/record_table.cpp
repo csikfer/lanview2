@@ -605,7 +605,7 @@ void cRecordTable::initSimple(QWidget * pW)
 
     connect(pButtons,    SIGNAL(buttonPressed(int)),   this, SLOT(buttonPressed(int)));
     if (!isReadOnly) {
-        connect(pTableModel, SIGNAL(removed(cAlternate*)), this, SLOT(recordRemove(cAlternate*)), Qt::DirectConnection);
+        connect(pTableModel, SIGNAL(removed(cRecordAny*)), this, SLOT(recordRemove(cRecordAny*)), Qt::DirectConnection);
         connect(pTableView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
     }
     if (pMaster != NULL) {
@@ -741,7 +741,7 @@ void cRecordTable::insert()
         if (owner_id == NULL_ID) return;
     }
     int buttons = enum2set(DBT_OK, DBT_INSERT, DBT_CANCEL);
-    cAlternate rec;
+    cRecordAny rec;
     switch (tit) {
     case TIT_NO:
     case TIT_ONLY: {
@@ -812,7 +812,7 @@ int cRecordTable::actRow()
     return row;
 }
 
-cAlternate *cRecordTable::actRecord()
+cRecordAny *cRecordTable::actRecord()
 {
     int row = actRow();
     if (row < 0) return NULL;
@@ -823,7 +823,7 @@ void cRecordTable::modify()
 {
     int row = actRow();
     if (row < 0) return;
-    cAlternate *pRec = (cAlternate *)actRecord()->dup();
+    cRecordAny *pRec = (cRecordAny *)actRecord()->dup();
     int buttons = enum2set(DBT_OK, DBT_CANCEL, DBT_NEXT, DBT_PREV);
     cRecordDialog *    pRd  = NULL;
     cRecordDialogInh * pRdt = NULL;
@@ -920,7 +920,7 @@ void cRecordTable::modify()
                 }
             }
             if (!isContIx(*pTableModel, row)) break;
-            pRec = (cAlternate *)pTableModel->records()[row]->dup();
+            pRec = (cRecordAny *)pTableModel->records()[row]->dup();
             continue;
         }
         case DBT_CANCEL:
@@ -1073,7 +1073,7 @@ void cRecordTable::buttonPressed(int id)
     }
 }
 
-void cRecordTable::recordRemove(cAlternate * _pr)
+void cRecordTable::recordRemove(cRecordAny * _pr)
 {
     PDEB(INFO) << "Remove : " << _pr->toString() << endl;
     cErrorMessageBox::condMsgBox(_pr->tryRemove(*pq));

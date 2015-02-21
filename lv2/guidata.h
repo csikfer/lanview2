@@ -248,7 +248,7 @@ public:
     /// A hívás lekéri az enumerációhoz tartozó beszédesebb nevet, ha van.
     /// Ha nincs ilyen érték, akkor az enumerációs értékkel tér vissza.
     /// Ha az enumerációs érték egyértelmüen azonosítható a típus megadásának a hiányában is, akkor azt nem szükséges megadni.
-    /// Ha en adtunk meg enumerációs típust, és a lekérdezés eredménye nem egyértelmű, akkor SQL hibát kapunk (kizárást dob).
+    /// Ha nem adtunk meg enumerációs típust, és a lekérdezés eredménye nem egyértelmű, akkor SQL hibát kapunk (kizárást dob).
     static QString title(QSqlQuery& q, const QString& _ev, const QString& _tn = _sNul);
     /// Rekord(ok) törlésa az enumeráció típus név alapján
     /// @param  q
@@ -256,7 +256,7 @@ public:
     /// @param __pat Ha értéke true, akkor az __n paraméter minta stringnek tekintendő.
     /// @return a törölt rekordok száma
     int delByTypeName(QSqlQuery& q, const QString& __n, bool __pat = false);
-    /// Rekord(ok) törlésa az enumeráció típus név alapján
+    /// Rekord(ok) törlésa az enumeráció típus és érték név alapján
     /// @param  q
     /// @param __t Az enum_type_name mező értéke
     /// @param __n Az enum__name mező értéke

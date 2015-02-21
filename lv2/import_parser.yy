@@ -89,49 +89,9 @@ enum eShare {
 
 #define UNKNOWN_PLACE_ID 0LL
 
-static QSqlQuery      *piq = NULL;
-static inline QSqlQuery& qq() { if (piq == NULL) EXCEPTION(EPROGFAIL); return *piq; }
-
 typedef QList<QStringPair> QStringPairList;
 
 typedef QList<qlonglong> intList;
-
-class cTemplateMapMap : public QMap<QString, cTemplateMap> {
- public:
-    /// Konstruktor
-    cTemplateMapMap() : QMap<QString, cTemplateMap>() { ; }
-    ///
-    cTemplateMap& operator[](const QString __t) {
-        if (contains(__t)) {
-            return  (*(QMap<QString, cTemplateMap> *)this)[__t];
-        }
-        return *insert(__t, cTemplateMap(__t));
-    }
-
-    /// Egy megadott nevű template lekérése, ha nincs a konténerben, akkor beolvassa az adatbázisból.
-    /// Az eredményt stringgel tér vissza
-    const QString& _get(const QString& __type, const QString&  __name) {
-        const QString& r = (*this)[__type].get(qq(), __name);
-        return r;
-    }
-    /// Egy megadott nevű template lekérése, ha nincs a konténerben, akkor beolvassa az adatbázisból.
-    /// Az eredményt a macro bufferbe tölti
-    void get(const QString& __type, const QString&  __name) {
-        insertCode(_get(__type, __name));
-    }
-    /// Egy adott nevű template elhelyezése a konténerbe, de az adatbázisban nem.
-    void set(const QString& __type, const QString& __name, const QString& __cont) {
-        (*this)[__type].set(__name, __cont);
-    }
-    /// Egy adott nevű template elhelyezése a konténerbe, és az adatbázisban.
-    void save(const QString& __type, const QString& __name, const QString& __cont, const QString& __descr) {
-        (*this)[__type].save(qq(), __name, __cont, __descr);
-    }
-    /// Egy adott nevű template törlése a konténerből, és az adatbázisból.
-    void del(const QString& __type, const QString& __name) {
-        (*this)[__type].del(qq(), __name);
-    }
-};
 
 class c_yyFile {
 public:
@@ -215,7 +175,8 @@ public:
 };
 
 
-static QStringList     allNotifSwitchs;
+static QStringList      allNotifSwitchs;
+static  qlonglong       id;
 
 unsigned long yyflags = 0;
 
@@ -296,6 +257,7 @@ QSqlQuery& qq2()
     if (pq2 == NULL) pq2 = newQuery();
     return *pq2;
 }
+
 
 enum {
     EP_NIL = -1,
@@ -800,8 +762,28 @@ static QChar yyget()
     return c;
 }
 
+/// A sor maradékát eldobja.
+/// megnézi hány space típuso karakterrel kezdődő sor, és eldobja az összes következő sort,
+/// amelyik nem kezdődik több space típuső karakterrel, vagy üres.
 static inline void yyunget(const QChar& _c) {
     macbuff.insert(0,_c);
+}
+
+static void yyskip(bool b)
+{
+    if (!b) return;
+    QRegExp ns("\\D");      // Az első nem space karakter kereséséhez
+    QRegExp as("^\\d*$");   // Csak space karakter
+    int n = lastLine.indexOf(ns);
+    if (n < 0) yyerror("Indent error ?");
+    do {
+        ++importLineNo;
+        lastLine = importInputStream->readLine();
+        PDEB(INFO) << "yyskep : \"" << lastLine << "\"" << endl;
+        if (lastLine.isNull()) break;                 // fájl vége
+        if (lastLine.indexOf(as) == 0) continue;    // Üres sor
+    } while (n < lastLine.indexOf(ns));
+    macbuff = lastLine;
 }
 
 static int yylex(void);
@@ -1056,18 +1038,19 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
 %token      INHERIT_T NAMES_T HIDE_T VALUE_T DEFAULT_T FILTER_T FILTERS_T
 %token      ORD_T SEQUENCE_T MENU_T GUI_T OWN_T TOOL_T TIP_T WHATS_T THIS_T
 %token      EXEC_T TAG_T ANY_T BOOLEAN_T CHAR_T IPADDRESS_T REAL_T URL_T
-%token      BYTEA_T DATE_T DISABLE_T EXPRESSION_T
+%token      BYTEA_T DATE_T DISABLE_T EXPRESSION_T PREFIX_T RESET_T CACHE_T
+%token      DATA_T IANA_T IFDEF_T IFNDEF_T
 
 %token <i>  INTEGER_V
 %token <r>  FLOAT_V
 %token <s>  STRING_V NAME_V
 %token <mac> MAC_V 
 %token <ip> IPV4_V IPV6_V
-%type  <i>  int int_ iexpr lnktype shar ipprotp ipprot offs ix_z vlan_t set_t
+%type  <i>  int int_ iexpr lnktype shar ipprotp ipprot offs ix_z vlan_t set_t srvtid
 %type  <i>  vlan_id place_id iptype pix pix_z pix_ iptype_a step timep image_id tmod int0
 %type  <i>  ptypen fhs hsid srvid grpid tmpid node_id port_id snet_id ift_id plg_id usr_id
 %type  <il> list_i pixs // ints
-%type  <b>  bool bool_on
+%type  <b>  bool bool_on ifdef
 %type  <r>  /* real */ num fexpr
 %type  <s>  str str_ str_z name_q time tod _toddef sexpr pnm mac_q ha nsw ips
 %type  <sl> strs strs_z alert list_m nsws nsws_ node_h host_h
@@ -1103,6 +1086,7 @@ command : macro
         | vlan
         | image
         | place
+        | iftype
         | nodes
         | params
         | arp
@@ -1113,6 +1097,7 @@ command : macro
         | scan
         | gui
         | modify
+        | if
         ;
 macro   : INCLUDE_T str ';'                                 { c_yyFile::inc($2); }
         | MACRO_T            NAME_V str ';'               { templates.set (_sMacros,     sp2s($2), sp2s($3));     }
@@ -1136,6 +1121,7 @@ list_m  : LIST_T iexpr TO_T iexpr MASK_T str                { $$ = listLoop($6, 
 trans   : BEGIN_T ';'   { if (!qq().exec("BEGIN TRANSACTION"))    yyerror("Error BEGIN sql command"); PDEB(INFO) << "BEGIN TRANSACTION" << endl; }
         | END_T ';'     { if (!qq().exec("END TRANSACTION"))      yyerror("Error END sql command");   PDEB(INFO) << "END TRANSACTION" << endl; }
         | ROLLBACK_T ';'{ if (!qq().exec("ROLLBACK TRANSACTION")) yyerror("Error END sql command");   PDEB(INFO) << "ROLLBACK TRANSACTION" << endl; }
+        | RESET_T CACHE_T DATA_T ';'            { lanView::resetCacheData(); }
         ;
 eqs     : '#' NAME_V '=' iexpr ';'              { ivars[*$2] = $4; delete $2; }
         | '&' NAME_V '=' sexpr ';'              { svars[*$2] = *$4; delete $2; delete $4; }
@@ -1175,6 +1161,7 @@ int_    : INTEGER_V                             { $$ = $1; }
         | ID_T PORT_T '(' port_id ')'           { $$ = $4; }
         | ID_T HOST_T SERVICE_T '(' hsid ')'    { $$ = $5; }
         | ID_T SERVICE_T '(' srvid ')'          { $$ = $4; }
+        | ID_T SERVICE_T TYPE_T '(' srvtid ')'  { $$ = $5; }
         | ID_T PLACE_T '(' place_id ')'         { $$ = $4; }
         | ID_T PLACE_T GROUP_T '(' plg_id ')'   { $$ = $5; }
         | ID_T TIME_T PERIOD_T '(' tmpid ')'    { $$ = $5; }
@@ -1207,6 +1194,8 @@ place_id: str                                   { $$ = cPlace().getIdByName(qq()
         ;
 // Név alapján a services rekord ID-t adja vissza
 srvid   : str                                   { $$ = cService().getIdByName(qq(),*$1); delete $1; }
+        ;
+srvtid  : str                                   { $$ = cServiceType().getIdByName(qq(),*$1); delete $1; }
         ;
 // Név alapján a timeperiods rekord ID-t adja vissza
 tmpid   : str                                   { $$ = cTimePeriod().getIdByName(qq(), *$1); delete $1; }
@@ -1446,7 +1435,6 @@ place_p : NOTE_T str ';'            { place.set(_sPlaceNote, *$2);     delete $2
         | IMAGE_T image_id ';'      { place.set(_sImageId,  $2); }
         | FRAME_T frame ';'         { place.set(_sFrame, QVariant::fromValue(*$2)); delete $2; }
         | TEL_T strs ';'            { place.set(_sTel, *$2);            delete $2; }
-        | ALARM_T MESSAGE_T str ';' { place.set(_sPlaceAlarmMsg, *$3);  delete $3; }
         ;
 frame   : '{' points  '}'           { $$ = $2; }
         ;
@@ -1454,6 +1442,12 @@ points  : point                     { $$ = new tPolygonF(); *$$ << *$1;  delete 
         | points ',' point          { $$ = $1;              *$$ << *$3;  delete $3; }
         ;
 point   : '[' num ',' num ']'       { $$ = new QPointF($2, $4); }
+        ;
+iftype  : SET_T IFTYPE_T '[' str ']' '.' NAME_T PREFIX_T '=' str ';'
+                                    { cIfType().setByName(qq(), sp2s($4)).setName(_sIfNamePrefix, sp2s($10)).update(qq(), false);
+                                      lanView::resetCacheData(); }
+        | IFTYPE_T str str_z  IANA_T int TO_T int ';'
+                                    { cIfType::insertNew(qq(), sp2s($2), sp2s($3), (int)$5, (int)$7); }
         ;
 nodes   : patch
         | node
@@ -1553,7 +1547,6 @@ node_cf :
         ;
 node_p  : NOTE_T str ';'                       { pNode->setName(_sNodeNote, sp2s($2)); }
         | PLACE_T place_id ';'                  { pNode->setId(_sPlaceId, $2); }
-        | ALARM_T MESSAGE_T str ';'             { pNode->setName(_sNodeAlarmMsg, sp2s($3)); }
         | SET_T str '=' value ';'               { pNode->set(sp2s($2), vp2v($4)); }
         | ADD_T PORTS_T str offs FROM_T int TO_T int offs str ';'
                                                 { setLastPort(pNode->addPorts(sp2s($3), sp2s($10), $9, $6, $8, $4)); }
@@ -1689,12 +1682,15 @@ shar    :                                           { $$ = ES_; }
 srv     : service
         | hostsrv
         ;
-service : SERVICE_T str str_z    { NEWOBJ(pService, cService());
+service : SERVICE_T str str_z       { NEWOBJ(pService, cService());
                                       pService->setName(*$2);
                                       pService->set(_sServiceNote, *$3);
                                       delete $2; delete $3; }
           srvend                    { pService->insert(qq()); DELOBJ(pService); }
-        | SET_T ALERT_T SERVICE_T srvid ';'    { alertServiceId = $4; }
+        | SET_T ALERT_T SERVICE_T srvid ';'     { alertServiceId = $4; }
+        | SERVICE_T TYPE_T str str_z ';'        { cServiceType::insertNew(qq(), sp2s($3), sp2s($4)); }
+        | MESSAGE_T str str SERVICE_T TYPE_T srvtid nsws ';'    { cAlarmMsg::replaces(qq(), $6, slp2sl($7), sp2s($2), sp2s($3)); }
+        | SERVICE_T TYPE_T srvtid MESSAGE_T  '{'                { id = $3; }    srvmsgs '}'
         ;
 srvend  : '{' srv_ps '}'
         | ';'
@@ -1716,7 +1712,7 @@ srv_p   : ipprotp int ';'                       { (*pService)[_sProtocolId] = $1
         | FLAPPING_T INTERVAL_T int ';'         { (*pService)[_sFlappingInterval]    = $3 * 1000; }
         | FLAPPING_T MAX_T CHANGE_T int ';'     { (*pService)[_sFlappingMaxChange]   = $4; }
         | SET_T str '=' value ';'               { (*pService)[*$2] = *$4; delete $2; delete $4; }
-        | ALARM_T MESSAGE_T str ';'             { (*pService)[_sServiceAlarmMsg] = *$3; delete $3; }
+        | TYPE_T str ';'                        { (*pService)[*$2] = cServiceType().getIdByName(qq(), sp2s($2)); delete $2; }
         | bool_on DISABLE_T ';'                 { (*pService)[_sDisabled] = $1; }
         ;
 ipprotp : TCP_T                     { $$ = EP_TCP; }
@@ -1726,6 +1722,11 @@ ipprot  : ICMP_T                    { $$ = EP_ICMP; }
         | IP_T                      { $$ = EP_IP; }
         | NIL_T                     { $$ = EP_NIL; }
         | PROTOCOL_T str            { $$ = cIpProtocol().getIdByName(qq(), *$2, true); delete $2; }
+        ;
+srvmsgs : srvmsg
+        | srvmsgs srvmsg
+        ;
+srvmsg  : nsws ':' str str ';'                   { cAlarmMsg::replaces(qq(), id, slp2sl($1), sp2s($3), sp2s($4)); }
         ;
 hostsrv : HOST_T SERVICE_T str '.' str str_z    { NEWOBJ(pHostServices, cHostServices(qq(), $3, NULL, $5, $6)); }
           hsrvend                               { pHostServices->insert(qq()); DELOBJ(pHostServices); }
@@ -1756,7 +1757,6 @@ hsrv_p  : PRIME_T SERVICE_T srvid ';'           { pHostServices->sets(_sPrimeSer
         | OFF_T LINE_T GROUP_T grpid ';'        { pHostServices->sets(_sOffLineGroupId, $4); }
         | ON_T LINE_T GROUP_T grpid ';'         { pHostServices->sets(_sOnLineGroupId, $4); }
         | SET_T str '=' value ';'               { pHostServices->sets(*$2, *$4); delete $2; delete $4; }
-        | ALARM_T MESSAGE_T str ';'             { pHostServices->sets(_sHostServiceAlarmMsg, *$3); delete $3; }
         | bool_on DISABLE_T ';'                 { pHostServices->sets(_sDisabled,  $1); }
         ;
 // host_services rekordok előkotrása, a kifelyezés értéke a kapott rekord szám, az első rekord a megallokált pHostService2-be
@@ -1922,10 +1922,31 @@ miop    : TOOL_T TIP_T str ';'                  { setToolTip(sp2s($3)); }
         ;
 // Névvel azonosítható rekord egy mezőjének a modosítása az adatbázisban:
 // SET <tábla név>[<modosítandó mező neve>].<rekordot azonosító név> = <új érték>;
-modify  : SET_T str '[' str ']' '.' str '=' value ';'   { cAlternate(sp2s($2)).setByName(qq(), sp2s($4)).set(sp2s($7), vp2v($9)).update(qq(), false); }
-        | SET_T str '[' int ']' '.' str '=' value ';'   { cAlternate(sp2s($2)).setById(qq(), $4).set(sp2s($7), vp2v($9)).update(qq(), false); }
+modify  : SET_T str '[' str ']' '.' str '=' value ';'   { cRecordAny(sp2s($2)).setByName(qq(), sp2s($4)).set(sp2s($7), vp2v($9)).update(qq(), false); }
+        | SET_T str '[' int ']' '.' str '=' value ';'   { cRecordAny(sp2s($2)).setById(qq(), $4).set(sp2s($7), vp2v($9)).update(qq(), false); }
         | bool_on DISABLE_T SERVICE_T str ';'           { cService().setByName(qq(), sp2s($4)).setBool(_sDisabled, $1).update(qq(), false); }
         | bool_on DISABLE_T HOST_T SERVICE_T hsid ';'   { cHostService().setById(qq(), $5).setBool(_sDisabled, $1).update(qq(), false); }
+        ;
+if      : IFDEF_T  ifdef                                { yyskip(!$2);  }
+        | IFNDEF_T ifdef                                { yyskip($2);; }
+        ;
+ifdef   : PLACE_T str                   { $$ = NULL_ID != cPlace().     getIdByName(qq(), sp2s($2), false); }
+        | PLACE_T GROUP_T str           { $$ = NULL_ID != cPlaceGroup().getIdByName(qq(), sp2s($3), false); }
+        | USER_T str                    { $$ = NULL_ID != cUser().      getIdByName(qq(), sp2s($2), false); }
+        | USER_T GROUP_T str            { $$ = NULL_ID != cGroup().     getIdByName(qq(), sp2s($3), false); }
+        | GROUP_T str                   { $$ = NULL_ID != cGroup().     getIdByName(qq(), sp2s($2), false); }
+        | PATCH_T str                   { $$ = NULL_ID != cPatch().     getIdByName(qq(), sp2s($2), false); }
+        | NODE_T  str                   { $$ = NULL_ID != cNode().      getIdByName(qq(), sp2s($2), false); }
+        | VLAN_T  str                   { $$ = NULL_ID != cVLan().      getIdByName(qq(), sp2s($2), false); }
+        | SUBNET_T str                  { $$ = NULL_ID != cSubNet().    getIdByName(qq(), sp2s($2), false); }
+        | TABLE_T SHAPE_T str           { $$ = NULL_ID != cTableShape().getIdByName(qq(), sp2s($3), false); }
+        | HOST_T  SERVICE_T fhs         { $$ = $3 != 0; pDelete(pHostService2); }
+        | MACRO_T str ';'               { $$ = !templates[_sMacros].get(qq(), sp2s($2), false).isEmpty(); }
+        | TEMPLATE_T PATCH_T str ';'    { $$ = !templates[_sPatchs].get(qq(), sp2s($3), false).isEmpty(); }
+        | TEMPLATE_T NODE_T str ';'     { $$ = !templates[_sNodes]. get(qq(), sp2s($3), false).isEmpty(); }
+/*      | ENUM_T TITLE_T  strs ';'     { $$ = NULL_ID != cEnumVal().; }
+        | ENUM_T TITLE_T  str strs ';' { $$ = NULL_ID != cEnumVal().; }
+        | GUI_T strs MENU_T ';'        { $$ = NULL_ID != cMenuItem(); } */
         ;
 %%
 
@@ -2102,7 +2123,8 @@ static int yylex(void)
         TOK(INHERIT) TOK(NAMES) TOK(HIDE) TOK(VALUE) TOK(DEFAULT) TOK(FILTER) TOK(FILTERS)
         TOK(ORD) TOK(SEQUENCE) TOK(MENU) TOK(GUI) TOK(OWN) TOK(TOOL) TOK(TIP) TOK(WHATS) TOK(THIS)
         TOK(EXEC) TOK(TAG) TOK(ANY) TOK(BOOLEAN) TOK(CHAR) TOK(IPADDRESS) TOK(REAL) TOK(URL)
-        TOK(BYTEA) TOK(DATE) TOK(DISABLE) TOK(EXPRESSION)
+        TOK(BYTEA) TOK(DATE) TOK(DISABLE) TOK(EXPRESSION) TOK(PREFIX) TOK(RESET) TOK(CACHE)
+        TOK(DATA) TOK(IANA)
         { "WST",    WORKSTATION_T }, // rövidítések
         { "ATC",    ATTACHED_T },
         { "INT",    INTEGER_T },

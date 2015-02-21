@@ -262,7 +262,7 @@ void cRecordDialogInh::init(qlonglong _oid)
     int i, n = tabDescriptors.size();
     for (i = 0; i < n; ++i) {
         cTableShape& shape = *tabDescriptors[i];
-        cAlternate * pRec = new cAlternate(shape.getName(_sTableName), shape.getName(_sSchemaName));
+        cRecordAny * pRec = new cRecordAny(shape.getName(_sTableName), shape.getName(_sSchemaName));
         if (_oid != NULL_ID) {
             int oix = pRec->descr().ixToOwner();
             pRec->setId(oix, _oid);

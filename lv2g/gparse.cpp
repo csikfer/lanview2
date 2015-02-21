@@ -136,8 +136,11 @@ void cParseWidget::remoteParse(const QString &src)
     QString msg = trUtf8("Végrehajtandó forrásszöveg kiírva az adatbázisba (ID = %1)\nVárakozás...").arg(imp.getId());
     int lastStat = ES_WAIT;
     while (true) {
-        pUi->textEditResult->clear();
-        pUi->textEditResult->setText(msg);
+        if (msg.isEmpty() == false) {
+            pUi->textEditResult->clear();
+            pUi->textEditResult->setText(msg);
+            msg.clear();
+        }
         sleep(1);
         if (!imp.fetchById(*pq)) {
             msg = trUtf8("A kiírt imports rekordot nem tudom visszaolvasni (ID = %1).").arg(imp.getId());
@@ -148,7 +151,7 @@ void cParseWidget::remoteParse(const QString &src)
         lastStat = stat;
         switch (stat) {
         case ES_EXECUTE:
-            msg = trUtf8("Végrehajtás alatt (ID = %1).").arg(imp.getId());
+            msg = trUtf8("Végrehajtás alatt (ID = %1, PID = %2).").arg(imp.getId()).arg(imp.getId(_sPid));
             if (!imp.isNull(_sStarted)) msg += trUtf8("Kezdete : %1\n").arg(imp.getName(_sStarted));
             continue;
         case ES_OK:

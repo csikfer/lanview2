@@ -113,7 +113,7 @@ public:
     /// Beolvassa az összes olyan rekordot, mely megfelel a pointerként átadott
     /// objektum megadott mezőinek. Csak egyenlőségre szűr, kivébe, ha beállítjuk a *p objektumban a likeMask bitjeit.
     /// A metódus akkor is használható, ha a template osztály onmagában nem azonosítja a kezelt adattáblát,
-    /// de csak olyan *p objektummal hívhatjuk, ami egyértelműen azonosítja azt. cAlternate esetén
+    /// de csak olyan *p objektummal hívhatjuk, ami egyértelműen azonosítja azt. cRecordAny esetén
     /// ha a *p faceless, akkor hibát fog generálni a hívás.
     /// @param __q query objektum, amivel a lekérdezés elvégezhető.
     /// @param __only Ha a leszármazottakban nem kell keresni, akkor értéke true.
@@ -149,7 +149,7 @@ public:
     }
     /// Beolvassa az összes olyan rekordot, melynek a megadott indexű numerikus mezője egyezik a megadott id-vel
     /// Az objektumot (konténert) elötte kiüríti. A T template osztálynak egyértelműen azonosítania kell a
-    /// kezelt adattáblát, pl. a cAlternate osztály esetén hibát fog generálni a metódus.
+    /// kezelt adattáblát, pl. a cRecordAny osztály esetén hibát fog generálni a metódus.
     /// @param __q query objektum, amivel a lekérdezés elvégezhető.
     /// @param __only
     /// @param __fn A numerikus mező indexe.
@@ -163,7 +163,7 @@ public:
     }
     /// Beolvassa az összes olyan rekordot, melynek a megadott nevű numerikus mezője egyezik a megadott id-vel
     /// Az objektumot (konténert) elötte kiüríti. A T template osztálynak egyértelműen azonosítania kell a
-    /// kezelt adattáblát, pl. a cAlternate osztály esetén hibát fog generálni a metódus.
+    /// kezelt adattáblát, pl. a cRecordAny osztály esetén hibát fog generálni a metódus.
     /// @param __q query objektum, amivel a lekérdezés elvégezhető.
     /// @param __only
     /// @param __fn A numerikus mező neve.

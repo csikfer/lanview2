@@ -495,10 +495,14 @@ void lanView::insertReStart(QSqlQuery& q) {
 
 bool lanView::subsDbNotif(const QString& __n, bool __ex)
 {
+    static bool first = true;
     if (pDb != NULL && pDb->driver()->hasFeature(QSqlDriver::EventNotifications)) {
         QString name = __n.isEmpty() ? appName : __n;
         pDb->driver()->subscribeToNotification(name);
-        connect(pDb->driver(), SIGNAL(notification(QString)), SLOT(dbNotif(QString)));
+        if (first) {
+            connect(pDb->driver(), SIGNAL(notification(QString)), SLOT(dbNotif(QString)));
+            first = false;
+        }
         return true;
     }
     else {
@@ -558,6 +562,14 @@ const cUser& lanView::user()
 {
     if (instance == NULL || instance->pUser == NULL) EXCEPTION(EPROGFAIL);
     return *instance->pUser;
+}
+
+void lanView::resetCacheData()
+{
+    if (!exist()) EXCEPTION(EPROGFAIL);
+    QSqlQuery q = getQuery();
+    cIfType::fetchIfTypes(q);
+    cService::clearServicesCache();
 }
 
 const QString& IPV4Pol(int e, bool __ex)

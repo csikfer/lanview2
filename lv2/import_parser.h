@@ -34,6 +34,8 @@ extern void downImportParser();
 
 #if defined(LV2_LIBRARY)
 
+static QSqlQuery      *piq = NULL;
+static inline QSqlQuery& qq() { if (piq == NULL) EXCEPTION(EPROGFAIL); return *piq; }
 
 class cHostServices : public tRecordList<cHostService> {
 public:
@@ -81,6 +83,48 @@ public:
         delete pp;
     }
 };
+
+static void insertCode(const QString& __txt);
+
+class cTemplateMapMap : public QMap<QString, cTemplateMap> {
+ public:
+    /// Konstruktor
+    cTemplateMapMap() : QMap<QString, cTemplateMap>() { ; }
+    ///
+    cTemplateMap& operator[](const QString __t) {
+        if (contains(__t)) {
+            return  (*(QMap<QString, cTemplateMap> *)this)[__t];
+        }
+        return *insert(__t, cTemplateMap(__t));
+    }
+
+    /// Egy megadott nevű template lekérése, ha nincs a konténerben, akkor beolvassa az adatbázisból.
+    /// Az eredményt stringgel tér vissza
+    const QString& _get(const QString& __type, const QString&  __name) {
+        const QString& r = (*this)[__type].get(qq(), __name);
+        return r;
+    }
+    /// Egy megadott nevű template lekérése, ha nincs a konténerben, akkor beolvassa az adatbázisból.
+    /// Az eredményt a macro bufferbe tölti
+    void get(const QString& __type, const QString&  __name) {
+        insertCode(_get(__type, __name));
+    }
+    /// Egy adott nevű template elhelyezése a konténerbe, de az adatbázisban nem.
+    void set(const QString& __type, const QString& __name, const QString& __cont) {
+        if (__cont.isEmpty()) EXCEPTION(EDATA, -1, QObject::trUtf8("Üres minta."))
+        (*this)[__type].set(__name, __cont);
+    }
+    /// Egy adott nevű template elhelyezése a konténerbe, és az adatbázisban.
+    void save(const QString& __type, const QString& __name, const QString& __cont, const QString& __descr) {
+        if (__cont.isEmpty()) EXCEPTION(EDATA, -1, QObject::trUtf8("Üres minta."))
+        (*this)[__type].save(qq(), __name, __cont, __descr);
+    }
+    /// Egy adott nevű template törlése a konténerből, és az adatbázisból.
+    void del(const QString& __type, const QString& __name) {
+        (*this)[__type].del(qq(), __name);
+    }
+};
+
 
 #endif
 

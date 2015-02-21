@@ -322,5 +322,92 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION set_service_stat(hsid bigint, state notifswitch, note varchar(255), dmid bigint) IS
 'Adminisztrálja a megadott szolgáltatás megállpított új állapotát.';
 
+CREATE TABLE alarm_messages (
+    service_type_id     bigint          NOT NULL
+        REFERENCES service_types(service_type_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE,
+    status              notifswitch     NOT NULL,
+    short_msg           varchar(64)     NOT NULL,
+    message             text            NOT NULL,
+    PRIMARY KEY (service_type_id, status)
+);
+ALTER  TABLE alarm_messages OWNER TO lanview2;
+COMMENT ON TABLE alarm_messages IS 'Riasztási üzenetek táblája.';
+COMMENT ON COLUMN alarm_messages.service_type_id IS 'Melyik szervíz típushoz/csoporthoz tartozik a riasztási üzenet.';
+COMMENT ON COLUMN alarm_messages.status IS 'Milyen állapothoz tartozik a riasztási üzenet.';
+COMMENT ON COLUMN alarm_messages.short_msg IS 'Rövide üzenet';
+COMMENT ON COLUMN alarm_messages.message IS 'Részletes üzenet minta.';
 
+CREATE OR REPLACE FUNCTION alarm_message(sid bigint, st notifswitch) RETURNS text AS $$
+DECLARE
+    msg         text; 
+    hs          host_services;
+    stid        bigint;
+    s           services;
+    n           nodes;
+    pl          places;
+BEGIN
+    SELECT * INTO hs FROM host_services WHERE host_service_id = sid;
+    IF NOT FOUND THEN
+        PERFORM error('IdNotFound', sid, 'host_service_id', 'alarm_message()', 'host_services');
+    END IF;
+    
+    SELECT * INTO s FROM services WHERE service_id = hs.service_id;
+    IF NOT FOUND THEN
+        PERFORM error('IdNotFound', hs.service_id, 'service_id', 'alarm_message()', 'services');
+    END IF;
+    
+    SELECT message INTO msg FROM alarm_messages WHERE service_type_id = s.service_type_id AND status = st;
+    IF NOT FOUND THEN
+        SELECT message INTO msg FROM alarm_messages WHERE service_type_id = -1 AND status = st; -- service_type = unmarked
+        IF NOT FOUND THEN
+            msg := '$hs.name is $st';
+        END IF;
+    END IF;
 
+    msg := replace(msg, '$st',       st::text);
+    IF msg LIKE '%$hs.%' THEN 
+        IF msg LIKE '%$hs.name%' THEN
+            msg := replace(msg, '$hs.name',  host_service_id2name(hs.host_service_id));
+        END IF;
+        msg := replace(msg, '$hs.note',  COALESCE(hs.host_service_note, ''));
+    END IF;
+
+    IF msg LIKE '%$s.%' THEN 
+        msg := replace(msg, '$s.name',   s.service_name);
+        msg := replace(msg, '$s.note',   COALESCE(s.service_note, ''));
+    END IF;
+
+    IF msg LIKE '%$n.%' OR msg LIKE '%$pl.%' THEN
+        SELECT * INTO n FROM nodes WHERE node_id = hs.node_id;
+        IF NOT FOUND THEN
+            PERFORM error('IdNotFound', hs.node_id, 'node_id', 'alarm_message()', 'nodes');
+        END IF;
+        IF msg LIKE '%$n.%' THEN
+            msg := replace(msg, '$n.name',     n.node_name);
+            msg := replace(msg, '$n.note',     COALESCE(n.node_note, ''));
+        END IF;
+        IF msg LIKE '%$pl.%' THEN
+            SELECT * INTO pl FROM placess WHERE place_id = n.place_id;
+            IF NOT FOUND THEN
+                PERFORM error('IdNotFound', n.place_id, 'plaxe_id', 'alarm_message()', 'places');
+            END IF;
+            msg := replace(msg, '$pl.name',     pl.place_name);
+            msg := replace(msg, '$pl.note',     COALESCE(pl.place_note, ''));
+        END IF;
+    END IF;
+    RETURN msg;
+END
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE VIEW view_alarms AS
+    SELECT
+    a.begin_time,
+    a.end_time IS NULL AS active,
+    pl.place_name,
+    alarm_message(host_service_id, max_status) AS msg
+    FROM alarms        AS a
+    JOIN host_services AS hs USING(host_service_id)
+    JOIN nodes         AS n  USING(node_id)
+    JOIN places        AS pl USING(place_id)
+    ORDER BY begin_time DESC;
+    

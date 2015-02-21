@@ -575,6 +575,15 @@ public:
 /* ------------------------------------------------------------------------ */
 class LV2SHARED_EXPORT cIfType : public cRecord {
     CRECORD(cIfType);
+public:
+    /// Csak annyiban különbözik az ős osztály metódusátol, hogy sikeres írás esetén törli a iftypes konténert,
+    /// hogy ott is megjelenhesen az új adat, mivel ezzel kikényszerítjük a tábla újraolvasását
+    virtual bool insert(QSqlQuery &__q, bool __ex = true);
+    /// Csak annyiban különbözik az ős osztály metódusátol, hogy sikeres írás esetén törli a iftypes konténert,
+    /// hogy ott is megjelenhesen az új adat, mivel ezzel kikényszerítjük a tábla újraolvasását
+    virtual bool update(QSqlQuery &__q, bool __only, const QBitArray &__set = QBitArray(), const QBitArray &__where = QBitArray(), bool __ex = true);
+    ///
+    static qlonglong insertNew(QSqlQuery &__q, const QString& __nm, const QString& __no, int __iid, int __lid);
 protected:
     /// Az összes if_types rekordot tartalmazó konténer
     /// Nem frissül automatikusan, ha változik az adattábla.
@@ -1206,8 +1215,25 @@ public:
     int open(QSqlQuery &q, cSnmp& snmp, bool __ex = true) const;
 };
 
+/// @class cIpProtocol
 class LV2SHARED_EXPORT cIpProtocol : public cRecord {
     CRECORD(cIpProtocol);
+};
+
+/// @class cServiceType
+/// A service objektumokat csoportosítására bevezetett elem.
+/// A sevízek állapotaihoz rendelt üzenetek ősszeállításánál van szerepe.
+class LV2SHARED_EXPORT cServiceType : public cRecord {
+    CRECORD(cServiceType);
+public:
+    static qlonglong insertNew(QSqlQuery& __q, const QString& __name, const QString& __note, bool __ex = true);
+};
+
+class LV2SHARED_EXPORT cAlarmMsg  : public cRecord {
+    CRECORD(cAlarmMsg);
+public:
+    static void replace(QSqlQuery& __q, qlonglong __stid, const QString& __stats, const QString& __shortMsg, const QString& __msg);
+    static void replaces(QSqlQuery& __q, qlonglong __stid, const QStringList& __stats, const QString& __shortMsg, const QString& __msg);
 };
 
 class cHostService;
@@ -1254,6 +1280,7 @@ public:
     /// Egy services objektumot ad vissza az ID alapján, ha nincs ilyen nevű típus, akkor dob egy kizárást.
     static const cService& service(QSqlQuery &__q, qlonglong __id, bool __ex = true);
     static const cService& _nul() { if (pNull == NULL) pNull = new cService(); return *pNull; }
+    static void clearServicesCache() { services.clear(); }
 };
 
 class LV2SHARED_EXPORT cHostService : public cRecord {
@@ -1389,12 +1416,20 @@ protected:
     tMagicMap              *_pMagicMap;
 };
 
+/* ---------------------------------------------------------------- */
+class LV2SHARED_EXPORT cAlarm  : public cRecord {
+    CRECORD(cAlarm);
+public:
+};
+
+/* ---------------------------------------------------------------- */
 class LV2SHARED_EXPORT cOui  : public cRecord {
     CRECORD(cOui);
 public:
     enum eReasons replace(QSqlQuery& __q);
 };
 
+/* ---------------------------------------------------------------- */
 class LV2SHARED_EXPORT cMacTab  : public cRecord {
     CRECORD(cMacTab);
 protected:
@@ -1517,6 +1552,7 @@ public:
     bool isLinked(QSqlQuery& q, qlonglong __pid1, qlonglong __pid2) { return LinkIsLinked(q, *this, __pid1, __pid2); }
 };
 
+/* ---------------------------------------------------------------- */
 enum eExecState {
     ES_INVALID = -1,
     ES_WAIT    =  0,
@@ -1556,7 +1592,7 @@ public:
         return *this;
     }
     /// Egy megadott nevű template lekérése, ha nincs a konténerben, akkor beolvassa az adatbázisból.
-    const QString& get(QSqlQuery& __q, const QString& __name);
+    const QString& get(QSqlQuery& __q, const QString& __name, bool __ex = true);
     /// Egy adott nevű template elhelyezése a konténerbe, de az adatbázisban nem.
     void set(const QString& __name, const QString& __cont);
     /// Egy adott nevű template elhelyezése a konténerbe, és az adatbázisban.

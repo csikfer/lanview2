@@ -233,6 +233,8 @@ public:
     static const cUser *setUser(const QString& un, bool __ex = true);
     static const cUser *setUser(qlonglong uid, bool __ex = true);
     static const cUser& user();
+    /// Az api könynvtér által gyorstárazott adatokat újra tülti,
+    static void resetCacheData();
     const QString   libName;
     qlonglong       debug;      ///< Debug level
     QString         debFile;    ///< Debug/log file

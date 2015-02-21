@@ -130,8 +130,8 @@ eDesignRole lv2gDesign::desRole(const cRecStaticDescr& __d, int __ix)
     case cColStaticDescr::FT_PROPERTY:
     case cColStaticDescr::FT_OWNER:
     {
-        cAlternate *pF = cd.pFRec;
-        if (pF == NULL) pF = new cAlternate(cd.fKeyTable, cd.fKeySchema);
+        cRecordAny *pF = cd.pFRec;
+        if (pF == NULL) pF = new cRecordAny(cd.fKeyTable, cd.fKeySchema);
         bool n = pF->isIndex(pF->nameIndex(false));
         if (cd.pFRec == NULL) delete pF;
         if (n) return GDR_FNAME;

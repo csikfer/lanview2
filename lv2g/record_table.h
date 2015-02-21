@@ -178,8 +178,8 @@ public:
     const bool      isDialog;
 protected:
     int         actRow();
-    cAlternate *actRecord();
-    qlonglong   actId() { cAlternate *p = actRecord(); return p == NULL ? NULL_ID : p->getId(); }
+    cRecordAny *actRecord();
+    qlonglong   actId() { cRecordAny *p = actRecord(); return p == NULL ? NULL_ID : p->getId(); }
     void setActRow(int row) { pTableView->setCurrentIndex(pTableModel->index(row, 0)); }
 
     void empty();
@@ -266,7 +266,7 @@ protected slots:
     /// @param id A megnyomott gomb azonosítója
     void buttonPressed(int id);
     /// Ha eltávolításra került sor akkor itt jelez a model. A megadott objektum törlését fogja megkisérelni.
-    void recordRemove(cAlternate * _pr);
+    void recordRemove(cRecordAny * _pr);
     /// Ha változott a kijelölés
     void selectionChanged(QItemSelection,QItemSelection);
     void clickedHeader(int);

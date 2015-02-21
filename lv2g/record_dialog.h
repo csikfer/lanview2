@@ -169,7 +169,7 @@ public:
 protected:
     QVBoxLayout            *pVBoxLayout;
     QTabWidget             *pTabWidget;
-    tRecordList<cAlternate> recs;
+    tRecordList<cRecordAny> recs;
     QList<cRecordDialog *>  tabs;
 private:
     void init(qlonglong _oid);

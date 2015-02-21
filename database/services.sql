@@ -13,13 +13,28 @@ INSERT INTO ipprotocols (protocol_id, protocol_name) VALUES
     (  6, 'tcp' ),
     ( 17, 'udp' );
 
--- //// LAN.SERVICES
+    
+CREATE TABLE service_types (
+    service_type_id     bigserial       PRIMARY KEY,
+    service_type_name   varchar(32)     UNIQUE,
+    service_type_note   varchar(64)     DEFAULT NULL
+);
+ALTER TABLE service_types OWNER TO lanview2;
+COMMENT ON TABLE  service_types IS 'A service objektumok csoportosítását teszi lehetővé, egy rekord csak egy csoportba tartozhat.';
+COMMENT ON COLUMN service_types.service_type_id   IS 'service csoport ill. típus azonosító.';
+COMMENT ON COLUMN service_types.service_type_name IS 'service csoport ill. típus név.';
+COMMENT ON COLUMN service_types.service_type_note IS 'Megjegyzés.';
+
+INSERT INTO service_types (service_type_id, service_type_name) VALUES 
+    ( -1,        'unmarked');
+
 
 CREATE TABLE services (
     service_id              bigserial      PRIMARY KEY,
     service_name            varchar(32)    NOT NULL,
     service_note            varchar(255)   DEFAULT NULL,
-    service_alarm_msg       varchar(255)   DEFAULT NULL,
+    service_type_id         bigint         DEFAULT -1  -- unmarked
+        REFERENCES service_types(service_type_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
     protocol_id             bigint         DEFAULT -1  -- nil
         REFERENCES ipprotocols(protocol_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
     port                    integer        DEFAULT NULL,
@@ -119,10 +134,10 @@ CREATE TYPE noalarmtype AS ENUM ('off',     -- Az alarm-ok nincsenek letiltva
                                  'from_to');-- Az alarmok egy tőintervallumban le lesznek/vannak/voltak tiltva
 COMMENT ON TYPE noalarmtype IS '
 Riasztás tiltási állapotok:
-"off"     Az alarm-ok nincsenek letiltva
-"on"      Az alarmok le vannak tiltva
-"to"      Az alarmok egy megadott időpontig le vannak/voltak tiltva
-"from"    Az alarmok egy időpontól le lesznek/le vannak tiltva
+"off"     Az alarm-ok nincsenek letiltva;
+"on"      Az alarmok le vannak tiltva;
+"to"      Az alarmok egy megadott időpontig le vannak/voltak tiltva;
+"from"    Az alarmok egy időpontól le lesznek/le vannak tiltva;
 "from_to" Az alarmok egy tőintervallumban le lesznek/vannak/voltak tiltva';
 
 CREATE TABLE host_services (
@@ -133,7 +148,6 @@ CREATE TABLE host_services (
         REFERENCES services(service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     port_id                 bigint         DEFAULT NULL,
     host_service_note       varchar(255)   DEFAULT NULL,
-    host_service_alarm_msg  varchar(255)   DEFAULT NULL,
     prime_service_id        bigint         NOT NULL DEFAULT -1       -- nil
         REFERENCES services(service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT,
     proto_service_id        bigint         NOT NULL DEFAULT -1       -- nil
@@ -177,7 +191,6 @@ CREATE UNIQUE INDEX host_services_port_subservices_key ON host_services (node_id
 COMMENT ON TABLE  host_services IS 'A szolgáltatás-node összerendelések, ill. a konkrét szolgáltatások vagy ellenörzés utasítások táblája, és azok állpota.';
 COMMENT ON COLUMN host_services.host_service_id IS 'Egyedi azonosító';
 COMMENT ON COLUMN host_services.host_service_note IS 'Megjegyzés / leírás.';
-COMMENT ON COLUMN host_services.host_service_alarm_msg IS 'Riasztás esetén egy megjelnítendő üzenet ill. magyarázó szöveg.';
 COMMENT ON COLUMN host_services.node_id IS 'A node ill. host azonosítója, amin a szolgáltatás, vagy az ellenörzés fut.';
 COMMENT ON COLUMN host_services.service_id IS 'A szolgáltatást, vagy az ellenörzés típusát azonosító ID';
 COMMENT ON COLUMN host_services.prime_service_id IS 'Az ellenőrzés elsődleges módszerét azonosító, szervíz típus ID';
@@ -542,7 +555,6 @@ CREATE OR REPLACE VIEW view_host_services AS
     SELECT
         hs.host_service_id          AS host_service_id,
         hs.host_service_note        AS host_service_note,
-        hs.host_service_alarm_msg   AS host_service_alarm_msg,
         hs.node_id                  AS node_id,
         n.node_name                 AS node_name,
         hs.service_id               AS service_id,

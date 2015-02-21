@@ -5,16 +5,26 @@
 #include <QAbstractTableModel>
 #include <QStringListModel>
 
+/// @class cStringListModel
+/// Lista modell string lista megjelenítéséhez.
 class LV2GSHARED_EXPORT cStringListModel: public QAbstractListModel {
 public:
+    /// Konstruktor
+    /// Az elemek sorszámozását kikapcsolja.
     cStringListModel(QObject *__par = NULL);
+    /// A _stringList konténer adattag méretét adja vissza
     virtual int rowCount(const QModelIndex &parent) const;
+    /// Egy oszlopos megjelenítés (esetleg egy sorszám oszlop, mint heder), mindíg 1-el tér vissza.
     virtual int columnCount(const QModelIndex &parent) const;
+    /// Cella adatként a _stringList megfelelő elemét, az igazítás típusaként pedig balra igazítást, egyébb esetben 'NULL'-t ad vissza.
     virtual QVariant data(const QModelIndex &index, int role) const;
+    /// Ha sorszámozás van megadva, akkor a kért sorszámot adja vissza.
     virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const;
+    /// Az aktuális string konténer referenciáját adja vissza.
     const QStringList& stringList() const       { return _stringList; }
+    /// A megadott sring lista megjelenításe. A konténert bemásolja _stringList adattag konténerbe.
     bool setStringList(const QStringList& sl);
-    /// Az aktuális lista a végéhez ad egy sort
+    /// Az aktuális lista (_stringList konténer) a végéhez ad egy sort, és az új lista lessz megjelenítve.
     cStringListModel& operator<<(const QString& s) {
         beginResetModel();
         _stringList << s;
@@ -53,14 +63,21 @@ public:
         endResetModel();
         return *this;
     }
-    ///
+    /// Az index listában kijelölt elemeket törli.
     cStringListModel& remove(QModelIndexList& mil);
+    /// A sorszámozás állapotát adja vissza
     bool rowNumbers() const                     { return _rowNumbers; }
+    /// A sorszámozás kéreése, vagy tiltása
+    /// @param b Ha kérünk sorszámokat, akkor teue, egyébként false.
     void setRowNumers(bool b)                   { _rowNumbers = b; }
+    /// A lista aktuális mérete
     int size() const                            { return _stringList.size(); }
+    /// Ha az aktuális lista üres, akkor true értékkel tér vissza.
     int isEmpty() const                         { return _stringList.isEmpty(); }
 protected:
+    /// Az aktuálisan megjelenített string lista konténer
     QStringList _stringList;
+    /// A sorszámozás megjelenítésének az aktuális állpota.
     bool        _rowNumbers;
 };
 
