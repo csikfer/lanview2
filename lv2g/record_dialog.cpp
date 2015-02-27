@@ -81,7 +81,7 @@ cRecordDialogBase::cRecordDialogBase(const cTableShape &__tm, int _buttons, bool
     }
 
     _pWidget->setObjectName(name + "_Widget");
-    _pWidget->setWindowTitle(descriptor.getDescr());
+    _pWidget->setWindowTitle(descriptor.getNote());
 }
 
 cRecordDialogBase::~cRecordDialogBase()
@@ -190,7 +190,7 @@ void cRecordDialog::init()
         pw->setObjectName(mf.getName());
         PDEB(VVERBOSE) << "Add row to form : " << mf.getName() << " widget : " << typeid(*pFW).name() << QChar('/') << fieldWidgetType(pFW->wType()) << endl;
         pw->adjustSize();
-        pFormLayout->addRow(mf.getDescr(), pw);
+        pFormLayout->addRow(mf.getNote(), pw);
     }
     _pWidget->adjustSize();
     DBGFNL();

@@ -4,6 +4,7 @@
 #include "lv2g.h"
 #include "record_table.h"
 #include <QMainWindow>
+#include "onlinealarm.h"
 
 enum eMenuActionType {
     MAT_ERROR,          ///< Az objektum inicializálása sikertelen
@@ -14,31 +15,41 @@ enum eMenuActionType {
     MAT_DIALOG          ///< egy dialogus ablak mejelenítése
 };
 
+enum eOwnTab {
+    OWN_UNKNOWN = -1,
+    OWN_SETUP   =  0,
+    OWN_PARSER  =  1,
+    OWN_OLALARM =  2
+};
+
 /// @class cMenuAction
 /// A menu pontok funkcióit megvalósító objektum.
 class LV2GSHARED_EXPORT cMenuAction : public QObject {
     Q_OBJECT
 public:
     /// Konstruktor
+    /// Menüpont, a *pmi objektumban leírtak alapján inicializálj az objektumot.
+    /// Az objektumot a menu_items rekordja alapján hozzuk létre.
     cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidget * par, bool __ex = true);
-    /// Konstruktor
+/*  /// Konstruktor
     /// Egy tábla megjelenítése
     /// @param ps A megjelenítés leíró objektuma (a ps objektum ownere lessz a this objektum példány)
     /// @param pa A menü elem QAction objektuma
     /// @param par A QTab objektum, melynek egy tab-jában történik a megjelenítés
-    cMenuAction(cTableShape *ps, const QString&  nm, QAction *pa, QTabWidget *par);
+    cMenuAction(cTableShape *ps, const QString&  nm, QAction *pa, QTabWidget *par);*/
     /// Konstruktor
-    /// A menüpont egy parancsot hajt végre
+    /// A menüpont egy parancsot hajt végre. Az objektumot nem a menu_items rekordja alapján hozzuk létre.
     /// @param ps A végrehajtandó parancs (az objektum neveként lessz eltárolva)
     /// @param pa A menü elem QAction objektuma
     /// @param par A QTab objektum, melynek egy tab-jában történik a megjelenítés
     cMenuAction(const QString&  ps, QAction *pa, QTabWidget *par);
     /// Konstruktor
-    /// A menüpont egy widget-et jelenít meg
+    /// A menüpont egy widget-et jelenít meg. Az objektumot nem a menu_items rekordja alapján hozzuk létre.
     /// @param ps A widget pointere
+    /// @param t A ps típusa
     /// @param pa A menü elem QAction objektuma
     /// @param par A QTab objektum, melynek egy tab-jában történik a megjelenítés
-    cMenuAction(cOwnTab *po, QAction *pa, QTabWidget * par);
+    cMenuAction(cOwnTab *po, enum eOwnTab t, QAction *pa, QTabWidget * par);
     /// Destruktor (üres)
     ~cMenuAction();
     /// Típus
@@ -50,12 +61,17 @@ public:
     cTableShape     *pTableShape;
     /// Amennyiben egy táblát jelenítünk meg, akkoe a megjelenítést végző objektum
     cRecordTable    *pRecordTable;
-    /// A tab-ban a menüponthoz tartozó widget
-    QWidget         *pWidget;
+    /// Amennyiben egy belső custom widget, akkor a bázis objektum pointere
+    cOwnTab         *pOwnTab;
+    enum eOwnTab    ownType;
+    /// Widget pointere (widget típus)
+    QWidget        *pWidget;
     /// Amennyiben egy dialógus ablakként jelenik meg, akkor a dialogus ablak pointere
     QDialog         *pDialog;
     ///< A menü elemhez tartozó QAction objektum
     QAction         *pAction;
+    ///< Paraméter konténer
+    tMagicMap       mm;
 private:
     /// A type adattag beállítása
     void setType(enum eMenuActionType _t) {
@@ -64,6 +80,8 @@ private:
 
     /// Tábla megjelenítése esetén az inicializáló metódus.
     void initRecordTable();
+    /// Own megjelenítése esetén az inicializáló metódus.
+    void initOwn();
 public slots:
     /// Az objektumot meg kell jeleníteni
     void displayIt();

@@ -219,7 +219,7 @@ EXT_ const QString& nodeType(int __e, bool __ex = true);
 class LV2SHARED_EXPORT cParamType : public cRecord {
     CRECORD(cParamType);
 public:
-    /// Egy új port_params rekord beinzertálása (paraméter név/típus/dimenzió objektumlétrehozása).
+    /// Egy új paraméter típus rekord beinzertálása (paraméter név/típus/dimenzió objektumlétrehozása).
     /// Hiba esetén, ha __ex igaz (vagy nincs megadva), akkor dob egy kizárást,
     /// @param q Az adatbázis művelethet használt objektum
     /// @param __n A paraméter neve
@@ -228,7 +228,7 @@ public:
     /// @param __di A paraméter dimenziója, opcionális
     /// @return Az új rekord azonisítója (ID), hiba esetén, ha ::ex hamis volt, akkor NULL_ID-vel tér vissza.
     static qlonglong insertNew(QSqlQuery &q, const QString& __n, const QString& __de, const QString __t, const QString __di = QString(), bool __ex = true);
-    /// Egy új port_params rekord beinzertálása (paraméter név/típus/dimenzió objektumlétrehozása).
+    /// Egy új paraméter típus rekord beinzertálása (paraméter név/típus/dimenzió objektumlétrehozása).
     /// Hiba esetén, ha __ex igaz (vagy nincs megadva), akkor dob egy kizárást,
     /// @param q Az adatbázis művelethet használt objektum
     /// @param __n A paraméter neve
@@ -237,7 +237,7 @@ public:
     /// @param __di A paraméter dimenziója, opcionális
     /// @return Az új rekord azonisítója (ID), hiba esetén, ha ::ex hamis volt, akkor NULL_ID-vel tér vissza.
     static qlonglong insertNew(QSqlQuery &q, const QString& __n, const QString& __de, int __t, const QString __di = QString(), bool __ex = true);
-    /// Egy új port_params rekord beinzertálása (paraméter név/típus/dimenzió objektumlétrehozása).
+    /// Egy új paraméter típus rekord beinzertálása (paraméter név/típus/dimenzió objektumlétrehozása).
     /// Hiba esetén, ha __ex igaz (vagy nincs megadva), akkor dob egy kizárást,
     /// @param __n A paraméter neve
     /// @param __de Egy megjegyzés a paraméter típushoz
@@ -316,6 +316,11 @@ public:
         if (__ex && r == R_NOTFOUND) EXCEPTION(EFOUND, -1, _tn);
         return r;
     }
+    /// Rendszer paraméter név szerinti lekérdezése.
+    /// @param _q
+    /// @param __nm A paraméter neve
+    /// @param __ex Ha értéke true és nem létezik a lekért paraméter, akkor dob egy kizárást.
+    /// @return A kért paraméter értéke, vagy ha nem létezik és _ex false, akkor egy üres objektum.
     static QVariant getSysParam(QSqlQuery& _q, const QString& _nm, bool __ex = true) {
         cSysParam   po;
         if (po.fetchByName(_q, _nm)) {
@@ -323,6 +328,14 @@ public:
         }
         if(__ex) EXCEPTION(EFOUND, -1, _nm);
         return QVariant();
+    }
+    static QString getString(QSqlQuery& _q, const QString& _nm, const QString& __def = _sNul) {
+        cSysParam   po;
+        if (po.fetchByName(_q, _nm)) {
+            return po.value().toString();
+        }
+        return __def;
+
     }
 
 protected:

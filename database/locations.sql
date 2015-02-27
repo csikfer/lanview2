@@ -124,10 +124,9 @@ BEGIN
     RETURN id;
 END
 $$ LANGUAGE plpgsql;
--- Lekérdezi, hogy az idr azonosítójú places rekord parentje-e az idq-azonosítójúnak.
 CREATE OR REPLACE FUNCTION is_parent_place(idr bigint, idq bigint) RETURNS boolean AS $$
 DECLARE
-    n bigint;
+    n integer;
     id bigint := idr;
 BEGIN
     n := 0;
@@ -146,13 +145,14 @@ BEGIN
     END LOOP;
 END
 $$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION is_parent_place(bigint, bigint) IS
+'Lekérdezi, hogy az idr azonosítójú places rekord parentje-e az idq-azonosítójúnak.';
 
-CREATE OR REPLACE FUNCTION get_parent_image(idr bigint) RETURNS images AS $$
+CREATE OR REPLACE FUNCTION get_parent_image(idr bigint) RETURNS bigint AS $$
 DECLARE
-    n bigint;
+    n integer;
     pid bigint := idr;
     iid bigint;
-    ret images;
 BEGIN
     n := 0;
     LOOP
@@ -165,9 +165,23 @@ BEGIN
             RETURN NULL;
         END IF;
         IF iid IS NOT NULL THEN
-            SELECT * INTO ret FROM images WHERE image_id = iid;
-            RETURN ret;
+            RETURN iid;
         END IF;
     END LOOP;
 END
 $$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION get_parent_image(bigint) IS
+'Lekéri a legközelebbi parent image_id-jét. Addig megy a gyökér felé, amíg nem NULL értéket talál,
+vagy nincs több parent.';
+
+CREATE OR REPLACE FUNCTION is_group_place(idr bigint, idq bigint) RETURNS boolean AS $$
+DECLARE
+    n integer;
+BEGIN
+    SELECT COUNT(*) INTO n FROM place_group_places WHERE place_group_id = idq AND (place_id = idr OR is_parent_place(idr, place_id));
+    RETURN n > 0;
+END
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION is_group_place(bigint, bigint) IS
+'Lekérdezi, hogy az idr azonosítójú places tagja-e az idq-azonosítójú place_groups csoportnak,
+vagy valamelyik parentje tag-e';

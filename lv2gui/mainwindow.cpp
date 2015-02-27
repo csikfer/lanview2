@@ -3,13 +3,14 @@
 #include "setup.h"
 
 
+
 cMainWindow::cMainWindow(bool _setupOnly, QWidget *parent) :
     QMainWindow(parent)
 {
     pTabWidget = new QTabWidget(this);
     // Central Widget
     setCentralWidget(pTabWidget);
-    if (_setupOnly) {   /// Minimalista setup, nincs adatbázisunk
+    if (_setupOnly) {   // Minimalista setup, nincs adatbázisunk, vagy csak ez kell
         QAction *pFile = menuBar()->addAction(trUtf8("File"));
         QMenu   *pm    = new QMenu(menuBar());
         pFile->setMenu(pm);
@@ -20,7 +21,7 @@ cMainWindow::cMainWindow(bool _setupOnly, QWidget *parent) :
         pa = pm->addAction(nm);
         cOwnTab *pot =  new cSetupWidget(*lanView::getInstance()->pSet, this);
         pot->setObjectName(nm);
-        po  = new cMenuAction(pot, pa, pTabWidget);
+        po  = new cMenuAction(pot, OWN_SETUP, pa, pTabWidget);
         po->setObjectName(nm);
 
 /*      nm = trUtf8("Restart");
@@ -33,8 +34,7 @@ cMainWindow::cMainWindow(bool _setupOnly, QWidget *parent) :
         po  = new cMenuAction(nm, pa, pTabWidget);
         po->setObjectName(nm);
     }
-    else {
-        // Menu
+    else {        // Menu
         cMenuItem mi;
         QSqlQuery *pqm = newQuery();
         if (!mi.fetchFirstItem(*pqm, lanView::getInstance()->appName)) EXCEPTION(EDBDATA,-1, QObject::trUtf8("Nincs menü a GUI applikációhoz"));
@@ -44,7 +44,6 @@ cMainWindow::cMainWindow(bool _setupOnly, QWidget *parent) :
             delete pq2;
         } while(mi.next(*pqm));
     }
-
 }
 
 cMainWindow::~cMainWindow()

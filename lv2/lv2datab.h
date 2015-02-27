@@ -1058,7 +1058,7 @@ public:
     cMac    getMac(int __i, bool __ex = true) const;
     cMac    getMac(const QString& __n, bool __ex = true) const { return getMac(toIndex(__n, __ex)); }
     /// Az descriptor/cím mező értékével tér vissza, ha van, egyébként dob egy kizárást
-    QString getDescr() const                        { return getName(noteIndex()); }
+    QString getNote() const                        { return getName(noteIndex()); }
     /// Egy mező értékével tér vissza, feltételezve, hogy az egyvoid t logikai érték, ill. annak értékét bool típusúvá konvertálja.
     bool getBool(int __i) const                     { return get(__i).toBool(); }
     /// Egy mező értékével tér vissza, feltételezve, hogy az egy logikai érték, ill. annak értékét bool típusúvá konvertálja.

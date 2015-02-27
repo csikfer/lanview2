@@ -38,7 +38,7 @@ CREATE TABLE table_shapes (
     table_inherit_type tableinherittype DEFAULT 'no',
     inherit_table_names varchar(32)[]   DEFAULT NULL,
     is_read_only        boolean         DEFAULT 'f',
-    refine              varchar(64)     DEFAULT NULL,
+    refine              varchar(255)    DEFAULT NULL,
     properties          varchar(255)    DEFAULT NULL,
     left_shape_id       bigint          DEFAULT NULL REFERENCES table_shapes(table_shape_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
     right_shape_id      bigint          DEFAULT NULL REFERENCES table_shapes(table_shape_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,

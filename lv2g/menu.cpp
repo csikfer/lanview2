@@ -3,17 +3,18 @@
 #include "gparse.h"
 
 cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidget * par, bool __ex)
-    : QObject(par), type(MAT_ERROR)
+    : QObject(par), type(MAT_ERROR), mm()
 {
     pTabWidget   = par;
     pTableShape  = NULL;
     pRecordTable = NULL;
+    pOwnTab      = NULL;
     pWidget      = NULL;
+    ownType      = OWN_UNKNOWN;
     pDialog      = NULL;
     pAction      = pa;
 
     setObjectName(pmi->title()); // Ez lessz a TAB neve
-    tMagicMap mm;
     mm = splitMagic(pmi->getName(_sProperties), mm);
     QString mp;
     if      (!(mp = magicParam(QString("shape"),  mm)).isEmpty()) {
@@ -24,39 +25,40 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidge
         setType(MAT_SHAPE);
         connect(pAction,      SIGNAL(triggered()), this, SLOT(displayIt()));
     }
-    else if (!(mp = magicParam(QString("exec"),   mm)).isEmpty()) {
+    else if (!(mp = magicParam(QString("exec"),   mm)).isEmpty()) { // "exec"   Belső parancs végrehajtása (Exit, Restart,...)
         setObjectName(mp); // Nincs tab, a név a parancs lessz
         setType(MAT_EXEC);
         connect(pa, SIGNAL(triggered()), this, SLOT(executeIt()));
     }
-    else if (!(mp = magicParam(QString("own"),    mm)).isEmpty()) {
-        cOwnTab *pot =  NULL;
-        if (0 == mp.compare("setup", Qt::CaseInsensitive)) {
-            pot =  new cSetupWidget(*lanView::getInstance()->pSet, par);
-            pWidget = (QWidget *)pot;
+    else if (!(mp = magicParam(QString("own"),    mm)).isEmpty()) { // "own"    Egyedi előre definiált cOwnTab leszármazott hívása
+        if (0 == mp.compare("setup", Qt::CaseInsensitive)) {            // "setup"      Beállítások szerkesztése widget
+            ownType = OWN_SETUP;
         }
-        else if (0 == mp.compare("parser", Qt::CaseInsensitive)) {
-            pot =  new cParseWidget(par);
-            pWidget = (QWidget *)pot;
+        else if (0 == mp.compare("parser", Qt::CaseInsensitive)) {      // "parser"     A parszer widget
+            ownType = OWN_PARSER;
+        }
+        else if (0 == mp.compare("olalarm", Qt::CaseInsensitive)) {     // "olalarm"    On-Line riasztások widget
+            ownType = OWN_OLALARM;
         }
         else {
             if (__ex) EXCEPTION(ENONAME, -1, mp);
             return;
         }
-        connect(pAction,      SIGNAL(triggered()), this, SLOT(displayIt()));
-        connect(pot,          SIGNAL(closeIt()),   this, SLOT(removeIt()));
-        connect(pWidget,      SIGNAL(destroyed()), this, SLOT(destroyedChild()));
         setType(MAT_OWN);
+        connect(pAction,      SIGNAL(triggered()), this, SLOT(displayIt()));
     }
     else if (__ex) EXCEPTION(EDBDATA);
 }
 
+/*
 cMenuAction::cMenuAction(cTableShape *ps, const QString &nm, QAction *pa, QTabWidget *par)
     : QObject(par), type(MAT_SHAPE)
 {
     pTabWidget   = par;
     pTableShape  = ps;
     pRecordTable = NULL;
+    pOwnTab      = NULL;
+    ownType      = OWN_UNKNOWN;
     pWidget      = NULL;
     pDialog      = NULL;
     pAction      = pa;
@@ -66,6 +68,7 @@ cMenuAction::cMenuAction(cTableShape *ps, const QString &nm, QAction *pa, QTabWi
     connect(pRecordTable, SIGNAL(closeIt()),   this, SLOT(removeIt()));
     setObjectName(nm);
 }
+*/
 
 cMenuAction::cMenuAction(const QString&  ps, QAction *pa, QTabWidget * par)
     : QObject(par), type(MAT_EXEC)
@@ -73,6 +76,8 @@ cMenuAction::cMenuAction(const QString&  ps, QAction *pa, QTabWidget * par)
     pTabWidget   = par;
     pTableShape  = NULL;
     pRecordTable = NULL;
+    pOwnTab      = NULL;
+    ownType      = OWN_UNKNOWN;
     pWidget      = NULL;
     pDialog      = NULL;
     pAction      = pa;
@@ -81,12 +86,13 @@ cMenuAction::cMenuAction(const QString&  ps, QAction *pa, QTabWidget * par)
     connect(pa, SIGNAL(triggered()), this, SLOT(executeIt()));
 }
 
-cMenuAction::cMenuAction(cOwnTab *po, QAction *pa, QTabWidget * par)
+cMenuAction::cMenuAction(cOwnTab *po, eOwnTab t, QAction *pa, QTabWidget * par)
     : QObject(par), type(MAT_WIDGET)
 {
     pTabWidget   = par;
     pTableShape  = NULL;
     pRecordTable = NULL;
+    ownType      = t;
     pWidget      = po;
     pDialog      = NULL;
     pAction      = pa;
@@ -107,6 +113,27 @@ void cMenuAction::initRecordTable()
     connect(pRecordTable, SIGNAL(destroyed()), this, SLOT(destroyedChild()));
 }
 
+void cMenuAction::initOwn()
+{
+    switch (ownType) {
+    case OWN_SETUP:
+        pOwnTab = new cSetupWidget(*lanView::getInstance()->pSet, pTabWidget);
+        break;
+    case OWN_PARSER:
+        pOwnTab = new cParseWidget(pTabWidget);
+        break;
+    case OWN_OLALARM:
+        pOwnTab = new cOnlineAlarm(pTabWidget);
+        break;
+    default:
+        EXCEPTION(EPROGFAIL);
+        break;
+    }
+    pWidget = pOwnTab->pWidget();
+    connect(pOwnTab,      SIGNAL(closeIt()),   this, SLOT(removeIt()));
+    connect(pWidget,      SIGNAL(destroyed()), this, SLOT(destroyedChild()));
+}
+
 void cMenuAction::displayIt()
 {
     switch (type) {
@@ -114,6 +141,8 @@ void cMenuAction::displayIt()
         if (pWidget == NULL) initRecordTable();
         break;
     case MAT_OWN:
+        if (pWidget == NULL) initOwn();
+        break;
     case MAT_WIDGET:
         if (pWidget == NULL) {
             EXCEPTION(EPROGFAIL,-1,"pWidget is NULL.");
@@ -145,12 +174,19 @@ void cMenuAction::removeIt()
     pWidget->setVisible(false);
     switch (type) {
     case MAT_SHAPE:
-        delete pRecordTable;    // Ha becsukta, akkor csinalunk az objektumnal egy resetet
-        pRecordTable = NULL;
+        pDelete(pRecordTable);
+        break;
+    case MAT_OWN:
+        pDelete(pOwnTab);
+        break;
+    case MAT_WIDGET:
+        return; // itt nem kéne nullázni a pWidget-et
         break;
     default:
+        EXCEPTION(EPROGFAIL,type,"Invalid type.");
         break;
     }
+    pWidget = NULL;
 }
 
 void cMenuAction::destroyedChild()

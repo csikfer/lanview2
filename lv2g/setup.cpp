@@ -69,6 +69,7 @@ cSetupWidget::~cSetupWidget()
     if (pLl != NULL) delete pLl;
     DBGFNL();
 }
+
 void cSetupWidget::applicate()
 {
     DBGFN();

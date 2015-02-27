@@ -72,6 +72,8 @@ public:
     ~lv2g();
     static lv2g*    getInstance(void) { return (lv2g *)lanView::getInstance(); }
     static bool  logonNeeded;
+    static bool  zoneNeeded;
+    qlonglong   zoneId;
 protected:
     const lv2gDesign *pDesign;
 };
@@ -152,11 +154,12 @@ static inline QWidget *newFrame(int _st, QWidget * p = NULL)
 static inline QWidget *newHLine(QWidget * p = NULL) { return newFrame(QFrame::HLine, p); }
 static inline QWidget *newVLine(QWidget * p = NULL) { return newFrame(QFrame::VLine, p); }
 
-// A tab-os megjelenítéshez egy segéd osztály, csak annyi a szerepe, hogy van egy removeTab() szignálja
+// A tab-os megjelenítéshez egy segéd osztály,
 class LV2GSHARED_EXPORT cOwnTab : public QWidget {
     Q_OBJECT
 public:
-    cOwnTab(QWidget *par = NULL);
+    cOwnTab(QWidget *par);
+    QWidget *pWidget() { return (QWidget *)this; }
 signals:
     // A widget-et be kell csukni, el kell távolítani ...
     void closeIt();

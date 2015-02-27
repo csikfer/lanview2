@@ -258,13 +258,18 @@ int cRecordTableModelSql::qView()
     int cnt = 0;
     extLines.clear();
     if (q.seek(qpos)) do {
-        qlonglong tableoid = variantToId(q.value(0));
         cRecordAny *p = NULL;
-        if (tableoid == recDescr.tableoid()) {
+        if (q.value(0).isNull()) {
             p = new cRecordAny(&recDescr);
         }
         else {
-            p = new cRecordAny(&recordTable.inhRecDescr(tableoid));
+            qlonglong tableoid = variantToId(q.value(0));
+            if (tableoid == recDescr.tableoid()) {
+                p = new cRecordAny(&recDescr);
+            }
+            else {
+                p = new cRecordAny(&recordTable.inhRecDescr(tableoid));
+            }
         }
         p->set(q);
         _records << p;

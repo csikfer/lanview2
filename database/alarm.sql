@@ -60,6 +60,19 @@ ALTER TABLE host_services ADD FOREIGN KEY (last_alarm_log_id)
     REFERENCES alarms(alarm_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL;
 ALTER TABLE host_service_logs ADD FOREIGN KEY (superior_alarm_id)
     REFERENCES alarms(alarm_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL;
+    
+CREATE OR REPLACE FUNCTION alarm_notice() RETURNS TRIGGER AS $$
+BEGIN
+    IF NOT NEW.noalarm OR NEW.alarms.superior_alarm_id IS NULL THEN
+--        IF  (TG_OP = 'UPDATE' AND NEW.max_status > OLD.max_status) OR TG_OP = 'INSERT' THEN
+            NOTIFY alarm;
+--        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- CREATE TRIGGER alarms_before_insert_or_update  BEFORE UPDATE OR INSERT ON alarms  FOR EACH ROW EXECUTE PROCEDURE alarm_notice();
 
 CREATE OR REPLACE FUNCTION alarm_id2name(bigint) RETURNS TEXT AS $$
 DECLARE
@@ -399,15 +412,25 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE VIEW view_alarms AS
+DROP VIEW IF EXISTS view_alarms;
+CREATE VIEW view_alarms AS
     SELECT
+    a.alarm_id,
+    a.host_service_id,
+    hs.node_id,
+    n.place_id,
+    a.superior_alarm_id,
     a.begin_time,
-    a.end_time IS NULL AS active,
+    a.end_time,
+    n.node_name,
+    a.max_status,
     pl.place_name,
-    alarm_message(host_service_id, max_status) AS msg
+    alarm_message(host_service_id, max_status) AS msg,
+    au.user_name AS ack_user_name
     FROM alarms        AS a
     JOIN host_services AS hs USING(host_service_id)
     JOIN nodes         AS n  USING(node_id)
     JOIN places        AS pl USING(place_id)
+    LEFT OUTER JOIN users AS au ON a.ack_user_id = au.user_id
     ORDER BY begin_time DESC;
     

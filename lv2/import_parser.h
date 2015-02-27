@@ -32,8 +32,10 @@ extern void initImportParser();
 /// A parser hívás után az esetleg (pl. hiba esetén) fel nem szabadított pointereket felszabadítja, ill nullázza.
 extern void downImportParser();
 
+// Ez a kód csak azért került ide, mert a qtcreator nem támogatja a .yy forrásokat, és abban nem működik a kodkiegészítés, szinezés ...
 #if defined(LV2_LIBRARY)
-
+// Mivel ez a kódrész nem teljesen idevaló, a fordító reklamál
+static void insertCode(const QString& __txt);
 static QSqlQuery      *piq = NULL;
 static inline QSqlQuery& qq() { if (piq == NULL) EXCEPTION(EPROGFAIL); return *piq; }
 
@@ -83,8 +85,6 @@ public:
         delete pp;
     }
 };
-
-static void insertCode(const QString& __txt);
 
 class cTemplateMapMap : public QMap<QString, cTemplateMap> {
  public:

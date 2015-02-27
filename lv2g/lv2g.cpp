@@ -3,6 +3,7 @@
 #include "logon.h"
 
 bool lv2g::logonNeeded = true;
+bool lv2g::zoneNeeded  = true;
 
 lv2g::lv2g() :
     lanView(),
@@ -10,11 +11,12 @@ lv2g::lv2g() :
 {
     if (lastError != 0) return;
     try {
+        zoneId = NULL_ID;
         #include "errcodes.h"
         pDesign = new lv2gDesign(this);
         if (logonNeeded) {
             if (!dbIsOpen()) EXCEPTION(EPROGFAIL);
-            switch (cLogOn::logOn()) {
+            switch (cLogOn::logOn(zoneNeeded ? &zoneId : NULL)) {
             case LR_OK:         break;
             case LR_INVALID:    EXCEPTION(ELOGON, LR_INVALID, trUtf8("Tul sok hibás bejelentkezési próbálkozás."));
             case LR_CANCEL:     EXCEPTION(ELOGON, LR_CANCEL, trUtf8("Mégsem."));
@@ -22,6 +24,7 @@ lv2g::lv2g() :
             }
         }
     } CATCHS(lastError)
+    if (!logonNeeded || !zoneNeeded) zoneId = cPlaceGroup().getIdByName(_sAll);
 }
 
 lv2g::~lv2g()
@@ -175,10 +178,9 @@ void _setFonts()
 }
 
 
-cOwnTab::cOwnTab(QWidget *par)
-    : QWidget(par)
+cOwnTab::cOwnTab(QWidget *par) :QWidget(par)
 {
-    setVisible(false);
+    ;
 }
 
 void cOwnTab::endIt()

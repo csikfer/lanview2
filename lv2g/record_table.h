@@ -147,6 +147,7 @@ class cRecordTable : public QObject {
     friend class cRecordTableModel;
     friend class cRecordTableModelSql;
     friend class cRecordTableFODialog;
+    friend class cOnlineAlarm;
     Q_OBJECT
 public:
     /// Konstruktor
@@ -176,6 +177,10 @@ public:
     const cRecordTableColumn& field(int i) const { return *fields[i]; }
     /// Ha a megjelínítés egy dialog box-ban történik, akkor értéke true.
     const bool      isDialog;
+    const cRecordAny *recordAt(int i) const {
+        if (!isContIx(pTableModel->records(), i)) EXCEPTION(EDATA, i);
+        return pTableModel->records()[i];
+    }
 protected:
     int         actRow();
     cRecordAny *actRecord();
@@ -259,7 +264,7 @@ private:
     cTableShape *   getInhShape(const cRecStaticDescr& d) { return getInhShape(d.tableName()); }
     QStringList         inheritTableList;
     QMap<qlonglong, const cRecStaticDescr *> * pInhRecDescr;
-    QString             viewName;
+    QString             viewName;   // A TEMP VIEW neve, vagy NULL, ha nincs
     eTableInheritType   tit;
 protected slots:
     /// Megnyomtak egy gombot.
@@ -272,6 +277,8 @@ protected slots:
     void clickedHeader(int);
 signals:
     void closeIt();
+public:
+    QTableView *tableView() { return pTableView; }
 };
 
 

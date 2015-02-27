@@ -701,6 +701,7 @@ bool cLldpScan::createSnmpDev()
         ip.second= _sFixIp;
         rDev.asmbNode(q, _sLOOKUP, NULL, &ip, &ma, _sNul, NULL_ID, false);
         if (rDev.isDefective()) return false;
+        rDev.setName(_sNodeNote, "By LLDP scan.");
         if (rDev.setBySnmp(_sNul, false)      // Objektum kitöltése
          && rDev.insert(q, false)) {                        // Sikerült létrehozni az objektumot
             PDEB(INFO) << "Created SNMP Device : " << rDev.toString() << endl;
