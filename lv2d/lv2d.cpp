@@ -469,11 +469,13 @@ void cDaemon::procReadyStdOut()
         QString     pre;
         for (int i = maxArcLog; i > 1; --i) {
             old = actLogFile.fileName() + QChar('.') + QString::number(i);
+            (void)QFile::remove(old);
             pre = actLogFile.fileName() + QChar('.') + QString::number(i -1);
             bool r = QFile::rename(pre, old);
             PDEB(VVERBOSE) << "Rename " << pre << " to " << old << " Result : " << DBOOL(r) << endl;
         }
         old = actLogFile.fileName() + ".1";
+        (void)QFile::remove(old);
         pre = actLogFile.fileName();
         if (!QFile::rename(pre, old)) {
             DERR() << "log file rename " << pre << " to " << old << " error." << endl;

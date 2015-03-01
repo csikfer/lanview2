@@ -10,6 +10,7 @@
 void setAppHelp()
 {
     lanView::appHelp += QObject::trUtf8("-s|--setup            Setup.\n");
+    lanView::appHelp += QObject::trUtf8("-a|--app-name         APP name.\n");
 }
 
 int main(int argc, char * argv[])
@@ -23,6 +24,12 @@ int main(int argc, char * argv[])
     if (0 <= findArg(QChar('s'),QString("setup"), app.arguments())) {
         lv2Gui::_setup = true;
     }
+    int i;
+    if (0 <= (i = findArg(QChar('a'),QString("app-name"), app.arguments()))
+     && (i + 1) < app.arguments().count()) {
+        lanView::appName = app.arguments()[i + 1];
+    }
+
     lanView::sqlNeeded  = !lv2Gui::_setup;
 
     lv2Gui   mo;
