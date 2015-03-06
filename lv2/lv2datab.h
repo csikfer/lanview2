@@ -299,7 +299,8 @@ CSD_INHERITOR(cColStaticDescrTime)
 };
 
 /// @class cColStaticDescrDateTime
-/// Az ós cColStaticDescr osztályt dátum és idő (timestamp) konverziós függvényivel egészíti ki.
+/// Az ős cColStaticDescr osztályt dátum és idő (timestamp) konverziós függvényivel egészíti ki.
+/// Mindig QDateTime típusban tárolódik kivéve a NULL, és a NOW, ez utóbbi QString.
 CSD_INHERITOR(cColStaticDescrDateTime)
 };
 
@@ -415,7 +416,7 @@ protected:
     int                 _idIndex;
     /// Az név mező indexe, vagy NULL_IX (negatív), ha nincs, vagy nem ismert
     int                 _nameIndex;
-    /// Az descr (title) mező indexe, vagy NULL_IX (negatív), ha nincs, vagy nem ismert
+    /// Az note (title) mező indexe, vagy NULL_IX (negatív), ha nincs, vagy nem ismert
     int                 _noteIndex;
     /// A deleted mező indexe, vagy NULL_IX (negatív), ha nincs ilyen mező
     int                 _deletedIndex;
@@ -558,7 +559,7 @@ public:
     int idIndex(bool _ex = true) const             { if (_ex && !isIndex(_idIndex)) EXCEPTION(EFOUND, _idIndex, "Nothing ID field."); return _idIndex; }
     /// Az NAME mező indexével tér vissza, ha nincs név, vagy nem ismert az indexe, és _ex értéke true, akkor dob egy kizárást.
     int nameIndex(bool _ex = true) const           { if (_ex && !isIndex(_nameIndex)) EXCEPTION(EFOUND, _nameIndex, "Nothing name field."); return _nameIndex; }
-    /// Az DESCR mező indexével tér vissza, ha nincs név, vagy nem ismert az indexe, és _ex értéke true, akkor dob egy kizárást.
+    /// Az NOTE mező indexével tér vissza, ha nincs név, vagy nem ismert az indexe, és _ex értéke true, akkor dob egy kizárást.
     int noteIndex(bool _ex = true) const           { if (_ex && !isIndex(_noteIndex)) EXCEPTION(EFOUND, _noteIndex, "Nothing descr field."); return _noteIndex; }
     /// Az DELETED mező indexével tér vissza, ha nincs deleted mező, vagy nem ismert az indexe, és _ex értéke true, akkor dob egy kizárást.
     int deletedIndex(bool _ex = true) const        { if (_ex && !isIndex(_deletedIndex)) EXCEPTION(EFOUND, _deletedIndex, "Nothing descr field."); return _deletedIndex; }
@@ -664,6 +665,8 @@ public:
     QString toString() const;
     /// A tulajdonosra mutató távoli kulcs mező megkeresése
     int ixToOwner(bool __ex = true) const;
+    /// Az önmagára mutató távoli kulcs mező megkeresése
+    int ixToTree(bool __ex = true) const;
 protected:
     bool addMap();
     static int _setReCallCnt;
@@ -782,7 +785,7 @@ Más mező adat típust nem támogat a cRecord osztály.
 A mező adatokhoz a set() és get() metódusokkal ill. az operator[]() -on keresztül tudunk hozzáférni.
 Van néhány speciális mező (nem kötelező, a rendszer ezeket csak akkor detektálja, ha azok megfelelnek a szabályoknak),
 ilyen az ID, a név, és a 'descr' mező (nem keverendő a *Descr nevű objektumokkal). Ezek esetén nem kell megadni
-a mező nevét vagy indexét: getId(), getName(), getDescr(), setId(i), setName(n). És van néhány metódus, ami elvégez
+a mező nevét vagy indexét: getId(), getName(), getNote(), setId(i), setName(n). És van néhány metódus, ami elvégez
 helyettünk néhány gyakoribb adat konverziót getId(const QString&), getName(const QString&), getBool(const QString&), getId(int), getName(int),
 getBool(int), view(), setId(const QString&,qlonglong), setName(const QString&, const QString&), setId(int,qlonglong), setName(int, const QString&).
 
@@ -1053,13 +1056,23 @@ public:
     QString getName(int i) const                    { return descr()[i].toName(get(i)); }
     /// Egy mező értékével tér vissza, feltételezve, hogy az egy string, ill. annak értékét stringgé konvertálja.
     QString getName(const QString& __n) const       { return getName(toIndex(__n)); }
-    /// Az név (name) mező értékével tér vissza, ha van, egyébként dob egy kizárást
-    QString getName() const                         { return getName(nameIndex()); }
+    /// Az név (name) mező értékével tér vissza, ha van,és nem NULL.
+    /// Ha nincs név mező megkísérli a rekord ID-ből az id2name SQL föggvénnyel konvertálni a nevet.
+    /// Ha se név se id mező nincs kizárást dob.
+    /// Ha a név mező NULL, de nincs ID mező, vagy konvertáló függvén akkor kizárást dob.
+    /// Ha a név és ID mező is NULL, akkor egy NULL stringgel tér vissza.
+    QString getName() const;
+    /// Feltételezve, hogy a megadott indexű mező egy MAC, annk értékével tér vissza.
     cMac    getMac(int __i, bool __ex = true) const;
+    /// Feltételezve, hogy a megadott nevű mező egy MAC, annk értékével tér vissza.
     cMac    getMac(const QString& __n, bool __ex = true) const { return getMac(toIndex(__n, __ex)); }
-    /// Az descriptor/cím mező értékével tér vissza, ha van, egyébként dob egy kizárást
+    /// Az megjegyzés/cím mező értékével tér vissza, ha van, egyébként dob egy kizárást
     QString getNote() const                        { return getName(noteIndex()); }
-    /// Egy mező értékével tér vissza, feltételezve, hogy az egyvoid t logikai érték, ill. annak értékét bool típusúvá konvertálja.
+    /// Ha a megjegyzés/cím mező nem NULL, akkor azzal, egyébként a névvel tér vissza.
+    QString getNoteOrName() const                  { QString s = getNote(); return s.isEmpty() ? getName() : s; }
+    /// Ha az n1 nevű mező nem NULL, akkor azzal, egyébként az n2 nevű mező értékével tér vissza.
+    QString getName2(const QString& n1, const QString& n2) const { QString s = getName(n1); return s.isEmpty() ? getName(n2) : s; }
+    /// Egy mező értékével tér vissza, feltételezve, hogy az egy logikai érték, ill. annak értékét bool típusúvá konvertálja.
     bool getBool(int __i) const                     { return get(__i).toBool(); }
     /// Egy mező értékével tér vissza, feltételezve, hogy az egy logikai érték, ill. annak értékét bool típusúvá konvertálja.
     bool getBool(const QString& __i) const          { return get(__i).toBool(); }
@@ -1119,7 +1132,7 @@ public:
     /// Ha a megadott indexű mező NULL, vagy nincs ilyen indexü mező akkor true-val tér vissza
     /// Nem hív virtuális metódust.
     bool isNull(int i) const                        { return isNull() || !(i >= 0 && i < _fields.size()) || _fields[i].isNull(); }
-    /// Az isNull(int i) újradefiniálása, a név konvenció miatt.
+    /// Az isNull(int i) változatlan újradefiniálása, a név konvenció miatt.
     bool _isNull(int i) const                       { return isNull(i); }
     /// Ha a megadott Nevű mező NULL, vagy nincs ilyen nincs mező akkor true-val tér vissza
     /// Virtuális metódust hív, konstruktorban nem használható.

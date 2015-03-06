@@ -239,12 +239,13 @@ bool cTableShape::setDefaults(QSqlQuery& q)
         fm.setName(_sTableShapeFieldTitle, cDescr);
         fm.setId(_sFieldSequenceNumber, (i + 1) * 10);
         bool ro = (!fm.isUpdatable()) || rDescr.primaryKey()[i] || rDescr.autoIncrement()[i];
-        bool hide = false;
+        bool hide = i == rDescr.idIndex(false);
         if (cDescr.fKeyType == cColStaticDescr::FT_OWNER) {
             ro   = true;
             hide = true;
-            type |= enum2set(TS_CHILD);
+            type = (type & ~enum2set(TS_SIMPLE)) | enum2set(TS_CHILD);
         }
+        // Önmagára mutató fkey?
         if (cDescr.fKeyType     == cColStaticDescr::FT_PROPERTY
          && rDescr.tableName()  == cDescr.fKeyTable
          && rDescr.schemaName() == cDescr.fKeySchema) {
@@ -281,6 +282,7 @@ bool cTableShape::setDefaults(QSqlQuery& q)
         }
     }
     setId(_sTableShapeType, type);
+    setBool(_sIsReadOnly, !rDescr.isUpdatable());
     return r;
 }
 

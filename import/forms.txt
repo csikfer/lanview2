@@ -125,7 +125,7 @@ TABLE SHAPE ipaddresses "IP címek" {
 DELETE TABLE SHAPE hostports;
 TABLE interfaces SHAPE hostports "Hálózati interfészek, portok" {
     SET DEFAULTS;
-    TABLE TYPE child, owner;
+    TABLE TYPE child, owner, tree;
     RIGHT SHAPE ipaddresses;
     TABLE INHERIT TYPE listed_rev;
     INHERIT TABLE NAMES nports;                 // A teljes lista: interfaces, nports
@@ -143,6 +143,7 @@ TABLE snmpdevices SHAPE allnodes "Hálózati elemek" {
     SET DEFAULTS;
     TABLE TYPE owner;
     TABLE INHERIT TYPE listed_rev;      // Megjelenítjük az ős tábla elemeit is
+    INHERIT TABLE NAMES nodes;          // A teljes lista: snmpdevices, nodes
     RIGHT SHAPE hostports;
     FIELD node_name ORD asc,desc,no;
     FIELD node_note, place_id ORD no, asc, desc;
@@ -162,14 +163,14 @@ TABLE SHAPE snmpdevices "SNMP hosts" {
 DELETE TABLE SHAPE places;
 TABLE SHAPE places "Helyiségek" {
     SET DEFAULTS;
-    TABLE TYPE simple;  // A 'SET DEFAULTS' tree-re állítja, de tree még nincs...
+    TABLE TYPE tree;
     $DefRights
 }
 
 DELETE TABLE SHAPE host_services;
 TABLE SHAPE host_services "A hostkokhoz rendelt szervíz példányok" {
     SET DEFAULTS;
-    TABLE TYPE simple;
+    TABLE TYPE tree;
     FIELD node_id, service_id, prime_service_id, proto_service_id ADD FILTERS begin, like, similar, regexp, regexpi;
     FIELD node_id, service_id, port_id ORD asc,desc,no;
     FIELD prime_service_id, proto_service_id, superior_host_service_id, host_service_state, soft_state, hard_state, last_changed, last_touched ORD no,asc,desc;
@@ -196,6 +197,7 @@ TABLE SHAPE subnets "Alhálózatok" {
 DELETE TABLE SHAPE vlans;
 TABLE SHAPE vlans "VLAN-ok" {
     SET DEFAULTS;
+    FIELD vlan_id HIDE OFF;
     TABLE TYPE simple;
     $DefRights
 }
@@ -206,7 +208,7 @@ TABLE SHAPE vlans "VLAN-ok" {
 DELETE TABLE SHAPE alarms;
 TABLE SHAPE alarms "Riasztások" {
     SET DEFAULTS;
-    TABLE TYPE simple;
+    TABLE TYPE tree;
     TABLE READ ONLY;
     FIELD alarm_id          TITLE "ID"            "Riasztás egyedi azonosító kódja";
     FIELD host_service_id   TITLE "host:service" "Szolgálltatás példány";
@@ -302,7 +304,7 @@ TABLE SHAPE table_shapes "Táblák megjelenítése" {
 DELETE TABLE SHAPE menu_items;
 TABLE SHAPE menu_items "Menu elemek" {
     SET DEFAULTS;
-    TABLE TYPE simple; // tree
+    TABLE TYPE tree;
     $DefRights
 }
 

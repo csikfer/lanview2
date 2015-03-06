@@ -7,7 +7,7 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidge
 {
     pTabWidget   = par;
     pTableShape  = NULL;
-    pRecordTable = NULL;
+    pRecordView = NULL;
     pOwnTab      = NULL;
     pWidget      = NULL;
     ownType      = OWN_UNKNOWN;
@@ -19,9 +19,7 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidge
     QString mp;
     if      (!(mp = magicParam(QString("shape"),  mm)).isEmpty()) {
         if (pq == NULL) EXCEPTION(EPROGFAIL);   // Ha nincs adatbázis, akkor ezt nem kéne
-        pTableShape = new cTableShape;
-        pTableShape->setParent(this);
-        pTableShape->setByName(*pq, mp);
+        setObjectName(mp);
         setType(MAT_SHAPE);
         connect(pAction,      SIGNAL(triggered()), this, SLOT(displayIt()));
     }
@@ -75,7 +73,7 @@ cMenuAction::cMenuAction(const QString&  ps, QAction *pa, QTabWidget * par)
 {
     pTabWidget   = par;
     pTableShape  = NULL;
-    pRecordTable = NULL;
+    pRecordView = NULL;
     pOwnTab      = NULL;
     ownType      = OWN_UNKNOWN;
     pWidget      = NULL;
@@ -91,7 +89,7 @@ cMenuAction::cMenuAction(cOwnTab *po, eOwnTab t, QAction *pa, QTabWidget * par)
 {
     pTabWidget   = par;
     pTableShape  = NULL;
-    pRecordTable = NULL;
+    pRecordView = NULL;
     ownType      = t;
     pWidget      = po;
     pDialog      = NULL;
@@ -107,10 +105,17 @@ cMenuAction::~cMenuAction()
 
 void cMenuAction::initRecordTable()
 {
-    pRecordTable = new cRecordTable(pTableShape, false, pTabWidget);
-    pWidget = pRecordTable->pWidget();
-    connect(pRecordTable, SIGNAL(closeIt()),   this, SLOT(removeIt()));
-    connect(pRecordTable, SIGNAL(destroyed()), this, SLOT(destroyedChild()));
+    pTableShape = new cTableShape;
+    pTableShape->setParent(this);
+    QString n = objectName();
+    pTableShape->setByName(n);
+    qlonglong type = pTableShape->getId(_sTableShapeType);
+    if (type & ENUM2SET(TS_TREE)) pRecordView = new cRecordTree( pTableShape, false, NULL, pTabWidget);
+    else                          pRecordView = new cRecordTable(pTableShape, false, NULL, pTabWidget);
+
+    pWidget = pRecordView->pWidget();
+    connect(pRecordView, SIGNAL(closeIt()),   this, SLOT(removeIt()));
+    connect(pRecordView, SIGNAL(destroyed()), this, SLOT(destroyedChild()));
 }
 
 void cMenuAction::initOwn()
@@ -174,7 +179,7 @@ void cMenuAction::removeIt()
     pWidget->setVisible(false);
     switch (type) {
     case MAT_SHAPE:
-        pDelete(pRecordTable);
+        pDelete(pRecordView);
         break;
     case MAT_OWN:
         pDelete(pOwnTab);
@@ -193,7 +198,7 @@ void cMenuAction::destroyedChild()
 {
     DBGFN();
     pWidget = NULL;         // A tab tényleg elitézi a többit?
-    pRecordTable = NULL;
+    pRecordView = NULL;
 }
 
 void  cMenuAction::executeIt()

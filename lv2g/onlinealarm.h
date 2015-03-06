@@ -27,6 +27,23 @@ private:
 private slots:
     void curRowChgNoAck(QItemSelection sel, QItemSelection);
     void curRowChgAckAct(QItemSelection sel, QItemSelection);
+    void acknowledge();
 };
+
+_GEX QPolygonF toQPolygonF(const tPolygonF _pol);
+
+#if defined(LV2G_LIBRARY)
+#include "ui_acknowledge.h"
+
+class cAckDialog : public QDialog {
+    Q_OBJECT
+public:
+    cAckDialog(const cRecordAny& __r, QWidget *par = NULL);
+    ~cAckDialog();
+    Ui_ackDialog *pUi;
+private slots:
+    void changed();
+};
+#endif // defined(LV2G_LIBRARY)
 
 #endif // CONLINEALARM_H

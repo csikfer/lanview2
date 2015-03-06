@@ -128,15 +128,6 @@ EXT_ bool sqlEnd(QSqlQuery& q, bool __ex = true);
 /// Tranzakció visszagörgetése
 EXT_ bool sqlRollback(QSqlQuery& q, bool __ex = true);
 
-/// Végrehajt ill összeállít és végrehajt egy query-t ami egy SQL függvényhívás.
-/// @param q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.
-/// @param fn Az SQL függvény neve. Maximum négy paramétert tudunk átadni.
-/// @param v1 A hívott függvény első paramétere, ha megadtuk, ha nem, akkor a függvénynek nincs egy paramétere sem.
-/// @param v2 A hívott függvény második paramétere, ha megadtuk, ha nem, akkor a függvénynek egy paramétere van.
-/// @param v3 A hívott függvény harmadik paramétere, ha megadtuk, ha nem, akkor a függvénynek kettő paramétere van.
-/// @param v4 A hívott függvény negyedik paramétere, ha megadtuk, ha nem, akkor a függvénynek három paramétere van.
-EXT_ bool execSqlFunction(QSqlQuery& q, const QString& fn, const QVariant v1 = QVariant(), const QVariant v2 = QVariant(), const QVariant v3 = QVariant(), const QVariant v4 = QVariant());
-
 /// Végrehajt egy query-t
 /// @param q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.
 /// @param sql Az SQL query string.
@@ -146,5 +137,35 @@ EXT_ bool execSqlFunction(QSqlQuery& q, const QString& fn, const QVariant v1 = Q
 /// @param v4 A query negyedik paramétere, ha megadtuk, ha nem, akkor három paramétere van.
 /// @return amit a q.first() visszaad a query végrehajtása után
 EXT_ bool execSql(QSqlQuery& q, const QString& sql, const QVariant v1 = QVariant(), const QVariant v2 = QVariant(), const QVariant v3 = QVariant(), const QVariant v4 = QVariant());
+
+/// Végrehajt ill összeállít és végrehajt egy query-t ami egy SQL függvényhívás.
+/// @param q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.
+/// @param fn Az SQL függvény neve. Maximum négy paramétert tudunk átadni.
+/// @param v1 A hívott függvény első paramétere, ha megadtuk, ha nem, akkor a függvénynek nincs egy paramétere sem.
+/// @param v2 A hívott függvény második paramétere, ha megadtuk, ha nem, akkor a függvénynek egy paramétere van.
+/// @param v3 A hívott függvény harmadik paramétere, ha megadtuk, ha nem, akkor a függvénynek kettő paramétere van.
+/// @param v4 A hívott függvény negyedik paramétere, ha megadtuk, ha nem, akkor a függvénynek három paramétere van.
+EXT_ bool execSqlFunction(QSqlQuery& q, const QString& fn, const QVariant v1 = QVariant(), const QVariant v2 = QVariant(), const QVariant v3 = QVariant(), const QVariant v4 = QVariant());
+
+/// Végrehajt ill összeállít és végrehajt egy query-t ami egy SQL függvényhívás, egész szám visszatérési értékkel.
+/// @param q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.
+/// @param pOk Egy pointer, ha nem NULL, akkor a lekérdezés eredményességét tartalmazza, true értéket kap, ha a lekérdezés eredménye egy egész szám.
+/// @param fn Az SQL függvény neve. Maximum négy paramétert tudunk átadni.
+/// @param v1 A hívott függvény első paramétere, ha megadtuk, ha nem, akkor a függvénynek nincs egy paramétere sem.
+/// @param v2 A hívott függvény második paramétere, ha megadtuk, ha nem, akkor a függvénynek egy paramétere van.
+/// @param v3 A hívott függvény harmadik paramétere, ha megadtuk, ha nem, akkor a függvénynek kettő paramétere van.
+/// @param v4 A hívott függvény negyedik paramétere, ha megadtuk, ha nem, akkor a függvénynek három paramétere van.
+/// @return A hívott függvény visszatérési értéke, vagy ha nincs ill. nem egész érték, akkor NULL_ID.
+EXT_ qlonglong execSqlIntFunction(QSqlQuery& q, bool *pOk, const QString& fn, const QVariant v1 = QVariant(), const QVariant v2 = QVariant(), const QVariant v3 = QVariant(), const QVariant v4 = QVariant());
+
+/// Végrehajt ill összeállít és végrehajt egy query-t ami egy SQL függvényhívás, szöveges visszatérési értékkel.
+/// @param q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.
+/// @param fn Az SQL függvény neve. Maximum négy paramétert tudunk átadni.
+/// @param v1 A hívott függvény első paramétere, ha megadtuk, ha nem, akkor a függvénynek nincs egy paramétere sem.
+/// @param v2 A hívott függvény második paramétere, ha megadtuk, ha nem, akkor a függvénynek egy paramétere van.
+/// @param v3 A hívott függvény harmadik paramétere, ha megadtuk, ha nem, akkor a függvénynek kettő paramétere van.
+/// @param v4 A hívott függvény negyedik paramétere, ha megadtuk, ha nem, akkor a függvénynek három paramétere van.
+/// @return A hívott függvény visszatérési értéke.
+EXT_ QString execSqlTextFunction(QSqlQuery& q, const QString& fn, const QVariant v1 = QVariant(), const QVariant v2 = QVariant(), const QVariant v3 = QVariant(), const QVariant v4 = QVariant());
 
 #endif // LV2SQL_H

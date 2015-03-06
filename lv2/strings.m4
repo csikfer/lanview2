@@ -25,6 +25,7 @@ __SDEF(D)
 __SDEF(BEGIN)
 __SDEF(END)
 __SDEF(ROLLBACK)
+__SDEF(NOW)
 
 STRDEF(Stdin,  "stdin")
 STRDEF(StdOut, "stdout")

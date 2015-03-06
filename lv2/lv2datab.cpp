@@ -1278,7 +1278,11 @@ QVariant  cColStaticDescrDateTime::set(const QVariant& _f, int& str) const
     bool ok = true;
     if (_f.canConvert<QDateTime>()) dt = _f.toDateTime();
     else if (variantIsInteger(_f))  dt = QDateTime::fromTime_t(_f.toUInt(&ok));
-    else if (variantIsString(_f))   dt = QDateTime::fromString(_f.toString());
+    else if (variantIsString(_f)) {
+        QString sDt = _f.toString();
+        if (sDt.compare(_sNOW, Qt::CaseInsensitive) == 0) return QVariant(sDt);
+        dt = QDateTime::fromString(sDt);
+    }
     else ok = false;
     if (ok && dt.isNull()) {
         DERR() << QObject::trUtf8("Az adat nem értelmezhető dátum és idő ként.") << endl;
@@ -1292,6 +1296,7 @@ QString   cColStaticDescrDateTime::toName(const QVariant& _f) const
 {
  //   _DBGFN() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
     if (_f.isNull()) return QString();
+    if (variantIsString(_f)) return _f.toString();  // NOW
     return _f.toDateTime().toString(_tmstmpFrm);
 }
 qlonglong cColStaticDescrDateTime::toId(const QVariant& _f) const
@@ -2105,6 +2110,21 @@ int cRecStaticDescr::ixToOwner(bool __ex) const
     return fix;
 }
 
+int cRecStaticDescr::ixToTree(bool __ex) const
+{
+    int fix;
+    for (fix = 0; fix < _columnsNum; ++fix) {          // Egy önmagára mutató távoli kulcsot keresünk
+        const cColStaticDescr& cd = columnDescrs()[fix];
+        cColStaticDescr::eFKeyType t = cd.fKeyType;
+        if (t == cColStaticDescr::FT_SELF) break;
+    }
+    if (fix >= _columnsNum) {
+        if (__ex) EXCEPTION(EDATA, -1, toString());
+        return NULL_IX;
+    }
+    return fix;
+}
+
 /* ******************************************************************************************************* */
 const QVariant  cRecord::_vNul;
 
@@ -2338,6 +2358,21 @@ const QVariant& cRecord::_get(int __i) const
     return _fields[__i];
 }
 
+QString cRecord::getName() const {
+    if (isEmpty_()) return QString();
+    const cRecStaticDescr& d = descr();
+    int ixN = d._nameIndex;
+    if (isIndex(ixN) && !isNull(ixN)) return getName(ixN); // Ha van név mező és nem null
+    int ixI = d._idIndex;
+    if (!isIndex(ixI)) {
+        if (isIndex(ixN)) return QString();     // Nincs ID elfogadjukk a névre a NULL-t
+        EXCEPTION(EDATA, -1, trUtf8("A rekord neve nem állpítható meg. Nincs sem név, sem ID mező."));
+    }
+    if (isNull(d.idIndex())) return QString();
+    QSqlQuery q = getQuery();
+    QString fn = d.checkId2Name(q, d.tableName(), d.schemaName());
+    return execSqlTextFunction(q, fn, get(d.idIndex()));
+}
 const QVariant& cRecord::get(int __i) const
 {
     if (isNull()) return _vNul;

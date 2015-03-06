@@ -29,7 +29,9 @@ SOURCES += \
     setup.cpp \
     gparse.cpp \
     logon.cpp \
-    onlinealarm.cpp
+    onlinealarm.cpp \
+    record_tree_model.cpp \
+    record_tree.cpp
 
 HEADERS +=\
         lv2g_global.h \
@@ -46,14 +48,17 @@ HEADERS +=\
     gparse.h \
     logon.h \
     LV2G_errcodes.h \
-    onlinealarm.h
+    onlinealarm.h \
+    record_tree_model.h \
+    record_tree.h
 
 FORMS += \
     column_filter.ui \
     setup_logl.ui \
     setup.ui \
     gparse.ui \
-    logindialog.ui
+    logindialog.ui \
+    acknowledge.ui
 INCLUDEPATH += ../lv2
 unix:LIBS += -lsnmp
 LIBS += -L../lv2 -llv2

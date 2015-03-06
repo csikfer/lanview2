@@ -3,6 +3,7 @@
 
 #include "lv2g.h"
 #include "record_table.h"
+#include "record_tree.h"
 #include <QMainWindow>
 #include "onlinealarm.h"
 
@@ -60,7 +61,7 @@ public:
     /// Amennyiben egy táblát jelenítünk meg, akkor annak a leírója (több tábla esetén a fő tábláé)
     cTableShape     *pTableShape;
     /// Amennyiben egy táblát jelenítünk meg, akkoe a megjelenítést végző objektum
-    cRecordTable    *pRecordTable;
+    cRecordViewBase *pRecordView;
     /// Amennyiben egy belső custom widget, akkor a bázis objektum pointere
     cOwnTab         *pOwnTab;
     enum eOwnTab    ownType;

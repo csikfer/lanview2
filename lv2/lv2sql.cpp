@@ -169,6 +169,25 @@ bool sqlRollback(QSqlQuery& q, bool __ex)
     return false;
 }
 
+EXT_ bool execSql(QSqlQuery& q, const QString& sql, const QVariant v1, const QVariant v2, const QVariant v3, const QVariant v4)
+{
+    if (!q.prepare(sql)) SQLPREPERR(q, sql);
+    if (v1.isValid()) {
+        q.bindValue(0,v1);
+        if (v2.isValid()) {
+            q.bindValue(1,v2);
+            if (v3.isValid()) {
+                q.bindValue(2,v3);
+                if (v4.isValid()) {
+                    q.bindValue(3,v4);
+                }
+            }
+        }
+    }
+    if (!q.exec()) SQLQUERYERR(q);
+    return q.first();
+}
+
 EXT_ bool execSqlFunction(QSqlQuery& q, const QString& fn, const QVariant v1, const QVariant v2, const QVariant v3, const QVariant v4)
 {
     QString sql = "SELECT " + fn + QChar('(');
@@ -188,21 +207,22 @@ EXT_ bool execSqlFunction(QSqlQuery& q, const QString& fn, const QVariant v1, co
     return execSql(q, sql,v1, v2, v3, v4);
 }
 
-EXT_ bool execSql(QSqlQuery& q, const QString& sql, const QVariant v1, const QVariant v2, const QVariant v3, const QVariant v4)
+EXT_ qlonglong execSqlIntFunction(QSqlQuery& q, bool *pOk, const QString& fn, const QVariant v1, const QVariant v2, const QVariant v3, const QVariant v4)
 {
-    if (!q.prepare(sql)) SQLPREPERR(q, sql);
-    if (v1.isValid()) {
-        q.bindValue(0,v1);
-        if (v2.isValid()) {
-            q.bindValue(1,v2);
-            if (v3.isValid()) {
-                q.bindValue(2,v3);
-                if (v4.isValid()) {
-                    q.bindValue(3,v4);
-                }
-            }
-        }
+    bool ok = execSqlFunction(q, fn, v1, v2, v3, v4);
+    qlonglong r = NULL_ID;
+    if (ok) {
+        r = q.value(0).toLongLong(&ok);
+        if (!ok) r = NULL_ID;
     }
-    if (!q.exec()) SQLQUERYERR(q);
-    return q.first();
+    if (pOk != NULL) *pOk = ok;
+    return r;
+}
+
+EXT_ QString execSqlTextFunction(QSqlQuery& q, const QString& fn, const QVariant v1, const QVariant v2, const QVariant v3, const QVariant v4)
+{
+    bool ok = execSqlFunction(q, fn, v1, v2, v3, v4);;
+    QString r;
+    if (ok) r = q.value(0).toString();
+    return r;
 }

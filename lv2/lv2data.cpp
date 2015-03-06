@@ -2654,6 +2654,7 @@ cHostService& cHostService::magic2prop()
 
 /* ----------------------------------------------------------------- */
 DEFAULTCRECDEF(cAlarm, _sAlarms)
+
 /* ----------------------------------------------------------------- */
 DEFAULTCRECDEF(cOui, _sOuis)
 

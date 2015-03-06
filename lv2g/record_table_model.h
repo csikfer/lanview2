@@ -6,9 +6,46 @@
 typedef tRecordList<cRecordAny>         tRecords;
 class   cRecordTableColumn;
 typedef tRecordList<cRecordTableColumn>  tRecordTableColumns;
+class cRecordViewBase;
 class   cRecordTable;
 
-class cRecordTableModel : public QAbstractTableModel {
+class cRecordViewModelBase {
+public:
+    cRecordViewModelBase(const cRecordViewBase &_rt);
+    ~cRecordViewModelBase();
+    cRecordAny *qGetRecord(QSqlQuery& q);
+
+    /// Kereszt indexek
+    tIntVector                   _col2shape, _col2field;
+    /// A rekord sorszámok kijelzése (default tue)
+    bool                        _viewRowNumbers;
+    /// A header megjelenítése (default tue)
+    bool                        _viewHeader;
+    /// Az első megfjeklenített sor sorszáma (1-től indúl, default 1)
+    int                         _firstRowNumber;
+    /// A maximálisan megjelenítendő sorok száma (default 100)
+    int                         _maxRows;
+    /// Egy áltatlánosan használlt lekérdező objektum.
+    QSqlQuery                 * pq;
+    const cRecordViewBase&      recordView;
+    const cRecStaticDescr&      recDescr;
+    const cTableShape&          tableShape;
+    const tRecordTableColumns&  columns;
+
+    bool rowNumbers() const                     { return _viewRowNumbers; }
+    void setRowNumers(bool b)                   { _viewRowNumbers = b; }
+    bool viewHeader() const                     { return _viewHeader; }
+    void setViewHeader(bool b)                  { _viewHeader = b;  }
+    int  maxRows() const                        { return _maxRows; }
+    void setMaxRows(int _max)                   { _maxRows = _max;  }
+    int  firstRowNumber() const                 { return _firstRowNumber; }
+    void setFirstRowNumber(int _fn)             { _firstRowNumber = _fn;  }
+
+    QVariant _headerData(int section, Qt::Orientation orientation, int role) const;
+
+};
+
+class cRecordTableModel : public QAbstractTableModel, public cRecordViewModelBase {
     Q_OBJECT
 public:
     cRecordTableModel(const cRecordTable &_rt);
@@ -42,39 +79,15 @@ public:
     /// A régi pointer felszabadítja, a paraméterként megadottat, pedig szintén ő szabadítja fel, ha már nem kell.
     /// @return ha elvégezte a műveletet true, ha olyan sort adunk meg, ami nem létezik, akkor false. ekkor a paraméterként kapott pointert nem szabadítja fel.
     bool update(int row, cRecordAny *pRec);
-    bool rowNumbers() const                     { return _viewRowNumbers; }
-    void setRowNumers(bool b)                   { _viewRowNumbers = b; }
-    bool viewHeader() const                     { return _viewHeader; }
-    void setViewHeader(bool b)                  { _viewHeader = b;  }
-    int  maxRows() const                        { return _maxRows; }
-    void setMaxRows(int _max)                   { _maxRows = _max;  }
-    int  firstRowNumber() const                 { return _firstRowNumber; }
-    void setFirstRowNumber(int _fn)             { _firstRowNumber = _fn;  }
     int size() const                            { return _records.size(); }
     int isEmpty() const                         { return _records.isEmpty(); }
     bool isExtRow(int row)                      { return extLines.contains(row); }
-    const cRecordTable&         recordTable;
-    const cRecStaticDescr&      recDescr;
-    const cTableShape&          descriptor;
-    const tRecordTableColumns&   columns;
     /// Kiemelt sorok
     tIntVector                  extLines;
 protected:
-    virtual void _removed(cRecordAny *p);
+    void _removed(cRecordAny *p);
     /// A record set
     tRecords                    _records;
-    /// Kereszt indexek
-    tIntVector                   _col2shape, _col2field;
-    /// A rekord sorszámok kijelzése (default tue)
-    bool                        _viewRowNumbers;
-    /// A header megjelenítése (default tue)
-    bool                        _viewHeader;
-    /// Az első megfjeklenített sor sorszáma (1-től indúl, default 1)
-    int                         _firstRowNumber;
-    /// A maximálisan megjelenítendő sorok száma (default 100)
-    int                         _maxRows;
-    /// Egy áltatlánosan használlt lekérdező objektum.
-    QSqlQuery                 * pq;
 signals:
     /// Egy rekord törlése a rekord set-ből.
     /// A signal kiadása után a pointer törlődik, aszinkron kapcsolat nem lehet !!!

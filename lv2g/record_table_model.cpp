@@ -1,21 +1,19 @@
 #include "record_table_model.h"
 #include "record_table.h"
 
-cRecordTableModel::cRecordTableModel(const cRecordTable& _rt)
-    : QAbstractTableModel(_rt.pWidget())
-    , recordTable(_rt)
+cRecordViewModelBase::cRecordViewModelBase(const cRecordViewBase& _rt)
+    : _col2shape(), _col2field()
+    , recordView(_rt)
     , recDescr(_rt.recDescr())
-    , descriptor(_rt.tableShape())
+    , tableShape(_rt.tableShape())
     , columns(_rt.fields)
-    , extLines()
-    , _records()
-    , _col2shape(), _col2field()
 {
     _viewRowNumbers = true;
     _viewHeader     = true;
     _firstRowNumber =   0;
     _maxRows        = 100;
     pq = newQuery();
+
     int i, n = columns.size();
     for (i = 0; i < n; ++i) {
         const cRecordTableColumn&  column = *columns[i];
@@ -30,49 +28,12 @@ cRecordTableModel::cRecordTableModel(const cRecordTable& _rt)
     PDEB(VVERBOSE) << "X tabs : " << tIntVectorToString(_col2field) << QChar(' ') << tIntVectorToString(_col2shape) << endl;
 }
 
-cRecordTableModel::~cRecordTableModel()
+cRecordViewModelBase::~cRecordViewModelBase()
 {
-    clear();
     delete pq;
 }
 
-int cRecordTableModel::rowCount(const QModelIndex &) const
-{
-    return _records.size();
-}
-
-int cRecordTableModel::columnCount(const QModelIndex &) const
-{
-    return _col2field.size();
-}
-
-QVariant cRecordTableModel::data(const QModelIndex &index, int role) const
-{
-    if (!index.isValid()) {
-        //DWAR() << "Invalid modelIndex." << endl;
-        return QVariant();
-    }
-    int row = index.row();      // Sor index a táblázatban
-    int col = index.column();   // oszlop index a táblázatban
-    if (row < _records.size() && col < _col2field.size()) {
-        int fix = _col2field[col];  // Mező index a rekordbam
-        int mix = _col2shape[col];  // Index a leíróban
-        // _DBGFN() << VDEB(row) << VDEB(col) << VDEB(role) << endl;
-        if (role == Qt::DisplayRole)       return _records.at(row)->view(*pq, fix);
-        if (role == Qt::TextAlignmentRole) return columns[mix]->dataAlign;
-        const colorAndFont&   cf = _records.at(row)->isNull(fix)
-                ?   design().null
-                :   design()[columns[mix]->dataRole];
-        switch (role) {
-        case Qt::ForegroundRole:    return cf.fg;
-        case Qt::BackgroundRole:    return cf.bg;
-        case Qt::FontRole:          return cf.font;
-        }
-    }
-    return QVariant();
-}
-
-QVariant cRecordTableModel::headerData(int section, Qt::Orientation orientation, int role) const
+QVariant cRecordViewModelBase::_headerData(int section, Qt::Orientation orientation, int role) const
 {
 //    _DBGFN() << VDEB(section) << VDEB(orientation) << VDEB(role) << endl;
     QVariant r;
@@ -114,6 +75,82 @@ QVariant cRecordTableModel::headerData(int section, Qt::Orientation orientation,
     }
 //    _DBGFNL() << " = " << quotedString(r.toString()) << endl;
     return r;
+}
+
+cRecordAny *cRecordViewModelBase::qGetRecord(QSqlQuery& q)
+{
+    cRecordAny *p = NULL;
+    if (q.value(0).isNull()) {
+        p = new cRecordAny(&recDescr);
+    }
+    else {
+        qlonglong tableoid = variantToId(q.value(0));
+        if (tableoid == recDescr.tableoid()) {
+            p = new cRecordAny(&recDescr);
+        }
+        else {
+            p = new cRecordAny(&recordView.inhRecDescr(tableoid));
+        }
+    }
+    p->set(q);
+    return p;
+}
+
+/*  */
+
+cRecordTableModel::cRecordTableModel(const cRecordTable& _rt)
+    : QAbstractTableModel(_rt.pWidget())
+    , cRecordViewModelBase(_rt)
+    , extLines()
+    , _records()
+{
+    ;
+}
+
+cRecordTableModel::~cRecordTableModel()
+{
+    clear();
+}
+
+int cRecordTableModel::rowCount(const QModelIndex &) const
+{
+    return _records.size();
+}
+
+int cRecordTableModel::columnCount(const QModelIndex &) const
+{
+    return _col2field.size();
+}
+
+QVariant cRecordTableModel::data(const QModelIndex &index, int role) const
+{
+    if (!index.isValid()) {
+        //DWAR() << "Invalid modelIndex." << endl;
+        return QVariant();
+    }
+    int row = index.row();      // Sor index a táblázatban
+    int col = index.column();   // oszlop index a táblázatban
+    if (row < _records.size() && col < _col2field.size()) {
+        int fix = _col2field[col];  // Mező index a rekordbam
+        int mix = _col2shape[col];  // Index a leíróban
+        // _DBGFN() << VDEB(row) << VDEB(col) << VDEB(role) << endl;
+        if (role == Qt::DisplayRole)       return _records.at(row)->view(*pq, fix);
+        if (role == Qt::TextAlignmentRole) return columns[mix]->dataAlign;
+        const colorAndFont&   cf = _records.at(row)->isNull(fix)
+                ?   design().null
+                :   design()[columns[mix]->dataRole];
+        switch (role) {
+        case Qt::ForegroundRole:    return cf.fg;
+        case Qt::BackgroundRole:    return cf.bg;
+        case Qt::FontRole:          return cf.font;
+        }
+    }
+    return QVariant();
+}
+
+QVariant cRecordTableModel::headerData(int section, Qt::Orientation orientation, int role) const
+{
+    return _headerData(section, orientation, role);
 }
 
 bool cRecordTableModel::setRecords(const tRecords& __recs, int _firstNm)
@@ -258,21 +295,7 @@ int cRecordTableModelSql::qView()
     int cnt = 0;
     extLines.clear();
     if (q.seek(qpos)) do {
-        cRecordAny *p = NULL;
-        if (q.value(0).isNull()) {
-            p = new cRecordAny(&recDescr);
-        }
-        else {
-            qlonglong tableoid = variantToId(q.value(0));
-            if (tableoid == recDescr.tableoid()) {
-                p = new cRecordAny(&recDescr);
-            }
-            else {
-                p = new cRecordAny(&recordTable.inhRecDescr(tableoid));
-            }
-        }
-        p->set(q);
-        _records << p;
+        _records << qGetRecord(q);
         ++cnt;
     } while (q.next() && cnt < _maxRows);
     else {

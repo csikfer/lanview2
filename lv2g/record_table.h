@@ -77,13 +77,14 @@ signals:
     void moveDown(cRecordTableOrd *p);
 };
 
+class cRecordViewBase;
 
 class cRecordTableFODialog : public QDialog {
     Q_OBJECT
 public:
-    cRecordTableFODialog(QSqlQuery *pq, cRecordTable &_rt);
+    cRecordTableFODialog(QSqlQuery *pq, cRecordViewBase&_rt);
     ~cRecordTableFODialog();
-    const cRecordTable&         recordTable;
+    const cRecordViewBase&      recordView;
     QString                     where(QVariantList &qparams);
     QString                     ord();
     cRecordTableFilter&         filter() { if (pSelFilter == NULL) EXCEPTION(EPROGFAIL); return *pSelFilter; }
@@ -118,7 +119,7 @@ private slots:
 
 class cRecordTableColumn {
 public:
-    cRecordTableColumn(cTableShapeField& sf, cRecordTable &table);
+    cRecordTableColumn(cTableShapeField& sf, cRecordViewBase &table);
     cTableShapeField&       shapeField;
     const cRecStaticDescr&  recDescr;
     int                     fieldIndex;
@@ -140,31 +141,12 @@ enum eRecordTableFlags  {
     RTF_LEFT   = 0x0040     ///< A bal oldali link tábla
 };
 
-/// @class cRecordTable
-/// Egy adatbázis tábla megjelenítését végző objektum.
-class cRecordTable : public QObject {
-    friend class cRecordTableColumn;
-    friend class cRecordTableModel;
-    friend class cRecordTableModelSql;
-    friend class cRecordTableFODialog;
-    friend class cOnlineAlarm;
+class cRecordViewBase : public QObject {
     Q_OBJECT
 public:
-    /// Konstruktor
-    /// Fő ill. önálló tábla megjelenítése
-    /// @param _mn A tábla megjelenítését leíró rekord neve (table_shapes.table_shape_name)
-    /// @param _isDialog Ha igaz, akkor a megjelenítés egy dialog ablakban.
-    /// @param par A szülő widget pointere, vagy NULL
-    cRecordTable(const QString& _mn, bool _isDialog, QWidget * par = NULL);
-    /// Konstruktor
-    /// Al tábla megjelenítése.
-    /// @param id A tábla megjelenítését leíró rekord ID (table_shapes.table_shape_id)
-    /// @param _isDialog Ha igaz, akkor a megjelenítés egy dialog ablakban.
-    /// @param _upper A tulajdonos táblát megjelenítő objektum pointere
-    /// @param par A szülő widget pointere, vagy NULL
-    cRecordTable(qlonglong id, bool _isDialog, cRecordTable *_upper, QWidget * par = NULL);
-    cRecordTable(cTableShape *pts, bool _isDialog, QWidget * par = NULL);
-    ~cRecordTable();
+    cRecordViewBase(bool _isDialog, QWidget *par);
+    ~cRecordViewBase();
+
     QWidget& widget() const { return *_pWidget; }
     QWidget *pWidget() const { return _pWidget; }
     /// A QDialog objektum referenciáját adja vissza, ha a megjelenítés nem dialog boxban történik, akkor dob egy kizárást
@@ -177,18 +159,126 @@ public:
     const cRecordTableColumn& field(int i) const { return *fields[i]; }
     /// Ha a megjelínítés egy dialog box-ban történik, akkor értéke true.
     const bool      isDialog;
+    /// A megadott ID-ű nyomódomb tiltásának a beállítása
+    /// @param id A nyomogom id-je (egy enum eDialogButtons érték).
+    /// @param d Ha értéke true, akkor a nyomógom letiltásra kerül.
+    void buttonDisable(int id, bool d = true);
+    /// A tábla viszonyát meghatározó flag-ek
+    int             flags;
+    /// Ha a táblázat csak olvasható, akkor értéke true
+    bool            isReadOnly;
+    /// A lekérdezésekhez (nem az alap lekérdezésekhez) használt query objektum.
+    QSqlQuery      *pq;
+    QSqlQuery      *pTabQuery;
+    /// A megjelenítő leíró
+    cTableShape    *pTableShape;
+    /// Ha ez egy al táblázat, akkor a felette lévő tábla megjelenítőjének a pointere, egyébként NULL
+    cRecordViewBase   *pUpper;
+    /// A fő tábla, vagy NULL. Két tábla esetén azonos pUpper-rel
+    cRecordViewBase   *pMaster;
+    /// A megjelenítendő mezők
+    tRecordTableColumns  fields;
+    /// A megjelenítendő tábla leíró pointere
+    const cRecStaticDescr*pRecDescr;
+    /// A fő widget, vagy dialog box objektum pointere
+    QWidget        *_pWidget;
+    ///
+    QSplitter      *pMasterFrame;
+    /// A nyomogombok objektuma
+    cDialogButtons *pButtons;
+    /// A saját táblázat megjelenítésének a layer-e
+    QVBoxLayout    *pMainLayer;
+    /// Ha több tábla megjelenítése szükséges, akkor a fő layer, egyébként NULL.
+    QHBoxLayout    *pMasterLayout;
+    /// Ha több megjelenített tábla van akkor a bal oldali és saját táblázatot tartalmazó widget pointere, vagy NULL.
+    QWidget        *pLeftWidget;
+    /// A (bal oldali) alárendelt tábla megjelenítő objektuma.
+    cRecordViewBase   *pRightTable;
+    /// Szűrők és rendezés dialog box
+    cRecordTableFODialog *  pFODialog;
+    /// Child tábla esetén a tulajdonos ID-je, ha ismert (csak egy rekord van kijelölve az owner táblázatban)
+    qlonglong   owner_id;
+    /// A dialogus ablak megnyitásához allokál egy objektumot a megadott record tábla név alapján
+    /// Hiba esetén dob egy kizárást.
+    cTableShape *   getInhShape(const QString& _tn);
+    /// A dialogus ablak megnyitásához allokál egy objektumot a megadott record descriptor alapján
+    /// Hiba esetén dob egy kizárást.
+    cTableShape *   getInhShape(const cRecStaticDescr& d) { return getInhShape(d.tableName()); }
+    QStringList         inheritTableList;
+    QMap<qlonglong, const cRecStaticDescr *> * pInhRecDescr;
+    QString             viewName;   // A TEMP VIEW neve, vagy NULL, ha nincs
+    eTableInheritType   tit;
+
+    const cRecStaticDescr& inhRecDescr(qlonglong i) const;
+    const cRecStaticDescr& inhRecDescr(const QString& tn) const;
+
+    /// Dialogus ablak esetén hívja a done() metódust a paraméterrel.
+    /// Egyébként a closeIt() hívja.
+    virtual void close(int r = QDialog::Accepted);
+
+    virtual void refresh(bool first = true) = 0;
+    virtual void modify() = 0;
+    virtual void remove() = 0;
+    virtual void insert() = 0;
+    virtual void setEditButtons() = 0;
+    virtual void setPageButtons() = 0;
+    virtual void setButtons() = 0;
+    QStringList refineWhere(QVariantList& qParams);
+    QStringList where(QVariantList &qParams);
+
+    virtual QStringList filterWhere(QVariantList& qParams);
+    /// Nem kötelezően implementálandó metódus. Ha nincs újraimplementálva, de mégis meghívjuk, akkor kizárást dob
+    virtual void first();
+    /// Nem kötelezően implementálandó metódus. Ha nincs újraimplementálva, de mégis meghívjuk, akkor kizárást dob
+    virtual void next();
+    /// Nem kötelezően implementálandó metódus. Ha nincs újraimplementálva, de mégis meghívjuk, akkor kizárást dob
+    virtual void prev();
+    /// Nem kötelezően implementálandó metódus. Ha nincs újraimplementálva, de mégis meghívjuk, akkor kizárást dob
+    virtual void last();
+
+    void initView();
+    void initShape(cTableShape *pts = NULL);
+    void initOwner();
+    virtual void initSimple(QWidget *pW) = 0;
+public slots:
+    /// Megnyomtak egy gombot.
+    /// @param id A megnyomott gomb azonosítója
+    void buttonPressed(int id);
+signals:
+    void closeIt();
+protected:
+    static cRecordViewBase *newRecordViewBase(QSqlQuery &q, qlonglong shapeId, cRecordViewBase * own = NULL, QWidget *par = NULL);
+};
+
+/// @class cRecordTable
+/// Egy adatbázis tábla megjelenítését végző objektum.
+class cRecordTable : public cRecordViewBase {
+    Q_OBJECT
+public:
+    /// Konstruktor
+    /// Fő ill. önálló tábla megjelenítése
+    /// @param _mn A tábla megjelenítését leíró rekord neve (table_shapes.table_shape_name)
+    /// @param _isDialog Ha igaz, akkor a megjelenítés egy dialog ablakban.
+    /// @param par A szülő widget pointere, vagy NULL
+    cRecordTable(const QString& _mn, bool _isDialog, QWidget * par = NULL);
+    /// Konstruktor
+    /// Fő, al, vagy önálló tábla megjelenítése, már beolvasott leíró
+    /// @param _mn A tábla megjelenítését leíró rekord neve (table_shapes.table_shape_name)
+    /// @param _isDialog Ha igaz, akkor a megjelenítés egy dialog ablakban.
+    /// @param par A szülő widget pointere, vagy NULL
+    cRecordTable(cTableShape *pts, bool _isDialog, cRecordViewBase *_upper = NULL, QWidget * par = NULL);
+    /// destruktor
+    ~cRecordTable();
     const cRecordAny *recordAt(int i) const {
         if (!isContIx(pTableModel->records(), i)) EXCEPTION(EDATA, i);
         return pTableModel->records()[i];
     }
-protected:
     int         actRow();
     cRecordAny *actRecord();
     qlonglong   actId() { cRecordAny *p = actRecord(); return p == NULL ? NULL_ID : p->getId(); }
     void setActRow(int row) { pTableView->setCurrentIndex(pTableModel->index(row, 0)); }
 
     void empty();
-    void close();
     void first();
     void next();
     void prev();
@@ -201,82 +291,23 @@ protected:
     void setPageButtons();
     void setButtons();
 
-    /// A megadott ID-ű nyomódomb tiltásának a beállítása
-    /// @param id A nyomogom id-je (egy enum eDialogButtons érték).
-    /// @param d Ha értéke true, akkor a nyomógom letiltásra kerül.
-    void buttonDisable(int id, bool d = true);
     ///
-    const cRecStaticDescr& inhRecDescr(qlonglong i) const;
-    const cRecStaticDescr& inhRecDescr(const QString& tn) const;
 
-    /// A tábla viszonyát meghatározó flag-ek
-    int             flags;
-    /// Ha a táblázat csak olvasható, akkor értéke true
-    bool            isReadOnly;
-    /// A lekérdezésekhez (nem az alap lekérdezésekhez) használt query objektum.
-    QSqlQuery      *pq;
-    QSqlQuery      *pTabQuery;
-    /// A megjelenítő leíró
-    cTableShape    *pTableShape;
-    /// Ha ez egy al táblázat, akkor a felette lévő tábla megjelenítőjének a pointere, egyébként NULL
-    cRecordTable   *pUpper;
-    /// A fő tábla, vagy NULL. Két tábla esetén azonos pUpper-rel
-    cRecordTable   *pMaster;
-    /// A megjelenítendő mezők
-    tRecordTableColumns  fields;
-    /// A megjelenítendő tábla leíró pointere
-    const cRecStaticDescr*pRecDescr;
     /// A tábla model pointere
     cRecordTableModelSql *pTableModel;
-    /// A fő widget, vagy dialog box objektum pointere
-    QWidget        *_pWidget;
-    /// A nyomogombok objektuma
-    cDialogButtons *pButtons;
-    /// A saját táblázat megjelenítésének a layer-e
-    QVBoxLayout    *pMainLayer;
     /// A táblázatot megjelenítő widget
     QTableView     *pTableView;
-    /// Ha több tábla megjelenítése szükséges, akkor a fő layer, egyébként NULL.
-    QHBoxLayout    *pMasterLayout;
-    QSplitter      *pMasterFrame;
-    /// Ha több megjelenített tábla van akkor a bal oldali és saját táblázatot tartalmazó widget pointere, vagy NULL.
-    QWidget        *pLeftWidget;
-    /// A (bal oldali) alárendelt tábla megjelenítő objektuma.
-    cRecordTable   *pRightTable;
-    /// Szűrők és rendezés dialog box
-    cRecordTableFODialog *  pFODialog;
-    /// Child tábla esetén a tulajdonos ID-je, ha ismert (csak egy rekord van kijelölve az owner táblázatban)
-    qlonglong   owner_id;
-private:
-    void init(QWidget *par);
-    void initSimple(QWidget *pW);
-    void initTree();
-    void initOwner();
-    QString where(QVariantList &qParams);
+    void init();
+    virtual void initSimple(QWidget *pW);
+    virtual QStringList filterWhere(QVariantList& qParams);
     void _refresh(bool first = true);
     void refresh_lst_rev();
-    void initView();
-    /// A dialogus ablak megnyitásához allokál egy objektumot a megadott record tábla név alapján
-    /// Hiba esetén dob egy kizárást.
-    cTableShape *   getInhShape(const QString& _tn);
-    /// A dialogus ablak megnyitásához allokál egy objektumot a megadott record descriptor alapján
-    /// Hiba esetén dob egy kizárást.
-    cTableShape *   getInhShape(const cRecStaticDescr& d) { return getInhShape(d.tableName()); }
-    QStringList         inheritTableList;
-    QMap<qlonglong, const cRecStaticDescr *> * pInhRecDescr;
-    QString             viewName;   // A TEMP VIEW neve, vagy NULL, ha nincs
-    eTableInheritType   tit;
 protected slots:
-    /// Megnyomtak egy gombot.
-    /// @param id A megnyomott gomb azonosítója
-    void buttonPressed(int id);
     /// Ha eltávolításra került sor akkor itt jelez a model. A megadott objektum törlését fogja megkisérelni.
     void recordRemove(cRecordAny * _pr);
     /// Ha változott a kijelölés
     void selectionChanged(QItemSelection,QItemSelection);
     void clickedHeader(int);
-signals:
-    void closeIt();
 public:
     QTableView *tableView() { return pTableView; }
 };
