@@ -5,6 +5,7 @@
 #include "record_table_model.h"
 
 
+
 class   cRecordTree;
 
 class cTreeNode;
@@ -13,6 +14,7 @@ class cRecordTreeModel;
 class cTreeNode {
 public:
     cTreeNode(cRecordAny *__po = NULL, cTreeNode *_parentNode = NULL);
+    cTreeNode(const cTreeNode&);
     ~cTreeNode();
     cTreeNode          *parent;
     cRecordAny         *pData;
@@ -38,7 +40,7 @@ public:
     int         columnCount( const QModelIndex & parent = QModelIndex()) const;
     QVariant    data(const QModelIndex & index, int role = Qt::DisplayRole) const;
     QVariant    headerData(int section, Qt::Orientation orientation, int role) const;
-//    Qt::ItemFlags flags(const QModelIndex &index) const;
+    Qt::ItemFlags flags(const QModelIndex &index) const;
     bool    canFetchMore(const QModelIndex &parent) const;
     void    fetchMore(const QModelIndex &parent);
 

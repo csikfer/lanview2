@@ -8,6 +8,11 @@ cTreeNode::cTreeNode(cRecordAny *__po, cTreeNode * _parentNode)
     pChildrens = NULL;
 }
 
+cTreeNode::cTreeNode(const cTreeNode&)
+{
+    EXCEPTION(EPROGFAIL);
+}
+
 cTreeNode::~cTreeNode()
 {
     if (pData) {
@@ -16,19 +21,6 @@ cTreeNode::~cTreeNode()
     if (pChildrens) {
         qDeleteAll(*pChildrens);
         delete pChildrens;
-    }
-}
-
-void cTreeNode::clearChild()
-{
-    if (pChildrens != NULL) {
-        if (pChildrens->size()) {
-            qDeleteAll(*pChildrens);
-            pChildrens->clear();
-        }
-    }
-    else {
-        pChildrens = new QList<cTreeNode *>;
     }
 }
 
@@ -57,9 +49,21 @@ cRecordTreeModel::~cRecordTreeModel()
 
 QModelIndex cRecordTreeModel::index(int row, int column, const QModelIndex& parent) const
 {
-    if (!hasIndex(row, column, parent) || pRootNode == NULL) return QModelIndex();
+    if (pRootNode == NULL) {
+        DWAR() << "pRootNode is NULL." << endl;
+        return QModelIndex();
+    }
+    if (!hasIndex(row, column, parent)) {
+        DWAR() << "Is no valid index." << endl;
+        return QModelIndex();
+    }
     cTreeNode *parentNode = nodeFromIndex(parent);
-    if (parentNode->pChildrens->size() <= row) return QModelIndex();
+    if (parentNode->pChildrens == NULL) EXCEPTION(EPROGFAIL);
+    PDEB(VVERBOSE) << "Index: " << VDEB(row) << VDEB(column) << " parent = " << parentNode->name() << endl;
+    if (parentNode->pChildrens->size() <= row) {
+        DWAR() << "Invalid row = " << row << "child number : " << parentNode->pChildrens->size() << endl;
+        return QModelIndex();
+    }
     return createIndex(row, column, parentNode->pChildrens->at(row));
 }
 
@@ -128,13 +132,13 @@ QVariant    cRecordTreeModel::headerData(int section, Qt::Orientation orientatio
     return _headerData(section, orientation, role);
 }
 
-/*Qt::ItemFlags cRecordTreeModel::flags(const QModelIndex &index) const
+Qt::ItemFlags cRecordTreeModel::flags(const QModelIndex &index) const
 {
     if (!index.isValid())
         return 0;
 
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-}*/
+}
 
 bool cRecordTreeModel::canFetchMore(const QModelIndex &parent) const
 {
@@ -145,6 +149,7 @@ bool cRecordTreeModel::canFetchMore(const QModelIndex &parent) const
 void cRecordTreeModel::fetchMore(const QModelIndex &parent)
 {
     cTreeNode *pNode = nodeFromIndex(parent);
+    _DBGFN() << pNode->name() << endl;
     readChilds(pNode);
 }
 
@@ -170,7 +175,11 @@ void cRecordTreeModel::fetchTree()
 
 void cRecordTreeModel::readChilds(cTreeNode *pNode)
 {
-    pNode->clearChild();
+    if (pNode->pChildrens != NULL) {
+        DWAR() << "node : " << pNode->name() << " pChildrens pointer is not NULL." << endl;
+        return;
+    }
+    pNode->pChildrens = new QList<cTreeNode *>;
     if (((cRecordTree&)recordView).queryNodeChildrens(*pq, pNode)) {
         do {
             pNode->addChild(new cTreeNode(qGetRecord(*pq), pNode));
