@@ -21,7 +21,6 @@ public:
     QList<cTreeNode *> *pChildrens;
 
     QString name() { return (pData == NULL) ? "//" : pData->getName(); }
-    void clearChild();
     void addChild(cTreeNode *cn) { pChildrens->append(cn); }
     int row() const;
 };

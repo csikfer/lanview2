@@ -122,13 +122,9 @@ bool cRecordTree::queryNodeChildrens(QSqlQuery& q, cTreeNode *pn)
 
 void cRecordTree::refresh(bool first)
 {
+    if (first) pDelete(pTreeModel->pRootNode);
     if (pTreeModel->pRootNode == NULL) {
         pTreeModel->pRootNode = new cTreeNode();
-    }
-    else if (first) {
-        pTreeModel->pRootNode->clearChild();
-        pDelete(pTreeModel->pRootNode->pData);
-
     }
     pTreeModel->fetchTree();
 }

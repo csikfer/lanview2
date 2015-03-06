@@ -69,14 +69,13 @@ QModelIndex cRecordTreeModel::index(int row, int column, const QModelIndex& pare
 
 QModelIndex cRecordTreeModel::parent(const QModelIndex& child) const
 {
-    cTreeNode *node = nodeFromIndex(child);
-    if (node == NULL) return QModelIndex();
-    cTreeNode *parentNode = node->parent;
+    cTreeNode *pNode = nodeFromIndex(child);
+    if (pNode == NULL) return QModelIndex();
+    cTreeNode *parentNode = pNode->parent;
     if (parentNode == NULL) return QModelIndex();
-    cTreeNode *grandparentNode = parentNode->parent;
-    if (grandparentNode == NULL) return QModelIndex();
-    int row = grandparentNode->pChildrens->indexOf(parentNode);
-    return createIndex(row, child.column(), parentNode);
+    if (parentNode->parent == NULL) return QModelIndex();
+    int row = parentNode->row();
+    return createIndex(row, 0, parentNode);
 }
 
 int         cRecordTreeModel::rowCount(const QModelIndex &parent) const
@@ -89,7 +88,7 @@ int         cRecordTreeModel::rowCount(const QModelIndex &parent) const
 //    PDEB(VVERBOSE) << __PRETTY_FUNCTION__ <<  " return : " << parentNode->childrens.count()
 //                   << " (parant : "<< parentNode->name() << ")" << endl;
     if (parentNode->pChildrens == NULL) {
-        // Csak így mőködik, de akkor minak a canFetchMore() és fetchMore(); ??
+        // Csak így mőködik, de akkor minek a canFetchMore() és fetchMore(); ?? (talán előre kéne tudni a sorok számát?)
         const_cast<cRecordTreeModel *>(this)->readChilds(parentNode);
     }
     return parentNode->pChildrens->count();
@@ -112,7 +111,7 @@ QVariant    cRecordTreeModel::data(const QModelIndex & index, int role) const
     if (col < _col2field.size()) {
         int fix = _col2field[col];  // Mező index a rekordbam
         int mix = _col2shape[col];  // Index a leíróban
-        // Ettül a DEBUG üzenettől bagyon belassul!!!
+        // Ettül a DEBUG üzenettől nagyon belassul!!!
 //        _DBGFN() << " name = " << node->name() << "; " << VDEB(col) << VDEB(role) << endl;
         if (role == Qt::DisplayRole)       return node->pData->view(*pq, fix);
         if (role == Qt::TextAlignmentRole) return columns[mix]->dataAlign;

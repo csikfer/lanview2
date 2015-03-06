@@ -23,7 +23,7 @@ public:
 
     bool queryNodeChildrens(QSqlQuery &q, cTreeNode *pn);
 
-    virtual void refresh(bool first = true);
+    virtual void refresh(bool first = false);
     virtual void modify();
     virtual void remove();
     virtual void insert();
