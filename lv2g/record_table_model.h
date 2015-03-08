@@ -78,7 +78,7 @@ public:
     /// A megadott sorhoz tartozó rekord objektum pointert lecseréli. A megjelenített táblát frissíti.
     /// A régi pointer felszabadítja, a paraméterként megadottat, pedig szintén ő szabadítja fel, ha már nem kell.
     /// @return ha elvégezte a műveletet true, ha olyan sort adunk meg, ami nem létezik, akkor false. ekkor a paraméterként kapott pointert nem szabadítja fel.
-    bool update(int row, cRecordAny *pRec);
+    bool updateRow(const QModelIndex &mi, cRecordAny *pRec);
     int size() const                            { return _records.size(); }
     int isEmpty() const                         { return _records.isEmpty(); }
     bool isExtRow(int row)                      { return extLines.contains(row); }

@@ -167,14 +167,15 @@ bool cRecordTableModel::setRecords(const tRecords& __recs, int _firstNm)
 
 }
 
-bool cRecordTableModel::update(int row, cRecordAny *pRec)
+bool cRecordTableModel::updateRow(const QModelIndex& mi, cRecordAny *pRec)
 {
-    if (row < 0 || row >= _records.size()) return false;
+    int row = mi.row();
+    if (isContIx(_records, row)) EXCEPTION(EPROGFAIL);
     beginResetModel();
     delete _records[row];
     _records[row] = pRec;
     endResetModel();
-    return true;
+    return false;
 }
 
 cRecordTableModel& cRecordTableModel::operator<<(const cRecordAny& _r)
@@ -235,13 +236,13 @@ cRecordTableModel& cRecordTableModel::removeAll()
 
 cRecordTableModel& cRecordTableModel::remove(QModelIndexList& mil)
 {
-    int s = _records.size();
     if (mil.isEmpty()) return *this;
-    if (mil.size() == 1) {
-        int row = mil[0].row();
-        if (row < s) return remove(row);
-        return *this;
-    }
+    int b = QMessageBox::warning(recordView.pWidget(),
+                         trUtf8("Kijelölt objektu(mo)k törlése!"),
+                         trUtf8("Valóban törölni akarja a kijelölt objektumo(ka)t ?"),
+                         QMessageBox::Ok, QMessageBox::Cancel);
+    if (b != QMessageBox::Ok) return *this;
+    int s = _records.size();
     QBitArray   rb(s, false);
     foreach(QModelIndex ix, mil) {
         int row = ix.row();

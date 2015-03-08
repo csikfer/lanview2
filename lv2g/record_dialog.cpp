@@ -23,6 +23,8 @@ cDialogButtons::cDialogButtons(int buttons, int buttons2, QWidget *par)
         buttonNames << trUtf8("Töröl");         icons << QIcon::fromTheme("list-remove");
         buttonNames << trUtf8("Visszaállít");   icons << QIcon::fromTheme("edit-redo");
         buttonNames << trUtf8("Elvet");         icons << QIcon::fromTheme("gtk-cancel");
+        buttonNames << trUtf8("Alapállapot");   icons << QIcon::fromTheme("go-first");
+        buttonNames << trUtf8("Gyökér");        icons << QIcon::fromTheme("go-next");
     }
     if (0 == (buttons & ((1 << DBT_BUTTON_NUMBERS) - 1))) EXCEPTION(EDATA);
     _pWidget = new QWidget(par);

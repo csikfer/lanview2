@@ -25,6 +25,8 @@ enum eDialogButtons {
     DBT_DELETE,
     DBT_RESTORE,
     DBT_CANCEL,
+    DBT_RESET,
+    DBT_SET_ROOT,
     DBT_BUTTON_NUMBERS  ///< Nem egy nyomógombot reprezentál, hanem azok számát
 };
 

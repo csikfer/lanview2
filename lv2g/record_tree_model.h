@@ -47,6 +47,16 @@ public:
 
     void fetchTree();
     void readChilds(cTreeNode *pNode);
+    /// Törli a kijelölt rekordokat, ill. rész fát
+    void remove(const QModelIndex &mi);
+    /// Törli a rész fát és rekordjait
+    void remove(cTreeNode *pn);
+    /// A kiválasztott sor lessz a gyökér
+    void setRoot(const QModelIndex& mi);
+    /// Vissalép a fán a pRootNode pointerrel, ha lehet
+    /// @param _sing Ha igaz, akkor csak egyet lép vissza, ha hamis, akkor az eredeti gyökérig.
+    void prevRoot(bool _sing);
+    bool updateRow(const QModelIndex &mi, cRecordAny * pRec);
 
 };
 

@@ -37,7 +37,7 @@ cRecordTreeModel::cRecordTreeModel(const cRecordTree&  _rt)
     , cRecordViewModelBase(_rt)
 {
     pRootNode = NULL;
-    _viewRowNumbers = false;
+    _viewRowNumbers = false;    // NINCS!!
     pq = newQuery();
 }
 
@@ -184,4 +184,71 @@ void cRecordTreeModel::readChilds(cTreeNode *pNode)
             pNode->addChild(new cTreeNode(qGetRecord(*pq), pNode));
         } while (pq->next());
     }
+}
+
+void cRecordTreeModel::remove(const QModelIndex& mi)
+{
+    cTreeNode *pn = nodeFromIndex(mi);
+    int b = QMessageBox::warning(recordView.pWidget(),
+                         trUtf8("Egy rész fa teljes törlése!"),
+                         trUtf8("Valóban törölni akarja a kijelölt objektumot, az összes alárendelt objektummal eggyütt ?"),
+                         QMessageBox::Ok, QMessageBox::Cancel);
+    if (b != QMessageBox::Ok) return;
+    beginResetModel();
+    remove(pn);
+    endResetModel();
+}
+
+void cRecordTreeModel::remove(cTreeNode *pn)
+{
+    if (pn->parent != NULL) {   // Töröljük az elemet a parentből
+        pn->parent->pChildrens->removeAt(pn->row());
+    }
+    if (pn->pChildrens == NULL) {   // Még be sincsenek olvasva a gyerköcök
+        readChilds(pn);
+    }
+    // Töröljük a gyerköcöket..
+    while (pn->pChildrens->size()) remove(pn->pChildrens->at(0));
+    pn->pData->remove(*pq); // Töröljük a rekordot;
+    delete pn;  // Végül magát (a már gyermektelen) a node-ot
+}
+
+void cRecordTreeModel::setRoot(const QModelIndex &mi)
+{
+    cTreeNode *pn = nodeFromIndex(mi);
+    beginResetModel();
+    pRootNode = pn;
+    endResetModel();
+}
+
+void cRecordTreeModel::prevRoot(bool _sing)
+{
+    if (pRootNode->parent == NULL) return;  // nincs mit visszaállítani
+    beginResetModel();
+    if (_sing) {
+        // egyet vissza
+        pRootNode = pRootNode->parent;
+    }
+    else while (pRootNode->parent != NULL) {
+        // elballagunk az eredeti gyökérig
+        pRootNode = pRootNode->parent;
+    }
+    endResetModel();
+}
+
+bool cRecordTreeModel::updateRow(const QModelIndex& mi, cRecordAny * pRec)
+{
+    cTreeNode *pn = nodeFromIndex(mi);
+    if (pn->parent == NULL || pn->pData == NULL) EXCEPTION(EPROGFAIL);
+    qlonglong ixPId = pRec->descr().ixToTree();
+    if (pn->pData->getId(ixPId) != pRec->getId(ixPId)) {
+        delete pn->pData;
+        pn->pData = pRec;
+        return true;    // változott a fa szerkezete, mindent újraolvas
+    }
+    beginResetModel();
+    delete pn->pData;
+    pn->pData = pRec;
+    endResetModel();
+    return false;
 }

@@ -3,6 +3,7 @@
 
 #include    "record_dialog.h"
 #include    "record_table_model.h"
+#include    <QModelIndex>
 
 #if defined(LV2G_LIBRARY)
 #include    "ui_column_filter.h"
@@ -217,11 +218,11 @@ public:
     virtual void close(int r = QDialog::Accepted);
 
     virtual void refresh(bool first = true) = 0;
-    virtual void modify() = 0;
+    virtual void modify();
     virtual void remove() = 0;
     virtual void insert() = 0;
     virtual void setEditButtons() = 0;
-    virtual void setPageButtons() = 0;
+    virtual void setPageButtons();
     virtual void setButtons() = 0;
     QStringList refineWhere(QVariantList& qParams);
     QStringList where(QVariantList &qParams);
@@ -236,6 +237,14 @@ public:
     /// Nem kötelezően implementálandó metódus. Ha nincs újraimplementálva, de mégis meghívjuk, akkor kizárást dob
     virtual void last();
 
+    virtual QModelIndex actIndex() = 0;
+    virtual cRecordAny *actRecord(const QModelIndex& _mi = QModelIndex()) = 0;
+    virtual cRecordAny *nextRow(QModelIndex *pMi)   = 0;
+    virtual cRecordAny *prevRow(QModelIndex *pMi)   = 0;
+    virtual void selectRow(const QModelIndex& mi)   = 0;
+    virtual bool        updateRow(const QModelIndex& mi, cRecordAny *__new) = 0;
+    qlonglong   actId() { cRecordAny *p = actRecord(); return p == NULL ? NULL_ID : p->getId(); }
+
     void initView();
     void initShape(cTableShape *pts = NULL);
     void initOwner();
@@ -243,11 +252,12 @@ public:
 public slots:
     /// Megnyomtak egy gombot.
     /// @param id A megnyomott gomb azonosítója
-    void buttonPressed(int id);
+    virtual void buttonPressed(int id);
+    void clickedHeader(int);
 signals:
     void closeIt();
 protected:
-    static cRecordViewBase *newRecordViewBase(QSqlQuery &q, qlonglong shapeId, cRecordViewBase * own = NULL, QWidget *par = NULL);
+    static cRecordViewBase *newRecordView(QSqlQuery &q, qlonglong shapeId, cRecordViewBase * own = NULL, QWidget *par = NULL);
 };
 
 /// @class cRecordTable
@@ -273,10 +283,12 @@ public:
         if (!isContIx(pTableModel->records(), i)) EXCEPTION(EDATA, i);
         return pTableModel->records()[i];
     }
-    int         actRow();
-    cRecordAny *actRecord();
-    qlonglong   actId() { cRecordAny *p = actRecord(); return p == NULL ? NULL_ID : p->getId(); }
-    void setActRow(int row) { pTableView->setCurrentIndex(pTableModel->index(row, 0)); }
+    virtual QModelIndex actIndex();
+    virtual cRecordAny *actRecord(const QModelIndex& _mi = QModelIndex());
+    virtual cRecordAny *nextRow(QModelIndex *pMi);
+    virtual cRecordAny *prevRow(QModelIndex *pMi);
+    virtual void selectRow(const QModelIndex& mi);
+    virtual bool        updateRow(const QModelIndex& mi, cRecordAny *__new);
 
     void empty();
     void first();
@@ -286,7 +298,6 @@ public:
     void refresh(bool first = true);
     void remove();
     void insert();
-    void modify();
     void setEditButtons();
     void setPageButtons();
     void setButtons();
@@ -307,7 +318,6 @@ protected slots:
     void recordRemove(cRecordAny * _pr);
     /// Ha változott a kijelölés
     void selectionChanged(QItemSelection,QItemSelection);
-    void clickedHeader(int);
 public:
     QTableView *tableView() { return pTableView; }
 };

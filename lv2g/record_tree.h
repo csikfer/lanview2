@@ -23,18 +23,31 @@ public:
 
     bool queryNodeChildrens(QSqlQuery &q, cTreeNode *pn);
 
+    virtual QModelIndex actIndex();
+    virtual cRecordAny *actRecord(const QModelIndex &_mi);
+    virtual cRecordAny *nextRow(QModelIndex *pMi);
+    virtual cRecordAny *prevRow(QModelIndex *pMi);
+    virtual void selectRow(const QModelIndex& mi);
+    virtual bool        updateRow(const QModelIndex &_mi, cRecordAny *__new);
+
+
     virtual void refresh(bool first = false);
-    virtual void modify();
     virtual void remove();
     virtual void insert();
     virtual void setEditButtons();
-    virtual void setPageButtons();
     virtual void setButtons();
+    virtual void prev();
+    void setRoot();
+    void restoreRoot();
 
     virtual void initSimple(QWidget * pW);
 
     cRecordTreeModel *  pTreeModel;
     QTreeView *         pTreeView;
+    virtual void buttonPressed(int id);
+protected slots:
+    /// Ha változott a kijelölés
+    void selectionChanged(QItemSelection,QItemSelection);
 };
 
 

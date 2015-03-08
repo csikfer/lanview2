@@ -33,7 +33,6 @@ CREATE TABLE places (
     place_id    bigserial              PRIMARY KEY,
     place_name  varchar(32)         NOT NULL UNIQUE,
     place_note varchar(255)         DEFAULT NULL,
-    place_alarm_msg varchar(255)    DEFAULT NULL,
     place_type  placetype           DEFAULT 'real',
     parent_id   bigint             DEFAULT NULL REFERENCES places(place_id) MATCH SIMPLE
                                         ON DELETE RESTRICT ON UPDATE RESTRICT,
