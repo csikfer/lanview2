@@ -20,7 +20,6 @@ cRecordTree::~cRecordTree()
 
 void cRecordTree::init()
 {
-    pTreeModel = NULL;
     pTreeView  = NULL;
 
     switch (pTableShape->getId(_sTableShapeType)) {
@@ -72,7 +71,7 @@ void cRecordTree::initSimple(QWidget *pW)
 
     pMainLayer  = new QVBoxLayout(pW);
     pTreeView   = new QTreeView(pW);
-    pTreeModel  = new cRecordTreeModel(*this);
+    pModel      = new cRecordTreeModel(*this);
     QString title = pTableShape->getName(_sTableShapeTitle);
     if (title.size() > 0) {
         QLabel *pl = new QLabel(title);
@@ -80,7 +79,7 @@ void cRecordTree::initSimple(QWidget *pW)
     }
     pMainLayer->addWidget(pTreeView);
     pMainLayer->addWidget(pButtons->pWidget());
-    pTreeView->setModel(pTreeModel);
+    pTreeView->setModel(pTreeModel());
 
     pTreeView->setSelectionBehavior(QAbstractItemView::SelectRows);     // Csak sor jelölhető ki
     pTreeView->setSelectionMode(QAbstractItemView::SingleSelection);    // Egyszerre csak egy sor kijelölése
@@ -129,6 +128,11 @@ bool cRecordTree::queryNodeChildrens(QSqlQuery& q, cTreeNode *pn)
     return q.first();
 }
 
+QModelIndexList cRecordTree::selectedRows()
+{
+    return pTreeView->selectionModel()->selectedRows();
+}
+
 QModelIndex cRecordTree::actIndex()
 {
     QModelIndexList mil = pTreeView->selectionModel()->selectedRows();
@@ -140,7 +144,7 @@ cRecordAny *cRecordTree::actRecord(const QModelIndex &_mi)
 {
     QModelIndex mi = _mi;
     if (!_mi.isValid()) mi = actIndex();
-    cTreeNode * pn = pTreeModel->nodeFromIndex(mi);
+    cTreeNode * pn = pTreeModel()->nodeFromIndex(mi);
     if (pn->parent == NULL || pn->pData == NULL) return NULL;
     return pn->pData;
 }
@@ -148,7 +152,7 @@ cRecordAny *cRecordTree::actRecord(const QModelIndex &_mi)
 cRecordAny *cRecordTree::nextRow(QModelIndex *pMi)
 {
     if (!pMi->isValid()) return NULL;
-    cTreeNode * pn = pTreeModel->nodeFromIndex(*pMi);
+    cTreeNode * pn = pTreeModel()->nodeFromIndex(*pMi);
     if (pn->parent == NULL) {
         *pMi = QModelIndex();
         return NULL;
@@ -156,7 +160,7 @@ cRecordAny *cRecordTree::nextRow(QModelIndex *pMi)
     int row = pn->row();
     ++row;
     if (isContIx(*pn->parent->pChildrens, row)) {
-        *pMi = pTreeModel->index(row, pMi->column(), pMi->parent());
+        *pMi = pTreeModel()->index(row, pMi->column(), pMi->parent());
         if (pMi->isValid()) {
             selectRow(*pMi);
             return dynamic_cast<cRecordAny *>(pn->pData->dup());
@@ -169,7 +173,7 @@ cRecordAny *cRecordTree::nextRow(QModelIndex *pMi)
 cRecordAny *cRecordTree::prevRow(QModelIndex *pMi)
 {
     if (!pMi->isValid()) return NULL;
-    cTreeNode * pn = pTreeModel->nodeFromIndex(*pMi);
+    cTreeNode * pn = pTreeModel()->nodeFromIndex(*pMi);
     if (pn->parent == NULL) {
         *pMi = QModelIndex();
         return NULL;
@@ -177,7 +181,7 @@ cRecordAny *cRecordTree::prevRow(QModelIndex *pMi)
     int row = pn->row();
     --row;
     if (isContIx(*pn->parent->pChildrens, row)) {
-        *pMi = pTreeModel->index(row, pMi->column(), pMi->parent());
+        *pMi = pTreeModel()->index(row, pMi->column(), pMi->parent());
         if (pMi->isValid()) {
             selectRow(*pMi);
             return dynamic_cast<cRecordAny *>(pn->pData->dup());
@@ -192,19 +196,9 @@ void cRecordTree::selectRow(const QModelIndex& mi)
     pTreeView->selectionModel()->select(mi, QItemSelectionModel::ClearAndSelect);
 }
 
-bool cRecordTree::updateRow(const QModelIndex& _mi, cRecordAny *__new)
+void cRecordTree::_refresh(bool first)
 {
-    return pTreeModel->updateRow(_mi, __new);
-}
-
-void cRecordTree::refresh(bool first)
-{
-    // EZ ITT NEM KEREK !!!! Ütközik a részfa megjelenítéssel!!!
-    if (first) pDelete(pTreeModel->pRootNode);
-    if (pTreeModel->pRootNode == NULL) {
-        pTreeModel->pRootNode = new cTreeNode();
-    }
-    pTreeModel->fetchTree();
+    pTreeModel()->refresh(first);
 }
 
 void cRecordTree::buttonPressed(int id)
@@ -224,18 +218,12 @@ void cRecordTree::buttonPressed(int id)
     }
 }
 
-void cRecordTree::remove()
-{
-    DBGFN();
-    QModelIndexList mil = pTreeView->selectionModel()->selectedRows();
-    if (mil.size() == 0) return;
-    pTreeModel->remove(mil.at(0));
-    refresh();
-}
+/*
 void cRecordTree::insert()
 {
 
 }
+*/
 void cRecordTree::setEditButtons()
 {
 
@@ -247,19 +235,19 @@ void cRecordTree::setButtons()
 
 void cRecordTree::prev()
 {
-    pTreeModel->prevRoot(true); // egyet vissza
+    pTreeModel()->prevRoot(true); // egyet vissza
 }
 
 void cRecordTree::setRoot()
 {
     QModelIndexList mil = pTreeView->selectionModel()->selectedRows();
     if (mil.size() == 0) return;
-    pTreeModel->setRoot(mil.at(0));
+    pTreeModel()->setRoot(mil.at(0));
 }
 
 void cRecordTree::restoreRoot()
 {
-    pTreeModel->prevRoot(false);    // vissza az eredeti gyökérig
+    pTreeModel()->prevRoot(false);    // vissza az eredeti gyökérig
 }
 
 void cRecordTree::selectionChanged(QItemSelection,QItemSelection)

@@ -471,6 +471,7 @@ cRecordViewBase::cRecordViewBase(bool _isDialog, QWidget *par)
     pq = newQuery();
     pTabQuery = newQuery();
     pTableShape = NULL;
+    pModel = NULL;
     pUpper = NULL;
     pMaster = NULL;
     pRecDescr = NULL;
@@ -573,6 +574,25 @@ void cRecordViewBase::first() { EXCEPTION(EPROGFAIL); }
 void cRecordViewBase::next()  { EXCEPTION(EPROGFAIL); }
 void cRecordViewBase::prev()  { EXCEPTION(EPROGFAIL); }
 void cRecordViewBase::last()  { EXCEPTION(EPROGFAIL); }
+
+void cRecordViewBase::refresh(bool first)
+{
+    DBGFN();
+    switch (tit) {
+    case TIT_NO:
+    case TIT_ON:
+    case TIT_ONLY:
+    case TIT_LISTED_REV:
+        _refresh(first);
+        break;
+    default:
+        EXCEPTION(ENOTSUPP);
+        break;
+    }
+    setButtons();
+    if (pRightTable != NULL) pRightTable->refresh(true);
+    DBGFNL();
+}
 
 void cRecordViewBase::initView()
 {
@@ -769,14 +789,9 @@ void cRecordViewBase::modify()
                 continue;
             }
             else {
-                PDEB(VERBOSE) << "Update record : " << pRec->toString() << endl;
-                if (!cErrorMessageBox::condMsgBox(pRec->tryUpdate(*pq, true))) {
-                    continue;   // Hiba volt hiba ablakkal, újra...
-                }
-                PDEB(VVERBOSE) << "Update returned : " << pRec->toString() << endl;
-                updateRow(index, pRec);    // Ő szabadítja fel pRec-et
+                if (!pModel->updateRec(index, pRec)) continue;
                 // Nincs felszabadítva, de már nem a mienk
-                pRec = NULL;    // ?!
+                pRec = NULL;
             }
             if (id == DBT_OK) {
                 // A select-et helyreállítjuk (updateRow elszúrhatta
@@ -807,6 +822,86 @@ void cRecordViewBase::modify()
     pDelete(pRec);
 }
 
+void cRecordViewBase::remove()
+{
+    DBGFN();
+    QModelIndexList mil = selectedRows();
+    pModel->removeRecords(mil);
+}
+
+void cRecordViewBase::insert()
+{
+    if (flags & RTF_CHILD) {
+        if (pUpper == NULL) EXCEPTION(EPROGFAIL);
+        if (owner_id == NULL_ID) return;
+    }
+    int buttons = enum2set(DBT_OK, DBT_INSERT, DBT_CANCEL);
+    cRecordAny rec;
+    switch (tit) {
+    case TIT_NO:
+    case TIT_ONLY: {
+        rec.setType(pRecDescr);
+        if (flags & RTF_CHILD) {
+            int ofix = rec.descr().ixToOwner();
+            rec[ofix] = owner_id;
+        }
+        cRecordDialog   rd(rec, *pTableShape, buttons, pWidget());  // A rekord szerkesztő dialógus
+        while (1) {
+            int r = rd.exec();
+            if (r == DBT_INSERT || r == DBT_OK) {   // Csak az OK, és Insert gombra csinálunk valamit
+                bool ok = rd.accept();
+                if (ok) {
+                    cRecordAny *pRec = dynamic_cast<cRecordAny *>(rec.dup());
+                    ok = pModel->insertRec(pRec);
+                    if (!ok) delete pRec;
+                }
+                if (ok) {
+                    if (r == DBT_OK) break; // Ha OK-t nyomott becsukjuk az dialóg-ot
+                    continue;               // Ha Insert-et, akkor folytathatja a következővel
+                }
+                else {
+                    //QMessageBox::warning(pWidget(), trUtf8("Az új rekord beszúrása sikertelen."), rd.errMsg());
+                    continue;
+                }
+            }
+            break;
+        }
+    }   break;
+    case TIT_LISTED_REV: {
+        tRecordList<cTableShape>    shapes;
+        QStringList tableNames;
+        tableNames << pTableShape->getName(_sTableName);
+        tableNames << inheritTableList;
+        foreach (QString tableName, tableNames) {
+            shapes << getInhShape(tableName);
+        }
+        cRecordDialogInh rd(*pTableShape, shapes, buttons, owner_id, true, pWidget());
+        while (1) {
+            int r = rd.exec();
+            if (r == DBT_INSERT || r == DBT_OK) {
+                bool ok = rd.accept();
+                if (ok) {
+                    cRecordAny *pRec = dynamic_cast<cRecordAny *>(rec.dup());
+                    ok = pModel->insertRec(pRec);
+                    if (!ok) delete pRec;
+                }
+                if (ok) {
+                    if (r == DBT_OK) break; // Ha OK-t nyomott becsukjuk az dialóg-ot
+                    continue;               // Ha Insert-et, akkor folytathatja a következővel
+                }
+                else {
+                    // QMessageBox::warning(pWidget(), trUtf8("Az új rekord beszúrása sikertelen."), rd.errMsg());
+                    continue;
+                }
+            }
+            break;
+        }
+    }   break;
+    default:
+        EXCEPTION(ENOTSUPP);
+    }
+}
+
 /* ***************************************************************************************************** */
 
 cRecordTable::cRecordTable(const QString& _mn, bool _isDialog, QWidget * par)
@@ -834,7 +929,6 @@ cRecordTable::~cRecordTable()
 
 void cRecordTable::init()
 {
-    pTableModel = NULL;
     pTableView = NULL;
 
     switch (pTableShape->getId(_sTableShapeType)) {
@@ -887,7 +981,7 @@ void cRecordTable::initSimple(QWidget * pW)
     pButtons    = new cDialogButtons(buttons, buttons2, pW);
     pMainLayer  = new QVBoxLayout(pW);
     pTableView  = new QTableView(pW);
-    pTableModel = new cRecordTableModelSql(*this);
+    pModel      = new cRecordTableModel(*this);
     QString title = pTableShape->getName(_sTableShapeTitle);
     if (title.size() > 0) {
         QLabel *pl = new QLabel(title);
@@ -895,7 +989,7 @@ void cRecordTable::initSimple(QWidget * pW)
     }
     pMainLayer->addWidget(pTableView);
     pMainLayer->addWidget(pButtons->pWidget());
-    pTableView->setModel(pTableModel);
+    pTableView->setModel(pTableModel());
 
     pTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
     pTableView->setSelectionMode(QAbstractItemView::ExtendedSelection);
@@ -903,7 +997,6 @@ void cRecordTable::initSimple(QWidget * pW)
 
     connect(pButtons,    SIGNAL(buttonPressed(int)),   this, SLOT(buttonPressed(int)));
     if (!isReadOnly) {
-        connect(pTableModel, SIGNAL(removed(cRecordAny*)), this, SLOT(recordRemove(cRecordAny*)), Qt::DirectConnection);
         connect(pTableView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
     }
     if (pMaster != NULL) {
@@ -913,50 +1006,31 @@ void cRecordTable::initSimple(QWidget * pW)
 
 void cRecordTable::empty()
 {
-    pTableModel->clear();
+    pTableModel()->clear();
 }
 
 void cRecordTable::first()
 {
-    pTableModel->qFirst();
+    pTableModel()->qFirst();
     setButtons();
 }
 
 void cRecordTable::next()
 {
-    pTableModel->qNext();
+    pTableModel()->qNext();
     setButtons();
 }
 
 void cRecordTable::prev()
 {
-    pTableModel->qPrev();
+    pTableModel()->qPrev();
     setButtons();
 }
 
 void cRecordTable::last()
 {
-    pTableModel->qLast();
+    pTableModel()->qLast();
     setButtons();
-}
-
-void cRecordTable::refresh(bool first)
-{
-    DBGFN();
-    switch (tit) {
-    case TIT_NO:
-    case TIT_ON:
-    case TIT_ONLY:
-    case TIT_LISTED_REV:
-        _refresh(first);
-        break;
-    default:
-        EXCEPTION(ENOTSUPP);
-        break;
-    }
-    setButtons();
-    if (pRightTable != NULL) pRightTable->refresh();
-    DBGFNL();
 }
 
 QStringList cRecordTable::filterWhere(QVariantList& qParams)
@@ -975,7 +1049,7 @@ void cRecordTable::_refresh(bool first)
     QStringList wl = where(qParams);
     if (!wl.isEmpty()) {
         if (wl.at(0) == _sFalse) {         // Ha üres..
-            pTableModel->clear();
+            pTableModel()->clear();
             return;
         }
         sql += " WHERE " + wl.join(" AND ");
@@ -988,82 +1062,13 @@ void cRecordTable::_refresh(bool first)
     int i = 0;
     foreach (QVariant v, qParams) pTabQuery->bindValue(i++, v);
     if (!pTabQuery->exec()) SQLQUERYERR(*pTabQuery);
-    pTableModel->setRecords(*pTabQuery, first);
+    pTableModel()->setRecords(*pTabQuery, first);
 }
 
-void cRecordTable::remove()
-{
-    DBGFN();
-    QModelIndexList mil = pTableView->selectionModel()->selectedRows();
-    pTableModel->remove(mil);
-    refresh();
-}
 
-void cRecordTable::insert()
+QModelIndexList cRecordTable::selectedRows()
 {
-    if (flags & RTF_CHILD) {
-        if (pUpper == NULL) EXCEPTION(EPROGFAIL);
-        if (owner_id == NULL_ID) return;
-    }
-    int buttons = enum2set(DBT_OK, DBT_INSERT, DBT_CANCEL);
-    cRecordAny rec;
-    switch (tit) {
-    case TIT_NO:
-    case TIT_ONLY: {
-        rec.setType(pRecDescr);
-        if (flags & RTF_CHILD) {
-            int ofix = rec.descr().ixToOwner();
-            rec[ofix] = owner_id;
-        }
-        cRecordDialog   rd(rec, *pTableShape, buttons, pWidget());  // A rekord szerkesztő dialógus
-        while (1) {
-            bool r = rd.exec();
-            if (r == DBT_INSERT || r == DBT_OK) {   // Csak az OK, és Insert gombra csinálunk valamit
-                int ok = rd.accept();
-                ok = ok && cErrorMessageBox::condMsgBox(rec.tryInsert(*pq));
-                if (ok) {
-                    refresh();
-                    if (r == DBT_OK) break; // Ha OK-t nyomott becsukjuk az dialóg-ot
-                    continue;               // Ha Insert-et, akkor folytathatja a következővel
-                }
-                else {
-                    QMessageBox::warning(pWidget(), trUtf8("Az új rekord beszúrása sikertelen."), rd.errMsg());
-                    continue;
-                }
-            }
-            break;
-        }
-    }   break;
-    case TIT_LISTED_REV: {
-        tRecordList<cTableShape>    shapes;
-        QStringList tableNames;
-        tableNames << pTableShape->getName(_sTableName);
-        tableNames << inheritTableList;
-        foreach (QString tableName, tableNames) {
-            shapes << getInhShape(tableName);
-        }
-        cRecordDialogInh rd(*pTableShape, shapes, buttons, owner_id, true, pWidget());
-        while (1) {
-            int r = rd.exec();
-            if (r == DBT_INSERT || r == DBT_OK) {
-                bool ok = rd.accept();
-                ok = ok && rd.record().tryInsert(*pq);
-                if (ok) {
-                    refresh();
-                    if (r == DBT_OK) break;
-                    continue;
-                }
-                else {
-                    QMessageBox::warning(pWidget(), trUtf8("Az új rekord beszúrása sikertelen."), rd.errMsg());
-                    continue;
-                }
-            }
-            break;
-        }
-    }   break;
-    default:
-        EXCEPTION(ENOTSUPP);
-    }
+    return pTableView->selectionModel()->selectedRows();
 }
 
 QModelIndex cRecordTable::actIndex()
@@ -1081,7 +1086,7 @@ cRecordAny *cRecordTable::actRecord(const QModelIndex &_mi)
 {
     QModelIndex mi = _mi;
     if (!mi.isValid()) mi = actIndex();
-    if (mi.isValid() && isContIx(pTableModel->records(), mi.row())) return pTableModel->records()[mi.row()];
+    if (mi.isValid() && isContIx(pTableModel()->records(), mi.row())) return pTableModel()->records()[mi.row()];
     return NULL;
 }
 
@@ -1090,25 +1095,26 @@ cRecordAny * cRecordTable::nextRow(QModelIndex *pMi)
     if (pMi->isValid() == false) return NULL;    // Nincs aktív
     int row = pMi->row();
     row++;
-    if (row == pTableModel->size()) {
-        if (!pTableModel->qNextResult()) return NULL; // Az utolsó volt, nincs következő, kész
-        pTableModel->qNext();   // Lapozunk
+    if (row == pTableModel()->size()) {
+        if (!pTableModel()->qNextResult()) return NULL; // Az utolsó volt, nincs következő, kész
+        pTableModel()->qNext();   // Lapozunk
         row = 0;
     }
-    else if (!isContIx(pTableModel->records(), row)) {
+    else if (!isContIx(pTableModel()->records(), row)) {
         DWAR() << "Invalid row : " << row << endl;
         *pMi = QModelIndex();
         return NULL;
     }
-    *pMi = pTableModel->index(row, pMi->column());
+    *pMi = pTableModel()->index(row, pMi->column());
     if (!pMi->isValid()) {
         DWAR() << "Invalid index : " << row << endl;
         return NULL;
     }
     selectRow(*pMi);
     cRecordAny *pRec = actRecord(*pMi);
-    if (pRec != NULL) return dynamic_cast<cRecordAny *>(pRec->dup());
-    return NULL;
+    if (pRec == NULL) return NULL;
+    pRec = dynamic_cast<cRecordAny *>(pRec->dup());
+    return pRec;
 }
 
 cRecordAny *cRecordTable::prevRow(QModelIndex *pMi)
@@ -1117,16 +1123,16 @@ cRecordAny *cRecordTable::prevRow(QModelIndex *pMi)
     int row = pMi->row();
     row--;
     if (row == -1) {
-        if (!pTableModel->qPrevResult()) return NULL; // Az első volt , nincs előző, kész
-        pTableModel->qPrev();   // Lapozunk
-        row = pTableModel->size() -1;
+        if (!pTableModel()->qPrevResult()) return NULL; // Az első volt , nincs előző, kész
+        pTableModel()->qPrev();   // Lapozunk
+        row = pTableModel()->size() -1;
     }
-    else if (!isContIx(pTableModel->records(), row)) {
+    else if (!isContIx(pTableModel()->records(), row)) {
         DWAR() << "Invalid row : " << row << endl;
         *pMi = QModelIndex();
         return NULL;
     }
-    *pMi = pTableModel->index(row, pMi->column());
+    *pMi = pTableModel()->index(row, pMi->column());
     if (!pMi->isValid()) {
         DWAR() << "Invalid index : " << row << endl;
         return NULL;
@@ -1142,34 +1148,21 @@ void cRecordTable::selectRow(const QModelIndex& mi)
     pTableView->selectionModel()->select(mi, QItemSelectionModel::ClearAndSelect);
 }
 
-bool cRecordTable::updateRow(const QModelIndex &mi, cRecordAny * __new)
-{
-    return pTableModel->updateRow(mi, __new);
-}
-
 void cRecordTable::setEditButtons()
 {
     if (!isReadOnly) {
         QModelIndexList mix = pTableView->selectionModel()->selectedRows();
         int n = mix.size();
-        bool ext = false;
-        if (n > 0 && pTableModel->extLines.size() > 0) foreach (QModelIndex mi, mix) {
-            if (pTableModel->isExtRow(mi.row())) {
-                ext = true;
-                break;
-            }
-        }
-        // PDEB(VVERBOSE) << setButtons() << " : " << VDEB(n) << VDEBBOOL(ext) << endl;
-        buttonDisable(DBT_DELETE, ext || n <  1);
-        buttonDisable(DBT_MODIFY, ext || n != 1);
+        buttonDisable(DBT_DELETE, n <  1);
+        buttonDisable(DBT_MODIFY, n != 1);
     }
 }
 
 void cRecordTable::setPageButtons()
 {
-    if (pTableModel->qIsPaged()) {
-        bool    next = pTableModel->qNextResult();
-        bool    prev = pTableModel->qPrevResult();
+    if (pTableModel()->qIsPaged()) {
+        bool    next = pTableModel()->qNextResult();
+        bool    prev = pTableModel()->qPrevResult();
         buttonDisable(DBT_FIRST,!prev);
         buttonDisable(DBT_PREV, !prev);
         buttonDisable(DBT_NEXT, !next);
@@ -1187,12 +1180,6 @@ void cRecordTable::setButtons()
 {
     setEditButtons();
     setPageButtons();
-}
-
-void cRecordTable::recordRemove(cRecordAny * _pr)
-{
-    PDEB(INFO) << "Remove : " << _pr->toString() << endl;
-    cErrorMessageBox::condMsgBox(_pr->tryRemove(*pq));
 }
 
 void cRecordTable::selectionChanged(QItemSelection,QItemSelection)

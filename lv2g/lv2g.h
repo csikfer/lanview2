@@ -16,7 +16,7 @@ A könyvtár a következő osztályokat valósítja meg:\n
 - cPolygonTableModel Polygon táblázatos megjelenítése
 - cRecordListModel Rekord lista megjelenítése, minden rekordot egy string (név) azonosít
 - cRecordTableModel
-- cRecordTableModelSql
+- cRecordTreeModel
 @section validators Validátor osztályok
 - cIntValidator Validator egy numerikus egész típusú mezőhöz.
 - cRealValidator Validator egy numerikus típusú mezőhöz.

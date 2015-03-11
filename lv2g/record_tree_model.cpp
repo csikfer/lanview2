@@ -1,5 +1,6 @@
 #include "record_tree_model.h"
 #include "record_tree.h"
+#include "cerrormessagebox.h"
 
 cTreeNode::cTreeNode(cRecordAny *__po, cTreeNode * _parentNode)
     : pData(__po)
@@ -32,10 +33,11 @@ int cTreeNode::row() const
  }
 
 /* */
-cRecordTreeModel::cRecordTreeModel(const cRecordTree&  _rt)
+cRecordTreeModel::cRecordTreeModel(cRecordTree&  _rt)
     : QAbstractItemModel(_rt.pWidget())
     , cRecordViewModelBase(_rt)
 {
+    pActRootNode = NULL;
     pRootNode = NULL;
     _viewRowNumbers = false;    // NINCS!!
     pq = newQuery();
@@ -47,9 +49,30 @@ cRecordTreeModel::~cRecordTreeModel()
     delete pq;
 }
 
+QModelIndex cRecordTreeModel::findNode(qlonglong pid, const QModelIndex& mi)
+{
+    cTreeNode *pn = nodeFromIndex(mi);
+    _DBGFN() << QString("@(%1, %2)").arg(pid).arg(pn->name()) << endl;
+    if (pn->pData != NULL && pid == pn->pData->getId()) {
+        _DBGFNL() << " found : " << pn->name() << endl;
+        return mi;
+    }
+    int rows = rowCount(mi);
+    for (int i = 0; i < rows; ++i) {
+        QModelIndex cmi = index(i, 0, mi);
+        cmi = findNode(pid, cmi);
+        if (cmi.isValid()) {
+            _DBGFNL() << " found parent " << pn->name() << " row : " << i << endl;
+            return cmi;
+        }
+    }
+    _DBGFNL() << "not found : " << pn->name() << endl;
+    return QModelIndex();   // Nincs találat
+}
+
 QModelIndex cRecordTreeModel::index(int row, int column, const QModelIndex& parent) const
 {
-    if (pRootNode == NULL) {
+    if (pActRootNode == NULL) {
         DWAR() << "pRootNode is NULL." << endl;
         return QModelIndex();
     }
@@ -82,7 +105,7 @@ int         cRecordTreeModel::rowCount(const QModelIndex &parent) const
 {
     cTreeNode *parentNode = nodeFromIndex(parent);
     if (parentNode == NULL) {
-//        PDEB(VVERBOSE) << __PRETTY_FUNCTION__ <<  " return : 0 (parant is NULL)" << endl;
+        PDEB(VVERBOSE) << __PRETTY_FUNCTION__ <<  " return : 0 (parant is NULL)" << endl;
         return 0;
     }
 //    PDEB(VVERBOSE) << __PRETTY_FUNCTION__ <<  " return : " << parentNode->childrens.count()
@@ -159,17 +182,33 @@ cTreeNode * cRecordTreeModel::nodeFromIndex(const QModelIndex& index) const
         return static_cast<cTreeNode *>(index.internalPointer());
     }
     else {
-        return pRootNode;
+        return pActRootNode;
+    }
+}
+
+void cRecordTreeModel::refresh(bool first)
+{
+    first = first || (pRootNode == NULL) || (pRootNode == pActRootNode);
+    qlonglong rid = NULL_ID;
+    if (!first) {           // Ha rész fa van
+        if (pActRootNode->pData == NULL) EXCEPTION(EPROGFAIL);
+        rid = pActRootNode->pData->getId();
+        if (rid == NULL_ID) EXCEPTION(EPROGFAIL);
+    }
+    beginResetModel();
+    pDelete(pRootNode);
+    pRootNode = pActRootNode = new cTreeNode();;
+    fetchTree();
+    endResetModel();
+    if (rid != NULL_ID) {
+        QModelIndex rmi = findNode(rid);
+        setRoot(rmi);
     }
 }
 
 void cRecordTreeModel::fetchTree()
 {
-    beginResetModel();
-
-    readChilds(pRootNode);
-
-    endResetModel();
+    readChilds(pActRootNode);
 }
 
 void cRecordTreeModel::readChilds(cTreeNode *pNode)
@@ -186,20 +225,10 @@ void cRecordTreeModel::readChilds(cTreeNode *pNode)
     }
 }
 
-void cRecordTreeModel::remove(const QModelIndex& mi)
-{
-    cTreeNode *pn = nodeFromIndex(mi);
-    int b = QMessageBox::warning(recordView.pWidget(),
-                         trUtf8("Egy rész fa teljes törlése!"),
-                         trUtf8("Valóban törölni akarja a kijelölt objektumot, az összes alárendelt objektummal eggyütt ?"),
-                         QMessageBox::Ok, QMessageBox::Cancel);
-    if (b != QMessageBox::Ok) return;
-    beginResetModel();
-    remove(pn);
-    endResetModel();
-}
-
-void cRecordTreeModel::remove(cTreeNode *pn)
+/// Törli a csomóponthoz rendelt rekordot, és a gyerek csomópontokat, vagyis a teljes rész fát.
+/// A csomopontot eltávolítja a pearent-ből.
+/// Az adatok változásáról nem küld szignáltt.
+bool cRecordTreeModel::removeNode(cTreeNode *pn)
 {
     if (pn->parent != NULL) {   // Töröljük az elemet a parentből
         pn->parent->pChildrens->removeAt(pn->row());
@@ -208,47 +237,155 @@ void cRecordTreeModel::remove(cTreeNode *pn)
         readChilds(pn);
     }
     // Töröljük a gyerköcöket..
-    while (pn->pChildrens->size()) remove(pn->pChildrens->at(0));
-    pn->pData->remove(*pq); // Töröljük a rekordot;
+    while (pn->pChildrens->size()) removeNode(pn->pChildrens->at(0));
+    bool r = pn->pData->remove(*pq); // Töröljük a rekordot;
     delete pn;  // Végül magát (a már gyermektelen) a node-ot
+    return r;
 }
 
 void cRecordTreeModel::setRoot(const QModelIndex &mi)
 {
     cTreeNode *pn = nodeFromIndex(mi);
     beginResetModel();
-    pRootNode = pn;
+    pActRootNode = pn;
     endResetModel();
 }
 
 void cRecordTreeModel::prevRoot(bool _sing)
 {
-    if (pRootNode->parent == NULL) return;  // nincs mit visszaállítani
+    if (pActRootNode->parent == NULL) return;  // nincs mit visszaállítani
     beginResetModel();
     if (_sing) {
         // egyet vissza
-        pRootNode = pRootNode->parent;
+        pActRootNode = pActRootNode->parent;
     }
-    else while (pRootNode->parent != NULL) {
+    else while (pActRootNode->parent != NULL) {
         // elballagunk az eredeti gyökérig
-        pRootNode = pRootNode->parent;
+        pActRootNode = pActRootNode->parent;
     }
     endResetModel();
 }
 
-bool cRecordTreeModel::updateRow(const QModelIndex& mi, cRecordAny * pRec)
+
+void cRecordTreeModel::removeRecords(const QModelIndexList& mil)
+{
+    foreach (QModelIndex mi, mil) {
+        removeRec(mi);
+    }
+}
+
+bool cRecordTreeModel::removeRec(const QModelIndex & mi)
 {
     cTreeNode *pn = nodeFromIndex(mi);
+    int b = QMessageBox::warning(recordView.pWidget(),
+                         trUtf8("Egy rész fa teljes törlése!"),
+                         trUtf8("Valóban törölni akarja a kijelölt %1 nevű objektumot, az összes alárendelt objektummal eggyütt ?").arg(pn->name()),
+                         QMessageBox::Ok, QMessageBox::Cancel);
+    if (b != QMessageBox::Ok) return false;
+    beginRemoveRows(mi.parent(), mi.row(), mi.row());
+    sqlBegin(*pq);
+    bool r = removeNode(pn);
+    r = r ? sqlEnd(*pq) : !sqlRollback(*pq);
+    endRemoveRows();
+    if (!r) recordView.refresh(true);
+    return r;
+}
+
+bool cRecordTreeModel::removeRow(const QModelIndex & mi)
+{
+    (void)mi;
+    // EXCEPTION(ENOTSUPP);
+    return false;
+}
+
+int cRecordTreeModel::checkUpdateRow(const QModelIndex& mi, cRecordAny * pRec, QModelIndex& new_parent)
+{
+    cTreeNode *pn = nodeFromIndex(mi);  // A modosított elem (node)
     if (pn->parent == NULL || pn->pData == NULL) EXCEPTION(EPROGFAIL);
-    qlonglong ixPId = pRec->descr().ixToTree();
-    if (pn->pData->getId(ixPId) != pRec->getId(ixPId)) {
-        delete pn->pData;
-        pn->pData = pRec;
-        return true;    // változott a fa szerkezete, mindent újraolvas
+    int ixPId = pRec->descr().ixToTree();     // Az ősre mutató ID mező indexe
+    qlonglong old_pid = pn->pData->getId(ixPId);    // Régi parent ID
+    qlonglong new_pid = pRec->getId(ixPId);         // Új parent ID
+    if (old_pid == new_pid) {   // A modosítottat ugyanode kell visszarakni
+        return 1;   // OK, A fát nem kell átrendezni
     }
-    beginResetModel();
+    else {                      // Átírta az owber ID-t
+        QModelIndex pmi;        // Parent index (alapból a gyökér)
+        if (new_pid != NULL_ID) {   // Ha nem a gyökér a parent
+            pmi = findNode(new_pid, pmi);
+            if (!pmi.isValid()) {
+                return 0;   // Ez gáz, hurkot csinált a júzer.
+            }
+        }
+        new_parent = pmi;
+        return 2;   // Fa modosult, új parent megvan
+    }
+}
+
+bool cRecordTreeModel::updateRec(const QModelIndex& mi, cRecordAny * pRec)
+{
+    QModelIndex npi;
+    int chkr = checkUpdateRow(mi, pRec, npi);
+    if (chkr == 0) {
+        QMessageBox::warning(recordView.pWidget(), trUtf8("Hibás adatok"), trUtf8("Nem megengedett szülő megadása. Hurok a fában."));
+        return false;
+    }
+    if (!cErrorMessageBox::condMsgBox(pRec->tryUpdate(*pq, false))) {
+        return false;
+    }
+    int row = mi.row();
+    cTreeNode *pn = nodeFromIndex(mi);  // A modosított elem (node)
+    cTreeNode *pp = pn->parent;         // A szülő
+    beginRemoveRows(mi.parent(), row, row);
+    pp->pChildrens->takeAt(row);
+    endRemoveRows();
     delete pn->pData;
     pn->pData = pRec;
-    endResetModel();
+    switch (chkr) {
+    case 1:
+        beginInsertRows(mi.parent(), row, row);
+        pp->pChildrens->insert(row, pn);
+        endInsertRows();
+        break;
+    case 2: {
+        cTreeNode *pnp = nodeFromIndex(npi);
+        row = pnp->rows();
+        beginInsertRows(npi, row, row);
+        pnp->pChildrens->push_back(pn);
+        endInsertRows();
+        break;
+    }
+    default:
+        EXCEPTION(EPROGFAIL);
+        return false;
+    }
+    return true;
+}
+
+bool cRecordTreeModel::updateRow(const QModelIndex& mi, cRecordAny * pRec)
+{
+    (void)mi;
+    (void)pRec;
+//  EXCEPTION(ENOTSUPP);
     return false;
+}
+
+bool cRecordTreeModel::insertRow(cRecordAny *pRec)
+{
+    int ixPId = pRec->descr().ixToTree();     // Az ősre mutató ID mező indexe
+    qlonglong pid = pRec->getId(ixPId);
+    QModelIndex pmi;
+    if (pid == NULL_ID) {
+        pmi = findNode(pid);
+        if (!pmi.isValid()) {   // nincs meg a parent!!
+            DWAR() << "Parent not found, record : " << pRec->toString() << endl;
+            return false;
+        }
+    }
+    cTreeNode *ppn = nodeFromIndex(pmi);
+    int row = rowCount(pmi);
+    beginInsertRows(pmi, row,row);
+    cTreeNode *pnn = new cTreeNode(pRec, ppn);
+    ppn->pChildrens->append(pnn);
+    endInsertRows();
+    return true;
 }

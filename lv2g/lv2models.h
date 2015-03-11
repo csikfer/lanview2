@@ -26,24 +26,22 @@ public:
     bool setStringList(const QStringList& sl);
     /// Az aktuális lista (_stringList konténer) a végéhez ad egy sort, és az új lista lessz megjelenítve.
     cStringListModel& operator<<(const QString& s) {
-        beginResetModel();
         _stringList << s;
-        endResetModel();
+        insertRow(_stringList.size() -1);
         return *this;
     }
     /// Beszúr egy elemet a megadott indexű sor elé
     cStringListModel& insert(const QString& s, int i = -1) {
         if (i < 0) i = _stringList.size();
-        beginResetModel();
         _stringList.insert(i, s);
-        endResetModel();
+        insertRow(i);
         return *this;
     }
     /// Törli a megadott indexű sort
     cStringListModel& remove(int i) {
-        beginResetModel();
+        beginRemoveRows(QModelIndex(), i, i);
         _stringList.removeAt(i);
-        endResetModel();
+        endRemoveRows();
         return *this;
     }
     /// Törli az utolsó sort, ha üres a lista, akkor nem csinál semmit.

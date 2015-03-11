@@ -79,6 +79,10 @@ void cErrorMessageBox::endIt()
     accept();
 }
 
+/// Feltételes hiba ablak megjelenítése:
+/// @param _pe Hiba objektum pointere. Ha értéke NULL, akkor visszatér egy true értékkel,
+///            ha nem NULL, akkor megjeleníti, majd a hiba ablak bezárásakor visszetér egy false értékkel.
+/// @param parent Parent widget pointere.
 int cErrorMessageBox::condMsgBox(cError * _pe, QWidget *parent)
 {
     if (_pe == NULL) return true;

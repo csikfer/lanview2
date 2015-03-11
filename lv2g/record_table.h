@@ -173,6 +173,8 @@ public:
     QSqlQuery      *pTabQuery;
     /// A megjelenítő leíró
     cTableShape    *pTableShape;
+    /// A model (bázis objektum)-ra mutató pointer
+    cRecordViewModelBase *pModel;
     /// Ha ez egy al táblázat, akkor a felette lévő tábla megjelenítőjének a pointere, egyébként NULL
     cRecordViewBase   *pUpper;
     /// A fő tábla, vagy NULL. Két tábla esetén azonos pUpper-rel
@@ -217,10 +219,9 @@ public:
     /// Egyébként a closeIt() hívja.
     virtual void close(int r = QDialog::Accepted);
 
-    virtual void refresh(bool first = true) = 0;
     virtual void modify();
-    virtual void remove() = 0;
-    virtual void insert() = 0;
+    virtual void remove();
+    virtual void insert();
     virtual void setEditButtons() = 0;
     virtual void setPageButtons();
     virtual void setButtons() = 0;
@@ -236,19 +237,23 @@ public:
     virtual void prev();
     /// Nem kötelezően implementálandó metódus. Ha nincs újraimplementálva, de mégis meghívjuk, akkor kizárást dob
     virtual void last();
+    ///
+    void refresh(bool first = true);
 
+    virtual QModelIndexList selectedRows() = 0;
     virtual QModelIndex actIndex() = 0;
     virtual cRecordAny *actRecord(const QModelIndex& _mi = QModelIndex()) = 0;
     virtual cRecordAny *nextRow(QModelIndex *pMi)   = 0;
     virtual cRecordAny *prevRow(QModelIndex *pMi)   = 0;
     virtual void selectRow(const QModelIndex& mi)   = 0;
-    virtual bool        updateRow(const QModelIndex& mi, cRecordAny *__new) = 0;
     qlonglong   actId() { cRecordAny *p = actRecord(); return p == NULL ? NULL_ID : p->getId(); }
 
     void initView();
     void initShape(cTableShape *pts = NULL);
     void initOwner();
     virtual void initSimple(QWidget *pW) = 0;
+
+    virtual void _refresh(bool first = true) = 0;
 public slots:
     /// Megnyomtak egy gombot.
     /// @param id A megnyomott gomb azonosítója
@@ -279,33 +284,29 @@ public:
     cRecordTable(cTableShape *pts, bool _isDialog, cRecordViewBase *_upper = NULL, QWidget * par = NULL);
     /// destruktor
     ~cRecordTable();
+    cRecordTableModel *pTableModel() const { return static_cast<cRecordTableModel *>(pModel); }
     const cRecordAny *recordAt(int i) const {
-        if (!isContIx(pTableModel->records(), i)) EXCEPTION(EDATA, i);
-        return pTableModel->records()[i];
+        if (!isContIx(pTableModel()->records(), i)) EXCEPTION(EDATA, i);
+        return pTableModel()->records()[i];
     }
+    virtual QModelIndexList selectedRows();
     virtual QModelIndex actIndex();
     virtual cRecordAny *actRecord(const QModelIndex& _mi = QModelIndex());
     virtual cRecordAny *nextRow(QModelIndex *pMi);
     virtual cRecordAny *prevRow(QModelIndex *pMi);
     virtual void selectRow(const QModelIndex& mi);
-    virtual bool        updateRow(const QModelIndex& mi, cRecordAny *__new);
 
     void empty();
     void first();
     void next();
     void prev();
     void last();
-    void refresh(bool first = true);
-    void remove();
-    void insert();
     void setEditButtons();
     void setPageButtons();
     void setButtons();
 
     ///
 
-    /// A tábla model pointere
-    cRecordTableModelSql *pTableModel;
     /// A táblázatot megjelenítő widget
     QTableView     *pTableView;
     void init();
@@ -314,8 +315,6 @@ public:
     void _refresh(bool first = true);
     void refresh_lst_rev();
 protected slots:
-    /// Ha eltávolításra került sor akkor itt jelez a model. A megadott objektum törlését fogja megkisérelni.
-    void recordRemove(cRecordAny * _pr);
     /// Ha változott a kijelölés
     void selectionChanged(QItemSelection,QItemSelection);
 public:

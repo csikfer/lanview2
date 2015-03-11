@@ -23,17 +23,15 @@ public:
 
     bool queryNodeChildrens(QSqlQuery &q, cTreeNode *pn);
 
+    virtual QModelIndexList selectedRows();
     virtual QModelIndex actIndex();
     virtual cRecordAny *actRecord(const QModelIndex &_mi);
     virtual cRecordAny *nextRow(QModelIndex *pMi);
     virtual cRecordAny *prevRow(QModelIndex *pMi);
     virtual void selectRow(const QModelIndex& mi);
-    virtual bool        updateRow(const QModelIndex &_mi, cRecordAny *__new);
 
 
-    virtual void refresh(bool first = false);
-    virtual void remove();
-    virtual void insert();
+    virtual void _refresh(bool first = false);
     virtual void setEditButtons();
     virtual void setButtons();
     virtual void prev();
@@ -42,7 +40,7 @@ public:
 
     virtual void initSimple(QWidget * pW);
 
-    cRecordTreeModel *  pTreeModel;
+    cRecordTreeModel *  pTreeModel() const { return static_cast<cRecordTreeModel *>(pModel); }
     QTreeView *         pTreeView;
     virtual void buttonPressed(int id);
 protected slots:

@@ -104,7 +104,7 @@ public:
         typename QList<T *>::iterator    i;
         for (i = QList<T *>::begin(); i != QList<T *>::end(); i++) delete *i;
     }
-    /// A konténer insert metódusának az újra definiálása
+    /// A konténer insert metódusának az újra definiálása. A pointer ezután a konténer hatáskörébe tartozik, az szabadítja fel.
     void insert(int i, T *p)        { list().insert(i, p); }
     /// Hasonló a konténer insert metódusához, de az _o objektumot ujra allokálja a dup() metódus hívásával.
     /// @note A két insert lehet, hogy egy kicsit "beugratós", változtatni kéne ?

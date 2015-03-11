@@ -1,7 +1,8 @@
 #include "record_table_model.h"
 #include "record_table.h"
+#include "cerrormessagebox.h"
 
-cRecordViewModelBase::cRecordViewModelBase(const cRecordViewBase& _rt)
+cRecordViewModelBase::cRecordViewModelBase(cRecordViewBase& _rt)
     : _col2shape(), _col2field()
     , recordView(_rt)
     , recDescr(_rt.recDescr())
@@ -96,12 +97,36 @@ cRecordAny *cRecordViewModelBase::qGetRecord(QSqlQuery& q)
     return p;
 }
 
-/*  */
+bool cRecordViewModelBase::updateRec(const QModelIndex& mi, cRecordAny *pRec)
+{
+    sqlBegin(*pq);
+    if (!cErrorMessageBox::condMsgBox(pRec->tryUpdate(*pq, false))) {
+        sqlRollback(*pq);
+        return false;
+    }
+    sqlEnd(*pq);
+    PDEB(VVERBOSE) << "Update returned : " << pRec->toString() << endl;
+    return updateRow(mi, pRec);
+}
 
-cRecordTableModel::cRecordTableModel(const cRecordTable& _rt)
+bool cRecordViewModelBase::insertRec(cRecordAny *pRec)
+{
+    sqlBegin(*pq);
+    if (!cErrorMessageBox::condMsgBox(pRec->tryInsert(*pq))) {
+        sqlRollback(*pq);
+        return false;
+    }
+    sqlEnd(*pq);
+    PDEB(VVERBOSE) << "Insert returned : " << pRec->toString() << endl;
+    return insertRow(pRec);
+}
+
+
+/* ********************************************************************** */
+
+cRecordTableModel::cRecordTableModel(cRecordTable& _rt)
     : QAbstractTableModel(_rt.pWidget())
     , cRecordViewModelBase(_rt)
-    , extLines()
     , _records()
 {
     ;
@@ -167,56 +192,74 @@ bool cRecordTableModel::setRecords(const tRecords& __recs, int _firstNm)
 
 }
 
+void cRecordTableModel::removeRecords(const QModelIndexList &mil)
+{
+    if (mil.isEmpty()) return;
+    int b = QMessageBox::warning(recordView.pWidget(),
+                         trUtf8("Kijelölt objektu(mo)k törlése!"),
+                         trUtf8("Valóban törölni akarja a kijelölt objektumo(ka)t ?"),
+                         QMessageBox::Ok, QMessageBox::Cancel);
+    if (b != QMessageBox::Ok) return;
+    int s = _records.size();
+    QBitArray   rb(s, false);
+    foreach(QModelIndex mi, mil) {
+        int row = mi.row();
+        if (row < s) {
+            if (!rb[row]) {
+                rb.setBit(row, true);
+                removeRec(mi);
+            }
+        }
+    }
+
+}
+
+bool cRecordTableModel::removeRec(const QModelIndex &mi)
+{
+    if (mi.isValid() && isContIx(_records, mi.row())) {
+        cRecordAny * p = _records.at(mi.row());
+        PDEB(INFO) << "Remove : " << p->toString() << endl;
+        sqlBegin(*pq);
+        if (cErrorMessageBox::condMsgBox(p->tryRemove(*pq))) {
+            return removeRow(mi);
+            sqlRollback(*pq);
+            recordView.refresh(true);
+        }
+        else {
+            sqlEnd(*pq);
+        }
+    }
+    return false;
+}
+
+bool cRecordTableModel::removeRow(const QModelIndex &mi)
+{
+    int r = mi.row();
+    beginRemoveRows(mi.parent(), r, r);
+    delete _records.takeAt(r);
+    endRemoveRows();
+    return true;
+}
+
 bool cRecordTableModel::updateRow(const QModelIndex& mi, cRecordAny *pRec)
 {
     int row = mi.row();
     if (isContIx(_records, row)) EXCEPTION(EPROGFAIL);
-    beginResetModel();
-    delete _records[row];
-    _records[row] = pRec;
-    endResetModel();
+    beginRemoveRows(QModelIndex(), row, row);
+    delete _records.pullAt(row);
+    endRemoveColumns();
+    beginInsertRows(QModelIndex(), row, row);
+    _records.insert(row, pRec);
     return false;
 }
 
-cRecordTableModel& cRecordTableModel::operator<<(const cRecordAny& _r)
+bool cRecordTableModel::insertRow(cRecordAny *pRec)
 {
-    beginResetModel();
-    _records << _r;
-    endResetModel();
-    return *this;
-}
-
-cRecordTableModel& cRecordTableModel::insert(const cRecordAny& _r, int i)
-{
-    // ?????!!!!!
-    if (i < 0) i = _records.size();
-    beginResetModel();
-    _records.insert(i, _r);
-    endResetModel();
-    return *this;
-}
-
-cRecordTableModel& cRecordTableModel::remove(int i)
-{
-    // ?????!!!!!
-    _DBGFN() << " #" << i << endl;
-    beginResetModel();
-    cRecordAny * p = _records.list().takeAt(i);
-    endResetModel();
-    _removed(p);
-    return *this;
-}
-
-cRecordTableModel& cRecordTableModel::pop_back()
-{
-    if (_records.isEmpty()) return *this;
-    return remove(_records.size() -1);
-}
-
-cRecordTableModel& cRecordTableModel::pop_front()
-{
-    if (_records.isEmpty()) return *this;
-    return remove(0);
+    int row = _records.size();
+    beginInsertRows(QModelIndex(), row, row);
+    _records.insert(row, pRec);
+    endInsertRows();
+    return true;
 }
 
 cRecordTableModel& cRecordTableModel::clear()
@@ -225,76 +268,26 @@ cRecordTableModel& cRecordTableModel::clear()
     _records.clear();
     _firstRowNumber = 0;
     endResetModel();
+    q.clear();
     return *this;
 }
 
-cRecordTableModel& cRecordTableModel::removeAll()
-{
-    while (_records.size()) pop_back();
-    return *this;
-}
-
-cRecordTableModel& cRecordTableModel::remove(QModelIndexList& mil)
-{
-    if (mil.isEmpty()) return *this;
-    int b = QMessageBox::warning(recordView.pWidget(),
-                         trUtf8("Kijelölt objektu(mo)k törlése!"),
-                         trUtf8("Valóban törölni akarja a kijelölt objektumo(ka)t ?"),
-                         QMessageBox::Ok, QMessageBox::Cancel);
-    if (b != QMessageBox::Ok) return *this;
-    int s = _records.size();
-    QBitArray   rb(s, false);
-    foreach(QModelIndex ix, mil) {
-        int row = ix.row();
-        if (row < s) rb.setBit(row, true);
-    }
-    beginResetModel();
-    for (int i = s; i > 0;) {
-        --i;
-        if (rb[i]) remove(i);
-    }
-    endResetModel();
-    return *this;
-
-}
-
-void cRecordTableModel::_removed(cRecordAny *p)
-{
-    removed(p);
-    delete p;
-}
-
-/* ******************************************************************************************************************** */
-cRecordTableModelSql::cRecordTableModelSql(const cRecordTable& _rt)
-    : cRecordTableModel(_rt)
-{
-    ;
-}
-
-cRecordTableModelSql::~cRecordTableModelSql()
-{
-    clear();
-}
-
-
-int cRecordTableModelSql::setRecords(QSqlQuery& _q, bool _first)
+int cRecordTableModel::setRecords(QSqlQuery& _q, bool _first)
 {
     DBGFN();
-    extLines.clear();
     q = _q;
     int r = _first ? qFirst() : qView();
     _DBGFNL() << " = " << r << endl;
     return r;
 }
 
-int cRecordTableModelSql::qView()
+int cRecordTableModel::qView()
 {
     DBGFN();
     int qpos = _firstRowNumber;
     _records.clear();
     beginResetModel();
     int cnt = 0;
-    extLines.clear();
     if (q.seek(qpos)) do {
         _records << qGetRecord(q);
         ++cnt;
@@ -311,19 +304,19 @@ int cRecordTableModelSql::qView()
     return r;
 }
 
-int cRecordTableModelSql::qFirst()
+int cRecordTableModel::qFirst()
 {
     _firstRowNumber = 0;
     return qView();
 }
 
-int cRecordTableModelSql::qNext()
+int cRecordTableModel::qNext()
 {
     _firstRowNumber += _maxRows;
     return qView();
 }
 
-int cRecordTableModelSql::qPrev()
+int cRecordTableModel::qPrev()
 {
     if (_firstRowNumber < _maxRows) {
         DWAR() << "Nothing previous page." << endl;
@@ -333,7 +326,7 @@ int cRecordTableModelSql::qPrev()
     return qView();
 }
 
-int cRecordTableModelSql::qLast()
+int cRecordTableModel::qLast()
 {
     int s = q.size();
     if (s < 0) {
@@ -342,11 +335,5 @@ int cRecordTableModelSql::qLast()
     }
     _firstRowNumber = (s / _maxRows) * _maxRows;
     return qView();
-}
-
-cRecordTableModel& cRecordTableModelSql::clear()
-{
-    q.clear();
-    return cRecordTableModel::clear();
 }
 
