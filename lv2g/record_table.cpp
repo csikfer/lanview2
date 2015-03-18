@@ -750,7 +750,7 @@ void cRecordViewBase::modify()
             cTableShape *pTS = getInhShape(tableName);;
             *pShapes << pTS;
         }
-        pRdt = new cRecordDialogInh(*pTableShape, *pShapes, buttons, owner_id, true, pWidget());
+        pRdt = new cRecordDialogInh(*pTableShape, *pShapes, buttons, owner_id, NULL_ID, true, pWidget());
     }   break;
     default:
         EXCEPTION(ENOTSUPP);
@@ -835,15 +835,30 @@ void cRecordViewBase::insert()
         if (pUpper == NULL) EXCEPTION(EPROGFAIL);
         if (owner_id == NULL_ID) return;
     }
+    qlonglong pid = NULL_ID;
+    // Ha TREE, akkor a default parent a kiszelektált sor,
+    if (flags & RTF_TREE) {
+        cRecordAny *pARec = actRecord();
+        if (pARec != NULL) {    // ha van kiszelektált (egy) sor
+            pid = pARec->getId();
+        }
+    }
+
     int buttons = enum2set(DBT_OK, DBT_INSERT, DBT_CANCEL);
     cRecordAny rec;
     switch (tit) {
     case TIT_NO:
     case TIT_ONLY: {
         rec.setType(pRecDescr);
+        // Ha CHILD, akkor a owner id adott
         if (flags & RTF_CHILD) {
             int ofix = rec.descr().ixToOwner();
             rec[ofix] = owner_id;
+        }
+        // Ha TREE, akkor a default parent a kiszelektált sor,
+        if (pid != NULL_ID) {
+            int pfix = rec.descr().ixToParent();
+            rec[pfix] = pid;
         }
         cRecordDialog   rd(rec, *pTableShape, buttons, pWidget());  // A rekord szerkesztő dialógus
         while (1) {
@@ -875,7 +890,7 @@ void cRecordViewBase::insert()
         foreach (QString tableName, tableNames) {
             shapes << getInhShape(tableName);
         }
-        cRecordDialogInh rd(*pTableShape, shapes, buttons, owner_id, true, pWidget());
+        cRecordDialogInh rd(*pTableShape, shapes, buttons, owner_id, pid, true, pWidget());
         while (1) {
             int r = rd.exec();
             if (r == DBT_INSERT || r == DBT_OK) {

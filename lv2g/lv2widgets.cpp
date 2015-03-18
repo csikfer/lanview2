@@ -5,7 +5,7 @@
 
 cImageWindow::cImageWindow(QWidget *__par) : QLabel(__par)
 {
-    image = NULL;
+    pImage = NULL;
     setAcceptDrops(true);
     // Test
 /*    QList<QByteArray> lst = QImageReader::supportedImageFormats ();
@@ -18,7 +18,7 @@ cImageWindow::cImageWindow(QWidget *__par) : QLabel(__par)
 cImageWindow::~cImageWindow()
 {
     hide();
-    if (image) delete image;
+    if (pImage) delete pImage;
 }
 
 bool cImageWindow::setImage(const QString& __fn, const QString& __t)
@@ -27,10 +27,10 @@ bool cImageWindow::setImage(const QString& __fn, const QString& __t)
     QString title = __t;
     if (title.isEmpty()) title = "IMAGE : " + __fn;
     setWindowTitle(title);
-    if (image != NULL) image = new QPixmap();
-    image = new QPixmap(__fn);
-    if (image->isNull()) return false;
-    setPixmap(*image);
+    if (pImage != NULL) pImage = new QPixmap();
+    pImage = new QPixmap(__fn);
+    if (pImage->isNull()) return false;
+    setPixmap(*pImage);
     show();
     return true;
 }
@@ -45,10 +45,10 @@ bool cImageWindow::setImage(QSqlQuery __q, qlonglong __id, const QString& __t)
 
 bool cImageWindow::setImage(const cImage& __o, const QString& __t)
 {
-    if (image != NULL) image = new QPixmap();
-    if (!image->loadFromData(__o.getImage(), __o.getType())) return false;
+    if (pImage != NULL) pImage = new QPixmap();
+    if (!pImage->loadFromData(__o.getImage(), __o.getType())) return false;
     setWindowTitle(__t.isEmpty() ? __o.getName(_sImageNote) : __t);
-    setPixmap(*image);
+    setPixmap(*pImage);
     show();
     return true;
 
@@ -724,6 +724,7 @@ cPolygonWidget::cPolygonWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSy
     pLayout = new QHBoxLayout;
     _pWidget->setLayout(pLayout);
     pTable = new QTableView(_pWidget);
+    pImageButton = NULL;
     if (_readOnly) {
         pLayout->addWidget(pTable);
 
@@ -751,6 +752,7 @@ cPolygonWidget::cPolygonWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSy
         pAddButton   = new QPushButton(trUtf8("Hozzáad"), _pWidget);
         pDelButton   = new QPushButton(trUtf8("Töröl"), _pWidget);
         pClearButton = new QPushButton(trUtf8("Ürít"), _pWidget);
+
 
         pLayout->addLayout(pLeftLayout);
         pLayout->addLayout(pRightLayout);

@@ -25,6 +25,18 @@ cTreeNode::~cTreeNode()
     }
 }
 
+void cTreeNode::addChild(cTreeNode *pn)
+{
+    pChildrens->append(pn);
+    pn->parent = this;
+}
+
+void cTreeNode::addChild(cRecordAny *pRec)
+{
+    cTreeNode *pn = new cTreeNode(pRec, this);
+    pChildrens->append(pn);
+}
+
 int cTreeNode::row() const
  {
      if (parent && parent->pChildrens)
@@ -302,7 +314,7 @@ int cRecordTreeModel::checkUpdateRow(const QModelIndex& mi, cRecordAny * pRec, Q
 {
     cTreeNode *pn = nodeFromIndex(mi);  // A modosított elem (node)
     if (pn->parent == NULL || pn->pData == NULL) EXCEPTION(EPROGFAIL);
-    int ixPId = pRec->descr().ixToTree();     // Az ősre mutató ID mező indexe
+    int ixPId = pRec->descr().ixToParent();     // Az ősre mutató ID mező indexe
     qlonglong old_pid = pn->pData->getId(ixPId);    // Régi parent ID
     qlonglong new_pid = pRec->getId(ixPId);         // Új parent ID
     if (old_pid == new_pid) {   // A modosítottat ugyanode kell visszarakni
@@ -324,33 +336,34 @@ int cRecordTreeModel::checkUpdateRow(const QModelIndex& mi, cRecordAny * pRec, Q
 bool cRecordTreeModel::updateRec(const QModelIndex& mi, cRecordAny * pRec)
 {
     QModelIndex npi;
+    // Lecsekkoljuk, változott-e a fa, az új rendben van-e, és mi a parent új indexe
     int chkr = checkUpdateRow(mi, pRec, npi);
-    if (chkr == 0) {
+    if (chkr == 0) {    // Az új fa szerkezet nem OK
         QMessageBox::warning(recordView.pWidget(), trUtf8("Hibás adatok"), trUtf8("Nem megengedett szülő megadása. Hurok a fában."));
         return false;
     }
     if (!cErrorMessageBox::condMsgBox(pRec->tryUpdate(*pq, false))) {
         return false;
     }
-    int row = mi.row();
+    int row = mi.row(); // A modosított rekord eredeti sorszáma a parentjében
     cTreeNode *pn = nodeFromIndex(mi);  // A modosított elem (node)
     cTreeNode *pp = pn->parent;         // A szülő
+    // Az eredeti sort eltávolítjuk.
     beginRemoveRows(mi.parent(), row, row);
-    pp->pChildrens->takeAt(row);
-    endRemoveRows();
-    delete pn->pData;
+    delete pp->pChildrens->takeAt(row)->pData; // pp->pChildrens->takeAt(row) === pn
     pn->pData = pRec;
+    endRemoveRows();
     switch (chkr) {
     case 1:
         beginInsertRows(mi.parent(), row, row);
-        pp->pChildrens->insert(row, pn);
+        pp->pChildrens->insert(row, pn);    // A modisított adattartalmut visszatesszük ugyan oda
         endInsertRows();
         break;
     case 2: {
         cTreeNode *pnp = nodeFromIndex(npi);
         row = pnp->rows();
         beginInsertRows(npi, row, row);
-        pnp->pChildrens->push_back(pn);
+        pnp->addChild(pn);
         endInsertRows();
         break;
     }
@@ -371,10 +384,10 @@ bool cRecordTreeModel::updateRow(const QModelIndex& mi, cRecordAny * pRec)
 
 bool cRecordTreeModel::insertRow(cRecordAny *pRec)
 {
-    int ixPId = pRec->descr().ixToTree();     // Az ősre mutató ID mező indexe
+    int ixPId = pRec->descr().ixToParent();     // Az ősre mutató ID mező indexe
     qlonglong pid = pRec->getId(ixPId);
-    QModelIndex pmi;
-    if (pid == NULL_ID) {
+    QModelIndex pmi;        // Gyökér
+    if (pid != NULL_ID) {   // Ha nem a gyökér a parent
         pmi = findNode(pid);
         if (!pmi.isValid()) {   // nincs meg a parent!!
             DWAR() << "Parent not found, record : " << pRec->toString() << endl;
@@ -383,9 +396,8 @@ bool cRecordTreeModel::insertRow(cRecordAny *pRec)
     }
     cTreeNode *ppn = nodeFromIndex(pmi);
     int row = rowCount(pmi);
-    beginInsertRows(pmi, row,row);
-    cTreeNode *pnn = new cTreeNode(pRec, ppn);
-    ppn->pChildrens->append(pnn);
+    beginInsertRows(pmi, row, row);
+    ppn->addChild(pRec);
     endInsertRows();
     return true;
 }

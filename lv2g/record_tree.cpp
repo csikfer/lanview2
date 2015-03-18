@@ -24,24 +24,24 @@ void cRecordTree::init()
 
     switch (pTableShape->getId(_sTableShapeType)) {
     case ENUM2SET2(TS_TREE, TS_NO):
-        flags = RTF_SLAVE;
+        flags = RTF_SLAVE | RTF_TREE;
         initSimple(_pWidget);
         break;
     case ENUM2SET(TS_TREE):
-        flags = RTF_SINGLE;
+        flags = RTF_SINGLE | RTF_TREE;
         initSimple(_pWidget);
         break;
     case ENUM2SET2(TS_TREE, TS_OWNER):
-        flags = RTF_MASTER | RTF_OVNER;
+        flags = RTF_MASTER | RTF_OVNER | RTF_TREE;
         initOwner();
         break;
     case ENUM2SET2(TS_TREE, TS_CHILD):
         if (pUpper == NULL) EXCEPTION(EDATA);
-        flags = RTF_SLAVE | RTF_CHILD;
+        flags = RTF_SLAVE | RTF_CHILD | RTF_TREE;
         initSimple(_pWidget);
         break;
     case ENUM2SET3(TS_TREE, TS_OWNER, TS_CHILD):
-        flags = RTF_OVNER | RTF_SLAVE | RTF_CHILD;
+        flags = RTF_OVNER | RTF_SLAVE | RTF_CHILD | RTF_TREE;
         initSimple(_pWidget);
         pRightTable = cRecordViewBase::newRecordView(*pq, pTableShape->getId(_sRightShapeId), this, _pWidget);
         break;
@@ -108,7 +108,7 @@ bool cRecordTree::queryNodeChildrens(QSqlQuery& q, cTreeNode *pn)
     if (!wl.isEmpty() && wl.at(0) == _sFalse) {         // Ha üres..
         return false;
     }
-    int tfix = recDescr().ixToTree();
+    int tfix = recDescr().ixToParent();
     qlonglong parId = NULL_ID;
     if (pn->pData != NULL && !pn->pData->isEmpty()) parId = pn->pData->getId();
     wl << (recDescr().columnName(tfix) + (

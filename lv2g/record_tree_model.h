@@ -21,7 +21,8 @@ public:
     QList<cTreeNode *> *pChildrens;
 
     QString name() { return (pData == NULL) ? "//" : pData->getName(); }
-    void addChild(cTreeNode *cn) { pChildrens->append(cn); }
+    void addChild(cTreeNode *pn);
+    void addChild(cRecordAny *pRec);
     int row() const;
     int rows() const { if (pChildrens == NULL) EXCEPTION(EPROGFAIL); return pChildrens->size(); }
 };

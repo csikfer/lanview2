@@ -22,7 +22,7 @@
 
 /// @class cImageWindow
 /// Egy képet tartalmazó ablak objektum
-class LV2GSHARED_EXPORT cImageWindow : public QLabel {
+class LV2GSHARED_EXPORT cImageWindow : public QWidget {
     Q_OBJECT
 public:
     /// Konstruktor
@@ -49,7 +49,7 @@ public:
     /// Metódus az egér kattintásra
     virtual void mousePressEvent(QMouseEvent * ev);
     /// A kép objektum pointere, a konstruktor NULL-ra inicializálja. A destruktor pedig felszabadítja, ha nemm NULL.
-    QPixmap *   image;
+    QPixmap *   pImage;
 signals:
     /// Szignál, ha kattintottak ez egérrel a képen.
     /// @param A kattintáskori egér pozíció a képen.
@@ -317,7 +317,6 @@ private slots:
     void selectionChanged(QItemSelection,QItemSelection);
 };
 
-
 /// @class cPolygonWidget
 /// Egy tömb adatmező megjelenítése és módosítása
 class LV2GSHARED_EXPORT cPolygonWidget : public cFieldEditBase {
@@ -349,6 +348,8 @@ protected:
     QPushButton *pAddButton;
     QPushButton *pDelButton;
     QPushButton *pClearButton;
+    QPushButton *pImageButton;
+    cImageWindow*pMapWin;
 
     tPolygonF   polygon;
     bool        xOk, yOk;

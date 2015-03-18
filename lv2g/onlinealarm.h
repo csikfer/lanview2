@@ -13,17 +13,17 @@ public:
 private:
     void map();
     QSqlQuery *     pq;
-    QVBoxLayout *   pMainLayout;
-    QSplitter *     pMainSplitter;
-    QSplitter *     pAlarmSplitter;
-    cRecordTable *  pRecTabNoAck;
-    cRecordTable *  pRecTabAckAct;
-    QWidget *       pRightWidget;
-    QVBoxLayout *   pRightVBLayout;
-    QLabel *        pMapLabel;
-    QLabel *        pMap;
-    QPushButton *   pAckButton;
-    const cRecordAny *    pActRecord;
+    QVBoxLayout *   pMainLayout;    /// Az ablak(widget)-hez rendelt layout.
+    QSplitter *     pMainSplitter;  /// Az ablak splittere: jobbra riasztások, balra térkép
+    QSplitter *     pAlarmSplitter; /// A bal oldali splitter, riasztások: fent a nem nyugtázott, lent a nyugtázott de aktív
+    cRecordTable *  pRecTabNoAck;   /// A nem nyugtázott riasztások táblála (tree?)
+    cRecordTable *  pRecTabAckAct;  /// A nyugtázott aktív riasztások táblála (tree?)
+    QWidget *       pRightWidget;   /// A jobb oldali widget
+    QVBoxLayout *   pRightVBLayout; /// A jobb oldali widget vertikális layout
+    QLabel *        pMapLabel;      /// A térkép/alaprajz cím sora
+    QLabel *        pMap;           /// A térkép/alaprajz (image)
+    QPushButton *   pAckButton;     /// A nyugtázás gomb
+    const cRecordAny *pActRecord;   /// A kiválasztott rekord a nem nyugtázott riasztások táblában
 private slots:
     void curRowChgNoAck(QItemSelection sel, QItemSelection);
     void curRowChgAckAct(QItemSelection sel, QItemSelection);
@@ -35,6 +35,8 @@ _GEX QPolygonF toQPolygonF(const tPolygonF _pol);
 #if defined(LV2G_LIBRARY)
 #include "ui_acknowledge.h"
 
+/// @class cAckDialog
+/// @brief Egy riasztás nyugtázása dialógus ablak.
 class cAckDialog : public QDialog {
     Q_OBJECT
 public:
@@ -42,6 +44,8 @@ public:
     ~cAckDialog();
     Ui_ackDialog *pUi;
 private slots:
+    /// A megjegyzés mező megváltozásához rendselt slot:
+    /// Ga a megjegyzés mező ki van töltve, akkor engedélyezi a nyugtézás gonbot.
     void changed();
 };
 #endif // defined(LV2G_LIBRARY)

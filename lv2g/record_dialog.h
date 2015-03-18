@@ -150,10 +150,11 @@ public:
     /// @param _tm A rekord/tábla megjelenítését ill szerkesztését vezérlő leíró (alap tábla ill. rekord típusra)
     /// @param _tms A további lehetséges rekord leírók (vagy az összes ?)
     /// @param _buttons A megjelenítendő nyomógombok bit maszkja
-    /// @param _oid Tulajdonos rekord ID ?? Opcionális?
+    /// @param _oid Tulajdonos rekord ID, ha nincs owner, akkor kötelezően NULL_ID.
+    /// @param _oid Parent rekord ID , ha nincs parent, vagy nincs megadva, akkor értéke NULL_ID
     /// @param dialog Ha a dialóus ablakot QDialog-ból kell létrehozni, akkor true, ha fals, akkor QWidget-ből.
     /// @param parent Az szülő widget opcionális parent pointere
-    cRecordDialogInh(const cTableShape &_tm, tRecordList<cTableShape>& _tms, int _buttons, qlonglong _oid, bool dialog = true, QWidget * parent = NULL);
+    cRecordDialogInh(const cTableShape &_tm, tRecordList<cTableShape>& _tms, int _buttons, qlonglong _oid = NULL_ID, qlonglong _pid = NULL_ID, bool dialog = true, QWidget * parent = NULL);
     ///
     virtual cRecord& record();
     int actTab();
@@ -174,7 +175,7 @@ protected:
     tRecordList<cRecordAny> recs;
     QList<cRecordDialog *>  tabs;
 private:
-    void init(qlonglong _oid);
+    void init(qlonglong _oid, qlonglong _pid);
 };
 
 #endif // RECORD_DIALOG_H

@@ -2110,7 +2110,7 @@ int cRecStaticDescr::ixToOwner(bool __ex) const
     return fix;
 }
 
-int cRecStaticDescr::ixToTree(bool __ex) const
+int cRecStaticDescr::ixToParent(bool __ex) const
 {
     int fix;
     for (fix = 0; fix < _columnsNum; ++fix) {          // Egy önmagára mutató távoli kulcsot keresünk

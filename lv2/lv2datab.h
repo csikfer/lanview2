@@ -666,7 +666,7 @@ public:
     /// A tulajdonosra mutató távoli kulcs mező megkeresése
     int ixToOwner(bool __ex = true) const;
     /// Az önmagára mutató távoli kulcs mező megkeresése
-    int ixToTree(bool __ex = true) const;
+    int ixToParent(bool __ex = true) const;
 protected:
     bool addMap();
     static int _setReCallCnt;

@@ -138,8 +138,9 @@ enum eRecordTableFlags  {
     RTF_SLAVE  = 0x0004,    ///< több tábla, az objektum egy mellék tábláé
     RTF_OVNER  = 0x0008,
     RTF_CHILD  = 0x0010,
-    RTF_LINK   = 0x0020,    ///< Link táblák
-    RTF_LEFT   = 0x0040     ///< A bal oldali link tábla
+    RTF_TREE   = 0x0020,
+    RTF_LINK   = 0x0040,    ///< Link táblák
+    RTF_LEFT   = 0x0080     ///< A bal oldali link tábla
 };
 
 class cRecordViewBase : public QObject {

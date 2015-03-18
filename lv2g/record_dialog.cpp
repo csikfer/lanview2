@@ -237,7 +237,7 @@ bool cRecordDialog::accept()
 
 /* ***************************************************************************************************** */
 
-cRecordDialogInh::cRecordDialogInh(const cTableShape& _tm, tRecordList<cTableShape>& _tms, int _buttons, qlonglong _oid, bool dialog, QWidget * parent)
+cRecordDialogInh::cRecordDialogInh(const cTableShape& _tm, tRecordList<cTableShape>& _tms, int _buttons, qlonglong _oid, qlonglong _pid, bool dialog, QWidget * parent)
     : cRecordDialogBase(_tm, _buttons, dialog, parent)
     , tabDescriptors(_tms)
     , recs()
@@ -248,10 +248,10 @@ cRecordDialogInh::cRecordDialogInh(const cTableShape& _tm, tRecordList<cTableSha
     if (_pButtons == NULL) EXCEPTION(EPROGFAIL);
     if (isReadOnly) EXCEPTION(EDATA);
 
-    init(_oid);
+    init(_oid, _pid);
 }
 
-void cRecordDialogInh::init(qlonglong _oid)
+void cRecordDialogInh::init(qlonglong _oid, qlonglong _pid)
 {
     DBGFN();
     pTabWidget = new QTabWidget;
@@ -268,6 +268,11 @@ void cRecordDialogInh::init(qlonglong _oid)
         if (_oid != NULL_ID) {
             int oix = pRec->descr().ixToOwner();
             pRec->setId(oix, _oid);
+        }
+        if (_pid != NULL_ID) {
+            int pix = pRec->descr().ixToParent();
+            pRec->setId(pix, _pid);
+
         }
         cRecordDialog * pDlg = new cRecordDialog(*pRec, shape, 0, false, pTabWidget);
         recs << pRec;
