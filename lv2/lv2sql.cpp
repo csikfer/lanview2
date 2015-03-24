@@ -212,7 +212,8 @@ EXT_ qlonglong execSqlIntFunction(QSqlQuery& q, bool *pOk, const QString& fn, co
     bool ok = execSqlFunction(q, fn, v1, v2, v3, v4);
     qlonglong r = NULL_ID;
     if (ok) {
-        r = q.value(0).toLongLong(&ok);
+        QVariant v = q.value(0);
+        r = v.toLongLong(&ok);
         if (!ok) r = NULL_ID;
     }
     if (pOk != NULL) *pOk = ok;

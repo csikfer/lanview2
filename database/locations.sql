@@ -153,6 +153,10 @@ DECLARE
     pid bigint := idr;
     iid bigint;
 BEGIN
+    SELECT parent_id INTO pid FROM places WHERE place_id = pid;
+    IF NOT FOUND THEN
+        RETURN NULL;
+    END IF;
     n := 0;
     LOOP
         n := n + 1;

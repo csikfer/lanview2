@@ -164,11 +164,12 @@ DELETE TABLE SHAPE places;
 TABLE SHAPE places "Helyiségek" {
     SET DEFAULTS;
     TABLE TYPE tree;
+    PROP ":map=get_parent_image:";
     $DefRights
 }
 
 DELETE TABLE SHAPE host_services;
-TABLE SHAPE host_services "A hostkokhoz rendelt szervíz példányok" {
+TABLE SHAPE host_services "A hostokhoz rendelt szervíz példányok" {
     SET DEFAULTS;
     TABLE TYPE tree;
     FIELD node_id, service_id, prime_service_id, proto_service_id ADD FILTERS begin, like, similar, regexp, regexpi;

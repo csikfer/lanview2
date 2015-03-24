@@ -164,16 +164,17 @@ public:
     bool setFieldSeq(const QStringList& _fnl, int last = 0, bool __ex = true);
     bool setOrdSeq(const QStringList& _fnl, int last = 0, bool __ex = true);
 
-    /// A rekordban a atrubutes nezőt vágja szát, és az elemeket elhelyezi a pMagicMap pointer által mutatott konténerbe.
+    /// A rekordban a atrubutes mezőt vágja szát, és az elemeket elhelyezi a pMagicMap pointer által mutatott konténerbe.
     /// Ha pMagicMap egy NULL pointer, akkor a művelet elött megallokálja a konténert, ha nem NULL, akkor pedig törli a konténer tartalmát.
-    tMagicMap& splitMagic(bool __ex = true);
+    /// Mivel a pMagicMap pointerű konténer csak egy gyorstár, az objektum érdemben nem változik meg, ezért konstans a metódus
+    tMagicMap& splitMagic(bool __ex = true) const;
     /// Visszaadja a pMagicMap által mutatott konténer referenciáját. Ha pMagicMap értéke NULL, akkor hívja a splitMagic() metódust, ami megallokálja
     /// és feltölti a konténert.
-    tMagicMap& magicMap(bool __ex = true)                       { if (_pMagicMap == NULL) splitMagic(__ex); return *_pMagicMap; }
+    tMagicMap& magicMap(bool __ex = true) const                 { if (_pMagicMap == NULL) splitMagic(__ex); return *_pMagicMap; }
     /// A megadott kulcs alapján visszaadja a magicMap konténerből a paraméter értéket a név alapján. Ha a konténer nincs megallokálva, akkor megallokálja
     /// és feltölti.
     /// @return ha a kulcshoz tartozik megadott néven paraméter, akkor az értéket adja vissza, vagy üres stringet.
-    QString magicParam(const QString& __nm, bool __ex = true)   { return ::magicParam(__nm, magicMap(__ex)); }
+    QString magicParam(const QString& __nm, bool __ex = true) const { return ::magicParam(__nm, magicMap(__ex)); }
     /// Magadot kulcsal egy paraméter keresése.
     /// @return találat esetén true.
     bool findMagic(const QString &_nm, bool __ex = true)        { return ::findMagic(_nm, magicMap(__ex)); }
@@ -194,6 +195,8 @@ public:
 protected:
     static int              _ixProperties;
     /// magicMap konténer, vagy null pointer, ha még nincs feltöltve
+    /// Mivel cache ként van felhasználva a konténer, ezért a megváltoztatása akkor is engedélyezett (saját metódus számára)
+    /// ha az objektum konstans.
     tMagicMap          *_pMagicMap;
 };
 

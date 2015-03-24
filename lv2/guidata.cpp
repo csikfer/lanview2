@@ -483,11 +483,11 @@ bool cTableShape::setOrdSeq(const QStringList& _fnl, int last, bool __ex)
 
 template void _SplitMagicT<cTableShape>(cTableShape& o, bool __ex);
 
-tMagicMap&  cTableShape::splitMagic(bool __ex)
+tMagicMap&  cTableShape::splitMagic(bool __ex) const
 {
     DBGFN();
     PDEB(VVERBOSE) << VDEB(_ixProperties) << endl;
-    _SplitMagicT<cTableShape>(*this, __ex);
+    _SplitMagicT<cTableShape>(*const_cast<cTableShape *>(this), __ex);
     return *_pMagicMap;
 }
 

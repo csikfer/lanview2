@@ -90,6 +90,8 @@ cRecordDialogBase::~cRecordDialogBase()
 {
     if (_pLoop != NULL) EXCEPTION(EPROGFAIL);
     if (!close()) EXCEPTION(EPROGFAIL);
+    delete _pWidget;
+    delete pq;
 }
 
 int cRecordDialogBase::exec(bool _close)

@@ -45,7 +45,7 @@ bool cImageWindow::setImage(QSqlQuery __q, qlonglong __id, const QString& __t)
 
 bool cImageWindow::setImage(const cImage& __o, const QString& __t)
 {
-    if (pImage != NULL) pImage = new QPixmap();
+    if (pImage == NULL) pImage = new QPixmap();
     if (!pImage->loadFromData(__o.getImage(), __o.getType())) return false;
     setWindowTitle(__t.isEmpty() ? __o.getName(_sImageNote) : __t);
     setPixmap(*pImage);
@@ -725,6 +725,27 @@ cPolygonWidget::cPolygonWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSy
     _pWidget->setLayout(pLayout);
     pTable = new QTableView(_pWidget);
     pImageButton = NULL;
+    pMapWin = NULL;
+    pMapRec = NULL;
+    // Alaprajz, ha van
+    qlonglong iid = NULL_ID;    // Az image rkord ID-je
+    qlonglong rid = _pFieldRef->record().getId();    // Az editálandü rekord ID-je,
+    if (rid != NULL_ID) {   // ID nélkül nincs image (ez feature)
+        QString map_f = _tableShape.magicParam("map");  // Meg van adva a image id-t visszaadó függvlny neve ?
+        if (map_f.isEmpty() == false) {
+            bool ok;
+            iid = execSqlIntFunction(*pq, &ok, map_f, rid);
+            if (!ok) {
+                iid = NULL_ID;
+            }
+            if (iid > 0) { // if (iid != NULL_ID) {
+                // Valamiért 0-val tér vissza, NULL helyett :-o
+                pMapRec = new cImage();
+                pMapRec->setParent(this);
+                pMapRec->setById(*pq, iid);
+            }
+        }
+    }
     if (_readOnly) {
         pLayout->addWidget(pTable);
 
@@ -738,6 +759,7 @@ cPolygonWidget::cPolygonWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSy
         pAddButton  = NULL;
         pDelButton  = NULL;
         pClearButton= NULL;
+        // if (pMapRec != NULL) { késöbb...
     }
     else {
         pLeftLayout  = new QVBoxLayout;
@@ -750,9 +772,11 @@ cPolygonWidget::cPolygonWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSy
         pLineY  = new QLineEdit(_pWidget);
 
         pAddButton   = new QPushButton(trUtf8("Hozzáad"), _pWidget);
-        pDelButton   = new QPushButton(trUtf8("Töröl"), _pWidget);
-        pClearButton = new QPushButton(trUtf8("Ürít"), _pWidget);
-
+        pDelButton   = new QPushButton(trUtf8("Töröl"),   _pWidget);
+        pClearButton = new QPushButton(trUtf8("Ürít"),    _pWidget);
+        if (pMapRec != NULL) {
+            pImageButton = new QPushButton(trUtf8("Alaprajz"), _pWidget);
+        }
 
         pLayout->addLayout(pLeftLayout);
         pLayout->addLayout(pRightLayout);
@@ -772,6 +796,9 @@ cPolygonWidget::cPolygonWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSy
         pRightLayout->addWidget(pAddButton);
         pRightLayout->addWidget(pDelButton);
         pRightLayout->addWidget(pClearButton);
+        if (pImageButton != NULL) {
+            pRightLayout->addWidget(pImageButton);
+        }
 
         xOk = yOk = false;
         pAddButton->setDisabled(true);
@@ -794,11 +821,14 @@ cPolygonWidget::cPolygonWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSy
         connect(pLineY, SIGNAL(textChanged(QString)), this, SLOT(yChanged(QString)));
         connect(pTable->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
     }
+    if (pImageButton != NULL) {
+        connect(pImageButton, SIGNAL(pressed()), this, SLOT(image()));
+    }
 }
 
 cPolygonWidget::~cPolygonWidget()
 {
-    ;
+    pDelete(pMapWin);
 }
 
 void cPolygonWidget::setButtons()
@@ -893,6 +923,24 @@ void cPolygonWidget::selectionChanged(QItemSelection,QItemSelection)
     pDelButton->setDisabled(polygon.isEmpty() || !pTable->selectionModel()->hasSelection());
 }
 
+void cPolygonWidget::image()
+{
+    if (pMapWin != NULL) return;
+    pMapWin = new cImageWindow();
+    if (!pMapWin->setImage(*pMapRec)) EXCEPTION(EDATA, -1, trUtf8("Nem lehet betölteni az alaprajzot."));
+    if (!isReadOnly()) {
+        connect(pMapWin, SIGNAL(mousePressed(QPoint)), this, SLOT(imagePoint(QPoint)));
+    }
+}
+
+void cPolygonWidget::imagePoint(QPoint _p)
+{
+    QPointF pt = _p;
+    *pModel << pt;
+    polygon = pModel->polygon();
+    setButtons();
+    _setv(QVariant::fromValue(polygon));
+}
 
 /* **************************************** cFKeyWidget ****************************************  */
 

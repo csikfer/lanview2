@@ -22,7 +22,7 @@
 
 /// @class cImageWindow
 /// Egy képet tartalmazó ablak objektum
-class LV2GSHARED_EXPORT cImageWindow : public QWidget {
+class LV2GSHARED_EXPORT cImageWindow : public QLabel {
     Q_OBJECT
 public:
     /// Konstruktor
@@ -41,9 +41,9 @@ public:
     /// @par __t Opcionális paraméter, az ablak címe, nincs megadva, akkor az image_descr mező lessz a cím
     /// @return Ha sikerült a kép betöltése, akkor true, ha nem akkor false (ekkor az ablak nem kerül megjelenítésre).
     bool setImage(QSqlQuery __q, qlonglong __id, const QString& __t = QString());
-    /// Az ablak tartaémának a betöltése ecFieldEditBasegy cImage objektumból
+    /// Az ablak tartaémának a betöltése egy cImage objektumból
     /// @par __o A kép et tartalmazó frltöltött cImage objektum referenciája
-    /// @par __t Opcionális param1c:6f:65:4c:84:1aéter, az ablak címe, nincs megadva, akkor az image_descr mező lessz a cím
+    /// @par __t Opcionális paraméter, az ablak címe, nincs megadva, akkor az image_descr mező lessz a cím
     /// @return Ha sikerült a kép betöltése, akkor true, ha nem akkor false (ekkor az ablak nem kerül megjelenítésre).
     bool setImage(const cImage& __o, const QString& __t = QString());
     /// Metódus az egér kattintásra
@@ -148,7 +148,7 @@ public:
     QString fieldToName()                   { if (_pFieldRef == NULL) EXCEPTION(EPROGFAIL); return (QString)*_pFieldRef; }
     /// A widgethez rendelt rekord objektum leíró objektumával tér vissza, ha nincs mező rendelve a widgethez, akkor dob egy kizárást.
     const cRecStaticDescr& recDescr() const { if (_pFieldRef == NULL) EXCEPTION(EPROGFAIL); return _pFieldRef->recDescr(); }
-    /// A widgethez rendelt mező objektum ibexével a rekordban tér vissza, ha nincs mező rendelve a widgethez, akkor dob egy kizárást.
+    /// A widgethez rendelt mező objektum inexével a rekordban tér vissza, ha nincs mező rendelve a widgethez, akkor dob egy kizárást.
     int fldIndex() const { if (_pFieldRef == NULL) EXCEPTION(EPROGFAIL); return _pFieldRef->index(); }
 
     /// A mező leíró objektum referenciája
@@ -348,8 +348,9 @@ protected:
     QPushButton *pAddButton;
     QPushButton *pDelButton;
     QPushButton *pClearButton;
-    QPushButton *pImageButton;
-    cImageWindow*pMapWin;
+    QPushButton *pImageButton;  ///< Nyomogomb: az opcionális alaprajz megjelenítése
+    cImageWindow*pMapWin;       ///< Az opcionális alaprajzot megjelenítő ablak
+    cImage *     pMapRec;       ///< Az alaprajz rekord
 
     tPolygonF   polygon;
     bool        xOk, yOk;
@@ -362,6 +363,8 @@ private slots:
     void xChanged(QString _t);
     void yChanged(QString _t);
     void selectionChanged(QItemSelection,QItemSelection);
+    void image();
+    void imagePoint(QPoint _p);
 };
 
 /// @class cFKeyWidget
