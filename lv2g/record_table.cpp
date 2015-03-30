@@ -476,11 +476,12 @@ cRecordViewBase::cRecordViewBase(bool _isDialog, QWidget *par)
     pMaster = NULL;
     pRecDescr = NULL;
     _pWidget = NULL;
-    pMasterFrame = NULL;
+    pMasterSplitter = NULL;
     pButtons = NULL;
     pMainLayer = NULL;
     pLeftWidget = NULL;
     pRightTable = NULL;
+    pRightTable2 = NULL;
     pFODialog   = NULL;
     owner_id = NULL_ID;
     pInhRecDescr = NULL;
@@ -505,7 +506,10 @@ QDialog& cRecordViewBase::dialog()
 void cRecordViewBase::buttonDisable(int id, bool d)
 {
     QAbstractButton * p = pButtons->button(id);
-    if (p == NULL) EXCEPTION(EDATA, id);
+    if (p == NULL) {
+        // EXCEPTION(EDATA, id);
+        return;
+    }
     p->setDisabled(d);
 }
 
@@ -550,30 +554,30 @@ void cRecordViewBase::buttonPressed(int id)
 {
     switch (id) {
     case DBT_CLOSE:     close();    break;
-    case DBT_FIRST:     first();    break;
-    case DBT_NEXT:      next();     break;
-    case DBT_PREV:      prev();     break;
-    case DBT_LAST:      last();     break;
     case DBT_REFRESH:   refresh();  break;
-    case DBT_DELETE:    remove();   break;
     case DBT_INSERT:    insert();   break;
     case DBT_MODIFY:    modify();   break;
+    case DBT_FIRST:     first();    break;
+    case DBT_PREV:      prev();     break;
+    case DBT_NEXT:      next();     break;
+    case DBT_LAST:      last();     break;
+    case DBT_DELETE:    remove();   break;
+    case DBT_RESET:     reset();    break;
+    case DBT_PUT_IN:    putIn();    break;
+    case DBT_GET_OUT:   getOut();   break;
     default:
         DWAR() << "Invalid button id : " << id << endl;
         break;
     }
 }
 
+// PushButton -> virtual f()
+
 void cRecordViewBase::close(int r)
 {
     if (isDialog) dynamic_cast<QDialog *>(_pWidget)->done(r);
     else closeIt();
 }
-
-void cRecordViewBase::first() { EXCEPTION(EPROGFAIL); }
-void cRecordViewBase::next()  { EXCEPTION(EPROGFAIL); }
-void cRecordViewBase::prev()  { EXCEPTION(EPROGFAIL); }
-void cRecordViewBase::last()  { EXCEPTION(EPROGFAIL); }
 
 void cRecordViewBase::refresh(bool first)
 {
@@ -589,136 +593,109 @@ void cRecordViewBase::refresh(bool first)
         EXCEPTION(ENOTSUPP);
         break;
     }
-    setButtons();
-    if (pRightTable != NULL) pRightTable->refresh(true);
+    selectionChanged(QItemSelection(), QItemSelection());
+    setPageButtons();
+    if (pRightTable != NULL) {
+        pRightTable->refresh(true);
+        if (pRightTable2 != NULL) pRightTable2->refresh();
+    }
     DBGFNL();
 }
 
-void cRecordViewBase::initView()
+void cRecordViewBase::insert()
 {
-    tit = (eTableInheritType)pTableShape->getId(_sTableInheritType);
-    if (tit == TIT_NO) return;
-    inheritTableList = pTableShape->get(_sInheritTableNames).toStringList();
-    bool only = tit == TIT_ONLY || !inheritTableList.isEmpty();
-    QString schema = pTableShape->getName(_sSchemaName);
-    viewName = pTableShape->getName(_sTableName) + "_view";
-    QString sql = "CREATE OR REPLACE TEMP VIEW " + viewName + " AS ";
-    sql += "SELECT tableoid, * FROM ";
-    if (only) sql += "ONLY ";
-    sql += recDescr().fullTableNameQ();
-    if (! inheritTableList.isEmpty()) {
-        pInhRecDescr = new QMap<qlonglong,const cRecStaticDescr *>;
-        foreach (QString tn, inheritTableList) {
-            const cRecStaticDescr * p = cRecStaticDescr::get(tn, schema);
-            pInhRecDescr->insert(p->tableoid(), p);
-            sql += "\nUNION\n SELECT tableoid";
-            const cRecStaticDescr& d = inhRecDescr(tn);
-            int i, n = recDescr().cols();
-            for (i = 0; i < n; ++i) {   // Végihrohanunk az első tábla mezőin
-                QString fn = recDescr().columnName(i);
-                sql += _sCommaSp;
-                sql += d.toIndex(fn, false) < 0 ? _sNULL : fn;  // Ha nincs akkor NULL
+    if (flags & RTF_CHILD) {
+        if (pUpper == NULL) EXCEPTION(EPROGFAIL);
+        if (owner_id == NULL_ID) return;
+    }
+    qlonglong pid = NULL_ID;
+    // Ha TREE, akkor a default parent a kiszelektált sor,
+    if (flags & RTF_TREE) {
+        cRecordAny *pARec = actRecord();
+        if (pARec != NULL) {    // ha van kiszelektált (egy) sor
+            pid = pARec->getId();
+        }
+    }
+
+    int buttons = enum2set(DBT_OK, DBT_INSERT, DBT_CANCEL);
+    cRecordAny rec;
+    switch (tit) {
+    case TIT_NO:
+    case TIT_ONLY: {
+        rec.setType(pRecDescr);
+        // Ha CHILD, akkor a owner id adott
+        if (flags & RTF_CHILD) {
+            int ofix = rec.descr().ixToOwner();
+            rec[ofix] = owner_id;
+        }
+        // Ha TREE, akkor a default parent a kiszelektált sor,
+        if (pid != NULL_ID) {
+            int pfix = rec.descr().ixToParent();
+            rec[pfix] = pid;
+        }
+        cRecordDialog   rd(rec, *pTableShape, buttons, pWidget());  // A rekord szerkesztő dialógus
+        while (1) {
+            int r = rd.exec();
+            if (r == DBT_INSERT || r == DBT_OK) {   // Csak az OK, és Insert gombra csinálunk valamit
+                bool ok = rd.accept();
+                if (ok) {
+                    cRecordAny *pRec = dynamic_cast<cRecordAny *>(rec.dup());
+                    ok = pModel->insertRec(pRec);
+                    if (!ok) delete pRec;
+                    else if (flags & RTF_GROUP) {    // Group, tagja listába van a beillesztés?
+                        ok = cGroupAny(*pRec, *(pUpper->actRecord())).insert(*pq, false);
+                        if (!ok) {
+                            QMessageBox::warning(pWidget(), trUtf8("Hiba"), trUtf8("A kijelölt tag felvétele az új csoportba sikertelen"),QMessageBox::Ok);
+                            refresh();
+                            break;
+                        }
+                    }
+                }
+                if (ok) {
+                    if (r == DBT_OK) break; // Ha OK-t nyomott becsukjuk az dialóg-ot
+                    continue;               // Ha Insert-et, akkor folytathatja a következővel
+                }
+                else {
+                    //QMessageBox::warning(pWidget(), trUtf8("Az új rekord beszúrása sikertelen."), rd.errMsg());
+                    continue;
+                }
             }
-            sql += " FROM ONLY " + p->fullTableNameQ();
+            break;
         }
-    }
-    PDEB(VVERBOSE) << "Create view : " << sql << endl;
-    if (!pq->exec(sql)) SQLPREPERR(*pq, sql);
-}
-
-void cRecordViewBase::initShape(cTableShape *pts)
-{
-    if (pts != NULL) pTableShape = pts;
-
-    pTableShape->setParent(this);
-
-    if (pTableShape->shapeFields.isEmpty() && 0 == pTableShape->fetchFields(*pq)) EXCEPTION(EDATA, pTableShape->getId(), pTableShape->getName());
-
-    pRecDescr = cRecStaticDescr::get(pTableShape->getName(_sTableName));
-    isReadOnly = pTableShape->getBool(_sIsReadOnly);
-
-    tTableShapeFields::iterator i, n = pTableShape->shapeFields.end();
-    for (i = pTableShape->shapeFields.begin(); i != n; ++i) {
-        cRecordTableColumn *p = new cRecordTableColumn(**i, *this);
-        fields << p;
-    }
-    initView();
-}
-
-cRecordViewBase *cRecordViewBase::newRecordView(QSqlQuery& q, qlonglong shapeId, cRecordViewBase * own, QWidget *par)
-{
-    cTableShape *pts = new cTableShape();
-    if (!pts->fetchById(q, shapeId)) EXCEPTION(EFOUND, shapeId);
-    qlonglong type = pts->getId(_sTableShapeType);
-    if (type & ENUM2SET(TS_TREE)) return new cRecordTree( pts, false, own, par);
-    else                          return new cRecordTable(pts, false, own, par);
-}
-
-/// Inicializálja a táblázatos megjelenítést.
-/// Az initSimle() metódust hívja, de létrehozza a spritter widgetet, hogy több táblát lehessen megjeleníteni.
-void cRecordViewBase::initOwner()
-{
-    pLeftWidget   = new QWidget(_pWidget);
-    initSimple(pLeftWidget);
-
-    pMasterLayout = new QHBoxLayout(_pWidget);
-    pMasterFrame = new QSplitter(Qt::Horizontal, _pWidget);
-    pMasterLayout->addWidget(pMasterFrame);
-    pMasterFrame->addWidget(pLeftWidget);
-    pRightTable = cRecordViewBase::newRecordView(*pq, pTableShape->getId(_sRightShapeId), this, _pWidget);
-}
-
-/// Üres, nem kötelezően implemetálandó. Csak ha megadhatóak szűrők.
-QStringList cRecordViewBase::filterWhere(QVariantList& qParams)
-{
-    (void)qParams;
-    return QStringList();
-}
-
-/// Üres, nem kötelezően implemetálandó. Csak ha van lapozási lehetőség
-void cRecordViewBase::setPageButtons()
-{
-    ;
-}
-
-QStringList cRecordViewBase::refineWhere(QVariantList& qParams)
-{
-    QStringList r;
-    if (! pTableShape->isNull(_sRefine)) {  // Ha megadtak egy általános érvényű szűrőt
-        QStringList rl = pTableShape->getName(_sRefine).split(QChar(':'));
-        r << rl.at(0);
-        if ((rl.at(0).count(QChar('?')) + 1) != rl.size())
-            EXCEPTION(EDATA, -1, trUtf8("Inkonzisztens adat; refine = %1").arg(rl.join(QChar(':'))));
-        for (int i = 1; i < rl.size(); ++i) {  // Paraméter helyettesítések...
-            if      (!rl.at(i).compare(_sUserId,         Qt::CaseInsensitive)) qParams << QVariant(lanView::user().getId());
-            else if (!rl.at(i).compare(_sUserName,       Qt::CaseInsensitive)) qParams << QVariant(lanView::user().getName());
-            else if (!rl.at(i).compare(_sPlaceGroupId,   Qt::CaseInsensitive)) qParams << QVariant(lv2g::getInstance()->zoneId);
-            else EXCEPTION(EDATA, i, trUtf8("Ismeretlen változónév a refine mezőben %1").arg(rl.at(i)));
+    }   break;
+    case TIT_LISTED_REV: {
+        tRecordList<cTableShape>    shapes;
+        QStringList tableNames;
+        tableNames << pTableShape->getName(_sTableName);
+        tableNames << inheritTableList;
+        foreach (QString tableName, tableNames) {
+            shapes << getInhShape(tableName);
         }
-    }
-    return r;
-}
-
-QStringList cRecordViewBase::where(QVariantList& qParams)
-{
-    QStringList wl;
-    if (flags & RTF_CHILD) {        // A tulaj ID-jére szűrünk, ha van
-        if (owner_id == NULL_ID) {  // A tulajdonos rekord nincs kiválasztva
-            wl << _sFalse;
-            return wl;         // Ez egy üres tábla lessz!!
+        cRecordDialogInh rd(*pTableShape, shapes, buttons, owner_id, pid, true, pWidget());
+        while (1) {
+            int r = rd.exec();
+            if (r == DBT_INSERT || r == DBT_OK) {
+                bool ok = rd.accept();
+                if (ok) {
+                    cRecordAny *pRec = dynamic_cast<cRecordAny *>(rec.dup());
+                    ok = pModel->insertRec(pRec);
+                    if (!ok) delete pRec;
+                }
+                if (ok) {
+                    if (r == DBT_OK) break; // Ha OK-t nyomott becsukjuk az dialóg-ot
+                    continue;               // Ha Insert-et, akkor folytathatja a következővel
+                }
+                else {
+                    // QMessageBox::warning(pWidget(), trUtf8("Az új rekord beszúrása sikertelen."), rd.errMsg());
+                    continue;
+                }
+            }
+            break;
         }
-        int ofix = recDescr().ixToOwner();
-        wl << recDescr().columnName(ofix) + " = " + QString::number(owner_id);
+    }   break;
+    default:
+        EXCEPTION(ENOTSUPP);
     }
-    wl << filterWhere(qParams);
-    wl << refineWhere(qParams);
-    return wl;
-}
-
-void cRecordViewBase::clickedHeader(int)
-{
-    int r = pFODialog->exec();
-    if (r == DBT_OK) refresh();
 }
 
 void cRecordViewBase::modify()
@@ -822,6 +799,11 @@ void cRecordViewBase::modify()
     pDelete(pRec);
 }
 
+void cRecordViewBase::first() { EXCEPTION(ENOTSUPP); }
+void cRecordViewBase::prev()  { EXCEPTION(ENOTSUPP); }
+void cRecordViewBase::next()  { EXCEPTION(ENOTSUPP); }
+void cRecordViewBase::last()  { EXCEPTION(ENOTSUPP); }
+
 void cRecordViewBase::remove()
 {
     DBGFN();
@@ -829,92 +811,223 @@ void cRecordViewBase::remove()
     pModel->removeRecords(mil);
 }
 
-void cRecordViewBase::insert()
-{
-    if (flags & RTF_CHILD) {
-        if (pUpper == NULL) EXCEPTION(EPROGFAIL);
-        if (owner_id == NULL_ID) return;
-    }
-    qlonglong pid = NULL_ID;
-    // Ha TREE, akkor a default parent a kiszelektált sor,
-    if (flags & RTF_TREE) {
-        cRecordAny *pARec = actRecord();
-        if (pARec != NULL) {    // ha van kiszelektált (egy) sor
-            pid = pARec->getId();
-        }
-    }
+void cRecordViewBase::reset() { EXCEPTION(ENOTSUPP); }
+void cRecordViewBase::putIn() { EXCEPTION(ENOTSUPP); }
+void cRecordViewBase::getOut(){ EXCEPTION(ENOTSUPP); }
 
-    int buttons = enum2set(DBT_OK, DBT_INSERT, DBT_CANCEL);
-    cRecordAny rec;
-    switch (tit) {
-    case TIT_NO:
-    case TIT_ONLY: {
-        rec.setType(pRecDescr);
-        // Ha CHILD, akkor a owner id adott
-        if (flags & RTF_CHILD) {
-            int ofix = rec.descr().ixToOwner();
-            rec[ofix] = owner_id;
-        }
-        // Ha TREE, akkor a default parent a kiszelektált sor,
-        if (pid != NULL_ID) {
-            int pfix = rec.descr().ixToParent();
-            rec[pfix] = pid;
-        }
-        cRecordDialog   rd(rec, *pTableShape, buttons, pWidget());  // A rekord szerkesztő dialógus
-        while (1) {
-            int r = rd.exec();
-            if (r == DBT_INSERT || r == DBT_OK) {   // Csak az OK, és Insert gombra csinálunk valamit
-                bool ok = rd.accept();
-                if (ok) {
-                    cRecordAny *pRec = dynamic_cast<cRecordAny *>(rec.dup());
-                    ok = pModel->insertRec(pRec);
-                    if (!ok) delete pRec;
-                }
-                if (ok) {
-                    if (r == DBT_OK) break; // Ha OK-t nyomott becsukjuk az dialóg-ot
-                    continue;               // Ha Insert-et, akkor folytathatja a következővel
-                }
-                else {
-                    //QMessageBox::warning(pWidget(), trUtf8("Az új rekord beszúrása sikertelen."), rd.errMsg());
-                    continue;
-                }
+void cRecordViewBase::initView()
+{
+    tit = (eTableInheritType)pTableShape->getId(_sTableInheritType);
+    if (tit == TIT_NO) return;
+    inheritTableList = pTableShape->get(_sInheritTableNames).toStringList();
+    bool only = tit == TIT_ONLY || !inheritTableList.isEmpty();
+    QString schema = pTableShape->getName(_sSchemaName);
+    viewName = pTableShape->getName(_sTableName) + "_view";
+    QString sql = "CREATE OR REPLACE TEMP VIEW " + viewName + " AS ";
+    sql += "SELECT tableoid, * FROM ";
+    if (only) sql += "ONLY ";
+    sql += recDescr().fullTableNameQ();
+    if (! inheritTableList.isEmpty()) {
+        pInhRecDescr = new QMap<qlonglong,const cRecStaticDescr *>;
+        foreach (QString tn, inheritTableList) {
+            const cRecStaticDescr * p = cRecStaticDescr::get(tn, schema);
+            pInhRecDescr->insert(p->tableoid(), p);
+            sql += "\nUNION\n SELECT tableoid";
+            const cRecStaticDescr& d = inhRecDescr(tn);
+            int i, n = recDescr().cols();
+            for (i = 0; i < n; ++i) {   // Végihrohanunk az első tábla mezőin
+                QString fn = recDescr().columnName(i);
+                sql += _sCommaSp;
+                sql += d.toIndex(fn, false) < 0 ? _sNULL : fn;  // Ha nincs akkor NULL
             }
-            break;
+            sql += " FROM ONLY " + p->fullTableNameQ();
         }
-    }   break;
-    case TIT_LISTED_REV: {
-        tRecordList<cTableShape>    shapes;
-        QStringList tableNames;
-        tableNames << pTableShape->getName(_sTableName);
-        tableNames << inheritTableList;
-        foreach (QString tableName, tableNames) {
-            shapes << getInhShape(tableName);
-        }
-        cRecordDialogInh rd(*pTableShape, shapes, buttons, owner_id, pid, true, pWidget());
-        while (1) {
-            int r = rd.exec();
-            if (r == DBT_INSERT || r == DBT_OK) {
-                bool ok = rd.accept();
-                if (ok) {
-                    cRecordAny *pRec = dynamic_cast<cRecordAny *>(rec.dup());
-                    ok = pModel->insertRec(pRec);
-                    if (!ok) delete pRec;
-                }
-                if (ok) {
-                    if (r == DBT_OK) break; // Ha OK-t nyomott becsukjuk az dialóg-ot
-                    continue;               // Ha Insert-et, akkor folytathatja a következővel
-                }
-                else {
-                    // QMessageBox::warning(pWidget(), trUtf8("Az új rekord beszúrása sikertelen."), rd.errMsg());
-                    continue;
-                }
-            }
-            break;
-        }
-    }   break;
-    default:
-        EXCEPTION(ENOTSUPP);
     }
+    PDEB(VVERBOSE) << "Create view : " << sql << endl;
+    if (!pq->exec(sql)) SQLPREPERR(*pq, sql);
+}
+
+void cRecordViewBase::initShape(cTableShape *pts)
+{
+    if (pts != NULL) pTableShape = pts;
+
+    pTableShape->setParent(this);
+
+    if (pTableShape->shapeFields.isEmpty() && 0 == pTableShape->fetchFields(*pq)) EXCEPTION(EDATA, pTableShape->getId(), pTableShape->getName());
+
+    pRecDescr = cRecStaticDescr::get(pTableShape->getName(_sTableName));
+    isReadOnly = pTableShape->getBool(_sIsReadOnly);
+
+    tTableShapeFields::iterator i, n = pTableShape->shapeFields.end();
+    for (i = pTableShape->shapeFields.begin(); i != n; ++i) {
+        cRecordTableColumn *p = new cRecordTableColumn(**i, *this);
+        fields << p;
+    }
+    initView();
+}
+
+cRecordViewBase *cRecordViewBase::newRecordView(cTableShape *pts, cRecordViewBase * own, QWidget *par)
+{
+    qlonglong type = pts->getId(_sTableShapeType);
+    if ((type & ENUM2SET(TS_GRPMBR)) && own != NULL) EXCEPTION(ENOTSUPP);
+    if (type & ENUM2SET(TS_TREE)) {
+        return new cRecordTree( pts, false, own, par);
+    }
+    else {
+        return new cRecordTable(pts, false, own, par);
+    }
+}
+
+cRecordViewBase *cRecordViewBase::newRecordView(QSqlQuery& q, qlonglong shapeId, cRecordViewBase * own, QWidget *par)
+{
+    cTableShape *pts = new cTableShape();
+    if (!pts->fetchById(q, shapeId)) EXCEPTION(EFOUND, shapeId);
+    return newRecordView(pts, own, par);
+}
+
+/// Inicializálja a megjelenítést.
+/// Az initSimple() metódust hívja, de létrehozza a splitter widgetet, hogy több táblát lehessen megjeleníteni.
+void cRecordViewBase::initMaster()
+{
+    pLeftWidget   = new QWidget(_pWidget);
+    initSimple(pLeftWidget);
+
+    pMasterLayout = new QHBoxLayout(_pWidget);
+    pMasterSplitter = new QSplitter(Qt::Horizontal, _pWidget);
+    pMasterLayout->addWidget(pMasterSplitter);
+    pMasterSplitter->addWidget(pLeftWidget);
+    if ((flags & RTF_GRPMBR)) {
+        initGroup();
+    }
+    else {
+        pRightTable = cRecordViewBase::newRecordView(*pq, pTableShape->getId(_sRightShapeId), this, _pWidget);
+        for (cRecordViewBase *p = pRightTable; p != NULL; p = p->pRightTable) pMasterSplitter->addWidget(p->pWidget());
+    }
+}
+
+void cRecordViewBase::initGroup()
+{
+    cTableShape *pts = new cTableShape();
+    int ixTableShapeType = pts->toIndex(_sTableShapeType);
+    pTableShape->fetchRight(*pq, pts);              // A group tábla megjelenítését leíró rekord
+
+    QSplitter *pRightSplitter = new QSplitter(Qt::Vertical, _pWidget);      // A két táblát egymás alá egy splitterbe tesszük
+    pMasterSplitter->addWidget(pRightSplitter);             // A splitterünk a fő splitter jobb oldalán
+
+    pts->setId(ixTableShapeType, ENUM2SET(TS_GROUP));     // Itt ez a típus kell, máshol is használható a leíró, más típussal.
+    pRightTable  = cRecordViewBase::newRecordView(dynamic_cast<cTableShape *>(pts->dup()), this, _pWidget);    // A felső tábla
+    pRightSplitter->addWidget(pRightTable->pWidget());      // Jobb oldali splitter felső részébe
+
+    pts->setId(ixTableShapeType, ENUM2SET(TS_NOGROUP));
+    pRightTable2 = cRecordViewBase::newRecordView(pts, this, _pWidget);    // Az alsó tábla (megjelenésében ugyanaz)
+    pRightSplitter->addWidget(pRightTable2->pWidget());     // Jobb oldali splitter alsó részébe
+}
+
+/// Üres, nem kötelezően implemetálandó. Csak ha megadhatóak szűrők.
+QStringList cRecordViewBase::filterWhere(QVariantList& qParams)
+{
+    (void)qParams;
+    return QStringList();
+}
+
+void cRecordTable::setEditButtons()
+{
+    if (!isReadOnly) {
+        QModelIndexList mix = pTableView->selectionModel()->selectedRows();
+        int n = mix.size();
+        buttonDisable(DBT_DELETE,  n <  1);
+        buttonDisable(DBT_MODIFY,  n != 1);
+        buttonDisable(DBT_GET_OUT, n != 1);
+        buttonDisable(DBT_PUT_IN,  n != 1);
+        buttonDisable(DBT_INSERT, (flags & RTF_GROUP) && (owner_id == NULL_ID));
+    }
+}
+
+
+/// Üres, nem kötelezően implemetálandó. Csak ha van lapozási lehetőség
+void cRecordViewBase::setPageButtons()
+{
+    ;
+}
+
+void cRecordViewBase::setButtons()
+{
+    setEditButtons();
+    setPageButtons();
+}
+
+
+QStringList cRecordViewBase::refineWhere(QVariantList& qParams)
+{
+    QStringList r;
+    if (! pTableShape->isNull(_sRefine)) {  // Ha megadtak egy általános érvényű szűrőt
+        QStringList rl = pTableShape->getName(_sRefine).split(QChar(':'));
+        r << rl.at(0);
+        if ((rl.at(0).count(QChar('?')) + 1) != rl.size())
+            EXCEPTION(EDATA, -1, trUtf8("Inkonzisztens adat; refine = %1").arg(rl.join(QChar(':'))));
+        for (int i = 1; i < rl.size(); ++i) {  // Paraméter helyettesítések...
+            if      (!rl.at(i).compare(_sUserId,         Qt::CaseInsensitive)) qParams << QVariant(lanView::user().getId());
+            else if (!rl.at(i).compare(_sUserName,       Qt::CaseInsensitive)) qParams << QVariant(lanView::user().getName());
+            else if (!rl.at(i).compare(_sPlaceGroupId,   Qt::CaseInsensitive)) qParams << QVariant(lv2g::getInstance()->zoneId);
+            else EXCEPTION(EDATA, i, trUtf8("Ismeretlen változónév a refine mezőben %1").arg(rl.at(i)));
+        }
+    }
+    return r;
+}
+
+QStringList cRecordViewBase::where(QVariantList& qParams)
+{
+    QStringList wl;
+    int f = flags & (RTF_CHILD | RTF_GROUP | RTF_NOGROUP);
+    if (f) { // A tulaj ID-jére szűrünk, ha van
+        if (owner_id == NULL_ID) {  // A tulajdonos/tag rekord nincs kiválasztva
+            wl << _sFalse;      // Ezzel jelezzük, hogy egy üres táblát kell megjeleníteni
+            return wl;          // Ez egy üres tábla lessz!!
+        }
+        switch (f) {
+        case RTF_CHILD: {
+            int ofix = recDescr().ixToOwner();
+            wl << dQuoted(recDescr().columnName(ofix)) + " = " + QString::number(owner_id);
+        }   break;
+        case RTF_GROUP:
+        case RTF_NOGROUP: {
+            cGroupAny   g(&recDescr(), &pUpper->recDescr());
+            QString w =
+                    "EXISTS (SELECT 1 FROM " + g.tableName() +
+                    " WHERE " + g.groupIdName() + " = " + mCat(g.group.tableName(), g.groupIdName()) +
+                    " AND "  + g.memberIdName() + " = " + QString::number(owner_id) + ")";
+            if (f == RTF_NOGROUP) w = "NOT " + w;
+            wl << w;
+        }   break;
+        default:
+            EXCEPTION(EPROGFAIL);
+            break;
+        }
+    }
+    wl << filterWhere(qParams);
+    wl << refineWhere(qParams);
+    return wl;
+}
+
+void cRecordViewBase::clickedHeader(int)
+{
+    int r = pFODialog->exec();
+    if (r == DBT_OK) refresh();
+}
+
+void cRecordViewBase::selectionChanged(QItemSelection,QItemSelection)
+{
+    if (flags & (RTF_OVNER | RTF_GRPMBR)) {
+        if (pRightTable == NULL) EXCEPTION(EPROGFAIL);
+        pRightTable->owner_id = actId();
+        pRightTable->refresh();
+        if (flags & RTF_GRPMBR) {
+            if (pRightTable2 == NULL) EXCEPTION(EPROGFAIL);
+            pRightTable2->owner_id = actId();
+            pRightTable2->refresh();
+        }
+    }
+    setEditButtons();
 }
 
 /* ***************************************************************************************************** */
@@ -945,29 +1058,59 @@ cRecordTable::~cRecordTable()
 void cRecordTable::init()
 {
     pTableView = NULL;
-
-    switch (pTableShape->getId(_sTableShapeType)) {
+    // Az alapértelmezett gombok:
+    buttons << DBT_CLOSE << DBT_SPACER << DBT_REFRESH << DBT_FIRST << DBT_PREV << DBT_NEXT << DBT_LAST;
+    if (isReadOnly == false) buttons << DBT_BREAK << DBT_SPACER << DBT_DELETE << DBT_INSERT << DBT_MODIFY;
+    qlonglong type = pTableShape->getId(_sTableShapeType);
+    switch (type) {
     case ENUM2SET(TS_NO):
+        if (pUpper != NULL) EXCEPTION(EDATA);
         flags = RTF_SLAVE;
+        buttons.pop_front();    // A close nem kell
         initSimple(_pWidget);
         break;
     case ENUM2SET(TS_SIMPLE):
+        if (pUpper != NULL) EXCEPTION(EDATA);
         flags = RTF_SINGLE;
         initSimple(_pWidget);
         break;
+    case ENUM2SET(TS_GRPMBR):
+        if (pUpper != NULL) EXCEPTION(EDATA);
+        flags = RTF_MASTER | RTF_GRPMBR;
+        initMaster();
+        break;
     case ENUM2SET(TS_OWNER):
+        if (pUpper != NULL) EXCEPTION(EDATA);
         flags = RTF_MASTER | RTF_OVNER;
-        initOwner();
+        initMaster();
+        break;
+    case ENUM2SET(TS_GROUP):
+    case ENUM2SET(TS_NOGROUP):
+        if (pUpper == NULL) EXCEPTION(EDATA);
+        if (tit != TIT_NO && tit != TIT_ONLY) EXCEPTION(EDATA);
+        buttons.clear();
+        buttons << DBT_REFRESH << DBT_SPACER;
+        if (type == ENUM2SET(TS_GROUP)) {
+            flags = RTF_SLAVE | RTF_GROUP;
+            if (isReadOnly == false) buttons << DBT_GET_OUT << DBT_DELETE << DBT_INSERT << DBT_MODIFY;
+        }
+        else {
+            flags = RTF_SLAVE | RTF_NOGROUP;
+            if (isReadOnly == false) buttons << DBT_INSERT << DBT_PUT_IN;
+        }
+        initSimple(_pWidget);
         break;
     case ENUM2SET(TS_CHILD):
         if (pUpper == NULL) EXCEPTION(EDATA);
         flags = RTF_SLAVE | RTF_CHILD;
+        buttons.pop_front();    // A close nem kell
         initSimple(_pWidget);
         break;
     case ENUM2SET2(TS_OWNER, TS_CHILD):
         flags = RTF_OVNER | RTF_SLAVE | RTF_CHILD;
+        if (pUpper == NULL) EXCEPTION(EDATA);
+        buttons.pop_front();    // A close nem kell
         initSimple(_pWidget);
-        pRightTable = cRecordViewBase::newRecordView(*pq, pTableShape->getId(_sRightShapeId), this, _pWidget);
         break;
     default:
         EXCEPTION(ENOTSUPP, pTableShape->getId(_sTableShapeType), pTableShape->getName(_sTableShapeType));
@@ -980,20 +1123,7 @@ void cRecordTable::init()
 /// Inicializálja a táblázatos megjelenítést
 void cRecordTable::initSimple(QWidget * pW)
 {
-    int buttons, buttons2 = 0;
-    int closeBut = 0;
-    if (!(flags & RTF_SLAVE)) closeBut = enum2set(DBT_CLOSE);
-    if (flags & RTF_SINGLE || isReadOnly) {
-        buttons = closeBut | enum2set(DBT_REFRESH, DBT_FIRST, DBT_PREV, DBT_NEXT, DBT_LAST);
-        if (isReadOnly == false) {
-            buttons |= enum2set(DBT_DELETE, DBT_INSERT, DBT_MODIFY);
-        }
-    }
-    else {
-        buttons  = enum2set(DBT_FIRST, DBT_PREV, DBT_NEXT, DBT_LAST);
-        buttons2 = closeBut | enum2set(DBT_DELETE, DBT_INSERT, DBT_MODIFY, DBT_REFRESH);
-    }
-    pButtons    = new cDialogButtons(buttons, buttons2, pW);
+    pButtons    = new cDialogButtons(buttons, pW);
     pMainLayer  = new QVBoxLayout(pW);
     pTableView  = new QTableView(pW);
     pModel      = new cRecordTableModel(*this);
@@ -1011,12 +1141,7 @@ void cRecordTable::initSimple(QWidget * pW)
     pTableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
     connect(pButtons,    SIGNAL(buttonPressed(int)),   this, SLOT(buttonPressed(int)));
-    if (!isReadOnly) {
-        connect(pTableView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
-    }
-    if (pMaster != NULL) {
-        pMaster->pMasterFrame->addWidget(_pWidget);
-    }
+    connect(pTableView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
 }
 
 void cRecordTable::empty()
@@ -1024,15 +1149,11 @@ void cRecordTable::empty()
     pTableModel()->clear();
 }
 
+
+
 void cRecordTable::first()
 {
     pTableModel()->qFirst();
-    setButtons();
-}
-
-void cRecordTable::next()
-{
-    pTableModel()->qNext();
     setButtons();
 }
 
@@ -1042,10 +1163,45 @@ void cRecordTable::prev()
     setButtons();
 }
 
+void cRecordTable::next()
+{
+    pTableModel()->qNext();
+    setButtons();
+}
+
 void cRecordTable::last()
 {
     pTableModel()->qLast();
     setButtons();
+}
+
+void cRecordTable::putIn()
+{
+    if (((flags & RTF_NOGROUP) == 0) || pUpper == NULL) EXCEPTION(EPROGFAIL);
+    cRecordAny *pG = actRecord();
+    cRecordAny *pM = pUpper->actRecord();
+    if (pG == NULL || pM == NULL) {
+        DERR() << "Nincs kijelölve a tag vagy csoport rekord" << endl;
+        return;
+    }
+    cGroupAny(*pG, *pM).insert(*pq);
+    pModel->removeRow(actIndex());
+    pUpper->pRightTable->refresh();
+}
+
+void cRecordTable::getOut()
+{
+    if (((flags & RTF_GROUP) == 0) || pUpper == NULL) EXCEPTION(EPROGFAIL);
+    cRecordAny *pG = actRecord();
+    cRecordAny *pM = pUpper->actRecord();
+    if (pG == NULL || pM == NULL) {
+        DERR() << "Nincs kijelölve a tag vagy csoport rekord" << endl;
+        return;
+    }
+    cGroupAny(*pG, *pM).remove(*pq);
+    pModel->removeRow(actIndex());
+    pUpper->pRightTable2->refresh();
+
 }
 
 QStringList cRecordTable::filterWhere(QVariantList& qParams)
@@ -1163,16 +1319,6 @@ void cRecordTable::selectRow(const QModelIndex& mi)
     pTableView->selectionModel()->select(mi, QItemSelectionModel::ClearAndSelect);
 }
 
-void cRecordTable::setEditButtons()
-{
-    if (!isReadOnly) {
-        QModelIndexList mix = pTableView->selectionModel()->selectedRows();
-        int n = mix.size();
-        buttonDisable(DBT_DELETE, n <  1);
-        buttonDisable(DBT_MODIFY, n != 1);
-    }
-}
-
 void cRecordTable::setPageButtons()
 {
     if (pTableModel()->qIsPaged()) {
@@ -1191,19 +1337,4 @@ void cRecordTable::setPageButtons()
     }
 }
 
-void cRecordTable::setButtons()
-{
-    setEditButtons();
-    setPageButtons();
-}
-
-void cRecordTable::selectionChanged(QItemSelection,QItemSelection)
-{
-    setEditButtons();
-    if (flags & RTF_OVNER) {
-        if (pRightTable == NULL) EXCEPTION(EPROGFAIL);
-        pRightTable->owner_id = actId();
-        pRightTable->refresh();
-    }
-}
 

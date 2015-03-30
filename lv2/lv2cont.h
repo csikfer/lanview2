@@ -7,6 +7,7 @@ Adatbázis kezelő objektum konténerek ill. template-k
 */
 
 #include <QList>
+#include <lv2datab.h>
 
 /*!
 @class tRecordList
@@ -533,10 +534,12 @@ public:
     /// @param __g A group objektum referenciája
     /// @param __m A member objektum  referenciája
     tGroup(const G& __g, const M& __m) : group(__g), member(__m) { ; }
+/*
     /// Értékadás a group adattagra.
     tGroup& operator =(const G& __g) { group  = __g; return *this; }
     /// Értékadás a member adattagra.
     tGroup& operator =(const M& __m) { member = __m; return *this; }
+*/
     /// Értékadás a group és a member típusú adattagra.
     tGroup& operator =(const tGroup __gm) { group = __gm.group; member = __gm.member; return *this; }
     /// A kapcsoló tábla nevének előállításánál használt segéd függvény.
@@ -731,6 +734,20 @@ public:
     static tRecordList<M> fetchGroups(QSqlQuery& q, const QString& mn) { return fetchGroups(q, G().setByname(q, mn)); }
 };
 
+class cGroupAny : public tGroup<cRecordAny, cRecordAny> {
+public:
+    cGroupAny(const cRecStaticDescr *_gd, const cRecStaticDescr *_md)
+        : tGroup<cRecordAny, cRecordAny>()
+    {
+        group.setType(_gd);
+        member.setType(_md);
+    }
+    cGroupAny(const cRecordAny& _g, const cRecordAny _m)
+        : tGroup<cRecordAny, cRecordAny>(_g, _m)
+    {
+        ;
+    }
+};
 
 
 

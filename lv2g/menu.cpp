@@ -89,7 +89,7 @@ cMenuAction::cMenuAction(cOwnTab *po, eOwnTab t, QAction *pa, QTabWidget * par)
 {
     pTabWidget   = par;
     pTableShape  = NULL;
-    pRecordView = NULL;
+    pRecordView  = NULL;
     ownType      = t;
     pWidget      = po;
     pDialog      = NULL;
@@ -109,10 +109,7 @@ void cMenuAction::initRecordTable()
     pTableShape->setParent(this);
     QString n = objectName();
     pTableShape->setByName(n);
-    qlonglong type = pTableShape->getId(_sTableShapeType);
-    if (type & ENUM2SET(TS_TREE)) pRecordView = new cRecordTree( pTableShape, false, NULL, pTabWidget);
-    else                          pRecordView = new cRecordTable(pTableShape, false, NULL, pTabWidget);
-
+    pRecordView = cRecordViewBase::newRecordView(pTableShape, NULL, pTabWidget);
     pWidget = pRecordView->pWidget();
     connect(pRecordView, SIGNAL(closeIt()),   this, SLOT(removeIt()));
     connect(pRecordView, SIGNAL(destroyed()), this, SLOT(destroyedChild()));

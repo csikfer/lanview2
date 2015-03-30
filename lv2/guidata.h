@@ -19,7 +19,10 @@ enum eTableShapeType {
     TS_OWNER,       ///< "owner"
     TS_CHILD,       ///< "child"
     TS_SWITCH,      ///< "switch"   Kapcsoló tábla'
-    TS_LINK         ///< "link"     Hasonló a kapcsoló táblához, de egy tábla (és leszármazottai) közötti kapcsolatot reprezentál (linkek)
+    TS_LINK,        ///< "link"     Hasonló a kapcsoló táblához, de egy tábla (és leszármazottai) közötti kapcsolatot reprezentál (linkek)
+    TS_GRPMBR,      ///< "grpmbr"   Normál megjelenés, a gobboldalon a csoport rekordok (tag/nem tag)
+    TS_GROUP,       ///< "group"
+    TS_NOGROUP      ///< "nogroup"
 };
 /// Konverziós függvény a eTableShapeType enumerációs típushoz
 /// @param n Az enumerációs értéket reprezentáló string az adatbázisban
@@ -180,8 +183,8 @@ public:
     bool findMagic(const QString &_nm, bool __ex = true)        { return ::findMagic(_nm, magicMap(__ex)); }
     ///
     bool typeIs(eTableShapeType _t) const { return getId(_sTableShapeType) & enum2set(_t); }
-    bool fetchLeft(QSqlQuery& q, cTableShape * _po, bool _ex) const;
-    bool fetchRight(QSqlQuery& q, cTableShape * _po, bool _ex) const;
+    bool fetchLeft(QSqlQuery& q, cTableShape * _po, bool _ex = true) const;
+    bool fetchRight(QSqlQuery& q, cTableShape * _po, bool _ex = true) const;
     const cRecStaticDescr * getRecDescr() const { return cRecStaticDescr::get(getName(_sTableName)); }
     /// Létrehoz, és hozzáad egy mező onjekrumot a shapeFields konténerhez.
     /// @param _name  A mező/oszlop neve

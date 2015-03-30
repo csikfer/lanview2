@@ -201,15 +201,15 @@ void cRecordTableModel::removeRecords(const QModelIndexList &mil)
                          QMessageBox::Ok, QMessageBox::Cancel);
     if (b != QMessageBox::Ok) return;
     int s = _records.size();
-    QBitArray   rb(s, false);
+    QBitArray   rb(s, false);   // Sorismétlések kivédése
     foreach(QModelIndex mi, mil) {
         int row = mi.row();
         if (row < s) {
-            if (!rb[row]) {
-                rb.setBit(row, true);
-                removeRec(mi);
-            }
+            rb.setBit(row, true);
         }
+    }
+    for (int i = s - 1; i >= 0; --i) {   // végigszaladunk a sorokon, visszafelé
+        removeRec(index(i, 0));
     }
 
 }

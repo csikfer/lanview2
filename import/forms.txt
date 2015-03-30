@@ -43,6 +43,10 @@ ENUM filtertype     interval        TITLE "Csak a megadott két érték között
 ENUM filtertype     proc            TITLE "Szűrés egy magadott SQL függvénnyel";
 ENUM filtertype     SQL             TITLE "A szürési feltétel megadása SQL nyelven";
 
+DELETE GUI "%" MENU;
+DELETE TABLE SHAPE "%";
+
+INCLUDE "iaform.txt";
 // ***************************************************************************************
 // Objects:
 // Adattáblák (objektumok) megjelenítése
@@ -53,8 +57,6 @@ TABLE EDIT   RIGHTS admin;          // Mődosítható admin joggal
 TABLE DELETE RIGHTS admin;          // Egy elem törölhető admin joggal
 TABLE INSERT RIGHTS admin;          // Új elem beszúrható admin joggal
 $$;
-
-DELETE TABLE SHAPE pports;
 
 TABLE SHAPE pports "Pach panel és fali csatlakozó portok" {
     SET DEFAULTS;               // Az összes mező felvétele alapértelmezett tulajdonságokkal
@@ -72,7 +74,6 @@ TABLE SHAPE pports "Pach panel és fali csatlakozó portok" {
     $DefRights
 }
 
-DELETE TABLE SHAPE patchs;
 TABLE SHAPE patchs "Pach panelek és fali csatlakozók" {
     SET DEFAULTS;
     TABLE TYPE owner;
@@ -85,7 +86,6 @@ TABLE SHAPE patchs "Pach panelek és fali csatlakozók" {
     $DefRights
 }
 
-DELETE TABLE SHAPE nports;
 TABLE SHAPE nports "Passzív portok" {
     SET DEFAULTS;
     TABLE INHERIT TYPE only;
@@ -98,7 +98,6 @@ TABLE SHAPE nports "Passzív portok" {
     FIELD iftype_id ADD FILTERS like;
 }
 
-DELETE TABLE SHAPE nodes;
 TABLE SHAPE nodes "Passzív, felügyeltbe bevont elemek" {
     SET DEFAULTS;
     TABLE TYPE owner;
@@ -113,7 +112,6 @@ TABLE SHAPE nodes "Passzív, felügyeltbe bevont elemek" {
     FIELD node_stat DEFAULT VALUE unkbown;
 }
 
-DELETE TABLE SHAPE ipaddresses;
 TABLE SHAPE ipaddresses "IP címek" {
     SET DEFAULTS;
 //  TABLE INHERIT TYPE no;      // 'no' a default
@@ -122,7 +120,6 @@ TABLE SHAPE ipaddresses "IP címek" {
     $DefRights
 }
 
-DELETE TABLE SHAPE hostports;
 TABLE interfaces SHAPE hostports "Hálózati interfészek, portok" {
     SET DEFAULTS;
     TABLE TYPE child, owner, tree;
@@ -138,7 +135,6 @@ TABLE interfaces SHAPE hostports "Hálózati interfészek, portok" {
     $DefRights
 }
 
-DELETE TABLE SHAPE allnodes;
 TABLE snmpdevices SHAPE allnodes "Hálózati elemek" {
     SET DEFAULTS;
     TABLE TYPE owner;
@@ -160,15 +156,6 @@ TABLE SHAPE snmpdevices "SNMP hosts" {
 }
 */
 
-DELETE TABLE SHAPE places;
-TABLE SHAPE places "Helyiségek" {
-    SET DEFAULTS;
-    TABLE TYPE tree;
-    PROP ":map=get_parent_image:";
-    $DefRights
-}
-
-DELETE TABLE SHAPE host_services;
 TABLE SHAPE host_services "A hostokhoz rendelt szervíz példányok" {
     SET DEFAULTS;
     TABLE TYPE tree;
@@ -178,7 +165,6 @@ TABLE SHAPE host_services "A hostokhoz rendelt szervíz példányok" {
     $DefRights
 }
 
-DELETE TABLE SHAPE services;
 TABLE SHAPE services "Szervíz típusok" {
     SET DEFAULTS;
     TABLE TYPE simple;
@@ -188,14 +174,12 @@ TABLE SHAPE services "Szervíz típusok" {
 }
 
 
-DELETE TABLE SHAPE subnets;
 TABLE SHAPE subnets "Alhálózatok" {
     SET DEFAULTS;
     TABLE TYPE simple;
     $DefRights
 }
 
-DELETE TABLE SHAPE vlans;
 TABLE SHAPE vlans "VLAN-ok" {
     SET DEFAULTS;
     FIELD vlan_id HIDE OFF;
@@ -206,7 +190,6 @@ TABLE SHAPE vlans "VLAN-ok" {
 // ***************************************************************************************
 // events
 
-DELETE TABLE SHAPE alarms;
 TABLE SHAPE alarms "Riasztások" {
     SET DEFAULTS;
     TABLE TYPE tree;
@@ -236,14 +219,12 @@ TABLE SHAPE alarms "Riasztások" {
     $DefRights
 }
 
-DELETE TABLE SHAPE app_errs;
 TABLE SHAPE app_errs "Applikáció hiba napló" {
     SET DEFAULTS;
     TABLE READ ONLY;
     $DefRights
 }
 
-DELETE TABLE SHAPE host_service_logs;
 TABLE SHAPE host_service_logs "A szervíz példányok log rekordjai" {
     SET DEFAULTS;
     TABLE READ ONLY;
@@ -256,7 +237,6 @@ TABLE SHAPE host_service_logs "A szervíz példányok log rekordjai" {
 // ***************************************************************************************
 // Others:
 
-DELETE TABLE SHAPE arps;
 TABLE SHAPE arps "ARP tábla" {
     SET DEFAULTS;
     TABLE TYPE simple;
@@ -267,7 +247,6 @@ TABLE SHAPE arps "ARP tábla" {
     $DefRights
 }
 
-DELETE TABLE SHAPE mactab;
 TABLE SHAPE mactab "Port címtábla" {
     SET DEFAULTS;
     $DefRights
@@ -277,7 +256,6 @@ TABLE SHAPE mactab "Port címtábla" {
 // GUI
 
 
-DELETE TABLE SHAPE table_shape_filters;
 TABLE SHAPE table_shape_filters "Szűrési lehetőséget a mezőkre" {
     SET DEFAULTS;
     TABLE TYPE child;
@@ -285,7 +263,6 @@ TABLE SHAPE table_shape_filters "Szűrési lehetőséget a mezőkre" {
     $DefRights
 }
 
-DELETE TABLE SHAPE table_shape_fields;
 TABLE SHAPE table_shape_fields "Tábla mezők megjelenítése" {
     SET DEFAULTS;
     TABLE TYPE child, owner;
@@ -294,7 +271,6 @@ TABLE SHAPE table_shape_fields "Tábla mezők megjelenítése" {
     $DefRights
 }
 
-DELETE TABLE SHAPE table_shapes;
 TABLE SHAPE table_shapes "Táblák megjelenítése" {
     SET DEFAULTS;
     TABLE TYPE owner;
@@ -302,56 +278,56 @@ TABLE SHAPE table_shapes "Táblák megjelenítése" {
     $DefRights
 }
 
-DELETE TABLE SHAPE menu_items;
 TABLE SHAPE menu_items "Menu elemek" {
     SET DEFAULTS;
     TABLE TYPE tree;
     $DefRights
 }
 
-DELETE TABLE SHAPE enum_vals;
 TABLE SHAPE enum_vals "Enumerációs értékek" {
     SET DEFAULTS;
     TABLE TYPE simple;
     $DefRights
 }
 
-DELETE TABLE SHAPE param_types;
 TABLE SHAPE param_types "Paraméter típus leírók" {
     SET DEFAULTS;
     TABLE TYPE simple;
     $DefRights
 }
 
-DELETE TABLE SHAPE sys_params;
 TABLE SHAPE sys_params "Rendszer paraméterek" {
     SET DEFAULTS;
     TABLE TYPE simple;
     $DefRights
 }
 
-DELETE TABLE SHAPE users;
-TABLE SHAPE users "felhasználók" {
-    SET DEFAULTS;
-    TABLE TYPE simple;
-    $DefRights
-}
-
-DELETE TABLE SHAPE groups;
 TABLE SHAPE groups "felhasználói csoportok" {
     SET DEFAULTS;
     TABLE TYPE simple;
     $DefRights
 }
 
-DELETE TABLE SHAPE place_groups;
+TABLE SHAPE users "felhasználók" {
+    SET DEFAULTS;
+    TABLE TYPE grpmbr;
+    RIGHT SHAPE groups;
+    $DefRights
+}
+
 TABLE SHAPE place_groups "Hely és helyiség csoportok / Zónák" {
     SET DEFAULTS;
     TABLE TYPE simple;
     $DefRights
 }
 
-DELETE GUI lv2gui MENU;
+TABLE SHAPE places "Helyiségek" {
+    SET DEFAULTS;
+    TABLE TYPE tree, grpmbr;
+    RIGHT SHAPE place_groups;
+    TABLE PROP ":map=get_parent_image:";
+    $DefRights
+}
 
 GUI lv2gui {
   file MENU "fájl" {
@@ -379,6 +355,7 @@ GUI lv2gui {
     alarms      SHAPE   alarms          "Riasztások";
     app_errs    SHAPE   app_errs        "Program hibák";
     host_service_logs SHAPE host_service_logs "Szervíz log";
+    olalarm     OWN     olalarm         "On-Line riasztások";
   }
   others MENU "Egyéb táblák" {
     arps        SHAPE   arps            "ARP tábla";

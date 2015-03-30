@@ -5,50 +5,94 @@
 
 QStringList     cDialogButtons::buttonNames;
 QList<QIcon>    cDialogButtons::icons;
+int cDialogButtons::_buttonNumbers = DBT_BUTTON_NUMBERS;
+
 
 cDialogButtons::cDialogButtons(int buttons, int buttons2, QWidget *par)
     :QButtonGroup(par)
 {
-    if (buttonNames.isEmpty()) {
-        buttonNames << trUtf8("OK");            icons << QIcon::fromTheme("emblem-default");
-        buttonNames << trUtf8("Bezár");         icons << QIcon::fromTheme("window-close");
-        buttonNames << trUtf8("Frissít");       icons << QIcon::fromTheme("reload");
-        buttonNames << trUtf8("Beilleszt");     icons << QIcon::fromTheme("insert-image");
-        buttonNames << trUtf8("Módosít");       icons << QIcon::fromTheme("text-editor");
-        buttonNames << trUtf8("Ment");          icons << QIcon::fromTheme("list-add");
-        buttonNames << trUtf8("Első");          icons << QIcon::fromTheme("go-first");
-        buttonNames << trUtf8("Előző");         icons << QIcon::fromTheme("go-previous");
-        buttonNames << trUtf8("Következő");     icons << QIcon::fromTheme("go-next");
-        buttonNames << trUtf8("Utolsó");        icons << QIcon::fromTheme("go-last");
-        buttonNames << trUtf8("Töröl");         icons << QIcon::fromTheme("list-remove");
-        buttonNames << trUtf8("Visszaállít");   icons << QIcon::fromTheme("edit-redo");
-        buttonNames << trUtf8("Elvet");         icons << QIcon::fromTheme("gtk-cancel");
-        buttonNames << trUtf8("Alapállapot");   icons << QIcon::fromTheme("go-first");
-        buttonNames << trUtf8("Gyökér");        icons << QIcon::fromTheme("go-next");
-    }
-    if (0 == (buttons & ((1 << DBT_BUTTON_NUMBERS) - 1))) EXCEPTION(EDATA);
+    staticInit();
+    if (0 == (buttons & ((1 << _buttonNumbers) - 1))) EXCEPTION(EDATA);
     _pWidget = new QWidget(par);
     if (buttons2 == 0) {        // Egy gombsor
-        _pLayout = NULL;
-        _pLayoutBotom = NULL;
-        _pLayoutTop = new QHBoxLayout(_pWidget);
-        init(buttons, _pLayoutTop);
+        _pLayout = new QHBoxLayout(_pWidget);
+        init(buttons, _pLayout);
     }
     else {                      // Két gombsor
         _pLayout = new QVBoxLayout(_pWidget);
-        _pLayoutTop   = new QHBoxLayout();
-        _pLayoutBotom = new QHBoxLayout();
-        _pLayout->addLayout(_pLayoutTop);
-        _pLayout->addLayout(_pLayoutBotom);
-        init(buttons, _pLayoutTop);
-        init(buttons2, _pLayoutBotom);
+        QHBoxLayout *pLayoutTop   = new QHBoxLayout();
+        QHBoxLayout *pLayoutBotom = new QHBoxLayout();
+        _pLayout->addLayout(pLayoutTop);
+        _pLayout->addLayout(pLayoutBotom);
+        init(buttons, pLayoutTop);
+        init(buttons2, pLayoutBotom);
     }
 }
 
-void cDialogButtons::init(int buttons, QHBoxLayout *pL)
+cDialogButtons::cDialogButtons(const tIntVector& buttons, QWidget *par)
+{
+    staticInit();
+    _pWidget = new QWidget(par);
+    if (buttons.indexOf(DBT_BREAK) < 0) {   // Egy sorba
+        _pLayout = new QHBoxLayout(_pWidget);
+        foreach (int id, buttons) {
+            if (id < _buttonNumbers) {
+                PDEB(VVERBOSE) << "Add button #" << id << " " << buttonNames[id] << endl;
+                QPushButton *pPB = new QPushButton(icons[id], buttonNames[id], _pWidget);
+                addButton(pPB, id);
+                _pLayout->addWidget(pPB);
+            }
+            else if (id == DBT_SPACER) _pLayout->addStretch();
+            else EXCEPTION(EDATA, id);
+        }
+    }
+    else {
+        _pLayout = new QVBoxLayout(_pWidget);
+        QHBoxLayout *pL = new QHBoxLayout();
+        _pLayout->addLayout(pL);
+        foreach (int id, buttons) {
+            if (id < _buttonNumbers) {
+                PDEB(VVERBOSE) << "Add button #" << id << " " << buttonNames[id] << endl;
+                QPushButton *pPB = new QPushButton(icons[id], buttonNames[id], _pWidget);
+                addButton(pPB, id);
+                pL->addWidget(pPB);
+            }
+            else if (id == DBT_SPACER) pL->addStretch();
+            else if (id == DBT_BREAK)  _pLayout->addLayout(pL = new QHBoxLayout());
+            else EXCEPTION(EDATA, id);
+        }
+    }
+}
+
+void cDialogButtons::staticInit()
+{
+    if (buttonNames.isEmpty()) {
+        buttonNames << trUtf8("OK");            icons << QIcon::fromTheme("emblem-default");    // DBT_OK
+        buttonNames << trUtf8("Bezár");         icons << QIcon::fromTheme("window-close");      // DBT_CLOSE
+        buttonNames << trUtf8("Frissít");       icons << QIcon::fromTheme("reload");            // DBT_REFRESH
+        buttonNames << trUtf8("Új");            icons << QIcon::fromTheme("insert-image");      // DBT_INSERT
+        buttonNames << trUtf8("Módosít");       icons << QIcon::fromTheme("text-editor");       // DBT_MODIFY
+        buttonNames << trUtf8("Ment");          icons << QIcon::fromTheme("list-add");          // DBT_SAVE
+        buttonNames << trUtf8("Első");          icons << QIcon::fromTheme("go-first");          // DBT_FIRST
+        buttonNames << trUtf8("Előző");         icons << QIcon::fromTheme("go-previous");       // DBT_PREV
+        buttonNames << trUtf8("Következő");     icons << QIcon::fromTheme("go-next");           // DBT_NEXT
+        buttonNames << trUtf8("Utolsó");        icons << QIcon::fromTheme("go-last");           // DBT_LAST
+        buttonNames << trUtf8("Töröl");         icons << QIcon::fromTheme("list-remove");       // DBT_DELETE
+        buttonNames << trUtf8("Visszaállít");   icons << QIcon::fromTheme("edit-redo");         // DBT_RESTORE
+        buttonNames << trUtf8("Elvet");         icons << QIcon::fromTheme("gtk-cancel");        // DBT_CANCEL
+        buttonNames << trUtf8("Alapállapot");   icons << QIcon::fromTheme("go-first");          // DBT_RESET
+        buttonNames << trUtf8("Betesz");        icons << QIcon::fromTheme("insert-image");      // DBT_PUT_IN
+        buttonNames << trUtf8("Kivesz");        icons << QIcon::fromTheme("list-remove");       // DBT_GET_OUT
+    }
+    if (buttonNames.size() != _buttonNumbers) EXCEPTION(EPROGFAIL);
+    if (      icons.size() != _buttonNumbers) EXCEPTION(EPROGFAIL);
+}
+
+
+void cDialogButtons::init(int buttons, QBoxLayout *pL)
 {
     pL->addStretch();
-    for (int id = 0; DBT_BUTTON_NUMBERS > id; ++id) {
+    for (int id = 0; _buttonNumbers > id; ++id) {
         if (buttons & enum2set(id)) {
             PDEB(VVERBOSE) << "Add button #" << id << " " << buttonNames[id] << endl;
             QPushButton *pPB = new QPushButton(icons[id], buttonNames[id], _pWidget);

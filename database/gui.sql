@@ -2,7 +2,7 @@
 DROP TABLE IF EXISTS table_shape_filters, table_shape_fields, table_shapes, enum_vals, id_view_procs CASCADE;
 DROP TYPE  IF EXISTS tableshapetype, filtertype, filterdatatype, ordtype, tableinherittype;
 
-CREATE TYPE tableshapetype AS ENUM ('no', 'simple', 'tree', 'owner', 'child', 'switch', 'link');
+CREATE TYPE tableshapetype AS ENUM ('no', 'simple', 'tree', 'owner', 'child', 'switch', 'link', 'grpmbr', 'group', 'nogroup');
 ALTER TYPE tableshapetype OWNER TO lanview2;
 COMMENT ON TYPE tableshapetype IS
 'table shape típusa:
@@ -12,7 +12,11 @@ tree        Fa struktúrájú objektumok
 owner       A tábla egy másik tábla tulajdonosa (pl a ''nodes'' az ''nports'' -nak)
 child       A tábla egy owner táblához tartozik
 switch      Kapcsoló tábla (maga a kapcsoló tábla láthatatlan, csak a kapcsolatokat reprezentálja)
-link        Link tábla (Adattartalommal is rendelkező kapcsoló tábla)';
+link        Link tábla (Adattartalommal is rendelkező kapcsoló tábla)
+grpmbr      A megjelenített tábla elemei csoport tagok, a jobb oldalon a csoport rekordok lesznek megjelenítva
+group       Group típusú tábla (tagja) megjelenítés. A típus automatikus nem kell/szabad megadni.
+nogroup     Group típusú tábla (nem tagja) megjelenítés. A típus automatikus nem kell/szabad megadni.'
+;
 
 CREATE TYPE tableinherittype AS ENUM ('no', 'only', 'on', 'all', 'reverse', 'listed', 'listed_rev', 'listed_all');
 ALTER TYPE tableinherittype OWNER TO lanview2;

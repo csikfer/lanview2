@@ -12,22 +12,25 @@
 /// @enum eDialogButtons
 /// @brief A dialógus ablakokban kezelt nyomógombok típusait reprezentáló enumerációs konstansok.
 enum eDialogButtons {
-    DBT_OK = 0,
-    DBT_CLOSE,
-    DBT_REFRESH,
-    DBT_INSERT,
-    DBT_MODIFY,
-    DBT_SAVE,
-    DBT_FIRST,
-    DBT_PREV,
-    DBT_NEXT,
-    DBT_LAST,
-    DBT_DELETE,
-    DBT_RESTORE,
-    DBT_CANCEL,
-    DBT_RESET,
-    DBT_SET_ROOT,
-    DBT_BUTTON_NUMBERS  ///< Nem egy nyomógombot reprezentál, hanem azok számát
+    DBT_OK = 0,         ///< OK
+    DBT_CLOSE,          ///< Close
+    DBT_REFRESH,        ///< Ablak tartalmának a frissítése
+    DBT_INSERT,         ///< Beszúrás
+    DBT_MODIFY,         ///< modosítás
+    DBT_SAVE,           ///< Mentés
+    DBT_FIRST,          ///< Lapozás az elsőoldalra
+    DBT_PREV,           ///< Előző oldalra lapozás, előző elem
+    DBT_NEXT,           ///< Következő oldal/elem
+    DBT_LAST,           ///< Utolsó oldal/elem
+    DBT_DELETE,         ///< törlés
+    DBT_RESTORE,        ///< Visszaállítás
+    DBT_CANCEL,         ///< Elvet
+    DBT_RESET,          ///< Alaphelyzet
+    DBT_PUT_IN,         ///< Betesz
+    DBT_GET_OUT,        ///< Kivesz
+    DBT_BUTTON_NUMBERS, ///< Nem egy nyomógombot reprezentál, hanem azok számát
+    DBT_SPACER,         ///< Nem nyomogomb, spacer
+    DBT_BREAK           ///< Nem nyomógomb, "sortörés"
 };
 
 /// @class cDialogButtons
@@ -35,14 +38,15 @@ enum eDialogButtons {
 class LV2GSHARED_EXPORT cDialogButtons : public QButtonGroup {
 public:
     cDialogButtons(int buttons, int buttons2 = 0, QWidget *par = NULL);
-    void init(int buttons, QHBoxLayout *pL);
+    cDialogButtons(const tIntVector& buttons, QWidget *par = NULL);
     QWidget& widget()   { return *_pWidget; }
     QWidget *pWidget()  { return _pWidget; }
 protected:
-    QWidget *_pWidget;
-    QVBoxLayout *_pLayout;
-    QHBoxLayout *_pLayoutTop;
-    QHBoxLayout *_pLayoutBotom;
+    void init(int buttons, QBoxLayout *pL);
+    static void staticInit();
+    QWidget     *_pWidget;
+    QBoxLayout  *_pLayout;
+    static int _buttonNumbers;
     static QStringList      buttonNames;
     static QList<QIcon>     icons;
 };

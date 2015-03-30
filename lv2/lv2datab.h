@@ -1938,6 +1938,8 @@ public:
     virtual cRecord *dup()const;
     /// Másoló operátor. Átmásolja a forrás objektum descriptor mutatóját (típusát) és a mező adatokat.
     cRecordAny& operator=(const cRecord& __o);
+    /// Másoló operátor. Átmásolja a forrás objektum descriptor mutatóját (típusát) és a mező adatokat.
+    cRecordAny& operator=(const cRecordAny& __o) { return *this = (const cRecord&)__o; }
 protected:
     const cRecStaticDescr *pStaticDescr;
 };

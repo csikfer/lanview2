@@ -21,27 +21,41 @@ cRecordTree::~cRecordTree()
 void cRecordTree::init()
 {
     pTreeView  = NULL;
-
+    // Az alapértelmezett gombok:
+    buttons << DBT_CLOSE << DBT_SPACER << DBT_REFRESH;
+    if (isReadOnly == false) buttons << DBT_SPACER << DBT_DELETE << DBT_INSERT << DBT_MODIFY;
     switch (pTableShape->getId(_sTableShapeType)) {
     case ENUM2SET2(TS_TREE, TS_NO):
+        if (pUpper != NULL) EXCEPTION(EDATA);
         flags = RTF_SLAVE | RTF_TREE;
+        buttons.pop_front();    // A close nem kell
         initSimple(_pWidget);
         break;
     case ENUM2SET(TS_TREE):
+        if (pUpper != NULL) EXCEPTION(EDATA);
         flags = RTF_SINGLE | RTF_TREE;
         initSimple(_pWidget);
         break;
+    case ENUM2SET2(TS_TREE, TS_GRPMBR):
+        if (pUpper != NULL) EXCEPTION(EDATA);
+        flags = RTF_MASTER | RTF_GRPMBR | RTF_TREE;
+        initMaster();
+        break;
     case ENUM2SET2(TS_TREE, TS_OWNER):
+        if (pUpper != NULL) EXCEPTION(EDATA);
         flags = RTF_MASTER | RTF_OVNER | RTF_TREE;
-        initOwner();
+        initMaster();
         break;
     case ENUM2SET2(TS_TREE, TS_CHILD):
         if (pUpper == NULL) EXCEPTION(EDATA);
         flags = RTF_SLAVE | RTF_CHILD | RTF_TREE;
+        buttons.pop_front();    // A close nem kell
         initSimple(_pWidget);
         break;
     case ENUM2SET3(TS_TREE, TS_OWNER, TS_CHILD):
+        if (pUpper == NULL) EXCEPTION(EDATA);
         flags = RTF_OVNER | RTF_SLAVE | RTF_CHILD | RTF_TREE;
+        buttons.pop_front();    // A close nem kell
         initSimple(_pWidget);
         pRightTable = cRecordViewBase::newRecordView(*pq, pTableShape->getId(_sRightShapeId), this, _pWidget);
         break;
@@ -53,22 +67,7 @@ void cRecordTree::init()
 
 void cRecordTree::initSimple(QWidget *pW)
 {
-    int buttons, buttons2 = 0;
-    int closeBut = 0;
-    if (!(flags & RTF_SLAVE)) closeBut = enum2set(DBT_CLOSE);
-    if (flags & RTF_SINGLE || isReadOnly) {
-        buttons = closeBut | enum2set(DBT_REFRESH, DBT_PREV, DBT_RESTORE, DBT_SET_ROOT);
-        if (isReadOnly == false) {
-            buttons |= enum2set(DBT_DELETE, DBT_INSERT, DBT_MODIFY);
-        }
-    }
-    else {
-        buttons  = enum2set(DBT_PREV, DBT_SET_ROOT, DBT_RESTORE);
-        buttons2 = closeBut | enum2set(DBT_DELETE, DBT_INSERT, DBT_MODIFY, DBT_REFRESH);
-    }
-    pButtons    = new cDialogButtons(buttons, buttons2, pW);
-
-
+    pButtons    = new cDialogButtons(buttons, pW);
     pMainLayer  = new QVBoxLayout(pW);
     pTreeView   = new QTreeView(pW);
     pModel      = new cRecordTreeModel(*this);
@@ -90,7 +89,7 @@ void cRecordTree::initSimple(QWidget *pW)
         connect(pTreeView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
     }
     if (pMaster != NULL) {
-        pMaster->pMasterFrame->addWidget(_pWidget);
+        pMaster->pMasterSplitter->addWidget(_pWidget);
     }
     pTreeView->header()->setSectionsClickable(true);
     connect(pTreeView->header(), SIGNAL(sectionClicked(int)), this, SLOT(clickedHeader(int)));
@@ -210,7 +209,7 @@ void cRecordTree::buttonPressed(int id)
     case DBT_INSERT:    insert();   break;
     case DBT_MODIFY:    modify();   break;
     case DBT_PREV:      prev();     break;
-    case DBT_SET_ROOT:  setRoot();      break;
+    case DBT_RESET:     setRoot();      break;
     case DBT_RESTORE:   restoreRoot();  break;
     default:
         DWAR() << "Invalid button id : " << id << endl;
@@ -250,7 +249,3 @@ void cRecordTree::restoreRoot()
     pTreeModel()->prevRoot(false);    // vissza az eredeti gyökérig
 }
 
-void cRecordTree::selectionChanged(QItemSelection,QItemSelection)
-{
-
-}

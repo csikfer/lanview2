@@ -140,7 +140,10 @@ enum eRecordTableFlags  {
     RTF_CHILD  = 0x0010,
     RTF_TREE   = 0x0020,
     RTF_LINK   = 0x0040,    ///< Link táblák
-    RTF_LEFT   = 0x0080     ///< A bal oldali link tábla
+    RTF_LEFT   = 0x0080,    ///< A bal oldali link tábla
+    RTF_GRPMBR = 0x0100,    ///< Csoport tagság
+    RTF_GROUP  = 0x0200,
+    RTF_NOGROUP= 0x0400
 };
 
 class cRecordViewBase : public QObject {
@@ -187,7 +190,9 @@ public:
     /// A fő widget, vagy dialog box objektum pointere
     QWidget        *_pWidget;
     ///
-    QSplitter      *pMasterFrame;
+    QSplitter      *pMasterSplitter;
+    /// Nyomógomb ID-k sorrendben
+    tIntVector  buttons;
     /// A nyomogombok objektuma
     cDialogButtons *pButtons;
     /// A saját táblázat megjelenítésének a layer-e
@@ -198,6 +203,8 @@ public:
     QWidget        *pLeftWidget;
     /// A (bal oldali) alárendelt tábla megjelenítő objektuma.
     cRecordViewBase   *pRightTable;
+    /// A (bal oldali) alárendelt tábla megjelenítő objektuma, ha kettő van
+    cRecordViewBase   *pRightTable2;
     /// Szűrők és rendezés dialog box
     cRecordTableFODialog *  pFODialog;
     /// Child tábla esetén a tulajdonos ID-je, ha ismert (csak egy rekord van kijelölve az owner táblázatban)
@@ -216,20 +223,16 @@ public:
     const cRecStaticDescr& inhRecDescr(qlonglong i) const;
     const cRecStaticDescr& inhRecDescr(const QString& tn) const;
 
+    // egy gomb megnyomására hívandó virtuális metódusok
     /// Dialogus ablak esetén hívja a done() metódust a paraméterrel.
     /// Egyébként a closeIt() hívja.
     virtual void close(int r = QDialog::Accepted);
-
-    virtual void modify();
-    virtual void remove();
+    /// Újraolvassa az adatbázist
+    void refresh(bool first = true);
+    /// Egy új rekord neszúrása
     virtual void insert();
-    virtual void setEditButtons() = 0;
-    virtual void setPageButtons();
-    virtual void setButtons() = 0;
-    QStringList refineWhere(QVariantList& qParams);
-    QStringList where(QVariantList &qParams);
-
-    virtual QStringList filterWhere(QVariantList& qParams);
+    /// Egy kijelölt rekord modosítása
+    virtual void modify();
     /// Nem kötelezően implementálandó metódus. Ha nincs újraimplementálva, de mégis meghívjuk, akkor kizárást dob
     virtual void first();
     /// Nem kötelezően implementálandó metódus. Ha nincs újraimplementálva, de mégis meghívjuk, akkor kizárást dob
@@ -238,8 +241,24 @@ public:
     virtual void prev();
     /// Nem kötelezően implementálandó metódus. Ha nincs újraimplementálva, de mégis meghívjuk, akkor kizárást dob
     virtual void last();
-    ///
-    void refresh(bool first = true);
+    /// Egy vagy több kijelölt rekord törlése
+    virtual void remove();
+    /// Nem kötelezően implementálandó metódus. Ha nincs újraimplementálva, de mégis meghívjuk, akkor kizárást dob
+    virtual void reset();
+    /// Nem kötelezően implementálandó metódus. Ha nincs újraimplementálva, de mégis meghívjuk, akkor kizárást dob
+    virtual void putIn();
+    /// Nem kötelezően implementálandó metódus. Ha nincs újraimplementálva, de mégis meghívjuk, akkor kizárást dob
+    virtual void getOut();
+
+    virtual void setEditButtons() = 0;
+    /// Nem kötelezően implementálandü virtuális metódus. Alapértelmezetten nem csinál semmit.
+    virtual void setPageButtons();
+    /// Alapértelmezetten a setEditButtons(); és setPageButtons(); metódusokat hívja
+    virtual void setButtons();
+    QStringList refineWhere(QVariantList& qParams);
+    QStringList where(QVariantList &qParams);
+
+    virtual QStringList filterWhere(QVariantList& qParams);
 
     virtual QModelIndexList selectedRows() = 0;
     virtual QModelIndex actIndex() = 0;
@@ -251,7 +270,8 @@ public:
 
     void initView();
     void initShape(cTableShape *pts = NULL);
-    void initOwner();
+    void initMaster();
+    void initGroup();
     virtual void initSimple(QWidget *pW) = 0;
 
     virtual void _refresh(bool first = true) = 0;
@@ -260,9 +280,12 @@ public slots:
     /// @param id A megnyomott gomb azonosítója
     virtual void buttonPressed(int id);
     void clickedHeader(int);
+    /// Ha változott a kijelölés
+    void selectionChanged(QItemSelection,QItemSelection);
 signals:
     void closeIt();
-protected:
+public:
+    static cRecordViewBase *newRecordView(cTableShape * pts, cRecordViewBase * own = NULL, QWidget *par = NULL);
     static cRecordViewBase *newRecordView(QSqlQuery &q, qlonglong shapeId, cRecordViewBase * own = NULL, QWidget *par = NULL);
 };
 
@@ -296,15 +319,17 @@ public:
     virtual cRecordAny *nextRow(QModelIndex *pMi);
     virtual cRecordAny *prevRow(QModelIndex *pMi);
     virtual void selectRow(const QModelIndex& mi);
-
     void empty();
+
     void first();
     void next();
     void prev();
     void last();
+    void putIn();
+    void getOut();
+
     void setEditButtons();
     void setPageButtons();
-    void setButtons();
 
     ///
 
@@ -315,9 +340,6 @@ public:
     virtual QStringList filterWhere(QVariantList& qParams);
     void _refresh(bool first = true);
     void refresh_lst_rev();
-protected slots:
-    /// Ha változott a kijelölés
-    void selectionChanged(QItemSelection,QItemSelection);
 public:
     QTableView *tableView() { return pTableView; }
 };

@@ -1,5 +1,5 @@
 
-DELETE TABLE SHAPE uaalarms, aaalarms;
+// DELETE TABLE SHAPE uaalarms, aaalarms;
 
 TABLE view_alarms SHAPE uaalarms  "Nem nyugtázott riasztások" {
     SET DEFAULTS;               // Az összes mező felvétele alapértelmezett tulajdonságokkal

@@ -13,7 +13,7 @@ class cRecordTree : public cRecordViewBase {
 public:
     /// Konstruktor
     /// Fő ill. önálló tábla megjelenítése, már beolvasott leíró
-    /// @param _mn A tábla megjelenítését leíró rekord neve (table_shapes.table_shape_name)
+    /// @param pts A tábla megjelenítését leíró rekord
     /// @param _isDialog Ha igaz, akkor a megjelenítés egy dialog ablakban.
     /// @param par A szülő widget pointere, vagy NULL
     cRecordTree(cTableShape *pts, bool _isDialog, cRecordViewBase * _upper, QWidget * par = NULL);
@@ -43,9 +43,6 @@ public:
     cRecordTreeModel *  pTreeModel() const { return static_cast<cRecordTreeModel *>(pModel); }
     QTreeView *         pTreeView;
     virtual void buttonPressed(int id);
-protected slots:
-    /// Ha változott a kijelölés
-    void selectionChanged(QItemSelection,QItemSelection);
 };
 
 
