@@ -584,16 +584,32 @@ $$ LANGUAGE plpgsql;
 -- Port ID-je alapján visszaadja az nevét, ha az ID nem létezik, dob egy kizárást+hiba rekord
 CREATE OR REPLACE FUNCTION port_id2name(bigint) RETURNS varchar(32) AS $$
 DECLARE
-    id varchar(32);
+    name varchar(32);
 BEGIN
     IF $1 IS NULL THEN
         return NULL;
     END IF;
-    SELECT port_name INTO id FROM nports WHERE port_id = $1;
+    SELECT port_name INTO name FROM nports WHERE port_id = $1;
     IF NOT FOUND THEN
         PERFORM error('IdNotFound', $1, 'port_id', 'port_id2name()', 'nports');
     END IF;
-    RETURN id;
+    RETURN name;
+END
+$$ LANGUAGE plpgsql;
+
+-- Port ID-je alapján visszaadja az nevét, ha az ID nem létezik, dob egy kizárást+hiba rekord
+CREATE OR REPLACE FUNCTION port_id2full_name(bigint) RETURNS varchar(65) AS $$
+DECLARE
+    name varchar(65);
+BEGIN
+    IF $1 IS NULL THEN
+        return NULL;
+    END IF;
+    SELECT node_id2name(node_id) || ':' || port_name INTO name FROM nports WHERE port_id = $1;
+    IF NOT FOUND THEN
+        PERFORM error('IdNotFound', $1, 'port_id', 'port_id2full_name()', 'nports');
+    END IF;
+    RETURN name;
 END
 $$ LANGUAGE plpgsql;
 
