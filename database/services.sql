@@ -257,7 +257,7 @@ COMMENT ON FUNCTION host_service_id2name(bigint) IS 'A host_service_id -ből a h
 CREATE TABLE host_service_logs (
     host_service_log_id bigserial      PRIMARY KEY,
     host_service_id     bigint
-        REFERENCES host_services(host_service_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
+        REFERENCES host_services(host_service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     date_of             timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     old_state           notifswitch     NOT NULL,
     old_soft_state      notifswitch     NOT NULL,

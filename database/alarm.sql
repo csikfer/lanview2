@@ -11,7 +11,7 @@ CREATE TABLE alarms (
     host_service_id bigint
             REFERENCES host_services(host_service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE,
     daemon_id       bigint     DEFAULT NULL
-            REFERENCES host_services(host_service_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE CASCADE,
+            REFERENCES host_services(host_service_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
     first_status    notifswitch NOT NULL,
     max_status      notifswitch NOT NULL,
     last_status     notifswitch NOT NULL,

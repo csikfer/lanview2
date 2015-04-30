@@ -244,7 +244,7 @@ bool cRecordTableModel::removeRow(const QModelIndex &mi)
 bool cRecordTableModel::updateRow(const QModelIndex& mi, cRecordAny *pRec)
 {
     int row = mi.row();
-    if (isContIx(_records, row)) EXCEPTION(EPROGFAIL);
+    if (!isContIx(_records, row)) EXCEPTION(EPROGFAIL);
     beginRemoveRows(QModelIndex(), row, row);
     delete _records.pullAt(row);
     endRemoveColumns();

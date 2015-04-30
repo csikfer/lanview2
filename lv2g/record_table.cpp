@@ -48,7 +48,7 @@ void cRecordTableFilter::setFilter(int i)
             closed1 = closed2 = true;
         }
         tTableShapeFilters& filters = field.shapeField.shapeFilters;
-        if (isContIx(filters, i)) EXCEPTION(EDATA);
+        if (!isContIx(filters, i)) EXCEPTION(EDATA);
         pFilter = filters[i];
         iFilter = i;
     }
