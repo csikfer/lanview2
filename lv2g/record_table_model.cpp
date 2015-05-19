@@ -97,16 +97,16 @@ cRecordAny *cRecordViewModelBase::qGetRecord(QSqlQuery& q)
     return p;
 }
 
-bool cRecordViewModelBase::updateRec(const QModelIndex& mi, cRecordAny *pRec)
+int cRecordViewModelBase::updateRec(const QModelIndex& mi, cRecordAny *pRec)
 {
     sqlBegin(*pq);
     if (!cErrorMessageBox::condMsgBox(pRec->tryUpdate(*pq, false))) {
         sqlRollback(*pq);
-        return false;
+        return 0;
     }
     sqlEnd(*pq);
     PDEB(VVERBOSE) << "Update returned : " << pRec->toString() << endl;
-    return updateRow(mi, pRec);
+    return updateRow(mi, pRec) ? 1 : 0;
 }
 
 bool cRecordViewModelBase::insertRec(cRecordAny *pRec)
@@ -247,10 +247,11 @@ bool cRecordTableModel::updateRow(const QModelIndex& mi, cRecordAny *pRec)
     if (!isContIx(_records, row)) EXCEPTION(EPROGFAIL);
     beginRemoveRows(QModelIndex(), row, row);
     delete _records.pullAt(row);
-    endRemoveColumns();
+    endRemoveRows();
     beginInsertRows(QModelIndex(), row, row);
     _records.insert(row, pRec);
-    return false;
+    endInsertRows();
+    return true;
 }
 
 bool cRecordTableModel::insertRow(cRecordAny *pRec)

@@ -263,8 +263,8 @@ public:
     virtual QModelIndexList selectedRows() = 0;
     virtual QModelIndex actIndex() = 0;
     virtual cRecordAny *actRecord(const QModelIndex& _mi = QModelIndex()) = 0;
-    virtual cRecordAny *nextRow(QModelIndex *pMi)   = 0;
-    virtual cRecordAny *prevRow(QModelIndex *pMi)   = 0;
+    virtual cRecordAny *nextRow(QModelIndex *pMi, int _upRes = 1)   = 0;
+    virtual cRecordAny *prevRow(QModelIndex *pMi, int _upRes = 1)   = 0;
     virtual void selectRow(const QModelIndex& mi)   = 0;
     qlonglong   actId() { cRecordAny *p = actRecord(); return p == NULL ? NULL_ID : p->getId(); }
 
@@ -316,8 +316,8 @@ public:
     virtual QModelIndexList selectedRows();
     virtual QModelIndex actIndex();
     virtual cRecordAny *actRecord(const QModelIndex& _mi = QModelIndex());
-    virtual cRecordAny *nextRow(QModelIndex *pMi);
-    virtual cRecordAny *prevRow(QModelIndex *pMi);
+    virtual cRecordAny *nextRow(QModelIndex *pMi, int _upRes = 1);
+    virtual cRecordAny *prevRow(QModelIndex *pMi, int _upRes = 1);
     virtual void selectRow(const QModelIndex& mi);
     void empty();
 

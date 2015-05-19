@@ -616,13 +616,12 @@ void cRecordViewBase::insert()
             pid = pARec->getId();
         }
     }
-
+    // A dialógusban megjelenítendő nyomógombok.
     int buttons = enum2set(DBT_OK, DBT_INSERT, DBT_CANCEL);
-    cRecordAny rec;
     switch (tit) {
     case TIT_NO:
     case TIT_ONLY: {
-        rec.setType(pRecDescr);
+        cRecordAny rec(pRecDescr);
         // Ha CHILD, akkor a owner id adott
         if (flags & RTF_CHILD) {
             int ofix = rec.descr().ixToOwner();
@@ -633,13 +632,14 @@ void cRecordViewBase::insert()
             int pfix = rec.descr().ixToParent();
             rec[pfix] = pid;
         }
-        cRecordDialog   rd(rec, *pTableShape, buttons, pWidget());  // A rekord szerkesztő dialógus
+        cRecordDialog   rd(*pTableShape, buttons, pWidget());  // A rekord szerkesztő dialógus
+        rd.restore(&rec);
         while (1) {
             int r = rd.exec();
             if (r == DBT_INSERT || r == DBT_OK) {   // Csak az OK, és Insert gombra csinálunk valamit
                 bool ok = rd.accept();
                 if (ok) {
-                    cRecordAny *pRec = dynamic_cast<cRecordAny *>(rec.dup());
+                    cRecordAny *pRec = new cRecordAny(rd.record());
                     ok = pModel->insertRec(pRec);
                     if (!ok) delete pRec;
                     else if (flags & RTF_GROUP) {    // Group, tagja listába van a beillesztés?
@@ -668,16 +668,18 @@ void cRecordViewBase::insert()
         QStringList tableNames;
         tableNames << pTableShape->getName(_sTableName);
         tableNames << inheritTableList;
+        tableNames.removeDuplicates();
         foreach (QString tableName, tableNames) {
             shapes << getInhShape(tableName);
         }
+        // A parent ID, és owner ID -t ha van a konstruktor állítja be a rekord objektumokban.
         cRecordDialogInh rd(*pTableShape, shapes, buttons, owner_id, pid, true, pWidget());
         while (1) {
             int r = rd.exec();
             if (r == DBT_INSERT || r == DBT_OK) {
                 bool ok = rd.accept();
                 if (ok) {
-                    cRecordAny *pRec = dynamic_cast<cRecordAny *>(rec.dup());
+                    cRecordAny *pRec = new cRecordAny(rd.record());
                     ok = pModel->insertRec(pRec);
                     if (!ok) delete pRec;
                 }
@@ -702,9 +704,9 @@ void cRecordViewBase::modify()
 {
     QModelIndex index = actIndex();
     if (index.isValid() == false) return;
-    cRecordAny *pRec = actRecord(index);
+    cRecordAny *pRec = actRecord(index);    // pointer az aktuális rekordra, a beolvasott/megjelenített rekord listában
     if (pRec == NULL) return;
-    pRec = (cRecordAny *)pRec->dup();
+    pRec = new cRecordAny(*pRec);           // Saját másolat
     int buttons = enum2set(DBT_OK, DBT_CANCEL, DBT_NEXT, DBT_PREV);
     cRecordDialog *    pRd  = NULL;
     cRecordDialogInh * pRdt = NULL;
@@ -716,7 +718,7 @@ void cRecordViewBase::modify()
     case TIT_NO:
     case TIT_ONLY:
         pShape = getInhShape(pRec->descr());
-        pRd = new cRecordDialog(*pRec, *pShape, buttons, pWidget());
+        pRd = new cRecordDialog(*pShape, buttons, pWidget());
         break;
     case TIT_LISTED_REV: {
         QStringList tableNames;
@@ -751,10 +753,11 @@ void cRecordViewBase::modify()
             if (!e) EXCEPTION(EPROGFAIL);   // Ha egyet sem az is gáz
             pRd = pRdt->actPDialog();
         }
-        pRd->restore();
+        pRd->restore(pRec);     // lemásolja a dialogus saját adatterületére
         if (pRdt != NULL) id = pRdt->exec(false);
         else              id =  pRd->exec(false);
-        // Ellenörzés, következő, vagy kilép
+        // Ellenörzés, következő/előző, vagy kilép
+        int updateResult = 0;
         switch(id) {
         case DBT_OK:
         case DBT_NEXT:
@@ -762,29 +765,39 @@ void cRecordViewBase::modify()
             // Update DB
             bool r = pRd->accept(); // Bevitt adatok rendben?
             if (!r) {
+                // Nem ok az adat
                 QMessageBox::warning(pWidget(), trUtf8("Adat hiba"), pRd->errMsg());
+                // Újra
                 continue;
             }
             else {
-                if (!pModel->updateRec(index, pRec)) continue;
-                // Nincs felszabadítva, de már nem a mienk
+                // Leadminisztráljuk kiírjuk. Ha hiba van, azt a hívott metódus kiírja, és újrázunk.
+                *pRec = pRd->record();
+                updateResult = pModel->updateRec(index, pRec);
+                if (!updateResult) {
+                    continue;
+                }
+                // Nincs felszabadítva, de már nem a mienk (betettük a rekord listába, régi elem felszabadítva)
                 pRec = NULL;
             }
+            // pRec == NULL
             if (id == DBT_OK) {
-                // A select-et helyreállítjuk (updateRow elszúrhatta
+                // A row-select-et helyreállítjuk (updateRow elszúrhatta
                 if (index.isValid()) selectRow(index);
                 break;    // OK: vége
             }
+            // A nexRow prevRow egy allokált objektumot ad vissza a bemásolt adattartalommal.
             if (id == DBT_NEXT) {       // A következő szerkesztése
-                pRec = nextRow(&index);
+                pRec = nextRow(&index, updateResult);
             }
             else {                      // Az előző szerkesztése
-                pRec = prevRow(&index);
+                pRec = prevRow(&index, updateResult);
             }
-            if (pRec == NULL) break;
+            if (pRec == NULL) break;    // Nem volt előző/következő
             continue;
         }
         case DBT_CANCEL:
+            delete pRec;
             break;
         default:
             EXCEPTION(EPROGFAIL);
@@ -792,10 +805,10 @@ void cRecordViewBase::modify()
         }
         break;
     }
-    pDelete(pShape);
-    pDelete(pShapes);
     if (pRdt == NULL) pDelete(pRd);
     else              pDelete(pRdt);
+    pDelete(pShape);
+    pDelete(pShapes);
     pDelete(pRec);
 }
 
@@ -1018,12 +1031,14 @@ void cRecordViewBase::clickedHeader(int)
 void cRecordViewBase::selectionChanged(QItemSelection,QItemSelection)
 {
     if (flags & (RTF_OVNER | RTF_GRPMBR)) {
+        qlonglong _actId = NULL_ID;
+        if (selectedRows().size() > 0) _actId = actId();
         if (pRightTable == NULL) EXCEPTION(EPROGFAIL);
-        pRightTable->owner_id = actId();
+        pRightTable->owner_id = _actId;
         pRightTable->refresh();
         if (flags & RTF_GRPMBR) {
             if (pRightTable2 == NULL) EXCEPTION(EPROGFAIL);
-            pRightTable2->owner_id = actId();
+            pRightTable2->owner_id = _actId;
             pRightTable2->refresh();
         }
     }
@@ -1261,8 +1276,9 @@ cRecordAny *cRecordTable::actRecord(const QModelIndex &_mi)
     return NULL;
 }
 
-cRecordAny * cRecordTable::nextRow(QModelIndex *pMi)
+cRecordAny * cRecordTable::nextRow(QModelIndex *pMi, int _upRes)
 {
+    (void)_upRes;
     if (pMi->isValid() == false) return NULL;    // Nincs aktív
     int row = pMi->row();
     row++;
@@ -1288,8 +1304,9 @@ cRecordAny * cRecordTable::nextRow(QModelIndex *pMi)
     return pRec;
 }
 
-cRecordAny *cRecordTable::prevRow(QModelIndex *pMi)
+cRecordAny *cRecordTable::prevRow(QModelIndex *pMi, int _upRes)
 {
+    (void)_upRes;
     if (pMi->isValid() == false) return NULL;    // Nincs aktív
     int row = pMi->row();
     row--;

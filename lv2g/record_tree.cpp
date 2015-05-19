@@ -148,7 +148,7 @@ cRecordAny *cRecordTree::actRecord(const QModelIndex &_mi)
     return pn->pData;
 }
 
-cRecordAny *cRecordTree::nextRow(QModelIndex *pMi)
+cRecordAny *cRecordTree::nextRow(QModelIndex *pMi, int _upRes)
 {
     if (!pMi->isValid()) return NULL;
     cTreeNode * pn = pTreeModel()->nodeFromIndex(*pMi);
@@ -157,7 +157,12 @@ cRecordAny *cRecordTree::nextRow(QModelIndex *pMi)
         return NULL;
     }
     int row = pn->row();
-    ++row;
+    if (_upRes == 1) {  // Nem változott a fa szerkezete
+        ++row;
+    }
+    else {      // Megváltozott a fa szerkezete, vagyis az aktuális parent-ből el lett távolítva.
+        ;   // A sor sorszáma változatlan
+    }
     if (isContIx(*pn->parent->pChildrens, row)) {
         *pMi = pTreeModel()->index(row, pMi->column(), pMi->parent());
         if (pMi->isValid()) {
@@ -169,8 +174,9 @@ cRecordAny *cRecordTree::nextRow(QModelIndex *pMi)
     return NULL;
 }
 
-cRecordAny *cRecordTree::prevRow(QModelIndex *pMi)
+cRecordAny *cRecordTree::prevRow(QModelIndex *pMi, int _upRes)
 {
+    (void)_upRes;
     if (!pMi->isValid()) return NULL;
     cTreeNode * pn = pTreeModel()->nodeFromIndex(*pMi);
     if (pn->parent == NULL) {

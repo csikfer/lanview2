@@ -118,3 +118,6 @@ unix:LIBS += -lsnmp
 # linux: message( "linux on" )
 # win32: message( "Win32 on" )
 # message( $$INCLUDEPATH )
+
+DISTFILES += \
+    ../lv2gui/lv2gui.supp

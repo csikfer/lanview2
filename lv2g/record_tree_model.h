@@ -72,7 +72,7 @@ public:
     virtual bool removeRow(const QModelIndex & mi);
 
     int checkUpdateRow(const QModelIndex& mi, cRecordAny * pRec, QModelIndex& new_parent);
-    virtual bool updateRec(const QModelIndex& mi, cRecordAny * pRec);
+    virtual int updateRec(const QModelIndex& mi, cRecordAny * pRec);
     virtual bool updateRow(const QModelIndex &mi, cRecordAny *pRec);
 
     virtual bool insertRow(cRecordAny *pRec);

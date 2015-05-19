@@ -107,13 +107,15 @@ void cDialogButtons::init(int buttons, QBoxLayout *pL)
 cRecordDialogBase::cRecordDialogBase(const cTableShape &__tm, int _buttons, bool dialog, QWidget *par)
     : QObject(par)
     , descriptor(__tm)
+    , rDescr(*cRecStaticDescr::get(__tm.getName(_sTableName), __tm.getName(_sSchemaName)))
     , name(descriptor.getName())
     , _errMsg()
 {
     isDialog = dialog;
-    _pLoop = NULL;
+    _pRecord = NULL;
+    _pLoop   = NULL;
     _pWidget = NULL;
-    _pButtons = NULL;
+    _pButtons= NULL;
 
     pq = newQuery();
     setObjectName(name);
@@ -136,6 +138,7 @@ cRecordDialogBase::~cRecordDialogBase()
     if (!close()) EXCEPTION(EPROGFAIL);
     delete _pWidget;
     delete pq;
+    pDelete(_pRecord);
 }
 
 int cRecordDialogBase::exec(bool _close)
@@ -160,11 +163,19 @@ void cRecordDialogBase::_pressed(int id)
     else                     buttonPressed(id);
 }
 
+cRecord& cRecordDialogBase::record()
+{
+    if (_pRecord == NULL) {
+        _pRecord = new cRecordAny(&rDescr);
+    }
+    return *_pRecord;
+}
+
+
 /* ************************************************************************************************* */
 
-cRecordDialog::cRecordDialog(cRecord &rec, cTableShape& __tm, int _buttons, bool dialog, QWidget *parent)
+cRecordDialog::cRecordDialog(const cTableShape& __tm, int _buttons, bool dialog, QWidget *parent)
     : cRecordDialogBase(__tm, _buttons, dialog, parent)
-    , _record(rec)
     , fields()
 {
     pVBoxLayout = NULL;
@@ -172,7 +183,6 @@ cRecordDialog::cRecordDialog(cRecord &rec, cTableShape& __tm, int _buttons, bool
     pSplitter = NULL;
     pSplittLayout = NULL;
     pFormLayout = NULL;
-    if (descriptor.getName(_sTableName) != _record.tableName()) EXCEPTION(EDATA);
     if (descriptor.shapeFields.size() == 0) EXCEPTION(EDATA);
     init();
 }
@@ -222,6 +232,7 @@ void cRecordDialog::init()
         }
     }
     tTableShapeFields::const_iterator i, e = descriptor.shapeFields.cend();
+    _pRecord = new cRecordAny(&rDescr);
     int cnt = 0;
     for (i = descriptor.shapeFields.cbegin(); i != e; ++i) {
         if (++cnt > maxFields) {
@@ -230,9 +241,9 @@ void cRecordDialog::init()
             pSplitter->addWidget(_frame(pFormLayout, _pWidget));
         }
         const cTableShapeField& mf = **i;
-        int fieldIx = _record.toIndex(mf.getName());
+        int fieldIx = rDescr.toIndex(mf.getName());
         bool setRo = isReadOnly || mf.getBool(_sIsReadOnly);
-        cFieldEditBase *pFW = cFieldEditBase::createFieldWidget(descriptor, _record[fieldIx], SY_NO, setRo, _pWidget);
+        cFieldEditBase *pFW = cFieldEditBase::createFieldWidget(descriptor, (*_pRecord)[fieldIx], SY_NO, setRo, _pWidget);
         fields.append(pFW);
         QWidget * pw = pFW->pWidget();
         pw->setObjectName(mf.getName());
@@ -244,40 +255,42 @@ void cRecordDialog::init()
     DBGFNL();
 }
 
-cRecord& cRecordDialog::record()
+void cRecordDialog::restore(cRecord *_pRec)
 {
-    return _record;
-}
-
-void cRecordDialog::restore()
-{
-    int i, n = _record.descr().cols();
+    if (_pRec != NULL) {
+        pDelete(_pRecord);
+        _pRecord = new cRecordAny(*_pRec);
+    }
+    else if (_pRecord == NULL) {
+        _pRecord = new cRecordAny(&rDescr);
+    }
+    int i, n = rDescr.cols();
     for (i = 0; i < n; i++) {
-        fields[i]->set(_record.get(i));
+        fields[i]->set(_pRecord->get(i));
     }
 }
 
 bool cRecordDialog::accept()
 {
     _errMsg.clear();    // Töröljük a hiba stringet
-    int i, n = _record.descr().cols();
+    int i, n = rDescr.cols();
     // record.set();           // NEM !! Kinullázzuk a rekordot
     for (i = 0; i < n; i++) {   // Végigszaladunk a mezőkön
         cFieldEditBase& fe = *fields[i];
-        if (fe.isReadOnly()) continue;      // FEltételezzük, hogy RO esetén az van a mezőben aminek lennie kell.
-        int s = _record._stat;                   // Mentjük a hiba bitet,
-        _record._stat &= ~cRecord::ES_DEFECTIVE; // majd töröljük, mert mezőnkként kell
+        if (fe.isReadOnly()) continue;      // Feltételezzük, hogy RO esetén az van a mezőben aminek lennie kell.
+        int s = _pRecord->_stat;                   // Mentjük a hiba bitet,
+        _pRecord->_stat &= ~cRecord::ES_DEFECTIVE; // majd töröljük, mert mezőnkként kell
         QVariant fv = fields[i]->get();     // A mező widget-jéből kivesszük az értéket
         if (fv.isNull() && fe._isInsert && fe._hasDefault) continue;    // NULL, insert, van alapérték
-        PDEB(VERBOSE) << "Dialog -> obj. field " << _record.columnName(i) << " = " << debVariantToString(fv) << endl;
-        _record.set(i, fv);                      // Az értéket bevéssük a rekordba
-        if (_record._stat & cRecord::ES_DEFECTIVE) {
-            DWAR() << "Invalid data : field " << _record.columnName(i) << " = " << debVariantToString(fv) << endl;
-            _errMsg += trUtf8("Adat hiba a %1 mezőnél\n").arg(_record.columnName(i));
+        PDEB(VERBOSE) << "Dialog -> obj. field " << _pRecord->columnName(i) << " = " << debVariantToString(fv) << endl;
+        _pRecord->set(i, fv);                      // Az értéket bevéssük a rekordba
+        if (_pRecord->_stat & cRecord::ES_DEFECTIVE) {
+            DWAR() << "Invalid data : field " << _pRecord->columnName(i) << " = " << debVariantToString(fv) << endl;
+            _errMsg += trUtf8("Adat hiba a %1 mezőnél\n").arg(_pRecord->columnName(i));
         }
-        _record._stat |= s & cRecord::ES_DEFECTIVE;
+        _pRecord->_stat |= s & cRecord::ES_DEFECTIVE;
     }
-    return 0 == (_record._stat & cRecord::ES_DEFECTIVE);
+    return 0 == (_pRecord->_stat & cRecord::ES_DEFECTIVE);
 }
 
 
@@ -286,7 +299,6 @@ bool cRecordDialog::accept()
 cRecordDialogInh::cRecordDialogInh(const cTableShape& _tm, tRecordList<cTableShape>& _tms, int _buttons, qlonglong _oid, qlonglong _pid, bool dialog, QWidget * parent)
     : cRecordDialogBase(_tm, _buttons, dialog, parent)
     , tabDescriptors(_tms)
-    , recs()
     , tabs()
 {
     pVBoxLayout = NULL;
@@ -300,33 +312,33 @@ cRecordDialogInh::cRecordDialogInh(const cTableShape& _tm, tRecordList<cTableSha
 void cRecordDialogInh::init(qlonglong _oid, qlonglong _pid)
 {
     DBGFN();
-    pTabWidget = new QTabWidget;
+    pTabWidget = new QTabWidget;                // Az egész egy tab widgetben, minden rekord típus egy tab.
     pTabWidget->setObjectName(name + "_tab");
     pVBoxLayout = new QVBoxLayout;
     pVBoxLayout->setObjectName(name + "_VBox");
     _pWidget->setLayout(pVBoxLayout);
     pVBoxLayout->addWidget(pTabWidget);
-    pVBoxLayout->addWidget(_pButtons->pWidget());
+    pVBoxLayout->addWidget(_pButtons->pWidget());   // Nyomógombok a TAB alatt
+    // Egyenként megcsináljuk a widgeteket a különböző rekord típusokra.
     int i, n = tabDescriptors.size();
     for (i = 0; i < n; ++i) {
-        cTableShape& shape = *tabDescriptors[i];
+        const cTableShape& shape = *tabDescriptors[i];
         cRecordAny * pRec = new cRecordAny(shape.getName(_sTableName), shape.getName(_sSchemaName));
-        if (_oid != NULL_ID) {
+        if (_oid != NULL_ID) {  // Ha van owner, akkor az ID-jét beállítjuk
             int oix = pRec->descr().ixToOwner();
             pRec->setId(oix, _oid);
         }
-        if (_pid != NULL_ID) {
+        if (_pid != NULL_ID) {  // Ha van parent, akkor az ID-jét beállítjuk
             int pix = pRec->descr().ixToParent();
             pRec->setId(pix, _pid);
 
         }
-        cRecordDialog * pDlg = new cRecordDialog(*pRec, shape, 0, false, pTabWidget);
-        recs << pRec;
+        cRecordDialog * pDlg = new cRecordDialog(shape, 0, false, pTabWidget);
         tabs << pDlg;
         pTabWidget->addTab(pDlg->pWidget(), shape.getName());
     }
     pTabWidget->setCurrentIndex(0);
-    _pWidget->adjustSize();
+    _pWidget->adjustSize(); //?
     DBGFNL();
 }
 

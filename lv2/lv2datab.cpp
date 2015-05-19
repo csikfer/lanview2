@@ -1928,15 +1928,11 @@ bool cRecStaticDescr::isKey(int i) const
     return false;
 }
 
-QString cRecStaticDescr::checkId2Name(QSqlQuery& q, const QString& _tn, const QString& _sn, bool __ex)
+
+QString cRecStaticDescr::checkId2Name(QSqlQuery& q) const
 {
-    const cRecStaticDescr *pDescr = get(_tn, _sn, !__ex);
-    if (pDescr == NULL) {
-        if (__ex) EXCEPTION(EDATA);
-        return QString();
-    }
-    const QString& sIdName     = pDescr->idName();
-    const QString& sSchemaName = pDescr->schemaName();
+    const QString& sIdName     = idName();
+    const QString& sSchemaName = schemaName();
     // Az id -> name konverziós függvény :
     QString sFnToName = sIdName + "2name"; // Az alapértelmezett név
     // Csak a nevet ellenőrizzük, ilyen neve ne legyen més függvénynek !!
@@ -1944,8 +1940,8 @@ QString cRecStaticDescr::checkId2Name(QSqlQuery& q, const QString& _tn, const QS
             .arg(sSchemaName).arg(sFnToName);
     if (!q.exec(sql)) SQLPREPERR(q, sql);
     if (!q.first() || q.value(0).toInt() == 1) return sFnToName;    // Definiálva van a keresett függvény, OK
-    const QString& sNameName   = pDescr->nameName();
-    const QString& sTableName  = pDescr->tableName();
+    const QString& sNameName   = nameName();
+    const QString& sTableName  = tableName();
     DWAR() << QObject::trUtf8("Function %1 not found, create ...").arg(sFnToName) << endl;
     sql = QString(
          "CREATE OR REPLACE FUNCTION %1(bigint) RETURNS varchar(32) AS $$"
@@ -1966,6 +1962,17 @@ QString cRecStaticDescr::checkId2Name(QSqlQuery& q, const QString& _tn, const QS
     if (!q.exec(sql)) SQLPREPERR(q, sql);
     PDEB(INFO) << QObject::trUtf8("Created procedure : %1").arg(quotedString(sql)) << endl;
     return sFnToName;
+
+}
+
+QString cRecStaticDescr::checkId2Name(QSqlQuery& q, const QString& _tn, const QString& _sn, bool __ex)
+{
+    const cRecStaticDescr *pDescr = get(_tn, _sn, !__ex);
+    if (pDescr == NULL) {
+        if (__ex) EXCEPTION(EDATA);
+        return QString();
+    }
+    return pDescr->checkId2Name(q);
 }
 
 bool cRecStaticDescr::operator<(const cRecStaticDescr& __o) const
@@ -2370,7 +2377,7 @@ QString cRecord::getName() const {
     }
     if (isNull(d.idIndex())) return QString();
     QSqlQuery q = getQuery();
-    QString fn = d.checkId2Name(q, d.tableName(), d.schemaName());
+    QString fn = d.checkId2Name(q);
     return execSqlTextFunction(q, fn, get(d.idIndex()));
 }
 const QVariant& cRecord::get(int __i) const

@@ -44,7 +44,8 @@ int cTreeNode::row() const
      return 0;
  }
 
-/* */
+/* -------------------------------------------------------------------------------- */
+
 cRecordTreeModel::cRecordTreeModel(cRecordTree&  _rt)
     : QAbstractItemModel(_rt.pWidget())
     , cRecordViewModelBase(_rt)
@@ -85,7 +86,7 @@ QModelIndex cRecordTreeModel::findNode(qlonglong pid, const QModelIndex& mi)
 QModelIndex cRecordTreeModel::index(int row, int column, const QModelIndex& parent) const
 {
     if (pActRootNode == NULL) {
-        DWAR() << "pRootNode is NULL." << endl;
+        DWAR() << "pActRootNode is NULL." << endl;
         return QModelIndex();
     }
     if (!hasIndex(row, column, parent)) {
@@ -94,7 +95,7 @@ QModelIndex cRecordTreeModel::index(int row, int column, const QModelIndex& pare
     }
     cTreeNode *parentNode = nodeFromIndex(parent);
     if (parentNode->pChildrens == NULL) EXCEPTION(EPROGFAIL);
-    PDEB(VVERBOSE) << "Index: " << VDEB(row) << VDEB(column) << " parent = " << parentNode->name() << endl;
+//    PDEB(VVERBOSE) << "Index: " << VDEB(row) << VDEB(column) << " parent = " << parentNode->name() << endl;
     if (parentNode->pChildrens->size() <= row) {
         DWAR() << "Invalid row = " << row << "child number : " << parentNode->pChildrens->size() << endl;
         return QModelIndex();
@@ -129,11 +130,12 @@ int         cRecordTreeModel::rowCount(const QModelIndex &parent) const
     return parentNode->pChildrens->count();
 }
 
-int         cRecordTreeModel::columnCount( const QModelIndex & parent) const
+int         cRecordTreeModel::columnCount(const QModelIndex & parent) const
 {
     (void)parent;
     return _col2field.size();
 }
+
 QVariant    cRecordTreeModel::data(const QModelIndex & index, int role) const
 {
     if (!index.isValid()) {
@@ -146,7 +148,7 @@ QVariant    cRecordTreeModel::data(const QModelIndex & index, int role) const
     if (col < _col2field.size()) {
         int fix = _col2field[col];  // Mező index a rekordbam
         int mix = _col2shape[col];  // Index a leíróban
-        // Ettül a DEBUG üzenettől nagyon belassul!!!
+        // Ettöl a DEBUG üzenettől nagyon belassul!!!
 //        _DBGFN() << " name = " << node->name() << "; " << VDEB(col) << VDEB(role) << endl;
         if (role == Qt::DisplayRole)       return node->pData->view(*pq, fix);
         if (role == Qt::TextAlignmentRole) return columns[mix]->dataAlign;
@@ -161,6 +163,7 @@ QVariant    cRecordTreeModel::data(const QModelIndex & index, int role) const
     }
     return QVariant();
 }
+
 QVariant    cRecordTreeModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     return _headerData(section, orientation, role);
@@ -239,12 +242,14 @@ void cRecordTreeModel::readChilds(cTreeNode *pNode)
 
 /// Törli a csomóponthoz rendelt rekordot, és a gyerek csomópontokat, vagyis a teljes rész fát.
 /// A csomopontot eltávolítja a pearent-ből.
-/// Az adatok változásáról nem küld szignáltt.
+/// Az adatok változásáról nem küld szignáltt. Rekourzív.
 bool cRecordTreeModel::removeNode(cTreeNode *pn)
 {
-    if (pn->parent != NULL) {   // Töröljük az elemet a parentből
-        pn->parent->pChildrens->removeAt(pn->row());
+    if (pn->parent != NULL) {
+        EXCEPTION(EPROGFAIL);   // A gyökér törlése nem értelmezhető
     }
+    // Töröljük az elemet a parentből
+    pn->parent->pChildrens->removeAt(pn->row());
     if (pn->pChildrens == NULL) {   // Még be sincsenek olvasva a gyerköcök
         readChilds(pn);
     }
@@ -306,7 +311,7 @@ bool cRecordTreeModel::removeRec(const QModelIndex & mi)
 bool cRecordTreeModel::removeRow(const QModelIndex & mi)
 {
     (void)mi;
-    // EXCEPTION(ENOTSUPP);
+    EXCEPTION(ENOTSUPP);
     return false;
 }
 
@@ -333,33 +338,34 @@ int cRecordTreeModel::checkUpdateRow(const QModelIndex& mi, cRecordAny * pRec, Q
     }
 }
 
-bool cRecordTreeModel::updateRec(const QModelIndex& mi, cRecordAny * pRec)
+int cRecordTreeModel::updateRec(const QModelIndex& mi, cRecordAny * pRec)
 {
     QModelIndex npi;
     // Lecsekkoljuk, változott-e a fa, az új rendben van-e, és mi a parent új indexe
     int chkr = checkUpdateRow(mi, pRec, npi);
     if (chkr == 0) {    // Az új fa szerkezet nem OK
         QMessageBox::warning(recordView.pWidget(), trUtf8("Hibás adatok"), trUtf8("Nem megengedett szülő megadása. Hurok a fában."));
-        return false;
+        return 0;
     }
     if (!cErrorMessageBox::condMsgBox(pRec->tryUpdate(*pq, false))) {
-        return false;
+        return 0;
     }
     int row = mi.row(); // A modosított rekord eredeti sorszáma a parentjében
     cTreeNode *pn = nodeFromIndex(mi);  // A modosított elem (node)
     cTreeNode *pp = pn->parent;         // A szülő
     // Az eredeti sort eltávolítjuk.
-    beginRemoveRows(mi.parent(), row, row);
-    delete pp->pChildrens->takeAt(row)->pData; // pp->pChildrens->takeAt(row) === pn
-    pn->pData = pRec;
-    endRemoveRows();
     switch (chkr) {
-    case 1:
-        beginInsertRows(mi.parent(), row, row);
-        pp->pChildrens->insert(row, pn);    // A modisított adattartalmut visszatesszük ugyan oda
-        endInsertRows();
+    case 1: {
+        QModelIndex topLeft     = index(row, 0,                    mi.parent());
+        QModelIndex bottomRight = index(row, _col2field.size() -1, mi.parent());
+        dataChanged(topLeft, bottomRight);
         break;
+    }
     case 2: {
+        beginRemoveRows(mi.parent(), row, row);
+        delete pp->pChildrens->takeAt(row)->pData; // pp->pChildrens->takeAt(row) === pn
+        pn->pData = pRec;
+        endRemoveRows();
         cTreeNode *pnp = nodeFromIndex(npi);
         row = pnp->rows();
         beginInsertRows(npi, row, row);
@@ -369,17 +375,17 @@ bool cRecordTreeModel::updateRec(const QModelIndex& mi, cRecordAny * pRec)
     }
     default:
         EXCEPTION(EPROGFAIL);
-        return false;
+        return 0;
     }
-    return true;
+    return chkr;
 }
 
 bool cRecordTreeModel::updateRow(const QModelIndex& mi, cRecordAny * pRec)
 {
     (void)mi;
     (void)pRec;
-//  EXCEPTION(ENOTSUPP);
-    return false;
+    EXCEPTION(ENOTSUPP);
+    return false; //
 }
 
 bool cRecordTreeModel::insertRow(cRecordAny *pRec)

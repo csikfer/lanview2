@@ -63,7 +63,7 @@ public:
     /// A régi pointer felszabadítja, a paraméterként megadottat, pedig szintén ő szabadítja fel, ha már nem kell.
     /// @return ha elvégezte a műveletet true, ha olyan sort adunk meg, ami nem létezik, akkor false.
     ///  ekkor a paraméterként kapott pointert nem szabadítja fel.
-    virtual bool updateRec(const QModelIndex &mi, cRecordAny *pRec);
+    virtual int updateRec(const QModelIndex &mi, cRecordAny *pRec);
     virtual bool updateRow(const QModelIndex &mi, cRecordAny *pRec) = 0;
 
     virtual bool insertRec(cRecordAny *pRec);
@@ -92,7 +92,7 @@ public:
     /// Törli a megadott indexű recordot a record set-ből
     virtual bool removeRow(const QModelIndex & mi);
 
-    /// Modosítj a awidget megfelelő sorát a megadott rekord tartalommal.
+    /// Modosítja a widget megfelelő sorát a megadott rekord tartalommal.
     virtual bool updateRow(const QModelIndex &mi, cRecordAny *pRec);
 
     /// Beszúr egy elemet a megadott indexű pont elé

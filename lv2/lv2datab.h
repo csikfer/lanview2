@@ -474,6 +474,10 @@ public:
     /// @param find_only Ha true, akkor NULL pointerrel tér vissza
     /// @exception cError * Ha _setReCallCnt értéke nagyobb vagy egyenlő mint 10, és objektumot kellene kreálni, akkor dob egy kizárást.
     static const cRecStaticDescr *get(qlonglong _oid, bool find_only = false);
+    /// A tábla esetén megnézi, hogy létezik-e a rekord ID-t névvé konvertáló függvény.
+    /// Ha létezik, akkor a nevével tér vissza. Ha nem, akkor megkísérli megkreálni.
+    /// Ha a megadott tábla descriptora még nem létezik, és __ex false, akkor egy üres stringgel tér vissza.
+    QString checkId2Name(QSqlQuery& q) const;
     /// A megadott tábla esetén megnézi, hogy létezik-e a rekord ID-t névvé konvertáló függvény.
     /// Ha létezik, akkor a nevével tér vissza. Ha nem, akkor megkísérli megkreálni.
     /// Ha a megadott tábla descriptora még nem létezik, és __ex false, akkor egy üres stringgel tér vissza.

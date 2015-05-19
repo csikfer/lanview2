@@ -65,7 +65,7 @@ public:
     cRecordDialogBase(const cTableShape &__tm, int _buttons, bool dialog = true, QWidget *par = NULL);
     /// destruktor
     ~cRecordDialogBase();
-    virtual cRecord& record() = 0;
+    virtual cRecord& record();
     /// A dialógust megvalósító widget objektum referenciájával tér vissza
     QWidget& widget()   { return *_pWidget; }
     /// A dialógust megvalósító widget objektum pointerével tér vissza
@@ -80,8 +80,10 @@ public:
     /// Ha _close igaz, de az isDialog adattagunk hamis, akkor kapunk egy kizárást.
     /// @return A dialógus ablak kilépési kódja, vagyis az aktívált nyomógombot reprezentáló enumeráxiós konstans értéke.
     int exec(bool _close = true);
-    /// A tábla model rekord
+    /// A tábla model rekord. A megjelenítés leírója, azonosítja a rekord decriptor-t.
     const cTableShape&      descriptor;
+    /// Rekord descriptor
+    const cRecStaticDescr&  rDescr;
     /// Az objektum neve
     const QString           name;
 public slots:
@@ -93,6 +95,8 @@ protected:
     QWidget                *_pWidget;
     /// Ha a dialógus ténylegesen egy QDialog objektumként lett létrehozva, akkor értéke true.
     bool                    isDialog;
+    /// A szerkesztendő objektum pointere. Az osztálydestruktor felszabadítja, ha nem NULL.
+    cRecord                *_pRecord;
     /// A nyomógombokat kezelő objektum példány
     cDialogButtons         *_pButtons;
     ///
@@ -122,15 +126,11 @@ public:
     /// @param _buttons A megjelenítendő nyomógombok bit maszkja
     /// @param dialog Ha a dialóus ablakot QDialog-ból kell létrehozni, akkor true, ha fals, akkor QWidget-ből.
     /// @param parent Az szülő widget opcionális parent pointere
-    cRecordDialog(cRecord& rec, cTableShape &__tm, int _buttons, bool dialog = true, QWidget * parent = NULL);
-    ///
-    virtual cRecord& record();
+    cRecordDialog(const cTableShape &__tm, int _buttons, bool dialog = true, QWidget * parent = NULL);
     /// A rekord adattag tartalmának a megjelenítése/megjelenítés visszaállítása
-    void restore();
+    void restore(cRecord *_pRec = NULL);
     /// A megjelenített értékek kiolvasása
     bool accept();
-    /// Az adat rekord referenciája (konstansnak kellene lennie, de macerás)
-    cRecord&                _record;
 protected:
     QVBoxLayout            *pVBoxLayout;
     //QHBoxLayout            *pHBoxLayout;
@@ -152,12 +152,12 @@ class LV2GSHARED_EXPORT cRecordDialogInh : public cRecordDialogBase {
 public:
     /// Konstruktor
     /// @param _tm A rekord/tábla megjelenítését ill szerkesztését vezérlő leíró (alap tábla ill. rekord típusra)
-    /// @param _tms A további lehetséges rekord leírók (vagy az összes ?)
+    /// @param _tms A lehetséges rekord leírók. Mind, tartalmazza a _tm -et is!
     /// @param _buttons A megjelenítendő nyomógombok bit maszkja
     /// @param _oid Tulajdonos rekord ID, ha nincs owner, akkor kötelezően NULL_ID.
-    /// @param _oid Parent rekord ID , ha nincs parent, vagy nincs megadva, akkor értéke NULL_ID
+    /// @param _pid Parent rekord ID , ha nincs parent, vagy nincs megadva, akkor értéke NULL_ID
     /// @param dialog Ha a dialóus ablakot QDialog-ból kell létrehozni, akkor true, ha fals, akkor QWidget-ből.
-    /// @param parent Az szülő widget opcionális parent pointere
+    /// @param parent Az szülő widget opcionális pointere
     cRecordDialogInh(const cTableShape &_tm, tRecordList<cTableShape>& _tms, int _buttons, qlonglong _oid = NULL_ID, qlonglong _pid = NULL_ID, bool dialog = true, QWidget * parent = NULL);
     ///
     virtual cRecord& record();
@@ -170,13 +170,12 @@ public:
     void set(const cRecord& _r) { tabs[actTab()]->set(_r); }*/
     ///
     bool accept();
-    const cRecStaticDescr& actType() { return recs[actTab()]->descr(); }
+    const cRecStaticDescr& actType() { return record().descr(); }
     void setTabEnabled(int index, bool enable) { pTabWidget->setTabEnabled(index, enable); }
     tRecordList<cTableShape>&tabDescriptors;
 protected:
     QVBoxLayout            *pVBoxLayout;
     QTabWidget             *pTabWidget;
-    tRecordList<cRecordAny> recs;
     QList<cRecordDialog *>  tabs;
 private:
     void init(qlonglong _oid, qlonglong _pid);
