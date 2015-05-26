@@ -642,7 +642,7 @@ void cRecordViewBase::insert()
                     cRecordAny *pRec = new cRecordAny(rd.record());
                     ok = pModel->insertRec(pRec);
                     if (!ok) delete pRec;
-                    else if (flags & RTF_GROUP) {    // Group, tagja listába van a beillesztés?
+                    else if (flags & RTF_INGROUP) {    // Group, tagja listába van a beillesztés?
                         ok = cGroupAny(*pRec, *(pUpper->actRecord())).insert(*pq, false);
                         if (!ok) {
                             QMessageBox::warning(pWidget(), trUtf8("Hiba"), trUtf8("A kijelölt tag felvétele az új csoportba sikertelen"),QMessageBox::Ok);
@@ -783,7 +783,9 @@ void cRecordViewBase::modify()
             // pRec == NULL
             if (id == DBT_OK) {
                 // A row-select-et helyreállítjuk (updateRow elszúrhatta
-                if (index.isValid()) selectRow(index);
+                if (index.isValid()) {
+                    selectRow(index);
+                }
                 break;    // OK: vége
             }
             // A nexRow prevRow egy allokált objektumot ad vissza a bemásolt adattartalommal.
@@ -882,7 +884,7 @@ void cRecordViewBase::initShape(cTableShape *pts)
 cRecordViewBase *cRecordViewBase::newRecordView(cTableShape *pts, cRecordViewBase * own, QWidget *par)
 {
     qlonglong type = pts->getId(_sTableShapeType);
-    if ((type & ENUM2SET(TS_GRPMBR)) && own != NULL) EXCEPTION(ENOTSUPP);
+    if ((type & ENUM2SET(TS_MEMBER)) && own != NULL) EXCEPTION(ENOTSUPP);
     if (type & ENUM2SET(TS_TREE)) {
         return new cRecordTree( pts, false, own, par);
     }
@@ -927,7 +929,7 @@ void cRecordViewBase::initGroup()
     QSplitter *pRightSplitter = new QSplitter(Qt::Vertical, _pWidget);      // A két táblát egymás alá egy splitterbe tesszük
     pMasterSplitter->addWidget(pRightSplitter);             // A splitterünk a fő splitter jobb oldalán
 
-    pts->setId(ixTableShapeType, ENUM2SET(TS_GROUP));     // Itt ez a típus kell, máshol is használható a leíró, más típussal.
+    pts->setId(ixTableShapeType, ENUM2SET(TS_INGROUP));     // Itt ez a típus kell, máshol is használható a leíró, más típussal.
     pRightTable  = cRecordViewBase::newRecordView(dynamic_cast<cTableShape *>(pts->dup()), this, _pWidget);    // A felső tábla
     pRightSplitter->addWidget(pRightTable->pWidget());      // Jobb oldali splitter felső részébe
 
@@ -952,7 +954,7 @@ void cRecordTable::setEditButtons()
         buttonDisable(DBT_MODIFY,  n != 1);
         buttonDisable(DBT_GET_OUT, n != 1);
         buttonDisable(DBT_PUT_IN,  n != 1);
-        buttonDisable(DBT_INSERT, (flags & RTF_GROUP) && (owner_id == NULL_ID));
+        buttonDisable(DBT_INSERT, (flags & RTF_INGROUP) && (owner_id == NULL_ID));
     }
 }
 
@@ -991,7 +993,7 @@ QStringList cRecordViewBase::refineWhere(QVariantList& qParams)
 QStringList cRecordViewBase::where(QVariantList& qParams)
 {
     QStringList wl;
-    int f = flags & (RTF_CHILD | RTF_GROUP | RTF_NOGROUP);
+    int f = flags & (RTF_CHILD | RTF_INGROUP | RTF_NOGROUP);
     if (f) { // A tulaj ID-jére szűrünk, ha van
         if (owner_id == NULL_ID) {  // A tulajdonos/tag rekord nincs kiválasztva
             wl << _sFalse;      // Ezzel jelezzük, hogy egy üres táblát kell megjeleníteni
@@ -1002,7 +1004,7 @@ QStringList cRecordViewBase::where(QVariantList& qParams)
             int ofix = recDescr().ixToOwner();
             wl << dQuoted(recDescr().columnName(ofix)) + " = " + QString::number(owner_id);
         }   break;
-        case RTF_GROUP:
+        case RTF_INGROUP:
         case RTF_NOGROUP: {
             cGroupAny   g(&recDescr(), &pUpper->recDescr());
             QString w =
@@ -1089,7 +1091,7 @@ void cRecordTable::init()
         flags = RTF_SINGLE;
         initSimple(_pWidget);
         break;
-    case ENUM2SET(TS_GRPMBR):
+    case ENUM2SET(TS_MEMBER):
         if (pUpper != NULL) EXCEPTION(EDATA);
         flags = RTF_MASTER | RTF_GRPMBR;
         initMaster();
@@ -1099,14 +1101,14 @@ void cRecordTable::init()
         flags = RTF_MASTER | RTF_OVNER;
         initMaster();
         break;
-    case ENUM2SET(TS_GROUP):
+    case ENUM2SET(TS_INGROUP):
     case ENUM2SET(TS_NOGROUP):
         if (pUpper == NULL) EXCEPTION(EDATA);
         if (tit != TIT_NO && tit != TIT_ONLY) EXCEPTION(EDATA);
         buttons.clear();
         buttons << DBT_REFRESH << DBT_SPACER;
-        if (type == ENUM2SET(TS_GROUP)) {
-            flags = RTF_SLAVE | RTF_GROUP;
+        if (type == ENUM2SET(TS_INGROUP)) {
+            flags = RTF_SLAVE | RTF_INGROUP;
             if (isReadOnly == false) buttons << DBT_GET_OUT << DBT_DELETE << DBT_INSERT << DBT_MODIFY;
         }
         else {
@@ -1206,7 +1208,7 @@ void cRecordTable::putIn()
 
 void cRecordTable::getOut()
 {
-    if (((flags & RTF_GROUP) == 0) || pUpper == NULL) EXCEPTION(EPROGFAIL);
+    if (((flags & RTF_INGROUP) == 0) || pUpper == NULL) EXCEPTION(EPROGFAIL);
     cRecordAny *pG = actRecord();
     cRecordAny *pM = pUpper->actRecord();
     if (pG == NULL || pM == NULL) {

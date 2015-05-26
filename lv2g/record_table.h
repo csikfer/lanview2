@@ -142,7 +142,7 @@ enum eRecordTableFlags  {
     RTF_LINK   = 0x0040,    ///< Link táblák
     RTF_LEFT   = 0x0080,    ///< A bal oldali link tábla
     RTF_GRPMBR = 0x0100,    ///< Csoport tagság
-    RTF_GROUP  = 0x0200,
+    RTF_INGROUP  = 0x0200,
     RTF_NOGROUP= 0x0400
 };
 

@@ -10,8 +10,9 @@ int tableShapeType(const QString& n, bool __ex)
     if (0 == n.compare(_sChild,  Qt::CaseInsensitive)) return TS_CHILD;
     if (0 == n.compare(_sSwitch, Qt::CaseInsensitive)) return TS_SWITCH;
     if (0 == n.compare(_sLink,   Qt::CaseInsensitive)) return TS_LINK;
-    if (0 == n.compare(_sGrpMbr, Qt::CaseInsensitive)) return TS_GRPMBR;
+    if (0 == n.compare(_sMember, Qt::CaseInsensitive)) return TS_MEMBER;
     if (0 == n.compare(_sGroup,  Qt::CaseInsensitive)) return TS_GROUP;
+    if (0 == n.compare(_sInGroup,Qt::CaseInsensitive)) return TS_INGROUP;
     if (0 == n.compare(_sNoGroup,Qt::CaseInsensitive)) return TS_NOGROUP;
     if (__ex) EXCEPTION(EDATA, -1, n);
     return TS_UNKNOWN;
@@ -27,8 +28,9 @@ const QString& tableShapeType(int e, bool __ex)
     case TS_CHILD:      return _sChild;
     case TS_SWITCH:     return _sSwitch;
     case TS_LINK:       return _sLink;
-    case TS_GRPMBR:     return _sGrpMbr;
+    case TS_MEMBER:     return _sMember;
     case TS_GROUP:      return _sGroup;
+    case TS_INGROUP:    return _sInGroup;
     case TS_NOGROUP:    return _sNoGroup;
     default:            break;
     }

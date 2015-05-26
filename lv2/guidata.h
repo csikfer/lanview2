@@ -20,9 +20,10 @@ enum eTableShapeType {
     TS_CHILD,       ///< "child"
     TS_SWITCH,      ///< "switch"   Kapcsoló tábla'
     TS_LINK,        ///< "link"     Hasonló a kapcsoló táblához, de egy tábla (és leszármazottai) közötti kapcsolatot reprezentál (linkek)
-    TS_GRPMBR,      ///< "grpmbr"   Normál megjelenés, a gobboldalon a csoport rekordok (tag/nem tag)
+    TS_MEMBER,      ///< "member"   A jobboldalon a csoport rekordok (tag/nem tag)
     TS_GROUP,       ///< "group"
-    TS_NOGROUP      ///< "nogroup"
+    TS_INGROUP,     ///< "ingroup"  Jobb oldal, az aktuális (bal) rekord tagja a csoport rekordoknak
+    TS_NOGROUP      ///< "nogroup"  Jobb oldal, az aktuális (bal) rekord nem tagja a csoport rekordoknak
 };
 /// Konverziós függvény a eTableShapeType enumerációs típushoz
 /// @param n Az enumerációs értéket reprezentáló string az adatbázisban
