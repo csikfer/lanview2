@@ -86,33 +86,34 @@ SQL tábla mező tulajdonságait tartalmazó objektum.
 
 Az osztály írja le a cRecStaticDescr osztályban (annak részeként) a mezők tulajdonságait, ill. a virtuális metódusok végzik a mező adatkonverzióit.
 Az QString ős objektum a mező nevét tartalmazza
+Az alap osztály a numerikus skalár, és string típusú mezők adatkonverzióit végzi.
 */
 class LV2SHARED_EXPORT cColStaticDescr : public QString {
 public:
     /// A mező típus konstansok
     enum eFieldType {
-        FT_ARRAY    = 0x40000000L,	///<A mező egy tömb
-        FT_ANY      =          0,		///< ismeretlen
-        FT_TIME,				///< idő (time)
-        FT_DATE,				///< dátum (date)
-        FT_DATE_TIME,			///< dátum és idő (timestamp)
-        FT_INTERVAL,			///< Idő intervallum (interval)
-        FT_INTEGER,			///< egész szám (minden egész qlonglon-ban tárolódik)
-        FT_REAL,				///< lebegőpontos szám
-        FT_TEXT,				///< szöveges adat
-        FT_BINARY,			///< bináris (bytea)
-        FT_BOOLEAN,			///< bináris érték (boolean)
-        FT_POLYGON,			///< poligon (polygon)
-        FT_ENUM,				///< enumerációs típus
-        FT_SET          = FT_ENUM + FT_ARRAY,	///< set típus, ami az adatbázisban egy enumerációs tömb
-        FT_INTEGER_ARRAY= FT_INTEGER + FT_ARRAY,	///< egész tömb
-        FT_REAL_ARRAY   = FT_REAL + FT_ARRAY,	///< lebegőpontos tömb
-        FT_TEXT_ARRAY   = FT_TEXT + FT_ARRAY,	///< Söveg tömb
-        FT_MAC      = 0x00000100L,		///< MAC cím
-        FT_INET,				///< hálózati cím
-        FT_CIDR,				///< Hálózati címtartomány
-        FT_ADDR_MASK= 0x00000100L,	///< Mask a cím típusok felismeréséhez
-        FT_NEXT_TYPE= 0x00001000L	///< esetleges további típusok ...
+        FT_ARRAY  = 0x40000000L,///<A mező egy tömb
+        FT_ANY    =          0, ///< ismeretlen
+        FT_TIME,                ///< idő (time)
+        FT_DATE,                ///< dátum (date)
+        FT_DATE_TIME,           ///< dátum és idő (timestamp)
+        FT_INTERVAL,            ///< Idő intervallum (interval)
+        FT_INTEGER,             ///< egész szám (minden egész qlonglon-ban tárolódik)
+        FT_REAL,                ///< lebegőpontos szám
+        FT_TEXT,                ///< szöveges adat
+        FT_BINARY,              ///< bináris (bytea)
+        FT_BOOLEAN,             ///< bináris érték (boolean)
+        FT_POLYGON,             ///< poligon (polygon)
+        FT_ENUM,                ///< enumerációs típus
+        FT_SET          = FT_ENUM + FT_ARRAY,       ///< set típus, ami az adatbázisban egy enumerációs tömb
+        FT_INTEGER_ARRAY= FT_INTEGER + FT_ARRAY,    ///< egész tömb
+        FT_REAL_ARRAY   = FT_REAL + FT_ARRAY,       ///< lebegőpontos tömb
+        FT_TEXT_ARRAY   = FT_TEXT + FT_ARRAY,       ///< Söveg tömb
+        FT_MAC    = 0x00000100L,///< MAC cím
+        FT_INET,                ///< hálózati cím
+        FT_CIDR,                ///< Hálózati címtartomány
+        FT_ADDR_MASK= 0x00000100L,///< Mask a cím típusok felismeréséhez
+        FT_NEXT_TYPE= 0x00001000L ///< esetleges további típusok ...
     };
     /// távoli kulcs típusok.
     enum eFKeyType {
@@ -120,6 +121,14 @@ public:
         FT_PROPERTY = FT_NEXT_TYPE, ///< A távoli kulcs egy tulajdonságot reprezentáló rekordra mutat
         FT_OWNER,                   ///< A távoli kulcs egy tulajdonos objektumra mutat
         FT_SELF                     ///< Önmagára mutató távoli kulcs (pl. fa struktúrát reprezentál)
+    };
+    enum eValueCheck {
+        VC_INVALID = 0,     ///< Nem megengedett érték, nem konvertálható
+        VC_TRUNC,           ///< Típuskonverzió szükséges, de csak adatvesztéssel (csonkolás)
+        VC_NULL,            ///< NULL, a mező felveheti a NULL értéket
+        VC_DEFAULT,         ///< NULL, nem lehet NULL, de van alapértelmezett érték (DEFAULT)
+        VC_CONVERT,         ///< Értékhatáron bellül, típuskonverzió szükséges, és lehetséges
+        VC_OK               ///< Értékhatáron bellül típus azonos érték
     };
 
     /// Konstruktor, egy üres objektumot hoz létre
@@ -139,6 +148,11 @@ public:
     /// Kideríti a mező típusát a szöveges típus nevek alapján, vagyis meghatározza az eColType adattag értékét.
     void typeDetect();
     // virtuális metódusok
+    /// Adat ellenörzés. Megvizsgálja, hogy a megadott érték hozzárendelhető-e a mezőhöz.
+    /// Csak elleőrzi az értéket.
+    /// @param v Az ellenőrizendő érték
+    /// @return Az ellenörzés eredményével tér vissza, lsd.: az eValueCheck típust.
+    virtual enum eValueCheck check(const QVariant& v) const;
     /// Az adatbázisból beolvasott adatot konvertálja a rekord konténerben tárolt formára.
     virtual QVariant fromSql(const QVariant& __f) const;
     /// A rekord konténerben tárolt formából konvertálja az adatot, az adatbázis kezelőnek átadható formára.
@@ -183,12 +197,14 @@ public:
     int         pos;
     /// A mező sorrendet jelző szám (ordinal_position), jó esetben azonos pos-al, de ha mező volt törölve, akkor nem folytonos
     int         ordPos;
-    /// A mező típusa. Az adatbázisból kiolvasott típus string.
+    /// A mező típusa. Az adatbázisból kiolvasott típus string (information_schema.columns.data_type)
     /// Ha a mező tömb, vagy felhasználó által definiált típus, akkor a
     /// colType értéke "ARRAY" ill. "USER-DEFINED"
     QString     colType;
     /// Szintén típus, tömb ill. USER DEFINED típus esetén ez tartalmazza a típus nevet.
     QString     udtName;
+    /// character maximum lenght
+    int         chrMaxLenghr;
     /// A mező alapértelmezett értéke (SQL szintaxis)
     QString     colDefault;
     /// Ha igaz, akkor a mező felveheti a NULL értéket
@@ -220,6 +236,12 @@ public:
     QString allToString() const;
     /// Ha a mező egy távoli kulcs, és nem önmagára hivatkozik, akkor a hivatkozott objektumra mutat, egyébként NULL.
     cRecordAny *pFRec;
+protected:
+    eValueCheck checkIfNull() const {
+        if (isNullable)             return VC_NULL;     // NULL / OK
+        if (colDefault.isEmpty())   return VC_INVALID;  // NULL / INVALID
+        else                        return VC_DEFAULT;  // NULL / DEFAULT
+    }
 };
 TSTREAMO(cColStaticDescr)
 
@@ -232,6 +254,7 @@ public:
     cColStaticDescrBool(const cColStaticDescr& __o) : cColStaticDescr(__o) { init(); }
     /// A konstruktor kitölti a enumVals konténert is, hogy enumerációként is kezelhető legyen
     cColStaticDescrBool(int t) : cColStaticDescr(t) { init(); }
+    enum eValueCheck  check(const QVariant& v) const;
     virtual QVariant  fromSql(const QVariant& __f) const;
     virtual QVariant  toSql(const QVariant& __f) const;
     virtual QVariant  set(const QVariant& _f, int &str) const;
@@ -253,6 +276,7 @@ private:
       public: \
         T(int t) : cColStaticDescr(t) { ; } \
         T(const cColStaticDescr& __o) : cColStaticDescr(__o) { ; } \
+        virtual enum eValueCheck check(const QVariant& v) const; \
         virtual QVariant  fromSql(const QVariant& __f) const; \
         virtual QVariant  toSql(const QVariant& __f) const; \
         virtual QVariant  set(const QVariant& _f, int &rst) const; \

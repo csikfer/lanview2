@@ -79,6 +79,17 @@ bool str2bool(const QString& _b, bool __ex)
     return !b.isEmpty();
 }
 
+bool strIsBool(const QString& _b)
+{
+    static QStringList  boolValues;
+    if (boolValues.isEmpty()) {
+        boolValues << "t" << "true"  << "y" << "yes" << "on"  << "1"
+                   << "f" << "false" << "n" << "no"  << "off" << "0"
+                   << langBool(true) <<  langBool(false);
+    }
+    return boolValues.contains(_b, Qt::CaseInsensitive);
+}
+
 static qlonglong __schemaoid(QSqlQuery q, const QString& __s)
 {
     DBGFN();
@@ -153,6 +164,7 @@ cColStaticDescr::cColStaticDescr(int __t)
     isNullable  = false;
     pos =  ordPos = -1;
     eColType = __t;
+    chrMaxLenghr = -1;
     isUpdatable = false;
     fKeyType = FT_NONE;
     pFRec    = NULL;
@@ -175,6 +187,7 @@ cColStaticDescr::cColStaticDescr(const cColStaticDescr& __o)
     ordPos      = __o.ordPos;
     pos         = __o.pos;
     eColType    = __o.eColType;
+    chrMaxLenghr= __o.chrMaxLenghr;
     isUpdatable = __o.isUpdatable;
     fKeyType    = __o.fKeyType;
     pFRec       = __o.pFRec;
@@ -190,6 +203,7 @@ cColStaticDescr& cColStaticDescr::operator=(const cColStaticDescr __o)
     *(QString *)this = __o;
     colType     = __o.colType;
     udtName     = __o.udtName;
+    chrMaxLenghr= __o.chrMaxLenghr;
     colDefault  = __o.colDefault;
     isNullable  = __o.isNullable;
     ordPos      = __o.ordPos;
@@ -212,7 +226,9 @@ QString cColStaticDescr::toString() const
 {
     QString r = dQuoted((QString&)*this);
     r += QChar('[') + QString::number(pos) + QChar('/') + QString::number(ordPos) + QChar(']');
-    r += QChar(' ') + colType + "/" + udtName;
+    r += QChar(' ') + colType;
+    if (chrMaxLenghr > 0) r += QString("(%1)").arg(chrMaxLenghr);
+    r +=  "/" + udtName;
     if (enumVals.size())       r += QChar('{') + enumVals.join(_sCommaSp) + QChar('}');
     if (!isNullable)           r += " NOT NULL ";
     if (!colDefault.isNull()) {
@@ -239,6 +255,42 @@ QString cColStaticDescr::allToString() const
     if (pFRec != NULL) ", pFRec : " + pFRec->tableName();
     return r;
 }
+
+enum cColStaticDescr::eValueCheck cColStaticDescr::check(const QVariant& v) const
+{
+    if (v.isNull() || isNumNull(v)
+     || (eColType != FT_TEXT && variantIsString(v) && v.toString().isEmpty())) {
+        return checkIfNull();
+    }
+    switch (eColType) {
+    case FT_INTEGER:
+        if (v.canConvert(QVariant::LongLong)) switch (v.type()) {
+        case QVariant::Int:
+        case QVariant::LongLong:return VC_OK;
+        default:                return VC_CONVERT;
+        }
+        return VC_INVALID;
+    case FT_REAL:
+        if (v.canConvert(QVariant::Double)) switch (v.type()) {
+        case QVariant::Double:  return VC_OK;
+        default:                return VC_CONVERT;
+        }
+        return VC_INVALID;
+    case FT_BINARY:
+        return v.canConvert(QVariant::ByteArray)? VC_OK : VC_INVALID;
+    case FT_TEXT:
+        if (v.canConvert(QVariant::String)) {
+            if (chrMaxLenghr > 0 && chrMaxLenghr < v.toString().size()) return VC_TRUNC;
+            return v.type() == QVariant::String ? VC_OK : VC_CONVERT;
+        }
+        return VC_INVALID;
+    default:
+        EXCEPTION(EPROGFAIL);
+        break;
+    }
+    return VC_INVALID;
+}
+
 QVariant cColStaticDescr::fromSql(const QVariant& _f) const
 {
     if (_f.isNull()) return _f;
@@ -270,8 +322,7 @@ QVariant cColStaticDescr::set(const QVariant& _f, int &str) const
     QVariant r =_f;
     bool ok = true;
     if ((eColType != FT_TEXT && variantIsString(_f) && _f.toString().isEmpty())
-     || (QMetaType::LongLong == _f.userType() && NULL_ID == _f.toLongLong())
-     || (QMetaType::Int      == _f.userType() && NULL_IX == _f.toInt())) {
+     || isNumNull(_f)) {
         r.clear();
     }
     if (r.isNull()) {
@@ -423,10 +474,21 @@ bool cColStaticDescr::checkEnum(tE2S e2s, tS2E s2e) const
 
 /* ------------------------------------------------------------------------------------------------------- */
 
+enum cColStaticDescrBool::eValueCheck cColStaticDescrBool::check(const QVariant& v) const
+{
+    if (v.isNull() || isNumNull(v))     return checkIfNull();
+    if (variantIsString(v))             return strIsBool(v.toString()) ? VC_OK : VC_CONVERT;
+    if (v.type() == QVariant::Bool)     return VC_OK;
+    if (v.canConvert(QVariant::Bool))   return VC_CONVERT;
+    return VC_INVALID;
+}
+
+
 QVariant  cColStaticDescrBool::fromSql(const QVariant& _f) const
 {
     return str2bool(_f.toString(), true);
 }
+
 QVariant  cColStaticDescrBool::toSql(const QVariant& _f) const
 {
     if (_f.isNull()) EXCEPTION(EDATA,-1,QObject::trUtf8("Data is NULL"));
@@ -451,8 +513,7 @@ QVariant  cColStaticDescrBool::set(const QVariant& _f, int & str) const
 {
     bool ok = true;
     QVariant r =_f;
-    if ((QMetaType::LongLong == _f.userType() && NULL_ID == _f.toLongLong())
-     || (QMetaType::Int      == _f.userType() && NULL_IX == _f.toInt())) r.clear();
+    if (isNumNull(_f)) r.clear();
     if (r.isNull()) {
         ok = isNullable || !colDefault.isEmpty();
     }
@@ -500,6 +561,69 @@ void cColStaticDescrBool::setDefValue()
 
 CDDUPDEF(cColStaticDescrBool)
 /* ....................................................................................................... */
+
+cColStaticDescr::eValueCheck  cColStaticDescrArray::check(const QVariant& v) const
+{
+    if (v.isNull() || isNumNull(v)) return checkIfNull();
+    int t = v.userType();
+    eValueCheck r = VC_OK;
+    switch (eColType) {
+    case FT_INTEGER_ARRAY:
+        // Lista, elemeinek típusa, kovertálhatósága
+        if (t == QMetaType::QVariantList) {
+            foreach (QVariant e, v.toList()) {
+                if (variantIsNum(e)) continue;
+                if (!e.canConvert(QMetaType::Double)) return VC_INVALID;
+                r = VC_CONVERT;
+            }
+            return r;
+        }
+        // Ha string list, elemek konvertálhatóak?
+        if (t == QMetaType::QStringList) {
+            foreach (QString s, v.toStringList()) {
+                bool ok;
+                (void)s.toLongLong(&ok);
+                if (!ok) return VC_INVALID;
+            }
+            return VC_CONVERT;
+        }
+        // egész skalár, vagy konvertálható skalár
+        if (metaIsInteger(t) || v.canConvert(QMetaType::LongLong)) return VC_CONVERT;
+        return VC_INVALID;
+    case FT_REAL_ARRAY:
+        if (t == QMetaType::QVariantList) {
+            foreach (QVariant e, v.toList()) {
+                if (variantIsInteger(e)) continue;
+                if (!e.canConvert(QMetaType::LongLong)) return VC_INVALID;
+                r = VC_CONVERT;
+            }
+            return r;
+        }
+        if (t == QMetaType::QStringList) {
+            foreach (QString s, v.toStringList()) {
+                bool ok;
+                (void)s.toDouble(&ok);
+                if (!ok) return VC_INVALID;
+            }
+            return VC_CONVERT;
+        }
+        if (metaIsFloat(t) || v.canConvert(QMetaType::Double)) return VC_CONVERT;
+        return VC_INVALID;
+    case FT_TEXT_ARRAY:
+        if (t == QMetaType::QStringList) return VC_OK;
+        if (t == QMetaType::QVariantList) {
+            foreach (QVariant e, v.toList()) {
+                if (!e.canConvert(QMetaType::QString)) return VC_INVALID;
+            }
+            return VC_CONVERT;
+        }
+        if (metaIsString(t) || v.canConvert(QMetaType::QString)) return VC_CONVERT;
+        return VC_INVALID;
+    default:
+        EXCEPTION(EPROGFAIL);
+    }
+    return VC_INVALID;
+}
 
 QVariant  cColStaticDescrArray::fromSql(const QVariant& _f) const
 {
@@ -618,8 +742,7 @@ Ha a paraméter és a tárolási típus is QVariantList, akkor a lista elemeket 
 QVariant  cColStaticDescrArray::set(const QVariant& _f, int &str) const
 {
     QVariant r =_f;
-    if ((QMetaType::LongLong == _f.userType() && NULL_ID == _f.toLongLong())
-     || (QMetaType::Int      == _f.userType() && NULL_IX == _f.toInt())) r.clear();
+    if (isNumNull(_f)) r.clear();
     if (r.isNull()) {
         if (!isNullable && colDefault.isEmpty()) str |= cRecord::ES_DEFECTIVE;
         return r;
@@ -705,6 +828,20 @@ void cColStaticDescrArray::setDefValue()
 CDDUPDEF(cColStaticDescrArray)
 /* ....................................................................................................... */
 
+cColStaticDescr::eValueCheck  cColStaticDescrEnum::check(const QVariant& v) const
+{
+    if (v.isNull() || isNumNull(v)) return checkIfNull();
+    int t = v.userType();
+    if (metaIsInteger(t)) {
+        if (isContIx(enumVals, v.toLongLong())) return VC_OK;
+        return VC_INVALID;
+    }
+    if (!v.canConvert(QMetaType::QString) || !enumVals.contains(v.toString())) {
+        return VC_INVALID;
+    }
+    return VC_OK;
+}
+
 QVariant  cColStaticDescrEnum::fromSql(const QVariant& _f) const
 {
     return _f;
@@ -733,9 +870,7 @@ QVariant  cColStaticDescrEnum::set(const QVariant& _f, int & str) const
     QVariant r =_f;
     qlonglong i;
     bool ok = true;
-    if ((QMetaType::LongLong == _f.userType() && NULL_ID == _f.toLongLong())
-     || (QMetaType::Int      == _f.userType() && NULL_IX == _f.toInt())
-     || r.isNull()) {
+    if (r.isNull() || isNumNull(r)) {
         ok = isNullable || !colDefault.isEmpty();
         r.clear();
     }
@@ -792,6 +927,27 @@ void cColStaticDescrEnum::setDefValue()
 */
 /* ....................................................................................................... */
 
+cColStaticDescr::eValueCheck  cColStaticDescrSet::check(const QVariant& v) const
+{
+    if (v.isNull() || isNumNull(v)) return checkIfNull();
+    int t = v.userType();
+    if (metaIsInteger(t)) {
+        if (v.toLongLong() < (1 << enumVals.size())) return VC_OK;
+        return VC_TRUNC;
+    }
+    if (metaIsString(t)) {
+        if (enumVals.contains(v.toString(), Qt::CaseInsensitive)) return VC_CONVERT;
+        return VC_INVALID;
+    }
+    if (v.canConvert(QMetaType::QStringList)) {
+        foreach (QString s, v.toStringList()) {
+            if (!contains(s, Qt::CaseInsensitive)) return VC_INVALID;
+        }
+        return VC_OK;
+    }
+    return VC_INVALID;
+}
+
 QVariant  cColStaticDescrSet::fromSql(const QVariant& _f) const
 {
     QString s = _f.toString();
@@ -833,9 +989,7 @@ QVariant  cColStaticDescrSet::set(const QVariant& _f, int & str) const
 {
     _DBGFN() << debVariantToString(_f) << endl;
     int t = _f.userType();
-    if ((QMetaType::LongLong == t && NULL_ID == _f.toLongLong())
-     || (QMetaType::Int      == t && NULL_IX == _f.toInt())
-     || _f.isNull()) {
+    if (_f.isNull() || isNumNull(_f)) {
         if (!isNullable && colDefault.isEmpty()) str |= cRecord::ES_DEFECTIVE;
         return QVariant();
     }
@@ -902,6 +1056,16 @@ CDDUPDEF(cColStaticDescrSet)
 
 /* ....................................................................................................... */
 
+cColStaticDescr::eValueCheck  cColStaticDescrPolygon::check(const QVariant& _f) const
+{
+    int t = _f.userType();
+    if (_f.isNull() || isNumNull(_f)) return checkIfNull();
+    if (t == _UMTID_tPolygonF) {
+        return VC_OK;
+    }
+    return VC_INVALID;
+}
+
 QVariant  cColStaticDescrPolygon::fromSql(const QVariant& _f) const
 {
     if (_f.isNull()) return _f;
@@ -959,21 +1123,20 @@ QVariant  cColStaticDescrPolygon::toSql(const QVariant& _f) const
     //PDEB(VVERBOSE) << "_toSql() polygon -> string : " << s << endl;
     return QVariant(s);
 }
+
 QVariant  cColStaticDescrPolygon::set(const QVariant& _f, int& str) const
 {
     _DBGFN() << QChar(' ') << debVariantToString(_f);
     int t = _f.userType();
-    if ((QMetaType::LongLong == t && NULL_ID == _f.toLongLong())
-     || (QMetaType::Int      == t && NULL_IX == _f.toInt())
-     || _f.isNull()) {
+    if (_f.isNull() || isNumNull(_f)) {
         if (!isNullable && colDefault.isEmpty()) str |= cRecord::ES_DEFECTIVE;
         return QVariant();
     }
-    tPolygonF   pol;
     if (t == _UMTID_tPolygonF) {
         return _f;
     }
-/*    switch (t) {
+/*  tPolygonF   pol;
+    switch (t) {
     case QMetaType::QPolygon:
         foreach (QPoint p, _f.value<QPolygon>()) {
             pol << QPointF(p);
@@ -1016,6 +1179,33 @@ void cColStaticDescrPolygon::setDefValue()
 */
 
 /* ....................................................................................................... */
+
+cColStaticDescr::eValueCheck  cColStaticDescrAddr::check(const QVariant& _f) const
+{
+    int mtid = _f.userType();
+    if (_f.isNull() || isNumNull(_f)) return checkIfNull();
+
+    switch (eColType) {
+    case FT_MAC:
+        if (mtid == _UMTID_cMac)    return VC_OK;
+        if (cMac::isValid(_f))      return VC_CONVERT;
+        if (metaIsInteger(mtid))    return cMac::isValid(_f.toLongLong()) ? VC_CONVERT : VC_INVALID;
+        if (metaIsString(mtid))     return cMac::isValid(_f.toString())   ? VC_CONVERT : VC_INVALID;
+        return VC_INVALID;
+    case FT_INET:
+    case FT_CIDR:
+        if (mtid == _UMTID_netAddress)      return VC_OK;
+        if (mtid == _UMTID_QHostAddress)    return VC_OK;
+        if (metaIsString(mtid)) {
+            if (netAddress(_f.toString()).isValid()) return VC_CONVERT;
+        }
+        return VC_INVALID;
+    default:
+        EXCEPTION(EPROGFAIL);
+    }
+
+    return VC_INVALID;
+}
 
 QVariant  cColStaticDescrAddr::fromSql(const QVariant& _f) const
 {
@@ -1142,6 +1332,17 @@ void cColStaticDescrSet::setDefValue()
 /* ....................................................................................................... */
 
 /// Tárolási adattípus QTime
+
+cColStaticDescr::eValueCheck  cColStaticDescrTime::check(const QVariant& _f) const
+{
+    int t = _f.userType();
+    if (_f.isNull() || isNumNull(_f)) return checkIfNull();
+    if (t == QMetaType::QTime)  return VC_OK;
+    if (_f.canConvert<QTime>()) return VC_CONVERT;
+    if (variantIsNum(_f))       return VC_CONVERT;
+    return VC_INVALID;
+}
+
 QVariant  cColStaticDescrTime::fromSql(const QVariant& _f) const
 {
     _DBGFN() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
@@ -1155,10 +1356,7 @@ QVariant  cColStaticDescrTime::toSql(const QVariant& _f) const
 QVariant  cColStaticDescrTime::set(const QVariant& _f, int& str) const
 {
     _DBGFN() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
-    int t = _f.userType();
-    if ((QMetaType::LongLong == t && NULL_ID == _f.toLongLong())
-     || (QMetaType::Int      == t && NULL_IX == _f.toInt())
-     || _f.isNull()) {
+    if (isNumNull(_f) || _f.isNull()) {
         if (!isNullable && colDefault.isEmpty()) str |= cRecord::ES_DEFECTIVE;
         return QVariant();
     }
@@ -1205,6 +1403,17 @@ CDDUPDEF(cColStaticDescrTime)
 /* ....................................................................................................... */
 
 /// Tárolási adattípus QDate
+
+cColStaticDescr::eValueCheck  cColStaticDescrDate::check(const QVariant& _f) const
+{
+    int t = _f.userType();
+    if (_f.isNull() || isNumNull(_f)) return checkIfNull();
+    if (t == QMetaType::QDate)  return VC_OK;
+    if (_f.canConvert<QDate>()) return VC_CONVERT;
+    if (variantIsNum(_f))       return VC_CONVERT;
+    return VC_INVALID;
+}
+
 QVariant  cColStaticDescrDate::fromSql(const QVariant& _f) const
 {
     _DBGFN() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
@@ -1250,7 +1459,16 @@ qlonglong cColStaticDescrDate::toId(const QVariant& _f) const
 CDDUPDEF(cColStaticDescrDate)
 /* ....................................................................................................... */
 
-static const QString _tmstmpFrm = "yyyy-MM-dd HH:mm:ss";
+cColStaticDescr::eValueCheck  cColStaticDescrDateTime::check(const QVariant& _f) const
+{
+    int t = _f.userType();
+    if (_f.isNull() || isNumNull(_f)) return checkIfNull();
+    if (t == QMetaType::QDateTime)  return VC_OK;
+    if (_f.canConvert<QDateTime>()) return VC_CONVERT;
+    if (variantIsNum(_f))           return VC_CONVERT;
+    return VC_INVALID;
+}
+
 /// Timezone kezelés nincs, a tört másodperceket eldobja
 QVariant  cColStaticDescrDateTime::fromSql(const QVariant& _f) const
 {
@@ -1292,8 +1510,10 @@ QVariant  cColStaticDescrDateTime::set(const QVariant& _f, int& str) const
     _DBGFNL() << " Return :" << dt.toString() << endl;
     return QVariant(dt);
 }
+
 QString   cColStaticDescrDateTime::toName(const QVariant& _f) const
 {
+    static const QString _tmstmpFrm = "yyyy-MM-dd HH:mm:ss";
  //   _DBGFN() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
     if (_f.isNull()) return QString();
     if (variantIsString(_f)) return _f.toString();  // NOW
@@ -1374,6 +1594,18 @@ QString intervalToStr(qlonglong i)
     }
     return is;
 
+}
+
+cColStaticDescr::eValueCheck  cColStaticDescrInterval::check(const QVariant& _f) const
+{
+    bool ok;
+    qlonglong i = _f.toLongLong(&ok);
+    if (ok) return i < 0 ? VC_INVALID : VC_OK;
+    if (variantIsString(_f)) {
+        parseTimeInterval(_f.toString(), &ok);
+        return i < 0 ? VC_INVALID : VC_OK;
+    }
+    return VC_INVALID;
 }
 
 /// Az intervallum qlonglong-ban tárolódik, és mSec-ben értendő.
@@ -1635,6 +1867,8 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
         PDEB(VVERBOSE) << "colDefault : " <<  (columnDescr.colDefault.isNull() ? "NULL" : dQuoted(columnDescr.colDefault)) << endl;
         columnDescr.colType   = pq->record().value("data_type").toString();
         columnDescr.udtName   = pq->record().value("udt_name").toString();
+        QVariant cml = pq->record().value("character_maximum_length");
+        columnDescr.chrMaxLenghr = cml.canConvert(QVariant::Int) ? cml.toInt() : -1;
         columnDescr.isNullable= pq->record().value("is_nullable").toString() == QString("YES");
         columnDescr.isUpdatable=pq->record().value("is_updatable").toString() == QString("YES");
         _isUpdatable = _isUpdatable || columnDescr.isUpdatable;

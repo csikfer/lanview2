@@ -141,7 +141,7 @@ cMac& cMac::set(const QString& __mac)
     if (__mac.isEmpty()) return *this;
     bool ok = true;
     QRegExp pat;
-    if (QRegExp(QString(_sMacPattern1)).exactMatch(__mac)) {
+    if ((pat = QRegExp(QString(_sMacPattern1))).exactMatch(__mac)) {
         val = pat.cap(1).toLongLong(&ok, 16);
         if (!ok) EXCEPTION(EPROGFAIL, -1, __mac);
     }
@@ -155,14 +155,14 @@ cMac& cMac::set(const QString& __mac)
         }
         // PDEB(VVERBOSE) << "val = " << hex << val << dec << endl;
     }
-    else if (QRegExp(QString(_sMacPattern3)).exactMatch(__mac)) {
+    else if ((pat = QRegExp(QString(_sMacPattern3))).exactMatch(__mac)) {
         val =  pat.cap(1).toLongLong(&ok, 16);
         if (!ok) EXCEPTION(EPROGFAIL, -1, __mac);
         val <<= 24;
         val |= pat.cap(2).toLongLong(&ok, 16);
         if (!ok) EXCEPTION(EPROGFAIL, -1, __mac);
     }
-    else if (QRegExp(QString(_sMacPattern4)).exactMatch(__mac)) {
+    else if ((pat = QRegExp(QString(_sMacPattern4))).exactMatch(__mac)) {
         QString t(__mac);
         for (int i = 1; i <= 6; ++i) {
             qlonglong d = pat.cap(i).toLongLong(&ok, 10);
@@ -215,6 +215,44 @@ cMac& cMac::set(const QVariant& __mac)
     }
     return *this;
 }
+
+bool cMac::isValid(const QString& v)
+{
+    if (v.isEmpty()) return false;
+    if (QRegExp(QString(_sMacPattern1)).exactMatch(v)) return true;
+    if (QRegExp(QString(_sMacPattern2)).exactMatch(v)) return true;
+    if (QRegExp(QString(_sMacPattern3)).exactMatch(v)) return true;
+    QRegExp rxpat;
+    rxpat.setPattern(QString(_sMacPattern4));
+    if (rxpat.exactMatch(v)) {
+        for (int i = 1; i <= 6; ++i) {
+            bool ok;
+            int d = rxpat.cap(i).toInt(&ok, 10);
+            if (!ok) EXCEPTION(EPROGFAIL, -1, v);
+            if (d > 255) return false;
+        }
+        return true;
+    }
+    if (QRegExp(QString(_sMacPattern5)).exactMatch(v)) return true;
+    return false;
+}
+
+bool cMac::isValid(const QByteArray& v)
+{
+    return v.size() == 6;
+}
+
+bool cMac::isValid(const QVariant& v)
+{
+    switch (v.userType()) {
+    case QMetaType::LongLong:
+    case QMetaType::ULongLong:   return isValid(v.toULongLong());
+    case QMetaType::QByteArray:  return isValid(v.toByteArray());
+    case QVariant::String:       return isValid(v.toString());
+    }
+    return false;
+}
+
 
 /* ********************************************************************************************************
    *                                        class netAddress                                              *

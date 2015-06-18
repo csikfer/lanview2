@@ -6,6 +6,16 @@
 #include <QMap>
 #include <QBitArray>
 
+inline bool isNumNull(const QVariant v)
+{
+    int t = v.userType();
+    return (
+            (QMetaType::LongLong == t && NULL_ID == v.toLongLong())
+         || (QMetaType::Int      == t && NULL_IX == v.toInt())
+    );
+}
+
+
 /// Létrehoz egy megadott méretű csupa 0 elemű bit tömböt, és annak egy megadot
 /// bitjét 1-be állítja.
 /// @param s A bit tömb mérete
