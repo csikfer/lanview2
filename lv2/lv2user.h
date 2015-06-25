@@ -75,7 +75,6 @@ public:
 /// @typedef cGroupUser
 /// Az objektum típus a groups/users táblák közötti kapcsoló táblát kezeli
 /// Nem cRecord típusú objektum. Da adattagként tartalmaza a cUser és cGroup objektumokat.
-/// lsd.: tGroup deklarációját a lv2datab.h végén.
 typedef tGroup<cGroup, cUser> cGroupUser;
 
 #endif // LV2USER_H

@@ -41,27 +41,27 @@ EXT_  bool variantIsNum(const QVariant & _v);
 /// Ha a string (b) értéke "f", "false", "n", "no", "off" vagy "0", akkor false-val tér vissza,
 /// Egyéb értékeknél, ha __ex true, akkor dob egy kizárást, ha viszont __ex értéke hamis, akkor
 /// üres string esetén false, ellenkező esetben true a visszaadott érték.
-bool str2bool(const QString& _b, bool __ex = true);
+EXT_ bool str2bool(const QString& _b, bool __ex = true);
 /// A bool-ból stringet csinál, a nyelvi beállításoknak megfelelően.
-QString langBool(bool b);
+EXT_ QString langBool(bool b);
 
 /// A megadott nevű séma OID-jével tér vissza.
 /// Ha nincs ilyen séma, vagy más hiba történt dob egy kizárást
 /// @param q Az adatbázis művelethez használható objektum.
 /// @param __s A séma neve
-qlonglong schemaoid(QSqlQuery q, const QString& __s);
+EXT_ qlonglong schemaoid(QSqlQuery q, const QString& __s);
 /// A tableoid lekérdezése, hiba esetén dob egy kizárást. Ha nincs ilyen tábla akkor is kizárást dob.
 /// @param q Az adatbázis művelethez használható objektum.
 /// @param __t SQL tábla neve
 /// @param __sid SQL tábla séma OID (vagy NULL_ID, ha az alapértelmezett "public" a séma)
 /// @param __ex Ha értéke true, és nem létezik a megadott nevű tábla, akkor a NULL:IS-vel tér vissza, és nem dob kizárást.
 /// @return a tabloid
-qlonglong tableoid(QSqlQuery q, const QString& __t, qlonglong __sid = NULL_ID, bool __ex = true);
+EXT_ qlonglong tableoid(QSqlQuery q, const QString& __t, qlonglong __sid = NULL_ID, bool __ex = true);
 /// A tableoid érték alapján visszaadja a tábla és séma nevet, ha nincs ilyen tábla, vagy hiba esetén dob egy kizárást.
 /// @param q Az adatbázis művelethez használható objektum.
 /// @param toid A table OID érték.
 /// @return A first adattag a tábla neve, a second pedig a séma név.
-QStringPair tableoid2name(QSqlQuery q, qlonglong toid);
+EXT_ QStringPair tableoid2name(QSqlQuery q, qlonglong toid);
 
 /// Az enumerációs típus (int) stringgé konvertáló függvény pointerének a típusa.
 typedef const QString& (*tE2S)(int e, bool __ex);
@@ -73,6 +73,46 @@ class cRecordFieldRef;
 class cRecordFieldConstRef;
 template <class T> class tRecordList;
 class cRecordAny;
+
+/* ******************************************************************************************************
+   *                                         cColEnumType                                            *
+   ******************************************************************************************************/
+/*!
+@class cColEnumType
+@brief
+SQL enumerációs mező típus tulajdonságait tartalmazó objektum.
+
+*/
+class LV2SHARED_EXPORT cColEnumType : public QString {
+public:
+    cColEnumType(qlonglong id, const QString& name, const QStringList& values);
+    cColEnumType(const cColEnumType& _o);
+    static const cColEnumType *fetchOrGet(QSqlQuery& q, const QString& name, bool _ex = true);
+    QString     toString() const;
+    const qlonglong   typeId;
+    const QStringList enumValues;
+    bool check(const QString& v) const  { return enumValues.contains(v, Qt::CaseInsensitive); }
+    bool check(const QStringList& v) const;
+    bool checkSet(qlonglong b) const    { return b < (1 << enumValues.size()); }
+    bool checkEnum(qlonglong i) const   { return i < enumValues.size(); }
+    const QString& enum2str(qlonglong e, bool _ex = true) const;
+    QStringList set2lst(qlonglong b, bool _ex = true) const;
+    qlonglong str2enum(const QString& s, bool _ex = true) const;
+    qlonglong str2set(const QString& s, bool _ex = true) const;
+    qlonglong lst2set(const QStringList& s, bool _ex = true) const;
+    QString     normalize(const QString& nm, bool *pok = NULL) const;
+    QStringList normalize(const QStringList& lst, bool *pok = NULL) const;
+private:
+    // Egy belső konstruktor a kereséshez
+    cColEnumType(const QString& _n) :QString(_n), typeId(NULL_ID) , enumValues() { ; }
+    static QSet<cColEnumType>  colEnumTypes;
+public:
+    static const cColEnumType *find(const QString& name);
+    static const cColEnumType& get(const QString& name);
+};
+
+TSTREAMO(cColEnumType)
+
 
 /* ******************************************************************************************************
    *                                         cColStaticDescr                                            *
@@ -186,8 +226,8 @@ public:
     /// SET esetén pedig a numerikus értékben a megadott sorszámú bit reprezentál egy enumerációs értéket.
     /// Az API-ban lévő sring - enumeráció kovertáló függvényeknél ügyelni kell arra, hogy a C-ben definiált
     /// enumerációs értékek megfeleljenek az adatbázisban a megfelelő enumerációs érték sorrendjének.
-    /// A vizsgálat csak az adatbázis szerini értékek irányából ellenőriz, ha a konverziós függvények
-    /// több értéket is kezelnének, azt nem képes detektálni.
+    /// A vizsgálat csak az adatbázis szerini értékek irányából ellenőriz, a konverziós függvényeknél,
+    /// a numerikusból stringbe konvertálásnál csak azt ellenörzi, hogy az utolsó elem után ad-e vissza nem null értéket.
     /// @param e2s Az enumerációból stringgé konvertáló függvény pointere
     /// @param s2e A stringból enumerációs konstanba konvertáló függvény pointere.
     /// @return true, ha nem sikerült eltérést detektálni a kétféle enum értelmezés között, és false, ha eltérés van
@@ -209,8 +249,10 @@ public:
     QString     colDefault;
     /// Ha igaz, akkor a mező felveheti a NULL értéket
     bool        isNullable;
-    /// Enumerációs ill. set típus esetén az értékkészlet
-    QStringList enumVals;
+    /// Enumerációs ill. set típus esetén a leíró pointere, vagy NULL pointer
+    const cColEnumType *pEnumType;
+    /// Enumerációs ill. set típus leíró referenciája, ha nincs dob egy kizárást.
+    const cColEnumType& enumType() const { if (pEnumType == NULL) EXCEPTION(EDATA); return *pEnumType; }
     /// A mező (oszlop) típusa, lásd: eFieldType
     int         eColType;
     /// Ha a mező módosítható, akkor értéke igaz
@@ -250,9 +292,9 @@ TSTREAMO(cColStaticDescr)
 class LV2SHARED_EXPORT cColStaticDescrBool : public cColStaticDescr {
     friend class cRecStaticDescr;
 public:
-    /// A konstruktor kitölti a enumVals konténert is, hogy enumerációként is kezelhető legyen
+    /// A konstruktor kitölti a enumType pointert is, hogy enumerációként is kezelhető legyen
     cColStaticDescrBool(const cColStaticDescr& __o) : cColStaticDescr(__o) { init(); }
-    /// A konstruktor kitölti a enumVals konténert is, hogy enumerációként is kezelhető legyen
+    /// A konstruktor kitölti a enumType pointert is, hogy enumerációként is kezelhető legyen
     cColStaticDescrBool(int t) : cColStaticDescr(t) { init(); }
     enum eValueCheck  check(const QVariant& v) const;
     virtual QVariant  fromSql(const QVariant& __f) const;

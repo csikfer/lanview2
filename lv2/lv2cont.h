@@ -584,13 +584,17 @@ public:
     /// @param __q Az adabázisművelethez használt QSqlQuery objektum.
     /// @return True, ha volt legalább egy meber, false, ha nem.
     bool fetchFirstMember(QSqlQuery& __q) {
-        QString sql = QString("SELECT * FROM %1 JOIN $2 USING($3) WHERE %4 = %5")
-                .arg(tableName()).arg(member.tableName).arg(memberIdName())
-                .arg(groupIdName()).arg(group.getId());
+        QString sql = QString("SELECT * FROM %1 JOIN %2 USING(%3) WHERE %4 = %5")
+                .arg(tableName())       // Kapcsoló tábla neve
+                .arg(member.tableName())// Tagok tábla neve
+                .arg(memberIdName())    // Tagok tábla ID mező neve
+                .arg(groupIdName())     // Csoport tábla ID mező neve
+                .arg(group.getId());    // Csoport tábla, kiválasztott csoport ID
         if (!__q.exec(sql)) SQLPREPERR(__q, sql);
-        if (__q.first()) member.set(__q);
-        else             member.set();
-        return !member.isEmpty();
+        bool r = __q.first();
+        if (r) member.set(__q);
+        else   member.set();
+        return r;
     }
     /// A fetchMembers(QSqlQuery& __q) metódus hívása után a további member rekordok beolvasása
     /// Egy példa a metódus használatára:
@@ -614,10 +618,11 @@ public:
     /// @param __q Az adabázisművelethez használt QSqlQuery objektum, amit a fetchMeber() metődusnál is használltunk,
     ///          ill. ami au ott kezdeményezett lekérdezés eredményét tartalmazza.
     /// @return Ha be tudott olvasni további member rekordot, akkor true, egyébként false.
-    bool fetchNnextMember(QSqlQuery& __q) {
-        if (__q.next()) member.set(__q);
-        else            member.set();
-        return !member.isEmpty();
+    bool fetchNextMember(QSqlQuery& __q) {
+        bool r = __q.next();
+        if (r) member.set(__q);
+        else   member.set();
+        return r;
     }
     /// Feltételezi, hogy a member objektumnak az ID mezője ki van töltve.
     /// Lekérdezi a megadott meber group rekordjait.
@@ -626,21 +631,23 @@ public:
     /// @param __q Az adabázisművelethez használt QSqlQuery objektum.
     /// @return True, ha volt legalább egy group, false, ha nem.
     bool fetchFirstGroup(QSqlQuery& __q) {
-        QString sql = QString("SELECT * FROM %1 JOIN $2 USING($3) WHERE %4 = %5")
+        QString sql = QString("SELECT * FROM %1 JOIN %2 USING(%3) WHERE %4 = %5")
                 .arg(tableName()).arg(group.tableName).arg(groupIdName())
                 .arg(groupIdName()).arg(member.getId());
         if (!__q.exec(sql)) SQLPREPERR(__q, sql);
-        if (__q.first()) group.set(__q);
-        else             group.set();
-        return !member.isEmpty();
+        bool r = __q.first();
+        if (r) group.set(__q);
+        else   group.set();
+        return r;
     }
     /// A fetchGroup(QSqlQuery& __q) metódus hívása után a további group rekordok beolvasása
     /// @param __q Az adabázisművelethez használt QSqlQuery objektum.
     /// @return Ha be tudott olvasni további group rekordot, akkor true, egyébként false.
     bool fetchNextGroup(QSqlQuery& __q) {
-        if (__q.next()) group.set(__q);
-        else            group.set();
-        return !member.isEmpty();
+        bool r = __q.next();
+        if (r) group.set(__q);
+        else   group.set();
+        return r;
     }
     /// A metődus feltételezi, hogy a group és member objektumoknak ki van töltve az ID mezőjük, és ez alapján beinzertálja a kapcsoló rekordot.
     /// @param __q Az adabázisművelethez használt QSqlQuery objektum.
@@ -698,7 +705,7 @@ public:
         if (gm.fetchFirstMember(q)) {
             do {
                 r << gm.member;
-            } while (gm.fetchNnextMember(q));
+            } while (gm.fetchNextMember(q));
         }
         return r;
     }
@@ -732,6 +739,19 @@ public:
     /// @param q Az adabázisművelethez használt QSqlQuery objektum.
     /// @param mn A member tíousú objektum neve
     static tRecordList<M> fetchGroups(QSqlQuery& q, const QString& mn) { return fetchGroups(q, G().setByname(q, mn)); }
+    //
+    int setMemberByGroup(QSqlQuery& q, const QString& gn, const QString& fn, const QVariant& v)
+    {
+        int r = 0;
+        group.setByName(q, gn);
+        if (fetchFirstMember(q)) do {
+            member.set(fn, v);
+            ++r;
+        } while (fetchNextMember(q));
+        return r;
+    }
+    //
+    int disableMemberByGroup(QSqlQuery& q, const QString& gn, bool f = true) { return setMemberByGroup(q, gn, _sDisabled, QVariant(f)); }
 };
 
 class cGroupAny : public tGroup<cRecordAny, cRecordAny> {

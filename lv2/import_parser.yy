@@ -174,8 +174,6 @@ public:
     bool            newNode;
 };
 
-
-static QStringList      allNotifSwitchs;
 static  qlonglong       id;
 
 unsigned long yyflags = 0;
@@ -208,10 +206,6 @@ void initImportParser()
     if (pArpServerDefs == NULL)
         pArpServerDefs = new cArpServerDefs();
     // notifswitch tömb = SET, minden on-ba, visszaolvasás listaként
-    if (allNotifSwitchs.isEmpty()) {
-        /// egy notif_switch set típusú mezőn mindent on-ba teszünk, stringlisté konvertálva lessz egy teljes listánk.
-        allNotifSwitchs = cUser().set(_sHostNotifSwitchs, QVariant(0xffff)).get(_sHostNotifSwitchs).toStringList();
-    }
     if (piq == NULL) {
         piq = newQuery();
     }
@@ -945,7 +939,7 @@ static void setLastPort(cNPort *p)
     setLastPort(p->getName(_sPortName), ix);
 }
 
-void newNode(QStringList * t, QString *name, QString *d)
+static void newNode(QStringList * t, QString *name, QString *d)
 {
     _DBGFN() << "@(" << *name << QChar(',') << *d << ")" << endl;
     pNode = new cNode();
@@ -1047,7 +1041,7 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
 %token <mac> MAC_V 
 %token <ip> IPV4_V IPV6_V
 %type  <i>  int int_ iexpr lnktype shar ipprotp ipprot offs ix_z vlan_t set_t srvtid
-%type  <i>  vlan_id place_id iptype pix pix_z pix_ iptype_a step timep image_id tmod int0
+%type  <i>  vlan_id place_id iptype pix pix_z pix_ iptype_a step image_id tmod int0
 %type  <i>  ptypen fhs hsid srvid grpid tmpid node_id port_id snet_id ift_id plg_id usr_id
 %type  <il> list_i pixs // ints
 %type  <b>  bool bool_on ifdef
@@ -1079,7 +1073,8 @@ main    :
 commands: command
         | command commands
         ;
-command : macro
+command : INCLUDE_T str ';'                               { c_yyFile::inc($2); }
+        | macro
         | trans
         | user
         | timeper
@@ -1099,15 +1094,16 @@ command : macro
         | modify
         | if
         ;
-macro   : INCLUDE_T str ';'                                 { c_yyFile::inc($2); }
-        | MACRO_T            NAME_V str ';'               { templates.set (_sMacros,     sp2s($2), sp2s($3));     }
-        | MACRO_T            NAME_V str SAVE_T str_z ';'  { templates.save(_sMacros,     sp2s($2), sp2s($3), sp2s($5)); }
-        | TEMPLATE_T PATCH_T NAME_V str ';'               { templates.set (_sPatchs,     sp2s($3), sp2s($4));     }
-        | TEMPLATE_T PATCH_T NAME_V str SAVE_T str_z ';'  { templates.save(_sPatchs,     sp2s($3), sp2s($4), sp2s($6)); }
-        | TEMPLATE_T NODE_T  NAME_V str ';'               { templates.set (_sNodes,      sp2s($3), sp2s($4));     }
-        | TEMPLATE_T NODE_T  NAME_V str SAVE_T str_z ';'  { templates.save(_sNodes,      sp2s($3), sp2s($4), sp2s($6)); }
+// Makró vagy makró jellegű definíciók
+macro   : MACRO_T            NAME_V str ';'                 { templates.set (_sMacros, sp2s($2), sp2s($3));           }
+        | MACRO_T            NAME_V str SAVE_T str_z ';'    { templates.save(_sMacros, sp2s($2), sp2s($3), sp2s($5)); }
+        | TEMPLATE_T PATCH_T NAME_V str ';'                 { templates.set (_sPatchs, sp2s($3), sp2s($4));           }
+        | TEMPLATE_T PATCH_T NAME_V str SAVE_T str_z ';'    { templates.save(_sPatchs, sp2s($3), sp2s($4), sp2s($6)); }
+        | TEMPLATE_T NODE_T  NAME_V str ';'                 { templates.set (_sNodes,  sp2s($3), sp2s($4));           }
+        | TEMPLATE_T NODE_T  NAME_V str SAVE_T str_z ';'    { templates.save(_sNodes,  sp2s($3), sp2s($4), sp2s($6)); }
         | for_m
         ;
+// Ciklusok
 for_m   : FOR_T vals  DO_T MACRO_T NAME_V ';'               { forLoopMac($5, $2); }
         | FOR_T vals  DO_T str ';'                          { forLoop($4, $2); }
         | FOR_T iexpr TO_T iexpr step MASK_T str ';'        { forLoop($7, $2, $4, $5); }
@@ -1115,9 +1111,11 @@ for_m   : FOR_T vals  DO_T MACRO_T NAME_V ';'               { forLoopMac($5, $2)
 step    :                                                   { $$ = 1; }
         | STEP_T iexpr                                      { $$ = $2; }
         ;
+// Listák
 list_m  : LIST_T iexpr TO_T iexpr MASK_T str                { $$ = listLoop($6, $2, $4, 1);  }
         | LIST_T iexpr TO_T iexpr STEP_T iexpr MASK_T str   { $$ = listLoop($8, $2, $4, $6); }
         ;
+// tranzakciókezelés
 trans   : BEGIN_T ';'   { if (!qq().exec("BEGIN TRANSACTION"))    yyerror("Error BEGIN sql command"); PDEB(INFO) << "BEGIN TRANSACTION" << endl; }
         | END_T ';'     { if (!qq().exec("END TRANSACTION"))      yyerror("Error END sql command");   PDEB(INFO) << "END TRANSACTION" << endl; }
         | ROLLBACK_T ';'{ if (!qq().exec("ROLLBACK TRANSACTION")) yyerror("Error END sql command");   PDEB(INFO) << "ROLLBACK TRANSACTION" << endl; }
@@ -1178,9 +1176,10 @@ int     : int_                                  { $$ = $1; }
         | '-' INTEGER_V                         { $$ =-$2; }
         | '#' '[' iexpr ']'                     { $$ = $3; }
         ;
-// Név alapján a patchss rekord ID-t adja vissza (node_id)
+// Név alapján a patchs (vagy leszármazottja) rekord ID-t adja vissza (node_id)
 node_id : str                                   { $$ = cPatch().getIdByName(qq(), *$1); delete $1; }
         ;
+// Port ID a node_id és port név, vagy port index alapján
 port_id : node_id ':' str                       { $$ = cNPort().setPortByName(qq(), *$3, $1).getId(); delete $3; }
         | node_id ':' int                       { $$ = cNPort().setPortByIndex(qq(), $3, $1).getId(); }
         ;
@@ -1279,23 +1278,28 @@ bool    : ON_T      { $$ = true; }  | YES_T     { $$ = true; }  | TRUE_T    { $$
 bool_on :                           { $$ = true; }
         | bool                      { $$ = $1; }
         ;
+// felhasználók, felhesználói csoportok definíciója.
 user    : USER_T str str_z          { NEWOBJ(pUser, cUser()); pUser->setName(*$2).setName(_sUserNote, *$3); delete $2; delete $3; }
             user_e                  { INSERTANDDEL(pUser); }
         | USER_T GROUP_T str str_z  { NEWOBJ(pGroup, cGroup()); pGroup->setName(*$3).setName(_sGroupNote, *$4); delete $3; delete $4; }
             ugrp_e                  { INSERTANDDEL(pGroup); }
+//  Felhasználói csoportagság kezelése
         | USER_T GROUP_T str ADD_T str ';'      { cGroupUser gu(qq(), *$3, *$5); if (!gu.test(qq())) gu.insert(qq()); delete $3; delete $5; }
         | USER_T GROUP_T str REMOVE_T str ';'   { cGroupUser gu(qq(), *$3, *$5); if (gu.test(qq())) gu.remove(qq()); delete $3; delete $5; }
+// Felhasználó letiltása
         | USER_T str bool_on DISABLE_T ';'      { cUser().setByName(qq(), sp2s($2)).setBool(_sDisabled, $3).update(qq(), true); }
-        | USER_T bool_on DISABLE_T str GROUP_T ':'
+// Összes csoporttag letiltása/engedélyezése
+        | USER_T bool_on DISABLE_T str GROUP_T ':'  { cGroupUser().disableMemberByGroup(qq(), sp2s($4), $2); }
         ;
+// Felhasználók tulajdonságai
 user_e  : ';'
         | '{' user_ps '}'
         ;
 user_ps :
         | user_ps user_p
         ;
-user_p  : HOST_T NOTIF_T PERIOD_T timep ';'     { pUser->setId(_sHostNotifPeriod, $4); }
-        | SERVICE_T NOTIF_T PERIOD_T timep ';'  { pUser->setId(_sServNotifPeriod, $4); }
+user_p  : HOST_T NOTIF_T PERIOD_T tmpid ';'     { pUser->setId(_sHostNotifPeriod, $4); }
+        | SERVICE_T NOTIF_T PERIOD_T tmpid ';'  { pUser->setId(_sServNotifPeriod, $4); }
         | HOST_T NOTIF_T SWITCH_T nsws ';'      { pUser->set(_sHostNotifSwitchs, QVariant(*$4)); delete $4; }
         | SERVICE_T NOTIF_T SWITCH_T nsws ';'   { pUser->set(_sServNotifSwitchs, QVariant(*$4)); delete $4; }
         | HOST_T NOTIF_T COMMAND_T str ';'      { pUser->setName(_sHostNotifCmd, *$4); delete $4; }
@@ -1305,16 +1309,17 @@ user_p  : HOST_T NOTIF_T PERIOD_T timep ';'     { pUser->setId(_sHostNotifPeriod
         | PLACE_T place_id ';'                  { pUser->setId(_sPlaceId, $2); }
         | bool_on DISABLE_T ';'                 { pUser->setBool(_sDisabled, $1); }
         ;
-timep   : str                                   { $$ = cTimePeriod().fetchByName(*$1); delete $1; }
-        ;
-nsws    : ALL_T                                 { $$ = new QStringList(allNotifSwitchs); }
+nsws    : ALL_T                                 { $$ = new QStringList(cUser().descr()[_sHostNotifSwitchs].enumVals); }
         |                                       { $$ = new QStringList(); }
         | nsws_                                 { $$ = $1; }
         ;
 nsws_   : nsw                                   { $$ = new QStringList(*$1); delete $1; }
         | nsws_ ',' nsw                         { *($$ = $1) << *$3; delete $3; }
         ; 
-nsw     : str                                   { $$ = $1; if (!allNotifSwitchs.contains(*$1)) yyerror("Ivalis notif swich value."); delete $1; }
+nsw     : str                                   { $$ = $1;
+                                                  if (cUser().descr()[_sHostNotifSwitchs].check(*$$))
+                                                      yyerror("Ivalis notif swich value."); delete $1;
+                                                }
         ;
 ugrp_e  : ';'
         | '{' ugrp_ps '}'
@@ -1324,7 +1329,8 @@ ugrp_ps :
         ;
 ugrp_p  : RIGHTS_T str ';'                      { pGroup->setName(_sGroupRights, *$2); delete $2; }
         | PLACE_T place_id ';'                  { pGroup->setId(_sPlaceId, $2); }
-        ; 
+        ;
+//Timeperiod rekord definíció (insert), napi időperiódusok hozzárendelése/definíciója
 timeper : TIME_T PERIOD_T str str_z ';'         { INSREC(cTimePeriod, _sTimePeriodNote, $3, $4); }
         | tod ADD_T TIME_T PERIOD_T str ';'     { tTimePeriodTpow(qq(), *$5, *$1).insert(qq()); delete $1; delete $5; }
         | toddef
@@ -1332,18 +1338,24 @@ timeper : TIME_T PERIOD_T str str_z ';'         { INSREC(cTimePeriod, _sTimePeri
 tod     : _toddef                   { $$ = $1; }
         | TIME_T OF_T DAY_T str     { $$ = $4; }
         ;
+// Egy napon bellüli időpont megadása
 time    : INTEGER_V ':' INTEGER_V               { $$ = sTime($1, $3); }
         | INTEGER_V ':' INTEGER_V ':' INTEGER_V { $$ = sTime($1, $3, $5); }
         ;
+// Inzertál egy time_of_day rekordot, a rekord névvel tár vissza
 _toddef : TIME_T OF_T DAY_T str str FROM_T time TO_T time str_z	{ $$ = toddef($4, $5, $7, $9, $10); }
         ;
+// Inzertál egy time_of_day rekordot, önálló parancsként
 toddef  : _toddef ';'               { delete $1; }
         ;
+// Rendszer, vagy port paraméterek
 params  : ptype
         | syspar
         ;
+// Paraméter típus definíciók
 ptype   : PARAM_T TYPE_T str str ptypen str_z ';'{ cParamType::insertNew(*$3, *$4, $5, *$6); delete $3; delete $4; delete $6; }
         ;
+// Adat típusok
 ptypen  : BOOLEAN_T                 { $$ = PT_BOOLEAN; }
         | INTEGER_T                 { $$ = PT_BIGINT; }
         | REAL_T                    { $$ = PT_DOUBLE_PRECISION; }
@@ -1355,6 +1367,7 @@ ptypen  : BOOLEAN_T                 { $$ = PT_BOOLEAN; }
         | DATE_T  TIME_T            { $$ = PT_TIMESTAMP; }
         | BYTEA_T                   { $$ = PT_BYTEA; }
         ;
+// Renddszerparaméterek definiálása
 syspar  : SYS_T PARAM_T str str '=' str { cSysParam::setSysParam(qq(), *$4, *$6, *$3); delete $3; delete $4; delete $6; }
         | SYS_T STRING_T str '=' str    { cSysParam::setTextSysParam(qq(), *$3, *$5); delete $3; delete $5; }
         | SYS_T BOOLEAN_T str '=' bool  { cSysParam::setBoolSysParam(qq(), *$3, $5); delete $3; }
@@ -1362,6 +1375,7 @@ syspar  : SYS_T PARAM_T str str '=' str { cSysParam::setSysParam(qq(), *$4, *$6,
         | SYS_T INTERVAL_T str '=' str  { cSysParam::setSysParam(qq(), *$3, *$5, _sInterval); delete $3; delete $5; }
         | SYS_T INTERVAL_T str '=' int  { cSysParam::setSysParam(qq(), *$3, $5 * 1000, _sInterval); delete $3; }
         ;
+// VLAN definíciók
 vlan    : VLAN_T int str str_z      {
                                         actVlanId = cVLan::insertNew($2, actVlanName = *$3, actVlanNote = *$4, true);
                                         delete $3; delete $4;
@@ -1404,6 +1418,7 @@ ip      : IPV4_V                    { $$ = $1; PDEB(VVERBOSE) << "ip(IPV4):" << 
         ;
 ips     : ip                        { $$ = new QString($1->toString()); delete $1; }
         ;
+// Image definíciók
 image   : IMAGE_T str str_z         { NEWOBJ(pImage, cImage()); pImage->setName(*$2).setName(_sImageNote, *$3); delete $2; delete $3; }
             image_e                 { INSERTANDDEL(pImage); }
         ;
@@ -1416,6 +1431,7 @@ image_p : TYPE_T str ';'            { pImage->setName(_sImageType, *$2); delete 
         | SUB_T TYPE_T str ';'      { pImage->setName(_sImageSubType, *$3); delete $3; }
         | IMAGE_T FILE_T str ';'    { pImage->load(*$3); delete $3; }
         ;
+// Helyiség definíciók
 place   : PLACE_T str str_z         { place.clear().setName(*$2).set(_sPlaceNote, *$3); delete $2; delete $3; }
           place_e                   { place.insert(qq()); }
         | SET_T PLACE_T place_id ';'{ globalPlaceId = $3; }

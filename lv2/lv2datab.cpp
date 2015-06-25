@@ -145,6 +145,146 @@ QStringPair tableoid2name(QSqlQuery q, qlonglong toid)
     return r;
 }
 
+/* ******************************************************************************************************* */
+
+QSet<cColEnumType>  cColEnumType::colEnumTypes;
+
+cColEnumType::cColEnumType(qlonglong id, const QString &name, const QStringList &values)
+    : QString(name)
+    , typeId(id)
+    , enumValues(values)
+{
+    if (find(name) != NULL) EXCEPTION(EPROGFAIL, id, name);
+    colEnumTypes.insert(*this);
+}
+
+cColEnumType::cColEnumType(const cColEnumType& _o)
+    : QString(_o)
+    , typeId(_o.typeId)
+    , enumValues(_o.enumValues)
+{
+    ;
+}
+
+QString cColEnumType::toString() const
+{
+    return "Enum type " + (QString)*this + "/#" + QString::number(typeId)
+              + " : {" + enumValues.join(", ") + "}";
+}
+
+const cColEnumType *cColEnumType::fetchOrGet(QSqlQuery& q, const QString& name, bool _ex)
+{
+
+    const cColEnumType *r = find(name);
+    if (r != NULL) return r;        // Ha a típust már beolvastuk
+    QString sql = QString(
+                "SELECT pg_enum.enumlabel, pg_enum.enumtypid FROM  pg_catalog.pg_enum JOIN pg_catalog.pg_type ON pg_type.oid = pg_enum.enumtypid "
+                "WHERE pg_type.typname = '%1' ORDER BY pg_enum.oid").arg(name);
+    if (!q.exec(sql)) SQLPREPERR(q, sql);
+    if (q.first()) {
+        qlonglong id = q.value(1).toLongLong();
+        QStringList vals;
+        do {
+            vals << q.value(0).toString();
+        } while(q.next());
+        return new cColEnumType(id, name, vals);
+    }
+    if (_ex) EXCEPTION(EDATA, -1, QObject::trUtf8("Ismeretlrn enumerációs típus név: %1").arg(name));
+    return NULL;
+}
+
+bool cColEnumType::check(const QStringList& v) const
+{
+    foreach (QString s, v) {
+        if (!check(s)) return false;
+    }
+    return true;
+}
+
+const QString& cColEnumType::enum2str(qlonglong e, bool _ex) const
+{
+    if (isContIx(enumValues, e)) {
+        return enumValues[e];
+    }
+    if (_ex) EXCEPTION(EDATA, e, QObject::trUtf8("Nem megengedett enumerációs érték : %1").arg(*this));
+    return _sNul;
+}
+
+QStringList cColEnumType::set2lst(qlonglong b, bool _ex) const
+{
+    if (_ex && checkSet(b)) EXCEPTION(EDATA, b, QObject::trUtf8("Nem megengedett enumerációs érték : %1").arg(*this));
+    QStringList r;
+    for (int i = 0; i < enumValues.size(); ++i) {
+        if (b & (1 << i)) r << enumValues[i];
+    }
+    return r;
+}
+
+qlonglong cColEnumType::str2enum(const QString& s, bool _ex) const
+{
+    for (int i = 0; i < enumValues.size(); ++i) {
+        if (0 == enumValues[i].compare(s, Qt::CaseInsensitive)) return i;
+    }
+    if (_ex) EXCEPTION(EDATA, -1, QObject::trUtf8("Nem megengedett enumerációs érték : %1.%2").arg(*this).arg(s));
+    return -1;
+
+}
+qlonglong cColEnumType::str2set(const QString& s, bool _ex) const
+{
+    for (int i = 0; i < enumValues.size(); ++i) {
+        if (0 == enumValues[i].compare(s, Qt::CaseInsensitive)) return 1 << i;
+    }
+    if (_ex) EXCEPTION(EDATA, -1, QObject::trUtf8("Nem megengedett enumerációs érték : %1.%2").arg(*this).arg(s));
+    return 0;
+}
+qlonglong cColEnumType::lst2set(const QStringList &s, bool _ex) const
+{
+    qlonglong r = 0;
+    foreach (QString n, s) {
+        r |= str2set(n, _ex);
+    }
+    return r;
+}
+
+const cColEnumType *cColEnumType::find(const QString& name)
+{
+     QSet<cColEnumType>::const_iterator i = colEnumTypes.find(cColEnumType(name));
+     if (i == colEnumTypes.constEnd()) return NULL;
+     return &(*i);
+}
+
+const cColEnumType& cColEnumType::get(const QString& name)
+{
+    const cColEnumType *p = find(name);
+    if (p == NULL) EXCEPTION(EDATA, -1, name);
+    return *p;
+}
+
+QString     cColEnumType::normalize(const QString& nm, bool *pok) const
+{
+    foreach (QString e, enumValues) {
+        if (0 == e.compare(nm, Qt::CaseInsensitive)) {
+            if (pok != NULL) *pok = true;
+            return e;
+        }
+    }
+    if (pok != NULL) *pok = false;
+    return QString();
+}
+
+QStringList cColEnumType::normalize(const QStringList& lst, bool *pok) const
+{
+    qlonglong r = 0;
+    bool ok = true;
+    foreach (QString n, lst) {
+        bool b = str2set(n, false);
+        if (b == 0) ok = false;
+        else        r |= b;
+    }
+    if (pok != NULL) *pok = ok;
+    return set2lst(r);
+}
+
 
 /* ******************************************************************************************************* */
 
@@ -153,7 +293,6 @@ cColStaticDescr::cColStaticDescr(int __t)
     , colType()
     , udtName()
     , colDefault()
-    , enumVals()
     , fKeySchema()
     , fKeyTable()
     , fKeyField()
@@ -164,6 +303,7 @@ cColStaticDescr::cColStaticDescr(int __t)
     isNullable  = false;
     pos =  ordPos = -1;
     eColType = __t;
+    pEnumType = NULL;
     chrMaxLenghr = -1;
     isUpdatable = false;
     fKeyType = FT_NONE;
@@ -175,7 +315,6 @@ cColStaticDescr::cColStaticDescr(const cColStaticDescr& __o)
     , colType(__o.colType)
     , udtName(__o.udtName)
     , colDefault(__o.colDefault)
-    , enumVals(__o.enumVals)
     , fKeySchema(__o.fKeySchema)
     , fKeyTable(__o.fKeyTable)
     , fKeyField(__o.fKeyField)
@@ -187,6 +326,7 @@ cColStaticDescr::cColStaticDescr(const cColStaticDescr& __o)
     ordPos      = __o.ordPos;
     pos         = __o.pos;
     eColType    = __o.eColType;
+    pEnumType    = __o.pEnumType;
     chrMaxLenghr= __o.chrMaxLenghr;
     isUpdatable = __o.isUpdatable;
     fKeyType    = __o.fKeyType;
@@ -208,7 +348,7 @@ cColStaticDescr& cColStaticDescr::operator=(const cColStaticDescr __o)
     isNullable  = __o.isNullable;
     ordPos      = __o.ordPos;
     pos         = __o.pos;
-    enumVals    = __o.enumVals;
+    pEnumType    = __o.pEnumType;
     eColType    = __o.eColType;
     isUpdatable = __o.isUpdatable;
     fKeySchema  = __o.fKeySchema;
@@ -229,7 +369,7 @@ QString cColStaticDescr::toString() const
     r += QChar(' ') + colType;
     if (chrMaxLenghr > 0) r += QString("(%1)").arg(chrMaxLenghr);
     r +=  "/" + udtName;
-    if (enumVals.size())       r += QChar('{') + enumVals.join(_sCommaSp) + QChar('}');
+    if (pEnumType != NULL)      r += QChar('{') + pEnumType->enumValues.join(_sCommaSp) + QChar('}');
     if (!isNullable)           r += " NOT NULL ";
     if (!colDefault.isNull()) {
         r += " DEFAULT " + colDefault;
@@ -442,7 +582,7 @@ void cColStaticDescr::typeDetect()
     TYPEDETUDT("date",     FT_DATE)
     TYPEDETUDT("timestamp",FT_DATE_TIME)
     TYPEDETUDT("interval", FT_INTERVAL)
-    if      (enumVals.count() > 0)                         eColType = FT_ENUM;
+    if      (pEnumType != NULL)                            eColType = FT_ENUM;
     else if (udtName.contains("int", Qt::CaseInsensitive)) eColType = FT_INTEGER;
     else if (udtName.contains("real",Qt::CaseInsensitive)) eColType = FT_REAL;
     else if (udtName.contains("char",Qt::CaseInsensitive)) eColType = FT_TEXT;
@@ -456,10 +596,12 @@ void cColStaticDescr::typeDetect()
 
 bool cColStaticDescr::checkEnum(tE2S e2s, tS2E s2e) const
 {
-    int n = enumVals.size();
-    if (n == 0) EXCEPTION(EPROGFAIL);
-    for (int i = 0; i < n; ++i) {
-        const QString& s = enumVals[i];
+    if (pEnumType == NULL) EXCEPTION(EPROGFAIL);   // Ez nem enum ?!
+    int n = pEnumType->enumValues.size();
+    int i;
+    if (n == 0) EXCEPTION(EPROGFAIL, 0, *pEnumType);   // Ez nem hihető
+    for (i = 0; i < n; ++i) {
+        const QString& s = pEnumType->enumValues[i];
         if (i != (*s2e)(s, false)) {
             DERR() << "#" << i << "/" << s << " : " << "s2e(" << s << ") = " << (*s2e)(s, false) << endl;
             return false;
@@ -469,7 +611,9 @@ bool cColStaticDescr::checkEnum(tE2S e2s, tS2E s2e) const
             return false;
         }
     }
-    return true;
+    if ((*e2s)(i, false).isEmpty()) return true;    // Nem lehet több elem a konverziós függvény szerint!
+    DERR() << "Az enumerációs típus értékkészlet hiányos az adatbázis típusban." << endl;
+    return false;
 }
 
 /* ------------------------------------------------------------------------------------------------------- */
@@ -542,12 +686,18 @@ qlonglong cColStaticDescrBool::toId(const QVariant& _f) const
 
 QString cColStaticDescrBool::toView(QSqlQuery&, const QVariant& _f) const
 {
-    return _f.toBool() ? enumVals[1] : enumVals[0];
+    return langBool(_f.toBool());
 }
 void cColStaticDescrBool::init()
 {
+    const cColEnumType *pt = cColEnumType::find(_sBoolean);
+    QStringList enumVals;
     enumVals << langBool(false);
     enumVals << langBool(true);
+    if (pt == NULL) {
+        pt = new cColEnumType(NULL_ID, _sBoolean, enumVals);
+    }
+    pEnumType = pt;
 }
 
 /*
@@ -830,13 +980,14 @@ CDDUPDEF(cColStaticDescrArray)
 
 cColStaticDescr::eValueCheck  cColStaticDescrEnum::check(const QVariant& v) const
 {
+    if (pEnumType == NULL) EXCEPTION(EPROGFAIL);
     if (v.isNull() || isNumNull(v)) return checkIfNull();
     int t = v.userType();
     if (metaIsInteger(t)) {
-        if (isContIx(enumVals, v.toLongLong())) return VC_OK;
+        if (enumType().checkEnum(v.toLongLong())) return VC_OK;
         return VC_INVALID;
     }
-    if (!v.canConvert(QMetaType::QString) || !enumVals.contains(v.toString())) {
+    if (!v.canConvert(QMetaType::QString) || !enumType().check(v.toString())) {
         return VC_INVALID;
     }
     return VC_OK;
@@ -863,28 +1014,22 @@ egy üres objektum.
 @param _f A konvertálandó érték
 @param str A status referenciája
 @return A konvertált érték
-@exception cError Ha az enumVals adattag üres, és szükséges a konverzióhóz.
+@exception cError Ha az enumType adattag NULL, és szükséges a konverzióhóz.
 */
 QVariant  cColStaticDescrEnum::set(const QVariant& _f, int & str) const
 {
     QVariant r =_f;
-    qlonglong i;
     bool ok = true;
     if (r.isNull() || isNumNull(r)) {
         ok = isNullable || !colDefault.isEmpty();
         r.clear();
     }
     else if (variantIsInteger(r)) {
-        if (enumVals.isEmpty()) EXCEPTION(EPROGFAIL);
-        i = r.toLongLong();
-        if (isContIx(enumVals, i)) {
-            r = enumVals[i];
-        }
-        else {
-            ok = false;
-        }
+        qlonglong i = r.toLongLong();
+        r  = enumType().enum2str(i, false);
+        ok = enumType().checkEnum(i);
     }
-    else if (!r.convert(QMetaType::QString) || !enumVals.contains(r.toString())) {
+    else if (!r.convert(QMetaType::QString) || !enumType().check(r.toString())) {
         ok = false;
     }
     if (!ok) {
@@ -909,8 +1054,7 @@ qlonglong cColStaticDescrEnum::toId(const QVariant& _f) const
 {
     QString s = _f.toString();
     if (s.isEmpty()) return NULL_ID;
-    if (enumVals.isEmpty()) EXCEPTION(EPROGFAIL);
-    qlonglong i = enumVals.indexOf(s);
+    qlonglong i = enumType().str2enum(s);
     if (i < 0) EXCEPTION(EDATA, -1, s);
     return i;
 }
@@ -932,18 +1076,16 @@ cColStaticDescr::eValueCheck  cColStaticDescrSet::check(const QVariant& v) const
     if (v.isNull() || isNumNull(v)) return checkIfNull();
     int t = v.userType();
     if (metaIsInteger(t)) {
-        if (v.toLongLong() < (1 << enumVals.size())) return VC_OK;
+        if (enumType().checkSet(v.toLongLong())) return VC_OK;
         return VC_TRUNC;
     }
     if (metaIsString(t)) {
-        if (enumVals.contains(v.toString(), Qt::CaseInsensitive)) return VC_CONVERT;
+        if (enumType().check(v.toString())) return VC_CONVERT;
         return VC_INVALID;
     }
     if (v.canConvert(QMetaType::QStringList)) {
-        foreach (QString s, v.toStringList()) {
-            if (!contains(s, Qt::CaseInsensitive)) return VC_INVALID;
-        }
-        return VC_OK;
+        if (enumType().check(v.toStringList())) return VC_OK;
+        return VC_INVALID;
     }
     return VC_INVALID;
 }
@@ -996,26 +1138,22 @@ QVariant  cColStaticDescrSet::set(const QVariant& _f, int & str) const
     QStringList sl;
     bool ok = true;
     if (metaIsInteger(t)) {
-        if (enumVals.isEmpty()) EXCEPTION(EPROGFAIL);
-        qlonglong i,m, v = _f.toLongLong();
-        for (m = 1, i = 0; m <= v && i < enumVals.size() && 0 < m; m <<= 1, i++) {
-            if (m & v) sl << enumVals[i];
-        }
+        qlonglong bm = _f.toLongLong();
+        sl = enumType().set2lst(bm, false);
+        if (enumType().checkSet(bm)) str |= cRecord::ES_DEFECTIVE;
         return QVariant(sl);
     }
     else if (metaIsString(t)) {
         sl = _f.toString().split(QChar(','));
     }
-    else if (QMetaType::QStringList == t || QMetaType::QVariantList == t) {
+    else if (_f.canConvert(QMetaType::QStringList)) {
         sl = _f.toStringList();
     }
-    sl.removeDuplicates();
-    foreach (QString s, sl) {
-        if (!enumVals.contains(s)) {
-            ok = false;
-            sl.removeOne(s);
-        }
+    else {
+        str |= cRecord::ES_DEFECTIVE;
+        return QVariant();
     }
+    sl = enumType().normalize(sl, &ok);
     if (!ok) str |= cRecord::ES_DEFECTIVE;
     return QVariant(sl);
  }
@@ -1033,15 +1171,7 @@ QString   cColStaticDescrSet::toName(const QVariant& _f) const
 qlonglong cColStaticDescrSet::toId(const QVariant& _f) const
 {
     if (_f.isNull()) return 0;
-    if (enumVals.isEmpty()) EXCEPTION(EPROGFAIL);
-    qlonglong r = 0;
-    QStringList vl = _f.toStringList();
-    foreach (const QString& v, vl) {
-        int i = enumVals.indexOf(v);
-        if (i >= 0) r |= enum2set(i);
-        else DWAR() << QObject::trUtf8("Invalid enum %1 value %2").arg(udtName).arg(v) << endl;
-    }
-    return r;
+    return enumType().lst2set(_f.toStringList(), false);
 }
 
 /*
@@ -1879,19 +2009,11 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
         if (columnDescr.colType ==  _sUSER_DEFINED || columnDescr.colType ==  _sARRAY) {
             if (columnDescr.colType ==  _sARRAY && columnDescr.udtName.startsWith(QChar('_'))) {
                 // Az ARRAY-nál a típus névhez, hozzá szokott bigyeszteni egy '_'-karakter (nem mindíg)
-                columnDescr.udtName = columnDescr.udtName.mid(1);   // Ha a sját típust keressük, az '_'-t törölni kell.
+                columnDescr.udtName = columnDescr.udtName.mid(1);   // Ha a saját típust keressük, az '_'-t törölni kell.
             }
-            sql = QString(
-                        "SELECT pg_enum.enumlabel FROM  pg_catalog.pg_enum JOIN pg_catalog.pg_type ON pg_type.oid = pg_enum.enumtypid "
-                        "WHERE pg_type.typname = '%1' ORDER BY pg_enum.oid").arg(columnDescr.udtName);
-            if (!pq2->exec(sql)) SQLPREPERR(*pq2, sql);
-            if (pq2->first()) do {
-                columnDescr.enumVals << pq2->value(0).toString();
-            } while(pq2->next());
-            PDEB(VVERBOSE) << columnDescr.colName()
-                           << (columnDescr.colType ==  _sARRAY ? " is set" : " is enum : ")
-                           << columnDescr.udtName << QChar('{') << columnDescr.enumVals.join(QChar(',')) << QChar('}') << endl;
+            columnDescr.pEnumType = cColEnumType::fetchOrGet(*pq2, columnDescr.udtName, false);
         }
+        // Deleted mező?
         if (columnDescr.colName() == _sDeleted) {
             if (columnDescr.colType == "boolean") {
                 if (_deletedIndex >= 0) EXCEPTION(EPROGFAIL);

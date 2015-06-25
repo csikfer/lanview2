@@ -299,7 +299,7 @@ cSetWidget::cSetWidget(const cTableShape& _tm, cRecordFieldRef __fr, eSyncType _
     widget().setLayout(pLayout);
     int id = 0;
     _bits = _descr.toId(_value);
-    foreach (QString e, _descr.enumVals) {
+    foreach (QString e, _descr.enumType().enumValues) {
         QString t = cEnumVal::title(*pq, e, _descr.udtName);
         QCheckBox *pCB = new QCheckBox(t, pWidget());
         pButtons->addButton(pCB, id);
@@ -331,7 +331,7 @@ int cSetWidget::set(const QVariant& v)
     _DBGFN() << debVariantToString(v) << endl;
     int r = 1 == cFieldEditBase::set(v);
     if (r) {
-        int nid = _descr.enumVals.size();
+        int nid = _descr.enumType().enumValues.size();
         QAbstractButton *pAB = pButtons->button(nid);
         if (pAB != NULL) pAB->setChecked(v.isNull());
         _bits = _descr.toId(v);
@@ -347,8 +347,8 @@ void cSetWidget::_set(int id)
 {
     _DBGFNL() << id << endl;
     int dummy;
-    int n =_pFieldRef->descr().enumVals.size();
-    if (id >= _pFieldRef->descr().enumVals.size()) {
+    int n =_pFieldRef->descr().enumType().enumValues.size();
+    if (id >= n) {
         for (int i = 0; i < n; ++i) {
             if (_bits & enum2set(i)) pButtons->button(i)->setChecked(false);
         }
@@ -378,7 +378,7 @@ cEnumRadioWidget::cEnumRadioWidget(const cTableShape& _tm, cRecordFieldRef __fr,
     int id = 0;
     eval = _descr.toId(_value);
     QSqlQuery q = getQuery();
-    foreach (QString e, _descr.enumVals) {
+    foreach (QString e, _descr.enumType().enumValues) {
         QString t = cEnumVal::title(q, e, _descr.udtName);
         QRadioButton *pRB = new QRadioButton(t, pWidget());
         pButtons->addButton(pRB, id);
@@ -410,7 +410,7 @@ int cEnumRadioWidget::set(const QVariant& v)
         eval = _descr.toId(v);
         if (eval >= 0) pButtons->button(eval)->setChecked(true);
         else {
-            QAbstractButton *pRB = pButtons->button(_descr.enumVals.size());
+            QAbstractButton *pRB = pButtons->button(_descr.enumType().enumValues.size());
             if (pRB != NULL) pRB->setChecked(true);
         }
     }
@@ -424,7 +424,7 @@ void cEnumRadioWidget::_set(int id)
         if (pButtons->button(id)->isChecked() == false) pButtons->button(id)->setChecked(true);
         return;
     }
-    if (id == _descr.enumVals.size()) {
+    if (id == _descr.enumType().enumValues.size()) {
         if (eval < 0) {
             if (pButtons->button(id)->isChecked() == false) pButtons->button(id)->setChecked(true);
             return;
@@ -446,7 +446,7 @@ cEnumComboWidget::cEnumComboWidget(const cTableShape& _tm, cRecordFieldRef __fr,
     _wType = FEW_ENUM_COMBO;
     QComboBox *pCB = new QComboBox(par);
     _pWidget = pCB;
-    pCB->addItems(_descr.enumVals);                 // A lehetséges értékek nevei
+    pCB->addItems(_descr.enumType().enumValues);                 // A lehetséges értékek nevei
     if (_nullView.isEmpty() == false) {
         pCB->addItem(_nullView);   // A NULL érték
     }
@@ -463,8 +463,8 @@ cEnumComboWidget::~cEnumComboWidget()
 void cEnumComboWidget::setWidget()
 {
     QComboBox *pCB = (QComboBox *)_pWidget;
-    if (isContIx(_descr.enumVals, eval)) pCB->setCurrentIndex(eval);
-    else pCB->setCurrentIndex(_descr.enumVals.size());
+    if (isContIx(_descr.enumType().enumValues, eval)) pCB->setCurrentIndex(eval);
+    else pCB->setCurrentIndex(_descr.enumType().enumValues.size());
 }
 
 int cEnumComboWidget::set(const QVariant& v)
@@ -482,7 +482,7 @@ void cEnumComboWidget::_set(int id)
 {
     if (eval == id) return;
     qlonglong v = id;
-    if (id == _descr.enumVals.size()) v = NULL_ID;
+    if (id == _descr.enumType().enumValues.size()) v = NULL_ID;
     int dummy;
     _setv(_descr.set(QVariant(v), dummy));
 }
