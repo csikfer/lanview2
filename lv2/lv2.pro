@@ -41,7 +41,8 @@ M4HEADERS    += strings.m4h
 M4SOURCES    += strings.m4c
 DEPENDPATH   += $$TARGETPATH
 
-OTHER_FILES += $$BISONSOURCES $$M4HEADERS $$M4SOURCES
+OTHER_FILES += $$BISONSOURCES $$M4HEADERS $$M4SOURCES \
+    import_parser_pre.cpp
 
 QT += network \
     sql \
@@ -78,6 +79,7 @@ SOURCES += lanview.cpp \
     import_parser.cpp \
     lv2daterr.cpp \
     qtelnet.cpp
+
 HEADERS += lanview.h \
     lv2_global.h \
     qsnmp.h \
