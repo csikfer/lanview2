@@ -22,7 +22,7 @@ extern int importParseFile(const QString& fn);
 ///
 extern int importParse();
 
-/// Megníitja olvasásra a megadott nevű forrás fájlt.
+/// Megnyitja olvasásra a megadott nevű forrás fájlt.
 /// Elöszőr az aktuális könyvtárban, ill. ha a fájl nem létezik, akkor a home könyvtárban próbállja megnyitni.
 /// @return true, ha sikerült a fájlt megnyitni.
 extern bool importSrcOpen(QFile& f);

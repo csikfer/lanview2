@@ -1,6 +1,3 @@
-# -------------------------------------------------
-# Project created by QtCreator 2010-02-13T18:45:35
-# -------------------------------------------------
 
 #bison definition
 bison.name = Bison
@@ -13,36 +10,33 @@ bison.variable_out = SOURCES
 QMAKE_EXTRA_COMPILERS += bison
 msvc:INCLUDEPATH += "."
 
-# Az M4-es makrók fordítása nem működik rendesen, kézzel kell fordítani!!!:
-#< m4 strings.m4c >../../lanview2.debug/lv2/strings.cpp
-#< m4 strings.m4h >strings.h
-
 #m4 definition
 m4h.name = m4h
-m4h.input = M4HEADERS
+m4h.input = M4HEADER
 m4h.output = ${QMAKE_FILE_IN_PATH}/${QMAKE_FILE_BASE}.h
 m4h.commands = m4 -I${QMAKE_FILE_IN_PATH} ${QMAKE_FILE_IN} >${QMAKE_FILE_OUT}
 m4h.clean = rm ${QMAKE_FILE_OUT}
 m4h.CONFIG += target_predeps
 m4h.variable_out = HEADERS
+m4h.depends  += ${QMAKE_FILE_IN_PATH}/strings.m4
 QMAKE_EXTRA_COMPILERS += m4h
 
 m4c.name = m4c
-m4c.input = M4SOURCES
+m4c.input = M4SOURCE
 m4c.output =${QMAKE_FILE_BASE}.cpp
 m4c.commands = m4 -I${QMAKE_FILE_IN_PATH} ${QMAKE_FILE_IN} >${QMAKE_FILE_OUT}
 m4c.clean = rm ${QMAKE_FILE_OUT}
 m4c.CONFIG += target_predeps
 m4c.variable_out = SOURCES
+m4c.depends  += ${QMAKE_FILE_IN_PATH}/strings.m4
 QMAKE_EXTRA_COMPILERS +=  m4c
 
 BISONSOURCES += import_parser.yy
-M4HEADERS    += strings.m4h
-M4SOURCES    += strings.m4c
+M4HEADER      = strings.m4h
+M4SOURCE      = strings.m4c
 DEPENDPATH   += $$TARGETPATH
 
-OTHER_FILES += $$BISONSOURCES $$M4HEADERS $$M4SOURCES \
-    import_parser_pre.cpp
+OTHER_FILES += $$BISONSOURCES $$M4HEADER $$M4SOURCE
 
 QT += network \
     sql \
