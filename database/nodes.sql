@@ -247,7 +247,8 @@ CREATE TYPE portshare AS ENUM ('',      -- 1,2,3,4,5,6,7,8  / nincs megosztás
                                'BA',    -- 4,5
                                'BB',    -- 7,8
                                'C',     -- 3,4
-                               'D');    -- 5,6
+                               'D',     -- 5,6
+                               'NC');   -- No Connected
 COMMENT ON TYPE portshare IS
 'Port megosztás típusok:
     ''''    1,2,3,4,5,6,7,8  / nincs megosztás
@@ -258,10 +259,14 @@ COMMENT ON TYPE portshare IS
     ''BA''  4,5
     ''BB''  7,8
     ''C''   3,4
-    ''D''   5,6';
+    ''D''   5,6
+    ''NC''  Nincs bekötve';
 -- A megengedett, egymással nem ütköző konkurens SHARE kombinációk
 CREATE OR REPLACE FUNCTION check_shared(portshare, portshare) RETURNS boolean AS $$
 BEGIN
+    IF $1 = 'NC' OR $2 = 'NC' THEN
+        PERFORM error('DataError', -1, 'shared_cable', 'check_shared()', 'pports');
+    END IF;
     IF $1 = '' OR $2 = '' THEN
         RETURN FALSE;
     END IF;
@@ -281,6 +286,9 @@ COMMENT ON FUNCTION check_shared(portshare, portshare) IS
 -- Legkisebb SHARE meghatározása, ha a két share kombináció nem ad semmilyen összeköttetést, akkor NULL
 CREATE OR REPLACE FUNCTION min_shared(portshare, portshare) RETURNS portshare AS $$
 BEGIN
+    IF $1 = 'NC' OR $2 = 'NC' THEN
+        PERFORM error('DataError', -1, 'shared_cable', 'min_shared()', 'pports');
+    END IF;
     IF $1 > $2 THEN
         RETURN min_shared($2, $1);
     END IF;

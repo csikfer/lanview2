@@ -21,6 +21,7 @@ __SDEF(BA)
 __SDEF(BB)
 __SDEF(C)
 __SDEF(D)
+__SDEF(NC)
 
 __SDEF(BEGIN)
 __SDEF(END)

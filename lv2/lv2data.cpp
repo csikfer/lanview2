@@ -1019,6 +1019,41 @@ QString cNPort::getFullName(QSqlQuery& q, bool _ex)
 
 /* ------------------------------ cPPort ------------------------------ */
 
+ int portShare(const QString& _n, bool __ex)
+ {
+     if (_n.isEmpty())                                return ES_;
+     if (0 == _n.compare(_sA,   Qt::CaseInsensitive)) return ES_A;
+     if (0 == _n.compare(_sAA,  Qt::CaseInsensitive)) return ES_AA;
+     if (0 == _n.compare(_sAB,  Qt::CaseInsensitive)) return ES_AB;
+     if (0 == _n.compare(_sB,   Qt::CaseInsensitive)) return ES_B;
+     if (0 == _n.compare(_sBA,  Qt::CaseInsensitive)) return ES_BA;
+     if (0 == _n.compare(_sBB,  Qt::CaseInsensitive)) return ES_BB;
+     if (0 == _n.compare(_sC,   Qt::CaseInsensitive)) return ES_C;
+     if (0 == _n.compare(_sD,   Qt::CaseInsensitive)) return ES_D;
+     if (0 == _n.compare(_sNC,  Qt::CaseInsensitive)) return ES_NC;
+     if (__ex) EXCEPTION(EDATA, -1, _n);
+     return ES_INVALID;
+ }
+
+const QString& portShare(int _i, bool __ex)
+{
+    switch (_i) {
+    case ES_:   return _sNul;
+    case ES_A:  return _sA;
+    case ES_AA: return _sAA;
+    case ES_AB: return _sAB;
+    case ES_B:  return _sB;
+    case ES_BA: return _sBA;
+    case ES_BB: return _sBB;
+    case ES_C:  return _sC;
+    case ES_D:  return _sD;
+    case ES_NC: return _sNC;
+    default: if (__ex) EXCEPTION(EDATA, _i);
+    }
+    return _sNul;   // !!
+
+}
+
 cPPort::cPPort() : cNPort(_no_init_)
 {
     //_DBGFN() << VDEBPTR(this) << endl;
@@ -1038,6 +1073,7 @@ qlonglong       cPPort::_ifTypePatch = NULL_ID;
 const cRecStaticDescr&  cPPort::descr() const
 {
     if (initPDescr<cPPort>(_sPPorts)) {
+        CHKENUM(_sPortShared, portShare);
         _ifTypePatch = cIfType::ifTypeId(_sPatch);
     }
     return *_pRecordDescr;
@@ -1342,7 +1378,7 @@ void cPatch::clearShares()
 bool cPatch::setShare(int __a, int __ab, int __b, int __bb, bool __cd)
 {
     // Csak létező portra lehet megosztást csinálni
-    if ((__a  != NULL_IX && 0 > ports.indexOf(cPPort::_ixPortIndex, QVariant(__a)))
+    if ((                   0 > ports.indexOf(cPPort::_ixPortIndex, QVariant(__a)))
      || (__b  != NULL_IX && 0 > ports.indexOf(cPPort::_ixPortIndex, QVariant(__b)))
      || (__ab != NULL_IX && 0 > ports.indexOf(cPPort::_ixPortIndex, QVariant(__ab)))
      || (__bb != NULL_IX && 0 > ports.indexOf(cPPort::_ixPortIndex, QVariant(__bb)))) return false;
@@ -1364,29 +1400,36 @@ bool cPatch::updateShares(QSqlQuery& __q, bool __clr, bool __ex)
         }
     }
     if (shares().isEmpty()) return true;
-    QBitArray um = DESCR(cPPort).mask(_sSharedCable, _sSharedPortId);
+    int sci = DESCR(cPPort).toIndex(_sSharedCable);
+    int spi = DESCR(cPPort).toIndex(_sSharedPortId);
+    QBitArray um = mask(sci, spi);
     QBitArray wm = DESCR(cPPort).primaryKey();
     QString ss;
     foreach (const cShareBack& s, shares()) {
         cPPort *p = ports.get(cPPort::_ixPortIndex, QVariant(s.getA()))->reconvert<cPPort>();   // A bázis port A vagy AA megosztás
         qlonglong pid = p->getId();
+        p->clear(spi);
+        if (s.isNC()) {
+            if (!p->setName(sci, _sNC ).update(__q, true, um, wm, __ex)) return false;
+            return true;
+        }
         if (s.getAB() == NULL_IX) { // A
-            if (!p->setName(_sSharedCable, _sA ).update(__q, true, um, wm, __ex)) return false;
+            if (!p->setName(sci, _sA ).update(__q, true, um, wm, __ex)) return false;
         }
         else {                      // AA, AB / C
-            if (!p->setName(_sSharedCable, _sAA).update(__q, true, um, wm, __ex)) return false;
+            if (!p->setName(sci, _sAA).update(__q, true, um, wm, __ex)) return false;
             p = ports.get(cPPort::_ixPortIndex, QVariant(s.getAB()))->reconvert<cPPort>();
             ss = s.isCD() ? _sC : _sAB;
-            if (!p->setName(_sSharedCable, ss).setId(_sSharedPortId, pid).update(__q, true, um, wm, __ex)) return false;
-        }                           // B / BA / D
+            if (!p->setName(sci, ss).setId(spi, pid).update(__q, true, um, wm, __ex)) return false;
+        }                           // B , BA / D
         if (s.getB() != NULL_IX) {
             p = ports.get(cPPort::_ixPortIndex, QVariant(s.getB()))->reconvert<cPPort>();
             ss = s.getBB() == NULL_IX ? _sB : s.isCD() ? _sD : _sBA;
-            if (!p->setName(_sSharedCable, ss).setId(_sSharedPortId, pid).update(__q, true, um, wm, __ex)) return false;
+            if (!p->setName(sci, ss).setId(spi, pid).update(__q, true, um, wm, __ex)) return false;
         }
         if (s.getBB() != NULL_IX) { // BB
             p = ports.get(cPPort::_ixPortIndex, QVariant(s.getB()))->reconvert<cPPort>();
-            if (!p->setName(_sSharedCable, _sBB).setId(_sSharedPortId, pid).update(__q, true, um, wm, __ex)) return false;
+            if (!p->setName(sci, _sBB).setId(spi, pid).update(__q, true, um, wm, __ex)) return false;
         }
     }
     return true;

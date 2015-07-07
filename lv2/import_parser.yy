@@ -184,13 +184,6 @@ public:
     }
 };
 
-enum eShare {
-    ES_     = 0,
-    ES_A,   ES_AA, ES_AB,
-    ES_B,   ES_BA, ES_BB,
-    ES_C,   ES_D
-};
-
 #define UNKNOWN_PLACE_ID 0LL
 
 typedef QList<QStringPair> QStringPairList;
@@ -959,7 +952,7 @@ static QString * sTime(qlonglong h, qlonglong m, qlonglong s = 0)
     return p;
 }
 
-static enum eShare s2share(QString * __ps)
+static enum ePortShare s2share(QString * __ps)
 {
     QString s;
     if (__ps != NULL) {
@@ -1042,6 +1035,18 @@ static void setLastPort(cNPort *p)
     qlonglong ix = p->getId(_sPortIndex);
     if (ix == NULL_ID) ix = NULL_IX;
     setLastPort(p->getName(_sPortName), ix);
+}
+
+inline static cNPort * setLastPort(qlonglong ix, cPatch * _pnode) {
+    cNPort * p = _pnode->ports.get(cNPort::ixPortIndex(), QVariant(ix));
+    setLastPort(p);
+    return p;
+}
+
+inline static cNPort * setLastPort(const QString& n, cPatch * _pnode) {
+    cNPort * p = _pnode->ports.get(_sPortName, QVariant(n));
+    setLastPort(p);
+    return p;
 }
 
 static void newNode(QStringList * t, QString *name, QString *d)
@@ -1138,7 +1143,7 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
 %token      ORD_T SEQUENCE_T MENU_T GUI_T OWN_T TOOL_T TIP_T WHATS_T THIS_T
 %token      EXEC_T TAG_T ANY_T BOOLEAN_T CHAR_T IPADDRESS_T REAL_T URL_T
 %token      BYTEA_T DATE_T DISABLE_T EXPRESSION_T PREFIX_T RESET_T CACHE_T
-%token      DATA_T IANA_T IFDEF_T IFNDEF_T
+%token      DATA_T IANA_T IFDEF_T IFNDEF_T NC_T
 
 %token <i>  INTEGER_V
 %token <r>  FLOAT_V
@@ -1620,6 +1625,8 @@ patch_p : NOTE_T str ';'                        { pPatch->setName(_sNodeNote, sp
                                                   setLastPort(pPatch->ports.get(_sPortIndex, QVariant(_pix))->getName(_sPortName), _pix);
                                                   portShare($2, $4);
                                                 }
+        | PORT_T pix NC_T ';'                   { setLastPort($2, pPatch); pPatch->setShare($2, NULL_IX, NULL_IX, NULL_IX, true); }
+        | PORT_T pnm NC_T ';'                   { pPatch->setShare(setLastPort(sp2s($2), pPatch)->getId(_sPortIndex), NULL_IX, NULL_IX, NULL_IX, true); delete $2; }
         | for_m
         | eqs
         ;
