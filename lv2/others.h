@@ -56,6 +56,12 @@ static inline QBitArray _mask(int s, int i1, int i2, int i3, int i4) { QBitArray
 /// @return A megkreállt bit tömb objektum
 /// @related cRecStaticDescr
 static inline QBitArray _bit(int i) { return _mask(i+1,i); }
+/// Létrehoz egy max(i1,i2) +1 méretű csupa 0 elemű bit tömböt, és az
+/// i1, i2 indexű bitjeit 1-be állítja.
+/// @param i1 Az 1-be álítandó bit indexe.
+/// @param i2 Az 1-be álítandó bit indexe.
+/// @return A megkreállt bit tömb objektum
+static inline QBitArray _bits(int i1, int i2) { return _mask(qMax(i1, i2) +1,i1, i2); }
 
 /// Az enumerációs értéket a set-ben reprezentáló bit visszaadása.
 static inline qlonglong enum2set(int e) { return ((qlonglong)1) << e; }

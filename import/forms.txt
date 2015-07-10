@@ -304,30 +304,33 @@ TABLE SHAPE sys_params "Rendszer paraméterek" {
 
 TABLE SHAPE groups "felhasználói csoportok" {
     SET DEFAULTS;
-    TABLE TYPE simple;
+    TABLE TYPE group;
     $DefRights
 }
 
 TABLE SHAPE users "felhasználók" {
     SET DEFAULTS;
-    TABLE TYPE grpmbr;
+    TABLE TYPE member;
     RIGHT SHAPE groups;
     $DefRights
 }
+SET table_shapes[groups].right_shape_id = ID TABLE SHAPE ( users );
 
 TABLE SHAPE place_groups "Hely és helyiség csoportok / Zónák" {
     SET DEFAULTS;
-    TABLE TYPE simple;
+    TABLE TYPE group;
+    RIGHT SHAPE users;
     $DefRights
 }
 
 TABLE SHAPE places "Helyiségek" {
     SET DEFAULTS;
-    TABLE TYPE tree, grpmbr;
+    TABLE TYPE tree, member;
     RIGHT SHAPE place_groups;
     TABLE PROP ":map=get_parent_image:";
     $DefRights
 }
+SET table_shapes[place_groups].right_shape_id = ID TABLE SHAPE ( places );
 
 GUI lv2gui {
   file MENU "fájl" {

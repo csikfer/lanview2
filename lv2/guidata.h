@@ -235,6 +235,8 @@ public:
     /// Magadot kulcsal egy paraméter keresése.
     /// @return találat esetén true.
     bool findMagic(const QString &_nm, bool __ex = true)        { return ::findMagic(_nm, magicMap(__ex)); }
+    bool fetchByNames(QSqlQuery& q, const QString& tsn, const QString& fn, bool __ex = false);
+    static qlonglong getIdByNames(QSqlQuery& q, const QString& tsn, const QString& fn);
     tTableShapeFilters  shapeFilters;
 protected:
     static cRecStaticDescr  _staticDescr;

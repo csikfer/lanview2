@@ -241,7 +241,7 @@ public:
     /// @param __name A mező neve
     /// @param _val A keresett érték.
     /// @param __st Kezdő index a kereséshez, opcionális, ha nem adjuk meg az első (0.) elemmel kezdi a keresést.
-    /// @return A listában megtaéállt első lista elem sorszáma, vagy -1, ha nem talállt semmit.
+    /// @return A listában megtalállt első lista elem sorszáma, vagy -1, ha nem talállt semmit.
     int indexOf (const QString&  __name, const QVariant& _val, int __st = 0) const {
         typename QList<T *>::const_iterator    i = QList<T *>::constBegin();
         if (__st != 0) {
@@ -352,7 +352,7 @@ public:
         int i = indexOf(__id);
         if (i < 0) {
             if (__ex == false) return NULL;
-            EXCEPTION(EFOUND, __id);
+            EXCEPTION(EFOUND, __id, QObject::trUtf8("Keresés a rekord ID alapján: %1 = %2").arg(T().idName()).arg(__id));
         }
         return this->at(i);
     }
@@ -364,7 +364,7 @@ public:
         int i = indexOf(__nm);
         if (i < 0) {
             if (__ex == false) return NULL;
-            EXCEPTION(EFOUND, -1, __nm);
+            EXCEPTION(EFOUND, 0, QObject::trUtf8("Keresés a rekord név alapján: %1 = %2").arg(T().nameName()).arg(__nm));
         }
         return this->at(i);
     }
@@ -377,7 +377,7 @@ public:
         int i = indexOf(__fn, __v);
         if (i < 0) {
             if (__ex == false) return NULL;
-            EXCEPTION(EFOUND, -1, __fn);
+            EXCEPTION(EFOUND, 0, QObject::trUtf8("Keresés a %1 nevű mezőérték alapján: %2").arg(__fn).arg(debVariantToString(__v)));
         }
         return this->at(i);
     }
@@ -390,7 +390,7 @@ public:
         int i = indexOf(__ix, __v);
         if (i < 0) {
             if (__ex == false) return NULL;
-            EXCEPTION(EFOUND, __ix);
+            EXCEPTION(EFOUND, __ix, QObject::trUtf8("Keresés a %1 indexű mezőérték alapján: %2").arg(__ix).arg(debVariantToString(__v)));
         }
         return this->at(i);
     }

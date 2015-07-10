@@ -41,12 +41,8 @@ const QString& reasons(int _r, bool __ex = true);
 /// A makró feltételezi, hogy a két konverziós függvény neve azonos, és csak a típusuk különböző (tE2S és tS2E)
 /// Ha az enumeráció kezelés a hívás szerint hibás, akkor dob egy kizárást.
 /// @param n Az enumeráció típusú mező neve, vagy indexe
-/// @param f A konverziós függvény(ek) neve.
-#define CHKENUM(n, f)   { \
-    const cRecStaticDescr& r = *_pRecordDescr; \
-    if (false == r[n].checkEnum( f, f)) \
-        EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("Enumeráció %1 konverziós hiba!").arg(r[n].udtName)); \
-}
+/// @param f A konverziós függvény(ek) neve. A két függvény azonos nevű, de más típusú.
+#define CHKENUM(n, f)   (*_pRecordDescr)[n].checkEnum( f, f, __FILE__, __LINE__,__PRETTY_FUNCTION__);
 
 /* -------------------- Enum, enum - string konverziók -------------------- */
 /// @enum eSubNetType
@@ -898,37 +894,37 @@ protected:
 /// @brief Egy hátlapi megosztást reprezentáló objektum.
 class LV2SHARED_EXPORT cShareBack {
 protected:
-    int     a;  ///< Az A vagy AA (hátlapi) megosztott, vagy a nem bekötött port  port indexe.
-    int     ab; ///< Az AB (hátlapi) megosztott port  port indexe, ha nincs a megadott megosztás, akkor NULL_IX.
-    int     b;  ///< Az B vagy BA (hátlapi) megosztott port  port indexe, ha nincs a megadott megosztás, akkor NULL_IX.
-    int     bb; ///< Az BB (hátlapi) megosztott port  port indexe, ha nincs a megadott megosztás, akkor NULL_IX.
+    int     a;  ///< Az A vagy AA (hátlapi) megosztott, vagy a nem bekötött port sorszáma a ports konténerben.
+    int     ab; ///< Az AB (hátlapi) megosztott port  sorszáma a ports konténerben, ha nincs a megadott megosztás, akkor negatív.
+    int     b;  ///< Az B vagy BA (hátlapi) megosztott port  sorszáma a ports konténerben, ha nincs a megadott megosztás, akkor negatív.
+    int     bb; ///< Az BB (hátlapi) megosztott port  sorszáma a ports konténerben, ha nincs a megadott megosztás, akkor negatív.
     /// Ha AB ill. BA megosztás is van, és értéke true, akkor azok típusa C és D
     /// Ha csak A van megadva, és értéke true, akkor a port nincs bekötve, egyébbként érdektelen.
     bool    cd;
 public:
     /// Üres konstruktor.
-    cShareBack() { a = ab = b = bb = NULL_IX; cd = false; }
-    /// Konstruktor, az adattagok értékeivel. Nem adható meg két azonos port_index (csak ha az NULL_IX)
-    cShareBack(int __a, int __b, int __ab = NULL_IX, int __bb = NULL_IX, bool __cd = false) { set(__a, __b, __ab, __bb, __cd); }
+    cShareBack() { a = ab = b = bb = -1; cd = false; }
+    /// Konstruktor, az adattagok értékeivel. Nem adható meg két azonos port_index (csak ha az NULL_ID)
+    cShareBack(int __a, int __b, int __ab = -1, int __bb = -1, bool __cd = false) { set(__a, __b, __ab, __bb, __cd); }
     /// Copy operátor. Mivel ellenörzi az értékeket az öres objektum nem másolható.
     cShareBack& operator=(const cShareBack& __o) { return set(__o.a, __o.b, __o.ab, __o.bb, __o.cd); }
     /// Az objektum feltöltése, két azonos index nem adható meg,
-    /// az A ill AA típusú megosztású port indexe nem lehet NULL_IX!
-    cShareBack& set(int __a, int __b, int __ab = NULL_IX, int __bb = NULL_IX, bool __cd = false);
+    /// az A ill AA típusú megosztású port sorszáma a ports konténerben, nem lehet negatív!
+    cShareBack& set(int __a, int __b, int __ab = -1, int __bb = -1, bool __cd = false);
     /// Copy konstruktor. Nem ellenöriz.
     cShareBack(const cShareBack& __o)            { a = __o.a; ab = __o.ab; b = __o.b; bb = __o.bb; cd = __o.cd; }
-    /// True, ha a két objektum a,b,ab,bb adattagjaiból bármelyik, bármelyikkel egyenlő, és nem NULL_IX.
+    /// True, ha a két objektum a,b,ab,bb adattagjaiból bármelyik, bármelyikkel egyenlő, és nem NULL_ID.
     bool operator==(const cShareBack& __o) const;
-    /// True, ha az objektum a,b,ab,bb adattagjaiból bármelyikel egyenlő __o -val, és nem NULL_IX.
-    bool operator==(int __o) const;
+    /// True, ha az objektum a,b,ab,bb adattagjaiból bármelyikel egyenlő __o -val, és __o nem negatív.
+    bool operator==(int __i) const;
     int getA() const    { return a;  }
     int getB() const    { return b;  }
     int getAB() const   { return ab; }
     int getBB() const   { return bb; }
     /// Ha AA C D BB mehosztásról van szó, akkor true-val tér vissza
-    bool isCD() const   { return cd && (ab != NULL_IX || b != NULL_IX || bb != NULL_IX); }
+    bool isCD() const   { return cd && (ab < 0 || b < 0 || bb < 0); }
     /// Ha az objektum azt kelzi, hogy az egy magadott (A) port nincs bekötve, akkor true-val tér vissza.
-    bool isNC() const   { return cd && (ab == NULL_IX && b == NULL_IX && bb == NULL_IX); }
+    bool isNC() const   { return cd && (ab < -1 && b < 0 && bb < 0); }
 };
 inline uint qHash(const cShareBack& sh) { return (uint)qHash(sh.getA()); }
 
@@ -963,14 +959,14 @@ public:
     /// Törli a port bekötéseket tartalmazó konténert. Amennyiben a konténer még nincs megallokálva, akkor megallokálja az üres konténert.
     virtual void clearShares();
     /// Beállít egy (hátlapi) kábel megosztást. A ports adattagot fel kell tölteni a hívás elött!
-    /// @param __a    Az A vagy AA típusú megosztott, vagy nem bekötött port indexe (port port_index mező értéke)
-    /// @param __ab   Az AB vagy C típusú megosztott port indexe, ha értéke -1, akkor __a egy A típusú megosztást jelöl
-    /// @param __b    Az B vagy BA típusú megosztott port indexe (port port_index mező értéke)
-    /// @param __bb   Az BB vagy D típusú megosztott port indexe, ha értéke -1, akkor __b egy B típusú megosztást jelöl
+    /// @param __a    Az A vagy AA típusú megosztott, vagy nem bekötött port sorszáma a ports konténerben
+    /// @param __ab   Az AB vagy C típusú megosztott port sorszáma a ports konténerben, ha értéke negatív, akkor __a egy A típusú megosztást jelöl
+    /// @param __b    Az B vagy BA típusú megosztott port sorszáma a ports konténerben
+    /// @param __bb   Az BB vagy D típusú megosztott port sorszáma a ports konténerben, ha értéke negatív, akkor __b egy B típusú megosztást jelöl
     /// @param __cd   Ha __ab vagy __bb nem negatív, és __cd értéke true, akkor __ab és __bb egy C ill. D típusú megosztást jelöl.
     ///               Ha __ab, __b és __bb is negatív, és __cd értéke true, akkor az __a a indexű port nincs bekütbe.
     /// @return true, ha beállította a megosztásokat a ports objektumon, és false, ha hiba történt.
-    virtual bool setShare(int __a, int __ab = NULL_IX, int __b = NULL_IX, int __bb = NULL_IX, bool __cd = false);
+    virtual bool setShare(int __a, int __ab = -1, int __b = -1, int __bb = -1, bool __cd = false);
     /// A megosztásokat is kiírja az adatbázisba.
     /// Feltételezi, hogy a ports konténerbe az adatbázis tartalma be lett olvasva
     /// @param __q Az adatbázis művelethet használt query objektum.
@@ -1115,7 +1111,7 @@ public:
     /// Hibát dob, ebben az osztályban nem támogatott, nem értelmezett
     virtual void clearShares();
     /// Hibát dob, ebben az osztályban nem támogatott, nem értelmezett
-    virtual bool setShare(int __a, int __ab = NULL_IX, int __b = NULL_IX, int __bb = NULL_IX, bool __cd = false);
+    virtual bool setShare(int __a, int __ab = -1, int __b = -1, int __bb = -1, bool __cd = false);
     /// Hibát dob, ebben az osztályban nem támogatott, nem értelmezett
     virtual bool updateShares(QSqlQuery& __q, bool __clr = false, bool __ex = true);
     /// Hibát dob, ebben az osztályban nem támogatott, nem értelmezett

@@ -652,6 +652,24 @@ tMagicMap&  cTableShapeField::splitMagic(bool __ex)
     return *_pMagicMap;
 }
 
+bool cTableShapeField::fetchByNames(QSqlQuery& q, const QString& tsn, const QString& fn, bool __ex)
+{
+    clear();
+    qlonglong tsid = cTableShape().getIdByName(q, tsn, __ex);
+    if (tsid == NULL_ID) return false;
+    setId(_sTableShapeId, tsid);
+    setName(_sTableShapeFieldName, fn);
+    if (completion(q) != 1) EXCEPTION(EDATA, tsid, fn);
+    return true;
+}
+
+qlonglong cTableShapeField::getIdByNames(QSqlQuery& q, const QString& tsn, const QString& fn)
+{
+    cTableShapeField o;
+    o.fetchByNames(q, tsn, fn, true);
+    return o.getId();
+}
+
 /* ------------------------------ cTableShapeFilter ------------------------------ */
 CRECCNTR(cTableShapeFilter)
 

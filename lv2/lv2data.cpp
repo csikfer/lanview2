@@ -462,7 +462,7 @@ const QString& subNetType(int __at, bool __ex)
     case NT_PRIVATE:    return _sPrivate;
     default:  if (__ex) EXCEPTION(EDATA, __at);
     }
-    return _sNULL;
+    return _sNul;
 }
 
 int subNetType(const QString& __at, bool __ex)
@@ -617,7 +617,7 @@ const QString& addrType(int __at, bool __ex)
     case AT_EXTERNAL:return _sExternal;
     default: if (__ex) EXCEPTION(EDATA, __at);
     }
-    return _sNULL;
+    return _sNul;
 }
 
 int addrType(const QString& __at, bool __ex)
@@ -1073,8 +1073,8 @@ qlonglong       cPPort::_ifTypePatch = NULL_ID;
 const cRecStaticDescr&  cPPort::descr() const
 {
     if (initPDescr<cPPort>(_sPPorts)) {
-        CHKENUM(_sPortShared, portShare);
-        _ifTypePatch = cIfType::ifTypeId(_sPatch);
+        CHKENUM(_sSharedCable, portShare);
+        _ifTypePatch = cIfType::ifTypeId(_sPatch); // Minden portnak ez a típusa
     }
     return *_pRecordDescr;
 }
@@ -1287,9 +1287,9 @@ cShareBack& cShareBack::set(int __a, int __b, int __ab, int __bb, bool __cd)
     b = __b;
     ab = __ab;
     bb = __bb;
-    if ((a == NULL_IX || (a == b || a == ab || a == bb))
-     || (b != NULL_IX && (          b == ab || b == bb))
-     || (ab!= NULL_IX &&                      ab == bb ))
+    if ((a  < 0 || (a == b || a == ab || a == bb))
+     || (b >= 0 && (          b == ab || b == bb))
+     || (ab>= 0 &&                      ab == bb ))
         EXCEPTION(EDATA);
     cd = __cd;
     return *this;
@@ -1300,10 +1300,10 @@ bool cShareBack::operator==(const cShareBack& __o) const
     return (*this) == __o.a || (*this) == __o.b || (*this) == __o.ab || (*this) == __o.bb;
 }
 
-bool cShareBack::operator==(int __ix) const
+bool cShareBack::operator==(int __i) const
 {
-    if (__ix == NULL_IX) return a == NULL_IX;
-    return __ix == a || __ix == b || __ix == ab || __ix == bb;
+    if (__i < 0) return false;
+    return __i == a || __i == b || __i == ab || __i == bb;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -1378,11 +1378,11 @@ void cPatch::clearShares()
 bool cPatch::setShare(int __a, int __ab, int __b, int __bb, bool __cd)
 {
     // Csak létező portra lehet megosztást csinálni
-    if ((                   0 > ports.indexOf(cPPort::_ixPortIndex, QVariant(__a)))
-     || (__b  != NULL_IX && 0 > ports.indexOf(cPPort::_ixPortIndex, QVariant(__b)))
-     || (__ab != NULL_IX && 0 > ports.indexOf(cPPort::_ixPortIndex, QVariant(__ab)))
-     || (__bb != NULL_IX && 0 > ports.indexOf(cPPort::_ixPortIndex, QVariant(__bb)))) return false;
-    // A konstruktor is ellenőriz, egy port csak egyszer mind nem lehet NULL_IX, ha mégis dob egy kizárást.
+    if ((             !isContIx(ports, __a))
+     || (__b  >= 0 && !isContIx(ports, __b))
+     || (__ab >= 0 && !isContIx(ports, __ab))
+     || (__bb >= 0 && !isContIx(ports, __bb))) return false;
+    // A konstruktor is ellenőriz, egy port csak egyszer mind nem lehet negatív, ha mégis dob egy kizárást.
     cShareBack  s(__a, __b, __ab, __bb, __cd);
     // Egy port csak egy megosztásban szerepelhet
     if (shares().contains(s)) return false;
@@ -1402,33 +1402,33 @@ bool cPatch::updateShares(QSqlQuery& __q, bool __clr, bool __ex)
     if (shares().isEmpty()) return true;
     int sci = DESCR(cPPort).toIndex(_sSharedCable);
     int spi = DESCR(cPPort).toIndex(_sSharedPortId);
-    QBitArray um = mask(sci, spi);
+    QBitArray um = _bits(sci, spi);
     QBitArray wm = DESCR(cPPort).primaryKey();
     QString ss;
     foreach (const cShareBack& s, shares()) {
-        cPPort *p = ports.get(cPPort::_ixPortIndex, QVariant(s.getA()))->reconvert<cPPort>();   // A bázis port A vagy AA megosztás
-        qlonglong pid = p->getId();
+        qlonglong pid = ports[s.getA()]->getId();
+        cPPort *p = ports[s.getA()]->reconvert<cPPort>();   // A bázis port A vagy AA megosztás
         p->clear(spi);
-        if (s.isNC()) {
+        if (s.isNC()) {     // NC
             if (!p->setName(sci, _sNC ).update(__q, true, um, wm, __ex)) return false;
             return true;
         }
-        if (s.getAB() == NULL_IX) { // A
+        if (s.getAB() < 0) { // A
             if (!p->setName(sci, _sA ).update(__q, true, um, wm, __ex)) return false;
         }
         else {                      // AA, AB / C
             if (!p->setName(sci, _sAA).update(__q, true, um, wm, __ex)) return false;
-            p = ports.get(cPPort::_ixPortIndex, QVariant(s.getAB()))->reconvert<cPPort>();
+            p = ports[s.getAB()]->reconvert<cPPort>();
             ss = s.isCD() ? _sC : _sAB;
             if (!p->setName(sci, ss).setId(spi, pid).update(__q, true, um, wm, __ex)) return false;
         }                           // B , BA / D
-        if (s.getB() != NULL_IX) {
-            p = ports.get(cPPort::_ixPortIndex, QVariant(s.getB()))->reconvert<cPPort>();
-            ss = s.getBB() == NULL_IX ? _sB : s.isCD() ? _sD : _sBA;
+        if (s.getB() >= 0) {
+            p = ports[s.getB()]->reconvert<cPPort>();
+            ss = s.getBB() < 0 ? _sB : s.isCD() ? _sD : _sBA;
             if (!p->setName(sci, ss).setId(spi, pid).update(__q, true, um, wm, __ex)) return false;
         }
-        if (s.getBB() != NULL_IX) { // BB
-            p = ports.get(cPPort::_ixPortIndex, QVariant(s.getB()))->reconvert<cPPort>();
+        if (s.getBB() >= 0) { // BB
+            p = ports[s.getB()]->reconvert<cPPort>();
             if (!p->setName(sci, _sBB).setId(spi, pid).update(__q, true, um, wm, __ex)) return false;
         }
     }
@@ -3131,7 +3131,7 @@ const QString& vlanType(int __e, bool __ex)
     case VT_VIRTUAL:    return _sVirtual;
     case VT_HARD:       return _sHard;
     default:            if (__ex) EXCEPTION(EDATA, (qlonglong)__e);
-                        return _sNULL;
+                        return _sNul;
     }
 }
 
@@ -3151,7 +3151,7 @@ const QString& setType(int __e, bool __ex)
     case ST_QUERY:  return _sQuery;
     case ST_MANUAL: return _sManual;
     default:        if (__ex) EXCEPTION(EDATA, (qlonglong)__e);
-                    return _sNULL;
+                    return _sNul;
     }
 }
 

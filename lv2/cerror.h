@@ -207,6 +207,13 @@ Az adattagok inicializálása után hívja a circulation() metódust
     /// Dob egy kizárást a this pointerrel.
     /// @return A metódus nem tér vissza
     virtual void exception(void);
+
+    static void exception(const char * _mSrcName, int _mSrcLine, const char * _mFuncName, int _mErrorCode,
+           int _mErrorSubCode = 0, const QString& _mErrorSubMsg = QString())
+    {
+        (new cError(_mSrcName, _mSrcLine, _mFuncName, _mErrorCode, _mErrorSubCode, _mErrorSubMsg))->exception();
+    }
+
     /*! Az objektum tartalmát egy stringgé konvertálja. */
     virtual QString msg(void) const;
     /*!

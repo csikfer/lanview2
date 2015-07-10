@@ -162,6 +162,7 @@ public:
         FT_OWNER,                   ///< A távoli kulcs egy tulajdonos objektumra mutat
         FT_SELF                     ///< Önmagára mutató távoli kulcs (pl. fa struktúrát reprezentál)
     };
+    /// Egy mező érték ellenörzésének az eredménye.
     enum eValueCheck {
         VC_INVALID = 0,     ///< Nem megengedett érték, nem konvertálható
         VC_TRUNC,           ///< Típuskonverzió szükséges, de csak adatvesztéssel (csonkolás)
@@ -170,7 +171,6 @@ public:
         VC_CONVERT,         ///< Értékhatáron bellül, típuskonverzió szükséges, és lehetséges
         VC_OK               ///< Értékhatáron bellül típus azonos érték
     };
-
     /// Konstruktor, egy üres objektumot hoz létre
     /// @param __t Ha megadjuk a paramétert, akkor az eColType adattag ezt az értéket fogja felvenni.
     cColStaticDescr(int __t = FT_ANY);
@@ -191,8 +191,9 @@ public:
     /// Adat ellenörzés. Megvizsgálja, hogy a megadott érték hozzárendelhető-e a mezőhöz.
     /// Csak elleőrzi az értéket.
     /// @param v Az ellenőrizendő érték
+    /// @param acceptable Ha az elenörzés értéke kisebb, akkor dob egy kizárást. Alapértelmezetten nincs kizárás.
     /// @return Az ellenörzés eredményével tér vissza, lsd.: az eValueCheck típust.
-    virtual enum eValueCheck check(const QVariant& v) const;
+    virtual enum cColStaticDescr::eValueCheck check(const QVariant& v, cColStaticDescr::eValueCheck acceptable = cColStaticDescr::VC_INVALID) const;
     /// Az adatbázisból beolvasott adatot konvertálja a rekord konténerben tárolt formára.
     virtual QVariant fromSql(const QVariant& __f) const;
     /// A rekord konténerben tárolt formából konvertálja az adatot, az adatbázis kezelőnek átadható formára.
@@ -230,8 +231,9 @@ public:
     /// a numerikusból stringbe konvertálásnál csak azt ellenörzi, hogy az utolsó elem után ad-e vissza nem null értéket.
     /// @param e2s Az enumerációból stringgé konvertáló függvény pointere
     /// @param s2e A stringból enumerációs konstanba konvertáló függvény pointere.
-    /// @return true, ha nem sikerült eltérést detektálni a kétféle enum értelmezés között, és false, ha eltérés van
-    bool checkEnum(tE2S e2s, tS2E s2e) const;
+    ///
+    /// @exception cError *, Ha sikerült eltérést detektálni a kétféle enum értelmezés között.
+    void checkEnum(tE2S e2s, tS2E s2e, const char * src, int lin, const char * fn) const;
     // Adattagok
     /// A mező pozíciója, nem zéró pozitív szám (1,2,3...)
     int         pos;
@@ -278,12 +280,14 @@ public:
     QString allToString() const;
     /// Ha a mező egy távoli kulcs, és nem önmagára hivatkozik, akkor a hivatkozott objektumra mutat, egyébként NULL.
     cRecordAny *pFRec;
+    static const QString valueCheck(int e);
 protected:
     eValueCheck checkIfNull() const {
-        if (isNullable)             return VC_NULL;     // NULL / OK
-        if (colDefault.isEmpty())   return VC_INVALID;  // NULL / INVALID
-        else                        return VC_DEFAULT;  // NULL / DEFAULT
+        if (isNullable)             return cColStaticDescr::VC_NULL;     // NULL / OK
+        if (colDefault.isEmpty())   return cColStaticDescr::VC_INVALID;  // NULL / INVALID
+        else                        return cColStaticDescr::VC_DEFAULT;  // NULL / DEFAULT
     }
+    eValueCheck ifExcep(eValueCheck result, eValueCheck acceptable, const QVariant &val) const;
 };
 TSTREAMO(cColStaticDescr)
 
@@ -296,7 +300,7 @@ public:
     cColStaticDescrBool(const cColStaticDescr& __o) : cColStaticDescr(__o) { init(); }
     /// A konstruktor kitölti a enumType pointert is, hogy enumerációként is kezelhető legyen
     cColStaticDescrBool(int t) : cColStaticDescr(t) { init(); }
-    enum eValueCheck  check(const QVariant& v) const;
+    enum cColStaticDescr::eValueCheck  check(const QVariant& v, cColStaticDescr::eValueCheck acceptable = cColStaticDescr::VC_INVALID) const;
     virtual QVariant  fromSql(const QVariant& __f) const;
     virtual QVariant  toSql(const QVariant& __f) const;
     virtual QVariant  set(const QVariant& _f, int &str) const;
@@ -318,7 +322,7 @@ private:
       public: \
         T(int t) : cColStaticDescr(t) { ; } \
         T(const cColStaticDescr& __o) : cColStaticDescr(__o) { ; } \
-        virtual enum eValueCheck check(const QVariant& v) const; \
+        virtual enum cColStaticDescr::eValueCheck check(const QVariant& v, cColStaticDescr::eValueCheck acceptable = cColStaticDescr::VC_INVALID) const; \
         virtual QVariant  fromSql(const QVariant& __f) const; \
         virtual QVariant  toSql(const QVariant& __f) const; \
         virtual QVariant  set(const QVariant& _f, int &rst) const; \
