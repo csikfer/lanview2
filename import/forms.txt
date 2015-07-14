@@ -312,6 +312,8 @@ TABLE SHAPE users "felhasználók" {
     SET DEFAULTS;
     TABLE TYPE member;
     RIGHT SHAPE groups;
+    FIELD passwd PROP passwd;
+    FIELD passwd HIDE;
     $DefRights
 }
 SET table_shapes[groups].right_shape_id = ID TABLE SHAPE ( users );

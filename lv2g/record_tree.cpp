@@ -38,7 +38,7 @@ void cRecordTree::init()
         break;
     case ENUM2SET2(TS_TREE, TS_MEMBER):
         if (pUpper != NULL) EXCEPTION(EDATA);
-        flags = RTF_MASTER | RTF_GRPMBR | RTF_TREE;
+        flags = RTF_MASTER | RTF_MEMBER | RTF_TREE;
         initMaster();
         break;
     case ENUM2SET2(TS_TREE, TS_OWNER):

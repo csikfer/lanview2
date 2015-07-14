@@ -2,7 +2,7 @@
 DROP TABLE IF EXISTS table_shape_filters, table_shape_fields, table_shapes, enum_vals, id_view_procs CASCADE;
 DROP TYPE  IF EXISTS tableshapetype, filtertype, filterdatatype, ordtype, tableinherittype;
 
-CREATE TYPE tableshapetype AS ENUM ('no', 'simple', 'tree', 'owner', 'child', 'switch', 'link', 'member', 'group', 'ingroup', 'nogroup');
+CREATE TYPE tableshapetype AS ENUM ('no', 'simple', 'tree', 'owner', 'child', 'switch', 'link', 'member', 'group');
 ALTER TYPE tableshapetype OWNER TO lanview2;
 COMMENT ON TYPE tableshapetype IS
 'table shape típusa:
@@ -14,9 +14,7 @@ child       A tábla egy owner táblához tartozik
 switch      Kapcsoló tábla (maga a kapcsoló tábla láthatatlan, csak a kapcsolatokat reprezentálja)
 link        Link tábla (Adattartalommal is rendelkező kapcsoló tábla)
 member      A megjelenített tábla elemei csoport tagok, a jobb oldalon a csoport rekordok lesznek megjelenítva
-group       A megjelenített tábla elemei csoportok, jobboldalon a csoport tagjai.
-ingroup     Group típusú tábla (tagja) megjelenítés. A típus automatikus nem kell/szabad megadni.
-nogroup     Group típusú tábla (nem tagja) megjelenítés. A típus automatikus nem kell/szabad megadni.'
+group       A megjelenített tábla elemei csoportok, jobboldalon a csoport tagjai.'
 ;
 
 CREATE TYPE tableinherittype AS ENUM ('no', 'only', 'on', 'all', 'reverse', 'listed', 'listed_rev', 'listed_all');
@@ -84,10 +82,10 @@ CREATE TABLE table_shape_fields (
     table_shape_field_note varchar(255)     DEFAULT NULL,
     table_shape_field_title varchar(32)     DEFAULT NULL,
     table_shape_id          bigint          NOT NULL REFERENCES table_shapes(table_shape_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    field_sequence_number   bigint          NOT NULL,
+    field_sequence_number   integer         NOT NULL,
     ord_types               ordtype[]       DEFAULT '{"no","asc","desc"}',
     ord_init_type           ordtype         DEFAULT NULL,
-    ord_init_sequence_number bigint         DEFAULT NULL,
+    ord_init_sequence_number integer        DEFAULT NULL,
     is_read_only            boolean         DEFAULT 'f',
     is_hide                 boolean         DEFAULT 'f',
     expression              varchar(255)    DEFAULT NULL,
@@ -220,7 +218,7 @@ DROP TABLE IF EXISTS menu_items;
 CREATE TABLE menu_items (
     menu_item_id            bigserial       PRIMARY KEY,
     menu_item_name          varchar(32)     NOT NULL,
-    item_sequence_number    bigint          DEFAULT NULL,
+    item_sequence_number    integer         DEFAULT NULL,
     menu_item_title         varchar(32)     DEFAULT NULL,
     app_name                varchar(32)     NOT NULL,
     upper_menu_item_id      bigint          DEFAULT NULL REFERENCES menu_items(menu_item_id) MATCH SIMPLE ON DELETE CASCADE ON UPDATE RESTRICT,
@@ -234,7 +232,7 @@ ALTER TABLE menu_items OWNER TO lanview2;
 
 CREATE OR REPLACE FUNCTION check_insert_menu_items() RETURNS TRIGGER AS $$
 DECLARE
-    n   bigint;
+    n   integer;
 BEGIN
     IF NEW.item_sequence_number IS NULL THEN
         IF NEW.upper_menu_item_id IS NULL THEN

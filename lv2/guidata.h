@@ -22,8 +22,11 @@ enum eTableShapeType {
     TS_LINK,        ///< "link"     Hasonló a kapcsoló táblához, de egy tábla (és leszármazottai) közötti kapcsolatot reprezentál (linkek)
     TS_MEMBER,      ///< "member"   A jobboldalon a csoport rekordok (tag/nem tag)
     TS_GROUP,       ///< "group"
-    TS_INGROUP,     ///< "ingroup"  Jobb oldal, az aktuális (bal) rekord tagja a csoport rekordoknak
-    TS_NOGROUP      ///< "nogroup"  Jobb oldal, az aktuális (bal) rekord nem tagja a csoport rekordoknak
+    TS_UNKNOWN_PAD, ///< Dummy érték a CHKENU miatt, további lehetséges éertékek nem megengedettek az adatbázisban
+    TS_IGROUP,      ///< "igroup"  Jobb oldali groupoknak, az aktuális bal rekord tagja
+    TS_NGROUP,      ///< "ngroup"  Jobb oldali groupoknak, az aktuális bal rekord nem tagja
+    TS_IMEMBER,     ///< "imember" Jobb oldali tagok, az aktuális bal csoportnak tagjai
+    TS_NMEMBER      ///< "nmember" Jobb oldali tagok, az aktuális bal csoportnak nem tagjai
 };
 /// Konverziós függvény a eTableShapeType enumerációs típushoz
 /// @param n Az enumerációs értéket reprezentáló string az adatbázisban
@@ -170,11 +173,10 @@ public:
 
     /// A rekordban a atrubutes mezőt vágja szát, és az elemeket elhelyezi a pMagicMap pointer által mutatott konténerbe.
     /// Ha pMagicMap egy NULL pointer, akkor a művelet elött megallokálja a konténert, ha nem NULL, akkor pedig törli a konténer tartalmát.
-    /// Mivel a pMagicMap pointerű konténer csak egy gyorstár, az objektum érdemben nem változik meg, ezért konstans a metódus
-    tMagicMap& splitMagic(bool __ex = true) const;
+    tMagicMap& splitMagic(bool __ex = true);
     /// Visszaadja a pMagicMap által mutatott konténer referenciáját. Ha pMagicMap értéke NULL, akkor hívja a splitMagic() metódust, ami megallokálja
     /// és feltölti a konténert.
-    tMagicMap& magicMap(bool __ex = true) const                 { if (_pMagicMap == NULL) splitMagic(__ex); return *_pMagicMap; }
+    const tMagicMap& magicMap(bool __ex = true) const;
     /// A megadott kulcs alapján visszaadja a magicMap konténerből a paraméter értéket a név alapján. Ha a konténer nincs megallokálva, akkor megallokálja
     /// és feltölti.
     /// @return ha a kulcshoz tartozik megadott néven paraméter, akkor az értéket adja vissza, vagy üres stringet.
@@ -225,16 +227,20 @@ public:
     /// A rekordban a atrubutes nezőt vágja szát, és az elemeket elhelyezi a pMagicMap pointer által mutatott konténerbe.
     /// Ha pMagicMap egy NULL pointer, akkor a művelet elött megallokálja a konténert, ha nem NULL, akkor pedig törli a konténer tartalmát.
     tMagicMap& splitMagic(bool __ex = true);
-    /// Visszaadja a pMagicMap által mutatott konténer referenciáját. Ha pMagicMap értéke NULL, akkor hívja a splitMagic() metódust, ami megallokálja
-    /// és feltölti a konténert.
-    tMagicMap& magicMap(bool __ex = true)                       { if (_pMagicMap == NULL) splitMagic(__ex); return *_pMagicMap; }
-    /// A megadott kulcs alapján visszaadja a magicMap konténerből a paraméter értéket a név alapján. Ha a konténer nincs megallokálva, akkor megallokálja
-    /// és feltölti.
+    /// Visszaadja a pMagicMap által mutatott konténer referenciáját.
+    /// Konstansként van definiálva, az objektum értékét érdemben nem változtatja meg, de ha a _pMagicMap adattag egy
+    /// NULL pointer, akkor megallokálja és feltölti a (gyorstárként funkcionáló) konténert.
+    const tMagicMap& magicMap(bool __ex = true) const;
+    /// A megadott kulcs alapján visszaadja a magicMap konténerből a paraméter értéket a név alapján.
+    /// Konstansként van definiálva, az objektum értékét érdemben nem változtatja meg, de ha a _pMagicMap adattag egy
+    /// NULL pointer, akkor megallokálja és feltölti a (gyorstárként finkcionáló) konténert.
     /// @return ha a kulcshoz tartozik megadott néven paraméter, akkor az értéket adja vissza, vagy üres stringet.
-    QString magicParam(const QString& __nm, bool __ex = true)   { return ::magicParam(__nm, magicMap(__ex)); }
+    QString magicParam(const QString& __nm, bool __ex = true) const { return ::magicParam(__nm, magicMap(__ex)); }
     /// Magadot kulcsal egy paraméter keresése.
+    /// Konstansként van definiálva, az objektum értékét érdemben nem változtatja meg, de ha a _pMagicMap adattag egy
+    /// NULL pointer, akkor megallokálja és feltölti a (gyorstárként finkcionáló) konténert.
     /// @return találat esetén true.
-    bool findMagic(const QString &_nm, bool __ex = true)        { return ::findMagic(_nm, magicMap(__ex)); }
+    bool findMagic(const QString &_nm, bool __ex = true) const  { return ::findMagic(_nm, magicMap(__ex)); }
     bool fetchByNames(QSqlQuery& q, const QString& tsn, const QString& fn, bool __ex = false);
     static qlonglong getIdByNames(QSqlQuery& q, const QString& tsn, const QString& fn);
     tTableShapeFilters  shapeFilters;

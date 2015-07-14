@@ -20,18 +20,16 @@ class LV2SHARED_EXPORT cGroup : public cRecord {
 class LV2SHARED_EXPORT cUser : public cRecord {
     CRECORD(cUser);
 public:
-    void updatePassword(QSqlQuery &q, const QString &__passwd);
-    void updatePassword(const QString &__passwd) { QSqlQuery q = getQuery(); updatePassword(q, __passwd); }
-    /// Ellenörzi a jelszót. A felhasználót azonosító user_id-t vagy a felhasználó nevet (user:name) az objektum tartalmazza,
-    /// vagyis legalább ezt az egyik mezőt ki kell tölteni az objektumban. Az user_id az lsődleges.
-    /// Ha mindkét fenti két mezp értéke NULL, akkor hibát dob a metódus.
+    /// Ellenörzi a jelszót. A felhasználót azonosító user_id-t vagy a felhasználó nevet (user_name) az objektum tartalmazza,
+    /// vagyis legalább ezt az egyik mezőt ki kell tölteni az objektumban. Az user_id az elsődleges.
+    /// Ha mindkét fenti mező értéke NULL, akkor hibát dob a metódus.
     /// @return Ha a jelszó helyes, és nincs letiltva a felhasználó, akkor true-val tér vissza, egyébként false értékkel
     /// @param q Adatbázis művelethez használlt objektum
     /// @param __passwd Az ellenörizendő jelszó.
     bool checkPassword(QSqlQuery &q, const QString &__passwd) const;
     /// Ellenörzi a jelszót. A felhasználót azonosító user_id-t vagy a felhasználó nevet (user:name) az objektum tartalmazza,
     /// vagyis legalább ezt az egyik mezőt ki kell tölteni az objektumban. Az user_id az lsődleges.
-    /// Ha mindkét fenti két mezp értéke NULL, akkor hibát dob a metódus.
+    /// Ha mindkét fenti mező értéke NULL, akkor hibát dob a metódus.
     /// @return Ha a jelszó helyes, és nincs letiltva a felhasználó, akkor true-val tér vissza, egyébként false értékkel
     /// @param __passwd Az ellenörizendő jelszó.
     bool checkPassword(const QString &__passwd) const { QSqlQuery q = getQuery(); return checkPassword(q, __passwd); }

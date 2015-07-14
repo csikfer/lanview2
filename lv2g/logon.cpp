@@ -77,7 +77,8 @@ void cLogOn::ok()
                 ui->msgLBL->setText(trUtf8("A kétszer begépelt új jelszó nem eggyezik. Próbálja újra!"));
                 return;
             }
-            lanView::getInstance()->pUser->updatePassword(np);
+            QSqlQuery q = getQuery();
+            lanView::getInstance()->pUser->set(_sPasswd, np).update(q, false);
         }
         accept();
         return;

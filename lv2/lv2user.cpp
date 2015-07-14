@@ -6,17 +6,6 @@ DEFAULTCRECDEF(cGroup, _sGroups)
 /* ------------------------------ users ------------------------------ */
 DEFAULTCRECDEF(cUser, _sUsers)
 
-void cUser::updatePassword(QSqlQuery& q, const QString &__passwd)
-{
-    QString sql = "SELECT update_user_password(:uid, :newpass)";
-    if (!q.prepare(sql)) SQLPREPERR(q, sql);
-    q.bindValue(":uid", get(_sUserId));
-    q.bindValue(":newpass", __passwd);
-    if (!q.exec()) SQLQUERYERR(q);
-    q.first();
-    cRecord::set(q);
-}
-
 bool cUser::checkPassword(QSqlQuery& q, const QString &__passwd) const
 {
     QString sql;

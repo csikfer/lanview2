@@ -153,6 +153,8 @@ public:
         FT_INET,                ///< hálózati cím
         FT_CIDR,                ///< Hálózati címtartomány
         FT_ADDR_MASK= 0x00000100L,///< Mask a cím típusok felismeréséhez
+        ///< Titkosított adat
+        FT_CRYPTED  = 0x00000200L,
         FT_NEXT_TYPE= 0x00001000L ///< esetleges további típusok ...
     };
     /// távoli kulcs típusok.
@@ -280,7 +282,9 @@ public:
     QString allToString() const;
     /// Ha a mező egy távoli kulcs, és nem önmagára hivatkozik, akkor a hivatkozott objektumra mutat, egyébként NULL.
     cRecordAny *pFRec;
+    /// Az eValueCheck enumerációs értéket reprezentáló stringgel tér vissza.
     static const QString valueCheck(int e);
+    ///
 protected:
     eValueCheck checkIfNull() const {
         if (isNullable)             return cColStaticDescr::VC_NULL;     // NULL / OK

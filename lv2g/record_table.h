@@ -133,17 +133,20 @@ public:
 
 /// A tábla viszonyát meghatározó flag értékek
 enum eRecordTableFlags  {
-    RTF_SINGLE = 0x0001,    ///< Egyedi tábla megjelenítése
-    RTF_MASTER = 0x0002,    ///< több tábla, az objektum a fő tábláé
-    RTF_SLAVE  = 0x0004,    ///< több tábla, az objektum egy mellék tábláé
-    RTF_OVNER  = 0x0008,
-    RTF_CHILD  = 0x0010,
-    RTF_TREE   = 0x0020,
-    RTF_LINK   = 0x0040,    ///< Link táblák
-    RTF_LEFT   = 0x0080,    ///< A bal oldali link tábla
-    RTF_GRPMBR = 0x0100,    ///< Csoport tagság
-    RTF_INGROUP  = 0x0200,
-    RTF_NOGROUP= 0x0400
+    RTF_SINGLE  = 0x0001,   ///< Egyedi tábla megjelenítése
+    RTF_MASTER  = 0x0002,   ///< több tábla, az objektum a fő tábláé
+    RTF_SLAVE   = 0x0004,   ///< több tábla, az objektum egy mellék tábláé
+    RTF_OVNER   = 0x0008,
+    RTF_CHILD   = 0x0010,
+    RTF_TREE    = 0x0020,   ///< Fa szerkezet
+    RTF_LINK    = 0x0040,   ///< Link táblák
+    RTF_LEFT    = 0x0080,   ///< A bal oldali link tábla
+    RTF_MEMBER  = 0x0100,   ///< Csoport tagság
+    RTF_GROUP   = 0x0200,   ///< Csoprt
+    RTF_IGROUP  = 0x1000,
+    RTF_NGROUP  = 0x2000,
+    RTF_IMEMBER = 0x4000,
+    RTF_NMEMBER = 0x8000
 };
 
 class cRecordViewBase : public QObject {

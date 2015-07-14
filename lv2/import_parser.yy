@@ -1457,7 +1457,7 @@ user_p  : HOST_T NOTIF_T PERIOD_T tmpid ';'     { pUser->setId(_sHostNotifPeriod
         | SERVICE_T NOTIF_T SWITCH_T nsws ';'   { pUser->set(_sServNotifSwitchs, QVariant(*$4)); delete $4; }
         | HOST_T NOTIF_T COMMAND_T str ';'      { pUser->setName(_sHostNotifCmd, *$4); delete $4; }
         | SERVICE_T NOTIF_T COMMAND_T str ';'   { pUser->setName(_sServNotifCmd, *$4); delete $4; }
-        | TEL_T strs ';'                        { pUser->set(_sTel, QVariant(*$2)); delete $2; }
+        | TEL_T strs ';'                        { pUser->set(_sTels, QVariant(*$2)); delete $2; }
         | ADDRESS_T strs ';'                    { pUser->set(_sAddresses, QVariant(*$2)); delete $2; }
         | PLACE_T place_id ';'                  { pUser->setId(_sPlaceId, $2); }
         | bool_on DISABLE_T ';'                 { pUser->setBool(_sDisabled, $1); }
@@ -1621,7 +1621,7 @@ place_p : NOTE_T str ';'            { place.set(_sPlaceNote, *$2);     delete $2
         | PARENT_T place_id ';'     { place.set(_sParentId, $2); }
         | IMAGE_T image_id ';'      { place.set(_sImageId,  $2); }
         | FRAME_T frame ';'         { place.set(_sFrame, QVariant::fromValue(*$2)); delete $2; }
-        | TEL_T strs ';'            { place.set(_sTel, *$2);            delete $2; }
+        | TEL_T strs ';'            { place.set(_sTels, *$2);            delete $2; }
         ;
 frame   : '{' points  '}'           { $$ = $2; }
         ;

@@ -642,7 +642,7 @@ void cRecordViewBase::insert()
                     cRecordAny *pRec = new cRecordAny(rd.record());
                     ok = pModel->insertRec(pRec);
                     if (!ok) delete pRec;
-                    else if (flags & RTF_INGROUP) {    // Group, tagja listába van a beillesztés?
+                    else if (flags & RTF_IGROUP) {    // Group, tagja listába van a beillesztés?
                         ok = cGroupAny(*pRec, *(pUpper->actRecord())).insert(*pq, false);
                         if (!ok) {
                             QMessageBox::warning(pWidget(), trUtf8("Hiba"), trUtf8("A kijelölt tag felvétele az új csoportba sikertelen"),QMessageBox::Ok);
@@ -911,7 +911,7 @@ void cRecordViewBase::initMaster()
     pMasterSplitter = new QSplitter(Qt::Horizontal, _pWidget);
     pMasterLayout->addWidget(pMasterSplitter);
     pMasterSplitter->addWidget(pLeftWidget);
-    if ((flags & RTF_GRPMBR)) {
+    if ((flags & (RTF_MEMBER | RTF_GROUP))) {
         initGroup();
     }
     else {
@@ -922,6 +922,15 @@ void cRecordViewBase::initMaster()
 
 void cRecordViewBase::initGroup()
 {
+    qlonglong it, nt;
+    if (flags & (RTF_MEMBER)) {
+        it = ENUM2SET(TS_IGROUP);
+        nt = ENUM2SET(TS_NGROUP);
+    }
+    else {  //   RTF_GROUP
+        it = ENUM2SET(TS_IMEMBER);
+        nt = ENUM2SET(TS_NMEMBER);
+    }
     cTableShape *pts = new cTableShape();
     int ixTableShapeType = pts->toIndex(_sTableShapeType);
     pTableShape->fetchRight(*pq, pts);              // A group tábla megjelenítését leíró rekord
@@ -929,11 +938,11 @@ void cRecordViewBase::initGroup()
     QSplitter *pRightSplitter = new QSplitter(Qt::Vertical, _pWidget);      // A két táblát egymás alá egy splitterbe tesszük
     pMasterSplitter->addWidget(pRightSplitter);             // A splitterünk a fő splitter jobb oldalán
 
-    pts->setId(ixTableShapeType, ENUM2SET(TS_INGROUP));     // Itt ez a típus kell, máshol is használható a leíró, más típussal.
+    pts->setId(ixTableShapeType, it);     // Itt ez a típus kell, máshol is használható a leíró, más típussal.
     pRightTable  = cRecordViewBase::newRecordView(dynamic_cast<cTableShape *>(pts->dup()), this, _pWidget);    // A felső tábla
     pRightSplitter->addWidget(pRightTable->pWidget());      // Jobb oldali splitter felső részébe
 
-    pts->setId(ixTableShapeType, ENUM2SET(TS_NOGROUP));
+    pts->setId(ixTableShapeType, nt);
     pRightTable2 = cRecordViewBase::newRecordView(pts, this, _pWidget);    // Az alsó tábla (megjelenésében ugyanaz)
     pRightSplitter->addWidget(pRightTable2->pWidget());     // Jobb oldali splitter alsó részébe
 }
@@ -954,7 +963,7 @@ void cRecordTable::setEditButtons()
         buttonDisable(DBT_MODIFY,  n != 1);
         buttonDisable(DBT_GET_OUT, n != 1);
         buttonDisable(DBT_PUT_IN,  n != 1);
-        buttonDisable(DBT_INSERT, (flags & RTF_INGROUP) && (owner_id == NULL_ID));
+        buttonDisable(DBT_INSERT, (flags & RTF_IGROUP) && (owner_id == NULL_ID));
     }
 }
 
@@ -993,7 +1002,7 @@ QStringList cRecordViewBase::refineWhere(QVariantList& qParams)
 QStringList cRecordViewBase::where(QVariantList& qParams)
 {
     QStringList wl;
-    int f = flags & (RTF_CHILD | RTF_INGROUP | RTF_NOGROUP);
+    int f = flags & (RTF_CHILD | RTF_IGROUP | RTF_NGROUP | RTF_IMEMBER | RTF_NMEMBER);
     if (f) { // A tulaj ID-jére szűrünk, ha van
         if (owner_id == NULL_ID) {  // A tulajdonos/tag rekord nincs kiválasztva
             wl << _sFalse;      // Ezzel jelezzük, hogy egy üres táblát kell megjeleníteni
@@ -1004,14 +1013,24 @@ QStringList cRecordViewBase::where(QVariantList& qParams)
             int ofix = recDescr().ixToOwner();
             wl << dQuoted(recDescr().columnName(ofix)) + " = " + QString::number(owner_id);
         }   break;
-        case RTF_INGROUP:
-        case RTF_NOGROUP: {
+        case RTF_IGROUP:
+        case RTF_NGROUP: {
             cGroupAny   g(&recDescr(), &pUpper->recDescr());
             QString w =
                     "EXISTS (SELECT 1 FROM " + g.tableName() +
                     " WHERE " + g.groupIdName() + " = " + mCat(g.group.tableName(), g.groupIdName()) +
                     " AND "  + g.memberIdName() + " = " + QString::number(owner_id) + ")";
-            if (f == RTF_NOGROUP) w = "NOT " + w;
+            if (f == RTF_NGROUP) w = "NOT " + w;
+            wl << w;
+        }   break;
+        case RTF_IMEMBER:
+        case RTF_NMEMBER: {
+            cGroupAny   g(&pUpper->recDescr(), &recDescr());
+            QString w =
+                    "EXISTS (SELECT 1 FROM " + g.tableName() +
+                    " WHERE " + g.groupIdName() + " = " + mCat(g.group.tableName(), g.groupIdName()) +
+                    " AND "  + g.memberIdName() + " = " + QString::number(owner_id) + ")";
+            if (f == RTF_NMEMBER) w = "NOT " + w;
             wl << w;
         }   break;
         default:
@@ -1032,13 +1051,13 @@ void cRecordViewBase::clickedHeader(int)
 
 void cRecordViewBase::selectionChanged(QItemSelection,QItemSelection)
 {
-    if (flags & (RTF_OVNER | RTF_GRPMBR)) {
+    if (flags & (RTF_OVNER | RTF_MEMBER)) {
         qlonglong _actId = NULL_ID;
         if (selectedRows().size() > 0) _actId = actId();
         if (pRightTable == NULL) EXCEPTION(EPROGFAIL);
         pRightTable->owner_id = _actId;
         pRightTable->refresh();
-        if (flags & RTF_GRPMBR) {
+        if (flags & RTF_MEMBER) {
             if (pRightTable2 == NULL) EXCEPTION(EPROGFAIL);
             pRightTable2->owner_id = _actId;
             pRightTable2->refresh();
@@ -1093,7 +1112,12 @@ void cRecordTable::init()
         break;
     case ENUM2SET(TS_MEMBER):
         if (pUpper != NULL) EXCEPTION(EDATA);
-        flags = RTF_MASTER | RTF_GRPMBR;
+        flags = RTF_MASTER | RTF_MEMBER;
+        initMaster();
+        break;
+    case ENUM2SET(TS_GROUP):
+        if (pUpper != NULL) EXCEPTION(EDATA);
+        flags = RTF_MASTER | RTF_GROUP;
         initMaster();
         break;
     case ENUM2SET(TS_OWNER):
@@ -1101,19 +1125,33 @@ void cRecordTable::init()
         flags = RTF_MASTER | RTF_OVNER;
         initMaster();
         break;
-    case ENUM2SET(TS_INGROUP):
-    case ENUM2SET(TS_NOGROUP):
+    case ENUM2SET(TS_IGROUP):
+    case ENUM2SET(TS_NGROUP):
+    case ENUM2SET(TS_IMEMBER):
+    case ENUM2SET(TS_NMEMBER):
         if (pUpper == NULL) EXCEPTION(EDATA);
         if (tit != TIT_NO && tit != TIT_ONLY) EXCEPTION(EDATA);
         buttons.clear();
         buttons << DBT_REFRESH << DBT_SPACER;
-        if (type == ENUM2SET(TS_INGROUP)) {
-            flags = RTF_SLAVE | RTF_INGROUP;
+        switch (type) {
+        case ENUM2SET(TS_IGROUP):
+            flags = RTF_SLAVE | RTF_IGROUP;
             if (isReadOnly == false) buttons << DBT_GET_OUT << DBT_DELETE << DBT_INSERT << DBT_MODIFY;
-        }
-        else {
-            flags = RTF_SLAVE | RTF_NOGROUP;
+            break;
+        case ENUM2SET(TS_NGROUP):
+            flags = RTF_SLAVE | RTF_NGROUP;
             if (isReadOnly == false) buttons << DBT_INSERT << DBT_PUT_IN;
+            break;
+        case ENUM2SET(TS_IMEMBER):
+            flags = RTF_SLAVE | RTF_IMEMBER;
+            if (isReadOnly == false) buttons << DBT_GET_OUT;
+            break;
+        case ENUM2SET(TS_NMEMBER):
+            flags = RTF_SLAVE | RTF_NMEMBER;
+            if (isReadOnly == false) buttons << DBT_PUT_IN;
+            break;
+        default:
+            EXCEPTION(EPROGFAIL);
         }
         initSimple(_pWidget);
         break;
@@ -1194,11 +1232,22 @@ void cRecordTable::last()
 
 void cRecordTable::putIn()
 {
-    if (((flags & RTF_NOGROUP) == 0) || pUpper == NULL) EXCEPTION(EPROGFAIL);
-    cRecordAny *pG = actRecord();
-    cRecordAny *pM = pUpper->actRecord();
+    if (pUpper == NULL || pUpper->pRightTable) EXCEPTION(EPROGFAIL);
+    cRecordAny *pM;
+    cRecordAny *pG;
+    if (((flags & RTF_NGROUP) != 0)) {
+        pG = actRecord();
+        pM = pUpper->actRecord();
+    }
+    else if (((flags & RTF_NMEMBER) != 0)) {
+        pM = actRecord();
+        pG = pUpper->actRecord();
+    }
+    else {
+        EXCEPTION(EPROGFAIL);
+    }
     if (pG == NULL || pM == NULL) {
-        DERR() << "Nincs kijelölve a tag vagy csoport rekord" << endl;
+        DERR() << "Nincs kijelölve a tag és/vagy csoport rekord" << endl;
         return;
     }
     cGroupAny(*pG, *pM).insert(*pq);
@@ -1208,11 +1257,19 @@ void cRecordTable::putIn()
 
 void cRecordTable::getOut()
 {
-    if (((flags & RTF_INGROUP) == 0) || pUpper == NULL) EXCEPTION(EPROGFAIL);
-    cRecordAny *pG = actRecord();
-    cRecordAny *pM = pUpper->actRecord();
+    if (pUpper == NULL || pUpper->pRightTable) EXCEPTION(EPROGFAIL);
+    cRecordAny *pM;
+    cRecordAny *pG;
+    if ((flags & RTF_IGROUP) != 0) {
+        pG = actRecord();
+        pM = pUpper->actRecord();
+    }
+    else {
+        pM = actRecord();
+        pG = pUpper->actRecord();
+    }
     if (pG == NULL || pM == NULL) {
-        DERR() << "Nincs kijelölve a tag vagy csoport rekord" << endl;
+        DERR() << "Nincs kijelölve a tag és/vagy csoport rekord" << endl;
         return;
     }
     cGroupAny(*pG, *pM).remove(*pq);

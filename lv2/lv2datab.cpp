@@ -277,7 +277,7 @@ QStringList cColEnumType::normalize(const QStringList& lst, bool *pok) const
     qlonglong r = 0;
     bool ok = true;
     foreach (QString n, lst) {
-        bool b = str2set(n, false);
+        qlonglong b = str2set(n, false);
         if (b == 0) ok = false;
         else        r |= b;
     }

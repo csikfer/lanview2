@@ -243,7 +243,7 @@ void cRecordDialog::init()
         const cTableShapeField& mf = **i;
         int fieldIx = rDescr.toIndex(mf.getName());
         bool setRo = isReadOnly || mf.getBool(_sIsReadOnly);
-        cFieldEditBase *pFW = cFieldEditBase::createFieldWidget(descriptor, (*_pRecord)[fieldIx], SY_NO, setRo, _pWidget);
+        cFieldEditBase *pFW = cFieldEditBase::createFieldWidget(descriptor, mf, (*_pRecord)[fieldIx], setRo, _pWidget);
         fields.append(pFW);
         QWidget * pw = pFW->pWidget();
         pw->setObjectName(mf.getName());

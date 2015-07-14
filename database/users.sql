@@ -149,7 +149,7 @@ CREATE TABLE users (    -- contacts
     serv_notif_switchs  notifswitch[]   NOT NULL DEFAULT '{"unreachable","down","recovered","unknown","critical"}',
     host_notif_cmd      varchar(255)    DEFAULT NULL,
     serv_notif_cmd      varchar(255)    DEFAULT NULL,
-    tel                 varchar(20)     DEFAULT NULL,
+    tels                varchar(20)[]   DEFAULT NULL,
     addresses           varchar(128)[]  DEFAULT NULL,
     place_id            bigint          DEFAULT NULL REFERENCES places(place_id) MATCH SIMPLE
                                             ON DELETE RESTRICT ON UPDATE RESTRICT
@@ -277,54 +277,25 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION is_member_userr(uid bigint, gids bigint[], pid bigint DEFAULT NULL) RETURNS boolean AS $$
-DECLARE
-    n   bigint;
-    apid bigint;       -- place_id
-    pgid bigint;       -- place_id -hez kapcsolódó group_id, vagy NULL
+CREATE OR REPLACE FUNCTION crypt_user_password() RETURNS TRIGGER AS $$
 BEGIN
-    SELECT COUNT(*) INTO n FROM group_users WHERE user_id = uid AND group_id = ANY (gids);
-    IF n > 0 THEN
-        RETURN TRUE;
-    END IF;
-    apid := pid;
-    LOOP
-        IF apid IS NULL THEN
-            RETURN FALSE;
+    IF TG_OP = 'UPDATE' THEN
+        IF NEW.passwd IS NULL THEN
+            NEW.passwd := OLD.passwd;
+            RETURN NEW;
+        ELSIF NEW.passwd = OLD.passwd THEN
+            RETURN NEW;
         END IF;
-        SELECT COUNT(*) INTO n FROM group_users INNER JOIN groups USING(group_id) WHERE apid = place_id;
-        IF n > n THEN
-            RETURN TRUE;
+    ELSE -- 'INSERT'
+        IF NEW.passwd IS NULL THEN
+            RETURN NEW;
         END IF;
-        BEGIN
-            SELECT place_id INTO STRICT apid FROM places WHERE parent_id = apid;
-            EXCEPTION
-                WHEN NO_DATA_FOUND THEN     -- nem találtunk
-                   RETURN FALSE;
-        END;
-    END LOOP;
-END;
-$$ LANGUAGE plpgsql;
-
-
-CREATE OR REPLACE FUNCTION update_user_password(uid bigint, newpasswd character varying)
-  RETURNS users AS
-$BODY$
-DECLARE 
-    usr users;
-BEGIN
-    UPDATE users set passwd = crypt(newpasswd, gen_salt('md5')) WHERE user_id = uid
-        RETURNING * INTO usr;
-    IF NOT FOUND THEN
-        PERFORM error('IdNotFound', uid, 'user_id', 'update_user_password()', 'users');
     END IF;
-    RETURN usr;
+    NEW.passwd = crypt(NEW.passwd, gen_salt('md5'));
+    RETURN NEW;
 END
-$BODY$
-  LANGUAGE plpgsql VOLATILE
-  COST 100;
-ALTER FUNCTION update_user_password(bigint, character varying)
-  OWNER TO lanview2;
+$$ LANGUAGE plpgsql;
+ALTER FUNCTION crypt_user_password()  OWNER TO lanview2;
+COMMENT ON FUNCTION crypt_user_password() IS 'Trigger függvény az users táblához. Titkosítja a passwd mwzőt, ha meg van adva, vagy változott.';
 
-COMMENT ON FUNCTION update_user_password(uid bigint, newpasswd character varying)
-IS 'Módosítja a uid azonosítójú felhasználó jelszavát';
+CREATE TRIGGER crypt_password BEFORE UPDATE OR INSERT ON users FOR EACH ROW EXECUTE PROCEDURE crypt_user_password();

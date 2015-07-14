@@ -12,8 +12,10 @@ int tableShapeType(const QString& n, bool __ex)
     if (0 == n.compare(_sLink,   Qt::CaseInsensitive)) return TS_LINK;
     if (0 == n.compare(_sMember, Qt::CaseInsensitive)) return TS_MEMBER;
     if (0 == n.compare(_sGroup,  Qt::CaseInsensitive)) return TS_GROUP;
-    if (0 == n.compare(_sInGroup,Qt::CaseInsensitive)) return TS_INGROUP;
-    if (0 == n.compare(_sNoGroup,Qt::CaseInsensitive)) return TS_NOGROUP;
+    if (0 == n.compare(_sIGroup, Qt::CaseInsensitive)) return TS_IGROUP;
+    if (0 == n.compare(_sNGroup, Qt::CaseInsensitive)) return TS_NGROUP;
+    if (0 == n.compare(_sIMember,Qt::CaseInsensitive)) return TS_IMEMBER;
+    if (0 == n.compare(_sNMember,Qt::CaseInsensitive)) return TS_NMEMBER;
     if (__ex) EXCEPTION(EDATA, -1, n);
     return TS_UNKNOWN;
 }
@@ -30,8 +32,11 @@ const QString& tableShapeType(int e, bool __ex)
     case TS_LINK:       return _sLink;
     case TS_MEMBER:     return _sMember;
     case TS_GROUP:      return _sGroup;
-    case TS_INGROUP:    return _sInGroup;
-    case TS_NOGROUP:    return _sNoGroup;
+      // TS_INVALID_PAD
+    case TS_IGROUP:     return _sIGroup;
+    case TS_NGROUP:     return _sNGroup;
+    case TS_IMEMBER:    return _sIMember;
+    case TS_NMEMBER:    return _sNMember;
     default:            break;
     }
     if (__ex) EXCEPTION(EDATA, e);
@@ -491,13 +496,22 @@ bool cTableShape::setOrdSeq(const QStringList& _fnl, int last, bool __ex)
 
 template void _SplitMagicT<cTableShape>(cTableShape& o, bool __ex);
 
-tMagicMap&  cTableShape::splitMagic(bool __ex) const
+tMagicMap&  cTableShape::splitMagic(bool __ex)
 {
     DBGFN();
     PDEB(VVERBOSE) << VDEB(_ixProperties) << endl;
-    _SplitMagicT<cTableShape>(*const_cast<cTableShape *>(this), __ex);
+    _SplitMagicT<cTableShape>(*this, __ex);
     return *_pMagicMap;
 }
+
+const tMagicMap& cTableShape::magicMap(bool __ex) const
+{
+    if (_pMagicMap == NULL) {
+        const_cast<cTableShape *>(this)->splitMagic(__ex);
+    }
+    return *_pMagicMap;
+}
+
 
 bool cTableShape::fetchLeft(QSqlQuery& q, cTableShape * _po, bool _ex) const
 {
@@ -651,6 +665,15 @@ tMagicMap&  cTableShapeField::splitMagic(bool __ex)
     _SplitMagicT<cTableShapeField>(*this, __ex);
     return *_pMagicMap;
 }
+
+const tMagicMap& cTableShapeField::magicMap(bool __ex) const
+{
+    if (_pMagicMap == NULL) {
+        const_cast<cTableShapeField *>(this)->splitMagic(__ex);
+    }
+    return *_pMagicMap;
+}
+
 
 bool cTableShapeField::fetchByNames(QSqlQuery& q, const QString& tsn, const QString& fn, bool __ex)
 {
