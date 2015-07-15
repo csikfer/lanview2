@@ -14,6 +14,17 @@ qlonglong enum2set(int (&f)(const QString &, bool), const QStringList &el, bool 
     return r;
 }
 
+QStringList set2lst(const QString&(&f)(int e, bool __ex), qlonglong _set, bool __ex)
+{
+    qlonglong b;
+    int n;
+    QStringList r;
+    for (n = 0, b = 1 ; b <= _set && b != 0; ++n, b <<= 1) {
+        const QString& s = f(n, __ex);
+        if (_set & b) r << s;
+    }
+    return r;
+}
 const QString   nullString;
 
 QString nameAndNumber(const QString& __pat, int __num, char __c)

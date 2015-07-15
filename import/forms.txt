@@ -312,7 +312,7 @@ TABLE SHAPE users "felhasználók" {
     SET DEFAULTS;
     TABLE TYPE member;
     RIGHT SHAPE groups;
-    FIELD passwd PROP passwd;
+    FIELD passwd PROP ":passwd:";
     FIELD passwd HIDE;
     $DefRights
 }

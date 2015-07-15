@@ -153,12 +153,13 @@ cTableShape::~cTableShape()
 }
 
 int  cTableShape::_ixProperties = NULL_IX;
-
+int  cTableShape::_ixTableShapeType = NULL_IX;
 const cRecStaticDescr&  cTableShape::descr() const
 {
     if (initPDescr<cTableShape>(_sTableShapes)) {
         _ixProperties = _descr_cTableShape().toIndex(_sProperties);
-        CHKENUM(_sTableShapeType, tableShapeType);
+        _ixTableShapeType = _descr_cTableShape().toIndex(_sTableShapeType);
+        CHKENUM(_ixTableShapeType, tableShapeType);
         CHKENUM(_sTableInheritType, tableInheritType);
     }
     return *_pRecordDescr;
@@ -214,6 +215,26 @@ bool cTableShape::insert(QSqlQuery &__q, bool __ex)
         return i == shapeFields.count();
     }
     return true;
+}
+
+/// A típus mezőnek lehetnek olyan értékei is, melyek az adatbázisban nem szerepelnek,
+/// viszont a megjelenítésnél van szerepük.
+/// Az alapértelmezett metódus ezeket az értékeket eldobná, természetesen ezek az extra értékek
+/// elvesznek, ha az objektumoot kiírnámk az adatbázisba. Az objektum státuszában bebillentjük az invalid bitet, ha extra tíous lett megadva.
+/// Az extra értékeket a getId() matódus nem adja vissza, mert a konverziónál elvesznek, csak a get() metódus használható,
+/// ami egy QStringList -et ad vissza, és a enum2set() és tableShapeType() függvénnyekkel konvertálható qlonglong típussá.
+cTableShape& cTableShape::setShapeType(qlonglong __t)
+{
+    static const qlonglong extraValues = ENUM2SET4(TS_IGROUP, TS_NGROUP, TS_IMEMBER, TS_NMEMBER);
+    if (extraValues & __t) {   // extra érték (bit)?
+        if (_fields.isEmpty()) cRecord::set();
+        _fields[_ixTableShapeType] = set2lst(tableShapeType, __t, false);
+        _stat |= ES_MODIFY | ES_INVALID;
+        // toEnd(__i);          // Feltételezzük, hogy most nem kell
+        // fieldModified(__i);  // Feltételezzük, hogy most nem kell
+        return *this;
+    }
+    return *(set(_ixTableShapeType, __t).reconvert<cTableShape>());
 }
 
 int cTableShape::fetchFields(QSqlQuery& q)
@@ -294,7 +315,7 @@ bool cTableShape::setDefaults(QSqlQuery& q)
             r = false;
         }
     }
-    setId(_sTableShapeType, type);
+    setId(_ixTableShapeType, type);
     setBool(_sIsReadOnly, !rDescr.isUpdatable());
     return r;
 }

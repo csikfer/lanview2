@@ -27,7 +27,7 @@ enum eDialogButtons {
     DBT_CANCEL,         ///< Elvet
     DBT_RESET,          ///< Alaphelyzet
     DBT_PUT_IN,         ///< Betesz
-    DBT_GET_OUT,        ///< Kivesz
+    DBT_TAKE_OUT,        ///< Kivesz
     DBT_BUTTON_NUMBERS, ///< Nem egy nyomógombot reprezentál, hanem azok számát
     DBT_SPACER,         ///< Nem nyomogomb, spacer
     DBT_BREAK           ///< Nem nyomógomb, "sortörés"

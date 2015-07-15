@@ -82,6 +82,7 @@ public:
     virtual QVariant data(const QModelIndex &index, int role) const;
     virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const;
 
+    QBitArray index2map(const QModelIndexList &mil);
     /// Törli az index listában megjelült rekordokat.
     /// Elötte egy dialógusban megerősítést kér, ha ebből Cancel-el lépünk ki, akkor nincs törlés.
     /// A sorokat/rekordokat a removeRec() metódus hívásával törli.

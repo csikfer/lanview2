@@ -523,7 +523,7 @@ cTableShape * cRecordViewBase::getInhShape(const QString &_tn)
     }
     // Ha nincs, akkor esetleg jó lessz az alap shape rekord?
     if (_tn == pTableShape->getName(_sTableName)) {
-        p->set(*pTableShape);
+        p->cRecord::set(*pTableShape);
         p->fetchFields(*pq);
         return p;
     }
@@ -564,7 +564,7 @@ void cRecordViewBase::buttonPressed(int id)
     case DBT_DELETE:    remove();   break;
     case DBT_RESET:     reset();    break;
     case DBT_PUT_IN:    putIn();    break;
-    case DBT_GET_OUT:   getOut();   break;
+    case DBT_TAKE_OUT:   takeOut();   break;
     default:
         DWAR() << "Invalid button id : " << id << endl;
         break;
@@ -641,7 +641,7 @@ void cRecordViewBase::insert()
                 if (ok) {
                     cRecordAny *pRec = new cRecordAny(rd.record());
                     ok = pModel->insertRec(pRec);
-                    if (!ok) delete pRec;
+                    if (!ok) pDelete(pRec);
                     else if (flags & RTF_IGROUP) {    // Group, tagja listába van a beillesztés?
                         ok = cGroupAny(*pRec, *(pUpper->actRecord())).insert(*pq, false);
                         if (!ok) {
@@ -681,7 +681,7 @@ void cRecordViewBase::insert()
                 if (ok) {
                     cRecordAny *pRec = new cRecordAny(rd.record());
                     ok = pModel->insertRec(pRec);
-                    if (!ok) delete pRec;
+                    if (!ok) pDelete(pRec);
                 }
                 if (ok) {
                     if (r == DBT_OK) break; // Ha OK-t nyomott becsukjuk az dialóg-ot
@@ -799,7 +799,7 @@ void cRecordViewBase::modify()
             continue;
         }
         case DBT_CANCEL:
-            delete pRec;
+            pDelete(pRec);
             break;
         default:
             EXCEPTION(EPROGFAIL);
@@ -828,7 +828,7 @@ void cRecordViewBase::remove()
 
 void cRecordViewBase::reset() { EXCEPTION(ENOTSUPP); }
 void cRecordViewBase::putIn() { EXCEPTION(ENOTSUPP); }
-void cRecordViewBase::getOut(){ EXCEPTION(ENOTSUPP); }
+void cRecordViewBase::takeOut(){ EXCEPTION(ENOTSUPP); }
 
 void cRecordViewBase::initView()
 {
@@ -873,6 +873,9 @@ void cRecordViewBase::initShape(cTableShape *pts)
     pRecDescr = cRecStaticDescr::get(pTableShape->getName(_sTableName));
     isReadOnly = pTableShape->getBool(_sIsReadOnly);
 
+    // Extra típus értékek miatt nem használható a mező alap konverziós metódusa !
+    shapeType = enum2set(tableShapeType, pTableShape->get(_sTableShapeType).toStringList(), false);
+
     tTableShapeFields::iterator i, n = pTableShape->shapeFields.end();
     for (i = pTableShape->shapeFields.begin(); i != n; ++i) {
         cRecordTableColumn *p = new cRecordTableColumn(**i, *this);
@@ -885,6 +888,7 @@ cRecordViewBase *cRecordViewBase::newRecordView(cTableShape *pts, cRecordViewBas
 {
     qlonglong type = pts->getId(_sTableShapeType);
     if ((type & ENUM2SET(TS_MEMBER)) && own != NULL) EXCEPTION(ENOTSUPP);
+    if ((type & ENUM2SET(TS_GROUP))  && own != NULL) EXCEPTION(ENOTSUPP);
     if (type & ENUM2SET(TS_TREE)) {
         return new cRecordTree( pts, false, own, par);
     }
@@ -923,6 +927,7 @@ void cRecordViewBase::initMaster()
 void cRecordViewBase::initGroup()
 {
     qlonglong it, nt;
+    // A jobboldali két tábla típusa
     if (flags & (RTF_MEMBER)) {
         it = ENUM2SET(TS_IGROUP);
         nt = ENUM2SET(TS_NGROUP);
@@ -932,17 +937,21 @@ void cRecordViewBase::initGroup()
         nt = ENUM2SET(TS_NMEMBER);
     }
     cTableShape *pts = new cTableShape();
-    int ixTableShapeType = pts->toIndex(_sTableShapeType);
-    pTableShape->fetchRight(*pq, pts);              // A group tábla megjelenítését leíró rekord
-
+    pTableShape->fetchRight(*pq, pts);              // A jobb oldali táblák megjelenítését leíró (minta) rekord
+    // A jobboldali tábláknál a TREE típust megtartjuk.
+#if 0   // Nem müködik rendesen, ha a jobb oldalon TREE típus van, ezért mégsem marad a tree
+    qlonglong tree = pts->getId(_sTableShapeType) & ENUM2SET(TS_TREE);
+    it |= tree;
+    nt |= tree;
+#endif
     QSplitter *pRightSplitter = new QSplitter(Qt::Vertical, _pWidget);      // A két táblát egymás alá egy splitterbe tesszük
     pMasterSplitter->addWidget(pRightSplitter);             // A splitterünk a fő splitter jobb oldalán
 
-    pts->setId(ixTableShapeType, it);     // Itt ez a típus kell, máshol is használható a leíró, más típussal.
+    pts->setShapeType(it);     // Itt ez a típus kell, az adatbázisban nem létező értékek
     pRightTable  = cRecordViewBase::newRecordView(dynamic_cast<cTableShape *>(pts->dup()), this, _pWidget);    // A felső tábla
     pRightSplitter->addWidget(pRightTable->pWidget());      // Jobb oldali splitter felső részébe
 
-    pts->setId(ixTableShapeType, nt);
+    pts->setShapeType(nt);
     pRightTable2 = cRecordViewBase::newRecordView(pts, this, _pWidget);    // Az alsó tábla (megjelenésében ugyanaz)
     pRightSplitter->addWidget(pRightTable2->pWidget());     // Jobb oldali splitter alsó részébe
 }
@@ -961,9 +970,9 @@ void cRecordTable::setEditButtons()
         int n = mix.size();
         buttonDisable(DBT_DELETE,  n <  1);
         buttonDisable(DBT_MODIFY,  n != 1);
-        buttonDisable(DBT_GET_OUT, n != 1);
-        buttonDisable(DBT_PUT_IN,  n != 1);
-        buttonDisable(DBT_INSERT, (flags & RTF_IGROUP) && (owner_id == NULL_ID));
+        buttonDisable(DBT_TAKE_OUT,n <  1);
+        buttonDisable(DBT_PUT_IN,  n <  1);
+        buttonDisable(DBT_INSERT, (flags & (RTF_IGROUP | RTF_IMEMBER | RTF_OVNER)) && (owner_id == NULL_ID));
     }
 }
 
@@ -1028,8 +1037,8 @@ QStringList cRecordViewBase::where(QVariantList& qParams)
             cGroupAny   g(&pUpper->recDescr(), &recDescr());
             QString w =
                     "EXISTS (SELECT 1 FROM " + g.tableName() +
-                    " WHERE " + g.groupIdName() + " = " + mCat(g.group.tableName(), g.groupIdName()) +
-                    " AND "  + g.memberIdName() + " = " + QString::number(owner_id) + ")";
+                    " WHERE " + g.memberIdName() + " = " + mCat(g.member.tableName(), g.memberIdName()) +
+                    " AND "  + g.groupIdName() + " = " + QString::number(owner_id) + ")";
             if (f == RTF_NMEMBER) w = "NOT " + w;
             wl << w;
         }   break;
@@ -1051,13 +1060,13 @@ void cRecordViewBase::clickedHeader(int)
 
 void cRecordViewBase::selectionChanged(QItemSelection,QItemSelection)
 {
-    if (flags & (RTF_OVNER | RTF_MEMBER)) {
+    if (flags & (RTF_OVNER | RTF_MEMBER | RTF_GROUP)) {
         qlonglong _actId = NULL_ID;
         if (selectedRows().size() > 0) _actId = actId();
         if (pRightTable == NULL) EXCEPTION(EPROGFAIL);
         pRightTable->owner_id = _actId;
         pRightTable->refresh();
-        if (flags & RTF_MEMBER) {
+        if (flags & (RTF_MEMBER | RTF_GROUP)) {
             if (pRightTable2 == NULL) EXCEPTION(EPROGFAIL);
             pRightTable2->owner_id = _actId;
             pRightTable2->refresh();
@@ -1065,6 +1074,8 @@ void cRecordViewBase::selectionChanged(QItemSelection,QItemSelection)
     }
     setEditButtons();
 }
+
+
 
 /* ***************************************************************************************************** */
 
@@ -1097,8 +1108,7 @@ void cRecordTable::init()
     // Az alapértelmezett gombok:
     buttons << DBT_CLOSE << DBT_SPACER << DBT_REFRESH << DBT_FIRST << DBT_PREV << DBT_NEXT << DBT_LAST;
     if (isReadOnly == false) buttons << DBT_BREAK << DBT_SPACER << DBT_DELETE << DBT_INSERT << DBT_MODIFY;
-    qlonglong type = pTableShape->getId(_sTableShapeType);
-    switch (type) {
+    switch (shapeType) {
     case ENUM2SET(TS_NO):
         if (pUpper != NULL) EXCEPTION(EDATA);
         flags = RTF_SLAVE;
@@ -1133,10 +1143,10 @@ void cRecordTable::init()
         if (tit != TIT_NO && tit != TIT_ONLY) EXCEPTION(EDATA);
         buttons.clear();
         buttons << DBT_REFRESH << DBT_SPACER;
-        switch (type) {
+        switch (shapeType) {
         case ENUM2SET(TS_IGROUP):
             flags = RTF_SLAVE | RTF_IGROUP;
-            if (isReadOnly == false) buttons << DBT_GET_OUT << DBT_DELETE << DBT_INSERT << DBT_MODIFY;
+            if (isReadOnly == false) buttons << DBT_TAKE_OUT << DBT_DELETE << DBT_INSERT << DBT_MODIFY;
             break;
         case ENUM2SET(TS_NGROUP):
             flags = RTF_SLAVE | RTF_NGROUP;
@@ -1144,7 +1154,7 @@ void cRecordTable::init()
             break;
         case ENUM2SET(TS_IMEMBER):
             flags = RTF_SLAVE | RTF_IMEMBER;
-            if (isReadOnly == false) buttons << DBT_GET_OUT;
+            if (isReadOnly == false) buttons << DBT_TAKE_OUT;
             break;
         case ENUM2SET(TS_NMEMBER):
             flags = RTF_SLAVE | RTF_NMEMBER;
@@ -1232,50 +1242,94 @@ void cRecordTable::last()
 
 void cRecordTable::putIn()
 {
-    if (pUpper == NULL || pUpper->pRightTable) EXCEPTION(EPROGFAIL);
+    if (pUpper == NULL || pUpper->pRightTable == NULL) EXCEPTION(EPROGFAIL);
+
     cRecordAny *pM;
     cRecordAny *pG;
     if (((flags & RTF_NGROUP) != 0)) {
-        pG = actRecord();
         pM = pUpper->actRecord();
+        if (pM == NULL) {
+            DERR() << trUtf8("Nincs kijelölve a tag rekord a baloldalon!") << endl;
+            return;
+        }
     }
     else if (((flags & RTF_NMEMBER) != 0)) {
-        pM = actRecord();
         pG = pUpper->actRecord();
+        if (pG == NULL) {
+            DERR() << trUtf8("Nincs kijelölve a csoport rekord a baloldalon!") << endl;
+            return;
+        }
     }
     else {
         EXCEPTION(EPROGFAIL);
     }
-    if (pG == NULL || pM == NULL) {
-        DERR() << "Nincs kijelölve a tag és/vagy csoport rekord" << endl;
+
+    QModelIndexList mil = selectedRows();
+    QBitArray rb = pTableModel()->index2map(mil);
+    if (rb.count(true) == 0) {
+        DERR() << trUtf8("Nincs kijelölve egy csoport vagy tag rekord sem a jobboldalon!") << endl;
         return;
     }
-    cGroupAny(*pG, *pM).insert(*pq);
-    pModel->removeRow(actIndex());
+
+    for (int i = rb.size() -1; i >= 0; i--) {
+        bool f = rb[i];
+        if (!f) continue;
+        if (((flags & RTF_NGROUP) != 0)) {
+            pG = record(i);
+        }
+        else {
+            pM = record(i);
+        }
+        cGroupAny(*pG, *pM).insert(*pq);
+        pModel->removeRow(pTableModel()->index(i, 0));
+    }
     pUpper->pRightTable->refresh();
 }
 
-void cRecordTable::getOut()
+void cRecordTable::takeOut()
 {
-    if (pUpper == NULL || pUpper->pRightTable) EXCEPTION(EPROGFAIL);
+    if (pUpper == NULL || pUpper->pRightTable == NULL) EXCEPTION(EPROGFAIL);
+
     cRecordAny *pM;
     cRecordAny *pG;
-    if ((flags & RTF_IGROUP) != 0) {
-        pG = actRecord();
+    if (((flags & RTF_IGROUP) != 0)) {
         pM = pUpper->actRecord();
+        if (pM == NULL) {
+            DERR() << trUtf8("Nincs kijelölve a tag rekord a baloldalon!") << endl;
+            return;
+        }
+    }
+    else if (((flags & RTF_IMEMBER) != 0)) {
+        pG = pUpper->actRecord();
+        if (pG == NULL) {
+            DERR() << trUtf8("Nincs kijelölve a csoport rekord a baloldalon!") << endl;
+            return;
+        }
     }
     else {
-        pM = actRecord();
-        pG = pUpper->actRecord();
+        EXCEPTION(EPROGFAIL);
     }
-    if (pG == NULL || pM == NULL) {
-        DERR() << "Nincs kijelölve a tag és/vagy csoport rekord" << endl;
+
+    QModelIndexList mil = selectedRows();
+    QBitArray rb = pTableModel()->index2map(mil);
+    if (rb.count(true) == 0) {
+        DERR() << trUtf8("Nincs kijelölve egy csoport vagy tag rekord sem a jobboldalon!") << endl;
         return;
     }
-    cGroupAny(*pG, *pM).remove(*pq);
-    pModel->removeRow(actIndex());
-    pUpper->pRightTable2->refresh();
 
+    for (int i = rb.size() -1; i >= 0; i--) {
+        bool f = rb[i];
+        if (!f) continue;
+        if (((flags & RTF_IGROUP) != 0)) {
+            pG = record(i);
+        }
+        else {
+            pM = record(i);
+        }
+        cGroupAny(*pG, *pM).remove(*pq);
+        pModel->removeRow(pTableModel()->index(i, 0));
+    }
+    pUpper->pRightTable2->refresh();
 }
 
 QStringList cRecordTable::filterWhere(QVariantList& qParams)
@@ -1413,4 +1467,14 @@ void cRecordTable::setPageButtons()
     }
 }
 
+cRecordAny * cRecordTable::record(int i)
+{
+    if (!isContIx(pTableModel()->_records, i)) EXCEPTION(ENOINDEX, i);
+    return pTableModel()->_records[i];
+}
+
+cRecordAny * cRecordTable::record(QModelIndex mi)
+{
+    return record(mi.row());
+}
 

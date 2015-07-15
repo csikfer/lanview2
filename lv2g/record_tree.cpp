@@ -24,7 +24,7 @@ void cRecordTree::init()
     // Az alapértelmezett gombok:
     buttons << DBT_CLOSE << DBT_SPACER << DBT_REFRESH;
     if (isReadOnly == false) buttons << DBT_SPACER << DBT_DELETE << DBT_INSERT << DBT_MODIFY;
-    switch (pTableShape->getId(_sTableShapeType)) {
+    switch (shapeType) {
     case ENUM2SET2(TS_TREE, TS_NO):
         if (pUpper != NULL) EXCEPTION(EDATA);
         flags = RTF_SLAVE | RTF_TREE;
@@ -40,6 +40,41 @@ void cRecordTree::init()
         if (pUpper != NULL) EXCEPTION(EDATA);
         flags = RTF_MASTER | RTF_MEMBER | RTF_TREE;
         initMaster();
+        break;
+    case ENUM2SET2(TS_TREE, TS_GROUP):
+        if (pUpper != NULL) EXCEPTION(EDATA);
+        flags = RTF_MASTER | RTF_GROUP | RTF_TREE;
+        initMaster();
+        break;
+    case ENUM2SET2(TS_TREE, TS_IGROUP):
+    case ENUM2SET2(TS_TREE, TS_NGROUP):
+    case ENUM2SET2(TS_TREE, TS_IMEMBER):
+    case ENUM2SET2(TS_TREE, TS_NMEMBER):
+        if (pUpper == NULL) EXCEPTION(EDATA);
+        if (tit != TIT_NO && tit != TIT_ONLY) EXCEPTION(EDATA);
+        buttons.clear();
+        buttons << DBT_REFRESH << DBT_SPACER;
+        switch (shapeType) {
+        case ENUM2SET2(TS_TREE, TS_IGROUP):
+            flags = RTF_SLAVE | RTF_IGROUP;
+            if (isReadOnly == false) buttons << DBT_TAKE_OUT << DBT_DELETE << DBT_INSERT << DBT_MODIFY;
+            break;
+        case ENUM2SET2(TS_TREE, TS_NGROUP):
+            flags = RTF_SLAVE | RTF_NGROUP;
+            if (isReadOnly == false) buttons << DBT_INSERT << DBT_PUT_IN;
+            break;
+        case ENUM2SET2(TS_TREE, TS_IMEMBER):
+            flags = RTF_SLAVE | RTF_IMEMBER;
+            if (isReadOnly == false) buttons << DBT_TAKE_OUT;
+            break;
+        case ENUM2SET2(TS_TREE, TS_NMEMBER):
+            flags = RTF_SLAVE | RTF_NMEMBER;
+            if (isReadOnly == false) buttons << DBT_PUT_IN;
+            break;
+        default:
+            EXCEPTION(EPROGFAIL);
+        }
+        initSimple(_pWidget);
         break;
     case ENUM2SET2(TS_TREE, TS_OWNER):
         if (pUpper != NULL) EXCEPTION(EDATA);

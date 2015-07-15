@@ -206,8 +206,8 @@ SELECT setval('groups_group_id_seq', 5);
 INSERT INTO users(user_id, user_name, user_note, passwd) VALUES
     ( 0, 'nobody',  'Unknown user', NULL),
     ( 1, 'system',  'system',       NULL),
-    ( 2, 'admin',   'Administrator',crypt('admin',gen_salt('md5'))),
-    ( 3, 'operator','Operator',     crypt('operator',gen_salt('md5'))),
+    ( 2, 'admin',   'Administrator','admin'),
+    ( 3, 'operator','Operator',     'operator'),
     ( 4, 'viewer',  'Viewer',       NULL);
 
 SELECT setval('users_user_id_seq', 5);

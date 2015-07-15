@@ -104,6 +104,7 @@ static inline qlonglong enum2set(int (&f)(const QString& e, bool __ex), const QS
     return enum2set(f, e1, e2, e3, e4, e5, e6, e7, __ex) | enum2set(f, e8, __ex);
 }
 qlonglong enum2set(int (&f)(const QString& e, bool __ex), const QStringList& el, bool __ex = true);
+QStringList set2lst(const QString&(&f)(int e, bool __ex), qlonglong _set, bool __ex = true);
 
 
 /// @def ENUM2SET

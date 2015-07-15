@@ -127,6 +127,7 @@ public:
     virtual bool toEnd(int i);
     virtual void clearToEnd();
     virtual bool insert(QSqlQuery &__q, bool __ex = true);
+    cTableShape& setShapeType(qlonglong __t);
     int fetchFields(QSqlQuery& q);
     /// Az objektumhoz feltölti a ShapeFields konténert, default értékekkel.
     /// Az adatokat az adatbázisban nem tárolja el, feltételezi, hogy az adattábla neve ismert.
@@ -200,6 +201,7 @@ public:
     tTableShapeFields       shapeFields;
 protected:
     static int              _ixProperties;
+    static int              _ixTableShapeType;
     /// magicMap konténer, vagy null pointer, ha még nincs feltöltve
     /// Mivel cache ként van felhasználva a konténer, ezért a megváltoztatása akkor is engedélyezett (saját metódus számára)
     /// ha az objektum konstans.

@@ -192,15 +192,10 @@ bool cRecordTableModel::setRecords(const tRecords& __recs, int _firstNm)
 
 }
 
-void cRecordTableModel::removeRecords(const QModelIndexList &mil)
+QBitArray cRecordTableModel::index2map(const QModelIndexList &mil)
 {
-    if (mil.isEmpty()) return;
-    int b = QMessageBox::warning(recordView.pWidget(),
-                         trUtf8("Kijelölt objektu(mo)k törlése!"),
-                         trUtf8("Valóban törölni akarja a kijelölt objektumo(ka)t ?"),
-                         QMessageBox::Ok, QMessageBox::Cancel);
-    if (b != QMessageBox::Ok) return;
-    int s = _records.size();
+    if (mil.isEmpty()) return QBitArray();
+    int s = _records.size();    // Az összes rekord
     QBitArray   rb(s, false);   // Sorismétlések kivédése
     foreach(QModelIndex mi, mil) {
         int row = mi.row();
@@ -208,8 +203,21 @@ void cRecordTableModel::removeRecords(const QModelIndexList &mil)
             rb.setBit(row, true);
         }
     }
+    return rb;
+}
+
+void cRecordTableModel::removeRecords(const QModelIndexList &mil)
+{
+    QBitArray   rb = index2map(mil);
+    if (rb.count(true) == 0) return;
+    int b = QMessageBox::warning(recordView.pWidget(),
+                         trUtf8("Kijelölt objektu(mo)k törlése!"),
+                         trUtf8("Valóban törölni akarja a kijelölt objektumo(ka)t ?"),
+                         QMessageBox::Ok, QMessageBox::Cancel);
+    if (b != QMessageBox::Ok) return;
+    int s = rb.size();    // Az összes rekord száma
     for (int i = s - 1; i >= 0; --i) {   // végigszaladunk a sorokon, visszafelé
-        removeRec(index(i, 0));
+        if (rb[i]) removeRec(index(i, 0));
     }
 
 }

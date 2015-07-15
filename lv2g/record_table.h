@@ -173,6 +173,7 @@ public:
     void buttonDisable(int id, bool d = true);
     /// A tábla viszonyát meghatározó flag-ek
     int             flags;
+    qlonglong       shapeType;
     /// Ha a táblázat csak olvasható, akkor értéke true
     bool            isReadOnly;
     /// A lekérdezésekhez (nem az alap lekérdezésekhez) használt query objektum.
@@ -251,7 +252,7 @@ public:
     /// Nem kötelezően implementálandó metódus. Ha nincs újraimplementálva, de mégis meghívjuk, akkor kizárást dob
     virtual void putIn();
     /// Nem kötelezően implementálandó metódus. Ha nincs újraimplementálva, de mégis meghívjuk, akkor kizárást dob
-    virtual void getOut();
+    virtual void takeOut();
 
     virtual void setEditButtons() = 0;
     /// Nem kötelezően implementálandü virtuális metódus. Alapértelmezetten nem csinál semmit.
@@ -329,7 +330,7 @@ public:
     void prev();
     void last();
     void putIn();
-    void getOut();
+    void takeOut();
 
     void setEditButtons();
     void setPageButtons();
@@ -342,7 +343,9 @@ public:
     virtual void initSimple(QWidget *pW);
     virtual QStringList filterWhere(QVariantList& qParams);
     void _refresh(bool first = true);
-    void refresh_lst_rev();
+    // void refresh_lst_rev();
+    cRecordAny * record(int i);
+    cRecordAny * record(QModelIndex mi);
 public:
     QTableView *tableView() { return pTableView; }
 };
