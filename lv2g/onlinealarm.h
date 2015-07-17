@@ -21,7 +21,7 @@ private:
     QWidget *       pRightWidget;   /// A jobb oldali widget
     QVBoxLayout *   pRightVBLayout; /// A jobb oldali widget vertikális layout
     QLabel *        pMapLabel;      /// A térkép/alaprajz cím sora
-    QLabel *        pMap;           /// A térkép/alaprajz (image)
+    cImageWidget *  pMap;           /// A térkép/alaprajz (image)
     QPushButton *   pAckButton;     /// A nyugtázás gomb
     const cRecordAny *pActRecord;   /// A kiválasztott rekord a nem nyugtázott riasztások táblában
 private slots:
@@ -29,8 +29,6 @@ private slots:
     void curRowChgAckAct(QItemSelection sel, QItemSelection);
     void acknowledge();
 };
-
-_GEX QPolygonF toQPolygonF(const tPolygonF _pol);
 
 #if defined(LV2G_LIBRARY)
 #include "ui_acknowledge.h"

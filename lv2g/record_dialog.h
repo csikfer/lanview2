@@ -81,11 +81,12 @@ public:
     /// @return A dialógus ablak kilépési kódja, vagyis az aktívált nyomógombot reprezentáló enumeráxiós konstans értéke.
     int exec(bool _close = true);
     /// A tábla model rekord. A megjelenítés leírója, azonosítja a rekord decriptor-t.
-    const cTableShape&      descriptor;
+    const cTableShape&      tableShape;
     /// Rekord descriptor
     const cRecStaticDescr&  rDescr;
     /// Az objektum neve
     const QString           name;
+    virtual cFieldEditBase * operator[](const QString& __fn) = 0;
 public slots:
     bool close()        { return _pWidget->close(); }
     void show()         { _pWidget->show(); }
@@ -131,6 +132,7 @@ public:
     void restore(cRecord *_pRec = NULL);
     /// A megjelenített értékek kiolvasása
     bool accept();
+    virtual cFieldEditBase * operator[](const QString& __fn);
 protected:
     QVBoxLayout            *pVBoxLayout;
     //QHBoxLayout            *pHBoxLayout;
@@ -173,6 +175,7 @@ public:
     const cRecStaticDescr& actType() { return record().descr(); }
     void setTabEnabled(int index, bool enable) { pTabWidget->setTabEnabled(index, enable); }
     tRecordList<cTableShape>&tabDescriptors;
+    virtual cFieldEditBase * operator[](const QString& __fn);
 protected:
     QVBoxLayout            *pVBoxLayout;
     QTabWidget             *pTabWidget;

@@ -378,9 +378,22 @@ public:
     /// A bianaris adatot adja vissza
     QByteArray getImage() const     { return get(_ixImageData).toByteArray(); }
     /// A bináris adattartalmat állítja be
-    void setImage(QByteArray __a)   { set(_ixImageData, QVariant(__a)); }
+    void setImage(const QByteArray& __a)   { set(_ixImageData, QVariant(__a)); }
     /// Az kép típusának a nevét adja vissza
-    const char * getType() const    { return _imageType(getId(_ixImageType)); }
+    const char * _getType() const    { return _imageType(getId(_ixImageType)); }
+    /// Az kép típusának a nevét adja vissza
+    const QString& getType() const   { return imageType(getId(_ixImageType)); }
+    /// A típust állítja be.
+    void setType(const QString& __t)   { set(_ixImageType, QVariant(__t)); }
+    /// Ha az objektum tartalmaz bináris adatot, és típusa nem valamilyen kép, vagy NULL (vagyis BIN), akkor true értékkel tár vissza
+    bool dataIsBin() const { return getId(_ixImageType) == IT_BIN && !isNull(_ixImageData); }
+    /// Ha az objektum tartalmaz bináris adatot, és típusa valamilyen kép (nem BIN, vagy NULL), akkor true értékkel tár vissza
+    bool dataIsPic() const {
+        if (isNull(_ixImageType)) return false;
+        if (getId(_ixImageType) == IT_BIN) return false;
+        if (isNull(_ixImageData)) return false;
+        return true;
+    }
 protected:
     static int  _ixImageData;
     static int  _ixImageType;

@@ -2,7 +2,7 @@
 -- Rendszer paraméter a insert_or_update_mactab(pid bigint, mac macaddr, typ settype, mst mactabstate[]) függvényhez:
 INSERT INTO sys_params
     (sys_param_name,                    param_type_id,                 param_value,    sys_param_note) VALUES
-    ('oui_list_url_MA-L',               param_type_name2id('text'),     'http://www.ieee.org/netstorage/standards/oui.txt',        'MA-L Public list'),
+    ('oui_list_url_MA-L',               param_type_name2id('text'),     'http://standards-oui.ieee.org/oui.txt',        'MA-L Public list'),
     ('arps_expire_interval',            param_type_name2id('interval'),'21 days',      'Az arps táblában ennyi idő mulva törlődik egy rekord, ha nem frissül a last_time mező'),
     ('mactab_move_check_interval',      param_type_name2id('interval'),'01:00:00',     'Hibás topológia miatt mozgó MAC lokációk észlelési időintervalluma'),
     ('mactab_move_check_count',         param_type_name2id('bigint'),  '6',            'Hibás topológia miatt mozgó MAC lokációk észlelési határértéke (látszólagos mozgások száma).'),

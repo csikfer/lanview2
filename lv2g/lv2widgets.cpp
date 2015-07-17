@@ -1,41 +1,35 @@
-#include "lv2widgets.h"
+#include "record_dialog.h"
 #include "lv2validator.h"
 
 /* **************************************** cImageWindows ****************************************  */
 
-cImageWindow::cImageWindow(QWidget *__par) : QLabel(__par)
+cImageWidget::cImageWidget(QWidget *__par)
+    : QScrollArea(__par)
+    , image()
+//  , draws()
 {
-    pImage = NULL;
-    setAcceptDrops(true);
-    // Test
-/*    QList<QByteArray> lst = QImageReader::supportedImageFormats ();
-    QString s;
-    foreach (QByteArray a, lst) { s += a + QChar(','); }
-    s.chop(1);
-    PDEB(INFO) << "QImageReader::supportedImageFormats() : " << s << endl;*/
+    scaleStep = 0.50;
+    scale = 0;
+    pLabel = NULL;
 }
 
-cImageWindow::~cImageWindow()
+cImageWidget::~cImageWidget()
 {
-    hide();
-    if (pImage) delete pImage;
+    ;
 }
 
-bool cImageWindow::setImage(const QString& __fn, const QString& __t)
+bool cImageWidget::setImage(const QString& __fn, const QString& __t)
 {
     hide();
+    scale = 0;
     QString title = __t;
     if (title.isEmpty()) title = "IMAGE : " + __fn;
     setWindowTitle(title);
-    if (pImage != NULL) pImage = new QPixmap();
-    pImage = new QPixmap(__fn);
-    if (pImage->isNull()) return false;
-    setPixmap(*pImage);
-    show();
-    return true;
+    if (!image.load(__fn)) return false;
+    return resetImage();
 }
 
-bool cImageWindow::setImage(QSqlQuery __q, qlonglong __id, const QString& __t)
+bool cImageWidget::setImage(QSqlQuery __q, qlonglong __id, const QString& __t)
 {
     cImage  im;
     im.setId(__id);
@@ -43,20 +37,97 @@ bool cImageWindow::setImage(QSqlQuery __q, qlonglong __id, const QString& __t)
     return setImage(im, __t);
 }
 
-bool cImageWindow::setImage(const cImage& __o, const QString& __t)
+bool cImageWidget::setImage(const cImage& __o, const QString& __t)
 {
-    if (pImage == NULL) pImage = new QPixmap();
-    if (!pImage->loadFromData(__o.getImage(), __o.getType())) return false;
-    setWindowTitle(__t.isEmpty() ? __o.getName(_sImageNote) : __t);
-    setPixmap(*pImage);
-    show();
-    return true;
-
+    hide();
+    scale = -1;
+    bool f = __o.dataIsPic();
+    if (!f) return false;
+    const char * _type = __o._getType();
+    QByteArray   _data = __o.getImage();
+    if (!image.loadFromData(_data, _type)) return false;
+    QString title = __t;
+    if (title.isEmpty()) title = __o.getName(_sImageNote);
+    setWindowTitle(title);
+    return resetImage();
 }
 
-void cImageWindow::mousePressEvent(QMouseEvent * ev)
+bool cImageWidget::setText(const QString& _txt)
+{
+    pLabel = new QLabel();
+    pLabel->setText(_txt);
+    setWidget(pLabel);
+    show();
+    return true;
+}
+
+void cImageWidget::mousePressEvent(QMouseEvent * ev)
 {
     mousePressed(ev->pos());
+}
+
+bool cImageWidget::resetImage()
+{
+    if (scale < 0) scale = 0;
+    image.setDevicePixelRatio(1.0/(1.0 + (scale * scaleStep)));
+    draw();
+    pLabel = new QLabel();
+    pLabel->setPixmap(image);
+    setWidget(pLabel);
+    show();
+    return true;
+}
+
+void cImageWidget::draw()
+{
+    if (draws.isEmpty()) return;
+    QPainter painter(&image);
+    painter.setBrush(brush);
+    painter.setPen(pen);
+    foreach (QVariant g, draws) {
+        draw(painter, g);
+    }
+}
+
+void cImageWidget::draw(QPainter& painter, QVariant& d)
+{
+    int t = d.userType();
+
+    if (t == _UMTID_tPolygonF) {
+        QPolygonF   pol;
+        foreach (QPointF p, d.value<tPolygonF>()) {
+           pol << p;
+        }
+        d = QVariant::fromValue(pol);
+        t = QMetaType::QPolygonF;
+    }
+
+    switch (t) {
+    case QMetaType::QPolygon:
+        painter.drawPolygon(d.value<QPolygon>());
+        break;
+    case QMetaType::QPolygonF:
+        painter.drawPolygon(d.value<QPolygonF>());
+        break;
+    default:
+        EXCEPTION(ENOTSUPP, t, debVariantToString(d));
+    }
+}
+
+
+void cImageWidget::zoomIn()
+{
+    if (scale >= 0) {
+        ++scale;
+        resetImage();
+    }
+}
+void cImageWidget::zoomOut()
+{
+    if (scale >  0) {
+        --scale;
+        resetImage();
+    }
 }
 
 /* ********************************************************************************************
@@ -84,9 +155,10 @@ QString fieldWidgetType(int _t)
     }
 }
 
-cFieldEditBase::cFieldEditBase(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef _fr, bool _ro, QWidget *_par)
+cFieldEditBase::cFieldEditBase(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef _fr, bool _ro, cRecordDialogBase *_par)
     : QObject(_par)
-    , _descr(_fr.descr())
+    , _parent(*_par)
+    , _recDescr(_fr.descr())
     , _tableShape(_tm)
     , _fieldShape(_tf)
     , _value()
@@ -113,34 +185,35 @@ cFieldEditBase::cFieldEditBase(const cTableShape &_tm, const cTableShapeField &_
 cFieldEditBase::~cFieldEditBase()
 {
     if (pq         != NULL) delete pq;
-    if (_pWidget   != NULL) delete _pWidget;
+ // if (_pWidget   != NULL) delete _pWidget;
     if (_pFieldRef != NULL) delete _pFieldRef;
 }
 
 QVariant cFieldEditBase::get() const
 {
-    _DBGFN() << QChar('/') << _descr<< QChar(' ') <<  debVariantToString(_value) << endl;
+    _DBGFN() << QChar('/') << _recDescr<< QChar(' ') <<  debVariantToString(_value) << endl;
     return _value;
 }
 
 QString cFieldEditBase::getName() const
 {
-    return _descr.toName(get());
+    return _recDescr.toName(get());
 }
 
 qlonglong cFieldEditBase::getId() const
 {
-    return _descr.toId(get());
+    return _recDescr.toId(get());
 }
 
 int cFieldEditBase::set(const QVariant& _v)
 {
-    _DBGFN() << QChar('/') << _descr<< QChar(' ') <<  debVariantToString(_v) << endl;
+    _DBGFN() << QChar('/') << _recDescr<< QChar(' ') <<  debVariantToString(_v) << endl;
     int st = 0;
-    QVariant v = _descr.set(_v, st);
+    QVariant v = _recDescr.set(_v, st);
     if (st & cRecord::ES_DEFECTIVE) return -1;
     if (v == _value) return 0;
     _value = v;
+    changedValue(this);
     return 1;
 }
 
@@ -156,18 +229,29 @@ int cFieldEditBase::setId(qlonglong v)
 void cFieldEditBase::setFromWidget(QVariant v)
 {
     if (_value == v) {
-        _DBGFN() << QChar('/') << _descr<< QChar(' ') <<  debVariantToString(v) << " dropped" << endl;
+        _DBGFN() << QChar('/') << _recDescr<< QChar(' ') <<  debVariantToString(v) << " dropped" << endl;
         return;
     }
-    _DBGFN() << QChar('/') << _descr<< QChar(' ') <<  debVariantToString(v) << endl;
+    _DBGFN() << QChar('/') << _recDescr<< QChar(' ') <<  debVariantToString(v) << endl;
     _value = v;
+    changedValue(this);
 }
 
+cFieldEditBase * cFieldEditBase::anotherField(const QString& __fn, bool __ex)
+{
+    cFieldEditBase *p = _parent[__fn];
+    if (p == NULL && __ex) {
+        QString se = trUtf8("A keresett %1 mező, nem található a '%2'.'%3'-ból.")
+                .arg(__fn).arg(_parent.name).arg(_pFieldRef->columnName());
+        EXCEPTION(EDATA, -1, se);
+    }
+    return p;
+}
 
-// SLOT
+/* / SLOT
 void cFieldEditBase::modRec()
 {
-    _DBGFN() << QChar('/') << _descr << endl;
+    _DBGFN() << QChar('/') << _recDescr << endl;
     if (_value != fieldValue()) {
         bool r = set(fieldValue());
         PDEB(VVERBOSE) << "Sync to widget field #" << _pFieldRef->index() << VDEB(_value) << " TO " << fieldToName() << (r ? " OK" : " FAILED") << endl;
@@ -176,11 +260,12 @@ void cFieldEditBase::modRec()
 
 void cFieldEditBase::modField(int ix)
 {
-    _DBGFN() << QChar('/') << _descr << endl;
+    _DBGFN() << QChar('/') << _recDescr << endl;
     if (ix == _pFieldRef->index()) modRec();
 }
+*/
 
-cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef _fr, bool _ro, QWidget * _par)
+cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef _fr, bool _ro, cRecordDialogBase *_par)
 {
     _DBGFN() << QChar(' ') << _tm.tableName() << _sCommaSp << _fr.fullColumnName() << " ..." << endl;
     PDEB(VVERBOSE) << "Field value = " << debVariantToString(_fr) << endl;
@@ -278,19 +363,19 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
 
 /* **************************************** cSetWidget **************************************** */
 
-cSetWidget::cSetWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, bool _ro, QWidget * par)
-    : cFieldEditBase(_tm, _tf, __fr, _ro, par)
+cSetWidget::cSetWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, __fr, _ro, _par)
 {
     _wType = FEW_SET;
-    _pWidget  = new QWidget(par);
+    _pWidget  = new QWidget(_par->pWidget());
     pButtons  = new QButtonGroup(pWidget());
     pLayout   = new QVBoxLayout;
     pButtons->setExclusive(false);      // SET, több opció is kiválasztható
     widget().setLayout(pLayout);
     int id = 0;
-    _bits = _descr.toId(_value);
-    foreach (QString e, _descr.enumType().enumValues) {
-        QString t = cEnumVal::title(*pq, e, _descr.udtName);
+    _bits = _recDescr.toId(_value);
+    foreach (QString e, _recDescr.enumType().enumValues) {
+        QString t = cEnumVal::title(*pq, e, _recDescr.udtName);
         QCheckBox *pCB = new QCheckBox(t, pWidget());
         pButtons->addButton(pCB, id);
         pLayout->addWidget(pCB);
@@ -321,10 +406,10 @@ int cSetWidget::set(const QVariant& v)
     _DBGFN() << debVariantToString(v) << endl;
     int r = 1 == cFieldEditBase::set(v);
     if (r) {
-        int nid = _descr.enumType().enumValues.size();
+        int nid = _recDescr.enumType().enumValues.size();
         QAbstractButton *pAB = pButtons->button(nid);
         if (pAB != NULL) pAB->setChecked(v.isNull());
-        _bits = _descr.toId(v);
+        _bits = _recDescr.toId(v);
         if (_bits < 0) _bits = 0;
         for (int id = 0; id < nid && NULL != (pAB = pButtons->button(id)) ; id++) {
             pAB->setChecked(enum2set(id) & _bits);
@@ -343,11 +428,11 @@ void cSetWidget::setFromEdit(int id)
             if (_bits & enum2set(i)) pButtons->button(i)->setChecked(false);
         }
         _bits = 0;
-        setFromWidget(_descr.set(QVariant(), dummy));
+        setFromWidget(_recDescr.set(QVariant(), dummy));
     }
     else {
         _bits ^= enum2set(id);
-        setFromWidget(_descr.set(QVariant(_bits), dummy));
+        setFromWidget(_recDescr.set(QVariant(_bits), dummy));
         QAbstractButton *p = pButtons->button(n);
         if (p != NULL && p->isChecked()) p->setChecked(false);
     }
@@ -356,20 +441,20 @@ void cSetWidget::setFromEdit(int id)
 
 /* **************************************** cEnumRadioWidget ****************************************  */
 
-cEnumRadioWidget::cEnumRadioWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, bool _ro, QWidget * par)
-    : cFieldEditBase(_tm, _tf, __fr, _ro, par)
+cEnumRadioWidget::cEnumRadioWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, __fr, _ro, _par)
 {
     _wType = FEW_ENUM_RADIO;
-    _pWidget = new QWidget(par);
+    _pWidget = new QWidget(_par->pWidget());
     pButtons  = new QButtonGroup(pWidget());
     pLayout   = new QVBoxLayout;
     pButtons->setExclusive(true);
     widget().setLayout(pLayout);
     int id = 0;
-    eval = _descr.toId(_value);
+    eval = _recDescr.toId(_value);
     QSqlQuery q = getQuery();
-    foreach (QString e, _descr.enumType().enumValues) {
-        QString t = cEnumVal::title(q, e, _descr.udtName);
+    foreach (QString e, _recDescr.enumType().enumValues) {
+        QString t = cEnumVal::title(q, e, _recDescr.udtName);
         QRadioButton *pRB = new QRadioButton(t, pWidget());
         pButtons->addButton(pRB, id);
         pLayout->addWidget(pRB);
@@ -397,10 +482,10 @@ int cEnumRadioWidget::set(const QVariant& v)
     int r = cFieldEditBase::set(v);
     if (1 == r) {
         pButtons->button(pButtons->checkedId())->setChecked(false);
-        eval = _descr.toId(v);
+        eval = _recDescr.toId(v);
         if (eval >= 0) pButtons->button(eval)->setChecked(true);
         else {
-            QAbstractButton *pRB = pButtons->button(_descr.enumType().enumValues.size());
+            QAbstractButton *pRB = pButtons->button(_recDescr.enumType().enumValues.size());
             if (pRB != NULL) pRB->setChecked(true);
         }
     }
@@ -414,7 +499,7 @@ void cEnumRadioWidget::setFromEdit(int id)
         if (pButtons->button(id)->isChecked() == false) pButtons->button(id)->setChecked(true);
         return;
     }
-    if (id == _descr.enumType().enumValues.size()) {
+    if (id == _recDescr.enumType().enumValues.size()) {
         if (eval < 0) {
             if (pButtons->button(id)->isChecked() == false) pButtons->button(id)->setChecked(true);
             return;
@@ -424,19 +509,19 @@ void cEnumRadioWidget::setFromEdit(int id)
         v = eval;
     }
     int dummy;
-    setFromWidget(_descr.set(v, dummy));
+    setFromWidget(_recDescr.set(v, dummy));
 }
 
 /* **************************************** cEnumComboWidget ****************************************  */
 
-cEnumComboWidget::cEnumComboWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, QWidget * par)
-    : cFieldEditBase(_tm, _tf, __fr, false, par)
+cEnumComboWidget::cEnumComboWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, __fr, false, _par)
 {
     eval = getId();
     _wType = FEW_ENUM_COMBO;
-    QComboBox *pCB = new QComboBox(par);
+    QComboBox *pCB = new QComboBox(_par->pWidget());
     _pWidget = pCB;
-    pCB->addItems(_descr.enumType().enumValues);                 // A lehetséges értékek nevei
+    pCB->addItems(_recDescr.enumType().enumValues);                 // A lehetséges értékek nevei
     if (_nullView.isEmpty() == false) {
         pCB->addItem(_nullView);   // A NULL érték
     }
@@ -453,8 +538,8 @@ cEnumComboWidget::~cEnumComboWidget()
 void cEnumComboWidget::setWidget()
 {
     QComboBox *pCB = (QComboBox *)_pWidget;
-    if (isContIx(_descr.enumType().enumValues, eval)) pCB->setCurrentIndex(eval);
-    else pCB->setCurrentIndex(_descr.enumType().enumValues.size());
+    if (isContIx(_recDescr.enumType().enumValues, eval)) pCB->setCurrentIndex(eval);
+    else pCB->setCurrentIndex(_recDescr.enumType().enumValues.size());
 }
 
 int cEnumComboWidget::set(const QVariant& v)
@@ -472,26 +557,30 @@ void cEnumComboWidget::setFromEdit(int id)
 {
     if (eval == id) return;
     qlonglong v = id;
-    if (id == _descr.enumType().enumValues.size()) v = NULL_ID;
+    if (id == _recDescr.enumType().enumValues.size()) v = NULL_ID;
     int dummy;
-    setFromWidget(_descr.set(QVariant(v), dummy));
+    setFromWidget(_recDescr.set(QVariant(v), dummy));
 }
 
 /* **************************************** cFieldLineWidget ****************************************  */
 
-cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef _fr, bool _ro, QWidget * par)
-    : cFieldEditBase(_tm, _tf, _fr, _ro, par)
+/*!
+A 'properties' mező:\n
+:<b>passwd</b>: Ha megadtuk, és a mező típusa text, akkor a képernyőn nem olvasható az adat
+ */
+cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef _fr, bool _ro, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, _fr, _ro, _par)
 {
     _wType = FEW_LINE;  // Widget típus azonosító
-    QLineEdit *pLE = new QLineEdit(par);
+    QLineEdit *pLE = new QLineEdit(_par->pWidget());
     _pWidget = pLE;
     isPwd = false;
-    bool nullable = _descr.isNullable;
+    bool nullable = _recDescr.isNullable;
     QString tx;
     if (_readOnly == false) {
         tx = _fr.toString();
         _value = QVariant(tx);
-        switch (_descr.eColType) {
+        switch (_recDescr.eColType) {
         case cColStaticDescr::FT_INTEGER:   pLE->setValidator(new cIntValidator( nullable, pLE));   break;
         case cColStaticDescr::FT_REAL:      pLE->setValidator(new cRealValidator(nullable, pLE));   break;
         case cColStaticDescr::FT_TEXT:      isPwd = _fieldShape.findMagic(_sPasswd);                break;
@@ -539,10 +628,10 @@ int cFieldLineWidget::set(const QVariant& v)
     if (1 == r) {
         QLineEdit *pLE = (QLineEdit *)_pWidget;
         if (_readOnly == false) {
-            pLE->setText(_descr.toName(_value));
+            pLE->setText(_recDescr.toName(_value));
         }
         else {
-            pLE->setText(_descr.toView(*pq, _value));
+            pLE->setText(_recDescr.toView(*pq, _value));
         }
     }
     return r;
@@ -554,7 +643,7 @@ void cFieldLineWidget::setFromEdit()
     QVariant v; // NULL
     QString  s = pLE->text();
     if (!(isPwd && s.isEmpty())) {
-          v = QVariant(s);
+        v = QVariant(s);
     }
     setFromWidget(v);
     valid();
@@ -564,12 +653,12 @@ void cFieldLineWidget::setFromEdit()
 /* **************************************** cArrayWidget ****************************************  */
 
 
-cArrayWidget::cArrayWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, QWidget * par)
-    : cFieldEditBase(_tm, _tf, __fr, _ro, par)
+cArrayWidget::cArrayWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, __fr, _ro, _par)
     , last()
 {
     _wType   = FEW_ARRAY;
-    _pWidget = new QWidget(par);
+    _pWidget = new QWidget(_par->pWidget());
     pLayout  = new QHBoxLayout;
     _pWidget->setLayout(pLayout);
     pList = new QListView(_pWidget);
@@ -682,7 +771,7 @@ void cArrayWidget::changed(QString _t)
         return;
     }
     bool ok;
-    switch (_descr.eColType) {
+    switch (_recDescr.eColType) {
     case cColStaticDescr::FT_INTEGER_ARRAY:
         _t.toLongLong(&ok);
         break;
@@ -693,7 +782,7 @@ void cArrayWidget::changed(QString _t)
         ok = true;
         break;
     default:
-        EXCEPTION(ENOTSUPP, _descr.eColType);
+        EXCEPTION(ENOTSUPP, _recDescr.eColType);
     }
     if (ok) last = _t;
     else    pLineEd->setText(last);
@@ -725,38 +814,24 @@ void cArrayWidget::selectionChanged(QItemSelection,QItemSelection)
   | +---------------------------------------------------------------------------------+ |\n
   +-------------------------------------------------------------------------------------+\n
   </tt>
+  A 'properties' mező:\n
+  :<b>map</b>=<i>\<sql függvény\></i>: Ha megadtuk, és a rekordnak már van ID-je (nem új rekord felvitel), és a megadott SQL függvény a
+                rekord ID alapján visszaadta egy kép (images.image_id) azonosítóját, akkor feltesz egy plussz gombot, ami megjeleníti
+                a képet, és azon klikkelve is felvehetünk pontokat.
  */
-cPolygonWidget::cPolygonWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, QWidget * par)
-    : cFieldEditBase(_tm, _tf, __fr, _ro, par)
+cPolygonWidget::cPolygonWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, __fr, _ro, _par)
     , xPrev(), yPrev()
 {
     _wType = FEW_POLYGON;
-    _pWidget = new QWidget(par);
+    _pWidget = new QWidget(_par->pWidget());
     pLayout = new QHBoxLayout;
     _pWidget->setLayout(pLayout);
     pTable = new QTableView(_pWidget);
     pImageButton = NULL;
     pMapWin = NULL;
     pMapRec = NULL;
-    // Alaprajz, ha van
-    qlonglong iid = NULL_ID;    // Az image rkord ID-je
-    qlonglong rid = _pFieldRef->record().getId();    // Az editálandü rekord ID-je,
-    if (rid != NULL_ID) {   // ID nélkül nincs image (ez feature)
-        QString map_f = _tableShape.magicParam("map");  // Meg van adva a image id-t visszaadó függvlny neve ?
-        if (map_f.isEmpty() == false) {
-            bool ok;
-            iid = execSqlIntFunction(*pq, &ok, map_f, rid);
-            if (!ok) {
-                iid = NULL_ID;
-            }
-            if (iid > 0) { // if (iid != NULL_ID) {
-                // Valamiért 0-val tér vissza, NULL helyett :-o
-                pMapRec = new cImage();
-                pMapRec->setParent(this);
-                pMapRec->setById(*pq, iid);
-            }
-        }
-    }
+    changeParentIdConnected = false;
     if (_readOnly) {
         pLayout->addWidget(pTable);
 
@@ -770,7 +845,6 @@ cPolygonWidget::cPolygonWidget(const cTableShape& _tm, const cTableShapeField &_
         pAddButton  = NULL;
         pDelButton  = NULL;
         pClearButton= NULL;
-        // if (pMapRec != NULL) { késöbb...
     }
     else {
         pLeftLayout  = new QVBoxLayout;
@@ -785,9 +859,17 @@ cPolygonWidget::cPolygonWidget(const cTableShape& _tm, const cTableShapeField &_
         pAddButton   = new QPushButton(trUtf8("Hozzáad"), _pWidget);
         pDelButton   = new QPushButton(trUtf8("Töröl"),   _pWidget);
         pClearButton = new QPushButton(trUtf8("Ürít"),    _pWidget);
-        if (pMapRec != NULL) {
-            pImageButton = new QPushButton(trUtf8("Alaprajz"), _pWidget);
-        }
+
+        pImageButton = new QPushButton(trUtf8("Alaprajz"), _pWidget);
+        pImageButton->hide();
+        pZoomIn      = new QPushButton(trUtf8("+"), _pWidget);
+        pZoomIn->hide();
+        pZoomOut     = new QPushButton(trUtf8("-"), _pWidget);
+        pZoomOut->hide();
+        pImgButLayout = new QHBoxLayout;
+        pImgButLayout->addWidget(pImageButton);
+        pImgButLayout->addWidget(pZoomIn);
+        pImgButLayout->addWidget(pZoomOut);
 
         pLayout->addLayout(pLeftLayout);
         pLayout->addLayout(pRightLayout);
@@ -808,7 +890,7 @@ cPolygonWidget::cPolygonWidget(const cTableShape& _tm, const cTableShapeField &_
         pRightLayout->addWidget(pDelButton);
         pRightLayout->addWidget(pClearButton);
         if (pImageButton != NULL) {
-            pRightLayout->addWidget(pImageButton);
+            pRightLayout->addLayout(pImgButLayout);
         }
 
         xOk = yOk = false;
@@ -831,15 +913,69 @@ cPolygonWidget::cPolygonWidget(const cTableShape& _tm, const cTableShapeField &_
         connect(pLineX, SIGNAL(textChanged(QString)), this, SLOT(xChanged(QString)));
         connect(pLineY, SIGNAL(textChanged(QString)), this, SLOT(yChanged(QString)));
         connect(pTable->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
-    }
-    if (pImageButton != NULL) {
-        connect(pImageButton, SIGNAL(pressed()), this, SLOT(image()));
+        connect(pImageButton, SIGNAL(pressed()), this, SLOT(imageOpen()));
+        image();
     }
 }
 
 cPolygonWidget::~cPolygonWidget()
 {
     pDelete(pMapWin);
+}
+
+void cPolygonWidget::image()
+{
+    bool opened = false;
+    if (pMapRec) {
+        pImageButton->hide();
+        if (pMapWin) {
+            pMapWin->close();
+            pDelete(pMapWin);
+            opened = true;
+        }
+        pDelete(pMapRec);
+    }
+    // Alaprajz, ha van
+    qlonglong id = NULL_ID;    // Az image rkord ID-je (még NULL)
+    // Ha egy 'places' rekordot szerkesztünk, akkor van egy parent_id  mezőnk, amiből megvan az image_id
+    if (recDescr() == cPlace().descr()) {
+        cFieldEditBase *p = anotherField(_sImageId);
+        if (!changeParentIdConnected) {
+            changeParentIdConnected = true;
+            connect(p, SIGNAL(changedValue(cFieldEditBase*)), this, SLOT(changeParentId(cFieldEditBase*)));
+        }
+        id = p->getId();
+        if (id != NULL_ID) {
+            bool ok;
+            id = execSqlIntFunction(*pq, &ok, "get_image", id);
+            if (!ok) {
+                id = NULL_ID;
+            }
+        }
+    }
+    // Másik lehetőség, a properties-ben van egy függvénynevünk, ami a rekord id-alapján megadja az image id-t
+    else {
+        id = _pFieldRef->record().getId();    // Az editálandü rekord ID-je, (read_only mező)
+        if (id != NULL_ID) {   // ID nélkül nincs image (ez feature)
+            QString map_f = _tableShape.magicParam("map");  // Meg van adva a image id-t visszaadó függvlny neve ?
+            if (map_f.isEmpty() == false) {
+                bool ok;
+                id = execSqlIntFunction(*pq, &ok, map_f, id);
+                if (!ok) {
+                    id = NULL_ID;
+                }
+            }
+            else id = NULL_ID;
+        }
+    }
+    if (id > 0) { // if (iid != NULL_ID) {
+        // Valamiért 0-val tér vissza, NULL helyett :-o
+        pMapRec = new cImage();
+        pMapRec->setParent(this);
+        pMapRec->setById(*pq, id);
+        pImageButton->show();
+        if (opened) imageOpen();
+    }
 }
 
 void cPolygonWidget::setButtons()
@@ -857,7 +993,17 @@ int cPolygonWidget::set(const QVariant& v)
         pModel->setPolygon(polygon);
         setButtons();
     }
+    image();    // Feltételezi, hogy az rekord ID ha van elöbb lett megadva
     return r;
+}
+
+void cPolygonWidget::drawPolygon()
+{
+    if (pMapWin == NULL) return;
+    if (polygon.size() > 0) {
+        pMapWin->addDraw(QVariant::fromValue(polygon));
+    }
+    if (!pMapWin->setImage(*pMapRec)) EXCEPTION(EDATA, -1, trUtf8("Nem lehet betölteni az alaprajzot."));
 }
 
 void cPolygonWidget::delRow()
@@ -877,6 +1023,7 @@ void cPolygonWidget::delRow()
     }
     setButtons();
     setFromWidget(QVariant::fromValue(polygon));
+    drawPolygon();
 }
 
 void cPolygonWidget::addRow()
@@ -891,6 +1038,7 @@ void cPolygonWidget::addRow()
     yPrev.clear();
     pLineY->setText(yPrev);
     pAddButton->setDisabled(true);
+    drawPolygon();
 }
 
 void cPolygonWidget::clearRows()
@@ -899,6 +1047,7 @@ void cPolygonWidget::clearRows()
     pModel->clear();
     setButtons();
     setFromWidget(QVariant::fromValue(polygon));
+    drawPolygon();
 }
 
 void cPolygonWidget::xChanged(QString _t)
@@ -934,14 +1083,24 @@ void cPolygonWidget::selectionChanged(QItemSelection,QItemSelection)
     pDelButton->setDisabled(polygon.isEmpty() || !pTable->selectionModel()->hasSelection());
 }
 
-void cPolygonWidget::image()
+void cPolygonWidget::imageOpen()
 {
-    if (pMapWin != NULL) return;
-    pMapWin = new cImageWindow();
-    if (!pMapWin->setImage(*pMapRec)) EXCEPTION(EDATA, -1, trUtf8("Nem lehet betölteni az alaprajzot."));
+    if (pMapRec == NULL) EXCEPTION(EPROGFAIL);
+    if (pMapWin != NULL) {
+        pMapWin->show();
+        return;
+    }
+    pMapWin = new cImageWidget();
+    pMapWin->setBrush(QBrush(QColor(Qt::red))).clearDraws();
+    drawPolygon();
     if (!isReadOnly()) {
         connect(pMapWin, SIGNAL(mousePressed(QPoint)), this, SLOT(imagePoint(QPoint)));
     }
+    pZoomIn->show();
+    pZoomOut->show();
+    connect(pZoomIn, SIGNAL(pressed()), pMapWin, SLOT(zoomIn()));
+    connect(pZoomOut,SIGNAL(pressed()), pMapWin, SLOT(zoomOut()));
+    connect(pMapWin, SIGNAL(destroyed(QObject*)), SLOT(destroyedImage(QObject*)));
 }
 
 void cPolygonWidget::imagePoint(QPoint _p)
@@ -951,40 +1110,37 @@ void cPolygonWidget::imagePoint(QPoint _p)
     polygon = pModel->polygon();
     setButtons();
     setFromWidget(QVariant::fromValue(polygon));
+    pMapWin->clearDraws();
+    if (polygon.size()) {
+        pMapWin->addDraw(QVariant::fromValue(polygon));
+    }
+    if (!pMapWin->setImage(*pMapRec)) EXCEPTION(EDATA, -1, trUtf8("Nem lehet betölteni az alaprajzot."));
+}
+
+void cPolygonWidget::destroyedImage(QObject *p)
+{
+    (void)p;
+    pMapWin = NULL;
+}
+
+void cPolygonWidget::changeParentId(cFieldEditBase *p)
+{
+    (void)p;
+    image();
 }
 
 /* **************************************** cFKeyWidget ****************************************  */
 
-cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, QWidget * par)
-    : cFieldEditBase(_tm, _tf, __fr, false, par)
+cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, __fr, false, _par)
 {
     _wType = FEW_FKEY;
-    QComboBox *pCB = new QComboBox(par);
+    QComboBox *pCB = new QComboBox(_par->pWidget());
     _pWidget = pCB;
-    pRDescr = cRecStaticDescr::get(_descr.fKeyTable, _descr.fKeySchema);
+    pRDescr = cRecStaticDescr::get(_recDescr.fKeyTable, _recDescr.fKeySchema);
     pModel = new cRecordListModel(*pRDescr, pWidget());
-    pModel->nullable = _descr.isNullable;
-    pModel->setToNameF(_descr.fnToName);
-    /* Ez hülyeség, vagy nem értem
-    if (_descr.fKeyTable == recDescr().tableName()) {   // saját táblára mutató kulcs
-        if (_tableShape.typeIs(TS_CHILD)) {             // CHILD tábla, önagára mutató kulcsal,
-            int fix = recDescr().ixToOwner();
-            qlonglong   oid = _pFieldRef->record().getId(fix);      // Az ownerre mutató ID
-            QString     fnm = _pFieldRef->record().columnNameQ(fix);
-            if (oid == NULL_ID) {       // Az owner még nincs az adatbázisban ?
-                // Akkor ezt a mezőt nem tudjuk kitölteni, Csak olvasható lessz.
-                pDelete(pModel);
-                pDelete(_pWidget);
-                _readOnly = true;
-                if (initIfRo(par)) return;
-                EXCEPTION(EPROGFAIL);
-            }
-            QString where = fnm + " = " + QString::number(oid);     // Csak az azonos ownerű rekordok kellenek
-            pModel->setConstFilter(where, FT_SQL_WHERE);
-        }
-//      else {  // Ide kéne egy szűrés, hogy valóban rendes fa legyen
-//      }
-    }*/
+    pModel->nullable = _recDescr.isNullable;
+    pModel->setToNameF(_recDescr.fnToName);
     pModel->setFilter(_sNul, OT_ASC, FT_NO);
     pCB->setModel(pModel);
     pCB->setEditable(true);
@@ -1001,7 +1157,7 @@ cFKeyWidget::~cFKeyWidget()
 
 bool cFKeyWidget::setWidget()
 {
-    qlonglong id = _descr.toId(_value);
+    qlonglong id = _recDescr.toId(_value);
     int ix = pModel->indexOf(id);
     if (ix < 0) return false;
     pComboBox()->setCurrentIndex(ix);
@@ -1036,11 +1192,11 @@ void cFKeyWidget::_edited(QString _txt)
 /* **************************************** cDateWidget ****************************************  */
 
 
-cDateWidget::cDateWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, QWidget * par)
-    : cFieldEditBase(_tm, _tf, __fr, false, par)
+cDateWidget::cDateWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, __fr, false, _par)
 {
     _wType = FEW_DATE;
-    QDateEdit * pDE = new QDateEdit(par);
+    QDateEdit * pDE = new QDateEdit(_par->pWidget());
     _pWidget = pDE;
     connect(pDE, SIGNAL(dateChanged(QDate)),  this, SLOT(setFromEdit(QDate)));
 }
@@ -1067,11 +1223,11 @@ void cDateWidget::setFromEdit(QDate d)
 
 /* **************************************** cTimeWidget ****************************************  */
 
-cTimeWidget::cTimeWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, QWidget * par)
-    : cFieldEditBase(_tm, _tf, __fr, false, par)
+cTimeWidget::cTimeWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, __fr, false, _par)
 {
     _wType = FEW_TIME;
-    QTimeEdit * pTE = new QTimeEdit(par);
+    QTimeEdit * pTE = new QTimeEdit(_par->pWidget());
     _pWidget = pTE;
     connect(pTE, SIGNAL(TimeChanged(QTime)),  this, SLOT(setFromEdit(QTime)));
 }
@@ -1098,11 +1254,11 @@ void cTimeWidget::setFromEdit(QTime d)
 
 /* **************************************** cDateTimeWidget ****************************************  */
 
-cDateTimeWidget::cDateTimeWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, QWidget * par)
-    : cFieldEditBase(_tm, _tf, __fr,false, par)
+cDateTimeWidget::cDateTimeWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, __fr,false, _par)
 {
     _wType = FEW_DATE_TIME;
-    QDateTimeEdit * pDTE = new QDateTimeEdit(par);
+    QDateTimeEdit * pDTE = new QDateTimeEdit(_par->pWidget());
     _pWidget = pDTE;
     connect(pDTE, SIGNAL(dateTimeChanged(QDateTime)),  this, SLOT(setFromEdit(QDateTime)));
 }
@@ -1130,11 +1286,11 @@ void cDateTimeWidget::setFromEdit(QDateTime d)
 /* **************************************** cIntervalWidget ****************************************  */
 
 
-cIntervalWidget::cIntervalWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, bool _ro, QWidget * par)
-    : cFieldEditBase(_tm, _tf, __fr, _ro, par)
+cIntervalWidget::cIntervalWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, __fr, _ro, _par)
 {
     _wType = FEW_INTERVAL;
-    _pWidget = new QWidget(par);
+    _pWidget = new QWidget(_par->pWidget());
     pLayout = new QHBoxLayout;
     _pWidget->setLayout(pLayout);
     pLineEdDay = new QLineEdit(_pWidget);
@@ -1185,7 +1341,7 @@ int cIntervalWidget::set(const QVariant& v)
 
 void cIntervalWidget::view()
 {
-    qlonglong v = _descr.toId(_value);
+    qlonglong v = _recDescr.toId(_value);
     int msec   = v % 1000; v /= 1000;
     int sec    = v %   60; v /=   60;
     int minute = v %   60; v /=   60;
@@ -1202,38 +1358,98 @@ void cIntervalWidget::setFromEdit()
 
 /* **************************************** cBinaryWidget ****************************************  */
 
-cBinaryWidget::cBinaryWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, QWidget * par)
-    : cFieldEditBase(_tm, _tf, __fr, _ro, par)
+cBinaryWidget::cBinaryWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, __fr, _ro, _par)
     , data()
 {
-    _wType = FEW_BINARY;
-    _pWidget = new QWidget(par);
-    pLayout = new QHBoxLayout;
-    _pWidget->setLayout(pLayout);
+    _init();
     bool z = _value.isNull();
-    if (_readOnly) {
-        pRadioButton = new QRadioButton(_sNULL, _pWidget);
-        pLoadButton  = NULL;
-        pLayout->addWidget(pRadioButton);
-        pRadioButton->setChecked(z);
-        pRadioButton->setCheckable(false);
-    }
-    else {
-        pRadioButton = new QRadioButton(_sNULL, _pWidget);
-        pLoadButton  = new QPushButton(trUtf8("Betölt"), _pWidget);
-        pLayout->addWidget(pRadioButton);
-        pLayout->addWidget(pLoadButton);
-        connect(pRadioButton, SIGNAL(clicked(bool)), this, SLOT(setNull(bool)));
-        connect(pLoadButton, SIGNAL(pressed()), this, SLOT(loadDataFromFile()));
-        pRadioButton->setChecked(z);
-        pRadioButton->setCheckable(!z);
-    }
     if (!z) data = _value.toByteArray();
+    pRadioButton->setChecked(z);
+    setViewButtons();
 }
 
 cBinaryWidget::~cBinaryWidget()
 {
-    ;
+    pDelete(pCImage);
+    pDelete(pImageWidget);
+}
+
+void cBinaryWidget::_init()
+{
+    _wType = FEW_BINARY;
+    pLayout         = NULL;
+    pRadioButton    = NULL;
+    pLoadButton     = NULL;
+    pViewButton     = NULL;
+    pZoomInButton   = NULL;
+    pZoomOutButton  = NULL;
+    pImageWidget    = NULL;
+    pCImage         = NULL;
+    isCImage = recDescr() == cImage().descr();
+    _pWidget        = new QWidget(_parent.pWidget());
+    pLayout         = new QHBoxLayout;
+    _pWidget->setLayout(pLayout);
+    pRadioButton    = new QRadioButton(_sNULL, _pWidget);
+    pRadioButton->setDisabled(_readOnly);
+    pLayout->addWidget(pRadioButton);
+    if (!_readOnly) {
+        pLoadButton  = new QPushButton(trUtf8("Betölt"), _pWidget);
+        pLayout->addWidget(pLoadButton);
+        connect(pRadioButton, SIGNAL(clicked(bool)), this, SLOT(nullChecked(bool)));
+        connect(pLoadButton, SIGNAL(pressed()), this, SLOT(loadDataFromFile()));
+    }
+    if (isCImage) {     // Ha egy cImage objektum része, akkor meg tudjuk jeleníteni.
+        pViewButton     = new QPushButton(trUtf8("Megjelenít"));
+        pViewButton->setDefault(true);
+        pLayout->addWidget(pViewButton);
+        pZoomInButton   = new QPushButton(trUtf8("+"));
+        pZoomInButton->setDisabled(true);
+        pLayout->addWidget(pZoomInButton);
+        pZoomOutButton  = new QPushButton(trUtf8("-"));
+        pZoomOutButton->setDisabled(true);
+        pLayout->addWidget(pZoomOutButton);
+        connect(pViewButton, SIGNAL(pressed()), this, SLOT(viewPic()));
+        // Ha jó a mező sorrend, akkor ezek a mezők már megvannak.
+        connect(anotherField(_sImageName), SIGNAL(changedValue(cFieldEditBase*)), this, SLOT(changedAnyField(cFieldEditBase*)));
+        connect(anotherField(_sImageType), SIGNAL(changedValue(cFieldEditBase*)), this, SLOT(changedAnyField(cFieldEditBase*)));
+    }
+}
+
+
+bool cBinaryWidget::setCImage()
+{
+    setNull();
+    if (!isCImage) EXCEPTION(EPROGFAIL);            // Ha nem cImage a rekord, akkor hogy kerültünk ide ?!
+    if (pCImage == NULL) pCImage = new cImage;
+    pCImage->clear();
+    if (data.size() > 0 && !pRadioButton->isChecked()) {
+        QString type;
+        pCImage->setName(_sImageName, anotherField(_sImageName)->getName());
+        pCImage->setType(anotherField(_sImageType)->getName());
+        pCImage->setImage(data);
+        if (pCImage->dataIsPic()) {
+            pViewButton->setEnabled(true);
+            if (pImageWidget) {
+                closePic();
+                openPic();
+            }
+            return true;
+        }
+    }
+    if (pImageWidget) {
+        closePic();
+    }
+    return false;
+}
+
+void cBinaryWidget::setViewButtons()
+{
+    if (pViewButton == NULL) return;
+    bool z = data.isEmpty() || !setCImage();
+    if (z) {
+        pViewButton->setDisabled(true);
+    }
 }
 
 int cBinaryWidget::set(const QVariant& v)
@@ -1242,9 +1458,13 @@ int cBinaryWidget::set(const QVariant& v)
     if (r == 1) {
         bool z = v.isNull();
         pRadioButton->setChecked(z);
-        pRadioButton->setCheckable(!z);
-        if (z) data.clear();
-        else   data = _value.toByteArray();
+        if (z) {
+            data.clear();
+        }
+        else {
+            data = _value.toByteArray();
+        }
+        setCImage();
     }
     return r;
 }
@@ -1254,7 +1474,7 @@ void cBinaryWidget::loadDataFromFile()
     QString fn = QFileDialog::getOpenFileName(pWidget());
     if (fn.isEmpty()) return;
     QFile f(fn);
-    if (f.isReadable() == false) {
+    if (f.open(QIODevice::ReadOnly) == false && f.isReadable() == false) {
         QMessageBox::warning(pWidget(), trUtf8("Hiba"), trUtf8("A megadott fájl nem olvasható"));
         return;
     }
@@ -1264,12 +1484,66 @@ void cBinaryWidget::loadDataFromFile()
     setFromWidget(QVariant(data));
 }
 
-void cBinaryWidget::setNull(bool checked)
+void cBinaryWidget::setNull()
 {
-    if (checked) data.clear();
-    bool z = data.isEmpty();
-    pRadioButton->setChecked(z);
-    pRadioButton->setCheckable(!z);
-    setFromWidget(QVariant(data));
+    if (data.isEmpty()) {
+        pRadioButton->setChecked(true);
+        pRadioButton->setDisabled(true);
+    }
+    else {
+        pRadioButton->setEnabled(true);
+    }
+    bool f = pRadioButton->isChecked();
+    if (f) {
+        _value.clear();
+    }
 }
 
+void cBinaryWidget::nullChecked(bool checked)
+{
+    (void)checked;
+    setCImage();
+}
+
+void cBinaryWidget::closePic()
+{
+    if (pImageWidget == NULL) EXCEPTION(EPROGFAIL);
+    pZoomInButton->setDisabled(true);
+    pZoomOutButton->setDisabled(true);
+    pImageWidget->close();
+    pDelete(pImageWidget);
+}
+
+void cBinaryWidget::openPic()
+{
+    if (pImageWidget) EXCEPTION(EPROGFAIL);
+    pImageWidget = new cImageWidget;
+    pImageWidget->setImage(*pCImage);
+    pZoomInButton->setEnabled(true);
+    pZoomOutButton->setEnabled(true);
+    connect(pImageWidget,   SIGNAL(destroyed(QObject*)), this, SLOT(destroyedImage(QObject*)));
+    connect(pZoomInButton,  SIGNAL(pressed()), pImageWidget, SLOT(zoomIn()));
+    connect(pZoomOutButton, SIGNAL(pressed()), pImageWidget, SLOT(zoomOut()));
+}
+
+void cBinaryWidget::viewPic()
+{
+    if (pImageWidget != NULL) {
+        pImageWidget->show();
+        return;
+    }
+    if (pCImage == NULL) EXCEPTION(EPROGFAIL);
+    if (pCImage->dataIsPic()) openPic();
+}
+
+void cBinaryWidget::changedAnyField(cFieldEditBase *p)
+{
+    (void)p;
+    setCImage();
+}
+
+void cBinaryWidget::destroyedImage(QObject *p)
+{
+    (void)p;
+    pImageWidget = NULL;
+}

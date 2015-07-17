@@ -116,7 +116,7 @@ void cLogOn::change()
 
 void cLogOn::userNameEdit(const QString &)
 {
-    DBGFNL();
+    // DBGFNL();
     ui->passwLE->clear();
     ui->zoneCB->clear();
     _zoneIdList.clear();
@@ -124,7 +124,7 @@ void cLogOn::userNameEdit(const QString &)
 
 void cLogOn::userNameEdited()
 {
-    DBGFNL();
+    // DBGFNL();
     QSqlQuery q = getQuery();
     QString sql =
             "SELECT place_group_id, place_group_note"

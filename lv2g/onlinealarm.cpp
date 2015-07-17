@@ -34,14 +34,8 @@ cOnlineAlarm::cOnlineAlarm(QWidget *par) : cOwnTab(par)
     pMapLabel = new QLabel();
 //??    pMapLabel.setPalette(QPalette::Dark);
     pRightVBLayout->addWidget(pMapLabel);
-    pMap  = new QLabel();
-    pRightVBLayout->addStretch();
-    QHBoxLayout *pHB = new QHBoxLayout();
-    pHB->addStretch();
-    pHB->addWidget(pMap);
-    pHB->addStretch();
-    pRightVBLayout->addLayout(pHB);
-    pRightVBLayout->addStretch();
+    pMap  = new cImageWidget();
+    pRightVBLayout->addWidget(pMap);
     pAckButton     = new QPushButton(trUtf8("Nyugtázás"));
     pAckButton->setDisabled(true);
     pRightVBLayout->addWidget(pAckButton);
@@ -65,29 +59,21 @@ void cOnlineAlarm::map()
     // A parent alaprajza
     bool ok;
     qlonglong id = execSqlIntFunction(*pq, &ok, "get_parent_image", pid);
+    cImage  image;
+    ok = ok && image.fetchById(*pq, id);
+    ok = ok && image.dataIsPic();
     if (ok) {
-        cImage  image;
-        image.fetchById(*pq, id);
-        PDEB(VERBOSE) << "MAP image : " << image.getName() << " type : " << image.getType() << endl;
         h = trUtf8("%1; %2").arg(image.getNoteOrName()).arg(h);
-        QPixmap pmap;
-        if (!pmap.loadFromData(image.getImage(), image.getType()))
-            EXCEPTION(EDATA, id, image.getType());
-        QPolygonF polygon = toQPolygonF(pl.get(_sFrame).value<tPolygonF>());
-        if (polygon.size() > 0) {
-            QPainter painter(&pmap);
-            QBrush brush(QColor(Qt::red));
-            painter.setBrush(brush);
-            painter.drawPolygon(polygon);
+        pMap->clearDraws();
+        if (pl.isNull(_sFrame) == false) {
+            pMap->setBrush(QBrush(QColor(Qt::red))).addDraw(pl.get(_sFrame));
         }
         else {
             h += trUtf8(" (nincs pontos hely adat)");
         }
-        pMap->setPixmap(pmap);
-        // a fejléc szövege
     }
-    else {
-        pMap->clear();
+    ok = ok && pMap->setImage(image);
+    if (!ok) {
         pMap->setText(trUtf8(" (Nincs megjeleníthető alaprajz.)"));
     }
     pMapLabel->setText(h);
@@ -136,15 +122,6 @@ void cOnlineAlarm::acknowledge()
         }
     }
 
-}
-
-QPolygonF toQPolygonF(const tPolygonF _pol)
-{
-    QPolygonF   pol;
-    foreach (QPointF p, _pol) {
-       pol << p;
-    }
-    return pol;
 }
 
 cAckDialog::cAckDialog(const cRecordAny& __r, QWidget *par)

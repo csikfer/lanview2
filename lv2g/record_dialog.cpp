@@ -106,9 +106,9 @@ void cDialogButtons::init(int buttons, QBoxLayout *pL)
 /* ************************************************************************************************* */
 cRecordDialogBase::cRecordDialogBase(const cTableShape &__tm, int _buttons, bool dialog, QWidget *par)
     : QObject(par)
-    , descriptor(__tm)
+    , tableShape(__tm)
     , rDescr(*cRecStaticDescr::get(__tm.getName(_sTableName), __tm.getName(_sSchemaName)))
-    , name(descriptor.getName())
+    , name(tableShape.getName())
     , _errMsg()
 {
     isDialog = dialog;
@@ -119,7 +119,7 @@ cRecordDialogBase::cRecordDialogBase(const cTableShape &__tm, int _buttons, bool
 
     pq = newQuery();
     setObjectName(name);
-    isReadOnly = descriptor.getBool(_sIsReadOnly);
+    isReadOnly = tableShape.getBool(_sIsReadOnly);
     if (dialog) _pWidget = new QDialog(par);
     else        _pWidget = new QWidget(par);
     if (_buttons != 0) {
@@ -129,7 +129,7 @@ cRecordDialogBase::cRecordDialogBase(const cTableShape &__tm, int _buttons, bool
     }
 
     _pWidget->setObjectName(name + "_Widget");
-    _pWidget->setWindowTitle(descriptor.getNote());
+    _pWidget->setWindowTitle(tableShape.getNote());
 }
 
 cRecordDialogBase::~cRecordDialogBase()
@@ -183,7 +183,7 @@ cRecordDialog::cRecordDialog(const cTableShape& __tm, int _buttons, bool dialog,
     pSplitter = NULL;
     pSplittLayout = NULL;
     pFormLayout = NULL;
-    if (descriptor.shapeFields.size() == 0) EXCEPTION(EDATA);
+    if (tableShape.shapeFields.size() == 0) EXCEPTION(EDATA);
     init();
 }
 
@@ -202,7 +202,7 @@ void cRecordDialog::init()
     DBGFN();
     pFormLayout = new QFormLayout;
     pFormLayout->setObjectName(name + "_Form");
-    int n = descriptor.shapeFields.size();
+    int n = tableShape.shapeFields.size();
     if (n > maxFields) {
         pSplittLayout = new QBoxLayout(QBoxLayout::LeftToRight);
         pSplitter     = new QSplitter(_pWidget);
@@ -231,10 +231,10 @@ void cRecordDialog::init()
             _pWidget->setLayout(pFormLayout);
         }
     }
-    tTableShapeFields::const_iterator i, e = descriptor.shapeFields.cend();
+    tTableShapeFields::const_iterator i, e = tableShape.shapeFields.cend();
     _pRecord = new cRecordAny(&rDescr);
     int cnt = 0;
-    for (i = descriptor.shapeFields.cbegin(); i != e; ++i) {
+    for (i = tableShape.shapeFields.cbegin(); i != e; ++i) {
         if (++cnt > maxFields) {
             cnt = 0;
             pFormLayout = new QFormLayout;  // !!!
@@ -243,7 +243,7 @@ void cRecordDialog::init()
         const cTableShapeField& mf = **i;
         int fieldIx = rDescr.toIndex(mf.getName());
         bool setRo = isReadOnly || mf.getBool(_sIsReadOnly);
-        cFieldEditBase *pFW = cFieldEditBase::createFieldWidget(descriptor, mf, (*_pRecord)[fieldIx], setRo, _pWidget);
+        cFieldEditBase *pFW = cFieldEditBase::createFieldWidget(tableShape, mf, (*_pRecord)[fieldIx], setRo, this);
         fields.append(pFW);
         QWidget * pw = pFW->pWidget();
         pw->setObjectName(mf.getName());
@@ -293,6 +293,19 @@ bool cRecordDialog::accept()
     return 0 == (_pRecord->_stat & cRecord::ES_DEFECTIVE);
 }
 
+cFieldEditBase * cRecordDialog::operator[](const QString& __fn)
+{
+    _DBGFN() << " " << __fn << endl;
+    QList<cFieldEditBase *>::iterator i;
+    for (i = fields.begin(); i < fields.end(); ++i) {
+        int x = i - fields.begin();
+        cFieldEditBase *p = *i;
+        QString name = p->_fieldShape.getName();
+        PDEB(VVERBOSE) << "#" << x << " : " << name << endl;
+        if (name == __fn) return p;
+    }
+    return NULL;
+}
 
 /* ***************************************************************************************************** */
 
@@ -368,4 +381,9 @@ bool cRecordDialogInh::accept()
     bool  r = prd->accept();
     if (!r) _errMsg = prd->errMsg();
     return r;
+}
+
+cFieldEditBase * cRecordDialogInh::operator[](const QString& __fn)
+{
+    return actDialog()[__fn];
 }

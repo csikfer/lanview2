@@ -177,6 +177,22 @@ COMMENT ON FUNCTION get_parent_image(bigint) IS
 'Lekéri a legközelebbi parent image_id-jét. Addig megy a gyökér felé, amíg nem NULL értéket talál,
 vagy nincs több parent.';
 
+CREATE OR REPLACE FUNCTION get_image(pid bigint) RETURNS bigint AS $$
+DECLARE
+    iid bigint;
+BEGIN
+    SELECT image_id INTO iid FROM places WHERE place_id = pid;
+    IF iid IS NOT NULL THEN
+        RETURN iid;
+    END IF;
+    RETURN get_parent_image(pid);
+END
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION get_image(bigint) IS
+'Lekéri a rekord vagy a legközelebbi parent image_id-jét. Addig megy a gyökér felé, amíg nem NULL értéket talál,
+vagy nincs több parent.';
+    
+
 CREATE OR REPLACE FUNCTION is_group_place(idr bigint, idq bigint) RETURNS boolean AS $$
 DECLARE
     n integer;

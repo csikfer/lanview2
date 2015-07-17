@@ -1960,7 +1960,7 @@ public:
     /// A hivatkozott mező indexe
     int index()                             { return _index; }
     /// A mező névvel tár vissza
-    QString columnName() const { return descr().colName(); }
+    const QString& columnName() const { return descr().colName(); }
     /// A teljes (tábla névvel kiegészített) mező névvel tér vissza
     QString fullColumnName() const { return recDescr().fullColumnName(columnName()); }
 };

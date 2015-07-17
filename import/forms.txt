@@ -187,6 +187,12 @@ TABLE SHAPE vlans "VLAN-ok" {
     $DefRights
 }
 
+TABLE SHAPE images {
+    SET DEFAULTS;
+    TABLE TYPE simple;
+    $DefRights
+}
+
 // ***************************************************************************************
 // events
 
@@ -365,6 +371,7 @@ GUI lv2gui {
   others MENU "Egyéb táblák" {
     arps        SHAPE   arps            "ARP tábla";
     mactab      SHAPE   mactab          "Port címtáblák";
+    images	SHAPE images images;
   }
   gui MENU "Megjelenítés" {
     shapes      SHAPE   table_shapes    "Táblák megjelenítése";

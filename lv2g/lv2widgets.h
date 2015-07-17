@@ -19,17 +19,16 @@
 #include "lv2g.h"
 #include "lv2models.h"
 
-
-/// @class cImageWindow
+/// @class cImageWidget
 /// Egy képet tartalmazó ablak objektum
-class LV2GSHARED_EXPORT cImageWindow : public QLabel {
+class LV2GSHARED_EXPORT cImageWidget : public QScrollArea {
     Q_OBJECT
 public:
     /// Konstruktor
     /// @par __par Szülő widget pointere
-    cImageWindow(QWidget *__par = NULL);
+    cImageWidget(QWidget *__par = NULL);
     /// Destruktor
-    ~cImageWindow();
+    ~cImageWidget();
     /// Az ablak tartaémának a betöltése egy kép fájlból, és az ablak megjelenítése
     /// @par __fn A kép fájl neve
     /// @par __t Opcionális paraméter, az ablak címe
@@ -46,14 +45,35 @@ public:
     /// @par __t Opcionális paraméter, az ablak címe, nincs megadva, akkor az image_descr mező lessz a cím
     /// @return Ha sikerült a kép betöltése, akkor true, ha nem akkor false (ekkor az ablak nem kerül megjelenítésre).
     bool setImage(const cImage& __o, const QString& __t = QString());
+    bool setText(const QString& _txt);
     /// Metódus az egér kattintásra
     virtual void mousePressEvent(QMouseEvent * ev);
-    /// A kép objektum pointere, a konstruktor NULL-ra inicializálja. A destruktor pedig felszabadítja, ha nemm NULL.
-    QPixmap *   pImage;
+    double          scaleStep;
+protected:
+    bool resetImage();
+    void draw();
+    void draw(QPainter &painter, QVariant& d);
+    QLabel *        pLabel;
+    /// Az eredeti kép objektum
+    QPixmap         image;
+    int             scale;
+    QVariantList    draws;
+    QBrush          brush;
+    QPen            pen;
+public:
+    cImageWidget& setBrush(const QBrush& b)     { brush = b;    return *this; }
+    cImageWidget& setPen(const QPen& p)         { pen = p;      return *this; }
+    cImageWidget& setDraws(const QVariantList&d){ draws = d;    return *this; }
+    cImageWidget& addDraw(const QVariant& d)    { draws << d;   return *this; }
+    cImageWidget& clearDraws()                  { draws.clear();return *this; }
 signals:
     /// Szignál, ha kattintottak ez egérrel a képen.
     /// @param A kattintáskori egér pozíció a képen.
     void mousePressed(const QPoint& __p);
+public slots:
+    void zoomIn();
+    void zoomOut();
+
 };
 
 enum eFieldWidgetType {
@@ -76,7 +96,7 @@ enum eFieldWidgetType {
 /// Vissza konverzió nincs, ez is csak nyomkövetési céllal.
 _GEX QString fieldWidgetType(int _t);
 
-class cRecordDialog;
+class cRecordDialogBase;
 
 /// @class cFieldEditBase
 /// @brief Bázis objekktum a mező megjelenítő/módosító widget-ekhez
@@ -90,10 +110,9 @@ public:
     /// @param _tm A rekord megjelenítését leíró objektum referenciája
     /// @param _tf A mező megjelenítését leíró objektum referenciája
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
-    /// @param _ro Ha true nem szerkeszthető. Egyes leszármazottnál a true nem értelmezhető, ekkor kizárást dob a konstruktor
-    ///            Ha értéke true, akkor a sync hívás csak értékadás a widget-re.
+    /// @param _ro Ha true nem szerkeszthető. Egyes leszármazottnál a true nem értelmezhető, ekkor kizárást dob a konstruktor.
     /// @param parent A parent widget pointere
-    cFieldEditBase(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro = false, QWidget * _par = NULL);
+    cFieldEditBase(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase* _par);
     /// Destruktor
     ~cFieldEditBase();
     /// Az objektum típusát megadó enumerációs értékkel tér vissza (_wType adattag értéke)
@@ -104,13 +123,15 @@ public:
     virtual qlonglong getId()   const;
     /// A megjelenített/editált érték kiolvasása
     virtual QString   getName() const;
-    /// A magjelenített érték megadása
+    /// A magjelenített érték megadása.
     /// @return Ha az értékadás nem sikeres, akkor -1, ha nincs változás, akkor 0, és ha van változás akkor 1.
-    virtual int set(const QVariant& _v)   = 0;
-    /// A magjelenített érték megadása
+    virtual int set(const QVariant& v)   = 0;
+    /// A magjelenített érték megadása. Az alapértelmezett metódus a QVarian-á kovertált paraméterrel
+    /// hívja a int set(const QVariant& v) metódust.
     /// @return Ha az értékadás nem sikeres, akkor -1, ha nincs változás, akkor 0, és ha van változás akkor 1.
     virtual int setId(qlonglong v);
-    /// A magjelenített érték megadása
+    /// A magjelenített érték megadása. Az alapértelmezett metódus a QVarian-á kovertált paraméterrel
+    /// hívja a int set(const QVariant& v) metódust.
     /// @return Ha az értékadás nem sikeres, akkor -1, ha nincs változás, akkor 0, és ha van változás akkor 1.
     virtual int setName(const QString& v);
     /// Ha a widget readOnly true-vel, ha szerkeszthető, akkor false-val tér vissza
@@ -123,9 +144,9 @@ public:
     /// @param _tf A mező megjelenítését/szerkesztését leíró objektum
     /// @param _fr A mező referencia objektuma
     /// @param _ro Ha a mező nem szerkeszthető, akkor true
-    /// @param _par A létrehozandó widget szülő widget je, vagy NULL
+    /// @param _par Parent
     /// @return A létrehozott objektum pointere
-    static cFieldEditBase *createFieldWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef _fr, bool _ro = false, QWidget * _par = NULL);
+    static cFieldEditBase *createFieldWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef _fr, bool _ro, cRecordDialogBase *_par);
     /// A Widget-ben megjelenített értéket adja vissza. ld.: get() metódust.
     operator QVariant() const   { return get(); }
     /// A Widget-ben megjelenített értéket adja vissza, qlonglong-á konvertálva, Konvertáló függvény a mező leíró objektum szerint.
@@ -143,14 +164,17 @@ public:
     /// A widgethez rendelt mező objektum inexével a rekordban tér vissza, ha nincs mező rendelve a widgethez, akkor dob egy kizárást.
     int fldIndex() const { if (_pFieldRef == NULL) EXCEPTION(EPROGFAIL); return _pFieldRef->index(); }
 
+    /// Parent objektum
+    cRecordDialogBase& _parent;
     /// A mező leíró objektum referenciája
-    const cColStaticDescr&  _descr;
+    const cColStaticDescr&  _recDescr;
     /// A tábla megjelenítését (és a dialog megjelenítését) leíró objektum referenciája
     const cTableShape&      _tableShape;
     /// A mezö megjelenítését (és a dialog megjelenítését) leíró objektum referenciája
     const cTableShapeField& _fieldShape;
 protected:
     void setFromWidget(QVariant v);
+    cFieldEditBase * anotherField(const QString& __fn, bool __ex = true);
     cRecordFieldRef    *_pFieldRef;     ///< A mező referencia objektum pointere
     bool                _readOnly;      ///< Ha nem szerkeszthető, akkor értéke true
     bool                _nullable;      ///< Amező értéke NULL is lehet
@@ -161,9 +185,13 @@ protected:
     QVariant            _value;         ///< A mező aktuális értéke
     QWidget            *_pWidget;       ///< A megjelenítéshez létrejozptt QWidget (valós widget objektumÜ pointere)
     QSqlQuery          *pq;             ///< Amennyiben szükslges a megjelenítéshez adatbázis hozzáférés, akkor a QSqlQuery objektum pointere.
+/*
 protected slots:
     void modRec();                  ///< A rekord módosult, aktualizálandó a megjelenítés
     void modField(int ix);          ///< A mező módosult, aktualizálandó a megjelenítés
+*/
+signals:
+    void changedValue(cFieldEditBase * pSndr);
 };
 
 /// @class cSetWidget
@@ -177,7 +205,7 @@ public:
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
     /// @param _ro Ha true nem szerkeszthető
     /// @param parent A parent widget pointere
-    cSetWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro = false, QWidget * par = NULL);
+    cSetWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase* _par);
     ~cSetWidget();
     virtual int set(const QVariant& v);
 protected:
@@ -204,7 +232,7 @@ public:
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
     /// @param _ro Ha true nem szerkeszthető
     /// @param par A parent widget pointere
-    cEnumRadioWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro = false, QWidget * par = NULL);
+    cEnumRadioWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase* _par);
     ~cEnumRadioWidget();
     virtual int set(const QVariant& v);
 protected:
@@ -227,8 +255,8 @@ public:
     /// Konstruktor (nincs csak olvasható mód)
     /// @param _tm A megjelenítő leíró objektum referenciája.
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
-    /// @param parent A parent widget pointere
-    cEnumComboWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, QWidget * parent = NULL);
+    /// @param _par A parent
+    cEnumComboWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, cRecordDialogBase *_par);
     ~cEnumComboWidget();
     virtual int set(const QVariant& v);
 protected:
@@ -249,9 +277,9 @@ class LV2GSHARED_EXPORT cFieldLineWidget : public cFieldEditBase {
 public:
     /// Konstruktor
     /// @param _fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
-    /// @param _ro Ha nem szerkeszthető, értéke true, ebben az esetben a sync csak értékadás a widget-re
+    /// @param _ro Ha nem szerkeszthető, értéke true.
     /// @param parent A parent widget pointere
-    cFieldLineWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef _fr, bool _ro = false, QWidget * par = NULL);
+    cFieldLineWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef _fr, bool _ro, cRecordDialogBase* _par);
     ~cFieldLineWidget();
     virtual int set(const QVariant& v);
 protected:
@@ -275,12 +303,11 @@ private slots:
 class LV2GSHARED_EXPORT cArrayWidget : public cFieldEditBase {
     Q_OBJECT
 public:
-    /// Konstruktor, hívja a sync() metódust is.
-    /// A widget-en megjelenő értékeket szinkronizálja a hivatkozott mezőben.
+    /// Konstruktor
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
     /// @param _ro Ha nem szerkeszthető, értéke true
-    /// @param parent A parent widget pointere
-    cArrayWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, bool _ro = false, QWidget * parent = NULL);
+    /// @param _par A parent pointere
+    cArrayWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase *_par);
     ~cArrayWidget();
     virtual int set(const QVariant& v);
 protected:
@@ -313,16 +340,17 @@ private slots:
 class LV2GSHARED_EXPORT cPolygonWidget : public cFieldEditBase {
     Q_OBJECT
 public:
-    /// Konstruktor, hívja a sync() metódust is.
-    /// A widget-en megjelenő értékeket szinkronizálja a hivatkozott mezőben.
+    /// Konstruktor.
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
-    /// @oaram _ro Ha nem szerkeszthető, értéke true
+    /// @param _ro Ha nem szerkeszthető, értéke true
     /// @param parent A parent widget pointere
-    cPolygonWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, bool _ro = false, QWidget * par = NULL);
+    cPolygonWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase* _par);
     ~cPolygonWidget();
     virtual int set(const QVariant& v);
 protected:
     void setButtons();
+    void image();
+    void drawPolygon();
     QHBoxLayout *pLayout;
 
     QVBoxLayout *pLeftLayout;
@@ -338,14 +366,18 @@ protected:
     QPushButton *pAddButton;
     QPushButton *pDelButton;
     QPushButton *pClearButton;
+    QHBoxLayout *pImgButLayout;
     QPushButton *pImageButton;  ///< Nyomogomb: az opcionális alaprajz megjelenítése
-    cImageWindow*pMapWin;       ///< Az opcionális alaprajzot megjelenítő ablak
+    QPushButton *pZoomIn;       ///< Nyomogomb: Az alaprajz magyítása
+    QPushButton *pZoomOut;      ///< Nyomogomb: az alaprajz kicsinyítése
+    cImageWidget*pMapWin;       ///< Az opcionális alaprajzot megjelenítő ablak
     cImage *     pMapRec;       ///< Az alaprajz rekord
 
     tPolygonF   polygon;
     bool        xOk, yOk;
     QString     xPrev, yPrev;
     double      x,y;
+    bool        changeParentIdConnected;
 private slots:
     void delRow();
     void addRow();
@@ -353,8 +385,10 @@ private slots:
     void xChanged(QString _t);
     void yChanged(QString _t);
     void selectionChanged(QItemSelection,QItemSelection);
-    void image();
+    void imageOpen();
     void imagePoint(QPoint _p);
+    void destroyedImage(QObject *p);
+    void changeParentId(cFieldEditBase * p);
 };
 
 /// @class cFKeyWidget
@@ -364,8 +398,8 @@ class LV2GSHARED_EXPORT cFKeyWidget : public cFieldEditBase {
 public:
     /// Konstruktor Nincs readOnly mód
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
-    /// @param parent A parent widget pointere
-    cFKeyWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, QWidget * parent = NULL);
+    /// @param _par A parent pointere
+    cFKeyWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, cRecordDialogBase *_par);
     ~cFKeyWidget();
     virtual int set(const QVariant& v);
 protected:
@@ -383,11 +417,10 @@ private slots:
 class LV2GSHARED_EXPORT cDateWidget : public cFieldEditBase {
     Q_OBJECT
 public:
-    /// Konstruktor, hívja a sync() metódust is.
-    /// A widget-en megjelenő értékeket szinkronizálja a hivatkozott mezőben.
+    /// Konstruktor.
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
-    /// @param parent A parent widget pointere
-    cDateWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, QWidget * par = NULL);
+    /// @param _par A parent pointere
+    cDateWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, cRecordDialogBase* _par);
     ~cDateWidget();
     virtual int set(const QVariant& v);
 private slots:
@@ -399,11 +432,10 @@ private slots:
 class LV2GSHARED_EXPORT cTimeWidget : public cFieldEditBase {
     Q_OBJECT
 public:
-    /// Konstruktor, hívja a sync() metódust is.
-    /// A widget-en megjelenő értékeket szinkronizálja a hivatkozott mezőben.
+    /// Konstruktor.
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
     /// @param par A parent widget pointere
-    cTimeWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, QWidget * par = NULL);
+    cTimeWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, cRecordDialogBase* _par);
     ~cTimeWidget();
     virtual int set(const QVariant& v);
 private slots:
@@ -415,11 +447,10 @@ private slots:
 class LV2GSHARED_EXPORT cDateTimeWidget : public cFieldEditBase {
     Q_OBJECT
 public:
-    /// Konstruktor, hívja a sync() metódust is.
-    /// A widget-en megjelenő értékeket szinkronizálja a hivatkozott mezőben.
+    /// Konstruktor.
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
     /// @param parent A parent widget pointere
-    cDateTimeWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, QWidget * par = NULL);
+    cDateTimeWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, cRecordDialogBase* _par);
     ~cDateTimeWidget();
     virtual int set(const QVariant& v);
 private slots:
@@ -431,11 +462,10 @@ private slots:
 class LV2GSHARED_EXPORT cIntervalWidget : public cFieldEditBase {
     Q_OBJECT
 public:
-    /// Konstruktor, hívja a sync() metódust is.
-    /// A widget-en megjelenő értékeket szinkronizálja a hivatkozott mezőben.
+    /// Konstruktor.
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
     /// @param parent A parent widget pointere
-    cIntervalWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro = false, QWidget * par = NULL);
+    cIntervalWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase* _par);
     ~cIntervalWidget();
     virtual int set(const QVariant& v);
 protected:
@@ -455,22 +485,36 @@ private slots:
 class LV2GSHARED_EXPORT cBinaryWidget : public cFieldEditBase {
     Q_OBJECT
 public:
-    /// Konstruktor, hívja a sync() metódust is.
-    /// A widget-en megjelenő értékeket szinkronizálja a hivatkozott mezőben.
+    /// Konstruktor.
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
     /// @param parent A parent widget pointere
-    cBinaryWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, bool _ro = false, QWidget * parent = NULL);
+    cBinaryWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase* _par);
     ~cBinaryWidget();
     virtual int set(const QVariant& v);
 protected:
-    void init();
+    void _init();
+    bool setCImage();
+    void setNull();
+    void setViewButtons();
+    void closePic();
+    void openPic();
     QHBoxLayout    *pLayout;
     QRadioButton   *pRadioButton;
     QPushButton    *pLoadButton;
+    QPushButton    *pViewButton;
+    QPushButton    *pZoomInButton;
+    QPushButton    *pZoomOutButton;
+    cImageWidget   *pImageWidget;
     QByteArray      data;
+    /// A flag értéke true, ha a mező a cImage objektum része
+    bool            isCImage;
+    cImage         *pCImage;
 private slots:
     void loadDataFromFile();
-    void setNull(bool checked);
+    void nullChecked(bool checked);
+    void viewPic();
+    void changedAnyField(cFieldEditBase * p);
+    void destroyedImage(QObject *p);
 };
 
 #endif // LV2WIDGETS_H
