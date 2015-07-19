@@ -229,12 +229,12 @@ bool cRecordTableModel::removeRec(const QModelIndex &mi)
         PDEB(INFO) << "Remove : " << p->toString() << endl;
         sqlBegin(*pq);
         if (cErrorMessageBox::condMsgBox(p->tryRemove(*pq))) {
+            sqlEnd(*pq);
             return removeRow(mi);
-            sqlRollback(*pq);
-            recordView.refresh(true);
         }
         else {
-            sqlEnd(*pq);
+            sqlRollback(*pq);
+            recordView.refresh(true);
         }
     }
     return false;

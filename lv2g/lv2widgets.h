@@ -15,7 +15,6 @@
 #include <QFileDialog>
 #include <QMessageBox>
 
-
 #include "lv2g.h"
 #include "lv2models.h"
 
@@ -335,8 +334,9 @@ private slots:
     void selectionChanged(QItemSelection,QItemSelection);
 };
 
+class Ui_polygonEd;
 /// @class cPolygonWidget
-/// Egy tömb adatmező megjelenítése és módosítása
+/// Egy polygon típusú adatmező megjelenítése és módosítása
 class LV2GSHARED_EXPORT cPolygonWidget : public cFieldEditBase {
     Q_OBJECT
 public:
@@ -348,47 +348,52 @@ public:
     ~cPolygonWidget();
     virtual int set(const QVariant& v);
 protected:
-    void setButtons();
-    void image();
+    enum ePic {
+        NO_ANY_PIC,
+        IS_PLACE_REC,
+        ID2IMAGE_FUN
+    };
+    bool getImage(bool refresh = false);
     void drawPolygon();
-    QHBoxLayout *pLayout;
-
-    QVBoxLayout *pLeftLayout;
-    QTableView  *pTable;
+    void modPostprod(QModelIndex select = QModelIndex());
+    void setButtons();
+    QModelIndex index(int row) { return pModel->index(row, 0); }
+    QModelIndex actIndex(bool __ex = true);
+    int actRow(bool __ex = true);
     cPolygonTableModel *pModel;
-    QHBoxLayout *pXYLayout;
-    QLabel      *pLabelX;
-    QLineEdit   *pLineX;
-    QLabel      *pLabelY;
-    QLineEdit   *pLineY;
-
-    QVBoxLayout *pRightLayout;
-    QPushButton *pAddButton;
-    QPushButton *pDelButton;
-    QPushButton *pClearButton;
-    QHBoxLayout *pImgButLayout;
-    QPushButton *pImageButton;  ///< Nyomogomb: az opcionális alaprajz megjelenítése
-    QPushButton *pZoomIn;       ///< Nyomogomb: Az alaprajz magyítása
-    QPushButton *pZoomOut;      ///< Nyomogomb: az alaprajz kicsinyítése
+    Ui_polygonEd    *pUi;
     cImageWidget*pMapWin;       ///< Az opcionális alaprajzot megjelenítő ablak
-    cImage *     pMapRec;       ///< Az alaprajz rekord
+    cImage *     pCImage;       ///< Az alaprajz rekord
 
     tPolygonF   polygon;
-    bool        xOk, yOk;
+    bool        xOk, yOk, xyOk;
     QString     xPrev, yPrev;
     double      x,y;
-    bool        changeParentIdConnected;
+    enum ePic   epic;
+    QString     id2imageFun;
+    qlonglong   parentOrPlace_id;
+    int         selectedRowNum;
+    int         _actRow;
+    QModelIndex _actIndex;
+
 private slots:
-    void delRow();
-    void addRow();
-    void clearRows();
+    void tableSelectionChanged(const QItemSelection&, const QItemSelection&);
+    void tableDoubleclicked(const QModelIndex& mi);
     void xChanged(QString _t);
     void yChanged(QString _t);
-    void selectionChanged(QItemSelection,QItemSelection);
+    void addRow();
+    void insRow();
+    void upRow();
+    void downRow();
+    void modRow();
+    void delRow();
+    void clearRows();
     void imageOpen();
+    void zoom(double z);
+
     void imagePoint(QPoint _p);
     void destroyedImage(QObject *p);
-    void changeParentId(cFieldEditBase * p);
+    void changeId(cFieldEditBase * p);
 };
 
 /// @class cFKeyWidget

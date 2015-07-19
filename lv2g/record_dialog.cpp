@@ -83,6 +83,7 @@ void cDialogButtons::staticInit()
         buttonNames << trUtf8("Alapállapot");   icons << QIcon::fromTheme("go-first");          // DBT_RESET
         buttonNames << trUtf8("Betesz");        icons << QIcon::fromTheme("insert-image");      // DBT_PUT_IN
         buttonNames << trUtf8("Kivesz");        icons << QIcon::fromTheme("list-remove");       // DBT_GET_OUT
+        buttonNames << trUtf8("Kibont");        icons << QIcon();                               // DBT_EXPAND
     }
     if (buttonNames.size() != _buttonNumbers) EXCEPTION(EPROGFAIL);
     if (      icons.size() != _buttonNumbers) EXCEPTION(EPROGFAIL);

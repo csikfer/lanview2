@@ -31,7 +31,8 @@ SOURCES += \
     logon.cpp \
     onlinealarm.cpp \
     record_tree_model.cpp \
-    record_tree.cpp
+    record_tree.cpp \
+    imagedrv.cpp
 
 HEADERS +=\
         lv2g_global.h \
@@ -50,7 +51,8 @@ HEADERS +=\
     LV2G_errcodes.h \
     onlinealarm.h \
     record_tree_model.h \
-    record_tree.h
+    record_tree.h \
+    imagedrv.h
 
 FORMS += \
     column_filter.ui \
@@ -58,7 +60,8 @@ FORMS += \
     setup.ui \
     gparse.ui \
     logindialog.ui \
-    acknowledge.ui
+    acknowledge.ui \
+    polygoned.ui
 INCLUDEPATH += ../lv2
 unix:LIBS += -lsnmp
 LIBS += -L../lv2 -llv2

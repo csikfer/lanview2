@@ -131,11 +131,37 @@ public:
         endResetModel();
         return *this;
     }
+    ///
+    cPolygonTableModel& up(int i) {
+        if (i > 0 && isContIx(_polygon, i)) {
+            beginResetModel();
+            _polygon.swap(i, i-1);
+            endResetModel();
+        }
+        return *this;
+    }
+    cPolygonTableModel& down(int i) {
+        if (isContIx(_polygon, i + 1)) {
+            beginResetModel();
+            _polygon.swap(i, i +1);
+            endResetModel();
+        }
+        return *this;
+    }
+    cPolygonTableModel& modify(int i, const QPointF& p) {
+        if (isContIx(_polygon, i)) {
+            beginResetModel();
+            _polygon[i] = p;
+            endResetModel();
+        }
+        return *this;
+    }
+    ///
     cPolygonTableModel& remove(QModelIndexList& mil);
     bool rowNumbers() const                     { return _rowNumbers; }
     void setRowNumers(bool b)                   { _rowNumbers = b; /* ??? */ }
     bool viewHeader() const                     { return _viewHeader; }
-    void setViewHeader(bool b)                   { _viewHeader = b; /* ??? */ }
+    void setViewHeader(bool b)                  { _viewHeader = b; /* ??? */ }
     int size() const                            { return _polygon.size(); }
     int isEmpty() const                         { return _polygon.isEmpty(); }
 private:

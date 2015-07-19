@@ -22,7 +22,7 @@ void cRecordTree::init()
 {
     pTreeView  = NULL;
     // Az alapértelmezett gombok:
-    buttons << DBT_CLOSE << DBT_SPACER << DBT_REFRESH;
+    buttons << DBT_CLOSE << DBT_SPACER << DBT_EXPAND << DBT_REFRESH;
     if (isReadOnly == false) buttons << DBT_SPACER << DBT_DELETE << DBT_INSERT << DBT_MODIFY;
     switch (shapeType) {
     case ENUM2SET2(TS_TREE, TS_NO):
@@ -53,7 +53,7 @@ void cRecordTree::init()
         if (pUpper == NULL) EXCEPTION(EDATA);
         if (tit != TIT_NO && tit != TIT_ONLY) EXCEPTION(EDATA);
         buttons.clear();
-        buttons << DBT_REFRESH << DBT_SPACER;
+        buttons << DBT_EXPAND << DBT_REFRESH << DBT_SPACER;
         switch (shapeType) {
         case ENUM2SET2(TS_TREE, TS_IGROUP):
             flags = RTF_SLAVE | RTF_IGROUP;
@@ -170,7 +170,7 @@ QModelIndexList cRecordTree::selectedRows()
 QModelIndex cRecordTree::actIndex()
 {
     QModelIndexList mil = pTreeView->selectionModel()->selectedRows();
-    if (mil.size() == 0) return QModelIndex();
+    if (mil.size() != 1) return QModelIndex();
     return mil.first();
 }
 
@@ -252,6 +252,7 @@ void cRecordTree::buttonPressed(int id)
     case DBT_PREV:      prev();     break;
     case DBT_RESET:     setRoot();      break;
     case DBT_RESTORE:   restoreRoot();  break;
+    case DBT_EXPAND:    expand();   break;
     default:
         DWAR() << "Invalid button id : " << id << endl;
         break;
@@ -290,3 +291,9 @@ void cRecordTree::restoreRoot()
     pTreeModel()->prevRoot(false);    // vissza az eredeti gyökérig
 }
 
+void cRecordTree::expand()
+{
+    QModelIndex mi = actIndex();
+    if (mi.isValid()) pTreeView->setExpanded(mi, true);
+    else              pTreeView->expandAll();
+}

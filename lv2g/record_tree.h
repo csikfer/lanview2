@@ -37,6 +37,7 @@ public:
     virtual void prev();
     void setRoot();
     void restoreRoot();
+    void expand();
 
     virtual void initSimple(QWidget * pW);
 

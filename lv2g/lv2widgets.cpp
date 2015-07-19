@@ -1,6 +1,6 @@
 #include "record_dialog.h"
 #include "lv2validator.h"
-
+#include "ui_polygoned.h"
 /* **************************************** cImageWindows ****************************************  */
 
 cImageWidget::cImageWidget(QWidget *__par)
@@ -796,24 +796,6 @@ void cArrayWidget::selectionChanged(QItemSelection,QItemSelection)
 
 /* **************************************** cPolygonWidget ****************************************  */
 /**
-  Polygon widget form (nem read-only)\n
-  <tt>
-  +-*_pWidget---------------------------------------------------------------------------+\n
-  | +-*pLayout)-----------------------------------------------------------------------+ |\n
-  | | +-*pLeftLayout------------------------------------------+ +-*pRightLayout-----+ | |\n
-  | | | +-*pTable-------------------------------------------+ | | ^ ^ ^ ^ ^ ^ ^ ^ ^ | | |\n
-  | | | | . . . . . . . . . . . . . . . . . . . . . . . . . | | | ^ ^ ^ ^ ^ ^ ^ ^ ^ | | |\n
-  | | | | . . . . . . . . . . . . . . . . . . . . . . . . . | | | ^ ^ ^ ^ ^ ^ ^ ^ ^ | | |\n
-  | | | +---------------------------------------------------+ | | +-*pAddButton---+ | | |\n
-  | | | +-*pXYLayout----------------------------------------+ | | +---------------+ | | |\n
-  | | | | +-*pLabelX-+ +-*pLineX-+ +-*pLabelY-+ +-*pLineY-+ | | | +-*pDelButton---+ | | |\n
-  | | | | +----------+ +---------+ +----------+ +---------+ | | | +---------------+ | | |\n
-  | | | +---------------------------------------------------+ | | +-*pClearButton-+ | | |\n
-  | | | ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ | | +---------------+ | | |\n
-  | | +-------------------------------------------------------+ +-------------------+ | |\n
-  | +---------------------------------------------------------------------------------+ |\n
-  +-------------------------------------------------------------------------------------+\n
-  </tt>
   A 'properties' mező:\n
   :<b>map</b>=<i>\<sql függvény\></i>: Ha megadtuk, és a rekordnak már van ID-je (nem új rekord felvitel), és a megadott SQL függvény a
                 rekord ID alapján visszaadta egy kép (images.image_id) azonosítóját, akkor feltesz egy plussz gombot, ami megjeleníti
@@ -824,165 +806,77 @@ cPolygonWidget::cPolygonWidget(const cTableShape& _tm, const cTableShapeField &_
     , xPrev(), yPrev()
 {
     _wType = FEW_POLYGON;
-    _pWidget = new QWidget(_par->pWidget());
-    pLayout = new QHBoxLayout;
-    _pWidget->setLayout(pLayout);
-    pTable = new QTableView(_pWidget);
-    pImageButton = NULL;
+
     pMapWin = NULL;
-    pMapRec = NULL;
-    changeParentIdConnected = false;
-    if (_readOnly) {
-        pLayout->addWidget(pTable);
+    pCImage = NULL;
+    epic = NO_ANY_PIC;
+    parentOrPlace_id = NULL_ID;
+    selectedRowNum = 0;
+    xOk = yOk = xyOk = false ;
 
-        pXYLayout   = NULL;
-        pLabelX     = NULL;
-        pLineX      = NULL;
-        pLabelY     = NULL;
-        pLineY      = NULL;
-        pLeftLayout = NULL;
-        pRightLayout= NULL;
-        pAddButton  = NULL;
-        pDelButton  = NULL;
-        pClearButton= NULL;
+    _pWidget = new QWidget(_par->pWidget());
+    pUi = new Ui_polygonEd;
+    pUi->setupUi(_pWidget);
+
+    pUi->lineEditX->setDisabled(_readOnly);
+    pUi->lineEditY->setDisabled(_readOnly);
+    pUi->pushButtonAdd->setDisabled(true);
+    pUi->pushButtonIns->setDisabled(true);
+    pUi->pushButtonUp->setDisabled(true);
+    pUi->pushButtonDown->setDisabled(true);
+    pUi->pushButtonMod->setDisabled(true);
+    pUi->pushButtonDel->setDisabled(true);
+    pUi->pushButtonClr->setDisabled(_readOnly);
+    pUi->pushButtonPic->setDisabled(true);
+    pUi->doubleSpinBoxZoom->setDisabled(true);
+
+    // Alaprajz előkészítése, ha van
+    // Ha egy 'places' rekordot szerkesztünk, akkor van egy parent_id  mezőnk, amiből megvan az image_id
+    if (recDescr() == cPlace().descr()) {
+        cFieldEditBase *p = anotherField(_sParentId);
+        connect(p, SIGNAL(changedValue(cFieldEditBase*)), this, SLOT(changeId(cFieldEditBase*)));
+        epic = IS_PLACE_REC;
     }
+    // Másik lehetőség, a properties-ben van egy függvénynevünk, ami a rekord id-alapján megadja az image id-t
     else {
-        pLeftLayout  = new QVBoxLayout;
-        pRightLayout = new QVBoxLayout;
-        pXYLayout    = new QHBoxLayout;
-
-        pLabelX = new QLabel("X", _pWidget);
-        pLineX  = new QLineEdit(_pWidget);
-        pLabelY = new QLabel("Y", _pWidget);
-        pLineY  = new QLineEdit(_pWidget);
-
-        pAddButton   = new QPushButton(trUtf8("Hozzáad"), _pWidget);
-        pDelButton   = new QPushButton(trUtf8("Töröl"),   _pWidget);
-        pClearButton = new QPushButton(trUtf8("Ürít"),    _pWidget);
-
-        pImageButton = new QPushButton(trUtf8("Alaprajz"), _pWidget);
-        pImageButton->hide();
-        pZoomIn      = new QPushButton(trUtf8("+"), _pWidget);
-        pZoomIn->hide();
-        pZoomOut     = new QPushButton(trUtf8("-"), _pWidget);
-        pZoomOut->hide();
-        pImgButLayout = new QHBoxLayout;
-        pImgButLayout->addWidget(pImageButton);
-        pImgButLayout->addWidget(pZoomIn);
-        pImgButLayout->addWidget(pZoomOut);
-
-        pLayout->addLayout(pLeftLayout);
-        pLayout->addLayout(pRightLayout);
-
-        // Left layout
-        pLeftLayout->addWidget(pTable);
-        pLeftLayout->addStretch();
-        pLeftLayout->addLayout(pXYLayout);
-
-        pXYLayout->addWidget(pLabelX);
-        pXYLayout->addWidget(pLineX);
-        pXYLayout->addWidget(pLabelY);
-        pXYLayout->addWidget(pLineY);
-
-        // Right layout
-        pRightLayout->addStretch();
-        pRightLayout->addWidget(pAddButton);
-        pRightLayout->addWidget(pDelButton);
-        pRightLayout->addWidget(pClearButton);
-        if (pImageButton != NULL) {
-            pRightLayout->addLayout(pImgButLayout);
+        id2imageFun = _tableShape.magicParam("map");  // Meg van adva a image id-t visszaadó függvlny neve ?
+        if (id2imageFun.isEmpty() == false) {
+            cFieldEditBase *p = anotherField(recDescr().idName());
+            connect(p, SIGNAL(changedValue(cFieldEditBase*)), this, SLOT(changeId(cFieldEditBase*)));
+            epic = ID2IMAGE_FUN;
         }
-
-        xOk = yOk = false;
-        pAddButton->setDisabled(true);
-        pDelButton->setDisabled(true);
     }
+    if (epic != NO_ANY_PIC) {
+        pCImage = new cImage;
+        pCImage->setParent(this);
+    }
+
     if (_value.isValid()) polygon = _value.value<tPolygonF>();
     pModel = new cPolygonTableModel(this);
     pModel->setPolygon(polygon);
-    pTable->setModel(pModel);
-    pTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    pTable->setSelectionMode(QAbstractItemView::ContiguousSelection);
-    pTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    pTable->setAlternatingRowColors(true); //nem mükszik ?
+    pUi->tableViewPolygon->setModel(pModel);
     setButtons();
     if (!_readOnly) {
-        connect(pAddButton,   SIGNAL(pressed()), this, SLOT(addRow()));
-        connect(pDelButton,   SIGNAL(pressed()), this, SLOT(delRow()));
-        connect(pClearButton, SIGNAL(pressed()), this, SLOT(clearRows()));
-        connect(pLineX, SIGNAL(textChanged(QString)), this, SLOT(xChanged(QString)));
-        connect(pLineY, SIGNAL(textChanged(QString)), this, SLOT(yChanged(QString)));
-        connect(pTable->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
-        connect(pImageButton, SIGNAL(pressed()), this, SLOT(imageOpen()));
-        image();
+        connect(pUi->tableViewPolygon->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(tableSelectionChanged(QItemSelection,QItemSelection)));
+        connect(pUi->tableViewPolygon, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(tableDoubleclicked(QModelIndex)));
+        connect(pUi->lineEditX, SIGNAL(textChanged(QString)), this, SLOT(xChanged(QString)));
+        connect(pUi->lineEditY, SIGNAL(textChanged(QString)), this, SLOT(yChanged(QString)));
+        connect(pUi->pushButtonAdd, SIGNAL(pressed()), this, SLOT(addRow()));
+        connect(pUi->pushButtonIns, SIGNAL(pressed()), this, SLOT(insRow()));
+        connect(pUi->pushButtonUp , SIGNAL(pressed()), this, SLOT(upRow()));
+        connect(pUi->pushButtonDown,SIGNAL(pressed()), this, SLOT(downRow()));
+        connect(pUi->pushButtonMod, SIGNAL(pressed()), this, SLOT(modRow()));
+        connect(pUi->pushButtonDel, SIGNAL(pressed()), this, SLOT(delRow()));
+        connect(pUi->pushButtonClr,SIGNAL(pressed()), this, SLOT(clearRows()));
+        connect(pUi->pushButtonPic,SIGNAL(pressed()), this, SLOT(imageOpen()));
+        connect(pUi->doubleSpinBoxZoom, SIGNAL(valueChanged(double)), this, SLOT(zoom(double)));
+        (void)getImage();
     }
 }
 
 cPolygonWidget::~cPolygonWidget()
 {
-    pDelete(pMapWin);
-}
-
-void cPolygonWidget::image()
-{
-    bool opened = false;
-    if (pMapRec) {
-        pImageButton->hide();
-        if (pMapWin) {
-            pMapWin->close();
-            pDelete(pMapWin);
-            opened = true;
-        }
-        pDelete(pMapRec);
-    }
-    // Alaprajz, ha van
-    qlonglong id = NULL_ID;    // Az image rkord ID-je (még NULL)
-    // Ha egy 'places' rekordot szerkesztünk, akkor van egy parent_id  mezőnk, amiből megvan az image_id
-    if (recDescr() == cPlace().descr()) {
-        cFieldEditBase *p = anotherField(_sImageId);
-        if (!changeParentIdConnected) {
-            changeParentIdConnected = true;
-            connect(p, SIGNAL(changedValue(cFieldEditBase*)), this, SLOT(changeParentId(cFieldEditBase*)));
-        }
-        id = p->getId();
-        if (id != NULL_ID) {
-            bool ok;
-            id = execSqlIntFunction(*pq, &ok, "get_image", id);
-            if (!ok) {
-                id = NULL_ID;
-            }
-        }
-    }
-    // Másik lehetőség, a properties-ben van egy függvénynevünk, ami a rekord id-alapján megadja az image id-t
-    else {
-        id = _pFieldRef->record().getId();    // Az editálandü rekord ID-je, (read_only mező)
-        if (id != NULL_ID) {   // ID nélkül nincs image (ez feature)
-            QString map_f = _tableShape.magicParam("map");  // Meg van adva a image id-t visszaadó függvlny neve ?
-            if (map_f.isEmpty() == false) {
-                bool ok;
-                id = execSqlIntFunction(*pq, &ok, map_f, id);
-                if (!ok) {
-                    id = NULL_ID;
-                }
-            }
-            else id = NULL_ID;
-        }
-    }
-    if (id > 0) { // if (iid != NULL_ID) {
-        // Valamiért 0-val tér vissza, NULL helyett :-o
-        pMapRec = new cImage();
-        pMapRec->setParent(this);
-        pMapRec->setById(*pq, id);
-        pImageButton->show();
-        if (opened) imageOpen();
-    }
-}
-
-void cPolygonWidget::setButtons()
-{
-    bool empty = polygon.isEmpty();
-    pDelButton->setDisabled(empty || !pTable->selectionModel()->hasSelection());
-    pClearButton->setDisabled(empty);
+    ;
 }
 
 int cPolygonWidget::set(const QVariant& v)
@@ -993,8 +887,52 @@ int cPolygonWidget::set(const QVariant& v)
         pModel->setPolygon(polygon);
         setButtons();
     }
-    image();    // Feltételezi, hogy az rekord ID ha van elöbb lett megadva
+    getImage();    // Feltételezi, hogy az rekord ID ha van elöbb lett megadva
     return r;
+}
+
+/// Ha a feltételek teljesülnek, akkor kitölti a pCImage objektumot.
+/// Ha epic == NO_ANY_PIC, akkor nem csinál semmit, és false-val tér vissza.
+/// ...
+bool cPolygonWidget::getImage(bool refresh)
+{
+    if (epic == NO_ANY_PIC) return false;
+    if (pCImage == NULL) EXCEPTION(EPROGFAIL);
+    qlonglong iid = NULL_ID;
+    switch (epic) {
+    case IS_PLACE_REC:
+        if (parentOrPlace_id != NULL_ID) {
+            bool ok;
+            iid = execSqlIntFunction(*pq, &ok, "get_image", parentOrPlace_id);
+            if (!ok || iid == 0) {  // Valamiért 0-val tér vissza, NULL helyett :-o
+                iid = NULL_ID;
+            }
+        }
+        break;
+    case ID2IMAGE_FUN:
+        if (parentOrPlace_id != NULL_ID) {
+            bool ok;
+            iid = execSqlIntFunction(*pq, &ok, id2imageFun, parentOrPlace_id);
+            if (!ok || iid == 0) {  // Valamiért 0-val tér vissza, NULL helyett :-o
+                iid = NULL_ID;
+            }
+        }
+        break;
+    default:
+        EXCEPTION(EPROGFAIL);
+    }
+    if (iid != NULL_ID) {
+        if ((refresh || iid != pCImage->getId())) {
+            pCImage->setById(*pq, iid);
+            pUi->pushButtonPic->setEnabled(true);
+        }
+        return pCImage->dataIsPic();
+    }
+    else {
+        pCImage->clear();
+        pUi->pushButtonPic->setDisabled(true);
+        return false;
+    }
 }
 
 void cPolygonWidget::drawPolygon()
@@ -1003,27 +941,114 @@ void cPolygonWidget::drawPolygon()
     if (polygon.size() > 0) {
         pMapWin->addDraw(QVariant::fromValue(polygon));
     }
-    if (!pMapWin->setImage(*pMapRec)) EXCEPTION(EDATA, -1, trUtf8("Nem lehet betölteni az alaprajzot."));
+    if (!pMapWin->setImage(*pCImage)) EXCEPTION(EDATA, -1, trUtf8("Nem lehet betölteni az alaprajzot."));
 }
 
-void cPolygonWidget::delRow()
+void cPolygonWidget::modPostprod(QModelIndex select)
 {
-    QModelIndexList mil = pTable->selectionModel()->selectedRows();
-    if (mil.size()) {
-        do {
-            int row = mil.last().row();
-            pModel->remove(row);
-            PDEB(VVERBOSE) << "Remove #" << row << endl;
-            mil = pTable->selectionModel()->selectedRows();
-        } while (mil.size());
-        polygon = pModel->polygon();
+    if (select.isValid()) {
+        pUi->tableViewPolygon->selectionModel()->select(select, QItemSelectionModel::ClearAndSelect);
     }
     else {
-        polygon = pModel->pop_back().polygon();
+        setButtons();
     }
-    setButtons();
     setFromWidget(QVariant::fromValue(polygon));
     drawPolygon();
+}
+
+void cPolygonWidget::setButtons()
+{
+    int s = polygon.size(); // size
+    int m = s - 1;          // max index
+    bool single = selectedRowNum == 1;
+    bool any    = selectedRowNum  > 0;
+    pUi->pushButtonAdd ->setEnabled(xyOk &&                           !_readOnly);
+    pUi->pushButtonIns ->setEnabled(xyOk && single &&                 !_readOnly);
+    pUi->pushButtonUp  ->setEnabled(        single && actRow() > 0 && !_readOnly);
+    pUi->pushButtonDown->setEnabled(        single && actRow() < m && !_readOnly);
+    pUi->pushButtonMod ->setEnabled(xyOk && single &&                 !_readOnly);
+    pUi->pushButtonDel ->setEnabled(        any    &&                 !_readOnly);
+    pUi->pushButtonClr ->setEnabled(                  s > 0        && !_readOnly);
+
+    pUi->pushButtonPic->setEnabled(pCImage->dataIsPic());
+    pUi->doubleSpinBoxZoom->setEnabled(pMapWin != NULL);
+}
+
+QModelIndex cPolygonWidget::actIndex(bool __ex)
+{
+    if (__ex && !_actIndex.isValid()) EXCEPTION(EDATA);
+    return _actIndex;
+}
+
+int cPolygonWidget::actRow(bool __ex)
+{
+    if (__ex && _actRow < 0) EXCEPTION(EDATA);
+    return _actRow;
+}
+
+// ***** cPolygonWidget SLOTS *****
+
+void cPolygonWidget::tableSelectionChanged(const QItemSelection &, const QItemSelection &)
+{
+    QModelIndexList mil = pUi->tableViewPolygon->selectionModel()->selectedRows();
+    selectedRowNum = mil.size();
+    if (selectedRowNum == 1) {
+        _actIndex = mil[0];
+        _actRow   = _actIndex.row();
+    }
+    else {
+        _actIndex = QModelIndex();
+        _actRow   = -1;
+    }
+    setButtons();
+}
+
+void cPolygonWidget::tableDoubleclicked(const QModelIndex& mi)
+{
+    int row = mi.row();
+    if (isContIx(polygon, row)) {
+        QPointF p = polygon[row];
+        pUi->lineEditX->setText(QString::number(p.x(), 'f', 3));
+        pUi->lineEditY->setText(QString::number(p.y(), 'f', 3));
+    }
+}
+
+void cPolygonWidget::xChanged(QString _t)
+{
+    if (_t.isEmpty()) {
+        xPrev.clear();
+        xOk = false;
+    }
+    else {
+        bool ok;
+        x = _t.toDouble(&ok);
+        if (ok) {
+            xPrev = _t;
+            xOk = true;
+        }
+        else     pUi->lineEditX->setText(xPrev);
+    }
+    xyOk = xOk && yOk;
+    setButtons();
+}
+
+void cPolygonWidget::yChanged(QString _t)
+{
+    if (_t.isEmpty()) {
+        yPrev.clear();
+        xOk = false;
+    }
+    else {
+        bool ok;
+        y = _t.toDouble(&ok);
+        if (ok) {
+            yPrev = _t;
+            yOk = true;
+        }
+        else     pUi->lineEditY->setText(yPrev);
+    }
+    xyOk = xOk && yOk;
+    setButtons();
 }
 
 void cPolygonWidget::addRow()
@@ -1031,61 +1056,71 @@ void cPolygonWidget::addRow()
     QPointF pt(x,y);
     *pModel << pt;
     polygon = pModel->polygon();
-    setButtons();
-    setFromWidget(QVariant::fromValue(polygon));
-    xPrev.clear();
-    pLineX->setText(xPrev);
-    yPrev.clear();
-    pLineY->setText(yPrev);
-    pAddButton->setDisabled(true);
-    drawPolygon();
+    int row = polygon.size() -1;
+    QModelIndex mi = index(row);
+    modPostprod(mi);
+}
+
+void cPolygonWidget::insRow()
+{
+    QPointF pt(x,y);
+    QModelIndex mi = actIndex();
+    int row = mi.row();
+    pModel->insert(pt, row);
+    polygon = pModel->polygon();
+    modPostprod(mi);
+}
+
+void cPolygonWidget::upRow()
+{
+    int row = actRow();
+    pModel->up(row);
+    modPostprod(index(row -1));
+}
+
+void cPolygonWidget::downRow()
+{
+    int row = actRow();
+    pModel->down(row);
+    modPostprod(index(row +1));
+}
+
+void cPolygonWidget::modRow()
+{
+    int row = actRow();
+    QPointF p(x, y);
+    pModel->modify(row, p);
+    modPostprod();
+}
+
+void cPolygonWidget::delRow()
+{
+    QModelIndexList mil = pUi->tableViewPolygon->selectionModel()->selectedRows();
+    if (mil.size()) {
+        do {
+            int row = mil.last().row();
+            pModel->remove(row);
+            PDEB(VVERBOSE) << "Remove #" << row << endl;
+            mil.pop_back();
+        } while (mil.size());
+        polygon = pModel->polygon();
+    }
+    else {
+        polygon = pModel->pop_back().polygon();
+    }
+    modPostprod();
 }
 
 void cPolygonWidget::clearRows()
 {
     polygon.clear();
     pModel->clear();
-    setButtons();
-    setFromWidget(QVariant::fromValue(polygon));
-    drawPolygon();
-}
-
-void cPolygonWidget::xChanged(QString _t)
-{
-    if (_t.isEmpty()) {
-        pAddButton->setDisabled(true);
-        xPrev.clear();
-    }
-    else {
-        x = _t.toDouble(&xOk);
-        if (xOk) xPrev = _t;
-        else     pLineX->setText(xPrev);
-        pAddButton->setDisabled(xPrev.isEmpty() || yPrev.isEmpty());
-    }
-}
-
-void cPolygonWidget::yChanged(QString _t)
-{
-    if (_t.isEmpty()) {
-        pAddButton->setDisabled(true);
-        yPrev.clear();
-    }
-    else {
-        y = _t.toDouble(&yOk);
-        if (yOk) yPrev = _t;
-        else     pLineY->setText(yPrev);
-        pAddButton->setDisabled(xPrev.isEmpty() || yPrev.isEmpty());
-    }
-}
-
-void cPolygonWidget::selectionChanged(QItemSelection,QItemSelection)
-{
-    pDelButton->setDisabled(polygon.isEmpty() || !pTable->selectionModel()->hasSelection());
+    modPostprod();
 }
 
 void cPolygonWidget::imageOpen()
 {
-    if (pMapRec == NULL) EXCEPTION(EPROGFAIL);
+    if (pCImage == NULL) EXCEPTION(EPROGFAIL);
     if (pMapWin != NULL) {
         pMapWin->show();
         return;
@@ -1096,37 +1131,34 @@ void cPolygonWidget::imageOpen()
     if (!isReadOnly()) {
         connect(pMapWin, SIGNAL(mousePressed(QPoint)), this, SLOT(imagePoint(QPoint)));
     }
-    pZoomIn->show();
-    pZoomOut->show();
-    connect(pZoomIn, SIGNAL(pressed()), pMapWin, SLOT(zoomIn()));
-    connect(pZoomOut,SIGNAL(pressed()), pMapWin, SLOT(zoomOut()));
-    connect(pMapWin, SIGNAL(destroyed(QObject*)), SLOT(destroyedImage(QObject*)));
+    // ...
+}
+
+void cPolygonWidget::zoom(double z)
+{
+    if (pMapWin == NULL) EXCEPTION(EPROGFAIL);
+    (void)z;
 }
 
 void cPolygonWidget::imagePoint(QPoint _p)
 {
-    QPointF pt = _p;
-    *pModel << pt;
-    polygon = pModel->polygon();
-    setButtons();
-    setFromWidget(QVariant::fromValue(polygon));
-    pMapWin->clearDraws();
-    if (polygon.size()) {
-        pMapWin->addDraw(QVariant::fromValue(polygon));
-    }
-    if (!pMapWin->setImage(*pMapRec)) EXCEPTION(EDATA, -1, trUtf8("Nem lehet betölteni az alaprajzot."));
+    x = _p.x();
+    y = _p.y();
+    addRow();
 }
 
 void cPolygonWidget::destroyedImage(QObject *p)
 {
     (void)p;
     pMapWin = NULL;
+    pUi->doubleSpinBoxZoom->setDisabled(true);
 }
 
-void cPolygonWidget::changeParentId(cFieldEditBase *p)
+void cPolygonWidget::changeId(cFieldEditBase *p)
 {
     (void)p;
-    image();
+    parentOrPlace_id = p->getId();
+    getImage();
 }
 
 /* **************************************** cFKeyWidget ****************************************  */
