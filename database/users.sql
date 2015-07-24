@@ -291,7 +291,7 @@ BEGIN
             RETURN NEW;
         END IF;
     END IF;
-    NEW.passwd = crypt(NEW.passwd, gen_salt('md5'));
+    NEW.passwd := crypt(NEW.passwd, gen_salt('md5'));
     RETURN NEW;
 END
 $$ LANGUAGE plpgsql;
