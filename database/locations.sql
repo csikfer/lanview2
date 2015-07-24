@@ -8,7 +8,8 @@ CREATE TABLE images (
     image_note      varchar(255)    DEFAULT NULL,
     image_type      imagetype       NOT NULL DEFAULT 'PNG',
     image_sub_type  varchar(32)     DEFAULT NULL,
-    image_data      bytea           NOT NULL
+    image_data      bytea           NOT NULL,
+    image_hash      bytea           NOT NULL
 );
 ALTER TABLE images OWNER TO lanview2;
 COMMENT ON TABLE  images             IS 'Bináris adatokat, tipikusan képeket tartalmazó tábla';
@@ -18,7 +19,18 @@ COMMENT ON COLUMN images.image_note IS 'A kép ill bináris adathamaz opcionáli
 COMMENT ON COLUMN images.image_type  IS 'A kép ill bináris adathamaz típusa, a kezelt kép formátumok, vagy BIN';
 COMMENT ON COLUMN images.image_sub_type IS 'Bináris adathamaz esetén (image_type = BIN) egy opcionális típus azonosító string';
 COMMENT ON COLUMN images.image_data  IS 'A kép ill bináris adathamaz.';
+COMMENT ON COLUMN images.image_hash  IS 'A kép ill bináris adathamaz SHA512 HASH. NULL esetén a trigger függvény autómatikusan meggenerálja';
 
+CREATE OR REPLACE FUNCTION set_image_hash_if_NULL() RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.image_hash IS NULL THEN
+        NEW.image_hash := digest(NEW.image_data, 'sha512');
+    END IF;
+    RETURN NEW;
+END
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER set_image_hash_if_NULL BEFORE INSERT OR UPDATE ON images FOR EACH ROW EXECUTE PROCEDURE set_image_hash_if_NULL();
 
 CREATE TYPE placetype AS ENUM ('root', 'unknown', 'real');
 COMMENT ON TYPE placetype IS '
@@ -37,7 +49,7 @@ CREATE TABLE places (
     parent_id   bigint              DEFAULT NULL REFERENCES places(place_id) MATCH SIMPLE
                                         ON DELETE RESTRICT ON UPDATE RESTRICT,
     image_id    bigint              DEFAULT NULL REFERENCES images(image_id) MATCH SIMPLE
-                                        ON DELETE RESTRICT ON UPDATE RESTRICT,
+                                        ON DELETE SET NULL ON UPDATE RESTRICT,
     frame       polygon             DEFAULT NULL,
     tels        varchar(20)[]       DEFAULT NULL
 );

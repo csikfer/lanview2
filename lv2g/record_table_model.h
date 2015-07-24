@@ -6,7 +6,7 @@
 typedef tRecordList<cRecordAny>         tRecords;
 class   cRecordTableColumn;
 typedef tRecordList<cRecordTableColumn>  tRecordTableColumns;
-class cRecordViewBase;
+class cRecordsViewBase;
 class   cRecordTable;
 
 /// @class cRecordViewModelBase
@@ -15,7 +15,7 @@ class   cRecordTable;
 class cRecordViewModelBase {
 public:
 
-    cRecordViewModelBase(cRecordViewBase &_rt);
+    cRecordViewModelBase(cRecordsViewBase &_rt);
     ~cRecordViewModelBase();
     cRecordAny *qGetRecord(QSqlQuery& q);
 
@@ -34,7 +34,7 @@ public:
     /// Egy áltatlánosan használlt lekérdező objektum.
     QSqlQuery                 * pq;
     /// A megjelenító view objektum
-    cRecordViewBase&      recordView;
+    cRecordsViewBase&      recordView;
     /// A megjelenített (fő) tábla/rekord leíró
     const cRecStaticDescr&      recDescr;
     /// A megjelenítést vezérlő (fő) tábla leíró rekord
@@ -68,6 +68,7 @@ public:
 
     virtual bool insertRec(cRecordAny *pRec);
     virtual bool insertRow(cRecordAny *pRec) = 0;
+    static bool SqlInsert(QSqlQuery &q, cRecord *pRec);
 };
 
 /// @class cRecordTableModel

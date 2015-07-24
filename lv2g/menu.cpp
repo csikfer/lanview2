@@ -109,7 +109,7 @@ void cMenuAction::initRecordTable()
     pTableShape->setParent(this);
     QString n = objectName();
     pTableShape->setByName(n);
-    pRecordView = cRecordViewBase::newRecordView(pTableShape, NULL, pTabWidget);
+    pRecordView = cRecordsViewBase::newRecordView(pTableShape, NULL, pTabWidget);
     pWidget = pRecordView->pWidget();
     connect(pRecordView, SIGNAL(closeIt()),   this, SLOT(removeIt()));
     connect(pRecordView, SIGNAL(destroyed()), this, SLOT(destroyedChild()));

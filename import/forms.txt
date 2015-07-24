@@ -361,6 +361,7 @@ GUI lv2gui {
     host_services SHAPE host_services   "Szolgáltatás példányok";
     subnets     SHAPE   subnets         "Alhálózatok";
     vlans       SHAPE   vlans           "VLAN-ok";
+    images      SHAPE images images;
   }
   events MENU "Események" {
     alarms      SHAPE   alarms          "Riasztások";
@@ -371,7 +372,6 @@ GUI lv2gui {
   others MENU "Egyéb táblák" {
     arps        SHAPE   arps            "ARP tábla";
     mactab      SHAPE   mactab          "Port címtáblák";
-    images	SHAPE images images;
   }
   gui MENU "Megjelenítés" {
     shapes      SHAPE   table_shapes    "Táblák megjelenítése";

@@ -369,14 +369,16 @@ typedef tGroup<cTimePeriod, cTpow> tTimePeriodTpow;
 class LV2SHARED_EXPORT cImage : public cRecord {
     CRECORD(cImage);
 public:
+    /// Ha az image_data mező feltöltésekor törli a image_hash mezőt.
+    /// Az image_hash mező, csak akkor törlődik, ha az image_data mezőt egyedileg modosítjuk,
+    /// vagyis az objektum toEnd() (paraméter nélküli) metódusa az alapértelmezett metódus, ami nem cdinál semmit.
+    bool toEnd(int _i);
     /// Betölt az objektumba egy képet
     /// @param __fn A kép fájl neve
     bool load(const QString& __fn, bool __ex = true);
     /// Kiír egy képet egy fájlba
     /// @param __fn A kép fájl neve
     bool save(const QString& __fn, bool __ex = true);
-    /// A bianaris adatot adja vissza
-    QByteArray getImage() const     { return get(_ixImageData).toByteArray(); }
     /// A bináris adattartalmat állítja be
     void setImage(const QByteArray& __a)   { set(_ixImageData, QVariant(__a)); }
     /// Az kép típusának a nevét adja vissza
@@ -394,9 +396,20 @@ public:
         if (isNull(_ixImageData)) return false;
         return true;
     }
+    /// A bianaris adatot adja vissza
+    QByteArray getImage() const     { return get(_ixImageData).toByteArray(); }
+    /// A bianaris hash mező értékét adja vissza
+    QByteArray getHash() const      { return get(_ixImageHash).toByteArray(); }
+    /// Ha a imaga_data NULL, akkor true-val tér vissza
+    bool dataIsNull() const         { return isNull(_ixImageData); }
+    /// Ha a hash mező értéke NULL, akkor true-val térvissza. Elvileg az adatbázisban mindíg ki van töltve.
+    /// Ha az objektumban modosítkuk a image_data mezőt, akkor törölva lessz a image_hash mező, melyet az
+    /// az adatbázis logika kiíráskor majd kiszámol. és kitölt
+    bool hashIsNull() const         { return isNull(_ixImageHash); }
 protected:
-    static int  _ixImageData;
     static int  _ixImageType;
+    static int  _ixImageData;
+    static int  _ixImageHash;
 };
 
 /*!

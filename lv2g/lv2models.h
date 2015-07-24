@@ -5,6 +5,10 @@
 #include <QAbstractTableModel>
 #include <QStringListModel>
 
+_GEX QVector<int> mil2rowsAsc(const QModelIndexList& mil);
+_GEX QVector<int> mil2rowsDesc(const QModelIndexList& mil);
+
+
 /// @class cStringListModel
 /// Lista modell string lista megjelenítéséhez.
 class LV2GSHARED_EXPORT cStringListModel: public QAbstractListModel {
@@ -37,6 +41,15 @@ public:
         insertRow(i);
         return *this;
     }
+    /// Módosítja a megadott indexű egy elemet
+    cStringListModel& modify(const QString& s, int i) {
+        if (isContIx(_stringList, i)) {
+            beginResetModel();
+            _stringList[i] = s;
+            endResetModel();
+        }
+        return *this;
+    }
     /// Törli a megadott indexű sort
     cStringListModel& remove(int i) {
         beginRemoveRows(QModelIndex(), i, i);
@@ -63,6 +76,9 @@ public:
     }
     /// Az index listában kijelölt elemeket törli.
     cStringListModel& remove(QModelIndexList& mil);
+    cStringListModel& up(const QModelIndexList& mil);
+    cStringListModel& down(const QModelIndexList& mil);
+
     /// A sorszámozás állapotát adja vissza
     bool rowNumbers() const                     { return _rowNumbers; }
     /// A sorszámozás kéreése, vagy tiltása
@@ -132,22 +148,8 @@ public:
         return *this;
     }
     ///
-    cPolygonTableModel& up(int i) {
-        if (i > 0 && isContIx(_polygon, i)) {
-            beginResetModel();
-            _polygon.swap(i, i-1);
-            endResetModel();
-        }
-        return *this;
-    }
-    cPolygonTableModel& down(int i) {
-        if (isContIx(_polygon, i + 1)) {
-            beginResetModel();
-            _polygon.swap(i, i +1);
-            endResetModel();
-        }
-        return *this;
-    }
+    cPolygonTableModel& up(const QModelIndexList& mil);
+    cPolygonTableModel& down(const QModelIndexList& mil);
     cPolygonTableModel& modify(int i, const QPointF& p) {
         if (isContIx(_polygon, i)) {
             beginResetModel();

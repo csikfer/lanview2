@@ -4,8 +4,8 @@
 #include "cerrormessagebox.h"
 
 
-cRecordTree::cRecordTree(cTableShape *pts, bool _isDialog, cRecordViewBase *_upper, QWidget * par)
-    : cRecordViewBase(_isDialog, par)
+cRecordTree::cRecordTree(cTableShape *pts, bool _isDialog, cRecordsViewBase *_upper, QWidget * par)
+    : cRecordsViewBase(_isDialog, par)
 {
     pMaster = pUpper = _upper;
     if (pMaster != NULL && pUpper->pMaster != NULL) pMaster = pUpper->pMaster;
@@ -92,12 +92,13 @@ void cRecordTree::init()
         flags = RTF_OVNER | RTF_SLAVE | RTF_CHILD | RTF_TREE;
         buttons.pop_front();    // A close nem kell
         initSimple(_pWidget);
-        pRightTable = cRecordViewBase::newRecordView(*pq, pTableShape->getId(_sRightShapeId), this, _pWidget);
+        pRightTable = cRecordsViewBase::newRecordView(*pq, pTableShape->getId(_sRightShapeId), this, _pWidget);
         break;
     default:
         EXCEPTION(ENOTSUPP);
     }
     refresh();
+    connect(pTreeView, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(modifyByIndex(QModelIndex)));
 }
 
 void cRecordTree::initSimple(QWidget *pW)
@@ -233,7 +234,7 @@ cRecordAny *cRecordTree::prevRow(QModelIndex *pMi, int _upRes)
 
 void cRecordTree::selectRow(const QModelIndex& mi)
 {
-    pTreeView->selectionModel()->select(mi, QItemSelectionModel::ClearAndSelect);
+    pTreeView->selectionModel()->select(mi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
 }
 
 void cRecordTree::_refresh(bool first)

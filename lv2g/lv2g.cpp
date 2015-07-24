@@ -20,7 +20,7 @@ lv2g::lv2g() :
             case LR_OK:         break;
             case LR_INVALID:    EXCEPTION(ELOGON, LR_INVALID, trUtf8("Tul sok hibás bejelentkezési próbálkozás."));
             case LR_CANCEL:     EXCEPTION(ELOGON, LR_CANCEL, trUtf8("Mégsem."));
-            default:            EXCEPTION(EPROGFAIL);
+            default:            EXCEPTION(EOK);
             }
         }
     } CATCHS(lastError)
@@ -215,8 +215,14 @@ bool cLv2GQApp::notify(QObject * receiver, QEvent * event)
     PDEB(DERROR) << "Receiver : " << receiver->objectName() << "::" << typeid(*receiver).name() << endl;
     PDEB(DERROR) << "Event : " << typeid(*event).name() << endl;  Kiakad ?! */
     cError::mDropAll = true;                    // A továbbiakban nem *cError-al dobja a hibákat, hanem no_init_ -el
-    lanView::getInstance()->lastError = lastError;
-    cErrorMessageBox::messageBox(lastError);    // Kitesszük a hibaüzenetet,
-    QApplication::exit(lastError->mErrorCode);  // kilépünk.
+    int e = lastError->mErrorCode;
+    if (e == eError::EOK) {
+        pDelete(lastError);
+    }
+    else {
+        lanView::getInstance()->lastError = lastError;
+        cErrorMessageBox::messageBox(lastError);    // Kitesszük a hibaüzenetet,
+     }
+    QApplication::exit(e);  // kilépünk.
     return false;
 }

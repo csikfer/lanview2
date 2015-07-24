@@ -1,6 +1,8 @@
-#include "record_dialog.h"
+#include "record_table.h"
 #include "lv2validator.h"
 #include "ui_polygoned.h"
+#include "ui_arrayed.h"
+#include "ui_fkeyed.h"
 /* **************************************** cImageWindows ****************************************  */
 
 cImageWidget::cImageWidget(QWidget *__par)
@@ -658,60 +660,32 @@ cArrayWidget::cArrayWidget(const cTableShape& _tm, const cTableShapeField &_tf, 
     , last()
 {
     _wType   = FEW_ARRAY;
+
     _pWidget = new QWidget(_par->pWidget());
-    pLayout  = new QHBoxLayout;
-    _pWidget->setLayout(pLayout);
-    pList = new QListView(_pWidget);
-    if (_readOnly) {
-        pLayout->addWidget(pList);
+    pUi      = new Ui_arrayEd;
+    pUi->setupUi(_pWidget);
 
-        pLineEd     = NULL;
-        pLeftLayout = NULL;
-        pRightLayout= NULL;
-        pAddButton  = NULL;
-        pDelButton  = NULL;
-        pClearButton= NULL;
-    }
-    else {
-        pLeftLayout  = new QVBoxLayout;
-        pRightLayout = new QVBoxLayout;
+    selectedNum = 0;
 
-        pLineEd = new QLineEdit(_pWidget);
+    pUi->pushButtonAdd->setDisabled(_readOnly);
+    pUi->pushButtonIns->setDisabled(_readOnly);
+    pUi->pushButtonUp->setDisabled(_readOnly);
+    pUi->pushButtonDown->setDisabled(_readOnly);
+    pUi->pushButtonMod->setDisabled(_readOnly);
+    pUi->pushButtonDel->setDisabled(_readOnly);
+    pUi->pushButtonClr->setDisabled(_readOnly);
 
-        pAddButton   = new QPushButton(trUtf8("Hozzáad"), _pWidget);
-        pDelButton   = new QPushButton(trUtf8("Töröl"), _pWidget);
-        pClearButton = new QPushButton(trUtf8("Ürít"), _pWidget);
-
-        pLayout->addLayout(pLeftLayout);
-        pLayout->addLayout(pRightLayout);
-
-        // Left layout
-        pLeftLayout->addWidget(pList);
-        pLeftLayout->addStretch();
-        pLeftLayout->addWidget(pLineEd);
-
-        // Right layout
-        pRightLayout->addStretch();
-        pRightLayout->addWidget(pAddButton);
-        pRightLayout->addWidget(pDelButton);
-        pRightLayout->addWidget(pClearButton);
-    }
     pModel = new cStringListModel(pWidget());
     pModel->setStringList(_value.toStringList());
-    pList->setModel(pModel);
-    pList->setSelectionBehavior(QAbstractItemView::SelectRows);
-    pList->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    pList->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    pList->setAlternatingRowColors(true); //nem mükszik
-    setButtons();
-    pAddButton->setDisabled(true);
-    pDelButton->setDisabled(true);
+    pUi->listView->setModel(pModel);
+    pUi->listView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
     if (!_readOnly) {
-        connect(pAddButton,   SIGNAL(pressed()), this, SLOT(addRow()));
-        connect(pDelButton,   SIGNAL(pressed()), this, SLOT(delRow()));
-        connect(pClearButton, SIGNAL(pressed()), this, SLOT(clearRows()));
-        connect(pLineEd,      SIGNAL(textChanged(QString)), this, SLOT(changed(QString)));
-        connect(pList->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
+        connect(pUi->pushButtonAdd, SIGNAL(pressed()), this, SLOT(addRow()));
+        connect(pUi->pushButtonDel, SIGNAL(pressed()), this, SLOT(delRow()));
+        connect(pUi->pushButtonClr, SIGNAL(pressed()), this, SLOT(clrRows()));
+        connect(pUi->lineEdit, SIGNAL(textChanged(QString)), this, SLOT(changed(QString)));
+        connect(pUi->listView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
     }
 }
 
@@ -732,66 +706,112 @@ int cArrayWidget::set(const QVariant& v)
 
 void cArrayWidget::setButtons()
 {
-    bool empty = pModel->isEmpty();
-    pDelButton->setDisabled(empty || !pList->selectionModel()->hasSelection());
-    pClearButton->setDisabled(empty);
+    bool eArr = pModel->isEmpty();
+    bool eLin = pUi->lineEdit->text().isEmpty();
+    bool sing = selectedNum == 1;
+    bool any  = selectedNum > 0;
+
+    pUi->pushButtonAdd ->setDisabled(eLin         || _readOnly);
+    pUi->pushButtonIns ->setDisabled(eLin || sing || _readOnly);
+    pUi->pushButtonUp  ->setDisabled(        any  || _readOnly);
+    pUi->pushButtonDown->setDisabled(        any  || _readOnly);
+    pUi->pushButtonMod ->setDisabled(eLin || sing || _readOnly);
+    pUi->pushButtonDel ->setDisabled(eArr         || _readOnly);
+    pUi->pushButtonClr ->setDisabled(eArr         || _readOnly);
 }
 
-void cArrayWidget::delRow()
-{
-    QModelIndexList mil = pList->selectionModel()->selectedIndexes();
-    pModel->remove(mil);
-    setButtons();
-    setFromWidget(pModel->stringList());
-}
+// cArrayWidget SLOTS
 
-void cArrayWidget::addRow()
+void cArrayWidget::selectionChanged(QItemSelection,QItemSelection)
 {
-    *pModel << last;
+    QModelIndexList mil = pUi->listView->selectionModel()->selectedColumns();
+    selectedNum = mil.size();
+    if (selectedNum == 0) actIndex = mil.first();
+    else                  actIndex = QModelIndex();
     setButtons();
-    setFromWidget(pModel->stringList());
-    last.clear();
-    pLineEd->setText(last);
-    pAddButton->setDisabled(true);
-}
-
-void cArrayWidget::clearRows()
-{
-    pModel->clear();
-    setButtons();
-    setFromWidget(pModel->stringList());
 }
 
 void cArrayWidget::changed(QString _t)
 {
     if (_t.isEmpty()) {
         last.clear();
-        pLineEd->setText(last);
-        pAddButton->setDisabled(true);
-        return;
+        pUi->lineEdit->setText(last);
     }
-    bool ok;
-    switch (_recDescr.eColType) {
-    case cColStaticDescr::FT_INTEGER_ARRAY:
-        _t.toLongLong(&ok);
-        break;
-    case cColStaticDescr::FT_REAL_ARRAY:
-        _t.toDouble(&ok);
-        break;
-    case cColStaticDescr::FT_TEXT_ARRAY:
-        ok = true;
-        break;
-    default:
-        EXCEPTION(ENOTSUPP, _recDescr.eColType);
+    else {
+        bool ok;
+        switch (_recDescr.eColType) {
+        case cColStaticDescr::FT_INTEGER_ARRAY:
+            _t.toLongLong(&ok);
+            break;
+        case cColStaticDescr::FT_REAL_ARRAY:
+            _t.toDouble(&ok);
+            break;
+        case cColStaticDescr::FT_TEXT_ARRAY:
+            ok = true;
+            break;
+        default:
+            EXCEPTION(ENOTSUPP, _recDescr.eColType);
+        }
+        if (ok) last = _t;
+        else    pUi->lineEdit->setText(last);
     }
-    if (ok) last = _t;
-    else    pLineEd->setText(last);
-    pAddButton->setDisabled(last.isEmpty());
+    setButtons();
 }
 
-void cArrayWidget::selectionChanged(QItemSelection,QItemSelection)
+void cArrayWidget::addRow()
 {
-    pDelButton->setDisabled(pModel->isEmpty() || !pList->selectionModel()->hasSelection());
+    *pModel << last;
+    setFromWidget(pModel->stringList());
+    setButtons();
+}
+
+void cArrayWidget::insRow()
+{
+    int row = actIndex.row();
+    pModel->insert(last, row);
+    setFromWidget(pModel->stringList());
+    setButtons();
+}
+
+void cArrayWidget::upRow()
+{
+    QModelIndexList mil = pUi->listView->selectionModel()->selectedRows();
+    pModel->up(mil);
+    setFromWidget(pModel->stringList());
+    setButtons();
+}
+
+void cArrayWidget::downRow()
+{
+    QModelIndexList mil = pUi->listView->selectionModel()->selectedRows();
+    pModel->down(mil);
+    setFromWidget(pModel->stringList());
+    setButtons();
+}
+
+void cArrayWidget::modRow()
+{
+
+}
+
+void cArrayWidget::delRow()
+{
+    QModelIndexList mil = pUi->listView->selectionModel()->selectedIndexes();
+    if (mil.size() > 0) {
+        pModel->remove(mil);
+    }
+    else {
+        pModel->pop_back();
+    }
+    setFromWidget(pModel->stringList());
+    setButtons();
+}
+
+void cArrayWidget::clrRows()
+{
+    pModel->clear();
+    setFromWidget(pModel->stringList());
+    setButtons();
 }
 
 /* **************************************** cPolygonWidget ****************************************  */
@@ -829,6 +849,7 @@ cPolygonWidget::cPolygonWidget(const cTableShape& _tm, const cTableShapeField &_
     pUi->pushButtonClr->setDisabled(_readOnly);
     pUi->pushButtonPic->setDisabled(true);
     pUi->doubleSpinBoxZoom->setDisabled(true);
+    pUi->doubleSpinBoxZoom->setValue(stZoom);
 
     // Alaprajz előkészítése, ha van
     // Ha egy 'places' rekordot szerkesztünk, akkor van egy parent_id  mezőnk, amiből megvan az image_id
@@ -926,10 +947,18 @@ bool cPolygonWidget::getImage(bool refresh)
             pCImage->setById(*pq, iid);
             pUi->pushButtonPic->setEnabled(true);
         }
-        return pCImage->dataIsPic();
+        if (pCImage->dataIsPic()) {
+            if (pMapWin != NULL) pMapWin->setImage(*pCImage);
+            return true;
+        }
+        else {
+            pDelete(pMapWin);
+            return false;
+        }
     }
     else {
         pCImage->clear();
+        pDelete(pMapWin);
         pUi->pushButtonPic->setDisabled(true);
         return false;
     }
@@ -938,10 +967,11 @@ bool cPolygonWidget::getImage(bool refresh)
 void cPolygonWidget::drawPolygon()
 {
     if (pMapWin == NULL) return;
-    if (polygon.size() > 0) {
-        pMapWin->addDraw(QVariant::fromValue(polygon));
-    }
-    if (!pMapWin->setImage(*pCImage)) EXCEPTION(EDATA, -1, trUtf8("Nem lehet betölteni az alaprajzot."));
+    if (polygon.size() < 3)
+        pMapWin->clearPolygon();
+    else
+        pMapWin->setPolygon(polygon);
+    lastPos = QPointF(0,0);
 }
 
 void cPolygonWidget::modPostprod(QModelIndex select)
@@ -958,17 +988,17 @@ void cPolygonWidget::modPostprod(QModelIndex select)
 
 void cPolygonWidget::setButtons()
 {
-    int s = polygon.size(); // size
-    int m = s - 1;          // max index
-    bool single = selectedRowNum == 1;
-    bool any    = selectedRowNum  > 0;
-    pUi->pushButtonAdd ->setEnabled(xyOk &&                           !_readOnly);
-    pUi->pushButtonIns ->setEnabled(xyOk && single &&                 !_readOnly);
-    pUi->pushButtonUp  ->setEnabled(        single && actRow() > 0 && !_readOnly);
-    pUi->pushButtonDown->setEnabled(        single && actRow() < m && !_readOnly);
-    pUi->pushButtonMod ->setEnabled(xyOk && single &&                 !_readOnly);
-    pUi->pushButtonDel ->setEnabled(        any    &&                 !_readOnly);
-    pUi->pushButtonClr ->setEnabled(                  s > 0        && !_readOnly);
+    bool ne  = polygon.size() > 0;
+    bool one = selectedRowNum == 1;
+    bool any = selectedRowNum  > 0;
+
+    pUi->pushButtonAdd ->setEnabled(xyOk &&              !_readOnly);
+    pUi->pushButtonIns ->setEnabled(xyOk && one &&       !_readOnly);
+    pUi->pushButtonUp  ->setEnabled(        any &&       !_readOnly);
+    pUi->pushButtonDown->setEnabled(        any &&       !_readOnly);
+    pUi->pushButtonMod ->setEnabled(xyOk && one &&       !_readOnly);
+    pUi->pushButtonDel ->setEnabled(               ne && !_readOnly);
+    pUi->pushButtonClr ->setEnabled(               ne && !_readOnly);
 
     pUi->pushButtonPic->setEnabled(pCImage->dataIsPic());
     pUi->doubleSpinBoxZoom->setEnabled(pMapWin != NULL);
@@ -1008,8 +1038,8 @@ void cPolygonWidget::tableDoubleclicked(const QModelIndex& mi)
     int row = mi.row();
     if (isContIx(polygon, row)) {
         QPointF p = polygon[row];
-        pUi->lineEditX->setText(QString::number(p.x(), 'f', 3));
-        pUi->lineEditY->setText(QString::number(p.y(), 'f', 3));
+        pUi->lineEditX->setText(QString::number(p.x(), 'f', 0));
+        pUi->lineEditY->setText(QString::number(p.y(), 'f', 0));
     }
 }
 
@@ -1073,16 +1103,16 @@ void cPolygonWidget::insRow()
 
 void cPolygonWidget::upRow()
 {
-    int row = actRow();
-    pModel->up(row);
-    modPostprod(index(row -1));
+    QModelIndexList mil = pUi->tableViewPolygon->selectionModel()->selectedRows();
+    pModel->up(mil);
+    modPostprod();
 }
 
 void cPolygonWidget::downRow()
 {
-    int row = actRow();
-    pModel->down(row);
-    modPostprod(index(row +1));
+    QModelIndexList mil = pUi->tableViewPolygon->selectionModel()->selectedRows();
+    pModel->down(mil);
+    modPostprod();
 }
 
 void cPolygonWidget::modRow()
@@ -1097,16 +1127,11 @@ void cPolygonWidget::delRow()
 {
     QModelIndexList mil = pUi->tableViewPolygon->selectionModel()->selectedRows();
     if (mil.size()) {
-        do {
-            int row = mil.last().row();
-            pModel->remove(row);
-            PDEB(VVERBOSE) << "Remove #" << row << endl;
-            mil.pop_back();
-        } while (mil.size());
-        polygon = pModel->polygon();
+        polygon = pModel->remove(mil).polygon();
     }
     else {
-        polygon = pModel->pop_back().polygon();
+        pModel->pop_back();
+        polygon = pModel->polygon();
     }
     modPostprod();
 }
@@ -1125,26 +1150,29 @@ void cPolygonWidget::imageOpen()
         pMapWin->show();
         return;
     }
-    pMapWin = new cImageWidget();
-    pMapWin->setBrush(QBrush(QColor(Qt::red))).clearDraws();
+    pMapWin = new cImagePolygonWidget(!isReadOnly(), _parent.pWidget());
+    pMapWin->setWindowFlags(Qt::Window);
+    pMapWin->setImage(*pCImage);
+    pMapWin->show();
+    pMapWin->setBrush(QBrush(QColor(Qt::red)));
     drawPolygon();
+    pUi->doubleSpinBoxZoom->setEnabled(true);
     if (!isReadOnly()) {
-        connect(pMapWin, SIGNAL(mousePressed(QPoint)), this, SLOT(imagePoint(QPoint)));
+        // connect(pMapWin, SIGNAL(mousePressed(QPoint)), this, SLOT(imagePoint(QPoint)));
+        connect(pMapWin, SIGNAL(polygonMove(QPointF)),    this, SLOT(moved(QPointF)));
+        connect(pMapWin, SIGNAL(polygonMod(QPointF,int)), this, SLOT(modifyed(QPointF,int)));
+        connect(pMapWin, SIGNAL(polygonSet(QPolygonF)),   this, SLOT(setted(QPolygonF)));
     }
-    // ...
+    pMapWin->setScale(stZoom);
 }
+
+qreal cPolygonWidget::stZoom = 1.0;
 
 void cPolygonWidget::zoom(double z)
 {
+    stZoom = z;
     if (pMapWin == NULL) EXCEPTION(EPROGFAIL);
-    (void)z;
-}
-
-void cPolygonWidget::imagePoint(QPoint _p)
-{
-    x = _p.x();
-    y = _p.y();
-    addRow();
+    pMapWin->setScale(z);
 }
 
 void cPolygonWidget::destroyedImage(QObject *p)
@@ -1161,25 +1189,70 @@ void cPolygonWidget::changeId(cFieldEditBase *p)
     getImage();
 }
 
+void cPolygonWidget::moved(QPointF pos)
+{
+    qreal dX = pos.x() - lastPos.x();
+    qreal dY = pos.y() - lastPos.y();
+    lastPos = pos;
+    for (tPolygonF::iterator i = polygon.begin(); i < polygon.end(); ++i) {
+        i->setX(i->x() + dX);
+        i->setY(i->y() + dY);
+    }
+    pModel->setPolygon(polygon);
+    setFromWidget(QVariant::fromValue(polygon));
+}
+
+void cPolygonWidget::modifyed(QPointF point, int index)
+{
+    if (index >= polygon.size()) polygon << point;
+    else                         polygon[index] = point;
+    pModel->setPolygon(polygon);
+    setFromWidget(QVariant::fromValue(polygon));
+}
+
+void cPolygonWidget::setted(QPolygonF pol)
+{
+    polygon.clear();
+    foreach (QPointF pt, pol) {
+        polygon << pt;
+    }
+    pModel->setPolygon(polygon);
+    setFromWidget(QVariant::fromValue(polygon));
+}
+
 /* **************************************** cFKeyWidget ****************************************  */
 
 cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, cRecordDialogBase *_par)
     : cFieldEditBase(_tm, _tf, __fr, false, _par)
 {
     _wType = FEW_FKEY;
-    QComboBox *pCB = new QComboBox(_par->pWidget());
-    _pWidget = pCB;
+
+    _pWidget = new QWidget(_par->pWidget());
+    pUi = new Ui_fKeyEd;
+    pUi->setupUi(_pWidget);
+
     pRDescr = cRecStaticDescr::get(_recDescr.fKeyTable, _recDescr.fKeySchema);
     pModel = new cRecordListModel(*pRDescr, pWidget());
     pModel->nullable = _recDescr.isNullable;
     pModel->setToNameF(_recDescr.fnToName);
     pModel->setFilter(_sNul, OT_ASC, FT_NO);
-    pCB->setModel(pModel);
-    pCB->setEditable(true);
-    pCB->setAutoCompletion(true);
+    pUi->comboBox->setModel(pModel);
+    pUi->pushButtonEdit->setDisabled(true);
+    pTableShape = new cTableShape();
+    if (pTableShape->fetchByName(pRDescr->tableName())) {   // Ha meg tudjuk jeleníteni (azonos nevű shape)
+        pUi->pushButtonNew->setEnabled(true);
+        connect(pUi->pushButtonEdit, SIGNAL(pressed()), this, SLOT(modifyF()));
+        connect(pUi->pushButtonNew,  SIGNAL(pressed()), this, SLOT(inserF()));
+    }
+    else {
+        pDelete(pTableShape);
+        pUi->pushButtonNew->setDisabled(true);
+    }
+
     setWidget();
-    connect(pCB, SIGNAL(currentIndexChanged(int)), this, SLOT(setFromEdit(int)));
-    //connect(pCB, SIGNAL(editTextChanged(QString)), this, SLOT(_edited(QString)));
+
+    connect(pUi->comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(setFromEdit(int)));
+    //connect(pUi->comboBox, SIGNAL(editTextChanged(QString)), this, SLOT(_edited(QString)));
 }
 
 cFKeyWidget::~cFKeyWidget()
@@ -1190,9 +1263,10 @@ cFKeyWidget::~cFKeyWidget()
 bool cFKeyWidget::setWidget()
 {
     qlonglong id = _recDescr.toId(_value);
+    pUi->pushButtonEdit->setDisabled(pTableShape == NULL || id == NULL_ID);
     int ix = pModel->indexOf(id);
     if (ix < 0) return false;
-    pComboBox()->setCurrentIndex(ix);
+    pUi->comboBox->setCurrentIndex(ix);
     return true;
 }
 
@@ -1207,7 +1281,9 @@ bool cFKeyWidget::setWidget()
 
 void cFKeyWidget::setFromEdit(int i)
 {
-    setFromWidget(pModel->atId(i));
+    qlonglong id = pModel->atId(i);
+    setFromWidget(id);
+    // pUi->comboBox()->setCurrentIndex(i);
 }
 
 /*
@@ -1219,8 +1295,30 @@ void cFKeyWidget::_edited(QString _txt)
         pComboBox()->
     }
 
+}*/
+
+void cFKeyWidget::inserF()
+{
+    if (pTableShape == NULL) EXCEPTION(EPROGFAIL);
+    cRecordAny *pRec = cRecordDialogBase::insertDialog(*pq, pTableShape, pRDescr);
+    pModel->setFilter(_sNul, OT_ASC, FT_NO);
+    if (pRec != NULL) {
+        pUi->comboBox->setCurrentIndex(pModel->indexOf(pRec->getName()));
+        pDelete(pRec);
+    }
 }
-*/
+
+void cFKeyWidget::modifyF()
+{
+    if (pTableShape == NULL) EXCEPTION(EPROGFAIL);
+    qlonglong id = pModel->atId(pUi->comboBox->currentIndex());
+    cRecordAny r(pRDescr);
+    if (r.fetchById(id)) {
+        eTableInheritType   tit = (eTableInheritType)pTableShape->getId(_sTableInheritType);
+
+    }
+}
+
 /* **************************************** cDateWidget ****************************************  */
 
 
@@ -1373,14 +1471,20 @@ int cIntervalWidget::set(const QVariant& v)
 
 void cIntervalWidget::view()
 {
-    qlonglong v = _recDescr.toId(_value);
-    int msec   = v % 1000; v /= 1000;
-    int sec    = v %   60; v /=   60;
-    int minute = v %   60; v /=   60;
-    int hour   = v %   24; v /=   24;
-    QTime t(hour, minute, sec, msec);
-    pTimeEd->setTime(t);
-    pLineEdDay->setText(QString::number(v));
+    if (_value.isValid()) {
+        qlonglong v = _recDescr.toId(_value);
+        int msec   = v % 1000; v /= 1000;
+        int sec    = v %   60; v /=   60;
+        int minute = v %   60; v /=   60;
+        int hour   = v %   24; v /=   24;
+        QTime t(hour, minute, sec, msec);
+        pTimeEd->setTime(t);
+        pLineEdDay->setText(QString::number(v));
+    }
+    else {
+        pTimeEd->clear();
+        pLineEdDay->clear();
+    }
 }
 
 void cIntervalWidget::setFromEdit()
@@ -1397,7 +1501,7 @@ cBinaryWidget::cBinaryWidget(const cTableShape& _tm, const cTableShapeField &_tf
     _init();
     bool z = _value.isNull();
     if (!z) data = _value.toByteArray();
-    pRadioButton->setChecked(z);
+    pRadioButtonNULL->setChecked(z);
     setViewButtons();
 }
 
@@ -1411,24 +1515,26 @@ void cBinaryWidget::_init()
 {
     _wType = FEW_BINARY;
     pLayout         = NULL;
-    pRadioButton    = NULL;
+    pRadioButtonNULL    = NULL;
     pLoadButton     = NULL;
     pViewButton     = NULL;
     pZoomInButton   = NULL;
     pZoomOutButton  = NULL;
     pImageWidget    = NULL;
     pCImage         = NULL;
-    isCImage = recDescr() == cImage().descr();
+    const cRecStaticDescr& cidescr = cImage().descr();
+    isCImage   = recDescr() == cidescr;     // éppen egy cImage objektumot szerkesztünk
+
     _pWidget        = new QWidget(_parent.pWidget());
     pLayout         = new QHBoxLayout;
     _pWidget->setLayout(pLayout);
-    pRadioButton    = new QRadioButton(_sNULL, _pWidget);
-    pRadioButton->setDisabled(_readOnly);
-    pLayout->addWidget(pRadioButton);
+    pRadioButtonNULL    = new QRadioButton(_sNULL, _pWidget);
+    pRadioButtonNULL->setDisabled(_readOnly);
+    pLayout->addWidget(pRadioButtonNULL);
     if (!_readOnly) {
         pLoadButton  = new QPushButton(trUtf8("Betölt"), _pWidget);
         pLayout->addWidget(pLoadButton);
-        connect(pRadioButton, SIGNAL(clicked(bool)), this, SLOT(nullChecked(bool)));
+        connect(pRadioButtonNULL, SIGNAL(clicked(bool)), this, SLOT(nullChecked(bool)));
         connect(pLoadButton, SIGNAL(pressed()), this, SLOT(loadDataFromFile()));
     }
     if (isCImage) {     // Ha egy cImage objektum része, akkor meg tudjuk jeleníteni.
@@ -1443,7 +1549,6 @@ void cBinaryWidget::_init()
         pLayout->addWidget(pZoomOutButton);
         connect(pViewButton, SIGNAL(pressed()), this, SLOT(viewPic()));
         // Ha jó a mező sorrend, akkor ezek a mezők már megvannak.
-        connect(anotherField(_sImageName), SIGNAL(changedValue(cFieldEditBase*)), this, SLOT(changedAnyField(cFieldEditBase*)));
         connect(anotherField(_sImageType), SIGNAL(changedValue(cFieldEditBase*)), this, SLOT(changedAnyField(cFieldEditBase*)));
     }
 }
@@ -1455,7 +1560,7 @@ bool cBinaryWidget::setCImage()
     if (!isCImage) EXCEPTION(EPROGFAIL);            // Ha nem cImage a rekord, akkor hogy kerültünk ide ?!
     if (pCImage == NULL) pCImage = new cImage;
     pCImage->clear();
-    if (data.size() > 0 && !pRadioButton->isChecked()) {
+    if (data.size() > 0 && !pRadioButtonNULL->isChecked()) {
         QString type;
         pCImage->setName(_sImageName, anotherField(_sImageName)->getName());
         pCImage->setType(anotherField(_sImageType)->getName());
@@ -1489,15 +1594,15 @@ int cBinaryWidget::set(const QVariant& v)
     bool r = cFieldEditBase::set(v);
     if (r == 1) {
         bool z = v.isNull();
-        pRadioButton->setChecked(z);
+        pRadioButtonNULL->setChecked(z);
         if (z) {
             data.clear();
         }
         else {
             data = _value.toByteArray();
         }
-        setCImage();
     }
+    if (r != 0) setCImage();
     return r;
 }
 
@@ -1511,21 +1616,22 @@ void cBinaryWidget::loadDataFromFile()
         return;
     }
     data = f.readAll();
-    pRadioButton->setChecked(false);
-    pRadioButton->setCheckable(true);
+    pRadioButtonNULL->setChecked(false);
+    pRadioButtonNULL->setCheckable(true);
     setFromWidget(QVariant(data));
+    setCImage();
 }
 
 void cBinaryWidget::setNull()
 {
     if (data.isEmpty()) {
-        pRadioButton->setChecked(true);
-        pRadioButton->setDisabled(true);
+        pRadioButtonNULL->setChecked(true);
+        pRadioButtonNULL->setDisabled(true);
     }
     else {
-        pRadioButton->setEnabled(true);
+        pRadioButtonNULL->setEnabled(true);
     }
-    bool f = pRadioButton->isChecked();
+    bool f = pRadioButtonNULL->isChecked();
     if (f) {
         _value.clear();
     }

@@ -2,7 +2,7 @@
 #include "record_table.h"
 #include "cerrormessagebox.h"
 
-cRecordViewModelBase::cRecordViewModelBase(cRecordViewBase& _rt)
+cRecordViewModelBase::cRecordViewModelBase(cRecordsViewBase& _rt)
     : _col2shape(), _col2field()
     , recordView(_rt)
     , recDescr(_rt.recDescr())
@@ -111,16 +111,21 @@ int cRecordViewModelBase::updateRec(const QModelIndex& mi, cRecordAny *pRec)
 
 bool cRecordViewModelBase::insertRec(cRecordAny *pRec)
 {
-    sqlBegin(*pq);
-    if (!cErrorMessageBox::condMsgBox(pRec->tryInsert(*pq))) {
-        sqlRollback(*pq);
-        return false;
-    }
-    sqlEnd(*pq);
-    PDEB(VVERBOSE) << "Insert returned : " << pRec->toString() << endl;
-    return insertRow(pRec);
+    bool r = SqlInsert(*pq, pRec);
+    PDEB(VVERBOSE) << QString("Insert returned : %1; record : %2").arg(r).arg(pRec->toString()) << endl;
+    return r && insertRow(pRec);
 }
 
+bool cRecordViewModelBase::SqlInsert(QSqlQuery& q, cRecord *pRec)
+{
+    sqlBegin(q);
+    if (!cErrorMessageBox::condMsgBox(pRec->tryInsert(q))) {
+        sqlRollback(q);
+        return false;
+    }
+    sqlEnd(q);
+    return true;
+}
 
 /* ********************************************************************** */
 

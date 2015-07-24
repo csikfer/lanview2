@@ -1,4 +1,38 @@
 #include "lv2models.h"
+#include <algorithm>
+
+QVector<int> mil2rowsAsc(const QModelIndexList& mil)
+{
+    QVector<int> rows;
+    foreach (QModelIndex mi, mil) {
+        rows << mi.row();
+    }
+    std::sort(rows.begin(), rows.end());
+    int i = rows.size() -1;
+    while (i > 0) {
+        if (rows[i] == rows[i -1]) rows.remove(i);
+        --i;
+    }
+    return rows;
+}
+
+QVector<int> mil2rowsDesc(const QModelIndexList& mil)
+{
+    QVector<int> rows;
+    foreach (QModelIndex mi, mil) {
+        rows << mi.row();
+    }
+    std::sort(rows.begin(), rows.end());
+    int i = rows.size() -1;
+    QVector<int> rrows;
+    while (i > 0) {
+        if (rows[i] == rows[i -1]) rows.remove(i);
+        else rrows << rows[i];
+        --i;
+    }
+    rrows << rows[0];
+    return rrows;
+}
 
 /* **************************************** cStringListModel ****************************************  */
 
@@ -49,26 +83,48 @@ bool cStringListModel::setStringList(const QStringList& sl)
 
 cStringListModel& cStringListModel::remove(QModelIndexList& mil)
 {
-    int s = _stringList.size();
-    if (mil.isEmpty()) return *this;
-    if (mil.size() == 1) {
-        int row = mil[0].row();
-        if (row < s) return remove(row);
-        return *this;
-    }
-    QBitArray   rb(s, false);
-    foreach(QModelIndex ix, mil) {
-        int row = ix.row();
-        if (row < s) rb.setBit(row, true);
-    }
+    QVector<int> rows = mil2rowsDesc(mil);
     beginResetModel();
-    for (int i = s; i > 0;) {
-        --i;
-        if (rb[i]) remove(i);
+    int s = rows.size();
+    for (int i = 0; i < s; ++i) {
+        remove(rows[i]);
     }
     endResetModel();
     return *this;
 }
+
+cStringListModel& cStringListModel::up(const QModelIndexList& mil)
+{
+    QVector<int> rows = mil2rowsAsc(mil);
+    beginResetModel();
+    int s = rows.size();
+    for (int i = 0; i < s; ++i) {
+        int row1 = rows[i];
+        if (!isContIx(_stringList, row1)) continue;
+        int row2 = row1 -1;
+        if (row2 < 0) row2 = _stringList.size() -1;
+        _stringList.swap(row1, row2);
+    }
+    endResetModel();
+    return *this;
+}
+
+cStringListModel& cStringListModel::down(const QModelIndexList& mil)
+{
+    QVector<int> rows = mil2rowsDesc(mil);
+    beginResetModel();
+    int s = rows.size();
+    for (int i = 0; i < s; ++i) {
+        int row1 = rows[i];
+        if (!isContIx(_stringList, row1)) continue;
+        int row2 = row1 +1;
+        if (row2 >=  _stringList.size()) row2 = 0;
+        _stringList.swap(row1, row2);
+    }
+    endResetModel();
+    return *this;
+}
+
 
 /* **************************************** cPolygonTableModel ****************************************  */
 
@@ -126,24 +182,44 @@ const tPolygonF &cPolygonTableModel::polygon() const
     return _polygon;
 }
 
+cPolygonTableModel& cPolygonTableModel::up(const QModelIndexList& mil)
+{
+    QVector<int> rows = mil2rowsAsc(mil);
+    beginResetModel();
+    int s = rows.size();
+    for (int i = 0; i < s; ++i) {
+        int row1 = rows[i];
+        if (!isContIx(_polygon, row1)) continue;
+        int row2 = row1 -1;
+        if (row2 < 0) row2 = _polygon.size() -1;
+        _polygon.swap(row1, row2);
+    }
+    endResetModel();
+    return *this;
+}
+cPolygonTableModel& cPolygonTableModel::down(const QModelIndexList& mil)
+{
+    QVector<int> rows = mil2rowsDesc(mil);
+    beginResetModel();
+    int s = rows.size();
+    for (int i = 0; i < s; ++i) {
+        int row1 = rows[i];
+        if (!isContIx(_polygon, row1)) continue;
+        int row2 = row1 +1;
+        if (row2 >=  _polygon.size()) row2 = 0;
+        _polygon.swap(row1, row2);
+    }
+    endResetModel();
+    return *this;
+}
+
 cPolygonTableModel& cPolygonTableModel::remove(QModelIndexList& mil)
 {
-    int s = _polygon.size();
-    if (mil.isEmpty()) return *this;
-    if (mil.size() == 1) {
-        int row = mil[0].row();
-        if (row < s) return remove(row);
-        return *this;
-    }
-    QBitArray   rb(s, false);
-    foreach(QModelIndex ix, mil) {
-        int row = ix.row();
-        if (row < s) rb.setBit(row, true);
-    }
+    QVector<int> rows = mil2rowsDesc(mil);
     beginResetModel();
-    for (int i = s; i > 0;) {
-        --i;
-        if (rb[i]) remove(i);
+    int s = rows.size();
+    for (int i = 0; i < s; ++i) {
+        remove(rows[i]);
     }
     endResetModel();
     return *this;

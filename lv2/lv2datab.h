@@ -1093,7 +1093,7 @@ public:
     /// Előtte törli az objektumot.
     /// Tisztán virtuális metódust hív, konstruktorból nem hívható.
     /// @param __r Forrás rekord objektum. A mezők név szerint lesznek azonosítva.
-    /// @param __fromp Ha nem NULL, akkor a *__fromp indextől végzi a feltöltést, visszatéréskor az első nem olvasott indexe
+    /// @param __fromp Ha nem NULL, akkor a *__fromp indextől végzi a feltöltést, visszatéréskor az első nem olvasott mező indexe
     /// @param __size Ha értéke pozitív, akkor össz. ennyi mezőt fog olvasni.
     cRecord& set(const QSqlRecord& __r, int* __fromp = NULL, int __size = -1);
     /// Beállítja a megadott indexű mező értékét, majd hívja a toEnd(__i) metódust. Ha az objektum NULL, akkor feltölti elöszőr a _fields-t NULL értékekkel.
@@ -1687,7 +1687,9 @@ protected:
     /// Létrehozza az összes mezőt sorrendben, és feltölti (a mezőnevek alapján) az __r-ben lévő tartalommal.
     /// Nem hív virtuális metódust.
     /// Ha _r olyan mezőt tartalmaz, melyet az objektum nem, akkor az figyelmen kívül lesz hagyva.
-    /// Előtte nem törli az objektum tartalmát
+    /// Előtte nem törli az objektum tartalmát. A mezők feltöltése után meghívja a paraméter nélküli toEnd() virtuális metódust,
+    /// majd a modified() signalt.
+    /// (A mezők feltöltésekor a toEnd(int) metódusok nem kerülnek meghívásra.
     /// @param __r A kitöltendő mező adatokat tartalmazó rekord objektum.
     /// @param __d Tábla leíró objektum
     /// @param __fromp Egy sorszámra mutató pointer, ha nem null, akkor a beolvasott rekord első figyelembevett eleme az itt megadott sorszámú.

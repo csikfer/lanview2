@@ -130,99 +130,6 @@ COMMENT ON COLUMN nports.node_id    IS 'Csomópont azonosító, idegen kulcs a t
 COMMENT ON COLUMN nports.port_index IS 'Opcionális port index. Egyes leszármazottaknál kötelező, ha meg van adva, akkor a port_name -hez hasonlóan egyedinek kell lennie.';
 COMMENT ON COLUMN nports.deleted    IS 'Ha igaz, akkor a port logikailag törölve lett.';
 
-CREATE TABLE port_params (
-    port_param_id       bigserial          PRIMARY KEY,
-    param_type_id       bigint         NOT NULL
-            REFERENCES param_types(param_type_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
-    port_id             bigint         NOT NULL,   -- REFERENCES nports(port_id) kivéve pports
-    param_value         varchar(255)    DEFAULT NULL,
-    UNIQUE (param_type_id, port_id)
-);
-ALTER TABLE port_params OWNER TO lanview2;
-COMMENT ON TABLE  port_params IS 'Port extra paraméter értékek.';
-COMMENT ON COLUMN port_params.port_param_id IS 'A paraméter érték egyedi azonosítója.';
-COMMENT ON COLUMN port_params.param_type_id IS 'A paraméter tulajdonságait definiáló param_types rekord azonosítója.';
-COMMENT ON COLUMN port_params.port_id IS 'A tulajdonos port rekordjának az azonosítója.';
-COMMENT ON COLUMN port_params.param_value IS 'A parméter érték.';
-
-CREATE OR REPLACE FUNCTION set_str_port_param(pid bigint, txtval text, tname varchar(32)) RETURNS reasons AS $$
-DECLARE
-    type_id bigint;
-BEGIN
-    SELECT param_type_id INTO type_id FROM param_types WHERE param_type_name = tname;
-    IF NOT FOUND THEN
-        RETURN 'notfound';
-    END IF;
-    IF 0 < COUNT(*) FROM port_params WHERE port_id = pid AND param_type_id = type_id AND port_param_value = txtval THEN
-        RETURN 'found';
-    END IF;
-    UPDATE port_params SET param_value = txtval WHERE port_id = pid AND param_type_id = type_id;
-    IF NOT FOUND THEN
-        INSERT INTO port_params(port_id, param_type_id, param_value) VALUES (pid, type_id, txtval);
-        RETURN 'insert';
-    END IF;
-    RETURN 'modify';
-END
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION set_bool_port_param(pid bigint, boolval boolean, tname varchar(32) ) RETURNS reasons AS $$
-BEGIN
-    RETURN set_str_port_param(pid, boolval::text, tname);
-END
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION set_int_port_param(pid bigint, intval bigint, tname varchar(32)) RETURNS reasons AS $$
-BEGIN
-    RETURN set_str_port_param(pname, intval::text, tname);
-END
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION set_interval_port_param(pid bigint, ival interval, tname varchar(32)) RETURNS reasons AS $$
-BEGIN
-    RETURN set_str_port_param(pid, ival::text, tname);
-END
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION get_str_port_param(pid bigint, tname varchar(32)) RETURNS text AS $$
-DECLARE
-    res text;
-    type_id bigint;
-BEGIN
-    SELECT param_type_id INTO type_id FROM param_types WHERE param_type_name = tname;
-    IF NOT FOUND THEN
-        RETURN NULL;
-    END IF;
-    SELECT param_value INTO res FROM port_params WHERE port_id = pid AND param_type_id = type_id;
-    IF NOT FOUND THEN
-        RETURN NULL;
-    END IF;
-    RETURN res;
-END
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION get_bool_port_param(pid bigint, tname varchar(32)) RETURNS boolean AS $$
-BEGIN
-    IF get_str_port_param(pid,tname)::boolean THEN
-        RETURN true;
-    ELSE
-        RETURN false;
-    END IF;
-END
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION get_int_port_param(pid bigint, tname varchar(32)) RETURNS bigint AS $$
-BEGIN
-    RETURN get_str_port_param(pid,tname)::bigint;
-END
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION get_interval_port_param(pid bigint, tname varchar(32)) RETURNS interval AS $$
-BEGIN
-    RETURN get_str_port_param(pname,tname)::interval;
-END
-$$ LANGUAGE plpgsql;
-
-
 CREATE TABLE patchs (
     node_id     bigserial          PRIMARY KEY,    -- Sequence: patchs_node_id_seq
     node_name   varchar(32)     NOT NULL UNIQUE,
@@ -700,6 +607,8 @@ CREATE OR REPLACE FUNCTION check_reference_port_id() RETURNS TRIGGER AS $$
     return;
 $$ LANGUAGE plperl;
 
+\i portparams.sql
+
 -- Járulékos törlések egy nports rekord (és leszármazottai) tőrlése után
 -- A pports, és patchs típusú node-k most nem játszanak
 CREATE OR REPLACE FUNCTION delete_port_post() RETURNS TRIGGER AS $$
@@ -864,10 +773,13 @@ CREATE OR REPLACE FUNCTION check_reference_node_id() RETURNS TRIGGER AS $$
     return;
 $$ LANGUAGE plperl;
 
+\i nodeparams.sql
+
 CREATE OR REPLACE FUNCTION delete_node_post() RETURNS TRIGGER AS $$
 BEGIN
     DELETE FROM nports            WHERE node_id = OLD.node_id;
     DELETE FROM host_services     WHERE node_id = OLD.node_id;
+    DELETE FROM node_params       WHERE node_id = OLD.node_id;
     RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -884,6 +796,7 @@ CREATE TRIGGER snmpdevices_restrict_modfy_node_id_before_update BEFORE UPDATE ON
 -- node_id idegen kulcs hivatkozások ellenözése (létrehozás, és módosítás)
 CREATE TRIGGER nports_check_reference_node_id        BEFORE UPDATE OR INSERT ON nports        FOR EACH ROW EXECUTE PROCEDURE check_reference_node_id('false', 'patchs', 'patchs');
 CREATE TRIGGER interfaces_check_reference_node_id    BEFORE UPDATE OR INSERT ON interfaces    FOR EACH ROW EXECUTE PROCEDURE check_reference_node_id('false', 'nodes');
+CREATE TRIGGER node_param_value_check_reference_node_id BEFORE UPDATE OR INSERT ON node_params FOR EACH ROW EXECUTE PROCEDURE check_reference_node_id('false', 'nodes');
 -- Kaszkád törlések
 CREATE TRIGGER patchs_delete_patch_post     AFTER DELETE ON patchs      FOR EACH ROW EXECUTE PROCEDURE delete_node_post();
 CREATE TRIGGER nodes_delete_node_post       AFTER DELETE ON nodes       FOR EACH ROW EXECUTE PROCEDURE delete_node_post();

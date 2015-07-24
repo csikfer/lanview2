@@ -8,7 +8,7 @@
 
 /// @class cRecordTree
 /// Egy adatbázis tábla megjelenítését végző objektum.
-class cRecordTree : public cRecordViewBase {
+class cRecordTree : public cRecordsViewBase {
     Q_OBJECT
 public:
     /// Konstruktor
@@ -16,7 +16,7 @@ public:
     /// @param pts A tábla megjelenítését leíró rekord
     /// @param _isDialog Ha igaz, akkor a megjelenítés egy dialog ablakban.
     /// @param par A szülő widget pointere, vagy NULL
-    cRecordTree(cTableShape *pts, bool _isDialog, cRecordViewBase * _upper, QWidget * par = NULL);
+    cRecordTree(cTableShape *pts, bool _isDialog, cRecordsViewBase * _upper, QWidget * par = NULL);
 
     ~cRecordTree();
     void init();

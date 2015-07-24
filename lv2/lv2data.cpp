@@ -288,14 +288,25 @@ CRECDEFD(cImage)
 
 int  cImage::_ixImageType = NULL_IX;
 int  cImage::_ixImageData = NULL_IX;
+int  cImage::_ixImageHash = NULL_IX;
 const cRecStaticDescr&  cImage::descr() const
 {
     if (initPDescr<cImage>(_sImages)) {
         _ixImageType = _pRecordDescr->toIndex(_sImageType);
         _ixImageData = _pRecordDescr->toIndex(_sImageData);
+        _ixImageHash = _pRecordDescr->toIndex(_sImageHash);
         CHKENUM(_ixImageType, imageType);
     }
     return *_pRecordDescr;
+}
+
+bool cImage::toEnd(int _i)
+{
+    if (_i == _ixImageData) {
+        clear(_ixImageHash);
+        return true;
+    }
+    return false;
 }
 
 bool cImage::load(const QString& __fn, bool __ex)

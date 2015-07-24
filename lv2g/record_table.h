@@ -78,14 +78,14 @@ signals:
     void moveDown(cRecordTableOrd *p);
 };
 
-class cRecordViewBase;
+class cRecordsViewBase;
 
 class cRecordTableFODialog : public QDialog {
     Q_OBJECT
 public:
-    cRecordTableFODialog(QSqlQuery *pq, cRecordViewBase&_rt);
+    cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase&_rt);
     ~cRecordTableFODialog();
-    const cRecordViewBase&      recordView;
+    const cRecordsViewBase&      recordView;
     QString                     where(QVariantList &qparams);
     QString                     ord();
     cRecordTableFilter&         filter() { if (pSelFilter == NULL) EXCEPTION(EPROGFAIL); return *pSelFilter; }
@@ -120,7 +120,7 @@ private slots:
 
 class cRecordTableColumn {
 public:
-    cRecordTableColumn(cTableShapeField& sf, cRecordViewBase &table);
+    cRecordTableColumn(cTableShapeField& sf, cRecordsViewBase &table);
     cTableShapeField&       shapeField;
     const cRecStaticDescr&  recDescr;
     int                     fieldIndex;
@@ -149,11 +149,11 @@ enum eRecordTableFlags  {
     RTF_NMEMBER = 0x8000
 };
 
-class cRecordViewBase : public QObject {
+class cRecordsViewBase : public QObject {
     Q_OBJECT
 public:
-    cRecordViewBase(bool _isDialog, QWidget *par);
-    ~cRecordViewBase();
+    cRecordsViewBase(bool _isDialog, QWidget *par);
+    ~cRecordsViewBase();
 
     QWidget& widget() const { return *_pWidget; }
     QWidget *pWidget() const { return _pWidget; }
@@ -184,9 +184,9 @@ public:
     /// A model (bázis objektum)-ra mutató pointer
     cRecordViewModelBase *pModel;
     /// Ha ez egy al táblázat, akkor a felette lévő tábla megjelenítőjének a pointere, egyébként NULL
-    cRecordViewBase   *pUpper;
+    cRecordsViewBase   *pUpper;
     /// A fő tábla, vagy NULL. Két tábla esetén azonos pUpper-rel
-    cRecordViewBase   *pMaster;
+    cRecordsViewBase   *pMaster;
     /// A megjelenítendő mezők
     tRecordTableColumns  fields;
     /// A megjelenítendő tábla leíró pointere
@@ -206,23 +206,24 @@ public:
     /// Ha több megjelenített tábla van akkor a bal oldali és saját táblázatot tartalmazó widget pointere, vagy NULL.
     QWidget        *pLeftWidget;
     /// A (bal oldali) alárendelt tábla megjelenítő objektuma.
-    cRecordViewBase   *pRightTable;
+    cRecordsViewBase   *pRightTable;
     /// A (bal oldali) alárendelt tábla megjelenítő objektuma, ha kettő van
-    cRecordViewBase   *pRightTable2;
+    cRecordsViewBase   *pRightTable2;
     /// Szűrők és rendezés dialog box
     cRecordTableFODialog *  pFODialog;
     /// Child tábla esetén a tulajdonos ID-je, ha ismert (csak egy rekord van kijelölve az owner táblázatban)
     qlonglong   owner_id;
     /// A dialogus ablak megnyitásához allokál egy objektumot a megadott record tábla név alapján
     /// Hiba esetén dob egy kizárást.
-    cTableShape *   getInhShape(const QString& _tn);
+    static cTableShape *   getInhShape(QSqlQuery &q, cTableShape *pTableShape, const QString& _tn);
     /// A dialogus ablak megnyitásához allokál egy objektumot a megadott record descriptor alapján
     /// Hiba esetén dob egy kizárást.
-    cTableShape *   getInhShape(const cRecStaticDescr& d) { return getInhShape(d.tableName()); }
+    cTableShape *   getInhShape(cTableShape *pTableShape, const cRecStaticDescr& d) { return getInhShape(*pq, pTableShape, d.tableName()); }
     QStringList         inheritTableList;
     QMap<qlonglong, const cRecStaticDescr *> * pInhRecDescr;
     QString             viewName;   // A TEMP VIEW neve, vagy NULL, ha nincs
     eTableInheritType   tit;
+    cRecordDialogBase  *pRecordDialog;
 
     const cRecStaticDescr& inhRecDescr(qlonglong i) const;
     const cRecStaticDescr& inhRecDescr(const QString& tn) const;
@@ -286,16 +287,18 @@ public slots:
     void clickedHeader(int);
     /// Ha változott a kijelölés
     void selectionChanged(QItemSelection,QItemSelection);
+    /// Indítja az editáló dialogust, a megadostt indexű rekordra.
+    void modifyByIndex(const QModelIndex & index);
 signals:
     void closeIt();
 public:
-    static cRecordViewBase *newRecordView(cTableShape * pts, cRecordViewBase * own = NULL, QWidget *par = NULL);
-    static cRecordViewBase *newRecordView(QSqlQuery &q, qlonglong shapeId, cRecordViewBase * own = NULL, QWidget *par = NULL);
+    static cRecordsViewBase *newRecordView(cTableShape * pts, cRecordsViewBase * own = NULL, QWidget *par = NULL);
+    static cRecordsViewBase *newRecordView(QSqlQuery &q, qlonglong shapeId, cRecordsViewBase * own = NULL, QWidget *par = NULL);
 };
 
 /// @class cRecordTable
 /// Egy adatbázis tábla megjelenítését végző objektum.
-class cRecordTable : public cRecordViewBase {
+class cRecordTable : public cRecordsViewBase {
     Q_OBJECT
 public:
     /// Konstruktor
@@ -309,7 +312,7 @@ public:
     /// @param _mn A tábla megjelenítését leíró rekord neve (table_shapes.table_shape_name)
     /// @param _isDialog Ha igaz, akkor a megjelenítés egy dialog ablakban.
     /// @param par A szülő widget pointere, vagy NULL
-    cRecordTable(cTableShape *pts, bool _isDialog, cRecordViewBase *_upper = NULL, QWidget * par = NULL);
+    cRecordTable(cTableShape *pts, bool _isDialog, cRecordsViewBase *_upper = NULL, QWidget * par = NULL);
     /// destruktor
     ~cRecordTable();
     cRecordTableModel *pTableModel() const { return static_cast<cRecordTableModel *>(pModel); }

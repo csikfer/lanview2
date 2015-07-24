@@ -17,6 +17,7 @@
 
 #include "lv2g.h"
 #include "lv2models.h"
+#include "imagedrv.h"
 
 /// @class cImageWidget
 /// Egy képet tartalmazó ablak objektum
@@ -83,7 +84,7 @@ enum eFieldWidgetType {
     FEW_LINE,           ///< cFieldLineWidget
     FEW_ARRAY,          ///< cArrayWidget
     FEW_POLYGON,        ///< cPolygonWidget
-    FEW_FKEY,           ///< cFKeywideget
+    FEW_FKEY,           ///< cFKeyWidget
     FEW_DATE,           ///< cDateWidget
     FEW_TIME,           ///< cTimeWidget
     FEW_DATE_TIME,      ///< cDateTimeWidget
@@ -182,7 +183,7 @@ protected:
     QString             _nullView;      ///< Ha megadható NULL érték, akkor annak a megjelenése (NULL vagy Default)
     eFieldWidgetType    _wType;         ///< A widget típusa (a leszármazott objektumot azonosítja)
     QVariant            _value;         ///< A mező aktuális értéke
-    QWidget            *_pWidget;       ///< A megjelenítéshez létrejozptt QWidget (valós widget objektumÜ pointere)
+    QWidget            *_pWidget;       ///< A megjelenítéshez létrejozptt QWidget (valós widget objektum pointere)
     QSqlQuery          *pq;             ///< Amennyiben szükslges a megjelenítéshez adatbázis hozzáférés, akkor a QSqlQuery objektum pointere.
 /*
 protected slots:
@@ -296,7 +297,7 @@ private slots:
     void setFromEdit();
 };
 
-
+class Ui_arrayEd;
 /// @class cArrayWidget
 /// Egy tömb adatmező megjelenítése és módosítása
 class LV2GSHARED_EXPORT cArrayWidget : public cFieldEditBase {
@@ -311,27 +312,22 @@ public:
     virtual int set(const QVariant& v);
 protected:
     void setButtons();
-    QHBoxLayout *pLayout;
-    QVBoxLayout *pLeftLayout;
-    QVBoxLayout *pRightLayout;
-
-    QListView   *pList;
+    Ui_arrayEd       *pUi;
     cStringListModel *pModel;
-    QLineEdit   *pLineEd;
-
-    QPushButton *pAddButton;
-    QPushButton *pDelButton;
-    QPushButton *pClearButton;
-
-//  QStringList array;
     /// Az inzertálandó adat legutoljára elfogadott értéke.
     QString     last;
+    QModelIndex actIndex;
+    int         selectedNum;
 private slots:
-    void delRow();
-    void addRow();
-    void clearRows();
-    void changed(QString _t);
     void selectionChanged(QItemSelection,QItemSelection);
+    void changed(QString _t);
+    void addRow();
+    void insRow();
+    void modRow();
+    void upRow();
+    void downRow();
+    void delRow();
+    void clrRows();
 };
 
 class Ui_polygonEd;
@@ -362,7 +358,7 @@ protected:
     int actRow(bool __ex = true);
     cPolygonTableModel *pModel;
     Ui_polygonEd    *pUi;
-    cImageWidget*pMapWin;       ///< Az opcionális alaprajzot megjelenítő ablak
+    cImagePolygonWidget*pMapWin;       ///< Az opcionális alaprajzot megjelenítő ablak
     cImage *     pCImage;       ///< Az alaprajz rekord
 
     tPolygonF   polygon;
@@ -375,6 +371,8 @@ protected:
     int         selectedRowNum;
     int         _actRow;
     QModelIndex _actIndex;
+    QPointF     lastPos;
+    static qreal stZoom;    ///< Global zoom
 
 private slots:
     void tableSelectionChanged(const QItemSelection&, const QItemSelection&);
@@ -391,10 +389,14 @@ private slots:
     void imageOpen();
     void zoom(double z);
 
-    void imagePoint(QPoint _p);
     void destroyedImage(QObject *p);
     void changeId(cFieldEditBase * p);
+    void moved(QPointF pos);
+    void modifyed(QPointF pos, int index);
+    void setted(QPolygonF pol);
 };
+
+class Ui_fKeyEd;
 
 /// @class cFKeyWidget
 /// Egy távoli kulcs mező megjelenítése, és szerkesztése
@@ -408,13 +410,16 @@ public:
     ~cFKeyWidget();
     virtual int set(const QVariant& v);
 protected:
-    QComboBox * pComboBox() { return (QComboBox *)_pWidget; }
     bool setWidget();
+    Ui_fKeyEd          *pUi;
     cRecordListModel   *pModel;
     const cRecStaticDescr *pRDescr;
+    cTableShape *   pTableShape;
 private slots:
     void setFromEdit(int i);
 //  void _edited(QString _txt);
+    void inserF();
+    void modifyF();
 };
 
 /// @class cDateWidget
@@ -504,7 +509,7 @@ protected:
     void closePic();
     void openPic();
     QHBoxLayout    *pLayout;
-    QRadioButton   *pRadioButton;
+    QRadioButton   *pRadioButtonNULL;
     QPushButton    *pLoadButton;
     QPushButton    *pViewButton;
     QPushButton    *pZoomInButton;

@@ -81,6 +81,8 @@ public:
     /// Ha _close igaz, de az isDialog adattagunk hamis, akkor kapunk egy kizárást.
     /// @return A dialógus ablak kilépési kódja, vagyis az aktívált nyomógombot reprezentáló enumeráxiós konstans értéke.
     int exec(bool _close = true);
+    /// Insert modal dialog
+    static cRecordAny *insertDialog(QSqlQuery &q, cTableShape *pTableShape, const cRecStaticDescr *pRecDescr, QWidget *_par = NULL);
     /// A tábla model rekord. A megjelenítés leírója, azonosítja a rekord decriptor-t.
     const cTableShape&      tableShape;
     /// Rekord descriptor
@@ -109,7 +111,7 @@ protected:
     bool                    isReadOnly;
     /// A szerkesztett értékek rekordba másolásakor a hiba üzenetek buffere
     QString                 _errMsg;
-private slots:
+public slots:
     /// Slot a megnyomtak egy gombot szignálra.
     /// @param id a megnyomott gomb kódja
     void _pressed(int id);

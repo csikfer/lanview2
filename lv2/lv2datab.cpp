@@ -1773,6 +1773,7 @@ inline static qlonglong __tconvs(qlonglong i, QString& s, int div)
 QString intervalToStr(qlonglong i)
 {
     QString is;
+    if (i == NULL_ID) return is;
     qlonglong j = i % 1000;
     i /= 1000;
     if (j) {
@@ -1856,7 +1857,7 @@ QString   cColStaticDescrInterval::toName(const QVariant& _f) const
 qlonglong cColStaticDescrInterval::toId(const QVariant& _f) const
 {
     _DBGFN() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
-    return variantToId(_f);
+    return variantToId(_f, false, NULL_ID);
 }
 
 CDDUPDEF(cColStaticDescrInterval)

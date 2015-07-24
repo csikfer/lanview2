@@ -1,4 +1,4 @@
-#include "record_dialog.h"
+#include "record_table.h"
 
 
 /* ************************************************************************************************* */
@@ -155,6 +155,78 @@ int cRecordDialogBase::exec(bool _close)
     return r;
 }
 
+cRecordAny * cRecordDialogBase::insertDialog(QSqlQuery& q, cTableShape *pTableShape, const cRecStaticDescr *pRecDescr, QWidget * _par)
+{
+    eTableInheritType tit = (eTableInheritType)pTableShape->getId(_sTableInheritType);
+    // A dialógusban megjelenítendő nyomógombok.
+    int buttons = enum2set(DBT_OK, DBT_INSERT, DBT_CANCEL);
+    switch (tit) {
+    case TIT_NO:
+    case TIT_ONLY: {
+        cRecordAny rec(pRecDescr);
+        cRecordDialog   rd(*pTableShape, buttons, true, _par);  // A rekord szerkesztő dialógus
+        rd.dialog().setModal(true);
+        rd.restore(&rec);
+        while (1) {
+            int r = rd.exec();
+            if (r == DBT_INSERT || r == DBT_OK) {   // Csak az OK, és Insert gombra csinálunk valamit
+                bool ok = rd.accept();
+                cRecordAny *pRec = new cRecordAny(rd.record());
+                if (ok) {
+                    ok = cRecordViewModelBase::SqlInsert(q, pRec);
+                }
+                if (ok) {
+                    if (r == DBT_OK) {  // Ha OK-t nyomott becsukjuk az dialóg-ot
+                        return pRec;
+                    }
+                    pDelete(pRec);
+                    continue;               // Ha Insert-et, akkor folytathatja a következővel
+                }
+                else {
+                    pDelete(pRec);
+                    continue;
+                }
+            }
+            break;
+        }
+    }   break;
+    case TIT_LISTED_REV: {
+        tRecordList<cTableShape>    shapes;
+        QStringList tableNames;
+        tableNames << pTableShape->getName(_sTableName);
+        tableNames << pTableShape->get(_sInheritTableNames).toStringList();;
+        tableNames.removeDuplicates();
+        foreach (QString tableName, tableNames) {
+            shapes << cRecordsViewBase::getInhShape(q, pTableShape, tableName);
+        }
+        cRecordDialogInh rd(*pTableShape, shapes, buttons, NULL_ID, NULL_ID, true, _par);
+        while (1) {
+            int r = rd.exec();
+            if (r == DBT_INSERT || r == DBT_OK) {
+                bool ok = rd.accept();
+                cRecordAny *pRec = new cRecordAny(rd.record());
+                if (ok) {
+                    ok = cRecordViewModelBase::SqlInsert(q, pRec);
+                }
+                if (ok) {
+                    if (r == DBT_OK) {      // Ha OK-t nyomott becsukjuk az dialóg-ot
+                        return pRec;
+                    }
+                    continue;               // Ha Insert-et, akkor folytathatja a következővel
+                }
+                else {
+                    continue;
+                }
+            }
+            break;
+        }
+    }   break;
+    default:
+        EXCEPTION(ENOTSUPP);
+    }
+    return NULL;
+}
+
 /// Slot a megnyomtak egy gombot szignálra.
 void cRecordDialogBase::_pressed(int id)
 {
@@ -199,7 +271,7 @@ inline static QFrame * _frame(QLayout * lay, QWidget * par)
 
 void cRecordDialog::init()
 {
-    const int maxFields = 15;
+    const int maxFields = 10;
     DBGFN();
     pFormLayout = new QFormLayout;
     pFormLayout->setObjectName(name + "_Form");
@@ -265,29 +337,31 @@ void cRecordDialog::restore(cRecord *_pRec)
     else if (_pRecord == NULL) {
         _pRecord = new cRecordAny(&rDescr);
     }
-    int i, n = rDescr.cols();
+    int i, n = fields.size();
     for (i = 0; i < n; i++) {
-        fields[i]->set(_pRecord->get(i));
+        cFieldEditBase& field = *fields[i];
+        field.set(_pRecord->get(field._pFieldRef->index()));
     }
 }
 
 bool cRecordDialog::accept()
 {
     _errMsg.clear();    // Töröljük a hiba stringet
-    int i, n = rDescr.cols();
+    int i, n = fields.size();
     // record.set();           // NEM !! Kinullázzuk a rekordot
     for (i = 0; i < n; i++) {   // Végigszaladunk a mezőkön
-        cFieldEditBase& fe = *fields[i];
-        if (fe.isReadOnly()) continue;      // Feltételezzük, hogy RO esetén az van a mezőben aminek lennie kell.
+        cFieldEditBase& field = *fields[i];
+        int rfi = field._pFieldRef->index();
+        if (field.isReadOnly()) continue;      // Feltételezzük, hogy RO esetén az van a mezőben aminek lennie kell.
         int s = _pRecord->_stat;                   // Mentjük a hiba bitet,
         _pRecord->_stat &= ~cRecord::ES_DEFECTIVE; // majd töröljük, mert mezőnkként kell
         QVariant fv = fields[i]->get();     // A mező widget-jéből kivesszük az értéket
-        if (fv.isNull() && fe._isInsert && fe._hasDefault) continue;    // NULL, insert, van alapérték
+        if (fv.isNull() && field._isInsert && field._hasDefault) continue;    // NULL, insert, van alapérték
         PDEB(VERBOSE) << "Dialog -> obj. field " << _pRecord->columnName(i) << " = " << debVariantToString(fv) << endl;
-        _pRecord->set(i, fv);                      // Az értéket bevéssük a rekordba
+        _pRecord->set(rfi, fv);                      // Az értéket bevéssük a rekordba
         if (_pRecord->_stat & cRecord::ES_DEFECTIVE) {
-            DWAR() << "Invalid data : field " << _pRecord->columnName(i) << " = " << debVariantToString(fv) << endl;
-            _errMsg += trUtf8("Adat hiba a %1 mezőnél\n").arg(_pRecord->columnName(i));
+            DWAR() << "Invalid data : field " << _pRecord->columnName(rfi) << " = " << debVariantToString(fv) << endl;
+            _errMsg += trUtf8("Adat hiba a %1 mezőnél\n").arg(_pRecord->columnName(rfi));
         }
         _pRecord->_stat |= s & cRecord::ES_DEFECTIVE;
     }

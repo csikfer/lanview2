@@ -61,7 +61,9 @@ FORMS += \
     gparse.ui \
     logindialog.ui \
     acknowledge.ui \
-    polygoned.ui
+    polygoned.ui \
+    arrayed.ui \
+    fkeyed.ui
 INCLUDEPATH += ../lv2
 unix:LIBS += -lsnmp
 LIBS += -L../lv2 -llv2

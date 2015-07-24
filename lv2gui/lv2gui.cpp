@@ -44,8 +44,13 @@ int main(int argc, char * argv[])
         } CATCHS(pe);
     }
     if (pe != NULL) {
-        PDEB(INFO) << "**** ERROR ****" << endl;
-        cErrorMessageBox::messageBox(pe);
+        if (pe->mErrorCode == eError::EOK) {
+            PDEB(INFO) << "**** EOK exit ****" << endl;
+        }
+        else {
+            PDEB(INFO) << "**** ERROR ****" << endl;
+            cErrorMessageBox::messageBox(pe);
+        }
         exit(pe->mErrorCode);
     }
     PDEB(INFO) << "**** OK ****" << endl;
