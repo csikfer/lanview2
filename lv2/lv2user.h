@@ -2,6 +2,20 @@
 #define LV2USER_H
 #include "lv2datab.h"
 
+enum ePrivilegeLevel {
+    PL_INVALID = -1, ///< Csak hibajelzésre
+    PL_NONE,     ///< Nincs jogosultsága
+    PL_VIEWER,   ///<
+    PL_INDALARM, ///< Riasztások, riasztások nyugtázása
+    PL_OPERATOR,
+    PL_ADMIN,
+    PL_SYSTEM
+};
+
+EXT_ int privilegeLevel(const QString& n, bool __ex = true);
+EXT_ const QString& privilegeLevel(int e, bool __ex = true);
+
+
 /// @class cGroup
 /// Egy felhasználói csoport tábla rekordot reprezentáló osztály
 /// @note
@@ -68,11 +82,18 @@ public:
     /// @param __passwd Az ellenörizendő jelszó.
     /// @param __nm A felhasználó neve
     bool checkPasswordAndFetch(const QString &__passwd, const QString& __nm) { QSqlQuery q = getQuery(); return checkPasswordAndFetch(q, __passwd, __nm); }
+    ///
+    enum ePrivilegeLevel getRights(QSqlQuery& q);
+    ///
+    enum ePrivilegeLevel    privilegeLevel() const;
+protected:
+    ///
+    enum ePrivilegeLevel    _privilegeLevel;
 };
 
 /// @typedef cGroupUser
 /// Az objektum típus a groups/users táblák közötti kapcsoló táblát kezeli
-/// Nem cRecord típusú objektum. Da adattagként tartalmaza a cUser és cGroup objektumokat.
+/// Nem cRecord típusú objektum. De adattagként tartalmaza a cUser és cGroup objektumokat.
 typedef tGroup<cGroup, cUser> cGroupUser;
 
 #endif // LV2USER_H

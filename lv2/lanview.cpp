@@ -527,7 +527,6 @@ const cUser *lanView::setUser(const QString& un, const QString& pw, bool __ex)
     if (!q.exec(QString("SELECT set_user_id(%1)").arg(instance->pUser->getId()))) SQLQUERYERR(q);
     return instance->pUser;
 }
-
 const cUser *lanView::setUser(const QString& un, bool __ex)
 {
     if (instance == NULL) EXCEPTION(EPROGFAIL);
@@ -555,6 +554,7 @@ const cUser *lanView::setUser(qlonglong uid, bool __ex)
         return NULL;
     }
     if (!q.exec(QString("SELECT set_user_id(%1)").arg(uid))) SQLQUERYERR(q);
+    instance->pUser->getRights(q);
     return instance->pUser;
 }
 
@@ -570,6 +570,10 @@ void lanView::resetCacheData()
     QSqlQuery q = getQuery();
     cIfType::fetchIfTypes(q);
     cService::clearServicesCache();
+    if (instance->pUser != NULL) {
+        instance->pUser->setById(q);
+        instance->pUser->getRights(q);
+    }
 }
 
 const QString& IPV4Pol(int e, bool __ex)

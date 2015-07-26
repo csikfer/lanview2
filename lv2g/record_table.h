@@ -176,6 +176,10 @@ public:
     qlonglong       shapeType;
     /// Ha a táblázat csak olvasható, akkor értéke true
     bool            isReadOnly;
+    /// Ha a táblázatba nincs joga sort törölni
+    bool            isNoDelete;
+    /// Ha a táblázatba nincs joga rekordot beszúrni
+    bool            isNoInsert;
     /// A lekérdezésekhez (nem az alap lekérdezésekhez) használt query objektum.
     QSqlQuery      *pq;
     QSqlQuery      *pTabQuery;

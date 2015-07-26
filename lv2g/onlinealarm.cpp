@@ -1,5 +1,7 @@
 #include "onlinealarm.h"
 
+const enum ePrivilegeLevel cOnlineAlarm::rights = PL_INDALARM;
+
 cOnlineAlarm::cOnlineAlarm(QWidget *par) : cOwnTab(par)
 {
     pActRecord = NULL;

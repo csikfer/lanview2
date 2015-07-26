@@ -91,8 +91,10 @@ CREATE TABLE table_shape_fields (
     expression              varchar(255)    DEFAULT NULL,
     default_value           varchar(255)    DEFAULT NULL,
     properties              varchar(255)    DEFAULT NULL,
-    view_rights             rights          DEFAULT 'operator',
-    edit_rights             rights          DEFAULT 'admin',
+    tool_tip                text            DEFAULT NULL,
+    whats_this              text            DEFAULT NULL,
+    view_rights             rights          DEFAULT NULL,
+    edit_rights             rights          DEFAULT NULL,
     UNIQUE (table_shape_id, table_shape_field_name)
 );
 ALTER TABLE table_shape_fields OWNER TO lanview2;
@@ -112,8 +114,8 @@ COMMENT ON COLUMN table_shape_fields.is_hide                 IS 'A táblázatos 
 COMMENT ON COLUMN table_shape_fields.default_value           IS 'Egy opcionális default érték.';
 COMMENT ON COLUMN table_shape_fields.expression              IS 'Egy opcionális SQL kifelyezés a mező értékére';
 COMMENT ON COLUMN table_shape_fields.properties              IS 'További paraméterek.';
-COMMENT ON COLUMN table_shape_fields.view_rights             IS 'Minimális jogosultsági szint a mező megtekintéséhez';
-COMMENT ON COLUMN table_shape_fields.edit_rights             IS 'Minimális jogosultsági szint a mező szerkestéséhez';
+COMMENT ON COLUMN table_shape_fields.view_rights             IS 'Minimális jogosultsági szint a mező megtekintéséhez, NULL esetén a táblánál magadottak az érvényesek';
+COMMENT ON COLUMN table_shape_fields.edit_rights             IS 'Minimális jogosultsági szint a mező szerkestéséhez, NULL esetén a táblánál magadottak az érvényesek';
 
 CREATE TYPE filtertype AS ENUM ('begin', 'like', 'similar', 'regexp', 'regexpi', 'big', 'litle', 'interval', 'proc', 'SQL');
 ALTER TYPE filtertype OWNER TO lanview2;
@@ -225,10 +227,22 @@ CREATE TABLE menu_items (
     properties              varchar(255)    DEFAULT NULL,
     tool_tip                text            DEFAULT NULL,
     whats_this              text            DEFAULT NULL,
+    menu_rights		    rights          NOT NULL DEFAULT 'none',
     UNIQUE (app_name, menu_item_name),
     UNIQUE (app_name, upper_menu_item_id, item_sequence_number)
 );
 ALTER TABLE menu_items OWNER TO lanview2;
+COMMENT ON TABLE menu_items IS 'GUI menü elemek definíciója';
+COMMENT ON COLUMN menu_items.menu_item_id IS 'Menü elem egyedi azonosító';
+COMMENT ON COLUMN menu_items.menu_item_name IS 'Applikáción bellül egyedi név';
+COMMENT ON COLUMN menu_items.item_sequence_number IS 'A sorrendet meghatározó szám';
+COMMENT ON COLUMN menu_items.menu_item_title IS 'Megjelenített név, ha NULL, akkor a megjelenített név a menu_item_name';
+COMMENT ON COLUMN menu_items.app_name IS 'Aplikáció név, melyhez a menü elem tartozik.';
+COMMENT ON COLUMN menu_items.upper_menu_item_id IS 'Al menű esetén az elemet tartalmazó felsőbb szintű menü elem azonosítója.';
+COMMENT ON COLUMN menu_items.properties IS 'Járulékos paraméterek (a menü elem típusát határozza meg): ":shape=<név>:", ":exec=<név>:", ":own=<név>:", ...';
+COMMENT ON COLUMN menu_items.tool_tip IS '';
+COMMENT ON COLUMN menu_items.whats_this IS '';
+COMMENT ON COLUMN menu_items.menu_rights IS 'Milyen minimális jogosutságnál jelenik meg az elem.';
 
 CREATE OR REPLACE FUNCTION check_insert_menu_items() RETURNS TRIGGER AS $$
 DECLARE

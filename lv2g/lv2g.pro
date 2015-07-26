@@ -32,7 +32,8 @@ SOURCES += \
     onlinealarm.cpp \
     record_tree_model.cpp \
     record_tree.cpp \
-    imagedrv.cpp
+    imagedrv.cpp \
+    mainwindow.cpp
 
 HEADERS +=\
         lv2g_global.h \
@@ -52,7 +53,8 @@ HEADERS +=\
     onlinealarm.h \
     record_tree_model.h \
     record_tree.h \
-    imagedrv.h
+    imagedrv.h \
+    mainwindow.h
 
 FORMS += \
     column_filter.ui \

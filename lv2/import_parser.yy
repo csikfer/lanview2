@@ -810,16 +810,22 @@ static void newMenuItem(const QString& _n, const QString& _sn, const QString& _t
     menuItems << p;
 }
 
-static void setToolTip(const QString& _tt)
+static void setMenuToolTip(const QString& _tt)
 {
     actMenuItem().setName(_sToolTip, _tt);
     actMenuItem().update(qq(), false, actMenuItem().mask(_sToolTip));
 }
 
-static void setWhatsThis(const QString& _wt)
+static void setMenuWhatsThis(const QString& _wt)
 {
     actMenuItem().setName(_sWhatsThis, _wt);
     actMenuItem().update(qq(), false, actMenuItem().mask(_sWhatsThis));
+}
+
+static void setMenuRights(const QString& _wt)
+{
+    actMenuItem().setName(_sMenuRights, _wt);
+    actMenuItem().update(qq(), false, actMenuItem().mask(_sMenuRights));
 }
 
 static void insertCode(const QString& __txt)
@@ -2064,6 +2070,8 @@ tmodp   : SET_T DEFAULTS_T ';'                  { pTableShape->setDefaults(qq())
         | FIELD_T strs HIDE_T bool_on ';'       { pTableShape->fsets(slp2sl($2), _sIsHide, $4); }
         | FIELD_T strs DEFAULT_T VALUE_T str ';'{ pTableShape->fsets(slp2sl($2), _sDefaultValue, sp2s($5)); }
         | FIELD_T strs READ_T ONLY_T bool_on ';'{ pTableShape->fsets(slp2sl($2), _sIsReadOnly, $5); }
+        | FIELD_T str TOOL_T TIP_T str ';'      { pTableShape->fset(sp2s($2), _sToolTip, sp2s($5)); }
+        | FIELD_T str WHATS_T THIS_T str ';'    { pTableShape->fset(sp2s($2), _sWhatsThis, sp2s($5)); }
         | FIELD_T strs ADD_T FILTER_T str str_z ';' { pTableShape->addFilter(slp2sl($2), sp2s($5), sp2s($5)); }
         | FIELD_T strs ADD_T FILTERS_T strs ';'     { pTableShape->addFilter(slp2sl($2), *$5); delete $5; }
         | FIELD_T SEQUENCE_T int0 strs ';'      { pTableShape->setFieldSeq(slp2sl($4), $3); }
@@ -2103,6 +2111,8 @@ fmodp   : SET_T str '=' value ';'       { pTableShapeField->set(sp2s($2), vp2v($
         | HIDE_T bool_on ';'            { pTableShapeField->setBool(_sIsHide, $2); }
         | DEFAULT_T VALUE_T str ';'     { pTableShapeField->setName(_sDefaultValue, sp2s($3)); }
         | READ_T ONLY_T bool_on ';'     { pTableShapeField->setBool(_sIsReadOnly, $3); }
+        | TOOL_T TIP_T str ';'          { pTableShapeField->setBool(_sToolTip, $3); }
+        | WHATS_T THIS_T str ';'        { pTableShapeField->setBool(_sWhatsThis, $3); }
         ;
 appmenu : GUI_T str                             { pMenuApp = $2;}
             '{' menus '}'                       { pDelete(pMenuApp); }
@@ -2128,8 +2138,9 @@ mitem   : str SHAPE_T str str_z                 { newMenuItem(sp2s($1), sp2s($3)
 miops   : miop miops
         |
         ;
-miop    : TOOL_T TIP_T str ';'                  { setToolTip(sp2s($3)); }
-        | WHATS_T THIS_T str ';'                { setWhatsThis(sp2s($3)); }
+miop    : TOOL_T TIP_T str ';'                  { setMenuToolTip(sp2s($3)); }
+        | WHATS_T THIS_T str ';'                { setMenuWhatsThis(sp2s($3)); }
+        | RIGHTS_T rights                       { setMenuRights(sp2s($2)); }
         ;
 // Névvel azonosítható rekord egy mezőjének a modosítása az adatbázisban:
 // SET <tábla név>[<modosítandó mező neve>].<rekordot azonosító név> = <új érték>;

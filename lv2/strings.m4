@@ -205,6 +205,12 @@ STRDEF(Groups, "groups")
  STRDEF(GroupName, "group_name")
  STRDEF(GroupNote, "group_note")
  STRDEF(GroupRights, "group_rights")
+  STRDEF(None, "none")
+  STRDEF(Viewer, "viewer")
+  STRDEF(Indalarm, "indalarm")
+  STRDEF(Operator, "operator")
+  STRDEF(Admin, "admin")
+  STRDEF(System, "system")
  dnl place_id
 
  STRDEF(IfTypes,"iftypes")
@@ -626,6 +632,7 @@ STRDEF(MenuItems, "menu_items")
  dnl "properties"
  STRDEF(ToolTip, "tool_tip")
  STRDEF(WhatsThis, "whats_this")
+ STRDEF(MenuRights, "menu_rights")
 
 
 STRDEF(RunStats,"runstats")

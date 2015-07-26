@@ -7,7 +7,7 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidge
 {
     pTabWidget   = par;
     pTableShape  = NULL;
-    pRecordView = NULL;
+    pRecordView  = NULL;
     pOwnTab      = NULL;
     pWidget      = NULL;
     ownType      = OWN_UNKNOWN;
@@ -21,7 +21,15 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidge
         if (pq == NULL) EXCEPTION(EPROGFAIL);   // Ha nincs adatbázis, akkor ezt nem kéne
         setObjectName(mp);
         setType(MAT_SHAPE);
-        connect(pAction,      SIGNAL(triggered()), this, SLOT(displayIt()));
+        pTableShape = new cTableShape();
+        pTableShape->setParent(this);
+        pTableShape->setByName(mp);
+        if (lanView::isAuthorized(pTableShape->getId(_sViewRights))) {           // Jog?
+            connect(pAction, SIGNAL(triggered()), this, SLOT(displayIt()));
+        }
+        else {
+            pa->setDisabled(true);
+        }
     }
     else if (!(mp = magicParam(QString("exec"),   mm)).isEmpty()) { // "exec"   Belső parancs végrehajtása (Exit, Restart,...)
         setObjectName(mp); // Nincs tab, a név a parancs lessz
@@ -29,21 +37,30 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidge
         connect(pa, SIGNAL(triggered()), this, SLOT(executeIt()));
     }
     else if (!(mp = magicParam(QString("own"),    mm)).isEmpty()) { // "own"    Egyedi előre definiált cOwnTab leszármazott hívása
+        enum ePrivilegeLevel rights = PL_SYSTEM;
         if (0 == mp.compare("setup", Qt::CaseInsensitive)) {            // "setup"      Beállítások szerkesztése widget
             ownType = OWN_SETUP;
+            rights = cSetupWidget::rights;
         }
-        else if (0 == mp.compare("parser", Qt::CaseInsensitive)) {      // "parser"     A parszer widget
+        else if (0 == mp.compare("parser", Qt::CaseInsensitive)) {      // "parser"     A parser widget
             ownType = OWN_PARSER;
+            rights = cParseWidget::rights;
         }
         else if (0 == mp.compare("olalarm", Qt::CaseInsensitive)) {     // "olalarm"    On-Line riasztások widget
             ownType = OWN_OLALARM;
+            rights = cOnlineAlarm::rights;
         }
         else {
             if (__ex) EXCEPTION(ENONAME, -1, mp);
             return;
         }
         setType(MAT_OWN);
-        connect(pAction,      SIGNAL(triggered()), this, SLOT(displayIt()));
+        if (lanView::isAuthorized(rights)) {
+            connect(pAction, SIGNAL(triggered()), this, SLOT(displayIt()));
+        }
+        else {
+            pa->setDisabled(true);
+        }
     }
     else if (__ex) EXCEPTION(EDBDATA);
 }
@@ -105,10 +122,7 @@ cMenuAction::~cMenuAction()
 
 void cMenuAction::initRecordTable()
 {
-    pTableShape = new cTableShape;
-    pTableShape->setParent(this);
-    QString n = objectName();
-    pTableShape->setByName(n);
+    if (pTableShape == NULL) EXCEPTION(EPROGFAIL);
     pRecordView = cRecordsViewBase::newRecordView(pTableShape, NULL, pTabWidget);
     pWidget = pRecordView->pWidget();
     connect(pRecordView, SIGNAL(closeIt()),   this, SLOT(removeIt()));

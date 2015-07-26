@@ -90,7 +90,7 @@ enum eFieldWidgetType {
     FEW_DATE_TIME,      ///< cDateTimeWidget
     FEW_INTERVAL,       ///< cIntervalWidget
     FEW_BINARY,         ///< cBinaryWidget
-    FEW_RO_LINE         ///< c
+    FEW_NULL            ///< cNullVidget
 };
 /// Az enum eFieldWidgetType értékeket stringgé konvertálja.
 /// Vissza konverzió nincs, ez is csak nyomkövetési céllal.
@@ -125,7 +125,7 @@ public:
     virtual QString   getName() const;
     /// A magjelenített érték megadása.
     /// @return Ha az értékadás nem sikeres, akkor -1, ha nincs változás, akkor 0, és ha van változás akkor 1.
-    virtual int set(const QVariant& v)   = 0;
+    virtual int set(const QVariant& v);
     /// A magjelenített érték megadása. Az alapértelmezett metódus a QVarian-á kovertált paraméterrel
     /// hívja a int set(const QVariant& v) metódust.
     /// @return Ha az értékadás nem sikeres, akkor -1, ha nincs változás, akkor 0, és ha van változás akkor 1.
@@ -192,6 +192,20 @@ protected slots:
 */
 signals:
     void changedValue(cFieldEditBase * pSndr);
+};
+
+/// @class cNullWidget
+/// @brief Nincs elegendő jogosultság, fix szöveg megjelenítése.
+class LV2GSHARED_EXPORT cNullWidget : public cFieldEditBase {
+    Q_OBJECT
+public:
+    /// Konstruktor
+    /// @param _tm A megjelenítő leíró objektum referenciája.
+    /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
+    /// @param _ro Ha true nem szerkeszthető
+    /// @param parent A parent widget pointere
+    cNullWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase* _par);
+    ~cNullWidget();
 };
 
 /// @class cSetWidget

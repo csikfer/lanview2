@@ -19,6 +19,7 @@ class  LV2GSHARED_EXPORT cParseWidget : public cOwnTab
 public:
     cParseWidget(QWidget *par);
     ~cParseWidget();
+    static const enum ePrivilegeLevel rights;
 private:
     Ui::GParseWidget *pUi;
 private slots:

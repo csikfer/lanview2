@@ -3,6 +3,8 @@
 #include <QFileDialog>
 
 
+const enum ePrivilegeLevel cSetupWidget::rights = PL_ADMIN;
+
 cSetupWidget::cSetupWidget(QSettings &__s, QWidget *par)
 : cOwnTab(par)
 , logFile()

@@ -11,12 +11,10 @@ CONFIG -= app_bundle
 CONFIG += debug
 
 SOURCES += \
-    lv2gui.cpp \
-    mainwindow.cpp
+    lv2gui.cpp
 
 HEADERS  += \
-    lv2gui.h \
-    mainwindow.h
+    lv2gui.h
 
 
 INCLUDEPATH += ../lv2 ../lv2g

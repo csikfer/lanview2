@@ -761,9 +761,21 @@ DEFAULTCRECDEF(cMenuItem, _sMenuItems)
 bool cMenuItem::fetchFirstItem(QSqlQuery& q, const QString& _appName, qlonglong upId)
 {
     clear();
-    setName(_sAppName, _appName);
-    if (upId != NULL_ID) setId(_sUpperMenuItemId, upId);
-    return fetch(q, false, mask(_sAppName, _sUpperMenuItemId), iTab(_sItemSequenceNumber));
+    QString pl = privilegeLevel(lanView::user().privilegeLevel());  // Az aktuális jogosultsági szint
+    QString sql =
+            "SELECT * FROM menu_item"
+            " WHERE app_name = ?"                           // A megadott nevű app menüje
+              " AND menu_rights <= ?"                       // Jogosultság szerint szűrve
+              " AND %1"                                     // Fő vagy al menü
+            " ORDER BY item_sequence_number ASC NULLS LAST";
+    if (upId != NULL_ID) {
+        sql.arg("upper_menu_item_id = ?");                      // A mgadott menű almenü pontjai
+        return execSql(q, sql, _appName, pl, upId);
+    }
+    else {
+        sql.arg("upper_menu_item_id IS NULL");                  // Fő menü
+        return execSql(q, sql, _appName, pl);
+    }
 }
 
 

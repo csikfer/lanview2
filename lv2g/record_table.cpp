@@ -891,6 +891,9 @@ void cRecordsViewBase::initShape(cTableShape *pts)
 
     pRecDescr = cRecStaticDescr::get(pTableShape->getName(_sTableName));
     isReadOnly = pTableShape->getBool(_sIsReadOnly);
+    isReadOnly = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sEditRights));
+    isNoDelete = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sRemoveRights));
+    isNoInsert = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sInsertRights));
 
     // Extra típus értékek miatt nem használható a mező alap konverziós metódusa !
     shapeType = enum2set(tableShapeType, pTableShape->get(_sTableShapeType).toStringList(), false);
@@ -987,11 +990,11 @@ void cRecordTable::setEditButtons()
     if (!isReadOnly) {
         QModelIndexList mix = pTableView->selectionModel()->selectedRows();
         int n = mix.size();
-        buttonDisable(DBT_DELETE,  n <  1);
-        buttonDisable(DBT_MODIFY,  n != 1);
-        buttonDisable(DBT_TAKE_OUT,n <  1);
-        buttonDisable(DBT_PUT_IN,  n <  1);
-        buttonDisable(DBT_INSERT, (flags & (RTF_IGROUP | RTF_IMEMBER | RTF_OVNER)) && (owner_id == NULL_ID));
+        buttonDisable(DBT_DELETE,  isNoDelete || n <  1 );
+        buttonDisable(DBT_MODIFY,                n != 1);
+        buttonDisable(DBT_TAKE_OUT,              n <  1);
+        buttonDisable(DBT_PUT_IN,                n <  1);
+        buttonDisable(DBT_INSERT,  isNoInsert || ((flags & (RTF_IGROUP | RTF_IMEMBER | RTF_OVNER)) && (owner_id == NULL_ID)));
     }
 }
 
@@ -1204,6 +1207,7 @@ void cRecordTable::init()
         if (pUpper == NULL) EXCEPTION(EDATA);
         buttons.pop_front();    // A close nem kell
         initSimple(_pWidget);
+        pRightTable = cRecordsViewBase::newRecordView(*pq, pTableShape->getId(_sRightShapeId), this, _pWidget);
         break;
     default:
         EXCEPTION(ENOTSUPP, pTableShape->getId(_sTableShapeType), pTableShape->getName(_sTableShapeType));

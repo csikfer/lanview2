@@ -10,6 +10,7 @@ class  LV2GSHARED_EXPORT cOnlineAlarm : public cOwnTab
 public:
     cOnlineAlarm(QWidget *par);
     ~cOnlineAlarm();
+    static const enum ePrivilegeLevel rights;
 private:
     void map();
     QSqlQuery *     pq;

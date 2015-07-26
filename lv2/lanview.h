@@ -228,13 +228,39 @@ public:
     static bool dbIsOpen() {
         return instance != NULL && instance->pDb != NULL && instance->pDb->isOpen();
     }
-    ///
+    /// A megadott felhasználói név alapján betölti a magadott users rekordott,
+    /// de elötte ellenörzi a megadott jelszót, hogy helyes-e.
+    /// Ha a művelet sikeres, akkor a megallokált cUser objektum pointerét beírja a pUser statikus adattagba.
+    /// @param un A felhasználónév
+    /// @param pw A jelszó
+    /// @param __ex Ha értéke igaz, és a falhasználó név és/vagy jelszó nem egyezik, akkor dob egy kizárást.
+    /// @retuen Ha létezik a megadott nevű felhasználó, és a jelszó is megfelelő, akkor a feltöltött cUser objekum címe.
     static const cUser *setUser(const QString& un, const QString& pw, bool __ex = true);
+    /// A megadott felhasználói név alapján betölti a magadott users rekordott.
+    /// Ha a művelet sikeres, akkor a megallokált cUser objektum pointerét beírja a pUser statikus adattagba.
+    /// @param un A felhasználónév
+    /// @param __ex Ha értéke igaz, és a falhasználó név létezik, akkor dob egy kizárást.
+    /// @retuen Ha létezik a megadott nevű felhasználó, akkor a feltöltött cUser objekum címe.
     static const cUser *setUser(const QString& un, bool __ex = true);
+    /// A megadott felhasználói ID alapján betölti a magadott users rekordott.
+    /// Ha a művelet sikeres, akkor a megallokált cUser objektum pointerét beírja a pUser statikus adattagba.
+    /// @param un A felhasználó ID
+    /// @param __ex Ha értéke igaz, és a falhasználó ID létezik, akkor dob egy kizárást.
+    /// @retuen Ha létezik a megadott ID-jű felhasználó, akkor a feltöltött cUser objekum címe.
     static const cUser *setUser(qlonglong uid, bool __ex = true);
+    /// Az aktuális felhasználó adatait tartalmazó cUser objektum referenciája.
+    /// A pUser adattag által mutatott objektum referenciájával tér vissza.
+    /// Ha még nem példányosítottuk a lanView osztályt, vagy a pUser egy NULL pointer, akkor dob egy kizárást.
     static const cUser& user();
+    /// Ellenörzi az aktuális felhasználó jogosultsági szintjét
+    static bool isAuthorized(enum ePrivilegeLevel pl) { return user().privilegeLevel() >= pl; }
+    /// Ellenörzi az aktuális felhasználó jogosultsági szintjét
+    static bool isAuthorized(qlonglong pl) { return isAuthorized((enum ePrivilegeLevel) pl); }
+    /// Ellenörzi az aktuális felhasználó jogosultsági szintjét
+    static bool isAuthorized(const QString& pl) { return isAuthorized((enum ePrivilegeLevel)privilegeLevel(pl)); }
     /// Az api könynvtér által gyorstárazott adatokat újra tülti,
     static void resetCacheData();
+    /// A könyvtár neve, statikus konstans string, a LIBNAME makró által definiált: "lv2lib"
     const QString   libName;
     qlonglong       debug;      ///< Debug level
     QString         debFile;    ///< Debug/log file
@@ -247,16 +273,20 @@ public:
     QTranslator    *libTranslator;  ///< translator az API-hoz
     QTranslator    *appTranslator;  ///< translator az APP-hoz
 
-    cNode          *pSelfNode;          ///< Saját host objektum pointere, vagy NULL, ha nem ismeretlen
-    cService       *pSelfService;       ///< Saját service objektum pointere, vagy NULL, ha me, ismeretlen
-    cHostService   *pSelfHostService;   ///< Saját service példány objektum pointere, vagy NULL, ha nem ismeretlen
-    bool            setSelfStateF;      ///< Ha igaz, akkor kilépéskor (destruktor) be kell állítani az aktuális sservice példány állapotát.
+    cNode          *pSelfNode;          ///< Saját host objektum pointere, vagy NULL, ha nem ismert
+    cService       *pSelfService;       ///< Saját service objektum pointere, vagy NULL, ha nem ismert
+    cHostService   *pSelfHostService;   ///< Saját service példány objektum pointere, vagy NULL, ha nem ismert
+    bool            setSelfStateF;      ///< Ha igaz, akkor kilépéskor (destruktor) be kell állítani az aktuális service példány állapotát.
     cUser          *pUser;              ///< A felhasználót azonosító objektum pointere, vagy NULL
 
     static QString    appName;          ///< Az APP neve
     static short      appVersionMinor;  ///< Az APP al verzió száma
     static short      appVersionMajor;  ///< Az APP fő verzió száma
     static QString    appVersion;       ///< APP verzioó string
+    /// Program név és verzió beállítása
+    /// @param _vMajor Fő verziószám
+    /// @param _vMinor Al verziószám
+    /// @param _name Program neve
     static void setApp(short _vMajor, short _vMinor, const char * _name) {
         appVersionMajor = _vMajor;
         appVersionMinor = _vMinor;

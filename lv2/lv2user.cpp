@@ -1,10 +1,58 @@
 #include "lanview.h"
 #include "lv2user.h"
 
+int privilegeLevel(const QString& n, bool __ex)
+{
+    if (0 == n.compare(_sNone,     Qt::CaseInsensitive)) return PL_NONE;
+    if (0 == n.compare(_sViewer,   Qt::CaseInsensitive)) return PL_VIEWER;
+    if (0 == n.compare(_sIndalarm, Qt::CaseInsensitive)) return PL_INDALARM;
+    if (0 == n.compare(_sOperator, Qt::CaseInsensitive)) return PL_OPERATOR;
+    if (0 == n.compare(_sAdmin,    Qt::CaseInsensitive)) return PL_ADMIN;
+    if (0 == n.compare(_sSystem,   Qt::CaseInsensitive)) return PL_SYSTEM;
+    if (__ex) EXCEPTION(EDATA, -1, n);
+    return PL_INVALID;
+}
+
+const QString& privilegeLevel(int e, bool __ex)
+{
+    switch(e) {
+    case PL_NONE:       return _sNone;
+    case PL_VIEWER:     return _sViewer;
+    case PL_INDALARM:   return _sIndalarm;
+    case PL_OPERATOR:   return _sOperator;
+    case PL_ADMIN:      return _sAdmin;
+    case PL_SYSTEM:     return _sSystem;
+    default:    if (__ex) EXCEPTION(EDATA, e);
+    }
+    return _sNul;
+}
+
 /* ------------------------------ groups ------------------------------ */
-DEFAULTCRECDEF(cGroup, _sGroups)
+CRECCNTR(cGroup)
+CRECDEFD(cGroup)
+
+const cRecStaticDescr&  cGroup::descr() const
+{
+    if (initPDescr<cGroup>(_sGroups)) {
+        CHKENUM(_sGroupRights, privilegeLevel);
+    }
+    return *_pRecordDescr;
+}
 /* ------------------------------ users ------------------------------ */
-DEFAULTCRECDEF(cUser, _sUsers)
+CRECDEFD(cUser)
+CRECDDCR(cUser, _sUsers)
+
+cUser::cUser() : cRecord()
+{
+    _set(cUser::descr());
+    _privilegeLevel = PL_INVALID;
+}
+
+cUser::cUser(const cUser& __o) : cRecord()
+{
+    _cp(__o);
+    _privilegeLevel = __o._privilegeLevel;
+}
 
 bool cUser::checkPassword(QSqlQuery& q, const QString &__passwd) const
 {
@@ -48,3 +96,23 @@ bool cUser::checkPasswordAndFetch(QSqlQuery& q, const QString &__passwd, qlonglo
     return true;
 }
 
+enum ePrivilegeLevel cUser::getRights(QSqlQuery& q)
+{
+    if (isNullId()) {
+        if (isNullName()) EXCEPTION(EDATA, 0, trUtf8("Nincs megadva a felhasználói ID, vagy név"));
+        setByName(q);
+    }
+    QString sql = "SELECT MAX(group_rights) FROM group_users JOIN groups USING(group_id) WHERE user_id = ?";
+    if (!execSql(q, sql, get(idIndex()))) EXCEPTION(EDATA, 0, trUtf8("Nem azonosítható a felhasználói ID, vagy név"));
+    _privilegeLevel = (enum ePrivilegeLevel)::privilegeLevel(q.value(0).toString());
+    return _privilegeLevel;
+}
+
+enum ePrivilegeLevel cUser::privilegeLevel() const
+{
+    if (_privilegeLevel == PL_INVALID) {
+        QSqlQuery q = getQuery();
+        return const_cast<cUser *>(this)->getRights(q);
+    }
+    return _privilegeLevel;
+}

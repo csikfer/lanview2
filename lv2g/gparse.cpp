@@ -2,6 +2,7 @@
 #include "import_parser.h"
 #include "cerrormessagebox.h"
 
+const enum ePrivilegeLevel cParseWidget::rights = PL_OPERATOR;
 
 cParseWidget::cParseWidget(QWidget *par)
 : cOwnTab(par)

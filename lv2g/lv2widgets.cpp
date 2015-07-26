@@ -152,7 +152,7 @@ QString fieldWidgetType(int _t)
     case FEW_DATE_TIME:     return "cDateTimeWidget";
     case FEW_INTERVAL:      return "cIntervalWidget";
     case FEW_BINARY:        return "cBinaryWidget";
-    case FEW_RO_LINE:       return "ReadOnly LineEdit";
+    case FEW_NULL:          return "cNullWidget";
     default:                return sInvalidEnum();
     }
 }
@@ -166,7 +166,7 @@ cFieldEditBase::cFieldEditBase(const cTableShape &_tm, const cTableShapeField &_
     , _value()
 {
     _wType      = FEW_UNKNOWN;
-    _readOnly   = _ro;
+    _readOnly   = _ro || (_fieldShape.isNull(_sEditRights) ? false : !lanView::isAuthorized(_fieldShape.getId(_sEditRights)));
     _value      = _fr;
     _pWidget    = NULL;
     _pFieldRef  = new cRecordFieldRef(_fr);
@@ -272,6 +272,11 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
     _DBGFN() << QChar(' ') << _tm.tableName() << _sCommaSp << _fr.fullColumnName() << " ..." << endl;
     PDEB(VVERBOSE) << "Field value = " << debVariantToString(_fr) << endl;
     PDEB(VVERBOSE) << "Field descr = " << _fr.descr().allToString() << endl;
+    if (!_tf.isNull(_sViewRights) && !lanView::isAuthorized(_tf.getId(_sViewRights))) {
+        cNullWidget *p = new cNullWidget(_tm, _tf, _fr, true, _par);
+        _DBGFNL() << " new cNullWidget" << endl;
+        return p;
+    }
     int et = _fr.descr().eColType;
     bool ro = _ro || !(_fr.record().isUpdatable()) || !(_fr.descr().isUpdatable);
     ro = ro || (et == cColStaticDescr::FT_INTEGER && _fr.record().autoIncrement()[_fr.index()]);    // Ha auto increment, akkor RO.
@@ -362,6 +367,18 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
         return NULL;
     }
 }
+
+/* **************************************** cNullWidget **************************************** */
+cNullWidget::cNullWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase* _par)
+    : cFieldEditBase(_tm, _tf, __fr, _ro, _par)
+{
+    _wType = FEW_NULL;
+    QLabel *pL = new QLabel(_par->pWidget());
+    _pWidget = pL;
+    pL->setText(trUtf8("Nem elérhető"));
+    pL->setFont(design()[GDR_NULL].font);
+}
+
 
 /* **************************************** cSetWidget **************************************** */
 
