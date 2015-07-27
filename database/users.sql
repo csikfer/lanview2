@@ -194,37 +194,11 @@ COMMENT ON TABLE  group_users           IS 'Group members table';
 COMMENT ON COLUMN group_users.group_id  IS 'Group ID';
 COMMENT ON COLUMN group_users.user_id   IS 'User ID';
 
-INSERT INTO groups(group_id, group_name, group_note, group_rights) VALUES
-    ( 0, 'system',  'system',           'system'  ),
-    ( 1, 'admin',   'Administrators',   'admin'   ),
-    ( 2, 'operator','Operators',        'operator'),
-    ( 3, 'indalarm','IndAlarm users',   'indalarm'),
-    ( 4, 'viewer',  'Viewers',          'viewer'  );
-
-SELECT setval('groups_group_id_seq', 5);
-
-INSERT INTO users(user_id, user_name, user_note, passwd) VALUES
-    ( 0, 'nobody',  'Unknown user', NULL),
-    ( 1, 'system',  'system',       NULL),
-    ( 2, 'admin',   'Administrator','admin'),
-    ( 3, 'operator','Operator',     'operator'),
-    ( 4, 'viewer',  'Viewer',       NULL);
-
-SELECT setval('users_user_id_seq', 5);
-
 CREATE OR REPLACE FUNCTION user_name2id(varchar(32)) RETURNS bigint AS $$
 BEGIN
     RETURN user_id FROM users WHERE user_name = $1;
 END
 $$ LANGUAGE plpgsql;
-
-INSERT INTO group_users ( group_id, user_id ) VALUES
-    ( group_name2id('system'),   user_name2id('system') ),
-    ( group_name2id('admin'),    user_name2id('admin') ),
-    ( group_name2id('operator'), user_name2id('operator') ),
-    ( group_name2id('viewer'),   user_name2id('viewer') );
-
-
 
 -- Az aktuális felhasználói név beállítása.
 -- Ha nincs ilyen felhasználó, akkor dob egy kizárást, és létrehoz egy db_errs rekordot.
@@ -299,3 +273,28 @@ ALTER FUNCTION crypt_user_password()  OWNER TO lanview2;
 COMMENT ON FUNCTION crypt_user_password() IS 'Trigger függvény az users táblához. Titkosítja a passwd mwzőt, ha meg van adva, vagy változott.';
 
 CREATE TRIGGER crypt_password BEFORE UPDATE OR INSERT ON users FOR EACH ROW EXECUTE PROCEDURE crypt_user_password();
+
+INSERT INTO groups(group_id, group_name, group_note, group_rights) VALUES
+    ( 0, 'system',  'system',           'system'  ),
+    ( 1, 'admin',   'Administrators',   'admin'   ),
+    ( 2, 'operator','Operators',        'operator'),
+    ( 3, 'indalarm','IndAlarm users',   'indalarm'),
+    ( 4, 'viewer',  'Viewers',          'viewer'  );
+
+SELECT setval('groups_group_id_seq', 5);
+
+INSERT INTO users(user_id, user_name, user_note, passwd) VALUES
+    ( 0, 'nobody',  'Unknown user', NULL),
+    ( 1, 'system',  'system',       NULL),
+    ( 2, 'admin',   'Administrator','admin'),
+    ( 3, 'operator','Operator',     'operator'),
+    ( 4, 'viewer',  'Viewer',       NULL);
+
+SELECT setval('users_user_id_seq', 5);
+
+INSERT INTO group_users ( group_id, user_id ) VALUES
+    ( group_name2id('system'),   user_name2id('system') ),
+    ( group_name2id('admin'),    user_name2id('admin') ),
+    ( group_name2id('operator'), user_name2id('operator') ),
+    ( group_name2id('viewer'),   user_name2id('viewer') );
+

@@ -763,19 +763,22 @@ bool cMenuItem::fetchFirstItem(QSqlQuery& q, const QString& _appName, qlonglong 
     clear();
     QString pl = privilegeLevel(lanView::user().privilegeLevel());  // Az aktuális jogosultsági szint
     QString sql =
-            "SELECT * FROM menu_item"
+            "SELECT * FROM menu_items"
             " WHERE app_name = ?"                           // A megadott nevű app menüje
               " AND menu_rights <= ?"                       // Jogosultság szerint szűrve
               " AND %1"                                     // Fő vagy al menü
             " ORDER BY item_sequence_number ASC NULLS LAST";
+    bool    r;
     if (upId != NULL_ID) {
-        sql.arg("upper_menu_item_id = ?");                      // A mgadott menű almenü pontjai
-        return execSql(q, sql, _appName, pl, upId);
+        sql = sql.arg("upper_menu_item_id = ?");                      // A mgadott menű almenü pontjai
+        r = execSql(q, sql, _appName, pl, upId);
     }
     else {
-        sql.arg("upper_menu_item_id IS NULL");                  // Fő menü
-        return execSql(q, sql, _appName, pl);
+        sql = sql.arg("upper_menu_item_id IS NULL");                  // Fő menü
+        r = execSql(q, sql, _appName, pl);
     }
+    if (r) set(q);
+    return r;
 }
 
 
