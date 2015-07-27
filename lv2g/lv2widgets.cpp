@@ -379,6 +379,10 @@ cNullWidget::cNullWidget(const cTableShape &_tm, const cTableShapeField &_tf, cR
     pL->setFont(design()[GDR_NULL].font);
 }
 
+cNullWidget::~cNullWidget()
+{
+    ;
+}
 
 /* **************************************** cSetWidget **************************************** */
 
