@@ -591,6 +591,8 @@ public:
     cPortParams(QSqlQuery& __q, qlonglong __port_id);
     /// Copy konstrultor. A konténer összes elemét klónozza.
     cPortParams(const cPortParams& __o);
+    ///
+    ~cPortParams();
     /// Másoló operátor. A konténer összes elemét klónozza.
     cPortParams& operator=(const cPortParams& __o);
     /// A listét feltölti az adatbázisból, hogy a megadott porthoz (ID) tartozó összes paramétert tartalmazza.
@@ -607,7 +609,9 @@ public:
     /// @return A kiírt rekordok száma
     int       insert(QSqlQuery &__q, qlonglong __port_id, bool __ex = true);
 };
+
 /* ------------------------------------------------------------------------ */
+
 class LV2SHARED_EXPORT cIfType : public cRecord {
     CRECORD(cIfType);
 public:
@@ -966,6 +970,8 @@ public:
     cNodeParams(QSqlQuery& __q, qlonglong __Node_id);
     /// Copy konstrultor. A konténer összes elemét klónozza.
     cNodeParams(const cNodeParams& __o);
+    ///
+    ~cNodeParams();
     /// Másoló operátor. A konténer összes elemét klónozza.
     cNodeParams& operator=(const cNodeParams& __o);
     /// A listét feltölti az adatbázisból, hogy a megadott Nodehoz (ID) tartozó összes paramétert tartalmazza.
@@ -1032,7 +1038,7 @@ class LV2SHARED_EXPORT cPatch : public cRecord {
     CRECORD(cPatch);
 protected:
     /// A mehosztásokat (port bekötéseket) tartalamzó konténer tartalmának a törlése.
-    explicit cPatch(no_init_&) : cRecord(), ports(), pShares(NULL)  { cPatch::descr(); }
+    explicit cPatch(no_init_&) : cRecord(), ports(), params(), pShares(NULL)  { cPatch::descr(); }
 public:
     /// A létrehozott üres objektumban kitölti a port_name és port_descr mezőket.
     //! @param __name a port_name mező új értéke.
@@ -1627,6 +1633,10 @@ public:
     static QHostAddress mac2ip(QSqlQuery& __q, const cMac& __m, bool __ex = true);
     static cMac ip2mac(QSqlQuery& __q, const QHostAddress& __a, bool __ex = true);
     static int checkExpired(QSqlQuery& __q);
+};
+
+class LV2SHARED_EXPORT cDynAddrRange : public cRecord {
+    CRECORD(cDynAddrRange);
 };
 
 /// Csak a cPhsLink és cLldpLink objektumokkal használható

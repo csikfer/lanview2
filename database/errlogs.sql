@@ -261,7 +261,7 @@ COMMENT ON FUNCTION error_name2note(varchar(32)) IS 'Hiba tipus leírás a név 
 
 CREATE OR REPLACE FUNCTION error (
     text,                   -- $1 Error name (errors.err_name)
-    bigint DEFAULT -1,     -- $2 Error Sub code
+    bigint  DEFAULT -1,      -- $2 Error Sub code
     text    DEFAULT 'nil',  -- $3 Error Sub Message
     text    DEFAULT 'nil',  -- $4 Source name (function name, ...)
     text    DEFAULT 'nil',  -- $5 Actual table name

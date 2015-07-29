@@ -1792,11 +1792,20 @@ template <class R> const cRecStaticDescr *getPDescr(const QString& _tn, const QS
 
 /// @def CRECCNTR(R)
 /// @relates cRecord
-/// @param R Az osztály neve, melyhez a metódusok tartoznak
 /// Egy alapértelmezett ill. egyszerű cRecord leszármazott objektum konstruktorainak a definiciói.
+/// @param R Az osztály neve, melyhez a metódusok tartoznak
 #define CRECCNTR(R) \
     R::R()             : cRecord() { _set(R::descr()); } \
     R::R(const R& __o) : cRecord() { _cp(__o); }
+
+/// @def CRECCNTR_DEB(R)
+/// @relates cRecord
+/// Egy alapértelmezett ill. egyszerű cRecord leszármazott objektum konstruktorainak a definiciói.
+/// Nyomkövető makrókkal kiegészítve
+/// @param R Az osztály neve, melyhez a metódusok tartoznak
+#define CRECCNTR_DEB(R) \
+    R::R()             : cRecord() { DBGOBJ();  _set(R::descr()); } \
+    R::R(const R& __o) : cRecord() { DBGOBJ();  _cp(__o); }
 
 /// @def CRECDEF(R)
 /// @relates cRecord
@@ -1819,6 +1828,13 @@ template <class R> const cRecStaticDescr *getPDescr(const QString& _tn, const QS
 /// A cRecord leszármazottakban a destruktort, a newObj() és dup() virtuális metódusokat definiáló makró
 /// @param R Az osztály neve, melyhez a metódusok tartoznak
 #define CRECDEFD(R)    CRECDEF(R) R::~R() { ; }
+
+/// @def CRECDEFD_DEB(R)
+/// @relates cRecord
+/// A cRecord leszármazottakban a destruktort, a newObj() és dup() virtuális metódusokat definiáló makró
+/// Nyomkövető makrókkal kiegészítve
+/// @param R Az osztály neve, melyhez a metódusok tartoznak
+#define CRECDEFD_DEB(R)    CRECDEF(R) R::~R() { ; }
 
 /// @def DEFAULTCRECDEF(R)
 /// @relates cRecord

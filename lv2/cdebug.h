@@ -78,12 +78,12 @@ EXT_ QString quotedString(const QString& __s, const QChar &__q = QChar('"'));
 /// Debug üzenet kiírása egy nyomkövetendő konstruktor vagy destruktor meghívásakor, az üzenet nincs lezárva, a sor kiegészíthető,
 /// és le kell zárni egy endl-vel.
 /// @relates cDebug
-#define _DBGOBJ()    PDEB(OBJECT) << __PRETTY_FUNCTION__
+#define _DBGOBJ()    PDEB(OBJECT) << __PRETTY_FUNCTION__ << VDEBPTR(this)
 
 /// @def DBGOBJ()
 /// Debug üzenet kiírása egy nyomkövetendő konstruktor vagy destruktor meghívásakor, az üzenet le van zárva.
 /// @relates cDebug
-#define DBGOBJ()    PDEB(OBJECT) << __PRETTY_FUNCTION__ << endl
+#define DBGOBJ()    _DBGOBJ() << endl
 
 #define __DERRH(fi, li, fu)    QObject::trUtf8("Error in ") << fi << "[" << li << "] " << fu << " : "
 #define _DERRH()    __DERRH(__FILE__, __LINE__, __PRETTY_FUNCTION__)

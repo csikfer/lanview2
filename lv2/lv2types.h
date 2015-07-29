@@ -524,6 +524,9 @@ public:
       Két objektum adattartalmának a cserélye.
      */
     netAddress& swap(netAddress& __o)   { netAddress t = __o; __o = *this; return *this = t; }
+    ///
+    static int ipv4NetMask(const QString& _mask);
+    QPair<QHostAddress, int> toPair() { return *this; }
 };
 
 /*!

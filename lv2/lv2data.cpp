@@ -644,8 +644,8 @@ int addrType(const QString& __at, bool __ex)
 
 /* ******************************  ****************************** */
 
-CRECCNTR(cPortParam)
-CRECDEFD(cPortParam)
+CRECCNTR_DEB(cPortParam)
+CRECDEFD_DEB(cPortParam)
 
 int cPortParam::_ixParamTypeId = NULL_IX;
 int cPortParam::_ixPortId = NULL_IX;
@@ -688,23 +688,31 @@ void    cPortParam::clearToEnd()
 
 cPortParams::cPortParams() : tRecordList<cPortParam>()
 {
-    ;
+    DBGOBJ();
 }
 
 cPortParams::cPortParams(const cPortParam& __v) : tRecordList<cPortParam>(__v)
 {
-    ;
+    DBGOBJ();
 }
 
 cPortParams::cPortParams(QSqlQuery& __q, qlonglong __port_id) : tRecordList<cPortParam>()
 {
+    DBGOBJ();
     fetch(__q, __port_id);
 }
 
 cPortParams::cPortParams(const cPortParams& __o) : tRecordList<cPortParam>()
 {
+    DBGOBJ();
     *this = __o;
 }
+
+cPortParams::~cPortParams()
+{
+    DBGOBJ();
+}
+
 
 cPortParams& cPortParams::operator=(const cPortParams& __o)
 {   // Az ős template osztály ugyanezt definiálja (más a visszaadott érték típusa)
@@ -840,18 +848,19 @@ qlonglong cNPort::_tableoid_interfaces = NULL_ID;
 
 cNPort::cNPort() : cRecord()
 {
-    // _DBGFN() << VDEBPTR(this) << endl;
+    DBGOBJ();
     _set(cNPort::descr());
 }
 
 cNPort::cNPort(const cNPort& __o) : cRecord()
 {
+    DBGOBJ();
     __cp(__o);
     _copy(__o, _descr_cNPort());
     params = __o.params;
 }
 
-CRECDEFD(cNPort)
+CRECDEFD_DEB(cNPort)
 
 // -- virtual
 
@@ -1095,10 +1104,12 @@ CRECDEFD(cPPort)
 
 cInterface::cInterface() : cNPort(_no_init_), trunkMembers()
 {
+    DBGOBJ();
     _set(cInterface::descr());
 }
 cInterface::cInterface(const cInterface& __o) : cNPort(_no_init_), trunkMembers()
 {
+    DBGOBJ();
     __cp(__o);
     _copy(__o, _descr_cInterface());
     params       = __o.params;
@@ -1116,7 +1127,7 @@ const cRecStaticDescr&  cInterface::descr() const
     return *_pRecordDescr;
 }
 
-CRECDEFD(cInterface)
+CRECDEFD_DEB(cInterface)
 
 void cInterface::clearToEnd()
 {
@@ -1319,31 +1330,34 @@ bool cShareBack::operator==(int __i) const
 
 /* -------------------------------------------------------------------------- */
 
-cPatch::cPatch() : cRecord(), ports(), pShares(new QSet<cShareBack>)
+cPatch::cPatch() : cRecord(), ports(), params(), pShares(new QSet<cShareBack>)
 {
-    //_DBGFN() << VDEBPTR(this) << endl;
+    DBGOBJ();
     _set(cPatch::descr());
 }
 
-cPatch::cPatch(const cPatch& __o) : cRecord(), ports(), pShares(new QSet<cShareBack>)
+cPatch::cPatch(const cPatch& __o) : cRecord(), ports(), params(), pShares(new QSet<cShareBack>)
 {
+    DBGOBJ();
     _cp(__o);
     ports = __o.ports;
 }
 
-cPatch::cPatch(const QString& __name, const QString& __descr) : cRecord(), ports(), pShares(new QSet<cShareBack>)
+cPatch::cPatch(const QString& __name, const QString& __descr) : cRecord(), ports(), params(), pShares(new QSet<cShareBack>)
 {
+    DBGOBJ();
     _set(cPatch::descr());
     _set(_descr_cPatch().nameIndex(),  __name);
     _set(_descr_cPatch().noteIndex(), __descr);
 }
 
 CRECDDCR(cPatch, _sPatchs)
-CRECDEFD(cPatch)
+CRECDEFD_DEB(cPatch)
 
 void cPatch::clearToEnd()
 {
     ports.clear();
+    params.clear();
     if (pShares != NULL) clearShares();
 }
 
@@ -1375,6 +1389,7 @@ bool cPatch::insert(QSqlQuery &__q, bool __ex)
         if (pShares == NULL) return true;
         return updateShares(__q, false, __ex);
     }
+    if (params.count()) params.insert(__q, getId());
     return true;
 }
 
@@ -1566,8 +1581,8 @@ cPatch * cPatch::getNodeObjById(QSqlQuery& q, qlonglong __node_id, bool __ex)
 
 /* --------------------------------------------------------------------------- */
 
-CRECCNTR(cNodeParam)
-CRECDEFD(cNodeParam)
+CRECCNTR_DEB(cNodeParam)
+CRECDEFD_DEB(cNodeParam)
 
 int cNodeParam::_ixParamTypeId = NULL_IX;
 int cNodeParam::_ixNodeId = NULL_IX;
@@ -1610,22 +1625,29 @@ void    cNodeParam::clearToEnd()
 
 cNodeParams::cNodeParams() : tRecordList<cNodeParam>()
 {
-    ;
+    DBGOBJ();
 }
 
 cNodeParams::cNodeParams(const cNodeParam& __v) : tRecordList<cNodeParam>(__v)
 {
-    ;
+    DBGOBJ();
 }
 
 cNodeParams::cNodeParams(QSqlQuery& __q, qlonglong __Node_id) : tRecordList<cNodeParam>()
 {
+    DBGOBJ();
     fetch(__q, __Node_id);
 }
 
 cNodeParams::cNodeParams(const cNodeParams& __o) : tRecordList<cNodeParam>()
 {
+    DBGOBJ();
     *this = __o;
+}
+
+cNodeParams::~cNodeParams()
+{
+    DBGOBJ();
 }
 
 cNodeParams& cNodeParams::operator=(const cNodeParams& __o)
@@ -1701,11 +1723,13 @@ const QString& nodeType(int __e, bool __ex)
 
 cNode::cNode() : cPatch(_no_init_)
 {
+    DBGOBJ();
     _set(cNode::descr());
 }
 
 cNode::cNode(const cNode& __o) : cPatch(_no_init_)
 {
+    DBGOBJ();
     __cp(__o);
     _copy(__o, _descr_cNode());
     ports         = __o.ports;
@@ -1713,6 +1737,7 @@ cNode::cNode(const cNode& __o) : cPatch(_no_init_)
 
 cNode::cNode(const QString& __name, const QString& __descr) : cPatch(_no_init_)
 {
+    DBGOBJ();
     _set(cNode::descr());
     _set(_descr_cNode().nameIndex(),  __name);
     _set(_descr_cNode().noteIndex(), __descr);
@@ -1720,6 +1745,7 @@ cNode::cNode(const QString& __name, const QString& __descr) : cPatch(_no_init_)
 
 cNode& cNode::operator=(const cNode& __o)
 {
+    DBGOBJ();
     __cp(__o);
     _copy(__o, _descr_cNode());
     ports         = __o.ports;
@@ -1763,7 +1789,8 @@ bool cNode::insert(QSqlQuery &__q, bool __ex)
     return cPatch::insert(__q, __ex);
 }
 
-int  cNode::fetchPorts(QSqlQuery& __q, bool __ex) {
+int  cNode::fetchPorts(QSqlQuery& __q, bool __ex)
+{
     QSqlQuery q = getQuery(); // A copy construktor vagy másolás az nem jó!! (shadow copy)
     QString sql = "SELECT tableoid, port_id FROM nports WHERE node_id = ? AND NOT deleted";
     if (execSql(__q, sql, getId())) do {
@@ -2995,6 +3022,7 @@ int cArp::checkExpired(QSqlQuery& __q)
 
 /* ----------------------------------------------------------------- */
 
+DEFAULTCRECDEF(cDynAddrRange, _sAlarms)
 /* ----------------------------------------------------------------- */
 bool LinkUnlink(QSqlQuery& q, cRecord& o, qlonglong __pid)
 {

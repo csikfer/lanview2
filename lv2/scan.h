@@ -115,7 +115,7 @@ public:
     QString toString() const;
 protected:
     void getByProcFile(QIODevice& __f);
-    void getByDhcpdConf(QIODevice& __f);
+    void getByDhcpdConf(QIODevice& __f, qlonglong _hid = NULL_ID);
     const QString& token(QIODevice& __f);
 };
 

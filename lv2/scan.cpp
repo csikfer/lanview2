@@ -259,42 +259,54 @@ const QString& cArpTable::token(QIODevice& __f)
 #define GETOKEN()   if ((tok = token(__f)).isEmpty()) break;
 #define CHKTOK(s)   if (tok != s) continue;
 
-void cArpTable::getByDhcpdConf(QIODevice& __f)
+void cArpTable::getByDhcpdConf(QIODevice& __f, qlonglong _hid)
 {
     //DBGFN();
     static const QString _shost           = "host";
     static const QString _shardware       = "hardware";
     static const QString _sethernet       = "ethernet";
     static const QString _sfixed_address  = "fixed-address";
-    static const QString _sBreak          = "break";
-    static const QString _sDroped         = "dropped";
+    static const QString _srange          = "range";
     QTextStream str(&__f);
     QString tok;
     QString _s;
     while (true) {
-        do {
-            tok = token(__f);
-            if (tok.isEmpty()) return;
-        } while (tok != _shost);
-        GETOKEN();
-        GETOKEN();  CHKTOK("{");
-        GETOKEN();  CHKTOK("hardware");
-        GETOKEN();  CHKTOK("ethernet");
+        tok = token(__f);
+        if (tok.isEmpty()) return;
+        if (tok == _shost) {
+            GETOKEN();  // név
+            GETOKEN();  CHKTOK("{");
+            GETOKEN();  CHKTOK(_shardware);
+            GETOKEN();  CHKTOK(_sethernet);
 
-        GETOKEN();  cMac    mac(tok);
-        if (mac.isEmpty()) continue;
+            GETOKEN();  cMac    mac(tok);
+            if (mac.isEmpty()) continue;
 
-        GETOKEN();  CHKTOK(";");
-        GETOKEN();  CHKTOK("fixed-address");
-        GETOKEN();  QHostAddress addr(tok);
-        if (addr.isNull()) continue;
+            GETOKEN();  CHKTOK(";");
+            GETOKEN();  CHKTOK(_sfixed_address);
+            GETOKEN();  QHostAddress addr(tok);
+            if (addr.isNull()) continue;
 
-        GETOKEN();  CHKTOK(";");
-        GETOKEN();  CHKTOK("}");
+            GETOKEN();  CHKTOK(";");
+            GETOKEN();  CHKTOK("}");
 
-        PDEB(VERBOSE) << "add : " << addr.toString() << " / " << mac.toString() << endl;
+            PDEB(VERBOSE) << "add : " << addr.toString() << " / " << mac.toString() << endl;
 
-        insert(addr, mac);
+            insert(addr, mac);
+        }
+        else if (tok == _srange) {
+            GETOKEN();  QHostAddress b(tok);
+            GETOKEN();  QHostAddress e(tok);
+            if (b.isNull() || e.isNull()) {
+                DERR() << "Dynamic range : " << b.toString() << " > " << e.toString() << endl;
+                continue;
+            }
+            QSqlQuery q = getQuery();
+            QVariant hId;
+            if (_hid != NULL_ID) hId = _hid;
+            QString r = execSqlTextFunction(q,"replace_dyn_addr_range", b.toString(), e.toString(), hId);
+            PDEB(INFO) << "Dynamic range " << b.toString() << " < " << e.toString() << "repl. result: " << r << endl;
+        }
     }
     return;
 }

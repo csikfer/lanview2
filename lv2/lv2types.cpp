@@ -596,6 +596,74 @@ netAddress& netAddress::setAddressByName(const QString& __hn)
     return *this;
 }
 
+int netAddress::ipv4NetMask(const QString& _mask)
+{
+    uint r = -1;
+    bool ok;
+    QStringList ml = _mask.split('.');
+    if (ml.size() == 1) {
+        r = ml[0].toUInt(&ok);
+        if (!ok || r > 32) return -1;
+        return (int)r;
+    }
+    if (ml.size() == 4) {
+        uint iml[4];
+        for (int i = 0; i < 4; ++i) {
+            iml[i] = ml[4].toUInt(&ok);
+            if (!ok || iml[i] > 255) return -1;
+        }
+        if ((iml[1] + iml[2] + iml[3]) == 0) switch (iml[0]) {
+        case 0:     return  0;
+        case 0x80:  return  1;
+        case 0xc0:  return  2;
+        case 0xe0:  return  3;
+        case 0xf0:  return  4;
+        case 0xf8:  return  5;
+        case 0xfc:  return  6;
+        case 0xfe:  return  7;
+        case 0xff:  return  8;
+        default:    return -1;
+        }
+        if (iml[0] != 255) return -1;
+        if ((iml[2] + iml[3]) == 0) switch (iml[1]) {
+        case 0x80:  return  9;
+        case 0xc0:  return 10;
+        case 0xe0:  return 11;
+        case 0xf0:  return 12;
+        case 0xf8:  return 13;
+        case 0xfc:  return 14;
+        case 0xfe:  return 15;
+        case 0xff:  return 16;
+        default:    return -1;
+        }
+        if (iml[1] != 255) return -1;
+        if (iml[3] == 0) switch (iml[2]) {
+        case 0x80:  return 17;
+        case 0xc0:  return 18;
+        case 0xe0:  return 19;
+        case 0xf0:  return 20;
+        case 0xf8:  return 21;
+        case 0xfc:  return 22;
+        case 0xfe:  return 23;
+        case 0xff:  return 24;
+        default:    return -1;
+        }
+        if (iml[2] != 255) return -1;
+        switch (iml[3]) {
+        case 0x80:  return 25;
+        case 0xc0:  return 26;
+        case 0xe0:  return 27;
+        case 0xf0:  return 28;
+        case 0xf8:  return 29;
+        case 0xfc:  return 30;
+        case 0xfe:  return 31;
+        case 0xff:  return 32;
+        default:    return -1;
+        }
+    }
+    return -1;
+}
+
 /* ********************************************************************************************************
    *                                        class netAddressList                                          *
    ******************************************************************************************************** */

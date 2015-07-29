@@ -467,7 +467,12 @@ STRDEF(Alarms, "alarms")
 STRDEF(Arps, "arps")
  STRDEF(IpAddress, "ipaddress")
  dnl hwaddress, first_time, last_time
-
+STRDEF(DynAddrRanges, "dyn_addr_ranges")
+ STRDEF(DynAddrRangeId, "dyn_addr_range_id")
+ STRDEF(DynAddrRangeNote, "dyn_addr_range_note")
+ STRDEF(BeginAddress, "begin_address")
+ STRDEF(EndAddress, "end_address")
+ STRDEF(DhcpServer, "dhcp_server")
 STRDEF(PortVlans, "port_vlans")
  STRDEF(PortVlanId, "port_vlan_id")
  dnl port_id, vlan_id, first_time
