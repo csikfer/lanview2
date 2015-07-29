@@ -830,4 +830,6 @@ TSTREAMF(QPoint,      QPointTosString)
 TSTREAMF(QPointF,     QPointFTosString)
 TSTREAMF(tPolygonF,   tPolygonFToString)
 
+EXT_ QString debVariantToString(const QVariant v);
+
 #endif //LV2TYPES_H_INCLUDED

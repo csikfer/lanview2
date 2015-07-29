@@ -32,15 +32,15 @@ INSERT INTO service_types (service_type_id, service_type_name) VALUES
 CREATE TABLE services (
     service_id              bigserial      PRIMARY KEY,
     service_name            varchar(32)    NOT NULL,
-    service_note            varchar(255)   DEFAULT NULL,
+    service_note            text   DEFAULT NULL,
     service_type_id         bigint         DEFAULT -1  -- unmarked
         REFERENCES service_types(service_type_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
     protocol_id             bigint         DEFAULT -1  -- nil
         REFERENCES ipprotocols(protocol_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
     port                    integer        DEFAULT NULL,
     superior_service_mask   varchar(64)    DEFAULT NULL,
-    check_cmd               varchar(255)   DEFAULT NULL,
-    properties              varchar(255)   DEFAULT ':',
+    check_cmd               text   DEFAULT NULL,
+    properties              text   DEFAULT ':',
     disabled                boolean        NOT NULL DEFAULT FALSE,
     max_check_attempts      integer        DEFAULT NULL,
     normal_check_interval   interval       DEFAULT NULL,
@@ -147,14 +147,14 @@ CREATE TABLE host_services (
     service_id              bigint         NOT NULL
         REFERENCES services(service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     port_id                 bigint         DEFAULT NULL,
-    host_service_note       varchar(255)   DEFAULT NULL,
+    host_service_note       text   DEFAULT NULL,
     prime_service_id        bigint         NOT NULL DEFAULT -1       -- nil
         REFERENCES services(service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT,
     proto_service_id        bigint         NOT NULL DEFAULT -1       -- nil
         REFERENCES services(service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT,
     delegate_host_state     boolean        NOT NULL DEFAULT FALSE,
-    check_cmd               varchar(255)   DEFAULT NULL,
-    properties              varchar(255)   DEFAULT NULL,
+    check_cmd               text   DEFAULT NULL,
+    properties              text   DEFAULT NULL,
     disabled                boolean        NOT NULL DEFAULT FALSE,
     superior_host_service_id bigint        DEFAULT NULL
         REFERENCES host_services(host_service_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
@@ -174,7 +174,7 @@ CREATE TABLE host_services (
     host_service_state      notifswitch    NOT NULL DEFAULT 'unknown',
     soft_state              notifswitch    NOT NULL DEFAULT 'unknown',
     hard_state              notifswitch    NOT NULL DEFAULT 'unknown',
-    state_msg               varchar(255)   DEFAULT NULL,
+    state_msg               text   DEFAULT NULL,
     check_attempts          integer        NOT NULL DEFAULT 0,
     last_changed            TIMESTAMP      DEFAULT NULL,
     last_touched            TIMESTAMP      DEFAULT NULL,
@@ -265,7 +265,7 @@ CREATE TABLE host_service_logs (
     new_state           notifswitch     NOT NULL,
     new_soft_state      notifswitch     NOT NULL,
     new_hard_state      notifswitch     NOT NULL,
-    event_note          varchar(255)    DEFAULT NULL,
+    event_note          text    DEFAULT NULL,
     superior_alarm_id   bigint          DEFAULT NULL,
     noalarm             boolean         NOT NULL
 );
@@ -295,12 +295,12 @@ COMMENT ON COLUMN host_service_noalarms.user_id IS 'A tíltást kiadó felhaszn�
 CREATE TABLE host_service_charts (
     host_service_chart_id bigserial    PRIMARY KEY,
     host_service_id     bigint         REFERENCES host_services(host_service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    rrd_file_name       varchar(255)   DEFAULT NULL,
+    rrd_file_name       text   DEFAULT NULL,
     graph_order         bigint[]       DEFAULT NULL,
     graph_args          varchar(255)   DEFAULT NULL,
     graph_vlabel        varchar(255)   DEFAULT NULL,
     graph_scale         boolean        DEFAULT NULL,   -- ??
-    graph_info          varchar(255)   DEFAULT NULL,   -- ??
+    graph_info          text   DEFAULT NULL,   -- ??
     graph_category      varchar(255)   DEFAULT NULL,   -- ??
     graph_period        varchar(255)   DEFAULT NULL,   -- ??
     graph_height        bigint         DEFAULT 300,
@@ -319,13 +319,13 @@ ALTER TYPE drawtype OWNER TO lanview2;
 CREATE TABLE host_service_vars (
     service_var_id      bigserial       PRIMARY KEY,
     service_var_name    varchar(32)     NOT NULL,
-    service_var_note    varchar(255)    DEFAULT NULL,
+    service_var_note    text    DEFAULT NULL,
     host_service_id     bigint          NOT NULL
         REFERENCES host_services(host_service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     color               bigint          DEFAULT 0,
     service_var_type    servicevartype  DEFAULT 'GAUGE',
     draw_type           drawtype        DEFAULT 'LINE',
-    cdef                varchar(255)    DEFAULT NULL,
+    cdef                text    DEFAULT NULL,
     negative            boolean         DEFAULT FALSE,
     dim                 varchar(32)     DEFAULT NULL,
     min_value           real            DEFAULT NULL,

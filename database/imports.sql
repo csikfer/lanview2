@@ -49,7 +49,7 @@ CREATE TABLE import_templates (
     import_template_id	bigserial       PRIMARY KEY,
     template_name	varchar(32)     NOT NULL,
     template_type	templatetype	NOT NULL,
-    template_note	varchar(255)	DEFAULT NULL,
+    template_note	text	DEFAULT NULL,
     template_text	text		NOT NULL,
     UNIQUE (template_type, template_name)
 );

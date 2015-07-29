@@ -1,3 +1,4 @@
+
 CREATE TYPE  linktype AS ENUM ( 'ptp', 'bus', 'patch', 'logical', 'wireless', 'unknown');
 COMMENT ON TYPE linktype IS
 'A port típus a link alapján :
@@ -18,7 +19,7 @@ COMMENT ON TYPE portobjtype IS
 CREATE TABLE iftypes (
     iftype_id           bigserial       PRIMARY KEY,
     iftype_name         varchar(64)     NOT NULL UNIQUE,
-    iftype_note         varchar(255)    DEFAULT NULL,
+    iftype_note         text    DEFAULT NULL,
     iftype_iana_id      integer         NOT NULL DEFAULT 1, -- 'other'
     iftype_link_type    linktype        NOT NULL DEFAULT 'unknown',
     iftype_obj_type     portobjtype     NOT NULL DEFAULT 'unknown',
@@ -30,7 +31,7 @@ ALTER TABLE iftypes OWNER TO lanview2;
 COMMENT ON TABLE  iftypes               IS 'Network Interfaces (ports) típus leíró rekord.';
 COMMENT ON COLUMN iftypes.iftype_id     IS 'Unique ID for interface''s type';
 COMMENT ON COLUMN iftypes.iftype_name   IS 'Interface type''s name';
-COMMENT ON COLUMN iftypes.iftype_note  IS 'Interface type''s description';
+COMMENT ON COLUMN iftypes.iftype_note  IS 'Interface type''s noteiption';
 COMMENT ON COLUMN iftypes.iftype_iana_id IS 'Protocoll Types id assigned by IANA';
 COMMENT ON COLUMN iftypes.iftype_link_type IS 'A porton értelmezhető link típusa';
 COMMENT ON COLUMN iftypes.iftype_obj_type IS 'A portot reprezentáló API objektum típusa.';
@@ -110,7 +111,7 @@ IndaContact port stáruszok kifelytése:
 CREATE TABLE nports (
     port_id     bigserial       PRIMARY KEY,
     port_name   varchar(32)     NOT NULL,
-    port_note   varchar(255)    DEFAULT NULL,
+    port_note   text    DEFAULT NULL,
     port_tag    varchar(32)     DEFAULT NULL,
     iftype_id   bigint          DEFAULT 0   -- Default type is 'unknown'
                         REFERENCES iftypes(iftype_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
@@ -133,7 +134,7 @@ COMMENT ON COLUMN nports.deleted    IS 'Ha igaz, akkor a port logikailag töröl
 CREATE TABLE patchs (
     node_id     bigserial          PRIMARY KEY,    -- Sequence: patchs_node_id_seq
     node_name   varchar(32)     NOT NULL UNIQUE,
-    node_note   varchar(255)    DEFAULT NULL,
+    node_note   text    DEFAULT NULL,
     place_id    bigint         DEFAULT 0   -- place = 'unknown'
                 REFERENCES places(place_id) MATCH FULL ON DELETE SET DEFAULT ON UPDATE RESTRICT,
     deleted     boolean         NOT NULL DEFAULT false
@@ -275,7 +276,7 @@ COMMENT ON COLUMN interfaces.dualface_type IS 'Dualface port esetén a másik t�
 CREATE TABLE vlans (
     vlan_id     bigint         PRIMARY KEY,
     vlan_name   varchar(32)     NOT NULL UNIQUE,
-    vlan_note  varchar(255)    DEFAULT NULL,
+    vlan_note  text    DEFAULT NULL,
     vlan_stat   boolean         NOT NULL DEFAULT 'on'
 );
 ALTER TABLE vlans OWNER TO lanview2;
@@ -298,7 +299,7 @@ COMMENT ON TYPE subnettype IS
 CREATE TABLE subnets (
     subnet_id       bigserial          PRIMARY KEY,
     subnet_name     varchar(32)     NOT NULL UNIQUE,
-    subnet_note    varchar(255)    DEFAULT NULL,
+    subnet_note    text    DEFAULT NULL,
     netaddr         cidr            NOT NULL,
     vlan_id         bigint         DEFAULT NULL
             REFERENCES vlans(vlan_id) MATCH SIMPLE ON DELETE RESTRICT ON UPDATE RESTRICT,
@@ -374,14 +375,14 @@ ALTER TYPE addresstype OWNER TO lanview2;
 
 
 CREATE TABLE ipaddresses (
-    ip_address_id   bigserial      PRIMARY KEY,
-    ip_address_note varchar(255) DEFAULT NULL,
-    address         inet        DEFAULT NULL,
-    ip_address_type addresstype DEFAULT 'dynamic',
-    preferred       bigint     DEFAULT NULL,
-    subnet_id       bigint     DEFAULT NULL REFERENCES subnets(subnet_id) MATCH SIMPLE
+    ip_address_id   bigserial    PRIMARY KEY,
+    ip_address_note text DEFAULT NULL,
+    address         inet         DEFAULT NULL,
+    ip_address_type addresstype  NOT NULL,
+    preferred       bigint       DEFAULT NULL,
+    subnet_id       bigint       DEFAULT NULL REFERENCES subnets(subnet_id) MATCH SIMPLE
                                     ON DELETE RESTRICT ON UPDATE RESTRICT,
-    port_id         bigint     NOT NULL REFERENCES interfaces(port_id) MATCH FULL
+    port_id         bigint       NOT NULL REFERENCES interfaces(port_id) MATCH FULL
                                     ON DELETE CASCADE ON UPDATE RESTRICT
 );
 ALTER TABLE ipaddresses OWNER TO lanview2;
@@ -446,6 +447,17 @@ CREATE TABLE snmpdevices (
 )
 INHERITS (nodes);
 ALTER TABLE snmpdevices OWNER TO lanview2;
+
+CREATE TABLE dyn_addr_ranges (
+    dyn_addr_range_id   bigserial       PRIMARY KEY,
+    dyn_addr_range_note text           DEFAULT NULL,
+    begin_address       inet            NOT NULL UNIQUE,
+    end_address         inet            NOT NULL UNIQUE,
+    subnet_id           bigint          REFERENCES subnets(subnet_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    dhcp_server         bigint          REFERENCES nodes(node_id) MATCH SIMPLE ON DELETE CASCADE ON UPDATE RESTRICT
+    
+);
+ALTER TABLE dyn_addr_ranges OWNER TO lanview2;
 
 -- -------------------------------
 -- ----- Functions, TRIGGERs -----
@@ -642,6 +654,19 @@ CREATE TRIGGER pports_delete_port_post      AFTER DELETE ON pports      FOR EACH
 CREATE TRIGGER nports_delete_port_post      AFTER DELETE ON nports      FOR EACH ROW EXECUTE PROCEDURE delete_port_post();
 CREATE TRIGGER interfaces_delete_port_post  AFTER DELETE ON interfaces  FOR EACH ROW EXECUTE PROCEDURE delete_port_post();
 
+-- Ellenőrzi, hogy a para,éterként megadott IP cím része-e egy dinamikus IP tartománynak,
+CREATE OR REPLACE FUNCTION is_dyn_addr(inet) RETURNS bigint AS $$
+DECLARE
+    id  bigint;
+BEGIN
+    SELECT dyn_addr_ranges_id INTO id FROM dyn_addr_ranges WHERE begin_address <= $1 AND $1 <= end_address;
+    IF NOT FOUND THEN
+        RETURN NULL;
+    END IF;
+    RETURN id;
+END;
+$$ LANGUAGE plpgsql;
+
 -- Ellenőrzi, hogy a address (ip cím) mező rendben van-e
 -- Nem ütközik más címmel
 CREATE OR REPLACE FUNCTION check_ip_address() RETURNS TRIGGER AS $$
@@ -650,6 +675,13 @@ DECLARE
 BEGIN
  -- RAISE INFO 'check_ip_address() %/% NEW = %',TG_TABLE_NAME, TG_OP , NEW;
     -- Az új rekordban van ip cím
+    IF NEW.ip_address_type IS NULL THEN
+        IF NEW.address IS NULL OR is_dyn_addr(NEW.address) THEN
+            NEW.ip_address_type := 'dynamic';
+        ELSE
+            NEW.ip_address_type := 'fixip';
+        END IF;
+    END IF;
     IF NEW.address IS NOT NULL THEN
         -- Nincs subnet (id), keresünk egyet
         IF NEW.subnet_id IS NULL AND NEW.ip_address_type <> 'external' THEN
@@ -675,16 +707,16 @@ BEGIN
             -- external típusnál mindíg NULL a subnet_id
             NEW.subnet_id := NULL;
         END IF;
-        -- Ha van már ilyen fix vagy pseudo ip cím, az hiba, de privat címneknél nincs ütközés
+        -- Ha van már ilyen fix vagy pseudo ip cím, az baj, de privat címneknél nincs ütközés
         IF NEW.address IS NOT NULL AND NEW.ip_address_type <> 'private' THEN
-            IF 0 < COUNT(*) FROM ipaddresses WHERE
+            -- Töröljük az azonos dinamikus címmeketm ha van
+            IF NEW.ip_address_type = 'dynamic' THEN
+                UPDATE ipaddresses SET address = NULL WHERE address = NEW.address AND ip_address_type = 'dynamic' AND ip_address_id <> NEW.ip_address_id;
+            -- minden egyébb ütközés hiba
+            ELSIF 0 < COUNT(*) FROM ipaddresses WHERE
                          ( ip_address_type = 'fixip' OR ip_address_type = 'pseudo') AND
                          address = NEW.address AND ip_address_id <> NEW.ip_address_id THEN
                 PERFORM error('IdNotUni', n, CAST(NEW.address AS TEXT), 'check_ip_address()', TG_TABLE_NAME, TG_OP);
-            END IF;
-            -- Töröljük az azonos dinamikus címmeket
-            IF NEW.ip_address_type = 'dynamic' THEN
-                UPDATE ipaddresses SET address = NULL WHERE address = NEW.address AND ip_address_type = 'dynamic' AND ip_address_id <> NEW.ip_address_id;
             END IF;
         END IF;
         -- Ha a preferred nincs megadva, akkor az elsőnek megadott cím a preferált

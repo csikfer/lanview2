@@ -915,6 +915,74 @@ protected:
 
 /* ****************************** NODES (patchs, nodes, snmphosts ****************************** */
 
+class cNodeParams;
+class cNode;
+
+/// Node paraméter érték
+class LV2SHARED_EXPORT cNodeParam : public cRecord {
+    friend class cNodeParams;
+    friend class cNode;
+    CRECORD(cNodeParam);
+public:
+    /// Törli a paramType adattagot.
+    virtual void    clearToEnd();
+    /// A toEnd(int i) metódust hívja a Node paraméter (típus) rekord id mező indexével.
+    virtual void 	toEnd ();
+    /// Ha megváltozik a Node param (típus) id, akkor betölti, vagy törli a megfelelp értéket a paramType adattagba.
+    /// Nincs ilyen id-vel Node_params rekord (és nem NULL az id), akkor a statusban bebillenti az ES_DEFECZIVE bitet.
+    virtual bool 	toEnd (int i);
+    /// A Node paraméter nevével tér vissza
+    QString name()   const { return paramType.getName(); }
+    /// A Node paraméter típus enumerációs értékkel tér vissza
+    qlonglong type()   const { return paramType.getId(_sParamTypeType); }
+    /// A Node paraméter dimenzió ill. mértékegység nevével tér vissza
+    QString dim()    const { return paramType.getName(__sParamTypeDim); }
+    /// A Node paraméter értékére mutató referencia objektummal tér vissza.
+    cRecordFieldConstRef value() const { return (*this)[_sParamValue]; }
+    /// A Node paraméter értékére mutató referencia objektummal tér vissza.
+    cRecordFieldRef      value()       { return (*this)[_sParamValue]; }
+    /// A paraméter típusának a beállítása
+    /// @param __id A paraméter típus rekord ID-je
+    cNodeParam& setType(qlonglong __id)        { set(_ixParamTypeId, __id); return *this; }
+    /// @param __n A paraméter típus rekord név mezőjenek az értéke
+    cNodeParam& setType(const QString& __n)    { paramType.fetchByName(__n); _set(_ixParamTypeId, paramType.getId()); return *this; }
+    /// Értékadás az érték mezőnek.
+    cNodeParam& operator=(const QString& __v)  { setName(_sParamValue, __v); return *this; }
+protected:
+    /// A Node paraméter értékhez tartozó típus rekord/objektum
+    cParamType  paramType;
+    static int _ixParamTypeId;
+    static int _ixNodeId;
+};
+
+/// Node paraméter értékek listája
+class LV2SHARED_EXPORT cNodeParams : public tRecordList<cNodeParam> {
+public:
+    /// Konstruktor. Üres listát készít.
+    cNodeParams();
+    /// Konstruktor. A listának egy eleme lessz, a megadott objektum klónja.
+    cNodeParams(const cNodeParam& __v);
+    /// Konstruktor. A listét feltölti az adatbázisból, hogy a megadott Nodehoz (ID) tartozó összes paramétert tartalmazza.
+    cNodeParams(QSqlQuery& __q, qlonglong __Node_id);
+    /// Copy konstrultor. A konténer összes elemét klónozza.
+    cNodeParams(const cNodeParams& __o);
+    /// Másoló operátor. A konténer összes elemét klónozza.
+    cNodeParams& operator=(const cNodeParams& __o);
+    /// A listét feltölti az adatbázisból, hogy a megadott Nodehoz (ID) tartozó összes paramétert tartalmazza.
+    int fetch(QSqlQuery& __q, qlonglong __Node_id) {
+        if (cNodeParam::_ixNodeId < 0) cNodeParam();    // Ha még nem volt init.
+        PDEB(VVERBOSE) << "Call: tRecordList<cNodeParam>::fetch(__q, false, " << cNodeParam::_ixNodeId << _sCommaSp << __Node_id << QChar(')') << endl;
+        return tRecordList<cNodeParam>::fetch(__q, false, cNodeParam::_ixNodeId, __Node_id);
+    }
+    /// Index operátor: egy elem a paraméter név alapján
+    const cNodeParam& operator[](const QString& __n) const;
+    /// Index operátor: egy elem a paraméter név alapján
+    cNodeParam&       operator[](const QString& __n);
+    /// Az összes elem kiírása az adatbázisba.
+    /// @return A kiírt rekordok száma
+    int       insert(QSqlQuery &__q, qlonglong __Node_id, bool __ex = true);
+};
+/* ------------------------------------------------------------------------ */
 
 /// @class cShareBack
 /// @brief Egy hátlapi megosztást reprezentáló objektum.
@@ -1083,6 +1151,8 @@ public:
     /// Az objektum portjai, nincs automatikus feltöltés
     /// Ha módosítjuk az ID-t akkor törlődhet lásd az atEndCont() metódust
     tRecordList<cNPort> ports;
+    /// Node paraméterek, nincs automatikusan feltöltve
+    cNodeParams   params;
 private:
     /// Megosztások konténer. (csak a cPatch osztályban)
     /// Nincs automatikusan feltöltve, de a clearToEnd(); törli, ill. az atEnd() törölheti.
@@ -1104,6 +1174,9 @@ template<class P> static inline P * getObjByIdT(QSqlQuery& q, qlonglong  __id, b
     }
     return p;
 }
+
+/* ------------------------------------------------------------------------------------------------- */
+
 
 /*!
 @class cNode

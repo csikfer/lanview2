@@ -21,6 +21,7 @@ void  cGrPixmapItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 {
     cImagePolygonWidget *p = pImagePolygonWidget(this);
     if (p->pPolygonItem == NULL) {  // Ha még nincs polygonunk
+        // Csinálunk egyet: háromszög a klikk helyén
         QPointF pos = event->scenePos();
         QPolygonF pol;
         qreal  s = cGrNodeItem::nodeSize *2;
@@ -28,7 +29,7 @@ void  cGrPixmapItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
         pol << pos + QPointF( s,-s);
         pol << pos + QPointF(-s,-s);
         p->setPolygon(pol);
-        emit p->polygonSet(pol);
+        emit p->modifiedPolygon(pol);
     }
 }
 
@@ -43,7 +44,7 @@ cGrPolygonItem::cGrPolygonItem(const QPolygonF& _pol, QGraphicsItem * _par)
     //setFlag(QGraphicsItem::ItemIsSelectable);
     setFlag(QGraphicsItem::ItemSendsScenePositionChanges);
     setOpacity(polygonOpacity);
-    editing = false;
+    editing = dise = false;
 }
 
 // ****
@@ -52,32 +53,32 @@ void cGrPolygonItem::editBegin()
 {
     QList<QGraphicsItem *> childList = childItems();
     if (childList.size()) EXCEPTION(EPROGFAIL);
+    editing = dise = true;
     QPointF   pt  = pos();
     QPolygonF pol = polygon();
-    if (!isNegligible(pt)) {
-        pol.translate(pt);
-        setPolygon(pol);
-    }
+    pol.translate(pt);
+    setPolygon(pol);
     setPos(QPointF(0,0));
     setFlag(QGraphicsItem::ItemIsMovable, false);
     int index = 0;
     int maxix = pol.size() -1;
     cGrNodeItem::eNodeType nt = cGrNodeItem::NT_FIRST;
+    cGrNodeItem *pItem;
     foreach (pt, pol) {
-        cGrNodeItem *pItem = new cGrNodeItem(pt, this, nt, index);
+        pItem = new cGrNodeItem(pt, this, nt, index);
         if (index == 0) pFirstItem = pItem;
         index++;
-        if (index == maxix) {
+        if (index == maxix) {       // Következő index az utolsó pontja a polygon-nak
             nt = cGrNodeItem::NT_LAST;
-            pLastItem = pItem;
         }
         else {
             nt = cGrNodeItem::NT_OTHER;
         }
     }
+    pLastItem = pItem;
     pt = (pol.first() + pol.last()) /2;
     pNewItem = new cGrNodeItem(pt, this, cGrNodeItem::NT_NEW, -1);
-    editing = true;
+    dise = false;
 }
 
 void cGrPolygonItem::editEnd()
@@ -95,18 +96,28 @@ void cGrPolygonItem::editEnd()
     editing = false;
 }
 
+void cGrPolygonItem::modPolygon(QPolygonF _pol)
+{
+    editEnd();
+    dise = true;
+    setPolygon(_pol);
+    setPos(QPointF(0,0));
+    dise = false;
+}
+
 QVariant cGrPolygonItem::itemChange(GraphicsItemChange change, const QVariant & value)
 {
     if (change == ItemPositionChange) {
         // value is the new position.
         QPointF newPos = value.toPointF();
         if (editing) {
-            if (!isNegligible(newPos)) {
+            if (!dise) {    // Hacsak nem mi nulláztuk a pozíciót.
                 EXCEPTION(ENOTSUPP);   // Edit módban nincs mozgatás.
             }
-            // Hacsak nem mi nulláztuk a pozíciót.
         }
-        emit pImagePolygonWidget(this)->polygonMove(newPos);
+        else {
+            emit pImagePolygonWidget(this)->modifiedPolygon(polygon().translated(newPos));
+        }
     }
     return QGraphicsItem::itemChange(change, value);
 }
@@ -200,7 +211,7 @@ QVariant cGrNodeItem::itemChange(GraphicsItemChange change, const QVariant & val
             EXCEPTION(EPROGFAIL);
         }
         par->setPolygon(polygon);
-        emit pImagePolygonWidget(this)->polygonMod(newPos, pointIx);
+        emit pImagePolygonWidget(this)->modifiedPolygon(polygon);
     }
     return QGraphicsItem::itemChange(change, value);
 }
@@ -267,9 +278,7 @@ cImagePolygonWidget& cImagePolygonWidget::setPolygon(const QPolygonF& pol)
         scene()->addItem(pPolygonItem);
     }
     else {
-        pPolygonItem->editEnd();
-        pPolygonItem->setPos(0,0);
-        pPolygonItem->setPolygon(pol);
+        pPolygonItem->modPolygon(pol);
     }
     return *this;
 }

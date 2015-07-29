@@ -405,8 +405,6 @@ private slots:
 
     void destroyedImage(QObject *p);
     void changeId(cFieldEditBase * p);
-    void moved(QPointF pos);
-    void modifyed(QPointF pos, int index);
     void setted(QPolygonF pol);
 };
 

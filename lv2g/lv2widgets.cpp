@@ -234,7 +234,7 @@ void cFieldEditBase::setFromWidget(QVariant v)
         _DBGFN() << QChar('/') << _recDescr<< QChar(' ') <<  debVariantToString(v) << " dropped" << endl;
         return;
     }
-    _DBGFN() << QChar('/') << _recDescr<< QChar(' ') <<  debVariantToString(v) << endl;
+    _DBGFN() << " { " << _recDescr << " } " <<  debVariantToString(v) << " != " <<  debVariantToString(_value) << endl;
     _value = v;
     changedValue(this);
 }
@@ -1180,9 +1180,7 @@ void cPolygonWidget::imageOpen()
     pUi->doubleSpinBoxZoom->setEnabled(true);
     if (!isReadOnly()) {
         // connect(pMapWin, SIGNAL(mousePressed(QPoint)), this, SLOT(imagePoint(QPoint)));
-        connect(pMapWin, SIGNAL(polygonMove(QPointF)),    this, SLOT(moved(QPointF)));
-        connect(pMapWin, SIGNAL(polygonMod(QPointF,int)), this, SLOT(modifyed(QPointF,int)));
-        connect(pMapWin, SIGNAL(polygonSet(QPolygonF)),   this, SLOT(setted(QPolygonF)));
+        connect(pMapWin, SIGNAL(modifiedPolygon(QPolygonF)),   this, SLOT(setted(QPolygonF)));
     }
     pMapWin->setScale(stZoom);
 }
@@ -1208,27 +1206,6 @@ void cPolygonWidget::changeId(cFieldEditBase *p)
     (void)p;
     parentOrPlace_id = p->getId();
     getImage();
-}
-
-void cPolygonWidget::moved(QPointF pos)
-{
-    qreal dX = pos.x() - lastPos.x();
-    qreal dY = pos.y() - lastPos.y();
-    lastPos = pos;
-    for (tPolygonF::iterator i = polygon.begin(); i < polygon.end(); ++i) {
-        i->setX(i->x() + dX);
-        i->setY(i->y() + dY);
-    }
-    pModel->setPolygon(polygon);
-    setFromWidget(QVariant::fromValue(polygon));
-}
-
-void cPolygonWidget::modifyed(QPointF point, int index)
-{
-    if (index >= polygon.size()) polygon << point;
-    else                         polygon[index] = point;
-    pModel->setPolygon(polygon);
-    setFromWidget(QVariant::fromValue(polygon));
 }
 
 void cPolygonWidget::setted(QPolygonF pol)

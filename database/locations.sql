@@ -5,7 +5,7 @@ CREATE TYPE imagetype AS ENUM ('BMP', 'GIF', 'JPG', 'JPEG', 'PNG', 'PBM', 'PGM',
 CREATE TABLE images (
     image_id        bigserial          PRIMARY KEY,
     image_name      varchar(32)     NOT NULL UNIQUE,
-    image_note      varchar(255)    DEFAULT NULL,
+    image_note      text    DEFAULT NULL,
     image_type      imagetype       NOT NULL DEFAULT 'PNG',
     image_sub_type  varchar(32)     DEFAULT NULL,
     image_data      bytea           NOT NULL,
@@ -44,7 +44,7 @@ ALTER TYPE placetype OWNER TO lanview2;
 CREATE TABLE places (
     place_id    bigserial           PRIMARY KEY,
     place_name  varchar(32)         NOT NULL UNIQUE,
-    place_note  varchar(255)        DEFAULT NULL,
+    place_note  text        DEFAULT NULL,
     place_type  placetype           DEFAULT 'real',
     parent_id   bigint              DEFAULT NULL REFERENCES places(place_id) MATCH SIMPLE
                                         ON DELETE RESTRICT ON UPDATE RESTRICT,
@@ -68,7 +68,7 @@ COMMENT ON COLUMN places.parent_id  IS 'A térkép ill. alaprajz szülő, ha nin
 CREATE TABLE place_groups (
     place_group_id      bigserial       PRIMARY KEY,
     place_group_name    varchar(32)     NOT NULL UNIQUE,
-    place_group_note    varchar(255)    DEFAULT NULL
+    place_group_note    text    DEFAULT NULL
 );
 ALTER TABLE place_groups OWNER TO lanview2;
 COMMENT ON TABLE  place_groups                      IS 'Helyiségek, helyek csoportjai';

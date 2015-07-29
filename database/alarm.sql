@@ -16,7 +16,7 @@ CREATE TABLE alarms (
     max_status      notifswitch NOT NULL,
     last_status     notifswitch NOT NULL,
     begin_time      timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    event_note      varchar(255),
+    event_note      text,
     superior_alarm_id  bigint   DEFAULT NULL
             REFERENCES alarms(alarm_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
     noalarm         boolean     NOT NULL,
@@ -29,7 +29,7 @@ CREATE TABLE alarms (
     ack_time        timestamp   DEFAULT NULL,
     ack_user_id     bigint      DEFAULT NULL
         REFERENCES users(user_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
-    ack_msg         varchar(255)
+    ack_msg         text
 );
 CREATE INDEX alarms_begin_time_index ON alarms (begin_time);
 CREATE INDEX alarms_end_time_index   ON alarms (end_time);
@@ -182,7 +182,7 @@ COMMENT ON FUNCTION touch_host_service(bigint) IS
 CREATE OR REPLACE FUNCTION set_service_stat(
     hsid        bigint,                -- A host_services rekord id-je
     state       notifswitch,            -- Az új státusz
-    note        varchar(255) DEFAULT '',-- Az eseményhez tartozó üzenet (opcionális)
+    note        text DEFAULT '',-- Az eseményhez tartozó üzenet (opcionális)
     dmid        bigint DEFAULT NULL)   -- Daemon host_service_id
 RETURNS host_services AS $$
 DECLARE
@@ -332,7 +332,7 @@ BEGIN
     RETURN hs;
 END
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION set_service_stat(hsid bigint, state notifswitch, note varchar(255), dmid bigint) IS
+COMMENT ON FUNCTION set_service_stat(hsid bigint, state notifswitch, note text, dmid bigint) IS
 'Adminisztrálja a megadott szolgáltatás megállpított új állapotát.';
 
 CREATE TABLE alarm_messages (

@@ -1355,7 +1355,10 @@ void cPatch::toEnd()
 bool cPatch::toEnd(int i)
 {
     if (i == idIndex()) {
-        if (atEndCont(ports, _sNodeId) && pShares != NULL) clearShares();
+        if (atEndCont(ports, _sNodeId)) {
+            params.clear();
+            if (pShares != NULL) clearShares();
+        }
         return true;
     }
     return false;
@@ -1559,6 +1562,112 @@ cPatch * cPatch::getNodeObjById(QSqlQuery& q, qlonglong __node_id, bool __ex)
     qlonglong tableoid = cPatch().setId(__node_id).fetchTableOId(q, __ex);
     if (tableoid < 0LL) return NULL;
     return getNodeObjById(q, tableoid, __node_id, __ex);
+}
+
+/* --------------------------------------------------------------------------- */
+
+CRECCNTR(cNodeParam)
+CRECDEFD(cNodeParam)
+
+int cNodeParam::_ixParamTypeId = NULL_IX;
+int cNodeParam::_ixNodeId = NULL_IX;
+const cRecStaticDescr&  cNodeParam::descr() const
+{
+    if (initPDescr<cNodeParam>(_sNodeParams)) {
+        _ixParamTypeId = _pRecordDescr->toIndex(_sParamTypeId);
+        _ixNodeId      = _pRecordDescr->toIndex(_sNodeId);
+    }
+    return *_pRecordDescr;
+}
+
+void    cNodeParam::toEnd()
+{
+    cNodeParam::toEnd(_ixParamTypeId);
+}
+
+bool cNodeParam::toEnd(int i)
+{
+    if (i == _ixParamTypeId) {
+        qlonglong id = _isNull(i) ? NULL_ID : variantToId(_get(i));
+        if (id == NULL_ID) {
+            paramType.clear();
+        }
+        else {
+            QSqlQuery q = getQuery();
+            if (!paramType.fetchById(q, id)) _stat |= ES_DEFECTIVE;
+        }
+        return true;
+    }
+    return false;
+}
+
+void    cNodeParam::clearToEnd()
+{
+    paramType.clear();
+}
+
+/* ........................................................................ */
+
+cNodeParams::cNodeParams() : tRecordList<cNodeParam>()
+{
+    ;
+}
+
+cNodeParams::cNodeParams(const cNodeParam& __v) : tRecordList<cNodeParam>(__v)
+{
+    ;
+}
+
+cNodeParams::cNodeParams(QSqlQuery& __q, qlonglong __Node_id) : tRecordList<cNodeParam>()
+{
+    fetch(__q, __Node_id);
+}
+
+cNodeParams::cNodeParams(const cNodeParams& __o) : tRecordList<cNodeParam>()
+{
+    *this = __o;
+}
+
+cNodeParams& cNodeParams::operator=(const cNodeParams& __o)
+{   // Az ős template osztály ugyanezt definiálja (más a visszaadott érték típusa)
+    clear();
+    const_iterator i;
+    for (i = __o.constBegin(); i < __o.constEnd(); i++) {
+        *this << new cNodeParam(**i);
+    }
+    return *this;
+}
+
+const cNodeParam& cNodeParams::operator[](const QString& __n) const
+{
+    cParamType pp;
+    if (!pp.fetchByName(__n)) EXCEPTION(EFOUND, 1, __n);
+    int i = indexOf(_sParamTypeName, QVariant(__n));
+    if (i < 0) EXCEPTION(EFOUND, 2, __n);
+    return *at(i);
+}
+
+cNodeParam&       cNodeParams::operator[](const QString& __n)
+{
+    cParamType pp;
+    if (!pp.fetchByName(__n)) EXCEPTION(EFOUND, 1, __n);
+    int i = indexOf(_sParamTypeName, QVariant(__n));
+    if (i < 0) {
+        cNodeParam * pr = new cNodeParam();
+        pr->setType(pp.getId());
+        append(pr);
+        return *pr;
+    }
+    return *at(i);
+}
+
+int       cNodeParams::insert(QSqlQuery &__q, qlonglong __Node_id, bool __ex)
+{
+    iterator i;
+    for (i = begin(); i < end(); i++) {
+        (*i)->set(cNodeParam::_ixNodeId, QVariant(__Node_id));
+    }
+    return tRecordList<cNodeParam>::insert(__q, __ex);
 }
 
 /* ------------------------------ NODES : cNode ------------------------------ */

@@ -104,8 +104,22 @@ COMMENT ON TABLE arp_logs IS 'Az arps tábla változásainag a napló táblája.
 
 CREATE OR REPLACE FUNCTION insert_or_update_arp(inet, macaddr) RETURNS reasons AS $$
 DECLARE
-    arp arps;
+    arp     arps;
+    aid     bigint;
 BEGIN
+    BEGIN
+        SELECT ip_address_id INTO STRICT aid FROM ipaddresses JOIN interfaces USING(port_id) WHERE
+                                ip_address_type = 'dynamic' AND hwaddress = $2 AND (address <> $1 OR address IS NULL);
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+                aid := NULL;
+            WHEN TOO_MANY_ROWS THEN
+                PERFORM error('DataWarn', -1, 'address', 'insert_or_update_arp(' || $1::text || ', ' || $2::text || ')', 'ipaddresses JOIN interfaces');
+                aid := NULL;
+    END;
+    IF aid IS NOT NULL THEN
+        UPDATE ipaddress SET address = $1 WHERE ip_address_id = aid;
+    END IF;
     SELECT * INTO arp FROM arps WHERE ipaddress = $1;
     IF NOT FOUND THEN
         INSERT INTO arps(ipaddress, hwaddress) VALUES ($1, $2);
@@ -128,6 +142,7 @@ END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION insert_or_update_arp(inet, macaddr) IS
 'A detektált MAC - IP cím pár alapján modosítja az arps táblát, és kezeli a napló táblát is
+Ha talál olyan dynamikus IP címet, meylhez tartozó MAC azonos, de a cím változott, akkor azt is modosítja.
 Paraméterek:
     $1      IP cím
     $2      MAC

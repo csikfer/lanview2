@@ -75,7 +75,7 @@ Ok      Nem hiba, ''Info''
 CREATE TABLE errors (
     error_id    bigserial       PRIMARY KEY,
     error_name  varchar(32)     NOT NULL UNIQUE,
-    error_note varchar(255),
+    error_note text,
     error_type  errtype         NOT NULL
 );
 ALTER TABLE errors OWNER TO lanview2;
@@ -130,7 +130,7 @@ CREATE TABLE db_errs (
     table_name   varchar(64)    DEFAULT NULL,
     trigger_op  varchar(8)      DEFAULT NULL,
     err_subcode bigint          DEFAULT NULL,
-    err_msg  varchar(255)       DEFAULT NULL,
+    err_msg  text       DEFAULT NULL,
     func_name    varchar(255)   DEFAULT NULL,
     reapeat     bigint          DEFAULT 0,
     date_of_last timestamp 	NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -248,8 +248,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION error_name2id(varchar(32)) IS 'Hiba tipus azonosító a név alapján';
--- Get Error description by name
-CREATE OR REPLACE FUNCTION error_name2descr(varchar(32)) RETURNS varchar(255) AS $$
+-- Get Error noteiption by name
+CREATE OR REPLACE FUNCTION error_name2note(varchar(32)) RETURNS text AS $$
 DECLARE
     err errors%ROWTYPE;
 BEGIN
@@ -257,7 +257,7 @@ BEGIN
     return err.error_note;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION error_name2descr(varchar(32)) IS 'Hiba tipus leírás a név alapján';
+COMMENT ON FUNCTION error_name2note(varchar(32)) IS 'Hiba tipus leírás a név alapján';
 
 CREATE OR REPLACE FUNCTION error (
     text,                   -- $1 Error name (errors.err_name)

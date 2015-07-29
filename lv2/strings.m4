@@ -349,9 +349,10 @@ STRDEF(SubNets, "subnets")
   dnl pseudo
   dnl private
 STRDEF(PortParams, "port_params")
- STRDEF(PortParamIdm, "port_param_id")
+ STRDEF(PortParamId, "port_param_id")
  dnl param_type_id, port_id
  STRDEF(ParamValue, "param_value")
+STRDEF(NodeParams, "node_params")
 STRDEF(IpProtocols, "ipprotocols")
  STRDEF(ProtocolId, "protocol_id")
  STRDEF(ProtocolName, "protocol_name")

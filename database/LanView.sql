@@ -100,7 +100,7 @@ CREATE TYPE paramtype AS ENUM ( 'boolean', 'bigint', 'double precision', 'text',
 CREATE TABLE param_types (
     param_type_id       bigserial       NOT NULL PRIMARY KEY,
     param_type_name     varchar(32)     NOT NULL UNIQUE,
-    param_type_note     varchar(255)    DEFAULT NULL,
+    param_type_note     text    DEFAULT NULL,
     param_type_type     paramtype       NOT NULL,
     param_type_dim      varchar(32)     DEFAULT NULL
 );
@@ -146,7 +146,7 @@ COMMENT ON TYPE reasons IS
 CREATE TABLE sys_params (
     sys_param_id        bigserial       PRIMARY KEY,
     sys_param_name      varchar(32)     NOT NULL UNIQUE,
-    sys_param_note      varchar(255)    DEFAULT NULL,
+    sys_param_note      text    DEFAULT NULL,
     param_type_id       bigint          NOT NULL
             REFERENCES param_types(param_type_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
     param_value         text            DEFAULT NULL

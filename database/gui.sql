@@ -33,16 +33,16 @@ listed_all  Csak a felsorolt leszármazottak és ősök megjelenítése';
 CREATE TABLE table_shapes (
     table_shape_id      bigserial       PRIMARY KEY,
     table_shape_name    varchar(32)     NOT NULL UNIQUE,
-    table_shape_note    varchar(255)    DEFAULT NULL,
-    table_shape_title   varchar(255)    DEFAULT NULL,
+    table_shape_note    text    DEFAULT NULL,
+    table_shape_title   text    DEFAULT NULL,
     table_shape_type   tableshapetype[] DEFAULT '{simple}',
     table_name          varchar(32)     NOT NULL,
     schema_name         varchar(32)     NOT NULL DEFAULT 'public',
     table_inherit_type tableinherittype DEFAULT 'no',
     inherit_table_names varchar(32)[]   DEFAULT NULL,
     is_read_only        boolean         DEFAULT 'f',
-    refine              varchar(255)    DEFAULT NULL,
-    properties          varchar(255)    DEFAULT NULL,
+    refine              text    DEFAULT NULL,
+    properties          text    DEFAULT NULL,
     left_shape_id       bigint          DEFAULT NULL REFERENCES table_shapes(table_shape_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
     right_shape_id      bigint          DEFAULT NULL REFERENCES table_shapes(table_shape_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
     view_rights         rights          DEFAULT 'operator',
@@ -79,7 +79,7 @@ desc    Csökkenő sorrend.';
 CREATE TABLE table_shape_fields (
     table_shape_field_id    bigserial       PRIMARY KEY,
     table_shape_field_name  varchar(32)     NOT NULL,
-    table_shape_field_note varchar(255)     DEFAULT NULL,
+    table_shape_field_note text     DEFAULT NULL,
     table_shape_field_title varchar(32)     DEFAULT NULL,
     table_shape_id          bigint          NOT NULL REFERENCES table_shapes(table_shape_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     field_sequence_number   integer         NOT NULL,
@@ -88,9 +88,9 @@ CREATE TABLE table_shape_fields (
     ord_init_sequence_number integer        DEFAULT NULL,
     is_read_only            boolean         DEFAULT 'f',
     is_hide                 boolean         DEFAULT 'f',
-    expression              varchar(255)    DEFAULT NULL,
-    default_value           varchar(255)    DEFAULT NULL,
-    properties              varchar(255)    DEFAULT NULL,
+    expression              text    DEFAULT NULL,
+    default_value           text    DEFAULT NULL,
+    properties              text    DEFAULT NULL,
     tool_tip                text            DEFAULT NULL,
     whats_this              text            DEFAULT NULL,
     view_rights             rights          DEFAULT NULL,
@@ -134,7 +134,7 @@ SQL	egy WHERE feltétel megadása';
 
 CREATE TABLE table_shape_filters (
     table_shape_filter_id       bigserial      PRIMARY KEY,
-    table_shape_filter_note     varchar(255)   DEFAULT NULL,
+    table_shape_filter_note     text   DEFAULT NULL,
     table_shape_field_id        bigint         REFERENCES table_shape_fields(table_shape_field_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     filter_type                 filtertype     NOT NULL
 );
@@ -148,7 +148,7 @@ COMMENT ON COLUMN table_shape_filters.filter_type   IS 'Alkalmazható filter tí
 CREATE TABLE enum_vals (
     enum_val_id         bigserial       PRIMARY KEY,
     enum_val_name       varchar(32)     NOT NULL,
-    enum_val_note       varchar(255),
+    enum_val_note       text,
     enum_type_name      varchar(32)     NOT NULL,
     UNIQUE (enum_type_name, enum_val_name)
 );
@@ -184,31 +184,31 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION enum_name2descr(varchar(32), varchar(32) DEFAULT NULL) RETURNS varchar(255) AS $$
+CREATE OR REPLACE FUNCTION enum_name2note(varchar(32), varchar(32) DEFAULT NULL) RETURNS text AS $$
 DECLARE
-    descr varchar(255);
+    note text;
 BEGIN
     IF $2 IS NULL THEN
         BEGIN
-            SELECT enum_val_note INTO descr FROM enum_vals WHERE enum_val_name = $1;
+            SELECT enum_val_note INTO note FROM enum_vals WHERE enum_val_name = $1;
             EXCEPTION
                 WHEN NO_DATA_FOUND THEN     -- nem találtunk
-                    descr = $1;
+                    note = $1;
                 WHEN TOO_MANY_ROWS THEN     -- több találat is van, nem egyértelmű
-                    PERFORM error('Ambiguous', -1, $1, 'enum_name2descr()', 'enum_vals');
+                    PERFORM error('Ambiguous', -1, $1, 'enum_name2note()', 'enum_vals');
         END;
     ELSE 
-        SELECT enum_val_note INTO descr FROM enum_vals WHERE enum_val_name = $1 AND enum_type_name = $2;
+        SELECT enum_val_note INTO note FROM enum_vals WHERE enum_val_name = $1 AND enum_type_name = $2;
         IF NOT FOUND THEN
-            descr = $1;
+            note = $1;
         END IF;
     END IF;
-    RETURN descr;
+    RETURN note;
 END
 $$ LANGUAGE plpgsql;
 
-COMMENT ON FUNCTION enum_name2descr(varchar(32), varchar(32)) IS
-'Egy enumerációs értékhez tartozó descr stringet kéri le
+COMMENT ON FUNCTION enum_name2note(varchar(32), varchar(32)) IS
+'Egy enumerációs értékhez tartozó note stringet kéri le
 Paraméterek:
     $1 Az enumerációs érték.
     $2 Az enumerációs típus neve opcionális.
@@ -224,7 +224,7 @@ CREATE TABLE menu_items (
     menu_item_title         varchar(32)     DEFAULT NULL,
     app_name                varchar(32)     NOT NULL,
     upper_menu_item_id      bigint          DEFAULT NULL REFERENCES menu_items(menu_item_id) MATCH SIMPLE ON DELETE CASCADE ON UPDATE RESTRICT,
-    properties              varchar(255)    DEFAULT NULL,
+    properties              text    DEFAULT NULL,
     tool_tip                text            DEFAULT NULL,
     whats_this              text            DEFAULT NULL,
     menu_rights		    rights          NOT NULL DEFAULT 'none',

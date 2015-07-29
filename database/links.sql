@@ -6,7 +6,7 @@ CREATE TABLE log_links_table (
     --  REFERENCES interfaces(port_id) ON DELETE CASCADE ON UPDATE RESTRICT,
     port_id2        bigint         NOT NULL UNIQUE,
     --  REFERENCES interfaces(port_id) ON DELETE CASCADE ON UPDATE RESTRICT,
-    log_link_note  varchar(255)     DEFAULT NULL,                   -- Description
+    log_link_note  text     DEFAULT NULL,                   -- noteiption
     link_type       linktype        NOT NULL,
 --    first_time    timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP, -- First time discovered the logical link
 --    last_time     timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Last time discovered the logical link
@@ -20,7 +20,7 @@ COMMENT ON TABLE  log_links_table                   IS 'Logical Links Table';
 COMMENT ON COLUMN log_links_table.log_link_id       IS 'Unique ID for logical links';
 COMMENT ON COLUMN log_links_table.port_id1          IS 'Interface''s ID which connects to logical links';
 COMMENT ON COLUMN log_links_table.port_id2          IS 'Interface''s ID which connects to logical links';
-COMMENT ON COLUMN log_links_table.log_link_note    IS 'Description';
+COMMENT ON COLUMN log_links_table.log_link_note    IS 'noteiption';
 -- COMMENT ON COLUMN log_links_table.first_time        IS 'First time discovered the logical link';
 -- COMMENT ON COLUMN log_links_table.last_time         IS 'Last time discovered the logical link';
 
@@ -62,7 +62,7 @@ CREATE TABLE phs_links_table (
     port_id2        bigint, -- REFERENCES nports(port_id) ON DELETE CASCADE ON UPDATE RESTRICT,
     phs_link_type1  phslinktype     NOT NULL,
     phs_link_type2  phslinktype     NOT NULL,
-    phs_link_note  varchar(255)    DEFAULT NULL,
+    phs_link_note  text    DEFAULT NULL,
     port_shared     portshare       NOT NULL DEFAULT '',
     link_type       linktype        NOT NULL,
     create_time     timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -79,7 +79,7 @@ COMMENT ON COLUMN phs_links_table.phs_link_type1    IS $$Link típusa(1), végpo
 COMMENT ON COLUMN phs_links_table.port_id2          IS 'Port''s ID(2) which connects to physical link';
 COMMENT ON COLUMN phs_links_table.phs_link_type2    IS $$Link típusa(2), végpont 'Term', patch panel előlap 'Front', vagy hátlap 'Back'$$;
 COMMENT ON COLUMN phs_links_table.port_shared       IS $$Mindíg a 'Front' patch portra vonatkozik, ha mindkettő 'Front' patch port, akkor csak '' lehet, vagyis a megosztás tiltott$$;
-COMMENT ON COLUMN phs_links_table.phs_link_note    IS 'Description';
+COMMENT ON COLUMN phs_links_table.phs_link_note    IS 'noteiption';
 COMMENT ON COLUMN phs_links_table.create_time       IS 'Time setting up the physical link';
 COMMENT ON COLUMN phs_links_table.create_user_id    IS 'User ID for who set this physical link';
 COMMENT ON COLUMN phs_links_table.modify_time       IS 'Time modified the physical link';

@@ -27,11 +27,13 @@ public:
     void editBegin();
     void editEnd();
     bool isEditing() { return editing; }
+    void modPolygon(QPolygonF _pol);
     static qreal polygonOpacity;
 protected:
     virtual QVariant	itemChange(GraphicsItemChange change, const QVariant & value);
     virtual void        mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event);
     bool                editing;
+    bool                dise;
     cGrNodeItem *       pFirstItem;
     cGrNodeItem *       pLastItem;
     cGrNodeItem *       pNewItem;
@@ -84,9 +86,7 @@ protected:
 public slots:
     void setScale(qreal s);
 signals:
-    void polygonMove(QPointF pos);
-    void polygonMod(QPointF point, int index);
-    void polygonSet(QPolygonF polygon);
+    void modifiedPolygon(QPolygonF polygon);
 };
 
 #endif // IMAGEDRV_H

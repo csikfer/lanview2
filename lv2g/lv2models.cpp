@@ -155,8 +155,8 @@ QVariant cPolygonTableModel::data(const QModelIndex &index, int role) const
         return int(Qt::AlignRight | Qt::AlignVCenter);
     case Qt::DisplayRole:
         switch (col) {
-        case 0: return _polygon.at(row).x();
-        case 1: return _polygon.at(row).y();
+        case 0: return QString::number(_polygon.at(row).x(), 'f', 0);
+        case 1: return QString::number(_polygon.at(row).y(), 'f', 0);
         }
         break;
     }

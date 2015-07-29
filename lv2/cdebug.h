@@ -127,14 +127,7 @@ EXT_ QString quotedString(const QString& __s, const QChar &__q = QChar('"'));
 #define VDEBPTR(n)  " " #n " = " << p2string(n)
 /// @def VDEBTOSTR(n)
 /// Kiíratásnál használható makró, egy objektum nevének és értékének a kiíratásához, az objektum toString() metődusát hivja
-#define VDEBTOSTR(n) " " #n " = " << n.toString()
-inline static QString debVariantToString(const QVariant v)
-{
-    if (v.isNull()) return "[NULL]";
-    if (!v.isValid()) return "[Invalid]";
-    const char * tn = v.typeName();
-    return quotedString(v.toString()) + "::" + (tn == NULL ? _sNULL : QString(tn));
-}
+#define VDEBTOSTR(n) " " #n " = " << debVariantToString(n)
 
 template <class T> QString debPToString(T *p) {
     if (p == NULL) return "[NULL]";

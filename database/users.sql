@@ -8,7 +8,7 @@ COMMENT ON TYPE dayofweek IS 'Date of week enumeration.';
 CREATE TABLE tpows (
     tpow_id     bigserial       PRIMARY KEY,
     tpow_name   varchar(32)     NOT NULL UNIQUE,
-    tpow_note   varchar(255)    DEFAULT NULL,
+    tpow_note   text    DEFAULT NULL,
     dow         dayofweek       NOT NULL,
     begin_time  time            NOT NULL DEFAULT  '0:00',
     end_time    time            NOT NULL DEFAULT '24:00'
@@ -26,7 +26,7 @@ COMMENT ON COLUMN tpows.end_time    IS 'End time';
 CREATE TABLE timeperiods (
     timeperiod_id       bigserial       PRIMARY KEY,
     timeperiod_name     varchar(32)     NOT NULL UNIQUE,
-    timeperiod_note     varchar(255)    DEFAULT NULL
+    timeperiod_note     text    DEFAULT NULL
 );
 ALTER TABLE timeperiods OWNER TO lanview2;
 COMMENT ON TABLE  timeperiods                  IS 'Time periods';
@@ -136,7 +136,7 @@ COMMENT ON TYPE notifswitch IS 'Notification switch, or host or service status';
 CREATE TABLE users (    -- contacts
     user_id             bigserial       PRIMARY KEY,
     user_name           varchar(32)     NOT NULL UNIQUE,
-    user_note           varchar(255)    DEFAULT NULL,
+    user_note           text    DEFAULT NULL,
     passwd              varchar(64),
     enabled             boolean         DEFAULT TRUE,
     host_notif_period   bigint          DEFAULT 0 REFERENCES timeperiods(timeperiod_id) MATCH FULL
@@ -147,8 +147,8 @@ CREATE TABLE users (    -- contacts
     host_notif_switchs  notifswitch[]   NOT NULL DEFAULT '{"unreachable","down","recovered","unknown","critical"}',
     -- ez szintén egy set, mint feljebb
     serv_notif_switchs  notifswitch[]   NOT NULL DEFAULT '{"unreachable","down","recovered","unknown","critical"}',
-    host_notif_cmd      varchar(255)    DEFAULT NULL,
-    serv_notif_cmd      varchar(255)    DEFAULT NULL,
+    host_notif_cmd      text    DEFAULT NULL,
+    serv_notif_cmd      text    DEFAULT NULL,
     tels                varchar(20)[]   DEFAULT NULL,
     addresses           varchar(128)[]  DEFAULT NULL,
     place_id            bigint          DEFAULT NULL REFERENCES places(place_id) MATCH SIMPLE
@@ -164,7 +164,7 @@ ALTER TYPE  rights OWNER TO lanview2;
 CREATE TABLE groups (
     group_id        bigserial           PRIMARY KEY,
     group_name      varchar(32)         NOT NULL UNIQUE,
-    group_note      varchar(255)        DEFAULT NULL,
+    group_note      text        DEFAULT NULL,
     group_rights    rights              DEFAULT 'viewer',
     place_group_id  bigint              DEFAULT NULL REFERENCES place_groups(place_group_id) MATCH SIMPLE
                                             ON DELETE RESTRICT ON UPDATE RESTRICT
