@@ -170,7 +170,7 @@ public slots:
 
 /// @class cLv2GQApp
 /// Saját QApplication osztály, a hiba kizárások elkapásához (újra definiált notify() metódus.)
-class cLv2GQApp : public QApplication {
+class LV2GSHARED_EXPORT cLv2GQApp : public QApplication {
 public:
     /// Konstruktor. Nincs saját inicilizálás, csak a QApplication konstrujtort hívja.
     cLv2GQApp(int& argc, char ** argv);

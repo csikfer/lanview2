@@ -58,3 +58,8 @@ int importParseFile(const QString& fn)
     return r;
 }
 
+cError *importGetLastError() {
+    cError *r = importLastError;
+    importLastError = NULL;
+    return r;
+}

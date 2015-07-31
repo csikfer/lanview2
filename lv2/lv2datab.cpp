@@ -215,7 +215,7 @@ QStringList cColEnumType::set2lst(qlonglong b, bool _ex) const
     if (_ex && !checkSet(b)) EXCEPTION(EDATA, b, QObject::trUtf8("Nem megengedett enumerációs érték : %1").arg(*this));
     QStringList r;
     for (int i = 0; i < enumValues.size(); ++i) {
-        if (b & (1 << i)) r << enumValues[i];
+        if (b & (1LL << i)) r << enumValues[i];
     }
     return r;
 }
@@ -232,7 +232,7 @@ qlonglong cColEnumType::str2enum(const QString& s, bool _ex) const
 qlonglong cColEnumType::str2set(const QString& s, bool _ex) const
 {
     for (int i = 0; i < enumValues.size(); ++i) {
-        if (0 == enumValues[i].compare(s, Qt::CaseInsensitive)) return 1 << i;
+        if (0 == enumValues[i].compare(s, Qt::CaseInsensitive)) return 1LL << i;
     }
     if (_ex) EXCEPTION(EDATA, -1, QObject::trUtf8("Nem megengedett enumerációs érték : %1.%2").arg(*this).arg(s));
     return 0;
@@ -2959,7 +2959,7 @@ QString cRecord::whereString(QBitArray& _fm) const
             where += columnNameQ(i);
             where += get(i).isNull() ? " is NULL" : _isLike(i) ? " LIKE ?" : " = ?";
         }
-        if (descr()._deletedIndex != -1 && _deletedBehavior & FILTERED && _fm.size() <= descr()._deletedIndex && _fm[descr()._deletedIndex] == FALSE) {
+        if (descr()._deletedIndex != -1 && _deletedBehavior & FILTERED && _fm.size() <= descr()._deletedIndex && _fm[descr()._deletedIndex] == false) {
             where += " AND deleted = FALSE";
         }
         where = " WHERE " + where;

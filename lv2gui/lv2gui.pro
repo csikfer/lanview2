@@ -8,7 +8,8 @@ QT       += core gui sql network xml widgets
 
 TARGET = lv2gui
 CONFIG -= app_bundle
-CONFIG += debug
+
+CONFIG -= debug_and_release
 
 SOURCES += \
     lv2gui.cpp
@@ -18,8 +19,7 @@ HEADERS  += \
 
 
 INCLUDEPATH += ../lv2 ../lv2g
-LIBS += -lsnmp -L../lv2 -L../lv2g -llv2 -llv2g
-
+LIBS += -L../lv2 -L../lv2g -llv2 -llv2g
 unix:LIBS += -lsnmp
 
 TRANSLATIONS    = lv2gui_hu.ts \

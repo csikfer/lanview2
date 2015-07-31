@@ -8,12 +8,7 @@ QT       += network sql gui xml widgets
 
 TARGET = lv2g
 TEMPLATE = lib
-win32:CONFIG += debug_and_release
-unix:CONFIG += debug
-#kell ahhoz, hogy a debug dll neveben ott legyen a d a vegen
-CONFIG(debug, debug|release) {
-     win32: TARGET = $$join(TARGET,,,d)
-}
+CONFIG -= debug_and_release
 DEFINES += LV2G_LIBRARY
 
 SOURCES += \
@@ -36,7 +31,7 @@ SOURCES += \
     mainwindow.cpp
 
 HEADERS +=\
-        lv2g_global.h \
+    lv2g_global.h \
     lv2g.h \
     record_table_model.h \
     record_dialog.h \
@@ -71,7 +66,7 @@ unix:LIBS += -lsnmp
 LIBS += -L../lv2 -llv2
 
 
- TRANSLATIONS    = lv2glib_hu.ts \
-                   lv2glib_en.ts
+TRANSLATIONS    = lv2glib_hu.ts \
+                  lv2glib_en.ts
 
- CODECFORSRC     = UTF-8
+CODECFORSRC     = UTF-8

@@ -4,7 +4,7 @@
 #include <QDialog>
 #include "lv2g.h"
 
-class cErrorMessageBox : public QDialog
+class LV2GSHARED_EXPORT cErrorMessageBox : public QDialog
 {
     Q_OBJECT
 public:

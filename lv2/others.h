@@ -6,7 +6,7 @@
 #include <QMap>
 #include <QBitArray>
 
-inline bool isNumNull(const QVariant v)
+static inline bool isNumNull(const QVariant v)
 {
     int t = v.userType();
     return (
@@ -103,8 +103,8 @@ static inline qlonglong enum2set(int (&f)(const QString& e, bool __ex), const QS
                                  const QString& e5, const QString& e6, const QString& e7, const QString& e8, bool __ex = true) {
     return enum2set(f, e1, e2, e3, e4, e5, e6, e7, __ex) | enum2set(f, e8, __ex);
 }
-qlonglong enum2set(int (&f)(const QString& e, bool __ex), const QStringList& el, bool __ex = true);
-QStringList set2lst(const QString&(&f)(int e, bool __ex), qlonglong _set, bool __ex = true);
+EXT_ qlonglong enum2set(int (&f)(const QString& e, bool __ex), const QStringList& el, bool __ex = true);
+EXT_ QStringList set2lst(const QString&(&f)(int e, bool __ex), qlonglong _set, bool __ex = true);
 
 
 /// @def ENUM2SET
@@ -115,7 +115,7 @@ QStringList set2lst(const QString&(&f)(int e, bool __ex), qlonglong _set, bool _
 #define ENUM2SET4(n,n2,n3,n4)   ((1LL << (n)) | (1LL << (n2)) | (1LL << (n3)) | (1LL << (n4)))
 
 /// Megvizsgálja hogy a set ként értelmezett s bitmap-ban az e-vel reprezentált enumerációs érték be van-e állítva
-inline static bool isOn(qlonglong s, int e)   { return 0 != (s & enum2set(e)); }
+static inline bool isOn(qlonglong s, int e)   { return 0 != (s & enum2set(e)); }
 
 /// Egy pointer felszabadítása, és a pointer változó nullázása, feltéve ha a pointer nem NULL.
 template <class T> void pDelete(T *& p) {

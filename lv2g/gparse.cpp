@@ -96,13 +96,13 @@ void cParseWidget::localParse(const QString& src)
         pD->setGui(false);
         disconnect(pDS, SIGNAL(readyDebugLine()), this, SLOT(debugLine()));
     } CATCHS(pe);
-    if (importLastError != NULL) {
+    cError *ipe = importGetLastError();
+    if (ipe != NULL) {
         if (pe != NULL) {
             pUi->textEditResult->append(trUtf8("<p><b> Tbbszörös hiba. <p> %1.").arg(pe->msg()));
             delete pe;
         }
-        pe = importLastError;
-        importLastError = NULL;
+        pe = ipe;
     }
     if (pe != NULL) {
         if (pq != NULL) {
@@ -142,7 +142,11 @@ void cParseWidget::remoteParse(const QString &src)
             pUi->textEditResult->setText(msg);
             msg.clear();
         }
+#if   defined(Q_CC_MSVC)
+        Sleep(1000);
+#elif defined(Q_CC_GNU)
         sleep(1);
+#endif
         if (!imp.fetchById(*pq)) {
             msg = trUtf8("A kiírt imports rekordot nem tudom visszaolvasni (ID = %1).").arg(imp.getId());
             break;

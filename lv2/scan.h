@@ -5,8 +5,6 @@
 
 #if (defined(Q_OS_UNIX) || defined(Q_OS_LINUX)) && defined(MUST_SNMP)
 #define MUST_SCAN
-#else
-#warning "MUST_SCAN not defined."
 #endif
 
 

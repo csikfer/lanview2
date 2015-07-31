@@ -93,7 +93,7 @@ public:
     const QStringList enumValues;
     bool check(const QString& v) const  { return enumValues.contains(v, Qt::CaseInsensitive); }
     bool check(const QStringList& v) const;
-    bool checkSet(qlonglong b) const    { return b < (1 << enumValues.size()); }
+    bool checkSet(qlonglong b) const    { return b < (1LL << enumValues.size()); }
     bool checkEnum(qlonglong i) const   { return i < enumValues.size(); }
     const QString& enum2str(qlonglong e, bool _ex = true) const;
     QStringList set2lst(qlonglong b, bool _ex = true) const;
@@ -1993,7 +1993,7 @@ inline cRecordFieldConstRef cRecord::operator[](const QString& __fn) const  { re
 Azt hogy melyik adattáblát kezeli azt a konstruktorban, vagy a setType() metódusokban kell beállítani.
 Természetesen csak az alapfunkciókra képes, amik a cRecord-ban meg lettek valósítva.
  */
-class cRecordAny : public cRecord {
+class LV2SHARED_EXPORT cRecordAny : public cRecord {
 public:
     /// Üres konstruktor. Használat elütt hivni kell valamelyik setType() metódust.
     /// Ha nincs beállítva típus, akkor minden olyan hívásra, melynek szüksége van

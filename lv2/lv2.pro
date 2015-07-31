@@ -1,9 +1,10 @@
+CONFIG -= debug_and_release
 
 #bison definition
 bison.name = Bison
 bison.input = BISONSOURCES
 bison.output = ${QMAKE_FILE_BASE}_yy.cpp
-bison.commands = bison -d -o ${QMAKE_FILE_OUT} -v --report-file=bison_report.txt ${QMAKE_FILE_IN}
+bison.commands = bison -d -o ${QMAKE_FILE_OUT} -v --report-file=bison_report.txt $$replace(${QMAKE_FILE_IN},'\\','/')
 bison.clean =
 bison.CONFIG += target_predeps
 bison.variable_out = SOURCES
@@ -46,18 +47,10 @@ QT -= gui
 TARGET = lv2
 TEMPLATE = lib
 
-msvc:CONFIG += debug_and_release
-unix:CONFIG += debug
-
-#kell ahhoz, hogy a debug dll neveben ott legyen a d a vegen
-CONFIG(debug, debug|release) {
-     msvc: TARGET = $$join(TARGET,,,d)
-}
 DEFINES += LV2_LIBRARY
 SOURCES += lanview.cpp \
     cdebug.cpp \
     cerror.cpp \
-    usignal.cpp \
     lv2types.cpp \
     lv2sql.cpp \
     lv2datab.cpp \
@@ -80,7 +73,6 @@ HEADERS += lanview.h \
     errcodes.h \
     cerror.h \
     cdebug.h \
-    usignal.h \
     lv2types.h \
     lv2sql.h \
     lv2xml.h \
@@ -100,20 +92,15 @@ HEADERS += lanview.h \
     lv2daterr.h \
     qtelnet.h
 
+unix:SOURCES += usignal.cpp
+unix:HEADERS += usignal.h
+
 FORMS += 
 
 unix:LIBS += -lsnmp
 
- TRANSLATIONS    = lv2lib_hu.ts \
-                   lv2lib_en.ts
+TRANSLATIONS    = lv2lib_hu.ts \
+                  lv2lib_en.ts
 
- CODECFORSRC     = UTF-8
+CODECFORSRC     = UTF-8
 
-# message( $$CONFIG )
-# msvc: message( "msvc on" )
-# linux: message( "linux on" )
-# win32: message( "Win32 on" )
-# message( $$INCLUDEPATH )
-
-DISTFILES += \
-    ../lv2gui/lv2gui.supp

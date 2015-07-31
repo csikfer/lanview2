@@ -23,6 +23,7 @@ int main(int argc, char * argv[])
     lanView::snmpNeeded = false;
     if (0 <= findArg(QChar('s'),QString("setup"), app.arguments())) {
         lv2Gui::_setup = true;
+        lv2g::logonNeeded = false;
     }
     int i;
     if (0 <= (i = findArg(QChar('a'),QString("app-name"), app.arguments()))

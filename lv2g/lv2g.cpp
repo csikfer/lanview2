@@ -24,7 +24,7 @@ lv2g::lv2g() :
             }
         }
     } CATCHS(lastError)
-    if (!logonNeeded || !zoneNeeded) zoneId = cPlaceGroup().getIdByName(_sAll);
+    if (logonNeeded && !zoneNeeded) zoneId = cPlaceGroup().getIdByName(_sAll);
 }
 
 lv2g::~lv2g()

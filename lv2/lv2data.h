@@ -30,8 +30,8 @@ enum eReasons {
     R_ERROR         ///< Egyébb hiba
 };
 
-int reasons(const QString& _r, bool __ex = true);
-const QString& reasons(int _r, bool __ex = true);
+EXT_ int reasons(const QString& _r, bool __ex = true);
+EXT_ const QString& reasons(int _r, bool __ex = true);
 
 /// @def CHKENUM
 /// @brief Egy enumerációs típus konverziós függvényeinek az ellenörzése.
@@ -1722,8 +1722,8 @@ enum eExecState {
     ES_ABORTED
 };
 
-int execState(const QString& _n, bool __ex = true);
-const QString& execState(int _e, bool __ex = true);
+EXT_ int execState(const QString& _n, bool __ex = true);
+EXT_ const QString& execState(int _e, bool __ex = true);
 
 class LV2SHARED_EXPORT cImport : public cRecord {
     CRECORD(cImport);
