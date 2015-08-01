@@ -137,7 +137,7 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE TYPE reasons AS ENUM ('new', 'insert', 'remove', 'expired', 'move', 'restore', 'modify', 'update', 'unchange', 'found', 'notfound', 'discard', 'caveat', 'error');
+CREATE TYPE reasons AS ENUM ('new', 'insert', 'remove', 'expired', 'move', 'restore', 'modify', 'update', 'unchange', 'found', 'notfound', 'discard', 'caveat', 'ambiguous', 'error');
 ALTER TYPE reasons OWNER TO lanview2;
 COMMENT ON TYPE reasons IS
 'Okok ill. műveletek eredményei
@@ -294,6 +294,7 @@ INSERT INTO unusual_fkeys
   ( table_name,         column_name,    unusual_fkeys_type, f_table_name,   f_column_name,  f_inherited_tables) VALUES
   ( 'nports',           'node_id',      'owner',            'nodes',        'node_id',      '{nodes, snmpdevices}'),
   ( 'port_param_values','port_id',      'owner',            'nports',       'port_id',      '{nports, pports, interfaces}'),
+  ( 'node_param_values','node_id',      'owner',            'patchs',       'node_id',      '{patchs, nodes, snmpdevices}'),
   ( 'interfaces',       'node_id',      'owner',            'nodes',        'node_id',      '{nodes, snmpdevices}'),
   ( 'host_services',    'node_id',      'property',         'nodes',        'node_id',      '{nodes, snmpdevices}'),
   ( 'host_services',    'port_id',      'property',         'nports',       'port_id',      '{nports, interfaces}'),

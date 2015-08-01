@@ -27,7 +27,8 @@ enum eReasons {
     R_NOTFOUND,     ///< Nincs találat, valamelyik objektum hiányzik.
     R_DISCARD,      ///< Nincs művelet, az adat eldobásra került.
     R_CAVEAT,       ///< Valamilyen ellentmondás van az adatok között
-    R_ERROR         ///< Egyébb hiba
+    R_ERROR,        ///< Egyébb hiba
+    R_AMBIGUOUS     ///< kétértelmüség
 };
 
 EXT_ int reasons(const QString& _r, bool __ex = true);
@@ -114,6 +115,7 @@ enum eSetType  {
     ST_INVALID = -1,    ///< Csak hiba jelzésre
     ST_AUTO,            ///< automatikus
     ST_QUERY,           ///< Egy lekérdezés eredménye
+    ST_CONFIG,          ///< Konfig import
     ST_MANUAL           ///< Manuális összerendelés
 };
 
@@ -1595,9 +1597,9 @@ protected:
     static int _ixMacTabState;
 public:
     /// Inzertálja, vagy modosítja az ip cím, mint kulcs alapján a rekordot.
-    /// A funkciót egy PGPLSQL fúggvény (insert_or_update_mactab) valósítja meg.
+    /// A funkciót egy PGPLSQL fúggvény (replace_mactab) valósítja meg.
     /// @param __q Az adatbázis művelethez használt objektum.
-    /// @return A insert_or_update_arp függvény vissatérési értéke. Ld.: enum eReasons
+    /// @return A peplace_arp függvény vissatérési értéke. Ld.: enum eReasons
     enum eReasons replace(QSqlQuery& __q);
     static int refresStats(QSqlQuery& __q);
 };
@@ -1608,6 +1610,8 @@ class LV2SHARED_EXPORT cArp : public cRecord {
 protected:
     static int _ixIpAddress;
     static int _ixHwAddress;
+    static int _ixSetType;
+    static int _ixHostServiceId;
 public:
     cArp& operator = (const QHostAddress& __a)  { set(_ixIpAddress, __a.toString()); return *this; }
     cArp& operator = (const cMac __m)           { set(_ixHwAddress, __m.toString()); return *this; }
@@ -1620,15 +1624,15 @@ public:
     /// Az objektum (a beolvasott rekord) IP cím mezőjének az értékével tér vissza
     QHostAddress getIpAddress() const { return (QHostAddress)*this; }
     /// Inzertálja, vagy modosítja az ip cím, mint kulcs alapján a rekordot.
-    /// A funkciót egy PGPLSQL fúggvény (insert_or_update_arp) valósítja meg.
+    /// A funkciót egy PGPLSQL fúggvény (replace_arp) valósítja meg.
     /// @param __q Az adatbázis művelethez használt objektum.
-    /// @return A insert_or_update_arp függvény vissatérési értéke. Ld.: enum eReasons
+    /// @return A replace_arp függvény vissatérési értéke. Ld.: enum eReasons
     enum eReasons replace(QSqlQuery& __q);
     /// Inzertálja, vagy morosítja az ip cím, mint kulcs alapján a rekordokat
     /// @param __q Az adatbázis művelethez használt objektum.
     /// @param __t A módosításokat tartalmazó konténer
     /// @return a kiírt, vagy módosított rekordok száma
-    static int replaces(QSqlQuery& __q, const cArpTable& __t);
+    static int replaces(QSqlQuery& __q, const cArpTable& __t, int setType = ST_QUERY, qlonglong hsid = NULL_ID);
     static QList<QHostAddress> mac2ips(QSqlQuery& __q, const cMac& __m);
     static QHostAddress mac2ip(QSqlQuery& __q, const cMac& __m, bool __ex = true);
     static cMac ip2mac(QSqlQuery& __q, const QHostAddress& __a, bool __ex = true);

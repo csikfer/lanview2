@@ -347,12 +347,13 @@ untagged    nem címkézett, közvetlen
 virtual     
 hard        logikailag egyenértékeű az untagged-del';
 
-CREATE TYPE settype AS ENUM ('auto', 'query', 'manual');
+CREATE TYPE settype AS ENUM ('auto', 'query', 'config', 'manual');
 ALTER TYPE settype OWNER TO lanview2;
 COMMENT ON TYPE settype IS
 'Egy paraméter megállapításának módja:
 auto    autómatikus
 query   lekérdező program töltötte ki
+cpnfig	Konfigurációs állományból importálva
 manual  kézzel megadva';
 
 CREATE TABLE port_vlans (
@@ -451,6 +452,8 @@ ALTER TABLE snmpdevices OWNER TO lanview2;
 CREATE TABLE dyn_addr_ranges (
     dyn_addr_range_id   bigserial       PRIMARY KEY,
     dyn_addr_range_note text            DEFAULT NULL,
+    exclude		boolean		DEFAULT false,
+    set_type		settype		DEFAULT 'config',
     begin_address       inet            NOT NULL UNIQUE,
     end_address         inet            NOT NULL UNIQUE,
     subnet_id           bigint          REFERENCES subnets(subnet_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
@@ -657,13 +660,13 @@ CREATE TRIGGER nports_delete_port_post      AFTER DELETE ON nports      FOR EACH
 CREATE TRIGGER interfaces_delete_port_post  AFTER DELETE ON interfaces  FOR EACH ROW EXECUTE PROCEDURE delete_port_post();
 
 
-CREATE OR REPLACE FUNCTION replace_dyn_addr_range(baddr inet, eaddr inet, hid bigint DEFAULT NULL, snid bigint DEFAULT NULL) RETURNS TEXT AS $$
+CREATE OR REPLACE FUNCTION replace_dyn_addr_range(baddr inet, eaddr inet, hid bigint DEFAULT NULL, snid bigint DEFAULT NULL, excl boolean DEFAULT false) RETURNS reasons AS $$
 DECLARE
     brec dyn_addr_ranges;
     erec dyn_addr_ranges;
     bcol  boolean;
     ecol  boolean;
-    r     text;
+    r     reasons;
     snid2 bigint;
 BEGIN
     IF snid IS NULL THEN 
@@ -671,26 +674,26 @@ BEGIN
             SELECT subnet_id INTO STRICT snid FROM subnets WHERE netaddr >> baddr;
             EXCEPTION
                 WHEN NO_DATA_FOUND THEN     -- nem találtunk
-                    RETURN 'NOT FOUND';
+                    RETURN 'notfound';
                 WHEN TOO_MANY_ROWS THEN     -- több találat is van, nem egyértelmű
-                    RETURN 'TOO MANY';
+                    RETURN 'ambiguous';
         END;
-        BEGIN
+        BEGIN       -- vég cím subnet-je
             SELECT subnet_id INTO STRICT snid2 FROM subnets WHERE netaddr >> eaddr;
             EXCEPTION
                 WHEN NO_DATA_FOUND THEN     -- nem találtunk
-                    RETURN 'NOT FOUND';
+                    RETURN 'notfound';
                 WHEN TOO_MANY_ROWS THEN     -- több találat is van, nem egyértelmű
-                    RETURN 'TOO MANY';
+                    RETURN 'ambiguous';
         END;
         IF snid <> snid2 THEN
-            RETURN 'ERROR DATA';
+            RETURN 'caveat';
         END IF;
     END IF;
     
-    SELECT * INTO brec FROM dyn_addr_ranges WHERE begin_address <= baddr AND baddr <= end_address;
+    SELECT * INTO brec FROM dyn_addr_ranges WHERE begin_address <= baddr AND baddr <= end_address AND exclude = excl;
     bcol := FOUND;
-    SELECT * INTO erec FROM dyn_addr_ranges WHERE begin_address <= eaddr AND eaddr <= end_address;
+    SELECT * INTO erec FROM dyn_addr_ranges WHERE begin_address <= eaddr AND eaddr <= end_address AND exclude = excl;
     ecol := FOUND;
     IF bcol AND ecol AND brec.dyn_addr_range_id = erec.dyn_addr_range_id AND baddr = brec.begin_address AND brec.end_address = eaddr THEN
         RAISE INFO '1: % < % ; % = %', baddr, eaddr, brec, erec; 
@@ -706,9 +709,9 @@ BEGIN
         RAISE INFO '2: % < % ; % <> %', baddr, eaddr, brec, erec;
         if brec.dyn_addr_range_id <> erec.dyn_addr_range_id THEN
             DELETE FROM dyn_addr_ranges WHERE dyn_addr_range_id = erec.dyn_addr_range_id;
-            r := 'delete,';
+            r := 'remove';
         ELSE
-            r := '';
+            r := 'modify';
         END IF;
         UPDATE dyn_addr_ranges
             SET
@@ -719,7 +722,7 @@ BEGIN
                 dhcp_server = hid,
                 touch = true
             WHERE dyn_addr_range_id = brec.dyn_addr_range_id;
-        RETURN r || 'modify';
+        RETURN r;
     END IF;
     IF bcol OR ecol THEN
         if ecol THEN
@@ -730,6 +733,7 @@ BEGIN
         END IF;
         UPDATE dyn_addr_ranges
             SET
+	        exclude = excl,
                 begin_address = baddr,
                 end_address = eaddr,
                 subnet_id = snid,
@@ -745,13 +749,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Ellenőrzi, hogy a para,éterként megadott IP cím része-e egy dinamikus IP tartománynak,
+-- Ellenőrzi, hogy a paraméterként megadott IP cím része-e egy dinamikus IP tartománynak,
 CREATE OR REPLACE FUNCTION is_dyn_addr(inet) RETURNS bigint AS $$
 DECLARE
     id  bigint;
 BEGIN
-    SELECT dyn_addr_ranges_id INTO id FROM dyn_addr_ranges WHERE begin_address <= $1 AND $1 <= end_address;
+    SELECT dyn_addr_ranges_id INTO id FROM dyn_addr_ranges WHERE exclude = false AND begin_address <= $1 AND $1 <= end_address;
     IF NOT FOUND THEN
+        RETURN NULL;
+    END IF;
+    SELECT dyn_addr_ranges_id         FROM dyn_addr_ranges WHERE exclude = true  AND begin_address <= $1 AND $1 <= end_address;
+    IF FOUND THEN
         RETURN NULL;
     END IF;
     RETURN id;

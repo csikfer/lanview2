@@ -20,7 +20,7 @@ CREATE TABLE service_types (
     service_type_note   varchar(64)     DEFAULT NULL
 );
 ALTER TABLE service_types OWNER TO lanview2;
-COMMENT ON TABLE  service_types IS 'A service objektumok csoportosítását teszi lehetővé, egy rekord csak egy csoportba tartozhat.';
+COMMENT ON TABLE  service_types IS 'A service objektumok csoportosítását teszi lehetővé, egy rekord csak egy csoportba tartozhat./ Ez mire kellett ? Lehet, hogy törölni kéne.';
 COMMENT ON COLUMN service_types.service_type_id   IS 'service csoport ill. típus azonosító.';
 COMMENT ON COLUMN service_types.service_type_name IS 'service csoport ill. típus név.';
 COMMENT ON COLUMN service_types.service_type_note IS 'Megjegyzés.';
@@ -234,9 +234,9 @@ BEGIN
         FROM host_services hs
         JOIN nodes n USING(node_id)
         JOIN services s USING(service_id)
-        LEFT JOIN nports p ON hs.port_id = p.port_id
-        JOIN services sproto ON hs.proto_service_id = sproto.service_id
-        JOIN services sprime ON hs.prime_service_id = sprime.service_id
+        LEFT JOIN nports p ON hs.port_id = p.port_id			-- ez lehet NULL
+        JOIN services sproto ON hs.proto_service_id = sproto.service_id	-- a 'nil' nevű services a NULL
+        JOIN services sprime ON hs.prime_service_id = sprime.service_id	-- a 'nil' nevű services a NULL
         WHERE host_service_id = $1;
     IF NOT FOUND THEN
         PERFORM error('IdNotFound', $1, 'host_service_id', 'host_service_id2name()', 'host_services');

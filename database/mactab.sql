@@ -1,5 +1,5 @@
 
--- Rendszer paraméter a insert_or_update_mactab(pid bigint, mac macaddr, typ settype, mst mactabstate[]) függvényhez:
+-- Rendszer paraméter a replace_mactab(pid bigint, mac macaddr, typ settype, mst mactabstate[]) függvényhez:
 INSERT INTO sys_params
     (sys_param_name,                    param_type_id,                 param_value,    sys_param_note) VALUES
     ('oui_list_url_MA-L',               param_type_name2id('text'),     'http://standards-oui.ieee.org/oui.txt',        'MA-L Public list'),
@@ -10,7 +10,7 @@ INSERT INTO sys_params
     ('mactab_reliable_expire_interval', param_type_name2id('interval'),'60 days',      'Az mactab táblában ennyi idő mulva törlődik egy rekord, ha nem frissül a last_time mező, és vannak az adat megbízhatóságára utaló fleg-ek'),
     ('mactab_expire_interval',          param_type_name2id('interval'),'14 days',      'Az mactab táblában ennyi idő mulva törlődik egy rekord, ha nem frissül a last_time mező, és nincsenek az adat megbízhatóságára utaló fleg-ek'),
     ('mactab_suspect_expire_interval',  param_type_name2id('interval'),'1 day',        'Az mactab táblában ennyi idő mulva törlődik egy rekord, ha nem frissül a last_time mező, és csak a suspect flag van beállítva');
--- Port paraméter a insert_or_update_mactab(pid bigint, mac macaddr, typ settype, mst mactabstate[]) függvényhez:
+-- Port paraméter a replace_mactab(pid bigint, mac macaddr, typ settype, mst mactabstate[]) függvényhez:
 INSERT INTO param_types
     (param_type_name,    param_type_type, param_type_note)    VALUES
     ('suspected_uplink', 'boolean',      'Port paraméter: Feltételezhetően egy uplink, a portnak a mactab táblába való felvétele tiltott.');
@@ -62,6 +62,8 @@ Visszatérési értékek:
 CREATE TABLE arps (
     ipaddress       inet        PRIMARY KEY,
     hwaddress       macaddr     NOT NULL,
+    set_type	    settype     NOT NULL,
+    host_service_id bigint	REFERENCES host_services(host_service_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
     first_time      timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP, -- First time discovered
     last_time       timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP  -- Last time discovered
 );
@@ -73,7 +75,7 @@ ALTER TABLE arps OWNER TO lanview2;
 COMMENT ON TABLE arps IS
 'Az ARP tábla (vagy DHCP konfig) lekérdezések eredményét tartalmazó tábla.
 Az adatmanipulációs műveleteket nem közvetlenül, hanem a kezelő függvényeken keresztül kell elvégezni,
-hogy létrejöjjenek a log rekordok is: insert_or_update_arp(), arp_remove() és refresh_arps().';
+hogy létrejöjjenek a log rekordok is: replace_arp(), arp_remove() és refresh_arps().';
 COMMENT ON COLUMN arps.ipaddress IS 'A MAC-hoz detektált ip cím, egyedi kulcs.';
 COMMENT ON COLUMN arps.hwaddress IS 'Az ethernet cím, nem egyedi kulcs.';
 COMMENT ON COLUMN arps.first_time IS 'A rekord létrehozásának az ideje, ill. az első detektálás ideje.';
@@ -95,6 +97,8 @@ CREATE TABLE arp_logs (
     ipaddress       inet        DEFAULT NULL,
     hwaddress_new   macaddr     DEFAULT NULL,
     hwaddress_old   macaddr     DEFAULT NULL,
+    set_type_old    settype     NOT NULL,
+    host_service_id_old bigint	REFERENCES host_services(host_service_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
     first_time_old  timestamp   DEFAULT NULL,
     last_time_old   timestamp   DEFAULT NULL
 );
@@ -102,54 +106,60 @@ CREATE INDEX arp_logs_date_of_index   ON arp_logs(date_of);
 ALTER TABLE arp_logs OWNER TO lanview2;
 COMMENT ON TABLE arp_logs IS 'Az arps tábla változásainag a napló táblája.';
 
-CREATE OR REPLACE FUNCTION insert_or_update_arp(inet, macaddr) RETURNS reasons AS $$
+CREATE OR REPLACE FUNCTION replace_arp(ipa inet, hwa macaddr, stp settype DEFAULT 'query', hsi bigint DEFAULT NULL) RETURNS reasons AS $$
 DECLARE
     arp     arps;
     aid     bigint;
 BEGIN
     BEGIN
         SELECT ip_address_id INTO STRICT aid FROM ipaddresses JOIN interfaces USING(port_id) WHERE
-                                ip_address_type = 'dynamic' AND hwaddress = $2 AND (address <> $1 OR address IS NULL);
+                                ip_address_type = 'dynamic' AND hwaddress = hwa AND (address <> $1 OR address IS NULL);
         EXCEPTION
             WHEN NO_DATA_FOUND THEN
                 aid := NULL;
             WHEN TOO_MANY_ROWS THEN
-                PERFORM error('DataWarn', -1, 'address', 'insert_or_update_arp(' || $1::text || ', ' || $2::text || ')', 'ipaddresses JOIN interfaces');
+                PERFORM error('DataWarn', -1, 'address', 'replace_arp(' || ipa::text || ', ' || hwa::text || ')', 'ipaddresses JOIN interfaces');
                 aid := NULL;
     END;
     IF aid IS NOT NULL THEN
-        UPDATE ipaddress SET address = $1 WHERE ip_address_id = aid;
+        UPDATE ipaddress SET address = ipa WHERE ip_address_id = aid;
     END IF;
-    SELECT * INTO arp FROM arps WHERE ipaddress = $1;
+    SELECT * INTO arp FROM arps WHERE ipaddress = ipa;
     IF NOT FOUND THEN
-        INSERT INTO arps(ipaddress, hwaddress) VALUES ($1, $2);
+        INSERT INTO arps(ipaddress, hwaddress,set_type, host_service_id) VALUES (ipa, hwa, stp, hsi);
         RETURN 'insert';
     ELSE
-        IF arp.hwaddress = $2 THEN
-            UPDATE arps SET last_time = CURRENT_TIMESTAMP WHERE ipaddress = arp.ipaddress;
-            RETURN 'found';
+        IF arp.hwaddress = hwa THEN
+	    IF arp.set_type < stp THEN
+	        UPDATE arps SET set_type = stp, host_service_id = hsi, last_time = CURRENT_TIMESTAMP WHERE ipaddress = arp.ipaddress;
+		RETURN 'update';
+	    ELSE
+	        UPDATE arps SET last_time = CURRENT_TIMESTAMP WHERE ipaddress = arp.ipaddress;
+		RETURN 'found';
+	    END IF;
         ELSE
             UPDATE arps
-                SET hwaddress = $2,  first_time = CURRENT_TIMESTAMP, last_time = CURRENT_TIMESTAMP
+                SET hwaddress = hwa,  first_time = CURRENT_TIMESTAMP, set_type = stp, host_service_id = hsi, last_time = CURRENT_TIMESTAMP
                 WHERE ipaddress = arp.ipaddress;
             INSERT INTO
-                arp_logs(reason, ipaddress, hwaddress_new, hwaddress_old, first_time_old, last_time_old)
-                VALUES( 'move',  $1,        $2,            arp.hwaddress, arp.first_time, arp.last_time);
-            RETURN 'update';
+                arp_logs(reason, ipaddress, hwaddress_new, hwaddress_old, set_type_old, host_service_id_old, first_time_old, last_time_old)
+                VALUES( 'move',  ipa,       hwi,           arp.hwaddress, arp.set_type, arp.host_service_id, arp.first_time, arp.last_time);
+            RETURN 'modify';
         END IF;
     END IF;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION insert_or_update_arp(inet, macaddr) IS
+COMMENT ON FUNCTION replace_arp(inet, macaddr, settype, bigint) IS
 'A detektált MAC - IP cím pár alapján modosítja az arps táblát, és kezeli a napló táblát is
 Ha talál olyan dynamikus IP címet, meylhez tartozó MAC azonos, de a cím változott, akkor azt is modosítja.
 Paraméterek:
-    $1      IP cím
-    $2      MAC
+    ipa      IP cím
+    hwa      MAC
 Visszatérési érték:
     Ha létrejött egy új rekord, akkor "insert".
     Ha nincs változás (csak a last_time frissül), akkor "found".
-    Ha az IP cím egy másik MAC-hez lett rendelve, akkor "update".';
+    Ha a cím összerendelés nem változott, de a set_type igen, akkor "update".
+    Ha az IP cím egy másik MAC-hez lett rendelve, akkor "modfy".';
 
 CREATE OR REPLACE FUNCTION arp_remove(
     a  arps,
@@ -157,8 +167,8 @@ CREATE OR REPLACE FUNCTION arp_remove(
 ) RETURNS void AS $$
 BEGIN
     INSERT INTO
-        arp_logs(reason, ipaddress,  hwaddress_old, first_time_old, last_time_old)
-        VALUES(  re,     a.ipaddress,a.hwaddress,   a.first_time,   a.last_time);
+        arp_logs(reason, ipaddress,  hwaddress_old, set_type_old, host_service_id_old, first_time_old, last_time_old)
+        VALUES(  re,     a.ipaddress,a.hwaddress,   a.set_type,   a.host_service_id,   a.first_time,   a.last_time);
     DELETE FROM arps WHERE ipaddress = a.ipaddress;
 END;
 $$ LANGUAGE plpgsql;
@@ -176,7 +186,7 @@ DECLARE
     ret integer := 0;
 BEGIN
     FOR a IN SELECT * FROM arps
-        WHERE  last_time < (CURRENT_TIMESTAMP - get_interval_sys_param('arps_expire_interval'))
+        WHERE  set_type < 'config'::settype AND last_time < (CURRENT_TIMESTAMP - get_interval_sys_param('arps_expire_interval'))
     LOOP
         PERFORM arp_remove(a, 'expired');
         ret := ret +1;
@@ -195,7 +205,7 @@ Visszatérési érték a törölt rekordok száma. A törlés oka "expired"lessz
 -- DROP FUNCTION mactab_remove(mactab, reasons);
 -- DROP FUNCTION mactab_changestat(mactab, mactabstate[], settype, boolean);
 -- DROP FUNCTION current_mactab_stat(bigint, macaddr, mactabstate[]);
--- DROP FUNCTION insert_or_update_mactab(bigint, macaddr, settype, mactabstate[]);
+-- DROP FUNCTION replace_mactab(bigint, macaddr, settype, mactabstate[]);
 -- DROP TABLE mactab;
 -- DROP TABLE mactab_logs;
 -- DROP TYPE mactabstate;
@@ -225,7 +235,7 @@ CREATE INDEX mactab_first_time_index            ON mactab(first_time);
 CREATE INDEX mactab_last_time_index             ON mactab(last_time);
 CREATE INDEX mactab_state_updated_time_index    ON mactab(state_updated_time);
 ALTER TABLE mactab OWNER TO lanview2;
-COMMENT ON TABLE mactab IS 'Port címtábla lekérdezések eredményét tartalmazó tábla. Az adatmanipulációs műveletek a függvényeket keresztűl lehet elvégezni : insert_or_update_mactab()';
+COMMENT ON TABLE mactab IS 'Port címtábla lekérdezések eredményét tartalmazó tábla. Az adatmanipulációs műveletek a függvényeket keresztűl lehet elvégezni : replace_mactab()';
 
 CREATE TABLE mactab_logs (
     mactab_log_id   bigserial   PRIMARY KEY,
@@ -366,7 +376,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION insert_or_update_mactab(
+CREATE OR REPLACE FUNCTION replace_mactab(
     pid bigint,
     mac macaddr,        
     typ settype DEFAULT 'query',
@@ -416,7 +426,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-COMMENT ON FUNCTION insert_or_update_mactab(pid bigint, mac macaddr, typ settype, mst mactabstate[]) IS '
+COMMENT ON FUNCTION replace_mactab(pid bigint, mac macaddr, typ settype, mst mactabstate[]) IS '
 Egy (switch) port és mac (cím tábla) összerendelés létrehozása, vagy módosítása.
 Paraméterek:
   pid   A (switch) port ID.

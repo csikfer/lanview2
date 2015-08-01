@@ -4,6 +4,8 @@
 // #include "lv2service.h"
 #include "others.h"
 
+#define STFIELDIX(c,m)   _ix ## m = _descr_ ## c().toIndex(_s ## m);
+
 EXT_ const QString& notifSwitch(int _ns, bool __ex = true);
 EXT_ int notifSwitch(const QString& _nm, bool __ex = true);
 
@@ -23,6 +25,7 @@ int reasons(const QString& _r, bool __ex)
     if (0 == _r.compare(_sDiscard,  Qt::CaseInsensitive)) return R_DISCARD;
     if (0 == _r.compare(_sCaveat,   Qt::CaseInsensitive)) return R_CAVEAT;
     if (0 == _r.compare(_sError,    Qt::CaseInsensitive)) return R_ERROR;
+    if (0 == _r.compare(_sAmbiguous,Qt::CaseInsensitive)) return R_AMBIGUOUS;
     if (__ex == true)   EXCEPTION(EDATA, -1, _r);
     return R_INVALID;
 }
@@ -44,6 +47,7 @@ const QString& reasons(int _r, bool __ex)
     case R_DISCARD:     return _sDiscard;
     case R_CAVEAT:      return _sCaveat;
     case R_ERROR:       return _sError;
+    case R_AMBIGUOUS:   return _sAmbiguous;
     }
     if (__ex == true)   EXCEPTION(EDATA, _r);
     return _sNul;
@@ -2880,7 +2884,7 @@ CRECDEFD(cMacTab)
 
 enum eReasons cMacTab::replace(QSqlQuery& __q)
 {
-    QString sql = "SELECT insert_or_update_mactab(?,?";
+    QString sql = "SELECT replace_mactab(?,?";
     if (!isNull(_ixSetType))     sql += _sCommaQ;
     if (!isNull(_ixMacTabState)) sql += _sCommaQ;
     sql += QChar(')');
@@ -2909,12 +2913,15 @@ CRECCNTR(cArp);
 
 int cArp::_ixIpAddress = NULL_IX;
 int cArp::_ixHwAddress = NULL_IX;
-
+int cArp::_ixSetType   = NULL_IX;
+int cArp::_ixHostServiceId = NULL_IX;
 const cRecStaticDescr&  cArp::descr() const
 {
     if (initPDescr<cArp>(_sArps)) {
-        _ixIpAddress = _descr_cArp().toIndex(_sIpAddress);
-        _ixHwAddress = _descr_cArp().toIndex(_sHwAddress);
+        STFIELDIX(cArp, IpAddress);
+        STFIELDIX(cArp, HwAddress);
+        STFIELDIX(cArp, SetType);
+        STFIELDIX(cArp, HostServiceId);
     }
     return *_pRecordDescr;
 }
@@ -2934,10 +2941,16 @@ cArp::operator cMac() const
 
 enum eReasons cArp::replace(QSqlQuery& __q)
 {
-    QString sql = "SELECT insert_or_update_arp(?,?)";
+    QString sql = "SELECT replace_arp(?,?";
+    if (!isNull(_ixSetType))       sql += _sCommaQ;
+    if (!isNull(_ixHostServiceId)) sql += _sCommaQ;
+    sql += QChar(')');
     if (!__q.prepare(sql)) SQLPREPERR(__q, sql);
     bind(_ixIpAddress, __q, 0);
     bind(_ixHwAddress, __q, 1);
+    int i = 2;
+    if (!isNull(_ixSetType))       bind(_ixSetType,       __q, i++);
+    if (!isNull(_ixHostServiceId)) bind(_ixHostServiceId, __q, i);
     if (!__q.exec()) SQLQUERYERR(__q);
     __q.first();
     enum eReasons r = (enum eReasons) reasons(__q.value(0).toString(), false);
@@ -2945,19 +2958,22 @@ enum eReasons cArp::replace(QSqlQuery& __q)
 }
 
 #ifdef MUST_SCAN
-int cArp::replaces(QSqlQuery& __q, const cArpTable& __t)
+int cArp::replaces(QSqlQuery& __q, const cArpTable& __t, int setType, qlonglong hsid)
 {
     int r = 0;
     cArp arp;
     for (cArpTable::const_iterator i = __t.constBegin(); i != __t.constEnd(); ++i) {
+        arp.clear();
         arp = i.key();
         arp = i.value();
-        if (0 < arp.replace(__q)) ++r;
+        arp.setId(_ixSetType, setType);
+        arp.setId(_ixHostServiceId, hsid);
+        if (R_INSERT == arp.replace(__q)) ++r;
     }
     return r;
 }
 #else  // MUST_SCAN
-int cArp::replaces(QSqlQuery&, const cArpTable&)
+int cArp::replaces(QSqlQuery&, const cArpTable&, int, qlonglong)
 {
     EXCEPTION(ENOTSUPP);
     return 0;
@@ -3255,14 +3271,14 @@ void cTemplateMap::del(QSqlQuery& __q, const QString &__name)
 
 int vlanType(const QString& __n, bool __ex)
 {
-    if (__n == _sNo)        return VT_NO;
-    if (__n == _sUnknown)   return VT_NOTKNOWN;
-    if (__n == _sForbidden) return VT_FORBIDDEN;
-    if (__n == _sAuto)      return VT_AUTO;
-    if (__n == _sTagged)    return VT_TAGGED;
-    if (__n == _sUntagged)  return VT_UNTAGGED;
-    if (__n == _sVirtual)   return VT_VIRTUAL;
-    if (__n == _sHard)      return VT_HARD;
+    if (0 == __n.compare(_sNo,        Qt::CaseInsensitive)) return VT_NO;
+    if (0 == __n.compare(_sUnknown,   Qt::CaseInsensitive)) return VT_NOTKNOWN;
+    if (0 == __n.compare(_sForbidden, Qt::CaseInsensitive)) return VT_FORBIDDEN;
+    if (0 == __n.compare(_sAuto,      Qt::CaseInsensitive)) return VT_AUTO;
+    if (0 == __n.compare(_sTagged,    Qt::CaseInsensitive)) return VT_TAGGED;
+    if (0 == __n.compare(_sUntagged,  Qt::CaseInsensitive)) return VT_UNTAGGED;
+    if (0 == __n.compare(_sVirtual,   Qt::CaseInsensitive)) return VT_VIRTUAL;
+    if (0 == __n.compare(_sHard,      Qt::CaseInsensitive)) return VT_HARD;
     if (__ex) EXCEPTION(EDATA, -1, __n);
     return VT_INVALID;
 }
@@ -3285,9 +3301,10 @@ const QString& vlanType(int __e, bool __ex)
 
 int  setType(const QString& __n, bool __ex)
 {
-    if (__n == _sAuto)   return ST_AUTO;
-    if (__n == _sQuery)  return ST_QUERY;
-    if (__n == _sManual) return ST_MANUAL;
+    if (0 == __n.compare(_sAuto,   Qt::CaseInsensitive)) return ST_AUTO;
+    if (0 == __n.compare(_sQuery,  Qt::CaseInsensitive)) return ST_QUERY;
+    if (0 == __n.compare(_sConfig, Qt::CaseInsensitive)) return ST_CONFIG;
+    if (0 == __n.compare(_sManual, Qt::CaseInsensitive)) return ST_MANUAL;
     if (__ex) EXCEPTION(EDATA, -1, __n);
     return ST_INVALID;
 }
@@ -3297,6 +3314,7 @@ const QString& setType(int __e, bool __ex)
     switch (__e) {
     case ST_AUTO:   return _sAuto;
     case ST_QUERY:  return _sQuery;
+    case ST_CONFIG: return _sConfig;
     case ST_MANUAL: return _sManual;
     default:        if (__ex) EXCEPTION(EDATA, (qlonglong)__e);
                     return _sNul;

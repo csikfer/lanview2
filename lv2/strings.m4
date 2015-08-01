@@ -116,7 +116,8 @@ STRDEF(Found, "found")
 STRDEF(Notfound, "notfound")
 STRDEF(Discard, "discard")
 STRDEF(Caveat, "caveat")
- dnl error
+dnl error
+STRDEF(Ambiguous, "ambiguous")
 
 dnl Tábla és mező nevek
 STRDEF(ParamTypes, "param_types")
@@ -490,6 +491,7 @@ STRDEF(PortVlans, "port_vlans")
  STRDEF(SetType, "set_type")
   dnl auto
   STRDEF(Query, "query")
+  STRDEF(Config, "config")
   STRDEF(Manual, "manual")
 
 STRDEF(Ouis, "ouis")

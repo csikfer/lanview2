@@ -4,7 +4,7 @@ CONFIG -= debug_and_release
 bison.name = Bison
 bison.input = BISONSOURCES
 bison.output = ${QMAKE_FILE_BASE}_yy.cpp
-bison.commands = bison -d -o ${QMAKE_FILE_OUT} -v --report-file=bison_report.txt $$replace(${QMAKE_FILE_IN},'\\','/')
+bison.commands = bison -d -o ${QMAKE_FILE_OUT} -v --report-file=bison_report.txt ${QMAKE_FILE_IN}
 bison.clean =
 bison.CONFIG += target_predeps
 bison.variable_out = SOURCES

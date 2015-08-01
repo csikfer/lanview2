@@ -29,7 +29,7 @@ public:
     /// Destruktor
     ~cDeviceArp();
     /// A lekérdezést végző virtuális metódus.
-    /// @par q A lekerdezés eredményét a q objetummal írja az adatbázisba.
+    /// @param q A lekerdezés eredményét a q objetummal írja az adatbázisba.
     virtual enum eNotifSwitch run(QSqlQuery& q);
     /// SNMP objektum a lekérdezéshez, ha kell
     cSnmp      *pSnmp;

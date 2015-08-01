@@ -187,12 +187,14 @@ cDeviceArp::~cDeviceArp()
 enum eNotifSwitch cDeviceArp::run(QSqlQuery& q)
 {
     _DBGFN() << QChar(' ') << name() << endl;
+    int setType;
     cArpTable at;
-    // SNMP lekérdezés:
     if (*pPSSnmp == protoService()) {
+        setType = ST_QUERY;     // SNMP lekérdezés:
         at.getBySnmp(*pSnmp);
     }
     else if (*pPSDhcpConf == primeService()) {
+        setType = ST_CONFIG;    // DHCP: dhcpd.conf fájl
         if    (*pPSLocal == protoService()) {
             at.getByLocalDhcpdConf(*pFileName);
         }
@@ -202,6 +204,7 @@ enum eNotifSwitch cDeviceArp::run(QSqlQuery& q)
         else EXCEPTION(EDATA);
     }
     else if (*pPSArpProc == primeService()) {
+        setType = ST_QUERY;     // proc file
         if    (*pPSLocal == protoService()) {
             at.getByLocalProcFile(*pFileName);
         }
@@ -211,7 +214,7 @@ enum eNotifSwitch cDeviceArp::run(QSqlQuery& q)
         else EXCEPTION(EDATA);
     }
     else EXCEPTION(EDATA);
-    cArp::replaces(q, at);
+    cArp::replaces(q, at, setType, hostServiceId());
     DBGFNL();
     return RS_ON;
 }

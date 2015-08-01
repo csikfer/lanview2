@@ -12,10 +12,8 @@ QT       -= gui
 TARGET = arpd
 CONFIG += console
 CONFIG -= app_bundle
-CONFIG += debug
 
 TEMPLATE = app
-
 
 SOURCES += \
     arpd.cpp
@@ -23,10 +21,10 @@ SOURCES += \
 INCLUDEPATH += ../lv2
 LIBS += -lsnmp -L../lv2 -llv2
 
- TRANSLATIONS    = arpd_hu.ts \
-                   arpd_en.ts
+TRANSLATIONS    = arpd_hu.ts \
+                  arpd_en.ts
 
- CODECFORSRC     = UTF-8
+CODECFORSRC     = UTF-8
 
 HEADERS += \
     arpd.h

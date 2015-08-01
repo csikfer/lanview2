@@ -12,7 +12,6 @@ QT       -= gui
 TARGET = portstat
 CONFIG += console
 CONFIG -= app_bundle
-CONFIG += debug
 
 TEMPLATE = app
 
@@ -22,8 +21,8 @@ HEADERS +=  portstat.h
 INCLUDEPATH += ../lv2
 LIBS += -lsnmp -L../lv2 -llv2
 
- TRANSLATIONS    = portstat_hu.ts \
-                   portstat_en.ts
+TRANSLATIONS    = portstat_hu.ts \
+                  portstat_en.ts
 
- CODECFORSRC     = UTF-8
+CODECFORSRC     = UTF-8
 
