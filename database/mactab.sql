@@ -143,7 +143,7 @@ BEGIN
                 WHERE ipaddress = arp.ipaddress;
             INSERT INTO
                 arp_logs(reason, ipaddress, hwaddress_new, hwaddress_old, set_type_old, host_service_id_old, first_time_old, last_time_old)
-                VALUES( 'move',  ipa,       hwi,           arp.hwaddress, arp.set_type, arp.host_service_id, arp.first_time, arp.last_time);
+                VALUES( 'move',  ipa,       hwa,           arp.hwaddress, arp.set_type, arp.host_service_id, arp.first_time, arp.last_time);
             RETURN 'modify';
         END IF;
     END IF;
