@@ -51,14 +51,15 @@ enum eInternalStat {
 
 /// Az ellenörző eéjárás típusa
 enum eInspectorType {
-    IT_UNKNOWN = -1,
-    IT_TIMED   =  1,    ///< Időzített, a fő szálban
-    IT_THREAD,          ///< Időzített saját szálként
-    IT_CONTINUE,        ///< Belső időzítés, futó saját szál
-    IT_PASSIVE          ///< a superior lekérdezés eredményéhez kapcsolódik
+    IT_UNKNOWN      = -1,
+    IT_CONTINUE     =  0,   ///< Egy szál, saját időzítés
+    IT_TIMED        =  1,   ///< Időzített, a fő szálban
+    IT_THREAD       =  2,   ///< Saját szálként
+    IT_TIMEDTHREAD  =  3,   ///< Időzített saját szálként
+    IT_PASSIVE      =  4    ///< a superior lekérdezés eredményéhez kapcsolódik
 };
 
-EXT_ const QString& inspectorType(enum eInspectorType __t, bool __ex = true);
+EXT_ QString inspectorType(enum eInspectorType __t, bool __ex = true);
 EXT_ eInspectorType inspectorType(const QString& __n, bool __ex = true);
 
 /// Az időzítés típusa ill. állapota
@@ -177,7 +178,8 @@ public:
     void self(QSqlQuery& q, const QString& __sn);
     /// A belső statuszt konvertálja stringgé.
     const QString& internalStatName() { return ::internalStatName(internalStat); }
-
+    /// A parancs string, és behelyettesítéseinek a végrahajtása
+    QString& getCheckCmd(QSqlQuery &q);
     // Adattagok
     /// Objektum típus
     enum eInspectorType inspectorType;
@@ -207,6 +209,11 @@ public:
     qlonglong           lastElapsedTime;
     /// Ha ő egy thread, akkor a QThread objektumra mutat, egyébként NULL
     QThread            *pThread;
+    /// Opcionális parancs sor
+    QString             checkCmd;
+    QStringList         checkCmdArgs;
+    /// Parancs objektum, vagy NULL
+    QProcess           *pProcess;
     /// Adatbázis műveletekhez használt objektum
     QSqlQuery          *pq;
     /// Ha superior szolgálltatásról van szó, akkor az alárendeltek listájára mutató pointer, egyébként NULL.
@@ -289,20 +296,20 @@ public:
         return pParent->hostServiceId();
     }
     qlonglong portId() const            { return nPort().getId(); }
-    const cService& primeService()      { if (pPrimeService == NULL) EXCEPTION(EPROGFAIL); return *pPrimeService; }
+    const cService& primeService()      { if (pPrimeService == NULL) EXCEPTION(EDATA); return *pPrimeService; }
     qlonglong primeServiceId()          { return primeService().getId(); }
     QString primeServiceName()          { return primeService().getName(); }
-    const cService& protoService()      { if (pProtoService == NULL) EXCEPTION(EPROGFAIL); return *pProtoService; }
+    const cService& protoService()      { if (pProtoService == NULL) EXCEPTION(EDATA); return *pProtoService; }
     qlonglong protoServiceId()          { return protoService().getId(); }
     QString protoServiceName()          { return protoService().getName(); }
     QString name();
 
     /// Ha az objektum időzített.
-    bool isTimed() const { return inspectorType == IT_TIMED  || inspectorType == IT_THREAD; }
+    bool isTimed() const { return inspectorType & IT_TIMED; }
     /// Ha az objektum önálló szálon fut
-    bool isThread() const { return inspectorType == IT_THREAD || inspectorType == IT_CONTINUE; }
+    bool isThread() const { return inspectorType & IT_THREAD; }
     /// Ha a lekérdezést el kell indítani / nem passzív
-    bool needStart() const { return inspectorType == IT_TIMED  || inspectorType == IT_THREAD || inspectorType == IT_CONTINUE; }
+    bool needStart() const { return inspectorType != IT_PASSIVE; }
     /// A statikus adattagokat (tableoid-k) inicializálja, ha ez még nem történt meg (értékük NULL_ID).
     /// A tableoid értékek csak a main objektum (lnaview2) létrehozása után kérdezhetőek le, miután már meg lett nyitva az adatbázis.
     static void initStatic() {

@@ -68,8 +68,9 @@ daemon      Az szolgáltatás ellenörzése egy daemon program, paraméterek:\n
     polling     daemon paraméter: a programot időzítve kell hívni. He elvégezte az ellenörzést, akkor kilép.
 inspector
     timed       Időzített
-    thread      Időzített, saját szállal (?!)
-    continue    Saját szál belső ütemezés ill. folyamatos (?!)
+    thread      Saját szál
+	timed,thread	Időzített saját szállal
+    continue    Folyamatos/belső időzítés/polling
     passive     Valamilyen lekérdezés (superior) járulékos eredményeként van állpota
 superior    Alárendelteket ellenörző eljárásokat hív, szolgál ki (passive)
     <üres>      Alárendelt viszony,autómatikus

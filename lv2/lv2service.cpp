@@ -34,7 +34,8 @@ void cInspectorThread::timerEvent(QTimerEvent * e)
     _DBGFNL() << inspector.name() << endl;
 }
 
-qlonglong cInspector::nodeOid = NULL_ID;    // "inicializálatlan"! Az első alkalommal hívott konstruktor inicializálja: initStaric().
+// "inicializálatlan"! Az első alkalommal hívott konstruktor inicializálja: initStaric().
+qlonglong cInspector::nodeOid = NULL_ID;
 qlonglong cInspector::sdevOid = NULL_ID;
 
 void cInspector::preInit()
@@ -53,6 +54,7 @@ void cInspector::preInit()
     lastRun.invalidate();
     lastElapsedTime = -1;
     pThread  = NULL;
+    pProcess = NULL;
     pq       = NULL;
     pSubordinates = NULL;
     pProtoService = NULL;
@@ -152,6 +154,7 @@ void cInspector::down()
         delete pThread;
         pThread = NULL;
     }
+    pDelete(pProcess);
     pDelete(pq);
     pDelete(pPort);
     pDelete(pNode);
@@ -211,6 +214,11 @@ void cInspector::postInit(QSqlQuery& q, const QString& qs)
     _DBGFN() << name() << endl;
     if (pSubordinates != NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 pSubordinates pointer nem NULL!").arg(name()));
     if (pThread       != NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 pThread pointer nem NULL!").arg(name()));
+    // Ha meg van adva az ellenörző parancs, akkor a QProcess objektum létrejozása
+    if (!getCheckCmd().isEmpty()) {
+        pProcess = QProcess(this);
+        pProcess->setProgram(checkCmd);
+    }
     // Az objektum típusa, a IT_TIMED az alapértelmezett
     QString s = magicParam(_sInspector);
     inspectorType = s.isEmpty() ? IT_TIMED : ::inspectorType(s);
@@ -315,6 +323,62 @@ void cInspector::self(QSqlQuery& q, const QString& __sn)
     pNode->fetchSelf(q);
     // És a host_services rekordot is előszedjük.
     hostService.fetchByIds(q, pNode->getId(), service().getId());
+}
+
+QString& cInspector::getCheckCmd(QSqlQuery& q)
+{
+    checkCmdArgs.clear();
+    checkCmd = get(_sCheckCmd).toString();
+    checkCmd = checkCmd.trimmed();
+    if (checkCmd.isEmpty()) return checkCmd;
+    QString arg;
+    QString::iterator i = checkCmd.begin();
+    char separator = 0;
+    QString name;
+    while (i < checkCmd.end()) {
+        char c = i->toLatin1();
+        if (separator != 0 && c == separator) {
+            separator = 0;
+            continue;
+        }
+        if (separator == 0 && i->isSpace()) {
+            checkCmdArgs << arg;
+            arg.clear();
+            continue;
+        }
+        if (c == '"' || c == '\'') {
+            separator = c;
+            continue;
+        }
+        if (c == '$') {
+            name.clear();
+            while (++i, i < checkCmd.end()) {
+                if (i->isSpace()) break;
+                name += *i;
+            }
+            if      (0 == name.compare(_sHost,     Qt::CaseInsensitive)) arg += host().getName();
+            else if (0 == name.compare(_sAddress,  Qt::CaseInsensitive)) arg += host().getIpAddress();
+            else if (0 == name.compare(_sProtocol, Qt::CaseInsensitive)) arg += protoService().getName();
+            else if (0 == name.compare("ipproto",  Qt::CaseInsensitive)) {
+                qlonglong pid = service().getId(_sProtocolId);
+                if (pid == NULL_ID) pid = protoService().getId(_sProtocolId);
+                if (pid == NULL_ID) EXCEPTION(EDATA);
+                arg += cService().getNameById();
+            }
+            else if (0 == name.compare(_s, Qt::CaseInsensitive))  arg += ;
+            else if (0 == name.compare(_s, Qt::CaseInsensitive))  arg += ;
+            else if (0 == name.compare(_s, Qt::CaseInsensitive))  arg += ;
+            else if (0 == name.compare(_s, Qt::CaseInsensitive))  arg += ;
+            else if (0 == name.compare(_s, Qt::CaseInsensitive))  arg += ;
+            else if (0 == name.compare(_s, Qt::CaseInsensitive))  arg += ;
+            else if (0 == name.compare(_s, Qt::CaseInsensitive))  arg += ;
+        }
+        arg << *i;
+    }
+    checkCmdArgs << arg;
+    checkCmd = checkCmdArgs.first();
+    checkCmdArgs.pop_front();
+    return checkCmd;
 }
 
 void cInspector::timerEvent(QTimerEvent *)
@@ -444,9 +508,50 @@ void cInspector::start()
         PDEB(VERBOSE) << "Start timer " << interval << QChar('/') << t << "ms in defailt thread " << name() << endl;
         timerId = startTimer(t);
         timerStat = TS_FIRST;
+        startSubs();
+        internalStat = IS_RUN;
     }
-    startSubs();
-    internalStat = IS_RUN;
+    else if (needStart()) {
+        cError * lastError = NULL;
+        enum eNotifSwitch retStat = RS_UNKNOWN;
+        bool statIsSet = false;
+        internalStat = IS_RUN;
+        try {
+            sqlBegin(*pq);
+            if (lastRun.isValid()) {
+                lastRun.restart();
+            }
+            else {
+                lastRun.start();
+            }
+            retStat      = run(*pq);
+            statIsSet    = retStat & RS_STAT_SETTED;
+            retStat      = (enum eNotifSwitch)(retStat & RS_STAT_MASK);
+        } CATCHS(lastError);
+        // Ha hívtuk a run metódust, és dobott egy hátast
+        if (lastError != NULL) {
+            sqlRollback(*pq, false);  // Hiba volt, inkább visszacsináljuk az egészet.
+            // A hibárol LOG az adatbázisba, amugy töröljük a hibát
+            lanView  *plv = lanView::getInstance();
+            qlonglong id = lanView::sendError(lastError);
+            delete lastError;
+            if (plv->lastError == lastError) plv->lastError = NULL;
+            lastError = NULL;
+            QString msg = QString(QObject::trUtf8("Hiba, ld.: app_errs.applog_id = %1")).arg(id);
+            sqlBegin(*pq);
+            hostService.setState(*pq, _sUnknown, msg, parentId(false));
+        }
+        // Ha ugyan nem volt hiba, de sokat tököltünk
+        else if (retStat < RS_WARNING && interval > 0 && lastRun.hasExpired(interval)) {
+            QString msg = QString(QObject::trUtf8("Idő tullépés, futási idö %1 ezred másodperc")).arg(lastRun.elapsed());
+            hostService.setState(*pq, notifSwitch(RS_WARNING), msg, parentId(false));
+        }
+        else if (!statIsSet) {   // Ha nem volt status állítás
+            QString msg = QString(QObject::trUtf8("Futási idő %1 ezred másodperc")).arg(lastRun.elapsed());
+            hostService.setState(*pq, notifSwitch(retStat), msg, parentId(false));
+        }
+        sqlEnd(*pq);
+    }
     _DBGFNL() << QChar(' ') << name() << " internalStat = " << internalStatName() << endl;
 }
 
@@ -582,12 +687,13 @@ const QString& internalStatName(eInternalStat is)
     return _sNul;   // Hogy ne legyen warningunk.
 }
 
-const QString& inspectorType(enum eInspectorType __t, bool __ex)
+QString inspectorType(enum eInspectorType __t, bool __ex)
 {
     switch (__t) {
+    case IT_CONTINUE:   return _sContinue;
     case IT_TIMED:      return _sTimed;
     case IT_THREAD:     return _sThread;
-    case IT_CONTINUE:   return _sContinue;
+    case IT_TIMEDTHREAD:return _sTimed + _sCommaSp+ _sThread;
     case IT_PASSIVE:    return _sPassive;
     default:            break;
     }
@@ -601,6 +707,8 @@ eInspectorType inspectorType(const QString& __n, bool __ex)
     if (0 == __n.compare(_sThread,   Qt::CaseInsensitive)) return IT_THREAD;
     if (0 == __n.compare(_sContinue, Qt::CaseInsensitive)) return IT_CONTINUE;
     if (0 == __n.compare(_sPassive,  Qt::CaseInsensitive)) return IT_PASSIVE;
+    if (    __n.contains(_sTimed,    Qt::CaseInsensitive)
+        &&  __n.contains(_sThread,   Qt::CaseInsensitive)) return IT_TIMEDTHREAD;
     if (__ex) EXCEPTION(EDATA, -1, __n);
     return IT_UNKNOWN;
 }
