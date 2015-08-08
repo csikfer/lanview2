@@ -40,7 +40,7 @@ CREATE TABLE services (
     port                    integer        DEFAULT NULL,
     superior_service_mask   varchar(64)    DEFAULT NULL,
     check_cmd               text   DEFAULT NULL,
-    properties              text   DEFAULT ':',
+    features              text   DEFAULT ':',
     disabled                boolean        NOT NULL DEFAULT FALSE,
     max_check_attempts      integer        DEFAULT NULL,
     normal_check_interval   interval       DEFAULT NULL,
@@ -60,27 +60,27 @@ COMMENT ON COLUMN services.service_note     IS 'Megjegyzés';
 COMMENT ON COLUMN services.protocol_id      IS 'Ip protocol id (-1 : nil, if no ip protocol)';
 COMMENT ON COLUMN services.port             IS 'Default (TCP, UDP, ...) port number. or NULL';
 COMMENT ON COLUMN services.check_cmd        IS 'Default check command';
-COMMENT ON COLUMN services.properties       IS
+COMMENT ON COLUMN services.features       IS
 'Default paraméter lista (szeparátor a kettőspont, paraméter szeparátor az ''='', első és utolsó karakter a szeparátor):\n
 daemon      Az szolgáltatás ellenörzése egy daemon program, paraméterek:\n
     respawn     daemon paraméter: a programot újra kell indítani, ha kilép. A kilépés nem hiba.\n
     continue    daemon paraméter: a program normál körülmények között nem lép ki, csak ha leállítják, vagy hiba van. (default)
     polling     daemon paraméter: a programot időzítve kell hívni. He elvégezte az ellenörzést, akkor kilép.
-inspector
+timing
     timed       Időzített
     thread      Saját szál
-	timed,thread	Időzített saját szállal
-    continue    Folyamatos/belső időzítés/polling
+    timed,thread Időzített saját szállal
+    custom      Belső időzítés/polling
     passive     Valamilyen lekérdezés (superior) járulékos eredményeként van állpota
+    polling     Egyszeri futás
 superior    Alárendelteket ellenörző eljárásokat hív, szolgál ki (passive)
     <üres>      Alárendelt viszony,autómatikus
-    custom      egyedileg kezelt (a cInspector objektum nem ovassa be az alárendelteket, azok egyedileg kezelendőek)
-protocol    Ez egy protokolt (is)
-mode        Ez egy módszer, sablon, ...
-system
-    lanview2    Lanview2 modul
+method
+    custom      saját/ismeretlen (alapérte,mezett)
+    qparser     Lanview2 quer
     nagios      Egy Nagios plugin
     munin       Egy Munin plugin
+    carried     Önálló (csak akkor kell adminisztrállni, ha kiakadt)
 ifType      A szolgáltatás hierarhia mely port típus linkjével azonos (paraméter: interface típus neve)
 disabled    service_name = icontsrv , csak a host_services rekordban, a szolgáltatás (riasztás) tiltva.
 reversed    service_name = icontsrv , csak a host_services rekordban, a port fordított bekötését jelzi.
@@ -155,7 +155,7 @@ CREATE TABLE host_services (
         REFERENCES services(service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT,
     delegate_host_state     boolean        NOT NULL DEFAULT FALSE,
     check_cmd               text   DEFAULT NULL,
-    properties              text   DEFAULT NULL,
+    features              text   DEFAULT NULL,
     disabled                boolean        NOT NULL DEFAULT FALSE,
     superior_host_service_id bigint        DEFAULT NULL
         REFERENCES host_services(host_service_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
@@ -199,7 +199,7 @@ COMMENT ON COLUMN host_services.proto_service_id IS 'Az ellenőrzés módszerén
 COMMENT ON COLUMN host_services.port_id IS 'Opcionális port azonosító, ha a szolgáltatás ill. ellenörzés egy porthoz rendelt.';
 COMMENT ON COLUMN host_services.delegate_host_state IS 'Értéke igaz, ha a szolgáltatás állapotát örökli a node is.';
 COMMENT ON COLUMN host_services.check_cmd IS 'Egy opcionális parancs.';
-COMMENT ON COLUMN host_services.properties IS 'További paraméterek. Ld.: services.properties . Ha értéke nem NULL, akkor fellülbírálja a service_id -hez tartozó services.properties értékét';
+COMMENT ON COLUMN host_services.features IS 'További paraméterek. Ld.: services.features . Ha értéke nem NULL, akkor fellülbírálja a service_id -hez tartozó services.features értékét';
 COMMENT ON COLUMN host_services.superior_host_service_id IS 'Szülő szolgáltatás. Az ellenörzés a szülőn keresztül hajtódik végre, ill. az végzi.';
 COMMENT ON COLUMN host_services.max_check_attempts IS 'Hibás eredmények maximális száma, a riasztás kiadása elött.';
 COMMENT ON COLUMN host_services.normal_check_interval IS 'Ellenörzések ütemezése másodpercben, ha nincs hiba.';
@@ -474,7 +474,7 @@ BEGIN
     END IF;
     IF ptyp IS NULL THEN
         ptyp := substring(
-            (SELECT properties FROM services WHERE service_id = hsrv.service_id)
+            (SELECT features FROM services WHERE service_id = hsrv.service_id)
             FROM E'\\:iftype\\=(.*)\\:');
     END IF;
     IF hsnm IS NULL OR ptyp IS NULL THEN
@@ -555,6 +555,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE VIEW view_host_services AS
     SELECT
         hs.host_service_id          AS host_service_id,
+        host_service_id2name(hs.host_service_id) AS host_service_name,
         hs.host_service_note        AS host_service_note,
         hs.node_id                  AS node_id,
         n.node_name                 AS node_name,
@@ -566,8 +567,8 @@ CREATE OR REPLACE VIEW view_host_services AS
         p.port_name                 AS port_name,
         hs.delegate_host_state      AS delegate_host_state,
         COALESCE(hs.check_cmd,             s.check_cmd)              AS check_cmd,
-        s.properties                AS default_properties,
-        hs.properties               AS properties,
+        s.features                AS default_features,
+        hs.features               AS features,
         hs.superior_host_service_id AS superior_host_service_id,
         superior_hs_h.node_name     AS superior_host_service_host_name,
         superior_hs_s.service_name  AS superior_host_service_service_name,

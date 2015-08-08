@@ -71,8 +71,6 @@ public:
     QDialog         *pDialog;
     ///< A menü elemhez tartozó QAction objektum
     QAction         *pAction;
-    ///< Paraméter konténer
-    tMagicMap       mm;
 private:
     /// A type adattag beállítása
     void setType(enum eMenuActionType _t) {

@@ -1843,53 +1843,59 @@ template <class R> const cRecStaticDescr *getPDescr(const QString& _tn, const QS
 /// Egy alapértelmezett cRecord leszármazott objektum teljes definíciója
 #define DEFAULTCRECDEF(R, tn)   CRECCNTR(R) CRECDEFD(R) CRECDDCR(R, tn)
 
+#define STFIELDIX(c,m)   _ix ## m = _descr_ ## c().toIndex(_s ## m);
+
 /// @relates cRecord
 class LV2SHARED_EXPORT cRecordFieldConstRef {
     friend class cRecord;
     friend class cRecordFieldRef;
 protected:
     /// A hivatkozott objektum referenciája
-    const cRecord&  _record;
+    const cRecord *  _pRecord;
     /// A hivatkozott mező indexe
     int             _index;
     /// Konstruktor a mező indexével
-    cRecordFieldConstRef(const cRecord& __r, int __ix) : _record(__r) {
+    cRecordFieldConstRef(const cRecord& __r, int __ix) {
+        _pRecord = &__r;
         _index = __ix;
-        _record.chkIndex(_index);
+        _pRecord->chkIndex(_index);
     }
     /// Konstruktor a mező nevével
-    cRecordFieldConstRef(const cRecord& __r,const QString& __n)  : _record(__r) {
+    cRecordFieldConstRef(const cRecord& __r,const QString& __n) {
+        _pRecord = &__r;
         _index = __r.toIndex(__n);
-        _record.chkIndex(_index);
+        _pRecord->chkIndex(_index);
     }
 public:
     /// Copy konstruktor
-    cRecordFieldConstRef(const cRecordFieldConstRef& __r) : _record(__r._record) { _index = __r._index; }
+    cRecordFieldConstRef(const cRecordFieldConstRef& __r)  { _index = __r._index; _pRecord = __r._pRecord; }
+    ///
+    cRecordFieldConstRef& operator =(const cRecordFieldConstRef& __r)  { _index = __r._index; _pRecord = __r._pRecord; return *this; }
     /// A hivatkozott mező értéke. Vigyázat a függvény egy referencsiát ad vissza, ami potenciálisan veszályes lehet,
     /// ha megváltozik a cDecord::_field adattagja.
-    operator const QVariant&() const   { return _record.get(_index); }
+    operator const QVariant&() const   { return _pRecord->get(_index); }
     /// A hivatkozott mező értéke egész számként
-    operator qlonglong() const  { return _record.getId(_index); }
+    operator qlonglong() const  { return _pRecord->getId(_index); }
     /// A hivatkozott mező értéke stringként
-    operator QString() const    { return _record.getName(_index); }
+    operator QString() const    { return _pRecord->getName(_index); }
     /// A hivatkozott mező értéke stringként
     QString toString() const    { return *this; }
     /// A hivatkozott objektum statuszának a referenciája
-    const int& stat() { return _record._stat; }
+    const int& stat() { return _pRecord->_stat; }
     /// A hivatkozott objektum referenciája
-    const cRecord& record() const           { return _record; }
+    const cRecord& record() const           { return *_pRecord; }
     /// A hivatkozott mező leíró objektumának a referenciája
-    const cRecStaticDescr& recDescr() const { return _record.descr(); }
+    const cRecStaticDescr& recDescr() const { return _pRecord->descr(); }
     /// A hivatkozott objektum leíró objektumának a referenciája
-    const cColStaticDescr& descr() const    { return _record.descr().colDescr(_index); }
+    const cColStaticDescr& descr() const    { return _pRecord->descr().colDescr(_index); }
     /// A hivatkozott mező indexe
     int index() const           { return _index; }
     /// Ha a mező értéke NULL, akkor true-val tér vissza
-    bool isNull() const         { return _record.isNull(_index); }
+    bool isNull() const         { return _pRecord->isNull(_index); }
     /// Ha a mező értéke az adatbázisban modosítható, akkor true-val tér vissza
-    bool isUpdatable() const    { return _record.isUpdatable(_index); }
+    bool isUpdatable() const    { return _pRecord->isUpdatable(_index); }
     /// Ha a mező értéke lehet NULL, akkor true-val tér vissza
-    bool isNullable() const     { return _record.isNullable(_index); }
+    bool isNullable() const     { return _pRecord->isNullable(_index); }
     /// A mező névvel tár vissza
     QString columnName() const { return descr().colName(); }
     /// A teljes (tábla névvel kiegészített) mező névvel tér vissza
@@ -2040,33 +2046,89 @@ protected:
     const cRecStaticDescr *pStaticDescr;
 };
 
-/// Template függvény a "properties" mező felbontására
+/// Template függvény a "features" mező felbontására
 /// A sablon föggvény számít arra, hogy az objektumnak van egy
-/// _pMagicMap konténere, ahova az eredményt helyezi, továbbá egy _ixProperties adattagja, ami a properties mező indexe.
-/// @param S Egy cRecord leszármazott osztály
+/// _pFeatures konténere, ahova az eredményt helyezi, továbbá egy _ixFeatures statikus adattagja.
+/// Ha a konténer meg volt allokálva (_pFeatures != NULL), akkor kiüríti.
+/// Ha nem volt megallokálva, akkor létrehozza.
+/// ami a features mező indexe.
+/// @param R Egy cRecord leszármazott osztály
 /// @param o Az objektumpéldány
 /// @param __ex ha értéke true, akkor hiba esetén dob egy kizárást.
 /// @relates cRecord
-template <class S> void _SplitMagicT(S& o, bool __ex)
+template <class R> void _SplitFeatureT(R& o, bool __ex)
 {
-    if (o._pMagicMap == NULL) o._pMagicMap = new tMagicMap();
-    else                      o._pMagicMap->clear();
-    *o._pMagicMap = splitMagic(o.getName(S::_ixProperties), *o._pMagicMap, __ex);
+    if (o._pFeatures == NULL) o._pFeatures = new cFeatures();
+    else                        o._pFeatures->clear();
+    if (R::_ixFeatures < 0) EXCEPTION(EPROGFAIL);
+    o._pFeatures->split(o.getName(R::_ixFeatures), __ex);
 }
-/// Egy módosított map visszaírása a "properties" mezőbe. Nem hiívja az cRecord::atEnd(int) metódust.
+/// Egy módosított map visszaírása a "features" mezőbe. Nem hiívja az cRecord::atEnd(int) metódust.
 /// A sablon föggvény számít arra, hogy az objektumnak van egy
-/// _pMagicMap konténere, továbbá egy _ixProperties adattagja, ami a properties mező indexe.
+/// _pFeatures konténere, továbbá egy _ixFeatures statikus adattagja, ami a features mező indexe.
 /// @param S Egy cRecord leszármazott osztály
 /// @param o Az objektumpéldány
 /// @relates cRecord
-template <class S> void _Magic2PropT(S& o)
+template <class R> void _JoinFeatureT(R& o)
 {
+    if (o._pFeatures == NULL ) return;
     QString prop;
-    if (o._pMagicMap != NULL) prop = joinMagic(*o._pMagicMap);
-    if (o.getName(S::_ixProperties) != prop) { // Nem túl hatékony, de bonyi lenne.
-        o._set(S::_ixProperties, QVariant(prop));   // nincs atEnd() !
-        o._stat |= cRecord::ES_MODIFY;
+    prop = o._pFeatures->join();
+    if (o.getName(R::_ixFeatures) != prop) { // Nem túl hatékony (sorrend változhat), de bonyi lenne.
+        if (R::_ixFeatures < 0) EXCEPTION(EPROGFAIL);
+        o._set(R::_ixFeatures, QVariant(prop));   // nincs atEnd() !
+        o._stat |= R::ES_MODIFY;
     }
 }
+
+/// @def FEATURES()
+/// Egy cRecord leszármazott osztálydeklaráció törzsében használható makró.
+/// A features mező kezeléséhez szükséges adattagot, és metóduaokat deklarálja.
+/// A deklarált adattag:
+/// @code
+/// cFeatures *pFeatures;
+/// @code
+/// A paramétereket tároló konténer pointere.
+/// @par
+/// A definiált metódusok:
+/// @code
+/// cFeatures&  split(bool __ex);
+/// @code
+/// Feltölti (ha kell allokálja) a konténert. Ha a konténer létezett, akor elöszőr törli a tartalmát.
+/// Lásd: template <class R> void _SplitFeatureT(R& o, bool __ex)
+/// @code
+/// const cFeatures&  features(bool __ex = true);
+/// @code
+/// Visszaadja a pFeatures adattag által mutatott cFeatures konténer objektumot.
+/// Ha a a pFeatures pointer NULL, akkor megallokálja, és feltülti azt.
+/// Mivel a pFeatures csak egy gyorstár jellegű konténer, a metódus ezt konxtans objektum esetén is elvégzi.
+/// @code
+/// cFeatures&  features(bool __ex = true);
+/// @code
+/// Visszaadja a pFeatures adattag által mutatott cFeatures konténer objektumot.
+/// Ha a a pFeatures pointer NULL, akkor megallokálja, és feltülti azt.
+/// @code
+/// const QString& feature(const QString &_nm);
+/// @code
+/// A megadott nevű paraméter értékével tér vissza (ha a konténer még nincs létrehozva, akkor létrehozza, és feltülti lásd: cFeatures&  features(bool __ex);
+/// @code
+/// cService& map2prop();
+/// @code
+/// Lásd: _Map2PropT<cService>(*this);
+
+#define FEATURES(R) \
+    friend void _SplitFeatureT<R>(R& o, bool __ex); \
+    friend void _JoinFeatureT<R>(R& o); \
+protected: \
+    cFeatures *_pFeatures; \
+    static int _ixFeatures; \
+public: \
+    cFeatures&  split(bool __ex) { _SplitFeatureT<R>(*this, __ex); return *_pFeatures; } \
+    const cFeatures&  features(bool __ex = true) const { if (_pFeatures == NULL) const_cast<R *>(this)->split(__ex); return *_pFeatures; } \
+    cFeatures&  features(bool __ex = true) { if (_pFeatures == NULL) this->split(__ex); return *_pFeatures; } \
+    QString feature(const QString &_nm) const { return features().value(_nm); } \
+    bool  isFeature(const QString &_nm) const { return features().contains(_nm); } \
+    R& join() { _JoinFeatureT<R>(*this); return *this;  }
+
 
 #endif // LV2DATAB_H

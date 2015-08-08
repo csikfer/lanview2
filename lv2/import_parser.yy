@@ -117,23 +117,27 @@ static qlonglong       globalPlaceId = NULL_ID;
 /// A parser
 static int yyparse();
 /// A parser utolsó hibajelentése, NULL, ha nincs hiba
-cError *importLastError = NULL;
+cError *pImportLastError = NULL;
 
 /// A parse() hívása a hiba elkapásával.
 /// Hiba esetén a hiba objektumba menti a parser következő állpotváltozóit:
 /// Feldolgozott forrásállomány neve, aktuális sor sorszáma, tartalma, és a sor puffer (macbuff) tartalma.
-int importParse()
+int importParse(eImportParserStat _st)
 {
+    if (importParserStat != IPS_READY)
+        EXCEPTION(EPROGFAIL, (int)importParserStat);
+    importParserStat = _st;
     int i = -1;
     try {
         i = yyparse();
     }
-    CATCHS(importLastError);
-    if (importLastError != NULL) {
-        importLastError->mDataLine = importLineNo;
-        importLastError->mDataName = importFileNm;
-        importLastError->mDataMsg  = "lastLine : " + quotedString(lastLine) + "\n macbuff : " + quotedString(macbuff);
+    CATCHS(pImportLastError);
+    if (pImportLastError != NULL) {
+        pImportLastError->mDataLine = importLineNo;
+        pImportLastError->mDataName = importFileNm;
+        pImportLastError->mDataMsg  = "lastLine : " + quotedString(lastLine) + "\n macbuff : " + quotedString(macbuff);
     }
+    importParserStat = IPS_READY;
     return i;
 }
 
@@ -201,7 +205,8 @@ public:
     static void inc(QString *__f);
     static void eoi();
     static int size() { return stack.size(); }
-    static void clear() { stack.clear(); }
+//  static void clear();
+    static void dropp();
 private:
     QTextStream*    oldStream;
     QFile *         newFile;
@@ -209,6 +214,43 @@ private:
     unsigned int    oldPos;
     static QStack<c_yyFile> stack;
 };
+
+void c_yyFile::inc(QString *__f)
+{
+    c_yyFile    o;
+    o.newFile = new QFile(*__f);
+    if (!importSrcOpen(*o.newFile)) yyerror(QObject::trUtf8("include: file open error."));
+    o.oldStream = pImportInputStream;
+    pImportInputStream = new QTextStream(o.newFile);
+    o.oldFileName = importFileNm;
+    importFileNm = *__f;
+    delete __f;
+    o.oldPos = importLineNo;
+    importLineNo = 0;
+    stack.push(o);
+}
+
+void c_yyFile::eoi()
+{
+    c_yyFile    o = stack.pop();
+    delete pImportInputStream;
+    delete o.newFile;
+    pImportInputStream = o.oldStream;
+    importFileNm = o.oldFileName;
+    importLineNo = o.oldPos;
+}
+
+void c_yyFile::dropp()
+{
+    if (stack.size() == 0) return;
+    int     n = importLineNo;
+    QString f = importFileNm;
+    while (stack.size() > 0) {
+        eoi();
+    }
+    importLineNo = n;
+    importFileNm = f;
+}
 
 /// A fizikai linkeket definiáló blokk adatait tartalmazó, ill. a blokkon
 /// belüli definíciókat rögzítő metódusok osztálya.
@@ -312,9 +354,10 @@ void initImportParser()
     netType = NT_INVALID; // firstSubNet = ;
     alertServiceId = NULL_ID;
 
-    pDelete(importLastError);
+    pDelete(pImportLastError);
     importLineNo = 0;
-    c_yyFile::clear();
+    // c_yyFile::clear();
+    if (c_yyFile::size() > 0) EXCEPTION(EPROGFAIL);
 }
 
 void downImportParser()
@@ -339,6 +382,7 @@ void downImportParser()
     ivars.clear();
     svars.clear();
     pDelete(pq2);
+    c_yyFile::dropp();
 }
 
 QSqlQuery& qq2()
@@ -405,32 +449,6 @@ static inline cSnmpDevice& snmpdev() {
     if (pPatch == NULL) EXCEPTION(EPROGFAIL);
     return *pPatch->reconvert<cSnmpDevice>();
 }
-
-void c_yyFile::inc(QString *__f)
-{
-    c_yyFile    o;
-    o.newFile = new QFile(*__f);
-    if (!importSrcOpen(*o.newFile)) yyerror(QObject::trUtf8("include: file open error."));
-    o.oldStream = importInputStream;
-    importInputStream = new QTextStream(o.newFile);
-    o.oldFileName = importFileNm;
-    importFileNm = *__f;
-    delete __f;
-    o.oldPos = importLineNo;
-    importLineNo = 0;
-    stack.push(o);
-}
-
-void c_yyFile::eoi()
-{
-    c_yyFile    o = stack.pop();
-    delete importInputStream;
-    delete o.newFile;
-    importInputStream = o.oldStream;
-    importFileNm = o.oldFileName;
-    importLineNo = o.oldPos;
-}
-
 
 /* ************************************************************************************************ */
 void cArpServerDef::updateArpTable(QSqlQuery& q)
@@ -617,7 +635,7 @@ void cLink::insert(QString * __d, QStringList * __srv)
         hose.setId(_sNodeId,     ho.getId());
         hose.setId(_sPortId,     po.getId());
         hose[_sDelegateHostState] = true;
-        QString it = se.magicParam(_sIfType);
+        QString it = se.feature(_sIfType);
         if (it.isEmpty()) { //??
             DWAR() << "Invalid or empty service magic param : iftype" << endl;
         }
@@ -781,7 +799,7 @@ static void newMenuMenu(const QString& _n, const QString& _t)
         p->setId(_sUpperMenuItemId, actMenuItem().getId());
     }
     if (!_t.isEmpty()) p->setName(_sMenuItemTitle, _t);
-    p->setName(_sProperties, ":sub:");
+    p->setName(_sFeatures, ":sub:");
     PDEB(VVERBOSE) << "Insert : " << p->allToString() << endl;
     p->insert(qq());
     menuItems << p;
@@ -796,7 +814,7 @@ static void delMenuItem()
 /// @param _n Rekord név
 /// @param _sn paraméter
 /// @param _t Megjelenített név
-/// @param typ Minta string a properties mezőhöz (paraméter _n
+/// @param typ Minta string a features mezőhöz (paraméter _n
 static void newMenuItem(const QString& _n, const QString& _sn, const QString& _t, const char * typ)
 {
     if (pMenuApp == NULL) EXCEPTION(EPROGFAIL);
@@ -805,7 +823,7 @@ static void newMenuItem(const QString& _n, const QString& _sn, const QString& _t
     p->set(_sAppName, *pMenuApp);
     p->setId(_sUpperMenuItemId, actMenuItem().getId());
     if (!_t.isEmpty()) p->setName(_sMenuItemTitle, _t);
-    p->setName(_sProperties, QString(typ).arg(_sn));
+    p->setName(_sFeatures, QString(typ).arg(_sn));
     p->insert(qq());
     menuItems << p;
 }
@@ -834,6 +852,13 @@ static void insertCode(const QString& __txt)
     macbuff = __txt + macbuff;
 }
 
+static QString yygetline()
+{
+    ++importLineNo;
+    if (pImportInputStream != NULL) return pImportInputStream->readLine();
+    if (importParserStat != IPS_THREAD) EXCEPTION(EPROGFAIL);
+    return cImportParseThread::instance().pop();
+}
 
 static QChar yyget()
 {
@@ -841,8 +866,7 @@ static QChar yyget()
 
     if (!macbuff.size()) {
         do {
-            ++importLineNo;
-            lastLine = macbuff  = importInputStream->readLine();
+            lastLine = macbuff  = yygetline();
             PDEB(INFO) << "YYLine(" << importFileNm << "[" << importLineNo << "]) : \"" << lastLine << "\"" << endl;
             if (macbuff.isNull()) {
                 if (c_yyFile::size() > 0) {
@@ -877,8 +901,7 @@ static void yyskip(bool b)
     int n = lastLine.indexOf(ns);
     if (n < 0) yyerror(QObject::trUtf8("Indent error ?"));
     do {
-        ++importLineNo;
-        lastLine = importInputStream->readLine();
+        lastLine = yygetline();
         PDEB(INFO) << "yyskip : \"" << lastLine << "\"" << endl;
         if (lastLine.isNull()) break;               // fájl vége
         if (lastLine.indexOf(as) == 0) continue;    // Üres sor
@@ -1178,14 +1201,15 @@ static int portIndex2SeqN(qlonglong ix)
 %token      USER_T DAY_T OF_T PERIOD_T PROTOCOL_T ALERT_T INTEGER_T FLOAT_T
 %token      DELETE_T ONLY_T STRING_T SAVE_T TYPE_T STEP_T
 %token      MASK_T LIST_T VLANS_T ID_T DYNAMIC_T FIXIP_T PRIVATE_T PING_T
-%token      NOTIF_T ALL_T RIGHTS_T REMOVE_T SUB_T PROPERTIES_T MAC_T EXTERNAL_T
+%token      NOTIF_T ALL_T RIGHTS_T REMOVE_T SUB_T FEATURES_T MAC_T EXTERNAL_T
 %token      LINK_T LLDP_T SCAN_T TABLE_T FIELD_T SHAPE_T TITLE_T REFINE_T
 %token      LEFT_T DEFAULTS_T ENUM_T RIGHT_T VIEW_T INSERT_T EDIT_T
 %token      INHERIT_T NAMES_T HIDE_T VALUE_T DEFAULT_T FILTER_T FILTERS_T
 %token      ORD_T SEQUENCE_T MENU_T GUI_T OWN_T TOOL_T TIP_T WHATS_T THIS_T
 %token      EXEC_T TAG_T ANY_T BOOLEAN_T CHAR_T IPADDRESS_T REAL_T URL_T
 %token      BYTEA_T DATE_T DISABLE_T EXPRESSION_T PREFIX_T RESET_T CACHE_T
-%token      DATA_T IANA_T IFDEF_T IFNDEF_T NC_T
+%token      DATA_T IANA_T IFDEF_T IFNDEF_T NC_T QUERY_T PARSER_T
+%token      REPLACE_T RANGE_T EXCLUDE_T PREP_T POST_T CASE_T
 
 %token <i>  INTEGER_V
 %token <r>  FLOAT_V
@@ -1197,7 +1221,7 @@ static int portIndex2SeqN(qlonglong ix)
 %type  <i>  ptypen fhs hsid srvid grpid tmpid node_id port_id snet_id ift_id plg_id
 %type  <i>  usr_id ftmod p_seq
 %type  <il> list_i p_seqs p_seqsl // ints
-%type  <b>  bool bool_on ifdef
+%type  <b>  bool bool_on ifdef exclude case
 %type  <r>  /* real */ num fexpr
 %type  <s>  str str_ str_z name_q time tod _toddef sexpr pnm mac_q ha nsw ips rights
 %type  <s>  imgty tsintyp
@@ -1892,6 +1916,8 @@ shar    :                                           { $$ = ES_; }
         ;
 srv     : service
         | hostsrv
+        | iprange
+        | qparse
         ;
 service : SERVICE_T str str_z       { NEWOBJ(pService, cService());
                                       pService->setName(*$2);
@@ -1913,7 +1939,7 @@ srv_p   : ipprotp int ';'                       { (*pService)[_sProtocolId] = $1
         | ipprot ix_z ';'                       { (*pService)[_sProtocolId] = $1; if ($2 >= 0) (*pService)[_sPort] = $2; }
         | SUPERIOR_T SERVICE_T MASK_T str ';'   { (*pService)[_sSuperiorServiceMask] = *$4; delete $4; }
         | COMMAND_T str  ';'                    { (*pService)[_sCheckCmd]   = *$2; delete $2; }
-        | PROPERTIES_T str ';'                  { (*pService)[_sProperties] = *$2; delete $2; }
+        | FEATURES_T str ';'                  { (*pService)[_sFeatures] = *$2; delete $2; }
         | MAX_T CHECK_T ATTEMPTS_T int ';'      { (*pService)[_sMaxCheckAttempts]    = $4; }
         | NORMAL_T CHECK_T INTERVAL_T str ';'   { (*pService)[_sNormalCheckInterval] = *$4; delete $4; }
         | NORMAL_T CHECK_T INTERVAL_T int ';'   { (*pService)[_sNormalCheckInterval] = $4 * 1000; }
@@ -1957,7 +1983,7 @@ hsrv_p  : PRIME_T SERVICE_T srvid ';'           { pHostServices->sets(_sPrimeSer
         | PORT_T str ';'                        { pHostServices->setsPort(qq(), *$2); delete $2; }
         | DELEGATE_T HOST_T STATE_T bool_on ';' { pHostServices->sets(_sDelegateHostState, $4); }
         | COMMAND_T str ';'                     { pHostServices->sets(_sCheckCmd, *$2); delete $2; }
-        | PROPERTIES_T str ';'                  { pHostServices->sets(_sProperties, *$2); delete $2; }
+        | FEATURES_T str ';'                  { pHostServices->sets(_sFeatures, *$2); delete $2; }
         | SUPERIOR_T SERVICE_T hsid ';'         { pHostServices->sets(_sSuperiorHostServiceId,  $3); }
         | MAX_T CHECK_T ATTEMPTS_T int ';'      { pHostServices->sets(_sMaxCheckAttempts, $4); }
         | NORMAL_T CHECK_T INTERVAL_T value ';' { pHostServices->sets(_sNormalCheckInterval, *$4); delete $4; }
@@ -2047,7 +2073,7 @@ tmodp   : SET_T DEFAULTS_T ';'                  { pTableShape->setDefaults(qq())
         | TABLE_T TYPE_T tstypes ';'            { pTableShape->set(_sTableShapeType, slp2sl($3)); }
         | TABLE_T TITLE_T str ';'               { pTableShape->set(_sTableShapeTitle, sp2s($3)); }
         | TABLE_T READ_T ONLY_T bool_on ';'     { pTableShape->set(_sIsReadOnly, $4); }
-        | TABLE_T PROPERTIES_T str ';'          { pTableShape->set(_sProperties, sp2s($3)); }
+        | TABLE_T FEATURES_T str ';'          { pTableShape->set(_sFeatures, sp2s($3)); }
         | LEFT_T SHAPE_T tmod ';'               { pTableShape->setId(_sLeftShapeId, $3); }
         | RIGHT_T SHAPE_T tmod ';'              { pTableShape->setId(_sRightShapeId, $3); }
         | REFINE_T str ';'                      { pTableShape->setName(_sRefine, sp2s($2)); }
@@ -2065,7 +2091,7 @@ tmodp   : SET_T DEFAULTS_T ';'                  { pTableShape->setDefaults(qq())
                                                   pTableShape->fset(sp2s($2),_sTableShapeFieldNote, sp2s($5)); }
         | FIELD_T strs VIEW_T RIGHTS_T rights ';'{ pTableShape->fsets(slp2sl($2), _sViewRights, sp2s($5)); }
         | FIELD_T strs EDIT_T RIGHTS_T rights ';'{ pTableShape->fsets(slp2sl($2), _sEditRights, sp2s($5)); }
-        | FIELD_T strs PROPERTIES_T str ';'     { pTableShape->fsets(slp2sl($2), _sProperties, sp2s($4)); }
+        | FIELD_T strs FEATURES_T str ';'     { pTableShape->fsets(slp2sl($2), _sFeatures, sp2s($4)); }
         | FIELD_T str EXPRESSION_T str ';'      { pTableShape->fset(sp2s($2), _sExpression, sp2s($4)); }
         | FIELD_T strs HIDE_T bool_on ';'       { pTableShape->fsets(slp2sl($2), _sIsHide, $4); }
         | FIELD_T strs DEFAULT_T VALUE_T str ';'{ pTableShape->fsets(slp2sl($2), _sDefaultValue, sp2s($5)); }
@@ -2106,7 +2132,7 @@ fmodp   : SET_T str '=' value ';'       { pTableShapeField->set(sp2s($2), vp2v($
                                           pTableShapeField->setName(_sTableShapeFieldNote, sp2s($3)); }
         | VIEW_T RIGHTS_T rights ';'    { pTableShapeField->setName(_sViewRights, sp2s($3)); }
         | EDIT_T RIGHTS_T rights ';'    { pTableShapeField->setName(_sEditRights, sp2s($3)); }
-        | PROPERTIES_T str ';'          { pTableShapeField->setName(_sProperties, sp2s($2)); }
+        | FEATURES_T str ';'          { pTableShapeField->setName(_sFeatures, sp2s($2)); }
         | EXPRESSION_T str ';'          { pTableShapeField->setName(_sExpression, sp2s($2)); }
         | HIDE_T bool_on ';'            { pTableShapeField->setBool(_sIsHide, $2); }
         | DEFAULT_T VALUE_T str ';'     { pTableShapeField->setName(_sDefaultValue, sp2s($3)); }
@@ -2169,6 +2195,25 @@ ifdef   : PLACE_T str                   { $$ = NULL_ID != cPlace().     getIdByN
 /*      | ENUM_T TITLE_T  strs ';'     { $$ = NULL_ID != cEnumVal().; }
         | ENUM_T TITLE_T  str strs ';' { $$ = NULL_ID != cEnumVal().; }
         | GUI_T strs MENU_T ';'        { $$ = NULL_ID != cMenuItem(); } */
+        ;
+iprange : REPLACE_T DYNAMIC_T ADDRESS_T RANGE_T exclude ip TO_T ip int ';'
+            { cDynAddrRange::replace(qq(), *$6, *$8, $9, $5); }
+        ;
+exclude : EXCLUDE_T                     { $$ = true;  }
+        |                               { $$ = false; }
+        ;
+qparse  : QUERY_T PARSER_T srvid '{'    { ivars[_sServiceId] = $3; ivars[_sItemSequenceNumber] = 10; }
+            qparis '}'
+        ;
+qparis  : qpari
+        | qparis qpari
+        ;
+qpari   : case str str str_z ';'    { cQueryParser::_insert(qq(), ivars[_sServiceId], _sParse, $1, sp2s($2), sp2s($3), sp2s($4), ivars[_sItemSequenceNumber]); ivars[_sItemSequenceNumber] += 10; }
+        | PREP_T str str_z ';'      { cQueryParser::_insert(qq(), ivars[_sServiceId], _sPrep, false, _sNul, sp2s($2), sp2s($3), NULL_ID); }
+        | POST_T str str_z ';'      { cQueryParser::_insert(qq(), ivars[_sServiceId], _sPost, false, _sNul, sp2s($2), sp2s($3), NULL_ID); }
+        ;
+case    : CASE_T bool               { $$ = $2; }
+        |                           { $$ = false; }
         ;
 %%
 
@@ -2339,20 +2384,21 @@ static int yylex(void)
         TOK(USER) TOK(DAY) TOK(OF) TOK(PERIOD) TOK(PROTOCOL) TOK(ALERT) TOK(INTEGER) TOK(FLOAT)
         TOK(DELETE) TOK(ONLY) TOK(STRING) TOK(SAVE) TOK(TYPE) TOK(STEP)
         TOK(MASK) TOK(LIST) TOK(VLANS) TOK(ID) TOK(DYNAMIC) TOK(FIXIP) TOK(PRIVATE) TOK(PING)
-        TOK(NOTIF) TOK(ALL) TOK(RIGHTS) TOK(REMOVE) TOK(SUB) TOK(PROPERTIES) TOK(MAC) TOK(EXTERNAL)
+        TOK(NOTIF) TOK(ALL) TOK(RIGHTS) TOK(REMOVE) TOK(SUB) TOK(FEATURES) TOK(MAC) TOK(EXTERNAL)
         TOK(LINK) TOK(LLDP) TOK(SCAN) TOK(TABLE) TOK(FIELD) TOK(SHAPE) TOK(TITLE) TOK(REFINE)
         TOK(LEFT) TOK(DEFAULTS) TOK(ENUM) TOK(RIGHT) TOK(VIEW) TOK(INSERT) TOK(EDIT)
         TOK(INHERIT) TOK(NAMES) TOK(HIDE) TOK(VALUE) TOK(DEFAULT) TOK(FILTER) TOK(FILTERS)
         TOK(ORD) TOK(SEQUENCE) TOK(MENU) TOK(GUI) TOK(OWN) TOK(TOOL) TOK(TIP) TOK(WHATS) TOK(THIS)
         TOK(EXEC) TOK(TAG) TOK(ANY) TOK(BOOLEAN) TOK(CHAR) TOK(IPADDRESS) TOK(REAL) TOK(URL)
         TOK(BYTEA) TOK(DATE) TOK(DISABLE) TOK(EXPRESSION) TOK(PREFIX) TOK(RESET) TOK(CACHE)
-        TOK(DATA) TOK(IANA) TOK(IFDEF) TOK(IFNDEF) TOK(NC)
+        TOK(DATA) TOK(IANA) TOK(IFDEF) TOK(IFNDEF) TOK(NC) TOK(QUERY) TOK(PARSER)
+        TOK(REPLACE) TOK(RANGE) TOK(EXCLUDE) TOK(PREP) TOK(POST) TOK(CASE)
         { "WST",    WORKSTATION_T }, // rövidítések
         { "ATC",    ATTACHED_T },
         { "INT",    INTEGER_T },
         { "MSG",    MESSAGE_T },
         { "CMD",    COMMAND_T },
-        { "PROP",   PROPERTIES_T },
+        { "PROP",   FEATURES_T },
         { "PROTO",  PROTOCOL_T },
         { "SEQ",    SEQUENCE_T },
         { "DEL",    DELETE_T },

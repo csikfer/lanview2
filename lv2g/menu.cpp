@@ -3,7 +3,7 @@
 #include "gparse.h"
 
 cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidget * par, bool __ex)
-    : QObject(par), type(MAT_ERROR), mm()
+    : QObject(par), type(MAT_ERROR)
 {
     pTabWidget   = par;
     pTableShape  = NULL;
@@ -15,9 +15,8 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidge
     pAction      = pa;
 
     setObjectName(pmi->title()); // Ez lessz a TAB neve
-    mm = splitMagic(pmi->getName(_sProperties), mm);
     QString mp;
-    if      (!(mp = magicParam(QString("shape"),  mm)).isEmpty()) {
+    if      (!(mp = pmi->feature("shape")).isEmpty()) {
         if (pq == NULL) EXCEPTION(EPROGFAIL);   // Ha nincs adatbázis, akkor ezt nem kéne
         setObjectName(mp);
         setType(MAT_SHAPE);
@@ -31,12 +30,12 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidge
             pa->setDisabled(true);
         }
     }
-    else if (!(mp = magicParam(QString("exec"),   mm)).isEmpty()) { // "exec"   Belső parancs végrehajtása (Exit, Restart,...)
+    else if (!(mp = pmi->feature("exec")).isEmpty()) { // "exec"   Belső parancs végrehajtása (Exit, Restart,...)
         setObjectName(mp); // Nincs tab, a név a parancs lessz
         setType(MAT_EXEC);
         connect(pa, SIGNAL(triggered()), this, SLOT(executeIt()));
     }
-    else if (!(mp = magicParam(QString("own"),    mm)).isEmpty()) { // "own"    Egyedi előre definiált cOwnTab leszármazott hívása
+    else if (!(mp = pmi->feature("own")).isEmpty()) { // "own"    Egyedi előre definiált cOwnTab leszármazott hívása
         enum ePrivilegeLevel rights = PL_SYSTEM;
         if (0 == mp.compare("setup", Qt::CaseInsensitive)) {            // "setup"      Beállítások szerkesztése widget
             ownType = OWN_SETUP;
@@ -90,7 +89,7 @@ cMenuAction::cMenuAction(const QString&  ps, QAction *pa, QTabWidget * par)
 {
     pTabWidget   = par;
     pTableShape  = NULL;
-    pRecordView = NULL;
+    pRecordView  = NULL;
     pOwnTab      = NULL;
     ownType      = OWN_UNKNOWN;
     pWidget      = NULL;

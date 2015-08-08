@@ -588,7 +588,7 @@ void cEnumComboWidget::setFromEdit(int id)
 /* **************************************** cFieldLineWidget ****************************************  */
 
 /*!
-A 'properties' mező:\n
+A 'features' mező:\n
 :<b>passwd</b>: Ha megadtuk, és a mező típusa text, akkor a képernyőn nem olvasható az adat
  */
 cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef _fr, bool _ro, cRecordDialogBase *_par)
@@ -606,7 +606,7 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
         switch (_recDescr.eColType) {
         case cColStaticDescr::FT_INTEGER:   pLE->setValidator(new cIntValidator( nullable, pLE));   break;
         case cColStaticDescr::FT_REAL:      pLE->setValidator(new cRealValidator(nullable, pLE));   break;
-        case cColStaticDescr::FT_TEXT:      isPwd = _fieldShape.findMagic(_sPasswd);                break;
+        case cColStaticDescr::FT_TEXT:      isPwd = _fieldShape.isFeature(_sPasswd);                  break;
         case cColStaticDescr::FT_MAC:       pLE->setValidator(new cMacValidator( nullable, pLE));   break;
         case cColStaticDescr::FT_INET:      pLE->setValidator(new cINetValidator(nullable, pLE));   break;
         case cColStaticDescr::FT_CIDR:      pLE->setValidator(new cCidrValidator(nullable, pLE));   break;
@@ -837,7 +837,7 @@ void cArrayWidget::clrRows()
 
 /* **************************************** cPolygonWidget ****************************************  */
 /**
-  A 'properties' mező:\n
+  A 'features' mező:\n
   :<b>map</b>=<i>\<sql függvény\></i>: Ha megadtuk, és a rekordnak már van ID-je (nem új rekord felvitel), és a megadott SQL függvény a
                 rekord ID alapján visszaadta egy kép (images.image_id) azonosítóját, akkor feltesz egy plussz gombot, ami megjeleníti
                 a képet, és azon klikkelve is felvehetünk pontokat.
@@ -879,9 +879,9 @@ cPolygonWidget::cPolygonWidget(const cTableShape& _tm, const cTableShapeField &_
         connect(p, SIGNAL(changedValue(cFieldEditBase*)), this, SLOT(changeId(cFieldEditBase*)));
         epic = IS_PLACE_REC;
     }
-    // Másik lehetőség, a properties-ben van egy függvénynevünk, ami a rekord id-alapján megadja az image id-t
+    // Másik lehetőség, a features-ben van egy függvénynevünk, ami a rekord id-alapján megadja az image id-t
     else {
-        id2imageFun = _tableShape.magicParam("map");  // Meg van adva a image id-t visszaadó függvlny neve ?
+        id2imageFun = _tableShape.feature("map");  // Meg van adva a image id-t visszaadó függvlny neve ?
         if (id2imageFun.isEmpty() == false) {
             cFieldEditBase *p = anotherField(recDescr().idName());
             connect(p, SIGNAL(changedValue(cFieldEditBase*)), this, SLOT(changeId(cFieldEditBase*)));

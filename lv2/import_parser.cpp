@@ -8,7 +8,8 @@
 
 QString      importFileNm;
 unsigned int importLineNo = 0;
-QTextStream* importInputStream = NULL;
+QTextStream* pImportInputStream = NULL;
+enum eImportParserStat importParserStat = IPS_READY;
 
 bool importSrcOpen(QFile& f)
 {
@@ -26,13 +27,13 @@ bool importSrcOpen(QFile& f)
 int importParseText(QString text)
 {
     importFileNm = "[stream]";
-    importInputStream = new QTextStream(&text);
+    pImportInputStream = new QTextStream(&text);
     PDEB(INFO) << QObject::trUtf8("Start parser ...") << endl;
     initImportParser();
     int r = importParse();
     downImportParser();
     PDEB(INFO) << QObject::trUtf8("End parser.") << endl;
-    pDelete(importInputStream);
+    pDelete(pImportInputStream);
     return r;
 }
 
@@ -42,11 +43,11 @@ int importParseFile(const QString& fn)
     importFileNm = fn;
     if (fn == QChar('-') || fn == _sStdin) {
         importFileNm = _sStdin;
-        importInputStream = new QTextStream(stdin, QIODevice::ReadOnly);
+        pImportInputStream = new QTextStream(stdin, QIODevice::ReadOnly);
     }
     else {
         if (!importSrcOpen(in)) EXCEPTION(EFOPEN, -1, in.fileName());
-        importInputStream = new QTextStream(&in);
+        pImportInputStream = new QTextStream(&in);
         importFileNm = in.fileName();
     }
     PDEB(INFO) << QObject::trUtf8("Start parser ...") << endl;
@@ -54,12 +55,148 @@ int importParseFile(const QString& fn)
     int r = importParse();
     downImportParser();
     PDEB(INFO) << QObject::trUtf8("End parser.") << endl;
-    pDelete(importInputStream);
+    pDelete(pImportInputStream);
     return r;
 }
 
 cError *importGetLastError() {
-    cError *r = importLastError;
-    importLastError = NULL;
+    cError *r = pImportLastError;
+    pImportLastError = NULL;
     return r;
+}
+
+cImportParseThread *cImportParseThread::pInstance = NULL;
+
+cImportParseThread::cImportParseThread(const QString& _inicmd, QObject *par)
+    : QThread(par)
+    , queueAccess(1)    // A queue szabad
+    , dataReady(0)      // A Queue üres
+    , parseReady(0)     // A parser szabad, de nincs adat
+    , queue()
+    , iniCmd(_inicmd)
+{
+    if (pInstance != NULL) EXCEPTION(EPROGFAIL);
+    pInstance = this;
+    setObjectName("Import parser");
+}
+
+#define IPT_SHORT_WAIT  1000
+#define IPT_LONG_WAIT  5000
+cImportParseThread::~cImportParseThread()
+{
+    stopParser();
+    pInstance = NULL;
+}
+
+void cImportParseThread::reset()
+{
+
+    queue.clear();
+    if (0 != dataReady.available()) {
+        if (!dataReady.tryAcquire(dataReady.available())) EXCEPTION(ESEM);
+    }
+    switch (queueAccess.available()) {
+    case 1:                          break;
+    case 0: queueAccess.release();   break;
+    default: EXCEPTION(ESEM);
+    }
+    if (0 != parseReady.available()) {
+        if (!parseReady.tryAcquire(parseReady.available())) EXCEPTION(ESEM);
+    }
+}
+
+void	cImportParseThread::run()
+{
+    // Alaphelyzetbe állítjuk a sorpuffert, és a szemforokat
+    reset();
+    importFileNm = "[queue]";
+    if (importParserStat != IPS_READY || pImportInputStream != NULL) {
+        DERR() << VDEB(importParserStat) << _sCommaSp << VDEBPTR(pImportInputStream) << endl;
+        return;
+    }
+    PDEB(INFO) << QObject::trUtf8("Start parser (thread) ...") << endl;
+    initImportParser();
+    importParse(IPS_THREAD);
+    downImportParser();
+    PDEB(INFO) << QObject::trUtf8("End parser ((thread)).") << endl;
+    pDelete(pImportInputStream);
+}
+
+int cImportParseThread::push(const QString& src, cError *& pe)
+{
+    int r;
+    if (isRunning()) {
+        int i = parseReady.available();
+        if (i) parseReady.tryAcquire(i);    // Nyit, ha kész a parser
+        queueAccess.acquire();              // puffer hazzáférés foglalt
+        queue.enqueue(src);                 // küld
+        dataReady.release();                // pufferben adat
+        queueAccess.release();              // puffer hazzáférés szabad
+        if (parseReady.tryAcquire(1, IPT_SHORT_WAIT)) {    // Megváruk, hogy végezzen a parser
+            pe = importGetLastError();
+            r = pe == NULL ? REASON_OK : R_ERROR;
+        }
+        else {
+            pe = importGetLastError();                      // Időtullépés
+            if (NULL == pe) pe = NEWCERROR(ETO);
+            r = REASON_TO;
+        }
+    }
+    else {
+        pe = importGetLastError();
+        if (pe == NULL) pe = NEWCERROR(EUNKNOWN, -1, trUtf8("A parser szál nem fut."));
+        r = R_DISCARD;
+    }
+    if (REASON_OK != r) {
+        cError *rpe = NULL;
+        reStartParser(rpe);
+        if (rpe != NULL) {
+            DERR() << rpe->msg() << endl;
+            delete rpe;
+        }
+    }
+    return r;
+}
+
+QString cImportParseThread::pop()
+{
+    QString r;
+    if (parseReady.available() == 0) parseReady.release();
+    dataReady.acquire();
+    queueAccess.acquire();
+    if (!queue.isEmpty()) r = queue.dequeue();
+    queueAccess.release();
+    return r;
+}
+
+int cImportParseThread::startParser(cError *&pe)
+{
+    start();
+    return push(iniCmd, pe);
+}
+
+int cImportParseThread::reStartParser(cError *&pe)
+{
+    stopParser();
+    return startParser(pe);
+}
+
+void cImportParseThread::stopParser()
+{
+    if (isRunning()) {
+        if (!queueAccess.tryAcquire(1, IPT_SHORT_WAIT)) {
+            DERR() << "Ignore blocked access semaphor." << endl;
+        }
+        queue.clear();
+        queueAccess.release();
+        dataReady.release();
+        if (!wait(IPT_LONG_WAIT)) {
+            DERR() << "Import parser thread, nothing exited." << endl;
+            terminate();
+            if (!wait(IPT_LONG_WAIT)) {
+                DERR() << "Import parser thread, nothing terminated." << endl;
+            }
+            downImportParser();
+        }
+    }
 }

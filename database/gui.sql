@@ -42,7 +42,7 @@ CREATE TABLE table_shapes (
     inherit_table_names varchar(32)[]   DEFAULT NULL,
     is_read_only        boolean         DEFAULT 'f',
     refine              text    DEFAULT NULL,
-    properties          text    DEFAULT NULL,
+    features          text    DEFAULT NULL,
     left_shape_id       bigint          DEFAULT NULL REFERENCES table_shapes(table_shape_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
     right_shape_id      bigint          DEFAULT NULL REFERENCES table_shapes(table_shape_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
     view_rights         rights          DEFAULT 'operator',
@@ -60,7 +60,7 @@ COMMENT ON COLUMN table_shapes.table_shape_title    IS 'A shape megjelenítések
 COMMENT ON COLUMN table_shapes.table_shape_type     IS 'A listázandó objektum típusa.';
 COMMENT ON COLUMN table_shapes.table_name           IS 'A shape álltal megjelenítendő tábla neve';
 COMMENT ON COLUMN table_shapes.refine               IS 'Egy opcionális feltétel, ha a táblának csak egy részhalmaza kell (WHERE clause)';
-COMMENT ON COLUMN table_shapes.properties           IS 'További paraméterek.';
+COMMENT ON COLUMN table_shapes.features           IS 'További paraméterek.';
 COMMENT ON COLUMN table_shapes.left_shape_id        IS 'Az bal oldali, tulajdonos, vagy member tábla megjelenítő leíróra mutat';
 COMMENT ON COLUMN table_shapes.right_shape_id       IS 'A jobb oldali, gyerek, vagy csoport tábla megjelenítő leíróra mutat';
 COMMENT ON COLUMN table_shapes.view_rights          IS 'Minimális jogosultsági szint a táblába megtekintéséhez';
@@ -90,7 +90,7 @@ CREATE TABLE table_shape_fields (
     is_hide                 boolean         DEFAULT 'f',
     expression              text    DEFAULT NULL,
     default_value           text    DEFAULT NULL,
-    properties              text    DEFAULT NULL,
+    features              text    DEFAULT NULL,
     tool_tip                text            DEFAULT NULL,
     whats_this              text            DEFAULT NULL,
     view_rights             rights          DEFAULT NULL,
@@ -113,7 +113,7 @@ COMMENT ON COLUMN table_shape_fields.is_read_only            IS 'Mindenképpen c
 COMMENT ON COLUMN table_shape_fields.is_hide                 IS 'A táblázatos megjelenítésnél rejtett';
 COMMENT ON COLUMN table_shape_fields.default_value           IS 'Egy opcionális default érték.';
 COMMENT ON COLUMN table_shape_fields.expression              IS 'Egy opcionális SQL kifelyezés a mező értékére';
-COMMENT ON COLUMN table_shape_fields.properties              IS 'További paraméterek.';
+COMMENT ON COLUMN table_shape_fields.features              IS 'További paraméterek.';
 COMMENT ON COLUMN table_shape_fields.view_rights             IS 'Minimális jogosultsági szint a mező megtekintéséhez, NULL esetén a táblánál magadottak az érvényesek';
 COMMENT ON COLUMN table_shape_fields.edit_rights             IS 'Minimális jogosultsági szint a mező szerkestéséhez, NULL esetén a táblánál magadottak az érvényesek';
 
@@ -224,7 +224,7 @@ CREATE TABLE menu_items (
     menu_item_title         varchar(32)     DEFAULT NULL,
     app_name                varchar(32)     NOT NULL,
     upper_menu_item_id      bigint          DEFAULT NULL REFERENCES menu_items(menu_item_id) MATCH SIMPLE ON DELETE CASCADE ON UPDATE RESTRICT,
-    properties              text    DEFAULT NULL,
+    features              text    DEFAULT NULL,
     tool_tip                text            DEFAULT NULL,
     whats_this              text            DEFAULT NULL,
     menu_rights		    rights          NOT NULL DEFAULT 'none',
@@ -239,7 +239,7 @@ COMMENT ON COLUMN menu_items.item_sequence_number IS 'A sorrendet meghatározó 
 COMMENT ON COLUMN menu_items.menu_item_title IS 'Megjelenített név, ha NULL, akkor a megjelenített név a menu_item_name';
 COMMENT ON COLUMN menu_items.app_name IS 'Aplikáció név, melyhez a menü elem tartozik.';
 COMMENT ON COLUMN menu_items.upper_menu_item_id IS 'Al menű esetén az elemet tartalmazó felsőbb szintű menü elem azonosítója.';
-COMMENT ON COLUMN menu_items.properties IS 'Járulékos paraméterek (a menü elem típusát határozza meg): ":shape=<név>:", ":exec=<név>:", ":own=<név>:", ...';
+COMMENT ON COLUMN menu_items.features IS 'Járulékos paraméterek (a menü elem típusát határozza meg): ":shape=<név>:", ":exec=<név>:", ":own=<név>:", ...';
 COMMENT ON COLUMN menu_items.tool_tip IS '';
 COMMENT ON COLUMN menu_items.whats_this IS '';
 COMMENT ON COLUMN menu_items.menu_rights IS 'Milyen minimális jogosutságnál jelenik meg az elem.';

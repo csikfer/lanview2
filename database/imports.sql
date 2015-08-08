@@ -49,7 +49,7 @@ CREATE TABLE import_templates (
     import_template_id	bigserial       PRIMARY KEY,
     template_name	varchar(32)     NOT NULL,
     template_type	templatetype	NOT NULL,
-    template_note	text	DEFAULT NULL,
+    template_note	text	        DEFAULT NULL,
     template_text	text		NOT NULL,
     UNIQUE (template_type, template_name)
 );
@@ -61,3 +61,21 @@ COMMENT ON COLUMN import_templates.template_type IS 'A template típusa (macros,
 COMMENT ON COLUMN import_templates.template_name IS 'A minta vagy makró neve';
 COMMENT ON COLUMN import_templates.template_note IS 'Opcionális megjegyzés';
 COMMENT ON COLUMN import_templates.template_text IS 'A makró vagy minta tartalma.';
+
+-- QUERY PARSER --
+
+CREATE TYPE parsertype AS ENUM ('prep', 'parse', 'post');
+
+CREATE TABLE query_parsers (
+    query_parser_id             bigserial     PRIMARY KEY,
+    query_parser_note           text          DEFAULT NULL,
+    service_id                  bigint        NOT NULL REFERENCES services(service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE,
+    parse_type                  parsertype    DEFAULT 'parse',
+    item_sequence_number        integer       DEFAULT NULL,
+    case_sesitive               boolean       DEFAULT false,
+    regular_expressionion       text          DEFAULT NULL,
+    import_expressionion        text          NOT NULL,
+    CONSTRAINT check_expression CHECK ((parse_type = 'parse' AND regular_expressionion IS NOT NULL) OR (parse_type <> 'parse' AND regular_expressionion IS NULL))
+);
+
+ALTER TABLE query_parsers OWNER TO lanview2;

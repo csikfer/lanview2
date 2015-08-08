@@ -56,10 +56,8 @@ void cMainWindow::action(QAction *pa, cMenuItem& _mi, QSqlQuery *pq)
     _DBGFN() << _mi.toString() << endl;
     if (!_mi.isNull(_sToolTip))     pa->setToolTip(_mi.getName(_sToolTip));
     if (!_mi.isNull(_sWhatsThis))   pa->setWhatsThis(_mi.getName(_sWhatsThis));
-    tMagicMap mm;
-    mm = splitMagic(_mi.getName(_sProperties), mm);
     QString mp;
-    if (findMagic(QString("sub"), mm)) {    // Almenük vannak
+    if (_mi.isFeature("sub")) {    // Almenük vannak
         cMenuItem sm;
         QMenu *pm = new QMenu(this);
         pa->setMenu(pm);

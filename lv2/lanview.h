@@ -15,12 +15,12 @@
 #include "qsnmp.h"
 #include "lv2sql.h"
 #include "lv2types.h"
-#include "lv2data.h"
+#include "srvdata.h"
 #include "lv2user.h"
 #include "lv2daterr.h"
 #include "lv2xml.h"
 #include "scan.h"
-#include "lv2user.h"
+
 
 #define ORGNAME     "LanView"
 #define ORGDOMAIN   ""
@@ -252,6 +252,9 @@ public:
     /// A pUser adattag által mutatott objektum referenciájával tér vissza.
     /// Ha még nem példányosítottuk a lanView osztályt, vagy a pUser egy NULL pointer, akkor dob egy kizárást.
     static const cUser& user();
+    static cNode&          selfNode()        { cNode        *p = getInstance()->pSelfNode;        if (p == NULL) EXCEPTION(EPROGFAIL); return *p; }
+    static cService&       selfService()     { cService     *p = getInstance()->pSelfService;     if (p == NULL) EXCEPTION(EPROGFAIL); return *p; }
+    static cHostService&   selfHostService() { cHostService *p = getInstance()->pSelfHostService; if (p == NULL) EXCEPTION(EPROGFAIL); return *p; }
     /// Ellenörzi az aktuális felhasználó jogosultsági szintjét
     static bool isAuthorized(enum ePrivilegeLevel pl) { return user().privilegeLevel() >= pl; }
     /// Ellenörzi az aktuális felhasználó jogosultsági szintjét

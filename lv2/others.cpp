@@ -50,48 +50,42 @@ QString nameAndNumber(const QString& __pat, int __num, char __c)
 
 /******************************************************************************/
 
-tMagicMap splitMagic(const QString& __ms, const tMagicMap &__map, bool __ex)
+cFeatures& cFeatures::split(const QString& __ms, bool __ex)
 {
-    tMagicMap   r(__map);
     QString msg = QString(QObject::trUtf8("Invalid magic string : %1")).arg(quotedString(__ms));
-    if (__ms.isEmpty()) return r;
+    if (__ms.isEmpty()) return *this;
     QStringList sl = __ms.split(QChar(':'));
-    // Első és utolsó karakter a szeparátor, tehát at első és utolsó elem üres
+    // Első és utolsó karakter a szeparátor, tehát az első és utolsó elem üres
     if (sl.isEmpty() || !(sl.first().isEmpty() && sl.last().isEmpty())) {
         if (__ex) EXCEPTION(EDATA, -1, msg);
         DERR() << msg << endl;
-        return __map;
+        return *this;
     }
+    if (sl.size() <= 2) return *this; // űres
     sl.pop_back();  // utolsó ures elem
-    if (sl.isEmpty()) return r; // űres
     sl.pop_front(); // első üres elem
     foreach (QString s, sl) {
         QStringList pv = s.split(QChar('='));
         if (pv.count()  > 2) {
             if (__ex) EXCEPTION(EDATA, -1, msg);
             DERR() << msg << endl;
-            return __map;
+            return *this;
         }
-        if (pv.count() == 2) r[pv[0].toLower()] = pv[1];
-        else                 r[s.toLower()]     = _sNul;
+        QString key = pv[0].toLower();
+        QString val = pv.count() == 2 ? pv[1] : _sNul;
+        if (val == "!") remove(key);        // Törli (ha van)
+        else            (*this)[key] = val;
     }
-    return r;
+    return *this;
 }
 
-const QString& magicParam(const QString &_nm, const tMagicMap __map)
+QString cFeatures::join() const
 {
-    tMagicMapConstIteraeor i = __map.find(_nm.toLower());
-    if (i == __map.constEnd()) return nullString;
-    return i.value();
-}
-
-QString joinMagic(const tMagicMap __map)
-{
-    QString r = QChar(',');
-    for (tMagicMapConstIteraeor i = __map.constBegin(); i != __map.constEnd(); ++i) {
+    QString r = QChar(':');
+    for (ConstIterator i = constBegin(); i != constEnd(); ++i) {
         r += i.key();
-        if (!i.value().isEmpty()) r +=  _sEquSp + i.value();
-        r += QChar(',');
+        if (!i.value().isEmpty()) r +=  "=" + i.value();
+        r += QChar(':');
     }
     return r;
 }

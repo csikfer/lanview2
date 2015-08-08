@@ -65,7 +65,8 @@ SOURCES += lanview.cpp \
     guidata.cpp \
     import_parser.cpp \
     lv2daterr.cpp \
-    qtelnet.cpp
+    qtelnet.cpp \
+    srvdata.cpp
 
 HEADERS += lanview.h \
     lv2_global.h \
@@ -90,7 +91,8 @@ HEADERS += lanview.h \
     import_parser.h \
     strings.m4 \
     lv2daterr.h \
-    qtelnet.h
+    qtelnet.h \
+    srvdata.h
 
 unix:SOURCES += usignal.cpp
 unix:HEADERS += usignal.h

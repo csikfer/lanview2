@@ -130,6 +130,14 @@ enum eNotifSwitch cArpDaemon::run(QSqlQuery &)
     return RS_ON;
 }
 
+/*
+QString& cArpDaemon::getCheckCmd(QSqlQuery &q)
+{
+    checkCmd.clear();;
+    checkCmdArgs.clear();
+    return checkCmd;
+}
+*/
 /******************************************************************************/
 /// Protokol (local) azonosító objektum pointere
 /// ARP lekérdezés módja lokális álomány felolvasása
@@ -162,8 +170,7 @@ cDeviceArp::cDeviceArp(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __
         if (*pPSDhcpConf == primeService() || *pPSArpProc == primeService()) {
             static const QString _sFile("file");
             pFileName = new QString();
-            *pFileName = hostService.magicParam(_sFile);
-            if (pFileName->isEmpty()) *pFileName = primeService().magicParam(_sFile);
+            *pFileName = hostService.feature(_sFile);
         }
         // Ha az előírt protokol SSH, akkor a service user paramétere, ill. ha ez üres,
         // akkor a proto_service user paramétere tartalmazza a távoli hoston az user nevet.
@@ -171,8 +178,7 @@ cDeviceArp::cDeviceArp(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __
         if (*pPSSsh == protoService()) {
             static const QString _sUser("user");
             pRemoteUser = new QString();
-            *pRemoteUser = hostService.magicParam(_sUser);
-            if (pRemoteUser->isEmpty()) *pRemoteUser = protoService().magicParam(_sUser);
+            *pRemoteUser = hostService.feature(_sUser);
         }
     }
 }

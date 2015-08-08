@@ -51,16 +51,33 @@ enum eInternalStat {
 
 /// Az ellenörző eéjárás típusa
 enum eInspectorType {
-    IT_UNKNOWN      = -1,
-    IT_CONTINUE     =  0,   ///< Egy szál, saját időzítés
-    IT_TIMED        =  1,   ///< Időzített, a fő szálban
-    IT_THREAD       =  2,   ///< Saját szálként
-    IT_TIMEDTHREAD  =  3,   ///< Időzített saját szálként
-    IT_PASSIVE      =  4    ///< a superior lekérdezés eredményéhez kapcsolódik
+    IT_UNKNOWN              = -1,       ///< Ismeretlen (csak hibajelzésre)
+
+    IT_TIMING_CUSTOM        = 0x0000,   ///< Egy szál, saját időzítés
+    IT_TIMING_TIMED         = 0x0001,   ///< Időzített, a fő szálban
+    IT_TIMING_THREAD        = 0x0002,   ///< Saját szálként
+    IT_TIMING_TIMEDTHREAD   = 0x0003,   ///< Időzített saját szálként
+    IT_TIMING_PASSIVE       = 0x0004,   ///< a superior lekérdezés eredményéhez kapcsolódik
+    IT_TIMING_POLLING       = 0x0008,   ///< Időzítés nélkül egyszer fut/szekvenciális
+    IT_TIMING_MASK          = 0x000F,   ///< Maszk: ütemezés
+
+    IT_NO_DAEMON            = 0x0000,
+    IT_DAEMON_RESPAWN       = 0x0010,
+    IT_DAEMON_CONTINUE      = 0x0020,
+    IT_DAEMON_POLLING       = 0x0040,
+    IT_DAEMON_MASK          = 0x0070,
+
+    IT_SUPERIOR             = 0x0080,
+
+    IT_METHOD_CUSTOM        = 0x0000,
+    IT_METHOD_QPARSER       = 0x0100,
+    IT_METHOD_NAGIOS        = 0x0200,
+    IT_METHOD_MUNIN         = 0x0300,
+    IT_METHOD_CARRIED       = 0x4000,
+    IT_METHOD_MASK          = 0x0700
 };
 
-EXT_ QString inspectorType(enum eInspectorType __t, bool __ex = true);
-EXT_ eInspectorType inspectorType(const QString& __n, bool __ex = true);
+EXT_ QString inspectorType(int __t);
 
 /// Az időzítés típusa ill. állapota
 enum eTimerStat {
@@ -122,10 +139,17 @@ public:
     /// A rum metódus által visszaadott érték, vagy az esetleges hiba alapján beállítja az adatbázisban a szolgáltatáspéldány állapotát,
     /// valamint állít az időzítésen, ha ez szükséges (normal/retry időzítés kezelése)
     virtual void timerEvent(QTimerEvent * );
+    virtual bool toRun(bool __timed);
     /// A szolgáltatáshoz tartozó tevékenységet végrehajtó virtuális metódus.
-    /// A alap objektumban a metódus nem csinál semmit (egy debug üzenet feltételes kiírásán túl), csak visszatér egy RS_ON értékkel.
+    /// A alap objektumban a metódus ha pProcess = NULL, akkor nem csinál semmit (egy debug üzenet feltételes kiírásán túl),
+    /// csak visszatér egy RS_ON értékkel.
+    /// Ha pProcess pointer nem NULL, akkor végrehajtja a megadott parancsot, és az eredménnyel hívja a parse() metódust.
     /// @return A szolgáltatás állpota, ill. a tevékenység eredménye.
     virtual enum eNotifSwitch run(QSqlQuery& q);
+    /// Szöveg (parancs kimenet) prtelmezése.
+    /// Ha meg van adva kölső ellenörző program, akkor az alapértelmezett run() metódus hívja a végrehajtott parancs kimenetével.
+    /// Az alapértelmezett metódus dob egy kizárást, késöbb okosítjuk...
+    virtual enum eNotifSwitch parser(int _ec, QByteArray& text);
     /// Futás időzítés indítása
     virtual void start();
     /// Futás/időzítés leállítása, ha nem futott, és __ex = true, akkor dob egy kizárást.
@@ -154,20 +178,20 @@ public:
     /// akkor aservices adattagból olvassa be.
     /// @param __n A mező név
     /// @return A mező értéke.
-    QVariant get(const QString& __n) const;
+    cRecordFieldConstRef get(const QString& __n) const;
     /// A services és a host_services rekordban a atrubutes nezőt vágja szát, és az elemeket elhelyezi a pMagicMap pointer által mutatott konténerbe.
     /// Ha pMagicMap egy NULL pointer, akkor a művelet elött megallokálja a konténert, ha nem NULL, akkor pedig törli a konténer tartalmát.
-    tMagicMap& splitMagic(bool __ex = true);
+    cFeatures& split(bool __ex = true);
     /// Visszaadja a pMagicMap által mutatott konténer referenciáját. Ha pMagicMap értéke NULL, akkor hívja a splitMagic() metódust, ami megallokálja
     /// és feltölti a konténert.
-    tMagicMap& magicMap(bool __ex = true)                               { if (pMagicMap == NULL) splitMagic(__ex); return *pMagicMap; }
+    cFeatures& features(bool __ex = true)   { if (_pFeatures == NULL) split(__ex); return *_pFeatures; }
     /// A megadott kulcs alapján visszaadja a magicMap konténerből a paraméter értéket a név alapján. Ha a konténer nincs megallokálva, akkor megallokálja
     /// és feltölti.
     /// @return Egy string, a paraméter érték, ha nincs ilyen paraméter, akkor a NULL string, ha viszont nincs paraméternek értéke, akkor egy üres string
-    QString magicParam(const QString& __nm, bool __ex = true) { return ::magicParam(__nm, magicMap(__ex)); }
-    /// Magadot kulcsal egy paraméter keresése.
-    /// @return találat esetén true.
-    bool findMagic(const QString &_nm, bool __ex = true)      { return ::findMagic(_nm, magicMap(__ex)); }
+    QString feature(const QString& __nm, bool __ex = true) { return features(__ex).value(__nm); }
+    bool isFeature( const QString& __nm, bool __ex = true) { return features(__ex).contains(__nm); }
+    ///
+    int setInspectorType();
     /// Saját adatok beállítása. Hiba esetén dob egy kizárást.
     /// A pNode adattag egy cNode objektumra fog mutatni, ami a sajátgép adatait fogja tartalmazni, feltéve, hogy az adatbázis ezt tartalmazza.
     /// Akkor is cNode lessz az adattípus, ha a sajátgép történetesen egy SNMP eszközként szerepel az adatbázisban.
@@ -179,10 +203,10 @@ public:
     /// A belső statuszt konvertálja stringgé.
     const QString& internalStatName() { return ::internalStatName(internalStat); }
     /// A parancs string, és behelyettesítéseinek a végrahajtása
-    QString& getCheckCmd(QSqlQuery &q);
+    virtual QString& getCheckCmd(QSqlQuery &q);
     // Adattagok
     /// Objektum típus
-    enum eInspectorType inspectorType;
+    int inspectorType;
     /// Belső status
     enum eInternalStat  internalStat;
     /// Az időzítés statusa
@@ -196,7 +220,7 @@ public:
     /// A port objektum pointere, ha meg van adva a hos_services rekordban, egyébként NULL
     cNPort             *pPort;
     /// magicMap konténer, vagy null pointer, ha még nincs feltöltve
-    tMagicMap          *pMagicMap;
+    cFeatures        *_pFeatures;
     /// Két lekérdezés közötti idő intervallum ezred másodpercben normal_check_interval
     qint64              interval;
     /// Hiba esetén az időzítés
@@ -209,11 +233,14 @@ public:
     qlonglong           lastElapsedTime;
     /// Ha ő egy thread, akkor a QThread objektumra mutat, egyébként NULL
     QThread            *pThread;
-    /// Opcionális parancs sor
+    /// Opcionális parancs
     QString             checkCmd;
+    /// Opcionális parancs argumentumok
     QStringList         checkCmdArgs;
     /// Parancs objektum, vagy NULL
     QProcess           *pProcess;
+    /// Parancs kimenetet értelmező objektum, ha van
+    cQueryParser       *pQparser;
     /// Adatbázis műveletekhez használt objektum
     QSqlQuery          *pq;
     /// Ha superior szolgálltatásról van szó, akkor az alárendeltek listájára mutató pointer, egyébként NULL.
@@ -273,7 +300,7 @@ public:
     const cSnmpDevice& snmpDev() const  { if (pNode == NULL || !(pNode->descr() >= cSnmpDevice().descr()) ) EXCEPTION(EDATA); return *(dynamic_cast<const cSnmpDevice*>(pNode)); }
     cSnmpDevice& snmpDev()              { if (pNode == NULL || !(pNode->descr() >= cSnmpDevice().descr()) ) EXCEPTION(EDATA); return *(dynamic_cast<cSnmpDevice*>(pNode)); }
     const cInspector& parent() const{if (pParent == NULL) EXCEPTION(EDATA); return *pParent; }
-    cInspector& parent()           { if (pParent == NULL) EXCEPTION(EDATA); return *pParent; }
+    cInspector& parent()                { if (pParent == NULL) EXCEPTION(EDATA); return *pParent; }
     template <class T> static qlonglong getIdT(const T *p, bool __ex) {
         if (p == NULL) {
             if (__ex) EXCEPTION(EDATA);
@@ -296,20 +323,25 @@ public:
         return pParent->hostServiceId();
     }
     qlonglong portId() const            { return nPort().getId(); }
-    const cService& primeService()      { if (pPrimeService == NULL) EXCEPTION(EDATA); return *pPrimeService; }
-    qlonglong primeServiceId()          { return primeService().getId(); }
-    QString primeServiceName()          { return primeService().getName(); }
-    const cService& protoService()      { if (pProtoService == NULL) EXCEPTION(EDATA); return *pProtoService; }
-    qlonglong protoServiceId()          { return protoService().getId(); }
-    QString protoServiceName()          { return protoService().getName(); }
-    QString name();
+    const cService& primeService() const{ if (pPrimeService == NULL) EXCEPTION(EDATA); return *pPrimeService; }
+    qlonglong primeServiceId() const    { return primeService().getId(); }
+    QString primeServiceName() const    { return primeService().getName(); }
+    const cService& protoService() const{ if (pProtoService == NULL) EXCEPTION(EDATA); return *pProtoService; }
+    qlonglong protoServiceId() const    { return protoService().getId(); }
+    QString protoServiceName() const    { return protoService().getName(); }
+    QString name() const;
+    QString getParValue(QSqlQuery &q, const QString& name, bool *pOk = NULL) const;
 
+    ///
+    int timing() const { return inspectorType & IT_TIMING_MASK; }
+    int daemon() const { return inspectorType & IT_DAEMON_MASK; }
+    int method() const { return inspectorType & IT_METHOD_MASK; }
     /// Ha az objektum időzített.
-    bool isTimed() const { return inspectorType & IT_TIMED; }
+    bool isTimed() const { return inspectorType & IT_TIMING_TIMED; }
     /// Ha az objektum önálló szálon fut
-    bool isThread() const { return inspectorType & IT_THREAD; }
+    bool isThread() const { return inspectorType & IT_TIMING_THREAD; }
     /// Ha a lekérdezést el kell indítani / nem passzív
-    bool needStart() const { return inspectorType != IT_PASSIVE; }
+    bool needStart() const { return timing() != IT_TIMING_PASSIVE; }
     /// A statikus adattagokat (tableoid-k) inicializálja, ha ez még nem történt meg (értékük NULL_ID).
     /// A tableoid értékek csak a main objektum (lnaview2) létrehozása után kérdezhetőek le, miután már meg lett nyitva az adatbázis.
     static void initStatic() {

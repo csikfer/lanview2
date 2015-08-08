@@ -453,7 +453,6 @@ CREATE TABLE dyn_addr_ranges (
     dyn_addr_range_id   bigserial       PRIMARY KEY,
     dyn_addr_range_note text            DEFAULT NULL,
     exclude		boolean		DEFAULT false,
-    set_type		settype		DEFAULT 'config',
     begin_address       inet            NOT NULL UNIQUE,
     end_address         inet            NOT NULL UNIQUE,
     subnet_id           bigint          REFERENCES subnets(subnet_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
@@ -660,7 +659,7 @@ CREATE TRIGGER nports_delete_port_post      AFTER DELETE ON nports      FOR EACH
 CREATE TRIGGER interfaces_delete_port_post  AFTER DELETE ON interfaces  FOR EACH ROW EXECUTE PROCEDURE delete_port_post();
 
 
-CREATE OR REPLACE FUNCTION replace_dyn_addr_range(baddr inet, eaddr inet, hid bigint DEFAULT NULL, snid bigint DEFAULT NULL, excl boolean DEFAULT false) RETURNS reasons AS $$
+CREATE OR REPLACE FUNCTION replace_dyn_addr_range(baddr inet, eaddr inet, hid bigint DEFAULT NULL, excl boolean DEFAULT false, snid bigint DEFAULT NULL) RETURNS reasons AS $$
 DECLARE
     brec dyn_addr_ranges;
     erec dyn_addr_ranges;

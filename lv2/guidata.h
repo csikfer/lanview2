@@ -120,8 +120,8 @@ typedef tRecordList<cTableShapeField> tTableShapeFields;
 @brief Adattáblák táblázatos megjelenítésének a leírója
 */
 class LV2SHARED_EXPORT cTableShape : public cRecord {
-    template <class S> friend void _SplitMagicT(S& o, bool __ex);
     CRECORD(cTableShape);
+    FEATURES(cTableShape)
 public:
     virtual void toEnd();
     virtual bool toEnd(int i);
@@ -172,19 +172,6 @@ public:
     bool setFieldSeq(const QStringList& _fnl, int last = 0, bool __ex = true);
     bool setOrdSeq(const QStringList& _fnl, int last = 0, bool __ex = true);
 
-    /// A rekordban a atrubutes mezőt vágja szát, és az elemeket elhelyezi a pMagicMap pointer által mutatott konténerbe.
-    /// Ha pMagicMap egy NULL pointer, akkor a művelet elött megallokálja a konténert, ha nem NULL, akkor pedig törli a konténer tartalmát.
-    tMagicMap& splitMagic(bool __ex = true);
-    /// Visszaadja a pMagicMap által mutatott konténer referenciáját. Ha pMagicMap értéke NULL, akkor hívja a splitMagic() metódust, ami megallokálja
-    /// és feltölti a konténert.
-    const tMagicMap& magicMap(bool __ex = true) const;
-    /// A megadott kulcs alapján visszaadja a magicMap konténerből a paraméter értéket a név alapján. Ha a konténer nincs megallokálva, akkor megallokálja
-    /// és feltölti.
-    /// @return ha a kulcshoz tartozik megadott néven paraméter, akkor az értéket adja vissza, vagy üres stringet.
-    QString magicParam(const QString& __nm, bool __ex = true) const { return ::magicParam(__nm, magicMap(__ex)); }
-    /// Magadot kulcsal egy paraméter keresése.
-    /// @return találat esetén true.
-    bool findMagic(const QString &_nm, bool __ex = true)        { return ::findMagic(_nm, magicMap(__ex)); }
     ///
     bool typeIs(eTableShapeType _t) const { return getId(_sTableShapeType) & enum2set(_t); }
     bool fetchLeft(QSqlQuery& q, cTableShape * _po, bool _ex = true) const;
@@ -200,12 +187,7 @@ public:
 
     tTableShapeFields       shapeFields;
 protected:
-    static int              _ixProperties;
     static int              _ixTableShapeType;
-    /// magicMap konténer, vagy null pointer, ha még nincs feltöltve
-    /// Mivel cache ként van felhasználva a konténer, ezért a megváltoztatása akkor is engedélyezett (saját metódus számára)
-    /// ha az objektum konstans.
-    tMagicMap          *_pMagicMap;
 };
 
 class cTableShapeFilter;
@@ -216,8 +198,8 @@ typedef tRecordList<cTableShapeFilter> tTableShapeFilters;
 @brief Adattáblák mezőinek a megjelenítési leírói
 */
 class LV2SHARED_EXPORT cTableShapeField : public cRecord {
-    template <class S> friend void _SplitMagicT(S& o, bool __ex);
     CRECORD(cTableShapeField);
+    FEATURES(cTableShapeField)
 public:
     cTableShapeField(QSqlQuery& q);
     virtual void toEnd();
@@ -226,31 +208,11 @@ public:
     virtual bool insert(QSqlQuery &__q, bool __ex);
     int fetchFilters(QSqlQuery& q);
     bool addFilter(const QString& _t, const QString& _d, bool __ex = true);
-    /// A rekordban a atrubutes nezőt vágja szát, és az elemeket elhelyezi a pMagicMap pointer által mutatott konténerbe.
-    /// Ha pMagicMap egy NULL pointer, akkor a művelet elött megallokálja a konténert, ha nem NULL, akkor pedig törli a konténer tartalmát.
-    tMagicMap& splitMagic(bool __ex = true);
-    /// Visszaadja a pMagicMap által mutatott konténer referenciáját.
-    /// Konstansként van definiálva, az objektum értékét érdemben nem változtatja meg, de ha a _pMagicMap adattag egy
-    /// NULL pointer, akkor megallokálja és feltölti a (gyorstárként funkcionáló) konténert.
-    const tMagicMap& magicMap(bool __ex = true) const;
-    /// A megadott kulcs alapján visszaadja a magicMap konténerből a paraméter értéket a név alapján.
-    /// Konstansként van definiálva, az objektum értékét érdemben nem változtatja meg, de ha a _pMagicMap adattag egy
-    /// NULL pointer, akkor megallokálja és feltölti a (gyorstárként finkcionáló) konténert.
-    /// @return ha a kulcshoz tartozik megadott néven paraméter, akkor az értéket adja vissza, vagy üres stringet.
-    QString magicParam(const QString& __nm, bool __ex = true) const { return ::magicParam(__nm, magicMap(__ex)); }
-    /// Magadot kulcsal egy paraméter keresése.
-    /// Konstansként van definiálva, az objektum értékét érdemben nem változtatja meg, de ha a _pMagicMap adattag egy
-    /// NULL pointer, akkor megallokálja és feltölti a (gyorstárként finkcionáló) konténert.
-    /// @return találat esetén true.
-    bool findMagic(const QString &_nm, bool __ex = true) const  { return ::findMagic(_nm, magicMap(__ex)); }
     bool fetchByNames(QSqlQuery& q, const QString& tsn, const QString& fn, bool __ex = false);
     static qlonglong getIdByNames(QSqlQuery& q, const QString& tsn, const QString& fn);
     tTableShapeFilters  shapeFilters;
 protected:
     static cRecStaticDescr  _staticDescr;
-    static int _ixProperties;
-    /// magicMap konténer, vagy null pointer, ha még nincs feltöltve
-    tMagicMap          *_pMagicMap;
 };
 
 class LV2SHARED_EXPORT cTableShapeFilter : public cRecord {
@@ -283,6 +245,7 @@ public:
 
 class LV2SHARED_EXPORT cMenuItem : public cRecord {
     CRECORD(cMenuItem);
+    FEATURES(cMenuItem)
 public:
     QString title() const { return isNull(_sMenuItemTitle) ? getName(_sMenuItemName) : getName(_sMenuItemTitle); }
     bool fetchFirstItem(QSqlQuery &q, const QString &_appName, qlonglong upId = NULL_ID);

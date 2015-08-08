@@ -141,36 +141,36 @@ template <class T> bool isContIx(const T& cont, qlonglong ix) {
 /// @return Az eredmény stringgel tér vissza
 EXT_ QString nameAndNumber(const QString& __pat, int __num, char __c = '?');
 
-/// Konténer típus a properties mező értelmezéséhez
-typedef QMap<QString, QString>                     tMagicMap;
-typedef QMap<QString, QString>::iterator           tMagicMapIteraeor;
-typedef QMap<QString, QString>::const_iterator     tMagicMapConstIteraeor;
+/// @class cFeatures
+/// \brief A features mezőt kezelő osztály. A kulcs a metódusokban mindíg kisbetüssé van konvertálva.
+class LV2SHARED_EXPORT cFeatures : public QMap<QString, QString>
+{
+public:
+    cFeatures() : QMap<QString, QString>() { ; }
+    /// Egy magic stringet szétvág és objektumot feltölti, ill. összefésüli az elemeivel
+    /// A magic string paramétereket és értékeket tartalmazó string, a kezdő és záró karakter, valamint a szaeparátor
+    /// a kettőspont. A paraméter név és érték szeparátor az egyenlőségjel. Pl.:
+    /// ':par1:par2=val2:par3:par4=val4:
+    /// Ha a paraméter érték a felkiáltójel, akkor az adott kulcs türülve lessz.
+    /// @param __ms A feldolgozandó paraméter string
+    /// @param __ex Nem megfelelő formátumú string esetén kizárást dob.
+    /// @return Az eredmény ill. az objektum referencia
+    cFeatures& split(const QString& __ms, bool __ex = true);
+    /// Kiemeli a megadott nevű paraméter ártéket.
+    /// @param _nm A paraméter neve (kisbetüssé lesz konvertálva)
+    /// @return Egy string, a paraméter érték, ha nincs ilyen paraméter, akkor a NULL string,
+    ///         ha viszont nincs paraméternek értéke, akkor egy üres string
+    QString value(const QString &_nm) const { return QMap<QString, QString>::value(_nm.toLower()); }
+    /// Megkeresi a megadott nevű paramétert.
+    /// @param _nm A paraméter neve (kisbetüssé lesz konvertálva)
+    /// @return Ha létezik ilyen nevű paraméter (értéke lehet üresÖ, akkor true
+    bool contains(const QString &_nm) const { return QMap<QString, QString>::contains(_nm.toLower()); }
+    /// A features mező értékének az előállítása.
+    /// @param __map a forrás konténer
+    /// @return Az eredmény string
+    QString join() const;
+};
 
-/// Egy magic stringet szétvág és egy QMap-ot tölt föl az elemeivel
-/// A konténer kiindulási értéke a második opcionális paraméter,
-/// A magic string paramétereket és értékeket tartalmazó string, a kezdő és záró karakter, valamint a szaeparátor
-/// a kettőspont. A paraméter név és érték szeparátor az egyenlőségjel. Pl.:
-/// ':par1:par2=val2:par3:par4=val4:
-/// @param __ms A feldolgozandó magic string
-/// @param __map A konténer kiindulási értéke
-/// @param __ex Nem megfelelő formátumú string esetén kizárást dob.
-/// @return Az eredmény konténer
-EXT_ tMagicMap splitMagic(const QString& __ms, const tMagicMap& __map, bool __ex = true);
-/// Egy magic string elemból kiemeli a megadott nevű paraméter stringet, feltételezve, hogy csak egy adott nevű elem van
-/// @param _nm A paraméter neve
-/// @param __map A magic string szétvágásakor keletkező konténer.
-/// @return Egy string, a paraméter érték, ha nincs ilyen paraméter, akkor a NULL string, ha viszont nincs paraméternek értéke, akkor egy üres string
-EXT_ const QString& magicParam(const QString& _nm, const tMagicMap __map);
-/// A megadott __map konténerben keres egy a __k kulcshoz tartozó attributum nevet.
-/// A konténerben talállható tulajdonság nevekről az esetleges paramétereket leválasztja az összehasonlítás elött
-/// @param _nm A tulajdonság név (paraméterek nélkül)
-/// @param __map A konténer referenciája
-/// @return true, ha megtalálta az adott tulajdonságú elemet, egyébként false.
-static inline bool findMagic(const QString& _nm, const tMagicMap __map) { return __map.contains(_nm); }
-/// A properties mező értékének az előállítása a megadott konténer alapján.
-/// @param __map a forrás konténer
-/// @return Az eredmény string objektummal tér vissza
-EXT_ QString joinMagic(const tMagicMap __map);
 /// Egy QVariant érték konvertálása numerikussá (qlonglong).
 /// @param v A konvertálandó adat, ha nem konvertálható (és nem null) akkor dob egy kizárást.
 /// @param _ex Ha értéke true, akkor a NULL érték hibát dob, egyébként a def vagy annak alapértelmezett értékével NULL:ID-vel tér vissza.

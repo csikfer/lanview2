@@ -156,7 +156,7 @@ void cDevicePSt::postInit(QSqlQuery &q, const QString&)
 {
     DBGFN();
     cInspector::postInit(q);
-    if (pSubordinates != NULL) EXCEPTION(EPROGFAIL);
+    if (pSubordinates != NULL) EXCEPTION(EDATA);    // Ha a superior=custom nem volt megadva
     pSubordinates = new QList<cInspector *>;
     /// A host eredeti objektum típusa
     cSnmpDevice& dev = snmpDev();

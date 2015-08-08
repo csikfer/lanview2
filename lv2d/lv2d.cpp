@@ -105,7 +105,7 @@ void lv2d::reSet()
 
 cSupDaemon::cSupDaemon(QSqlQuery& q, const QString& __sn, lv2d &_mo) : cInspector(q, __sn), mo(_mo)
 {
-    inspectorType = IT_TIMED;
+    inspectorType = IT_TIMING_TIMED;
 }
 
 cSupDaemon::~cSupDaemon()
@@ -174,15 +174,15 @@ enum eNotifSwitch cSupDaemon::run(QSqlQuery &q)
         cDaemon& d = *(cDaemon *)(*i);
         if (d.crashCnt >  d.maxCrashCnt)    continue;           // Ennek már annyi
         // if (d.crashCnt == d.oldCrashCnt)    d.crashCnt = 0;     // Ha sokáig nincs új elszállás, nullázzuk ?
-        switch (d.daemonType) {
-        case DT_CONTINUE:
-        case DT_RESPAWN:
+        switch (d.inspectorType & IT_DAEMON_MASK) {
+        case IT_DAEMON_CONTINUE:
+        case IT_DAEMON_RESPAWN:
             break;      // itt nincs értelme a time out figyelésnek.
-        case DT_POLLING:
+        case IT_DAEMON_POLLING:
             if (d.lastRun.elapsed() > (d.interval * 2))   to = true;
             break;
         default:
-            EXCEPTION(EPROGFAIL, (int)d.daemonType);
+            EXCEPTION(EPROGFAIL, d.inspectorType, d.name());
         }
     }
     if (to) hostService.setState(q, _sWarning, QObject::trUtf8("Idő tullépés. Több mint kétszeres késleltetés egy lekérdezésnél"));
@@ -193,9 +193,9 @@ enum eNotifSwitch cSupDaemon::run(QSqlQuery &q)
 
 int cDaemon::maxCrashCnt = 5;
 
-cDaemon::cDaemon(QSqlQuery& q,cSupDaemon *par) : cInspector(q, NULL_ID, NULL_ID, par), cmd(), process(this), actLogFile()
+cDaemon::cDaemon(QSqlQuery& q,cSupDaemon *par) : cInspector(q, NULL_ID, NULL_ID, par), process(this), actLogFile()
 {
-    inspectorType = IT_TIMED;   // Ez nem feltétlenül igaz, de egyedileg van kezelve a kegtöbb dolog, és így nem akad ki nem értelmezhető érték miatt
+    inspectorType = IT_TIMING_TIMED;   // Ez nem feltétlenül igaz, de egyedileg van kezelve a kegtöbb dolog, és így nem akad ki nem értelmezhető érték miatt
     crashCnt = 0;
     oldCrashCnt = 0;
     maxArcLog   = 4;
@@ -212,22 +212,19 @@ cDaemon::~cDaemon()
 
 
 
-void cDaemon::postInit(QSqlQuery &, const QString &)
+void cDaemon::postInit(QSqlQuery &q, const QString &)
 {
-    QString s = magicParam(_sDaemon);
-    if      (s.compare(_sRespawn, Qt::CaseInsensitive)) daemonType = DT_RESPAWN;
-    else if (s.compare(_sPolling, Qt::CaseInsensitive)) daemonType = DT_POLLING;
-    else                                                daemonType = DT_CONTINUE;
-    getCmd();
-    PDEB(INFO) << "Init " << name() << " : " << cmd << endl;
+    getCheckCmd(q);
+    PDEB(INFO) << "Init " << name() << " : " << checkCmd << checkCmdArgs.join(' ') << endl;
     process.setObjectName(name());
     process.setProcessChannelMode(QProcess::MergedChannels);    // stderr + stdout ==> stdout
 
-    if (magicParam(_sLognull).isNull() == false) {
+    if (isFeature(_sLognull)) {
         logNull = true;
     }
     else {
-        if ((s = magicParam(_sLogrot)).isEmpty() == false) {
+        QString s;
+        if ((s = feature(_sLogrot)).isEmpty() == false) {
             QStringList ss = s.split(QRegExp("\\s*[,;]\\s*"));
             int i;
             bool ok;
@@ -250,130 +247,27 @@ void cDaemon::postInit(QSqlQuery &, const QString &)
 //  connect(&process, SIGNAL(readyReadStandardError()),           SLOT(procReadyStdErr()));
     connect(&process, SIGNAL(readyReadStandardOutput()),          SLOT(procReadyStdOut()));
     internalStat = IS_RUN;
-    if (daemonType == DT_CONTINUE || daemonType == DT_RESPAWN) process.start(cmd);
-}
-
-static QString getParName(QString::Iterator& i, const QString::Iterator& e)
-{
-    QString r;
-    ++i;
-    if (i == e) return r;
-    if (*i == QChar('{')) {
-        for (++i; i != e && *i != QChar('}'); ++i) r += *i;
-        if (i == e) return QString();
-        ++i;
-        return r;
-    }
-    for (; i != e; ++i) {
-        QChar c = *i;
-        if (c.isLetterOrNumber() || c == QChar('.') || c == QChar('_')) {
-            r += c;
-        }
-        break;
-    }
-    return r;
-}
-
-QString cDaemon::getParValue(const QString& n)
-{
-    QStringList sl = n.split(QChar('.'));
-    QString m;
-    if (sl.size() > 1) {
-        if (sl.size() > 2) EXCEPTION(EDATA, 1, n);
-        QString m = sl.first();
-        if (m == _sHostServices) return hostService.getName(sl[1]);
-        if (m == _sServices)     return service().getName(sl[1]);
-        if (m == _sNodes)        return pNode->getName(sl[1]);
-        EXCEPTION(EDATA, 2, n);
-    }
-    else {
-        if (hostService.isIndex(n)) return hostService.getName(n);
-        if (  service().isIndex(n)) return   service().getName(n);
-        if (     pNode->isIndex(n)) return      pNode->getName(n);
-        if (n == "parent_id")       return QString::number(((lv2d *)lanView::getInstance())->pSelf->hostServiceId());
-        if (n == "S")   {
-            if (lanView::testSelfName.isNull()) return _sNul;
-            return "-S " + lanView::testSelfName;
-        }
-        EXCEPTION(EDATA, 3, n);
-    }
-    return _sNul;
-}
-
-void cDaemon::getCmd()
-{
-    DBGFN();
-    QChar   c('$');
-    cmd = get(_sCheckCmd).toString();
-    QString::Iterator i;
-    if (cmd.contains(c)) {
-        QString s = cmd;
-        cmd.clear();
-        for (i = s.begin(); i != s.end(); ++i) {
-            if (*i != c) {
-                cmd += *i;
-                continue;
-            }
-            QString n = getParName(i, s.end());
-            cmd += getParValue(n);
-        }
-    }
-    if (cmd.isEmpty()) EXCEPTION(EDATA, -1, trUtf8("Insufficient command in %1").arg(name()));
-    QString cmdFile;
-    for (i = cmd.begin(); i != cmd.end() && !i->isSpace(); ++i) cmdFile += *i;
-    if (i == cmd.end()) {
-        cmd.clear();    // nins a paraméter
-    }
-    else {
-        int n = i - cmd.begin();
-        cmd = cmd.mid(n);
-    }
-    QFileInfo   f(cmdFile);
-    if (f.isExecutable()) {
- //       if (f.path().isEmpty()) {
- //           QDir    d(lanView::getInstance()->homeDir);
- //           f.setFile(d, cmdFile);
- //       }
-    }
-    else {    // A saját nevén (ha full path) ill. az aktiv directoriban nincs.
-        QString pathEnv(qgetenv("PATH"));
-        QStringList path;
-#ifdef Q_OS_WIN
-        QChar   sep(';');
-#else
-        QChar   sep(':');
-#endif
-        path << lanView::getInstance()->binPath.split(sep) << pathEnv.split(sep);    // saját path, és a PATH -ban lévő path-ok
-        foreach (QString dir, path) {
-            QDir d(dir);
-            f.setFile(d, cmdFile);
-            if (f.isExecutable()) break;      // megtaláltuk
-        }
-        if (!f.isExecutable()) EXCEPTION(ENOTFILE, -1, trUtf8("Ismeretlrn %1 parancs a %2 -ben").arg(cmdFile).arg(name()));  // nem volt a path-on sem
-    }
-    cmdFile = f.absoluteFilePath();
-    cmd = cmdFile + cmd;    // A cmd-ben már csak az argumentumok vannak.
-    _DBGFNL() << "cmd = " << quotedString(cmd) << endl;
+    if ((inspectorType & IT_DAEMON_MASK) == IT_DAEMON_CONTINUE || (inspectorType & IT_DAEMON_MASK) == IT_DAEMON_RESPAWN) process.start(checkCmd, checkCmdArgs);
 }
 
 eNotifSwitch cDaemon::run(QSqlQuery& q)
 {
     DBGFN();
     if (crashCnt > maxCrashCnt) return RS_DOWN;
-    switch (daemonType) {
-    case DT_POLLING:
+    switch (inspectorType & IT_DAEMON_MASK) {
+    case IT_DAEMON_POLLING:
         if (process.state() == QProcess::NotRunning) {
-            process.start(cmd);
+            process.start(checkCmd, checkCmdArgs);
         }
         else {
             hostService.setState(q,
                                  _sWarning,
-                                 QString(QObject::trUtf8("Idő tullépés a %1 parancs futásánál.")).arg(cmd),
+                                 QString(QObject::trUtf8("Idő tullépés a %1 parancs futásánál.")).arg(checkCmd),
                                  ((lv2d *)lanView::getInstance())->pSelf->hostServiceId());
         }
         break;
-    case DT_CONTINUE:
-    case DT_RESPAWN:
+    case IT_DAEMON_CONTINUE:
+    case IT_DAEMON_RESPAWN:
         break;
     default:
         EXCEPTION(EPROGFAIL);
@@ -401,7 +295,7 @@ void cDaemon::stop(bool)
 
 void cDaemon::procError(QProcess::ProcessError error)
 {
-    QString msg = QString(trUtf8("Service %1, Command : '%2'; error : %3")).arg(service().getName()).arg(cmd).arg(ProcessError2Message(error));
+    QString msg = QString(trUtf8("Service %1, Command : '%2'; error : %3")).arg(service().getName()).arg(checkCmd).arg(ProcessError2Message(error));
     DERR() << msg << endl;
     INSERROR(EPROCERR, (int)error, msg);
 }
@@ -410,14 +304,14 @@ void cDaemon::procFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
     _DBGFN() << name() << " @(" << exitCode << ", " << (exitStatus ? "normal exit" : "crashed") << ")" << endl;
     if (internalStat != IS_RUN) return;
-    if (exitStatus ==  QProcess::CrashExit || daemonType == DT_CONTINUE) {
+    if (exitStatus ==  QProcess::CrashExit || (inspectorType & IT_DAEMON_MASK) == IT_DAEMON_CONTINUE) {
         crashCnt++;
         QString msg = QString(QObject::trUtf8("Service %1 : ")).arg(service().getName());
         if (exitStatus ==  QProcess::CrashExit) {
-            msg += QString(QObject::trUtf8("A %1 program elszállt")).arg(quotedString(cmd));
+            msg += QString(QObject::trUtf8("A %1 program elszállt")).arg(quotedString(checkCmd));
         }
         else {
-            msg += QString(QObject::trUtf8("A %1 program kilépett. Kilépési kód %2.")).arg(quotedString(cmd)).arg(exitCode);
+            msg += QString(QObject::trUtf8("A %1 program kilépett. Kilépési kód %2.")).arg(quotedString(checkCmd)).arg(exitCode);
         }
         if (crashCnt > maxCrashCnt) msg += QObject::trUtf8(" Leállítva!");
         DERR() << msg << endl;
@@ -437,13 +331,13 @@ void cDaemon::procFinished(int exitCode, QProcess::ExitStatus exitStatus)
     else {
         crashCnt = 0;
     }
-    if (internalStat != IS_RUN) switch (daemonType) {
-    case DT_CONTINUE:
-    case DT_RESPAWN:
+    if (internalStat != IS_RUN) switch (inspectorType & IT_DAEMON_MASK) {
+    case IT_DAEMON_CONTINUE:
+    case IT_DAEMON_RESPAWN:
         PDEB(INFO) << "Restart process " << name() << endl;
-        process.start(cmd);
+        process.start(checkCmd, checkCmdArgs);
         break;
-    case DT_POLLING:
+    case IT_DAEMON_POLLING:
         break;
     default:
         EXCEPTION(EPROGFAIL);

@@ -135,13 +135,13 @@ const QString& filterType(int e, bool __ex)
 
 cTableShape::cTableShape() : cRecord()
 {
-    _pMagicMap = NULL;
+    _pFeatures = NULL;
     _set(cTableShape::descr());
 }
 
 cTableShape::cTableShape(const cTableShape &__o) : cRecord()
 {
-    _pMagicMap = NULL;
+    _pFeatures = NULL;
     _set(cTableShape::descr());
     _cp(__o);
     shapeFields = __o.shapeFields;
@@ -152,12 +152,12 @@ cTableShape::~cTableShape()
     clearToEnd();
 }
 
-int  cTableShape::_ixProperties = NULL_IX;
+int  cTableShape::_ixFeatures = NULL_IX;
 int  cTableShape::_ixTableShapeType = NULL_IX;
 const cRecStaticDescr&  cTableShape::descr() const
 {
     if (initPDescr<cTableShape>(_sTableShapes)) {
-        _ixProperties = _descr_cTableShape().toIndex(_sProperties);
+        _ixFeatures = _descr_cTableShape().toIndex(_sFeatures);
         _ixTableShapeType = _descr_cTableShape().toIndex(_sTableShapeType);
         CHKENUM(_ixTableShapeType, tableShapeType);
         CHKENUM(_sTableInheritType, tableInheritType);
@@ -169,7 +169,7 @@ CRECDEF(cTableShape)
 void cTableShape::toEnd()
 {
     toEnd(_descr_cTableShape().idIndex());
-    toEnd(_ixProperties);
+    toEnd(_ixFeatures);
 }
 
 bool cTableShape::toEnd(int i)
@@ -185,10 +185,10 @@ bool cTableShape::toEnd(int i)
         shapeFields.clear();
         return true;
     }
-    if (_ixProperties) {
-        if (_pMagicMap != NULL) {
-            delete _pMagicMap;
-            _pMagicMap = NULL;
+    if (_ixFeatures) {
+        if (_pFeatures != NULL) {
+            delete _pFeatures;
+            _pFeatures = NULL;
         }
         return true;
     }
@@ -198,9 +198,9 @@ bool cTableShape::toEnd(int i)
 void cTableShape::clearToEnd()
 {
     shapeFields.clear();
-    if (_pMagicMap != NULL) {
-        delete _pMagicMap;
-        _pMagicMap = NULL;
+    if (_pFeatures != NULL) {
+        delete _pFeatures;
+        _pFeatures = NULL;
     }
 }
 
@@ -515,25 +515,6 @@ bool cTableShape::setOrdSeq(const QStringList& _fnl, int last, bool __ex)
 }
 
 
-template void _SplitMagicT<cTableShape>(cTableShape& o, bool __ex);
-
-tMagicMap&  cTableShape::splitMagic(bool __ex)
-{
-    DBGFN();
-    PDEB(VVERBOSE) << VDEB(_ixProperties) << endl;
-    _SplitMagicT<cTableShape>(*this, __ex);
-    return *_pMagicMap;
-}
-
-const tMagicMap& cTableShape::magicMap(bool __ex) const
-{
-    if (_pMagicMap == NULL) {
-        const_cast<cTableShape *>(this)->splitMagic(__ex);
-    }
-    return *_pMagicMap;
-}
-
-
 bool cTableShape::fetchLeft(QSqlQuery& q, cTableShape * _po, bool _ex) const
 {
     qlonglong oid = getId(_sLeftShapeId);
@@ -557,7 +538,7 @@ bool cTableShape::fetchRight(QSqlQuery& q, cTableShape * _po, bool _ex) const
 cTableShapeField *cTableShape::addField(const QString& _name, const QString& _title, const QString& _note, bool __ex)
 {
     if (0 <= shapeFields.indexOf(_name)) {
-        if (__ex) EXCEPTION(EUNOQUE, -1, _name);
+        if (__ex) EXCEPTION(EUNIQUE, -1, _name);
         return NULL;
     }
     cTableShapeField *p = new cTableShapeField();
@@ -572,13 +553,13 @@ cTableShapeField *cTableShape::addField(const QString& _name, const QString& _ti
 
 cTableShapeField::cTableShapeField() : cRecord()
 {
-    _pMagicMap = NULL;
+    _pFeatures = NULL;
     _set(cTableShapeField::descr());
 }
 
 cTableShapeField::cTableShapeField(const cTableShapeField &__o) : cRecord()
 {
-    _pMagicMap = NULL;
+    _pFeatures = NULL;
     _set(cTableShapeField::descr());
     _cp(__o);
     shapeFilters = __o.shapeFilters;
@@ -587,7 +568,7 @@ cTableShapeField::cTableShapeField(const cTableShapeField &__o) : cRecord()
 
 cTableShapeField::cTableShapeField(QSqlQuery& q)
 {
-    _pMagicMap = NULL;
+    _pFeatures = NULL;
     _set(cTableShapeField::descr());
     set(q);
 }
@@ -597,12 +578,12 @@ cTableShapeField::~cTableShapeField()
     clearToEnd();
 }
 
-int cTableShapeField::_ixProperties = NULL_IX;
+int cTableShapeField::_ixFeatures = NULL_IX;
 
 const cRecStaticDescr&  cTableShapeField::descr() const
 {
     if (initPDescr<cTableShapeField>(_sTableShapeFields)) {
-        _ixProperties = _descr_cTableShapeField().toIndex(_sProperties);
+        _ixFeatures = _descr_cTableShapeField().toIndex(_sFeatures);
         CHKENUM(_sOrdTypes, orderType);
     }
     return *_pRecordDescr;
@@ -613,7 +594,7 @@ CRECDEF(cTableShapeField)
 void cTableShapeField::toEnd()
 {
     toEnd(_descr_cTableShapeField().idIndex());
-    toEnd(_ixProperties);
+    toEnd(_ixFeatures);
 }
 
 bool cTableShapeField::toEnd(int i)
@@ -629,10 +610,10 @@ bool cTableShapeField::toEnd(int i)
         shapeFilters.clear();
         return true;
     }
-    if (_ixProperties) {
-        if (_pMagicMap != NULL) {
-            delete _pMagicMap;
-            _pMagicMap = NULL;
+    if (_ixFeatures) {
+        if (_pFeatures != NULL) {
+            delete _pFeatures;
+            _pFeatures = NULL;
         }
         return true;
     }
@@ -675,24 +656,6 @@ bool cTableShapeField::addFilter(const QString& _t, const QString& _d, bool __ex
     if (!_d.isEmpty()) pF->setName(_sTableShapeFieldNote);
     shapeFilters << pF;
     return true;
-}
-
-template void _SplitMagicT<cTableShapeField>(cTableShapeField& o, bool __ex);
-
-tMagicMap&  cTableShapeField::splitMagic(bool __ex)
-{
-    DBGFN();
-    PDEB(VVERBOSE) << VDEB(_ixProperties) << endl;
-    _SplitMagicT<cTableShapeField>(*this, __ex);
-    return *_pMagicMap;
-}
-
-const tMagicMap& cTableShapeField::magicMap(bool __ex) const
-{
-    if (_pMagicMap == NULL) {
-        const_cast<cTableShapeField *>(this)->splitMagic(__ex);
-    }
-    return *_pMagicMap;
 }
 
 
@@ -756,7 +719,17 @@ bool cEnumVal::delByNames(QSqlQuery& q, const QString& __t, const QString& __n)
 }
 
 /* ------------------------------ cMenuItems ------------------------------ */
-DEFAULTCRECDEF(cMenuItem, _sMenuItems)
+CRECCNTR(cMenuItem) CRECDEFD(cMenuItem)
+
+int cMenuItem::_ixFeatures = NULL_IX;
+
+const cRecStaticDescr&  cMenuItem::descr() const
+{
+    if (initPDescr<cMenuItem>(_sMenuItems)) {
+        _ixFeatures = _descr_cMenuItem().toIndex(_sFeatures);
+    }
+    return *_pRecordDescr;
+}
 
 bool cMenuItem::fetchFirstItem(QSqlQuery& q, const QString& _appName, qlonglong upId)
 {

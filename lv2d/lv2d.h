@@ -45,12 +45,6 @@ private slots:
     void dbNotif(QString __s);
 };
 
-enum eDaemonType {
-    DT_CONTINUE,    ///< Folyamatosan futó, csak hiba esetén vagy parancsra áll le. Alapértelmezett.
-    DT_RESPAWN,     ///< Ha kérés érkezik hozzá, akkor végrehajtja, majd kilép, újra kell indítani. Magic: "#RESPAWN"
-    DT_POLLING      ///< Időzítve indítandó, elvégzi a dolgát, majd leáll. Magic: "#POLLING"
-};
-
 class cDaemon : public cInspector {
     Q_OBJECT
 public:
@@ -60,25 +54,6 @@ public:
     virtual void postInit(QSqlQuery &q, const QString &qs = QString());
     virtual void stop(bool __ex);
 
-    /// A check_cmd mezőben a $<paraméter név> típusú kifejezésben a paraméter névhez tartozó
-    /// értéket adja vissza, a megadott név alapján, ha a névben a pont karakter szerepel: \n
-    /// host_services.<mező név>    Az aktuális host_services rekord megadott nevű mezőjének az értéke stringgé konvertálva \n
-    /// services.<mező név>         Az aktuális services rekord megadott nevű mezőjének az értéke stringgé konvertálva \n
-    /// nodes.<mező név>            Az aktuális nodes rekord megadott nevű mezőjének az értéke stringgé konvertálva \n
-    /// Ha nem szerepel a pont karakter, akkor az aktuális host_services, services ill. a nodes rekordokban keresi az azonos nevű
-    /// mezőt, a megadott sorrendben, és találat esetén a mező strinngé konvertált értékével tér vissza \n
-    /// Ha nem volt eddig találat, akkor a következő nevekre a kovetkező értéket adja vissza: \n
-    /// parent_id   A saját (lv2d) host_service_id értékkel \n
-    /// address     Az aktuális node ip címével (ha meg van adva port, akkor a port ip címével). \n
-    /// S           Ha megvolt adva a -S <név> parancs opció, akkor annak értékét adja vissza, ha nem akkor egy üres stringget \n
-    /// Ha nem tudja értelmezni a nevet, akkor dob egy kizárást
-    QString getParValue(const QString& n);
-    //
-    void getCmd();
-    /// A futtatandó shell parancs
-    QString         cmd;
-    /// A daemon típusa
-    enum eDaemonType    daemonType;
     /// Ha true, akkor a processz önállóan loggol a kimenetét eldobjuk
     bool            logNull;
     /// Rotálás esetén a maximális log fájl hossz (bype), ha ennél nagyobb új log fájlt kell nyitni
