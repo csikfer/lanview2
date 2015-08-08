@@ -72,10 +72,10 @@ CREATE TABLE query_parsers (
     service_id                  bigint        NOT NULL REFERENCES services(service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE,
     parse_type                  parsertype    DEFAULT 'parse',
     item_sequence_number        integer       DEFAULT NULL,
-    case_sesitive               boolean       DEFAULT false,
-    regular_expressionion       text          DEFAULT NULL,
-    import_expressionion        text          NOT NULL,
-    CONSTRAINT check_expression CHECK ((parse_type = 'parse' AND regular_expressionion IS NOT NULL) OR (parse_type <> 'parse' AND regular_expressionion IS NULL))
+    case_sensitive              boolean       DEFAULT false,
+    regular_expression       text          DEFAULT NULL,
+    import_expression           text          NOT NULL,
+    CONSTRAINT check_expression CHECK ((parse_type = 'parse' AND regular_expression IS NOT NULL) OR (parse_type <> 'parse' AND regular_expression IS NULL))
 );
 
 ALTER TABLE query_parsers OWNER TO lanview2;

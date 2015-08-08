@@ -719,7 +719,19 @@ bool cEnumVal::delByNames(QSqlQuery& q, const QString& __t, const QString& __n)
 }
 
 /* ------------------------------ cMenuItems ------------------------------ */
-CRECCNTR(cMenuItem) CRECDEFD(cMenuItem)
+CRECDEFD(cMenuItem)
+
+cMenuItem::cMenuItem() : cRecord()
+{
+    _pFeatures = NULL;
+    _set(cMenuItem::descr());
+}
+cMenuItem::cMenuItem(const cMenuItem& __o) : cRecord()
+{
+    _pFeatures = NULL;
+    _cp(__o);
+}
+
 
 int cMenuItem::_ixFeatures = NULL_IX;
 

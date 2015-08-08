@@ -302,7 +302,7 @@ cRecordFieldConstRef cInspector::get(const QString& __n) const
     return r;
 }
 
-cFeatures& cInspector::split(bool __ex)
+cFeatures& cInspector::splitFeature(bool __ex)
 {
     int ixFeatures = cService::_descr_cService().toIndex(_sFeatures);
 

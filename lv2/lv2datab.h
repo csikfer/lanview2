@@ -2092,7 +2092,7 @@ template <class R> void _JoinFeatureT(R& o)
 /// @par
 /// A definiált metódusok:
 /// @code
-/// cFeatures&  split(bool __ex);
+/// cFeatures&  splitFeature(bool __ex);
 /// @code
 /// Feltölti (ha kell allokálja) a konténert. Ha a konténer létezett, akor elöszőr törli a tartalmát.
 /// Lásd: template <class R> void _SplitFeatureT(R& o, bool __ex)
@@ -2123,12 +2123,12 @@ protected: \
     cFeatures *_pFeatures; \
     static int _ixFeatures; \
 public: \
-    cFeatures&  split(bool __ex) { _SplitFeatureT<R>(*this, __ex); return *_pFeatures; } \
-    const cFeatures&  features(bool __ex = true) const { if (_pFeatures == NULL) const_cast<R *>(this)->split(__ex); return *_pFeatures; } \
-    cFeatures&  features(bool __ex = true) { if (_pFeatures == NULL) this->split(__ex); return *_pFeatures; } \
+    cFeatures&  splitFeature(bool __ex = true) { _SplitFeatureT<R>(*this, __ex); return *_pFeatures; } \
+    const cFeatures&  features(bool __ex = true) const { if (_pFeatures == NULL) const_cast<R *>(this)->splitFeature(__ex); return *_pFeatures; } \
+    cFeatures&  features(bool __ex = true) { if (_pFeatures == NULL) this->splitFeature(__ex); return *_pFeatures; } \
     QString feature(const QString &_nm) const { return features().value(_nm); } \
     bool  isFeature(const QString &_nm) const { return features().contains(_nm); } \
-    R& join() { _JoinFeatureT<R>(*this); return *this;  }
+    R& joinFeature() { _JoinFeatureT<R>(*this); return *this;  }
 
 
 #endif // LV2DATAB_H

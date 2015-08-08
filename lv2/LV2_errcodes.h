@@ -42,4 +42,4 @@ ERRCOD( ENOENV,      "Environment variable not found.")
 ERRCOD( ESOCKET,     "Communication (socket). error.")
 ERRCOD( ESEM,        "Semaphore error.")
 
-#define __LAST_ERROR_CODE__  ESOCKET
+#define __LAST_ERROR_CODE__  ESEM

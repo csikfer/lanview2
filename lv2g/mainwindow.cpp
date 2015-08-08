@@ -65,6 +65,7 @@ void cMainWindow::action(QAction *pa, cMenuItem& _mi, QSqlQuery *pq)
         if (sm.fetchFirstItem(*pq, _mi.getName(_sAppName), _mi.getId())) {
             PDEB(VERBOSE) << "Menu :" << _mi.title() << " #" << pq->size() << " sub menü:" << endl;
             do {
+                sm.splitFeature(); // features
                 PDEB(VERBOSE) << _mi.title() << " sub menu : " << sm.title() << endl;
                 QSqlQuery *pq2 = newQuery();
                 action(pm->addAction(sm.title()), sm, pq2);

@@ -180,10 +180,10 @@ public:
     cRecordFieldConstRef get(const QString& __n) const;
     /// A services és a host_services rekordban a atrubutes nezőt vágja szát, és az elemeket elhelyezi a pMagicMap pointer által mutatott konténerbe.
     /// Ha pMagicMap egy NULL pointer, akkor a művelet elött megallokálja a konténert, ha nem NULL, akkor pedig törli a konténer tartalmát.
-    cFeatures& split(bool __ex = true);
+    cFeatures& splitFeature(bool __ex = true);
     /// Visszaadja a pMagicMap által mutatott konténer referenciáját. Ha pMagicMap értéke NULL, akkor hívja a splitMagic() metódust, ami megallokálja
     /// és feltölti a konténert.
-    cFeatures& features(bool __ex = true)   { if (_pFeatures == NULL) split(__ex); return *_pFeatures; }
+    cFeatures& features(bool __ex = true)   { if (_pFeatures == NULL) splitFeature(__ex); return *_pFeatures; }
     /// A megadott kulcs alapján visszaadja a magicMap konténerből a paraméter értéket a név alapján. Ha a konténer nincs megallokálva, akkor megallokálja
     /// és feltölti.
     /// @return Egy string, a paraméter érték, ha nincs ilyen paraméter, akkor a NULL string, ha viszont nincs paraméternek értéke, akkor egy üres string
