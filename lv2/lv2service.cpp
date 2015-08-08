@@ -324,9 +324,9 @@ int cInspector::setInspectorType()
     if      (     value.isEmpty())                                inspectorType |= IT_TIMING_TIMED;
     else if (0 == value.compare(_sTimed,    Qt::CaseInsensitive)) inspectorType |= IT_TIMING_TIMED;
     else if (0 == value.compare(_sThread,   Qt::CaseInsensitive)) inspectorType |= IT_TIMING_THREAD;
-    else if (0 == value.compare(_sCustom,   Qt::CaseInsensitive)) inspectorType |= IT_TIMING_CUSTOM;
     else if (0 == value.compare(_sPassive,  Qt::CaseInsensitive)) inspectorType |= IT_TIMING_PASSIVE;
     else if (0 == value.compare(_sPolling,  Qt::CaseInsensitive)) inspectorType |= IT_TIMING_POLLING;
+//  else if (0 == value.compare(_sCustom,   Qt::CaseInsensitive)) inspectorType |= IT_TIMING_CUSTOM;
     else {
         if (value.contains(_sTimed, Qt::CaseInsensitive) && value.contains(_sThread, Qt::CaseInsensitive))
             inspectorType |= IT_TIMING_TIMEDTHREAD;
@@ -337,14 +337,13 @@ int cInspector::setInspectorType()
     else if (0 == value.compare(_sContinue, Qt::CaseInsensitive)) inspectorType |= IT_DAEMON_CONTINUE;
     else if (0 == value.compare(_sPolling,  Qt::CaseInsensitive)) inspectorType |= IT_DAEMON_POLLING;
 
-    if (isFeature(_sSuperior))                                  inspectorType |= IT_SUPERIOR;
+    if (isFeature(_sSuperior))                                    inspectorType |= IT_SUPERIOR;
 
     value = features().value(_sMethod);
-    if      (0 == value.compare(_sQparser,  Qt::CaseInsensitive)) inspectorType |= IT_METHOD_QPARSER;
-    else if (0 == value.compare(_sNagios,   Qt::CaseInsensitive)) inspectorType |= IT_METHOD_NAGIOS;
+    if      (0 == value.compare(_sNagios,   Qt::CaseInsensitive)) inspectorType |= IT_METHOD_NAGIOS;
     else if (0 == value.compare(_sMunin,    Qt::CaseInsensitive)) inspectorType |= IT_METHOD_MUNIN;
     else if (0 == value.compare(_sCarried,  Qt::CaseInsensitive)) inspectorType |= IT_METHOD_CARRIED;
-    else if (0 == value.compare(_sCustom,   Qt::CaseInsensitive)) inspectorType |= IT_METHOD_CUSTOM;
+//  else if (0 == value.compare(_sCustom,   Qt::CaseInsensitive)) inspectorType |= IT_METHOD_CUSTOM;
     return inspectorType;
 }
 
@@ -894,7 +893,6 @@ QString inspectorType(int __t)
     if (__t & IT_SUPERIOR)      r += ":" + _sSuperior;
     switch (__t & IT_METHOD_MASK) {
     case IT_METHOD_CUSTOM:                                                          break;
-    case IT_METHOD_QPARSER:     r += ":" + _sMethod + "=" + _sQparser;              break;
     case IT_METHOD_NAGIOS:      r += ":" + _sMethod + "=" + _sNagios;               break;
     case IT_METHOD_MUNIN:       r += ":" + _sMethod + "=" + _sMunin;                break;
     case IT_METHOD_CARRIED:     r += ":" + _sMethod + "=" + _sCarried;              break;

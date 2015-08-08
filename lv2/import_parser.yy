@@ -2398,7 +2398,6 @@ static int yylex(void)
         { "INT",    INTEGER_T },
         { "MSG",    MESSAGE_T },
         { "CMD",    COMMAND_T },
-        { "PROP",   FEATURES_T },
         { "PROTO",  PROTOCOL_T },
         { "SEQ",    SEQUENCE_T },
         { "DEL",    DELETE_T },

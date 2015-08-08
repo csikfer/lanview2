@@ -318,7 +318,7 @@ TABLE SHAPE users "felhasználók" {
     SET DEFAULTS;
     TABLE TYPE member;
     RIGHT SHAPE groups;
-    FIELD passwd PROP ":passwd:";
+    FIELD passwd FEATURES ":passwd:";
     FIELD passwd HIDE;
     $DefRights
 }
@@ -335,7 +335,7 @@ TABLE SHAPE places "Helyiségek" {
     SET DEFAULTS;
     TABLE TYPE tree, member;
     RIGHT SHAPE place_groups;
-    TABLE PROP ":map=get_parent_image:";
+    TABLE FEATURES ":map=get_parent_image:";
     $DefRights
 }
 SET table_shapes[place_groups].right_shape_id = ID TABLE SHAPE ( places );

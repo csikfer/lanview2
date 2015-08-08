@@ -77,10 +77,12 @@ superior    Alárendelteket ellenörző eljárásokat hív, szolgál ki (passive
     <üres>      Alárendelt viszony,autómatikus
 method
     custom      saját/ismeretlen (alapérte,mezett)
-    qparser     Lanview2 quer
     nagios      Egy Nagios plugin
     munin       Egy Munin plugin
     carried     Önálló (csak akkor kell adminisztrállni, ha kiakadt)
+qparser
+    manager
+    inferior
 ifType      A szolgáltatás hierarhia mely port típus linkjével azonos (paraméter: interface típus neve)
 disabled    service_name = icontsrv , csak a host_services rekordban, a szolgáltatás (riasztás) tiltva.
 reversed    service_name = icontsrv , csak a host_services rekordban, a port fordított bekötését jelzi.

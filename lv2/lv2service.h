@@ -70,10 +70,9 @@ enum eInspectorType {
     IT_SUPERIOR             = 0x0080,
 
     IT_METHOD_CUSTOM        = 0x0000,
-    IT_METHOD_QPARSER       = 0x0100,
-    IT_METHOD_NAGIOS        = 0x0200,
-    IT_METHOD_MUNIN         = 0x0300,
-    IT_METHOD_CARRIED       = 0x4000,
+    IT_METHOD_NAGIOS        = 0x0100,
+    IT_METHOD_MUNIN         = 0x0200,
+    IT_METHOD_CARRIED       = 0x0400,
     IT_METHOD_MASK          = 0x0700
 };
 
