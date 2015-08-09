@@ -1313,7 +1313,7 @@ void cFKeyWidget::modifyF()
     cRecordAny r(pRDescr);
     if (r.fetchById(id)) {
         eTableInheritType   tit = (eTableInheritType)pTableShape->getId(_sTableInheritType);
-
+        // ...
     }
 }
 

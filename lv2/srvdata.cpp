@@ -779,7 +779,7 @@ int cQueryParser::load(QSqlQuery& q, qlonglong _sid, bool force)
     default:    EXCEPTION(EDATA,n, _sPost);             break;
     }
 
-    return R_OK;
+    return REASON_OK;
 }
 
 QString cQueryParser::getParValue(const QString& name, const QStringList& args)

@@ -694,7 +694,7 @@ DEFAULTCRECDEF(cEnumVal, _sEnumVals)
 
 QString cEnumVal::title(QSqlQuery& q, const QString& _ev, const QString& _tn)
 {
-    QString sql = "SELECT enum_name2descr(" + quoted(_ev);
+    QString sql = "SELECT enum_name2note(" + quoted(_ev);
     if (_tn.isEmpty() == false) sql += QChar(',') + quoted(_tn);
     sql += ")";
     if (!q.exec(sql)) SQLPREPERR(q, sql);
