@@ -2843,6 +2843,19 @@ cRecord& cRecord::setMac(int __i, const cMac& __a, bool __ex)
     return *this;
 }
 
+cRecord& cRecord::setIp(int __i, const QHostAddress& __a, bool __ex)
+{
+    int t = colDescr(__i).eColType;
+    if (t != cColStaticDescr::FT_INET) {
+        if (__ex) EXCEPTION(EDATA, t, trUtf8("A %1 mező típusa nem IP cím.").arg(fullColumnName(columnName(__i))));
+    }
+    else {
+        if (__a.isNull()) clear(__i);
+        else      set(__i, QVariant::fromValue(__a));
+    }
+    return *this;
+}
+
 qlonglong cRecord::getIdByName(QSqlQuery& __q, const QString& __n, bool __ex) const
 {
     return descr().getIdByName(__q, __n, __ex);

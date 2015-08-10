@@ -56,7 +56,7 @@ void cInspector::preInit()
     pThread  = NULL;
     pProcess = NULL;
     pQparser = NULL;
-    pq       = NULL;
+    pq       = newQuery();
     pSubordinates = NULL;
     pProtoService = NULL;
     pPrimeService = NULL;
@@ -396,7 +396,7 @@ QString& cInspector::getCheckCmd(QSqlQuery& q)
     QString::const_iterator i = checkCmd.constBegin();
     char separator = 0;
     bool prevSpace = false;
-    while (i < checkCmd.end()) {
+    while (i != checkCmd.constEnd()) {
         char c = i->toLatin1();
         QChar qc = *i;
         ++i;
@@ -517,7 +517,6 @@ bool cInspector::toRun(bool __timed)
         lastElapsedTime = 0;
         lastRun.start();
     }
-    if (pq == NULL) pq = newQuery();
     // Tesszük a dolgunkat bármi legyen is az, egy tranzakció lessz.
     try {
         sqlBegin(*pq);
@@ -599,7 +598,6 @@ enum eNotifSwitch cInspector::parser(int _ec, QByteArray& text)
 bool cInspector::threadPrelude(QThread &)
 {
     _DBGFN() << name() << endl;
-    if (pq == NULL) pq = newQuery();
     if (inspectorType & IT_SUPERIOR) {
         pSubordinates = new QList<cInspector *>;
         setSubs(*pq);
@@ -626,7 +624,7 @@ void cInspector::start()
         EXCEPTION(EDATA, timerId, QObject::trUtf8("%1 óra újra inicializálása.").arg(name()));
     if (pQparser != NULL)
         EXCEPTION(EPROGFAIL, -1, trUtf8("A %1-ben a parser objektum nem létezhet a start elött!").arg(name()));
-    if (_sManager.compare(feature(_sQparser), Qt::CaseInsensitive)) {
+    if (0 == _sManager.compare(feature(_sQparser), Qt::CaseInsensitive)) {
         pQparser = new cQueryParser();
         int r = pQparser->load(*pq, serviceId(), true);
         if (R_NOTFOUND == r && NULL != pPrimeService) r = pQparser->load(*pq, primeServiceId(), true);

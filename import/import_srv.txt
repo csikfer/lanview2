@@ -5,8 +5,8 @@ SERVICE "tcp.rs"    "TCP serial port gateway"{TCP 4001; }
 SERVICE dhcp        "DHCP server"       { UDP 67; }
 
 
-SERVICE "dhcp.conf"  "DHCP config fájl, local vagy ssh-n keresztül"      { NIL; FEATURES "file=/etc/dhcp/dhcpd.conf:"; }
-SERVICE "arp.proc"   "ARP fájl a proc-ban, local vagy ssh-n keresztül"   { NIL; FEATURES "file=/proc/net/arp:"; }
+SERVICE "dhcp.conf"  "DHCP config fájl, local vagy ssh-n keresztül"      { NIL; FEATURES ":file=/etc/dhcp/dhcpd.conf:"; }
+SERVICE "arp.proc"   "ARP fájl a proc-ban, local vagy ssh-n keresztül"   { NIL; FEATURES ":file=/proc/net/arp:"; }
 
 //--------------------------------------------------------
 SERVICE "updt_oui"  "Update OUI" {

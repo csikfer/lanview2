@@ -1206,7 +1206,7 @@ static int portIndex2SeqN(qlonglong ix)
 %token      LEFT_T DEFAULTS_T ENUM_T RIGHT_T VIEW_T INSERT_T EDIT_T
 %token      INHERIT_T NAMES_T HIDE_T VALUE_T DEFAULT_T FILTER_T FILTERS_T
 %token      ORD_T SEQUENCE_T MENU_T GUI_T OWN_T TOOL_T TIP_T WHATS_T THIS_T
-%token      EXEC_T TAG_T ANY_T BOOLEAN_T CHAR_T IPADDRESS_T REAL_T URL_T
+%token      EXEC_T TAG_T BOOLEAN_T IPADDRESS_T REAL_T
 %token      BYTEA_T DATE_T DISABLE_T EXPRESSION_T PREFIX_T RESET_T CACHE_T
 %token      DATA_T IANA_T IFDEF_T IFNDEF_T NC_T QUERY_T PARSER_T
 %token      REPLACE_T RANGE_T EXCLUDE_T PREP_T POST_T CASE_T
@@ -1219,7 +1219,7 @@ static int portIndex2SeqN(qlonglong ix)
 %type  <i>  int int_ iexpr lnktype shar ipprotp ipprot offs ix_z vlan_t set_t srvtid
 %type  <i>  vlan_id place_id iptype pix pix_z iptype_a step image_id tmod int0
 %type  <i>  ptypen fhs hsid srvid grpid tmpid node_id port_id snet_id ift_id plg_id
-%type  <i>  usr_id ftmod p_seq
+%type  <i>  usr_id ftmod p_seq int_z
 %type  <il> list_i p_seqs p_seqsl // ints
 %type  <b>  bool bool_on ifdef exclude case
 %type  <r>  /* real */ num fexpr
@@ -1271,6 +1271,7 @@ command : INCLUDE_T str ';'                               { c_yyFile::inc($2); }
         | gui
         | modify
         | if
+        | replace
         ;
 // Makró vagy makró jellegű definíciók
 macro   : MACRO_T            NAME_V str ';'                 { templates.set (_sMacros, sp2s($2), sp2s($3));           }
@@ -1357,6 +1358,9 @@ int_    : INTEGER_V                             { $$ = $1; }
 int     : int_                                  { $$ = $1; }
         | '-' INTEGER_V                         { $$ =-$2; }
         | '#' '[' iexpr ']'                     { $$ = $3; }
+        ;
+int_z   : int                                   { $$ = $1; }
+        |                                       { $$ = NULL_ID; }
         ;
 // Név alapján a patchs (vagy leszármazottja) rekord ID-t adja vissza (node_id)
 node_id : str                                   { $$ = cPatch().getIdByName(qq(), *$1); delete $1; }
@@ -1916,7 +1920,6 @@ shar    :                                           { $$ = ES_; }
         ;
 srv     : service
         | hostsrv
-        | iprange
         | qparse
         ;
 service : SERVICE_T str str_z       { NEWOBJ(pService, cService());
@@ -2196,12 +2199,6 @@ ifdef   : PLACE_T str                   { $$ = NULL_ID != cPlace().     getIdByN
         | ENUM_T TITLE_T  str strs ';' { $$ = NULL_ID != cEnumVal().; }
         | GUI_T strs MENU_T ';'        { $$ = NULL_ID != cMenuItem(); } */
         ;
-iprange : REPLACE_T DYNAMIC_T ADDRESS_T RANGE_T exclude ip TO_T ip int ';'
-            { cDynAddrRange::replace(qq(), *$6, *$8, $9, $5); }
-        ;
-exclude : EXCLUDE_T                     { $$ = true;  }
-        |                               { $$ = false; }
-        ;
 qparse  : QUERY_T PARSER_T srvid '{'    { ivars[_sServiceId] = $3; ivars[_sItemSequenceNumber] = 10; }
             qparis '}'
         ;
@@ -2215,6 +2212,20 @@ qpari   : case str str str_z ';'    { cQueryParser::_insert(qq(), ivars[_sServic
 case    : CASE_T bool               { $$ = $2; }
         |                           { $$ = false; }
         ;
+replace : iprange
+        | reparp
+        ;
+iprange : REPLACE_T DYNAMIC_T ADDRESS_T RANGE_T exclude ip TO_T ip int ';'
+            { cDynAddrRange::replace(qq(), *$6, *$8, $9, $5); delete $6; delete $8; }
+        ;
+exclude : EXCLUDE_T                 { $$ = true;  }
+        |                           { $$ = false; }
+        ;
+reparp  : REPLACE_T ARP_T ip mac str int_z ';'
+            { cArp arp;
+              arp.setIp(_sIpAddress, *$3).setMac(_sHwAddress, *$4).setName(_sSetType, sp2s($5)).setId(_sHostServiceId, $6);
+              arp.replace(qq());
+              delete $3; delete $4; }
 %%
 
 static inline bool isXDigit(QChar __c) {
@@ -2389,7 +2400,7 @@ static int yylex(void)
         TOK(LEFT) TOK(DEFAULTS) TOK(ENUM) TOK(RIGHT) TOK(VIEW) TOK(INSERT) TOK(EDIT)
         TOK(INHERIT) TOK(NAMES) TOK(HIDE) TOK(VALUE) TOK(DEFAULT) TOK(FILTER) TOK(FILTERS)
         TOK(ORD) TOK(SEQUENCE) TOK(MENU) TOK(GUI) TOK(OWN) TOK(TOOL) TOK(TIP) TOK(WHATS) TOK(THIS)
-        TOK(EXEC) TOK(TAG) TOK(ANY) TOK(BOOLEAN) TOK(CHAR) TOK(IPADDRESS) TOK(REAL) TOK(URL)
+        TOK(EXEC) TOK(TAG) TOK(BOOLEAN) TOK(IPADDRESS) TOK(REAL)
         TOK(BYTEA) TOK(DATE) TOK(DISABLE) TOK(EXPRESSION) TOK(PREFIX) TOK(RESET) TOK(CACHE)
         TOK(DATA) TOK(IANA) TOK(IFDEF) TOK(IFNDEF) TOK(NC) TOK(QUERY) TOK(PARSER)
         TOK(REPLACE) TOK(RANGE) TOK(EXCLUDE) TOK(PREP) TOK(POST) TOK(CASE)

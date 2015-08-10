@@ -21,7 +21,6 @@ QString getParName(QString::const_iterator& i, const QString::const_iterator& e,
             r += c;
         }
         else {
-            --i;
             break;
         }
     }

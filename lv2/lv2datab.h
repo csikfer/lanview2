@@ -1185,6 +1185,9 @@ public:
     cRecord& setMac(int __i, const cMac& __a, bool __ex = true);
     cRecord& setMac(const QString& __n, const cMac& __a, bool __ex = true)   { return setMac(toIndex(__n), __a, __ex); }
     ///
+    cRecord& setIp(int __i, const QHostAddress& __a, bool __ex = true);
+    cRecord& setIp(const QString& __n, const QHostAddress& __a, bool __ex = true)   { return setIp(toIndex(__n), __a, __ex); }
+    ///
     cRecord& enum2setOn(int __ix, int __e)                      { setId(__ix, getId(__ix) | enum2set(__e)); return *this; }
     cRecord& enum2setOn(int __ix, int _e1, int _e2)             { setId(__ix, getId(__ix) | enum2set(_e1, _e2)); return *this; }
     cRecord& enum2setOn(const QString& __n, int __e)            { enum2setOn(toIndex(__n), __e); return *this; }
