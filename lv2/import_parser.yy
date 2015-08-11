@@ -2303,9 +2303,11 @@ static QString *yygetstr2(const QString& mn)
         for (i = 0; i < mn.size(); i++) {
             if (mn[i] != (c = yyget())) {
                 if (c.isNull()) break;
-                *ps += QChar('$');
-                if (i) *ps += mn.mid(0, i);
+                *ps += QChar('$');  // A $ jel
+                *ps += c;           // A már nem ok. karakter
+                if (i) *ps += mn.mid(0, i); // Meg amit eddig "felismertünk"
                 i = -1;  // Nincs találat, ez tuti nem egyenlő mn.size() -vel.
+                break;
             }
         }
         if (c.isNull()) break;
