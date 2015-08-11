@@ -2221,9 +2221,9 @@ iprange : REPLACE_T DYNAMIC_T ADDRESS_T RANGE_T exclude ip TO_T ip int ';'
 exclude : EXCLUDE_T                 { $$ = true;  }
         |                           { $$ = false; }
         ;
-reparp  : REPLACE_T ARP_T ip mac str int_z ';'
+reparp  : REPLACE_T ARP_T ip mac str int_z str_z ';'
             { cArp arp;
-              arp.setIp(_sIpAddress, *$3).setMac(_sHwAddress, *$4).setName(_sSetType, sp2s($5)).setId(_sHostServiceId, $6);
+              arp.setIp(_sIpAddress, *$3).setMac(_sHwAddress, *$4).setName(_sSetType, sp2s($5)).setId(_sHostServiceId, $6).setName(_sArpNote, sp2s($7));
               arp.replace(qq());
               delete $3; delete $4; }
 %%

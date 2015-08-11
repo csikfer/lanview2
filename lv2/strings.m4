@@ -407,6 +407,8 @@ STRDEF(Services, "services")
    STRDEF(Carried, "carried")
   STRDEF(Logrot, "logrot")
   STRDEF(Lognull, "lognull")
+  STRDEF(User, "user")
+  STRDEF(File, "file")
   dnl protocol
   dnl ifType
   STRDEF(Disabled, "disabled")
@@ -479,6 +481,7 @@ STRDEF(DynAddrRanges, "dyn_addr_ranges")
  STRDEF(BeginAddress, "begin_address")
  STRDEF(EndAddress, "end_address")
  STRDEF(DhcpServer, "dhcp_server")
+ STRDEF(ArpNote, "arp_note")
 STRDEF(PortVlans, "port_vlans")
  STRDEF(PortVlanId, "port_vlan_id")
  dnl port_id, vlan_id, first_time

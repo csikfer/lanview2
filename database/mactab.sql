@@ -65,7 +65,8 @@ CREATE TABLE arps (
     set_type	    settype     NOT NULL,
     host_service_id bigint	REFERENCES host_services(host_service_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
     first_time      timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP, -- First time discovered
-    last_time       timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP  -- Last time discovered
+    last_time       timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Last time discovered
+    arp_note        text
 );
 CREATE INDEX arps_hwaddress_index   ON arps(hwaddress);
 CREATE INDEX arps_first_time_index  ON arps(first_time);

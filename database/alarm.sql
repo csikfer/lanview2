@@ -180,36 +180,35 @@ COMMENT ON FUNCTION touch_host_service(bigint) IS
 
 
 CREATE OR REPLACE FUNCTION set_service_stat(
-    hsid        bigint,                -- A host_services rekord id-je
-    state       notifswitch,            -- Az új státusz
-    note        text DEFAULT '',-- Az eseményhez tartozó üzenet (opcionális)
-    dmid        bigint DEFAULT NULL)   -- Daemon host_service_id
+    hsid        bigint,             -- A host_services rekord id-je
+    state       notifswitch,        -- Az új státusz
+    note        text DEFAULT '',    -- Az eseményhez tartozó üzenet (opcionális)
+    dmid        bigint DEFAULT NULL)-- Daemon host_service_id
 RETURNS host_services AS $$
 DECLARE
-    hs          host_services;
-    old_hs      host_services;
-    s           services;
-    na          isnoalarm;
+    hs          host_services;  -- Az új host_services rekord
+    old_hs      host_services;  -- A régi
+    s           services;       -- A hozzá tartozó services rekord
+    na          isnoalarm;      -- Alarm tiltás állpota
     sup         bigint;
-    tflapp      interval;
-    iflapp      integer;
+    tflapp      interval;       -- Flapping figyelés időablakának a hossza
+    iflapp      integer;        -- Az isőablakon bellüli státuszváltozások száma
 BEGIN
     hs := touch_host_service(hsid);
-    SELECT * INTO  s FROM services      WHERE service_id = hs.service_id;
+    SELECT * INTO  s FROM services WHERE service_id = hs.service_id;
     IF NOT FOUND THEN
         PERFORM error('IdNotFound', hs.service_id, 'service_id', 'set_service_stat()', 'services');
     END IF;
     IF state = hs.host_service_state AND state = hs.hard_state AND state = hs.soft_state THEN   -- Ha nincs változás
-        PERFORM set_host_status(hs);
         RETURN hs;
     END IF;
     old_hs := hs;
     CASE state
         WHEN 'on','recovered' THEN
             IF hs.hard_state = 'on' THEN
-                hs.host_service_state = state;
+                hs.host_service_state := 'on';
             ELSE
-                hs.host_service_state = 'recovered';
+                hs.host_service_state := 'recovered';
             END IF;
             hs.hard_state := 'on';
             hs.soft_state := 'on';
@@ -218,7 +217,7 @@ BEGIN
             IF hs.hard_state <> 'on' THEN   -- nem most rommlott el
                 hs.hard_state := state;
                 hs.soft_state := state;
-                hs.host_service_state = state;
+                hs.host_service_state := state;
                 hs.check_attempts := 0;
             ELSE                            -- mostm vagy nem rég romlott el, hihető?
                 IF hs.soft_state = 'on' THEN
@@ -286,7 +285,7 @@ BEGIN
                 ELSE
                     hs.last_alarm_log_id := hs.last_alarm_log_id;
                 END IF;
-                hs.last_alarm_log_id := NULL;
+                hs.act_alarm_log_id := NULL;
             END IF;
         -- Új riasztás,
         WHEN (old_hs.host_service_state < 'warning' OR old_hs.host_service_state = 'unknown')

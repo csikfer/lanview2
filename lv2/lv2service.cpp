@@ -15,6 +15,7 @@ cInspectorThread::cInspectorThread(cInspector *pp)
 void cInspectorThread::run()
 {
     _DBGFN() << inspector.name() << endl;
+   inspector. pq = newQuery();
     if (inspector.threadPrelude(*this)) {   // Timed, event loop
         PDEB(VERBOSE) << "Thread " << inspector.name() << " start timer and loop..." << endl;
         exec();
@@ -23,6 +24,7 @@ void cInspectorThread::run()
         PDEB(VERBOSE) << "Thread " << inspector.name() << " started..." << endl;
         inspector.run(*inspector.pq);   // ??
     }
+    pDelete(inspector.pq);
     inspector.moveToThread(qApp->thread());
     _DBGFNL() << inspector.name() << endl;
 }
@@ -644,6 +646,7 @@ void cInspector::start()
         setParent(NULL);            // Nem lehet parentje, mert a moveToThread(); vinné azt is!
         moveToThread(pThread);
         if (thread() != pThread) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 QObject::moveToThread() hívás sikertelen.").arg(name()));
+        pDelete(pq);
         pThread->start();
         PDEB(VERBOSE) << name() << " thread started." << endl;
         _DBGFNL() << QChar(' ') << name() << " internalStat = " << internalStatName() << endl;

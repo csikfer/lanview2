@@ -217,6 +217,10 @@ cArpTable& cArpTable::getByLocalProcFile(const QString& __f)
     return *this;
 }
 
+/// Az ARP tábla lekérdezése a proc fájlrendszeren keresztül, egy távoli gépen SSH-val
+/// @param __h A távoli hoszt név, vagy ip cím
+/// @param __f A fájl neve a proc fájlrendszerben
+/// @param __ru Opcionális, a felhasználó név a távoli gépen.
 cArpTable& cArpTable::getBySshProcFile(const QString& __h, const QString& __f, const QString& __ru)
 {
     //_DBGFN() << " @(" << VDEB(__h) << QChar(',') << VDEB(__f) << QChar(',') << VDEB(__ru) << QChar(')') << endl;
@@ -226,7 +230,8 @@ cArpTable& cArpTable::getBySshProcFile(const QString& __h, const QString& __f, c
     cmd += __f.isEmpty() ? "/proc/net/arp" : __f;
     QProcess    proc;
     proc.start(cmd, QIODevice::ReadOnly);
-    if (false == proc.waitForFinished(60000)) EXCEPTION(ETO, -1, cmd);
+    if (false == proc.waitForStarted(  2000)
+     || false == proc.waitForFinished(10000)) EXCEPTION(ETO, -1, cmd);
     getByProcFile(proc);
     return *this;
 }
@@ -329,7 +334,8 @@ cArpTable& cArpTable::getBySshDhcpdConf(const QString& __h, const QString& __f, 
     cmd += __f.isEmpty() ? "/etc/dhcp3/dhcpd.conf" : __f;
     QProcess    proc;
     proc.start(cmd, QIODevice::ReadOnly);
-    if (false == proc.waitForFinished(60000)) EXCEPTION(ETO, -1, cmd);
+    if (false == proc.waitForStarted(  2000)
+     || false == proc.waitForFinished(10000)) EXCEPTION(ETO, -1, cmd);
     getByDhcpdConf(proc);
     return *this;
 }

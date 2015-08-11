@@ -168,7 +168,6 @@ cDeviceArp::cDeviceArp(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __
         // Ha prime_service fájl felolvasását írja elő, akkor a service file paramétere, ill. ha ez üres,
         // akkor a prime_service file paramétere tartalmazza a felovasandó fájl nevét.
         if (*pPSDhcpConf == primeService() || *pPSArpProc == primeService()) {
-            static const QString _sFile("file");
             pFileName = new QString();
             *pFileName = hostService.feature(_sFile);
         }
@@ -176,9 +175,9 @@ cDeviceArp::cDeviceArp(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __
         // akkor a proto_service user paramétere tartalmazza a távoli hoston az user nevet.
         // A lekérdezés csak akkor műkösik, ha jelszó megadása nem szükséges.
         if (*pPSSsh == protoService()) {
-            static const QString _sUser("user");
             pRemoteUser = new QString();
             *pRemoteUser = hostService.feature(_sUser);
+            host().fetchPorts(*pq);
         }
     }
 }
@@ -222,6 +221,7 @@ enum eNotifSwitch cDeviceArp::run(QSqlQuery& q)
     else EXCEPTION(EDATA);
     cArp::replaces(q, at, setType, hostServiceId());
     DBGFNL();
+    // Ha senki nem dobott kizárást, akkor minden OK
     return RS_ON;
 }
 
