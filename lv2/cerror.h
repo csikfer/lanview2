@@ -251,7 +251,7 @@ Az adattagok inicializálása után hívja a circulation() metódust
     QString mSrcName;               ///< Source file name where called EXCEPTION macro
     int     mSrcLine;               ///< Source file line number where called EXCEPTION macro
     int     mErrorCode;             ///< Error code
-    int     mErrorSubCode;          ///< Error sub code
+    qlonglong     mErrorSubCode;          ///< Error sub code
     int     mErrorSysCode;          ///< Sytem error code (errno)
     QString mErrorSubMsg;           ///< Error sub message
     QString mThreadName;            ///< Thread name if available

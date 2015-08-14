@@ -6,12 +6,11 @@
 
 
 
-class   cRecordTree;
-
+class cRecordTree;
 class cTreeNode;
 class cRecordTreeModel;
 
-class cTreeNode {
+class LV2GSHARED_EXPORT cTreeNode {
 public:
     cTreeNode(cRecordAny *__po = NULL, cTreeNode *_parentNode = NULL);
     cTreeNode(const cTreeNode&);
@@ -27,7 +26,7 @@ public:
     int rows() const { if (pChildrens == NULL) EXCEPTION(EPROGFAIL); return pChildrens->size(); }
 };
 
-class cRecordTreeModel : public QAbstractItemModel, public cRecordViewModelBase {
+class LV2GSHARED_EXPORT cRecordTreeModel : public QAbstractItemModel, public cRecordViewModelBase {
     Q_OBJECT
 public:
     cRecordTreeModel(cRecordTree &_rt);
@@ -78,6 +77,5 @@ public:
     virtual bool insertRow(cRecordAny *pRec);
 
 };
-
 
 #endif // RECORD_TREE_MODEL_H

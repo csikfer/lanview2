@@ -9,6 +9,7 @@ cRecordTree::cRecordTree(cTableShape *pts, bool _isDialog, cRecordsViewBase *_up
 {
     pMaster = pUpper = _upper;
     if (pMaster != NULL && pUpper->pMaster != NULL) pMaster = pUpper->pMaster;
+    disableFilters = true;
     initShape(pts);
     init();
 }
@@ -22,7 +23,7 @@ void cRecordTree::init()
 {
     pTreeView  = NULL;
     // Az alapértelmezett gombok:
-    buttons << DBT_CLOSE << DBT_SPACER << DBT_EXPAND << DBT_REFRESH;
+    buttons << DBT_CLOSE << DBT_SPACER << DBT_EXPAND << DBT_REFRESH << DBT_ROOT << DBT_RESTORE;
     if (isReadOnly == false) buttons << DBT_SPACER << DBT_DELETE << DBT_INSERT << DBT_MODIFY;
     switch (shapeType) {
     case ENUM2SET2(TS_TREE, TS_NO):
@@ -153,9 +154,10 @@ bool cRecordTree::queryNodeChildrens(QSqlQuery& q, cTreeNode *pn)
           );
     sql += " WHERE " + wl.join(" AND ");
 
-//    QString ord = pFODialog->ord();
-//    if (!ord.isEmpty()) sql += " ORDER BY " + ord;
-
+    if (pFODialog != NULL) {
+        QString ord = pFODialog->ord();
+        if (!ord.isEmpty()) sql += " ORDER BY " + ord;
+    }
     if (!q.prepare(sql)) SQLPREPERR(*pTabQuery, sql);
     int i = 0;
     foreach (QVariant v, qParams) pTabQuery->bindValue(i++, v);
@@ -245,15 +247,15 @@ void cRecordTree::_refresh(bool first)
 void cRecordTree::buttonPressed(int id)
 {
     switch (id) {
-    case DBT_CLOSE:     close();    break;
-    case DBT_REFRESH:   refresh();  break;
-    case DBT_DELETE:    remove();   break;
-    case DBT_INSERT:    insert();   break;
-    case DBT_MODIFY:    modify();   break;
-    case DBT_PREV:      prev();     break;
-    case DBT_RESET:     setRoot();      break;
+    case DBT_CLOSE:     close();        break;
+    case DBT_REFRESH:   refresh(false); break;
+    case DBT_DELETE:    remove();       break;
+    case DBT_INSERT:    insert();       break;
+    case DBT_MODIFY:    modify();       break;
+    case DBT_PREV:      prev();         break;
+    case DBT_ROOT:      setRoot();      break;
     case DBT_RESTORE:   restoreRoot();  break;
-    case DBT_EXPAND:    expand();   break;
+    case DBT_EXPAND:    expand();       break;
     default:
         DWAR() << "Invalid button id : " << id << endl;
         break;

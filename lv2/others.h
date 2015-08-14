@@ -198,6 +198,13 @@ template <typename T> struct PtrLess
     }
 };
 
+template <typename T> struct PtrGreat
+{
+    bool operator()(const T* a, const T* b) const {
+        return *a > *b;
+    }
+};
+
 EXT_ void appReStart();
 
 /* ******************************  ****************************** */

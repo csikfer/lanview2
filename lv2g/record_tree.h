@@ -8,7 +8,7 @@
 
 /// @class cRecordTree
 /// Egy adatbázis tábla megjelenítését végző objektum.
-class cRecordTree : public cRecordsViewBase {
+class LV2GSHARED_EXPORT cRecordTree : public cRecordsViewBase {
     Q_OBJECT
 public:
     /// Konstruktor

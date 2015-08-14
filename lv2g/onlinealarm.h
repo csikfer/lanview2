@@ -36,7 +36,7 @@ private slots:
 
 /// @class cAckDialog
 /// @brief Egy riasztás nyugtázása dialógus ablak.
-class cAckDialog : public QDialog {
+class  cAckDialog : public QDialog {
     Q_OBJECT
 public:
     cAckDialog(const cRecordAny& __r, QWidget *par = NULL);

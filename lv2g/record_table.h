@@ -20,9 +20,9 @@ class cRecordTableFODialog;
 @brief
 A tábla megjelenítésnél a szűrő funkciókat ellátó objektum.
 
-Az objektum egy mezőre vonatkozó szűrési feltételt kezel
+Az objektum egy mezőre vonatkozó szűrési feltételt kezel.
  */
-class cRecordTableFilter : public QObject {
+class LV2GSHARED_EXPORT cRecordTableFilter : public QObject {
     friend class cRecordTableFODialog;
     Q_OBJECT
 public:
@@ -34,8 +34,8 @@ public:
     int fieldType();                ///< A mező (oszlop) típusa
     cRecordTableColumn& field;      ///< A megjelenítés mező (oszlop) leírója
     cRecordTableFODialog &dialog;   ///< A szűrési feltétel megadásának a dialógusa
-    cTableShapeFilter * pFilter;    ///< A szűrő leíró objektuma
-    int                 iFilter;
+    cTableShapeFilter * pFilter;    ///< A kiválasztott szűrő leíró objektumam vagy NULL, ha nincs aktív szűrő
+    int                 iFilter;    ///< A kiválasztott szűrő leíró indexe vagy -1, ha nincs aktív szűrő
     QVariant            param1;     ///< Szűrés (opcionális) paramétere
     bool                closed1;    ///< Ha a szűrési paraméter egy értékhatár, akkor ha true. akkor zárt intervallumként kell értelmezni.
     QVariant            param2;     ///< Szűrés (opcionális) paramétere, ha két paraméter van
@@ -51,7 +51,7 @@ A tábla megjelenítésnél a rendezés funkciókat ellátó objektum.
 
 
  */
-class cRecordTableOrd : public QObject {
+class LV2GSHARED_EXPORT cRecordTableOrd : public QObject {
     friend class cRecordTableFODialog;
     Q_OBJECT
 public:
@@ -59,6 +59,7 @@ public:
     ~cRecordTableOrd();
     QString             ord();
     bool operator<(const cRecordTableOrd& _o) const { return sequence_number < _o.sequence_number; }
+    bool operator>(const cRecordTableOrd& _o) const { return sequence_number > _o.sequence_number; }
     void disableUp(bool f = true)   { pUp->setDisabled(f); pDown->setDisabled(false);}
     void disableDown(bool f = true) { pDown->setDisabled(f); }
 protected:
@@ -80,13 +81,14 @@ signals:
 
 class cRecordsViewBase;
 
-class cRecordTableFODialog : public QDialog {
+///
+class LV2GSHARED_EXPORT cRecordTableFODialog : public QDialog {
     Q_OBJECT
 public:
     cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase&_rt);
     ~cRecordTableFODialog();
     const cRecordsViewBase&      recordView;
-    QString                     where(QVariantList &qparams);
+    QStringList where(QVariantList &qparams);
     QString                     ord();
     cRecordTableFilter&         filter() { if (pSelFilter == NULL) EXCEPTION(EPROGFAIL); return *pSelFilter; }
     QList<cRecordTableFilter *> filters;
@@ -118,7 +120,7 @@ private slots:
     void changeClosed2(bool f);
 };
 
-class cRecordTableColumn {
+class LV2GSHARED_EXPORT cRecordTableColumn {
 public:
     cRecordTableColumn(cTableShapeField& sf, cRecordsViewBase &table);
     cTableShapeField&       shapeField;
@@ -149,7 +151,7 @@ enum eRecordTableFlags  {
     RTF_NMEMBER = 0x8000
 };
 
-class cRecordsViewBase : public QObject {
+class LV2GSHARED_EXPORT cRecordsViewBase : public QObject {
     Q_OBJECT
 public:
     cRecordsViewBase(bool _isDialog, QWidget *par);
@@ -180,6 +182,8 @@ public:
     bool            isNoDelete;
     /// Ha a táblázatba nincs joga rekordot beszúrni
     bool            isNoInsert;
+    /// Ha bem engedélyezett a szűrők használata (tree esetén nem müködnek a szűrők, mert nem bejárható a fa)
+    bool            disableFilters;
     /// A lekérdezésekhez (nem az alap lekérdezésekhez) használt query objektum.
     QSqlQuery      *pq;
     QSqlQuery      *pTabQuery;
@@ -302,7 +306,7 @@ public:
 
 /// @class cRecordTable
 /// Egy adatbázis tábla megjelenítését végző objektum.
-class cRecordTable : public cRecordsViewBase {
+class LV2GSHARED_EXPORT cRecordTable : public cRecordsViewBase {
     Q_OBJECT
 public:
     /// Konstruktor

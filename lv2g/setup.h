@@ -14,7 +14,7 @@ namespace Ui {
 
 class cLogLevelDialog;
 
-class  LV2GSHARED_EXPORT cSetupWidget : public cOwnTab
+class LV2GSHARED_EXPORT cSetupWidget : public cOwnTab
 {
     Q_OBJECT
 public:
@@ -46,7 +46,7 @@ private:
 
 #if defined(LV2G_LIBRARY)
 
-class LV2GSHARED_EXPORT cLogLevelDialog : public QDialog, Ui::LogLevelDialog
+class cLogLevelDialog : public QDialog, Ui::LogLevelDialog
 {
     Q_OBJECT
    public:

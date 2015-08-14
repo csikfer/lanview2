@@ -20,7 +20,7 @@
       <enum>QTabWidget::North</enum>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tabFilter">
       <attribute name="title">
@@ -57,7 +57,7 @@
           <widget class="QComboBox" name="comboBox_colName"/>
          </item>
          <item row="1" column="0">
-          <widget class="QLabel" name="label_fitType">
+          <widget class="QLabel" name="label_filtType">
            <property name="text">
             <string>A szűrés típusa :</string>
            </property>
@@ -68,7 +68,7 @@
        <item>
         <widget class="QStackedWidget" name="stackedWidget">
          <property name="currentIndex">
-          <number>5</number>
+          <number>0</number>
          </property>
          <widget class="QWidget" name="page_FilterNo">
           <layout class="QGridLayout" name="gridLayout_2">

@@ -189,7 +189,7 @@ cRecordTableFODialog::cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase &_rt)
             connect(pOrd, SIGNAL(moveUp(cRecordTableOrd*)),   this, SLOT(ordMoveUp(cRecordTableOrd*)));
             connect(pOrd, SIGNAL(moveDown(cRecordTableOrd*)), this, SLOT(ordMoveDown(cRecordTableOrd*)));
         }
-        if (tsf.fetchFilters(*pq)) {
+        if (recordView.disableFilters == false && tsf.fetchFilters(*pq)) {
             cRecordTableFilter *pFilt = new cRecordTableFilter(*this, **i);
             filters << pFilt;
             pForm->comboBox_colName->addItem(tsf.getName(_sTableShapeFieldName));
@@ -197,15 +197,13 @@ cRecordTableFODialog::cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase &_rt)
     }
     connect(pForm->pushButton_OK, SIGNAL(clicked()), this, SLOT(clickOk()));
     connect(pForm->pushButton_Default, SIGNAL(clicked()), this, SLOT(clickDefault()));
-    qSort(ords.begin(), ords.end(), PtrLess<cRecordTableOrd>());
+    qSort(ords.begin(), ords.end(), PtrGreat<cRecordTableOrd>());
     setGridLayoutOrder();
     iSelFilterCol = -1;
     iSelFilterType = -1;
     if (!filters.isEmpty()) {
         pSelFilter = filters.first();
-        pForm->comboBox_colName->setCurrentIndex(0);
         pForm->comboBox_FiltType->addItems(pSelFilter->typeList);
-        pForm->comboBox_FiltType->setCurrentIndex(0);
         connect(pForm->comboBox_colName,    SIGNAL(currentIndexChanged(int)),   this, SLOT(filtCol(int)));
         connect(pForm->comboBox_FiltType,   SIGNAL(currentIndexChanged(int)),   this, SLOT(filtType(int)));
 
@@ -224,11 +222,21 @@ cRecordTableFODialog::cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase &_rt)
         connect(pForm->checkBox_closeF2,    SIGNAL(toggled(bool)),              this, SLOT(changeClosed2(bool)));
         connect(pForm->checkBox_closeDT1,   SIGNAL(toggled(bool)),              this, SLOT(changeClosed1(bool)));
         connect(pForm->checkBox_closeDT2,   SIGNAL(toggled(bool)),              this, SLOT(changeClosed2(bool)));
+
+        pForm->comboBox_colName->setCurrentIndex(0);
+        pForm->comboBox_FiltType->setCurrentIndex(0);
+        setFilterDialog();
     }
     else {
+        pForm->comboBox_colName->hide();
+        pForm->comboBox_FiltType->hide();
+        pForm->label_col->hide();
+        pForm->label_filtType->hide();
+        pForm->lineEdit_colDescr->hide();
+        pForm->lineEdit_typeTitle->hide();
+        pForm->stackedWidget->setCurrentWidget(pForm->page_FilterNo);
         pForm->label_noFilter->setText(trUtf8("Nincs lehetőség szűrő feltétel megadására."));
     }
-    setFilterDialog();
     pForm->pushButton_Default->setDisabled(true);   // Nincs implementálva !
 }
 
@@ -237,14 +245,13 @@ cRecordTableFODialog::~cRecordTableFODialog()
 
 }
 
-QString cRecordTableFODialog::where(QVariantList& qparams)
+QStringList cRecordTableFODialog::where(QVariantList& qparams)
 {
-    QString r;
+    QStringList r;
     if (!filters.isEmpty()) foreach (cRecordTableFilter *pF, filters) {
         QString rw = pF->where(qparams);
         if (!rw.isEmpty()) {
-            if (r.isEmpty()) r = rw;
-            else r += " AND " + rw;
+            if (r.isEmpty()) r << rw;
         }
     }
     return r;
@@ -289,19 +296,10 @@ void cRecordTableFODialog::setGridLayoutOrder()
 }
 void cRecordTableFODialog::setFilterDialog()
 {
-    if (iSelFilterCol < 0) {
-        iSelFilterType = -1;
-        pSelFilter = NULL;
-        pForm->comboBox_FiltType->setDisabled(true);
-        pForm->lineEdit_colDescr->setText(_sNul);
-    }
-    else {
-        pForm->lineEdit_colDescr->setText(filter().field.shapeField.getName(_sTableShapeFieldTitle));
-        pForm->comboBox_FiltType->setDisabled(false);
-    }
+    pForm->lineEdit_colDescr->setText(filter().field.shapeField.getName(_sTableShapeFieldTitle));
+    pForm->comboBox_FiltType->setDisabled(false);
     if (iSelFilterType < 0) {
-        ;
-        if (iSelFilterCol >= 0) filter().setFilter(iSelFilterType);
+        filter().setFilter(iSelFilterType);
         pForm->stackedWidget->setCurrentWidget(pForm->page_FilterNo);
         pForm->lineEdit_typeTitle->setText(_sNul);
     }
@@ -404,23 +402,17 @@ void cRecordTableFODialog::ordMoveDown(cRecordTableOrd * _po)
 
 void cRecordTableFODialog::filtCol(int _c)
 {
-    if (_c == 0) {
-        iSelFilterCol = iSelFilterType = -1;
-        pSelFilter = NULL;
+
+    iSelFilterCol = _c;
+    if (!isContIx(filters, iSelFilterCol)) EXCEPTION(EDATA, iSelFilterCol);
+    pSelFilter = filters[iSelFilterCol];
+    if (filter().iFilter < 0) {
+        iSelFilterType = -1;
         pForm->comboBox_FiltType->setCurrentIndex(0);
     }
     else {
-        iSelFilterCol = _c -1;
-        if (!isContIx(filters, iSelFilterCol)) EXCEPTION(EDATA, iSelFilterCol);
-        pSelFilter = filters[iSelFilterCol];
-        if (filter().iFilter < 0) {
-            iSelFilterType = -1;
-            pForm->comboBox_FiltType->setCurrentIndex(0);
-        }
-        else {
-            iSelFilterType = filter().iFilter;
-            pForm->comboBox_FiltType->setCurrentIndex(iSelFilterType +1);
-        }
+        iSelFilterType = filter().iFilter;
+        pForm->comboBox_FiltType->setCurrentIndex(iSelFilterType +1);
     }
 }
 
@@ -488,7 +480,7 @@ cRecordsViewBase::cRecordsViewBase(bool _isDialog, QWidget *par)
     tit = TIT_NO;
     pRecordDialog = NULL;
     _pWidget = isDialog ? new QDialog(par) : new QWidget(par);
-    pFODialog = new cRecordTableFODialog(pq, *this);
+    disableFilters = false; // alapértelmezetten vannak szűrők
 }
 
 cRecordsViewBase::~cRecordsViewBase()
@@ -1076,6 +1068,7 @@ QStringList cRecordsViewBase::where(QVariantList& qParams)
 
 void cRecordsViewBase::clickedHeader(int)
 {
+    if (pFODialog == NULL) pFODialog = new cRecordTableFODialog(pq, *this);
     int r = pFODialog->exec();
     if (r == DBT_OK) refresh();
 }
@@ -1367,8 +1360,7 @@ void cRecordTable::takeOut()
 
 QStringList cRecordTable::filterWhere(QVariantList& qParams)
 {
-    (void)qParams;
-    // Itt kellene implementálni a beállított szűréseket....
+    if (pFODialog != NULL) return pFODialog->where(qParams);
     return QStringList();
 }
 
@@ -1387,8 +1379,10 @@ void cRecordTable::_refresh(bool first)
         sql += " WHERE " + wl.join(" AND ");
     }
 
-    QString ord = pFODialog->ord();
-    if (!ord.isEmpty()) sql += " ORDER BY " + ord;
+    if (pFODialog != NULL) {
+        QString ord = pFODialog->ord();
+        if (!ord.isEmpty()) sql += " ORDER BY " + ord;
+    }
 
     if (!pTabQuery->prepare(sql)) SQLPREPERR(*pTabQuery, sql);
     int i = 0;
