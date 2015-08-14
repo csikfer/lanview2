@@ -223,7 +223,7 @@ void cInspector::postInit(QSqlQuery& q, const QString& qs)
     _DBGFN() << name() << endl;
     if (pSubordinates != NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 pSubordinates pointer nem NULL!").arg(name()));
     if (pThread       != NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 pThread pointer nem NULL!").arg(name()));
-    // Ha meg van adva az ellenörző parancs, akkor a QProcess objektum létrejozása
+    // Ha meg van adva az ellenörző parancs, akkor a QProcess objektum létrehozása
     if (!getCheckCmd(q).isEmpty()) {
         pProcess = new QProcess(this);
     }
@@ -251,7 +251,7 @@ void cInspector::setSubs(QSqlQuery& q, const QString& qs)
     if (pSubordinates == NULL) EXCEPTION(EPROGFAIL, -1, name());
     bool ok = true;
     QSqlQuery q2 = getQuery();
-    static QString sql =
+    QString sql =
             "SELECT hs.host_service_id, h.tableoid "
              "FROM host_services AS hs JOIN nodes AS h USING(node_id) JOIN services AS s USING(service_id) "
              "WHERE hs.superior_host_service_id = %1 "
@@ -449,6 +449,9 @@ QString& cInspector::getCheckCmd(QSqlQuery& q)
         return checkCmd;
     }
 
+#ifdef Q_OS_WIN
+    if (!checkCmd.contains(QChar('.'))) checkCmd += ".exe";
+#endif
     QFileInfo   fcmd(checkCmd);
     if (fcmd.isExecutable()) {
         ; // OK
@@ -508,6 +511,7 @@ void cInspector::timerEvent(QTimerEvent *)
 
 bool cInspector::toRun(bool __timed)
 {
+    _DBGFN() << name() << (__timed ? _sTimed : _sNul) << endl;
     enum eNotifSwitch retStat = RS_UNKNOWN;     // A lekérdezés státusza
     bool statIsSet    = false;                  // A statusz beállítva
     bool statSetRetry = false;                  // Időzítés modosítása
@@ -558,38 +562,58 @@ bool cInspector::toRun(bool __timed)
 
 enum eNotifSwitch cInspector::run(QSqlQuery& q)
 {
-    DBGFN();
+    _DBGFN() << name() << endl;
     (void)q;
     if (pProcess != NULL) {
         if (checkCmd.isEmpty()) EXCEPTION(EPROGFAIL);
+        PDEB(VERBOSE) << "Run : " << checkCmd << endl;
         pProcess->start(checkCmd, checkCmdArgs, QIODevice::ReadOnly);
         if (!pProcess->waitForStarted()) {
             EXCEPTION(ETO, pProcess->error(), ProcessError2Message(pProcess->error()));
         }
-        if (pProcess->waitForFinished()) {
+        if (!pProcess->waitForFinished()) {
             EXCEPTION(ETO, pProcess->error(), ProcessError2Message(pProcess->error()));
         }
-        QByteArray out = pProcess->readAll();
-        return parser(pProcess->exitCode(), out);
+        return parser(pProcess->exitCode(), *pProcess);
     }
     return RS_ON;
 }
 
-enum eNotifSwitch cInspector::parser(int _ec, QByteArray& text)
+enum eNotifSwitch cInspector::parser(int _ec, QIODevice& text)
 {
+    _DBGFN() <<  name() << endl;
     (void)_ec; // !!!!!!!!!!!!!!!!!!!!!!! Ezzel is kellene kezdeni valamit ?
     if (0 == _sInferior.compare(feature(_sQparser), Qt::CaseInsensitive)) {
+        QString comment = feature(_sComment);
         cQueryParser *pQP = NULL;
         for (cInspector *pPar = pParent; pPar != NULL; pPar = pPar->pParent) {
             pQP = pPar->pQparser;
             if (pQP != NULL) break;
         }
         if (pQP == NULL) EXCEPTION(EDATA, -1, name());
-        QString t(text);
-        cError *pe;
-        int r = pQP->parse(t, pe);
-        if (r != REASON_OK) pe->exception();
-        return RS_ON;
+        pQP->setInspector(this);
+        QString t;
+        bool ok = false;
+        while (false == (t = QString::fromUtf8(text.readLine())).isEmpty()) {
+            t = t.simplified();
+            if (t.isEmpty()) continue;      // üres
+            if (!comment.isEmpty() && 0 == t.indexOf(comment)) continue;
+            cError *pe = NULL;
+            int r = pQP->parse(t, pe);
+            ok = ok || r == REASON_OK;      // Ha semmire sem volt találat
+            if (r == R_NOTFOUND) {
+                continue;  // Nincs minta a sorra, nem foglalkozunk vele
+            }
+            if (r != REASON_OK) {
+                if (pe == NULL) {
+                    DERR() << _sUnKnown << VDEB(r) << endl;
+                    EXCEPTION(EUNKNOWN, r);
+                }
+                DERR() << pe->msg() << endl;
+                pe->exception();
+            }
+        }
+        return ok ? RS_ON : RS_INVALID;
     }
     else {
         EXCEPTION(ENOTSUPP);
@@ -633,6 +657,7 @@ void cInspector::start()
         if (R_NOTFOUND == r && NULL != pProtoService) r = pQparser->load(*pq, protoServiceId(), true);
         if (R_NOTFOUND == r) EXCEPTION(EFOUND);
         cError *pe = NULL;
+        pQparser->setInspector(this);
         pQparser->prep(pe);
         if (NULL != pe) pe->exception();
     }
@@ -662,6 +687,8 @@ void cInspector::start()
     }
     else if (needStart()) {
         (void)toRun(false);
+        startSubs();
+        if (inspectorType & IT_TIMING_POLLING) stop();
     }
     _DBGFNL() << QChar(' ') << name() << " internalStat = " << internalStatName() << endl;
 }
@@ -674,8 +701,12 @@ void cInspector::startSubs()
         for (i = pSubordinates->begin(); i != n; ++i) {
             cInspector *p = *i;
             if (p != NULL) {
-                if (p->needStart()) p->start();
-                else p->setInternalStat(IS_RUN);
+                if (p->needStart()) {
+                    p->start();
+                }
+                else {
+                    p->setInternalStat(IS_RUN);
+                }
             }
         }
     }
@@ -747,15 +778,24 @@ void cInspector::toNormalInterval()
 
 QString cInspector::name() const
 {
-    QString r;
+    QString r = "(";
+    r += typeid(*this).name();
+    r += "):";
     static const QString    qq("??");
-    if (pNode != NULL && !node().isNull(node().nameIndex())) r = node().getName();
-    else                                                     r = qq;
+    if (pNode != NULL && !node().isNull(node().nameIndex())) r += node().getName();
+    else                                                     r += qq;
     r +=  QChar(':');
     if (pPort != NULL) r += nPort().getName() + QChar(':');
     if (pService != NULL) r += service().getName();
     else                  r += qq;
-    // A prime és proto services-t még esetleg ki kéne írni...
+    if (pPrimeService != NULL || pProtoService != NULL) {
+        r += "(";
+        if (pPrimeService != NULL) r += pPrimeService->getName();
+        r += ":";
+        if (pProtoService != NULL) r += pProtoService->getName();
+        r += ")";
+    }
+    r += QString("[%1]").arg(hostServiceId());
     return r;
 }
 
@@ -820,6 +860,10 @@ QString cInspector::getParValue(QSqlQuery& q, const QString& name, bool *pOk) co
             }
             return QString::number(pn);
         }
+        if (0 == name.compare("host_service_id",Qt::CaseInsensitive))return QString::number(hostServiceId());
+        if (0 == name.compare("host_id",        Qt::CaseInsensitive))return QString::number(nodeId());
+        if (0 == name.compare("service_id",     Qt::CaseInsensitive))return QString::number(serviceId());
+
         if (pOk == NULL) EXCEPTION(EDATA, 1, name);
         *pOk = false;
         return QString();

@@ -1629,29 +1629,29 @@ void    cNodeParam::clearToEnd()
 
 cNodeParams::cNodeParams() : tRecordList<cNodeParam>()
 {
-    DBGOBJ();
+    //DBGOBJ();
 }
 
 cNodeParams::cNodeParams(const cNodeParam& __v) : tRecordList<cNodeParam>(__v)
 {
-    DBGOBJ();
+    //DBGOBJ();
 }
 
 cNodeParams::cNodeParams(QSqlQuery& __q, qlonglong __Node_id) : tRecordList<cNodeParam>()
 {
-    DBGOBJ();
+    //DBGOBJ();
     fetch(__q, __Node_id);
 }
 
 cNodeParams::cNodeParams(const cNodeParams& __o) : tRecordList<cNodeParam>()
 {
-    DBGOBJ();
+    //DBGOBJ();
     *this = __o;
 }
 
 cNodeParams::~cNodeParams()
 {
-    DBGOBJ();
+    //DBGOBJ();
 }
 
 cNodeParams& cNodeParams::operator=(const cNodeParams& __o)

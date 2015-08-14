@@ -147,8 +147,8 @@ public:
     virtual enum eNotifSwitch run(QSqlQuery& q);
     /// Szöveg (parancs kimenet) prtelmezése.
     /// Ha meg van adva kölső ellenörző program, akkor az alapértelmezett run() metódus hívja a végrehajtott parancs kimenetével.
-    /// Az alapértelmezett metódus dob egy kizárást, késöbb okosítjuk...
-    virtual enum eNotifSwitch parser(int _ec, QByteArray& text);
+    /// QueryParser ...
+    virtual enum eNotifSwitch parser(int _ec, QIODevice &text);
     /// Futás időzítés indítása
     virtual void start();
     /// Futás/időzítés leállítása, ha nem futott, és __ex = true, akkor dob egy kizárást.

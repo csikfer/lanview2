@@ -409,6 +409,7 @@ STRDEF(Services, "services")
   STRDEF(Lognull, "lognull")
   STRDEF(User, "user")
   STRDEF(File, "file")
+  STRDEF(Comment, "comment")
   dnl protocol
   dnl ifType
   STRDEF(Disabled, "disabled")

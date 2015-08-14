@@ -1303,7 +1303,10 @@ trans   : BEGIN_T ';'   { if (!qq().exec("BEGIN TRANSACTION"))    yyerror("Error
 eqs     : '#' NAME_V '=' iexpr ';'              { ivars[*$2] = $4; delete $2; }
         | '&' NAME_V '=' sexpr ';'              { svars[*$2] = *$4; delete $2; delete $4; }
         ;
-str_    : STRING_V                              { $$ = $1; }
+str_    : STRING_V                              {
+                                                    QString dummy = QString("STRING : $1 = ") + debPString($1);
+                                                    $$ = $1;
+                                                }
         | NAME_V                                { $$ = $1; }
         | NULL_T                                { $$ = new QString(); }
         | STRING_T '(' iexpr ')'                { $$ = new QString(QString::number($3)); }
@@ -1318,8 +1321,8 @@ str     : str_                      { $$ = $1; }
         ;
 sexpr   : str_                      { $$ = $1; }
         | '(' sexpr ')'             { $$ = $2; }
-        | sexpr '+' sexpr           { *$$ += *$3; delete $3; }
-        | iexpr '*' sexpr           { *$$ = $3->repeated($1); }
+        | sexpr '+' sexpr           { *($$ = $1) += *$3; delete $3; }
+        | iexpr '*' sexpr           { *($$ = $3)  =  $3->repeated($1); }
         ;
 str_z   : str                       { $$ = $1; }
         |                           { $$ = new QString(); }
@@ -1834,7 +1837,9 @@ ip_qq   : ips iptype                            { $$ = new QStringPair(sp2s($1),
 ip_a    : ips iptype_a                          { $$ = new QStringPair(sp2s($1),  addrType($2)); }
         ;
 mac     : MAC_V                                 { $$ = $1; }
-        | MAC_T '(' sexpr ')'                   { $$ = new cMac(sp2s($3)); if (!$$->isValid()) yyerror("Invalid MAC."); }
+        | MAC_T '(' sexpr ')'                   {
+                                                    QString dummy = QString("MAC( $3  = ") + debPString($3) + ")";
+                                                    $$ = new cMac(sp2s($3)); if (!$$->isValid()) yyerror("Invalid MAC."); }
         ;
 mac_q   : mac                                   { $$ = new QString($1->toString()); delete $1; }
         | ARP_T                                 { $$ = new QString(_sARP); }
@@ -2215,7 +2220,7 @@ case    : CASE_T bool               { $$ = $2; }
 replace : iprange
         | reparp
         ;
-iprange : REPLACE_T DYNAMIC_T ADDRESS_T RANGE_T exclude ip TO_T ip int ';'
+iprange : REPLACE_T DYNAMIC_T ADDRESS_T RANGE_T exclude ip TO_T ip hsid ';'
             { cDynAddrRange::replace(qq(), *$6, *$8, $9, $5); delete $6; delete $8; }
         ;
 exclude : EXCLUDE_T                 { $$ = true;  }

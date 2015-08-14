@@ -129,24 +129,26 @@ QString   cMac::toString() const
     return r.right(17);
 }
 
-const char cMac::_sMacPattern1[] = "^\\s*([a-fA-F\\d]{1-12})\\s*$";
-const char cMac::_sMacPattern2[] = "^\\s*([a-fA-F\\d]{1,2}):([a-fA-F\\d]{1,2}):([a-fA-F\\d]{1,2}):([a-fA-F\\d]{1,2}):([a-fA-F\\d]{1,2}):([a-fA-F\\d]{1,2})\\s*$";
-const char cMac::_sMacPattern3[] = "^\\s*([a-fA-F\\d]{1,6})-([a-fA-F\\d]{1,6})\\s*$";
-const char cMac::_sMacPattern4[] = "^\\s*(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)\\s*$";
-const char cMac::_sMacPattern5[] = "^\\s*([a-fA-F\\d]{1,2})\\s+([a-fA-F\\d]{1,2})\\s+([a-fA-F\\d]{1,2})\\s+([a-fA-F\\d]{1,2})\\s+([a-fA-F\\d]{1,2})\\s+([a-fA-F\\d]{1,2})\\s*$";
+const char cMac::_sMacPattern1[] = "([A-F\\d]{1,12})";
+const char cMac::_sMacPattern2[] = "([A-F\\d]{1,2}):([A-F\\d]{1,2}):([A-F\\d]{1,2}):([A-F\\d]{1,2}):([A-F\\d]{1,2}):([A-F\\d]{1,2})";
+const char cMac::_sMacPattern3[] = "([A-F\\d]{1,6})-([A-F\\d]{1,6})";
+const char cMac::_sMacPattern4[] = "(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)";
+const char cMac::_sMacPattern5[] = "([A-F\\d]{1,2})\\s+([A-F\\d]{1,2})\\s+([A-F\\d]{1,2})\\s+([A-F\\d]{1,2})\\s+([A-F\\d]{1,2})\\s+([A-F\\d]{1,2})";
 cMac& cMac::set(const QString& __mac)
 {
-    // _DBGFN() << " @(" << __mac << ")" << endl;
+    QString s = __mac.simplified();
+    _DBGFN() << " @(" << s << ")" << endl;
     val = 0LL;
-    if (__mac.isEmpty()) return *this;
+    if (s.isEmpty()) return *this;
     bool ok = true;
+    Qt::CaseSensitivity cs = Qt::CaseInsensitive;
     QRegExp pat;
-    if ((pat = QRegExp(QString(_sMacPattern1))).exactMatch(__mac)) {
+    if ((pat = QRegExp(QString(_sMacPattern1), cs)).exactMatch(s)) {
         val = pat.cap(1).toLongLong(&ok, 16);
         if (!ok) EXCEPTION(EPROGFAIL, -1, __mac);
     }
-    else if ((pat = QRegExp(QString(_sMacPattern2))).exactMatch(__mac)
-          || (pat = QRegExp(QString(_sMacPattern5))).exactMatch(__mac)) {
+    else if ((pat = QRegExp(QString(_sMacPattern2), cs)).exactMatch(s)
+          || (pat = QRegExp(QString(_sMacPattern5), cs)).exactMatch(s)) {
         for (int i = 1; i <= 6; ++i) {
             val <<= 8;
             val |= pat.cap(i).toLongLong(&ok, 16);
@@ -155,14 +157,14 @@ cMac& cMac::set(const QString& __mac)
         }
         // PDEB(VVERBOSE) << "val = " << hex << val << dec << endl;
     }
-    else if ((pat = QRegExp(QString(_sMacPattern3))).exactMatch(__mac)) {
+    else if ((pat = QRegExp(QString(_sMacPattern3), cs)).exactMatch(s)) {
         val =  pat.cap(1).toLongLong(&ok, 16);
         if (!ok) EXCEPTION(EPROGFAIL, -1, __mac);
         val <<= 24;
         val |= pat.cap(2).toLongLong(&ok, 16);
         if (!ok) EXCEPTION(EPROGFAIL, -1, __mac);
     }
-    else if ((pat = QRegExp(QString(_sMacPattern4))).exactMatch(__mac)) {
+    else if ((pat = QRegExp(QString(_sMacPattern4), cs)).exactMatch(s)) {
         QString t(__mac);
         for (int i = 1; i <= 6; ++i) {
             qlonglong d = pat.cap(i).toLongLong(&ok, 10);

@@ -1,16 +1,41 @@
 #include "cmddisp.h"
 
-#define VERSION_MAJOR   1
-#define VERSION_MINOR   01
+#define VERSION_MAJOR   0
+#define VERSION_MINOR   02
 #define VERSION_STR     _STR(VERSION_MAJOR) "." _STR(VERSION_MINOR)
 
 const QString& setAppHelp()
 {
     return _sNul;
 }
+/*
+#ifdef Q_OS_WIN
+#include <Windows.h>
+void Console()
+{
+    AllocConsole();
+    FILE *pFileCon = NULL;
+    pFileCon = freopen("CONOUT$", "w", stdout);
 
+    COORD coordInfo;
+    coordInfo.X = 130;
+    coordInfo.Y = 9000;
+
+    SetConsoleScreenBufferSize(GetStdHandle(STD_OUTPUT_HANDLE), coordInfo);
+    SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE),ENABLE_QUICK_EDIT_MODE| ENABLE_EXTENDED_FLAGS);
+
+    fprintf(pFileCon, "Print to *pFileCon\n");
+    printf("Print to stdout\n");
+}
+#endif
+*/
 int main (int argc, char * argv[])
 {
+/*
+#ifdef Q_OS_WIN
+    Console();
+#endif
+*/
     cLv2QApp app(argc, argv);
 
     SETAPP();
@@ -31,12 +56,12 @@ lv2CmdDisp::lv2CmdDisp() : lanView()
     if (lastError == NULL) {
         try {
             pq = newQuery();
-
-         /* sqlBegin(*pq);
-            insertStart(*pq);
-            sqlEnd(*pq);
-         */
-
+            pSelf = new cCmdDispatcher(*pq, APPNAME);
+            if (pSelf->inspectorType & IT_TIMING_TIMEDTHREAD) {
+                sqlBegin(*pq);
+                insertStart(*pq);
+                sqlEnd(*pq);
+            }
             setup();
         } CATCHS(lastError)
     }
@@ -50,11 +75,6 @@ lv2CmdDisp::~lv2CmdDisp()
 void lv2CmdDisp::setup()
 {
     sqlBegin(*pq);
-    pSelf = new cCmdDispatcher(*pq, appName);
-    QString sql = "UPDATE host_services "
-            "SET superior_host_service_id = ? "
-            "WHERE prime_service_id = ?";
-    execSql(*pq, sql, pSelf->hostServiceId(), pSelf->serviceId());
     pSelf->postInit(*pq);
     if (pSelf->pSubordinates == NULL || pSelf->pSubordinates->isEmpty()) EXCEPTION(NOTODO);
     sqlEnd(*pq);
@@ -67,12 +87,12 @@ void lv2CmdDisp::setup()
 cCmdDispatcher::cCmdDispatcher(QSqlQuery& q, const QString& __sn)
     : cInspector(q, __sn)
 {
-    ;
+    _DBGOBJ() << name() << endl;
 }
 
 cCmdDispatcher::~cCmdDispatcher()
 {
-    ;
+    _DBGOBJ() << name() << endl;
 }
 
 cInspector * cCmdDispatcher::newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong hoid, cInspector *pid)
@@ -81,15 +101,33 @@ cInspector * cCmdDispatcher::newSubordinate(QSqlQuery &q, qlonglong hsid, qlongl
 }
 
 
+/* -----------------------------------------------------------------------------*/
+
 cCmdDispItem::cCmdDispItem(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector * _par)
     : cInspector(__q, __host_service_id, __tableoid, _par)
 {
-    ;
+    _DBGOBJ() << name() << endl;
 }
 
 cCmdDispItem::~cCmdDispItem()
 {
-    ;
+    _DBGOBJ() << name() << endl;
 }
 
+cInspector * cCmdDispItem::newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong hoid, cInspector *pid)
+{
+    return new cCmdDispSubItem(q, hsid, hoid, pid);
+}
 
+/* -----------------------------------------------------------------------------*/
+
+cCmdDispSubItem::cCmdDispSubItem(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector *_par)
+    : cInspector(__q, __host_service_id, __tableoid, _par)
+{
+    _DBGOBJ() << name() << endl;
+}
+
+cCmdDispSubItem::~cCmdDispSubItem()
+{
+    ;
+}

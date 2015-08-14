@@ -40,6 +40,7 @@ ERRCOD( AMBIGUOUS,   "Ambiguous")
 ERRCOD( NOTODO,      "Nothing to do.")
 ERRCOD( ENOENV,      "Environment variable not found.")
 ERRCOD( ESOCKET,     "Communication (socket). error.")
+ERRCOD( ESTAT,       "Invalid status.")
 ERRCOD( ESEM,        "Semaphore error.")
 
 #define __LAST_ERROR_CODE__  ESEM

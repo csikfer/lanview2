@@ -647,6 +647,7 @@ cQueryParser::cQueryParser() : cRecord()
     pPostCmd = pPrepCmd = NULL;
     pListCmd = NULL;
     pListRExp = NULL;
+    pInspector = NULL;
     pParserThread = NULL;
     _set(cQueryParser::descr());
 }
@@ -693,7 +694,7 @@ int cQueryParser::prep(cError *& pe)
     pe = NULL;
     if (pParserThread != NULL) EXCEPTION(EPROGFAIL);
     QString cmd;
-    if (pPrepCmd != NULL) cmd = *pPrepCmd;
+    if (pPrepCmd != NULL) cmd = substitutions(*pPrepCmd, QStringList());
     pParserThread = new cImportParseThread(cmd, this);
     return pParserThread->startParser(pe);
 }
@@ -710,27 +711,17 @@ int cQueryParser::parse(QString src,  cError *&pe)
         }
         else continue;
     }
+    PDEB(VVERBOSE) << "Nincs illeszkedes : " << src << endl;
     return R_NOTFOUND;
 }
 
 int cQueryParser::post(cError *& pe)
 {
-    int r;
+    int r = REASON_OK;
     pe = NULL;
     // Záró parancs elküldése, ha van
     if (pPostCmd != NULL) r = execute(pe, *pPostCmd);
-    int sr;
-    cError *spe = NULL;
-    sr = pParserThread->startParser(spe);
-    if (r == REASON_OK) {
-        r = sr;
-        pe = spe;
-    }
-    else if (sr != REASON_OK) {
-        DERR() << spe->msg() << endl;
-        pDelete(spe);
-    }
-
+    pParserThread->stopParser();
     // Töröljük a thread-et
     pDelete(pParserThread);
     return r;
@@ -765,19 +756,18 @@ int cQueryParser::load(QSqlQuery& q, qlonglong _sid, bool force)
     clear().setId(ixServiceId, id).setName(_sParseType, _sPrep);
     n = completion(q);
     switch(n) {
-    case 0:                                             break;
-    case 1:     *pPrepCmd = getName(_sImportExpression);  break;
-    default:    EXCEPTION(EDATA,n, _sPrep);             break;
+    case 0:                                                     break;
+    case 1: pPrepCmd = new QString(getName(_sImportExpression));break;
+    default:EXCEPTION(EDATA,n, _sPrep);                         break;
     }
 
     clear().setId(ixServiceId, id).setName(_sParseType, _sPost);
     n = completion(q);
     switch(n) {
-    case 0:                                             break;
-    case 1:     *pPostCmd = getName(_sImportExpression); break;
-    default:    EXCEPTION(EDATA,n, _sPost);             break;
+    case 0:                                                     break;
+    case 1: pPostCmd = new QString(getName(_sImportExpression));break;
+    default:EXCEPTION(EDATA,n, _sPost);                         break;
     }
-
     return REASON_OK;
 }
 
@@ -800,7 +790,7 @@ QString cQueryParser::substitutions(const QString& _cmd, const QStringList& args
 {
     QString r;
     QString::const_iterator i = _cmd.constBegin();
-    while (i < _cmd.constEnd()) {
+    while (i != _cmd.constEnd()) {
         char c = i->toLatin1();
         QChar qc = *i;
         ++i;
@@ -822,6 +812,7 @@ QString cQueryParser::substitutions(const QString& _cmd, const QStringList& args
 
 int cQueryParser::execute(cError *&pe, const QString& _cmd, const QStringList& args)
 {
+    _DBGFN() << _cmd << "; " << args.join(_sCommaSp) << endl;
     QString cmd = substitutions(_cmd, args);
     if (pParserThread == NULL) EXCEPTION(EPROGFAIL);
     return pParserThread->push(cmd, pe);

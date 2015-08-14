@@ -88,7 +88,6 @@ cDebug::cDebug() : mFName(fNameCnv(QString()))
 }
 cDebug::cDebug(qlonglong _mMask, const QString& _fn) : mFName(_fn)
 {
-    QString fn;
     mCout                = NULL;
     mFile                = NULL;
     mMsgQueue            = NULL;
@@ -99,13 +98,18 @@ cDebug::cDebug(qlonglong _mMask, const QString& _fn) : mFName(_fn)
     mThreadMsgQueueMutex = NULL;
 
     mMask = _mMask;
+#if defined (Q_OS_WIN)
+    if      (mFName == _sStdOut || mFName == _sStdErr) {
+        mCout = new debugStream(stdout);
+    }
+#else
     if      (mFName == _sStdOut) {
         mCout = new debugStream(stdout);
     }
     else if (mFName == _sStdErr) {
         mCout = new debugStream(stderr);
-        fn = _sStdErr;
     }
+#endif
     else {
         mFile = new QFile(mFName);
         if (! mFile->open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -171,7 +175,9 @@ bool cDebug::pDeb(qlonglong mask)
     if (instance == NULL) {
         instance = new cDebug();
     }
-    return mask && (instance->mMask & mask) == mask;
+    qlonglong mm = instance->mMask & mask;
+    bool       r = mask && (mm) == mask;
+    return r;
 }
 
 debugStream *cDebug::pCout(void)

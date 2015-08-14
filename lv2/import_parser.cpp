@@ -75,22 +75,24 @@ cImportParseThread::cImportParseThread(const QString& _inicmd, QObject *par)
     , queue()
     , iniCmd(_inicmd)
 {
+    DBGOBJ();
     if (pInstance != NULL) EXCEPTION(EPROGFAIL);
     pInstance = this;
     setObjectName("Import parser");
 }
 
-#define IPT_SHORT_WAIT  1000
-#define IPT_LONG_WAIT  5000
+#define IPT_SHORT_WAIT  5000
+#define IPT_LONG_WAIT  15000
 cImportParseThread::~cImportParseThread()
 {
+    DBGOBJ();
     stopParser();
     pInstance = NULL;
 }
 
 void cImportParseThread::reset()
 {
-
+    DBGFN();
     queue.clear();
     if (0 != dataReady.available()) {
         if (!dataReady.tryAcquire(dataReady.available())) EXCEPTION(ESEM);
@@ -107,23 +109,28 @@ void cImportParseThread::reset()
 
 void	cImportParseThread::run()
 {
+    DBGFN();
     // Alaphelyzetbe állítjuk a sorpuffert, és a szemforokat
     reset();
     importFileNm = "[queue]";
     if (importParserStat != IPS_READY || pImportInputStream != NULL) {
+        if (pImportLastError == NULL) pImportLastError = NEWCERROR(ESTAT);
         DERR() << VDEB(importParserStat) << _sCommaSp << VDEBPTR(pImportInputStream) << endl;
         return;
     }
     PDEB(INFO) << QObject::trUtf8("Start parser (thread) ...") << endl;
     initImportParser();
     importParse(IPS_THREAD);
+    if (parseReady.available() == 0) parseReady.release();
     downImportParser();
     PDEB(INFO) << QObject::trUtf8("End parser ((thread)).") << endl;
     pDelete(pImportInputStream);
+    DBGFNL();
 }
 
 int cImportParseThread::push(const QString& src, cError *& pe)
 {
+    _DBGFN() << src << endl;
     int r;
     if (isRunning()) {
         int i = parseReady.available();
@@ -155,6 +162,12 @@ int cImportParseThread::push(const QString& src, cError *& pe)
             delete rpe;
         }
     }
+    if (pe == NULL) {
+        DBGFNL();
+    }
+    else {
+        _DBGFNL() << "ÉAST ERROR : " << pe->msg() << endl;
+    }
     return r;
 }
 
@@ -171,8 +184,18 @@ QString cImportParseThread::pop()
 
 int cImportParseThread::startParser(cError *&pe)
 {
+    DBGFN();
+    int r;
     start();
-    return push(iniCmd, pe);
+    if (iniCmd.isEmpty()) {
+        pe = NULL;
+        r = REASON_OK;
+    }
+    else {
+        r = push(iniCmd, pe);
+    }
+    DBGFNL();
+    return r;
 }
 
 int cImportParseThread::reStartParser(cError *&pe)
@@ -183,6 +206,7 @@ int cImportParseThread::reStartParser(cError *&pe)
 
 void cImportParseThread::stopParser()
 {
+    DBGFN();
     if (isRunning()) {
         if (!queueAccess.tryAcquire(1, IPT_SHORT_WAIT)) {
             DERR() << "Ignore blocked access semaphor." << endl;
@@ -199,4 +223,5 @@ void cImportParseThread::stopParser()
             downImportParser();
         }
     }
+    DBGFNL();
 }

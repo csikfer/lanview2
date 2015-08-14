@@ -94,7 +94,6 @@ void cError::circulation()
 
 void cError::exception(void)
 {
-
     if (cDebug::getInstance() != NULL) PDEB(EXCEPT) << QObject::trUtf8("throw this : %1").arg(msg()) << endl;
     throw(this);
 }

@@ -1,15 +1,12 @@
 #ifndef ARPD_H
 #define ARPD_H
-#if defined(Q_OS_UNIX) || defined(Q_OS_LINUX)
-#error "A program csak Windows rendszeren futtatjató"
-#endif
 
 #include "QtCore"
 
 #include "lanview.h"
 #include "lv2service.h"
 
-#define APPNAME "Command Dispatcher"
+#define APPNAME "cmddisp"
 #undef  __MODUL_NAME__
 #define __MODUL_NAME__  APP
 
@@ -22,16 +19,26 @@ public:
     virtual cInspector * newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong hoid, cInspector *pid);
 };
 
-/// @class cDeviceArp
-/// Az egy lekérdezendő eszközt reprezentál
+/// @class cCmdDispItem
+/// Az egy lekérdezendő eszközt/vagy csoportot reprezentál
 class cCmdDispItem : public cInspector {
 public:
     /// Konstruktor
     cCmdDispItem(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector *_par);
     /// Destruktor
     ~cCmdDispItem();
+    virtual cInspector * newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong hoid, cInspector *pid);
 };
 
+/// @class cCmdDispSubItem
+/// Az egy lekérdezendő eszközt a csoportban reprezentál
+class cCmdDispSubItem : public cInspector {
+public:
+    /// Konstruktor
+    cCmdDispSubItem(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector *_par);
+    /// Destruktor
+    ~cCmdDispSubItem();
+};
 
 /// Lekédező APP main objektum
 class lv2CmdDisp : public lanView {

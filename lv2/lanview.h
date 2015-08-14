@@ -351,7 +351,7 @@ EXT_ int IPV6Pol(const QString& n, bool __ex = true);
 
 /// @class cLv2QApp
 /// Saját QApplication osztály, a hiba kizárások elkapásához (újra definiált notify() metódus.)
-class cLv2QApp : public QCoreApplication {
+class LV2SHARED_EXPORT cLv2QApp : public QCoreApplication {
 public:
     /// Konstruktor. Nincs saját inicilizálás, csak a QApplication konstrujtort hívja.
     cLv2QApp(int& argc, char ** argv);

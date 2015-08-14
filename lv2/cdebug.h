@@ -346,23 +346,23 @@ class LV2SHARED_EXPORT cDebug {
      Debug maszk értékek és bitek definíciüi
      */
     typedef enum {
-        SILENT     =  0x00000000,   ///< Debug mask érték: Nincsennek debug üzenetek
-        EXCEPT     =  0x00000001,   ///< Debug mask bit: A fatális hibáknál a debug üzeneteket is kiírja
-        DERROR     =  0x00000002,   ///< Debug mask bit: A nem fatális hiba üzenetek kiírása
-        WARNING    =  0x00000004,   ///< Debug mask bit: A figyelmeztető üzenetek kiírása
-        INFO       =  0x00000008,   ///< Debug mask bit: A információs üzenetek kiírása
-        VERBOSE    =  0x00000010,   ///< Debug mask bit: A beszédesebb információs üzenetek kiírása
-        VVERBOSE   =  0x00000020,   ///< Debug mask bit: A mégbeszédesebb információs üzenetek kiírása
-        ENTERLEAVE =  0x00000040,   ///< Debug mask bit: A függvények (ahol van) be és kilépési üzenetek liírása
-        PARSEARG   =  0x00000080,   ///< Debug mask bit: Az argumentum feldolgozás debug üzeneteinek a kiírása
-        SQL        =  0x00000100,   ///< Debug mask bit: Az SQL műveletek debug üzeneteinek a kiírása
-        OBJECT     =  0x00000200,   ///< Debug mask bit: Az objektumokkal kapcsolatos debug üzenetek kiírása
-        ADDRESS    =  0x00000400,   ///< Debug mask bit: A címkezeléssel kapcsolatos debug üzenetek kiírása
-        ALL        =  0xffffffff,   ///< Debug mask érték: Minden üzenet kiírása
-        LV2        =  0x80000000,   ///< Debug mask bit: Az lv2 modul üzeneteinek a kiírása
-        LV2G       =  0x40000000,   ///< Debug mask bit: Az lv2g modul üzeneteinek a kiírása
-        PARSER     =  0x20000000,
-        APP        =  0x08000000,   ///< Debug mask bit: Az APP  üzeneteinek a kiírása
+        SILENT     =  0x00000000UL,   ///< Debug mask érték: Nincsennek debug üzenetek
+        EXCEPT     =  0x00000001UL,   ///< Debug mask bit: A fatális hibáknál a debug üzeneteket is kiírja
+        DERROR     =  0x00000002UL,   ///< Debug mask bit: A nem fatális hiba üzenetek kiírása
+        WARNING    =  0x00000004UL,   ///< Debug mask bit: A figyelmeztető üzenetek kiírása
+        INFO       =  0x00000008UL,   ///< Debug mask bit: A információs üzenetek kiírása
+        VERBOSE    =  0x00000010UL,   ///< Debug mask bit: A beszédesebb információs üzenetek kiírása
+        VVERBOSE   =  0x00000020UL,   ///< Debug mask bit: A mégbeszédesebb információs üzenetek kiírása
+        ENTERLEAVE =  0x00000040UL,   ///< Debug mask bit: A függvények (ahol van) be és kilépési üzenetek liírása
+        PARSEARG   =  0x00000080UL,   ///< Debug mask bit: Az argumentum feldolgozás debug üzeneteinek a kiírása
+        SQL        =  0x00000100UL,   ///< Debug mask bit: Az SQL műveletek debug üzeneteinek a kiírása
+        OBJECT     =  0x00000200UL,   ///< Debug mask bit: Az objektumokkal kapcsolatos debug üzenetek kiírása
+        ADDRESS    =  0x00000400UL,   ///< Debug mask bit: A címkezeléssel kapcsolatos debug üzenetek kiírása
+        ALL        =  0xffffffffUL,   ///< Debug mask érték: Minden üzenet kiírása
+        LV2        =  0x40000000UL,   ///< Debug mask bit: Az lv2 modul üzeneteinek a kiírása
+        LV2G       =  0x20000000UL,   ///< Debug mask bit: Az lv2g modul üzeneteinek a kiírása
+        PARSER     =  0x10000000UL,
+        APP        =  0x08000000UL,   ///< Debug mask bit: Az APP  üzeneteinek a kiírása
 /*        TEST       =  APP,
         LV2D       =  APP,
         LV2GUI     =  APP,

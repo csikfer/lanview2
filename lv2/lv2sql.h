@@ -168,4 +168,18 @@ EXT_ qlonglong execSqlIntFunction(QSqlQuery& q, bool *pOk, const QString& fn, co
 /// @return A hívott függvény visszatérési értéke.
 EXT_ QString execSqlTextFunction(QSqlQuery& q, const QString& fn, const QVariant v1 = QVariant(), const QVariant v2 = QVariant(), const QVariant v3 = QVariant(), const QVariant v4 = QVariant(), const QVariant v5 = QVariant());
 
+class LV2SHARED_EXPORT cNamedList {
+private:
+    QStringList     _names;
+    QVariantList    _values;
+public:
+    cNamedList() :_names(), _values() { ; }
+    cNamedList& add(const QString& name, const QVariant& value) { _names << name; _values << value; return *this; }
+    int size() const { int r = _names.size(); if (r != _values.size()) EXCEPTION(EDATA); return r; }
+    const QStringList     names() const { return _names; }
+    const QVariantList    values() const { return _values; }
+    const QVariant        value(int i) const { return _values.at(i); }
+    QString quotes() const { QString r = QString("?,").repeated(size()); r.chop(1); return r; }
+};
+
 #endif // LV2SQL_H

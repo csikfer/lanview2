@@ -2,7 +2,7 @@
 #include "lv2service.h"
 
 #define VERSION_MAJOR   0
-#define VERSION_MINOR   01
+#define VERSION_MINOR   02
 #define VERSION_STR     _STR(VERSION_MAJOR) "." _STR(VERSION_MINOR)
 
 // ****************************************************************************************************************
@@ -34,18 +34,18 @@ int findArg(char __c, const char * __s, int argc, char * argv[])
 
 int findArg(const QChar& __c, const QString& __s, const QStringList &args)
 {
-    PDEB(PARSEARG) << "findArg('" << __c << "', \"" << __s << "\", args)" << endl;
+    //PDEB(PARSEARG) << "findArg('" << __c << "', \"" << __s << "\", args)" << endl;
     for (int i = 1; i < args.count(); ++i) {
         QString arg(args[i]);
         if (arg.indexOf(_sMinusMinus)  == 0) {
             if (__s == arg.mid(2)) {
-                PDEB(PARSEARG) << QObject::trUtf8("Long switch found, return %1").arg(i) << endl;
+                //PDEB(PARSEARG) << QObject::trUtf8("Long switch found, return %1").arg(i) << endl;
                 return i;
             }
         }
         else if (arg[0] == QChar('-') && arg.count() > 1) {
             if (QChar(__c) == arg[1]) {
-                PDEB(PARSEARG) << QObject::trUtf8("Short switch found, return %1").arg(i) << endl;
+                //PDEB(PARSEARG) << QObject::trUtf8("Short switch found, return %1").arg(i) << endl;
                 return i;
             }
         }
@@ -56,8 +56,14 @@ int findArg(const QChar& __c, const QString& __s, const QStringList &args)
 
 // ****************************************************************************************************************
 
+#ifdef Q_OS_WIN
+#define DEFDEB 0
+#else
+#define DEFDEB cDebug::DERROR | cDebug::WARNING | cDebug::INFO | cDebug::VERBOSE | cDebug::LV2
+#endif
+
 /// Default debug level
-qlonglong lanView::debugDefault = cDebug::DERROR | cDebug::WARNING | cDebug::INFO | cDebug::VERBOSE | cDebug::LV2;
+qlonglong lanView::debugDefault = DEFDEB;
 lanView  *lanView::instance     = NULL;
 #if defined(Q_OS_UNIX) || defined(Q_OS_LINUX)
 bool      lanView::snmpNeeded   = true;
@@ -405,10 +411,33 @@ qlonglong lanView::sendError(const cError *pe, const QString& __t)
     QSqlQuery   q(*instance->pDb);
     // sqlRollback(q, false);
     // sqlBegin(q);
-    QString sql = "INSERT INTO app_errs"
-                 "(app_name, pid, app_ver, lib_ver, thread_name, err_code, err_name, err_subcode, err_msg, errno, func_name, func_src, src_line) "
-            "VALUES (?,"     "?," "?,"     "?,"     "?,"         "?,"      "?,"      "?,"         "?,"     "?,"   "?,"       "?,"      "?) "
-            "RETURNING applog_id";
+    cNamedList  fields;
+    fields.add(_sAppName,       appName);
+    if (instance->pSelfNode != NULL && !selfNode().isNullId()) fields.add(_sNodeId, selfNode().getId());
+    fields.add(_sPid,           QCoreApplication::applicationPid());
+    fields.add("app_ver",       appVersion);
+    fields.add("lib_ver",       libVersion);
+    fields.add("func_name",     pe->mFuncName);
+    fields.add("src_name",      pe->mSrcName);
+    fields.add("src_line",      pe->mSrcLine);
+    fields.add("err_code",      pe->mErrorCode);
+    fields.add("err_name",      pe->errorMsg());
+    fields.add("err_subcode",   pe->mErrorSubCode);
+    fields.add("err_syscode",   pe->mErrorSysCode);
+    fields.add("err_submsg",    pe->mErrorSubMsg);
+    fields.add("thread_name",   pe->mThreadName);
+    fields.add("sql_err_num",   pe->mSqlErrNum);
+    fields.add("sql_err_type",  pe->mSqlErrType);
+    fields.add("sql_driver_text",pe->mSqlErrDrText);
+    fields.add("sql_db_text",   pe->mSqlErrDbText);
+    fields.add("sql_query",     pe->mSqlQuery);
+    fields.add("sql_bounds",    pe->mSqlBounds);
+    fields.add("data_line",     pe->mDataLine);
+    fields.add("data_pos",      pe->mDataPos);
+    fields.add("data_msg",      pe->mDataMsg);
+    fields.add("data_name",     pe->mDataName);
+
+    QString sql ="INSERT INTO app_errs (" + fields.names().join(", ") + ") VALUES (" + fields.quotes() + ") RETURNING applog_id";
     PDEB(VVERBOSE) << QObject::trUtf8("sendError() : Prepare ...") << endl;
     if (! q.prepare(sql)) {
         DERR() << trUtf8("Dropp error object ... ") << endl;
@@ -416,19 +445,8 @@ qlonglong lanView::sendError(const cError *pe, const QString& __t)
         return NULL_ID;
     }
     // PDEB(VVERBOSE) << "Bindings ..." << endl;
-    q.bindValue( 0, appName);
-    q.bindValue( 1, QCoreApplication::applicationPid());
-    q.bindValue( 2, appVersion);
-    q.bindValue( 3, libVersion);
-    q.bindValue( 4, __t.isNull()              ? QVariant(_sNul) : QVariant(__t));
-    q.bindValue( 5, pe->mErrorCode);
-    q.bindValue( 6, pe->errorMsg());
-    q.bindValue( 7, QVariant(pe->mErrorSubCode));
-    q.bindValue( 8, pe->mErrorSubMsg.isNull() ? QVariant(_sNul) : QVariant(pe->mErrorSubMsg));
-    q.bindValue( 9, pe->mErrorSysCode);
-    q.bindValue(10, pe->mFuncName);
-    q.bindValue(11, pe->mSrcName);
-    q.bindValue(12, pe->mSrcLine);
+    int n = fields.size();
+    for (int i = 0; i < n; ++i) q.bindValue(i, fields.value(i));
     // PDEB(VVERBOSE) << "Exec ..." << endl;
     if (!q.exec()) {
         DERR() << trUtf8("Dropp error object ... ") << endl;
