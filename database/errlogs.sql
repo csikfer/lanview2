@@ -9,15 +9,26 @@ CREATE TABLE app_errs (
     pid         bigint          DEFAULT NULL,
     app_ver     varchar(32)     DEFAULT NULL,
     lib_ver     varchar(32)     DEFAULT NULL,
-    thread_name varchar(32)     DEFAULT NULL,
-    err_code    bigint          DEFAULT NULL,
+    -- cError
+    func_name   varchar(255)    DEFAULT NULL,
+    src_name    varchar(255)    DEFAULT NULL,
+    src_line    integer         DEFAULT NULL,
+    err_code    integer         DEFAULT NULL,
     err_name    varchar(32)     DEFAULT NULL,
     err_subcode bigint          DEFAULT NULL,
-    err_msg     text            DEFAULT NULL,
-    errno       bigint          DEFAULT NULL,
-    func_name   varchar(255)    DEFAULT NULL,
-    func_src    varchar(255)    DEFAULT NULL,
-    src_line    bigint          DEFAULT NULL
+    err_syscode integer         DEFAULT NULL,
+    err_submsg  text            DEFAULT NULL,
+    thread_name varchar(32)     DEFAULT NULL,
+    sql_err_num integer         DEFAULT NULL,
+    sql_err_type integer        DEFAULT NULL,
+    sql_driver_text text        DEFAULT NULL,
+    sql_db_text text            DEFAULT NULL,
+    sql_query   text            DEFAULT NULL,
+    sql_bounds  text            DEFAULT NULL,
+    data_line   integer         DEFAULT NULL,
+    data_pos    integer         DEFAULT NULL,
+    data_msg    text            DEFAULT NULL,
+    data_name   text            DEFAULT NULL
 );
 CREATE INDEX app_errs_date_of_index ON app_errs (date_of);
 ALTER TABLE app_errs OWNER TO lanview2;
@@ -38,10 +49,8 @@ COMMENT ON COLUMN app_errs.thread_name IS 'Aplication thread identifier (optiona
 COMMENT ON COLUMN app_errs.err_code    IS 'Error code';
 COMMENT ON COLUMN app_errs.err_name    IS 'Error symbolic code';
 COMMENT ON COLUMN app_errs.err_subcode IS 'Error sub code, or integer parameter';
-COMMENT ON COLUMN app_errs.err_msg     IS 'Error message or string parameter';
-COMMENT ON COLUMN app_errs.errno       IS 'Sytem errno (errno actual value, nam feltétlenül kapcsolódik a hibához)';
 COMMENT ON COLUMN app_errs.func_name   IS 'Function full name.';
-COMMENT ON COLUMN app_errs.func_src    IS 'Code source name.';
+COMMENT ON COLUMN app_errs.src_name    IS 'Code source name.';
 COMMENT ON COLUMN app_errs.src_line    IS 'Code source line number.';
 
 CREATE OR REPLACE FUNCTION app_err_id2name(bigint) RETURNS TEXT AS $$

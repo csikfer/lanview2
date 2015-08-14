@@ -430,7 +430,7 @@ BEGIN
                     FROM host_services JOIN services USING(service_id)
                     WHERE host_service_id = NEW.superior_host_service_id;
                 IF sn !~ msk THEN
-                    PERFORM error('Params', OLD.host_service_id, 'superior_host_service_id', 'check_host_services()', TG_TABLE_NAME, TG_OP);
+                    PERFORM error('Params', NEW.host_service_id, 'superior_host_service_id : "' || sn || '" !~ "' || msk || '"' , 'check_host_services()', TG_TABLE_NAME, TG_OP);
                     RETURN NULL;
                 END IF; -- 1
             END IF; -- 2

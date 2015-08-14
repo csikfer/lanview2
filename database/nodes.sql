@@ -453,12 +453,14 @@ CREATE TABLE dyn_addr_ranges (
     dyn_addr_range_id   bigserial       PRIMARY KEY,
     dyn_addr_range_note text            DEFAULT NULL,
     exclude		boolean		DEFAULT false,
-    begin_address       inet            NOT NULL UNIQUE,
-    end_address         inet            NOT NULL UNIQUE,
+    begin_address       inet            NOT NULL,
+    end_address         inet            NOT NULL,
     subnet_id           bigint          REFERENCES subnets(subnet_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    dhcp_server         bigint          REFERENCES nodes(node_id) MATCH SIMPLE ON DELETE CASCADE ON UPDATE RESTRICT,
+    host_service_id     bigint          REFERENCES host_services(host_service_id) MATCH SIMPLE ON DELETE CASCADE ON UPDATE RESTRICT,
     last_time           timestamp       DEFAULT CURRENT_TIMESTAMP,
-    touch               boolean         DEFAULT 't'
+    touch               boolean         DEFAULT 't',
+    UNIQUE (begin_address, exclude),
+    UNIQUE (end_address, exclude)
     
 );
 ALTER TABLE dyn_addr_ranges OWNER TO lanview2;
@@ -659,7 +661,7 @@ CREATE TRIGGER nports_delete_port_post      AFTER DELETE ON nports      FOR EACH
 CREATE TRIGGER interfaces_delete_port_post  AFTER DELETE ON interfaces  FOR EACH ROW EXECUTE PROCEDURE delete_port_post();
 
 
-CREATE OR REPLACE FUNCTION replace_dyn_addr_range(baddr inet, eaddr inet, hid bigint DEFAULT NULL, excl boolean DEFAULT false, snid bigint DEFAULT NULL) RETURNS reasons AS $$
+CREATE OR REPLACE FUNCTION replace_dyn_addr_range(baddr inet, eaddr inet, hsid bigint DEFAULT NULL, excl boolean DEFAULT false, snid bigint DEFAULT NULL) RETURNS reasons AS $$
 DECLARE
     brec dyn_addr_ranges;
     erec dyn_addr_ranges;
@@ -699,7 +701,7 @@ BEGIN
         UPDATE dyn_addr_ranges
             SET
                 last_time = CURRENT_TIMESTAMP,
-                dhcp_server = hid,
+                host_service_id = hsid,
                 touch = true
             WHERE dyn_addr_range_id = brec.dyn_addr_range_id;
         RETURN 'update';
@@ -718,7 +720,7 @@ BEGIN
                 end_address = eaddr,
                 subnet_id = snid,
                 last_time = CURRENT_TIMESTAMP,
-                dhcp_server = hid,
+                host_service_id = hsid,
                 touch = true
             WHERE dyn_addr_range_id = brec.dyn_addr_range_id;
         RETURN r;
@@ -732,18 +734,17 @@ BEGIN
         END IF;
         UPDATE dyn_addr_ranges
             SET
-	        exclude = excl,
                 begin_address = baddr,
                 end_address = eaddr,
                 subnet_id = snid,
                 last_time = CURRENT_TIMESTAMP,
-                dhcp_server = hid,
+                host_service_id = hsid,
                 touch = true
             WHERE dyn_addr_range_id = brec.dyn_addr_range_id;
         RETURN 'modify';
     END IF;
     RAISE INFO '4: % < % ', baddr, eaddr;
-    INSERT INTO dyn_addr_ranges (begin_address, end_address, subnet_id, dhcp_server) VALUES(baddr, eaddr, snid, hid);
+    INSERT INTO dyn_addr_ranges (begin_address, end_address, exclude, subnet_id, host_service_id) VALUES(baddr, eaddr, excl, snid, hsid);
     return 'insert';
 END;
 $$ LANGUAGE plpgsql;

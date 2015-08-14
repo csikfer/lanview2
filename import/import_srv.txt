@@ -157,27 +157,28 @@ SERVICE attached "IndAlarm Contact védett eszköz" {
 
 
 SERVICE "cmddisp"  "Lekérdezések egy parancshíváson keresztül" {
+    SUPERIOR SERVICE MASK "^lv2d$";
     FEATURES ":superior:";
 }
 
 SERVICE "win.dhcp.conf" "DHCP konfiguráció a netsh-n keresztül" {
-    SUPERIOR SERVICE MASK "^lv2d";
-    FEATURES ":timing=polling:qparser=manager";
+    SUPERIOR SERVICE MASK "^cmddisp$";
+    FEATURES ":timing=polling:qparser=manager:superior:";
     CMD "netsh dhcp server \\\\$node dump all";
 }
 
 SERVICE qparser "Query Parser (inferior)" {
-    FEATURES ":timing=polling:qparser=inferior";
+    FEATURES ":timing=polling:qparser=inferior:";
 }
 
 QUERY PARSER "win.dhcp.conf" {
     CASE NO
-        $rexp$\s*Dhcp\s+Server\s+\\+([\w\-\.]+)\sScope\s+[\d\.\:]+\s+Add\s+iprange\s+([\d\.\:]+)\s+([\d\.\:]+)\s*$rexp$
-        $ipar$REPLACE DYNAMIC ADDRESS RANGE $2 TO $3 $1.dhcp;$ipar$;
+        $rexp$Dhcp\s+Server\s+\\+([\w\-\.]+)\sScope\s+[\d\.\:]+\s+Add\s+iprange\s+([\d\.\:]+)\s+([\d\.\:]+)$rexp$
+        $ipar$REPLACE DYNAMIC ADDRESS RANGE $2 TO $3 "$1".dhcp;$ipar$;
     CASE NO
-        $rexp$\s*Dhcp\s+Server\s+\\+([\w\-\.]+)\sScope\s+[\d\.\:]+\s+Add\s+excluderange\s+([\d\.\:]+)\s+([\d\.\:]+)\s*$rexp$
-        $ipar$REPLACE DYNAMIC ADDRESS RANGE EXCLUDE $2 TO $3 $1.dhcp;$ipar$;
+        $rexp$Dhcp\s+Server\s+\\+([\w\-\.]+)\sScope\s+[\d\.\:]+\s+Add\s+excluderange\s+([\d\.\:]+)\s+([\d\.\:]+)$rexp$
+        $ipar$REPLACE DYNAMIC ADDRESS RANGE EXCLUDE $2 TO $3 "$1".dhcp;$ipar$;
     CASE NO
-        $rexp$\s*Dhcp\s+Server\s+\\+([\w\-\.]+)\sScope\s+[\d\.\:]+\s+Add\s+reservedip\s+([\d\.\:]+)\s+([\dA-F])+\s+(.*)$rexp$
-        $ipar$REPLACE ARP $2 MAC("$3") $1.dhcp $$note$$$4$$note$$;$ipar$;
+        $rexp$Dhcp\s+Server\s+\\+([\w\-\.]+)\sScope\s+[\d\.\:]+\s+Add\s+reservedip\s+([\d\.\:]+)\s+([\dA-F]+)\s+(.*)$rexp$
+        $ipar$REPLACE ARP $2 MAC("$3") $host_service_id $$note$$$4$$note$$;$ipar$;
 }
