@@ -456,7 +456,7 @@ CREATE TABLE dyn_addr_ranges (
     begin_address       inet            NOT NULL,
     end_address         inet            NOT NULL,
     subnet_id           bigint          REFERENCES subnets(subnet_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    host_service_id     bigint          REFERENCES host_services(host_service_id) MATCH SIMPLE ON DELETE CASCADE ON UPDATE RESTRICT,
+    host_service_id     bigint,
     last_time           timestamp       DEFAULT CURRENT_TIMESTAMP,
     touch               boolean         DEFAULT 't',
     UNIQUE (begin_address, exclude),

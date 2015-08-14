@@ -190,6 +190,7 @@ ALTER TABLE host_services OWNER TO lanview2;
 
 CREATE UNIQUE INDEX host_services_port_subservices_key ON host_services (node_id, service_id, COALESCE(port_id, -1), prime_service_id, proto_service_id);
 -- CREATE UNIQUE INDEX host_services_node_id_service_id ON host_services(node_id, service_id) WHERE port_id IS NULL;
+ALTER TABLE dyn_addr_ranges ADD FOREIGN KEY (host_service_id)  REFERENCES host_services(host_service_id) MATCH SIMPLE ON DELETE CASCADE ON UPDATE RESTRICT;
 
 COMMENT ON TABLE  host_services IS 'A szolgáltatás-node összerendelések, ill. a konkrét szolgáltatások vagy ellenörzés utasítások táblája, és azok állpota.';
 COMMENT ON COLUMN host_services.host_service_id IS 'Egyedi azonosító';
