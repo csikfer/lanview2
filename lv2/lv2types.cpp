@@ -129,7 +129,7 @@ QString   cMac::toString() const
     return r.right(17);
 }
 
-const char cMac::_sMacPattern1[] = "([A-F\\d]{1,12})";
+const char cMac::_sMacPattern1[] = "([A-F\\d]{6,12})";
 const char cMac::_sMacPattern2[] = "([A-F\\d]{1,2}):([A-F\\d]{1,2}):([A-F\\d]{1,2}):([A-F\\d]{1,2}):([A-F\\d]{1,2}):([A-F\\d]{1,2})";
 const char cMac::_sMacPattern3[] = "([A-F\\d]{1,6})-([A-F\\d]{1,6})";
 const char cMac::_sMacPattern4[] = "(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)";

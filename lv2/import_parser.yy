@@ -2517,7 +2517,7 @@ recall:
         insertCode(mm);
         goto recall;
     }
-    // VALUE INT
+    // VALUE Numeric, address
     if (c.isDigit()) {
         QChar cf = c;    // Meg kelleni fog
         QString sn = cf;
@@ -2569,7 +2569,7 @@ recall:
         PDEB(VVERBOSE) << "ylex : INTEGER : " << yylval.i << endl;
         return INTEGER_V;
     }
-    // VALUE STRING tipusu
+    // VALUE STRING
     if (c == QChar('\"')) {
         yylval.s = yygetstr();
         PDEB(VVERBOSE) << "ylex : STRING : " << *(yylval.s) << endl;
@@ -2590,7 +2590,6 @@ recall:
     }
     int r;
     if (!c.isNull()) yyunget(c);
-    if (0 != (r = isAddress(*sp))) return r;
     if (sp->isEmpty()) yyerror("Invalid character");
     for (const struct token *p = sToken; p->name; p++) {
         if (p->name == *sp) {
@@ -2599,6 +2598,7 @@ recall:
             return p->value;
         }
     }
+    if (0 != (r = isAddress(*sp))) return r;
     yylval.s = sp;
     PDEB(VVERBOSE) << "ylex : NAME : " << *sp << endl;
     return NAME_V;
