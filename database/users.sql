@@ -1,3 +1,4 @@
+
 -- //// TPOWS
 
 CREATE TYPE dayofweek AS ENUM ('sunday','monday','tuesday','wednesday','thursday','friday','saturday');
@@ -136,23 +137,26 @@ COMMENT ON TYPE notifswitch IS 'Notification switch, or host or service status';
 CREATE TABLE users (    -- contacts
     user_id             bigserial       PRIMARY KEY,
     user_name           varchar(32)     NOT NULL UNIQUE,
-    user_note           text    DEFAULT NULL,
-    passwd              varchar(64),
+    user_note           text    	DEFAULT NULL,
+    passwd              varchar(254),
+    first_name		varchar(64),
+    last_name		varchar(64),
+    language		varchar(8),
+    tels                varchar(20)[]   DEFAULT NULL,
+    addresses           varchar(128)[]  DEFAULT NULL,
+    place_id            bigint          DEFAULT NULL REFERENCES places(place_id) MATCH SIMPLE
+                                            ON DELETE RESTRICT ON UPDATE RESTRICT,
+    expired		date		DEFAULT NULL,
     enabled             boolean         DEFAULT TRUE,
+    features            text            DEFAULT NULL,
     host_notif_period   bigint          DEFAULT 0 REFERENCES timeperiods(timeperiod_id) MATCH FULL
                                             ON DELETE RESTRICT ON UPDATE RESTRICT,
     serv_notif_period   bigint          DEFAULT 0 REFERENCES timeperiods(timeperiod_id) MATCH FULL
                                             ON DELETE RESTRICT ON UPDATE RESTRICT,
-    -- ez valójában egy set akar lenni, de csak enum van, ezért tömb.
     host_notif_switchs  notifswitch[]   NOT NULL DEFAULT '{"unreachable","down","recovered","unknown","critical"}',
-    -- ez szintén egy set, mint feljebb
     serv_notif_switchs  notifswitch[]   NOT NULL DEFAULT '{"unreachable","down","recovered","unknown","critical"}',
-    host_notif_cmd      text    DEFAULT NULL,
-    serv_notif_cmd      text    DEFAULT NULL,
-    tels                varchar(20)[]   DEFAULT NULL,
-    addresses           varchar(128)[]  DEFAULT NULL,
-    place_id            bigint          DEFAULT NULL REFERENCES places(place_id) MATCH SIMPLE
-                                            ON DELETE RESTRICT ON UPDATE RESTRICT
+    host_notif_cmd      text    	DEFAULT NULL,
+    serv_notif_cmd      text    	DEFAULT NULL
 );
 ALTER TABLE users OWNER TO lanview2;
 COMMENT ON TABLE  users                 IS 'Users and contact table';
@@ -164,10 +168,11 @@ ALTER TYPE  rights OWNER TO lanview2;
 CREATE TABLE groups (
     group_id        bigserial           PRIMARY KEY,
     group_name      varchar(32)         NOT NULL UNIQUE,
-    group_note      text        DEFAULT NULL,
+    group_note      text        	DEFAULT NULL,
     group_rights    rights              DEFAULT 'viewer',
     place_group_id  bigint              DEFAULT NULL REFERENCES place_groups(place_group_id) MATCH SIMPLE
-                                            ON DELETE RESTRICT ON UPDATE RESTRICT
+                                            ON DELETE RESTRICT ON UPDATE RESTRICT,
+    features            text            DEFAULT NULL
 );
 ALTER TABLE groups OWNER TO lanview2;
 COMMENT ON TABLE  groups                IS 'User groups';

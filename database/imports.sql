@@ -12,6 +12,8 @@ aborted Az import az üzenetet eldobta
 
 CREATE TABLE imports (
     import_id       bigserial   PRIMARY KEY,
+    target_id       bigserial
+        REFERENCES host_services(host_service_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
     date_of         timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     user_id         bigint      NOT NULL
         REFERENCES users(user_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE,
@@ -73,9 +75,8 @@ CREATE TABLE query_parsers (
     parse_type                  parsertype    DEFAULT 'parse',
     item_sequence_number        integer       DEFAULT NULL,
     case_sensitive              boolean       DEFAULT false,
-    regular_expression       text          DEFAULT NULL,
+    regular_expression          text          DEFAULT NULL,
     import_expression           text          NOT NULL,
     CONSTRAINT check_expression CHECK ((parse_type = 'parse' AND regular_expression IS NOT NULL) OR (parse_type <> 'parse' AND regular_expression IS NULL))
 );
-
 ALTER TABLE query_parsers OWNER TO lanview2;

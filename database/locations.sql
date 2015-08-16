@@ -15,7 +15,7 @@ ALTER TABLE images OWNER TO lanview2;
 COMMENT ON TABLE  images             IS 'Bináris adatokat, tipikusan képeket tartalmazó tábla';
 COMMENT ON COLUMN images.image_id    IS 'A kép ill bináris adathamaz egyedi azonosítója';
 COMMENT ON COLUMN images.image_name  IS 'A kép ill bináris adathamaz egyedi neve';
-COMMENT ON COLUMN images.image_note IS 'A kép ill bináris adathamaz opcionális megjegyzés, leírás';
+COMMENT ON COLUMN images.image_note  IS 'A kép ill bináris adathamaz opcionális megjegyzés, leírás';
 COMMENT ON COLUMN images.image_type  IS 'A kép ill bináris adathamaz típusa, a kezelt kép formátumok, vagy BIN';
 COMMENT ON COLUMN images.image_sub_type IS 'Bináris adathamaz esetén (image_type = BIN) egy opcionális típus azonosító string';
 COMMENT ON COLUMN images.image_data  IS 'A kép ill bináris adathamaz.';
@@ -68,7 +68,7 @@ COMMENT ON COLUMN places.parent_id  IS 'A térkép ill. alaprajz szülő, ha nin
 CREATE TABLE place_groups (
     place_group_id      bigserial       PRIMARY KEY,
     place_group_name    varchar(32)     NOT NULL UNIQUE,
-    place_group_note    text    DEFAULT NULL
+    place_group_note    text            DEFAULT NULL
 );
 ALTER TABLE place_groups OWNER TO lanview2;
 COMMENT ON TABLE  place_groups                      IS 'Helyiségek, helyek csoportjai';
@@ -80,8 +80,8 @@ COMMENT ON COLUMN place_groups.place_group_note     IS 'Megjegyzés';
 
 CREATE TABLE place_group_places (
     place_group_place_id   bigserial  PRIMARY KEY,
-    place_group_id          bigint REFERENCES place_groups(place_group_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    place_id                bigint REFERENCES places(place_id)             MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    place_group_id         bigint REFERENCES place_groups(place_group_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    place_id               bigint REFERENCES places(place_id)             MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     UNIQUE(place_group_id, place_id)
 );
 ALTER TABLE place_group_places OWNER TO lanview2;

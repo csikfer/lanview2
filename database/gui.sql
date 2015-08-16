@@ -224,7 +224,7 @@ CREATE TABLE menu_items (
     menu_item_title         varchar(32)     DEFAULT NULL,
     app_name                varchar(32)     NOT NULL,
     upper_menu_item_id      bigint          DEFAULT NULL REFERENCES menu_items(menu_item_id) MATCH SIMPLE ON DELETE CASCADE ON UPDATE RESTRICT,
-    features              text    DEFAULT NULL,
+    features                text            DEFAULT NULL,
     tool_tip                text            DEFAULT NULL,
     whats_this              text            DEFAULT NULL,
     menu_rights		    rights          NOT NULL DEFAULT 'none',

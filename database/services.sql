@@ -150,14 +150,14 @@ CREATE TABLE host_services (
     service_id              bigint         NOT NULL
         REFERENCES services(service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     port_id                 bigint         DEFAULT NULL,
-    host_service_note       text   DEFAULT NULL,
+    host_service_note       text           DEFAULT NULL,
     prime_service_id        bigint         NOT NULL DEFAULT -1       -- nil
         REFERENCES services(service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT,
     proto_service_id        bigint         NOT NULL DEFAULT -1       -- nil
         REFERENCES services(service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT,
     delegate_host_state     boolean        NOT NULL DEFAULT FALSE,
-    check_cmd               text   DEFAULT NULL,
-    features              text   DEFAULT NULL,
+    check_cmd               text           DEFAULT NULL,
+    features                text           DEFAULT NULL,
     disabled                boolean        NOT NULL DEFAULT FALSE,
     superior_host_service_id bigint        DEFAULT NULL
         REFERENCES host_services(host_service_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
@@ -177,7 +177,7 @@ CREATE TABLE host_services (
     host_service_state      notifswitch    NOT NULL DEFAULT 'unknown',
     soft_state              notifswitch    NOT NULL DEFAULT 'unknown',
     hard_state              notifswitch    NOT NULL DEFAULT 'unknown',
-    state_msg               text   DEFAULT NULL,
+    state_msg               text           DEFAULT NULL,
     check_attempts          integer        NOT NULL DEFAULT 0,
     last_changed            TIMESTAMP      DEFAULT NULL,
     last_touched            TIMESTAMP      DEFAULT NULL,
