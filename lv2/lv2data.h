@@ -991,7 +991,11 @@ public:
     cNodeParam&       operator[](const QString& __n);
     /// Az összes elem kiírása az adatbázisba.
     /// @return A kiírt rekordok száma
-    int       insert(QSqlQuery &__q, qlonglong __Node_id, bool __ex = true);
+    int insert(QSqlQuery &__q, qlonglong __Node_id, bool __ex = true);
+    ///
+    static int remove(QSqlQuery &__q, qlonglong __Node_id, bool __ex = true);
+    ///
+    int replace(QSqlQuery &__q, qlonglong __Node_id, bool __ex = true);
 };
 /* ------------------------------------------------------------------------ */
 

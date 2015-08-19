@@ -1236,6 +1236,8 @@ public:
     /// @return ha történt változás az adatbázisban, akkor true.
     virtual bool insert(QSqlQuery& __q, bool __ex = true);
     cError *tryInsert(QSqlQuery& __q);
+    virtual int replace(QSqlQuery& __q, bool __ex = true);
+    virtual bool _replace(QSqlQuery& __q, bool __ex = true);
     /// Egy WHERE stringet állít össze a következőképpen.
     /// A feltételben azok a mezők fognak szerepelni, melyek indexének megfelelő bit az __fm tömbben igaz.
     /// A feltétel, ha a mező NULL, akkor \<mező név\> IS NULL, ha nem NULL, akkor ha isLike() a mező indexére igaz,
@@ -1366,8 +1368,8 @@ public:
     /// @param __fn A mező(k) maszk, alapértelmezése üres, ekkor a használt maszk az elsődleges kulcs mező(k).
     /// @param __ex Ha értéke true, és az exec hibával tér vissza, akkor dob egy kizárást
     /// @exception Ha a QSqlQuery::prepare() metódus sikertelen, akkor dob egy kizárást, feltéve, hogy __ex igaz.
-    /// @return true, ha a feltételnek megfelelt legalább egy rekord, és azt törölte. false, ha nincs egyetlen rekord sem
-    bool remove(QSqlQuery& __q, bool __only = false, const QBitArray& __fm = QBitArray(), bool __ex = true);
+    /// @return A törölt rekordok száma
+    int remove(QSqlQuery& __q, bool __only = false, const QBitArray& __fm = QBitArray(), bool __ex = true);
     cError *tryRemove(QSqlQuery& __q, bool __only = false, const QBitArray& __fm = QBitArray());
     /// Adat ellenőrzést végez
     /// Beállítja _stat értékét

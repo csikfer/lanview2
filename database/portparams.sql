@@ -1,9 +1,10 @@
 CREATE TABLE port_params (
-    port_param_id       bigserial      PRIMARY KEY,
-    param_type_id       bigint         NOT NULL
+    port_param_id       bigserial       PRIMARY KEY,
+    param_type_id       bigint          NOT NULL
             REFERENCES param_types(param_type_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
-    port_id             bigint         NOT NULL,   -- REFERENCES nports(port_id) kivéve pports
-    param_value         text   DEFAULT NULL,
+    port_id             bigint          NOT NULL,   -- REFERENCES nports(port_id) kivéve pports
+    param_value         text            DEFAULT NULL,
+    touch               boolean         DEFAULT true,
     UNIQUE (param_type_id, port_id)
 );
 ALTER TABLE port_params OWNER TO lanview2;

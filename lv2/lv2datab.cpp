@@ -2874,16 +2874,11 @@ bool cRecord::insert(QSqlQuery& __q, bool _ex)
         cRecord *po = newObj();
         po->setName(getName());
         po->set(descr()._deletedIndex, QVariant(true));
-        if (po->completion()) {     // Van egy azonos nevű deleted = true rekordunk.
-            delete po;
-            QBitArray   sets(cols(), true); // ???!!
-            sets.clearBit(nameIndex());
-            if (isNullId()) {
-                sets.clearBit(idIndex());
-            }
-            return update(__q, true, sets, mask(nameIndex()),_ex);
-        }
+        int r = po->completion();
         delete po;
+        if (r > 0) {     // Van egy azonos nevű deleted = true rekordunk.
+            return _replace(__q, _ex);
+        }
     }
     sql  = "INSERT INTO " + fullTableNameQ() + " (";
     for (int i = 0; i < recDescr.cols(); ++i) {
@@ -2932,6 +2927,33 @@ cError *cRecord::tryInsert(QSqlQuery &__q)
     }
     CATCHS(pe);
     return pe;
+}
+
+int cRecord::replace(QSqlQuery& __q, bool __ex)
+{
+    // _DBGFN() << "@(," << DBOOL(_ex) << ") table : " << fullTableName() << endl;
+    const cRecStaticDescr& recDescr = descr();
+    __q.finish();
+    if (!recDescr.isUpdatable()) {
+        if (__ex) EXCEPTION(EDATA, -1 , QObject::trUtf8("Az adat nem módosítható."));
+        return false;
+    }
+    cRecord *po = newObj();
+    po->setName(getName());
+    int r = po->completion(__q);    // Van ilyen nevű rekord ?
+    delete po;
+    if (r == 0) return insert(__q, __ex) ? 1 : 0;   // Ha nincs, akkor insert
+    return _replace(__q, __ex) ? -1 : 0;            // Ha van akkor replace
+}
+
+bool cRecord::_replace(QSqlQuery &__q, bool __ex)
+{
+    QBitArray   sets(cols(), true);     // Minden mezőt kiírunk,
+    sets.clearBit(nameIndex());         // kivéve a név mezőt
+    if (idIndex(false) >= 0 && isNullId()) { // és az ID-t, ha van olyan és az értéke NULL
+        sets.clearBit(idIndex());
+    }
+    return update(__q, true, sets, mask(nameIndex()),__ex);
 }
 
 bool cRecord::query(QSqlQuery& __q, const QString& sql, const tIntVector& __arg, bool __ex) const
@@ -3167,7 +3189,7 @@ cError *cRecord::tryUpdate(QSqlQuery& __q, bool __only, const QBitArray& __set, 
     return pe;
 }
 
-bool cRecord::remove(QSqlQuery& __q, bool __only, const QBitArray& _fm, bool __ex)
+int cRecord::remove(QSqlQuery& __q, bool __only, const QBitArray& _fm, bool __ex)
 {
     QBitArray fm = _fm;
     if (!isUpdatable()) {
@@ -3181,7 +3203,7 @@ bool cRecord::remove(QSqlQuery& __q, bool __only, const QBitArray& _fm, bool __e
     QString sql = "DELETE FROM ";
     if (__only) sql += "ONLY ";
     sql += tableName() + whereString(fm);
-    return query(__q, sql, fm, __ex) && __q.numRowsAffected() > 0;
+    return query(__q, sql, fm, __ex) ? __q.numRowsAffected() : 0;
 }
 
 cError *cRecord::tryRemove(QSqlQuery& __q, bool __only, const QBitArray& _fm)

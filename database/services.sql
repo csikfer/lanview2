@@ -309,6 +309,7 @@ CREATE TABLE host_service_charts (
     graph_period        varchar(255)   DEFAULT NULL,   -- ??
     graph_height        bigint         DEFAULT 300,
     graph_width         bigint         DEFAULT 600,
+    features            text           DEFAULT NULL,
     deleted             boolean        NOT NULL DEFAULT FALSE
 );
 ALTER TABLE host_service_charts OWNER TO lanview2;
@@ -338,6 +339,7 @@ CREATE TABLE host_service_vars (
     warning_min         real            DEFAULT NULL,
     critical_max        real            DEFAULT NULL,
     critical_min        real            DEFAULT NULL,
+    features            text           DEFAULT NULL,
     deleted             boolean         NOT NULL DEFAULT FALSE,
     UNIQUE (host_service_id, service_var_name)
 );

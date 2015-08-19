@@ -1687,7 +1687,7 @@ cNodeParam&       cNodeParams::operator[](const QString& __n)
     return *at(i);
 }
 
-int       cNodeParams::insert(QSqlQuery &__q, qlonglong __Node_id, bool __ex)
+int cNodeParams::insert(QSqlQuery &__q, qlonglong __Node_id, bool __ex)
 {
     iterator i;
     for (i = begin(); i < end(); i++) {

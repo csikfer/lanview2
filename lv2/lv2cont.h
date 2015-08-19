@@ -106,10 +106,9 @@ public:
         for (i = QList<T *>::begin(); i != QList<T *>::end(); i++) delete *i;
     }
     /// A konténer insert metódusának az újra definiálása. A pointer ezután a konténer hatáskörébe tartozik, az szabadítja fel.
-    void insert(int i, T *p)        { list().insert(i, p); }
+    void add(int i, T *p)        { list().insert(i, p); }
     /// Hasonló a konténer insert metódusához, de az _o objektumot ujra allokálja a dup() metódus hívásával.
-    /// @note A két insert lehet, hogy egy kicsit "beugratós", változtatni kéne ?
-    void insert(int i, const T& _o) { insert(i, dynamic_cast<T *>(_o.dup())); }
+    void add(int i, const T& _o) { add(i, dynamic_cast<T *>(_o.dup())); }
 
     /// Beolvassa az összes olyan rekordot, mely megfelel a pointerként átadott
     /// objektum megadott mezőinek. Csak egyenlőségre szűr, kivébe, ha beállítjuk a *p objektumban a likeMask bitjeit.
@@ -490,6 +489,79 @@ public:
 };
 
 template<class T> QTextStream& operator<<(QTextStream& __t, const tRecordList<T>& __v) { return __t << toString(__v); }
+
+template <class T>
+        class tOwnRecords : public tRecordList<T *>
+{
+public:
+    /// Az owner rekord id (távoli kulcs) mező indexe.
+    const int ixOwnerId;
+    /// Konstruktor, üres konténert hoz létre
+    /// @param _ix_owner_id Az owner rekord id (távoli kulcs) mező indexe.
+    tOwnRecords(int _ix_owner_id) : tRecordList<T *>(), ixOwnerId(_ix_owner_id) { ; }
+    /// Konstruktor, Egy egy elemű konténert hoz létre
+    /// @param _ix_owner_id Az owner rekord id (távoli kulcs) mező indexe.
+    /// @param _p Az elem, amit a konténerbe elhelyet (a pointer az objektumhoz kerül, a destruktora felszabadítja a pointert).
+    tOwnRecords(int _ix_owner_id, T *_p) : tRecordList<T *>(_p), ixOwnerId(_ix_owner_id) { ; }
+    /// Konstruktor, Egy egy elemű konténert hoz létre
+    /// @param _ix_owner_id Az owner rekord id (távoli kulcs) mező indexe.
+    /// @param _p Az objektumról másolata kerül a kontéberbe
+    tOwnRecords(int _ix_owner_id, T& _o) : tRecordList<T *>(_o), ixOwnerId(_ix_owner_id) { ; }
+    /// Konstruktor.
+    /// Beolvassa az összes vagy adott típusú owner-hez tatozó rekordot
+    /// @param __q query objektum, amivel a lekérdezés elvégezhető.
+    /// @param __only
+    /// @param __fi Az owner rekord id (távoli kulcs) mező indexe.
+    /// @param __id Az owner rekord ID.
+    tOwnRecords(QSqlQuery& __q, bool __only, int __fi, qlonglong __id) : tRecordList<T *>(__q, __only, __fi, __id), ixOwnerId(__fi) { ; }
+    /// Copy konstruktor. A konténer elemeiről másolatot készít, és ezt helyezi el az új konténerbe
+    tOwnRecords(const tOwnRecords& __o) : tRecordList<T>((const tRecordList<T>&)__o) , ixOwnerId(__o.ixOwnerId) { ; }
+    /// Másoló operátor. Az elemekről másolatot készít.
+    /// Ha a két objektumban az ixOwnerId mező nem egyenlő akkor kizárást dob.
+    tOwnRecords& operator =(const tOwnRecords& __o) {
+        if (ixOwnerId != __o.ixOwnerId) EXCEPTION(EDATA);
+        *this = tRecordList<T>::operator =(__o);
+        return *this;
+    }
+    int fetch(QSqlQuery &__q, qlonglong __owner_id, bool __only = false) {
+        return tRecordList<T>::fetch(__q, __only, ixOwnerId, __owner_id);
+    }
+    int insert(QSqlQuery &__q, qlonglong __owner_id, bool __ex) {
+        tRecordList<T>::setsId(ixOwnerId, __owner_id);
+        return tRecordList<T>::insert(__q, __ex);
+    }
+    int ownRemove(QSqlQuery &__q, qlonglong __owner_id, bool __ex) {
+        T o;
+        o.setId(ixOwnerId, __owner_id);
+        return o.remove(__q, false, o.mask(ixOwnerId). __ex);
+    }
+    int replace(QSqlQuery &__q, qlonglong __owner_id, bool __ex) {
+        if (tRecordList<T>::size() == 0) return ownRemove(__q, __owner_id, __ex);
+        untouch(__q, __owner_id);
+        int r = 0;
+        typename QList<T *>::const_iterator    i;
+        for (i = QList<T *>::constBegin(); i < QList<T *>::constEnd(); i++) {
+            PDEB(VERBOSE) << "Replace : " << (*i)->toString() << endl;
+            (*i)->setBool(_sTouch, true);
+            if ((*i)->replace(__q, __ex)) ++r;
+        }
+        return r + removeUntouched(__q, __owner_id, __ex);
+    }
+    int untouch(QSqlQuery &__q, qlonglong __owner_id) {
+        T o;
+        QString sql = "UPDATE " + o.tableName() + " SET touch = false WHERE " + o.colName(ixOwnerId) + " = ?";
+        execSql(__q, sql, __owner_id);
+        return __q.numRowsAffected();
+    }
+    int removeUntouched(QSqlQuery& __q, qlonglong __owner_id, bool __ex = true) {
+        T o;
+        int ixTouch = o.toIndex(_sTouch, __ex);
+        o.setBool(ixTouch, false);
+        o.setId(ixOwnerId, __owner_id);
+        return o.remove(__q, false, o.mask(ixTouch, ixOwnerId). __ex);
+    }
+};
+
 
 /* ******************************  ****************************** */
 

@@ -118,6 +118,7 @@ CREATE TABLE nports (
     node_id     bigint          NOT NULL,   -- REFERENCES (patch, nodes, snmp_devs)
     port_index  integer         DEFAULT NULL,
     deleted     boolean         DEFAULT false,
+    touch       boolean         DEFAULT true,
     UNIQUE(node_id, port_name)
 );
 ALTER TABLE nports OWNER TO lanview2;
@@ -137,6 +138,7 @@ CREATE TABLE patchs (
     node_note   text    DEFAULT NULL,
     place_id    bigint         DEFAULT 0   -- place = 'unknown'
                 REFERENCES places(place_id) MATCH FULL ON DELETE SET DEFAULT ON UPDATE RESTRICT,
+    features    text            DEFAULT NULL,
     deleted     boolean         NOT NULL DEFAULT false
 );
 ALTER TABLE patchs OWNER TO lanview2;
@@ -364,6 +366,7 @@ CREATE TABLE port_vlans (
     last_time       timestamp   DEFAULT CURRENT_TIMESTAMP,
     vlan_type       vlantype    NOT NULL DEFAULT 'untagged',
     set_type        settype     NOT NULL DEFAULT 'manual',
+    touch           boolean     DEFAULT true,
     UNIQUE (port_id, vlan_id)
 );
 ALTER TABLE port_vlans OWNER TO lanview2;
@@ -381,10 +384,11 @@ CREATE TABLE ipaddresses (
     address         inet         DEFAULT NULL,
     ip_address_type addresstype  NOT NULL,
     preferred       bigint       DEFAULT NULL,
-    subnet_id       bigint       DEFAULT NULL REFERENCES subnets(subnet_id) MATCH SIMPLE
-                                    ON DELETE RESTRICT ON UPDATE RESTRICT,
-    port_id         bigint       NOT NULL REFERENCES interfaces(port_id) MATCH FULL
-                                    ON DELETE CASCADE ON UPDATE RESTRICT
+    subnet_id       bigint       DEFAULT NULL
+        REFERENCES subnets(subnet_id) MATCH SIMPLE ON DELETE RESTRICT ON UPDATE RESTRICT,
+    port_id         bigint       NOT NULL
+        REFERENCES interfaces(port_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    touch           boolean         DEFAULT true
 );
 ALTER TABLE ipaddresses OWNER TO lanview2;
 COMMENT ON TABLE ipaddresses IS 'IP címek';
