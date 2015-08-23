@@ -1106,12 +1106,12 @@ CRECDEFD(cPPort)
 
 /* ------------------------------ cInterface ------------------------------ */
 
-cInterface::cInterface() : cNPort(_no_init_), trunkMembers()
+cInterface::cInterface() : cNPort(_no_init_), addresses(cIpAddress::_ixPortId), trunkMembers()
 {
     DBGOBJ();
     _set(cInterface::descr());
 }
-cInterface::cInterface(const cInterface& __o) : cNPort(_no_init_), trunkMembers()
+cInterface::cInterface(const cInterface& __o) : cNPort(_no_init_), addresses(cIpAddress::_ixPortId), trunkMembers()
 {
     DBGOBJ();
     __cp(__o);
@@ -1169,8 +1169,7 @@ bool cInterface::insert(QSqlQuery &__q, bool __ex)
         r = vlans.insert(__q, __ex) == vlans.size();
     }
     if (!addresses.isEmpty()) {
-        addresses.setsId(cIpAddress::_ixPortId, getId());
-        r = addresses.insert(__q, __ex) == addresses.size() && r;
+        r = addresses.insert(__q, getId(), __ex) == addresses.size() && r;
     }
     return r;
 }
@@ -1241,7 +1240,7 @@ int cInterface::fetchVlans(QSqlQuery& q)
 int cInterface::fetchAddressess(QSqlQuery& q)
 {
     if (cIpAddress::_ixPortId < 0) cIpAddress();
-    return addresses.fetch(q, false, cIpAddress::_ixPortId, getId());
+    return addresses.fetch(q, getId(), false);
 }
 
 cIpAddress& cInterface::addIpAddress(const cIpAddress& __a)

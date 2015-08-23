@@ -541,7 +541,9 @@ protected:
     static int _ixIpAddressType;
 };
 
-typedef tRecordList<cIpAddress> cIpAddresses;
+// typedef tRecordList<cIpAddress> cIpAddresses;
+typedef tOwnRecords<cIpAddress> cIpAddresses;
+
 /* ******************************  ****************************** */
 
 class cPortParams;
