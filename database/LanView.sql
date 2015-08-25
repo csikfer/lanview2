@@ -243,6 +243,40 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
+
+CREATE OR REPLACE FUNCTION set_db_version(major int, minor int) RETURNS reasons AS $$
+BEGIN
+    PERFORM set_int_sys_param('version_minor', minor);
+    RETURN set_int_sys_param('version_major', major);
+END
+$$ LANGUAGE plpgsql;
+    
+-- DB Version 1.0
+SELECT set_db_version(1, 0);
+
+CREATE OR REPLACE FUNCTION compare_db_version(major int, minor int) RETURNS int AS $$
+DECLARE
+    i int;
+BEGIN
+    i := get_int_sys_param('version_major');
+    IF i = major THEN
+        i := get_int_sys_param('version_minor');
+        IF i = minor THEN
+            RETURN 0;
+        ELSIF  i < minor THEN
+            RETURN 1;
+        ELSE
+            return -1;
+        END IF;
+    ELSIF  i < major THEN
+        RETURN 1;
+    ELSE
+        return -1;
+    END IF;
+    
+END
+$$ LANGUAGE plpgsql;
+
 -- //////////////////// ERROR LOGOK ////////////////////
 \i errlogs.sql
 -- //////////////////// Helyek/helyiségek ////////////////////
