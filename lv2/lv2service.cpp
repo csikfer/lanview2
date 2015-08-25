@@ -607,7 +607,7 @@ enum eNotifSwitch cInspector::parser(int _ec, QIODevice& text)
             if (r != REASON_OK) {
                 if (pe == NULL) {
                     DERR() << _sUnKnown << VDEB(r) << endl;
-                    EXCEPTION(EUNKNOWN, r);
+                    EXCEPTION(EUNKNOWN, r, name());
                 }
                 DERR() << pe->msg() << endl;
                 pe->exception();
@@ -616,7 +616,7 @@ enum eNotifSwitch cInspector::parser(int _ec, QIODevice& text)
         return ok ? RS_ON : RS_INVALID;
     }
     else {
-        EXCEPTION(ENOTSUPP);
+        EXCEPTION(ENOTSUPP, 0, name());
         return RS_CRITICAL;
     }
 }
