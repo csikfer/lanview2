@@ -20,7 +20,8 @@ TEMPLATE = app
 SOURCES += lv2d.cpp
 HEADERS += lv2d.h
 INCLUDEPATH += ../lv2
-LIBS += -lsnmp -L../lv2 -llv2
+LIBS += -L../lv2 -llv2
+unix:LIBS += -lsnmp
 
  TRANSLATIONS    = lv2d_hu.ts \
                    lv2d_en.ts

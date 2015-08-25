@@ -55,6 +55,7 @@ lv2d::~lv2d()
     down();
 }
 
+#ifdef MUST_USIGNAL
 bool lv2d::uSigRecv(int __i)
 {
     if (__i == SIGHUP) {
@@ -69,6 +70,7 @@ bool lv2d::uSigRecv(int __i)
     }
     return true;
 }
+#endif
 void lv2d::dbNotif(const QString& name, QSqlDriver::NotificationSource source, const QVariant &payload)
 {
     lanView::dbNotif(name, source, payload);    // DEBUG

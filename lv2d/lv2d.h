@@ -20,7 +20,9 @@ public:
     void setup();
     void down();
     void reSet();
+#ifdef MUST_USIGNAL
     bool uSigRecv(int __i);
+#endif
     /// Saját hoszt/szolgáltatás cInspector objektum
     cInspector  *pSelf;
     ///
