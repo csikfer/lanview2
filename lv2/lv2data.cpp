@@ -794,7 +794,7 @@ qlonglong cNPort::_tableoid_nports     = NULL_ID;
 qlonglong cNPort::_tableoid_pports     = NULL_ID;
 qlonglong cNPort::_tableoid_interfaces = NULL_ID;
 
-cNPort::cNPort() : cRecord(), params(cPortParam::_descr_cPortParam().toIndex(_sPortId))
+cNPort::cNPort() : cRecord(), params(cPortParam::ixPortId())
 {
     DBGOBJ();
     _set(cNPort::descr());
