@@ -262,7 +262,7 @@ bool cRecordTableModel::updateRow(const QModelIndex& mi, cRecordAny *pRec)
     delete _records.pullAt(row);
     endRemoveRows();
     beginInsertRows(QModelIndex(), row, row);
-    _records.insert(row, pRec);
+    _records.pushAt(row, pRec);
     endInsertRows();
     return true;
 }
@@ -271,7 +271,7 @@ bool cRecordTableModel::insertRow(cRecordAny *pRec)
 {
     int row = _records.size();
     beginInsertRows(QModelIndex(), row, row);
-    _records.insert(row, pRec);
+    _records.pushAt(row, pRec);
     endInsertRows();
     return true;
 }

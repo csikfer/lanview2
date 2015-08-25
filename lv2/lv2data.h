@@ -10,30 +10,6 @@
 Az adatbázis interfész objektumok.
 */
 
-/// @enum eReasons
-/// @brief Okok ill. műveletek eredményei
-enum eReasons {
-    R_INVALID = -1, ///< Csak hiba jelzésre
-    R_NEW     =  0, ///< Új elem
-    R_INSERT,       ///< Új elem beszúrása/beszúrva.
-    R_REMOVE,       ///< Elem eltávolítása/eltávolítva
-    R_EXPIRED,      ///< Lejárt, elévült
-    R_MOVE,         ///< Az elem át-mozgatása/mozgatva
-    R_RESTORE,      ///< Helyreálitás/helyreállítva
-    R_MODIFY,       ///< Az elem módosítva (összetetteb módosítás)
-    R_UPDATE,       ///< Az elem módosítva
-    R_UNCHANGE,     ///< Nincs változás
-    R_FOUND,        ///< Találat, az elem már létezik...
-    R_NOTFOUND,     ///< Nincs találat, valamelyik objektum hiányzik.
-    R_DISCARD,      ///< Nincs művelet, az adat eldobásra került.
-    R_CAVEAT,       ///< Valamilyen ellentmondás van az adatok között
-    R_ERROR,        ///< Egyébb hiba
-    R_AMBIGUOUS,    ///< kétértelmüség
-    R_DB_ENUM_SIZE, ///< Az adatbázis enum típusban definiált értékek száma
-    REASON_OK,      ///< OK
-    REASON_TO       ///< Idő tullépés történt
-};
-
 EXT_ int reasons(const QString& _r, bool __ex = true);
 EXT_ const QString& reasons(int _r, bool __ex = true);
 
@@ -338,7 +314,8 @@ public:
         return __def;
 
     }
-
+    STATICIX(cSysParam, ixParamTypeId)
+    STATICIX(cSysParam, ixParamValue)
 protected:
     /// A port paraméter értékhez tartozó típus rekord/objektum
     cParamType  paramType;
@@ -411,6 +388,9 @@ public:
     /// Ha az objektumban modosítkuk a image_data mezőt, akkor törölva lessz a image_hash mező, melyet az
     /// az adatbázis logika kiíráskor majd kiszámol. és kitölt
     bool hashIsNull() const         { return isNull(_ixImageHash); }
+    STATICIX(cImage, ixImageType)
+    STATICIX(cImage, ixImageData)
+    STATICIX(cImage, ixImageHash)
 protected:
     static int  _ixImageType;
     static int  _ixImageData;
@@ -476,6 +456,9 @@ public:
     /// @param __addr IP cím, melyet tartalmaznia kell a keresett subnet-nek.
     /// @return A feltételnek megfelelő rekordok száma
     int getByAddress(QSqlQuery & __q, const QHostAddress &__addr);
+    STATICIX(cSubNet, ixNetAddr)
+    STATICIX(cSubNet, ixVlanId)
+    STATICIX(cSubNet, ixSubNetType)
 protected:
     /// A netaddr nevű mező indexe. Mivel nem öröklődik a tábla, ezért lehet statikus.
     static int              _ixNetAddr;
@@ -524,6 +507,8 @@ public:
     cIpAddress& operator=(const QHostAddress& __a) { set(_ixAddress, QVariant::fromValue(__a)); return *this; }
     /// Érték adás a cím mezőnek, és a típus mezőnek.
     cIpAddress& setAddress(const QHostAddress& __a, const QString& __t = _sNul);
+    /// A bázisobjektum metódusától abban különbözik, hogy a rekordot az IP cím, és a port_id mező azonosítja.
+    virtual int replace(QSqlQuery &__q, bool __ex = true);
     /// A cím mező értékének a lekérése.
     QHostAddress address() const;
     /// Ha nincs subnet a megadott címhez, akkor a típust 'external'-ra állítja
@@ -534,6 +519,10 @@ public:
     static QString lookup(const QHostAddress& ha, bool __ex = true);
     static QHostAddress lookup(const QString& hn, bool __ex = true);
     QHostAddress setIpByName(const QString& _hn, const QString &_t = _sNul, bool __ex = true);
+    STATICIX(cIpAddress, ixPortId)
+    STATICIX(cIpAddress, ixAddress)
+    STATICIX(cIpAddress, ixSubNetId)
+    STATICIX(cIpAddress, ixIpAddressType)
 protected:
     static int _ixPortId;
     static int _ixAddress;
@@ -541,17 +530,13 @@ protected:
     static int _ixIpAddressType;
 };
 
-// typedef tRecordList<cIpAddress> cIpAddresses;
-typedef tOwnRecords<cIpAddress> cIpAddresses;
-
 /* ******************************  ****************************** */
 
-class cPortParams;
 class cNPort;
 
 /// Port paraméter érték
 class LV2SHARED_EXPORT cPortParam : public cRecord {
-    friend class cPortParams;
+    friend class tOwnPatams<cPortParam>;
     friend class cNPort;
     friend class cInterface;
     CRECORD(cPortParam);
@@ -580,6 +565,8 @@ public:
     cPortParam& setType(const QString& __n)    { paramType.fetchByName(__n); _set(_ixParamTypeId, paramType.getId()); return *this; }
     /// Értékadás az érték mezőnek.
     cPortParam& operator=(const QString& __v)  { setName(_sParamValue, __v); return *this; }
+    STATICIX(cPortParam, ixParamTypeId)
+    STATICIX(cPortParam, ixPortId)
 protected:
     /// A port paraméter értékhez tartozó típus rekord/objektum
     cParamType  paramType;
@@ -588,35 +575,7 @@ protected:
 };
 
 /// Port paraméter értékek listája
-class LV2SHARED_EXPORT cPortParams : public tRecordList<cPortParam> {
-public:
-    /// Konstruktor. Üres listát készít.
-    cPortParams();
-    /// Konstruktor. A listának egy eleme lessz, a megadott objektum klónja.
-    cPortParams(const cPortParam& __v);
-    /// Konstruktor. A listét feltölti az adatbázisból, hogy a megadott porthoz (ID) tartozó összes paramétert tartalmazza.
-    cPortParams(QSqlQuery& __q, qlonglong __port_id);
-    /// Copy konstrultor. A konténer összes elemét klónozza.
-    cPortParams(const cPortParams& __o);
-    ///
-    ~cPortParams();
-    /// Másoló operátor. A konténer összes elemét klónozza.
-    cPortParams& operator=(const cPortParams& __o);
-    /// A listét feltölti az adatbázisból, hogy a megadott porthoz (ID) tartozó összes paramétert tartalmazza.
-    int fetch(QSqlQuery& __q, qlonglong __port_id) {
-        if (cPortParam::_ixPortId < 0) cPortParam();    // Ha még nem volt init.
-        PDEB(VVERBOSE) << "Call: tRecordList<cPortParam>::fetch(__q, false, " << cPortParam::_ixPortId << _sCommaSp << __port_id << QChar(')') << endl;
-        return tRecordList<cPortParam>::fetch(__q, false, cPortParam::_ixPortId, __port_id);
-    }
-    /// Index operátor: egy elem a paraméter név alapján
-    const cPortParam& operator[](const QString& __n) const;
-    /// Index operátor: egy elem a paraméter név alapján
-    cPortParam&       operator[](const QString& __n);
-    /// Az összes elem kiírása az adatbázisba.
-    /// @return A kiírt rekordok száma
-    int       insert(QSqlQuery &__q, qlonglong __port_id, bool __ex = true);
-};
-
+typedef tOwnPatams<cPortParam> cPortParams;
 /* ------------------------------------------------------------------------ */
 
 class LV2SHARED_EXPORT cIfType : public cRecord {
@@ -676,7 +635,10 @@ class LV2SHARED_EXPORT cNPort : public cRecord {
     CRECORD(cNPort);
 protected:
     /// Konstruktor a leszámazottak számára.
-    explicit cNPort(no_init_& __dummy) : cRecord() { __dummy = __dummy; cNPort::descr(); }
+    explicit cNPort(no_init_& __dummy) : cRecord(), params(cPortParam::_descr_cPortParam().toIndex(_sPortId)) {
+        (void)__dummy;
+        cNPort::descr();
+    }
 public:
     /// Törli a params konténert.
     virtual void clearToEnd();
@@ -685,7 +647,8 @@ public:
     /// Ha a port id indexével hívtuk, akkor ha szükséges törli a params konténert, lásd az atEndCont() metódust.
     virtual bool toEnd(int i);
     /// Beszúr egy port rekordot az adatbázisba a járulékos adatokkal (rekordokkal) együtt.
-    virtual bool insert(QSqlQuery &__q, bool __ex = false);
+    virtual bool insert(QSqlQuery &__q, bool __ex = true);
+    virtual int replace(QSqlQuery &__q, bool __ex = true);
 
     /// Egy port rekord beolvasása a port név és a node id alapján.
     /// @param __q Az adatbázis műveletjez haszbált objektum.
@@ -803,9 +766,9 @@ public:
     static qlonglong tableoid_nports()      { return _tableoid_nports; }
     static qlonglong tableoid_pports()      { return _tableoid_pports; }
     static qlonglong tableoid_interfaces()  { return _tableoid_interfaces; }
-    static int ixNodeId()       { return _ixNodeId;    }
-    static int ixPortIndex()    { return _ixPortIndex; }
-    static int ixIfTypeId()     { return _ixIfTypeId;  }
+    STATICIX(cNPort, ixNodeId)
+    STATICIX(cNPort, ixPortIndex)
+    STATICIX(cNPort, ixIfTypeId)
 
 };
 
@@ -879,6 +842,7 @@ public:
     virtual void toEnd();
     virtual bool toEnd(int i);
     virtual bool insert(QSqlQuery &__q, bool __ex = true);
+    virtual int replace(QSqlQuery &__q, bool __ex = true);
     virtual QString toString() const;
     // A trunkMembers konténer adattaghoz hozzáad egy port indexet
     void addTrunkMember(int __ix) { trunkMembers << __ix;  }
@@ -887,6 +851,7 @@ public:
     /// Ha a trunkMembers fel van töltve, akkor a konténer TRUNK port esetén a trunk tagjainak az indexét tartalmazza (port_index mező értéke).
     const tIntVector& getTrunkMembers() const { return trunkMembers; }
     void joinVlan(qlonglong __id, enum eVlanType __t, enum eSetType __st = ST_MANUAL);
+    bool splitVlan(qlonglong __id);
     /// Beolvas egy objektumot/rekordot a MAC alapján
     /// @param q Az adatbázisműveletekhez használt objektum
     /// @param a A keresett MAC
@@ -913,9 +878,10 @@ public:
     cInterface& operator=(const cMac& _m) { set(_sHwAddress, QVariant::fromValue(_m)); return *this; }
 
     /// VLAN hozzárendejések, nincs automatikus feltöltés
-    tRecordList<cPortVlan> vlans;
+    tOwnRecords<cPortVlan>  vlans;
     /// Ip címek listája (nincs automatikus feltöltés
-    cIpAddresses    addresses;
+    tOwnRecords<cIpAddress> addresses;
+    STATICIX(cInterface, ixHwAddress)
 protected:
     /// Trubk port esetén a trunk tagjainak az indexe (port_index mező)
     /// Nincs automatikusan feltöltve.
@@ -926,12 +892,10 @@ protected:
 
 /* ****************************** NODES (patchs, nodes, snmphosts ****************************** */
 
-class cNodeParams;
 class cNode;
 
 /// Node paraméter érték
 class LV2SHARED_EXPORT cNodeParam : public cRecord {
-    friend class cNodeParams;
     friend class cNode;
     CRECORD(cNodeParam);
 public:
@@ -959,47 +923,14 @@ public:
     cNodeParam& setType(const QString& __n)    { paramType.fetchByName(__n); _set(_ixParamTypeId, paramType.getId()); return *this; }
     /// Értékadás az érték mezőnek.
     cNodeParam& operator=(const QString& __v)  { setName(_sParamValue, __v); return *this; }
-protected:
     /// A Node paraméter értékhez tartozó típus rekord/objektum
     cParamType  paramType;
+    STATICIX(cNodeParam, ixParamTypeId)
+    STATICIX(cNodeParam, ixNodeId)
+protected:
     static int _ixParamTypeId;
     static int _ixNodeId;
 };
-
-/// Node paraméter értékek listája
-class LV2SHARED_EXPORT cNodeParams : public tRecordList<cNodeParam> {
-public:
-    /// Konstruktor. Üres listát készít.
-    cNodeParams();
-    /// Konstruktor. A listának egy eleme lessz, a megadott objektum klónja.
-    cNodeParams(const cNodeParam& __v);
-    /// Konstruktor. A listét feltölti az adatbázisból, hogy a megadott Nodehoz (ID) tartozó összes paramétert tartalmazza.
-    cNodeParams(QSqlQuery& __q, qlonglong __Node_id);
-    /// Copy konstrultor. A konténer összes elemét klónozza.
-    cNodeParams(const cNodeParams& __o);
-    ///
-    ~cNodeParams();
-    /// Másoló operátor. A konténer összes elemét klónozza.
-    cNodeParams& operator=(const cNodeParams& __o);
-    /// A listét feltölti az adatbázisból, hogy a megadott Nodehoz (ID) tartozó összes paramétert tartalmazza.
-    int fetch(QSqlQuery& __q, qlonglong __Node_id) {
-        if (cNodeParam::_ixNodeId < 0) cNodeParam();    // Ha még nem volt init.
-        PDEB(VVERBOSE) << "Call: tRecordList<cNodeParam>::fetch(__q, false, " << cNodeParam::_ixNodeId << _sCommaSp << __Node_id << QChar(')') << endl;
-        return tRecordList<cNodeParam>::fetch(__q, false, cNodeParam::_ixNodeId, __Node_id);
-    }
-    /// Index operátor: egy elem a paraméter név alapján
-    const cNodeParam& operator[](const QString& __n) const;
-    /// Index operátor: egy elem a paraméter név alapján
-    cNodeParam&       operator[](const QString& __n);
-    /// Az összes elem kiírása az adatbázisba.
-    /// @return A kiírt rekordok száma
-    int insert(QSqlQuery &__q, qlonglong __Node_id, bool __ex = true);
-    ///
-    static int remove(QSqlQuery &__q, qlonglong __Node_id, bool __ex = true);
-    ///
-    int replace(QSqlQuery &__q, qlonglong __Node_id, bool __ex = true);
-};
-/* ------------------------------------------------------------------------ */
 
 /// @class cShareBack
 /// @brief Egy hátlapi megosztást reprezentáló objektum.
@@ -1049,7 +980,7 @@ class LV2SHARED_EXPORT cPatch : public cRecord {
     CRECORD(cPatch);
 protected:
     /// A mehosztásokat (port bekötéseket) tartalamzó konténer tartalmának a törlése.
-    explicit cPatch(no_init_&) : cRecord(), ports(), params(), pShares(NULL)  { cPatch::descr(); }
+    explicit cPatch(no_init_&) : cRecord(), ports(cNPort::ixNodeId()), params(cNodeParam::ixNodeId()), pShares(NULL)  { cPatch::descr(); }
 public:
     /// A létrehozott üres objektumban kitölti a port_name és port_descr mezőket.
     //! @param __name a port_name mező új értéke.
@@ -1059,6 +990,8 @@ public:
     virtual void toEnd();
     virtual bool toEnd(int i);
     virtual bool insert(QSqlQuery &__q, bool __ex = true);
+    virtual int replace(QSqlQuery &__q, bool __ex = true);
+
     /// Kitölti a ports konténer adattagot. A node-hoz tartozó összes portot beolvassa a kontéberbe.
     /// Feltételezi, hogy a node_id mevű maző, vagyis a rekord ID ki ban töltve.
     /// @param __q Az adatbázis művelethet használt query objektum.
@@ -1167,9 +1100,9 @@ public:
 
     /// Az objektum portjai, nincs automatikus feltöltés
     /// Ha módosítjuk az ID-t akkor törlődhet lásd az atEndCont() metódust
-    tRecordList<cNPort> ports;
+    tOwnRecords<cNPort>     ports;
     /// Node paraméterek, nincs automatikusan feltöltve
-    cNodeParams   params;
+    tOwnPatams<cNodeParam>  params;
 private:
     /// Megosztások konténer. (csak a cPatch osztályban)
     /// Nincs automatikusan feltöltve, de a clearToEnd(); törli, ill. az atEnd() törölheti.
@@ -1215,6 +1148,7 @@ public:
     /// A cPatch::insert(QSqlQuery &__q, bool __ex = true) hívása elött beállítja a
     /// node_type értékét, ha az NULL.
     virtual bool insert(QSqlQuery &__q, bool __ex = true);
+    virtual int replace(QSqlQuery &__q, bool __ex = true);
     /// Kitölti a ports adattagot, hiba esetén dob egy kizárást.
     /// Ha a port típusa cInterface, akkor az IP címeket is.
     virtual int  fetchPorts(QSqlQuery& __q, bool __ex = true);
@@ -1368,6 +1302,7 @@ public:
     /// A cPatch::insert(QSqlQuery &__q, bool __ex = true) hívása elött beállítja a
     /// node_type értékét, ha az NULL.
     virtual bool insert(QSqlQuery &__q, bool __ex = true);
+    virtual int replace(QSqlQuery &__q, bool __ex = true);
     /// Lista bővítése egy elemmel.
     /// @param __t A port típusát definiáló objektum referenciája
     /// @param __name port_name
@@ -1506,6 +1441,10 @@ public:
     cPortVlan& setSetType(enum eSetType __e)    { setName(_ixSetType, setType(__e)); return *this; }
     cPortVlan& setSetType(const QString& __n)   { (void)setType(__n); setName(_ixSetType, __n); return *this; }
     enum eSetType getSetType(bool __ex = true)  { return (enum eSetType)setType(getName(_ixSetType), __ex); }
+    STATICIX(cPortVlan, ixPortId)
+    STATICIX(cPortVlan, ixVlanId)
+    STATICIX(cPortVlan, ixVlanType)
+    STATICIX(cPortVlan, ixSetType)
 protected:
     static int _ixPortId;
     static int _ixVlanId;

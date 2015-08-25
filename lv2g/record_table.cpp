@@ -14,8 +14,8 @@ cRecordTableFilter::cRecordTableFilter(cRecordTableFODialog &_par, cRecordTableC
     , typeList()
 {
     closed1 = closed2 = true;
-    tTableShapeFilters& filters = field.shapeField.shapeFilters;
-    tTableShapeFilters::const_iterator i, e = filters.constEnd();
+    tOwnRecords<cTableShapeFilter>& filters = field.shapeField.shapeFilters;
+    tOwnRecords<cTableShapeFilter>::const_iterator i, e = filters.constEnd();
     types = 0;
     typeList << trUtf8("Nincs szűrés");
     for (i = filters.constBegin(); i != e; ++i) {
@@ -47,7 +47,7 @@ void cRecordTableFilter::setFilter(int i)
             param2.clear();
             closed1 = closed2 = true;
         }
-        tTableShapeFilters& filters = field.shapeField.shapeFilters;
+        tOwnRecords<cTableShapeFilter>& filters = field.shapeField.shapeFilters;
         if (!isContIx(filters, i)) EXCEPTION(EDATA);
         pFilter = filters[i];
         iFilter = i;
@@ -890,7 +890,7 @@ void cRecordsViewBase::initShape(cTableShape *pts)
     // Extra típus értékek miatt nem használható a mező alap konverziós metódusa !
     shapeType = enum2set(tableShapeType, pTableShape->get(_sTableShapeType).toStringList(), false);
 
-    tTableShapeFields::iterator i, n = pTableShape->shapeFields.end();
+    tOwnRecords<cTableShapeField>::iterator i, n = pTableShape->shapeFields.end();
     for (i = pTableShape->shapeFields.begin(); i != n; ++i) {
         cRecordTableColumn *p = new cRecordTableColumn(**i, *this);
         fields << p;

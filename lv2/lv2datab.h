@@ -68,6 +68,30 @@ typedef const QString& (*tE2S)(int e, bool __ex);
 /// A stringet enumerációs típussá (int) konvertáló függvény pointerének a típusa.
 typedef int (*tS2E)(const QString& n, bool __ex);
 
+/// @enum eReasons
+/// @brief Okok ill. műveletek eredményei
+enum eReasons {
+    R_INVALID = -1, ///< Csak hiba jelzésre
+    R_NEW     =  0, ///< Új elem
+    R_INSERT,       ///< Új elem beszúrása/beszúrva.
+    R_REMOVE,       ///< Elem eltávolítása/eltávolítva
+    R_EXPIRED,      ///< Lejárt, elévült
+    R_MOVE,         ///< Az elem át-mozgatása/mozgatva
+    R_RESTORE,      ///< Helyreálitás/helyreállítva
+    R_MODIFY,       ///< Az elem módosítva (összetetteb módosítás)
+    R_UPDATE,       ///< Az elem módosítva
+    R_UNCHANGE,     ///< Nincs változás
+    R_FOUND,        ///< Találat, az elem már létezik...
+    R_NOTFOUND,     ///< Nincs találat, valamelyik objektum hiányzik.
+    R_DISCARD,      ///< Nincs művelet, az adat eldobásra került.
+    R_CAVEAT,       ///< Valamilyen ellentmondás van az adatok között
+    R_ERROR,        ///< Egyébb hiba
+    R_AMBIGUOUS,    ///< kétértelmüség
+    R_DB_ENUM_SIZE, ///< Az adatbázis enum típusban definiált értékek száma
+    REASON_OK,      ///< OK
+    REASON_TO       ///< Idő tullépés történt
+};
+
 class cRecord;
 class cRecordFieldRef;
 class cRecordFieldConstRef;
@@ -1235,9 +1259,25 @@ public:
     /// @exception cError* Hiba esetén dob egy kizárást, ha _ex értéke true
     /// @return ha történt változás az adatbázisban, akkor true.
     virtual bool insert(QSqlQuery& __q, bool __ex = true);
+    /// Hasonló az insert() metódushoz. Ha az insert metódus kizárást dobott, akkor a hiba objektum pointerével tér vissza.
+    /// Ha rendben megtörtépnt a művelet, akkor NULL pointerrel.
     cError *tryInsert(QSqlQuery& __q);
+    /// Fellülír egy létező rekordot. A rekord azonosítása a név mező értéke alapján. A rekordot visszaolvassa.
+    virtual bool rewrite(QSqlQuery& __q, bool __ex = true);
+    /// Beszúr vagy fellülír egy rekordot a megfelelő adattáblába. Az inzert utasításban azok a mezők
+    /// lesznek megadva, melyeknek nem NULL az értékük. Feelülírásnál a NULL értékú mezőknél ha van az
+    /// alapértelmezett érték lesz kiírva, ha nincs akkor a NULL.
+    /// Ha sikeres volt a művelet, akkor az objektumot újra tölti, az adatbázisban keletkezett/módosított rekord alapján.
+    /// A rekord kiírását, és visszaolvasását egy SQL paranccsal valósítja meg : "... RETURNING *"
+    /// Létező rekord azonosítása mindig a név mező értéke alapján történik.
+    /// @param __q Az inzert/update utasítás ezel az objektummal lesz kiadva
+    /// @param __ex Ha értéke true (ez az alapértelmezés), akkor kizárást dob, ha adat hiba van, ill. nem történt meg az insert/update
+    /// @exception cError* Hiba esetén dob egy kizárást, ha _ex értéke true
+    /// @return Egy eReasons érték: R_ERROR, R_INSERT, R_UPDATE, esetleg (nem minden objektum esetén detektált) R_FOUND
     virtual int replace(QSqlQuery& __q, bool __ex = true);
-    virtual bool _replace(QSqlQuery& __q, bool __ex = true);
+    /// Hasonló az replace() metódushoz. Ha a replace metódus kizárást dobott, akkor a hiba objektum pointerével tér vissza.
+    /// Ha rendben megtörtépnt a művelet, akkor NULL pointerrel.
+    cError *tryReplace(QSqlQuery& __q);
     /// Egy WHERE stringet állít össze a következőképpen.
     /// A feltételben azok a mezők fognak szerepelni, melyek indexének megfelelő bit az __fm tömbben igaz.
     /// A feltétel, ha a mező NULL, akkor \<mező név\> IS NULL, ha nem NULL, akkor ha isLike() a mező indexére igaz,
@@ -1709,7 +1749,7 @@ protected:
     QVariant& _get(int __i)  { if (__i < 0 || __i >=  _fields.size()) EXCEPTION(EPROGFAIL,__i); return _fields[__i]; }
     /// Ellenőrzi, hogy egy az objektum "tulajdonában lévő" rekordok listáját törölni kell-e. (pl. egy node esetén a port lista)
     /// Üres konténert nem töröl.
-    /// A konténernek csak az elő elemét vizsgálja. Ha az ID mező nincs kitöltve, akkor feltételezi, hogy a rekordok
+    /// A konténernek csak az első elemét vizsgálja. Ha az ID mező nincs kitöltve, akkor feltételezi, hogy a rekordok
     /// még nincsenek rögzítve, és nem törli a konténert.
     /// Ha az első vizsgállt elemben a tulajdonos id-je megegyezik az objektum id-vel szintén nem törli a konténert.
     /// Minden egyébb esetben törli a konténer tartalmát.
@@ -2065,8 +2105,7 @@ template <class R> void _SplitFeatureT(R& o, bool __ex)
 {
     if (o._pFeatures == NULL) o._pFeatures = new cFeatures();
     else                        o._pFeatures->clear();
-    if (R::_ixFeatures < 0) EXCEPTION(EPROGFAIL);
-    o._pFeatures->split(o.getName(R::_ixFeatures), __ex);
+    o._pFeatures->split(o.getName(R::ixFeatures()), __ex);
 }
 /// Egy módosított map visszaírása a "features" mezőbe. Nem hiívja az cRecord::atEnd(int) metódust.
 /// A sablon föggvény számít arra, hogy az objektumnak van egy
@@ -2079,9 +2118,8 @@ template <class R> void _JoinFeatureT(R& o)
     if (o._pFeatures == NULL ) return;
     QString prop;
     prop = o._pFeatures->join();
-    if (o.getName(R::_ixFeatures) != prop) { // Nem túl hatékony (sorrend változhat), de bonyi lenne.
-        if (R::_ixFeatures < 0) EXCEPTION(EPROGFAIL);
-        o._set(R::_ixFeatures, QVariant(prop));   // nincs atEnd() !
+    if (o.getName(R::ixFeatures()) != prop) { // Nem túl hatékony (sorrend változhat), de bonyi lenne.
+        o._set(R::ixFeatures(), QVariant(prop));   // nincs atEnd() !
         o._stat |= R::ES_MODIFY;
     }
 }
@@ -2128,6 +2166,7 @@ protected: \
     cFeatures *_pFeatures; \
     static int _ixFeatures; \
 public: \
+    STATICIX(R, ixFeatures) \
     cFeatures&  splitFeature(bool __ex = true) { _SplitFeatureT<R>(*this, __ex); return *_pFeatures; } \
     const cFeatures&  features(bool __ex = true) const { if (_pFeatures == NULL) const_cast<R *>(this)->splitFeature(__ex); return *_pFeatures; } \
     cFeatures&  features(bool __ex = true) { if (_pFeatures == NULL) this->splitFeature(__ex); return *_pFeatures; } \
@@ -2135,5 +2174,14 @@ public: \
     bool  isFeature(const QString &_nm) const { return features().contains(_nm); } \
     R& joinFeature() { _JoinFeatureT<R>(*this); return *this;  }
 
+
+#define STATICIX(R, n) \
+    static int n() { \
+        if (_##n < 0) { \
+            R o; (void)o; \
+            if (_ ## n < 0) EXCEPTION(EPROGFAIL, 0, __STR(R::_##n)); \
+        } \
+        return _ ## n; \
+    }
 
 #endif // LV2DATAB_H

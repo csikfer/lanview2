@@ -305,7 +305,7 @@ void cRecordDialog::init()
             _pWidget->setLayout(pFormLayout);
         }
     }
-    tTableShapeFields::const_iterator i, e = tableShape.shapeFields.cend();
+    tOwnRecords<cTableShapeField>::const_iterator i, e = tableShape.shapeFields.cend();
     _pRecord = new cRecordAny(&rDescr);
     int cnt = 0;
     for (i = tableShape.shapeFields.cbegin(); i != e; ++i) {

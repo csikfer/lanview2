@@ -252,7 +252,7 @@ enum eNotifSwitch cDevicePMac::run(QSqlQuery& q)
         cMac mac = i.key();
         mt.setMac(_sHwAddress, mac);
         mt.setId(_sPortId, pi.value()->getId());
-        enum eReasons r = mt.replace(q);
+        int r = mt.replace(q);
         if (r == R_DISCARD) ports.remove(ix);   // Lett neki egy "suspected_uplink" paramétere, igaz értékkel!
     }
 

@@ -91,6 +91,38 @@ void computerstFromGlpi()
 
 }
 
+qlonglong placeId(const QString& place_full_name)
+{
+    if (place_full_name.isEmpty()) return NULL_ID;
+    QStringList pl = place_full_name.split(">");
+    // 3 szint van az elsú a KKK, második az épület+emelet, harmadik a szoba száma
+    if (pl.size() != 3 && 0 != pl.at(0).simplified().compare("KKK", Qt::CaseInsensitive)) return NULL_ID;
+    QString parentName = pl.at(1).simplified().toUpper();   // Épület "név" + emelet mindíg nagybetű
+    if (parentName.size() != 2) {                           // és mindíg 2 betű
+        PDEB(INFO) << "Invalid place parent name : " << parentName << " full : " << place_full_name << endl;
+        return NULL_ID;
+    }
+    QString placeName = pl.at(2).simplified().toLower();    // Szoba szám, és ha van betű jel, az kisbetü.
+    QRegExp m("(\\d+[a-z]?).*");
+    if (!m.exactMatch(placeName)) {                         // Ez nem hasonlít szobaszámra
+        PDEB(INFO) << "Invalid place name : " << placeName << " full : " << place_full_name << endl;
+        return NULL_ID;
+    }
+    placeName = parentName + m.cap();                       // Épület + emelet + szobaszám: a helyiság neve
+    cPlace place;
+    qlonglong id = place.getIdByName(placeName, false);     // Van ilyen az adatbázisban?
+    if (id != NULL_ID) return id;                           // Ha van, örül
+    // Ha nincs, akkor beszúrjuk
+    qlonglong pid = place.getIdByName(parentName, false);   // A parent ID, ha van
+    if (pid == NULL_ID) {   // Nincs parentünk se ???
+        PDEB(INFO) << "Place parent not found : " << parentName << " full : " << place_full_name << endl;
+    }
+    place.clear().setName(placeName).setId(_sParentId, pid).setName(_sPlaceNote, "Import from GLPI");
+    QSqlQuery q = getQuery();
+    place.insert(q);
+    return place.getId();
+}
+
 void doComputer(const QSqlRecord& rec)
 {
     qlonglong   id      = rec.value("id").toLongLong();
@@ -101,6 +133,7 @@ void doComputer(const QSqlRecord& rec)
     QString     place   = rec.value("place_name").toString();
     QDateTime   modify  = rec.value("date_mod").toDateTime();
     QString     opsys   = rec.value("opsys_name").toString();
+    QSqlQuery   q = getQuery();
 
     QStringList l;
     l << QString::number(id);
@@ -108,8 +141,8 @@ void doComputer(const QSqlRecord& rec)
     PDEB(VERBOSE) << l.join(", ") << endl;
 
     cNode node;
-    if (!name.contains(QChar('.')) && !domain.isEmpty()) name = mCat(name. domain);
-    qlonglong nid = node.getIdByName(name, false);      // Van ilyen node ?
+    if (!name.contains(QChar('.')) && !domain.isEmpty()) name = mCat(name, domain);
+    qlonglong nid = node.getIdByName(q, name, false);      // Van ilyen node ?
     if (nid != NULL_ID) {
         node.setById(nid);
     }
@@ -131,38 +164,5 @@ void doComputer(const QSqlRecord& rec)
 
     } while (glpi.next());
 
-
-
 }
 
-qlonglong placeId(const QString& place_full_name)
-{
-    if (place_full_name.isEmpty()) return NULL_ID;
-    QStringList pl = place_full_name.split(">");
-    // 3 szint van az elsú a KKK, második az épület+emelet, harmadik a szoba száma
-    if (pl.size() != 3 && 0 != pl.at(0).simplified().compare("KKK", Qt::CaseInsensitive)) return NULL_ID;
-    QString parentName = pl.at(1).simplified().toUpper();   // Épület "név" + emelet mindíg nagybetű
-    if (parentName.size() != 2) {                           // és mindíg 2 betű
-        DEBP(INFO) << "Invalid place parent name : " << parentName << " full : " << place_full_name << endl;
-        return NULL_ID;
-    }
-    QString placeName = pl.at(2).simplified().toLower();    // Szoba szám, és ha van betű jel, az kisbetü.
-    QRegExp m("(\\d+[a-z]?).*");
-    if (!m.exactMatch(placeName)) {                         // Ez nem hasonlít szobaszámra
-        DEBP(INFO) << "Invalid place name : " << placeName << " full : " << place_full_name << endl;
-        return NULL_ID;
-    }
-    placeName = parentName + m.cap();                       // Épület + emelet + szobaszám: a helyiság neve
-    cPlace place;
-    qlonglong id = place.getIdByName(placeName, false);     // Van ilyen az adatbázisban?
-    if (id != NULL_ID) return id;                           // Ha van, örül
-    // Ha nincs, akkor beszúrjuk
-    qlonglong pid = place.getIdByName(parentName, false);   // A parent ID, ha van
-    if (pid == NULL_ID) {   // Nincs parentünk se ???
-        DEBP(INFO) << "Place parent not found : " << parentName << " full : " << place_full_name << endl;
-    }
-    place.clear().setName(placeName).setId(_sParentId, pid).setName(_sPlaceNote, "Import from GLPI");
-    QSqlQuery q = getQuery();
-    place.insert(q);
-    return place.getId();
-}

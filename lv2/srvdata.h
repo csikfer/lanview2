@@ -57,6 +57,7 @@ public:
     static const cService& service(QSqlQuery &__q, qlonglong __id, bool __ex = true);
     static const cService& _nul() { if (pNull == NULL) pNull = new cService(); return *pNull; }
     static void clearServicesCache() { services.clear(); }
+    STATICIX(cService, ixProtocolId)
 };
 
 class LV2SHARED_EXPORT cHostService : public cRecord {
@@ -69,6 +70,7 @@ public:
     virtual void toEnd();
     virtual bool toEnd(int i);
     virtual void clearToEnd();
+    virtual int replace(QSqlQuery &__q, bool __ex = true);
     /// Státusz beállítása. A  set_service_stat() PL/pSQL függvényt hívja.
     /// @param __q Az adatbázis művelethez használt objektum.
     /// @param __st A szolgáltatással kapcsolatos művelet eredménye. Nem az új status, azt a set_service_stat()
@@ -184,7 +186,7 @@ public:
 class LV2SHARED_EXPORT cOui  : public cRecord {
     CRECORD(cOui);
 public:
-    enum eReasons replace(QSqlQuery& __q);
+    virtual int replace(QSqlQuery& __q, bool __ex = false);
 };
 
 /* ---------------------------------------------------------------- */
@@ -200,8 +202,12 @@ public:
     /// A funkciót egy PGPLSQL fúggvény (replace_mactab) valósítja meg.
     /// @param __q Az adatbázis művelethez használt objektum.
     /// @return A peplace_arp függvény vissatérési értéke. Ld.: enum eReasons
-    enum eReasons replace(QSqlQuery& __q);
+    virtual int replace(QSqlQuery& __q, bool __ex = false);
     static int refresStats(QSqlQuery& __q);
+    STATICIX(cMacTab, ixPortId)
+    STATICIX(cMacTab, ixHwAddress)
+    STATICIX(cMacTab, ixSetType)
+    STATICIX(cMacTab, ixMacTabState)
 };
 
 class cArpTable;
@@ -227,7 +233,7 @@ public:
     /// A funkciót egy PGPLSQL fúggvény (replace_arp) valósítja meg.
     /// @param __q Az adatbázis művelethez használt objektum.
     /// @return A replace_arp függvény vissatérési értéke. Ld.: enum eReasons
-    enum eReasons replace(QSqlQuery& __q);
+    virtual int replace(QSqlQuery& __q, bool __ex = true);
     /// Inzertálja, vagy morosítja az ip cím, mint kulcs alapján a rekordokat
     /// @param __q Az adatbázis művelethez használt objektum.
     /// @param __t A módosításokat tartalmazó konténer

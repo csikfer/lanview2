@@ -106,9 +106,9 @@ public:
         for (i = QList<T *>::begin(); i != QList<T *>::end(); i++) delete *i;
     }
     /// A konténer insert metódusának az újra definiálása. A pointer ezután a konténer hatáskörébe tartozik, az szabadítja fel.
-    void add(int i, T *p)        { list().insert(i, p); }
+    void pushAt(int i, T *p)        { list().insert(i, p); }
     /// Hasonló a konténer insert metódusához, de az _o objektumot ujra allokálja a dup() metódus hívásával.
-    void add(int i, const T& _o) { add(i, dynamic_cast<T *>(_o.dup())); }
+    void pushAt(int i, const T& _o) { pushAt(i, dynamic_cast<T *>(_o.dup())); }
 
     /// Beolvassa az összes olyan rekordot, mely megfelel a pointerként átadott
     /// objektum megadott mezőinek. Csak egyenlőségre szűr, kivébe, ha beállítjuk a *p objektumban a likeMask bitjeit.
@@ -520,20 +520,20 @@ public:
     /// Ha a két objektumban az ixOwnerId mező nem egyenlő akkor kizárást dob.
     tOwnRecords& operator =(const tOwnRecords& __o) {
         if (ixOwnerId != __o.ixOwnerId) EXCEPTION(EDATA);
-        *this = tRecordList<T>::operator =(__o);
-        return *this;
+        return (tOwnRecords&)(this->tRecordList<T>::operator =(__o));
     }
     int fetch(QSqlQuery &__q, qlonglong __owner_id, bool __only = false) {
         return this->tRecordList<T>::fetch(__q, __only, ixOwnerId, __owner_id);
     }
     int insert(QSqlQuery &__q, qlonglong __owner_id, bool __ex) {
+        if (tRecordList<T>::size() == 0) return 0;
         this->tRecordList<T>::setsId(ixOwnerId, __owner_id);
         return this->tRecordList<T>::insert(__q, __ex);
     }
     int ownRemove(QSqlQuery &__q, qlonglong __owner_id, bool __ex) {
         T o;
         o.setId(ixOwnerId, __owner_id);
-        return o.remove(__q, false, o.mask(ixOwnerId). __ex);
+        return o.remove(__q, false, o.mask(ixOwnerId), __ex);
     }
     int replace(QSqlQuery &__q, qlonglong __owner_id, bool __ex) {
         if (tRecordList<T>::size() == 0) return ownRemove(__q, __owner_id, __ex);
@@ -543,13 +543,13 @@ public:
         for (i = QList<T *>::constBegin(); i < QList<T *>::constEnd(); i++) {
             PDEB(VERBOSE) << "Replace : " << (*i)->toString() << endl;
             (*i)->setBool(_sTouch, true);
-            if ((*i)->replace(__q, __ex)) ++r;
+            if ((*i)->replace(__q, __ex) != R_ERROR) ++r;
         }
         return r + removeUntouched(__q, __owner_id, __ex);
     }
     int untouch(QSqlQuery &__q, qlonglong __owner_id) {
         T o;
-        QString sql = "UPDATE " + o.tableName() + " SET touch = false WHERE " + o.colName(ixOwnerId) + " = ?";
+        QString sql = "UPDATE " + o.tableName() + " SET touch = false WHERE " + o.columnName(ixOwnerId) + " = ?";
         execSql(__q, sql, __owner_id);
         return __q.numRowsAffected();
     }
@@ -558,12 +558,12 @@ public:
         int ixTouch = o.toIndex(_sTouch, __ex);
         o.setBool(ixTouch, false);
         o.setId(ixOwnerId, __owner_id);
-        return o.remove(__q, false, o.mask(ixTouch, ixOwnerId). __ex);
+        return o.remove(__q, false, o.mask(ixTouch, ixOwnerId), __ex);
     }
 };
 
 
-template <class R, class T>
+template <class R>
         class tOwnPatams :public tRecordList<R>
 {
 public:
@@ -596,20 +596,19 @@ public:
     tOwnPatams& operator =(const tOwnPatams& __o) {
         if (ixOwnerId != __o.ixOwnerId) EXCEPTION(EDATA);
         if (ixParamTypeId != __o.ixParamTypeId) EXCEPTION(EDATA);
-        *this = tRecordList<R>::operator =(__o);
-        return *this;
+        return (tOwnPatams &)(this->tRecordList<R>::operator =(__o));
     }
     int fetch(QSqlQuery &__q, qlonglong __owner_id, bool __only = false) {
-        return this->tRecordList<T>::fetch(__q, __only, ixOwnerId, __owner_id);
+        return this->tRecordList<R>::fetch(__q, __only, ixOwnerId, __owner_id);
     }
     int insert(QSqlQuery &__q, qlonglong __owner_id, bool __ex) {
-        this->tRecordList<T>::setsId(ixOwnerId, __owner_id);
-        return this->tRecordList<T>::insert(__q, __ex);
+        this->tRecordList<R>::setsId(ixOwnerId, __owner_id);
+        return this->tRecordList<R>::insert(__q, __ex);
     }
     int ownRemove(QSqlQuery &__q, qlonglong __owner_id, bool __ex) {
         R o;
         o.setId(ixOwnerId, __owner_id);
-        return o.remove(__q, false, o.mask(ixOwnerId). __ex);
+        return o.remove(__q, false, o.mask(ixOwnerId), __ex);
     }
     int replace(QSqlQuery &__q, qlonglong __owner_id, bool __ex) {
         if (tRecordList<R>::size() == 0) return ownRemove(__q, __owner_id, __ex);
@@ -619,13 +618,13 @@ public:
         for (i = QList<R *>::constBegin(); i < QList<R *>::constEnd(); i++) {
             PDEB(VERBOSE) << "Replace : " << (*i)->toString() << endl;
             (*i)->setBool(_sTouch, true);
-            if ((*i)->replace(__q, __ex)) ++r;
+            if ((*i)->replace(__q, __ex) != R_ERROR) ++r;
         }
         return r + removeUntouched(__q, __owner_id, __ex);
     }
     int untouch(QSqlQuery &__q, qlonglong __owner_id) {
         R o;
-        QString sql = "UPDATE " + o.tableName() + " SET touch = false WHERE " + o.colName(ixOwnerId) + " = ?";
+        QString sql = "UPDATE " + o.tableName() + " SET touch = false WHERE " + o.columnName(ixOwnerId) + " = ?";
         execSql(__q, sql, __owner_id);
         return __q.numRowsAffected();
     }
@@ -634,13 +633,13 @@ public:
         int ixTouch = o.toIndex(_sTouch, __ex);
         o.setBool(ixTouch, false);
         o.setId(ixOwnerId, __owner_id);
-        return o.remove(__q, false, o.mask(ixTouch, ixOwnerId). __ex);
+        return o.remove(__q, false, o.mask(ixTouch, ixOwnerId), __ex);
     }
     /// Index operátor: egy elem a paraméter név alapján
     const R& operator[](const QString& __n) const
     {
-        T pp;
-        if (!pp.fetchByName(__n)) EXCEPTION(EFOUND, 1, __n);
+        cRecordAny t(R().paramType.decr());
+        if (!t.fetchByName(__n)) EXCEPTION(EFOUND, 1, __n);
         int i;
         i = tRecordList<R>::indexOf(_sParamTypeName, QVariant(__n));
         if (i < 0) EXCEPTION(EFOUND, 2, __n);
@@ -649,13 +648,13 @@ public:
     /// Index operátor: egy elem a paraméter név alapján
     R& operator[](const QString& __n)
     {
-        T pp;
-        if (!pp.fetchByName(__n)) EXCEPTION(EFOUND, 1, __n);
+        cRecordAny t(&R().paramType.descr());
+        if (!t.fetchByName(__n)) EXCEPTION(EFOUND, 1, __n);
         int i = tRecordList<R>::indexOf(_sParamTypeName, QVariant(__n));
         if (i < 0) {
             R * pr = new R();
-            pr->setType(pp.getId());
-            append(pr);
+            pr->setType(t.getId());
+            this->append(pr);
             return *pr;
         }
         return *tRecordList<R>::at(i);

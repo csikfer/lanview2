@@ -2877,7 +2877,7 @@ bool cRecord::insert(QSqlQuery& __q, bool _ex)
         int r = po->completion();
         delete po;
         if (r > 0) {     // Van egy azonos nevű deleted = true rekordunk.
-            return _replace(__q, _ex);
+            return rewrite(__q, _ex);
         }
     }
     sql  = "INSERT INTO " + fullTableNameQ() + " (";
@@ -2929,24 +2929,7 @@ cError *cRecord::tryInsert(QSqlQuery &__q)
     return pe;
 }
 
-int cRecord::replace(QSqlQuery& __q, bool __ex)
-{
-    // _DBGFN() << "@(," << DBOOL(_ex) << ") table : " << fullTableName() << endl;
-    const cRecStaticDescr& recDescr = descr();
-    __q.finish();
-    if (!recDescr.isUpdatable()) {
-        if (__ex) EXCEPTION(EDATA, -1 , QObject::trUtf8("Az adat nem módosítható."));
-        return false;
-    }
-    cRecord *po = newObj();
-    po->setName(getName());
-    int r = po->completion(__q);    // Van ilyen nevű rekord ?
-    delete po;
-    if (r == 0) return insert(__q, __ex) ? 1 : 0;   // Ha nincs, akkor insert
-    return _replace(__q, __ex) ? -1 : 0;            // Ha van akkor replace
-}
-
-bool cRecord::_replace(QSqlQuery &__q, bool __ex)
+bool cRecord::rewrite(QSqlQuery &__q, bool __ex)
 {
     QBitArray   sets(cols(), true);     // Minden mezőt kiírunk,
     sets.clearBit(nameIndex());         // kivéve a név mezőt
@@ -2954,6 +2937,33 @@ bool cRecord::_replace(QSqlQuery &__q, bool __ex)
         sets.clearBit(idIndex());
     }
     return update(__q, true, sets, mask(nameIndex()),__ex);
+}
+
+int cRecord::replace(QSqlQuery& __q, bool __ex)
+{
+    // _DBGFN() << "@(," << DBOOL(_ex) << ") table : " << fullTableName() << endl;
+    const cRecStaticDescr& recDescr = descr();
+    __q.finish();
+    if (!recDescr.isUpdatable()) {
+        if (__ex) EXCEPTION(EDATA, -1 , QObject::trUtf8("Az adat nem módosítható."));
+        return R_ERROR;
+    }
+    cRecord *po = newObj();
+    po->setName(getName());
+    int r = po->completion(__q);    // Van ilyen nevű rekord ?
+    delete po;
+    if (r == 0) return insert(__q, __ex) ? R_INSERT : R_ERROR;  // Ha nincs, akkor insert
+    return rewrite(__q, __ex) ? R_UPDATE : R_ERROR;             // Ha van akkor replace
+}
+
+cError *cRecord::tryReplace(QSqlQuery& __q)
+{
+    cError *pe = NULL;
+    try {
+        replace(__q, true);
+    }
+    CATCHS(pe);
+    return pe;
 }
 
 bool cRecord::query(QSqlQuery& __q, const QString& sql, const tIntVector& __arg, bool __ex) const

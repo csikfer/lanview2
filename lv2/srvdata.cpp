@@ -220,6 +220,13 @@ void cHostService::clearToEnd()
 
 CRECDEF(cHostService)
 
+int cHostService::replace(QSqlQuery &__q, bool __ex)
+{
+    (void)__q;
+    if (__ex) EXCEPTION(ENOTSUPP);
+    return R_ERROR;
+}
+
 cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const QString& __note, qlonglong __did)
 {
     QString sql = QString("SELECT * FROM set_service_stat(%1, '%2', '%3'%4)")
@@ -433,8 +440,9 @@ DEFAULTCRECDEF(cAlarm, _sAlarms)
 /* ----------------------------------------------------------------- */
 DEFAULTCRECDEF(cOui, _sOuis)
 
-enum eReasons cOui::replace(QSqlQuery& __q)
+int cOui::replace(QSqlQuery& __q, bool __ex)
 {
+    (void)__ex;
     if (!execSqlFunction(__q, "replace_oui", toSql(_sOui), toSql(_sOuiName), toSql(_sOuiNote))) {
         EXCEPTION(EPROGFAIL);
     }
@@ -463,8 +471,9 @@ const cRecStaticDescr& cMacTab::descr() const
 }
 CRECDEFD(cMacTab)
 
-enum eReasons cMacTab::replace(QSqlQuery& __q)
+int cMacTab::replace(QSqlQuery& __q, bool __ex)
 {
+    (void)__ex;
     QString sql = "SELECT replace_mactab(?,?";
     if (!isNull(_ixSetType))     sql += _sCommaQ;
     if (!isNull(_ixMacTabState)) sql += _sCommaQ;
@@ -520,8 +529,9 @@ cArp::operator cMac() const
     return get(_ixHwAddress).value<cMac>();
 }
 
-enum eReasons cArp::replace(QSqlQuery& __q)
+int cArp::replace(QSqlQuery& __q, bool __ex)
 {
+    (void)__ex;
     QString sql = "SELECT replace_arp(?,?";
     if (!isNull(_ixSetType))       sql += _sCommaQ;
     if (!isNull(_ixHostServiceId)) sql += _sCommaQ;

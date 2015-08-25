@@ -114,7 +114,6 @@ EXT_ int filterType(const QString& n, bool __ex = true);
 EXT_ const QString&   filterType(int e, bool __ex = true);
 
 class cTableShapeField;
-typedef tRecordList<cTableShapeField> tTableShapeFields;
 /*!
 @class cTableShape
 @brief Adattáblák táblázatos megjelenítésének a leírója
@@ -127,6 +126,7 @@ public:
     virtual bool toEnd(int i);
     virtual void clearToEnd();
     virtual bool insert(QSqlQuery &__q, bool __ex = true);
+    virtual int replace(QSqlQuery &__q, bool __ex = true);
     cTableShape& setShapeType(qlonglong __t);
     int fetchFields(QSqlQuery& q);
     /// Az objektumhoz feltölti a ShapeFields konténert, default értékekkel.
@@ -185,13 +185,12 @@ public:
     /// @exception Ha már létezik ilyen nevű elem a konténerben.
     cTableShapeField *addField(const QString& _name, const QString& _title = _sNul, const QString& _note = _sNul, bool __ex = true);
 
-    tTableShapeFields       shapeFields;
+    tOwnRecords<cTableShapeField>   shapeFields;
 protected:
     static int              _ixTableShapeType;
 };
 
 class cTableShapeFilter;
-typedef tRecordList<cTableShapeFilter> tTableShapeFilters;
 
 /*!
 @class cTableShapeField
@@ -206,17 +205,25 @@ public:
     virtual bool toEnd(int i);
     virtual void clearToEnd();
     virtual bool insert(QSqlQuery &__q, bool __ex);
+    virtual int replace(QSqlQuery &__q, bool __ex);
     int fetchFilters(QSqlQuery& q);
     bool addFilter(const QString& _t, const QString& _d, bool __ex = true);
     bool fetchByNames(QSqlQuery& q, const QString& tsn, const QString& fn, bool __ex = false);
     static qlonglong getIdByNames(QSqlQuery& q, const QString& tsn, const QString& fn);
-    tTableShapeFilters  shapeFilters;
+    tOwnRecords<cTableShapeFilter> shapeFilters;
+    STATICIX( cTableShapeField, ixTableShapeId)
 protected:
     static cRecStaticDescr  _staticDescr;
+    static int _ixTableShapeId;
 };
 
 class LV2SHARED_EXPORT cTableShapeFilter : public cRecord {
     CRECORD(cTableShapeFilter);
+public:
+    STATICIX(cTableShapeFilter, ixTableShapeFieldId)
+protected:
+    static int _ixTableShapeFieldId;
+
 };
 
 /// @class cEnumVal

@@ -105,7 +105,7 @@ bool ouiParser(QSqlQuery * pq, QByteArray& text)
             while ((line = src.readLine()).isEmpty() == false) note += "\n" + line.simplified();
             oui.setName(_sOuiNote, note);
             PDEB(VVERBOSE) << "OUI REPLACE : " << oui.toString() << endl;
-            enum eReasons r = oui.replace(*pq);
+            int r = oui.replace(*pq);
             PDEB(VVERBOSE) << "Result : " << reasons(r) << endl;
         }
     } CATCHS(lanView::getInstance()->lastError);
