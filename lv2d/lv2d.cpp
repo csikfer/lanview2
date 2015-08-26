@@ -131,8 +131,8 @@ void cSupDaemon::postInit(QSqlQuery &q, const QString &)
                  "JOIN nodes AS h USING(node_id) "
                  "JOIN services AS s USING(service_id) "
                 "WHERE ((hs.node_id = %1 "                      // A saját host
-                  "AND   (s.properties LIKE '%:daemon=%' "      // Csak azok amik a properties-ben van daemon paraméter
-                   "OR   hs.properties LIKE '%:daemon=%') "
+                  "AND   (s.features LIKE '%:daemon=%' "      // Csak azok amik a features-ben van daemon paraméter
+                   "OR   hs.features LIKE '%:daemon=%') "
                   "AND   host_service_id <> %2) "               // saját rekord nem kell
                  "OR    hs.superior_host_service_id = %2) "     // Vagy a szabályosan linkelt példányok
                   "AND NOT s.disabled AND NOT hs.disabled "     // letiltottak nem kellenek
