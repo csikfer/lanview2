@@ -1142,10 +1142,32 @@ static int portIndex2SeqN(qlonglong ix)
     return r;
 }
 
+static tPolygonF *rectangle(QPointF *p1, QPointF *p2)
+{
+    tPolygonF *pol = new tPolygonF;
+    *pol << *p1;
+    *pol << QPointF(p1->x(), p2->y());
+    *pol << *p2;
+    *pol << QPointF(p2->x(), p1->y());
+    delete p1;
+    delete p2;
+    return pol;
+}
+
 #define NEWOBJ(p, t) \
-    if (p != NULL) yyerror(_STR(p) " is not null"); \
+    if (p != NULL) yyerror("NEWOBJ(" _STR(p) ", " _STR(t) ") : pointer is not null"); \
     p = new t;
 //  if (p->stat == ES_DEFECTIVE) yyerror("Nincs elegendő adat, vagy kétértelműség.")
+
+#define REPOBJ(p, t, pnm, pno) \
+    if (p != NULL) yyerror("REPOBJ(" _STR(p) ", " _STR(t) ", " + *pnm + ") : pointer is not null"); \
+    p = new t; \
+    if (!p->fetchByName(qq(), *pnm)) p->setName(*pnm); \
+    if (pno != NULL) { \
+        if(!pno->isEmpty()) p->setNote(*pno); \
+        delete pno; \
+    } \
+    delete pnm;
 
 #define INSERTANDDEL(p) \
     if (p == NULL) yyerror(_STR(p) " is null"); \
@@ -1209,7 +1231,7 @@ static int portIndex2SeqN(qlonglong ix)
 %token      EXEC_T TAG_T BOOLEAN_T IPADDRESS_T REAL_T
 %token      BYTEA_T DATE_T DISABLE_T EXPRESSION_T PREFIX_T RESET_T CACHE_T
 %token      DATA_T IANA_T IFDEF_T IFNDEF_T NC_T QUERY_T PARSER_T
-%token      REPLACE_T RANGE_T EXCLUDE_T PREP_T POST_T CASE_T
+%token      REPLACE_T RANGE_T EXCLUDE_T PREP_T POST_T CASE_T RECTANGLE_T
 
 %token <i>  INTEGER_V
 %token <r>  FLOAT_V
@@ -1221,7 +1243,7 @@ static int portIndex2SeqN(qlonglong ix)
 %type  <i>  ptypen fhs hsid srvid grpid tmpid node_id port_id snet_id ift_id plg_id
 %type  <i>  usr_id ftmod p_seq int_z
 %type  <il> list_i p_seqs p_seqsl // ints
-%type  <b>  bool bool_on ifdef exclude case
+%type  <b>  bool bool_on ifdef exclude cases
 %type  <r>  /* real */ num fexpr
 %type  <s>  str str_ str_z name_q time tod _toddef sexpr pnm mac_q ha nsw ips rights
 %type  <s>  imgty tsintyp
@@ -1231,7 +1253,7 @@ static int portIndex2SeqN(qlonglong ix)
 %type  <n>  subnet
 %type  <ip> ip
 %type  <pnt> point
-%type  <pol> frame points
+%type  <pol> frame points rectangle
 %type  <idl> vlan_ids
 %type  <ss>  ip_qq ip_q ip_a
 %type  <mac> mac
@@ -1658,6 +1680,7 @@ place_p : NOTE_T str ';'            { place.set(_sPlaceNote, *$2);     delete $2
         | PARENT_T place_id ';'     { place.set(_sParentId, $2); }
         | IMAGE_T image_id ';'      { place.set(_sImageId,  $2); }
         | FRAME_T frame ';'         { place.set(_sFrame, QVariant::fromValue(*$2)); delete $2; }
+        | RECTANGLE_T rectangle ';' { place.set(_sFrame, QVariant::fromValue(*$2)); delete $2; }
         | TEL_T strs ';'            { place.set(_sTels, *$2);            delete $2; }
         ;
 frame   : '{' points  '}'           { $$ = $2; }
@@ -1666,6 +1689,8 @@ points  : point                     { $$ = new tPolygonF(); *$$ << *$1;  delete 
         | points ',' point          { $$ = $1;              *$$ << *$3;  delete $3; }
         ;
 point   : '[' num ',' num ']'       { $$ = new QPointF($2, $4); }
+        ;
+rectangle : '{' point ',' point '}' { $$ = rectangle($2, $4); }
         ;
 iftype  : SET_T IFTYPE_T '[' str ']' '.' NAME_T PREFIX_T '=' str ';'
                                     { cIfType().setByName(qq(), sp2s($4)).setName(_sIfNamePrefix, sp2s($10)).update(qq(), false);
@@ -2044,6 +2069,7 @@ delete  : DELETE_T PLACE_T strs ';'             { foreach (QString s, *$3) { cPl
         | DELETE_T NODE_T  strs ';'             { foreach (QString s, *$3) { cNode().  delByName(qq(), s, true, false); }delete $3; }
         | DELETE_T VLAN_T  strs ';'             { foreach (QString s, *$3) { cVLan().  delByName(qq(), s, true); }       delete $3; }
         | DELETE_T SUBNET_T strs ';'            { foreach (QString s, *$3) { cSubNet().delByName(qq(), s, true); }       delete $3; }
+        | DELETE_T SERVICE_T strs ';'           { foreach (QString s, *$3) { cService().delByName(qq(),s, true); }       delete $3; }
         | DELETE_T HOST_T  SERVICE_T hsss ';'   { $4->remove(qq()); delete $4; }
         | DELETE_T HOST_T strs SERVICE_T strs ';'
                                                 { cHostService hs;
@@ -2060,6 +2086,7 @@ delete  : DELETE_T PLACE_T strs ';'             { foreach (QString s, *$3) { cPl
         | DELETE_T ENUM_T TITLE_T  strs ';'     { foreach (QString s, *$4) { cEnumVal().delByTypeName(qq(), s, true); } delete $4; }
         | DELETE_T ENUM_T TITLE_T  str strs ';' { foreach (QString s, *$5) { cEnumVal().delByNames(qq(), sp2s($4), s); } delete $5; }
         | DELETE_T GUI_T strs MENU_T ';'        { foreach (QString s, *$3) { cMenuItem().delByAppName(qq(), s, true); } delete $3; }
+        | DELETE_T QUERY_T PARSER_T strs ';'    { foreach (QString s, *$4) { cQueryParser().delByServiceName(qq(), s, true); } delete $4; }
         ;
 scan    : SCAN_T LLDP_T snmph ';'               { scanByLldp(qq(), *$3); delete $3; }
         ;
@@ -2196,6 +2223,7 @@ ifdef   : PLACE_T str                   { $$ = NULL_ID != cPlace().     getIdByN
         | VLAN_T  str                   { $$ = NULL_ID != cVLan().      getIdByName(qq(), sp2s($2), false); }
         | SUBNET_T str                  { $$ = NULL_ID != cSubNet().    getIdByName(qq(), sp2s($2), false); }
         | TABLE_T SHAPE_T str           { $$ = NULL_ID != cTableShape().getIdByName(qq(), sp2s($3), false); }
+        | SERVICE_T str                 { $$ = NULL_ID != cService().   getIdByName(qq(), sp2s($2), false); }
         | HOST_T  SERVICE_T fhs         { $$ = $3 != 0; pDelete(pHostService2); }
         | MACRO_T str ';'               { $$ = !templates[_sMacros].get(qq(), sp2s($2), false).isEmpty(); }
         | TEMPLATE_T PATCH_T str ';'    { $$ = !templates[_sPatchs].get(qq(), sp2s($3), false).isEmpty(); }
@@ -2210,15 +2238,16 @@ qparse  : QUERY_T PARSER_T srvid '{'    { ivars[_sServiceId] = $3; ivars[_sItemS
 qparis  : qpari
         | qparis qpari
         ;
-qpari   : case str str str_z ';'    { cQueryParser::_insert(qq(), ivars[_sServiceId], _sParse, $1, sp2s($2), sp2s($3), sp2s($4), ivars[_sItemSequenceNumber]); ivars[_sItemSequenceNumber] += 10; }
+qpari   : cases str str str_z ';'   { cQueryParser::_insert(qq(), ivars[_sServiceId], _sParse, $1, sp2s($2), sp2s($3), sp2s($4), ivars[_sItemSequenceNumber]); ivars[_sItemSequenceNumber] += 10; }
         | PREP_T str str_z ';'      { cQueryParser::_insert(qq(), ivars[_sServiceId], _sPrep, false, _sNul, sp2s($2), sp2s($3), NULL_ID); }
         | POST_T str str_z ';'      { cQueryParser::_insert(qq(), ivars[_sServiceId], _sPost, false, _sNul, sp2s($2), sp2s($3), NULL_ID); }
         ;
-case    : CASE_T bool               { $$ = $2; }
+cases   : CASE_T bool               { $$ = $2; }
         |                           { $$ = false; }
         ;
 replace : iprange
         | reparp
+        | repsrv
         ;
 iprange : REPLACE_T DYNAMIC_T ADDRESS_T RANGE_T exclude ip TO_T ip hsid ';'
             { cDynAddrRange::replace(qq(), *$6, *$8, $9, $5); delete $6; delete $8; }
@@ -2231,6 +2260,9 @@ reparp  : REPLACE_T ARP_T ip mac str int_z str_z ';'
               arp.setIp(_sIpAddress, *$3).setMac(_sHwAddress, *$4).setName(_sSetType, sp2s($5)).setId(_sHostServiceId, $6).setName(_sArpNote, sp2s($7));
               arp.replace(qq());
               delete $3; delete $4; }
+repsrv  : REPLACE_T SERVICE_T str str_z { REPOBJ(pService, cService(), $3, $4); }
+          srvend                        { pService->replace(qq()); DELOBJ(pService); }
+        ;
 %%
 
 static inline bool isXDigit(QChar __c) {
@@ -2410,7 +2442,7 @@ static int yylex(void)
         TOK(EXEC) TOK(TAG) TOK(BOOLEAN) TOK(IPADDRESS) TOK(REAL)
         TOK(BYTEA) TOK(DATE) TOK(DISABLE) TOK(EXPRESSION) TOK(PREFIX) TOK(RESET) TOK(CACHE)
         TOK(DATA) TOK(IANA) TOK(IFDEF) TOK(IFNDEF) TOK(NC) TOK(QUERY) TOK(PARSER)
-        TOK(REPLACE) TOK(RANGE) TOK(EXCLUDE) TOK(PREP) TOK(POST) TOK(CASE)
+        TOK(REPLACE) TOK(RANGE) TOK(EXCLUDE) TOK(PREP) TOK(POST) TOK(CASE) TOK(RECTANGLE)
         { "WST",    WORKSTATION_T }, // rövidítések
         { "ATC",    ATTACHED_T },
         { "INT",    INTEGER_T },

@@ -3275,12 +3275,22 @@ QString cRecord::toString() const
     return s;
 }
 
-/// NEM KEZELI AZ ESETLEGES DELETED MEZŐT !!!!
+
 int cRecord::delByName(QSqlQuery& q, const QString& __n, bool __pat, bool __only)
 {
-    QString sql = "DELETE FROM ";
-    if (__only) sql += "ONLY ";
-    sql += tableName() + " WHERE " + dQuoted(nameName()) + (__pat ? " LIKE " : " = ") + quoted(__n);
+    static QString _sOnly = "ONLY ";
+    QString only = __only ? _sOnly : _sNul;
+    QString sql;
+    if (descr().deletedIndex(false) >= 0 && _deletedBehavior & DELETE_LOGICAL) {  // Nincs deleted mező, tényleges törlés
+        sql = "UPDATE " + only
+             + tableName() + " SET deleted = 't'  WHERE "
+             + dQuoted(nameName()) + (__pat ? " LIKE " : " = ") + quoted(__n)
+             + " AND NOT deleted";
+    }
+    else {                                  // Csak a deleted mezőt állítjuk true-ra
+        sql = "DELETE FROM " + only + tableName()
+            + " WHERE " + dQuoted(nameName()) + (__pat ? " LIKE " : " = ") + quoted(__n);
+    }
     if (!q.exec(sql)) SQLPREPERR(q, sql);
     int n = q.numRowsAffected();
     // PDEB(VVERBOSE) << QObject::trUtf8("delByName SQL : \"%1\" removed %1 record(s).").arg(sql).arg(n) << endl;

@@ -62,27 +62,28 @@ COMMENT ON COLUMN services.port             IS 'Default (TCP, UDP, ...) port num
 COMMENT ON COLUMN services.check_cmd        IS 'Default check command';
 COMMENT ON COLUMN services.features       IS
 'Default paraméter lista (szeparátor a kettőspont, paraméter szeparátor az ''='', első és utolsó karakter a szeparátor):\n
-daemon      Az szolgáltatás ellenörzése egy daemon program, paraméterek:\n
-    respawn     daemon paraméter: a programot újra kell indítani, ha kilép. A kilépés nem hiba.\n
-    continue    daemon paraméter: a program normál körülmények között nem lép ki, csak ha leállítják, vagy hiba van. (default)
-    polling     daemon paraméter: a programot időzítve kell hívni. He elvégezte az ellenörzést, akkor kilép.
 timing
+    custom      Belső időzítés (alapértelmezett)
     timed       Időzített
     thread      Saját szál
     timed,thread Időzített saját szállal
-    custom      Belső időzítés/polling
-    passive     Valamilyen lekérdezés (superior) járulékos eredményeként van állpota
+    passive     Valamilyen lekérdezés (superior) járulékos eredményeként van állpota, vagy csak az alárendelteket indítja, önálló tevékenység nélkül.
     polling     Egyszeri futás
-superior    Alárendelteket ellenörző eljárásokat hív, szolgál ki (passive)
+process      Az szolgáltatás ellenörzése egy program, paraméterek:
+    respawn     A programot újra kell indítani, ha kilép. A kilépés nem hiba.\n
+    continue    A program normál körülmények között nem lép ki, csak ha leállítják, vagy hiba van. (default)
+    polling     A programot egyszer kell inditani, elvégzi a dolgát és kilép. Nincs időzítés vagy újraindítás
+    timed       A programot időzitve kell indítani (periódikusan)
+    carried     A program önállóan állítja a statusát, a fenzi opciókkal együtt adható meg.
+superior    Alárendelteket ellenörző eljárásokat hív
     <üres>      Alárendelt viszony,autómatikus
 method
     custom      saját/ismeretlen (alapérte,mezett)
     nagios      Egy Nagios plugin
     munin       Egy Munin plugin
+    qparser     query parser
+    parser      Parser szülö, ha a parser önálló szálban fut.
     carried     Önálló (csak akkor kell adminisztrállni, ha kiakadt)
-qparser
-    manager
-    inferior
 ifType      A szolgáltatás hierarhia mely port típus linkjével azonos (paraméter: interface típus neve)
 disabled    service_name = icontsrv , csak a host_services rekordban, a szolgáltatás (riasztás) tiltva.
 reversed    service_name = icontsrv , csak a host_services rekordban, a port fordított bekötését jelzi.

@@ -231,8 +231,8 @@ public:
             if (__st >= (int)this->size()) return -1;
             i += __st;
         }
-        for (; i < QList<T *>::constEnd(); i++) {
-            if ((*i)->isNull(__ix) == false && (*i)->get(__ix) == _val) return i - QList<T *>::constBegin();
+        for (; i < QList<T *>::constEnd(); i++, __st++) {
+            if ((*i)->isNull(__ix) == false && (*i)->get(__ix) == _val) return __st;
         }
         return -1;
     }
@@ -248,8 +248,8 @@ public:
             if (__st >= (int)this->size()) return -1;
             i += __st;
         }
-        for (; i < QList<T *>::constEnd(); i++) {
-            if ((*i)->isNull(__name) == false && (*i)->get(__name) == _val) return i - QList<T *>::constBegin();
+        for (; i < QList<T *>::constEnd(); i++, __st++) {
+            if ((*i)->isNull(__name) == false && (*i)->get(__name) == _val) return __st;
         }
         return -1;
     }

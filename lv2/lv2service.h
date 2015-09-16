@@ -49,11 +49,11 @@ enum eInternalStat {
     IS_RUN      ///< Internal status runing (inited)
 };
 
-/// Az ellenörző eéjárás típusa
+/// Az ellenörző eljárás típusa
 enum eInspectorType {
-    IT_UNKNOWN              = -1,       ///< Ismeretlen (csak hibajelzésre)
+    IT_CUSTOM               = 0,        ///< Egyedi
 
-    IT_TIMING_CUSTOM        = 0x0000,   ///< Egy szál, saját időzítés
+    IT_TIMING_CUSTOM        = 0x0000,   ///< Egy szál, saját időzítés (alapértelmezés)
     IT_TIMING_TIMED         = 0x0001,   ///< Időzített, a fő szálban
     IT_TIMING_THREAD        = 0x0002,   ///< Saját szálként
     IT_TIMING_TIMEDTHREAD   = 0x0003,   ///< Időzített saját szálként
@@ -61,26 +61,30 @@ enum eInspectorType {
     IT_TIMING_POLLING       = 0x0008,   ///< Időzítés nélkül egyszer fut/szekvenciális
     IT_TIMING_MASK          = 0x000F,   ///< Maszk: ütemezés
 
-    IT_NO_DAEMON            = 0x0000,
-    IT_DAEMON_RESPAWN       = 0x0010,
-    IT_DAEMON_CONTINUE      = 0x0020,
-    IT_DAEMON_POLLING       = 0x0040,
-    IT_DAEMON_MASK          = 0x0070,
+    IT_NO_PROCESS           = 0x0000,   ///< Nem végrehajtható program hívása
+    IT_PROCESS_RESPAWN      = 0x0010,   ///< A program (daemon) újrahívása, ha kilépett
+    IT_PROCESS_CONTINUE     = 0x0020,   ///< A program (daemon) csak akkor lép ki, ha hiba van, vagy leállítoják
+    IT_PROCESS_POLLING      = 0x0030,   ///< A programot start() indítja, lefut és kilép
+    IT_PROCESS_TIMED        = 0x0040,   ///< A programot időzítve kell indítani
+    IT_PROCESS_CARRIED      = 0x0080,   ///< A hívott program beállítja a status-t
+    IT_PROCESS_MASK         = 0x00F0,   ///< Maszk: önálló processz indítása
 
-    IT_SUPERIOR             = 0x0080,
+    IT_METHOD_CUSTOM        = 0x0000,   ///< Egyedi
+    IT_METHOD_NAGIOS        = 0x0100,   ///< Nagios plugin
+    IT_METHOD_MUNIN         = 0x0200,   ///< Munin plugin
+    IT_METHOD_QPARSE        = 0x0300,   ///< Query parser
+    IT_METHOD_PARSER        = 0x0400,   ///< Parser szülő objektum a query parser(ek)hez
+    IT_METHOD_CARRIED       = 0x0800,   ///<
+    IT_METHOD_MASK          = 0x0F00,
 
-    IT_METHOD_CUSTOM        = 0x0000,
-    IT_METHOD_NAGIOS        = 0x0100,
-    IT_METHOD_MUNIN         = 0x0200,
-    IT_METHOD_CARRIED       = 0x0400,
-    IT_METHOD_MASK          = 0x0700
+    IT_SUPERIOR             = 0x1000,   ///< Alárendelt funkciók vannak
+    IT_MAIN                 = 0x2000,   ///< Fő folyamat, nincs parent
+    IT_OWNER_QUERY_PARSER   = 0x4000    ///< A megallokált pQparse pointer tulajdonosa
 };
-
-EXT_ QString inspectorType(int __t);
 
 /// Az időzítés típusa ill. állapota
 enum eTimerStat {
-    TS_STOP,    ///< nincs időzítés
+    TS_STOP,    ///< nincs időzítés (vagy még nem elindított)
     TS_NORMAL,  ///< normál időzítés (normal_interval)
     TS_RETRY,   ///< Hiba miatt gyorsabb időzítés (retry_interval)
     TS_FIRST    ///< Első alkalom (egy a normal_interval -nal rövidebb véletlenszerű időzítés)
@@ -103,11 +107,38 @@ protected:
     virtual void run();
 };
 
+class LV2SHARED_EXPORT cInspectorProcess : public QProcess {
+    Q_OBJECT
+public:
+    cInspectorProcess(cInspector *pp);
+    /// A inspector objektumban meghatározott checkCmd paramcsot elindítja,
+    /// megvárja, míg elindul. Ezután, ha a sync igaz, akkor megvárja míg kilép.
+    /// Ha viszint sync hamis, akkor csatlakoztatja a processFinished(), és
+    /// processReadyRead() slot-okat.
+    /// Hiba esetén dob egy kizárást.
+    /// @param startTo Maximális várakozási dő a parancs indulására millisec-ben, alapértelmezetten 5 másodperc.
+    /// @param sync Ha értéke true, akkor megvárja, amíg kilép a hívott program, ha false, akkor a slot-okat cstlakoztatja, és kilép.
+    /// @param stopTo Maximális várakozási dő a parancs lefutására millisec-ben, alapértelmezetten 30 másodperc. Ha sync értéke false, akkor érdektelen.
+    virtual int startProcess(bool conn = false, int startTo = 5000, int stopTo = 0);
+    cInspector& inspector;
+protected slots:
+    virtual void processFinished(int _exitCode, QProcess::ExitStatus exitStatus);
+    virtual void processReadyRead();
+protected:
+    int         reStartCnt;         ///< Hiba számláló
+    int         reStartMax;         ///< Maximális megengedett hiba szám
+    int         errCntClearTime;    ///< Hiba számláló törlése, ha nincs hiba ennyi msec ideig.
+    int         maxArcLog;
+    int         maxLogSize;
+    int         logNull;
+    QFile       actLogFile;
+};
+
 /// @class cInspector
 /// Egy szolgáltatás példány adatai és időzítése, kezelése
-/// Az osztály közvetlenül nem használható, de nem klasszikus értelemben vett bázis osztály,
-/// mivel minden virtuális fügvénye definiált, és ezek közül csak néhányat kell fellüldefiniálni
-/// a feladattol föggően.
+/// Az osztály közvetlenül is használható, nem klasszikus értelemben vett bázis osztály,
+/// mivel minden virtuális fügvénye definiált, és ezek közül csak néhányat kell(het) fellüldefiniálni
+/// a feladattól föggően.
 class LV2SHARED_EXPORT cInspector : public QObject {
     friend class cInspectorThread;
     Q_OBJECT
@@ -145,41 +176,41 @@ public:
     /// Ha pProcess pointer nem NULL, akkor végrehajtja a megadott parancsot, és az eredménnyel hívja a parse() metódust.
     /// @return A szolgáltatás állpota, ill. a tevékenység eredménye.
     virtual enum eNotifSwitch run(QSqlQuery& q);
-    /// Szöveg (parancs kimenet) prtelmezése.
+    /// Szöveg (parancs kimenet) értelmezése.
     /// Ha meg van adva kölső ellenörző program, akkor az alapértelmezett run() metódus hívja a végrehajtott parancs kimenetével.
-    /// QueryParser ...
-    virtual enum eNotifSwitch parser(int _ec, QIODevice &text);
+    virtual enum eNotifSwitch parse(int _ec, QIODevice &text);
     /// Futás időzítés indítása
     virtual void start();
     /// Futás/időzítés leállítása, ha nem futott, és __ex = true, akkor dob egy kizárást.
     virtual void stop(bool __ex = true);
-    /// Egy alárendelt szolgáltatás objektum létrehozása. Az alapértelmezett metódus egy NULL pointert ad vissza.
-    /// Egy alternatív lehetőség a subordinates konténer elemeinek a feltöltésére, nem kötelező fellüldefiniálni,
-    /// mivel ha fellüldefiniáltuk a setSubs() metódust, akkor nem halytódik végre.
-    /// @param q Az adatbázis műveletekhez használható objektum.
-    /// @param hsid host_service_id
-    /// @param hoid A node objektum típusát azonosító tableoid
-    /// @param A parent host_service_id
-    virtual cInspector *newSubordinate(QSqlQuery& q, qlonglong hsid, qlonglong hoid = NULL_ID, cInspector *pid = NULL);
-    /// A QThread objektum ill. az abból származtatott objektum allokálása. Az alap metódus egy QThread objektumot allokál.
-    virtual QThread *newThread();
+    /// Egy alárendelt szolgáltatás objektum létrehozása. Alapértelmezetten egy cInspector objektumot hoz létre.
+    /// Az alapőértelmezett setSubs() metódus hívja a gyerek objektumok létrehozásához, ha azt akarjuk,
+    /// hogy ijenkkor egy cIspector leszármazott jöjjön létre, akkor a metódus fellüldefiniálandü.
+    /// @param _hsid host_service_id
+    /// @param _toid A node objektum típusát azonosító tableoid
+    /// @param _par A parent objekrum
+    virtual cInspector *newSubordinate(QSqlQuery& q, qlonglong _hsid, qlonglong _toid = NULL_ID, cInspector *_par = NULL);
+    /// A QThread objektum ill. az abból származtatott objektum allokálása. Az alap metódus egy cInspectorThread objektumot allokál.
+    virtual cInspectorThread *newThread();
+    virtual cInspectorProcess *newProcess();
     /// Feltölti a subordinates konténert. Hiba esetén dob egy kizárást, de ha nincs mivel feltölteni a subordinatest, az nem hiba.
-    /// Hasonló a setSubsT() template metódushoz, csak itt az objektum típusa a newSubordinate() virtuáéis éa fellüldefiniált metódus által meghatározott.
+    /// At új objektum típusa a newSubordinate() virtuális metódus által meghatározott.
     /// @param q az adabázis művelethez használlható objektum.
     /// @param qs Opcionális query string, A stringben a %1 karakter a hostServiceId-vel helyettesítődik.
     virtual void setSubs(QSqlQuery& q, const QString& qs = _sNul);
     /// A pHost, pService és hostService adattagok feltöltése után az inicializálás befejezése
-    /// @param Superior tulajdonság esetén az alárendeltek beolvasásához használt objektum, a setSubs-nak adja át
-    /// @param Szinté az opcionális alárendeltek beolvasásáoz egy opcionális query string, a setSubs második paramétere.
+    /// @param q Superior tulajdonság esetén az alárendeltek beolvasásához használt objektum, a setSubs-nak adja át
+    /// @param qs Szintén az opcionális alárendeltek beolvasásáoz egy opcionális query string, a setSubs második paramétere.
     virtual void postInit(QSqlQuery &q, const QString &qs = QString());
 
     /// hasonló a cRecord get(const QString& __n) metódusához. A mezőt elöszőr a hostService adattagban keresi, ha viszont az NULL,
-    /// akkor aservices adattagból olvassa be.
+    /// akkor aservices adattagból olvassa be, majd a prome és végül a proto szervíz rekordbol (ha van).
     /// @param __n A mező név
     /// @return A mező értéke.
     cRecordFieldConstRef get(const QString& __n) const;
-    /// A services és a host_services rekordban a atrubutes nezőt vágja szát, és az elemeket elhelyezi a pMagicMap pointer által mutatott konténerbe.
-    /// Ha pMagicMap egy NULL pointer, akkor a művelet elött megallokálja a konténert, ha nem NULL, akkor pedig törli a konténer tartalmát.
+    /// A services és a host_services rekordban a features nezőt vágja szát, és az elemeket elhelyezi a pFeatures pointer által mutatott konténerbe.
+    /// Ha pFeatures egy NULL pointer, akkor a művelet elött megallokálja a konténert, ha nem NULL, akkor pedig törli a konténer tartalmát.
+    /// A feldolgozás sorrendje: proto, prime, servece, host_service, lásd még a cFeatures osztály split() metódusát
     cFeatures& splitFeature(bool __ex = true);
     /// Visszaadja a pMagicMap által mutatott konténer referenciáját. Ha pMagicMap értéke NULL, akkor hívja a splitMagic() metódust, ami megallokálja
     /// és feltölti a konténert.
@@ -190,7 +221,7 @@ public:
     QString feature(const QString& __nm, bool __ex = true) { return features(__ex).value(__nm); }
     bool isFeature( const QString& __nm, bool __ex = true) { return features(__ex).contains(__nm); }
     ///
-    int setInspectorType();
+    int getInspectorType(QSqlQuery &q);
     /// Saját adatok beállítása. Hiba esetén dob egy kizárást.
     /// A pNode adattag egy cNode objektumra fog mutatni, ami a sajátgép adatait fogja tartalmazni, feltéve, hogy az adatbázis ezt tartalmazza.
     /// Akkor is cNode lessz az adattípus, ha a sajátgép történetesen egy SNMP eszközként szerepel az adatbázisban.
@@ -201,8 +232,10 @@ public:
     void self(QSqlQuery& q, const QString& __sn);
     /// A belső statuszt konvertálja stringgé.
     const QString& internalStatName() { return ::internalStatName(internalStat); }
-    /// A parancs string, és behelyettesítéseinek a végrahajtása
-    virtual QString& getCheckCmd(QSqlQuery &q);
+    /// A parancs string, és behelyettesítéseinek a végrahajtása.
+    /// A parancs path a checkCmd adattagba, a paraméterei pedig a checkCmdArgs konténerbe kerülnek.
+    /// @return 0, ha nincs parancs string, 1, ha van és checkCmd beállítva, -1 ha a parancs az éppen futó process
+    virtual int getCheckCmd(QSqlQuery &q);
     // Adattagok
     /// Objektum típus
     int inspectorType;
@@ -237,7 +270,7 @@ public:
     /// Opcionális parancs argumentumok
     QStringList         checkCmdArgs;
     /// Parancs objektum, vagy NULL
-    QProcess           *pProcess;
+    cInspectorProcess  *pProcess;
     /// Parancs kimenetet értelmező objektum, ha van
     cQueryParser       *pQparser;
     /// Adatbázis műveletekhez használt objektum
@@ -254,6 +287,12 @@ protected:
     /// A lekérdezés típusát azonosító services rekord objektum pointere, vagy NULL ha ismeretlen, vagy még nincs beállítva.
     /// Nem kell/szabad felszabadítani a pointert!
     const cService     *pService;
+    int getInspectorTiming(const QString &value);
+    int getInspectorProcess(const QString &value);
+    int getInspectorMethod(const QString &value);
+    enum eNotifSwitch parse_munin(int _ec, QIODevice &text);
+    enum eNotifSwitch parse_nagios(int _ec, QIODevice &text);
+    enum eNotifSwitch parse_qparse(int _ec, QIODevice &text);
 public:
     /// A szolgáltatás cService objektumára mutató referenciával tér vissza
     /// @param __ex Ha értéke true, és nem ismert a szolgáltatás objektum (pService értéke NULL) akkor dob egy kizárást
@@ -333,14 +372,14 @@ public:
 
     ///
     int timing() const { return inspectorType & IT_TIMING_MASK; }
-    int daemon() const { return inspectorType & IT_DAEMON_MASK; }
+    int process() const{ return inspectorType & IT_PROCESS_MASK; }
     int method() const { return inspectorType & IT_METHOD_MASK; }
     /// Ha az objektum időzített.
-    bool isTimed() const { return inspectorType & IT_TIMING_TIMED; }
+    bool isTimed() const { return inspectorType & (IT_TIMING_TIMED | IT_PROCESS_TIMED) ; }
     /// Ha az objektum önálló szálon fut
     bool isThread() const { return inspectorType & IT_TIMING_THREAD; }
     /// Ha a lekérdezést el kell indítani / nem passzív
-    bool needStart() const { return timing() != IT_TIMING_PASSIVE; }
+    bool needStart() const { return !(inspectorType & IT_TIMING_PASSIVE); }
     /// A statikus adattagokat (tableoid-k) inicializálja, ha ez még nem történt meg (értékük NULL_ID).
     /// A tableoid értékek csak a main objektum (lnaview2) létrehozása után kérdezhetőek le, miután már meg lett nyitva az adatbázis.
     static void initStatic() {

@@ -120,11 +120,6 @@ cInspector * cPortStat::newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong h
     return new cDevicePSt(q, hsid, hoid, pid);
 }
 
-enum eNotifSwitch cPortStat::run(QSqlQuery &)
-{
-    return RS_ON;
-}
-
 /******************************************************************************/
 
 const cService *cDevicePSt::pRLinkStat = NULL;

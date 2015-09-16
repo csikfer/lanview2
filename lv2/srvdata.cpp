@@ -731,13 +731,14 @@ int cQueryParser::post(cError *& pe)
     pe = NULL;
     // Záró parancs elküldése, ha van
     if (pPostCmd != NULL) r = execute(pe, *pPostCmd);
+    if (pParserThread == NULL) EXCEPTION(EPROGFAIL);
     pParserThread->stopParser();
     // Töröljük a thread-et
     pDelete(pParserThread);
     return r;
 }
 
-int cQueryParser::load(QSqlQuery& q, qlonglong _sid, bool force)
+int cQueryParser::load(QSqlQuery& q, qlonglong _sid, bool force, bool thread)
 {
     int ixServiceId = toIndex(_sServiceId);
     if (_sid != NULL_ID) {
@@ -766,19 +767,31 @@ int cQueryParser::load(QSqlQuery& q, qlonglong _sid, bool force)
     clear().setId(ixServiceId, id).setName(_sParseType, _sPrep);
     n = completion(q);
     switch(n) {
-    case 0:                                                     break;
-    case 1: pPrepCmd = new QString(getName(_sImportExpression));break;
-    default:EXCEPTION(EDATA,n, _sPrep);                         break;
+    case 0: break;
+    case 1: if (thread) { pPrepCmd = new QString(getName(_sImportExpression)); break; }
+    default:EXCEPTION(EDATA,n, _sPrep); break;
     }
 
     clear().setId(ixServiceId, id).setName(_sParseType, _sPost);
     n = completion(q);
     switch(n) {
     case 0:                                                     break;
-    case 1: pPostCmd = new QString(getName(_sImportExpression));break;
+    case 1: if (thread) { pPostCmd = new QString(getName(_sImportExpression)); break; }
     default:EXCEPTION(EDATA,n, _sPost);                         break;
     }
     return REASON_OK;
+}
+
+int cQueryParser::delByServiceName(QSqlQuery &q, const QString &__n, bool __pat)
+{
+    QString sql = QString(
+            "DELETE FROM query_parsers WHERE service_id IN "
+                "(SELECT service_id FROM services WHERE service_name %1 '%2')"
+            ).arg(__pat ? "LIKE" : "=").arg(__n);
+    if (!q.exec(sql)) SQLPREPERR(q, sql);
+    int n = q.numRowsAffected();
+    return  n;
+
 }
 
 QString cQueryParser::getParValue(const QString& name, const QStringList& args)
@@ -824,6 +837,13 @@ int cQueryParser::execute(cError *&pe, const QString& _cmd, const QStringList& a
 {
     _DBGFN() << _cmd << "; " << args.join(_sCommaSp) << endl;
     QString cmd = substitutions(_cmd, args);
-    if (pParserThread == NULL) EXCEPTION(EPROGFAIL);
-    return pParserThread->push(cmd, pe);
+    if (pParserThread == NULL) {
+        if (0 == importParseText(cmd)) return REASON_OK;
+        pe = importGetLastError();
+        return R_ERROR;
+    }
+    else {
+        return pParserThread->push(cmd, pe);
+    }
 }
+

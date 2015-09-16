@@ -1,39 +1,41 @@
-SERVICE local        "local service"    { NIL;      }
-SERVICE  ssh         ssh                { TCP 22;   }
-SERVICE snmp        snmp                { UDP 161;  }
-SERVICE "tcp.rs"    "TCP serial port gateway"{TCP 4001; }
-SERVICE dhcp        "DHCP server"       { UDP 67; }
+REPLACE SERVICE local        "local service"    { NIL;      }
+REPLACE SERVICE  ssh         ssh                { TCP 22;   }
+REPLACE SERVICE snmp        snmp                { UDP 161;  }
+REPLACE SERVICE "tcp.rs"    "TCP serial port gateway"{TCP 4001; }
+REPLACE SERVICE dhcp        "DHCP server"       { UDP 67; }
 
 
-SERVICE "dhcp.conf"  "DHCP config fájl, local vagy ssh-n keresztül"      { NIL; FEATURES ":file=/etc/dhcp/dhcpd.conf:"; }
-SERVICE "arp.proc"   "ARP fájl a proc-ban, local vagy ssh-n keresztül"   { NIL; FEATURES ":file=/proc/net/arp:"; }
+REPLACE SERVICE "dhcp.conf"  "DHCP config fájl, local vagy ssh-n keresztül"      { NIL; FEATURES ":file=/etc/dhcp/dhcpd.conf:"; }
+REPLACE SERVICE "arp.proc"   "ARP fájl a proc-ban, local vagy ssh-n keresztül"   { NIL; FEATURES ":file=/proc/net/arp:"; }
 
 //--------------------------------------------------------
-SERVICE "updt_oui"  "Update OUI" {
+REPLACE SERVICE "updt_oui"  "Update OUI" {
     NIL;
     SUPERIOR SERVICE MASK "~."; // Semmire sem illeszkedik
 }
 //--------------------------------------------------------
 
-SERVICE lv2d "Lanview2 super server" {
+REPLACE SERVICE lv2d "Lanview2 super server" {
     NIL;
     SUPERIOR SERVICE MASK "~."; // Semmire sem illeszkedik
-    FEATURES ":daemon=continue:timing=timed:superior:";
-    NORMAL CHECK INTERVAL  60;
-    RETRY CHECK INTERVAL   60;
+    FEATURES ":superior:timing=passive:";
+    NORMAL CHECK INTERVAL  300;
 }
 //--------------------------------------------------------
 
-SERVICE arpd        "Arp daemon" {
+REPLACE SERVICE arpd        "Arp daemon" {
     NIL;
-    FEATURES ":daemon=continue:timing=timed:superior:";
+    // process=continue         Önálló programként van magvalósítva, ami folyamatosan fut (a parancs futtatónak szól)
+    // timing=passive           Maga a fő folyamat nem csinál semmit 
+    // superior                 Alárendelt folyamatok bannak
+    // logrot=50M,4             Log fájl max 50MiByte, 4 arhívált (a parancs futtatónak szól)
+    FEATURES ":process=continue:timing=passive:superior:logrot=50M,4:";
     SUPERIOR SERVICE MASK lv2d;
     COMMAND "arpd $S";
     NORMAL CHECK INTERVAL  600;
-    RETRY CHECK INTERVAL   600;
 }
 
-SERVICE "arp" "ARP tábla lekérdezése" {
+REPLACE SERVICE "arp" "ARP tábla lekérdezése" {
     NIL;
     FEATURES ":timing=timed:";
     SUPERIOR SERVICE MASK "arpd";
@@ -44,36 +46,34 @@ SERVICE "arp" "ARP tábla lekérdezése" {
 
 //--------------------------------------------------------
 
-SERVICE icontsrv "icontsrv daemon" {
+REPLACE SERVICE icontsrv "icontsrv daemon" {
     NIL;
-    FEATURES ":daemon=continue:timing=timed:superior:";
+    FEATURES ":process=continue:timing=passive:superior:logrot=50M,4:";
     SUPERIOR SERVICE MASK lv2d;
     COMMAND "icontsrv $S";
     NORMAL CHECK INTERVAL  60;
     RETRY CHECK INTERVAL   60;
 }
 
-SERVICE import "import daemon" {
+REPLACE SERVICE import "import daemon" {
     NIL;
-    FEATURES ":daemon=respawn:timing=custom";
+    FEATURES ":process=respawn:timing=custom";
     SUPERIOR SERVICE MASK lv2d;
     COMMAND "import $S -D";
     NORMAL CHECK INTERVAL 300;
-    RETRY CHECK INTERVAL  300;
 }
 
-SERVICE portstat "Device port status query daemon" {
+REPLACE SERVICE portstat "Device port status query daemon" {
     NIL;
-    FEATURES ":daemon=contimue:timing=timed:superior:";
+    FEATURES ":process=contimue:timing=passive:superior:";
     SUPERIOR SERVICE MASK lv2d;
     COMMAND "portstat $S";
     NORMAL CHECK INTERVAL 300;
-    RETRY CHECK INTERVAL  300;
 }
 
 //---------------------------------------------------------
 
-SERVICE "pstat" "Query port status by <protocol>" {
+REPLACE SERVICE "pstat" "Query port status by <protocol>" {
     NIL;
     SUPERIOR SERVICE MASK "portstat";
     FEATURES ":timing=timed:";
@@ -82,7 +82,7 @@ SERVICE "pstat" "Query port status by <protocol>" {
     RETRY CHECK INTERVAL  30;
 }
 
-SERVICE rlinkstat "Jelenlét, a switch port állapota alapján" {
+REPLACE SERVICE rlinkstat "Jelenlét, a switch port állapota alapján" {
     NIL;
     SUPERIOR SERVICE MASK "pstat";
     FEATURES ":timing=passive:iftype=ethernet:";
@@ -90,35 +90,15 @@ SERVICE rlinkstat "Jelenlét, a switch port állapota alapján" {
 }
 
 //---------------------------------------------------------
-
-SERVICE "rs485" "RS485 BUS interface or gateway" {
-    SUPERIOR SERVICE MASK icontsrv;
-    NORMAL CHECK INTERVAL 10;
-    RETRY CHECK INTERVAL  10;
-    FEATURES ":timing=thread,timed:superior:";
-}
-
-// IndaContakt interface V1 master
-SERVICE indalarmif1ma "IndAlarm Contact V1 Master" {
-    NIL;
-    SUPERIOR SERVICE MASK rs485;
-    MAX CHECK ATTEMPTS     3;
-    NORMAL CHECK INTERVAL 10;
-    RETRY CHECK INTERVAL  10;
-    FEATURES ":iftype=rs485:timing=timed:";
-}
-//---------------------------------------------------------
-//---------------------------------------------------------
-SERVICE portmac "Device port address table query daemon" {
+REPLACE SERVICE portmac "Device port address table query daemon" {
     NIL;
     SUPERIOR SERVICE MASK lv2d;
-    FEATURES ":daemon=contimue:timing=timed:superior:";
+    FEATURES ":process=contimue:timing=timed:superior:";
     COMMAND "portmac $S";
     NORMAL CHECK INTERVAL 300;
-    RETRY CHECK INTERVAL  300;
 }
 //---------------------------------------------------------
-SERVICE "pmac" "Query port address table by <protocol>" {
+REPLACE SERVICE "pmac" "Query port address table by <protocol>" {
     NIL;
     SUPERIOR SERVICE MASK "portmac";
     FEATURES ":timing=timed:";
@@ -128,8 +108,26 @@ SERVICE "pmac" "Query port address table by <protocol>" {
 }
 
 //---------------------------------------------------------
+
+REPLACE SERVICE "rs485" "RS485 BUS interface or gateway" {
+    SUPERIOR SERVICE MASK icontsrv;
+    NORMAL CHECK INTERVAL 10;
+    RETRY CHECK INTERVAL  10;
+    FEATURES ":timing=thread,timed:superior:";
+}
+
+// IndaContakt interface V1 master
+REPLACE SERVICE indalarmif1ma "IndAlarm Contact V1 Master" {
+    NIL;
+    SUPERIOR SERVICE MASK rs485;
+    MAX CHECK ATTEMPTS     3;
+    NORMAL CHECK INTERVAL 10;
+    RETRY CHECK INTERVAL  10;
+    FEATURES ":iftype=rs485:timing=timed:";
+}
+//---------------------------------------------------------
 // IndaContakt interface V1 slave
-SERVICE indalarmif1sl "IndAlarm Contact V1 Slave"{
+REPLACE SERVICE indalarmif1sl "IndAlarm Contact V1 Slave"{
     NIL;
     MAX CHECK ATTEMPTS     3;
     NORMAL CHECK INTERVAL 10;
@@ -138,7 +136,7 @@ SERVICE indalarmif1sl "IndAlarm Contact V1 Slave"{
     FEATURES ":iftype=iic:timing=timed:superior:";
 }
 // IndaContakt interface V2
-SERVICE indalarmif2 "IndAlarm Contact V2" {
+REPLACE SERVICE indalarmif2 "IndAlarm Contact V2" {
     NIL;
     SUPERIOR SERVICE MASK rs485;
     MAX CHECK ATTEMPTS     3;
@@ -148,7 +146,7 @@ SERVICE indalarmif2 "IndAlarm Contact V2" {
 }
 
 // Pseudo services
-SERVICE attached "IndAlarm Contact védett eszköz" {
+REPLACE SERVICE attached "IndAlarm Contact védett eszköz" {
     NIL;
     SUPERIOR SERVICE MASK "indalarmif";
     FEATURES ":timing=passive:iftype=attach:";
@@ -156,20 +154,21 @@ SERVICE attached "IndAlarm Contact védett eszköz" {
 }
 
 
-SERVICE "cmddisp"  "Lekérdezések egy parancshíváson keresztül" {
+REPLACE SERVICE "cmddisp"  "Lekérdezések egy parancshíváson keresztül" {
     SUPERIOR SERVICE MASK "^lv2d$";
-    FEATURES ":superior:";
+    FEATURES ":superior:timing=polling:";
 }
 
-SERVICE "win.dhcp.conf" "DHCP konfiguráció a netsh-n keresztül" {
+REPLACE SERVICE "win.dhcp.conf" "DHCP konfiguráció a netsh-n keresztül" {
     SUPERIOR SERVICE MASK "^cmddisp$";
     FEATURES ":timing=polling:qparser=manager:superior:";
 }
 
-SERVICE qparser "Query Parser (inferior)" {
+REPLACE SERVICE qparser "Query Parser (inferior)" {
     FEATURES ":timing=polling:qparser=inferior:";
 }
 
+DELETE QUERY PARSER "win.dhcp.conf";
 QUERY PARSER "win.dhcp.conf" {
     CASE NO
         $rexp$Dhcp\s+Server\s+\\+([\w\-\.]+)\sScope\s+[\d\.\:]+\s+Add\s+iprange\s+([\d\.\:]+)\s+([\d\.\:]+)$rexp$

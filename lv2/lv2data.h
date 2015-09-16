@@ -306,13 +306,21 @@ public:
         if(__ex) EXCEPTION(EFOUND, -1, _nm);
         return QVariant();
     }
-    static QString getString(QSqlQuery& _q, const QString& _nm, const QString& __def = _sNul) {
+    static QString getTextSysParam(QSqlQuery& _q, const QString& _nm, const QString& __def = _sNul) {
         cSysParam   po;
         if (po.fetchByName(_q, _nm)) {
             return po.value().toString();
         }
         return __def;
-
+    }
+    static qlonglong getIntSysParam(QSqlQuery& _q, const QString& _nm, qlonglong __def = 0) {
+        cSysParam   po;
+        if (po.fetchByName(_q, _nm)) {
+            bool ok;
+            qlonglong r = po.value().toLongLong(&ok);
+            if (ok) return r;
+        }
+        return __def;
     }
     STATICIX(cSysParam, ixParamTypeId)
     STATICIX(cSysParam, ixParamValue)

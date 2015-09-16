@@ -1198,6 +1198,9 @@ public:
     /// Az név (name) mező értékét állítja be
     /// @param __n Az név új értéke, ha null stringet adunk át, akkor NULL lessz.
     cRecord& setName(const QString& __n)            { return setName(nameIndex(), __n); }
+    /// Az megjegyzés (note) mező értékét állítja be
+    /// @param __n Az note mező új értéke, ha null stringet adunk át, akkor NULL lessz.
+    cRecord& setNote(const QString& __n)            { return setName(noteIndex(), __n); }
     ///
     cRecord& setBool(int __i, bool __f)             { return set(__i, QVariant(__f)); }
     cRecord& setBool(const QString& __n, bool __f)  { return set(__n, QVariant(__f)); }

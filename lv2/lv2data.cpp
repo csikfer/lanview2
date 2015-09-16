@@ -664,8 +664,8 @@ int addrType(const QString& __at, bool __ex)
 
 /* ******************************  ****************************** */
 
-CRECCNTR_DEB(cPortParam)
-CRECDEFD_DEB(cPortParam)
+CRECCNTR(cPortParam)
+CRECDEFD(cPortParam)
 
 int cPortParam::_ixParamTypeId = NULL_IX;
 int cPortParam::_ixPortId = NULL_IX;
@@ -808,7 +808,7 @@ cNPort::cNPort(const cNPort& __o) : cRecord(), params(cPortParam::_descr_cPortPa
     params = __o.params;
 }
 
-CRECDEFD_DEB(cNPort)
+CRECDEFD(cNPort)
 
 // -- virtual
 
@@ -1066,7 +1066,7 @@ cInterface::cInterface()
     , addresses(cIpAddress::ixPortId())
     , trunkMembers()
 {
-    DBGOBJ();
+//    DBGOBJ();
     _set(cInterface::descr());
 }
 cInterface::cInterface(const cInterface& __o)
@@ -1075,7 +1075,7 @@ cInterface::cInterface(const cInterface& __o)
     , addresses(cIpAddress::ixPortId())
     , trunkMembers()
 {
-    DBGOBJ();
+//    DBGOBJ();
     __cp(__o);
     _copy(__o, _descr_cInterface());
     params       = __o.params;
@@ -1093,7 +1093,7 @@ const cRecStaticDescr&  cInterface::descr() const
     return *_pRecordDescr;
 }
 
-CRECDEFD_DEB(cInterface)
+CRECDEFD(cInterface)
 
 void cInterface::clearToEnd()
 {
@@ -1338,7 +1338,7 @@ cPatch::cPatch(const QString& __name, const QString& __descr)
 }
 
 CRECDDCR(cPatch, _sPatchs)
-CRECDEFD_DEB(cPatch)
+CRECDEFD(cPatch)
 
 void cPatch::clearToEnd()
 {
@@ -1585,8 +1585,8 @@ cPatch * cPatch::getNodeObjById(QSqlQuery& q, qlonglong __node_id, bool __ex)
 
 /* --------------------------------------------------------------------------- */
 
-CRECCNTR_DEB(cNodeParam)
-CRECDEFD_DEB(cNodeParam)
+CRECCNTR(cNodeParam)
+CRECDEFD(cNodeParam)
 
 int cNodeParam::_ixParamTypeId = NULL_IX;
 int cNodeParam::_ixNodeId = NULL_IX;
@@ -1656,13 +1656,13 @@ const QString& nodeType(int __e, bool __ex)
 
 cNode::cNode() : cPatch(_no_init_)
 {
-    DBGOBJ();
+//  DBGOBJ();
     _set(cNode::descr());
 }
 
 cNode::cNode(const cNode& __o) : cPatch(_no_init_)
 {
-    DBGOBJ();
+//  DBGOBJ();
     __cp(__o);
     _copy(__o, _descr_cNode());
     ports         = __o.ports;
@@ -1670,7 +1670,7 @@ cNode::cNode(const cNode& __o) : cPatch(_no_init_)
 
 cNode::cNode(const QString& __name, const QString& __descr) : cPatch(_no_init_)
 {
-    DBGOBJ();
+//    DBGOBJ();
     _set(cNode::descr());
     _set(_descr_cNode().nameIndex(),  __name);
     _set(_descr_cNode().noteIndex(), __descr);
@@ -1678,7 +1678,6 @@ cNode::cNode(const QString& __name, const QString& __descr) : cPatch(_no_init_)
 
 cNode& cNode::operator=(const cNode& __o)
 {
-    DBGOBJ();
     __cp(__o);
     _copy(__o, _descr_cNode());
     ports         = __o.ports;
@@ -1743,6 +1742,7 @@ int cNode::replace(QSqlQuery &__q, bool __ex)
 
 int  cNode::fetchPorts(QSqlQuery& __q, bool __ex)
 {
+    ports.clear();
     // A ports objektum fetch metódusa csak azonos rekord típusok esetén jó...
     QSqlQuery q = getQuery(); // A copy construktor vagy másolás az nem jó!! (shadow copy)
     QString sql = "SELECT tableoid, port_id FROM nports WHERE node_id = ? AND NOT deleted";

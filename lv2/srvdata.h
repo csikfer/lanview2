@@ -283,7 +283,12 @@ public:
     int prep(cError *&pe);
     int parse(QString src, cError *&pe);
     int post(cError *&pe);
-    int load(QSqlQuery& q, qlonglong _sid = NULL_ID, bool force = true);
+    /// Beolvassa az összes megadott _sid -hez tartozó rekordot, és létrehozza, és kitölti a pListCmd és pListRExp kontlnereket,
+    /// valamit a pPrepCmd és pPostCmd stringeket.
+    /// Ha a thread értéke true, akkor kltrejozza, és elindítja a pParserThread -et is.
+    /// @param force Akkor is beolvassa a rekordokat, ha a konténerek léteznek, és _sid nem változott.
+    int load(QSqlQuery& q, qlonglong _sid = NULL_ID, bool force = true, bool thread = true);
+    int delByServiceName(QSqlQuery &q, const QString &__n, bool __pat);
 protected:
     QString getParValue(const QString& name, const QStringList &args);
     QString substitutions(const QString& _cmd, const QStringList& args);

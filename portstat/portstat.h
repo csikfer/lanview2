@@ -17,7 +17,6 @@ public:
     cPortStat(QSqlQuery& q, const QString& __sn);
     ~cPortStat();
     virtual cInspector * newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong hoid, cInspector *pid);
-    virtual enum eNotifSwitch run(QSqlQuery &q);
 };
 
 /// @class cDevicePSt

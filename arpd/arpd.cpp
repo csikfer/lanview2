@@ -125,19 +125,6 @@ cInspector * cArpDaemon::newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong 
     return new cDeviceArp(q, hsid, hoid, pid);
 }
 
-enum eNotifSwitch cArpDaemon::run(QSqlQuery &)
-{
-    return RS_ON;
-}
-
-/*
-QString& cArpDaemon::getCheckCmd(QSqlQuery &q)
-{
-    checkCmd.clear();;
-    checkCmdArgs.clear();
-    return checkCmd;
-}
-*/
 /******************************************************************************/
 /// Protokol (local) azonosító objektum pointere
 /// ARP lekérdezés módja lokális álomány felolvasása

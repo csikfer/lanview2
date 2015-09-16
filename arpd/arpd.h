@@ -17,8 +17,6 @@ public:
     cArpDaemon(QSqlQuery& q, const QString& __sn);
     ~cArpDaemon();
     virtual cInspector * newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong hoid, cInspector *pid);
-    virtual enum eNotifSwitch run(QSqlQuery &q);
-//    virtual QString& getCheckCmd(QSqlQuery &q);
 };
 
 /// @class cDeviceArp
