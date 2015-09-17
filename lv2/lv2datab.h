@@ -1596,12 +1596,16 @@ public:
     /// Megvizsgálja, hogy a megadott indexű bit a likeMask-ban milyen értékű, és azzal tér vissza, ha nincs ilyen elem, akkor false-val.
     bool _isLike(int __ix) const { return __ix < 0 || _likeMask.size() <= __ix ? false : _likeMask[__ix]; }
     /// Az aktuális időt írja a last_time nevű mezőbe, az első módosított rekord aktuális tartalmát visszaolvassa.
-    /// Azt, hogy mely rekordokat kell módosítani, az objektum adattartalma határozza meg
+    /// Azt, hogy mely rekordokat kell módosítani, a _where tartalma határozza meg
     /// Azok a rekordok lesznek módosítva, melyeket az o.completion() beolvasna, de a módosítandó mező ki van zárva a feltételből.
     /// @param q Az adatbázis művelethez használható query objektum.
     /// @param _fn Opcionális paraméter, ha megadjuk akkor nem a last_time lessz módosítva, hanem a megadott nevű mező.
-    /// @return A módosított rekordok száma. Ha üres objektummal hívjuk, akkor -1
-    int touch(QSqlQuery& q, const QString&_fn = _sNul);
+    /// @param __where Opcionális bitmap, a feltételben szereplő mezőkkel azonos indexű biteket 1-be kell állítani.
+    ///        Alapértelmezetten az elsődleges kulcs mező(ke)t használja, ha egy üres tömböt adunk át,
+    ///        ha viszont nem üres, de egyetlen true értéket sem tartalmazó tömböt adunk meg,
+    ///        akkor az a tábla összes elemét kiválasztja.
+    /// @return A módosított rekordok száma.
+    int touch(QSqlQuery& q, const QString&_fn = _sNul, const QBitArray &_where = QBitArray());
     /// Az aktuális időt írja a megadott indexű mezőbe, az első módosított rekord aktuális tartalmát visszaolvassa.
     /// Azt, hogy mely rekordokat kell módosítani, az objektum adattartalma határozza meg
     /// Azok a rekordok lesznek módosítva, melyeket az o.completion() beolvasna, de a módosítandó mező ki van zárva a feltételből.

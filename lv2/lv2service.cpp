@@ -27,6 +27,7 @@ void cInspectorThread::run()
     pDelete(inspector.pq);
     inspector.moveToThread(qApp->thread());
     _DBGFNL() << inspector.name() << endl;
+    inspector.internalStat = IS_STOPPED;
 }
 
 void cInspectorThread::timerEvent(QTimerEvent * e)
@@ -45,11 +46,19 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
     : QProcess(pp)
     , inspector(*pp)
 {
-    reStartCnt = 0;
     bool ok;
+    QString s;
 
-    reStartMax = inspector.feature(_sRestartMax).toInt(&ok);
-    if (!ok) cSysParam::getIntSysParam(*inspector.pq, _sRestartMax, DEF_RESTART_MAX);
+    reStartCnt = 0;
+
+    if ((s = inspector.feature(_sRestartMax)).size()) {
+        reStartMax = s.toInt(&ok);
+        if (!ok) EXCEPTION(EDATA, -1, trUtf8("Az %1 értéke nem értelmezhető : %2").arg(_sRestartMax).arg(s));
+    }
+    else ok = false;
+    if (!ok) {
+        reStartMax = cSysParam::getIntSysParam(*inspector.pq, _sRestartMax, DEF_RESTART_MAX);
+    }
 
     errCntClearTime = inspector.interval * 5;
     if (errCntClearTime <= 0) errCntClearTime = 600000; // 10min
@@ -61,31 +70,27 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
 
     if (inspector.isFeature(_sLognull)) {
         logNull = true;
+        maxArcLog = maxLogSize = 0;
     }
     else {
-        QString s;
         if ((s = inspector.feature(_sLogrot)).isEmpty() == false) {
-            QStringList ss = s.split(QRegExp("\\s*[,;]\\s*"));
-            int i;
-            bool ok = false;
-            if (ss.size() > 0) {
-                QChar c = ss[0].right(1)[0].toLower();
-                const QString ms = "kmg";
-                if (ms.contains(c)) ss[0].chop(1);
-                else                c = QChar(' ');
-                i = ss[0].toLongLong(&ok);
-                if (ok) switch (c.toLatin1()) {
-                case ' ':   break;
-                case 'k':   i *= 1024;  break;
-                case 'm':   i *= 1024 * 1024;  break;
-                case 'g':   i *= 1024 * 1024 * 1024;  break;
-                default:    EXCEPTION(EPROGFAIL);
-                }
+            QRegExp m("(\\d+)([kMG]?)[,;]?(\\d*)");
+            if (!m.isValid()) EXCEPTION(EPROGFAIL, 0, m.pattern());
+            if (!m.exactMatch(s)) EXCEPTION(EDATA, -1, trUtf8("Az %1 értéke nem értelmezhető : %2").arg(_sLogrot).arg(s));
+            s = m.cap(1);   // $1
+            maxLogSize = s.toInt(&ok);
+            if (!ok) EXCEPTION(EPROGFAIL, 0, s);
+            s = m.cap(2);   // $2
+            if (s.size()) switch (s[0].toLatin1()) {
+            case 'k':   maxLogSize *= 1024;                 break;
+            case 'M':   maxLogSize *= 1024 * 1024;          break;
+            case 'G':   maxLogSize *= 1024 * 1024 * 1024;   break;
+            default:    EXCEPTION(EPROGFAIL, 0, s);
             }
-            if (ok) {
-                if (ss.size() > 1 && ((i = ss.at(1).toInt(&ok)), ok)) {
-                    maxArcLog = i;
-                }
+            s = m.cap(3);   // $3
+            if (s.size()) {
+                maxArcLog = s.toInt(&ok);
+                if (!ok) EXCEPTION(EPROGFAIL, 0, s);
             }
         }
         actLogFile.setFileName(lanView::getInstance()->homeDir + "/log/" +  inspector.service().getName() + ".log");
@@ -97,30 +102,54 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
 
 int cInspectorProcess::startProcess(bool conn, int startTo, int stopTo)
 {
+    _DBGFN() << VDEBBOOL(conn) << VDEB(startTo) << VDEB(stopTo) << endl;
+    QString msg;
     if (inspector.checkCmd.isEmpty()) EXCEPTION(EPROGFAIL);
+    PDEB(VVERBOSE) << "START : " << inspector.checkCmd << "; and wait ..." << endl;
+    if (conn) {
+        PDEB(VVERBOSE) << "connect .." << endl;
+        connect(this, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(processFinished(int, QProcess::ExitStatus)));
+        connect(this, SIGNAL(readyRead()),                         this, SLOT(processReadyRead()));
+    }
     start(inspector.checkCmd, inspector.checkCmdArgs, QIODevice::ReadOnly);
     if (!waitForStarted(startTo)) {
-        QString msg = trUtf8("A programindítás időtullépés miatt meghiusult %1").arg(errorString());
+        msg = trUtf8("'waitForStarted()' hiba : %1").arg(ProcessError2Message(error()));
         inspector.hostService.setState(*inspector.pq, _sDown, msg);
         return -1;
     }
-    if (conn) {
-        connect(this, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(processFinished(int, QProcess::ExitStatus)));
-        connect(this, SIGNAL(readyRead()),                         this, SLOT(processReadyRead()));
-        return 0;
-    }
-    else if (stopTo) {
-        if (!waitForFinished(stopTo)) {
-            QString msg = trUtf8("Program időtullépés.");
-            inspector.hostService.setState(*inspector.pq, _sUnknown, msg);
-            return -1;
+    switch (state()) {
+    case QProcess::Running:
+        PDEB(VVERBOSE) << "Runing..." << endl;
+        if (conn) return 0; // RUN...
+        if (stopTo) {
+            if (!waitForFinished(stopTo)) {
+                msg = trUtf8("'waitForFinished()' hiba: '%1'.").arg(ProcessError2Message(error()));
+                DERR() << msg << endl;
+                inspector.hostService.setState(*inspector.pq, _sUnknown, msg);
+                return -1;
+            }
+            break;          // EXITED
         }
+        else return 0;      // RUN...
+        break;
+    case QProcess::NotRunning:
+        break;              // EXITED
+    default:
+        EXCEPTION(EPROGFAIL);
     }
-    return exitCode();
+    inspector.internalStat = IS_STOPPED;
+    if (exitStatus() == QProcess::NormalExit) {
+        PDEB(VVERBOSE) << "A '" << inspector.checkCmd << "' lefutott, kilépéso kód : " << exitCode() << endl;
+        return exitCode();
+    }
+    msg = trUtf8("A '%1' program elszállt : %2").arg(inspector.checkCmd).arg(ProcessError2Message(error()));
+    inspector.hostService.setState(*inspector.pq, _sCritical, msg);
+    return -1;
 }
 
 void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus exitStatus)
 {
+    _DBGFN() << VDEB(_exitCode) << VDEB(exitStatus) << endl;
     if (inspector.internalStat != IS_RUN) return;
     if (inspector.inspectorType & (IT_PROCESS_CONTINUE | IT_PROCESS_RESPAWN)) {   // Program indítás volt időzités nélkül
         if (inspector.inspectorType & IT_PROCESS_CONTINUE || _exitCode != 0 || exitStatus ==  QProcess::CrashExit) {
@@ -130,6 +159,7 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus exit
             else                                    msg = trUtf8("A program kilépett, exit = %1.").arg(_exitCode);
             if (reStartCnt > reStartMax) {
                 inspector.hostService.setState(*inspector.pq, _sDown, msg + " Nincs újraindítás.");
+                inspector.internalStat = IS_STOPPED;
                 return;
             }
             else {
@@ -137,6 +167,7 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus exit
             }
         }
         PDEB(VERBOSE) << "ReStart : " << inspector.checkCmd << endl;
+        inspector.internalStat = IS_RUN;
         startProcess();
     }
     else {  // ?! Nem szabadna itt lennünk.
@@ -146,6 +177,7 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus exit
 
 void cInspectorProcess::processReadyRead()
 {
+    // DBGFN();
     if (logNull) {
         (void)readAllStandardOutput();
     }
@@ -399,7 +431,7 @@ void cInspector::postInit(QSqlQuery& q, const QString& qs)
     if (isThread()) {
         pThread = newThread();      //
     }
-    // Van superior, de nem custom vagy bármi más, Thread-nál a thread-ban kell
+    // Van superior. (Thread-nél a thread-ben kell.)
     else if (inspectorType & IT_SUPERIOR) {
         pSubordinates = new QList<cInspector *>;
         setSubs(q, qs);
@@ -546,23 +578,21 @@ int cInspector::getInspectorMethod(const QString &value)
 int cInspector::getInspectorType(QSqlQuery& q)
 {
     inspectorType = 0;
-    if (pParent == NULL)       inspectorType |= IT_MAIN;
-    if (isFeature(_sSuperior)) inspectorType |= IT_SUPERIOR;
+    if (pParent == NULL) inspectorType |= IT_MAIN;
     int r = getCheckCmd(q);
     switch (r) {
-    case  0:
+    case  0:        // Nincs program hívás
+        if (isFeature(_sSuperior)) inspectorType |= IT_SUPERIOR;
         inspectorType |= getInspectorTiming(feature(_sTiming));
         inspectorType |= getInspectorMethod(feature(_sMethod));
         break;
-    case  1:
-        r &= ~IT_SUPERIOR;
+    case  1:        // Program hívása, a hívó applikációban
         r = getInspectorProcess(feature(_sProcess));
         inspectorType |= r;
         // Check...
         r &= ~IT_PROCESS_CARRIED;   // ellenörzés szempontjából érdektelen
         r |= getInspectorTiming(feature(_sTiming));
         r &= ~IT_TIMING_THREAD;     // ellenörzés szempontjából érdektelen
-        if (r & IT_TIMING_PASSIVE) r = IT_CUSTOM;  //ez nem OK
         switch (r) {
         case IT_CUSTOM:
         case IT_PROCESS_POLLING  | IT_TIMING_TIMED:
@@ -572,7 +602,8 @@ int cInspector::getInspectorType(QSqlQuery& q)
         r = getInspectorMethod(feature(_sMethod));
         inspectorType |= r;
         break;
-    case -1:
+    case -1:        // Program hívása, a hívótt applikációban
+        if (isFeature(_sSuperior)) inspectorType |= IT_SUPERIOR;
         inspectorType |= getInspectorTiming(feature(_sTiming));
         r = getInspectorMethod(feature(_sMethod));
         inspectorType |= r;
@@ -601,7 +632,7 @@ void cInspector::self(QSqlQuery& q, const QString& __sn)
     // Előkotorjuk a szolgáltatás típus rekordot.
     pService = &cService::service(q, __sn);
     // Jelenleg feltételezzük, hogy a node az egy host
-    pNode = new cNode();
+    pNode = lanView::getInstance()->selfNode().dup()->reconvert<cNode>();
     pNode->fetchSelf(q);
     // És a host_services rekordot is előszedjük.
     hostService.fetchByIds(q, pNode->getId(), service().getId());
@@ -730,12 +761,18 @@ void cInspector::timerEvent(QTimerEvent *)
              << host().getName()   << QChar('(') << host().getId()    << QChar(')') << QChar(',')
              << service().getName()<< QChar('(') << service().getId() << QChar(')') << _sCommaSp
              << "Thread: " << (isMainThread() ? "Main" : objectName()) <<  endl;
-    if (!isTimed()) EXCEPTION(EPROGFAIL, (int)inspectorType, name());
-    if (isThread() && isMainThread()) EXCEPTION(EPROGFAIL, (int)inspectorType, name());
     if (inspectorType & IT_TIMING_PASSIVE) {
+        if (pSubordinates == NULL) EXCEPTION(EPROGFAIL);    //?!
+        int n = 0;  // Hány alárendelt fut még?
+        foreach (cInspector * pSub, *pSubordinates) {
+            if (pSub != NULL && pSub->internalStat == IS_RUN) ++n;
+        }
+        if (!n) EXCEPTION(NOTODO, 1);
         hostService.touch(*pq, _sLastTouched);
         return;
     }
+    if (!isTimed()) EXCEPTION(EPROGFAIL, (int)inspectorType, name());
+    if (isThread() && isMainThread()) EXCEPTION(EPROGFAIL, (int)inspectorType, name());
     bool statSetRetry = toRun(true);
     if (timerStat == TS_FIRST) toNormalInterval();  // Ha az első esetleg túl rövid, ne legyen felesleges event.
     // normal/retry intervallum kezelése
@@ -907,8 +944,8 @@ bool cInspector::threadPrelude(QThread &)
         timerStat = TS_FIRST;
         timerId = startTimer(t);
     }
+//  internalStat = IS_RUN;
     startSubs();
-    internalStat = IS_RUN;
     return r;
 }
 
@@ -917,6 +954,7 @@ void cInspector::start()
     _DBGFN() << QChar(' ') << name() << " internalStat = " << internalStatName() << endl;
     if (internalStat != IS_INIT && internalStat != IS_REINIT)
         EXCEPTION(EDATA, (int)internalStat, QObject::trUtf8("%1 nem megfelelő belső állapot").arg(name()));
+    internalStat = IS_RUN;
     if (timerId != -1)
         EXCEPTION(EDATA, timerId, QObject::trUtf8("%1 óra újra inicializálása.").arg(name()));
     if (pQparser != NULL)
@@ -953,7 +991,7 @@ void cInspector::start()
     if (inspectorType & (IT_PROCESS_CONTINUE | IT_PROCESS_RESPAWN)) {   // Program indítás időzités nélkül
         if (checkCmd.isEmpty()) EXCEPTION(EPROGFAIL);
         PDEB(VERBOSE) << "Start : " << checkCmd << endl;
-        pProcess->startProcess();
+        pProcess->startProcess(true);
         return;
     }
     if (isTimed()) {

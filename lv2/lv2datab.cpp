@@ -3297,17 +3297,15 @@ int cRecord::delByName(QSqlQuery& q, const QString& __n, bool __pat, bool __only
     return  n;
 }
 
-int cRecord::touch(QSqlQuery& q, const QString& _fn)
+int cRecord::touch(QSqlQuery& q, const QString& _fn, const QBitArray& _where)
 {
     QString fn = _fn;
     if (fn.isEmpty()) fn = _sLastTime;
     int iLastTime = toIndex(fn);
     QBitArray bset  = mask(iLastTime);
     clear(iLastTime);
-    QBitArray where = getSetMap();
-    if (where.isEmpty()) return -1;
-    if (where.size() > iLastTime && where[iLastTime]) where.clearBit(iLastTime);
-    QString sql = QString("UPDATE %1 SET last_time = NOW() ").arg(fullTableNameQ());
+    QBitArray where = _where;
+    QString sql = QString("UPDATE %1 SET %2 = NOW() ").arg(fullTableNameQ()).arg(fn);
     sql += whereString(where);
     sql += " RETURNING *";
     query(q, sql, where, true);
