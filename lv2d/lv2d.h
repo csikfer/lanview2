@@ -28,7 +28,7 @@ public:
     /// A futó démonok száma
     int     runingCnt;
 private slots:
-    void dbNotif(QString __s);
+    void dbNotif(const QString &name, QSqlDriver::NotificationSource source, const QVariant &payload);
 };
 
 

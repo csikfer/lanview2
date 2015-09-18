@@ -69,11 +69,11 @@ bool lv2d::uSigRecv(int __i)
     }
     return true;
 }
-void lv2d::dbNotif(QString __s)
+void lv2d::dbNotif(const QString& name, QSqlDriver::NotificationSource source, const QVariant &payload)
 {
-    DBGFN();
+    lanView::dbNotif(name, source, payload);    // DEBUG
     if (pSelf != NULL && pSelf->internalStat != IS_RUN) return;
-    PDEB(INFO) << QString(trUtf8("EVENT FROM DB : %1")).arg(__s) << endl;
+    PDEB(INFO) << trUtf8("Event from DB, call reSet()... ") << endl;
     reSet();
 }
 

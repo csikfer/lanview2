@@ -65,7 +65,7 @@ public:
     cArpDaemon      *pSelf;
 protected slots:
     /// Adatbázis "NOTIF" ill. event
-    void dbNotif(QString __s);
+    void dbNotif(const QString &name, QSqlDriver::NotificationSource source, const QVariant &payload);
 };
 
 #endif // ARPD_H

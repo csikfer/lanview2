@@ -491,9 +491,18 @@ void lanView::uSigSlot(int __i)
     }
 }
 
-void    lanView::dbNotif(const QString& __s)
+void    lanView::dbNotif(const QString& name, QSqlDriver::NotificationSource source, const QVariant &payload)
 {
-    DERR() << QObject::trUtf8("Database notifycation : %1").arg(__s) << endl;
+    if (ONDB(INFO)) {
+        QString src;
+        switch (source) {
+        case QSqlDriver::SelfSource:    src = "Self";       break;
+        case QSqlDriver::OtherSource:   src = "Other";      break;
+        case QSqlDriver::UnknownSource:
+        default:                        src = "Unknown";    break;
+        }
+        cDebug::cout() << QObject::trUtf8("Database notifycation : %1, source %2, payload :").arg(name).arg(src) << debVariantToString(payload) << endl;
+    }
 }
 
 void lanView::insertStart(QSqlQuery& q)
@@ -519,13 +528,12 @@ bool lanView::subsDbNotif(const QString& __n, bool __ex)
     if (pDb != NULL && pDb->driver()->hasFeature(QSqlDriver::EventNotifications)) {
         QString name = __n.isEmpty() ? appName : __n;
         if (pDb->driver()->subscribeToNotification(name)) {
-	    PDEB(INFO) << "Subscribed NOTIF " << name << endl;
-            QString sql  = "LISTEN " + name; 
-            QSqlQuery q = getQuery();
-            if (!q.exec(sql)) SQLPREPERR(q, sql);
+            PDEB(INFO) << "Subscribed NOTIF " << name << endl;
             if (first) {
                 PDEB(VVERBOSE) << "Connect to notification(QString)" << endl;
-                connect(pDb->driver(), SIGNAL(notification(QString)), SLOT(dbNotif(QString)));
+                connect(pDb->driver(),
+                        SIGNAL(notification(const QString&, QSqlDriver::NotificationSource, const QVariant&)),
+                               SLOT(dbNotif(const QString&, QSqlDriver::NotificationSource, const QVariant&)));
                 first = false;
             }
             return true;

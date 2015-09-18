@@ -18,7 +18,7 @@ REPLACE SERVICE "updt_oui"  "Update OUI" {
 REPLACE SERVICE lv2d "Lanview2 super server" {
     NIL;
     SUPERIOR SERVICE MASK "~."; // Semmire sem illeszkedik
-    FEATURES ":superior:timing=passive:";
+    FEATURES ":superior:timing=passive:logrot=500M,8:";
     NORMAL CHECK INTERVAL  300;
 }
 //--------------------------------------------------------
@@ -29,7 +29,7 @@ REPLACE SERVICE arpd        "Arp daemon" {
     // timing=passive           Maga a fő folyamat nem csinál semmit 
     // superior                 Alárendelt folyamatok bannak
     // logrot=50M,4             Log fájl max 50MiByte, 4 arhívált (a parancs futtatónak szól)
-    FEATURES ":process=continue:timing=passive:superior:logrot=50M,4:";
+    FEATURES ":process=continue:timing=passive:superior:logrot=500M,8:";
     SUPERIOR SERVICE MASK lv2d;
     COMMAND "arpd $S";
     NORMAL CHECK INTERVAL  600;
@@ -48,7 +48,7 @@ REPLACE SERVICE "arp" "ARP tábla lekérdezése" {
 
 REPLACE SERVICE icontsrv "icontsrv daemon" {
     NIL;
-    FEATURES ":process=continue:timing=passive:superior:logrot=50M,4:";
+    FEATURES ":process=continue:timing=passive:superior:logrot=500M,4:";
     SUPERIOR SERVICE MASK lv2d;
     COMMAND "icontsrv $S";
     NORMAL CHECK INTERVAL  60;
@@ -65,7 +65,7 @@ REPLACE SERVICE import "import daemon" {
 
 REPLACE SERVICE portstat "Device port status query daemon" {
     NIL;
-    FEATURES ":process=continue:timing=passive:superior:";
+    FEATURES ":process=continue:timing=passive:superior:logrot=500M,8:";
     SUPERIOR SERVICE MASK lv2d;
     COMMAND "portstat $S";
     NORMAL CHECK INTERVAL 300;
@@ -93,7 +93,7 @@ REPLACE SERVICE rlinkstat "Jelenlét, a switch port állapota alapján" {
 REPLACE SERVICE portmac "Device port address table query daemon" {
     NIL;
     SUPERIOR SERVICE MASK lv2d;
-    FEATURES ":process=continue:timing=passive:superior:";
+    FEATURES ":process=continue:timing=passive:superior:logrot=500M,8:";
     COMMAND "portmac $S";
     NORMAL CHECK INTERVAL 300;
 }

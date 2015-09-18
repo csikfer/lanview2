@@ -40,9 +40,7 @@ lv2portMac::lv2portMac() : lanView()
             insertStart(*pq);
             sqlEnd(*pq);
 
-            if (subsDbNotif(QString(), false)) {
-                connect(pDb->driver(), SIGNAL(notification(QString)), SLOT(dbNotif(QString)));
-            }
+            subsDbNotif();
 
             cDevicePMac::pSrvSnmp   = &cService::service(*pq, _sSnmp);
             setup();
@@ -69,12 +67,12 @@ bool lv2portMac::uSigRecv(int __i)
     }
     return true;
 }
-void lv2portMac::dbNotif(QString __s)
+void lv2portMac::dbNotif(const QString& name, QSqlDriver::NotificationSource source, const QVariant &payload)
 {
+    lanView::dbNotif(name, source, payload);    // DEBUG
     if (pSelf != NULL && pSelf->internalStat != IS_RUN) return;
-    PDEB(INFO) << QString(trUtf8("EVENT FROM DB : %1")).arg(__s) << endl;
-    reSet();
-}
+    PDEB(INFO) << trUtf8("Event from DB, call reSet()... ") << endl;
+    reSet();}
 
 void lv2portMac::setup()
 {

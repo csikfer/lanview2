@@ -40,9 +40,7 @@ lv2ArpD::lv2ArpD() : lanView()
             insertStart(*pq);
             sqlEnd(*pq);
 
-            if (subsDbNotif(QString(), false)) {
-                connect(pDb->driver(), SIGNAL(notification(QString)), SLOT(dbNotif(QString)));
-            }
+            subsDbNotif();
 
             cDeviceArp::pPSLocal   = &cService::service(*pq, _sLocal);
             cDeviceArp::pPSSnmp    = &cService::service(*pq, _sSnmp);
@@ -74,10 +72,11 @@ bool lv2ArpD::uSigRecv(int __i)
     }
     return true;
 }
-void lv2ArpD::dbNotif(QString __s)
+void lv2ArpD::dbNotif(const QString& name, QSqlDriver::NotificationSource source, const QVariant &payload)
 {
+    lanView::dbNotif(name, source, payload);    // DEBUG
     if (pSelf != NULL && pSelf->internalStat != IS_RUN) return;
-    PDEB(INFO) << QString(trUtf8("EVENT FROM DB : %1")).arg(__s) << endl;
+    PDEB(INFO) << trUtf8("Event from DB, call reSet()... ") << endl;
     reSet();
 }
 
