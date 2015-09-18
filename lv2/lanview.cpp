@@ -520,7 +520,7 @@ void lanView::insertReStart(QSqlQuery& q) {
     cDbErr::insertNew(q, cDbErrType::_sReStart, appName, QCoreApplication::applicationPid(), _sNil, _sNil);
 }
 
-/// A tesztek szerint ez ,inux alatt nem működik, (régebben ment a LISTEN kiadása nélkül is).
+/// A tesztek szerint ez Linux alatt nem működik
 bool lanView::subsDbNotif(const QString& __n, bool __ex)
 {
     static bool first = true;
