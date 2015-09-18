@@ -304,7 +304,7 @@ int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString&
         (*this)[_sPortId] = id;
     }
     if (__pron.isEmpty() == false && _sNil != __pron) {
-        qlonglong id = cService().getIdByName(q, __pron, __ex);
+        id = cService().getIdByName(q, __pron, __ex);
         if (id == NULL_ID) return 0;
     }
     else id = -1;   //nil

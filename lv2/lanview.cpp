@@ -491,7 +491,7 @@ void lanView::uSigSlot(int __i)
     }
 }
 
-void    lanView::dbNotif(QString __s)
+void    lanView::dbNotif(const QString& __s)
 {
     DERR() << QObject::trUtf8("Database notifycation : %1").arg(__s) << endl;
 }
@@ -511,24 +511,33 @@ void lanView::insertReStart(QSqlQuery& q) {
     cDbErr::insertNew(q, cDbErrType::_sReStart, appName, QCoreApplication::applicationPid(), _sNil, _sNil);
 }
 
+/// A tesztek szerint ez ,inux alatt nem működik, (régebben ment a LISTEN kiadása nélkül is).
 bool lanView::subsDbNotif(const QString& __n, bool __ex)
 {
     static bool first = true;
+    QString e;
     if (pDb != NULL && pDb->driver()->hasFeature(QSqlDriver::EventNotifications)) {
         QString name = __n.isEmpty() ? appName : __n;
-        pDb->driver()->subscribeToNotification(name);
-        if (first) {
-            connect(pDb->driver(), SIGNAL(notification(QString)), SLOT(dbNotif(QString)));
-            first = false;
+        if (pDb->driver()->subscribeToNotification(name)) {
+	    PDEB(INFO) << "Subscribed NOTIF " << name << endl;
+            QString sql  = "LISTEN " + name; 
+            QSqlQuery q = getQuery();
+            if (!q.exec(sql)) SQLPREPERR(q, sql);
+            if (first) {
+                PDEB(VVERBOSE) << "Connect to notification(QString)" << endl;
+                connect(pDb->driver(), SIGNAL(notification(QString)), SLOT(dbNotif(QString)));
+                first = false;
+            }
+            return true;
         }
-        return true;
+        e = trUtf8("Database notification subscribe is unsuccessful.");
     }
     else {
-        QString e = trUtf8("Database notification is nothing supported.");
-        if (__ex) EXCEPTION(ENOTSUPP, -1, e);
-        DERR() << e << endl;
-        return false;
+    	e = trUtf8("Database notification is nothing supported.");
     }
+    if (__ex) EXCEPTION(ENOTSUPP, -1, e);
+    DERR() << e << endl;
+    return false;
 }
 
 const cUser *lanView::setUser(const QString& un, const QString& pw, bool __ex)

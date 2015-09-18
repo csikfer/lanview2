@@ -158,7 +158,7 @@ QString cParamType::paramToString(eParamType __t, const QVariant& __v, bool __ex
             if (ok) r = QString::number(__v.toDouble());
             break;
         case PT_INTERVAL: {
-            qlonglong i;
+            qlonglong i = 0;
             if (__v.canConvert(QVariant::LongLong)) {
                 i = __v.toLongLong(&ok);
             }

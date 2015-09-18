@@ -332,7 +332,7 @@ public:
     static lanView *   instance;
     void            instAppTransl();
 protected slots:
-    virtual void    dbNotif(QString __s);
+    virtual void    dbNotif(const QString& __s);
     void            uSigSlot(int __i);
 };
 

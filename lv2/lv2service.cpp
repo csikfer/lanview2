@@ -769,6 +769,14 @@ void cInspector::timerEvent(QTimerEvent *)
         }
         if (!n) EXCEPTION(NOTODO, 1);
         hostService.touch(*pq, _sLastTouched);
+/*	// Teszt, a NOTIFY -nek így sincs semmi hatása...
+        QStringList nl = getSqlDb()->driver()->subscribedToNotifications();
+        if (nl.size()) {
+            QString sql  = "LISTEN " + nl[0];
+            QSqlQuery q = getQuery();
+            if (!q.exec(sql)) SQLPREPERR(q, sql);
+            PDEB(VVERBOSE) << "subscribedToNotifications : " << getSqlDb()->driver()->subscribedToNotifications().join(", ") << endl;
+        }*/
         return;
     }
     if (!isTimed()) EXCEPTION(EPROGFAIL, (int)inspectorType, name());

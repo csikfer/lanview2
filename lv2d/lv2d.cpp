@@ -43,9 +43,7 @@ lv2d::lv2d()
             insertStart(*pq);
             sqlEnd(*pq);
 
-            if (subsDbNotif(QString(), false)) {
-                connect(pDb->driver(), SIGNAL(notification(QString)), SLOT(dbNotif(QString)));
-            }
+            subsDbNotif();
 
             setup();
         } CATCHS(lastError)
@@ -73,6 +71,7 @@ bool lv2d::uSigRecv(int __i)
 }
 void lv2d::dbNotif(QString __s)
 {
+    DBGFN();
     if (pSelf != NULL && pSelf->internalStat != IS_RUN) return;
     PDEB(INFO) << QString(trUtf8("EVENT FROM DB : %1")).arg(__s) << endl;
     reSet();
