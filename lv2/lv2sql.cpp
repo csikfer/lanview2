@@ -147,7 +147,10 @@ bool executeSqlScript(QFile& file, QSqlDatabase *pDb, bool __ex)
 
 bool sqlBegin(QSqlQuery& q, bool __ex)
 {
-    if (q.exec(_sBEGIN)) return true;
+    if (q.exec(_sBEGIN)) {
+
+        return true;
+    }
     if (__ex) SQLPREPERR(q, _sBEGIN);
     SQLPREPERRDEB(q, _sBEGIN);
     return false;

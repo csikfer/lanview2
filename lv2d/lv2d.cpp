@@ -79,7 +79,6 @@ void lv2d::dbNotif(const QString& name, QSqlDriver::NotificationSource source, c
 
 void lv2d::setup()
 {
-    sqlBegin(*pq);
     pSelf = new cInspector(*pq, appName);
     pSelf->postInit(*pq);
     pSelf->start();

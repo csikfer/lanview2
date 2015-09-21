@@ -82,11 +82,9 @@ void lv2ArpD::dbNotif(const QString& name, QSqlDriver::NotificationSource source
 
 void lv2ArpD::setup()
 {
-    sqlBegin(*pq);
     pSelf = new cArpDaemon(*pq, appName);
     pSelf->postInit(*pq);
     if (pSelf->pSubordinates == NULL || pSelf->pSubordinates->isEmpty()) EXCEPTION(NOTODO);
-    sqlEnd(*pq);
     pSelf->start();
 }
 

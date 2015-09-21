@@ -76,11 +76,9 @@ void lv2portMac::dbNotif(const QString& name, QSqlDriver::NotificationSource sou
 
 void lv2portMac::setup()
 {
-    sqlBegin(*pq);
     pSelf = new cPortMac(*pq, appName);
     pSelf->postInit(*pq);
     if (pSelf->pSubordinates == NULL || pSelf->pSubordinates->isEmpty()) EXCEPTION(NOTODO);
-    sqlEnd(*pq);
     pSelf->start();
 }
 

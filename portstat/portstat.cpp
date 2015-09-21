@@ -77,11 +77,9 @@ void lv2portStat::dbNotif(const QString& name, QSqlDriver::NotificationSource so
 
 void lv2portStat::setup()
 {
-    sqlBegin(*pq);
     pSelf = new cPortStat(*pq, appName);
     pSelf->postInit(*pq);
     if (pSelf->pSubordinates == NULL || pSelf->pSubordinates->isEmpty()) EXCEPTION(NOTODO);
-    sqlEnd(*pq);
     pSelf->start();
 }
 
