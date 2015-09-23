@@ -18,14 +18,14 @@ COMMENT ON TYPE portobjtype IS
     unknown       Ismeretlen (az api kizárást fog dobni!)';
 CREATE TABLE iftypes (
     iftype_id           bigserial       PRIMARY KEY,
-    iftype_name         varchar(64)     NOT NULL UNIQUE,
+    iftype_name         text     NOT NULL UNIQUE,
     iftype_note         text    DEFAULT NULL,
     iftype_iana_id      integer         NOT NULL DEFAULT 1, -- 'other'
     iftype_link_type    linktype        NOT NULL DEFAULT 'unknown',
     iftype_obj_type     portobjtype     NOT NULL DEFAULT 'unknown',
     preferred           bool            DEFAULT false,
     iana_id_link        integer         DEFAULT NULL,
-    if_name_prefix      varchar(16)     DEFAULT NULL
+    if_name_prefix      text     DEFAULT NULL
 );
 ALTER TABLE iftypes OWNER TO lanview2;
 COMMENT ON TABLE  iftypes               IS 'Network Interfaces (ports) típus leíró rekord.';
@@ -110,9 +110,9 @@ IndaContact port stáruszok kifelytése:
 
 CREATE TABLE nports (
     port_id     bigserial       PRIMARY KEY,
-    port_name   varchar(32)     NOT NULL,
+    port_name   text     NOT NULL,
     port_note   text    DEFAULT NULL,
-    port_tag    varchar(32)     DEFAULT NULL,
+    port_tag    text     DEFAULT NULL,
     iftype_id   bigint          DEFAULT 0   -- Default type is 'unknown'
                         REFERENCES iftypes(iftype_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
     node_id     bigint          NOT NULL,   -- REFERENCES (patch, nodes, snmp_devs)
@@ -134,7 +134,7 @@ COMMENT ON COLUMN nports.deleted    IS 'Ha igaz, akkor a port logikailag töröl
 
 CREATE TABLE patchs (
     node_id     bigserial          PRIMARY KEY,    -- Sequence: patchs_node_id_seq
-    node_name   varchar(32)     NOT NULL UNIQUE,
+    node_name   text     NOT NULL UNIQUE,
     node_note   text    DEFAULT NULL,
     place_id    bigint         DEFAULT 0   -- place = 'unknown'
                 REFERENCES places(place_id) MATCH FULL ON DELETE SET DEFAULT ON UPDATE RESTRICT,
@@ -277,7 +277,7 @@ COMMENT ON COLUMN interfaces.dualface_type IS 'Dualface port esetén a másik t�
 
 CREATE TABLE vlans (
     vlan_id     bigint         PRIMARY KEY,
-    vlan_name   varchar(32)     NOT NULL UNIQUE,
+    vlan_name   text     NOT NULL UNIQUE,
     vlan_note  text    DEFAULT NULL,
     vlan_stat   boolean         NOT NULL DEFAULT 'on'
 );
@@ -300,7 +300,7 @@ COMMENT ON TYPE subnettype IS
 
 CREATE TABLE subnets (
     subnet_id       bigserial          PRIMARY KEY,
-    subnet_name     varchar(32)     NOT NULL UNIQUE,
+    subnet_name     text     NOT NULL UNIQUE,
     subnet_note    text    DEFAULT NULL,
     netaddr         cidr            NOT NULL,
     vlan_id         bigint         DEFAULT NULL
@@ -434,17 +434,17 @@ INSERT INTO param_types
     ('search_domain',    'text',          'System paraméter: Search domain names(s)');
 
 CREATE TABLE snmpdevices (
-    community_rd    varchar(16)    NOT NULL DEFAULT 'public',
-    community_wr    varchar(16)    DEFAULT NULL,
+    community_rd    text    NOT NULL DEFAULT 'public',
+    community_wr    text    DEFAULT NULL,
     snmp_ver        snmpver        NOT NULL DEFAULT '2c',
-    sysdescr        varchar(255),
-    sysobjectid     varchar(32),        -- OID tárolása milyen változóban lehetne még?
+    sysdescr        text,
+    sysobjectid     text,        -- OID tárolása milyen változóban lehetne még?
     sysuptime       bigint,    -- ez itt egy bigint, ami a másodperceket jelöli
-    syscontact      varchar(255),
-    sysname         varchar(255),
-    syslocation     varchar(255),
+    syscontact      text,
+    sysname         text,
+    syslocation     text,
     sysservices     smallint,
-    vendorname      varchar(255),
+    vendorname      text,
     PRIMARY KEY (node_id),
     UNIQUE (node_name),
     CONSTRAINT snmpdevices_place_id_fkey FOREIGN KEY (place_id)
@@ -479,7 +479,7 @@ ALTER TABLE dyn_addr_ranges OWNER TO lanview2;
 -- A megadott hálózati node névhez visszaadja a node ID-t
 -- Az összes patchs tábla leszármazotjában keres (tahát a nodes, snmpdevices-ben is).
 -- Ha nincs ilyen nevű hálózati node akkor dob egy kizárást.
-CREATE OR REPLACE FUNCTION node_name2id(varchar(32)) RETURNS bigint AS $$
+CREATE OR REPLACE FUNCTION node_name2id(text) RETURNS bigint AS $$
 DECLARE
     id bigint;
 BEGIN
@@ -494,9 +494,9 @@ $$ LANGUAGE plpgsql;
 -- A megadott hálózati node ID-hez visszaadja a node nevét
 -- Az összes patchs tábla leszármazotjában keres (tahát a nodes, snmpdevices-ben is).
 -- Ha nincs ilyen nevű hálózati node ID akkor dob egy kizárást.
-CREATE OR REPLACE FUNCTION node_id2name(bigint) RETURNS varchar(32) AS $$
+CREATE OR REPLACE FUNCTION node_id2name(bigint) RETURNS text AS $$
 DECLARE
-    id varchar(32);
+    id text;
 BEGIN
     IF $1 IS NULL THEN
         return NULL;
@@ -519,9 +519,9 @@ $$ LANGUAGE plpgsql;
 -- Néhány port_id -vel kapcsolatos helper függvény
 --
 -- Port ID-je alapján visszaadja az nevét, ha az ID nem létezik, dob egy kizárást+hiba rekord
-CREATE OR REPLACE FUNCTION port_id2name(bigint) RETURNS varchar(32) AS $$
+CREATE OR REPLACE FUNCTION port_id2name(bigint) RETURNS text AS $$
 DECLARE
-    name varchar(32);
+    name text;
 BEGIN
     IF $1 IS NULL THEN
         return NULL;
@@ -535,9 +535,9 @@ END
 $$ LANGUAGE plpgsql;
 
 -- Port ID-je alapján visszaadja az nevét, ha az ID nem létezik, dob egy kizárást+hiba rekord
-CREATE OR REPLACE FUNCTION port_id2full_name(bigint) RETURNS varchar(65) AS $$
+CREATE OR REPLACE FUNCTION port_id2full_name(bigint) RETURNS text AS $$
 DECLARE
-    name varchar(65);
+    name text;
 BEGIN
     IF $1 IS NULL THEN
         return NULL;

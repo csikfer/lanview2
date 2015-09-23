@@ -245,7 +245,7 @@ void cRecordTreeModel::readChilds(cTreeNode *pNode)
 /// Az adatok változásáról nem küld szignáltt. Rekourzív.
 bool cRecordTreeModel::removeNode(cTreeNode *pn)
 {
-    if (pn->parent != NULL) {
+    if (pn->parent == NULL) {
         EXCEPTION(EPROGFAIL);   // A gyökér törlése nem értelmezhető
     }
     // Töröljük az elemet a parentből

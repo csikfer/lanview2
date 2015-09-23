@@ -4,21 +4,21 @@
 CREATE TABLE app_errs (
     applog_id   bigserial       PRIMARY KEY,
     date_of     timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    app_name    varchar(32)     DEFAULT NULL,
+    app_name    text     DEFAULT NULL,
     node_id     bigint          DEFAULT NULL,	-- Ezt nem tölti ki senki !!!
     pid         bigint          DEFAULT NULL,
-    app_ver     varchar(32)     DEFAULT NULL,
-    lib_ver     varchar(32)     DEFAULT NULL,
+    app_ver     text     DEFAULT NULL,
+    lib_ver     text     DEFAULT NULL,
     -- cError
-    func_name   varchar(255)    DEFAULT NULL,
-    src_name    varchar(255)    DEFAULT NULL,
+    func_name   text    DEFAULT NULL,
+    src_name    text    DEFAULT NULL,
     src_line    integer         DEFAULT NULL,
     err_code    integer         DEFAULT NULL,
-    err_name    varchar(32)     DEFAULT NULL,
+    err_name    text     DEFAULT NULL,
     err_subcode bigint          DEFAULT NULL,
     err_syscode integer         DEFAULT NULL,
     err_submsg  text            DEFAULT NULL,
-    thread_name varchar(32)     DEFAULT NULL,
+    thread_name text     DEFAULT NULL,
     sql_err_num integer         DEFAULT NULL,
     sql_err_type integer        DEFAULT NULL,
     sql_driver_text text        DEFAULT NULL,
@@ -83,7 +83,7 @@ Ok      Nem hiba, ''Info''
 
 CREATE TABLE errors (
     error_id    bigserial       PRIMARY KEY,
-    error_name  varchar(32)     NOT NULL UNIQUE,
+    error_name  text     NOT NULL UNIQUE,
     error_note text,
     error_type  errtype         NOT NULL
 );
@@ -136,11 +136,11 @@ CREATE TABLE db_errs (
     error_id    bigint          NOT NULL
         REFERENCES errors(error_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
     user_id     bigint          NOT NULL DEFAULT 0, -- REFERENCES users(user_id) még nincs definiálva, DEFAULT = nobody
-    table_name   varchar(64)    DEFAULT NULL,
-    trigger_op  varchar(8)      DEFAULT NULL,
+    table_name   text    DEFAULT NULL,
+    trigger_op  text      DEFAULT NULL,
     err_subcode bigint          DEFAULT NULL,
     err_msg  text       DEFAULT NULL,
-    func_name    varchar(255)   DEFAULT NULL,
+    func_name    text   DEFAULT NULL,
     reapeat     bigint          DEFAULT 0,
     date_of_last timestamp 	NOT NULL DEFAULT CURRENT_TIMESTAMP,
     acknowledged boolean 	DEFAULT false);
@@ -213,7 +213,7 @@ Ha az új rekordban az acknowledged mező igaz, akkor mindenképpen rógzítve l
 
 -- ERROR functions
 -- Get Error recod by name
-CREATE OR REPLACE FUNCTION error_by_name(varchar(32)) RETURNS errors AS $$
+CREATE OR REPLACE FUNCTION error_by_name(text) RETURNS errors AS $$
 DECLARE
     err errors%ROWTYPE;
 BEGIN
@@ -228,7 +228,7 @@ BEGIN
     RETURN err;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION error_by_name(varchar(32)) IS 'Egy hiba típus rekord beolvasása a hiba típus név alapján';
+COMMENT ON FUNCTION error_by_name(text) IS 'Egy hiba típus rekord beolvasása a hiba típus név alapján';
 
 -- Get Error recod by ID
 CREATE OR REPLACE FUNCTION error_by_id(bigint) RETURNS errors AS $$
@@ -248,7 +248,7 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION error_by_id(bigint) IS 'Egy hiba tipus rekord beolvasása a hiba tipus azonosító alapján';
 
 -- Get Error ID by name
-CREATE OR REPLACE FUNCTION error_name2id(varchar(32)) RETURNS bigint AS $$
+CREATE OR REPLACE FUNCTION error_name2id(text) RETURNS bigint AS $$
 DECLARE
     err errors%ROWTYPE;
 BEGIN
@@ -256,9 +256,9 @@ BEGIN
     return err.error_id;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION error_name2id(varchar(32)) IS 'Hiba tipus azonosító a név alapján';
+COMMENT ON FUNCTION error_name2id(text) IS 'Hiba tipus azonosító a név alapján';
 -- Get Error noteiption by name
-CREATE OR REPLACE FUNCTION error_name2note(varchar(32)) RETURNS text AS $$
+CREATE OR REPLACE FUNCTION error_name2note(text) RETURNS text AS $$
 DECLARE
     err errors%ROWTYPE;
 BEGIN
@@ -266,7 +266,7 @@ BEGIN
     return err.error_note;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION error_name2note(varchar(32)) IS 'Hiba tipus leírás a név alapján';
+COMMENT ON FUNCTION error_name2note(text) IS 'Hiba tipus leírás a név alapján';
 
 CREATE OR REPLACE FUNCTION error (
     text,                   -- $1 Error name (errors.err_name)

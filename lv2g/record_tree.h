@@ -31,7 +31,7 @@ public:
     virtual void selectRow(const QModelIndex& mi);
 
 
-    virtual void _refresh(bool first = false);
+    virtual void _refresh(bool all = false);
     virtual void setEditButtons();
     virtual void setButtons();
     virtual void prev();

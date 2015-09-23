@@ -385,7 +385,7 @@ CREATE OR REPLACE FUNCTION replace_mactab(
 ) RETURNS reasons AS $$
 DECLARE
     mt       mactab;
-    pname_di CONSTANT varchar(32) := 'suspected_uplink';
+    pname_di CONSTANT text := 'suspected_uplink';
     maxct    CONSTANT bigint      := get_int_sys_param('mactab_move_check_count');
     mv       CONSTANT reasons     := 'move';
     btm      CONSTANT timestamp   := CURRENT_TIMESTAMP - get_interval_sys_param('mactab_move_check_interval');

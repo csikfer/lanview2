@@ -2,7 +2,7 @@
 
 CREATE TABLE ipprotocols (
     protocol_id     bigint     PRIMARY KEY,    -- == protocol number
-    protocol_name   varchar(32) NOT NULL UNIQUE
+    protocol_name   text NOT NULL UNIQUE
 );
 ALTER TABLE ipprotocols OWNER TO lanview2;
 
@@ -16,8 +16,8 @@ INSERT INTO ipprotocols (protocol_id, protocol_name) VALUES
     
 CREATE TABLE service_types (
     service_type_id     bigserial       PRIMARY KEY,
-    service_type_name   varchar(32)     UNIQUE,
-    service_type_note   varchar(64)     DEFAULT NULL
+    service_type_name   text     UNIQUE,
+    service_type_note   text     DEFAULT NULL
 );
 ALTER TABLE service_types OWNER TO lanview2;
 COMMENT ON TABLE  service_types IS 'A service objektumok csoportosítását teszi lehetővé, egy rekord csak egy csoportba tartozhat./ Ez mire kellett ? Lehet, hogy törölni kéne.';
@@ -31,14 +31,14 @@ INSERT INTO service_types (service_type_id, service_type_name) VALUES
 
 CREATE TABLE services (
     service_id              bigserial      PRIMARY KEY,
-    service_name            varchar(32)    NOT NULL,
+    service_name            text    NOT NULL,
     service_note            text   DEFAULT NULL,
     service_type_id         bigint         DEFAULT -1  -- unmarked
         REFERENCES service_types(service_type_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
     protocol_id             bigint         DEFAULT -1  -- nil
         REFERENCES ipprotocols(protocol_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
     port                    integer        DEFAULT NULL,
-    superior_service_mask   varchar(64)    DEFAULT NULL,
+    superior_service_mask   text    DEFAULT NULL,
     check_cmd               text   DEFAULT NULL,
     features              text   DEFAULT ':',
     disabled                boolean        NOT NULL DEFAULT FALSE,
@@ -101,7 +101,7 @@ COMMENT ON COLUMN services.retry_check_interval IS 'Ellenörzések ütemezése, 
 INSERT INTO services (service_id, service_name, service_note) VALUES
     ( -1, 'nil', 'A NULL-t reprezentálja, de összehasonlítható');
 
-CREATE OR REPLACE FUNCTION service_name2id(varchar(32)) RETURNS bigint AS $$
+CREATE OR REPLACE FUNCTION service_name2id(text) RETURNS bigint AS $$
 DECLARE
     id bigint;
 BEGIN
@@ -302,12 +302,12 @@ CREATE TABLE host_service_charts (
     host_service_id     bigint         REFERENCES host_services(host_service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     rrd_file_name       text   DEFAULT NULL,
     graph_order         bigint[]       DEFAULT NULL,
-    graph_args          varchar(255)   DEFAULT NULL,
-    graph_vlabel        varchar(255)   DEFAULT NULL,
+    graph_args          text   DEFAULT NULL,
+    graph_vlabel        text   DEFAULT NULL,
     graph_scale         boolean        DEFAULT NULL,   -- ??
     graph_info          text   DEFAULT NULL,   -- ??
-    graph_category      varchar(255)   DEFAULT NULL,   -- ??
-    graph_period        varchar(255)   DEFAULT NULL,   -- ??
+    graph_category      text   DEFAULT NULL,   -- ??
+    graph_period        text   DEFAULT NULL,   -- ??
     graph_height        bigint         DEFAULT 300,
     graph_width         bigint         DEFAULT 600,
     features            text           DEFAULT NULL,
@@ -324,7 +324,7 @@ ALTER TYPE drawtype OWNER TO lanview2;
 
 CREATE TABLE host_service_vars (
     service_var_id      bigserial       PRIMARY KEY,
-    service_var_name    varchar(32)     NOT NULL,
+    service_var_name    text     NOT NULL,
     service_var_note    text    DEFAULT NULL,
     host_service_id     bigint          NOT NULL
         REFERENCES host_services(host_service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
@@ -333,7 +333,7 @@ CREATE TABLE host_service_vars (
     draw_type           drawtype        DEFAULT 'LINE',
     cdef                text    DEFAULT NULL,
     negative            boolean         DEFAULT FALSE,
-    dim                 varchar(32)     DEFAULT NULL,
+    dim                 text     DEFAULT NULL,
     min_value           real            DEFAULT NULL,
     max_value           real            DEFAULT NULL,
     warning_max         real            DEFAULT NULL,
@@ -464,14 +464,14 @@ CREATE TRIGGER host_services_check_reference_node_id BEFORE UPDATE OR INSERT ON 
 -- Beállítja a superior id-ket
 CREATE OR REPLACE FUNCTION find_superior(
     hsrv  host_services,            -- A frissítendő host_services rekord
-    _hsnm varchar(32) DEFAULT NULL, -- Superior service_name
-    _ptyp varchar(64) DEFAULT NULL  -- A host port típusa ami linkel a superior_host -hoz
+    _hsnm text DEFAULT NULL, -- Superior service_name
+    _ptyp text DEFAULT NULL  -- A host port típusa ami linkel a superior_host -hoz
 ) RETURNS host_services AS $$
 DECLARE
     r    record;
-    hsnm varchar(32) := _hsnm;
-    ptyp varchar(64) := _ptyp;
-    serv varchar(32);
+    hsnm text := _hsnm;
+    ptyp text := _ptyp;
+    serv text;
     rres bigint;
     nid  bigint;
 BEGIN
@@ -528,8 +528,8 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION set_superior(
     hsid  bigint,            -- Az frissítendő host_services rekord
-    hsnm varchar(32) DEFAULT NULL, -- Superior service_name
-    ptyp varchar(64) DEFAULT NULL  -- A host port típusa ami linkel a superior_host -hoz
+    hsnm text DEFAULT NULL, -- Superior service_name
+    ptyp text DEFAULT NULL  -- A host port típusa ami linkel a superior_host -hoz
 ) RETURNS boolean AS $$
 DECLARE
     hsrv  host_services;            -- Az frissítendő host_services rekord

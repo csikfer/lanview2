@@ -241,7 +241,7 @@ public:
     /// Egyébként a closeIt() hívja.
     virtual void close(int r = QDialog::Accepted);
     /// Újraolvassa az adatbázist
-    void refresh(bool first = true);
+    void refresh(bool all = true);
     /// Egy új rekord neszúrása
     virtual void insert();
     /// Egy kijelölt rekord modosítása
@@ -287,7 +287,7 @@ public:
     void initGroup();
     virtual void initSimple(QWidget *pW) = 0;
 
-    virtual void _refresh(bool first = true) = 0;
+    virtual void _refresh(bool all = true) = 0;
 public slots:
     /// Megnyomtak egy gombot.
     /// @param id A megnyomott gomb azonosítója
@@ -353,7 +353,7 @@ public:
     void init();
     virtual void initSimple(QWidget *pW);
     virtual QStringList filterWhere(QVariantList& qParams);
-    void _refresh(bool first = true);
+    void _refresh(bool all = true);
     // void refresh_lst_rev();
     cRecordAny * record(int i);
     cRecordAny * record(QModelIndex mi);

@@ -1364,7 +1364,7 @@ QStringList cRecordTable::filterWhere(QVariantList& qParams)
     return QStringList();
 }
 
-void cRecordTable::_refresh(bool first)
+void cRecordTable::_refresh(bool all)
 {
     QString sql;
     if (viewName.isEmpty()) sql = "SELECT NULL,* FROM " + pTableShape->getName(_sTableName);
@@ -1388,7 +1388,7 @@ void cRecordTable::_refresh(bool first)
     int i = 0;
     foreach (QVariant v, qParams) pTabQuery->bindValue(i++, v);
     if (!pTabQuery->exec()) SQLQUERYERR(*pTabQuery);
-    pTableModel()->setRecords(*pTabQuery, first);
+    pTableModel()->setRecords(*pTabQuery, all);
 }
 
 

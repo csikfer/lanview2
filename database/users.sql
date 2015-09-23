@@ -8,7 +8,7 @@ COMMENT ON TYPE dayofweek IS 'Date of week enumeration.';
 -- Idő intervallum definíciók egy megadott napon egy héten bellül
 CREATE TABLE tpows (
     tpow_id     bigserial       PRIMARY KEY,
-    tpow_name   varchar(32)     NOT NULL UNIQUE,
+    tpow_name   text     NOT NULL UNIQUE,
     tpow_note   text    DEFAULT NULL,
     dow         dayofweek       NOT NULL,
     begin_time  time            NOT NULL DEFAULT  '0:00',
@@ -26,7 +26,7 @@ COMMENT ON COLUMN tpows.end_time    IS 'End time';
 
 CREATE TABLE timeperiods (
     timeperiod_id       bigserial       PRIMARY KEY,
-    timeperiod_name     varchar(32)     NOT NULL UNIQUE,
+    timeperiod_name     text     NOT NULL UNIQUE,
     timeperiod_note     text    DEFAULT NULL
 );
 ALTER TABLE timeperiods OWNER TO lanview2;
@@ -87,19 +87,19 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION tpow_name2id(varchar(32)) RETURNS bigint AS $$
+CREATE OR REPLACE FUNCTION tpow_name2id(text) RETURNS bigint AS $$
 DECLARE
     id bigint;
 BEGIN
     SELECT tpow_id INTO id FROM tpows WHERE tpow_name = $1;
     IF NOT FOUND THEN
-        PERFORM error('NameNotFound', -1, $1, 'tpow_name2id(varchar(32))', 'tpows');
+        PERFORM error('NameNotFound', -1, $1, 'tpow_name2id(text)', 'tpows');
     END IF;
     RETURN id;
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION timeperiod_name2id(varchar(32)) RETURNS bigint AS $$
+CREATE OR REPLACE FUNCTION timeperiod_name2id(text) RETURNS bigint AS $$
 BEGIN
     RETURN timeperiod_id FROM timeperiods WHERE timeperiod_name = $1;
 END
@@ -136,14 +136,14 @@ COMMENT ON TYPE notifswitch IS 'Notification switch, or host or service status';
 
 CREATE TABLE users (    -- contacts
     user_id             bigserial       PRIMARY KEY,
-    user_name           varchar(32)     NOT NULL UNIQUE,
+    user_name           text     NOT NULL UNIQUE,
     user_note           text    	DEFAULT NULL,
-    passwd              varchar(254),
-    first_name		varchar(64),
-    last_name		varchar(64),
-    language		varchar(8),
-    tels                varchar(20)[]   DEFAULT NULL,
-    addresses           varchar(128)[]  DEFAULT NULL,
+    passwd              text,
+    first_name		text,
+    last_name		text,
+    language		text,
+    tels                text[]   DEFAULT NULL,
+    addresses           text[]  DEFAULT NULL,
     place_id            bigint          DEFAULT NULL REFERENCES places(place_id) MATCH SIMPLE
                                             ON DELETE RESTRICT ON UPDATE RESTRICT,
     expired		date		DEFAULT NULL,
@@ -167,7 +167,7 @@ ALTER TYPE  rights OWNER TO lanview2;
 
 CREATE TABLE groups (
     group_id        bigserial           PRIMARY KEY,
-    group_name      varchar(32)         NOT NULL UNIQUE,
+    group_name      text         NOT NULL UNIQUE,
     group_note      text        	DEFAULT NULL,
     group_rights    rights              DEFAULT 'viewer',
     place_group_id  bigint              DEFAULT NULL REFERENCES place_groups(place_group_id) MATCH SIMPLE
@@ -182,7 +182,7 @@ COMMENT ON COLUMN groups.group_note     IS '';
 COMMENT ON COLUMN groups.group_rights   IS 'User rights';
 COMMENT ON COLUMN groups.place_group_id IS 'Zone';
 
-CREATE OR REPLACE FUNCTION group_name2id(varchar(32)) RETURNS bigint AS $$
+CREATE OR REPLACE FUNCTION group_name2id(text) RETURNS bigint AS $$
 BEGIN
     RETURN group_id FROM groups WHERE group_name = $1;
 END
@@ -199,7 +199,7 @@ COMMENT ON TABLE  group_users           IS 'Group members table';
 COMMENT ON COLUMN group_users.group_id  IS 'Group ID';
 COMMENT ON COLUMN group_users.user_id   IS 'User ID';
 
-CREATE OR REPLACE FUNCTION user_name2id(varchar(32)) RETURNS bigint AS $$
+CREATE OR REPLACE FUNCTION user_name2id(text) RETURNS bigint AS $$
 BEGIN
     RETURN user_id FROM users WHERE user_name = $1;
 END
@@ -213,7 +213,7 @@ $$ LANGUAGE plpgsql;
 -- lanview2.user_rights = 'none'
 -- Ha a paraméterkén megadott felhasználónév valós, akkor annak a paramétereit állítja be a fenti
 -- konfigurációs változókba.
-CREATE OR REPLACE FUNCTION set_user_name(varchar(32)) RETURNS users AS $$
+CREATE OR REPLACE FUNCTION set_user_name(text) RETURNS users AS $$
 DECLARE
     ur users%ROWTYPE;
     ri rights;

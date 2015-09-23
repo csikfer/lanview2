@@ -32,14 +32,14 @@ listed_all  Csak a felsorolt leszármazottak és ősök megjelenítése';
 
 CREATE TABLE table_shapes (
     table_shape_id      bigserial       PRIMARY KEY,
-    table_shape_name    varchar(32)     NOT NULL UNIQUE,
+    table_shape_name    text     NOT NULL UNIQUE,
     table_shape_note    text    DEFAULT NULL,
     table_shape_title   text    DEFAULT NULL,
     table_shape_type   tableshapetype[] DEFAULT '{simple}',
-    table_name          varchar(32)     NOT NULL,
-    schema_name         varchar(32)     NOT NULL DEFAULT 'public',
+    table_name          text     NOT NULL,
+    schema_name         text     NOT NULL DEFAULT 'public',
     table_inherit_type tableinherittype DEFAULT 'no',
-    inherit_table_names varchar(32)[]   DEFAULT NULL,
+    inherit_table_names text[]   DEFAULT NULL,
     is_read_only        boolean         DEFAULT 'f',
     refine              text    DEFAULT NULL,
     features          text    DEFAULT NULL,
@@ -78,9 +78,9 @@ desc    Csökkenő sorrend.';
 
 CREATE TABLE table_shape_fields (
     table_shape_field_id    bigserial       PRIMARY KEY,
-    table_shape_field_name  varchar(32)     NOT NULL,
+    table_shape_field_name  text     NOT NULL,
     table_shape_field_note text     DEFAULT NULL,
-    table_shape_field_title varchar(32)     DEFAULT NULL,
+    table_shape_field_title text     DEFAULT NULL,
     table_shape_id          bigint          NOT NULL REFERENCES table_shapes(table_shape_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     field_sequence_number   integer         NOT NULL,
     ord_types               ordtype[]       DEFAULT '{"no","asc","desc"}',
@@ -147,9 +147,9 @@ COMMENT ON COLUMN table_shape_filters.filter_type   IS 'Alkalmazható filter tí
 
 CREATE TABLE enum_vals (
     enum_val_id         bigserial       PRIMARY KEY,
-    enum_val_name       varchar(32)     NOT NULL,
+    enum_val_name       text     NOT NULL,
     enum_val_note       text,
-    enum_type_name      varchar(32)     NOT NULL,
+    enum_type_name      text     NOT NULL,
     UNIQUE (enum_type_name, enum_val_name)
 );
 ALTER TABLE enum_vals OWNER TO lanview2;
@@ -160,7 +160,7 @@ COMMENT ON COLUMN enum_vals.enum_val_note IS 'Az enumerációs értékhez tartoz
 COMMENT ON COLUMN enum_vals.enum_type_name IS 'Az enumerációs típusnak a neve';
 
 
-CREATE OR REPLACE FUNCTION table_shape_name2id(varchar(32)) RETURNS bigint AS $$
+CREATE OR REPLACE FUNCTION table_shape_name2id(text) RETURNS bigint AS $$
 DECLARE
     id bigint;
 BEGIN
@@ -172,7 +172,7 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION table_shape_field_name2id(varchar(32), varchar(32)) RETURNS bigint AS $$
+CREATE OR REPLACE FUNCTION table_shape_field_name2id(text, text) RETURNS bigint AS $$
 DECLARE
     id bigint;
 BEGIN
@@ -184,7 +184,7 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION enum_name2note(varchar(32), varchar(32) DEFAULT NULL) RETURNS text AS $$
+CREATE OR REPLACE FUNCTION enum_name2note(text, text DEFAULT NULL) RETURNS text AS $$
 DECLARE
     note text;
 BEGIN
@@ -207,7 +207,7 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-COMMENT ON FUNCTION enum_name2note(varchar(32), varchar(32)) IS
+COMMENT ON FUNCTION enum_name2note(text, text) IS
 'Egy enumerációs értékhez tartozó note stringet kéri le
 Paraméterek:
     $1 Az enumerációs érték.
@@ -219,10 +219,10 @@ Ha nem adtuk meg az enumerációs típust, és az enumerációs értékre több 
 DROP TABLE IF EXISTS menu_items;
 CREATE TABLE menu_items (
     menu_item_id            bigserial       PRIMARY KEY,
-    menu_item_name          varchar(32)     NOT NULL,
+    menu_item_name          text     NOT NULL,
     item_sequence_number    integer         DEFAULT NULL,
-    menu_item_title         varchar(32)     DEFAULT NULL,
-    app_name                varchar(32)     NOT NULL,
+    menu_item_title         text     DEFAULT NULL,
+    app_name                text     NOT NULL,
     upper_menu_item_id      bigint          DEFAULT NULL REFERENCES menu_items(menu_item_id) MATCH SIMPLE ON DELETE CASCADE ON UPDATE RESTRICT,
     features                text            DEFAULT NULL,
     tool_tip                text            DEFAULT NULL,

@@ -19,7 +19,7 @@ CREATE TABLE imports (
         REFERENCES users(user_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE,
     node_id         bigint	NOT NULL
         REFERENCES nodes(node_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE,
-    app_name        varchar(32) DEFAULT NULL,
+    app_name        text DEFAULT NULL,
     import_text     text        NOT NULL,
     exec_state      execstate   NOT NULL DEFAULT 'wait',
     pid             bigint      DEFAULT NULL,
@@ -49,7 +49,7 @@ CREATE TYPE templatetype AS ENUM ('macros', 'patchs', 'nodes');
 
 CREATE TABLE import_templates (
     import_template_id	bigserial       PRIMARY KEY,
-    template_name	varchar(32)     NOT NULL,
+    template_name	text     NOT NULL,
     template_type	templatetype	NOT NULL,
     template_note	text	        DEFAULT NULL,
     template_text	text		NOT NULL,
