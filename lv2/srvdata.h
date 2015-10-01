@@ -42,7 +42,6 @@ public:
     QString protocolName() { return protocol().getName(); }
     int protocolId()  { return (int)protocol().getId(); }
 protected:
-    static int              _ixProtocolId;
     cIpProtocol             _protocol;
     /// Konténer ill. gyorstár a cService rekordoknak.
     /// Nem frissül automatikusan, ha változik az adattábla.
@@ -192,11 +191,6 @@ public:
 /* ---------------------------------------------------------------- */
 class LV2SHARED_EXPORT cMacTab  : public cRecord {
     CRECORD(cMacTab);
-protected:
-    static int _ixPortId;
-    static int _ixHwAddress;
-    static int _ixSetType;
-    static int _ixMacTabState;
 public:
     /// Inzertálja, vagy modosítja az ip cím, mint kulcs alapján a rekordot.
     /// A funkciót egy PGPLSQL fúggvény (replace_mactab) valósítja meg.

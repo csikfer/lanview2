@@ -110,15 +110,15 @@ IndaContact port stáruszok kifelytése:
 
 CREATE TABLE nports (
     port_id     bigserial       PRIMARY KEY,
-    port_name   text     NOT NULL,
-    port_note   text    DEFAULT NULL,
-    port_tag    text     DEFAULT NULL,
+    port_name   text            NOT NULL,
+    port_note   text            DEFAULT NULL,
+    port_tag    text            DEFAULT NULL,
     iftype_id   bigint          DEFAULT 0   -- Default type is 'unknown'
-                        REFERENCES iftypes(iftype_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
+                REFERENCES iftypes(iftype_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
     node_id     bigint          NOT NULL,   -- REFERENCES (patch, nodes, snmp_devs)
     port_index  integer         DEFAULT NULL,
     deleted     boolean         DEFAULT false,
-    touch       boolean         DEFAULT true,
+    flag        boolean         DEFAULT false,
     UNIQUE(node_id, port_name)
 );
 ALTER TABLE nports OWNER TO lanview2;
@@ -133,10 +133,10 @@ COMMENT ON COLUMN nports.port_index IS 'Opcionális port index. Egyes leszármaz
 COMMENT ON COLUMN nports.deleted    IS 'Ha igaz, akkor a port logikailag törölve lett.';
 
 CREATE TABLE patchs (
-    node_id     bigserial          PRIMARY KEY,    -- Sequence: patchs_node_id_seq
-    node_name   text     NOT NULL UNIQUE,
-    node_note   text    DEFAULT NULL,
-    place_id    bigint         DEFAULT 0   -- place = 'unknown'
+    node_id     bigserial       PRIMARY KEY,    -- Sequence: patchs_node_id_seq
+    node_name   text            NOT NULL UNIQUE,
+    node_note   text            DEFAULT NULL,
+    place_id    bigint          DEFAULT 0   -- place = 'unknown'
                 REFERENCES places(place_id) MATCH FULL ON DELETE SET DEFAULT ON UPDATE RESTRICT,
     features    text            DEFAULT NULL,
     deleted     boolean         NOT NULL DEFAULT false
@@ -262,7 +262,7 @@ CREATE TABLE interfaces (
         REFERENCES iftypes(iftype_id) MATCH SIMPLE ON DELETE RESTRICT ON UPDATE RESTRICT,
     PRIMARY KEY (port_id),
     UNIQUE(node_id, port_name),
-    UNIQUE(port_name,  hwaddress),	-- EZ ITT NEM JO !!!!! Trigger függvény kell hozzá !!!
+    -- UNIQUE(port_name,  hwaddress),	-- EZ ITT NEM JO !!!!! Trigger függvény kell hozzá !!!
     CONSTRAINT interfaces_iftype_id_fkey FOREIGN KEY (iftype_id)
         REFERENCES iftypes(iftype_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT
 )
@@ -277,9 +277,10 @@ COMMENT ON COLUMN interfaces.dualface_type IS 'Dualface port esetén a másik t�
 
 CREATE TABLE vlans (
     vlan_id     bigint         PRIMARY KEY,
-    vlan_name   text     NOT NULL UNIQUE,
-    vlan_note  text    DEFAULT NULL,
-    vlan_stat   boolean         NOT NULL DEFAULT 'on'
+    vlan_name   text            NOT NULL UNIQUE,
+    vlan_note   text            DEFAULT NULL,
+    vlan_stat   boolean         NOT NULL DEFAULT 'on',
+    flag        boolean         DEFAULT false
 );
 ALTER TABLE vlans OWNER TO lanview2;
 COMMENT ON TABLE  vlans            IS 'VLANs Table';
@@ -366,7 +367,7 @@ CREATE TABLE port_vlans (
     last_time       timestamp   DEFAULT CURRENT_TIMESTAMP,
     vlan_type       vlantype    NOT NULL DEFAULT 'untagged',
     set_type        settype     NOT NULL DEFAULT 'manual',
-    touch           boolean     DEFAULT true,
+    flag            boolean     DEFAULT false,
     UNIQUE (port_id, vlan_id)
 );
 ALTER TABLE port_vlans OWNER TO lanview2;
@@ -379,26 +380,26 @@ ALTER TYPE addresstype OWNER TO lanview2;
 
 
 CREATE TABLE ipaddresses (
-    ip_address_id   bigserial    PRIMARY KEY,
-    ip_address_note text DEFAULT NULL,
-    address         inet         DEFAULT NULL,
-    ip_address_type addresstype  NOT NULL,
-    preferred       bigint       DEFAULT NULL,
-    subnet_id       bigint       DEFAULT NULL
+    ip_address_id   bigserial   PRIMARY KEY,
+    ip_address_note text        DEFAULT NULL,
+    address         inet        DEFAULT NULL,
+    ip_address_type addresstype NOT NULL,
+    preferred       int         DEFAULT NULL,
+    subnet_id       bigint      DEFAULT NULL
         REFERENCES subnets(subnet_id) MATCH SIMPLE ON DELETE RESTRICT ON UPDATE RESTRICT,
-    port_id         bigint       NOT NULL
+    port_id         bigint      NOT NULL
         REFERENCES interfaces(port_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    touch           boolean         DEFAULT true
+    flag            boolean     DEFAULT false
 );
 ALTER TABLE ipaddresses OWNER TO lanview2;
-COMMENT ON TABLE ipaddresses IS 'IP címek';
+COMMENT ON TABLE  ipaddresses IS 'IP címek';
 COMMENT ON COLUMN ipaddresses.address IS 'Az IP cím (nem tartomány)';
 COMMENT ON COLUMN ipaddresses.ip_address_type IS 'A cím típusa';
 COMMENT ON COLUMN ipaddresses.preferred IS 'Cím keresésnél egy opcionális sorrendet definiál, a kisebb érték az preferált.';
 COMMENT ON COLUMN ipaddresses.port_id IS 'A tulajdonos port, melyhez a cím tartozik';
 -- //// NODES;
 
-CREATE TYPE nodetype AS ENUM ('node', 'host', 'switch', 'hub', 'virtual', 'snmp');
+CREATE TYPE nodetype AS ENUM ('node', 'host', 'switch', 'hub', 'virtual', 'snmp', 'converter', 'printer', 'gateway');
 ALTER TYPE nodetype OWNER TO lanview2;
 COMMENT ON TYPE nodetype IS '
 Típus azonosítók
@@ -462,7 +463,7 @@ CREATE TABLE dyn_addr_ranges (
     subnet_id           bigint          REFERENCES subnets(subnet_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     host_service_id     bigint,
     last_time           timestamp       DEFAULT CURRENT_TIMESTAMP,
-    touch               boolean         DEFAULT 't',
+    flag                boolean         DEFAULT false,
     UNIQUE (begin_address, exclude),
     UNIQUE (end_address, exclude)
     
@@ -706,7 +707,7 @@ BEGIN
             SET
                 last_time = CURRENT_TIMESTAMP,
                 host_service_id = hsid,
-                touch = true
+                flag = false
             WHERE dyn_addr_range_id = brec.dyn_addr_range_id;
         RETURN 'update';
     END IF;
@@ -725,7 +726,7 @@ BEGIN
                 subnet_id = snid,
                 last_time = CURRENT_TIMESTAMP,
                 host_service_id = hsid,
-                touch = true
+                flag = false
             WHERE dyn_addr_range_id = brec.dyn_addr_range_id;
         RETURN r;
     END IF;
@@ -743,7 +744,7 @@ BEGIN
                 subnet_id = snid,
                 last_time = CURRENT_TIMESTAMP,
                 host_service_id = hsid,
-                touch = true
+                flag = false
             WHERE dyn_addr_range_id = brec.dyn_addr_range_id;
         RETURN 'modify';
     END IF;

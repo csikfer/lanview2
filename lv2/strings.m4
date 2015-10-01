@@ -275,6 +275,9 @@ STRDEF(Nodes,"nodes")
   STRDEF(Host,"host")
   STRDEF(Switch, "switch")
   STRDEF(Hub, "hub")
+  STRDEF(Converter, "converter")
+  STRDEF(Printer, "printer")
+  STRDEF(Gateway, "gateway")
   dnl virtual
  STRDEF(AlarmPlaceGroupId, "alarm_place_group_id")
 STRDEF(SnmpDevices,"snmpdevices")
@@ -299,6 +302,7 @@ STRDEF(NPorts,"nports")
  dnl node_id
  STRDEF(PortIndex, "port_index")
  dnl deleted
+ STRDEF(Flag, "flag")
 STRDEF(PPorts,"pports")
  STRDEF(SharedCable, "shared_cable")
  STRDEF(SharedPortId, "shared_port_id")

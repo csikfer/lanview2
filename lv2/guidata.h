@@ -126,7 +126,7 @@ public:
     virtual bool toEnd(int i);
     virtual void clearToEnd();
     virtual bool insert(QSqlQuery &__q, bool __ex = true);
-    virtual int replace(QSqlQuery &__q, bool __ex = true);
+    virtual bool rewrite(QSqlQuery &__q, bool __ex = true);
     cTableShape& setShapeType(qlonglong __t);
     int fetchFields(QSqlQuery& q);
     /// Az objektumhoz feltölti a ShapeFields konténert, default értékekkel.
@@ -205,7 +205,7 @@ public:
     virtual bool toEnd(int i);
     virtual void clearToEnd();
     virtual bool insert(QSqlQuery &__q, bool __ex);
-    virtual int replace(QSqlQuery &__q, bool __ex);
+    virtual bool rewrite(QSqlQuery &__q, bool __ex);
     int fetchFilters(QSqlQuery& q);
     bool addFilter(const QString& _t, const QString& _d, bool __ex = true);
     bool fetchByNames(QSqlQuery& q, const QString& tsn, const QString& fn, bool __ex = false);
@@ -214,16 +214,11 @@ public:
     STATICIX( cTableShapeField, ixTableShapeId)
 protected:
     static cRecStaticDescr  _staticDescr;
-    static int _ixTableShapeId;
 };
 
 class LV2SHARED_EXPORT cTableShapeFilter : public cRecord {
     CRECORD(cTableShapeFilter);
-public:
     STATICIX(cTableShapeFilter, ixTableShapeFieldId)
-protected:
-    static int _ixTableShapeFieldId;
-
 };
 
 /// @class cEnumVal

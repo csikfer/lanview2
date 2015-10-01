@@ -386,9 +386,9 @@ Q_IPV6ADDR netAddress::bitmask6(int __m)
     int b = m % 8;
     int i;
     for (i = 0; i < n; i++) bits[i] = 0xff;
-    if (n == 16) {
-        bits[i] = 0xff << b;
-        for (i = n + 1; i < 16; ++i) bits[i] = 0;
+    if (n < 16) {
+        if (b) bits[i++] = 0xff << b;
+        for (i = n; i < 16; ++i) bits[i] = 0;
     }
     return bits;
 }

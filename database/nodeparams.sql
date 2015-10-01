@@ -4,7 +4,7 @@ CREATE TABLE node_params (
             REFERENCES param_types(param_type_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
     node_id             bigint          NOT NULL,   -- REFERENCES nodes(node_id)
     param_value         text            DEFAULT NULL,
-    touch               boolean         DEFAULT true,
+    flag                boolean         DEFAULT false,
     UNIQUE (param_type_id, node_id)
 );
 ALTER TABLE node_params OWNER TO lanview2;

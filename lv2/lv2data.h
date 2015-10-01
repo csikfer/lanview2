@@ -177,7 +177,10 @@ enum eNodeType {
     NT_SWITCH,
     NT_HUB,
     NT_VIRTUAL,
-    NT_SNMP
+    NT_SNMP,
+    NT_CONVERTER,
+    NT_PRINTER,
+    NT_GATEWAY
 };
 
 /// Node típus név konverzió
@@ -322,13 +325,19 @@ public:
         }
         return __def;
     }
+    static bool getBoolSysParam(QSqlQuery& _q, const QString& _nm, bool __def = false) {
+        cSysParam   po;
+        if (po.fetchByName(_q, _nm)) {
+            QString r = po.value().toString();
+            return str2bool(r);
+        }
+        return __def;
+    }
     STATICIX(cSysParam, ixParamTypeId)
     STATICIX(cSysParam, ixParamValue)
 protected:
     /// A port paraméter értékhez tartozó típus rekord/objektum
     cParamType  paramType;
-    static int _ixParamTypeId;
-    static int _ixParamValue;
 };
 
 /* ------------------------------------------------------------------ */
@@ -399,10 +408,6 @@ public:
     STATICIX(cImage, ixImageType)
     STATICIX(cImage, ixImageData)
     STATICIX(cImage, ixImageHash)
-protected:
-    static int  _ixImageType;
-    static int  _ixImageData;
-    static int  _ixImageHash;
 };
 
 /*!
@@ -426,7 +431,8 @@ public:
     /// @param __n A név mező értéke
     /// @param __d A descr mező értéke
     /// @return Az új rekord id-je.
-    static qlonglong insertNew(const QString& __n, const QString& __d);
+    static qlonglong insertNew(QSqlQuery q, const QString& __n, const QString& __d);
+    static qlonglong replaceNew(QSqlQuery q, const QString& __n, const QString& __d);
 };
 
 typedef tGroup<cPlaceGroup, cPlace> cGroupPlace;
@@ -467,11 +473,6 @@ public:
     STATICIX(cSubNet, ixNetAddr)
     STATICIX(cSubNet, ixVlanId)
     STATICIX(cSubNet, ixSubNetType)
-protected:
-    /// A netaddr nevű mező indexe. Mivel nem öröklődik a tábla, ezért lehet statikus.
-    static int              _ixNetAddr;
-    static int              _ixVlanId;
-    static int              _ixSubNetType;
 };
 
 /*!
@@ -515,7 +516,9 @@ public:
     cIpAddress& operator=(const QHostAddress& __a) { set(_ixAddress, QVariant::fromValue(__a)); return *this; }
     /// Érték adás a cím mezőnek, és a típus mezőnek.
     cIpAddress& setAddress(const QHostAddress& __a, const QString& __t = _sNul);
-    /// A bázisobjektum metódusától abban különbözik, hogy a rekordot az IP cím, és a port_id mező azonosítja.
+    /// Ez a hívás nem támogatott, kizárást dob
+    virtual bool rewrite(QSqlQuery &__q, bool __ex = true);
+    /// Ez a hívás nem támogatott, kizárást dob
     virtual int replace(QSqlQuery &__q, bool __ex = true);
     /// A cím mező értékének a lekérése.
     QHostAddress address() const;
@@ -531,11 +534,6 @@ public:
     STATICIX(cIpAddress, ixAddress)
     STATICIX(cIpAddress, ixSubNetId)
     STATICIX(cIpAddress, ixIpAddressType)
-protected:
-    static int _ixPortId;
-    static int _ixAddress;
-    static int _ixSubNetId;
-    static int _ixIpAddressType;
 };
 
 /* ******************************  ****************************** */
@@ -544,7 +542,7 @@ class cNPort;
 
 /// Port paraméter érték
 class LV2SHARED_EXPORT cPortParam : public cRecord {
-    friend class tOwnPatams<cPortParam>;
+    friend class tOwnParams<cPortParam>;
     friend class cNPort;
     friend class cInterface;
     CRECORD(cPortParam);
@@ -578,12 +576,10 @@ public:
 protected:
     /// A port paraméter értékhez tartozó típus rekord/objektum
     cParamType  paramType;
-    static int _ixParamTypeId;
-    static int _ixPortId;
 };
 
 /// Port paraméter értékek listája
-typedef tOwnPatams<cPortParam> cPortParams;
+typedef tOwnParams<cPortParam> cPortParams;
 /* ------------------------------------------------------------------------ */
 
 class LV2SHARED_EXPORT cIfType : public cRecord {
@@ -656,7 +652,7 @@ public:
     virtual bool toEnd(int i);
     /// Beszúr egy port rekordot az adatbázisba a járulékos adatokkal (rekordokkal) együtt.
     virtual bool insert(QSqlQuery &__q, bool __ex = true);
-    virtual int replace(QSqlQuery &__q, bool __ex = true);
+    virtual bool rewrite(QSqlQuery &__q, bool __ex = true);
 
     /// Egy port rekord beolvasása a port név és a node id alapján.
     /// @param __q Az adatbázis műveletjez haszbált objektum.
@@ -760,12 +756,6 @@ public:
     /// Port paraméterek, nincs automatikusan feltöltve
     cPortParams   params;
 protected:
-    /// A tulajdonos patchs rekordra mutató id mező indexe
-    static int _ixNodeId;
-    /// A port_index mező indexe
-    static int _ixPortIndex;
-    /// Port iftype_id field index
-    static int _ixIfTypeId;
     ///
     static qlonglong _tableoid_nports;
     static qlonglong _tableoid_pports;
@@ -795,13 +785,13 @@ enum ePortShare {
 /// @param _n Az SQL enumerációs érték
 /// @param __ex Ha értéke true, akkor ha nem lehetséges a konverzió, akkor dob egy kizárást.
 /// @return Az SQL értéknek megfelelő konstan érték, vagy -1.
-EXT_ int portShare(const QString& _n, bool __ex);
+EXT_ int portShare(const QString& _n, bool __ex = true);
 /// A portshare SQL enumeráció típusba  a ePortShare típusból konverziós függvény.
 /// @param _n Az enumerációs konstans
 /// @param __ex Ha értéke true, akkor ha nem lehetséges a konverzió, akkor dob egy kizárást.
 /// @return A konstansnak megfelelő SQL érték, vagy üres string, mivel ez azonos egy SQL értékkel,
 ///         ezért hiba detektálásra a visszaadott érték alkalmatlan.
-EXT_ const QString& portShare(int _i, bool __ex);
+EXT_ const QString& portShare(int _i, bool __ex = true);
 
 /*!
 @class cPPort
@@ -850,7 +840,7 @@ public:
     virtual void toEnd();
     virtual bool toEnd(int i);
     virtual bool insert(QSqlQuery &__q, bool __ex = true);
-    virtual int replace(QSqlQuery &__q, bool __ex = true);
+    virtual bool rewrite(QSqlQuery &__q, bool __ex = true);
     virtual QString toString() const;
     // A trunkMembers konténer adattaghoz hozzáad egy port indexet
     void addTrunkMember(int __ix) { trunkMembers << __ix;  }
@@ -895,7 +885,6 @@ protected:
     /// Nincs automatikusan feltöltve.
     tIntVector trunkMembers;
     /// A MAC cím mező indexe
-    static int _ixHwAddress;
 };
 
 /* ****************************** NODES (patchs, nodes, snmphosts ****************************** */
@@ -935,9 +924,6 @@ public:
     cParamType  paramType;
     STATICIX(cNodeParam, ixParamTypeId)
     STATICIX(cNodeParam, ixNodeId)
-protected:
-    static int _ixParamTypeId;
-    static int _ixNodeId;
 };
 
 /// @class cShareBack
@@ -998,7 +984,7 @@ public:
     virtual void toEnd();
     virtual bool toEnd(int i);
     virtual bool insert(QSqlQuery &__q, bool __ex = true);
-    virtual int replace(QSqlQuery &__q, bool __ex = true);
+    virtual bool rewrite(QSqlQuery &__q, bool __ex = true);
 
     /// Kitölti a ports konténer adattagot. A node-hoz tartozó összes portot beolvassa a kontéberbe.
     /// Feltételezi, hogy a node_id mevű maző, vagyis a rekord ID ki ban töltve.
@@ -1110,7 +1096,7 @@ public:
     /// Ha módosítjuk az ID-t akkor törlődhet lásd az atEndCont() metódust
     tOwnRecords<cNPort>     ports;
     /// Node paraméterek, nincs automatikusan feltöltve
-    tOwnPatams<cNodeParam>  params;
+    tOwnParams<cNodeParam>  params;
 private:
     /// Megosztások konténer. (csak a cPatch osztályban)
     /// Nincs automatikusan feltöltve, de a clearToEnd(); törli, ill. az atEnd() törölheti.
@@ -1156,7 +1142,7 @@ public:
     /// A cPatch::insert(QSqlQuery &__q, bool __ex = true) hívása elött beállítja a
     /// node_type értékét, ha az NULL.
     virtual bool insert(QSqlQuery &__q, bool __ex = true);
-    virtual int replace(QSqlQuery &__q, bool __ex = true);
+    virtual bool rewrite(QSqlQuery &__q, bool __ex = true);
     /// Kitölti a ports adattagot, hiba esetén dob egy kizárást.
     /// Ha a port típusa cInterface, akkor az IP címeket is.
     virtual int  fetchPorts(QSqlQuery& __q, bool __ex = true);
@@ -1292,14 +1278,14 @@ public:
     /// @return Az új port objektum pointere
     cNPort& asmbHostPort(QSqlQuery& q, int ix, const QString& pt, const QString& pn, const QStringPair *ip, const QVariant *mac, const  QString& d);
     /// Egy új host vagy snmp eszköz összeállítása
-    /// @param name Az eszköz neve, vagy a "LOOKUP" string
-    /// @param pp port neve/port typusa, vagy NULL, ha default.
-    /// @param ip Pointer egy string pár, az első elem az IP cím, vagy az "ARP" ill. "LOOKUP" string, ha az ip címet a MAC címből ill.
+    /// @param __name Az eszköz neve, vagy a "LOOKUP" string
+    /// @param __port port neve/port typusa, vagy NULL, ha default.
+    /// @param __addr Pointer egy string pár, az első elem az IP cím, vagy az "ARP" ill. "LOOKUP" string, ha az ip címet a MAC címből ill.
     ///            a névből kell meghatározni.A második elem az ip cím típus neve.
-    /// @param mac Vagy a MAC stringgé konvertálva, vagy az "ARP" string, ha az IP címből kell meghatározni.
-    /// @param d node secriptorra/megjegyzés
+    /// @param __sMac Vagy a MAC stringgé konvertálva, vagy az "ARP" string, ha az IP címből kell meghatározni.
+    /// @param __note node secriptorra/megjegyzés
     /// @param __ex Ha értéke true, akkor hiba esetén dob egy kizárást, ha false, akkor hiba esetén a ES_DEFECTIVE bitet állítja be.
-    cNode& asmbNode(QSqlQuery& q, const QString& name, const QStringPair* pp, const QStringPair *ip, const QString *mac, const QString &d = _sNul, qlonglong __place = NULL_ID, bool __ex = true);
+    cNode& asmbNode(QSqlQuery& q, const QString& __name, const QStringPair* __port, const QStringPair *__addr, const QString *__sMac, const QString &__note = _sNul, qlonglong __place = NULL_ID, bool __ex = true);
 };
 
 
@@ -1310,7 +1296,7 @@ public:
     /// A cPatch::insert(QSqlQuery &__q, bool __ex = true) hívása elött beállítja a
     /// node_type értékét, ha az NULL.
     virtual bool insert(QSqlQuery &__q, bool __ex = true);
-    virtual int replace(QSqlQuery &__q, bool __ex = true);
+    virtual bool rewrite(QSqlQuery &__q, bool __ex = true);
     /// Lista bővítése egy elemmel.
     /// @param __t A port típusát definiáló objektum referenciája
     /// @param __name port_name
@@ -1325,57 +1311,77 @@ public:
     int open(QSqlQuery &q, cSnmp& snmp, bool __ex = true) const;
 };
 
+/// Fizikai link típusa
+enum ePhsLinkType {
+    LT_INVALID = -1,    ///< Csak hibajelzésre
+    LT_FRONT   = 0,     ///< Patch oanel, fali csatlakozü előlapi/külső link
+    LT_BACK,            ///< Patch oanel, fali csatlakozü játlapi/belső link
+    LT_TERM             ///< Hálózati elem/végpont linkje
+};
 
-/// Csak a cPhsLink és cLldpLink objektumokkal használható
-/// A megadott porthoz tartozó linket törli.
-/// @param q Az SQL lekérdezéshez használt objektum.
-/// @param o Az objektum, melyhez tartozó táblából törölni szeretnénk (tartalma érdektelen, csak a táblát azonosítja)
-/// @param __pid Port id (port_id1)
-/// @return true, ha törölt egy rekordot, false, ha nem
-EXT_ bool LinkUnlink(QSqlQuery& q, cRecord& o, qlonglong __pid);
-/// Csak a cPhsLink, cLogLink és cLldpLink objektumokkal használható
+EXT_ int phsLinkType(const QString& n, bool __ex = true);
+EXT_ const QString& phsLinkType(int e, bool __ex = true);
+
+typedef QPair<qlonglong, ePhsLinkType> tPhsLinkPort;
+
+class LV2SHARED_EXPORT cPhsLink : public cRecord {
+    CRECORD(cPhsLink);
+public:
+    /// @return Vigyázat a visszaadott érték értelmezése más, mint a röbbi replace metódusnál:
+    /// Ha felvette az új rekordot, és nem kellet törölni egyet sem, akkor 0, ha töröpni kellett rekordokat, akkor azok
+    /// számával tér vissza, ha viszont nem sikerült felvenni ez új rekordot, akkor egy negatív értékkel, aminek a sikertelen
+    /// inzert elött törölt rekordszám kivonva -1 -ből.
+    virtual int replace(QSqlQuery &__q, bool __ex);
+    /// Nem támogatott, kizárást dosb.
+    virtual bool rewrite(QSqlQuery &__q, bool __ex);
+    /// Törli a megadott fizikai linket
+    /// @param q Az SQL lekérdezéshez használt objektum.
+    /// @param __nn A host neve, amihez a link tartozik
+    /// @param __pn A port neve, vagy egy minta, amihez a link trtozik
+    /// @param __t  A link típusa, LT_INVALID (ez az alapérteémezés) esetén mindehyik típust töröljük,
+    /// @param __pat Ha true (ez az alapérteémezés), akkor nem konkrét port név lett megadva, hanem egy minta.
+    /// @return A törölt rekordok száma
+    int unlink(QSqlQuery &q, const QString& __nn, const QString& __pn, ePhsLinkType __t = LT_INVALID, bool __pat = true);
+    /// Törli a megadott fizikai linket
+    /// @param q Az SQL lekérdezéshez használt objektum.
+    /// @param __hn A host neve, amihez a link tartozik
+    /// @param __ix A port indexe, amihez a link trtozik, vagy egy kezdő érték
+    /// @param __ei Egy opcionális port index záró érték, vagy NULL_IX (alapértelmezett), ha nem egy tartományról van szó.
+    /// @return A törölt rekordok száma
+    int unlink(QSqlQuery &q, const QString& __nn, ePhsLinkType __t, int __ix, int __ei = NULL_IX);
+    /// Törli a megadott fizikai linket
+    /// @param q Az SQL lekérdezéshez használt objektum.
+    /// @param __id A port ID, amihez a link trtozik.
+    /// @return a törölt rekordok száma
+    int unlink(QSqlQuery &q, qlonglong __pid, ePhsLinkType __t = LT_INVALID, ePortShare __s = ES_NC) const;
+    /// Ütközö linkek törlése
+    int unxlinks(QSqlQuery& __q, qlonglong __pid, ePhsLinkType __t, ePortShare __s) const;
+
+};
+
+/// Csak a cLogLink és cLldpLink objektumokkal használható. Figyelem, a hivás külön nem ellenörzi!
 /// Megadja, hogy az ID alapján megadott port, mely másik porttal van link-be
 /// @param q Az SQL lekérdezéshez használt objektum.
 /// @param o Az objektum, melyhez tartozó táblában keresni szeretnénk
 /// @param __pid port ID
 /// @return A talált port ID-je, vagy NULL_ID
 EXT_ qlonglong LinkGetLinked(QSqlQuery& q, cRecord& o, qlonglong __pid);
-/// Csak a cPhsLink, cLogLink és cLldpLink objektumokka használható
+/// Csak a cLogLink és cLldpLink objektumokka használható. Figyelem, a hivás külön nem ellenörzi!
 /// Megadja, hogy az ID alapján megadott két port, link-be van-e
 /// @param q Az SQL lekérdezéshez használt objektum.
 /// @param o Az objektum, melyhez tartozó táblában keresni szeretnénk
 /// @param __pid1 az egyik port ID
 /// @param __pid2 a másik port ID
-/// @return A talált port ID-je, vagy NULL_ID
+/// @return true, ha a portok linkben vannak, ekkor a link rekord beolvasásra kerül o-ba.
 EXT_ bool LinkIsLinked(QSqlQuery& q, cRecord& o, qlonglong __pid1, qlonglong __pid2);
-
-class LV2SHARED_EXPORT cPhsLink : public cRecord {
-    CRECORD(cPhsLink);
-public:
-    /// Törli a megadott fizikai linket
-    /// @param q Az SQL lekérdezéshez használt objektum.
-    /// @param __nn A host neve, amihez a link tartozik
-    /// @param __pn A port neve, vagy egy minta, amihez a link trtozik
-    /// @param __pat Ha true, akkor nem konkrét port név lett megadva, hanem egy minta.
-    /// @return A törölt rekordok száma
-    int unlink(QSqlQuery &q, const QString& __nn, const QString& __pn, bool __pat);
-    /// Törli a megadott fizikai linket
-    /// @param q Az SQL lekérdezéshez használt objektum.
-    /// @param __hn A host neve, amihez a link tartozik
-    /// @param __ix A port indexe, amihez a link trtozik, vagy egy kező érték
-    /// @param __ei Egy port index záró érték, vagy NULL_IX, ha nem egy trtományról van szó.
-    /// @return A törölt rekordok száma
-    int unlink(QSqlQuery &q, const QString& __nn, int __ix, int __ei);
-    bool unlink(QSqlQuery &q, qlonglong __pid) { return LinkUnlink(q, *this, __pid); }
-    qlonglong getLinked(QSqlQuery& q, qlonglong __pid) { return LinkGetLinked(q, *this, __pid); }
-    bool isLinked(QSqlQuery& q, qlonglong __pid1, qlonglong __pid2) { return LinkIsLinked(q, *this, __pid1, __pid2); }
-};
 
 class LV2SHARED_EXPORT cLogLink : public cRecord {
     CRECORD(cLogLink);
 public:
     /// A tábla írása automatikus, az insert metódus tiltott
     virtual bool insert(QSqlQuery &, bool);
+    /// A tábla írása automatikus, az insert metódus tiltott
+    virtual int replace(QSqlQuery &, bool);
     /// A tábla írása automatikus, az update metódus tiltott
     virtual bool update(QSqlQuery &, bool, const QBitArray &, const QBitArray &, bool);
     /// A logikai link tábla alapján megadja, hogy a megadott id-jű port mely másik portal van összekötve
@@ -1390,7 +1396,12 @@ public:
 class LV2SHARED_EXPORT cLldpLink : public cRecord {
     CRECORD(cLldpLink);
 public:
-    bool unlink(QSqlQuery &q, qlonglong __pid) { return LinkUnlink(q, *this, __pid); }
+    /// A megadott porthoz tartozó linket törli.
+    /// @param q Az SQL lekérdezéshez használt objektum.
+    /// @param o Az objektum, melyhez tartozó táblából törölni szeretnénk (tartalma érdektelen, csak a táblát azonosítja)
+    /// @param __pid Port id (port_id1)
+    /// @return true, ha törölt egy rekordot, false, ha nem
+    bool unlink(QSqlQuery &q, qlonglong __pid);
     /// A logikai link tábla alapján megadja, hogy a megadott id-jű port mely másik portal van összekötve
     /// Az aktuális link rekordot beolvassa, ha van találat.
     /// @param A port id, melyel linkelt portot keressük.
@@ -1453,11 +1464,6 @@ public:
     STATICIX(cPortVlan, ixVlanId)
     STATICIX(cPortVlan, ixVlanType)
     STATICIX(cPortVlan, ixSetType)
-protected:
-    static int _ixPortId;
-    static int _ixVlanId;
-    static int _ixVlanType;
-    static int _ixSetType;
 };
 
 #endif // LV2DATA_H

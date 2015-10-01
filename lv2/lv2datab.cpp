@@ -1936,6 +1936,7 @@ cRecStaticDescr::cRecStaticDescr(const QString &__t, const QString &__s)
     , _tableRecord()
     , _columnDescrs()
     , _primaryKeyMask()
+    , _nameKeyMask()
     , _uniqueMasks()
     , _autoIncrement()
     , _parents()
@@ -1943,9 +1944,8 @@ cRecStaticDescr::cRecStaticDescr(const QString &__t, const QString &__s)
     _tableType      = UNKNOWN_TABLE;
     _columnsNum     = 0;
     _tableOId       = _schemaOId = NULL_ID;
-    _idIndex        = _nameIndex = _noteIndex = _deletedIndex = NULL_IX;
+    _idIndex        = _nameIndex = _noteIndex = _deletedIndex = _flagIndex = NULL_IX;
     _isUpdatable    = false;
-    _isParent       = false;
     _set(__t,__s);
     addMap();
     // Csak most tudjuk rendesen előszedni, esetleg megkreálni az id->name konverziós függvényeket
@@ -2091,7 +2091,17 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
                 // PDEB(VVERBOSE) << QObject::trUtf8("deleted field is found, index : %1").arg(_deletedIndex) << endl;
             }
             else {
-                // PDEB(VVERBOSE) << QObject::trUtf8("deleted field is found, but type is not boolean, index : %1, type : %2").arg(i -1).arg(columnDescr.colType) << endl;
+                DWAR() << QObject::trUtf8("deleted field is found, but type is not boolean, index : %1, type : %2").arg(i -1).arg(columnDescr.colType) << endl;
+            }
+        }
+        if (columnDescr.colName() == _sFlag) {
+            if (columnDescr.colType == "boolean") {
+                if (_flagIndex >= 0) EXCEPTION(EPROGFAIL);
+                _flagIndex = i -1;
+                // PDEB(VVERBOSE) << QObject::trUtf8("deleted field is found, index : %1").arg(_flagIndex) << endl;
+            }
+            else {
+                DWAR() << QObject::trUtf8("flag field is found, but type is not boolean, index : %1, type : %2").arg(i -1).arg(columnDescr.colType) << endl;
             }
         }
         // Mező típus
@@ -2205,7 +2215,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
 
         default:
             if (columnDescr.eColType & cColStaticDescr::FT_ARRAY) _columnDescrs << new cColStaticDescrArray(columnDescr);
-            else                                                  _columnDescrs << columnDescr;
+            else                                                  _columnDescrs << columnDescr; // alap typus, new and copy
             break;
         }
         // cColStaticDescr *pp = ((cColStaticDescrList::list)_columnDescrs)[i -1];
@@ -2226,6 +2236,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
     if (!pq->exec()) SQLQUERYERR(*pq);
     // PDEB(VVERBOSE) << "Read keys in " << _fullTableName() << " table..." << endl;
     if (pq->first()) {
+        // CONSTRAINT név /_uniqueMasks index
         QMap<QString, int>  map;
         do {
             QString constraintName = pq->record().value("constraint_name").toString();
@@ -2239,23 +2250,38 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
                 if (columnName.endsWith(QString("_id"))) _idIndex = i;
             }
             else if(constraintType == "UNIQUE") {
+                // A map-ban van ilyen nevű CONSTRAINT (UNIQUE KEY név) ?
                 QMap<QString, int>::iterator    it = map.find(constraintName);
                 int j;
-                if (it == map.end()) {
-                    j = _uniqueMasks.size();
+                if (it == map.end()) {      // Nincs, új bitmap
+                    j = _uniqueMasks.size();    // új maszk indexe
                     //PDEB(VVERBOSE) << "Insert #" << j << " bit vector to _uniqueMasks ..." << endl;
                     map.insert(constraintName, j);
                     _uniqueMasks << QBitArray(_columnsNum);
                 }
-                else j = it.value();
+                else j = it.value();            // A talált maszk indexe
                 //PDEB(VVERBOSE) << "Set _uniqueMasks[" << j << "] bit #" << i << " to true..." << endl;
                 _uniqueMasks[j].setBit(i);
                 // if (_nameIndex < 0 && columnName.endsWith(QString("_name"))) _nameIndex = i;
             }
         } while(pq->next());
     }
+    // _nameKeyMask kitöltése (mivel együtt egyedi a név mező)
+    if (_nameIndex >= 0) {
+        foreach (QBitArray u, _uniqueMasks) {
+            if (u[_nameIndex]) {
+                if (_nameKeyMask.count(true)) {
+                    _nameKeyMask.fill(false);       // kétértelmüség
+                    break;
+                }
+                _nameKeyMask = u;
+            }
+        }
+    }
     // Ha találtunk ID-t, akkor az csak egyedüli egyedi kulcs lehet!
     if (_primaryKeyMask.count(true) != 1) _idIndex = NULL_IX;
+    // Ha van ID-nk, akkor az elsődleges kulcs kell legyen
+    if (_idIndex != NULL_IX && !_primaryKeyMask[_idIndex]) EXCEPTION(EDATA, _idIndex, fullColumnName(_idIndex));
     //PDEB(VERBOSE) << VDEB(_idIndex) << " ; " << VDEB(_nameIndex) << endl;
     //
     if (_tableType == BASE_TABLE && _nameIndex < 0              // Típus még nem derült ki, és nincs neve
@@ -2416,11 +2442,7 @@ qlonglong cRecStaticDescr::getIdByName(QSqlQuery& __q, const QString& __n, bool 
     QString sql = QString("SELECT %1 FROM %2 WHERE %3 = '%4'")
                   .arg(dQuoted(idName()), fullTableNameQ(), dQuoted(nameName()), __n);
     // PDEB(VERBOSE) << __PRETTY_FUNCTION__ << " SQL : " << sql << endl;
-    if (!__q.exec(sql)) {
-        if (ex == false && __q.lastError().type() == QSqlError::StatementError) SQLQUERYERRDEB(__q)
-        else                                                                    SQLQUERYERR(__q)
-        return NULL_ID;
-    }
+    if (!__q.exec(sql)) SQLQUERYERR(__q)
     if (!__q.first()) {
         if (ex) EXCEPTION(EFOUND,0,__n);
         return NULL_ID;
@@ -2437,11 +2459,7 @@ QString cRecStaticDescr::getNameById(QSqlQuery& __q, qlonglong __id, bool ex) co
 {
     QString sql = QString("SELECT %1 FROM %2 WHERE %3 = %4")
             .arg(dQuoted(nameName()), fullTableNameQ(), dQuoted(idName())). arg(__id);
-    if (!__q.exec(sql)) {
-        if (ex == false && __q.lastError().type() == QSqlError::StatementError) SQLQUERYERRDEB(__q)
-        else                                                                    SQLQUERYERR(__q)
-        return QString();
-    }
+    if (!__q.exec(sql)) SQLQUERYERR(__q)
     if (!__q.first()) {
         if (ex) EXCEPTION(EFOUND, __id);
         return QString();
@@ -2457,6 +2475,24 @@ QString cRecStaticDescr::getNameById(QSqlQuery& __q, qlonglong __id, bool ex) co
     }
     return name.toString();
 }
+
+QBitArray cRecStaticDescr::mask(const QStringList& __nl, bool __ex) const
+{
+    QBitArray r(cols(), false);
+    foreach (QString fn, __nl) {
+        int ix = toIndex(fn, __ex);
+        if (ix < 0) continue;
+        r[ix] = 1;
+    }
+    return r;
+}
+QBitArray cRecStaticDescr::inverseMask(const QBitArray& __m) const
+{
+    QBitArray r = __m;
+    r.resize(cols());
+    return ~r;
+}
+
 
 QString cRecStaticDescr::toString() const
 {
@@ -2665,6 +2701,16 @@ cRecord& cRecord::clear(int __ix, bool __ex)
     return *this;
 }
 
+cRecord& cRecord::clear(const QBitArray& __m, bool __ex)
+{
+    int n = __m.size();
+    if (n > cols()) {
+        if (__ex) EXCEPTION(EDATA, n);
+        n = cols();
+    }
+    for (int i = 0; i < n; ++i) if (__m[i]) clear(i);
+    return *this;
+}
 
 cRecord& cRecord::_set(const QSqlRecord& __r, const cRecStaticDescr& __d, int* _fromp, int __size)
 {
@@ -2675,7 +2721,7 @@ cRecord& cRecord::_set(const QSqlRecord& __r, const cRecStaticDescr& __d, int* _
         n = __size;
     }
     int first = 0;                  // Első elem a forrásból
-    if (_fromp != NULL) {          // Ha csak egy szelet kell a forrásból
+    if (_fromp != NULL) {           // Ha nem az elején kezdjük
         first = *_fromp;
         if (__size > 0) {           // A következő szelet első eleme
             *_fromp = n += first;
@@ -2742,7 +2788,7 @@ bool cRecord::_copy(const cRecord &__o, const cRecStaticDescr &d)
     int n = __o.cols();    // Mezők száma a forrás rekordban
     for (i = 0; i < n; i++) {
         QString fn = __o.columnName(i);     // Mező név
-        int ii = d.toIndex(fn, false);      // A cél ugyanojan nevű mezőjének az indexe
+        int ii = d.toIndex(fn, false);      // A cél azonos nevű mezőjének az indexe
         if (!d.isIndex((ii))) continue;     // A cél rekordban nincs ilyen mező
         if (__o.isNull(i))    continue;     // vagy null a forrás mező
         _set(ii, __o.get(i));
@@ -2762,6 +2808,14 @@ bool cRecord::isIdent(const QBitArray& __m) const
 {
     for (int i = 0; i < __m.size(); ++i) if (__m[i] && isNull(i)) return false;
     return true;
+}
+
+void cRecord::fieldsCopy(const cRecord& __o, const QBitArray& __m)
+{
+    if (descr() != __o.descr()) EXCEPTION(EDATA, 0, trUtf8("%1 != %2").arg(descr().fullTableName()).arg(__o.descr().fullTableName()));
+    int n = __m.size();
+    if (n > cols()) EXCEPTION(EDATA, n);
+    for (int i = 0; i < n; i++) if (__m[i]) set(i, __o.get(i));
 }
 
 cRecord& cRecord::set(const QSqlRecord& __r, int* _fromp, int __size)
@@ -2855,28 +2909,20 @@ cRecord& cRecord::setIp(int __i, const QHostAddress& __a, bool __ex)
     return *this;
 }
 
-qlonglong cRecord::getIdByName(QSqlQuery& __q, const QString& __n, bool __ex) const
-{
-    return descr().getIdByName(__q, __n, __ex);
-}
-
 bool cRecord::insert(QSqlQuery& __q, bool _ex)
 {
     // _DBGFN() << "@(," << DBOOL(_ex) << ") table : " << fullTableName() << endl;
     const cRecStaticDescr& recDescr = descr();
     __q.finish();
-    if (!recDescr.isUpdatable()) {
-        if (_ex) EXCEPTION(EDATA, -1 , QObject::trUtf8("Az adat nem módosítható."));
-        return false;
-    }
+    if (!recDescr.isUpdatable()) EXCEPTION(EDATA, -1 , trUtf8("A %1 tábla nem módosítható.").arg(tableName()));
     QString sql, qms;
     if (descr()._deletedIndex != -1 && _deletedBehavior & REPLACED_BY_NAME) {
-        cRecord *po = newObj();
-        po->setName(getName());
-        po->set(descr()._deletedIndex, QVariant(true));
-        int r = po->completion();
+        cRecord *po = dup();
+        po->setOn(deletedIndex());
+        QBitArray where = nameKeyMask() | mask(deletedIndex());
+        bool ed = fetchQuery(__q, false, where);
         delete po;
-        if (r > 0) {     // Van egy azonos nevű deleted = true rekordunk.
+        if (ed) {     // Van egy azonos nevű deleted = true rekordunk.
             return rewrite(__q, _ex);
         }
     }
@@ -2898,86 +2944,89 @@ bool cRecord::insert(QSqlQuery& __q, bool _ex)
     for (int ix = 0; ix < recDescr.cols(); ++ix) {           // ix: mező index a rekordban
         if (!isNull(ix)) bind(ix, __q, i++);
     }
-    bool r;
-    if (!(r = __q.exec())) {
-        // Pontosítani kéne, sajnos nincs hibakód!!
-        if (_ex == false && __q.lastError().type() == QSqlError::StatementError) {
-            SQLQUERYERRDEB(__q);
-        }
-        else {
-            SQLQUERYERR(__q);
-        }
+    if (!__q.exec()) SQLQUERYERR(__q);
+    if (__q.first()) {
+        set(__q);
+        _stat =  ES_EXIST | ES_COMPLETE | ES_IDENTIF;
+        // PDEB(VERBOSE) << "Insert RETURNING :" << toString() << endl;
+        return true;
     }
-    else {
-        if (__q.first()) {
-            set(__q);
-            _stat =  ES_EXIST | ES_COMPLETE | ES_IDENTIF;
-            // PDEB(VERBOSE) << "Insert RETURNING :" << toString() << endl;
-        }
-    }
-    // DBGFNL();
-    return r;
+    if (_ex) EXCEPTION(EDATA, 0, trUtf8("A beszúrás utáni újraolvasás sikertelen, nincs adat.."));
+    return false;
 }
 
-cError *cRecord::tryInsert(QSqlQuery &__q)
+cError *cRecord::tryInsert(QSqlQuery &__q, bool __tr)
 {
     cError *pe = NULL;
+    if (__tr) sqlBegin(__q);
     try {
         insert(__q, true);
     }
     CATCHS(pe);
+    if (__tr) {
+        if (pe == NULL) sqlEnd(__q);
+        else            sqlRollback(__q);
+    }
     return pe;
 }
 
 bool cRecord::rewrite(QSqlQuery &__q, bool __ex)
 {
     QBitArray   sets(cols(), true);     // Minden mezőt kiírunk,
-    sets.clearBit(nameIndex());         // kivéve a név mezőt
+    QBitArray   where = nameKeyMask();
+    sets &= ~where;              // kivéve a név mezőt ...
     if (idIndex(false) >= 0 && isNullId()) { // és az ID-t, ha van olyan és az értéke NULL
         sets.clearBit(idIndex());
     }
-    return update(__q, true, sets, mask(nameIndex()),__ex);
+    int r = update(__q, true, sets, where,__ex);
+    switch (r) {
+    case 1: return true;
+    case 0:
+        if (__ex) EXCEPTION(EFOUND, 0);
+        break;
+    default:    // Ez nagyon gáz, egyedinek kellene lennie!!
+        EXCEPTION(AMBIGUOUS, r, trUtf8("Table %1, unique key problem.").arg(tableName()));
+    }
+    return false;
 }
 
 int cRecord::replace(QSqlQuery& __q, bool __ex)
 {
-    // _DBGFN() << "@(," << DBOOL(_ex) << ") table : " << fullTableName() << endl;
-    const cRecStaticDescr& recDescr = descr();
-    __q.finish();
-    if (!recDescr.isUpdatable()) {
-        if (__ex) EXCEPTION(EDATA, -1 , QObject::trUtf8("Az adat nem módosítható."));
-        return R_ERROR;
+    int r = rows(__q, false, nameKeyMask());
+    switch (r) {
+    case 0: return insert( __q, __ex) ? R_INSERT : R_ERROR; // Ha nincs, akkor insert
+    case 1: return rewrite(__q, __ex) ? R_UPDATE : R_ERROR; // Ha van akkor replace
+    default:    // Ez nagyon gáz, egyedinek kellene lennie!!
+        EXCEPTION(AMBIGUOUS, r, trUtf8("Table %1, unique key problem.").arg(tableName()));
     }
-    cRecord *po = newObj();
-    po->setName(getName());
-    int r = po->completion(__q);    // Van ilyen nevű rekord ?
-    delete po;
-    if (r == 0) return insert(__q, __ex) ? R_INSERT : R_ERROR;  // Ha nincs, akkor insert
-    return rewrite(__q, __ex) ? R_UPDATE : R_ERROR;             // Ha van akkor replace
+    return R_ERROR;
 }
 
-cError *cRecord::tryReplace(QSqlQuery& __q)
+cError *cRecord::tryReplace(QSqlQuery& __q, bool __tr)
 {
     cError *pe = NULL;
+    if (__tr) sqlBegin(__q);
     try {
         replace(__q, true);
     }
     CATCHS(pe);
+    if (__tr) {
+        if (pe == NULL) sqlEnd(__q);
+        else            sqlRollback(__q);
+    }
     return pe;
 }
 
-bool cRecord::query(QSqlQuery& __q, const QString& sql, const tIntVector& __arg, bool __ex) const
+void cRecord::query(QSqlQuery& __q, const QString& sql, const tIntVector& __arg) const
 {
     if (!__q.prepare(sql)) SQLPREPERR(__q, sql);
     for (int i = 0; i < __arg.size(); ++i) {
         bind(__arg[i], __q, i);
     }
-    bool r = __q.exec();
-    if (__ex && !r) SQLQUERYERR(__q);
-    return r;
+    if (!__q.exec()) SQLQUERYERR(__q);
 }
 
-bool cRecord::query(QSqlQuery& __q, const QString& sql, const QBitArray& _fm, bool __ex) const
+void cRecord::query(QSqlQuery& __q, const QString& sql, const QBitArray& _fm) const
 {
     if (!__q.prepare(sql)) SQLPREPERR(__q, sql);
     int i,j;
@@ -2986,9 +3035,7 @@ bool cRecord::query(QSqlQuery& __q, const QString& sql, const QBitArray& _fm, bo
             bind(i, __q, j++);
         }
     }
-    bool r = __q.exec();
-    if (__ex && !r) SQLQUERYERR(__q);
-    return r;
+    if (!__q.exec()) SQLQUERYERR(__q);
 }
 
 QString cRecord::whereString(QBitArray& _fm) const
@@ -3014,7 +3061,7 @@ QString cRecord::whereString(QBitArray& _fm) const
     return where;
 }
 
-void cRecord::fetchQuery(QSqlQuery& __q, bool __only, const QBitArray& _fm, const tIntVector& __ord, int __lim, int __off, QString __s, QString __w) const
+bool cRecord::fetchQuery(QSqlQuery& __q, bool __only, const QBitArray& _fm, const tIntVector& __ord, int __lim, int __off, QString __s, QString __w) const
 {
     // _DBGFN() << " @(" << _fm << _sCommaSp << __ord << _sCommaSp << __lim << _sCommaSp << __off <<  _sCommaSp << __s << QChar(')') << endl;
     // PDEB(VVERBOSE) << "Record value : " << toString() << endl;
@@ -3040,14 +3087,14 @@ void cRecord::fetchQuery(QSqlQuery& __q, bool __only, const QBitArray& _fm, cons
     }
     if (__lim > 0) sql += " LIMIT "  + QString::number(__lim);
     if (__off > 0) sql += " OFFSET " + QString::number(__off);
-    query(__q, sql, fm, true);
+    query(__q, sql, fm);
+    return __q.first();
 }
 
 bool cRecord::fetch(QSqlQuery& __q, bool __only, const QBitArray& _fm, const tIntVector& __ord, int __lim, int __off)
 {
     // _DBGFN() << " @(" << _fm << _sCommaSp << __ord << _sCommaSp << __lim << _sCommaSp << __off << QChar(')') << endl;
-    fetchQuery(__q,__only, _fm, __ord, __lim, __off);
-    if (__q.first()) {
+    if (fetchQuery(__q,__only, _fm, __ord, __lim, __off)) {
         set(__q.record());
         _stat |= ES_EXIST;
         return true;
@@ -3109,8 +3156,7 @@ qlonglong cRecord::fetchTableOId(QSqlQuery& __q, bool __ex) const
         }
     }
 
-    fetchQuery(__q, false, m, tIntVector(),0,0,QString("tableoid"));
-    if (__q.first()) {
+    if (fetchQuery(__q, false, m, tIntVector(),0,0,QString("tableoid"))) {
         if (__q.size() == 1) {
             return variantToId(__q.value(0), __ex, NULL_ID);
         }
@@ -3123,26 +3169,20 @@ qlonglong cRecord::fetchTableOId(QSqlQuery& __q, bool __ex) const
     return NULL_ID;
 }
 
-bool cRecord::update(QSqlQuery& __q, bool __only, const QBitArray& __set, const QBitArray& __where, bool __ex)
+int cRecord::update(QSqlQuery& __q, bool __only, const QBitArray& __set, const QBitArray& __where, bool __ex)
 {
 //    _DBGFN() << "@("
 //             << this->toString() << _sCommaSp << DBOOL(__only) << _sCommaSp << list2string(__set) <<  _sCommaSp << list2string(__where) << _sCommaSp << DBOOL(__ex)
 //             << ")" << endl;
     __q.finish();
-    if (!isUpdatable()) {
-        if (__ex) EXCEPTION(EDATA, -1 , QObject::trUtf8("Az adat nem módosítható."));
-        return false;
-    }
+    if (!isUpdatable()) EXCEPTION(EDATA, -1 , QObject::trUtf8("Az adat nem módosítható."));
     QBitArray bset  = __set;
     QBitArray where = __where;
     if (where.size() == 0) where = primaryKey();
     if (bset.count(true) == 0) {
         bset = QBitArray(cols(), true) & ~where;      // Változott, nem csak a beállított értékeket updateli alapértelmezetten
     }
-    if (bset.count(true) == 0) {
-        if (__ex) EXCEPTION(EDATA);
-        return false;
-    }
+    if (bset.count(true) == 0) EXCEPTION(EDATA);
     QString sql = QString(__only ? "UPDATE ONLY %1 SET" : "UPDATE %1 SET").arg(fullTableNameQ());
     int i,j;
     for (i = 0; i < bset.size(); i++) {
@@ -3165,47 +3205,66 @@ bool cRecord::update(QSqlQuery& __q, bool __only, const QBitArray& __set, const 
             bind(i, __q, j++);
         }
     }
-    bool r;
 
-    if (!(r = __q.exec())) {
-        // Pontosítani kéne, sajnos nincs hibakód!!
-        if (__q.lastError().type() == QSqlError::StatementError && !__ex) SQLQUERYERRDEB(__q)
-        else                                                              SQLQUERYERR(__q)
+    if (!__q.exec()) SQLQUERYERR(__q)
+    if (__q.first()) {
+        set(__q);
+        _stat =  ES_EXIST | ES_COMPLETE | ES_IDENTIF;
+        // PDEB(VERBOSE) << "Update RETURNING :" << toString() << endl;
+        return __q.numRowsAffected();
     }
     else {
-        if (__q.first()) {
-            set(__q);
-            _stat =  ES_EXIST | ES_COMPLETE | ES_IDENTIF;
-            // PDEB(VERBOSE) << "Update RETURNING :" << toString() << endl;
-        }
-        else {
-            DWAR() << "Nothing modify any record." << endl;
-            if (__ex) EXCEPTION(EDATA);
-            r = false;
-        }
+        DWAR() << "Nothing modify any record." << endl;
+        if (__ex) EXCEPTION(EFOUND);
+        return 0;
     }
-    // DBGFNL();
-    return r;
-
 }
 
-cError *cRecord::tryUpdate(QSqlQuery& __q, bool __only, const QBitArray& __set, const QBitArray& __where)
+cError *cRecord::tryUpdate(QSqlQuery& __q, bool __only, const QBitArray& __set, const QBitArray& __where, bool __tr)
 {
     cError *pe = NULL;
+    if (__tr) sqlBegin(__q);
     try {
         update(__q, __only, __set, __where, true);
     }
     CATCHS(pe);
+    if (__tr) {
+        if (pe == NULL) sqlEnd(__q);
+        else            sqlRollback(__q);
+    }
     return pe;
 }
+
+int cRecord::mark(QSqlQuery& __q, const QBitArray &__where, bool __flag) const
+{
+    cRecord *p = dup();
+    int ixFlag = p->descr()._flagIndex;
+    if (ixFlag < 0) EXCEPTION(EDATA, 0, "Missing 'flag' field in " + tableName() + " table.");
+    p->setBool(ixFlag, __flag);
+    int r = p->update(__q, false, mask(ixFlag), __where, false);
+    delete p;
+    return r;
+}
+
+int cRecord::removeMarked(QSqlQuery& __q, const QBitArray& __where) const
+{
+    cRecord *p = dup();
+    int ixFlag = p->descr()._flagIndex;
+    if (ixFlag < 0) EXCEPTION(EDATA, 0, "Missing 'flag' field in " + tableName() + " table.");
+    p->setBool(ixFlag, true);
+    QBitArray where = __where;
+    if (where.isEmpty()) where = p->primaryKey() | p->mask(ixFlag);
+    else                 where = where           | p->mask(ixFlag);
+    int r = p->remove(__q, false, where, false);
+    delete p;
+    return r;
+}
+
 
 int cRecord::remove(QSqlQuery& __q, bool __only, const QBitArray& _fm, bool __ex)
 {
     QBitArray fm = _fm;
-    if (!isUpdatable()) {
-        if (__ex) EXCEPTION(EDATA, -1 , QObject::trUtf8("Az adat nem módosítható."));
-        return false;
-    }
+    if (!isUpdatable()) EXCEPTION(EDATA, -1 , QObject::trUtf8("Az adat nem módosítható."));
     if (descr()._deletedIndex != -1 && _deletedBehavior & DELETE_LOGICAL) {
         set(descr()._deletedIndex, QVariant(true));
         return update(__q, __only, mask(descr()._deletedIndex), fm, __ex);
@@ -3213,16 +3272,24 @@ int cRecord::remove(QSqlQuery& __q, bool __only, const QBitArray& _fm, bool __ex
     QString sql = "DELETE FROM ";
     if (__only) sql += "ONLY ";
     sql += tableName() + whereString(fm);
-    return query(__q, sql, fm, __ex) ? __q.numRowsAffected() : 0;
+    query(__q, sql, fm);
+    int r = __q.numRowsAffected();
+    if (!r) EXCEPTION(EFOUND);
+    return r;
 }
 
-cError *cRecord::tryRemove(QSqlQuery& __q, bool __only, const QBitArray& _fm)
+cError *cRecord::tryRemove(QSqlQuery& __q, bool __only, const QBitArray& _fm, bool __tr)
 {
     cError *pe = NULL;
+    if (__tr) sqlBegin(__q);
     try {
         remove(__q, __only, _fm, true);
     }
     CATCHS(pe);
+    if (__tr) {
+        if (pe == NULL) sqlEnd(__q);
+        else            sqlRollback(__q);
+    }
     return pe;
 }
 
@@ -3308,7 +3375,7 @@ int cRecord::touch(QSqlQuery& q, const QString& _fn, const QBitArray& _where)
     QString sql = QString("UPDATE %1 SET %2 = NOW() ").arg(fullTableNameQ()).arg(fn);
     sql += whereString(where);
     sql += " RETURNING *";
-    query(q, sql, where, true);
+    query(q, sql, where);
     if (q.first()) {
         set(q.record());
         _stat |= ES_EXIST;

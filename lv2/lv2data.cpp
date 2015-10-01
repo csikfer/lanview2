@@ -403,13 +403,21 @@ qlonglong cPlace::parentImageId(QSqlQuery& q)
 
 DEFAULTCRECDEF(cPlaceGroup, _sPlaceGroups)
 
-qlonglong cPlaceGroup::insertNew(const QString& __n, const QString& __d)
+qlonglong cPlaceGroup::insertNew(QSqlQuery q, const QString& __n, const QString& __d)
 {
     cPlaceGroup o;
     o.setName(__n);
     o.setName(_sPlaceGroupNote, __d);
-    QSqlQuery q = getQuery();
     o.insert(q);
+    return o.getId();
+}
+
+qlonglong cPlaceGroup::replaceNew(QSqlQuery q, const QString& __n, const QString& __d)
+{
+    cPlaceGroup o;
+    o.setName(__n);
+    o.setName(_sPlaceGroupNote, __d);
+    o.replace(q);
     return o.getId();
 }
 
@@ -546,20 +554,16 @@ const cRecStaticDescr&  cIpAddress::descr() const
     return *_pRecordDescr;
 }
 
-int cIpAddress::replace(QSqlQuery &__q, bool __ex)
+bool cIpAddress::rewrite(QSqlQuery &, bool)
 {
-    const cRecStaticDescr& recDescr = descr();
-    if (!recDescr.isUpdatable()) {
-        if (__ex) EXCEPTION(EDATA, -1 , QObject::trUtf8("Az adat nem módosítható."));
-        return false;
-    }
-    cRecord *po = newObj();
-    po->set(_ixAddress, get(_ixAddress));
-    po->set(_ixPortId, get(_ixPortId));
-    int r = po->completion(__q);    // Van ilyen nevű rekord ?
-    delete po;
-    if (r == 0) return insert(__q, __ex) ? R_INSERT : R_ERROR;  // Ha nincs, akkor insert
-    return rewrite(__q, __ex) ? R_UPDATE : R_ERROR;            // Ha van akkor replace
+    EXCEPTION(ENOTSUPP);
+    return false; // warning...
+}
+
+int cIpAddress::replace(QSqlQuery &, bool)
+{
+    EXCEPTION(ENOTSUPP);
+    return R_ERROR; // warning...
 }
 
 cIpAddress& cIpAddress::setAddress(const QHostAddress& __a, const QString& __t)
@@ -674,6 +678,7 @@ const cRecStaticDescr&  cPortParam::descr() const
     if (initPDescr<cPortParam>(_sPortParams)) {
         _ixParamTypeId = _pRecordDescr->toIndex(_sParamTypeId);
         _ixPortId      = _pRecordDescr->toIndex(_sPortId);
+        setNameKeyMask(_pRecordDescr, _pRecordDescr->mask(_ixParamTypeId, _ixPortId));
     }
     return *_pRecordDescr;
 }
@@ -703,6 +708,7 @@ void    cPortParam::clearToEnd()
 {
     paramType.clear();
 }
+
 
 /* ------------------------------ cIfType ------------------------------ */
 DEFAULTCRECDEF(cIfType, _sIfTypes)
@@ -858,14 +864,9 @@ bool cNPort::insert(QSqlQuery &__q, bool __ex)
     return false;
 }
 
-int cNPort::replace(QSqlQuery &__q, bool __ex)
+bool cNPort::rewrite(QSqlQuery &__q, bool __ex)
 {
-    int r = cRecord::replace(__q, __ex);
-    if (r != R_ERROR) {
-        params.replace(__q, getId(), __ex);
-        return r;
-    }
-    return R_ERROR;
+    return tRewrite(__q, params, __ex);
 }
 
 // --
@@ -1130,13 +1131,15 @@ bool cInterface::insert(QSqlQuery &__q, bool __ex)
     return r;
 }
 
-int cInterface::replace(QSqlQuery &__q, bool __ex)
+/// Az cInterface nem önálló objektum. A replace() metódus nem kezeli az IP címeket
+/// az IP címek kezelését a cNode objektum rewrite() metódusa végzi: törli az összes
+/// az objektumhoz (közvetve) tartozó ip cím rekordot, majd beszürja az újakat.
+/// Az cIpAddress::replace() és cIpAddress::rewrite() metódusok nem támogatottak.
+bool cInterface::rewrite(QSqlQuery &__q, bool __ex)
 {
-    int r = cNPort::replace(__q, __ex);
-    if ((r == R_ERROR) || (trunkMembers.size() != updateTrunkMembers(__q, __ex))) return R_ERROR;
-        vlans.replace(__q, getId(), __ex);
-    addresses.replace(__q, getId(), __ex);
-    return r;
+    bool r = cNPort::replace(__q, __ex);
+    if (!r) return false;
+    return vlans.replace(__q, getId(), __ex);
 }
 
 QString cInterface::toString() const
@@ -1367,26 +1370,20 @@ bool cPatch::toEnd(int i)
 bool cPatch::insert(QSqlQuery &__q, bool __ex)
 {
     if (!cRecord::insert(__q, __ex)) return false;
+    if (params.insert(__q, getId(), __ex) != params.size()) return false;
     if (ports.count()) {
         if (ports.insert(__q, getId(), __ex) != ports.count()) return false;
         if (pShares == NULL) return true;
         return updateShares(__q, false, __ex);
     }
-    params.insert(__q, getId(), __ex);
     return true;
 }
 
-int cPatch::replace(QSqlQuery &__q, bool __ex)
+bool cPatch::rewrite(QSqlQuery &__q, bool __ex)
 {
-    int r = cRecord::replace(__q, __ex);
-    if (r == R_ERROR) return R_ERROR;
-    if (ports.count()) {
-        if (ports.replace(__q, getId(), __ex) != ports.count()) return false;
-        if (pShares != NULL) updateShares(__q, false, __ex);
-    }
-    params.replace(__q, getId(), __ex);
-    return r;
-
+    if (!tRewrite(__q, ports, params, __ex)) return false;
+    if (pShares == NULL) return true;
+    return updateShares(__q, false, __ex);
 }
 
 int cPatch::fetchPorts(QSqlQuery& __q, bool __ex)
@@ -1595,6 +1592,7 @@ const cRecStaticDescr&  cNodeParam::descr() const
     if (initPDescr<cNodeParam>(_sNodeParams)) {
         _ixParamTypeId = _pRecordDescr->toIndex(_sParamTypeId);
         _ixNodeId      = _pRecordDescr->toIndex(_sNodeId);
+        setNameKeyMask(_pRecordDescr, _pRecordDescr->mask(_ixParamTypeId, _ixNodeId));
     }
     return *_pRecordDescr;
 }
@@ -1629,12 +1627,15 @@ void    cNodeParam::clearToEnd()
 
 int nodeType(const QString& __n, bool __ex)
 {
-    if (0 == __n.compare(_sNode,    Qt::CaseInsensitive)) return NT_NODE;
-    if (0 == __n.compare(_sHost,    Qt::CaseInsensitive)) return NT_HOST;
-    if (0 == __n.compare(_sSwitch,  Qt::CaseInsensitive)) return NT_SWITCH;
-    if (0 == __n.compare(_sHub,     Qt::CaseInsensitive)) return NT_HUB;
-    if (0 == __n.compare(_sVirtual, Qt::CaseInsensitive)) return NT_VIRTUAL;
-    if (0 == __n.compare(_sSnmp,    Qt::CaseInsensitive)) return NT_SNMP;
+    if (0 == __n.compare(_sNode,        Qt::CaseInsensitive)) return NT_NODE;
+    if (0 == __n.compare(_sHost,        Qt::CaseInsensitive)) return NT_HOST;
+    if (0 == __n.compare(_sSwitch,      Qt::CaseInsensitive)) return NT_SWITCH;
+    if (0 == __n.compare(_sHub,         Qt::CaseInsensitive)) return NT_HUB;
+    if (0 == __n.compare(_sVirtual,     Qt::CaseInsensitive)) return NT_VIRTUAL;
+    if (0 == __n.compare(_sSnmp,        Qt::CaseInsensitive)) return NT_SNMP;
+    if (0 == __n.compare(_sConverter,   Qt::CaseInsensitive)) return NT_CONVERTER;
+    if (0 == __n.compare(_sPrinter,     Qt::CaseInsensitive)) return NT_PRINTER;
+    if (0 == __n.compare(_sGateway,     Qt::CaseInsensitive)) return NT_GATEWAY;
     if (__ex == true)   EXCEPTION(EDATA, -1, __n);
     return NT_INVALID;
 }
@@ -1648,6 +1649,9 @@ const QString& nodeType(int __e, bool __ex)
     case NT_HUB:        return _sHub;
     case NT_VIRTUAL:    return _sVirtual;
     case NT_SNMP:       return _sSnmp;
+    case NT_CONVERTER:  return _sConverter;
+    case NT_PRINTER:    return _sPrinter;
+    case NT_GATEWAY:    return _sGateway;
     }
     if (__ex == true)   EXCEPTION(EDATA, __e);
     return _sNul;
@@ -1721,23 +1725,34 @@ bool cNode::insert(QSqlQuery &__q, bool __ex)
     return cPatch::insert(__q, __ex);
 }
 
-int cNode::replace(QSqlQuery &__q, bool __ex)
+/// Az IP címeket töröljük, és újra felvesszük, a csere nem támogatott.
+bool cNode::rewrite(QSqlQuery &__q, bool __ex)
 {
-    int ixNodeType = toIndex(_sNodeType);
-    if (isNull(ixNodeType)) {
-        qlonglong nt = enum2set(NT_NODE);
-        foreach (const cNPort *pp, ports) {
-            if (pp->tableoid() == cInterface::_descr_cInterface().tableoid()) {
-                const cInterface *pi = (const cInterface *)pp;
-                if (!pi->addresses.isEmpty()) {
-                    nt = enum2set(NT_HOST);
-                    break;
-                }
-            }
+    if (!tRewrite(__q, ports, params, __ex)) return false;
+    cIpAddress a;
+    int nif = 0;    // megszámoljuk az interface-kat, van-e egyáltalán
+    tOwnRecords<cNPort>::iterator i, e = ports.end();
+    QBitArray  w = a.mask(cIpAddress::ixPortId());
+    // Töröljők az összes régi IP címeket
+    for (i = ports.begin(); i != e; ++i) {
+        cNPort& p = **i;
+        // Csak az interface típusnak lehet címe
+        if (p.descr() == cInterface::_descr_cInterface()) {
+            nif++;
+            a.setId((cIpAddress::ixPortId(), p.getId()));
+            a.remove(__q, false, w, false); // Lehet, hogy semmit nem töröl!
         }
-        setId(ixNodeType, nt);
     }
-    return cPatch::replace(__q, __ex);
+    if (nif == 0) return true;  // Kész, nincs interface, nem lehetnek címek sem.
+    // Kiírjuk az új címeket
+    for (i = ports.begin(); i != e; ++i) {
+        cNPort *p = *i;
+        if (p->descr() == cInterface::_descr_cInterface()) {
+            cInterface *pif = p->reconvert<cInterface>();
+            if (pif->addresses.size()) pif->addresses.insert(__q, p->getId(), __ex);
+        }
+    }
+    return true;
 }
 
 int  cNode::fetchPorts(QSqlQuery& __q, bool __ex)
@@ -2093,24 +2108,24 @@ cNPort& cNode::asmbHostPort(QSqlQuery& q, int ix, const QString& pt, const QStri
 }
 
 
-cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const QStringPair *pp, const QStringPair *ip, const QString *mac, const QString& d, qlonglong __place, bool __ex)
+cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const QStringPair *__port, const QStringPair *__addr, const QString *__sMac, const QString& __note, qlonglong __place, bool __ex)
 {
     QString em;
     QString name = __name;
     clear();
-    setName(_sNodeNote, d);
+    setName(_sNodeNote, __note);
     setId(_sPlaceId, __place);
     QString ips, ipt, ifType, pnm;
-    if (ip != NULL) { ips = ip->first; ipt = ip->second; }      // IP cím és típus
-    if (pp != NULL) { pnm = pp->first; ifType = pp->second; }   // port név és típus
+    if (__addr != NULL) { ips = __addr->first; ipt = __addr->second; }      // IP cím és típus
+    if (__port != NULL) { pnm = __port->first; ifType = __port->second; }   // port név és típus
     if (ifType.isEmpty()) ifType = _sEthernet;
     if (pnm.isEmpty())    pnm    = _sEthernet;
     QList<QHostAddress> hal;
     QHostAddress ha;
     cMac ma;
-    if (mac != NULL) {
-        if (*mac != _sARP && !ma.set(*mac)) {
-            em = trUtf8("Nem értelmezhető MAC : %1").arg(*mac);
+    if (__sMac != NULL) {
+        if (*__sMac != _sARP && !ma.set(*__sMac)) {
+            em = trUtf8("Nem értelmezhető MAC : %1").arg(*__sMac);
             if (__ex) EXCEPTION(EDATA, -1, em);
             DERR() << em << endl;
             _stat |= ES_DEFECTIVE;
@@ -2131,11 +2146,11 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const QStringPair *p
             int n = hal.size();
             if (n != 1) {
                 if (n < 1) {
-                    em = trUtf8("A név nem deríthető ki, a %1 MAC-hez nincs IP cím").arg(*mac);
+                    em = trUtf8("A név nem deríthető ki, a %1 MAC-hez nincs IP cím").arg(*__sMac);
                     if (__ex) EXCEPTION(EFOUND, n, em);
                 }
                 else{
-                    em = trUtf8("A név nem deríthető ki, a %1 MAC-hez több IP cím tartozik").arg(*mac);
+                    em = trUtf8("A név nem deríthető ki, a %1 MAC-hez több IP cím tartozik").arg(*__sMac);
                     if (__ex) EXCEPTION(AMBIGUOUS,n, em);
                 }
                 DERR() << em << endl;
@@ -2150,11 +2165,11 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const QStringPair *p
                 if (__ex) EXCEPTION(EDATA, -1, em);
             }
             else if (!ma) {  // Nincs MAC, van IP
-                if (mac == NULL) {
+                if (__sMac == NULL) {
                     em = trUtf8("Hiányzó MAC cím.");
                     if (__ex) EXCEPTION(EDATA, -1, em);
                 }
-                else if (*mac == _sARP) ma = cArp::ip2mac(q, ha);
+                else if (*__sMac == _sARP) ma = cArp::ip2mac(q, ha);
                 if (!ma) {
                     if (em.isEmpty()) em = trUtf8("A %1 cím alapján nem deríthatő ki a MAC.").arg(ips);
                     if (__ex) EXCEPTION(EDATA, -1, em);
@@ -2173,11 +2188,11 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const QStringPair *p
     }
     // Van név
     setName(name);
-    if (ip == NULL) {                   // Nincs IP címe
-        if (pp == NULL && mac == NULL) {    // Portja sincs
+    if (__addr == NULL) {                   // Nincs IP címe
+        if (__port == NULL && __sMac == NULL) {    // Portja sincs
             return *this;                   // Akkor kész
         }
-        if (mac != NULL && *mac == _sARP) {
+        if (__sMac != NULL && *__sMac == _sARP) {
             em = trUtf8("Ebben a kontexusban a MAC nem kideríthető");
             if (__ex) EXCEPTION(EDATA, -1, em);
             DERR() << em << endl;
@@ -2187,7 +2202,7 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const QStringPair *p
         if (ifType.isEmpty()) ifType = _sEthernet;
         if (pnm.isEmpty())    pnm    = ifType;
         cNPort *p = addPort(ifType, pnm, _sNul, 1);
-        if (mac == NULL) return *this;      // Ha nem adtunk meg MAC-et
+        if (__sMac == NULL) return *this;      // Ha nem adtunk meg MAC-et
         if (!ma) EXCEPTION(EPROGFAIL);
         *p->reconvert<cInterface>() = ma;   // A MAC-et is beállítjuk.
         return *this;
@@ -2216,7 +2231,7 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const QStringPair *p
             return *this;
         }
     }
-    if (mac != NULL && *mac == _sARP) {
+    if (__sMac != NULL && *__sMac == _sARP) {
         ma = cArp::ip2mac(q, ha);
     }
     if (ifType.isEmpty()) ifType = _sEthernet;
@@ -2266,7 +2281,7 @@ bool cSnmpDevice::insert(QSqlQuery &__q, bool __ex)
     return cPatch::insert(__q, __ex);
 }
 
-int cSnmpDevice::replace(QSqlQuery &__q, bool __ex)
+bool cSnmpDevice::rewrite(QSqlQuery &__q, bool __ex)
 {
     int ixNodeType = toIndex(_sNodeType);
     if (isNull(ixNodeType)) {
@@ -2274,7 +2289,7 @@ int cSnmpDevice::replace(QSqlQuery &__q, bool __ex)
         if (ports.size() > 8) nt |= enum2set(NT_SWITCH);
         setId(ixNodeType, nt);
     }
-    return cPatch::replace(__q, __ex);
+    return cNode::rewrite(__q, __ex);
 }
 
 cNPort *cSnmpDevice::addPort(const cIfType& __t, const QString& __name, const QString& __descr, int __ix)
@@ -2351,14 +2366,205 @@ int cSnmpDevice::open(QSqlQuery& q, cSnmp& snmp, bool __ex) const
 
 
 /* ----------------------------------------------------------------- */
-bool LinkUnlink(QSqlQuery& q, cRecord& o, qlonglong __pid)
+
+int phsLinkType(const QString& n, bool __ex)
 {
-    o.clear();
-    o.setId(_sPortId1, __pid);
-    if (o.completion(q) != 1) return false;
-    return o.remove(q);
+    if (0 == n.compare(_sFront, Qt::CaseInsensitive)) return LT_FRONT;
+    if (0 == n.compare(_sBack,  Qt::CaseInsensitive)) return LT_BACK;
+    if (0 == n.compare(_sTerm,  Qt::CaseInsensitive)) return LT_TERM;
+    if (__ex) EXCEPTION(EDATA, 0, n);
+    return LT_INVALID;
 }
 
+const QString& phsLinkType(int e, bool __ex)
+{
+    switch (e) {
+    case LT_FRONT:  return _sFront;
+    case LT_BACK:   return _sBack;
+    case LT_TERM:   return _sTerm;
+    default:        break;
+    }
+    if (__ex) EXCEPTION(EDATA, e);
+    return _sNul;
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+CRECCNTR(cPhsLink)
+const cRecStaticDescr&  cPhsLink::descr() const
+{
+    if (initPDescr<cPhsLink>(_sPhsLinks)) {
+        // Link, a fenti a view tábla neve, ellenőrizzük a tábla nevet, és a típust:
+        if (_descr_cPhsLink().tableType() != LINK_TABLE || _descr_cPhsLink().tableName() != _sPhsLinksTable) EXCEPTION(EPROGFAIL);
+        CHKENUM(_sPhsLinkType1, phsLinkType);
+        CHKENUM(_sPhsLinkType2, phsLinkType);
+    }
+    return *_pRecordDescr;
+}
+CRECDEFD(cPhsLink)
+
+int cPhsLink::unxlinks(QSqlQuery& __q, qlonglong __pid, ePhsLinkType __t, ePortShare __s) const
+{
+    int r = 0;
+    switch (__t) {
+    case LT_BACK:
+    case LT_TERM:   // Nincs/nem lehet megosztás erre a portra
+                    r += unlink(__q, __pid, __t);
+                    break;
+    case LT_FRONT:
+        switch (__s) {  // Minden ütközö link törlendő
+        case ES_:   r += unlink(__q, __pid, LT_FRONT);
+                    break;
+        case ES_A:  r += unlink(__q, __pid, LT_FRONT, ES_A);
+                    r += unlink(__q, __pid, LT_FRONT, ES_AA);
+                    r += unlink(__q, __pid, LT_FRONT, ES_AB);
+                    r += unlink(__q, __pid, LT_FRONT, ES_C);
+                    r += unlink(__q, __pid, LT_FRONT, ES_D);
+                    break;
+        case ES_AA: r += unlink(__q, __pid, LT_FRONT, ES_A);
+                    r += unlink(__q, __pid, LT_FRONT, ES_AA);
+                    break;
+        case ES_AB: r += unlink(__q, __pid, LT_FRONT, ES_A);
+                    r += unlink(__q, __pid, LT_FRONT, ES_AB);
+                    r += unlink(__q, __pid, LT_FRONT, ES_C);
+                    r += unlink(__q, __pid, LT_FRONT, ES_D);
+                    break;
+        case ES_B:  r += unlink(__q, __pid, LT_FRONT, ES_B);
+                    r += unlink(__q, __pid, LT_FRONT, ES_BA);
+                    r += unlink(__q, __pid, LT_FRONT, ES_BB);
+                    r += unlink(__q, __pid, LT_FRONT, ES_C);
+                    r += unlink(__q, __pid, LT_FRONT, ES_D);
+                    break;
+        case ES_BA: r += unlink(__q, __pid, LT_FRONT, ES_B);
+                    r += unlink(__q, __pid, LT_FRONT, ES_BA);
+                    r += unlink(__q, __pid, LT_FRONT, ES_C);
+                    r += unlink(__q, __pid, LT_FRONT, ES_D);
+                    break;
+        case ES_BB: r += unlink(__q, __pid, LT_FRONT, ES_B);
+                    r += unlink(__q, __pid, LT_FRONT, ES_BB);
+                    ;
+        case ES_C:  r += unlink(__q, __pid, LT_FRONT, ES_C);
+                    r += unlink(__q, __pid, LT_FRONT, ES_A);
+                    r += unlink(__q, __pid, LT_FRONT, ES_B);
+                    r += unlink(__q, __pid, LT_FRONT, ES_AB);
+                    r += unlink(__q, __pid, LT_FRONT, ES_BA);
+                    break;
+        case ES_D:  r += unlink(__q, __pid, LT_FRONT, ES_D);
+                    r += unlink(__q, __pid, LT_FRONT, ES_A);
+                    r += unlink(__q, __pid, LT_FRONT, ES_B);
+                    r += unlink(__q, __pid, LT_FRONT, ES_AB);
+                    r += unlink(__q, __pid, LT_FRONT, ES_BA);
+                    break;
+        default:    EXCEPTION(EDATA);
+        }
+    default:    EXCEPTION(EDATA);
+    }
+    return r;
+}
+
+int cPhsLink::replace(QSqlQuery &__q, bool __ex)
+{
+    int r = 0;
+    // Ütköző linkek törlése a bal oldali porthoz (1)
+    r += unxlinks(__q, getId(_sPortId1), (ePhsLinkType)getId(_sPhsLinkType1), (ePortShare)getId(__sPortShared));
+    // Ütköző linkek törlése a jobb oldali porthoz (2)
+    r += unxlinks(__q, getId(_sPortId2), (ePhsLinkType)getId(_sPhsLinkType2), (ePortShare)getId(__sPortShared));
+    if (!insert(__q, __ex)) return R_ERROR;
+    return r ? R_UPDATE : R_INSERT;
+}
+
+bool cPhsLink::rewrite(QSqlQuery &, bool)
+{
+    EXCEPTION(ENOTSUPP);
+    return false;
+}
+
+int cPhsLink::unlink(QSqlQuery &q, const QString& __nn, const QString& __pn, ePhsLinkType __t, bool __pat)
+{
+    QString sql =
+            "SELECT phs_link_id FROM phs_links AS l"
+            " JOIN nports AS p ON p.port_id = l.port_id1"
+            " JOIN patch  AS n ON n.node_id = p.node_id"
+            " WHERE n.node_name = ? AND p.port_name " + QString(__pat ? "LIKE" : "=") + " ?";
+    if (__t != LT_INVALID) sql += " AND " + _sPhsLinkType1 + " = ?";
+    if (!q.prepare(sql)) SQLPREPERR(q, sql);
+    q.bindValue(0, __nn);
+    q.bindValue(1, __pn);
+    if (__t != LT_INVALID) q.bindValue(2, phsLinkType(__t));
+    if (!q.exec()) SQLQUERYERR(q);
+    QList<qlonglong>    idl;
+    if (q.first()) {
+        do {
+            idl << variantToId(q.value(0));
+        } while (q.next());
+        foreach (qlonglong id, idl) {
+            setId(id);
+            PDEB(VVERBOSE) << " Delete " << tableName() << " rekord, " << VDEBBOOL(id) << endl;
+            if (!remove(q, false, primaryKey())) DERR() << "Nem sikerült törölni a host_services rekordot, ID = " << id << endl;
+        }
+    }
+    else {
+        DWAR() << "Egyetlen rekord sem kerül törlésre." << endl;
+    }
+    return idl.size();
+}
+
+int cPhsLink::unlink(QSqlQuery &q, const QString& __nn, ePhsLinkType __t, int __ix, int __ei)
+{
+    QString sql =
+            "SELECT phs_link_id FROM phs_links AS l"
+            " JOIN nports AS p ON p.port_id = l.port_id1"
+            " JOIN patch  AS n ON n.node_id = p.node_id"
+            " WHERE n.node_name = ? AND phs_link_type1 = ? AND p.port_index";
+    if (__ei == NULL_IX || __ei == __ix) {
+        sql += "= " + QString::number(__ix);
+    }
+    else {
+        // if (__ix > __ie) EXCEPTION(EDATA);
+        sql += ">= " + QString::number(__ix) + "AND p.port_index <= " + QString::number(__ei);
+    }
+
+    if (!q.prepare(sql)) SQLPREPERR(q, sql);
+    q.bindValue(0, __nn);
+    q.bindValue(1, phsLinkType(__t));
+    if (!q.exec()) SQLQUERYERR(q);
+    QList<qlonglong>    idl;
+    if (q.first()) {
+        do {
+            idl << variantToId(q.value(0));
+        } while (q.next());
+        foreach (qlonglong id, idl) {
+            setId(id);
+            PDEB(VVERBOSE) << " Delete " << tableName() << " rekord, " << VDEBBOOL(id) << endl;
+            if (!remove(q, false, primaryKey())) DERR() << "Nem sikerült törölni a host_services rekordot, ID = " << id << endl;
+        }
+    }
+    else {
+        DWAR() << "Egyetlen rekord sem kerül törlésre." << endl;
+    }
+    return idl.size();
+}
+
+int cPhsLink::unlink(QSqlQuery &q, qlonglong __pid, ePhsLinkType __t, ePortShare __s) const
+{
+    QString pid = QString::number(__pid);
+    QString w1 = "port_id1 = " + pid;
+    QString w2 = "port_id2 = " + pid;
+    if (__t != LT_INVALID) {
+        QString t = quoted(phsLinkType(__t));
+        w1 = "(" + w1 + " AND phs_link_type1 = " + t + ")";
+        w2 = "(" + w1 + " AND phs_link_type2 = " + t + ")";
+    }
+    QString where = w1 + " OR " + w2;
+    if (__s != ES_NC) {
+        where = "port_shared = '" + portShare((int)__s) + "' AND (" + where + ")";
+    }
+    QString sql = "DELETE FROM " + descr().fullTableNameQ() + " WHERE " + where;
+    execSql(q, sql);
+    return q.numRowsAffected();
+}
+
+/* ----------------------------------------------------------------- */
 qlonglong LinkGetLinked(QSqlQuery& q, cRecord& o, qlonglong __pid)
 {
     o.clear();
@@ -2375,82 +2581,6 @@ bool LinkIsLinked(QSqlQuery& q, cRecord& o, qlonglong __pid1, qlonglong __pid2)
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-CRECCNTR(cPhsLink)
-const cRecStaticDescr&  cPhsLink::descr() const
-{
-    if (initPDescr<cPhsLink>(_sPhsLinks)) {
-        // Link, a fenti a view tábla neve, ellenőrizzük a tábla nevet, és a típust:
-        if (_descr_cPhsLink().tableType() != LINK_TABLE || _descr_cPhsLink().tableName() != _sPhsLinksTable) EXCEPTION(EPROGFAIL);
-    }
-    return *_pRecordDescr;
-}
-CRECDEFD(cPhsLink)
-
-int cPhsLink::unlink(QSqlQuery &q, const QString& __nn, const QString& __pn, bool __pat)
-{
-    QString sql =
-            "SELECT phs_link_id FROM phs_links AS l"
-            " JOIN nports AS p ON p.port_id = l.port_id1"
-            " JOIN nodes  AS n ON n.node_id = p.node_id"
-            " WHERE n.node_name = ? AND p.port_name %1 ?";
-    sql = sql.arg(__pat ? "LIKE" : "=");
-    if (!q.prepare(sql)) SQLPREPERR(q, sql);
-    q.bindValue(0, __nn);
-    q.bindValue(1, __pn);
-    if (!q.exec()) SQLQUERYERR(q);
-    QList<qlonglong>    idl;
-    if (q.first()) {
-        do {
-            idl << variantToId(q.value(0));
-        } while (q.next());
-        foreach (qlonglong id, idl) {
-            setId(id);
-            PDEB(VVERBOSE) << " Delete " << tableName() << " rekord, " << VDEBBOOL(id) << endl;
-            if (!remove(q, false, primaryKey())) DERR() << "Nem sikerült törölni a host_services rekordot, ID = " << id << endl;
-        }
-    }
-    else {
-        DWAR() << "Egyetlen rekord sem kerül törlésre." << endl;
-    }
-    return idl.size();
-}
-
-int cPhsLink::unlink(QSqlQuery &q, const QString& __nn, int __ix, int __ei)
-{
-    QString sql =
-            "SELECT phs_link_id FROM phs_links AS l"
-            " JOIN nports AS p ON p.port_id = l.port_id1"
-            " JOIN nodes  AS n ON n.node_id = p.node_id"
-            " WHERE n.node_name = ? AND p.port_index ";
-    if (__ei == NULL_IX || __ei == __ix) {
-        sql += "= " + QString::number(__ix);
-    }
-    else {
-        // if (__ix > __ie) EXCEPTION(EDATA);
-        sql += ">= " + QString::number(__ix) + "AND p.port_index <= " + QString::number(__ei);
-    }
-
-    if (!q.prepare(sql)) SQLPREPERR(q, sql);
-    q.bindValue(0, __nn);
-    if (!q.exec()) SQLQUERYERR(q);
-    QList<qlonglong>    idl;
-    if (q.first()) {
-        do {
-            idl << variantToId(q.value(0));
-        } while (q.next());
-        foreach (qlonglong id, idl) {
-            setId(id);
-            PDEB(VVERBOSE) << " Delete " << tableName() << " rekord, " << VDEBBOOL(id) << endl;
-            if (!remove(q, false, primaryKey())) DERR() << "Nem sikerült törölni a host_services rekordot, ID = " << id << endl;
-        }
-    }
-    else {
-        DWAR() << "Egyetlen rekord sem kerül törlésre." << endl;
-    }
-    return idl.size();
-}
-
-/* ----------------------------------------------------------------- */
 
 CRECCNTR(cLogLink)
 const cRecStaticDescr&  cLogLink::descr() const
@@ -2463,6 +2593,12 @@ const cRecStaticDescr&  cLogLink::descr() const
 }
 
 bool cLogLink::insert(QSqlQuery &, bool)
+{
+    EXCEPTION(ENOTSUPP);
+    return false;
+}
+
+int cLogLink::replace(QSqlQuery &, bool)
 {
     EXCEPTION(ENOTSUPP);
     return false;
@@ -2488,6 +2624,14 @@ const cRecStaticDescr&  cLldpLink::descr() const
     return *_pRecordDescr;
 }
 CRECDEFD(cLldpLink)
+
+bool cLldpLink::unlink(QSqlQuery& q, qlonglong __pid)
+{
+    QString pid = QString::number(__pid);
+    QString sql = "DELETE FROM " + descr().fullTableNameQ() + " WHERE port_id1 = " + pid + " OR port_id2 = " + pid;
+    execSql(q, sql);
+    return q.numRowsAffected() != 0;
+}
 
 /* ----------------------------------------------------------------- */
 int execState(const QString& _n, bool __ex)

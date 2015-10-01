@@ -122,11 +122,11 @@ Ha létrejön hiba objektum, azt nem szabadítja fel. Nem ellenörzi, volt-e ér
 EXT_ bool executeSqlScript(QFile& file, QSqlDatabase *pq = NULL, bool __e = true);
 
 /// Tranzakció indítása
-EXT_ bool sqlBegin(QSqlQuery& q, bool __ex = true);
+EXT_ bool sqlBegin(QSqlQuery& q);
 /// Tranzakció befejezése
-EXT_ bool sqlEnd(QSqlQuery& q, bool __ex = true);
+EXT_ bool sqlEnd(QSqlQuery& q);
 /// Tranzakció visszagörgetése
-EXT_ bool sqlRollback(QSqlQuery& q, bool __ex = true);
+EXT_ bool sqlRollback(QSqlQuery& q);
 
 /// Végrehajt egy query-t
 /// @param q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.

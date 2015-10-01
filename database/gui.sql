@@ -78,9 +78,9 @@ desc    Csökkenő sorrend.';
 
 CREATE TABLE table_shape_fields (
     table_shape_field_id    bigserial       PRIMARY KEY,
-    table_shape_field_name  text     NOT NULL,
-    table_shape_field_note text     DEFAULT NULL,
-    table_shape_field_title text     DEFAULT NULL,
+    table_shape_field_name  text            NOT NULL,
+    table_shape_field_note  text            DEFAULT NULL,
+    table_shape_field_title text            DEFAULT NULL,
     table_shape_id          bigint          NOT NULL REFERENCES table_shapes(table_shape_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     field_sequence_number   integer         NOT NULL,
     ord_types               ordtype[]       DEFAULT '{"no","asc","desc"}',
@@ -95,6 +95,7 @@ CREATE TABLE table_shape_fields (
     whats_this              text            DEFAULT NULL,
     view_rights             rights          DEFAULT NULL,
     edit_rights             rights          DEFAULT NULL,
+    flag                    boolean         DEFAULT false,
     UNIQUE (table_shape_id, table_shape_field_name)
 );
 ALTER TABLE table_shape_fields OWNER TO lanview2;
@@ -136,7 +137,8 @@ CREATE TABLE table_shape_filters (
     table_shape_filter_id       bigserial      PRIMARY KEY,
     table_shape_filter_note     text   DEFAULT NULL,
     table_shape_field_id        bigint         REFERENCES table_shape_fields(table_shape_field_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    filter_type                 filtertype     NOT NULL
+    filter_type                 filtertype     NOT NULL,
+    flag                        boolean        DEFAULT false
 );
 ALTER TABLE table_shape_filters OWNER TO lanview2;
 

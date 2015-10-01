@@ -1,21 +1,21 @@
-REPLACE SERVICE local        "local service"    { NIL;      }
-REPLACE SERVICE  ssh         ssh                { TCP 22;   }
-REPLACE SERVICE snmp        snmp                { UDP 161;  }
-REPLACE SERVICE "tcp.rs"    "TCP serial port gateway"{TCP 4001; }
-REPLACE SERVICE dhcp        "DHCP server"       { UDP 67; }
+SERVICE local        "local service"    { NIL;      }
+SERVICE  ssh         ssh                { TCP 22;   }
+SERVICE snmp        snmp                { UDP 161;  }
+SERVICE "tcp.rs"    "TCP serial port gateway"{TCP 4001; }
+SERVICE dhcp        "DHCP server"       { UDP 67; }
 
 
-REPLACE SERVICE "dhcp.conf"  "DHCP config fájl, local vagy ssh-n keresztül"      { NIL; FEATURES ":file=/etc/dhcp/dhcpd.conf:"; }
-REPLACE SERVICE "arp.proc"   "ARP fájl a proc-ban, local vagy ssh-n keresztül"   { NIL; FEATURES ":file=/proc/net/arp:"; }
+SERVICE "dhcp.conf"  "DHCP config fájl, local vagy ssh-n keresztül"      { NIL; FEATURES ":file=/etc/dhcp/dhcpd.conf:"; }
+SERVICE "arp.proc"   "ARP fájl a proc-ban, local vagy ssh-n keresztül"   { NIL; FEATURES ":file=/proc/net/arp:"; }
 
 //--------------------------------------------------------
-REPLACE SERVICE "updt_oui"  "Update OUI" {
+SERVICE "updt_oui"  "Update OUI" {
     NIL;
     SUPERIOR SERVICE MASK "~."; // Semmire sem illeszkedik
 }
 //--------------------------------------------------------
 
-REPLACE SERVICE lv2d "Lanview2 super server" {
+SERVICE lv2d "Lanview2 super server" {
     NIL;
     SUPERIOR SERVICE MASK "~."; // Semmire sem illeszkedik
     FEATURES ":superior:timing=passive:logrot=500M,8:";
@@ -23,7 +23,7 @@ REPLACE SERVICE lv2d "Lanview2 super server" {
 }
 //--------------------------------------------------------
 
-REPLACE SERVICE arpd        "Arp daemon" {
+SERVICE arpd        "Arp daemon" {
     NIL;
     // process=continue         Önálló programként van magvalósítva, ami folyamatosan fut (a parancs futtatónak szól)
     // timing=passive           Maga a fő folyamat nem csinál semmit 
@@ -35,7 +35,7 @@ REPLACE SERVICE arpd        "Arp daemon" {
     NORMAL CHECK INTERVAL  600;
 }
 
-REPLACE SERVICE "arp" "ARP tábla lekérdezése" {
+SERVICE "arp" "ARP tábla lekérdezése" {
     NIL;
     FEATURES ":timing=timed:";
     SUPERIOR SERVICE MASK "arpd";
@@ -46,7 +46,7 @@ REPLACE SERVICE "arp" "ARP tábla lekérdezése" {
 
 //--------------------------------------------------------
 
-REPLACE SERVICE icontsrv "icontsrv daemon" {
+SERVICE icontsrv "icontsrv daemon" {
     NIL;
     FEATURES ":process=continue:timing=passive:superior:logrot=500M,4:";
     SUPERIOR SERVICE MASK lv2d;
@@ -55,7 +55,7 @@ REPLACE SERVICE icontsrv "icontsrv daemon" {
     RETRY CHECK INTERVAL   60;
 }
 
-REPLACE SERVICE import "import daemon" {
+SERVICE import "import daemon" {
     NIL;
     FEATURES ":process=respawn:timing=custom";
     SUPERIOR SERVICE MASK lv2d;
@@ -63,7 +63,7 @@ REPLACE SERVICE import "import daemon" {
     NORMAL CHECK INTERVAL 300;
 }
 
-REPLACE SERVICE portstat "Device port status query daemon" {
+SERVICE portstat "Device port status query daemon" {
     NIL;
     FEATURES ":process=continue:timing=passive:superior:logrot=500M,8:";
     SUPERIOR SERVICE MASK lv2d;
@@ -73,7 +73,7 @@ REPLACE SERVICE portstat "Device port status query daemon" {
 
 //---------------------------------------------------------
 
-REPLACE SERVICE "pstat" "Query port status by <protocol>" {
+SERVICE "pstat" "Query port status by <protocol>" {
     NIL;
     SUPERIOR SERVICE MASK "portstat";
     FEATURES ":timing=timed:";
@@ -82,7 +82,7 @@ REPLACE SERVICE "pstat" "Query port status by <protocol>" {
     RETRY CHECK INTERVAL  30;
 }
 
-REPLACE SERVICE rlinkstat "Jelenlét, a switch port állapota alapján" {
+SERVICE rlinkstat "Jelenlét, a switch port állapota alapján" {
     NIL;
     SUPERIOR SERVICE MASK "pstat";
     FEATURES ":timing=passive:iftype=ethernet:";
@@ -90,7 +90,7 @@ REPLACE SERVICE rlinkstat "Jelenlét, a switch port állapota alapján" {
 }
 
 //---------------------------------------------------------
-REPLACE SERVICE portmac "Device port address table query daemon" {
+SERVICE portmac "Device port address table query daemon" {
     NIL;
     SUPERIOR SERVICE MASK lv2d;
     FEATURES ":process=continue:timing=passive:superior:logrot=500M,8:";
@@ -98,7 +98,7 @@ REPLACE SERVICE portmac "Device port address table query daemon" {
     NORMAL CHECK INTERVAL 300;
 }
 //---------------------------------------------------------
-REPLACE SERVICE "pmac" "Query port address table by <protocol>" {
+SERVICE "pmac" "Query port address table by <protocol>" {
     NIL;
     SUPERIOR SERVICE MASK "portmac";
     FEATURES ":timing=timed:";
@@ -109,7 +109,7 @@ REPLACE SERVICE "pmac" "Query port address table by <protocol>" {
 
 //---------------------------------------------------------
 
-REPLACE SERVICE "rs485" "RS485 BUS interface or gateway" {
+SERVICE "rs485" "RS485 BUS interface or gateway" {
     SUPERIOR SERVICE MASK icontsrv;
     NORMAL CHECK INTERVAL 10;
     RETRY CHECK INTERVAL  10;
@@ -117,7 +117,7 @@ REPLACE SERVICE "rs485" "RS485 BUS interface or gateway" {
 }
 
 // IndaContakt interface V1 master
-REPLACE SERVICE indalarmif1ma "IndAlarm Contact V1 Master" {
+SERVICE indalarmif1ma "IndAlarm Contact V1 Master" {
     NIL;
     SUPERIOR SERVICE MASK rs485;
     MAX CHECK ATTEMPTS     3;
@@ -127,7 +127,7 @@ REPLACE SERVICE indalarmif1ma "IndAlarm Contact V1 Master" {
 }
 //---------------------------------------------------------
 // IndaContakt interface V1 slave
-REPLACE SERVICE indalarmif1sl "IndAlarm Contact V1 Slave"{
+SERVICE indalarmif1sl "IndAlarm Contact V1 Slave"{
     NIL;
     MAX CHECK ATTEMPTS     3;
     NORMAL CHECK INTERVAL 10;
@@ -136,7 +136,7 @@ REPLACE SERVICE indalarmif1sl "IndAlarm Contact V1 Slave"{
     FEATURES ":iftype=iic:timing=timed:superior:";
 }
 // IndaContakt interface V2
-REPLACE SERVICE indalarmif2 "IndAlarm Contact V2" {
+SERVICE indalarmif2 "IndAlarm Contact V2" {
     NIL;
     SUPERIOR SERVICE MASK rs485;
     MAX CHECK ATTEMPTS     3;
@@ -146,7 +146,7 @@ REPLACE SERVICE indalarmif2 "IndAlarm Contact V2" {
 }
 
 // Pseudo services
-REPLACE SERVICE attached "IndAlarm Contact védett eszköz" {
+SERVICE attached "IndAlarm Contact védett eszköz" {
     NIL;
     SUPERIOR SERVICE MASK "indalarmif";
     FEATURES ":timing=passive:iftype=attach:";
@@ -154,17 +154,17 @@ REPLACE SERVICE attached "IndAlarm Contact védett eszköz" {
 }
 
 
-REPLACE SERVICE "cmddisp"  "Lekérdezések egy parancshíváson keresztül" {
+SERVICE "cmddisp"  "Lekérdezések egy parancshíváson keresztül" {
     SUPERIOR SERVICE MASK "^lv2d$";
     FEATURES ":superior:timing=polling:";
 }
 
-REPLACE SERVICE "win.dhcp.conf" "DHCP konfiguráció a netsh-n keresztül" {
+SERVICE "win.dhcp.conf" "DHCP konfiguráció a netsh-n keresztül" {
     SUPERIOR SERVICE MASK "^cmddisp$";
     FEATURES ":timing=polling:qparser=manager:superior:";
 }
 
-REPLACE SERVICE qparser "Query Parser (inferior)" {
+SERVICE qparser "Query Parser (inferior)" {
     FEATURES ":timing=polling:qparser=inferior:";
 }
 

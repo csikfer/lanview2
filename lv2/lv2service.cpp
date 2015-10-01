@@ -821,7 +821,7 @@ bool cInspector::toRun(bool __timed)
         retStat      = (enum eNotifSwitch)(retStat & RS_STAT_MASK);
     } CATCHS(lastError);
     if (lastError != NULL) {    // Ha hívtuk a run metódust, és dobott egy hátast
-        sqlRollback(*pq, false);  // Hiba volt, inkább visszacsináljuk az egészet.
+        sqlRollback(*pq);  // Hiba volt, inkább visszacsináljuk az egészet.
         if (pProcess != NULL && QProcess::NotRunning != pProcess->state()) {
             pProcess->kill();
         }

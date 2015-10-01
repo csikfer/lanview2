@@ -78,7 +78,7 @@ COMMENT ON COLUMN phs_links_table.port_id1          IS 'Port''s ID(1) which conn
 COMMENT ON COLUMN phs_links_table.phs_link_type1    IS $$Link típusa(1), végpont 'Term', patch panel előlap 'Front', vagy hátlap 'Back'$$;
 COMMENT ON COLUMN phs_links_table.port_id2          IS 'Port''s ID(2) which connects to physical link';
 COMMENT ON COLUMN phs_links_table.phs_link_type2    IS $$Link típusa(2), végpont 'Term', patch panel előlap 'Front', vagy hátlap 'Back'$$;
-COMMENT ON COLUMN phs_links_table.port_shared       IS $$Mindíg a 'Front' patch portra vonatkozik, ha mindkettő 'Front' patch port, akkor csak '' lehet, vagyis a megosztás tiltott$$;
+COMMENT ON COLUMN phs_links_table.port_shared       IS $$Mindíg a 'Front' patch portra vonatkozik, ha mindkettő 'Back' patch port, akkor csak '' lehet, vagyis a megosztás tiltott$$;
 COMMENT ON COLUMN phs_links_table.phs_link_note    IS 'noteiption';
 COMMENT ON COLUMN phs_links_table.create_time       IS 'Time setting up the physical link';
 COMMENT ON COLUMN phs_links_table.create_user_id    IS 'User ID for who set this physical link';
@@ -569,7 +569,7 @@ BEGIN
             NEW.share_result <> OLD.share_result) THEN
             PERFORM error('Constant', -1, '', 'check_log_links()', TG_TABLE_NAME, TG_OP);
         END IF;
-        RETURN new;
+        RETURN NEW;
     END IF;
     IF 0 < COUNT(*) FROM log_links WHERE port_id1 = NEW.port_id1 THEN
         PERFORM error('IdNotUni', NEW.port_id1, 'port_id1', 'check_log_links()', TG_TABLE_NAME, TG_OP);

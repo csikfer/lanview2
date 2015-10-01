@@ -145,37 +145,34 @@ bool executeSqlScript(QFile& file, QSqlDatabase *pDb, bool __ex)
 
 /* ********************************************************************************************* */
 
-bool sqlBegin(QSqlQuery& q, bool __ex)
+bool sqlBegin(QSqlQuery& q)
 {
-    if (q.exec(_sBEGIN)) {
-
-        return true;
-    }
-    if (__ex) SQLPREPERR(q, _sBEGIN);
-    SQLPREPERRDEB(q, _sBEGIN);
+    if (q.exec(_sBEGIN)) return true;
+    SQLPREPERR(q, _sBEGIN);
     return false;
 }
 
-bool sqlEnd(QSqlQuery& q, bool __ex)
+bool sqlEnd(QSqlQuery& q)
 {
     if (q.exec(_sEND)) return true;
-    if (__ex) SQLPREPERR(q, _sEND);
-    SQLPREPERRDEB(q, _sEND);
+    SQLPREPERR(q, _sEND);
     return false;
 }
 
-bool sqlRollback(QSqlQuery& q, bool __ex)
+bool sqlRollback(QSqlQuery& q)
 {
     if (q.exec(_sROLLBACK)) return true;
-    if (__ex) SQLPREPERR(q, _sROLLBACK);
-    SQLPREPERRDEB(q, _sROLLBACK);
+    SQLPREPERR(q, _sROLLBACK);
     return false;
 }
 
 EXT_ bool execSql(QSqlQuery& q, const QString& sql, const QVariant v1, const QVariant v2, const QVariant v3, const QVariant v4, const QVariant v5)
 {
-    if (!q.prepare(sql)) SQLPREPERR(q, sql);
-    if (v1.isValid()) {
+    if (!v1.isValid()) {
+        if (!q.exec(sql)) SQLQUERYERR(q);
+    }
+    else {
+        if (!q.prepare(sql)) SQLPREPERR(q, sql);
         q.bindValue(0,v1);
         if (v2.isValid()) {
             q.bindValue(1,v2);
@@ -189,8 +186,8 @@ EXT_ bool execSql(QSqlQuery& q, const QString& sql, const QVariant v1, const QVa
                 }
             }
         }
+        if (!q.exec()) SQLQUERYERR(q);
     }
-    if (!q.exec()) SQLQUERYERR(q);
     return q.first();
 }
 

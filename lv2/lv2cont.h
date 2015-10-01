@@ -176,26 +176,29 @@ public:
         return fetch(__q, __only, fm, p);
     }
     /// Kiírja az adatbázisba az összes elemet az INSERT utasítással ld.: cRecord::insert()
-    /// @return A sikeresen kiírt rekordszámmal tér vissza.
+    /// Ha egy rekord kiírása sikertelen, akkor megszakítja a kiírásokat.
+    /// @return A sikeresen kiírt rekordszámmal tér vissza, vagy hiba esetén -1 -el
     int insert(QSqlQuery& __q, bool __ex = true)  {
         DBGFN();
         int r = 0;
         typename QList<T *>::const_iterator    i;
         for (i = QList<T *>::constBegin(); i < QList<T *>::constEnd(); i++) {
             PDEB(VERBOSE) << "Insert : " << (*i)->toString() << endl;
-            if ((*i)->insert(__q, __ex)) ++r;
+            if (!(*i)->insert(__q, __ex)) return -1;
+            ++r;
         }
         _DBGFNL() << " = " << r << endl;
         return r;
     }
-    /// törli az adatbázisból az összes elemet az REMOVE utasítással ld.: cRecord::remove()
+    /// Törli az adatbázisból az összes elemet az REMOVE utasítással ld.: cRecord::remove()
     /// @return A sikeresen törölt rekordszámmal tér vissza.
     int remove(QSqlQuery& __q, bool __ex = true)  {
         int r = 0;
         typename QList<T *>::const_iterator    i;
         for (i = QList<T *>::constBegin(); i < QList<T *>::constEnd(); i++) {
             PDEB(VERBOSE) << "Remove from db : " << (*i)->toString() << endl;
-            if ((*i)->remove(__q, false, QBitArray(), __ex)) ++r;
+            if (!(*i)->remove(__q, false, QBitArray(), __ex)) return -1;
+            ++r;
         }
         return r;
     }
@@ -522,49 +525,52 @@ public:
         if (ixOwnerId != __o.ixOwnerId) EXCEPTION(EDATA);
         return (tOwnRecords&)(this->tRecordList<T>::operator =(__o));
     }
+    void setsOwnerId(qlonglong __owner_id = NULL_ID) { this->tRecordList<T>::setsId(ixOwnerId, __owner_id); }
     int fetch(QSqlQuery &__q, qlonglong __owner_id, bool __only = false) {
         return this->tRecordList<T>::fetch(__q, __only, ixOwnerId, __owner_id);
     }
     int insert(QSqlQuery &__q, qlonglong __owner_id, bool __ex) {
         if (tRecordList<T>::size() == 0) return 0;
-        this->tRecordList<T>::setsId(ixOwnerId, __owner_id);
+        setsOwnerId(__owner_id);
         return this->tRecordList<T>::insert(__q, __ex);
     }
-    int ownRemove(QSqlQuery &__q, qlonglong __owner_id, bool __ex) {
+    int removeByOwn(QSqlQuery &__q, qlonglong __owner_id, bool __ex) const {
         T o;
         o.setId(ixOwnerId, __owner_id);
         return o.remove(__q, false, o.mask(ixOwnerId), __ex);
     }
-    int replace(QSqlQuery &__q, qlonglong __owner_id, bool __ex) {
-        if (tRecordList<T>::size() == 0) return ownRemove(__q, __owner_id, __ex);
-        untouch(__q, __owner_id);
+    bool replace(QSqlQuery &__q, qlonglong __owner_id, bool __ex) {
+        // Ha nincs új rekord, csak a régieket töröljük
+        if (tRecordList<T>::size() == 0) {
+            removeByOwn(__q, __owner_id, false);    // Ha nem töröl semmit, az nem hiba!
+            return true;
+        }
+        // Megjelöljük a régi rekordokat, ha egy sincs akkor csak beillesztjük az újakat
+        if (mark(__q, __owner_id) == 0) {
+            return 0 < insert(__q, __owner_id, __ex);   // A nulla fura lenne
+        }
         int r = 0;
         typename QList<T *>::const_iterator    i;
         for (i = QList<T *>::constBegin(); i < QList<T *>::constEnd(); i++) {
             PDEB(VERBOSE) << "Replace : " << (*i)->toString() << endl;
-            (*i)->setBool(_sTouch, true);
+            (*i)->setFlag(false);
             if ((*i)->replace(__q, __ex) != R_ERROR) ++r;
         }
-        return r + removeUntouched(__q, __owner_id, __ex);
+        removeMarked(__q, __owner_id, __ex);    // Ha flag = true maradt, akkor töröljük
+        return r == QList<T *>::size();
     }
-    int untouch(QSqlQuery &__q, qlonglong __owner_id) {
+    int mark(QSqlQuery &__q, qlonglong __owner_id) const {
         T o;
-        QString sql = "UPDATE " + o.tableName() + " SET touch = false WHERE " + o.columnName(ixOwnerId) + " = ?";
-        execSql(__q, sql, __owner_id);
-        return __q.numRowsAffected();
+        return o.setId(ixOwnerId, __owner_id).mark(__q, o.mask(__owner_id), true);
     }
-    int removeUntouched(QSqlQuery& __q, qlonglong __owner_id, bool __ex = true) {
+    int removeMarked(QSqlQuery& __q, qlonglong __owner_id, bool __ex = true) const {
         T o;
-        int ixTouch = o.toIndex(_sTouch, __ex);
-        o.setBool(ixTouch, false);
-        o.setId(ixOwnerId, __owner_id);
-        return o.remove(__q, false, o.mask(ixTouch, ixOwnerId), __ex);
+        return o.setId(ixOwnerId, __owner_id).removeMarked(__q, o.mask(__owner_id, __ex));
     }
 };
 
-
 template <class R>
-        class tOwnPatams :public tRecordList<R>
+        class tOwnParams :public tRecordList<R>
 {
 public:
     /// Az owner rekord id (távoli kulcs) mező indexe.
@@ -573,31 +579,32 @@ public:
     const int ixParamTypeId;
     /// Konstruktor, üres konténert hoz létre
     /// @param _ix_owner_id Az owner rekord id (távoli kulcs) mező indexe.
-    tOwnPatams(int _ix_owner_id) : tRecordList<R>(), ixOwnerId(_ix_owner_id), ixParamTypeId(R().toIndex(_sParamTypeId)) { ; }
+    tOwnParams(int _ix_owner_id) : tRecordList<R>(), ixOwnerId(_ix_owner_id), ixParamTypeId(R().toIndex(_sParamTypeId)) { ; }
     /// Konstruktor, Egy egy elemű konténert hoz létre
     /// @param _ix_owner_id Az owner rekord id (távoli kulcs) mező indexe.
     /// @param _p Az elem, amit a konténerbe elhelyet (a pointer az objektumhoz kerül, a destruktora felszabadítja a pointert).
-    tOwnPatams(int _ix_owner_id, R *_p) : tRecordList<R>(_p), ixOwnerId(_ix_owner_id), ixParamTypeId(_p->toIndex(_sParamTypeId)) { ; }
+    tOwnParams(int _ix_owner_id, R *_p) : tRecordList<R>(_p), ixOwnerId(_ix_owner_id), ixParamTypeId(_p->toIndex(_sParamTypeId)) { ; }
     /// Konstruktor, Egy egy elemű konténert hoz létre
     /// @param _ix_owner_id Az owner rekord id (távoli kulcs) mező indexe.
     /// @param _p Az objektumról másolata kerül a kontéberbe
-    tOwnPatams(int _ix_owner_id, R& _o) : tRecordList<R>(_o), ixOwnerId(_ix_owner_id), ixParamTypeId(_o.toIndex(_sParamTypeId)) { ; }
+    tOwnParams(int _ix_owner_id, R& _o) : tRecordList<R>(_o), ixOwnerId(_ix_owner_id), ixParamTypeId(_o.toIndex(_sParamTypeId)) { ; }
     /// Konstruktor.
     /// Beolvassa az összes vagy adott típusú owner-hez tatozó rekordot
     /// @param __q query objektum, amivel a lekérdezés elvégezhető.
     /// @param __only
     /// @param __fi Az owner rekord id (távoli kulcs) mező indexe.
     /// @param __id Az owner rekord ID.
-    tOwnPatams(QSqlQuery& __q, bool __only, int __fi, qlonglong __id) : tRecordList<R>(__q, __only, __fi, __id), ixOwnerId(__fi), ixParamTypeId(R().toIndex(_sParamTypeId)) { ; }
+    tOwnParams(QSqlQuery& __q, bool __only, int __fi, qlonglong __id) : tRecordList<R>(__q, __only, __fi, __id), ixOwnerId(__fi), ixParamTypeId(R().toIndex(_sParamTypeId)) { ; }
     /// Copy konstruktor. A konténer elemeiről másolatot készít, és ezt helyezi el az új konténerbe
-    tOwnPatams(const tOwnPatams& __o) : tRecordList<R>((const tRecordList<R>&)__o) , ixOwnerId(__o.ixOwnerId), ixParamTypeId(__o.ixParamTypeId) { ; }
+    tOwnParams(const tOwnParams& __o) : tRecordList<R>((const tRecordList<R>&)__o) , ixOwnerId(__o.ixOwnerId), ixParamTypeId(__o.ixParamTypeId) { ; }
     /// Másoló operátor. Az elemekről másolatot készít.
     /// Ha a két objektumban az ixOwnerId mező nem egyenlő akkor kizárást dob.
-    tOwnPatams& operator =(const tOwnPatams& __o) {
+    tOwnParams& operator =(const tOwnParams& __o) {
         if (ixOwnerId != __o.ixOwnerId) EXCEPTION(EDATA);
         if (ixParamTypeId != __o.ixParamTypeId) EXCEPTION(EDATA);
-        return (tOwnPatams &)(this->tRecordList<R>::operator =(__o));
+        return (tOwnParams &)(this->tRecordList<R>::operator =(__o));
     }
+    void setsOwnerId(qlonglong __owner_id = NULL_ID) { this->tRecordList<R>::setsId(ixOwnerId, __owner_id); }
     int fetch(QSqlQuery &__q, qlonglong __owner_id, bool __only = false) {
         return this->tRecordList<R>::fetch(__q, __only, ixOwnerId, __owner_id);
     }

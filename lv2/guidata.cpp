@@ -201,15 +201,9 @@ bool cTableShape::insert(QSqlQuery &__q, bool __ex)
     }
     return true;
 }
-int cTableShape::replace(QSqlQuery &__q, bool __ex)
+bool cTableShape::rewrite(QSqlQuery &__q, bool __ex)
 {
-    int r = cRecord::replace(__q, __ex);
-    if (r == R_ERROR) return R_ERROR;
-    if (shapeFields.count()) {
-        if (getBool(_sIsReadOnly)) shapeFields.sets(_sIsReadOnly, QVariant(true));
-        shapeFields.replace(__q, getId(), __ex);
-    }
-    return r;
+    return tRewrite(__q, shapeFields, __ex);
 }
 
 /// A típus mezőnek lehetnek olyan értékei is, melyek az adatbázisban nem szerepelnek,
@@ -630,14 +624,9 @@ bool cTableShapeField::insert(QSqlQuery &__q, bool __ex)
     return true;
 }
 
-int cTableShapeField::replace(QSqlQuery &__q, bool __ex)
+bool cTableShapeField::rewrite(QSqlQuery &__q, bool __ex)
 {
-    int r = cRecord::insert(__q, __ex);
-    if (r == R_ERROR) return R_ERROR;
-    if (shapeFilters.count()) {
-        shapeFilters.replace(__q, getId(), __ex);
-    }
-    return r;
+    return tRewrite(__q, shapeFilters, __ex);
 }
 
 int cTableShapeField::fetchFilters(QSqlQuery& q)
