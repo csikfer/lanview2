@@ -1650,6 +1650,7 @@ void cColStaticDescrTime::setDefValue()
     QString  time;
     if (getString(colDefault, time)) {
         defValue = fromSql(time);
+        return;
     }
     EXCEPTION(EDBDATA, eColType, QObject::trUtf8("Nem értelmezhető a DEFAULT érték: %1").arg(colDefault));
 }
@@ -1721,6 +1722,7 @@ void cColStaticDescrDate::setDefValue()
     QString  time;
     if (getString(colDefault, time)) {
         defValue = fromSql(time);
+        return;
     }
     EXCEPTION(EDBDATA, eColType, QObject::trUtf8("Nem értelmezhető a DEFAULT érték: %1").arg(colDefault));
 }
@@ -1805,6 +1807,7 @@ void cColStaticDescrDateTime::setDefValue()
     QString  time;
     if (getString(colDefault, time)) {
         defValue = fromSql(time);
+        return;
     }
     if (colDefault == QString("now()")) {
         // Mivel ez nem konstans érték, és ez csak feleslegesen onyolítja a helyzetet, ezért nincs beállítva érték...
