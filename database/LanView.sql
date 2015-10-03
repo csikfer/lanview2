@@ -251,8 +251,8 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
     
--- DB Version 1.0
-SELECT set_db_version(1, 0);
+-- DB Version 1.1
+SELECT set_db_version(1, 1);
 
 CREATE OR REPLACE FUNCTION compare_db_version(major int, minor int) RETURNS int AS $$
 DECLARE

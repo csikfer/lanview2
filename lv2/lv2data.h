@@ -1331,9 +1331,9 @@ public:
     /// Ha felvette az új rekordot, és nem kellet törölni egyet sem, akkor 0, ha töröpni kellett rekordokat, akkor azok
     /// számával tér vissza, ha viszont nem sikerült felvenni ez új rekordot, akkor egy negatív értékkel, aminek a sikertelen
     /// inzert elött törölt rekordszám kivonva -1 -ből.
-    virtual int replace(QSqlQuery &__q, bool __ex);
+    virtual int replace(QSqlQuery &__q, bool __ex = true);
     /// Nem támogatott, kizárást dosb.
-    virtual bool rewrite(QSqlQuery &__q, bool __ex);
+    virtual bool rewrite(QSqlQuery &__q, bool __ex = true);
     /// Törli a megadott fizikai linket
     /// @param q Az SQL lekérdezéshez használt objektum.
     /// @param __nn A host neve, amihez a link tartozik

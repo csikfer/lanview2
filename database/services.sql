@@ -30,37 +30,36 @@ INSERT INTO service_types (service_type_id, service_type_name) VALUES
 
 
 CREATE TABLE services (
-    service_id              bigserial      PRIMARY KEY,
-    service_name            text    NOT NULL,
-    service_note            text   DEFAULT NULL,
-    service_type_id         bigint         DEFAULT -1  -- unmarked
+    service_id              bigserial   PRIMARY KEY,
+    service_name            text        NOT NULL UNIQUE,
+    service_note            text        DEFAULT NULL,
+    service_type_id         bigint      DEFAULT -1  -- unmarked
         REFERENCES service_types(service_type_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
-    protocol_id             bigint         DEFAULT -1  -- nil
+    protocol_id             bigint      DEFAULT -1  -- nil
         REFERENCES ipprotocols(protocol_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
-    port                    integer        DEFAULT NULL,
-    superior_service_mask   text    DEFAULT NULL,
-    check_cmd               text   DEFAULT NULL,
-    features              text   DEFAULT ':',
-    disabled                boolean        NOT NULL DEFAULT FALSE,
-    max_check_attempts      integer        DEFAULT NULL,
-    normal_check_interval   interval       DEFAULT NULL,
-    retry_check_interval    interval       DEFAULT NULL,
-    timeperiod_id           bigint         NOT NULL DEFAULT 0  -- DEFAULT 'always'
+    port                    integer     DEFAULT NULL,
+    superior_service_mask   text        DEFAULT NULL,
+    check_cmd               text        DEFAULT NULL,
+    features                text        DEFAULT ':',
+    disabled                boolean     NOT NULL DEFAULT FALSE,
+    max_check_attempts      integer     DEFAULT NULL,
+    normal_check_interval   interval    DEFAULT NULL,
+    retry_check_interval    interval    DEFAULT NULL,
+    timeperiod_id           bigint      NOT NULL DEFAULT 0  -- DEFAULT 'always'
         REFERENCES timeperiods(timeperiod_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
-    flapping_interval       interval       NOT NULL DEFAULT '30 minutes',
-    flapping_max_change     integer        NOT NULL DEFAULT 15,
-    deleted                 boolean        NOT NULL DEFAULT FALSE,
-    UNIQUE (service_name, protocol_id)
+    flapping_interval       interval    NOT NULL DEFAULT '30 minutes',
+    flapping_max_change     integer     NOT NULL DEFAULT 15,
+    deleted                 boolean     NOT NULL DEFAULT false
 );
 ALTER TABLE services OWNER TO lanview2;
 COMMENT ON TABLE  services                  IS 'Services table';
-COMMENT ON COLUMN services.service_id       IS 'Egyedi azonosító';
-COMMENT ON COLUMN services.service_name     IS 'Szervice name';
+COMMENT ON COLUMN services.service_id       IS 'ID egyedi azonosító';
+COMMENT ON COLUMN services.service_name     IS 'Szervice name (egyedi)';
 COMMENT ON COLUMN services.service_note     IS 'Megjegyzés';
 COMMENT ON COLUMN services.protocol_id      IS 'Ip protocol id (-1 : nil, if no ip protocol)';
 COMMENT ON COLUMN services.port             IS 'Default (TCP, UDP, ...) port number. or NULL';
 COMMENT ON COLUMN services.check_cmd        IS 'Default check command';
-COMMENT ON COLUMN services.features       IS
+COMMENT ON COLUMN services.features         IS
 'Default paraméter lista (szeparátor a kettőspont, paraméter szeparátor az ''='', első és utolsó karakter a szeparátor):\n
 timing
     custom      Belső időzítés (alapértelmezett)
@@ -93,10 +92,9 @@ lognull     A superior az stderr és stdout-ot a null-ba irányítja. A szolgál
 tcp         Alternatív TCP port megadása, paraméter a port száma
 udp         Alternatív UDP port megadása, paraméter a port száma
 ';
-COMMENT ON COLUMN services.max_check_attempts IS 'Hibás eredmények maximális száma, a riasztás kiadása elött. Alapértelmezett érték.';
+COMMENT ON COLUMN services.max_check_attempts    IS 'Hibás eredmények maximális száma, a riasztás kiadása elött. Alapértelmezett érték.';
 COMMENT ON COLUMN services.normal_check_interval IS 'Ellenörzések ütemezése, ha nincs hiba. Alapértelmezett érték.';
-COMMENT ON COLUMN services.retry_check_interval IS 'Ellenörzések ütemezése, hiba esetén a riasztás kiadásáig. Alapértelmezett érték.';
-
+COMMENT ON COLUMN services.retry_check_interval  IS 'Ellenörzések ütemezése, hiba esetén a riasztás kiadásáig. Alapértelmezett érték.';
 
 INSERT INTO services (service_id, service_name, service_note) VALUES
     ( -1, 'nil', 'A NULL-t reprezentálja, de összehasonlítható');
@@ -298,20 +296,20 @@ COMMENT ON COLUMN host_service_noalarms.noalarm_to IS 'Ha a tíltás időhöz k�
 COMMENT ON COLUMN host_service_noalarms.user_id IS 'A tíltást kiadó felhasználó azonosítója.';
 
 CREATE TABLE host_service_charts (
-    host_service_chart_id bigserial    PRIMARY KEY,
-    host_service_id     bigint         REFERENCES host_services(host_service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    rrd_file_name       text   DEFAULT NULL,
-    graph_order         bigint[]       DEFAULT NULL,
-    graph_args          text   DEFAULT NULL,
-    graph_vlabel        text   DEFAULT NULL,
-    graph_scale         boolean        DEFAULT NULL,   -- ??
-    graph_info          text   DEFAULT NULL,   -- ??
-    graph_category      text   DEFAULT NULL,   -- ??
-    graph_period        text   DEFAULT NULL,   -- ??
-    graph_height        bigint         DEFAULT 300,
-    graph_width         bigint         DEFAULT 600,
-    features            text           DEFAULT NULL,
-    deleted             boolean        NOT NULL DEFAULT FALSE
+    host_service_chart_id bigserial     PRIMARY KEY,
+    host_service_id     bigint          REFERENCES host_services(host_service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    rrd_file_name       text            DEFAULT NULL,
+    graph_order         bigint[]        DEFAULT NULL,
+    graph_args          text            DEFAULT NULL,
+    graph_vlabel        text            DEFAULT NULL,
+    graph_scale         boolean         DEFAULT NULL,   -- ??
+    graph_info          text            DEFAULT NULL,   -- ??
+    graph_category      text            DEFAULT NULL,   -- ??
+    graph_period        text            DEFAULT NULL,   -- ??
+    graph_height        bigint          DEFAULT 300,
+    graph_width         bigint          DEFAULT 600,
+    features            text            DEFAULT NULL,
+    deleted             boolean         NOT NULL DEFAULT false
 );
 ALTER TABLE host_service_charts OWNER TO lanview2;
 
@@ -323,25 +321,27 @@ CREATE TYPE drawtype AS ENUM ('LINE', 'AREA', 'STACK');
 ALTER TYPE drawtype OWNER TO lanview2;
 
 CREATE TABLE host_service_vars (
-    service_var_id      bigserial       PRIMARY KEY,
-    service_var_name    text     NOT NULL,
-    service_var_note    text    DEFAULT NULL,
-    host_service_id     bigint          NOT NULL
+    service_var_id      bigserial           PRIMARY KEY,
+    service_var_name    text                NOT NULL,
+    service_var_note    text                DEFAULT NULL,
+    host_service_id     bigint              NOT NULL
         REFERENCES host_services(host_service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    color               bigint          DEFAULT 0,
-    service_var_type    servicevartype  DEFAULT 'GAUGE',
-    draw_type           drawtype        DEFAULT 'LINE',
-    cdef                text    DEFAULT NULL,
-    negative            boolean         DEFAULT FALSE,
-    dim                 text     DEFAULT NULL,
-    min_value           real            DEFAULT NULL,
-    max_value           real            DEFAULT NULL,
-    warning_max         real            DEFAULT NULL,
-    warning_min         real            DEFAULT NULL,
-    critical_max        real            DEFAULT NULL,
-    critical_min        real            DEFAULT NULL,
-    features            text           DEFAULT NULL,
-    deleted             boolean         NOT NULL DEFAULT FALSE,
+    color               bigint              DEFAULT 0,
+    service_var_type    servicevartype      DEFAULT 'GAUGE',
+    draw_type           drawtype            DEFAULT 'LINE',
+    cdef                text                DEFAULT NULL,
+    negative            boolean             DEFAULT FALSE,
+    dim                 text                DEFAULT NULL,
+    last_value          double precision    DEFAULT NULL,
+    last_time           timestamp           DEFAULT NULL,
+    min_value           double precision    DEFAULT NULL,
+    max_value           double precision    DEFAULT NULL,
+    warning_max         double precision    DEFAULT NULL,
+    warning_min         double precision    DEFAULT NULL,
+    critical_max        double precision    DEFAULT NULL,
+    critical_min        double precision    DEFAULT NULL,
+    features            text                DEFAULT NULL,
+    deleted             boolean             NOT NULL DEFAULT FALSE,
     UNIQUE (host_service_id, service_var_name)
 );
 ALTER TABLE host_service_vars OWNER TO lanview2;

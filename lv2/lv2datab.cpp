@@ -297,7 +297,7 @@ cColStaticDescr::cColStaticDescr(int __t)
     , fKeyField()
     , fKeyTables()
     , fnToName()
-//    , defValue()
+    , defValue()
 {
     isNullable  = false;
     pos =  ordPos = -1;
@@ -319,7 +319,7 @@ cColStaticDescr::cColStaticDescr(const cColStaticDescr& __o)
     , fKeyField(__o.fKeyField)
     , fKeyTables(__o.fKeyTables)
     , fnToName(__o.fnToName)
-//    , defValue(__o.defValue)
+    , defValue(__o.defValue)
 {
     isNullable  = __o.isNullable;
     ordPos      = __o.ordPos;
@@ -357,7 +357,7 @@ cColStaticDescr& cColStaticDescr::operator=(const cColStaticDescr __o)
     fKeyType    = __o.fKeyType;
     fnToName    = __o.fnToName;
     pFRec       = __o.pFRec;
-//    defValue    = __o.defValue;
+    defValue    = __o.defValue;
     return *this;
 }
 
@@ -535,20 +535,40 @@ QString cColStaticDescr::toView(QSqlQuery& q, const QVariant &_f) const
 
 #define CDDUPDEF(T)     cColStaticDescr *T::dup() const { return new T(*this); }
 
-/*
+static bool getString(const QString& def, QString& str)
+{
+    int n = def.size();
+    if (n > 4 && def[0] == QChar('\'')) {
+        n = def.indexOf(QChar('\''), 1);
+        if (n >= 1) {
+            str = def.mid(1, n -1);
+            return true;
+        }
+    }
+    return false;
+}
+
 void cColStaticDescr::setDefValue()
 {
     if (colDefault.isNull()) return;
+    if (colDefault.indexOf("nextval") == 0) return;
     bool ok = true;
     switch (eColType) {
     case FT_INTEGER:
-        defValue = colDefault.toLongLong(&ok);
+        if (colDefault[0] == QChar('(') && colDefault.endsWith(QChar(')'))) {
+            QString num = colDefault.mid(1, colDefault.size() -2);
+            defValue = num.toLongLong(&ok);
+        }
+        else defValue = colDefault.toLongLong(&ok);
         break;
     case FT_REAL:
         defValue = colDefault.toDouble(&ok);
         break;
-    case FT_TEXT:
-        defValue =colDefault;
+    case FT_TEXT: {
+        QString str;
+        ok = getString(colDefault, str);
+        defValue = str;
+    }
         break;
     case FT_BINARY:
         ok = false;
@@ -557,10 +577,10 @@ void cColStaticDescr::setDefValue()
         EXCEPTION(EPROGFAIL);
         break;
     }
-    if (!ok) EXCEPTION(EDATA, eColType, QObject::trUtf8("Nem értelmezhető DEFAULT érték: %1").arg(colDefault));
+    if (!ok) EXCEPTION(EDATA, eColType, QObject::trUtf8("Nem értelmezhető a DEFAULT érték: %1").arg(colDefault));
     return;
 }
-*/
+
 CDDUPDEF(cColStaticDescr)
 
 /// @def TYPEDETECT
@@ -583,10 +603,11 @@ void cColStaticDescr::typeDetect()
     TYPEDETUDT("timestamp",FT_DATE_TIME)
     TYPEDETUDT("interval", FT_INTERVAL)
     if      (pEnumType != NULL)                            eColType = FT_ENUM;
-    else if (udtName.contains("int", Qt::CaseInsensitive)) eColType = FT_INTEGER;
-    else if (udtName.contains("real",Qt::CaseInsensitive)) eColType = FT_REAL;
-    else if (udtName.contains("char",Qt::CaseInsensitive)) eColType = FT_TEXT;
-    else if (!udtName.compare("text",Qt::CaseInsensitive)) eColType = FT_TEXT;
+    else if (udtName.contains("int",   Qt::CaseInsensitive)) eColType = FT_INTEGER;
+    else if (udtName.contains("real",  Qt::CaseInsensitive)) eColType = FT_REAL;
+    else if (udtName.contains("double",Qt::CaseInsensitive)) eColType = FT_REAL;
+    else if (udtName.contains("char",  Qt::CaseInsensitive)) eColType = FT_TEXT;
+    else if (!udtName.compare("text",  Qt::CaseInsensitive)) eColType = FT_TEXT;
     else {
         EXCEPTION(ENOTSUPP, -1, QObject::trUtf8("Unknown %1 field type %2/%3 ").arg(colName(), colType, udtName));
     }
@@ -736,14 +757,13 @@ void cColStaticDescrBool::init()
     pEnumType = pt;
 }
 
-/*
+
 void cColStaticDescrBool::setDefValue()
 {
     if (colDefault.isNull()) return;
-    defValue = str2bool(_f.toString(), false);
-
+    defValue = str2bool(colDefault, true);
 }
-*/
+
 
 CDDUPDEF(cColStaticDescrBool)
 /* ....................................................................................................... */
@@ -1017,14 +1037,32 @@ QString cColStaticDescrArray::toView(QSqlQuery &q, const QVariant &_f) const
     return _f.toStringList().join(QChar(','));
 }
 
-/*
+static bool getArray(const QString& def, QString& array)
+{
+    static const QString sBegin("'{");
+    static const QString sEnd("}'");
+    int n = def.size();
+    if (n > 6 && def.indexOf(sBegin) == 0) {
+        n = def.indexOf(sEnd, 2);
+        if (n >= 2) {
+            array = def.mid(1, n);
+            return true;
+        }
+    }
+    return false;
+}
+
 void cColStaticDescrArray::setDefValue()
 {
-    if (colDefault.isNull()) return;
-    defValue = fromSql(QVariant(colDefault));   // ?
-
+    if (colDefault.isEmpty()) return;
+    QString array;
+    if (getArray(colDefault, array)) {
+        defValue = fromSql(array);
+        return;
+    }
+    EXCEPTION(EDATA, eColType, QObject::trUtf8("Nem értelmezhető a DEFAULT érték: %1").arg(colDefault));
 }
-*/
+
 
 CDDUPDEF(cColStaticDescrArray)
 /* ....................................................................................................... */
@@ -1115,14 +1153,18 @@ qlonglong cColStaticDescrEnum::toId(const QVariant& _f) const
 
 CDDUPDEF(cColStaticDescrEnum)
 
-/*
 void cColStaticDescrEnum::setDefValue()
 {
-    if (colDefault.isNull()) return;
-    defValue = colDefault;
-    if (!enumVals.contains(colDefault)) EXCEPTION(EDBDATA, -1, QObject::trUtf8("Invalid default enum value %1").arg(colDefault));
+    if (colDefault.isEmpty()) return;
+    QString str;
+    if (getString(colDefault, str)) {
+        if (pEnumType != NULL && pEnumType->check(str)) {
+            defValue = str;
+            return;
+        }
+    }
+    EXCEPTION(EDBDATA, 0, QObject::trUtf8("Invalid default enum value %1").arg(colDefault));
 }
-*/
 /* ....................................................................................................... */
 
 cColStaticDescr::eValueCheck  cColStaticDescrSet::check(const QVariant& v, cColStaticDescr::eValueCheck acceptable) const
@@ -1229,13 +1271,17 @@ qlonglong cColStaticDescrSet::toId(const QVariant& _f) const
     return enumType().lst2set(_f.toStringList(), false);
 }
 
-/*
+
 void cColStaticDescrSet::setDefValue()
 {
-    if (colDefault.isNull()) return;
-    defValue = fromSql(QVariant(colDefault));   // ?
-}
-*/
+    if (colDefault.isEmpty()) return;
+    QString array;
+    if (getArray(colDefault, array)) {
+        defValue = fromSql(array);
+        return;
+    }
+    EXCEPTION(EDATA, eColType, QObject::trUtf8("Nem értelmezhető a DEFAULT érték: %1").arg(colDefault));
+ }
 
 CDDUPDEF(cColStaticDescrSet)
 
@@ -1354,13 +1400,18 @@ qlonglong cColStaticDescrPolygon::toId(const QVariant& _f) const
 
 CDDUPDEF(cColStaticDescrPolygon)
 
-/*
+
 void cColStaticDescrPolygon::setDefValue()
 {
-    if (colDefault.isNull()) return;
-    defValue = fromSql(QVariant(colDefault));   // ?
+    if (colDefault.isEmpty()) return;
+    QString array;
+    if (getArray(colDefault, array)) {
+        defValue = fromSql(array);
+        return;
+    }
+    EXCEPTION(EDBDATA, eColType, QObject::trUtf8("Nem értelmezhető a DEFAULT érték: %1").arg(colDefault));
 }
-*/
+
 
 /* ....................................................................................................... */
 
@@ -1490,30 +1541,33 @@ qlonglong cColStaticDescrAddr::toId(const QVariant& _f) const
 }
 
 CDDUPDEF(cColStaticDescrAddr)
-/*
-void cColStaticDescrSet::setDefValue()
+
+// Nem használt, és ellenörzött!!
+void cColStaticDescrAddr::setDefValue()
 {
     if (colDefault.isNull()) return;
+    QString str;
     netAddress a;
     cMac mac;
-    switch (eColType) {
+    bool ok = getString(colDefault, str);
+    if (ok) switch (eColType) {
     case FT_MAC:
-        mac.set(colDefault);
+        mac.set(str);
         if (mac.isValid()) defValue = QVariant::fromValue(mac);
         else               ok = false;
         break;
     case FT_INET:
     case FT_CIDR:
-        a.set(as);
+        a.set(str);
         if (a.isValid()) defValue = QVariant::fromValue(a);
         else             ok = false;
         break;
     default:
         EXCEPTION(EPROGFAIL);
     }
-    if (!ok) EXCEPTION(EDBDATA);
+    if (!ok) EXCEPTION(EDBDATA, eColType, QObject::trUtf8("Nem értelmezhető a DEFAULT érték: %1").arg(colDefault));
 }
-*/
+
 
 /* ....................................................................................................... */
 
@@ -1589,6 +1643,17 @@ qlonglong cColStaticDescrTime::toId(const QVariant& _f) const
 }
 
 CDDUPDEF(cColStaticDescrTime)
+
+void cColStaticDescrTime::setDefValue()
+{
+    if (colDefault.isEmpty()) return;
+    QString  time;
+    if (getString(colDefault, time)) {
+        defValue = fromSql(time);
+    }
+    EXCEPTION(EDBDATA, eColType, QObject::trUtf8("Nem értelmezhető a DEFAULT érték: %1").arg(colDefault));
+}
+
 /* ....................................................................................................... */
 
 /// Tárolási adattípus QDate
@@ -1649,6 +1714,17 @@ qlonglong cColStaticDescrDate::toId(const QVariant& _f) const
     return NULL_ID;
 }
 CDDUPDEF(cColStaticDescrDate)
+
+void cColStaticDescrDate::setDefValue()
+{
+    if (colDefault.isEmpty()) return;
+    QString  time;
+    if (getString(colDefault, time)) {
+        defValue = fromSql(time);
+    }
+    EXCEPTION(EDBDATA, eColType, QObject::trUtf8("Nem értelmezhető a DEFAULT érték: %1").arg(colDefault));
+}
+
 /* ....................................................................................................... */
 
 cColStaticDescr::eValueCheck  cColStaticDescrDateTime::check(const QVariant& _f, cColStaticDescr::eValueCheck acceptable) const
@@ -1722,6 +1798,20 @@ qlonglong cColStaticDescrDateTime::toId(const QVariant& _f) const
 }
 
 CDDUPDEF(cColStaticDescrDateTime)
+
+void cColStaticDescrDateTime::setDefValue()
+{
+    if (colDefault.isEmpty()) return;
+    QString  time;
+    if (getString(colDefault, time)) {
+        defValue = fromSql(time);
+    }
+    if (colDefault == QString("now()")) {
+        // Mivel ez nem konstans érték, és ez csak feleslegesen onyolítja a helyzetet, ezért nincs beállítva érték...
+        return;
+    }
+    EXCEPTION(EDBDATA, eColType, QObject::trUtf8("Nem értelmezhető a DEFAULT érték: %1").arg(colDefault));
+}
 /* ....................................................................................................... */
 
 /// Az intervallum qlonglong-ban tárolódik, és mSec-ben értendő.
@@ -1861,6 +1951,20 @@ qlonglong cColStaticDescrInterval::toId(const QVariant& _f) const
 }
 
 CDDUPDEF(cColStaticDescrInterval)
+void cColStaticDescrInterval::setDefValue()
+{
+    if (colDefault.isEmpty()) return;
+    QString  time;
+    if (getString(colDefault, time)) {
+        defValue = fromSql(time);
+        return;
+    }
+    if (colDefault == QString("now()")) {
+        // Mivel ez nem konstans érték, és ez csak feleslegesen onyolítja a helyzetet, ezért nincs beállítva érték...
+        return;
+    }
+    EXCEPTION(EDBDATA, eColType, QObject::trUtf8("Nem értelmezhető a DEFAULT érték: %1").arg(colDefault));
+}
 /* ******************************************************************************************************* */
 
 cColStaticDescrList::cColStaticDescrList()
@@ -2218,7 +2322,8 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
             else                                                  _columnDescrs << columnDescr; // alap typus, new and copy
             break;
         }
-        // cColStaticDescr *pp = ((cColStaticDescrList::list)_columnDescrs)[i -1];
+        cColStaticDescr *pp = ((cColStaticDescrList::list)_columnDescrs)[i -1];
+        pp->setDefValue();
         // PDEB(VERBOSE) << QObject::trUtf8("Field %1 type is %2").arg(pp->colName()).arg(typeid(*pp).name()) << endl;
     } while(pq->next());
     if (_columnsNum != i) EXCEPTION(EPROGFAIL, -1, "Nem egyértelmű mező szám");
@@ -2266,17 +2371,22 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
             }
         } while(pq->next());
     }
-    // _nameKeyMask kitöltése (mivel együtt egyedi a név mező)
+    // _nameKeyMask kitöltése (mivel együtt egyedi a név mező ?)
     if (_nameIndex >= 0) {
         foreach (QBitArray u, _uniqueMasks) {
             if (u[_nameIndex]) {
                 if (_nameKeyMask.count(true)) {
                     _nameKeyMask.fill(false);       // kétértelmüség
+                    PDEB(VERBOSE) << "_nameKeyMask is ambiguos, unset." << endl;
                     break;
                 }
                 _nameKeyMask = u;
+                PDEB(VERBOSE) << "_nameKeyMask set : " << list2string(u) << endl;
             }
         }
+    }
+    else {
+        PDEB(VERBOSE) << "No name field, _nameKeyMask is not set." << endl;
     }
     // Ha találtunk ID-t, akkor az csak egyedüli egyedi kulcs lehet!
     if (_primaryKeyMask.count(true) != 1) _idIndex = NULL_IX;
@@ -2909,6 +3019,17 @@ cRecord& cRecord::setIp(int __i, const QHostAddress& __a, bool __ex)
     return *this;
 }
 
+QBitArray cRecord::areNull() const
+{
+    QBitArray r(cols(), true);
+    if (isEmpty_()) return r;
+    int i, n = cols();
+    for (i = 0; i < n; ++i) {
+        r[i] = isNull(i);
+    }
+    return r;
+}
+
 bool cRecord::insert(QSqlQuery& __q, bool _ex)
 {
     // _DBGFN() << "@(," << DBOOL(_ex) << ") table : " << fullTableName() << endl;
@@ -2992,14 +3113,8 @@ bool cRecord::rewrite(QSqlQuery &__q, bool __ex)
 
 int cRecord::replace(QSqlQuery& __q, bool __ex)
 {
-    int r = rows(__q, false, nameKeyMask());
-    switch (r) {
-    case 0: return insert( __q, __ex) ? R_INSERT : R_ERROR; // Ha nincs, akkor insert
-    case 1: return rewrite(__q, __ex) ? R_UPDATE : R_ERROR; // Ha van akkor replace
-    default:    // Ez nagyon gáz, egyedinek kellene lennie!!
-        EXCEPTION(AMBIGUOUS, r, trUtf8("Table %1, unique key problem.").arg(tableName()));
-    }
-    return R_ERROR;
+    if (existByNameKey(__q)) return rewrite(__q, __ex) ? R_UPDATE : R_ERROR; // Ha van akkor replace
+    else                     return insert( __q, __ex) ? R_INSERT : R_ERROR; // Ha nincs, akkor insert
 }
 
 cError *cRecord::tryReplace(QSqlQuery& __q, bool __tr)
@@ -3138,6 +3253,31 @@ bool cRecord::next(QSqlQuery& __q)
     set();
     return false;
 
+}
+
+bool cRecord::existByNameKey(QSqlQuery& __q)
+{
+    QBitArray m = nameKeyMask() & areNull();
+    // kitöltetlen mező a kulcsban?
+    if (m.count(true)) {
+        // Ezeknél meg kell adni a DEFAULT értéket
+        int i, n = cols();
+        for (i = 0; i < n; ++i) {
+            if (m[i]) { // Ez egy kulcs mező, ami NULL
+                if (colDescr(i).defValue.isNull()) {
+                    EXCEPTION(EDBDATA, i, trUtf8("%1 table %2 field, is NULL and no DEFAULT.").arg(tableName()).arg(colDescr(i)));
+                }
+                set(i, colDescr(i).defValue);
+            }
+        }
+    }
+    int row = rows(__q, false, nameKeyMask());
+    switch (row) {
+    case 0: return false;
+    case 1: return true;
+    }
+    EXCEPTION(EDBDATA, row);
+    return false;
 }
 
 qlonglong cRecord::fetchTableOId(QSqlQuery& __q, bool __ex) const

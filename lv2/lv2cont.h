@@ -81,14 +81,14 @@ public:
     /// A konténer összes objektumát újra allokálja (a dup(() metódus hívásával), és ezek kerülnek a másolat konténer objektumba.
     tRecordList& operator=(const tRecordList& __o)
     {
-        DBGFN();
+        //DBGFN();
         clear();
         typename QList<T *>::const_iterator    i;
         for (i = __o.constBegin(); i != __o.constEnd(); i++) {
             T * p =  dynamic_cast<T *>((*i)->dup());
             this->append(p);
         }
-        DBGFNL();
+        //DBGFNL();
         return *this;
     }
     /// Copy konstruktor.

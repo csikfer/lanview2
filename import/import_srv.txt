@@ -154,13 +154,10 @@ SERVICE attached "IndAlarm Contact védett eszköz" {
 }
 
 
-SERVICE "cmddisp"  "Lekérdezések egy parancshíváson keresztül" {
-    SUPERIOR SERVICE MASK "^lv2d$";
-    FEATURES ":superior:timing=polling:";
-}
+DELETE SERVICE "cmddisp";
 
 SERVICE "win.dhcp.conf" "DHCP konfiguráció a netsh-n keresztül" {
-    SUPERIOR SERVICE MASK "^cmddisp$";
+    SUPERIOR SERVICE MASK "^lv2d$";
     FEATURES ":timing=polling:qparser=manager:superior:";
 }
 

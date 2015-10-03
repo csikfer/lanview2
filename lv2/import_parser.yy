@@ -1282,8 +1282,8 @@ void setReplace(int er)
     delete pnm;
 
 #define REPANDDEL(p) \
-    if (p == NULL) yyerror(_STR(p) " is null"); \
-    if (isReplace) p->insert(qq()); else p->replace(qq()); \
+    if (p == NULL) yyerror("Parser erroro: " _STR(p) " is null"); \
+    if (isReplace) p->replace(qq()); else p->insert(qq()); \
     pDelete(p); \
     setLastPort(NULL, NULL_IX)  // Törli
 

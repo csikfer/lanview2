@@ -153,6 +153,7 @@ Az QString ős objektum a mező nevét tartalmazza
 Az alap osztály a numerikus skalár, és string típusú mezők adatkonverzióit végzi.
 */
 class LV2SHARED_EXPORT cColStaticDescr : public QString {
+    friend class cRecStaticDescr;
 public:
     /// A mező típus konstansok
     enum eFieldType {
@@ -244,8 +245,6 @@ public:
     /// @param _f Forrás adat, a mező értéke.
     /// @return A strinngé konvertált érték.
     virtual QString toView(QSqlQuery& q, const QVariant& _f) const;
-/*    /// Ha van default érték, akkor azt konvertálja a megfelelő típusba, vagyis beállítja a defValue adattag értékét.
-    virtual void setDefValue(); */
     /// Clone object
     virtual cColStaticDescr *dup() const;
     /// Az enumeráció kezelés konzisztenciájának ellenörzése.
@@ -297,8 +296,8 @@ public:
     QStringList fKeyTables;
     /// Egy opcionális függvény név, ami ID-k esetén elvégzi a stringgé (névvé) konvertálást
     QString     fnToName;
-/*    /// A mező alapértelmezett értéke, az adott típusra konvertálva (ha nincs akkor "invalid")
-    QVariant    defValue;*/
+    /// A mező alapértelmezett értéke, az adott típusra konvertálva (ha nincs akkor "invalid")
+    QVariant    defValue;
     /// Az objektum tartalmát striggé konvertálja pl. nyomkövetésnél használható.
     QString toString() const;
     /// Az objektum tartalmát striggé konvertálja pl. nyomkövetésnél használható.
@@ -316,6 +315,8 @@ protected:
         else                        return cColStaticDescr::VC_DEFAULT;  // NULL / DEFAULT
     }
     eValueCheck ifExcep(eValueCheck result, eValueCheck acceptable, const QVariant &val) const;
+    /// Ha van default érték, akkor azt konvertálja a megfelelő típusba, vagyis beállítja a defValue adattag értékét.
+    virtual void setDefValue();
 };
 TSTREAMO(cColStaticDescr)
 
@@ -336,7 +337,8 @@ public:
     virtual qlonglong toId(const QVariant& _f) const;
     virtual QString toView(QSqlQuery&, const QVariant& _f) const;
     virtual cColStaticDescr *dup() const;
-//  virtual void setDefValue();
+protected:
+    virtual void setDefValue();
 private:
     void init();
 };
@@ -347,6 +349,7 @@ private:
 /// A makróban a class definíció nincs lezárva a '}' karakterrel!
 #define CSD_INHERITOR(T) \
     class LV2SHARED_EXPORT T : public cColStaticDescr { \
+    friend class cRecStaticDescr; \
       public: \
         T(int t) : cColStaticDescr(t) { ; } \
         T(const cColStaticDescr& __o) : cColStaticDescr(__o) { ; } \
@@ -357,7 +360,8 @@ private:
         virtual QString   toName(const QVariant& _f) const; \
         virtual qlonglong toId(const QVariant& _f) const; \
         virtual cColStaticDescr *dup() const; \
-        /*virtual void setDefValue();*/
+  protected: \
+        virtual void setDefValue();
 
 /// @class cColStaticDescrAddr
 /// Az ős cColStaticDescr osztályt az macaddr, inet és cidr típus konverziós függvényivel egészíti ki.
@@ -367,6 +371,7 @@ CSD_INHERITOR(cColStaticDescrAddr)
 /// @class cColStaticDescrArray
 /// Az ős cColStaticDescr osztályt a általános tömb típus konverziós függvényivel egészíti ki.
 CSD_INHERITOR(cColStaticDescrArray)
+public:
 virtual QString toView(QSqlQuery& q, const QVariant& _f) const;
 };
 
@@ -1090,7 +1095,7 @@ public:
     /// Ha a név egyedi kulcs, akkor csak a név mező indexével azonos indexű bit egyes. Ha nem csak egy olyan mezőkombináció
     /// van ami trtalmazza a név mezőt, és egyedi kulcs, akkor dob egy kizárást, szintén kizárást dob, ha nincs név mező,
     /// vagy az egyetlen egyedi kulcsban sem szerepel.
-    const QBitArray& nameKeyMask()
+    const QBitArray& nameKeyMask() const
     {
         if (descr()._nameKeyMask.count(true) == 0) EXCEPTION(EDATA, -1 , QObject::trUtf8("_nameKeyMask is empty."));
         return descr()._nameKeyMask;
@@ -1290,6 +1295,8 @@ public:
     /// Ha a név mező NULL, akkor true-val tér vissza
     /// Virtuális metódust hív, konstruktorban nem használható.
     bool isNullName() const                         { return isNull(nameIndex()); }
+    /// Visszaad egy bitmap-et, ahol minden olyan bit igaz, mellyel azonos idexű mező értéke NULL.
+    QBitArray areNull() const;
     /// Beszúr egy rekordot a megfelelő adattáblába. Az inzert utasításban azok a mezők
     /// lesznek megadva, melyeknek nem NULL az értékük.
     /// Ha sikeres volt az inzert, akkor az objektumot újra tölti, az adatbázisban keletkezett új rekord alapján.
@@ -1518,6 +1525,11 @@ public:
         fetchQuery(__q, __only, __fm, tIntVector(), 0,0,QString("count(*)"));
         return __q.value(0).toInt();
     }
+    /// Megnézi létezik-e a rekord a név (és az azt kiegészítő, egyedivétevő mezők) alapján.
+    /// Ha olyan mező alapján kell keresni, amely nincs kitöltve (NULL) azt kitölti az alapértelmezése szerint.
+    /// Hívja a nemeKeyMask() metódust, ha egy a maszkban szereplő mező értéke NULL, és nincs alapértelmezett
+    /// értéke, akkor is kizárást dob. Ha a lekérdezés szerint egynél több rekordot talál az is kizárást eredményez.
+    bool existByNameKey(QSqlQuery& __q);
     /// Hasonló a fetch() metódushoz, de csak a rekordok számát kérdezi le, konstans metódus
     int rows(bool __only = false, const QBitArray& __fm = QBitArray()) const { QSqlQuery q = getQuery(); return rows(q, __only, __fm);  }
     /// Az objektum típusnak megfelelő tableoid-vel tér vissza.
