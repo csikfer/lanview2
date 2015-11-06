@@ -491,182 +491,118 @@ public:
     }
 };
 
-template<class T> QTextStream& operator<<(QTextStream& __t, const tRecordList<T>& __v) { return __t << toString(__v); }
+template<class T> QTextStream& operator<<(QTextStream& __t, const tRecordList<T>& __v)
+{
+    return __t << toString(__v);
+}
 
-template <class T>
-        class tOwnRecords : public tRecordList<T>
+/// cRecoed típusú objektum részobjektumait tároló konténer.
+/// A konténer C típusú objektumokat táro, és a rulajdonos objektum tíousa O.
+/// A QList ösnek nem minden metódusa lett újra implementálva!
+template <class C, class O>
+        class tOwnRecords : public tRecordList<C>
 {
 public:
     /// Az owner rekord id (távoli kulcs) mező indexe.
     const int ixOwnerId;
+protected:
+    O  * pOwner;
+public:
     /// Konstruktor, üres konténert hoz létre
-    /// @param _ix_owner_id Az owner rekord id (távoli kulcs) mező indexe.
-    tOwnRecords(int _ix_owner_id) : tRecordList<T>(), ixOwnerId(_ix_owner_id) { ; }
-    /// Konstruktor, Egy egy elemű konténert hoz létre
-    /// @param _ix_owner_id Az owner rekord id (távoli kulcs) mező indexe.
-    /// @param _p Az elem, amit a konténerbe elhelyet (a pointer az objektumhoz kerül, a destruktora felszabadítja a pointert).
-    tOwnRecords(int _ix_owner_id, T *_p) : tRecordList<T>(_p), ixOwnerId(_ix_owner_id) { ; }
-    /// Konstruktor, Egy egy elemű konténert hoz létre
-    /// @param _ix_owner_id Az owner rekord id (távoli kulcs) mező indexe.
-    /// @param _p Az objektumról másolata kerül a kontéberbe
-    tOwnRecords(int _ix_owner_id, T& _o) : tRecordList<T>(_o), ixOwnerId(_ix_owner_id) { ; }
-    /// Konstruktor.
-    /// Beolvassa az összes vagy adott típusú owner-hez tatozó rekordot
-    /// @param __q query objektum, amivel a lekérdezés elvégezhető.
-    /// @param __only
-    /// @param __fi Az owner rekord id (távoli kulcs) mező indexe.
-    /// @param __id Az owner rekord ID.
-    tOwnRecords(QSqlQuery& __q, bool __only, int __fi, qlonglong __id) : tRecordList<T>(__q, __only, __fi, __id), ixOwnerId(__fi) { ; }
-    /// Copy konstruktor. A konténer elemeiről másolatot készít, és ezt helyezi el az új konténerbe
-    tOwnRecords(const tOwnRecords& __o) : tRecordList<T>((const tRecordList<T>&)__o) , ixOwnerId(__o.ixOwnerId) { ; }
-    /// Másoló operátor. Az elemekről másolatot készít.
-    /// Ha a két objektumban az ixOwnerId mező nem egyenlő akkor kizárást dob.
-    tOwnRecords& operator =(const tOwnRecords& __o) {
-        if (ixOwnerId != __o.ixOwnerId) EXCEPTION(EDATA);
-        return (tOwnRecords&)(this->tRecordList<T>::operator =(__o));
+    /// @param __po Tulajdonos objektum pointere.
+    tOwnRecords(O *__po) : tRecordList<C>(), ixOwnerId(C().descr().ixToOwner()), pOwner(__po) {
+        if (pOwner == NULL) EXCEPTION(EPROGFAIL);
     }
-    void setsOwnerId(qlonglong __owner_id = NULL_ID) { this->tRecordList<T>::setsId(ixOwnerId, __owner_id); }
-    int fetch(QSqlQuery &__q, qlonglong __owner_id, bool __only = false) {
-        return this->tRecordList<T>::fetch(__q, __only, ixOwnerId, __owner_id);
+    tOwnRecords(O *__po, const tOwnRecords& __c) : tRecordList<C>(), ixOwnerId(C().descr().ixToOwner()), pOwner(__po) {
+        append(__c);
     }
-    int insert(QSqlQuery &__q, qlonglong __owner_id, bool __ex) {
-        if (tRecordList<T>::size() == 0) return 0;
-        setsOwnerId(__owner_id);
-        return this->tRecordList<T>::insert(__q, __ex);
+    /// Bővíti a listát egy elemmel. A megadott pointer helyezi el a konténerben, nem készít másolatot.
+    void append(C *p) {
+        p->setParent(pOwner);
+        this->QList<C *>::append(p);
     }
-    int removeByOwn(QSqlQuery &__q, qlonglong __owner_id, bool __ex) const {
-        T o;
-        o.setId(ixOwnerId, __owner_id);
+    /// Bővíti a listát a konténer elemeivel. Minden elemről másolat készül.
+    void append(const tOwnRecords<C, O>& __o) {
+        typename QList<C *>::const_iterator    i;
+        for (i = __o.QList<C *>::constBegin(); i < __o.QList<C *>::constEnd(); i++) {
+            (*this) << **i;
+        }
+    }
+    /// Bővíti a listát egy elemmel. A megadott pointer helyezi el a konténerben, nem készít másolatot.
+    tOwnRecords<C, O>& operator <<(C *p) {
+        append(p);
+        return *this;
+    }
+    /// Bővíti a listát egy elemmel. Az objektumról másolatot készít, és azt teszi be a konténerbe
+    /// @note A két << operátor lehet, hogy egy kicsit "beugratós", változtatni kéne ?
+    tOwnRecords<C, O>& operator <<(const C& _o) {
+        C * p =  dynamic_cast<C *>(_o.dup());
+        append(p);
+        return *this;
+    }
+    ///
+    tOwnRecords&  setsOwnerId() {
+        this->tRecordList<C>::setsId(ixOwnerId, pOwner->getId());
+        return *this;
+    }
+    int fetch(QSqlQuery &__q, bool __only = false) {
+        int r = this->tRecordList<C>::fetch(__q, __only, ixOwnerId, pOwner->getId());
+        if (r > 0) setOwner();
+        return r;
+    }
+    int insert(QSqlQuery &__q, bool __ex) {
+        if (tRecordList<C>::size() == 0) return 0;
+        setsOwnerId();
+        return this->tRecordList<C>::insert(__q, __ex);
+    }
+    int removeByOwn(QSqlQuery &__q, bool __ex) const {
+        C o;
+        o.setId(ixOwnerId, pOwner->getId());
         return o.remove(__q, false, o.mask(ixOwnerId), __ex);
     }
-    bool replace(QSqlQuery &__q, qlonglong __owner_id, bool __ex) {
+    bool replace(QSqlQuery &__q, bool __ex) {
         // Ha nincs új rekord, csak a régieket töröljük
-        if (tRecordList<T>::size() == 0) {
-            removeByOwn(__q, __owner_id, false);    // Ha nem töröl semmit, az nem hiba!
+        if (tRecordList<C>::size() == 0) {
+            removeByOwn(__q, false);    // Ha nem töröl semmit, az nem hiba!
             return true;
         }
         // Megjelöljük a régi rekordokat, ha egy sincs akkor csak beillesztjük az újakat
-        if (mark(__q, __owner_id) == 0) {
-            return 0 < insert(__q, __owner_id, __ex);   // A nulla fura lenne
+        if (mark(__q) == 0) {
+            return 0 < insert(__q, __ex);   // A nulla fura lenne
         }
         int r = 0;
-        typename QList<T *>::const_iterator    i;
-        for (i = QList<T *>::constBegin(); i < QList<T *>::constEnd(); i++) {
+        typename QList<C *>::const_iterator    i;
+        for (i = QList<C *>::constBegin(); i < QList<C *>::constEnd(); i++) {
             PDEB(VERBOSE) << "Replace : " << (*i)->toString() << endl;
             (*i)->setFlag(false);
             if ((*i)->replace(__q, __ex) != R_ERROR) ++r;
         }
-        removeMarked(__q, __owner_id, __ex);    // Ha flag = true maradt, akkor töröljük
-        return r == QList<T *>::size();
+        removeMarked(__q, __ex);    // Ha flag = true maradt, akkor töröljük
+        return r == QList<C *>::size();
     }
-    int mark(QSqlQuery &__q, qlonglong __owner_id) const {
-        T o;
-        return o.setId(ixOwnerId, __owner_id).mark(__q, o.mask(__owner_id), true);
+    int mark(QSqlQuery &__q) const {
+        if (pOwner == NULL) EXCEPTION(EPROGFAIL);
+        qlonglong oid = pOwner->getId();
+        C o;
+        return o.setId(ixOwnerId, oid).mark(__q, o.mask(oid), true);
     }
-    int removeMarked(QSqlQuery& __q, qlonglong __owner_id, bool __ex = true) const {
-        T o;
-        return o.setId(ixOwnerId, __owner_id).removeMarked(__q, o.mask(__owner_id, __ex));
+    int removeMarked(QSqlQuery& __q, bool __ex = true) const {
+        if (pOwner == NULL) EXCEPTION(EPROGFAIL);
+        qlonglong oid = pOwner->getId();
+        C o;
+        return o.setId(ixOwnerId, oid).removeMarked(__q, o.mask(oid, __ex));
+    }
+    O& owner() { return *pOwner; }
+protected:
+    tOwnRecords<C,O>& setOwner() {
+        typename QList<C *>::const_iterator    i;
+        for (i = QList<C *>::constBegin(); i < QList<C *>::constEnd(); i++) {
+            (*i)->setParent(pOwner);
+        }
+        return *this;
     }
 };
 
-template <class R>
-        class tOwnParams :public tRecordList<R>
-{
-public:
-    /// Az owner rekord id (távoli kulcs) mező indexe.
-    const int ixOwnerId;
-    /// A típus rekord id (távoli kulcs) mező indexe.
-    const int ixParamTypeId;
-    /// Konstruktor, üres konténert hoz létre
-    /// @param _ix_owner_id Az owner rekord id (távoli kulcs) mező indexe.
-    tOwnParams(int _ix_owner_id) : tRecordList<R>(), ixOwnerId(_ix_owner_id), ixParamTypeId(R().toIndex(_sParamTypeId)) { ; }
-    /// Konstruktor, Egy egy elemű konténert hoz létre
-    /// @param _ix_owner_id Az owner rekord id (távoli kulcs) mező indexe.
-    /// @param _p Az elem, amit a konténerbe elhelyet (a pointer az objektumhoz kerül, a destruktora felszabadítja a pointert).
-    tOwnParams(int _ix_owner_id, R *_p) : tRecordList<R>(_p), ixOwnerId(_ix_owner_id), ixParamTypeId(_p->toIndex(_sParamTypeId)) { ; }
-    /// Konstruktor, Egy egy elemű konténert hoz létre
-    /// @param _ix_owner_id Az owner rekord id (távoli kulcs) mező indexe.
-    /// @param _p Az objektumról másolata kerül a kontéberbe
-    tOwnParams(int _ix_owner_id, R& _o) : tRecordList<R>(_o), ixOwnerId(_ix_owner_id), ixParamTypeId(_o.toIndex(_sParamTypeId)) { ; }
-    /// Konstruktor.
-    /// Beolvassa az összes vagy adott típusú owner-hez tatozó rekordot
-    /// @param __q query objektum, amivel a lekérdezés elvégezhető.
-    /// @param __only
-    /// @param __fi Az owner rekord id (távoli kulcs) mező indexe.
-    /// @param __id Az owner rekord ID.
-    tOwnParams(QSqlQuery& __q, bool __only, int __fi, qlonglong __id) : tRecordList<R>(__q, __only, __fi, __id), ixOwnerId(__fi), ixParamTypeId(R().toIndex(_sParamTypeId)) { ; }
-    /// Copy konstruktor. A konténer elemeiről másolatot készít, és ezt helyezi el az új konténerbe
-    tOwnParams(const tOwnParams& __o) : tRecordList<R>((const tRecordList<R>&)__o) , ixOwnerId(__o.ixOwnerId), ixParamTypeId(__o.ixParamTypeId) { ; }
-    /// Másoló operátor. Az elemekről másolatot készít.
-    /// Ha a két objektumban az ixOwnerId mező nem egyenlő akkor kizárást dob.
-    tOwnParams& operator =(const tOwnParams& __o) {
-        if (ixOwnerId != __o.ixOwnerId) EXCEPTION(EDATA);
-        if (ixParamTypeId != __o.ixParamTypeId) EXCEPTION(EDATA);
-        return (tOwnParams &)(this->tRecordList<R>::operator =(__o));
-    }
-    void setsOwnerId(qlonglong __owner_id = NULL_ID) { this->tRecordList<R>::setsId(ixOwnerId, __owner_id); }
-    int fetch(QSqlQuery &__q, qlonglong __owner_id, bool __only = false) {
-        return this->tRecordList<R>::fetch(__q, __only, ixOwnerId, __owner_id);
-    }
-    int insert(QSqlQuery &__q, qlonglong __owner_id, bool __ex) {
-        this->tRecordList<R>::setsId(ixOwnerId, __owner_id);
-        return this->tRecordList<R>::insert(__q, __ex);
-    }
-    int ownRemove(QSqlQuery &__q, qlonglong __owner_id, bool __ex) {
-        R o;
-        o.setId(ixOwnerId, __owner_id);
-        return o.remove(__q, false, o.mask(ixOwnerId), __ex);
-    }
-    int replace(QSqlQuery &__q, qlonglong __owner_id, bool __ex) {
-        if (tRecordList<R>::size() == 0) return ownRemove(__q, __owner_id, __ex);
-        untouch(__q, __owner_id);
-        int r = 0;
-        typename QList<R *>::const_iterator    i;
-        for (i = QList<R *>::constBegin(); i < QList<R *>::constEnd(); i++) {
-            PDEB(VERBOSE) << "Replace : " << (*i)->toString() << endl;
-            (*i)->setBool(_sTouch, true);
-            if ((*i)->replace(__q, __ex) != R_ERROR) ++r;
-        }
-        return r + removeUntouched(__q, __owner_id, __ex);
-    }
-    int untouch(QSqlQuery &__q, qlonglong __owner_id) {
-        R o;
-        QString sql = "UPDATE " + o.tableName() + " SET touch = false WHERE " + o.columnName(ixOwnerId) + " = ?";
-        execSql(__q, sql, __owner_id);
-        return __q.numRowsAffected();
-    }
-    int removeUntouched(QSqlQuery& __q, qlonglong __owner_id, bool __ex = true) {
-        R o;
-        int ixTouch = o.toIndex(_sTouch, __ex);
-        o.setBool(ixTouch, false);
-        o.setId(ixOwnerId, __owner_id);
-        return o.remove(__q, false, o.mask(ixTouch, ixOwnerId), __ex);
-    }
-    /// Index operátor: egy elem a paraméter név alapján
-    const R& operator[](const QString& __n) const
-    {
-        cRecordAny t(R().paramType.decr());
-        if (!t.fetchByName(__n)) EXCEPTION(EFOUND, 1, __n);
-        int i;
-        i = tRecordList<R>::indexOf(_sParamTypeName, QVariant(__n));
-        if (i < 0) EXCEPTION(EFOUND, 2, __n);
-        return *tRecordList<R>::at(i);
-    }
-    /// Index operátor: egy elem a paraméter név alapján
-    R& operator[](const QString& __n)
-    {
-        cRecordAny t(&R().paramType.descr());
-        if (!t.fetchByName(__n)) EXCEPTION(EFOUND, 1, __n);
-        int i = tRecordList<R>::indexOf(_sParamTypeName, QVariant(__n));
-        if (i < 0) {
-            R * pr = new R();
-            pr->setType(t.getId());
-            this->append(pr);
-            return *pr;
-        }
-        return *tRecordList<R>::at(i);
-    }
-};
 /* ******************************  ****************************** */
 
 /*!

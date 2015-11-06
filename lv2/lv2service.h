@@ -13,26 +13,6 @@ enum eTmStat {
     TM_TO      = -1     ///< A várakozási idő letelt, és a követkeő várakozási dőtartam túl kicsi lett
 };*/
 
-/// Lekérdezés eredmonye.
-/// Ugyan ez az enumerációs típus reprezentálja az adatbázisban a notifswitch nevű enumerációs típust is,
-/// de ott az RS_STAT_MASK és az aszt megelőző elemek nem használhatóak, ill nincs megfelelőjük.
-/// Az enumerációs (numerikus) értékek, és az őket reprezentáló adatbázis beli string értékek között a
-/// notifSwitch() függvény pár konvertál.
-enum eNotifSwitch {
-    RS_INVALID     =   -1,  ///< Csak hibajelzésre szolgál
-    RS_STAT_SETTED = 0x80,  ///< A status beállítása megtörtént, mask nem valódi status érték, henem egy flag
-    RS_SET_RETRY   = 0x40,  ///< Az időzítést normálból->retry-be kel váltani.
-    RS_STAT_MASK   = 0x0f,  ///< A valódi státusz maszkja
-    RS_ON          =    0,  ///< Az aktuális futási eredmény 'on'
-    RS_RECOVERED,           ///< Az aktuális futási eredmény 'recovered'
-    RS_WARNING,             ///< Az aktuális futási eredmény 'warning'
-    RS_CRITICAL,            ///< Az aktuális futási eredmény 'critical'
-    RS_UNREACHABLE,         ///< Az aktuális futási eredmény 'unreachable'
-    RS_DOWN,                ///< Az aktuális futási eredmény 'down'
-    RS_FLAPPING,            ///< Az aktuális futási eredmény 'flapping'
-    RS_UNKNOWN              ///< Az aktuális futási eredmény 'unknown'
-};
-
 /// A lekérdezés eredményét reprezebtáló enumerációs értéket konvertálja az adatbázisban tárolt string formára.
 /// RS_STAT_SETTED érték konverzió elütt ki lessz maszkolva. Ha a konverzió nem lehetséges, akkor dob egy kizárást.
 EXT_ const QString& notifSwitch(int _ns, bool __ex = true);

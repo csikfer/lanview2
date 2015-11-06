@@ -1,24 +1,23 @@
-
 -- ---------------------------------------------------------------------------
 -- Apolication errors
 CREATE TABLE app_errs (
     applog_id   bigserial       PRIMARY KEY,
     date_of     timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    app_name    text     DEFAULT NULL,
+    app_name    text            DEFAULT NULL,
     node_id     bigint          DEFAULT NULL,	-- Ezt nem tölti ki senki !!!
     pid         bigint          DEFAULT NULL,
-    app_ver     text     DEFAULT NULL,
-    lib_ver     text     DEFAULT NULL,
+    app_ver     text            DEFAULT NULL,
+    lib_ver     text            DEFAULT NULL,
     -- cError
-    func_name   text    DEFAULT NULL,
-    src_name    text    DEFAULT NULL,
+    func_name   text            DEFAULT NULL,
+    src_name    text            DEFAULT NULL,
     src_line    integer         DEFAULT NULL,
     err_code    integer         DEFAULT NULL,
-    err_name    text     DEFAULT NULL,
+    err_name    text            DEFAULT NULL,
     err_subcode bigint          DEFAULT NULL,
     err_syscode integer         DEFAULT NULL,
     err_submsg  text            DEFAULT NULL,
-    thread_name text     DEFAULT NULL,
+    thread_name text            DEFAULT NULL,
     sql_err_num integer         DEFAULT NULL,
     sql_err_type integer        DEFAULT NULL,
     sql_driver_text text        DEFAULT NULL,

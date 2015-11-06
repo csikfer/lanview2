@@ -305,7 +305,7 @@ void cRecordDialog::init()
             _pWidget->setLayout(pFormLayout);
         }
     }
-    tOwnRecords<cTableShapeField>::const_iterator i, e = tableShape.shapeFields.cend();
+    tTableShapeFields::const_iterator i, e = tableShape.shapeFields.cend();
     _pRecord = new cRecordAny(&rDescr);
     int cnt = 0;
     for (i = tableShape.shapeFields.cbegin(); i != e; ++i) {
@@ -354,7 +354,7 @@ bool cRecordDialog::accept()
         cFieldEditBase& field = *fields[i];
         int rfi = field._pFieldRef->index();
         if (field.isReadOnly()) continue;      // Feltételezzük, hogy RO esetén az van a mezőben aminek lennie kell.
-        int s = _pRecord->_stat;                   // Mentjük a hiba bitet,
+        qlonglong s = _pRecord->_stat;                   // Mentjük a hiba bitet,
         _pRecord->_stat &= ~cRecord::ES_DEFECTIVE; // majd töröljük, mert mezőnkként kell
         QVariant fv = fields[i]->get();     // A mező widget-jéből kivesszük az értéket
         if (fv.isNull() && field._isInsert && field._hasDefault) continue;    // NULL, insert, van alapérték

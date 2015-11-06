@@ -15,8 +15,6 @@ static void insertCode(const QString& __txt);
 static QSqlQuery      *piq = NULL;
 static inline QSqlQuery& qq() { if (piq == NULL) EXCEPTION(EPROGFAIL); return *piq; }
 
-static const QString _sParams = "params";
-
 class cHostServices : public tRecordList<cHostService> {
 public:
     cHostServices(QSqlQuery& q, QString * ph, QString * pp, QString * ps, QString * pn) : tRecordList<cHostService>()
@@ -499,6 +497,7 @@ static qlonglong newAttachedNode(const QString& __n, const QString& __d)
 {
     cNode   node;
     node.asmbAttached(__n, __d, gPlace());
+    node.containerValid = CV_ALL_HOST;
     node.insert(qq(), true);
     return node.ports.first()->getId();
 }
@@ -507,6 +506,7 @@ static qlonglong replaceAttachedNode(const QString& __n, const QString& __d)
 {
     cNode   node;
     node.asmbAttached(__n, __d, gPlace());
+    node.containerValid = CV_ALL_HOST;
     node.replace(qq(), true);
     return node.ports.first()->getId();
 }
@@ -535,6 +535,7 @@ static qlonglong newWorkstation(const QString& __n, const cMac& __mac, const QSt
 {
     cNode host;
     host.asmbWorkstation(qq(), __n, __mac, __d, gPlace());
+    host.containerValid = CV_ALL_HOST;
     host.insert(qq(), true);
     return host.ports.first()->getId();
 }
@@ -543,6 +544,7 @@ static qlonglong replaceWorkstation(const QString& __n, const cMac& __mac, const
 {
     cNode host;
     host.asmbWorkstation(qq(), __n, __mac, __d, gPlace());
+    host.containerValid = CV_ALL_HOST;
     host.replace(qq(), true);
     return host.ports.first()->getId();
 }
@@ -1184,15 +1186,15 @@ static void patchCopy(QStringList *pExl, QStringList *pInc, QString *pSrc)
     pPatch->fieldsCopy(src, mask);
     if (ports) {
         src.fetchPorts(qq());
-        pPatch->ports = src.ports;
+        pPatch->ports.append(src.ports);
         pPatch->ports.clearId();
-        pPatch->ports.setsOwnerId();    // clear
+        pPatch->ports.setsOwnerId();
     }
     if (params) {
-        src.fetchPorts(qq());
-        pPatch->params = src.params;
+        src.fetchParams(qq());
+        pPatch->params.append(src.params);
         pPatch->params.clearId();
-        pPatch->params.setsOwnerId();    // clear
+        pPatch->params.setsOwnerId();
     }
 }
 
@@ -1202,7 +1204,7 @@ static void copyTableShape(QString *pSrc)
     src.setByName(qq(), *pSrc);
     delete pSrc;
     pTableShape->fieldsCopy(src, ~pTableShape->mask(_sTableShapeId, _sTableShapeName));
-    tOwnRecords<cTableShapeField>::iterator i, n = src.shapeFields.end();
+    tTableShapeFields::iterator i, n = src.shapeFields.end();
     int ixId  = cTableShapeField().idIndex();
     int ixOvn = src.shapeFields.ixOwnerId;
     for (i = src.shapeFields.begin(); i != n; ++i) {
@@ -1210,7 +1212,7 @@ static void copyTableShape(QString *pSrc)
         cTableShapeField *pField = srcField.dup()->reconvert<cTableShapeField>();
         pField->clear(ixId);
         pField->clear(ixOvn);
-        pField->shapeFilters = srcField.shapeFilters;
+        pField->shapeFilters.append(srcField.shapeFilters);
         pField->shapeFilters.clearId();
         pField->shapeFilters.setsOwnerId();
         pTableShape->shapeFields << pField;
@@ -1892,7 +1894,9 @@ iftype  : IFTYPE_T str str_z  IANA_T int TO_T int ';'
         ;
 nodes   : patch
         | node
-patch   : patch_h { if (pPatch->isNull(_sPlaceId)) pPatch->setId(_sPlaceId, gPlace()); } patch_e { REPANDDEL(pPatch); }
+patch   : patch_h                               { if (pPatch->isNull(_sPlaceId)) pPatch->setId(_sPlaceId, gPlace());
+                                                  pPatch->containerValid = CV_ALL_PATCH; }
+          patch_e                               { REPANDDEL(pPatch); }
         ;
 patch_h : PATCH_T replace str str_z                 { REPOBJ(pPatch, cPatch, $2, $3, $4); }
         | PATCH_T replace str str_z TEMPLATE_T str  { REPOBJ(pPatch, cPatch, $2, $3, $4); templates.get(_sPatchs, sp2s($6)); }
@@ -2020,7 +2024,7 @@ host_t  : SWITCH_T                              { $$ = new QString(_sSwitch); }
         | PRINTER_T                             { $$ = new QString(_sPrinter); }
         | GATEWAY_T                             { $$ = new QString(_sGateway); }
         ;
-node    : node_h str str_z                          { newNode($1, $2, $3); }
+node    : node_h str str_z                          { newNode($1, $2, $3); pPatch->containerValid = CV_ALL_NODE; }
                 node_cf node_e                      { REPANDDEL(pPatch); }
         | ATTACHED_T str str_z ';'                  { if (globalReplaceFlag) replaceAttachedNode(sp2s($2), sp2s($3));
                                                       else                       newAttachedNode(sp2s($2), sp2s($3)); }
@@ -2033,7 +2037,7 @@ node    : node_h str str_z                          { newNode($1, $2, $3); }
                                                     { replaceAttachedNodes(sp2s($3), sp2s($4), $6, $8); }
         | ATTACHED_T INSERT_T str str_z FROM_T int TO_T int ';'
                                                     {     newAttachedNodes(sp2s($3), sp2s($4), $6, $8); }
-        | host_h name_q ip_q mac_q str_z            { newHost($1, $2, $3, $4, $5); }
+        | host_h name_q ip_q mac_q str_z            { newHost($1, $2, $3, $4, $5); pPatch->containerValid = CV_ALL_HOST; }
             node_cf node_e                          { REPANDDEL(pPatch); }
         | WORKSTATION_T str mac str_z ';'           { if (globalReplaceFlag) replaceWorkstation(sp2s($2), *$3, sp2s($4));
                                                       else                       newWorkstation(sp2s($2), *$3, sp2s($4));
@@ -2065,8 +2069,8 @@ node_p  : NOTE_T str ';'                        { node().setName(_sNodeNote, sp2
         | PORT_T pnm TAG_T str ';'              { setLastPort(node().portSet(sp2s($2), _sPortTag, sp2s($4))); }
         | PORT_T pnm SET_T str '=' value ';'    { setLastPort(node().portSet(sp2s($2), sp2s($4), vp2v($6))); }
         | PORT_T pix SET_T str '=' vals ';'     { setLastPort(node().portSet($2, sp2s($4), vlp2vl($6)));; }
-        | PORT_T pnm PARAM_T str '=' str ';'    { setLastPort(node().portSetParam(sp2s($2), sp2s($4), sp2s($6))); }
-        | PORT_T pix PARAM_T str '=' strs ';'   { setLastPort(node().portSetParam($2, sp2s($4), slp2sl($6))); }
+        | PORT_T pnm PARAM_T str '=' value ';'  { setLastPort(node().portSetParam(sp2s($2), sp2s($4), vp2v($6))); }
+        | PORT_T pix PARAM_T str '=' vals ';'   { setLastPort(node().portSetParam($2, sp2s($4), vlp2vl($6))); }
         /* host */
         | ALARM_T PLACE_T GROUP_T plg_id ';'    { node().setId(_sAlarmPlaceGroupId, $4); }
         | ADD_T PORT_T pix_z str str ip_qq mac_qq str_z ';' { setLastPort(hostAddPort((int)$3, $4,$5,$6,$7,$8)); }

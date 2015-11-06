@@ -114,6 +114,8 @@ EXT_ int filterType(const QString& n, bool __ex = true);
 EXT_ const QString&   filterType(int e, bool __ex = true);
 
 class cTableShapeField;
+class cTableShape;
+typedef tOwnRecords<cTableShapeField, cTableShape>  tTableShapeFields;
 /*!
 @class cTableShape
 @brief Adattáblák táblázatos megjelenítésének a leírója
@@ -185,13 +187,14 @@ public:
     /// @exception Ha már létezik ilyen nevű elem a konténerben.
     cTableShapeField *addField(const QString& _name, const QString& _title = _sNul, const QString& _note = _sNul, bool __ex = true);
 
-    tOwnRecords<cTableShapeField>   shapeFields;
+    tTableShapeFields   shapeFields;
 protected:
     static int              _ixTableShapeType;
 };
 
 class cTableShapeFilter;
-
+class cTableShapeField;
+typedef tOwnRecords<cTableShapeFilter, cTableShapeField> tTableShapeFilters;
 /*!
 @class cTableShapeField
 @brief Adattáblák mezőinek a megjelenítési leírói
@@ -210,7 +213,7 @@ public:
     bool addFilter(const QString& _t, const QString& _d, bool __ex = true);
     bool fetchByNames(QSqlQuery& q, const QString& tsn, const QString& fn, bool __ex = false);
     static qlonglong getIdByNames(QSqlQuery& q, const QString& tsn, const QString& fn);
-    tOwnRecords<cTableShapeFilter> shapeFilters;
+    tTableShapeFilters shapeFilters;
     STATICIX( cTableShapeField, ixTableShapeId)
 protected:
     static cRecStaticDescr  _staticDescr;

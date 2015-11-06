@@ -302,6 +302,24 @@ QString cOId::toString() const
     return len > 0 ? QString::fromUtf8(buf) : _sUnKnown;
 }
 
+cOId cOId::mid(int _first, int _size)
+{
+    cOId r;
+    uint i, e;
+    if (_size > 0) {
+        e = _first + _size;
+        if (e > oidSize) e = oidSize;
+    }
+    else {
+        e = oidSize;
+    }
+    for (i = _first; i < e; ++i) {
+        int x = this->at(i);
+        r << x;
+    }
+    return r;
+}
+
 QVariant cOId::toVariant() const
 {
     QVariantList    v;
@@ -332,6 +350,20 @@ cMac cOId::toMac() const
         r.set(v);
     }
     return r;
+}
+
+QHostAddress cOId::toIPV4() const
+{
+    if (oidSize >= 4) {
+        qint32 v = 0;
+        for (int i = 4; i > 0; i--) {
+            uint b = (*this)[oidSize - i];
+            if (b > 255) return QHostAddress();  // invalid
+            v = (v << 8) + b;
+        }
+        return QHostAddress(v);
+    }
+    return QHostAddress();
 }
 
 cOId& cOId::operator <<(int __i)
@@ -514,10 +546,21 @@ QVariant cSnmp::value(const netsnmp_variable_list * __var)
             case ASN_NULL: //            ((u_char)0x05)
                 // _PDEB(VVERBOSE) << "NULL" << endl;
                 break;
-            case ASN_OBJECT_ID: //       ((u_char)0x06)
-                r = cOId((oid *)__var->val.string, __var->val_len / sizeof(oid)).toVariant();
+            case ASN_OBJECT_ID: {//       ((u_char)0x06)
+                // cOId _oid = cOId((oid *)__var->val.string, __var->val_len / sizeof(oid));    // Ez lenne a logikus
+                int len = __var->val_len / sizeof(int);             // De 64 biten ez tűnik jónak
+                cOId _oid = cOId((oid *)__var->val.string, len);
+                if (len > 0) {
+                    QString sOid;
+                    for (int i = 0; i < len; ++i) {
+                        sOid += QString::number((unsigned long)_oid[i]) + ".";
+                    }
+                    sOid.chop(1);
+                    r = sOid;
+                }
                 // _PDEB(VVERBOSE) << r.toString() << endl;
                 break;
+            }
             case ASN_SEQUENCE: //        ((u_char)0x10)
             case ASN_SET: //             ((u_char)0x11)
             // case ASN_PRIMITIVE:       ((u_char)0x00)

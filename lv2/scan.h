@@ -117,8 +117,8 @@ protected:
     const QString& token(QIODevice& __f);
 };
 
-extern bool setPortsBySnmp(cSnmpDevice &node, bool __ex = true);
-extern bool setSysBySnmp(cSnmpDevice &node);
+extern bool setPortsBySnmp(cSnmpDevice &node, bool __ex = true, QString *pEs = NULL);
+extern int setSysBySnmp(cSnmpDevice &node, bool __ex = true, QString *pEs = NULL);
 
 extern QString lookup(const QHostAddress& ha, bool __ex = true);
 

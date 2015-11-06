@@ -133,18 +133,17 @@ const QString& filterType(int e, bool __ex)
 
 /* ------------------------------ cTableShape ------------------------------ */
 
-cTableShape::cTableShape() : cRecord(), shapeFields(cTableShapeField::ixTableShapeId())
+cTableShape::cTableShape() : cRecord(), shapeFields(this)
 {
     _pFeatures = NULL;
     _set(cTableShape::descr());
 }
 
-cTableShape::cTableShape(const cTableShape &__o) : cRecord(), shapeFields(cTableShapeField::ixTableShapeId())
+cTableShape::cTableShape(const cTableShape &__o) : cRecord(), shapeFields(this, __o.shapeFields)
 {
     _pFeatures = NULL;
     _set(cTableShape::descr());
     _cp(__o);
-    shapeFields = __o.shapeFields;
 }
 
 cTableShape::~cTableShape()
@@ -196,7 +195,7 @@ bool cTableShape::insert(QSqlQuery &__q, bool __ex)
     if (!cRecord::insert(__q, __ex)) return false;
     if (shapeFields.count()) {
         if (getBool(_sIsReadOnly)) shapeFields.sets(_sIsReadOnly, QVariant(true));
-        int i = shapeFields.insert(__q, getId(), __ex);
+        int i = shapeFields.insert(__q, __ex);
         return i == shapeFields.count();
     }
     return true;
@@ -376,7 +375,7 @@ bool cTableShape::setAllOrders( QStringList& _ord, bool __ex)
     else {
         deford = enum2set(orderType, _ord[0]);
     }
-    tOwnRecords<cTableShapeField>::Iterator i, e = shapeFields.end();
+    tTableShapeFields::Iterator i, e = shapeFields.end();
     int seq = 0;
     for (i = shapeFields.begin(); e != i; ++i) {
         cTableShapeField& f = **i;
@@ -407,7 +406,7 @@ bool cTableShape::setOrders(const QStringList& _fnl, QStringList& _ord, bool __e
     else {
         deford = enum2set(orderType, _ord[0]);
     }
-    tOwnRecords<cTableShapeField>::Iterator i, e = shapeFields.end();
+    tTableShapeFields::Iterator i, e = shapeFields.end();
     int seq = 0;
     const int step = 10;
     const int ixOrdInitSequenceNumber = shapeFields.front()->toIndex(_sOrdInitSequenceNumber);
@@ -542,26 +541,23 @@ cTableShapeField *cTableShape::addField(const QString& _name, const QString& _ti
 
 int cTableShapeField::_ixTableShapeId = NULL_IX;
 
-cTableShapeField::cTableShapeField() : cRecord(), shapeFilters(cTableShapeFilter::ixTableShapeFieldId())
+cTableShapeField::cTableShapeField() : cRecord(), shapeFilters(this)
 {
     _pFeatures = NULL;
     _set(cTableShapeField::descr());
 }
 
-cTableShapeField::cTableShapeField(const cTableShapeField &__o) : cRecord(), shapeFilters(cTableShapeFilter::ixTableShapeFieldId())
+cTableShapeField::cTableShapeField(const cTableShapeField &__o) : cRecord(), shapeFilters(this, __o.shapeFilters)
 {
     _pFeatures = NULL;
     _set(cTableShapeField::descr());
     _cp(__o);
-    shapeFilters = __o.shapeFilters;
-
 }
 
-cTableShapeField::cTableShapeField(QSqlQuery& q) : cRecord(), shapeFilters(cTableShapeFilter::ixTableShapeFieldId())
+cTableShapeField::cTableShapeField(QSqlQuery& q) : cRecord(), shapeFilters(this)
 {
     _pFeatures = NULL;
-    _set(cTableShapeField::descr());
-    set(q);
+    _set(q.record(), cTableShapeField::descr());
 }
 
 cTableShapeField::~cTableShapeField()
@@ -618,7 +614,7 @@ bool cTableShapeField::insert(QSqlQuery &__q, bool __ex)
 {
     if (!cRecord::insert(__q, __ex)) return false;
     if (shapeFilters.count()) {
-        int i = shapeFilters.insert(__q, getId(), __ex);
+        int i = shapeFilters.insert(__q, __ex);
         return i == shapeFilters.count();
     }
     return true;
@@ -626,7 +622,7 @@ bool cTableShapeField::insert(QSqlQuery &__q, bool __ex)
 
 bool cTableShapeField::rewrite(QSqlQuery &__q, bool __ex)
 {
-    return tRewrite(__q, shapeFilters, __ex);
+    return tRewrite(__q, shapeFilters, 0, __ex);
 }
 
 int cTableShapeField::fetchFilters(QSqlQuery& q)

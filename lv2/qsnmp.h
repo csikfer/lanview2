@@ -17,6 +17,18 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
+/*!
+@file qsnmp.h
+Objektumok az SNMP protokolhoz.
+A net-snmp -n alapul: (unix:LIBS += -lsnmp). Csak linux alatt implementált (elvileg működhetne windows alatt is).
+Az SNMP (MIB) névfeloldáshoz (Ubuntu 14.04):
+    sudo apt-get snmp lib-snmp-dev snmp-mibs-downloader
+    sudo download-mibs
+A /etc/snmp/snmp.conf -ban meg kell adni a MIB-ek útvonalát (alapértelmezetten tiltva):
+    # mibs :
+    mibdirs /usr/share/mibs/iana:/usr/share/mibs/ietf:/usr/share/snmp/mibs
+Egyébb használlt MIB-ek útvonalával is ki kell egészíteni!
+*/
 
 #ifndef QSNMP_H
 #define QSNMP_H
@@ -36,6 +48,7 @@ EXT_ QString snmpNotSupMsg();
 #include <net-snmp/net-snmp-includes.h>
 #include <string.h>
 
+/// Hálózati interfész SNMP statuszok
 enum eIfStatus {
     IF_UP           = 1,
     IF_DOWN         = 2,
@@ -64,7 +77,7 @@ class LV2SHARED_EXPORT cTable : public QMap<QString, QVariantVector >
     /// A tábla sorainak számával tér vissza, feltételezve, hogy minden oszlop azonos számú elemet tartalmaz.
     ///
     int rows(void) const    { return size() ? constBegin()->size() : 0; }
-    /// Egy elem ketesése
+    /// Egy elem keresése
     /// Ha van találat, akkor az elem pointere, egyébként NULL
     /// @param __in Az index oszlop neve
     /// @param __ix Az index érték, az index oszlopban, megadja a keresett sort
@@ -84,7 +97,10 @@ EXT_ QBitArray   bitString2Array(u_char *__bs, size_t __os);
 
 class LV2SHARED_EXPORT netSnmp {
    protected:
+    /// Első híváskor (ha nincs több netSnmp példány) inicializálja az SNMP könyvtárat.
+    /// Ha a lanView objektumban meg van adva MIB path, akkor azokat hozzáadja a MIB-ek keresési útvonalához.
     netSnmp();
+    /// Az utolsó objektumnál hívja az snmp_shutdown() függvényt.
     ~netSnmp();
     /// Törli az snmp_errno globális változót, és a status, valamint az emsg adattagot
     void    clrStat(void);
@@ -99,7 +115,9 @@ class LV2SHARED_EXPORT netSnmp {
     /// @param __em Egy opcionális string, amit hozzáfűz a hiba string-hez
     /// @return a staus adattag új értéke
     int     setStat(bool __e, const QString& __em);
+    /// Igazzal tér vissza ha a staus értéke nulla.
     virtual operator bool() const   { return status == 0; }
+    /// Igazzal tér vissza ha a staus értéke nem nulla.
     virtual bool operator !() const { return status != 0; }
    public:
     static void setMibDirs(const char * __dl);
@@ -143,11 +161,13 @@ class LV2SHARED_EXPORT cOId : public QVector<oid>, public netSnmp {
     /// Ha az objektum méretét jelző érték nagyobb, mint a konténer, akkor dob egy kizárást.
     virtual operator bool() const;
     virtual bool operator !() const;
-    cOId& operator  =(const char * __oid)   { return set(__oid); }
-    cOId& operator  =(const QString& __oid) { return set(__oid); }
-    cOId& operator  =(const cOId& __oid)    { return set(__oid); }
+    cOId& operator =(const char * __oid)    { return set(__oid); }
+    cOId& operator =(const QString& __oid)  { return set(__oid); }
+    cOId& operator =(const cOId& __oid)     { return set(__oid); }
     cOId& operator <<(int __i);
     cOId& operator <<(const QString& __s);
+    cOId  operator +(int __i) const             { return cOId(*this) << __i; }
+    cOId  operator +(const QString& __s) const  { return cOId(*this) << __s; }
     /// Összehasonlít két objektumot. Az összehasonlítés eredménye akkor igaz, ha a bal érték
     /// elemszáma kisebb mint a jobb érték, és a balérték, és a jobb érték elejének a balértéknek
     /// megfelelő hosszú darabja azonos, egyébbként az eredmény hamis. Nem sorrendiséget állapít meg.
@@ -160,27 +180,33 @@ class LV2SHARED_EXPORT cOId : public QVector<oid>, public netSnmp {
     bool  operator ==(const cOId& __o) const;
     bool  operator <=(const cOId& __o) const{ return *this == __o ||  *this < __o; }
     bool  operator >=(const cOId& __o) const{ return *this == __o ||  *this > __o; }
+    oid last() const { return at(oidSize -1); }
     /// Összehasonlít lét objektumot. Ha a kettő azonos, akkor hamis tér vissza.
     bool  operator !=(const cOId& __o) const{ return !(*this == __o); }
     /// Ha a jobb érték kisebb (lsd < operator), akkor a jobb érték balértékkel azonos eleje törlődik.
     /// Ha a jobb érték nem azonos a bal érték elejével, akkor az eredmény egy üres objrektum lessz.
     cOId& operator -=(const cOId& __o);
-    /// Ha a jobb oldali oerandus kisebb (lsd < operator), akkor az eredmény a baloldali operandus lessz a jobboldali operandussal azonos részt törölve.
+    /// Ha a jobb oldali oerandus kisebb (lsd < operator), akkor az eredmény a baloldali operandus lessz a jobboldali
+    /// operandussal azonos részt törölve.
     /// Ha a jobb oldali operandus nem azonos a bal oldali operandus elejével, akkor az eredmény egy üres objrektum lessz.
     cOId  operator  -(const cOId& __o) const{ cOId r(*this); return r -= __o; }
-    oid   pop_front() {
+
+    oid pop_front() {
+        if (oidSize <= 0) EXCEPTION(EPROGFAIL, oidSize);
+        oidSize--;
         oid r = at(0);
         QVector<oid>::pop_front();      // A vektorunk fix hosszú, de most rövidebb lett
-        QVector<oid>::push_back(zero);  // Vissza a fix hoss.
+        QVector<oid>::push_back(zero);  // Vissza a fix hossz.
         return r;
     }
-    oid   pop_back() {
+    oid pop_back() {
         if (oidSize <= 0) EXCEPTION(EPROGFAIL, oidSize);
         oidSize--;
         oid r = at(oidSize);
         (*this)[oidSize] = zero;
         return r;
     }
+    cOId mid(int _first, int _size);
     QVariant toVariant() const;
     QString toString() const;
     QString description() const;
@@ -188,6 +214,9 @@ class LV2SHARED_EXPORT cOId : public QVector<oid>, public netSnmp {
     /// Az utolsó hat elemet megpróbálja MAC-ként értelmezni.
     /// Ha nincs 6 eleme az objektumnak, vagy az utolsó 6 elem nem a 0-255 tartományba esik, akkor egy üres objektummal tér vissza.
     cMac toMac() const;
+    /// Az utolsó négy elemet megpróbálja IPV4 címként értelmezni.
+    /// Ha nincs 4 eleme az objektumnak, vagy az utolsó 4 elem nem a 0-255 tartományba esik, akkor egy üres objektummal tér vissza.
+    QHostAddress toIPV4() const;
     // QString toFullString() const;
     bool    chkSize(size_t __len);
 };

@@ -346,6 +346,29 @@ CREATE TABLE host_service_vars (
 );
 ALTER TABLE host_service_vars OWNER TO lanview2;
 
+CREATE TABLE app_memos (
+    app_memo_id         bigserial       PRIMARY KEY,
+    date_of             timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    app_name            text            DEFAULT NULL,
+    pid                 bigint          DEFAULT NULL,
+    app_ver             text            DEFAULT NULL,
+    lib_ver             text            DEFAULT NULL,
+    func_name           text            DEFAULT NULL,
+    src_name            text            DEFAULT NULL,
+    src_line            integer         DEFAULT NULL,
+    node_id             bigint          DEFAULT NULL,
+    host_service_id     bigint          DEFAULT NULL
+        REFERENCES host_services(host_service_id) MATCH SIMPLE ON DELETE CASCADE ON UPDATE RESTRICT,
+    user_id             bigint          DEFAULT NULL
+        REFERENCES users(user_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
+    importance          notifswitch     DEFAULT 'unknown',
+    memo                text            NOT NULL
+);
+CREATE INDEX app_memos_date_of_index ON app_memos (date_of);
+ALTER TABLE app_memos OWNER TO lanview2;
+COMMENT ON TABLE  app_memos IS '';
+
+
 CREATE TYPE isnoalarm AS ENUM ('on', 'expired', 'off');
 ALTER TYPE isnoalarm OWNER TO lanview2;
 

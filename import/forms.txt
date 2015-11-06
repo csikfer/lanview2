@@ -44,6 +44,7 @@ ENUM filtertype     proc            TITLE "Szűrés egy magadott SQL függvénny
 ENUM filtertype     SQL             TITLE "A szürési feltétel megadása SQL nyelven";
 
 DELETE GUI "%" MENU;
+DELETE TABLE SHAPE "%";
 
 INCLUDE "iaform.txt";
 // ***************************************************************************************
@@ -192,6 +193,12 @@ TABLE SHAPE images {
     $DefRights
 }
 
+TABLE SHAPE dyn_addr_ranges "Dinamikus címtartományok" {
+    SET DEFAULTS;
+    TABLE TYPE simple;
+    $DefRights
+}
+
 // ***************************************************************************************
 // events
 
@@ -224,9 +231,22 @@ TABLE SHAPE alarms "Riasztások" {
     $DefRights
 }
 
+TABLE SHAPE db_errs "Adatbázis hiba napló" {
+    SET DEFAULTS;
+    TABLE READ ONLY;
+    $DefRights
+}
+
 TABLE SHAPE app_errs "Applikáció hiba napló" {
     SET DEFAULTS;
     TABLE READ ONLY;
+    $DefRights
+}
+
+TABLE SHAPE app_memos "Applikáció napló" {
+    SET DEFAULTS;
+    TABLE READ ONLY;
+    FIELD memo FEATURES ":text:";       // több sosros
     $DefRights
 }
 
@@ -239,8 +259,15 @@ TABLE SHAPE host_service_logs "A szervíz példányok log rekordjai" {
     $DefRights
 }
 
+TABLE SHAPE iftypes "Port típusok" {
+    SET DEFAULTS;
+    TABLE READ ONLY;
+    TABLE TYPE simple;
+    $DefRights
+}
+
 // ***************************************************************************************
-// Others:
+// NET Others:
 
 TABLE SHAPE arps "ARP tábla" {
     SET DEFAULTS;
@@ -257,9 +284,25 @@ TABLE SHAPE mactab "Port címtábla" {
     $DefRights
 }
 
+TABLE SHAPE arp_logs "ARP lekérdezés napló." {
+    SET DEFAULTS;
+    TABLE READ ONLY;
+    $DefRights
+}
+
+TABLE SHAPE fkey_types "Távoli kulcs típusok" {
+    SET DEFAULTS;
+    TABLE READ ONLY;
+    $DefRights
+}
+
 // ***************************************************************************************
 // GUI
 
+TABLE SHAPE alarm_messages "Figyelmeztető üzenetek szövege" {
+    SET DEFAULTS;
+    $DefRights
+}
 
 TABLE SHAPE table_shape_filters "Szűrési lehetőséget a mezőkre" {
     SET DEFAULTS;
@@ -348,9 +391,9 @@ GUI lv2gui {
     exit        EXEC    exit            "Kilép";
   }
   userss MENU "Felhasználók" {
-      users     SHAPE   users           "Felhasználók";
-      groups    SHAPE   groups          "Felhasználói csoportok";
-      zones     SHAPE   place_groups    "Zónák";
+    users     SHAPE   users           "Felhasználók";
+    groups    SHAPE   groups          "Felhasználói csoportok";
+    zones     SHAPE   place_groups    "Zónák";
   }
   objects MENU "Objektumok" {
     patchs      SHAPE   patchs          "Patch panelek";
@@ -364,15 +407,21 @@ GUI lv2gui {
   }
   events MENU "Események" {
     alarms      SHAPE   alarms          "Riasztások";
-    app_errs    SHAPE   app_errs        "Program hibák";
-    host_service_logs SHAPE host_service_logs "Szervíz log";
+    app_errs    SHAPE   app_errs        "Program hiba napló";
+    app_memos   SHAPE   app_memos       "Program esemény napló";
+    host_service_logs SHAPE host_service_logs "Szervíz állapot napló";
     olalarm     OWN     olalarm         "On-Line riasztások";
   }
-  others MENU "Egyéb táblák" {
+  netothers MENU "Egyébb hálózati adatok" {
     arps        SHAPE   arps            "ARP tábla";
+    arp_logs    SHAPE   arp_logs        "ARP napló";
     mactab      SHAPE   mactab          "Port címtáblák";
   }
+  internals MENU "Belső vezérlő adatok" {
+    fkey_types  SHAPE   fkey_types      "Idegen kulcs típusok";
+  }
   gui MENU "Megjelenítés" {
+    alarm_messages SHAPE alarm_messages "Figyelmeztető üzenetek szövege";
     shapes      SHAPE   table_shapes    "Táblák megjelenítése";
     enums       SHAPE   enum_vals       "Enumerációs értékek";
     menus       SHAPE   menu_items      "GUI menük";

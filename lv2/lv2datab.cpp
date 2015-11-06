@@ -457,7 +457,7 @@ Ha üres objektumot adunk meg, és isNullable értéke false, akkor szintén be 
 @return A konvertált érték
 @exception cError Ha eColType értéke nem a fenti három érték eggyike.
 */
-QVariant cColStaticDescr::set(const QVariant& _f, int &str) const
+QVariant cColStaticDescr::set(const QVariant& _f, qlonglong &str) const
 {
     QVariant r =_f;
     bool ok = true;
@@ -710,7 +710,7 @@ Ha üres objektumot adunk meg, és isNullable értéke false, akkor szintén be 
 @param str A status referenciája
 @return A konvertált érték
 */
-QVariant  cColStaticDescrBool::set(const QVariant& _f, int & str) const
+QVariant  cColStaticDescrBool::set(const QVariant& _f, qlonglong & str) const
 {
     bool ok = true;
     QVariant r =_f;
@@ -960,7 +960,7 @@ Ha a paraméter és a tárolási típus is QVariantList, akkor a lista elemeket 
 @return A konvertált érték
 @exception cError Ha eColType értéke nem a fenti három érték eggyike.
 */
-QVariant  cColStaticDescrArray::set(const QVariant& _f, int &str) const
+QVariant  cColStaticDescrArray::set(const QVariant& _f, qlonglong &str) const
 {
     QVariant r =_f;
     if (isNumNull(_f)) r.clear();
@@ -1108,7 +1108,7 @@ egy üres objektum.
 @return A konvertált érték
 @exception cError Ha az enumType adattag NULL, és szükséges a konverzióhóz.
 */
-QVariant  cColStaticDescrEnum::set(const QVariant& _f, int & str) const
+QVariant  cColStaticDescrEnum::set(const QVariant& _f, qlonglong & str) const
 {
     QVariant r =_f;
     bool ok = true;
@@ -1224,7 +1224,7 @@ Ha olyan elemeket adunk meg, amik nincsenek az enumVals -ban, akkor azok az elem
 @return A konvertált stringlista vagy null objektum
 @exception cError Ha az enumVals adattag üres, és szükséges a konverzióhóz/ellenörzéshez
 */
-QVariant  cColStaticDescrSet::set(const QVariant& _f, int & str) const
+QVariant  cColStaticDescrSet::set(const QVariant& _f, qlonglong & str) const
 {
     // _DBGFN() << debVariantToString(_f) << endl;
     int t = _f.userType();
@@ -1354,7 +1354,7 @@ QVariant  cColStaticDescrPolygon::toSql(const QVariant& _f) const
     return QVariant(s);
 }
 
-QVariant  cColStaticDescrPolygon::set(const QVariant& _f, int& str) const
+QVariant  cColStaticDescrPolygon::set(const QVariant& _f, qlonglong& str) const
 {
     // _DBGF() << QChar(' ') << debVariantToString(_f);
     int t = _f.userType();
@@ -1446,8 +1446,8 @@ cColStaticDescr::eValueCheck  cColStaticDescrAddr::check(const QVariant& _f, cCo
 
 QVariant  cColStaticDescrAddr::fromSql(const QVariant& _f) const
 {
-    int es;
-    return set(_f, es);
+    qlonglong dummy;
+    return set(_f, dummy);
 }
 QVariant  cColStaticDescrAddr::toSql(const QVariant& _f) const
 {
@@ -1456,7 +1456,7 @@ QVariant  cColStaticDescrAddr::toSql(const QVariant& _f) const
     if (r.toString().isEmpty()) EXCEPTION(EDATA,-1,QObject::trUtf8("Invalid data type."));
     return r;
 }
-QVariant  cColStaticDescrAddr::set(const QVariant& _f, int &str) const
+QVariant  cColStaticDescrAddr::set(const QVariant& _f, qlonglong &str) const
 {
     int mtid = _f.userType();
     if ((QMetaType::LongLong == mtid && NULL_ID == _f.toLongLong())
@@ -1596,7 +1596,7 @@ QVariant  cColStaticDescrTime::toSql(const QVariant& _f) const
     if (_f.isNull()) EXCEPTION(EDATA,-1,QObject::trUtf8("Data is NULL"));
     return _f;
 }
-QVariant  cColStaticDescrTime::set(const QVariant& _f, int& str) const
+QVariant  cColStaticDescrTime::set(const QVariant& _f, qlonglong& str) const
 {
     // _DBGF() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
     if (isNumNull(_f) || _f.isNull()) {
@@ -1683,7 +1683,7 @@ QVariant  cColStaticDescrDate::toSql(const QVariant& _f) const
     if (_f.isNull()) EXCEPTION(EDATA,-1,QObject::trUtf8("Data is NULL"));
     return _f;
 }
-QVariant  cColStaticDescrDate::set(const QVariant& _f, int& str) const
+QVariant  cColStaticDescrDate::set(const QVariant& _f, qlonglong& str) const
 {
     // _DBGF() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
     int t = _f.userType();
@@ -1754,7 +1754,7 @@ QVariant  cColStaticDescrDateTime::toSql(const QVariant& _f) const
     if (_f.isNull()) EXCEPTION(EDATA,-1,"Data is NULL");
     return _f;
 }
-QVariant  cColStaticDescrDateTime::set(const QVariant& _f, int& str) const
+QVariant  cColStaticDescrDateTime::set(const QVariant& _f, qlonglong& str) const
 {
     // _DBGF() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
     int t = _f.userType();
@@ -1922,7 +1922,7 @@ QVariant  cColStaticDescrInterval::toSql(const QVariant& _f) const
 
 }
 /// Egy időintervallum értéket konvertál, a tárolási tíousra (mSec)
-QVariant  cColStaticDescrInterval::set(const QVariant& _f, int& str) const
+QVariant  cColStaticDescrInterval::set(const QVariant& _f, qlonglong& str) const
 {
     // _DBGF() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
     int t = _f.userType();
@@ -2741,7 +2741,7 @@ cRecord& cRecord::_clear(int __ix)
     if (_fields.size() <= __ix) EXCEPTION(EPROGFAIL, __ix);
     _fields[__ix].clear();
     if  (isEmpty()) _stat  = ES_NULL;
-    else             _stat |= ES_MODIFY;
+    else            _stat |= ES_MODIFY;
     return *this;
 }
 
@@ -2787,6 +2787,23 @@ cRecord& cRecord::_set(const cRecStaticDescr& __d)
     for (i = 0; i < n; i++) _fields << QVariant();
     _stat = ES_EMPTY;
     return *this;
+}
+
+QStringList cRecord::defectiveFields() const
+{
+    QStringList r;
+    if (isDefective()) {
+        long mask = defectiveFieldMask() ;
+        if (mask == 0) r << "[unknown]";
+        else {
+            int i;
+            long b;
+            for (i = 0, b = 1; i < cols(); ++i, b <<= 1) if (mask & b) {
+                r << columnName(i);
+            }
+        }
+    }
+    return r;
 }
 
 cRecord& cRecord::set()
@@ -2879,7 +2896,10 @@ cRecord& cRecord::_set(const QSqlRecord& __r, const cRecStaticDescr& __d, int* _
             _set(ix, f);
         }
         else {
-            if (!fd.isNullable) _stat |= ES_INCOMPLETE;
+            if (!fd.isNullable) {
+                _stat |= ES_INCOMPLETE;
+                _setDefectivFieldBit(ix);
+            }
         }
    }
     if (cnt == m) {
@@ -2943,7 +2963,12 @@ cRecord& cRecord::set(int __i, const QVariant& __v)
 {
     // _DBGFN() << " @(" << __i << _sCommaSp << __v.toString() << QChar(')') << endl;
     if (_fields.isEmpty()) set();
-    _set(__i, descr()[__i].set(__v, _stat));
+    qlonglong _s = 0;
+    _set(__i, descr()[__i].set(__v, _s));
+    if (_s == ES_DEFECTIVE) {
+        _stat |= ES_DEFECTIVE;
+        _setDefectivFieldBit(__i);
+    }
     _stat |= ES_MODIFY;
     toEnd(__i);
     fieldModified(__i);
@@ -2982,6 +3007,17 @@ QString cRecord::view(QSqlQuery& q, int __i) const
 {
     if (isIndex(__i) == false) return QObject::trUtf8("[nincs]");
     return descr()[__i].toView(q, get(__i));
+}
+
+bool cRecord::isContainerValid(qlonglong) const
+{
+    EXCEPTION(EPROGFAIL);
+    return false;
+}
+
+void cRecord::setContainerValid(qlonglong, qlonglong)
+{
+    EXCEPTION(EPROGFAIL);
 }
 
 cMac    cRecord::getMac(int __i, bool __ex) const
@@ -3452,7 +3488,8 @@ bool cRecord::checkData()
             allNull = false;
         }
         else if (colcDescrs[i].isNullable == false && colcDescrs[i].colDefault.isEmpty()) {
-            _stat = ES_DEFECTIVE;
+            _stat |= ES_DEFECTIVE;
+            _setDefectivFieldBit(i);
         }
     }
     if (allNull == true) {
@@ -3477,8 +3514,8 @@ QString cRecord::toString() const
     QString s = QChar(' ') + tableName() + QChar('{');
     for (int i = 0; isIndex(i); i++) {
         s += QChar(' ') + columnNameQ(i);
-        if (isNull(i)) s += " IS NULL, ";
-        else           s +=  " = " + getName(i) + QString("::") + QString(get(i).typeName()) + "; ";
+        if (isNull(i)) s += " IS NULL;";
+        else           s +=  " = " + getName(i) + QString("::") + QString(get(i).typeName()) + ";";
     }
     s.chop(2);
     s + QChar('}');

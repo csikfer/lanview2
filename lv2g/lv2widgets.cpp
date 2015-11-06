@@ -144,6 +144,7 @@ QString fieldWidgetType(int _t)
     case FEW_ENUM_COMBO:    return "cEnumComboWidget";
     case FEW_ENUM_RADIO:    return "cEnumRadioWidget";
     case FEW_LINE:          return "cFieldLineWidget";
+    case FEW_TEXT:          return "cFieldLineWidget/long";
     case FEW_ARRAY:         return "cArrayWidget";
     case FEW_POLYGON:       return "cPolygonWidget";
     case FEW_FKEY:          return "cFKeyWidget";
@@ -210,7 +211,7 @@ qlonglong cFieldEditBase::getId() const
 int cFieldEditBase::set(const QVariant& _v)
 {
     _DBGFN() << QChar('/') << _recDescr<< QChar(' ') <<  debVariantToString(_v) << endl;
-    int st = 0;
+    qlonglong st = 0;
     QVariant v = _recDescr.set(_v, st);
     if (st & cRecord::ES_DEFECTIVE) return -1;
     if (v == _value) return 0;
@@ -444,7 +445,7 @@ int cSetWidget::set(const QVariant& v)
 void cSetWidget::setFromEdit(int id)
 {
     _DBGFNL() << id << endl;
-    int dummy;
+    qlonglong dummy;
     int n =_pFieldRef->descr().enumType().enumValues.size();
     if (id >= n) {
         for (int i = 0; i < n; ++i) {
@@ -531,7 +532,7 @@ void cEnumRadioWidget::setFromEdit(int id)
     else {
         v = eval;
     }
-    int dummy;
+    qlonglong dummy;
     setFromWidget(_recDescr.set(v, dummy));
 }
 
@@ -581,7 +582,7 @@ void cEnumComboWidget::setFromEdit(int id)
     if (eval == id) return;
     qlonglong v = id;
     if (id == _recDescr.enumType().enumValues.size()) v = NULL_ID;
-    int dummy;
+    qlonglong dummy;
     setFromWidget(_recDescr.set(QVariant(v), dummy));
 }
 
@@ -590,13 +591,25 @@ void cEnumComboWidget::setFromEdit(int id)
 /*!
 A 'features' mező:\n
 :<b>passwd</b>: Ha megadtuk, és a mező típusa text, akkor a képernyőn nem olvasható az adat
+:<b>text</b>:   Csak text típus esetén, több soros megjelenítés
  */
 cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef _fr, bool _ro, cRecordDialogBase *_par)
     : cFieldEditBase(_tm, _tf, _fr, _ro, _par)
 {
-    _wType = FEW_LINE;  // Widget típus azonosító
-    QLineEdit *pLE = new QLineEdit(_par->pWidget());
-    _pWidget = pLE;
+    QLineEdit *pLE = NULL;
+    QPlainTextEdit *pTE = NULL;
+    if (_recDescr.eColType == cColStaticDescr::FT_TEXT && _fieldShape.isFeature(_sText)) {
+        _wType = FEW_TEXT;  // Widget típus azonosító
+        pTE = new QPlainTextEdit(_par->pWidget());
+        _pWidget = pTE;
+
+    }
+    else {
+        _wType = FEW_LINE;  // Widget típus azonosító
+        pLE = new QLineEdit(_par->pWidget());
+        _pWidget = pLE;
+        isPwd = _fieldShape.isFeature(_sPasswd);
+    }
     isPwd = false;
     bool nullable = _recDescr.isNullable;
     QString tx;
@@ -606,7 +619,7 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
         switch (_recDescr.eColType) {
         case cColStaticDescr::FT_INTEGER:   pLE->setValidator(new cIntValidator( nullable, pLE));   break;
         case cColStaticDescr::FT_REAL:      pLE->setValidator(new cRealValidator(nullable, pLE));   break;
-        case cColStaticDescr::FT_TEXT:      isPwd = _fieldShape.isFeature(_sPasswd);                  break;
+        case cColStaticDescr::FT_TEXT:                                                              break;
         case cColStaticDescr::FT_MAC:       pLE->setValidator(new cMacValidator( nullable, pLE));   break;
         case cColStaticDescr::FT_INET:      pLE->setValidator(new cINetValidator(nullable, pLE));   break;
         case cColStaticDescr::FT_CIDR:      pLE->setValidator(new cCidrValidator(nullable, pLE));   break;
@@ -616,11 +629,16 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
             pLE->setEchoMode(QLineEdit::Password);
             pLE->setText("");
             _value.clear();
+            connect(pLE, SIGNAL(editingFinished()),  this, SLOT(setFromEdit()));
+        }
+        else if (pLE != NULL){
+            pLE->setText(_fr);
+            connect(pLE, SIGNAL(editingFinished()),  this, SLOT(setFromEdit()));
         }
         else {
-            pLE->setText(_fr);
+            pTE->setPlainText(_fr);
+            connect(pTE, SIGNAL(textChanged()),  this, SLOT(setFromEdit()));
         }
-        connect(pLE, SIGNAL(editingFinished()),  this, SLOT(setFromEdit()));
     }
     else {
         tx = _fr.view(*pq);
@@ -631,8 +649,14 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
             if (recDescr().autoIncrement()[fldIndex()]) tx = design().valAuto;
             else if (_hasDefault) tx = design().valDefault;
         }
-        pLE->setText(tx);
-        pLE->setReadOnly(true);
+        if (pLE != NULL) {
+            pLE->setText(tx);
+            pLE->setReadOnly(true);
+        }
+        else {
+            pTE->setPlainText(tx);
+            pTE->setReadOnly(true);
+        }
     }
 }
 
@@ -649,22 +673,25 @@ int cFieldLineWidget::set(const QVariant& v)
     }
     int r = cFieldEditBase::set(v);
     if (1 == r) {
-        QLineEdit *pLE = (QLineEdit *)_pWidget;
+        QString txt;
         if (_readOnly == false) {
-            pLE->setText(_recDescr.toName(_value));
+            txt = _recDescr.toName(_value);
         }
         else {
-            pLE->setText(_recDescr.toView(*pq, _value));
+            txt = _recDescr.toView(*pq, _value);
         }
+        if (_wType == FEW_LINE) pLineEdit()->setText(txt);
+        else                    pTextEdit()->setPlainText(txt);
     }
     return r;
 }
 
 void cFieldLineWidget::setFromEdit()
 {
-    QLineEdit *pLE = (QLineEdit *)_pWidget;
+    QString  s;
+    if (_wType == FEW_LINE) s = pLineEdit()->text();
+    else                    s = pTextEdit()->toPlainText();
     QVariant v; // NULL
-    QString  s = pLE->text();
     if (!(isPwd && s.isEmpty())) {
         v = QVariant(s);
     }

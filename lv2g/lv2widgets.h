@@ -82,6 +82,7 @@ enum eFieldWidgetType {
     FEW_ENUM_COMBO,     ///< cEnumComboWidget
     FEW_ENUM_RADIO,     ///< cEnumRadioWidget
     FEW_LINE,           ///< cFieldLineWidget
+    FEW_TEXT,           ///< cFieldLineWidget/long text
     FEW_ARRAY,          ///< cArrayWidget
     FEW_POLYGON,        ///< cPolygonWidget
     FEW_FKEY,           ///< cFKeyWidget
@@ -90,7 +91,7 @@ enum eFieldWidgetType {
     FEW_DATE_TIME,      ///< cDateTimeWidget
     FEW_INTERVAL,       ///< cIntervalWidget
     FEW_BINARY,         ///< cBinaryWidget
-    FEW_NULL            ///< cNullVidget
+    FEW_NULL            ///< cNullWidget
 };
 /// Az enum eFieldWidgetType értékeket stringgé konvertálja.
 /// Vissza konverzió nincs, ez is csak nyomkövetési céllal.
@@ -302,7 +303,16 @@ protected:
     /// Csak olyan adat típus engedélyezett, aminél az Array típus kezelve vean.
     cFieldLineWidget(const cColStaticDescr& _cd, QWidget * par);
     /// Az eredeti widget pointerrel tér visszta
-    QLineEdit *pLineEdit() { return (QLineEdit *)pWidget(); }
+    QLineEdit *pLineEdit() {
+        QLineEdit *pLE = qobject_cast<QLineEdit *>(pWidget());
+        if (pLE == NULL) EXCEPTION(EPROGFAIL);
+        return pLE;
+    }
+    QPlainTextEdit *pTextEdit() {
+        QPlainTextEdit *pTE = qobject_cast<QPlainTextEdit *>(pWidget());
+        if (pTE == NULL) EXCEPTION(EPROGFAIL);
+        return pTE;
+    }
     /// Ha  ez egy jelszó
     bool    isPwd;
 signals:

@@ -230,7 +230,7 @@ public:
     /// @param rst A rekord status referenciája
     /// @return A cRecord-ban tárolt formátumra konvertált adat. Ha nem sikerült az adatot a megfelelő
     /// formátumra konvertálni, akkor str -be bebillenti az ES_DEFECTIVE bitet.
-    virtual QVariant set(const QVariant& _f, int& str) const;
+    virtual QVariant set(const QVariant& _f, qlonglong &str) const;
     /// Konverzió érték kiolvasásakor, ha az eredményt string formában kérjük
     /// @param _f Forrás adat, a mező értéke.
     /// @return A strinngé konvertált érték.
@@ -332,7 +332,7 @@ public:
     enum cColStaticDescr::eValueCheck  check(const QVariant& v, cColStaticDescr::eValueCheck acceptable = cColStaticDescr::VC_INVALID) const;
     virtual QVariant  fromSql(const QVariant& __f) const;
     virtual QVariant  toSql(const QVariant& __f) const;
-    virtual QVariant  set(const QVariant& _f, int &str) const;
+    virtual QVariant  set(const QVariant& _f, qlonglong &str) const;
     virtual QString   toName(const QVariant& _f) const;
     virtual qlonglong toId(const QVariant& _f) const;
     virtual QString toView(QSqlQuery&, const QVariant& _f) const;
@@ -356,7 +356,7 @@ private:
         virtual enum cColStaticDescr::eValueCheck check(const QVariant& v, cColStaticDescr::eValueCheck acceptable = cColStaticDescr::VC_INVALID) const; \
         virtual QVariant  fromSql(const QVariant& __f) const; \
         virtual QVariant  toSql(const QVariant& __f) const; \
-        virtual QVariant  set(const QVariant& _f, int &rst) const; \
+        virtual QVariant  set(const QVariant& _f, qlonglong &rst) const; \
         virtual QString   toName(const QVariant& _f) const; \
         virtual qlonglong toId(const QVariant& _f) const; \
         virtual cColStaticDescr *dup() const; \
@@ -952,6 +952,7 @@ class LV2SHARED_EXPORT cRecord : public QObject {
     template <class T> friend class tRecordList;
     friend class cRecordFieldConstRef;
     friend class cRecordFieldRef;
+    friend class cLldpScan;
     Q_OBJECT
 protected:
     /// Az objektum adattartalma, a mező értékek, megadott sorrendben, vagy üres.
@@ -962,19 +963,20 @@ public:
     /// @enum eStat
     /// Rekord státusz konstansok
     typedef enum {
-        ES_FACELESS     = -2,   ///< A rekord üres, és nincs típusa, ill nincs hozzárendelve adattáblához. Ez az állapot csak a cRecordAny típusú objektumokban lehetséges.
-        ES_NULL         = -1,   ///< A rekord üres, a _fields adattagnak nincs egy eleme sem
-        ES_EMPTY        =  0,   ///< A rekord üres, a _fields adattag feltöltve, de minden eleme null
-        ES_EXIST        =  1,   ///< O.K. Az adatbázisban létező rekord
-        ES_NONEXIST     =  2,   ///< O.K. Az adatbázisban nem létező rekord
-        ES_COMPLETE     =  4,   ///< Minden kötelező mező feltöltve
-        ES_INCOMPLETE   =  8,   ///< Hiányos
-        ES_MODIFY       = 16,   ///< Módosítva
-        ES_IDENTIF      = 32,   ///< A rendelkezésre álló mezők egyértelműen azonosíthatnak egy rekordot
-        ES_UNIDENT      = 64,   ///< A rendelkezésre álló mezők nem feltétlenül azonosítanak egy rekordot
-        ES_DEFECTIVE    =128    ///< A rekord, vagy leíró inkonzisztens
+        ES_FACELESS     =     -2LL, ///< A rekord üres, és nincs típusa, ill nincs hozzárendelve adattáblához. Ez az állapot csak a cRecordAny típusú objektumokban lehetséges.
+        ES_NULL         =     -1LL, ///< A rekord üres, a _fields adattagnak nincs egy eleme sem
+        ES_EMPTY        = 0x0000LL, ///< A rekord üres, a _fields adattag feltöltve, de minden eleme null
+        ES_EXIST        = 0x0001LL, ///< O.K. Az adatbázisban létező rekord
+        ES_NONEXIST     = 0x0002LL, ///< O.K. Az adatbázisban nem létező rekord
+        ES_COMPLETE     = 0x0004LL, ///< Minden kötelező mező feltöltve
+        ES_INCOMPLETE   = 0x0008LL, ///< Hiányos
+        ES_MODIFY       = 0x0010LL, ///< Módosítva
+        ES_IDENTIF      = 0x0020LL, ///< A rendelkezésre álló mezők egyértelműen azonosíthatnak egy rekordot
+        ES_UNIDENT      = 0x0040LL, ///< A rendelkezésre álló mezők nem feltétlenül azonosítanak egy rekordot
+        ES_DEFECTIVE    = 0x0080LL, ///< A rekord, vagy leíró inkonzisztens, nem konvertálható érték megadása
+        ES_INV_FLD_MSK  = 0x0FFFFFFFFFFF0000LL   ///< A hibás értékadásban résztvevő mező(ke)t azonosító bit(ek), bit_ix = mező_ix + 8
     } eStat;
-    int _stat;  ///< A rekord állapota
+    qlonglong _stat;  ///< A rekord állapota
     /// Enumeráció (bitek) a deleted mező kezeléséhez.
     enum eDeletedBehavior {
         NO_EFFECT        = 0,   ///< Nem kezeli a deleted mezőt
@@ -1022,6 +1024,9 @@ public:
     /// Lekérdezi egy mező értékét. A távoli kulcsokat megkisérli névvé konvertálni.
     /// Mindíg egy ember álltal értelmezhető értékkel (próbál) visszatérni.
     virtual QString view(QSqlQuery &q, int __i) const;
+    ///
+    virtual bool isContainerValid(qlonglong __mask) const;
+    virtual void setContainerValid(qlonglong __set, qlonglong __clr = 0);
     /// Leellenőrzi, lehet-e mező (oszlop) index a paraméter.
     /// Tisztán virtuális függvényt hív, konstruktorból nem hívható.
     /// @param A viszgálandó index érték
@@ -1147,11 +1152,16 @@ public:
     /// Azonos az isNull() metódussal, mivel nem hív virtuális metódust, ezen a néven újra lett definiálva.
     bool _isNull() const                            { return _fields.isEmpty();  }
     /// Ha isNull() visszaadott értéke true, vagy minden mező NULL, akkor true-val tér vissza, utóbbi állapot kiderítésére csak a _stat értékét vizsgálja.
-    bool isEmpty_() const                           { return isNull() || _stat == ES_EMPTY; }
+    bool isEmpty_() const                           { return _stat == ES_EMPTY || isNull(); }
     /// Ha a _stat adattag szerint módosítva lett az objektum, akkor true-val tér vissza.
     bool isModify_() const                          { return (_stat & ES_MODIFY) != 0; }
-    /// Ha a _stat adattag szerint hiba történt
+    /// Ha a _stat adattag szerint adat hiba történt
     bool isDefective() const                        { return (_stat & ES_DEFECTIVE) != 0; }
+    /// Egy listát ad vissza, azon mezőnevek listáját, melyeknél a _stat-ban a megfelelő bit be van állítva.
+    /// Ha a _stat -ban az ES_DEFECTIVE bit nincs beállítva, akkor üres listát ad vissza.
+    /// Ha az ES_DEFECTIVE nincs beállítva, de nincs megjelülve a _stat -ban egy mező sem, akkor egy elemú listát ad vissza,
+    /// ahol az egy elem értéke "[unknown]".
+    QStringList defectiveFields() const;
     /// Létrehozza az összes mezőt sorrendben null tartalommal. Előtte törli az objektumot
     /// Tisztán virtuális metódust hív, konstruktorból nem hívható.
     cRecord& set();
@@ -1314,23 +1324,26 @@ public:
     /// Fellülír egy létező rekordot. A rekord azonosítása a nameKeyMask() alapján. A rekordot visszaolvassa.
     /// Ha a felülírás sikertelen, (nincs érintett rekord) és __ex értéke true, akkor dob egy kizárást.
     virtual bool rewrite(QSqlQuery& __q, bool __ex = true);
-    /// Sablon metódus, egy járulékos tábla terozik a rekordhoz, ami az objektum tulajdona
+    /// Sablon metódus, egy járulékos tábla tartozik a rekordhoz, ami az objektum tulajdona
     /// @param __ch
-    template<class L> bool tRewrite(QSqlQuery& __q, L& __ch, bool __ex = true)
+    template<class L> bool tRewrite(QSqlQuery& __q, L& __ch, qlonglong __m, bool __ex = true)
     {
         bool r = cRecord::rewrite(__q, __ex);   // Kiírjuk magát a rekordot
         if (!r) return false;   // Ha nem sikerült, nincs több dolgunk :(
-        return __ch.replace(__q, getId(), __ex);
+        if (__m == 0 || isContainerValid(__m)) r = __ch.replace(__q, __ex);
+        return r;
     }
     /// Sablon metódus, ha két járulékos tábla terozik a rekordhoz, ami az objektum tulajdona
-    template<class L1, class L2> bool tRewrite(QSqlQuery& __q, L1& __ch1, L2& __ch2, bool __ex = true)
+    template<class L1, class L2> bool tRewrite(QSqlQuery& __q, L1& __ch1, qlonglong __m1, L2& __ch2, qlonglong __m2, bool __ex = true)
     {
         bool r = cRecord::rewrite(__q, __ex);   // Kiírjuk magát a rekordot
         if (!r) return false;   // Ha nem sikerült, nincs több dolgunk :(
-        qlonglong id = getId();
-        r =__ch1.replace(__q, id, __ex);
-        if (!r) return false;   // Ha nem sikerült, nincs több dolgunk :(
-        return __ch2.replace(__q, id, __ex);
+        if (__m1 == 0 || isContainerValid(__m1)) {
+            r =__ch1.replace(__q, __ex);
+            if (!r) return false;   // Ha nem sikerült, nincs több dolgunk :(
+        }
+        if (__m2 == 0 || isContainerValid(__m2)) r = __ch2.replace(__q, __ex);
+        return r;
     }
     /// Beszúr vagy fellülír egy rekordot a megfelelő adattáblába. Az insert utasításban azok a mezők
     /// lesznek megadva, melyeknek nem NULL az értékük. Feelülírásnál a NULL értékú mezőknél ha van az
@@ -1811,6 +1824,27 @@ public:
         return setq(_fn, __q, _fn);
     }
 protected:
+    qlonglong _defectiveFieldMask() const {
+        return _stat >> 16;
+    }
+    qlonglong defectiveFieldMask() const {
+        return _defectiveFieldMask() & ((1 << cols()) -1);
+    }
+    void _setDefectivFieldBit(int ix) {
+        _stat |= 1 << (ix + 16);
+    }
+    void setDefectivFieldBit(int ix) {
+        chkIndex(ix);
+        _setDefectivFieldBit(ix);
+    }
+    void _clearDefectivFieldBit(int ix) {
+        _stat &= ~(1 << (ix + 16));
+    }
+    void clearDefectivFieldBit(int ix) {
+        chkIndex(ix);
+        _clearDefectivFieldBit(ix);
+    }
+    ///
     static void setNameKeyMask(const cRecStaticDescr *pD,  const QBitArray& __m)
     {
         const_cast<cRecStaticDescr *>(pD)->_nameKeyMask = __m;
@@ -2041,7 +2075,7 @@ public:
     /// A hivatkozott mező értéke stringként
     QString toString() const    { return *this; }
     /// A hivatkozott objektum statuszának a referenciája
-    const int& stat() { return _pRecord->_stat; }
+    const qlonglong& stat() { return _pRecord->_stat; }
     /// A hivatkozott objektum referenciája
     const cRecord& record() const           { return *_pRecord; }
     /// A hivatkozott mező leíró objektumának a referenciája
@@ -2130,7 +2164,7 @@ public:
     /// Ha a mező értéke lehet NULL, akkor true-val tér vissza
     bool isNullable() const     { return _record.isNullable(_index); }
     /// A hivatkozott objektum statuszának a referenciája
-    const int& stat() const { return _record._stat; }
+    const qlonglong& stat() const { return _record._stat; }
     /// Frissíti a hivatkozott mező értéket az adatbázisban, a rekordot az elsődleges kulcs azonosítja, lásd méga a cRecord::update() metódust.
     bool update(QSqlQuery& q, bool __ex = true) const {
         return _record.update(q, false, _record.mask(_index), _record.primaryKey(), __ex);

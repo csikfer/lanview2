@@ -41,5 +41,4 @@ public:
 };
 
 
-
 #endif // LV2DATERR_H

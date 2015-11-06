@@ -217,8 +217,11 @@ void cInspectorProcess::processReadyRead()
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-// "inicializálatlan"! Az első alkalommal hívott konstruktor inicializálja: initStatic().
+/// "inicializálatlan"! Az első alkalommal hívott konstruktor inicializálja: initStatic().
+/// A nodes táblát azonosító OID
 qlonglong cInspector::nodeOid = NULL_ID;
+/// "inicializálatlan"! Az első alkalommal hívott konstruktor inicializálja: initStatic().
+/// A snmpdevices táblát azonosító OID
 qlonglong cInspector::sdevOid = NULL_ID;
 
 void cInspector::preInit()

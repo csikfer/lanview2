@@ -34,6 +34,7 @@ STRDEF(StdErr, "stderr")
 STRDEF(Permissive, "permissive")
 STRDEF(Strict, "strict")
 STRDEF(Ignored, "ignored")
+STRDEF(Params, "params")
 
 dnl Thread nevek
 STRDEF(MainThread, "mainThread")
@@ -736,4 +737,12 @@ dnl date_of, error_id, user_id, table_name
  STRDEF(Reapeat, "reapeat")
  STRDEF(DateOfLast, "date_of_last")
  STRDEF(Acknowledged, "acknowledged")
+
+STRDEF(AppMemos, "app_memos")
+ STRDEF(Importance, "importance")
+ STRDEF(Memo, "memo")
+ STRDEF(AppVer, "app_ver")
+ STRDEF(LibVer, "lib_ver")
+ STRDEF(SrcName, "src_name")
+ STRDEF(SrcLine, "src_line")
 

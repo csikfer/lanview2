@@ -99,10 +99,10 @@ CREATE TYPE paramtype AS ENUM ( 'boolean', 'bigint', 'double precision', 'text',
 
 CREATE TABLE param_types (
     param_type_id       bigserial       NOT NULL PRIMARY KEY,
-    param_type_name     text     NOT NULL UNIQUE,
-    param_type_note     text    DEFAULT NULL,
+    param_type_name     text            NOT NULL UNIQUE,
+    param_type_note     text            DEFAULT NULL,
     param_type_type     paramtype       NOT NULL,
-    param_type_dim      text     DEFAULT NULL
+    param_type_dim      text            DEFAULT NULL
 );
 ALTER TABLE param_types OWNER TO lanview2;
 COMMENT ON TABLE param_types IS 'Paraméterek deklarálása (név, típus, dimenzió)';
@@ -327,8 +327,8 @@ COMMENT ON COLUMN unusual_fkeys.f_inherited_tables IS 'Azon leszármazott tábl�
 INSERT INTO unusual_fkeys
   ( table_name,         column_name,    unusual_fkeys_type, f_table_name,   f_column_name,  f_inherited_tables) VALUES
   ( 'nports',           'node_id',      'owner',            'nodes',        'node_id',      '{nodes, snmpdevices}'),
-  ( 'port_param_values','port_id',      'owner',            'nports',       'port_id',      '{nports, pports, interfaces}'),
-  ( 'node_param_values','node_id',      'owner',            'patchs',       'node_id',      '{patchs, nodes, snmpdevices}'),
+  ( 'port_params',      'port_id',      'owner',            'nports',       'port_id',      '{nports, pports, interfaces}'),
+  ( 'node_params',      'node_id',      'owner',            'patchs',       'node_id',      '{patchs, nodes, snmpdevices}'),
   ( 'interfaces',       'node_id',      'owner',            'nodes',        'node_id',      '{nodes, snmpdevices}'),
   ( 'host_services',    'node_id',      'property',         'nodes',        'node_id',      '{nodes, snmpdevices}'),
   ( 'host_services',    'port_id',      'property',         'nports',       'port_id',      '{nports, interfaces}'),
@@ -355,7 +355,8 @@ COMMENT ON COLUMN fkey_types.unusual_fkeys_type IS 'A hivatkozás/távoli kulcs 
 INSERT INTO fkey_types
   ( table_name,             column_name,            unusual_fkeys_type) VALUES
   ( 'pports',               'node_id',              'owner'         ),
-  ( 'ipaddresses',          'port_id',              'owner'         ),
+  ( 'port_vlans',           'port_id',              'owner'         ),
+  ( 'interfaces',           'port_id',              'owner'         ),
   ( 'table_shape_fields',   'table_shape_id',       'owner'         ),
   ( 'table_shape_filters',  'table_shape_field_id', 'owner'         );
 
