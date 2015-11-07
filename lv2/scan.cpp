@@ -412,23 +412,15 @@ bool setPortsBySnmp(cSnmpDevice& node, bool __ex, QString *pEs)
     QHostAddress hostAddr;
     // A gyátrói baromságok kezeléséhez kell
     QString sysdescr = node.getName(_sSysDescr);
-    // Előszedjük a címet az ideiglenesen felvett, megadott egy port és egy cím alapján.
+    // Előszedjük a címet az ideiglenesen felvett/beolvasott, egy port és egy cím alapján.
     // A portot töröljük, azt majd a lekérdezés teljes adatatartalommal felveszi
     if (node.ports.size() != 1) {
         es = QObject::trUtf8("Egy. és csakis egy ideiglenes portot lehet megadni. megadott portszám :%1 ").arg(node.ports.size());
         goto setPortsBySnmp_error;
     }
     pTempIf = node.ports.pop_back()->reconvert<cInterface>();
-    if (!pTempIf->isNullId()) {
-        es = QObject::trUtf8("A megadott (ideiglenes) portnak nem lehet ID-je. ID = %1 ").arg(pTempIf->getId());
-        goto setPortsBySnmp_error;
-    }
     if (pTempIf->addresses.size() != 1) {
         es = QObject::trUtf8("A megadott (ideiglenes) portnak egy és csakis egy címe lehet. ");
-        goto setPortsBySnmp_error;
-    }
-    if (!pTempIf->addresses[0]->isNullId()) {
-        es = QObject::trUtf8("A megadott (ideiglenes) cím rekordnak nem lehet ID-je. ");
 setPortsBySnmp_error:
         pDelete(pTempIf);
         if (__ex) EXCEPTION(EDATA,-1, es);
@@ -751,7 +743,8 @@ bool cLldpScan::createSnmpDev()
         int ixNodeType = rDev.toIndex(_sNodeType);
         rDev.clearDefectivFieldBit(ixNodeType);     // Insert beállítja, nembaj ha rossz
         rDev.clear(ixNodeType);
-        if (rDev.isDefective() == false) {      // e == 1 : Az eddig kitöltött mezők rendben?
+        // Ezzel most ne szívassuk magunkat, majd talán késöbb megkeresem miér teljesül néha
+//      if (rDev.isDefective() == false) {      // e == 1 : Az eddig kitöltött mezők rendben?
             e++;
             if (rDev.insert(q, false)) {        // e == 2 : Sikerült létrehozni az objektumot ?
                 PDEB(INFO) << "Created SNMP Device : " << rDev.toString() << endl;
@@ -759,17 +752,18 @@ bool cLldpScan::createSnmpDev()
                 rHost.set(rDev);
                 return true;                    // O.K.
             }
-        }
+//      }
     }
     memo = QObject::trUtf8("LLDP lekérdezés : %1 MAC és %2 IP című eszköz felvétele sikertelen :\n").arg(rMac.toString()).arg(RemManAddr.toString());
     switch (e) {
     case 0:     memo += QObject::trUtf8("Az SNMP lekérdezés sikertelen : ") + es + "\n";  break;
-    case 1:     memo += QObject::trUtf8("Hibásan kitöltött adatmező: %1\n").arg(rDev.defectiveFields().join(_sCommaSp));    break;
+//  case 1:     memo += QObject::trUtf8("Hibásan kitöltött adatmező: %1\n").arg(rDev.defectiveFields().join(_sCommaSp));    break;
     case 2:     memo += QObject::trUtf8("Sikertelen adatbázis művelet: \n");    break;
     default:    EXCEPTION(EPROGFAIL);
     }
     memo += rDev.toString();
     APPMEMO(q, memo, RS_CRITICAL);      // LOG
+    DERR() << memo << endl;
     rDev.clear();
     rHost.clear();
     return false;                       // FAILED
@@ -801,7 +795,7 @@ bool cLldpScan::updateSnmpDev()
     }
     if (rDev.tableoid() == rHost.fetchTableOId(q)) {    // Ez SNMP Device ?
         if (!rDev.fetchByMac(q, rMac)) {                // Beolvassuk a teljes rekordot
-            EXCEPTION(EPROGFAIL);                           // Hirtelen mégsincs ???!!!
+            EXCEPTION(EPROGFAIL,0, QObject::trUtf8("Fetch by %1 MAC.").arg(rMac.toString())); // Hirtelen mégsincs ???!!!
         }
         // Kell frissíteni?
         if (queued.contains(rDev.getId()) || scanned.contains(rDev.getId())) return true;

@@ -577,20 +577,20 @@ public:
             (*i)->setFlag(false);
             if ((*i)->replace(__q, __ex) != R_ERROR) ++r;
         }
-        removeMarked(__q, __ex);    // Ha flag = true maradt, akkor töröljük
+        removeMarked(__q);    // Ha flag = true maradt, akkor töröljük
         return r == QList<C *>::size();
     }
     int mark(QSqlQuery &__q) const {
         if (pOwner == NULL) EXCEPTION(EPROGFAIL);
         qlonglong oid = pOwner->getId();
         C o;
-        return o.setId(ixOwnerId, oid).mark(__q, o.mask(oid), true);
+        return o.setId(ixOwnerId, oid).mark(__q, o.mask(ixOwnerId), true);
     }
-    int removeMarked(QSqlQuery& __q, bool __ex = true) const {
+    int removeMarked(QSqlQuery& __q) const {
         if (pOwner == NULL) EXCEPTION(EPROGFAIL);
         qlonglong oid = pOwner->getId();
         C o;
-        return o.setId(ixOwnerId, oid).removeMarked(__q, o.mask(oid, __ex));
+        return o.setId(ixOwnerId, oid).removeMarked(__q, o.mask(ixOwnerId));
     }
     O& owner() { return *pOwner; }
 protected:

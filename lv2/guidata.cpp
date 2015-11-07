@@ -202,7 +202,7 @@ bool cTableShape::insert(QSqlQuery &__q, bool __ex)
 }
 bool cTableShape::rewrite(QSqlQuery &__q, bool __ex)
 {
-    return tRewrite(__q, shapeFields, __ex);
+    return tRewrite(__q, shapeFields, 0, __ex);
 }
 
 /// A típus mezőnek lehetnek olyan értékei is, melyek az adatbázisban nem szerepelnek,

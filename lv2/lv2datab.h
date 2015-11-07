@@ -1325,12 +1325,16 @@ public:
     /// Ha a felülírás sikertelen, (nincs érintett rekord) és __ex értéke true, akkor dob egy kizárást.
     virtual bool rewrite(QSqlQuery& __q, bool __ex = true);
     /// Sablon metódus, egy járulékos tábla tartozik a rekordhoz, ami az objektum tulajdona
-    /// @param __ch
+    /// @param __ch Gyerek objektum konténer
+    /// @param __m  eContainerValid maszk, vagy 0, ha nincs feltétele a végrehajtásnak.
     template<class L> bool tRewrite(QSqlQuery& __q, L& __ch, qlonglong __m, bool __ex = true)
     {
         bool r = cRecord::rewrite(__q, __ex);   // Kiírjuk magát a rekordot
         if (!r) return false;   // Ha nem sikerült, nincs több dolgunk :(
-        if (__m == 0 || isContainerValid(__m)) r = __ch.replace(__q, __ex);
+        if (__m == 0 || isContainerValid(__m)) {
+            __ch.setsOwnerId();
+            r = __ch.replace(__q, __ex);
+        }
         return r;
     }
     /// Sablon metódus, ha két járulékos tábla terozik a rekordhoz, ami az objektum tulajdona
@@ -1339,10 +1343,14 @@ public:
         bool r = cRecord::rewrite(__q, __ex);   // Kiírjuk magát a rekordot
         if (!r) return false;   // Ha nem sikerült, nincs több dolgunk :(
         if (__m1 == 0 || isContainerValid(__m1)) {
+            __ch1.setsOwnerId();
             r =__ch1.replace(__q, __ex);
             if (!r) return false;   // Ha nem sikerült, nincs több dolgunk :(
         }
-        if (__m2 == 0 || isContainerValid(__m2)) r = __ch2.replace(__q, __ex);
+        if (__m2 == 0 || isContainerValid(__m2)) {
+            __ch2.setsOwnerId();
+            r = __ch2.replace(__q, __ex);
+        }
         return r;
     }
     /// Beszúr vagy fellülír egy rekordot a megfelelő adattáblába. Az insert utasításban azok a mezők

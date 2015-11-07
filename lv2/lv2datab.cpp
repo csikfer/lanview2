@@ -3453,7 +3453,7 @@ int cRecord::remove(QSqlQuery& __q, bool __only, const QBitArray& _fm, bool __ex
     sql += tableName() + whereString(fm);
     query(__q, sql, fm);
     int r = __q.numRowsAffected();
-    if (!r) EXCEPTION(EFOUND);
+    if (!r && __ex) EXCEPTION(EFOUND);
     return r;
 }
 

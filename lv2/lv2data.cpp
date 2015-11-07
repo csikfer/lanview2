@@ -1873,7 +1873,7 @@ bool cNode::insert(QSqlQuery &__q, bool __ex)
 bool cNode::rewrite(QSqlQuery &__q, bool __ex)
 {
     // Töröljők az összes régi IP címet (IP címekre nincs replace/rewrite metódus)
-    QString sql = "DELATE FROM ipaddresses WHERE port_id IN "
+    QString sql = "DELETE FROM ipaddresses WHERE port_id IN "
             "(SELECT port_id FROM nports WHERE node_id = ?)";
     execSql(__q, sql, getId());
 
