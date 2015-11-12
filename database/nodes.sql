@@ -414,7 +414,6 @@ Típus azonosítók
 CREATE TABLE nodes (
     node_stat       notifswitch     DEFAULT NULL,
     node_type       nodetype[]      NOT NULL DEFAULT '{node}',
-    alarm_place_group_id    bigint DEFAULT NULL,
     PRIMARY KEY (node_id),
     UNIQUE (node_name),
     CONSTRAINT nodes_place_id_fkey FOREIGN KEY (place_id)

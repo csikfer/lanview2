@@ -71,7 +71,7 @@ CREATE TABLE place_groups (
     place_group_note    text            DEFAULT NULL
 );
 ALTER TABLE place_groups OWNER TO lanview2;
-COMMENT ON TABLE  place_groups                      IS 'Helyiségek, helyek csoportjai';
+COMMENT ON TABLE  place_groups                      IS 'Helyiségek, helyek csoportjai. Zónák.';
 COMMENT ON COLUMN place_groups.place_group_id       IS 'Csoport azososítója ID';
 COMMENT ON COLUMN place_groups.place_group_name     IS 'Csoport azososító neve';
 COMMENT ON COLUMN place_groups.place_group_note     IS 'Megjegyzés';
