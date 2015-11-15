@@ -238,28 +238,6 @@ public:
     /// @param __di A paraméter dimenziója, opcionális
     /// @return Az új rekord azonisítója (ID), hiba esetén, ha __ex hamis volt, akkor NULL_ID-vel tér vissza.
     static qlonglong insertNew(QSqlQuery &q, const QString& __n, const QString& __de, int __t, const QString __di = QString(), bool __ex = true);
-    /// Egy új paraméter típus rekord beinzertálása (paraméter név/típus/dimenzió objektumlétrehozása).
-    /// Hiba esetén, ha __ex igaz (vagy nincs megadva), akkor dob egy kizárást,
-    /// @param __n A paraméter neve
-    /// @param __de Egy megjegyzés a paraméter típushoz
-    /// @param __t A paraméter adat típusa
-    /// @param __di A paraméter dimenziója, opcionális
-    /// @return Az új rekord azonisítója (ID), hiba esetén, ha __ex hamis volt, akkor NULL_ID-vel tér vissza.
-    static qlonglong insertNew(const QString& __n, const QString& __de, const QString __t, const QString __di = QString(), bool __ex = true) {
-        QSqlQuery q = getQuery();
-        return insertNew(q, __n, __de, __t, __di, __ex);
-    }
-    /// Egy új port_params rekord beinzertálása (paraméter név/típus/dimenzió objektumlétrehozása).
-    /// Hiba esetén, ha __ex igaz (vagy nincs megadva), akkor dob egy kizárást,
-    /// @param __n A paraméter neve
-    /// @param __de Egy megjegyzés a paraméter típushoz
-    /// @param __t A paraméter adat típusa (lsd.: eParamType).
-    /// @param __di A paraméter dimenziója, opcionális
-    /// @return Az új rekord azonisítója (ID), hiba esetén, ha ::ex hamis volt, akkor NULL_ID-vel tér vissza.
-    static qlonglong insertNew(const QString& __n, const QString& __de, int __t, const QString __di = QString(), bool __ex = true) {
-        QSqlQuery q = getQuery();
-        return insertNew(q, __n, __de, __t, __di, __ex);
-    }
     ///
     static QString paramToString(eParamType __t, const QVariant& __v, bool __ex = true);
     ///
@@ -1066,6 +1044,8 @@ public:
     virtual int fetchPorts(QSqlQuery& __q);
     /// Feltölti az adatbázisból a params konténert.
     int fetchParams(QSqlQuery& q);
+    /// Paraméter létrehozása, vagy értékének a modosítása
+    void setParam(const QString& __par, const QVariant& __val);
 
     // Csak a cPatch-ban támogatott virtualis metódusok, a cNode-ban ujraimplementált metódusok kizárást dobnak.
     /// Törli a port bekötéseket tartalmazó konténert. Amennyiben a konténer még nincs megallokálva, akkor megallokálja az üres konténert.
@@ -1276,7 +1256,7 @@ public:
 
     /// A port liasta bővítése egy sorozattal. Ha nem vesz fel egy portot sem, akkor dob egy kizárást.
     /// @param __t A port típusát definiáló objektum referenciája
-    /// @param __pref Port név minta.
+    /// @param __np Port név minta.
     /// @param __noff Egy eltolás a név kébzéséhez
     /// @param __from Legkisebb idex
     /// @param __to Legnagyobb idex
@@ -1285,7 +1265,7 @@ public:
     cNPort *addPorts(const cIfType& __t, const QString& __np, int __noff, int __from, int __to, int __off);
     /// A port liasta bővítése egy sorozattal. Ha nem vesz fel egy portot sem, akkor dob egy kizárást.
     /// @param __t A port típusát definiáló típus név
-    /// @param __pref Port név minta.
+    /// @param __np Port név minta.
     /// @param __noff Egy eltolás a név kébzéséhez
     /// @param __from Legkisebb idex
     /// @param __to Legnagyobb idex

@@ -1542,6 +1542,18 @@ int cPatch::fetchParams(QSqlQuery& q)
     return params.fetch(q);
 }
 
+void cPatch::setParam(const QString& __par, const QVariant& __val)
+{
+    qlonglong typeId = cParamType::paramTypeId(__par);
+    cNodeParam *param = params.get(_sParamTypeId, typeId);
+    if (param == NULL) {
+        param = new cNodeParam();
+        param->setId(_sParamTypeId, typeId);
+        params << param;
+    }
+    param->value() = __val;
+}
+
 void cPatch::clearShares()
 {
     shares().clear();

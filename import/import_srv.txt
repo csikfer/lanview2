@@ -27,7 +27,7 @@ SERVICE arpd        "Arp daemon" {
     NIL;
     // process=continue         Önálló programként van magvalósítva, ami folyamatosan fut (a parancs futtatónak szól)
     // timing=passive           Maga a fő folyamat nem csinál semmit 
-    // superior                 Alárendelt folyamatok bannak
+    // superior                 Alárendelt folyamatok vannak
     // logrot=50M,4             Log fájl max 50MiByte, 4 arhívált (a parancs futtatónak szól)
     FEATURES ":process=continue:timing=passive:superior:logrot=500M,8:";
     SUPERIOR SERVICE MASK lv2d;

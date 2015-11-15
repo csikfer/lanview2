@@ -1755,7 +1755,8 @@ params  : ptype
         | syspar
         ;
 // Paraméter típus definíciók
-ptype   : PARAM_T TYPE_T str str ptypen str_z ';'{ cParamType::insertNew(*$3, *$4, $5, *$6); delete $3; delete $4; delete $6; }
+ptype   : PARAM_T TYPE_T str str ptypen str_z ';'{ cParamType::insertNew(qq(), sp2s($3), sp2s($4), $5, sp2s($6)); }
+        | PARAM_T TYPE_T str ptypen str_z ';'{ cParamType::insertNew(qq(), sp2s($3), QString(), $4, sp2s($5)); }
         ;
 // Adat típusok
 ptypen  : BOOLEAN_T                 { $$ = PT_BOOLEAN; }
@@ -2058,6 +2059,7 @@ node_cf :
 node_p  : NOTE_T str ';'                        { node().setName(_sNodeNote, sp2s($2)); }
         | PLACE_T place_id ';'                  { node().setId(_sPlaceId, $2); }
         | SET_T str '=' value ';'               { node().set(sp2s($2), vp2v($4)); }
+        | PARAM_T str '=' value ';'             { node().setParam(sp2s($2), vp2v($4)); }
         | ADD_T PORTS_T str offs FROM_T int TO_T int offs str ';'
                                                 { setLastPort(node().addPorts(sp2s($3), sp2s($10), $9, $6, $8, $4)); }
         | ADD_T PORT_T pix_z str str str_z ';'  { setLastPort(node().addPort(sp2s($4), sp2s($5), sp2s($6), $3)); }
