@@ -355,18 +355,18 @@ bool cRecordDialog::accept()
         int rfi = field._pFieldRef->index();
         if (field.isReadOnly()) continue;      // Feltételezzük, hogy RO esetén az van a mezőben aminek lennie kell.
         qlonglong s = _pRecord->_stat;                   // Mentjük a hiba bitet,
-        _pRecord->_stat &= ~cRecord::ES_DEFECTIVE; // majd töröljük, mert mezőnkként kell
+        _pRecord->_stat &= ~ES_DEFECTIVE; // majd töröljük, mert mezőnkként kell
         QVariant fv = fields[i]->get();     // A mező widget-jéből kivesszük az értéket
         if (fv.isNull() && field._isInsert && field._hasDefault) continue;    // NULL, insert, van alapérték
         PDEB(VERBOSE) << "Dialog -> obj. field " << _pRecord->columnName(i) << " = " << debVariantToString(fv) << endl;
         _pRecord->set(rfi, fv);                      // Az értéket bevéssük a rekordba
-        if (_pRecord->_stat & cRecord::ES_DEFECTIVE) {
+        if (_pRecord->_stat & ES_DEFECTIVE) {
             DWAR() << "Invalid data : field " << _pRecord->columnName(rfi) << " = " << debVariantToString(fv) << endl;
             _errMsg += trUtf8("Adat hiba a %1 mezőnél\n").arg(_pRecord->columnName(rfi));
         }
-        _pRecord->_stat |= s & cRecord::ES_DEFECTIVE;
+        _pRecord->_stat |= s & ES_DEFECTIVE;
     }
-    return 0 == (_pRecord->_stat & cRecord::ES_DEFECTIVE);
+    return 0 == (_pRecord->_stat & ES_DEFECTIVE);
 }
 
 cFieldEditBase * cRecordDialog::operator[](const QString& __fn)

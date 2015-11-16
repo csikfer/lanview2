@@ -213,7 +213,7 @@ int cFieldEditBase::set(const QVariant& _v)
     _DBGFN() << QChar('/') << _recDescr<< QChar(' ') <<  debVariantToString(_v) << endl;
     qlonglong st = 0;
     QVariant v = _recDescr.set(_v, st);
-    if (st & cRecord::ES_DEFECTIVE) return -1;
+    if (st & ES_DEFECTIVE) return -1;
     if (v == _value) return 0;
     _value = v;
     changedValue(this);

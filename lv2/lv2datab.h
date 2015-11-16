@@ -801,6 +801,32 @@ TSTREAMO(cRecStaticDescr)
 /* ******************************************************************************************************
    *                                              cRecord                                               *
    ******************************************************************************************************/
+// enum eStat helyetti definíciók:
+/// enum eStat: A rekord üres, és nincs típusa, ill nincs hozzárendelve adattáblához. Ez az állapot csak a cRecordAny típusú objektumokban lehetséges.
+#define ES_FACELESS          -2LL
+/// enum eStat: A rekord üres, a _fields adattagnak nincs egy eleme sem
+#define ES_NULL              -1LL
+/// enum eStat: A rekord üres, a _fields adattag feltöltve, de minden eleme null
+#define ES_EMPTY         0x0000LL
+/// enum eStat: O.K. Az adatbázisban létező rekord
+#define ES_EXIST         0x0001LL
+/// enum eStat: O.K. Az adatbázisban nem létező rekord
+#define ES_NONEXIST      0x0002LL
+/// enum eStat: Minden kötelező mező feltöltve
+#define ES_COMPLETE      0x0004LL
+/// enum eStat: Hiányos
+#define ES_INCOMPLETE    0x0008LL
+/// enum eStat: Módosítva
+#define ES_MODIFY        0x0010LL
+/// enum eStat: A rendelkezésre álló mezők egyértelműen azonosíthatnak egy rekordot
+#define ES_IDENTIF       0x0020LL
+/// enum eStat: A rendelkezésre álló mezők nem feltétlenül azonosítanak egy rekordot
+#define ES_UNIDENT       0x0040LL
+/// enum eStat: A rekord, vagy leíró inkonzisztens, nem konvertálható érték megadása
+#define ES_DEFECTIVE     0x0080LL
+/// enum eStat: A hibás értékadásban résztvevő mező(ke)t azonosító bit(ek), bit_ix = mező_ix + 8
+#define ES_INV_FLD_MSK   0x0FFFFFFFFFFF0000LL
+
 /*!
 @class cRecord
 @brief Az adat rekord objektumok tisztán virtuális ős objektuma.
@@ -960,6 +986,7 @@ protected:
     /// Csak egy segéd konstans, ha egy üres konstans QVariant-ra mutató referenciát kel visszaadnia egy metódusnak.
     static const QVariant   _vNul;
 public:
+    /* A 32 bites kompatibilitás miatt nem lehet enum, mert akkor az csak 32 bites lesz, és nem kényszeríthető ki a 64 bit.
     /// @enum eStat
     /// Rekord státusz konstansok
     typedef enum {
@@ -975,7 +1002,8 @@ public:
         ES_UNIDENT      = 0x0040LL, ///< A rendelkezésre álló mezők nem feltétlenül azonosítanak egy rekordot
         ES_DEFECTIVE    = 0x0080LL, ///< A rekord, vagy leíró inkonzisztens, nem konvertálható érték megadása
         ES_INV_FLD_MSK  = 0x0FFFFFFFFFFF0000LL   ///< A hibás értékadásban résztvevő mező(ke)t azonosító bit(ek), bit_ix = mező_ix + 8
-    } eStat;
+    } eStat; */
+    typedef qlonglong sStat;    /// Az enum eStat helyetti definíció
     qlonglong _stat;  ///< A rekord állapota
     /// Enumeráció (bitek) a deleted mező kezeléséhez.
     enum eDeletedBehavior {
@@ -1839,14 +1867,14 @@ protected:
         return _defectiveFieldMask() & ((1 << cols()) -1);
     }
     void _setDefectivFieldBit(int ix) {
-        _stat |= 1 << (ix + 16);
+        _stat |= 1LL << (ix + 16);
     }
     void setDefectivFieldBit(int ix) {
         chkIndex(ix);
         _setDefectivFieldBit(ix);
     }
     void _clearDefectivFieldBit(int ix) {
-        _stat &= ~(1 << (ix + 16));
+        _stat &= ~(1LL << (ix + 16));
     }
     void clearDefectivFieldBit(int ix) {
         chkIndex(ix);
@@ -2277,7 +2305,7 @@ template <class R> void _JoinFeatureT(R& o)
     prop = o._pFeatures->join();
     if (o.getName(R::ixFeatures()) != prop) { // Nem túl hatékony (sorrend változhat), de bonyi lenne.
         o._set(R::ixFeatures(), QVariant(prop));   // nincs atEnd() !
-        o._stat |= R::ES_MODIFY;
+        o._stat |= ES_MODIFY;
     }
 }
 

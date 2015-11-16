@@ -63,6 +63,7 @@ FORMS += \
     fkeyed.ui
 INCLUDEPATH += ../lv2
 unix:LIBS += -lsnmp
+msvc:LIBS += -lSecur32
 LIBS += -L../lv2 -llv2
 
 

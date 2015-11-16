@@ -487,7 +487,7 @@ QVariant cColStaticDescr::set(const QVariant& _f, qlonglong &str) const
         EXCEPTION(EPROGFAIL);
         break;
     }
-    if (!ok) str |= cRecord::ES_DEFECTIVE;
+    if (!ok) str |= ES_DEFECTIVE;
     return r;
 }
 
@@ -728,7 +728,7 @@ QVariant  cColStaticDescrBool::set(const QVariant& _f, qlonglong & str) const
         ok = _f.canConvert<bool>();
         r = _f.toBool();
     }
-    if (!ok) str |= cRecord::ES_DEFECTIVE;
+    if (!ok) str |= ES_DEFECTIVE;
     return r;
 }
 QString   cColStaticDescrBool::toName(const QVariant& _f) const
@@ -965,7 +965,7 @@ QVariant  cColStaticDescrArray::set(const QVariant& _f, qlonglong &str) const
     QVariant r =_f;
     if (isNumNull(_f)) r.clear();
     if (r.isNull()) {
-        if (!isNullable && colDefault.isEmpty()) str |= cRecord::ES_DEFECTIVE;
+        if (!isNullable && colDefault.isEmpty()) str |= ES_DEFECTIVE;
         return r;
     }
     int t = _f.userType();
@@ -979,7 +979,7 @@ QVariant  cColStaticDescrArray::set(const QVariant& _f, qlonglong &str) const
     case FT_TEXT_ARRAY:
         foreach (QVariant v, _f.toList()) {
             sl << QVariantToString(v, &ok);
-            if (!ok) str |= cRecord::ES_DEFECTIVE;
+            if (!ok) str |= ES_DEFECTIVE;
         }
         return QVariant(sl);
     default:
@@ -991,13 +991,13 @@ QVariant  cColStaticDescrArray::set(const QVariant& _f, qlonglong &str) const
     case FT_INTEGER_ARRAY:
         foreach (QString s, _f.toStringList()) {
             vl << QVariant(s.toLongLong(&ok));
-            if (!ok) str |= cRecord::ES_DEFECTIVE;
+            if (!ok) str |= ES_DEFECTIVE;
         }
         return QVariant(vl);
     case FT_REAL_ARRAY:
         foreach (QString s, _f.toStringList()) {
             vl << QVariant(s.toDouble(&ok));
-            if (!ok) str |= cRecord::ES_DEFECTIVE;
+            if (!ok) str |= ES_DEFECTIVE;
         }
         return QVariant(vl);
     default:
@@ -1006,15 +1006,15 @@ QVariant  cColStaticDescrArray::set(const QVariant& _f, qlonglong &str) const
     switch (eColType) {
     case FT_TEXT_ARRAY:
         sl << QVariantToString(_f, &ok);
-        if (!ok) str |= cRecord::ES_DEFECTIVE;
+        if (!ok) str |= ES_DEFECTIVE;
         return QVariant(sl);
     case FT_INTEGER_ARRAY:
         if (_f.canConvert<qlonglong>()) vl << _f.toLongLong();
-        else str |= cRecord::ES_DEFECTIVE;
+        else str |= ES_DEFECTIVE;
         return QVariant(vl);
     case FT_REAL_ARRAY:
         if (_f.canConvert<double>()) vl << _f.toDouble();
-        else str |= cRecord::ES_DEFECTIVE;
+        else str |= ES_DEFECTIVE;
         return QVariant(vl);
     default:
         EXCEPTION(EPROGFAIL);
@@ -1126,7 +1126,7 @@ QVariant  cColStaticDescrEnum::set(const QVariant& _f, qlonglong & str) const
     }
     if (!ok) {
         DWAR() << QObject::trUtf8("Invalid enum value : ") << debVariantToString(_f) << endl;
-        str |= cRecord::ES_DEFECTIVE;
+        str |= ES_DEFECTIVE;
         r.clear();
     }
     return r;
@@ -1229,7 +1229,7 @@ QVariant  cColStaticDescrSet::set(const QVariant& _f, qlonglong & str) const
     // _DBGFN() << debVariantToString(_f) << endl;
     int t = _f.userType();
     if (_f.isNull() || isNumNull(_f)) {
-        if (!isNullable && colDefault.isEmpty()) str |= cRecord::ES_DEFECTIVE;
+        if (!isNullable && colDefault.isEmpty()) str |= ES_DEFECTIVE;
         return QVariant();
     }
     QStringList sl;
@@ -1237,7 +1237,7 @@ QVariant  cColStaticDescrSet::set(const QVariant& _f, qlonglong & str) const
     if (metaIsInteger(t)) {
         qlonglong bm = _f.toLongLong();
         sl = enumType().set2lst(bm, false);
-        if (enumType().checkSet(bm)) str |= cRecord::ES_DEFECTIVE;
+        if (enumType().checkSet(bm)) str |= ES_DEFECTIVE;
         return QVariant(sl);
     }
     else if (metaIsString(t)) {
@@ -1247,11 +1247,11 @@ QVariant  cColStaticDescrSet::set(const QVariant& _f, qlonglong & str) const
         sl = _f.toStringList();
     }
     else {
-        str |= cRecord::ES_DEFECTIVE;
+        str |= ES_DEFECTIVE;
         return QVariant();
     }
     sl = enumType().normalize(sl, &ok);
-    if (!ok) str |= cRecord::ES_DEFECTIVE;
+    if (!ok) str |= ES_DEFECTIVE;
     return QVariant(sl);
  }
 
@@ -1359,7 +1359,7 @@ QVariant  cColStaticDescrPolygon::set(const QVariant& _f, qlonglong& str) const
     // _DBGF() << QChar(' ') << debVariantToString(_f);
     int t = _f.userType();
     if (_f.isNull() || isNumNull(_f)) {
-        if (!isNullable && colDefault.isEmpty()) str |= cRecord::ES_DEFECTIVE;
+        if (!isNullable && colDefault.isEmpty()) str |= ES_DEFECTIVE;
         return QVariant();
     }
     if (t == _UMTID_tPolygonF) {
@@ -1384,7 +1384,7 @@ QVariant  cColStaticDescrPolygon::set(const QVariant& _f, qlonglong& str) const
         return QVariant::fromValue(pol);
     }
 */
-    str |= cRecord::ES_DEFECTIVE;
+    str |= ES_DEFECTIVE;
     return QVariant();
 
 }
@@ -1462,7 +1462,7 @@ QVariant  cColStaticDescrAddr::set(const QVariant& _f, qlonglong &str) const
     if ((QMetaType::LongLong == mtid && NULL_ID == _f.toLongLong())
      || (QMetaType::Int      == mtid && NULL_IX == _f.toInt())
      || _f.isNull()) {
-        if (!isNullable && colDefault.isEmpty()) str |= cRecord::ES_DEFECTIVE;
+        if (!isNullable && colDefault.isEmpty()) str |= ES_DEFECTIVE;
         return QVariant();
     }
     bool ok = true;
@@ -1503,7 +1503,7 @@ QVariant  cColStaticDescrAddr::set(const QVariant& _f, qlonglong &str) const
     default:
         EXCEPTION(EPROGFAIL);
     }
-    if (!ok) str |= cRecord::ES_DEFECTIVE;
+    if (!ok) str |= ES_DEFECTIVE;
     return r;
 }
 
@@ -1600,7 +1600,7 @@ QVariant  cColStaticDescrTime::set(const QVariant& _f, qlonglong& str) const
 {
     // _DBGF() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
     if (isNumNull(_f) || _f.isNull()) {
-        if (!isNullable && colDefault.isEmpty()) str |= cRecord::ES_DEFECTIVE;
+        if (!isNullable && colDefault.isEmpty()) str |= ES_DEFECTIVE;
         return QVariant();
     }
     QTime   dt;
@@ -1619,7 +1619,7 @@ QVariant  cColStaticDescrTime::set(const QVariant& _f, qlonglong& str) const
     }
     if (dt.isValid()) return QVariant(dt);
     DERR() << QObject::trUtf8("Az adat nem értelmezhető  idő ként : ") << endl;
-    str |= cRecord::ES_DEFECTIVE;
+    str |= ES_DEFECTIVE;
     return QVariant();
 }
 QString   cColStaticDescrTime::toName(const QVariant& _f) const
@@ -1690,7 +1690,7 @@ QVariant  cColStaticDescrDate::set(const QVariant& _f, qlonglong& str) const
     if (_f.isNull()
      || (QMetaType::LongLong == t && NULL_ID == _f.toLongLong())
      || (QMetaType::Int      == t && NULL_IX == _f.toInt())) {
-        if (!isNullable && colDefault.isEmpty()) str |= cRecord::ES_DEFECTIVE;
+        if (!isNullable && colDefault.isEmpty()) str |= ES_DEFECTIVE;
         return QVariant();
     }
     QDate   dt;
@@ -1700,7 +1700,7 @@ QVariant  cColStaticDescrDate::set(const QVariant& _f, qlonglong& str) const
     }
     if (dt.isValid()) return QVariant(dt);
     DERR() << QObject::trUtf8("Az adat nem értelmezhető  idő ként : ") << endl;
-    str |= cRecord::ES_DEFECTIVE;
+    str |= ES_DEFECTIVE;
     return QVariant();
 }
 QString   cColStaticDescrDate::toName(const QVariant& _f) const
@@ -1762,7 +1762,7 @@ QVariant  cColStaticDescrDateTime::set(const QVariant& _f, qlonglong& str) const
      || (QMetaType::LongLong == t && NULL_ID == _f.toLongLong())
      || (QMetaType::Int      == t && NULL_IX == _f.toInt())
      || (QMetaType::QDateTime== t && _f.toDateTime().isNull())) {
-        if (!isNullable && colDefault.isEmpty()) str |= cRecord::ES_DEFECTIVE;
+        if (!isNullable && colDefault.isEmpty()) str |= ES_DEFECTIVE;
         return QVariant();
     }
     QDateTime   dt;
@@ -1777,7 +1777,7 @@ QVariant  cColStaticDescrDateTime::set(const QVariant& _f, qlonglong& str) const
     else ok = false;
     if (ok && dt.isNull()) {
         DERR() << QObject::trUtf8("Az adat nem értelmezhető dátum és idő ként.") << endl;
-        str |= cRecord::ES_DEFECTIVE;
+        str |= ES_DEFECTIVE;
         return QVariant();
     }
     // _DBGFL() << " Return :" << dt.toString() << endl;
@@ -1930,7 +1930,7 @@ QVariant  cColStaticDescrInterval::set(const QVariant& _f, qlonglong& str) const
      || (QMetaType::LongLong == t && NULL_ID == _f.toLongLong())
      || (QMetaType::Int      == t && NULL_IX == _f.toInt())
      || (metaIsString(t)          && _f.toString().isEmpty())) {
-        if (!isNullable && colDefault.isEmpty()) str |= cRecord::ES_DEFECTIVE;
+        if (!isNullable && colDefault.isEmpty()) str |= ES_DEFECTIVE;
         return QVariant();
     }
     bool ok = false;
@@ -1938,7 +1938,7 @@ QVariant  cColStaticDescrInterval::set(const QVariant& _f, qlonglong& str) const
     if      (variantIsFloat(_f))   r = (qlonglong)(_f.toDouble(&ok) + 0.5);
     else if (variantIsString(_f))  r = parseTimeInterval(_f.toString(), &ok);
     else if (variantIsInteger(_f)) r = _f.toLongLong(&ok);
-    if (!ok) str |= cRecord::ES_DEFECTIVE;
+    if (!ok) str |= ES_DEFECTIVE;
     return r == NULL_ID || !ok ? QVariant() : QVariant(r);
 }
 QString   cColStaticDescrInterval::toName(const QVariant& _f) const

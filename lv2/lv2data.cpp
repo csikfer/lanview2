@@ -2514,6 +2514,7 @@ bool cSnmpDevice::setBySnmp(const QString& __com, bool __ex, QString *pEs)
     }
 #else // MUST_SCAN
     (void)__com;
+    if (pEs != NULL) *pEs = snmpNotSupMsg();
     if (__ex) EXCEPTION(ENOTSUPP, -1, snmpNotSupMsg());
 #endif // MUST_SCAN
     return false;

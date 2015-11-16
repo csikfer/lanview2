@@ -1,5 +1,11 @@
 #include "logon.h"
 
+#if   defined(Q_CC_MSVC)
+#define SECURITY_WIN32
+#include <security.h>
+#include <secext.h>
+#endif
+
 int     cLogOn::_maxProbes = 5;
 cLogOn::cLogOn(bool __needZone, QWidget *parent) :
     QDialog(parent),
@@ -8,6 +14,15 @@ cLogOn::cLogOn(bool __needZone, QWidget *parent) :
 {
     _needZone = __needZone;
     ui->setupUi(this);
+#if   defined(Q_CC_MSVC)
+    // Csak próba !!!!
+#define USER_NAME_MAXSIZE   64
+    char charUserName[USER_NAME_MAXSIZE];
+    DWORD userNameSize = USER_NAME_MAXSIZE;
+    if (GetUserNameExA(NameDnsDomain, charUserName, &userNameSize)) {
+        ui->userLE->setText(QString(charUserName));
+    }
+#endif
     _changeTxt   = ui->chgPswPB->text();
     _unChangeTxt = trUtf8("Ne legyen jelszócsere");
     _change = true;
