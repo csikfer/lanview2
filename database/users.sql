@@ -136,14 +136,15 @@ COMMENT ON TYPE notifswitch IS 'Notification switch, or host or service status';
 
 CREATE TABLE users (    -- contacts
     user_id             bigserial       PRIMARY KEY,
-    user_name           text     NOT NULL UNIQUE,
+    user_name           text            NOT NULL UNIQUE,
     user_note           text    	DEFAULT NULL,
     passwd              text,
+    domain_users        text[],
     first_name		text,
     last_name		text,
     language		text,
-    tels                text[]   DEFAULT NULL,
-    addresses           text[]  DEFAULT NULL,
+    tels                text[]          DEFAULT NULL,
+    addresses           text[]          DEFAULT NULL,
     place_id            bigint          DEFAULT NULL REFERENCES places(place_id) MATCH SIMPLE
                                             ON DELETE RESTRICT ON UPDATE RESTRICT,
     expired		date		DEFAULT NULL,

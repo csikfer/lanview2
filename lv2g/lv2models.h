@@ -2,6 +2,7 @@
 #define LV2MODELS_H
 
 #include "lv2g.h"
+#include "cerrormessagebox.h"
 #include <QAbstractTableModel>
 #include <QStringListModel>
 
@@ -30,8 +31,10 @@ public:
     bool setStringList(const QStringList& sl);
     /// Az aktuális lista (_stringList konténer) a végéhez ad egy sort, és az új lista lessz megjelenítve.
     cStringListModel& operator<<(const QString& s) {
+        int ix = _stringList.size();
+        beginInsertRows(QModelIndex(), ix, ix);
         _stringList << s;
-        insertRow(_stringList.size() -1);
+        endInsertRows();
         return *this;
     }
     /// Beszúr egy elemet a megadott indexű sor elé

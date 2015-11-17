@@ -4,6 +4,8 @@
 #define SECURITY_WIN32
 #include <security.h>
 #include <secext.h>
+#else
+#include <pwd.h>
 #endif
 
 int     cLogOn::_maxProbes = 5;
@@ -12,17 +14,43 @@ cLogOn::cLogOn(bool __needZone, QWidget *parent) :
     ui(new Ui::LoginDialog),
     _zoneIdList()
 {
+    _pMyUser = NULL;
     _needZone = __needZone;
     ui->setupUi(this);
 #if   defined(Q_CC_MSVC)
-    // Csak próba !!!!
 #define USER_NAME_MAXSIZE   64
     char charUserName[USER_NAME_MAXSIZE];
     DWORD userNameSize = USER_NAME_MAXSIZE;
     if (GetUserNameExA(NameDnsDomain, charUserName, &userNameSize)) {
-        ui->userLE->setText(QString(charUserName));
+        QString du = QString(charUserName);
+        QStringList sdu = du.split('\\');
+        if (sdu.size() == 2) {
+            _myDomain = sdu.at(0);
+            _myUser   = sdu.at(1);
+        }
+        else if (sdu.size() == 1) {
+            _myDomain = sdu.at(0);
+        }
+    }
+#else
+    uid_t uid = geteuid();
+    struct passwd *pw = getpwuid(uid);
+    if (pw) {
+        _myUserName = pw->pw_name;
+        if (lanView::getInstance()->pSelfNode != NULL) {
+            _myDomainName = lanView::getInstance()->pSelfNode->getName();
+        }
     }
 #endif
+    if (!_myUserName.isEmpty() && !_myDomainName.isEmpty()) {
+        QString ud = _myUserName + "@" + _myDomainName;
+        QString sql = "SELECT * FROM users WHERE ? = ANY(domain_users)";
+        QSqlQuery q = getQuery();
+        if (execSql(q, sql, ud)) {
+            _pMyUser = new cUser();
+            _pMyUser->set(q);
+        }
+    }
     _changeTxt   = ui->chgPswPB->text();
     _unChangeTxt = trUtf8("Ne legyen jelszócsere");
     _change = true;
@@ -41,11 +69,21 @@ cLogOn::cLogOn(bool __needZone, QWidget *parent) :
         ui->zoneCB->hide();
         ui->zoneLBL->hide();
     }
+    if (_pMyUser != NULL) {
+        ui->myUserPB->setDisabled(false);
+        _inUser = _pMyUser->getName();
+        ui->userLE->setText(_inUser);
+        userNameEdited();
+        connect(ui->myUserPB, SIGNAL(clicked()), this, SLOT(myUser()));
+    }
+    else {
+        ui->myUserPB->setDisabled(true);
+    }
 }
 
 cLogOn::~cLogOn()
 {
-    ;
+    pDelete(_pMyUser);
 }
 
 eLogOnResult    cLogOn::checkState()
@@ -129,12 +167,19 @@ void cLogOn::change()
     }
 }
 
-void cLogOn::userNameEdit(const QString &)
+void cLogOn::userNameEdit(const QString &_txt)
 {
-    // DBGFNL();
-    ui->passwLE->clear();
-    ui->zoneCB->clear();
-    _zoneIdList.clear();
+    _inUser = _txt;
+    if (_pMyUser != NULL && 0 == _pMyUser->getName().compare(_txt, Qt::CaseInsensitive)) {
+        userNameEdited();
+        ui->myUserPB->setDisabled(false);
+    }
+    else {
+        ui->passwLE->clear();
+        ui->zoneCB->clear();
+        _zoneIdList.clear();
+        ui->myUserPB->setDisabled(true);
+    }
 }
 
 void cLogOn::userNameEdited()
@@ -149,7 +194,7 @@ void cLogOn::userNameEdited()
             " JOIN users USING(user_id)"
             " WHERE user_name = ?";
     if (!q.prepare(sql)) SQLPREPERR(q, sql);
-    q.bindValue(0, ui->userLE->text());
+    q.bindValue(0, _inUser);
     if (!q.exec()) SQLQUERYERR(q);
     ui->zoneCB->clear();
     _zoneIdList.clear();
@@ -162,4 +207,13 @@ void cLogOn::userNameEdited()
         } while (q.next());
         ui->zoneCB->setCurrentIndex(0);
     }
+}
+
+void cLogOn::myUser()
+{
+    if (_pMyUser == NULL) EXCEPTION(EPROGFAIL,0,"_pMyUser pointer is NULL.");
+    lanView::setUser(_pMyUser);
+    _pMyUser = NULL;
+    _state = LR_OK;
+    accept();
 }

@@ -774,7 +774,7 @@ void cArrayWidget::selectionChanged(QItemSelection,QItemSelection)
 {
     QModelIndexList mil = pUi->listView->selectionModel()->selectedColumns();
     selectedNum = mil.size();
-    if (selectedNum == 0) actIndex = mil.first();
+    if (selectedNum == 1) actIndex = mil.first();
     else                  actIndex = QModelIndex();
     setButtons();
 }

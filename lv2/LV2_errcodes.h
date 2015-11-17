@@ -42,5 +42,6 @@ ERRCOD( ENOENV,      "Environment variable not found.")
 ERRCOD( ESOCKET,     "Communication (socket). error.")
 ERRCOD( ESTAT,       "Invalid status.")
 ERRCOD( ESEM,        "Semaphore error.")
+ERRCOD( EDISP,       "Megjelenítési hiba.")
 
-#define __LAST_ERROR_CODE__  ESEM
+#define __LAST_ERROR_CODE__  EDISP

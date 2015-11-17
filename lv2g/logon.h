@@ -31,12 +31,17 @@ private:
     QString             _unChangeTxt;
     QList<qlonglong>    _zoneIdList;
     bool                _needZone;
+    QString             _myDomainName;
+    QString             _myUserName;
+    QString             _inUser;
+    cUser              *_pMyUser;
 private slots:
     void cancel();
     void ok();
     void change();
-    void userNameEdit(const QString &);
+    void userNameEdit(const QString &_txt);
     void userNameEdited();
+    void myUser();
 };
 
 #endif // LOGON

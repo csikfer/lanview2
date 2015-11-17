@@ -277,8 +277,6 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
--- //////////////////// ERROR LOGOK ////////////////////
-\i errlogs.sql
 -- //////////////////// Helyek/helyiségek ////////////////////
 \i locations.sql
 -- //////////////////// Felhasználók  ////////////////////
@@ -286,6 +284,9 @@ $$ LANGUAGE plpgsql;
 
 \i nodes.sql
 \i services.sql
+-- //////////////////// ERROR LOGOK ////////////////////
+\i errlogs.sql
+
 \i mactab.sql
 \i links.sql
 \i imports.sql
@@ -302,7 +303,7 @@ owner       Szülő objektumra mutató kulcs
 ';
 
 CREATE TABLE unusual_fkeys (
-    unusual_fkeys_id    bigserial       NOT NULL PRIMARY KEY,
+    unusual_fkey_id     bigserial       NOT NULL PRIMARY KEY,
     table_schema        text     NOT NULL DEFAULT 'public',
     table_name          text     NOT NULL,
     column_name         text     NOT NULL,
@@ -338,7 +339,7 @@ INSERT INTO unusual_fkeys
   ( 'log_links_table',  'port_id2',     'property',         'nports',       'port_id',      '{nports, interfaces}');
 
 CREATE TABLE fkey_types (
-    fkeys_types_id      bigserial       NOT NULL PRIMARY KEY,
+    fkey_type_id        bigserial  NOT NULL PRIMARY KEY,
     table_schema        text     NOT NULL DEFAULT 'public',
     table_name          text     NOT NULL,
     column_name         text     NOT NULL,
@@ -356,7 +357,7 @@ INSERT INTO fkey_types
   ( table_name,             column_name,            unusual_fkeys_type) VALUES
   ( 'pports',               'node_id',              'owner'         ),
   ( 'port_vlans',           'port_id',              'owner'         ),
-  ( 'interfaces',           'port_id',              'owner'         ),
+  ( 'ipaddresses',          'port_id',              'owner'         ),
   ( 'table_shape_fields',   'table_shape_id',       'owner'         ),
   ( 'table_shape_filters',  'table_shape_field_id', 'owner'         );
 

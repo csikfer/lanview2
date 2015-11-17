@@ -8,6 +8,10 @@ CREATE TABLE app_errs (
     pid         bigint          DEFAULT NULL,
     app_ver     text            DEFAULT NULL,
     lib_ver     text            DEFAULT NULL,
+    user_id     bigint          DEFAULT NULL
+        REFERENCES users(user_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
+    service_id  bigint          DEFAULT NULL
+        REFERENCES services(service_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
     -- cError
     func_name   text            DEFAULT NULL,
     src_name    text            DEFAULT NULL,

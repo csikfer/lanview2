@@ -106,7 +106,7 @@ TABLE SHAPE nodes "Passzív, felügyeltbe bevont elemek" {
     $DefRights
     FIELD deleted HIDE;
     FIELD node_name ORD asc,desc,no;
-    FIELD node_note, place_id, node_stat, alarm_place_group_id ORD no, asc, desc;
+    FIELD node_note, place_id, node_stat ORD no, asc, desc;
     FIELD node_name, node_note,node_stat,node_type ADD FILTERS begin, like, similar, regexp, regexpi;
     FIELD node_stat READ ONLY;
     FIELD node_stat DEFAULT VALUE unkbown;
@@ -115,6 +115,7 @@ TABLE SHAPE nodes "Passzív, felügyeltbe bevont elemek" {
 TABLE SHAPE ipaddresses "IP címek" {
     SET DEFAULTS;
 //  TABLE INHERIT TYPE no;      // 'no' a default
+    FIELD port_id HIDE;
     FIELD preferred ORD asc,desc,no;
     FIELD address, ip_address_note ORD no, asc, desc;
     $DefRights
@@ -128,7 +129,7 @@ TABLE interfaces SHAPE hostports "Hálózati interfészek, portok" {
     INHERIT TABLE NAMES nports;                 // A teljes lista: interfaces, nports
     FIELD port_ostat, port_astat READ ONLY;
     FIELD port_ostat, port_astat DEFAULT VALUE unknown;
-    FIELD deleted HIDE;
+    FIELD deleted, node_id HIDE;
     FIELD port_index ORD asc,desc,no;
     FIELD port_name, port_tag, port_note, iftype_id ORD no, asc, desc;
     FIELD port_name, port_tag, port_note ADD FILTERS begin, like, similar, regexp, regexpi;

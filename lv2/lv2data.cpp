@@ -819,8 +819,8 @@ void cIfType::fetchIfTypes(QSqlQuery& __q)
         return;
     }
     // UPDATE
-    int found = 0;              // Megtalált rekordok száma
-    int n = ifTypes.count();    // Megtalálandó rekordok száma
+    int found = ifTypes.count();    // Megtalálandó rekordok száma
+    int n = 0;                      // Megtalált rekordok számláló
     cIfType ift;
     if (!ift.fetch(__q, false, ba)) EXCEPTION(EDATA, 0, trUtf8("Update cache: The if_types table is empty."));
     do {
@@ -2904,6 +2904,7 @@ int vlanType(const QString& __n, bool __ex)
     if (0 == __n.compare(_sUnknown,   Qt::CaseInsensitive)) return VT_NOTKNOWN;
     if (0 == __n.compare(_sForbidden, Qt::CaseInsensitive)) return VT_FORBIDDEN;
     if (0 == __n.compare(_sAuto,      Qt::CaseInsensitive)) return VT_AUTO;
+    if (0 == __n.compare(_sAutoTagged,Qt::CaseInsensitive)) return VT_AUTO_TAGGED;
     if (0 == __n.compare(_sTagged,    Qt::CaseInsensitive)) return VT_TAGGED;
     if (0 == __n.compare(_sUntagged,  Qt::CaseInsensitive)) return VT_UNTAGGED;
     if (0 == __n.compare(_sVirtual,   Qt::CaseInsensitive)) return VT_VIRTUAL;
@@ -2919,6 +2920,7 @@ const QString& vlanType(int __e, bool __ex)
     case VT_NOTKNOWN:   return _sUnknown;
     case VT_FORBIDDEN:  return _sForbidden;
     case VT_AUTO:       return _sAuto;
+    case VT_AUTO_TAGGED:return _sAutoTagged;
     case VT_TAGGED:     return _sTagged;
     case VT_UNTAGGED:   return _sUntagged;
     case VT_VIRTUAL:    return _sVirtual;
@@ -2982,6 +2984,7 @@ qlonglong cAppMemo::memo(QSqlQuery &q, QString& _memo, int _imp, const QString& 
     lanView *pI = lanView::getInstance();
     o.setName(_sAppName, lanView::appName);
     o.setId(_sPid, QCoreApplication::applicationPid());
+    o.setName(_sThreadName, currentThreadName());
     o.setName(_sAppVer, lanView::appVersion);
     o.setName(_sLibVer, lanView::libVersion);
     o.setName(_sFuncName, _func_name);

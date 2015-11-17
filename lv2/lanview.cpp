@@ -415,17 +415,19 @@ qlonglong lanView::sendError(const cError *pe, const QString& __t)
     fields.add(_sAppName,       appName);
     if (instance->pSelfNode != NULL && !selfNode().isNullId()) fields.add(_sNodeId, selfNode().getId());
     fields.add(_sPid,           QCoreApplication::applicationPid());
-    fields.add("app_ver",       appVersion);
-    fields.add("lib_ver",       libVersion);
-    fields.add("func_name",     pe->mFuncName);
-    fields.add("src_name",      pe->mSrcName);
-    fields.add("src_line",      pe->mSrcLine);
+    fields.add(_sAppVer,        appVersion);
+    fields.add(_sLibVer,        libVersion);
+    if (!instance->user().isNullId()) fields.add(_sUserId, instance->user().getId());
+    if (instance->pSelfService != NULL && !instance->pSelfService->isNullId()) fields.add(_sServiceId, instance->pSelfService->getId());
+    fields.add(_sFuncName,      pe->mFuncName);
+    fields.add(_sSrcName,       pe->mSrcName);
+    fields.add(_sSrcLine,       pe->mSrcLine);
     fields.add("err_code",      pe->mErrorCode);
     fields.add("err_name",      pe->errorMsg());
     fields.add("err_subcode",   pe->mErrorSubCode);
     fields.add("err_syscode",   pe->mErrorSysCode);
     fields.add("err_submsg",    pe->mErrorSubMsg);
-    fields.add("thread_name",   pe->mThreadName);
+    fields.add(_sThreadName,    pe->mThreadName);
     fields.add("sql_err_num",   pe->mSqlErrNum);
     fields.add("sql_err_type",  pe->mSqlErrType);
     fields.add("sql_driver_text",pe->mSqlErrDrText);
@@ -591,6 +593,16 @@ const cUser *lanView::setUser(qlonglong uid, bool __ex)
     instance->pUser->getRights(q);
     return instance->pUser;
 }
+
+const cUser *lanView::setUser(cUser *__pUser)
+{
+    if (instance == NULL) EXCEPTION(EPROGFAIL);
+    if (!(__pUser->_stat < 0 || __pUser->_stat & ES_COMPLETE)) EXCEPTION(EDATA,__pUser->_stat, "Invalid __pUser object :" + __pUser->toString());
+    if (instance->pUser != NULL) pDelete(instance->pUser);
+    instance->pUser = __pUser;
+    return instance->pUser;
+}
+
 
 const cUser& lanView::user()
 {

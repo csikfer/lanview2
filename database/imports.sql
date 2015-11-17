@@ -12,7 +12,7 @@ aborted Az import az üzenetet eldobta
 
 CREATE TABLE imports (
     import_id       bigserial   PRIMARY KEY,
-    target_id       bigserial
+    target_id       bigint      DEFAULT NULL
         REFERENCES host_services(host_service_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
     date_of         timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     user_id         bigint      NOT NULL

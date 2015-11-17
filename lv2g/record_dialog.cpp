@@ -138,8 +138,8 @@ cRecordDialogBase::~cRecordDialogBase()
 {
     if (_pLoop != NULL) EXCEPTION(EPROGFAIL);
     if (!close()) EXCEPTION(EPROGFAIL);
-    delete _pWidget;
-    delete pq;
+    pDelete(_pWidget);
+    pDelete( pq);
     pDelete(_pRecord);
 }
 
@@ -398,6 +398,14 @@ cRecordDialogInh::cRecordDialogInh(const cTableShape& _tm, tRecordList<cTableSha
     init(_oid, _pid);
 }
 
+cRecordDialogInh::~cRecordDialogInh()
+{
+    while (tabs.size()) {
+        delete tabs.first();
+        tabs.pop_front();
+    }
+}
+
 void cRecordDialogInh::init(qlonglong _oid, qlonglong _pid)
 {
     DBGFN();
@@ -412,6 +420,7 @@ void cRecordDialogInh::init(qlonglong _oid, qlonglong _pid)
     int i, n = tabDescriptors.size();
     for (i = 0; i < n; ++i) {
         const cTableShape& shape = *tabDescriptors[i];
+        cRecordDialog * pDlg = new cRecordDialog(shape, 0, false, pTabWidget);
         cRecordAny * pRec = new cRecordAny(shape.getName(_sTableName), shape.getName(_sSchemaName));
         if (_oid != NULL_ID) {  // Ha van owner, akkor az ID-jét beállítjuk
             int oix = pRec->descr().ixToOwner();
@@ -420,11 +429,12 @@ void cRecordDialogInh::init(qlonglong _oid, qlonglong _pid)
         if (_pid != NULL_ID) {  // Ha van parent, akkor az ID-jét beállítjuk
             int pix = pRec->descr().ixToParent();
             pRec->setId(pix, _pid);
-
+            pDlg->isReadOnly = true;
         }
-        cRecordDialog * pDlg = new cRecordDialog(shape, 0, false, pTabWidget);
+        pDlg->_pRecord = pRec;
+        pDlg->restore();
         tabs << pDlg;
-        pTabWidget->addTab(pDlg->pWidget(), shape.getName());
+        pTabWidget->addTab(pDlg->pWidget(), shape.getName(_sTableName));
     }
     pTabWidget->setCurrentIndex(0);
     _pWidget->adjustSize(); //?

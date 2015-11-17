@@ -248,6 +248,11 @@ public:
     /// @param __ex Ha értéke igaz, és a falhasználó ID létezik, akkor dob egy kizárást.
     /// @retuen Ha létezik a megadott ID-jű felhasználó, akkor a feltöltött cUser objekum címe.
     static const cUser *setUser(qlonglong uid, bool __ex = true);
+    /// Az megadott felhasználói rekord lessz az aktuális felhaszbáló.
+    /// @param __pUser A felhasználói objektum pointere, a pointer a lanView példány tulajdona lesz, az fogja felszíbadítani.
+    /// @exception Ha az objektum ES_COMPLETE bitje nics beállítva a _stat adattagbanm vagy a _stat negatív.
+    static const cUser *setUser(cUser *__pUser);
+
     /// Az aktuális felhasználó adatait tartalmazó cUser objektum referenciája.
     /// A pUser adattag által mutatott objektum referenciájával tér vissza.
     /// Ha még nem példányosítottuk a lanView osztályt, vagy a pUser egy NULL pointer, akkor dob egy kizárást.

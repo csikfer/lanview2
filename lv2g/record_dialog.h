@@ -53,10 +53,12 @@ protected:
     static QList<QIcon>     icons;
 };
 
+class cRecordDialogInh;
 /// @class cRecordDialogBase
 /// @brief Rekord szerkesztés dialógus alap objektum
 /// Konkrét megjelenítést nem tartalmaz.
 class LV2GSHARED_EXPORT cRecordDialogBase : public QObject {
+    friend class cRecordDialogInh;
     Q_OBJECT
 public:
     /// Konstruktor
@@ -165,6 +167,7 @@ public:
     /// @param dialog Ha a dialóus ablakot QDialog-ból kell létrehozni, akkor true, ha fals, akkor QWidget-ből.
     /// @param parent Az szülő widget opcionális pointere
     cRecordDialogInh(const cTableShape &_tm, tRecordList<cTableShape>& _tms, int _buttons, qlonglong _oid = NULL_ID, qlonglong _pid = NULL_ID, bool dialog = true, QWidget * parent = NULL);
+    ~cRecordDialogInh();
     ///
     virtual cRecord& record();
     int actTab();

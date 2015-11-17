@@ -357,7 +357,7 @@ Exception SQL error, a hibaüzenetbe beleteszi az SQL paramcsot is (lekérdezi).
 #define SQLQUERYERR(o)  { \
         QSqlError le = (o).lastError(); \
         _sql_err_deb_(le, __FILE__, __LINE__, __PRETTY_FUNCTION__, (o).lastQuery() + " / Bind { " + _sql_err_bound(o) + "}"); \
-        _sql_err_ex(NEWCERROR(EQUERY, le.number(), le.text()), (o).lastQuery(), _sql_err_bound(o)); \
+        _sql_err_ex(NEWCERROR(EQUERY, le.number(), le.text()), le, (o).lastQuery(), _sql_err_bound(o)); \
     }
 
 #define CATCHS(pe) \

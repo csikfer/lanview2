@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>531</width>
-    <height>266</height>
+    <width>582</width>
+    <height>299</height>
    </rect>
   </property>
   <property name="font">
@@ -168,6 +168,18 @@
       </spacer>
      </item>
      <item>
+      <widget class="QPushButton" name="myUserPB">
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Saját felhasználó</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="okPB">
        <property name="font">
         <font>
@@ -175,7 +187,7 @@
         </font>
        </property>
        <property name="text">
-        <string>OK</string>
+        <string>LogOn</string>
        </property>
       </widget>
      </item>

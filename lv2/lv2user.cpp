@@ -116,3 +116,10 @@ enum ePrivilegeLevel cUser::privilegeLevel() const
     }
     return _privilegeLevel;
 }
+
+void cUser::addDomainUsers(const QStringList& __sl)
+{
+    QStringList sl = get(_sDomainUsers).toStringList();
+    sl += __sl;
+    set(_sDomainUsers, sl);
+}

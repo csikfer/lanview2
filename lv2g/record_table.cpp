@@ -557,7 +557,7 @@ void cRecordsViewBase::buttonPressed(int id)
     case DBT_DELETE:    remove();   break;
     case DBT_RESET:     reset();    break;
     case DBT_PUT_IN:    putIn();    break;
-    case DBT_TAKE_OUT:   takeOut();   break;
+    case DBT_TAKE_OUT:  takeOut();   break;
     default:
         DWAR() << "Invalid button id : " << id << endl;
         break;
@@ -986,7 +986,7 @@ void cRecordTable::setEditButtons()
         buttonDisable(DBT_MODIFY,                n != 1);
         buttonDisable(DBT_TAKE_OUT,              n <  1);
         buttonDisable(DBT_PUT_IN,                n <  1);
-        buttonDisable(DBT_INSERT,  isNoInsert || ((flags & (RTF_IGROUP | RTF_IMEMBER | RTF_OVNER)) && (owner_id == NULL_ID)));
+        buttonDisable(DBT_INSERT,  isNoInsert || ((flags & (RTF_IGROUP | RTF_IMEMBER | RTF_CHILD)) && (owner_id == NULL_ID)));
     }
 }
 

@@ -351,6 +351,7 @@ CREATE TABLE app_memos (
     date_of             timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     app_name            text            DEFAULT NULL,
     pid                 bigint          DEFAULT NULL,
+    thread_name         text            DEFAULT NULL,
     app_ver             text            DEFAULT NULL,
     lib_ver             text            DEFAULT NULL,
     func_name           text            DEFAULT NULL,

@@ -336,7 +336,7 @@ CREATE TRIGGER subnets_check_before_update_trigger
 BEFORE UPDATE ON subnets
     FOR EACH ROW EXECUTE PROCEDURE subnet_check_before_update();
 
-CREATE TYPE vlantype AS ENUM ('no', 'unknown','forbidden', 'auto', 'tagged', 'untagged', 'virtual', 'hard');
+CREATE TYPE vlantype AS ENUM ('no', 'unknown','forbidden', 'auto', 'auto_tagged', 'tagged', 'untagged', 'virtual', 'hard');
 -- Hard = VLAN unsupported ~= Untagged
 ALTER TYPE vlantype OWNER TO lanview2;
 COMMENT ON TYPE vlantype IS
@@ -345,6 +345,7 @@ no          nincs hozzárendelés
 unknown     ismeretlen
 forbidden   Tiltott
 auto        autómatikus hozzárendelés
+auto_tagged     Cimkézett, automatikusan
 tagged      címkézett
 untagged    nem címkézett, közvetlen
 virtual     

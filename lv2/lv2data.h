@@ -93,6 +93,7 @@ enum eVlanType {
     VT_NOTKNOWN,        ///< Ismeretlen
     VT_FORBIDDEN,       ///< Tiltott
     VT_AUTO,            ///< automatikus
+    VT_AUTO_TAGGED,     ///< auto+tagged
     VT_TAGGED,          ///< Tagged (802.1q)
     VT_UNTAGGED,        ///< Untagged
     VT_VIRTUAL,         ///< Virtuális interfész a VLAN-hoz létrehozva

@@ -86,6 +86,8 @@ public:
     enum ePrivilegeLevel getRights(QSqlQuery& q);
     ///
     enum ePrivilegeLevel    privilegeLevel() const;
+    ///
+    void addDomainUsers(const QStringList& __sl);
 protected:
     ///
     enum ePrivilegeLevel    _privilegeLevel;
