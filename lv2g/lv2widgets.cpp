@@ -161,7 +161,7 @@ QString fieldWidgetType(int _t)
 cFieldEditBase::cFieldEditBase(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef _fr, bool _ro, cRecordDialogBase *_par)
     : QObject(_par)
     , _parent(*_par)
-    , _recDescr(_fr.descr())
+    , _colDescr(_fr.descr())
     , _tableShape(_tm)
     , _fieldShape(_tf)
     , _value()
@@ -194,25 +194,25 @@ cFieldEditBase::~cFieldEditBase()
 
 QVariant cFieldEditBase::get() const
 {
-    _DBGFN() << QChar('/') << _recDescr<< QChar(' ') <<  debVariantToString(_value) << endl;
+    _DBGFN() << QChar('/') << _colDescr<< QChar(' ') <<  debVariantToString(_value) << endl;
     return _value;
 }
 
 QString cFieldEditBase::getName() const
 {
-    return _recDescr.toName(get());
+    return _colDescr.toName(get());
 }
 
 qlonglong cFieldEditBase::getId() const
 {
-    return _recDescr.toId(get());
+    return _colDescr.toId(get());
 }
 
 int cFieldEditBase::set(const QVariant& _v)
 {
-    _DBGFN() << QChar('/') << _recDescr<< QChar(' ') <<  debVariantToString(_v) << endl;
+    _DBGFN() << QChar('/') << _colDescr<< QChar(' ') <<  debVariantToString(_v) << endl;
     qlonglong st = 0;
-    QVariant v = _recDescr.set(_v, st);
+    QVariant v = _colDescr.set(_v, st);
     if (st & ES_DEFECTIVE) return -1;
     if (v == _value) return 0;
     _value = v;
@@ -232,10 +232,10 @@ int cFieldEditBase::setId(qlonglong v)
 void cFieldEditBase::setFromWidget(QVariant v)
 {
     if (_value == v) {
-        _DBGFN() << QChar('/') << _recDescr<< QChar(' ') <<  debVariantToString(v) << " dropped" << endl;
+        _DBGFN() << QChar('/') << _colDescr<< QChar(' ') <<  debVariantToString(v) << " dropped" << endl;
         return;
     }
-    _DBGFN() << " { " << _recDescr << " } " <<  debVariantToString(v) << " != " <<  debVariantToString(_value) << endl;
+    _DBGFN() << " { " << _colDescr << " } " <<  debVariantToString(v) << " != " <<  debVariantToString(_value) << endl;
     _value = v;
     changedValue(this);
 }
@@ -397,9 +397,9 @@ cSetWidget::cSetWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRec
     pButtons->setExclusive(false);      // SET, több opció is kiválasztható
     widget().setLayout(pLayout);
     int id = 0;
-    _bits = _recDescr.toId(_value);
-    foreach (QString e, _recDescr.enumType().enumValues) {
-        QString t = cEnumVal::title(*pq, e, _recDescr.udtName);
+    _bits = _colDescr.toId(_value);
+    foreach (QString e, _colDescr.enumType().enumValues) {
+        QString t = cEnumVal::title(*pq, e, _colDescr.udtName);
         QCheckBox *pCB = new QCheckBox(t, pWidget());
         pButtons->addButton(pCB, id);
         pLayout->addWidget(pCB);
@@ -430,10 +430,10 @@ int cSetWidget::set(const QVariant& v)
     _DBGFN() << debVariantToString(v) << endl;
     int r = 1 == cFieldEditBase::set(v);
     if (r) {
-        int nid = _recDescr.enumType().enumValues.size();
+        int nid = _colDescr.enumType().enumValues.size();
         QAbstractButton *pAB = pButtons->button(nid);
         if (pAB != NULL) pAB->setChecked(v.isNull());
-        _bits = _recDescr.toId(v);
+        _bits = _colDescr.toId(v);
         if (_bits < 0) _bits = 0;
         for (int id = 0; id < nid && NULL != (pAB = pButtons->button(id)) ; id++) {
             pAB->setChecked(enum2set(id) & _bits);
@@ -452,11 +452,11 @@ void cSetWidget::setFromEdit(int id)
             if (_bits & enum2set(i)) pButtons->button(i)->setChecked(false);
         }
         _bits = 0;
-        setFromWidget(_recDescr.set(QVariant(), dummy));
+        setFromWidget(_colDescr.set(QVariant(), dummy));
     }
     else {
         _bits ^= enum2set(id);
-        setFromWidget(_recDescr.set(QVariant(_bits), dummy));
+        setFromWidget(_colDescr.set(QVariant(_bits), dummy));
         QAbstractButton *p = pButtons->button(n);
         if (p != NULL && p->isChecked()) p->setChecked(false);
     }
@@ -475,10 +475,10 @@ cEnumRadioWidget::cEnumRadioWidget(const cTableShape& _tm, const cTableShapeFiel
     pButtons->setExclusive(true);
     widget().setLayout(pLayout);
     int id = 0;
-    eval = _recDescr.toId(_value);
+    eval = _colDescr.toId(_value);
     QSqlQuery q = getQuery();
-    foreach (QString e, _recDescr.enumType().enumValues) {
-        QString t = cEnumVal::title(q, e, _recDescr.udtName);
+    foreach (QString e, _colDescr.enumType().enumValues) {
+        QString t = cEnumVal::title(q, e, _colDescr.udtName);
         QRadioButton *pRB = new QRadioButton(t, pWidget());
         pButtons->addButton(pRB, id);
         pLayout->addWidget(pRB);
@@ -506,10 +506,10 @@ int cEnumRadioWidget::set(const QVariant& v)
     int r = cFieldEditBase::set(v);
     if (1 == r) {
         pButtons->button(pButtons->checkedId())->setChecked(false);
-        eval = _recDescr.toId(v);
+        eval = _colDescr.toId(v);
         if (eval >= 0) pButtons->button(eval)->setChecked(true);
         else {
-            QAbstractButton *pRB = pButtons->button(_recDescr.enumType().enumValues.size());
+            QAbstractButton *pRB = pButtons->button(_colDescr.enumType().enumValues.size());
             if (pRB != NULL) pRB->setChecked(true);
         }
     }
@@ -523,7 +523,7 @@ void cEnumRadioWidget::setFromEdit(int id)
         if (pButtons->button(id)->isChecked() == false) pButtons->button(id)->setChecked(true);
         return;
     }
-    if (id == _recDescr.enumType().enumValues.size()) {
+    if (id == _colDescr.enumType().enumValues.size()) {
         if (eval < 0) {
             if (pButtons->button(id)->isChecked() == false) pButtons->button(id)->setChecked(true);
             return;
@@ -533,7 +533,7 @@ void cEnumRadioWidget::setFromEdit(int id)
         v = eval;
     }
     qlonglong dummy;
-    setFromWidget(_recDescr.set(v, dummy));
+    setFromWidget(_colDescr.set(v, dummy));
 }
 
 /* **************************************** cEnumComboWidget ****************************************  */
@@ -545,7 +545,7 @@ cEnumComboWidget::cEnumComboWidget(const cTableShape& _tm, const cTableShapeFiel
     _wType = FEW_ENUM_COMBO;
     QComboBox *pCB = new QComboBox(_par->pWidget());
     _pWidget = pCB;
-    pCB->addItems(_recDescr.enumType().enumValues);                 // A lehetséges értékek nevei
+    pCB->addItems(_colDescr.enumType().enumValues);                 // A lehetséges értékek nevei
     if (_nullView.isEmpty() == false) {
         pCB->addItem(_nullView);   // A NULL érték
     }
@@ -562,8 +562,8 @@ cEnumComboWidget::~cEnumComboWidget()
 void cEnumComboWidget::setWidget()
 {
     QComboBox *pCB = (QComboBox *)_pWidget;
-    if (isContIx(_recDescr.enumType().enumValues, eval)) pCB->setCurrentIndex(eval);
-    else pCB->setCurrentIndex(_recDescr.enumType().enumValues.size());
+    if (isContIx(_colDescr.enumType().enumValues, eval)) pCB->setCurrentIndex(eval);
+    else pCB->setCurrentIndex(_colDescr.enumType().enumValues.size());
 }
 
 int cEnumComboWidget::set(const QVariant& v)
@@ -581,9 +581,9 @@ void cEnumComboWidget::setFromEdit(int id)
 {
     if (eval == id) return;
     qlonglong v = id;
-    if (id == _recDescr.enumType().enumValues.size()) v = NULL_ID;
+    if (id == _colDescr.enumType().enumValues.size()) v = NULL_ID;
     qlonglong dummy;
-    setFromWidget(_recDescr.set(QVariant(v), dummy));
+    setFromWidget(_colDescr.set(QVariant(v), dummy));
 }
 
 /* **************************************** cFieldLineWidget ****************************************  */
@@ -598,7 +598,7 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
 {
     QLineEdit *pLE = NULL;
     QPlainTextEdit *pTE = NULL;
-    if (_recDescr.eColType == cColStaticDescr::FT_TEXT && _fieldShape.isFeature(_sText)) {
+    if (_colDescr.eColType == cColStaticDescr::FT_TEXT && _fieldShape.isFeature(_sText)) {
         _wType = FEW_TEXT;  // Widget típus azonosító
         pTE = new QPlainTextEdit(_par->pWidget());
         _pWidget = pTE;
@@ -611,12 +611,12 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
         isPwd = _fieldShape.isFeature(_sPasswd);
     }
     isPwd = false;
-    bool nullable = _recDescr.isNullable;
+    bool nullable = _colDescr.isNullable;
     QString tx;
     if (_readOnly == false) {
         tx = _fr.toString();
         _value = QVariant(tx);
-        switch (_recDescr.eColType) {
+        switch (_colDescr.eColType) {
         case cColStaticDescr::FT_INTEGER:   pLE->setValidator(new cIntValidator( nullable, pLE));   break;
         case cColStaticDescr::FT_REAL:      pLE->setValidator(new cRealValidator(nullable, pLE));   break;
         case cColStaticDescr::FT_TEXT:                                                              break;
@@ -675,10 +675,10 @@ int cFieldLineWidget::set(const QVariant& v)
     if (1 == r) {
         QString txt;
         if (_readOnly == false) {
-            txt = _recDescr.toName(_value);
+            txt = _colDescr.toName(_value);
         }
         else {
-            txt = _recDescr.toView(*pq, _value);
+            txt = _colDescr.toView(*pq, _value);
         }
         if (_wType == FEW_LINE) pLineEdit()->setText(txt);
         else                    pTextEdit()->setPlainText(txt);
@@ -787,7 +787,7 @@ void cArrayWidget::changed(QString _t)
     }
     else {
         bool ok;
-        switch (_recDescr.eColType) {
+        switch (_colDescr.eColType) {
         case cColStaticDescr::FT_INTEGER_ARRAY:
             _t.toLongLong(&ok);
             break;
@@ -798,7 +798,7 @@ void cArrayWidget::changed(QString _t)
             ok = true;
             break;
         default:
-            EXCEPTION(ENOTSUPP, _recDescr.eColType);
+            EXCEPTION(ENOTSUPP, _colDescr.eColType);
         }
         if (ok) last = _t;
         else    pUi->lineEdit->setText(last);
@@ -1256,10 +1256,10 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
     pUi = new Ui_fKeyEd;
     pUi->setupUi(_pWidget);
 
-    pRDescr = cRecStaticDescr::get(_recDescr.fKeyTable, _recDescr.fKeySchema);
+    pRDescr = cRecStaticDescr::get(_colDescr.fKeyTable, _colDescr.fKeySchema);
     pModel = new cRecordListModel(*pRDescr, pWidget());
-    pModel->nullable = _recDescr.isNullable;
-    pModel->setToNameF(_recDescr.fnToName);
+    pModel->nullable = _colDescr.isNullable;
+    pModel->setToNameF(_colDescr.fnToName);
     pModel->setFilter(_sNul, OT_ASC, FT_NO);
     pUi->comboBox->setModel(pModel);
     pUi->pushButtonEdit->setDisabled(true);
@@ -1287,7 +1287,7 @@ cFKeyWidget::~cFKeyWidget()
 
 bool cFKeyWidget::setWidget()
 {
-    qlonglong id = _recDescr.toId(_value);
+    qlonglong id = _colDescr.toId(_value);
     pUi->pushButtonEdit->setDisabled(pTableShape == NULL || id == NULL_ID);
     int ix = pModel->indexOf(id);
     if (ix < 0) return false;
@@ -1322,10 +1322,19 @@ void cFKeyWidget::_edited(QString _txt)
 
 }*/
 
+/// Egy tulajdosnság kulcs mezőben vagyunk.
+/// Be szertnénk szúrni egy tulajdonság rekordot
 void cFKeyWidget::inserF()
 {
-    if (pTableShape == NULL) EXCEPTION(EPROGFAIL);
-    cRecordAny *pRec = cRecordDialogBase::insertDialog(*pq, pTableShape, pRDescr);
+    // Kellene egy megjelenítés leíró az insert-hez
+    cTableShape fts;
+    // A megjelenítő neve azonos a tulajdonság rekord nevével
+    // Öröklés nem lehet, nincs ellenörzés!
+    fts.setByName(*pq, _colDescr.fKeyTable);
+    fts.fetchFields(*pq);
+    // A tulajdonság rekord leírója is kell
+    const cRecStaticDescr *pRecDescr = cRecStaticDescr::get(_colDescr.fKeyTable);
+    cRecordAny *pRec = cRecordDialogBase::insertDialog(*pq, &fts, pRecDescr);
     pModel->setFilter(_sNul, OT_ASC, FT_NO);
     if (pRec != NULL) {
         pUi->comboBox->setCurrentIndex(pModel->indexOf(pRec->getName()));
@@ -1497,7 +1506,7 @@ int cIntervalWidget::set(const QVariant& v)
 void cIntervalWidget::view()
 {
     if (_value.isValid()) {
-        qlonglong v = _recDescr.toId(_value);
+        qlonglong v = _colDescr.toId(_value);
         int msec   = v % 1000; v /= 1000;
         int sec    = v %   60; v /=   60;
         int minute = v %   60; v /=   60;

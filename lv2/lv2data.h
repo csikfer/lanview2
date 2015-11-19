@@ -303,15 +303,15 @@ public:
         execSqlFunction(_q, "set_text_sys_param", QVariant(__nm), QVariant(_val), QVariant(_tn));
         return (enum eReasons)reasons(_q.value(0).toString());
     }
-    static enum eReasons setBoolSysParam(QSqlQuery& _q, const QString& __nm, bool _val, const QString& _tn = _sText) {
+    static enum eReasons setBoolSysParam(QSqlQuery& _q, const QString& __nm, bool _val, const QString& _tn = _sBoolean) {
         execSqlFunction(_q, "set_bool_sys_param", QVariant(__nm), QVariant(_val), QVariant(_tn));
         return (enum eReasons)reasons(_q.value(0).toString());
     }
-    static enum eReasons setIntSysParam(QSqlQuery& _q, const QString& __nm, qlonglong _val, const QString& _tn = _sText) {
+    static enum eReasons setIntSysParam(QSqlQuery& _q, const QString& __nm, qlonglong _val, const QString& _tn = _sBigInt) {
         execSqlFunction(_q, "set_int_sys_param", QVariant(__nm), QVariant(_val), QVariant(_tn));
         return (enum eReasons)reasons(_q.value(0).toString());
     }
-    static enum eReasons setIntervalSysParam(QSqlQuery& _q, const QString& __nm, qlonglong _val, const QString& _tn = _sText) {
+    static enum eReasons setIntervalSysParam(QSqlQuery& _q, const QString& __nm, qlonglong _val, const QString& _tn = _sInterval) {
         execSqlFunction(_q, "set_interval_sys_param", QVariant(__nm), QVariant(intervalToStr(_val)), QVariant(_tn));
         return (enum eReasons)reasons(_q.value(0).toString());
     }

@@ -1384,7 +1384,7 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
 %type  <b>  bool bool_on ifdef exclude cases
 %type  <r>  /* real */ num fexpr
 %type  <s>  str str_ str_z name_q time tod _toddef sexpr pnm mac_q ha nsw ips rights
-%type  <s>  imgty tsintyp usrfn usrgfn plfn ptcfn node_t host_t
+%type  <s>  imgty tsintyp usrfn usrgfn plfn ptcfn node_t host_t copy_from
 %type  <sl> strs strs_z alert list_m nsws nsws_ node_h host_h tstypes
 %type  <sl> usrfns usrgfns plfns ptcfns node_ts host_ts
 %type  <v>  value mac_qq
@@ -1654,24 +1654,30 @@ user_ps :
         | user_ps user_p
         ;
 user_p  : NOTE_T str ';'                        { pUser->setNote(sp2s($2)); }
-        | ADD_T DOMAIN_T USER_T strs ';'        {}
+        | DOMAIN_T USER_T strs ';'              { pUser->setStringList(_sDomainUsers, slp2sl($3));}
+        | ADD_T DOMAIN_T USER_T strs ';'        { pUser->addStringList(_sDomainUsers, slp2sl($4));}
         | HOST_T NOTIF_T PERIOD_T tmpid ';'     { pUser->setId(_sHostNotifPeriod, $4); }
         | SERVICE_T NOTIF_T PERIOD_T tmpid ';'  { pUser->setId(_sServNotifPeriod, $4); }
         | HOST_T NOTIF_T SWITCH_T nsws ';'      { pUser->set(_sHostNotifSwitchs, QVariant(*$4)); delete $4; }
         | SERVICE_T NOTIF_T SWITCH_T nsws ';'   { pUser->set(_sServNotifSwitchs, QVariant(*$4)); delete $4; }
         | HOST_T NOTIF_T COMMAND_T str ';'      { pUser->setName(_sHostNotifCmd, *$4); delete $4; }
         | SERVICE_T NOTIF_T COMMAND_T str ';'   { pUser->setName(_sServNotifCmd, *$4); delete $4; }
-        | TEL_T strs ';'                        { pUser->set(_sTels, QVariant(*$2)); delete $2; }
-        | ADDRESS_T strs ';'                    { pUser->set(_sAddresses, QVariant(*$2)); delete $2; }
+        | TEL_T strs ';'                        { pUser->setStringList(_sTels, slp2sl($2)); }
+        | ADD_T TEL_T strs ';'                  { pUser->addStringList(_sTels, slp2sl($3)); }
+        | ADDRESS_T strs ';'                    { pUser->setStringList(_sAddresses, slp2sl($2)); }
+        | ADD_T ADDRESS_T strs ';'              { pUser->addStringList(_sAddresses, slp2sl($3)); }
         | PLACE_T place_id ';'                  { pUser->setId(_sPlaceId, $2); }
-        | DISABLE_T ';'                         { pUser->setBool(_sDisabled, true); }
-        | ENABLE_T ';'                          { pUser->setBool(_sDisabled, false); }
+        | DISABLE_T ';'                         { pUser->setBool(_sEnabled, false); }
+        | ENABLE_T ';'                          { pUser->setBool(_sEnabled, true); }
         | CLEAR_T ';'                           { pUser->clear(~pUser->mask(_sUserId, _sUserName)); }
         | CLEAR_T usrfns ';'                    { pUser->clear(pUser->mask(slp2sl($2))); }
         | PLACE_T ';'                           { pUser->setId(_sPlaceId, globalPlaceId); }
-        | COPY_T FROM_T str ';'                 { pUser->fieldsCopy(cUser().setByName(qq(), sp2s($3)), ~pUser->mask(_sUserId, _sUserName));}
-        | COPY_T usrfns FROM_T str ';'          { pUser->fieldsCopy(cUser().setByName(qq(), sp2s($4)),  pUser->mask(slp2sl($2))); }
-        | COPY_T EXCEPT_T usrfns FROM_T str ';' { pUser->fieldsCopy(cUser().setByName(qq(), sp2s($5)), ~(pUser->mask(_sUserId, _sUserName) | pUser->mask(slp2sl($3)))); }
+        | COPY_T copy_from ';'                  { pUser->fieldsCopy(qq(), $2, ~pUser->mask(_sUserId, _sUserName)); pDelete($2); }
+        | COPY_T usrfns copy_from ';'           { pUser->fieldsCopy(qq(), $3,  pUser->mask(slp2sl($2))); pDelete($3); }
+        | COPY_T EXCEPT_T usrfns copy_from ';'  { pUser->fieldsCopy(qq(), $4, ~(pUser->mask(_sUserId, _sUserName) | pUser->mask(slp2sl($3)))); pDelete($4); }
+        ;
+copy_from:                                      { $$ = NULL; }
+        | FROM_T str                            { $$ = $2; }
         ;
 nsws    : ALL_T                                 { $$ = new QStringList(cUser().descr()[_sHostNotifSwitchs].enumType().enumValues); }
         |                                       { $$ = new QStringList(); }

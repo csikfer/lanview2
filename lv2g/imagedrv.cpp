@@ -63,7 +63,7 @@ void cGrPolygonItem::editBegin()
     int index = 0;
     int maxix = pol.size() -1;
     cGrNodeItem::eNodeType nt = cGrNodeItem::NT_FIRST;
-    cGrNodeItem *pItem;
+    cGrNodeItem *pItem = NULL;
     foreach (pt, pol) {
         pItem = new cGrNodeItem(pt, this, nt, index);
         if (index == 0) pFirstItem = pItem;

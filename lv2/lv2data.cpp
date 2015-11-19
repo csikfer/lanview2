@@ -1887,7 +1887,8 @@ bool cNode::rewrite(QSqlQuery &__q, bool __ex)
     // Töröljők az összes régi IP címet (IP címekre nincs replace/rewrite metódus)
     QString sql = "DELETE FROM ipaddresses WHERE port_id IN "
             "(SELECT port_id FROM nports WHERE node_id = ?)";
-    execSql(__q, sql, getId());
+    qlonglong id = cNode().getIdByName(__q, getName());
+    execSql(__q, sql, id);
 
     if (!tRewrite(__q, ports, CV_PORTS, params, CV_NODE_PARAMS, __ex)) return false;
     return true;

@@ -168,7 +168,7 @@ public:
     /// Parent objektum
     cRecordDialogBase& _parent;
     /// A mező leíró objektum referenciája
-    const cColStaticDescr&  _recDescr;
+    const cColStaticDescr&  _colDescr;
     /// A tábla megjelenítését (és a dialog megjelenítését) leíró objektum referenciája
     const cTableShape&      _tableShape;
     /// A mezö megjelenítését (és a dialog megjelenítését) leíró objektum referenciája

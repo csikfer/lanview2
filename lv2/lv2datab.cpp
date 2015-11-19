@@ -2951,6 +2951,20 @@ void cRecord::fieldsCopy(const cRecord& __o, const QBitArray& __m)
     for (int i = 0; i < n; i++) if (__m[i]) set(i, __o.get(i));
 }
 
+void cRecord::fieldsCopy(QSqlQuery& __q, QString *pName, const QBitArray& __m)
+{
+    cRecord *pOld = newObj();
+    if (pName == NULL && pName->isEmpty()) {
+        pOld->setByName(__q, getName());
+    }
+    else {
+        pOld->setByName(__q, *pName);
+    }
+    fieldsCopy(*pOld, __m);
+    delete pOld;
+}
+
+
 cRecord& cRecord::set(const QSqlRecord& __r, int* _fromp, int __size)
 {
     _set(__r, descr(), _fromp, __size);
@@ -3057,6 +3071,44 @@ cRecord& cRecord::setIp(int __i, const QHostAddress& __a, bool __ex)
     }
     return *this;
 }
+
+QStringList cRecord::getStringList(int __i, bool __ex) const
+{
+    if (isIndex(__i)) {
+        int t = colDescr(__i).eColType;
+        if (t & cColStaticDescr::FT_ARRAY) {
+            return get(__i).toStringList();
+        }
+        if (__ex) EXCEPTION(EDATA, t, toString());
+    }
+    else if (__ex) EXCEPTION(ENOINDEX, __i, toString());
+    return QStringList();
+}
+
+cRecord& cRecord::setStringList(int __i, const QStringList& __v, bool __ex)
+{
+    if (isIndex(__i)) {
+        set(__i, __v);
+    }
+    else {
+        if (__ex) EXCEPTION(ENOINDEX, __i, toString());
+        _stat |= ES_DEFECTIVE;
+    }
+    return *this;
+}
+
+cRecord& cRecord::addStringList(int __i, const QStringList &__v, bool __ex)
+{
+    if (isIndex(__i)) {
+        set(__i, getStringList(__i) + __v);
+    }
+    else {
+        if (__ex) EXCEPTION(ENOINDEX, __i, toString());
+        _stat |= ES_DEFECTIVE;
+    }
+    return *this;
+}
+
 
 QBitArray cRecord::areNull() const
 {

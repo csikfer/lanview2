@@ -1270,8 +1270,8 @@ void cRecordTable::putIn()
 {
     if (pUpper == NULL || pUpper->pRightTable == NULL) EXCEPTION(EPROGFAIL);
 
-    cRecordAny *pM;
-    cRecordAny *pG;
+    cRecordAny *pM = NULL;
+    cRecordAny *pG = NULL;
     if (((flags & RTF_NGROUP) != 0)) {
         pM = pUpper->actRecord();
         if (pM == NULL) {
@@ -1316,8 +1316,8 @@ void cRecordTable::takeOut()
 {
     if (pUpper == NULL || pUpper->pRightTable == NULL) EXCEPTION(EPROGFAIL);
 
-    cRecordAny *pM;
-    cRecordAny *pG;
+    cRecordAny *pM = NULL;
+    cRecordAny *pG = NULL;
     if (((flags & RTF_IGROUP) != 0)) {
         pM = pUpper->actRecord();
         if (pM == NULL) {

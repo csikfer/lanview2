@@ -262,15 +262,23 @@ bool cTableShape::setDefaults(QSqlQuery& q)
         fm.setId(_sFieldSequenceNumber, (i + 1) * 10);
         bool ro = (!fm.isUpdatable()) || rDescr.primaryKey()[i] || rDescr.autoIncrement()[i];
         bool hide = i == rDescr.idIndex(false);
-        if (cDescr.fKeyType == cColStaticDescr::FT_OWNER) {
+        if (i == 0 && rDescr.idIndex(false) == 0 && rDescr.autoIncrement().at(0)) {
+            hide = true;
+            ro   = true;
+        }
+        else if (rDescr.deletedIndex(false) == i) {
+            hide = true;
+            ro   = true;
+        }
+        else if (cDescr.fKeyType == cColStaticDescr::FT_OWNER) {
             ro   = true;
             hide = true;
             type = (type & ~enum2set(TS_SIMPLE)) | enum2set(TS_CHILD);
         }
         // Önmagára mutató fkey?
-        if (cDescr.fKeyType     == cColStaticDescr::FT_PROPERTY
-         && rDescr.tableName()  == cDescr.fKeyTable
-         && rDescr.schemaName() == cDescr.fKeySchema) {
+        else if (cDescr.fKeyType     == cColStaticDescr::FT_PROPERTY
+         &&      rDescr.tableName()  == cDescr.fKeyTable
+         &&      rDescr.schemaName() == cDescr.fKeySchema) {
             type = (type & ~enum2set(TS_SIMPLE)) | enum2set(TS_TREE);
             hide = true;
         }
@@ -397,14 +405,14 @@ bool cTableShape::setOrders(const QStringList& _fnl, QStringList& _ord, bool __e
         return false;
     }
     qlonglong deford;
-    qlonglong s = enum2set(orderType, _ord, __ex);
+    qlonglong s = enum2set(orderType, _ord, __ex);  // SET
     if (s < 0LL) return false;
     if (!s) {
-        s = enum2set(OT_NO);
-        deford = OT_NO;
+        s = enum2set(OT_NO);    // SET
+        deford = OT_NO;         // ENUM
     }
     else {
-        deford = enum2set(orderType, _ord[0]);
+        deford = orderType(_ord[0]);    // ENUM!
     }
     tTableShapeFields::Iterator i, e = shapeFields.end();
     int seq = 0;

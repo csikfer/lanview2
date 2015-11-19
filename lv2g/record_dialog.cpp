@@ -349,7 +349,8 @@ bool cRecordDialog::accept()
 {
     _errMsg.clear();    // Töröljük a hiba stringet
     int i, n = fields.size();
-    // record.set();           // NEM !! Kinullázzuk a rekordot
+    // record.set();            // NEM !! Kinullázzuk a rekordot
+    _pRecord->_stat = 0;        // Kinullázzuk, majd mezőnként "felesleges" értékadással gyűjtlük a hiba biteket
     for (i = 0; i < n; i++) {   // Végigszaladunk a mezőkön
         cFieldEditBase& field = *fields[i];
         int rfi = field._pFieldRef->index();
@@ -366,7 +367,9 @@ bool cRecordDialog::accept()
         }
         _pRecord->_stat |= s & ES_DEFECTIVE;
     }
-    return 0 == (_pRecord->_stat & ES_DEFECTIVE);
+    if (0 == (_pRecord->_stat & ES_DEFECTIVE)) return true;
+    QMessageBox::warning(_pWidget, trUtf8("Adat hiba"), _errMsg);
+    return false;
 }
 
 cFieldEditBase * cRecordDialog::operator[](const QString& __fn)

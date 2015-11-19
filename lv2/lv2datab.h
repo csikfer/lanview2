@@ -1302,6 +1302,19 @@ public:
     cRecord& enum2setOn(const QString& __n, int __e)            { enum2setOn(toIndex(__n), __e); return *this; }
     cRecord& enum2setOn(const QString& __n, int _e1, int _e2)   { enum2setOn(toIndex(__n), _e1, _e2); return *this; }
     ///
+    QStringList getStringList(int __i, bool __ex = true) const;
+    cRecord& setStringList(int __i, const QStringList& __v, bool __ex = true);
+    cRecord& addStringList(int __i, const QStringList& __v, bool __ex = true);
+    QStringList getStringList(const QString& __fn, bool __ex = true) const {
+        return getStringList(toIndex(__fn, __ex), __ex);
+    }
+    cRecord& setStringList(const QString& __fn, const QStringList& __v, bool __ex = true) {
+        return setStringList(toIndex(__fn, __ex), __v, __ex);
+    }
+    cRecord& addStringList(const QString& __fn, const QStringList& __v, bool __ex = true) {
+        return addStringList(toIndex(__fn, __ex), __v, __ex);
+    }
+    ///
     cRecord& enum2setOff(int __ix, int __e)                     { setId(__ix, getId(__ix) & ~enum2set(__e)); return *this; }
     cRecord& enum2setOff(int __ix, int _e1, int _e2)            { setId(__ix, getId(__ix) & ~enum2set(_e1, _e2)); return *this; }
     cRecord& enum2setOff(const QString& __n, int __e)           { enum2setOff(toIndex(__n), __e); return *this; }
@@ -1608,9 +1621,15 @@ public:
     /// Csak két azonos típusú objektumok között használható metódus. (descr() == __o.descr()), ha ez a feltétel nem
     /// teljesül dob egy kizárást.
     /// Azokat a mezőket másolja át a __o objektumból, melyekkel megegyező indexű __m elem értéke true.
-    /// A NULL értékek is másolva lesznek, h az __m megfelelő indexű eleme igaz. Ha az __m üres, akkor az összes elem másolásra kerül.
+    /// A NULL értékek is másolva lesznek, ha az __m megfelelő indexű eleme igaz. Ha az __m üres, akkor az összes elem másolásra kerül.
     /// Az __m elemszáma nem lehet nagyobb, mint a mezők száma, ellenkező esetben kizárást dob a metódus.
     void fieldsCopy(const cRecord& __o, const QBitArray& __m = QBitArray());
+    /// Látrehoz egy azonos típusú objektumot, és feltölti a név alapján. A névre a pName paraméter mutat, vagy ha az
+    /// NULL vagy öres stringre mutat, akkor az objektum beállított neve.
+    /// Az látrehozott objektumból azokat mezőket másolja át, melyekkel megegyező indexű __m elem értéke true.
+    /// A NULL értékek is másolva lesznek, ha az __m megfelelő indexű eleme igaz. Ha az __m üres, akkor az összes elem másolásra kerül.
+    /// Az __m elemszáma nem lehet nagyobb, mint a mezők száma, ellenkező esetben kizárást dob a metódus.
+    void fieldsCopy(QSqlQuery& __q, QString *pName, const QBitArray& __m = QBitArray());
     /// Mező érték, ill. referencia az index alapján. Nem valódi referenciával tér vissza,
     /// hanem egy cRecordFieldRef példánnyal. Valódi, a mező értékre mutató referencia használata ebben az estben potesnciálisan
     /// veszályes lenne, valamit kikerülné a konverziós függvényeket is, ami nem cél.
