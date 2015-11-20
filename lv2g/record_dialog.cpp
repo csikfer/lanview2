@@ -1,4 +1,5 @@
 #include "record_table.h"
+#include "ui_no_rights.h"
 
 
 /* ************************************************************************************************* */
@@ -114,6 +115,7 @@ cRecordDialogBase::cRecordDialogBase(const cTableShape &__tm, int _buttons, bool
     , _errMsg()
 {
     isDialog = dialog;
+    isDisabled = false;
     _pRecord = NULL;
     _pLoop   = NULL;
     _pWidget = NULL;
@@ -121,17 +123,36 @@ cRecordDialogBase::cRecordDialogBase(const cTableShape &__tm, int _buttons, bool
 
     pq = newQuery();
     setObjectName(name);
-    isReadOnly = tableShape.getBool(_sIsReadOnly);
-    if (dialog) _pWidget = new QDialog(par);
-    else        _pWidget = new QWidget(par);
-    if (_buttons != 0) {
+    qlonglong rights = tableShape.getId(_sViewRights);
+    isDisabled = !lanView::isAuthorized(rights);
+    isReadOnly = isDisabled || tableShape.getBool(_sIsReadOnly);
+    if (!isReadOnly) {  // Ha írható, van hozzá joga is ??
+        rights = tableShape.getId(_sEditRights);
+        isReadOnly = !lanView::isAuthorized(rights);
+    }
+
+    Ui::noRightsForm *noRighrs = NULL;
+    if (isDisabled) noRighrs = new Ui::noRightsForm();
+
+    if (dialog) {
+        _pWidget = new QDialog(par, Qt::CustomizeWindowHint|Qt::WindowTitleHint);
+        _pWidget->setWindowTitle(tableShape.getNote());
+    }
+    else {
+        _pWidget = new QWidget(par);
+    }
+
+    if (isDisabled) {
+        noRighrs->setupUi(_pWidget);
+        connect(noRighrs->closePB, SIGNAL(pressed()), this, SLOT(close()));
+    }
+    else if (_buttons != 0) {
         _pButtons = new cDialogButtons(_buttons, 0, _pWidget);
         _pButtons->widget().setObjectName(name + "_Buttons");
         connect(_pButtons, SIGNAL(buttonClicked(int)), this, SLOT(_pressed(int)));
     }
 
     _pWidget->setObjectName(name + "_Widget");
-    _pWidget->setWindowTitle(tableShape.getNote());
 }
 
 cRecordDialogBase::~cRecordDialogBase()
@@ -257,6 +278,7 @@ cRecordDialog::cRecordDialog(const cTableShape& __tm, int _buttons, bool dialog,
     pSplitter = NULL;
     pSplittLayout = NULL;
     pFormLayout = NULL;
+    if (isDisabled) return;
     if (tableShape.shapeFields.size() == 0) EXCEPTION(EDATA);
     init();
 }
@@ -395,6 +417,7 @@ cRecordDialogInh::cRecordDialogInh(const cTableShape& _tm, tRecordList<cTableSha
 {
     pVBoxLayout = NULL;
     pTabWidget = NULL;
+    if (isDisabled) return;
     if (_pButtons == NULL) EXCEPTION(EPROGFAIL);
     if (isReadOnly) EXCEPTION(EDATA);
 

@@ -721,7 +721,7 @@ void cRecordsViewBase::modify()
     cTableShape *    pShape = NULL;
     tRecordList<cTableShape> * pShapes = NULL;
 
-    // Létrehozzuk a doalogot
+    // Létrehozzuk a dialogot
     switch (tit) {
     case TIT_NO:
     case TIT_ONLY:
@@ -1096,8 +1096,8 @@ void cRecordsViewBase::selectionChanged(QItemSelection,QItemSelection)
 
 void cRecordsViewBase::modifyByIndex(const QModelIndex & index)
 {
-    selectRow(index);
-
+    //selectRow(index);
+    (void)index;
     modify();
 }
 
@@ -1473,7 +1473,9 @@ cRecordAny *cRecordTable::prevRow(QModelIndex *pMi, int _upRes)
 
 void cRecordTable::selectRow(const QModelIndex& mi)
 {
-    pTableView->selectRow(mi.row());
+    int row = mi.row();
+    _DBGFN() << " row = " << row << endl;
+    pTableView->selectRow(row);
 }
 
 void cRecordTable::setPageButtons()

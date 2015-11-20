@@ -112,6 +112,8 @@ protected:
     QSqlQuery              *pq;
     /// Ha a dialógus nem szerkeszthető, akkor értéke true.
     bool                    isReadOnly;
+    /// A tábla nézet nem nyitható meg. (alternatív hiba üzenet az _errMsg -ben, ha van).
+    bool                    isDisabled;
     /// A szerkesztett értékek rekordba másolásakor a hiba üzenetek buffere
     QString                 _errMsg;
 public slots:

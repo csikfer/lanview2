@@ -60,7 +60,8 @@ FORMS += \
     acknowledge.ui \
     polygoned.ui \
     arrayed.ui \
-    fkeyed.ui
+    fkeyed.ui \
+    no_rights.ui
 INCLUDEPATH += ../lv2
 unix:LIBS += -lsnmp
 msvc:LIBS += -lSecur32

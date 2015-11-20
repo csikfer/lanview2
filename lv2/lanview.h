@@ -261,7 +261,10 @@ public:
     static cService&       selfService()     { cService     *p = getInstance()->pSelfService;     if (p == NULL) EXCEPTION(EPROGFAIL); return *p; }
     static cHostService&   selfHostService() { cHostService *p = getInstance()->pSelfHostService; if (p == NULL) EXCEPTION(EPROGFAIL); return *p; }
     /// Ellenörzi az aktuális felhasználó jogosultsági szintjét
-    static bool isAuthorized(enum ePrivilegeLevel pl) { return user().privilegeLevel() >= pl; }
+    static bool isAuthorized(enum ePrivilegeLevel pl) {
+        enum ePrivilegeLevel act = user().privilegeLevel();
+        return act  >= pl;
+    }
     /// Ellenörzi az aktuális felhasználó jogosultsági szintjét
     static bool isAuthorized(qlonglong pl) { return isAuthorized((enum ePrivilegeLevel) pl); }
     /// Ellenörzi az aktuális felhasználó jogosultsági szintjét

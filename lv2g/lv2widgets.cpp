@@ -167,7 +167,10 @@ cFieldEditBase::cFieldEditBase(const cTableShape &_tm, const cTableShapeField &_
     , _value()
 {
     _wType      = FEW_UNKNOWN;
-    _readOnly   = _ro || (_fieldShape.isNull(_sEditRights) ? false : !lanView::isAuthorized(_fieldShape.getId(_sEditRights)));
+    _readOnly   = _ro;
+    if (!_fieldShape.isNull(_sEditRights)) {
+        _ro = !lanView::isAuthorized(_fieldShape.getId(_sEditRights));
+    }
     _value      = _fr;
     _pWidget    = NULL;
     _pFieldRef  = new cRecordFieldRef(_fr);
@@ -598,6 +601,7 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
 {
     QLineEdit *pLE = NULL;
     QPlainTextEdit *pTE = NULL;
+    isPwd = false;
     if (_colDescr.eColType == cColStaticDescr::FT_TEXT && _fieldShape.isFeature(_sText)) {
         _wType = FEW_TEXT;  // Widget típus azonosító
         pTE = new QPlainTextEdit(_par->pWidget());
@@ -610,7 +614,6 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
         _pWidget = pLE;
         isPwd = _fieldShape.isFeature(_sPasswd);
     }
-    isPwd = false;
     bool nullable = _colDescr.isNullable;
     QString tx;
     if (_readOnly == false) {
@@ -732,8 +735,10 @@ cArrayWidget::cArrayWidget(const cTableShape& _tm, const cTableShapeField &_tf, 
         connect(pUi->pushButtonAdd, SIGNAL(pressed()), this, SLOT(addRow()));
         connect(pUi->pushButtonDel, SIGNAL(pressed()), this, SLOT(delRow()));
         connect(pUi->pushButtonClr, SIGNAL(pressed()), this, SLOT(clrRows()));
+        connect(pUi->pushButtonMod, SIGNAL(pressed()), this, SLOT(modRow()));
         connect(pUi->lineEdit, SIGNAL(textChanged(QString)), this, SLOT(changed(QString)));
-        connect(pUi->listView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
+        connect(pUi->listView->selectionModel(), SIGNAL(currentRowChanged(QModelIndex,QModelIndex)), this, SLOT(selectionChanged(QModelIndex,QModelIndex)));
+        connect(pUi->listView, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(doubleClickRow(QModelIndex)));
     }
 }
 
@@ -770,12 +775,17 @@ void cArrayWidget::setButtons()
 
 // cArrayWidget SLOTS
 
-void cArrayWidget::selectionChanged(QItemSelection,QItemSelection)
+void cArrayWidget::selectionChanged(QModelIndex cur, QModelIndex)
 {
-    QModelIndexList mil = pUi->listView->selectionModel()->selectedColumns();
-    selectedNum = mil.size();
-    if (selectedNum == 1) actIndex = mil.first();
-    else                  actIndex = QModelIndex();
+    DBGFN();
+    if (cur.isValid()) {
+        actIndex = cur;
+        PDEB(INFO) << "Current row = " << actIndex.row() << endl;
+    }
+    else {
+        actIndex = QModelIndex();
+        PDEB(INFO) << "No current row." << endl;
+    }
     setButtons();
 }
 
@@ -839,7 +849,9 @@ void cArrayWidget::downRow()
 
 void cArrayWidget::modRow()
 {
-
+    int row = actIndex.row();
+    pModel->modify(last, row);
+    setFromWidget(pModel->stringList());
 }
 
 void cArrayWidget::delRow()
@@ -860,6 +872,15 @@ void cArrayWidget::clrRows()
     pModel->clear();
     setFromWidget(pModel->stringList());
     setButtons();
+}
+
+void cArrayWidget::doubleClickRow(const QModelIndex & index)
+{
+    const QStringList& sl = pModel->stringList();
+    int row = index.row();
+    if (isContIx(sl, row)) {
+        pUi->lineEdit->setText(sl.at(row));
+    }
 }
 
 /* **************************************** cPolygonWidget ****************************************  */

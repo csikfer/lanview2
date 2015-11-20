@@ -31,17 +31,15 @@ public:
     bool setStringList(const QStringList& sl);
     /// Az aktuális lista (_stringList konténer) a végéhez ad egy sort, és az új lista lessz megjelenítve.
     cStringListModel& operator<<(const QString& s) {
-        int ix = _stringList.size();
-        beginInsertRows(QModelIndex(), ix, ix);
-        _stringList << s;
-        endInsertRows();
-        return *this;
+        return insert(s);
     }
     /// Beszúr egy elemet a megadott indexű sor elé
     cStringListModel& insert(const QString& s, int i = -1) {
         if (i < 0) i = _stringList.size();
+        else if (i > _stringList.size()) EXCEPTION(ENOINDEX);
+        beginInsertRows(QModelIndex(), i, i);
         _stringList.insert(i, s);
-        insertRow(i);
+        endInsertRows();
         return *this;
     }
     /// Módosítja a megadott indexű egy elemet
@@ -51,13 +49,17 @@ public:
             _stringList[i] = s;
             endResetModel();
         }
+        else EXCEPTION(ENOINDEX);
         return *this;
     }
     /// Törli a megadott indexű sort
     cStringListModel& remove(int i) {
-        beginRemoveRows(QModelIndex(), i, i);
-        _stringList.removeAt(i);
-        endRemoveRows();
+        if (isContIx(_stringList, i)) {
+            beginRemoveRows(QModelIndex(), i, i);
+            _stringList.removeAt(i);
+            endRemoveRows();
+        }
+        else EXCEPTION(ENOINDEX);
         return *this;
     }
     /// Törli az utolsó sort, ha üres a lista, akkor nem csinál semmit.

@@ -42,6 +42,7 @@ cLogOn::cLogOn(bool __needZone, QWidget *parent) :
         }
     }
 #endif
+    PDEB(INFO) << "My user : " << _myUserName << "; domain : " << _myDomainName << endl;
     if (!_myUserName.isEmpty() && !_myDomainName.isEmpty()) {
         QString ud = _myUserName + "@" + _myDomainName;
         QString sql = "SELECT * FROM users WHERE ? = ANY(domain_users)";

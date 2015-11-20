@@ -343,7 +343,7 @@ protected:
     QModelIndex actIndex;
     int         selectedNum;
 private slots:
-    void selectionChanged(QItemSelection,QItemSelection);
+    void selectionChanged(QModelIndex cur, QModelIndex);
     void changed(QString _t);
     void addRow();
     void insRow();
@@ -352,6 +352,7 @@ private slots:
     void downRow();
     void delRow();
     void clrRows();
+    void doubleClickRow(const QModelIndex & index);
 };
 
 class Ui_polygonEd;
