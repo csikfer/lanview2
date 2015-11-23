@@ -15,14 +15,14 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidge
     pAction      = pa;
 
     setObjectName(pmi->title()); // Ez lessz a TAB neve
-    QString mp;
-    if      (!(mp = pmi->feature("shape")).isEmpty()) {
+    QString feature;
+    if      (!(feature = pmi->feature("shape")).isEmpty()) {
         if (pq == NULL) EXCEPTION(EPROGFAIL);   // Ha nincs adatbázis, akkor ezt nem kéne
-        setObjectName(mp);
+        setObjectName(feature);
         setType(MAT_SHAPE);
         pTableShape = new cTableShape();
         pTableShape->setParent(this);
-        pTableShape->setByName(mp);
+        pTableShape->setByName(feature);
         if (lanView::isAuthorized(pTableShape->getId(_sViewRights))) {           // Jog?
             connect(pAction, SIGNAL(triggered()), this, SLOT(displayIt()));
         }
@@ -30,27 +30,32 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidge
             pa->setDisabled(true);
         }
     }
-    else if (!(mp = pmi->feature("exec")).isEmpty()) { // "exec"   Belső parancs végrehajtása (Exit, Restart,...)
-        setObjectName(mp); // Nincs tab, a név a parancs lessz
+    else if (!(feature = pmi->feature("exec")).isEmpty()) { // "exec"   Belső parancs végrehajtása (Exit, Restart,...)
+        setObjectName(feature); // Nincs tab, a név a parancs lessz
         setType(MAT_EXEC);
-        connect(pa, SIGNAL(triggered()), this, SLOT(executeIt()));
+        if (lanView::isAuthorized(pmi->getId(_sMenuRights))) {           // Jog?
+            connect(pa, SIGNAL(triggered()), this, SLOT(executeIt()));
+        }
+        else {
+            pa->setDisabled(true);
+        }
     }
-    else if (!(mp = pmi->feature("own")).isEmpty()) { // "own"    Egyedi előre definiált cOwnTab leszármazott hívása
+    else if (!(feature = pmi->feature("own")).isEmpty()) { // "own"    Egyedi előre definiált cOwnTab leszármazott hívása
         enum ePrivilegeLevel rights = PL_SYSTEM;
-        if (0 == mp.compare("setup", Qt::CaseInsensitive)) {            // "setup"      Beállítások szerkesztése widget
+        if (0 == feature.compare("setup", Qt::CaseInsensitive)) {            // "setup"      Beállítások szerkesztése widget
             ownType = OWN_SETUP;
             rights = cSetupWidget::rights;
         }
-        else if (0 == mp.compare("parser", Qt::CaseInsensitive)) {      // "parser"     A parser widget
+        else if (0 == feature.compare("parser", Qt::CaseInsensitive)) {      // "parser"     A parser widget
             ownType = OWN_PARSER;
             rights = cParseWidget::rights;
         }
-        else if (0 == mp.compare("olalarm", Qt::CaseInsensitive)) {     // "olalarm"    On-Line riasztások widget
+        else if (0 == feature.compare("olalarm", Qt::CaseInsensitive)) {     // "olalarm"    On-Line riasztások widget
             ownType = OWN_OLALARM;
             rights = cOnlineAlarm::rights;
         }
         else {
-            if (__ex) EXCEPTION(ENONAME, -1, mp);
+            if (__ex) EXCEPTION(ENONAME, -1, feature);
             return;
         }
         setType(MAT_OWN);
