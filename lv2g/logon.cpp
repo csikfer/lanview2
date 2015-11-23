@@ -25,11 +25,8 @@ cLogOn::cLogOn(bool __needZone, QWidget *parent) :
         QString du = QString(charUserName);
         QStringList sdu = du.split('\\');
         if (sdu.size() == 2) {
-            _myDomain = sdu.at(0);
-            _myUser   = sdu.at(1);
-        }
-        else if (sdu.size() == 1) {
-            _myDomain = sdu.at(0);
+            _myDomainName = sdu.at(0);
+            _myUserName   = sdu.at(1);
         }
     }
 #else
