@@ -19,7 +19,7 @@ public:
     /// Konstruktor
     /// Ha _setupOnly true, akkor csak a setup tab-ot jeleníti meg, egy minimális menüvel.
     /// Ha _setupOnly false, akkor üres üres tab mellett, felolvassa az adatbáziskól a menüt, és megjeleníti.
-    cMainWindow(bool _setupOnly, QWidget *parent = 0);
+    cMainWindow(QWidget *parent = 0);
     ~cMainWindow();
     /// A QTabWidget objektum pointere, a fő ablak munkaterülete.
     QTabWidget *pTabWidget;

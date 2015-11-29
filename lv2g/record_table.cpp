@@ -485,7 +485,7 @@ cRecordsViewBase::cRecordsViewBase(bool _isDialog, QWidget *par)
     _pWidget = NULL;
     pMasterSplitter = NULL;
     pButtons = NULL;
-    pMainLayer = NULL;
+    pMainLayout = NULL;
     pLeftWidget = NULL;
     pRightTables = NULL;
     pRightTabWidget = NULL;
@@ -958,7 +958,7 @@ void cRecordsViewBase::rightTabs(QVariantList& vlids)
         qlonglong id = vid.toLongLong(&ok);
         if (!ok) EXCEPTION(EDATA);
         QWidget *pw = new QWidget();
-        cRecordsViewBase *prvb = cRecordsViewBase::newRecordView(*pq, id, this, _pWidget);
+        cRecordsViewBase *prvb = cRecordsViewBase::newRecordView(*pq, id, this, pw);
         *pRightTables << prvb;
         pRightTabWidget->addTab(pw, prvb->tableShape().getName(_sTableTitle));
     }
@@ -966,6 +966,11 @@ void cRecordsViewBase::rightTabs(QVariantList& vlids)
 
 /// Inicializálja a megjelenítést.
 /// Az initSimple() metódust hívja, de létrehozza a splitter widgetet, hogy több táblát lehessen megjeleníteni.
+///
+/// Ha csak egy (child) táblázat van a jobb oldalon:
+/// \diafile    record_table2.dia "Egy child tábla" width=10cm
+/// Ha több (child) táblázat van a jobb oldalon, akkor azok egy tab-ba kerülnek:
+/// \diafile    record_table3.dia "Több child tábla" width=10cm
 void cRecordsViewBase::initMaster()
 {
     cRecordsViewBase *pRightTable = NULL;
@@ -973,26 +978,29 @@ void cRecordsViewBase::initMaster()
     QVariantList vlids;
     bool ok;
 
-    pLeftWidget   = new QWidget(_pWidget);
-    initSimple(pLeftWidget);
-
     pMasterLayout = new QHBoxLayout(_pWidget);
-    pMasterSplitter = new QSplitter(Qt::Horizontal, _pWidget);
+    pMasterSplitter = new QSplitter(Qt::Horizontal);
     pMasterLayout->addWidget(pMasterSplitter);
+
+    pLeftWidget   = new QWidget();
+    initSimple(pLeftWidget);
     pMasterSplitter->addWidget(pLeftWidget);
-    vlids = pTableShape->get(_sRightShapeIds).toList();
+
+    vlids = pTableShape->get(_sRightShapeIds).toList(); // Jobb oldali (child) lista (ID)
     if (vlids.isEmpty()) EXCEPTION(EDATA, 0, trUtf8("A jobboldali táblákat azonosító tömb üres."));
-    pRightTables = new tRecordsViewBaseList;
-    if ((flags & (RTF_MEMBER | RTF_GROUP))) {
-        initGroup(vlids);
-        rightTabs(vlids);
+    pRightTables = new tRecordsViewBaseList;    // A jobb oldali elemek listája (objektum)
+    if ((flags & (RTF_MEMBER | RTF_GROUP))) {   // Az első elem esetén lehet Group/member táblák
+        createRightTab();                       // Ez eleve két tábla a jobb oldalon, tab widget kell.
+        initGroup(vlids);                       // A két tag-nem tag tábla (vlids első eleme)
+        rightTabs(vlids);                       // A maradék táblák, ha vannak
     }
-    else if (vlids.size() > 1) {
+    else if (vlids.size() == 1) {                // Ha nem kell a tab widget
         id = vlids.at(0).toLongLong(&ok);
         if (!ok) EXCEPTION(EDATA);
-        pRightTable = cRecordsViewBase::newRecordView(*pq, id, this, _pWidget);
+        QWidget *pRightWidget = new QWidget();
+        pRightTable = cRecordsViewBase::newRecordView(*pq, id, this, pRightWidget);
         *pRightTables << pRightTable;
-        pMasterSplitter->addWidget(pRightTable->pWidget());
+        pMasterSplitter->addWidget(pRightWidget);
     }
     else {
         createRightTab();
@@ -1003,7 +1011,7 @@ void cRecordsViewBase::initMaster()
 void cRecordsViewBase::initGroup(QVariantList& vlids)
 {
     qlonglong it, nt;
-    createRightTab();
+
     // A jobboldali két tábla típusa
     if (flags & (RTF_MEMBER)) {
         it = ENUM2SET(TS_IGROUP);
@@ -1278,19 +1286,19 @@ void cRecordTable::init()
 /// Inicializálja a táblázatos megjelenítést
 void cRecordTable::initSimple(QWidget * pW)
 {
-    pButtons    = new cDialogButtons(buttons, pW);
-    pMainLayer  = new QVBoxLayout(pW);
-    pTableView  = new QTableView(pW);
+    pButtons    = new cDialogButtons(buttons);
+    pMainLayout = new QVBoxLayout(pW);
+    pTableView  = new QTableView();
     pModel      = new cRecordTableModel(*this);
     if (!pTableShape->getBool(_sTableShapeType, TS_BARE)) {
         QString title = pTableShape->getName(_sTableTitle);
         if (title.size() > 0) {
             QLabel *pl = new QLabel(title);
-            pMainLayer->addWidget(pl);
+            pMainLayout->addWidget(pl);
         }
     }
-    pMainLayer->addWidget(pTableView);
-    pMainLayer->addWidget(pButtons->pWidget());
+    pMainLayout->addWidget(pTableView);
+    pMainLayout->addWidget(pButtons->pWidget());
     pTableView->setModel(pTableModel());
 
     pTableView->setSelectionBehavior(QAbstractItemView::SelectRows);

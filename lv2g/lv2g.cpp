@@ -2,7 +2,7 @@
 #include "cerrormessagebox.h"
 #include "logon.h"
 
-bool lv2g::logonNeeded = true;
+bool lv2g::logonNeeded = false;
 bool lv2g::zoneNeeded  = true;
 
 lv2g::lv2g() :
@@ -14,8 +14,7 @@ lv2g::lv2g() :
         zoneId = NULL_ID;
         #include "errcodes.h"
         pDesign = new lv2gDesign(this);
-        if (logonNeeded) {
-            if (!dbIsOpen()) EXCEPTION(EPROGFAIL);
+        if (dbIsOpen()) {
             switch (cLogOn::logOn(zoneNeeded ? &zoneId : NULL)) {
             case LR_OK:         break;
             case LR_INVALID:    EXCEPTION(ELOGON, LR_INVALID, trUtf8("Tul sok hibás bejelentkezési próbálkozás."));
@@ -23,8 +22,9 @@ lv2g::lv2g() :
             default:            EXCEPTION(EOK);
             }
         }
+        else if (logonNeeded) EXCEPTION(ESQLOPEN, 0, trUtf8("Nincs elérhető adatbázis."));
     } CATCHS(lastError)
-    if (logonNeeded && !zoneNeeded) zoneId = cPlaceGroup().getIdByName(_sAll);
+    if (dbIsOpen() && !zoneNeeded) zoneId = cPlaceGroup().getIdByName(_sAll);
 }
 
 lv2g::~lv2g()

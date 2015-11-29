@@ -9,7 +9,6 @@
 
 void setAppHelp()
 {
-    lanView::appHelp += QObject::trUtf8("-s|--setup            Setup.\n");
     lanView::appHelp += QObject::trUtf8("-a|--app-name         APP name.\n");
 }
 
@@ -23,7 +22,7 @@ int main(int argc, char * argv[])
     lanView::snmpNeeded = false;
     if (0 <= findArg(QChar('s'),QString("setup"), app.arguments())) {
         lv2Gui::_setup = true;
-        lv2g::logonNeeded = false;
+        lanView::sqlNeeded = SN_NO_SQL;
     }
     int i;
     if (0 <= (i = findArg(QChar('a'),QString("app-name"), app.arguments()))
@@ -31,7 +30,7 @@ int main(int argc, char * argv[])
         lanView::appName = app.arguments()[i + 1];
     }
 
-    lanView::sqlNeeded  = !lv2Gui::_setup;
+    lanView::sqlNeeded  = lv2Gui::_setup ? SN_NO_SQL : SN_SQL_TRY;
 
     lv2Gui   mo;
 
@@ -65,7 +64,7 @@ lv2Gui::lv2Gui() : lv2g()
     pMainWindow = NULL;
     if (!lastError) {
         try {
-            pMainWindow = new cMainWindow(_setup);
+            pMainWindow = new cMainWindow();
             pMainWindow->show();
         } CATCHS(lastError)
     }

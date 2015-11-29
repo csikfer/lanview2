@@ -217,7 +217,7 @@ public:
     /// A nyomogombok objektuma
     cDialogButtons *pButtons;
     /// A saját táblázat megjelenítésének a layer-e
-    QVBoxLayout    *pMainLayer;
+    QVBoxLayout    *pMainLayout;
     /// Ha több tábla megjelenítése szükséges, akkor a fő layer, egyébként NULL.
     QHBoxLayout    *pMasterLayout;
     /// Ha több megjelenített tábla van akkor a bal oldali és saját táblázatot tartalmazó widget pointere, vagy NULL.
@@ -294,6 +294,9 @@ public:
     void initShape(cTableShape *pts = NULL);
     void initMaster();
     void initGroup(QVariantList &vlids);
+    /// Inicializálja az adattábla megjelenítését.
+    ///
+    /// \diafile    record_table.dia "" width=10cm
     virtual void initSimple(QWidget *pW) = 0;
 
     virtual void _refresh(bool all = true) = 0;

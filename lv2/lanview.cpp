@@ -70,7 +70,7 @@ bool      lanView::snmpNeeded   = true;
 #else
 bool      lanView::snmpNeeded   = false;
 #endif
-bool      lanView::sqlNeeded    = true;
+eSqlNeed  lanView::sqlNeeded    = SN_SQL_NEED;
 bool      lanView::gui          = false;
 const QString lanView::orgName(ORGNAME);
 const QString lanView::orgDomain(ORGDOMAIN);
@@ -137,7 +137,16 @@ lanView::lanView()
         ipv4Pol = (eIPV4Pol)IPV4Pol(pSet->value(_sIPV4Pol, QVariant(_sStrict)).toString());
         ipv6Pol = (eIPV6Pol)IPV6Pol(pSet->value(_sIPV6Pol, QVariant(_sPermissive)).toString());
         QDir    d(homeDir);
-        if (!QDir::setCurrent(d.path())) EXCEPTION(ENODIR, -1, d.path());
+        if (!QDir::setCurrent(d.path())) {
+            // Ha GUI, és nem volt megadva könyvtár, akkor az user home könyvtár lessz a home
+            if (gui && pSet->value(_sHomeDir).isNull()) {
+                d = QDir::homePath();
+                homeDir = d.path();
+            }
+            else {
+                EXCEPTION(ENODIR, -1, d.path());
+            }
+        }
         binPath = d.filePath(_sBin);
         binPath = pSet->value(_sBinDir,  QVariant(binPath)).toString();
         lang    = pSet->value(_sLang,    QVariant(lang)).toString();
@@ -167,30 +176,31 @@ lanView::lanView()
         if (instance != NULL) EXCEPTION(EPROGFAIL,-1,QObject::trUtf8("A lanView objektumból csak egy példány lehet."))
         instance = this;
         // Kapcsolódunk az adatbázishoz, ha kell
-        if (sqlNeeded) {
-            openDatabase();
-            // SELF:
-            QSqlQuery q = getQuery();
-            pSelfNode = new cNode;
-            if (pSelfNode->fetchSelf(q, false)) {
-                pSelfService = new cService;
-                if (pSelfService->fetchByName(q, appName)) {
-                    pSelfHostService = new cHostService();
-                    pSelfHostService->setId(_sNodeId,    pSelfNode->getId());
-                    pSelfHostService->setId(_sServiceId, pSelfService->getId());
-                    if (1 == pSelfHostService->completion(q)) {
-                        setSelfStateF = true;
+        if (sqlNeeded != SN_NO_SQL) {
+            if (openDatabase(sqlNeeded == SN_SQL_NEED)) {
+                // SELF:
+                QSqlQuery q = getQuery();
+                pSelfNode = new cNode;
+                if (pSelfNode->fetchSelf(q, false)) {
+                    pSelfService = new cService;
+                    if (pSelfService->fetchByName(q, appName)) {
+                        pSelfHostService = new cHostService();
+                        pSelfHostService->setId(_sNodeId,    pSelfNode->getId());
+                        pSelfHostService->setId(_sServiceId, pSelfService->getId());
+                        if (1 == pSelfHostService->completion(q)) {
+                            setSelfStateF = true;
+                        }
+                        else {// Nincs, vagy nem egyértelmű
+                            pDelete(pSelfHostService);
+                        }
                     }
-                    else {// Nincs, vagy nem egyértelmű
-                        pDelete(pSelfHostService);
+                    else {
+                        pDelete(pSelfService);
                     }
                 }
                 else {
-                    pDelete(pSelfService);
+                    pDelete(pSelfNode);
                 }
-            }
-            else {
-                pDelete(pSelfNode);
             }
         }
         // SNMP init, ha kell

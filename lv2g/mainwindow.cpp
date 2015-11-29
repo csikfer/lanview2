@@ -5,13 +5,13 @@
 
 
 
-cMainWindow::cMainWindow(bool _setupOnly, QWidget *parent) :
+cMainWindow::cMainWindow(QWidget *parent) :
     QMainWindow(parent)
 {
     pTabWidget = new QTabWidget(this);
     // Central Widget
     setCentralWidget(pTabWidget);
-    if (_setupOnly) {   // Minimalista setup, nincs adatbázisunk, vagy csak ez kell
+    if (!lanView::dbIsOpen()) {   // Minimalista setup, nincs adatbázisunk, vagy csak ez kell
         setSetupMenu();
     }
     else {        // Menu

@@ -94,9 +94,9 @@ int main (int argc, char * argv[])
     QCoreApplication app(argc, argv);
 
     SETAPP();
-    lanView::snmpNeeded = true;     // Ha az SNMP objektumokat szeretnénk használni
-    lanView::sqlNeeded  = true;     // Ha szükség van az adatbázis kapcsolatra, és nem magunk nyitjuk meg a kapcsolatot
-    lanView::gui        = false;    // Ha ez nem egy GUI alkalmazás
+    lanView::snmpNeeded = true;         // Ha az SNMP objektumokat szeretnénk használni
+    lanView::sqlNeeded  = SN_SQL_NEED;  // Ha szükség van az adatbázis kapcsolatra, és nem magunk nyitjuk meg a kapcsolatot
+    lanView::gui        = false;        // Ha ez nem egy GUI alkalmazás
 
     myLanView   mo; // A saját példány létrehozása. A myLanView osztály a lanView osztály leszármazotja.
 
@@ -164,6 +164,12 @@ bool myApp::notify(QObject * receiver, QEvent * event)
 @endcode
 Természetesen a main() függvényunkben nem a QApplication objektumot, hanemn a saját myApp objetumunkat kell használni.
 */
+
+enum eSqlNeed {
+    SN_NO_SQL,
+    SN_SQL_NEED,
+    SN_SQL_TRY
+};
 
 class LV2SHARED_EXPORT lanView  : public QObject {
 #ifdef MUST_USIGNAL
@@ -313,7 +319,7 @@ public:
     static QString          appHelp;            ///< Az applikáció help string kiegészítésa
     static bool             gui;                ///< Ha GUI alkalmazás, akkor true
     static bool             snmpNeeded;         ///< Ha kell az SNMP akkor true
-    static bool             sqlNeeded;          ///< Ha a konstruktor nyissa meg az adatbázist, akkor true
+    static eSqlNeed         sqlNeeded;          ///< Ha a konstruktor nyissa meg az adatbázist, akkor true
     static qlonglong        debugDefault;       ///< Debug maszk alapértelmezett értéke.
     static const QString    homeDefault;        ///< a home mappa alapértelmezett értéke.
     /// Amennyiben be van állítva, akkor ezel a saját hosznévvel fog dolgozni a rendszer. Lsd.: class cInspector;

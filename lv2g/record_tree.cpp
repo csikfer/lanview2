@@ -104,18 +104,18 @@ void cRecordTree::init()
 void cRecordTree::initSimple(QWidget *pW)
 {
     pButtons    = new cDialogButtons(buttons, pW);
-    pMainLayer  = new QVBoxLayout(pW);
+    pMainLayout  = new QVBoxLayout(pW);
     pTreeView   = new QTreeView(pW);
     pModel      = new cRecordTreeModel(*this);
     if (!pTableShape->getBool(_sTableShapeType, TS_BARE)) {
         QString title = pTableShape->getName(_sTableTitle);
         if (title.size() > 0) {
             QLabel *pl = new QLabel(title);
-            pMainLayer->addWidget(pl);
+            pMainLayout->addWidget(pl);
         }
     }
-    pMainLayer->addWidget(pTreeView);
-    pMainLayer->addWidget(pButtons->pWidget());
+    pMainLayout->addWidget(pTreeView);
+    pMainLayout->addWidget(pButtons->pWidget());
     pTreeView->setModel(pTreeModel());
 
     pTreeView->setSelectionBehavior(QAbstractItemView::SelectRows);     // Csak sor jelölhető ki
