@@ -522,7 +522,7 @@ BEGIN
         JOIN services       supsrv    ON supsrv.service_id = suphstsrv.service_id
       WHERE slport.node_id = nid AND slprtyp.iftype_name = ptyp AND supsrv.service_name ~ hsnm;
     GET DIAGNOSTICS rres = ROW_COUNT;
-    RAISE INFO '(symple) ROW_COUNT is %, FOUND is %', rres, FOUND;
+    RAISE INFO '(simple) ROW_COUNT is %, FOUND is %', rres, FOUND;
     IF rres = 0 THEN
         RAISE INFO 'Search acros one hub';
         SELECT shs.host_service_id, shs.node_id INTO r

@@ -1190,9 +1190,11 @@ cColStaticDescr::eValueCheck  cColStaticDescrSet::check(const QVariant& v, cColS
 QVariant  cColStaticDescrSet::fromSql(const QVariant& _f) const
 {
     QString s = _f.toString();
+    if (s.isEmpty()) return QVariant(); // NULL
     // Ez a hiba üzenethez kelhet
     QString em = QString("ARRAY %1 = %2").arg(colName()).arg(s);
     // A tömb { ... } zárójelek közt kell legyen
+    if (s.size() < 2) EXCEPTION(EDATA, 0, em);  // ???
     if (s.at(0) != QChar('{') || !s.endsWith(QChar('}'))) EXCEPTION(EDBDATA, 1, em);
     s = s.mid(1, s.size() -2);  // Lekapjuk a kapcsos zárójelet
     // Az elemek közötti szeparátor a vessző, elvileg nincsenek idézőjelek
@@ -2557,12 +2559,22 @@ qlonglong cRecStaticDescr::getIdByName(QSqlQuery& __q, const QString& __n, bool 
     // PDEB(VERBOSE) << __PRETTY_FUNCTION__ << " SQL : " << sql << endl;
     if (!__q.exec(sql)) SQLQUERYERR(__q)
     if (!__q.first()) {
-        if (ex) EXCEPTION(EFOUND,0,__n);
+        QString msg = QObject::trUtf8("A %1 táblában nincs %2 nevű rekord (ahol a név mező %3)")
+                .arg(fullTableNameQ())
+                .arg(dQuoted(__n))
+                .arg(dQuoted(nameName()));
+        if (ex) EXCEPTION(EFOUND, 1, msg);
+        DWAR() << msg << endl;
         return NULL_ID;
     }
     QVariant id = __q.value(0);
     if (__q.next()) {
-        if (ex) EXCEPTION(AMBIGUOUS, 2, id.toString());
+        QString msg = QObject::trUtf8("A %1 táblában több %2 nevű rekord is van (ahol a név mező %3)")
+                .arg(fullTableNameQ())
+                .arg(dQuoted(__n))
+                .arg(dQuoted(nameName()));
+        if (ex) EXCEPTION(AMBIGUOUS, 2, msg);
+        DWAR() << msg << endl;
         return NULL_ID;
     }
     return variantToId(id, ex, NULL_ID);
@@ -3123,7 +3135,7 @@ QBitArray cRecord::areNull() const
 
 bool cRecord::insert(QSqlQuery& __q, bool _ex)
 {
-    // _DBGFN() << "@(," << DBOOL(_ex) << ") table : " << fullTableName() << endl;
+    _DBGFN() << "@(," << DBOOL(_ex) << ") table : " << fullTableName() << endl;
     const cRecStaticDescr& recDescr = descr();
     __q.finish();
     if (!recDescr.isUpdatable()) EXCEPTION(EDATA, -1 , trUtf8("A %1 tábla nem módosítható.").arg(tableName()));
@@ -3152,10 +3164,10 @@ bool cRecord::insert(QSqlQuery& __q, bool _ex)
     sql += " RETURNING *";
     if (!__q.prepare(sql)) SQLPREPERR(__q, sql)
     int i = 0;  // Nem null mezők indexe
-    // PDEB(VVERBOSE) << "Insert cmd :" << sql << endl;
     for (int ix = 0; ix < recDescr.cols(); ++ix) {           // ix: mező index a rekordban
         if (!isNull(ix)) bind(ix, __q, i++);
     }
+    PDEB(VVERBOSE) << "Insert :" << sql << " / Bind { " + _sql_err_bound(__q) + "}" << endl;
     if (!__q.exec()) SQLQUERYERR(__q);
     if (__q.first()) {
         set(__q);
@@ -3184,6 +3196,7 @@ cError *cRecord::tryInsert(QSqlQuery &__q, bool __tr)
 
 bool cRecord::rewrite(QSqlQuery &__q, bool __ex)
 {
+    _DBGFN() << "@(," << DBOOL(__ex) << ") table : " << fullTableName() << endl;
     QBitArray   sets(cols(), true);     // Minden mezőt kiírunk,
     QBitArray   where = nameKeyMask();
     sets &= ~where;              // kivéve a név mezőt ...

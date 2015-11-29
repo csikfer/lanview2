@@ -1,20 +1,22 @@
 ﻿
 DROP TABLE IF EXISTS table_shape_filters, table_shape_fields, table_shapes, enum_vals, id_view_procs CASCADE;
-DROP TYPE  IF EXISTS tableshapetype, filtertype, filterdatatype, ordtype, tableinherittype;
+DROP TYPE  IF EXISTS tableshapetype, filtertype, fieldflag, filterdatatype, ordtype, tableinherittype;
 
-CREATE TYPE tableshapetype AS ENUM ('no', 'simple', 'tree', 'owner', 'child', 'switch', 'link', 'member', 'group');
+CREATE TYPE tableshapetype AS ENUM ('simple', 'tree', 'bare', 'owner', 'child', 'link', 'dialog', 'table' , 'member', 'group', 'read_only');
 ALTER TYPE tableshapetype OWNER TO lanview2;
 COMMENT ON TYPE tableshapetype IS
 'table shape típusa:
-no          Csak dialógus
 simple      Egyszerű tábla.
 tree        Fa struktúrájú objektumok
+bare        Fejléc nélküli, beágyzott
 owner       A tábla egy másik tábla tulajdonosa (pl a ''nodes'' az ''nports'' -nak)
 child       A tábla egy owner táblához tartozik
-switch      Kapcsoló tábla (maga a kapcsoló tábla láthatatlan, csak a kapcsolatokat reprezentálja)
 link        Link tábla (Adattartalommal is rendelkező kapcsoló tábla)
+dialog      Csak dialogus megjelenítése, tábla tiltva
+table       Csak tábla megjelenítése, dialogus tiltva
 member      A megjelenített tábla elemei csoport tagok, a jobb oldalon a csoport rekordok lesznek megjelenítva
-group       A megjelenített tábla elemei csoportok, jobboldalon a csoport tagjai.'
+group       A megjelenített tábla elemei csoportok, jobboldalon a csoport tagjai.
+read_only   Nem modosítható'
 ;
 
 CREATE TYPE tableinherittype AS ENUM ('no', 'only', 'on', 'all', 'reverse', 'listed', 'listed_rev', 'listed_all');
@@ -32,22 +34,22 @@ listed_all  Csak a felsorolt leszármazottak és ősök megjelenítése';
 
 CREATE TABLE table_shapes (
     table_shape_id      bigserial       PRIMARY KEY,
-    table_shape_name    text     NOT NULL UNIQUE,
-    table_shape_note    text    DEFAULT NULL,
-    table_shape_title   text    DEFAULT NULL,
+    table_shape_name    text            NOT NULL UNIQUE,
+    table_shape_note    text            DEFAULT NULL,
+    table_title         text            DEFAULT NULL,
+    dialog_title        text            DEFAULT NULL,
+    dialog_tab_title    text            DEFAULT NULL,
     table_shape_type   tableshapetype[] DEFAULT '{simple}',
-    table_name          text     NOT NULL,
-    schema_name         text     NOT NULL DEFAULT 'public',
+    table_name          text            NOT NULL,
+    schema_name         text            NOT NULL DEFAULT 'public',
     table_inherit_type tableinherittype DEFAULT 'no',
-    inherit_table_names text[]   DEFAULT NULL,
-    is_read_only        boolean         DEFAULT 'f',
-    refine              text    DEFAULT NULL,
-    features          text    DEFAULT NULL,
-    left_shape_id       bigint          DEFAULT NULL REFERENCES table_shapes(table_shape_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
-    right_shape_id      bigint          DEFAULT NULL REFERENCES table_shapes(table_shape_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
-    view_rights         rights          DEFAULT 'operator',
-    edit_rights         rights          DEFAULT 'admin',
-    insert_rights       rights          DEFAULT 'admin',
+    inherit_table_names text[]          DEFAULT NULL,
+    refine              text            DEFAULT NULL,
+    features            text            DEFAULT NULL,
+    right_shape_ids     bigint[]        DEFAULT NULL, -- REFERENCES table_shapes(table_shape_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
+    view_rights         rights          DEFAULT 'viewer',
+    edit_rights         rights          DEFAULT 'operator',
+    insert_rights       rights          DEFAULT 'operator',
     remove_rights       rights          DEFAULT 'admin'
 );
 ALTER TABLE table_shapes OWNER TO lanview2;
@@ -56,13 +58,14 @@ COMMENT ON TABLE  table_shapes                      IS 'Tábla megjelenítő lí
 COMMENT ON COLUMN table_shapes.table_shape_id       IS 'Egyedi azonosító ID';
 COMMENT ON COLUMN table_shapes.table_shape_name     IS 'A shape neve, egyedi azonosító';
 COMMENT ON COLUMN table_shapes.table_shape_note     IS 'A shape leírása ill. megjegyzés.';
-COMMENT ON COLUMN table_shapes.table_shape_title    IS 'A shape megjelenítésekor megjelenő táblázat cím.';
-COMMENT ON COLUMN table_shapes.table_shape_type     IS 'A listázandó objektum típusa.';
+COMMENT ON COLUMN table_shapes.table_title          IS 'A táblázat címe.';
+COMMENT ON COLUMN table_shapes.dialog_title         IS 'A dialógus címe.';
+COMMENT ON COLUMN table_shapes.dialog_tab_title     IS 'A tab címe, dialógus esetén (öröklés)';
+COMMENT ON COLUMN table_shapes.table_shape_type     IS 'A megjelenítés típusa.';
 COMMENT ON COLUMN table_shapes.table_name           IS 'A shape álltal megjelenítendő tábla neve';
 COMMENT ON COLUMN table_shapes.refine               IS 'Egy opcionális feltétel, ha a táblának csak egy részhalmaza kell (WHERE clause)';
-COMMENT ON COLUMN table_shapes.features           IS 'További paraméterek.';
-COMMENT ON COLUMN table_shapes.left_shape_id        IS 'Az bal oldali, tulajdonos, vagy member tábla megjelenítő leíróra mutat';
-COMMENT ON COLUMN table_shapes.right_shape_id       IS 'A jobb oldali, gyerek, vagy csoport tábla megjelenítő leíróra mutat';
+COMMENT ON COLUMN table_shapes.features             IS 'További paraméterek.';
+COMMENT ON COLUMN table_shapes.right_shape_ids      IS 'A jobb oldali, gyerek, vagy csoport táblákat megjelenítő leírókra mutatnak az elemei';
 COMMENT ON COLUMN table_shapes.view_rights          IS 'Minimális jogosultsági szint a táblába megtekintéséhez';
 COMMENT ON COLUMN table_shapes.edit_rights          IS 'Minimális jogosultsági szint a tábábla szerkesztéséhez';
 COMMENT ON COLUMN table_shapes.insert_rights        IS 'Minimális jogosultsági szint a táblába való beszúráshoz';
@@ -76,18 +79,30 @@ no      Nincs rendezés.
 asc     Növekvő sorrend.
 desc    Csökkenő sorrend.';
 
+CREATE TYPE fieldflag AS ENUM ('table_hide', 'dialog_hide', 'auto_set', 'read_only', 'passwd', 'huge');
+ALTER TYPE fieldflag OWNER TO lanview2;
+COMMENT ON TYPE fieldflag IS
+'A mező tulajdonságok logokai (igen/nem):
+table_hide      A táblázatos megjelenítésnél a mező rejtett
+dialog_hide     A dialógusban (insert, modosít) a mező rejtett
+auto_set        A mező értéke automatikusan kap értéket
+read_only       A mező nem szerkeszthető
+passwd          A mező egy jelszó (tartlma rejtett)
+huge            A TEXT típusú mező több soros
+';
+
 CREATE TABLE table_shape_fields (
     table_shape_field_id    bigserial       PRIMARY KEY,
     table_shape_field_name  text            NOT NULL,
     table_shape_field_note  text            DEFAULT NULL,
-    table_shape_field_title text            DEFAULT NULL,
+    table_title             text            DEFAULT NULL,
+    dialog_title            text            DEFAULT NULL,
     table_shape_id          bigint          NOT NULL REFERENCES table_shapes(table_shape_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     field_sequence_number   integer         NOT NULL,
-    ord_types               ordtype[]       DEFAULT '{"no","asc","desc"}',
-    ord_init_type           ordtype         DEFAULT NULL,
+    ord_types               ordtype[]       DEFAULT NULL,
+    ord_init_type           ordtype         DEFAULT 'no',
     ord_init_sequence_number integer        DEFAULT NULL,
-    is_read_only            boolean         DEFAULT 'f',
-    is_hide                 boolean         DEFAULT 'f',
+    field_flags             fieldflag[]     DEFAULT '{}',
     expression              text            DEFAULT NULL,
     default_value           text            DEFAULT NULL,
     features                text            DEFAULT NULL,
@@ -104,17 +119,17 @@ COMMENT ON TABLE  table_shape_fields                         IS 'Tábla shape os
 COMMENT ON COLUMN table_shape_fields.table_shape_field_id    IS 'Egyedi azonosító ID';
 COMMENT ON COLUMN table_shape_fields.table_shape_field_name  IS 'Mező név, a query-ben használt név.';
 COMMENT ON COLUMN table_shape_fields.table_shape_field_note  IS 'A mező dialog box-ban megjelenő neve';
-COMMENT ON COLUMN table_shape_fields.table_shape_field_title IS 'Megjelenített mező (oszlop) név';
+COMMENT ON COLUMN table_shape_fields.table_title             IS 'Megjelenített mező (oszlop) cím';
+COMMENT ON COLUMN table_shape_fields.dialog_title            IS 'Megjelenített mező név a dialogusban';
 COMMENT ON COLUMN table_shape_fields.table_shape_id          IS 'Távoli kulcs a tulajdonos rekordra.';
 COMMENT ON COLUMN table_shape_fields.field_sequence_number   IS 'A mező sorrendje a táblázatban / dialog boxban';
 COMMENT ON COLUMN table_shape_fields.ord_types               IS 'A mező rendezési lehetőségei';
 COMMENT ON COLUMN table_shape_fields.ord_init_type           IS 'Opcionális, a mező érték szerinti rendezés alap beállítása.';
 COMMENT ON COLUMN table_shape_fields.ord_init_sequence_number IS 'Opcionális, a mező érték szerinti rendezés alap sorrendje.';
-COMMENT ON COLUMN table_shape_fields.is_read_only            IS 'Mindenképpen csak olvasható mező, ha értéke true';
-COMMENT ON COLUMN table_shape_fields.is_hide                 IS 'A táblázatos megjelenítésnél rejtett';
+COMMENT ON COLUMN table_shape_fields.field_flags             IS 'A mező fleg-ek';
 COMMENT ON COLUMN table_shape_fields.default_value           IS 'Egy opcionális default érték.';
 COMMENT ON COLUMN table_shape_fields.expression              IS 'Egy opcionális SQL kifelyezés a mező értékére';
-COMMENT ON COLUMN table_shape_fields.features              IS 'További paraméterek.';
+COMMENT ON COLUMN table_shape_fields.features                IS 'További paraméterek.';
 COMMENT ON COLUMN table_shape_fields.view_rights             IS 'Minimális jogosultsági szint a mező megtekintéséhez, NULL esetén a táblánál magadottak az érvényesek';
 COMMENT ON COLUMN table_shape_fields.edit_rights             IS 'Minimális jogosultsági szint a mező szerkestéséhez, NULL esetén a táblánál magadottak az érvényesek';
 
@@ -138,6 +153,7 @@ CREATE TABLE table_shape_filters (
     table_shape_filter_note     text   DEFAULT NULL,
     table_shape_field_id        bigint         REFERENCES table_shape_fields(table_shape_field_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     filter_type                 filtertype     NOT NULL,
+    features                    text           DEFAULT NULL,
     flag                        boolean        DEFAULT false
 );
 ALTER TABLE table_shape_filters OWNER TO lanview2;
@@ -162,6 +178,36 @@ COMMENT ON COLUMN enum_vals.enum_val_note IS 'Az enumerációs értékhez tartoz
 COMMENT ON COLUMN enum_vals.enum_type_name IS 'Az enumerációs típusnak a neve';
 
 
+DROP TABLE IF EXISTS menu_items;
+CREATE TABLE menu_items (
+    menu_item_id            bigserial   PRIMARY KEY,
+    menu_item_name          text        NOT NULL,
+    app_name                text        NOT NULL,
+    upper_menu_item_id      bigint      DEFAULT NULL REFERENCES menu_items(menu_item_id) MATCH SIMPLE ON DELETE CASCADE ON UPDATE RESTRICT,
+    item_sequence_number    integer     DEFAULT NULL,
+    menu_title              text        NOT NULL,
+    tab_title               text        DEFAULT NULL,
+    features                text        DEFAULT NULL,
+    tool_tip                text        DEFAULT NULL,
+    whats_this              text        DEFAULT NULL,
+    menu_rights             rights      NOT NULL DEFAULT 'none',
+    UNIQUE (app_name, menu_item_name),
+    UNIQUE (app_name, upper_menu_item_id, item_sequence_number)
+);
+ALTER TABLE menu_items OWNER TO lanview2;
+COMMENT ON TABLE menu_items IS 'GUI menü elemek definíciója';
+COMMENT ON COLUMN menu_items.menu_item_id IS 'Menü elem egyedi azonosító';
+COMMENT ON COLUMN menu_items.menu_item_name IS 'Applikáción bellül egyedi név';
+COMMENT ON COLUMN menu_items.item_sequence_number IS 'A sorrendet meghatározó szám';
+COMMENT ON COLUMN menu_items.menu_title IS 'Megjelenített név.';
+COMMENT ON COLUMN menu_items.tab_title IS 'A megjelenített tab neve.';
+COMMENT ON COLUMN menu_items.app_name IS 'Aplikáció név, melyhez a menü elem tartozik.';
+COMMENT ON COLUMN menu_items.upper_menu_item_id IS 'Al menű esetén az elemet tartalmazó felsőbb szintű menü elem azonosítója.';
+COMMENT ON COLUMN menu_items.features IS 'Járulékos paraméterek (a menü elem típusát határozza meg): ":shape=<név>:", ":exec=<név>:", ":own=<név>:", ...';
+COMMENT ON COLUMN menu_items.tool_tip IS '';
+COMMENT ON COLUMN menu_items.whats_this IS '';
+COMMENT ON COLUMN menu_items.menu_rights IS 'Milyen minimális jogosutságnál jelenik meg az elem. Ha ez a végrajtandó elemnél ilyen paraméter nem létezik.';
+
 CREATE OR REPLACE FUNCTION table_shape_name2id(text) RETURNS bigint AS $$
 DECLARE
     id bigint;
@@ -173,6 +219,25 @@ BEGIN
     RETURN id;
 END
 $$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION check_table_shape() RETURNS TRIGGER AS $$
+DECLARE
+    tsid  bigint;
+BEGIN
+    IF right_shape_ids IS NULL THEN
+        RETURN NEW;
+    END IF
+    FOREACH tsid  IN NEW.right_shape_ids LOOP
+        IF 1 <> COUNT(*) FROM table_shapes WHERE table_shape_id = tsid THEN
+            PERFORM error('IdNotFound', tsid, NEW.table_shape_name, 'check_table_shape()', TG_TABLE_NAME, TG_OP);
+            RETURN NULL;
+        ENDIF;
+    END LOOP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER check_table_shape BEFORE UPDATE OR INSERT ON table_shapes FOR EACH ROW EXECUTE PROCEDURE check_table_shape();
 
 CREATE OR REPLACE FUNCTION table_shape_field_name2id(text, text) RETURNS bigint AS $$
 DECLARE
@@ -216,35 +281,6 @@ Paraméterek:
     $2 Az enumerációs típus neve opcionális.
 Ha van megfelelő rekord enum_vals táblában, akkor enum_val_note értékével tér vissza, ha nem akkor az első paraméter értékével.
 Ha nem adtuk meg az enumerációs típust, és az enumerációs értékre több találatot is kapunk, akkor a függvény hibát dob.';
-
-
-DROP TABLE IF EXISTS menu_items;
-CREATE TABLE menu_items (
-    menu_item_id            bigserial       PRIMARY KEY,
-    menu_item_name          text     NOT NULL,
-    item_sequence_number    integer         DEFAULT NULL,
-    menu_item_title         text     DEFAULT NULL,
-    app_name                text     NOT NULL,
-    upper_menu_item_id      bigint          DEFAULT NULL REFERENCES menu_items(menu_item_id) MATCH SIMPLE ON DELETE CASCADE ON UPDATE RESTRICT,
-    features                text            DEFAULT NULL,
-    tool_tip                text            DEFAULT NULL,
-    whats_this              text            DEFAULT NULL,
-    menu_rights		    rights          NOT NULL DEFAULT 'none',
-    UNIQUE (app_name, menu_item_name),
-    UNIQUE (app_name, upper_menu_item_id, item_sequence_number)
-);
-ALTER TABLE menu_items OWNER TO lanview2;
-COMMENT ON TABLE menu_items IS 'GUI menü elemek definíciója';
-COMMENT ON COLUMN menu_items.menu_item_id IS 'Menü elem egyedi azonosító';
-COMMENT ON COLUMN menu_items.menu_item_name IS 'Applikáción bellül egyedi név';
-COMMENT ON COLUMN menu_items.item_sequence_number IS 'A sorrendet meghatározó szám';
-COMMENT ON COLUMN menu_items.menu_item_title IS 'Megjelenített név, ha NULL, akkor a megjelenített név a menu_item_name';
-COMMENT ON COLUMN menu_items.app_name IS 'Aplikáció név, melyhez a menü elem tartozik.';
-COMMENT ON COLUMN menu_items.upper_menu_item_id IS 'Al menű esetén az elemet tartalmazó felsőbb szintű menü elem azonosítója.';
-COMMENT ON COLUMN menu_items.features IS 'Járulékos paraméterek (a menü elem típusát határozza meg): ":shape=<név>:", ":exec=<név>:", ":own=<név>:", ...';
-COMMENT ON COLUMN menu_items.tool_tip IS '';
-COMMENT ON COLUMN menu_items.whats_this IS '';
-COMMENT ON COLUMN menu_items.menu_rights IS 'Milyen minimális jogosutságnál jelenik meg az elem.';
 
 CREATE OR REPLACE FUNCTION check_insert_menu_items() RETURNS TRIGGER AS $$
 DECLARE

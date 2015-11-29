@@ -43,6 +43,9 @@ public:
     cDialogButtons(const tIntVector& buttons, QWidget *par = NULL);
     QWidget& widget()   { return *_pWidget; }
     QWidget *pWidget()  { return _pWidget; }
+    void enabeAll();
+    void disable(qlonglong __idSet);
+    void disableExcept(qlonglong __idSet = ENUM2SET2(DBT_CANCEL, DBT_CLOSE));
 protected:
     void init(int buttons, QBoxLayout *pL);
     static void staticInit();
@@ -66,7 +69,8 @@ public:
     /// @param _buttons A megjelenítendő nyomógombok bit maszkja
     /// @param dialog Ha a dialóus ablakot QDialog-ból kell létrehozni, akkor true, ha fals, akkor QWidget-ből.
     /// @param par Az szülő widget opcionális parent pointere
-    cRecordDialogBase(const cTableShape &__tm, int _buttons, bool dialog = true, QWidget *par = NULL);
+    /// @param own Ha egy cRecordDialogInh része, akkor a szülő objektum pointere
+    cRecordDialogBase(const cTableShape &__tm, int _buttons, bool dialog = true, QWidget *par = NULL, cRecordDialogBase * own = NULL);
     /// destruktor
     ~cRecordDialogBase();
     virtual cRecord& record();
@@ -75,9 +79,10 @@ public:
     /// A dialógust megvalósító widget objektum pointerével tér vissza
     QWidget *pWidget()  { return _pWidget; }
     /// A dialógust megvalósító dialógus objektum referenciájával tér vissza, ha nem QDialóg objektum valósítja meg a dialógust, akkor dob egy kizárást.
-    QDialog& dialog()   { if (!isDialog) EXCEPTION(EPROGFAIL); return *(QDialog *)_pWidget; }
+    QDialog& dialog()   { if (!_isDialog) EXCEPTION(EPROGFAIL); return *(QDialog *)_pWidget; }
     /// A hiba string tartalmával tér vissza
     const QString& errMsg() const { return _errMsg; }
+    bool disabled() const { return _isDisabled; }
     /// Ha a _close paraméter true. akkor feltételezi, hogy QDialógus objektum a dialógus ablakunk, és hívja a QDialog::exec() metódust.
     /// Ha viszont _close false, akkor indít a widgetre egy loop-ot (QEventLoop). Ekkor egy nyomógomb megnyomásakor nem csukódik be a dialógusunk.
     /// Annak becsukásáról, ill az exec() metódus újra hívásáról mi döntünk.
@@ -87,21 +92,30 @@ public:
     /// Insert modal dialog
     static cRecordAny *insertDialog(QSqlQuery &q, cTableShape *pTableShape, const cRecStaticDescr *pRecDescr, QWidget *_par = NULL);
     /// A tábla model rekord. A megjelenítés leírója, azonosítja a rekord decriptor-t.
-    const cTableShape&      tableShape;
+    cTableShape      tableShape;
     /// Rekord descriptor
     const cRecStaticDescr&  rDescr;
+    /// Owner vagy NULL
+    cRecordDialogBase * _pOwner;
     /// Az objektum neve
     const QString           name;
     virtual cFieldEditBase * operator[](const QString& __fn) = 0;
+    virtual void restore(cRecord *_pRec = NULL) = 0;
+    virtual bool accept() = 0;
 public slots:
+    /// Hiba ablakunk van, megnyomták a close gombot...
+    void cancel()       { _pressed(DBT_CANCEL); }
     bool close()        { return _pWidget->close(); }
     void show()         { _pWidget->show(); }
     void hide()         { _pWidget->hide(); }
+    /// Slot a megnyomtak egy gombot szignálra.
+    /// @param id a megnyomott gomb kódja
+    void _pressed(int id);
 protected:
     /// A dialógust megvalósító QWidget, vagy QDialog objektum példány.
     QWidget                *_pWidget;
     /// Ha a dialógus ténylegesen egy QDialog objektumként lett létrehozva, akkor értéke true.
-    bool                    isDialog;
+    bool                    _isDialog;
     /// A szerkesztendő objektum pointere. Az osztálydestruktor felszabadítja, ha nem NULL.
     cRecord                *_pRecord;
     /// A nyomógombokat kezelő objektum példány
@@ -111,15 +125,12 @@ protected:
     /// Az adatbázis hozzáférést biztosító objektum példány
     QSqlQuery              *pq;
     /// Ha a dialógus nem szerkeszthető, akkor értéke true.
-    bool                    isReadOnly;
+    bool                    _isReadOnly;
     /// A tábla nézet nem nyitható meg. (alternatív hiba üzenet az _errMsg -ben, ha van).
-    bool                    isDisabled;
+    bool                    _isDisabled;
+    qlonglong               _viewRights;
     /// A szerkesztett értékek rekordba másolásakor a hiba üzenetek buffere
     QString                 _errMsg;
-public slots:
-    /// Slot a megnyomtak egy gombot szignálra.
-    /// @param id a megnyomott gomb kódja
-    void _pressed(int id);
  signals:
      void buttonPressed(int id);
 };
@@ -135,11 +146,11 @@ public:
     /// @param _buttons A megjelenítendő nyomógombok bit maszkja
     /// @param dialog Ha a dialóus ablakot QDialog-ból kell létrehozni, akkor true, ha fals, akkor QWidget-ből.
     /// @param parent Az szülő widget opcionális parent pointere
-    cRecordDialog(const cTableShape &__tm, int _buttons, bool dialog = true, QWidget * parent = NULL);
+    cRecordDialog(const cTableShape &__tm, int _buttons, bool dialog = true, QWidget * parent = NULL, cRecordDialogBase *own = NULL);
     /// A rekord adattag tartalmának a megjelenítése/megjelenítés visszaállítása
-    void restore(cRecord *_pRec = NULL);
+    virtual void restore(cRecord *_pRec = NULL);
     /// A megjelenített értékek kiolvasása
-    bool accept();
+    virtual bool accept();
     virtual cFieldEditBase * operator[](const QString& __fn);
 protected:
     QVBoxLayout            *pVBoxLayout;
@@ -173,6 +184,7 @@ public:
     ///
     virtual cRecord& record();
     int actTab();
+
     void setActTab(int i);
     cRecordDialog& actDialog()  { return *tabs[actTab()]; }
     cRecordDialog *actPDialog() { return  tabs[actTab()]; }
@@ -180,11 +192,12 @@ public:
 /*    /// A megjelenített értékek beállítása az aktuális tab-on
     void set(const cRecord& _r) { tabs[actTab()]->set(_r); }*/
     ///
-    bool accept();
+    virtual bool accept();
     const cRecStaticDescr& actType() { return record().descr(); }
     void setTabEnabled(int index, bool enable) { pTabWidget->setTabEnabled(index, enable); }
     tRecordList<cTableShape>&tabDescriptors;
     virtual cFieldEditBase * operator[](const QString& __fn);
+    virtual void restore(cRecord *_pRec = NULL);
 protected:
     QVBoxLayout            *pVBoxLayout;
     QTabWidget             *pTabWidget;

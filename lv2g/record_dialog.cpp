@@ -106,53 +106,115 @@ void cDialogButtons::init(int buttons, QBoxLayout *pL)
     }
 }
 
+void cDialogButtons::enabeAll()
+{
+    foreach (QAbstractButton *p, buttons()) {
+        p->setEnabled(true);
+    }
+}
+
+void cDialogButtons::disable(qlonglong __idSet)
+{
+    foreach (QAbstractButton *p, buttons()) {
+        if (__idSet && enum2set(id(p))) p->setDisabled(true);
+    }
+}
+
+void cDialogButtons::disableExcept(qlonglong __idSet)
+{
+    foreach (QAbstractButton *p, buttons()) {
+        int _id = id(p);
+        qlonglong b = enum2set(_id);
+        if (!(__idSet & b)) p->setDisabled(true);
+    }
+}
+
+
 /* ************************************************************************************************* */
-cRecordDialogBase::cRecordDialogBase(const cTableShape &__tm, int _buttons, bool dialog, QWidget *par)
+cRecordDialogBase::cRecordDialogBase(const cTableShape &__tm, int _buttons, bool dialog, QWidget *par, cRecordDialogBase *own)
     : QObject(par)
     , tableShape(__tm)
     , rDescr(*cRecStaticDescr::get(__tm.getName(_sTableName), __tm.getName(_sSchemaName)))
     , name(tableShape.getName())
     , _errMsg()
 {
-    isDialog = dialog;
-    isDisabled = false;
+    _isDialog = dialog;
+    _isDisabled = false;
     _pRecord = NULL;
     _pLoop   = NULL;
     _pWidget = NULL;
     _pButtons= NULL;
+    _pOwner   = own;
 
     pq = newQuery();
     setObjectName(name);
-    qlonglong rights = tableShape.getId(_sViewRights);
-    isDisabled = !lanView::isAuthorized(rights);
-    isReadOnly = isDisabled || tableShape.getBool(_sIsReadOnly);
-    if (!isReadOnly) {  // Ha írható, van hozzá joga is ??
-        rights = tableShape.getId(_sEditRights);
-        isReadOnly = !lanView::isAuthorized(rights);
-    }
 
-    Ui::noRightsForm *noRighrs = NULL;
-    if (isDisabled) noRighrs = new Ui::noRightsForm();
+    // Megfelelő a leíró típusa?
+    if (tableShape.getBool(_sTableShapeType, TS_TABLE)) {   // Ez nem jó dialógushoz
+        // Keresünk egy táblával azonos nevűt, ha az jó, akkor OK.
+        QString tableName = tableShape.getName(_sTableName);
+        int e;
+        if ((e=0, name == tableName)                                // Ez az azonos nevű leíró, kár keresni
+         || (++e, !tableShape.fetchByName(*pq, tableName))          // Nincs
+         || (++e, tableShape.getBool(_sTableShapeType, TS_TABLE))){ // Ez sem jobb
+            QString msg;
+            switch (e) {
+            case 0:
+                msg = trUtf8("Dialógushoz nem használlható a %1, táblával azonos nevű elsődleges leíró.").arg(name);
+                break;
+            case 1:
+                msg = trUtf8("Dialógushoz nem használlható a %1, leíró, táblával azonos navű pedig nincs").arg(__tm.getName());
+                break;
+            case 2:
+                msg = trUtf8("Dialógushoz nem használlható a %1, leíró, és a táblával azonos nevű %2 leíró sem.").arg(name).arg(tableName);
+                break;
+            default:
+                EXCEPTION(EPROGFAIL, e);
+            }
+            EXCEPTION(EDATA, e, msg);
+        }
+    }
+    // Ha az owner objektum megnézésére nem jogosult, akkor ezt sem nézheti meg.
+    if (_pOwner != NULL && _pOwner->disabled()) {
+        _isDisabled = true;
+        _viewRights = _pOwner->_viewRights;
+    }
+    else {
+        _viewRights = tableShape.getId(_sViewRights);
+        _isDisabled = !lanView::isAuthorized(_viewRights);
+    }
+    _isReadOnly = _isDisabled || tableShape.getBool(_sTableShapeType, TS_READ_ONLY);
+    if (!_isReadOnly) {  // Ha írható, van hozzá joga is ??
+        qlonglong rights;
+        rights = tableShape.getId(_sEditRights);
+        _isReadOnly = !lanView::isAuthorized(rights);
+    }
 
     if (dialog) {
         _pWidget = new QDialog(par, Qt::CustomizeWindowHint|Qt::WindowTitleHint);
-        _pWidget->setWindowTitle(tableShape.getNote());
+        _pWidget->setWindowTitle(tableShape.getName(_sDialogTitle));
     }
     else {
         _pWidget = new QWidget(par);
     }
-
-    if (isDisabled) {
-        noRighrs->setupUi(_pWidget);
-        connect(noRighrs->closePB, SIGNAL(pressed()), this, SLOT(close()));
-    }
-    else if (_buttons != 0) {
-        _pButtons = new cDialogButtons(_buttons, 0, _pWidget);
-        _pButtons->widget().setObjectName(name + "_Buttons");
-        connect(_pButtons, SIGNAL(buttonClicked(int)), this, SLOT(_pressed(int)));
-    }
-
     _pWidget->setObjectName(name + "_Widget");
+
+    if (_isDisabled) {  // Neki tltva, csak egy egy üzenet erről.
+        Ui::noRightsForm *noRighrs = noRighrsSetup(_pWidget, _viewRights, objectName());
+        if (_pOwner == NULL) {
+            connect(noRighrs->closePB, SIGNAL(pressed()), this, SLOT(cancel()));
+        }
+        else {          // Az ownernél még szabad lett volna, vannak már gombok
+            noRighrs->closePB->hide();
+        }
+    }
+    else {
+        if (_buttons != 0) {
+            _pButtons = new cDialogButtons(_buttons, 0, _pWidget);
+            _pButtons->widget().setObjectName(name + "_Buttons");
+            connect(_pButtons, SIGNAL(buttonClicked(int)), this, SLOT(_pressed(int)));
+        }
+    }
 }
 
 cRecordDialogBase::~cRecordDialogBase()
@@ -166,7 +228,13 @@ cRecordDialogBase::~cRecordDialogBase()
 
 int cRecordDialogBase::exec(bool _close)
 {
-    if (_pButtons == NULL) EXCEPTION(EPROGFAIL);
+    if (_pButtons == NULL) {
+        if(_isDisabled == false) EXCEPTION(EPROGFAIL);
+    }
+    else {
+        if (_isReadOnly || _isDisabled) _pButtons->disableExcept();
+        else                            _pButtons->enabeAll();
+    }
     if (_close) return dialog().exec();
     if (_pLoop != NULL) EXCEPTION(EPROGFAIL);
     _pWidget->setWindowModality(Qt::WindowModal);
@@ -254,7 +322,7 @@ void cRecordDialogBase::_pressed(int id)
 {
     if      (_pLoop != NULL) _pLoop->exit(id);
 
-    else if (isDialog)       dialog().done(id);
+    else if (_isDialog)       dialog().done(id);
     else                     buttonPressed(id);
 }
 
@@ -269,8 +337,8 @@ cRecord& cRecordDialogBase::record()
 
 /* ************************************************************************************************* */
 
-cRecordDialog::cRecordDialog(const cTableShape& __tm, int _buttons, bool dialog, QWidget *parent)
-    : cRecordDialogBase(__tm, _buttons, dialog, parent)
+cRecordDialog::cRecordDialog(const cTableShape& __tm, int _buttons, bool dialog, QWidget *parent, cRecordDialogBase *own)
+    : cRecordDialogBase(__tm, _buttons, dialog, parent, own)
     , fields()
 {
     pVBoxLayout = NULL;
@@ -278,7 +346,7 @@ cRecordDialog::cRecordDialog(const cTableShape& __tm, int _buttons, bool dialog,
     pSplitter = NULL;
     pSplittLayout = NULL;
     pFormLayout = NULL;
-    if (isDisabled) return;
+    if (_isDisabled) return;
     if (tableShape.shapeFields.size() == 0) EXCEPTION(EDATA);
     init();
 }
@@ -331,21 +399,22 @@ void cRecordDialog::init()
     _pRecord = new cRecordAny(&rDescr);
     int cnt = 0;
     for (i = tableShape.shapeFields.cbegin(); i != e; ++i) {
+        const cTableShapeField& mf = **i;
+        if (mf.getBool(_sFieldFlags, FF_DIALOG_HIDE)) continue;
         if (++cnt > maxFields) {
             cnt = 0;
             pFormLayout = new QFormLayout;  // !!!
             pSplitter->addWidget(_frame(pFormLayout, _pWidget));
         }
-        const cTableShapeField& mf = **i;
         int fieldIx = rDescr.toIndex(mf.getName());
-        bool setRo = isReadOnly || mf.getBool(_sIsReadOnly);
+        bool setRo = _isReadOnly || mf.getBool(_sFieldFlags, FF_READ_ONLY);
         cFieldEditBase *pFW = cFieldEditBase::createFieldWidget(tableShape, mf, (*_pRecord)[fieldIx], setRo, this);
         fields.append(pFW);
         QWidget * pw = pFW->pWidget();
         pw->setObjectName(mf.getName());
         PDEB(VVERBOSE) << "Add row to form : " << mf.getName() << " widget : " << typeid(*pFW).name() << QChar('/') << fieldWidgetType(pFW->wType()) << endl;
         pw->adjustSize();
-        pFormLayout->addRow(mf.getNote(), pw);
+        pFormLayout->addRow(mf.getName(_sDialogTitle), pw);
     }
     _pWidget->adjustSize();
     DBGFNL();
@@ -377,6 +446,7 @@ bool cRecordDialog::accept()
         cFieldEditBase& field = *fields[i];
         int rfi = field._pFieldRef->index();
         if (field.isReadOnly()) continue;      // Feltételezzük, hogy RO esetén az van a mezőben aminek lennie kell.
+        if (field._fieldShape.getBool(_sFieldFlags, FF_AUTO_SET)) continue; // Ezt sem kell ellenörizni
         qlonglong s = _pRecord->_stat;                   // Mentjük a hiba bitet,
         _pRecord->_stat &= ~ES_DEFECTIVE; // majd töröljük, mert mezőnkként kell
         QVariant fv = fields[i]->get();     // A mező widget-jéből kivesszük az értéket
@@ -417,9 +487,9 @@ cRecordDialogInh::cRecordDialogInh(const cTableShape& _tm, tRecordList<cTableSha
 {
     pVBoxLayout = NULL;
     pTabWidget = NULL;
-    if (isDisabled) return;
+    if (_isDisabled) return;
     if (_pButtons == NULL) EXCEPTION(EPROGFAIL);
-    if (isReadOnly) EXCEPTION(EDATA);
+    // if (isReadOnly) EXCEPTION(EDATA);
 
     init(_oid, _pid);
 }
@@ -446,7 +516,7 @@ void cRecordDialogInh::init(qlonglong _oid, qlonglong _pid)
     int i, n = tabDescriptors.size();
     for (i = 0; i < n; ++i) {
         const cTableShape& shape = *tabDescriptors[i];
-        cRecordDialog * pDlg = new cRecordDialog(shape, 0, false, pTabWidget);
+        cRecordDialog * pDlg = new cRecordDialog(shape, 0, false, pTabWidget, this);
         cRecordAny * pRec = new cRecordAny(shape.getName(_sTableName), shape.getName(_sSchemaName));
         if (_oid != NULL_ID) {  // Ha van owner, akkor az ID-jét beállítjuk
             int oix = pRec->descr().ixToOwner();
@@ -455,12 +525,12 @@ void cRecordDialogInh::init(qlonglong _oid, qlonglong _pid)
         if (_pid != NULL_ID) {  // Ha van parent, akkor az ID-jét beállítjuk
             int pix = pRec->descr().ixToParent();
             pRec->setId(pix, _pid);
-            pDlg->isReadOnly = true;
+            pDlg->_isReadOnly = true;
         }
         pDlg->_pRecord = pRec;
         pDlg->restore();
         tabs << pDlg;
-        pTabWidget->addTab(pDlg->pWidget(), shape.getName(_sTableName));
+        pTabWidget->addTab(pDlg->pWidget(), shape.getName(_sDialogTabTitle));
     }
     pTabWidget->setCurrentIndex(0);
     _pWidget->adjustSize(); //?
@@ -484,11 +554,13 @@ void cRecordDialogInh::setActTab(int i)
 {
     if (!isContIx(tabs, i)) EXCEPTION(EPROGFAIL, i);
     pTabWidget->setCurrentIndex(i);
+    if (_pButtons == NULL) EXCEPTION(EPROGFAIL);
 }
 
 bool cRecordDialogInh::accept()
 {
     _errMsg.clear();
+    if (disabled()) return false;
     cRecordDialog *prd = tabs[actTab()];
     bool  r = prd->accept();
     if (!r) _errMsg = prd->errMsg();
@@ -499,3 +571,11 @@ cFieldEditBase * cRecordDialogInh::operator[](const QString& __fn)
 {
     return actDialog()[__fn];
 }
+
+void cRecordDialogInh::restore(cRecord *_pRec)
+{
+    (void)_pRec;
+    if (disabled()) return;
+    EXCEPTION(EPROGFAIL);
+}
+

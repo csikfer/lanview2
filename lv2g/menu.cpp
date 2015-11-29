@@ -13,8 +13,9 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidge
     ownType      = OWN_UNKNOWN;
     pDialog      = NULL;
     pAction      = pa;
+    pMenuItem    = new cMenuItem(*pmi);
 
-    setObjectName(pmi->title()); // Ez lessz a TAB neve
+    setObjectName(pmi->getName());
     QString feature;
     if      (!(feature = pmi->feature("shape")).isEmpty()) {
         if (pq == NULL) EXCEPTION(EPROGFAIL);   // Ha nincs adatbázis, akkor ezt nem kéne
@@ -69,26 +70,6 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidge
     else if (__ex) EXCEPTION(EDBDATA);
 }
 
-/*
-cMenuAction::cMenuAction(cTableShape *ps, const QString &nm, QAction *pa, QTabWidget *par)
-    : QObject(par), type(MAT_SHAPE)
-{
-    pTabWidget   = par;
-    pTableShape  = ps;
-    pRecordTable = NULL;
-    pOwnTab      = NULL;
-    ownType      = OWN_UNKNOWN;
-    pWidget      = NULL;
-    pDialog      = NULL;
-    pAction      = pa;
-
-    pTableShape->setParent(this);
-    connect(pAction,      SIGNAL(triggered()), this, SLOT(displayIt()));
-    connect(pRecordTable, SIGNAL(closeIt()),   this, SLOT(removeIt()));
-    setObjectName(nm);
-}
-*/
-
 cMenuAction::cMenuAction(const QString&  ps, QAction *pa, QTabWidget * par)
     : QObject(par), type(MAT_EXEC)
 {
@@ -100,6 +81,7 @@ cMenuAction::cMenuAction(const QString&  ps, QAction *pa, QTabWidget * par)
     pWidget      = NULL;
     pDialog      = NULL;
     pAction      = pa;
+    pMenuItem    = NULL;
 
     setObjectName(ps);
     connect(pa, SIGNAL(triggered()), this, SLOT(executeIt()));
@@ -115,6 +97,7 @@ cMenuAction::cMenuAction(cOwnTab *po, eOwnTab t, QAction *pa, QTabWidget * par)
     pWidget      = po;
     pDialog      = NULL;
     pAction      = pa;
+    pMenuItem    = NULL;
 
     connect(pAction, SIGNAL(triggered()), this, SLOT(displayIt()));
 }
@@ -126,7 +109,12 @@ cMenuAction::~cMenuAction()
 
 void cMenuAction::initRecordTable()
 {
-    if (pTableShape == NULL) EXCEPTION(EPROGFAIL);
+    if (pTableShape == NULL) {
+        QString shape = objectName();
+        pTableShape = new cTableShape();
+        pTableShape->setParent(this);
+        pTableShape->setByName(shape);
+    }
     pRecordView = cRecordsViewBase::newRecordView(pTableShape, NULL, pTabWidget);
     pWidget = pRecordView->pWidget();
     connect(pRecordView, SIGNAL(closeIt()),   this, SLOT(removeIt()));
@@ -177,7 +165,8 @@ void cMenuAction::displayIt()
     }
     int i = pTabWidget->indexOf(pWidget);
     if (i < 0) {
-        i = pTabWidget->addTab(pWidget, objectName());
+        QString title =  pMenuItem == NULL ? objectName() : pMenuItem->getName(_sTabTitle);
+        i = pTabWidget->addTab(pWidget, title);
     }
     pTabWidget->setCurrentIndex(i);
 }
@@ -195,6 +184,7 @@ void cMenuAction::removeIt()
     switch (type) {
     case MAT_SHAPE:
         pDelete(pRecordView);
+        pTableShape = NULL; // A fenti obj. destruktora ezt is törölte!!
         break;
     case MAT_OWN:
         pDelete(pOwnTab);
@@ -212,7 +202,7 @@ void cMenuAction::removeIt()
 void cMenuAction::destroyedChild()
 {
     DBGFN();
-    pWidget = NULL;         // A tab tényleg elitézi a többit?
+    pWidget = NULL;         // A tab tényleg elintézi a többit?
     pRecordView = NULL;
 }
 

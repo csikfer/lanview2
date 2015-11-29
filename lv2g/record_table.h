@@ -7,9 +7,15 @@
 
 #if defined(LV2G_LIBRARY)
 #include    "ui_column_filter.h"
+#include    "ui_no_rights.h"
 #else
-namespace Ui { class dialogTabFiltOrd; }
+namespace Ui {
+    class dialogTabFiltOrd;
+    class noRightsForm;
+}
 #endif
+
+EXT_ Ui::noRightsForm * noRighrsSetup(QWidget *_pWidget, qlonglong _need, const QString& _obj, const QString& _html = QString());
 
 class cRecordTable;
 class cRecordTableColumn;
@@ -151,6 +157,9 @@ enum eRecordTableFlags  {
     RTF_NMEMBER = 0x8000
 };
 
+class cRecordsViewBase;
+typedef QList<cRecordsViewBase *>   tRecordsViewBaseList;
+
 class LV2GSHARED_EXPORT cRecordsViewBase : public QObject {
     Q_OBJECT
 public:
@@ -214,9 +223,9 @@ public:
     /// Ha több megjelenített tábla van akkor a bal oldali és saját táblázatot tartalmazó widget pointere, vagy NULL.
     QWidget        *pLeftWidget;
     /// A (bal oldali) alárendelt tábla megjelenítő objektuma.
-    cRecordsViewBase   *pRightTable;
-    /// A (bal oldali) alárendelt tábla megjelenítő objektuma, ha kettő van
-    cRecordsViewBase   *pRightTable2;
+    tRecordsViewBaseList   *pRightTables;
+    /// Ha több bal oldali tábla van, a tabWideget
+    QTabWidget             *pRightTabWidget;
     /// Szűrők és rendezés dialog box
     cRecordTableFODialog *  pFODialog;
     /// Child tábla esetén a tulajdonos ID-je, ha ismert (csak egy rekord van kijelölve az owner táblázatban)
@@ -284,7 +293,7 @@ public:
     void initView();
     void initShape(cTableShape *pts = NULL);
     void initMaster();
-    void initGroup();
+    void initGroup(QVariantList &vlids);
     virtual void initSimple(QWidget *pW) = 0;
 
     virtual void _refresh(bool all = true) = 0;
@@ -302,6 +311,10 @@ signals:
 public:
     static cRecordsViewBase *newRecordView(cTableShape * pts, cRecordsViewBase * own = NULL, QWidget *par = NULL);
     static cRecordsViewBase *newRecordView(QSqlQuery &q, qlonglong shapeId, cRecordsViewBase * own = NULL, QWidget *par = NULL);
+private:
+    void rightTabs(QVariantList &vlids);
+    void createRightTab();
+
 };
 
 /// @class cRecordTable

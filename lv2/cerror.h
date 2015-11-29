@@ -285,7 +285,7 @@ static inline QString _sql_err_bound(QSqlQuery& q)
     QString r;
     while (i.hasNext()) {
         i.next();
-        r += i.key() + " = " + i.value().toString() + "; ";
+        r += i.key() + " = " + debVariantToString(i.value()) + "; ";
     }
     if (r.size() > 0) r.chop(2);
     return  r;

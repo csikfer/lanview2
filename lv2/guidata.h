@@ -13,15 +13,17 @@ A megjelenítéssel kapcsolatos adattáblákat kezelő objektumok.
 /// Tábla Shape típusok (set)
 enum eTableShapeType {
     TS_UNKNOWN =-1, ///< ismeretlen, csak hibajelzésre
-    TS_NO = 0,      ///< "no"       Csak diakógus (egy rekord megjelenítése, módosítása ill. beszúrása)
-    TS_SIMPLE,      ///< "simple'   Egyszerű
+    TS_SIMPLE = 0,  ///< "simple'   Egyszerű
     TS_TREE,        ///< "tree"     fa strukrúra
+    TS_BARE,        ///< "bare"     Dekoráció nélkül, beágyazott tábla
     TS_OWNER,       ///< "owner"
     TS_CHILD,       ///< "child"
-    TS_SWITCH,      ///< "switch"   Kapcsoló tábla'
     TS_LINK,        ///< "link"     Hasonló a kapcsoló táblához, de egy tábla (és leszármazottai) közötti kapcsolatot reprezentál (linkek)
+    TS_DIALOG,      ///< "dialog"   Csak dialógus, tábla tiltva
+    TS_TABLE,       ///< "table"    Csak táblázat, dialógus tiltva
     TS_MEMBER,      ///< "member"   A jobboldalon a csoport rekordok (tag/nem tag)
     TS_GROUP,       ///< "group"
+    TS_READ_ONLY,   ///< "read_only" Nem modosítható
     TS_UNKNOWN_PAD, ///< Dummy érték a CHKENU miatt, további lehetséges éertékek nem megengedettek az adatbázisban
     TS_IGROUP,      ///< "igroup"  Jobb oldali groupoknak, az aktuális bal rekord tagja
     TS_NGROUP,      ///< "ngroup"  Jobb oldali groupoknak, az aktuális bal rekord nem tagja
@@ -84,6 +86,18 @@ EXT_ int orderType(const QString& n, bool __ex = true);
 /// @return Az enumerációs konstanshoz tartozó enumeráxiós név, vagy üres string, ha ismeretlen a konstams, és __ex hamis.
 EXT_ const QString&  orderType(int e, bool __ex = true);
 
+enum eFieldFlag {
+    FF_UNKNOWN = -1,    ///< ismeretlen, csak hibajelzésre
+    FF_TABLE_HIDE=  0,    ///< A táblázatos megjelenítésnél a mező rejtett
+    FF_DIALOG_HIDE,     ///< A dialógusban (insert, modosít) a mező rejtett
+    FF_AUTO_SET,        ///< A mező értéke automatikusan kap értéket
+    FF_READ_ONLY,       ///< A mező nem szerkeszthető
+    FF_PASSWD,          ///< A mező egy jelszó (tartlma rejtett)
+    FF_HUGE             ///< A TEXT típusú mező több soros
+};
+
+EXT_ int fieldFlag(const QString& n, bool __ex = true);
+EXT_ const QString& fieldFlag(int e, bool __ex = true);
 
 /// @enum eFilterType
 /// Szűrési metódusok
@@ -115,6 +129,7 @@ EXT_ const QString&   filterType(int e, bool __ex = true);
 
 class cTableShapeField;
 class cTableShape;
+typedef tRecordList<cTableShape>    tTableShapes;
 typedef tOwnRecords<cTableShapeField, cTableShape>  tTableShapeFields;
 /*!
 @class cTableShape
@@ -134,7 +149,8 @@ public:
     /// Az objektumhoz feltölti a ShapeFields konténert, default értékekkel.
     /// Az adatokat az adatbázisban nem tárolja el, feltételezi, hogy az adattábla neve ismert.
     /// Ha a tábla nem létezik, akkor dob egy kizárást.
-    bool setDefaults(QSqlQuery &q);
+    bool setDefaults(QSqlQuery &q, bool _disable_tree = false);
+    void setTitle(const QStringList& _tt);
     /// Egy érték beállítása a megadott nevű mező leírójában
     /// @param _fn A mező neve a (megjelenítendő) táblában.
     /// @param _fpn A mező leíró paraméterének a neve
@@ -176,8 +192,8 @@ public:
 
     ///
     bool typeIs(eTableShapeType _t) const { return getId(_sTableShapeType) & enum2set(_t); }
-    bool fetchLeft(QSqlQuery& q, cTableShape * _po, bool _ex = true) const;
-    bool fetchRight(QSqlQuery& q, cTableShape * _po, bool _ex = true) const;
+//  bool fetchLeft(QSqlQuery& q, cTableShape * _po, bool _ex = true) const;
+//  int fetchRight(QSqlQuery& q, tTableShapes *&_pol, bool _ex = true) const;
     const cRecStaticDescr * getRecDescr() const { return cRecStaticDescr::get(getName(_sTableName)); }
     /// Létrehoz, és hozzáad egy mező onjekrumot a shapeFields konténerhez.
     /// @param _name  A mező/oszlop neve
@@ -185,7 +201,10 @@ public:
     /// @param _note Megjegyzés
     /// @return Az új (konténerbe helyezett) objektum pointere.
     /// @exception Ha már létezik ilyen nevű elem a konténerben.
-    cTableShapeField *addField(const QString& _name, const QString& _title = _sNul, const QString& _note = _sNul, bool __ex = true);
+    cTableShapeField *addField(const QString& _name, const QString& _note = _sNul, bool __ex = true);
+    ///
+    void addRightShape(QStringList& _sn);
+    void setRightShape(QStringList& _sn) { clear(_sRightShapeIds); addRightShape(_sn); }
 
     tTableShapeFields   shapeFields;
 protected:
@@ -209,6 +228,7 @@ public:
     virtual void clearToEnd();
     virtual bool insert(QSqlQuery &__q, bool __ex);
     virtual bool rewrite(QSqlQuery &__q, bool __ex);
+    void setTitle(const QStringList& _tt);
     int fetchFilters(QSqlQuery& q);
     bool addFilter(const QString& _t, const QString& _d, bool __ex = true);
     bool fetchByNames(QSqlQuery& q, const QString& tsn, const QString& fn, bool __ex = false);
@@ -252,9 +272,13 @@ class LV2SHARED_EXPORT cMenuItem : public cRecord {
     CRECORD(cMenuItem);
     FEATURES(cMenuItem)
 public:
-    QString title() const { return isNull(_sMenuItemTitle) ? getName(_sMenuItemName) : getName(_sMenuItemTitle); }
     bool fetchFirstItem(QSqlQuery &q, const QString &_appName, qlonglong upId = NULL_ID);
     int delByAppName(QSqlQuery &q, const QString &__n, bool __pat = false) const;
+/*
+    static const cMenuItem& nullItem();
+private:
+    static cMenuItem *pNullItem;
+*/
 };
 
 #endif // GUIDATA_H

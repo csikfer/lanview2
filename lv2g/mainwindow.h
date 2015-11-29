@@ -26,6 +26,7 @@ public:
 private:
     ///
     void action(QAction *pa, cMenuItem& _mi, QSqlQuery *pq = NULL);
+    void setSetupMenu();
 };
 
 

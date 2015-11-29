@@ -498,5 +498,7 @@ EXT_ QString list2string(const QBitArray& __vl);
 /// Egy QStringList típusú árték stringgé konvertálása egy debug vagy hiba üzenetben.
 EXT_ QString list2string(const QStringList& __vl);
 
+EXT_ QString debVariantToString(const QVariant v);
+
 
 #endif // CDEBUG_H

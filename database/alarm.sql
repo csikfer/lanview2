@@ -425,7 +425,8 @@ CREATE VIEW view_alarms AS
     a.max_status,
     COALESCE(pl.place_note, pl.place_name) AS place_name,
     alarm_message(host_service_id, max_status) AS msg,
-    au.user_name AS ack_user_name
+    au.user_name AS ack_user_name,
+    a.ack_msg
     FROM alarms        AS a
     JOIN host_services AS hs USING(host_service_id)
     JOIN nodes         AS n  USING(node_id)

@@ -820,9 +820,9 @@ static cMenuItem& actMenuItem()
     return *menuItems.last();
 }
 
-static void newMenuMenu(const QString& _n, const QString& _t)
+/// Menü objektum létrehozása. Almenüi lesznek
+static void newMenuMenu(const QString& _n)
 {
-    _DBGFN() << VDEB(_n) << VDEB(_t) << endl;
     if (pMenuApp == NULL) EXCEPTION(EPROGFAIL);
     cMenuItem *p = new cMenuItem;
     p->setName(_n);
@@ -830,9 +830,9 @@ static void newMenuMenu(const QString& _n, const QString& _t)
     if (!menuItems.isEmpty()) {
         p->setId(_sUpperMenuItemId, actMenuItem().getId());
     }
-    if (!_t.isEmpty()) p->setName(_sMenuItemTitle, _t);
+    p->setName(_sMenuTitle, _n);
+    p->setName(_sTabTitle, _n);
     p->setName(_sFeatures, ":sub:");
-    PDEB(VVERBOSE) << "Insert : " << p->allToString() << endl;
     p->insert(qq());
     menuItems << p;
 }
@@ -847,17 +847,34 @@ static void delMenuItem()
 /// @param _sn paraméter
 /// @param _t Megjelenített név
 /// @param typ Minta string a features mezőhöz (paraméter _n
-static void newMenuItem(const QString& _n, const QString& _sn, const QString& _t, const char * typ)
+static void newMenuItem(const QString& _n, const QString& _sn, const char * typ)
 {
     if (pMenuApp == NULL) EXCEPTION(EPROGFAIL);
     cMenuItem *p = new cMenuItem;
     p->setName(_n);
     p->set(_sAppName, *pMenuApp);
     p->setId(_sUpperMenuItemId, actMenuItem().getId());
-    if (!_t.isEmpty()) p->setName(_sMenuItemTitle, _t);
+    p->setName(_sMenuTitle, _n);
+    p->setName(_sTabTitle, _n);
     p->setName(_sFeatures, QString(typ).arg(_sn));
     p->insert(qq());
     menuItems << p;
+}
+
+static void setMenuTitle(const QStringList& _tt)
+{
+    QString n = actMenuItem().getName();
+    if (_tt.size() > 0 && _tt.at(0).size() > 0) {
+        if (_tt.at(0) != _sAt) n = _tt.at(0);
+        actMenuItem().setName(_sMenuTitle, n);
+
+        if (_tt.size() > 1 && _tt.at(1).size() > 0) {
+            if (_tt.at(1) != _sAt) n = _tt.at(1);
+            actMenuItem().setName(_sTabTitle,  n);
+        }
+
+        actMenuItem().update(qq(), false, actMenuItem().mask(_sMenuTitle, _sTabTitle));
+    }
 }
 
 static void setMenuToolTip(const QString& _tt)
@@ -1370,6 +1387,8 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
 %token      DATA_T IANA_T IFDEF_T IFNDEF_T NC_T QUERY_T PARSER_T
 %token      REPLACE_T RANGE_T EXCLUDE_T PREP_T POST_T CASE_T RECTANGLE_T
 %token      DELETED_T PARAMS_T CONVERTER_T PRINTER_T GATEWAY_T DOMAIN_T
+%token      DIALOG_T AUTO_T PASSWD_T HUGE_T FLAG_T TREE_T SECONDARY_T
+%token      SIMPLE_T BARE_T OWNER_T CHILD_T MEMBER_T
 
 %token <i>  INTEGER_V
 %token <r>  FLOAT_V
@@ -1379,13 +1398,13 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
 %type  <i>  int int_ iexpr lnktype shar ipprotp ipprot offs ix_z vlan_t set_t srvtid
 %type  <i>  vlan_id place_id iptype pix pix_z iptype_a step image_id tmod int0 replace
 %type  <i>  ptypen fhs hsid srvid grpid tmpid node_id port_id snet_id ift_id plg_id
-%type  <i>  usr_id ftmod p_seq int_z lnktypez
+%type  <i>  usr_id ftmod p_seq int_z lnktypez fflags fflag tstypes tstype
 %type  <il> list_i p_seqs p_seqsl // ints
 %type  <b>  bool bool_on ifdef exclude cases
 %type  <r>  /* real */ num fexpr
-%type  <s>  str str_ str_z name_q time tod _toddef sexpr pnm mac_q ha nsw ips rights
+%type  <s>  str str_ str_z str_zz name_q time tod _toddef sexpr pnm mac_q ha nsw ips rights
 %type  <s>  imgty tsintyp usrfn usrgfn plfn ptcfn node_t host_t copy_from
-%type  <sl> strs strs_z alert list_m nsws nsws_ node_h host_h tstypes
+%type  <sl> strs strs_z strs_zz alert list_m nsws nsws_ node_h host_h
 %type  <sl> usrfns usrgfns plfns ptcfns node_ts host_ts
 %type  <v>  value mac_qq
 %type  <vl> vals
@@ -1488,6 +1507,9 @@ sexpr   : str_                      { $$ = $1; }
 str_z   : str                       { $$ = $1; }
         |                           { $$ = new QString(); }
         ;
+str_zz  : str_z                     { $$ = $1; }
+        | '@'                       { $$ = new QString("@"); }
+        ;
 strs    : str                       { $$ = new QStringList(*$1); delete $1; }
         | list_m                    { $$ = $1; }
         | strs ',' str              { $$ = $1;   *$$ << *$3;     delete $3; }
@@ -1497,6 +1519,11 @@ strs_z  : str_z                     { $$ = new QStringList(*$1); delete $1; }
         | list_m                    { $$ = $1; }
         | strs_z ',' str_z          { $$ = $1;   *$$ << *$3;     delete $3; }
         | strs_z ',' list_m         { $$ = $1;   *$$ << *$3;     delete $3; }
+        ;
+strs_zz : str_zz                    { $$ = new QStringList(*$1); delete $1; }
+        | list_m                    { $$ = $1; }
+        | strs_zz ',' str_zz        { $$ = $1;   *$$ << *$3;     delete $3; }
+        | strs_zz ',' list_m        { $$ = $1;   *$$ << *$3;     delete $3; }
         ;
 
 int_    : INTEGER_V                             { $$ = $1; }
@@ -1623,8 +1650,8 @@ vals    : value                     { $$ = new QVariantList(); *$$ << *$1; delet
 num     : iexpr                     { $$ = $1; }
         | fexpr                     { $$ = $1; }
         ;
-bool    : ON_T      { $$ = true; }  | YES_T     { $$ = true; }  | TRUE_T    { $$ = true; }
-        | OFF_T     { $$ = false; } | NO_T      { $$ = false; } | FALSE_T   { $$ = false; }
+bool    : ON_T                      { $$ = true; }  | YES_T     { $$ = true; }  | TRUE_T    { $$ = true; }
+        | OFF_T                     { $$ = false; } | NO_T      { $$ = false; } | FALSE_T   { $$ = false; }
         ;
 bool_on :                           { $$ = true; }
         | bool                      { $$ = $1; }
@@ -2358,13 +2385,16 @@ tmodps  : tmodp
         | tmodps tmodp
         ;
 tmodp   : SET_T DEFAULTS_T ';'                  { pTableShape->setDefaults(qq()); }
+        | SET_T NO_T TREE_T DEFAULTS_T ';'      { pTableShape->setDefaults(qq(), true); }
         | SET_T str '=' value ';'               { pTableShape->set(sp2s($2), vp2v($4)); }
-        | TABLE_T TYPE_T tstypes ';'            { pTableShape->set(_sTableShapeType, slp2sl($3)); }
-        | TABLE_T TITLE_T str ';'               { pTableShape->set(_sTableShapeTitle, sp2s($3)); }
-        | TABLE_T READ_T ONLY_T bool_on ';'     { pTableShape->set(_sIsReadOnly, $4); }
+        | TABLE_T TYPE_T tstypes ';'            { pTableShape->setId( _sTableShapeType, $3); }
+        | TABLE_T TYPE_T ON_T tstypes ';'       { pTableShape->setOn( _sTableShapeType, $4); }
+        | TABLE_T TYPE_T OFF_T tstypes ';'      { pTableShape->setOff(_sTableShapeType, $4); }
+        | TABLE_T TITLE_T strs_zz  ';'          { pTableShape->setTitle(slp2sl($3)); }
+        | TABLE_T READ_T ONLY_T bool_on ';'     { pTableShape->setBool(_sTableShapeType, TS_READ_ONLY, $4); }
         | TABLE_T FEATURES_T str ';'            { pTableShape->set(_sFeatures, sp2s($3)); }
-        | LEFT_T SHAPE_T tmod ';'               { pTableShape->setId(_sLeftShapeId, $3); }
-        | RIGHT_T SHAPE_T tmod ';'              { pTableShape->setId(_sRightShapeId, $3); }
+//      | LEFT_T SHAPE_T tmod ';'               { pTableShape->setId(_sLeftShapeId, $3); }
+        | RIGHT_T SHAPE_T strs ';'              { pTableShape->addRightShape(*$3); delete $3; }
         | REFINE_T str ';'                      { pTableShape->setName(_sRefine, sp2s($2)); }
         | TABLE_T INHERIT_T TYPE_T tsintyp ';'  { pTableShape->setName(_sTableInheritType, sp2s($4)); }
         | INHERIT_T TABLE_T NAMES_T strs ';'    { pTableShape->set(_sInheritTableNames, slp2vl($4)); }
@@ -2374,17 +2404,28 @@ tmodp   : SET_T DEFAULTS_T ';'                  { pTableShape->setDefaults(qq())
         | TABLE_T INSERT_T RIGHTS_T rights ';'  { pTableShape->setName(_sInsertRights, sp2s($4)); }
         | SET_T str '.' str '=' value ';'       { pTableShape->fset(sp2s($2), sp2s($4), vp2v($6)); }
         | SET_T '(' strs ')' '.' str '=' value ';'{ pTableShape->fsets(slp2sl($3), sp2s($6), vp2v($8)); }
-        | FIELD_T str TITLE_T str ';'           { pTableShape->fset(sp2s($2),_sTableShapeFieldTitle, sp2s($4)); }
+        | FIELD_T str TITLE_T strs_zz ';'       { pTableShape->shapeFields.get(sp2s($2))->setTitle(slp2sl($4)); }
         | FIELD_T str NOTE_T str ';'            { pTableShape->fset(sp2s($2),_sTableShapeFieldNote, sp2s($4)); }
-        | FIELD_T str TITLE_T str str ';'       { pTableShape->fset(    *$2,    _sTableShapeFieldTitle, sp2s($4)   );
-                                                  pTableShape->fset(sp2s($2),_sTableShapeFieldNote, sp2s($5)); }
         | FIELD_T strs VIEW_T RIGHTS_T rights ';'{pTableShape->fsets(slp2sl($2), _sViewRights, sp2s($5)); }
         | FIELD_T strs EDIT_T RIGHTS_T rights ';'{pTableShape->fsets(slp2sl($2), _sEditRights, sp2s($5)); }
         | FIELD_T strs FEATURES_T str ';'       { pTableShape->fsets(slp2sl($2), _sFeatures, sp2s($4)); }
         | FIELD_T str EXPRESSION_T str ';'      { pTableShape->fset(sp2s($2), _sExpression, sp2s($4)); }
-        | FIELD_T strs HIDE_T bool_on ';'       { pTableShape->fsets(slp2sl($2), _sIsHide, $4); }
-        | FIELD_T strs DEFAULT_T VALUE_T str ';'{ pTableShape->fsets(slp2sl($2), _sDefaultValue, sp2s($5)); }
-        | FIELD_T strs READ_T ONLY_T bool_on ';'{ pTableShape->fsets(slp2sl($2), _sIsReadOnly, $5); }
+        | FIELD_T strs FLAG_T fflags ';'        { pTableShape->fsets(slp2sl($2), _sFieldFlags, $4); }
+        | FIELD_T strs FLAG_T bool fflags ';'   { foreach (QString fn, *$2) {
+                                                      cTableShapeField *pTS = pTableShape->shapeFields.get(fn);
+                                                      qlonglong f = pTS->getBigInt(_sFieldFlags);
+                                                      if ($4) f |=  $5;
+                                                      else    f &= ~$5;
+                                                      pTS->setId(_sFieldFlags, f);
+                                                  }
+                                                  delete $2;
+                                                }
+        | FIELD_T strs READ_T ONLY_T bool_on ';'{ foreach (QString fn, *$2) {
+                                                    pTableShape->shapeFields.get(fn)->setBool(_sFieldFlags, FF_READ_ONLY, $5);
+                                                  }
+                                                  delete $2;
+                                                }
+        | FIELD_T str DEFAULT_T VALUE_T str ';' { pTableShape->fset(sp2s($2), _sDefaultValue, sp2s($5)); }
         | FIELD_T str TOOL_T TIP_T str ';'      { pTableShape->fset(sp2s($2), _sToolTip, sp2s($5)); }
         | FIELD_T str WHATS_T THIS_T str ';'    { pTableShape->fset(sp2s($2), _sWhatsThis, sp2s($5)); }
         | FIELD_T strs ADD_T FILTER_T str str_z ';' { pTableShape->addFilter(slp2sl($2), sp2s($5), sp2s($5)); }
@@ -2393,14 +2434,24 @@ tmodp   : SET_T DEFAULTS_T ';'                  { pTableShape->setDefaults(qq())
         | FIELD_T strs ORD_T strs ';'           { pTableShape->setOrders(*$2, *$4); delete $2; delete $4; }
         | FIELD_T '*'  ORD_T strs ';'           { pTableShape->setAllOrders(*$4); delete $4; }
         | FIELD_T ORD_T SEQUENCE_T int0 strs ';'{ pTableShape->setOrdSeq(slp2sl($5), $4); }
-        | ADD_T FIELD_T str str str_z ';'       { pTableShape->addField(sp2s($3), sp2s($4), sp2s($5)); }
-        | ADD_T FIELD_T str ';'                 { pTableShape->addField(sp2s($3)); }
-        | ADD_T FIELD_T str str str_z '{'       { pTableShapeField = pTableShape->addField(sp2s($3), sp2s($4), sp2s($5)); }
-            fmodps '}'
-        | ADD_T FIELD_T str '{'                 { pTableShapeField = pTableShape->addField(sp2s($3)); }
+        | ADD_T FIELD_T str str_z ';'           { pTableShape->addField(sp2s($3), sp2s($4)); }
+        | ADD_T FIELD_T str str_z '{'           { pTableShapeField = pTableShape->addField(sp2s($3), sp2s($4)); }
             fmodps '}'
         ;
-tstypes : strs                          { $$ = $1; cTableShape().descr()[_sTableShapeType].  check(*$1, cColStaticDescr::VC_OK); }
+tstypes : tstype                                { $$ = $1; }
+        | tstypes ',' tstype                    { $$ = $1 | $3; }
+        ;
+tstype  : SIMPLE_T                              { $$ = ENUM2SET(TS_SIMPLE); }
+        | TREE_T                                { $$ = ENUM2SET(TS_TREE); }
+        | BARE_T                                { $$ = ENUM2SET(TS_BARE); }
+        | OWNER_T                               { $$ = ENUM2SET(TS_OWNER); }
+        | CHILD_T                               { $$ = ENUM2SET(TS_CHILD); }
+        | LINK_T                                { $$ = ENUM2SET(TS_LINK); }
+        | DIALOG_T                              { $$ = ENUM2SET(TS_DIALOG); }
+        | TABLE_T                               { $$ = ENUM2SET(TS_TABLE); }
+        | MEMBER_T                              { $$ = ENUM2SET(TS_MEMBER); }
+        | GROUP_T                               { $$ = ENUM2SET(TS_GROUP); }
+        | READ_T ONLY_T                         { $$ = ENUM2SET(TS_READ_ONLY); }
         ;
 tsintyp : str                           { $$ = $1; cTableShape().descr()[_sTableInheritType].check(*$1, cColStaticDescr::VC_OK); }
         ;
@@ -2411,51 +2462,62 @@ tmod    : str                           { $$ = cTableShape().getIdByName(sp2s($1
         ;
 ftmod   : str '.' str                   { $$ = cTableShapeField::getIdByNames(qq(), sp2s($1), sp2s($3)); }
         ;
+fflags  : fflag                         { $$ = $1; }
+        | fflags ',' fflag              { $$ = $1 | $3; }
+        ;
+fflag   : HIDE_T                        { $$ = ENUM2SET2(FF_DIALOG_HIDE, FF_TABLE_HIDE); }
+        | HIDE_T TABLE_T                { $$ = ENUM2SET(FF_TABLE_HIDE);    }
+        | HIDE_T DIALOG_T               { $$ = ENUM2SET(FF_DIALOG_HIDE);   }
+        | AUTO_T SET_T                  { $$ = ENUM2SET(FF_AUTO_SET);      }
+        | READ_T ONLY_T                 { $$ = ENUM2SET(FF_READ_ONLY);     }
+        | PASSWD_T                      { $$ = ENUM2SET(FF_PASSWD);        }
+        | HUGE_T                        { $$ = ENUM2SET(FF_HUGE);          }
+        ;
 fmodps  : fmodp
         | fmodps fmodp
         ;
 fmodp   : SET_T str '=' value ';'       { pTableShapeField->set(sp2s($2), vp2v($4)); }
-        | TITLE_T str ';'               { pTableShapeField->setName(_sTableShapeFieldTitle, sp2s($2)); }
+        | TITLE_T strs_zz ';'           { pTableShapeField->setTitle(slp2sl($2)); }
         | NOTE_T str ';'                { pTableShapeField->setName(_sTableShapeFieldNote, sp2s($2)); }
-        | TITLE_T str str ';'           { pTableShapeField->setName(_sTableShapeFieldTitle, sp2s($2)   );
-                                          pTableShapeField->setName(_sTableShapeFieldNote, sp2s($3)); }
         | VIEW_T RIGHTS_T rights ';'    { pTableShapeField->setName(_sViewRights, sp2s($3)); }
         | EDIT_T RIGHTS_T rights ';'    { pTableShapeField->setName(_sEditRights, sp2s($3)); }
         | FEATURES_T str ';'            { pTableShapeField->setName(_sFeatures, sp2s($2)); }
         | EXPRESSION_T str ';'          { pTableShapeField->setName(_sExpression, sp2s($2)); }
-        | HIDE_T bool_on ';'            { pTableShapeField->setBool(_sIsHide, $2); }
+        | FLAG_T fflags ';'             { pTableShapeField->setId(_sFieldFlags, $2); }
+        | FLAG_T ON_T fflags ';'        { pTableShapeField->setOn(_sFieldFlags, $3); }
+        | FLAG_T OFF_T fflags ';'       { pTableShapeField->setOff(_sFieldFlags, $3); }
         | DEFAULT_T VALUE_T str ';'     { pTableShapeField->setName(_sDefaultValue, sp2s($3)); }
-        | READ_T ONLY_T bool_on ';'     { pTableShapeField->setBool(_sIsReadOnly, $3); }
         | TOOL_T TIP_T str ';'          { pTableShapeField->setBool(_sToolTip, $3); }
         | WHATS_T THIS_T str ';'        { pTableShapeField->setBool(_sWhatsThis, $3); }
         ;
-appmenu : GUI_T str                             { pMenuApp = $2;}
-            '{' menus '}'                       { pDelete(pMenuApp); }
+appmenu : GUI_T str                     { pMenuApp = $2;}
+            '{' menus '}'               { pDelete(pMenuApp); }
         ;
 menus   : menu
         | menu menus
         ;
-menu    : str MENU_T str_z                      { newMenuMenu(sp2s($1), sp2s($3)); }
-            miops  '{' mitems '}'               { delMenuItem(); }
+menu    : str MENU_T                    { newMenuMenu(sp2s($1)); }
+            '{' miops mitems '}'        { delMenuItem(); }
         ;
 mitems  : mitem mitems
         |
         ;
-mitem   : str SHAPE_T str str_z                 { newMenuItem(sp2s($1), sp2s($3), sp2s($4), ":shape=%1:"); }
-            miops ';'                           { delMenuItem(); }
-        | str EXEC_T str str_z                  { newMenuItem(sp2s($1), sp2s($3), sp2s($4), ":exec=%1:"); }
-            miops ';'                           { delMenuItem(); }
-        | str OWN_T str str_z                   { newMenuItem(sp2s($1), sp2s($3), sp2s($4), ":own=%1:"); }
-            miops ';'                           { delMenuItem(); }
-        | str MENU_T str_z                      { newMenuMenu(sp2s($1), sp2s($3)); }
-            miops  '{' mitems '}'               { delMenuItem(); }
+mitem   : str SHAPE_T str               { newMenuItem(sp2s($1), sp2s($3), ":shape=%1:"); }
+            '{' miops '}'               { delMenuItem(); }
+        | str EXEC_T str                { newMenuItem(sp2s($1), sp2s($3), ":exec=%1:"); }
+            '{' miops '}'               { delMenuItem(); }
+        | str OWN_T str                 { newMenuItem(sp2s($1), sp2s($3), ":own=%1:"); }
+            '{' miops '}'               { delMenuItem(); }
+        | str MENU_T                    { newMenuMenu(sp2s($1)); }
+            '{' miops mitems '}'        { delMenuItem(); }
         ;
 miops   : miop miops
         |
         ;
-miop    : TOOL_T TIP_T str ';'                  { setMenuToolTip(sp2s($3)); }
-        | WHATS_T THIS_T str ';'                { setMenuWhatsThis(sp2s($3)); }
-        | RIGHTS_T rights                       { setMenuRights(sp2s($2)); }
+miop    : TITLE_T strs_zz ';'           { setMenuTitle(slp2sl($2)); }
+        | TOOL_T TIP_T str ';'          { setMenuToolTip(sp2s($3)); }
+        | WHATS_T THIS_T str ';'        { setMenuWhatsThis(sp2s($3)); }
+        | RIGHTS_T rights ';'           { setMenuRights(sp2s($2)); }
         ;
 // Névvel azonosítható rekord egy mezőjének a modosítása az adatbázisban:
 // SET <tábla név>[<modosítandó mező neve>].<rekordot azonosító név> = <új érték>;
@@ -2625,7 +2687,7 @@ static QString *yygetstr2(const QString& mn)
             *ps += c;
         }
     }
-    PDEB(VVERBOSE) << ee << QChar(' ') << *ps;
+    // PDEB(VVERBOSE) << ee << QChar(' ') << *ps;
     delete ps;
     yyerror(ee);    // az yyerror() olyan mintha visszatérne, pedig dehogy.
     return NULL;
@@ -2650,13 +2712,13 @@ static int isAddress(const QString& __s)
     bool ok;
     yylval.i = as.toLongLong(&ok);
     if (ok) {
-        PDEB(VVERBOSE) << "INTEGER : " << as << endl;
+        // PDEB(VVERBOSE) << "INTEGER : " << as << endl;
         return INTEGER_V;
     }
     // MAC ?
     yylval.mac = new cMac(as);
     if (yylval.mac->isValid()) {
-        PDEB(VVERBOSE) << "MAC : " << as << endl;
+        // PDEB(VVERBOSE) << "MAC : " << as << endl;
         return MAC_V;
     }
     delete yylval.mac;
@@ -2665,7 +2727,7 @@ static int isAddress(const QString& __s)
     if (n > 2 || (n > 1 && as.contains("::"))) {
         yylval.ip = new QHostAddress();
         if (yylval.ip->setAddress(as)) {
-            PDEB(VVERBOSE) << "IPV6 : " << as << endl;
+            // PDEB(VVERBOSE) << "IPV6 : " << as << endl;
             return IPV6_V;
         }
         delete yylval.ip;
@@ -2712,6 +2774,8 @@ static int yylex(void)
         TOK(DATA) TOK(IANA) TOK(IFDEF) TOK(IFNDEF) TOK(NC) TOK(QUERY) TOK(PARSER)
         TOK(REPLACE) TOK(RANGE) TOK(EXCLUDE) TOK(PREP) TOK(POST) TOK(CASE) TOK(RECTANGLE)
         TOK(DELETED) TOK(PARAMS) TOK(CONVERTER) TOK(PRINTER) TOK(GATEWAY) TOK(DOMAIN)
+        TOK(DIALOG) TOK(AUTO) TOK(PASSWD) TOK(HUGE) TOK(FLAG) TOK(TREE) TOK(SECONDARY)
+        TOK(SIMPLE) TOK(BARE) TOK(OWNER) TOK(CHILD) TOK(MEMBER)
         { "WST",    WORKSTATION_T }, // rövidítések
         { "ATC",    ATTACHED_T },
         { "INT",    INTEGER_T },
@@ -2722,7 +2786,8 @@ static int yylex(void)
         { "DEL",    DELETE_T },
         { "EXPR",   EXPRESSION_T },
         { "BOOL",   BOOLEAN_T },
-        { "GATE",   GATEWAY_T },
+        { "GW",     GATEWAY_T },
+        { "SEC",    SECONDARY_T },
         { NULL, 0 }
     };
     // DBGFN();
@@ -2748,7 +2813,7 @@ recall:
                 goto find_comment_end;          // keressük tövább
             }
             if (!c2.isNull()) yyunget(c2);  // A feleslegesen beolvasott karaktert vissza
-            PDEB(VVERBOSE) << "C TOKEN : /" << endl;
+            // PDEB(VVERBOSE) << "C TOKEN : /" << endl;
             return c.toLatin1();             // nem komment, hanem a '/' token
         }
     }
@@ -2760,12 +2825,12 @@ recall:
             return '$';
         if (c == QChar('$')) {  // Ez nem is makró, hanem string literál : $$ bla.bla $$, vagy $aa$ bla.bla $aa$
             yylval.s = yygetstr2(mn);
-            PDEB(VVERBOSE) << "ylex : $$ STRING : " << *(yylval.s) << endl;
+            // PDEB(VVERBOSE) << "ylex : $$ STRING : " << *(yylval.s) << endl;
             return STRING_V;
         }
         if (!c.isNull() && c.isSpace()) c = yyget();
         QStringList    parms;
-        //PDEB(VVERBOSE) << "yylex: exec macro: " << mn << endl;
+        // PDEB(VVERBOSE) << "yylex: exec macro: " << mn << endl;
         if (c == QChar('(')) { // Makró paraméterek
             static const char me[] = "EOF in macro parameter list.";
             //static const char mi[] = "Invalid char in macro parameter list.";
@@ -2799,7 +2864,7 @@ recall:
                 }
                 parm += c;
             } while (true);
-            //PDEB(VVERBOSE) << "Macro params : " << toString(parms);
+            // PDEB(VVERBOSE) << "Macro params : " << toString(parms);
         }
         else {
             yyunget(c);
@@ -2816,7 +2881,7 @@ recall:
             }
             else mm += c;
         }
-        //PDEB(VVERBOSE) << "Macro Body : \"" << mm << "\"" << endl;
+        // PDEB(VVERBOSE) << "Macro Body : \"" << mm << "\"" << endl;
         insertCode(mm);
         goto recall;
     }
@@ -2839,14 +2904,14 @@ recall:
             if (!ok) {   // Ez nem float
                 yyerror("Invalid float number.");
             }
-            PDEB(VVERBOSE) << "ylex : FLOAT : " << yylval.r << endl;
+            // PDEB(VVERBOSE) << "ylex : FLOAT : " << yylval.r << endl;
             return FLOAT_V;
         case 3:  // IP
             yylval.ip = new QHostAddress();
             if (!yylval.ip->setAddress(sn)) {
                 yyerror("Invalid IP number.");
             }
-            PDEB(VVERBOSE) << "ylex : IPV4 : " << yylval.ip->toString() << endl;
+            // PDEB(VVERBOSE) << "ylex : IPV4 : " << yylval.ip->toString() << endl;
             return IPV4_V;
             break;
         case 0: // Int
@@ -2869,13 +2934,13 @@ recall:
             yylval.i = sn.toLongLong(&ok, 10);
         }
         if (!ok) yyerror("Pprogram error");
-        PDEB(VVERBOSE) << "ylex : INTEGER : " << yylval.i << endl;
+        // PDEB(VVERBOSE) << "ylex : INTEGER : " << yylval.i << endl;
         return INTEGER_V;
     }
     // VALUE STRING
     if (c == QChar('\"')) {
         yylval.s = yygetstr();
-        PDEB(VVERBOSE) << "ylex : STRING : " << *(yylval.s) << endl;
+        // PDEB(VVERBOSE) << "ylex : STRING : " << *(yylval.s) << endl;
         return STRING_V;
     }
     // Egybetus tokenek
@@ -2883,7 +2948,7 @@ recall:
         int r;
         if (c == QChar(':') && 0 != (r = isAddress(":"))) return r;
         int ct = c.toLatin1();
-        PDEB(VVERBOSE) << "ylex : char token : '" << c << "' (" <<  ct << QChar(')') << endl;
+        // PDEB(VVERBOSE) << "ylex : char token : '" << c << "' (" <<  ct << QChar(')') << endl;
         return ct;
     }
     QString *sp = new QString();
@@ -2896,14 +2961,14 @@ recall:
     if (sp->isEmpty()) yyerror("Invalid character");
     for (const struct token *p = sToken; p->name; p++) {
         if (p->name == *sp) {
-            PDEB(VVERBOSE) << "ylex TOKEN : " << *sp << endl;
+            // PDEB(VVERBOSE) << "ylex TOKEN : " << *sp << endl;
             delete sp;
             return p->value;
         }
     }
     if (0 != (r = isAddress(*sp))) return r;
     yylval.s = sp;
-    PDEB(VVERBOSE) << "ylex : NAME : " << *sp << endl;
+    // PDEB(VVERBOSE) << "ylex : NAME : " << *sp << endl;
     return NAME_V;
 }
 
@@ -2914,7 +2979,7 @@ static void forLoopMac(QString *_in, QVariantList *_lst)
     foreach (QVariant v, *_lst) {
         s += QChar('$') + *_in + QChar('(') + v.toString() + ") ";
     }
-    PDEB(VVERBOSE) << "forLoopMac inserted : " << dQuoted(s) << endl;
+    // PDEB(VVERBOSE) << "forLoopMac inserted : " << dQuoted(s) << endl;
     insertCode(s);
     delete _in; delete _lst;
 }

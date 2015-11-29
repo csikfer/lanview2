@@ -18,7 +18,7 @@ cRecordViewModelBase::cRecordViewModelBase(cRecordsViewBase& _rt)
     int i, n = columns.size();
     for (i = 0; i < n; ++i) {
         const cRecordTableColumn&  column = *columns[i];
-        if (column.shapeField.getBool(_sIsHide)) {
+        if (column.shapeField.getBool(_sFieldFlags, FF_TABLE_HIDE)) {
             PDEB(VVERBOSE) << "Hidden field : " << columns[i]->shapeField.getName(_sTableShapeFieldName) << endl;
             continue;
         }

@@ -3,19 +3,21 @@
 
 int tableShapeType(const QString& n, bool __ex)
 {
-    if (0 == n.compare(_sNo,     Qt::CaseInsensitive)) return TS_NO;
-    if (0 == n.compare(_sSimple, Qt::CaseInsensitive)) return TS_SIMPLE;
-    if (0 == n.compare(_sTree,   Qt::CaseInsensitive)) return TS_TREE;
-    if (0 == n.compare(_sOwner,  Qt::CaseInsensitive)) return TS_OWNER;
-    if (0 == n.compare(_sChild,  Qt::CaseInsensitive)) return TS_CHILD;
-    if (0 == n.compare(_sSwitch, Qt::CaseInsensitive)) return TS_SWITCH;
-    if (0 == n.compare(_sLink,   Qt::CaseInsensitive)) return TS_LINK;
-    if (0 == n.compare(_sMember, Qt::CaseInsensitive)) return TS_MEMBER;
-    if (0 == n.compare(_sGroup,  Qt::CaseInsensitive)) return TS_GROUP;
-    if (0 == n.compare(_sIGroup, Qt::CaseInsensitive)) return TS_IGROUP;
-    if (0 == n.compare(_sNGroup, Qt::CaseInsensitive)) return TS_NGROUP;
-    if (0 == n.compare(_sIMember,Qt::CaseInsensitive)) return TS_IMEMBER;
-    if (0 == n.compare(_sNMember,Qt::CaseInsensitive)) return TS_NMEMBER;
+    if (0 == n.compare(_sSimple,  Qt::CaseInsensitive)) return TS_SIMPLE;
+    if (0 == n.compare(_sTree,    Qt::CaseInsensitive)) return TS_TREE;
+    if (0 == n.compare(_sOwner,   Qt::CaseInsensitive)) return TS_OWNER;
+    if (0 == n.compare(_sBare,    Qt::CaseInsensitive)) return TS_BARE;
+    if (0 == n.compare(_sChild,   Qt::CaseInsensitive)) return TS_CHILD;
+    if (0 == n.compare(_sLink,    Qt::CaseInsensitive)) return TS_LINK;
+    if (0 == n.compare(_sDialog,  Qt::CaseInsensitive)) return TS_DIALOG;
+    if (0 == n.compare(_sTable,   Qt::CaseInsensitive)) return TS_TABLE;
+    if (0 == n.compare(_sMember,  Qt::CaseInsensitive)) return TS_MEMBER;
+    if (0 == n.compare(_sGroup,   Qt::CaseInsensitive)) return TS_GROUP;
+    if (0 == n.compare(_sReadOnly,Qt::CaseInsensitive)) return TS_READ_ONLY;
+    if (0 == n.compare(_sIGroup,  Qt::CaseInsensitive)) return TS_IGROUP;
+    if (0 == n.compare(_sNGroup,  Qt::CaseInsensitive)) return TS_NGROUP;
+    if (0 == n.compare(_sIMember, Qt::CaseInsensitive)) return TS_IMEMBER;
+    if (0 == n.compare(_sNMember, Qt::CaseInsensitive)) return TS_NMEMBER;
     if (__ex) EXCEPTION(EDATA, -1, n);
     return TS_UNKNOWN;
 }
@@ -23,15 +25,17 @@ int tableShapeType(const QString& n, bool __ex)
 const QString& tableShapeType(int e, bool __ex)
 {
     switch(e) {
-    case TS_NO:         return _sNo;
     case TS_SIMPLE:     return _sSimple;
     case TS_TREE:       return _sTree;
+    case TS_BARE:       return _sBare;
     case TS_OWNER:      return _sOwner;
     case TS_CHILD:      return _sChild;
-    case TS_SWITCH:     return _sSwitch;
     case TS_LINK:       return _sLink;
+    case TS_DIALOG:     return _sDialog;
+    case TS_TABLE:      return _sTable;
     case TS_MEMBER:     return _sMember;
     case TS_GROUP:      return _sGroup;
+    case TS_READ_ONLY:  return _sReadOnly;
       // TS_INVALID_PAD
     case TS_IGROUP:     return _sIGroup;
     case TS_NGROUP:     return _sNGroup;
@@ -94,6 +98,34 @@ const QString& orderType(int e, bool __ex)
     if (__ex) EXCEPTION(EDATA, e);
     return _sNul;
 }
+
+int fieldFlag(const QString& n, bool __ex)
+{
+    if (0 == n.compare(_sTableHide, Qt::CaseInsensitive)) return FF_TABLE_HIDE;
+    if (0 == n.compare(_sDialogHide,Qt::CaseInsensitive)) return FF_DIALOG_HIDE;
+    if (0 == n.compare(_sAutoSet,   Qt::CaseInsensitive)) return FF_AUTO_SET;
+    if (0 == n.compare(_sReadOnly,  Qt::CaseInsensitive)) return FF_READ_ONLY;
+    if (0 == n.compare(_sPasswd,    Qt::CaseInsensitive)) return FF_PASSWD;
+    if (0 == n.compare(_sHuge,      Qt::CaseInsensitive)) return FF_HUGE;
+    if (__ex) EXCEPTION(EDATA, -1, n);
+    return FF_UNKNOWN;
+}
+
+const QString& fieldFlag(int e, bool __ex)
+{
+    switch(e) {
+    case FF_TABLE_HIDE: return _sTableHide;
+    case FF_DIALOG_HIDE:return _sDialogHide;
+    case FF_AUTO_SET:   return _sAutoSet;
+    case FF_READ_ONLY:  return _sReadOnly;
+    case FF_PASSWD:     return _sPasswd;
+    case FF_HUGE:       return _sHuge;
+    default:            break;
+    }
+    if (__ex) EXCEPTION(EDATA, e);
+    return _sNul;
+}
+
 
 
 int filterType(const QString& n, bool __ex)
@@ -194,7 +226,7 @@ bool cTableShape::insert(QSqlQuery &__q, bool __ex)
 {
     if (!cRecord::insert(__q, __ex)) return false;
     if (shapeFields.count()) {
-        if (getBool(_sIsReadOnly)) shapeFields.sets(_sIsReadOnly, QVariant(true));
+        // if (getBool(_sIsReadOnly)) shapeFields.sets(_sIsReadOnly, QVariant(true));
         int i = shapeFields.insert(__q, __ex);
         return i == shapeFields.count();
     }
@@ -243,25 +275,34 @@ int cTableShape::fetchFields(QSqlQuery& q)
 /// Törli a shapeField konténert, majd feltölti azt:
 /// Felveszi a tábla összes mezőjét, a *note és *title mező értéke a mező neve lessz.
 /// A mező sorrendjét meghatározó "field_sequence_number" mező értéke a mező sorszám * 10 lessz.
-/// Ha talál olyan mezőt, ami távoli kulcs, és 'FT_OWNER'tulajdonságú, akkor a tábla megjelenítés típushoz hozzáadja az TS_CHILD jelzőt.
-/// Ha a távoli kulcs a saját táblára mutat és tulajdonságot jelöl, akkor a TS_SIMPLE tíoust lecseréli TS_TREE típusra.
-/// A fenti két esetben a mezőn beállítja az 'is_hide' mezőt true-ra.
+/// Ha talál olyan mezőt, ami távoli kulcs, és 'FT_OWNER'tulajdonságú, akkor a tábla megjelenítés típushoz hozzáadja az TS_CHILD jelzőt,
+///  és a mezőt rejtetté teszi a táblázatos megjelenítésnél.
+/// Ha _disable_tree értéke hamis, valamint a távoli kulcs a saját táblára mutat és tulajdonságot jelöl,
+/// akkor a TS_SIMPLE tíoust lecseréli TS_TREE típusra, és a mezőt a táblázatos megjelenítésnél rejtetté teszi.
+/// A maző rejtett lessz, ha a deleted mező, vagy elsődleges kulcs és autoincrement (ID) mező
+/// A flag mező (ha van) szintén rejtett.
 /// Kapcsoló tábla esetén :
-bool cTableShape::setDefaults(QSqlQuery& q)
+bool cTableShape::setDefaults(QSqlQuery& q, bool _disable_tree)
 {
     bool r = true;
-    int type = enum2set(TS_SIMPLE);
+    QString n = getName();
+    setName(_sTableTitle, n);
+    setName(_sDialogTitle, n);
+    setName(_sDialogTabTitle, n);
+    int type = ENUM2SET(TS_SIMPLE);
     const cRecStaticDescr& rDescr = *cRecStaticDescr::get(getName(_sTableName), getName(_sSchemaName));
     shapeFields.clear();
+    int ixFieldFlags = cTableShapeField().toIndex(_sFieldFlags);
     for (int i = 0; rDescr.isIndex(i); ++i) {
         const cColStaticDescr& cDescr = rDescr.colDescr(i);
         cTableShapeField fm;
-        fm.setName(cDescr);
+        fm.setName(cDescr); // mező név a rekordban
         fm.setName(_sTableShapeFieldNote, cDescr);
-        fm.setName(_sTableShapeFieldTitle, cDescr);
-        fm.setId(_sFieldSequenceNumber, (i + 1) * 10);
-        bool ro = (!fm.isUpdatable()) || rDescr.primaryKey()[i] || rDescr.autoIncrement()[i];
-        bool hide = i == rDescr.idIndex(false);
+        fm.setName(_sTableTitle, cDescr);
+        fm.setName(_sDialogTitle, cDescr);
+        fm.setId(_sFieldSequenceNumber, (i + 1) * 10);  // mezők megjelenítési sorrendje
+        bool ro = !cDescr.isUpdatable;
+        bool hide = false;
         if (i == 0 && rDescr.idIndex(false) == 0 && rDescr.autoIncrement().at(0)) {
             hide = true;
             ro   = true;
@@ -272,22 +313,28 @@ bool cTableShape::setDefaults(QSqlQuery& q)
         }
         else if (cDescr.fKeyType == cColStaticDescr::FT_OWNER) {
             ro   = true;
-            hide = true;
+            fm.enum2setOn(ixFieldFlags, FF_TABLE_HIDE);
             type = (type & ~enum2set(TS_SIMPLE)) | enum2set(TS_CHILD);
         }
         // Önmagára mutató fkey?
         else if (cDescr.fKeyType     == cColStaticDescr::FT_PROPERTY
          &&      rDescr.tableName()  == cDescr.fKeyTable
          &&      rDescr.schemaName() == cDescr.fKeySchema) {
-            type = (type & ~enum2set(TS_SIMPLE)) | enum2set(TS_TREE);
+            if (!_disable_tree) {
+                type = (type & ~enum2set(TS_SIMPLE)) | enum2set(TS_TREE);
+                fm.enum2setOn(ixFieldFlags, FF_TABLE_HIDE);
+            }
+        }
+        else if (rDescr.flagIndex(false) == i) {
             hide = true;
         }
-        fm.setBool(_sIsReadOnly, ro);
-        fm.setBool(_sIsHide, hide);
+        if (ro)   fm.enum2setOn(_sFieldFlags, FF_READ_ONLY);
+        if (hide) fm.enum2setOn(_sFieldFlags, FF_TABLE_HIDE, FF_DIALOG_HIDE);
         shapeFields << fm;
     }
     // Kapcsoló tábla ?
-    if (rDescr.cols() >= 3                                            // Legalább 3 mező
+    (void)q;
+/*    if (rDescr.cols() >= 3                                            // Legalább 3 mező
      && rDescr.primaryKey().count(true) == 1 && rDescr.primaryKey()[0]  // Első elem egy elsődleges kulcs
      && rDescr.colDescr(1).fKeyType == cColStaticDescr::FT_PROPERTY     // Masodik egy távoli kulcs
      && rDescr.colDescr(2).fKeyType == cColStaticDescr::FT_PROPERTY) {  // Harmadik is egy távoli kulcs
@@ -310,10 +357,29 @@ bool cTableShape::setDefaults(QSqlQuery& q)
             DWAR() << QObject::trUtf8("A csoport %1 tábla azonos nevű leírüja hiányzik.").arg(tn) << endl;
             r = false;
         }
-    }
+    }*/
+    if (!rDescr.isUpdatable()) type |= ENUM2SET(TS_READ_ONLY);
     setId(_ixTableShapeType, type);
-    setBool(_sIsReadOnly, !rDescr.isUpdatable());
     return r;
+}
+
+void cTableShape::setTitle(const QStringList& _tt)
+{
+    QString n = getName();
+    if (_tt.size() > 0 && _tt.at(0).size() > 0) {
+        if (_tt.at(0) != _sAt) n = _tt.at(0);
+        setName(_sTableTitle, n);
+
+        if (_tt.size() > 1 && _tt.at(1).size() > 0) {
+            if (_tt.at(1) != _sAt) n = _tt.at(1);
+            setName(_sDialogTitle, n);
+
+            if (_tt.size() > 2 && _tt.at(2).size() > 0) {
+                if (_tt.at(2) != _sAt) n = _tt.at(2);
+                setName(_sDialogTabTitle, n);
+            }
+        }
+    }
 }
 
 bool cTableShape::fset(const QString& _fn, const QString& _fpn, const QVariant& _v, bool __ex)
@@ -510,7 +576,7 @@ bool cTableShape::setOrdSeq(const QStringList& _fnl, int last, bool __ex)
     return true;
 }
 
-
+/*
 bool cTableShape::fetchLeft(QSqlQuery& q, cTableShape * _po, bool _ex) const
 {
     qlonglong oid = getId(_sLeftShapeId);
@@ -521,17 +587,42 @@ bool cTableShape::fetchLeft(QSqlQuery& q, cTableShape * _po, bool _ex) const
     return true;
 }
 
-bool cTableShape::fetchRight(QSqlQuery& q, cTableShape * _po, bool _ex) const
-{
-    qlonglong oid = getId(_sRightShapeId);
-    if (oid == NULL_ID || !_po->fetchById(q, oid)) {
-        if (_ex) EXCEPTION(EDATA);
-        return false;
-    }
-    return true;
-}
 
-cTableShapeField *cTableShape::addField(const QString& _name, const QString& _title, const QString& _note, bool __ex)
+int cTableShape::fetchRight(QSqlQuery& q, tTableShapes *&_pol, bool _ex) const
+{
+    if (isNull(_sRightShapeIds)) return 0;
+    if (_pol == NULL) _pol = new tTableShapes();
+    int i = 0;
+    foreach (QVariant vId, get(_sRightShapeIds).toList()) {
+        bool ok;
+        qlonglong id = vId.toLongLong(&ok);
+        if (!ok) {
+            QString msg = trUtf8("%1 mező : várt adattípus bigint (ID), a #%2-ik elem értéke : %3")
+                    .arg(fullColumnNameQ(_sRightShapeIds))
+                    .arg(i)
+                    .arg(debVariantToString(vId));
+            if (_ex) EXCEPTION(EDATA, i, msg);
+            DWAR() << msg << endl;
+            return -1;
+        }
+        cTableShape *po = new cTableShape();
+        if (!po->fetchById(q, id)) {
+            delete po;
+            QString msg = trUtf8("%1 mező : hivatkozott a #%2-ik elemhez tartozó ID = %3 objektum nem létezik.")
+                    .arg(fullColumnNameQ(_sRightShapeIds))
+                    .arg(i)
+                    .arg(id);
+            if (_ex) EXCEPTION(EFOUND, id, msg);
+            DWAR() << msg << endl;
+            return -1;
+        }
+        *_pol << po;
+        ++i;
+    }
+    return i;
+}
+*/
+cTableShapeField *cTableShape::addField(const QString& _name, const QString& _note, bool __ex)
 {
     if (0 <= shapeFields.indexOf(_name)) {
         if (__ex) EXCEPTION(EUNIQUE, -1, _name);
@@ -539,15 +630,31 @@ cTableShapeField *cTableShape::addField(const QString& _name, const QString& _ti
     }
     cTableShapeField *p = new cTableShapeField();
     p->setName(_name);
-    p->setName(_sTableShapeFieldTitle, _title.size() ? _title : _name);
-    p->setName(_sTableShapeFieldNote,  _note.size()  ? _note  : _name);
+    p->setName(_sTableTitle, _name);
+    p->setName(_sDialogTitle, _name);
+    if (_note.size()) p->setName(_sTableShapeFieldNote, _note);
     shapeFields << p;
     return p;
 }
 
+void cTableShape::addRightShape(QStringList& _snl)
+{
+    QSqlQuery q = getQuery();
+    QVariantList list;
+    int ix = toIndex(_sRightShapeIds);
+    if (!isNull(ix)) list = get(ix).toList();
+    foreach (QString sn, _snl) {
+        qlonglong id = getIdByName(q, sn);
+        list << QVariant(id);
+    }
+    set(ix, QVariant::fromValue(list));
+}
+
+
 /* ------------------------------ cTableShapeField ------------------------------ */
 
 int cTableShapeField::_ixTableShapeId = NULL_IX;
+int cTableShapeField::_ixFeatures = NULL_IX;
 
 cTableShapeField::cTableShapeField() : cRecord(), shapeFilters(this)
 {
@@ -573,14 +680,13 @@ cTableShapeField::~cTableShapeField()
     clearToEnd();
 }
 
-int cTableShapeField::_ixFeatures = NULL_IX;
-
 const cRecStaticDescr&  cTableShapeField::descr() const
 {
     if (initPDescr<cTableShapeField>(_sTableShapeFields)) {
         _ixFeatures = _descr_cTableShapeField().toIndex(_sFeatures);
         _ixTableShapeId = _descr_cTableShapeField().toIndex(_sTableShapeId);
         CHKENUM(_sOrdTypes, orderType);
+        CHKENUM(_sFieldFlags, fieldFlag);
     }
     return *_pRecordDescr;
 }
@@ -631,6 +737,20 @@ bool cTableShapeField::insert(QSqlQuery &__q, bool __ex)
 bool cTableShapeField::rewrite(QSqlQuery &__q, bool __ex)
 {
     return tRewrite(__q, shapeFilters, 0, __ex);
+}
+
+void cTableShapeField::setTitle(const QStringList& _tt)
+{
+    QString n = getName();
+    if (_tt.size() > 0 && _tt.at(0).size() > 0) {
+        if (_tt.at(0) != _sAt) n = _tt.at(0);
+        setName(_sTableTitle, n);
+
+        if (_tt.size() > 1 && _tt.at(1).size() > 0) {
+            if (_tt.at(1) != _sAt) n = _tt.at(1);
+            setName(_sDialogTitle, n);
+        }
+    }
 }
 
 int cTableShapeField::fetchFilters(QSqlQuery& q)
@@ -774,3 +894,13 @@ int cMenuItem::delByAppName(QSqlQuery &q, const QString &__n, bool __pat) const
     PDEB(VVERBOSE) << QObject::trUtf8("delByAppName SQL : \"%1\" removed %2 records.").arg(sql).arg(n) << endl;
     return  n;
 }
+
+/*
+cMenuItem *cMenuItem::pNullItem = NULL;
+
+const cMenuItem& cMenuItem::nullItem()
+{
+    if (pNullItem == NULL) pNullItem = new cMenuItem();
+    return *pNullItem;
+}
+*/

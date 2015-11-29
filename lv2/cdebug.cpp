@@ -444,3 +444,16 @@ QString list2string(const QStringList& __vl)
     return r + QChar('}');
 }
 
+// lv2types.h -ban
+EXT_ QString QVariantToString(const QVariant& _v, bool *pOk);
+
+QString debVariantToString(const QVariant v)
+{
+    if (v.isNull()) return "[NULL]";
+    if (!v.isValid()) return "[Invalid]";
+    const char * tn = v.typeName();
+    bool ok;
+    QString s = QVariantToString(v, &ok);
+    if (!ok) s = "[?]";
+    return quotedString(s) + "::" + (tn == NULL ? _sNULL : QString(tn));
+}

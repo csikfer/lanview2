@@ -591,18 +591,13 @@ void cEnumComboWidget::setFromEdit(int id)
 
 /* **************************************** cFieldLineWidget ****************************************  */
 
-/*!
-A 'features' mező:\n
-:<b>passwd</b>: Ha megadtuk, és a mező típusa text, akkor a képernyőn nem olvasható az adat
-:<b>text</b>:   Csak text típus esetén, több soros megjelenítés
- */
 cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef _fr, bool _ro, cRecordDialogBase *_par)
     : cFieldEditBase(_tm, _tf, _fr, _ro, _par)
 {
     QLineEdit *pLE = NULL;
     QPlainTextEdit *pTE = NULL;
     isPwd = false;
-    if (_colDescr.eColType == cColStaticDescr::FT_TEXT && _fieldShape.isFeature(_sText)) {
+    if (_colDescr.eColType == cColStaticDescr::FT_TEXT && _fieldShape.getBool(_sFieldFlags, FF_HUGE)) {
         _wType = FEW_TEXT;  // Widget típus azonosító
         pTE = new QPlainTextEdit(_par->pWidget());
         _pWidget = pTE;
@@ -612,7 +607,7 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
         _wType = FEW_LINE;  // Widget típus azonosító
         pLE = new QLineEdit(_par->pWidget());
         _pWidget = pLE;
-        isPwd = _fieldShape.isFeature(_sPasswd);
+        isPwd = _fieldShape.getBool(_sFieldFlags, FF_PASSWD);
     }
     bool nullable = _colDescr.isNullable;
     QString tx;

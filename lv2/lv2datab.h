@@ -1259,6 +1259,10 @@ public:
     bool getBool(int __i) const                     { return get(__i).toBool(); }
     /// Egy mező értékével tér vissza, feltételezve, hogy az egy logikai érték, ill. annak értékét bool típusúvá konvertálja.
     bool getBool(const QString& __i) const          { return get(__i).toBool(); }
+    /// Feltételezi, hogy egy set típusú mezőről van szó ..,
+    bool getBool(int __i, int __e) const            { return (getBigInt(__i) & enum2set(__e)) != 0; }
+    /// Feltételezi, hogy egy set típusú mezőről van szó ..,
+    bool getBool(const QString& __i, int __e) const { return (getBigInt(__i) & enum2set(__e)) != 0; }
     /// Lekérdezi egy mező értékét. Lsd. a másik view(int __i) metódust.
     QString view(QSqlQuery& q, const QString& __i) const    { return view(q, toIndex(__i, false)); }
     /// Az ID mező értékét állítja be. Ha NULL_ID-t adunk meg, akkor törli a mezőt.
@@ -1293,14 +1297,80 @@ public:
     ///
     cRecord& setMac(int __i, const cMac& __a, bool __ex = true);
     cRecord& setMac(const QString& __n, const cMac& __a, bool __ex = true)   { return setMac(toIndex(__n), __a, __ex); }
-    ///
+    /// \brief setIp
+    /// Feltételezve, hogy a mező típusa IP cím, beállítja a mező értékét.
+    /// \param __i  A mező indexe
+    /// \param __a  A neállítandó IP cím
+    /// \param __ex Ha értéke true (ez az alapértelmezés) akkor hiba esetén dob egy kizárást.
+    /// \return Az obkeltum referenciával tér vissza
     cRecord& setIp(int __i, const QHostAddress& __a, bool __ex = true);
+    /// \brief setIp
+    /// Feltételezve, hogy a mező típusa IP cím, beállítja a mező értékét.
+    /// \param __n  A mező neve
+    /// \param __a  A neállítandó IP cím
+    /// \param __ex Ha értéke true (ez az alapértelmezés) akkor hiba esetén dob egy kizárást.
+    /// \return Az obkeltum referenciával tér vissza
     cRecord& setIp(const QString& __n, const QHostAddress& __a, bool __ex = true)   { return setIp(toIndex(__n), __a, __ex); }
-    ///
-    cRecord& enum2setOn(int __ix, int __e)                      { setId(__ix, getId(__ix) | enum2set(__e)); return *this; }
-    cRecord& enum2setOn(int __ix, int _e1, int _e2)             { setId(__ix, getId(__ix) | enum2set(_e1, _e2)); return *this; }
+    /// \brief getBigInt
+    ///  Hasonló a getId-hez, de ha a mező érték NULL, akkor nem a NULL_ID-vel, hanem 0-val tér vissza.
+    /// \param __ix A mező indexe
+    /// \return A mező numerikus értéke, NULL esetén 0LL.
+    qlonglong getBigInt(int __ix) const {
+        if (isNull(__ix)) return 0LL;
+        return getId(__ix);
+    }
+    /// \brief getBigInt
+    ///  Hasonló a getId-hez, de ha a mező érték NULL, akkor nem a NULL_ID-vel, hanem 0-val tér vissza.
+    /// \param __n A mező neve
+    /// \return A mező numerikus értéke, NULL esetén 0LL.
+    qlonglong getBigInt(const QString& __n) const { return getBigInt(toIndex(__n)); }
+    /// \brief setOn
+    /// Set típusú mezőben (enumerációs tömb) maszkkal megadott értékek beállítása ill. hozzáadása.
+    /// \param __ix A mező indexe
+    /// \param __set A SET-ben beállítandó érték maszk
+    /// \return Az objektum referenciával tér vissza.
+    cRecord& setOn(int __ix, qlonglong __set) { return setId(__ix, getBigInt(__ix) | __set); }
+    /// \brief setOn
+    /// Set típusú mezőben (enumerációs tömb) maszkkal megadott értékek beállítása ill. hozzáadása.
+    /// \param __n A mező neve
+    /// \param __set A SET-ben beállítandó érték maszk
+    /// \return Az objektum referenciával tér vissza.
+    cRecord& setOn(const QString& __n, qlonglong __set) { return setOn(toIndex(__n), __set); }
+    /// \brief enum2setOn
+    /// Set típusú mezőben (enumerációs tömb) egy enumerációs értéke beállítása/hozzáadása, az enumeráció numerikus értékének a megadásával.
+    /// \param __ix A mező indexe
+    /// \param __e A hozzáadott enumerációs érték numerikus megfleelője ( a set numerikus értékében a bit indexe)
+    /// \return Az objektum referenciával tér vissza.
+    cRecord& enum2setOn(int __ix, int __e)                      { setId(__ix, getBigInt(__ix) | enum2set(__e)); return *this; }
+    /// \brief enum2setOn
+    /// Set típusú mezőben (enumerációs tömb) két enumerációs értéke beállítása/hozzáadása, az enumeráció numerikus értékének a megadásával.
+    /// \param __ix A mező indexe
+    /// \param _e1 Az egyik hozzáadott enumerációs érték numerikus megfleelője
+    /// \param _e2 A másik hozzáadott enumerációs érték numerikus megfleelője
+    /// \return Az objektum referenciával tér vissza.
+    cRecord& enum2setOn(int __ix, int _e1, int _e2)             { setId(__ix, getBigInt(__ix) | enum2set(_e1, _e2)); return *this; }
     cRecord& enum2setOn(const QString& __n, int __e)            { enum2setOn(toIndex(__n), __e); return *this; }
     cRecord& enum2setOn(const QString& __n, int _e1, int _e2)   { enum2setOn(toIndex(__n), _e1, _e2); return *this; }
+    /// \brief setOff
+    /// Set típusú mezőben (enumerációs tömb) maszkkal megadott értékek törlése.
+    /// \param __ix A mező indexe
+    /// \param __set A SET-ben törlendő érték maszk
+    /// \return Az objektum referenciával tér vissza.
+    cRecord& setOff(int __ix, qlonglong __set) { return setId(__ix, getBigInt(__ix) & ~__set); }
+    /// \brief setOff
+    /// Set típusú mezőben (enumerációs tömb) maszkkal megadott értékek törlése.
+    /// \param __n A mező neve
+    /// \param __set A SET-ben törlendő érték maszk
+    /// \return Az objektum referenciával tér vissza.
+    cRecord& setOff(const QString& __n, qlonglong __set) { return setOff(toIndex(__n), __set); }
+    ///
+    cRecord& enum2setOff(int __ix, int __e)                     { setId(__ix, getBigInt(__ix) & ~enum2set(__e)); return *this; }
+    cRecord& enum2setOff(int __ix, int _e1, int _e2)            { setId(__ix, getBigInt(__ix) & ~enum2set(_e1, _e2)); return *this; }
+    cRecord& enum2setOff(const QString& __n, int __e)           { enum2setOff(toIndex(__n), __e); return *this; }
+    cRecord& enum2setOff(const QString& __n, int _e1, int _e2)  { enum2setOff(toIndex(__n), _e1, _e2); return *this; }
+    ///
+    cRecord& setBool(int __ix, int __e, bool __v)               { if (__v) enum2setOn(__ix, __e); else enum2setOff(__ix, __e); return *this; }
+    cRecord& setBool(const QString& __n, int __e, bool __v)     { if (__v) enum2setOn(__n,  __e); else enum2setOff(__n,  __e); return *this; }
     ///
     QStringList getStringList(int __i, bool __ex = true) const;
     cRecord& setStringList(int __i, const QStringList& __v, bool __ex = true);
@@ -1314,11 +1384,15 @@ public:
     cRecord& addStringList(const QString& __fn, const QStringList& __v, bool __ex = true) {
         return addStringList(toIndex(__fn, __ex), __v, __ex);
     }
-    ///
-    cRecord& enum2setOff(int __ix, int __e)                     { setId(__ix, getId(__ix) & ~enum2set(__e)); return *this; }
-    cRecord& enum2setOff(int __ix, int _e1, int _e2)            { setId(__ix, getId(__ix) & ~enum2set(_e1, _e2)); return *this; }
-    cRecord& enum2setOff(const QString& __n, int __e)           { enum2setOff(toIndex(__n), __e); return *this; }
-    cRecord& enum2setOff(const QString& __n, int _e1, int _e2)  { enum2setOff(toIndex(__n), _e1, _e2); return *this; }
+    cRecord& addStringList(int __i, const QString& __v, bool __ex = true) {
+        QStringList l;
+        l << __v;
+        return addStringList(__i, l, __ex);
+    }
+    cRecord& addStringList(const QString& __fn, const QString& __v, bool __ex = true) {
+        return addStringList(toIndex(__fn, __ex), __v, __ex);
+    }
+
     /// Az ID mezőket hasonlítja össze. Ha nincs vagy nem ismert az ID mező, akkor dob egy kizárást.
     /// Nem ellenőrzi, hogy a két objektum valójában milyen típusú, akkor is elvégzi az összehasonlítást, ha ez logikailag értelmetlen.
     /// Ha az ID értéke NULL, akkor az kisebb minden lehetséges ID értéknél.

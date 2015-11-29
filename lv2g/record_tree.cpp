@@ -26,7 +26,7 @@ void cRecordTree::init()
     buttons << DBT_CLOSE << DBT_SPACER << DBT_EXPAND << DBT_REFRESH << DBT_ROOT << DBT_RESTORE;
     if (isReadOnly == false) buttons << DBT_SPACER << DBT_DELETE << DBT_INSERT << DBT_MODIFY;
     switch (shapeType) {
-    case ENUM2SET2(TS_TREE, TS_NO):
+    case ENUM2SET2(TS_TREE, TS_BARE):
         if (pUpper != NULL) EXCEPTION(EDATA);
         flags = RTF_SLAVE | RTF_TREE;
         buttons.pop_front();    // A close nem kell
@@ -92,8 +92,7 @@ void cRecordTree::init()
         if (pUpper == NULL) EXCEPTION(EDATA);
         flags = RTF_OVNER | RTF_SLAVE | RTF_CHILD | RTF_TREE;
         buttons.pop_front();    // A close nem kell
-        initSimple(_pWidget);
-        pRightTable = cRecordsViewBase::newRecordView(*pq, pTableShape->getId(_sRightShapeId), this, _pWidget);
+        initMaster();
         break;
     default:
         EXCEPTION(ENOTSUPP);
@@ -108,10 +107,12 @@ void cRecordTree::initSimple(QWidget *pW)
     pMainLayer  = new QVBoxLayout(pW);
     pTreeView   = new QTreeView(pW);
     pModel      = new cRecordTreeModel(*this);
-    QString title = pTableShape->getName(_sTableShapeTitle);
-    if (title.size() > 0) {
-        QLabel *pl = new QLabel(title);
-        pMainLayer->addWidget(pl);
+    if (!pTableShape->getBool(_sTableShapeType, TS_BARE)) {
+        QString title = pTableShape->getName(_sTableTitle);
+        if (title.size() > 0) {
+            QLabel *pl = new QLabel(title);
+            pMainLayer->addWidget(pl);
+        }
     }
     pMainLayer->addWidget(pTreeView);
     pMainLayer->addWidget(pButtons->pWidget());

@@ -57,6 +57,8 @@ public:
     const enum eMenuActionType  type;
     /// Az owner tab widget pointere
     QTabWidget     *pTabWidget;
+    ///
+    cMenuItem   *pMenuItem;
 //    cOwnTab         *pOwnTab;       ///< ? A menüponthoz tartozó tab ?
     /// Amennyiben egy táblát jelenítünk meg, akkor annak a leírója (több tábla esetén a fő tábláé)
     cTableShape     *pTableShape;

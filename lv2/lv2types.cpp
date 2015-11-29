@@ -958,11 +958,12 @@ QString QVariantToString(const QVariant& _v, bool *pOk)
         case QMetaType::QVariantList:   return QVariantListToString(_v.toList(), pOk);
         case QMetaType::QPoint:         return QPointTosString(_v.toPoint());
         case QMetaType::QPointF:        return QPointFTosString(_v.toPointF());
-/*      case QMetaType::QPolygon:       return QPolygonToString(_v.value<QPolygon>());
+/*      Ezek csak akkor vannak, ha GUI-val fordítunk !!!
+        case QMetaType::QPolygon:       return QPolygonToString(_v.value<QPolygon>());
         case QMetaType::QPolygonF:      return QPolygonFToString(_v.value<QPolygonF>()); */
         default:                        break;
         }
-        if (pOk != NULL) *pOk = !_v.canConvert<QString>();
+        if (pOk != NULL) *pOk = _v.canConvert<QString>();
         return _v.toString();
     }
 //    if (type == _UMTID_QPoint)          return QPointTosString(_v.value<QPoint>());
@@ -976,13 +977,3 @@ QString QVariantToString(const QVariant& _v, bool *pOk)
     return QString();
 }
 
-QString debVariantToString(const QVariant v)
-{
-    if (v.isNull()) return "[NULL]";
-    if (!v.isValid()) return "[Invalid]";
-    const char * tn = v.typeName();
-    bool ok;
-    QString s = QVariantToString(v, &ok);
-    if (!ok) s = "[?]";
-    return quotedString(s) + "::" + (tn == NULL ? _sNULL : QString(tn));
-}

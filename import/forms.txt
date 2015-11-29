@@ -26,7 +26,7 @@ ENUM notifswitch    unknown         TITLE "ismeretlen";
 DELETE ENUM TITLE rights;
 ENUM rights         none            TITLE "jogosulatlan";
 ENUM rights         viewer          TITLE "megfigyelő";
-ENUM rights         indalarm        TITLE "riasztás figyelő";
+ENUM rights         indalarm        TITLE "rendész";
 ENUM rights         operator        TITLE "operátor";
 ENUM rights         admin           TITLE "adminisztrátor";
 ENUM rights         system          TITLE "rendszer";
@@ -51,46 +51,66 @@ INCLUDE "iaform.txt";
 // Objects:
 // Adattáblák (objektumok) megjelenítése
 
-MACRO DefRights $$
-TABLE VIEW   RIGHTS operator;       // Megjeleníthető csak operátor vagy magasabb jogosultsággal
-TABLE EDIT   RIGHTS admin;          // Mődosítható admin joggal
-TABLE DELETE RIGHTS admin;          // Egy elem törölhető admin joggal
-TABLE INSERT RIGHTS admin;          // Új elem beszúrható admin joggal
-$$;
+TABLE SHAPE port_params "Port paraméterek" {
+    SET DEFAULTS;
+    
+    TABLE               TITLE "Port paraméterek", "A porthoz rendelt paraméter",;
+    FIELD param_type_id TITLE "Típus",@;
+    FIELD param_value   TITLE "Érték",@;
+}
 
 TABLE SHAPE pports "Pach panel és fali csatlakozó portok" {
-    SET DEFAULTS;               // Az összes mező felvétele alapértelmezett tulajdonságokkal
-//  TABLE TYPE child;           // Más táblával (owner) kapcsolatban jelenítjük csak meg (patchs). A 'SET DEFAULTS' már beállította.
-    TABLE INHERIT TYPE "only";  // Öröklés kizárása, ős ill. leszármazott objektumok nem kerülnek megjelenítésre
-//  FIELD node_id HIDE;         // Az owner-nél már megjelenítettük, itt felesleges. A 'SET DEFAULTS' már beállította.
-    FIELD deleted HIDE;
-    FIELD iftype_id HIDE;       // Csak egy típus van, nem jelenítjük meg
-    FIELD iftype_id READ ONLY;  // Mivel egy típus lehet, azt nem változtathatjuk meg.
-    FIELD iftype_id DEFAULT VALUE STRING(ID IFTYPE(patch));     // Új objektumnál ezt a típust kell beállítani
-    FIELD port_index ORD asc,desc,no;   // Alapértelmezetten a port indexre lessz rendezve
-    FIELD port_name, port_tag  ORD no, asc, desc;       // Rendezhető még a névre vagy a cimkére
+    SET NO TREE DEFAULTS;       // Az összes mező felvétele alapértelmezett tulajdonságokkal (CHILD)
+    
+    TABLE                TITLE "A kiválasztott csatlakozó vagy panel portjai", "Pach panel vagy fali csatlakozó port",;
+    FIELD port_name      TITLE "Név",@;
+    FIELD port_note      TITLE "Megjegyzés",@;
+    FIELD port_tag       TITLE "Cimke",@;
+    FIELD port_index     TITLE "Index",     "A port sorszáma (kötelező)";
+    FIELD shared_cable   TITLE "Megosztás", "A megosztás típusa";
+    FIELD shared_port_id TITLE "Megosztva", "Másodlagos megosztáshoz tartozó elsődleges port";
+    
+    TABLE TYPE CHILD, OWNER;    // patchs tulajdona, de a pports tulajdonosa
+    TABLE INHERIT TYPE only;    // Öröklés kizárása, ős ill. leszármazott objektumok nem kerülnek megjelenítésre
+    RIGHT SHAPE port_params;
+    FIELD iftype_id FLAG HIDE;  // Csak egy típus van, nem jelenítjük meg sehol
+    FIELD iftype_id DEFAULT VALUE STRING(ID IFTYPE(patch));     // Új portnál mindíg ezt a típust kell beállítani
+    FIELD port_index ORD asc,desc,no;                           // Alapértelmezetten a port indexre lessz rendezve
+    FIELD port_name, port_tag, port_note  ORD no, asc, desc;    // Rendezhető még a névre, cimkére vagy a megjegyzésre
     FIELD port_index ADD FILTERS big, litle, interval; // A port indexre megadható szűrő: kicebb, nagyobb és tartomány
     FIELD port_name, port_tag, port_note ADD FILTERS like, similar, regexp, regexpi;
-    $DefRights
 }
 
 TABLE SHAPE patchs "Pach panelek és fali csatlakozók" {
     SET DEFAULTS;
-    TABLE TYPE owner;
-    TABLE INHERIT TYPE "only";
-    RIGHT SHAPE pports;         // A portok listájával együtt jelenítjük meg
-    FIELD deleted HIDE;
+    
+    TABLE            TITLE "Pach panelek és fali csatlakozók", "Pach panel vagy fali csatlakozó",;
+    FIELD node_name  TITLE "Név",@;
+    FIELD node_note  TITLE "Megjegyzés",@;
+    FIELD place_id   TITLE "Hely",@;
+    FIELD features   TITLE "Egyébb paraméterek", "Egyébb paraméterek";
+    
+    TABLE TYPE OWNER;
+    TABLE INHERIT TYPE only;
+    RIGHT SHAPE pports, port_params;  // plussz a paraméter rekordok
     FIELD node_name ORD asc,desc,no;
     FIELD node_note, place_id ORD no, asc, desc;
     FIELD node_name, node_note ADD FILTERS begin, like, similar, regexp, regexpi;
-    $DefRights
 }
 
-TABLE SHAPE nports "Passzív portok" {
+TABLE SHAPE nports "Passzív portok (Csak dialógus!)" {
     SET DEFAULTS;
-    TABLE INHERIT TYPE only;
-    $DefRights
-    FIELD deleted HIDE;
+    
+    TABLE               TITLE ,"Passzív port",@;
+    FIELD port_name     TITLE "Név",@;
+    FIELD port_note     TITLE "Megjegyzés",@;
+    FIELD port_tag      TITLE "Cimke",@;
+    FIELD port_index    TITLE "Index",   "A port sorszáma (opcionális)";
+    FIELD iftype_id     TITLE "Típus",   "A port típusa";
+    
+    TABLE TYPE DIALOG;
+    TABLE INHERIT TYPE no;
+    
     FIELD port_name ORD asc,desc,no;
     FIELD port_tag, port_note, iftype_id, port_index ORD no, asc, desc;
     FIELD port_index ADD FILTERS big, litle, interval;
@@ -98,106 +118,132 @@ TABLE SHAPE nports "Passzív portok" {
     FIELD iftype_id ADD FILTERS like;
 }
 
-TABLE SHAPE nodes "Passzív, felügyeltbe bevont elemek" {
+TABLE SHAPE nodes "Passzív, felügyeletbe bevont elemek (Csak dialógus!)" {
     SET DEFAULTS;
-    TABLE TYPE owner;
+    
+    TABLE            TITLE ,"Hálózati végberendszés","Nem SNMP eszköz";
+    FIELD node_name  TITLE "Név",@;
+    FIELD node_note  TITLE "Megjegyzés",@;
+    FIELD place_id   TITLE "Hely", "Az eszköz helye";
+    FIELD features   TITLE "paraméterek", "Egyébb paraméterek";
+    FIELD node_type  TITLE "Típus", "Az eszköz típusa";
+    FIELD node_stat  TITLE "Állapot", "Az eszköz állpota";
+    
+    TABLE TYPE DIALOG;
     TABLE INHERIT TYPE only;
-    RIGHT SHAPE nports;
-    $DefRights
-    FIELD deleted HIDE;
+    
     FIELD node_name ORD asc,desc,no;
     FIELD node_note, place_id, node_stat ORD no, asc, desc;
     FIELD node_name, node_note,node_stat,node_type ADD FILTERS begin, like, similar, regexp, regexpi;
-    FIELD node_stat READ ONLY;
-    FIELD node_stat DEFAULT VALUE unkbown;
+    
+    FIELD node_stat DEFAULT VALUE unknown;
+    FIELD node_type DEFAULT VALUE "{node}";
+    FIELD node_stat, node_type EDIT RIGHTS admin;
 }
 
 TABLE SHAPE ipaddresses "IP címek" {
     SET DEFAULTS;
-//  TABLE INHERIT TYPE no;      // 'no' a default
-    FIELD port_id HIDE;
+    
+    TABLE                 TITLE "IP ímek", "IP cím";
+    FIELD ip_address_note TITLE "Megjegyzés",@;
+    FIELD address         TITLE "Cím",@;
+    FIELD ip_address_type TITLE "Típus", "A cím típusa";
+    FIELD subnet_id       TITLE "Alhálózat", @;
+    
     FIELD preferred ORD asc,desc,no;
     FIELD address, ip_address_note ORD no, asc, desc;
-    $DefRights
 }
 
 TABLE interfaces SHAPE hostports "Hálózati interfészek, portok" {
     SET DEFAULTS;
-    TABLE TYPE child, owner, tree;
-    RIGHT SHAPE ipaddresses;
+    TABLE TYPE CHILD, OWNER, TREE;
+    RIGHT SHAPE ipaddresses,  port_params;
     TABLE INHERIT TYPE listed_rev;
     INHERIT TABLE NAMES nports;                 // A teljes lista: interfaces, nports
+
+    TABLE               TITLE "Hálózati interfészek és portok","Hálózati interfész vagy passzív port", "Aktív port vagy interfész";
+    FIELD port_name     TITLE "Név",@;
+    FIELD port_note     TITLE "Megjegyzés",@;
+    FIELD port_tag      TITLE "Cimke",@;
+    FIELD port_index    TITLE "Index", "A port sorszáma";
+    FIELD port_index TOOL TIP "SNMP eszköz esetén az index kötelező, és azonos az interfész SNMP azonosítójával.";
+    FIELD iftype_id     TITLE "Típus", "A port típus";
+    
     FIELD port_ostat, port_astat READ ONLY;
-    FIELD port_ostat, port_astat DEFAULT VALUE unknown;
-    FIELD deleted, node_id HIDE;
+    FIELD port_ostat DEFAULT VALUE unknown;
+    FIELD port_astat DEFAULT VALUE unknown;
     FIELD port_index ORD asc,desc,no;
     FIELD port_name, port_tag, port_note, iftype_id ORD no, asc, desc;
     FIELD port_name, port_tag, port_note ADD FILTERS begin, like, similar, regexp, regexpi;
-    $DefRights
+}
+
+TABLE SHAPE node_params "Eszköz paraméterek" {
+    SET DEFAULTS;
+    
+    TABLE               TITLE "Eszköz paraméterek", "Az eszközhöz rendelt paraméter",;
+    FIELD param_type_id TITLE "Típus",@;
+    FIELD param_value   TITLE "Érték",@;
 }
 
 TABLE snmpdevices SHAPE allnodes "Hálózati elemek" {
     SET DEFAULTS;
-    TABLE TYPE owner;
+    
+    TABLE            TITLE "Aktív és passzív hálózati elemek", "Aktív vagy passzív hálózati elem", "Aktív SNMP eszköz";
+    FIELD node_name  TITLE "Név",@;
+    FIELD node_note  TITLE "Megjegyzés",@;
+    FIELD place_id   TITLE "Hely", "Az eszköz helye";
+    FIELD features   TITLE "paraméterek", "Egyébb paraméterek";
+    FIELD node_type  TITLE "Típus", "Az eszköz típusa";
+    FIELD node_stat  TITLE "Állapot", "Az eszköz állpota";
+    FIELD community_rd TITLE "SNMP read community",@;
+    FIELD community_wr TITLE "SNMP write community",@;
+    FIELD snmp_ver   TITLE "SNMP verzió",@;
+    
+    TABLE TYPE OWNER;
     TABLE INHERIT TYPE listed_rev;      // Megjelenítjük az ős tábla elemeit is
     INHERIT TABLE NAMES nodes;          // A teljes lista: snmpdevices, nodes
-    RIGHT SHAPE hostports;
+    RIGHT SHAPE hostports, node_params;
     FIELD node_name ORD asc,desc,no;
     FIELD node_note, place_id ORD no, asc, desc;
     FIELD node_name, node_note, place_id ADD FILTERS begin, like, similar, regexp, regexpi;
-    $DefRights
 }
 
-/*
-DELETE TABLE SHAPE snmpdevices;
-TABLE SHAPE snmpdevices "SNMP hosts" {
-    SET DEFAULTS;
-    TABLE TYPE no;
-    $DefRights
-}
-*/
 
 TABLE SHAPE host_services "A hostokhoz rendelt szervíz példányok" {
     SET DEFAULTS;
-    TABLE TYPE tree;
+    TABLE TYPE TREE;
     FIELD node_id, service_id, prime_service_id, proto_service_id ADD FILTERS begin, like, similar, regexp, regexpi;
     FIELD node_id, service_id, port_id ORD asc,desc,no;
     FIELD prime_service_id, proto_service_id, superior_host_service_id, host_service_state, soft_state, hard_state, last_changed, last_touched ORD no,asc,desc;
-    $DefRights
+    
 }
 
 TABLE SHAPE services "Szervíz típusok" {
     SET DEFAULTS;
-    TABLE TYPE simple;
+    TABLE TYPE SIMPLE;
     FIELD service_name ORD asc,desc,no;
     FIELD service_name ADD FILTERS begin, like, similar, regexp, regexpi;
-    $DefRights
 }
 
 
 TABLE SHAPE subnets "Alhálózatok" {
     SET DEFAULTS;
-    TABLE TYPE simple;
-    $DefRights
+    TABLE TYPE SIMPLE;
 }
 
 TABLE SHAPE vlans "VLAN-ok" {
     SET DEFAULTS;
-    FIELD vlan_id HIDE OFF;
-    TABLE TYPE simple;
-    $DefRights
+    TABLE TYPE SIMPLE;
 }
 
 TABLE SHAPE images {
     SET DEFAULTS;
-    TABLE TYPE simple;
-    $DefRights
+    TABLE TYPE SIMPLE;
 }
 
 TABLE SHAPE dyn_addr_ranges "Dinamikus címtartományok" {
     SET DEFAULTS;
-    TABLE TYPE simple;
-    $DefRights
+    TABLE TYPE SIMPLE;
 }
 
 // ***************************************************************************************
@@ -205,66 +251,65 @@ TABLE SHAPE dyn_addr_ranges "Dinamikus címtartományok" {
 
 TABLE SHAPE alarms "Riasztások" {
     SET DEFAULTS;
-    TABLE TYPE tree;
-    TABLE READ ONLY;
-    FIELD alarm_id          TITLE "ID"            "Riasztás egyedi azonosító kódja";
-    FIELD host_service_id   TITLE "host:service" "Szolgálltatás példány";
-    FIELD daemon_id         TITLE "daemon"        "Lekérdező daemon";
-    FIELD first_status      TITLE "kezdő áll."    "Állapot a risztás kezdetekor";
-    FIELD max_status        TITLE "crit. áll."    "Legkritikusabb állapot a riasztás alatt";
-    FIELD begin_time        TITLE "kezdete"       "A kritikus esemény kezdete";
-    FIELD event_note        TITLE "üzenet"        "A riasztást dezektáló folyamat üzenete";
-    FIELD superior_alarm_id TITLE  "Függ.Figy." "Felsőbb szintű riasztás";
-    FIELD noalarm           TITLE "letiltva"      "Az értesítés letiltása";
-    FIELD end_time          TITLE "vége"          "A kritikus esemény vége";
-    FIELD msg_time          TITLE "uzenet küldve" "A riasztási üzenet elküldésének az időpontja";
-    FIELD alarm_time        TITLE "on-line ért."  "Az on-line riasztás időpontja";
-    FIELD notice_time       TITLE "megnézte"      "Az első on-line riasztás állapot lekérdezésének az ideje.";
-    FIELD notice_user_id    TITLE "aki megnézte"  "Az első on-line riasztási állapot lekérdezéső felhasználó";
-    FIELD ack_time          TITLE "nyugtázva"     "A riasztás nyugtázásának az időpontja";
-    FIELD ack_user_id       TITLE "aki nyugtázta" "A riasztást nyugtázó felhasználó";
-    FIELD ack_msg           TITLE "megjegyzés"    "A nyugtázó megjegyzése";
+    TABLE TYPE TREE, READ ONLY;
+    TABLE                   TITLE "Riasztási események", "Riasztási esemény",;
+    FIELD alarm_id          TITLE "ID",            "Riasztás egyedi azonosító kódja";
+    FIELD host_service_id   TITLE "host:service", "Szolgálltatás példány";
+    FIELD daemon_id         TITLE "daemon",        "Lekérdező daemon";
+    FIELD first_status      TITLE "kezdő áll.",    "Állapot a risztás kezdetekor";
+    FIELD max_status        TITLE "krit. áll.",    "Legkritikusabb állapot a riasztás alatt";
+    FIELD begin_time        TITLE "kezdete",       "A kritikus esemény kezdete";
+    FIELD event_note        TITLE "üzenet",        "A riasztást dezektáló folyamat üzenete";
+    FIELD superior_alarm_id TITLE  "Függ.Figy.", "Felsőbb szintű riasztás";
+    FIELD noalarm           TITLE "letiltva",      "Az értesítés letiltása";
+    FIELD end_time          TITLE "vége",          "A kritikus esemény vége";
+    FIELD msg_time          TITLE "uzenet küldve", "A riasztási üzenet elküldésének az időpontja";
+    FIELD alarm_time        TITLE "on-line ért.",  "Az on-line riasztás időpontja";
+    FIELD notice_time       TITLE "megnézte",      "Az első on-line riasztás állapot lekérdezésének az ideje.";
+    FIELD notice_user_id    TITLE "aki megnézte",  "Az első on-line riasztási állapot lekérdezéső felhasználó";
+    FIELD ack_time          TITLE "nyugtázva",     "A riasztás nyugtázásának az időpontja";
+    FIELD ack_user_id       TITLE "aki nyugtázta", "A riasztást nyugtázó felhasználó";
+    FIELD ack_msg           TITLE "megjegyzés",    "A nyugtázó megjegyzése";
+    FIELD event_note, ack_msg FLAG ON HUGE;
 
     FIELD host_service_id, daemon_id, max_status, event_note, noalarm, notice_user_id, ack_user_id, ack_msg ADD FILTERS begin, like, similar, regexp, regexpi;
     FIELD begin_time, end_time, msg_time, alarm_time, notice_time, ack_time ADD FILTERS big, litle, interval;
     FIELD begin_time ORD desc, asc, no;
     FIELD end_time, msg_time, alarm_time, notice_time, notice_user_id, ack_time, ack_user_id, ack_msg ORD no, desc, asc;
-    $DefRights
+    
 }
 
 TABLE SHAPE db_errs "Adatbázis hiba napló" {
     SET DEFAULTS;
     TABLE READ ONLY;
-    $DefRights
+    
 }
 
 TABLE SHAPE app_errs "Applikáció hiba napló" {
     SET DEFAULTS;
     TABLE READ ONLY;
-    $DefRights
+    
 }
 
 TABLE SHAPE app_memos "Applikáció napló" {
     SET DEFAULTS;
     TABLE READ ONLY;
-    FIELD memo FEATURES ":text:";       // több sosros
-    $DefRights
+    FIELD memo FLAG ON HUGE;       // több sosros
 }
 
 TABLE SHAPE host_service_logs "A szervíz példányok log rekordjai" {
     SET DEFAULTS;
     TABLE READ ONLY;
-    TABLE TYPE simple;
+    TABLE TYPE SIMPLE;
     FIELD host_service_id ADD FILTERS begin, like, similar, regexp, regexpi;
     FIELD * ORD no;
-    $DefRights
+    
 }
 
 TABLE SHAPE iftypes "Port típusok" {
     SET DEFAULTS;
     TABLE READ ONLY;
-    TABLE TYPE simple;
-    $DefRights
+    TABLE TYPE SIMPLE;
 }
 
 // ***************************************************************************************
@@ -272,162 +317,174 @@ TABLE SHAPE iftypes "Port típusok" {
 
 TABLE SHAPE arps "ARP tábla" {
     SET DEFAULTS;
-    TABLE TYPE simple;
-    FIELD ipaddress  TITLE "IP"     "IP cím";
-    FIELD hwaddress  TITLE "MAC"    "MAC cím";
-    FIELD first_time TITLE first    "Első detektálás ideje";
-    FIELD last_time  TITLE last     "Utoló detektálás ideje";
-    $DefRights
+    TABLE TYPE SIMPLE;
+    FIELD ipaddress  TITLE "IP",     "IP cím";
+    FIELD hwaddress  TITLE "MAC",    "MAC cím";
+    FIELD first_time TITLE first,    "Első detektálás ideje";
+    FIELD last_time  TITLE last,     "Utoló detektálás ideje";
+    
 }
 
 TABLE SHAPE mactab "Port címtábla" {
     SET DEFAULTS;
-    $DefRights
+    
 }
 
 TABLE SHAPE arp_logs "ARP lekérdezés napló." {
     SET DEFAULTS;
     TABLE READ ONLY;
-    $DefRights
+    
 }
+
+// ***************************************************************************************
 
 TABLE SHAPE fkey_types "Távoli kulcs típusok" {
     SET DEFAULTS;
     TABLE READ ONLY;
-    $DefRights
+    TABLE VIEW RIGHTS operator;
 }
+TABLE SHAPE unusual_fkeys "Nem tipikus távoli kulcsok" {
+    SET DEFAULTS;
+    TABLE READ ONLY;
+    TABLE VIEW RIGHTS operator;
+}
+
 
 // ***************************************************************************************
 // GUI
 
 TABLE SHAPE alarm_messages "Figyelmeztető üzenetek szövege" {
     SET DEFAULTS;
-    $DefRights
+    
 }
 
-TABLE SHAPE table_shape_filters "Szűrési lehetőséget a mezőkre" {
+TABLE SHAPE table_shape_filters "Szűrési lehetőség a mezőkre" {
     SET DEFAULTS;
-    TABLE TYPE child;
-    FIELD table_shape_field_id HIDE;
-    $DefRights
+    TABLE TYPE CHILD;
 }
 
 TABLE SHAPE table_shape_fields "Tábla mezők megjelenítése" {
     SET DEFAULTS;
-    TABLE TYPE child, owner;
+    TABLE TYPE CHILD, OWNER;
     RIGHT SHAPE table_shape_filters;
-    FIELD table_shape_id HIDE;
-    $DefRights
 }
 
 TABLE SHAPE table_shapes "Táblák megjelenítése" {
     SET DEFAULTS;
-    TABLE TYPE owner;
+    TABLE TYPE OWNER;
     RIGHT SHAPE table_shape_fields;
-    $DefRights
+    
 }
 
 TABLE SHAPE menu_items "Menu elemek" {
     SET DEFAULTS;
-    TABLE TYPE tree;
-    $DefRights
+    TABLE TYPE TREE;
 }
 
 TABLE SHAPE enum_vals "Enumerációs értékek" {
     SET DEFAULTS;
-    TABLE TYPE simple;
-    $DefRights
+    TABLE TYPE SIMPLE;
+    
 }
 
 TABLE SHAPE param_types "Paraméter típus leírók" {
     SET DEFAULTS;
-    TABLE TYPE simple;
-    $DefRights
+    TABLE TYPE SIMPLE;
+    
 }
 
 TABLE SHAPE sys_params "Rendszer paraméterek" {
     SET DEFAULTS;
-    TABLE TYPE simple;
-    $DefRights
+    TABLE TYPE SIMPLE;
+    
 }
 
 TABLE SHAPE groups "felhasználói csoportok" {
     SET DEFAULTS;
-    TABLE TYPE group;
-    $DefRights
+    TABLE TYPE GROUP;
 }
 
 TABLE SHAPE users "felhasználók" {
     SET DEFAULTS;
-    TABLE TYPE member;
+    TABLE TYPE MEMBER;
     RIGHT SHAPE groups;
-    FIELD passwd FEATURES ":passwd:";
-    FIELD passwd HIDE;
-    $DefRights
+    FIELD passwd FLAG ON PASSWD, HIDE TABLE;
 }
-SET table_shapes[groups].right_shape_id = ID TABLE SHAPE ( users );
+SET table_shapes[groups].right_shape_ids = ID TABLE SHAPE ( users );
 
 TABLE SHAPE place_groups "Hely és helyiség csoportok / Zónák" {
     SET DEFAULTS;
-    TABLE TYPE group;
+    TABLE TYPE GROUP;
     RIGHT SHAPE users;
-    $DefRights
+  
 }
 
 TABLE SHAPE places "Helyiségek" {
     SET DEFAULTS;
-    TABLE TYPE tree, member;
+    TABLE TYPE TREE, MEMBER;
     RIGHT SHAPE place_groups;
     TABLE FEATURES ":map=get_parent_image:";
-    $DefRights
+  
 }
-SET table_shapes[place_groups].right_shape_id = ID TABLE SHAPE ( places );
+SET table_shapes[place_groups].right_shape_ids = ID TABLE SHAPE ( places );
 
 GUI lv2gui {
-  file MENU "fájl" {
-    setup       OWN     setup           "Beállítások";
-    sys_params  SHAPE   sys_params      "Rendszer paraméterek";
-    param_types SHAPE   param_types     "Paraméter típus leírók";
-    restart     EXEC    restart         "Újraindítás";
-    exit        EXEC    exit            "Kilép";
-  }
-  userss MENU "Felhasználók" {
-    users     SHAPE   users           "Felhasználók";
-    groups    SHAPE   groups          "Felhasználói csoportok";
-    zones     SHAPE   place_groups    "Zónák";
-  }
-  objects MENU "Objektumok" {
-    patchs      SHAPE   patchs          "Patch panelek";
-    nodes       SHAPE   allnodes        "Hálózati elemek";
-    places      SHAPE   places          "Helyek, helyiségek";
-    services    SHAPE   services        "Szolgáltatás típusok";
-    host_services SHAPE host_services   "Szolgáltatás példányok";
-    subnets     SHAPE   subnets         "Alhálózatok";
-    vlans       SHAPE   vlans           "VLAN-ok";
-    images      SHAPE images images;
-  }
-  events MENU "Események" {
-    alarms      SHAPE   alarms          "Riasztások";
-    app_errs    SHAPE   app_errs        "Program hiba napló";
-    app_memos   SHAPE   app_memos       "Program esemény napló";
-    host_service_logs SHAPE host_service_logs "Szervíz állapot napló";
-    olalarm     OWN     olalarm         "On-Line riasztások";
-  }
-  netothers MENU "Egyébb hálózati adatok" {
-    arps        SHAPE   arps            "ARP tábla";
-    arp_logs    SHAPE   arp_logs        "ARP napló";
-    mactab      SHAPE   mactab          "Port címtáblák";
-  }
-  internals MENU "Belső vezérlő adatok" {
-    fkey_types  SHAPE   fkey_types      "Idegen kulcs típusok";
-  }
-  gui MENU "Megjelenítés" {
-    alarm_messages SHAPE alarm_messages "Figyelmeztető üzenetek szövege";
-    shapes      SHAPE   table_shapes    "Táblák megjelenítése";
-    enums       SHAPE   enum_vals       "Enumerációs értékek";
-    menus       SHAPE   menu_items      "GUI menük";
-  }
-  tools MENU "Eszközök" {
-    import      OWN     parser          "Szöveges import";
-  }
+    file MENU {
+        TITLE "fájl";
+        setup       OWN     setup           {   TITLE "Beállítások",@;  }
+        sys_params  SHAPE   sys_params      {   TITLE "Rendszer paraméterek",@;  }
+        param_types SHAPE   param_types     {   TITLE "Paraméter típus leírók",@;  }
+        restart     EXEC    restart         {   TITLE "Újraindítás";  }
+        exit        EXEC    exit            {   TITLE "Kilép";  }
+    }
+    userss MENU  {
+        TITLE "Felhasználók";
+        users       SHAPE   users           {   TITLE "Felhasználók",@;  }
+        groups      SHAPE   groups          {   TITLE "Felhasználói csoportok",@;  }
+        zones       SHAPE   place_groups    {   TITLE "Zónák",@;  }
+    }
+    objects MENU  {
+        TITLE "Objektumok";
+        patchs      SHAPE   patchs          {   TITLE "Patch panelek",@;  }
+        nodes       SHAPE   allnodes        {   TITLE "Hálózati elemek",@;  }
+        places      SHAPE   places          {   TITLE "Helyek, helyiségek",@;  }
+        services    SHAPE   services        {   TITLE "Szolgáltatás típusok",@;  }
+        host_services SHAPE host_services   {   TITLE "Szolgáltatás példányok",@;  }
+        subnets     SHAPE   subnets         {   TITLE "Alhálózatok",@;  }
+        vlans       SHAPE   vlans           {   TITLE "VLAN-ok",@;  }
+        images      SHAPE   images          {   TITLE "Képek",@;  }
+    }
+    events MENU {
+        TITLE "Események";
+        alarms      SHAPE   alarms          {   TITLE "Riasztások",@;  }
+        app_errs    SHAPE   app_errs        {   TITLE "Program hiba napló",@;  }
+        app_memos   SHAPE   app_memos       {   TITLE "Program esemény napló",@;  }
+        host_service_logs SHAPE host_service_logs { TITLE "Szervíz állapot napló",@;  }
+        olalarm     OWN     olalarm         {   TITLE "On-Line riasztások",@;  }
+    }
+    netothers MENU {
+        TITLE "Egyébb hálózati adatok";
+        arps        SHAPE   arps            {   TITLE "ARP tábla",@;  }
+        arp_logs    SHAPE   arp_logs        {   TITLE "ARP napló",@;  }
+        mactab      SHAPE   mactab          {   TITLE "Port címtáblák",@;  }
+    }
+    internals MENU {
+        TITLE "Belső vezérlő adatok";
+        RIGHTS operator;
+        fkey_types  SHAPE   fkey_types      {   TITLE "Idegen kulcs típusok",@;  }
+        unusual_fkeys SHAPE unusual_fkeys   {   TITLE "Idegen kulcs és öröklődés",@;  }
+    }
+    gui MENU {
+        TITLE "Megjelenítés";
+        RIGHTS operator;
+        alarm_messages SHAPE alarm_messages {   TITLE "Figyelmeztető üzenetek szövege",@;  }
+        shapes      SHAPE   table_shapes    {   TITLE "Táblák megjelenítése",@;  }
+        enums       SHAPE   enum_vals       {   TITLE "Enumerációs értékek",@;  }
+        menus       SHAPE   menu_items      {   TITLE "GUI menük",@;  }
+    }
+    tools MENU {
+        TITLE "Eszközök";
+        RIGHTS admin;
+        import      OWN     parser          {   TITLE "Szöveges import",@; }
+    }
 }
