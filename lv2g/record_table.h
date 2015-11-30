@@ -296,7 +296,7 @@ public:
     void initGroup(QVariantList &vlids);
     /// Inicializálja az adattábla megjelenítését.
     ///
-    /// \diafile    record_table.dia "" width=10cm
+    /// \diafile    record_table.dia "" width=8cm
     virtual void initSimple(QWidget *pW) = 0;
 
     virtual void _refresh(bool all = true) = 0;

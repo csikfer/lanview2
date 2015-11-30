@@ -957,10 +957,10 @@ void cRecordsViewBase::rightTabs(QVariantList& vlids)
         bool ok;
         qlonglong id = vid.toLongLong(&ok);
         if (!ok) EXCEPTION(EDATA);
-        QWidget *pw = new QWidget();
-        cRecordsViewBase *prvb = cRecordsViewBase::newRecordView(*pq, id, this, pw);
+        cRecordsViewBase *prvb = cRecordsViewBase::newRecordView(*pq, id, this);
+        prvb->setParent(this);
         *pRightTables << prvb;
-        pRightTabWidget->addTab(pw, prvb->tableShape().getName(_sTableTitle));
+        pRightTabWidget->addTab(prvb->pWidget(), prvb->tableShape().getName(_sTableTitle));
     }
 }
 
@@ -968,9 +968,9 @@ void cRecordsViewBase::rightTabs(QVariantList& vlids)
 /// Az initSimple() metódust hívja, de létrehozza a splitter widgetet, hogy több táblát lehessen megjeleníteni.
 ///
 /// Ha csak egy (child) táblázat van a jobb oldalon:
-/// \diafile    record_table2.dia "Egy child tábla" width=10cm
+/// \diafile    record_table2.dia "Egy child tábla" width=8cm
 /// Ha több (child) táblázat van a jobb oldalon, akkor azok egy tab-ba kerülnek:
-/// \diafile    record_table3.dia "Több child tábla" width=10cm
+/// \diafile    record_table3.dia "Több child tábla" width=8cm
 void cRecordsViewBase::initMaster()
 {
     cRecordsViewBase *pRightTable = NULL;
@@ -1029,16 +1029,16 @@ void cRecordsViewBase::initGroup(QVariantList& vlids)
     vlids.pop_front();                  // A maradék lista, chhild obj-ek
     pts->fetchById(*pq, id);            // A jobb oldali táblák megjelenítését leíró (minta) rekord
     pts->setShapeType(it);     // Itt ez a típus kell, az adatbázisban nem létező értékek
-    QWidget *pw = new QWidget();
-    prvb = cRecordsViewBase::newRecordView(dynamic_cast<cTableShape *>(pts->dup()), this, pw);
+    prvb = cRecordsViewBase::newRecordView(dynamic_cast<cTableShape *>(pts->dup()), this);
+    prvb->setParent(this);
     *pRightTables << prvb;
-    pRightTabWidget->addTab(pw, prvb->tableShape().getName(_sTableTitle));  // TITLE!!!!
+    pRightTabWidget->addTab(prvb->pWidget(), prvb->tableShape().getName(_sTableTitle));  // TITLE!!!!
 
     pts->setShapeType(nt);
-    pw = new QWidget();
-    prvb = cRecordsViewBase::newRecordView(dynamic_cast<cTableShape *>(pts->dup()), this, pw);
+    prvb = cRecordsViewBase::newRecordView(dynamic_cast<cTableShape *>(pts->dup()), this);
+    prvb->setParent(this);
     *pRightTables << prvb;
-    pRightTabWidget->addTab(pw, prvb->tableShape().getName(_sTableTitle));  // TITLE!!!!
+    pRightTabWidget->addTab(prvb->pWidget(), prvb->tableShape().getName(_sTableTitle));  // TITLE!!!!
 }
 
 /// Üres, nem kötelezően implemetálandó. Csak ha megadhatóak szűrők.
