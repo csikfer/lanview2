@@ -20,7 +20,8 @@ enum eOwnTab {
     OWN_UNKNOWN = -1,
     OWN_SETUP   =  0,
     OWN_PARSER  =  1,
-    OWN_OLALARM =  2
+    OWN_OLALARM =  2,
+    OWN_ERRCODES=  3
 };
 
 /// @class cMenuAction

@@ -274,6 +274,8 @@ Az adattagok inicializálása után hívja a circulation() metódust
     static bool     mDropAll;       ///< Ha értéke true, akkor nem hoz létre hiba objektumokat, a továbbiakban no_init_ objektummal dobja a hibát
 protected:
     static  QMap<int, QString>      mErrorStringMap;///< Hiba string konténer
+public:
+    static const QMap<int, QString>& errorMap() { return mErrorStringMap; }
 };
 
 /// Egy SQL hiba típus konstanst stringgé kovertál.

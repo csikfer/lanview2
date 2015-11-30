@@ -907,13 +907,14 @@ void cRecordsViewBase::initShape(cTableShape *pts)
     if (pTableShape->shapeFields.isEmpty() && 0 == pTableShape->fetchFields(*pq)) EXCEPTION(EDATA, pTableShape->getId(), pTableShape->getName());
 
     pRecDescr = cRecStaticDescr::get(pTableShape->getName(_sTableName));
-    isReadOnly = pTableShape->getBool(_sTableShapeType, TS_READ_ONLY);
+    // Extra típus értékek miatt nem használható a mező alap konverziós metódusa !
+    shapeType = enum2set(tableShapeType, pTableShape->get(_sTableShapeType).toStringList(), false);
+    isReadOnly =  ENUM2SET(TS_READ_ONLY) & shapeType;
+    shapeType &= ~ENUM2SET(TS_READ_ONLY);
     isReadOnly = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sEditRights));
     isNoDelete = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sRemoveRights));
     isNoInsert = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sInsertRights));
 
-    // Extra típus értékek miatt nem használható a mező alap konverziós metódusa !
-    shapeType = enum2set(tableShapeType, pTableShape->get(_sTableShapeType).toStringList(), false);
     if (shapeType & ENUM2SET(TS_DIALOG))
         EXCEPTION(EDATA, 0, trUtf8("Táblázatos megjelenítés az arra alkalmatlan %1 nevű leíróval.").arg(pts->getName()));
 

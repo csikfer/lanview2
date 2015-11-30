@@ -1903,7 +1903,7 @@ int  cNode::fetchPorts(QSqlQuery& __q)
     if (execSql(__q, sql, getId())) do {
         qlonglong tableoid = variantToId(__q.value(0));
         qlonglong port_id  = variantToId(__q.value(1));
-        cNPort *p = cNPort::getPortObjById(q, tableoid, port_id);
+        cNPort *p = cNPort::getPortObjById(q, tableoid, port_id, true);
         q.finish();
         if (p == NULL) return -1;
         if (tableoid == cNPort::tableoid_interfaces()) {

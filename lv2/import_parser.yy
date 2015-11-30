@@ -1337,6 +1337,13 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
     setLastPort(pNode->ports.first());
 }
 
+static void yySqlExec(const QString& _cmd)
+{
+    if (!qq().exec(_cmd))
+        yyerror(QObject::trUtf8("Error '%1' sql command").arg(_cmd));
+    PDEB(INFO) << "SQL : " << _cmd << endl;
+}
+
 %}
 
 %union {
@@ -1387,7 +1394,7 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
 %token      DATA_T IANA_T IFDEF_T IFNDEF_T NC_T QUERY_T PARSER_T
 %token      REPLACE_T RANGE_T EXCLUDE_T PREP_T POST_T CASE_T RECTANGLE_T
 %token      DELETED_T PARAMS_T CONVERTER_T PRINTER_T GATEWAY_T DOMAIN_T
-%token      DIALOG_T AUTO_T PASSWD_T HUGE_T FLAG_T TREE_T SECONDARY_T
+%token      DIALOG_T AUTO_T PASSWD_T HUGE_T FLAG_T TREE_T NOTIFY_T
 %token      SIMPLE_T BARE_T OWNER_T CHILD_T MEMBER_T
 
 %token <i>  INTEGER_V
@@ -1433,7 +1440,7 @@ commands: command
         ;
 command : INCLUDE_T str ';'                               { c_yyFile::inc($2); }
         | macro
-        | trans
+        | sql
         | user
         | timeper
         | vlan
@@ -1475,9 +1482,10 @@ list_m  : LIST_T iexpr TO_T iexpr MASK_T str                { $$ = listLoop($6, 
         | LIST_T iexpr TO_T iexpr STEP_T iexpr MASK_T str   { $$ = listLoop($8, $2, $4, $6); }
         ;
 // tranzakciókezelés
-trans   : BEGIN_T ';'   { if (!qq().exec("BEGIN TRANSACTION"))    yyerror("Error BEGIN sql command"); PDEB(INFO) << "BEGIN TRANSACTION" << endl; }
-        | END_T ';'     { if (!qq().exec("END TRANSACTION"))      yyerror("Error END sql command");   PDEB(INFO) << "END TRANSACTION" << endl; }
-        | ROLLBACK_T ';'{ if (!qq().exec("ROLLBACK TRANSACTION")) yyerror("Error END sql command");   PDEB(INFO) << "ROLLBACK TRANSACTION" << endl; }
+sql     : BEGIN_T ';'                           { yySqlExec("BEGIN TRANSACTION"); }
+        | END_T ';'                             { yySqlExec("END TRANSACTION"); }
+        | ROLLBACK_T ';'                        { yySqlExec("ROLLBACK TRANSACTION"); }
+        | NOTIFY_T str ';'                      { yySqlExec("NOTIFY " + sp2s($2)); }
         | RESET_T CACHE_T DATA_T ';'            { lanView::resetCacheData(); }
         ;
 eqs     : '#' NAME_V '=' iexpr ';'              { ivars[*$2] = $4; delete $2; }
@@ -2774,7 +2782,7 @@ static int yylex(void)
         TOK(DATA) TOK(IANA) TOK(IFDEF) TOK(IFNDEF) TOK(NC) TOK(QUERY) TOK(PARSER)
         TOK(REPLACE) TOK(RANGE) TOK(EXCLUDE) TOK(PREP) TOK(POST) TOK(CASE) TOK(RECTANGLE)
         TOK(DELETED) TOK(PARAMS) TOK(CONVERTER) TOK(PRINTER) TOK(GATEWAY) TOK(DOMAIN)
-        TOK(DIALOG) TOK(AUTO) TOK(PASSWD) TOK(HUGE) TOK(FLAG) TOK(TREE) TOK(SECONDARY)
+        TOK(DIALOG) TOK(AUTO) TOK(PASSWD) TOK(HUGE) TOK(FLAG) TOK(TREE) TOK(NOTIFY)
         TOK(SIMPLE) TOK(BARE) TOK(OWNER) TOK(CHILD) TOK(MEMBER)
         { "WST",    WORKSTATION_T }, // rövidítések
         { "ATC",    ATTACHED_T },
@@ -2787,7 +2795,6 @@ static int yylex(void)
         { "EXPR",   EXPRESSION_T },
         { "BOOL",   BOOLEAN_T },
         { "GW",     GATEWAY_T },
-        { "SEC",    SECONDARY_T },
         { NULL, 0 }
     };
     // DBGFN();
