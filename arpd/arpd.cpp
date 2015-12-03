@@ -149,18 +149,13 @@ cDeviceArp::cDeviceArp(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __
         snmpDev().open(__q, *pSnmp);
     }
     else {
-        // Ha prime_service fájl felolvasását írja elő, akkor a service file paramétere, ill. ha ez üres,
-        // akkor a prime_service file paramétere tartalmazza a felovasandó fájl nevét.
         if (*pPSDhcpConf == primeService() || *pPSArpProc == primeService()) {
             pFileName = new QString();
-            *pFileName = hostService.feature(_sFile);
+            *pFileName = feature(_sFile);
         }
-        // Ha az előírt protokol SSH, akkor a service user paramétere, ill. ha ez üres,
-        // akkor a proto_service user paramétere tartalmazza a távoli hoston az user nevet.
-        // A lekérdezés csak akkor műkösik, ha jelszó megadása nem szükséges.
         if (*pPSSsh == protoService()) {
             pRemoteUser = new QString();
-            *pRemoteUser = hostService.feature(_sUser);
+            *pRemoteUser = feature(_sUser);
             host().fetchPorts(*pq);
         }
     }
@@ -185,10 +180,10 @@ enum eNotifSwitch cDeviceArp::run(QSqlQuery& q)
     else if (*pPSDhcpConf == primeService()) {
         setType = ST_CONFIG;    // DHCP: dhcpd.conf fájl
         if    (*pPSLocal == protoService()) {
-            at.getByLocalDhcpdConf(*pFileName);
+            at.getByLocalDhcpdConf(*pFileName, hostServiceId());
         }
         else if (*pPSSsh == protoService()) {
-            at.getBySshDhcpdConf(host().getIpAddress().toString(), *pFileName, *pRemoteUser);
+            at.getBySshDhcpdConf(host().getIpAddress().toString(), *pFileName, *pRemoteUser, hostServiceId());
         }
         else EXCEPTION(EDATA);
     }

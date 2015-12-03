@@ -336,6 +336,11 @@ TABLE SHAPE arp_logs "ARP lekérdezés napló." {
     
 }
 
+TABLE SHAPE dyn_addr_ranges "Dinamikus címtartományok" {
+    SET DEFAULTS;
+    TABLE EDIT RIGHTS admin;
+}
+
 // ***************************************************************************************
 
 TABLE SHAPE fkey_types "Távoli kulcs típusok" {
@@ -402,6 +407,7 @@ TABLE SHAPE sys_params "Rendszer paraméterek" {
 TABLE SHAPE groups "felhasználói csoportok" {
     SET DEFAULTS;
     TABLE TYPE GROUP;
+    TABLE TITLE "Felhasználói csoportok","Feljasználói csoport",,"Csoportok tagjai", "Coportoknak nem tagjai";
 }
 
 TABLE SHAPE users "felhasználók" {
@@ -409,14 +415,15 @@ TABLE SHAPE users "felhasználók" {
     TABLE TYPE MEMBER;
     RIGHT SHAPE groups;
     FIELD passwd FLAG ON PASSWD, HIDE TABLE;
+    TABLE TITLE "Felhasználók","Feljasználó",,"Csoportoknak tagja", "Csoportoknak nem tagja";
 }
 SET table_shapes[groups].right_shape_ids = ID TABLE SHAPE ( users );
 
 TABLE SHAPE place_groups "Hely és helyiség csoportok / Zónák" {
     SET DEFAULTS;
     TABLE TYPE GROUP;
-    RIGHT SHAPE users;
-  
+ // RIGHT SHAPE places;
+    TABLE TITLE "Hely csoportok","Hely csoport",,"Csoportok tagjai", "Coportoknak nem tagjai";
 }
 
 TABLE SHAPE places "Helyiségek" {
@@ -424,6 +431,7 @@ TABLE SHAPE places "Helyiségek" {
     TABLE TYPE TREE, MEMBER;
     RIGHT SHAPE place_groups;
     TABLE FEATURES ":map=get_parent_image:";
+    TABLE TITLE "Helyek, helyiségek", "Hely helyiség",,"Csoportoknak tagja", "Csoportoknak nem tagja";
   
 }
 SET table_shapes[place_groups].right_shape_ids = ID TABLE SHAPE ( places );
@@ -461,12 +469,14 @@ GUI lv2gui {
         app_memos   SHAPE   app_memos       {   TITLE "Program esemény napló",@;  }
         host_service_logs SHAPE host_service_logs { TITLE "Szervíz állapot napló",@;  }
         olalarm     OWN     olalarm         {   TITLE "On-Line riasztások",@;  }
+        api_ecodes  OWN     errcodes        {   TITLE "API hiba kódok",@; }
     }
     netothers MENU {
         TITLE "Egyébb hálózati adatok";
         arps        SHAPE   arps            {   TITLE "ARP tábla",@;  }
         arp_logs    SHAPE   arp_logs        {   TITLE "ARP napló",@;  }
         mactab      SHAPE   mactab          {   TITLE "Port címtáblák",@;  }
+        dyn_addr_ranges SHAPE dyn_addr_ranges { TITLE "Dinamikus címtartományok",@; }
     }
     internals MENU {
         TITLE "Belső vezérlő adatok";

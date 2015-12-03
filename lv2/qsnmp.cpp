@@ -352,18 +352,20 @@ cMac cOId::toMac() const
     return r;
 }
 
-QHostAddress cOId::toIPV4() const
+QHostAddress cOId::toIPV4(uint _in) const
 {
-    if (oidSize >= 4) {
+    QHostAddress r;
+    _in += 4;
+    if (oidSize >= _in) {
         qint32 v = 0;
-        for (int i = 4; i > 0; i--) {
+        for (int i = _in; i > 0; i--) {
             uint b = (*this)[oidSize - i];
             if (b > 255) return QHostAddress();  // invalid
             v = (v << 8) + b;
         }
-        return QHostAddress(v);
+        r = QHostAddress(v);
     }
-    return QHostAddress();
+    return r;
 }
 
 cOId& cOId::operator <<(int __i)

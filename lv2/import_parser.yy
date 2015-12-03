@@ -207,6 +207,7 @@ static cTableShape *    pTableShape = NULL;
 static qlonglong        alertServiceId = NULL_ID;
 static QMap<QString, qlonglong>    ivars;
 static QMap<QString, QString>      svars;
+static QMap<QString, QVariantList> avars;
 static QSqlQuery  *     pq2 = NULL;
 
 /// A parser
@@ -401,6 +402,7 @@ void downImportParser()
     pDelete(pTableShape);
     ivars.clear();
     svars.clear();
+    avars.clear();
     pDelete(pq2);
     c_yyFile::dropp();
 }
@@ -439,6 +441,11 @@ static inline qlonglong& vint(const QString& n){
 static inline QString& vstr(const QString& n){
     if (!svars.contains(n)) yyerror(QObject::trUtf8("String variable %1 not found").arg(n));
     return svars[n];
+}
+
+static inline QVariantList& varray(const QString& n){
+    if (!avars.contains(n)) yyerror(QObject::trUtf8("String variable %1 not found").arg(n));
+    return avars[n];
 }
 
 static inline const QString& nextNetType() {
@@ -1337,11 +1344,31 @@ static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *ma
     setLastPort(pNode->ports.first());
 }
 
-static void yySqlExec(const QString& _cmd)
+static void yySqlExec(const QString& _cmd, QVariantList *pvl = NULL, QVariantList * _ret = NULL)
 {
-    if (!qq().exec(_cmd))
-        yyerror(QObject::trUtf8("Error '%1' sql command").arg(_cmd));
+    QSqlQuery q = qq();
     PDEB(INFO) << "SQL : " << _cmd << endl;
+    if (pvl == NULL) {
+        if (!q.exec(_cmd)) SQLPREPERR(q, _cmd);
+    }
+    else {
+        if (!q.prepare(_cmd)) SQLPREPERR(q, _cmd);
+        int i = 0;
+        foreach (QVariant v, *pvl) {
+            q.bindValue(i, v);
+            ++i;
+        }
+        delete pvl;
+        if (!q.exec()) SQLQUERYERR(q);
+    }
+    if (_ret != NULL) {
+        _ret->clear();
+        if (!q.first()) return;
+        int n = q.record().count();
+        for (int i = 0; i < n; ++i) {
+            *_ret << q.value(i);
+        }
+    }
 }
 
 %}
@@ -1395,7 +1422,7 @@ static void yySqlExec(const QString& _cmd)
 %token      REPLACE_T RANGE_T EXCLUDE_T PREP_T POST_T CASE_T RECTANGLE_T
 %token      DELETED_T PARAMS_T CONVERTER_T PRINTER_T GATEWAY_T DOMAIN_T
 %token      DIALOG_T AUTO_T PASSWD_T HUGE_T FLAG_T TREE_T NOTIFY_T
-%token      SIMPLE_T BARE_T OWNER_T CHILD_T MEMBER_T
+%token      SIMPLE_T BARE_T OWNER_T CHILD_T MEMBER_T REFRESH_T SQL_T
 
 %token <i>  INTEGER_V
 %token <r>  FLOAT_V
@@ -1487,9 +1514,12 @@ sql     : BEGIN_T ';'                           { yySqlExec("BEGIN TRANSACTION")
         | ROLLBACK_T ';'                        { yySqlExec("ROLLBACK TRANSACTION"); }
         | NOTIFY_T str ';'                      { yySqlExec("NOTIFY " + sp2s($2)); }
         | RESET_T CACHE_T DATA_T ';'            { lanView::resetCacheData(); }
+        | SQL_T '(' str ')' ';'                 { yySqlExec(sp2s($3)); }
+        | SQL_T '(' str ',' vals ')' ';'        { yySqlExec(sp2s($3), $5); }
         ;
 eqs     : '#' NAME_V '=' iexpr ';'              { ivars[*$2] = $4; delete $2; }
         | '&' NAME_V '=' sexpr ';'              { svars[*$2] = *$4; delete $2; delete $4; }
+        | '@' NAME_V '=' vals ';'               { avars[*$2] = *$4; delete $2; delete $4; }
         ;
 str_    : STRING_V                              {
                                                     QString dummy = QString("STRING : $1 = ") + debPString($1);
@@ -1624,7 +1654,7 @@ ix_z    :                           { $$ = NULL_IX; }
 list_i  : LIST_T iexpr TO_T iexpr                { $$ = listLoop($2, $4, 1);  }
         | LIST_T iexpr TO_T iexpr STEP_T iexpr   { $$ = listLoop($2, $4, $6); }
         ;
-/*real    : FLOAT_V                   { $$ = $1; }
+/*real    : FLOAT_V                 { $$ = $1; }
         | '[' fexpr ']'             { $$ = $2; }
         ;*/
 fexpr   : FLOAT_V                   { $$ = $1; }
@@ -1647,6 +1677,7 @@ value   : iexpr                     { $$ = new QVariant($1); }
         | frame                     { $$ = new QVariant(); $$->setValue(*$1); delete $1; }
         | point                     { $$ = new QVariant(); $$->setValue(*$1); delete $1; }
 //      | NULL_T                    { $$ = new QVariant(); }
+        | '@' str '[' int ']'       { $$ = new QVariant(varray(sp2s($2))[$4]); }
         ;
 vals    : value                     { $$ = new QVariantList(); *$$ << *$1; delete $1; }
         | list_m                    { $$ = new QVariantList(slp2vl($1)); }
@@ -1654,6 +1685,9 @@ vals    : value                     { $$ = new QVariantList(); *$$ << *$1; delet
         | vals ',' value            { $$ = $1;                 *$$ << *$3; delete $3; }
         | vals ',' list_m           { $$ = $1;                 *$$ << slp2vl($3); }
         | vals ',' list_i           { $$ = $1; foreach (qlonglong i, *$3) *$$ << QVariant(i); delete $3; }
+        | SQL_T '(' str ')'         { yySqlExec(sp2s($3),NULL, $$ = new QVariantList); }
+        | SQL_T '(' str ',' vals ')'{ yySqlExec(sp2s($3),  $5, $$ = new QVariantList); }
+        | '@' str                   { $$ = new QVariantList(varray(sp2s($2))); }
         ;
 num     : iexpr                     { $$ = $1; }
         | fexpr                     { $$ = $1; }
@@ -2401,6 +2435,8 @@ tmodp   : SET_T DEFAULTS_T ';'                  { pTableShape->setDefaults(qq())
         | TABLE_T TITLE_T strs_zz  ';'          { pTableShape->setTitle(slp2sl($3)); }
         | TABLE_T READ_T ONLY_T bool_on ';'     { pTableShape->setBool(_sTableShapeType, TS_READ_ONLY, $4); }
         | TABLE_T FEATURES_T str ';'            { pTableShape->set(_sFeatures, sp2s($3)); }
+        | AUTO_T REFRESH_T str ';'              { pTableShape->setName(_sAutoRefresh, sp2s($3)); }
+        | AUTO_T REFRESH_T int ';'              { pTableShape->setId(  _sAutoRefresh,      $3 ); }
 //      | LEFT_T SHAPE_T tmod ';'               { pTableShape->setId(_sLeftShapeId, $3); }
         | RIGHT_T SHAPE_T strs ';'              { pTableShape->addRightShape(*$3); delete $3; }
         | REFINE_T str ';'                      { pTableShape->setName(_sRefine, sp2s($2)); }
@@ -2783,7 +2819,7 @@ static int yylex(void)
         TOK(REPLACE) TOK(RANGE) TOK(EXCLUDE) TOK(PREP) TOK(POST) TOK(CASE) TOK(RECTANGLE)
         TOK(DELETED) TOK(PARAMS) TOK(CONVERTER) TOK(PRINTER) TOK(GATEWAY) TOK(DOMAIN)
         TOK(DIALOG) TOK(AUTO) TOK(PASSWD) TOK(HUGE) TOK(FLAG) TOK(TREE) TOK(NOTIFY)
-        TOK(SIMPLE) TOK(BARE) TOK(OWNER) TOK(CHILD) TOK(MEMBER)
+        TOK(SIMPLE) TOK(BARE) TOK(OWNER) TOK(CHILD) TOK(MEMBER) TOK(REFRESH) TOK(SQL)
         { "WST",    WORKSTATION_T }, // rövidítések
         { "ATC",    ATTACHED_T },
         { "INT",    INTEGER_T },

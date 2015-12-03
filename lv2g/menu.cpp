@@ -126,6 +126,18 @@ void cMenuAction::initRecordTable()
     connect(pRecordView, SIGNAL(destroyed()), this, SLOT(destroyedChild()));
 }
 
+/** Egy megjelenítést végző cOwnTab leszármazott objektum létrehozása
+
+A menüben az "own=<típus>" stringgel lehet megadni a properties mezőben megjelenítő típusát.
+A jelenleg implementállt lehetőségek:
+| Típus név | Konstans név | Objektum név    | Funkció                  |
+|-----------|--------------|-----------------|--------------------------|
+| setup     | OWN_SETUP    | cSetupWidget    | Alapbeállítások megadása |
+| parser    | OWN_PARSER   | cParseWidget    | A parser hvása           |
+| olalarm   | OWN_OLALARM  | cOnlineAlarm    | OnLine riasztások        |
+| errcodes  | OWN_ERRCODES | cErrcodesWidget | API hibakósok listája    |
+@endtable
+ */
 void cMenuAction::initOwn()
 {
     switch (ownType) {

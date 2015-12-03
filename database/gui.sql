@@ -39,6 +39,8 @@ CREATE TABLE table_shapes (
     table_title         text            DEFAULT NULL,
     dialog_title        text            DEFAULT NULL,
     dialog_tab_title    text            DEFAULT NULL,
+    member_title        text            DEFAULT NULL,
+    not_member_title    text            DEFAULT NULL,
     table_shape_type   tableshapetype[] DEFAULT '{simple}',
     table_name          text            NOT NULL,
     schema_name         text            NOT NULL DEFAULT 'public',
@@ -47,6 +49,7 @@ CREATE TABLE table_shapes (
     refine              text            DEFAULT NULL,
     features            text            DEFAULT NULL,
     right_shape_ids     bigint[]        DEFAULT NULL, -- REFERENCES table_shapes(table_shape_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
+    auto_refresh        interval        DEFAULT NULL,
     view_rights         rights          DEFAULT 'viewer',
     edit_rights         rights          DEFAULT 'operator',
     insert_rights       rights          DEFAULT 'operator',
@@ -224,14 +227,18 @@ CREATE OR REPLACE FUNCTION check_table_shape() RETURNS TRIGGER AS $$
 DECLARE
     tsid  bigint;
 BEGIN
-    IF right_shape_ids IS NULL THEN
+    IF NEW.right_shape_ids IS NULL THEN
         RETURN NEW;
-    END IF
-    FOREACH tsid  IN NEW.right_shape_ids LOOP
+    END IF;
+    IF array_length(NEW.right_shape_ids,1) = 0 THEN
+        NEW.right_shape_ids = NULL;
+        RETURN NEW;
+    END IF;
+    FOREACH tsid  IN ARRAY NEW.right_shape_ids LOOP
         IF 1 <> COUNT(*) FROM table_shapes WHERE table_shape_id = tsid THEN
             PERFORM error('IdNotFound', tsid, NEW.table_shape_name, 'check_table_shape()', TG_TABLE_NAME, TG_OP);
             RETURN NULL;
-        ENDIF;
+        END IF;
     END LOOP;
     RETURN NEW;
 END;

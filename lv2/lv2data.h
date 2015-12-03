@@ -1541,7 +1541,7 @@ public:
 class LV2SHARED_EXPORT cAppMemo : public cRecord {
     CRECORD(cAppMemo);
 public:
-    static qlonglong memo(QSqlQuery &q, QString &_memo, int _imp = RS_UNKNOWN, const QString &_func_name = _sNul, const QString &_src = _sNul, int _lin = 0);
+    static qlonglong memo(QSqlQuery &q, const QString &_memo, int _imp = RS_UNKNOWN, const QString &_func_name = _sNul, const QString &_src = _sNul, int _lin = 0);
 };
 
 #endif // LV2DATA_H

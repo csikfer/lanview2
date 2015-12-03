@@ -2979,7 +2979,7 @@ CRECDEFD(cPortVlan)
 /* ------------------------------ app_memos ------------------------------ */
 DEFAULTCRECDEF(cAppMemo, _sAppMemos)
 
-qlonglong cAppMemo::memo(QSqlQuery &q, QString& _memo, int _imp, const QString& _func_name, const QString& _src, int _lin)
+qlonglong cAppMemo::memo(QSqlQuery &q, const QString &_memo, int _imp, const QString& _func_name, const QString& _src, int _lin)
 {
     cAppMemo o;
     lanView *pI = lanView::getInstance();

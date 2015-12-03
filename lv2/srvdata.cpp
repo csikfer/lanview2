@@ -434,6 +434,13 @@ QString cHostService::names(QSqlQuery& q)
     return r;
 }
 
+QString cHostService::names(QSqlQuery& q, qlonglong __id)
+{
+    execSqlFunction(q, "host_service_id2name", __id);
+    QString r = q.value(0).toString();
+    return r;
+}
+
 /* ----------------------------------------------------------------- */
 DEFAULTCRECDEF(cAlarm, _sAlarms)
 

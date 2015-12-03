@@ -104,8 +104,8 @@ public:
     cArpTable& getBySnmp(cSnmp& __snmp);
     cArpTable& getByLocalProcFile(const QString& __f = QString());
     cArpTable& getBySshProcFile(const QString& __h, const QString& __f = QString(), const QString& __ru = QString());
-    cArpTable& getByLocalDhcpdConf(const QString& __f = QString());
-    cArpTable& getBySshDhcpdConf(const QString& __h, const QString& __f = QString(), const QString& __ru = QString());
+    cArpTable& getByLocalDhcpdConf(const QString& __f = QString(), qlonglong _hid = NULL_ID);
+    cArpTable& getBySshDhcpdConf(const QString& __h, const QString& __f = QString(), const QString& __ru = QString(), qlonglong _hid = NULL_ID);
     cArpTable& getFromDb(QSqlQuery& __q);
     QList<QHostAddress> operator[](const cMac& __a) const;
     cMac operator[](const QHostAddress& __a) const { return QMap<QHostAddress, cMac>::operator [](__a); }

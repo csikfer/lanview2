@@ -993,15 +993,15 @@ void cRecordsViewBase::initMaster()
     if ((flags & (RTF_MEMBER | RTF_GROUP))) {   // Az első elem esetén lehet Group/member táblák
         createRightTab();                       // Ez eleve két tábla a jobb oldalon, tab widget kell.
         initGroup(vlids);                       // A két tag-nem tag tábla (vlids első eleme)
-        rightTabs(vlids);                       // A maradék táblák, ha vannak
+        rightTabs(vlids);                       // A maradék táblák, ha vannak (első elem törölve)
     }
     else if (vlids.size() == 1) {                // Ha nem kell a tab widget
         id = vlids.at(0).toLongLong(&ok);
         if (!ok) EXCEPTION(EDATA);
-        QWidget *pRightWidget = new QWidget();
-        pRightTable = cRecordsViewBase::newRecordView(*pq, id, this, pRightWidget);
+        pRightTable = cRecordsViewBase::newRecordView(*pq, id, this);
+        pRightTable->setParent(this);
         *pRightTables << pRightTable;
-        pMasterSplitter->addWidget(pRightWidget);
+        pMasterSplitter->addWidget(pRightTable->pWidget());
     }
     else {
         createRightTab();
@@ -1033,13 +1033,13 @@ void cRecordsViewBase::initGroup(QVariantList& vlids)
     prvb = cRecordsViewBase::newRecordView(dynamic_cast<cTableShape *>(pts->dup()), this);
     prvb->setParent(this);
     *pRightTables << prvb;
-    pRightTabWidget->addTab(prvb->pWidget(), prvb->tableShape().getName(_sTableTitle));  // TITLE!!!!
+    pRightTabWidget->addTab(prvb->pWidget(), prvb->tableShape().getName(_sMemberTitle));  // TITLE!!!!
 
     pts->setShapeType(nt);
     prvb = cRecordsViewBase::newRecordView(dynamic_cast<cTableShape *>(pts->dup()), this);
     prvb->setParent(this);
     *pRightTables << prvb;
-    pRightTabWidget->addTab(prvb->pWidget(), prvb->tableShape().getName(_sTableTitle));  // TITLE!!!!
+    pRightTabWidget->addTab(prvb->pWidget(), prvb->tableShape().getName(_sNotMemberTitle));  // TITLE!!!!
 }
 
 /// Üres, nem kötelezően implemetálandó. Csak ha megadhatóak szűrők.
