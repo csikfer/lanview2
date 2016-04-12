@@ -57,8 +57,6 @@ CREATE TABLE import_templates (
 );
 ALTER TABLE import_templates OWNER TO lanview2;
 
-CREATE TABLE VIEW
-
 COMMENT ON TABLE  import_templates IS 'Az importban mentett makrók és egyébb minták táblája.';
 COMMENT ON COLUMN import_templates.import_template_id IS 'Egyedi rekord azonosító.';
 COMMENT ON COLUMN import_templates.template_type IS 'A template típusa (macros, patchs,...)';

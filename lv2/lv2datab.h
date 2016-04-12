@@ -1834,7 +1834,8 @@ public:
     /// @return Ha az objektum üres, vagy a státusz változó szerint nincs rendben, akkor true-val tér vissza
     bool operator !() { return _stat <= ES_EMPTY || ((_stat & (ES_INCOMPLETE || ES_DEFECTIVE)) != 0); }
     /// Ha az objektum nem tartalmaz egyetlen nem null mezőt sem, akkor true-val tér vissza.
-    /// Nem a stat adattag alapján tér vissza, ill. azt beállítja ha a visszaadott érték true.
+    /// Nem a _stat adattag alapján tér vissza, ill. azt beállítja ha a visszaadott érték true.
+    /// Konstans objektum esetén használjuk az isEmpty_() metódust, az a _stat értéke alapján tér vissza.
     bool isEmpty();
     /// Azonos az IsEmpty() hívással. Mivel nem hív virtuális metódust, le lett definiálva ezen a néven is.
     bool _isEmpty()                        { return isEmpty(); }

@@ -3387,8 +3387,12 @@ bool cRecord::existByNameKey(QSqlQuery& __q)
 qlonglong cRecord::fetchTableOId(QSqlQuery& __q, bool __ex) const
 {
     QBitArray m = getSetMap();              // Mit ismerünk ?
-    if (m.count(true) == 0) {
-        if (__ex) EXCEPTION(EDATA);
+    if (isFaceless() || isEmpty_() || m.count(true) == 0) {
+        if (__ex) {
+            QString tn = _stat == ES_FACELESS ? "<ismeretlen>" : descr().fullTableName();
+            QString msg = trUtf8("Az objektum üres. Rekord típus %1").arg(tn);
+            EXCEPTION(EDATA, 0, msg);
+        }
         return NULL_ID; // Ha semmit, az gáz
     }
     // Ha lehet szűkítjük a feltételben résztvevő mezőket
@@ -3405,11 +3409,22 @@ qlonglong cRecord::fetchTableOId(QSqlQuery& __q, bool __ex) const
             return variantToId(__q.value(0), __ex, NULL_ID);
         }
         else {
-            if (__ex) EXCEPTION(AMBIGUOUS);
-            return NULL_ID;
+            qlonglong oid = variantToId(__q.value(0), __ex, NULL_ID);
+            while (__q.next()) if (oid != variantToId(__q.value(0), __ex, NULL_ID)) {
+                if (__ex) {
+                    QString msg = trUtf8("Objektum rekord típus %1; adatok : %2").arg(descr().fullTableName()).arg(toString());
+                    EXCEPTION(AMBIGUOUS, __q.size(), msg);
+                }
+                oid = NULL_ID;
+                break;
+            }
+            return oid;
         }
     }
-    if (__ex) EXCEPTION(EFOUND);
+    if (__ex) {
+        QString msg = trUtf8("Objektum rekord típus %1; adatok : %2").arg(descr().fullTableName()).arg(toString());
+        EXCEPTION(EFOUND,0,msg);
+    }
     return NULL_ID;
 }
 
