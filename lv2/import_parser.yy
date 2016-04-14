@@ -20,9 +20,14 @@ public:
     cHostServices(QSqlQuery& q, QString * ph, QString * pp, QString * ps, QString * pn) : tRecordList<cHostService>()
     {
         tRecordList<cNode> hl;
-        hl.fetchByNamePattern(q, *ph, false); delete ph;
+        hl.fetchByNamePattern(q, *ph, false);
+        QString n;
+        n = ph; pDelete(ph);
+        yyerror(QObject::trUtf8("A %1 mintára egyetlen hálózati elem neve sem illeszkedik.").arg(n));
         tRecordList<cService> sl;
-        sl.fetchByNamePattern(q, *ps, false); delete ps;
+        sl.fetchByNamePattern(q, *ps, false);
+        n = ps; pDelete(ps);
+        yyerror(QObject::trUtf8("A %1 mintára egyetlen szolgáltatás típus neve sem illeszkedik.").arg(n));
         for (tRecordList<cNode>::iterator i = hl.begin(); i < hl.end(); ++i) {
             cNode &h = **i;
             for (tRecordList<cService>::iterator j = sl.begin(); j < sl.end(); ++j) {
@@ -35,10 +40,12 @@ public:
                 *this << phs;
             }
         }
+        if (size() == 0) yyerror(QObject::trUtf8("A megadott minta kollekcióra nincs semmilyen találat."));
         pDelete(pn);
         pDelete(pp);
     }
-    cHostServices(QSqlQuery& q, cHostService *&_p)  : tRecordList<cHostService>(_p)
+
+    cHostServices(QSqlQuery& q, cHostService *&_p) : tRecordList<cHostService>(_p)
     {
         _p = NULL;
         while (true) {

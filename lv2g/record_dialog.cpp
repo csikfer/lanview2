@@ -432,7 +432,7 @@ void cRecordDialog::restore(cRecord *_pRec)
     int i, n = fields.size();
     for (i = 0; i < n; i++) {
         cFieldEditBase& field = *fields[i];
-        field.set(_pRecord->get(field._pFieldRef->index()));
+        field.set(_pRecord->get(field.fieldIndex()));
     }
 }
 
@@ -444,7 +444,7 @@ bool cRecordDialog::accept()
     _pRecord->_stat = 0;        // Kinullázzuk, majd mezőnként "felesleges" értékadással gyűjtlük a hiba biteket
     for (i = 0; i < n; i++) {   // Végigszaladunk a mezőkön
         cFieldEditBase& field = *fields[i];
-        int rfi = field._pFieldRef->index();
+        int rfi = field.fieldIndex();
         if (field.isReadOnly()) continue;      // Feltételezzük, hogy RO esetén az van a mezőben aminek lennie kell.
         if (field._fieldShape.getBool(_sFieldFlags, FF_AUTO_SET)) continue; // Ezt sem kell ellenörizni
         qlonglong s = _pRecord->_stat;                   // Mentjük a hiba bitet,

@@ -154,16 +154,16 @@ public:
     operator qlonglong() const  { return getId(); }
     /// A Widget-ben megjelenített értéket adja vissza, QString-é konvertálva, Konvertáló függvény a mező leíró objektum szerint.
     operator QString() const    { return getName(); }
-    /// A widgethez rendelt rekord objektum mező értékével tér vissza, ha nincs mező rendelve a widgethez, akkor dob egy kizárást.
-    /// @return A mező értéke, ahogyan azt a rekord objektum tárolja.
-    QVariant fieldValue()                   { if (_pFieldRef == NULL) EXCEPTION(EPROGFAIL); return *_pFieldRef; }
-    /// A widgethez rendelt rekord objektum mező értékével tér vissza, ha nincs mező rendelve a widgethez, akkor dob egy kizárást.
-    /// @return A mező értéke, stringgé konvertálva, a mező leíró szerint stringgé konvertálva.
-    QString fieldToName()                   { if (_pFieldRef == NULL) EXCEPTION(EPROGFAIL); return (QString)*_pFieldRef; }
+    // / A widgethez rendelt rekord objektum mező értékével tér vissza, ha nincs mező rendelve a widgethez, akkor dob egy kizárást.
+    // / @return A mező értéke, ahogyan azt a rekord objektum tárolja.
+//  QVariant fieldValue()                   { if (_pFieldRef == NULL) EXCEPTION(EPROGFAIL); return *_pFieldRef; }
+    // / A widgethez rendelt rekord objektum mező értékével tér vissza, ha nincs mező rendelve a widgethez, akkor dob egy kizárást.
+    // / @return A mező értéke, stringgé konvertálva, a mező leíró szerint stringgé konvertálva.
+//  QString fieldToName()                   { if (_pFieldRef == NULL) EXCEPTION(EPROGFAIL); return (QString)*_pFieldRef; }
     /// A widgethez rendelt rekord objektum leíró objektumával tér vissza, ha nincs mező rendelve a widgethez, akkor dob egy kizárást.
-    const cRecStaticDescr& recDescr() const { if (_pFieldRef == NULL) EXCEPTION(EPROGFAIL); return _pFieldRef->recDescr(); }
+    const cRecStaticDescr& recDescr() const;
     /// A widgethez rendelt mező objektum inexével a rekordban tér vissza, ha nincs mező rendelve a widgethez, akkor dob egy kizárást.
-    int fldIndex() const { if (_pFieldRef == NULL) EXCEPTION(EPROGFAIL); return _pFieldRef->index(); }
+    int fieldIndex() const { return _colDescr.fieldIndex(); }
 
     /// Parent objektum
     cRecordDialogBase& _parent;
@@ -176,7 +176,7 @@ public:
 protected:
     void setFromWidget(QVariant v);
     cFieldEditBase * anotherField(const QString& __fn, bool __ex = true);
-    cRecordFieldRef    *_pFieldRef;     ///< A mező referencia objektum pointere
+//  cRecordFieldRef    *_pFieldRef;     ///< A mező referencia objektum pointere
     bool                _readOnly;      ///< Ha nem szerkeszthető, akkor értéke true
     bool                _nullable;      ///< Amező értéke NULL is lehet
     bool                _hasDefault;    ///< Ha a mezó rendelkezik alapértelmezett értékkel, akkor treu

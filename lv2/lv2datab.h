@@ -308,6 +308,7 @@ public:
     /// Az eValueCheck enumerációs értéket reprezentáló stringgel tér vissza.
     static const QString valueCheck(int e);
     ///
+    int fieldIndex() const { return pos -1; }
 protected:
     eValueCheck checkIfNull() const {
         if (isNullable)             return cColStaticDescr::VC_NULL;     // NULL / OK
