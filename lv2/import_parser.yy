@@ -11,6 +11,18 @@
 
 #define  YYERROR_VERBOSE
 
+/// A parser hiba függvénye. A hiba üzenettel dob egy kizárást.
+static int yyerror(QString em)
+{
+    EXCEPTION(EPARSE, -1, em);
+    return -1;
+}
+/// A parser hiba függvénye. A hiba üzenettel dob egy kizárást.
+static int yyerror(const char * em)
+{
+    return yyerror(QString(em));
+}
+
 static void insertCode(const QString& __txt);
 static QSqlQuery      *piq = NULL;
 static inline QSqlQuery& qq() { if (piq == NULL) EXCEPTION(EPROGFAIL); return *piq; }
@@ -22,11 +34,11 @@ public:
         tRecordList<cNode> hl;
         hl.fetchByNamePattern(q, *ph, false);
         QString n;
-        n = ph; pDelete(ph);
+        n = *ph; pDelete(ph);
         yyerror(QObject::trUtf8("A %1 mintára egyetlen hálózati elem neve sem illeszkedik.").arg(n));
         tRecordList<cService> sl;
         sl.fetchByNamePattern(q, *ps, false);
-        n = ps; pDelete(ps);
+        n = *ps; pDelete(ps);
         yyerror(QObject::trUtf8("A %1 mintára egyetlen szolgáltatás típus neve sem illeszkedik.").arg(n));
         for (tRecordList<cNode>::iterator i = hl.begin(); i < hl.end(); ++i) {
             cNode &h = **i;
@@ -242,18 +254,6 @@ int importParse(eImportParserStat _st)
     }
     importParserStat = IPS_READY;
     return i;
-}
-
-/// A parser hiba függvénye. A hiba üzenettel dob egy kizárást.
-static int yyerror(QString em)
-{
-    EXCEPTION(EPARSE, -1, em);
-    return -1;
-}
-/// A parser hiba függvénye. A hiba üzenettel dob egy kizárást.
-static int yyerror(const char * em)
-{
-    return yyerror(QString(em));
 }
 
 class cArpServerDef {
