@@ -4,19 +4,19 @@
 #include "cerrormessagebox.h"
 
 
-Ui::noRightsForm * noRighrsSetup(QWidget *_pWidget, qlonglong _need, const QString& _obj, const QString& _html)
+Ui::noRightsForm * noRightsSetup(QWidget *_pWidget, qlonglong _need, const QString& _obj, const QString& _html)
 {
-    Ui::noRightsForm *noRighrs;
-    noRighrs = new Ui::noRightsForm();
-    noRighrs->setupUi(_pWidget);
-    noRighrs->userLE->setText(lanView::user().getName());
-    noRighrs->userRightsLE->setText(privilegeLevel(lanView::user().privilegeLevel()));
-    noRighrs->viewRightsLE->setText(privilegeLevel(_need));
-    noRighrs->viewedLE->setText(_obj);
+    Ui::noRightsForm *noRights;
+    noRights = new Ui::noRightsForm();
+    noRights->setupUi(_pWidget);
+    noRights->userLE->setText(lanView::user().getName());
+    noRights->userRightsLE->setText(privilegeLevel(lanView::user().privilegeLevel()));
+    noRights->viewRightsLE->setText(privilegeLevel(_need));
+    noRights->viewedLE->setText(_obj);
     if (_html.isEmpty() == false) {
-        noRighrs->msgTE->setHtml(_html);
+        noRights->msgTE->setHtml(_html);
     }
-    return noRighrs;
+    return noRights;
 }
 
 /* ***************************************************************************************************** */
@@ -137,7 +137,7 @@ cRecordTableOrd::cRecordTableOrd(cRecordTableFODialog &par,cRecordTableColumn& _
     pUp     = new QPushButton(QIcon::fromTheme("go-up"), pUp->trUtf8("Fel"), &par);
     pDown   = new QPushButton(QIcon::fromTheme("go-down"), pUp->trUtf8("Le"), &par);
     pRowName->setText(field.header.toString());
-    pRowName->setEnabled(false);
+    pRowName->setReadOnly(true);
     types |= enum2set(OT_NO);   // Ha esetleg a nincs rendezés nem lenne benne a set-ben
     for (int i = 0; enum2set(i) <= types ; ++i) {
         if (enum2set(i) & types) pType->addItem(orderType(i));
@@ -212,7 +212,7 @@ cRecordTableFODialog::cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase &_rt)
     }
     connect(pForm->pushButton_OK, SIGNAL(clicked()), this, SLOT(clickOk()));
     connect(pForm->pushButton_Default, SIGNAL(clicked()), this, SLOT(clickDefault()));
-    qSort(ords.begin(), ords.end(), PtrGreat<cRecordTableOrd>());
+    qSort(ords.begin(), ords.end(), PtrLess<cRecordTableOrd>());
     setGridLayoutOrder();
     iSelFilterCol = -1;
     iSelFilterType = -1;
@@ -1140,7 +1140,7 @@ QStringList cRecordsViewBase::where(QVariantList& qParams)
 
 void cRecordsViewBase::clickedHeader(int)
 {
-    if (pFODialog == NULL) pFODialog = new cRecordTableFODialog(pq, *this);
+    if (pFODialog == NULL) EXCEPTION(EPROGFAIL);
     int r = pFODialog->exec();
     if (r == DBT_OK) refresh();
 }
@@ -1308,6 +1308,8 @@ void cRecordTable::initSimple(QWidget * pW)
 
     connect(pButtons,    SIGNAL(buttonPressed(int)),   this, SLOT(buttonPressed(int)));
     connect(pTableView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
+    if (pFODialog != NULL) EXCEPTION(EPROGFAIL);
+    pFODialog = new cRecordTableFODialog(pq, *this);
 }
 
 void cRecordTable::empty()

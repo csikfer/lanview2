@@ -200,7 +200,7 @@ cRecordDialogBase::cRecordDialogBase(const cTableShape &__tm, int _buttons, bool
     _pWidget->setObjectName(name + "_Widget");
 
     if (_isDisabled) {  // Neki tltva, csak egy egy üzenet erről.
-        Ui::noRightsForm *noRighrs = noRighrsSetup(_pWidget, _viewRights, objectName());
+        Ui::noRightsForm *noRighrs = noRightsSetup(_pWidget, _viewRights, objectName());
         if (_pOwner == NULL) {
             connect(noRighrs->closePB, SIGNAL(pressed()), this, SLOT(cancel()));
         }

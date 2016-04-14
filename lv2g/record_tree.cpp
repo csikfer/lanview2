@@ -131,6 +131,8 @@ void cRecordTree::initSimple(QWidget *pW)
     }
     pTreeView->header()->setSectionsClickable(true);
     connect(pTreeView->header(), SIGNAL(sectionClicked(int)), this, SLOT(clickedHeader(int)));
+    if (pFODialog != NULL) EXCEPTION(EPROGFAIL);
+    pFODialog = new cRecordTableFODialog(pq, *this);
 }
 
 bool cRecordTree::queryNodeChildrens(QSqlQuery& q, cTreeNode *pn)

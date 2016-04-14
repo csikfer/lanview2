@@ -15,7 +15,8 @@ namespace Ui {
 }
 #endif
 
-EXT_ Ui::noRightsForm * noRighrsSetup(QWidget *_pWidget, qlonglong _need, const QString& _obj, const QString& _html = QString());
+/// Nincs jogosultsága form megjelenítése
+EXT_ Ui::noRightsForm * noRightsSetup(QWidget *_pWidget, qlonglong _need, const QString& _obj, const QString& _html = QString());
 
 class cRecordTable;
 class cRecordTableColumn;
