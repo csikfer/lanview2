@@ -1249,7 +1249,7 @@ bool cInterface::insert(QSqlQuery &__q, bool __ex)
 /// A Hívása elött a cNode törli az összes IP cím rekordot, igy az IP címekhet nem a replace() hanem az insert() metódust kell hívni,
 bool cInterface::rewrite(QSqlQuery &__q, bool __ex)
 {
-    bool r = cNPort::rewrite(__q, __ex);
+    bool r = cNPort::rewrite(__q, __ex) && (trunkMembers.size() == updateTrunkMembers(__q, __ex));
     if (!r) return false;
     r = vlans.replace(__q, __ex);
     if (!r) return false;

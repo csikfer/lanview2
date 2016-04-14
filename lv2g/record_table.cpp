@@ -81,23 +81,23 @@ QString cRecordTableFilter::where(QVariantList& qparams)
     if (pFilter != NULL) {
         switch (pFilter->getId(_sFilterType)) {
         case FT_BEGIN:
-            r = c + " LIKE ?";
+            r = c + "::text LIKE ?";
             qparams << QVariant(param1.toString() + "%");
             break;
         case FT_LIKE:
-            r = c + " LIKE ?";
+            r = c + "::text LIKE ?";
             qparams << param1;
             break;
         case FT_SIMILAR:
-            r = c + " SIMILAR ?";
+            r = c + "::text SIMILAR ?";
             qparams << param1;
             break;
         case FT_REGEXP:
-            r = c + " ~ ?";
+            r = c + "::text ~ ?";
             qparams << param1;
             break;
         case FT_REGEXPI:
-            r = c + " ~* ?";
+            r = c + "::text ~* ?";
             qparams << param1;
             break;
         case FT_BIG:
@@ -1466,6 +1466,7 @@ void cRecordTable::_refresh(bool all)
     foreach (QVariant v, qParams) pTabQuery->bindValue(i++, v);
     if (!pTabQuery->exec()) SQLQUERYERR(*pTabQuery);
     pTableModel()->setRecords(*pTabQuery, all);
+    pTableView->horizontalHeader()->resizeSections(QHeaderView::ResizeToContents);
 }
 
 

@@ -246,7 +246,7 @@ enum eNotifSwitch cDevicePSt::run(QSqlQuery& q)
         // Előkapjuk a kapcsolódó szolgálltatást
         cInspector& ns   = *(*pSubordinates)[ix];
         if (opstat == _sUp) ns.hostService.setState(q, _sOn, _sNul, parentId());
-        else                ns.hostService.setState(q, _sCritical, QString("%1/%2").arg(opstat).arg(adstat), parentId());
+        else                ns.hostService.setState(q, _sCritical, QString("o:%1/a:%2").arg(opstat).arg(adstat), parentId());
     }
     DBGFNL();
     return RS_ON;
