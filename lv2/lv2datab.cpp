@@ -2510,9 +2510,9 @@ QString cRecStaticDescr::checkId2Name(QSqlQuery& q) const
     const QString& sTableName  = tableName();
     DWAR() << QObject::trUtf8("Function %1 not found, create ...").arg(sFnToName) << endl;
     sql = QString(
-         "CREATE OR REPLACE FUNCTION %1(bigint) RETURNS varchar(32) AS $$"
+         "CREATE OR REPLACE FUNCTION %1(bigint) RETURNS text AS $$"
         " DECLARE"
-            " name varchar(32);"
+            " name text;"
         " BEGIN"
             " IF $1 IS NULL THEN"
                 " RETURN NULL; "

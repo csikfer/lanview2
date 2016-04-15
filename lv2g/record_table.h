@@ -88,22 +88,29 @@ signals:
 
 class cRecordsViewBase;
 
-///
+/// Szűrések és rendezés dialógus.
+/// A rendezés és szűrések állpota
 class LV2GSHARED_EXPORT cRecordTableFODialog : public QDialog {
     Q_OBJECT
 public:
     cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase&_rt);
     ~cRecordTableFODialog();
     const cRecordsViewBase&      recordView;
+    /// A szűrési feltételeknek megfeleő SQL feltételek litáját adja vissza
+    /// A szükslges paramétereket (bind) hozzáadja a qparams konténerhez.
     QStringList where(QVariantList &qparams);
+    /// A rendezési utasítás az SQL select-ben
     QString                     ord();
+    /// Az aktuálisan kivállasztott filter objektummal tér vissza (?)
     cRecordTableFilter&         filter() { if (pSelFilter == NULL) EXCEPTION(EPROGFAIL); return *pSelFilter; }
     QList<cRecordTableFilter *> filters;
     cRecordTableFilter *        pSelFilter;
+    /// A dialógusban a szűrésnél aktuálisan kiválasztott oszlop index
     int                         iSelFilterCol;
+    /// A dialógusban a szűrésnél aktuálisan kiválasztott oszlophoz tartozó kiválasztott szűrés típus index
     int                         iSelFilterType;
     QList<cRecordTableOrd *>    ords;
-    Ui::dialogTabFiltOrd *      pForm;
+    Ui::dialogTabFiltOrd *      pForm;  ///< Dialógus form
 private:
     int indexOf(cRecordTableOrd * _po);
     void setGridLayoutOrder();

@@ -77,27 +77,32 @@ int cRecordTableFilter::fieldType()
 QString cRecordTableFilter::where(QVariantList& qparams)
 {
     QString r;
-    QString c = field.colDescr.colNameQ();
+    QString c  = field.colDescr.colNameQ();
+    QString cs = c + "::text";
+    // Egész, lehet ID is, van név konverzió
+    if (field.colDescr.eColType == cColStaticDescr::FT_INTEGER && !field.colDescr.fnToName.isEmpty()) {
+        cs = field.colDescr.fnToName + "(" + c + ")";
+    }
     if (pFilter != NULL) {
         switch (pFilter->getId(_sFilterType)) {
         case FT_BEGIN:
-            r = c + "::text LIKE ?";
+            r = cs + " LIKE ?";
             qparams << QVariant(param1.toString() + "%");
             break;
         case FT_LIKE:
-            r = c + "::text LIKE ?";
+            r = cs + " LIKE ?";
             qparams << param1;
             break;
         case FT_SIMILAR:
-            r = c + "::text SIMILAR ?";
+            r = cs + " SIMILAR ?";
             qparams << param1;
             break;
         case FT_REGEXP:
-            r = c + "::text ~ ?";
+            r = cs + " ~ ?";
             qparams << param1;
             break;
         case FT_REGEXPI:
-            r = c + "::text ~* ?";
+            r = cs + " ~* ?";
             qparams << param1;
             break;
         case FT_BIG:
@@ -417,12 +422,21 @@ void cRecordTableFODialog::ordMoveDown(cRecordTableOrd * _po)
 
 void cRecordTableFODialog::filtCol(int _c)
 {
-
+    if (iSelFilterCol == _c) return;
     iSelFilterCol = _c;
     if (!isContIx(filters, iSelFilterCol)) EXCEPTION(EDATA, iSelFilterCol);
     pSelFilter = filters[iSelFilterCol];
+    pForm->lineEdit_colDescr->setText(filter().field.shapeField.getName(_sDialogTitle));
+    while (pForm->comboBox_FiltType->count() > 1) pForm->comboBox_FiltType->removeItem(1);
+    if (pSelFilter->typeList.size() > 1) {
+        pForm->comboBox_FiltType->addItems(pSelFilter->typeList.mid(1));
+        pForm->comboBox_FiltType->setEnabled(true);
+    }
+    else {
+        pForm->comboBox_FiltType->setEnabled(false);
+    }
     if (filter().iFilter < 0) {
-        iSelFilterType = -1;
+        iSelFilterType = -1;    // Nincs szűrési lehetőség az oszlopra
         pForm->comboBox_FiltType->setCurrentIndex(0);
     }
     else {

@@ -246,6 +246,7 @@ void cLogLevelDialog::setLogLevel(qlonglong __ll)
     checkBoxSQL->       setCheckState(checkState(__ll, cDebug::SQL));
     checkBoxObject->    setCheckState(checkState(__ll, cDebug::OBJECT));
     checkBoxAddress->   setCheckState(checkState(__ll, cDebug::ADDRESS));
+    checkBoxSNMP->      setCheckState(checkState(__ll, cDebug::SNMP));
 
     checkBoxLv2->       setCheckState(checkState(__ll, cDebug::LV2));
     checkBoxLv2g->      setCheckState(checkState(__ll, cDebug::LV2G));
@@ -268,6 +269,7 @@ qlonglong cLogLevelDialog::getLogLevel()
     checkState(checkBoxObject->    checkState(), l, cDebug::OBJECT);
     checkState(checkBoxObject->    checkState(), l, cDebug::OBJECT);
     checkState(checkBoxAddress->   checkState(), l, cDebug::ADDRESS);
+    checkState(checkBoxSNMP->      checkState(), l, cDebug::SNMP);
 
     checkState(checkBoxLv2->       checkState(), l, cDebug::LV2);
     checkState(checkBoxLv2g->      checkState(), l, cDebug::LV2G);
