@@ -135,7 +135,7 @@ A jelenleg implementállt lehetőségek:
 | setup     | OWN_SETUP    | cSetupWidget    | Alapbeállítások megadása |
 | parser    | OWN_PARSER   | cParseWidget    | A parser hvása           |
 | olalarm   | OWN_OLALARM  | cOnlineAlarm    | OnLine riasztások        |
-| errcodes  | OWN_ERRCODES | cErrcodesWidget | API hibakósok listája    |
+| errcodes  | OWN_ERRCODES | cErrcodesWidget | API hibakódok listája    |
 @endtable
  */
 void cMenuAction::initOwn()

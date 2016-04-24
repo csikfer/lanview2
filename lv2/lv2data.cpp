@@ -885,13 +885,13 @@ qlonglong cNPort::_tableoid_interfaces = NULL_ID;
 
 cNPort::cNPort() : cRecord(), params(this)
 {
-    DBGOBJ();
+    // DBGOBJ();
     _set(cNPort::descr());
 }
 
 cNPort::cNPort(const cNPort& __o) : cRecord(), params(this, __o.params)
 {
-    DBGOBJ();
+    // DBGOBJ();
     __cp(__o);
     _copy(__o, _descr_cNPort());
 }

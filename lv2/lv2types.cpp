@@ -137,7 +137,7 @@ const char cMac::_sMacPattern5[] = "([A-F\\d]{1,2})\\s+([A-F\\d]{1,2})\\s+([A-F\
 cMac& cMac::set(const QString& __mac)
 {
     QString s = __mac.simplified();
-    _DBGFN() << " @(" << s << ")" << endl;
+    // _DBGFN() << " @(" << s << ")" << endl;
     val = 0LL;
     if (s.isEmpty()) return *this;
     bool ok = true;

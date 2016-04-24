@@ -467,6 +467,7 @@ GUI lv2gui {
         alarms      SHAPE   alarms          {   TITLE "Riasztások",@;  }
         app_errs    SHAPE   app_errs        {   TITLE "Program hiba napló",@;  }
         app_memos   SHAPE   app_memos       {   TITLE "Program esemény napló",@;  }
+        db_errs     SHAPE   db_errs         {   TITLE "Adatbázis hiba napló" ,@;  }
         host_service_logs SHAPE host_service_logs { TITLE "Szervíz állapot napló",@;  }
         olalarm     OWN     olalarm         {   TITLE "On-Line riasztások",@;  }
         api_ecodes  OWN     errcodes        {   TITLE "API hiba kódok",@; }

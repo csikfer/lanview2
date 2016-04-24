@@ -29,7 +29,9 @@ SOURCES += \
     record_tree.cpp \
     imagedrv.cpp \
     mainwindow.cpp \
-    apierrcodes.cpp
+    apierrcodes.cpp \
+    record_link.cpp \
+    record_link_model.cpp
 
 HEADERS +=\
     lv2g_global.h \
@@ -51,7 +53,9 @@ HEADERS +=\
     record_tree.h \
     imagedrv.h \
     mainwindow.h \
-    apierrcodes.h
+    apierrcodes.h \
+    record_link.h \
+    record_link_model.h
 
 FORMS += \
     column_filter.ui \

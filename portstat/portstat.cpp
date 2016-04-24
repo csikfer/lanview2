@@ -170,7 +170,7 @@ void cDevicePSt::postInit(QSqlQuery &q, const QString&)
                 if (lpid1 != NULL_ID && lpid1 != lpid) { // Ez egy ellentmondás!!!
                     msg += trUtf8("A szervíz %1 port logikai linkje %2 porthoz, ötközik az LLDP klinkkel a %3 porthoz, ezért törölkük a fizikai link első elemét. ")
                             .arg(p->getFullName(q))
-                            .arg(cNPort::getFullNameById(q, lpid2))
+                            .arg(cNPort::getFullNameById(q, lpid1))
                             .arg(cNPort::getFullNameById(q, lpid));
                     cPhsLink().unlink(q, p->getId(), LT_TERM, ES_);
                 }
