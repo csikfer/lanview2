@@ -153,6 +153,7 @@ public:
     /// Rekord azonosító nevekből képez egy stringet: node:szolgáltatés alakban.
     /// A neveket az objektum nem tartalmazza, ezért azokat az adatbázisból kérdezi le.
     QString names(QSqlQuery& q);
+    static QString names(QSqlQuery& q, qlonglong __id);
     /// A prime_service mező álltal hivatkozott cService objektummal tér vissza.
     /// Ha a mező ártéke NULL, akkor egy üres objektum referenciájával.
     /// @param Az esetleges SQL lekérdezéshez használlt objektum (ha már be van olvasva a keresett objektum, akkor nem fordul az adatbázishoz)

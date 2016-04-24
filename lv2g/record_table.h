@@ -15,7 +15,8 @@ namespace Ui {
 }
 #endif
 
-EXT_ Ui::noRightsForm * noRighrsSetup(QWidget *_pWidget, qlonglong _need, const QString& _obj, const QString& _html = QString());
+/// Nincs jogosultsága form megjelenítése
+EXT_ Ui::noRightsForm * noRightsSetup(QWidget *_pWidget, qlonglong _need, const QString& _obj, const QString& _html = QString());
 
 class cRecordTable;
 class cRecordTableColumn;
@@ -87,22 +88,29 @@ signals:
 
 class cRecordsViewBase;
 
-///
+/// Szűrések és rendezés dialógus.
+/// A rendezés és szűrések állpota
 class LV2GSHARED_EXPORT cRecordTableFODialog : public QDialog {
     Q_OBJECT
 public:
     cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase&_rt);
     ~cRecordTableFODialog();
     const cRecordsViewBase&      recordView;
+    /// A szűrési feltételeknek megfeleő SQL feltételek litáját adja vissza
+    /// A szükslges paramétereket (bind) hozzáadja a qparams konténerhez.
     QStringList where(QVariantList &qparams);
+    /// A rendezési utasítás az SQL select-ben
     QString                     ord();
+    /// Az aktuálisan kivállasztott filter objektummal tér vissza (?)
     cRecordTableFilter&         filter() { if (pSelFilter == NULL) EXCEPTION(EPROGFAIL); return *pSelFilter; }
     QList<cRecordTableFilter *> filters;
     cRecordTableFilter *        pSelFilter;
+    /// A dialógusban a szűrésnél aktuálisan kiválasztott oszlop index
     int                         iSelFilterCol;
+    /// A dialógusban a szűrésnél aktuálisan kiválasztott oszlophoz tartozó kiválasztott szűrés típus index
     int                         iSelFilterType;
     QList<cRecordTableOrd *>    ords;
-    Ui::dialogTabFiltOrd *      pForm;
+    Ui::dialogTabFiltOrd *      pForm;  ///< Dialógus form
 private:
     int indexOf(cRecordTableOrd * _po);
     void setGridLayoutOrder();
@@ -296,7 +304,7 @@ public:
     void initGroup(QVariantList &vlids);
     /// Inicializálja az adattábla megjelenítését.
     ///
-    /// \diafile    record_table.dia "" width=10cm
+    /// \diafile    record_table.dia "" width=8cm
     virtual void initSimple(QWidget *pW) = 0;
 
     virtual void _refresh(bool all = true) = 0;
@@ -333,7 +341,7 @@ public:
     cRecordTable(const QString& _mn, bool _isDialog, QWidget * par = NULL);
     /// Konstruktor
     /// Fő, al, vagy önálló tábla megjelenítése, már beolvasott leíró
-    /// @param _mn A tábla megjelenítését leíró rekord neve (table_shapes.table_shape_name)
+    /// @param pts A tábla megjelenítését leíró objektum pointere
     /// @param _isDialog Ha igaz, akkor a megjelenítés egy dialog ablakban.
     /// @param par A szülő widget pointere, vagy NULL
     cRecordTable(cTableShape *pts, bool _isDialog, cRecordsViewBase *_upper = NULL, QWidget * par = NULL);

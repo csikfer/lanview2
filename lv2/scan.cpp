@@ -155,15 +155,11 @@ cArpTable& cArpTable::getBySnmp(cSnmp& __snmp)
     PDEB(VVERBOSE) << "Base oid : " << oid.toNumString() << endl;
     if (__snmp.getNext(oid)) EXCEPTION(ESNMP, __snmp.status, "First getNext().")
     do {
-        cOId   sufix = __snmp.name() - oid;
-        if (!sufix) break;
+        if (!(oid < __snmp.name())) break;
         PDEB(VVERBOSE) << "oid : " << __snmp.name().toNumString() << " = " << dump(__snmp.value().toByteArray()) << endl;
-        PDEB(VVERBOSE) << "sufix : " << sufix.toNumString() << " ; " << sufix.size() << endl;
-        sufix.pop_front();  // IP cím elött van egy szám (port azonosító?)
-        sufix.pop_back();   // IP cím után is van egy szám (sorszám?)
-        QHostAddress addr(sufix.toNumString());
+        QHostAddress addr = __snmp.name().toIPV4();
         if (addr.isNull()) {
-            QString msg = QString("Invalid IP Address %1  OID : %2").arg(sufix.toString(), __snmp.name().toString());
+            QString msg = QString("Invalid IP Address OID : %2").arg(__snmp.name().toString());
             DERR() << msg << endl;
             EXCEPTION(EDATA, -1, msg);
         }
@@ -264,6 +260,9 @@ const QString& cArpTable::token(QIODevice& __f)
 #define GETOKEN()   if ((tok = token(__f)).isEmpty()) break;
 #define CHKTOK(s)   if (tok != s) continue;
 
+/// dhcp.comf fájl tartalmának az értelmezése
+/// @param __f A fájl tartalma
+/// @param _hid host_service_id opcionális
 void cArpTable::getByDhcpdConf(QIODevice& __f, qlonglong _hid)
 {
     //DBGFN();
@@ -275,6 +274,8 @@ void cArpTable::getByDhcpdConf(QIODevice& __f, qlonglong _hid)
     QTextStream str(&__f);
     QString tok;
     QString _s;
+    QVariant hId;
+    if (_hid != NULL_ID) hId = _hid;
     while (true) {
         tok = token(__f);
         if (tok.isEmpty()) return;
@@ -300,15 +301,21 @@ void cArpTable::getByDhcpdConf(QIODevice& __f, qlonglong _hid)
             insert(addr, mac);
         }
         else if (tok == _srange) {
-            GETOKEN();  QHostAddress b(tok);
-            GETOKEN();  QHostAddress e(tok);
-            if (b.isNull() || e.isNull()) {
-                DERR() << "Dynamic range : " << b.toString() << " > " << e.toString() << endl;
+            QSqlQuery q = getQuery();
+            QString sb, se;
+            GETOKEN();  sb = tok;   QHostAddress b(tok);
+            GETOKEN();  se = tok;   QHostAddress e(tok);
+            if (b.isNull() || e.isNull() || b.protocol() != e.protocol()
+              || (b.protocol() == QAbstractSocket::IPv4Protocol && b.toIPv4Address() >= e.toIPv4Address())) {
+                DERR() << "Dynamic range : " << sb << " > " << se << endl;
+                QString hs = QObject::trUtf8("nincs megadva");
+                if (_hid != NULL_ID) {
+                    hs = cHostService::names(q, _hid);
+                }
+                QString m = QObject::trUtf8("Invalid dynamic range from %1 to %2, HostService : %3").arg(sb,se,hs);
+                APPMEMO(q, m, RS_CRITICAL);
                 continue;
             }
-            QSqlQuery q = getQuery();
-            QVariant hId;
-            if (_hid != NULL_ID) hId = _hid;
             QString r = execSqlTextFunction(q,"replace_dyn_addr_range", b.toString(), e.toString(), hId);
             PDEB(INFO) << "Dynamic range " << b.toString() << " < " << e.toString() << "repl. result: " << r << endl;
         }
@@ -316,16 +323,17 @@ void cArpTable::getByDhcpdConf(QIODevice& __f, qlonglong _hid)
     return;
 }
 
-cArpTable& cArpTable::getByLocalDhcpdConf(const QString& __f)
+cArpTable& cArpTable::getByLocalDhcpdConf(const QString& __f, qlonglong _hid)
 {
     //_DBGFN() << " @(" << __f << ")" << endl;
     QFile dhcpdConf(__f.isEmpty() ? "/etc/dhcp3/dhcpd.conf" : __f);
     if (!dhcpdConf.open(QIODevice::ReadOnly | QIODevice::Text)) EXCEPTION(EFOPEN, -1, dhcpdConf.fileName());
-    getByDhcpdConf(dhcpdConf);
+    getByDhcpdConf(dhcpdConf, _hid);
     return *this;
 }
 
-cArpTable& cArpTable::getBySshDhcpdConf(const QString& __h, const QString& __f, const QString& __ru)
+/// @param _hid host_service_id opcionális
+cArpTable& cArpTable::getBySshDhcpdConf(const QString& __h, const QString& __f, const QString& __ru, qlonglong _hid)
 {
     //_DBGFN() << " @(" << VDEB(__h) << QChar(',') << VDEB(__f) << QChar(',') << VDEB(__ru) << QChar(')') << endl;
     QString     ru;
@@ -336,7 +344,7 @@ cArpTable& cArpTable::getBySshDhcpdConf(const QString& __h, const QString& __f, 
     proc.start(cmd, QIODevice::ReadOnly);
     if (false == proc.waitForStarted(  2000)
      || false == proc.waitForFinished(10000)) EXCEPTION(ETO, -1, cmd);
-    getByDhcpdConf(proc);
+    getByDhcpdConf(proc, _hid);
     return *this;
 }
 

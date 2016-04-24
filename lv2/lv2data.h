@@ -800,6 +800,7 @@ public:
     /// Az objektumnak csak a node_id mezője és a név mezője alapján állítja elő a visszaadott értéket.
     /// @param q Az adatbázis lekérdezéshez használt query objektum.
     QString getFullName(QSqlQuery& q, bool _ex = true);
+    static QString getFullNameById(QSqlQuery& q, qlonglong _id) { cNPort o; o.setById(q, _id); return o.getFullName(q); }
     /// Port paraméterek, nincs automatikusan feltöltve
     tOwnRecords<cPortParam, cNPort>   params;
 protected:
@@ -1423,7 +1424,11 @@ public:
     /// @return a törölt rekordok száma
     int unlink(QSqlQuery &q, qlonglong __pid, ePhsLinkType __t = LT_INVALID, ePortShare __s = ES_NC) const;
     /// Ütközö linkek törlése
-    int unxlinks(QSqlQuery& __q, qlonglong __pid, ePhsLinkType __t, ePortShare __s) const;
+    /// @param __pid Port ID
+    /// @param __t a link típusa
+    /// @param __s a megosztás típusa
+    /// @return A törölt linkek száma
+    int unxlinks(QSqlQuery& __q, qlonglong __pid, ePhsLinkType __t, ePortShare __s = ES_) const;
 
 };
 
@@ -1541,7 +1546,7 @@ public:
 class LV2SHARED_EXPORT cAppMemo : public cRecord {
     CRECORD(cAppMemo);
 public:
-    static qlonglong memo(QSqlQuery &q, QString &_memo, int _imp = RS_UNKNOWN, const QString &_func_name = _sNul, const QString &_src = _sNul, int _lin = 0);
+    static qlonglong memo(QSqlQuery &q, const QString &_memo, int _imp = RS_UNKNOWN, const QString &_func_name = _sNul, const QString &_src = _sNul, int _lin = 0);
 };
 
 #endif // LV2DATA_H

@@ -36,8 +36,8 @@ public:
 class LV2SHARED_EXPORT cDbErr : public cRecord {
     CRECORD(cDbErr);
 public:
-    static int insertNew(const QString& type, const QString& msg, int code, const QString& table, const QString& func);
-    static int insertNew(QSqlQuery &q, const QString& type, const QString& msg, int code, const QString& table, const QString& func);
+    static int insertNew(const QString& type, const QString& msg, int code = -1, const QString& table = _sNil, const QString& func = _sNil);
+    static int insertNew(QSqlQuery &q, const QString& type, const QString& msg, int code = -1, const QString& table = _sNil, const QString& func = _sNil);
 };
 
 

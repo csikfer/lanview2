@@ -22,7 +22,7 @@ int main (int argc, char * argv[])
     cLv2QApp app(argc, argv);
     SETAPP();
     lanView::snmpNeeded = true;
-    lanView::sqlNeeded  = true;
+    lanView::sqlNeeded  = SN_SQL_NEED;
 
     // Elmentjük az aktuális könyvtárt
     QString actDir = QDir::currentPath();

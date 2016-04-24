@@ -15,16 +15,16 @@ enum eTableShapeType {
     TS_UNKNOWN =-1, ///< ismeretlen, csak hibajelzésre
     TS_SIMPLE = 0,  ///< "simple'   Egyszerű
     TS_TREE,        ///< "tree"     fa strukrúra
-    TS_BARE,        ///< "bare"     Dekoráció nélkül, beágyazott tábla
-    TS_OWNER,       ///< "owner"
-    TS_CHILD,       ///< "child"
+    TS_BARE,        ///< "bare"     Dekoráció nélkül, beágyazott táblázat
+    TS_OWNER,       ///< "owner"    Tulajdonos (van child tánlája)
+    TS_CHILD,       ///< "child"    A sorok egy másik objektum részei
     TS_LINK,        ///< "link"     Hasonló a kapcsoló táblához, de egy tábla (és leszármazottai) közötti kapcsolatot reprezentál (linkek)
     TS_DIALOG,      ///< "dialog"   Csak dialógus, tábla tiltva
     TS_TABLE,       ///< "table"    Csak táblázat, dialógus tiltva
     TS_MEMBER,      ///< "member"   A jobboldalon a csoport rekordok (tag/nem tag)
     TS_GROUP,       ///< "group"
     TS_READ_ONLY,   ///< "read_only" Nem modosítható
-    TS_UNKNOWN_PAD, ///< Dummy érték a CHKENU miatt, további lehetséges éertékek nem megengedettek az adatbázisban
+    TS_UNKNOWN_PAD, ///< Dummy érték a CHKENU miatt (ne jelezzen hibát), további lehetséges értékek nem megengedettek az adatbázisban
     TS_IGROUP,      ///< "igroup"  Jobb oldali groupoknak, az aktuális bal rekord tagja
     TS_NGROUP,      ///< "ngroup"  Jobb oldali groupoknak, az aktuális bal rekord nem tagja
     TS_IMEMBER,     ///< "imember" Jobb oldali tagok, az aktuális bal csoportnak tagjai

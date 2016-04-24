@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
 
     SETAPP();
     lanView::snmpNeeded = false;
-    lanView::sqlNeeded  = true;
+    lanView::sqlNeeded  = SN_SQL_NEED;
 
     lv2UpdateOui   mo;
 

@@ -885,13 +885,13 @@ qlonglong cNPort::_tableoid_interfaces = NULL_ID;
 
 cNPort::cNPort() : cRecord(), params(this)
 {
-    DBGOBJ();
+    // DBGOBJ();
     _set(cNPort::descr());
 }
 
 cNPort::cNPort(const cNPort& __o) : cRecord(), params(this, __o.params)
 {
-    DBGOBJ();
+    // DBGOBJ();
     __cp(__o);
     _copy(__o, _descr_cNPort());
 }
@@ -1249,7 +1249,7 @@ bool cInterface::insert(QSqlQuery &__q, bool __ex)
 /// A Hívása elött a cNode törli az összes IP cím rekordot, igy az IP címekhet nem a replace() hanem az insert() metódust kell hívni,
 bool cInterface::rewrite(QSqlQuery &__q, bool __ex)
 {
-    bool r = cNPort::rewrite(__q, __ex);
+    bool r = cNPort::rewrite(__q, __ex) && (trunkMembers.size() == updateTrunkMembers(__q, __ex));
     if (!r) return false;
     r = vlans.replace(__q, __ex);
     if (!r) return false;
@@ -1903,7 +1903,7 @@ int  cNode::fetchPorts(QSqlQuery& __q)
     if (execSql(__q, sql, getId())) do {
         qlonglong tableoid = variantToId(__q.value(0));
         qlonglong port_id  = variantToId(__q.value(1));
-        cNPort *p = cNPort::getPortObjById(q, tableoid, port_id);
+        cNPort *p = cNPort::getPortObjById(q, tableoid, port_id, true);
         q.finish();
         if (p == NULL) return -1;
         if (tableoid == cNPort::tableoid_interfaces()) {
@@ -2979,7 +2979,7 @@ CRECDEFD(cPortVlan)
 /* ------------------------------ app_memos ------------------------------ */
 DEFAULTCRECDEF(cAppMemo, _sAppMemos)
 
-qlonglong cAppMemo::memo(QSqlQuery &q, QString& _memo, int _imp, const QString& _func_name, const QString& _src, int _lin)
+qlonglong cAppMemo::memo(QSqlQuery &q, const QString &_memo, int _imp, const QString& _func_name, const QString& _src, int _lin)
 {
     cAppMemo o;
     lanView *pI = lanView::getInstance();

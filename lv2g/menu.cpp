@@ -1,6 +1,7 @@
 #include "menu.h"
 #include "setup.h"
 #include "gparse.h"
+#include "apierrcodes.h"
 
 cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidget * par, bool __ex)
     : QObject(par), type(MAT_ERROR)
@@ -54,6 +55,10 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidge
         else if (0 == feature.compare("olalarm", Qt::CaseInsensitive)) {     // "olalarm"    On-Line riasztások widget
             ownType = OWN_OLALARM;
             rights = cOnlineAlarm::rights;
+        }
+        else if (0 == feature.compare("errcodes", Qt::CaseInsensitive)) {     // "errcodes"  API hibakódok
+            ownType = OWN_ERRCODES;
+            rights = cErrcodesWidget::rights;
         }
         else {
             if (__ex) EXCEPTION(ENONAME, -1, feature);
@@ -121,6 +126,18 @@ void cMenuAction::initRecordTable()
     connect(pRecordView, SIGNAL(destroyed()), this, SLOT(destroyedChild()));
 }
 
+/** Egy megjelenítést végző cOwnTab leszármazott objektum létrehozása
+
+A menüben az "own=<típus>" stringgel lehet megadni a properties mezőben megjelenítő típusát.
+A jelenleg implementállt lehetőségek:
+| Típus név | Konstans név | Objektum név    | Funkció                  |
+|-----------|--------------|-----------------|--------------------------|
+| setup     | OWN_SETUP    | cSetupWidget    | Alapbeállítások megadása |
+| parser    | OWN_PARSER   | cParseWidget    | A parser hvása           |
+| olalarm   | OWN_OLALARM  | cOnlineAlarm    | OnLine riasztások        |
+| errcodes  | OWN_ERRCODES | cErrcodesWidget | API hibakódok listája    |
+@endtable
+ */
 void cMenuAction::initOwn()
 {
     switch (ownType) {
@@ -132,6 +149,9 @@ void cMenuAction::initOwn()
         break;
     case OWN_OLALARM:
         pOwnTab = new cOnlineAlarm(pTabWidget);
+        break;
+    case OWN_ERRCODES:
+        pOwnTab = new cErrcodesWidget(pTabWidget);
         break;
     default:
         EXCEPTION(EPROGFAIL);

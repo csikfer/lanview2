@@ -4,19 +4,19 @@
 #include "cerrormessagebox.h"
 
 
-Ui::noRightsForm * noRighrsSetup(QWidget *_pWidget, qlonglong _need, const QString& _obj, const QString& _html)
+Ui::noRightsForm * noRightsSetup(QWidget *_pWidget, qlonglong _need, const QString& _obj, const QString& _html)
 {
-    Ui::noRightsForm *noRighrs;
-    noRighrs = new Ui::noRightsForm();
-    noRighrs->setupUi(_pWidget);
-    noRighrs->userLE->setText(lanView::user().getName());
-    noRighrs->userRightsLE->setText(privilegeLevel(lanView::user().privilegeLevel()));
-    noRighrs->viewRightsLE->setText(privilegeLevel(_need));
-    noRighrs->viewedLE->setText(_obj);
+    Ui::noRightsForm *noRights;
+    noRights = new Ui::noRightsForm();
+    noRights->setupUi(_pWidget);
+    noRights->userLE->setText(lanView::user().getName());
+    noRights->userRightsLE->setText(privilegeLevel(lanView::user().privilegeLevel()));
+    noRights->viewRightsLE->setText(privilegeLevel(_need));
+    noRights->viewedLE->setText(_obj);
     if (_html.isEmpty() == false) {
-        noRighrs->msgTE->setHtml(_html);
+        noRights->msgTE->setHtml(_html);
     }
-    return noRighrs;
+    return noRights;
 }
 
 /* ***************************************************************************************************** */
@@ -77,27 +77,32 @@ int cRecordTableFilter::fieldType()
 QString cRecordTableFilter::where(QVariantList& qparams)
 {
     QString r;
-    QString c = field.colDescr.colNameQ();
+    QString c  = field.colDescr.colNameQ();
+    QString cs = c + "::text";
+    // Egész, lehet ID is, van név konverzió
+    if (field.colDescr.eColType == cColStaticDescr::FT_INTEGER && !field.colDescr.fnToName.isEmpty()) {
+        cs = field.colDescr.fnToName + "(" + c + ")";
+    }
     if (pFilter != NULL) {
         switch (pFilter->getId(_sFilterType)) {
         case FT_BEGIN:
-            r = c + " LIKE ?";
+            r = cs + " LIKE ?";
             qparams << QVariant(param1.toString() + "%");
             break;
         case FT_LIKE:
-            r = c + " LIKE ?";
+            r = cs + " LIKE ?";
             qparams << param1;
             break;
         case FT_SIMILAR:
-            r = c + " SIMILAR ?";
+            r = cs + " SIMILAR ?";
             qparams << param1;
             break;
         case FT_REGEXP:
-            r = c + " ~ ?";
+            r = cs + " ~ ?";
             qparams << param1;
             break;
         case FT_REGEXPI:
-            r = c + " ~* ?";
+            r = cs + " ~* ?";
             qparams << param1;
             break;
         case FT_BIG:
@@ -137,7 +142,7 @@ cRecordTableOrd::cRecordTableOrd(cRecordTableFODialog &par,cRecordTableColumn& _
     pUp     = new QPushButton(QIcon::fromTheme("go-up"), pUp->trUtf8("Fel"), &par);
     pDown   = new QPushButton(QIcon::fromTheme("go-down"), pUp->trUtf8("Le"), &par);
     pRowName->setText(field.header.toString());
-    pRowName->setEnabled(false);
+    pRowName->setReadOnly(true);
     types |= enum2set(OT_NO);   // Ha esetleg a nincs rendezés nem lenne benne a set-ben
     for (int i = 0; enum2set(i) <= types ; ++i) {
         if (enum2set(i) & types) pType->addItem(orderType(i));
@@ -212,7 +217,7 @@ cRecordTableFODialog::cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase &_rt)
     }
     connect(pForm->pushButton_OK, SIGNAL(clicked()), this, SLOT(clickOk()));
     connect(pForm->pushButton_Default, SIGNAL(clicked()), this, SLOT(clickDefault()));
-    qSort(ords.begin(), ords.end(), PtrGreat<cRecordTableOrd>());
+    qSort(ords.begin(), ords.end(), PtrLess<cRecordTableOrd>());
     setGridLayoutOrder();
     iSelFilterCol = -1;
     iSelFilterType = -1;
@@ -417,12 +422,21 @@ void cRecordTableFODialog::ordMoveDown(cRecordTableOrd * _po)
 
 void cRecordTableFODialog::filtCol(int _c)
 {
-
+    if (iSelFilterCol == _c) return;
     iSelFilterCol = _c;
     if (!isContIx(filters, iSelFilterCol)) EXCEPTION(EDATA, iSelFilterCol);
     pSelFilter = filters[iSelFilterCol];
+    pForm->lineEdit_colDescr->setText(filter().field.shapeField.getName(_sDialogTitle));
+    while (pForm->comboBox_FiltType->count() > 1) pForm->comboBox_FiltType->removeItem(1);
+    if (pSelFilter->typeList.size() > 1) {
+        pForm->comboBox_FiltType->addItems(pSelFilter->typeList.mid(1));
+        pForm->comboBox_FiltType->setEnabled(true);
+    }
+    else {
+        pForm->comboBox_FiltType->setEnabled(false);
+    }
     if (filter().iFilter < 0) {
-        iSelFilterType = -1;
+        iSelFilterType = -1;    // Nincs szűrési lehetőség az oszlopra
         pForm->comboBox_FiltType->setCurrentIndex(0);
     }
     else {
@@ -907,13 +921,14 @@ void cRecordsViewBase::initShape(cTableShape *pts)
     if (pTableShape->shapeFields.isEmpty() && 0 == pTableShape->fetchFields(*pq)) EXCEPTION(EDATA, pTableShape->getId(), pTableShape->getName());
 
     pRecDescr = cRecStaticDescr::get(pTableShape->getName(_sTableName));
-    isReadOnly = pTableShape->getBool(_sTableShapeType, TS_READ_ONLY);
+    // Extra típus értékek miatt nem használható a mező alap konverziós metódusa !
+    shapeType = enum2set(tableShapeType, pTableShape->get(_sTableShapeType).toStringList(), false);
+    isReadOnly =  ENUM2SET(TS_READ_ONLY) & shapeType;
+    shapeType &= ~ENUM2SET(TS_READ_ONLY);
     isReadOnly = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sEditRights));
     isNoDelete = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sRemoveRights));
     isNoInsert = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sInsertRights));
 
-    // Extra típus értékek miatt nem használható a mező alap konverziós metódusa !
-    shapeType = enum2set(tableShapeType, pTableShape->get(_sTableShapeType).toStringList(), false);
     if (shapeType & ENUM2SET(TS_DIALOG))
         EXCEPTION(EDATA, 0, trUtf8("Táblázatos megjelenítés az arra alkalmatlan %1 nevű leíróval.").arg(pts->getName()));
 
@@ -957,10 +972,10 @@ void cRecordsViewBase::rightTabs(QVariantList& vlids)
         bool ok;
         qlonglong id = vid.toLongLong(&ok);
         if (!ok) EXCEPTION(EDATA);
-        QWidget *pw = new QWidget();
-        cRecordsViewBase *prvb = cRecordsViewBase::newRecordView(*pq, id, this, pw);
+        cRecordsViewBase *prvb = cRecordsViewBase::newRecordView(*pq, id, this);
+        prvb->setParent(this);
         *pRightTables << prvb;
-        pRightTabWidget->addTab(pw, prvb->tableShape().getName(_sTableTitle));
+        pRightTabWidget->addTab(prvb->pWidget(), prvb->tableShape().getName(_sTableTitle));
     }
 }
 
@@ -968,9 +983,9 @@ void cRecordsViewBase::rightTabs(QVariantList& vlids)
 /// Az initSimple() metódust hívja, de létrehozza a splitter widgetet, hogy több táblát lehessen megjeleníteni.
 ///
 /// Ha csak egy (child) táblázat van a jobb oldalon:
-/// \diafile    record_table2.dia "Egy child tábla" width=10cm
+/// \diafile    record_table2.dia "Egy child tábla" width=8cm
 /// Ha több (child) táblázat van a jobb oldalon, akkor azok egy tab-ba kerülnek:
-/// \diafile    record_table3.dia "Több child tábla" width=10cm
+/// \diafile    record_table3.dia "Több child tábla" width=8cm
 void cRecordsViewBase::initMaster()
 {
     cRecordsViewBase *pRightTable = NULL;
@@ -992,15 +1007,15 @@ void cRecordsViewBase::initMaster()
     if ((flags & (RTF_MEMBER | RTF_GROUP))) {   // Az első elem esetén lehet Group/member táblák
         createRightTab();                       // Ez eleve két tábla a jobb oldalon, tab widget kell.
         initGroup(vlids);                       // A két tag-nem tag tábla (vlids első eleme)
-        rightTabs(vlids);                       // A maradék táblák, ha vannak
+        rightTabs(vlids);                       // A maradék táblák, ha vannak (első elem törölve)
     }
     else if (vlids.size() == 1) {                // Ha nem kell a tab widget
         id = vlids.at(0).toLongLong(&ok);
         if (!ok) EXCEPTION(EDATA);
-        QWidget *pRightWidget = new QWidget();
-        pRightTable = cRecordsViewBase::newRecordView(*pq, id, this, pRightWidget);
+        pRightTable = cRecordsViewBase::newRecordView(*pq, id, this);
+        pRightTable->setParent(this);
         *pRightTables << pRightTable;
-        pMasterSplitter->addWidget(pRightWidget);
+        pMasterSplitter->addWidget(pRightTable->pWidget());
     }
     else {
         createRightTab();
@@ -1029,16 +1044,16 @@ void cRecordsViewBase::initGroup(QVariantList& vlids)
     vlids.pop_front();                  // A maradék lista, chhild obj-ek
     pts->fetchById(*pq, id);            // A jobb oldali táblák megjelenítését leíró (minta) rekord
     pts->setShapeType(it);     // Itt ez a típus kell, az adatbázisban nem létező értékek
-    QWidget *pw = new QWidget();
-    prvb = cRecordsViewBase::newRecordView(dynamic_cast<cTableShape *>(pts->dup()), this, pw);
+    prvb = cRecordsViewBase::newRecordView(dynamic_cast<cTableShape *>(pts->dup()), this);
+    prvb->setParent(this);
     *pRightTables << prvb;
-    pRightTabWidget->addTab(pw, prvb->tableShape().getName(_sTableTitle));  // TITLE!!!!
+    pRightTabWidget->addTab(prvb->pWidget(), prvb->tableShape().getName(_sMemberTitle));  // TITLE!!!!
 
     pts->setShapeType(nt);
-    pw = new QWidget();
-    prvb = cRecordsViewBase::newRecordView(dynamic_cast<cTableShape *>(pts->dup()), this, pw);
+    prvb = cRecordsViewBase::newRecordView(dynamic_cast<cTableShape *>(pts->dup()), this);
+    prvb->setParent(this);
     *pRightTables << prvb;
-    pRightTabWidget->addTab(pw, prvb->tableShape().getName(_sTableTitle));  // TITLE!!!!
+    pRightTabWidget->addTab(prvb->pWidget(), prvb->tableShape().getName(_sNotMemberTitle));  // TITLE!!!!
 }
 
 /// Üres, nem kötelezően implemetálandó. Csak ha megadhatóak szűrők.
@@ -1139,7 +1154,7 @@ QStringList cRecordsViewBase::where(QVariantList& qParams)
 
 void cRecordsViewBase::clickedHeader(int)
 {
-    if (pFODialog == NULL) pFODialog = new cRecordTableFODialog(pq, *this);
+    if (pFODialog == NULL) EXCEPTION(EPROGFAIL);
     int r = pFODialog->exec();
     if (r == DBT_OK) refresh();
 }
@@ -1307,6 +1322,8 @@ void cRecordTable::initSimple(QWidget * pW)
 
     connect(pButtons,    SIGNAL(buttonPressed(int)),   this, SLOT(buttonPressed(int)));
     connect(pTableView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
+    if (pFODialog != NULL) EXCEPTION(EPROGFAIL);
+    pFODialog = new cRecordTableFODialog(pq, *this);
 }
 
 void cRecordTable::empty()
@@ -1463,6 +1480,7 @@ void cRecordTable::_refresh(bool all)
     foreach (QVariant v, qParams) pTabQuery->bindValue(i++, v);
     if (!pTabQuery->exec()) SQLQUERYERR(*pTabQuery);
     pTableModel()->setRecords(*pTabQuery, all);
+    pTableView->horizontalHeader()->resizeSections(QHeaderView::ResizeToContents);
 }
 
 

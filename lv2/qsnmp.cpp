@@ -137,7 +137,7 @@ netSnmp::~netSnmp()
 void    netSnmp::implicitInit(void)
 {
     if (inited) return;
-    // PDEB(INFO) << "Init SNMP (" << type << ")" << endl;
+    PDEB(SNMP) << "Init SNMP (" << type << ")" << endl;
     init_snmp(type); // Initialize the SNMP library
     SOCK_STARTUP;
     QStringList pl = lanView::getInstance()->pSet->value(_sMibPath).toString().split(QChar(','));
@@ -147,7 +147,7 @@ void    netSnmp::implicitInit(void)
         if (first) first = false;
         else dir.prepend(QChar('+'));
         netsnmp_set_mib_directory(dir.toStdString().c_str());
-        // PDEB(VVERBOSE) << "set_mib_directory(" << dir << ") ..." << endl;
+        PDEB(SNMP) << "set_mib_directory(" << dir << ") ..." << endl;
     }
     inited = true;
 }
@@ -156,7 +156,7 @@ void    netSnmp::implicitDown(void)
     if (!inited) return;    // Ha nem volt init, akkor nem kell
     if (objCnt != 0 || explicitInit != 0) return;   // Még nem esedékes a down
     SOCK_CLEANUP;
-    // PDEB(INFO) << "Shutdown SNMP (" << type << ")" << endl;
+    PDEB(SNMP) << "Shutdown SNMP (" << type << ")" << endl;
     snmp_shutdown(type);
     inited = false;
 }
@@ -352,18 +352,20 @@ cMac cOId::toMac() const
     return r;
 }
 
-QHostAddress cOId::toIPV4() const
+QHostAddress cOId::toIPV4(uint _in) const
 {
-    if (oidSize >= 4) {
+    QHostAddress r;
+    _in += 4;
+    if (oidSize >= _in) {
         qint32 v = 0;
-        for (int i = 4; i > 0; i--) {
+        for (int i = _in; i > 0; i--) {
             uint b = (*this)[oidSize - i];
             if (b > 255) return QHostAddress();  // invalid
             v = (v << 8) + b;
         }
-        return QHostAddress(v);
+        r = QHostAddress(v);
     }
-    return QHostAddress();
+    return r;
 }
 
 cOId& cOId::operator <<(int __i)
@@ -489,7 +491,7 @@ void  cSnmp::_clear(void)
 int cSnmp::open(const char * __host, const char * __com, int __ver)
 {
 
-    PDEB(VVERBOSE) << __PRETTY_FUNCTION__ << QChar('(') << __host << _sCommaSp << __ver << _sCommaSp << __ver << ")" << endl;
+    PDEB(SNMP) << __PRETTY_FUNCTION__ << QChar('(') << __host << _sCommaSp << __ver << _sCommaSp << __ver << ")" << endl;
     _clear();
     snmp_sess_init(&session);
     session.peername        = strdup(__host);
@@ -773,7 +775,7 @@ int cSnmp::getTable(const cOIdVector& Ids, const QStringList& columns, cTable& r
             const cOId&     oib = Ids[i];       // Oszlop bázis ID
             const cOId      oia = name();       // cella ID
             QVariantVector& vv  = result[col];
-            // PDEB(INFO) << "getTab : " << col << " : " << oib.toNumString() << " < " << oia.toNumString() << " = " << value().toString() << endl;
+            PDEB(SNMP) << "getTab : " << col << " : " << oib.toNumString() << " < " << oia.toNumString() << " = " << value().toString() << endl;
             if (oib < oia) {                    // A kívánt tartományban vagyunk
                 if (i == 0) {                   // első oszlop indexe
                     row = oia.last();

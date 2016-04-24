@@ -351,7 +351,7 @@ int cHostService::fetchFirstByNamePatterns(QSqlQuery& q, const QString& __hn, co
         set(q);
         return q.size();
     }
-    QString e = trUtf8("HostService not found, pattern: %1:%2").arg(__hn).arg(__sn);
+    QString e = trUtf8("HostService not found, pattern: \"%1\".\"%2\"").arg(__hn).arg(__sn);
     if (__ex) EXCEPTION(EFOUND, 0, e);
     DWAR() << e << endl;
     return 0;
@@ -430,6 +430,13 @@ QVariant cHostService::value(QSqlQuery& q, const cService& s, const QString& f)
 QString cHostService::names(QSqlQuery& q)
 {
     execSqlFunction(q, "host_service_id2name", getId());
+    QString r = q.value(0).toString();
+    return r;
+}
+
+QString cHostService::names(QSqlQuery& q, qlonglong __id)
+{
+    execSqlFunction(q, "host_service_id2name", __id);
     QString r = q.value(0).toString();
     return r;
 }

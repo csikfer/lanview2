@@ -358,6 +358,7 @@ class LV2SHARED_EXPORT cDebug {
         SQL        =  0x00000100UL,   ///< Debug mask bit: Az SQL műveletek debug üzeneteinek a kiírása
         OBJECT     =  0x00000200UL,   ///< Debug mask bit: Az objektumokkal kapcsolatos debug üzenetek kiírása
         ADDRESS    =  0x00000400UL,   ///< Debug mask bit: A címkezeléssel kapcsolatos debug üzenetek kiírása
+        SNMP       =  0x000008000L,   ///< Debug mask bit: Az SNMP lekérdezés
         ALL        =  0xffffffffUL,   ///< Debug mask érték: Minden üzenet kiírása
         LV2        =  0x40000000UL,   ///< Debug mask bit: Az lv2 modul üzeneteinek a kiírása
         LV2G       =  0x20000000UL,   ///< Debug mask bit: Az lv2g modul üzeneteinek a kiírása

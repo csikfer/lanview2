@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>450</width>
-    <height>413</height>
+    <height>465</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -128,6 +128,13 @@
           <widget class="QCheckBox" name="checkBoxAddress">
            <property name="text">
             <string>Címek</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="checkBoxSNMP">
+           <property name="text">
+            <string>SNMP</string>
            </property>
           </widget>
          </item>

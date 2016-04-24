@@ -28,7 +28,10 @@ SOURCES += \
     record_tree_model.cpp \
     record_tree.cpp \
     imagedrv.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    apierrcodes.cpp \
+    record_link.cpp \
+    record_link_model.cpp
 
 HEADERS +=\
     lv2g_global.h \
@@ -49,7 +52,10 @@ HEADERS +=\
     record_tree_model.h \
     record_tree.h \
     imagedrv.h \
-    mainwindow.h
+    mainwindow.h \
+    apierrcodes.h \
+    record_link.h \
+    record_link_model.h
 
 FORMS += \
     column_filter.ui \
@@ -61,7 +67,8 @@ FORMS += \
     polygoned.ui \
     arrayed.ui \
     fkeyed.ui \
-    no_rights.ui
+    no_rights.ui \
+    apierrcodes.ui
 INCLUDEPATH += ../lv2
 unix:LIBS += -lsnmp
 msvc:LIBS += -lSecur32

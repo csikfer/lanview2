@@ -1,5 +1,6 @@
 #include "portstat.h"
 
+
 #define VERSION_MAJOR   1
 #define VERSION_MINOR   01
 #define VERSION_STR     _STR(VERSION_MAJOR) "." _STR(VERSION_MINOR)
@@ -15,7 +16,7 @@ int main (int argc, char * argv[])
 
     SETAPP();
     lanView::snmpNeeded = true;
-    lanView::sqlNeeded  = true;
+    lanView::sqlNeeded  = SN_SQL_NEED;
 
     lv2portStat   mo;
 
@@ -154,12 +155,47 @@ void cDevicePSt::postInit(QSqlQuery &q, const QString&)
     dev.open(q, snmp);
     dev.fetchPorts(q);
     tRecordList<cNPort>::iterator i, n = dev.ports.end();
-    for (i = dev.ports.begin(); i != n; ++i) {
+    for (i = dev.ports.begin(); i != n; ++i) {      // Végigvesszük a portokat
         cNPort *np = *i;
-        cInspector *pnas = NULL;
+        cInspector *pnas = NULL;    // Al szolgáltatás,ha van
         if (np->descr() >= cInterface::_descr_cInterface()) {      // interface-nél alacsonyabb típussal nem foglalkozunk
+            QString msg;
             cInterface *p = dynamic_cast<cInterface *>(np);
-            qlonglong lpid = cLogLink().getLinked(q, p->getId()); // Mivel van linkelve?
+             // Mivel van linkelve?
+            qlonglong lpid, lpid1, lpid2;     // Linkelt port ID
+            lpid = cLldpLink().getLinked(q, p->getId());
+            if (lpid != NULL_ID) {
+                lpid1 = cLogLink().getLinked(q, p->getId());
+                lpid2 = cLogLink().getLinked(q, lpid);
+                if (lpid1 != NULL_ID && lpid1 != lpid) { // Ez egy ellentmondás!!!
+                    msg += trUtf8("A szervíz %1 port logikai linkje %2 porthoz, ötközik az LLDP klinkkel a %3 porthoz, ezért törölkük a fizikai link első elemét. ")
+                            .arg(p->getFullName(q))
+                            .arg(cNPort::getFullNameById(q, lpid1))
+                            .arg(cNPort::getFullNameById(q, lpid));
+                    cPhsLink().unlink(q, p->getId(), LT_TERM, ES_);
+                }
+                if (lpid2 != NULL_ID && lpid2 != p->getId()) { // Ez egy ellentmondás!!!
+                    msg += trUtf8("A kliens %1 port logikai linkje %2 porthoz, ötközik az LLDP klinkkel a %3 porthoz, ezért törölkük a fizikai link utolsó elemét. ")
+                            .arg(cNPort::getFullNameById(q, lpid))
+                            .arg(cNPort::getFullNameById(q, lpid2))
+                            .arg(p->getFullName(q));
+                    cPhsLink().unlink(q, lpid, LT_TERM, ES_);
+                }
+            }
+            else {      // nem volt LLDP-vel felfedezett link
+                lpid = cLogLink().getLinked(q, p->getId());     // Logikai link ?
+                if (lpid != NULL_ID) {
+                    lpid2 = cLldpLink().getLinked(q, lpid);
+                    if (lpid2 != NULL_ID) {     // Elvileg lehetetlen, hogy jó legyen ha ez van az ellenkező irány meg nincs.
+                        msg += trUtf8("A kliens %1 port lldp linkje %2 porthoz, ötközik a logikai klinkkel a %3 porthoz, ezért törölkük a fizikai link utolsó elemét. ")
+                                .arg(cNPort::getFullNameById(q, lpid))
+                                .arg(cNPort::getFullNameById(q, lpid2))
+                                .arg(p->getFullName(q));
+                        cPhsLink().unlink(q, lpid, LT_TERM, ES_);
+                        lpid = NULL_ID;     // nem ok link, töröltük
+                    }
+                }
+            }
             if (lpid != NULL_ID) {  // A linkelt port ID-je
                 pnas = new cInspector(this);
                 pnas->service(pRLinkStat);
@@ -188,11 +224,14 @@ void cDevicePSt::postInit(QSqlQuery &q, const QString&)
                         hs.setId(_sServiceId, pnas->serviceId());
                         hs.setId(_sSuperiorHostServiceId, hostServiceId());
                         hs.setId(_sPortId, lpid);
-                        hs.setName(_sHostServiceNote, QObject::trUtf8("Automatikusan generálva a portstat által."));
+                        hs.setName(_sHostServiceNote, trUtf8("Automatikusan generálva a portstat által."));
                         hs.setName(_sNoalarmFlag, _sOn);    // Nem kérünk riasztást az automatikusan generált rekordhoz.
                         hs.insert(q);
                     }
                 }
+            }
+            if (!msg.isEmpty()) {
+                cDbErr::insertNew(q, cDbErrType::_sDataWarn, msg);
             }
         }
         *pSubordinates << pnas;
@@ -246,7 +285,7 @@ enum eNotifSwitch cDevicePSt::run(QSqlQuery& q)
         // Előkapjuk a kapcsolódó szolgálltatást
         cInspector& ns   = *(*pSubordinates)[ix];
         if (opstat == _sUp) ns.hostService.setState(q, _sOn, _sNul, parentId());
-        else                ns.hostService.setState(q, _sCritical, QString("%1/%2").arg(opstat).arg(adstat), parentId());
+        else                ns.hostService.setState(q, _sCritical, QString("o:%1/a:%2").arg(opstat).arg(adstat), parentId());
     }
     DBGFNL();
     return RS_ON;

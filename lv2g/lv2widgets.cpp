@@ -173,7 +173,6 @@ cFieldEditBase::cFieldEditBase(const cTableShape &_tm, const cTableShapeField &_
     }
     _value      = _fr;
     _pWidget    = NULL;
-    _pFieldRef  = new cRecordFieldRef(_fr);
     pq          = newQuery();
     _nullable   = _fr.isNullable();
     _hasDefault = _fr.descr().colDefault.isNull() == false;
@@ -185,14 +184,13 @@ cFieldEditBase::cFieldEditBase(const cTableShape &_tm, const cTableShapeField &_
         _nullView = design().valNull;
     }
 
-    _DBGFNL() << VDEB(_nullable) << VDEB(_hasDefault) << VDEB(_isInsert) << " Index = " << _pFieldRef->index() << " _value = " << debVariantToString(_value) << endl;
+    _DBGFNL() << VDEB(_nullable) << VDEB(_hasDefault) << VDEB(_isInsert) << " Index = " << fieldIndex() << " _value = " << debVariantToString(_value) << endl;
  }
 
 cFieldEditBase::~cFieldEditBase()
 {
     if (pq         != NULL) delete pq;
  // if (_pWidget   != NULL) delete _pWidget;
-    if (_pFieldRef != NULL) delete _pFieldRef;
 }
 
 QVariant cFieldEditBase::get() const
@@ -248,7 +246,7 @@ cFieldEditBase * cFieldEditBase::anotherField(const QString& __fn, bool __ex)
     cFieldEditBase *p = _parent[__fn];
     if (p == NULL && __ex) {
         QString se = trUtf8("A keresett %1 mező, nem található a '%2'.'%3'-ból.")
-                .arg(__fn).arg(_parent.name).arg(_pFieldRef->columnName());
+                .arg(__fn).arg(_parent.name).arg(_colDescr.colName());
         EXCEPTION(EDATA, -1, se);
     }
     return p;
@@ -372,6 +370,11 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
     }
 }
 
+const cRecStaticDescr& cFieldEditBase::recDescr() const
+{
+    return _parent.rDescr;
+}
+
 /* **************************************** cNullWidget **************************************** */
 cNullWidget::cNullWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase* _par)
     : cFieldEditBase(_tm, _tf, __fr, _ro, _par)
@@ -449,7 +452,7 @@ void cSetWidget::setFromEdit(int id)
 {
     _DBGFNL() << id << endl;
     qlonglong dummy;
-    int n =_pFieldRef->descr().enumType().enumValues.size();
+    int n =_colDescr.enumType().enumValues.size();
     if (id >= n) {
         for (int i = 0; i < n; ++i) {
             if (_bits & enum2set(i)) pButtons->button(i)->setChecked(false);
@@ -644,7 +647,7 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
             tx = "********";
         }
         else if (_isInsert) {
-            if (recDescr().autoIncrement()[fldIndex()]) tx = design().valAuto;
+            if (recDescr().autoIncrement()[fieldIndex()]) tx = design().valAuto;
             else if (_hasDefault) tx = design().valDefault;
         }
         if (pLE != NULL) {
