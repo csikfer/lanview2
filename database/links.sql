@@ -102,6 +102,15 @@ COMMENT ON VIEW phs_links IS 'Symmetric View Table for physical links';
 
 -- // Egyébb VIEW táblák
 
+CREATE OR REPLACE VIEW log_links_shape AS
+    SELECT log_link_id,
+           port_id1, n1.node_id AS node_id1, n1.node_name AS node_name1, p1.port_name AS port_name1, p1.port_index AS port_index1, n1.node_name || ':' || p1.port_name AS port_full_name1,
+           port_id2, n2.node_id AS node_id2, n2.node_name AS node_name2, p2.port_name AS port_name2, p2.port_index AS port_index2, n2.node_name || ':' || p2.port_name AS port_full_name2,
+           log_link_note, link_type, phs_link_chain, share_result
+    FROM log_links JOIN ( nports AS p1 JOIN patchs AS n1 USING(node_id)) ON p1.port_id = port_id1
+                   JOIN ( nports AS p2 JOIN patchs AS n2 USING(node_id)) ON p2.port_id = port_id2;
+COMMENT ON VIEW log_links_shape IS 'Symmetric View Table for logical links with shape';
+
 CREATE OR REPLACE VIEW log_named_links AS
     SELECT log_link_id, port_id1, n1.node_name AS node_name1, p1.port_name AS port_name1,
                         port_id2, n2.node_name AS node_name2, p2.port_name AS port_name2,
@@ -110,6 +119,15 @@ CREATE OR REPLACE VIEW log_named_links AS
                    JOIN ( nports AS p2 JOIN patchs AS n2 USING(node_id)) ON p2.port_id = port_id2;
 COMMENT ON VIEW log_named_links IS 'Symmetric View Table for logical links with name fields';
 
+CREATE OR REPLACE VIEW phs_links_shape AS
+    SELECT phs_link_id, 
+           port_id1, n1.node_id AS node_id1, n1.node_name AS node_name1, p1.port_name AS port_name1, p1.port_index AS port_index1, n1.node_name || ':' || p1.port_name AS port_full_name1,
+           port_id2, n2.node_id AS node_id2, n2.node_name AS node_name2, p2.port_name AS port_name2, p2.port_index AS port_index2, n2.node_name || ':' || p2.port_name AS port_full_name2,
+           phs_link_note, port_shared, link_type,
+                        create_time, create_user_id, modify_time, modify_user_id, forward
+    FROM phs_links JOIN ( nports AS p1 JOIN patchs AS n1 USING(node_id)) ON p1.port_id = port_id1
+                   JOIN ( nports AS p2 JOIN patchs AS n2 USING(node_id)) ON p2.port_id = port_id2;
+COMMENT ON VIEW phs_links_shape IS 'Symmetric View Table for physical links with shape';
 
 CREATE OR REPLACE VIEW phs_named_links AS
     SELECT phs_link_id, port_id1, n1.node_name AS node_name1, p1.port_name AS port_name1, phs_link_type1,
@@ -119,6 +137,16 @@ CREATE OR REPLACE VIEW phs_named_links AS
     FROM phs_links JOIN ( nports AS p1 JOIN patchs AS n1 USING(node_id)) ON p1.port_id = port_id1
                    JOIN ( nports AS p2 JOIN patchs AS n2 USING(node_id)) ON p2.port_id = port_id2;
 COMMENT ON VIEW phs_named_links IS 'Symmetric View Table for physical links with name fields';
+
+CREATE OR REPLACE VIEW lldp_links_shape AS
+    SELECT lldp_link_id,
+           port_id1, n1.node_id AS node_id1, n1.node_name AS node_name1, p1.port_name AS port_name1, p1.port_index AS port_index1, n1.node_name || ':' || p1.port_name AS port_full_name1,
+           port_id2, n2.node_id AS node_id2, n2.node_name AS node_name2, p2.port_name AS port_name2, p2.port_index AS port_index2, n2.node_name || ':' || p2.port_name AS port_full_name2,
+           first_time, last_time
+    FROM lldp_links JOIN (nports AS p1 JOIN patchs AS n1 USING (node_id)) ON p1.port_id = port_id1
+                    JOIN (nports AS p2 JOIN patchs AS n2 USING (node_id)) ON p2.port_id = port_id2;
+ALTER TABLE lldp_links_shape OWNER TO lanview2;
+COMMENT ON VIEW lldp_links_shape IS 'Symmetric View Table for lldp links with shape';
 
 CREATE OR REPLACE VIEW lldp_named_links AS
  SELECT lldp_links.lldp_link_id,
@@ -130,7 +158,6 @@ CREATE OR REPLACE VIEW lldp_named_links AS
    JOIN patchs n1 USING (node_id)) ON p1.port_id = lldp_links.port_id1
    JOIN (nports p2
    JOIN patchs n2 USING (node_id)) ON p2.port_id = lldp_links.port_id2;
-
 ALTER TABLE lldp_named_links OWNER TO lanview2;
 COMMENT ON VIEW lldp_named_links IS 'Symmetric View Table for lldp links with name fields';
 -- -------------------------------
