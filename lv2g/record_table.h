@@ -292,11 +292,11 @@ public:
 
     virtual QModelIndexList selectedRows() = 0;
     virtual QModelIndex actIndex() = 0;
-    virtual cRecordAny *actRecord(const QModelIndex& _mi = QModelIndex()) = 0;
-    virtual cRecordAny *nextRow(QModelIndex *pMi, int _upRes = 1)   = 0;
-    virtual cRecordAny *prevRow(QModelIndex *pMi, int _upRes = 1)   = 0;
+    virtual cRecord *actRecord(const QModelIndex& _mi = QModelIndex()) = 0;
+    virtual cRecord *nextRow(QModelIndex *pMi, int _upRes = 1)   = 0;
+    virtual cRecord *prevRow(QModelIndex *pMi, int _upRes = 1)   = 0;
     virtual void selectRow(const QModelIndex& mi)   = 0;
-    qlonglong   actId() { cRecordAny *p = actRecord(); return p == NULL ? NULL_ID : p->getId(); }
+    qlonglong   actId() { cRecord *p = actRecord(); return p == NULL ? NULL_ID : p->getId(); }
 
     void initView();
     void initShape(cTableShape *pts = NULL);
@@ -348,15 +348,15 @@ public:
     /// destruktor
     ~cRecordTable();
     cRecordTableModel *pTableModel() const { return static_cast<cRecordTableModel *>(pModel); }
-    const cRecordAny *recordAt(int i) const {
+    const cRecord *recordAt(int i) const {
         if (!isContIx(pTableModel()->records(), i)) EXCEPTION(EDATA, i);
         return pTableModel()->records()[i];
     }
     virtual QModelIndexList selectedRows();
     virtual QModelIndex actIndex();
-    virtual cRecordAny *actRecord(const QModelIndex& _mi = QModelIndex());
-    virtual cRecordAny *nextRow(QModelIndex *pMi, int _upRes = 1);
-    virtual cRecordAny *prevRow(QModelIndex *pMi, int _upRes = 1);
+    virtual cRecord *actRecord(const QModelIndex& _mi = QModelIndex());
+    virtual cRecord *nextRow(QModelIndex *pMi, int _upRes = 1);
+    virtual cRecord *prevRow(QModelIndex *pMi, int _upRes = 1);
     virtual void selectRow(const QModelIndex& mi);
     void empty();
 
@@ -379,8 +379,8 @@ public:
     virtual QStringList filterWhere(QVariantList& qParams);
     void _refresh(bool all = true);
     // void refresh_lst_rev();
-    cRecordAny * record(int i);
-    cRecordAny * record(QModelIndex mi);
+    cRecord *record(int i);
+    cRecord * record(QModelIndex mi);
 public:
     QTableView *tableView() { return pTableView; }
 };

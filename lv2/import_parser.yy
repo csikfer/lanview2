@@ -2439,6 +2439,7 @@ tmodp   : SET_T DEFAULTS_T ';'                  { pTableShape->setDefaults(qq())
         | TABLE_T TYPE_T tstypes ';'            { pTableShape->setId( _sTableShapeType, $3); }
         | TABLE_T TYPE_T ON_T tstypes ';'       { pTableShape->setOn( _sTableShapeType, $4); }
         | TABLE_T TYPE_T OFF_T tstypes ';'      { pTableShape->setOff(_sTableShapeType, $4); }
+        // title, dialog title, member title (group), not member title (group)
         | TABLE_T TITLE_T strs_zz  ';'          { pTableShape->setTitle(slp2sl($3)); }
         | TABLE_T READ_T ONLY_T bool_on ';'     { pTableShape->setBool(_sTableShapeType, TS_READ_ONLY, $4); }
         | TABLE_T FEATURES_T str ';'            { pTableShape->set(_sFeatures, sp2s($3)); }

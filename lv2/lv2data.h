@@ -194,7 +194,8 @@ EXT_ const QString& paramTypeType(int __e, bool __ex = true);
 /// Hálózati elemek típus azonosítók (set)
 enum eNodeType {
     // NT_INVALID = -1,
-    NT_NODE = 0,
+    NT_PATCH  = 0,
+    NT_NODE,
     NT_HOST,
     NT_SWITCH,
     NT_HUB,

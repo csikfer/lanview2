@@ -245,7 +245,7 @@ int cRecordDialogBase::exec(bool _close)
     return r;
 }
 
-cRecordAny * cRecordDialogBase::insertDialog(QSqlQuery& q, cTableShape *pTableShape, const cRecStaticDescr *pRecDescr, QWidget * _par)
+cRecord * cRecordDialogBase::insertDialog(QSqlQuery& q, cTableShape *pTableShape, const cRecStaticDescr *pRecDescr, QWidget * _par)
 {
     eTableInheritType tit = (eTableInheritType)pTableShape->getId(_sTableInheritType);
     // A dialógusban megjelenítendő nyomógombok.
@@ -261,7 +261,7 @@ cRecordAny * cRecordDialogBase::insertDialog(QSqlQuery& q, cTableShape *pTableSh
             int r = rd.exec();
             if (r == DBT_INSERT || r == DBT_OK) {   // Csak az OK, és Insert gombra csinálunk valamit
                 bool ok = rd.accept();
-                cRecordAny *pRec = new cRecordAny(rd.record());
+                cRecord *pRec = rd.record().dup();
                 if (ok) {
                     ok = cRecordViewModelBase::SqlInsert(q, pRec);
                 }
@@ -294,7 +294,7 @@ cRecordAny * cRecordDialogBase::insertDialog(QSqlQuery& q, cTableShape *pTableSh
             int r = rd.exec();
             if (r == DBT_INSERT || r == DBT_OK) {
                 bool ok = rd.accept();
-                cRecordAny *pRec = new cRecordAny(rd.record());
+                cRecord *pRec = rd.record().dup();
                 if (ok) {
                     ok = cRecordViewModelBase::SqlInsert(q, pRec);
                 }
@@ -424,7 +424,7 @@ void cRecordDialog::restore(cRecord *_pRec)
 {
     if (_pRec != NULL) {
         pDelete(_pRecord);
-        _pRecord = new cRecordAny(*_pRec);
+        _pRecord = _pRec->dup();
     }
     else if (_pRecord == NULL) {
         _pRecord = new cRecordAny(&rDescr);
@@ -517,7 +517,7 @@ void cRecordDialogInh::init(qlonglong _oid, qlonglong _pid)
     for (i = 0; i < n; ++i) {
         const cTableShape& shape = *tabDescriptors[i];
         cRecordDialog * pDlg = new cRecordDialog(shape, 0, false, pTabWidget, this);
-        cRecordAny * pRec = new cRecordAny(shape.getName(_sTableName), shape.getName(_sSchemaName));
+        cRecord * pRec = new cRecordAny(shape.getName(_sTableName), shape.getName(_sSchemaName));
         if (_oid != NULL_ID) {  // Ha van owner, akkor az ID-jét beállítjuk
             int oix = pRec->descr().ixToOwner();
             pRec->setId(oix, _oid);

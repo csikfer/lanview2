@@ -78,9 +78,9 @@ QVariant cRecordViewModelBase::_headerData(int section, Qt::Orientation orientat
     return r;
 }
 
-cRecordAny *cRecordViewModelBase::qGetRecord(QSqlQuery& q)
+cRecord *cRecordViewModelBase::qGetRecord(QSqlQuery& q)
 {
-    cRecordAny *p = NULL;
+    cRecord *p = NULL;
     if (q.value(0).isNull()) {
         p = new cRecordAny(&recDescr);
     }
@@ -97,7 +97,7 @@ cRecordAny *cRecordViewModelBase::qGetRecord(QSqlQuery& q)
     return p;
 }
 
-int cRecordViewModelBase::updateRec(const QModelIndex& mi, cRecordAny *pRec)
+int cRecordViewModelBase::updateRec(const QModelIndex& mi, cRecord *pRec)
 {
     sqlBegin(*pq);
     if (!cErrorMessageBox::condMsgBox(pRec->tryUpdate(*pq, false))) {
@@ -109,7 +109,7 @@ int cRecordViewModelBase::updateRec(const QModelIndex& mi, cRecordAny *pRec)
     return updateRow(mi, pRec) ? 1 : 0;
 }
 
-bool cRecordViewModelBase::insertRec(cRecordAny *pRec)
+bool cRecordViewModelBase::insertRec(cRecord *pRec)
 {
     bool r = SqlInsert(*pq, pRec);
     PDEB(VVERBOSE) << QString("Insert returned : %1; record : %2").arg(r).arg(pRec->toString()) << endl;
@@ -230,7 +230,7 @@ void cRecordTableModel::removeRecords(const QModelIndexList &mil)
 bool cRecordTableModel::removeRec(const QModelIndex &mi)
 {
     if (mi.isValid() && isContIx(_records, mi.row())) {
-        cRecordAny * p = _records.at(mi.row());
+        cRecord * p = _records.at(mi.row());
         PDEB(INFO) << "Remove : " << p->toString() << endl;
         sqlBegin(*pq);
         if (cErrorMessageBox::condMsgBox(p->tryRemove(*pq))) {
@@ -254,7 +254,7 @@ bool cRecordTableModel::removeRow(const QModelIndex &mi)
     return true;
 }
 
-bool cRecordTableModel::updateRow(const QModelIndex& mi, cRecordAny *pRec)
+bool cRecordTableModel::updateRow(const QModelIndex& mi, cRecord *pRec)
 {
     int row = mi.row();
     if (!isContIx(_records, row)) EXCEPTION(EPROGFAIL);
@@ -267,7 +267,7 @@ bool cRecordTableModel::updateRow(const QModelIndex& mi, cRecordAny *pRec)
     return true;
 }
 
-bool cRecordTableModel::insertRow(cRecordAny *pRec)
+bool cRecordTableModel::insertRow(cRecord *pRec)
 {
     int row = _records.size();
     beginInsertRows(QModelIndex(), row, row);

@@ -12,16 +12,16 @@ class cRecordTreeModel;
 
 class LV2GSHARED_EXPORT cTreeNode {
 public:
-    cTreeNode(cRecordAny *__po = NULL, cTreeNode *_parentNode = NULL);
+    cTreeNode(cRecord *__po = NULL, cTreeNode *_parentNode = NULL);
     cTreeNode(const cTreeNode&);
     ~cTreeNode();
     cTreeNode          *parent;
-    cRecordAny         *pData;
+    cRecord            *pData;
     QList<cTreeNode *> *pChildrens;
 
     QString name() { return (pData == NULL) ? "//" : pData->getName(); }
     void addChild(cTreeNode *pn);
-    void addChild(cRecordAny *pRec);
+    void addChild(cRecord *pRec);
     int row() const;
     int rows() const { if (pChildrens == NULL) EXCEPTION(EPROGFAIL); return pChildrens->size(); }
 };
@@ -70,11 +70,11 @@ public:
     virtual bool removeRec(const QModelIndex & mi);
     virtual bool removeRow(const QModelIndex & mi);
 
-    int checkUpdateRow(const QModelIndex& mi, cRecordAny * pRec, QModelIndex& new_parent);
-    virtual int updateRec(const QModelIndex& mi, cRecordAny * pRec);
-    virtual bool updateRow(const QModelIndex &mi, cRecordAny *pRec);
+    int checkUpdateRow(const QModelIndex& mi, cRecord *pRec, QModelIndex& new_parent);
+    virtual int updateRec(const QModelIndex& mi, cRecord * pRec);
+    virtual bool updateRow(const QModelIndex &mi, cRecord *pRec);
 
-    virtual bool insertRow(cRecordAny *pRec);
+    virtual bool insertRow(cRecord *pRec);
 
 };
 

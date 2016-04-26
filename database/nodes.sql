@@ -1,4 +1,17 @@
 
+CREATE TYPE nodetype AS ENUM ('patch','node', 'host', 'switch', 'hub', 'virtual', 'snmp', 'converter', 'printer', 'gateway');
+ALTER TYPE nodetype OWNER TO lanview2;
+COMMENT ON TYPE nodetype IS '
+Típus azonosítók
+"patch"         Patch panel, vagy (fali) csatlakozó.
+"node"          Passzív eszköz
+"host"          Aktív eszköz
+"switch"        Switch
+"hub"           HUB
+"virtual"       Virtuális eszköz
+"snmp"          SNMP képes eszköz
+';
+
 CREATE TYPE  linktype AS ENUM ( 'ptp', 'bus', 'patch', 'logical', 'wireless', 'unknown');
 COMMENT ON TYPE linktype IS
 'A port típus a link alapján :
@@ -16,6 +29,7 @@ COMMENT ON TYPE portobjtype IS
     pport,        A port objektum típusa cPPort, tábla pport (patch ports)
     interface,    A port objektum típusa cInterface, tábla interfaces (aktív port)
     unknown       Ismeretlen (az api kizárást fog dobni!)';
+    
 CREATE TABLE iftypes (
     iftype_id           bigserial       PRIMARY KEY,
     iftype_name         text     NOT NULL UNIQUE,
@@ -136,6 +150,7 @@ CREATE TABLE patchs (
     node_id     bigserial       PRIMARY KEY,    -- Sequence: patchs_node_id_seq
     node_name   text            NOT NULL UNIQUE,
     node_note   text            DEFAULT NULL,
+    node_type   nodetype[]      DEFAULT NULL,
     place_id    bigint          DEFAULT 0   -- place = 'unknown'
                 REFERENCES places(place_id) MATCH FULL ON DELETE SET DEFAULT ON UPDATE RESTRICT,
     features    text            DEFAULT NULL,
@@ -147,6 +162,7 @@ COMMENT ON COLUMN patchs.node_id    IS 'Unique ID for node. Az összes leszárma
 COMMENT ON COLUMN patchs.node_name  IS 'Unique Name of the node. Az összes leszármazottra és az ősre is egyedi.';
 COMMENT ON COLUMN patchs.node_note  IS 'Descrition of the node';
 COMMENT ON COLUMN patchs.place_id   IS 'Az eszköz helyét azonosító "opcionális" távoli kulcs. Alapértelmezett hely a ''unknown''.';
+COMMENT ON COLUMN patchs.node_type  IS 'A hálózati elem típusa, a patch típusú rekord esetén mindíg "patch", a trigger állítja be.';
 
 -- //// LAN.PPORT S  Pach Ports
 CREATE TYPE portshare AS ENUM ('',      -- 1,2,3,4,5,6,7,8  / nincs megosztás
@@ -400,21 +416,8 @@ COMMENT ON COLUMN ipaddresses.preferred IS 'Cím keresésnél egy opcionális so
 COMMENT ON COLUMN ipaddresses.port_id IS 'A tulajdonos port, melyhez a cím tartozik';
 -- //// NODES;
 
-CREATE TYPE nodetype AS ENUM ('node', 'host', 'switch', 'hub', 'virtual', 'snmp', 'converter', 'printer', 'gateway');
-ALTER TYPE nodetype OWNER TO lanview2;
-COMMENT ON TYPE nodetype IS '
-Típus azonosítók
-"node"          Passzív eszköz
-"host"          Aktív eszköz
-"switch"        Switch
-"hub"           HUB
-"virtual"       Virtuális eszköz
-"snmp"          SNMP képes eszköz
-';
-
 CREATE TABLE nodes (
     node_stat       notifswitch     DEFAULT NULL,
-    node_type       nodetype[]      NOT NULL DEFAULT '{node}',
     PRIMARY KEY (node_id),
     UNIQUE (node_name),
     CONSTRAINT nodes_place_id_fkey FOREIGN KEY (place_id)
@@ -424,7 +427,7 @@ INHERITS(patchs);
 ALTER TABLE nodes OWNER TO lanview2;
 COMMENT ON TABLE  nodes         IS 'Passzív vagy aktív hálózati elemek táblája';
 COMMENT ON COLUMN nodes.node_stat IS 'Az eszköz állapota.';
-COMMENT ON COLUMN nodes.node_type IS 'Típus azonosítók.';
+COMMENT ON COLUMN nodes.node_type IS 'Típus azonosítók. ha NULL, akkor a trigger f. {node}-ra állítja.';
 
 -- //// LAN.SNMPDEVICES
 CREATE TYPE snmpver AS ENUM ('1'/*, '2'*/, '2c'/*, '3'*/);
@@ -863,6 +866,20 @@ BEGIN
     IF n > 0 THEN
         PERFORM error('NameNotUni', -1, 'node_name = ' || NEW.node_name, 'node_check_before_insert()', TG_TABLE_NAME, TG_OP);
     END IF;
+    CASE TG_TABLE_NAME
+        WHEN 'patchs' THEN
+            NEW.node_type = '{patch}';
+        WHEN 'nodes' THEN
+            IF NEW.node_type IS NULL THEN
+                NEW.node_type = '{node}';
+            END IF;
+        WHEN 'snmpdevices' THEN
+            IF NEW.node_type IS NULL THEN
+                NEW.node_type = '{host,snmp}';
+            END IF;
+        ELSE
+            PERFORM error('DataError', NEW.node_id, 'node_id', 'node_check_before_insert()', TG_TABLE_NAME, TG_OP);
+    END CASE;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

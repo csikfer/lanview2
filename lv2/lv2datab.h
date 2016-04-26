@@ -1954,6 +1954,14 @@ public:
     cRecord& setq(const QString& _fn, QSqlQuery& __q) {
         return setq(_fn, __q, _fn);
     }
+    /// Átmásolja az objektum tartalmát, elötte ellenörzi a típus azonosságot vagyis
+    /// a két statikus leírónak azonosnak kell lennie (a konkrét objektum típus lehet különböző,
+    /// ha pl. az egyik a cRecordAny.
+    cRecord& copy(const cRecord& o) {
+        if (descr() != o.descr()) EXCEPTION(EDATA, -1, QString("%1 != %2").arg(fullTableName(), o.fullTableName()));
+        _cp(o);
+        return *this;
+    }
 protected:
     qlonglong _defectiveFieldMask() const {
         return _stat >> 16;

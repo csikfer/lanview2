@@ -25,9 +25,9 @@ public:
 
     virtual QModelIndexList selectedRows();
     virtual QModelIndex actIndex();
-    virtual cRecordAny *actRecord(const QModelIndex &_mi);
-    virtual cRecordAny *nextRow(QModelIndex *pMi, int _upRes = 1);
-    virtual cRecordAny *prevRow(QModelIndex *pMi, int _upRes = 1);
+    virtual cRecord *actRecord(const QModelIndex &_mi);
+    virtual cRecord *nextRow(QModelIndex *pMi, int _upRes = 1);
+    virtual cRecord *prevRow(QModelIndex *pMi, int _upRes = 1);
     virtual void selectRow(const QModelIndex& mi);
 
 

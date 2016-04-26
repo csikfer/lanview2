@@ -2,7 +2,7 @@
 #include "record_tree.h"
 #include "cerrormessagebox.h"
 
-cTreeNode::cTreeNode(cRecordAny *__po, cTreeNode * _parentNode)
+cTreeNode::cTreeNode(cRecord *__po, cTreeNode * _parentNode)
     : pData(__po)
 {
     parent   = _parentNode;
@@ -31,7 +31,7 @@ void cTreeNode::addChild(cTreeNode *pn)
     pn->parent = this;
 }
 
-void cTreeNode::addChild(cRecordAny *pRec)
+void cTreeNode::addChild(cRecord *pRec)
 {
     cTreeNode *pn = new cTreeNode(pRec, this);
     pChildrens->append(pn);
@@ -315,7 +315,7 @@ bool cRecordTreeModel::removeRow(const QModelIndex & mi)
     return false;
 }
 
-int cRecordTreeModel::checkUpdateRow(const QModelIndex& mi, cRecordAny * pRec, QModelIndex& new_parent)
+int cRecordTreeModel::checkUpdateRow(const QModelIndex& mi, cRecord * pRec, QModelIndex& new_parent)
 {
     cTreeNode *pn = nodeFromIndex(mi);  // A modosított elem (node)
     if (pn->parent == NULL || pn->pData == NULL) EXCEPTION(EPROGFAIL);
@@ -338,7 +338,7 @@ int cRecordTreeModel::checkUpdateRow(const QModelIndex& mi, cRecordAny * pRec, Q
     }
 }
 
-int cRecordTreeModel::updateRec(const QModelIndex& mi, cRecordAny * pRec)
+int cRecordTreeModel::updateRec(const QModelIndex& mi, cRecord *pRec)
 {
     QModelIndex npi;
     // Lecsekkoljuk, változott-e a fa, az új rendben van-e, és mi a parent új indexe
@@ -380,7 +380,7 @@ int cRecordTreeModel::updateRec(const QModelIndex& mi, cRecordAny * pRec)
     return chkr;
 }
 
-bool cRecordTreeModel::updateRow(const QModelIndex& mi, cRecordAny * pRec)
+bool cRecordTreeModel::updateRow(const QModelIndex& mi, cRecord * pRec)
 {
     (void)mi;
     (void)pRec;
@@ -388,7 +388,7 @@ bool cRecordTreeModel::updateRow(const QModelIndex& mi, cRecordAny * pRec)
     return false; //
 }
 
-bool cRecordTreeModel::insertRow(cRecordAny *pRec)
+bool cRecordTreeModel::insertRow(cRecord *pRec)
 {
     int ixPId = pRec->descr().ixToParent();     // Az ősre mutató ID mező indexe
     qlonglong pid = pRec->getId(ixPId);

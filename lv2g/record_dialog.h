@@ -90,7 +90,7 @@ public:
     /// @return A dialógus ablak kilépési kódja, vagyis az aktívált nyomógombot reprezentáló enumeráxiós konstans értéke.
     int exec(bool _close = true);
     /// Insert modal dialog
-    static cRecordAny *insertDialog(QSqlQuery &q, cTableShape *pTableShape, const cRecStaticDescr *pRecDescr, QWidget *_par = NULL);
+    static cRecord *insertDialog(QSqlQuery &q, cTableShape *pTableShape, const cRecStaticDescr *pRecDescr, QWidget *_par = NULL);
     /// A tábla model rekord. A megjelenítés leírója, azonosítja a rekord decriptor-t.
     cTableShape      tableShape;
     /// Rekord descriptor

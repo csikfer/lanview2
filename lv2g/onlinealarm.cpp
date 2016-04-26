@@ -126,7 +126,7 @@ void cOnlineAlarm::acknowledge()
 
 }
 
-cAckDialog::cAckDialog(const cRecordAny& __r, QWidget *par)
+cAckDialog::cAckDialog(const cRecord& __r, QWidget *par)
     : QDialog(par)
 {
     pUi = new Ui_ackDialog;

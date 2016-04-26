@@ -24,7 +24,7 @@ private:
     QLabel *        pMapLabel;      /// A térkép/alaprajz cím sora
     cImageWidget *  pMap;           /// A térkép/alaprajz (image)
     QPushButton *   pAckButton;     /// A nyugtázás gomb
-    const cRecordAny *pActRecord;   /// A kiválasztott rekord a nem nyugtázott riasztások táblában
+    const cRecord  *pActRecord;     /// A kiválasztott rekord a nem nyugtázott riasztások táblában
 private slots:
     void curRowChgNoAck(QItemSelection sel, QItemSelection);
     void curRowChgAckAct(QItemSelection sel, QItemSelection);
@@ -39,7 +39,7 @@ private slots:
 class  cAckDialog : public QDialog {
     Q_OBJECT
 public:
-    cAckDialog(const cRecordAny& __r, QWidget *par = NULL);
+    cAckDialog(const cRecord &__r, QWidget *par = NULL);
     ~cAckDialog();
     Ui_ackDialog *pUi;
 private slots:

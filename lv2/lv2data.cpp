@@ -1461,8 +1461,15 @@ cPatch::cPatch(const QString& __name, const QString& __descr)
 }
 */
 
-CRECDDCR(cPatch, _sPatchs)
 CRECDEFD(cPatch)
+
+const cRecStaticDescr&  cPatch::descr() const
+{
+    if (initPDescr<cPatch>(_sPatchs)) {
+        CHKENUM(_sNodeType, nodeType);
+    }
+    return *_pRecordDescr;
+}
 
 void cPatch::clearToEnd()
 {
@@ -1782,6 +1789,7 @@ void    cNodeParam::clearToEnd()
 
 int nodeType(const QString& __n, bool __ex)
 {
+    if (0 == __n.compare(_sPatch,       Qt::CaseInsensitive)) return NT_PATCH;
     if (0 == __n.compare(_sNode,        Qt::CaseInsensitive)) return NT_NODE;
     if (0 == __n.compare(_sHost,        Qt::CaseInsensitive)) return NT_HOST;
     if (0 == __n.compare(_sSwitch,      Qt::CaseInsensitive)) return NT_SWITCH;
@@ -1798,6 +1806,7 @@ int nodeType(const QString& __n, bool __ex)
 const QString& nodeType(int __e, bool __ex)
 {
     switch (__e) {
+    case NT_PATCH:      return _sPatch;
     case NT_NODE:       return _sNode;
     case NT_HOST:       return _sHost;
     case NT_SWITCH:     return _sSwitch;
@@ -1850,7 +1859,6 @@ const cRecStaticDescr&  cNode::descr() const
 {
     if (initPDescr<cNode>(_sNodes)) {
         CHKENUM(_sNodeStat, notifSwitch);
-        CHKENUM(_sNodeType, nodeType);
     }
     return *_pRecordDescr;
 }

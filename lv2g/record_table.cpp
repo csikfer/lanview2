@@ -642,7 +642,7 @@ void cRecordsViewBase::insert()
     qlonglong pid = NULL_ID;
     // Ha TREE, akkor a default parent a kiszelektált sor,
     if (flags & RTF_TREE) {
-        cRecordAny *pARec = actRecord();
+        cRecord *pARec = actRecord();
         if (pARec != NULL) {    // ha van kiszelektált (egy) sor
             pid = pARec->getId();
         }
@@ -671,7 +671,7 @@ void cRecordsViewBase::insert()
             if (r == DBT_INSERT || r == DBT_OK) {   // Csak az OK, és Insert gombra csinálunk valamit
                 bool ok = rd.accept();
                 if (ok) {
-                    cRecordAny *pRec = new cRecordAny(rd.record());
+                    cRecord *pRec = rd.record().dup();
                     ok = pModel->insertRec(pRec);
                     if (!ok) pDelete(pRec);
                     else if (flags & RTF_IGROUP) {    // Group, tagja listába van a beillesztés?
@@ -712,7 +712,7 @@ void cRecordsViewBase::insert()
             if (r == DBT_INSERT || r == DBT_OK) {
                 bool ok = rd.accept();
                 if (ok) {
-                    cRecordAny *pRec = new cRecordAny(rd.record());
+                    cRecord *pRec = rd.record().dup();
                     ok = pModel->insertRec(pRec);
                     if (!ok) pDelete(pRec);
                 }
@@ -743,9 +743,9 @@ void cRecordsViewBase::modify()
         return;
     }
 
-    cRecordAny *pRec = actRecord(index);    // pointer az aktuális rekordra, a beolvasott/megjelenített rekord listában
+    cRecord *pRec = actRecord(index);    // pointer az aktuális rekordra, a beolvasott/megjelenített rekord listában
     if (pRec == NULL) return;
-    pRec = new cRecordAny(*pRec);           // Saját másolat
+    pRec = pRec->dup();           // Saját másolat
     int buttons = enum2set(DBT_OK, DBT_CANCEL, DBT_NEXT, DBT_PREV);
     cRecordDialogBase *pRd  = NULL;
     cRecordDialogInh * pRdt = NULL;
@@ -821,7 +821,7 @@ void cRecordsViewBase::modify()
             }
             else {
                 // Leadminisztráljuk kiírjuk. Ha hiba van, azt a hívott metódus kiírja, és újrázunk.
-                *pRec = pRd->record();
+                pRec->copy(pRd->record());
                 updateResult = pModel->updateRec(index, pRec);
                 if (!updateResult) {
                     continue;
@@ -1361,8 +1361,8 @@ void cRecordTable::putIn()
 {
     if (pUpper == NULL || pUpper->pRightTables == NULL || pUpper->pRightTables->size() < 2) EXCEPTION(EPROGFAIL);
 
-    cRecordAny *pM = NULL;
-    cRecordAny *pG = NULL;
+    cRecord *pM = NULL;
+    cRecord *pG = NULL;
     if (((flags & RTF_NGROUP) != 0)) {
         pM = pUpper->actRecord();
         if (pM == NULL) {
@@ -1407,8 +1407,8 @@ void cRecordTable::takeOut()
 {
     if (pUpper == NULL || pUpper->pRightTables == NULL || pUpper->pRightTables->size() < 2) EXCEPTION(EPROGFAIL);
 
-    cRecordAny *pM = NULL;
-    cRecordAny *pG = NULL;
+    cRecord *pM = NULL;
+    cRecord *pG = NULL;
     if (((flags & RTF_IGROUP) != 0)) {
         pM = pUpper->actRecord();
         if (pM == NULL) {
@@ -1500,7 +1500,7 @@ QModelIndex cRecordTable::actIndex()
 }
 
 
-cRecordAny *cRecordTable::actRecord(const QModelIndex &_mi)
+cRecord *cRecordTable::actRecord(const QModelIndex &_mi)
 {
     QModelIndex mi = _mi;
     if (!mi.isValid()) mi = actIndex();
@@ -1508,7 +1508,7 @@ cRecordAny *cRecordTable::actRecord(const QModelIndex &_mi)
     return NULL;
 }
 
-cRecordAny * cRecordTable::nextRow(QModelIndex *pMi, int _upRes)
+cRecord *cRecordTable::nextRow(QModelIndex *pMi, int _upRes)
 {
     (void)_upRes;
     if (pMi->isValid() == false) return NULL;    // Nincs aktív
@@ -1530,13 +1530,13 @@ cRecordAny * cRecordTable::nextRow(QModelIndex *pMi, int _upRes)
         return NULL;
     }
     selectRow(*pMi);
-    cRecordAny *pRec = actRecord(*pMi);
+    cRecord *pRec = actRecord(*pMi);
     if (pRec == NULL) return NULL;
-    pRec = dynamic_cast<cRecordAny *>(pRec->dup());
+    pRec = pRec->dup();
     return pRec;
 }
 
-cRecordAny *cRecordTable::prevRow(QModelIndex *pMi, int _upRes)
+cRecord *cRecordTable::prevRow(QModelIndex *pMi, int _upRes)
 {
     (void)_upRes;
     if (pMi->isValid() == false) return NULL;    // Nincs aktív
@@ -1558,8 +1558,8 @@ cRecordAny *cRecordTable::prevRow(QModelIndex *pMi, int _upRes)
         return NULL;
     }
     selectRow(*pMi);
-    cRecordAny *pRec = actRecord(*pMi);
-    if (pRec != NULL) return dynamic_cast<cRecordAny *>(pRec->dup());
+    cRecord *pRec = actRecord(*pMi);
+    if (pRec != NULL) pRec->dup();
     return NULL;
 }
 
@@ -1588,16 +1588,14 @@ void cRecordTable::setPageButtons()
     }
 }
 
-cRecordAny * cRecordTable::record(int i)
+cRecord * cRecordTable::record(int i)
 {
     if (!isContIx(pTableModel()->_records, i)) EXCEPTION(ENOINDEX, i);
     return pTableModel()->_records[i];
 }
 
-cRecordAny * cRecordTable::record(QModelIndex mi)
+cRecord *cRecordTable::record(QModelIndex mi)
 {
     return record(mi.row());
 }
-
-
 

@@ -1353,7 +1353,7 @@ void cFKeyWidget::inserF()
     fts.fetchFields(*pq);
     // A tulajdonság rekord leírója is kell
     const cRecStaticDescr *pRecDescr = cRecStaticDescr::get(_colDescr.fKeyTable);
-    cRecordAny *pRec = cRecordDialogBase::insertDialog(*pq, &fts, pRecDescr);
+    cRecord *pRec = cRecordDialogBase::insertDialog(*pq, &fts, pRecDescr);
     pModel->setFilter(_sNul, OT_ASC, FT_NO);
     if (pRec != NULL) {
         pUi->comboBox->setCurrentIndex(pModel->indexOf(pRec->getName()));
@@ -1364,12 +1364,12 @@ void cFKeyWidget::inserF()
 void cFKeyWidget::modifyF()
 {
     if (pTableShape == NULL) EXCEPTION(EPROGFAIL);
-    qlonglong id = pModel->atId(pUi->comboBox->currentIndex());
-    cRecordAny r(pRDescr);
-    if (r.fetchById(id)) {
-        eTableInheritType   tit = (eTableInheritType)pTableShape->getId(_sTableInheritType);
+//    qlonglong id = pModel->atId(pUi->comboBox->currentIndex());
+//    cRecord r(pRDescr);
+//    if (r.fetchById(id)) {
+//        eTableInheritType   tit = (eTableInheritType)pTableShape->getId(_sTableInheritType);
         // ...
-    }
+//    }
 }
 
 /* **************************************** cDateWidget ****************************************  */

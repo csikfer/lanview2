@@ -180,7 +180,7 @@ QModelIndex cRecordTree::actIndex()
     return mil.first();
 }
 
-cRecordAny *cRecordTree::actRecord(const QModelIndex &_mi)
+cRecord *cRecordTree::actRecord(const QModelIndex &_mi)
 {
     QModelIndex mi = _mi;
     if (!_mi.isValid()) mi = actIndex();
@@ -189,7 +189,7 @@ cRecordAny *cRecordTree::actRecord(const QModelIndex &_mi)
     return pn->pData;
 }
 
-cRecordAny *cRecordTree::nextRow(QModelIndex *pMi, int _upRes)
+cRecord *cRecordTree::nextRow(QModelIndex *pMi, int _upRes)
 {
     if (!pMi->isValid()) return NULL;
     cTreeNode * pn = pTreeModel()->nodeFromIndex(*pMi);
@@ -208,14 +208,14 @@ cRecordAny *cRecordTree::nextRow(QModelIndex *pMi, int _upRes)
         *pMi = pTreeModel()->index(row, pMi->column(), pMi->parent());
         if (pMi->isValid()) {
             selectRow(*pMi);
-            return dynamic_cast<cRecordAny *>(pn->pData->dup());
+            return pn->pData->dup();
         }
     }
     *pMi = QModelIndex();
     return NULL;
 }
 
-cRecordAny *cRecordTree::prevRow(QModelIndex *pMi, int _upRes)
+cRecord *cRecordTree::prevRow(QModelIndex *pMi, int _upRes)
 {
     (void)_upRes;
     if (!pMi->isValid()) return NULL;
@@ -230,7 +230,7 @@ cRecordAny *cRecordTree::prevRow(QModelIndex *pMi, int _upRes)
         *pMi = pTreeModel()->index(row, pMi->column(), pMi->parent());
         if (pMi->isValid()) {
             selectRow(*pMi);
-            return dynamic_cast<cRecordAny *>(pn->pData->dup());
+            return pn->pData->dup();
         }
     }
     *pMi = QModelIndex();

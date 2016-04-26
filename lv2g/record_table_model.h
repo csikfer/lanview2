@@ -3,7 +3,7 @@
 
 #include "lv2g.h"
 
-typedef tRecordList<cRecordAny>         tRecords;
+typedef tRecordList<cRecord>         tRecords;
 class   cRecordTableColumn;
 typedef tRecordList<cRecordTableColumn>  tRecordTableColumns;
 class cRecordsViewBase;
@@ -17,7 +17,7 @@ public:
 
     cRecordViewModelBase(cRecordsViewBase &_rt);
     ~cRecordViewModelBase();
-    cRecordAny *qGetRecord(QSqlQuery& q);
+    cRecord *qGetRecord(QSqlQuery& q);
 
     /// Kereszt index: Tábla oszlop - megjelenítő leíró, mező leíró index
     tIntVector                   _col2shape;
@@ -63,11 +63,11 @@ public:
     /// A régi pointer felszabadítja, a paraméterként megadottat, pedig szintén ő szabadítja fel, ha már nem kell.
     /// @return ha elvégezte a műveletet true, ha olyan sort adunk meg, ami nem létezik, akkor false.
     ///  ekkor a paraméterként kapott pointert nem szabadítja fel.
-    virtual int updateRec(const QModelIndex &mi, cRecordAny *pRec);
-    virtual bool updateRow(const QModelIndex &mi, cRecordAny *pRec) = 0;
+    virtual int updateRec(const QModelIndex &mi, cRecord *pRec);
+    virtual bool updateRow(const QModelIndex &mi, cRecord *pRec) = 0;
 
-    virtual bool insertRec(cRecordAny *pRec);
-    virtual bool insertRow(cRecordAny *pRec) = 0;
+    virtual bool insertRec(cRecord *pRec);
+    virtual bool insertRow(cRecord *pRec) = 0;
     static bool SqlInsert(QSqlQuery &q, cRecord *pRec);
 };
 
@@ -95,10 +95,10 @@ public:
     virtual bool removeRow(const QModelIndex & mi);
 
     /// Modosítja a widget megfelelő sorát a megadott rekord tartalommal.
-    virtual bool updateRow(const QModelIndex &mi, cRecordAny *pRec);
+    virtual bool updateRow(const QModelIndex &mi, cRecord *pRec);
 
     /// Beszúr egy elemet a megadott indexű pont elé
-    virtual bool insertRow(cRecordAny *pRec);
+    virtual bool insertRow(cRecord *pRec);
 
     /// A megjelenítendő record set kiürítése, az üres táblázat újra rajzolása
     virtual cRecordTableModel& clear();

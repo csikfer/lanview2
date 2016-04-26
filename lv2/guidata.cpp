@@ -649,6 +649,11 @@ cTableShapeField *cTableShape::addField(const QString& _name, const QString& _no
     p->setName(_sTableTitle, _name);
     p->setName(_sDialogTitle, _name);
     if (_note.size()) p->setName(_sTableShapeFieldNote, _note);
+    qlonglong seq = 0;
+    foreach (cTableShapeField * ptsf, shapeFields) {
+        seq = qMax(seq, ptsf->getId(_sFieldSequenceNumber));
+    }
+    p->setId(_sFieldSequenceNumber, seq + 10);
     shapeFields << p;
     return p;
 }

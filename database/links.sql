@@ -121,10 +121,10 @@ COMMENT ON VIEW log_named_links IS 'Symmetric View Table for logical links with 
 
 CREATE OR REPLACE VIEW phs_links_shape AS
     SELECT phs_link_id, 
-           port_id1, n1.node_id AS node_id1, n1.node_name AS node_name1, p1.port_name AS port_name1, p1.port_index AS port_index1, n1.node_name || ':' || p1.port_name AS port_full_name1,
-           port_id2, n2.node_id AS node_id2, n2.node_name AS node_name2, p2.port_name AS port_name2, p2.port_index AS port_index2, n2.node_name || ':' || p2.port_name AS port_full_name2,
+           port_id1, n1.node_id AS node_id1, n1.node_name AS node_name1, p1.port_name AS port_name1, p1.port_index AS port_index1, n1.node_name || ':' || p1.port_name AS port_full_name1, phs_link_type1,
+           port_id2, n2.node_id AS node_id2, n2.node_name AS node_name2, p2.port_name AS port_name2, p2.port_index AS port_index2, n2.node_name || ':' || p2.port_name AS port_full_name2, phs_link_type2,
            phs_link_note, port_shared, link_type,
-                        create_time, create_user_id, modify_time, modify_user_id, forward
+           create_time, create_user_id, modify_time, modify_user_id, forward
     FROM phs_links JOIN ( nports AS p1 JOIN patchs AS n1 USING(node_id)) ON p1.port_id = port_id1
                    JOIN ( nports AS p2 JOIN patchs AS n2 USING(node_id)) ON p2.port_id = port_id2;
 COMMENT ON VIEW phs_links_shape IS 'Symmetric View Table for physical links with shape';
