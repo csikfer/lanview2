@@ -241,7 +241,7 @@ inline void complementOneBit(Q_IPV6ADDR& __a, int __n)
 /// @param __a Az IPV4 cím
 /// @param __ex Ha értke true, vagy nincs megadva, és __a nem maszk, akkor dob egy kizárást
 /// @return Ha a cím maszk, akkor az egyes bitek számával, ha nem, és __ex = false, akkor -1 -el tér vissza.
-EXT_ int toIPv4Mask(const QHostAddress& __a, bool __ex = true);
+EXT_ int toIPv4Mask(const QHostAddress& __a, enum eEx __ex = EX_ERROR);
 
 EXT_ bool operator<(const QHostAddress& __a1, const QHostAddress& __a);
 

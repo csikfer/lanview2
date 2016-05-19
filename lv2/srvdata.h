@@ -5,7 +5,7 @@
 #include "lv2cont.h"
 
 /// Paraméter név
-EXT_ QString getParName(QString::const_iterator& i, const QString::const_iterator& e, bool __ex = true);
+EXT_ QString getParName(QString::const_iterator& i, const QString::const_iterator& e, enum eEx __ex = EX_ERROR);
 
 
 /// @class cIpProtocol
@@ -19,7 +19,7 @@ class LV2SHARED_EXPORT cIpProtocol : public cRecord {
 class LV2SHARED_EXPORT cServiceType : public cRecord {
     CRECORD(cServiceType);
 public:
-    static qlonglong insertNew(QSqlQuery& __q, const QString& __name, const QString& __note, bool __ex = true);
+    static qlonglong insertNew(QSqlQuery& __q, const QString& __name, const QString& __note, enum eEx __ex = EX_ERROR);
 };
 
 class LV2SHARED_EXPORT cAlarmMsg  : public cRecord {
@@ -51,16 +51,16 @@ protected:
 public:
     /// Egy services objektumot ad vissza a név alapján.
     /// Ha nincs ilyen nevű szervíz, akkor dob egy kizárást, vagy egy öres obbjektummal tér vissza.
-    static const cService& service(QSqlQuery &__q, const QString& __nm, bool __ex = true);
+    static const cService& service(QSqlQuery &__q, const QString& __nm, enum eEx __ex = EX_ERROR);
     /// Egy services objektumot ad vissza az ID alapján, ha nincs ilyen nevű típus, akkor dob egy kizárást.
-    static const cService& service(QSqlQuery &__q, qlonglong __id, bool __ex = true);
+    static const cService& service(QSqlQuery &__q, qlonglong __id, enum eEx __ex = EX_ERROR);
     static const cService& _nul() { if (pNull == NULL) pNull = new cService(); return *pNull; }
     static void clearServicesCache() { services.clear(); }
     STATICIX(cService, ixProtocolId)
 };
 
 class LV2SHARED_EXPORT cHostService : public cRecord {
-    template <class S> friend void _SplitMagicT(S& o, bool __ex);
+    template <class S> friend void _SplitMagicT(S& o, enum eEx __ex = EX_ERROR);
     template <class S> friend void _Magic2PropT(S& o);
     CRECORD(cHostService);
     FEATURES(cHostService)
@@ -69,7 +69,7 @@ public:
     virtual void toEnd();
     virtual bool toEnd(int i);
     virtual void clearToEnd();
-    virtual int replace(QSqlQuery &__q, bool __ex = true);
+    virtual int replace(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     /// Státusz beállítása. A  set_service_stat() PL/pSQL függvényt hívja.
     /// @param __q Az adatbázis művelethez használt objektum.
     /// @param __st A szolgáltatással kapcsolatos művelet eredménye. Nem az új status, azt a set_service_stat()
@@ -87,7 +87,7 @@ public:
     /// @param __sn A szolgáltatás típus (services) neve
     /// @param __ex Ha nincs ilyen rekord, vagy több van, és értéke true, akkor dob egy kizárást.
     /// @return A megadott nevekkel azonosított szolgáltatáspéldányok száma.
-    int fetchByNames(QSqlQuery& q, const QString& __hn, const QString& __sn, bool __ex = true);
+    int fetchByNames(QSqlQuery& q, const QString& __hn, const QString& __sn, enum eEx __ex = EX_ERROR);
     /// A hálózati elem, port és a szolgáltatás típus neve alapján olvassa be egy rekordot.
     /// Ha több rekord is létezik, akkor az első kerül beolvasásra.
     /// @param q Az adatbázis művelethez használlt objektum.
@@ -97,7 +97,7 @@ public:
     ///             Fugyelem az üres string olyan rekordot jelent amelyben a port_id éeréke NULL!
     /// @param __ex Ha nincs ilyen rekord, vagy több van, és értéke true, akkor dob egy kizárást.
     /// @return A megadott nevekkel azonosított szolgáltatáspéldányok száma.
-    int fetchByNames(QSqlQuery& q, const QString &__hn, const QString& __sn, const QString& __pn, bool __ex = NULL);
+    int fetchByNames(QSqlQuery& q, const QString &__hn, const QString& __sn, const QString& __pn, enum eEx __ex = EX_ERROR);
     /// A hálózati elem, port,  szolgáltatás típus valamit a proto és prome szolgáltatás típus nevek alapján olvassa be egy rekordot.
     /// Ha több rekord is létezik, akkor az első kerül beolvasásra.
     /// @param q Az adatbázis művelethez használlt objektum.
@@ -109,21 +109,21 @@ public:
     /// @param __prin A szolgáltatáspéldányhoz rendelt prime szolgáltatás neve, az üres string esetén nincs definiálva a példányhoz rime sz..
     /// @param __ex Ha nincs ilyen rekord, vagy több van, és értéke true, akkor dob egy kizárást.
     /// @return A megadott nevekkel azonosított szolgáltatáspéldányok száma.
-    int fetchByNames(QSqlQuery& q, const QString& __hn, const QString& __sn, const QString& __pn, const QString& __pron, const QString& __prin, bool __ex = NULL);
+    int fetchByNames(QSqlQuery& q, const QString& __hn, const QString& __sn, const QString& __pn, const QString& __pron, const QString& __prin, enum eEx __ex = EX_ERROR);
     /// A hálózati elem, és a szolgáltatás típus név minták alapján olvassa be az első rekordot.
     /// @param q Az adatbázis művelethez használlt objektum.
     /// @param __hn A hálózati elem (nodes) neve
     /// @param __sn A szolgáltatás típus (services) neve
     /// @param __ex Ha nincs egy ilyen rekord sem, és értéke true, akkor dob egy kizárást.
     /// @return A megadott név mintákkal azonosított szolgáltatáspéldányok száma.
-    int fetchFirstByNamePatterns(QSqlQuery& q, const QString& __hn, const QString& __sn, bool __ex = true);
+    int fetchFirstByNamePatterns(QSqlQuery& q, const QString& __hn, const QString& __sn, enum eEx __ex = EX_ERROR);
     /// A hálózati elem, és a szolgáltatás típus ID-k alapján olvas be egy rekordot
     /// @param q Az adatbázis művelethez használlt objektum.
     /// @param __hid A hálózati elem (nodes) ID
     /// @param __sid A szolgáltatás típus (services) ID
     /// @param __ex Ha nincs ilyen rekord, vagy több van, és értéke true, akkor dob egy kizárást.
     /// @return true, ha van egy és csakis egy ilyen rekord.
-    bool fetchByIds(QSqlQuery& q, qlonglong __hid, qlonglong __sid, bool __ex = true);
+    bool fetchByIds(QSqlQuery& q, qlonglong __hid, qlonglong __sid, enum eEx __ex = EX_ERROR);
     /// A megadott nevek alapján türli a megadott rekord(ok)at
     /// @param q Az adatbázis művelethez használlt objektum.
     /// @param __nn A node neve, vagy egy minta
@@ -139,7 +139,7 @@ public:
     /// @param __s A szervíz rekordot reprezentáló kitöltött objektum, a metódus csak az ID mezőt használja.
     /// @param __ex Ha értéke true (ill nem adjuk meg), akkor hiba esetén, ill. ha nem létezik valamelyik keresett objektum, akkor dob egy kizárást.
     /// @return Ha sikerült beolvasni a rekordokat, akkor true, ha nem és __ex értéke true, akkor false.
-    bool fetchSelf(QSqlQuery& q, cNode& __h, const cService& __s, bool __ex = true);
+    bool fetchSelf(QSqlQuery& q, cNode& __h, const cService& __s, enum eEx __ex = EX_ERROR);
     /// Egy mező értékének a lekérdezése.
     /// Ha a mező értéke null, akkor annak alapértelmezett értéke a megadott s-objektum azonos nevű
     /// mezőjének értéke lessz. Ha az s objektumban is null az érték, akkor dob egy kizárást.
@@ -159,7 +159,7 @@ public:
     /// @param Az esetleges SQL lekérdezéshez használlt objektum (ha már be van olvasva a keresett objektum, akkor nem fordul az adatbázishoz)
     /// @param __ex Hiba esetén vagy, ha az id nem NULL, de mégsem találja az objektumot, akkor nem üres objektummal tér vissza, hanem dob egy kizárást, ha __ex értéke true.
     /// @return A keresett objektum referenciája, ill. ha hiba volt és __ex nem true, ill. ha az ID NULL, akkor egy üres objektum pointere.
-    const cService& getPrimeService(QSqlQuery& __q, bool __ex = true)
+    const cService& getPrimeService(QSqlQuery& __q, enum eEx __ex = EX_ERROR)
     {
         qlonglong id = getId(_sPrimeServiceId);
         return id == NULL_ID ? cService::_nul() : cService::service(__q, id, __ex);
@@ -169,7 +169,7 @@ public:
     /// @param Az esetleges SQL lekérdezéshez használlt objektum (ha már be van olvasva a keresett objektum, akkor nem fordul az adatbázishoz)
     /// @param __ex Hiba esetén vagy, ha az id nem NULL, de mégsem találja az objektumot, akkor nem üres objektummal tér vissza, hanem dob egy kizárást, ha __ex értéke true.
     /// @return A keresett objektum referenciája, ill. ha hiba volt és __ex nem true, ill. ha az ID NULL, akkor egy üres objektum pointere.
-    const cService& getProtoService(QSqlQuery& __q, bool __ex = true)
+    const cService& getProtoService(QSqlQuery& __q, enum eEx __ex = EX_ERROR)
     {
         qlonglong id = getId(_sProtoServiceId);
         return id == NULL_ID ? cService::_nul() : cService::service(__q, id, __ex);
@@ -186,7 +186,7 @@ public:
 class LV2SHARED_EXPORT cOui  : public cRecord {
     CRECORD(cOui);
 public:
-    virtual int replace(QSqlQuery& __q, bool __ex = false);
+    virtual int replace(QSqlQuery& __q, enum eEx __ex = EX_ERROR);
 };
 
 /* ---------------------------------------------------------------- */
@@ -197,7 +197,7 @@ public:
     /// A funkciót egy PGPLSQL fúggvény (replace_mactab) valósítja meg.
     /// @param __q Az adatbázis művelethez használt objektum.
     /// @return A peplace_arp függvény vissatérési értéke. Ld.: enum eReasons
-    virtual int replace(QSqlQuery& __q, bool __ex = false);
+    virtual int replace(QSqlQuery& __q, enum eEx __ex = EX_ERROR);
     static int refresStats(QSqlQuery& __q);
     STATICIX(cMacTab, ixPortId)
     STATICIX(cMacTab, ixHwAddress)
@@ -228,15 +228,15 @@ public:
     /// A funkciót egy PGPLSQL fúggvény (replace_arp) valósítja meg.
     /// @param __q Az adatbázis művelethez használt objektum.
     /// @return A replace_arp függvény vissatérési értéke. Ld.: enum eReasons
-    virtual int replace(QSqlQuery& __q, bool __ex = true);
+    virtual int replace(QSqlQuery& __q, enum eEx __ex = EX_ERROR);
     /// Inzertálja, vagy morosítja az ip cím, mint kulcs alapján a rekordokat
     /// @param __q Az adatbázis művelethez használt objektum.
     /// @param __t A módosításokat tartalmazó konténer
     /// @return a kiírt, vagy módosított rekordok száma
     static int replaces(QSqlQuery& __q, const cArpTable& __t, int setType = ST_QUERY, qlonglong hsid = NULL_ID);
     static QList<QHostAddress> mac2ips(QSqlQuery& __q, const cMac& __m);
-    static QHostAddress mac2ip(QSqlQuery& __q, const cMac& __m, bool __ex = true);
-    static cMac ip2mac(QSqlQuery& __q, const QHostAddress& __a, bool __ex = true);
+    static QHostAddress mac2ip(QSqlQuery& __q, const cMac& __m, enum eEx __ex = EX_ERROR);
+    static cMac ip2mac(QSqlQuery& __q, const QHostAddress& __a, enum eEx __ex = EX_ERROR);
     static int checkExpired(QSqlQuery& __q);
 };
 
@@ -258,8 +258,8 @@ enum eExecState {
     ES_ABORTED
 };
 
-EXT_ int execState(const QString& _n, bool __ex = true);
-EXT_ const QString& execState(int _e, bool __ex = true);
+EXT_ int execState(const QString& _n, enum eEx __ex = EX_ERROR);
+EXT_ const QString& execState(int _e, enum eEx __ex = EX_ERROR);
 
 class LV2SHARED_EXPORT cImport : public cRecord {
     CRECORD(cImport);

@@ -1,7 +1,7 @@
 #include "guidata.h"
 
 
-int tableShapeType(const QString& n, bool __ex)
+int tableShapeType(const QString& n, enum eEx __ex)
 {
     if (0 == n.compare(_sSimple,  Qt::CaseInsensitive)) return TS_SIMPLE;
     if (0 == n.compare(_sTree,    Qt::CaseInsensitive)) return TS_TREE;
@@ -22,7 +22,7 @@ int tableShapeType(const QString& n, bool __ex)
     return TS_UNKNOWN;
 }
 
-const QString& tableShapeType(int e, bool __ex)
+const QString& tableShapeType(int e, enum eEx __ex)
 {
     switch(e) {
     case TS_SIMPLE:     return _sSimple;
@@ -47,7 +47,7 @@ const QString& tableShapeType(int e, bool __ex)
     return _sNul;
 }
 
-int tableInheritType(const QString& n, bool __ex)
+int tableInheritType(const QString& n, eEx __ex)
 {
     if (0 == n.compare(_sNo,        Qt::CaseInsensitive)) return TIT_NO;
     if (0 == n.compare(_sOnly,      Qt::CaseInsensitive)) return TIT_ONLY;
@@ -61,7 +61,7 @@ int tableInheritType(const QString& n, bool __ex)
     return TIT_UNKNOWN;
 }
 
-const QString& tableInheritType(int e, bool __ex)
+const QString& tableInheritType(int e, eEx __ex)
 {
     switch (e) {
     case TIT_NO:            return _sNo;
@@ -78,7 +78,7 @@ const QString& tableInheritType(int e, bool __ex)
     return _sNul;
 }
 
-int orderType(const QString& n, bool __ex)
+int orderType(const QString& n, eEx __ex)
 {
     if (0 == n.compare(_sNo,   Qt::CaseInsensitive)) return OT_NO;
     if (0 == n.compare(_sAsc,  Qt::CaseInsensitive)) return OT_ASC;
@@ -87,7 +87,7 @@ int orderType(const QString& n, bool __ex)
     return OT_UNKNOWN;
 }
 
-const QString& orderType(int e, bool __ex)
+const QString& orderType(int e, eEx __ex)
 {
     switch(e) {
     case OT_NO:         return _sNo;
@@ -99,7 +99,7 @@ const QString& orderType(int e, bool __ex)
     return _sNul;
 }
 
-int fieldFlag(const QString& n, bool __ex)
+int fieldFlag(const QString& n, eEx __ex)
 {
     if (0 == n.compare(_sTableHide, Qt::CaseInsensitive)) return FF_TABLE_HIDE;
     if (0 == n.compare(_sDialogHide,Qt::CaseInsensitive)) return FF_DIALOG_HIDE;
@@ -111,7 +111,7 @@ int fieldFlag(const QString& n, bool __ex)
     return FF_UNKNOWN;
 }
 
-const QString& fieldFlag(int e, bool __ex)
+const QString& fieldFlag(int e, eEx __ex)
 {
     switch(e) {
     case FF_TABLE_HIDE: return _sTableHide;
@@ -128,7 +128,7 @@ const QString& fieldFlag(int e, bool __ex)
 
 
 
-int filterType(const QString& n, bool __ex)
+int filterType(const QString& n, eEx __ex)
 {
     if (0 == n.compare(_sBegin,    Qt::CaseInsensitive)) return FT_BEGIN;
     if (0 == n.compare(_sLike,     Qt::CaseInsensitive)) return FT_LIKE;
@@ -144,7 +144,7 @@ int filterType(const QString& n, bool __ex)
     return FT_UNKNOWN;
 }
 
-const QString& filterType(int e, bool __ex)
+const QString& filterType(int e, eEx __ex)
 {
     switch(e) {
     case FT_BEGIN:      return _sBegin;
@@ -222,7 +222,7 @@ void cTableShape::clearToEnd()
     pDelete(_pFeatures);
 }
 
-bool cTableShape::insert(QSqlQuery &__q, bool __ex)
+bool cTableShape::insert(QSqlQuery &__q, eEx __ex)
 {
     if (!cRecord::insert(__q, __ex)) return false;
     if (shapeFields.count()) {
@@ -232,7 +232,7 @@ bool cTableShape::insert(QSqlQuery &__q, bool __ex)
     }
     return true;
 }
-bool cTableShape::rewrite(QSqlQuery &__q, bool __ex)
+bool cTableShape::rewrite(QSqlQuery &__q, eEx __ex)
 {
     return tRewrite(__q, shapeFields, 0, __ex);
 }
@@ -248,7 +248,7 @@ cTableShape& cTableShape::setShapeType(qlonglong __t)
     static const qlonglong extraValues = ENUM2SET4(TS_IGROUP, TS_NGROUP, TS_IMEMBER, TS_NMEMBER);
     if (extraValues & __t) {   // extra érték (bit)?
         if (_fields.isEmpty()) cRecord::set();
-        _fields[_ixTableShapeType] = set2lst(tableShapeType, __t, false);
+        _fields[_ixTableShapeType] = set2lst(tableShapeType, __t, EX_IGNORE);
         _stat |= ES_MODIFY | ES_INVALID;
         // toEnd(__i);          // Feltételezzük, hogy most nem kell
         // fieldModified(__i);  // Feltételezzük, hogy most nem kell
@@ -303,11 +303,11 @@ bool cTableShape::setDefaults(QSqlQuery& q, bool _disable_tree)
         fm.setId(_sFieldSequenceNumber, (i + 1) * 10);  // mezők megjelenítési sorrendje
         bool ro = !cDescr.isUpdatable;
         bool hide = false;
-        if (i == 0 && rDescr.idIndex(false) == 0 && rDescr.autoIncrement().at(0)) {
+        if (i == 0 && rDescr.idIndex(EX_IGNORE) == 0 && rDescr.autoIncrement().at(0)) {
             hide = true;
             ro   = true;
         }
-        else if (rDescr.deletedIndex(false) == i) {
+        else if (rDescr.deletedIndex(EX_IGNORE) == i) {
             hide = true;
             ro   = true;
         }
@@ -325,7 +325,7 @@ bool cTableShape::setDefaults(QSqlQuery& q, bool _disable_tree)
                 fm.enum2setOn(ixFieldFlags, FF_TABLE_HIDE);
             }
         }
-        else if (rDescr.flagIndex(false) == i) {
+        else if (rDescr.flagIndex(EX_IGNORE) == i) {
             hide = true;
         }
         if (ro)   fm.enum2setOn(_sFieldFlags, FF_READ_ONLY);
@@ -398,7 +398,7 @@ void cTableShape::setTitle(const QStringList& _tt)
     }
 }
 
-bool cTableShape::fset(const QString& _fn, const QString& _fpn, const QVariant& _v, bool __ex)
+bool cTableShape::fset(const QString& _fn, const QString& _fpn, const QVariant& _v, eEx __ex)
 {
     int i = shapeFields.indexOf(_fn);
     if (i < 0) {
@@ -411,14 +411,14 @@ bool cTableShape::fset(const QString& _fn, const QString& _fpn, const QVariant& 
     return true;
 }
 
-bool cTableShape::fsets(const QStringList& _fnl, const QString& _fpn, const QVariant& _v, bool __ex)
+bool cTableShape::fsets(const QStringList& _fnl, const QString& _fpn, const QVariant& _v, eEx __ex)
 {
     bool r = true;
     foreach (QString fn, _fnl) r = fset(fn, _fpn, _v, __ex) && r;
     return r;
 }
 
-bool cTableShape::addFilter(const QString& _fn, const QString& _t, const QString& _d, bool __ex)
+bool cTableShape::addFilter(const QString& _fn, const QString& _t, const QString& _d, eEx __ex)
 {
     int i = shapeFields.indexOf(_fn);
     if (i < 0) {
@@ -429,14 +429,14 @@ bool cTableShape::addFilter(const QString& _fn, const QString& _t, const QString
     return f.addFilter(_t, _d, __ex);
 }
 
-bool cTableShape::addFilter(const QStringList& _fnl, const QString& _t, const QString& _d, bool __ex)
+bool cTableShape::addFilter(const QStringList& _fnl, const QString& _t, const QString& _d, eEx __ex)
 {
     bool r = true;
     foreach (QString fn, _fnl) r = addFilter(fn, _t, _d, __ex) && r;
     return r;
 }
 
-bool cTableShape::addFilter(const QStringList& _fnl, const QStringList& _ftl, bool __ex)
+bool cTableShape::addFilter(const QStringList& _fnl, const QStringList& _ftl, eEx __ex)
 {
     bool r = true;
     foreach (QString fn, _fnl) {
@@ -447,7 +447,7 @@ bool cTableShape::addFilter(const QStringList& _fnl, const QStringList& _ftl, bo
     return r;
 }
 
-bool cTableShape::setAllOrders( QStringList& _ord, bool __ex)
+bool cTableShape::setAllOrders(QStringList& _ord, eEx __ex)
 {
     if (shapeFields.isEmpty()) {
         QString msg = trUtf8("A shape Fields konténer üres.");
@@ -478,7 +478,7 @@ bool cTableShape::setAllOrders( QStringList& _ord, bool __ex)
     return true;
 }
 
-bool cTableShape::setOrders(const QStringList& _fnl, QStringList& _ord, bool __ex)
+bool cTableShape::setOrders(const QStringList& _fnl, QStringList& _ord, eEx __ex)
 {
     if (shapeFields.isEmpty()) {
         QString msg = trUtf8("A shape Fields konténer üres.");
@@ -524,7 +524,7 @@ bool cTableShape::setOrders(const QStringList& _fnl, QStringList& _ord, bool __e
     return true;
 }
 
-bool cTableShape::setFieldSeq(const QStringList& _fnl, int last, bool __ex)
+bool cTableShape::setFieldSeq(const QStringList& _fnl, int last, eEx __ex)
 {
     if (shapeFields.isEmpty()) {
         QString msg = trUtf8("A shape Fields konténer üres.");
@@ -557,7 +557,7 @@ bool cTableShape::setFieldSeq(const QStringList& _fnl, int last, bool __ex)
     return true;
 }
 
-bool cTableShape::setOrdSeq(const QStringList& _fnl, int last, bool __ex)
+bool cTableShape::setOrdSeq(const QStringList& _fnl, int last, eEx __ex)
 {
     if (shapeFields.isEmpty()) {
         QString msg = trUtf8("A shape Fields konténer üres.");
@@ -592,53 +592,7 @@ bool cTableShape::setOrdSeq(const QStringList& _fnl, int last, bool __ex)
     return true;
 }
 
-/*
-bool cTableShape::fetchLeft(QSqlQuery& q, cTableShape * _po, bool _ex) const
-{
-    qlonglong oid = getId(_sLeftShapeId);
-    if (oid == NULL_ID || !_po->fetchById(q, oid)) {
-        if (_ex) EXCEPTION(EDATA);
-        return false;
-    }
-    return true;
-}
-
-
-int cTableShape::fetchRight(QSqlQuery& q, tTableShapes *&_pol, bool _ex) const
-{
-    if (isNull(_sRightShapeIds)) return 0;
-    if (_pol == NULL) _pol = new tTableShapes();
-    int i = 0;
-    foreach (QVariant vId, get(_sRightShapeIds).toList()) {
-        bool ok;
-        qlonglong id = vId.toLongLong(&ok);
-        if (!ok) {
-            QString msg = trUtf8("%1 mező : várt adattípus bigint (ID), a #%2-ik elem értéke : %3")
-                    .arg(fullColumnNameQ(_sRightShapeIds))
-                    .arg(i)
-                    .arg(debVariantToString(vId));
-            if (_ex) EXCEPTION(EDATA, i, msg);
-            DWAR() << msg << endl;
-            return -1;
-        }
-        cTableShape *po = new cTableShape();
-        if (!po->fetchById(q, id)) {
-            delete po;
-            QString msg = trUtf8("%1 mező : hivatkozott a #%2-ik elemhez tartozó ID = %3 objektum nem létezik.")
-                    .arg(fullColumnNameQ(_sRightShapeIds))
-                    .arg(i)
-                    .arg(id);
-            if (_ex) EXCEPTION(EFOUND, id, msg);
-            DWAR() << msg << endl;
-            return -1;
-        }
-        *_pol << po;
-        ++i;
-    }
-    return i;
-}
-*/
-cTableShapeField *cTableShape::addField(const QString& _name, const QString& _note, bool __ex)
+cTableShapeField *cTableShape::addField(const QString& _name, const QString& _note, eEx __ex)
 {
     if (0 <= shapeFields.indexOf(_name)) {
         if (__ex) EXCEPTION(EUNIQUE, -1, _name);
@@ -745,7 +699,7 @@ void cTableShapeField::clearToEnd()
     shapeFilters.clear();
 }
 
-bool cTableShapeField::insert(QSqlQuery &__q, bool __ex)
+bool cTableShapeField::insert(QSqlQuery &__q, eEx __ex)
 {
     if (!cRecord::insert(__q, __ex)) return false;
     if (shapeFilters.count()) {
@@ -755,9 +709,14 @@ bool cTableShapeField::insert(QSqlQuery &__q, bool __ex)
     return true;
 }
 
-bool cTableShapeField::rewrite(QSqlQuery &__q, bool __ex)
+bool cTableShapeField::rewrite(QSqlQuery &__q, eEx __ex)
 {
-    return tRewrite(__q, shapeFilters, 0, __ex);
+    bool r = cRecord::rewrite(__q, __ex);   // Kiírjuk magát a rekordot
+    if (!r) return false;   // Ha nem sikerült, nincs több dolgunk :(
+    shapeFilters.setsOwnerId();
+    shapeFilters.removeByOwn(__q, __ex);
+    r = shapeFilters.insert(__q, __ex);
+    return r;
 }
 
 void cTableShapeField::setTitle(const QStringList& _tt)
@@ -779,7 +738,7 @@ int cTableShapeField::fetchFilters(QSqlQuery& q)
     return shapeFilters.fetch(q, getId());
 }
 
-bool cTableShapeField::addFilter(const QString& _t, const QString& _d, bool __ex)
+bool cTableShapeField::addFilter(const QString& _t, const QString& _d, eEx __ex)
 {
     int t = filterType(_t, __ex);
     if (t == FT_UNKNOWN) return false;
@@ -796,7 +755,7 @@ bool cTableShapeField::addFilter(const QString& _t, const QString& _d, bool __ex
 }
 
 
-bool cTableShapeField::fetchByNames(QSqlQuery& q, const QString& tsn, const QString& fn, bool __ex)
+bool cTableShapeField::fetchByNames(QSqlQuery& q, const QString& tsn, const QString& fn, eEx __ex)
 {
     clear();
     qlonglong tsid = cTableShape().getIdByName(q, tsn, __ex);
@@ -810,7 +769,7 @@ bool cTableShapeField::fetchByNames(QSqlQuery& q, const QString& tsn, const QStr
 qlonglong cTableShapeField::getIdByNames(QSqlQuery& q, const QString& tsn, const QString& fn)
 {
     cTableShapeField o;
-    o.fetchByNames(q, tsn, fn, true);
+    o.fetchByNames(q, tsn, fn, EX_IGNORE);
     return o.getId();
 }
 

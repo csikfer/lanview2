@@ -68,7 +68,8 @@ FORMS += \
     arrayed.ui \
     fkeyed.ui \
     no_rights.ui \
-    apierrcodes.ui
+    apierrcodes.ui \
+    fkeyarrayed.ui
 INCLUDEPATH += ../lv2
 unix:LIBS += -lsnmp
 msvc:LIBS += -lSecur32

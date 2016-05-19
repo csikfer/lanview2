@@ -52,7 +52,7 @@ void cRecordTree::init()
     case ENUM2SET2(TS_TREE, TS_IMEMBER):
     case ENUM2SET2(TS_TREE, TS_NMEMBER):
         if (pUpper == NULL) EXCEPTION(EDATA);
-        if (tit != TIT_NO && tit != TIT_ONLY) EXCEPTION(EDATA);
+        if (tableInhType != TIT_NO && tableInhType != TIT_ONLY) EXCEPTION(EDATA);
         buttons.clear();
         buttons << DBT_EXPAND << DBT_REFRESH << DBT_SPACER;
         switch (shapeType) {

@@ -336,7 +336,8 @@ INSERT INTO unusual_fkeys
   ( 'phs_links_table',  'port_id1',     'property',         'nports',       'port_id',      '{nports, pports, interfaces}'),
   ( 'phs_links_table',  'port_id2',     'property',         'nports',       'port_id',      '{nports, pports, interfaces}'),
   ( 'log_links_table',  'port_id1',     'property',         'nports',       'port_id',      '{nports, interfaces}'),
-  ( 'log_links_table',  'port_id2',     'property',         'nports',       'port_id',      '{nports, interfaces}');
+  ( 'log_links_table',  'port_id2',     'property',         'nports',       'port_id',      '{nports, interfaces}'),
+  ( 'table_shapes',     'right_shape_ids','self',           'table_shapes', 'table_shape_id',NULL );
 
 CREATE TABLE fkey_types (
     fkey_type_id        bigserial  NOT NULL PRIMARY KEY,

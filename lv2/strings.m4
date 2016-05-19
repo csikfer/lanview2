@@ -545,6 +545,15 @@ STRDEF(PhsLinks, "phs_links")
  STRDEF(ModifyTime, "modify_time")
  STRDEF(ModifyUserId, "modify_user_id")
  STRDEF(Forward, "forward")
+STRDEF(PhsLinksShape, "phs_links_shape")
+STRDEF(NodeId1, "node_id1");
+STRDEF(NodeId2, "node_id2");
+ STRDEF(NodeName1, "node_name1");
+ STRDEF(NodeName2, "node_name2");
+ STRDEF(PortFullName1, "port_full_name1")
+ STRDEF(PortFullName2, "port_full_name2")
+ STRDEF(PortIndex1, "port_index1")
+ STRDEF(PortIndex2, "port_index2")
 STRDEF(LogLinksTable, "log_links_table")
 STRDEF(LogLinks, "log_links")
 STRDEF(LldpLinksTable, "lldp_links_table")

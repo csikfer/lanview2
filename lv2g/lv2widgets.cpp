@@ -146,6 +146,7 @@ QString fieldWidgetType(int _t)
     case FEW_LINE:          return "cFieldLineWidget";
     case FEW_TEXT:          return "cFieldLineWidget/long";
     case FEW_ARRAY:         return "cArrayWidget";
+    case FEW_FKEY_ARRAY:    return "cFKeyArrayWidget";
     case FEW_POLYGON:       return "cPolygonWidget";
     case FEW_FKEY:          return "cFKeyWidget";
     case FEW_DATE:          return "cDateWidget";
@@ -241,7 +242,7 @@ void cFieldEditBase::setFromWidget(QVariant v)
     changedValue(this);
 }
 
-cFieldEditBase * cFieldEditBase::anotherField(const QString& __fn, bool __ex)
+cFieldEditBase * cFieldEditBase::anotherField(const QString& __fn, eEx __ex)
 {
     cFieldEditBase *p = _parent[__fn];
     if (p == NULL && __ex) {
@@ -1071,13 +1072,13 @@ void cPolygonWidget::setButtons()
     pUi->doubleSpinBoxZoom->setEnabled(pMapWin != NULL);
 }
 
-QModelIndex cPolygonWidget::actIndex(bool __ex)
+QModelIndex cPolygonWidget::actIndex(eEx __ex)
 {
     if (__ex && !_actIndex.isValid()) EXCEPTION(EDATA);
     return _actIndex;
 }
 
-int cPolygonWidget::actRow(bool __ex)
+int cPolygonWidget::actRow(eEx __ex)
 {
     if (__ex && _actRow < 0) EXCEPTION(EDATA);
     return _actRow;

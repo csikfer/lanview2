@@ -1,6 +1,7 @@
 #ifndef QTELNET_H
 #define QTELNET_H
 
+#include "lv2_global.h"
 #include <QObject>
 #include <QHostAddress>
 #include <QTcpSocket>
@@ -14,10 +15,10 @@ public:
     explicit QTelnet(QHostAddress& host, int to = -1, QObject *parent = 0);
     ~QTelnet();
 
-    bool open(QHostAddress& host, int to = -1, bool __ex = true);
-    bool close(int to = -1, bool __ex = true);
-    bool waitForConnected(int to = 30000, bool __ex = true);
-    bool waitForDisconnected(int to = 30000, bool __ex = true);
+    bool open(QHostAddress& host, int to = -1, enum eEx __ex = EX_ERROR);
+    bool close(int to = -1, enum eEx __ex = EX_ERROR);
+    bool waitForConnected(int to = 30000, enum eEx __ex = EX_ERROR);
+    bool waitForDisconnected(int to = 30000, enum eEx __ex = EX_ERROR);
     void setTcpPort(int __p = 23) { port = __p; }
 
 signals:

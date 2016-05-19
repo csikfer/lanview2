@@ -335,13 +335,13 @@ qlonglong cInspector::rnd(qlonglong i, qlonglong m)
 
 void cInspector::down()
 {
-    stop(false);
+    stop(EX_IGNORE);
     if (internalStat != IS_DOWN) {
         setInternalStat(IS_DOWN);
     }
     dropSubs();
     if (pThread   != NULL) {
-        dropThreadDb(pThread->objectName(), false);
+        dropThreadDb(pThread->objectName(), EX_IGNORE);
         delete pThread;
         pThread = NULL;
     }
@@ -425,8 +425,8 @@ void cInspector::postInit(QSqlQuery& q, const QString& qs)
         pProcess = newProcess();
     }
     // Az időzítéssek, ha kellenek
-    interval = variantToId(get(_sNormalCheckInterval), false, -1);
-    retryInt = variantToId(get(_sRetryCheckInterval),  false, interval);
+    interval = variantToId(get(_sNormalCheckInterval), EX_IGNORE, -1);
+    retryInt = variantToId(get(_sRetryCheckInterval),  EX_IGNORE, interval);
     if (interval <=  0 && isTimed()) {   // Időzített időzítés nélkül !
         EXCEPTION(EDATA, interval, QObject::trUtf8("%1 időzített lekérdezés, időzítés nélkül.").arg(name()));
     }
@@ -499,7 +499,7 @@ cRecordFieldConstRef cInspector::get(const QString& __n) const
     return r;
 }
 
-cFeatures& cInspector::splitFeature(bool __ex)
+cFeatures& cInspector::splitFeature(eEx __ex)
 {
     int ixFeatures = cService::_descr_cService().toIndex(_sFeatures);
 
@@ -835,18 +835,18 @@ bool cInspector::toRun(bool __timed)
         pDelete(lastError);
         QString msg = QString(QObject::trUtf8("Hiba, ld.: app_errs.applog_id = %1")).arg(id);
         sqlBegin(*pq);
-        hostService.setState(*pq, _sUnknown, msg, parentId(false));
+        hostService.setState(*pq, _sUnknown, msg, parentId(EX_IGNORE));
     }
     // Ha ugyan nem volt hiba, de sokat tököltünk
     else if (retStat < RS_WARNING
              && ((interval > 0 && lastRun.hasExpired(interval))
                  || (__timed   && lastElapsedTime > ((interval*3)/2)))) {
         QString msg = QString(QObject::trUtf8("Idő tullépés, futási idö %1 ezred másodperc")).arg(lastRun.elapsed());
-        hostService.setState(*pq, notifSwitch(RS_WARNING), msg, parentId(false));
+        hostService.setState(*pq, notifSwitch(RS_WARNING), msg, parentId(EX_IGNORE));
     }
     else if (!statIsSet) {   // Ha nem volt status állítás
         QString msg = QString(QObject::trUtf8("Futási idő %1 ezred másodperc")).arg(lastRun.elapsed());
-        hostService.setState(*pq, notifSwitch(retStat), msg, parentId(false));
+        hostService.setState(*pq, notifSwitch(retStat), msg, parentId(EX_IGNORE));
     }
     sqlEnd(*pq);
     return statSetRetry;
@@ -1050,7 +1050,7 @@ void cInspector::startSubs()
     }
 }
 
-void cInspector::stop(bool __ex)
+void cInspector::stop(eEx __ex)
 {
     _DBGFN() << name() << endl;
     if (internalStat != IS_DOWN && internalStat != IS_REINIT) setInternalStat(IS_DOWN);
@@ -1210,7 +1210,7 @@ QString cInspector::getParValue(QSqlQuery& q, const QString& name, bool *pOk) co
 
 /* ********************************************************************************** */
 
-const QString& notifSwitch(int _ns, bool __ex)
+const QString& notifSwitch(int _ns, eEx __ex)
 {
     _ns = (enum eNotifSwitch)(_ns & ~RS_STAT_SETTED);
     switch (_ns) {
@@ -1227,7 +1227,7 @@ const QString& notifSwitch(int _ns, bool __ex)
     return _sNul;
 }
 
-int notifSwitch(const QString& _nm, bool __ex)
+int notifSwitch(const QString& _nm, eEx __ex)
 {
     if (0 == _nm.compare(_sOn,         Qt::CaseInsensitive)) return RS_ON;
     if (0 == _nm.compare(_sRecovered,  Qt::CaseInsensitive)) return RS_RECOVERED;

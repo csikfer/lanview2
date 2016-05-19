@@ -281,7 +281,7 @@ bool operator<(const QHostAddress& __a1, const QHostAddress& __a2)
     return false;
 }
 
-int toIPv4Mask(const QHostAddress& __a, bool __ex)
+int toIPv4Mask(const QHostAddress& __a, eEx __ex)
 {
     quint32 a = __a.toIPv4Address();
     //_DBGFN() << "@(" << __a.toString() << " (" << hex << a <<  "), " << DBOOL(__ex) << QChar(')') << endl;

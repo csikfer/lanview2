@@ -76,7 +76,7 @@ public:
     }
     void cat(cHostServices *pp) {
         cHostService *p;
-        while (NULL != (p = pp->pop_front(false))) pp->append(p);
+        while (NULL != (p = pp->pop_front(EX_IGNORE))) pp->append(p);
         delete pp;
     }
 };
@@ -512,7 +512,7 @@ static qlonglong newAttachedNode(const QString& __n, const QString& __d)
     cNode   node;
     node.asmbAttached(__n, __d, gPlace());
     node.containerValid = CV_ALL_HOST;
-    node.insert(qq(), true);
+    node.insert(qq(), EX_ERROR);
     return node.ports.first()->getId();
 }
 
@@ -521,7 +521,7 @@ static qlonglong replaceAttachedNode(const QString& __n, const QString& __d)
     cNode   node;
     node.asmbAttached(__n, __d, gPlace());
     node.containerValid = CV_ALL_HOST;
-    node.replace(qq(), true);
+    node.replace(qq(), EX_ERROR);
     return node.ports.first()->getId();
 }
 
@@ -550,7 +550,7 @@ static qlonglong newWorkstation(const QString& __n, const cMac& __mac, const QSt
     cNode host;
     host.asmbWorkstation(qq(), __n, __mac, __d, gPlace());
     host.containerValid = CV_ALL_HOST;
-    host.insert(qq(), true);
+    host.insert(qq(), EX_ERROR);
     return host.ports.first()->getId();
 }
 
@@ -559,7 +559,7 @@ static qlonglong replaceWorkstation(const QString& __n, const cMac& __mac, const
     cNode host;
     host.asmbWorkstation(qq(), __n, __mac, __d, gPlace());
     host.containerValid = CV_ALL_HOST;
-    host.replace(qq(), true);
+    host.replace(qq(), EX_ERROR);
     return host.ports.first()->getId();
 }
 
@@ -606,7 +606,7 @@ void cLink::side(eSide __e, QString * __n, QString *__p, int __s)
         nid = nodeId(__e);  // A blokk fejlécében megadott node, ha van
         if (nid == NULL_ID) EXCEPTION(EDATA, -1, "Nincs megadva node!");
     }
-    portId(__e) = cNPort::getPortIdByName(qq(), *__p, nid, false);
+    portId(__e) = cNPort::getPortIdByName(qq(), *__p, nid, EX_IGNORE);
     if (portId(__e) == NULL_ID) yyerror(QObject::trUtf8("Invalid left port specification, #%1:%2").arg(nid). arg(*__p));
     if (__s != 0) {
         if (share.size() > 0) yyerror(QObject::trUtf8("Multiple share defined"));
@@ -629,13 +629,13 @@ void cLink::side(eSide __e, QString * __n, int __p, int __s)
             portId(__e) = ep.getId();
         }
         else {
-            portId(__e) = cNPort::getPortIdByIndex(qq(), __p, nid, false);
+            portId(__e) = cNPort::getPortIdByIndex(qq(), __p, nid, EX_IGNORE);
         }
     }
     else {
         nid = nodeId(__e);
         if (nid == NULL_ID) EXCEPTION(EDATA, -1, QObject::trUtf8("Nincs megadva node!"));
-        portId(__e) = cNPort::getPortIdByIndex(qq(), __p, nid, false);
+        portId(__e) = cNPort::getPortIdByIndex(qq(), __p, nid, EX_IGNORE);
     }
     if (portId(__e) == NULL_ID) {
         yyerror(QObject::trUtf8("Invalid port index, #%1:#%2").arg(nid).arg(__p));
@@ -752,8 +752,8 @@ void cLink::replace(QString *__hn1, qlonglong __pi1, QString *__hn2, qlonglong _
     qlonglong nid1 = __hn1->size() > 0 ? cPatch::getNodeIdByName(qq(), *__hn1) : nodeId1;
     qlonglong nid2 = __hn2->size() > 0 ? cPatch::getNodeIdByName(qq(), *__hn2) : nodeId2;
     while (__n--) {
-        lnk[_sPortId1] = cNPort::getPortIdByIndex(qq(), __pi1, nid1, true);
-        lnk[_sPortId2] = cNPort::getPortIdByIndex(qq(), __pi2, nid2, true);
+        lnk[_sPortId1] = cNPort::getPortIdByIndex(qq(), __pi1, nid1, EX_ERROR);
+        lnk[_sPortId2] = cNPort::getPortIdByIndex(qq(), __pi2, nid2, EX_ERROR);
         lnk.insert(qq());
         lnk.clear(lnk.idIndex());   // töröljük az id-t mert a köv insert-nél baj lessz.
         __pi1++;                    // Léptetjük az indexeket
@@ -1189,7 +1189,7 @@ static void patchCopy(QStringList *pExl, QStringList *pInc, QString *pSrc)
         mask = ~pPatch->mask(_sNodeId, _sNodeName);
         ports = params = true;
         foreach (QString fn, *pExl) {
-            int i = pPatch->toIndex(fn, false);
+            int i = pPatch->toIndex(fn, EX_IGNORE);
             if (i < 0) {
                 if      (0 == fn.compare(_sPorts,  Qt::CaseInsensitive)) ports  = false;
                 else if (0 == fn.compare(_sParams, Qt::CaseInsensitive)) params = false;
@@ -1203,7 +1203,7 @@ static void patchCopy(QStringList *pExl, QStringList *pInc, QString *pSrc)
         mask.resize(pPatch->cols());
         ports = params = false;
         foreach (QString fn, *pExl) {
-            int i = pPatch->toIndex(fn, false);
+            int i = pPatch->toIndex(fn, EX_IGNORE);
             if (i < 0) {
                 if      (0 == fn.compare(_sPorts,  Qt::CaseInsensitive)) ports  = true;
                 else if (0 == fn.compare(_sParams, Qt::CaseInsensitive)) params = true;
@@ -1608,7 +1608,7 @@ port_id : node_id ':' str                       { $$ = cNPort().setPortByName(qq
 // Név alapján a vlans rekord ID-t adja vissza
 vlan_id : str                                   { $$ = cVLan().getIdByName(qq(), *$1); delete $1; }
 // Az int-el azonos, de ellenörzi, hogy az érték egy vlan id-e
-        | int                                   { cVLan().getNameById(qq(), $$ = $1, true); }
+        | int                                   { cVLan().getNameById(qq(), $$ = $1, EX_ERROR); }
         ;
 // Név alapján a places rekord ID-t adja vissza
 place_id: str                                   { $$ = cPlace().getIdByName(qq(), *$1); delete $1; }
@@ -2318,7 +2318,7 @@ ipprotp : TCP_T                     { $$ = EP_TCP; }
 ipprot  : ICMP_T                    { $$ = EP_ICMP; }
         | IP_T                      { $$ = EP_IP; }
         | NIL_T                     { $$ = EP_NIL; }
-        | PROTOCOL_T str            { $$ = cIpProtocol().getIdByName(qq(), *$2, true); delete $2; }
+        | PROTOCOL_T str            { $$ = cIpProtocol().getIdByName(qq(), *$2, EX_ERROR); delete $2; }
         ;
 srvmsgs : srvmsg
         | srvmsgs srvmsg
@@ -2360,21 +2360,21 @@ hsrv_p  : PRIME_T SERVICE_T srvid ';'           { pHostServices->sets(_sPrimeSer
 fhs
 // Csak az eszköz és a szervíz típus neve(minta) van megadva:  <host>.<service>
         : str '.' str                           { NEWOBJ(pHostService2, cHostService());
-                                                  $$ = pHostService2->fetchFirstByNamePatterns(qq(), sp2s($1), sp2s($3), false); }
+                                                  $$ = pHostService2->fetchFirstByNamePatterns(qq(), sp2s($1), sp2s($3), EX_IGNORE); }
 // Csak az eszköz és a szervíz típus neve van megadva:  <host>:<port>.<service>
 // Ha a port nevet elhagyjuk, akkor ott NULL-t vár
         | str ':' str '.' str                 { NEWOBJ(pHostService2, cHostService());
-                                                  $$ = pHostService2->fetchByNames(qq(), sp2s($1), sp2s($5), sp2s($3), false); }
+                                                  $$ = pHostService2->fetchByNames(qq(), sp2s($1), sp2s($5), sp2s($3), EX_IGNORE); }
 // Az összes azonosító megadva:  <host>:<port>.<service>(<protokol srv.>:<prime.srv.>)
 // Ha a port nevet elhagyjuk, akkor ott NULL-t vár, a két utlsó paramétert elhagyva a 'nil' szolgáltatás típust jelenti
         | str ':' str '.' str '(' str_z ':' str_z ')'
                                                 { NEWOBJ(pHostService2, cHostService());
-                                                  $$ = pHostService2->fetchByNames(qq(), sp2s($1), sp2s($5), sp2s($3), sp2s($7), sp2s($9), false); }
+                                                  $$ = pHostService2->fetchByNames(qq(), sp2s($1), sp2s($5), sp2s($3), sp2s($7), sp2s($9), EX_IGNORE); }
 // A port kivételével az összes azonosító megadva:  <host>.<service>(<protokol srv.>:<prime.srv.>)
 // Ha a port nevet elhagyjuk, akkor ott NULL-t vár, a két utlsó paramétert elhagyva a 'nil' szolgáltatás típust jelenti
         | str '.' str '(' str_z ':' str_z ')'
                                                 { NEWOBJ(pHostService2, cHostService());
-                                                  $$ = pHostService2->fetchByNames(qq(), sp2s($1), sp2s($3), _sNul, sp2s($5), sp2s($7), false); }
+                                                  $$ = pHostService2->fetchByNames(qq(), sp2s($1), sp2s($3), _sNul, sp2s($5), sp2s($7), EX_IGNORE); }
         ;
 // A megadott host_services rekord ID-vel tér vissza, ha nem azonosítható be a rekord, akkor hívja yyyerror()-t.
 hsid    : fhs                                   { if ($1 == 0) yyerror("Not found");
@@ -2598,21 +2598,21 @@ if      : IFDEF_T  ifdef                        { yyskip(!$2);  }
         | SET_T REPLACE_T ';'                   { globalReplaceFlag = true; }
         | SET_T INSERT_T ';'                    { globalReplaceFlag = false; }
         ;
-ifdef   : PLACE_T str                   { $$ = NULL_ID != cPlace().     getIdByName(qq(), sp2s($2), false); }
-        | PLACE_T GROUP_T str           { $$ = NULL_ID != cPlaceGroup().getIdByName(qq(), sp2s($3), false); }
-        | USER_T str                    { $$ = NULL_ID != cUser().      getIdByName(qq(), sp2s($2), false); }
-        | USER_T GROUP_T str            { $$ = NULL_ID != cGroup().     getIdByName(qq(), sp2s($3), false); }
-        | GROUP_T str                   { $$ = NULL_ID != cGroup().     getIdByName(qq(), sp2s($2), false); }
-        | PATCH_T str                   { $$ = NULL_ID != cPatch().     getIdByName(qq(), sp2s($2), false); }
-        | NODE_T  str                   { $$ = NULL_ID != cNode().      getIdByName(qq(), sp2s($2), false); }
-        | VLAN_T  str                   { $$ = NULL_ID != cVLan().      getIdByName(qq(), sp2s($2), false); }
-        | SUBNET_T str                  { $$ = NULL_ID != cSubNet().    getIdByName(qq(), sp2s($2), false); }
-        | TABLE_T SHAPE_T str           { $$ = NULL_ID != cTableShape().getIdByName(qq(), sp2s($3), false); }
-        | SERVICE_T str                 { $$ = NULL_ID != cService().   getIdByName(qq(), sp2s($2), false); }
+ifdef   : PLACE_T str                   { $$ = NULL_ID != cPlace().     getIdByName(qq(), sp2s($2), EX_IGNORE); }
+        | PLACE_T GROUP_T str           { $$ = NULL_ID != cPlaceGroup().getIdByName(qq(), sp2s($3), EX_IGNORE); }
+        | USER_T str                    { $$ = NULL_ID != cUser().      getIdByName(qq(), sp2s($2), EX_IGNORE); }
+        | USER_T GROUP_T str            { $$ = NULL_ID != cGroup().     getIdByName(qq(), sp2s($3), EX_IGNORE); }
+        | GROUP_T str                   { $$ = NULL_ID != cGroup().     getIdByName(qq(), sp2s($2), EX_IGNORE); }
+        | PATCH_T str                   { $$ = NULL_ID != cPatch().     getIdByName(qq(), sp2s($2), EX_IGNORE); }
+        | NODE_T  str                   { $$ = NULL_ID != cNode().      getIdByName(qq(), sp2s($2), EX_IGNORE); }
+        | VLAN_T  str                   { $$ = NULL_ID != cVLan().      getIdByName(qq(), sp2s($2), EX_IGNORE); }
+        | SUBNET_T str                  { $$ = NULL_ID != cSubNet().    getIdByName(qq(), sp2s($2), EX_IGNORE); }
+        | TABLE_T SHAPE_T str           { $$ = NULL_ID != cTableShape().getIdByName(qq(), sp2s($3), EX_IGNORE); }
+        | SERVICE_T str                 { $$ = NULL_ID != cService().   getIdByName(qq(), sp2s($2), EX_IGNORE); }
         | HOST_T  SERVICE_T fhs         { $$ = $3 != 0; pDelete(pHostService2); }
-        | MACRO_T str ';'               { $$ = !templates[_sMacros].get(qq(), sp2s($2), false).isEmpty(); }
-        | TEMPLATE_T PATCH_T str ';'    { $$ = !templates[_sPatchs].get(qq(), sp2s($3), false).isEmpty(); }
-        | TEMPLATE_T NODE_T str ';'     { $$ = !templates[_sNodes]. get(qq(), sp2s($3), false).isEmpty(); }
+        | MACRO_T str ';'               { $$ = !templates[_sMacros].get(qq(), sp2s($2), EX_IGNORE).isEmpty(); }
+        | TEMPLATE_T PATCH_T str ';'    { $$ = !templates[_sPatchs].get(qq(), sp2s($3), EX_IGNORE).isEmpty(); }
+        | TEMPLATE_T NODE_T str ';'     { $$ = !templates[_sNodes]. get(qq(), sp2s($3), EX_IGNORE).isEmpty(); }
 /*      | ENUM_T TITLE_T  strs ';'     { $$ = NULL_ID != cEnumVal().; }
         | ENUM_T TITLE_T  str strs ';' { $$ = NULL_ID != cEnumVal().; }
         | GUI_T strs MENU_T ';'        { $$ = NULL_ID != cMenuItem(); } */

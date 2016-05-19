@@ -21,7 +21,7 @@
 
 #ifdef MUST_SNMP
 
-const QString&  snmpIfStatus(int __i, bool __ex)
+const QString&  snmpIfStatus(int __i, eEx __ex)
 {
     switch(__i) {
     case IF_UP:             return _sUp;
@@ -36,7 +36,7 @@ const QString&  snmpIfStatus(int __i, bool __ex)
     return _sNul;
 }
 
-int  snmpIfStatus(const QString& __s, bool __ex)
+int  snmpIfStatus(const QString& __s, eEx __ex)
 {
     if (!_sUp.compare(__s, Qt::CaseInsensitive))            return IF_UP;
     if (!_sDown.compare(__s, Qt::CaseInsensitive))          return IF_DOWN;

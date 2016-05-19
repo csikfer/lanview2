@@ -436,6 +436,8 @@ TABLE SHAPE places "Helyiségek" {
 }
 SET table_shapes[place_groups].right_shape_ids = ID TABLE SHAPE ( places );
 
+include "form_link.txt";
+
 GUI lv2gui {
     file MENU {
         TITLE "fájl";
@@ -471,6 +473,10 @@ GUI lv2gui {
         host_service_logs SHAPE host_service_logs { TITLE "Szervíz állapot napló",@;  }
         olalarm     OWN     olalarm         {   TITLE "On-Line riasztások",@;  }
         api_ecodes  OWN     errcodes        {   TITLE "API hiba kódok",@; }
+    }
+    topology MENU {
+        TITLE "Hálózati topológia";
+        phsnodes    SHAPE   phsnodes        {   TITLE "Hálózati csomópontok",@; }
     }
     netothers MENU {
         TITLE "Egyébb hálózati adatok";

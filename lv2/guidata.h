@@ -34,12 +34,12 @@ enum eTableShapeType {
 /// @param n Az enumerációs értéket reprezentáló string az adatbázisban
 /// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs név esetén kizárást dob.
 /// @return Az enumerációs névhez tartozó enumeráxiós konstans, vagy TS_UNKNOWN, ha ismeretlen a név, és __ex hamis.
-EXT_ int tableShapeType(const QString& n, bool __ex = true);
+EXT_ int tableShapeType(const QString& n, enum eEx __ex = EX_ERROR);
 /// Konverziós függvény a eTableShapeType enumerációs típushoz
 /// @param e Az enumerációs konstans
 /// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs konstans esetén kizárást dob.
 /// @return Az enumerációs konstanshoz tartozó enumeráxiós név, vagy üres string, ha ismeretlen a konstams, és __ex hamis.
-EXT_ const QString&       tableShapeType(int e, bool __ex = true);
+EXT_ const QString&       tableShapeType(int e, enum eEx __ex = EX_ERROR);
 
 /// @enum eTableInheritType
 /// A tábla öröklés kezelése
@@ -58,12 +58,12 @@ enum eTableInheritType {
 /// @param n Az enumerációs értéket reprezentáló string az adatbázisban
 /// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs név esetén kizárást dob.
 /// @return Az enumerációs névhez tartozó enumeráxiós konstans, vagy TIT_UNKNOWN, ha ismeretlen a név, és __ex hamis.
-EXT_ int tableInheritType(const QString& n, bool __ex = true);
+EXT_ int tableInheritType(const QString& n, eEx __ex = EX_ERROR);
 /// Konverziós függvény a eTableInheritType enumerációs típushoz
 /// @param e Az enumerációs konstans
 /// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs konstans esetén kizárást dob.
 /// @return Az enumerációs konstanshoz tartozó enumeráxiós név, vagy üres string, ha ismeretlen a konstams, és __ex hamis.
-EXT_ const QString& tableInheritType(int e, bool __ex = true);
+EXT_ const QString& tableInheritType(int e, eEx __ex = EX_ERROR);
 
 /// @enum eOrderType
 /// Rendezési lehetőségek
@@ -79,12 +79,12 @@ enum eOrderType {
 /// @param n Az enumerációs értéket reprezentáló string az adatbázisban
 /// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs név esetén kizárást dob.
 /// @return Az enumerációs névhez tartozó enumeráxiós konstans, vagy OT_UNKNOWN, ha ismeretlen a név, és __ex hamis.
-EXT_ int orderType(const QString& n, bool __ex = true);
+EXT_ int orderType(const QString& n, eEx __ex = EX_ERROR);
 /// Konverziós függvény a eOrderType enumerációs típushoz
 /// @param e Az enumerációs konstans
 /// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs konstans esetén kizárást dob.
 /// @return Az enumerációs konstanshoz tartozó enumeráxiós név, vagy üres string, ha ismeretlen a konstams, és __ex hamis.
-EXT_ const QString&  orderType(int e, bool __ex = true);
+EXT_ const QString&  orderType(int e, eEx __ex = EX_ERROR);
 
 enum eFieldFlag {
     FF_UNKNOWN = -1,    ///< ismeretlen, csak hibajelzésre
@@ -96,8 +96,8 @@ enum eFieldFlag {
     FF_HUGE             ///< A TEXT típusú mező több soros
 };
 
-EXT_ int fieldFlag(const QString& n, bool __ex = true);
-EXT_ const QString& fieldFlag(int e, bool __ex = true);
+EXT_ int fieldFlag(const QString& n, eEx __ex = EX_ERROR);
+EXT_ const QString& fieldFlag(int e, eEx __ex = EX_ERROR);
 
 /// @enum eFilterType
 /// Szűrési metódusok
@@ -120,12 +120,12 @@ enum eFilterType {
 /// @param n Az enumerációs értéket reprezentáló string az adatbázisban
 /// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs név esetén kizárást dob.
 /// @return Az enumerációs névhez tartozó enumeráxiós konstans, vagy FT_UNKNOWN, ha ismeretlen a név, és __ex hamis.
-EXT_ int filterType(const QString& n, bool __ex = true);
+EXT_ int filterType(const QString& n, eEx __ex = EX_ERROR);
 /// Konverziós függvény a eFilterType enumerációs típushoz
 /// @param e Az enumerációs konstans
 /// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs konstans esetén kizárást dob.
 /// @return Az enumerációs konstanshoz tartozó enumeráxiós név, vagy üres string, ha ismeretlen a konstams, és __ex hamis.
-EXT_ const QString&   filterType(int e, bool __ex = true);
+EXT_ const QString&   filterType(int e, eEx __ex = EX_ERROR);
 
 class cTableShapeField;
 class cTableShape;
@@ -142,8 +142,8 @@ public:
     virtual void toEnd();
     virtual bool toEnd(int i);
     virtual void clearToEnd();
-    virtual bool insert(QSqlQuery &__q, bool __ex = true);
-    virtual bool rewrite(QSqlQuery &__q, bool __ex = true);
+    virtual bool insert(QSqlQuery &__q, eEx __ex = EX_ERROR);
+    virtual bool rewrite(QSqlQuery &__q, eEx __ex = EX_ERROR);
     cTableShape& setShapeType(qlonglong __t);
     int fetchFields(QSqlQuery& q);
     /// Az objektumhoz feltölti a ShapeFields konténert, default értékekkel.
@@ -157,43 +157,41 @@ public:
     /// @param _v a beállítandó érték
     /// @param __ex Ha értéke true, akkor hiba esetén (nincs ilyen nevű mező, vagy paraméter) dob egy kizárást.
     /// @return Ha beállította az értéket, akkor true.
-    bool fset(const QString& _fn, const QString& _fpn, const QVariant& _v, bool __ex = true);
+    bool fset(const QString& _fn, const QString& _fpn, const QVariant& _v, eEx __ex = EX_ERROR);
     /// Egy érték beállítása a megadott mezők leíróiban
     /// @param _fnl A mezők nevei a (megjelenítendő) táblában.
     /// @param _fpn A mező leíró paraméterének a neve
     /// @param _v a beállítandó érték
     /// @param __ex Ha értéke true, akkor hiba esetén (nincs ilyen nevű mező, vagy paraméter) dob egy kizárást.
     /// @return Ha beállította minden megadott mezőre az értéket, akkor true.
-    bool fsets(const QStringList& _fnl, const QString& _fpn, const QVariant& _v, bool __ex = true);
+    bool fsets(const QStringList& _fnl, const QString& _fpn, const QVariant& _v, eEx __ex = EX_ERROR);
     /// Egy új szűrő objektum hozzáadáse a mező leíróhoz
     /// @param _fnl A mező neve a táblában, melynek a leírója az objektum
     /// @param _t A szűrő típusa
     /// @param _d A szűrő megjelenített neve/leírása
     /// @param __ex Ha értéke true, akkor hiba esetén (nincs ilyen nevű mező) dob egy kizárást.
     /// @return Ha beállította minden megadott mezőre az értéket, akkor true.
-    bool addFilter(const QString& _fn, const QString& _t, const QString& _d, bool __ex = true);
+    bool addFilter(const QString& _fn, const QString& _t, const QString& _d, eEx __ex = EX_ERROR);
     /// Egy új szűrő objektum hozzáadáse a mező leíróhoz
     /// @param _fnl A mezők nevei a táblában, melynek a leíróta az objektum
     /// @param _t A szűrő típusa
     /// @param _d A szűrő megjelenített neve/leírása
     /// @param __ex Ha értéke true, akkor hiba esetén (nincs ilyen nevű mező) dob egy kizárást.
     /// @return Ha beállította minden megadott mezőre az értéket, akkor true.
-    bool addFilter(const QStringList& _fnl, const QString& _t, const QString& _d, bool __ex = true);
-    bool addFilter(const QStringList& _fnl, const QStringList& _ftl, bool __ex = true);
-    bool setAllOrders(QStringList& _ord, bool __ex = true);
-    bool setOrders(const QStringList& _fnl, QStringList& _ord, bool __ex = true);
+    bool addFilter(const QStringList& _fnl, const QString& _t, const QString& _d, eEx __ex = EX_ERROR);
+    bool addFilter(const QStringList& _fnl, const QStringList& _ftl, eEx __ex = EX_ERROR);
+    bool setAllOrders(QStringList& _ord, eEx __ex = EX_ERROR);
+    bool setOrders(const QStringList& _fnl, QStringList& _ord, eEx __ex = EX_ERROR);
     /// A mazők megjelenítésési sorrendjének a megváltoztatása
     /// @param _fnl A felsorolt nevű mezők sorrendjének a megadása
     /// @param last Az utolsó sorszám, melyhez tartozó mező sorrrendje nem változik, ill. ahonnan folytatjuk a sorszámozást.
     /// @param __ex Ha olyan mező nevet adunk meg, ami nem létezik, dob egy kizárást.
     /// @return Hiba esetén false, egyébként true.
-    bool setFieldSeq(const QStringList& _fnl, int last = 0, bool __ex = true);
-    bool setOrdSeq(const QStringList& _fnl, int last = 0, bool __ex = true);
+    bool setFieldSeq(const QStringList& _fnl, int last = 0, eEx __ex = EX_ERROR);
+    bool setOrdSeq(const QStringList& _fnl, int last = 0, eEx __ex = EX_ERROR);
 
     ///
     bool typeIs(eTableShapeType _t) const { return getId(_sTableShapeType) & enum2set(_t); }
-//  bool fetchLeft(QSqlQuery& q, cTableShape * _po, bool _ex = true) const;
-//  int fetchRight(QSqlQuery& q, tTableShapes *&_pol, bool _ex = true) const;
     const cRecStaticDescr * getRecDescr() const { return cRecStaticDescr::get(getName(_sTableName)); }
     /// Létrehoz, és hozzáad egy mező onjekrumot a shapeFields konténerhez.
     /// @param _name  A mező/oszlop neve
@@ -201,7 +199,7 @@ public:
     /// @param _note Megjegyzés
     /// @return Az új (konténerbe helyezett) objektum pointere.
     /// @exception Ha már létezik ilyen nevű elem a konténerben.
-    cTableShapeField *addField(const QString& _name, const QString& _note = _sNul, bool __ex = true);
+    cTableShapeField *addField(const QString& _name, const QString& _note = _sNul, eEx __ex = EX_ERROR);
     ///
     void addRightShape(QStringList& _sn);
     void setRightShape(QStringList& _sn) { clear(_sRightShapeIds); addRightShape(_sn); }
@@ -226,12 +224,12 @@ public:
     virtual void toEnd();
     virtual bool toEnd(int i);
     virtual void clearToEnd();
-    virtual bool insert(QSqlQuery &__q, bool __ex);
-    virtual bool rewrite(QSqlQuery &__q, bool __ex);
+    virtual bool insert(QSqlQuery &__q, eEx __ex = EX_ERROR);
+    virtual bool rewrite(QSqlQuery &__q, eEx __ex = EX_ERROR);
     void setTitle(const QStringList& _tt);
     int fetchFilters(QSqlQuery& q);
-    bool addFilter(const QString& _t, const QString& _d, bool __ex = true);
-    bool fetchByNames(QSqlQuery& q, const QString& tsn, const QString& fn, bool __ex = false);
+    bool addFilter(const QString& _t, const QString& _d, eEx __ex = EX_ERROR);
+    bool fetchByNames(QSqlQuery& q, const QString& tsn, const QString& fn, eEx __ex = EX_ERROR);
     static qlonglong getIdByNames(QSqlQuery& q, const QString& tsn, const QString& fn);
     tTableShapeFilters shapeFilters;
     STATICIX( cTableShapeField, ixTableShapeId)

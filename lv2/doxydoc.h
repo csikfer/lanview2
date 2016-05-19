@@ -54,11 +54,11 @@ függvényeket tartalmazza az adatkezelés megkönnyítésére:
 - QSqlDatabase *  getSqlDb(void);
 - static inline QSqlQuery * newQuery(QSqlDatabase *pDb)
 - static inline QSqlQuery getQuery(QSqlDatabase *pDb)
-- void dropThreadDb(const QString& tn, bool __ex)
-- bool executeSqlScript(QFile& file, QSqlDatabase *pq, bool __e)
-- bool sqlBegin(QSqlQuery& q, bool __ex)
-- bool sqlEnd(QSqlQuery& q, bool __ex)
-- bool sqlRollback(QSqlQuery& q, bool __ex)
+- void dropThreadDb(const QString& tn, enum eEx __ex)
+- bool executeSqlScript(QFile& file, QSqlDatabase *pq, eEx __e)
+- bool sqlBegin(QSqlQuery& q, enum eEx __ex)
+- bool sqlEnd(QSqlQuery& q, enum eEx __ex)
+- bool sqlRollback(QSqlQuery& q, enum eEx __ex)
 Továbbá néhány string függvény:
 - static inline QString  mCat(const QString& a, const QString& b)
 - static inline QString dQuoted(const QString& __s)

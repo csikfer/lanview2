@@ -43,5 +43,6 @@ ERRCOD( ESOCKET,     "Communication (socket). error.")
 ERRCOD( ESTAT,       "Invalid status.")
 ERRCOD( ESEM,        "Semaphore error.")
 ERRCOD( EDISP,       "Megjelenítési hiba.")
+ERRCOD( EREDO,       "Ismételten végrehajtott művelet.")
 
-#define __LAST_ERROR_CODE__  EDISP
+#define __LAST_ERROR_CODE__  EREDO

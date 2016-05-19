@@ -84,6 +84,7 @@ enum eFieldWidgetType {
     FEW_LINE,           ///< cFieldLineWidget
     FEW_TEXT,           ///< cFieldLineWidget/long text
     FEW_ARRAY,          ///< cArrayWidget
+    FEW_FKEY_ARRAY,     ///< cFKeyArrayWidget
     FEW_POLYGON,        ///< cPolygonWidget
     FEW_FKEY,           ///< cFKeyWidget
     FEW_DATE,           ///< cDateWidget
@@ -175,7 +176,7 @@ public:
     const cTableShapeField& _fieldShape;
 protected:
     void setFromWidget(QVariant v);
-    cFieldEditBase * anotherField(const QString& __fn, bool __ex = true);
+    cFieldEditBase * anotherField(const QString& __fn, eEx __ex = EX_ERROR);
 //  cRecordFieldRef    *_pFieldRef;     ///< A mező referencia objektum pointere
     bool                _readOnly;      ///< Ha nem szerkeszthető, akkor értéke true
     bool                _nullable;      ///< Amező értéke NULL is lehet
@@ -379,8 +380,8 @@ protected:
     void modPostprod(QModelIndex select = QModelIndex());
     void setButtons();
     QModelIndex index(int row) { return pModel->index(row, 0); }
-    QModelIndex actIndex(bool __ex = true);
-    int actRow(bool __ex = true);
+    QModelIndex actIndex(eEx __ex = EX_ERROR);
+    int actRow(enum eEx __ex = EX_ERROR);
     cPolygonTableModel *pModel;
     Ui_polygonEd    *pUi;
     cImagePolygonWidget*pMapWin;       ///< Az opcionális alaprajzot megjelenítő ablak

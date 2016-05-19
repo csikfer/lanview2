@@ -413,7 +413,7 @@ cArpTable& cArpTable::getFromDb(QSqlQuery& __q)
     }   return  false; }
 
 
-bool setPortsBySnmp(cSnmpDevice& node, bool __ex, QString *pEs)
+bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs)
 {
     QString es;
     cInterface *pTempIf = NULL;
@@ -559,7 +559,7 @@ setPortsBySnmp_error:
                             node.set(f, snmp.value()); \
                         }
 
-int setSysBySnmp(cSnmpDevice &node, bool __ex, QString *pEs)
+int setSysBySnmp(cSnmpDevice &node, eEx __ex, QString *pEs)
 {
     int r = 1;  //OK
     QString es;
@@ -593,7 +593,7 @@ int setSysBySnmp(cSnmpDevice &node, bool __ex, QString *pEs)
 
 /**********************************************************************************************/
 
-QString lookup(const QHostAddress& ha, bool __ex)
+QString lookup(const QHostAddress& ha, eEx __ex)
 {
     QHostInfo hi = QHostInfo::fromName(ha.toString());
     QString r = hi.hostName();
@@ -731,7 +731,7 @@ bool cLldpScan::createSnmpDev()
 
     QString memo;
     cNode nodeByIp;
-    if (nodeByIp.fetchByIp(q, RemManAddr, false)) { // Rákeresünk az eszközre a cím alapján is. Nem kéne találatnak lennie.
+    if (nodeByIp.fetchByIp(q, RemManAddr, EX_IGNORE)) { // Rákeresünk az eszközre a cím alapján is. Nem kéne találatnak lennie.
         memo =
                 QObject::trUtf8("LLDP lekérdezés : A %1 MAC nem azonosít eszközt, de a %2 IP cím igen :\n").arg(rMac.toString()).arg(RemManAddr.toString())
               + QObject::trUtf8("Az IP cím alapján talált eszköz : \n%1\n").arg(nodeByIp.toString());
@@ -742,11 +742,11 @@ bool cLldpScan::createSnmpDev()
     QString     ma = rMac.toString();
     ip.first = RemManAddr.toString();
     ip.second= _sFixIp;
-    rDev.asmbNode(q, _sLOOKUP, NULL, &ip, &ma, _sNul, NULL_ID, false);
+    rDev.asmbNode(q, _sLOOKUP, NULL, &ip, &ma, _sNul, NULL_ID, EX_IGNORE);
     rDev.setName(_sNodeNote, "By LLDP scan.");
     int e = 0;  // Hiba azonosító
     QString es;
-    if (rDev.setBySnmp(_sNul, false, &es)) {         // e == 0 : Objektum kitöltése
+    if (rDev.setBySnmp(_sNul, EX_IGNORE, &es)) {         // e == 0 : Objektum kitöltése
         e++;
         int ixNodeType = rDev.toIndex(_sNodeType);
         rDev.clearDefectivFieldBit(ixNodeType);     // Insert beállítja, nembaj ha rossz
@@ -754,7 +754,7 @@ bool cLldpScan::createSnmpDev()
         // Ezzel most ne szívassuk magunkat, majd talán késöbb megkeresem miér teljesül néha
 //      if (rDev.isDefective() == false) {      // e == 1 : Az eddig kitöltött mezők rendben?
             e++;
-            if (rDev.insert(q, false)) {        // e == 2 : Sikerült létrehozni az objektumot ?
+            if (rDev.insert(q, EX_IGNORE)) {        // e == 2 : Sikerült létrehozni az objektumot ?
                 PDEB(INFO) << "Created SNMP Device : " << rDev.toString() << endl;
                 queued << rDev;                 // Ezt majd lekérdezzük
                 rHost.set(rDev);
@@ -811,9 +811,9 @@ bool cLldpScan::updateSnmpDev()
         rDev.containerValid = CV_PORTS | CV_PORTS_ADDRESSES;    // A VLAN-okat nem kérdezzük le.
         int e = 0;
         QString es;
-        if (rDev.setBySnmp(_sNul, false, &es)) {      // Objektum tulajdonságainak az aktualizálása
+        if (rDev.setBySnmp(_sNul, EX_IGNORE, &es)) {      // Objektum tulajdonságainak az aktualizálása
             ++e;
-            if(rDev.rewrite(q, false)) {         // Frissítjük az objektumot
+            if(rDev.rewrite(q, EX_IGNORE)) {         // Frissítjük az objektumot
                 queued << rDev;                                 // Ezt majd lekérdezzük (LLDP)
                 return true;
             }

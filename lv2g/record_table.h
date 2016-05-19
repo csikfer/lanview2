@@ -247,7 +247,7 @@ public:
     QStringList         inheritTableList;
     QMap<qlonglong, const cRecStaticDescr *> * pInhRecDescr;
     QString             viewName;   // A TEMP VIEW neve, vagy NULL, ha nincs
-    eTableInheritType   tit;
+    eTableInheritType   tableInhType;
     cRecordDialogBase  *pRecordDialog;
 
     const cRecStaticDescr& inhRecDescr(qlonglong i) const;
@@ -286,7 +286,7 @@ public:
     /// Alapértelmezetten a setEditButtons(); és setPageButtons(); metódusokat hívja
     virtual void setButtons();
     QStringList refineWhere(QVariantList& qParams);
-    QStringList where(QVariantList &qParams);
+    virtual QStringList where(QVariantList &qParams);
 
     virtual QStringList filterWhere(QVariantList& qParams);
 

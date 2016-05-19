@@ -68,7 +68,7 @@ QString langBool(bool b)
     return b ? QObject::trUtf8("igen") : QObject::trUtf8("nem");
 }
 
-bool str2bool(const QString& _b, bool __ex)
+bool str2bool(const QString& _b, enum eEx __ex)
 {
     QString b = _b.toLower();
     if (b == "t" || b == "true" || b == "y" || b == "yes" || b == "on" || b == "1") return true;
@@ -114,7 +114,7 @@ qlonglong schemaoid(QSqlQuery q, const QString& __s)
     return __schemaoid(q, __s);
 }
 
-qlonglong tableoid(QSqlQuery q, const QString& __t, qlonglong __sid, bool __ex)
+qlonglong tableoid(QSqlQuery q, const QString& __t, qlonglong __sid, eEx __ex)
 {
     // DBGFN();
     if (__sid == NULL_ID) __sid = schemaoid(q, _sPublic);
@@ -172,7 +172,7 @@ QString cColEnumType::toString() const
               + " : {" + enumValues.join(", ") + "}";
 }
 
-const cColEnumType *cColEnumType::fetchOrGet(QSqlQuery& q, const QString& name, bool _ex)
+const cColEnumType *cColEnumType::fetchOrGet(QSqlQuery& q, const QString& name, eEx __ex)
 {
 
     const cColEnumType *r = find(name);
@@ -189,7 +189,7 @@ const cColEnumType *cColEnumType::fetchOrGet(QSqlQuery& q, const QString& name, 
         } while(q.next());
         return new cColEnumType(id, name, vals);
     }
-    if (_ex) EXCEPTION(EDATA, -1, QObject::trUtf8("Ismeretlrn enumerációs típus név: %1").arg(name));
+    if (__ex) EXCEPTION(EDATA, -1, QObject::trUtf8("Ismeretlrn enumerációs típus név: %1").arg(name));
     return NULL;
 }
 
@@ -201,18 +201,18 @@ bool cColEnumType::check(const QStringList& v) const
     return true;
 }
 
-const QString& cColEnumType::enum2str(qlonglong e, bool _ex) const
+const QString& cColEnumType::enum2str(qlonglong e, eEx __ex) const
 {
     if (isContIx(enumValues, e)) {
         return enumValues[e];
     }
-    if (_ex) EXCEPTION(EDATA, e, QObject::trUtf8("Nem megengedett enumerációs érték : %1").arg(*this));
+    if (__ex) EXCEPTION(EDATA, e, QObject::trUtf8("Nem megengedett enumerációs érték : %1").arg(*this));
     return _sNul;
 }
 
-QStringList cColEnumType::set2lst(qlonglong b, bool _ex) const
+QStringList cColEnumType::set2lst(qlonglong b, eEx __ex) const
 {
-    if (_ex && !checkSet(b)) EXCEPTION(EDATA, b, QObject::trUtf8("Nem megengedett enumerációs érték : %1").arg(*this));
+    if (__ex && !checkSet(b)) EXCEPTION(EDATA, b, QObject::trUtf8("Nem megengedett enumerációs érték : %1").arg(*this));
     QStringList r;
     for (int i = 0; i < enumValues.size(); ++i) {
         if (b & (1LL << i)) r << enumValues[i];
@@ -220,28 +220,28 @@ QStringList cColEnumType::set2lst(qlonglong b, bool _ex) const
     return r;
 }
 
-qlonglong cColEnumType::str2enum(const QString& s, bool _ex) const
+qlonglong cColEnumType::str2enum(const QString& s, eEx __ex) const
 {
     for (int i = 0; i < enumValues.size(); ++i) {
         if (0 == enumValues[i].compare(s, Qt::CaseInsensitive)) return i;
     }
-    if (_ex) EXCEPTION(EDATA, -1, QObject::trUtf8("Nem megengedett enumerációs érték : %1.%2").arg(*this).arg(s));
+    if (__ex) EXCEPTION(EDATA, -1, QObject::trUtf8("Nem megengedett enumerációs érték : %1.%2").arg(*this).arg(s));
     return -1;
 
 }
-qlonglong cColEnumType::str2set(const QString& s, bool _ex) const
+qlonglong cColEnumType::str2set(const QString& s, eEx __ex) const
 {
     for (int i = 0; i < enumValues.size(); ++i) {
         if (0 == enumValues[i].compare(s, Qt::CaseInsensitive)) return 1LL << i;
     }
-    if (_ex) EXCEPTION(EDATA, -1, QObject::trUtf8("Nem megengedett enumerációs érték : %1.%2").arg(*this).arg(s));
+    if (__ex) EXCEPTION(EDATA, -1, QObject::trUtf8("Nem megengedett enumerációs érték : %1.%2").arg(*this).arg(s));
     return 0;
 }
-qlonglong cColEnumType::lst2set(const QStringList &s, bool _ex) const
+qlonglong cColEnumType::lst2set(const QStringList &s, eEx __ex) const
 {
     qlonglong r = 0;
     foreach (QString n, s) {
-        r |= str2set(n, _ex);
+        r |= str2set(n, __ex);
     }
     return r;
 }
@@ -277,7 +277,7 @@ QStringList cColEnumType::normalize(const QStringList& lst, bool *pok) const
     qlonglong r = 0;
     bool ok = true;
     foreach (QString n, lst) {
-        qlonglong b = str2set(n, false);
+        qlonglong b = str2set(n, EX_IGNORE);
         if (b == 0) ok = false;
         else        r |= b;
     }
@@ -498,7 +498,7 @@ QString cColStaticDescr::toName(const QVariant& _f) const
 
 qlonglong cColStaticDescr::toId(const QVariant& _f) const
 {
-    return variantToId(_f, false, NULL_ID);
+    return variantToId(_f, EX_IGNORE, NULL_ID);
 }
 
 QString cColStaticDescr::toView(QSqlQuery& q, const QVariant &_f) const
@@ -525,7 +525,7 @@ QString cColStaticDescr::toView(QSqlQuery& q, const QVariant &_f) const
                 // A rekurzió detektálása megvan, de kivédeni kellene, nem elég eszrevenni.
                 *const_cast<cRecordAny **>(&pFRec) = new cRecordAny(fKeyTable, fKeySchema);
             }
-            QString n = pFRec->getNameById(q, id , false);
+            QString n = pFRec->getNameById(q, id , EX_IGNORE);
             if (n.isEmpty()) return h + r;
             return n;
         }
@@ -629,18 +629,18 @@ void cColStaticDescr::checkEnum(tE2S e2s, tS2E s2e, const char *src, int lin, co
     }
     for (i = 0; i < n; ++i) {
         const QString& s = pEnumType->enumValues[i];
-        int ii = (*s2e)(s, false);
+        int ii = (*s2e)(s, EX_IGNORE);
         if (i != ii) {
             EXCEPTION(EENUMVAL, 1, QObject::trUtf8("%1 : #%2/%3 : s2e(%3) ~ %4")
                       .arg(*pEnumType).arg(i).arg(s).arg(ii) )
         }
-        const QString& ss = (*e2s)(i, false);
+        const QString& ss = (*e2s)(i, EX_IGNORE);
         if (0 != s.compare(ss, Qt::CaseInsensitive)) {
             EXCEPTION(EENUMVAL, 2, QObject::trUtf8("%1 : #%2/%3 : e2s(%4) ~ %5")
                       .arg(*pEnumType).arg(i).arg(s).arg(ii).arg(ss) )
         }
     }
-    const QString e = (*e2s)(i, false);
+    const QString e = (*e2s)(i, EX_IGNORE);
     if (e.isEmpty() == false) {    // Nem lehet több elem a konverziós függvény szerint!
         EXCEPTION(EENUMVAL, 3, QObject::trUtf8("A %1 adatvázis típus hiényos, extra elem : #%2/%3")
                   .arg(*pEnumType).arg(i).arg(e))
@@ -687,7 +687,7 @@ enum cColStaticDescr::eValueCheck cColStaticDescrBool::check(const QVariant& v, 
 
 QVariant  cColStaticDescrBool::fromSql(const QVariant& _f) const
 {
-    return str2bool(_f.toString(), true);
+    return str2bool(_f.toString(), EX_ERROR);
 }
 
 QVariant  cColStaticDescrBool::toSql(const QVariant& _f) const
@@ -719,7 +719,7 @@ QVariant  cColStaticDescrBool::set(const QVariant& _f, qlonglong & str) const
         ok = isNullable || !colDefault.isEmpty();
     }
     else if (variantIsString(_f)) {
-        r = str2bool(_f.toString(), false);
+        r = str2bool(_f.toString(), EX_IGNORE);
     }
     else if (variantIsInteger(_f)) {
         r = _f.toLongLong(&ok) != 0;
@@ -761,7 +761,7 @@ void cColStaticDescrBool::init()
 void cColStaticDescrBool::setDefValue()
 {
     if (colDefault.isNull()) return;
-    defValue = str2bool(colDefault, true);
+    defValue = str2bool(colDefault, EX_ERROR);
 }
 
 
@@ -1118,7 +1118,7 @@ QVariant  cColStaticDescrEnum::set(const QVariant& _f, qlonglong & str) const
     }
     else if (variantIsInteger(r)) {
         qlonglong i = r.toLongLong();
-        r  = enumType().enum2str(i, false);
+        r  = enumType().enum2str(i, EX_IGNORE);
         ok = enumType().checkEnum(i);
     }
     else if (!r.convert(QMetaType::QString) || !enumType().check(r.toString())) {
@@ -1238,7 +1238,7 @@ QVariant  cColStaticDescrSet::set(const QVariant& _f, qlonglong & str) const
     bool ok = true;
     if (metaIsInteger(t)) {
         qlonglong bm = _f.toLongLong();
-        sl = enumType().set2lst(bm, false);
+        sl = enumType().set2lst(bm, EX_IGNORE);
         if (enumType().checkSet(bm)) str |= ES_DEFECTIVE;
         return QVariant(sl);
     }
@@ -1270,7 +1270,7 @@ QString   cColStaticDescrSet::toName(const QVariant& _f) const
 qlonglong cColStaticDescrSet::toId(const QVariant& _f) const
 {
     if (_f.isNull()) return 0;
-    return enumType().lst2set(_f.toStringList(), false);
+    return enumType().lst2set(_f.toStringList(), EX_IGNORE);
 }
 
 
@@ -1952,7 +1952,7 @@ QString   cColStaticDescrInterval::toName(const QVariant& _f) const
 qlonglong cColStaticDescrInterval::toId(const QVariant& _f) const
 {
     // _DBGF() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
-    return variantToId(_f, false, NULL_ID);
+    return variantToId(_f, EX_IGNORE, NULL_ID);
 }
 
 CDDUPDEF(cColStaticDescrInterval)
@@ -1992,7 +1992,7 @@ cColStaticDescrList& cColStaticDescrList::operator<<(cColStaticDescr * __o)
     return *this;
 }
 
-int cColStaticDescrList::toIndex(const QString& __n, bool __ex) const
+int cColStaticDescrList::toIndex(const QString& __n, eEx __ex) const
 {
     if (__n.isEmpty()) {
         static QString msg = QObject::trUtf8("Empty field name");
@@ -2142,7 +2142,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
         // Ha egy link tábláról van szó, akkor annak itt a view tábláját kell megadni, és ebben az estenben
         // a tábla név az a view név kiegészítve a "_table" uótaggal.
         QString tn = _viewName + "_table";
-        qlonglong toid = ::tableoid(*pq, tn, _schemaOId, false);
+        qlonglong toid = ::tableoid(*pq, tn, _schemaOId, EX_IGNORE);
         if (NULL_ID != toid) {
             // PDEB(INFO) << "Table " << _viewName << QChar('/') << _tableName << " table type : LINK_TABLE." << endl;
             _tableName = tn;
@@ -2190,7 +2190,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
                 // Az ARRAY-nál a típus névhez, hozzá szokott bigyeszteni egy '_'-karakter (nem mindíg)
                 columnDescr.udtName = columnDescr.udtName.mid(1);   // Ha a saját típust keressük, az '_'-t törölni kell.
             }
-            columnDescr.pEnumType = cColEnumType::fetchOrGet(*pq2, columnDescr.udtName, false);
+            columnDescr.pEnumType = cColEnumType::fetchOrGet(*pq2, columnDescr.udtName, EX_IGNORE);
         }
         // Deleted mező?
         if (columnDescr.colName() == _sDeleted) {
@@ -2230,20 +2230,26 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
             if (_noteIndex  < 0 && i == (DESCR_INDEX +1) && columnDescr.colName().endsWith(descrSufix)) _noteIndex = DESCR_INDEX;
         }
         // A távoli kulcs mezők detektálása:
-        if (columnDescr.eColType == cColStaticDescr::FT_INTEGER) {  // Feltételezzük, hogy távoli kulcs csak egész szám (ID) lehet
-            sql = QString(
-                        "SELECT f.table_schema, f.table_name, f.column_name, t.unusual_fkeys_type"
-                        "    FROM information_schema.referential_constraints r"
-                        "    JOIN information_schema.key_column_usage        l"
-                        "        USING(constraint_name, constraint_schema)"
-                        "    JOIN information_schema.key_column_usage        f"
-                        "        ON r.unique_constraint_name = f.constraint_name AND r.unique_constraint_schema = f.constraint_schema"
-                        "    LEFT JOIN fkey_types t"
-                        "            ON l.table_schema = t.table_schema AND l.table_name = t.table_name AND l.column_name = t.column_name"
-                        "    WHERE l.table_schema = '%1' AND l.table_name = '%2' AND l.column_name = '%3'"
-                        ).arg(_schemaName, _tableName, columnDescr.colName());
-            if (!pq2->exec(sql)) SQLPREPERR(*pq2, sql);
-            if (pq2->first()) { // Ha ő egy távoli kulcs, hova:
+        if (columnDescr.eColType == cColStaticDescr::FT_INTEGER         // Feltételezzük, hogy távoli kulcs csak egész szám (ID) lehet
+         || columnDescr.eColType == cColStaticDescr::FT_INTEGER_ARRAY) {// Vannak tömbjeink is, ami kulcs, és a pg nem támogatja
+            bool regularFKey = false;
+            // Rendszer szinten támogatott kulcsok:
+            if (columnDescr.eColType == cColStaticDescr::FT_INTEGER) {
+                sql = QString(
+                            "SELECT f.table_schema, f.table_name, f.column_name, t.unusual_fkeys_type"
+                            "    FROM information_schema.referential_constraints r"
+                            "    JOIN information_schema.key_column_usage        l"
+                            "        USING(constraint_name, constraint_schema)"
+                            "    JOIN information_schema.key_column_usage        f"
+                            "        ON r.unique_constraint_name = f.constraint_name AND r.unique_constraint_schema = f.constraint_schema"
+                            "    LEFT JOIN fkey_types t"
+                            "            ON l.table_schema = t.table_schema AND l.table_name = t.table_name AND l.column_name = t.column_name"
+                            "    WHERE l.table_schema = '%1' AND l.table_name = '%2' AND l.column_name = '%3'"
+                            ).arg(_schemaName, _tableName, columnDescr.colName());
+                if (!pq2->exec(sql)) SQLPREPERR(*pq2, sql);
+                regularFKey = pq2->first();
+            }
+            if (regularFKey) { // Ha ő egy szabályos/támogatott távoli kulcs, hova:
                 columnDescr.fKeySchema= pq2->value(0).toString();
                 columnDescr.fKeyTable = pq2->value(1).toString();
                 columnDescr.fKeyField = pq2->value(2).toString();
@@ -2271,7 +2277,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
                 columnDescr.fKeyTables << columnDescr.fKeyTable;
                 // columnDescr.fnToName = pq2->value(4).toString();
             }
-            // Az ismert, de az adatbázisban kerülő uton (öröklés miatt) kezelt távoli kulcsok
+            // Az ismert, de az adatbázisban kerülő uton (öröklés miatt, vagy mert tömb) kezelt távoli kulcsok
             else  {
                 sql = QString(
                             "SELECT f_table_schema, f_table_name, f_column_name, unusual_fkeys_type, f_inherited_tables"
@@ -2301,7 +2307,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
             }
             if (columnDescr.fKeyType != cColStaticDescr::FT_NONE) {
                 // Az id -> name konverziós függvény : (csak ha már megvan a cél tábla descriptora)
-                columnDescr.fnToName = checkId2Name(*pq2, columnDescr.fKeySchema, columnDescr.fnToName, false);
+                columnDescr.fnToName = checkId2Name(*pq2, columnDescr.fKeySchema, columnDescr.fnToName, EX_IGNORE);
             }
         }
         // A távoli kulcs mezők detektálása VÉGE
@@ -2352,7 +2358,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
             QString constraintName = pq->record().value("constraint_name").toString();
             QString columnName     = pq->record().value("column_name").toString();
             QString constraintType = pq->record().value("constraint_type").toString();
-            i = toIndex(columnName, false);
+            i = toIndex(columnName, EX_IGNORE);
             if (i < 0) EXCEPTION(EDBDATA,0, QObject::trUtf8("Invalid column name : %1").arg(fullColumnName(columnName)));
             if     (constraintType == "PRIMARY KEY") {
                 //PDEB(VVERBOSE) << "Set _primaryKeyMask bit, index = " << i << endl;
@@ -2410,7 +2416,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
   // DBGFL();
 }
 
-int cRecStaticDescr::toIndex(const QString& __n, bool __ex) const
+int cRecStaticDescr::toIndex(const QString& __n, eEx __ex) const
 {
     // _DBGFN() << " @(" << __n << "): " << fullTableName() << endl;
     // Esetleges schema vagy tábla név leválasztása
@@ -2480,7 +2486,8 @@ const cRecStaticDescr *cRecStaticDescr::get(const QString& _t, const QString& _s
 {
     // _DBGF() << _t << _sCommaSp << _s << endl;
     QSqlQuery *pq = newQuery();
-    qlonglong tableOId = ::tableoid(*pq, _t, schemaoid(*pq, _s), !find_only);
+    eEx ex = find_only ? EX_IGNORE : EX_ERROR;
+    qlonglong tableOId = ::tableoid(*pq, _t, schemaoid(*pq, _s), ex);
     delete pq;
     return tableOId == NULL_ID ? NULL : get(tableOId, find_only);
 }
@@ -2531,11 +2538,11 @@ QString cRecStaticDescr::checkId2Name(QSqlQuery& q) const
 
 }
 
-QString cRecStaticDescr::checkId2Name(QSqlQuery& q, const QString& _tn, const QString& _sn, bool __ex)
+QString cRecStaticDescr::checkId2Name(QSqlQuery& q, const QString& _tn, const QString& _sn, eEx __ex)
 {
-    const cRecStaticDescr *pDescr = get(_tn, _sn, !__ex);
+    const cRecStaticDescr *pDescr = get(_tn, _sn, __ex == EX_IGNORE);
     if (pDescr == NULL) {
-        if (__ex) EXCEPTION(EDATA);
+        if (__ex) EXCEPTION(EPROGFAIL); // Lehetetlen
         return QString();
     }
     return pDescr->checkId2Name(q);
@@ -2552,7 +2559,7 @@ bool cRecStaticDescr::operator<(const cRecStaticDescr& __o) const
     return false;
 }
 
-qlonglong cRecStaticDescr::getIdByName(QSqlQuery& __q, const QString& __n, bool ex) const
+qlonglong cRecStaticDescr::getIdByName(QSqlQuery& __q, const QString& __n, eEx __ex) const
 {
     QString sql = QString("SELECT %1 FROM %2 WHERE %3 = '%4'")
                   .arg(dQuoted(idName()), fullTableNameQ(), dQuoted(nameName()), __n);
@@ -2563,7 +2570,7 @@ qlonglong cRecStaticDescr::getIdByName(QSqlQuery& __q, const QString& __n, bool 
                 .arg(fullTableNameQ())
                 .arg(dQuoted(__n))
                 .arg(dQuoted(nameName()));
-        if (ex) EXCEPTION(EFOUND, 1, msg);
+        if (__ex) EXCEPTION(EFOUND, 1, msg);
         DWAR() << msg << endl;
         return NULL_ID;
     }
@@ -2573,14 +2580,14 @@ qlonglong cRecStaticDescr::getIdByName(QSqlQuery& __q, const QString& __n, bool 
                 .arg(fullTableNameQ())
                 .arg(dQuoted(__n))
                 .arg(dQuoted(nameName()));
-        if (ex) EXCEPTION(AMBIGUOUS, 2, msg);
+        if (__ex) EXCEPTION(AMBIGUOUS, 2, msg);
         DWAR() << msg << endl;
         return NULL_ID;
     }
-    return variantToId(id, ex, NULL_ID);
+    return variantToId(id, __ex, NULL_ID);
 }
 
-QString cRecStaticDescr::getNameById(QSqlQuery& __q, qlonglong __id, bool ex) const
+QString cRecStaticDescr::getNameById(QSqlQuery& __q, qlonglong __id, eEx ex) const
 {
     QString sql = QString("SELECT %1 FROM %2 WHERE %3 = %4")
             .arg(dQuoted(nameName()), fullTableNameQ(), dQuoted(idName())). arg(__id);
@@ -2601,7 +2608,7 @@ QString cRecStaticDescr::getNameById(QSqlQuery& __q, qlonglong __id, bool ex) co
     return name.toString();
 }
 
-QBitArray cRecStaticDescr::mask(const QStringList& __nl, bool __ex) const
+QBitArray cRecStaticDescr::mask(const QStringList& __nl, eEx __ex) const
 {
     QBitArray r(cols(), false);
     foreach (QString fn, __nl) {
@@ -2688,7 +2695,7 @@ QString cRecStaticDescr::toString() const
     return s;
 }
 
-int cRecStaticDescr::ixToOwner(bool __ex) const
+int cRecStaticDescr::ixToOwner(eEx __ex) const
 {
     int fix;
     for (fix = 0; fix < _columnsNum; ++fix) {          // Az ownerre mutató mezőt keressük
@@ -2703,7 +2710,7 @@ int cRecStaticDescr::ixToOwner(bool __ex) const
     return fix;
 }
 
-int cRecStaticDescr::ixToParent(bool __ex) const
+int cRecStaticDescr::ixToParent(eEx __ex) const
 {
     int fix;
     for (fix = 0; fix < _columnsNum; ++fix) {          // Egy önmagára mutató távoli kulcsot keresünk
@@ -2833,9 +2840,9 @@ cRecord& cRecord::clear()
     return *this;
 }
 
-cRecord& cRecord::clear(int __ix, bool __ex)
+cRecord& cRecord::clear(int __ix, eEx __ex)
 {
-    if (isIndex(__ix) || __ex) {
+    if (chkIndex(__ix, __ex) >= 0) {
         _clear(__ix);
         toEnd(__ix);
         fieldModified(__ix);
@@ -2843,7 +2850,7 @@ cRecord& cRecord::clear(int __ix, bool __ex)
     return *this;
 }
 
-cRecord& cRecord::clear(const QBitArray& __m, bool __ex)
+cRecord& cRecord::clear(const QBitArray& __m, eEx __ex)
 {
     int n = __m.size();
     if (n > cols()) {
@@ -2882,7 +2889,7 @@ cRecord& cRecord::_set(const QSqlRecord& __r, const cRecStaticDescr& __d, int* _
     const int invalid = -1;
     QVector<int>    ixv(m, invalid); // Kereszt index: cél index -> forrás index
     for (i = first; i < n; i++) {       // csinálunk egy kereszt index táblát
-        int ix = __d.toIndex(__r.fieldName(i), false);
+        int ix = __d.toIndex(__r.fieldName(i), EX_IGNORE);
         if (ix >= 0) ixv[ix] = i;
     }
     _set(__d);  // isEmpty() == true
@@ -2933,7 +2940,7 @@ bool cRecord::_copy(const cRecord &__o, const cRecStaticDescr &d)
     int n = __o.cols();    // Mezők száma a forrás rekordban
     for (i = 0; i < n; i++) {
         QString fn = __o.columnName(i);     // Mező név
-        int ii = d.toIndex(fn, false);      // A cél azonos nevű mezőjének az indexe
+        int ii = d.toIndex(fn, EX_IGNORE);      // A cél azonos nevű mezőjének az indexe
         if (!d.isIndex((ii))) continue;     // A cél rekordban nincs ilyen mező
         if (__o.isNull(i))    continue;     // vagy null a forrás mező
         _set(ii, __o.get(i));
@@ -3046,7 +3053,7 @@ void cRecord::setContainerValid(qlonglong, qlonglong)
     EXCEPTION(EPROGFAIL);
 }
 
-cMac    cRecord::getMac(int __i, bool __ex) const
+cMac    cRecord::getMac(int __i, eEx __ex) const
 {
     int t = colDescr(__i).eColType;
     cMac r;
@@ -3058,7 +3065,7 @@ cMac    cRecord::getMac(int __i, bool __ex) const
     return r;
 }
 
-cRecord& cRecord::setMac(int __i, const cMac& __a, bool __ex)
+cRecord& cRecord::setMac(int __i, const cMac& __a, eEx __ex)
 {
     int t = colDescr(__i).eColType;
     if (t != cColStaticDescr::FT_MAC) {
@@ -3071,7 +3078,7 @@ cRecord& cRecord::setMac(int __i, const cMac& __a, bool __ex)
     return *this;
 }
 
-cRecord& cRecord::setIp(int __i, const QHostAddress& __a, bool __ex)
+cRecord& cRecord::setIp(int __i, const QHostAddress& __a, eEx __ex)
 {
     int t = colDescr(__i).eColType;
     if (t != cColStaticDescr::FT_INET) {
@@ -3084,7 +3091,7 @@ cRecord& cRecord::setIp(int __i, const QHostAddress& __a, bool __ex)
     return *this;
 }
 
-QStringList cRecord::getStringList(int __i, bool __ex) const
+QStringList cRecord::getStringList(int __i, eEx __ex) const
 {
     if (isIndex(__i)) {
         int t = colDescr(__i).eColType;
@@ -3097,7 +3104,7 @@ QStringList cRecord::getStringList(int __i, bool __ex) const
     return QStringList();
 }
 
-cRecord& cRecord::setStringList(int __i, const QStringList& __v, bool __ex)
+cRecord& cRecord::setStringList(int __i, const QStringList& __v, eEx __ex)
 {
     if (isIndex(__i)) {
         set(__i, __v);
@@ -3109,7 +3116,7 @@ cRecord& cRecord::setStringList(int __i, const QStringList& __v, bool __ex)
     return *this;
 }
 
-cRecord& cRecord::addStringList(int __i, const QStringList &__v, bool __ex)
+cRecord& cRecord::addStringList(int __i, const QStringList &__v, eEx __ex)
 {
     if (isIndex(__i)) {
         set(__i, getStringList(__i) + __v);
@@ -3133,7 +3140,7 @@ QBitArray cRecord::areNull() const
     return r;
 }
 
-bool cRecord::insert(QSqlQuery& __q, bool _ex)
+bool cRecord::insert(QSqlQuery& __q, eEx _ex)
 {
     _DBGFN() << "@(," << DBOOL(_ex) << ") table : " << fullTableName() << endl;
     const cRecStaticDescr& recDescr = descr();
@@ -3184,7 +3191,7 @@ cError *cRecord::tryInsert(QSqlQuery &__q, bool __tr)
     cError *pe = NULL;
     if (__tr) sqlBegin(__q);
     try {
-        insert(__q, true);
+        insert(__q, EX_ERROR);
     }
     CATCHS(pe);
     if (__tr) {
@@ -3194,13 +3201,13 @@ cError *cRecord::tryInsert(QSqlQuery &__q, bool __tr)
     return pe;
 }
 
-bool cRecord::rewrite(QSqlQuery &__q, bool __ex)
+bool cRecord::rewrite(QSqlQuery &__q, eEx __ex)
 {
     _DBGFN() << "@(," << DBOOL(__ex) << ") table : " << fullTableName() << endl;
     QBitArray   sets(cols(), true);     // Minden mezőt kiírunk,
     QBitArray   where = nameKeyMask();
     sets &= ~where;              // kivéve a név mezőt ...
-    if (idIndex(false) >= 0 && isNullId()) { // és az ID-t, ha van olyan és az értéke NULL
+    if (idIndex(EX_IGNORE) >= 0 && isNullId()) { // és az ID-t, ha van olyan és az értéke NULL
         sets.clearBit(idIndex());
     }
     int r = update(__q, true, sets, where,__ex);
@@ -3215,7 +3222,7 @@ bool cRecord::rewrite(QSqlQuery &__q, bool __ex)
     return false;
 }
 
-int cRecord::replace(QSqlQuery& __q, bool __ex)
+int cRecord::replace(QSqlQuery& __q, eEx __ex)
 {
     if (existByNameKey(__q)) return rewrite(__q, __ex) ? R_UPDATE : R_ERROR; // Ha van akkor replace
     else                     return insert( __q, __ex) ? R_INSERT : R_ERROR; // Ha nincs, akkor insert
@@ -3226,7 +3233,7 @@ cError *cRecord::tryReplace(QSqlQuery& __q, bool __tr)
     cError *pe = NULL;
     if (__tr) sqlBegin(__q);
     try {
-        replace(__q, true);
+        replace(__q, EX_ERROR);
     }
     CATCHS(pe);
     if (__tr) {
@@ -3384,7 +3391,7 @@ bool cRecord::existByNameKey(QSqlQuery& __q)
     return false;
 }
 
-qlonglong cRecord::fetchTableOId(QSqlQuery& __q, bool __ex) const
+qlonglong cRecord::fetchTableOId(QSqlQuery& __q, eEx __ex) const
 {
     QBitArray m = getSetMap();              // Mit ismerünk ?
     if (isFaceless() || isEmpty_() || m.count(true) == 0) {
@@ -3428,7 +3435,7 @@ qlonglong cRecord::fetchTableOId(QSqlQuery& __q, bool __ex) const
     return NULL_ID;
 }
 
-int cRecord::update(QSqlQuery& __q, bool __only, const QBitArray& __set, const QBitArray& __where, bool __ex)
+int cRecord::update(QSqlQuery& __q, bool __only, const QBitArray& __set, const QBitArray& __where, eEx __ex)
 {
 //    _DBGFN() << "@("
 //             << this->toString() << _sCommaSp << DBOOL(__only) << _sCommaSp << list2string(__set) <<  _sCommaSp << list2string(__where) << _sCommaSp << DBOOL(__ex)
@@ -3474,7 +3481,7 @@ int cRecord::update(QSqlQuery& __q, bool __only, const QBitArray& __set, const Q
     }
     else {
         DWAR() << "Nothing modify any record." << endl;
-        if (__ex) EXCEPTION(EFOUND);
+        if (__ex == EX_NOOP) EXCEPTION(EFOUND);
         return 0;
     }
 }
@@ -3484,7 +3491,7 @@ cError *cRecord::tryUpdate(QSqlQuery& __q, bool __only, const QBitArray& __set, 
     cError *pe = NULL;
     if (__tr) sqlBegin(__q);
     try {
-        update(__q, __only, __set, __where, true);
+        update(__q, __only, __set, __where, EX_ERROR);
     }
     CATCHS(pe);
     if (__tr) {
@@ -3500,7 +3507,7 @@ int cRecord::mark(QSqlQuery& __q, const QBitArray &__where, bool __flag) const
     int ixFlag = p->descr()._flagIndex;
     if (ixFlag < 0) EXCEPTION(EDATA, 0, "Missing 'flag' field in " + tableName() + " table.");
     p->setBool(ixFlag, __flag);
-    int r = p->update(__q, false, mask(ixFlag), __where, false);
+    int r = p->update(__q, false, mask(ixFlag), __where, EX_ERROR);
     delete p;
     return r;
 }
@@ -3514,13 +3521,13 @@ int cRecord::removeMarked(QSqlQuery& __q, const QBitArray& __where) const
     QBitArray where = __where;
     if (where.isEmpty()) where = p->primaryKey() | p->mask(ixFlag);
     else                 where = where           | p->mask(ixFlag);
-    int r = p->remove(__q, false, where, false);
+    int r = p->remove(__q, false, where, EX_ERROR);
     delete p;
     return r;
 }
 
 
-int cRecord::remove(QSqlQuery& __q, bool __only, const QBitArray& _fm, bool __ex)
+int cRecord::remove(QSqlQuery& __q, bool __only, const QBitArray& _fm, eEx __ex)
 {
     QBitArray fm = _fm;
     if (!isUpdatable()) EXCEPTION(EDATA, -1 , QObject::trUtf8("Az adat nem módosítható."));
@@ -3533,7 +3540,7 @@ int cRecord::remove(QSqlQuery& __q, bool __only, const QBitArray& _fm, bool __ex
     sql += tableName() + whereString(fm);
     query(__q, sql, fm);
     int r = __q.numRowsAffected();
-    if (!r && __ex) EXCEPTION(EFOUND);
+    if (!r && __ex == EX_NOOP) EXCEPTION(EFOUND);
     return r;
 }
 
@@ -3542,7 +3549,7 @@ cError *cRecord::tryRemove(QSqlQuery& __q, bool __only, const QBitArray& _fm, bo
     cError *pe = NULL;
     if (__tr) sqlBegin(__q);
     try {
-        remove(__q, __only, _fm, true);
+        remove(__q, __only, _fm, EX_ERROR);
     }
     CATCHS(pe);
     if (__tr) {
@@ -3608,7 +3615,7 @@ int cRecord::delByName(QSqlQuery& q, const QString& __n, bool __pat, bool __only
     static QString _sOnly = "ONLY ";
     QString only = __only ? _sOnly : _sNul;
     QString sql;
-    if (descr().deletedIndex(false) >= 0 && _deletedBehavior & DELETE_LOGICAL) {  // Nincs deleted mező, tényleges törlés
+    if (descr().deletedIndex(EX_IGNORE) >= 0 && _deletedBehavior & DELETE_LOGICAL) {  // Nincs deleted mező, tényleges törlés
         sql = "UPDATE " + only
              + tableName() + " SET deleted = 't'  WHERE "
              + dQuoted(nameName()) + (__pat ? " LIKE " : " = ") + quoted(__n)

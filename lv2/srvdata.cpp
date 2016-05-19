@@ -2,7 +2,7 @@
 #include "lv2service.h"
 #include "import_parser.h"
 
-QString getParName(QString::const_iterator& i, const QString::const_iterator& e, bool __ex)
+QString getParName(QString::const_iterator& i, const QString::const_iterator& e, eEx __ex)
 {
     QString r;
     if (i == e) return r;
@@ -32,7 +32,7 @@ DEFAULTCRECDEF(cIpProtocol, _sIpProtocols)
 /* -------------------------------------------------------------- */
 DEFAULTCRECDEF(cServiceType, _sServiceTypes)
 
-qlonglong cServiceType::insertNew(QSqlQuery& __q, const QString& __name, const QString& __note, bool __ex)
+qlonglong cServiceType::insertNew(QSqlQuery& __q, const QString& __name, const QString& __note, eEx __ex)
 {
     cServiceType    o;
     o.setName(__name);
@@ -127,7 +127,7 @@ CRECDEF(cService)
 
 tRecordList<cService> cService::services;
 cService *cService::pNull;
-const cService& cService::service(QSqlQuery& __q, const QString& __nm, bool __ex)
+const cService& cService::service(QSqlQuery& __q, const QString& __nm, eEx __ex)
 {
     int i = services.indexOf(_nul().nameIndex(), QVariant(__nm));
     if (i < 0) {
@@ -143,7 +143,7 @@ const cService& cService::service(QSqlQuery& __q, const QString& __nm, bool __ex
     return *services.at(i);
 }
 
-const cService& cService::service(QSqlQuery &__q, qlonglong __id, bool __ex)
+const cService& cService::service(QSqlQuery &__q, qlonglong __id, eEx __ex)
 {
     int i = services.indexOf(_nul().idIndex(), QVariant(__id));
     if (i < 0) {
@@ -220,7 +220,7 @@ void cHostService::clearToEnd()
 
 CRECDEF(cHostService)
 
-int cHostService::replace(QSqlQuery &__q, bool __ex)
+int cHostService::replace(QSqlQuery &__q, eEx __ex)
 {
     (void)__q;
     if (__ex) EXCEPTION(ENOTSUPP);
@@ -242,7 +242,7 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
     return *this;
 }
 
-int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString& __sn, bool __ex)
+int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString& __sn, eEx __ex)
 {
     set();
     (*this)[_sNodeId]    = cNode().descr().getIdByName(q, __hn, __ex);
@@ -264,7 +264,7 @@ int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString&
     return 1;
 }
 
-int cHostService::fetchByNames(QSqlQuery& q, const QString& __hn, const QString& __sn, const QString& __pn, bool __ex)
+int cHostService::fetchByNames(QSqlQuery& q, const QString& __hn, const QString& __sn, const QString& __pn, eEx __ex)
 {
     set();
     (*this)[_sNodeId]    = cNode().descr().getIdByName(q, __hn, __ex);
@@ -292,7 +292,7 @@ int cHostService::fetchByNames(QSqlQuery& q, const QString& __hn, const QString&
     return 1;
 }
 
-int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString& __sn, const QString& __pn, const QString& __pron, const QString& __prin, bool __ex)
+int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString& __sn, const QString& __pn, const QString& __pron, const QString& __prin, eEx __ex)
 {
     set();
     (*this)[_sNodeId]    = cNode().descr().getIdByName(q, __hn, __ex);
@@ -334,7 +334,7 @@ int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString&
     return 1;
 }
 
-int cHostService::fetchFirstByNamePatterns(QSqlQuery& q, const QString& __hn, const QString& __sn, bool __ex)
+int cHostService::fetchFirstByNamePatterns(QSqlQuery& q, const QString& __hn, const QString& __sn, eEx __ex)
 {
     QString sql =
             "SELECT host_services.* "
@@ -358,7 +358,7 @@ int cHostService::fetchFirstByNamePatterns(QSqlQuery& q, const QString& __hn, co
 }
 
 
-bool cHostService::fetchByIds(QSqlQuery& q, qlonglong __hid, qlonglong __sid, bool __ex)
+bool cHostService::fetchByIds(QSqlQuery& q, qlonglong __hid, qlonglong __sid, eEx __ex)
 {
     set();
     (*this)[_sNodeId]    = __hid;
@@ -367,8 +367,8 @@ bool cHostService::fetchByIds(QSqlQuery& q, qlonglong __hid, qlonglong __sid, bo
     int r = completion(q);
     if (r != 1) {
         QString e = trUtf8("HostService : %1(%2):%3(%4)")
-                .arg(__hid).arg(cNode().   getNameById(__hid, false))
-                .arg(__sid).arg(cService().getNameById(__sid, false));
+                .arg(__hid).arg(cNode().   getNameById(__hid, EX_IGNORE))
+                .arg(__sid).arg(cService().getNameById(__sid, EX_IGNORE));
         if (__ex) {
             if (r == 0) {
                 EXCEPTION(EFOUND,    r, e);
@@ -406,7 +406,7 @@ int cHostService::delByNames(QSqlQuery& q, const QString& __nn, const QString& _
     return idl.size();
 }
 
-bool cHostService::fetchSelf(QSqlQuery& q, cNode& __h, const cService &__s, bool __ex)
+bool cHostService::fetchSelf(QSqlQuery& q, cNode& __h, const cService &__s, eEx __ex)
 {
     if (!__h.fetchSelf(q, __ex)) return false;
     if (!fetchByIds(q, __h.getId(), __s.getId(), __ex)) return false;
@@ -447,7 +447,7 @@ DEFAULTCRECDEF(cAlarm, _sAlarms)
 /* ----------------------------------------------------------------- */
 DEFAULTCRECDEF(cOui, _sOuis)
 
-int cOui::replace(QSqlQuery& __q, bool __ex)
+int cOui::replace(QSqlQuery& __q, eEx __ex)
 {
     (void)__ex;
     if (!execSqlFunction(__q, "replace_oui", toSql(_sOui), toSql(_sOuiName), toSql(_sOuiNote))) {
@@ -478,7 +478,7 @@ const cRecStaticDescr& cMacTab::descr() const
 }
 CRECDEFD(cMacTab)
 
-int cMacTab::replace(QSqlQuery& __q, bool __ex)
+int cMacTab::replace(QSqlQuery& __q, eEx __ex)
 {
     (void)__ex;
     QString sql = "SELECT replace_mactab(?,?";
@@ -493,7 +493,7 @@ int cMacTab::replace(QSqlQuery& __q, bool __ex)
     if (!isNull(_ixMacTabState)) bind(_ixMacTabState, __q, i);
     if (!__q.exec()) SQLQUERYERR(__q);
     __q.first();
-    enum eReasons r = (enum eReasons) reasons(__q.value(0).toString(), false);
+    enum eReasons r = (enum eReasons) reasons(__q.value(0).toString(), EX_IGNORE);
     return r;
 }
 
@@ -536,7 +536,7 @@ cArp::operator cMac() const
     return get(_ixHwAddress).value<cMac>();
 }
 
-int cArp::replace(QSqlQuery& __q, bool __ex)
+int cArp::replace(QSqlQuery& __q, eEx __ex)
 {
     (void)__ex;
     QString sql = "SELECT replace_arp(?,?";
@@ -551,7 +551,7 @@ int cArp::replace(QSqlQuery& __q, bool __ex)
     if (!isNull(_ixHostServiceId)) bind(_ixHostServiceId, __q, i);
     if (!__q.exec()) SQLQUERYERR(__q);
     __q.first();
-    enum eReasons r = (enum eReasons) reasons(__q.value(0).toString(), false);
+    enum eReasons r = (enum eReasons) reasons(__q.value(0).toString(), EX_IGNORE);
     return r;
 }
 
@@ -590,7 +590,7 @@ QList<QHostAddress> cArp::mac2ips(QSqlQuery& __q, const cMac& __m)
     return r;
 }
 
-QHostAddress cArp::mac2ip(QSqlQuery& __q, const cMac& __m, bool __ex)
+QHostAddress cArp::mac2ip(QSqlQuery& __q, const cMac& __m, eEx __ex)
 {
     QList<QHostAddress> al = mac2ips(__q, __m);
     int n = al.size();
@@ -609,7 +609,7 @@ QHostAddress cArp::mac2ip(QSqlQuery& __q, const cMac& __m, bool __ex)
 }
 
 
-cMac cArp::ip2mac(QSqlQuery& __q, const QHostAddress& __a, bool __ex)
+cMac cArp::ip2mac(QSqlQuery& __q, const QHostAddress& __a, eEx __ex)
 {
     QString em;
     if (__a.isNull()) {

@@ -15,10 +15,10 @@ enum eTmStat {
 
 /// A lekérdezés eredményét reprezebtáló enumerációs értéket konvertálja az adatbázisban tárolt string formára.
 /// RS_STAT_SETTED érték konverzió elütt ki lessz maszkolva. Ha a konverzió nem lehetséges, akkor dob egy kizárást.
-EXT_ const QString& notifSwitch(int _ns, bool __ex = true);
+EXT_ const QString& notifSwitch(int _ns, enum eEx __ex = EX_ERROR);
 /// A lekérdezés eredményét reprezebtáló enumerációs érték adatbázisban tárolt string formáráját konvertálja
 /// numerikus értékké.
-EXT_ int notifSwitch(const QString& _nm, bool __ex = true);
+EXT_ int notifSwitch(const QString& _nm, enum eEx __ex = EX_ERROR);
 
 
 /// cInspect és leszármazottai objektum belső status
@@ -163,7 +163,7 @@ public:
     /// Futás időzítés indítása
     virtual void start();
     /// Futás/időzítés leállítása, ha nem futott, és __ex = true, akkor dob egy kizárást.
-    virtual void stop(bool __ex = true);
+    virtual void stop(enum eEx __ex = EX_ERROR);
     /// Egy alárendelt szolgáltatás objektum létrehozása. Alapértelmezetten egy cInspector objektumot hoz létre.
     /// Az alapőértelmezett setSubs() metódus hívja a gyerek objektumok létrehozásához, ha azt akarjuk,
     /// hogy ijenkkor egy cIspector leszármazott jöjjön létre, akkor a metódus fellüldefiniálandü.
@@ -192,15 +192,15 @@ public:
     /// A services és a host_services rekordban a features nezőt vágja szát, és az elemeket elhelyezi a pFeatures pointer által mutatott konténerbe.
     /// Ha pFeatures egy NULL pointer, akkor a művelet elött megallokálja a konténert, ha nem NULL, akkor pedig törli a konténer tartalmát.
     /// A feldolgozás sorrendje: proto, prime, servece, host_service, lásd még a cFeatures osztály split() metódusát
-    cFeatures& splitFeature(bool __ex = true);
+    cFeatures& splitFeature(enum eEx __ex = EX_ERROR);
     /// Visszaadja a pMagicMap által mutatott konténer referenciáját. Ha pMagicMap értéke NULL, akkor hívja a splitMagic() metódust, ami megallokálja
     /// és feltölti a konténert.
-    cFeatures& features(bool __ex = true)   { if (_pFeatures == NULL) splitFeature(__ex); return *_pFeatures; }
+    cFeatures& features(enum eEx __ex = EX_ERROR)   { if (_pFeatures == NULL) splitFeature(__ex); return *_pFeatures; }
     /// A megadott kulcs alapján visszaadja a magicMap konténerből a paraméter értéket a név alapján. Ha a konténer nincs megallokálva, akkor megallokálja
     /// és feltölti.
     /// @return Egy string, a paraméter érték, ha nincs ilyen paraméter, akkor a NULL string, ha viszont nincs paraméternek értéke, akkor egy üres string
-    QString feature(const QString& __nm, bool __ex = true) { return features(__ex).value(__nm); }
-    bool isFeature( const QString& __nm, bool __ex = true) { return features(__ex).contains(__nm); }
+    QString feature(const QString& __nm, enum eEx __ex = EX_ERROR) { return features(__ex).value(__nm); }
+    bool isFeature( const QString& __nm, enum eEx __ex = EX_ERROR) { return features(__ex).contains(__nm); }
     ///
     int getInspectorType(QSqlQuery &q);
     /// Saját adatok beállítása. Hiba esetén dob egy kizárást.
@@ -278,7 +278,7 @@ public:
     /// A szolgáltatás cService objektumára mutató referenciával tér vissza
     /// @param __ex Ha értéke true, és nem ismert a szolgáltatás objektum (pService értéke NULL) akkor dob egy kizárást
     /// @return A szolgáltatás objektum referenciája, ha __ex értéke false, és nem ismert a szolgáltatés, akkor egy üres objektum őpintere.
-    const cService& service(bool __ex = true) const {
+    const cService& service(enum eEx __ex = EX_ERROR) const {
         if (pService == NULL) {
             if (__ex) EXCEPTION(EDATA);
             return cService::_nul();
@@ -291,7 +291,7 @@ public:
     /// @param __sn A szolgáltatás név
     /// @param __ex Ha értéke true, és nem ismert a megadott nevű szolgáltatás objektum (pService értéke NULL) akkor dob egy kizárást
     /// @return A szolgáltatás objektum referenciája, ha __ex értéke false, és nem ismert a szolgáltatés, akkor egy üres objektum pointere.
-    const cService& service(QSqlQuery& __q, const QString& __sn, bool __ex = true) {
+    const cService& service(QSqlQuery& __q, const QString& __sn, enum eEx __ex = EX_ERROR) {
         pService = &cService::service(__q, __sn, __ex);
         if (__ex == false && pService->isNull()) pService = NULL;
         return service();
@@ -302,7 +302,7 @@ public:
     /// @param __sn A szolgáltatás ID
     /// @param __ex Ha értéke true, és nem ismert a megadott nevű szolgáltatás objektum (pService értéke NULL) akkor dob egy kizárást
     /// @return A szolgáltatás objektum referenciája, ha __ex értéke false, és nem ismert a szolgáltatés, akkor egy üres objektum pointere.
-    const cService& service(QSqlQuery& __q, qlonglong __id, bool __ex = true) {
+    const cService& service(QSqlQuery& __q, qlonglong __id, enum eEx __ex = EX_ERROR) {
         pService = &cService::service(__q, __id, __ex);
         if (__ex == false && pService->isNull()) pService = NULL;
         return service();
@@ -320,7 +320,7 @@ public:
     cSnmpDevice& snmpDev()              { if (pNode == NULL || !(pNode->descr() >= cSnmpDevice().descr()) ) EXCEPTION(EDATA); return *(dynamic_cast<cSnmpDevice*>(pNode)); }
     const cInspector& parent() const{if (pParent == NULL) EXCEPTION(EDATA); return *pParent; }
     cInspector& parent()                { if (pParent == NULL) EXCEPTION(EDATA); return *pParent; }
-    template <class T> static qlonglong getIdT(const T *p, bool __ex) {
+    template <class T> static qlonglong getIdT(const T *p, enum eEx __ex = EX_ERROR) {
         if (p == NULL) {
             if (__ex) EXCEPTION(EDATA);
             return NULL_ID;
@@ -331,10 +331,10 @@ public:
     cNPort& nPort()                     { if (pPort == NULL) EXCEPTION(EDATA); return *pPort; }
     const cInterface& interface() const { if (pPort == NULL) EXCEPTION(EDATA); return *pPort->creconvert<cInterface>(); }
     cInterface& interface()             { if (pPort == NULL) EXCEPTION(EDATA); return *pPort->reconvert<cInterface>(); }
-    qlonglong nodeId(bool __ex = true) const     { return getIdT<cNode>(pNode, __ex); }
-    qlonglong serviceId(bool __ex = true) const  { return getIdT<cService>(pService, __ex); }
+    qlonglong nodeId(enum eEx __ex = EX_ERROR) const     { return getIdT<cNode>(pNode, __ex); }
+    qlonglong serviceId(enum eEx __ex = EX_ERROR) const  { return getIdT<cService>(pService, __ex); }
     qlonglong hostServiceId() const              { return hostService.getId(); }
-    qlonglong parentId(bool __ex = true) const {
+    qlonglong parentId(enum eEx __ex = EX_ERROR) const {
         if (pParent == NULL) {
             if (__ex) EXCEPTION(EDATA);
             return NULL_ID;

@@ -7,14 +7,14 @@
 Máshova nem sorolt objektumok, adat definíciók, ill. eljérésok.
 */
 
-qlonglong enum2set(int (&f)(const QString &, bool), const QStringList &el, bool __ex)
+qlonglong enum2set(int (&f)(const QString &, eEx), const QStringList &el, eEx __ex)
 {
     qlonglong r = 0;
     foreach (QString e, el) r |= enum2set(f, e, __ex);
     return r;
 }
 
-QStringList set2lst(const QString&(&f)(int e, bool __ex), qlonglong _set, bool __ex)
+QStringList set2lst(const QString&(&f)(int, eEx), qlonglong _set, eEx __ex)
 {
     qlonglong b;
     int n;
@@ -50,7 +50,7 @@ QString nameAndNumber(const QString& __pat, int __num, char __c)
 
 /******************************************************************************/
 
-cFeatures& cFeatures::split(const QString& __ms, bool __ex)
+cFeatures& cFeatures::split(const QString& __ms, eEx __ex)
 {
     QString msg = QString(QObject::trUtf8("Invalid magic string : %1")).arg(quotedString(__ms));
     if (__ms.isEmpty()) return *this;
@@ -92,7 +92,7 @@ QString cFeatures::join() const
 
 /******************************************************************************/
 
-qlonglong variantToId(const QVariant& v, bool _ex, qlonglong def)
+qlonglong variantToId(const QVariant& v, eEx _ex, qlonglong def)
 {
     if (v.isNull()) {
         if (_ex) EXCEPTION(EDATA, -1, QObject::trUtf8("Hiányzó numerikus adat."));
@@ -104,7 +104,7 @@ qlonglong variantToId(const QVariant& v, bool _ex, qlonglong def)
     return n;
 }
 
-qlonglong stringToId(const QString& v, bool _ex, qlonglong def)
+qlonglong stringToId(const QString& v, eEx _ex, qlonglong def)
 {
     if (v.isEmpty()) {
         if (_ex) EXCEPTION(EDATA, -1, QObject::trUtf8("Hiányzó numerikus adat."));

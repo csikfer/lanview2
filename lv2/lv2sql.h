@@ -102,7 +102,7 @@ Visszaad egy új QSqlQuery objektumot, a megadott vagy a getSqlDb() által vissz
 static inline QSqlQuery   getQuery(QSqlDatabase *pDb = NULL) { return     QSqlQuery(*(pDb == NULL ? getSqlDb() : pDb)); }
 
 /// A thread-okhoz rendelt adatbázis objektumok körül törli a megadott nevű elemet
-EXT_ void dropThreadDb(const QString& tn, bool __ex = true);
+EXT_ void dropThreadDb(const QString& tn, enum eEx __ex = EX_ERROR);
 
 /*!
 Beolvas egy sql szövegfájlt, SQL parancsokra tördeli, és végrehalytja egyenként.
@@ -119,7 +119,7 @@ Ha létrejön hiba objektum, azt nem szabadítja fel. Nem ellenörzi, volt-e ér
 @return Ha nincs hiba, akkor true. Hiba esetén ha __e false, akkor false. Ha __e true, és hiba van nem tér vissza, hibát dob.
 @exception cError* Ha __e értéke true, ill. nem adtuk meg az __e paramétert, akkor hiba esetén dob egy kizárást.
  */
-EXT_ bool executeSqlScript(QFile& file, QSqlDatabase *pq = NULL, bool __e = true);
+EXT_ bool executeSqlScript(QFile& file, QSqlDatabase *pq = NULL, enum eEx __ex = EX_ERROR);
 
 /// Tranzakció indítása
 EXT_ bool sqlBegin(QSqlQuery& q);

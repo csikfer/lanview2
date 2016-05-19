@@ -32,7 +32,7 @@ public:
     /// Konstruktor
     /// Menüpont, a *pmi objektumban leírtak alapján inicializálj az objektumot.
     /// Az objektumot a menu_items rekordja alapján hozzuk létre.
-    cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidget * par, bool __ex = true);
+    cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidget * par, eEx __ex = EX_ERROR);
 /*  /// Konstruktor
     /// Egy tábla megjelenítése
     /// @param ps A megjelenítés leíró objektuma (a ps objektum ownere lessz a this objektum példány)

@@ -11,7 +11,7 @@ QTelnet::QTelnet(QObject *parent) : QObject(parent)
 QTelnet::QTelnet(QHostAddress& host, int to, QObject *parent) : QObject(parent)
 {
     init();
-    open(host, to, true);
+    open(host, to, EX_ERROR);
 }
 
 QTelnet::~QTelnet()
@@ -29,7 +29,7 @@ void QTelnet::init()
     connect(socket, SIGNAL(bytesWritten(qint64)), this, SLOT(bytesWritten(qint64)));
 }
 
-bool QTelnet::open(QHostAddress &host, int to, bool __ex)
+bool QTelnet::open(QHostAddress &host, int to, eEx __ex)
 {
     if (host.isNull()) {
         QString emsg = trUtf8("Invalid host address.");
@@ -43,21 +43,21 @@ bool QTelnet::open(QHostAddress &host, int to, bool __ex)
     return waitForConnected(to, __ex);
 }
 
-bool QTelnet::close(int to, bool __ex)
+bool QTelnet::close(int to, eEx __ex)
 {
     socket->disconnectFromHost();
     if (to <= 0) return true;
     return waitForDisconnected(to, __ex);
 }
 
-bool QTelnet::waitForConnected(int to, bool __ex)
+bool QTelnet::waitForConnected(int to, eEx __ex)
 {
     bool r = socket->waitForConnected(to);
     if (__ex && !r) EXCEPTION(ESOCKET, socket->error(), socket->errorString());
     return r;
 }
 
-bool QTelnet::waitForDisconnected(int to, bool __ex)
+bool QTelnet::waitForDisconnected(int to, eEx __ex)
 {
     bool r = socket->waitForDisconnected(to);
     if (__ex && !r) EXCEPTION(ESOCKET, socket->error(), socket->errorString());

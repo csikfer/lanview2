@@ -1,6 +1,7 @@
 #include "guidata.h"
 #include "record_table.h"
 #include "record_tree.h"
+#include "record_link.h"
 #include "cerrormessagebox.h"
 
 
@@ -163,7 +164,7 @@ cRecordTableOrd::~cRecordTableOrd()
 QString cRecordTableOrd::ord()
 {
     QString r;
-    act = orderType(pType->currentText(), false);
+    act = orderType(pType->currentText(), EX_IGNORE);
     switch (act) {
     case OT_ASC:    r = " ASC ";    break;
     case OT_DESC:   r = " DESC ";   break;
@@ -506,7 +507,7 @@ cRecordsViewBase::cRecordsViewBase(bool _isDialog, QWidget *par)
     pFODialog   = NULL;
     owner_id = NULL_ID;
     pInhRecDescr = NULL;
-    tit = TIT_NO;
+    tableInhType = TIT_NO;
     pRecordDialog = NULL;
     _pWidget = isDialog ? new QDialog(par) : new QWidget(par);
     disableFilters = false; // alapértelmezetten vannak szűrők
@@ -608,7 +609,7 @@ void cRecordsViewBase::close(int r)
 void cRecordsViewBase::refresh(bool first)
 {
     DBGFN();
-    switch (tit) {
+    switch (tableInhType) {
     case TIT_NO:
     case TIT_ON:
     case TIT_ONLY:
@@ -649,7 +650,7 @@ void cRecordsViewBase::insert()
     }
     // A dialógusban megjelenítendő nyomógombok.
     int buttons = enum2set(DBT_OK, DBT_INSERT, DBT_CANCEL);
-    switch (tit) {
+    switch (tableInhType) {
     case TIT_NO:
     case TIT_ONLY: {
         cRecordAny rec(pRecDescr);
@@ -675,7 +676,7 @@ void cRecordsViewBase::insert()
                     ok = pModel->insertRec(pRec);
                     if (!ok) pDelete(pRec);
                     else if (flags & RTF_IGROUP) {    // Group, tagja listába van a beillesztés?
-                        ok = cGroupAny(*pRec, *(pUpper->actRecord())).insert(*pq, false);
+                        ok = cGroupAny(*pRec, *(pUpper->actRecord())).insert(*pq, EX_IGNORE);
                         if (!ok) {
                             QMessageBox::warning(pWidget(), trUtf8("Hiba"), trUtf8("A kijelölt tag felvétele az új csoportba sikertelen"),QMessageBox::Ok);
                             refresh();
@@ -753,7 +754,7 @@ void cRecordsViewBase::modify()
     tRecordList<cTableShape> * pShapes = NULL;
 
     // Létrehozzuk a dialogot
-    switch (tit) {
+    switch (tableInhType) {
     case TIT_NO:
     case TIT_ONLY:
         pShape = getInhShape(pTableShape, pRec->descr());
@@ -882,15 +883,14 @@ void cRecordsViewBase::takeOut(){ EXCEPTION(ENOTSUPP); }
 
 void cRecordsViewBase::initView()
 {
-    tit = (eTableInheritType)pTableShape->getId(_sTableInheritType);
-    if (tit == TIT_NO) return;
+    tableInhType = (eTableInheritType)pTableShape->getId(_sTableInheritType);
+    if (tableInhType == TIT_NO) return;
     inheritTableList = pTableShape->get(_sInheritTableNames).toStringList();
-    bool only = tit == TIT_ONLY || !inheritTableList.isEmpty();
+    if (inheritTableList.isEmpty()) return;
     QString schema = pTableShape->getName(_sSchemaName);
     viewName = pTableShape->getName(_sTableName) + "_view";
     QString sql = "CREATE OR REPLACE TEMP VIEW " + viewName + " AS ";
-    sql += "SELECT tableoid, * FROM ";
-    if (only) sql += "ONLY ";
+    sql += "SELECT tableoid, * FROM ONLY";
     sql += recDescr().fullTableNameQ();
     if (! inheritTableList.isEmpty()) {
         pInhRecDescr = new QMap<qlonglong,const cRecStaticDescr *>;
@@ -903,7 +903,7 @@ void cRecordsViewBase::initView()
             for (i = 0; i < n; ++i) {   // Végihrohanunk az első tábla mezőin
                 QString fn = recDescr().columnName(i);
                 sql += _sCommaSp;
-                sql += d.toIndex(fn, false) < 0 ? _sNULL : fn;  // Ha nincs akkor NULL
+                sql += d.toIndex(fn, EX_IGNORE) < 0 ? _sNULL : fn;  // Ha nincs akkor NULL
             }
             sql += " FROM ONLY " + p->fullTableNameQ();
         }
@@ -922,7 +922,7 @@ void cRecordsViewBase::initShape(cTableShape *pts)
 
     pRecDescr = cRecStaticDescr::get(pTableShape->getName(_sTableName));
     // Extra típus értékek miatt nem használható a mező alap konverziós metódusa !
-    shapeType = enum2set(tableShapeType, pTableShape->get(_sTableShapeType).toStringList(), false);
+    shapeType = enum2set(tableShapeType, pTableShape->get(_sTableShapeType).toStringList(), EX_IGNORE);
     isReadOnly =  ENUM2SET(TS_READ_ONLY) & shapeType;
     shapeType &= ~ENUM2SET(TS_READ_ONLY);
     isReadOnly = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sEditRights));
@@ -947,6 +947,9 @@ cRecordsViewBase *cRecordsViewBase::newRecordView(cTableShape *pts, cRecordsView
     if ((type & ENUM2SET(TS_GROUP))  && own != NULL) EXCEPTION(ENOTSUPP);
     if (type & ENUM2SET(TS_TREE)) {
         return new cRecordTree( pts, false, own, par);
+    }
+    if (type & ENUM2SET(TS_LINK)) {
+        return new cRecordLink(pts, false, own, par);
     }
     else {
         return new cRecordTable(pts, false, own, par);
@@ -1252,7 +1255,7 @@ void cRecordTable::init()
     case ENUM2SET(TS_IMEMBER):
     case ENUM2SET(TS_NMEMBER):
         if (pUpper == NULL) EXCEPTION(EDATA);
-        if (tit != TIT_NO && tit != TIT_ONLY) EXCEPTION(EDATA);
+        if (tableInhType != TIT_NO && tableInhType != TIT_ONLY) EXCEPTION(EDATA);
         buttons.clear();
         buttons << DBT_REFRESH << DBT_SPACER;
         switch (shapeType) {
@@ -1278,6 +1281,7 @@ void cRecordTable::init()
         initSimple(_pWidget);
         break;
     case ENUM2SET(TS_CHILD):
+    case ENUM2SET2(TS_CHILD, TS_LINK):
         if (pUpper == NULL) EXCEPTION(EDATA);
         flags = RTF_SLAVE | RTF_CHILD;
         buttons.pop_front();    // A close nem kell
@@ -1458,8 +1462,10 @@ QStringList cRecordTable::filterWhere(QVariantList& qParams)
 void cRecordTable::_refresh(bool all)
 {
     QString sql;
-    if (viewName.isEmpty()) sql = "SELECT NULL,* FROM " + pTableShape->getName(_sTableName);
-    else                    sql = "SELECT * FROM " + viewName;
+    QString only;
+    if (tableInhType == TIT_NO || tableInhType == TIT_ONLY) only = "ONLY ";
+    if (viewName.isEmpty()) sql = "SELECT NULL,* FROM " + only + pTableShape->getName(_sTableName);
+    else                    sql = "SELECT * FROM " + only + viewName;
     QVariantList qParams;
     QStringList wl = where(qParams);
     if (!wl.isEmpty()) {

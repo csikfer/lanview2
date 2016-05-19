@@ -1,7 +1,7 @@
 #include "lanview.h"
 #include "lv2user.h"
 
-int privilegeLevel(const QString& n, bool __ex)
+int privilegeLevel(const QString& n, eEx __ex)
 {
     if (0 == n.compare(_sNone,     Qt::CaseInsensitive)) return PL_NONE;
     if (0 == n.compare(_sViewer,   Qt::CaseInsensitive)) return PL_VIEWER;
@@ -13,7 +13,7 @@ int privilegeLevel(const QString& n, bool __ex)
     return PL_INVALID;
 }
 
-const QString& privilegeLevel(int e, bool __ex)
+const QString& privilegeLevel(int e, eEx __ex)
 {
     switch(e) {
     case PL_NONE:       return _sNone;

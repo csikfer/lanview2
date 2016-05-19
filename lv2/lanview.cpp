@@ -177,11 +177,11 @@ lanView::lanView()
         instance = this;
         // Kapcsolódunk az adatbázishoz, ha kell
         if (sqlNeeded != SN_NO_SQL) {
-            if (openDatabase(sqlNeeded == SN_SQL_NEED)) {
+            if (openDatabase(bool2ex(sqlNeeded == SN_SQL_NEED))) {
                 // SELF:
                 QSqlQuery q = getQuery();
                 pSelfNode = new cNode;
-                if (pSelfNode->fetchSelf(q, false)) {
+                if (pSelfNode->fetchSelf(q, EX_IGNORE)) {
                     pSelfService = new cService;
                     if (pSelfService->fetchByName(q, appName)) {
                         pSelfHostService = new cHostService();
@@ -307,7 +307,7 @@ lanView::~lanView()
     DBGFNL();
 }
 
-bool lanView::openDatabase(bool __ex)
+bool lanView::openDatabase(eEx __ex)
 {
     closeDatabase();
     PDEB(VERBOSE) << "Open database ..." << endl;
@@ -532,7 +532,7 @@ void lanView::insertReStart(QSqlQuery& q) {
     cDbErr::insertNew(q, cDbErrType::_sReStart, appName, QCoreApplication::applicationPid(), _sNil, _sNil);
 }
 
-bool lanView::subsDbNotif(const QString& __n, bool __ex)
+bool lanView::subsDbNotif(const QString& __n, eEx __ex)
 {
     static bool first = true;
     QString e;
@@ -559,7 +559,7 @@ bool lanView::subsDbNotif(const QString& __n, bool __ex)
     return false;
 }
 
-const cUser *lanView::setUser(const QString& un, const QString& pw, bool __ex)
+const cUser *lanView::setUser(const QString& un, const QString& pw, eEx __ex)
 {
     if (instance == NULL) EXCEPTION(EPROGFAIL);
     QSqlQuery q = getQuery();
@@ -573,7 +573,7 @@ const cUser *lanView::setUser(const QString& un, const QString& pw, bool __ex)
     if (!q.exec(QString("SELECT set_user_id(%1)").arg(instance->pUser->getId()))) SQLQUERYERR(q);
     return instance->pUser;
 }
-const cUser *lanView::setUser(const QString& un, bool __ex)
+const cUser *lanView::setUser(const QString& un, eEx __ex)
 {
     if (instance == NULL) EXCEPTION(EPROGFAIL);
     QSqlQuery q = getQuery();
@@ -588,7 +588,7 @@ const cUser *lanView::setUser(const QString& un, bool __ex)
     return instance->pUser;
 }
 
-const cUser *lanView::setUser(qlonglong uid, bool __ex)
+const cUser *lanView::setUser(qlonglong uid, eEx __ex)
 {
     if (instance == NULL) EXCEPTION(EPROGFAIL);
     QSqlQuery q = getQuery();
@@ -632,7 +632,7 @@ void lanView::resetCacheData()
     }
 }
 
-const QString& IPV4Pol(int e, bool __ex)
+const QString& IPV4Pol(int e, eEx __ex)
 {
     switch(e) {
     case IPV4_IGNORED:      return _sIgnored;
@@ -643,7 +643,7 @@ const QString& IPV4Pol(int e, bool __ex)
     return _sNul;
 }
 
-int IPV4Pol(const QString& n, bool __ex)
+int IPV4Pol(const QString& n, eEx __ex)
 {
     if (n.compare(_sIgnored, Qt::CaseInsensitive)) return IPV4_IGNORED;
     if (n.compare(_sPermissive, Qt::CaseInsensitive)) return IPV4_PERMISSIVE;
@@ -652,7 +652,7 @@ int IPV4Pol(const QString& n, bool __ex)
     return IPV4_UNKNOWN;
 }
 
-const QString& IPV6Pol(int e, bool __ex)
+const QString& IPV6Pol(int e, eEx __ex)
 {
     switch(e) {
     case IPV6_IGNORED:      return _sIgnored;
@@ -663,7 +663,7 @@ const QString& IPV6Pol(int e, bool __ex)
     return _sNul;
 }
 
-int IPV6Pol(const QString& n, bool __ex)
+int IPV6Pol(const QString& n, eEx __ex)
 {
     if (n.compare(_sIgnored, Qt::CaseInsensitive)) return IPV6_IGNORED;
     if (n.compare(_sPermissive, Qt::CaseInsensitive)) return IPV6_PERMISSIVE;

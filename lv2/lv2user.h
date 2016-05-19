@@ -12,8 +12,8 @@ enum ePrivilegeLevel {
     PL_SYSTEM
 };
 
-EXT_ int privilegeLevel(const QString& n, bool __ex = true);
-EXT_ const QString& privilegeLevel(int e, bool __ex = true);
+EXT_ int privilegeLevel(const QString& n, enum eEx __ex = EX_ERROR);
+EXT_ const QString& privilegeLevel(int e, enum eEx __ex = EX_ERROR);
 
 
 /// @class cGroup

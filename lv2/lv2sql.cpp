@@ -30,7 +30,7 @@ QSqlDatabase *  getSqlDb(void)
     return pSqlDb;
 }
 
-void dropThreadDb(const QString& tn, bool __ex)
+void dropThreadDb(const QString& tn, enum eEx __ex)
 {
 
     lanView::getInstance()->threadMutex.lock();
@@ -47,7 +47,7 @@ void dropThreadDb(const QString& tn, bool __ex)
 }
 
 
-bool executeSqlScript(QFile& file, QSqlDatabase *pDb, bool __ex)
+bool executeSqlScript(QFile& file, QSqlDatabase *pDb, enum eEx __ex)
 {
     cError *   pe = NULL;
     QSqlQuery *pq = NULL;

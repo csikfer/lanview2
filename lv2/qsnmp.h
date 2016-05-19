@@ -59,8 +59,8 @@ enum eIfStatus {
     IF_LOWERLAYERDOWN=7
 };
 
-EXT_ const QString&  snmpIfStatus(int __i, bool __ex = true);
-EXT_ int             snmpIfStatus(const QString& __s, bool __ex = true);
+EXT_ const QString&  snmpIfStatus(int __i, enum eEx __ex = EX_ERROR);
+EXT_ int             snmpIfStatus(const QString& __s, enum eEx __ex = EX_ERROR);
 
 typedef QVector<QVariant> QVariantVector;
 /// @class cTable

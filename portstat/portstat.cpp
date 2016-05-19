@@ -207,7 +207,7 @@ void cDevicePSt::postInit(QSqlQuery &q, const QString&)
                 }
                 else {
                     cHostService& hs = pnas->hostService;
-                    if (hs.fetchByIds(q, pnas->nodeId(), pnas->serviceId(), false)) { // Van host_services rekord
+                    if (hs.fetchByIds(q, pnas->nodeId(), pnas->serviceId(), EX_IGNORE)) { // Van host_services rekord
                         if (hs.getId(_sSuperiorHostServiceId) != hostServiceId()) {  // máshova mutat a superior, a link szerint viszont a mienk !!!
                             hs.setId(_sSuperiorHostServiceId, hostServiceId());
                         }
@@ -277,7 +277,7 @@ enum eNotifSwitch cDevicePSt::run(QSqlQuery& q)
             iface.setName(_sPortOStat, opstat);
             iface.setName(_sPortAStat, adstat);
             PDEB(VERBOSE) << "Update port stat: " << pNode->getName() << QChar(':') << ifDescr << endl;
-            if (!iface.update(q, false, iface.mask(_sPortOStat, _sPortAStat), iface.mask(_sNodeId, _sPortIndex), false)) {
+            if (!iface.update(q, false, iface.mask(_sPortOStat, _sPortAStat), iface.mask(_sNodeId, _sPortIndex), EX_IGNORE)) {
                 DERR() << "Update error : host " << pNode->getName() << " port index : " << ifIndex << endl;
             }
         }

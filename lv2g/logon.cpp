@@ -86,7 +86,7 @@ cLogOn::~cLogOn()
 
 eLogOnResult    cLogOn::checkState()
 {
-    if (NULL != lanView::setUser(ui->userLE->text(), ui->passwLE->text(), false)) {
+    if (NULL != lanView::setUser(ui->userLE->text(), ui->passwLE->text(), EX_IGNORE)) {
         _state = LR_OK;
     }
     else {

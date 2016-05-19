@@ -46,4 +46,13 @@ This file is part of LanView2.
 #error "Nem támogatott C++ fordító használata."
 #endif
 
+enum eEx {
+    EX_IGNORE = 0,  // Hiba esetén nem dob kizárást
+    EX_ERROR,       // Hiba esetén kizárást dob
+    EX_WARNING,     // Bármilyen probléma esetén kizárást dob
+    EX_NOOP          // Akkor is kizárást dob, ha nem történt változás
+};
+
+static inline enum eEx bool2ex(bool b, eEx ex = EX_ERROR) { return b ? ex : EX_IGNORE; }
+
 #endif // LV2_GLOBAL_H

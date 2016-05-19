@@ -5,11 +5,11 @@
 #include "others.h"
 
 #ifndef LV2SERVICE_H
-EXT_ const QString& notifSwitch(int _ns, bool __ex = true);
-EXT_ int notifSwitch(const QString& _nm, bool __ex = true);
+EXT_ const QString& notifSwitch(int _ns, enum eEx __ex = EX_ERROR);
+EXT_ int notifSwitch(const QString& _nm, enum eEx __ex = EX_ERROR);
 #endif
 
-int reasons(const QString& _r, bool __ex)
+int reasons(const QString& _r, eEx __ex)
 {
     if (0 == _r.compare(_sNew,      Qt::CaseInsensitive)) return R_NEW;
     if (0 == _r.compare(_sInsert,   Qt::CaseInsensitive)) return R_INSERT;
@@ -30,7 +30,7 @@ int reasons(const QString& _r, bool __ex)
     return R_INVALID;
 }
 
-const QString& reasons(int _r, bool __ex)
+const QString& reasons(int _r, eEx __ex)
 {
     switch (_r) {
     case R_NEW:         return _sNew;
@@ -57,7 +57,7 @@ const QString& reasons(int _r, bool __ex)
 }
 
 /* ------------------------------ param_types ------------------------------ */
-int paramTypeType(const QString& __n, bool __ex)
+int paramTypeType(const QString& __n, eEx __ex)
 {
     if (0 == __n.compare(_sBoolean,   Qt::CaseInsensitive))         return PT_BOOLEAN;
     if (0 == __n.compare(_sBigInt,    Qt::CaseInsensitive))         return PT_BIGINT;
@@ -73,7 +73,7 @@ int paramTypeType(const QString& __n, bool __ex)
     return PT_INVALID;
 }
 
-const QString& paramTypeType(int __e, bool __ex)
+const QString& paramTypeType(int __e, eEx __ex)
 {
     switch (__e) {
     case PT_BOOLEAN:            return _sBoolean;
@@ -106,7 +106,7 @@ const cRecStaticDescr& cParamType::descr() const
     return *_pRecordDescr;
 }
 
-qlonglong cParamType::insertNew(QSqlQuery& q, const QString& __n, const QString& __de, const QString __t, const QString __di, bool __ex)
+qlonglong cParamType::insertNew(QSqlQuery& q, const QString& __n, const QString& __de, const QString __t, const QString __di, eEx __ex)
 {
     cParamType pp;
     pp.setName(__n);
@@ -121,7 +121,7 @@ qlonglong cParamType::insertNew(QSqlQuery& q, const QString& __n, const QString&
     return pp.getId();
 }
 
-qlonglong cParamType::insertNew(QSqlQuery& q, const QString& __n, const QString& __de, int __t, const QString __di, bool __ex)
+qlonglong cParamType::insertNew(QSqlQuery& q, const QString& __n, const QString& __de, int __t, const QString __di, eEx __ex)
 {
     cParamType pp;
     pp.setName(__n);
@@ -136,7 +136,7 @@ qlonglong cParamType::insertNew(QSqlQuery& q, const QString& __n, const QString&
     return pp.getId();
 }
 
-QString cParamType::paramToString(eParamType __t, const QVariant& __v, bool __ex)
+QString cParamType::paramToString(eParamType __t, const QVariant& __v, eEx __ex)
 {
     QString r;
     bool ok = false;
@@ -201,7 +201,7 @@ QString cParamType::paramToString(eParamType __t, const QVariant& __v, bool __ex
     return r;
 }
 
-QVariant cParamType::paramFromString(eParamType __t, QString& __v, bool __ex)
+QVariant cParamType::paramFromString(eParamType __t, QString& __v, eEx __ex)
 {
     QVariant r;
     bool    ok = true;
@@ -261,7 +261,7 @@ void cParamType::fetchParamTypes(QSqlQuery& __q)
     if (n > found) EXCEPTION(EDATA, n - found, trUtf8("Deleted if_tpes record."));
 }
 
-const cParamType& cParamType::paramType(const QString& __nm, bool __ex)
+const cParamType& cParamType::paramType(const QString& __nm, eEx __ex)
 {
     checkParamTypes();
     int i = paramTypes.indexOf(_descr_cParamType().nameIndex(), QVariant(__nm));
@@ -272,7 +272,7 @@ const cParamType& cParamType::paramType(const QString& __nm, bool __ex)
     return *(paramTypes[i]);
 }
 
-const cParamType& cParamType::paramType(qlonglong __id, bool __ex)
+const cParamType& cParamType::paramType(qlonglong __id, eEx __ex)
 {
     checkParamTypes();
     int i = paramTypes.indexOf(_descr_cParamType().idIndex(), QVariant(__id));
@@ -329,13 +329,13 @@ void    cSysParam::clearToEnd()
     paramType.clear();
 }
 
-QVariant cSysParam::value(bool __ex) const
+QVariant cSysParam::value(eEx __ex) const
 {
     QString v = getName(_ixParamValue);
     return cParamType::paramFromString((enum eParamType)valueType(), v, __ex);
 }
 
-cSysParam& cSysParam::setValue(const QVariant& __v, bool __ex)
+cSysParam& cSysParam::setValue(const QVariant& __v, eEx __ex)
 {
     QString v = cParamType::paramToString((enum eParamType)valueType(), __v, __ex);
     setName(_ixParamValue, v);
@@ -373,7 +373,7 @@ bool cImage::toEnd(int _i)
     return false;
 }
 
-bool cImage::load(const QString& __fn, bool __ex)
+bool cImage::load(const QString& __fn, eEx __ex)
 {
     QFile   f(__fn);
     if (!f.open(QIODevice::ReadOnly)) {
@@ -384,7 +384,7 @@ bool cImage::load(const QString& __fn, bool __ex)
     return true;
 }
 
-bool cImage::save(const QString& __fn, bool __ex)
+bool cImage::save(const QString& __fn, eEx __ex)
 {
     QFile   f(__fn);
     if (!f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
@@ -395,7 +395,7 @@ bool cImage::save(const QString& __fn, bool __ex)
     return true;
 }
 
-int imageType(const QString& __n, bool __ex)
+int imageType(const QString& __n, eEx __ex)
 {
     if (__n == _sBMP) return IT_BMP;
     if (__n == _sGIF) return IT_GIF;
@@ -412,7 +412,7 @@ int imageType(const QString& __n, bool __ex)
     return IT_INVALID;
 }
 
-const QString&  imageType(int __e, bool __ex)
+const QString&  imageType(int __e, eEx __ex)
 {
     switch (__e) {
     case IT_BMP:        return _sBMP;
@@ -432,7 +432,7 @@ const QString&  imageType(int __e, bool __ex)
     return _sNul;
 }
 
-const char *   _imageType(int __e, bool __ex)
+const char *   _imageType(int __e, eEx __ex)
 {
     switch (__e) {
     case IT_BMP:        return __sJPG;
@@ -536,7 +536,7 @@ int cSubNet::getByAddress(QSqlQuery & __q, const QHostAddress& __addr)
     return __q.size();
 }
 
-const QString& subNetType(int __at, bool __ex)
+const QString& subNetType(int __at, eEx __ex)
 {
     switch (__at) {
     case NT_PRIMARY:    return _sPrimary;
@@ -548,7 +548,7 @@ const QString& subNetType(int __at, bool __ex)
     return _sNul;
 }
 
-int subNetType(const QString& __at, bool __ex)
+int subNetType(const QString& __at, eEx __ex)
 {
     if (__at == _sPrimary)  return NT_PRIMARY;
     if (__at == _sSecondary)return NT_SECONDARY;
@@ -614,13 +614,13 @@ const cRecStaticDescr&  cIpAddress::descr() const
     return *_pRecordDescr;
 }
 
-bool cIpAddress::rewrite(QSqlQuery &, bool)
+bool cIpAddress::rewrite(QSqlQuery &, eEx)
 {
     EXCEPTION(ENOTSUPP);
     return false; // warning...
 }
 
-int cIpAddress::replace(QSqlQuery &, bool)
+int cIpAddress::replace(QSqlQuery &, eEx)
 {
     EXCEPTION(ENOTSUPP);
     return R_ERROR; // warning...
@@ -657,7 +657,7 @@ bool cIpAddress::thisIsExternal(QSqlQuery& q)
     _set(_ixIpAddressType, QVariant(_sExternal));
     return true;
 }
-QString cIpAddress::lookup(const QHostAddress& ha, bool __ex)
+QString cIpAddress::lookup(const QHostAddress& ha, eEx __ex)
 {
     QHostInfo hi = QHostInfo::fromName(ha.toString());
     if (hi.error() != QHostInfo::NoError) {
@@ -667,7 +667,7 @@ QString cIpAddress::lookup(const QHostAddress& ha, bool __ex)
     return hi.hostName();
 }
 
-QList<QHostAddress> cIpAddress::lookupAll(const QString& hn, bool __ex)
+QList<QHostAddress> cIpAddress::lookupAll(const QString& hn, eEx __ex)
 {
     QHostInfo hi = QHostInfo::fromName(hn);
     if (hi.error() != QHostInfo::NoError) {
@@ -677,7 +677,7 @@ QList<QHostAddress> cIpAddress::lookupAll(const QString& hn, bool __ex)
     return hi.addresses();
 }
 
-QHostAddress cIpAddress::lookup(const QString& hn, bool __ex)
+QHostAddress cIpAddress::lookup(const QString& hn, eEx __ex)
 {
     QList<QHostAddress> al = lookupAll(hn, __ex);
     int n = al.count();
@@ -695,14 +695,14 @@ QHostAddress cIpAddress::lookup(const QString& hn, bool __ex)
     return al.first();
 }
 
-QHostAddress cIpAddress::setIpByName(const QString& _hn, const QString& _t, bool __ex)
+QHostAddress cIpAddress::setIpByName(const QString& _hn, const QString& _t, eEx __ex)
 {
     QHostAddress a = lookup(_hn, __ex);
     setAddress(a, _t);
     return a;
 }
 
-const QString& addrType(int __at, bool __ex)
+const QString& addrType(int __at, eEx __ex)
 {
     switch (__at) {
     case AT_FIXIP:  return _sFixIp;
@@ -715,7 +715,7 @@ const QString& addrType(int __at, bool __ex)
     return _sNul;
 }
 
-int addrType(const QString& __at, bool __ex)
+int addrType(const QString& __at, eEx __ex)
 {
     if (__at == _sFixIp)   return AT_FIXIP;
     if (__at == _sDynamic) return AT_DYNAMIC;
@@ -779,7 +779,7 @@ DEFAULTCRECDEF(cIfType, _sIfTypes)
 tRecordList<cIfType> cIfType::ifTypes;
 cIfType *cIfType::pNull = NULL;
 
-bool cIfType::insert(QSqlQuery &__q, bool __ex)
+bool cIfType::insert(QSqlQuery &__q, eEx __ex)
 {
     if (cRecord::insert(__q, __ex)) {
         ifTypes << *this;
@@ -788,7 +788,7 @@ bool cIfType::insert(QSqlQuery &__q, bool __ex)
     return false;
 }
 
-bool cIfType::update(QSqlQuery &__q, bool __only, const QBitArray &__set, const QBitArray &__where, bool __ex)
+bool cIfType::update(QSqlQuery &__q, bool __only, const QBitArray &__set, const QBitArray &__where, eEx __ex)
 {
     if (cRecord::update(__q, __only, __set, __where, __ex)) {
         cIfType *pIft = ifTypes.get(getId());
@@ -837,7 +837,7 @@ void cIfType::fetchIfTypes(QSqlQuery& __q)
     if (n > found) EXCEPTION(EDATA, n - found, trUtf8("Deleted if_tpes record."));
 }
 
-const cIfType& cIfType::ifType(const QString& __nm, bool __ex)
+const cIfType& cIfType::ifType(const QString& __nm, eEx __ex)
 {
     checkIfTypes();
     int i = ifTypes.indexOf(_descr_cIfType().nameIndex(), QVariant(__nm));
@@ -848,7 +848,7 @@ const cIfType& cIfType::ifType(const QString& __nm, bool __ex)
     return *(ifTypes[i]);
 }
 
-const cIfType& cIfType::ifType(qlonglong __id, bool __ex)
+const cIfType& cIfType::ifType(qlonglong __id, eEx __ex)
 {
     checkIfTypes();
     int i = ifTypes.indexOf(_descr_cIfType().idIndex(), QVariant(__id));
@@ -939,7 +939,7 @@ bool cNPort::toEnd(int i)
 }
 
 /// A tulajdonos objektum containerValid értéke érdektelen (nem kütelező, hogy tulajdonosa (QObject::parent()) legyen).
-bool cNPort::insert(QSqlQuery &__q, bool __ex)
+bool cNPort::insert(QSqlQuery &__q, eEx __ex)
 {
     bool r = cRecord::insert(__q, __ex);
     if (r) {
@@ -948,7 +948,7 @@ bool cNPort::insert(QSqlQuery &__q, bool __ex)
     return false;
 }
 
-bool cNPort::rewrite(QSqlQuery &__q, bool __ex)
+bool cNPort::rewrite(QSqlQuery &__q, eEx __ex)
 {
    return tRewrite(__q, params, CV_PORT_PARAMS, __ex);
 }
@@ -989,14 +989,14 @@ bool cNPort::fetchPortByName(QSqlQuery& __q, const QString& __port_name, qlonglo
     return n == 1;
 }
 
-qlonglong cNPort::getPortIdByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, bool ex)
+qlonglong cNPort::getPortIdByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, eEx ex)
 {
     cNPort p;
     if (!p.fetchPortByName(__q, __port_name, __node_id) && ex) EXCEPTION(EDATA, __node_id, __port_name);
     return p.getId();
 }
 
-bool cNPort::fetchPortByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, bool __ex)
+bool cNPort::fetchPortByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, eEx __ex)
 {
     clear();
     // A patch a közös ős
@@ -1009,7 +1009,7 @@ bool cNPort::fetchPortByName(QSqlQuery& __q, const QString& __port_name, const Q
     return n == 1;
 }
 
-qlonglong cNPort::getPortIdByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, bool ex)
+qlonglong cNPort::getPortIdByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, eEx ex)
 {
     cNPort p;
     if (!p.fetchPortByName(__q, __port_name, __node_name, ex) && ex)
@@ -1027,7 +1027,7 @@ bool cNPort::fetchPortByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong 
     return n == 1;
 }
 
-qlonglong cNPort::getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id, bool ex)
+qlonglong cNPort::getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id, eEx ex)
 {
     cNPort p;
     if (!p.fetchPortByIndex(__q, __port_index, __node_id) && ex)
@@ -1035,7 +1035,7 @@ qlonglong cNPort::getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, qlong
     return p.getId();
 }
 
-bool cNPort::fetchPortByIndex(QSqlQuery& __q, qlonglong __port_index, const QString& __node_name, bool __ex)
+bool cNPort::fetchPortByIndex(QSqlQuery& __q, qlonglong __port_index, const QString& __node_name, eEx __ex)
 {
     clear();
     // A patch a közös ős
@@ -1048,10 +1048,10 @@ bool cNPort::fetchPortByIndex(QSqlQuery& __q, qlonglong __port_index, const QStr
     return n == 1;
 }
 
-qlonglong cNPort::getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, const QString& __node_name, bool ex)
+qlonglong cNPort::getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, const QString& __node_name, eEx __ex)
 {
     cNPort p;
-    if (!p.fetchPortByIndex(__q, __port_index, __node_name, ex) && ex)
+    if (!p.fetchPortByIndex(__q, __port_index, __node_name, __ex) && __ex)
         EXCEPTION(EDATA, __port_index, __node_name);
     return p.getId();
 }
@@ -1071,7 +1071,7 @@ cNPort * cNPort::newPortObj(const cIfType& __t)
     return r;
 }
 
-template<class P> static inline P * getPortObjByIdT(QSqlQuery& q, qlonglong  __id, bool __ex)
+template<class P> static inline P * getPortObjByIdT(QSqlQuery& q, qlonglong  __id, eEx __ex)
 {
     P *p = new P();
     p->setId(__id);
@@ -1083,7 +1083,7 @@ template<class P> static inline P * getPortObjByIdT(QSqlQuery& q, qlonglong  __i
     return p;
 }
 
-cNPort * cNPort::getPortObjById(QSqlQuery& q, qlonglong __tableoid, qlonglong __port_id, bool __ex)
+cNPort * cNPort::getPortObjById(QSqlQuery& q, qlonglong __tableoid, qlonglong __port_id, eEx __ex)
 {
     if (_tableoid_nports == NULL_ID) cNPort();
     if      (__tableoid == _tableoid_nports)     return getPortObjByIdT<cNPort>       (q, __port_id, __ex);
@@ -1093,7 +1093,7 @@ cNPort * cNPort::getPortObjById(QSqlQuery& q, qlonglong __tableoid, qlonglong __
     return NULL;
 }
 
-cNPort * cNPort::getPortObjById(QSqlQuery& q, qlonglong __port_id, bool __ex)
+cNPort * cNPort::getPortObjById(QSqlQuery& q, qlonglong __port_id, eEx __ex)
 {
     qlonglong tableoid = cNPort().setId(__port_id).fetchTableOId(q, __ex);
     if (tableoid < 0LL) return NULL;
@@ -1106,14 +1106,14 @@ int cNPort::fetchParams(QSqlQuery& q)
     return params.fetch(q);
 }
 
-QString cNPort::getFullName(QSqlQuery& q, bool _ex)
+QString cNPort::getFullName(QSqlQuery& q, eEx __ex)
 {
-    return cNode().getNameById(q, getId(_ixNodeId), _ex) + ':' + getName();
+    return cNode().getNameById(q, getId(_ixNodeId), __ex) + ':' + getName();
 }
 
 /* ------------------------------ cPPort ------------------------------ */
 
- int portShare(const QString& _n, bool __ex)
+ int portShare(const QString& _n, eEx __ex)
  {
      if (_n.isEmpty())                                return ES_;
      if (0 == _n.compare(_sA,   Qt::CaseInsensitive)) return ES_A;
@@ -1129,7 +1129,7 @@ QString cNPort::getFullName(QSqlQuery& q, bool _ex)
      return ES_INVALID;
  }
 
-const QString& portShare(int _i, bool __ex)
+const QString& portShare(int _i, eEx __ex)
 {
     switch (_i) {
     case ES_:   return _sNul;
@@ -1236,7 +1236,7 @@ bool cInterface::toEnd(int i)
     return false;
 }
 
-bool cInterface::insert(QSqlQuery &__q, bool __ex)
+bool cInterface::insert(QSqlQuery &__q, eEx __ex)
 {
     if (!(cNPort::insert(__q, __ex) && (trunkMembers.size() == updateTrunkMembers(__q, __ex)))) return false;
     bool r = true;
@@ -1247,7 +1247,7 @@ bool cInterface::insert(QSqlQuery &__q, bool __ex)
 
 /// Az cInterface nem önálló objektum.
 /// A Hívása elött a cNode törli az összes IP cím rekordot, igy az IP címekhet nem a replace() hanem az insert() metódust kell hívni,
-bool cInterface::rewrite(QSqlQuery &__q, bool __ex)
+bool cInterface::rewrite(QSqlQuery &__q, eEx __ex)
 {
     bool r = cNPort::rewrite(__q, __ex) && (trunkMembers.size() == updateTrunkMembers(__q, __ex));
     if (!r) return false;
@@ -1264,7 +1264,7 @@ QString cInterface::toString() const
     return cRecord::toString() + " & adresses " + addresses.toString() + " ";
 }
 
-int cInterface::updateTrunkMembers(QSqlQuery& q, bool __ex)
+int cInterface::updateTrunkMembers(QSqlQuery& q, eEx __ex)
 {
     if (trunkMembers.isEmpty()) return 0;
     int r = 0;
@@ -1290,7 +1290,7 @@ int cInterface::updateTrunkMembers(QSqlQuery& q, bool __ex)
 
 void cInterface::joinVlan(qlonglong __id, enum eVlanType __t, enum eSetType __st)
 {
-    cPortVlan *pv = vlans.get(cPortVlan::ixVlanId(), __id, false);
+    cPortVlan *pv = vlans.get(cPortVlan::ixVlanId(), __id, EX_IGNORE);
     if (pv == NULL) vlans << (pv = new cPortVlan());
     pv->setVlanId(__id);
     pv->setVlanType(__t);
@@ -1356,7 +1356,7 @@ cIpAddress& cInterface::addIpAddress(const QHostAddress& __a, const QString& __t
     return *p;
 }
 
-int ifStatus(const QString& _n, bool __ex)
+int ifStatus(const QString& _n, enum eEx __ex)
 {
     if (0 == _n.compare(_sUp,             Qt::CaseInsensitive)) return cInterface::UP;
     if (0 == _n.compare(_sDown,           Qt::CaseInsensitive)) return cInterface::DOWN;
@@ -1373,7 +1373,7 @@ int ifStatus(const QString& _n, bool __ex)
     return cInterface::PS_INVALID;
 }
 
-const QString& ifStatus(int _i, bool __ex)
+const QString& ifStatus(int _i, enum eEx __ex)
 {
     switch (_i) {
     case cInterface::UP:                return _sUp;
@@ -1497,7 +1497,7 @@ bool cPatch::toEnd(int i)
     return false;
 }
 
-bool cPatch::insert(QSqlQuery &__q, bool __ex)
+bool cPatch::insert(QSqlQuery &__q, eEx __ex)
 {
     if (!cRecord::insert(__q, __ex)) return false;
     if (params.count()) {
@@ -1511,7 +1511,7 @@ bool cPatch::insert(QSqlQuery &__q, bool __ex)
     return true;
 }
 
-bool cPatch::rewrite(QSqlQuery &__q, bool __ex)
+bool cPatch::rewrite(QSqlQuery &__q, eEx __ex)
 {
     bool r = tRewrite(__q, ports, CV_PORTS, params, CV_NODE_PARAMS, __ex);
     if (!r) return false;
@@ -1580,7 +1580,7 @@ bool cPatch::setShare(int __a, int __ab, int __b, int __bb, bool __cd)
     shares() << s;
     return true;
 }
-bool cPatch::updateShares(QSqlQuery& __q, bool __clr, bool __ex)
+bool cPatch::updateShares(QSqlQuery& __q, bool __clr, eEx __ex)
 {
     if (__clr) {
         QString sql = "UPDATE pports SET shared_cable = DEFAULT, shared_port_id = DEFAULT WHERE port_id = " + QString::number(getId());
@@ -1705,7 +1705,7 @@ cNPort *cPatch::portSetParam(int __ix, const QString& __par, const QVariantList 
     return p;
 }
 
-cNPort * cPatch::getPort(int __ix, bool __ex)
+cNPort * cPatch::getPort(int __ix, eEx __ex)
 {
     if (__ix != NULL_IX) {
         int i = ports.indexOf(cNPort::ixPortIndex(), __ix);
@@ -1715,7 +1715,7 @@ cNPort * cPatch::getPort(int __ix, bool __ex)
     return NULL;
 }
 
-cNPort * cPatch::getPort(const QString& __pn, bool __ex)
+cNPort * cPatch::getPort(const QString& __pn, eEx __ex)
 {
     int i = ports.indexOf(cNPort().nameIndex(), __pn);
     if (i >= 0) return ports[i];
@@ -1723,7 +1723,7 @@ cNPort * cPatch::getPort(const QString& __pn, bool __ex)
     return NULL;
 }
 
-cPatch * cPatch::getNodeObjById(QSqlQuery& q, qlonglong __tableoid, qlonglong __node_id, bool __ex)
+cPatch * cPatch::getNodeObjById(QSqlQuery& q, qlonglong __tableoid, qlonglong __node_id, eEx __ex)
 {
     if      (__tableoid == cPatch().      tableoid()) return getObjByIdT<cPatch>     (q, __node_id, __ex);
     else if (__tableoid == cNode().       tableoid()) return getObjByIdT<cNode>      (q, __node_id, __ex);
@@ -1732,7 +1732,7 @@ cPatch * cPatch::getNodeObjById(QSqlQuery& q, qlonglong __tableoid, qlonglong __
     return NULL;
 }
 
-cPatch * cPatch::getNodeObjById(QSqlQuery& q, qlonglong __node_id, bool __ex)
+cPatch * cPatch::getNodeObjById(QSqlQuery& q, qlonglong __node_id, eEx __ex)
 {
     qlonglong tableoid = cPatch().setId(__node_id).fetchTableOId(q, __ex);
     if (tableoid < 0LL) return NULL;
@@ -1787,7 +1787,7 @@ void    cNodeParam::clearToEnd()
 
 /* ------------------------------ NODES : cNode ------------------------------ */
 
-int nodeType(const QString& __n, bool __ex)
+int nodeType(const QString& __n, eEx __ex)
 {
     if (0 == __n.compare(_sPatch,       Qt::CaseInsensitive)) return NT_PATCH;
     if (0 == __n.compare(_sNode,        Qt::CaseInsensitive)) return NT_NODE;
@@ -1803,7 +1803,7 @@ int nodeType(const QString& __n, bool __ex)
     return NT_INVALID;
 }
 
-const QString& nodeType(int __e, bool __ex)
+const QString& nodeType(int __e, eEx __ex)
 {
     switch (__e) {
     case NT_PATCH:      return _sPatch;
@@ -1865,13 +1865,13 @@ const cRecStaticDescr&  cNode::descr() const
 
 void cNode::clearShares()                                       { EXCEPTION(ENOTSUPP); }
 bool cNode::setShare(int, int, int , int, bool)                 { EXCEPTION(ENOTSUPP); return false; }
-bool cNode::updateShares(QSqlQuery&, bool, bool)                { EXCEPTION(ENOTSUPP); return false; }
+bool cNode::updateShares(QSqlQuery&, bool, eEx)                 { EXCEPTION(ENOTSUPP); return false; }
 cPPort *cNode::addPort(const QString&, const QString &, int)    { EXCEPTION(ENOTSUPP); return NULL; }
 cPPort *cNode::addPorts(const QString&, int , int , int , int ) { EXCEPTION(ENOTSUPP); return NULL; }
 
 CRECDEFD(cNode)
 
-bool cNode::insert(QSqlQuery &__q, bool __ex)
+bool cNode::insert(QSqlQuery &__q, eEx __ex)
 {
     int ixNodeType = toIndex(_sNodeType);
     if (isNull(ixNodeType)) {
@@ -1890,7 +1890,7 @@ bool cNode::insert(QSqlQuery &__q, bool __ex)
     return cPatch::insert(__q, __ex);
 }
 
-bool cNode::rewrite(QSqlQuery &__q, bool __ex)
+bool cNode::rewrite(QSqlQuery &__q, eEx __ex)
 {
     // Töröljők az összes régi IP címet (IP címekre nincs replace/rewrite metódus)
     QString sql = "DELETE FROM ipaddresses WHERE port_id IN "
@@ -1911,7 +1911,7 @@ int  cNode::fetchPorts(QSqlQuery& __q)
     if (execSql(__q, sql, getId())) do {
         qlonglong tableoid = variantToId(__q.value(0));
         qlonglong port_id  = variantToId(__q.value(1));
-        cNPort *p = cNPort::getPortObjById(q, tableoid, port_id, true);
+        cNPort *p = cNPort::getPortObjById(q, tableoid, port_id, EX_ERROR);
         q.finish();
         if (p == NULL) return -1;
         if (tableoid == cNPort::tableoid_interfaces()) {
@@ -1926,9 +1926,9 @@ int  cNode::fetchPorts(QSqlQuery& __q)
     return ports.count();
 }
 
-qlonglong cNode::getIdByName(QSqlQuery& __q, const QString& __n, bool __ex) const
+qlonglong cNode::getIdByName(QSqlQuery& __q, const QString& __n, eEx __ex) const
 {
-    qlonglong id = descr().getIdByName(__q, __n, false);
+    qlonglong id = descr().getIdByName(__q, __n, EX_IGNORE);
     if (id != NULL_ID) return id;
     QString sql =
             "SELECT nodes.node_id FROM nodes WHERE "
@@ -1956,8 +1956,8 @@ QString cNode::toString() const
 cNPort *cNode::addPort(const cIfType& __t, const QString& __name, const QString& __note, int __ix)
 {
     if (ports.count()) {
-        if (NULL != getPort(__name, false)) EXCEPTION(EDATA, -1, QString("Ilyen port név már létezik: %1").arg(__name));
-        if (__ix != NULL_IX && NULL != getPort(__ix,   false)) EXCEPTION(EDATA, __ix, QString("Ilyen port index már létezik."));
+        if (NULL != getPort(__name, EX_IGNORE)) EXCEPTION(EDATA, -1, QString("Ilyen port név már létezik: %1").arg(__name));
+        if (__ix != NULL_IX && NULL != getPort(__ix, EX_IGNORE)) EXCEPTION(EDATA, __ix, QString("Ilyen port index már létezik."));
     }
     cNPort  *p = cNPort::newPortObj(__t);
     p->setName(__name);
@@ -2023,7 +2023,7 @@ cNPort *cNode::addSensors(const QString& __np, int __noff, int __from, int __to,
     return p;
 }
 
-bool cNode::fetchByIp(QSqlQuery& q, const QHostAddress& a, bool __ex)
+bool cNode::fetchByIp(QSqlQuery& q, const QHostAddress& a, eEx __ex)
 {
     clear();
     QString sql = QString("SELECT DISTINCT %1.* FROM %1 JOIN interfaces USING(node_id) JOIN ipaddresses USING(port_id) WHERE address = ?").arg(tableName());
@@ -2040,7 +2040,7 @@ bool cNode::fetchByIp(QSqlQuery& q, const QHostAddress& a, bool __ex)
     return false;
 }
 
-bool cNode::fetchOnePortByIp(QSqlQuery& q, const QHostAddress& a, bool __ex)
+bool cNode::fetchOnePortByIp(QSqlQuery& q, const QHostAddress& a, eEx __ex)
 {
     ports.clear();
     QString sql =
@@ -2079,7 +2079,7 @@ bool cNode::fetchByMac(QSqlQuery& q, const cMac& a)
     return false;
 }
 
-bool cNode::fetchSelf(QSqlQuery& q, bool __ex)
+bool cNode::fetchSelf(QSqlQuery& q, eEx __ex)
 {
     if (lanView::testSelfName.isEmpty()) {
         QString name = getEnvVar("HOSTNAME");
@@ -2091,7 +2091,7 @@ bool cNode::fetchSelf(QSqlQuery& q, bool __ex)
         foreach (QHostAddress a, aa) {
             PDEB(VVERBOSE) << "My adress : " << a.toString() << endl;
             if (a.isNull() || a.isLoopback()) continue;
-            if (fetchByIp(q, a, false)) return true;
+            if (fetchByIp(q, a, EX_IGNORE)) return true;
         }
         QList<QNetworkInterface> ii = QNetworkInterface::allInterfaces();
         foreach (QNetworkInterface i, ii) {
@@ -2239,8 +2239,8 @@ cNPort& cNode::asmbHostPort(QSqlQuery& q, int ix, const QString& pt, const QStri
 {
     QHostAddress a;
     cMac m;
-    if (ix != NULL_IX && getPort(ix, false) != NULL) EXCEPTION(EDATA, ix, trUtf8("Nem egyedi port index"));
-    if (                 getPort(pn, false) != NULL) EXCEPTION(EDATA, -1, trUtf8("Nem egyedi portnév: %1").arg(pn));
+    if (ix != NULL_IX && getPort(ix, EX_IGNORE) != NULL) EXCEPTION(EDATA, ix, trUtf8("Nem egyedi port index"));
+    if (                 getPort(pn, EX_IGNORE) != NULL) EXCEPTION(EDATA, -1, trUtf8("Nem egyedi portnév: %1").arg(pn));
     if (mac != NULL) {
         if (variantIsInteger(*mac)) {
             int i = ports.indexOf(cPPort::ixPortIndex(), *mac);
@@ -2288,7 +2288,7 @@ cNPort& cNode::asmbHostPort(QSqlQuery& q, int ix, const QString& pt, const QStri
 }
 
 
-cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const QStringPair *__port, const QStringPair *__addr, const QString *__sMac, const QString& __note, qlonglong __place, bool __ex)
+cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const QStringPair *__port, const QStringPair *__addr, const QString *__sMac, const QString& __note, qlonglong __place, eEx __ex)
 {
     QString em;
     QString name = __name;
@@ -2461,7 +2461,7 @@ cSnmpDevice::cSnmpDevice(const QString& __n, const QString &__d)
 CRECDDCR(cSnmpDevice, _sSnmpDevices)
 CRECDEFD(cSnmpDevice)
 
-bool cSnmpDevice::insert(QSqlQuery &__q, bool __ex)
+bool cSnmpDevice::insert(QSqlQuery &__q, eEx __ex)
 {
     int ixNodeType = toIndex(_sNodeType);
     if (isNull(ixNodeType)) {
@@ -2473,7 +2473,7 @@ bool cSnmpDevice::insert(QSqlQuery &__q, bool __ex)
     return cPatch::insert(__q, __ex);
 }
 
-bool cSnmpDevice::rewrite(QSqlQuery &__q, bool __ex)
+bool cSnmpDevice::rewrite(QSqlQuery &__q, eEx __ex)
 {
     int ixNodeType = toIndex(_sNodeType);
     if (isNull(ixNodeType)) {
@@ -2501,7 +2501,7 @@ int cSnmpDevice::snmpVersion() const
     return -1;  // Inactive
 }
 
-bool cSnmpDevice::setBySnmp(const QString& __com, bool __ex, QString *pEs)
+bool cSnmpDevice::setBySnmp(const QString& __com, eEx __ex, QString *pEs)
 {
 #ifdef MUST_SCAN
     QString community = __com;
@@ -2529,7 +2529,7 @@ bool cSnmpDevice::setBySnmp(const QString& __com, bool __ex, QString *pEs)
     return false;
 }
 
-int cSnmpDevice::open(QSqlQuery& q, cSnmp& snmp, bool __ex) const
+int cSnmpDevice::open(QSqlQuery& q, cSnmp& snmp, eEx __ex) const
 {
 #ifdef MUST_SCAN
     QList<QHostAddress> la = fetchAllIpAddress(q);
@@ -2560,7 +2560,7 @@ int cSnmpDevice::open(QSqlQuery& q, cSnmp& snmp, bool __ex) const
 
 /* ----------------------------------------------------------------- */
 
-int phsLinkType(const QString& n, bool __ex)
+int phsLinkType(const QString& n, eEx __ex)
 {
     if (0 == n.compare(_sFront, Qt::CaseInsensitive)) return LT_FRONT;
     if (0 == n.compare(_sBack,  Qt::CaseInsensitive)) return LT_BACK;
@@ -2569,7 +2569,7 @@ int phsLinkType(const QString& n, bool __ex)
     return LT_INVALID;
 }
 
-const QString& phsLinkType(int e, bool __ex)
+const QString& phsLinkType(int e, eEx __ex)
 {
     switch (e) {
     case LT_FRONT:  return _sFront;
@@ -2655,7 +2655,7 @@ int cPhsLink::unxlinks(QSqlQuery& __q, qlonglong __pid, ePhsLinkType __t, ePortS
     return r;
 }
 
-int cPhsLink::replace(QSqlQuery &__q, bool __ex)
+int cPhsLink::replace(QSqlQuery &__q, eEx __ex)
 {
     int r = 0;
     // Ütköző linkek törlése a bal oldali porthoz (1)
@@ -2666,7 +2666,7 @@ int cPhsLink::replace(QSqlQuery &__q, bool __ex)
     return r ? R_UPDATE : R_INSERT;
 }
 
-bool cPhsLink::rewrite(QSqlQuery &, bool)
+bool cPhsLink::rewrite(QSqlQuery &, eEx)
 {
     EXCEPTION(ENOTSUPP);
     return false;
@@ -2827,7 +2827,7 @@ bool cLldpLink::unlink(QSqlQuery& q, qlonglong __pid)
 }
 
 /* ----------------------------------------------------------------- */
-int execState(const QString& _n, bool __ex)
+int execState(const QString& _n, enum eEx __ex)
 {
     if (0 == _n.compare(_sWait,     Qt::CaseInsensitive)) return ES_WAIT;
     if (0 == _n.compare(_sExecute,  Qt::CaseInsensitive)) return ES_EXECUTE;
@@ -2838,7 +2838,7 @@ int execState(const QString& _n, bool __ex)
     return ES_INVALID;
 }
 
-const QString& execState(int _e, bool __ex)
+const QString& execState(int _e, enum eEx __ex)
 {
     switch (_e) {
     case ES_WAIT:       return _sWait;
@@ -2865,7 +2865,7 @@ cTemplateMap::cTemplateMap(const cTemplateMap& __o) : QMap<QString, QString>(__o
     ;
 }
 
-const QString& cTemplateMap::get(QSqlQuery& __q, const QString& __name, bool __ex)
+const QString& cTemplateMap::get(QSqlQuery& __q, const QString& __name, eEx __ex)
 {
     QMap<QString, QString>::iterator i = find(__name);
     if (i != end()) return i.value();
@@ -2907,7 +2907,7 @@ void cTemplateMap::del(QSqlQuery& __q, const QString &__name)
 
 /* ---------------------------------------------------------------------------------------------------- */
 
-int vlanType(const QString& __n, bool __ex)
+int vlanType(const QString& __n, eEx __ex)
 {
     if (0 == __n.compare(_sNo,        Qt::CaseInsensitive)) return VT_NO;
     if (0 == __n.compare(_sUnknown,   Qt::CaseInsensitive)) return VT_NOTKNOWN;
@@ -2922,7 +2922,7 @@ int vlanType(const QString& __n, bool __ex)
     return VT_INVALID;
 }
 
-const QString& vlanType(int __e, bool __ex)
+const QString& vlanType(int __e, eEx __ex)
 {
     switch (__e) {
     case VT_NO:         return _sNo;
@@ -2939,7 +2939,7 @@ const QString& vlanType(int __e, bool __ex)
     }
 }
 
-int  setType(const QString& __n, bool __ex)
+int  setType(const QString& __n, eEx __ex)
 {
     if (0 == __n.compare(_sAuto,   Qt::CaseInsensitive)) return ST_AUTO;
     if (0 == __n.compare(_sQuery,  Qt::CaseInsensitive)) return ST_QUERY;
@@ -2949,7 +2949,7 @@ int  setType(const QString& __n, bool __ex)
     return ST_INVALID;
 }
 
-const QString& setType(int __e, bool __ex)
+const QString& setType(int __e, eEx __ex)
 {
     switch (__e) {
     case ST_AUTO:   return _sAuto;

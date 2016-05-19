@@ -3,7 +3,7 @@
 #include "gparse.h"
 #include "apierrcodes.h"
 
-cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidget * par, bool __ex)
+cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidget * par, eEx __ex)
     : QObject(par), type(MAT_ERROR)
 {
     pTabWidget   = par;

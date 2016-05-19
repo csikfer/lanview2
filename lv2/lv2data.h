@@ -31,8 +31,8 @@ enum eNotifSwitch {
 };
 
 
-EXT_ int reasons(const QString& _r, bool __ex = true);
-EXT_ const QString& reasons(int _r, bool __ex = true);
+EXT_ int reasons(const QString& _r, enum eEx __ex = EX_ERROR);
+EXT_ const QString& reasons(int _r, enum eEx __ex = EX_ERROR);
 
 /// @def CHKENUM
 /// @brief Egy enumerációs típus konverziós függvényeinek az ellenörzése.
@@ -60,9 +60,9 @@ enum eSubNetType {
 /// @param __at A típus konstans.
 /// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást. (NT_INVALID esetén is).
 /// @return A típus string, ha nem megengedett konstanssal hívtuk, és __ex false volt, akkor a NULL string.
-EXT_ const QString& subNetType(int __at, bool __ex = true);
+EXT_ const QString& subNetType(int __at, enum eEx __ex = EX_ERROR);
 /// Cím típus konstanssal tér vissza, a megadott típus név alapján
-EXT_ int subNetType(const QString& __at, bool __ex = true);
+EXT_ int subNetType(const QString& __at, enum eEx __ex = EX_ERROR);
 
 /// @enum eAddressType
 /// @brief Ip cím típusok
@@ -79,12 +79,12 @@ enum eAddressType {
 /// @param __at A típus konstans.
 /// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást.
 /// @return A típus string, ha nem megengedett konstanssal hívtuk, és __ex false volt, akkor a NULL string.
-EXT_ const QString& addrType(int __at, bool __ex = true);
+EXT_ const QString& addrType(int __at, enum eEx __ex = EX_ERROR);
 /// Cím típus konstanssal tér vissza, a megadott név alapján
 /// @param __at A típus név.
 /// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást.
 /// @return A típus konstans, ha nem megengedett névvel hívtuk, és __ex false volt, akkor -1
-EXT_ int addrType(const QString& __at, bool __ex = true);
+EXT_ int addrType(const QString& __at, enum eEx __ex = EX_ERROR);
 
 /// Port - VLAN összerendelés típusa
 enum eVlanType {
@@ -104,12 +104,12 @@ enum eVlanType {
 /// @param __n A típus konstans.
 /// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást.
 /// @return A típus string, ha nem megengedett konstanssal hívtuk, és __ex false volt, akkor a NULL string.
-EXT_ int vlanType(const QString& __n, bool __ex = true);
+EXT_ int vlanType(const QString& __n, enum eEx __ex = EX_ERROR);
 /// VLAN típus konstanssal tér vissza, a megadott név alapján
 /// @param __e A típus név.
 /// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást.
 /// @return A típus konstans, ha nem megengedett névvel hívtuk, és __ex false volt, akkor -1
-EXT_ const QString& vlanType(int __e, bool __ex = true);
+EXT_ const QString& vlanType(int __e, enum eEx __ex = EX_ERROR);
 
 /// Port - VLAN összerendelés forrása
 enum eSetType  {
@@ -124,12 +124,12 @@ enum eSetType  {
 /// @param __n A típus konstans.
 /// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást.
 /// @return A típus string, ha nem megengedett konstanssal hívtuk, és __ex false volt, akkor a NULL string.
-EXT_ int  setType(const QString& __n, bool __ex = true);
+EXT_ int  setType(const QString& __n, enum eEx __ex = EX_ERROR);
 /// ort - VLAN összerendelés típus konstanssal tér vissza, a megadott név alapján
 /// @param __e A típus név.
 /// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást.
 /// @return A típus konstans, ha nem megengedett névvel hívtuk, és __ex false volt, akkor -1
-EXT_ const QString& setType(int __e, bool __ex = true);
+EXT_ const QString& setType(int __e, enum eEx __ex = EX_ERROR);
 
 /// Image types
 enum eImageType {
@@ -151,17 +151,17 @@ enum eImageType {
 /// @param __n A típus konstans.
 /// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást.
 /// @return A típus string, ha nem megengedett konstanssal hívtuk, és __ex false volt, akkor a NULL string.
-EXT_ int  imageType(const QString& __n, bool __ex = true);
+EXT_ int  imageType(const QString& __n, enum eEx __ex = EX_ERROR);
 /// Kép típus konstanssal tér vissza, a megadott név alapján
 /// @param __e A típus név.
 /// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást.
 /// @return A típus konstans, ha nem megengedett névvel hívtuk, és __ex false volt, akkor -1
-EXT_ const QString&   imageType(int __e, bool __ex = true);
+EXT_ const QString&   imageType(int __e, enum eEx __ex = EX_ERROR);
 /// Kép típus konstanssal tér vissza, a megadott név alapján
 /// @param __e A típus név. Egyes Qt függvények ezt a típust vátják.
 /// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást.
 /// @return A típus konstans, ha nem megengedett névvel hívtuk, és __ex false volt, akkor -1
-EXT_ const char *    _imageType(int __e, bool __ex = true);
+EXT_ const char *    _imageType(int __e, enum eEx __ex = EX_ERROR);
 
 /// @enum eParamType
 /// Paraméter adattípus konstansok
@@ -183,12 +183,12 @@ enum eParamType {
 /// @param __n A paraméter típus neve (SQL enumerációs érték)
 /// @param __ex Ha értéke true, és nem valós típusnevet adtunk meg, akkor dob egy kizárást.
 /// @return A típus konstanssal tér vissza, ha nincs ilyen típus, és __ex értéke false, akkor a PT_INVALID konstanssal.
-EXT_ int paramTypeType(const QString& __n, bool __ex = true);
+EXT_ int paramTypeType(const QString& __n, enum eEx __ex = EX_ERROR);
 /// Paraméter típus név konverzió
 /// @param __e A paraméter típus konstans
 /// @param __ex Ha értéke true, és nem valós típus konstanst adtunk meg, akkor dob egy kizárást.
 /// @return A típus névvel tér vissza, ha nincs ilyen típus, és __ex értéke false, akkor egy üres stringgel.
-EXT_ const QString& paramTypeType(int __e, bool __ex = true);
+EXT_ const QString& paramTypeType(int __e, enum eEx __ex = EX_ERROR);
 
 /// @enum eNodeType
 /// Hálózati elemek típus azonosítók (set)
@@ -210,12 +210,12 @@ enum eNodeType {
 /// @param __n A node típus neve (SQL enumerációs érték)
 /// @param __ex Ha értéke true, és nem valós típusnevet adtunk meg, akkor dob egy kizárást.
 /// @return A típus konstanssal tér vissza, ha nincs ilyen típus, és __ex értéke false, akkor a NT_INVALID konstanssal.
-EXT_ int nodeType(const QString& __n, bool __ex = true);
+EXT_ int nodeType(const QString& __n, enum eEx __ex = EX_ERROR);
 /// Paraméter típus név konverzió
 /// @param __e A node típus konstans
 /// @param __ex Ha értéke true, és nem valós típus konstanst adtunk meg, akkor dob egy kizárást.
 /// @return A típus névvel tér vissza, ha nincs ilyen típus, és __ex értéke false, akkor egy üres stringgel.
-EXT_ const QString& nodeType(int __e, bool __ex = true);
+EXT_ const QString& nodeType(int __e, enum eEx __ex = EX_ERROR);
 
 /* ------------------------------------------------------------------ */
 /// Paraméter típus leíró rekord
@@ -230,7 +230,7 @@ public:
     /// @param __t A paraméter adat típusa
     /// @param __di A paraméter dimenziója, opcionális
     /// @return Az új rekord azonisítója (ID), hiba esetén, ha __ex hamis volt, akkor NULL_ID-vel tér vissza.
-    static qlonglong insertNew(QSqlQuery &q, const QString& __n, const QString& __de, const QString __t, const QString __di = QString(), bool __ex = true);
+    static qlonglong insertNew(QSqlQuery &q, const QString& __n, const QString& __de, const QString __t, const QString __di = QString(), enum eEx __ex = EX_ERROR);
     /// Egy új paraméter típus rekord beinzertálása (paraméter név/típus/dimenzió objektumlétrehozása).
     /// Hiba esetén, ha __ex igaz (vagy nincs megadva), akkor dob egy kizárást,
     /// @param q Az adatbázis művelethet használt objektum
@@ -239,11 +239,11 @@ public:
     /// @param __t A paraméter adat típusa (lsd.: eParamType).
     /// @param __di A paraméter dimenziója, opcionális
     /// @return Az új rekord azonisítója (ID), hiba esetén, ha __ex hamis volt, akkor NULL_ID-vel tér vissza.
-    static qlonglong insertNew(QSqlQuery &q, const QString& __n, const QString& __de, int __t, const QString __di = QString(), bool __ex = true);
+    static qlonglong insertNew(QSqlQuery &q, const QString& __n, const QString& __de, int __t, const QString __di = QString(), enum eEx __ex = EX_ERROR);
     ///
-    static QString paramToString(eParamType __t, const QVariant& __v, bool __ex = true);
+    static QString paramToString(eParamType __t, const QVariant& __v, enum eEx __ex = EX_ERROR);
     ///
-    static QVariant paramFromString(eParamType __t, QString& __v, bool __ex = true);
+    static QVariant paramFromString(eParamType __t, QString& __v, enum eEx __ex = EX_ERROR);
 protected:
     static tRecordList<cParamType>  paramTypes;
     static cParamType *pNull;
@@ -254,19 +254,19 @@ public:
     /// Egy cParamType objektumot ad vissza a név alapján, ha nincs ilyen nevű típus, akkor dob egy kizárást.
     /// Az paramTypes adattagban keres, ha paramTypes üres, akkor feltölti az adatbázisból
     /// Ha __ex értéke hamis, akkor kizárás helyett, egy üres objektummal tér vissza (amire a pNull adattag mutat)
-    static const cParamType& paramType(const QString& __nm, bool __ex = true);
+    static const cParamType& paramType(const QString& __nm, enum eEx __ex = EX_ERROR);
     /// Egy paramTypes objektumot ad vissza az ID alapján, ha nincs ilyen nevű típus, akkor dob egy kizárást.
     /// Az paramTypes adattagban keres, ha paramTypes üres, akkor feltölti az adatbázisból
     /// Ha __ex értéke hamis, akkor kizárás helyett, egy üres objektummal tér vissza (amire a pNull adattag mutat)
-    static const cParamType& paramType(qlonglong __id, bool __ex = true);
+    static const cParamType& paramType(qlonglong __id, enum eEx __ex = EX_ERROR);
     /// Egy paramTypes objektum Azonosítóját adja vissza a név alapján, ha nincs ilyen nevű típus, akkor dob egy kizárást.
     /// Az paramTypes adattagban keres, ha paramTypes üres, akkor feltölti az adatbázisból
     /// Ha __ex értéke hamis, akkor kizárás helyett, NULL_ID -vel tér vissza.
-    static qlonglong paramTypeId(const QString& __nm, bool __ex = true) { return paramType(__nm, __ex).getId(); }
+    static qlonglong paramTypeId(const QString& __nm, enum eEx __ex = EX_ERROR) { return paramType(__nm, __ex).getId(); }
     /// Egy paramTypes objektum nevét adja vissza az ID alapján, ha nincs ilyen azonosítójú típus, akkor dob egy kizárást.
     /// Az paramTypes adattagban keres, ha paramTypes üres, akkor feltölti az adatbázisból
     /// Ha __ex értéke hamis, akkor kizárás helyett, üres stringgel tér vissza.
-    static QString   paramTypeName(qlonglong __id, bool __ex = true)    { return paramType(__id, __ex).getName(); }
+    static QString   paramTypeName(qlonglong __id, enum eEx __ex = EX_ERROR)    { return paramType(__id, __ex).getName(); }
 protected:
     /// Ha nincs feltöltve az paramTypes adattag , akkor feltölti az adatbázisból,
     /// Vagyis hívja a void fetchParamTypes(QSqlQuery& __q); metódust.
@@ -286,18 +286,18 @@ public:
     /// A paraméter adat típus enumerációs értékkel tér vissza
     qlonglong valueType()   const { return paramType.getId(_sParamTypeType); }
     /// A paraméter adat típus névvel tér vissza
-    const QString& valueTypeName(bool __ex = true) const {return paramTypeType(valueType(), __ex); }
+    const QString& valueTypeName(enum eEx __ex = EX_ERROR) const {return paramTypeType(valueType(), __ex); }
     /// A paraméter dimenzió ill. mértékegység nevével tér vissza
     QString valueDim()    const { return paramType.getName(__sParamTypeDim); }
     /// A paraméter értékkel tér vissza
-    QVariant value(bool __ex = true) const;
+    QVariant value(enum eEx __ex = EX_ERROR) const;
     /// A paraméter típusának a beállítása
     /// @param __id A paraméter típus rekord ID-je
     cSysParam& setType(qlonglong __id)        { set(_ixParamTypeId, __id); return *this; }
     /// @param __n A paraméter típus rekord név mezőjenek az értéke
     cSysParam& setType(const QString& __n)    { paramType.fetchByName(__n); _set(_ixParamTypeId, paramType.getId()); return *this; }
     /// Értékadás az érték mezőnek.
-    cSysParam& setValue(const QVariant& __v, bool __ex = true);
+    cSysParam& setValue(const QVariant& __v, enum eEx __ex = EX_ERROR);
     /// Értékadás az érték mezőnek.
     cSysParam& operator=(const QVariant& __v) { return setValue(__v); }
     static enum eReasons setTextSysParam(QSqlQuery& _q, const QString& __nm, const QString& _val, const QString& _tn = _sText) {
@@ -316,7 +316,7 @@ public:
         execSqlFunction(_q, "set_interval_sys_param", QVariant(__nm), QVariant(intervalToStr(_val)), QVariant(_tn));
         return (enum eReasons)reasons(_q.value(0).toString());
     }
-    static enum eReasons setSysParam(QSqlQuery& _q, const QString& __nm, const QVariant& _val, const QString& _tn, bool __ex = true) {
+    static enum eReasons setSysParam(QSqlQuery& _q, const QString& __nm, const QVariant& _val, const QString& _tn, enum eEx __ex = EX_ERROR) {
         cSysParam   po;
         po.setType(_tn);
         po.setValue(_val, __ex);
@@ -329,7 +329,7 @@ public:
     /// @param __nm A paraméter neve
     /// @param __ex Ha értéke true és nem létezik a lekért paraméter, akkor dob egy kizárást.
     /// @return A kért paraméter értéke, vagy ha nem létezik és _ex false, akkor egy üres objektum.
-    static QVariant getSysParam(QSqlQuery& _q, const QString& _nm, bool __ex = true) {
+    static QVariant getSysParam(QSqlQuery& _q, const QString& _nm, enum eEx __ex = EX_ERROR) {
         cSysParam   po;
         if (po.fetchByName(_q, _nm)) {
             return po.value(__ex);
@@ -402,10 +402,10 @@ public:
     bool toEnd(int _i);
     /// Betölt az objektumba egy képet
     /// @param __fn A kép fájl neve
-    bool load(const QString& __fn, bool __ex = true);
+    bool load(const QString& __fn, enum eEx __ex = EX_ERROR);
     /// Kiír egy képet egy fájlba
     /// @param __fn A kép fájl neve
-    bool save(const QString& __fn, bool __ex = true);
+    bool save(const QString& __fn, enum eEx __ex = EX_ERROR);
     /// A bináris adattartalmat állítja be
     void setImage(const QByteArray& __a)   { set(_ixImageData, QVariant(__a)); }
     /// Az kép típusának a nevét adja vissza
@@ -545,19 +545,19 @@ public:
     /// Érték adás a cím mezőnek, és a típus mezőnek.
     cIpAddress& setAddress(const QHostAddress& __a, const QString& __t = _sNul);
     /// Ez a hívás nem támogatott, kizárást dob
-    virtual bool rewrite(QSqlQuery &__q, bool __ex = true);
+    virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     /// Ez a hívás nem támogatott, kizárást dob
-    virtual int replace(QSqlQuery &__q, bool __ex = true);
+    virtual int replace(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     /// A cím mező értékének a lekérése.
     QHostAddress address() const;
     /// Ha nincs subnet a megadott címhez, akkor a típust 'external'-ra állítja
     /// Ha nincs valós cím az objektumban akkor nem csinál semmit.
     /// @return true, ha a típust 'external'-ba állította, egyébként false.
     bool thisIsExternal(QSqlQuery &q);
-    static QList<QHostAddress> lookupAll(const QString& hn, bool __ex = true);
-    static QString lookup(const QHostAddress& ha, bool __ex = true);
-    static QHostAddress lookup(const QString& hn, bool __ex = true);
-    QHostAddress setIpByName(const QString& _hn, const QString &_t = _sNul, bool __ex = true);
+    static QList<QHostAddress> lookupAll(const QString& hn, enum eEx __ex = EX_ERROR);
+    static QString lookup(const QHostAddress& ha, enum eEx __ex = EX_ERROR);
+    static QHostAddress lookup(const QString& hn, enum eEx __ex = EX_ERROR);
+    QHostAddress setIpByName(const QString& _hn, const QString &_t = _sNul, enum eEx __ex = EX_ERROR);
     STATICIX(cIpAddress, ixPortId)
     STATICIX(cIpAddress, ixAddress)
     STATICIX(cIpAddress, ixSubNetId)
@@ -615,10 +615,10 @@ class LV2SHARED_EXPORT cIfType : public cRecord {
 public:
     /// Csak annyiban különbözik az ős osztály metódusátol, hogy sikeres írás esetén törli a iftypes konténert,
     /// hogy ott is megjelenhesen az új adat, mivel ezzel kikényszerítjük a tábla újraolvasását
-    virtual bool insert(QSqlQuery &__q, bool __ex = true);
+    virtual bool insert(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     /// Csak annyiban különbözik az ős osztály metódusátol, hogy sikeres írás esetén törli a iftypes konténert,
     /// hogy ott is megjelenhesen az új adat, mivel ezzel kikényszerítjük a tábla újraolvasását
-    virtual bool update(QSqlQuery &__q, bool __only, const QBitArray &__set = QBitArray(), const QBitArray &__where = QBitArray(), bool __ex = true);
+    virtual bool update(QSqlQuery &__q, bool __only, const QBitArray &__set = QBitArray(), const QBitArray &__where = QBitArray(), enum eEx __ex = EX_ERROR);
     ///
     static qlonglong insertNew(QSqlQuery &__q, const QString& __nm, const QString& __no, int __iid, int __lid);
 protected:
@@ -636,19 +636,19 @@ public:
     /// Egy cIfType objektumot ad vissza a név alapján, ha nincs ilyen nevű típus, akkor dob egy kizárást.
     /// Az ifTypes adattagban keres, ha ifTypes üres, akkor feltölti az adatbázisból
     /// Ha __ex értéke hamis, akkor kizárás helyett, egy üres objektummal tér vissza (amire a pNull adattag mutat)
-    static const cIfType& ifType(const QString& __nm, bool __ex = true);
+    static const cIfType& ifType(const QString& __nm, enum eEx __ex = EX_ERROR);
     /// Egy ifTypes objektumot ad vissza az ID alapján, ha nincs ilyen nevű típus, akkor dob egy kizárást.
     /// Az ifTypes adattagban keres, ha ifTypes üres, akkor feltölti az adatbázisból
     /// Ha __ex értéke hamis, akkor kizárás helyett, egy üres objektummal tér vissza (amire a pNull adattag mutat)
-    static const cIfType& ifType(qlonglong __id, bool __ex = true);
+    static const cIfType& ifType(qlonglong __id, enum eEx __ex = EX_ERROR);
     /// Egy ifTypes objektum Azonosítóját adja vissza a név alapján, ha nincs ilyen nevű típus, akkor dob egy kizárást.
     /// Az ifTypes adattagban keres, ha ifTypes üres, akkor feltölti az adatbázisból
     /// Ha __ex értéke hamis, akkor kizárás helyett, NULL_ID -vel tér vissza.
-    static qlonglong ifTypeId(const QString& __nm, bool __ex = true) { return ifType(__nm, __ex).getId(); }
+    static qlonglong ifTypeId(const QString& __nm, enum eEx __ex = EX_ERROR) { return ifType(__nm, __ex).getId(); }
     /// Egy ifTypes objektum nevét adja vissza az ID alapján, ha nincs ilyen azonosítójú típus, akkor dob egy kizárást.
     /// Az ifTypes adattagban keres, ha ifTypes üres, akkor feltölti az adatbázisból
     /// Ha __ex értéke hamis, akkor kizárás helyett, üres stringgel tér vissza.
-    static QString   ifTypeName(qlonglong __id, bool __ex = true)    { return ifType(__id, __ex).getName(); }
+    static QString   ifTypeName(qlonglong __id, enum eEx __ex = EX_ERROR)    { return ifType(__id, __ex).getName(); }
     /// Visszakeresi az ifTypes konténer azon elemét, melynek az iftype_iana_id értéke megeggyezik a
     /// a paraméterben magadott értékkel, és a preferred értéke true. Ha van ilyen objektum a
     /// konténerben, akkor az első pointerével, ha nincs NULL pointerrel tér vissza.
@@ -697,8 +697,8 @@ public:
     /// Ha a port id indexével hívtuk, akkor ha szükséges törli a params konténert, lásd az atEndCont() metódust.
     virtual bool toEnd(int i);
     /// Beszúr egy port rekordot az adatbázisba a járulékos adatokkal (rekordokkal) együtt.
-    virtual bool insert(QSqlQuery &__q, bool __ex = true);
-    virtual bool rewrite(QSqlQuery &__q, bool __ex = true);
+    virtual bool insert(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
+    virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     virtual bool isContainerValid(qlonglong __mask) const;
     virtual void setContainerValid(qlonglong __set, qlonglong __clr = 0);
 
@@ -722,11 +722,11 @@ public:
         return *this;
     }
     /// Egy port id  lekérése a port név és a node_id alapján.
-    static qlonglong getPortIdByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, bool __ex = true);
+    static qlonglong getPortIdByName(QSqlQuery& __q, const QString& __port_name, qlonglong __node_id, enum eEx __ex = EX_ERROR);
     /// Egy port rekord beolvasása a port név és a node neve alapján.
     /// @param __ex Ha értéke false, és a megadott nevű node nem létezik, akkor dob egy kizárást, egyébként visszatér false-val.
     /// @return Ha egy rekordot beolvasott akkor true
-    bool fetchPortByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, bool __ex = true);
+    bool fetchPortByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, enum eEx __ex = EX_ERROR);
     /// Egy port rekord beolvasása a port név és a node neve alapján.
     /// Ha nem tudja beolvasni a rekordot, akkor dob egy kizárást.
     cNPort& setPortByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name) {
@@ -737,7 +737,7 @@ public:
         return *this;
     }
     /// Egy port id  lekérése a port név és a node név alapján.
-    static qlonglong getPortIdByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, bool __ex = true);
+    static qlonglong getPortIdByName(QSqlQuery& __q, const QString& __port_name, const QString& __node_name, enum eEx __ex = EX_ERROR);
     /// Egy port rekord beolvasása a port index és a node_id alapján.
     bool fetchPortByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id);
     /// Egy port rekord beolvasása a port index és a node_id alapján.
@@ -748,9 +748,9 @@ public:
         return *this;
     }
     /// Egy port id  lekérése a port index és a node_id alapján.
-    static qlonglong getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id, bool __ex = true);
+    static qlonglong getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, qlonglong __node_id, enum eEx __ex = EX_ERROR);
     /// Egy port rekord beolvasása a port index és a node név alapján.
-    bool fetchPortByIndex(QSqlQuery& __q, qlonglong __port_index, const QString& __node_name, bool __ex = true);
+    bool fetchPortByIndex(QSqlQuery& __q, qlonglong __port_index, const QString& __node_name, enum eEx __ex = EX_ERROR);
     /// Egy port rekord beolvasása a port index és a node_id alapján.
     /// Ha nem tudja beolvasni a rekordot, akkor dob egy kizárást.
     cNPort& setPortByIndex(QSqlQuery& __q, qlonglong __port_index, const QString& __node_name) {
@@ -759,7 +759,7 @@ public:
         return *this;
     }
     /// Egy port id  lekérése a port index és a node_id alapján.
-    static qlonglong getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, const QString& __node_name, bool ex = true);
+    static qlonglong getPortIdByIndex(QSqlQuery& __q, qlonglong __port_index, const QString& __node_name, enum eEx __ex = EX_ERROR);
 
     /// Megallokál egy új cNPort, cInterface vagy cIfaceAddr objektumot, a megadott cIfType objektum szerint.
     /// Az objektum típust a cIfType (egy adatbázisból beolvasott iftypes rekord alapján) az iftype_obj_type
@@ -776,31 +776,31 @@ public:
     static cNPort *newPortObj(const QString& __ifTypeName) {
         return newPortObj(cIfType::ifType(__ifTypeName));
     }
-    static cNPort * getPortObjById(QSqlQuery& q, qlonglong __port_id, bool __ex = true);
+    static cNPort * getPortObjById(QSqlQuery& q, qlonglong __port_id, enum eEx __ex = EX_ERROR);
     /// Allokál és beolvas egy port objektumot a megadott port_id alapján.
     /// Az allokált objektum típusa megfelel a megadott tábla OID-nek, ha a tábla az nports, pports vagy interfaces.
     /// @param __port_id A port rekord id-je (port_id)
     /// @param __tableoid A típus azonosító tábla OID
     /// @param __ex Ha értéke true, és nem találja a rekordot, tableoid-t akkor dob egy kizárást. Egyébként NULL-lal tér vissza
-    static cNPort * getPortObjById(QSqlQuery& q, qlonglong __tableoid, qlonglong __port_id, bool __ex);
+    static cNPort * getPortObjById(QSqlQuery& q, qlonglong __tableoid, qlonglong __port_id, enum eEx __ex = EX_ERROR);
     /// Az objektum iftpes rekordjával tér vissza. Ha az iftype_id mező null, vagy nem egy létező iftpes rekord ID-je,
     /// akkor dob egy kizárást, vagy üres objektummal tér vissza.
     /// @param __ex Hiba esetén nem üres objektummal tér vissza, hanem dob egy kizárást, ha értéke igaz (ez az alapértelmezés).
-    const cIfType& ifType(bool __ex = true) const { return cIfType::ifType(getId(_sIfTypeId), __ex); }
+    const cIfType& ifType(enum eEx __ex = EX_ERROR) const { return cIfType::ifType(getId(_sIfTypeId), __ex); }
     /// Az iftype hívással lekéri az iftypes rekordot, és összehasonlítja a megadott névvel, a rekord név mezőjét,
     /// Ha azonos true-val tér vissza.
     /// @param q Az adatbázis lekérdezéshez használt query objektum.
     /// @param __iftypename A keresett név.
     /// @param __ex Hiba esetén dob egy kizárást, ha igaz (ez az alapértelmezés). Ha false, akkor hiba esetén false-vel tér vissza,
     ///           hacsak az __iftypename nem null.
-    bool isIfType(const QString& __iftypename, bool __ex = true) const { return ifType(__ex).getName() == __iftypename; }
+    bool isIfType(const QString& __iftypename, enum eEx __ex = EX_ERROR) const { return ifType(__ex).getName() == __iftypename; }
     /// Feltölti az adatbázisból a params konténert.
     int fetchParams(QSqlQuery& q);
     /// Egy névvel térvissza, mely alapján a port egyedileg azonosítható.
     /// A nevet a node és a port nevéből állítja össze, szeparátor a ':' karakter
     /// Az objektumnak csak a node_id mezője és a név mezője alapján állítja elő a visszaadott értéket.
     /// @param q Az adatbázis lekérdezéshez használt query objektum.
-    QString getFullName(QSqlQuery& q, bool _ex = true);
+    QString getFullName(QSqlQuery& q, enum eEx __ex = EX_ERROR);
     static QString getFullNameById(QSqlQuery& q, qlonglong _id) { cNPort o; o.setById(q, _id); return o.getFullName(q); }
     /// Port paraméterek, nincs automatikusan feltöltve
     tOwnRecords<cPortParam, cNPort>   params;
@@ -834,13 +834,13 @@ enum ePortShare {
 /// @param _n Az SQL enumerációs érték
 /// @param __ex Ha értéke true, akkor ha nem lehetséges a konverzió, akkor dob egy kizárást.
 /// @return Az SQL értéknek megfelelő konstan érték, vagy -1.
-EXT_ int portShare(const QString& _n, bool __ex = true);
+EXT_ int portShare(const QString& _n, enum eEx __ex = EX_ERROR);
 /// A portshare SQL enumeráció típusba  a ePortShare típusból konverziós függvény.
 /// @param _n Az enumerációs konstans
 /// @param __ex Ha értéke true, akkor ha nem lehetséges a konverzió, akkor dob egy kizárást.
 /// @return A konstansnak megfelelő SQL érték, vagy üres string, mivel ez azonos egy SQL értékkel,
 ///         ezért hiba detektálásra a visszaadott érték alkalmatlan.
-EXT_ const QString& portShare(int _i, bool __ex = true);
+EXT_ const QString& portShare(int _i, enum eEx __ex = EX_ERROR);
 
 /*!
 @class cPPort
@@ -858,8 +858,8 @@ protected:
     static qlonglong _ifTypePatch;
 };
 
-EXT_ int ifStatus(const QString& _n, bool __ex);
-EXT_ const QString& ifStatus(int _i, bool __ex);
+EXT_ int ifStatus(const QString& _n, enum eEx __ex = EX_ERROR);
+EXT_ const QString& ifStatus(int _i, enum eEx __ex = EX_ERROR);
 
 class cPortVlan;
 /*!
@@ -888,12 +888,12 @@ public:
     virtual void clearToEnd();
     virtual void toEnd();
     virtual bool toEnd(int i);
-    virtual bool insert(QSqlQuery &__q, bool __ex = true);
-    virtual bool rewrite(QSqlQuery &__q, bool __ex = true);
+    virtual bool insert(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
+    virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     virtual QString toString() const;
     // A trunkMembers konténer adattaghoz hozzáad egy port indexet
     void addTrunkMember(int __ix) { trunkMembers << __ix;  }
-    int updateTrunkMembers(QSqlQuery& q, bool __ex);
+    int updateTrunkMembers(QSqlQuery& q, enum eEx __ex = EX_ERROR);
     /// A trunkMembers adattag konstans referenciájával tér vissza.
     /// Ha a trunkMembers fel van töltve, akkor a konténer TRUNK port esetén a trunk tagjainak az indexét tartalmazza (port_index mező értéke).
     const tIntVector& getTrunkMembers() const { return trunkMembers; }
@@ -1034,15 +1034,14 @@ public:
     virtual void clearToEnd();
     virtual void toEnd();
     virtual bool toEnd(int i);
-    virtual bool insert(QSqlQuery &__q, bool __ex = true);
-    virtual bool rewrite(QSqlQuery &__q, bool __ex = true);
+    virtual bool insert(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
+    virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     virtual bool isContainerValid(qlonglong __mask) const;
     virtual void setContainerValid(qlonglong __set, qlonglong __clr = 0);
 
     /// Kitölti a ports konténer adattagot. A node-hoz tartozó összes portot beolvassa a kontéberbe.
     /// Feltételezi, hogy a node_id mevű maző, vagyis a rekord ID ki ban töltve.
     /// @param __q Az adatbázis művelethet használt query objektum.
-    /// @param __ex Nem használt paraméter.
     /// @return A baeolvasott portok száma.
     virtual int fetchPorts(QSqlQuery& __q);
     /// Feltölti az adatbázisból a params konténert.
@@ -1067,7 +1066,7 @@ public:
     /// @param __q Az adatbázis művelethet használt query objektum.
     /// @param __clr Alapértelmezetten a hívás csak az eltérő bekötéseket adja hozzá az adatbázis tartamához.
     ///              Ha a paraméter értéke true, akkor elötte törli az adatbázisban a node-hoz tartozó összes eltérő bekötést.
-    virtual bool updateShares(QSqlQuery& __q, bool __clr = false, bool __ex = true);
+    virtual bool updateShares(QSqlQuery& __q, bool __clr = false, enum eEx __ex = EX_ERROR);
     /// A ports konténer bővítése egy patch port objektummal.
     /// @param __name port neve
     /// @param __note megjegyzés, leírás
@@ -1123,23 +1122,23 @@ public:
     cNPort *portSetParam(int __port_index, const QString& __par, const QVariantList& __val);
 
     /// A port keresése az index mező értéke alapján.
-    cNPort * getPort(int __ix, bool __ex = true);
+    cNPort * getPort(int __ix, enum eEx __ex = EX_ERROR);
     /// A port keresése a port név alapján.
-    cNPort * getPort(const QString& __pn, bool __ex = true);
+    cNPort * getPort(const QString& __pn, enum eEx __ex = EX_ERROR);
     /// Allokál és beolvas egy node objektumot a megadott node_id alapján.
     /// Az allokált objektum típusa megfelel a táblának, ha a rekor az nodes, hosts, snmpdevices táblában van.
     /// @param __node_id A node rekord id-je (port_id)
     /// @param __ex Ha értéke true, és nem találja a rekordot, tableoid-t akkor dob egy kizárást. Egyébként NULL-lal tér vissza
-    static cPatch * getNodeObjById(QSqlQuery& q, qlonglong __node_id, bool __ex = true);
+    static cPatch * getNodeObjById(QSqlQuery& q, qlonglong __node_id, enum eEx __ex = EX_ERROR);
     /// Allokál és beolvas egy node objektumot a megadott node_id alapján.
     /// Az allokált objektum típusa megfelel a táblának, aminek a tableoid értékét megadtuk.
     /// @param __node_id A node rekord id-je (port_id)
     /// @param __tableoid Az allokálandó objektum típusát, ill. a hozzázatozó táblát azonosító OID
     /// @param __ex Ha értéke true, és nem találja a rekordot, tableoid-t akkor dob egy kizárást. Egyébként NULL-lal tér vissza
-    static cPatch * getNodeObjById(QSqlQuery& q, qlonglong __tableoid, qlonglong __node_id, bool __ex);
+    static cPatch * getNodeObjById(QSqlQuery& q, qlonglong __tableoid, qlonglong __node_id, enum eEx __ex = EX_ERROR);
 
     /// Egy node neve alapján visszaadja az id-t
-    static qlonglong getNodeIdByName(QSqlQuery& q, const QString& _n, bool __ex = true) {
+    static qlonglong getNodeIdByName(QSqlQuery& q, const QString& _n, enum eEx __ex = EX_ERROR) {
         return cPatch().getIdByName(q, _n, __ex);
     }
 
@@ -1171,7 +1170,7 @@ private:
 
 /// A sablon metódus a megadott ID-vel és a típus paraméternek megfelelő típusú
 /// objektumot hozza létre (new) és tölti be az adatbázisból
-template<class P> static inline P * getObjByIdT(QSqlQuery& q, qlonglong  __id, bool __ex = true)
+template<class P> static inline P * getObjByIdT(QSqlQuery& q, qlonglong  __id, enum eEx __ex = EX_ERROR)
 {
     P *p = new P();
     p->setId(__id);
@@ -1203,12 +1202,12 @@ public:
     // virtual void clearToEnd();
     // virtual void toEnd();
     // virtual bool toEnd(int i);
-    /// A cPatch::insert(QSqlQuery &__q, bool __ex) hívása elött beállítja a
+    /// A cPatch::insert(QSqlQuery &__q, eEx __ex) hívása elött beállítja a
     /// node_type értékét, ha az NULL.
-    virtual bool insert(QSqlQuery &__q, bool __ex = true);
+    virtual bool insert(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     /// Az objektum frissítése után hívja a rewrite() metódust a
     /// paraméter ás port konténerre is.
-    virtual bool rewrite(QSqlQuery &__q, bool __ex = true);
+    virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     /// Kitölti a ports adattagot, hiba esetén dob egy kizárást.
     /// Ha a port típusa cInterface, akkor az IP címeket is.
     virtual int  fetchPorts(QSqlQuery& __q);
@@ -1217,13 +1216,13 @@ public:
     /// a keresett nevet kiegészíti a kereső domain nevekkel, és az így kapott nevekkel végrehajt mégegy keresést.
     /// A kereső domain nevek a sys_param táblában azok a rekordok, melyek típusának a neve "search domain".
     /// Ez utobbi esetben ha több találat van, akkor a sys_param.sys_param_name alapján rendezett első találattal tér vissza.
-    virtual qlonglong getIdByName(QSqlQuery& __q, const QString& __n, bool __ex = true) const;
+    virtual qlonglong getIdByName(QSqlQuery& __q, const QString& __n, enum eEx __ex = EX_ERROR) const;
     /// Hibát dob, ebben az osztályban nem támogatott, nem értelmezett
     virtual void clearShares();
     /// Hibát dob, ebben az osztályban nem támogatott, nem értelmezett
     virtual bool setShare(int __a, int __ab = -1, int __b = -1, int __bb = -1, bool __cd = false);
     /// Hibát dob, ebben az osztályban nem támogatott, nem értelmezett
-    virtual bool updateShares(QSqlQuery& __q, bool __clr = false, bool __ex = true);
+    virtual bool updateShares(QSqlQuery& __q, bool __clr = false, enum eEx __ex = EX_ERROR);
     /// Hibát dob, ebben az osztályban nem támogatott, nem értelmezett
     virtual cPPort *addPort(const QString& __name, const QString &__note, int __ix);
     /// Hibát dob, ebben az osztályban nem támogatott, nem értelmezett
@@ -1287,10 +1286,10 @@ public:
     /// @param a A keresett IP cím
     /// @param __ex Ha több host-nak van azonos címem akkor ha értéke true, kizárást dob, egyébként false -val tér vissza.
     /// @return Ha van egy és csakis egy találat, ill. beolvasott rekord, akkor true, egyébként false
-    bool fetchByIp(QSqlQuery& q, const QHostAddress& a, bool __ex = true);
+    bool fetchByIp(QSqlQuery& q, const QHostAddress& a, enum eEx __ex = EX_ERROR);
     /// Törli a ports konténert.
     /// Beolvas egy portot, amelyhez a megadott ip cím tartozik, az egy IP cím rekorddal együtt.
-    bool fetchOnePortByIp(QSqlQuery& q, const QHostAddress& a, bool __ex = true);
+    bool fetchOnePortByIp(QSqlQuery& q, const QHostAddress& a, enum eEx __ex = EX_ERROR);
     /// Beolvas egy objektumot/rekordot a MAC alapján.  Nem feltétlenül tartalmazza a beolvasott
     /// objektum a megadott címet. A metódus elöbb megkeresi a megadott MAC címmel rendelkező interfaces rekordot,
     /// és az ehhez tartozó host-ot olvassa be. Ha esetleg cSnmpDevice objektummal hívjuk, és a beolvasandó rekord
@@ -1308,7 +1307,7 @@ public:
     /// @param __ex Ha értéke true, és nem sikerült beolvasni ill. megtalálni a rekordot, akkor dob egy kizárást.
     /// @return Ha nem találja a saját host rekordot, akkor ha __ex értéke hamis, akkor false-val tér vissza,
     ///         ha __ex értéke Hosttrue, akkor dob egy kizárást. Ha beolvasta a keresett rekordot, akkor true-val tér vissza
-    bool fetchSelf(QSqlQuery& q, bool __ex = true);
+    bool fetchSelf(QSqlQuery& q, enum eEx __ex = EX_ERROR);
     cInterface *portAddAddress(const QString& __port, const QHostAddress& __a, const QString& __t, const QString &__d = _sNul);
     cInterface *portAddAddress(int __port_index, const QHostAddress& __a, const QString& __t, const QString &__d = _sNul);
     /// A megadott porthoz hozzáad egy VLAN összerendelést.
@@ -1355,7 +1354,7 @@ public:
     /// @param __sMac Vagy a MAC stringgé konvertálva, vagy az "ARP" string, ha az IP címből kell meghatározni.
     /// @param __note node secriptorra/megjegyzés
     /// @param __ex Ha értéke true, akkor hiba esetén dob egy kizárást, ha false, akkor hiba esetén a ES_DEFECTIVE bitet állítja be.
-    cNode& asmbNode(QSqlQuery& q, const QString& __name, const QStringPair* __port, const QStringPair *__addr, const QString *__sMac, const QString &__note = _sNul, qlonglong __place = NULL_ID, bool __ex = true);
+    cNode& asmbNode(QSqlQuery& q, const QString& __name, const QStringPair* __port, const QStringPair *__addr, const QString *__sMac, const QString &__note = _sNul, qlonglong __place = NULL_ID, enum eEx __ex = EX_ERROR);
 };
 
 
@@ -1363,10 +1362,10 @@ class LV2SHARED_EXPORT cSnmpDevice : public cNode {
     CRECORD(cSnmpDevice);
 public:
     cSnmpDevice(const QString& __n, const QString& __d);
-    /// A cPatch::insert(QSqlQuery &__q, bool __ex = true) hívása elött beállítja a
+    /// A cPatch::insert(QSqlQuery &__q, enum eEx __ex) hívása elött beállítja a
     /// node_type értékét, ha az NULL.
-    virtual bool insert(QSqlQuery &__q, bool __ex = true);
-    virtual bool rewrite(QSqlQuery &__q, bool __ex = true);
+    virtual bool insert(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
+    virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     /// Lista bővítése egy elemmel.
     /// @param __t A port típusát definiáló objektum referenciája
     /// @param __name port_name
@@ -1376,9 +1375,9 @@ public:
     /// Az SNMP verzió konstanst adja vissza (net-snmp híváshoz)
     int snmpVersion() const;
     ///
-    bool setBySnmp(const QString& __com = _sNul, bool __ex = true, QString *pEs = NULL);
+    bool setBySnmp(const QString& __com = _sNul, enum eEx __ex = EX_ERROR, QString *pEs = NULL);
     ///
-    int open(QSqlQuery &q, cSnmp& snmp, bool __ex = true) const;
+    int open(QSqlQuery &q, cSnmp& snmp, enum eEx __ex = EX_ERROR) const;
 };
 
 /// Fizikai link típusa
@@ -1389,8 +1388,8 @@ enum ePhsLinkType {
     LT_TERM             ///< Hálózati elem/végpont linkje
 };
 
-EXT_ int phsLinkType(const QString& n, bool __ex = true);
-EXT_ const QString& phsLinkType(int e, bool __ex = true);
+EXT_ int phsLinkType(const QString& n, enum eEx __ex = EX_ERROR);
+EXT_ const QString& phsLinkType(int e, enum eEx __ex = EX_ERROR);
 
 typedef QPair<qlonglong, ePhsLinkType> tPhsLinkPort;
 
@@ -1401,9 +1400,9 @@ public:
     /// Ha felvette az új rekordot, és nem kellet törölni egyet sem, akkor 0, ha töröpni kellett rekordokat, akkor azok
     /// számával tér vissza, ha viszont nem sikerült felvenni ez új rekordot, akkor egy negatív értékkel, aminek a sikertelen
     /// inzert elött törölt rekordszám kivonva -1 -ből.
-    virtual int replace(QSqlQuery &__q, bool __ex = true);
+    virtual int replace(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     /// Nem támogatott, kizárást dosb.
-    virtual bool rewrite(QSqlQuery &__q, bool __ex = true);
+    virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     /// Törli a megadott fizikai linket
     /// @param q Az SQL lekérdezéshez használt objektum.
     /// @param __nn A host neve, amihez a link tartozik
@@ -1507,7 +1506,7 @@ public:
         return *this;
     }
     /// Egy megadott nevű template lekérése, ha nincs a konténerben, akkor beolvassa az adatbázisból.
-    const QString& get(QSqlQuery& __q, const QString& __name, bool __ex = true);
+    const QString& get(QSqlQuery& __q, const QString& __name, enum eEx __ex = EX_ERROR);
     /// Egy adott nevű template elhelyezése a konténerbe, de az adatbázisban nem.
     void set(const QString& __name, const QString& __cont);
     /// Egy adott nevű template elhelyezése a konténerbe, és az adatbázisban.
@@ -1530,10 +1529,10 @@ public:
     cPortVlan& setVlanId(const QString& __vn)   { set(_ixVlanId, cVLan().getIdByName(__vn)); return *this; }
     cPortVlan& setVlanType(enum eVlanType __e)  { setName(_ixVlanType, vlanType(__e)); return *this; }
     cPortVlan& setVlanType(const QString& __n)  { (void)vlanType(__n); setName(_ixVlanType, __n); return *this; }
-    enum eVlanType getVlanType(bool __ex = true){ return (enum eVlanType)vlanType(getName(_ixVlanType), __ex); }
+    enum eVlanType getVlanType(enum eEx __ex = EX_ERROR){ return (enum eVlanType)vlanType(getName(_ixVlanType), __ex); }
     cPortVlan& setSetType(enum eSetType __e)    { setName(_ixSetType, setType(__e)); return *this; }
     cPortVlan& setSetType(const QString& __n)   { (void)setType(__n); setName(_ixSetType, __n); return *this; }
-    enum eSetType getSetType(bool __ex = true)  { return (enum eSetType)setType(getName(_ixSetType), __ex); }
+    enum eSetType getSetType(enum eEx __ex = EX_ERROR)  { return (enum eSetType)setType(getName(_ixSetType), __ex); }
     STATICIX(cPortVlan, ixPortId)
     STATICIX(cPortVlan, ixVlanId)
     STATICIX(cPortVlan, ixVlanType)

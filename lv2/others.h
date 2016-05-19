@@ -73,38 +73,38 @@ static inline qlonglong enum2set(int e1, int e2, int e3, int e4, int e5, int e6)
 static inline qlonglong enum2set(int e1, int e2, int e3, int e4, int e5, int e6, int e7) { return enum2set(e1, e2, e3, e4, e5, e6) | enum2set(e7); }
 static inline qlonglong enum2set(int e1, int e2, int e3, int e4, int e5, int e6, int e7, int e8) { return enum2set(e1, e2, e3, e4, e5, e6, e7) | enum2set(e8); }
 
-static inline qlonglong enum2set(int (&f)(const QString& e, bool __ex), const QString& e, bool __ex = true) {
+static inline qlonglong enum2set(int (&f)(const QString& e, eEx __ex), const QString& e, enum eEx __ex = EX_ERROR) {
     int i = f(e, __ex);
     if (i < 0) return -1;
     return enum2set(i);
 }
-static inline qlonglong enum2set(int (&f)(const QString& e, bool __ex), const QString& e1, const QString& e2, bool __ex = true) {
+static inline qlonglong enum2set(int (&f)(const QString& e, eEx __ex), const QString& e1, const QString& e2, enum eEx __ex = EX_ERROR) {
     return enum2set(f, e1, __ex) | enum2set(f, e2, __ex);
 }
-static inline qlonglong enum2set(int (&f)(const QString& e, bool __ex), const QString& e1, const QString& e2, const QString& e3, bool __ex = true) {
+static inline qlonglong enum2set(int (&f)(const QString& e, eEx __ex), const QString& e1, const QString& e2, const QString& e3, enum eEx __ex = EX_ERROR) {
     return enum2set(f, e1, e2, __ex) | enum2set(f, e3, __ex);
 }
-static inline qlonglong enum2set(int (&f)(const QString& e, bool __ex), const QString& e1, const QString& e2, const QString& e3, const QString& e4, bool __ex = true) {
+static inline qlonglong enum2set(int (&f)(const QString& e, eEx __ex), const QString& e1, const QString& e2, const QString& e3, const QString& e4, enum eEx __ex = EX_ERROR) {
     return enum2set(f, e1, e2, e3, __ex) | enum2set(f, e4, __ex);
 }
-static inline qlonglong enum2set(int (&f)(const QString& e, bool __ex), const QString& e1, const QString& e2, const QString& e3, const QString& e4,
-                                 const QString& e5, bool __ex = true) {
+static inline qlonglong enum2set(int (&f)(const QString& e, eEx __ex), const QString& e1, const QString& e2, const QString& e3, const QString& e4,
+                                 const QString& e5, enum eEx __ex = EX_ERROR) {
     return enum2set(f, e1, e2, e3, e4, __ex) | enum2set(f, e5, __ex);
 }
-static inline qlonglong enum2set(int (&f)(const QString& e, bool __ex), const QString& e1, const QString& e2, const QString& e3, const QString& e4,
-                                 const QString& e5, const QString& e6, bool __ex = true) {
+static inline qlonglong enum2set(int (&f)(const QString& e, eEx __ex), const QString& e1, const QString& e2, const QString& e3, const QString& e4,
+                                 const QString& e5, const QString& e6, enum eEx __ex = EX_ERROR) {
     return enum2set(f, e1, e2, e3, e4, e5, __ex) | enum2set(f, e6, __ex);
 }
-static inline qlonglong enum2set(int (&f)(const QString& e, bool __ex), const QString& e1, const QString& e2, const QString& e3, const QString& e4,
-                                 const QString& e5, const QString& e6, const QString& e7, bool __ex = true) {
+static inline qlonglong enum2set(int (&f)(const QString& e, eEx __ex), const QString& e1, const QString& e2, const QString& e3, const QString& e4,
+                                 const QString& e5, const QString& e6, const QString& e7, enum eEx __ex = EX_ERROR) {
     return enum2set(f, e1, e2, e3, e4, e5, e6, __ex) | enum2set(f, e7, __ex);
 }
-static inline qlonglong enum2set(int (&f)(const QString& e, bool __ex), const QString& e1, const QString& e2, const QString& e3, const QString& e4,
-                                 const QString& e5, const QString& e6, const QString& e7, const QString& e8, bool __ex = true) {
+static inline qlonglong enum2set(int (&f)(const QString& e, eEx __ex), const QString& e1, const QString& e2, const QString& e3, const QString& e4,
+                                 const QString& e5, const QString& e6, const QString& e7, const QString& e8, enum eEx __ex = EX_ERROR) {
     return enum2set(f, e1, e2, e3, e4, e5, e6, e7, __ex) | enum2set(f, e8, __ex);
 }
-EXT_ qlonglong enum2set(int (&f)(const QString& e, bool __ex), const QStringList& el, bool __ex = true);
-EXT_ QStringList set2lst(const QString&(&f)(int e, bool __ex), qlonglong _set, bool __ex = true);
+EXT_ qlonglong enum2set(int (&f)(const QString& e, eEx __ex), const QStringList& el, enum eEx __ex = EX_ERROR);
+EXT_ QStringList set2lst(const QString&(&f)(int e, eEx __ex), qlonglong _set, enum eEx __ex = EX_ERROR);
 
 
 /// @def ENUM2SET
@@ -155,7 +155,7 @@ public:
     /// @param __ms A feldolgozandó paraméter string
     /// @param __ex Nem megfelelő formátumú string esetén kizárást dob.
     /// @return Az eredmény ill. az objektum referencia
-    cFeatures& split(const QString& __ms, bool __ex = true);
+    cFeatures& split(const QString& __ms, enum eEx __ex = EX_ERROR);
     /// Kiemeli a megadott nevű paraméter ártéket.
     /// @param _nm A paraméter neve (kisbetüssé lesz konvertálva)
     /// @return Egy string, a paraméter érték, ha nincs ilyen paraméter, akkor a NULL string,
@@ -176,14 +176,14 @@ public:
 /// @param _ex Ha értéke true, akkor a NULL érték hibát dob, egyébként a def vagy annak alapértelmezett értékével NULL:ID-vel tér vissza.
 /// @param def Ha engedélyezett a null érték, akkor ezzrl térvissza, ha nincs megadva, akkor NULL:ID-vel
 /// @return A konvertált vagy alapértelmezett érték.
-EXT_ qlonglong variantToId(const QVariant& v, bool _ex = true, qlonglong def = NULL_ID);
+EXT_ qlonglong variantToId(const QVariant& v, enum eEx __ex = EX_ERROR, qlonglong def = NULL_ID);
 
 /// Egy QString érték konvertálása numerikussá (qlonglong).
 /// @param v A konvertálandó adat, ha nem konvertálható (és nem null, ill. empty) akkor dob egy kizárást.
 /// @param _ex Ha értéke true, akkor a NULL érték hibát dob, egyébként a def vagy annak alapértelmezett értékével NULL:ID-vel tér vissza.
 /// @param def Ha engedélyezett a null érték, akkor ezzrl térvissza, ha nincs megadva, akkor NULL:ID-vel
 /// @return A konvertált vagy alapértelmezett érték.
-EXT_ qlonglong stringToId(const QString& v, bool _ex = true, qlonglong def = NULL_ID);
+EXT_ qlonglong stringToId(const QString& v, enum eEx __ex = EX_ERROR, qlonglong def = NULL_ID);
 
 /// Két szám legnagyobb közös osztója. Negatív paraméterek esetén dob egy kizárást.
 EXT_ qlonglong lko(qlonglong a, qlonglong b);

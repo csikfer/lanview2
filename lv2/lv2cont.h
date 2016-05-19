@@ -178,7 +178,7 @@ public:
     /// Kiírja az adatbázisba az összes elemet az INSERT utasítással ld.: cRecord::insert()
     /// Ha egy rekord kiírása sikertelen, akkor megszakítja a kiírásokat.
     /// @return A sikeresen kiírt rekordszámmal tér vissza, vagy hiba esetén -1 -el
-    int insert(QSqlQuery& __q, bool __ex = true)  {
+    int insert(QSqlQuery& __q, eEx __ex = EX_ERROR)  {
         DBGFN();
         int r = 0;
         typename QList<T *>::const_iterator    i;
@@ -192,7 +192,7 @@ public:
     }
     /// Törli az adatbázisból az összes elemet az REMOVE utasítással ld.: cRecord::remove()
     /// @return A sikeresen törölt rekordszámmal tér vissza.
-    int remove(QSqlQuery& __q, bool __ex = true)  {
+    int remove(QSqlQuery& __q, eEx __ex = EX_NOOP)  {
         int r = 0;
         typename QList<T *>::const_iterator    i;
         for (i = QList<T *>::constBegin(); i < QList<T *>::constEnd(); i++) {
@@ -350,7 +350,7 @@ public:
     /// Ha nincs ID mező, vagy nem ismert az indexe, akkor dob egy kizárást
     /// @param __id a keresett ID értéke
     /// @param __ex Ha értéke true, akkor ha nem találja az elemet, akkor dob egy kizárást, egyébként NULL pointerrel visszatár.
-    T *get(qlonglong __id, bool __ex = true) {
+    T *get(qlonglong __id, eEx __ex = EX_ERROR) {
         int i = indexOf(__id);
         if (i < 0) {
             if (__ex == false) return NULL;
@@ -362,7 +362,7 @@ public:
     /// Ha nincs név mező, vagy nem ismert az indexe, akkor dob egy kizárást
     /// @param __nm a keresett név értéke
     /// @param __ex Ha értéke true, akkor ha nem találja az elemet, akkor dob egy kizárást, egyébként NULL pointerrel visszatér.
-    T *get(const QString& __nm, bool __ex = true) {
+    T *get(const QString& __nm, eEx __ex = EX_ERROR) {
         int i = indexOf(__nm);
         if (i < 0) {
             if (__ex == false) return NULL;
@@ -375,7 +375,7 @@ public:
     /// @param __nm A mező neve, ami alapján keresünk
     /// @param __v A keresett érték
     /// @param __ex Ha értéke true, akkor ha nem találja az elemet, akkor dob egy kizárást, egyébként NULL pointerrel visszatér.
-    T *get(const QString& __fn, const QVariant& __v, bool __ex = true) {
+    T *get(const QString& __fn, const QVariant& __v, eEx __ex = EX_ERROR) {
         int i = indexOf(__fn, __v);
         if (i < 0) {
             if (__ex == false) return NULL;
@@ -388,7 +388,7 @@ public:
     /// @param __ix A mező sorszáma, ami alapján keresünk
     /// @param __v A keresett érték
     /// @param __ex Ha értéke true, akkor ha nem találja az elemet, akkor dob egy kizárást, egyébként NULL pointerrel visszatér.
-    T *get(int __ix, const QVariant& __v, bool __ex = true) {
+    T *get(int __ix, const QVariant& __v, eEx __ex = EX_ERROR) {
         int i = indexOf(__ix, __v);
         if (i < 0) {
             if (__ex == false) return NULL;
@@ -398,7 +398,7 @@ public:
     }
     /// A konténer utolsó pointerét törli a konténerből, de a pointert nem szabadítja föl, hanem azzal tér vissza.
     /// Ha a konténer üres, akkor dob egy kizárást, ha __ex igaz, vagy NULL pointerrel tér vissza, ha __ex hamis.
-    T *pop_back(bool __ex = true)  {
+    T *pop_back(eEx __ex = EX_ERROR)  {
         if (list().size() < 1) {
             if (__ex == false) return NULL;
             EXCEPTION(EFOUND, 0);
@@ -409,7 +409,7 @@ public:
     }
     /// A konténer első pointerét törli a konténerből, de a pointert nem szabadítja föl, hanem azzal tér vissza.
     /// Ha a konténer üres, akkor dob egy kizárást, ha __ex igaz, vagy NULL pointerrel tér vissza, ha __ex hamis.
-    T *pop_front(bool __ex = true) {
+    T *pop_front(eEx __ex = EX_ERROR) {
         if (list().size() < 1) {
             if (__ex == false) return NULL;
             EXCEPTION(EFOUND, 0);
@@ -422,7 +422,7 @@ public:
     /// Ha a konténer nem tartalmazza a megadott indexű elemet, akkor dob egy kizárást, ha __ex igaz, vagy NULL pointerrel tér vissza, ha __ex hamis.
     /// @param __ix A kiválasztott elem indexe a konténerben
     /// @param __ex Opcionális flag, ha igaz (ez az alapértelmezés) akkor ha nincs találat, dob egy kizárást.
-    T *pullAt(int __ix, bool __ex = true) {
+    T *pullAt(int __ix, eEx __ex = EX_ERROR) {
         if (list().size() <= __ix) {
             if (__ex == false) return NULL;
             EXCEPTION(EFOUND, __ix);
@@ -435,7 +435,7 @@ public:
     /// Ha a konténer nem tartalmazza a megadott elemet, akkor dob egy kizárást, ha __ex igaz, vagy NULL pointerrel tér vissza, ha __ex hamis.
     /// @param __id A keresett elem rekord azobosító ID-je
     /// @param __ex Opcionális flag, ha igaz (ez az alapértelmezés) akkor ha nincs találat, dob egy kizárást.
-    T *pull(qlonglong __id, bool __ex = true) {
+    T *pull(qlonglong __id, eEx __ex = EX_ERROR) {
         int ix = indexOf(__id);
         if (0 > ix) {
             if (__ex == false) return NULL;
@@ -449,7 +449,7 @@ public:
     /// Ha a konténer nem tartalmazza a megadott elemet, akkor dob egy kizárást, ha __ex igaz, vagy NULL pointerrel tér vissza, ha __ex hamis.
     /// @param __id A keresett elem rekord nevee
     /// @param __ex Opcionális flag, ha igaz (ez az alapértelmezés) akkor ha nincs találat, dob egy kizárást.
-    T *pull(const QString __name, bool __ex = true) {
+    T *pull(const QString __name, eEx __ex = EX_ERROR) {
         int ix = indexOf(__name);
         if (0 > ix) {
             if (__ex == false) return NULL;
@@ -464,7 +464,7 @@ public:
     /// @param __fname Mező név
     /// @param __val A keresett rekordban a megadott nevű mező értéke.
     /// @param __ex Opcionális flag, ha igaz (ez az alapértelmezés) akkor ha nincs találat, dob egy kizárást.
-    T *pull(const QString __fname, const QVariant& __val, bool __ex = true) {
+    T *pull(const QString __fname, const QVariant& __val, eEx __ex = EX_ERROR) {
         int ix = indexOf(__fname, __val);
         if (0 > ix) {
             if (__ex == false) return NULL;
@@ -479,7 +479,7 @@ public:
     /// @param __fix Mező index
     /// @param __val A keresett rekordban a megadott sorszámú mező értéke.
     /// @param __ex Opcionális flag, ha igaz (ez az alapértelmezés) akkor ha nincs találat, dob egy kizárást.
-    T *pull(int __fix, const QVariant& __val, bool __ex = true) {
+    T *pull(int __fix, const QVariant& __val, eEx __ex = EX_ERROR) {
         int ix = indexOf(__fix, __val);
         if (0 > ix) {
             if (__ex == false) return NULL;
@@ -550,25 +550,29 @@ public:
         if (r > 0) setOwner();
         return r;
     }
-    int insert(QSqlQuery &__q, bool __ex) {
-        if (tRecordList<C>::size() == 0) return 0;
+    int insert(QSqlQuery &__q, eEx __ex = EX_ERROR) {
+        if (tRecordList<C>::size() == 0) {
+            if (__ex == EX_NOOP) EXCEPTION(EDATA);
+            return 0;
+        }
         setsOwnerId();
         return this->tRecordList<C>::insert(__q, __ex);
     }
-    int removeByOwn(QSqlQuery &__q, bool __ex) const {
+    int removeByOwn(QSqlQuery &__q, eEx __ex = EX_ERROR) const {
         C o;
         o.setId(ixOwnerId, pOwner->getId());
         return o.remove(__q, false, o.mask(ixOwnerId), __ex);
     }
-    bool replace(QSqlQuery &__q, bool __ex) {
+    bool replace(QSqlQuery &__q, eEx __ex = EX_ERROR) {
         // Ha nincs új rekord, csak a régieket töröljük
         if (tRecordList<C>::size() == 0) {
-            removeByOwn(__q, false);    // Ha nem töröl semmit, az nem hiba!
+            removeByOwn(__q, __ex);
             return true;
         }
         // Megjelöljük a régi rekordokat, ha egy sincs akkor csak beillesztjük az újakat
         if (mark(__q) == 0) {
-            return 0 < insert(__q, __ex);   // A nulla fura lenne
+            insert(__q, EX_NOOP);
+            return true;
         }
         int r = 0;
         typename QList<C *>::const_iterator    i;
@@ -765,7 +769,7 @@ public:
     /// @param __q Az adabázisművelethez használt QSqlQuery objektum.
     /// @param __ex Ha értéke true, akkor hiba esettén dob egy kizárást, egyébként hiba esetén false-val tér vissza.
     /// @return Ha sikerült az insert, akkor true, ha hiba történt, és __ex = false, akkor false.
-    bool insert(QSqlQuery& __q, bool __ex = true) {
+    bool insert(QSqlQuery& __q, enum eEx __ex = EX_ERROR) {
         QString sql = "INSERT INTO " + tableName() +
                 QChar('(') + group.idName() + QChar(',') + member.idName() + QChar(')') +
                 " VALUES(" + QString::number(group.getId()) + QChar(',') + QString::number(member.getId()) + QChar(')');
@@ -788,7 +792,7 @@ public:
     /// @param __id opcionális kapcsoló rekord ID
     /// @param __ex Ha értéke true, akkor hiba esettén dob egy kizárást, egyébként hiba esetén false-val tér vissza.
     /// @return Ha sikerült a törlés, akkor true, ha hiba történt, és __ex = false, akkor false.
-    bool remove(QSqlQuery& __q, qlonglong __id = NULL_ID, bool __ex = true) {
+    bool remove(QSqlQuery& __q, qlonglong __id = NULL_ID, enum eEx __ex = EX_ERROR) {
         QString sql = "DELETE FROM " + tableName() + " WHERE ";
         if (__id == NULL_ID) {
             sql +=  group.idName()  + " = " + QString::number(group.getId()) + " AND " +

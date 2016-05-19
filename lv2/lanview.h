@@ -176,7 +176,7 @@ class LV2SHARED_EXPORT lanView  : public QObject {
     friend void unixSignalHandler(int __i);
 #endif
     friend LV2SHARED_EXPORT QSqlDatabase *  getSqlDb(void);
-    friend LV2SHARED_EXPORT void dropThreadDb(const QString &tn, bool __ex);
+    friend LV2SHARED_EXPORT void dropThreadDb(const QString &tn, enum eEx __ex);
    Q_OBJECT
 public:
     /// Konstruktor. Inicializálja az API-t. Az objektum csak egy példányban hozható létre.
@@ -216,13 +216,13 @@ public:
     /// Az adatbázis "notification" fogadásának az inicilizálása.
     /// Az adatbázis szerver NOTIFY \<csatorna\> parancsának hatására a dbNotif() virtuális slot lessz meghívva.
     /// @param __n csatorna név, ha üres, akkor a csatorna név az applikáció neve.
-    /// @param __ex Ha értéke true (alapértelmezés), akkor ha az adatbázis nem támogatja ezt a funkciót dob egy kizárást.
-    /// @return Ha minden rendben akkor true, hiba esetén (és ha __ex nem true), akkor false.
-    bool subsDbNotif(const QString& __n = QString(), bool __ex = true);
+    /// @param __ex Ha értéke nem EX_IGNORE (alapértelmezés EX_ERROR), akkor ha az adatbázis nem támogatja ezt a funkciót dob egy kizárást.
+    /// @return Ha minden rendben akkor true, hiba esetén (és ha __ex nem EX_IGNORE), akkor false.
+    bool subsDbNotif(const QString& __n = QString(), enum eEx __ex = EX_ERROR);
     /// Az adatbázis megnyitása.
-    /// @param __ex ha értéke true, és nem sikerült az adatbázis megnyitása, akkor dob egy kizárást.
+    /// @param __ex ha értéke nem EX_IGNORE, és nem sikerült az adatbázis megnyitása, akkor dob egy kizárást.
     /// @return Ha sikeresen megnyitotta az adatbázist, akkor true.
-    bool openDatabase(bool __ex = true);
+    bool openDatabase(enum eEx __ex = EX_ERROR);
     /// Az adatbázis bezárása.
     void closeDatabase();
     /// Ha létre lett hozva a lanView (vagy laszármazotjának) a példánya, akkor annak a pointervel tér vissza, ha nem
@@ -239,21 +239,21 @@ public:
     /// Ha a művelet sikeres, akkor a megallokált cUser objektum pointerét beírja a pUser statikus adattagba.
     /// @param un A felhasználónév
     /// @param pw A jelszó
-    /// @param __ex Ha értéke igaz, és a falhasználó név és/vagy jelszó nem egyezik, akkor dob egy kizárást.
+    /// @param __ex Ha értéke nem EX_IGNORE, és a falhasználó név és/vagy jelszó nem egyezik, akkor dob egy kizárást.
     /// @retuen Ha létezik a megadott nevű felhasználó, és a jelszó is megfelelő, akkor a feltöltött cUser objekum címe.
-    static const cUser *setUser(const QString& un, const QString& pw, bool __ex = true);
+    static const cUser *setUser(const QString& un, const QString& pw, enum eEx __ex = EX_ERROR);
     /// A megadott felhasználói név alapján betölti a magadott users rekordott.
     /// Ha a művelet sikeres, akkor a megallokált cUser objektum pointerét beírja a pUser statikus adattagba.
     /// @param un A felhasználónév
-    /// @param __ex Ha értéke igaz, és a falhasználó név létezik, akkor dob egy kizárást.
+    /// @param __ex Ha értéke nem EX_IGNORE, és a falhasználó név nem létezik, akkor dob egy kizárást.
     /// @retuen Ha létezik a megadott nevű felhasználó, akkor a feltöltött cUser objekum címe.
-    static const cUser *setUser(const QString& un, bool __ex = true);
+    static const cUser *setUser(const QString& un, enum eEx __ex = EX_ERROR);
     /// A megadott felhasználói ID alapján betölti a magadott users rekordott.
     /// Ha a művelet sikeres, akkor a megallokált cUser objektum pointerét beírja a pUser statikus adattagba.
     /// @param un A felhasználó ID
     /// @param __ex Ha értéke igaz, és a falhasználó ID létezik, akkor dob egy kizárást.
     /// @retuen Ha létezik a megadott ID-jű felhasználó, akkor a feltöltött cUser objekum címe.
-    static const cUser *setUser(qlonglong uid, bool __ex = true);
+    static const cUser *setUser(qlonglong uid, enum eEx __ex = EX_ERROR);
     /// Az megadott felhasználói rekord lessz az aktuális felhaszbáló.
     /// @param __pUser A felhasználói objektum pointere, a pointer a lanView példány tulajdona lesz, az fogja felszíbadítani.
     /// @exception Ha az objektum ES_COMPLETE bitje nics beállítva a _stat adattagbanm vagy a _stat negatív.
@@ -357,11 +357,11 @@ protected slots:
 }
 
 
-EXT_ const QString& IPV4Pol(int e, bool __ex = true);
-EXT_ int IPV4Pol(const QString& n, bool __ex = true);
+EXT_ const QString& IPV4Pol(int e, enum eEx __ex = EX_ERROR);
+EXT_ int IPV4Pol(const QString& n, enum eEx __ex = EX_ERROR);
 
-EXT_ const QString& IPV6Pol(int e, bool __ex = true);
-EXT_ int IPV6Pol(const QString& n, bool __ex = true);
+EXT_ const QString& IPV6Pol(int e, enum eEx __ex = EX_ERROR);
+EXT_ int IPV6Pol(const QString& n, enum eEx __ex = EX_ERROR);
 
 /// @class cLv2QApp
 /// Saját QApplication osztály, a hiba kizárások elkapásához (újra definiált notify() metódus.)

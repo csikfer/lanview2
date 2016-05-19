@@ -123,8 +123,8 @@ const colorAndFont&   lv2gDesign::operator[](int role) const
 eDesignRole lv2gDesign::desRole(const cRecStaticDescr& __d, int __ix)
 {
     __d.chkIndex(__ix);
-    if (__ix == __d.idIndex(false))      return GDR_ID;
-    if (__ix == __d.nameIndex(false))    return GDR_NAME;
+    if (__ix == __d.idIndex(EX_IGNORE))      return GDR_ID;
+    if (__ix == __d.nameIndex(EX_IGNORE))    return GDR_NAME;
     if (__d.primaryKey()[__ix])     return GDR_PRIMARY;
     const cColStaticDescr& cd = __d[__ix];
     switch (cd.fKeyType) {
@@ -135,7 +135,7 @@ eDesignRole lv2gDesign::desRole(const cRecStaticDescr& __d, int __ix)
     {
         cRecordAny *pF = cd.pFRec;
         if (pF == NULL) pF = new cRecordAny(cd.fKeyTable, cd.fKeySchema);
-        bool n = pF->isIndex(pF->nameIndex(false));
+        bool n = pF->isIndex(pF->nameIndex(EX_IGNORE));
         if (cd.pFRec == NULL) delete pF;
         if (n) return GDR_FNAME;
         if (!cd.fnToName.isEmpty())     return GDR_DERIVED;
