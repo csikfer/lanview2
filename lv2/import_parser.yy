@@ -2488,7 +2488,9 @@ tmodp   : SET_T DEFAULTS_T ';'                  { pTableShape->setDefaults(qq())
         | FIELD_T ORD_T SEQUENCE_T int0 strs ';'{ pTableShape->setOrdSeq(slp2sl($5), $4); }
         | ADD_T FIELD_T str str_z ';'           { pTableShape->addField(sp2s($3), sp2s($4)); }
         | ADD_T FIELD_T str str_z '{'           { pTableShapeField = pTableShape->addField(sp2s($3), sp2s($4)); }
-            fmodps '}'
+            fmodps '}'                          { pTableShapeField = NULL; }
+        | FIELD_T str '{'                       { pTableShapeField = pTableShape->shapeFields.get(sp2s($2)); }
+            fmodps '}'                          { pTableShapeField = NULL; }
         ;
 tstypes : tstype                                { $$ = $1; }
         | tstypes ',' tstype                    { $$ = $1 | $3; }
@@ -2541,6 +2543,8 @@ fmodp   : SET_T str '=' value ';'       { pTableShapeField->set(sp2s($2), vp2v($
         | DEFAULT_T VALUE_T str ';'     { pTableShapeField->setName(_sDefaultValue, sp2s($3)); }
         | TOOL_T TIP_T str ';'          { pTableShapeField->setBool(_sToolTip, $3); }
         | WHATS_T THIS_T str ';'        { pTableShapeField->setBool(_sWhatsThis, $3); }
+        | ADD_T FILTER_T str str_z ';'  { pTableShapeField->addFilter(sp2s($3), sp2s($4)); }
+        | ADD_T FILTERS_T strs ';'      { foreach (QString t, *$3) { pTableShapeField->addFilter(t); } delete $3; }
         ;
 appmenu : GUI_T str                     { pMenuApp = $2;}
             '{' menus '}'               { pDelete(pMenuApp); }

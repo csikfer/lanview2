@@ -484,12 +484,13 @@ public:
    Az egyszerű switch típusú táblához nem tartozik konstans, mert azokat nem cRecord típusú objektummal kezeljük.
  */
 typedef enum {
-    UNKNOWN_TABLE,
-    BASE_TABLE,     ///< Egyszerű tábla
-    VIEW_TABLE,     ///< Nézet tábla
-    SWITCH_TABLE,   ///< Switch tábla + tuajdonságok
-    LINK_TABLE,     ///< Link tábla (+ szimmetrikus VIEW)
-    CHILD_TABLE     ///< A tábla olyan objektumot ír le, mely egy másik tulajdona
+    UNKNOWN_TABLE   = 0,
+    TT_BASE_TABLE,     ///< Egyszerű tábla
+    TT_SWITCH_TABLE,   ///< Switch tábla + tuajdonságok
+    TT_LINK_TABLE,     ///< Link tábla (+ szimmetrikus VIEW)
+    TT_CHILD_TABLE,    ///< A tábla olyan objektumot ír le, mely egy másik tulajdona
+    TT_MASK         = 0x00ff,
+    TT_VIEW_TABLE   = 0x0100,     ///< Nézet tábla
 }   eTableType;
 
 /// Egy rekord tulajdonságait leíró objektum. A rekord adat objektumban a pointere egy statikus adattag (kivéve cRecordAny)
@@ -533,7 +534,7 @@ protected:
     /// Az adattábla oszlopait leíró objektumok listája
     cColStaticDescrList _columnDescrs;
     /// Az adattábla típusa
-    eTableType          _tableType;
+    quint16             _tableType; // enum eTableType
     /// Az objektumban a Primary Key-hez rendelt mezőkkel azonos indexű bitek 1-be vannak állítva.
     /// Ha nincs Primary Key, akkor nincs egyes bit a tömbben.
     QBitArray           _primaryKeyMask;
@@ -662,7 +663,7 @@ public:
     /// @param _c (rövid) mező név
     QString fullColumnNameQ(const QString& _c) const { return mCat(fullTableNameQ(), dQuoted(_c)); }
     /// A tábla típusával tér vissza
-    eTableType tableType() const                    { return _tableType; }
+    quint16 tableType() const                       { return _tableType; }
     /// A visszaadott objektum referenciában a Primary Key-hez rendelt mezükkel azonos indexű bitek 1-be vannak
     /// állítva. Ha nincs Primary Key, akkor nincs egyes bit a tömbben.
     /// @return Az elsőbleges kulcsként használt mezőket azonosító bit tömb objektum referenciája.
@@ -1118,7 +1119,7 @@ public:
     QString fullColumnNameQ(const QString& _c) const { return descr().fullColumnNameQ(_c); }
     /// A tábla típusával tér vissza
     /// Tisztán virtuális függvényt hív, konstruktorból nem hívható.
-    eTableType tableType() const                    { return descr().tableType(); }
+    quint16 tableType() const                       { return descr().tableType(); }
     /// Az mezők (oszlopok) teljes számával tér vissza
     /// Tisztán virtuális függvényt hív, konstruktorból nem hívható.
     int cols() const                                { return descr().cols(); }

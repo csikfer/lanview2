@@ -2136,9 +2136,9 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
 
     QString n = _tableRecord.value("table_type").toString();
     if      (n == "BASE TABLE")
-        _tableType = BASE_TABLE;
+        _tableType = TT_BASE_TABLE;
     else if (n == "VIEW") {
-        _tableType = VIEW_TABLE;
+        _tableType = TT_VIEW_TABLE | TT_BASE_TABLE;
         // Ha egy link tábláról van szó, akkor annak itt a view tábláját kell megadni, és ebben az estenben
         // a tábla név az a view név kiegészítve a "_table" uótaggal.
         QString tn = _viewName + "_table";
@@ -2147,7 +2147,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
             // PDEB(INFO) << "Table " << _viewName << QChar('/') << _tableName << " table type : LINK_TABLE." << endl;
             _tableName = tn;
             _tableOId  = toid;
-            _tableType = LINK_TABLE;
+            _tableType = TT_LINK_TABLE;
         }
     }
     else EXCEPTION(EDBDATA, 0, QObject::trUtf8("Invalid table type %1.%2 : %3").arg(_schemaName, _tableName, n));
@@ -2254,7 +2254,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
                 columnDescr.fKeyTable = pq2->value(1).toString();
                 columnDescr.fKeyField = pq2->value(2).toString();
                 QString t = pq2->value(3).toString();
-                if (t.isEmpty()) {   // Nincs megadva típus a távoli kulcsra (nincs fley_types rekord)
+                if (t.isEmpty()) {   // Nincs megadva típus a távoli kulcsra (nincs fkey_types rekord)
                     if (_tableName == columnDescr.fKeyTable && _schemaName == columnDescr.fKeySchema)
                         columnDescr.fKeyType = cColStaticDescr::FT_SELF;
                     else
@@ -2266,8 +2266,9 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
                 }
                 else if (!t.compare("owner",    Qt::CaseInsensitive)) {
                     columnDescr.fKeyType = cColStaticDescr::FT_OWNER;
-                    if (_tableType != BASE_TABLE) EXCEPTION(EDBDATA, _tableType, "Table type conflict.");
-                    _tableType = CHILD_TABLE;
+                    if ((_tableType & TT_MASK) != TT_BASE_TABLE) EXCEPTION(EDBDATA, _tableType, "Table type conflict.");
+                    _tableType &= ~TT_MASK;
+                    _tableType |= TT_CHILD_TABLE;
                 }
                 else if (!t.compare("self",     Qt::CaseInsensitive)) {
                     if (_tableName != columnDescr.fKeyTable || _schemaName != columnDescr.fKeySchema) EXCEPTION(EDBDATA);
@@ -2295,8 +2296,9 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
                         columnDescr.fKeyType = cColStaticDescr::FT_PROPERTY;
                     }
                     else if (!t.compare("owner",    Qt::CaseInsensitive)) {
-                        if (_tableType != BASE_TABLE) EXCEPTION(EDBDATA, _tableType, "Table type conflict.");
-                        _tableType = CHILD_TABLE;
+                        if ((_tableType & TT_MASK) != TT_BASE_TABLE) EXCEPTION(EDBDATA, _tableType, "Table type conflict.");
+                        _tableType &= ~TT_MASK;
+                        _tableType |= TT_CHILD_TABLE;
                         columnDescr.fKeyType = cColStaticDescr::FT_OWNER;
                     }
                     else if (!t.compare("self",     Qt::CaseInsensitive)) {
@@ -2405,10 +2407,12 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
     if (_idIndex != NULL_IX && !_primaryKeyMask[_idIndex]) EXCEPTION(EDATA, _idIndex, fullColumnName(_idIndex));
     //PDEB(VERBOSE) << VDEB(_idIndex) << " ; " << VDEB(_nameIndex) << endl;
     //
-    if (_tableType == BASE_TABLE && _nameIndex < 0              // Típus még nem derült ki, és nincs neve
+    if (_tableType == TT_BASE_TABLE && _nameIndex < 0              // Típus még nem derült ki, és nincs neve
      && colDescr(1).fKeyType == cColStaticDescr::FT_PROPERTY    // A második mező egy távoli kulcs
-     && colDescr(2).fKeyType == cColStaticDescr::FT_PROPERTY)   // és a harmadik mező is.
-        _tableType = SWITCH_TABLE;
+     && colDescr(2).fKeyType == cColStaticDescr::FT_PROPERTY) { // és a harmadik mező is.
+        _tableType &= ~TT_MASK;
+        _tableType |= TT_SWITCH_TABLE;
+    }
     delete pq;
     delete pq2;
     // ************************ init O.K
@@ -2684,14 +2688,14 @@ QString cRecStaticDescr::toString() const
         s += QChar(')') + '\n';
     }
     s += ";\n-- Table type : ";
-    switch (_tableType) {
-    case BASE_TABLE:    s += "Base";    break;
-    case VIEW_TABLE:    s += "View";    break;
-    case SWITCH_TABLE:  s += "Switch";  break;
-    case LINK_TABLE:    s += "Link";    break;
-    case CHILD_TABLE:   s += "Child";   break;
+    switch (_tableType & TT_MASK) {
+    case TT_BASE_TABLE:    s += "Base";    break;
+    case TT_SWITCH_TABLE:  s += "Switch";  break;
+    case TT_LINK_TABLE:    s += "Link";    break;
+    case TT_CHILD_TABLE:   s += "Child";   break;
     default:            s += "?";       break;
     }
+    if (_tableType & TT_VIEW_TABLE) s += ",View";
     return s;
 }
 

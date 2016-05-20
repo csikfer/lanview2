@@ -190,7 +190,7 @@ const cRecStaticDescr&  cHostService::descr() const
 {
     if (initPDescr<cHostService>(_sHostServices)) {
         // Ez egy SWITCH tábla kell legyen ...
-        if (_descr_cHostService().tableType() != SWITCH_TABLE) EXCEPTION(EPROGFAIL, _descr_cHostService().tableType(), _descr_cHostService().toString());
+        if (_descr_cHostService().tableType() != TT_SWITCH_TABLE) EXCEPTION(EPROGFAIL, _descr_cHostService().tableType(), _descr_cHostService().toString());
         _ixFeatures = _descr_cHostService().toIndex(_sFeatures);
     }
     return *_pRecordDescr;

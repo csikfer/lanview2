@@ -228,7 +228,7 @@ public:
     virtual bool rewrite(QSqlQuery &__q, eEx __ex = EX_ERROR);
     void setTitle(const QStringList& _tt);
     int fetchFilters(QSqlQuery& q);
-    bool addFilter(const QString& _t, const QString& _d, eEx __ex = EX_ERROR);
+    bool addFilter(const QString& _t, const QString& _d = QString(), eEx __ex = EX_ERROR);
     bool fetchByNames(QSqlQuery& q, const QString& tsn, const QString& fn, eEx __ex = EX_ERROR);
     static qlonglong getIdByNames(QSqlQuery& q, const QString& tsn, const QString& fn);
     tTableShapeFilters shapeFilters;

@@ -620,6 +620,7 @@ void cRecordsViewBase::refresh(bool first)
         EXCEPTION(ENOTSUPP);
         break;
     }
+    /*
     selectionChanged(QItemSelection(), QItemSelection());
     setPageButtons();
     if (pRightTables != NULL) {
@@ -627,6 +628,7 @@ void cRecordsViewBase::refresh(bool first)
             p->refresh(true);
         }
     }
+    */
     DBGFNL();
 }
 
@@ -735,7 +737,7 @@ void cRecordsViewBase::insert()
     pRecordDialog = NULL;
 }
 
-void cRecordsViewBase::modify()
+void cRecordsViewBase::modify(eEx __ex)
 {
     QModelIndex index = actIndex();
     if (index.isValid() == false) return;
@@ -781,7 +783,11 @@ void cRecordsViewBase::modify()
         }
     }   break;
     default:
-        EXCEPTION(ENOTSUPP);
+        pDelete(pRec);
+        if (__ex < EX_IGNORE) {
+            EXCEPTION(ENOTSUPP);
+        }
+        return;
     }
 
     int id = DBT_NEXT;
@@ -925,6 +931,7 @@ void cRecordsViewBase::initShape(cTableShape *pts)
     shapeType = enum2set(tableShapeType, pTableShape->get(_sTableShapeType).toStringList(), EX_IGNORE);
     isReadOnly =  ENUM2SET(TS_READ_ONLY) & shapeType;
     shapeType &= ~ENUM2SET(TS_READ_ONLY);
+    isReadOnly = isReadOnly || false == pRecDescr->isUpdatable();
     isReadOnly = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sEditRights));
     isNoDelete = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sRemoveRights));
     isNoInsert = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sInsertRights));
@@ -1184,7 +1191,7 @@ void cRecordsViewBase::modifyByIndex(const QModelIndex & index)
 {
     //selectRow(index);
     (void)index;
-    modify();
+    modify(EX_IGNORE);
 }
 
 /* ***************************************************************************************************** */
@@ -1214,6 +1221,7 @@ cRecordTable::~cRecordTable()
 
 void cRecordTable::init()
 {
+    pTimer = NULL;
     pTableView = NULL;
     // Az alapértelmezett gombok:
     buttons << DBT_CLOSE << DBT_SPACER << DBT_REFRESH << DBT_FIRST << DBT_PREV << DBT_NEXT << DBT_LAST;
@@ -1299,6 +1307,13 @@ void cRecordTable::init()
     pTableView->horizontalHeader()->setSectionsClickable(true);
     connect(pTableView->horizontalHeader(), SIGNAL(sectionClicked(int)), this, SLOT(clickedHeader(int)));
     connect(pTableView, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(modifyByIndex(QModelIndex)));
+    // Auto refresh ?
+    qlonglong ar = pTableShape->getId(_sAutoRefresh);
+    if (ar > 0) {
+        pTimer = new QTimer(this);
+        connect(pTimer, SIGNAL(timeout()), this, SLOT(autoRefresh()));
+        pTimer->setInterval(ar);
+    }
     refresh();
 }
 
@@ -1576,6 +1591,33 @@ void cRecordTable::selectRow(const QModelIndex& mi)
     pTableView->selectRow(row);
 }
 
+void cRecordTable::refresh(bool all)
+{
+    if (pTimer != NULL) pTimer->start();    // Auto refres (re)start
+    QList<qlonglong>    actIdList;
+    int row;
+    // Ha nem első init, és van ID-je a rekordnak, akkor megjegyezzük az aktív ID-jét
+    if (pRecDescr->idIndex(EX_IGNORE) >= 0) {
+        foreach (QModelIndex mi, selectedRows()) {
+           row = mi.row();
+           const tRecords& recs = pTableModel()->records();
+           if (isContIx(recs, row)) actIdList << recs.at(row)->getId();
+        }
+    }
+    cRecordsViewBase::refresh(all);
+    // Volt aktív sor ID-nk
+    if (!actIdList.isEmpty()) {
+        pTableView->setSelectionMode(QAbstractItemView::MultiSelection);
+        foreach (qlonglong id, actIdList) {
+            row = ((cRecordTableModel *)pModel)->records().indexOf(id);
+            if (row >= 0) {
+                pTableView->selectRow(row);
+            }
+        }
+        pTableView->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    }
+}
+
 void cRecordTable::setPageButtons()
 {
     if (pTableModel()->qIsPaged()) {
@@ -1603,5 +1645,10 @@ cRecord * cRecordTable::record(int i)
 cRecord *cRecordTable::record(QModelIndex mi)
 {
     return record(mi.row());
+}
+
+void cRecordTable::autoRefresh()
+{
+    refresh(false);
 }
 

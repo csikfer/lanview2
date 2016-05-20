@@ -258,11 +258,11 @@ public:
     /// Egyébként a closeIt() hívja.
     virtual void close(int r = QDialog::Accepted);
     /// Újraolvassa az adatbázist
-    void refresh(bool all = true);
+    virtual void refresh(bool all = true);
     /// Egy új rekord neszúrása
     virtual void insert();
     /// Egy kijelölt rekord modosítása
-    virtual void modify();
+    virtual void modify(enum eEx __ex = EX_ERROR);
     /// Nem kötelezően implementálandó metódus. Ha nincs újraimplementálva, de mégis meghívjuk, akkor kizárást dob
     virtual void first();
     /// Nem kötelezően implementálandó metódus. Ha nincs újraimplementálva, de mégis meghívjuk, akkor kizárást dob
@@ -358,6 +358,7 @@ public:
     virtual cRecord *nextRow(QModelIndex *pMi, int _upRes = 1);
     virtual cRecord *prevRow(QModelIndex *pMi, int _upRes = 1);
     virtual void selectRow(const QModelIndex& mi);
+    virtual void refresh(bool all = true);
     void empty();
 
     void first();
@@ -381,8 +382,12 @@ public:
     // void refresh_lst_rev();
     cRecord *record(int i);
     cRecord * record(QModelIndex mi);
+
+    QTimer *pTimer;
 public:
     QTableView *tableView() { return pTableView; }
+private slots:
+    void autoRefresh();
 };
 
 

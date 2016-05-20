@@ -333,11 +333,15 @@ INSERT INTO unusual_fkeys
   ( 'interfaces',       'node_id',      'owner',            'nodes',        'node_id',      '{nodes, snmpdevices}'),
   ( 'host_services',    'node_id',      'property',         'nodes',        'node_id',      '{nodes, snmpdevices}'),
   ( 'host_services',    'port_id',      'property',         'nports',       'port_id',      '{nports, interfaces}'),
-  ( 'phs_links_table',  'port_id1',     'property',         'nports',       'port_id',      '{nports, pports, interfaces}'),
+  ( 'phs_links_table',  'port_id1',     'owner',            'nports',       'port_id',      '{nports, pports, interfaces}'),
   ( 'phs_links_table',  'port_id2',     'property',         'nports',       'port_id',      '{nports, pports, interfaces}'),
-  ( 'log_links_table',  'port_id1',     'property',         'nports',       'port_id',      '{nports, interfaces}'),
+  ( 'log_links_table',  'port_id1',     'owner',            'nports',       'port_id',      '{nports, interfaces}'),
   ( 'log_links_table',  'port_id2',     'property',         'nports',       'port_id',      '{nports, interfaces}'),
-  ( 'table_shapes',     'right_shape_ids','self',           'table_shapes', 'table_shape_id',NULL );
+  ( 'table_shapes',     'right_shape_ids','self',           'table_shapes', 'table_shape_id',NULL ),
+  ( 'phs_links_shape',  'node_id1',     'property',         'patchs',        'port_id',     '{patchs, nodes, snmpdevices}'),
+  ( 'log_links_shape',  'node_id1',     'property',         'nports',       'port_id',      '{nodes, snmpdevices}'),
+  ( 'lldp_links_shape', 'node_id1',     'property',         'nports',       'port_id',      '{nodes, snmpdevices}'),
+  ( 'phs_named_link',   'port_id1',     'owner',            'nports',       'port_id',      '{nports, pports, interfaces}');
 
 CREATE TABLE fkey_types (
     fkey_type_id        bigserial  NOT NULL PRIMARY KEY,

@@ -1585,7 +1585,7 @@ bool cPatch::updateShares(QSqlQuery& __q, bool __clr, eEx __ex)
     if (__clr) {
         QString sql = "UPDATE pports SET shared_cable = DEFAULT, shared_port_id = DEFAULT WHERE port_id = " + QString::number(getId());
         if (__q.exec(sql)) {
-            if (__ex == false && __q.lastError().type() == QSqlError::StatementError) SQLQUERYERRDEB(__q)
+            if (__ex == EX_IGNORE && __q.lastError().type() == QSqlError::StatementError) SQLQUERYERRDEB(__q)
             else                                                                      SQLQUERYERR(__q)
             return false;
         }
@@ -2588,7 +2588,7 @@ const cRecStaticDescr&  cPhsLink::descr() const
 {
     if (initPDescr<cPhsLink>(_sPhsLinks)) {
         // Link, a fenti a view tábla neve, ellenőrizzük a tábla nevet, és a típust:
-        if (_descr_cPhsLink().tableType() != LINK_TABLE || _descr_cPhsLink().tableName() != _sPhsLinksTable) EXCEPTION(EPROGFAIL);
+        if (_descr_cPhsLink().tableType() != TT_LINK_TABLE || _descr_cPhsLink().tableName() != _sPhsLinksTable) EXCEPTION(EPROGFAIL);
         CHKENUM(_sPhsLinkType1, phsLinkType);
         CHKENUM(_sPhsLinkType2, phsLinkType);
     }
@@ -2780,7 +2780,7 @@ const cRecStaticDescr&  cLogLink::descr() const
 {
     if (initPDescr<cLogLink>(_sLogLinks)) {
         // Link, a fenti a view tábla neve, ellenőrizzük a tábla nevet, és a típust:
-        if (_descr_cLogLink().tableType() != LINK_TABLE || _descr_cLogLink().tableName() != _sLogLinksTable) EXCEPTION(EPROGFAIL);
+        if (_descr_cLogLink().tableType() != TT_LINK_TABLE || _descr_cLogLink().tableName() != _sLogLinksTable) EXCEPTION(EPROGFAIL);
     }
     return *_pRecordDescr;
 }
@@ -2812,7 +2812,7 @@ const cRecStaticDescr&  cLldpLink::descr() const
 {
     if (initPDescr<cLldpLink>(_sLldpLinks)) {
         // Link, a fenti a view tábla neve, ellenőrizzük a tábla nevet, és a típust:
-        if (_descr_cLldpLink().tableType() != LINK_TABLE || _descr_cLldpLink().tableName() != _sLldpLinksTable) EXCEPTION(EPROGFAIL);
+        if (_descr_cLldpLink().tableType() != TT_LINK_TABLE || _descr_cLldpLink().tableName() != _sLldpLinksTable) EXCEPTION(EPROGFAIL);
     }
     return *_pRecordDescr;
 }

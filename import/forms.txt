@@ -53,10 +53,10 @@ INCLUDE "iaform.txt";
 
 TABLE SHAPE port_params "Port paraméterek" {
     SET DEFAULTS;
-    
     TABLE               TITLE "Port paraméterek", "A porthoz rendelt paraméter",;
     FIELD param_type_id TITLE "Típus",@;
     FIELD param_value   TITLE "Érték",@;
+    FIELD 
 }
 
 TABLE SHAPE pports "Pach panel és fali csatlakozó portok" {

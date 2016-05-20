@@ -353,7 +353,7 @@ public:
     T *get(qlonglong __id, eEx __ex = EX_ERROR) {
         int i = indexOf(__id);
         if (i < 0) {
-            if (__ex == false) return NULL;
+            if (__ex == EX_IGNORE) return NULL;
             EXCEPTION(EFOUND, __id, QObject::trUtf8("Keresés a rekord ID alapján: %1 = %2").arg(T().idName()).arg(__id));
         }
         return this->at(i);
@@ -365,7 +365,7 @@ public:
     T *get(const QString& __nm, eEx __ex = EX_ERROR) {
         int i = indexOf(__nm);
         if (i < 0) {
-            if (__ex == false) return NULL;
+            if (__ex == EX_IGNORE) return NULL;
             EXCEPTION(EFOUND, 0, QObject::trUtf8("Keresés a rekord név alapján: %1 = %2").arg(T().nameName()).arg(__nm));
         }
         return this->at(i);
@@ -378,7 +378,7 @@ public:
     T *get(const QString& __fn, const QVariant& __v, eEx __ex = EX_ERROR) {
         int i = indexOf(__fn, __v);
         if (i < 0) {
-            if (__ex == false) return NULL;
+            if (__ex == EX_IGNORE) return NULL;
             EXCEPTION(EFOUND, 0, QObject::trUtf8("Keresés a %1 nevű mezőérték alapján: %2").arg(__fn).arg(debVariantToString(__v)));
         }
         return this->at(i);
@@ -391,7 +391,7 @@ public:
     T *get(int __ix, const QVariant& __v, eEx __ex = EX_ERROR) {
         int i = indexOf(__ix, __v);
         if (i < 0) {
-            if (__ex == false) return NULL;
+            if (__ex == EX_IGNORE) return NULL;
             EXCEPTION(EFOUND, __ix, QObject::trUtf8("Keresés a %1 indexű mezőérték alapján: %2").arg(__ix).arg(debVariantToString(__v)));
         }
         return this->at(i);
@@ -400,7 +400,7 @@ public:
     /// Ha a konténer üres, akkor dob egy kizárást, ha __ex igaz, vagy NULL pointerrel tér vissza, ha __ex hamis.
     T *pop_back(eEx __ex = EX_ERROR)  {
         if (list().size() < 1) {
-            if (__ex == false) return NULL;
+            if (__ex == EX_IGNORE) return NULL;
             EXCEPTION(EFOUND, 0);
         }
         T *p = QList<T *>::back();
@@ -411,7 +411,7 @@ public:
     /// Ha a konténer üres, akkor dob egy kizárást, ha __ex igaz, vagy NULL pointerrel tér vissza, ha __ex hamis.
     T *pop_front(eEx __ex = EX_ERROR) {
         if (list().size() < 1) {
-            if (__ex == false) return NULL;
+            if (__ex == EX_IGNORE) return NULL;
             EXCEPTION(EFOUND, 0);
         }
         T *p = QList<T *>::front();
@@ -424,7 +424,7 @@ public:
     /// @param __ex Opcionális flag, ha igaz (ez az alapértelmezés) akkor ha nincs találat, dob egy kizárást.
     T *pullAt(int __ix, eEx __ex = EX_ERROR) {
         if (list().size() <= __ix) {
-            if (__ex == false) return NULL;
+            if (__ex == EX_IGNORE) return NULL;
             EXCEPTION(EFOUND, __ix);
         }
         T *p = QList<T *>::at(__ix);
@@ -438,7 +438,7 @@ public:
     T *pull(qlonglong __id, eEx __ex = EX_ERROR) {
         int ix = indexOf(__id);
         if (0 > ix) {
-            if (__ex == false) return NULL;
+            if (__ex == EX_IGNORE) return NULL;
             EXCEPTION(EFOUND, __ex);
         }
         T *p = QList<T *>::at(ix);
@@ -452,7 +452,7 @@ public:
     T *pull(const QString __name, eEx __ex = EX_ERROR) {
         int ix = indexOf(__name);
         if (0 > ix) {
-            if (__ex == false) return NULL;
+            if (__ex == EX_IGNORE) return NULL;
             EXCEPTION(EFOUND, __ex);
         }
         T *p = QList<T *>::at(ix);
@@ -467,7 +467,7 @@ public:
     T *pull(const QString __fname, const QVariant& __val, eEx __ex = EX_ERROR) {
         int ix = indexOf(__fname, __val);
         if (0 > ix) {
-            if (__ex == false) return NULL;
+            if (__ex == EX_IGNORE) return NULL;
             EXCEPTION(EFOUND, __ex);
         }
         T *p = QList<T *>::at(ix);
@@ -482,7 +482,7 @@ public:
     T *pull(int __fix, const QVariant& __val, eEx __ex = EX_ERROR) {
         int ix = indexOf(__fix, __val);
         if (0 > ix) {
-            if (__ex == false) return NULL;
+            if (__ex == EX_IGNORE) return NULL;
             EXCEPTION(EFOUND, __ex);
         }
         T *p = QList<T *>::at(ix);
@@ -776,7 +776,7 @@ public:
         _DBGFNL() << "SQL:" << sql << endl;
         if (!__q.exec(sql)) {
             // Pontosítani kéne, sajnos nincs hibakód!!
-            if (__ex == false && __q.lastError().type() == QSqlError::StatementError) {
+            if (__ex == EX_IGNORE && __q.lastError().type() == QSqlError::StatementError) {
                 SQLQUERYERRDEB(__q);
                 return false;
             }
@@ -803,7 +803,7 @@ public:
         }
         if (!__q.exec(sql)) {
             // Pontosítani kéne, sajnos nincs hibakód!!
-            if (__ex == false && __q.lastError().type() == QSqlError::StatementError) {
+            if (__ex == EX_IGNORE && __q.lastError().type() == QSqlError::StatementError) {
                 SQLQUERYERRDEB(__q);
                 return false;
             }
