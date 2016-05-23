@@ -48,15 +48,71 @@ DELETE TABLE SHAPE "%";
 
 INCLUDE "iaform.txt";
 // ***************************************************************************************
+TABLE phs_links_shape SHAPE phs_links "Fizikai linkek" {
+    TABLE TYPE  CHILD, LINK;
+    TABLE TITLE "Fizikai linkek", "Fizikai link, patch";
+    ADD FIELD port_name1        {  TITLE "Port",        "Port név";     ADD FILTERS begin, like, similar, regexp, regexpi; }
+    ADD FIELD port_index1       {  TITLE "Index",       "Port index";   ADD FILTERS big,litle,interval; }
+    ADD FIELD phs_link_type1    {  TITLE "Típus",       "Típus";        ADD FILTERS begin, like; }
+    ADD FIELD link_type         {  TITLE "Busz",        "Busz";         ADD FILTERS begin, like; }
+    ADD FIELD port_shared       {  TITLE "Megosztás",   "Megosztás";    ADD FILTERS begin, like; }
+    ADD FIELD phs_link_note     {  TITLE "Megjegyzés",  "Megjegyzés";   ADD FILTERS begin, like, similar, regexp, regexpi; }
+    ADD FIELD node_name2        {  TITLE "Linked",      "Linked elem";  ADD FILTERS begin, like, similar, regexp, regexpi; }
+    ADD FIELD port_name2        {  TITLE "port",        "Linked port";  ADD FILTERS begin, like, similar, regexp, regexpi; }
+    ADD FIELD port_index2       {  TITLE "index",   "Linked port index";ADD FILTERS big,litle,interval; }
+    ADD FIELD phs_link_type2    {  TITLE "Típus",       "Típus";        ADD FILTERS begin, like; }
+    FIELD port_index1, port_name1, phs_link_type1             ORD asc,desc,no;
+    FIELD node_name2, port_name2, port_index2, phs_link_type2 ORD no, asc, desc;
+    TABLE FEATURES ":pports.owner=port_id1:"; 
+}
+
+TABLE log_links_shape SHAPE log_links "Logikai linkek" {
+    TABLE TYPE  CHILD, LINK;
+    TABLE TITLE "Logikai linkek";
+    TABLE READ ONLY;
+    ADD FIELD port_name1        {  TITLE "Port",        "Port";         ADD FILTERS begin, like, similar, regexp, regexpi; }
+    ADD FIELD port_index1       {  TITLE "Index",       "Index";        ADD FILTERS big,litle,interval; }
+    ADD FIELD node_name2        {  TITLE "Linked node", "Linked node";  ADD FILTERS begin, like, similar, regexp, regexpi; }
+    ADD FIELD port_name2        {  TITLE "Port",        "Linked Port";  ADD FILTERS begin, like, similar, regexp, regexpi; }
+    ADD FIELD port_index2       {  TITLE "Index",  "Linked Port Index"; ADD FILTERS big,litle,interval; }
+    FIELD port_index1                                     ORD asc,desc,no;
+    FIELD port_name1, node_name2, port_name2, port_index2 ORD no, asc, desc;
+    
+}
+
+TABLE lldp_links_shape SHAPE lldp_links "LLDP linkek" {
+    TABLE TYPE  CHILD, LINK;
+    TABLE TITLE "LLDP linkek";
+    TABLE READ ONLY;
+    ADD FIELD port_name1        {  TITLE "Port",        "Port";         ADD FILTERS begin, like, similar, regexp, regexpi; }
+    ADD FIELD port_index1       {  TITLE "Index",       "Index";        ADD FILTERS big,litle,interval; }
+    ADD FIELD node_name2        {  TITLE "Linked node", "Linked node";  ADD FILTERS begin, like, similar, regexp, regexpi; }
+    ADD FIELD port_name2        {  TITLE "Port",        "Linked Port";  ADD FILTERS begin, like, similar, regexp, regexpi; }
+    ADD FIELD port_index2       {  TITLE "Index",  "Linked Port Index"; ADD FILTERS big,litle,interval; }
+    FIELD port_index1                                     ORD asc,desc,no;
+    FIELD port_name1, node_name2, port_name2, port_index2 ORD no, asc, desc;
+}
+
+TABLE patchs SHAPE phsnodes "Hálózati elem" {
+    SET DEFAULTS;
+    TABLE TYPE OWNER;
+    TABLE INHERIT TYPE on;
+    TABLE READ ONLY;
+    RIGHT SHAPE phs_links, log_links, lldp_links;
+    FIELD node_name ORD asc,desc,no;
+    FIELD node_note, place_id ORD no, asc, desc;
+    FIELD node_name, node_type, node_note, place_id ADD FILTERS begin, like, similar, regexp, regexpi;
+}
+
+// ***************************************************************************************
 // Objects:
 // Adattáblák (objektumok) megjelenítése
 
 TABLE SHAPE port_params "Port paraméterek" {
     SET DEFAULTS;
     TABLE               TITLE "Port paraméterek", "A porthoz rendelt paraméter",;
-    FIELD param_type_id TITLE "Típus",@;
-    FIELD param_value   TITLE "Érték",@;
-    FIELD 
+    FIELD param_type_id { TITLE "Típus",@; ADD FILTERS begin, like, similar, regexp, regexpi; }
+    FIELD param_value   { TITLE "Érték",@; ADD FILTERS begin, like, similar, regexp, regexpi; }
 }
 
 TABLE SHAPE pports "Pach panel és fali csatlakozó portok" {
@@ -72,13 +128,13 @@ TABLE SHAPE pports "Pach panel és fali csatlakozó portok" {
     
     TABLE TYPE CHILD, OWNER;    // patchs tulajdona, de a pports tulajdonosa
     TABLE INHERIT TYPE only;    // Öröklés kizárása, ős ill. leszármazott objektumok nem kerülnek megjelenítésre
-    RIGHT SHAPE port_params;
+    RIGHT SHAPE port_params, phs_links;
     FIELD iftype_id FLAG HIDE;  // Csak egy típus van, nem jelenítjük meg sehol
     FIELD iftype_id DEFAULT VALUE STRING(ID IFTYPE(patch));     // Új portnál mindíg ezt a típust kell beállítani
     FIELD port_index ORD asc,desc,no;                           // Alapértelmezetten a port indexre lessz rendezve
     FIELD port_name, port_tag, port_note  ORD no, asc, desc;    // Rendezhető még a névre, cimkére vagy a megjegyzésre
     FIELD port_index ADD FILTERS big, litle, interval; // A port indexre megadható szűrő: kicebb, nagyobb és tartomány
-    FIELD port_name, port_tag, port_note ADD FILTERS like, similar, regexp, regexpi;
+    FIELD port_name, port_tag, port_note, shared_cable ADD FILTERS begin, like, similar, regexp, regexpi;
 }
 
 TABLE SHAPE patchs "Pach panelek és fali csatlakozók" {
@@ -92,10 +148,10 @@ TABLE SHAPE patchs "Pach panelek és fali csatlakozók" {
     
     TABLE TYPE OWNER;
     TABLE INHERIT TYPE only;
-    RIGHT SHAPE pports, port_params;  // plussz a paraméter rekordok
+    RIGHT SHAPE pports, port_params, phs_links;  // plussz a paraméter rekordok
     FIELD node_name ORD asc,desc,no;
     FIELD node_note, place_id ORD no, asc, desc;
-    FIELD node_name, node_note ADD FILTERS begin, like, similar, regexp, regexpi;
+    FIELD node_name, node_note, place_id ADD FILTERS begin, like, similar, regexp, regexpi;
 }
 
 TABLE SHAPE nports "Passzív portok (Csak dialógus!)" {
@@ -154,10 +210,18 @@ TABLE SHAPE ipaddresses "IP címek" {
     FIELD address, ip_address_note ORD no, asc, desc;
 }
 
+TABLE mactab_shape SHAPE mactab_port "Port címtábla" {
+    SET DEFAULTS;
+    TABLE READ ONLY;
+    TABLE FEATURES ":hostports.owner=port_id:";
+    FIELD node_id, node_name, port_id, port_name FLAG HIDE;
+}
+
+
 TABLE interfaces SHAPE hostports "Hálózati interfészek, portok" {
     SET DEFAULTS;
     TABLE TYPE CHILD, OWNER, TREE;
-    RIGHT SHAPE ipaddresses,  port_params;
+    RIGHT SHAPE ipaddresses,  port_params, mactab_port;
     TABLE INHERIT TYPE listed_rev;
     INHERIT TABLE NAMES nports;                 // A teljes lista: interfaces, nports
 
@@ -185,10 +249,31 @@ TABLE SHAPE node_params "Eszköz paraméterek" {
     FIELD param_value   TITLE "Érték",@;
 }
 
+TABLE SHAPE host_services "A hostokhoz rendelt szervíz példányok" {
+    SET DEFAULTS;
+    TABLE TYPE TREE;
+    FIELD node_id, service_id, prime_service_id, proto_service_id ADD FILTERS begin, like, similar, regexp, regexpi;
+    FIELD node_id, service_id, port_id ORD asc,desc,no;
+    FIELD prime_service_id, proto_service_id, superior_host_service_id, host_service_state, soft_state, hard_state, last_changed, last_touched ORD no,asc,desc;
+    TABLE FEATURES ":allnodes.owner=node_id:";
+}
+
+TABLE mactab_shape SHAPE mactab_node "Port címtábla" {
+    SET DEFAULTS;
+    TABLE READ ONLY;
+    TABLE FEATURES ":allnodes.owner=node_id:";
+    FIELD node_id, node_name, port_id FLAG HIDE;
+    FIELD port_name ORD asc,desc,no;
+    FIELD hwaddress, r_node_name, r_port_name, set_type ORD no,asc,desc;
+    FIELD port_name, hwaddress, r_node_name, r_port_name, set_type ADD FILTERS begin, like, similar, regexp, regexpi;
+    FIELD first_time, last_time, state_updated_time ADD FILTERS litle, big, interval;
+}
+
 TABLE snmpdevices SHAPE allnodes "Hálózati elemek" {
     SET DEFAULTS;
     
     TABLE            TITLE "Aktív és passzív hálózati elemek", "Aktív vagy passzív hálózati elem", "Aktív SNMP eszköz";
+    FIELD node_id    FLAG HIDE;
     FIELD node_name  TITLE "Név",@;
     FIELD node_note  TITLE "Megjegyzés",@;
     FIELD place_id   TITLE "Hely", "Az eszköz helye";
@@ -202,20 +287,10 @@ TABLE snmpdevices SHAPE allnodes "Hálózati elemek" {
     TABLE TYPE OWNER;
     TABLE INHERIT TYPE listed_rev;      // Megjelenítjük az ős tábla elemeit is
     INHERIT TABLE NAMES nodes;          // A teljes lista: snmpdevices, nodes
-    RIGHT SHAPE hostports, node_params;
+    RIGHT SHAPE hostports, node_params, lldp_links, log_links, host_services, mactab_node;
     FIELD node_name ORD asc,desc,no;
     FIELD node_note, place_id ORD no, asc, desc;
     FIELD node_name, node_note, place_id ADD FILTERS begin, like, similar, regexp, regexpi;
-}
-
-
-TABLE SHAPE host_services "A hostokhoz rendelt szervíz példányok" {
-    SET DEFAULTS;
-    TABLE TYPE TREE;
-    FIELD node_id, service_id, prime_service_id, proto_service_id ADD FILTERS begin, like, similar, regexp, regexpi;
-    FIELD node_id, service_id, port_id ORD asc,desc,no;
-    FIELD prime_service_id, proto_service_id, superior_host_service_id, host_service_state, soft_state, hard_state, last_changed, last_touched ORD no,asc,desc;
-    
 }
 
 TABLE SHAPE services "Szervíz típusok" {
@@ -225,7 +300,6 @@ TABLE SHAPE services "Szervíz típusok" {
     FIELD service_name ADD FILTERS begin, like, similar, regexp, regexpi;
 }
 
-
 TABLE SHAPE subnets "Alhálózatok" {
     SET DEFAULTS;
     TABLE TYPE SIMPLE;
@@ -234,16 +308,27 @@ TABLE SHAPE subnets "Alhálózatok" {
 TABLE SHAPE vlans "VLAN-ok" {
     SET DEFAULTS;
     TABLE TYPE SIMPLE;
+    FIELD vlan_id ADD FILTERS big, litle, interval;
+    FIELD vlan_name, vlan_note ADD FILTERS begin, like, similar, regexp, regexpi;
+    FIELD vlan_id ORD asc,desc,no;
+    FIELD vlan_name, vlan_note ORD no, asc, desc;
 }
 
 TABLE SHAPE images {
     SET DEFAULTS;
     TABLE TYPE SIMPLE;
+    FIELD image_id FLAG HIDE;
+    FIELD image_name, image_note, image_type, image_sub_type ADD FILTERS begin, like, similar, regexp, regexpi;
+    FIELD image_name ORD asc,desc,no;
+    FIELD image_note, image_type, image_sub_type ORD no, asc, desc;
 }
 
 TABLE SHAPE dyn_addr_ranges "Dinamikus címtartományok" {
     SET DEFAULTS;
     TABLE TYPE SIMPLE;
+    FIELD dyn_addr_range_id FLAG HIDE;
+    FIELD begin_address ORD asc,desc,no;
+    FIELD end_address, last_time, exclude ORD no,asc,desc;
 }
 
 // ***************************************************************************************
@@ -282,7 +367,11 @@ TABLE SHAPE alarms "Riasztások" {
 TABLE SHAPE db_errs "Adatbázis hiba napló" {
     SET DEFAULTS;
     TABLE READ ONLY;
-    
+    FIELD dblog_id FLAG HIDE;
+    FIELD date_of ORD asc,desc,no;
+    FIELD error_id, user_id, table_name, trigger_op, err_subcode, err_msg, func_name, reapeat, date_of_last, acknowledged ORD no, asc,desc;
+    FIELD error_id, user_id, table_name, trigger_op, err_subcode, err_msg, func_name, acknowledged ADD FILTERS begin, like, similar, regexp, regexpi;
+    FIELD error_id, date_of, reapeat, date_of_last ADD FILTERS big, litle, interval;
 }
 
 TABLE SHAPE app_errs "Applikáció hiba napló" {
@@ -301,9 +390,12 @@ TABLE SHAPE host_service_logs "A szervíz példányok log rekordjai" {
     SET DEFAULTS;
     TABLE READ ONLY;
     TABLE TYPE SIMPLE;
-    FIELD host_service_id ADD FILTERS begin, like, similar, regexp, regexpi;
-    FIELD * ORD no;
-    
+    FIELD date_of ORD asc,desc,no;
+    FIELD host_service_id, event_note, superior_alarm_id, noalarm ORD no, asc, desc;
+    FIELD host_service_id, old_state, old_soft_state, old_hard_state,
+                           new_state, new_soft_state, new_hard_state, event_note, superior_alarm_id, noalarm
+                    ADD FILTERS begin, like, similar, regexp, regexpi;
+    FIELD date_of ADD FILTERS big, litle, interval;
 }
 
 TABLE SHAPE iftypes "Port típusok" {
@@ -322,12 +414,8 @@ TABLE SHAPE arps "ARP tábla" {
     FIELD hwaddress  TITLE "MAC",    "MAC cím";
     FIELD first_time TITLE first,    "Első detektálás ideje";
     FIELD last_time  TITLE last,     "Utoló detektálás ideje";
-    
-}
-
-TABLE SHAPE mactab "Port címtábla" {
-    SET DEFAULTS;
-    
+    FIELD ipaddress ORD asc,desc,no;
+    FIELD hwaddress, first_time, last_time ORD no,asc,desc;
 }
 
 TABLE SHAPE arp_logs "ARP lekérdezés napló." {
@@ -340,6 +428,17 @@ TABLE SHAPE dyn_addr_ranges "Dinamikus címtartományok" {
     SET DEFAULTS;
     TABLE EDIT RIGHTS admin;
 }
+
+TABLE mactab_shape SHAPE mactab "Port címtábla" {
+    SET DEFAULTS;
+    TABLE READ ONLY;
+    FIELD node_id, port_id FLAG HIDE;
+    FIELD hwaddress ORD asc,desc,no;
+    FIELD node_name, port_name, r_node_name, r_port_name, set_type ORD no,asc,desc;
+    FIELD node_name, port_name, hwaddress, r_node_name, r_port_name, set_type ADD FILTERS begin, like, similar, regexp, regexpi;
+    FIELD first_time, last_time, state_updated_time ADD FILTERS litle, big, interval;
+}
+
 
 // ***************************************************************************************
 
@@ -436,8 +535,6 @@ TABLE SHAPE places "Helyiségek" {
 }
 SET table_shapes[place_groups].right_shape_ids = ID TABLE SHAPE ( places );
 
-include "form_link.txt";
-
 GUI lv2gui {
     file MENU {
         TITLE "fájl";
@@ -484,6 +581,7 @@ GUI lv2gui {
         arp_logs    SHAPE   arp_logs        {   TITLE "ARP napló",@;  }
         mactab      SHAPE   mactab          {   TITLE "Port címtáblák",@;  }
         dyn_addr_ranges SHAPE dyn_addr_ranges { TITLE "Dinamikus címtartományok",@; }
+        iftypes     SHAPE   iftypes         {   TITLE "Port típusok",@; }
     }
     internals MENU {
         TITLE "Belső vezérlő adatok";

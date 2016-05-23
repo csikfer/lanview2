@@ -200,12 +200,12 @@ void cDevicePSt::postInit(QSqlQuery &q, const QString&)
                 pnas = new cInspector(this);
                 pnas->service(pRLinkStat);
                 pnas->pPort = cNPort::getPortObjById(q, lpid);
-                pnas->pNode = cNode::getNodeObjById(q, pnas->pPort->getId(_sNodeId), false)->reconvert<cNode>();
-                if (pnas->pNode == NULL) {  // Bizonyára egy HUB, nem foglakozunk vele
-                    delete pnas;
-                    pnas = NULL;
+                cRecord *pn = cNode::getNodeObjById(q, pnas->pPort->getId(_sNodeId), EX_IGNORE);
+                if (pn == NULL) {  // Bizonyára egy HUB, nem foglakozunk vele
+                    pDelete(pnas);
                 }
                 else {
+                    pnas->pNode = pn->reconvert<cNode>();
                     cHostService& hs = pnas->hostService;
                     if (hs.fetchByIds(q, pnas->nodeId(), pnas->serviceId(), EX_IGNORE)) { // Van host_services rekord
                         if (hs.getId(_sSuperiorHostServiceId) != hostServiceId()) {  // máshova mutat a superior, a link szerint viszont a mienk !!!

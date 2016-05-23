@@ -238,6 +238,29 @@ CREATE INDEX mactab_state_updated_time_index    ON mactab(state_updated_time);
 ALTER TABLE mactab OWNER TO lanview2;
 COMMENT ON TABLE mactab IS 'Port címtábla lekérdezések eredményét tartalmazó tábla. Az adatmanipulációs műveletek a függvényeket keresztűl lehet elvégezni : replace_mactab()';
 
+CREATE VIEW mactab_shape AS
+    SELECT
+        n.node_id               AS node_id,
+        n.node_name             AS node_name,
+        t.port_id               AS port_id,
+        p.port_name             AS port_name,
+        t.hwaddress             AS hwaddress,
+        t.mactab_state          AS mactab_state,
+        t.first_time            AS first_time,
+        t.last_time             AS last_time,
+        t.state_updated_time    AS state_updated_time,
+        t.set_type              AS set_type,
+        r.node_name             AS r_node_name,
+        port_id2name(i.port_id) AS r_port_name
+    FROM mactab AS t
+      JOIN nports AS p USING (port_id)
+      JOIN nodes  AS n USING (node_id)
+      LEFT OUTER JOIN interfaces AS i USING(hwaddress)
+      LEFT OUTER JOIN nodes      AS r ON r.node_id = i.node_id;
+      
+ALTER TABLE mactab_shape OWNER TO lanview2;
+COMMENT ON VIEW mactab_shape IS 'A macteb táblázatos megjelenítéséhez.';
+
 CREATE TABLE mactab_logs (
     mactab_log_id   bigserial   PRIMARY KEY,
     hwaddress       macaddr     NOT NULL,

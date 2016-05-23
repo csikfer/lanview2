@@ -322,6 +322,14 @@ signals:
 public:
     static cRecordsViewBase *newRecordView(cTableShape * pts, cRecordsViewBase * own = NULL, QWidget *par = NULL);
     static cRecordsViewBase *newRecordView(QSqlQuery &q, qlonglong shapeId, cRecordsViewBase * own = NULL, QWidget *par = NULL);
+    int ixToOwner() {
+        if (pUpper == NULL) EXCEPTION(EPROGFAIL);
+        QString key = pUpper->pTableShape->getName() + "." + _sOwner;
+        QString ofn = pTableShape->feature(key);
+        if (ofn.isEmpty()) return recDescr().ixToOwner();
+        else               return recDescr().toIndex(ofn);
+    }
+
 private:
     void rightTabs(QVariantList &vlids);
     void createRightTab();

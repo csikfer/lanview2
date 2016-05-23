@@ -658,7 +658,7 @@ void cRecordsViewBase::insert()
         cRecordAny rec(pRecDescr);
         // Ha CHILD, akkor a owner id adott
         if (flags & RTF_CHILD) {
-            int ofix = rec.descr().ixToOwner();
+            int ofix = ixToOwner();
             rec[ofix] = owner_id;
         }
         // Ha TREE, akkor a default parent a kiszelektált sor,
@@ -945,6 +945,14 @@ void cRecordsViewBase::initShape(cTableShape *pts)
         fields << p;
     }
     initView();
+    // Ha egy egyszerű táblát használnánk al táblaként
+    if (pUpper != NULL) {
+        qlonglong st = shapeType & ~ENUM2SET2(TS_TABLE, TS_READ_ONLY);
+        if (st == ENUM2SET(TS_SIMPLE) || st == ENUM2SET(TS_TREE)) {
+            shapeType = (shapeType & ~ENUM2SET(TS_SIMPLE)) | ENUM2SET(TS_CHILD);
+        }
+    }
+
 }
 
 cRecordsViewBase *cRecordsViewBase::newRecordView(cTableShape *pts, cRecordsViewBase * own, QWidget *par)
@@ -1129,7 +1137,7 @@ QStringList cRecordsViewBase::where(QVariantList& qParams)
         }
         switch (f) {
         case RTF_CHILD: {
-            int ofix = recDescr().ixToOwner();
+            int ofix = ixToOwner();
             wl << dQuoted(recDescr().columnName(ofix)) + " = " + QString::number(owner_id);
         }   break;
         case RTF_IGROUP:

@@ -180,6 +180,7 @@ Qt::ItemFlags cRecordTreeModel::flags(const QModelIndex &index) const
 bool cRecordTreeModel::canFetchMore(const QModelIndex &parent) const
 {
     cTreeNode *pNode = nodeFromIndex(parent);
+    if (pNode == NULL) EXCEPTION(EPROGFAIL);
     return pNode->pChildrens == NULL;
 }
 
