@@ -26,7 +26,7 @@ int reasons(const QString& _r, eEx __ex)
     if (0 == _r.compare(_sCaveat,   Qt::CaseInsensitive)) return R_CAVEAT;
     if (0 == _r.compare(_sError,    Qt::CaseInsensitive)) return R_ERROR;
     if (0 == _r.compare(_sAmbiguous,Qt::CaseInsensitive)) return R_AMBIGUOUS;
-    if (__ex == true)   EXCEPTION(EDATA, -1, _r);
+    if (__ex != EX_IGNORE) EXCEPTION(EDATA, -1, _r);
     return R_INVALID;
 }
 
@@ -51,7 +51,7 @@ const QString& reasons(int _r, eEx __ex)
     case REASON_OK:     return _sOk;
     case REASON_TO:     return _sTimeOut;
     }
-    if (__ex == true)   EXCEPTION(EDATA, _r);
+    if (__ex != EX_IGNORE) EXCEPTION(EDATA, _r);
     return _sNul;
 
 }
@@ -69,7 +69,7 @@ int paramTypeType(const QString& __n, eEx __ex)
     if (0 == __n.compare(_sTimestamp, Qt::CaseInsensitive))         return PT_TIMESTAMP;
     if (0 == __n.compare(_sINet,      Qt::CaseInsensitive))         return PT_INET;
     if (0 == __n.compare(_sByteA,     Qt::CaseInsensitive))         return PT_BYTEA;
-    if (__ex == true)  EXCEPTION(EDATA, -1, __n);
+    if (__ex != EX_IGNORE)  EXCEPTION(EDATA, -1, __n);
     return PT_INVALID;
 }
 
@@ -87,7 +87,7 @@ const QString& paramTypeType(int __e, eEx __ex)
     case PT_INET:               return _sINet;
     case PT_BYTEA:              return _sByteA;
     }
-    if (__ex == true)   EXCEPTION(EDATA, __e);
+    if (__ex != EX_IGNORE)   EXCEPTION(EDATA, __e);
     return _sNul;
 }
 
@@ -1799,7 +1799,7 @@ int nodeType(const QString& __n, eEx __ex)
     if (0 == __n.compare(_sConverter,   Qt::CaseInsensitive)) return NT_CONVERTER;
     if (0 == __n.compare(_sPrinter,     Qt::CaseInsensitive)) return NT_PRINTER;
     if (0 == __n.compare(_sGateway,     Qt::CaseInsensitive)) return NT_GATEWAY;
-    if (__ex == true)   EXCEPTION(EDATA, -1, __n);
+    if (__ex != EX_IGNORE)   EXCEPTION(EDATA, -1, __n);
     return NT_INVALID;
 }
 
@@ -1817,7 +1817,7 @@ const QString& nodeType(int __e, eEx __ex)
     case NT_PRINTER:    return _sPrinter;
     case NT_GATEWAY:    return _sGateway;
     }
-    if (__ex == true)   EXCEPTION(EDATA, __e);
+    if (__ex != EX_IGNORE)   EXCEPTION(EDATA, __e);
     return _sNul;
 }
 
