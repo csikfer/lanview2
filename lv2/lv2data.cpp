@@ -248,7 +248,7 @@ void cParamType::fetchParamTypes(QSqlQuery& __q)
     cParamType pt;
     if (!pt.fetch(__q, false, ba)) EXCEPTION(EDATA, 0, trUtf8("Update cache: The if_types table is empty."));
     do {
-        cParamType *pPt = paramTypes.get(pt.getId(), false);    // ID alapján rákeresünk
+        cParamType *pPt = paramTypes.get(pt.getId(), EX_IGNORE);    // ID alapján rákeresünk
         if (pPt == NULL) {   // Ez egy új rekord
             paramTypes << pt;
         }
@@ -824,7 +824,7 @@ void cIfType::fetchIfTypes(QSqlQuery& __q)
     cIfType ift;
     if (!ift.fetch(__q, false, ba)) EXCEPTION(EDATA, 0, trUtf8("Update cache: The if_types table is empty."));
     do {
-        cIfType *pIft = ifTypes.get(ift.getId(), false);    // ID alapján rákeresünk
+        cIfType *pIft = ifTypes.get(ift.getId(), EX_IGNORE);    // ID alapján rákeresünk
         if (pIft == NULL) {   // Ez egy új rekord
             ifTypes << ift;
         }
@@ -1300,7 +1300,7 @@ void cInterface::joinVlan(qlonglong __id, enum eVlanType __t, enum eSetType __st
 
 bool cInterface::splitVlan(qlonglong __id)
 {
-    cPortVlan * p = vlans.pull(__id, false);
+    cPortVlan * p = vlans.pull(__id, EX_IGNORE);
     if (p == NULL) return false;
     delete p;
     return true;

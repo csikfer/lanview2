@@ -2296,9 +2296,16 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
                         columnDescr.fKeyType = cColStaticDescr::FT_PROPERTY;
                     }
                     else if (!t.compare("owner",    Qt::CaseInsensitive)) {
-                        if ((_tableType & TT_MASK) != TT_BASE_TABLE) EXCEPTION(EDBDATA, _tableType, "Table type conflict.");
-                        _tableType &= ~TT_MASK;
-                        _tableType |= TT_CHILD_TABLE;
+                        if ((_tableType & TT_MASK) == TT_BASE_TABLE) {
+                            _tableType &= ~TT_MASK;
+                            _tableType |= TT_CHILD_TABLE;
+                        }
+                        else if ((_tableType & TT_MASK) == TT_LINK_TABLE) {
+                            ;   // marad LINK
+                        }
+                        else {
+                            EXCEPTION(EDBDATA, _tableType, "Table type conflict.");
+                        }
                         columnDescr.fKeyType = cColStaticDescr::FT_OWNER;
                     }
                     else if (!t.compare("self",     Qt::CaseInsensitive)) {
