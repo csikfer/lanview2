@@ -629,6 +629,10 @@ void cColStaticDescr::checkEnum(tE2S e2s, tS2E s2e, const char *src, int lin, co
     }
     for (i = 0; i < n; ++i) {
         const QString& s = pEnumType->enumValues[i];
+/*        if (s.isEmpty()) {
+            EXCEPTION(EENUMVAL, 3, QObject::trUtf8("%1 : #%2 is empty")
+                      .arg(*pEnumType).arg(i) )
+        }*/
         int ii = (*s2e)(s, EX_IGNORE);
         if (i != ii) {
             EXCEPTION(EENUMVAL, 1, QObject::trUtf8("%1 : #%2/%3 : s2e(%3) ~ %4")
@@ -636,13 +640,13 @@ void cColStaticDescr::checkEnum(tE2S e2s, tS2E s2e, const char *src, int lin, co
         }
         const QString& ss = (*e2s)(i, EX_IGNORE);
         if (0 != s.compare(ss, Qt::CaseInsensitive)) {
-            EXCEPTION(EENUMVAL, 2, QObject::trUtf8("%1 : #%2/%3 : e2s(%4) ~ %5")
+            EXCEPTION(EENUMVAL, 4, QObject::trUtf8("%1 : #%2/%3 : e2s(%4) ~ %5")
                       .arg(*pEnumType).arg(i).arg(s).arg(ii).arg(ss) )
         }
     }
     const QString e = (*e2s)(i, EX_IGNORE);
     if (e.isEmpty() == false) {    // Nem lehet több elem a konverziós függvény szerint!
-        EXCEPTION(EENUMVAL, 3, QObject::trUtf8("A %1 adatvázis típus hiényos, extra elem : #%2/%3")
+        EXCEPTION(EENUMVAL, 5, QObject::trUtf8("A %1 adatvázis típus hiényos, extra elem : #%2/%3")
                   .arg(*pEnumType).arg(i).arg(e))
     }
 }

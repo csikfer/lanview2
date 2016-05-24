@@ -186,6 +186,7 @@ CREATE TABLE host_services (
     deleted                 boolean        NOT NULL DEFAULT FALSE
 );
 ALTER TABLE host_services OWNER TO lanview2;
+ALTER TABLE host_services ADD CONSTRAINT no_self_superior CHECK(host_service_id <> superior_host_service_id);
 
 CREATE UNIQUE INDEX host_services_port_subservices_key ON host_services (node_id, service_id, COALESCE(port_id, -1), prime_service_id, proto_service_id);
 -- CREATE UNIQUE INDEX host_services_node_id_service_id ON host_services(node_id, service_id) WHERE port_id IS NULL;

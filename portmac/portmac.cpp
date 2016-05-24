@@ -162,7 +162,7 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
             if (NULL_ID != cLldpLink().getLinked(__q, np.getId())) continue; // Ez egy LLDP-vel felderített uplink
             // mehet a ports konténerbe az indexe
         }
-        else if (ifTypeName != _sMultiplexor) {
+        else if (ifTypeName == _sMultiplexor) {
             // TRUNK-nal a TRUNK tagjaihoz van rendelve az uplink
             int ix = -1;
             bool first = true;

@@ -1284,6 +1284,7 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
     pUi->comboBox->setModel(pModel);
     pUi->pushButtonEdit->setDisabled(true);
     pTableShape = new cTableShape();
+    _value = pModel->atId(0);
     if (pTableShape->fetchByName(pRDescr->tableName())) {   // Ha meg tudjuk jeleníteni (azonos nevű shape)
         pUi->pushButtonNew->setEnabled(true);
         connect(pUi->pushButtonEdit, SIGNAL(pressed()), this, SLOT(modifyF()));
