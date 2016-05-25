@@ -9,6 +9,9 @@ cParseWidget::cParseWidget(QWidget *par)
 , fileFilter(trUtf8("Szöveg fájlok (*.txt *.src *.imp)"))
 {
     PDEB(OBJECT) << __PRETTY_FUNCTION__ << QChar(' ') << QChar(',') << VDEBPTR(this) << endl;
+    isRuning = false;
+    pLocalParser = NULL;
+    pLocalParsedStr = NULL;
     pUi = new Ui::GParseWidget();
     pUi->setupUi(this);
 
@@ -77,52 +80,51 @@ void cParseWidget::parseClicked()
 
 void cParseWidget::localParse(const QString& src)
 {
+    pUi->pushButtonClose->setDisabled(true);
+    pUi->pushButtonParse->setDisabled(true);
+    pUi->pushButtonClear->setDisabled(true);
+    pUi->pushButtonLoad->setDisabled(true);
+    pUi->textEditSrc->setReadOnly(true);
+
     pUi->textEditResult->clear();
-    cError *pe = NULL;
-    debugStream *pDS = NULL;
-    cDebug      *pD  = NULL;
-    QSqlQuery   *pq  = newQuery();
-    bool         transaction = false;
-    try {
-        pD  = cDebug::getInstance();
-        pDS = pD->pCout();
-        connect(pDS, SIGNAL(readyDebugLine()), this, SLOT(debugLine()));
-        pD->setGui();
-        transaction = sqlBegin(*pq);
-        importParseText(src);
-        transaction = !sqlEnd(*pq);
-        delete pq;
-        pq = NULL;
-        pD->setGui(false);
-        disconnect(pDS, SIGNAL(readyDebugLine()), this, SLOT(debugLine()));
-    } CATCHS(pe);
-    cError *ipe = importGetLastError();
-    if (ipe != NULL) {
-        if (pe != NULL) {
-            pUi->textEditResult->append(trUtf8("<p><b> Tbbszörös hiba. <p> %1.").arg(pe->msg()));
-            delete pe;
-        }
-        pe = ipe;
-    }
-    if (pe != NULL) {
-        if (pq != NULL) {
-            if (transaction) sqlRollback(*pq);
-            delete pq;
-            pq = NULL;
-        }
-        if (pD != NULL) {
-            pD->setGui(false);
-            if (pDS != NULL) {
-                disconnect(cDebug::getInstance()->pCout(), SIGNAL(readyDebugLine()), this, SLOT(debugLine()));
-            }
-            pUi->textEditResult->append(trUtf8("<p><b> A fordító kizárást dobott. <p> %1.").arg(pe->msg()));
-            cErrorMessageBox::messageBox(pe, this);
-        }
-        delete pe;
-    }
-    else {
+
+    pLocalError = NULL;
+    debugStream *pDS = cDebug::getInstance()->pCout();
+    connect(pDS, SIGNAL(readyDebugLine()), this, SLOT(debugLine()));
+    cDebug::getInstance()->setGui();
+
+    pLocalParser = new cImportParseThread(_sNul, pWidget());
+
+    connect(pLocalParser, SIGNAL(finished()), this, SLOT(localParseFinished()));
+    pLocalParsedStr = new QString(src);
+    pLocalParser->startParser(pLocalError, pLocalParsedStr);   // A hiba pointert ebben a kontexusban csk kinullázza
+}
+
+void cParseWidget::localParseFinished()
+{
+    // Az esetleges hiba kód
+    pLocalError = importGetLastError();
+    // A debug kimenet leválasztása a GUI-ról.
+    debugStream *pDS = cDebug::getInstance()->pCout();
+    disconnect(pDS, SIGNAL(readyDebugLine()), this, SLOT(debugLine()));
+    cDebug::getInstance()->setGui(false);
+    // OK ?
+    if (pLocalError == NULL) {
         pUi->textEditResult->append(trUtf8("<p><b> O.K."));
     }
+    else {
+        pUi->textEditResult->append(trUtf8("<p><b> A fordító kizárást dobott. <p> %1.").arg(pLocalError->msg()));
+        cErrorMessageBox::messageBox(pLocalError, this);
+        pDelete(pLocalError);
+    }
+    pDelete(pLocalParser);
+    pDelete(pLocalParsedStr);
+
+    pUi->pushButtonClose->setDisabled(false);
+    pUi->pushButtonParse->setDisabled(false);
+    pUi->pushButtonClear->setDisabled(false);
+    pUi->pushButtonLoad->setDisabled(false);
+    pUi->textEditSrc->setReadOnly(false);
 }
 
 void cParseWidget::remoteParse(const QString &src)

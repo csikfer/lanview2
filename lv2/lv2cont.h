@@ -9,6 +9,17 @@ Adatbázis kezelő objektum konténerek ill. template-k
 #include <QList>
 #include <lv2datab.h>
 
+template <class C, class M> void appendCont(C& c, const M& m, int i) {
+    if (c.size() != i) EXCEPTION(EPROGFAIL, i);
+    c << m;
+}
+
+template <class C1, class M1, class C2, class M2> void appendCont(C1& c1, const M1& m1, C2& c2, const M2& m2, int i) {
+    if (c1.size() != i || c2.size() != i) EXCEPTION(EPROGFAIL, i);
+    c1 << m1;
+    c2 << m2;
+}
+
 /*!
 @class tRecordList
 Template osztály. Rekord lista konténer.

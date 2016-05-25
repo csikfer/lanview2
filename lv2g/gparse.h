@@ -27,12 +27,17 @@ private slots:
     void saveCliecked();
     void parseClicked();
     void debugLine();
+    void localParseFinished();
 private:
     void localParse(const QString &src);
     void remoteParse(const QString &src);
     const QString fileFilter;
     QString dirName();
     QString fileName;
+    bool    isRuning;
+    cImportParseThread *pLocalParser;
+    cError             *pLocalError;
+    QString            *pLocalParsedStr;
 };
 
 #endif // GPARSE_H

@@ -2762,15 +2762,26 @@ qlonglong LinkGetLinked(QSqlQuery& q, cRecord& o, qlonglong __pid)
 {
     o.clear();
     o.setId(_sPortId1, __pid);
-    if (o.completion(q) == 1) return o.getId(_sPortId2);
+    int n = o.completion(q);
+    switch (n) {
+    case 0: break;
+    case 1: return o.getId(_sPortId2);
+    default:EXCEPTION(EDATA, n, o.descr().toString());
+    }
     return NULL_ID;
 }
 bool LinkIsLinked(QSqlQuery& q, cRecord& o, qlonglong __pid1, qlonglong __pid2)
 {
     o.clear();
     o.setId(_sPortId1, __pid1);
-    o.setId(_sPortId1, __pid2);
-    return (o.completion(q) == 1);
+    o.setId(_sPortId2, __pid2);
+    int n = o.completion(q);
+    switch (n) {
+    case 0: break;
+    case 1: return true;
+    default:EXCEPTION(EDATA, n, o.descr().toString());
+    }
+    return false;
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */

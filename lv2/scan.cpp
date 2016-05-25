@@ -426,6 +426,10 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs)
         es = QObject::trUtf8("Egy. és csakis egy ideiglenes portot lehet megadni. megadott portszám :%1 ").arg(node.ports.size());
         goto setPortsBySnmp_error;
     }
+    if (node.ports.first()->chkObjType<cInterface>(EX_IGNORE) < 0) {
+        es = QObject::trUtf8("Az ideiglenes portonak Interface típusúnak kell lennie.");
+        goto setPortsBySnmp_error;
+    }
     pTempIf = node.ports.pop_back()->reconvert<cInterface>();
     if (pTempIf->addresses.size() != 1) {
         es = QObject::trUtf8("A megadott (ideiglenes) portnak egy és csakis egy címe lehet. ");
@@ -435,9 +439,9 @@ setPortsBySnmp_error:
         if (pEs != NULL) *pEs += es;
         return false;
     }
-
+    // Megvan az IP cím, amit lekérdezhetőnk
     hostAddr = pTempIf->addresses[0]->address();
-    pDelete( pTempIf); // ez már nem kell.
+    pDelete(pTempIf); // ez már nem kell.
     if (hostAddr.isNull()) {
         es = QObject::trUtf8("Nincs beállítva megfelelő IP cím.");
         goto setPortsBySnmp_error;
@@ -454,7 +458,7 @@ setPortsBySnmp_error:
     PDEB(VVERBOSE) << "*************************************************" << endl;
     PDEB(VVERBOSE) << "SNMP TABLE : " << endl << tab.toString() << endl;
     PDEB(VVERBOSE) << "*************************************************" << endl;
-    tab << _sIpAdEntAddr; // Add ip address to table
+    tab << _sIpAdEntAddr; // Add ip address (empty column) to table
     cOId oid(_sIpMib + _sIpAdEntIfIndex);
     bool ok;
     if (0 == snmp.getNext(oid)) do {
@@ -507,7 +511,7 @@ setPortsBySnmp_error:
         if (sysdescr.contains("sonicwall", Qt::CaseInsensitive)) {
             QStringList sl = name.split(QChar(' '));
             if (sl.size() > 1) {
-                pPort->setName(_sPortNote, name);
+                pPort->setNote(name);
                 name = sl[0];
             }
         }
@@ -872,7 +876,10 @@ bool cLldpScan::scanByLldpDevRow(cSnmp& snmp, cSnmp& asnmp)
         goto scanByLldpDevRow_error;
     }
     RemPortIdSubtype = snmp.value().toInt();    // lldpRemPortIdSubtype
-    if (RemPortIdSubtype != 7) return true;     // Csak a local(7)-el foglalkozunk, az álltalában a port név
+    if (RemPortIdSubtype != 7   // local(7)         pl. ProCurve
+     && RemPortIdSubtype != 5   // interfaceName(5) pl. HP 3Com
+     && RemPortIdSubtype != 3)  // macAddress(3)    pl. HP AccesPoint
+        return true;
 
     NONEXTSNMPDATA(3)
     ix = (int)snmp.name()[oids[3].size()];
@@ -930,7 +937,7 @@ scanByLldpDevRow_error:
     }
     else {                                                  // Nem ismert host/dev
         if (!createSnmpDev()) return true;                       // nem ismert, és nem tudjuk létrehozni sem...
-        // Létrehoztuk, vagy mégos megvan, ?
+        // Létrehoztuk, vagy mégis megvan, ?
     }
     updateLink();
     return true;

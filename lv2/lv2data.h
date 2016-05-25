@@ -1539,8 +1539,16 @@ public:
     STATICIX(cPortVlan, ixSetType)
 };
 
-
+/// @macro APPMEMO(q, m, i)
+/// Egy ap_memos rekord kiírása.
+/// @param q Az adatbázis művelethez használt QSqlQuery objektum.
+/// @param m Az üzenet string
+/// @param i Az üzenet fontossága (enum eNotifSwitch konstans)
 #define APPMEMO(q, m, i) cAppMemo::memo(q, m, i, __PRETTY_FUNCTION__, __FILE__, __LINE__)
+/// @macro QAPPMEMO(q, m, i)
+/// Egy ap_memos rekord kiírása.
+/// @param m Az üzenet string
+/// @param i Az üzenet fontossága (enum eNotifSwitch konstans)
 #define QAPPMEMO(m, i)  { QSqlQuery q = getQuery(); APPMEMO(q, m, i); }
 
 class LV2SHARED_EXPORT cAppMemo : public cRecord {

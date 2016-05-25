@@ -233,6 +233,7 @@ TABLE interfaces SHAPE hostports "Hálózati interfészek, portok" {
     FIELD port_index TOOL TIP "SNMP eszköz esetén az index kötelező, és azonos az interfész SNMP azonosítójával.";
     FIELD iftype_id     TITLE "Típus", "A port típus";
     
+    FIELD port_staple_id FEATURES ":owner=self:";
     FIELD port_ostat, port_astat READ ONLY;
     FIELD port_ostat DEFAULT VALUE unknown;
     FIELD port_astat DEFAULT VALUE unknown;

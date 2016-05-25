@@ -2265,16 +2265,16 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
                         columnDescr.fKeyType = cColStaticDescr::FT_PROPERTY;
                     // FT_OWNER típus esetén kötelező definiáni a típust egy fkey_types vagy unusual_fkeys rekorddal !
                 }
-                else if (!t.compare("property", Qt::CaseInsensitive)) {
+                else if (!t.compare(_sProperty, Qt::CaseInsensitive)) {
                     columnDescr.fKeyType = cColStaticDescr::FT_PROPERTY;
                 }
-                else if (!t.compare("owner",    Qt::CaseInsensitive)) {
+                else if (!t.compare(_sOwner,    Qt::CaseInsensitive)) {
                     columnDescr.fKeyType = cColStaticDescr::FT_OWNER;
                     if ((_tableType & TT_MASK) != TT_BASE_TABLE) EXCEPTION(EDBDATA, _tableType, "Table type conflict.");
                     _tableType &= ~TT_MASK;
                     _tableType |= TT_CHILD_TABLE;
                 }
-                else if (!t.compare("self",     Qt::CaseInsensitive)) {
+                else if (!t.compare(_sSelf,     Qt::CaseInsensitive)) {
                     if (_tableName != columnDescr.fKeyTable || _schemaName != columnDescr.fKeySchema) EXCEPTION(EDBDATA);
                     columnDescr.fKeyType = cColStaticDescr::FT_SELF;
                 }
@@ -2296,10 +2296,10 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
                     columnDescr.fKeyField  = pq2->value(2).toString();
                     columnDescr.fKeyTables = stringArrayFromSql(pq2->value(4));
                     QString t = pq2->value(3).toString();
-                    if      (!t.compare("property", Qt::CaseInsensitive)) {
+                    if      (!t.compare(_sProperty, Qt::CaseInsensitive)) {
                         columnDescr.fKeyType = cColStaticDescr::FT_PROPERTY;
                     }
-                    else if (!t.compare("owner",    Qt::CaseInsensitive)) {
+                    else if (!t.compare(_sOwner,    Qt::CaseInsensitive)) {
                         if ((_tableType & TT_MASK) == TT_BASE_TABLE) {
                             _tableType &= ~TT_MASK;
                             _tableType |= TT_CHILD_TABLE;
@@ -2312,7 +2312,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
                         }
                         columnDescr.fKeyType = cColStaticDescr::FT_OWNER;
                     }
-                    else if (!t.compare("self",     Qt::CaseInsensitive)) {
+                    else if (!t.compare(_sSelf,     Qt::CaseInsensitive)) {
                         columnDescr.fKeyType = cColStaticDescr::FT_SELF;
                     }
                     else EXCEPTION(EDATA, -1, t);

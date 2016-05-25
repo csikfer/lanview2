@@ -238,6 +238,8 @@ public:
     cRecordTableFODialog *  pFODialog;
     /// Child tábla esetén a tulajdonos ID-je, ha ismert (csak egy rekord van kijelölve az owner táblázatban)
     qlonglong   owner_id;
+    /// Ha van parent objektum (rekord) és ismert.
+    qlonglong   parent_id;
     /// A dialogus ablak megnyitásához allokál egy objektumot a megadott record tábla név alapján
     /// Hiba esetén dob egy kizárást.
     static cTableShape *   getInhShape(QSqlQuery &q, cTableShape *pTableShape, const QString& _tn);
@@ -333,7 +335,7 @@ public:
 private:
     void rightTabs(QVariantList &vlids);
     void createRightTab();
-
+    tRecordList<cTableShape>    getShapes();
 };
 
 /// @class cRecordTable

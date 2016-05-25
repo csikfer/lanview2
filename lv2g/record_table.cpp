@@ -506,6 +506,7 @@ cRecordsViewBase::cRecordsViewBase(bool _isDialog, QWidget *par)
     pRightTabWidget = NULL;
     pFODialog   = NULL;
     owner_id = NULL_ID;
+    parent_id= NULL_ID;
     pInhRecDescr = NULL;
     tableInhType = TIT_NO;
     pRecordDialog = NULL;
@@ -639,15 +640,14 @@ void cRecordsViewBase::insert()
         if (owner_id == NULL_ID) return;
     }
     if (pRecordDialog != NULL) {
-        pRecordDialog->widget().show();
-        return;
+        EXCEPTION(EPROGFAIL);
     }
-    qlonglong pid = NULL_ID;
+    parent_id = NULL_ID;
     // Ha TREE, akkor a default parent a kiszelektált sor,
     if (flags & RTF_TREE) {
         cRecord *pARec = actRecord();
         if (pARec != NULL) {    // ha van kiszelektált (egy) sor
-            pid = pARec->getId();
+            parent_id = pARec->getId();
         }
     }
     // A dialógusban megjelenítendő nyomógombok.
@@ -657,16 +657,7 @@ void cRecordsViewBase::insert()
     case TIT_ONLY: {
         cRecordAny rec(pRecDescr);
         // Ha CHILD, akkor a owner id adott
-        if (flags & RTF_CHILD) {
-            int ofix = ixToOwner();
-            rec[ofix] = owner_id;
-        }
-        // Ha TREE, akkor a default parent a kiszelektált sor,
-        if (pid != NULL_ID) {
-            int pfix = rec.descr().ixToParent();
-            rec[pfix] = pid;
-        }
-        cRecordDialog   rd(*pTableShape, buttons, true, pWidget());  // A rekord szerkesztő dialógus
+        cRecordDialog   rd(*pTableShape, buttons, true, NULL, this, pWidget());  // A rekord szerkesztő dialógus
         pRecordDialog = &rd;
         rd.restore(&rec);
         while (1) {
@@ -699,16 +690,8 @@ void cRecordsViewBase::insert()
         }
     }   break;
     case TIT_LISTED_REV: {
-        tRecordList<cTableShape>    shapes;
-        QStringList tableNames;
-        tableNames << pTableShape->getName(_sTableName);
-        tableNames << inheritTableList;
-        tableNames.removeDuplicates();
-        foreach (QString tableName, tableNames) {
-            shapes << getInhShape(pTableShape, tableName);
-        }
-        // A parent ID, és owner ID -t ha van a konstruktor állítja be a rekord objektumokban.
-        cRecordDialogInh rd(*pTableShape, shapes, buttons, owner_id, pid, true, pWidget());
+        tRecordList<cTableShape>    shapes = getShapes();
+        cRecordDialogInh rd(*pTableShape, shapes, buttons, true, NULL, this, pWidget());
         pRecordDialog = &rd;
         while (1) {
             int r = rd.exec();
@@ -742,8 +725,7 @@ void cRecordsViewBase::modify(eEx __ex)
     QModelIndex index = actIndex();
     if (index.isValid() == false) return;
     if (pRecordDialog != NULL) {
-        pRecordDialog->widget().show();
-        return;
+        EXCEPTION(EPROGFAIL);
     }
 
     cRecord *pRec = actRecord(index);    // pointer az aktuális rekordra, a beolvasott/megjelenített rekord listában
@@ -760,22 +742,13 @@ void cRecordsViewBase::modify(eEx __ex)
     case TIT_NO:
     case TIT_ONLY:
         pShape = getInhShape(pTableShape, pRec->descr());
-        pRd = new cRecordDialog(*pShape, buttons, true, pWidget());
+        pRd = new cRecordDialog(*pShape, buttons, true, NULL, this, pWidget());
         pRecordDialog = pRd;
         break;
     case TIT_LISTED_REV: {
-        QStringList tableNames;
         pShapes = new tRecordList<cTableShape>;
-        QString n = pTableShape->getName(_sTableName);
-        if (!tableNames.contains(n)) {
-            tableNames << pTableShape->getName(_sTableName);
-        }
-        tableNames << inheritTableList;
-        foreach (QString tableName, tableNames) {
-            cTableShape *pTS = getInhShape(pTableShape, tableName);;
-            *pShapes << pTS;
-        }
-        pRdt = new cRecordDialogInh(*pTableShape, *pShapes, buttons, owner_id, NULL_ID, true, pWidget());
+        *pShapes = getShapes();
+        pRdt = new cRecordDialogInh(*pTableShape, *pShapes, buttons, true, NULL, this, pWidget());
         pRecordDialog = pRdt;
         if (pRdt->disabled()) {
             pRd = pRdt;     // Mégsincs tab widget
@@ -784,7 +757,7 @@ void cRecordsViewBase::modify(eEx __ex)
     }   break;
     default:
         pDelete(pRec);
-        if (__ex < EX_IGNORE) {
+        if (__ex > EX_IGNORE) {
             EXCEPTION(ENOTSUPP);
         }
         return;
@@ -819,7 +792,7 @@ void cRecordsViewBase::modify(eEx __ex)
         case DBT_NEXT:
         case DBT_PREV: {
             // Update DB
-            bool r = pRd->accept(); // Bevitt adatok rendben?
+            bool r = pRecordDialog->accept(); // Bevitt adatok rendben?
             if (!r) {
                 // Nem ok az adat
                 QMessageBox::warning(pWidget(), trUtf8("Adat hiba"), pRd->errMsg());
@@ -828,7 +801,7 @@ void cRecordsViewBase::modify(eEx __ex)
             }
             else {
                 // Leadminisztráljuk kiírjuk. Ha hiba van, azt a hívott metódus kiírja, és újrázunk.
-                pRec->copy(pRd->record());
+                pRec->copy(pRecordDialog->record());
                 updateResult = pModel->updateRec(index, pRec);
                 if (!updateResult) {
                     continue;
@@ -852,6 +825,7 @@ void cRecordsViewBase::modify(eEx __ex)
                 pRec = prevRow(&index, updateResult);
             }
             if (pRec == NULL) break;    // Nem volt előző/következő
+
             continue;
         }
         case DBT_CANCEL:
@@ -982,6 +956,19 @@ void cRecordsViewBase::createRightTab()
 {
     pRightTabWidget = new QTabWidget();
     pMasterSplitter->addWidget(pRightTabWidget);
+}
+
+tRecordList<cTableShape> cRecordsViewBase::getShapes()
+{
+    tRecordList<cTableShape>    shapes;
+    QStringList tableNames;
+    tableNames << pTableShape->getName(_sTableName);
+    tableNames << inheritTableList;
+    tableNames.removeDuplicates();
+    foreach (QString tableName, tableNames) {
+        shapes << getInhShape(pTableShape, tableName);
+    }
+    return shapes;
 }
 
 void cRecordsViewBase::rightTabs(QVariantList& vlids)
@@ -1509,7 +1496,7 @@ void cRecordTable::_refresh(bool all)
     foreach (QVariant v, qParams) pTabQuery->bindValue(i++, v);
     if (!pTabQuery->exec()) SQLQUERYERR(*pTabQuery);
     pTableModel()->setRecords(*pTabQuery, all);
-    pTableView->horizontalHeader()->resizeSections(QHeaderView::ResizeToContents);
+    pTableView->resizeColumnsToContents();
 }
 
 

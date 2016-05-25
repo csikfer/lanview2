@@ -245,6 +245,9 @@ void cRecordTree::selectRow(const QModelIndex& mi)
 void cRecordTree::_refresh(bool first)
 {
     pTreeModel()->refresh(first);
+    for (int i = 0; i < pTreeModel()->columnCount(); ++i) {
+        pTreeView->resizeColumnToContents(i);
+    }
 }
 
 void cRecordTree::buttonPressed(int id)

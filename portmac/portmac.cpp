@@ -171,17 +171,19 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
             while (true) {
                 int st = ix + 1;
                 // Keressük a trunk tagjait
-                ix = host().ports.indexOf(_sPortStapleId, np.get(_sPortId), ix);
+                ix = host().ports.indexOf(_sPortStapleId, np.get(_sPortId), st);
                 if (ix < 0) {
                     if (st == 0) {  // Üres trunk?
                         QString msg = trUtf8("A %1 trunk-nek nincs egyetlen tagja sem.").arg(np.getFullName(__q));
-                        cDbErr::insertNew(__q, cDbErrType::_sNotFound, msg, np.getId(), np.tableName(), APPNAME);
+                        APPMEMO(__q, msg, RS_WARNING);
                     }
                     break;  // Nincs, vagy nincs több
                 }
-                qlonglong pid = cLldpLink().getLinked(__q, ports[ix]->getId());
+                // port ID
+                qlonglong pid = cLldpLink().getLinked(__q, host().ports[ix]->getId());
+                // host ID
                 qlonglong hid = NULL_ID;
-                if (pid != NULL_ID) hid = cNode().setById(__q, pid).getId();
+                if (pid != NULL_ID) hid = cNPort().setById(__q, pid).getId(_sNodeId);
                 if (first) {
                     first = false;
                     linkedNodeId = hid;
@@ -192,7 +194,7 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
                                 .arg(np.getFullName(__q))
                                 .arg(cNode().getNameById(linkedNodeId))
                                 .arg(cNode().getNameById(hid));
-                        cDbErr::insertNew(__q, cDbErrType::_sNotFound, msg, np.getId(), np.tableName(), APPNAME);
+                        APPMEMO(__q, msg, RS_CRITICAL);
                     }
                 }
             }

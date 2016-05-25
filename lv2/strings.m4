@@ -618,6 +618,8 @@ STRDEF(TableShapes, "table_shapes")
   STRDEF(Table, "table")
   STRDEF(Member, "member")
   STRDEF(Group, "group")
+  STRDEF(Self, "self")
+  STRDEF(Property, "property")
   dnl read_only
   STRDEF(IGroup, "igroup")
   STRDEF(NGroup, "ngroup")

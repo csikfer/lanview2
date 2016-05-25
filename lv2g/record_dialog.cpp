@@ -68,24 +68,25 @@ cDialogButtons::cDialogButtons(const tIntVector& buttons, QWidget *par)
 void cDialogButtons::staticInit()
 {
     if (buttonNames.isEmpty()) {
-        buttonNames << trUtf8("OK");            icons << QIcon::fromTheme("emblem-default");    // DBT_OK
-        buttonNames << trUtf8("Bezár");         icons << QIcon::fromTheme("window-close");      // DBT_CLOSE
-        buttonNames << trUtf8("Frissít");       icons << QIcon::fromTheme("reload");            // DBT_REFRESH
-        buttonNames << trUtf8("Új");            icons << QIcon::fromTheme("insert-image");      // DBT_INSERT
-        buttonNames << trUtf8("Módosít");       icons << QIcon::fromTheme("text-editor");       // DBT_MODIFY
-        buttonNames << trUtf8("Ment");          icons << QIcon::fromTheme("list-add");          // DBT_SAVE
-        buttonNames << trUtf8("Első");          icons << QIcon::fromTheme("go-first");          // DBT_FIRST
-        buttonNames << trUtf8("Előző");         icons << QIcon::fromTheme("go-previous");       // DBT_PREV
-        buttonNames << trUtf8("Következő");     icons << QIcon::fromTheme("go-next");           // DBT_NEXT
-        buttonNames << trUtf8("Utolsó");        icons << QIcon::fromTheme("go-last");           // DBT_LAST
-        buttonNames << trUtf8("Töröl");         icons << QIcon::fromTheme("list-remove");       // DBT_DELETE
-        buttonNames << trUtf8("Visszaállít");   icons << QIcon::fromTheme("edit-redo");         // DBT_RESTORE
-        buttonNames << trUtf8("Elvet");         icons << QIcon::fromTheme("gtk-cancel");        // DBT_CANCEL
-        buttonNames << trUtf8("Alapállapot");   icons << QIcon::fromTheme("go-first");          // DBT_RESET
-        buttonNames << trUtf8("Betesz");        icons << QIcon::fromTheme("insert-image");      // DBT_PUT_IN
-        buttonNames << trUtf8("Kivesz");        icons << QIcon::fromTheme("list-remove");       // DBT_GET_OUT
-        buttonNames << trUtf8("Kibont");        icons << QIcon::fromTheme("zoom-in");           // DBT_EXPAND
-        buttonNames << trUtf8("Gyökér");        icons << QIcon();                               // DBT_ROOT
+        appendCont(buttonNames, trUtf8("OK"),          icons, QIcon::fromTheme("emblem-default"), DBT_OK);
+        appendCont(buttonNames, trUtf8("Bezár"),       icons, QIcon::fromTheme("window-close"),   DBT_CLOSE);
+        appendCont(buttonNames, trUtf8("Frissít"),     icons, QIcon::fromTheme("reload"),         DBT_REFRESH);
+        appendCont(buttonNames, trUtf8("Új"),          icons, QIcon::fromTheme("insert-image"),   DBT_INSERT);
+        appendCont(buttonNames, trUtf8("Módosít"),     icons, QIcon::fromTheme("text-editor"),    DBT_MODIFY);
+        appendCont(buttonNames, trUtf8("Ment"),        icons, QIcon::fromTheme("list-add"),       DBT_SAVE);
+        appendCont(buttonNames, trUtf8("Első"),        icons, QIcon::fromTheme("go-first"),       DBT_FIRST);
+        appendCont(buttonNames, trUtf8("Előző"),       icons, QIcon::fromTheme("go-previous"),    DBT_PREV);
+        appendCont(buttonNames, trUtf8("Következő"),   icons, QIcon::fromTheme("go-next"),        DBT_NEXT);
+        appendCont(buttonNames, trUtf8("Utolsó"),      icons, QIcon::fromTheme("go-last"),        DBT_LAST);
+        appendCont(buttonNames, trUtf8("Töröl"),       icons, QIcon::fromTheme("list-remove"),    DBT_DELETE);
+        appendCont(buttonNames, trUtf8("Visszaállít"), icons, QIcon::fromTheme("edit-redo"),      DBT_RESTORE);
+        appendCont(buttonNames, trUtf8("Elvet"),       icons, QIcon::fromTheme("gtk-cancel"),     DBT_CANCEL);
+        appendCont(buttonNames, trUtf8("Alapállapot"), icons, QIcon::fromTheme("go-first"),       DBT_RESET);
+        appendCont(buttonNames, trUtf8("Betesz"),      icons, QIcon::fromTheme("insert-image"),   DBT_PUT_IN);
+        appendCont(buttonNames, trUtf8("Kivesz"),      icons, QIcon::fromTheme("list-remove"),    DBT_TAKE_OUT);
+        appendCont(buttonNames, trUtf8("Kibont"),      icons, QIcon::fromTheme("zoom-in"),        DBT_EXPAND);
+        appendCont(buttonNames, trUtf8("Gyökér"),      icons, QIcon(),                            DBT_ROOT);
+        appendCont(buttonNames, trUtf8("Másol"),       icons, QIcon::fromTheme("copy"),           DBT_COPY);
     }
     if (buttonNames.size() != _buttonNumbers) EXCEPTION(EPROGFAIL);
     if (      icons.size() != _buttonNumbers) EXCEPTION(EPROGFAIL);
@@ -131,7 +132,7 @@ void cDialogButtons::disableExcept(qlonglong __idSet)
 
 
 /* ************************************************************************************************* */
-cRecordDialogBase::cRecordDialogBase(const cTableShape &__tm, int _buttons, bool dialog, QWidget *par, cRecordDialogBase *own)
+cRecordDialogBase::cRecordDialogBase(const cTableShape &__tm, int _buttons, bool dialog, cRecordDialogBase *ownDialog, cRecordsViewBase *ownTab, QWidget *par)
     : QObject(par)
     , tableShape(__tm)
     , rDescr(*cRecStaticDescr::get(__tm.getName(_sTableName), __tm.getName(_sSchemaName)))
@@ -144,7 +145,8 @@ cRecordDialogBase::cRecordDialogBase(const cTableShape &__tm, int _buttons, bool
     _pLoop   = NULL;
     _pWidget = NULL;
     _pButtons= NULL;
-    _pOwner   = own;
+    _pOwnerDialog = ownDialog;
+    _pOwnerTable  = ownTab;
 
     pq = newQuery();
     setObjectName(name);
@@ -175,9 +177,9 @@ cRecordDialogBase::cRecordDialogBase(const cTableShape &__tm, int _buttons, bool
         }
     }
     // Ha az owner objektum megnézésére nem jogosult, akkor ezt sem nézheti meg.
-    if (_pOwner != NULL && _pOwner->disabled()) {
+    if (_pOwnerDialog != NULL && _pOwnerDialog->disabled()) {
         _isDisabled = true;
-        _viewRights = _pOwner->_viewRights;
+        _viewRights = _pOwnerDialog->_viewRights;
     }
     else {
         _viewRights = tableShape.getId(_sViewRights);
@@ -201,7 +203,7 @@ cRecordDialogBase::cRecordDialogBase(const cTableShape &__tm, int _buttons, bool
 
     if (_isDisabled) {  // Neki tltva, csak egy egy üzenet erről.
         Ui::noRightsForm *noRighrs = noRightsSetup(_pWidget, _viewRights, objectName());
-        if (_pOwner == NULL) {
+        if (_pOwnerDialog == NULL) {
             connect(noRighrs->closePB, SIGNAL(pressed()), this, SLOT(cancel()));
         }
         else {          // Az ownernél még szabad lett volna, vannak már gombok
@@ -245,6 +247,7 @@ int cRecordDialogBase::exec(bool _close)
     return r;
 }
 
+/*
 cRecord * cRecordDialogBase::insertDialog(QSqlQuery& q, cTableShape *pTableShape, const cRecStaticDescr *pRecDescr, QWidget * _par)
 {
     eTableInheritType tit = (eTableInheritType)pTableShape->getId(_sTableInheritType);
@@ -316,7 +319,7 @@ cRecord * cRecordDialogBase::insertDialog(QSqlQuery& q, cTableShape *pTableShape
     }
     return NULL;
 }
-
+*/
 /// Slot a megnyomtak egy gombot szignálra.
 void cRecordDialogBase::_pressed(int id)
 {
@@ -337,8 +340,8 @@ cRecord& cRecordDialogBase::record()
 
 /* ************************************************************************************************* */
 
-cRecordDialog::cRecordDialog(const cTableShape& __tm, int _buttons, bool dialog, QWidget *parent, cRecordDialogBase *own)
-    : cRecordDialogBase(__tm, _buttons, dialog, parent, own)
+cRecordDialog::cRecordDialog(const cTableShape& __tm, int _buttons, bool dialog, cRecordDialogBase *ownDialog, cRecordsViewBase *ownTab, QWidget *parent)
+    : cRecordDialogBase(__tm, _buttons, dialog, ownDialog, ownTab, parent)
     , fields()
 {
     pVBoxLayout = NULL;
@@ -480,8 +483,8 @@ cFieldEditBase * cRecordDialog::operator[](const QString& __fn)
 
 /* ***************************************************************************************************** */
 
-cRecordDialogInh::cRecordDialogInh(const cTableShape& _tm, tRecordList<cTableShape>& _tms, int _buttons, qlonglong _oid, qlonglong _pid, bool dialog, QWidget * parent)
-    : cRecordDialogBase(_tm, _buttons, dialog, parent)
+cRecordDialogInh::cRecordDialogInh(const cTableShape& _tm, tRecordList<cTableShape>& _tms, int _buttons, bool dialog, cRecordDialogBase *ownDialog, cRecordsViewBase *ownTab, QWidget * parent)
+    : cRecordDialogBase(_tm, _buttons, dialog, ownDialog, ownTab, parent)
     , tabDescriptors(_tms)
     , tabs()
 {
@@ -489,9 +492,8 @@ cRecordDialogInh::cRecordDialogInh(const cTableShape& _tm, tRecordList<cTableSha
     pTabWidget = NULL;
     if (_isDisabled) return;
     if (_pButtons == NULL) EXCEPTION(EPROGFAIL);
-    // if (isReadOnly) EXCEPTION(EDATA);
-
-    init(_oid, _pid);
+//    if (isReadOnly) EXCEPTION(EDATA);
+    init();
 }
 
 cRecordDialogInh::~cRecordDialogInh()
@@ -502,7 +504,7 @@ cRecordDialogInh::~cRecordDialogInh()
     }
 }
 
-void cRecordDialogInh::init(qlonglong _oid, qlonglong _pid)
+void cRecordDialogInh::init()
 {
     DBGFN();
     pTabWidget = new QTabWidget;                // Az egész egy tab widgetben, minden rekord típus egy tab.
@@ -516,16 +518,16 @@ void cRecordDialogInh::init(qlonglong _oid, qlonglong _pid)
     int i, n = tabDescriptors.size();
     for (i = 0; i < n; ++i) {
         const cTableShape& shape = *tabDescriptors[i];
-        cRecordDialog * pDlg = new cRecordDialog(shape, 0, false, pTabWidget, this);
+        cRecordDialog * pDlg = new cRecordDialog(shape, 0, false, this, _pOwnerTable, pTabWidget);
         cRecord * pRec = new cRecordAny(shape.getName(_sTableName), shape.getName(_sSchemaName));
-        if (_oid != NULL_ID) {  // Ha van owner, akkor az ID-jét beállítjuk
+        if (_pOwnerTable != NULL && _pOwnerTable->owner_id != NULL_ID) {  // Ha van owner, akkor az ID-jét beállítjuk
             int oix = pRec->descr().ixToOwner();
-            pRec->setId(oix, _oid);
+            pRec->setId(oix, _pOwnerTable->owner_id);
         }
-        if (_pid != NULL_ID) {  // Ha van parent, akkor az ID-jét beállítjuk
+        if (_pOwnerTable != NULL && _pOwnerTable->parent_id != NULL_ID) {  // Ha van parent, akkor az ID-jét beállítjuk
             int pix = pRec->descr().ixToParent();
-            pRec->setId(pix, _pid);
-            pDlg->_isReadOnly = true;
+            pRec->setId(pix, _pOwnerTable->parent_id);
+            pDlg->_isReadOnly = true;// ??
         }
         pDlg->_pRecord = pRec;
         pDlg->restore();

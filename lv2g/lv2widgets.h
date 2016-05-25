@@ -442,7 +442,7 @@ protected:
 private slots:
     void setFromEdit(int i);
 //  void _edited(QString _txt);
-    void inserF();
+    void insertF();
     void modifyF();
 };
 

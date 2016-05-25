@@ -46,12 +46,12 @@ public:
     ~cImportParseThread();
 
     int push(const QString& srv, cError *&pe);
-    QString pop();
-    int startParser(cError *&pe);
+    int startParser(cError *&pe, QString *_pSrc = NULL);
     int reStartParser(cError *&pe);
     void stopParser();
 protected:
     virtual void	run();
+    QString pop();
 private:
     void reset();
     QSemaphore      queueAccess;    ///< Szemefor a queue eléréshez
@@ -59,6 +59,7 @@ private:
     QSemaphore      parseReady;     ///< Szemafor: A parser szabad (és nincs adat)
     QQueue<QString> queue;
     QString         iniCmd;
+    QString        *pSrc;
     static cImportParseThread *pInstance;
 public:
     static cImportParseThread& instance()       { if (pInstance == NULL) EXCEPTION(EPROGFAIL); return *pInstance; }

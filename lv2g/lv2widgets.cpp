@@ -1280,6 +1280,27 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
     pModel = new cRecordListModel(*pRDescr, pWidget());
     pModel->nullable = _colDescr.isNullable;
     pModel->setToNameF(_colDescr.fnToName);
+    QString owner = _fieldShape.feature(_sOwner);
+    if (0 == owner.compare(_sSelf, Qt::CaseInsensitive)) {
+        int owner_ix = __fr.record().descr().ixToOwner(EX_IGNORE);
+        if (owner_ix < 0) {
+            QAPPMEMO(trUtf8("Invalid feature %1.%2 'owner=self', owner id index not found.").arg(_tableShape.getName(), _fieldShape.getName()), RS_WARNING);
+        }
+        else {
+            qlonglong ownerId = NULL_ID;
+            if (_parent._pOwnerTable != NULL) {
+                ownerId = _parent._pOwnerTable->owner_id;
+            }
+            else if (_parent._pOwnerDialog != NULL) {
+                EXCEPTION(ENOTSUPP);
+            }
+            if (ownerId == NULL_ID) {
+                EXCEPTION(EDATA);
+            }
+            QString sql = __fr.record().descr().columnName(owner_ix) + " = " + QString::number(ownerId);
+            pModel->setConstFilter(sql, FT_SQL_WHERE);
+        }
+    }
     pModel->setFilter(_sNul, OT_ASC, FT_NO);
     pUi->comboBox->setModel(pModel);
     pUi->pushButtonEdit->setDisabled(true);
@@ -1288,7 +1309,7 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
     if (pTableShape->fetchByName(pRDescr->tableName())) {   // Ha meg tudjuk jeleníteni (azonos nevű shape)
         pUi->pushButtonNew->setEnabled(true);
         connect(pUi->pushButtonEdit, SIGNAL(pressed()), this, SLOT(modifyF()));
-        connect(pUi->pushButtonNew,  SIGNAL(pressed()), this, SLOT(inserF()));
+        connect(pUi->pushButtonNew,  SIGNAL(pressed()), this, SLOT(insertF()));
     }
     else {
         pDelete(pTableShape);
@@ -1345,8 +1366,8 @@ void cFKeyWidget::_edited(QString _txt)
 
 /// Egy tulajdosnság kulcs mezőben vagyunk.
 /// Be szertnénk szúrni egy tulajdonság rekordot
-void cFKeyWidget::inserF()
-{
+void cFKeyWidget::insertF()
+{/*
     // Kellene egy megjelenítés leíró az insert-hez
     cTableShape fts;
     // A megjelenítő neve azonos a tulajdonság rekord nevével
@@ -1361,7 +1382,7 @@ void cFKeyWidget::inserF()
         pUi->comboBox->setCurrentIndex(pModel->indexOf(pRec->getName()));
         pDelete(pRec);
     }
-}
+*/}
 
 void cFKeyWidget::modifyF()
 {
@@ -1373,7 +1394,6 @@ void cFKeyWidget::modifyF()
         // ...
 //    }
 }
-
 /* **************************************** cDateWidget ****************************************  */
 
 

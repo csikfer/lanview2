@@ -76,6 +76,7 @@ cImportParseThread::cImportParseThread(const QString& _inicmd, QObject *par)
     , iniCmd(_inicmd)
 {
     DBGOBJ();
+    pSrc = NULL;
     if (pInstance != NULL) EXCEPTION(EPROGFAIL);
     pInstance = this;
     setObjectName("Import parser");
@@ -120,8 +121,17 @@ void	cImportParseThread::run()
     }
     PDEB(INFO) << QObject::trUtf8("Start parser (thread) ...") << endl;
     initImportParser();
-    importParse(IPS_THREAD);
-    if (parseReady.available() == 0) parseReady.release();
+    if (pSrc == NULL) {     // Fordítás a queue-n keresztül
+        importParse(IPS_THREAD);
+        if (parseReady.available() == 0) parseReady.release();
+    }
+    else {
+        importFileNm = "[stream]";
+        pImportInputStream = new QTextStream(pSrc);
+        PDEB(INFO) << QObject::trUtf8("Start parsing ...") << endl;
+        importParse();
+        PDEB(INFO) << QObject::trUtf8("End parse.") << endl;
+    }
     downImportParser();
     PDEB(INFO) << QObject::trUtf8("End parser ((thread)).") << endl;
     pDelete(pImportInputStream);
@@ -182,9 +192,10 @@ QString cImportParseThread::pop()
     return r;
 }
 
-int cImportParseThread::startParser(cError *&pe)
+int cImportParseThread::startParser(cError *&pe, QString *_pSrc)
 {
     DBGFN();
+    pSrc = _pSrc;
     int r;
     start();
     if (iniCmd.isEmpty()) {

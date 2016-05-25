@@ -46,39 +46,43 @@ EXT_ QString quotedString(const QString& __s, const QChar &__q = QChar('"'));
 /// @relates cDebug
 #define _PDEB(mask)  if (cDebug::pDeb(cDebug::mask | __DMOD__)) cDebug::cout()
 
+/// @def HEAD()
+#define _HEAD(fi, li, fu)   fi << "[" << li << "] " << fu << " : "
+/// @def _HEAD()
+#define HEAD()           head << _HEAD(__FILE__, __LINE__, __PRETTY_FUNCTION__)
 /// @def PDEB(mask)
 /// Debug üzenet kiíratásához használlt makró.
 /// @param mask Debug üzenet kiírási feltételét definiáló maszk (modul infó nélkül)
 /// @relates cDebug
-#define PDEB(mask)  _PDEB(mask) << head
+#define PDEB(mask)  _PDEB(mask) << HEAD()
 
 /// @def _DBGFN()
 /// Debug üzenet kiírása egy nyomkövetendő függvény kezdetén, az üzenet nincs lezárva, a sor kiegészíthető,
 /// és le kell zárni egy endl-vel.
 /// @relates cDebug
-#define _DBGFN()    PDEB(ENTERLEAVE) << QObject::trUtf8("Enter: ") << __PRETTY_FUNCTION__
+#define _DBGFN()    PDEB(ENTERLEAVE) << QObject::trUtf8("Enter. ")
 
 /// @def _DBGFNL()
 /// Debug üzenet kiírása egy nyomkövetendő függvény végén (a returm(-ok) előtt), az üzenet nincs lezárva, a sor kiegészíthető,
 /// és le kell zárni egy endl-vel.
 /// @relates cDebug
-#define _DBGFNL()   PDEB(ENTERLEAVE) << QObject::trUtf8("Leave: ") << __PRETTY_FUNCTION__
+#define _DBGFNL()   PDEB(ENTERLEAVE) << QObject::trUtf8("Leave. ")
 
 /// @def DBGFN()
 /// Debug üzenet kiírása egy nyomkövetendő függvény kezdetén, az üzenet le van zárva.
 /// @relates cDebug
-#define DBGFN()     PDEB(ENTERLEAVE) << QObject::trUtf8("Enter: ") << __PRETTY_FUNCTION__ << endl
+#define DBGFN()     PDEB(ENTERLEAVE) << QObject::trUtf8("Enter.") << endl
 
 /// @def DBGFNL()
 /// Debug üzenet kiírása egy nyomkövetendő függvény végén, az üzenet le van zárva.
 /// @relates cDebug
-#define DBGFNL()    PDEB(ENTERLEAVE) << QObject::trUtf8("Leave: ") << __PRETTY_FUNCTION__ << endl
+#define DBGFNL()    PDEB(ENTERLEAVE) << QObject::trUtf8("Leave.") << endl
 
 /// @def _DBGOBJ()
 /// Debug üzenet kiírása egy nyomkövetendő konstruktor vagy destruktor meghívásakor, az üzenet nincs lezárva, a sor kiegészíthető,
 /// és le kell zárni egy endl-vel.
 /// @relates cDebug
-#define _DBGOBJ()    PDEB(OBJECT) << __PRETTY_FUNCTION__ << VDEBPTR(this)
+#define _DBGOBJ()    PDEB(OBJECT) << VDEBPTR(this)
 
 /// @def DBGOBJ()
 /// Debug üzenet kiírása egy nyomkövetendő konstruktor vagy destruktor meghívásakor, az üzenet le van zárva.
@@ -91,23 +95,25 @@ EXT_ QString quotedString(const QString& __s, const QChar &__q = QChar('"'));
 /// Hasonló a PDEB() makróhoz, de itt a mask (PDEB() paramétere) DERROR, és kiírja az
 /// aktuális forrásfájl nevét abban a sotrszámot, valamint az aktuális függvény teljes nevét is.
 /// @relates cDebug
-#define DERR()      PDEB(DERROR)   << _DERRH()
+#define DERR()      _PDEB(DERROR)   << _DERRH()
 /// @def DSYSERR()
 /// Hasonló a DERR() makróhoz, de még kiírja az aktuálsz rendszer hiba üzenetet.
 /// Az errno aktuális ártéke alapján.
 /// @relates cDebug
-#define DSYSERR()   PDEB(DERROR)   << _DERRH() << qStr(strerror(errno))
+#define DSYSERR()   _PDEB(DERROR)   << _DERRH() << qStr(strerror(errno))
 /// @def DWAR()
 /// Hasonló a PDEB() makróhoz, de itt a mask (PDEB() paramétere) WARNING, és kiírja az
 /// aktuális forrásfájl nevét abban a sotrszámot, valamint az aktuális függvény teljes nevét is.
 /// @relates cDebug
-#define DWAR()      PDEB(WARNING) << QObject::trUtf8("Warning in ") << __PRETTY_FUNCTION__ << " : "
+#define __DWARH(fi, li, fu)    QObject::trUtf8("Warning in ") << fi << "[" << li << "] " << fu << " : "
+#define _DWARH()    __DWARH(__FILE__, __LINE__, __PRETTY_FUNCTION__)
+#define DWAR()      _PDEB(WARNING) << _DWARH()
 
 /// @def DSYSWAR()
 /// Hasonló a DWAR() makróhoz, de még kiírja az aktuálsz rendszer hiba üzenetet.
 /// Az errno aktuális ártéke alapján.
 /// @relates cDebug
-#define DSYSWAR()   PDEB(WARNING) << QObject::trUtf8("Warning in ") << __PRETTY_FUNCTION__ << " : " << qStr(strerror(errno))
+#define DSYSWAR()   _PDEB(WARNING) << _DWARH << " : " << qStr(strerror(errno))
 
 /// @def DBOOL(b)
 /// Egy bool típusú érték konvertálása a 'true' cagy 'false' stringgé.

@@ -30,6 +30,7 @@ enum eDialogButtons {
     DBT_TAKE_OUT,       ///< Kivesz
     DBT_EXPAND,         ///< FA: kibont
     DBT_ROOT,           ///< FA: rész fa megjelenítése
+    DBT_COPY,           ///< Kijelölt sorok, mint név lista a vágó lapra
     DBT_BUTTON_NUMBERS, ///< Nem egy nyomógombot reprezentál, hanem azok számát
     DBT_SPACER,         ///< Nem nyomogomb, spacer
     DBT_BREAK           ///< Nem nyomógomb, "sortörés"
@@ -57,6 +58,7 @@ protected:
 };
 
 class cRecordDialogInh;
+class cRecordsViewBase;
 /// @class cRecordDialogBase
 /// @brief Rekord szerkesztés dialógus alap objektum
 /// Konkrét megjelenítést nem tartalmaz.
@@ -68,9 +70,10 @@ public:
     /// @param __tm A rekord megjelenítését leíró objektum példány
     /// @param _buttons A megjelenítendő nyomógombok bit maszkja
     /// @param dialog Ha a dialóus ablakot QDialog-ból kell létrehozni, akkor true, ha fals, akkor QWidget-ből.
+    /// @param ownTab Ha a parent egy táblázat (vagy tree) megjelenítő
+    /// @param ownDialog Ha egy cRecordDialogInh része, akkor a szülő objektum pointere, vagy a hívó egy cRecoedDialog obj.
     /// @param par Az szülő widget opcionális parent pointere
-    /// @param own Ha egy cRecordDialogInh része, akkor a szülő objektum pointere
-    cRecordDialogBase(const cTableShape &__tm, int _buttons, bool dialog = true, QWidget *par = NULL, cRecordDialogBase * own = NULL);
+    cRecordDialogBase(const cTableShape &__tm, int _buttons, bool dialog = true, cRecordDialogBase * ownDialog = NULL, cRecordsViewBase  * ownTab = NULL, QWidget *par = NULL);
     /// destruktor
     ~cRecordDialogBase();
     virtual cRecord& record();
@@ -89,14 +92,16 @@ public:
     /// Ha _close igaz, de az isDialog adattagunk hamis, akkor kapunk egy kizárást.
     /// @return A dialógus ablak kilépési kódja, vagyis az aktívált nyomógombot reprezentáló enumeráxiós konstans értéke.
     int exec(bool _close = true);
-    /// Insert modal dialog
-    static cRecord *insertDialog(QSqlQuery &q, cTableShape *pTableShape, const cRecStaticDescr *pRecDescr, QWidget *_par = NULL);
+    // / Insert modal dialog
+    // static cRecord *insertDialog(QSqlQuery &q, cTableShape *pTableShape, const cRecStaticDescr *pRecDescr, QWidget *_par = NULL);
     /// A tábla model rekord. A megjelenítés leírója, azonosítja a rekord decriptor-t.
     cTableShape      tableShape;
     /// Rekord descriptor
     const cRecStaticDescr&  rDescr;
-    /// Owner vagy NULL
-    cRecordDialogBase * _pOwner;
+    /// Owner dialógus pointere, ha van, vagy NULL
+    cRecordDialogBase * _pOwnerDialog;
+    /// Owner tábla pointere, ha van, vagy NULL
+    cRecordsViewBase  * _pOwnerTable;
     /// Az objektum neve
     const QString           name;
     virtual cFieldEditBase * operator[](const QString& __fn) = 0;
@@ -146,7 +151,7 @@ public:
     /// @param _buttons A megjelenítendő nyomógombok bit maszkja
     /// @param dialog Ha a dialóus ablakot QDialog-ból kell létrehozni, akkor true, ha fals, akkor QWidget-ből.
     /// @param parent Az szülő widget opcionális parent pointere
-    cRecordDialog(const cTableShape &__tm, int _buttons, bool dialog = true, QWidget * parent = NULL, cRecordDialogBase *own = NULL);
+    cRecordDialog(const cTableShape &__tm, int _buttons, bool dialog = true, cRecordDialogBase *ownDialog = NULL, cRecordsViewBase  * ownTab = NULL, QWidget * parent = NULL);
     /// A rekord adattag tartalmának a megjelenítése/megjelenítés visszaállítása
     virtual void restore(cRecord *_pRec = NULL);
     /// A megjelenített értékek kiolvasása
@@ -170,6 +175,7 @@ private:
 /// Szerkeszteni mindíg az eredeti rekordot lehet, vaygis ős esetén hiányoznak mezők az alaptípushoz képest, leszámazott esetén pedig további mező kerülnek megjelenítésre.
 /// Az objektum létrehozza az összes lehetséges rekord típushoz a cRecordDialog objektumot, és a konkrét rekord megadásakor választja ki azt amelyiket használni fogja.
 class LV2GSHARED_EXPORT cRecordDialogInh : public cRecordDialogBase {
+    friend class cRecordsViewBase;
 public:
     /// Konstruktor
     /// @param _tm A rekord/tábla megjelenítését ill szerkesztését vezérlő leíró (alap tábla ill. rekord típusra)
@@ -179,7 +185,7 @@ public:
     /// @param _pid Parent rekord ID , ha nincs parent, vagy nincs megadva, akkor értéke NULL_ID
     /// @param dialog Ha a dialóus ablakot QDialog-ból kell létrehozni, akkor true, ha fals, akkor QWidget-ből.
     /// @param parent Az szülő widget opcionális pointere
-    cRecordDialogInh(const cTableShape &_tm, tRecordList<cTableShape>& _tms, int _buttons, qlonglong _oid = NULL_ID, qlonglong _pid = NULL_ID, bool dialog = true, QWidget * parent = NULL);
+    cRecordDialogInh(const cTableShape &_tm, tRecordList<cTableShape>& _tms, int _buttons, bool dialog = true, cRecordDialogBase *ownDialog = NULL, cRecordsViewBase  * ownTab = NULL, QWidget * parent = NULL);
     ~cRecordDialogInh();
     ///
     virtual cRecord& record();
@@ -203,7 +209,7 @@ protected:
     QTabWidget             *pTabWidget;
     QList<cRecordDialog *>  tabs;
 private:
-    void init(qlonglong _oid, qlonglong _pid);
+    void init();
 };
 
 #endif // RECORD_DIALOG_H
