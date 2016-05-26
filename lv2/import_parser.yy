@@ -915,7 +915,7 @@ static void insertCode(const QString& __txt)
     macbuff = __txt + macbuff;
 }
 
-static QString yygetline()
+QString yygetline()
 {
     ++importLineNo;
     if (pImportInputStream != NULL) return pImportInputStream->readLine();

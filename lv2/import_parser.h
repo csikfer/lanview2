@@ -40,7 +40,8 @@ EXT_ void initImportParser();
 /// A parser hívás után az esetleg (pl. hiba esetén) fel nem szabadított pointereket felszabadítja, ill nullázza.
 EXT_ void downImportParser();
 
-class cImportParseThread : public QThread {
+class LV2SHARED_EXPORT cImportParseThread : public QThread {
+    friend QString yygetline();
 public:
     cImportParseThread(const QString &_inicmd = QString(), QObject *par = NULL);
     ~cImportParseThread();
