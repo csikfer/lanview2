@@ -129,7 +129,7 @@ extern QString lookup(const QHostAddress& ha, enum eEx __ex = EX_ERROR);
 /// Az objektum neve az IP cím alapján a DNS-szerver álltal visszaadott név.
 /// @param q Az adatbázis műveletekhez használlható query objektum
 /// @param __dev A kiíndulási eszköz, adatbázisban rögzített, onnen feltöltött objektum.
-extern void scanByLldp(QSqlQuery q, const cSnmpDevice& __dev);
+extern void scanByLldp(QSqlQuery q, const cSnmpDevice& __dev, bool _parser = false);
 
 #else  // MUST_SCAN
 

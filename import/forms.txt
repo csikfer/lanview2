@@ -383,8 +383,17 @@ TABLE SHAPE app_errs "Applikáció hiba napló" {
 
 TABLE SHAPE app_memos "Applikáció napló" {
     SET DEFAULTS;
-    TABLE READ ONLY;
-    FIELD memo FLAG ON HUGE;       // több sosros
+    // TABLE READ ONLY;
+    TABLE FEATURES ":dialog.height=13:";
+    TABLE VIEW RIGHTS operator;
+    TABLE EDIT RIGHTS system;
+    TABLE DELETE RIGHTS admin;
+    TABLE INSERT RIGHTS system;
+    FIELD app_memo_id FLAG HIDE;
+    FIELD memo {
+        FLAG ON HUGE;       // több sosros
+        FEATURES ":stretch.vertical=1:";
+    }
 }
 
 TABLE SHAPE host_service_logs "A szervíz példányok log rekordjai" {
@@ -472,13 +481,60 @@ TABLE SHAPE table_shape_fields "Tábla mezők megjelenítése" {
     SET DEFAULTS;
     TABLE TYPE CHILD, OWNER;
     RIGHT SHAPE table_shape_filters;
+    TABLE TITLE "Adattábla megjelenítés mező leírók","Adattábla megjelenítés mező leíró";
+    FIELD table_shape_field_name TITLE "Név","Mező ill. oszlop név";
+    FIELD table_shape_field_note TITLE "Megjegyzés",@;
+    FIELD table_title           TITLE "Oszlop címsora","Oszlop címsora a táblázatban";
+    FIELD dialog_title          TITLE "Mező címsora","Mező címsora a dialógusban";
+    FIELD field_sequence_number TITLE "Mező sorrendiség",@;
+    FIELD ord_types             TITLE "Rendezés", "Az oszlop rendezési lehetőségei";
+    FIELD ord_init_type         TITLE "Rendezve", "Az oszlop alapértelmezett rendezése";
+    FIELD ord_init_sequence_number TITLE "Mező rendezés sorrendiség",@;
+    FIELD field_flags           TITLE "Mező tulajdonságok",@;
+    FIELD expression            FLAG HIDE; // nem használt
+    FIELD default_value         FLAG HIDE; // nem használt
+    FIELD features              TITLE "Egyébb modosítók","Egyébb modosítók (features)";
+    FIELD tool_tip              TITLE "Tool Tip",@;
+    FIELD whats_this            TITLE "Whats this?",@;
+    FIELD view_rights           TITLE "Betekintési jog","Minimális jogosultság a megtekintéshez";
+    FIELD edit_rights           TITLE "Szerkesztési jog","Minimális jogosultság a szerkesztéshez";
+    FIELD flag                  FLAG HIDE; // system
+    FIELD * ORD no, asc, desc;
+    FIELD field_sequence_number ORD asc,desc,no;
+    FIELD table_shape_field_name,table_shape_field_note,field_flags,view_rights,edit_rights ADD FILTERS begin, like, similar, regexp, regexpi;
 }
 
-TABLE SHAPE table_shapes "Táblák megjelenítése" {
+TABLE SHAPE table_shapes "Adattábla megjelenítő leíró" {
     SET DEFAULTS;
     TABLE TYPE OWNER;
     RIGHT SHAPE table_shape_fields;
-    
+    TABLE TITLE "Adattábla megjelenítés leírók","Adattábla megjelenítés leíró";
+    FIELD table_shape_name      TITLE "Leíró neve",@;
+    FIELD table_shape_note      TITLE "Megjegyzés",@;
+    FIELD table_title           TITLE "Táblázat címsora",@;
+    FIELD dialog_title          TITLE "Dialógus címsora",@;
+    FIELD dialog_tab_title      TITLE "Dialógus tab címsora",@;
+    FIELD member_title          TITLE "Tagjai táblázat címsora",@;
+    FIELD not_member_title      TITLE "Nem tagjai táblázat címsora",@;
+    FIELD table_shape_type      TITLE "Leíró típusa",@;
+    FIELD table_name            TITLE "Az adattábla neve",@;
+    FIELD schema_name           TITLE "Az adattábla séma neve",@;
+    FIELD table_inherit_type    TITLE "Az ősök és/vagy leszármazottak",@;
+    FIELD inherit_table_names   TITLE "A megjelenített rokonok",@;
+    FIELD refine                TITLE "Szűrő","Konstans SQL szűrő kifejezés";
+    FIELD features              TITLE "Egyébb modosítók","Egyébb modosítók (features)";
+    FIELD right_shape_ids       TITLE "Jobb oldali meírók","Jobb oldali alárendelt meírók";
+    FIELD auto_refresh          TITLE "Autóm.frissítés","Táblázat automatikus frissítésének időköze";
+    FIELD view_rights           TITLE "Betekintési jog","Minimális jogosultság a megtekintéshez";
+    FIELD edit_rights           TITLE "Szerkesztési jog","Minimális jogosultság a szerkesztéshez";
+    FIELD insert_rights         TITLE "Hozzáadási jog","Minimális jogosultság új rekord hozzáadásához";
+    FIELD remove_rights         TITLE "Törlési jog","Minimális jogosultság a törléshez";
+    FIELD * ORD no, asc, desc;
+    FIELD table_shape_name ORD asc, desc, no;
+    FIELD right_shape_ids  ORD no;
+    FIELD table_shape_name,table_shape_note,table_name,inherit_table_names,refine,features,auto_refresh,
+          view_rights,edit_rights,insert_rights,remove_rights ADD FILTERS begin, like, similar, regexp, regexpi;
+    FIELD auto_refresh ADD FILTERS litle, big, interval;
 }
 
 TABLE SHAPE menu_items "Menu elemek" {

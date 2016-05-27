@@ -1,28 +1,24 @@
 -- //// LAN.LLINKS_TABLE
 
 CREATE TABLE log_links_table (
-    log_link_id     bigserial          PRIMARY KEY,
-    port_id1        bigint         NOT NULL UNIQUE,
+    log_link_id     bigserial   PRIMARY KEY,
+    port_id1        bigint      NOT NULL UNIQUE,
     --  REFERENCES interfaces(port_id) ON DELETE CASCADE ON UPDATE RESTRICT,
-    port_id2        bigint         NOT NULL UNIQUE,
+    port_id2        bigint      NOT NULL UNIQUE,
     --  REFERENCES interfaces(port_id) ON DELETE CASCADE ON UPDATE RESTRICT,
-    log_link_note  text     DEFAULT NULL,                   -- noteiption
-    link_type       linktype        NOT NULL,
---    first_time    timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP, -- First time discovered the logical link
---    last_time     timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Last time discovered the logical link
---    source_id       bigint         NOT NULL
---        REFERENCES users(user_id) MATCH SIMPLE ON DELETE RESTRICT ON UPDATE RESTRICT,
-    phs_link_chain  bigint[]       NOT NULL,   -- phs-link-id chains
-    share_result    portshare       NOT NULL DEFAULT ''-- Ha az útvonalban megsoztás van, megadja az összeköttetés milyenségét
+    log_link_note   text        DEFAULT NULL,
+    link_type       linktype    NOT NULL,
+    phs_link_chain  bigint[]    NOT NULL,   -- phs-link-id chains
+    share_result    portshare   NOT NULL DEFAULT ''-- Ha az útvonalban megsoztás van, megadja az összeköttetés milyenségét
 );
 ALTER TABLE log_links_table OWNER TO lanview2;
 COMMENT ON TABLE  log_links_table                   IS 'Logical Links Table';
 COMMENT ON COLUMN log_links_table.log_link_id       IS 'Unique ID for logical links';
 COMMENT ON COLUMN log_links_table.port_id1          IS 'Interface''s ID which connects to logical links';
 COMMENT ON COLUMN log_links_table.port_id2          IS 'Interface''s ID which connects to logical links';
-COMMENT ON COLUMN log_links_table.log_link_note    IS 'noteiption';
--- COMMENT ON COLUMN log_links_table.first_time        IS 'First time discovered the logical link';
--- COMMENT ON COLUMN log_links_table.last_time         IS 'Last time discovered the logical link';
+COMMENT ON COLUMN log_links_table.log_link_note     IS 'noteiption';
+COMMENT ON COLUMN log_links_table.phs_link_chain    IS 'Physical links chain.';
+COMMENT ON COLUMN log_links_table.share_result      IS 'Ha az útvonalban megsoztás van, megadja az összeköttetés milyenségét';
 
 -- //// LAN.LLINKS VIEW
 
@@ -35,8 +31,8 @@ COMMENT ON VIEW log_links IS 'Symmetric View Table for logical links';
 
 CREATE TABLE lldp_links_table (
     lldp_link_id bigserial         PRIMARY KEY,
-    port_id1    bigint REFERENCES interfaces(port_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    port_id2    bigint REFERENCES interfaces(port_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    port_id1    bigint NOT NULL UNIQUE REFERENCES interfaces(port_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    port_id2    bigint NOT NULL UNIQUE REFERENCES interfaces(port_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     first_time  timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP, -- First time discovered the logical link
     last_time   timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP  -- Last time discovered the logical link
 );
@@ -57,18 +53,18 @@ CREATE TYPE  phslinktype AS ENUM (
 );
 ALTER TYPE phslinktype OWNER TO lanview2;
 CREATE TABLE phs_links_table (
-    phs_link_id     bigserial          PRIMARY KEY,
-    port_id1        bigint, -- REFERENCES nports(port_id) ON DELETE CASCADE ON UPDATE RESTRICT,
-    port_id2        bigint, -- REFERENCES nports(port_id) ON DELETE CASCADE ON UPDATE RESTRICT,
+    phs_link_id     bigserial       PRIMARY KEY,
+    port_id1        bigint          NOT NULL, -- REFERENCES nports(port_id) ON DELETE CASCADE ON UPDATE RESTRICT,
+    port_id2        bigint          NOT NULL, -- REFERENCES nports(port_id) ON DELETE CASCADE ON UPDATE RESTRICT,
     phs_link_type1  phslinktype     NOT NULL,
     phs_link_type2  phslinktype     NOT NULL,
-    phs_link_note  text    DEFAULT NULL,
+    phs_link_note   text            DEFAULT NULL,
     port_shared     portshare       NOT NULL DEFAULT '',
     link_type       linktype        NOT NULL,
     create_time     timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    create_user_id  bigint         DEFAULT NULL,
+    create_user_id  bigint          DEFAULT NULL,
     modify_time     timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    modify_user_id  bigint         DEFAULT NULL,
+    modify_user_id  bigint          DEFAULT NULL,
     forward         boolean         DEFAULT true
 );
 ALTER TABLE phs_links_table OWNER TO lanview2;
@@ -79,7 +75,7 @@ COMMENT ON COLUMN phs_links_table.phs_link_type1    IS $$Link típusa(1), végpo
 COMMENT ON COLUMN phs_links_table.port_id2          IS 'Port''s ID(2) which connects to physical link';
 COMMENT ON COLUMN phs_links_table.phs_link_type2    IS $$Link típusa(2), végpont 'Term', patch panel előlap 'Front', vagy hátlap 'Back'$$;
 COMMENT ON COLUMN phs_links_table.port_shared       IS $$Mindíg a 'Front' patch portra vonatkozik, ha mindkettő 'Back' patch port, akkor csak '' lehet, vagyis a megosztás tiltott$$;
-COMMENT ON COLUMN phs_links_table.phs_link_note    IS 'noteiption';
+COMMENT ON COLUMN phs_links_table.phs_link_note     IS 'Megjegyzés';
 COMMENT ON COLUMN phs_links_table.create_time       IS 'Time setting up the physical link';
 COMMENT ON COLUMN phs_links_table.create_user_id    IS 'User ID for who set this physical link';
 COMMENT ON COLUMN phs_links_table.modify_time       IS 'Time modified the physical link';

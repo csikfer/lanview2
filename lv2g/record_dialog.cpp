@@ -234,8 +234,8 @@ int cRecordDialogBase::exec(bool _close)
         if(_isDisabled == false) EXCEPTION(EPROGFAIL);
     }
     else {
-        if (_isReadOnly || _isDisabled) _pButtons->disableExcept();
-        else                            _pButtons->enabeAll();
+        if (_isDisabled) _pButtons->disableExcept();
+        else             _pButtons->enabeAll();
     }
     if (_close) return dialog().exec();
     if (_pLoop != NULL) EXCEPTION(EPROGFAIL);
@@ -365,8 +365,11 @@ inline static QFrame * _frame(QLayout * lay, QWidget * par)
 
 void cRecordDialog::init()
 {
-    const int maxFields = 10;
+    int maxFields;
     DBGFN();
+    bool ok;
+    maxFields = tableShape.feature(pointCat(_sDialog, _sHeight)).toInt(&ok);
+    if (!ok) maxFields = 10;    // Default
     pFormLayout = new QFormLayout;
     pFormLayout->setObjectName(name + "_Form");
     int n = tableShape.shapeFields.size();
@@ -380,13 +383,13 @@ void cRecordDialog::init()
         pVBoxLayout->setObjectName(name + "_VBox");
         _pWidget->setLayout(pVBoxLayout);
         if (n > maxFields) {
-            pVBoxLayout->addLayout(pSplittLayout);
+            pVBoxLayout->addLayout(pSplittLayout, 1);
             pSplitter->addWidget(_frame(pFormLayout, _pWidget));
         }
         else {
-            pVBoxLayout->addLayout(pFormLayout);
+            pVBoxLayout->addLayout(pFormLayout, 1);
         }
-        pVBoxLayout->addWidget(_pButtons->pWidget());
+        pVBoxLayout->addWidget(_pButtons->pWidget(), 0);
     }
     else {
         pVBoxLayout = NULL;
@@ -414,9 +417,14 @@ void cRecordDialog::init()
         cFieldEditBase *pFW = cFieldEditBase::createFieldWidget(tableShape, mf, (*_pRecord)[fieldIx], setRo, this);
         fields.append(pFW);
         QWidget * pw = pFW->pWidget();
+        qlonglong stretch = mf.feature(pointCat(_sStretch, _sVertical), 0);
+        if (stretch > 0) {
+            QSizePolicy sp = pw->sizePolicy();
+            sp.setVerticalStretch(stretch);
+            pw->setSizePolicy(sp);
+        }
         pw->setObjectName(mf.getName());
         PDEB(VVERBOSE) << "Add row to form : " << mf.getName() << " widget : " << typeid(*pFW).name() << QChar('/') << fieldWidgetType(pFW->wType()) << endl;
-        pw->adjustSize();
         pFormLayout->addRow(mf.getName(_sDialogTitle), pw);
     }
     _pWidget->adjustSize();

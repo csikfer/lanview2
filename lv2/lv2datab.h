@@ -2420,6 +2420,16 @@ template <class R> void _JoinFeatureT(R& o)
     }
 }
 
+template <class R> qlonglong intFeature(const R& o, const QString& key, qlonglong _def)
+{
+    QString v = o.feature(key);
+    if (v.isEmpty()) return _def;
+    bool ok;
+    qlonglong r = v.toLongLong(&ok);
+    if (ok) return r;
+    return _def;
+}
+
 #define STATICIX(R, n) \
  protected: \
     static int _##n; \
@@ -2463,9 +2473,11 @@ template <class R> void _JoinFeatureT(R& o)
 /// @code
 /// A megadott nevű paraméter értékével tér vissza (ha a konténer még nincs létrehozva, akkor létrehozza, és feltülti lásd: cFeatures&  features(eEx __ex);
 /// @code
-/// cService& map2prop();
+/// qlonglobf feature(const QString &_nm, qlonglong _def);
 /// @code
-/// Lásd: _Map2PropT<cService>(*this);
+/// A megadott nevű paraméter értékével tér vissza, ha nincs ilyen nevű paraméter, vagy nem értelmezhető egész számként,
+/// akkor a _def fúggvényparaméter értékével tér vissza.
+/// (ha a konténer még nincs létrehozva, akkor létrehozza, és feltülti lásd: cFeatures&  features(eEx __ex);
 
 #define FEATURES(R) \
     friend void _SplitFeatureT<R>(R& o, eEx __ex); \
@@ -2479,6 +2491,7 @@ public: \
     cFeatures&  features(eEx __ex = EX_ERROR) { if (_pFeatures == NULL) this->splitFeature(__ex); return *_pFeatures; } \
     QString feature(const QString &_nm) const { return features().value(_nm); } \
     bool  isFeature(const QString &_nm) const { return features().contains(_nm); } \
-    R& joinFeature() { _JoinFeatureT<R>(*this); return *this;  }
+    R& joinFeature() { _JoinFeatureT<R>(*this); return *this;  } \
+    qlonglong feature(const QString &_nm, qlonglong _def) const { return intFeature(*this, _nm, _def); }
 
 #endif // LV2DATAB_H

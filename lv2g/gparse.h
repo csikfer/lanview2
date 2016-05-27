@@ -28,6 +28,7 @@ private slots:
     void parseClicked();
     void debugLine();
     void localParseFinished();
+    void localParseBreak();
 private:
     void localParse(const QString &src);
     void remoteParse(const QString &src);

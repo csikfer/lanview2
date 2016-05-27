@@ -613,9 +613,9 @@ QString lookup(const QHostAddress& ha, eEx __ex)
 /// @class cLldpScan
 /// Az LLDP felderítést végző osztály
 class cLldpScan {
-    friend void scanByLldp(QSqlQuery q, const cSnmpDevice& __dev);
+    friend void ::scanByLldp(QSqlQuery q, const cSnmpDevice& __dev, bool _parser);
 protected:
-    cLldpScan(QSqlQuery& _q);
+    cLldpScan(QSqlQuery& _q, bool _parser);
     /// LLDP felderítés
     /// @param __dev A kiindulási SNMP eszköz
     void scanByLldp(QSqlQuery &q, const cSnmpDevice& __dev);
@@ -632,6 +632,7 @@ protected:
     bool updateSnmpDev();
     void updateLink();
     typedef tRecordList<cSnmpDevice> tDevList;
+    bool        parser;         ///< A parser-ből lett hivva?
     tDevList    scanned;        ///< A megtalált eszközök nevei, ill. amit már nem kell lekérdezni
     tDevList    queued;         ///< A megtatlált, de még nem lekérdezett eszközök nevei
     cSnmpDevice *pDev;          ///< Az aktuális scennelt eszköz
@@ -662,9 +663,10 @@ cOIdVector   cLldpScan::oids;
 QString      cLldpScan::sAddrOid;
 cOId        *cLldpScan::pAddrOid = NULL;
 
-cLldpScan::cLldpScan(QSqlQuery& _q)
+cLldpScan::cLldpScan(QSqlQuery& _q, bool _parser)
     : scanned(), queued(), q(_q), rMac(), rDev(), rHost(), rPort(), lPort(), lnk(), RemPortId(), RemPortDesc()
 {
+    parser = _parser;
     staticInit();
     pDev = NULL;
 }
@@ -687,10 +689,13 @@ void cLldpScan::staticInit() {
     if (!oids[0]) EXCEPTION(ESNMP, -1, sOids.first());
 }
 
+EXT_ bool isBreakImportParser(bool _except);
 
 void cLldpScan::updateLink()
 {
     DBGFNL();
+    isBreakImportParser(parser);
+
     lnk.clear();
     rPort.clear();
     lPort.clear();
@@ -699,12 +704,15 @@ void cLldpScan::updateLink()
     lPort.setId(_sNodeId,    pDev->getId());
     if (lPort.completion(q) != 1) return;   // Ha nem tudjuk meghatározni a lokális portot, nem lessz link sem...
 
-    rPort.setId(_sNodeId, rHost.getId());
+    qlonglong rhid = rHost.getId();
+    rPort.setId(_sNodeId, rhid);
     if (rPortIx > 0 && rPort.setId(_sPortIndex, rPortIx).completion(q) != 1) {
+        rPort.clear().setId(_sNodeId, rhid);
         if (rPort.setName(RemPortDesc).completion(q) != 1) {
+            rPort.clear().setId(_sNodeId, rhid);
             if (rPort.setName(RemPortId).completion(q) != 1) {
                 // Név alapján nem találjuk a portot.
-                rPort.clear(_sPortName);    // Ha a dev-nek csak egy portja van, akkor az lessz az
+                rPort.clear().setId(_sNodeId, rhid);
                 if (rPort.completion(q) != 1) return; // Nem egy port van
             }
         }
@@ -732,6 +740,7 @@ void cLldpScan::updateLink()
 bool cLldpScan::createSnmpDev()
 {
     DBGFN();
+    isBreakImportParser(parser);
 
     QString memo;
     cNode nodeByIp;
@@ -747,33 +756,33 @@ bool cLldpScan::createSnmpDev()
     ip.first = RemManAddr.toString();
     ip.second= _sFixIp;
     rDev.asmbNode(q, _sLOOKUP, NULL, &ip, &ma, _sNul, NULL_ID, EX_IGNORE);
-    rDev.setName(_sNodeNote, "By LLDP scan.");
-    int e = 0;  // Hiba azonosító
+    rDev.setNote("By LLDP scan.");
     QString es;
-    if (rDev.setBySnmp(_sNul, EX_IGNORE, &es)) {         // e == 0 : Objektum kitöltése
-        e++;
-        int ixNodeType = rDev.toIndex(_sNodeType);
-        rDev.clearDefectivFieldBit(ixNodeType);     // Insert beállítja, nembaj ha rossz
-        rDev.clear(ixNodeType);
-        // Ezzel most ne szívassuk magunkat, majd talán késöbb megkeresem miér teljesül néha
-//      if (rDev.isDefective() == false) {      // e == 1 : Az eddig kitöltött mezők rendben?
-            e++;
-            if (rDev.insert(q, EX_IGNORE)) {        // e == 2 : Sikerült létrehozni az objektumot ?
-                PDEB(INFO) << "Created SNMP Device : " << rDev.toString() << endl;
-                queued << rDev;                 // Ezt majd lekérdezzük
-                rHost.set(rDev);
-                return true;                    // O.K.
-            }
-//      }
-    }
+    cError *pe = NULL;
     memo = QObject::trUtf8("LLDP lekérdezés : %1 MAC és %2 IP című eszköz felvétele sikertelen :\n").arg(rMac.toString()).arg(RemManAddr.toString());
-    switch (e) {
-    case 0:     memo += QObject::trUtf8("Az SNMP lekérdezés sikertelen : ") + es + "\n";  break;
-//  case 1:     memo += QObject::trUtf8("Hibásan kitöltött adatmező: %1\n").arg(rDev.defectiveFields().join(_sCommaSp));    break;
-    case 2:     memo += QObject::trUtf8("Sikertelen adatbázis művelet: \n");    break;
-    default:    EXCEPTION(EPROGFAIL);
+    if (rDev.setBySnmp(_sNul, EX_IGNORE, &es)) {         // e == 0 : Objektum kitöltése
+        pe = rDev.tryInsert(q);
+        if (pe == NULL) {
+            PDEB(INFO) << "Created SNMP Device : " << rDev.toString() << endl;
+            queued << rDev;                 // Ezt majd lekérdezzük
+            rHost.set(rDev);
+            return true;                    // O.K.
+        }
+        memo += QObject::trUtf8("SNMP eszköz : \n") + rDev.toString();
     }
-    memo += rDev.toString();
+    else {  // Az SNMP felderítés sikertelen
+        rHost.asmbNode(q, _sLOOKUP, NULL, &ip, &ma, _sNul, NULL_ID, EX_IGNORE);
+        rHost.setNote(rDev.getNote());
+        rDev.clear();
+        pe = rHost.tryInsert(q);
+        if (pe == NULL) {
+            PDEB(INFO) << "Created Node Device : " << rHost.toString() << endl;
+            return true;                    // O.K.
+        }
+        memo += QObject::trUtf8("Hálózati eszköz : \n") + rHost.toString();
+    }
+    memo += QObject::trUtf8("\nHiba leíró : \n") + pe->msg();
+    pDelete(pe);
     APPMEMO(q, memo, RS_CRITICAL);      // LOG
     DERR() << memo << endl;
     rDev.clear();
@@ -783,6 +792,7 @@ bool cLldpScan::createSnmpDev()
 
 bool cLldpScan::updateSnmpDev()
 {
+    isBreakImportParser(parser);
     // rHost beolvasva...
     QString memo;
     cNode nodeByIp;
@@ -890,7 +900,9 @@ bool cLldpScan::scanByLldpDevRow(cSnmp& snmp, cSnmp& asnmp)
     RemPortId = snmp.value().toString();        // lldpRemPortId
     bool ok;
     rPortIx = RemPortId.toInt(&ok);
-    if (!ok) rPortIx = -1;
+    if (!ok) {
+        rPortIx = -1;
+    }
 
     NONEXTSNMPDATA(4)
     ix = (int)snmp.name()[oids[4].size()];
@@ -945,6 +957,7 @@ scanByLldpDevRow_error:
 
 void cLldpScan::scanByLldpDev(QSqlQuery& q)
 {
+    isBreakImportParser(parser);
     cSnmp snmp, asnmp;
     pDev->open(q, snmp);
     pDev->open(q, asnmp);   // másik munkamanetben kell lekérdezni a távoli eszköz címét
@@ -987,9 +1000,9 @@ void cLldpScan::scanByLldp(QSqlQuery& q, const cSnmpDevice& __dev)
     }
 }
 
-void scanByLldp(QSqlQuery q, const cSnmpDevice& __dev)
+void scanByLldp(QSqlQuery q, const cSnmpDevice& __dev, bool _parser)
 {
-    cLldpScan(q).scanByLldp(q, __dev);
+    cLldpScan(q, _parser).scanByLldp(q, __dev);
 }
 
 #endif // MUST_SCAN

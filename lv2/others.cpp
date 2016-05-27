@@ -169,3 +169,15 @@ void appReStart()
     QProcess::startDetached(QCoreApplication::applicationFilePath(), qApp->arguments());
     exit(123);
 }
+
+static const QString point = ".";
+QString pointCat(const QString& s1, const QString& s2)
+{
+    return s1 + point + s2;
+}
+
+QString pointCat(const QString& s1, const QString& s2, const QString& s3)
+{
+    return s1 + point + s2 + point + s3;
+}
+

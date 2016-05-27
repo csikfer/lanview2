@@ -620,6 +620,10 @@ STRDEF(TableShapes, "table_shapes")
   STRDEF(Group, "group")
   STRDEF(Self, "self")
   STRDEF(Property, "property")
+  STRDEF(Height, "height");
+  STRDEF(Stretch, "stretch");
+  STRDEF(Horisontal, "horisontal");
+  STRDEF(Vertical, "vertical");
   dnl read_only
   STRDEF(IGroup, "igroup")
   STRDEF(NGroup, "ngroup")

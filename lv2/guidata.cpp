@@ -463,7 +463,7 @@ bool cTableShape::setAllOrders(QStringList& _ord, eEx __ex)
         deford = OT_NO;
     }
     else {
-        deford = enum2set(orderType, _ord[0]);
+        deford = orderType(_ord[0]);
     }
     tTableShapeFields::Iterator i, e = shapeFields.end();
     int seq = 0;
@@ -473,7 +473,7 @@ bool cTableShape::setAllOrders(QStringList& _ord, eEx __ex)
         if (s == enum2set(OT_NO)) continue;
         f.setId(_sOrdInitType, deford);
         seq += 10;
-        f.setId(_sOrdInitSequenceNumber, deford);
+        f.setId(_sOrdInitSequenceNumber, seq);
     }
     return true;
 }

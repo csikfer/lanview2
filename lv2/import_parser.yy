@@ -228,6 +228,7 @@ static QMap<QString, qlonglong>    ivars;
 static QMap<QString, QString>      svars;
 static QMap<QString, QVariantList> avars;
 static QSqlQuery  *     pq2 = NULL;
+static bool             breakParse = false;
 
 /// A parser
 static int yyparse();
@@ -365,6 +366,7 @@ static cTableShapeField *pTableShapeField;
 
 void initImportParser()
 {
+    breakParse = false;
     if (pArpServerDefs == NULL)
         pArpServerDefs = new cArpServerDefs();
     // notifswitch tömb = SET, minden on-ba, visszaolvasás listaként
@@ -412,7 +414,24 @@ void downImportParser()
     avars.clear();
     pDelete(pq2);
     c_yyFile::dropp();
+    breakParse = false;
 }
+
+void breakImportParser()
+{
+    breakParse = true;
+}
+
+bool isBreakImportParser(bool _except)
+{
+    bool r = breakParse;
+    if (_except) {
+        breakParse = false;
+        if (r) EXCEPTION(EBREAK);
+    }
+    return r;
+}
+
 
 QSqlQuery& qq2()
 {
@@ -917,6 +936,7 @@ static void insertCode(const QString& __txt)
 
 QString yygetline()
 {
+    isBreakImportParser(true);
     ++importLineNo;
     if (pImportInputStream != NULL) return pImportInputStream->readLine();
     if (importParserStat != IPS_THREAD) EXCEPTION(EPROGFAIL);
@@ -2415,7 +2435,7 @@ delete  : DELETE_T PLACE_T strs ';'             { foreach (QString s, *$3) { cPl
         | DELETE_T GUI_T strs MENU_T ';'        { foreach (QString s, *$3) { cMenuItem().delByAppName(qq(), s, true); } delete $3; }
         | DELETE_T QUERY_T PARSER_T strs ';'    { foreach (QString s, *$4) { cQueryParser().delByServiceName(qq(), s, true); } delete $4; }
         ;
-scan    : SCAN_T LLDP_T snmph ';'               { scanByLldp(qq(), *$3); delete $3; }
+scan    : SCAN_T LLDP_T snmph ';'               { scanByLldp(qq(), *$3, true); delete $3; }
         ;
 snmph   : str                                   { if (!($$ = new cSnmpDevice())->fetchByName(qq(), sp2s($1))) yyerror("ismeretlen SNMP eszköz név"); }
         ;

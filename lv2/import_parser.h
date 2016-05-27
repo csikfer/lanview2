@@ -39,6 +39,11 @@ EXT_ bool importSrcOpen(QFile& f);
 EXT_ void initImportParser();
 /// A parser hívás után az esetleg (pl. hiba esetén) fel nem szabadított pointereket felszabadítja, ill nullázza.
 EXT_ void downImportParser();
+/// A hívást követően, ha a parser beolvasna egy új sort, megszakítja a feldolgozást egy EBREAK hiba kóddal.
+EXT_ void breakImportParser();
+/// Visszaadja a parszert megszakító flag értékét ld.: void breakImportParser()
+/// @param _except Ha az opcionális paraméter értéke true, akkor törli a flag-et, és dob egy kizárást EBREAK hibaküddal.
+EXT_ bool isBreakImportParser(bool _except = false);
 
 class LV2SHARED_EXPORT cImportParseThread : public QThread {
     friend QString yygetline();

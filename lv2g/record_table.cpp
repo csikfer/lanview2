@@ -784,30 +784,35 @@ void cRecordsViewBase::modify(eEx __ex)
         pRd->restore(pRec);     // lemásolja a dialogus saját adatterületére
         if (pRdt != NULL) id = pRdt->exec(false);
         else              id =  pRd->exec(false);
-        if (pRd->disabled() || isReadOnly) id = DBT_CANCEL;
+        if (pRd->disabled()) id = DBT_CANCEL;
         // Ellenörzés, következő/előző, vagy kilép
         int updateResult = 0;
         switch(id) {
         case DBT_OK:
         case DBT_NEXT:
         case DBT_PREV: {
-            // Update DB
-            bool r = pRecordDialog->accept(); // Bevitt adatok rendben?
-            if (!r) {
-                // Nem ok az adat
-                QMessageBox::warning(pWidget(), trUtf8("Adat hiba"), pRd->errMsg());
-                // Újra
-                continue;
+            if (isReadOnly) {
+                pDelete(pRec);
             }
             else {
-                // Leadminisztráljuk kiírjuk. Ha hiba van, azt a hívott metódus kiírja, és újrázunk.
-                pRec->copy(pRecordDialog->record());
-                updateResult = pModel->updateRec(index, pRec);
-                if (!updateResult) {
+                // Update DB
+                bool r = pRecordDialog->accept(); // Bevitt adatok rendben?
+                if (!r) {
+                    // Nem ok az adat
+                    QMessageBox::warning(pWidget(), trUtf8("Adat hiba"), pRd->errMsg());
+                    // Újra
                     continue;
                 }
-                // Nincs felszabadítva, de már nem a mienk (betettük a rekord listába, régi elem felszabadítva)
-                pRec = NULL;
+                else {
+                    // Leadminisztráljuk kiírjuk. Ha hiba van, azt a hívott metódus kiírja, és újrázunk.
+                    pRec->copy(pRecordDialog->record());
+                    updateResult = pModel->updateRec(index, pRec);
+                    if (!updateResult) {
+                        continue;
+                    }
+                    // Nincs felszabadítva, de már nem a mienk (betettük a rekord listába, régi elem felszabadítva)
+                    pRec = NULL;
+                }
             }
             // pRec == NULL
             if (id == DBT_OK) {

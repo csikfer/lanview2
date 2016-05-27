@@ -82,6 +82,16 @@
       </spacer>
      </item>
      <item>
+      <widget class="QPushButton" name="pushButtonBreak">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Megszakít</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="pushButtonParse">
        <property name="text">
         <string>Végrehajt</string>

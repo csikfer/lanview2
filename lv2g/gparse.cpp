@@ -19,6 +19,7 @@ cParseWidget::cParseWidget(QWidget *par)
     connect(pUi->pushButtonSave,  SIGNAL(clicked()), this, SLOT(saveCliecked()));
     connect(pUi->pushButtonParse, SIGNAL(clicked()), this, SLOT(parseClicked()));
     connect(pUi->pushButtonClose, SIGNAL(clicked()), this, SLOT(endIt()));
+    connect(pUi->pushButtonBreak, SIGNAL(clicked()), this, SLOT(localParseBreak()));
     DBGFNL();
 }
 
@@ -85,6 +86,7 @@ void cParseWidget::localParse(const QString& src)
     pUi->pushButtonClear->setDisabled(true);
     pUi->pushButtonLoad->setDisabled(true);
     pUi->textEditSrc->setReadOnly(true);
+    pUi->pushButtonBreak->setDisabled(false);
 
     pUi->textEditResult->clear();
 
@@ -125,6 +127,13 @@ void cParseWidget::localParseFinished()
     pUi->pushButtonClear->setDisabled(false);
     pUi->pushButtonLoad->setDisabled(false);
     pUi->textEditSrc->setReadOnly(false);
+    pUi->pushButtonBreak->setDisabled(true);
+}
+
+void cParseWidget::localParseBreak()
+{
+    breakImportParser();
+    pUi->pushButtonBreak->setDisabled(true);
 }
 
 void cParseWidget::remoteParse(const QString &src)

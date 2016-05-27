@@ -223,6 +223,39 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION table_shape_id2name(bigint) RETURNS text AS $$
+DECLARE
+    name text;
+BEGIN
+    SELECT table_shape_name INTO name FROM table_shapes WHERE table_shape_id = $1;
+    IF NOT FOUND THEN
+        PERFORM error('IdNotFound', $1, '', 'table_shape_id2name(bigint)', 'table_shapes');
+    END IF;
+    RETURN name;
+END
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION table_shape_id2name(bigint[]) RETURNS text AS $$
+DECLARE
+    tsid bigint;
+    name text;
+    rlist text := '';
+BEGIN
+    IF $1 IS NULL THEN
+        RETURN NULL;
+    END IF;
+    FOREACH tsid IN ARRAY $1 LOOP
+        SELECT table_shape_name INTO name FROM table_shapes WHERE table_shape_id = tsid;
+        IF NOT FOUND THEN
+            PERFORM error('IdNotFound', tsid, '', 'table_shape_id2name(bigint)', 'table_shapes');
+        END IF;
+        rlist := rlist || name || ',';
+    END LOOP;
+    RETURN trim( trailing ',' FROM rlist);
+END
+$$ LANGUAGE plpgsql;
+
+
 CREATE OR REPLACE FUNCTION check_table_shape() RETURNS TRIGGER AS $$
 DECLARE
     tsid  bigint;

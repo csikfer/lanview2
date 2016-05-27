@@ -3356,7 +3356,7 @@ int cRecord::completion(QSqlQuery& __q)
 {
     QBitArray m = getSetMap();
     if (m.count(true) == 0) return -1;
-    fetch(__q, false, m);
+    if (!fetch(__q, false, m)) return 0;
     return __q.size();
 }
 
