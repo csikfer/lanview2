@@ -779,3 +779,4 @@ STRDEF(AppMemos, "app_memos")
  STRDEF(Importance, "importance")
  STRDEF(Memo, "memo")
 
+STRDEF(Selects, "selects");

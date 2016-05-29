@@ -605,3 +605,21 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER log_links_table_check_log_links BEFORE UPDATE OR INSERT ON log_links_table FOR EACH ROW EXECUTE PROCEDURE check_log_links();
+
+-- --
+CREATE TYPE  patterntype AS ENUM (
+    'equal', 'equali', 'similar', 'regexp', 'regexpi', 'oui'
+);
+
+CREATE TABLE selects (
+    select_id           bigserial       PRIMARY KEY,
+    select_type         text            NOT NULL,
+    select_note         text            DEFAULT NULL,
+    precedence          int             NOT NULL,
+    pattern             text            NOT NULL,
+    pattern_type        patterntype     NOT NULL,
+    choice              text            NOT NULL,
+    features            text            DEFAULT NULL,
+    UNIQUE (select_type, precedence)
+);
+CREATE INDEX selects_select_type_index ON selects (select_type);

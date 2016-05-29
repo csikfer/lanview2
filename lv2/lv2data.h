@@ -1557,4 +1557,17 @@ public:
     static qlonglong memo(QSqlQuery &q, const QString &_memo, int _imp = RS_UNKNOWN, const QString &_func_name = _sNul, const QString &_src = _sNul, int _lin = 0);
 };
 
+/* */
+
+class LV2SHARED_EXPORT cSelect : public cRecord {
+    CRECORD(cSelect);
+    FEATURES(cSelect)
+public:
+    STATICIX(cSelect, ixChoice)
+    cSelect& choice(QSqlQuery q, const QString& _type, const QString& _val, eEx __ex = EX_ERROR);
+    cSelect& choice(QSqlQuery q, const QString& _type, const cMac _val, eEx __ex = EX_ERROR);
+
+};
+
+
 #endif // LV2DATA_H

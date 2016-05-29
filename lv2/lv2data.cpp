@@ -3018,3 +3018,50 @@ qlonglong cAppMemo::memo(QSqlQuery &q, const QString &_memo, int _imp, const QSt
     o.insert(q);
     return o.getId();
 }
+
+/* -------------------------------------------- selects ---------------------------------------- */
+DEFAULTCRECDEF(cSelect, _sSelects)
+
+cSelect& cSelect::choice(QSqlQuery q, const QString& _type, const QString& _val, eEx __ex)
+{
+    static QString sql =
+            "SELECT * FROM selects "
+                "WHERE :styp = select_type"
+                  "AND ((pattern_type = 'equal'   AND :sval = pattern) "
+                    "OR (pattern_type = 'equali'  AND lower(:sval) = lower(pattern)) "
+                    "OR (pattern_type = 'similar' AND :sval similar TO pattern) "
+                    "OR (pattern_type = 'regexp'  AND :sval ~  pattern) "
+                    "OR (pattern_type = 'regexpi' AND :sval ~* pattern)) "
+                "ORDER BY precedence "
+                "LIMIT 1;";
+    if (!q.prepare(sql)) SQLPREPERR(q, sql);
+    q.bindValue(":styp", _type);
+    q.bindValue(":sval", _val);
+    if (!q.exec()) SQLQUERYERR(q);
+    if (q.first()) set(q);
+    else {
+        if (__ex >= EX_WARNING) EXCEPTION(EFOUND, 0, _type + " : " + _val);
+        set();
+    }
+    return *this;
+}
+
+cSelect& cSelect::choice(QSqlQuery q, const QString& _type, const cMac _val, eEx __ex)
+{
+    static QString sql =
+            "SELECT * FROM selects "
+                "WHERE :styp = select_type AND pattern_type = 'oui'"
+                  "AND pattern::macaddr = trunc(:mac::macaddr) "
+                "ORDER BY precedence "
+                "LIMIT 1;";
+    if (!q.prepare(sql)) SQLPREPERR(q, sql);
+    q.bindValue(":styp", _type);
+    q.bindValue(":mac", _val.toString());
+    if (!q.exec()) SQLQUERYERR(q);
+    if (q.first()) set(q);
+    else {
+        if (__ex >= EX_WARNING) EXCEPTION(EFOUND, 0, _type + " : " + _val.toString());
+        set();
+    }
+    return *this;
+}

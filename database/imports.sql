@@ -64,14 +64,6 @@ COMMENT ON COLUMN import_templates.template_name IS 'A minta vagy makró neve';
 COMMENT ON COLUMN import_templates.template_note IS 'Opcionális megjegyzés';
 COMMENT ON COLUMN import_templates.template_text IS 'A makró vagy minta tartalma.';
 
-CREATE TABLE scripts (
-    script_id           bigserial       PRIMARY KEY,
-    script_name         text            UNIQUE,
-    script_note         text            DEFAULT NULL,
-    script_text         text            NOT NULL
-);
-ALTER TABLE scripts OWNER TO lanview2;
-
 -- QUERY PARSER --
 
 CREATE TYPE parsertype AS ENUM ('prep', 'parse', 'post');
