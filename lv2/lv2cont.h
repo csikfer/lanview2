@@ -431,7 +431,7 @@ public:
             if (__ex == EX_IGNORE) return NULL;
             EXCEPTION(EFOUND, 0, QObject::trUtf8("Keresés a rekord név alapján: %1 = %2").arg(T().nameName()).arg(__nm));
         }
-        return QList<T>::at(i);
+        return QList<T *>::at(i);
     }
     /// A konténer egy elemének a lekérése amegadott nevű mező értéke alapján
     /// Ha nincs ilyen nevű mező, akkor dob egy kizárást
