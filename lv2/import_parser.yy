@@ -422,10 +422,10 @@ void breakImportParser()
     breakParse = true;
 }
 
-bool isBreakImportParser(bool _except)
+bool isBreakImportParser(bool __ex)
 {
     bool r = breakParse;
-    if (_except) {
+    if (__ex) {
         breakParse = false;
         if (r) EXCEPTION(EBREAK);
     }

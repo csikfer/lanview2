@@ -141,7 +141,7 @@ public:
 };
 
 
-inline void scanByLldp(QSqlQuery, const cSnmpDevice& ) { EXCEPTION(ENOTSUPP); }
+inline void scanByLldp(QSqlQuery, const cSnmpDevice&, bool _parser = false) { (void)_parser; EXCEPTION(ENOTSUPP); }
 
 #endif // MUST_SCAN
 

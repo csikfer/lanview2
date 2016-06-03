@@ -43,7 +43,7 @@ EXT_ void downImportParser();
 EXT_ void breakImportParser();
 /// Visszaadja a parszert megszakító flag értékét ld.: void breakImportParser()
 /// @param _except Ha az opcionális paraméter értéke true, akkor törli a flag-et, és dob egy kizárást EBREAK hibaküddal.
-EXT_ bool isBreakImportParser(bool _except = false);
+EXT_ bool isBreakImportParser(bool __ex = false);
 
 class LV2SHARED_EXPORT cImportParseThread : public QThread {
     friend QString yygetline();
