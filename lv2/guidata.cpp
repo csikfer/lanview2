@@ -254,7 +254,8 @@ cTableShape& cTableShape::setShapeType(qlonglong __t)
         // fieldModified(__i);  // Feltételezzük, hogy most nem kell
         return *this;
     }
-    return *(set(_ixTableShapeType, __t).reconvert<cTableShape>());
+    set(_ixTableShapeType, __t);
+    return *this;
 }
 
 int cTableShape::fetchFields(QSqlQuery& q)
@@ -604,8 +605,9 @@ cTableShapeField *cTableShape::addField(const QString& _name, const QString& _no
     p->setName(_sDialogTitle, _name);
     if (_note.size()) p->setName(_sTableShapeFieldNote, _note);
     qlonglong seq = 0;
-    foreach (cTableShapeField * ptsf, shapeFields) {
-        seq = qMax(seq, ptsf->getId(_sFieldSequenceNumber));
+    QListIterator<cTableShapeField *> i(shapeFields);
+    while (i.hasNext()) {
+        seq = qMax(seq, i.next()->getId(_sFieldSequenceNumber));
     }
     p->setId(_sFieldSequenceNumber, seq + 10);
     shapeFields << p;

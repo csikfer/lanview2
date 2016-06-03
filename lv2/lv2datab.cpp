@@ -168,8 +168,8 @@ cColEnumType::cColEnumType(const cColEnumType& _o)
 
 QString cColEnumType::toString() const
 {
-    return "Enum type " + (QString)*this + "/#" + QString::number(typeId)
-              + " : {" + enumValues.join(", ") + "}";
+    return "Enum " + dQuoted((QString)*this) + " #" + QString::number(typeId)
+              + " {" + enumValues.join(", ") + "}";
 }
 
 const cColEnumType *cColEnumType::fetchOrGet(QSqlQuery& q, const QString& name, eEx __ex)
@@ -368,7 +368,7 @@ QString cColStaticDescr::toString() const
     r += QChar(' ') + colType;
     if (chrMaxLenghr > 0) r += QString("(%1)").arg(chrMaxLenghr);
     r +=  "/" + udtName;
-    if (pEnumType != NULL)      r += QChar('{') + pEnumType->enumValues.join(_sCommaSp) + QChar('}');
+    if (pEnumType != NULL)     r += QChar('{') + pEnumType->enumValues.join(_sCommaSp) + QChar('}');
     if (!isNullable)           r += " NOT NULL ";
     if (!colDefault.isNull()) {
         r += " DEFAULT " + colDefault;
@@ -2098,6 +2098,7 @@ int cRecStaticDescr::_setReCallCnt = 0;
 
 void cRecStaticDescr::_set(const QString& __t, const QString& __s)
 {
+    _DBGFN() << " " << dQuotedCat(__s, __t) << endl;
     // _DBGF() << " @(" << __t << _sCommaSp << __s << QChar(')') << endl << dec; // Valahol valaki hex-re állítja :(
     if (_setReCallCnt) DWAR() << QObject::trUtf8("******** RECURSION #%1 ********").arg(_setReCallCnt) << endl;
     ++_setReCallCnt;
@@ -2405,7 +2406,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
                     break;
                 }
                 _nameKeyMask = u;
-                PDEB(VERBOSE) << "_nameKeyMask set : " << list2string(u) << endl;
+                // PDEB(VERBOSE) << "_nameKeyMask set : " << list2string(u) << endl;
             }
         }
     }
@@ -3613,13 +3614,13 @@ cRecordFieldConstRef cRecord::operator[](int __i) const
 
 QString cRecord::toString() const
 {
-    QString s = QChar(' ') + tableName() + QChar('{');
+    QString s = QChar(' ') + dQuotedCat(schemaName(), tableName()) + QChar('{');
     for (int i = 0; isIndex(i); i++) {
         s += QChar(' ') + columnNameQ(i);
         if (isNull(i)) s += " IS NULL;";
         else           s +=  " = " + getName(i) + QString("::") + QString(get(i).typeName()) + ";";
     }
-    s.chop(2);
+    s.chop(1);
     s + QChar('}');
     return s;
 }

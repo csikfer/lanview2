@@ -246,6 +246,7 @@ class LV2SHARED_EXPORT cDynAddrRange : public cRecord {
     CRECORD(cDynAddrRange);
 public:
     static eReasons replace(QSqlQuery &q, const QHostAddress& b, const QHostAddress& e, qlonglong dhcpSrvId, bool exclude, qlonglong subnetId = NULL_ID);
+    static int isDynamic(QSqlQuery &q, const QHostAddress& a);
 };
 
 /* ---------------------------------------------------------------- */

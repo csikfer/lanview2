@@ -500,7 +500,7 @@ public:
     int getByAddress(QSqlQuery & __q, const QHostAddress &__addr);
     STATICIX(cSubNet, ixNetAddr)
     STATICIX(cSubNet, ixVlanId)
-    STATICIX(cSubNet, ixSubNetType)
+    STATICIX(cSubNet, ixSubnetType)
 };
 
 /*!
@@ -921,6 +921,11 @@ public:
     /// @param __t Az IP cím típusa, alapértelmezett a _sFixIp
     /// @param __d Cím rekord megjegyzés mező (alapértelmezetten üres)
     cIpAddress& addIpAddress(const QHostAddress& __a, const QString& __t = _sFixIp, const QString& __d = _sNul);
+    cIpAddress& addIpAddress(const QHostAddress& __a, int __t = AT_FIXIP, const QString& __d = _sNul)
+    {
+        return addIpAddress(__a, addrType(__t), __d);
+    }
+
     /// Értékadása a hwaddress mezőnek.
     cInterface& operator=(const cMac& _m) { set(_sHwAddress, QVariant::fromValue(_m)); return *this; }
 
@@ -1161,7 +1166,7 @@ public:
     tOwnRecords<cNodeParam, cPatch> params;
     ///
     int containerValid;
-private:
+protected:
     /// Megosztások konténer. (csak a cPatch osztályban)
     /// Nincs automatikusan feltöltve, de a clearToEnd(); törli, ill. az atEnd() törölheti.
     /// Csak a normál bekötéstől való eltérések esetén kerül egy elem a konténerbe.
@@ -1198,7 +1203,7 @@ protected:
     explicit cNode(no_init_& _dummy) : cPatch(_dummy) { cNode::descr(); }
 public:
     cNode(const QString& __name, const QString& __note);
-    cNode& operator=(const cNode& __o);
+//  cNode& operator=(const cNode& __o);
     // virtual void clearToEnd();
     // virtual void toEnd();
     // virtual bool toEnd(int i);

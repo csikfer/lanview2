@@ -690,8 +690,8 @@ void cRecordsViewBase::insert()
         }
     }   break;
     case TIT_LISTED_REV: {
-        tRecordList<cTableShape>    shapes = getShapes();
-        cRecordDialogInh rd(*pTableShape, shapes, buttons, true, NULL, this, pWidget());
+        tRecordList<cTableShape> *pShapes = getShapes();
+        cRecordDialogInh rd(*pTableShape, *pShapes, buttons, true, NULL, this, pWidget());
         pRecordDialog = &rd;
         while (1) {
             int r = rd.exec();
@@ -713,6 +713,7 @@ void cRecordsViewBase::insert()
             }
             break;
         }
+        delete pShapes;
     }   break;
     default:
         EXCEPTION(ENOTSUPP);
@@ -746,8 +747,7 @@ void cRecordsViewBase::modify(eEx __ex)
         pRecordDialog = pRd;
         break;
     case TIT_LISTED_REV: {
-        pShapes = new tRecordList<cTableShape>;
-        *pShapes = getShapes();
+        pShapes = getShapes();
         pRdt = new cRecordDialogInh(*pTableShape, *pShapes, buttons, true, NULL, this, pWidget());
         pRecordDialog = pRdt;
         if (pRdt->disabled()) {
@@ -963,17 +963,17 @@ void cRecordsViewBase::createRightTab()
     pMasterSplitter->addWidget(pRightTabWidget);
 }
 
-tRecordList<cTableShape> cRecordsViewBase::getShapes()
+tRecordList<cTableShape> *cRecordsViewBase::getShapes()
 {
-    tRecordList<cTableShape>    shapes;
+    tRecordList<cTableShape>   *pShapes = new tRecordList<cTableShape>;
     QStringList tableNames;
     tableNames << pTableShape->getName(_sTableName);
     tableNames << inheritTableList;
     tableNames.removeDuplicates();
     foreach (QString tableName, tableNames) {
-        shapes << getInhShape(pTableShape, tableName);
+        *pShapes << getInhShape(pTableShape, tableName);
     }
-    return shapes;
+    return pShapes;
 }
 
 void cRecordsViewBase::rightTabs(QVariantList& vlids)

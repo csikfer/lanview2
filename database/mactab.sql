@@ -107,14 +107,27 @@ CREATE INDEX arp_logs_date_of_index   ON arp_logs(date_of);
 ALTER TABLE arp_logs OWNER TO lanview2;
 COMMENT ON TABLE arp_logs IS 'Az arps tábla változásainag a napló táblája.';
 
+CREATE TABLE dyn_ipaddress_logs (
+    dyn_ipaddress_log_id    bigserial   PRIMARY KEY,
+    date_of                 timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ipaddress_new           inet        DEFAULT NULL,
+    ipaddress_old           inet        DEFAULT NULL,
+    set_type                settype     NOT NULL,
+    port_id                 bigint      NOT NULL REFERENCES interfaces(port_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT
+);
+CREATE INDEX dyn_ipaddress_logs_date_of_index   ON dyn_ipaddress_logs(date_of);
+ALTER TABLE dyn_ipaddress_logs OWNER TO lanview2;
+
+
 CREATE OR REPLACE FUNCTION replace_arp(ipa inet, hwa macaddr, stp settype DEFAULT 'query', hsi bigint DEFAULT NULL) RETURNS reasons AS $$
 DECLARE
     arp     arps;
     aid     bigint;
+    oip     ipaddresses;
 BEGIN
-    BEGIN
+    BEGIN       -- MAC -> IP check
         SELECT ip_address_id INTO STRICT aid FROM ipaddresses JOIN interfaces USING(port_id) WHERE
-                                ip_address_type = 'dynamic' AND hwaddress = hwa AND (address <> $1 OR address IS NULL);
+             ip_address_type = 'dynamic' AND hwaddress = hwa AND (address <> ipa OR address IS NULL);
         EXCEPTION
             WHEN NO_DATA_FOUND THEN
                 aid := NULL;
@@ -123,7 +136,10 @@ BEGIN
                 aid := NULL;
     END;
     IF aid IS NOT NULL THEN
-        UPDATE ipaddress SET address = ipa WHERE ip_address_id = aid;
+        SELECT * INTO oip FROM ipaddresses WHERE ip_address_id = aid;     -- régi IP
+        UPDATE ipaddresses SET address = ipa WHERE ip_address_id = aid;   -- új ip
+        INSERT INTO dyn_ipaddress_logs(ipaddress_new, ipaddress_old, set_type, port_id)
+                                VALUES (ipa, oip.address, stp, oip.port_id);
     END IF;
     SELECT * INTO arp FROM arps WHERE ipaddress = ipa;
     IF NOT FOUND THEN

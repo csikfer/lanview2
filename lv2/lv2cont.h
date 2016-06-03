@@ -24,18 +24,20 @@ template <class C1, class M1, class C2, class M2> void appendCont(C1& c1, const 
 @class tRecordList
 Template osztály. Rekord lista konténer.
 
-A konténer az objektumok pointereit tárolja, amik a konténer objektum „tulajdonába” kerülnek, vagyis azokat a destruktor felszabadítja.
-A konténer másolásakor az összes elem klónozva lesz, ezért ez a művelet, főleg nagyobb listák esetén kerülendő, és lásd még a klónozásnál
-leírtakat is cRecord::dup() .
-Az ős QList konténer metódusain kívül mit nyújt a tRecordList konténer?
-A pointer elemeket az elem törlésekor felszabadítja, továbbá ha referenciával adjuk meg a konténerbe elhelyezendő objektumot (pointer helyett),
-akkor klónozza azt, és a klónt helyezi a konténerbe.
+A konténer az objektumok pointereit tárolja, amik a konténer objektum „tulajdonába” kerülnek, vagyis azokat a destruktor
+felszabadítja.
+A konténer másolásakor az összes elem klónozva lesz, ezért ez a művelet, főleg nagyobb listák esetén kerülendő, és lásd még
+a klónozásnál leírtakat is cRecord::dup().\n
+Az ős QList konténer metódusain kívül mit nyújt a tRecordList konténer? \n
+A pointer elemeket az elem törlésekor felszabadítja, továbbá ha referenciával adjuk meg a konténerbe elhelyezendő objektumot
+(pointer helyett), akkor klónozza azt, és a klónt helyezi a konténerbe.
 Egy elem kereshető, ill. elérhető egy mező értéke alapján: contains() és indexOff(), get() metódusok.
-Lehetőség van egy mező értékének beállítására az összes elemnél: set(), setId(), setName().
-Az osztály biztosít néhání adatbázis műveletet végző metódust: fetch(), insert()
+Lehetőség van egy mező értékének beállítására az összes elemnél: sets(), setId(), setName().
+Az osztály biztosít néhány adatbázis műveletet végző metódust: fetch(), insert(), remove()
 
 Azokat a metódusokat, melyek a mező indexe alapján azonosítanak egy mezőt, csak akkor használhatjuk, ha a konténerben tárolt
 objektumok valóban azonos típusuak, ill. ugyan az a cRecStaticDescr objektum a leírójuk.
+Vegyes cRecordAny objektum, ha a hozzárendelt adattáblák nincsenek öröklési kapcsolatban, nem támogatott.
 */
 template <class T>
         class tRecordList : public QList<T *>
@@ -44,16 +46,17 @@ public:
     /// Konstruktor. Üres rekord listát hoz létre
     tRecordList() : QList<T *>() { ; }
     /// Konstruktor. Egy elemű rekord listát hoz létre (T a rekord objektum típus)
+    /// A paraméterként megadott pointer a konténeré, annak destruktora (vagy a clean()) szabadítja fel.
     tRecordList(T * __p) : QList<T *>()
     {
-        this->append(__p);
+        QList<T *>::append(__p);
     }
     /// Konstruktor. Egy elemű listát hoz létre
     /// A paraméterként megadott objektumról másolatot készít.
     tRecordList(const T& __o) : QList<T *>()
     {
         T * p =  dynamic_cast<T *>(__o.dup());
-        this->append(p);
+        QList<T *>::append(p);
     }
     /// Konstruktor.
     /// Beolvassa az összes olyan rekordot, melynek a megadott sorszámú numerikus mezője egyezik a megadott id-vel
@@ -65,7 +68,13 @@ public:
     {
         fetch(__q, __only, __fi, __id);
     }
-    ///
+    /// Copy konstruktor
+    /// Nem támogatott
+    tRecordList(const tRecordList& __o) : QList<T *>()
+    {
+        EXCEPTION(EPROGFAIL, 0, typeid(T).name() + QString(" :: ") + __o.toString());
+    }
+
     QList<T *>& list()  { return *(QList<T *> *)this; }
     const QList<T *>& list() const { return *(const QList<T *> *)this; }
     /// Kiüríti a konténert, az összes elemet (pointerek) felszabadítja
@@ -77,38 +86,76 @@ public:
         return *this;
     }
     /// Bővíti a listát egy elemmel. A megadott pointer helyezi el a konténerben, nem készít másolatot.
+    /// Az objektumot amire a pointer mutat, a konténer szabadítja fel-
+    tRecordList<T>& append(T *p) {
+        QList<T *>::append(p);
+        return *this;
+    }
+    /// Bővíti a listát egy elemmel. A megadott pointer helyezi el a konténerben, nem készít másolatot.
+    /// Az objektumot amire a pointer mutat, a konténer szabadítja fel-
     tRecordList<T>& operator <<(T *p) {
-        this->append(p);
+        QList<T *>::append(p);
+        return *this;
+    }
+    /// Bővíti a listát egy elemmel. A megadott pointer helyezi el a konténerben, nem készít másolatot.
+    /// Az objektumot amire a pointer mutat, a konténer szabadítja fel-
+    tRecordList<T>& operator +=(T *p) {
+        QList<T *>::append(p);
+        return *this;
+    }
+    /// Bővíti a listát egy elemmel. Az objektumról másolatot készít, és azt teszi be a konténerbe
+    tRecordList<T>& append(const T& _o) {
+        T * p =  dynamic_cast<T *>(_o.dup());
+        QList<T *>::append(p);
         return *this;
     }
     /// Bővíti a listát egy elemmel. Az objektumról másolatot készít, és azt teszi be a konténerbe
     /// @note A két << operátor lehet, hogy egy kicsit "beugratós", változtatni kéne ?
-    tRecordList<T>& operator <<(const T& _o) {
-        T * p =  dynamic_cast<T *>(_o.dup());
-        this->append(p);
-        return *this;
+    tRecordList<T>& operator <<(const T& __o) {
+        return append(__o);
     }
-    /// Copy operátor.
-    /// A konténer összes objektumát újra allokálja (a dup(() metódus hívásával), és ezek kerülnek a másolat konténer objektumba.
-    tRecordList& operator=(const tRecordList& __o)
+    /// Bővíti a listát egy elemmel. Az objektumról másolatot készít, és azt teszi be a konténerbe
+    /// @note A két << operátor lehet, hogy egy kicsit "beugratós", változtatni kéne ?
+    tRecordList<T>& operator +=(const T& __o) {
+        return append(__o);
+    }
+    /// A konténerhez hozzáadja a paraméterként megadott konténer elemeit.
+    /// A paraméterként megadott konténer összes objektumát újra allokálja (a dup(() metódus hívásával),
+    /// és ezek kerülnek az objektum eredeti tartalma után azonos sorrendben.
+    tRecordList& append(const tRecordList& __o)
     {
         //DBGFN();
-        clear();
         typename QList<T *>::const_iterator    i;
         for (i = __o.constBegin(); i != __o.constEnd(); i++) {
             T * p =  dynamic_cast<T *>((*i)->dup());
-            this->append(p);
+            QList<T *>::append(p);
         }
         //DBGFNL();
         return *this;
     }
-    /// Copy konstruktor.
-    /// A konténer összes objektumát újra allokálja, és ezek kerülnek a másolat objektumba.
-    tRecordList(const tRecordList& __o) : QList<T *>()
+    /// A konténerhez hozzáadja a paraméterként megadott konténer elemeit.
+    /// A paraméterként megadott konténer összes objektumát újra allokálja (a dup(() metódus hívásával),
+    /// és ezek kerülnek az objektum eredeti tartalma után azonos sorrendben.
+    tRecordList& operator<<(const tRecordList& __o)
     {
-        DBGFN();
-        *this = __o;
-        DBGFNL();
+        //DBGFN();
+        return append(__o);
+    }
+    /// A konténerhez hozzáadja a paraméterként megadott konténer elemeit.
+    /// A paraméterként megadott konténer összes objektumát újra allokálja (a dup(() metódus hívásával),
+    /// és ezek kerülnek az objektum eredeti tartalma után azonos sorrendben.
+    tRecordList& operator+=(const tRecordList& __o)
+    {
+        //DBGFN();
+        return append(__o);
+    }
+    /// Copy operátor.
+    /// Nem támogatott. Helyettesíthető a clear().append(__o) hívással.
+    /// Volt belőle komoly gond, inkább nem kell.
+    tRecordList& operator=(const tRecordList& __o)
+    {
+        EXCEPTION(EPROGFAIL, 0, typeid(T).name() + QString(" :: ") + __o.toString());
+        return *this;
     }
     /// Konténer destruktor. A konténer elemeit, a pointereket felszabadítja.
     ~tRecordList()
@@ -116,14 +163,15 @@ public:
         typename QList<T *>::iterator    i;
         for (i = QList<T *>::begin(); i != QList<T *>::end(); i++) delete *i;
     }
+
     /// A konténer insert metódusának az újra definiálása. A pointer ezután a konténer hatáskörébe tartozik, az szabadítja fel.
     void pushAt(int i, T *p)        { list().insert(i, p); }
     /// Hasonló a konténer insert metódusához, de az _o objektumot ujra allokálja a dup() metódus hívásával.
     void pushAt(int i, const T& _o) { pushAt(i, dynamic_cast<T *>(_o.dup())); }
 
     /// Beolvassa az összes olyan rekordot, mely megfelel a pointerként átadott
-    /// objektum megadott mezőinek. Csak egyenlőségre szűr, kivébe, ha beállítjuk a *p objektumban a likeMask bitjeit.
-    /// A metódus akkor is használható, ha a template osztály onmagában nem azonosítja a kezelt adattáblát,
+    /// objektum megadott mezőinek. Csak egyenlőségre szűr, kivéve, ha beállítjuk a *p objektumban a likeMask bitjeit.
+    /// A metódus akkor is használható, ha a template osztály önmagában nem azonosítja a kezelt adattáblát,
     /// de csak olyan *p objektummal hívhatjuk, ami egyértelműen azonosítja azt. cRecordAny esetén
     /// ha a *p faceless, akkor hibát fog generálni a hívás.
     /// @param __q query objektum, amivel a lekérdezés elvégezhető.
@@ -135,11 +183,13 @@ public:
     int fetch(QSqlQuery& __q, bool __only, const QBitArray& fm, T *p)
     {
         if (p->fetch(__q, __only, fm)) {
-            this->append(p);
+            append(p);
             while (__q.next()) {
-                p = dynamic_cast<T *>(p->newObj());
+                cRecord *__p = p->newObj();
+                p = dynamic_cast<T *>(__p);
+                // p = dynamic_cast<T *>(p->newObj());
                 p->set(__q.record());
-                this->append(p);
+                append(p);
             }
         }
         else {
@@ -242,7 +292,7 @@ public:
         typename QList<T *>::const_iterator    i = QList<T *>::constBegin();
         if (__st != 0) {
             if (__st < 0) return -1;
-            if (__st >= (int)this->size()) return -1;
+            if (__st >= (int)QList<T *>::size()) return -1;
             i += __st;
         }
         for (; i < QList<T *>::constEnd(); i++, __st++) {
@@ -259,7 +309,7 @@ public:
         typename QList<T *>::const_iterator    i = QList<T *>::constBegin();
         if (__st != 0) {
             if (__st < 0) return -1;
-            if (__st >= (int)this->size()) return -1;
+            if (__st >= (int)QList<T *>::size()) return -1;
             i += __st;
         }
         for (; i < QList<T *>::constEnd(); i++, __st++) {
@@ -287,20 +337,22 @@ public:
     bool contains(const QString&  __name, const QVariant& _val) const { return indexOf(__name, _val) >= 0; }
     /// A lista tartalmának a stringé konvertálása
     QString toString() const {
+        if (QList<T *>::isEmpty()) return QString("[ ]");
         QString s = QChar('[');
         typename QList<T *>::const_iterator    i;
         for (i = QList<T *>::constBegin(); i < QList<T *>::constEnd(); i++) {
             T *p = *i;
-            s += QChar(' ') + p->toString() + QChar(',');
+            s += QChar(' ') + p->toString() + ", ";
         }
-        if (s.size() > 1) s.chop(1);
-        return s + QChar(' ') + QChar(']');
+        s.chop(2);
+        return s + "]";
     }
     /// Az összes elem ID mezőjének a törlése
     void clearId() {
         typename QList<T *>::const_iterator    i;
+        int ix = QList<T *>::first()->idIndex();
         for (i = QList<T *>::constBegin(); i < QList<T *>::constEnd(); i++) {
-            (*i)->clear((*i)->idIndex());
+            (*i)->clear(ix);
         }
     }
     /// Egy mező értékének a beállítása az összes elemnél a megadott értékre
@@ -367,7 +419,7 @@ public:
             if (__ex == EX_IGNORE) return NULL;
             EXCEPTION(EFOUND, __id, QObject::trUtf8("Keresés a rekord ID alapján: %1 = %2").arg(T().idName()).arg(__id));
         }
-        return this->at(i);
+        return QList<T *>::at(i);
     }
     /// A konténer egy elemének a lekérése az név alapján
     /// Ha nincs név mező, vagy nem ismert az indexe, akkor dob egy kizárást
@@ -379,7 +431,7 @@ public:
             if (__ex == EX_IGNORE) return NULL;
             EXCEPTION(EFOUND, 0, QObject::trUtf8("Keresés a rekord név alapján: %1 = %2").arg(T().nameName()).arg(__nm));
         }
-        return this->at(i);
+        return QList<T>::at(i);
     }
     /// A konténer egy elemének a lekérése amegadott nevű mező értéke alapján
     /// Ha nincs ilyen nevű mező, akkor dob egy kizárást
@@ -392,23 +444,23 @@ public:
             if (__ex == EX_IGNORE) return NULL;
             EXCEPTION(EFOUND, 0, QObject::trUtf8("Keresés a %1 nevű mezőérték alapján: %2").arg(__fn).arg(debVariantToString(__v)));
         }
-        return this->at(i);
+        return QList<T *>::at(i);
     }
     /// A konténer egy elemének a lekérése amegadott sorszámú mező értéke alapján
     /// Ha nincs ilyen mező, akkor dob egy kizárást
     /// @param __ix A mező sorszáma, ami alapján keresünk
     /// @param __v A keresett érték
-    /// @param __ex Ha értéke true, akkor ha nem találja az elemet, akkor dob egy kizárást, egyébként NULL pointerrel visszatér.
+    /// @param __ex Ha értéke nem EX_IGNORE, akkor ha nem találja az elemet, akkor dob egy kizárást, egyébként NULL pointerrel visszatér.
     T *get(int __ix, const QVariant& __v, eEx __ex = EX_ERROR) {
         int i = indexOf(__ix, __v);
         if (i < 0) {
             if (__ex == EX_IGNORE) return NULL;
             EXCEPTION(EFOUND, __ix, QObject::trUtf8("Keresés a %1 indexű mezőérték alapján: %2").arg(__ix).arg(debVariantToString(__v)));
         }
-        return this->at(i);
+        return QList<T *>::at(i);
     }
     /// A konténer utolsó pointerét törli a konténerből, de a pointert nem szabadítja föl, hanem azzal tér vissza.
-    /// Ha a konténer üres, akkor dob egy kizárást, ha __ex igaz, vagy NULL pointerrel tér vissza, ha __ex hamis.
+    /// Ha a konténer üres, akkor dob egy kizárást, ha __ex nem EX_IGNORE, vagy NULL pointerrel tér vissza, ha __ex hamis.
     T *pop_back(eEx __ex = EX_ERROR)  {
         if (list().size() < 1) {
             if (__ex == EX_IGNORE) return NULL;
@@ -419,7 +471,7 @@ public:
         return p;
     }
     /// A konténer első pointerét törli a konténerből, de a pointert nem szabadítja föl, hanem azzal tér vissza.
-    /// Ha a konténer üres, akkor dob egy kizárást, ha __ex igaz, vagy NULL pointerrel tér vissza, ha __ex hamis.
+    /// Ha a konténer üres, akkor dob egy kizárást, ha __ex nem EX_IGNORE, vagy NULL pointerrel tér vissza, ha __ex hamis.
     T *pop_front(eEx __ex = EX_ERROR) {
         if (list().size() < 1) {
             if (__ex == EX_IGNORE) return NULL;
@@ -432,7 +484,7 @@ public:
     /// A megadott indexű pointert törli a konténerből, de a pointert nem szabadítja föl, hanem azzal tér vissza.
     /// Ha a konténer nem tartalmazza a megadott indexű elemet, akkor dob egy kizárást, ha __ex igaz, vagy NULL pointerrel tér vissza, ha __ex hamis.
     /// @param __ix A kiválasztott elem indexe a konténerben
-    /// @param __ex Opcionális flag, ha igaz (ez az alapértelmezés) akkor ha nincs találat, dob egy kizárást.
+    /// @param __ex Opcionális flag, ha nem EX_IGNORE (ez az alapértelmezés) akkor ha nincs találat, dob egy kizárást.
     T *pullAt(int __ix, eEx __ex = EX_ERROR) {
         if (list().size() <= __ix) {
             if (__ex == EX_IGNORE) return NULL;
@@ -445,7 +497,7 @@ public:
     /// A megadott ID-jű objektumra mutató pointert törli a konténerből, de a pointert nem szabadítja föl, hanem azzal tér vissza.
     /// Ha a konténer nem tartalmazza a megadott elemet, akkor dob egy kizárást, ha __ex igaz, vagy NULL pointerrel tér vissza, ha __ex hamis.
     /// @param __id A keresett elem rekord azobosító ID-je
-    /// @param __ex Opcionális flag, ha igaz (ez az alapértelmezés) akkor ha nincs találat, dob egy kizárást.
+    /// @param __ex Opcionális flag, ha nem EX_IGNORE (ez az alapértelmezés) akkor ha nincs találat, dob egy kizárást.
     T *pull(qlonglong __id, eEx __ex = EX_ERROR) {
         int ix = indexOf(__id);
         if (0 > ix) {
@@ -459,7 +511,7 @@ public:
     /// A megadott nevű objektumra mutató pointert törli a konténerből, de a pointert nem szabadítja föl, hanem azzal tér vissza.
     /// Ha a konténer nem tartalmazza a megadott elemet, akkor dob egy kizárást, ha __ex igaz, vagy NULL pointerrel tér vissza, ha __ex hamis.
     /// @param __id A keresett elem rekord nevee
-    /// @param __ex Opcionális flag, ha igaz (ez az alapértelmezés) akkor ha nincs találat, dob egy kizárást.
+    /// @param __ex Opcionális flag, ha nem EX_IGNORE (ez az alapértelmezés) akkor ha nincs találat, dob egy kizárást.
     T *pull(const QString __name, eEx __ex = EX_ERROR) {
         int ix = indexOf(__name);
         if (0 > ix) {
@@ -471,7 +523,7 @@ public:
         return p;
     }
     /// A megadott nevű mező értékévlel egyezést mutató első objektumra mutató pointert törli a konténerből, de a pointert nem szabadítja föl, hanem azzal tér vissza.
-    /// Ha a konténer nem tartalmazza a megadott elemet, akkor dob egy kizárást, ha __ex igaz, vagy NULL pointerrel tér vissza, ha __ex hamis.
+    /// Ha a konténer nem tartalmazza a megadott elemet, akkor dob egy kizárást, ha __ex nem EX_IGNORE, vagy NULL pointerrel tér vissza, ha __ex hamis.
     /// @param __fname Mező név
     /// @param __val A keresett rekordban a megadott nevű mező értéke.
     /// @param __ex Opcionális flag, ha igaz (ez az alapértelmezés) akkor ha nincs találat, dob egy kizárást.
@@ -489,7 +541,7 @@ public:
     /// Ha a konténer nem tartalmazza a megadott elemet, akkor dob egy kizárást, ha __ex igaz, vagy NULL pointerrel tér vissza, ha __ex hamis.
     /// @param __fix Mező index
     /// @param __val A keresett rekordban a megadott sorszámú mező értéke.
-    /// @param __ex Opcionális flag, ha igaz (ez az alapértelmezés) akkor ha nincs találat, dob egy kizárást.
+    /// @param __ex Opcionális flag, ha nem EX_IGNORE (ez az alapértelmezés) akkor ha nincs találat, dob egy kizárást.
     T *pull(int __fix, const QVariant& __val, eEx __ex = EX_ERROR) {
         int ix = indexOf(__fix, __val);
         if (0 > ix) {
@@ -524,40 +576,62 @@ public:
     tOwnRecords(O *__po) : tRecordList<C>(), ixOwnerId(C().descr().ixToOwner()), pOwner(__po) {
         if (pOwner == NULL) EXCEPTION(EPROGFAIL);
     }
+    /// Konstruktor
     tOwnRecords(O *__po, const tOwnRecords& __c) : tRecordList<C>(), ixOwnerId(C().descr().ixToOwner()), pOwner(__po) {
         append(__c);
     }
-    /// Bővíti a listát egy elemmel. A megadott pointer helyezi el a konténerben, nem készít másolatot.
-    void append(C *p) {
-        p->setParent(pOwner);
-        this->QList<C *>::append(p);
+    /// Copy konstruktor. Nem támogatott
+    tOwnRecords(const tOwnRecords& __o) : tRecordList<C>(), ixOwnerId(NULL_IX) {
+        EXCEPTION(EPROGFAIL, 0, typeid(C).name() + QString(" , ") + typeid(O).name() + " :: \n" + __o.toString());
     }
+    /// Copy operator. Nem támogatott
+    tOwnRecords<C, O>& operator =(const tOwnRecords& __o) {
+        EXCEPTION(EPROGFAIL, 0, typeid(C).name() + QString(" , ") + typeid(O).name() + " :: \n" + __o.toString());
+    }
+
+    /// Bővíti a listát egy elemmel. A megadott pointer helyezi el a konténerben, nem készít másolatot.
+    tOwnRecords<C, O>& append(C *p) {
+        p->setParent(pOwner);
+        QList<C *>::append(p);
+        return *this;
+    }
+    /// Bővíti a listát egy elemmel. A megadott pointer helyezi el a konténerben, nem készít másolatot.
+    tOwnRecords<C, O>& operator <<(C *p) { return append(p); }
+    /// Bővíti a listát egy elemmel. A megadott pointer helyezi el a konténerben, nem készít másolatot.
+    tOwnRecords<C, O>& operator +=(C *p) { return append(p); }
+
+    /// Bővíti a listát egy elemmel. Az objektumról másolatot készít.
+    tOwnRecords<C, O>& append(const C& c) {
+        C *p = dynamic_cast<C *>(c.dup());
+        return append(p);
+    }
+    /// Bővíti a listát egy elemmel. Az objektumról másolatot készít, és azt teszi be a konténerbe
+    tOwnRecords<C, O>& operator <<(const C& _o) { return append(_o); }
+    /// Bővíti a listát egy elemmel. Az objektumról másolatot készít, és azt teszi be a konténerbe
+    /// @note A két << operátor lehet, hogy egy kicsit "beugratós", változtatni kéne ?
+    tOwnRecords<C, O>& operator +=(const C& _o) { return append(_o); }
+
     /// Bővíti a listát a konténer elemeivel. Minden elemről másolat készül.
-    void append(const tOwnRecords<C, O>& __o) {
+    tOwnRecords<C, O>& append(const tOwnRecords<C, O>& __o) {
+        if (ixOwnerId != __o.ixOwnerId) EXCEPTION(EDATA);
         typename QList<C *>::const_iterator    i;
         for (i = __o.QList<C *>::constBegin(); i < __o.QList<C *>::constEnd(); i++) {
             (*this) << **i;
         }
-    }
-    /// Bővíti a listát egy elemmel. A megadott pointer helyezi el a konténerben, nem készít másolatot.
-    tOwnRecords<C, O>& operator <<(C *p) {
-        append(p);
         return *this;
     }
-    /// Bővíti a listát egy elemmel. Az objektumról másolatot készít, és azt teszi be a konténerbe
-    /// @note A két << operátor lehet, hogy egy kicsit "beugratós", változtatni kéne ?
-    tOwnRecords<C, O>& operator <<(const C& _o) {
-        C * p =  dynamic_cast<C *>(_o.dup());
-        append(p);
-        return *this;
-    }
+    /// Bővíti a listát a konténer elemeivel. Minden elemről másolat készül.
+    tOwnRecords<C, O>& operator<<(const tOwnRecords<C, O>& __o) { return append(__o); }
+    /// Bővíti a listát a konténer elemeivel. Minden elemről másolat készül.
+    tOwnRecords<C, O>& operator+=(const tOwnRecords<C, O>& __o) { return append(__o); }
+
     ///
     tOwnRecords&  setsOwnerId() {
-        this->tRecordList<C>::setsId(ixOwnerId, pOwner->getId());
+        tRecordList<C>::setsId(ixOwnerId, pOwner->getId());
         return *this;
     }
     int fetch(QSqlQuery &__q, bool __only = false) {
-        int r = this->tRecordList<C>::fetch(__q, __only, ixOwnerId, pOwner->getId());
+        int r = tRecordList<C>::fetch(__q, __only, ixOwnerId, pOwner->getId());
         if (r > 0) setOwner();
         return r;
     }
@@ -567,7 +641,7 @@ public:
             return 0;
         }
         setsOwnerId();
-        return this->tRecordList<C>::insert(__q, __ex);
+        return tRecordList<C>::insert(__q, __ex);
     }
     int removeByOwn(QSqlQuery &__q, eEx __ex = EX_ERROR) const {
         C o;

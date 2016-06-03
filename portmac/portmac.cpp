@@ -169,7 +169,7 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
             // Erre a node-ra megy a link (ha marad NULL_ID, akkor nincs uplink)
             qlonglong linkedNodeId = NULL_ID;
             while (true) {
-                int st = ix + 1;
+                int st = ix + 1;    // 0 or next
                 // Keressük a trunk tagjait
                 ix = host().ports.indexOf(_sPortStapleId, np.get(_sPortId), st);
                 if (ix < 0) {
@@ -191,9 +191,9 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
                 else {
                     if (linkedNodeId != hid) {
                         QString msg = trUtf8("A %1(%2) trunk tagjai nem azonos node-hoz csatlakoznak (%2 - %3) .")
-                                .arg(np.getFullName(__q))
-                                .arg(cNode().getNameById(linkedNodeId))
-                                .arg(cNode().getNameById(hid));
+                                .arg(np.getFullName(__q, EX_IGNORE))
+                                .arg(linkedNodeId == NULL_ID ? _sNULL : cNode().getNameById(linkedNodeId), EX_IGNORE)
+                                .arg(hid          == NULL_ID ? _sNULL : cNode().getNameById(hid, EX_IGNORE));
                         APPMEMO(__q, msg, RS_CRITICAL);
                     }
                 }

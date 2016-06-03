@@ -780,3 +780,19 @@ STRDEF(AppMemos, "app_memos")
  STRDEF(Memo, "memo")
 
 STRDEF(Selects, "selects");
+ STRDEF(SelectType, "select_type")
+ STRDEF(SelectNote, "select_note")
+ STRDEF(Precedence, "precedence");
+ STRDEF(Pattern, "pattern")
+ STRDEF(PatternType, "pattern_type")
+  STRDEF(Equal, "equal")
+  STRDEF(EqualI, "equali")
+  dnl similar regexp regexpi oui
+ STRDEF(Choice, "choice")
+  __SDEF(ProCurve)
+  __SDEF(ProCurveWeb)
+  __SDEF(3Com);
+  __SDEF(Cisco)
+  __SDEF(HPAPC)
+  __SDEF(Linux)
+

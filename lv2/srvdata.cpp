@@ -643,6 +643,22 @@ eReasons cDynAddrRange::replace(QSqlQuery& q, const QHostAddress& b, const QHost
     return (eReasons)reasons(r);
 }
 
+int cDynAddrRange::isDynamic(QSqlQuery &q, const QHostAddress& a)
+{
+    int n = cSubNet().getByAddress(q, a);
+    if (n == 0) return AT_EXTERNAL;
+    static const QString sql =
+            "SELECT COUNT(*) FROM dyn_addr_ranges "
+                "WHERE (begin_address <= :ip AND end_address >= :ip AND NOT exclude )"
+              "AND NOT (begin_address <= :ip AND end_address >= :ip AND exclude)";
+    if (!q.prepare(sql)) SQLPREPERR(q, sql);
+    q.bindValue(":ip", a.toString());
+    if (!q.exec()) SQLQUERYERR(q);
+    if (!q.first()) EXCEPTION(EDBDATA);
+    n = q.value(0).toInt();
+    return n > 0 ? AT_DYNAMIC : AT_FIXIP;
+}
+
 /* ----------------------------------------------------------------- */
 CRECCNTR(cImport)
 CRECDEFD(cImport)

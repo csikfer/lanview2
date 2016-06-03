@@ -1703,7 +1703,7 @@ public:
     /// Az __m elemszáma nem lehet nagyobb, mint a mezők száma, ellenkező esetben kizárást dob a metódus.
     void fieldsCopy(const cRecord& __o, const QBitArray& __m = QBitArray());
     /// Látrehoz egy azonos típusú objektumot, és feltölti a név alapján. A névre a pName paraméter mutat, vagy ha az
-    /// NULL vagy öres stringre mutat, akkor az objektum beállított neve.
+    /// NULL vagy üres stringre mutat, akkor az objektum beállított neve.
     /// Az látrehozott objektumból azokat mezőket másolja át, melyekkel megegyező indexű __m elem értéke true.
     /// A NULL értékek is másolva lesznek, ha az __m megfelelő indexű eleme igaz. Ha az __m üres, akkor az összes elem másolásra kerül.
     /// Az __m elemszáma nem lehet nagyobb, mint a mezők száma, ellenkező esetben kizárást dob a metódus.
@@ -1820,12 +1820,17 @@ public:
     /// Ellenőrzi, hogy az objektum eredeti típusa megegyezik-e a megadott típussal.
     /// A statikus leíró _tableOId adattagjait hasonlítja össze.
     /// A metódus feltételezi, hogy az öröklődési láncok ekvivalensek!
-    /// @param __eq ha false, akkor az eredeti típus leszármazottja is lehet a megadott típusnak
+    /// Ha T, és/vagy az objektum típusa cRecordAny, akkor -1 -el tér bissza, vagy kizárást dob..
     /// @param __ex ha értéke EX_WARNING vagy nagyobb, akkor ha nincs egyezés kizárást dob,
     ///             Ha viszont értéke EX_ERROR és nem konvertálható a típus, akkor kizárást dob.
+    ///             Ha értéke nem EX_IGNORE, és T vagy az objektum cRecodeAny, kizárást dob.
     /// @return 0, ha egyezés van, 1 ha konvertálható, és -1 ha nem konvertálható.
     template <class T> int chkObjType(enum eEx __ex = EX_ERROR) const {
         T o;
+        if (typeid(T) == typeid(cRecordAny) || typeid(*this) == typeid(cRecordAny)) {
+            if (__ex >= EX_ERROR) EXCEPTION(EDATA, 0, QString(QObject::trUtf8("The object type can not be converted, %1 ~ %2").arg(descr().tableoid()).arg(o.descr().tableoid())));
+            return -1;
+        }
         if (descr().tableoid() == o.descr().tableoid()) return 0;  // Azonos
         if (__ex >= EX_WARNING) EXCEPTION(EDATA, 1, QString(QObject::trUtf8("Object type is not equal, %1 ~ %2").arg(descr().tableoid()).arg(o.descr().tableoid())));
         if (descr() > o.descr()) return 1;        // Nem azonos, de konvertálható
@@ -2116,6 +2121,7 @@ template <class R> const cRecStaticDescr *getPDescr(const QString& _tn, const QS
         virtual ~R(); \
         virtual cRecord *newObj() const; \
         virtual cRecord *dup()const; \
+        virtual R& clone(const cRecord& __o); \
         static const cRecStaticDescr& _descr_##R() { if (R::_pRecordDescr == NULL) EXCEPTION(EPROGFAIL); return *R::_pRecordDescr; } \
     protected: \
         static const cRecStaticDescr * _pRecordDescr
@@ -2136,23 +2142,23 @@ template <class R> const cRecStaticDescr *getPDescr(const QString& _tn, const QS
     R::R()             : cRecord() { _set(R::descr()); } \
     R::R(const R& __o) : cRecord() { _cp(__o); }
 
-/// @def CRECCNTR_DEB(R)
+
+/// @def CRECDEFNC(R)
 /// @relates cRecord
-/// Egy alapértelmezett ill. egyszerű cRecord leszármazott objektum konstruktorainak a definiciói.
-/// Nyomkövető makrókkal kiegészítve
+/// A cRecord leszármazottakban a newObj() és dup() virtuális metódusokat definiáló makró
 /// @param R Az osztály neve, melyhez a metódusok tartoznak
-#define CRECCNTR_DEB(R) \
-    R::R()             : cRecord() { DBGOBJ();  _set(R::descr()); } \
-    R::R(const R& __o) : cRecord() { DBGOBJ();  _cp(__o); }
+#define CRECDEFNC(R) \
+    const cRecStaticDescr * R::_pRecordDescr = NULL; \
+    cRecord *R::newObj() const { return new R(); }   \
+    cRecord *R::dup()const     { return new R(*this); } \
 
 /// @def CRECDEF(R)
 /// @relates cRecord
 /// A cRecord leszármazottakban a newObj() és dup() virtuális metódusokat definiáló makró
 /// @param R Az osztály neve, melyhez a metódusok tartoznak
 #define CRECDEF(R) \
-    const cRecStaticDescr * R::_pRecordDescr = NULL; \
-    cRecord *R::newObj() const { return new R; }   \
-    cRecord *R::dup()const     { return new R(*this); }
+    CRECDEFNC(R) \
+    R& R::clone(const cRecord& __o) { clear(); copy(__o); return *this; }
 
 /// @def  CRECDDCR(R, tn)
 /// @relates cRecord
@@ -2167,12 +2173,11 @@ template <class R> const cRecStaticDescr *getPDescr(const QString& _tn, const QS
 /// @param R Az osztály neve, melyhez a metódusok tartoznak
 #define CRECDEFD(R)    CRECDEF(R) R::~R() { ; }
 
-/// @def CRECDEFD_DEB(R)
+/// @def CRECDEFNCD(R)
 /// @relates cRecord
 /// A cRecord leszármazottakban a destruktort, a newObj() és dup() virtuális metódusokat definiáló makró
-/// Nyomkövető makrókkal kiegészítve
 /// @param R Az osztály neve, melyhez a metódusok tartoznak
-#define CRECDEFD_DEB(R)    CRECDEF(R) R::~R() { ; }
+#define CRECDEFNCD(R)    CRECDEFNC(R) R::~R() { ; }
 
 /// @def DEFAULTCRECDEF(R)
 /// @relates cRecord
@@ -2181,7 +2186,7 @@ template <class R> const cRecStaticDescr *getPDescr(const QString& _tn, const QS
 /// Egy alapértelmezett cRecord leszármazott objektum teljes definíciója
 #define DEFAULTCRECDEF(R, tn)   CRECCNTR(R) CRECDEFD(R) CRECDDCR(R, tn)
 
-#define STFIELDIX(c,m)   _ix ## m = _descr_ ## c().toIndex(_s ## m);
+#define STFIELDIX(c,m)   _ix ## m = _descr_ ## c().toIndex(_s ## m)
 
 /// @relates cRecord
 class LV2SHARED_EXPORT cRecordFieldConstRef {

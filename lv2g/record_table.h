@@ -335,7 +335,8 @@ public:
 private:
     void rightTabs(QVariantList &vlids);
     void createRightTab();
-    tRecordList<cTableShape>    getShapes();
+    /// megallokálja a konténert.
+    tRecordList<cTableShape>   *getShapes();
 };
 
 /// @class cRecordTable

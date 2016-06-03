@@ -94,7 +94,6 @@ const QString& paramTypeType(int __e, eEx __ex)
 tRecordList<cParamType>  cParamType::paramTypes;
 cParamType *cParamType::pNull;
 
-
 CRECCNTR(cParamType)
 CRECDEFD(cParamType)
 
@@ -356,9 +355,9 @@ int  cImage::_ixImageHash = NULL_IX;
 const cRecStaticDescr&  cImage::descr() const
 {
     if (initPDescr<cImage>(_sImages)) {
-        _ixImageType = _pRecordDescr->toIndex(_sImageType);
-        _ixImageData = _pRecordDescr->toIndex(_sImageData);
-        _ixImageHash = _pRecordDescr->toIndex(_sImageHash);
+        STFIELDIX(cImage, ImageType);
+        STFIELDIX(cImage, ImageData);
+        STFIELDIX(cImage, ImageHash);
         CHKENUM(_ixImageType, imageType);
     }
     return *_pRecordDescr;
@@ -461,6 +460,8 @@ qlonglong cPlace::parentImageId(QSqlQuery& q)
     return iid.isNull() ? NULL_ID : variantToId(iid);
 }
 
+/* ------------------------------ place_froups ------------------------------ */
+
 DEFAULTCRECDEF(cPlaceGroup, _sPlaceGroups)
 
 qlonglong cPlaceGroup::insertNew(QSqlQuery q, const QString& __n, const QString& __d)
@@ -487,14 +488,14 @@ CRECDEFD(cSubNet)
 
 int cSubNet::_ixNetAddr    = NULL_IX;
 int cSubNet::_ixVlanId     = NULL_IX;
-int cSubNet::_ixSubNetType = NULL_IX;
+int cSubNet::_ixSubnetType = NULL_IX;
 const cRecStaticDescr&  cSubNet::descr() const
 {
     if (initPDescr<cSubNet>(_sSubNets)) {
-        _ixNetAddr     = _pRecordDescr->toIndex(_sNetAddr);
-        _ixVlanId      = _pRecordDescr->toIndex(_sVlanId);
-        _ixSubNetType  = _pRecordDescr->toIndex(_sSubnetType);
-        CHKENUM(_ixSubNetType, subNetType);
+        STFIELDIX(cSubNet, NetAddr);
+        STFIELDIX(cSubNet, VlanId);
+        STFIELDIX(cSubNet, SubnetType);
+        CHKENUM(_ixSubnetType, subNetType);
     }
     return *_pRecordDescr;
 }
@@ -574,7 +575,7 @@ long cVLan::insertNew(long __i, const QString& __n, const QString& __d, bool __s
     return __i;
 }
 
-/* ------------------------------ ipadresses ------------------------------ */
+/* ------------------------------ ipaddresses ------------------------------ */
 
 cIpAddress::cIpAddress() : cRecord()
 {
@@ -894,11 +895,27 @@ cNPort::cNPort(const cNPort& __o) : cRecord(), params(this, __o.params)
     // DBGOBJ();
     __cp(__o);
     _copy(__o, _descr_cNPort());
+    params.append(__o.params);
 }
 
-CRECDEFD(cNPort)
-
 // -- virtual
+
+CRECDEFNCD(cNPort)
+
+/// A többi clone() metódushoz képest eltérés, hogy nem csak azonos típust (azonos descriptor) lehet másolni.
+/// Megengedi a cPPort és cInterface típusból is a másolást, a többlet adatokat figyelmen kívül hagyja.
+/// Ha __o eredeti typusa cRecordAny, akkor a params konténer üres lessz, mivel az __o nem tartalmazza.
+cNPort& cNPort::clone(const cRecord& __o)
+{
+    if (!(__o.descr() >= descr())) EXCEPTION(EDATA, 0, __o.toString());
+    clear();
+    __cp(__o);
+    set(__o);
+    if (typeid(__o) != typeid(cRecordAny)) {
+        params.append(dynamic_cast<const cNPort *>(&__o)->params);
+    }
+    return *this;
+}
 
 int cNPort::_ixNodeId = NULL_IX;
 int cNPort::_ixPortIndex = NULL_IX;
@@ -1172,7 +1189,16 @@ const cRecStaticDescr&  cPPort::descr() const
     }
     return *_pRecordDescr;
 }
-CRECDEFD(cPPort)
+CRECDEFNCD(cPPort)
+
+cPPort& cPPort::clone(const cRecord&__o)
+{
+    copy(__o);  // Ellenörzi az adat típust (descriptor)
+    if (typeid(__o) != typeid(cRecordAny)) {    // A cRecordAny -ban nincs konténer, nem konvertálható
+        params.clear().append(dynamic_cast<const cPPort *>(&__o)->params);
+    }
+    return *this;
+}
 
 /* ------------------------------ cInterface ------------------------------ */
 
@@ -1195,6 +1221,8 @@ cInterface::cInterface(const cInterface& __o)
     __cp(__o);
     _copy(__o, _descr_cInterface());
     params.append(__o.params);
+    vlans.append(__o.vlans);
+    addresses.append(__o.addresses);
     trunkMembers = __o.trunkMembers;
 }
 // -- virtual
@@ -1208,7 +1236,24 @@ const cRecStaticDescr&  cInterface::descr() const
     return *_pRecordDescr;
 }
 
-CRECDEFD(cInterface)
+CRECDEFNCD(cInterface)
+
+cInterface& cInterface::clone(const cRecord &__o)
+{
+    copy(__o);
+    params.clear();
+    vlans.clear();
+    addresses.clear();
+    trunkMembers.clear();
+    if (typeid(cRecordAny) != typeid(__o)) {
+        const cInterface& r = *dynamic_cast<const cInterface*>(&__o);
+        params.append(r.params);
+        vlans.append(r.vlans);
+        addresses.append(r.addresses);
+        trunkMembers = r.trunkMembers;
+    }
+    return *this;
+}
 
 void cInterface::clearToEnd()
 {
@@ -1261,7 +1306,7 @@ bool cInterface::rewrite(QSqlQuery &__q, eEx __ex)
 
 QString cInterface::toString() const
 {
-    return cRecord::toString() + " & adresses " + addresses.toString() + " ";
+    return cRecord::toString() + " @addresses = " + addresses.toString() + " ";
 }
 
 int cInterface::updateTrunkMembers(QSqlQuery& q, eEx __ex)
@@ -1316,7 +1361,7 @@ int cInterface::fetchByMac(QSqlQuery& q, const cMac& a)
 bool cInterface::fetchByIp(QSqlQuery& q, const QHostAddress& a)
 {
     clear();
-    QString sql = "SELECT interfaces.* FROM interfaces JOIN ipadresses USING(port_id) WHERE address = ?";
+    QString sql = "SELECT interfaces.* FROM interfaces JOIN ipaddresses USING(port_id) WHERE address = ?";
     if (execSql(q, sql, a.toString())) {
         set(q);
         return true;
@@ -1393,7 +1438,7 @@ const QString& ifStatus(int _i, enum eEx __ex)
 }
 
 
-/* ****************************** NODES (patch, nodes, snmphosts ****************************** */
+/* ****************************** NODES (patch => nodes => snmphosts ****************************** */
 /* ----------------------------- PATCHS : cPatch ----------------------------- */
 
 
@@ -1442,26 +1487,28 @@ cPatch::cPatch(const cPatch& __o)
     , pShares(new QSet<cShareBack>)
 {
     DBGOBJ();
-    _cp(__o);
+    __cp(__o);
+    _copy(__o, _descr_cPatch());
     containerValid = __o.containerValid;
+    if (__o.pShares == NULL) EXCEPTION(EPROGFAIL,0,__o.toString());
+    *pShares = *__o.pShares;
 }
 
-/*
-cPatch::cPatch(const QString& __name, const QString& __descr)
-    : cRecord()
-    , ports(this)
-    , params(cNodeParam::ixNodeId())
-    , pShares(new QSet<cShareBack>)
+CRECDEFNCD(cPatch)
+
+cPatch& cPatch::clone(const cRecord &__o)
 {
-    DBGOBJ();
-    _set(cPatch::descr());
-    _set(_descr_cPatch().nameIndex(),  __name);
-    _set(_descr_cPatch().noteIndex(), __descr);
-    containerValid = 0;
+    copy(__o);
+    if (typeid(cRecordAny) != typeid(__o)) {
+        const cPatch& r = *dynamic_cast<const cPatch*>(&__o);
+        containerValid = r.containerValid;
+        params.clear().append(r.params);
+        ports.clear().append(r.ports);
+        if (r.pShares == NULL) EXCEPTION(EPROGFAIL,0,__o.toString());
+        *pShares = *r.pShares;
+    }
+    return *this;
 }
-*/
-
-CRECDEFD(cPatch)
 
 const cRecStaticDescr&  cPatch::descr() const
 {
@@ -1833,8 +1880,25 @@ cNode::cNode(const cNode& __o) : cPatch(_no_init_)
 //  DBGOBJ();
     __cp(__o);
     _copy(__o, _descr_cNode());
+    if (__o.pShares != NULL) EXCEPTION(EPROGFAIL,0,__o.toString());
     ports.append(__o.ports);
-    // params.append(__o.params);
+    params.append(__o.params);
+}
+
+/// A többi clone() metódushoz képest eltérés, hogy nem csak azonos típust (azonos descriptor) lehet másolni.
+/// Megengedi a cSnmpDevice típusból is a másolást, a többlet adatokat figyelmen kívül hagyja.
+cNode& cNode::clone(const cRecord &__o)
+{
+    if (!(__o.descr() >= descr())) EXCEPTION(EDATA, 0, __o.toString());
+    clear();
+    __cp(__o);
+    set(__o);
+    if (typeid(__o) != typeid(cRecordAny)) {
+        const cNode& r = *dynamic_cast<const cNode*>(&__o);
+        ports.append(r.ports);
+        params.append(r.params);
+    }
+    return *this;
 }
 
 cNode::cNode(const QString& __name, const QString& __descr) : cPatch(_no_init_)
@@ -1843,15 +1907,6 @@ cNode::cNode(const QString& __name, const QString& __descr) : cPatch(_no_init_)
     _set(cNode::descr());
     _set(_descr_cNode().nameIndex(),  __name);
     _set(_descr_cNode().noteIndex(), __descr);
-}
-
-cNode& cNode::operator=(const cNode& __o)
-{
-    __cp(__o);
-    _copy(__o, _descr_cNode());
-    ports.clear();
-    ports.append(__o.ports);
-    return *this;
 }
 
 // -- virtual
@@ -1869,14 +1924,16 @@ bool cNode::updateShares(QSqlQuery&, bool, eEx)                 { EXCEPTION(ENOT
 cPPort *cNode::addPort(const QString&, const QString &, int)    { EXCEPTION(ENOTSUPP); return NULL; }
 cPPort *cNode::addPorts(const QString&, int , int , int , int ) { EXCEPTION(ENOTSUPP); return NULL; }
 
-CRECDEFD(cNode)
+CRECDEFNCD(cNode)
 
 bool cNode::insert(QSqlQuery &__q, eEx __ex)
 {
     int ixNodeType = toIndex(_sNodeType);
     if (isNull(ixNodeType)) {
         qlonglong nt = enum2set(NT_NODE);
-        foreach (const cNPort *pp, ports) {
+        QListIterator<cNPort *> i(ports);
+        while (i.hasNext()) {
+            const cNPort *pp = i.next();
             if (pp->tableoid() == cInterface::_descr_cInterface().tableoid()) {
                 const cInterface *pi = (const cInterface *)pp;
                 if (!pi->addresses.isEmpty()) {
@@ -1948,7 +2005,7 @@ QString cNode::toString() const
 {
     QString r;
     r  = cRecord::toString();
-    r += " & ports ";
+    r += " @ports = ";
     r += ports.toString();
     return r + " ";
 }
@@ -2168,6 +2225,7 @@ QList<QHostAddress> cNode::fetchAllIpAddress(QSqlQuery& q, qlonglong __id) const
                " ORDER BY preferred ASC";
     QList<QHostAddress> r;
     qlonglong id = __id < 0 ? getId() : __id;
+    PDEB(VERBOSE) << VDEB(id) << endl;
     if (execSql(q, sql, id)) do {
         QVariant v = q.value(0);
         QHostAddress a;
@@ -2447,6 +2505,7 @@ cSnmpDevice::cSnmpDevice(const cSnmpDevice& __o) : cNode(_no_init_)
     __cp(__o);
     _copy(__o, _descr_cSnmpDevice());
     ports.append(__o.ports);
+    params.append(__o.params);
 }
 
 cSnmpDevice::cSnmpDevice(const QString& __n, const QString &__d)
@@ -2457,9 +2516,20 @@ cSnmpDevice::cSnmpDevice(const QString& __n, const QString &__d)
     _set(_descr_cSnmpDevice().noteIndex(), __d);
 }
 
+cSnmpDevice& cSnmpDevice::clone(const cRecord& __o)
+{
+    copy(__o);
+    if (typeid(cRecordAny) != typeid(__o)) {
+        const cSnmpDevice& r = *dynamic_cast<const cSnmpDevice*>(&__o);
+        ports.clear().append(r.ports);
+        params.clear().append(r.params);
+    }
+    return *this;
+}
+
 // -- virtual
 CRECDDCR(cSnmpDevice, _sSnmpDevices)
-CRECDEFD(cSnmpDevice)
+CRECDEFNCD(cSnmpDevice)
 
 bool cSnmpDevice::insert(QSqlQuery &__q, eEx __ex)
 {
@@ -2524,7 +2594,7 @@ bool cSnmpDevice::setBySnmp(const QString& __com, eEx __ex, QString *pEs)
 #else // MUST_SCAN
     (void)__com;
     if (pEs != NULL) *pEs = snmpNotSupMsg();
-    if (__ex) EXCEPTION(ENOTSUPP, -1, snmpNotSupMsg());
+    if (__ex != EX_IGNORE) EXCEPTION(ENOTSUPP, -1, snmpNotSupMsg());
 #endif // MUST_SCAN
     return false;
 }
@@ -2537,22 +2607,23 @@ int cSnmpDevice::open(QSqlQuery& q, cSnmp& snmp, eEx __ex) const
         QString em = trUtf8("A %1 SNMP eszköznek nincs IP címe").arg(getName());
         if (__ex) EXCEPTION(EDATA, -1, em);
         DERR() << em << endl;
-        return false;
+        return -1;
     }
     QString comn = getName(_sCommunityRd);
     int     ver  = snmpVersion();
     int r = -1;
     foreach (QHostAddress a, la) {
         r = snmp.open(a.toString(), comn, ver);
-        if (r == 0) break;  // Valószínüleg kérdezni is kéne !!!
+        if (r != 0) continue;
+        r = snmp.getNext(QString("SNMPv2-MIB::sysDescr"));
+        if (r == 0) break;  // O.K.
     }
     if (__ex && r) EXCEPTION(ESNMP, r, snmp.emsg);
     return r;
 #else // MUST_SCAN
-    (void)__ex;
     (void)snmp;
     (void)q;
-    if (__ex) EXCEPTION(ENOTSUPP, -1, snmpNotSupMsg());
+    if (__ex != EX_IGNORE) EXCEPTION(ENOTSUPP, -1, snmpNotSupMsg());
     return -1;
 #endif // MUST_SCAN
 }
@@ -3020,13 +3091,28 @@ qlonglong cAppMemo::memo(QSqlQuery &q, const QString &_memo, int _imp, const QSt
 }
 
 /* -------------------------------------------- selects ---------------------------------------- */
-DEFAULTCRECDEF(cSelect, _sSelects)
+CRECCNTR(cSelect)
+
+const cRecStaticDescr&  cSelect::descr() const
+{
+    if (initPDescr<cSelect>(_sSelects)) {
+        _ixChoice   = _descr_cSelect().toIndex(_sChoice);
+        _ixFeatures = _descr_cSelect().toIndex(_sFeatures);
+//        CHKENUM(_ixPatternType, patternType);
+    }
+    return *_pRecordDescr;
+}
+
+int cSelect::_ixChoice   = NULL_IX;
+int cSelect::_ixFeatures = NULL_IX;
+
+CRECDEFD(cSelect)
 
 cSelect& cSelect::choice(QSqlQuery q, const QString& _type, const QString& _val, eEx __ex)
 {
     static QString sql =
             "SELECT * FROM selects "
-                "WHERE :styp = select_type"
+                "WHERE :styp = select_type "
                   "AND ((pattern_type = 'equal'   AND :sval = pattern) "
                     "OR (pattern_type = 'equali'  AND lower(:sval) = lower(pattern)) "
                     "OR (pattern_type = 'similar' AND :sval similar TO pattern) "
