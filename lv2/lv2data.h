@@ -1550,15 +1550,26 @@ public:
 /// @param m Az üzenet string
 /// @param i Az üzenet fontossága (enum eNotifSwitch konstans)
 #define APPMEMO(q, m, i) cAppMemo::memo(q, m, i, __PRETTY_FUNCTION__, __FILE__, __LINE__)
+
 /// @macro QAPPMEMO(q, m, i)
 /// Egy ap_memos rekord kiírása.
 /// @param m Az üzenet string
 /// @param i Az üzenet fontossága (enum eNotifSwitch konstans)
 #define QAPPMEMO(m, i)  { QSqlQuery q = getQuery(); APPMEMO(q, m, i); }
 
+/// @macro HEREIN(o, m, i)
+/// Egy ap_memos rekord kitöltése a keletkezés hely adataival.
+/// @param m Az üzenet string
+/// @param i Az üzenet fontossága (enum eNotifSwitch konstans)
+#define HEREIN(o, m, i)  o.herein(m, i, __PRETTY_FUNCTION__, __FILE__, __LINE__)
+
+
 class LV2SHARED_EXPORT cAppMemo : public cRecord {
     CRECORD(cAppMemo);
 public:
+    QString getMemo() { return getName(_sMemo); }
+    cAppMemo& setMemo(const QString& s) { setName(_sMemo, s); return *this; }
+    cAppMemo& herein(const QString &_memo, int _imp = RS_UNKNOWN, const QString &_func_name = _sNul, const QString &_src = _sNul, int _lin = 0);
     static qlonglong memo(QSqlQuery &q, const QString &_memo, int _imp = RS_UNKNOWN, const QString &_func_name = _sNul, const QString &_src = _sNul, int _lin = 0);
 };
 

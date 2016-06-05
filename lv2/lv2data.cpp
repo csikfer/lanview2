@@ -3072,22 +3072,28 @@ DEFAULTCRECDEF(cAppMemo, _sAppMemos)
 qlonglong cAppMemo::memo(QSqlQuery &q, const QString &_memo, int _imp, const QString& _func_name, const QString& _src, int _lin)
 {
     cAppMemo o;
-    lanView *pI = lanView::getInstance();
-    o.setName(_sAppName, lanView::appName);
-    o.setId(_sPid, QCoreApplication::applicationPid());
-    o.setName(_sThreadName, currentThreadName());
-    o.setName(_sAppVer, lanView::appVersion);
-    o.setName(_sLibVer, lanView::libVersion);
-    o.setName(_sFuncName, _func_name);
-    o.setName(_sSrcName, _src);
-    o.setId(_sSrcLine, _lin);
-    if (pI->pSelfNode        != NULL) o.setId(_sNodeId,        pI->pSelfNode->getId());
-    if (pI->pSelfHostService != NULL) o.setId(_sHostServiceId, pI->pSelfHostService->getId());
-    if (pI->pUser            != NULL) o.setId(_sUserId,        pI->pUser->getId());
-    o.setId(_sImportance, _imp);
-    o.setName(_sMemo, _memo);
+    o.herein(_memo, _imp, _func_name, _src, _lin);
     o.insert(q);
     return o.getId();
+}
+
+cAppMemo& cAppMemo::herein(const QString &_memo, int _imp, const QString &_func_name, const QString &_src, int _lin)
+{
+    lanView *pI = lanView::getInstance();
+    setName(_sAppName, lanView::appName);
+    setId(_sPid, QCoreApplication::applicationPid());
+    setName(_sThreadName, currentThreadName());
+    setName(_sAppVer, lanView::appVersion);
+    setName(_sLibVer, lanView::libVersion);
+    setName(_sFuncName, _func_name);
+    setName(_sSrcName, _src);
+    setId(_sSrcLine, _lin);
+    if (pI->pSelfNode        != NULL) setId(_sNodeId,        pI->pSelfNode->getId());
+    if (pI->pSelfHostService != NULL) setId(_sHostServiceId, pI->pSelfHostService->getId());
+    if (pI->pUser            != NULL) setId(_sUserId,        pI->pUser->getId());
+    setId(_sImportance, _imp);
+    setName(_sMemo, _memo);
+    return *this;
 }
 
 /* -------------------------------------------- selects ---------------------------------------- */
