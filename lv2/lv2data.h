@@ -203,7 +203,8 @@ enum eNodeType {
     NT_SNMP,
     NT_CONVERTER,
     NT_PRINTER,
-    NT_GATEWAY
+    NT_GATEWAY,
+    NT_AP
 };
 
 /// Node típus név konverzió

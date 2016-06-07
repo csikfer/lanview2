@@ -623,3 +623,16 @@ CREATE TABLE selects (
     UNIQUE (select_type, precedence)
 );
 CREATE INDEX selects_select_type_index ON selects (select_type);
+
+INSERT INTO "selects"
+(select_type,   select_note,     precedence, pattern,                         pattern_type, choice) VALUES
+('lldp.descr', 'Empty',                 10, '',                                 'equal',   'Empty'),
+('lldp.descr', 'HP ProCurve 1700',      20, 'PROCURVE J%V(A|B).0%',             'similar', 'ProCurveWeb'),
+('lldp.descr', 'HP ProCurve 1800',      30, 'PROCURVE J%P(A|B).0%',             'similar', 'ProCurveWeb'),
+('lldp.descr', 'HP ProCurve old',       40, 'ProCurve J%, revision [HRTNKE]%',  'similar', 'ProCurve'),
+('lldp.descr', 'HP ProCurve',           50, 'HP J%, revision [KW]%',            'similar', 'ProCurve'),
+('lldp.descr', 'HP HPE? 1910',          60, 'HPE? V1910%',                      'similar', '3COM'),
+('lldp.descr', 'Cisco',                 70, 'Cisco IOS Software%',              'similar', 'Cisco'),
+('lldp.descr', 'HP AP Controlled',      80, '%HP AP Controlled%',               'similar', 'HPAPC'),
+('lldp.descr', 'Linux',                 90, '%Linux%',                          'similar', 'Linux');
+

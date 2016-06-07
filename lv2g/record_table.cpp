@@ -589,7 +589,9 @@ void cRecordsViewBase::buttonPressed(int id)
     case DBT_DELETE:    remove();   break;
     case DBT_RESET:     reset();    break;
     case DBT_PUT_IN:    putIn();    break;
-    case DBT_TAKE_OUT:  takeOut();   break;
+    case DBT_TAKE_OUT:  takeOut();  break;
+    case DBT_COPY:      copy();     break;
+//  case DBT_TRUNCATE:  truencate();break;
     default:
         DWAR() << "Invalid button id : " << id << endl;
         break;
@@ -757,6 +759,7 @@ void cRecordsViewBase::modify(eEx __ex)
     }   break;
     default:
         pDelete(pRec);
+        pRecordDialog = NULL;
         if (__ex > EX_IGNORE) {
             EXCEPTION(ENOTSUPP);
         }
@@ -862,9 +865,25 @@ void cRecordsViewBase::remove()
     pModel->removeRecords(mil);
 }
 
-void cRecordsViewBase::reset() { EXCEPTION(ENOTSUPP); }
-void cRecordsViewBase::putIn() { EXCEPTION(ENOTSUPP); }
-void cRecordsViewBase::takeOut(){ EXCEPTION(ENOTSUPP); }
+void cRecordsViewBase::reset()      { EXCEPTION(ENOTSUPP); }
+void cRecordsViewBase::putIn()      { EXCEPTION(ENOTSUPP); }
+void cRecordsViewBase::takeOut()    { EXCEPTION(ENOTSUPP); }
+void cRecordsViewBase::truncate()   { EXCEPTION(ENOTSUPP); }
+
+void cRecordsViewBase::copy()
+{
+    QModelIndexList mil = selectedRows();
+    if (mil.size() > 0) {
+        QString list;
+        foreach (QModelIndex mi, mil) {
+            cRecord *pr = pModel->record(mi);
+            if (pr == NULL) continue;
+            list += quotedString(pr->getName()) + ", ";
+        }
+        list.chop(2);
+        QApplication::clipboard()->setText(list);
+    }
+}
 
 void cRecordsViewBase::initView()
 {
@@ -1019,7 +1038,7 @@ void cRecordsViewBase::initMaster()
         initGroup(vlids);                       // A két tag-nem tag tábla (vlids első eleme)
         rightTabs(vlids);                       // A maradék táblák, ha vannak (első elem törölve)
     }
-    else if (vlids.size() == 1) {                // Ha nem kell a tab widget
+    else if (vlids.size() == 1) {               // Ha nem kell a tab widget
         id = vlids.at(0).toLongLong(&ok);
         if (!ok) EXCEPTION(EDATA);
         pRightTable = cRecordsViewBase::newRecordView(*pq, id, this);
@@ -1075,15 +1094,16 @@ QStringList cRecordsViewBase::filterWhere(QVariantList& qParams)
 
 void cRecordTable::setEditButtons()
 {
+    QModelIndexList mix = pTableView->selectionModel()->selectedRows();
+    int n = mix.size();
     if (!isReadOnly) {
-        QModelIndexList mix = pTableView->selectionModel()->selectedRows();
-        int n = mix.size();
-        buttonDisable(DBT_DELETE,  isNoDelete || n <  1 );
         buttonDisable(DBT_MODIFY,                n != 1);
         buttonDisable(DBT_TAKE_OUT,              n <  1);
         buttonDisable(DBT_PUT_IN,                n <  1);
         buttonDisable(DBT_INSERT,  isNoInsert || ((flags & (RTF_IGROUP | RTF_IMEMBER | RTF_CHILD)) && (owner_id == NULL_ID)));
     }
+    buttonDisable(DBT_DELETE,  isNoDelete || n <  1 );
+    buttonDisable(DBT_COPY,    n < 1);
 }
 
 
@@ -1224,7 +1244,11 @@ void cRecordTable::init()
     pTimer = NULL;
     pTableView = NULL;
     // Az alapértelmezett gombok:
-    buttons << DBT_CLOSE << DBT_SPACER << DBT_REFRESH << DBT_FIRST << DBT_PREV << DBT_NEXT << DBT_LAST;
+    buttons << DBT_CLOSE << DBT_SPACER;
+    if (pTableShape->isFeature("button.copy")) {
+        buttons << DBT_COPY << DBT_SPACER;
+    }
+    buttons << DBT_REFRESH << DBT_FIRST << DBT_PREV << DBT_NEXT << DBT_LAST;
     if (isReadOnly == false) buttons << DBT_BREAK << DBT_SPACER << DBT_DELETE << DBT_INSERT << DBT_MODIFY;
     flags = 0;
     switch (shapeType & ~ENUM2SET2(TS_TABLE, TS_READ_ONLY)) {
@@ -1580,8 +1604,9 @@ cRecord *cRecordTable::prevRow(QModelIndex *pMi, int _upRes)
     }
     selectRow(*pMi);
     cRecord *pRec = actRecord(*pMi);
-    if (pRec != NULL) pRec->dup();
-    return NULL;
+    if (pRec == NULL) return NULL;
+    pRec = pRec->dup();
+    return pRec;
 }
 
 void cRecordTable::selectRow(const QModelIndex& mi)

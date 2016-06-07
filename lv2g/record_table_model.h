@@ -57,6 +57,7 @@ public:
     virtual void removeRecords(const QModelIndexList& mil) = 0;
     virtual bool removeRec(const QModelIndex & mi) = 0;
     virtual bool removeRow(const QModelIndex & mi) = 0;
+    virtual cRecord *record(const QModelIndex &mi) = 0;
 
     /// A megadott sorhoz tartozó rekord objektum pointert lecseréli. A megjelenített táblát frissíti.
     /// A megadott új adattartalommal frissíti az adatbázis tábla megfelelő rekordját.
@@ -82,6 +83,7 @@ public:
     virtual int columnCount(const QModelIndex &parent) const;
     virtual QVariant data(const QModelIndex &index, int role) const;
     virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const;
+    virtual cRecord *record(const QModelIndex &index);
 
     QBitArray index2map(const QModelIndexList &mil);
     /// Törli az index listában megjelült rekordokat.

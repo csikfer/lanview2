@@ -87,6 +87,7 @@ void cDialogButtons::staticInit()
         appendCont(buttonNames, trUtf8("Kibont"),      icons, QIcon::fromTheme("zoom-in"),        DBT_EXPAND);
         appendCont(buttonNames, trUtf8("Gyökér"),      icons, QIcon(),                            DBT_ROOT);
         appendCont(buttonNames, trUtf8("Másol"),       icons, QIcon::fromTheme("copy"),           DBT_COPY);
+        appendCont(buttonNames, trUtf8("Kiürít"),      icons, QIcon::fromTheme("edit-clear"),     DBT_TRUNCATE);
     }
     if (buttonNames.size() != _buttonNumbers) EXCEPTION(EPROGFAIL);
     if (      icons.size() != _buttonNumbers) EXCEPTION(EPROGFAIL);

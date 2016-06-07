@@ -3238,6 +3238,21 @@ bool cRecord::rewrite(QSqlQuery &__q, eEx __ex)
     return false;
 }
 
+cError *cRecord::tryRewrite(QSqlQuery& __q, bool __tr)
+{
+    cError *pe = NULL;
+    if (__tr) sqlBegin(__q);
+    try {
+        rewrite(__q, EX_ERROR);
+    }
+    CATCHS(pe);
+    if (__tr) {
+        if (pe == NULL) sqlEnd(__q);
+        else            sqlRollback(__q);
+    }
+    return pe;
+}
+
 int cRecord::replace(QSqlQuery& __q, eEx __ex)
 {
     if (existByNameKey(__q)) return rewrite(__q, __ex) ? R_UPDATE : R_ERROR; // Ha van akkor replace

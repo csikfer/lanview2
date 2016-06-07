@@ -281,6 +281,10 @@ public:
     virtual void putIn();
     /// Nem kötelezően implementálandó metódus. Ha nincs újraimplementálva, de mégis meghívjuk, akkor kizárást dob
     virtual void takeOut();
+    /// Kijeleölt sorok neveinek a vágólapra másolása, mint lista
+    virtual void copy();
+    ///
+    virtual void truncate();
 
     virtual void setEditButtons() = 0;
     /// Nem kötelezően implementálandü virtuális metódus. Alapértelmezetten nem csinál semmit.

@@ -183,6 +183,17 @@ QVariant cRecordTableModel::headerData(int section, Qt::Orientation orientation,
     return _headerData(section, orientation, role);
 }
 
+cRecord *cRecordTableModel::record(const QModelIndex &index)
+{
+    if (index.isValid()) {
+        int row = index.row();      // Sor index a táblázatban
+        if (row < _records.size()) {
+            return _records.at(row);
+        }
+    }
+    return NULL;
+}
+
 bool cRecordTableModel::setRecords(const tRecords& __recs, int _firstNm)
 {
     DBGFN();

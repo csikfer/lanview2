@@ -69,6 +69,7 @@ public:
     virtual void removeRecords(const QModelIndexList& mil);
     virtual bool removeRec(const QModelIndex & mi);
     virtual bool removeRow(const QModelIndex & mi);
+    virtual cRecord *record(const QModelIndex &index);
 
     int checkUpdateRow(const QModelIndex& mi, cRecord *pRec, QModelIndex& new_parent);
     virtual int updateRec(const QModelIndex& mi, cRecord * pRec);

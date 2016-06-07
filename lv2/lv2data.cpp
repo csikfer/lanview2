@@ -1846,6 +1846,7 @@ int nodeType(const QString& __n, eEx __ex)
     if (0 == __n.compare(_sConverter,   Qt::CaseInsensitive)) return NT_CONVERTER;
     if (0 == __n.compare(_sPrinter,     Qt::CaseInsensitive)) return NT_PRINTER;
     if (0 == __n.compare(_sGateway,     Qt::CaseInsensitive)) return NT_GATEWAY;
+    if (0 == __n.compare(_sAp,          Qt::CaseInsensitive)) return NT_AP;
     if (__ex != EX_IGNORE)   EXCEPTION(EDATA, -1, __n);
     return NT_INVALID;
 }
@@ -1863,6 +1864,7 @@ const QString& nodeType(int __e, eEx __ex)
     case NT_CONVERTER:  return _sConverter;
     case NT_PRINTER:    return _sPrinter;
     case NT_GATEWAY:    return _sGateway;
+    case NT_AP:         return _sAp;
     }
     if (__ex != EX_IGNORE)   EXCEPTION(EDATA, __e);
     return _sNul;

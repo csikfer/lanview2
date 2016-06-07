@@ -23,7 +23,11 @@ void cRecordTree::init()
 {
     pTreeView  = NULL;
     // Az alapértelmezett gombok:
-    buttons << DBT_CLOSE << DBT_SPACER << DBT_EXPAND << DBT_REFRESH << DBT_ROOT << DBT_RESTORE;
+    buttons << DBT_CLOSE << DBT_SPACER;
+    if (pTableShape->isFeature("button.copy")) {
+        buttons << DBT_COPY << DBT_SPACER;
+    }
+    buttons << DBT_EXPAND << DBT_REFRESH << DBT_ROOT << DBT_RESTORE;
     if (isReadOnly == false) buttons << DBT_SPACER << DBT_DELETE << DBT_INSERT << DBT_MODIFY;
     switch (shapeType) {
     case ENUM2SET2(TS_TREE, TS_BARE):

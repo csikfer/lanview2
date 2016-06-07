@@ -8,6 +8,10 @@ static inline QWidget *row(const QString& val, Qt::AlignmentFlag a = Qt::AlignLe
         QTextEdit   *pTE = new QTextEdit();
         pTE->setText(val);
         pTE->setReadOnly(true);
+        QSizePolicy sp = pTE->sizePolicy();
+        sp.setVerticalStretch(1);
+        pTE->setSizePolicy(sp);
+
         return pTE;
     }
     else {

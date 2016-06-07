@@ -281,6 +281,7 @@ STRDEF(Nodes,"nodes")
   STRDEF(Converter, "converter")
   STRDEF(Printer, "printer")
   STRDEF(Gateway, "gateway")
+  STRDEF(Ap, "ap");
   dnl virtual
  STRDEF(SnmpDevices,"snmpdevices")
  STRDEF(CommunityRd,"community_rd")
@@ -795,4 +796,5 @@ STRDEF(Selects, "selects");
   __SDEF(Cisco)
   __SDEF(HPAPC)
   __SDEF(Linux)
+  __SDEF(Empty)
 

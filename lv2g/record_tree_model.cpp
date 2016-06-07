@@ -316,6 +316,17 @@ bool cRecordTreeModel::removeRow(const QModelIndex & mi)
     return false;
 }
 
+cRecord *cRecordTreeModel::record(const QModelIndex &index)
+{
+    if (index.isValid()) {
+        cTreeNode *node = nodeFromIndex(index);
+        if (node != NULL) {
+            return node->pData;
+        }
+    }
+    return NULL;
+}
+
 int cRecordTreeModel::checkUpdateRow(const QModelIndex& mi, cRecord * pRec, QModelIndex& new_parent)
 {
     cTreeNode *pn = nodeFromIndex(mi);  // A modosított elem (node)

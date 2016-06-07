@@ -1444,6 +1444,10 @@ public:
     /// Fellülír egy létező rekordot. A rekord azonosítása a nameKeyMask() alapján. A rekordot visszaolvassa.
     /// Ha a felülírás sikertelen, (nincs érintett rekord) és __ex értéke true, akkor dob egy kizárást.
     virtual bool rewrite(QSqlQuery& __q, enum eEx __ex = EX_ERROR);
+    /// Fellülír egy létező rekordot. A rekord azonosítása a nameKeyMask() alapján. A rekordot visszaolvassa.
+    /// Ha rendben megtörtépnt a művelet, akkor NULL pointerrel, egyébként a hiba objektum pointerével tér vissza.
+    cError *tryRewrite(QSqlQuery& __q, bool __tr = false);
+
     /// Sablon metódus, egy járulékos tábla tartozik a rekordhoz, ami az objektum tulajdona
     /// @param __ch Gyerek objektum konténer
     /// @param __m  eContainerValid maszk, vagy 0, ha nincs feltétele a végrehajtásnak.
