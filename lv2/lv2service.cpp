@@ -577,13 +577,17 @@ int cInspector::getInspectorMethod(const QString &value)
     if (value.contains(_sNagios,   Qt::CaseInsensitive)) inspectorType |= IT_METHOD_NAGIOS;
     if (value.contains(_sMunin,    Qt::CaseInsensitive)) inspectorType |= IT_METHOD_MUNIN;
     if (value.contains(_sCarried,  Qt::CaseInsensitive)) inspectorType |= IT_METHOD_CARRIED;
-    if (value.contains(_sQparser,  Qt::CaseInsensitive)) inspectorType |= IT_METHOD_QPARSE;
+    if (value.contains(_sQparse,   Qt::CaseInsensitive)) inspectorType |= IT_METHOD_QPARSE;
+    if (value.contains(_sParser,   Qt::CaseInsensitive)) inspectorType |= IT_METHOD_PARSER;
     switch (r) {
     case IT_METHOD_CUSTOM:
     case IT_METHOD_NAGIOS:
     case IT_METHOD_MUNIN:
     case IT_METHOD_CARRIED:
     case IT_METHOD_QPARSE:
+    case IT_METHOD_PARSER:
+    case IT_METHOD_QPARSE | IT_METHOD_PARSER:
+
         break;    // O.K.
     default:
         EXCEPTION(EDATA, r, trUtf8("Invalid feature in %1 method = %2").arg(name()).arg(value));
@@ -918,18 +922,11 @@ enum eNotifSwitch cInspector::parse_qparse(int _ec, QIODevice& text)
     QString comment = feature(_sComment);
     // Ha a parser egy másik szálban fut, keresük ki indította el
     if (pQparser == NULL) {
-        for (cInspector *pPar = pParent; pPar != NULL; pPar = pPar->pParent) {
+        for (cInspector *pPar = this; pPar != NULL; pPar = pPar->pParent) {
             pQparser = pPar->pQparser;
             if (pQparser != NULL) break;     // Megtaláltuk
         }
-        if (pQparser == NULL) {
-            pQparser = new cQueryParser;
-            inspectorType |= IT_OWNER_QUERY_PARSER;
-            int r = pQparser->load(*pq, serviceId(), true, false);
-            if (R_NOTFOUND == r && NULL != pPrimeService) r = pQparser->load(*pq, primeServiceId(), true, false);
-            if (R_NOTFOUND == r && NULL != pProtoService) r = pQparser->load(*pq, protoServiceId(), true, false);
-            if (R_NOTFOUND == r) EXCEPTION(EFOUND);
-        }
+        EXCEPTION(EFOUND,0,name());
     }
     pQparser->setInspector(this);   // A kliens beállítása...
     QString t;
