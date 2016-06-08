@@ -657,18 +657,15 @@ void cRecordsViewBase::insert()
     switch (tableInhType) {
     case TIT_NO:
     case TIT_ONLY: {
-        cRecordAny rec(pRecDescr);
-        // Ha CHILD, akkor a owner id adott
         cRecordDialog   rd(*pTableShape, buttons, true, NULL, this, pWidget());  // A rekord szerkesztő dialógus
         pRecordDialog = &rd;
-        rd.restore(&rec);
         while (1) {
             int r = rd.exec();
             if (r == DBT_INSERT || r == DBT_OK) {   // Csak az OK, és Insert gombra csinálunk valamit
                 bool ok = rd.accept();
                 if (ok) {
                     cRecord *pRec = rd.record().dup();
-                    ok = pModel->insertRec(pRec);
+                    ok = pModel->insertRec(pRec);   // A pointer a pModel tulajdona lesz
                     if (!ok) pDelete(pRec);
                     else if (flags & RTF_IGROUP) {    // Group, tagja listába van a beillesztés?
                         ok = cGroupAny(*pRec, *(pUpper->actRecord())).insert(*pq, EX_IGNORE);
@@ -728,6 +725,7 @@ void cRecordsViewBase::modify(eEx __ex)
     QModelIndex index = actIndex();
     if (index.isValid() == false) return;
     if (pRecordDialog != NULL) {
+        // ESC-el lépett ki, Kideríteni mi ez, becsukja az ablakot, de nem lép ki a loop-bol.
         EXCEPTION(EPROGFAIL);
     }
 

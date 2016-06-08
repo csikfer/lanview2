@@ -371,6 +371,7 @@ void cRecordDialog::init()
     bool ok;
     maxFields = tableShape.feature(pointCat(_sDialog, _sHeight)).toInt(&ok);
     if (!ok) maxFields = 10;    // Default
+
     pFormLayout = new QFormLayout;
     pFormLayout->setObjectName(name + "_Form");
     int n = tableShape.shapeFields.size();
@@ -404,6 +405,16 @@ void cRecordDialog::init()
     }
     tTableShapeFields::const_iterator i, e = tableShape.shapeFields.cend();
     _pRecord = new cRecordAny(&rDescr);
+
+    if (_pOwnerTable != NULL && _pOwnerTable->owner_id != NULL_ID) {  // Ha van owner, akkor az ID-jét beállítjuk
+        int oix = _pRecord->descr().ixToOwner();
+        _pRecord->setId(oix, _pOwnerTable->owner_id);
+    }
+    if (_pOwnerTable != NULL && _pOwnerTable->parent_id != NULL_ID) {  // Ha van parent, akkor az ID-jét beállítjuk  ????
+        int pix = _pRecord->descr().ixToParent();
+        _pRecord->setId(pix, _pOwnerTable->parent_id);
+    }
+
     int cnt = 0;
     for (i = tableShape.shapeFields.cbegin(); i != e; ++i) {
         const cTableShapeField& mf = **i;
