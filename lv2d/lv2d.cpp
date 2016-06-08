@@ -23,9 +23,15 @@ int main(int argc, char *argv[])
         return mo.lastError->mErrorCode; // a mo destruktora majd kiírja a hibaüzenetet.
     }
 
-    if (mo.pSelf->inspectorType & (IT_TIMING_POLLING || IT_PROCESS_POLLING)) exit(0);
+    int r = mo.pSelf->inspectorType;
+    r = r & (IT_TIMING_POLLING | IT_PROCESS_POLLING);
+    if (r) {
+        PDEB(INFO) << QObject::trUtf8("Nothing start event loop, exit OK.") << endl;
+        exit(0);
+    }
 
-    int r = app.exec();
+    PDEB(INFO) << QObject::trUtf8("Start event loop ...") << endl;
+    r = app.exec();
 
     PDEB(INFO) << QObject::trUtf8("Event loop is exited.") << endl;
     exit(mo.lastError == NULL ? r : mo.lastError->mErrorCode);

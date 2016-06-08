@@ -51,6 +51,8 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
 
     reStartCnt = 0;
 
+    _DBGFN() << inspector.name() << endl;
+
     if ((s = inspector.feature(_sRestartMax)).size()) {
         reStartMax = s.toInt(&ok);
         if (!ok) EXCEPTION(EDATA, -1, trUtf8("Az %1 értéke nem értelmezhető : %2").arg(_sRestartMax).arg(s));
@@ -253,6 +255,7 @@ void cInspector::preInit()
 cInspector::cInspector(cInspector * __par)
     : QObject(__par), hostService(), lastRun()
 {
+    _DBGFN() << " parent : " << (__par == NULL ? "NULL" : __par->name()) << endl;
     preInit();
     pParent = __par;
     inspectorType = IT_TIMING_PASSIVE;
@@ -261,6 +264,7 @@ cInspector::cInspector(cInspector * __par)
 cInspector::cInspector(QSqlQuery& q, const QString &sn)
     : QObject(NULL), hostService(), lastRun()
 {
+    _DBGFN() << VDEB(sn) << endl;
     preInit();
     self(q, sn);
     // Ha van specifikált port is
@@ -274,6 +278,7 @@ cInspector::cInspector(QSqlQuery& q, const QString &sn)
 cInspector::cInspector(QSqlQuery& q, qlonglong __host_service_id, qlonglong __tableoid, cInspector *__par)
     : QObject(__par), hostService(), lastRun()
 {
+    _DBGFN() << VDEB(__host_service_id) << VDEB(__tableoid) << (__par == NULL ? "NULL" : __par->name()) << endl;
     preInit();
     pParent = __par;
     // Megallokáljuk a megfelelő típusú node objektumot
@@ -309,6 +314,7 @@ cInspector::cInspector(QSqlQuery& q, qlonglong __host_service_id, qlonglong __ta
     pProtoService = &hostService.getProtoService(q2);
     // features mező értelmezése
     getInspectorType(q2);
+    _DBGFNL() << name() << endl;
 }
 
 cInspector::~cInspector()
@@ -335,6 +341,7 @@ qlonglong cInspector::rnd(qlonglong i, qlonglong m)
 
 void cInspector::down()
 {
+    _DBGFN() << name() << endl;
     stop(EX_IGNORE);
     if (internalStat != IS_DOWN) {
         setInternalStat(IS_DOWN);
@@ -390,7 +397,7 @@ cInspector *cInspector::newSubordinate(QSqlQuery& _q, qlonglong _hsid, qlonglong
 
 cInspectorThread *cInspector::newThread()
 {
-    DBGFN();
+    _DBGFN() << name() << endl;
     cInspectorThread *p = new cInspectorThread(this);
     p->setObjectName(name());
     return p;
@@ -398,7 +405,7 @@ cInspectorThread *cInspector::newThread()
 
 cInspectorProcess *cInspector::newProcess()
 {
-    DBGFN();
+    _DBGFN() << name() << endl;
     cInspectorProcess *p = new cInspectorProcess(this);
     p->setObjectName(name());
     return p;
@@ -443,6 +450,7 @@ void cInspector::postInit(QSqlQuery& q, const QString& qs)
 
 void cInspector::setSubs(QSqlQuery& q, const QString& qs)
 {
+    _DBGFN() << name() << VDEB(qs) << endl;
     if (pSubordinates == NULL) EXCEPTION(EPROGFAIL, -1, name());
     bool ok = true;
     QSqlQuery q2 = getQuery();
@@ -510,13 +518,14 @@ cFeatures& cInspector::splitFeature(eEx __ex)
     if (pPrimeService != NULL) _pFeatures->split(pPrimeService->getName(ixFeatures), __ex);
     _pFeatures->split(service().  getName(ixFeatures), __ex);
     _pFeatures->split(hostService.getName(_sFeatures), __ex);
+    PDEB(VVERBOSE) << name() << " features : " << _pFeatures->join() << endl;
     return *_pFeatures;
 }
 
 int cInspector::getInspectorTiming(const QString& value)
 {
     if (value.isEmpty()) return 0;
-    int r = 0;
+    int r = 0; // IT_TIMING_CUSTOM
     if (value.contains(_sTimed,   Qt::CaseInsensitive)) r |= IT_TIMING_TIMED;
     if (value.contains(_sThread,  Qt::CaseInsensitive)) r |= IT_TIMING_THREAD;
     if (value.contains(_sPassive, Qt::CaseInsensitive)) r |= IT_TIMING_PASSIVE;
@@ -532,6 +541,7 @@ int cInspector::getInspectorTiming(const QString& value)
     default:
         EXCEPTION(EDATA, r, trUtf8("Invalid feature in %1 timing = %2").arg(name()).arg(value));
     }
+    PDEB(VVERBOSE) << name() << VDEB(value) << " timing = " << r << endl;
     return r;
 }
 
@@ -556,25 +566,29 @@ int cInspector::getInspectorProcess(const QString &value)
     default:
         EXCEPTION(EDATA, r, trUtf8("Invalid feature in %1 process = %2").arg(name()).arg(value));
     }
+    PDEB(VVERBOSE) << name() << VDEB(value) << " process = " << r << endl;
     return r;
 }
 
 int cInspector::getInspectorMethod(const QString &value)
 {
     if (value.isEmpty()) return 0;
-    int r = 0;
+    int r = 0;  // IT_METHOD_CUSTOM
     if (value.contains(_sNagios,   Qt::CaseInsensitive)) inspectorType |= IT_METHOD_NAGIOS;
     if (value.contains(_sMunin,    Qt::CaseInsensitive)) inspectorType |= IT_METHOD_MUNIN;
     if (value.contains(_sCarried,  Qt::CaseInsensitive)) inspectorType |= IT_METHOD_CARRIED;
+    if (value.contains(_sQparser,  Qt::CaseInsensitive)) inspectorType |= IT_METHOD_QPARSE;
     switch (r) {
     case IT_METHOD_CUSTOM:
     case IT_METHOD_NAGIOS:
     case IT_METHOD_MUNIN:
     case IT_METHOD_CARRIED:
+    case IT_METHOD_QPARSE:
         break;    // O.K.
     default:
         EXCEPTION(EDATA, r, trUtf8("Invalid feature in %1 method = %2").arg(name()).arg(value));
     }
+    PDEB(VVERBOSE) << name() << VDEB(value) << " method = " << r << endl;
     return r;
 }
 
@@ -620,6 +634,7 @@ int cInspector::getInspectorType(QSqlQuery& q)
         break;
     default: EXCEPTION(EPROGFAIL, r);
     }
+    _DBGFNL() << name() << VDEB(inspectorType) << endl;
     return inspectorType;
 }
 
@@ -898,6 +913,7 @@ enum eNotifSwitch cInspector::parse_nagios(int _ec, QIODevice &text)
 
 enum eNotifSwitch cInspector::parse_qparse(int _ec, QIODevice& text)
 {
+    _DBGFN() << name() << endl;
     (void)_ec;
     QString comment = feature(_sComment);
     // Ha a parser egy másik szálban fut, keresük ki indította el
@@ -926,6 +942,7 @@ enum eNotifSwitch cInspector::parse_qparse(int _ec, QIODevice& text)
         int r = pQparser->parse(t, pe);
         ok = ok || r == REASON_OK;      // Ha semmire sem volt találat
         if (r == R_NOTFOUND) {
+            PDEB(VVERBOSE) << "DROP : " << quotedString(t) << endl;
             continue;  // Nincs minta a sorra, nem foglalkozunk vele
         }
         if (r != REASON_OK) {
@@ -936,6 +953,7 @@ enum eNotifSwitch cInspector::parse_qparse(int _ec, QIODevice& text)
             DERR() << pe->msg() << endl;
             pe->exception();
         }
+        PDEB(VVERBOSE) << "MATCH : " << quotedString(t) << endl;
     }
     return ok ? RS_ON : RS_INVALID;
 }
