@@ -229,7 +229,7 @@ static QMap<QString, QString>      svars;
 static QMap<QString, QVariantList> avars;
 static QSqlQuery  *     pq2 = NULL;
 static bool             breakParse = false;
-
+static tRecordList<cMenuItem>   menuItems;
 /// A parser
 static int yyparse();
 /// A parser utolsó hibajelentése, NULL, ha nincs hiba
@@ -395,6 +395,7 @@ void downImportParser()
     pDelete(piq);
     macbuff.clear();
     lastLine.clear();
+    menuItems.clear();
 
     templates.clear();
     actVlanName.clear();
@@ -413,6 +414,7 @@ void downImportParser()
     svars.clear();
     avars.clear();
     pDelete(pq2);
+
     c_yyFile::dropp();
     breakParse = false;
 }
@@ -845,8 +847,6 @@ static cTableShape * newTableShape(QString *pTbl, QString * pMod, const QString 
 
 
 static QString *pMenuApp = NULL;
-static tRecordList<cMenuItem>   menuItems;
-
 static cMenuItem& actMenuItem()
 {
     if (menuItems.isEmpty()) EXCEPTION(EPROGFAIL);
