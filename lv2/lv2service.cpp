@@ -109,7 +109,7 @@ int cInspectorProcess::startProcess(bool conn, int startTo, int stopTo)
     if (inspector.checkCmd.isEmpty()) EXCEPTION(EPROGFAIL);
     PDEB(VVERBOSE) << "START : " << inspector.checkCmd << "; and wait ..." << endl;
     if (conn) {
-        PDEB(VVERBOSE) << "connect .." << endl;
+        PDEB(VVERBOSE) << "Set connects .." << endl;
         connect(this, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(processFinished(int, QProcess::ExitStatus)));
         connect(this, SIGNAL(readyRead()),                         this, SLOT(processReadyRead()));
     }
@@ -179,7 +179,7 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus exit
 
 void cInspectorProcess::processReadyRead()
 {
-    // DBGFN();
+    DBGFN();
     if (logNull) {
         (void)readAllStandardOutput();
     }
@@ -354,6 +354,7 @@ void cInspector::down()
     }
     pDelete(pProcess);
     if (inspectorType & IT_OWNER_QUERY_PARSER) {
+        PDEB(VVERBOSE) << trUtf8("%1: Free QParser : %2").arg(name()).arg((qlonglong)pQparser) << endl;
         pDelete(pQparser);
         inspectorType &= ~IT_OWNER_QUERY_PARSER;
     }
@@ -526,10 +527,11 @@ int cInspector::getInspectorTiming(const QString& value)
 {
     if (value.isEmpty()) return 0;
     int r = 0; // IT_TIMING_CUSTOM
-    if (value.contains(_sTimed,   Qt::CaseInsensitive)) r |= IT_TIMING_TIMED;
-    if (value.contains(_sThread,  Qt::CaseInsensitive)) r |= IT_TIMING_THREAD;
-    if (value.contains(_sPassive, Qt::CaseInsensitive)) r |= IT_TIMING_PASSIVE;
-    if (value.contains(_sPolling, Qt::CaseInsensitive)) r |= IT_TIMING_POLLING;
+    QStringList vl = value.split(QRegExp("\\s*,\\s*"));
+    if (vl.contains(_sTimed,   Qt::CaseInsensitive)) r |= IT_TIMING_TIMED;
+    if (vl.contains(_sThread,  Qt::CaseInsensitive)) r |= IT_TIMING_THREAD;
+    if (vl.contains(_sPassive, Qt::CaseInsensitive)) r |= IT_TIMING_PASSIVE;
+    if (vl.contains(_sPolling, Qt::CaseInsensitive)) r |= IT_TIMING_POLLING;
     switch (r) {
     case IT_TIMING_CUSTOM:
     case IT_TIMING_TIMED:
@@ -548,11 +550,14 @@ int cInspector::getInspectorTiming(const QString& value)
 int cInspector::getInspectorProcess(const QString &value)
 {
     int r = 0;
-    if (value.contains(_sRespawn,  Qt::CaseInsensitive)) r |= IT_PROCESS_RESPAWN;
-    if (value.contains(_sContinue, Qt::CaseInsensitive)) r |= IT_PROCESS_CONTINUE;
-    if (value.contains(_sPolling,  Qt::CaseInsensitive)) r |= IT_PROCESS_POLLING;
-    if (value.contains(_sTimed,    Qt::CaseInsensitive)) r |= IT_PROCESS_TIMED;
-    if (value.contains(_sCarried,  Qt::CaseInsensitive)) r |= IT_PROCESS_CARRIED;
+    if (!value.isEmpty()) {
+        QStringList vl = value.split(QRegExp("\\s*,\\s*"));
+        if (vl.contains(_sRespawn,  Qt::CaseInsensitive)) r |= IT_PROCESS_RESPAWN;
+        if (vl.contains(_sContinue, Qt::CaseInsensitive)) r |= IT_PROCESS_CONTINUE;
+        if (vl.contains(_sPolling,  Qt::CaseInsensitive)) r |= IT_PROCESS_POLLING;
+        if (vl.contains(_sTimed,    Qt::CaseInsensitive)) r |= IT_PROCESS_TIMED;
+        if (vl.contains(_sCarried,  Qt::CaseInsensitive)) r |= IT_PROCESS_CARRIED;
+    }
     switch (r) {
     case IT_PROCESS_RESPAWN:
     case IT_PROCESS_CONTINUE:
@@ -563,8 +568,24 @@ int cInspector::getInspectorProcess(const QString &value)
     case IT_PROCESS_TIMED   | IT_PROCESS_CARRIED:
         break;  // O.K.
     case IT_NO_PROCESS:
+        // Van megadva parancs, de nincs megadva időzítés
+        // A metódustol függően még jó lehet
+    {
+        int met = getInspectorMethod(feature(_sMethod));
+        switch (met) {
+        // ezeknél nem is kell (lehet) időzítés
+        case IT_METHOD_NAGIOS:
+        case IT_METHOD_MUNIN:
+        case IT_METHOD_QPARSE:
+        case IT_METHOD_QPARSE | IT_METHOD_PARSER:
+            return r | met;
+        default:
+            // Nem OK
+            EXCEPTION(EDATA, met, trUtf8("Invalid feature in %1 process = %2, metod = %3").arg(name(),value,feature(_sMethod)));
+        }
+    }
     default:
-        EXCEPTION(EDATA, r, trUtf8("Invalid feature in %1 process = %2").arg(name()).arg(value));
+        EXCEPTION(EDATA, r, trUtf8("Invalid feature in %1 process = %2").arg(name(),value));
     }
     PDEB(VVERBOSE) << name() << VDEB(value) << " process = " << r << endl;
     return r;
@@ -574,11 +595,12 @@ int cInspector::getInspectorMethod(const QString &value)
 {
     if (value.isEmpty()) return 0;
     int r = 0;  // IT_METHOD_CUSTOM
-    if (value.contains(_sNagios,   Qt::CaseInsensitive)) inspectorType |= IT_METHOD_NAGIOS;
-    if (value.contains(_sMunin,    Qt::CaseInsensitive)) inspectorType |= IT_METHOD_MUNIN;
-    if (value.contains(_sCarried,  Qt::CaseInsensitive)) inspectorType |= IT_METHOD_CARRIED;
-    if (value.contains(_sQparse,   Qt::CaseInsensitive)) inspectorType |= IT_METHOD_QPARSE;
-    if (value.contains(_sParser,   Qt::CaseInsensitive)) inspectorType |= IT_METHOD_PARSER;
+    QStringList vl = value.split(QRegExp("\\s*,\\s*"));
+    if (vl.contains(_sNagios,   Qt::CaseInsensitive)) r |= IT_METHOD_NAGIOS;
+    if (vl.contains(_sMunin,    Qt::CaseInsensitive)) r |= IT_METHOD_MUNIN;
+    if (vl.contains(_sCarried,  Qt::CaseInsensitive)) r |= IT_METHOD_CARRIED;
+    if (vl.contains(_sQparse,   Qt::CaseInsensitive)) r |= IT_METHOD_QPARSE;
+    if (vl.contains(_sParser,   Qt::CaseInsensitive)) r |= IT_METHOD_PARSER;
     switch (r) {
     case IT_METHOD_CUSTOM:
     case IT_METHOD_NAGIOS:
@@ -587,7 +609,6 @@ int cInspector::getInspectorMethod(const QString &value)
     case IT_METHOD_QPARSE:
     case IT_METHOD_PARSER:
     case IT_METHOD_QPARSE | IT_METHOD_PARSER:
-
         break;    // O.K.
     default:
         EXCEPTION(EDATA, r, trUtf8("Invalid feature in %1 method = %2").arg(name()).arg(value));
@@ -610,6 +631,16 @@ int cInspector::getInspectorType(QSqlQuery& q)
     case  1:        // Program hívása, a hívó applikációban
         r = getInspectorProcess(feature(_sProcess));
         inspectorType |= r;
+        if ((r & IT_PROCESS_MASK) == IT_NO_PROCESS) {
+            inspectorType |= getInspectorTiming(feature(_sTiming));
+            break;
+        }
+        else {
+            QString m = feature(_sTiming);
+            if (!m.isEmpty()) {
+                EXCEPTION(EDATA, r, trUtf8("Invalid feature in %1 process = %2, method = %3").arg(name()).arg(feature(_sProcess),m));
+            }
+        }
         // Check...
         r &= ~IT_PROCESS_CARRIED;   // ellenörzés szempontjából érdektelen
         r |= getInspectorTiming(feature(_sTiming));
@@ -620,8 +651,6 @@ int cInspector::getInspectorType(QSqlQuery& q)
         case IT_PROCESS_TIMED    | IT_TIMING_TIMED:
             EXCEPTION(EDATA, r, trUtf8("Invalid feature in %1 process = %2, timing = %3").arg(name()).arg(feature(_sProcess)).arg(feature(_sTiming)));
         }
-        r = getInspectorMethod(feature(_sMethod));
-        inspectorType |= r;
         break;
     case -1:        // Program hívása, a hívótt applikációban
         if (isFeature(_sSuperior)) inspectorType |= IT_SUPERIOR;
@@ -878,8 +907,12 @@ enum eNotifSwitch cInspector::run(QSqlQuery& q)
     if (pProcess != NULL) {
         if (checkCmd.isEmpty()) EXCEPTION(EPROGFAIL);
         PDEB(VERBOSE) << "Run : " << checkCmd << endl;
-        int ec = pProcess->startProcess(true);
+        int ec = pProcess->startProcess(false, 5000, 60000);    //Paraméterezni!!!
+        if (ec == -1) return RS_STAT_SETTED;    // sended: RS_CRITICAL
         return parse(ec, *pProcess);
+    }
+    else {
+        PDEB(VVERBOSE) << " * NOOP *" << endl;
     }
     return RS_UNKNOWN;
 }
@@ -888,8 +921,8 @@ enum eNotifSwitch cInspector::parse(int _ec, QIODevice& text)
 {
     _DBGFN() <<  name() << endl;
     switch (inspectorType & IT_METHOD_MASK) {
-    case IT_METHOD_CUSTOM:
-    case IT_METHOD_CARRIED: return RS_STAT_SETTED;
+//  case IT_METHOD_CUSTOM:
+//  case IT_METHOD_CARRIED: return RS_STAT_SETTED;
     case IT_METHOD_MUNIN:   return parse_munin(_ec, text);
     case IT_METHOD_NAGIOS:  return parse_nagios(_ec, text);
     case IT_METHOD_QPARSE:  return parse_qparse(_ec, text);
@@ -920,13 +953,14 @@ enum eNotifSwitch cInspector::parse_qparse(int _ec, QIODevice& text)
     _DBGFN() << name() << endl;
     (void)_ec;
     QString comment = feature(_sComment);
-    // Ha a parser egy másik szálban fut, keresük ki indította el
+    // Ha a parsert nem mi indítottuk, keressük meg, valamelyik parent lessz az indító
     if (pQparser == NULL) {
-        for (cInspector *pPar = this; pPar != NULL; pPar = pPar->pParent) {
+        for (cInspector *pPar = pParent; pPar != NULL; pPar = pPar->pParent) {
             pQparser = pPar->pQparser;
             if (pQparser != NULL) break;     // Megtaláltuk
         }
-        EXCEPTION(EFOUND,0,name());
+        if (pQparser == NULL) EXCEPTION(EFOUND,0,name());
+        if (inspectorType & IT_OWNER_QUERY_PARSER)EXCEPTION(EPROGFAIL,0,name());
     }
     pQparser->setInspector(this);   // A kliens beállítása...
     QString t;
@@ -987,6 +1021,7 @@ void cInspector::start()
         EXCEPTION(EPROGFAIL, -1, trUtf8("A %1-ben a parser objektum nem létezhet a start elött!").arg(name()));
     if (inspectorType & IT_METHOD_PARSER) {
         pQparser = new cQueryParser();
+        PDEB(VVERBOSE) << trUtf8("%1: Alloc QParser : %2").arg(name()).arg((qlonglong)pQparser) << endl;
         inspectorType |= IT_OWNER_QUERY_PARSER;
         int r = pQparser->load(*pq, serviceId(), true);
         if (R_NOTFOUND == r && NULL != pPrimeService) r = pQparser->load(*pq, primeServiceId(), true);
@@ -1014,7 +1049,7 @@ void cInspector::start()
         _DBGFNL() << QChar(' ') << name() << " internalStat = " << internalStatName() << endl;
         return;
     }
-    if (inspectorType & (IT_PROCESS_CONTINUE | IT_PROCESS_RESPAWN)) {   // Program indítás időzités nélkül
+    if (inspectorType & IT_PROCESS_MASK_NOTIME) {   // Program indítás időzités nélkül
         if (checkCmd.isEmpty()) EXCEPTION(EPROGFAIL);
         PDEB(VERBOSE) << "Start : " << checkCmd << endl;
         pProcess->startProcess(true);
@@ -1100,11 +1135,20 @@ void cInspector::stop(eEx __ex)
             }
         }
     }
-    if (pQparser != NULL) {
+    if (inspectorType & IT_OWNER_QUERY_PARSER) {
+        if (pQparser == NULL) EXCEPTION(EPROGFAIL, (qlonglong)pQparser, name());
         cError *pe = NULL;
         pQparser->post(pe);
         if (pe != NULL) DERR() << pe->msg() << endl;
+        PDEB(VVERBOSE) << trUtf8("%1: Free QParser : %2").arg(name()).arg((qlonglong)pQparser) << endl;
         pDelete(pQparser);
+        inspectorType &= ~IT_OWNER_QUERY_PARSER;
+        if (pSubordinates != NULL) {
+            // Az gyerkőcöknél is törölni kell, feltételezzük, hogy 1*-es a mélység, és csak ez az egy parser van a rész fában.
+            foreach (cInspector *pi, *pSubordinates) {
+                pi->pQparser = NULL;
+            }
+        }
     }
     _DBGFNL() << name() << endl;
 }
