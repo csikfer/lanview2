@@ -2395,6 +2395,8 @@ fhs
         | str '.' str '(' str_z ':' str_z ')'
                                                 { NEWOBJ(pHostService2, cHostService());
                                                   $$ = pHostService2->fetchByNames(qq(), sp2s($1), sp2s($3), _sNul, sp2s($5), sp2s($7), EX_IGNORE); }
+        | int                                   { NEWOBJ(pHostService2, cHostService());
+                                                  $$ = pHostService2->fetchById(qq(), $1) ? 1 : 0; }
         ;
 // A megadott host_services rekord ID-vel tér vissza, ha nem azonosítható be a rekord, akkor hívja yyyerror()-t.
 hsid    : fhs                                   { if ($1 == 0) yyerror("Not found");

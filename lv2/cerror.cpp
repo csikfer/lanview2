@@ -20,6 +20,7 @@
 #include <QtCore>
 #include "cdebug.h"
 #include "cerror.h"
+#include <iostream>
 
 cError  *cError::pLastError = NULL;
 QThread *cError::pLastThread = NULL;
@@ -94,8 +95,20 @@ void cError::circulation()
 
 void cError::exception(void)
 {
-    if (cDebug::getInstance() != NULL) PDEB(EXCEPT) << QObject::trUtf8("throw this : %1").arg(msg()) << endl;
+    QString m = QObject::trUtf8("throw this : %1").arg(msg());
+    if (cDebug::getInstance() != NULL) PDEB(EXCEPT) << m << endl;
     throw(this);
+    {
+        QString mm = QObject::trUtf8("Exception (throw) is not working, exit.");
+        if (cDebug::getInstance() != NULL) {
+            if (!ONDB(EXCEPT)) cDebug::cout() << m << endl;
+            cDebug::cout() << mm << endl;
+        }
+        else {
+            std::cout << m.toStdString() << std::endl << mm.toStdString() << std::endl;
+        }
+        exit(mErrorCode);
+    }
 }
 
 QString cError::errorMsg(int __ErrorCode)

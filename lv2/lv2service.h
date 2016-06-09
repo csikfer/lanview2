@@ -46,6 +46,7 @@ enum eInspectorType {
     IT_PROCESS_RESPAWN      = 0x0010,   ///< A program (daemon) újrahívása, ha kilépett
     IT_PROCESS_CONTINUE     = 0x0020,   ///< A program (daemon) csak akkor lép ki, ha hiba van, vagy leállítoják
     IT_PROCESS_POLLING      = 0x0030,   ///< A programot start() indítja, lefut és kilép
+    IT_PROCESS_MASK_NOTIME  = 0x0030,   ///< Maszk: Időzítés nélküli indítás
     IT_PROCESS_TIMED        = 0x0040,   ///< A programot időzítve kell indítani
     IT_PROCESS_CARRIED      = 0x0080,   ///< A hívott program beállítja a status-t
     IT_PROCESS_MASK         = 0x00F0,   ///< Maszk: önálló processz indítása
