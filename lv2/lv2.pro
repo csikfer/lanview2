@@ -35,7 +35,7 @@ QMAKE_EXTRA_COMPILERS += m4h
 m4c.name = m4c
 m4c.input = M4SOURCE
 m4c.output =${QMAKE_FILE_BASE}.cpp
-# gányolás ...
+# gányolás !!! ...
 msvc {
     m4c.commands = m4 -I../../lanview2/lv2 <${QMAKE_FILE_IN} >${QMAKE_FILE_OUT}
 } else {

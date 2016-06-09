@@ -141,7 +141,7 @@ int cInspectorProcess::startProcess(bool conn, int startTo, int stopTo)
     }
     inspector.internalStat = IS_STOPPED;
     if (exitStatus() == QProcess::NormalExit) {
-        PDEB(VVERBOSE) << "A '" << inspector.checkCmd << "' lefutott, kilépéso kód : " << exitCode() << endl;
+        PDEB(VVERBOSE) << trUtf8("A '%1' lefutott, kilépéso kód : %2").arg(inspector.checkCmd).arg(exitCode()) << endl;
         return exitCode();
     }
     msg = trUtf8("A '%1' program elszállt : %2").arg(inspector.checkCmd).arg(ProcessError2Message(error()));
@@ -897,6 +897,7 @@ bool cInspector::toRun(bool __timed)
         hostService.setState(*pq, notifSwitch(retStat), msg, parentId(EX_IGNORE));
     }
     sqlEnd(*pq);
+    _DBGFNL() << name() << endl;
     return statSetRetry;
 }
 
@@ -986,6 +987,7 @@ enum eNotifSwitch cInspector::parse_qparse(int _ec, QIODevice& text)
         }
         PDEB(VVERBOSE) << "MATCH : " << quotedString(t) << endl;
     }
+    _DBGFNL() << name() << " : " << (ok ? "OK" : "INVALID") << endl;
     return ok ? RS_ON : RS_INVALID;
 }
 
