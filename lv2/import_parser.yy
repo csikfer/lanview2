@@ -1425,7 +1425,7 @@ static void yySqlExec(const QString& _cmd, QVariantList *pvl = NULL, QVariantLis
 %token      MACRO_T FOR_T DO_T TO_T SET_T CLEAR_T BEGIN_T END_T ROLLBACK_T
 %token      VLAN_T SUBNET_T PORTS_T PORT_T NAME_T SHARED_T SENSORS_T
 %token      PLACE_T PATCH_T HUB_T SWITCH_T NODE_T HOST_T ADDRESS_T
-%token      PARENT_T IMAGE_T FRAME_T TEL_T NOTE_T MESSAGE_T ALARM_T
+%token      PARENT_T IMAGE_T FRAME_T TEL_T NOTE_T MESSAGE_T
 %token      PARAM_T TEMPLATE_T COPY_T FROM_T NULL_T VIRTUAL_T TERM_T
 %token      INCLUDE_T PSEUDO_T OFFS_T IFTYPE_T WRITE_T RE_T SYS_T
 %token      ADD_T READ_T UPDATE_T ARPS_T ARP_T SERVER_T FILE_T BY_T
@@ -1440,7 +1440,7 @@ static void yySqlExec(const QString& _cmd, QVariantList *pvl = NULL, QVariantLis
 %token      MASK_T LIST_T VLANS_T ID_T DYNAMIC_T FIXIP_T PRIVATE_T PING_T
 %token      NOTIF_T ALL_T RIGHTS_T REMOVE_T SUB_T FEATURES_T MAC_T EXTERNAL_T
 %token      LINK_T LLDP_T SCAN_T TABLE_T FIELD_T SHAPE_T TITLE_T REFINE_T
-%token      LEFT_T DEFAULTS_T ENUM_T RIGHT_T VIEW_T INSERT_T EDIT_T
+%token      DEFAULTS_T ENUM_T RIGHT_T VIEW_T INSERT_T EDIT_T
 %token      INHERIT_T NAMES_T HIDE_T VALUE_T DEFAULT_T FILTER_T FILTERS_T
 %token      ORD_T SEQUENCE_T MENU_T GUI_T OWN_T TOOL_T TIP_T WHATS_T THIS_T
 %token      EXEC_T TAG_T BOOLEAN_T IPADDRESS_T REAL_T ENABLE_T
@@ -2395,8 +2395,6 @@ fhs
         | str '.' str '(' str_z ':' str_z ')'
                                                 { NEWOBJ(pHostService2, cHostService());
                                                   $$ = pHostService2->fetchByNames(qq(), sp2s($1), sp2s($3), _sNul, sp2s($5), sp2s($7), EX_IGNORE); }
-        | int                                   { NEWOBJ(pHostService2, cHostService());
-                                                  $$ = pHostService2->fetchById(qq(), $1) ? 1 : 0; }
         ;
 // A megadott host_services rekord ID-vel tér vissza, ha nem azonosítható be a rekord, akkor hívja yyyerror()-t.
 hsid    : fhs                                   { if ($1 == 0) yyerror("Not found");
@@ -2468,7 +2466,6 @@ tmodp   : SET_T DEFAULTS_T ';'                  { pTableShape->setDefaults(qq())
         | TABLE_T FEATURES_T str ';'            { pTableShape->set(_sFeatures, sp2s($3)); }
         | AUTO_T REFRESH_T str ';'              { pTableShape->setName(_sAutoRefresh, sp2s($3)); }
         | AUTO_T REFRESH_T int ';'              { pTableShape->setId(  _sAutoRefresh,      $3 ); }
-//      | LEFT_T SHAPE_T tmod ';'               { pTableShape->setId(_sLeftShapeId, $3); }
         | RIGHT_T SHAPE_T strs ';'              { pTableShape->addRightShape(*$3); delete $3; }
         | REFINE_T str ';'                      { pTableShape->setName(_sRefine, sp2s($2)); }
         | TABLE_T INHERIT_T TYPE_T tsintyp ';'  { pTableShape->setName(_sTableInheritType, sp2s($4)); }
@@ -2830,7 +2827,7 @@ static int yylex(void)
         TOK(MACRO) TOK(FOR) TOK(DO) TOK(TO) TOK(SET) TOK(CLEAR) TOK(BEGIN) TOK(END) TOK(ROLLBACK)
         TOK(VLAN) TOK(SUBNET) TOK(PORTS) TOK(PORT) TOK(NAME) TOK(SHARED) TOK(SENSORS)
         TOK(PLACE) TOK(PATCH) TOK(HUB) TOK(SWITCH) TOK(NODE) TOK(HOST) TOK(ADDRESS)
-        TOK(PARENT) TOK(IMAGE) TOK(FRAME) TOK(TEL) TOK(NOTE) TOK(MESSAGE) TOK(ALARM)
+        TOK(PARENT) TOK(IMAGE) TOK(FRAME) TOK(TEL) TOK(NOTE) TOK(MESSAGE)
         TOK(PARAM) TOK(TEMPLATE) TOK(COPY) TOK(FROM) TOK(NULL) TOK(VIRTUAL) TOK(TERM)
         TOK(INCLUDE) TOK(PSEUDO) TOK(OFFS) TOK(IFTYPE) TOK(WRITE) TOK(RE) TOK(SYS)
         TOK(ADD) TOK(READ) TOK(UPDATE) TOK(ARPS) TOK(ARP) TOK(SERVER) TOK(FILE) TOK(BY)
@@ -2845,7 +2842,7 @@ static int yylex(void)
         TOK(MASK) TOK(LIST) TOK(VLANS) TOK(ID) TOK(DYNAMIC) TOK(FIXIP) TOK(PRIVATE) TOK(PING)
         TOK(NOTIF) TOK(ALL) TOK(RIGHTS) TOK(REMOVE) TOK(SUB) TOK(FEATURES) TOK(MAC) TOK(EXTERNAL)
         TOK(LINK) TOK(LLDP) TOK(SCAN) TOK(TABLE) TOK(FIELD) TOK(SHAPE) TOK(TITLE) TOK(REFINE)
-        TOK(LEFT) TOK(DEFAULTS) TOK(ENUM) TOK(RIGHT) TOK(VIEW) TOK(INSERT) TOK(EDIT)
+        TOK(DEFAULTS) TOK(ENUM) TOK(RIGHT) TOK(VIEW) TOK(INSERT) TOK(EDIT)
         TOK(INHERIT) TOK(NAMES) TOK(HIDE) TOK(VALUE) TOK(DEFAULT) TOK(FILTER) TOK(FILTERS)
         TOK(ORD) TOK(SEQUENCE) TOK(MENU) TOK(GUI) TOK(OWN) TOK(TOOL) TOK(TIP) TOK(WHATS) TOK(THIS)
         TOK(EXEC) TOK(TAG) TOK(BOOLEAN) TOK(IPADDRESS) TOK(REAL) TOK(ENABLE)
