@@ -176,7 +176,7 @@ int cImportParseThread::push(const QString& src, cError *& pe)
         DBGFNL();
     }
     else {
-        _DBGFNL() << "ÉAST ERROR : " << pe->msg() << endl;
+        _DBGFNL() << "LAST ERROR : " << pe->msg() << endl;
     }
     return r;
 }

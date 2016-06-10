@@ -47,7 +47,7 @@ Minden üzenet csak akkor kerül kiírásra ill. a sorba, ha lezártuk az endl m
 @section detemanip Adatkezelés
 Az API fel van készítve a több szálú működésre, beleértve az adatbázis műveleteket is.
 Az adatbázis eléréséhez a newQuery() vagy a getQuery() függvényekkel kérhetünk egy QSqlQuery objektumot.
-Az igy kapott objektumnál csak arra kell vigyázni, hogy abban a szálban kell hívni az előző függvényeket, amelyikben
+Az igy kapott objektumnál csak arra kell vigyázni, hogy abban a szálban kell hívni a fenti függvényeket, amelyikben
 használni is fogjuk a QSqlQuery objektumot.
 Az adatbázis eléréséhez az API nem definiál külön osztályt a magasabb szintű adat manipulátorokon kívül. De a következő
 függvényeket tartalmazza az adatkezelés megkönnyítésére:
@@ -59,13 +59,19 @@ függvényeket tartalmazza az adatkezelés megkönnyítésére:
 - bool sqlBegin(QSqlQuery& q, enum eEx __ex)
 - bool sqlEnd(QSqlQuery& q, enum eEx __ex)
 - bool sqlRollback(QSqlQuery& q, enum eEx __ex)
+- bool execSql(QSqlQuery& q, const QString& sql, const QVariant v1, const QVariant v2, const QVariant v3, const QVariant v4, const QVariant v5);
+- bool execSqlFunction(QSqlQuery& q, const QString& fn, const QVariant v1, const QVariant v2, const QVariant v3, const QVariant v4, const QVariant v5);
+- qlonglong execSqlIntFunction(QSqlQuery& q, bool *pOk, const QString& fn, const QVariant v1, const QVariant v2, const QVariant v3, const QVariant v4, const QVariant v5);
+- QString execSqlTextFunction(QSqlQuery& q, const QString& fn, const QVariant v1, const QVariant v2, const QVariant v3, const QVariant v4, const QVariant v5);
+
 Továbbá néhány string függvény:
-- static inline QString  mCat(const QString& a, const QString& b)
+- static inline QString mCat(const QString& a, const QString& b)
 - static inline QString dQuoted(const QString& __s)
 - static inline QString quoted(const QString& __s)
 - static inline QString unQuoted(const QString& name)
 - static inline QString unDQuoted(const QString& name)
 - static inline QString dQuotedCat(const QString& a, const QString& b)
+- static inline QString parentheses(const QString& __s)
 
 @subsection crec A cRecord bázis osztály
 A cRecord egy összetett bázis osztály, amely egy sablont biztosít az adatbázis adattáblái és a C++ objektumok
@@ -73,7 +79,7 @@ közötti megfeleltetéshez. Az osztály által biztosított egy-egy megfeleltet
 típusoknál van értelme, tipikusan azoknál, melyek maguk is objektum jellegűek, pl. konkrét tárgyakat reprezentálnak.
 
 @subsection  cRecStaticDescr A cRecStaticDescr leíró objektum
-Az adatkezelést vezérlő a tábla tulajdonságait tartalmazó cRecStaticDescr osztály teszi lehetővé a cRecord leszármazott osztály
+Az adatkezelést vezérlő, a tábla tulajdonságait tartalmazó cRecStaticDescr osztály teszi lehetővé a cRecord leszármazott osztály
 tábla specifikus működését.
 
 @subsection alternate A cRecordAny osztály
@@ -83,15 +89,26 @@ specifikus tulajdonságai hiányoznak.
 
 @subsection crectmpl További sablonok
 - tRecordList   A cRcord leszármazottak konténere
+- tOwnRecords   Egy cRecord leszármaott objektum tulajdonában lévő objektumok konténere
 - tGroup    A csoport és tagság kapcsoló tábla kezelő sablon
+- cGroupAny     Hasonló a tGroup osztályhoz, de a group - member objektumok típusa a cRecordAny
 
 @section User Felhasználók kezelése.
 
 @section location Helyek helyiségek
 
 @section node Hálózati elemek, a "node"-ok
-A hálózati elemek az adatbázisban egy meglehetősen bonyolultra sikerült származási fát alkotnak a portokkal együtt.
-A velük egyenértékű osztályok ezt a leszármazási vonalat követik.
+A hálózati elemeket az adatbázisban három tábla reprezentálja, melyek származási sora:
+patchs -> nodes -> snmpdevices. A megfelelő API osztályok ugyan ezt a származási sorrendet követik:
+cPatch -> cNode -> cSnmpDevice.
+
+A portokat szintén három tábla irja le: nports, pports, interfaces, melyekkel megfeleltethető az
+azonos származási sort alkotó három API osztály: cNPort, cPPort, cInterface.
+
+A hálózati elemek és portok relációja viszont nem ennyire egyenes. A patchs rekord ill. cPatch osztálynak
+(patch panelek és fali, vagy egyébb csatlakozók) csak pporsts ill. cPPort elemei lehetnek, és ez a port típus csak a
+cPatch osztályhoz rendelhető. A másik 2-2 objektum típus szabadon összerendelhető.
+
 
 @section topology A hálózati topológiák
 - Fizikai topológia
@@ -102,8 +119,56 @@ A velük egyenértékű osztályok ezt a leszármazási vonalat követik.
 
 @section inspector Szolgáltatások kezelése, a cInspector osztály.
 A cInspector osztály lekérdező programokban a host-services rekordok alapján épít fel a lekérdezéshez
-A szolgáltatáspéldányok fáját, és vezérli a lekérdezés részfolyamatait. A konkrét réstevékenységek a
-cInspector származtatásával valósul meg, a virtuális metódusokon keresztül.
+a szolgáltatáspéldányok fáját, és vezérli a lekérdezés részfolyamatait. A konkrét résztevékenységek
+egy körét az alap osztály tartalmazza, illetve a cInspector származtatásával valósítható meg,
+a virtuális metódusokon keresztül. Egy cIspector objektum működését mindíg egy cHostServices objektum
+(vagyis egy hostt_services rekord) és az általuk hivatkozott cService objektumok (services rekord)
+határozzák meg. Kulcs szerepük ebben a features mezőknek van.
+@subsection windhcpconf
+Egy példa a windows szerver DHCP konfigurációjának a lekérdezéséhez.
+A lekérdezést az lv2d nevű APP Windows-os változata halythatja végre. A példában a lekérdezés a
+netsh parancs hívásával valósul meg.
+A sükséges services definíciók (lásd: import_srv.txt fájlt, a példa ezzel nem azonos, kimaradtak a példa
+szempontjából irreleváns paraméterek):
+~~~~~~~~~~
+SERVICE lv2d "Lanview2 super server" {
+    SUPERIOR SERVICE MASK "~."; // Semmire sem illeszkedik, csak gyökér lehet
+    FEATURES ":logrot=500M,8:";
+}
+SERVICE "win.dhcp.conf.parser" "A netsh dhcp kimenetének az értelmezése" {
+    FEATURES ":timing=polling:method=parser:";
+}
+QUERY PARSER "win.dhcp.conf.parser" {
+    CASE NO
+        $rexp$Dhcp\s+Server\s+\\+([\w\-\.]+)\sScope\s+[\d\.\:]+\s+Add\s+iprange\s+([\d\.\:]+)\s+([\d\.\:]+)$rexp$
+        $ipar$REPLACE DYNAMIC ADDRESS RANGE $2 TO $3 $host_service_id;$ipar$;
+    CASE NO
+        $rexp$Dhcp\s+Server\s+\\+([\w\-\.]+)\sScope\s+[\d\.\:]+\s+Add\s+excluderange\s+([\d\.\:]+)\s+([\d\.\:]+)$rexp$
+        $ipar$REPLACE DYNAMIC ADDRESS RANGE EXCLUDE $2 TO $3 $host_service_id;$ipar$;
+    CASE NO
+        $rexp$Dhcp\s+Server\s+\\+([\w\-\.]+)\sScope\s+[\d\.\:]+\s+Add\s+reservedip\s+([\d\.\:]+)\s+([\dA-F]+)\s+(.*)$rexp$
+        $ipar$REPLACE ARP $2 MAC("$3") config $host_service_id $$note$$$4$$note$$;$ipar$;
+}
+SERVICE "win.dhcp.conf" "Windows DHCP konfiguráció lekérdezés" {
+    COMMAND "netsh dhcp server \\$node dump all";
+    FEATURES ":timing=polling:method=qparse:";
+}
+HOST SERVICE "query-host".lv2d {
+    FEATURES ":timing=polling:";
+}
+HOST SERVICE "query-host"."win.dhcp.conf.parser" {
+    FEATURES ":superior:";
+    SUPERIOR SERVICE "query-host".lv2d;
+}
+HOST SERVICE "dhcp-server1"."win.dhcp.conf" {
+    FEATURES ":timing=polling:";
+    SUPERIOR "query-host"."win.dhcp.conf.parser";
+}
+HOST SERVICE "dhcp-server2"."win.dhcp.conf" {
+    FEATURES ":timing=polling:";
+    SUPERIOR "query-host"."win.dhcp.conf.parser";
+}
+~~~~~~~~~~
 
 @section timeper Idő intervallumok
 
