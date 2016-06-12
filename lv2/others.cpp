@@ -181,3 +181,29 @@ QString pointCat(const QString& s1, const QString& s2, const QString& s3)
     return s1 + point + s2 + point + s3;
 }
 
+/* ***************************************************************************************** */
+
+void writeRollLog(QFile& __log, const QByteArray& __data, qlonglong __size, int __arc)
+{
+    __log.write(__data);
+    if (__size == 0) return;
+    qint64 pos = __log.pos();
+    if (__size < pos) {
+        __log.close();
+        QString     old;
+        QString     pre;
+        for (int i = __arc; i > 1; --i) {
+            old = __log.fileName() + QChar('.') + QString::number(i);
+            (void)QFile::remove(old);
+            pre = __log.fileName() + QChar('.') + QString::number(i -1);
+            QFile::rename(pre, old);
+        }
+        old = __log.fileName() + ".1";
+        (void)QFile::remove(old);
+        pre = __log.fileName();
+        QFile::rename(pre, old);
+        if (!__log.open(QIODevice::Append | QIODevice::WriteOnly)) {
+            EXCEPTION(EFOPEN, -1, __log.fileName());
+        }
+    }
+}

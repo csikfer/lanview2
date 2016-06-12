@@ -222,7 +222,7 @@ lanView::~lanView()
     PDEB(OBJECT) << QObject::trUtf8("delete (lanView *)%1").arg((qulonglong)this) << endl;
     // Ha volt hiba objektumunk, töröljük. Elötte kiírjuk a hibaüzenetet, ha tényleg hiba volt
     if (lastError && lastError->mErrorCode != eError::EOK) {
-        PDEB(DERROR) << lastError->msg();         // A Hiba üzenet
+        PDEB(DERROR) << lastError->msg() << endl;         // A Hiba üzenet
         qlonglong eid = sendError(lastError);
         // Hibát kiírtuk, ki kell írni a staust is? (ha nem sikerült a hiba kiírása, kár a statussal próbálkozni)
         if (eid != NULL_ID && setSelfStateF) {

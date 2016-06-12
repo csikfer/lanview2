@@ -96,6 +96,8 @@ cDebug::cDebug(qlonglong _mMask, const QString& _fn) : mFName(_fn)
     mThreadStreamsMapMutex= NULL;
     mThreadMsgQueue      = NULL;
     mThreadMsgQueueMutex = NULL;
+    mMaxLogSize          = 0;
+    mArcNum              = 0;
 
     mMask = _mMask;
 #if defined (Q_OS_WIN)
@@ -117,6 +119,8 @@ cDebug::cDebug(qlonglong _mMask, const QString& _fn) : mFName(_fn)
             mFile = NULL;
             EXCEPTION(EFOPEN, -1, _fn);
         }
+        mMaxLogSize = 1024 * 1024 * 128;
+        mArcNum     = 8;
         mCout = new debugStream(mFile);
     }
     if (QTextStream::Ok != mCout->stream.status()) EXCEPTION(EFOPEN, -1, mFName);
@@ -353,7 +357,8 @@ debugStream& debugStream::flush()
     if (pD == NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("cDebug::instance is NULL pointer"));
     if (isMain()) {
         // Main thread
-        oFile->write(buff.toUtf8());
+        if (pD->mMaxLogSize) writeRollLog(*oFile, buff.toUtf8(), pD->mMaxLogSize, pD->mArcNum);
+        else                 oFile->write(buff.toUtf8());
         if (pD->mMsgQueue != NULL) {    // GUI?
             if (pD->mMsgQueueMutex == NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("cDebug::instance->mMsgQueueMutex is NULL pointer"));
             pD->mMsgQueueMutex->lock();
