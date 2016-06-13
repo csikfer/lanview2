@@ -187,33 +187,7 @@ void cInspectorProcess::processReadyRead()
         if (!actLogFile.isOpen()) {
             EXCEPTION(EPROGFAIL);
         }
-        actLogFile.write(readAllStandardOutput());
-        qint64 pos = actLogFile.pos();
-        if (maxLogSize < pos) {
-            PDEB(VVERBOSE) << "LogRot : " << maxLogSize << " < " << pos << endl;
-            actLogFile.close();
-            QString     old;
-            QString     pre;
-            for (int i = maxArcLog; i > 1; --i) {
-                old = actLogFile.fileName() + QChar('.') + QString::number(i);
-                (void)QFile::remove(old);
-                pre = actLogFile.fileName() + QChar('.') + QString::number(i -1);
-                bool r = QFile::rename(pre, old);
-                PDEB(VVERBOSE) << "Rename " << pre << " to " << old << " Result : " << DBOOL(r) << endl;
-            }
-            old = actLogFile.fileName() + ".1";
-            (void)QFile::remove(old);
-            pre = actLogFile.fileName();
-            if (!QFile::rename(pre, old)) {
-                DERR() << "log file rename " << pre << " to " << old << " error." << endl;
-            }
-            else {
-                PDEB(VVERBOSE) << "Rename " << pre << " to " << old << " O.K." << endl;
-            }
-            if (!actLogFile.open(QIODevice::Append | QIODevice::WriteOnly)) {
-                EXCEPTION(EFOPEN, -1, actLogFile.fileName());
-            }
-        }
+        writeRollLog(actLogFile, readAllStandardOutput(), maxLogSize, maxArcLog);
     }
 }
 
@@ -635,12 +609,6 @@ int cInspector::getInspectorType(QSqlQuery& q)
             inspectorType |= getInspectorTiming(feature(_sTiming));
             break;
         }
-        else {
-            QString m = feature(_sTiming);
-            if (!m.isEmpty()) {
-                EXCEPTION(EDATA, r, trUtf8("Invalid feature in %1 process = %2, method = %3").arg(name()).arg(feature(_sProcess),m));
-            }
-        }
         // Check...
         r &= ~IT_PROCESS_CARRIED;   // ellenörzés szempontjából érdektelen
         r |= getInspectorTiming(feature(_sTiming));
@@ -652,7 +620,7 @@ int cInspector::getInspectorType(QSqlQuery& q)
             EXCEPTION(EDATA, r, trUtf8("Invalid feature in %1 process = %2, timing = %3").arg(name()).arg(feature(_sProcess)).arg(feature(_sTiming)));
         }
         break;
-    case -1:        // Program hívása, a hívótt applikációban
+    case -1:        // Van Check Cmd, de éppen a hívot app vagyunk
         if (isFeature(_sSuperior)) inspectorType |= IT_SUPERIOR;
         inspectorType |= getInspectorTiming(feature(_sTiming));
         r = getInspectorMethod(feature(_sMethod));
@@ -765,7 +733,7 @@ int cInspector::getCheckCmd(QSqlQuery& q)
     QString myBase = QFileInfo(QCoreApplication::arguments().at(0)).baseName();
     QString ccBase = QFileInfo(checkCmd).baseName();
     if (0 == myBase.compare(ccBase, cs)) {
-        // Önmagunk hívása nem jó ötéet
+        // Önmagunk hívása nem jó ötlet
         checkCmd.clear();
         checkCmdArgs.clear();
         return -1;

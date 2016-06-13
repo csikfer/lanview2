@@ -114,7 +114,7 @@ cDebug::cDebug(qlonglong _mMask, const QString& _fn) : mFName(_fn)
 #endif
     else {
         mFile = new QFile(mFName);
-        if (! mFile->open(QIODevice::WriteOnly | QIODevice::Text)) {
+        if (! mFile->open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
             delete mFile;
             mFile = NULL;
             EXCEPTION(EFOPEN, -1, _fn);

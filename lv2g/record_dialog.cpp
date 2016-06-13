@@ -6,6 +6,8 @@
 
 QStringList     cDialogButtons::buttonNames;
 QList<QIcon>    cDialogButtons::icons;
+QList<int>      cDialogButtons::keys;
+
 int cDialogButtons::_buttonNumbers = DBT_BUTTON_NUMBERS;
 
 
@@ -39,9 +41,7 @@ cDialogButtons::cDialogButtons(const tIntVector& buttons, QWidget *par)
         foreach (int id, buttons) {
             if (id < _buttonNumbers) {
                 PDEB(VVERBOSE) << "Add button #" << id << " " << buttonNames[id] << endl;
-                QPushButton *pPB = new QPushButton(icons[id], buttonNames[id], _pWidget);
-                addButton(pPB, id);
-                _pLayout->addWidget(pPB);
+                _pLayout->addWidget(addPB(id, _pWidget));
             }
             else if (id == DBT_SPACER) _pLayout->addStretch();
             else EXCEPTION(EDATA, id);
@@ -54,9 +54,7 @@ cDialogButtons::cDialogButtons(const tIntVector& buttons, QWidget *par)
         foreach (int id, buttons) {
             if (id < _buttonNumbers) {
                 PDEB(VVERBOSE) << "Add button #" << id << " " << buttonNames[id] << endl;
-                QPushButton *pPB = new QPushButton(icons[id], buttonNames[id], _pWidget);
-                addButton(pPB, id);
-                pL->addWidget(pPB);
+                pL->addWidget(addPB(id, _pWidget));
             }
             else if (id == DBT_SPACER) pL->addStretch();
             else if (id == DBT_BREAK)  _pLayout->addLayout(pL = new QHBoxLayout());
@@ -68,31 +66,40 @@ cDialogButtons::cDialogButtons(const tIntVector& buttons, QWidget *par)
 void cDialogButtons::staticInit()
 {
     if (buttonNames.isEmpty()) {
-        appendCont(buttonNames, trUtf8("OK"),          icons, QIcon::fromTheme("emblem-default"), DBT_OK);
-        appendCont(buttonNames, trUtf8("Bezár"),       icons, QIcon::fromTheme("window-close"),   DBT_CLOSE);
-        appendCont(buttonNames, trUtf8("Frissít"),     icons, QIcon::fromTheme("reload"),         DBT_REFRESH);
-        appendCont(buttonNames, trUtf8("Új"),          icons, QIcon::fromTheme("insert-image"),   DBT_INSERT);
-        appendCont(buttonNames, trUtf8("Módosít"),     icons, QIcon::fromTheme("text-editor"),    DBT_MODIFY);
-        appendCont(buttonNames, trUtf8("Ment"),        icons, QIcon::fromTheme("list-add"),       DBT_SAVE);
-        appendCont(buttonNames, trUtf8("Első"),        icons, QIcon::fromTheme("go-first"),       DBT_FIRST);
-        appendCont(buttonNames, trUtf8("Előző"),       icons, QIcon::fromTheme("go-previous"),    DBT_PREV);
-        appendCont(buttonNames, trUtf8("Következő"),   icons, QIcon::fromTheme("go-next"),        DBT_NEXT);
-        appendCont(buttonNames, trUtf8("Utolsó"),      icons, QIcon::fromTheme("go-last"),        DBT_LAST);
-        appendCont(buttonNames, trUtf8("Töröl"),       icons, QIcon::fromTheme("list-remove"),    DBT_DELETE);
-        appendCont(buttonNames, trUtf8("Visszaállít"), icons, QIcon::fromTheme("edit-redo"),      DBT_RESTORE);
-        appendCont(buttonNames, trUtf8("Elvet"),       icons, QIcon::fromTheme("gtk-cancel"),     DBT_CANCEL);
-        appendCont(buttonNames, trUtf8("Alapállapot"), icons, QIcon::fromTheme("go-first"),       DBT_RESET);
-        appendCont(buttonNames, trUtf8("Betesz"),      icons, QIcon::fromTheme("insert-image"),   DBT_PUT_IN);
-        appendCont(buttonNames, trUtf8("Kivesz"),      icons, QIcon::fromTheme("list-remove"),    DBT_TAKE_OUT);
-        appendCont(buttonNames, trUtf8("Kibont"),      icons, QIcon::fromTheme("zoom-in"),        DBT_EXPAND);
-        appendCont(buttonNames, trUtf8("Gyökér"),      icons, QIcon(),                            DBT_ROOT);
-        appendCont(buttonNames, trUtf8("Másol"),       icons, QIcon::fromTheme("copy"),           DBT_COPY);
-        appendCont(buttonNames, trUtf8("Kiürít"),      icons, QIcon::fromTheme("edit-clear"),     DBT_TRUNCATE);
+        appendCont(buttonNames, trUtf8("OK"),          icons, QIcon::fromTheme("emblem-default"), keys, Qt::Key_Enter,  DBT_OK);
+        appendCont(buttonNames, trUtf8("Bezár"),       icons, QIcon::fromTheme("window-close"),   keys, Qt::Key_Escape, DBT_CLOSE);
+        appendCont(buttonNames, trUtf8("Frissít"),     icons, QIcon::fromTheme("reload"),         keys, Qt::Key_F5,     DBT_REFRESH);
+        appendCont(buttonNames, trUtf8("Új"),          icons, QIcon::fromTheme("insert-image"),   keys, Qt::Key_Insert, DBT_INSERT);
+        appendCont(buttonNames, trUtf8("Módosít"),     icons, QIcon::fromTheme("text-editor"),    keys, 0,              DBT_MODIFY);
+        appendCont(buttonNames, trUtf8("Ment"),        icons, QIcon::fromTheme("list-add"),       keys, 0,              DBT_SAVE);
+        appendCont(buttonNames, trUtf8("Első"),        icons, QIcon::fromTheme("go-first"),       keys, Qt::Key_Home,   DBT_FIRST);
+        appendCont(buttonNames, trUtf8("Előző"),       icons, QIcon::fromTheme("go-previous"),    keys, Qt::Key_PageUp, DBT_PREV);
+        appendCont(buttonNames, trUtf8("Következő"),   icons, QIcon::fromTheme("go-next"),        keys, Qt::Key_PageDown,DBT_NEXT);
+        appendCont(buttonNames, trUtf8("Utolsó"),      icons, QIcon::fromTheme("go-last"),        keys, Qt::Key_End,    DBT_LAST);
+        appendCont(buttonNames, trUtf8("Töröl"),       icons, QIcon::fromTheme("list-remove"),    keys, Qt::Key_Delete, DBT_DELETE);
+        appendCont(buttonNames, trUtf8("Visszaállít"), icons, QIcon::fromTheme("edit-redo"),      keys, 0,              DBT_RESTORE);
+        appendCont(buttonNames, trUtf8("Elvet"),       icons, QIcon::fromTheme("gtk-cancel"),     keys, Qt::Key_Escape, DBT_CANCEL);
+        appendCont(buttonNames, trUtf8("Alapállapot"), icons, QIcon::fromTheme("go-first"),       keys, 0,              DBT_RESET);
+        appendCont(buttonNames, trUtf8("Betesz"),      icons, QIcon::fromTheme("insert-image"),   keys, Qt::Key_Plus,   DBT_PUT_IN);
+        appendCont(buttonNames, trUtf8("Kivesz"),      icons, QIcon::fromTheme("list-remove"),    keys, Qt::Key_Minus,  DBT_TAKE_OUT);
+        appendCont(buttonNames, trUtf8("Kibont"),      icons, QIcon::fromTheme("zoom-in"),        keys, Qt::Key_Plus,   DBT_EXPAND);
+        appendCont(buttonNames, trUtf8("Gyökér"),      icons, QIcon(),                            keys, 0,              DBT_ROOT);
+        appendCont(buttonNames, trUtf8("Másol"),       icons, QIcon::fromTheme("copy"),           keys, 0,              DBT_COPY);
+        appendCont(buttonNames, trUtf8("Kiürít"),      icons, QIcon::fromTheme("edit-clear"),     keys, 0,              DBT_TRUNCATE);
     }
     if (buttonNames.size() != _buttonNumbers) EXCEPTION(EPROGFAIL);
     if (      icons.size() != _buttonNumbers) EXCEPTION(EPROGFAIL);
+    if (       keys.size() != _buttonNumbers) EXCEPTION(EPROGFAIL);
 }
 
+QPushButton *cDialogButtons::addPB(int id, QWidget *par)
+{
+    QPushButton *pPB = new QPushButton(icons[id], buttonNames[id], par);
+    int key = keys[id];
+    if (key > 0) pPB->setShortcut(QKeySequence(key));
+    addButton(pPB, id);
+    return pPB;
+}
 
 void cDialogButtons::init(int buttons, QBoxLayout *pL)
 {
@@ -100,9 +107,7 @@ void cDialogButtons::init(int buttons, QBoxLayout *pL)
     for (int id = 0; _buttonNumbers > id; ++id) {
         if (buttons & enum2set(id)) {
             PDEB(VVERBOSE) << "Add button #" << id << " " << buttonNames[id] << endl;
-            QPushButton *pPB = new QPushButton(icons[id], buttonNames[id], _pWidget);
-            addButton(pPB, id);
-            pL->addWidget(pPB);
+            pL->addWidget(addPB(id, _pWidget));
             pL->addStretch();
         }
     }
