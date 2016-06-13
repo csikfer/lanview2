@@ -272,7 +272,7 @@ QStringList cRecordTableFODialog::where(QVariantList& qparams)
     if (!filters.isEmpty()) foreach (cRecordTableFilter *pF, filters) {
         QString rw = pF->where(qparams);
         if (!rw.isEmpty()) {
-            if (r.isEmpty()) r << rw;
+            r << rw;
         }
     }
     return r;

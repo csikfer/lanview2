@@ -267,19 +267,19 @@ enum eNotifSwitch cDevicePMac::snmpQuery(const cOId& __o, QMap<cMac, int>& macs)
         if (r) {
             QString msg = trUtf8("A %1 node SNMP hiba. OID:%2")
                     .arg(host().getName())
-                    .arg(pOId1->toString());
+                    .arg(__o.toString());
             DERR() << msg << ", #" << r << endl;
             cDbErr::insertNew(cDbErrType::_sRunTime, msg, r, _sNil, APPNAME);
             break;
         }
-        if (!(*pOId1 < snmp.name())) break;
+        if (!(__o < snmp.name())) break;
         o = snmp.name();
         bool ok;
         int pix = snmp.value().toInt(&ok);
         if (!ok) {
             QString msg = trUtf8("A %1 node SNMP válasz: nem értelmezhető index. OID:%2 = %3")
                     .arg(host().getName())
-                    .arg(pOId1->toString())
+                    .arg(__o.toString())
                     .arg(debVariantToString(snmp.value()));
             DERR() << msg << endl;
             cDbErr::insertNew(cDbErrType::_sRunTime, msg, 0, _sNil, APPNAME);
@@ -290,7 +290,7 @@ enum eNotifSwitch cDevicePMac::snmpQuery(const cOId& __o, QMap<cMac, int>& macs)
         if (!mac) {
             QString msg = trUtf8("A %1 node SNMP válasz: nem értelmezhető MAC. OID:%2 = %3")
                     .arg(host().getName())
-                    .arg(pOId1->toString())
+                    .arg(__o.toString())
                     .arg(snmp.value().toString());
             DERR() << msg << endl;
             cDbErr::insertNew(cDbErrType::_sRunTime, msg, 0, _sNil, APPNAME);
