@@ -620,6 +620,16 @@ const cUser& lanView::user()
     return *instance->pUser;
 }
 
+qlonglong lanView::getUserId(eEx __ex)
+{
+    if (instance == NULL) EXCEPTION(EPROGFAIL);
+    if (instance->pUser == NULL) {
+        if (__ex != EX_IGNORE) EXCEPTION(EFOUND);
+        return NULL_ID;
+    }
+    return instance->pUser->getId();
+}
+
 void lanView::resetCacheData()
 {
     if (!exist()) EXCEPTION(EPROGFAIL);

@@ -2723,6 +2723,7 @@ int cPhsLink::unxlinks(QSqlQuery& __q, qlonglong __pid, ePhsLinkType __t, ePortS
                     break;
         default:    EXCEPTION(EDATA);
         }
+        break;
     default:    EXCEPTION(EDATA);
     }
     return r;

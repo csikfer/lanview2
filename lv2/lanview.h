@@ -263,6 +263,7 @@ public:
     /// A pUser adattag által mutatott objektum referenciájával tér vissza.
     /// Ha még nem példányosítottuk a lanView osztályt, vagy a pUser egy NULL pointer, akkor dob egy kizárást.
     static const cUser& user();
+    static qlonglong getUserId(eEx __ex);
     static cNode&          selfNode()        { cNode        *p = getInstance()->pSelfNode;        if (p == NULL) EXCEPTION(EPROGFAIL); return *p; }
     static cService&       selfService()     { cService     *p = getInstance()->pSelfService;     if (p == NULL) EXCEPTION(EPROGFAIL); return *p; }
     static cHostService&   selfHostService() { cHostService *p = getInstance()->pSelfHostService; if (p == NULL) EXCEPTION(EPROGFAIL); return *p; }

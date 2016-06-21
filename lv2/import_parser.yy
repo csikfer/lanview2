@@ -1398,6 +1398,15 @@ static void yySqlExec(const QString& _cmd, QVariantList *pvl = NULL, QVariantLis
     }
 }
 
+static void setNodePlace(QStringList nodes, qlonglong place_id)
+{
+    static const QString sql =
+            "UPDATE patchs SET place_id = ? WHERE node_name LIKE ?";
+    foreach (QString node, nodes) {
+        execSql(qq(), sql, place_id, node);
+    }
+}
+
 %}
 
 %union {
@@ -2607,6 +2616,7 @@ modify  : SET_T str '[' str ']' '.' str '=' value ';'   { cRecordAny(sp2s($2)).s
         | SET_T SUPERIOR_T hsid TO_T hsss ';'   { $5->sets(_sSuperiorHostServiceId, $3); delete $5; }
         | SET_T PLACE_T place_id ';'            { globalPlaceId = $3; }
         | CLEAR_T PLACE_T ';'                   { globalPlaceId = NULL_ID; }
+        | SET_T PLACE_T place_id NODE_T strs ';'{ setNodePlace(slp2sl($5), $3); }
         // Felhasználó letiltása
         | DISABLE_T USER_T str ';'              { cUser().setByName(qq(), sp2s($3)).setBool(_sDisabled, true).update(qq(), true); }
         | ENABLE_T  USER_T str ';'              { cUser().setByName(qq(), sp2s($3)).setBool(_sDisabled, false).update(qq(), true); }
