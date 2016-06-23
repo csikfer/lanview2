@@ -2671,51 +2671,49 @@ CRECDEFD(cPhsLink)
 
 int cPhsLink::unxlinks(QSqlQuery& __q, qlonglong __pid, ePhsLinkType __t, ePortShare __s) const
 {
-    int r = 0;
+    int r;
     switch (__t) {
     case LT_BACK:
     case LT_TERM:   // Nincs/nem lehet megosztás erre a portra
-                    r += unlink(__q, __pid, __t);
-                    break;
+                    return unlink(__q, __pid, __t);
     case LT_FRONT:
+        if (__s == ES_) return unlink(__q, __pid, LT_FRONT);;
         switch (__s) {  // Minden ütközö link törlendő
-        case ES_:   r += unlink(__q, __pid, LT_FRONT);
-                    break;
-        case ES_A:  r += unlink(__q, __pid, LT_FRONT, ES_A);
+        case ES_A:  r  = unlink(__q, __pid, LT_FRONT, ES_A);
                     r += unlink(__q, __pid, LT_FRONT, ES_AA);
                     r += unlink(__q, __pid, LT_FRONT, ES_AB);
                     r += unlink(__q, __pid, LT_FRONT, ES_C);
                     r += unlink(__q, __pid, LT_FRONT, ES_D);
                     break;
-        case ES_AA: r += unlink(__q, __pid, LT_FRONT, ES_A);
+        case ES_AA: r  = unlink(__q, __pid, LT_FRONT, ES_A);
                     r += unlink(__q, __pid, LT_FRONT, ES_AA);
                     break;
-        case ES_AB: r += unlink(__q, __pid, LT_FRONT, ES_A);
+        case ES_AB: r  = unlink(__q, __pid, LT_FRONT, ES_A);
                     r += unlink(__q, __pid, LT_FRONT, ES_AB);
                     r += unlink(__q, __pid, LT_FRONT, ES_C);
                     r += unlink(__q, __pid, LT_FRONT, ES_D);
                     break;
-        case ES_B:  r += unlink(__q, __pid, LT_FRONT, ES_B);
+        case ES_B:  r  = unlink(__q, __pid, LT_FRONT, ES_B);
                     r += unlink(__q, __pid, LT_FRONT, ES_BA);
                     r += unlink(__q, __pid, LT_FRONT, ES_BB);
                     r += unlink(__q, __pid, LT_FRONT, ES_C);
                     r += unlink(__q, __pid, LT_FRONT, ES_D);
                     break;
-        case ES_BA: r += unlink(__q, __pid, LT_FRONT, ES_B);
+        case ES_BA: r  = unlink(__q, __pid, LT_FRONT, ES_B);
                     r += unlink(__q, __pid, LT_FRONT, ES_BA);
                     r += unlink(__q, __pid, LT_FRONT, ES_C);
                     r += unlink(__q, __pid, LT_FRONT, ES_D);
                     break;
-        case ES_BB: r += unlink(__q, __pid, LT_FRONT, ES_B);
+        case ES_BB: r  = unlink(__q, __pid, LT_FRONT, ES_B);
                     r += unlink(__q, __pid, LT_FRONT, ES_BB);
                     ;
-        case ES_C:  r += unlink(__q, __pid, LT_FRONT, ES_C);
+        case ES_C:  r  = unlink(__q, __pid, LT_FRONT, ES_C);
                     r += unlink(__q, __pid, LT_FRONT, ES_A);
                     r += unlink(__q, __pid, LT_FRONT, ES_B);
                     r += unlink(__q, __pid, LT_FRONT, ES_AB);
                     r += unlink(__q, __pid, LT_FRONT, ES_BA);
                     break;
-        case ES_D:  r += unlink(__q, __pid, LT_FRONT, ES_D);
+        case ES_D:  r  = unlink(__q, __pid, LT_FRONT, ES_D);
                     r += unlink(__q, __pid, LT_FRONT, ES_A);
                     r += unlink(__q, __pid, LT_FRONT, ES_B);
                     r += unlink(__q, __pid, LT_FRONT, ES_AB);
@@ -2723,14 +2721,15 @@ int cPhsLink::unxlinks(QSqlQuery& __q, qlonglong __pid, ePhsLinkType __t, ePortS
                     break;
         default:    EXCEPTION(EDATA);
         }
-        break;
+        return r + unlink(__q, __pid, LT_FRONT, ES_);
     default:    EXCEPTION(EDATA);
     }
-    return r;
+    return -1;
 }
 
 int cPhsLink::replace(QSqlQuery &__q, eEx __ex)
 {
+    PDEB(VVERBOSE) << toString() << endl;
     int r = 0;
     // Ütköző linkek törlése a bal oldali porthoz (1)
     r += unxlinks(__q, getId(_sPortId1), (ePhsLinkType)getId(_sPhsLinkType1), (ePortShare)getId(__sPortShared));
@@ -2820,7 +2819,7 @@ int cPhsLink::unlink(QSqlQuery &q, qlonglong __pid, ePhsLinkType __t, ePortShare
     if (__t != LT_INVALID) {
         QString t = quoted(phsLinkType(__t));
         w1 = "(" + w1 + " AND phs_link_type1 = " + t + ")";
-        w2 = "(" + w1 + " AND phs_link_type2 = " + t + ")";
+        w2 = "(" + w2 + " AND phs_link_type2 = " + t + ")";
     }
     QString where = w1 + " OR " + w2;
     if (__s != ES_NC) {
@@ -2828,7 +2827,9 @@ int cPhsLink::unlink(QSqlQuery &q, qlonglong __pid, ePhsLinkType __t, ePortShare
     }
     QString sql = "DELETE FROM " + descr().fullTableNameQ() + " WHERE " + where;
     execSql(q, sql);
-    return q.numRowsAffected();
+    int r = q.numRowsAffected();
+    PDEB(VVERBOSE) << "Deleted " << r << " recoed; SQL : " << quotedString(sql) << endl;
+    return r;
 }
 
 /* ----------------------------------------------------------------- */

@@ -3629,11 +3629,11 @@ cRecordFieldConstRef cRecord::operator[](int __i) const
 
 QString cRecord::toString() const
 {
-    QString s = QChar(' ') + dQuotedCat(schemaName(), tableName()) + QChar('{');
+    QString s = QChar(' ') + mCat(schemaName(), tableName()) + QChar('{');
     for (int i = 0; isIndex(i); i++) {
-        s += QChar(' ') + columnNameQ(i);
+        s += QChar(' ') + columnName(i);
         if (isNull(i)) s += " IS NULL;";
-        else           s +=  " = " + getName(i) + QString("::") + QString(get(i).typeName()) + ";";
+        else           s +=  " = " + debVariantToString(get(i)) + ";";
     }
     s.chop(1);
     s + QChar('}');

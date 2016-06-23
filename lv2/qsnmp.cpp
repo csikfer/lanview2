@@ -775,7 +775,7 @@ int cSnmp::getTable(const cOIdVector& Ids, const QStringList& columns, cTable& r
             const cOId&     oib = Ids[i];       // Oszlop bázis ID
             const cOId      oia = name();       // cella ID
             QVariantVector& vv  = result[col];
-            PDEB(SNMP) << "getTab : " << col << " : " << oib.toNumString() << " < " << oia.toNumString() << " = " << value().toString() << endl;
+            // PDEB(SNMP) << "getTab : " << col << " : " << oib.toNumString() << " < " << oia.toNumString() << " = " << value().toString() << endl;
             if (oib < oia) {                    // A kívánt tartományban vagyunk
                 if (i == 0) {                   // első oszlop indexe
                     row = oia.last();

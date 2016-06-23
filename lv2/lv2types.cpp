@@ -907,7 +907,13 @@ void initUserMetaTypes()
 
 QString QStringListToString(const QStringList& _v)
 {
-    return QChar('{') + _v.join(QChar(',')) + QChar('}');
+    if (_v.isEmpty()) return "{}";
+    QString r = QChar('{');
+    foreach (QString s, _v) {
+        r += s + QChar(',');
+    }
+    r.chop(1);
+    return r + QChar('}');
 }
 
 QString QVariantListToString(const QVariantList& _v, bool *pOk)
@@ -958,7 +964,7 @@ QString QVariantToString(const QVariant& _v, bool *pOk)
         case QMetaType::QVariantList:   return QVariantListToString(_v.toList(), pOk);
         case QMetaType::QPoint:         return QPointTosString(_v.toPoint());
         case QMetaType::QPointF:        return QPointFTosString(_v.toPointF());
-/*      Ezek csak akkor vannak, ha GUI-val fordítunk !!!
+/*      Ezek csak akkor vannak, ha GUI-val fordítunk !!! Kiakad!!!
         case QMetaType::QPolygon:       return QPolygonToString(_v.value<QPolygon>());
         case QMetaType::QPolygonF:      return QPolygonFToString(_v.value<QPolygonF>()); */
         default:                        break;

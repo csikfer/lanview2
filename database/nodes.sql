@@ -292,7 +292,7 @@ COMMENT ON COLUMN interfaces.dualface_type IS 'Dualface port esetén a másik t�
 -- /////
 
 CREATE TABLE vlans (
-    vlan_id     bigint         PRIMARY KEY,
+    vlan_id     bigint          PRIMARY KEY,
     vlan_name   text            NOT NULL UNIQUE,
     vlan_note   text            DEFAULT NULL,
     vlan_stat   boolean         NOT NULL DEFAULT 'on',
@@ -302,7 +302,7 @@ ALTER TABLE vlans OWNER TO lanview2;
 COMMENT ON TABLE  vlans            IS 'VLANs Table';
 COMMENT ON COLUMN vlans.vlan_id    IS 'Unique ID for vlans. (802,1q ID)';
 COMMENT ON COLUMN vlans.vlan_name  IS 'Name of VLAN';
-COMMENT ON COLUMN vlans.vlan_note IS 'Description for VLAN';
+COMMENT ON COLUMN vlans.vlan_note  IS 'Description for VLAN';
 COMMENT ON COLUMN vlans.vlan_stat  IS 'State of VLAN (On/Off)';
 
 -- //// SUBNET
@@ -316,13 +316,13 @@ COMMENT ON TYPE subnettype IS
     private     privát nem routolt tartomány (más tartományokkal ütközhet)';
 
 CREATE TABLE subnets (
-    subnet_id       bigserial          PRIMARY KEY,
-    subnet_name     text     NOT NULL UNIQUE,
-    subnet_note    text    DEFAULT NULL,
-    netaddr         cidr            NOT NULL,
-    vlan_id         bigint         DEFAULT NULL
+    subnet_id       bigserial   PRIMARY KEY,
+    subnet_name     text        NOT NULL UNIQUE,
+    subnet_note     text        DEFAULT NULL,
+    netaddr         cidr        NOT NULL,
+    vlan_id         bigint      DEFAULT NULL
             REFERENCES vlans(vlan_id) MATCH SIMPLE ON DELETE RESTRICT ON UPDATE RESTRICT,
-    subnet_type     subnettype      NOT NULL DEFAULT 'primary'
+    subnet_type     subnettype  NOT NULL DEFAULT 'primary'
 );
 ALTER TABLE subnets OWNER TO lanview2;
 COMMENT ON TABLE subnets IS 'Alhálózatok táblája.';
@@ -650,6 +650,23 @@ END;
 $$ LANGUAGE plpgsql;
 
 
+CREATE OR REPLACE FUNCTION check_interface() RETURNS TRIGGER AS $$
+DECLARE
+    n integer;
+BEGIN
+    IF NEW.hwaddress IS NULL THEN
+        RETURN NEW;
+    END IF;
+    SELECT COUNT(*) INTO n FROM interfaces WHERE node_id <> NEW.node_id AND hwaddress = NEW.hwaddress;
+    IF n > 0 THEN
+        PERFORM error('IdNotUni', NEW.port_id, NEW.hwaddress, 'check_interface()', TG_TABLE_NAME, TG_OP);
+        RETURN NULL;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION check_interface() IS 'Különböző node_id esetén nem lehet két azonos MAC';
+
 -- ///// TRIGGERS AND RULES for port_id key
 -- port_id egyediség ellenörzése az összes nports leszármazottban
 CREATE TRIGGER nports_check_port_id_before_insert               BEFORE INSERT ON nports      FOR EACH ROW EXECUTE PROCEDURE check_port_id_before_insert();
@@ -659,6 +676,7 @@ CREATE TRIGGER interfaces_check_port_id_before_insert           BEFORE INSERT ON
 CREATE TRIGGER nports_restrict_modfy_port_id_before_update      BEFORE UPDATE ON nports      FOR EACH ROW EXECUTE PROCEDURE restrict_modfy_port_id_before_update();
 CREATE TRIGGER pports_restrict_modfy_port_id_before_update      BEFORE UPDATE ON pports      FOR EACH ROW EXECUTE PROCEDURE restrict_modfy_port_id_before_update();
 CREATE TRIGGER interfaces_restrict_modfy_port_id_before_update  BEFORE UPDATE ON interfaces  FOR EACH ROW EXECUTE PROCEDURE restrict_modfy_port_id_before_update();
+CREATE TRIGGER intergaces_check_interface                       BEFORE INSERT OR UPDATE ON interfaces FOR EACH ROW EXECUTE PROCEDURE check_interface();
 -- port_id idegen kulcs hivatkozások ellenözése (létrehozás, és módosítás)
 CREATE TRIGGER port_params_check_reference_port_id BEFORE UPDATE OR INSERT ON port_params FOR EACH ROW EXECUTE PROCEDURE check_reference_port_id();
 CREATE TRIGGER port_vlans_check_reference_port_id        BEFORE UPDATE OR INSERT ON port_vlans        FOR EACH ROW EXECUTE PROCEDURE check_reference_port_id('false', 'interfaces');

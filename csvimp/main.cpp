@@ -113,6 +113,7 @@ void lv2csvimp::readcsv()
     }
 
     QByteArray rawlin;
+    f.readLine();   // Első sor a fejléc, eldobjuk
     while ((rawlin = f.readLine()).isEmpty() == false) {
         QString line = QString::fromUtf8(rawlin);;
         if (line.endsWith(QChar('\n'))) line.chop(0);
@@ -151,7 +152,7 @@ void lv2csvimp::csvrow(QStringList &fields)
         _room  = fields[CI_ROOM].toUpper();
     }
     if (fields[CI_SIDE].isEmpty() == false) side = fields[CI_SIDE];
-    if (floor.isEmpty() || room.isEmpty()) {
+    if (floor.isEmpty() || _room.isEmpty()) {
         DWAR() << "Floor or room is empty" << endl;
         return;
     }
@@ -212,9 +213,10 @@ void lv2csvimp::csvrow(QStringList &fields)
         intSwitch.clear();
         pport.clear();
         roomSocket.clear();
-        roomSocket.setName(room + "S");
+        roomSocket.setName(room + "_WS");
         roomSocket.setNote(note);
         roomSocket.setName(_sNodeType, _sPatch);
+        roomSocket.setId(_sPlaceId, placeRoom.getId());
         roomSocket.cRecord::replace(*pq);
     }
     swname = fields[CI_SWITCH];

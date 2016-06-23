@@ -934,12 +934,13 @@ public:
     tOwnRecords<cPortVlan, cInterface>  vlans;
     /// Ip címek listája (nincs automatikus feltöltés
     tOwnRecords<cIpAddress, cInterface> addresses;
+    /// A MAC cím mező indexe
     STATICIX(cInterface, ixHwAddress)
+    cMac mac() { return getMac(ixHwAddress()); }
 protected:
     /// Trubk port esetén a trunk tagjainak az indexe (port_index mező)
     /// Nincs automatikusan feltöltve.
     tIntVector trunkMembers;
-    /// A MAC cím mező indexe
 };
 
 /* ****************************** NODES (patchs, nodes, snmphosts ****************************** */
