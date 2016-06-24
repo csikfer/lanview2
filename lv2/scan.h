@@ -131,6 +131,9 @@ extern QString lookup(const QHostAddress& ha, enum eEx __ex = EX_ERROR);
 /// @param __dev A kiíndulási eszköz, adatbázisban rögzített, onnen feltöltött objektum.
 extern void scanByLldp(QSqlQuery q, const cSnmpDevice& __dev, bool _parser = false);
 
+extern void lldpInfo(QSqlQuery q, const cSnmpDevice& __dev, bool _parser);
+
+
 #else  // MUST_SCAN
 
 class LV2SHARED_EXPORT cArpTable {
