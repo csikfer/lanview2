@@ -791,13 +791,15 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
              << row.cmac.toString() << ":" << row.pmac.toString()
              << row.descr << " : " << row.pdescr << endl;
     bool r = false;
-    int  e;
-    QString choice, portDescr;
+    int  e = 0, i, portIdSubType;
+    QString choice, portDescr, portId;
+    QStringList soids;
     cAppMemo em;
-    cPatch *pp = NULL, *pp2;
+    cPatch *pp = NULL, *pp2 = NULL;
     cSelect sel;
     QHostAddress a;
-    cNPort *plp;
+    cMac        portMac;
+    cNPort *plp = NULL;
 
     rDev.clear();
     rHost.clear();
@@ -809,32 +811,72 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
     sel.choice(q, "lldp.descr", row.descr);
     choice = sel.getName(cSelect::ixChoice());
 
-
     // Lokális port objektum Az LLDP-ben nem biztos, hogy azonos a portok indexelése (gratula annak aki ezt kitalálta)
-    portDescr = QString("LLDP-MIB::lldpLocPortDesc.%1").arg(port_ix);
+    // És az sem biztos, hogy a portDescr mező az interfész descriptort tartalmazza, ez a 3COM esetén az portId-ben van (brávó-brávó, gondolom létezik több elcseszett variáció is)
+    soids <<  QString("LLDP-MIB::lldpLocPortDesc.%1")     .arg(port_ix);
+    soids <<  QString("LLDP-MIB::lldpLocPortIdSubtype.%1").arg(port_ix);
+    soids <<  QString("LLDP-MIB::lldpLocPortId.%1")       .arg(port_ix);
+
     a = pDev->getIpAddress();
     snmp.open(a.toString(), pDev->getName(_sCommunityRd), pDev->getId(_sSnmpVer));
-    e = snmp.get(portDescr);
+    e = snmp.get(soids);
     if  (e) {
         HEREIN(em, QObject::trUtf8("A %1 LLDP indexű lokális port sikertelen azonosítás: snmp error #%2.").arg(port_ix).arg(e), RS_WARNING);
         goto scanByLldpDevRow_error;
     }
     snmp.first();
-    portDescr = snmp.value().toString();
-    lPortIx = portDescr2Ix(q, snmp, a, portDescr, em);
-    if (lPortIx < 0) goto scanByLldpDevRow_error;
-
-    plp = pDev->ports.get(_sPortIndex, port_ix, EX_IGNORE);
-    if (plp == NULL) {
-        HEREIN(em, QObject::trUtf8("A %1 indexű lokális port nem létezik.").arg(port_ix), RS_WARNING);
-        goto scanByLldpDevRow_error;
+    portDescr       = snmp.value().toString();
+    snmp.next();
+    portIdSubType   = snmp.value().toInt();
+    snmp.next();
+    switch (portIdSubType) {
+    case 1: // interfaceAlias
+    case 2: // portComponent
+    case 4: // networkAddress
+    case 6: // agentCircuitId
+    case 7: // local
+    default:
+        portMac.clear();
+        portId.clear();
+        break;
+    case 3: // macAddress
+        portMac.set(snmp.value());
+        break;
+    case 5: // interfaceName :? ifDescr
+        portId  = snmp.value().toString();
+        break;
     }
-    if (0 != plp->chkObjType<cInterface>(EX_IGNORE)) {
-        HEREIN(em, QObject::trUtf8("A %1 indexű lokális port egy passzív port.").arg(port_ix), RS_WARNING);
+    lPortIx   = -1;
+    for (i = 0; i < pDev->ports.size(); ++i) {
+        cNPort *pnp = pDev->ports.at(i);
+        if (0 != pnp->chkObjType<cInterface>(EX_IGNORE)) continue;
+        cInterface *pif = dynamic_cast<cInterface *>(pnp);
+        QString name = pif->getName();
+        cMac    pmac = pif->getMac(_sHwAddress);
+        r = name == portDescr;
+        r = r || (portId.isEmpty() == false && portId  == name);
+        r = r || (portMac.isValid()         && portMac == pmac);
+        if (r) {
+            if (lPortIx < 0) {  // Volt találat
+                lPortIx = pif->getId(_sPortIndex);
+                plp = pnp;
+            }
+            else {              // Több találat nem lehet !!!
+                lPortIx = -2;
+                break;
+            }
+        }
+    }
+    if (lPortIx < 0) {
+        if (lPortIx == -2) {
+            HEREIN(em, QObject::trUtf8("A %1 LLDP indexű lokális port sikertelen azonosítás, nem egyértelmű. portDescr = %2, portId = %3, portMac = %4.").arg(port_ix).arg(portDescr, portId, portMac.toString()), RS_WARNING);
+        }
+        else {
+            HEREIN(em, QObject::trUtf8("A %1 LLDP indexű lokális port sikertelen azonosítás, nincs találat. portDescr = %2, portId = %3, portMac = %4.").arg(port_ix).arg(portDescr, portId, portMac.toString()), RS_WARNING);
+        }
         goto scanByLldpDevRow_error;
     }
     lPort.clone(*plp);
-
 
     // A távoli eszköz címe megvan?
     if (row.addr.isNull()) {
@@ -1250,14 +1292,17 @@ bool cLldpScan::setRPortFromMac(rowData &row, cAppMemo &em)
 
 int cLldpScan::portDescr2Ix(QSqlQuery &q, cSnmp &snmp, QHostAddress ha, const QString& pdescr, cAppMemo& em)
 {
+    _DBGFN() << "@(,," << ha.toString() << ", " << pdescr << ",)" << endl;
     (void)q;
     if (pdescr.isEmpty()) {
         HEREIN(em, QObject::trUtf8("Hiányzik a port azonosító név."), RS_CRITICAL);
+        DWAR() << em.getMemo() << endl;
         return -1;
     }
     int r = snmp.open(ha.toString());
     if (r) {
         HEREIN(em, QObject::trUtf8("Port index keresése. Az SNMP megnyitás sikertelen #%1").arg(r), RS_WARNING);
+        DWAR() << em.getMemo() << endl;
         return -1;
     }
     cOId oid(_sIfMib + _sIfDescr);
@@ -1265,16 +1310,20 @@ int cLldpScan::portDescr2Ix(QSqlQuery &q, cSnmp &snmp, QHostAddress ha, const QS
     r = snmp.getNext(oid);
     if (r) {
         HEREIN(em, QObject::trUtf8("Port index keresése. Sikertelen SNMP (first) lekérdezés #%1").arg(r), RS_WARNING);
+        DWAR() << em.getMemo() << endl;
         return -1;
     }
     do {
         if (NULL == snmp.first()) {
+            DWAR() << em.getMemo() << endl;
             HEREIN(em, QObject::trUtf8("Port index keresése. No SNMP data"), RS_WARNING);
             return -1;
         }
         cOId o = snmp.name();
+        PDEB(VVERBOSE) << o.toString() << " = " << debVariantToString(snmp.value()) << endl;
         if (!(oid < o)) {
-            HEREIN(em, QObject::trUtf8("Távoli port index keresése. Nincs %1 nevű port.").arg(pdescr), RS_WARNING);
+            HEREIN(em, QObject::trUtf8("Port index keresése. Nincs %1 nevű port.").arg(pdescr), RS_WARNING);
+            DWAR() << em.getMemo() << endl;
             return -1;
         }
         /* - */
@@ -1282,11 +1331,16 @@ int cLldpScan::portDescr2Ix(QSqlQuery &q, cSnmp &snmp, QHostAddress ha, const QS
         if (o.size() >= 1) {
             r = (int)o[0];
             QString n = snmp.value().toString();
+            PDEB(VVERBOSE) << "#" << r << "; compare : " << quotedString(n) << " == " << quotedString(pdescr) << endl;
             if (n == pdescr) return r;
+        }
+        else {
+            DWAR() << "Invalid OID size : " << o.toString() << " , host IP : " << ha.toString() << endl;
         }
         r = snmp.getNext();
         if (r) {
             HEREIN(em, QObject::trUtf8("Port index keresése. Sikertelen SNMP (next) lekérdezés #%1").arg(r), RS_WARNING);
+            DWAR() << em.getMemo() << endl;
             return -1;
         }
     } while (true);
