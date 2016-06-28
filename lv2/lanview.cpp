@@ -427,7 +427,7 @@ qlonglong lanView::sendError(const cError *pe, const QString& __t)
     fields.add(_sPid,           QCoreApplication::applicationPid());
     fields.add(_sAppVer,        appVersion);
     fields.add(_sLibVer,        libVersion);
-    if (!instance->user().isNullId()) fields.add(_sUserId, instance->user().getId());
+    if (instance->pUser != NULL && !instance->pUser->isNullId()) fields.add(_sUserId, instance->user().getId());
     if (instance->pSelfService != NULL && !instance->pSelfService->isNullId()) fields.add(_sServiceId, instance->pSelfService->getId());
     fields.add(_sFuncName,      pe->mFuncName);
     fields.add(_sSrcName,       pe->mSrcName);

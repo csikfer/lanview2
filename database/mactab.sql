@@ -124,6 +124,8 @@ DECLARE
     arp     arps;
     aid     bigint;
     oip     ipaddresses;
+    net     cidr;
+    sni     bigint;
 BEGIN
     BEGIN       -- MAC -> IP check
         SELECT ip_address_id INTO STRICT aid FROM ipaddresses JOIN interfaces USING(port_id) WHERE
@@ -137,7 +139,13 @@ BEGIN
     END;
     IF aid IS NOT NULL THEN
         SELECT * INTO oip FROM ipaddresses WHERE ip_address_id = aid;     -- régi IP
-        UPDATE ipaddresses SET address = ipa WHERE ip_address_id = aid;   -- új ip
+        SELECT netaddr INTO net FROM subnets WHERE subnet_id = oip.subnet_id;
+        IF net >> ipa THEN      -- Ha nem változott a subnet
+            sni := oip.subnet_id;
+        ELSE
+            sni := NULL;
+        END IF;
+        UPDATE ipaddresses SET address = ipa, subnet_id = sni WHERE ip_address_id = aid;   -- új ip
         INSERT INTO dyn_ipaddress_logs(ipaddress_new, ipaddress_old, set_type, port_id)
                                 VALUES (ipa, oip.address, stp, oip.port_id);
     END IF;
@@ -424,10 +432,10 @@ CREATE OR REPLACE FUNCTION replace_mactab(
 ) RETURNS reasons AS $$
 DECLARE
     mt       mactab;
-    pname_di CONSTANT text := 'suspected_uplink';
-    maxct    CONSTANT bigint      := get_int_sys_param('mactab_move_check_count');
-    mv       CONSTANT reasons     := 'move';
-    btm      CONSTANT timestamp   := CURRENT_TIMESTAMP - get_interval_sys_param('mactab_move_check_interval');
+    pname_di CONSTANT text      := 'suspected_uplink';
+    maxct    CONSTANT bigint    := get_int_sys_param('mactab_move_check_count');
+    mv       CONSTANT reasons   := 'move';
+    btm      CONSTANT timestamp := CURRENT_TIMESTAMP - get_interval_sys_param('mactab_move_check_interval');
 BEGIN
     IF get_bool_port_param(pid, pname_di) THEN
         RETURN 'discard';
@@ -444,16 +452,16 @@ BEGIN
             IF maxct < COUNT(*) FROM mactab_logs WHERE date_of > btm AND hwaddress = mac AND reason = mv THEN
                 -- Csiki-csuki van, az egyik port valójában uplink?
                 IF get_bool_port_param(mt.port_id, pname_di)
-                 OR ((SELECT COUNT(*) FROM mactab_logs WHERE date_of > btm AND port_id = pid        AND reason = mv)
-                   < (SELECT COUNT(*) FROM mactab_logs WHERE date_of > btm AND port_id = mt.port_id AND reason = mv))
+                 OR ((SELECT COUNT(*) FROM mactab_logs WHERE date_of > btm AND port_id_old = pid        AND reason = mv)
+                   < (SELECT COUNT(*) FROM mactab_logs WHERE date_of > btm AND port_id_old = mt.port_id AND reason = mv))
                 THEN    -- Nem az új pid a gyanús
                     PERFORM mactab_move(mt, pid, mac, typ, mst);
                     PERFORM set_bool_port_param(mt.port_id, true, pname);
-                    UPDATE mactab_logs SET be_void = true WHERE date_of > btm AND port_id = mt.port_id AND reason = mv AND hwaddress = mac;
+                    UPDATE mactab_logs SET be_void = true WHERE date_of > btm AND port_id_old = mt.port_id AND reason = mv AND hwaddress = mac;
                     RETURN 'restore';
                 ELSE
                     PERFORM set_bool_port_param(pid, true, pname);
-                    UPDATE mactab_logs SET be_void = true WHERE date_of > btm AND port_id = pid        AND reason = mv AND hwaddress = mac;
+                    UPDATE mactab_logs SET be_void = true WHERE date_of > btm AND port_id_old = pid        AND reason = mv AND hwaddress = mac;
                     RETURN 'modify';
                 END IF;
             ELSE
