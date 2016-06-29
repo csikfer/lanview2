@@ -31,6 +31,7 @@ enum eDialogButtons {
     DBT_EXPAND,         ///< FA: kibont
     DBT_ROOT,           ///< FA: rész fa megjelenítése
     DBT_COPY,           ///< Kijelölt sorok, mint név lista a vágó lapra
+    DBT_RECEIPT,         ///< Üzenet, esemény nyugtázása
     DBT_TRUNCATE,       ///< Az összes rekord törlése
     DBT_BUTTON_NUMBERS, ///< Nem egy nyomógombot reprezentál, hanem azok számát
     DBT_SPACER,         ///< Nem nyomogomb, spacer

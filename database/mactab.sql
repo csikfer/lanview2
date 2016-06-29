@@ -101,7 +101,8 @@ CREATE TABLE arp_logs (
     set_type_old    settype     NOT NULL,
     host_service_id_old bigint	REFERENCES host_services(host_service_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
     first_time_old  timestamp   DEFAULT NULL,
-    last_time_old   timestamp   DEFAULT NULL
+    last_time_old   timestamp   DEFAULT NULL,
+    acknowledged    boolean     DEFAULT false
 );
 CREATE INDEX arp_logs_date_of_index   ON arp_logs(date_of);
 ALTER TABLE arp_logs OWNER TO lanview2;
@@ -113,7 +114,8 @@ CREATE TABLE dyn_ipaddress_logs (
     ipaddress_new           inet        DEFAULT NULL,
     ipaddress_old           inet        DEFAULT NULL,
     set_type                settype     NOT NULL,
-    port_id                 bigint      NOT NULL REFERENCES interfaces(port_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT
+    port_id                 bigint      NOT NULL REFERENCES interfaces(port_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    acknowledged            boolean     DEFAULT false
 );
 CREATE INDEX dyn_ipaddress_logs_date_of_index   ON dyn_ipaddress_logs(date_of);
 ALTER TABLE dyn_ipaddress_logs OWNER TO lanview2;
@@ -298,7 +300,8 @@ CREATE TABLE mactab_logs (
     set_type_old    settype     NOT NULL,
     port_id_new     bigint DEFAULT NULL REFERENCES interfaces(port_id) MATCH SIMPLE ON DELETE CASCADE ON UPDATE RESTRICT,
     mactab_state_new mactabstate[] NOT NULL,
-    set_type_new    settype     NOT NULL
+    set_type_new    settype     NOT NULL,
+    acknowledged    boolean     DEFAULT false
 );
 CREATE INDEX mactab_logs_hwaddress_index ON mactab_logs(hwaddress);
 CREATE INDEX mactab_logs_date_of_index   ON mactab_logs(date_of);
@@ -456,11 +459,11 @@ BEGIN
                    < (SELECT COUNT(*) FROM mactab_logs WHERE date_of > btm AND port_id_old = mt.port_id AND reason = mv))
                 THEN    -- Nem az új pid a gyanús
                     PERFORM mactab_move(mt, pid, mac, typ, mst);
-                    PERFORM set_bool_port_param(mt.port_id, true, pname);
+                    PERFORM set_bool_port_param(mt.port_id, true, pname_di);
                     UPDATE mactab_logs SET be_void = true WHERE date_of > btm AND port_id_old = mt.port_id AND reason = mv AND hwaddress = mac;
                     RETURN 'restore';
                 ELSE
-                    PERFORM set_bool_port_param(pid, true, pname);
+                    PERFORM set_bool_port_param(pid, true, pname_di);
                     UPDATE mactab_logs SET be_void = true WHERE date_of > btm AND port_id_old = pid        AND reason = mv AND hwaddress = mac;
                     RETURN 'modify';
                 END IF;

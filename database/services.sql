@@ -364,7 +364,8 @@ CREATE TABLE app_memos (
     user_id             bigint          DEFAULT NULL
         REFERENCES users(user_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
     importance          notifswitch     DEFAULT 'unknown',
-    memo                text            NOT NULL
+    memo                text            NOT NULL,
+    acknowledged        boolean         DEFAULT false
 );
 CREATE INDEX app_memos_date_of_index ON app_memos (date_of);
 ALTER TABLE app_memos OWNER TO lanview2;

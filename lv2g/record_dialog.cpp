@@ -85,6 +85,7 @@ void cDialogButtons::staticInit()
         appendCont(buttonNames, trUtf8("Kibont"),      icons, QIcon::fromTheme("zoom-in"),        keys, Qt::Key_Plus,   DBT_EXPAND);
         appendCont(buttonNames, trUtf8("Gyökér"),      icons, QIcon(),                            keys, 0,              DBT_ROOT);
         appendCont(buttonNames, trUtf8("Másol"),       icons, QIcon::fromTheme("copy"),           keys, 0,              DBT_COPY);
+        appendCont(buttonNames, trUtf8("Nyugtáz"),     icons, QIcon(),                            keys, 0,              DBT_RECEIPT);
         appendCont(buttonNames, trUtf8("Kiürít"),      icons, QIcon::fromTheme("edit-clear"),     keys, 0,              DBT_TRUNCATE);
     }
     if (buttonNames.size() != _buttonNumbers) EXCEPTION(EPROGFAIL);

@@ -284,6 +284,7 @@ public:
     /// Kijeleölt sorok neveinek a vágólapra másolása, mint lista
     virtual void copy();
     ///
+    virtual void receipt();
     virtual void truncate();
 
     virtual void setEditButtons() = 0;

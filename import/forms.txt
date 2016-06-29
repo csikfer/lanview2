@@ -63,7 +63,7 @@ TABLE phs_links_shape SHAPE phs_links "Fizikai linkek" {
     ADD FIELD phs_link_type2    {  TITLE "Típus",       "Típus";        ADD FILTERS begin, like; }
     FIELD port_index1, port_name1, phs_link_type1             ORD asc,desc,no;
     FIELD node_name2, port_name2, port_index2, phs_link_type2 ORD no, asc, desc;
-    TABLE FEATURES ":pports.owner=port_id1:"; 
+    TABLE FEATURES ":pports.owner=port_id1:hostports.owner=port_id1:"; 
 }
 
 TABLE log_links_shape SHAPE log_links "Logikai linkek" {
@@ -77,7 +77,7 @@ TABLE log_links_shape SHAPE log_links "Logikai linkek" {
     ADD FIELD port_index2       {  TITLE "Index",  "Linked Port Index"; ADD FILTERS big,litle,interval; }
     FIELD port_index1                                     ORD asc,desc,no;
     FIELD port_name1, node_name2, port_name2, port_index2 ORD no, asc, desc;
-    
+    TABLE FEATURES ":hostports.owner=port_id1:"; 
 }
 
 TABLE lldp_links_shape SHAPE lldp_links "LLDP linkek" {
@@ -91,6 +91,7 @@ TABLE lldp_links_shape SHAPE lldp_links "LLDP linkek" {
     ADD FIELD port_index2       {  TITLE "Index",  "Linked Port Index"; ADD FILTERS big,litle,interval; }
     FIELD port_index1                                     ORD asc,desc,no;
     FIELD port_name1, node_name2, port_name2, port_index2 ORD no, asc, desc;
+    TABLE FEATURES ":hostports.owner=port_id1:"; 
 }
 
 TABLE patchs SHAPE phsnodes "Hálózati elem" {
@@ -225,7 +226,7 @@ TABLE mactab_shape SHAPE mactab_port "Port címtábla" {
 TABLE interfaces SHAPE hostports "Hálózati interfészek, portok" {
     SET DEFAULTS;
     TABLE TYPE CHILD, OWNER, TREE;
-    RIGHT SHAPE ipaddresses,  port_params, mactab_port;
+    RIGHT SHAPE ipaddresses,  port_params, mactab_port, phs_links, log_links, lldp_links;
     TABLE INHERIT TYPE listed_rev;
     INHERIT TABLE NAMES nports;                 // A teljes lista: interfaces, nports
 
@@ -327,11 +328,13 @@ TABLE SHAPE query_parsers "Lekérdezés értelmezések" {
 TABLE SHAPE subnets "Alhálózatok" {
     SET DEFAULTS;
     TABLE TYPE SIMPLE;
+    TABLE FEATURES ":vlans.owner=vlan_id:"; 
 }
 
 TABLE SHAPE vlans "VLAN-ok" {
     SET DEFAULTS;
-    TABLE TYPE SIMPLE;
+    TABLE TYPE OWNER;
+    RIGHT SHAPE subnets;
     TABLE FEATURES ":button.copy:";
     FIELD vlan_id ADD FILTERS big, litle, interval;
     FIELD vlan_name, vlan_note ADD FILTERS begin, like, similar, regexp, regexpi;
@@ -403,7 +406,41 @@ TABLE SHAPE db_errs "Adatbázis hiba napló" {
 TABLE SHAPE app_errs "Applikáció hiba napló" {
     SET DEFAULTS;
     TABLE READ ONLY;
+    FIELD date_of       TITLE "időpontja", "Az esemény időpontja";
+    FIELD app_name      TITLE "App.", "A program neve";
+    FIELD node_id       TITLE "Host", "A futtató szg. neve";
+    FIELD pid           TITLE "PID", "Folyamat azonosító (PID)";
+    FIELD app_ver       TITLE "P.ver.", "A progra verziószáma";
+    FIELD lib_ver       TITLE "L.ver.", "A könyvtár verziószáma";
+    FIELD user_id       TITLE "Felhasználó",@;
+    FIELD service_id    TITLE "Szervíz", @;
+    FIELD func_name     TITLE "Főggvény", "Függvény neve a forrásban";
+    FIELD src_name      TITLE "Forrás név", "A forrás fájl neve";
+    FIELD src_line      TITLE "Forrás sor", "A kod sor száma";
+    FIELD err_name      TITLE "Típus", "Hiba típusa";
+    FIELD err_subcode   TITLE "Hiba par.", "Másodlagost hiba paraméter";
+    FIELD err_syscode   TITLE "Sys.","Utolsó rendszer hiba típusa";
+    FIELD err_submsg    TITLE "Hiba par.", "Másodlagost hiba paraméter";
+    FIELD thread_name   TITLE "Szál","Program szál neve";
+    FIELD sql_err_num   TITLE "SQL c.","SQL hiba kód";
+    FIELD sql_err_type  TITLE "SQL t.","SQL hiba típus";
+    FIELD sql_driver_text TITLE "SQL dr.","SQL Driver";
+    FIELD sql_db_text   TITLE "QSL db","SQL db";
+    FIELD sql_query     TITLE "Query","SQL Query";
+    FIELD sql_bounds    TITLE "Bounds","SQL Bounds";
+    FIELD data_line     TITLE "Adat sor","Feldolgozott sor";
+    FIELD data_pos      TITLE "Adat poz","Feldolgozott pozíció";
+    FIELD data_msg      TITLE "Adat üz.","Hiba üzenet";
+    FIELD data_name     TITLE "Adat név","Feldolgozott neve";
+    FIELD acknowledged  TITLE "Nyugta","Nugtázva";
     
+    FIELD err_submsg, sql_driver_text, sql_db_text, sql_query, sql_bounds, data_msg FLAG ON HUGE;
+    FIELD date_of ORD asc, desc,no;
+    FIELD date_of ADD FILTERS big, litle, interval;
+    FIELD app_name, node_id, user_id, service_id, func_name, src_name, err_name, err_submsg,
+          thread_name, sql_driver_text, sql_db_text, sql_query, sql_bounds, data_msg
+                ADD FILTERS begin, like, similar, regexp, regexpi;
+    FIELD pid, src_line, err_code, err_subcode, err_syscode ADD FILTERS big, litle, interval;
 }
 
 TABLE SHAPE app_memos "Applikáció napló" {

@@ -591,7 +591,8 @@ void cRecordsViewBase::buttonPressed(int id)
     case DBT_PUT_IN:    putIn();    break;
     case DBT_TAKE_OUT:  takeOut();  break;
     case DBT_COPY:      copy();     break;
-//  case DBT_TRUNCATE:  truencate();break;
+    case DBT_RECEIPT:   receipt();  break;
+    case DBT_TRUNCATE:  truncate(); break;
     default:
         DWAR() << "Invalid button id : " << id << endl;
         break;
@@ -866,7 +867,6 @@ void cRecordsViewBase::remove()
 void cRecordsViewBase::reset()      { EXCEPTION(ENOTSUPP); }
 void cRecordsViewBase::putIn()      { EXCEPTION(ENOTSUPP); }
 void cRecordsViewBase::takeOut()    { EXCEPTION(ENOTSUPP); }
-void cRecordsViewBase::truncate()   { EXCEPTION(ENOTSUPP); }
 
 void cRecordsViewBase::copy()
 {
@@ -880,6 +880,32 @@ void cRecordsViewBase::copy()
         }
         list.chop(2);
         QApplication::clipboard()->setText(list);
+    }
+}
+
+void cRecordsViewBase::receipt()
+{
+    QModelIndexList mil = selectedRows();
+    int ix = recDescr().toIndex(_sAcknowledged);
+    bool mod = false;
+    foreach (QModelIndex mi, mil) {
+        cRecord * pr = pModel->record(mi);
+        if (pr->getBool(ix)) continue;
+        pr->setOn(ix);
+        if (cErrorMessageBox::condMsgBox(pr->tryUpdate(*pq, false, _bit(ix)), pWidget())) {
+            mod = true;
+            continue;
+        }
+        break;
+    }
+    if (mod) refresh();
+}
+
+void cRecordsViewBase::truncate()
+{
+    cRecordAny r(&recDescr());
+    if (cErrorMessageBox::condMsgBox(r.tryRemove(*pq, false, QBitArray(1, false), EX_ERROR), pWidget())) {
+        refresh();
     }
 }
 
@@ -1101,6 +1127,7 @@ void cRecordTable::setEditButtons()
         buttonDisable(DBT_INSERT,  isNoInsert || ((flags & (RTF_IGROUP | RTF_IMEMBER | RTF_CHILD)) && (owner_id == NULL_ID)));
     }
     buttonDisable(DBT_DELETE,  isNoDelete || n <  1 );
+    buttonDisable(DBT_RECEIPT, n < 1);
     buttonDisable(DBT_COPY,    n < 1);
 }
 
@@ -1247,7 +1274,12 @@ void cRecordTable::init()
         buttons << DBT_COPY << DBT_SPACER;
     }
     buttons << DBT_REFRESH << DBT_FIRST << DBT_PREV << DBT_NEXT << DBT_LAST;
-    if (isReadOnly == false) buttons << DBT_BREAK << DBT_SPACER << DBT_DELETE << DBT_INSERT << DBT_MODIFY;
+    if (recDescr().toIndex(_sAcknowledged, EX_IGNORE) >= 0)  {
+        buttons << DBT_SPACER << DBT_RECEIPT;
+    }
+    if (isReadOnly == false) {
+        buttons << DBT_BREAK << DBT_SPACER << DBT_DELETE << DBT_INSERT << DBT_MODIFY;
+    }
     flags = 0;
     switch (shapeType & ~ENUM2SET2(TS_TABLE, TS_READ_ONLY)) {
     case ENUM2SET(TS_BARE):

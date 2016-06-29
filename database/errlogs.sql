@@ -31,7 +31,8 @@ CREATE TABLE app_errs (
     data_line   integer         DEFAULT NULL,
     data_pos    integer         DEFAULT NULL,
     data_msg    text            DEFAULT NULL,
-    data_name   text            DEFAULT NULL
+    data_name   text            DEFAULT NULL,
+    acknowledged boolean        DEFAULT false
 );
 CREATE INDEX app_errs_date_of_index ON app_errs (date_of);
 ALTER TABLE app_errs OWNER TO lanview2;

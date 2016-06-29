@@ -1374,9 +1374,6 @@ public:
     cRecord& enum2setOff(const QString& __n, int __e)           { enum2setOff(toIndex(__n), __e); return *this; }
     cRecord& enum2setOff(const QString& __n, int _e1, int _e2)  { enum2setOff(toIndex(__n), _e1, _e2); return *this; }
     ///
-    cRecord& setBool(int __ix, int __e, bool __v)               { if (__v) enum2setOn(__ix, __e); else enum2setOff(__ix, __e); return *this; }
-    cRecord& setBool(const QString& __n, int __e, bool __v)     { if (__v) enum2setOn(__n,  __e); else enum2setOff(__n,  __e); return *this; }
-    ///
     QStringList getStringList(int __i, enum eEx __ex = EX_ERROR) const;
     cRecord& setStringList(int __i, const QStringList& __v, enum eEx __ex = EX_ERROR);
     cRecord& addStringList(int __i, const QStringList& __v, enum eEx __ex = EX_ERROR);
@@ -1501,6 +1498,8 @@ public:
     /// üres stringgel tér vissza.
     /// A _likeMask alapértelmezése üres (ami alapján az isLike() visszatér), ha értéket adunk neki a feltétel összeállítás megváltoztatásához, akkor
     /// ne felejtsük el a lekérdezés után törölni azt, mert a késöbbi lekérdezések viselkedését is befolyásolni fogja.
+    /// @param __fm Feltétel maszk. Ha üres tömb, akkor a használt maszk az elsődleges kulcsok maszkja lessz. Ha azt akarjuk, a feltétel
+    ///     legyen üres (kivéve a deleted mező), akkor a paraméter egy nem üres, de egy true értéket sem tartalmazó tömb kell legyen.
     QString whereString(QBitArray& __fm) const;
     /// Végrehajt egy query-t a megadott sql query stringgel, és az objektum mezőivel (bind) az __arg-ban megadott sorrendben.
     /// A mező adatok bind-elése a mezők sorrendje szerint történik, attol nem lehet eltérni, egy mező egyszer szerepelhet.
@@ -1637,9 +1636,11 @@ public:
     /// @param __only Ha megadjuk és értéke true, akkor a származtatott táblákban nem keres.
     /// @param __fn A mező(k) maszk, alapértelmezése üres, ekkor a használt maszk az elsődleges kulcs mező(k).
     /// @param __ex Ha EX_NOOP, és nincs egyetlen törölt rekord sem, akkor dob egy kizárást.
-    /// @exception Hiba esetén dob egy kizárást, valamint ha __ex igaz, és nincs egy törölt rekord sem.
+    /// @exception Hiba esetén dob egy kizárást, valamint ha __ex EX_NOOP, és nincs egy törölt rekord sem.
     /// @return A törölt rekordok száma
     int remove(QSqlQuery& __q, bool __only = false, const QBitArray& __fm = QBitArray(), enum eEx __ex = EX_NOOP);
+    /// Hasonló a remove metódushoz, de a hiba esetén a hiba objektum pointerével tér vissza, ha volt kizárás.
+    /// Ha nem volt hiba akkor a visszaadott érték a NULL pointer.
     cError *tryRemove(QSqlQuery& __q, bool __only = false, const QBitArray& __fm = QBitArray(), bool __tr = false);
     /// Adat ellenőrzést végez
     /// Beállítja _stat értékét
