@@ -1374,6 +1374,10 @@ public:
     cRecord& enum2setOff(const QString& __n, int __e)           { enum2setOff(toIndex(__n), __e); return *this; }
     cRecord& enum2setOff(const QString& __n, int _e1, int _e2)  { enum2setOff(toIndex(__n), _e1, _e2); return *this; }
     ///
+    cRecord& enum2setBool(int __ix, int __e, bool __f)          { if (__f) enum2setOn(__ix, __e); else enum2setOff(__ix,__e); return *this; }
+    cRecord& enum2setBool(const QString& __n, int __e, bool __f){ enum2setBool(toIndex(__n), __e, __f); return *this; }
+
+    ///
     QStringList getStringList(int __i, enum eEx __ex = EX_ERROR) const;
     cRecord& setStringList(int __i, const QStringList& __v, enum eEx __ex = EX_ERROR);
     cRecord& addStringList(int __i, const QStringList& __v, enum eEx __ex = EX_ERROR);

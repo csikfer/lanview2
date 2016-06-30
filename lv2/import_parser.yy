@@ -1407,6 +1407,72 @@ static void setNodePlace(QStringList nodes, qlonglong place_id)
     }
 }
 
+static void setNodePortsParam(const QString& __node, const QStringList& _ports, const QString& __ptype, const QString& __value)
+{
+    // Type
+    cParamType pt;
+    pt.setByName(qq(), __ptype);
+    eParamType tt = (eParamType)pt.getId(_sParamTypeType);
+    // Check/convert value
+    QString value = cParamType::paramToString(tt, __value);
+    // node
+    cPatch n;   // Közös ős
+    n.setByName(qq(), __node);
+    n.ports.fetch(qq());        // a fetchPorts() nem jó, cak a patch portokat olvasná
+    foreach (QString pn, _ports) {
+        cNPort *pp= n.ports.get(pn);
+        execSqlFunction(qq(), "set_str_port_param", pp->getId(), value, __ptype);
+    }
+}
+
+static void delNodePortsParam(const QString& __node, const QStringList& _ports, const QString& __ptype)
+{
+    // Type
+    qlonglong tid = cParamType().getIdByName(qq(), __ptype);
+    // node
+    cPatch n;   // Közös ős
+    n.setByName(qq(), __node);
+    n.ports.fetch(qq());        // a fetchPorts() nem jó, cak a patch portokat olvasná
+    cPortParam pp;
+    QBitArray  where = pp.mask(_sParamTypeId, _sPortId);
+    foreach (QString pn, _ports) {
+        pp.setId(_sParamTypeId, tid);
+        pp.setId(_sPortId,      n.ports.get(pn)->getId());
+        pp.remove(qq(), false, where, EX_ERROR);
+    }
+}
+
+static void setNodeParam(const QStringList& __nodes, const QString& __ptype, const QString& __value)
+{
+    // Type
+    cParamType pt;
+    pt.setByName(qq(), __ptype);
+    eParamType tt = (eParamType)pt.getId(_sParamTypeType);
+    // Check/convert value
+    QString value = cParamType::paramToString(tt, __value);
+    // nodes
+    foreach (QString nn, __nodes) {
+        qlonglong nid = cPatch().getIdByName(qq(), nn);
+        execSqlFunction(qq(), "set_str_node_param", nid, value, __ptype);
+    }
+}
+
+static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
+{
+    // Type
+    qlonglong tid = cParamType().getIdByName(qq(), __ptype);
+    // node
+    cNodeParam np;
+    QBitArray  where = np.mask(_sParamTypeId, _sNodeId);
+    foreach (QString nn, __nodes) {
+        qlonglong nid = cPatch().getIdByName(qq(), nn);
+        np.setId(_sParamTypeId, tid);
+        np.setId(_sNodeId,      nid);
+        np.remove(qq(), false, where, EX_ERROR);
+    }
+}
+
+
 %}
 
 %union {
@@ -2444,6 +2510,9 @@ delete  : DELETE_T PLACE_T strs ';'             { foreach (QString s, *$3) { cPl
         | DELETE_T ENUM_T TITLE_T  str strs ';' { foreach (QString s, *$5) { cEnumVal().delByNames(qq(), sp2s($4), s); } delete $5; }
         | DELETE_T GUI_T strs MENU_T ';'        { foreach (QString s, *$3) { cMenuItem().delByAppName(qq(), s, true); } delete $3; }
         | DELETE_T QUERY_T PARSER_T strs ';'    { foreach (QString s, *$4) { cQueryParser().delByServiceName(qq(), s, true); } delete $4; }
+        | DELETE_T NODE_T str PORTS_T strs PARAM_T str ';'
+                                                { delNodePortsParam(sp2s($3), slp2sl($5), sp2s($7)); }
+        | DELETE_T NODE_T strs PARAM_T str ';'  { delNodesParam(slp2sl($3), sp2s($5)); }
         ;
 scan    : SCAN_T LLDP_T snmph ';'               { scanByLldp(qq(), *$3, true); delete $3; }
         | SCAN_T SNMP_T snmph SET_T ';'         { $3->setBySnmp(); }
@@ -2472,7 +2541,7 @@ tmodp   : SET_T DEFAULTS_T ';'                  { pTableShape->setDefaults(qq())
         | TABLE_T TYPE_T OFF_T tstypes ';'      { pTableShape->setOff(_sTableShapeType, $4); }
         // title, dialog title, member title (group), not member title (group)
         | TABLE_T TITLE_T strs_zz  ';'          { pTableShape->setTitle(slp2sl($3)); }
-        | TABLE_T READ_T ONLY_T bool_on ';'     { pTableShape->setBool(_sTableShapeType, TS_READ_ONLY, $4); }
+        | TABLE_T READ_T ONLY_T bool_on ';'     { pTableShape->enum2setBool(_sTableShapeType, TS_READ_ONLY, $4); }
         | TABLE_T FEATURES_T str ';'            { pTableShape->set(_sFeatures, sp2s($3)); }
         | AUTO_T REFRESH_T str ';'              { pTableShape->setName(_sAutoRefresh, sp2s($3)); }
         | AUTO_T REFRESH_T int ';'              { pTableShape->setId(  _sAutoRefresh,      $3 ); }
@@ -2503,7 +2572,7 @@ tmodp   : SET_T DEFAULTS_T ';'                  { pTableShape->setDefaults(qq())
                                                   delete $2;
                                                 }
         | FIELD_T strs READ_T ONLY_T bool_on ';'{ foreach (QString fn, *$2) {
-                                                    pTableShape->shapeFields.get(fn)->setBool(_sFieldFlags, FF_READ_ONLY, $5);
+                                                    pTableShape->shapeFields.get(fn)->enum2setBool(_sFieldFlags, FF_READ_ONLY, $5);
                                                   }
                                                   delete $2;
                                                 }
@@ -2615,6 +2684,9 @@ modify  : SET_T str '[' str ']' '.' str '=' value ';'   { cRecordAny(sp2s($2)).s
         | SET_T ALERT_T SERVICE_T srvid ';'     { alertServiceId = $4; }
         | SET_T SUPERIOR_T hsid TO_T hsss ';'   { $5->sets(_sSuperiorHostServiceId, $3); delete $5; }
         | SET_T PLACE_T place_id ';'            { globalPlaceId = $3; }
+        | SET_T NODE_T str PORTS_T strs PARAM_T str str ';'
+                                                { setNodePortsParam(sp2s($3), slp2sl($5), sp2s($7), sp2s($8)); }
+        | SET_T NODE_T strs PARAM_T str str ';' { setNodeParam(slp2sl($3), sp2s($5), sp2s($6)); }
         | CLEAR_T PLACE_T ';'                   { globalPlaceId = NULL_ID; }
         | SET_T PLACE_T place_id NODE_T strs ';'{ setNodePlace(slp2sl($5), $3); }
         // Felhasználó letiltása
