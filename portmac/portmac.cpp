@@ -136,6 +136,9 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
     : cInspector(__q, __host_service_id, __tableoid, _par)
     , snmp()
 {
+    QString msg;
+    static const qlonglong suspectrdUpLinkTypeId = cParamType().getIdByName(__q, _sSuspectedUplink);
+    static const qlonglong queryMacTabTypeId     = cParamType().getIdByName(__q, _sQueryMacTab);
     // Ha nincs megadva protocol szervíz, akkor SNMP device esetén az az SNMP lessz
     if (protoService().isEmpty_() && __tableoid == cSnmpDevice().tableoid()) {
         hostService.set(_sProtoServiceId, pSrvSnmp->getId());
@@ -149,32 +152,37 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
     }
     // Beolvassuk a portokat is
     host().fetchPorts(__q);
+    host().fetchParams(__q);
     tRecordList<cNPort>::iterator   i;
     // Csinálunk a releváns portokhoz egy index táblát
     for (i = host().ports.begin(); i < host().ports.end(); ++i) {
         cNPort  &np = **i;
+        int ix = -1;
         if (np.descr() < cInterface::_descr_cInterface()) continue; // buta portok érdektelenek
         QString ifTypeName = np.ifType().getName();
         if (ifTypeName == _sEthernet) {
             // Ha ez egy TRUNK tagja, akkor nem érdekes.
             if (!np.isNull(_sPortStapleId)) continue;
             // Ki kéne még hajítani az uplinkeket
-            if (NULL_ID != cLldpLink().getLinked(__q, np.getId())) continue; // Ez egy LLDP-vel felderített uplink
+            if (NULL_ID != cLldpLink().getLinked(__q, np.getId())) { // Ez egy LLDP-vel felderített uplink
+                ix = np.params.indexOf(_sParamTypeId, QVariant(queryMacTabTypeId));
+                // Ha van "query_mac_tab" paraméter, és igaz, akkor a link ellenére lekérdezzük
+                if (ix < 0 || !str2bool(np.params.at(ix)->getName(_sParamValue))) continue;
+            }
             // mehet a ports konténerbe az indexe
         }
         else if (ifTypeName == _sMultiplexor) {
             // TRUNK-nal a TRUNK tagjaihoz van rendelve az uplink
             int ix = -1;
-            bool first = true;
             // Erre a node-ra megy a link (ha marad NULL_ID, akkor nincs uplink)
             qlonglong linkedNodeId = NULL_ID;
             while (true) {
-                int st = ix + 1;    // 0 or next
-                // Keressük a trunk tagjait
+                int st = ix + 1;    // Find start index: st = 0 or next port index
+                // Find trunk members
                 ix = host().ports.indexOf(_sPortStapleId, np.get(_sPortId), st);
                 if (ix < 0) {
                     if (st == 0) {  // Üres trunk?
-                        QString msg = trUtf8("A %1 trunk-nek nincs egyetlen tagja sem.").arg(np.getFullName(__q));
+                        msg = trUtf8("A %1:%2 trunk-nek nincs egyetlen tagja sem.").arg(host().getName(), np.getName());
                         APPMEMO(__q, msg, RS_WARNING);
                     }
                     break;  // Nincs, vagy nincs több
@@ -183,17 +191,24 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
                 qlonglong pid = cLldpLink().getLinked(__q, host().ports[ix]->getId());
                 // host ID
                 qlonglong hid = NULL_ID;
-                if (pid != NULL_ID) hid = cNPort().setById(__q, pid).getId(_sNodeId);
-                if (first) {
-                    first = false;
+                cNPort    lp;
+                if (pid != NULL_ID) {
+                    hid = lp.setById(__q, pid).getId(_sNodeId);
+                }
+                else {
+                    msg = trUtf8("A %1:%2 trunk %3 tagjához nincs link rendelve.")
+                            .arg(host().getName(), np.getName(), host().ports[ix]->getName());
+                    APPMEMO(__q, msg, RS_WARNING);
+                    continue;
+                }
+                if (linkedNodeId == NULL_ID) {  // There is no reference link (first)
                     linkedNodeId = hid;
                 }
                 else {
                     if (linkedNodeId != hid) {
-                        QString msg = trUtf8("A %1(%2) trunk tagjai nem azonos node-hoz csatlakoznak (%2 - %3) .")
-                                .arg(np.getFullName(__q, EX_IGNORE))
-                                .arg(linkedNodeId == NULL_ID ? _sNULL : cNode().getNameById(linkedNodeId), EX_IGNORE)
-                                .arg(hid          == NULL_ID ? _sNULL : cNode().getNameById(hid, EX_IGNORE));
+                        msg = trUtf8("A %1:%2 trunk %3 tagja %4 -el, előző tagja %5 -al van linkben.")
+                                .arg(host().getName(), np.getName(), host().ports[ix]->getName())
+                                .arg(cNode().getNameById(__q, EX_IGNORE), lp.getFullName(__q, EX_IGNORE));
                         APPMEMO(__q, msg, RS_CRITICAL);
                     }
                 }
@@ -204,12 +219,10 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
             // Más típusű port nem érdekes.
             continue;
         }
-        if (np.fetchParams(__q)) { // Ha van paraméter
-            static  qlonglong suspectrdUpLinkTypeId = NULL_ID;
-            if (suspectrdUpLinkTypeId == NULL_ID) suspectrdUpLinkTypeId = cParamType().getIdByName(__q, _sSuspectedUplink);
-            int i = np.params.indexOf(_sParamTypeId, QVariant(suspectrdUpLinkTypeId));
+        if (ix < 0) {   // Ha nem negatív, akkor volt query_mac_tab paraméterünk, ő az erősebb
+            ix = np.params.indexOf(_sParamTypeId, QVariant(suspectrdUpLinkTypeId));
             // Ha van "suspected_uplink" paraméter, és igaz, akkor nem foglalkozunk vele (csiki-csuki elkerülése)
-            if (i >= 0 && str2bool(np.params.at(i)->getName(_sParamValue))) continue;
+            if (ix >= 0 && str2bool(np.params.at(ix)->getName(_sParamValue))) continue;
         }
         ports.insert((int)np.getId(_sPortIndex), np.reconvert<cInterface>());
     }

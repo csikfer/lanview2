@@ -22,7 +22,7 @@ BEGIN
     IF NOT FOUND THEN
         RETURN 'notfound';
     END IF;
-    IF 0 < COUNT(*) FROM port_params WHERE port_id = pid AND param_type_id = type_id AND port_param_value = txtval THEN
+    IF 0 < COUNT(*) FROM port_params WHERE port_id = pid AND param_type_id = type_id AND param_value = txtval THEN
         RETURN 'found';
     END IF;
     UPDATE port_params SET param_value = txtval WHERE port_id = pid AND param_type_id = type_id;

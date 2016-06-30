@@ -13,7 +13,8 @@ INSERT INTO sys_params
 -- Port paraméter a replace_mactab(pid bigint, mac macaddr, typ settype, mst mactabstate[]) függvényhez:
 INSERT INTO param_types
     (param_type_name,    param_type_type, param_type_note)    VALUES
-    ('suspected_uplink', 'boolean',      'Port paraméter: Feltételezhetően egy uplink, a portnak a mactab táblába való felvétele tiltott.');
+    ('suspected_uplink', 'boolean',      'Port paraméter: Feltételezhetően egy uplink, a portnak a mactab táblába való felvétele tiltott.'),
+    ('query_mac_tab',    'boolean',      'Port paraméter: Bejegyzett uplink, de a portnak a mactab táblába való felvétele.');
 
 -- //// OUI
 
