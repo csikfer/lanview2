@@ -1407,14 +1407,14 @@ static void setNodePlace(QStringList nodes, qlonglong place_id)
     }
 }
 
-static void setNodePortsParam(const QString& __node, const QStringList& _ports, const QString& __ptype, const QString& __value)
+static void setNodePortsParam(const QString& __node, const QStringList& _ports, const QString& __ptype, const QString& __val)
 {
     // Type
     cParamType pt;
     pt.setByName(qq(), __ptype);
     eParamType tt = (eParamType)pt.getId(_sParamTypeType);
     // Check/convert value
-    QString value = cParamType::paramToString(tt, __value);
+    QString value = cParamType::paramToString(tt, __val);
     // node
     cPatch n;   // Közös ős
     n.setByName(qq(), __node);
@@ -1442,14 +1442,14 @@ static void delNodePortsParam(const QString& __node, const QStringList& _ports, 
     }
 }
 
-static void setNodeParam(const QStringList& __nodes, const QString& __ptype, const QString& __value)
+static void setNodeParam(const QStringList& __nodes, const QString& __ptype, const QString& __val)
 {
     // Type
     cParamType pt;
     pt.setByName(qq(), __ptype);
     eParamType tt = (eParamType)pt.getId(_sParamTypeType);
     // Check/convert value
-    QString value = cParamType::paramToString(tt, __value);
+    QString value = cParamType::paramToString(tt, __val);
     // nodes
     foreach (QString nn, __nodes) {
         qlonglong nid = cPatch().getIdByName(qq(), nn);
