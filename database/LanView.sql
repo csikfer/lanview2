@@ -342,7 +342,8 @@ INSERT INTO unusual_fkeys
   ( 'log_links_shape',  'node_id1',     'property',         'nports',       'port_id',      '{nodes, snmpdevices}'),
   ( 'lldp_links_shape', 'node_id1',     'property',         'nports',       'port_id',      '{nodes, snmpdevices}'),
   ( 'phs_named_link',   'port_id1',     'owner',            'nports',       'port_id',      '{nports, pports, interfaces}'),
-  ( 'app_errs',         'node_id',      'property',         'nodes',        'node_id',      '{nodes, snmpdevices}');
+  ( 'app_errs',         'node_id',      'property',         'nodes',        'node_id',      '{nodes, snmpdevices}'),
+  ( 'app_memos',        'node_id',      'property',         'nodes',        'node_id',      '{nodes, snmpdevices}');
 
 CREATE TABLE fkey_types (
     fkey_type_id        bigserial  NOT NULL PRIMARY KEY,

@@ -795,6 +795,7 @@ void cRecordsViewBase::modify(eEx __ex)
         case DBT_PREV: {
             if (isReadOnly) {
                 pDelete(pRec);
+                updateResult = 1;
             }
             else {
                 // Update DB

@@ -14,7 +14,8 @@ INSERT INTO sys_params
 INSERT INTO param_types
     (param_type_name,    param_type_type, param_type_note)    VALUES
     ('suspected_uplink', 'boolean',      'Port paraméter: Feltételezhetően egy uplink, a portnak a mactab táblába való felvétele tiltott.'),
-    ('query_mac_tab',    'boolean',      'Port paraméter: Bejegyzett uplink, de a portnak a mactab táblába való felvétele.');
+    ('query_mac_tab',    'boolean',      'Port paraméter: Bejegyzett uplink, de a portnak a mactab táblába való felvétele.'),
+    ('link_is_invisible_for_LLDP','boolean','Port paraméter: Az LLDP számára láthatatlan link (hibaüzenet elnyomása).');
 
 -- //// OUI
 

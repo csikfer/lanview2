@@ -229,7 +229,12 @@ cRecord *cRecordTree::prevRow(QModelIndex *pMi, int _upRes)
         return NULL;
     }
     int row = pn->row();
-    --row;
+    if (_upRes == 1) {  // Nem változott a fa szerkezete
+        --row;
+    }
+    else {      // Megváltozott a fa szerkezete, vagyis az aktuális parent-ből el lett távolítva.
+        ;   // A sor sorszáma változatlan
+    }
     if (isContIx(*pn->parent->pChildrens, row)) {
         *pMi = pTreeModel()->index(row, pMi->column(), pMi->parent());
         if (pMi->isValid()) {

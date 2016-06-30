@@ -137,8 +137,9 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
     , snmp()
 {
     QString msg;
-    static const qlonglong suspectrdUpLinkTypeId = cParamType().getIdByName(__q, _sSuspectedUplink);
-    static const qlonglong queryMacTabTypeId     = cParamType().getIdByName(__q, _sQueryMacTab);
+    static const qlonglong suspectrdUpLinkTypeId        = cParamType().getIdByName(__q, _sSuspectedUplink);
+    static const qlonglong queryMacTabTypeId            = cParamType().getIdByName(__q, _sQueryMacTab);
+    static const qlonglong linkIsInvisibleForLLDPTypeId = cParamType().getIdByName(__q, _sLinkIsInvisibleForLLDP);
     // Ha nincs megadva protocol szervíz, akkor SNMP device esetén az az SNMP lessz
     if (protoService().isEmpty_() && __tableoid == cSnmpDevice().tableoid()) {
         hostService.set(_sProtoServiceId, pSrvSnmp->getId());
@@ -196,6 +197,9 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
                     hid = lp.setById(__q, pid).getId(_sNodeId);
                 }
                 else {
+                    ix = np.params.indexOf(_sParamTypeId, QVariant(linkIsInvisibleForLLDPTypeId));
+                    // Ha van "link_is_invisible_for_LLDP" paraméter, és igaz, akkor nem pampogunk a link hiánya miatt
+                    if (ix >= 0 && str2bool(np.params.at(ix)->getName(_sParamValue))) continue;
                     msg = trUtf8("A %1:%2 trunk %3 tagjához nincs link rendelve.")
                             .arg(host().getName(), np.getName(), host().ports[ix]->getName());
                     APPMEMO(__q, msg, RS_WARNING);

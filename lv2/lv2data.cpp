@@ -2671,9 +2671,9 @@ CRECDEFD(cPhsLink)
 
 int cPhsLink::unxlinks(QSqlQuery& __q, qlonglong __pid, ePhsLinkType __t, ePortShare __s) const
 {
-    int r;
+    int r = 0;
     switch (__t) {
-    case LT_BACK:
+    case LT_BACK:   // A megosztások nem itt adahatóak meg
     case LT_TERM:   // Nincs/nem lehet megosztás erre a portra
                     return unlink(__q, __pid, __t);
     case LT_FRONT:
