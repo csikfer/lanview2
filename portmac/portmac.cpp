@@ -197,9 +197,9 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
                     hid = lp.setById(__q, pid).getId(_sNodeId);
                 }
                 else {
-                    ix = np.params.indexOf(_sParamTypeId, QVariant(linkIsInvisibleForLLDPTypeId));
+                    int pix = np.params.indexOf(_sParamTypeId, QVariant(linkIsInvisibleForLLDPTypeId));
                     // Ha van "link_is_invisible_for_LLDP" paraméter, és igaz, akkor nem pampogunk a link hiánya miatt
-                    if (ix >= 0 && str2bool(np.params.at(ix)->getName(_sParamValue))) continue;
+                    if (pix >= 0 && str2bool(np.params.at(pix)->getName(_sParamValue))) continue;
                     msg = trUtf8("A %1:%2 trunk %3 tagjához nincs link rendelve.")
                             .arg(host().getName(), np.getName(), host().ports[ix]->getName());
                     APPMEMO(__q, msg, RS_WARNING);
