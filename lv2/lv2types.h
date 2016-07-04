@@ -40,6 +40,12 @@ Név string literállá konvertálása.
  */
 #define _STR(s)     __STR(s)
 
+enum eTristate {
+    TS_NULL = -1,
+    TS_FALSE=  0,
+    TS_TRUE =  1
+};
+
 /// Hiba string
 EXT_ QString sInvalidEnum();
 /*!

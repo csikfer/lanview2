@@ -1128,6 +1128,26 @@ QString cNPort::getFullName(QSqlQuery& q, eEx __ex)
     return cNode().getNameById(q, getId(_ixNodeId), __ex) + ':' + getName();
 }
 
+QString  cNPort::getTextParam(qlonglong _typeId, eEx __ex) const
+{
+    const cPortParam *ppp = params.get(_sParamTypeId, _typeId, __ex);
+    if (ppp == NULL) return QString();
+    return ppp->getName(_sParamValue);
+
+}
+
+qlonglong cNPort::getIntParam(qlonglong _typeId, eEx __ex) const
+{
+    const cPortParam *ppp = params.get(_sParamTypeId, _typeId, __ex);
+    if (ppp == NULL) return NULL_ID;
+    return ppp->getId(_sParamValue);
+}
+
+eTristate cNPort::getBoolParam(qlonglong _typeId, eEx __ex) const
+{
+    return str2tristate(getTextParam(_typeId, __ex), __ex);
+}
+
 /* ------------------------------ cPPort ------------------------------ */
 
  int portShare(const QString& _n, eEx __ex)
@@ -1784,6 +1804,26 @@ cPatch * cPatch::getNodeObjById(QSqlQuery& q, qlonglong __node_id, eEx __ex)
     qlonglong tableoid = cPatch().setId(__node_id).fetchTableOId(q, __ex);
     if (tableoid < 0LL) return NULL;
     return getNodeObjById(q, tableoid, __node_id, __ex);
+}
+
+QString  cPatch::getTextParam(qlonglong _typeId, eEx __ex) const
+{
+    const cNodeParam *ppp = params.get(_sParamTypeId, _typeId, __ex);
+    if (ppp == NULL) return QString();
+    return ppp->getName(_sParamValue);
+
+}
+
+qlonglong cPatch::getIntParam(qlonglong _typeId, eEx __ex) const
+{
+    const cNodeParam *ppp = params.get(_sParamTypeId, _typeId, __ex);
+    if (ppp == NULL) return NULL_ID;
+    return ppp->getId(_sParamValue);
+}
+
+eTristate cPatch::getBoolParam(qlonglong _typeId, eEx __ex) const
+{
+    return str2tristate(getTextParam(_typeId, __ex), __ex);
 }
 
 /* --------------------------------------------------------------------------- */

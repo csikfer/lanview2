@@ -42,6 +42,12 @@ EXT_  bool variantIsNum(const QVariant & _v);
 /// Egyéb értékeknél, ha __ex nem EX_IGNORE, akkor dob egy kizárást, ha viszont __ex értéke EX_IGNORE, akkor
 /// üres string esetén false, ellenkező esetben true a visszaadott érték.
 EXT_ bool str2bool(const QString& _b, enum eEx __ex = EX_ERROR);
+/// Hasonló az bool str2bool(const QString& _b, enum eEx __ex); függvényhez, de:
+/// A true értéknek a TS_TRUE, a false értéknek a TS_FALSE felel meg.
+/// Ha a _b paraméter üres vagy NULL string, akkor TS_NULL -lal tér vissza.
+/// Ha __ex = EX_IGNORE, és a string értéke nem értelmezhető, akkor TS_NULL -lal tér vissza.
+EXT_ eTristate str2tristate(const QString& _b, enum eEx __ex);
+
 /// A bool-ból stringet csinál, a nyelvi beállításoknak megfelelően.
 EXT_ QString langBool(bool b);
 

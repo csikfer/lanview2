@@ -22,7 +22,7 @@ BEGIN
     IF NOT FOUND THEN
         RETURN 'notfound';
     END IF;
-    IF 0 < COUNT(*) FROM node_params WHERE node_id = pid AND param_type_id = type_id AND node_param_value = txtval THEN
+    IF 0 < COUNT(*) FROM node_params WHERE node_id = pid AND param_type_id = type_id AND param_value = txtval THEN
         RETURN 'found';
     END IF;
     UPDATE node_params SET param_value = txtval WHERE node_id = pid AND param_type_id = type_id;

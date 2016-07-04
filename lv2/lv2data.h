@@ -805,6 +805,10 @@ public:
     static QString getFullNameById(QSqlQuery& q, qlonglong _id) { cNPort o; o.setById(q, _id); return o.getFullName(q); }
     /// Port paraméterek, nincs automatikusan feltöltve
     tOwnRecords<cPortParam, cNPort>   params;
+    ///
+    QString  getTextParam(qlonglong _typeId, eEx __ex = EX_ERROR) const;
+    qlonglong getIntParam(qlonglong _typeId, eEx __ex = EX_ERROR) const;
+    eTristate getBoolParam(qlonglong _typeId, eEx __ex = EX_ERROR) const;
 protected:
     ///
     static qlonglong _tableoid_nports;
@@ -1168,6 +1172,11 @@ public:
     tOwnRecords<cNodeParam, cPatch> params;
     ///
     int containerValid;
+
+    QString  getTextParam(qlonglong _typeId, eEx __ex = EX_ERROR) const;
+    qlonglong getIntParam(qlonglong _typeId, eEx __ex = EX_ERROR) const;
+    eTristate getBoolParam(qlonglong _typeId, eEx __ex = EX_ERROR) const;
+
 protected:
     /// Megosztások konténer. (csak a cPatch osztályban)
     /// Nincs automatikusan feltöltve, de a clearToEnd(); törli, ill. az atEnd() törölheti.

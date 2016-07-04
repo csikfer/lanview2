@@ -421,7 +421,7 @@ public:
     /// Ha nincs ID mező, vagy nem ismert az indexe, akkor dob egy kizárást
     /// @param __id a keresett ID értéke
     /// @param __ex Ha értéke true, akkor ha nem találja az elemet, akkor dob egy kizárást, egyébként NULL pointerrel visszatár.
-    T *get(qlonglong __id, eEx __ex = EX_ERROR) {
+    T *get(qlonglong __id, eEx __ex = EX_ERROR) const {
         int i = indexOf(__id);
         if (i < 0) {
             if (__ex == EX_IGNORE) return NULL;
@@ -433,7 +433,7 @@ public:
     /// Ha nincs név mező, vagy nem ismert az indexe, akkor dob egy kizárást
     /// @param __nm a keresett név értéke
     /// @param __ex Ha értéke true, akkor ha nem találja az elemet, akkor dob egy kizárást, egyébként NULL pointerrel visszatér.
-    T *get(const QString& __nm, eEx __ex = EX_ERROR) {
+    T *get(const QString& __nm, eEx __ex = EX_ERROR) const {
         int i = indexOf(__nm);
         if (i < 0) {
             if (__ex == EX_IGNORE) return NULL;
@@ -446,7 +446,7 @@ public:
     /// @param __nm A mező neve, ami alapján keresünk
     /// @param __v A keresett érték
     /// @param __ex Ha értéke true, akkor ha nem találja az elemet, akkor dob egy kizárást, egyébként NULL pointerrel visszatér.
-    T *get(const QString& __fn, const QVariant& __v, eEx __ex = EX_ERROR) {
+    T *get(const QString& __fn, const QVariant& __v, eEx __ex = EX_ERROR) const {
         int i = indexOf(__fn, __v);
         if (i < 0) {
             if (__ex == EX_IGNORE) return NULL;
@@ -459,7 +459,7 @@ public:
     /// @param __ix A mező sorszáma, ami alapján keresünk
     /// @param __v A keresett érték
     /// @param __ex Ha értéke nem EX_IGNORE, akkor ha nem találja az elemet, akkor dob egy kizárást, egyébként NULL pointerrel visszatér.
-    T *get(int __ix, const QVariant& __v, eEx __ex = EX_ERROR) {
+    T *get(int __ix, const QVariant& __v, eEx __ex = EX_ERROR) const {
         int i = indexOf(__ix, __v);
         if (i < 0) {
             if (__ex == EX_IGNORE) return NULL;

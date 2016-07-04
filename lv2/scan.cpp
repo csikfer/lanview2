@@ -603,13 +603,14 @@ class cLldpScan {
     friend void staticAddOid(QString __cs, int i);
 protected:
     struct rowData {
-        cMac            cmac;   ///< MAC ChassisId
-        cMac            pmac;   ///< MAC PortId
+        cMac            cmac;   ///< ChassisId (MAC)
+        cMac            pmac;   ///< PortId    (MAC)
         QString         name;   ///<
         QString         descr;  ///<
         QString         pname;  ///<
         QString         pdescr; ///<
         QHostAddress    addr;   ///<
+        QString         clocal; ///< ChassisId (local)
     };
     cLldpScan(QSqlQuery& _q, bool _parser);
     /// LLDP felderítés
@@ -989,7 +990,7 @@ scanByLldpDevRow_error:
 inline int snmpNextField(int n, cSnmp& snmp, QString& em, int& _ix)
 {
     const netsnmp_variable_list *p;
-    p = n == 0 ? snmp.first() : snmp.next();
+    p = (n == 0) ? snmp.first() : snmp.next();
     if (NULL == p) {
         em = QObject::trUtf8("No SNMP data #%1, OID:%2; %3").arg(n).arg(cLldpScan::sOids[n], snmp.name().toString());
         return -1;
@@ -1016,7 +1017,7 @@ inline int snmpNextField(int n, cSnmp& snmp, QString& em, int& _ix)
                             else if (rr == -1) goto scanByLldpDev_error; \
                         }
 
-inline int snmpGetNext(cSnmp& snmp, bool& first, cOIdVector& oids)
+inline int snmpGetNext(cSnmp& snmp, bool first, cOIdVector& oids)
 {
     if (first) {    // First row
         return snmp.getNext(oids);
@@ -1095,13 +1096,28 @@ void cLldpScan::scanByLldpDev(QSqlQuery& q)
 #endif
 
         if (!RemSysName.isEmpty()) {
-            if (!rRows[index].name.isEmpty()) {
-                rRows[index].descr += " " + rRows[index].name;
+            if (!rRows[index].name.isEmpty() && rRows[index].name != RemSysName) {
+                s = QObject::trUtf8("LLDP:\nA %1 eszköz %2 indexű portján a távoli eszköz neve nem egyértelmű : %3, %4")
+                        .arg(pDev->getName()).arg(index).arg(rRows[index].name, RemSysName);
+                APPMEMO(q, s, RS_WARNING);
             }
-            rRows[index].name    = RemSysName;
+            rRows[index].name = RemSysName;
         }
-        rRows[index].pdescr += RemPortDesc;
-        rRows[index].descr  += RemSysDesc;
+
+        if (!RemSysDesc.isEmpty()) {
+            if (rRows[index].descr.isEmpty()) rRows[index].descr  =       RemSysDesc;
+            else                              rRows[index].descr += " " + RemSysDesc;
+        }
+
+        if (!RemPortDesc.isEmpty()) {
+            if (!rRows[index].pdescr.isEmpty() && rRows[index].pdescr != RemPortDesc) {
+                s = QObject::trUtf8("LLDP:\nA %1 eszköz %2 indexű portján a távoli eszköz port descripzor nem egyértelmű : %3, %4")
+                        .arg(pDev->getName()).arg(index).arg(rRows[index].pdescr, RemPortDesc);
+                APPMEMO(q, s, RS_WARNING);
+            }
+            rRows[index].pdescr = RemPortDesc;
+        }
+
         /* - */
         switch (RemChassisIdSubtype) {
         case 1: // chassisComponent
@@ -1123,8 +1139,7 @@ void cLldpScan::scanByLldpDev(QSqlQuery& q)
         case 7: // local
             s = RemChasisId.toString();
             if (!s.isEmpty()) {
-                if (rRows[index].name.isEmpty()) rRows[index].name   = s;
-                else                             rRows[index].descr += s;
+                rRows[index].clocal   = s;
             }
             break;
         }
@@ -1587,6 +1602,12 @@ bool cLldpScan::rowHPAPC(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& em)
         pDelete(pe);
         return false;
     }
+    if (row.clocal.isEmpty() == false) {   // SN
+        QString oldSn = execSqlTextFunction(q, "get_str_node_param", rHost.getId(), _sSerialNumber);
+        if (oldSn.isEmpty()) {
+            execSqlFunction(q, "set_str_node_param", rHost.getId(), row.clocal, _sSerialNumber);
+        }
+    }
     rPort.clone(*pi);
     return true;
 }
@@ -1669,7 +1690,7 @@ bool cLldpScan::rowEmpty(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em)
     QList<QHostAddress> al = arp.mac2ips(q, mac);
     r = al.size();
     if (r != 1) {   // Itt is csak egy találat a jó
-        if (r) {
+        if (r) {    // egynél több
             QString s;
             foreach (QHostAddress a, al) {
                 s += a.toString() + ", ";
@@ -1677,22 +1698,25 @@ bool cLldpScan::rowEmpty(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em)
             s.chop(2);
             HEREIN(em, QObject::trUtf8("A %1 MAC címhez nem azonosítható egyértelmüen IP cím (%2).").arg(mac.toString(),s), RS_WARNING);
         }
-        else HEREIN(em, QObject::trUtf8("A %1 MAC címhez nem azonosítható IP cím.").arg(mac.toString()), RS_WARNING);
+        else {  // nincs találat
+            HEREIN(em, QObject::trUtf8("A %1 MAC címhez nem azonosítható IP cím.").arg(mac.toString()), RS_WARNING);
+        }
         return false;
     }
-    // Van egy MC, egy IP. Keresünk hozzá egy nevet.
+    // Van egy MAC, egy IP. Keresünk hozzá egy nevet.
     QHostAddress a = al.first();
     QHostInfo hi = QHostInfo::fromName(a.toString());
     QString name = hi.hostName();
     if (name == a.toString()) name = "host-" + mac.toString();
 
     rHost.setName(name);
-    rHost.setName(_sNodeNote, "LLDP auto");
+    QString note = QObject::trUtf8("LLDP auto %1").arg(QDateTime::currentDateTime().toString());
+    rHost.setName(_sNodeNote, note);
     rHost.addPort(_sEthernet, _sEthernet, _sEthernet, 1);
     cInterface *pi = rHost.ports.first()->reconvert<cInterface>();
     *pi = row.cmac;
     rDev.setId(_sNodeType, enum2set(NT_HOST));
-    pi->addIpAddress(a, cDynAddrRange::isDynamic(q, a), "By LLDP");
+    pi->addIpAddress(a, cDynAddrRange::isDynamic(q, a), note);
     cError *pe = rHost.tryInsert(q);
     if (pe != NULL) {
         HEREIN(em, QObject::trUtf8("A %1 MAC és %2 IP című felderített eszköz \n%3\n Kiírása sikertelen :\n%4\n")

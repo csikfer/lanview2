@@ -153,11 +153,13 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
     }
     // Beolvassuk a portokat is
     host().fetchPorts(__q);
-    host().fetchParams(__q);
+    // host().fetchParams(__q);
     tRecordList<cNPort>::iterator   i;
     // Csinálunk a releváns portokhoz egy index táblát
     for (i = host().ports.begin(); i < host().ports.end(); ++i) {
         cNPort  &np = **i;
+        np.fetchParams(__q);
+        eTristate queryFlag = np.getBoolParam(queryMacTabTypeId, EX_IGNORE);
         int ix = -1;
         if (np.descr() < cInterface::_descr_cInterface()) continue; // buta portok érdektelenek
         QString ifTypeName = np.ifType().getName();
@@ -166,15 +168,14 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
             if (!np.isNull(_sPortStapleId)) continue;
             // Ki kéne még hajítani az uplinkeket
             if (NULL_ID != cLldpLink().getLinked(__q, np.getId())) { // Ez egy LLDP-vel felderített uplink
-                ix = np.params.indexOf(_sParamTypeId, QVariant(queryMacTabTypeId));
                 // Ha van "query_mac_tab" paraméter, és igaz, akkor a link ellenére lekérdezzük
-                if (ix < 0 || !str2bool(np.params.at(ix)->getName(_sParamValue))) continue;
+                if (queryFlag == TS_TRUE) continue;
             }
             // mehet a ports konténerbe az indexe
         }
         else if (ifTypeName == _sMultiplexor) {
             // TRUNK-nal a TRUNK tagjaihoz van rendelve az uplink
-            int ix = -1;
+            ix = -1;
             // Erre a node-ra megy a link (ha marad NULL_ID, akkor nincs uplink)
             qlonglong linkedNodeId = NULL_ID;
             while (true) {
@@ -196,10 +197,9 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
                 if (pid != NULL_ID) {
                     hid = lp.setById(__q, pid).getId(_sNodeId);
                 }
-                else {
-                    int pix = np.params.indexOf(_sParamTypeId, QVariant(linkIsInvisibleForLLDPTypeId));
+                else {  // Nincs link ? Trunk-nél!
                     // Ha van "link_is_invisible_for_LLDP" paraméter, és igaz, akkor nem pampogunk a link hiánya miatt
-                    if (pix >= 0 && str2bool(np.params.at(pix)->getName(_sParamValue))) continue;
+                    if (np.getBoolParam(linkIsInvisibleForLLDPTypeId, EX_IGNORE) == TS_TRUE) continue;
                     msg = trUtf8("A %1:%2 trunk %3 tagjához nincs link rendelve.")
                             .arg(host().getName(), np.getName(), host().ports[ix]->getName());
                     APPMEMO(__q, msg, RS_WARNING);
@@ -217,17 +217,16 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
                     }
                 }
             }
-            if (linkedNodeId != NULL_ID) continue;  // uplink, nem kell
+            // A Trunk-ot nem kérdezzük le, mert valószínüleg uplink, hacsak nincs "query_mac_tab = true"
+            if (queryFlag == TS_TRUE) continue;
         }
         else {
             // Más típusű port nem érdekes.
             continue;
         }
-        if (ix < 0) {   // Ha nem negatív, akkor volt query_mac_tab paraméterünk, ő az erősebb
-            ix = np.params.indexOf(_sParamTypeId, QVariant(suspectrdUpLinkTypeId));
-            // Ha van "suspected_uplink" paraméter, és igaz, akkor nem foglalkozunk vele (csiki-csuki elkerülése)
-            if (ix >= 0 && str2bool(np.params.at(ix)->getName(_sParamValue))) continue;
-        }
+        // Ha van "query_mac_tab" paraméter, és hamis, akkor tiltott a lekérdezés a portra
+        // Ha van "suspected_uplink" paraméter, és igaz, akkor nem foglalkozunk vele (csiki-csuki elkerülése)
+        if (queryFlag == TS_FALSE || np.getBoolParam(suspectrdUpLinkTypeId, EX_IGNORE) == TS_TRUE) continue;
         ports.insert((int)np.getId(_sPortIndex), np.reconvert<cInterface>());
     }
 }

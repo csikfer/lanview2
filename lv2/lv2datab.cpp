@@ -79,6 +79,19 @@ bool str2bool(const QString& _b, enum eEx __ex)
     return !b.isEmpty();
 }
 
+eTristate str2tristate(const QString& _b, enum eEx __ex)
+{
+    QString b = _b.toLower();
+    if (_b.isEmpty()) return TS_NULL;
+    if (b == "t" || b == "true" || b == "y" || b == "yes" || b == "on" || b == "1") return TS_TRUE;
+    if (b == "f" || b == "false"|| b == "n" || b == "no"  || b == "off"|| b == "0") return TS_FALSE;
+    if (langBool(true)  == b) return TS_TRUE;
+    if (langBool(false) == b) return TS_FALSE;
+    if (__ex) EXCEPTION(EDBDATA, -1, b);
+    return TS_NULL;
+}
+
+
 bool strIsBool(const QString& _b)
 {
     static QStringList  boolValues;
