@@ -1,5 +1,6 @@
 
-CREATE TYPE nodetype AS ENUM ('patch','node', 'host', 'switch', 'hub', 'virtual', 'snmp', 'converter', 'printer', 'gateway');
+CREATE TYPE nodetype AS ENUM ('patch','node', 'host', 'switch', 'hub', 'virtual', 'snmp', 'converter', 'printer', 'gateway',
+                              'workstation', 'mobile', 'device');
 ALTER TYPE nodetype OWNER TO lanview2;
 COMMENT ON TYPE nodetype IS '
 Típus azonosítók
@@ -10,6 +11,9 @@ Típus azonosítók
 "hub"           HUB
 "virtual"       Virtuális eszköz
 "snmp"          SNMP képes eszköz
+"workstation"   Munkaállomás, felhasználói gép
+"mobile"        Mobil eszköz
+"device"        
 ';
 
 CREATE TYPE  linktype AS ENUM ( 'ptp', 'bus', 'patch', 'logical', 'wireless', 'unknown');

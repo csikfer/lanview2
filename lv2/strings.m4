@@ -284,6 +284,9 @@ STRDEF(Nodes,"nodes")
   STRDEF(Printer, "printer")
   STRDEF(Gateway, "gateway")
   STRDEF(Ap, "ap");
+  STRDEF(Workstation, "workstation")
+  STRDEF(Mobile, "mobile")
+  STRDEF(Device, "device")
   dnl virtual
  STRDEF(SnmpDevices,"snmpdevices")
  STRDEF(CommunityRd,"community_rd")

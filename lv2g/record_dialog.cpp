@@ -4,6 +4,8 @@
 
 /* ************************************************************************************************* */
 
+#define SINGLE_BUTTON_LINE  1
+
 QStringList     cDialogButtons::buttonNames;
 QList<QIcon>    cDialogButtons::icons;
 QList<int>      cDialogButtons::keys;
@@ -17,11 +19,17 @@ cDialogButtons::cDialogButtons(int buttons, int buttons2, QWidget *par)
     staticInit();
     if (0 == (buttons & ((1 << _buttonNumbers) - 1))) EXCEPTION(EDATA);
     _pWidget = new QWidget(par);
+#if SINGLE_BUTTON_LINE
+    _pLayout = new QHBoxLayout(_pWidget);
+    init(buttons | buttons2, _pLayout);
+#else
     if (buttons2 == 0) {        // Egy gombsor
         _pLayout = new QHBoxLayout(_pWidget);
         init(buttons, _pLayout);
     }
     else {                      // Két gombsor
+        if (0 == (buttons2 & ((1 << _buttonNumbers) - 1))) EXCEPTION(EDATA);
+        if (0 != (buttons & buttons2)) EXCEPTION(EDATA);
         _pLayout = new QVBoxLayout(_pWidget);
         QHBoxLayout *pLayoutTop   = new QHBoxLayout();
         QHBoxLayout *pLayoutBotom = new QHBoxLayout();
@@ -30,13 +38,16 @@ cDialogButtons::cDialogButtons(int buttons, int buttons2, QWidget *par)
         init(buttons, pLayoutTop);
         init(buttons2, pLayoutBotom);
     }
+#endif //SINGLE_BUTTON_LINE
 }
 
 cDialogButtons::cDialogButtons(const tIntVector& buttons, QWidget *par)
 {
     staticInit();
     _pWidget = new QWidget(par);
+#if !SINGLE_BUTTON_LINE
     if (buttons.indexOf(DBT_BREAK) < 0) {   // Egy sorba
+#endif
         _pLayout = new QHBoxLayout(_pWidget);
         foreach (int id, buttons) {
             if (id < _buttonNumbers) {
@@ -44,8 +55,12 @@ cDialogButtons::cDialogButtons(const tIntVector& buttons, QWidget *par)
                 _pLayout->addWidget(addPB(id, _pWidget));
             }
             else if (id == DBT_SPACER) _pLayout->addStretch();
+#if SINGLE_BUTTON_LINE
+            else if (id == DBT_BREAK)  continue;
+#endif
             else EXCEPTION(EDATA, id);
         }
+#if !SINGLE_BUTTON_LINE
     }
     else {
         _pLayout = new QVBoxLayout(_pWidget);
@@ -61,6 +76,7 @@ cDialogButtons::cDialogButtons(const tIntVector& buttons, QWidget *par)
             else EXCEPTION(EDATA, id);
         }
     }
+#endif
 }
 
 void cDialogButtons::staticInit()

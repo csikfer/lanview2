@@ -204,7 +204,10 @@ enum eNodeType {
     NT_CONVERTER,
     NT_PRINTER,
     NT_GATEWAY,
-    NT_AP
+    NT_AP,
+    NT_WORKSTATION,
+    NT_MOBILE,
+    NT_DEVICE
 };
 
 /// Node típus név konverzió

@@ -223,7 +223,7 @@ TABLE mactab_shape SHAPE mactab_port "Port címtábla" {
 }
 
 
-TABLE interfaces SHAPE hostports "Hálózati interfészek, portok" {
+TABLE interfaces SHAPE hostports "Hálózati interfészek, portok (fa)" {
     SET DEFAULTS;
     TABLE TYPE CHILD, OWNER, TREE;
     RIGHT SHAPE ipaddresses,  port_params, mactab_port, phs_links, log_links, lldp_links;
@@ -239,12 +239,13 @@ TABLE interfaces SHAPE hostports "Hálózati interfészek, portok" {
     FIELD iftype_id     TITLE "Típus", "A port típus";
     
     FIELD port_staple_id FEATURES ":owner=self:";
+    FIELD port_staple_id FLAG HIDE;
     FIELD port_ostat, port_astat READ ONLY;
     FIELD port_ostat DEFAULT VALUE unknown;
     FIELD port_astat DEFAULT VALUE unknown;
     FIELD port_index ORD asc,desc,no;
     FIELD port_name, port_tag, port_note, iftype_id ORD no, asc, desc;
-    FIELD port_name, port_tag, port_note ADD FILTERS begin, like, similar, regexp, regexpi;
+//  FIELD port_name, port_tag, port_note ADD FILTERS begin, like, similar, regexp, regexpi;
     TABLE FEATURES ":button.copy:";
 }
 
@@ -315,7 +316,7 @@ TABLE SHAPE services "Szervíz típusok" {
     TABLE TYPE SIMPLE;
     TABLE FEATURES ":button.copy:";
     FIELD service_name ORD asc,desc,no;
-    FIELD service_name ADD FILTERS begin, like, similar, regexp, regexpi;
+    FIELD service_name, service_note, service_type_id, features, check_cmd ADD FILTERS begin, like, similar, regexp, regexpi;
 }
 
 TABLE SHAPE query_parsers "Lekérdezés értelmezések" {
@@ -328,7 +329,9 @@ TABLE SHAPE query_parsers "Lekérdezés értelmezések" {
 TABLE SHAPE subnets "Alhálózatok" {
     SET DEFAULTS;
     TABLE TYPE SIMPLE;
-    TABLE FEATURES ":vlans.owner=vlan_id:"; 
+    TABLE FEATURES ":vlans.owner=vlan_id:";
+    FIELD subnet_name ORD asc,desc,no;
+    FIELD netaddr, vlan_id, subnet_type ORD no,asc,desc;
 }
 
 TABLE SHAPE vlans "VLAN-ok" {
@@ -363,7 +366,7 @@ TABLE SHAPE dyn_addr_ranges "Dinamikus címtartományok" {
 // ***************************************************************************************
 // events
 
-TABLE SHAPE alarms "Riasztások" {
+TABLE alarms SHAPE alarms_tree "Riasztások (fa)" {
     SET DEFAULTS;
     TABLE TYPE TREE, READ ONLY;
     TABLE                   TITLE "Riasztási események", "Riasztási esemény",;
@@ -386,11 +389,38 @@ TABLE SHAPE alarms "Riasztások" {
     FIELD ack_msg           TITLE "megjegyzés",    "A nyugtázó megjegyzése";
     FIELD event_note, ack_msg FLAG ON HUGE;
 
+    FIELD begin_time ORD desc, asc, no;
+    FIELD end_time, msg_time, alarm_time, notice_time, notice_user_id, ack_time, ack_user_id, ack_msg ORD no, desc, asc;
+    
+}
+
+TABLE SHAPE alarms "Riasztások" {
+    SET DEFAULTS;
+    TABLE TYPE READ ONLY;
+    TABLE                   TITLE "Riasztási események", "Riasztási esemény",;
+    FIELD alarm_id          TITLE "ID",            "Riasztás egyedi azonosító kódja";
+    FIELD host_service_id   TITLE "host:service", "Szolgálltatás példány";
+    FIELD daemon_id         TITLE "daemon",        "Lekérdező daemon";
+    FIELD first_status      TITLE "kezdő áll.",    "Állapot a risztás kezdetekor";
+    FIELD max_status        TITLE "krit. áll.",    "Legkritikusabb állapot a riasztás alatt";
+    FIELD begin_time        TITLE "kezdete",       "A kritikus esemény kezdete";
+    FIELD event_note        TITLE "üzenet",        "A riasztást dezektáló folyamat üzenete";
+    FIELD superior_alarm_id TITLE  "Függ.Figy.", "Felsőbb szintű riasztás";
+    FIELD noalarm           TITLE "letiltva",      "Az értesítés letiltása";
+    FIELD end_time          TITLE "vége",          "A kritikus esemény vége";
+    FIELD msg_time          TITLE "uzenet küldve", "A riasztási üzenet elküldésének az időpontja";
+    FIELD alarm_time        TITLE "on-line ért.",  "Az on-line riasztás időpontja";
+    FIELD notice_time       TITLE "megnézte",      "Az első on-line riasztás állapot lekérdezésének az ideje.";
+    FIELD notice_user_id    TITLE "aki megnézte",  "Az első on-line riasztási állapot lekérdezéső felhasználó";
+    FIELD ack_time          TITLE "nyugtázva",     "A riasztás nyugtázásának az időpontja";
+    FIELD ack_user_id       TITLE "aki nyugtázta", "A riasztást nyugtázó felhasználó";
+    FIELD ack_msg           TITLE "megjegyzés",    "A nyugtázó megjegyzése";
+    FIELD event_note, ack_msg FLAG ON HUGE;
+    
     FIELD host_service_id, daemon_id, max_status, event_note, noalarm, notice_user_id, ack_user_id, ack_msg ADD FILTERS begin, like, similar, regexp, regexpi;
     FIELD begin_time, end_time, msg_time, alarm_time, notice_time, ack_time ADD FILTERS big, litle, interval;
     FIELD begin_time ORD desc, asc, no;
     FIELD end_time, msg_time, alarm_time, notice_time, notice_user_id, ack_time, ack_user_id, ack_msg ORD no, desc, asc;
-    
 }
 
 TABLE SHAPE db_errs "Adatbázis hiba napló" {
@@ -456,6 +486,11 @@ TABLE SHAPE app_memos "Applikáció napló" {
         FLAG ON HUGE;       // több sosros
         FEATURES ":stretch.vertical=1:";
     }
+    FIELD date_of, importance ORD asc, desc,no;
+    FIELD date_of ADD FILTERS big, litle, interval;
+    FIELD memo, app_name, node_id, user_id, func_name, src_name, thread_name, importance, acknowledged  ADD FILTERS begin, like, similar, regexp, regexpi;
+    FIELD pid, src_line ADD FILTERS big, litle, interval;
+    
 }
 
 TABLE SHAPE host_service_logs "A szervíz példányok log rekordjai" {
@@ -690,6 +725,7 @@ GUI lv2gui {
     events MENU {
         TITLE "Események";
         alarms      SHAPE   alarms          {   TITLE "Riasztások",@;  }
+        alarms_tree SHAPE   alarms_tree     {   TITLE "Riasztások (fa)",@;  }
         app_errs    SHAPE   app_errs        {   TITLE "Program hiba napló",@;  }
         app_memos   SHAPE   app_memos       {   TITLE "Program esemény napló",@;  }
         db_errs     SHAPE   db_errs         {   TITLE "Adatbázis hiba napló" ,@;  }

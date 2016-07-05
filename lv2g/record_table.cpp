@@ -734,6 +734,10 @@ void cRecordsViewBase::modify(eEx __ex)
     if (pRec == NULL) return;
     pRec = pRec->dup();           // Saját másolat
     int buttons = enum2set(DBT_OK, DBT_CANCEL, DBT_NEXT, DBT_PREV);
+    if (recDescr().toIndex(_sAcknowledged, EX_IGNORE) >= 0)  {
+        buttons |= enum2set(DBT_RECEIPT);
+    }
+
     cRecordDialogBase *pRd  = NULL;
     cRecordDialogInh * pRdt = NULL;
     cTableShape *    pShape = NULL;
@@ -792,10 +796,26 @@ void cRecordsViewBase::modify(eEx __ex)
         switch(id) {
         case DBT_OK:
         case DBT_NEXT:
-        case DBT_PREV: {
-            if (isReadOnly) {
+        case DBT_PREV:
+        case DBT_RECEIPT: {
+            updateResult = 1;
+            if (id == DBT_RECEIPT) {
+                if (false == pRec->getBool(_sAcknowledged)) {
+                    pRec->setOn(_sAcknowledged);
+                    updateResult = pModel->updateRec(index, pRec);
+                    if (!updateResult) {
+                        continue;
+                    }
+                    // Nincs felszabadítva, de már nem a mienk (betettük a rekord listába, régi elem felszabadítva)
+                    pRec = NULL;
+                }
+                else {
+                    pDelete(pRec);
+                }
+                id = DBT_NEXT;
+            }
+            else if (isReadOnly) {
                 pDelete(pRec);
-                updateResult = 1;
             }
             else {
                 // Update DB

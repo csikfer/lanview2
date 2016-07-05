@@ -1594,7 +1594,7 @@ bool cLldpScan::rowHPAPC(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& em)
     cInterface *pi = rHost.ports.first()->reconvert<cInterface>();
     *pi = row.cmac;
     pi->addIpAddress(row.addr, cDynAddrRange::isDynamic(q, row.addr), "By LLDP");
-    rDev.setId(_sNodeType, enum2set(NT_HOST, NT_AP));
+    rHost.setId(_sNodeType, enum2set(NT_HOST, NT_AP));
     cError *pe = rHost.tryInsert(q);
     if (pe != NULL) {
         HEREIN(em, QObject::trUtf8("A %1 MAC és %2 IP című felderített eszköz \n%3\n Kiírása sikertelen :\n%4\n")
@@ -1665,6 +1665,7 @@ bool cLldpScan::rowLinux(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em)
 }
 
 /// Csak egy MAC címunk van, se IP, se típus azonosító
+/// Windows??
 bool cLldpScan::rowEmpty(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em)
 {
     (void)snmp;
@@ -1711,7 +1712,8 @@ bool cLldpScan::rowEmpty(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em)
 
     rHost.setName(name);
     QString note = QObject::trUtf8("LLDP auto %1").arg(QDateTime::currentDateTime().toString());
-    rHost.setName(_sNodeNote, note);
+    rHost.setNote(note);
+    rHost.setId(_sNodeType, enum2set(NT_HOST, NT_WORKSTATION));
     rHost.addPort(_sEthernet, _sEthernet, _sEthernet, 1);
     cInterface *pi = rHost.ports.first()->reconvert<cInterface>();
     *pi = row.cmac;
