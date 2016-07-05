@@ -27,6 +27,8 @@ private:
     ///
     void action(QAction *pa, cMenuItem& _mi, QSqlQuery *pq = NULL);
     void setSetupMenu();
+private slots:
+    void tabCloseRequested(int index);
 };
 
 
