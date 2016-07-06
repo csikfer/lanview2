@@ -18,7 +18,7 @@ int tableShapeType(const QString& n, enum eEx __ex)
     if (0 == n.compare(_sNGroup,  Qt::CaseInsensitive)) return TS_NGROUP;
     if (0 == n.compare(_sIMember, Qt::CaseInsensitive)) return TS_IMEMBER;
     if (0 == n.compare(_sNMember, Qt::CaseInsensitive)) return TS_NMEMBER;
-    if (__ex) EXCEPTION(EDATA, -1, n);
+    if (__ex) EXCEPTION(EENUMVAL, -1, n);
     return TS_UNKNOWN;
 }
 
@@ -43,7 +43,7 @@ const QString& tableShapeType(int e, enum eEx __ex)
     case TS_NMEMBER:    return _sNMember;
     default:            break;
     }
-    if (__ex) EXCEPTION(EDATA, e);
+    if (__ex) EXCEPTION(EENUMVAL, e);
     return _sNul;
 }
 
@@ -57,7 +57,7 @@ int tableInheritType(const QString& n, eEx __ex)
     if (0 == n.compare(_sListed,    Qt::CaseInsensitive)) return TIT_LISTED;
     if (0 == n.compare(_sListedRev, Qt::CaseInsensitive)) return TIT_LISTED_REV;
     if (0 == n.compare(_sListedAll, Qt::CaseInsensitive)) return TIT_LISTED_ALL;
-    if (__ex) EXCEPTION(EDATA, -1, n);
+    if (__ex) EXCEPTION(EENUMVAL, -1, n);
     return TIT_UNKNOWN;
 }
 
@@ -74,7 +74,7 @@ const QString& tableInheritType(int e, eEx __ex)
     case TIT_LISTED_ALL:    return _sListedAll;
     default:                break;
     }
-    if (__ex) EXCEPTION(EDATA, e);
+    if (__ex) EXCEPTION(EENUMVAL, e);
     return _sNul;
 }
 
@@ -83,7 +83,7 @@ int orderType(const QString& n, eEx __ex)
     if (0 == n.compare(_sNo,   Qt::CaseInsensitive)) return OT_NO;
     if (0 == n.compare(_sAsc,  Qt::CaseInsensitive)) return OT_ASC;
     if (0 == n.compare(_sDesc, Qt::CaseInsensitive)) return OT_DESC;
-    if (__ex) EXCEPTION(EDATA, -1, n);
+    if (__ex) EXCEPTION(EENUMVAL, -1, n);
     return OT_UNKNOWN;
 }
 
@@ -95,7 +95,7 @@ const QString& orderType(int e, eEx __ex)
     case OT_DESC:       return _sDesc;
     default:            break;
     }
-    if (__ex) EXCEPTION(EDATA, e);
+    if (__ex) EXCEPTION(EENUMVAL, e);
     return _sNul;
 }
 
@@ -107,7 +107,7 @@ int fieldFlag(const QString& n, eEx __ex)
     if (0 == n.compare(_sReadOnly,  Qt::CaseInsensitive)) return FF_READ_ONLY;
     if (0 == n.compare(_sPasswd,    Qt::CaseInsensitive)) return FF_PASSWD;
     if (0 == n.compare(_sHuge,      Qt::CaseInsensitive)) return FF_HUGE;
-    if (__ex) EXCEPTION(EDATA, -1, n);
+    if (__ex) EXCEPTION(EENUMVAL, -1, n);
     return FF_UNKNOWN;
 }
 
@@ -122,7 +122,7 @@ const QString& fieldFlag(int e, eEx __ex)
     case FF_HUGE:       return _sHuge;
     default:            break;
     }
-    if (__ex) EXCEPTION(EDATA, e);
+    if (__ex) EXCEPTION(EENUMVAL, e);
     return _sNul;
 }
 
@@ -140,7 +140,7 @@ int filterType(const QString& n, eEx __ex)
     if (0 == n.compare(_sInterval, Qt::CaseInsensitive)) return FT_INTERVAL;
     if (0 == n.compare(_sProc,     Qt::CaseInsensitive)) return FT_PROC;
     if (0 == n.compare(_sSQL,      Qt::CaseInsensitive)) return FT_SQL_WHERE;
-    if (__ex) EXCEPTION(EDATA, -1, n);
+    if (__ex) EXCEPTION(EENUMVAL, -1, n);
     return FT_UNKNOWN;
 }
 
@@ -159,7 +159,7 @@ const QString& filterType(int e, eEx __ex)
     case FT_SQL_WHERE:  return _sSQL;
     default:            break;
     }
-    if (__ex) EXCEPTION(EDATA, e);
+    if (__ex) EXCEPTION(EENUMVAL, e);
     return _sNul;
 }
 
@@ -403,7 +403,8 @@ bool cTableShape::fset(const QString& _fn, const QString& _fpn, const QVariant& 
 {
     int i = shapeFields.indexOf(_fn);
     if (i < 0) {
-        if (__ex) EXCEPTION(EDATA, -1, _fn);
+        if (__ex) EXCEPTION(EFOUND, -1, emFieldNotFound(_fn));
+        DERR() << emFieldNotFound(_fn) << endl;
         return false;
     }
     cTableShapeField& f = *(shapeFields[i]);
@@ -423,7 +424,8 @@ bool cTableShape::addFilter(const QString& _fn, const QString& _t, const QString
 {
     int i = shapeFields.indexOf(_fn);
     if (i < 0) {
-        if (__ex) EXCEPTION(EDATA, -1, _fn);
+        if (__ex) EXCEPTION(EFOUND, -1, emFieldNotFound(_fn));
+        DERR() << emFieldNotFound(_fn) << endl;
         return false;
     }
     cTableShapeField& f = *(shapeFields[i]);
@@ -451,9 +453,8 @@ bool cTableShape::addFilter(const QStringList& _fnl, const QStringList& _ftl, eE
 bool cTableShape::setAllOrders(QStringList& _ord, eEx __ex)
 {
     if (shapeFields.isEmpty()) {
-        QString msg = trUtf8("A shape Fields konténer üres.");
-        if (__ex) EXCEPTION(EPROGFAIL, -1, msg);
-        DERR() << msg << endl;
+        if (__ex) EXCEPTION(EDATA, -1, emFildsIsEmpty());
+        DERR() << emFildsIsEmpty() << endl;
         return false;
     }
     qlonglong deford;
@@ -482,9 +483,8 @@ bool cTableShape::setAllOrders(QStringList& _ord, eEx __ex)
 bool cTableShape::setOrders(const QStringList& _fnl, QStringList& _ord, eEx __ex)
 {
     if (shapeFields.isEmpty()) {
-        QString msg = trUtf8("A shape Fields konténer üres.");
-        if (__ex) EXCEPTION(EPROGFAIL, -1, msg);
-        DERR() << msg << endl;
+        if (__ex) EXCEPTION(EDATA, -1, emFildsIsEmpty());
+        DERR() << emFildsIsEmpty() << endl;
         return false;
     }
     qlonglong deford;
@@ -513,7 +513,8 @@ bool cTableShape::setOrders(const QStringList& _fnl, QStringList& _ord, eEx __ex
     foreach (QString fn, _fnl) {
         int i = shapeFields.indexOf(fn);
         if (i < 0) {
-            if (__ex) EXCEPTION(EDATA, -1, fn);
+            if (__ex) EXCEPTION(EFOUND, -1, emFieldNotFound(fn));
+            DERR() << emFieldNotFound(fn) << endl;
             return false;
         }
         cTableShapeField& f = *(shapeFields[i]);
@@ -528,9 +529,8 @@ bool cTableShape::setOrders(const QStringList& _fnl, QStringList& _ord, eEx __ex
 bool cTableShape::setFieldSeq(const QStringList& _fnl, int last, eEx __ex)
 {
     if (shapeFields.isEmpty()) {
-        QString msg = trUtf8("A shape Fields konténer üres.");
-        if (__ex) EXCEPTION(EPROGFAIL, -1, msg);
-        DERR() << msg << endl;
+        if (__ex) EXCEPTION(EDATA, -1, emFildsIsEmpty());
+        DERR() << emFildsIsEmpty() << endl;
         return false;
     }
     const int step = 10;
@@ -548,7 +548,8 @@ bool cTableShape::setFieldSeq(const QStringList& _fnl, int last, eEx __ex)
     foreach (QString fn, fnl) {     // A last utániakat besoroljuk, elöször a felsoroltak, aztán a maradék
         int i = shapeFields.indexOf(fn);
         if (i < 0) {
-            if (__ex) EXCEPTION(EDATA, -1, fn);
+            if (__ex) EXCEPTION(EFOUND, -1, emFieldNotFound(fn));
+            DERR() << emFieldNotFound(fn) << endl;
             return false;
         }
         cTableShapeField& f = *(shapeFields[i]);
@@ -561,9 +562,8 @@ bool cTableShape::setFieldSeq(const QStringList& _fnl, int last, eEx __ex)
 bool cTableShape::setOrdSeq(const QStringList& _fnl, int last, eEx __ex)
 {
     if (shapeFields.isEmpty()) {
-        QString msg = trUtf8("A shape Fields konténer üres.");
-        if (__ex) EXCEPTION(EPROGFAIL, -1, msg);
-        DERR() << msg << endl;
+        if (__ex) EXCEPTION(EDATA, -1, emFildsIsEmpty());
+        DERR() << emFildsIsEmpty()<< endl;
         return false;
     }
     const int step = 10;
@@ -583,7 +583,8 @@ bool cTableShape::setOrdSeq(const QStringList& _fnl, int last, eEx __ex)
     foreach (QString fn, _fnl) {
         int i = shapeFields.indexOf(fn);
         if (i < 0) {
-            if (__ex) EXCEPTION(EDATA, -1, fn);
+            if (__ex) EXCEPTION(EFOUND, -1, emFieldNotFound(fn));
+            DERR() << emFieldNotFound(fn) << endl;
             return false;
         }
         cTableShapeField& f = *(shapeFields[i]);
@@ -625,6 +626,16 @@ void cTableShape::addRightShape(QStringList& _snl)
         list << QVariant(id);
     }
     set(ix, QVariant::fromValue(list));
+}
+
+QString cTableShape::emFildsIsEmpty()
+{
+    return trUtf8("A shape Fields konténer üres.");
+}
+
+QString cTableShape::emFieldNotFound(const QString& __f)
+{
+    return trUtf8("A %1 nevű shape objektumban nincs %2 nevű mező objektum").arg(getName(), __f);
 }
 
 

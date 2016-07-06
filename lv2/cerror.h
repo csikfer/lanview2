@@ -367,4 +367,7 @@ Exception SQL error, a hibaüzenetbe beleteszi az SQL paramcsot is (lekérdezi).
     catch (std::exception& __e) { pe = NEWCERROR(ESTD, -1, __e.what()); } \
     catch (...)                 { pe = NEWCERROR(EUNKNOWN); }
 
+// QString emNoField(const QString& __t, const QString& __f);
+
+
 #endif // CERROR_H_INCLUDED

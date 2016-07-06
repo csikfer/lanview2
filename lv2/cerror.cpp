@@ -187,3 +187,10 @@ QString SqlErrorTypeToString(int __et)
     }
     return QObject::trUtf8("Unknown SQL Error type.");
 }
+
+/*
+QString emNoField(const QString& __t, const QString& __f)
+{
+    return QObject::trUtf8("Nincs %2 mező a %1 táblában").arg(__t, __f);
+}
+*/

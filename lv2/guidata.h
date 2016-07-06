@@ -206,6 +206,8 @@ public:
 
     tTableShapeFields   shapeFields;
 protected:
+    QString emFildsIsEmpty();
+    QString emFieldNotFound(const QString& __f);
     static int              _ixTableShapeType;
 };
 
