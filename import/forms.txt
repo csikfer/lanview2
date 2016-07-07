@@ -674,6 +674,10 @@ TABLE SHAPE users "felhasználók" {
     RIGHT SHAPE groups;
     FIELD passwd FLAG ON PASSWD, HIDE TABLE;
     TABLE TITLE "Felhasználók","Feljasználó",,"Csoportoknak tagja", "Csoportoknak nem tagja";
+    FIELD user_name ORD asc,desc,no;
+    FIELD last_name, first_name, user_note, place_id, expired ORD no, asc, desc;
+    FIELD user_name, last_name, first_name, user_note, place_id ADD FILTERS begin, like, similar, regexp, regexpi;
+    FIELD expired ADD FILTERS big,litle,interval;
 }
 SET table_shapes[groups].right_shape_ids = ID TABLE SHAPE ( users );
 
@@ -682,14 +686,16 @@ TABLE SHAPE place_groups "Hely és helyiség csoportok / Zónák" {
     TABLE TYPE GROUP;
  // RIGHT SHAPE places;
     TABLE TITLE "Hely csoportok","Hely csoport",,"Csoportok tagjai", "Coportoknak nem tagjai";
+    FIELD place_group_name ORD asc,desc,no;
 }
 
-TABLE SHAPE places "Helyiségek" {
+TABLE SHAPE places "Helyiségek (fa)" {
     SET DEFAULTS;
     TABLE TYPE TREE, MEMBER;
     RIGHT SHAPE place_groups;
     TABLE FEATURES ":map=get_parent_image:";
     TABLE TITLE "Helyek, helyiségek", "Hely helyiség",,"Csoportoknak tagja", "Csoportoknak nem tagja";
+    FIELD place_name ORD asc,desc,no;
   
 }
 SET table_shapes[place_groups].right_shape_ids = ID TABLE SHAPE ( places );

@@ -14,6 +14,7 @@ public:
 private:
     void map();
     QSqlQuery *     pq;
+    bool            isAdmin;
     QVBoxLayout *   pMainLayout;    /// Az ablak(widget)-hez rendelt layout.
     QSplitter *     pMainSplitter;  /// Az ablak splittere: jobbra riasztások, balra térkép
     QSplitter *     pAlarmSplitter; /// A bal oldali splitter, riasztások: fent a nem nyugtázott, lent a nyugtázott de aktív
@@ -21,14 +22,17 @@ private:
     cRecordTable *  pRecTabAckAct;  /// A nyugtázott aktív riasztások táblála (tree?)
     QWidget *       pRightWidget;   /// A jobb oldali widget
     QVBoxLayout *   pRightVBLayout; /// A jobb oldali widget vertikális layout
+    QHBoxLayout *   pButtonLayout;  /// A jobb oldali Widget gombsora (alul)
     QLabel *        pMapLabel;      /// A térkép/alaprajz cím sora
     cImageWidget *  pMap;           /// A térkép/alaprajz (image)
     QPushButton *   pAckButton;     /// A nyugtázás gomb
+    QPushButton *   pAckAllButton;  /// Több sor nyugtázá gomb (Admin)
     const cRecord  *pActRecord;     /// A kiválasztott rekord a nem nyugtázott riasztások táblában
 private slots:
-    void curRowChgNoAck(QItemSelection sel, QItemSelection);
+    void curRowChgNoAck(QItemSelection, QItemSelection);
     void curRowChgAckAct(QItemSelection sel, QItemSelection);
     void acknowledge();
+    void allAcknowledge();
 };
 
 #if defined(LV2G_LIBRARY)

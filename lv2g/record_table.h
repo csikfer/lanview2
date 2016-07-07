@@ -364,8 +364,11 @@ public:
     /// destruktor
     ~cRecordTable();
     cRecordTableModel *pTableModel() const { return static_cast<cRecordTableModel *>(pModel); }
-    const cRecord *recordAt(int i) const {
-        if (!isContIx(pTableModel()->records(), i)) EXCEPTION(EDATA, i);
+    const cRecord *recordAt(int i, eEx __ex = EX_ERROR) const {
+        if (!isContIx(pTableModel()->records(), i)) {
+            if (__ex != EX_IGNORE) EXCEPTION(ENOINDEX, i);
+            return NULL;
+        }
         return pTableModel()->records()[i];
     }
     virtual QModelIndexList selectedRows();

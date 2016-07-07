@@ -6,6 +6,7 @@ cOnlineAlarm::cOnlineAlarm(QWidget *par) : cOwnTab(par)
 {
     pActRecord = NULL;
     pq = newQuery();
+    isAdmin = false;
 
     pMainLayout = new QVBoxLayout(this);                // (ös) widget layout
     pMainSplitter  = new QSplitter(Qt::Horizontal);     // Fő splitter
@@ -15,11 +16,16 @@ cOnlineAlarm::cOnlineAlarm(QWidget *par) : cOwnTab(par)
     pMainSplitter->addWidget(pAlarmSplitter);
 
     pRecTabNoAck  = new cRecordTable("uaalarms", false, pAlarmSplitter);    // nem nyugtázott riasztások tábla; bal felső
-    pRecTabNoAck->tableView()->setSelectionMode(QAbstractItemView::SingleSelection);    // Nincs több soros kijelölés
+    if (lanView::user().privilegeLevel() >= PL_ADMIN) {
+        isAdmin = true;
+    }
+    else {
+        pRecTabNoAck->tableView()->setSelectionMode(QAbstractItemView::SingleSelection);    // Nincs több soros kijelölés
+    }
     connect(pRecTabNoAck->tableView()->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
             this, SLOT(curRowChgNoAck(QItemSelection,QItemSelection)));
 
-    pRecTabAckAct = new cRecordTable("aaalarms", false, pAlarmSplitter);    // Nyugtátott. aktív riasztások; bal alsó
+    pRecTabAckAct = new cRecordTable("aaalarms", false, pAlarmSplitter);    // Nyugtázott. aktív riasztások; bal alsó
     pRecTabAckAct->tableView()->setSelectionMode(QAbstractItemView::SingleSelection);   // Nincs több soros kijelölés
     connect(pRecTabAckAct->tableView()->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
             this, SLOT(curRowChgAckAct(QItemSelection,QItemSelection)));
@@ -38,10 +44,21 @@ cOnlineAlarm::cOnlineAlarm(QWidget *par) : cOwnTab(par)
     pRightVBLayout->addWidget(pMapLabel);
     pMap  = new cImageWidget();
     pRightVBLayout->addWidget(pMap);
+    pButtonLayout  = new QHBoxLayout();
+    pRightVBLayout->addLayout(pButtonLayout);
     pAckButton     = new QPushButton(trUtf8("Nyugtázás"));
     pAckButton->setDisabled(true);
-    pRightVBLayout->addWidget(pAckButton);
+    pButtonLayout->addWidget(pAckButton);
     connect(pAckButton, SIGNAL(clicked()), this, SLOT(acknowledge()));
+    if (isAdmin) {
+        pAckAllButton = new QPushButton(trUtf8("Mind nyugtázása"));
+        pAckAllButton->setDisabled(true);
+        pButtonLayout->addWidget(pAckAllButton);
+        connect(pAckButton, SIGNAL(clicked()), this, SLOT(allAcknowledge()));
+    }
+    else {
+        pAckButton = NULL;
+    }
 }
 
 cOnlineAlarm::~cOnlineAlarm()
@@ -82,16 +99,28 @@ void cOnlineAlarm::map()
 }
 
 
-void cOnlineAlarm::curRowChgNoAck(QItemSelection sel, QItemSelection)
+void cOnlineAlarm::curRowChgNoAck(QItemSelection, QItemSelection)
 {
-    QModelIndexList mil = sel.indexes();
-    if (mil.size()) {
-        int row = mil.at(0).row();
-        pRecTabAckAct->tableView()->selectionModel()->clearSelection();
+    QModelIndexList mil = pRecTabNoAck->tableView()->selectionModel()->selectedRows();;
+    int row;
+    switch (mil.size()) {
+    case 0:
+        return;
+    case 1:
+        row = mil.at(0).row();
         pActRecord = pRecTabNoAck->recordAt(row);
         map();
-        pAckButton->setDisabled(false);
+        pAckButton->setEnabled(true);
+        pAckAllButton->setEnabled(isAdmin);
+        break;
+    default:
+        if (!isAdmin) EXCEPTION(EPROGFAIL);
+        pActRecord = NULL;
+        pAckButton->setDisabled(true);
+        pAckAllButton->setEnabled(true);
+        break;
     }
+    pRecTabAckAct->tableView()->selectionModel()->clearSelection();
 }
 
 void cOnlineAlarm::curRowChgAckAct(QItemSelection sel, QItemSelection)
@@ -103,7 +132,35 @@ void cOnlineAlarm::curRowChgAckAct(QItemSelection sel, QItemSelection)
         pActRecord = pRecTabAckAct->recordAt(row);
         map();
         pAckButton->setDisabled(true);
+        pAckAllButton->setDisabled(true);
     }
+}
+
+void cOnlineAlarm::allAcknowledge()
+{
+    if (!isAdmin) EXCEPTION(EPROGFAIL);
+    QModelIndexList mil = pRecTabNoAck->tableView()->selectionModel()->selectedRows();
+    foreach (QModelIndex mi, mil) {
+        int row = mi.row();
+        const cRecord *pr = pRecTabAckAct->recordAt(row, EX_IGNORE);
+        if (pr == NULL) {
+            DERR() << trUtf8("Invalid selected row : %1").arg(row) << endl;
+            continue;
+        }
+        qlonglong aid = pr->getId(_sAlarmId);
+        cAlarm a;
+        if (!a.fetchById(*pq, aid)) {
+            DERR() << trUtf8("Alarm record fetch failed, id = %1").arg(aid) << endl;
+            continue;
+        }
+        if (a.isNull(_sAckUserId)) {
+            a.setId(_sAckUserId, lanView::user().getId());
+            a.setName(_sAckTime, "NOW");
+            a.update(*pq,  false, a.mask(_sAckUserId, _sAckTime));
+        }
+    }
+    pRecTabAckAct->refresh();
+    pRecTabNoAck->refresh();
 }
 
 void cOnlineAlarm::acknowledge()
@@ -112,18 +169,19 @@ void cOnlineAlarm::acknowledge()
     cAckDialog dialog(*pActRecord, this);
     if (dialog.exec() == QDialog::Accepted) {
         cAlarm  a;
-        a.fetchById(*pq, pActRecord->getId("alarm_id"));
-        if (a.isNull("ack_user_id")) {
-            a.setId("ack_user_id", lv2g::getInstance()->user().getId());
-            a.setName("ack_time", "NOW");
-            a.setName("ack_msg", dialog.pUi->msgL->text());
-            a.update(*pq,  false, a.mask("ack_user_id", "ack_time", "ack_msg"));
+        a.fetchById(*pq, pActRecord->getId(_sAlarmId));
+        if (a.isNull(_sAckUserId)) {
+            a.setId(_sAckUserId, lanView::user().getId());
+            a.setName(_sAckTime, "NOW");
+            a.setName(_sAckMsg, dialog.pUi->msgL->text());
+            a.update(*pq,  false, a.mask(_sAckUserId, _sAckTime, _sAckMsg));
         }
         else {
             ; // Valaki már nyugtázta
         }
     }
-
+    pRecTabAckAct->refresh();
+    pRecTabNoAck->refresh();
 }
 
 cAckDialog::cAckDialog(const cRecord& __r, QWidget *par)
