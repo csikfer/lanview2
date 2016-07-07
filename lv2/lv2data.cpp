@@ -2313,8 +2313,9 @@ cNode& cNode::asmbAttached(const QString& __n, const QString& __d, qlonglong __p
 {
     clear();
     setName(__n);
-    setName(_sNodeNote, __d);
+    setNote(__d);
     setId(_sPlaceId, __place);
+    setId(_sNodeType, enum2set(NT_NODE));
     addPort(_sAttach, _sAttach, _sNul, 1);
     return *this;
 }
@@ -2322,8 +2323,9 @@ cNode& cNode::asmbAttached(const QString& __n, const QString& __d, qlonglong __p
 cNode& cNode::asmbWorkstation(QSqlQuery& q, const QString& __n, const cMac& __mac, const QString& __d, qlonglong __place)
 {
     setName(__n);
-    setName(_sNodeNote, __d);
+    setNote(__d);
     setId(_sPlaceId, __place);
+    setId(_sNodeType, enum2set(NT_HOST, NT_WORKSTATION));
     addPort(_sEthernet, _sEthernet, _sNul, 1);
     cInterface *pi = ports.first()->reconvert<cInterface>();
     *pi = __mac;
@@ -2696,7 +2698,7 @@ const QString& phsLinkType(int e, eEx __ex)
     case LT_TERM:   return _sTerm;
     default:        break;
     }
-    if (__ex) EXCEPTION(EDATA, e);
+    if (__ex) EXCEPTION(EENUMVAL, e);
     return _sNul;
 }
 
@@ -2796,7 +2798,7 @@ int cPhsLink::unlink(QSqlQuery &q, const QString& __nn, const QString& __pn, ePh
     QString sql =
             "SELECT phs_link_id FROM phs_links AS l"
             " JOIN nports AS p ON p.port_id = l.port_id1"
-            " JOIN patch  AS n ON n.node_id = p.node_id"
+            " JOIN patchs AS n ON n.node_id = p.node_id"
             " WHERE n.node_name = ? AND p.port_name " + QString(__pat ? "LIKE" : "=") + " ?";
     if (__t != LT_INVALID) sql += " AND " + _sPhsLinkType1 + " = ?";
     if (!q.prepare(sql)) SQLPREPERR(q, sql);
@@ -2826,19 +2828,21 @@ int cPhsLink::unlink(QSqlQuery &q, const QString& __nn, ePhsLinkType __t, int __
     QString sql =
             "SELECT phs_link_id FROM phs_links AS l"
             " JOIN nports AS p ON p.port_id = l.port_id1"
-            " JOIN patch  AS n ON n.node_id = p.node_id"
-            " WHERE n.node_name = ? AND phs_link_type1 = ? AND p.port_index";
+            " JOIN patchs AS n ON n.node_id = p.node_id"
+            " WHERE n.node_name = ?";
+    if (__t != LT_INVALID) sql += " AND phs_link_type1 = ?";
     if (__ei == NULL_IX || __ei == __ix) {
-        sql += "= " + QString::number(__ix);
+        sql += " AND p.port_index = " + QString::number(__ix);
     }
     else {
         // if (__ix > __ie) EXCEPTION(EDATA);
-        sql += ">= " + QString::number(__ix) + "AND p.port_index <= " + QString::number(__ei);
+        sql += " AND p.port_index >= " + QString::number(__ix);
+        sql += " AND p.port_index <= " + QString::number(__ei);
     }
 
     if (!q.prepare(sql)) SQLPREPERR(q, sql);
     q.bindValue(0, __nn);
-    q.bindValue(1, phsLinkType(__t));
+    if (__t != LT_INVALID) q.bindValue(1, phsLinkType(__t));
     if (!q.exec()) SQLQUERYERR(q);
     QList<qlonglong>    idl;
     if (q.first()) {

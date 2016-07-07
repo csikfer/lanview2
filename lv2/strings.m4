@@ -803,3 +803,6 @@ STRDEF(Selects, "selects");
   __SDEF(Linux)
   __SDEF(Empty)
 
+dnl SQL function names
+STRDEF(SetServiceStat, "set_service_stat")
+

@@ -233,3 +233,10 @@ EXT_ QString execSqlTextFunction(QSqlQuery& q, const QString& fn, const QVariant
     if (ok) r = q.value(0).toString();
     return r;
 }
+
+EXT_ bool execSqlRecFunction(QSqlQuery& q, const QString& fn, const QVariant v1, const QVariant v2, const QVariant v3, const QVariant v4, const QVariant v5)
+{
+    static const QString s = "* FROM ";
+    return execSqlFunction(q, s + fn, v1, v2, v3, v4, v5);
+}
+

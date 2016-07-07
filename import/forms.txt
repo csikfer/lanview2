@@ -377,7 +377,7 @@ TABLE alarms SHAPE alarms_tree "Riasztások (fa)" {
     FIELD max_status        TITLE "krit. áll.",    "Legkritikusabb állapot a riasztás alatt";
     FIELD begin_time        TITLE "kezdete",       "A kritikus esemény kezdete";
     FIELD event_note        TITLE "üzenet",        "A riasztást dezektáló folyamat üzenete";
-    FIELD superior_alarm_id TITLE  "Függ.Figy.", "Felsőbb szintű riasztás";
+    FIELD superior_alarm_id FLAG HIDE;
     FIELD noalarm           TITLE "letiltva",      "Az értesítés letiltása";
     FIELD end_time          TITLE "vége",          "A kritikus esemény vége";
     FIELD msg_time          TITLE "uzenet küldve", "A riasztási üzenet elküldésének az időpontja";
@@ -394,9 +394,9 @@ TABLE alarms SHAPE alarms_tree "Riasztások (fa)" {
     
 }
 
-TABLE SHAPE alarms "Riasztások" {
+TABLE SHAPE alarms "Riasztások (tábla)" {
     SET DEFAULTS;
-    TABLE TYPE READ ONLY;
+    TABLE TYPE ON READ ONLY;
     TABLE                   TITLE "Riasztási események", "Riasztási esemény",;
     FIELD alarm_id          TITLE "ID",            "Riasztás egyedi azonosító kódja";
     FIELD host_service_id   TITLE "host:service", "Szolgálltatás példány";
@@ -405,7 +405,7 @@ TABLE SHAPE alarms "Riasztások" {
     FIELD max_status        TITLE "krit. áll.",    "Legkritikusabb állapot a riasztás alatt";
     FIELD begin_time        TITLE "kezdete",       "A kritikus esemény kezdete";
     FIELD event_note        TITLE "üzenet",        "A riasztást dezektáló folyamat üzenete";
-    FIELD superior_alarm_id TITLE  "Függ.Figy.", "Felsőbb szintű riasztás";
+    FIELD superior_alarm_id TITLE "Függ.Figy.",    "Felsőbb szintű riasztás";
     FIELD noalarm           TITLE "letiltva",      "Az értesítés letiltása";
     FIELD end_time          TITLE "vége",          "A kritikus esemény vége";
     FIELD msg_time          TITLE "uzenet küldve", "A riasztási üzenet elküldésének az időpontja";

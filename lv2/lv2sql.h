@@ -145,6 +145,7 @@ EXT_ bool execSql(QSqlQuery& q, const QString& sql, const QVariant v1 = QVariant
 /// @param v2 A hívott függvény második paramétere, ha megadtuk, ha nem, akkor a függvénynek egy paramétere van.
 /// @param v3 A hívott függvény harmadik paramétere, ha megadtuk, ha nem, akkor a függvénynek kettő paramétere van.
 /// @param v4 A hívott függvény negyedik paramétere, ha megadtuk, ha nem, akkor a függvénynek három paramétere van.
+/// @return a lekérdezés után a q.first() metódus visszatérési értéke
 EXT_ bool execSqlFunction(QSqlQuery& q, const QString& fn, const QVariant v1 = QVariant(), const QVariant v2 = QVariant(), const QVariant v3 = QVariant(), const QVariant v4 = QVariant(), const QVariant v5 = QVariant());
 
 /// Végrehajt ill összeállít és végrehajt egy query-t ami egy SQL függvényhívás, egész szám visszatérési értékkel.
@@ -167,6 +168,16 @@ EXT_ qlonglong execSqlIntFunction(QSqlQuery& q, bool *pOk, const QString& fn, co
 /// @param v4 A hívott függvény negyedik paramétere, ha megadtuk, ha nem, akkor a függvénynek három paramétere van.
 /// @return A hívott függvény visszatérési értéke.
 EXT_ QString execSqlTextFunction(QSqlQuery& q, const QString& fn, const QVariant v1 = QVariant(), const QVariant v2 = QVariant(), const QVariant v3 = QVariant(), const QVariant v4 = QVariant(), const QVariant v5 = QVariant());
+
+/// Végrehajt ill összeállít és végrehajt egy query-t ami egy SQL függvényhívás, rekord visszatérési értékkel.
+/// @param q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.
+/// @param fn Az SQL függvény neve. Maximum négy paramétert tudunk átadni.
+/// @param v1 A hívott függvény első paramétere, ha megadtuk, ha nem, akkor a függvénynek nincs egy paramétere sem.
+/// @param v2 A hívott függvény második paramétere, ha megadtuk, ha nem, akkor a függvénynek egy paramétere van.
+/// @param v3 A hívott függvény harmadik paramétere, ha megadtuk, ha nem, akkor a függvénynek kettő paramétere van.
+/// @param v4 A hívott függvény negyedik paramétere, ha megadtuk, ha nem, akkor a függvénynek három paramétere van.
+/// @return a lekérdezés után a q.first() metódus visszatérési értéke
+bool execSqlRecFunction(QSqlQuery& q, const QString& fn, const QVariant v1 = QVariant(), const QVariant v2 = QVariant(), const QVariant v3 = QVariant(), const QVariant v4 = QVariant(), const QVariant v5 = QVariant());
 
 class LV2SHARED_EXPORT cNamedList {
 private:

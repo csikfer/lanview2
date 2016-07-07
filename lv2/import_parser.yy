@@ -1515,12 +1515,12 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
 %token      MASK_T LIST_T VLANS_T ID_T DYNAMIC_T FIXIP_T PRIVATE_T PING_T
 %token      NOTIF_T ALL_T RIGHTS_T REMOVE_T SUB_T FEATURES_T MAC_T EXTERNAL_T
 %token      LINK_T LLDP_T SCAN_T TABLE_T FIELD_T SHAPE_T TITLE_T REFINE_T
-%token      DEFAULTS_T ENUM_T RIGHT_T VIEW_T INSERT_T EDIT_T
+%token      DEFAULTS_T ENUM_T RIGHT_T VIEW_T INSERT_T EDIT_T AP_T
 %token      INHERIT_T NAMES_T HIDE_T VALUE_T DEFAULT_T FILTER_T FILTERS_T
 %token      ORD_T SEQUENCE_T MENU_T GUI_T OWN_T TOOL_T TIP_T WHATS_T THIS_T
-%token      EXEC_T TAG_T BOOLEAN_T IPADDRESS_T REAL_T ENABLE_T
+%token      EXEC_T TAG_T BOOLEAN_T IPADDRESS_T REAL_T ENABLE_T MOBILE_T
 %token      BYTEA_T DATE_T DISABLE_T EXPRESSION_T PREFIX_T RESET_T CACHE_T
-%token      DATA_T IANA_T IFDEF_T IFNDEF_T NC_T QUERY_T PARSER_T
+%token      DATA_T IANA_T IFDEF_T IFNDEF_T NC_T QUERY_T PARSER_T DEVICE_T
 %token      REPLACE_T RANGE_T EXCLUDE_T PREP_T POST_T CASE_T RECTANGLE_T
 %token      DELETED_T PARAMS_T CONVERTER_T PRINTER_T GATEWAY_T DOMAIN_T
 %token      DIALOG_T AUTO_T PASSWD_T HUGE_T FLAG_T TREE_T NOTIFY_T
@@ -2202,6 +2202,10 @@ host_t  : SWITCH_T                              { $$ = new QString(_sSwitch); }
         | CONVERTER_T                           { $$ = new QString(_sConverter); }
         | PRINTER_T                             { $$ = new QString(_sPrinter); }
         | GATEWAY_T                             { $$ = new QString(_sGateway); }
+        | AP_T                                  { $$ = new QString(_sAp); }
+        | WORKSTATION_T                         { $$ = new QString(_sWorkstation); }
+        | MOBILE_T                              { $$ = new QString(_sMobile); }
+        | DEVICE_T                              { $$ = new QString(_sDevice); }
         ;
 node    : node_h str str_z                          { newNode($1, $2, $3); pPatch->containerValid = CV_ALL_NODE; }
                 node_cf node_e                      { REPANDDEL(pPatch); }
@@ -2925,12 +2929,12 @@ static int yylex(void)
         TOK(MASK) TOK(LIST) TOK(VLANS) TOK(ID) TOK(DYNAMIC) TOK(FIXIP) TOK(PRIVATE) TOK(PING)
         TOK(NOTIF) TOK(ALL) TOK(RIGHTS) TOK(REMOVE) TOK(SUB) TOK(FEATURES) TOK(MAC) TOK(EXTERNAL)
         TOK(LINK) TOK(LLDP) TOK(SCAN) TOK(TABLE) TOK(FIELD) TOK(SHAPE) TOK(TITLE) TOK(REFINE)
-        TOK(DEFAULTS) TOK(ENUM) TOK(RIGHT) TOK(VIEW) TOK(INSERT) TOK(EDIT)
+        TOK(DEFAULTS) TOK(ENUM) TOK(RIGHT) TOK(VIEW) TOK(INSERT) TOK(EDIT) TOK(AP)
         TOK(INHERIT) TOK(NAMES) TOK(HIDE) TOK(VALUE) TOK(DEFAULT) TOK(FILTER) TOK(FILTERS)
         TOK(ORD) TOK(SEQUENCE) TOK(MENU) TOK(GUI) TOK(OWN) TOK(TOOL) TOK(TIP) TOK(WHATS) TOK(THIS)
-        TOK(EXEC) TOK(TAG) TOK(BOOLEAN) TOK(IPADDRESS) TOK(REAL) TOK(ENABLE)
+        TOK(EXEC) TOK(TAG) TOK(BOOLEAN) TOK(IPADDRESS) TOK(REAL) TOK(ENABLE) TOK(MOBILE)
         TOK(BYTEA) TOK(DATE) TOK(DISABLE) TOK(EXPRESSION) TOK(PREFIX) TOK(RESET) TOK(CACHE)
-        TOK(DATA) TOK(IANA) TOK(IFDEF) TOK(IFNDEF) TOK(NC) TOK(QUERY) TOK(PARSER)
+        TOK(DATA) TOK(IANA) TOK(IFDEF) TOK(IFNDEF) TOK(NC) TOK(QUERY) TOK(PARSER) TOK(DEVICE)
         TOK(REPLACE) TOK(RANGE) TOK(EXCLUDE) TOK(PREP) TOK(POST) TOK(CASE) TOK(RECTANGLE)
         TOK(DELETED) TOK(PARAMS) TOK(CONVERTER) TOK(PRINTER) TOK(GATEWAY) TOK(DOMAIN)
         TOK(DIALOG) TOK(AUTO) TOK(PASSWD) TOK(HUGE) TOK(FLAG) TOK(TREE) TOK(NOTIFY)

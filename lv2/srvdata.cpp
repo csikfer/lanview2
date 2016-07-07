@@ -229,14 +229,9 @@ int cHostService::replace(QSqlQuery &__q, eEx __ex)
 
 cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const QString& __note, qlonglong __did)
 {
-    QString sql = QString("SELECT * FROM set_service_stat(%1, '%2', '%3'%4)")
-            .arg(getId())
-            .arg(__st)
-            .arg(__note)
-            .arg(__did == NULL_ID ? _sNul : (_sCommaSp + QString::number(__did)) );
-    PDEB(VVERBOSE) << "setState() : " << sql << endl;
-    if (!__q.exec(sql)) SQLPREPERR(__q, sql);
-    if (!__q.first()) SQLERR(__q, EQUERY);
+    QVariant did;
+    if (__did != NULL_ID) did = __did;
+    if (!execSqlRecFunction(__q, _sSetServiceStat, getId(), __st, __note, did)) SQLERR(__q, EQUERY);
     set(__q);
     // DBGFNL();
     return *this;
