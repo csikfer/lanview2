@@ -16,9 +16,9 @@ private:
     QSqlQuery *     pq;
     bool            isAdmin;
     QVBoxLayout *   pMainLayout;    /// Az ablak(widget)-hez rendelt layout.
-    QSplitter *     pMainSplitter;  /// Az ablak splittere: jobbra riasztások, balra térkép
+    QSplitter *     pMainSplitter;  /// Az ablak splittere: balra riasztások,  jobbra térkép
     QSplitter *     pAlarmSplitter; /// A bal oldali splitter, riasztások: fent a nem nyugtázott, lent a nyugtázott de aktív
-    cRecordTable *  pRecTabNoAck;   /// A nem nyugtázott riasztások táblála (tree?)
+    cRecordTable *  pRecTabNoAck;   /// A nem nyugtázott riasztások táblája (tree?)
     cRecordTable *  pRecTabAckAct;  /// A nyugtázott aktív riasztások táblála (tree?)
     QWidget *       pRightWidget;   /// A jobb oldali widget
     QVBoxLayout *   pRightVBLayout; /// A jobb oldali widget vertikális layout
@@ -26,7 +26,7 @@ private:
     QLabel *        pMapLabel;      /// A térkép/alaprajz cím sora
     cImageWidget *  pMap;           /// A térkép/alaprajz (image)
     QPushButton *   pAckButton;     /// A nyugtázás gomb
-    QPushButton *   pAckAllButton;  /// Több sor nyugtázá gomb (Admin)
+    QPushButton *   pAckAllButton;  /// Több sor nyugtázás gomb (Admin)
     const cRecord  *pActRecord;     /// A kiválasztott rekord a nem nyugtázott riasztások táblában
 private slots:
     void curRowChgNoAck(QItemSelection, QItemSelection);

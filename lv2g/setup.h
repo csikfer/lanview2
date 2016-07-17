@@ -25,6 +25,7 @@ private:
     Ui::SetupWidget *pUi;
 private slots:
     void applicateAndRestart();
+    void applicateAndExit();
     void applicateAndClose();
     void logToStdOutClicked(bool __b);
     void logToStdErrClicked(bool __b);

@@ -1,5 +1,6 @@
 #include "menu.h"
 #include "setup.h"
+#include "gsetupwidget.h"
 #include "gparse.h"
 #include "apierrcodes.h"
 
@@ -44,9 +45,13 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidge
     }
     else if (!(feature = pmi->feature("own")).isEmpty()) { // "own"    Egyedi előre definiált cOwnTab leszármazott hívása
         enum ePrivilegeLevel rights = PL_SYSTEM;
-        if (0 == feature.compare("setup", Qt::CaseInsensitive)) {            // "setup"      Beállítások szerkesztése widget
+        if (0 == feature.compare("setup", Qt::CaseInsensitive)) {            // "setup"      Alap beállítások szerkesztése widget
             ownType = OWN_SETUP;
             rights = cSetupWidget::rights;
+        }
+        else if (0 == feature.compare("gsetup", Qt::CaseInsensitive)) {      // "gsetup"     GUI beállítások szerkesztése widget
+            ownType = OWN_GSETUP;
+            rights = cGSetupWidget::rights;
         }
         else if (0 == feature.compare("parser", Qt::CaseInsensitive)) {      // "parser"     A parser widget
             ownType = OWN_PARSER;
@@ -56,7 +61,7 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidge
             ownType = OWN_OLALARM;
             rights = cOnlineAlarm::rights;
         }
-        else if (0 == feature.compare("errcodes", Qt::CaseInsensitive)) {     // "errcodes"  API hibakódok
+        else if (0 == feature.compare("errcodes", Qt::CaseInsensitive)) {    // "errcodes"   API hibakódok
             ownType = OWN_ERRCODES;
             rights = cErrcodesWidget::rights;
         }
@@ -133,16 +138,19 @@ A jelenleg implementállt lehetőségek:
 | Típus név | Konstans név | Objektum név    | Funkció                  |
 |-----------|--------------|-----------------|--------------------------|
 | setup     | OWN_SETUP    | cSetupWidget    | Alapbeállítások megadása |
+| gsetup    | OWN_GSETUP   | cGSetupWidget   | Megjelenítési beállítások|
 | parser    | OWN_PARSER   | cParseWidget    | A parser hvása           |
 | olalarm   | OWN_OLALARM  | cOnlineAlarm    | OnLine riasztások        |
 | errcodes  | OWN_ERRCODES | cErrcodesWidget | API hibakódok listája    |
-@endtable
  */
 void cMenuAction::initOwn()
 {
     switch (ownType) {
     case OWN_SETUP:
         pOwnTab = new cSetupWidget(*lanView::getInstance()->pSet, pTabWidget);
+        break;
+    case OWN_GSETUP:
+        pOwnTab = new cGSetupWidget(*lanView::getInstance()->pSet, pTabWidget);
         break;
     case OWN_PARSER:
         pOwnTab = new cParseWidget(pTabWidget);

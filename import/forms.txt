@@ -704,6 +704,7 @@ GUI lv2gui {
     file MENU {
         TITLE "fájl";
         setup       OWN     setup           {   TITLE "Beállítások",@;  }
+        gsetup      OWN     gsetup          {   TITLE "GUI Beállítások",@;  }
         sys_params  SHAPE   sys_params      {   TITLE "Rendszer paraméterek",@;  }
         param_types SHAPE   param_types     {   TITLE "Paraméter típus leírók",@;  }
         restart     EXEC    restart         {   TITLE "Újraindítás";  }

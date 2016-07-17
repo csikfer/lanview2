@@ -19,9 +19,10 @@ enum eMenuActionType {
 enum eOwnTab {
     OWN_UNKNOWN = -1,
     OWN_SETUP   =  0,
-    OWN_PARSER  =  1,
-    OWN_OLALARM =  2,
-    OWN_ERRCODES=  3
+    OWN_GSETUP,
+    OWN_PARSER,
+    OWN_OLALARM,
+    OWN_ERRCODES
 };
 
 /// @class cMenuAction

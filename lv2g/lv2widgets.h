@@ -29,7 +29,7 @@ public:
     cImageWidget(QWidget *__par = NULL);
     /// Destruktor
     ~cImageWidget();
-    /// Az ablak tartaémának a betöltése egy kép fájlból, és az ablak megjelenítése
+    /// Az ablak tartalmának a betöltése egy kép fájlból, és az ablak megjelenítése
     /// @par __fn A kép fájl neve
     /// @par __t Opcionális paraméter, az ablak címe
     /// @return Ha sikerült a kép betöltése, akkor true, ha nem akkor false (ekkor az ablak nem kerül megjelenítésre).
@@ -45,9 +45,11 @@ public:
     /// @par __t Opcionális paraméter, az ablak címe, nincs megadva, akkor az image_descr mező lessz a cím
     /// @return Ha sikerült a kép betöltése, akkor true, ha nem akkor false (ekkor az ablak nem kerül megjelenítésre).
     bool setImage(const cImage& __o, const QString& __t = QString());
+    /// Egy szöveg megjelenítése a kép helyett.
     bool setText(const QString& _txt);
     /// Metódus az egér kattintásra
     virtual void mousePressEvent(QMouseEvent * ev);
+    /// Zoom szorzó
     double          scaleStep;
 protected:
     bool resetImage();

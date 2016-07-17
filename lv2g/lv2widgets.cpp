@@ -42,14 +42,14 @@ bool cImageWidget::setImage(QSqlQuery __q, qlonglong __id, const QString& __t)
 bool cImageWidget::setImage(const cImage& __o, const QString& __t)
 {
     hide();
-    scale = -1;
+    scale = 0;
     bool f = __o.dataIsPic();
     if (!f) return false;
     const char * _type = __o._getType();
     QByteArray   _data = __o.getImage();
     if (!image.loadFromData(_data, _type)) return false;
     QString title = __t;
-    if (title.isEmpty()) title = __o.getName(_sImageNote);
+    if (title.isEmpty()) title = __o.getNote();
     setWindowTitle(title);
     return resetImage();
 }
@@ -57,6 +57,7 @@ bool cImageWidget::setImage(const cImage& __o, const QString& __t)
 bool cImageWidget::setText(const QString& _txt)
 {
     pLabel = new QLabel();
+    pLabel->setWordWrap(true);
     pLabel->setText(_txt);
     setWidget(pLabel);
     show();
@@ -70,8 +71,8 @@ void cImageWidget::mousePressEvent(QMouseEvent * ev)
 
 bool cImageWidget::resetImage()
 {
-    if (scale < 0) scale = 0;
-    image.setDevicePixelRatio(1.0/(1.0 + (scale * scaleStep)));
+    if (scale < 0) image.setDevicePixelRatio(1.0 + (scale * scaleStep));
+    else           image.setDevicePixelRatio(1.0/(1.0 + (scale * scaleStep)));
     draw();
     pLabel = new QLabel();
     pLabel->setPixmap(image);
@@ -119,17 +120,13 @@ void cImageWidget::draw(QPainter& painter, QVariant& d)
 
 void cImageWidget::zoomIn()
 {
-    if (scale >= 0) {
-        ++scale;
-        resetImage();
-    }
+    ++scale;
+    resetImage();
 }
 void cImageWidget::zoomOut()
 {
-    if (scale >  0) {
-        --scale;
-        resetImage();
-    }
+    --scale;
+    resetImage();
 }
 
 /* ********************************************************************************************

@@ -31,7 +31,8 @@ SOURCES += \
     mainwindow.cpp \
     apierrcodes.cpp \
     record_link.cpp \
-    record_link_model.cpp
+    record_link_model.cpp \
+    gsetupwidget.cpp
 
 HEADERS +=\
     lv2g_global.h \
@@ -55,7 +56,8 @@ HEADERS +=\
     mainwindow.h \
     apierrcodes.h \
     record_link.h \
-    record_link_model.h
+    record_link_model.h \
+    gsetupwidget.h
 
 FORMS += \
     column_filter.ui \
@@ -69,7 +71,8 @@ FORMS += \
     fkeyed.ui \
     no_rights.ui \
     apierrcodes.ui \
-    fkeyarrayed.ui
+    fkeyarrayed.ui \
+    gsetup.ui
 INCLUDEPATH += ../lv2
 unix:LIBS += -lsnmp
 msvc:LIBS += -lSecur32

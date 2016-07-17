@@ -1055,6 +1055,8 @@ void cRecordsViewBase::rightTabs(QVariantList& vlids)
 
 /// Inicializálja a megjelenítést.
 /// Az initSimple() metódust hívja, de létrehozza a splitter widgetet, hogy több táblát lehessen megjeleníteni.
+/// A legfelső szintű splitter orientációja két féle lehet, hogy elférjrn kisebb képernyőn is.
+/// A második szint (több csak elvileg lehet) mindíg egymás melletti.
 ///
 /// Ha csak egy (child) táblázat van a jobb oldalon:
 /// \diafile    record_table2.dia "Egy child tábla" width=8cm
@@ -1068,7 +1070,8 @@ void cRecordsViewBase::initMaster()
     bool ok;
 
     pMasterLayout = new QHBoxLayout(_pWidget);
-    pMasterSplitter = new QSplitter(Qt::Horizontal);
+    if (pUpper == NULL) pMasterSplitter = new QSplitter(lv2g::getInstance()->defaultSplitOrientation);
+    else                pMasterSplitter = new QSplitter(Qt::Horizontal);
     pMasterLayout->addWidget(pMasterSplitter);
 
     pLeftWidget   = new QWidget();

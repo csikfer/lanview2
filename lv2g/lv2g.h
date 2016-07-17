@@ -71,9 +71,11 @@ public:
     lv2g();
     ~lv2g();
     static lv2g*    getInstance(void) { return (lv2g *)lanView::getInstance(); }
-    static bool  logonNeeded;
-    static bool  zoneNeeded;
-    qlonglong   zoneId;
+    static bool     logonNeeded;
+    static bool     zoneNeeded;
+    qlonglong       zoneId;
+    enum Qt::Orientation    defaultSplitOrientation;
+    static const  QString   sDefaultSplitOrientation;
 protected:
     const lv2gDesign *pDesign;
 };

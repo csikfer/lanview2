@@ -18,11 +18,11 @@ cSetupWidget::cSetupWidget(QSettings &__s, QWidget *par)
     bool forced = !lanView::dbIsOpen();
 
     connect(pUi->PBApplicateAndRestart,SIGNAL(clicked()),    this,   SLOT(applicateAndRestart()));
-    connect(pUi->PBApplicateAndClose,  SIGNAL(clicked()),    this,   SLOT(applicateAndClose()));
-    connect(pUi->PBCancel,             SIGNAL(clicked()),    this,   SLOT(close()));
+    connect(pUi->PBApplicateAndExit,  SIGNAL(clicked()),    this,   SLOT(applicateAndExit()));
+    connect(pUi->PBCancel,             SIGNAL(clicked()),    this,   SLOT(endIt()));
     pUi->PBCancel->setDisabled(forced);
-    connect(pUi->PBClose,              SIGNAL(clicked()),    this,   SLOT(endIt()));
-    pUi->PBClose->setDisabled(forced);
+    connect(pUi->PBApplicateAndClose,  SIGNAL(clicked()),    this,   SLOT(applicateAndClose()));
+    pUi->PBApplicateAndClose->setDisabled(forced);
 
     connect(pUi->logLevelMore,   SIGNAL(clicked()),      this,   SLOT(logLevelMoreClicked()));
     connect(pUi->logToStdOutRB,  SIGNAL(clicked(bool)),  this,   SLOT(logToStdOutClicked(bool)));
@@ -119,10 +119,16 @@ void cSetupWidget::applicateAndRestart()
     appReStart();
 }
 
-void cSetupWidget::applicateAndClose()
+void cSetupWidget::applicateAndExit()
 {
     applicate();
     qApp->exit(0);
+}
+
+void cSetupWidget::applicateAndClose()
+{
+    applicate();
+    endIt();
 }
 
 void cSetupWidget::logToStdOutClicked(bool __b)

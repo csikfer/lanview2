@@ -6,7 +6,7 @@ cOnlineAlarm::cOnlineAlarm(QWidget *par) : cOwnTab(par)
 {
     pActRecord = NULL;
     pq = newQuery();
-    isAdmin = false;
+    isAdmin = lanView::user().privilegeLevel() >= PL_ADMIN;
 
     pMainLayout = new QVBoxLayout(this);                // (ös) widget layout
     pMainSplitter  = new QSplitter(Qt::Horizontal);     // Fő splitter
@@ -16,8 +16,8 @@ cOnlineAlarm::cOnlineAlarm(QWidget *par) : cOwnTab(par)
     pMainSplitter->addWidget(pAlarmSplitter);
 
     pRecTabNoAck  = new cRecordTable("uaalarms", false, pAlarmSplitter);    // nem nyugtázott riasztások tábla; bal felső
-    if (lanView::user().privilegeLevel() >= PL_ADMIN) {
-        isAdmin = true;
+    if (isAdmin) {
+        pRecTabNoAck->tableView()->setSelectionMode(QAbstractItemView::ExtendedSelection);  // Több soros kijelölés
     }
     else {
         pRecTabNoAck->tableView()->setSelectionMode(QAbstractItemView::SingleSelection);    // Nincs több soros kijelölés
@@ -69,7 +69,7 @@ cOnlineAlarm::~cOnlineAlarm()
 void cOnlineAlarm::map()
 {
     if (pActRecord == NULL) EXCEPTION(EPROGFAIL);
-    // A tiasztás helye (ID)
+    // A riasztás helye (ID)
     qlonglong pid = pActRecord->getId(_sPlaceId);
     cPlace pl;
     pl.fetchById(*pq, pid);

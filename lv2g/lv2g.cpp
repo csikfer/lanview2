@@ -4,6 +4,7 @@
 
 bool lv2g::logonNeeded = false;
 bool lv2g::zoneNeeded  = true;
+const QString lv2g::sDefaultSplitOrientation = "defaultSplitOrientation";
 
 lv2g::lv2g() :
     lanView(),
@@ -23,6 +24,9 @@ lv2g::lv2g() :
             }
         }
         else if (logonNeeded) EXCEPTION(ESQLOPEN, 0, trUtf8("Nincs elérhető adatbázis."));
+        defaultSplitOrientation = Qt::Horizontal;
+        if (0 == QString("vertical").compare(pSet->value(sDefaultSplitOrientation).toString(), Qt::CaseInsensitive))
+            defaultSplitOrientation = Qt::Vertical;
     } CATCHS(lastError)
     if (dbIsOpen() && !zoneNeeded) zoneId = cPlaceGroup().getIdByName(_sAll);
 }
