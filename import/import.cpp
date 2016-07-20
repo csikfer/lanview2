@@ -83,11 +83,11 @@ void lv2import::abortOldRecords()
     pq->finish();
 }
 
-void lv2import::dbNotif(QString __s)
+void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource source, const QVariant &payload)
 {
     cImport     imp;
     try {
-        PDEB(INFO) << QString(trUtf8("DB notification : %1.")).arg(__s) << endl;
+        PDEB(INFO) << QString(trUtf8("DB notification : %1, %2, %3.")).arg(name).arg((int)source).arg(debVariantToString(payload)) << endl;
         imp.setName(_sExecState, _sWait);
         imp.fetch(*pq, false, imp.mask(_sExecState), imp.iTab(_sDateOf), 1);
         if (imp.isEmpty_()) {

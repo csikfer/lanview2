@@ -179,6 +179,9 @@ EXT_ QString execSqlTextFunction(QSqlQuery& q, const QString& fn, const QVariant
 /// @return a lekérdezés után a q.first() metódus visszatérési értéke
 bool execSqlRecFunction(QSqlQuery& q, const QString& fn, const QVariant v1 = QVariant(), const QVariant v2 = QVariant(), const QVariant v3 = QVariant(), const QVariant v4 = QVariant(), const QVariant v5 = QVariant());
 
+void sqlNotify(QSqlQuery& q, const QString& channel, const QString& payload = QString());
+
+
 class LV2SHARED_EXPORT cNamedList {
 private:
     QStringList     _names;

@@ -318,7 +318,7 @@ public:
     virtual void _refresh(bool all = true) = 0;
 
     bool enabledBatchEdit(const cTableShapeField& tsf);
-    bool batchEdit(int logicalindex);
+    virtual bool batchEdit(int logicalindex);
 public slots:
     /// Megnyomtak egy gombot.
     /// @param id A megnyomott gomb azonosítója
@@ -383,6 +383,7 @@ public:
     virtual cRecord *prevRow(QModelIndex *pMi, int _upRes = 1);
     virtual void selectRow(const QModelIndex& mi);
     virtual void refresh(bool all = true);
+    virtual bool batchEdit(int logicalindex);
     void empty();
 
     void first();

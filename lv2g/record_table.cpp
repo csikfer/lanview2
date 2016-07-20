@@ -1279,24 +1279,44 @@ bool cRecordsViewBase::batchEdit(int logicalindex)
         QLabel *pLabel = new QLabel(sf.getName(_sDialogTitle));
         pEd->verticalLayout->insertWidget(i * 2, pLabel);
     }
+    // Ha modosítottuk a táblát, majd volt rollback
+    bool    spoiling = false;
     while (pDialog->exec() == QDialog::Accepted) {
         sqlBegin(*pq);
+        cError  *pe = NULL;
+        bool first = true;
         foreach (QModelIndex mi, mil) {
             selectRow(mi);
             cRecord *ar = actRecord();
-            for (int i = 0; i < dataFieldIndexList.size(); ++i) {
-                QVariant v = febList[i]->get();
-                ar->set(dataFieldIndexList[i], v);
+            try {
+                for (int i = 0; i < dataFieldIndexList.size(); ++i) {
+                    QVariant v = febList[i]->get();
+                    ar->set(dataFieldIndexList[i], v);
+                }
+                ar->update(*pq, false, setMask);
+            } CATCHS(pe);
+            if (pe != NULL) {
+                spoiling = !first;
+                break;
             }
-            if (!cErrorMessageBox::condMsgBox(ar->tryUpdate(*pq, false, setMask), pWidget())) {
-                sqlRollback(*pq);
-                continue;
-            }
+            first = false;
+        }
+        if (pe != NULL) {
+            cErrorMessageBox::messageBox(pe, pDialog);
+            pDelete(pe);
+            sqlRollback(*pq);
+            continue;
         }
         sqlEnd(*pq);
+        spoiling = false;
         break;
     }
     delete pDialog;
+    // modosítottunk, majd roback-eltünk sorokat, frissíteni kell
+    if (spoiling) {
+        refresh();
+    }
+
     return false;
 }
 
@@ -1651,6 +1671,21 @@ void cRecordTable::_refresh(bool all)
     if (!pTabQuery->exec()) SQLQUERYERR(*pTabQuery);
     pTableModel()->setRecords(*pTabQuery, all);
     pTableView->resizeColumnsToContents();
+}
+
+bool cRecordTable::batchEdit(int logicalindex)
+{
+    QModelIndexList mil = selectedRows();   // save select
+    if (cRecordsViewBase::batchEdit(logicalindex)) return true;
+    if (mil.size() > 1) {                   // restore select
+        pTableView->clearSelection();
+        pTableView->setSelectionMode(QAbstractItemView::MultiSelection);
+        foreach (QModelIndex mi, mil) {
+            pTableView->selectRow(mi.row());
+        }
+        pTableView->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    }
+    return false;
 }
 
 

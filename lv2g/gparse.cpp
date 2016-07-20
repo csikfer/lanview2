@@ -142,10 +142,12 @@ void cParseWidget::remoteParse(const QString &src)
     imp.setName(_sImportText, src);
     imp.setName(_sAppName, lanView::appName);
     imp.setId(_sUserId, lanView::user().getId());
+    imp.setId(_sNodeId, lanView::selfNode().getId());
 
     QSqlQuery   *pq  = newQuery();
     imp.insert(*pq);
     QString msg = trUtf8("Végrehajtandó forrásszöveg kiírva az adatbázisba (ID = %1)\nVárakozás...").arg(imp.getId());
+    sqlNotify(*pq, "import");
     int lastStat = ES_WAIT;
     while (true) {
         if (msg.isEmpty() == false) {

@@ -516,8 +516,8 @@ qlonglong cColStaticDescr::toId(const QVariant& _f) const
 
 QString cColStaticDescr::toView(QSqlQuery& q, const QVariant &_f) const
 {
-    static QString  rNul = QObject::trUtf8("[NULL]");
-    static QString  rBin = QObject::trUtf8("[BINARY]");
+    static const QString  rNul = QObject::trUtf8("[NULL]");
+    static const QString  rBin = QObject::trUtf8("[BINARY]");
     if (_f.isNull())           return rNul;
     if (eColType == FT_BINARY) return rBin;
     if (eColType == FT_INTEGER && fKeyType != FT_NONE) {
@@ -527,8 +527,12 @@ QString cColStaticDescr::toView(QSqlQuery& q, const QVariant &_f) const
         QString h = "#";
         if (fnToName.isEmpty() == false) {
             QString sql = "SELECT " + fnToName + parentheses(r);
-            if (!q.exec(sql)) SQLPREPERR(q, sql);
-            if (q.first()) return q.value(0).toString();
+            if (!q.exec(sql)) {
+                SQLPREPERRDEB(q, sql);
+                static const QString e = QObject::trUtf8("[SQL ERROR]");
+                return h + r + e;
+            }
+            else if (q.first()) return q.value(0).toString();
             return h + r;
         }
         if (fKeyTable.isEmpty() == false) {
@@ -2559,8 +2563,12 @@ QString cRecStaticDescr::checkId2Name(QSqlQuery& q) const
             .arg(sSchemaName).arg(sFnToName);
     if (!q.exec(sql)) SQLPREPERR(q, sql);
     if (!q.first() || q.value(0).toInt() == 1) return sFnToName;    // Definiálva van a keresett függvény, OK
-    const QString& sNameName   = nameName();
+    const QString& sNameName   = nameName(EX_IGNORE);
     const QString& sTableName  = tableName();
+    if (sNameName.isEmpty()) {
+        DWAR() << QObject::trUtf8("Function %1 not found, nothing create.").arg(sFnToName) << endl;
+        return _sNul;
+    }
     DWAR() << QObject::trUtf8("Function %1 not found, create ...").arg(sFnToName) << endl;
     sql = QString(
          "CREATE OR REPLACE FUNCTION %1(bigint) RETURNS text AS $$"

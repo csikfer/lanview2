@@ -22,7 +22,7 @@ class lv2import : public lanView {
     QFile       in;
     bool        daemonMode;
 protected slots:
-    virtual void dbNotif(QString __s);
+    virtual void dbNotif(const QString & name, QSqlDriver::NotificationSource source, const QVariant & payload);
 };
 
 #endif // IMPORT_H
