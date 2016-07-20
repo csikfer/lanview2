@@ -93,7 +93,8 @@ enum eFieldFlag {
     FF_AUTO_SET,        ///< A mező értéke automatikusan kap értéket
     FF_READ_ONLY,       ///< A mező nem szerkeszthető
     FF_PASSWD,          ///< A mező egy jelszó (tartlma rejtett)
-    FF_HUGE             ///< A TEXT típusú mező több soros
+    FF_HUGE,            ///< A TEXT típusú mező több soros
+    FF_BATCH_EDIT       ///< A mező értéke csoportosan is beállítható
 };
 
 EXT_ int fieldFlag(const QString& n, eEx __ex = EX_ERROR);

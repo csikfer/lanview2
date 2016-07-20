@@ -54,7 +54,7 @@ cOnlineAlarm::cOnlineAlarm(QWidget *par) : cOwnTab(par)
         pAckAllButton = new QPushButton(trUtf8("Mind nyugtázása"));
         pAckAllButton->setDisabled(true);
         pButtonLayout->addWidget(pAckAllButton);
-        connect(pAckButton, SIGNAL(clicked()), this, SLOT(allAcknowledge()));
+        connect(pAckAllButton, SIGNAL(clicked()), this, SLOT(allAcknowledge()));
     }
     else {
         pAckButton = NULL;
@@ -142,12 +142,12 @@ void cOnlineAlarm::allAcknowledge()
     QModelIndexList mil = pRecTabNoAck->tableView()->selectionModel()->selectedRows();
     foreach (QModelIndex mi, mil) {
         int row = mi.row();
-        const cRecord *pr = pRecTabAckAct->recordAt(row, EX_IGNORE);
+        const cRecord *pr = pRecTabNoAck->recordAt(row, EX_IGNORE);
         if (pr == NULL) {
             DERR() << trUtf8("Invalid selected row : %1").arg(row) << endl;
             continue;
         }
-        qlonglong aid = pr->getId(_sAlarmId);
+        qlonglong aid = pr->getId();
         cAlarm a;
         if (!a.fetchById(*pq, aid)) {
             DERR() << trUtf8("Alarm record fetch failed, id = %1").arg(aid) << endl;
@@ -169,7 +169,7 @@ void cOnlineAlarm::acknowledge()
     cAckDialog dialog(*pActRecord, this);
     if (dialog.exec() == QDialog::Accepted) {
         cAlarm  a;
-        a.fetchById(*pq, pActRecord->getId(_sAlarmId));
+        a.fetchById(*pq, pActRecord->getId());
         if (a.isNull(_sAckUserId)) {
             a.setId(_sAckUserId, lanView::user().getId());
             a.setName(_sAckTime, "NOW");

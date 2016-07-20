@@ -3,28 +3,35 @@ DELETE TABLE SHAPE uaalarms, aaalarms;
 
 TABLE view_alarms SHAPE uaalarms  "Nem nyugtázott riasztások" {
     SET DEFAULTS;               // Az összes mező felvétele alapértelmezett tulajdonságokkal
-    TABLE TYPE BARE, READ ONLY;
+    TABLE TYPE BARE;
     TABLE TITLE "Nem nyugtázott riasztások";
     // Nincs nyugtázva, és zónán bellül
     REFINE "ack_user_name IS NULL AND is_group_place(place_id, ?):place_group_id";
-    TABLE VIEW  RIGHTS indalarm;
-    FIELD alarm_id, host_service_id, node_id, place_id, superior_alarm_id, ack_user_name, max_status, ack_msg FLAG HIDE;
+    TABLE VIEW   RIGHTS indalarm;
+    TABLE EDIT   RIGHTS system;
+    TABLE INSERT RIGHTS system;
+    TABLE DELETE RIGHTS admin;
+    FIELD view_alarm_id, host_service_id, node_id, place_id, superior_alarm_id, ack_user_name, max_status, ack_msg FLAG HIDE;
     FIELD begin_time TITLE "Kezdete";
     FIELD end_time   TITLE "Vége";
     FIELD node_name  TITLE "Eszköz";
     FIELD place_name TITLE "Helye";
     FIELD msg        TITLE "Leírás";
     FIELD SEQUENCE begin_time, end_time, place_name, node_name, msg;
+    AUTO REFRESH "0:0:30";
 }
 
 TABLE view_alarms SHAPE aaalarms "Nyugtázott aktív riasztások" {
     SET DEFAULTS;               // Az összes mező felvétele alapértelmezett tulajdonságokkal
-    TABLE TYPE BARE, READ ONLY;
+    TABLE TYPE BARE;
     TABLE TITLE "Nyugtázott és aktív riasztások";
     // Nyugtázva, de még fennál a riasztási állpot, és zónán bellül
     REFINE "ack_user_name IS NOT NULL AND end_time IS NULL AND is_group_place(place_id, ?):place_group_id";
-    TABLE VIEW RIGHTS indalarm;
-    FIELD alarm_id, host_service_id, node_id, place_id, superior_alarm_id, max_status, end_time FLAG HIDE;
+    TABLE VIEW   RIGHTS indalarm;
+    TABLE EDIT   RIGHTS system;
+    TABLE INSERT RIGHTS system;
+    TABLE DELETE RIGHTS admin;
+    FIELD view_alarm_id, host_service_id, node_id, place_id, superior_alarm_id, max_status, end_time FLAG HIDE;
     FIELD begin_time TITLE "Kezdete";
     FIELD ack_user_name TITLE "Nyugtázta";
     FIELD node_name  TITLE "Eszköz";

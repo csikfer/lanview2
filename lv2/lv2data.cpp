@@ -3128,6 +3128,7 @@ qlonglong cAppMemo::memo(QSqlQuery &q, const QString &_memo, int _imp, const QSt
     cAppMemo o;
     o.herein(_memo, _imp, _func_name, _src, _lin);
     o.insert(q);
+    if (_imp & RS_BREAK) (new cError(_src, _lin, _func_name, eError::EBREAK, o.getId(), _memo))->exception();
     return o.getId();
 }
 
@@ -3145,7 +3146,7 @@ cAppMemo& cAppMemo::herein(const QString &_memo, int _imp, const QString &_func_
     if (pI->pSelfNode        != NULL) setId(_sNodeId,        pI->pSelfNode->getId());
     if (pI->pSelfHostService != NULL) setId(_sHostServiceId, pI->pSelfHostService->getId());
     if (pI->pUser            != NULL) setId(_sUserId,        pI->pUser->getId());
-    setId(_sImportance, _imp);
+    setName(_sImportance, notifSwitch(_imp));
     setName(_sMemo, _memo);
     return *this;
 }

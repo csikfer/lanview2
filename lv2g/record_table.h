@@ -8,6 +8,7 @@
 #if defined(LV2G_LIBRARY)
 #include    "ui_column_filter.h"
 #include    "ui_no_rights.h"
+#include    "ui_edit_field.h"
 #else
 namespace Ui {
     class dialogTabFiltOrd;
@@ -315,11 +316,14 @@ public:
     virtual void initSimple(QWidget *pW) = 0;
 
     virtual void _refresh(bool all = true) = 0;
+
+    bool enabledBatchEdit(const cTableShapeField& tsf);
+    bool batchEdit(int logicalindex);
 public slots:
     /// Megnyomtak egy gombot.
     /// @param id A megnyomott gomb azonosítója
     virtual void buttonPressed(int id);
-    void clickedHeader(int);
+    void clickedHeader(int logicalindex);
     /// Ha változott a kijelölés
     void selectionChanged(QItemSelection,QItemSelection);
     /// Indítja az editáló dialogust, a megadostt indexű rekordra.
@@ -343,6 +347,7 @@ private:
     /// megallokálja a konténert.
     tRecordList<cTableShape>   *getShapes();
 };
+
 
 /// @class cRecordTable
 /// Egy adatbázis tábla megjelenítését végző objektum.

@@ -2158,7 +2158,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
     else if (n == "VIEW") {
         _tableType = TT_VIEW_TABLE | TT_BASE_TABLE;
         // Ha egy link tábláról van szó, akkor annak itt a view tábláját kell megadni, és ebben az estenben
-        // a tábla név az a view név kiegészítve a "_table" uótaggal.
+        // a tábla név az a view név kiegészítve a "_table" utótaggal.
         QString tn = _viewName + "_table";
         qlonglong toid = ::tableoid(*pq, tn, _schemaOId, EX_IGNORE);
         if (NULL_ID != toid) {
@@ -2365,78 +2365,95 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
         // PDEB(VERBOSE) << QObject::trUtf8("Field %1 type is %2").arg(pp->colName()).arg(typeid(*pp).name()) << endl;
     } while(pq->next());
     if (_columnsNum != i) EXCEPTION(EPROGFAIL, -1, "Nem egyértelmű mező szám");
-
-    // ************************ get key_column_usage records
-    /* sql = "SELECT * FROM information_schema.key_column_usage WHERE table_schema = ? AND table_name = ?"; */
-    sql = "SELECT * FROM information_schema.key_column_usage "
-                   "JOIN information_schema.table_constraints "
-                     "USING(constraint_name) "
-              "WHERE information_schema.key_column_usage.table_schema = ? "
-                "AND information_schema.key_column_usage.table_name = ?";
-    if (!pq->prepare(sql)) SQLPREPERR(*pq, sql);
-    pq->bindValue(0, _schemaName);
-    pq->bindValue(1, _tableName);
-    if (!pq->exec()) SQLQUERYERR(*pq);
-    // PDEB(VVERBOSE) << "Read keys in " << _fullTableName() << " table..." << endl;
-    if (pq->first()) {
-        // CONSTRAINT név /_uniqueMasks index
-        QMap<QString, int>  map;
-        do {
-            QString constraintName = pq->record().value("constraint_name").toString();
-            QString columnName     = pq->record().value("column_name").toString();
-            QString constraintType = pq->record().value("constraint_type").toString();
-            i = toIndex(columnName, EX_IGNORE);
-            if (i < 0) EXCEPTION(EDBDATA,0, QObject::trUtf8("Invalid column name : %1").arg(fullColumnName(columnName)));
-            if     (constraintType == "PRIMARY KEY") {
-                //PDEB(VVERBOSE) << "Set _primaryKeyMask bit, index = " << i << endl;
-                _primaryKeyMask.setBit(i);
-                if (columnName.endsWith(QString("_id"))) _idIndex = i;
-            }
-            else if(constraintType == "UNIQUE") {
-                // A map-ban van ilyen nevű CONSTRAINT (UNIQUE KEY név) ?
-                QMap<QString, int>::iterator    it = map.find(constraintName);
-                int j;
-                if (it == map.end()) {      // Nincs, új bitmap
-                    j = _uniqueMasks.size();    // új maszk indexe
-                    //PDEB(VVERBOSE) << "Insert #" << j << " bit vector to _uniqueMasks ..." << endl;
-                    map.insert(constraintName, j);
-                    _uniqueMasks << QBitArray(_columnsNum);
+    if ((_tableType & TT_VIEW_TABLE) == 0) {    // Nézettáblánál nincsenek explicit kulcsok
+        // ************************ get key_column_usage records
+        /* sql = "SELECT * FROM information_schema.key_column_usage WHERE table_schema = ? AND table_name = ?"; */
+        sql = "SELECT * FROM information_schema.key_column_usage "
+                       "JOIN information_schema.table_constraints "
+                         "USING(constraint_name) "
+                  "WHERE information_schema.key_column_usage.table_schema = ? "
+                    "AND information_schema.key_column_usage.table_name = ?";
+        if (!pq->prepare(sql)) SQLPREPERR(*pq, sql);
+        pq->bindValue(0, _schemaName);
+        pq->bindValue(1, _tableName);
+        if (!pq->exec()) SQLQUERYERR(*pq);
+        // PDEB(VVERBOSE) << "Read keys in " << _fullTableName() << " table..." << endl;
+        if (pq->first()) {
+            // CONSTRAINT név /_uniqueMasks index
+            QMap<QString, int>  map;
+            do {
+                QString constraintName = pq->record().value("constraint_name").toString();
+                QString columnName     = pq->record().value("column_name").toString();
+                QString constraintType = pq->record().value("constraint_type").toString();
+                i = toIndex(columnName, EX_IGNORE);
+                if (i < 0) EXCEPTION(EDBDATA,0, QObject::trUtf8("Invalid column name : %1").arg(fullColumnName(columnName)));
+                if     (constraintType == "PRIMARY KEY") {
+                    //PDEB(VVERBOSE) << "Set _primaryKeyMask bit, index = " << i << endl;
+                    _primaryKeyMask.setBit(i);
+                    if (columnName.endsWith(QString("_id"))) _idIndex = i;
                 }
-                else j = it.value();            // A talált maszk indexe
-                //PDEB(VVERBOSE) << "Set _uniqueMasks[" << j << "] bit #" << i << " to true..." << endl;
-                _uniqueMasks[j].setBit(i);
-                // if (_nameIndex < 0 && columnName.endsWith(QString("_name"))) _nameIndex = i;
-            }
-        } while(pq->next());
-    }
-    // _nameKeyMask kitöltése (mivel együtt egyedi a név mező ?)
-    if (_nameIndex >= 0) {
-        foreach (QBitArray u, _uniqueMasks) {
-            if (u[_nameIndex]) {
-                if (_nameKeyMask.count(true)) {
-                    _nameKeyMask.fill(false);       // kétértelmüség
-                    PDEB(VERBOSE) << "_nameKeyMask is ambiguos, unset." << endl;
-                    break;
+                else if(constraintType == "UNIQUE") {
+                    // A map-ban van ilyen nevű CONSTRAINT (UNIQUE KEY név) ?
+                    QMap<QString, int>::iterator    it = map.find(constraintName);
+                    int j;
+                    if (it == map.end()) {      // Nincs, új bitmap
+                        j = _uniqueMasks.size();    // új maszk indexe
+                        //PDEB(VVERBOSE) << "Insert #" << j << " bit vector to _uniqueMasks ..." << endl;
+                        map.insert(constraintName, j);
+                        _uniqueMasks << QBitArray(_columnsNum);
+                    }
+                    else j = it.value();            // A talált maszk indexe
+                    //PDEB(VVERBOSE) << "Set _uniqueMasks[" << j << "] bit #" << i << " to true..." << endl;
+                    _uniqueMasks[j].setBit(i);
+                    // if (_nameIndex < 0 && columnName.endsWith(QString("_name"))) _nameIndex = i;
                 }
-                _nameKeyMask = u;
-                // PDEB(VERBOSE) << "_nameKeyMask set : " << list2string(u) << endl;
+            } while(pq->next());
+        }
+        // _nameKeyMask kitöltése (mivel együtt egyedi a név mező ?)
+        if (_nameIndex >= 0) {
+            foreach (QBitArray u, _uniqueMasks) {
+                if (u[_nameIndex]) {
+                    if (_nameKeyMask.count(true)) {
+                        _nameKeyMask.fill(false);       // kétértelmüség
+                        PDEB(VERBOSE) << "_nameKeyMask is ambiguos, unset." << endl;
+                        break;
+                    }
+                    _nameKeyMask = u;
+                    // PDEB(VERBOSE) << "_nameKeyMask set : " << list2string(u) << endl;
+                }
             }
         }
+        else {
+            PDEB(VERBOSE) << "No name field, _nameKeyMask is not set." << endl;
+        }
+        // Ha találtunk ID-t, akkor az csak egyedüli egyedi kulcs lehet!
+        if (_primaryKeyMask.count(true) != 1) _idIndex = NULL_IX;
+        // Ha van ID-nk, akkor az elsődleges kulcs kell legyen
+        if (_idIndex != NULL_IX && !_primaryKeyMask[_idIndex]) EXCEPTION(EDATA, _idIndex, fullColumnName(_idIndex));
+        //PDEB(VERBOSE) << VDEB(_idIndex) << " ; " << VDEB(_nameIndex) << endl;
+        //
+        if (_tableType == TT_BASE_TABLE && _nameIndex < 0           // Típus még nem derült ki, és nincs neve
+         && colDescr(1).fKeyType == cColStaticDescr::FT_PROPERTY    // A második mező egy távoli kulcs
+         && colDescr(2).fKeyType == cColStaticDescr::FT_PROPERTY) { // és a harmadik mező is.
+            _tableType &= ~TT_MASK;
+            _tableType |= TT_SWITCH_TABLE;
+        }
     }
-    else {
-        PDEB(VERBOSE) << "No name field, _nameKeyMask is not set." << endl;
-    }
-    // Ha találtunk ID-t, akkor az csak egyedüli egyedi kulcs lehet!
-    if (_primaryKeyMask.count(true) != 1) _idIndex = NULL_IX;
-    // Ha van ID-nk, akkor az elsődleges kulcs kell legyen
-    if (_idIndex != NULL_IX && !_primaryKeyMask[_idIndex]) EXCEPTION(EDATA, _idIndex, fullColumnName(_idIndex));
-    //PDEB(VERBOSE) << VDEB(_idIndex) << " ; " << VDEB(_nameIndex) << endl;
-    //
-    if (_tableType == TT_BASE_TABLE && _nameIndex < 0              // Típus még nem derült ki, és nincs neve
-     && colDescr(1).fKeyType == cColStaticDescr::FT_PROPERTY    // A második mező egy távoli kulcs
-     && colDescr(2).fKeyType == cColStaticDescr::FT_PROPERTY) { // és a harmadik mező is.
-        _tableType &= ~TT_MASK;
-        _tableType |= TT_SWITCH_TABLE;
+    else {  // Nézet tábla...
+        // Nincs PRIMARY KEY, de nekünk kellhet egy egyedi azonosító ID
+        // Feltételezzük, hogy ha van akkor az az első mező, az ID mezőnév konvenció szerint:
+        QString n = _tableName;
+        n.chop(1);
+        QString fn = n + "_id";
+        if (colDescr(0).eColType == cColStaticDescr::FT_INTEGER && columnName(0) == fn) {
+            _primaryKeyMask = _mask(_columnsNum, 0);
+            _idIndex        = 0;
+        }
+        // Hasonlóan feltételezzők a név mező pozicióját (második) és nevét, ha van
+        fn = n + "_name";
+        if (colDescr(1).eColType == cColStaticDescr::FT_TEXT && columnName(1) == fn) {
+            _nameIndex      = 1;
+        }
     }
     delete pq;
     delete pq2;

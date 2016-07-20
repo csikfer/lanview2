@@ -132,7 +132,7 @@ TABLE SHAPE pports "Pach panel és fali csatlakozó portok" {
     TABLE TYPE CHILD, OWNER;    // patchs tulajdona, de a pports tulajdonosa
     TABLE INHERIT TYPE only;    // Öröklés kizárása, ős ill. leszármazott objektumok nem kerülnek megjelenítésre
     RIGHT SHAPE port_params, phs_links;
-    FIELD iftype_id FLAG HIDE;  // Csak egy típus van, nem jelenítjük meg sehol
+    FIELD iftype_id FLAG ON HIDE;  // Csak egy típus van, nem jelenítjük meg sehol
     FIELD iftype_id DEFAULT VALUE STRING(ID IFTYPE(patch));     // Új portnál mindíg ezt a típust kell beállítani
     FIELD port_index ORD asc,desc,no;                           // Alapértelmezetten a port indexre lessz rendezve
     FIELD port_name, port_tag, port_note  ORD no, asc, desc;    // Rendezhető még a névre, cimkére vagy a megjegyzésre
@@ -147,7 +147,7 @@ TABLE SHAPE patchs "Pach panelek és fali csatlakozók" {
     TABLE            TITLE "Pach panelek és fali csatlakozók", "Pach panel vagy fali csatlakozó",;
     FIELD node_name  TITLE "Név",@;
     FIELD node_note  TITLE "Megjegyzés",@;
-    FIELD place_id   TITLE "Hely",@;
+    FIELD place_id { TITLE "Hely",@; FLAG ON BATCH EDIT; }
     FIELD features   TITLE "Egyébb paraméterek", "Egyébb paraméterek";
     
     TABLE TYPE OWNER;
@@ -185,10 +185,10 @@ TABLE SHAPE nodes "Passzív, felügyeletbe bevont elemek (Csak dialógus!)" {
     TABLE            TITLE ,"Hálózati végberendszés","Nem SNMP eszköz";
     FIELD node_name  TITLE "Név",@;
     FIELD node_note  TITLE "Megjegyzés",@;
-    FIELD place_id   TITLE "Hely", "Az eszköz helye";
+    FIELD place_id { TITLE "Hely", "Az eszköz helye";           FLAG ON BATCH EDIT; }
     FIELD features   TITLE "paraméterek", "Egyébb paraméterek";
-    FIELD node_type  TITLE "Típus", "Az eszköz típusa";
-    FIELD node_stat  TITLE "Állapot", "Az eszköz állpota";
+    FIELD node_type{ TITLE "Típus", "Az eszköz típusa";         FLAG ON BATCH EDIT; }
+    FIELD node_stat{ TITLE "Állapot", "Az eszköz állpota";      FLAG ON BATCH EDIT; }
     
     TABLE TYPE DIALOG;
     TABLE INHERIT TYPE only;
@@ -219,7 +219,7 @@ TABLE mactab_shape SHAPE mactab_port "Port címtábla" {
     SET DEFAULTS;
     TABLE READ ONLY;
     TABLE FEATURES ":hostports.owner=port_id:";
-    FIELD node_id, node_name, port_id, port_name FLAG HIDE;
+    FIELD node_id, node_name, port_id, port_name FLAG ON HIDE;
 }
 
 
@@ -239,7 +239,7 @@ TABLE interfaces SHAPE hostports "Hálózati interfészek, portok (fa)" {
     FIELD iftype_id     TITLE "Típus", "A port típus";
     
     FIELD port_staple_id FEATURES ":owner=self:";
-    FIELD port_staple_id FLAG HIDE;
+    FIELD port_staple_id FLAG ON HIDE;
     FIELD port_ostat, port_astat READ ONLY;
     FIELD port_ostat DEFAULT VALUE unknown;
     FIELD port_astat DEFAULT VALUE unknown;
@@ -273,6 +273,11 @@ TABLE host_services SHAPE host_services_t "A hostokhoz rendelt szervíz példán
     FIELD node_id, service_id, port_id ORD asc,desc,no;
     FIELD prime_service_id, proto_service_id, superior_host_service_id, host_service_state, soft_state, hard_state, last_changed, last_touched ORD no,asc,desc;
     TABLE FEATURES ":button.copy:allnodes.owner=node_id:";
+    FIELD disabled, prime_service_id, proto_service_id, superior_host_service_id, 
+            max_check_attempts,  normal_check_interval,  retry_check_interval, timeperiod_id, flapping_interval, flapping_max_change,
+            noalarm_flag, offline_group_id, online_group_id
+        FLAG ON BATCH EDIT;
+    FIELD noalarm_flag FEATURES ":batch_edit_fields=noalarm_from,noalarm_to:";
 }
 
 TABLE mactab_shape SHAPE mactab_node "Port címtábla" {
@@ -290,7 +295,7 @@ TABLE snmpdevices SHAPE allnodes "Hálózati elemek" {
     SET DEFAULTS;
     
     TABLE            TITLE "Aktív és passzív hálózati elemek", "Aktív vagy passzív hálózati elem", "Aktív SNMP eszköz";
-    FIELD node_id    FLAG HIDE;
+    FIELD node_id    FLAG ON HIDE;
     FIELD node_name  TITLE "Név",@;
     FIELD node_note  TITLE "Megjegyzés",@;
     FIELD place_id   TITLE "Hely", "Az eszköz helye";
@@ -300,6 +305,7 @@ TABLE snmpdevices SHAPE allnodes "Hálózati elemek" {
     FIELD community_rd TITLE "SNMP read community",@;
     FIELD community_wr TITLE "SNMP write community",@;
     FIELD snmp_ver   TITLE "SNMP verzió",@;
+    FIELD place_id, community_rd, community_wr, snmp_ver FLAG ON BATCH EDIT;
     
     TABLE TYPE OWNER;
     TABLE INHERIT TYPE listed_rev;      // Megjelenítjük az ős tábla elemeit is
@@ -317,6 +323,9 @@ TABLE SHAPE services "Szervíz típusok" {
     TABLE FEATURES ":button.copy:";
     FIELD service_name ORD asc,desc,no;
     FIELD service_name, service_note, service_type_id, features, check_cmd ADD FILTERS begin, like, similar, regexp, regexpi;
+    FIELD disabled, service_type_id,
+        max_check_attempts,  normal_check_interval,  retry_check_interval, timeperiod_id, flapping_interval, flapping_max_change
+    FLAG ON BATCH EDIT;
 }
 
 TABLE SHAPE query_parsers "Lekérdezés értelmezések" {
@@ -377,7 +386,7 @@ TABLE alarms SHAPE alarms_tree "Riasztások (fa)" {
     FIELD max_status        TITLE "krit. áll.",    "Legkritikusabb állapot a riasztás alatt";
     FIELD begin_time        TITLE "kezdete",       "A kritikus esemény kezdete";
     FIELD event_note        TITLE "üzenet",        "A riasztást dezektáló folyamat üzenete";
-    FIELD superior_alarm_id FLAG HIDE;
+    FIELD superior_alarm_id FLAG ON HIDE;
     FIELD noalarm           TITLE "letiltva",      "Az értesítés letiltása";
     FIELD end_time          TITLE "vége",          "A kritikus esemény vége";
     FIELD msg_time          TITLE "uzenet küldve", "A riasztási üzenet elküldésének az időpontja";
@@ -534,7 +543,7 @@ TABLE SHAPE arp_logs "ARP lekérdezés napló." {
 TABLE mactab_shape SHAPE mactab "Port címtábla" {
     SET DEFAULTS;
     TABLE READ ONLY;
-    FIELD node_id, port_id FLAG HIDE;
+    FIELD node_id, port_id FLAG ON HIDE;
     FIELD hwaddress ORD asc,desc,no;
     FIELD node_name, port_name, r_node_name, r_port_name, set_type ORD no,asc,desc;
     FIELD node_name, port_name, hwaddress, r_node_name, r_port_name, set_type ADD FILTERS begin, like, similar, regexp, regexpi;
@@ -583,14 +592,14 @@ TABLE SHAPE table_shape_fields "Tábla mezők megjelenítése" {
     FIELD ord_init_type         TITLE "Rendezve", "Az oszlop alapértelmezett rendezése";
     FIELD ord_init_sequence_number TITLE "Mező rendezés sorrendiség",@;
     FIELD field_flags           TITLE "Mező tulajdonságok",@;
-    FIELD expression            FLAG HIDE; // nem használt
-    FIELD default_value         FLAG HIDE; // nem használt
+    FIELD expression            FLAG ON HIDE; // nem használt
+    FIELD default_value         FLAG ON HIDE; // nem használt
     FIELD features              TITLE "Egyébb modosítók","Egyébb modosítók (features)";
     FIELD tool_tip              TITLE "Tool Tip",@;
     FIELD whats_this            TITLE "Whats this?",@;
     FIELD view_rights           TITLE "Betekintési jog","Minimális jogosultság a megtekintéshez";
     FIELD edit_rights           TITLE "Szerkesztési jog","Minimális jogosultság a szerkesztéshez";
-    FIELD flag                  FLAG HIDE; // system
+    FIELD flag                  FLAG ON HIDE; // system
     FIELD * ORD no, asc, desc;
     FIELD field_sequence_number ORD asc,desc,no;
     FIELD table_shape_field_name,table_shape_field_note,field_flags,view_rights,edit_rights ADD FILTERS begin, like, similar, regexp, regexpi;
@@ -640,7 +649,7 @@ TABLE SHAPE enum_vals "Enumerációs értékek" {
     FIELD * ORD asc,desc,no;
     FIELD SEQUENCE 10 enum_type_name, enum_val_name, enum_val_note;
     FIELD ORD SEQUENCE 10 enum_type_name, enum_val_name, enum_val_note;
-    FIELD enum_val_id FLAG HIDE TABLE;
+    FIELD enum_val_id FLAG ON HIDE TABLE;
     FIELD enum_type_name, enum_val_name, enum_val_note ADD FILTERS begin, like, similar, regexp, regexpi;
 }
 
@@ -648,7 +657,7 @@ TABLE SHAPE param_types "Paraméter típus leírók" {
     SET DEFAULTS;
     TABLE TYPE SIMPLE;
     FIELD * ORD asc,desc,no;
-    FIELD param_type_id FLAG HIDE TABLE;
+    FIELD param_type_id FLAG ON HIDE TABLE;
     FIELD param_type_name, param_type_note, param_type_type, param_type_dim ADD FILTERS begin, like, similar, regexp, regexpi;
     FIELD param_type_name TITLE "Paraméter típus név",@;
     FIELD param_type_note TITLE "Megjegyzés",@;

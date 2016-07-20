@@ -162,7 +162,7 @@ QVariant cRecordTableModel::data(const QModelIndex &index, int role) const
     int col = index.column();   // oszlop index a táblázatban
     if (row < _records.size() && col < _col2field.size()) {
         int fix = _col2field[col];  // Mező index a rekordbam
-        int mix = _col2shape[col];  // Index a leíróban
+        int mix = _col2shape[col];  // Index a leíróban (shape)
         // _DBGFN() << VDEB(row) << VDEB(col) << VDEB(role) << endl;
         if (role == Qt::DisplayRole)       return _records.at(row)->view(*pq, fix);
         if (role == Qt::TextAlignmentRole) return columns[mix]->dataAlign;
@@ -180,6 +180,13 @@ QVariant cRecordTableModel::data(const QModelIndex &index, int role) const
 
 QVariant cRecordTableModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
+    if (orientation == Qt::Horizontal && role == Qt::ForegroundRole) {
+        int mix = _col2shape[section];  // Index a leíróban (shape)
+        cRecordTable& rt = (cRecordTable&)recordView;
+        if (rt.enabledBatchEdit(*rt.pTableShape->shapeFields[mix])) {
+            return QColor(Qt::blue);
+        }
+    }
     return _headerData(section, orientation, role);
 }
 

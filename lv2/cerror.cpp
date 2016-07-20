@@ -44,6 +44,30 @@ cError::cError()
 
 cError::cError(const char * _mSrcName, int _mSrcLine, const char * _mFuncName, int _mErrorCode,
            int _mErrorSubCode, const QString& _mErrorSubMsg)
+    : mFuncName(), mSrcName(), mErrorSubMsg(), mThreadName()
+    , mSqlErrDrText(), mSqlErrDbText(), mSqlQuery(), mSqlBounds()
+    , mDataMsg(), mDataName()
+{
+    if (mDropAll) {
+//      delete this;
+        throw _no_init_;
+    }
+    mFuncName     = QString::fromUtf8(_mFuncName);
+    mSrcName      = QString::fromUtf8(_mSrcName);
+    mErrorSysCode = errno;
+    mSrcLine      = _mSrcLine;
+    mErrorCode    = _mErrorCode;
+    mErrorSubCode = _mErrorSubCode;
+    mErrorSubMsg  = _mErrorSubMsg;
+    mSqlErrNum    = -1;
+    mSqlErrType   = QSqlError::NoError;
+    mDataLine     = -1;
+    mDataPos      = -1;
+    circulation();
+}
+
+cError::cError(const QString& _mSrcName, int _mSrcLine, const QString& _mFuncName, int _mErrorCode,
+           int _mErrorSubCode, const QString& _mErrorSubMsg)
     : mFuncName(_mFuncName), mSrcName(_mSrcName), mErrorSubMsg(), mThreadName()
     , mSqlErrDrText(), mSqlErrDbText(), mSqlQuery(), mSqlBounds()
     , mDataMsg(), mDataName()

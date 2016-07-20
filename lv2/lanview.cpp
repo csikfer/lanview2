@@ -251,7 +251,6 @@ lanView::~lanView()
                     n  = lastError->mErrorSubMsg;       // A megjegyzés a status-hoz
                 }
                 if ((rs & RS_STAT_SETTED) == 0) {        // A stusban jelezheti, hogy már megvolt a kiírás!
-                    rs &= ~RS_STAT_MASK;
                     pSelfHostService->setState(q, notifSwitch(rs), n);
                 }
             } catch(...) {

@@ -163,19 +163,19 @@ public:
     // / A widgethez rendelt rekord objektum mező értékével tér vissza, ha nincs mező rendelve a widgethez, akkor dob egy kizárást.
     // / @return A mező értéke, stringgé konvertálva, a mező leíró szerint stringgé konvertálva.
 //  QString fieldToName()                   { if (_pFieldRef == NULL) EXCEPTION(EPROGFAIL); return (QString)*_pFieldRef; }
-    /// A widgethez rendelt rekord objektum leíró objektumával tér vissza, ha nincs mező rendelve a widgethez, akkor dob egy kizárást.
-    const cRecStaticDescr& recDescr() const;
     /// A widgethez rendelt mező objektum inexével a rekordban tér vissza, ha nincs mező rendelve a widgethez, akkor dob egy kizárást.
     int fieldIndex() const { return _colDescr.fieldIndex(); }
 
     /// Parent objektum
-    cRecordDialogBase& _parent;
+    cRecordDialogBase *_pParentDialog;
     /// A mező leíró objektum referenciája
     const cColStaticDescr&  _colDescr;
     /// A tábla megjelenítését (és a dialog megjelenítését) leíró objektum referenciája
     const cTableShape&      _tableShape;
     /// A mezö megjelenítését (és a dialog megjelenítését) leíró objektum referenciája
     const cTableShapeField& _fieldShape;
+    ///
+    const cRecStaticDescr& _recDescr;
 protected:
     void setFromWidget(QVariant v);
     cFieldEditBase * anotherField(const QString& __fn, eEx __ex = EX_ERROR);

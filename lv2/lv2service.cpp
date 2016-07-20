@@ -1241,8 +1241,7 @@ QString cInspector::getParValue(QSqlQuery& q, const QString& name, bool *pOk) co
 
 const QString& notifSwitch(int _ns, eEx __ex)
 {
-    _ns = (enum eNotifSwitch)(_ns & ~RS_STAT_SETTED);
-    switch (_ns) {
+    switch (_ns & RS_STAT_MASK) {
     case RS_ON:             return _sOn;
     case RS_RECOVERED:      return _sRecovered;
     case RS_WARNING:        return _sWarning;

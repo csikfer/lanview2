@@ -19,6 +19,7 @@ enum eNotifSwitch {
     RS_INVALID     =   -1,  ///< Csak hibajelzésre szolgál
     RS_STAT_SETTED = 0x80,  ///< A status beállítása megtörtént, mask nem valódi status érték, henem egy flag
     RS_SET_RETRY   = 0x40,  ///< Az időzítést normálból->retry-be kel váltani.
+    RS_BREAK       = 0x20,
     RS_STAT_MASK   = 0x0f,  ///< A valódi státusz maszkja
     RS_ON          =    0,  ///< Az aktuális futási eredmény 'on'
     RS_RECOVERED,           ///< Az aktuális futási eredmény 'recovered'

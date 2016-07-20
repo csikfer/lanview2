@@ -72,7 +72,8 @@ FORMS += \
     no_rights.ui \
     apierrcodes.ui \
     fkeyarrayed.ui \
-    gsetup.ui
+    gsetup.ui \
+    edit_field.ui
 INCLUDEPATH += ../lv2
 unix:LIBS += -lsnmp
 msvc:LIBS += -lSecur32

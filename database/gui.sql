@@ -82,7 +82,7 @@ no      Nincs rendezés.
 asc     Növekvő sorrend.
 desc    Csökkenő sorrend.';
 
-CREATE TYPE fieldflag AS ENUM ('table_hide', 'dialog_hide', 'auto_set', 'read_only', 'passwd', 'huge');
+CREATE TYPE fieldflag AS ENUM ('table_hide', 'dialog_hide', 'auto_set', 'read_only', 'passwd', 'huge', 'batch_edit');
 ALTER TYPE fieldflag OWNER TO lanview2;
 COMMENT ON TYPE fieldflag IS
 'A mező tulajdonságok logokai (igen/nem):
@@ -92,6 +92,7 @@ auto_set        A mező értéke automatikusan kap értéket
 read_only       A mező nem szerkeszthető
 passwd          A mező egy jelszó (tartlma rejtett)
 huge            A TEXT típusú mező több soros
+batch_edit      A mező kötegelten modosítható
 ';
 
 CREATE TABLE table_shape_fields (

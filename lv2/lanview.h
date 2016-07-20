@@ -273,7 +273,7 @@ public:
         return act  >= pl;
     }
     /// Ellenörzi az aktuális felhasználó jogosultsági szintjét
-    static bool isAuthorized(qlonglong pl) { return isAuthorized((enum ePrivilegeLevel) pl); }
+    static bool isAuthorized(qlonglong pl) { return pl > PL_INVALID && isAuthorized((enum ePrivilegeLevel) pl); }
     /// Ellenörzi az aktuális felhasználó jogosultsági szintjét
     static bool isAuthorized(const QString& pl) { return isAuthorized((enum ePrivilegeLevel)privilegeLevel(pl)); }
     /// Az api könynvtér által gyorstárazott adatokat újra tülti,

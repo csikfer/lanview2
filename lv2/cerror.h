@@ -200,6 +200,9 @@ Az adattagok inicializálása után hívja a circulation() metódust
     */
     cError(const char * _mSrcName, int _mSrcLine, const char * _mFuncName, int _mErrorCode,
            int _mErrorSubCode = 0, const QString& _mErrorSubMsg = QString());
+    ///
+    cError(const QString& _mSrcName, int _mSrcLine, const QString& _mFuncName, int _mErrorCode,
+           int _mErrorSubCode = 0, const QString& _mErrorSubMsg = QString());
     /*!
     Destruktor
     */

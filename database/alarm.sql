@@ -414,7 +414,7 @@ $$ LANGUAGE plpgsql;
 DROP VIEW IF EXISTS view_alarms;
 CREATE VIEW view_alarms AS
     SELECT
-    a.alarm_id,
+    a.alarm_id AS view_alarm_id,
     a.host_service_id,
     hs.node_id,
     n.place_id,

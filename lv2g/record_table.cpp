@@ -1231,11 +1231,82 @@ QStringList cRecordsViewBase::where(QVariantList& qParams)
     return wl;
 }
 
-void cRecordsViewBase::clickedHeader(int)
+bool cRecordsViewBase::enabledBatchEdit(const cTableShapeField& tsf)
 {
-    if (pFODialog == NULL) EXCEPTION(EPROGFAIL);
-    int r = pFODialog->exec();
-    if (r == DBT_OK) refresh();
+    if (!tsf.getBool(_sFieldFlags, FF_BATCH_EDIT)) return false;            // Mezőnként kell engedélyezni
+    if (lanView::isAuthorized(PL_ADMIN)) return true;                       // ADMIN-nak ok
+    ePrivilegeLevel pl = (ePrivilegeLevel)privilegeLevel(tsf.feature(_sBatchEdit), EX_IGNORE);
+    return lanView::isAuthorized(pl);
+}
+
+bool cRecordsViewBase::batchEdit(int logicalindex)
+{
+    if (!isContIx(pModel->_col2field, logicalindex)) return true;           // Unknown field index
+    QList<int> dataFieldIndexList;
+    QList<int> shapeFieldIndexList;
+    dataFieldIndexList  << pModel->_col2field[logicalindex];
+    shapeFieldIndexList << pModel->_col2shape[logicalindex];
+    const cTableShapeField& tsf = *pTableShape->shapeFields[shapeFieldIndexList.first()];
+    if (!enabledBatchEdit(tsf)) return true;
+    QModelIndexList mil = selectedRows();
+    if (mil.isEmpty()) return true;                                         // nincs kijelölve rekord
+
+    QDialog *pDialog = new QDialog(pWidget());
+    Ui_FieldEditDialog *pEd = new Ui_FieldEditDialog;
+    pEd->setupUi(pDialog);
+    cRecordAny rec(&recDescr());
+    QBitArray setMask = _mask(rec.cols(), dataFieldIndexList.first());
+    // Addicionális együtt kezelendő mezők
+    QString ff = tsf.feature("batch_edit_fields");
+    if (!ff.isEmpty()) {
+        QStringList fl = ff.split(QRegExp(",\\s*"));
+        foreach (QString f, fl) {
+            int fix = rec.toIndex(f);
+            int mix = pTableShape->shapeFields.indexOf(f);
+            dataFieldIndexList  << fix;
+            shapeFieldIndexList << mix;
+            setMask[fix] = true;
+        }
+    }
+
+    QList<cFieldEditBase *> febList;
+    for (int i = 0; i < dataFieldIndexList.size(); ++i) {
+        cRecordFieldRef rfr = rec[dataFieldIndexList[i]];
+        const cTableShapeField& sf = *pTableShape->shapeFields[shapeFieldIndexList[i]];
+        cFieldEditBase *feb = cFieldEditBase::createFieldWidget(*pTableShape, sf, rfr, false, NULL);
+        febList << feb;
+        pEd->verticalLayout->insertWidget(i * 2, feb->pWidget());
+        QLabel *pLabel = new QLabel(sf.getName(_sDialogTitle));
+        pEd->verticalLayout->insertWidget(i * 2, pLabel);
+    }
+    while (pDialog->exec() == QDialog::Accepted) {
+        sqlBegin(*pq);
+        foreach (QModelIndex mi, mil) {
+            selectRow(mi);
+            cRecord *ar = actRecord();
+            for (int i = 0; i < dataFieldIndexList.size(); ++i) {
+                QVariant v = febList[i]->get();
+                ar->set(dataFieldIndexList[i], v);
+            }
+            if (!cErrorMessageBox::condMsgBox(ar->tryUpdate(*pq, false, setMask), pWidget())) {
+                sqlRollback(*pq);
+                continue;
+            }
+        }
+        sqlEnd(*pq);
+        break;
+    }
+    delete pDialog;
+    return false;
+}
+
+void cRecordsViewBase::clickedHeader(int logicalindex)
+{
+    if (batchEdit(logicalindex)) {
+        if (pFODialog == NULL) EXCEPTION(EPROGFAIL);
+        int r = pFODialog->exec();
+        if (r == DBT_OK) refresh();
+    }
 }
 
 void cRecordsViewBase::selectionChanged(QItemSelection,QItemSelection)
@@ -1263,7 +1334,7 @@ void cRecordsViewBase::modifyByIndex(const QModelIndex & index)
     modify(EX_IGNORE);
 }
 
-/* ***************************************************************************************************** */
+/* ----------------------------------------------------------------------------------------------------- */
 
 cRecordTable::cRecordTable(const QString& _mn, bool _isDialog, QWidget * par)
     : cRecordsViewBase(_isDialog, par)
@@ -1383,7 +1454,7 @@ void cRecordTable::init()
         EXCEPTION(ENOTSUPP, pTableShape->getId(_sTableShapeType), pTableShape->getName(_sTableShapeType));
     }
     pTableView->horizontalHeader()->setSectionsClickable(true);
-    connect(pTableView->horizontalHeader(), SIGNAL(sectionClicked(int)), this, SLOT(clickedHeader(int)));
+    connect(pTableView->horizontalHeader(), SIGNAL(sectionClicked(int)),       this, SLOT(clickedHeader(int)));
     connect(pTableView, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(modifyByIndex(QModelIndex)));
     // Auto refresh ?
     qlonglong ar = pTableShape->getId(_sAutoRefresh);
@@ -1728,6 +1799,9 @@ cRecord *cRecordTable::record(QModelIndex mi)
 
 void cRecordTable::autoRefresh()
 {
+    QAbstractButton *pb = pButtons->button(DBT_REFRESH);
+    if (pb == NULL) EXCEPTION(EPROGFAIL);
+    pb->animateClick(500); // 0.5 sec
     refresh(false);
 }
 
