@@ -49,6 +49,8 @@ public:
     bool setText(const QString& _txt);
     /// Metódus az egér kattintásra
     virtual void mousePressEvent(QMouseEvent * ev);
+    ///
+    void center(QPoint p);
     /// Zoom szorzó
     double          scaleStep;
 protected:

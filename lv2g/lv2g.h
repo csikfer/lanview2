@@ -182,5 +182,6 @@ public:
     virtual bool notify(QObject * receiver, QEvent * event);
 };
 
+_GEX QPolygonF convertPolygon(const tPolygonF __pol);
 
 #endif // LV2G_H

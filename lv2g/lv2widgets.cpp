@@ -69,6 +69,12 @@ void cImageWidget::mousePressEvent(QMouseEvent * ev)
     mousePressed(ev->pos());
 }
 
+void cImageWidget::center(QPoint p)
+{
+    QSize s = size();
+    ensureVisible(p.x(), p.y(), s.width() / 2, s.height() / 2);
+}
+
 bool cImageWidget::resetImage()
 {
     if (scale < 0) image.setDevicePixelRatio(1.0 + (scale * scaleStep));
@@ -97,11 +103,9 @@ void cImageWidget::draw(QPainter& painter, QVariant& d)
     int t = d.userType();
 
     if (t == _UMTID_tPolygonF) {
-        QPolygonF   pol;
-        foreach (QPointF p, d.value<tPolygonF>()) {
-           pol << p;
-        }
-        d = QVariant::fromValue(pol);
+        tPolygonF   tPol = d.value<tPolygonF>();
+        QPolygonF   qPol = convertPolygon(tPol);
+        d = QVariant::fromValue(qPol);
         t = QMetaType::QPolygonF;
     }
 

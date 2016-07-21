@@ -229,4 +229,14 @@ EXT_ QString pointCat(const QString& s1, const QString& s2, const QString& s3);
 
 void writeRollLog(QFile& __log, const QByteArray& __data, qlonglong __size, int __arc);
 
+template <class C, class T> T avarage(C c) {
+    T r;
+    foreach (T t, c) {
+        r += t;
+    }
+    return r / c.size();
+}
+
+
 #endif // OTHERS_H
+

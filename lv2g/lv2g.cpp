@@ -230,3 +230,14 @@ bool cLv2GQApp::notify(QObject * receiver, QEvent * event)
     QApplication::exit(e);  // kilépünk.
     return false;
 }
+
+
+_GEX QPolygonF convertPolygon(const tPolygonF __pol)
+{
+    QPolygonF   pol;
+    foreach (QPointF p, __pol) {
+       pol << p;
+    }
+    return pol;
+}
+

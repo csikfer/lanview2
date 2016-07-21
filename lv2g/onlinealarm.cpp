@@ -79,13 +79,18 @@ void cOnlineAlarm::map()
     bool ok;
     qlonglong id = execSqlIntFunction(*pq, &ok, "get_parent_image", pid);
     cImage  image;
+    QVariant vPol = pl.get(_sFrame);
+    QPolygonF pol;
+    QPoint    center;
     ok = ok && image.fetchById(*pq, id);
     ok = ok && image.dataIsPic();
     if (ok) {
         h = trUtf8("%1; %2").arg(image.getNoteOrName()).arg(h);
         pMap->clearDraws();
-        if (pl.isNull(_sFrame) == false) {
-            pMap->setBrush(QBrush(QColor(Qt::red))).addDraw(pl.get(_sFrame));
+        if (vPol.isNull() == false) {
+            pMap->setBrush(QBrush(QColor(Qt::red))).addDraw(vPol);
+            pol = convertPolygon(vPol.value<tPolygonF>());
+            center = avarage<QPolygonF, QPointF>(pol).toPoint();
         }
         else {
             h += trUtf8(" (nincs pontos hely adat)");
@@ -94,6 +99,11 @@ void cOnlineAlarm::map()
     ok = ok && pMap->setImage(image);
     if (!ok) {
         pMap->setText(trUtf8(" (Nincs megjeleníthető alaprajz.)"));
+    }
+    else {
+        if (vPol.isNull() == false) {
+            pMap->center(center);
+        }
     }
     pMapLabel->setText(h);
 }
