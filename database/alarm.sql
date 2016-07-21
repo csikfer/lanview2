@@ -421,9 +421,11 @@ CREATE VIEW view_alarms AS
     a.superior_alarm_id,
     a.begin_time,
     a.end_time,
-    COALESCE(n.node_note, n.node_name) AS node_name,
+--  COALESCE(n.node_note, n.node_name) AS node_name,
+    n.node_name,
     a.max_status,
-    COALESCE(pl.place_note, pl.place_name) AS place_name,
+--  COALESCE(pl.place_note, pl.place_name) AS place_name,
+    pl.place_name,
     alarm_message(host_service_id, max_status) AS msg,
     au.user_name AS ack_user_name,
     a.ack_msg
@@ -432,5 +434,6 @@ CREATE VIEW view_alarms AS
     JOIN nodes         AS n  USING(node_id)
     JOIN places        AS pl USING(place_id)
     LEFT OUTER JOIN users AS au ON a.ack_user_id = au.user_id
+    WHERE NOT a.noalarm
     ORDER BY begin_time DESC;
     

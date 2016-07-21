@@ -269,7 +269,9 @@ TABLE SHAPE host_services "A hostokhoz rendelt szervíz példányok (fa)" {
 TABLE host_services SHAPE host_services_t "A hostokhoz rendelt szervíz példányok (táblázat)" {
     SET DEFAULTS;
     TABLE TYPE SIMPLE;
-    FIELD node_id, service_id, prime_service_id, proto_service_id ADD FILTERS begin, like, similar, regexp, regexpi;
+    FIELD node_id, service_id, prime_service_id, proto_service_id, superior_host_service_id, timeperiod_id, noalarm_flag,
+            online_group_id, offline_group_id, host_service_state, soft_state, hard_state, state_msg
+        ADD FILTERS begin, like, similar, regexp, regexpi;
     FIELD node_id, service_id, port_id ORD asc,desc,no;
     FIELD prime_service_id, proto_service_id, superior_host_service_id, host_service_state, soft_state, hard_state, last_changed, last_touched ORD no,asc,desc;
     TABLE FEATURES ":button.copy:allnodes.owner=node_id:";
