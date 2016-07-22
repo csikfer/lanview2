@@ -360,7 +360,9 @@ TABLE SHAPE images {
     SET DEFAULTS;
     TABLE TYPE SIMPLE;
     TABLE FEATURES ":button.copy:";
-    FIELD image_id FLAG HIDE;
+    FIELD image_id   FLAG ON HIDE;
+    FIELD image_hash FLAG ON HIDE, READ ONLY;
+    FIELD image_data FLAG ON HIDE TABLE;
     FIELD image_name, image_note, image_type, image_sub_type ADD FILTERS begin, like, similar, regexp, regexpi;
     FIELD image_name ORD asc,desc,no;
     FIELD image_note, image_type, image_sub_type ORD no, asc, desc;

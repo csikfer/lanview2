@@ -111,14 +111,22 @@ void cOnlineAlarm::map()
 
 void cOnlineAlarm::curRowChgNoAck(QItemSelection, QItemSelection)
 {
-    QModelIndexList mil = pRecTabNoAck->tableView()->selectionModel()->selectedRows();;
+    QModelIndexList mil = pRecTabNoAck->tableView()->selectionModel()->selectedRows();
     int row;
-    switch (mil.size()) {
+    int sel = mil.size();
+    if (sel > 0 && pActRecord != NULL) {
+        disconnect(pActRecord, SIGNAL(destroyed(QObject*)), this, SLOT(actRecordDestroyed(QObject*)));
+    }
+    switch (sel) {
     case 0:
-        return;
+        if (pRecTabNoAck->tableView()->selectionModel()->selectedRows().size() == 0) {
+            pActRecord = NULL;
+        }
+        break;
     case 1:
         row = mil.at(0).row();
         pActRecord = pRecTabNoAck->recordAt(row);
+        connect(pActRecord, SIGNAL(destroyed(QObject*)), this, SLOT(actRecordDestroyed(QObject*)));
         map();
         pAckButton->setEnabled(true);
         pAckAllButton->setEnabled(isAdmin);
@@ -126,11 +134,16 @@ void cOnlineAlarm::curRowChgNoAck(QItemSelection, QItemSelection)
     default:
         if (!isAdmin) EXCEPTION(EPROGFAIL);
         pActRecord = NULL;
-        pAckButton->setDisabled(true);
-        pAckAllButton->setEnabled(true);
         break;
     }
-    pRecTabAckAct->tableView()->selectionModel()->clearSelection();
+    if (sel > 0) {
+        pRecTabAckAct->tableView()->selectionModel()->clearSelection();
+    }
+    if (pActRecord == NULL) {
+        pAckButton->setDisabled(true);
+        pAckAllButton->setEnabled(sel > 1);
+        clearMap();
+    }
 }
 
 void cOnlineAlarm::curRowChgAckAct(QItemSelection sel, QItemSelection)
@@ -143,6 +156,13 @@ void cOnlineAlarm::curRowChgAckAct(QItemSelection sel, QItemSelection)
         map();
         pAckButton->setDisabled(true);
         pAckAllButton->setDisabled(true);
+    }
+    else {
+        mil = pRecTabNoAck->tableView()->selectionModel()->selectedRows();
+        if (mil.size() == 0) {
+            pActRecord = NULL;
+            clearMap();
+        }
     }
 }
 
@@ -172,6 +192,15 @@ void cOnlineAlarm::allAcknowledge()
     pRecTabAckAct->refresh();
     pRecTabNoAck->refresh();
 }
+
+void cOnlineAlarm::actRecordDestroyed(QObject *pO)
+{
+    pActRecord = NULL;
+    pAckButton->setDisabled(true);
+    pAckAllButton->setDisabled(true);
+    clearMap();
+}
+
 
 void cOnlineAlarm::acknowledge()
 {

@@ -13,6 +13,12 @@ public:
     static const enum ePrivilegeLevel rights;
 private:
     void map();
+    void clearMap() {
+        pMapLabel->setText(_sNul);
+        pMap->clearDraws();
+        pMap->setText(_sNul);
+    }
+
     QSqlQuery *     pq;
     bool            isAdmin;
     QVBoxLayout *   pMainLayout;    /// Az ablak(widget)-hez rendelt layout.
@@ -33,6 +39,7 @@ private slots:
     void curRowChgAckAct(QItemSelection sel, QItemSelection);
     void acknowledge();
     void allAcknowledge();
+    void actRecordDestroyed(QObject *pO);
 };
 
 #if defined(LV2G_LIBRARY)

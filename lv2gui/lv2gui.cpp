@@ -3,8 +3,8 @@
 
 #define PREDEBUG    1
 
-#define VERSION_MAJOR   0
-#define VERSION_MINOR   01
+#define VERSION_MAJOR   1
+#define VERSION_MINOR   00
 #define VERSION_STR     _STR(VERSION_MAJOR) "." _STR(VERSION_MINOR)
 
 void setAppHelp()
