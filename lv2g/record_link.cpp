@@ -78,7 +78,7 @@ void cRecordLink::insert()
 
 void cRecordLink::modify(eEx __ex)
 {
-
+    (void)__ex;
 }
 
 void cRecordLink::remove()

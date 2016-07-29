@@ -149,7 +149,7 @@ TABLE SHAPE patchs "Pach panelek és fali csatlakozók" {
     FIELD node_note  TITLE "Megjegyzés",@;
     FIELD place_id { TITLE "Hely",@; FLAG ON BATCH EDIT; }
     FIELD features   TITLE "Egyébb paraméterek", "Egyébb paraméterek";
-    
+    FIELD node_type  FLAG HIDE, AUTO SET;
     TABLE TYPE OWNER;
     TABLE INHERIT TYPE only;
     RIGHT SHAPE pports, port_params, phs_links;  // plussz a paraméter rekordok

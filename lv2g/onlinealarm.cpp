@@ -195,6 +195,7 @@ void cOnlineAlarm::allAcknowledge()
 
 void cOnlineAlarm::actRecordDestroyed(QObject *pO)
 {
+    (void)pO;
     pActRecord = NULL;
     pAckButton->setDisabled(true);
     pAckAllButton->setDisabled(true);

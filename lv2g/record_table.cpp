@@ -1483,6 +1483,8 @@ void cRecordTable::init()
         connect(pTimer, SIGNAL(timeout()), this, SLOT(autoRefresh()));
         pTimer->setInterval(ar);
     }
+/*  pTableView->setDragDropMode(QAbstractItemView::DragOnly);
+    pTableView->setDragEnabled(true); */
     refresh();
 }
 

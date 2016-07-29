@@ -13,11 +13,11 @@ QList<int>      cDialogButtons::keys;
 int cDialogButtons::_buttonNumbers = DBT_BUTTON_NUMBERS;
 
 
-cDialogButtons::cDialogButtons(int buttons, int buttons2, QWidget *par)
+cDialogButtons::cDialogButtons(qlonglong buttons, qlonglong buttons2, QWidget *par)
     :QButtonGroup(par)
 {
     staticInit();
-    if (0 == (buttons & ((1 << _buttonNumbers) - 1))) EXCEPTION(EDATA);
+    if (0 == (buttons & ((1LL << _buttonNumbers) - 1))) EXCEPTION(EDATA);
     _pWidget = new QWidget(par);
 #if SINGLE_BUTTON_LINE
     _pLayout = new QHBoxLayout(_pWidget);
@@ -28,7 +28,7 @@ cDialogButtons::cDialogButtons(int buttons, int buttons2, QWidget *par)
         init(buttons, _pLayout);
     }
     else {                      // Két gombsor
-        if (0 == (buttons2 & ((1 << _buttonNumbers) - 1))) EXCEPTION(EDATA);
+        if (0 == (buttons2 & ((1LL << _buttonNumbers) - 1))) EXCEPTION(EDATA);
         if (0 != (buttons & buttons2)) EXCEPTION(EDATA);
         _pLayout = new QVBoxLayout(_pWidget);
         QHBoxLayout *pLayoutTop   = new QHBoxLayout();
@@ -155,7 +155,7 @@ void cDialogButtons::disableExcept(qlonglong __idSet)
 
 
 /* ************************************************************************************************* */
-cRecordDialogBase::cRecordDialogBase(const cTableShape &__tm, int _buttons, bool dialog, cRecordDialogBase *ownDialog, cRecordsViewBase *ownTab, QWidget *par)
+cRecordDialogBase::cRecordDialogBase(const cTableShape &__tm, qlonglong _buttons, bool dialog, cRecordDialogBase *ownDialog, cRecordsViewBase *ownTab, QWidget *par)
     : QObject(par)
     , tableShape(__tm)
     , rDescr(*cRecStaticDescr::get(__tm.getName(_sTableName), __tm.getName(_sSchemaName)))
@@ -363,7 +363,7 @@ cRecord& cRecordDialogBase::record()
 
 /* ************************************************************************************************* */
 
-cRecordDialog::cRecordDialog(const cTableShape& __tm, int _buttons, bool dialog, cRecordDialogBase *ownDialog, cRecordsViewBase *ownTab, QWidget *parent)
+cRecordDialog::cRecordDialog(const cTableShape& __tm, qlonglong _buttons, bool dialog, cRecordDialogBase *ownDialog, cRecordsViewBase *ownTab, QWidget *parent)
     : cRecordDialogBase(__tm, _buttons, dialog, ownDialog, ownTab, parent)
     , fields()
 {
@@ -429,8 +429,11 @@ void cRecordDialog::init()
     _pRecord = new cRecordAny(&rDescr);
 
     if (_pOwnerTable != NULL && _pOwnerTable->owner_id != NULL_ID) {  // Ha van owner, akkor az ID-jét beállítjuk
-        int oix = _pRecord->descr().ixToOwner();
-        _pRecord->setId(oix, _pOwnerTable->owner_id);
+        int flags = _pOwnerTable->flags;
+        if (flags & RTF_CHILD) {
+            int oix = _pRecord->descr().ixToOwner();
+            _pRecord->setId(oix, _pOwnerTable->owner_id);
+        }
     }
     if (_pOwnerTable != NULL && _pOwnerTable->parent_id != NULL_ID) {  // Ha van parent, akkor az ID-jét beállítjuk  ????
         int pix = _pRecord->descr().ixToParent();
@@ -460,6 +463,9 @@ void cRecordDialog::init()
         pw->setObjectName(mf.getName());
         PDEB(VVERBOSE) << "Add row to form : " << mf.getName() << " widget : " << typeid(*pFW).name() << QChar('/') << fieldWidgetType(pFW->wType()) << endl;
         pFormLayout->addRow(mf.getName(_sDialogTitle), pw);
+        if (!_pRecord->isNull(fieldIx)) {
+            pFW->set(_pRecord->get(fieldIx));
+        }
     }
     _pWidget->adjustSize();
     DBGFNL();
@@ -525,7 +531,7 @@ cFieldEditBase * cRecordDialog::operator[](const QString& __fn)
 
 /* ***************************************************************************************************** */
 
-cRecordDialogInh::cRecordDialogInh(const cTableShape& _tm, tRecordList<cTableShape>& _tms, int _buttons, bool dialog, cRecordDialogBase *ownDialog, cRecordsViewBase *ownTab, QWidget * parent)
+cRecordDialogInh::cRecordDialogInh(const cTableShape& _tm, tRecordList<cTableShape>& _tms, qlonglong _buttons, bool dialog, cRecordDialogBase *ownDialog, cRecordsViewBase *ownTab, QWidget * parent)
     : cRecordDialogBase(_tm, _buttons, dialog, ownDialog, ownTab, parent)
     , tabDescriptors(_tms)
     , tabs()

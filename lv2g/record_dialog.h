@@ -42,7 +42,7 @@ enum eDialogButtons {
 /// @brief A dialogus ablakokban nyomodombok kezelése
 class LV2GSHARED_EXPORT cDialogButtons : public QButtonGroup {
 public:
-    cDialogButtons(int buttons, int buttons2 = 0, QWidget *par = NULL);
+    cDialogButtons(qlonglong buttons, qlonglong buttons2 = 0, QWidget *par = NULL);
     cDialogButtons(const tIntVector& buttons, QWidget *par = NULL);
     QWidget& widget()   { return *_pWidget; }
     QWidget *pWidget()  { return _pWidget; }
@@ -77,7 +77,7 @@ public:
     /// @param ownTab Ha a parent egy táblázat (vagy tree) megjelenítő
     /// @param ownDialog Ha egy cRecordDialogInh része, akkor a szülő objektum pointere, vagy a hívó egy cRecoedDialog obj.
     /// @param par Az szülő widget opcionális parent pointere
-    cRecordDialogBase(const cTableShape &__tm, int _buttons, bool dialog = true, cRecordDialogBase * ownDialog = NULL, cRecordsViewBase  * ownTab = NULL, QWidget *par = NULL);
+    cRecordDialogBase(const cTableShape &__tm, qlonglong _buttons, bool dialog = true, cRecordDialogBase * ownDialog = NULL, cRecordsViewBase  * ownTab = NULL, QWidget *par = NULL);
     /// destruktor
     ~cRecordDialogBase();
     virtual cRecord& record();
@@ -155,7 +155,7 @@ public:
     /// @param _buttons A megjelenítendő nyomógombok bit maszkja
     /// @param dialog Ha a dialóus ablakot QDialog-ból kell létrehozni, akkor true, ha fals, akkor QWidget-ből.
     /// @param parent Az szülő widget opcionális parent pointere
-    cRecordDialog(const cTableShape &__tm, int _buttons, bool dialog = true, cRecordDialogBase *ownDialog = NULL, cRecordsViewBase  * ownTab = NULL, QWidget * parent = NULL);
+    cRecordDialog(const cTableShape &__tm, qlonglong _buttons, bool dialog = true, cRecordDialogBase *ownDialog = NULL, cRecordsViewBase  * ownTab = NULL, QWidget * parent = NULL);
     /// A rekord adattag tartalmának a megjelenítése/megjelenítés visszaállítása
     virtual void restore(cRecord *_pRec = NULL);
     /// A megjelenített értékek kiolvasása
@@ -189,7 +189,7 @@ public:
     /// @param _pid Parent rekord ID , ha nincs parent, vagy nincs megadva, akkor értéke NULL_ID
     /// @param dialog Ha a dialóus ablakot QDialog-ból kell létrehozni, akkor true, ha fals, akkor QWidget-ből.
     /// @param parent Az szülő widget opcionális pointere
-    cRecordDialogInh(const cTableShape &_tm, tRecordList<cTableShape>& _tms, int _buttons, bool dialog = true, cRecordDialogBase *ownDialog = NULL, cRecordsViewBase  * ownTab = NULL, QWidget * parent = NULL);
+    cRecordDialogInh(const cTableShape &_tm, tRecordList<cTableShape>& _tms, qlonglong _buttons, bool dialog = true, cRecordDialogBase *ownDialog = NULL, cRecordsViewBase  * ownTab = NULL, QWidget * parent = NULL);
     ~cRecordDialogInh();
     ///
     virtual cRecord& record();

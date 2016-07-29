@@ -441,8 +441,13 @@ protected:
     bool setWidget();
     Ui_fKeyEd          *pUi;
     cRecordListModel   *pModel;
+    /// A távoli kulcs által mutatott tábla leíró objektumára muatat
     const cRecStaticDescr *pRDescr;
+    /// A távoli kulcs által mutatott tábla rekord dialógus leíró objektum.
     cTableShape *   pTableShape;
+    /// A távoli kulcs által mutatott táblában a saját ID-t tartalmazó mező indexe
+    int             owner_ix;
+    qlonglong       ownerId;
 private slots:
     void setFromEdit(int i);
 //  void _edited(QString _txt);

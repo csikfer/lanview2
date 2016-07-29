@@ -1290,11 +1290,11 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
         if (_pParentDialog == NULL) {
             QAPPMEMO(trUtf8("Invalid feature %1.%2 'owner=self', invalid context.").arg(_tableShape.getName(), _fieldShape.getName()), RS_CRITICAL | RS_BREAK);
         }
-        int owner_ix = __fr.record().descr().ixToOwner(EX_IGNORE);
+        owner_ix = __fr.record().descr().ixToOwner(EX_IGNORE);
         if (owner_ix < 0) {
             QAPPMEMO(trUtf8("Invalid feature %1.%2 'owner=self', owner id index not found.").arg(_tableShape.getName(), _fieldShape.getName()), RS_CRITICAL | RS_BREAK);
         }
-        qlonglong ownerId = NULL_ID;
+        ownerId = NULL_ID;
         if (_pParentDialog->_pOwnerTable != NULL) {
             ownerId = _pParentDialog->_pOwnerTable->owner_id;
         }
@@ -1310,9 +1310,17 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
     pModel->setFilter(_sNul, OT_ASC, FT_NO);
     pUi->comboBox->setModel(pModel);
     pUi->pushButtonEdit->setDisabled(true);
-    pTableShape = new cTableShape();
     _value = pModel->atId(0);
-    if (pTableShape->fetchByName(pRDescr->tableName())) {   // Ha meg tudjuk jeleníteni (azonos nevű shape)
+    pTableShape = new cTableShape();
+    // Dialógus leíró neve a feature mezőben
+    QString tsn = _fieldShape.feature(_sDialog);
+    // ha ott nincs megadva, akkor a megjelenítő neve azonos a tulajdonság rekord nevével
+    if (tsn.isEmpty()) tsn = _colDescr.fKeyTable;
+    if (pTableShape->fetchByName(tsn)) {   // Ha meg tudjuk jeleníteni
+        // Nem lehet öröklés !!
+        qlonglong tit = pTableShape->getId(_sTableInheritType);
+        if (tit != TIT_NO && tit != TIT_ONLY) EXCEPTION(EDATA);
+        pTableShape->fetchFields(*pq);
         pUi->pushButtonNew->setEnabled(true);
         connect(pUi->pushButtonEdit, SIGNAL(pressed()), this, SLOT(modifyF()));
         connect(pUi->pushButtonNew,  SIGNAL(pressed()), this, SLOT(insertF()));
@@ -1330,7 +1338,7 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
 
 cFKeyWidget::~cFKeyWidget()
 {
-    ;
+    delete pTableShape;
 }
 
 bool cFKeyWidget::setWidget()
@@ -1373,32 +1381,42 @@ void cFKeyWidget::_edited(QString _txt)
 /// Egy tulajdosnság kulcs mezőben vagyunk.
 /// Be szertnénk szúrni egy tulajdonság rekordot
 void cFKeyWidget::insertF()
-{/*
-    // Kellene egy megjelenítés leíró az insert-hez
-    cTableShape fts;
-    // A megjelenítő neve azonos a tulajdonság rekord nevével
-    // Öröklés nem lehet, nincs ellenörzés!
-    fts.setByName(*pq, _colDescr.fKeyTable);
-    fts.fetchFields(*pq);
-    // A tulajdonság rekord leírója is kell
-    const cRecStaticDescr *pRecDescr = cRecStaticDescr::get(_colDescr.fKeyTable);
-    cRecord *pRec = cRecordDialogBase::insertDialog(*pq, &fts, pRecDescr);
-    pModel->setFilter(_sNul, OT_ASC, FT_NO);
-    if (pRec != NULL) {
-        pUi->comboBox->setCurrentIndex(pModel->indexOf(pRec->getName()));
-        pDelete(pRec);
+{
+    cRecordDialog *pDialog = new cRecordDialog(*pTableShape, ENUM2SET2(DBT_OK, DBT_CANCEL), true, _pParentDialog);
+    while (1) {
+        int keyId = pDialog->exec(false);
+        if (keyId == DBT_CANCEL) break;
+        if (!pDialog->accept()) continue;
+        if (!cErrorMessageBox::condMsgBox(pDialog->record().tryInsert(*pq))) continue;
+        pModel->setFilter(_sNul, OT_ASC, FT_NO);    // Refresh combo box
+        pUi->comboBox->setCurrentIndex(pModel->indexOf(pDialog->record().getId()));
+        break;
     }
-*/}
+    pDialog->close();
+    delete pDialog;
+    return;
+}
 
 void cFKeyWidget::modifyF()
 {
-    if (pTableShape == NULL) EXCEPTION(EPROGFAIL);
-//    qlonglong id = pModel->atId(pUi->comboBox->currentIndex());
-//    cRecord r(pRDescr);
-//    if (r.fetchById(id)) {
-//        eTableInheritType   tit = (eTableInheritType)pTableShape->getId(_sTableInheritType);
-        // ...
-//    }
+    cRecordAny rec(pRDescr);
+    cRecordDialog *pDialog = new cRecordDialog(*pTableShape, ENUM2SET2(DBT_OK, DBT_CANCEL), true, _pParentDialog);
+    int cix = pUi->comboBox->currentIndex();
+    qlonglong id = pModel->atId(cix);
+    if (!rec.fetchById(*pq, id)) return;
+    pDialog->restore(&rec);
+    while (1) {
+        int keyId = pDialog->exec(false);
+        if (keyId == DBT_CANCEL) break;
+        if (!pDialog->accept()) continue;
+        if (!cErrorMessageBox::condMsgBox(pDialog->record().tryUpdate(*pq, true))) continue;
+        pModel->setFilter(_sNul, OT_ASC, FT_NO);    // Refresh combo box
+        pUi->comboBox->setCurrentIndex(pModel->indexOf(rec.getId()));
+        break;
+    }
+    pDialog->close();
+    delete pDialog;
+    return;
 }
 /* **************************************** cDateWidget ****************************************  */
 
