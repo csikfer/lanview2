@@ -3,6 +3,7 @@
 #include "ui_polygoned.h"
 #include "ui_arrayed.h"
 #include "ui_fkeyed.h"
+#include "ui_fkeyarrayed.h"
 /* **************************************** cImageWindows ****************************************  */
 
 cImageWidget::cImageWidget(QWidget *__par)
@@ -344,6 +345,12 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
         return p;
     }
     case cColStaticDescr::FT_INTEGER_ARRAY:
+        if (_fr.descr().fKeyType != cColStaticDescr::FT_NONE) {
+            cFKeyArrayWidget *p = new cFKeyArrayWidget(_tm, _tf, _fr, ro, _par);
+            _DBGFNL() << " new cFKeyArrayWidget" << endl;
+            return p;
+        }
+        // Nincs break; !!
     case cColStaticDescr::FT_REAL_ARRAY:
     case cColStaticDescr::FT_TEXT_ARRAY: {
          cArrayWidget *p = new cArrayWidget(_tm, _tf, _fr, ro, _par);
@@ -1783,4 +1790,177 @@ void cBinaryWidget::destroyedImage(QObject *p)
 {
     (void)p;
     pImageWidget = NULL;
+}
+
+/* **************************************** cFKeyArrayWidget ****************************************  */
+
+
+cFKeyArrayWidget::cFKeyArrayWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, __fr, _ro, _par)
+    , last()
+{
+    _wType   = FEW_FKEY_ARRAY;
+
+    pFRecModel = NULL;
+    _pWidget = new QWidget(_par == NULL ? NULL : _par->pWidget());
+    pUi      = new Ui_fKeyArrayEd;
+    pUi->setupUi(_pWidget);
+
+    selectedNum = 0;
+
+    pUi->pushButtonAdd->setDisabled(_readOnly);
+    pUi->pushButtonIns->setDisabled(_readOnly);
+    pUi->pushButtonUp->setDisabled(_readOnly);
+    pUi->pushButtonDown->setDisabled(_readOnly);
+    pUi->pushButtonDel->setDisabled(_readOnly);
+    pUi->pushButtonClr->setDisabled(_readOnly);
+
+    pArrayModel = new cStringListModel(pWidget());
+    pRDescr = cRecStaticDescr::get(_colDescr.fKeyTable, _colDescr.fKeySchema);
+    cRecordAny  r(pRDescr);
+    foreach (QVariant vId, _value.toList()) {
+        valueView << r.getNameById(*pq, vId.toLongLong());
+    }
+    pArrayModel->setStringList(valueView);
+    pUi->listView->setModel(pArrayModel);
+    pUi->listView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+    if (!_readOnly) {
+        pFRecModel  = new cRecordListModel(*pRDescr, pWidget());
+        pUi->comboBox->setModel(pFRecModel);
+        pFRecModel->setFilter();
+        pUi->comboBox->setCurrentIndex(0);
+
+        connect(pUi->pushButtonAdd, SIGNAL(pressed()), this, SLOT(addRow()));
+        connect(pUi->pushButtonDel, SIGNAL(pressed()), this, SLOT(delRow()));
+        connect(pUi->pushButtonClr, SIGNAL(pressed()), this, SLOT(clrRows()));
+        connect(pUi->listView->selectionModel(), SIGNAL(currentRowChanged(QModelIndex,QModelIndex)), this, SLOT(selectionChanged(QModelIndex,QModelIndex)));
+        connect(pUi->listView, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(doubleClickRow(QModelIndex)));
+    }
+}
+
+cFKeyArrayWidget::~cFKeyArrayWidget()
+{
+    ;
+}
+
+int cFKeyArrayWidget::set(const QVariant& v)
+{
+    int r = cFieldEditBase::set(v);
+    if (1 == r) {
+        valueView.clear();
+        cRecordAny  r(pRDescr);
+        foreach (QVariant vId, _value.toList()) {
+            valueView << r.getNameById(*pq, vId.toLongLong());
+        }
+        pArrayModel->setStringList(valueView);
+        setButtons();
+    }
+    return r;
+}
+
+void cFKeyArrayWidget::setButtons()
+{
+    bool eArr = pArrayModel->isEmpty();
+    bool sing = selectedNum == 1;
+    bool any  = selectedNum > 0;
+
+    pUi->pushButtonAdd ->setDisabled(                _readOnly);
+    pUi->pushButtonIns ->setDisabled(        sing || _readOnly);
+    pUi->pushButtonUp  ->setDisabled(        any  || _readOnly);
+    pUi->pushButtonDown->setDisabled(        any  || _readOnly);
+    pUi->pushButtonDel ->setDisabled(eArr         || _readOnly);
+    pUi->pushButtonClr ->setDisabled(eArr         || _readOnly);
+}
+
+// cFKeyArrayWidget SLOTS
+
+void cFKeyArrayWidget::selectionChanged(QModelIndex cur, QModelIndex)
+{
+    DBGFN();
+    if (cur.isValid()) {
+        actIndex = cur;
+        PDEB(INFO) << "Current row = " << actIndex.row() << endl;
+    }
+    else {
+        actIndex = QModelIndex();
+        PDEB(INFO) << "No current row." << endl;
+    }
+    setButtons();
+}
+
+void cFKeyArrayWidget::addRow()
+{
+    int ix = pUi->comboBox->currentIndex();
+    qlonglong id = pFRecModel->atId(ix);
+    QString   nm = pFRecModel->at(ix);
+    *pArrayModel << nm;
+    QVariantList nv = _value.toList();
+    nv << id;
+    setFromWidget(nv);
+    setButtons();
+}
+
+void cFKeyArrayWidget::insRow()
+{
+    int ix = pUi->comboBox->currentIndex();
+    qlonglong id = pFRecModel->atId(ix);
+    QString   nm = pFRecModel->at(ix);
+    int row = actIndex.row();
+    pArrayModel->insert(nm, row);
+    QVariantList nv = _value.toList();
+    nv.insert(row, id);
+    setFromWidget(nv);
+    setButtons();
+}
+
+void cFKeyArrayWidget::upRow()
+{ /*
+    QModelIndexList mil = pUi->listView->selectionModel()->selectedRows();
+    pModel->up(mil);
+    setFromWidget(pModel->stringList());
+    setButtons(); */
+}
+
+void cFKeyArrayWidget::downRow()
+{ /*
+    QModelIndexList mil = pUi->listView->selectionModel()->selectedRows();
+    pModel->down(mil);
+    setFromWidget(pModel->stringList());
+    setButtons(); */
+}
+
+void cFKeyArrayWidget::delRow()
+{
+    QModelIndexList mil = pUi->listView->selectionModel()->selectedIndexes();
+    QVariantList nv = _value.toList();
+    if (mil.size() > 0) {
+        pArrayModel->remove(mil);
+        QVector<int> rows = mil2rowsDesc(mil);
+        foreach (int ix, rows) {
+            nv.removeAt(ix);
+        }
+    }
+    else {
+        pArrayModel->pop_back();
+        nv.pop_back();
+    }
+    setFromWidget(nv);
+    setButtons();
+}
+
+void cFKeyArrayWidget::clrRows()
+{
+    pArrayModel->clear();
+    setFromWidget(QVariantList());
+    setButtons();
+}
+
+void cFKeyArrayWidget::doubleClickRow(const QModelIndex & index)
+{ /*
+    const QStringList& sl = pModel->stringList();
+    int row = index.row();
+    if (isContIx(sl, row)) {
+        pUi->lineEdit->setText(sl.at(row));
+    }*/
 }

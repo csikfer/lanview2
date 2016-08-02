@@ -1181,6 +1181,7 @@ QStringList cRecordsViewBase::refineWhere(QVariantList& qParams)
             if      (!rl.at(i).compare(_sUserId,         Qt::CaseInsensitive)) qParams << QVariant(lanView::user().getId());
             else if (!rl.at(i).compare(_sUserName,       Qt::CaseInsensitive)) qParams << QVariant(lanView::user().getName());
             else if (!rl.at(i).compare(_sPlaceGroupId,   Qt::CaseInsensitive)) qParams << QVariant(lv2g::getInstance()->zoneId);
+            else if (!rl.at(i).compare(_sPlaceId,        Qt::CaseInsensitive)) qParams << QVariant(lanView::user().getId(_sPlaceId));
             else EXCEPTION(EDATA, i, trUtf8("Ismeretlen változónév a refine mezőben %1").arg(rl.at(i)));
         }
     }

@@ -428,9 +428,12 @@ CREATE VIEW view_alarms AS
     pl.place_name,
     alarm_message(host_service_id, max_status) AS msg,
     au.user_name AS ack_user_name,
+    COALESCE(hs.offline_group_ids, s.offline_group_ids)          AS offline_group_ids,
+    COALESCE(hs.online_group_ids, s.online_group_ids)            AS online_group_ids,
     a.ack_msg
     FROM alarms        AS a
     JOIN host_services AS hs USING(host_service_id)
+    JOIN services      AS s  USING(service_id)
     JOIN nodes         AS n  USING(node_id)
     JOIN places        AS pl USING(place_id)
     LEFT OUTER JOIN users AS au ON a.ack_user_id = au.user_id

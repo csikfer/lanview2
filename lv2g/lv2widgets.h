@@ -560,4 +560,39 @@ private slots:
     void destroyedImage(QObject *p);
 };
 
+class Ui_fKeyArrayEd;
+/// @class cArrayWidget
+/// Egy tömb adatmező megjelenítése és módosítása
+class LV2GSHARED_EXPORT cFKeyArrayWidget : public cFieldEditBase {
+    Q_OBJECT
+public:
+    /// Konstruktor
+    /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
+    /// @param _ro Ha nem szerkeszthető, értéke true
+    /// @param _par A parent pointere
+    cFKeyArrayWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase *_par);
+    ~cFKeyArrayWidget();
+    virtual int set(const QVariant& v);
+protected:
+    void setButtons();
+    Ui_fKeyArrayEd   *pUi;
+    QStringList       valueView;
+    cStringListModel *pArrayModel;
+    const cRecStaticDescr  *pRDescr;
+    cRecordListModel *pFRecModel;
+    /// Az inzertálandó adat legutoljára elfogadott értéke.
+    QString     last;
+    QModelIndex actIndex;
+    int         selectedNum;
+private slots:
+    void selectionChanged(QModelIndex cur, QModelIndex);
+    void addRow();
+    void insRow();
+    void upRow();
+    void downRow();
+    void delRow();
+    void clrRows();
+    void doubleClickRow(const QModelIndex & index);
+};
+
 #endif // LV2WIDGETS_H

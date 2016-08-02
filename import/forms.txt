@@ -258,7 +258,7 @@ TABLE SHAPE node_params "Eszköz paraméterek" {
     FIELD param_type_id, param_value ORD asc,desc,no;
 }
 
-TABLE SHAPE host_services "A hostokhoz rendelt szervíz példányok (fa)" {
+TABLE host_services SHAPE host_services_tree "A hostokhoz rendelt szervíz példányok (fa)" {
     SET DEFAULTS;
     TABLE TYPE TREE;
     FIELD node_id, service_id, port_id ORD asc,desc,no;
@@ -266,18 +266,18 @@ TABLE SHAPE host_services "A hostokhoz rendelt szervíz példányok (fa)" {
     TABLE FEATURES ":button.copy:";
 }
 
-TABLE host_services SHAPE host_services_t "A hostokhoz rendelt szervíz példányok (táblázat)" {
+TABLE SHAPE host_services "A hostokhoz rendelt szervíz példányok (táblázat)" {
     SET DEFAULTS;
     TABLE TYPE SIMPLE;
     FIELD node_id, service_id, prime_service_id, proto_service_id, superior_host_service_id, timeperiod_id, noalarm_flag,
-            online_group_id, offline_group_id, host_service_state, soft_state, hard_state, state_msg
+            online_group_ids, offline_group_ids, host_service_state, soft_state, hard_state, state_msg
         ADD FILTERS begin, like, similar, regexp, regexpi;
     FIELD node_id, service_id, port_id ORD asc,desc,no;
     FIELD prime_service_id, proto_service_id, superior_host_service_id, host_service_state, soft_state, hard_state, last_changed, last_touched ORD no,asc,desc;
     TABLE FEATURES ":button.copy:allnodes.owner=node_id:";
     FIELD disabled, prime_service_id, proto_service_id, superior_host_service_id, 
             max_check_attempts,  normal_check_interval,  retry_check_interval, timeperiod_id, flapping_interval, flapping_max_change,
-            noalarm_flag, offline_group_id, online_group_id
+            noalarm_flag, offline_group_ids, online_group_ids
         FLAG ON BATCH EDIT;
     FIELD noalarm_flag FEATURES ":batch_edit_fields=noalarm_from,noalarm_to:";
 }
@@ -313,21 +313,26 @@ TABLE snmpdevices SHAPE allnodes "Hálózati elemek" {
     TABLE INHERIT TYPE listed_rev;      // Megjelenítjük az ős tábla elemeit is
     INHERIT TABLE NAMES nodes;          // A teljes lista: snmpdevices, nodes
     TABLE FEATURES ":button.copy:";
-    RIGHT SHAPE hostports, node_params, lldp_links, log_links, host_services_t, mactab_node;
+    RIGHT SHAPE hostports, node_params, lldp_links, log_links, host_services, mactab_node;
     FIELD node_name ORD asc,desc,no;
     FIELD node_note, place_id, node_type ORD no, asc, desc;
     FIELD node_name, node_note, place_id, node_type, features, node_stat ADD FILTERS begin, like, similar, regexp, regexpi;
 }
 
-TABLE SHAPE services "Szervíz típusok" {
+TABLE SHAPE services "Szolgáltatások" {
     SET DEFAULTS;
     TABLE TYPE SIMPLE;
     TABLE FEATURES ":button.copy:";
     FIELD service_name ORD asc,desc,no;
     FIELD service_name, service_note, service_type_id, features, check_cmd ADD FILTERS begin, like, similar, regexp, regexpi;
     FIELD disabled, service_type_id,
-        max_check_attempts,  normal_check_interval,  retry_check_interval, timeperiod_id, flapping_interval, flapping_max_change
+    max_check_attempts, normal_check_interval,  retry_check_interval, timeperiod_id, flapping_interval, flapping_max_change, service_type_id, offline_group_ids, online_group_ids
     FLAG ON BATCH EDIT;
+}
+
+TABLE SHAPE service_types "Szolgáltatás típusok" {
+    SET DEFAULTS;
+    TABLE TYPE SIMPLE;
 }
 
 TABLE SHAPE query_parsers "Lekérdezés értelmezések" {
@@ -702,16 +707,28 @@ TABLE SHAPE place_groups "Hely és helyiség csoportok / Zónák" {
     FIELD place_group_name ORD asc,desc,no;
 }
 
-TABLE SHAPE places "Helyiségek (fa)" {
+TABLE places SHAPE places_tree "Helyiségek (fa)" {
     SET DEFAULTS;
     TABLE TYPE TREE, MEMBER;
     RIGHT SHAPE place_groups;
     TABLE FEATURES ":map=get_parent_image:";
     TABLE TITLE "Helyek, helyiségek", "Hely helyiség",,"Csoportoknak tagja", "Csoportoknak nem tagja";
     FIELD place_name ORD asc,desc,no;
-  
+    FIELD parent_id FLAG HIDE TABLE;
 }
-SET table_shapes[place_groups].right_shape_ids = ID TABLE SHAPE ( places );
+
+TABLE SHAPE places "Helyiségek (tábla)" {
+    SET DEFAULTS;
+    TABLE TYPE MEMBER;
+    RIGHT SHAPE place_groups;
+    TABLE FEATURES ":map=get_parent_image:";
+    TABLE TITLE "Helyek, helyiségek", "Hely helyiség",,"Csoportoknak tagja", "Csoportoknak nem tagja";
+    FIELD place_name ORD asc,desc,no;
+    FIELD place_name, place_note, place_type, parent_id, tels ADD FILTERS begin, like, similar, regexp, regexpi;
+}
+
+
+SET table_shapes[place_groups].right_shape_ids = ID TABLE SHAPE ( places_tree );
 
 GUI lv2gui {
     file MENU {
@@ -733,11 +750,13 @@ GUI lv2gui {
         TITLE "Objektumok";
         patchs      SHAPE   patchs          {   TITLE "Patch panelek",@;  }
         nodes       SHAPE   allnodes        {   TITLE "Hálózati elemek",@;  }
-        places      SHAPE   places          {   TITLE "Helyek, helyiségek",@;  }
-        services    SHAPE   services        {   TITLE "Szolgáltatás típusok",@;  }
+        places_t    SHAPE   places_tree     {   TITLE "Helyek, helyiségek (fa)",@;  }
+        places      SHAPE   places          {   TITLE "Helyek, helyiségek (tábla)",@;  }
+        services    SHAPE   services        {   TITLE "Szolgáltatások",@;  }
+        service_types SHAPE service_types   {   TITLE "Szolgáltatás típusok",@; }
         query_parsers SHAPE query_parsers   {   TITLE "Lekérdezés fordító",@; }
-        host_services SHAPE host_services   {   TITLE "Szolgáltatás példányok (fa)",@;  }
-        host_services_t SHAPE host_services_t { TITLE "Szolgáltatás példányok (tábla)",@;  }
+        host_services_t SHAPE host_services {   TITLE "Szolgáltatás példányok (fa)",@;  }
+        host_services   SHAPE host_services_tree { TITLE "Szolgáltatás példányok (tábla)",@;  }
         subnets     SHAPE   subnets         {   TITLE "Alhálózatok",@;  }
         vlans       SHAPE   vlans           {   TITLE "VLAN-ok",@;  }
         images      SHAPE   images          {   TITLE "Képek",@;  }

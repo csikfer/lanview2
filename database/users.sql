@@ -278,6 +278,29 @@ $$ LANGUAGE plpgsql;
 ALTER FUNCTION crypt_user_password()  OWNER TO lanview2;
 COMMENT ON FUNCTION crypt_user_password() IS 'Trigger függvény az users táblához. Titkosítja a passwd mwzőt, ha meg van adva, vagy változott.';
 
+CREATE OR REPLACE FUNCTION user_is_group_member(uid bigint, gid bigint) RETURNS boolean AS $$
+BEGIN
+    RETURN COUNT(*) > 0 FROM group_users WHERE user_id = uid AND group_id = gid;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION user_is_any_groups_member(uid bigint, gids bigint[]) RETURNS boolean AS $$
+DECLARE
+    gid bigint;
+BEGIN
+    IF gids IS NULL THEN
+        RETURN FALSE;
+    END IF;
+    FOREACH gid IN ARRAY gids LOOP
+        IF user_is_group_member(uid, gid) THEN
+            RETURN TRUE;
+        END IF;
+    END LOOP;
+    RETURN FALSE;
+END;
+$$ LANGUAGE plpgsql;
+
+
 CREATE TRIGGER crypt_password BEFORE UPDATE OR INSERT ON users FOR EACH ROW EXECUTE PROCEDURE crypt_user_password();
 
 INSERT INTO groups(group_id, group_name, group_note, group_rights) VALUES
@@ -302,5 +325,6 @@ INSERT INTO group_users ( group_id, user_id ) VALUES
     ( group_name2id('system'),   user_name2id('system') ),
     ( group_name2id('admin'),    user_name2id('admin') ),
     ( group_name2id('operator'), user_name2id('operator') ),
+    ( group_name2id('operator'), user_name2id('admin') ),
     ( group_name2id('viewer'),   user_name2id('viewer') );
 

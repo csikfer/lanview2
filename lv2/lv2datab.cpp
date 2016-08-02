@@ -514,6 +514,34 @@ qlonglong cColStaticDescr::toId(const QVariant& _f) const
     return variantToId(_f, EX_IGNORE, NULL_ID);
 }
 
+QString cColStaticDescr::fKeyId2name(QSqlQuery& q, qlonglong id) const
+{
+    QString r = QString::number(id);
+    QString h = "#";
+    if (fnToName.isEmpty() == false) {
+        QString sql = "SELECT " + fnToName + parentheses(r);
+        if (!q.exec(sql)) {
+            SQLPREPERRDEB(q, sql);
+            static const QString e = QObject::trUtf8("[SQL ERROR]");
+            return h + r + e;
+        }
+        else if (q.first()) return q.value(0).toString();
+        return h + r;
+    }
+    if (fKeyTable.isEmpty() == false) {
+        if (pFRec == NULL) {
+            // Sajnos itt trükközni kell, mivel ezt máskor nem tehetjük meg, ill veszélyes, macerás, de itt meg konstans a pointer
+            // A következő sor az objektum feltöltésekor, ahol még írható, akár végtelen rekurzióhoz is vezethet.
+            // A rekurzió detektálása megvan, de kivédeni kellene, nem elég eszrevenni.
+            *const_cast<cRecordAny **>(&pFRec) = new cRecordAny(fKeyTable, fKeySchema);
+        }
+        QString n = pFRec->getNameById(q, id , EX_IGNORE);
+        if (n.isEmpty()) return h + r;
+        return n;
+    }
+    return h + r;
+}
+
 QString cColStaticDescr::toView(QSqlQuery& q, const QVariant &_f) const
 {
     static const QString  rNul = QObject::trUtf8("[NULL]");
@@ -523,29 +551,7 @@ QString cColStaticDescr::toView(QSqlQuery& q, const QVariant &_f) const
     if (eColType == FT_INTEGER && fKeyType != FT_NONE) {
         qlonglong id = toId(_f);
         if (id == NULL_ID) return rNul; //?!
-        QString r = QString::number(id);
-        QString h = "#";
-        if (fnToName.isEmpty() == false) {
-            QString sql = "SELECT " + fnToName + parentheses(r);
-            if (!q.exec(sql)) {
-                SQLPREPERRDEB(q, sql);
-                static const QString e = QObject::trUtf8("[SQL ERROR]");
-                return h + r + e;
-            }
-            else if (q.first()) return q.value(0).toString();
-            return h + r;
-        }
-        if (fKeyTable.isEmpty() == false) {
-            if (pFRec == NULL) {
-                // Sajnos itt trükközni kell, mivel ezt máskor nem tehetjük meg, ill veszélyes, macerás, de itt meg konstans a pointer
-                // A következő sor az objektum feltöltésekor, ahol még írható, akár végtelen rekurzióhoz is vezethet.
-                // A rekurzió detektálása megvan, de kivédeni kellene, nem elég eszrevenni.
-                *const_cast<cRecordAny **>(&pFRec) = new cRecordAny(fKeyTable, fKeySchema);
-            }
-            QString n = pFRec->getNameById(q, id , EX_IGNORE);
-            if (n.isEmpty()) return h + r;
-            return n;
-        }
+        return fKeyId2name(q, id);
     }
     return toName(_f);
 }
@@ -1054,8 +1060,18 @@ qlonglong cColStaticDescrArray::toId(const QVariant& _f) const
 
 QString cColStaticDescrArray::toView(QSqlQuery &q, const QVariant &_f) const
 {
-    (void)q;
-    return _f.toStringList().join(QChar(','));
+    if (_f.isNull()) return cColStaticDescr::toView(q,_f);
+    QStringList viewList;
+    if (eColType == FT_INTEGER_ARRAY && fKeyType != FT_NONE) {
+        foreach (QVariant vid, _f.toList()) {
+            qlonglong id = vid.toLongLong();
+            viewList << fKeyId2name(q, id);
+        }
+    }
+    else {
+        viewList = _f.toStringList();
+    }
+    return viewList.join(QChar(','));
 }
 
 static bool getArray(const QString& def, QString& array)

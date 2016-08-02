@@ -96,6 +96,11 @@ COMMENT ON COLUMN services.max_check_attempts    IS 'Hibás eredmények maximál
 COMMENT ON COLUMN services.normal_check_interval IS 'Ellenörzések ütemezése, ha nincs hiba. Alapértelmezett érték.';
 COMMENT ON COLUMN services.retry_check_interval  IS 'Ellenörzések ütemezése, hiba esetén a riasztás kiadásáig. Alapértelmezett érték.';
 
+ALTER TABLE services ADD COLUMN offline_group_ids bigint[] DEFAULT NULL;
+COMMENT ON COLUMN services.offline_group_ids IS 'off-line riasztás küldése, az user_froup_id-k alapján a tagoknak, alapértelmezés';
+ALTER TABLE services ADD COLUMN online_group_ids  bigint[] DEFAULT NULL;
+COMMENT ON COLUMN services.online_group_ids  IS 'on-line riasztás küldése, az user_froup_id-k alapján a tagoknak, alapértelmezés';
+
 INSERT INTO services (service_id, service_name, service_note) VALUES
     ( -1, 'nil', 'A NULL-t reprezentálja, de összehasonlítható');
 
@@ -170,8 +175,8 @@ CREATE TABLE host_services (
     noalarm_flag            noalarmtype    NOT NULL DEFAULT 'off',
     noalarm_from            timestamp      DEFAULT NULL,
     noalarm_to              timestamp      DEFAULT NULL,
-    offline_group_id        bigint[]       DEFAULT NULL,
-    online_group_id         bigint[]       DEFAULT NULL,
+    offline_group_ids       bigint[]       DEFAULT NULL,
+    online_group_ids        bigint[]       DEFAULT NULL,
 -- Állapot
     host_service_state      notifswitch    NOT NULL DEFAULT 'unknown',
     soft_state              notifswitch    NOT NULL DEFAULT 'unknown',
@@ -599,8 +604,8 @@ CREATE OR REPLACE VIEW view_host_services AS
         p.port_name                 AS port_name,
         hs.delegate_host_state      AS delegate_host_state,
         COALESCE(hs.check_cmd,             s.check_cmd)              AS check_cmd,
-        s.features                AS default_features,
-        hs.features               AS features,
+        s.features                  AS default_features,
+        hs.features                 AS features,
         hs.superior_host_service_id AS superior_host_service_id,
         superior_hs_h.node_name     AS superior_host_service_host_name,
         superior_hs_s.service_name  AS superior_host_service_service_name,
@@ -614,8 +619,8 @@ CREATE OR REPLACE VIEW view_host_services AS
         hs.noalarm_flag             AS noalarm_flag,
         hs.noalarm_from             AS noalarm_from,
         hs.noalarm_to               AS noalarm_to,
-        hs.offline_group_id         AS offline_group_id,
-        hs.online_group_id          AS online_group_id,
+        COALESCE(hs.offline_group_id, s.offline_group_id)            AS offline_group_id,
+        COALESCE(hs.online_group_id, s.online_group_id)              AS online_group_id,
         hs.host_service_state       AS host_service_state,
         hs.soft_state               AS soft_state,
         hs.hard_state               AS hard_state,

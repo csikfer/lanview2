@@ -324,6 +324,7 @@ protected:
     eValueCheck ifExcep(eValueCheck result, eValueCheck acceptable, const QVariant &val) const;
     /// Ha van default érték, akkor azt konvertálja a megfelelő típusba, vagyis beállítja a defValue adattag értékét.
     virtual void setDefValue();
+    QString fKeyId2name(QSqlQuery &q, qlonglong id) const;
 };
 TSTREAMO(cColStaticDescr)
 
