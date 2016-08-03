@@ -13,13 +13,6 @@ enum eTmStat {
     TM_TO      = -1     ///< A várakozási idő letelt, és a követkeő várakozási dőtartam túl kicsi lett
 };*/
 
-/// A lekérdezés eredményét reprezebtáló enumerációs értéket konvertálja az adatbázisban tárolt string formára.
-/// RS_STAT_SETTED érték konverzió elütt ki lessz maszkolva. Ha a konverzió nem lehetséges, akkor dob egy kizárást.
-EXT_ const QString& notifSwitch(int _ns, enum eEx __ex = EX_ERROR);
-/// A lekérdezés eredményét reprezebtáló enumerációs érték adatbázisban tárolt string formáráját konvertálja
-/// numerikus értékké.
-EXT_ int notifSwitch(const QString& _nm, enum eEx __ex = EX_ERROR);
-
 
 /// cInspect és leszármazottai objektum belső status
 enum eInternalStat {
@@ -265,6 +258,8 @@ public:
     /// Ha van prime_service_id, akkor a prime service objektumra mutat, egyébként NULL.
     /// Nem kell/szabad felszabadítani a pointert!
     const cService     *pPrimeService;
+    /// Szabad felhasználású flag
+    bool    flag;
 protected:
     /// A lekérdezés típusát azonosító services rekord objektum pointere, vagy NULL ha ismeretlen, vagy még nincs beállítva.
     /// Nem kell/szabad felszabadítani a pointert!

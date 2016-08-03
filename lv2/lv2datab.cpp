@@ -3737,6 +3737,37 @@ int cRecord::touch(QSqlQuery& q, const QString& _fn, const QBitArray& _where)
     return 0;
 }
 
+int cRecord::updateFieldByNames(QSqlQuery& q, const QStringList& _nl, const QString& _fn, const QVariant& _v) const
+{
+    int r = 0;
+    QString nfn = nameName();
+    static const QString sql = QString("UPDATE %1 SET %2 = ? WHERE %3 = ?").arg(fullTableNameQ(), _fn, nfn);
+    foreach (QString n, _nl) {
+        execSql(q, sql, _v, n);
+        if (q.numRowsAffected() == 1) ++r;
+        else {
+            DERR() << trUtf8("Record %1 not updated (not found) name = %2").arg(fullTableName(), n);
+        }
+    }
+    return r;
+}
+
+int cRecord::updateFieldByIds(QSqlQuery& q, const QList<qlonglong>& _il, const QString& _fn, const QVariant& _v) const
+{
+    int r = 0;
+    QString ifn = idName();
+    static const QString sql = QString("UPDATE %1 SET %2 = ? WHERE %3 = ?").arg(fullTableNameQ(), _fn, ifn);
+    foreach (qlonglong id, _il) {
+        execSql(q, sql, _v, id);
+        if (q.numRowsAffected() == 1) ++r;
+        else {
+            DERR() << trUtf8("Record %1 not updated (not found) id = %2").arg(fullTableName()).arg(id);
+        }
+    }
+    return r;
+}
+
+
 /* ******************************************************************************************************* */
 cRecordFieldRef::cRecordFieldRef(const cRecordFieldRef& __r)
     : _record(__r._record)
@@ -3840,3 +3871,16 @@ cRecordAny& cRecordAny::clearType()
     _stat = ES_FACELESS;
     return *this;
 }
+
+int cRecordAny::updateFieldByNames(QSqlQuery& q, const cRecStaticDescr * _p, const QStringList& _nl, const QString& _fn, const QVariant& _v)
+{
+    cRecordAny ra(_p);
+    return ra.cRecord::updateFieldByNames(q, _nl, _fn, _v);
+}
+
+int cRecordAny::updateFieldByIds(QSqlQuery& q, const cRecStaticDescr * _p, const QList<qlonglong>& _il, const QString& _fn, const QVariant& _v)
+{
+    cRecordAny ra(_p);
+    return ra.cRecord::updateFieldByIds(q, _il, _fn, _v);
+}
+

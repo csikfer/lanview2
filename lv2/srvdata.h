@@ -27,6 +27,11 @@ class LV2SHARED_EXPORT cAlarmMsg  : public cRecord {
 public:
     static void replace(QSqlQuery& __q, qlonglong __stid, const QString& __stats, const QString& __shortMsg, const QString& __msg);
     static void replaces(QSqlQuery& __q, qlonglong __stid, const QStringList& __stats, const QString& __shortMsg, const QString& __msg);
+    static void replaces(QSqlQuery& __q, const QString& __stn, const QStringList& __stats, const QString& __shortMsg, const QString& __msg)
+    {
+        qlonglong id = cServiceType().getIdByName(__q, __stn);
+        replaces(__q, id, __stats, __shortMsg, __msg);
+    }
 };
 
 class cHostService;

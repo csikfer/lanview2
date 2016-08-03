@@ -1525,6 +1525,7 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
 %token      DELETED_T PARAMS_T CONVERTER_T PRINTER_T GATEWAY_T DOMAIN_T
 %token      DIALOG_T AUTO_T PASSWD_T HUGE_T FLAG_T TREE_T NOTIFY_T
 %token      SIMPLE_T BARE_T OWNER_T CHILD_T MEMBER_T REFRESH_T SQL_T
+%token      ALARM_T
 
 %token <i>  INTEGER_V
 %token <r>  FLOAT_V
@@ -1857,12 +1858,7 @@ nsws    : ALL_T                                 { $$ = new QStringList(cUser().d
 nsws_   : nsw                                   { $$ = new QStringList(*$1); delete $1; }
         | nsws_ ',' nsw                         { *($$ = $1) << *$3; delete $3; }
         ; 
-nsw     : str                                   { $$ = $1;
-                                                  if (cColStaticDescr::VC_INVALID == cUser().descr()[_sHostNotifSwitchs].check(*$$)) {
-                                                      yyerror(QObject::trUtf8("Ivalid notif swich value : %1").arg(*$1));
-                                                      delete $1;
-                                                  }
-                                                }
+nsw     : str                                   { (void)notifSwitch(*$1); $$ = $1; }
         ;
 usrfns  : usrfn                         { $$ = new QStringList(); *$$ << *$1; delete $1; }
         | usrfns ',' usrfn              { $$ = $1;                *$$ << *$3; delete $3; }
@@ -2422,7 +2418,7 @@ ipprot  : ICMP_T                    { $$ = EP_ICMP; }
 srvmsgs : srvmsg
         | srvmsgs srvmsg
         ;
-srvmsg  : nsws ':' str str ';'                   { cAlarmMsg::replaces(qq(), id, slp2sl($1), sp2s($3), sp2s($4)); }
+srvmsg  : nsws_ ':' str str ';'                 { cAlarmMsg::replaces(qq(), id, slp2sl($1), sp2s($3), sp2s($4)); }
         ;
 hostsrv : HOST_T SERVICE_T str '.' str str_z    { NEWOBJ(pHostServices, cHostServices(qq(), $3, NULL, $5, $6)); }
           hsrvend                               { pHostServices->insert(qq()); DELOBJ(pHostServices); }
@@ -2486,6 +2482,7 @@ hss     : fhs                                   { $$ = new cHostServices(qq(), p
 hsss    : hss                                   { $$ = $1; }
         | hsss ',' hss                          { ($$ = $1)->cat($3); }
         ;
+/*******/
 delete  : DELETE_T PLACE_T strs ';'             { foreach (QString s, *$3) { cPlace(). delByName(qq(), s, true); }       delete $3; }
         | DELETE_T PLACE_T GROUP_T strs ';'     { foreach (QString s, *$4) { cPlaceGroup(). delByName(qq(), s, true); }  delete $4; }
         | DELETE_T USER_T strs ';'              { foreach (QString s, *$3) { cUser().  delByName(qq(), s, true); }       delete $3; }
@@ -2681,8 +2678,10 @@ miop    : TITLE_T strs_zz ';'           { setMenuTitle(slp2sl($2)); }
         ;
 // Névvel azonosítható rekord egy mezőjének a modosítása az adatbázisban:
 // SET <tábla név>[<modosítandó mező neve>].<rekordot azonosító név> = <új érték>;
-modify  : SET_T str '[' str ']' '.' str '=' value ';'   { cRecordAny(sp2s($2)).setByName(qq(), sp2s($4)).set(sp2s($7), vp2v($9)).update(qq(), false); }
-        | SET_T str '[' int ']' '.' str '=' value ';'   { cRecordAny(sp2s($2)).setById(qq(), $4).set(sp2s($7), vp2v($9)).update(qq(), false); }
+modify  : SET_T str '[' strs ']' '.' str '=' value ';'
+                { cRecordAny::updateFieldByNames(qq(), cRecStaticDescr::get(sp2s($2)), slp2sl($4), sp2s($7), vp2v($9)); }
+        | SET_T str '.' str '[' strs ']' '.' str '=' value ';'
+                { cRecordAny::updateFieldByNames(qq(), cRecStaticDescr::get(sp2s($4), sp2s($2)), slp2sl($6), sp2s($9), vp2v($11)); }
         | SET_T IFTYPE_T '[' str ']' '.' NAME_T PREFIX_T '=' str ';'
                                     { cIfType().setByName(qq(), sp2s($4)).setName(_sIfNamePrefix, sp2s($10)).update(qq(), false);
                                       lanView::resetCacheData(); }
@@ -2940,6 +2939,7 @@ static int yylex(void)
         TOK(DELETED) TOK(PARAMS) TOK(CONVERTER) TOK(PRINTER) TOK(GATEWAY) TOK(DOMAIN)
         TOK(DIALOG) TOK(AUTO) TOK(PASSWD) TOK(HUGE) TOK(FLAG) TOK(TREE) TOK(NOTIFY)
         TOK(SIMPLE) TOK(BARE) TOK(OWNER) TOK(CHILD) TOK(MEMBER) TOK(REFRESH) TOK(SQL)
+        TOK(ALARM)
         { "WST",    WORKSTATION_T }, // rövidítések
         { "ATC",    ATTACHED_T },
         { "INT",    INTEGER_T },

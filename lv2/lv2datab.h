@@ -681,15 +681,30 @@ public:
     /// Egy bit vektorral tér vissza, ahol minden bit true, mellyel azonos indexű mező autoincrement.
     const QBitArray& autoIncrement() const          { return _autoIncrement; }
     /// Az ID mező indexével tér vissza, ha nincs ID, vagy nem ismert az indexe, és __ex értéke true, akkor dob egy kizárást.
-    int idIndex(enum eEx __ex = EX_ERROR) const     { if (__ex && !isIndex(_idIndex)) EXCEPTION(EFOUND, _idIndex, "Nothing ID field."); return _idIndex; }
+    int idIndex(enum eEx __ex = EX_ERROR) const     {
+        if (__ex && !isIndex(_idIndex)) EXCEPTION(EFOUND, _idIndex, QObject::trUtf8("Table %1 nothing ID field.").arg(fullTableName()));
+        return _idIndex;
+    }
     /// Az NAME mező indexével tér vissza, ha nincs név, vagy nem ismert az indexe, és __ex értéke true, akkor dob egy kizárást.
-    int nameIndex(enum eEx __ex = EX_ERROR) const   { if (__ex && !isIndex(_nameIndex)) EXCEPTION(EFOUND, _nameIndex, "Nothing name field."); return _nameIndex; }
+    int nameIndex(enum eEx __ex = EX_ERROR) const   {
+        if (__ex && !isIndex(_nameIndex)) EXCEPTION(EFOUND, _nameIndex, QObject::trUtf8("Table %1 nothing name field.").arg(fullTableName()));
+        return _nameIndex;
+    }
     /// Az NOTE mező indexével tér vissza, ha nincs név, vagy nem ismert az indexe, és __ex értéke true, akkor dob egy kizárást.
-    int noteIndex(enum eEx __ex = EX_ERROR) const   { if (__ex && !isIndex(_noteIndex)) EXCEPTION(EFOUND, _noteIndex, "Nothing descr field."); return _noteIndex; }
+    int noteIndex(enum eEx __ex = EX_ERROR) const   {
+        if (__ex && !isIndex(_noteIndex)) EXCEPTION(EFOUND, _noteIndex, QObject::trUtf8("Table %1 nothing note field.").arg(fullTableName()));
+        return _noteIndex;
+    }
     /// Az DELETED mező indexével tér vissza, ha nincs deleted mező, vagy nem ismert az indexe, és __ex értéke true, akkor dob egy kizárást.
-    int deletedIndex(enum eEx __ex = EX_ERROR) const{ if (__ex && !isIndex(_deletedIndex)) EXCEPTION(EFOUND, _deletedIndex, "Nothing descr field."); return _deletedIndex; }
+    int deletedIndex(enum eEx __ex = EX_ERROR) const {
+        if (__ex && !isIndex(_deletedIndex)) EXCEPTION(EFOUND, _deletedIndex, QObject::trUtf8("Table %1 nothing delete field.").arg(fullTableName()));
+        return _deletedIndex;
+    }
     /// Az DELETED mező indexével tér vissza, ha nincs deleted mező, vagy nem ismert az indexe, és __ex értéke true, akkor dob egy kizárást.
-    int flagIndex(enum eEx __ex = EX_ERROR) const   { if (__ex && !isIndex(_flagIndex)) EXCEPTION(EFOUND, _flagIndex, "Nothing descr field."); return _flagIndex; }
+    int flagIndex(enum eEx __ex = EX_ERROR) const   {
+        if (__ex && !isIndex(_flagIndex)) EXCEPTION(EFOUND, _flagIndex, QObject::trUtf8("Table %1 nothing flag field.").arg(fullTableName()));
+        return _flagIndex;
+    }
     /// A mezők számával tér vissza
     int cols() const                                { return _columnsNum; }
     /// A parent táblák leíróinak a pointerei, amennyiben a tábla származtatott, egyébként NULL pointer
@@ -1988,6 +2003,17 @@ public:
         _cp(o);
         return *this;
     }
+    int updateFieldByNames(QSqlQuery& q, const QStringList& _nl, const QString& _fn, const QVariant& _v) const;
+    int updateFieldByIds(QSqlQuery& q, const QList<qlonglong>& _il, const QString& _fn, const QVariant& _v) const;
+    int updateFieldByNames(QSqlQuery& q, const QStringList& _nl, int _fi, const QVariant& _v) const
+    {
+        return updateFieldByNames(q, _nl, columnName(_fi), _v);
+    }
+    int updateFieldByIds(QSqlQuery& q, const QList<qlonglong>& _il, int _fi, const QVariant& _v) const
+    {
+        return updateFieldByIds(q, _il, columnName(_fi), _v);
+    }
+
 protected:
     qlonglong _defectiveFieldMask() const {
         return _stat >> 16;
@@ -2401,6 +2427,9 @@ public:
     cRecordAny& operator=(const cRecord& __o);
     /// Másoló operátor. Átmásolja a forrás objektum descriptor mutatóját (típusát) és a mező adatokat.
     cRecordAny& operator=(const cRecordAny& __o) { return *this = (const cRecord&)__o; }
+    ///
+    static int updateFieldByNames(QSqlQuery& q, const cRecStaticDescr * _p, const QStringList& _nl, const QString& _fn, const QVariant& _v);
+    static int updateFieldByIds(QSqlQuery& q, const cRecStaticDescr * _p, const QList<qlonglong>& _il, const QString& _fn, const QVariant& _v);
 protected:
     const cRecStaticDescr *pStaticDescr;
 };

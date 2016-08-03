@@ -49,9 +49,9 @@ DEFAULTCRECDEF(cAlarmMsg, _sAlarmMessages)
 void cAlarmMsg::replace(QSqlQuery& __q, qlonglong __stid, const QString& __stat, const QString& __shortMsg, const QString& __msg)
 {
     cAlarmMsg o;
-    o.setId(__stid);
+    o.setId(_sServiceTypeId, __stid);
     o.setName(_sStatus, __stat);
-    bool e = o.completion(__q);
+    bool e = o.fetchQuery(__q);
     o.setName(_sMessage, __msg);
     o.setName(_sShortMsg, __shortMsg);
     if (e) o.update(__q, false);

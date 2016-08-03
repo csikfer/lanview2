@@ -1239,36 +1239,6 @@ QString cInspector::getParValue(QSqlQuery& q, const QString& name, bool *pOk) co
 
 /* ********************************************************************************** */
 
-const QString& notifSwitch(int _ns, eEx __ex)
-{
-    switch (_ns & RS_STAT_MASK) {
-    case RS_ON:             return _sOn;
-    case RS_RECOVERED:      return _sRecovered;
-    case RS_WARNING:        return _sWarning;
-    case RS_CRITICAL:       return _sCritical;
-    case RS_DOWN:           return _sDown;
-    case RS_UNREACHABLE:    return _sUnreachable;
-    case RS_FLAPPING:       return _sFlapping;
-    case RS_UNKNOWN:        return _sUnknown;
-    default:                if (__ex)EXCEPTION(EDATA, (int)_ns);
-    }
-    return _sNul;
-}
-
-int notifSwitch(const QString& _nm, eEx __ex)
-{
-    if (0 == _nm.compare(_sOn,         Qt::CaseInsensitive)) return RS_ON;
-    if (0 == _nm.compare(_sRecovered,  Qt::CaseInsensitive)) return RS_RECOVERED;
-    if (0 == _nm.compare(_sWarning,    Qt::CaseInsensitive)) return RS_WARNING;
-    if (0 == _nm.compare(_sCritical,   Qt::CaseInsensitive)) return RS_CRITICAL;
-    if (0 == _nm.compare(_sDown,       Qt::CaseInsensitive)) return RS_DOWN;
-    if (0 == _nm.compare(_sUnreachable,Qt::CaseInsensitive)) return RS_UNREACHABLE;
-    if (0 == _nm.compare(_sFlapping,   Qt::CaseInsensitive)) return RS_FLAPPING;
-    if (0 == _nm.compare(_sUnknown,    Qt::CaseInsensitive)) return RS_UNKNOWN;
-    if (0 ==__ex) EXCEPTION(EDATA, -1, _nm);
-    return RS_INVALID;
-}
-
 const QString& internalStatName(eInternalStat is)
 {
     switch (is) {

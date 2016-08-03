@@ -35,6 +35,13 @@ enum eNotifSwitch {
 EXT_ int reasons(const QString& _r, enum eEx __ex = EX_ERROR);
 EXT_ const QString& reasons(int _r, enum eEx __ex = EX_ERROR);
 
+/// A lekérdezés eredményét reprezebtáló enumerációs értéket konvertálja az adatbázisban tárolt string formára.
+/// RS_STAT_SETTED érték konverzió elött ki lessz maszkolva. Ha a konverzió nem lehetséges, akkor dob egy kizárást.
+EXT_ const QString& notifSwitch(int _ns, enum eEx __ex = EX_ERROR);
+/// A lekérdezés eredményét reprezebtáló enumerációs érték adatbázisban tárolt string formáráját konvertálja
+/// numerikus értékké.
+EXT_ int notifSwitch(const QString& _nm, enum eEx __ex = EX_ERROR);
+
 /// @def CHKENUM
 /// @brief Egy enumerációs típus konverziós függvényeinek az ellenörzése.
 ///

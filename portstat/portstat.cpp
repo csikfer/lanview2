@@ -253,6 +253,9 @@ enum eNotifSwitch cDevicePSt::run(QSqlQuery& q)
     }
     int n = tab.rows();
     int i;
+    foreach (cInspector *ps, *pSubordinates) {
+        ps->flag = false;   // A státuszt még nem állítottuk be.
+    }
     for (i = 0; i < n; i++) {
         bool    ok;
 
@@ -284,8 +287,17 @@ enum eNotifSwitch cDevicePSt::run(QSqlQuery& q)
         if ((*pSubordinates)[ix] == NULL) continue;   // Nincs szolgáltatás, kész
         // Előkapjuk a kapcsolódó szolgálltatást
         cInspector& ns   = *(*pSubordinates)[ix];
-        if (opstat == _sUp) ns.hostService.setState(q, _sOn, _sNul, parentId());
-        else                ns.hostService.setState(q, _sCritical, QString("o:%1/a:%2").arg(opstat).arg(adstat), parentId());
+        QString state = _sUnKnown;
+        if      (opstat == _sUp)   state = _sOn;        // On
+        else if (adstat == _sUp)   state = _sDown;      // Off
+        else if (adstat == _sDown) state = _sWarning;   // Disabled
+        ns.hostService.setState(q, state, trUtf8("if state : op:%1/adm:%2").arg(opstat).arg(adstat), parentId());
+        ns.flag = true; // beállítva;
+    }
+    foreach (cInspector *ps, *pSubordinates) {
+        if (ps->flag == false) {   // be lett állítva státusz ??? Ha még nem:
+            ps->hostService.setState(q, _sUnreachable, trUtf8("No data") , parentId());
+        }
     }
     DBGFNL();
     return RS_ON;

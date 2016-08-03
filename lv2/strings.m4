@@ -383,8 +383,8 @@ STRDEF(IpProtocols, "ipprotocols")
   STRDEF(ServiceTypeName, "service_type_name")
    STRDEF(Unmarked, "unmarked")
   STRDEF(ServiceTypeNote, "service_type_note")
-STRDEF(AlarmMessages, "alarma_messages")
- dnl service_id status
+STRDEF(AlarmMessages, "alarm_messages")
+ dnl service_type_id status
  STRDEF(Message, "message")
  STRDEF(ShortMsg, "short_msg")
 STRDEF(Services, "services")
