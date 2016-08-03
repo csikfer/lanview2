@@ -48,7 +48,11 @@ TABLE view_alarms SHAPE aaalarms "Nyugtázott aktív riasztások" {
 
 SERVICE TYPE life_sign "Jelenlét érzékelés";
 SET services [rlinkstat, attached].service_type_id = ID SERVICE TYPE(life_sign);
-ALARM life_sign (warning) MESSAGE "Letíltva" "Az érzékelés letíltva, állapot ismeretlen";
-ALARM life_sign (down)    MESSAGE "Nincs jelen", "Az eszköz jelenléte nem érzékelhető";
-ALARM life_sign (critical, unreachable,unknown) MESSAGE "Ismeretlen" "Az érzékelő állpota ismeretlen, hibás, az eszköz jelenléte nem ismert";
-ALARM life_sign (flapping) MESSAGE "Billeg" "Az érzékelő állapota változó, további riasztások letiltva.";
+
+SERVICE TYPE life_sign MESSAGE {
+    warning                             : "Letíltva"    "Az érzékelés letíltva, állapot ismeretlen";
+    down                                : "Nincs jelen" "Az eszköz jelenléte nem érzékelhető";
+    critical, unreachable,unknown       : "Ismeretlen"  "Az érzékelő állpota ismeretlen, hibás, az eszköz jelenléte nem ismert";
+    flapping                            : "Billeg"      "Az érzékelő állapota változó, billeg, további riasztások letiltva.";
+}
+

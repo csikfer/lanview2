@@ -254,7 +254,7 @@ enum eNotifSwitch cDevicePSt::run(QSqlQuery& q)
     int n = tab.rows();
     int i;
     foreach (cInspector *ps, *pSubordinates) {
-        ps->flag = false;   // A státuszt még nem állítottuk be.
+        if (ps != NULL) ps->flag = false;   // A státuszt még nem állítottuk be.
     }
     for (i = 0; i < n; i++) {
         bool    ok;
@@ -295,7 +295,7 @@ enum eNotifSwitch cDevicePSt::run(QSqlQuery& q)
         ns.flag = true; // beállítva;
     }
     foreach (cInspector *ps, *pSubordinates) {
-        if (ps->flag == false) {   // be lett állítva státusz ??? Ha még nem:
+        if (ps != NULL && ps->flag == false) {   // be lett állítva státusz ??? Ha még nem:
             ps->hostService.setState(q, _sUnreachable, trUtf8("No data") , parentId());
         }
     }
