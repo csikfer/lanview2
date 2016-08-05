@@ -159,6 +159,16 @@ EXT_ bool execSqlFunction(QSqlQuery& q, const QString& fn, const QVariant& v1 = 
 /// @return A hívott függvény visszatérési értéke, vagy ha nincs ill. nem egész érték, akkor NULL_ID.
 EXT_ qlonglong execSqlIntFunction(QSqlQuery& q, bool *pOk, const QString& fn, const QVariant& v1 = QVariant(), const QVariant& v2 = QVariant(), const QVariant& v3 = QVariant(), const QVariant& v4 = QVariant(), const QVariant& v5 = QVariant());
 
+/// Végrehajt ill összeállít és végrehajt egy query-t ami egy SQL függvényhívás, boolean visszatérési értékkel.
+/// @param q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.
+/// @param fn Az SQL függvény neve. Maximum négy paramétert tudunk átadni.
+/// @param v1 A hívott függvény első paramétere, ha megadtuk, ha nem, akkor a függvénynek nincs egy paramétere sem.
+/// @param v2 A hívott függvény második paramétere, ha megadtuk, ha nem, akkor a függvénynek egy paramétere van.
+/// @param v3 A hívott függvény harmadik paramétere, ha megadtuk, ha nem, akkor a függvénynek kettő paramétere van.
+/// @param v4 A hívott függvény negyedik paramétere, ha megadtuk, ha nem, akkor a függvénynek három paramétere van.
+/// @return A hívott függvény visszatérési értéke.
+EXT_ bool execSqlBoolFunction(QSqlQuery& q, const QString& fn, const QVariant& v1 = QVariant(), const QVariant& v2 = QVariant(), const QVariant& v3 = QVariant(), const QVariant& v4 = QVariant(), const QVariant& v5 = QVariant());
+
 /// Végrehajt ill összeállít és végrehajt egy query-t ami egy SQL függvényhívás, szöveges visszatérési értékkel.
 /// @param q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.
 /// @param fn Az SQL függvény neve. Maximum négy paramétert tudunk átadni.

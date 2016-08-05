@@ -370,6 +370,34 @@ cSysParam& cSysParam::setValue(const QVariant& __v, eEx __ex)
 DEFAULTCRECDEF(cTpow, _sTpows)
 /* ------------------------------ timeperiods ------------------------------ */
 DEFAULTCRECDEF(cTimePeriod, _sTimePeriods)
+
+bool cTimePeriod::isOnTime(QSqlQuery& q, const QDateTime& dt)
+{
+    if (isNull(idIndex())) setByName(q, getName());
+    qlonglong id = getId();
+    return isOnTime(q, id, dt);
+}
+
+bool cTimePeriod::isOnTime(QSqlQuery &q, qlonglong id, const QDateTime& dt)
+{
+    switch (id) {
+    case -1:    return false;   // never
+    case  0:    return true;    // always
+    }
+    bool r = execSqlBoolFunction(q, "time_in_timeperiod", id, dt);
+    return r;
+}
+
+bool cTimePeriod::isOnTime(QSqlQuery &q, const QString& name, const QDateTime& dt)
+{
+    if (name == _sNever)  return false;
+    if (name == _sAlways) return true;
+    cTimePeriod o;
+    qlonglong id = o.getIdByName(q, name);
+    return isOnTime(q, id, dt);
+}
+
+
 /* ------------------------------ images ------------------------------ */
 CRECCNTR(cImage)
 CRECDEFD(cImage)

@@ -1313,7 +1313,7 @@ bool cRecordsViewBase::batchEdit(int logicalindex)
         break;
     }
     delete pDialog;
-    // modosítottunk, majd roback-eltünk sorokat, frissíteni kell
+    // modosítottunk, majd rolack-eltünk sorokat, frissíteni kell
     if (spoiling) {
         refresh();
     }

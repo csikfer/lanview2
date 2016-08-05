@@ -12,8 +12,8 @@ cRecordViewModelBase::cRecordViewModelBase(cRecordsViewBase& _rt)
     _viewRowNumbers = true;
     _viewHeader     = true;
     _firstRowNumber =   0;
-    _maxRows        = 100;
     pq = newQuery();
+    _maxRows = (int)tableShape.feature(lv2g::sMaxRows, (qlonglong)lv2g::getInstance()->maxRows);
 
     int i, n = columns.size();
     for (i = 0; i < n; ++i) {
@@ -310,6 +310,7 @@ int cRecordTableModel::setRecords(QSqlQuery& _q, bool _first)
     q = _q;
     int r = _first ? qFirst() : qView();
     _DBGFNL() << " = " << r << endl;
+    dataReloded(_records);
     return r;
 }
 

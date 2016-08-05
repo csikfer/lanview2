@@ -381,6 +381,24 @@ TABLE SHAPE dyn_addr_ranges "Dinamikus címtartományok" {
     FIELD end_address, last_time, exclude ORD no,asc,desc;
 }
 
+
+TABLE SHAPE tpows "Időintervallumok, a hét napjaira" {
+    SET DEFAULTS;
+    TABLE TITLE "","Rész időintervallum",,"Tag rész időintervallumok", "Nem tag rész időintervallumok";
+    TABLE TYPE MEMBER;
+    FIELD dow, begin_time ORD asc,desc,no;
+    FIELD tpow_name, tpow_note ORD no, asc, desc;
+    FIELD tpow_name, tpow_note, dow ADD FILTERS begin, like, similar, regexp, regexpi;
+}
+
+TABLE SHAPE timeperiods "Időintervallumok" {
+    SET DEFAULTS;
+    TABLE TYPE GROUP;
+    RIGHT SHAPE tpows;
+    FIELD timeperiod_name ORD asc, desc, no;
+    FIELD timeperiod_name, timeperiod_note ADD FILTERS begin, like, similar, regexp, regexpi;
+}
+
 // ***************************************************************************************
 // events
 
@@ -445,7 +463,7 @@ TABLE SHAPE db_errs "Adatbázis hiba napló" {
     SET DEFAULTS;
     TABLE READ ONLY;
     FIELD dblog_id FLAG HIDE;
-    FIELD date_of ORD asc,desc,no;
+    FIELD date_of ORD desc,asc,no;
     FIELD error_id, user_id, table_name, trigger_op, err_subcode, err_msg, func_name, reapeat, date_of_last, acknowledged ORD no, asc,desc;
     FIELD error_id, user_id, table_name, trigger_op, err_subcode, err_msg, func_name, acknowledged ADD FILTERS begin, like, similar, regexp, regexpi;
     FIELD error_id, date_of, reapeat, date_of_last ADD FILTERS big, litle, interval;
@@ -483,7 +501,7 @@ TABLE SHAPE app_errs "Applikáció hiba napló" {
     FIELD acknowledged  TITLE "Nyugta","Nugtázva";
     
     FIELD err_submsg, sql_driver_text, sql_db_text, sql_query, sql_bounds, data_msg FLAG ON HUGE;
-    FIELD date_of ORD asc, desc,no;
+    FIELD date_of ORD desc, asc, no;
     FIELD date_of ADD FILTERS big, litle, interval;
     FIELD app_name, node_id, user_id, service_id, func_name, src_name, err_name, err_submsg,
           thread_name, sql_driver_text, sql_db_text, sql_query, sql_bounds, data_msg
@@ -504,7 +522,8 @@ TABLE SHAPE app_memos "Applikáció napló" {
         FLAG ON HUGE;       // több sosros
         FEATURES ":stretch.vertical=1:";
     }
-    FIELD date_of, importance ORD asc, desc,no;
+    FIELD date_of ORD desc, asc, no;
+    FIELD importance ORD asc, desc, no;
     FIELD date_of ADD FILTERS big, litle, interval;
     FIELD memo, app_name, node_id, user_id, func_name, src_name, thread_name, importance, acknowledged  ADD FILTERS begin, like, similar, regexp, regexpi;
     FIELD pid, src_line ADD FILTERS big, litle, interval;
@@ -515,7 +534,7 @@ TABLE SHAPE host_service_logs "A szervíz példányok log rekordjai" {
     SET DEFAULTS;
     TABLE READ ONLY;
     TABLE TYPE SIMPLE;
-    FIELD date_of ORD asc,desc,no;
+    FIELD date_of ORD desc,asc,no;
     FIELD host_service_id, event_note, superior_alarm_id, noalarm ORD no, asc, desc;
     FIELD host_service_id, old_state, old_soft_state, old_hard_state,
                            new_state, new_soft_state, new_hard_state, event_note, superior_alarm_id, noalarm
@@ -523,14 +542,14 @@ TABLE SHAPE host_service_logs "A szervíz példányok log rekordjai" {
     FIELD date_of ADD FILTERS big, litle, interval;
 }
 
+// ***************************************************************************************
+// NET Others:
+
 TABLE SHAPE iftypes "Port típusok" {
     SET DEFAULTS;
     TABLE READ ONLY;
     TABLE TYPE SIMPLE;
 }
-
-// ***************************************************************************************
-// NET Others:
 
 TABLE SHAPE arps "ARP tábla" {
     SET DEFAULTS;
@@ -546,7 +565,7 @@ TABLE SHAPE arps "ARP tábla" {
 TABLE SHAPE arp_logs "ARP lekérdezés napló." {
     SET DEFAULTS;
     TABLE READ ONLY;
-    
+    FIELD date_of ORD desc,asc,no;
 }
 
 TABLE mactab_shape SHAPE mactab "Port címtábla" {
@@ -559,6 +578,11 @@ TABLE mactab_shape SHAPE mactab "Port címtábla" {
     FIELD first_time, last_time, state_updated_time ADD FILTERS litle, big, interval;
 }
 
+TABLE SHAPE mactab_logs "Port címtábla lekérdezés napló" {
+    SET DEFAULTS;
+    TABLE READ ONLY;
+    FIELD date_of ORD desc,asc,no;
+}
 
 // ***************************************************************************************
 
@@ -727,7 +751,6 @@ TABLE SHAPE places "Helyiségek (tábla)" {
     FIELD place_name, place_note, place_type, parent_id, tels ADD FILTERS begin, like, similar, regexp, regexpi;
 }
 
-
 SET table_shapes[place_groups].right_shape_ids = ID TABLE SHAPE ( places_tree );
 
 GUI lv2gui {
@@ -760,6 +783,7 @@ GUI lv2gui {
         subnets     SHAPE   subnets         {   TITLE "Alhálózatok",@;  }
         vlans       SHAPE   vlans           {   TITLE "VLAN-ok",@;  }
         images      SHAPE   images          {   TITLE "Képek",@;  }
+        timeperiods SHAPE   timeperiods     {   TITLE "Időintervallumok",@;  }
     }
     events MENU {
         TITLE "Események";
@@ -781,6 +805,7 @@ GUI lv2gui {
         arps        SHAPE   arps            {   TITLE "ARP tábla",@;  }
         arp_logs    SHAPE   arp_logs        {   TITLE "ARP napló",@;  }
         mactab      SHAPE   mactab          {   TITLE "Port címtáblák",@;  }
+        mactab_logs SHAPE   mactab_logs     {   TITLE "Port címtáblak napló",@;  }
         dyn_addr_ranges SHAPE dyn_addr_ranges { TITLE "Dinamikus címtartományok",@; }
         iftypes     SHAPE   iftypes         {   TITLE "Port típusok",@; }
     }

@@ -1,10 +1,16 @@
 
--- //// alarm.nodes
+-- //// alarm
 
 ALTER TABLE host_services     DROP CONSTRAINT IF EXISTS host_services_act_alarm_log_id_fkey;
 ALTER TABLE host_services     DROP CONSTRAINT IF EXISTS host_services_last_alarm_log_id_fkey;
 ALTER TABLE host_service_logs DROP CONSTRAINT IF EXISTS host_service_logs_superior_alarm_id_fkey;
+DELETE FROM host_service_logs;
+UPDATE host_services  SET act_alarm_log_id = NULL, last_alarm_log_id = NULL;
+DROP  TABLE                                   IF EXISTS user_events;
+DROP  TYPE                                    IF EXISTS usereventtype;
+DROP  VIEW                                    IF EXISTS view_alarms;
 DROP  TABLE                                   IF EXISTS alarms;
+DROP  TABLE                                   IF EXISTS alarm_messages;
 
 CREATE TABLE alarms (
     alarm_id        bigserial      PRIMARY KEY,
@@ -20,16 +26,7 @@ CREATE TABLE alarms (
     superior_alarm_id  bigint   DEFAULT NULL
             REFERENCES alarms(alarm_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
     noalarm         boolean     NOT NULL,
-    end_time        timestamp   DEFAULT NULL,
-    msg_time        timestamp   DEFAULT NULL,
-    alarm_time      timestamp   DEFAULT NULL,
-    notice_time     timestamp   DEFAULT NULL,
-    notice_user_id  bigint     DEFAULT NULL
-        REFERENCES users(user_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
-    ack_time        timestamp   DEFAULT NULL,
-    ack_user_id     bigint      DEFAULT NULL
-        REFERENCES users(user_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
-    ack_msg         text
+    end_time        timestamp   DEFAULT NULL
 );
 CREATE INDEX alarms_begin_time_index ON alarms (begin_time);
 CREATE INDEX alarms_end_time_index   ON alarms (end_time);
@@ -46,13 +43,6 @@ COMMENT ON COLUMN alarms.superior_alarm_id  IS
     'Ha egy függő szervíz váltotta ki a riasztást, és a felsőbb szintű szolgáltatás is roasztási állpotban van, akkor annak a riasztásnak az azonosítója.';
 COMMENT ON COLUMN alarms.noalarm         IS 'Ha az értesítés riasztásról le van tíltva, akkor értéke true.';
 COMMENT ON COLUMN alarms.end_time        IS 'A riasztás végének az időpontja';
-COMMENT ON COLUMN alarms.msg_time        IS 'Az off-line üzenet(ek) elküldésének az időpontja, ha volt ilyen';
-COMMENT ON COLUMN alarms.alarm_time      IS 'Az első on line értesítés időpontja, ill. mikor jelent meg a riasztás egy futó kliens applikáción';
-COMMENT ON COLUMN alarms.notice_time     IS 'On line felhasználó észrevette/lekérte a riasztás adatait';
-COMMENT ON COLUMN alarms.notice_user_id  IS 'Az első on-line user, aki észrevette a riasztást';
-COMMENT ON COLUMN alarms.ack_time        IS 'A riasztás on-line nyugtázásának az időpontja';
-COMMENT ON COLUMN alarms.ack_user_id     IS 'Az user, aki a risztást nyugtázta';
-COMMENT ON COLUMN alarms.ack_msg         IS 'A nyugtázáshoz fűzött üzenet';
 
 ALTER TABLE host_services ADD FOREIGN KEY (act_alarm_log_id)
     REFERENCES alarms(alarm_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL;
@@ -60,7 +50,23 @@ ALTER TABLE host_services ADD FOREIGN KEY (last_alarm_log_id)
     REFERENCES alarms(alarm_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL;
 ALTER TABLE host_service_logs ADD FOREIGN KEY (superior_alarm_id)
     REFERENCES alarms(alarm_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL;
-    
+
+CREATE TYPE usereventtype AS ENUM ('notice', 'view', 'acknowledge', 'sendmessage', 'sendmail');
+COMMENT ON TYPE usereventtype IS 'User Event Types';
+
+CREATE TABLE user_events (
+    user_events_id      bigserial       PRIMARY KEY,
+    date_of             timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    user_id             bigint          NOT NULL
+        REFERENCES users(user_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE,
+    alarm_id            bigint          NOT NULL
+        REFERENCES alarms(alarm_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE,
+    event_type          usereventtype   NOT NULL,
+    user_event_note     text            DEFAULT NULL
+);
+CREATE INDEX user_events_date_of_index ON user_events (date_of);
+ALTER TABLE user_events OWNER TO lanview2;
+
 CREATE OR REPLACE FUNCTION alarm_notice() RETURNS TRIGGER AS $$
 BEGIN
     IF NOT NEW.noalarm OR NEW.alarms.superior_alarm_id IS NULL THEN
@@ -411,32 +417,23 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-DROP VIEW IF EXISTS view_alarms;
 CREATE VIEW view_alarms AS
     SELECT
-    a.alarm_id AS view_alarm_id,
+    a.alarm_id                                                  AS view_alarm_id,
     a.host_service_id,
     hs.node_id,
     n.place_id,
     a.superior_alarm_id,
     a.begin_time,
     a.end_time,
---  COALESCE(n.node_note, n.node_name) AS node_name,
-    n.node_name,
+    a.first_status,
     a.max_status,
---  COALESCE(pl.place_note, pl.place_name) AS place_name,
-    pl.place_name,
-    alarm_message(host_service_id, max_status) AS msg,
-    au.user_name AS ack_user_name,
-    COALESCE(hs.offline_group_ids, s.offline_group_ids)          AS offline_group_ids,
-    COALESCE(hs.online_group_ids, s.online_group_ids)            AS online_group_ids,
-    a.ack_msg
+    a.last_status,
+    alarm_message(host_service_id, max_status)                  AS msg,
+    COALESCE(hs.offline_group_ids, s.offline_group_ids)         AS offline_group_ids,
+    COALESCE(hs.online_group_ids, s.online_group_ids)           AS online_group_ids
     FROM alarms        AS a
     JOIN host_services AS hs USING(host_service_id)
     JOIN services      AS s  USING(service_id)
-    JOIN nodes         AS n  USING(node_id)
-    JOIN places        AS pl USING(place_id)
-    LEFT OUTER JOIN users AS au ON a.ack_user_id = au.user_id
-    WHERE NOT a.noalarm
-    ORDER BY begin_time DESC;
+    WHERE NOT a.noalarm;
     

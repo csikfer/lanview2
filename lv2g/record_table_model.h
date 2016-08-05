@@ -131,6 +131,8 @@ public:
 protected:
     /// Shadow copy az aktuális lekérdezés eredményéről
     QSqlQuery   q;
+signals:
+    void dataReloded(const tRecords& _recs);
 };
 
 

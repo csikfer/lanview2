@@ -3,6 +3,7 @@
 
 #include "lv2g.h"
 #include "record_table.h"
+#include "QSound"
 
 class  LV2GSHARED_EXPORT cOnlineAlarm : public cOwnTab
 {

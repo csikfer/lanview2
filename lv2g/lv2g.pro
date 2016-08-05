@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += network sql gui xml widgets
+QT       += network sql gui xml widgets multimedia
 
 TARGET = lv2g
 TEMPLATE = lib

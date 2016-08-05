@@ -8,8 +8,8 @@ COMMENT ON TYPE dayofweek IS 'Date of week enumeration.';
 -- Idő intervallum definíciók egy megadott napon egy héten bellül
 CREATE TABLE tpows (
     tpow_id     bigserial       PRIMARY KEY,
-    tpow_name   text     NOT NULL UNIQUE,
-    tpow_note   text    DEFAULT NULL,
+    tpow_name   text            NOT NULL UNIQUE,
+    tpow_note   text            DEFAULT NULL,
     dow         dayofweek       NOT NULL,
     begin_time  time            NOT NULL DEFAULT  '0:00',
     end_time    time            NOT NULL DEFAULT '24:00'
@@ -48,7 +48,7 @@ COMMENT ON COLUMN timeperiod_tpows.tpow_id         IS 'Unique ID';
 COMMENT ON COLUMN timeperiod_tpows.timeperiod_id   IS 'Unique ID';
 
 -- Hét napjainak a nevét numerikus kóddá alakítja
-CREATE OR REPLACE FUNCTION dow2int(dayofweek) RETURNS bigint AS $$
+CREATE OR REPLACE FUNCTION dow2int(dayofweek) RETURNS integer AS $$
 BEGIN
     CASE $1
         WHEN 'sunday'    THEN  RETURN 0;
@@ -58,12 +58,13 @@ BEGIN
         WHEN 'thursday'  THEN  RETURN 4;
         WHEN 'friday'    THEN  RETURN 5;
         WHEN 'saturday'  THEN  RETURN 6;
+        ELSE                   RETURN NULL;
     END CASE;
 END;
 $$ LANGUAGE plpgsql;
 
 -- Hét napjainak a nevét numerikus kóddá alakítja
-CREATE OR REPLACE FUNCTION int2dow(bigint) RETURNS dayofweek AS $$
+CREATE OR REPLACE FUNCTION int2dow(integer) RETURNS dayofweek AS $$
 BEGIN
     CASE $1
         WHEN 0  THEN  RETURN 'sunday';
@@ -73,19 +74,80 @@ BEGIN
         WHEN 4  THEN  RETURN 'thursday';
         WHEN 5  THEN  RETURN 'friday';
         WHEN 6  THEN  RETURN 'saturday';
+        ELSE          RETURN NULL;
     END CASE;
 END;
 $$ LANGUAGE plpgsql;
 
-
-
 -- // A megadott időpont benne van-e a megadott időintervallumban
-CREATE OR REPLACE FUNCTION time_in_timeperiods(bigint, timestamp DEFAULT CURRENT_TIMESTAMP) RETURNS boolean AS $$
+CREATE OR REPLACE FUNCTION time_in_timeperiod(bigint, timestamp DEFAULT CURRENT_TIMESTAMP) RETURNS boolean AS $$
 BEGIN
-    RETURN 0 < COUNT(*) FROM tpows JOIN timeperiods_tpows USING (tpow_id)
-        WHERE $1 = timeperiod_id AND int2dow(EXTRACT(DOW FROM $2)) = dow AND $2::time >= begin_time AND $2::time < end_time;
+    CASE $1
+        WHEN  0 THEN    -- always
+            RETURN TRUE;
+        WHEN -1 THEN    -- never
+            RETURN FALSE;
+        ELSE
+            RETURN 0 < COUNT(*) FROM tpows JOIN timeperiod_tpows USING (tpow_id)
+                WHERE $1 = timeperiod_id AND int2dow(EXTRACT(DOW FROM $2)::integer) = dow AND $2::time >= begin_time AND $2::time < end_time;
+    END CASE;
 END;
 $$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION next_dow(dayofweek) RETURNS dayofweek AS $$
+DECLARE
+    dows  dayofweek[];
+BEGIN
+    dows = enum_range($1);
+    IF array_length(dows, 1) > 1 THEN
+        RETURN dows[1];
+    ELSE
+        RETURN enum_first($1);
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION timeperiod_next_on_time(bigint, timestamp DEFAULT CURRENT_TIMESTAMP) RETURNS timestamp AS $$
+DECLARE
+    dw  dayofweek;
+    dwi integer;
+    dd  integer;
+    btm record;
+    tm  time;
+BEGIN
+    IF $1 <= 0 OR $1 IS NULL THEN    -- always, never, NULL, <invalid>
+        RETURN NULL;
+    END IF;
+    dwi := EXTRACT(DOW FROM $2)::integer;
+    dw  := int2dow(dwi);
+    SELECT begin_time INTO tm FROM tpows JOIN timeperiod_tpows USING (tpow_id)
+        WHERE $1 = timeperiod_id AND dw = dow AND $2::time <= begin_time AND $2::time < end_time
+        ORDER BY begin_time ASC
+        LIMIT 1;
+    IF FOUND THEN
+        RETURN $2::date + tm;
+    END IF;
+    SELECT begin_time, dow INTO btm FROM tpows JOIN timeperiod_tpows USING (tpow_id)
+        WHERE $1 = timeperiod_id AND dw < dow
+        ORDER BY dow ASC, begin_time ASC
+        LIMIT 1;
+    IF FOUND THEN
+        dd := dow2int(btm.dow) - dwi;
+        RETURN ($2::date + dd) + btm.begin_time;
+    END IF;
+    SELECT begin_time, dow INTO btm FROM tpows JOIN timeperiod_tpows USING (tpow_id)
+        WHERE $1 = timeperiod_id AND dw >= dow
+        ORDER BY dow ASC, begin_time ASC
+        LIMIT 1;
+    IF FOUND THEN
+        dd := dow2int(btm.dow) - dwi + 7;
+        RETURN ($2::date + dd) + btm.begin_time;
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
 
 CREATE OR REPLACE FUNCTION tpow_name2id(text) RETURNS bigint AS $$
 DECLARE

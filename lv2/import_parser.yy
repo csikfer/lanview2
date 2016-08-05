@@ -1062,7 +1062,8 @@ static QString * sTime(qlonglong h, qlonglong m, qlonglong s = 0)
     if (s < 0 || s >= 60) yyerror(QObject::trUtf8("Invalid sec value"));
     if (h == 24 && (m > 0 || s > 0)) yyerror("Invalid time value");
     QString *p = new QString();
-    *p = QString("%1:%2:%3").arg(h).arg(m).arg(s);
+    static const QChar fillChar = QLatin1Char('0');
+    *p = QString("%1:%2:%3").arg(h, 2, 10, fillChar).arg(m, 2, 10, fillChar).arg(s, 2, 10, fillChar);
     return p;
 }
 
@@ -2493,6 +2494,7 @@ delete  : DELETE_T PLACE_T strs ';'             { foreach (QString s, *$3) { cPl
         | DELETE_T VLAN_T  strs ';'             { foreach (QString s, *$3) { cVLan().  delByName(qq(), s, true); }       delete $3; }
         | DELETE_T SUBNET_T strs ';'            { foreach (QString s, *$3) { cSubNet().delByName(qq(), s, true); }       delete $3; }
         | DELETE_T SERVICE_T strs ';'           { foreach (QString s, *$3) { cService().delByName(qq(),s, true); }       delete $3; }
+        | DELETE_T SERVICE_T TYPE_T strs ';'    { foreach (QString s, *$4) { cServiceType().delByName(qq(),s, true); }   delete $4; }
         | DELETE_T HOST_T  SERVICE_T hsss ';'   { $4->remove(qq()); delete $4; }
         | DELETE_T HOST_T strs SERVICE_T strs ';'
                                                 { cHostService hs;

@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QWidget>
+#include <QSound>
 #include "lv2g.h"
 #include "ui_gsetup.h"
 
@@ -16,10 +17,13 @@ protected:
     void applicate();
     QSettings &qset;
     Ui_GSetup  *pUi;
+    QSound     *pSound;
 protected slots:
     void applicateAndRestart();
     void applicateAndExit();
     void applicateAndClose();
+    void selectAlarmFile();
+    void testAlarmFile();
 };
 
 #endif // CGSETUPWIDGET_H

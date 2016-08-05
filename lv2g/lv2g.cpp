@@ -4,7 +4,9 @@
 
 bool lv2g::logonNeeded = false;
 bool lv2g::zoneNeeded  = true;
-const QString lv2g::sDefaultSplitOrientation = "defaultSplitOrientation";
+const QString lv2g::sDefaultSplitOrientation= "defaultSplitOrientation";
+const QString lv2g::sMaxRows                = "max_rows";
+const QString lv2g::sSoundFileAlarm         = "sound_file_alarm";
 
 lv2g::lv2g() :
     lanView(),
@@ -22,6 +24,12 @@ lv2g::lv2g() :
             case LR_CANCEL:     EXCEPTION(ELOGON, LR_CANCEL, trUtf8("Mégsem."));
             default:            EXCEPTION(EOK);
             }
+            QSqlQuery q = getQuery();
+            maxRows = (int)cSysParam::getIntSysParam(q, sMaxRows, 100);
+            bool ok;
+            maxRows = pSet->value(sMaxRows, maxRows).toInt(&ok);
+            if (!ok) maxRows = (int)cSysParam::getIntSysParam(q, sMaxRows, 100);
+            sounFileAlarm = pSet->value(sSoundFileAlarm).toString();
         }
         else if (logonNeeded) EXCEPTION(ESQLOPEN, 0, trUtf8("Nincs elérhető adatbázis."));
         defaultSplitOrientation = Qt::Horizontal;

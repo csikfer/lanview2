@@ -34,7 +34,7 @@ CREATE TABLE services (
     service_name            text        NOT NULL UNIQUE,
     service_note            text        DEFAULT NULL,
     service_type_id         bigint      DEFAULT -1  -- unmarked
-        REFERENCES service_types(service_type_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
+        REFERENCES service_types(service_type_id) MATCH FULL ON DELETE SET DEFAULT ON UPDATE RESTRICT,
     protocol_id             bigint      DEFAULT -1  -- nil
         REFERENCES ipprotocols(protocol_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
     port                    integer     DEFAULT NULL,

@@ -21,6 +21,7 @@ TABLE view_alarms SHAPE uaalarms  "Nem nyugtázott riasztások" {
     FIELD msg        FLAG ON HUGE;
     FIELD SEQUENCE begin_time, end_time, place_name, node_name, msg;
     AUTO REFRESH "0:0:30";
+    TABLE FEATURES ":max_rows=500:";   // Nincs (nem kéne) lapozás, de tul nagy tábla akkor sem lehet
 }
 
 TABLE view_alarms SHAPE aaalarms "Nyugtázott aktív riasztások" {
@@ -46,6 +47,7 @@ TABLE view_alarms SHAPE aaalarms "Nyugtázott aktív riasztások" {
     AUTO REFRESH "0:0:30";
 }
 
+DELETE SERVICE TYPE life_sign;
 SERVICE TYPE life_sign "Jelenlét érzékelés";
 SET services [rlinkstat, attached].service_type_id = ID SERVICE TYPE(life_sign);
 

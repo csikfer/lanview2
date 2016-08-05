@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui sql network xml widgets
+QT       += core gui sql network xml widgets multimedia
 
 TARGET = lv2gui
 CONFIG -= app_bundle

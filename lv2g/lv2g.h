@@ -74,8 +74,13 @@ public:
     static bool     logonNeeded;
     static bool     zoneNeeded;
     qlonglong       zoneId;
+    int             maxRows;
     enum Qt::Orientation    defaultSplitOrientation;
-    static const  QString   sDefaultSplitOrientation;
+    QString                 sounFileAlarm;
+    // Identifier strings
+    static const QString    sDefaultSplitOrientation;
+    static const QString    sMaxRows;
+    static const QString    sSoundFileAlarm;
 protected:
     const lv2gDesign *pDesign;
 };

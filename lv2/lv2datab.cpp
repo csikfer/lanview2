@@ -3742,8 +3742,14 @@ int cRecord::updateFieldByNames(QSqlQuery& q, const QStringList& _nl, const QStr
     int r = 0;
     QString nfn = nameName();
     static const QString sql = QString("UPDATE %1 SET %2 = ? WHERE %3 = ?").arg(fullTableNameQ(), _fn, nfn);
+    int ix = toIndex(_fn);
+    const cColStaticDescr& cd = colDescr(ix);
+    QVariant v;
+    qlonglong st;
+    v = cd.set(_v, st);     // Conversion to local format
+    v = cd.toSql(v);        // Conversion to SQL
     foreach (QString n, _nl) {
-        execSql(q, sql, _v, n);
+        execSql(q, sql, v, n);
         if (q.numRowsAffected() == 1) ++r;
         else {
             DERR() << trUtf8("Record %1 not updated (not found) name = %2").arg(fullTableName(), n);
@@ -3757,8 +3763,14 @@ int cRecord::updateFieldByIds(QSqlQuery& q, const QList<qlonglong>& _il, const Q
     int r = 0;
     QString ifn = idName();
     static const QString sql = QString("UPDATE %1 SET %2 = ? WHERE %3 = ?").arg(fullTableNameQ(), _fn, ifn);
+    int ix = toIndex(_fn);
+    const cColStaticDescr& cd = colDescr(ix);
+    QVariant v;
+    qlonglong st;
+    v = cd.set(_v, st);     // Conversion to local format
+    v = cd.toSql(v);        // Conversion to SQL
     foreach (qlonglong id, _il) {
-        execSql(q, sql, _v, id);
+        execSql(q, sql, v, id);
         if (q.numRowsAffected() == 1) ++r;
         else {
             DERR() << trUtf8("Record %1 not updated (not found) id = %2").arg(fullTableName()).arg(id);

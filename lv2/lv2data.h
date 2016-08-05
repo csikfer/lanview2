@@ -395,6 +395,10 @@ class LV2SHARED_EXPORT cTpow : public cRecord {
 */
 class LV2SHARED_EXPORT cTimePeriod : public cRecord {
     CRECORD(cTimePeriod);
+public:
+    bool isOnTime(QSqlQuery &q, const QDateTime& dt = QDateTime::currentDateTime());
+    static bool isOnTime(QSqlQuery &q, qlonglong id, const QDateTime& dt = QDateTime::currentDateTime());
+    static bool isOnTime(QSqlQuery &q, const QString& name, const QDateTime& dt = QDateTime::currentDateTime());
 };
 
 typedef tGroup<cTimePeriod, cTpow> tTimePeriodTpow;
