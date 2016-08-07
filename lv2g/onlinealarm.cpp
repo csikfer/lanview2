@@ -24,6 +24,8 @@ cOnlineAlarm::cOnlineAlarm(QWidget *par) : cOwnTab(par)
     }
     connect(pRecTabNoAck->tableView()->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
             this, SLOT(curRowChgNoAck(QItemSelection,QItemSelection)));
+    cRecordTableModel *pNoAckModel = dynamic_cast<cRecordTableModel *>(pRecTabNoAck->pModel);
+    connect(pNoAckModel, SIGNAL(dataReloded(tRecords)), this, SLOT(noAckDataReloded(tRecords)));
 
     pRecTabAckAct = new cRecordTable("aaalarms", false, pAlarmSplitter);    // Nyugtázott. aktív riasztások; bal alsó
     pRecTabAckAct->tableView()->setSelectionMode(QAbstractItemView::SingleSelection);   // Nincs több soros kijelölés
@@ -39,11 +41,12 @@ cOnlineAlarm::cOnlineAlarm(QWidget *par) : cOwnTab(par)
     pRightVBLayout = new QVBoxLayout();
     pRightWidget->setLayout(pRightVBLayout);
 
-    pMapLabel = new QLabel();
+    pMapText = new QTextEdit();
+    pMapText->setReadOnly(true);
 //??    pMapLabel.setPalette(QPalette::Dark);
-    pRightVBLayout->addWidget(pMapLabel);
+    pRightVBLayout->addWidget(pMapText,1);
     pMap  = new cImageWidget();
-    pRightVBLayout->addWidget(pMap);
+    pRightVBLayout->addWidget(pMap, 10);
     pButtonLayout  = new QHBoxLayout();
     pRightVBLayout->addLayout(pButtonLayout);
     pAckButton     = new QPushButton(trUtf8("Nyugtázás"));
@@ -69,23 +72,44 @@ cOnlineAlarm::~cOnlineAlarm()
 void cOnlineAlarm::map()
 {
     if (pActRecord == NULL) EXCEPTION(EPROGFAIL);
-    // A riasztás helye (ID)
-    qlonglong pid = pActRecord->getId(_sPlaceId);
-    cPlace pl;
-    pl.fetchById(*pq, pid);
-    // Hely megnevezése a note mező, vagy ha üres akkor a név
-    QString h = pl.getNoteOrName();
+    QVariantList ids = pActRecord->get(_sViewUserIds).toList();
+    qlonglong uid = lanView::user().getId();
+    qlonglong aid = pActRecord->getId();
+    if (ids.indexOf(uid) < 0) {     // uid not found
+        cUserEvent::insert(*pq, uid, aid, UE_VIEW);
+        ids << uid;
+        pActRecord->set(_sNoticeUserIds, ids);
+    }
+
+    static const QString sPlaceTitle = cTableShape::getFieldDialogTitle(*pq, _sPlaces, _sPlaceName);
+    static const QString sNodeTitle  = cTableShape::getFieldDialogTitle(*pq, _sNodes,  _sNodeName);
+    QString text;   // HTML text
+    // Alarm location, based on the place_id
+    qlonglong placeId = pActRecord->getId(_sPlaceId);
+    cPlace place;
+    place.fetchById(*pq, placeId);
+    // node
+    qlonglong nodeId  = pActRecord->getId(_sNodeId);
+    cNode node;
+    node.fetchById(*pq, nodeId);
+    text  = sPlaceTitle + " : <b>" + place.getName() + "</b>, <i>" + place.getNote() + "</i><br>";
+    text += sNodeTitle  + " : <b>" + node.getName()  + "</b>, <i>" + node.getNote()  + "</i><br>";
+    text += "<b><i>" + pActRecord->getName(_sMsg) + "</i></b>";
+    if (pActRecord->get(_sAckUserIds).toList().isEmpty() == false) {
+        text += "<br>" + trUtf8("Nyugtázva : ") + "<b>" + pActRecord->view(*pq, _sAckUserIds) + "</b><br>";
+        text += "<i>" + pActRecord->getName(_sMsg) + "</i>";
+    }
     // A parent alaprajza
     bool ok;
-    qlonglong id = execSqlIntFunction(*pq, &ok, "get_parent_image", pid);
+    qlonglong id = execSqlIntFunction(*pq, &ok, "get_parent_image", placeId);
     cImage  image;
-    QVariant vPol = pl.get(_sFrame);
+    QVariant vPol = place.get(_sFrame);
     QPolygonF pol;
     QPoint    center;
     ok = ok && image.fetchById(*pq, id);
     ok = ok && image.dataIsPic();
     if (ok) {
-        h = trUtf8("%1; %2").arg(image.getNoteOrName()).arg(h);
+        text += trUtf8("<br>Alaprejz: %1, %2").arg(image.getName(), image.getNote());
         pMap->clearDraws();
         if (vPol.isNull() == false) {
             pMap->setBrush(QBrush(QColor(Qt::red))).addDraw(vPol);
@@ -93,19 +117,24 @@ void cOnlineAlarm::map()
             center = avarage<QPolygonF, QPointF>(pol).toPoint();
         }
         else {
-            h += trUtf8(" (nincs pontos hely adat)");
+            text += trUtf8("<br><br><b>Nincs pontos hely adat.</b>");
         }
     }
     ok = ok && pMap->setImage(image);
     if (!ok) {
-        pMap->setText(trUtf8(" (Nincs megjeleníthető alaprajz.)"));
+        text += trUtf8("<br><br><b>Nincs megjeleníthető alaprajz.</b>");
+        pMap->clearDraws();
     }
     else {
         if (vPol.isNull() == false) {
             pMap->center(center);
         }
     }
-    pMapLabel->setText(h);
+    pMapText->setText(text);
+    int height= pMapText->document()->size().height() +5;
+    int width = pMapText->document()->size().width();
+    pMapText->setMinimumHeight(height);
+    pMapText->resize(width, height);
 }
 
 
@@ -178,16 +207,7 @@ void cOnlineAlarm::allAcknowledge()
             continue;
         }
         qlonglong aid = pr->getId();
-        cAlarm a;
-        if (!a.fetchById(*pq, aid)) {
-            DERR() << trUtf8("Alarm record fetch failed, id = %1").arg(aid) << endl;
-            continue;
-        }
-        if (a.isNull(_sAckUserId)) {
-            a.setId(_sAckUserId, lanView::user().getId());
-            a.setName(_sAckTime, "NOW");
-            a.update(*pq,  false, a.mask(_sAckUserId, _sAckTime));
-        }
+        cUserEvent::insert(*pq, lanView::user().getId(), aid, UE_ACKNOWLEDGE);
     }
     pRecTabAckAct->refresh();
     pRecTabNoAck->refresh();
@@ -206,23 +226,40 @@ void cOnlineAlarm::actRecordDestroyed(QObject *pO)
 void cOnlineAlarm::acknowledge()
 {
     if (pActRecord == NULL) EXCEPTION(EPROGFAIL);
+    qlonglong aid = pActRecord->getId();
     cAckDialog dialog(*pActRecord, this);
     if (dialog.exec() == QDialog::Accepted) {
-        cAlarm  a;
-        a.fetchById(*pq, pActRecord->getId());
-        if (a.isNull(_sAckUserId)) {
-            a.setId(_sAckUserId, lanView::user().getId());
-            a.setName(_sAckTime, "NOW");
-            a.setName(_sAckMsg, dialog.pUi->msgL->text());
-            a.update(*pq,  false, a.mask(_sAckUserId, _sAckTime, _sAckMsg));
-        }
-        else {
-            ; // Valaki már nyugtázta
-        }
+        cUserEvent::insert(*pq, lanView::user().getId(), aid, UE_ACKNOWLEDGE, dialog.pUi->msgL->text());
     }
     pRecTabAckAct->refresh();
     pRecTabNoAck->refresh();
 }
+
+void cOnlineAlarm::noAckDataReloded(const tRecords& _recs)
+{
+    bool isAlarm = false;
+    qlonglong uid = lanView::user().getId();
+    qlonglong aid;
+    QVariantList ids;
+    QListIterator<cRecord *>    i(_recs);
+    while (i.hasNext()) {
+        cRecord *p = i.next();
+        aid = p->getId();
+        ids = p->get(_sNoticeUserIds).toList();
+        if (ids.indexOf(uid) < 0) {     // uid not found
+            cUserEvent::insert(*pq, uid, aid, UE_NOTICE);
+            ids << uid;
+            p->set(_sNoticeUserIds, ids);
+            isAlarm = true;
+        }
+        if (isAlarm) continue;
+        ids = p->get(_sViewUserIds).toList();
+        if (ids.indexOf(uid) < 0) {     // uid not found
+            isAlarm = true;
+        }
+    }
+}
+
 
 cAckDialog::cAckDialog(const cRecord& __r, QWidget *par)
     : QDialog(par)
@@ -253,3 +290,4 @@ void cAckDialog::changed()
 {
     pUi->ackPB->setDisabled(pUi->msgTE->toPlainText().size() < MIN_MSG_SIZE);
 }
+

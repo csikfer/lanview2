@@ -15,7 +15,7 @@ public:
 private:
     void map();
     void clearMap() {
-        pMapLabel->setText(_sNul);
+        pMapText->setText(_sNul);
         pMap->clearDraws();
         pMap->setText(_sNul);
     }
@@ -30,17 +30,18 @@ private:
     QWidget *       pRightWidget;   /// A jobb oldali widget
     QVBoxLayout *   pRightVBLayout; /// A jobb oldali widget vertikális layout
     QHBoxLayout *   pButtonLayout;  /// A jobb oldali Widget gombsora (alul)
-    QLabel *        pMapLabel;      /// A térkép/alaprajz cím sora
+    QTextEdit *     pMapText;      /// A térkép/alaprajz cím sora
     cImageWidget *  pMap;           /// A térkép/alaprajz (image)
     QPushButton *   pAckButton;     /// A nyugtázás gomb
     QPushButton *   pAckAllButton;  /// Több sor nyugtázás gomb (Admin)
-    const cRecord  *pActRecord;     /// A kiválasztott rekord a nem nyugtázott riasztások táblában
+    cRecord  *      pActRecord;     /// A kiválasztott rekord a nem nyugtázott riasztások táblában
 private slots:
     void curRowChgNoAck(QItemSelection, QItemSelection);
     void curRowChgAckAct(QItemSelection sel, QItemSelection);
     void acknowledge();
     void allAcknowledge();
     void actRecordDestroyed(QObject *pO);
+    void noAckDataReloded(const tRecords& _recs);
 };
 
 #if defined(LV2G_LIBRARY)

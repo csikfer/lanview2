@@ -1472,7 +1472,12 @@ void cRecordTable::init()
         initMaster();
         break;
     default:
-        EXCEPTION(ENOTSUPP, pTableShape->getId(_sTableShapeType), pTableShape->getName(_sTableShapeType));
+        EXCEPTION(ENOTSUPP, pTableShape->getId(_sTableShapeType),
+                  trUtf8("TABLE %1 SHAPE %2 TYPE : %3")
+                  .arg(pTableShape->getName(),
+                       pTableShape->getName(_sTableName),
+                       pTableShape->getName(_sTableShapeType))
+                  );
     }
     pTableView->horizontalHeader()->setSectionsClickable(true);
     connect(pTableView->horizontalHeader(), SIGNAL(sectionClicked(int)),       this, SLOT(clickedHeader(int)));
@@ -1668,6 +1673,7 @@ void cRecordTable::_refresh(bool all)
         if (!ord.isEmpty()) sql += " ORDER BY " + ord;
     }
 
+    PDEB(SQL) << quoted(sql) << "\n bind(s) : \n" << list2string(qParams) << endl;
     if (!pTabQuery->prepare(sql)) SQLPREPERR(*pTabQuery, sql);
     int i = 0;
     foreach (QVariant v, qParams) pTabQuery->bindValue(i++, v);

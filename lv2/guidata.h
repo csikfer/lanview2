@@ -205,6 +205,12 @@ public:
     void addRightShape(QStringList& _sn);
     void setRightShape(QStringList& _sn) { clear(_sRightShapeIds); addRightShape(_sn); }
 
+    /// Visszaadja az _sn nevű table_shapes rekordhoz tartozó _fn nevű table_shape_fields rekordnak a
+    /// dialog_title mező értékét. Ha valamelyik rekord hiányzik, és __ex értéke nem EX_WARNING vagy
+    /// EX_NOOP, akkor _fn-t adja vissza. Ha hiányzik valamelyik rekord, és __ex értéke EX_WARNING vagy
+    /// EX_NOOP, akkor kizárást dob.
+    static QString getFieldDialogTitle(QSqlQuery& q, const QString& _sn, const QString& _fn, eEx __ex = EX_ERROR);
+
     tTableShapeFields   shapeFields;
 protected:
     QString emFildsIsEmpty();

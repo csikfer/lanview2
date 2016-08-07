@@ -6,20 +6,30 @@ TABLE view_alarms SHAPE uaalarms  "Nem nyugtázott riasztások" {
     TABLE TYPE BARE;
     TABLE TITLE "Nem nyugtázott riasztások";
     // Nincs nyugtázva, és zónán bellül
-    REFINE "ack_user_name IS NULL AND is_group_place(place_id, ?) AND user_is_any_groups_member(?, online_group_ids):place_group_id:user_id";
+    REFINE "array_length(ack_user_ids, 1) IS NULL AND is_group_place(place_id, ?) AND user_is_any_groups_member(?,online_group_ids):place_group_id:user_id";
     TABLE VIEW   RIGHTS indalarm;
     TABLE EDIT   RIGHTS system;
     TABLE INSERT RIGHTS system;
     TABLE DELETE RIGHTS admin;
-    FIELD view_alarm_id, host_service_id, node_id, place_id, superior_alarm_id, ack_user_name, max_status, ack_msg,
-        online_group_ids, offline_group_ids FLAG HIDE;
-    FIELD begin_time TITLE "Kezdete";
-    FIELD end_time   TITLE "Vége";
-    FIELD node_name  TITLE "Eszköz";
-    FIELD place_name TITLE "Helye";
-    FIELD msg        TITLE "Leírás";
-    FIELD msg        FLAG ON HUGE;
-    FIELD SEQUENCE begin_time, end_time, place_name, node_name, msg;
+    
+    FIELD view_alarm_id     { FLAG HIDE;                                                                        }
+    FIELD host_service_id   { FLAG ON HIDE TABLE;   TITLE ,         "Felügyelő objektum neve";                  } 
+    FIELD node_id           {                       TITLE "Eszköz", "ESzköz neve";                              }
+    FIELD place_id          {                       TITLE "Hely",   "Az eszköz helye";                          }
+    FIELD superior_alarm_id { FLAG ON HIDE TABLE;   TITLE ,         "Fő felügyelő objektum neve";               }
+    FIELD begin_time        {                       TITLE "Kezdete","A riasztás kezdete";                       }
+    FIELD end_time          {                       TITLE "Vége",   "A riasztási állpot vége";                  }
+    FIELD first_status      { FLAG ON HIDE TABLE;   TITLE ,         "Állapot a riasztás kezdetén";              }
+    FIELD max_status        { FLAG ON HIDE TABLE;   TITLE ,         "A legsújosabb állapot a riasztás alatt";   }
+    FIELD last_status       { FLAG ON HIDE TABLE;   TITLE ,         "Az utolsó állapot a riasztás alatt";       }
+    FIELD msg               { FLAG ON HUGE;         TITLE "Üzenet", "Riasztási üzenet";                         } 
+    FIELD offline_group_ids { FLAG HIDE;                                                                        }
+    FIELD online_group_ids  { FLAG HIDE;                                                                        }
+    FIELD notice_user_ids   { FLAG ON HIDE TABLE;   TITLE ,         "Felhasználók láthatták a riasztást";       }
+    FIELD view_user_ids     { FLAG ON HIDE TABLE;   TITLE ,         "Felhasználók megnézték a riasztást";       }
+    FIELD ack_user_ids      { FLAG HIDE;                                                                        }
+    FIELD msg_user_ids      { FLAG HIDE;                                                                        }
+    FIELD mail_user_ids     { FLAG HIDE;                                                                        }
     AUTO REFRESH "0:0:30";
     TABLE FEATURES ":max_rows=500:";   // Nincs (nem kéne) lapozás, de tul nagy tábla akkor sem lehet
 }
@@ -29,21 +39,29 @@ TABLE view_alarms SHAPE aaalarms "Nyugtázott aktív riasztások" {
     TABLE TYPE BARE;
     TABLE TITLE "Nyugtázott és aktív riasztások";
     // Nyugtázva, de még fennál a riasztási állpot, és zónán bellül
-    REFINE "ack_user_name IS NOT NULL AND end_time IS NULL AND is_group_place(place_id, ?) AND user_is_any_groups_member(?, online_group_ids):place_group_id:user_id";
+    REFINE "array_length(ack_user_ids, 1) > 0 AND end_time IS NULL AND is_group_place(place_id, ?) AND user_is_any_groups_member(?, online_group_ids):place_group_id:user_id";
     TABLE VIEW   RIGHTS indalarm;
     TABLE EDIT   RIGHTS system;
     TABLE INSERT RIGHTS system;
     TABLE DELETE RIGHTS admin;
-    FIELD view_alarm_id, host_service_id, node_id, place_id, superior_alarm_id, max_status, end_time,
-        online_group_ids, offline_group_ids FLAG HIDE;
-    FIELD begin_time TITLE "Kezdete";
-    FIELD ack_user_name TITLE "Nyugtázta";
-    FIELD node_name  TITLE "Eszköz";
-    FIELD place_name TITLE "Helye";
-    FIELD msg        TITLE "Leírás";
-    FIELD ack_msg    TITLE "Nyugtázó üzenete";
-    FIELD msg, ack_msg FLAG ON HUGE;
-    FIELD SEQUENCE begin_time, place_name, node_name, msg, ack_msg;
+    FIELD view_alarm_id     { FLAG HIDE;                                                                        }
+    FIELD host_service_id   { FLAG ON HIDE TABLE;   TITLE ,         "Felügyelő objektum neve";                  } 
+    FIELD node_id           {                       TITLE "Eszköz", "Eszköz neve";                              }
+    FIELD place_id          {                       TITLE "Hely",   "Az eszköz helye";                          }
+    FIELD superior_alarm_id { FLAG ON HIDE TABLE;   TITLE ,         "Fő felügyelő objektum neve";               }
+    FIELD begin_time        {                       TITLE "Kezdete","A riasztás kezdete";                       }
+    FIELD end_time          { FLAG HIDE;                                                                        }
+    FIELD first_status      { FLAG ON HIDE TABLE;   TITLE ,         "Állapot a riasztás kezdetén";              }
+    FIELD max_status        { FLAG ON HIDE TABLE;   TITLE ,         "A legsújosabb állapot a riasztás alatt";   }
+    FIELD last_status       { FLAG ON HIDE TABLE;   TITLE ,         "Az utolsó állapot a riasztás alatt";       }
+    FIELD msg               { FLAG ON HUGE;         TITLE "Üzenet", "Riasztási üzenet";                         } 
+    FIELD offline_group_ids { FLAG HIDE;                                                                        }
+    FIELD online_group_ids  { FLAG HIDE;                                                                        }
+    FIELD notice_user_ids   { FLAG ON HIDE TABLE;   TITLE ,         "Felhasználók láthatták a riasztást";       }
+    FIELD view_user_ids     { FLAG ON HIDE TABLE;   TITLE ,         "Felhasználók megnézték a riasztást";       }
+    FIELD ack_user_ids      {                       TITLE "Nyugtázta",@;                                        }
+    FIELD msg_user_ids      { FLAG HIDE;                                                                        }
+    FIELD mail_user_ids     { FLAG HIDE;                                                                        }
     AUTO REFRESH "0:0:30";
 }
 

@@ -327,29 +327,37 @@ COMMENT ON COLUMN unusual_fkeys.f_inherited_tables IS 'Azon leszármazott tábl�
 
 INSERT INTO unusual_fkeys
   ( table_name,         column_name,    unusual_fkeys_type, f_table_name,   f_column_name,  f_inherited_tables) VALUES
-  ( 'nports',           'node_id',      'owner',            'nodes',        'node_id',      '{nodes, snmpdevices}'),
-  ( 'port_params',      'port_id',      'owner',            'nports',       'port_id',      '{nports, pports, interfaces}'),
-  ( 'node_params',      'node_id',      'owner',            'patchs',       'node_id',      '{patchs, nodes, snmpdevices}'),
-  ( 'interfaces',       'node_id',      'owner',            'nodes',        'node_id',      '{nodes, snmpdevices}'),
-  ( 'host_services',    'node_id',      'property',         'nodes',        'node_id',      '{nodes, snmpdevices}'),
-  ( 'host_services',    'port_id',      'property',         'nports',       'port_id',      '{nports, interfaces}'),
-  ( 'phs_links_table',  'port_id1',     'owner',            'nports',       'port_id',      '{nports, pports, interfaces}'),
-  ( 'phs_links_table',  'port_id2',     'property',         'nports',       'port_id',      '{nports, pports, interfaces}'),
-  ( 'log_links_table',  'port_id1',     'owner',            'nports',       'port_id',      '{nports, interfaces}'),
-  ( 'log_links_table',  'port_id2',     'property',         'nports',       'port_id',      '{nports, interfaces}'),
-  ( 'table_shapes',     'right_shape_ids','self',           'table_shapes', 'table_shape_id',NULL ),
-  ( 'phs_links_shape',  'node_id1',     'property',         'patchs',        'port_id',     '{patchs, nodes, snmpdevices}'),
-  ( 'log_links_shape',  'node_id1',     'property',         'nports',       'port_id',      '{nodes, snmpdevices}'),
-  ( 'lldp_links_shape', 'node_id1',     'property',         'nports',       'port_id',      '{nodes, snmpdevices}'),
-  ( 'phs_named_link',   'port_id1',     'owner',            'nports',       'port_id',      '{nports, pports, interfaces}'),
-  ( 'app_errs',         'node_id',      'property',         'nodes',        'node_id',      '{nodes, snmpdevices}'),
-  ( 'app_memos',        'node_id',      'property',         'nodes',        'node_id',      '{nodes, snmpdevices}'),
+  ( 'nports',           'node_id',           'owner',       'nodes',        'node_id',      '{nodes, snmpdevices}'),
+  ( 'port_params',      'port_id',           'owner',       'nports',       'port_id',      '{nports, pports, interfaces}'),
+  ( 'node_params',      'node_id',           'owner',       'patchs',       'node_id',      '{patchs, nodes, snmpdevices}'),
+  ( 'interfaces',       'node_id',           'owner',       'nodes',        'node_id',      '{nodes, snmpdevices}'),
+  ( 'host_services',    'node_id',           'property',    'nodes',        'node_id',      '{nodes, snmpdevices}'),
+  ( 'host_services',    'port_id',           'property',    'nports',       'port_id',      '{nports, interfaces}'),
+  ( 'phs_links_table',  'port_id1',          'owner',       'nports',       'port_id',      '{nports, pports, interfaces}'),
+  ( 'phs_links_table',  'port_id2',          'property',    'nports',       'port_id',      '{nports, pports, interfaces}'),
+  ( 'log_links_table',  'port_id1',          'owner',       'nports',       'port_id',      '{nports, interfaces}'),
+  ( 'log_links_table',  'port_id2',          'property',    'nports',       'port_id',      '{nports, interfaces}'),
+  ( 'table_shapes',     'right_shape_ids',   'self',        'table_shapes', 'table_shape_id',NULL ),
+  ( 'phs_links_shape',  'node_id1',          'property',    'patchs',       'port_id',      '{patchs, nodes, snmpdevices}'),
+  ( 'log_links_shape',  'node_id1',          'property',    'nports',       'port_id',      '{nodes, snmpdevices}'),
+  ( 'lldp_links_shape', 'node_id1',          'property',    'nports',       'port_id',      '{nodes, snmpdevices}'),
+  ( 'phs_named_link',   'port_id1',          'owner',       'nports',       'port_id',      '{nports, pports, interfaces}'),
+  ( 'app_errs',         'node_id',           'property',    'nodes',        'node_id',      '{nodes, snmpdevices}'),
+  ( 'app_memos',        'node_id',           'property',    'nodes',        'node_id',      '{nodes, snmpdevices}'),
   ( 'services',         'online_group_ids',  'property',    'groups',       'group_id',     NULL),
   ( 'services',         'offline_group_ids', 'property',    'groups',       'group_id',     NULL),
   ( 'host_services',    'online_group_ids',  'property',    'groups',       'group_id',     NULL),
   ( 'host_services',    'offline_group_ids', 'property',    'groups',       'group_id',     NULL),
   ( 'view_alarms',      'online_group_ids',  'property',    'groups',       'group_id',     NULL),
-  ( 'view_alarms',      'offline_group_ids', 'property',    'groups',       'group_id',     NULL);
+  ( 'view_alarms',      'offline_group_ids', 'property',    'groups',       'group_id',     NULL),
+  ( 'view_alarms',      'nitice_user_ids',   'property',    'users',        'user_id',      NULL),
+  ( 'view_alarms',      'view_user_ids',     'property',    'users',        'user_id',      NULL),
+  ( 'view_alarms',      'ack_user_ids',      'property',    'users',        'user_id',      NULL),
+  ( 'view_alarms',      'msg_user_ids',      'property',    'users',        'user_id',      NULL),
+  ( 'view_alarms',      'mail_user_ids',     'property',    'users',        'user_id',      NULL)
+  ( 'view_alarms',      'node_id',           'property',    'nodes',        'node_id',      '{nodes, snmpdevices}'),
+  ( 'view_alarms',      'place_id',          'property',    'places',       'place_id',     NULL),
+  ( 'view_alarms',      'host_service_id',   'property',    'host_services','host_service_id', NULL);
 
 CREATE TABLE fkey_types (
     fkey_type_id        bigserial  NOT NULL PRIMARY KEY,
@@ -372,7 +380,8 @@ INSERT INTO fkey_types
   ( 'port_vlans',           'port_id',              'owner'         ),
   ( 'ipaddresses',          'port_id',              'owner'         ),
   ( 'table_shape_fields',   'table_shape_id',       'owner'         ),
-  ( 'table_shape_filters',  'table_shape_field_id', 'owner'         );
+  ( 'table_shape_filters',  'table_shape_field_id', 'owner'         ),
+  ( 'user_events',          'alarm_id',             'owner'         );
 
 \i gui.sql
 

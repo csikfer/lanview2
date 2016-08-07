@@ -22,7 +22,8 @@ enum eOwnTab {
     OWN_GSETUP,
     OWN_PARSER,
     OWN_OLALARM,
-    OWN_ERRCODES
+    OWN_ERRCODES,
+    OWN_NOALARM
 };
 
 /// @class cMenuAction

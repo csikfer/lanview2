@@ -99,7 +99,12 @@ void cRecordTree::init()
         initMaster();
         break;
     default:
-        EXCEPTION(ENOTSUPP);
+        EXCEPTION(ENOTSUPP, pTableShape->getId(_sTableShapeType),
+                  trUtf8("TABLE %1 SHAPE %2 TYPE : %3")
+                  .arg(pTableShape->getName(),
+                       pTableShape->getName(_sTableName),
+                       pTableShape->getName(_sTableShapeType))
+                  );
     }
     refresh();
     connect(pTreeView, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(modifyByIndex(QModelIndex)));

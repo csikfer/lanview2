@@ -182,6 +182,25 @@ public:
 };
 
 /* ---------------------------------------------------------------- */
+enum eUserEventType {
+    UE_INVALID = -1,
+    UE_NOTICE,
+    UE_VIEW,
+    UE_ACKNOWLEDGE,
+    UE_SENDMESSAGE,
+    UE_SENDMAIL
+};
+
+EXT_ int userEventType(const QString& _n, eEx __ex = EX_ERROR);
+EXT_ const QString& userEventType(int _i, eEx __ex = EX_ERROR);
+
+class LV2SHARED_EXPORT cUserEvent  : public cRecord {
+    CRECORD(cUserEvent);
+public:
+    static qlonglong insert(QSqlQuery &q, qlonglong _uid, qlonglong _aid, eUserEventType _et, const QString &_m = QString());
+};
+
+/* ---------------------------------------------------------------- */
 class LV2SHARED_EXPORT cAlarm  : public cRecord {
     CRECORD(cAlarm);
 public:

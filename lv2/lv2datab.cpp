@@ -3741,7 +3741,7 @@ int cRecord::updateFieldByNames(QSqlQuery& q, const QStringList& _nl, const QStr
 {
     int r = 0;
     QString nfn = nameName();
-    static const QString sql = QString("UPDATE %1 SET %2 = ? WHERE %3 = ?").arg(fullTableNameQ(), _fn, nfn);
+    const QString sql = QString("UPDATE %1 SET %2 = ? WHERE %3 = ?").arg(fullTableNameQ(), _fn, nfn);
     int ix = toIndex(_fn);
     const cColStaticDescr& cd = colDescr(ix);
     QVariant v;
@@ -3762,7 +3762,7 @@ int cRecord::updateFieldByIds(QSqlQuery& q, const QList<qlonglong>& _il, const Q
 {
     int r = 0;
     QString ifn = idName();
-    static const QString sql = QString("UPDATE %1 SET %2 = ? WHERE %3 = ?").arg(fullTableNameQ(), _fn, ifn);
+    const QString sql = QString("UPDATE %1 SET %2 = ? WHERE %3 = ?").arg(fullTableNameQ(), _fn, ifn);
     int ix = toIndex(_fn);
     const cColStaticDescr& cd = colDescr(ix);
     QVariant v;

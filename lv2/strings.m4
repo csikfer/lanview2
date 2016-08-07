@@ -469,7 +469,17 @@ dnl host_service_logs, host_service_noalarms
 STRDEF(HostServiceCharts, "host_service_charts")
  STRDEF(RrdFileName, "rrd_file_name")
  dnl ...
-dnl host_service_vars
+dnl host_service_vars ...
+STRDEF(UserEvents, "user_events")
+ STRDEF(UserEventId, "user_event_id")
+ dnl date_of user_id alarm_id
+ STRDEF(EventType, "event_type")
+  STRDEF(Notice, "notice")
+  STRDEF(View, "view");
+  STRDEF(Acknowledge, "acknowledge")
+  STRDEF(Sendmessage, "sendmessage")
+  STRDEF(Sendmail, "sendmail")
+ STRDEF(UserEventNote, "user_event_note")
 STRDEF(Alarms, "alarms")
  STRDEF(AlarmId, "alarm_id")
  dnl host_service_id
@@ -482,13 +492,15 @@ STRDEF(Alarms, "alarms")
  STRDEF(SuperiorAlarmId, "superior_alarm_id")
  STRDEF(Noalrm, "noalarm")
  dnl end_time
- STRDEF(MsgTime, "msg_time")
- STRDEF(AlarmTime, "alarm_time")
- STRDEF(NoticeTime, "notice_time")
- STRDEF(NoticeUserId, "notice_user_id")
- STRDEF(AckTime, "ack_time")
- STRDEF(AckUserId, "ack_user_id")
- STRDEF(AckMsg, "ack_msg")
+STRDEF(ViewAlarms, "view_alarms")
+ STRDEF(ViewAlarmId, "view_alarm_id")
+ dnl host_service_id node_id place_id SuperiorAlarmId begin_time end_time first_status max_status last_status
+ STRDEF(Msg, "msg")
+ STRDEF(NoticeUserIds, "notice_user_ids")
+ STRDEF(ViewUserIds, "view_user_ids")
+ STRDEF(AckUserIds, "ack_user_ids")
+ STRDEF(MsgUserIds, "msg_user_ids")
+ STRDEF(MailUserIds, "mail_user_ids")
 STRDEF(Arps, "arps")
  STRDEF(IpAddress, "ipaddress")
  dnl hwaddress, first_time, last_time

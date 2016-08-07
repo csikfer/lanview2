@@ -55,7 +55,7 @@ CREATE TYPE usereventtype AS ENUM ('notice', 'view', 'acknowledge', 'sendmessage
 COMMENT ON TYPE usereventtype IS 'User Event Types';
 
 CREATE TABLE user_events (
-    user_events_id      bigserial       PRIMARY KEY,
+    user_event_id       bigserial       PRIMARY KEY,
     date_of             timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     user_id             bigint          NOT NULL
         REFERENCES users(user_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE,
@@ -431,9 +431,15 @@ CREATE VIEW view_alarms AS
     a.last_status,
     alarm_message(host_service_id, max_status)                  AS msg,
     COALESCE(hs.offline_group_ids, s.offline_group_ids)         AS offline_group_ids,
-    COALESCE(hs.online_group_ids, s.online_group_ids)           AS online_group_ids
+    COALESCE(hs.online_group_ids,  s.online_group_ids)          AS online_group_ids,
+    ARRAY(SELECT user_id FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'notice')        AS notice_user_ids,
+    ARRAY(SELECT user_id FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'view')          AS view_user_ids,
+    ARRAY(SELECT user_id FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'acknowledge')   AS ack_user_ids,
+    ARRAY(SELECT user_id FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'sendmessage')   AS msg_user_ids,
+    ARRAY(SELECT user_id FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'sendmail')      AS mail_user_ids
     FROM alarms        AS a
     JOIN host_services AS hs USING(host_service_id)
     JOIN services      AS s  USING(service_id)
+    JOIN nodes         AS n  USING(node_id)
     WHERE NOT a.noalarm;
     

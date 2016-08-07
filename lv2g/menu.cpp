@@ -2,6 +2,7 @@
 #include "setup.h"
 #include "gsetupwidget.h"
 #include "gparse.h"
+#include "setnoalarm.h"
 #include "apierrcodes.h"
 
 cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidget * par, eEx __ex)
@@ -64,6 +65,10 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidge
         else if (0 == feature.compare("errcodes", Qt::CaseInsensitive)) {    // "errcodes"   API hibakódok
             ownType = OWN_ERRCODES;
             rights = cErrcodesWidget::rights;
+        }
+        else if (0 == feature.compare("noalarm", Qt::CaseInsensitive)) {     // "noalarm"   Riasztás tiltások beállítása
+            ownType = OWN_NOALARM;
+            rights = cSetNoAlarm::rights;
         }
         else {
             if (__ex) EXCEPTION(ENONAME, -1, feature);
@@ -135,13 +140,14 @@ void cMenuAction::initRecordTable()
 
 A menüben az "own=<típus>" stringgel lehet megadni a properties mezőben megjelenítő típusát.
 A jelenleg implementállt lehetőségek:
-| Típus név | Konstans név | Objektum név    | Funkció                  |
-|-----------|--------------|-----------------|--------------------------|
-| setup     | OWN_SETUP    | cSetupWidget    | Alapbeállítások megadása |
-| gsetup    | OWN_GSETUP   | cGSetupWidget   | Megjelenítési beállítások|
-| parser    | OWN_PARSER   | cParseWidget    | A parser hvása           |
-| olalarm   | OWN_OLALARM  | cOnlineAlarm    | OnLine riasztások        |
-| errcodes  | OWN_ERRCODES | cErrcodesWidget | API hibakódok listája    |
+| Típus név | Konstans név | Objektum név    | Funkció                     |
+|-----------|--------------|-----------------|-----------------------------|
+| setup     | OWN_SETUP    | cSetupWidget    | Alapbeállítások megadása    |
+| gsetup    | OWN_GSETUP   | cGSetupWidget   | Megjelenítési beállítások   |
+| parser    | OWN_PARSER   | cParseWidget    | A parser hvása              |
+| olalarm   | OWN_OLALARM  | cOnlineAlarm    | OnLine riasztások           |
+| errcodes  | OWN_ERRCODES | cErrcodesWidget | API hibakódok listája       |
+| noalarm   | OWN_NOALARM  | cSetNoAlarm     | Riasztás tiltások beállítása|
  */
 void cMenuAction::initOwn()
 {
@@ -160,6 +166,9 @@ void cMenuAction::initOwn()
         break;
     case OWN_ERRCODES:
         pOwnTab = new cErrcodesWidget(pTabWidget);
+        break;
+    case OWN_NOALARM:
+        pOwnTab = new cSetNoAlarm(pTabWidget);
         break;
     default:
         EXCEPTION(EPROGFAIL);

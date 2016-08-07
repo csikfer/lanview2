@@ -437,6 +437,53 @@ QString cHostService::names(QSqlQuery& q, qlonglong __id)
 }
 
 /* ----------------------------------------------------------------- */
+int userEventType(const QString& _n, eEx __ex)
+{
+    if (0 == _n.compare(_sNotice,      Qt::CaseInsensitive)) return UE_NOTICE;
+    if (0 == _n.compare(_sView,        Qt::CaseInsensitive)) return UE_VIEW;
+    if (0 == _n.compare(_sAcknowledge, Qt::CaseInsensitive)) return UE_ACKNOWLEDGE;
+    if (0 == _n.compare(_sSendmessage, Qt::CaseInsensitive)) return UE_SENDMESSAGE;
+    if (0 == _n.compare(_sSendmail,    Qt::CaseInsensitive)) return UE_SENDMAIL;
+    if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, 0, _n);
+    return UE_INVALID;
+}
+
+const QString& userEventType(int _i, eEx __ex)
+{
+    switch(_i) {
+    case UE_NOTICE:         return _sNotice;
+    case UE_VIEW:           return _sView;
+    case UE_ACKNOWLEDGE:    return _sAcknowledge;
+    case UE_SENDMESSAGE:    return _sSendmessage;
+    case UE_SENDMAIL:       return _sSendmail;
+    default:
+        if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, _i);
+    }
+    return _sNul;
+}
+
+CRECCNTR(cUserEvent)
+CRECDEFD(cUserEvent)
+const cRecStaticDescr& cUserEvent::descr() const
+{
+    if (initPDescr<cUserEvent>(_sUserEvents)) {
+        CHKENUM(_sEventType, userEventType);
+    }
+    return *_pRecordDescr;
+}
+
+qlonglong cUserEvent::insert(QSqlQuery &q, qlonglong _uid, qlonglong _aid, eUserEventType _et, const QString& _m)
+{
+    cUserEvent ue;
+    ue.setId(_sUserId,  _uid);
+    ue.setId(_sAlarmId, _aid);
+    ue.setId(_sEventType,_et);
+    if (!_m.isNull()) ue.setName(_sUserEventNote, _m);
+    ue.cRecord::insert(q);
+    return ue.getId();
+}
+
+/* ----------------------------------------------------------------- */
 DEFAULTCRECDEF(cAlarm, _sAlarms)
 
 /* ----------------------------------------------------------------- */

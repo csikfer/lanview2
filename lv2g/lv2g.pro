@@ -32,7 +32,8 @@ SOURCES += \
     apierrcodes.cpp \
     record_link.cpp \
     record_link_model.cpp \
-    gsetupwidget.cpp
+    gsetupwidget.cpp \
+    setnoalarm.cpp
 
 HEADERS +=\
     lv2g_global.h \
@@ -57,7 +58,8 @@ HEADERS +=\
     apierrcodes.h \
     record_link.h \
     record_link_model.h \
-    gsetupwidget.h
+    gsetupwidget.h \
+    setnoalarm.h
 
 FORMS += \
     column_filter.ui \
@@ -73,7 +75,8 @@ FORMS += \
     apierrcodes.ui \
     fkeyarrayed.ui \
     gsetup.ui \
-    edit_field.ui
+    edit_field.ui \
+    noalarm.ui
 INCLUDEPATH += ../lv2
 unix:LIBS += -lsnmp
 msvc:LIBS += -lSecur32

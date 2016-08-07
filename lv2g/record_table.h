@@ -369,7 +369,7 @@ public:
     /// destruktor
     ~cRecordTable();
     cRecordTableModel *pTableModel() const { return static_cast<cRecordTableModel *>(pModel); }
-    const cRecord *recordAt(int i, eEx __ex = EX_ERROR) const {
+    cRecord *recordAt(int i, eEx __ex = EX_ERROR) const {
         if (!isContIx(pTableModel()->records(), i)) {
             if (__ex != EX_IGNORE) EXCEPTION(ENOINDEX, i);
             return NULL;

@@ -640,6 +640,21 @@ QString cTableShape::emFieldNotFound(const QString& __f)
     return trUtf8("A %1 nevű shape objektumban nincs %2 nevű mező objektum").arg(getName(), __f);
 }
 
+QString cTableShape::getFieldDialogTitle(QSqlQuery& q, const QString& _sn, const QString& _fn, eEx __ex)
+{
+    cTableShape ts;
+    if (!ts.fetchByName(q, _sn)) {
+        if (__ex > EX_ERROR) EXCEPTION(EFOUND, 0, _sn);
+        return _fn;
+    }
+    cTableShapeField fs;
+    fs.setId(_sTableShapeId, ts.getId());
+    fs.setName(_fn);
+    if (fs.completion(q) == 1) return fs.getName(_sDialogTitle);
+    if (__ex > EX_ERROR) EXCEPTION(EFOUND, 0, _sn);
+    return _fn;
+}
+
 
 /* ------------------------------ cTableShapeField ------------------------------ */
 

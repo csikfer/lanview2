@@ -402,12 +402,21 @@ TABLE SHAPE timeperiods "Időintervallumok" {
 // ***************************************************************************************
 // events
 
+TABLE SHAPE user_events "Felhasználói események" {
+    SET DEFAULTS;
+    TABLE TYPE READ ONLY, CHILD;
+    FIELD date_of ORD desc, asc, no;
+    FIELD user_id, event_type ORD no, asc, desc;
+    FIELD date_of, user_id, event_type, user_event_note ADD FILTERS begin, like, similar, regexp, regexpi;
+}
+
 TABLE alarms SHAPE alarms_tree "Riasztások (fa)" {
     SET DEFAULTS;
-    TABLE TYPE TREE, READ ONLY;
+    TABLE TYPE TREE, READ ONLY, OWNER;
+    RIGHT SHAPE user_events;
     TABLE                   TITLE "Riasztási események", "Riasztási esemény",;
     FIELD alarm_id          TITLE "ID",            "Riasztás egyedi azonosító kódja";
-    FIELD host_service_id   TITLE "host:service", "Szolgálltatás példány";
+    FIELD host_service_id   TITLE "host:service",  "Szolgálltatás példány";
     FIELD daemon_id         TITLE "daemon",        "Lekérdező daemon";
     FIELD first_status      TITLE "kezdő áll.",    "Állapot a risztás kezdetekor";
     FIELD max_status        TITLE "krit. áll.",    "Legkritikusabb állapot a riasztás alatt";
@@ -416,47 +425,32 @@ TABLE alarms SHAPE alarms_tree "Riasztások (fa)" {
     FIELD superior_alarm_id FLAG ON HIDE;
     FIELD noalarm           TITLE "letiltva",      "Az értesítés letiltása";
     FIELD end_time          TITLE "vége",          "A kritikus esemény vége";
-    FIELD msg_time          TITLE "uzenet küldve", "A riasztási üzenet elküldésének az időpontja";
-    FIELD alarm_time        TITLE "on-line ért.",  "Az on-line riasztás időpontja";
-    FIELD notice_time       TITLE "megnézte",      "Az első on-line riasztás állapot lekérdezésének az ideje.";
-    FIELD notice_user_id    TITLE "aki megnézte",  "Az első on-line riasztási állapot lekérdezéső felhasználó";
-    FIELD ack_time          TITLE "nyugtázva",     "A riasztás nyugtázásának az időpontja";
-    FIELD ack_user_id       TITLE "aki nyugtázta", "A riasztást nyugtázó felhasználó";
-    FIELD ack_msg           TITLE "megjegyzés",    "A nyugtázó megjegyzése";
-    FIELD event_note, ack_msg FLAG ON HUGE;
-
+    FIELD event_note FLAG ON HUGE;
     FIELD begin_time ORD desc, asc, no;
-    FIELD end_time, msg_time, alarm_time, notice_time, notice_user_id, ack_time, ack_user_id, ack_msg ORD no, desc, asc;
+    FIELD end_time ORD no, desc, asc;
     
 }
 
 TABLE SHAPE alarms "Riasztások (tábla)" {
     SET DEFAULTS;
-    TABLE TYPE ON READ ONLY;
+    TABLE TYPE READ ONLY, OWNER;
+    RIGHT SHAPE user_events;
     TABLE                   TITLE "Riasztási események", "Riasztási esemény",;
     FIELD alarm_id          TITLE "ID",            "Riasztás egyedi azonosító kódja";
-    FIELD host_service_id   TITLE "host:service", "Szolgálltatás példány";
+    FIELD host_service_id   TITLE "host:service",  "Szolgálltatás példány";
     FIELD daemon_id         TITLE "daemon",        "Lekérdező daemon";
     FIELD first_status      TITLE "kezdő áll.",    "Állapot a risztás kezdetekor";
     FIELD max_status        TITLE "krit. áll.",    "Legkritikusabb állapot a riasztás alatt";
     FIELD begin_time        TITLE "kezdete",       "A kritikus esemény kezdete";
     FIELD event_note        TITLE "üzenet",        "A riasztást dezektáló folyamat üzenete";
-    FIELD superior_alarm_id TITLE "Függ.Figy.",    "Felsőbb szintű riasztás";
+    FIELD superior_alarm_id TITLE "Superior",@;
     FIELD noalarm           TITLE "letiltva",      "Az értesítés letiltása";
     FIELD end_time          TITLE "vége",          "A kritikus esemény vége";
-    FIELD msg_time          TITLE "uzenet küldve", "A riasztási üzenet elküldésének az időpontja";
-    FIELD alarm_time        TITLE "on-line ért.",  "Az on-line riasztás időpontja";
-    FIELD notice_time       TITLE "megnézte",      "Az első on-line riasztás állapot lekérdezésének az ideje.";
-    FIELD notice_user_id    TITLE "aki megnézte",  "Az első on-line riasztási állapot lekérdezéső felhasználó";
-    FIELD ack_time          TITLE "nyugtázva",     "A riasztás nyugtázásának az időpontja";
-    FIELD ack_user_id       TITLE "aki nyugtázta", "A riasztást nyugtázó felhasználó";
-    FIELD ack_msg           TITLE "megjegyzés",    "A nyugtázó megjegyzése";
-    FIELD event_note, ack_msg FLAG ON HUGE;
     
-    FIELD host_service_id, daemon_id, max_status, event_note, noalarm, notice_user_id, ack_user_id, ack_msg ADD FILTERS begin, like, similar, regexp, regexpi;
-    FIELD begin_time, end_time, msg_time, alarm_time, notice_time, ack_time ADD FILTERS big, litle, interval;
+    FIELD host_service_id, daemon_id, max_status, event_note, noalarm ADD FILTERS begin, like, similar, regexp, regexpi;
+    FIELD begin_time, end_time ADD FILTERS big, litle, interval;
     FIELD begin_time ORD desc, asc, no;
-    FIELD end_time, msg_time, alarm_time, notice_time, notice_user_id, ack_time, ack_user_id, ack_msg ORD no, desc, asc;
+    FIELD end_time ORD no, desc, asc;
 }
 
 TABLE SHAPE db_errs "Adatbázis hiba napló" {
@@ -655,7 +649,7 @@ TABLE SHAPE table_shapes "Adattábla megjelenítő leíró" {
     FIELD schema_name           TITLE "Az adattábla séma neve",@;
     FIELD table_inherit_type    TITLE "Az ősök és/vagy leszármazottak",@;
     FIELD inherit_table_names   TITLE "A megjelenített rokonok",@;
-    FIELD refine                TITLE "Szűrő","Konstans SQL szűrő kifejezés";
+    FIELD refine              { TITLE "Szűrő","Konstans SQL szűrő kifejezés"; FLAG ON HUGE; }
     FIELD features              TITLE "Egyébb modosítók","Egyébb modosítók (features)";
     FIELD right_shape_ids       TITLE "Jobb oldali meírók","Jobb oldali alárendelt meírók";
     FIELD auto_refresh          TITLE "Autóm.frissítés","Táblázat automatikus frissítésének időköze";
@@ -746,7 +740,7 @@ TABLE SHAPE places "Helyiségek (tábla)" {
     TABLE TYPE MEMBER;
     RIGHT SHAPE place_groups;
     TABLE FEATURES ":map=get_parent_image:";
-    TABLE TITLE "Helyek, helyiségek", "Hely helyiség",,"Csoportoknak tagja", "Csoportoknak nem tagja";
+    TABLE TITLE "Helyek, helyiségek", "Hely, helyiség",,"Csoportoknak tagja", "Csoportoknak nem tagja";
     FIELD place_name ORD asc,desc,no;
     FIELD place_name, place_note, place_type, parent_id, tels ADD FILTERS begin, like, similar, regexp, regexpi;
 }
