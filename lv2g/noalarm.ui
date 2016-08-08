@@ -6,14 +6,21 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>940</width>
-    <height>673</height>
+    <width>1032</width>
+    <height>791</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,2,0,0,0,0">
+  <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0,10,0,0,0,0">
+   <item>
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string>Szűrési feltételek (és kapcsolat)</string>
+     </property>
+    </widget>
+   </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_4">
      <item>
@@ -219,7 +226,7 @@
          <item>
           <widget class="QPushButton" name="pushButtonFetch">
            <property name="enabled">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
            <property name="text">
             <string>Lekérdez</string>
@@ -294,11 +301,25 @@
     </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_2">
-     <item>
-      <layout class="QVBoxLayout" name="verticalLayoutType">
+    <layout class="QGridLayout" name="gridLayout_2">
+     <item row="0" column="0">
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>Beállítandó állapot</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="3">
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>További szűrés, az aktuális állpotra</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="3">
+      <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
-        <widget class="QRadioButton" name="radioButtonOff">
+        <widget class="QCheckBox" name="checkBoxOff">
          <property name="text">
           <string>Nincs tiltás</string>
          </property>
@@ -308,110 +329,175 @@
         </widget>
        </item>
        <item>
-        <widget class="QRadioButton" name="radioButtonOn">
+        <widget class="QCheckBox" name="checkBoxOn">
          <property name="text">
-          <string>Risztás(ok) permanens tiltása</string>
+          <string>Riasztás permanensen tiltva</string>
          </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QRadioButton" name="radioButtonTo">
-         <property name="text">
-          <string>Tiltás(ok) megadott időpontig</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QRadioButton" name="radioButtonFrom">
-         <property name="text">
-          <string>Tiltás(ok) megadott időponttól</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QRadioButton" name="radioButtonFromTo">
-         <property name="text">
-          <string>Tiltás(ok) megadott időíntervallumban</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <layout class="QVBoxLayout" name="verticalLayoutData">
-       <item>
-        <widget class="QLabel" name="labelFrom">
-         <property name="text">
-          <string>Tiltás kezdetének az időpontja :</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QDateTimeEdit" name="dateTimeEditFrom">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="currentSection">
-          <enum>QDateTimeEdit::HourSection</enum>
-         </property>
-         <property name="calendarPopup">
+         <property name="checked">
           <bool>true</bool>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="Line" name="line">
+        <widget class="QCheckBox" name="checkBoxTo">
+         <property name="text">
+          <string>Riasztás tiltva egy megadott időpontig</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="checkBoxFrom">
+         <property name="text">
+          <string>Riasztás tiltva egy magdott időponttól</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="checkBoxFromTo">
+         <property name="text">
+          <string>Riasztás tiltva megadott időpontok között.</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item row="1" column="0">
+      <layout class="QHBoxLayout" name="horizontalLayout_2">
+       <item>
+        <widget class="Line" name="line_5">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QLabel" name="labelTo">
-         <property name="text">
-          <string>Tiltás végének az időpontja :</string>
-         </property>
-        </widget>
+        <layout class="QVBoxLayout" name="verticalLayoutType">
+         <item>
+          <widget class="QRadioButton" name="radioButtonOff">
+           <property name="text">
+            <string>Nincs tiltás</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="radioButtonOn">
+           <property name="text">
+            <string>Risztás(ok) permanens tiltása</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="radioButtonTo">
+           <property name="text">
+            <string>Tiltás(ok) megadott időpontig</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="radioButtonFrom">
+           <property name="text">
+            <string>Tiltás(ok) megadott időponttól</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="radioButtonFromTo">
+           <property name="text">
+            <string>Tiltás(ok) megadott időíntervallumban</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
-        <widget class="QDateTimeEdit" name="dateTimeEditTo">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="dateTime">
-          <datetime>
-           <hour>0</hour>
-           <minute>0</minute>
-           <second>0</second>
-           <year>2000</year>
-           <month>1</month>
-           <day>1</day>
-          </datetime>
-         </property>
-         <property name="currentSection">
-          <enum>QDateTimeEdit::HourSection</enum>
-         </property>
-         <property name="calendarPopup">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="verticalSpacer">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
+        <layout class="QVBoxLayout" name="verticalLayoutData">
+         <item>
+          <widget class="QLabel" name="labelFrom">
+           <property name="text">
+            <string>Tiltás kezdetének az időpontja :</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDateTimeEdit" name="dateTimeEditFrom">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="currentSection">
+            <enum>QDateTimeEdit::HourSection</enum>
+           </property>
+           <property name="calendarPopup">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="Line" name="line">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="labelTo">
+           <property name="text">
+            <string>Tiltás végének az időpontja :</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDateTimeEdit" name="dateTimeEditTo">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="dateTime">
+            <datetime>
+             <hour>0</hour>
+             <minute>0</minute>
+             <second>0</second>
+             <year>2000</year>
+             <month>1</month>
+             <day>1</day>
+            </datetime>
+           </property>
+           <property name="currentSection">
+            <enum>QDateTimeEdit::HourSection</enum>
+           </property>
+           <property name="calendarPopup">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
        </item>
       </layout>
      </item>
-     <item>
+     <item row="1" column="1">
       <spacer name="horizontalSpacer_3">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -424,10 +510,24 @@
        </property>
       </spacer>
      </item>
+     <item row="1" column="2">
+      <widget class="Line" name="line_8">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="2">
+      <widget class="Line" name="line_9">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>
-    <widget class="Line" name="line_5">
+    <widget class="Line" name="line_10">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
@@ -485,22 +585,6 @@
  <resources/>
  <connections>
   <connection>
-   <sender>radioButtonPlacePattern</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>lineEditPlacePattern</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>55</x>
-     <y>111</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>210</x>
-     <y>114</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>radioButtonPlaceSelect</sender>
    <signal>toggled(bool)</signal>
    <receiver>comboBoxPlaceSelect</receiver>
@@ -513,22 +597,6 @@
     <hint type="destinationlabel">
      <x>210</x>
      <y>147</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>radioButtonNodePattern</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>lineEditNodePattern</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>669</x>
-     <y>50</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>836</x>
-     <y>53</y>
     </hint>
    </hints>
   </connection>
@@ -561,22 +629,6 @@
     <hint type="destinationlabel">
      <x>525</x>
      <y>86</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>radioButtonServicePattern</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>lineEditServicePattern</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>358</x>
-     <y>50</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>525</x>
-     <y>53</y>
     </hint>
    </hints>
   </connection>

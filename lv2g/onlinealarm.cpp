@@ -5,6 +5,8 @@ const enum ePrivilegeLevel cOnlineAlarm::rights = PL_INDALARM;
 cOnlineAlarm::cOnlineAlarm(QWidget *par) : cOwnTab(par)
 {
     pActRecord = NULL;
+    pSound = new QSound(lv2g::getInstance()->sounFileAlarm, this);
+    pSound->setLoops(QSound::Infinite);
     pq = newQuery();
     isAdmin = lanView::user().privilegeLevel() >= PL_ADMIN;
 
@@ -258,6 +260,8 @@ void cOnlineAlarm::noAckDataReloded(const tRecords& _recs)
             isAlarm = true;
         }
     }
+    if (isAlarm) pSound->play();
+    else         pSound->stop();
 }
 
 

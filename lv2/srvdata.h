@@ -64,6 +64,20 @@ public:
     STATICIX(cService, ixProtocolId)
 };
 
+enum eNoalarmType {
+    NAT_INVALID = -1,
+    NAT_OFF     =  0,
+    NAT_ON,
+    NAT_TO,
+    NAT_FROM,
+    NAT_FROM_TO
+};
+
+EXT_ int noalarmtype(const QString& _n, enum eEx __ex = EX_ERROR);
+EXT_ const QString& noalarmtype(int _e, enum eEx __ex = EX_ERROR);
+
+
+
 class LV2SHARED_EXPORT cHostService : public cRecord {
     template <class S> friend void _SplitMagicT(S& o, enum eEx __ex = EX_ERROR);
     template <class S> friend void _Magic2PropT(S& o);

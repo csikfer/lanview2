@@ -35,6 +35,7 @@ private:
     QPushButton *   pAckButton;     /// A nyugtázás gomb
     QPushButton *   pAckAllButton;  /// Több sor nyugtázás gomb (Admin)
     cRecord  *      pActRecord;     /// A kiválasztott rekord a nem nyugtázott riasztások táblában
+    QSound *        pSound;
 private slots:
     void curRowChgNoAck(QItemSelection, QItemSelection);
     void curRowChgAckAct(QItemSelection sel, QItemSelection);

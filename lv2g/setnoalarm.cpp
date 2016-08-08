@@ -2,15 +2,27 @@
 
 const enum ePrivilegeLevel cSetNoAlarm::rights = PL_OPERATOR;
 
-enum filterType {
+enum eFilterButtonId {
     FT_PATTERN, FT_SELECT
+};
+
+enum eTableColumnIx {
+    TC_HOST_SERVICE,
+    TC_NOALARM,
+    TC_FROM,
+    TC_TO,
+    TC_CHECK_BOX,
+    TC_COUNT
 };
 
 cSetNoAlarm::cSetNoAlarm(QWidget *par)
     : cOwnTab(par)
 {
+    pq  = newQuery();
+    pq2 = newQuery();
     pUi = new Ui_setNoAlarm;
     pUi->setupUi(this);
+    if (TC_COUNT != pUi->tableWidget->columnCount()) EXCEPTION(EDATA);
 
     pButtonGroupPlace   = new QButtonGroup(this);
     pButtonGroupPlace->addButton(pUi->radioButtonPlacePattern, FT_PATTERN);
@@ -27,6 +39,13 @@ cSetNoAlarm::cSetNoAlarm(QWidget *par)
     pButtonGroupNode->addButton(pUi->radioButtonNodeSelect,  FT_SELECT);
     pUi->radioButtonNodePattern->setChecked(true);
 
+    pButtonGroupType   = new QButtonGroup(this);
+    pButtonGroupType->addButton(pUi->radioButtonOff,    NAT_OFF);
+    pButtonGroupType->addButton(pUi->radioButtonOn,     NAT_ON);
+    pButtonGroupType->addButton(pUi->radioButtonTo,     NAT_TO);
+    pButtonGroupType->addButton(pUi->radioButtonFrom,   NAT_FROM);
+    pButtonGroupType->addButton(pUi->radioButtonFromTo, NAT_FROM_TO);
+
     pUi->dateTimeEditFrom->setMinimumDate(QDate::currentDate());
     pUi->dateTimeEditTo->setMinimumDate(QDate::currentDate());
 
@@ -41,26 +60,233 @@ cSetNoAlarm::cSetNoAlarm(QWidget *par)
     connect(pUi->radioButtonTo,     SIGNAL(toggled(bool)), this,SLOT(to(bool)));
     connect(pUi->radioButtonFrom,   SIGNAL(toggled(bool)), this,SLOT(from(bool)));
     connect(pUi->radioButtonFromTo, SIGNAL(toggled(bool)), this,SLOT(fromTo(bool)));
+
+    pPlaceModel = new cRecordListModel(cPlace().descr(), this);
+    pUi->comboBoxPlaceSelect->setModel(pPlaceModel);
+    pPlaceModel->setFilter();
+
+    pNodeModel = new cRecordListModel(cNode().descr(), this);
+    pUi->comboBoxNodeSelect->setModel(pNodeModel);
+    pNodeModel->setFilter();
+
+    pServiceModel = new cRecordListModel(cService().descr(), this);
+    pUi->comboBoxServiceSelect->setModel(pServiceModel);
+    pServiceModel->setFilter();
+}
+
+cSetNoAlarm::~cSetNoAlarm()
+{
+    delete pq;
+    delete pq2;
 }
 
 
 void cSetNoAlarm::fetch()
 {
+    QString sql =
+            "SELECT"
+                " hs.host_service_id, "                             // ID
+                " host_service_id2name(hs.host_service_id) as hsn, "// TC_HOST_SERVICE
+                " hs.noalarm_flag,"                                 // TC_NOALARM
+                " hs.noalarm_from,"                                 // TC_FROM
+                " hs.noalarm_to"                                    // TC_TO
+            " FROM host_services AS hs";
+    QStringList     where;
+    QVariantList    bind;
+    bool            empty = false;
+    bool            node  = false;     // nodes is join
 
+    bool idOff    = pUi->checkBoxOff->isChecked();
+    bool idOn     = pUi->checkBoxOn->isChecked();
+    bool idTo     = pUi->checkBoxTo->isChecked();
+    bool idFrom   = pUi->checkBoxFrom->isChecked();
+    bool idFromTo = pUi->checkBoxFromTo->isChecked();
+    empty = !(idOff || idOn || idTo || idFrom || idFromTo);
+    if (!empty && !(idOff && idOn && idTo && idFrom && idFromTo)) {
+        if (idOff)  where << "hs.noalarm_flag = 'off' ";
+        if (idOn)   where << "hs.noalarm_flag = 'on' ";
+        if (idTo)   where << "hs.noalarm_flag = 'to' ";
+        if (idFrom) where << "hs.noalarm_flag = 'from' ";
+        if (idFrom) where << "hs.noalarm_flag = 'from_to' ";
+        QString w = where.join("OR ");
+        if (w.size() > 1) w = "(" + w + ") ";
+        where.clear();
+        where << w;
+    }
+
+    // Filter by place
+    if (!empty && pUi->checkBoxPlace->isChecked()) {
+        node = true;
+        if (pUi->radioButtonPlacePattern->isChecked()) {
+            sql +=  " JOIN nodes  AS n USING(node_id)"
+                    " JOIN places AS p USING(place_id)";
+            where << " p.place_name LIKE ?";
+            bind  << pUi->lineEditPlacePattern->text();
+        }
+        else {
+            int i = pUi->comboBoxPlaceSelect->currentIndex();
+            qlonglong id = pPlaceModel->atId(i);
+            if (id == NULL_ID) empty = true;
+            else {
+                sql +=  " JOIN nodes  AS n USING(node_id)";
+                where << " n.place_id = ?";
+                bind  << id;
+                where << " is_parent_place(?, n.place_id)";
+                bind  << id;
+            }
+        }
+    }
+    // Filter by node
+    if (!empty && pUi->checkBoxNode->isChecked()) {
+        if (pUi->radioButtonNodePattern) {
+            if (!node) sql +=  " JOIN nodes AS n USING(node_id)";
+            where << " n.node_name LIKE ?";
+            bind  << pUi->lineEditNodePattern->text();
+        }
+        else {
+            int i = pUi->comboBoxNodeSelect->currentIndex();
+            qlonglong id = pNodeModel->atId(i);
+            if (id == NULL_ID) empty = true;
+            else {
+                where << " ns.node_id = ?";
+                bind  << id;
+            }
+        }
+    }
+    // Filter by service
+    if (!empty && pUi->checkBoxService->isChecked()) {
+        if (pUi->radioButtonServicePattern) {
+            sql +=  " JOIN services AS s USING(service_id)";
+            where << " s.service_name LIKE ?";
+            bind  << pUi->lineEditServicePattern->text();
+        }
+        else {
+            int i = pUi->comboBoxServiceSelect->currentIndex();
+            qlonglong id = pServiceModel->atId(i);
+            if (id == NULL_ID) empty = true;
+            else {
+                where << " ns.service_id = ?";
+                bind  << id;
+            }
+        }
+    }
+    idList.clear();
+    if (!empty) {
+        cHostService hs;
+        if (!where.isEmpty()) sql += " WHERE" + where.join(" AND");
+        sql += " ORDER BY hsn ASC";
+        if (!pq->prepare(sql)) SQLPREPERR(*pq, sql);
+        int i = 0;
+        foreach (QVariant v, bind) {
+            pq->bindValue(i, v);
+            ++i;
+        }
+        if (!pq->exec()) SQLQUERYERR(*pq);
+        if (pq->first()) {
+            QVariant v;
+            QString s;
+            QTableWidgetItem *pi;
+            const cColStaticDescr *pCd;
+            int row = 0;
+
+            do {
+                pUi->tableWidget->setRowCount(row + 1);
+
+                v = pq->value(0);                       // #0: ID
+                idList << v.toLongLong();
+
+                v = pq->value(1);                       // #1: TC_HOST_SERVICE
+                s = v.toString();
+                pi = new QTableWidgetItem(s);
+                pUi->tableWidget->setItem(row, TC_HOST_SERVICE, pi);
+
+                v = pq->value(2);                       // #2:  TC_NOALARM
+                pCd = &hs.colDescr(hs.toIndex(_sNoalarmFlag));
+                v = pCd->fromSql(v);
+                s = pCd->toView(*pq2, v);
+                pi = new QTableWidgetItem(s);
+                pUi->tableWidget->setItem(row, TC_NOALARM, pi);
+
+                v = pq->value(3);                       // #3:  TC_FROM
+                pCd = &hs.colDescr(hs.toIndex(_sNoalarmFrom));
+                v = pCd->fromSql(v);
+                s = pCd->toView(*pq2, v);
+                pi = new QTableWidgetItem(s);
+                pUi->tableWidget->setItem(row, TC_FROM, pi);
+
+                v = pq->value(4);                       // #4:  TC_TO
+                pCd = &hs.colDescr(hs.toIndex(_sNoalarmTo));
+                v = pCd->fromSql(v);
+                s = pCd->toView(*pq2, v);
+                pi = new QTableWidgetItem(s);
+                pUi->tableWidget->setItem(row, TC_TO, pi);
+
+                QCheckBox *pCb = new QCheckBox;
+                pCb->setChecked(true);
+                pi = new QTableWidgetItem();
+                pUi->tableWidget->setCellWidget(row, TC_CHECK_BOX, pCb);
+
+                row++;
+            } while (pq->next());
+            pUi->tableWidget->resizeColumnsToContents();
+            pUi->pushButtonAll->setDisabled(false);
+            pUi->pushButtonNone->setDisabled(false);
+            pUi->pushButtonSet->setDisabled(false);
+            return;
+        }
+        // empty
+    }
+    // EMPTY
+    pUi->tableWidget->setRowCount(0);
+    pUi->pushButtonAll->setDisabled(true);
+    pUi->pushButtonNone->setDisabled(true);
+    pUi->pushButtonSet->setDisabled(true);
 }
 
 void cSetNoAlarm::set()
 {
-
+    int rows = pUi->tableWidget->rowCount();
+    int nat  = pButtonGroupType->checkedId();
+    if (noalarmtype(nat, EX_IGNORE).isEmpty()) return;
+    cHostService hs;
+    QBitArray um = hs.mask(_sNoalarmFlag, _sNoalarmFrom, _sNoalarmTo, _sLastNoalarmMsg);
+    sqlBegin(*pq2);
+    for (int row = 0; row < rows; ++row) {
+        QCheckBox *pCb = dynamic_cast<QCheckBox *>(pUi->tableWidget->cellWidget(row, TC_CHECK_BOX));
+        if (pCb->isChecked()) {
+            pUi->tableWidget->selectRow(row);
+            hs.clear();
+            qlonglong id = idList.at(row);
+            hs.setId(id);
+            hs.setId(_sNoalarmFlag, nat);
+            if (nat == NAT_FROM || nat == NAT_FROM_TO) hs.set(_sNoalarmFrom, pUi->dateTimeEditFrom->dateTime());
+            if (nat == NAT_TO   || nat == NAT_FROM_TO) hs.set(_sNoalarmTo,   pUi->dateTimeEditTo->dateTime());
+            if (!cErrorMessageBox::condMsgBox(hs.tryUpdate(*pq2, false, um), this)) {
+                sqlRollback(*pq2);
+                return;
+            }
+        }
+    }
+    sqlEnd(*pq2);
+    fetch();
 }
 
 void cSetNoAlarm::all()
 {
-
+    int rows = pUi->tableWidget->rowCount();
+    for (int row = 0; row < rows; ++row) {
+        QCheckBox *pCb = dynamic_cast<QCheckBox *>(pUi->tableWidget->cellWidget(row, TC_CHECK_BOX));
+        pCb->setChecked(true);
+    }
 }
 
 void cSetNoAlarm::none()
 {
+    int rows = pUi->tableWidget->rowCount();
+    for (int row = 0; row < rows; ++row) {
+        QCheckBox *pCb = dynamic_cast<QCheckBox *>(pUi->tableWidget->cellWidget(row, TC_CHECK_BOX));
+        pCb->setChecked(false);
+    }
 
 }
 
@@ -97,4 +323,19 @@ void cSetNoAlarm::fromTo(bool f)
     if (!f) return;
     pUi->dateTimeEditFrom->setEnabled(true);
     pUi->dateTimeEditTo->setEnabled(true);
+}
+
+void cSetNoAlarm::editedPlacePattern(const QString& text)
+{
+    pPlaceModel->setFilter(text);
+}
+
+void cSetNoAlarm::editedNodePattern(const QString& text)
+{
+    pNodeModel->setFilter(text);
+}
+
+void cSetNoAlarm::editedServicePattern(const QString& text)
+{
+    pServiceModel->setFilter(text);
 }

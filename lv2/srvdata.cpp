@@ -161,6 +161,32 @@ const cService& cService::service(QSqlQuery &__q, qlonglong __id, eEx __ex)
 
 /* ----------------------------------------------------------------- */
 
+int noalarmtype(const QString& _n, enum eEx __ex)
+{
+    if (0 == _n.compare(_sOff,    Qt::CaseInsensitive)) return NAT_OFF;
+    if (0 == _n.compare(_sOn,     Qt::CaseInsensitive)) return NAT_ON;
+    if (0 == _n.compare(_sTo,     Qt::CaseInsensitive)) return NAT_TO;
+    if (0 == _n.compare(_sFrom,   Qt::CaseInsensitive)) return NAT_FROM;
+    if (0 == _n.compare(_sFromTo, Qt::CaseInsensitive)) return NAT_FROM_TO;
+    if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, 0, _n);
+    return NAT_INVALID;
+}
+
+const QString& noalarmtype(int _e, enum eEx __ex)
+{
+    switch(_e) {
+    case NAT_OFF:       return _sOff;
+    case NAT_ON:        return _sOn;
+    case NAT_TO:        return _sTo;
+    case NAT_FROM:      return _sFrom;
+    case NAT_FROM_TO:   return _sFromTo;
+    default:
+        if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, _e);
+    }
+    return _sNul;
+}
+
+
 cHostService::cHostService() : cRecord()
 {
     _pFeatures = NULL;
@@ -189,6 +215,7 @@ int cHostService::_ixFeatures  = NULL_IX;
 const cRecStaticDescr&  cHostService::descr() const
 {
     if (initPDescr<cHostService>(_sHostServices)) {
+        CHKENUM(_sNoalarmFlag, noalarmtype)
         // Ez egy SWITCH tábla kell legyen ...
         if (_descr_cHostService().tableType() != TT_SWITCH_TABLE) EXCEPTION(EPROGFAIL, _descr_cHostService().tableType(), _descr_cHostService().toString());
         _ixFeatures = _descr_cHostService().toIndex(_sFeatures);

@@ -188,7 +188,8 @@ CREATE TABLE host_services (
     act_alarm_log_id        bigint         DEFAULT NULL,   -- REFERENCES alarms(alarm_id) lsd.: alarm.sql
     last_alarm_log_id       bigint         DEFAULT NULL,   -- REFERENCES alarms(alarm_id) lsd.: alarm.sql
 -- Állapot vége
-    deleted                 boolean        NOT NULL DEFAULT FALSE
+    deleted                 boolean        NOT NULL DEFAULT FALSE,
+    last_noalarm_msg        text           DEFAULT NULL
 );
 ALTER TABLE host_services OWNER TO lanview2;
 ALTER TABLE host_services ADD CONSTRAINT no_self_superior CHECK(host_service_id <> superior_host_service_id);
@@ -289,7 +290,11 @@ CREATE TABLE host_service_noalarms (
     noalarm_flag            noalarmtype NOT NULL,
     noalarm_from            timestamp   DEFAULT NULL,
     noalarm_to              timestamp   DEFAULT NULL,
-    user_id                 bigint      DEFAULT NULL REFERENCES users(user_id) MATCH SIMPLE
+    noalarm_flag_old        noalarmtype NOT NULL,
+    noalarm_from_old        timestamp   DEFAULT NULL,
+    noalarm_to_old          timestamp   DEFAULT NULL,
+    user_id                 bigint      DEFAULT NULL REFERENCES users(user_id) MATCH SIMPLE,
+    msg                     text        DEFAULT NULL
 );
 CREATE INDEX host_service_noalarms_date_of_index ON host_service_noalarms (date_of);
 ALTER TABLE host_service_noalarms OWNER TO lanview2;
@@ -399,7 +404,8 @@ DECLARE
     id      bigint;
     msk     text;
     sn      text;
-    cset    boolean := FALSE;
+    cset    boolean   := FALSE;
+    nulltd  timestamp := '2000-01-01 00:00';
 BEGIN
     IF TG_OP = 'UPDATE' THEN
        IF OLD.node_id = NEW.node_id AND
@@ -429,7 +435,10 @@ BEGIN
         IF NEW.host_service_id <> OLD.host_service_id THEN
             PERFORM error('Constant', OLD.host_service_id, 'host_service_id', 'check_host_services()', TG_TABLE_NAME, TG_OP);
         END IF;
-        IF NEW.noalarm_flag <> OLD.noalarm_flag OR NEW.noalarm_from <> OLD.noalarm_from OR NEW.noalarm_to <> OLD.noalarm_to THEN
+        -- change noalarm ?
+        IF  NEW.noalarm_flag <> OLD.noalarm_flag
+         OR COALESCE(NEW.noalarm_from, nulltd) <> COALESCE(OLD.noalarm_from, nulltd)
+         OR COALESCE(NEW.noalarm_to,   nulltd) <> COALESCE(OLD.noalarm_to,   nulltd) THEN
             IF NEW.noalarm_flag = 'off' OR NEW.noalarm_flag = 'on' OR NEW.noalarm_flag = 'to' THEN
                 NEW.noalarm_from = NULL;
             END IF;
@@ -444,14 +453,17 @@ BEGIN
                 PERFORM error('NotNull', OLD.host_service_id, 'noalarm_from', 'check_host_services()', TG_TABLE_NAME, TG_OP);
                 RETURN NULL;
             END IF;
-            IF (NEW.noalarm_flag = 'from_to' AND NEW.noalarm_from > NEW.noalarm_to) OR
-               ((NEW.noalarm_flag = 'from_to' OR NEW.noalarm_flag = 'to')  AND  CURRENT_TIMESTAMP > NEW.noalarm_to) THEN
+            IF ( NEW.noalarm_flag = 'from_to'                               AND NEW.noalarm_from  > NEW.noalarm_to) OR
+               ((NEW.noalarm_flag = 'from_to' OR  NEW.noalarm_flag = 'to')  AND CURRENT_TIMESTAMP > NEW.noalarm_to) THEN
                 PERFORM error('OutOfRange', OLD.host_service_id, 'noalarm_to', 'check_host_services()', TG_TABLE_NAME, TG_OP);
                 RETURN NULL;
             END IF;
-            IF NEW.noalarm_flag <> 'off' THEN
-                INSERT INTO host_service_noalarms (host_service_id, noalarm_flag, noalarm_from, noalarm_to, user_id)
-                    VALUES(NEW.host_service_id, NEW.noalarm_flag, NEW.noalarm_from, NEW.noalarm_to, current_setting('lanview2.user_id')::bigint);
+            IF  NEW.noalarm_flag <> OLD.noalarm_flag            -- Ha mégis csak azonos (modosítottunk időadatokat)
+             OR COALESCE(NEW.noalarm_from, nulltd) <> COALESCE(OLD.noalarm_from, nulltd)
+             OR COALESCE(NEW.noalarm_to,   nulltd) <> COALESCE(OLD.noalarm_to,   nulltd) THEN
+                INSERT INTO host_service_noalarms
+                    (host_service_id,     noalarm_flag,     noalarm_from,     noalarm_to,     noalarm_flag_old, noalarm_from_old, noalarm_to_old, user_id,                                     msg) VALUES
+                    (NEW.host_service_id, NEW.noalarm_flag, NEW.noalarm_from, NEW.noalarm_to, OLD.noalarm_flag, OLD.noalarm_from, OLD.noalarm_to, current_setting('lanview2.user_id')::bigint, NEW.last_noalarm_msg);
             END IF;
         END IF;
     END IF;
