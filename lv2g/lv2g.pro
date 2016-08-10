@@ -33,7 +33,8 @@ SOURCES += \
     record_link.cpp \
     record_link_model.cpp \
     gsetupwidget.cpp \
-    setnoalarm.cpp
+    setnoalarm.cpp \
+    hsoperate.cpp
 
 HEADERS +=\
     lv2g_global.h \
@@ -59,7 +60,8 @@ HEADERS +=\
     record_link.h \
     record_link_model.h \
     gsetupwidget.h \
-    setnoalarm.h
+    setnoalarm.h \
+    hsoperate.h
 
 FORMS += \
     column_filter.ui \
@@ -76,7 +78,8 @@ FORMS += \
     fkeyarrayed.ui \
     gsetup.ui \
     edit_field.ui \
-    noalarm.ui
+    noalarm.ui \
+    hsoperate.ui
 INCLUDEPATH += ../lv2
 unix:LIBS += -lsnmp
 msvc:LIBS += -lSecur32

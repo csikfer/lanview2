@@ -42,16 +42,16 @@ A places rekord típus
 ALTER TYPE placetype OWNER TO lanview2;
 
 CREATE TABLE places (
-    place_id    bigserial           PRIMARY KEY,
-    place_name  text         NOT NULL UNIQUE,
-    place_note  text        DEFAULT NULL,
-    place_type  placetype           DEFAULT 'real',
-    parent_id   bigint              DEFAULT NULL REFERENCES places(place_id) MATCH SIMPLE
+    place_id    bigserial       PRIMARY KEY,
+    place_name  text            NOT NULL UNIQUE,
+    place_note  text            DEFAULT NULL,
+    place_type  placetype       DEFAULT 'real',
+    parent_id   bigint          DEFAULT NULL REFERENCES places(place_id) MATCH SIMPLE
                                         ON DELETE RESTRICT ON UPDATE RESTRICT,
-    image_id    bigint              DEFAULT NULL REFERENCES images(image_id) MATCH SIMPLE
+    image_id    bigint          DEFAULT NULL REFERENCES images(image_id) MATCH SIMPLE
                                         ON DELETE SET NULL ON UPDATE RESTRICT,
-    frame       polygon             DEFAULT NULL,
-    tels        text[]       DEFAULT NULL
+    frame       polygon         DEFAULT NULL,
+    tels        text[]          DEFAULT NULL
 );
 ALTER TABLE places OWNER TO lanview2;
 COMMENT ON TABLE  places            IS 'Helyiségek, helyek leírói a térképen ill. alaprajzon';
@@ -67,7 +67,7 @@ COMMENT ON COLUMN places.parent_id  IS 'A térkép ill. alaprajz szülő, ha nin
 
 CREATE TABLE place_groups (
     place_group_id      bigserial       PRIMARY KEY,
-    place_group_name    text     NOT NULL UNIQUE,
+    place_group_name    text            NOT NULL UNIQUE,
     place_group_note    text            DEFAULT NULL
 );
 ALTER TABLE place_groups OWNER TO lanview2;

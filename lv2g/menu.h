@@ -16,14 +16,15 @@ enum eMenuActionType {
     MAT_DIALOG          ///< egy dialogus ablak mejelenítése
 };
 
-enum eOwnTab {
+enum eOwnTab {          /// Egyedi GUI tab widget elemek
     OWN_UNKNOWN = -1,
-    OWN_SETUP   =  0,
-    OWN_GSETUP,
-    OWN_PARSER,
-    OWN_OLALARM,
-    OWN_ERRCODES,
-    OWN_NOALARM
+    OWN_SETUP   =  0,   /// SETUP alap beállítások
+    OWN_GSETUP,         /// tobábbi beállítások a GUI-hoz
+    OWN_PARSER,         /// Parser hívása
+    OWN_OLALARM,        /// On-Line riasztások
+    OWN_ERRCODES,       /// Program hiba kód táblázat
+    OWN_NOALARM,        /// A riasztások időleges vagy permanens tiltása/engedélyezése
+    OWN_HSOP            /// a szervíz példányok (host_services) állpot manipuláció
 };
 
 /// @class cMenuAction

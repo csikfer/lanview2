@@ -1,26 +1,26 @@
-#ifndef SETNOALARM
-#define SETNOALARM
+#ifndef HSOPERATE_H
+#define HSOPERATE_H
 
 #include <QObject>
 #include <QWidget>
 #include <QSound>
 #include "lv2g.h"
-#include "ui_noalarm.h"
+#include "ui_hsoperate.h"
 #include "lv2models.h"
 
-class LV2GSHARED_EXPORT cSetNoAlarm : public cOwnTab
+class LV2GSHARED_EXPORT cHSOperate : public cOwnTab
 {
     Q_OBJECT
 public:
-    cSetNoAlarm(QWidget *par);
-    ~cSetNoAlarm();
+    cHSOperate(QWidget *par);
+    ~cHSOperate();
     static const enum ePrivilegeLevel rights;
 protected:
-    Ui_setNoAlarm   *pUi;
+    void setButton();
+    Ui_hostServiceOp *pUi;
     QButtonGroup   *pButtonGroupPlace;
     QButtonGroup   *pButtonGroupService;
     QButtonGroup   *pButtonGroupNode;
-    QButtonGroup   *pButtonGroupType;
 
     cRecordListModel *pZoneModel;
     cRecordListModel *pPlaceModel;
@@ -39,16 +39,13 @@ protected slots:
     void all();
     /// A táblázat összes sorában a kijelülés törlése
     void none();
-    void off(bool f);
-    void on(bool f);
-    void to(bool f);
-    void from(bool f);
-    void fromTo(bool f);
+    void disable(bool f);
+    void enable(bool f);
+    void clrStat(bool f);
     void changePlacePattern(const QString& text);
     void changeNodePattern(const QString& text);
     void changeServicePattern(const QString& text);
-    void changeMsg();
 };
 
-#endif // SETNOALARM
+#endif // HSOPERATE_H
 
