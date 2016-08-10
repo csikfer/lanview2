@@ -99,7 +99,7 @@ void cHSOperate::fetch()
                 " hs.noalarm_to,"                                   // TC_TO
                 " s.disabled AS s_disabled,"
                 " hs.disabled,"                                     // TC_DISABLED
-                " hs.hard_state"                                    // TC_STATE
+                " hs.host_service_state"                            // TC_STATE
             " FROM host_services AS hs"
             " JOIN nodes  AS n USING(node_id)"
             " JOIN places AS p USING(place_id)"
@@ -301,8 +301,8 @@ void cHSOperate::set()
     cHostService hs;
     QBitArray um_disabled = hs.mask(_sDisabled);
     QStringList csf;
-    csf << _sSoftState << _sHardState << _sStateMsg << _sCheckAttempts << _sLastChanged
-        << _sLastTouched << _sActAlarmLogId;
+    csf << _sHostServiceState << _sSoftState << _sHardState << _sStateMsg << _sCheckAttempts
+        << _sLastChanged  << _sLastTouched << _sActAlarmLogId;
     QBitArray um_ClrState = hs.mask(csf);
     sqlBegin(*pq2);
     for (int row = 0; row < rows; ++row) {
@@ -321,14 +321,37 @@ void cHSOperate::set()
                 um = um_disabled;
             }
             if (pUi->checkBoxClrStat->isChecked()) {
+                hs.setId(_sHostServiceState, RS_UNKNOWN);
                 hs.setId(_sSoftState, RS_UNKNOWN);
                 hs.setId(_sHardState, RS_UNKNOWN);
                 hs.setId(__sCheckAttempts, 0);
                 um |= um_ClrState;
             }
-            hs.setId(id);
-            if (!cErrorMessageBox::condMsgBox(hs.tryUpdate(*pq2, false, um), this)) {
+            if (um.count(true) > 0) {
+                hs.setId(id);
+                if (!cErrorMessageBox::condMsgBox(hs.tryUpdate(*pq2, false, um), this)) {
+                    sqlRollback(*pq2);
+                    return;
+                }
+            }
+            cError *pe = NULL;
+            try {
+                if (pUi->checkBoxStatLog->isChecked()) {
+                    static const QString sql = "DELETE FROM host_service_logs WHERE host_service_id = ?";
+                    execSql(*pq2, sql, id);
+                }
+                if (pUi->checkBoxAlarm->isChecked()) {
+                    static const QString sql = "DELETE FROM alarms WHERE host_service_id = ?";
+                    execSql(*pq2, sql, id);
+                }
+                if (pUi->checkBoxMemo->isChecked()) {
+                    static const QString sql = "DELETE FROM app_memos WHERE host_service_id = ?";
+                    execSql(*pq2, sql, id);
+                }
+            } CATCHS(pe)
+            if (pe != NULL) {
                 sqlRollback(*pq2);
+                cErrorMessageBox::messageBox(pe, this);
                 return;
             }
         }

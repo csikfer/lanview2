@@ -341,7 +341,7 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="1">
+     <item row="0" column="2">
       <spacer name="horizontalSpacer_3">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -354,7 +354,7 @@
        </property>
       </spacer>
      </item>
-     <item row="0" column="2">
+     <item row="0" column="3">
       <widget class="QLabel" name="label_2">
        <property name="text">
         <string>További szűrés, a riasztás tiltására alapján</string>
@@ -368,7 +368,7 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="2">
+     <item row="1" column="3">
       <widget class="QCheckBox" name="checkBoxOff">
        <property name="text">
         <string>Nincs tiltás</string>
@@ -385,7 +385,7 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="2">
+     <item row="2" column="3">
       <widget class="QCheckBox" name="checkBoxOn">
        <property name="text">
         <string>Riasztás permanensen tiltva</string>
@@ -398,11 +398,11 @@
      <item row="3" column="0">
       <widget class="QCheckBox" name="checkBoxClrStat">
        <property name="text">
-        <string>Állpot mezők törlése</string>
+        <string>Állapot mezők törlése</string>
        </property>
       </widget>
      </item>
-     <item row="3" column="2">
+     <item row="3" column="3">
       <widget class="QCheckBox" name="checkBoxTo">
        <property name="text">
         <string>Riasztás tiltva egy megadott időpontig</string>
@@ -412,7 +412,7 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="2">
+     <item row="4" column="3">
       <widget class="QCheckBox" name="checkBoxFrom">
        <property name="text">
         <string>Riasztás tiltva egy magdott időponttól</string>
@@ -422,13 +422,41 @@
        </property>
       </widget>
      </item>
-     <item row="5" column="2">
+     <item row="5" column="3">
       <widget class="QCheckBox" name="checkBoxFromTo">
        <property name="text">
         <string>Riasztás tiltva megadott időpontok között.</string>
        </property>
        <property name="checked">
         <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>Log rekordok törlése</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QCheckBox" name="checkBoxStatLog">
+       <property name="text">
+        <string>Állapot követő logok</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QCheckBox" name="checkBoxAlarm">
+       <property name="text">
+        <string>Riasztások</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QCheckBox" name="checkBoxMemo">
+       <property name="text">
+        <string>Esemény napló (memos)</string>
        </property>
       </widget>
      </item>

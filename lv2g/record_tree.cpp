@@ -170,10 +170,10 @@ bool cRecordTree::queryNodeChildrens(QSqlQuery& q, cTreeNode *pn)
         QString ord = pFODialog->ord();
         if (!ord.isEmpty()) sql += " ORDER BY " + ord;
     }
-    if (!q.prepare(sql)) SQLPREPERR(*pTabQuery, sql);
+    if (!q.prepare(sql)) SQLPREPERR(q, sql);
     int i = 0;
-    foreach (QVariant v, qParams) pTabQuery->bindValue(i++, v);
-    if (!q.exec()) SQLQUERYERR(*pTabQuery);
+    foreach (QVariant v, qParams) q.bindValue(i++, v);
+    if (!q.exec()) SQLQUERYERR(q);
     return q.first();
 }
 

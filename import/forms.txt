@@ -772,8 +772,8 @@ GUI lv2gui {
         services    SHAPE   services        {   TITLE "Szolgáltatások",@;  }
         service_types SHAPE service_types   {   TITLE "Szolgáltatás típusok",@; }
         query_parsers SHAPE query_parsers   {   TITLE "Lekérdezés fordító",@; }
-        host_services_t SHAPE host_services {   TITLE "Szolgáltatás példányok (fa)",@;  }
-        host_services   SHAPE host_services_tree { TITLE "Szolgáltatás példányok (tábla)",@;  }
+        host_services_t SHAPE host_services_tree { TITLE "Szolgáltatás példányok (fa)",@;  }
+        host_services   SHAPE host_services {   TITLE "Szolgáltatás példányok (tábla)",@;  }
         subnets     SHAPE   subnets         {   TITLE "Alhálózatok",@;  }
         vlans       SHAPE   vlans           {   TITLE "VLAN-ok",@;  }
         images      SHAPE   images          {   TITLE "Képek",@;  }
