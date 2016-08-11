@@ -484,6 +484,7 @@ STRDEF(UserEvents, "user_events")
   STRDEF(Sendmail, "sendmail")
  STRDEF(UserEventNote, "user_event_note")
 STRDEF(Alarms, "alarms")
+  STRDEF(Alarm, "alarm")    dnl Database notify channel name
  STRDEF(AlarmId, "alarm_id")
  dnl host_service_id
  STRDEF(DaemonId, "daemon_id")

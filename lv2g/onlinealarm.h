@@ -43,6 +43,7 @@ private slots:
     void allAcknowledge();
     void actRecordDestroyed(QObject *pO);
     void noAckDataReloded(const tRecords& _recs);
+    void notify(const QString & name, QSqlDriver::NotificationSource, const QVariant & payload);
 };
 
 #if defined(LV2G_LIBRARY)

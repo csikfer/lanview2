@@ -4,6 +4,9 @@ const enum ePrivilegeLevel cOnlineAlarm::rights = PL_INDALARM;
 
 cOnlineAlarm::cOnlineAlarm(QWidget *par) : cOwnTab(par)
 {
+    lanView::getInstance()->subsDbNotif(_sAlarm);
+    connect(getSqlDb()->driver(), SIGNAL(notification(QString,QSqlDriver::NotificationSource,QVariant)),
+            this,                 SLOT(notify(QString,QSqlDriver::NotificationSource,QVariant)));
     pActRecord = NULL;
     pSound = new QSound(lv2g::getInstance()->sounFileAlarm, this);
     pSound->setLoops(QSound::Infinite);
@@ -264,6 +267,11 @@ void cOnlineAlarm::noAckDataReloded(const tRecords& _recs)
     else         pSound->stop();
 }
 
+void cOnlineAlarm::notify(const QString & name, QSqlDriver::NotificationSource, const QVariant & payload)
+{
+    PDEB(INFO) << name << " / " << debVariantToString(payload) << endl;
+}
+
 
 cAckDialog::cAckDialog(const cRecord& __r, QWidget *par)
     : QDialog(par)
@@ -294,4 +302,5 @@ void cAckDialog::changed()
 {
     pUi->ackPB->setDisabled(pUi->msgTE->toPlainText().size() < MIN_MSG_SIZE);
 }
+
 

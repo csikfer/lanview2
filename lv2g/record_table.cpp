@@ -577,6 +577,7 @@ const cRecStaticDescr& cRecordsViewBase::inhRecDescr(const QString& tn) const
 
 void cRecordsViewBase::buttonPressed(int id)
 {
+    _DBGFN() << " #" << id << endl;
     switch (id) {
     case DBT_CLOSE:     close();    break;
     case DBT_REFRESH:   refresh();  break;
@@ -597,6 +598,7 @@ void cRecordsViewBase::buttonPressed(int id)
         DWAR() << "Invalid button id : " << id << endl;
         break;
     }
+    DBGFNL();
 }
 
 // PushButton -> virtual f()
@@ -612,7 +614,7 @@ void cRecordsViewBase::close(int r)
 
 void cRecordsViewBase::refresh(bool first)
 {
-    DBGFN();
+    _DBGFN() << VDEB(first) << endl;
     switch (tableInhType) {
     case TIT_NO:
     case TIT_ON:
@@ -1192,6 +1194,7 @@ QStringList cRecordsViewBase::refineWhere(QVariantList& qParams)
 
 QStringList cRecordsViewBase::where(QVariantList& qParams)
 {
+    DBGFN();
     QStringList wl;
     int f = flags & (RTF_CHILD | RTF_IGROUP | RTF_NGROUP | RTF_IMEMBER | RTF_NMEMBER);
     if (f) { // A tulaj ID-jére szűrünk, ha van
@@ -1231,6 +1234,7 @@ QStringList cRecordsViewBase::where(QVariantList& qParams)
     }
     wl << filterWhere(qParams);
     wl << refineWhere(qParams);
+    DBGFNL();
     return wl;
 }
 

@@ -78,7 +78,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- CREATE TRIGGER alarms_before_insert_or_update  BEFORE UPDATE OR INSERT ON alarms  FOR EACH ROW EXECUTE PROCEDURE alarm_notice();
+CREATE TRIGGER alarms_before_insert_or_update  BEFORE UPDATE OR INSERT ON alarms  FOR EACH ROW EXECUTE PROCEDURE alarm_notice();
 
 CREATE OR REPLACE FUNCTION alarm_id2name(bigint) RETURNS TEXT AS $$
 DECLARE
@@ -87,7 +87,7 @@ BEGIN
     IF $1 IS NULL THEN
         return NULL;
     END IF;
-    SELECT host_service_id2name(host_service_id) || '/' || max_status INTO rname
+    SELECT host_service_id2name(host_service_id) || '/' || alarm_message(host_service_id, max_status) INTO rname
         FROM alarms
         WHERE alarm_id = $1;
     IF NOT FOUND THEN

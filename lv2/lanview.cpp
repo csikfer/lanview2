@@ -546,12 +546,12 @@ bool lanView::subsDbNotif(const QString& __n, eEx __ex)
                                SLOT(dbNotif(const QString&, QSqlDriver::NotificationSource, const QVariant&)));
                 first = false;
             }
-            return true;
+            return true;    // O.K.
         }
         e = trUtf8("Database notification subscribe is unsuccessful.");
     }
     else {
-    	e = trUtf8("Database notification is nothing supported.");
+        e = trUtf8("Database notification is nothing supported.");
     }
     if (__ex) EXCEPTION(ENOTSUPP, -1, e);
     DERR() << e << endl;
