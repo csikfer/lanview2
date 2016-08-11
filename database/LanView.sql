@@ -350,7 +350,7 @@ INSERT INTO unusual_fkeys
   ( 'host_services',    'offline_group_ids', 'property',    'groups',       'group_id',     NULL),
   ( 'view_alarms',      'online_group_ids',  'property',    'groups',       'group_id',     NULL),
   ( 'view_alarms',      'offline_group_ids', 'property',    'groups',       'group_id',     NULL),
-  ( 'view_alarms',      'nitice_user_ids',   'property',    'users',        'user_id',      NULL),
+  ( 'view_alarms',      'notice_user_ids',   'property',    'users',        'user_id',      NULL),
   ( 'view_alarms',      'view_user_ids',     'property',    'users',        'user_id',      NULL),
   ( 'view_alarms',      'ack_user_ids',      'property',    'users',        'user_id',      NULL),
   ( 'view_alarms',      'msg_user_ids',      'property',    'users',        'user_id',      NULL),

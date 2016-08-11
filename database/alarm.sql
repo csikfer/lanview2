@@ -30,6 +30,7 @@ CREATE TABLE alarms (
 );
 CREATE INDEX alarms_begin_time_index ON alarms (begin_time);
 CREATE INDEX alarms_end_time_index   ON alarms (end_time);
+CREATE INDEX alarms_host_service_id  ON alarms (host_service_id);
 ALTER  TABLE alarms OWNER TO lanview2;
 
 COMMENT ON TABLE  alarms                 IS 'Riasztási események táblája';
@@ -67,9 +68,14 @@ CREATE TABLE user_events (
 CREATE INDEX user_events_date_of_index ON user_events (date_of);
 ALTER TABLE user_events OWNER TO lanview2;
 
+CREATE INDEX user_events_date_of  ON user_events (date_of);
+CREATE INDEX user_events_alarm_id  ON user_events (alarm_id);
+CREATE INDEX user_events_alarm_id_event_type  ON user_events (alarm_id, event_type);
+
+
 CREATE OR REPLACE FUNCTION alarm_notice() RETURNS TRIGGER AS $$
 BEGIN
-    IF NOT NEW.noalarm OR NEW.alarms.superior_alarm_id IS NULL THEN
+    IF NOT NEW.noalarm OR NEW.superior_alarm_id IS NULL THEN
 --        IF  (TG_OP = 'UPDATE' AND NEW.max_status > OLD.max_status) OR TG_OP = 'INSERT' THEN
             NOTIFY alarm;
 --        END IF;

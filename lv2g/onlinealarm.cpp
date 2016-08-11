@@ -29,7 +29,7 @@ cOnlineAlarm::cOnlineAlarm(QWidget *par) : cOwnTab(par)
     }
     connect(pRecTabNoAck->tableView()->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
             this, SLOT(curRowChgNoAck(QItemSelection,QItemSelection)));
-    cRecordTableModel *pNoAckModel = dynamic_cast<cRecordTableModel *>(pRecTabNoAck->pModel);
+    pNoAckModel = dynamic_cast<cRecordTableModel *>(pRecTabNoAck->pModel);
     connect(pNoAckModel, SIGNAL(dataReloded(tRecords)), this, SLOT(noAckDataReloded(tRecords)));
 
     pRecTabAckAct = new cRecordTable("aaalarms", false, pAlarmSplitter);    // Nyugtázott. aktív riasztások; bal alsó
@@ -67,6 +67,7 @@ cOnlineAlarm::cOnlineAlarm(QWidget *par) : cOwnTab(par)
     else {
         pAckButton = NULL;
     }
+    noAckDataReloded(pNoAckModel->records());
 }
 
 cOnlineAlarm::~cOnlineAlarm()
@@ -83,7 +84,8 @@ void cOnlineAlarm::map()
     if (ids.indexOf(uid) < 0) {     // uid not found
         cUserEvent::insert(*pq, uid, aid, UE_VIEW);
         ids << uid;
-        pActRecord->set(_sNoticeUserIds, ids);
+        pActRecord->set(_sViewUserIds, ids);
+        noAckDataReloded(pNoAckModel->records());
     }
 
     static const QString sPlaceTitle = cTableShape::getFieldDialogTitle(*pq, _sPlaces, _sPlaceName);
@@ -270,6 +272,7 @@ void cOnlineAlarm::noAckDataReloded(const tRecords& _recs)
 void cOnlineAlarm::notify(const QString & name, QSqlDriver::NotificationSource, const QVariant & payload)
 {
     PDEB(INFO) << name << " / " << debVariantToString(payload) << endl;
+    pRecTabNoAck->refresh(false);
 }
 
 

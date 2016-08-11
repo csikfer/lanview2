@@ -6,7 +6,7 @@ TABLE view_alarms SHAPE uaalarms  "Nem nyugtázott riasztások" {
     TABLE TYPE BARE;
     TABLE TITLE "Nem nyugtázott riasztások";
     // Nincs nyugtázva, és zónán bellül
-    REFINE "array_length(ack_user_ids, 1) IS NULL AND is_group_place(place_id, ?) AND user_is_any_groups_member(?,online_group_ids):place_group_id:user_id";
+    REFINE "COALESCE(array_length(ack_user_ids, 1) = 0, true) AND is_group_place(place_id, ?) AND user_is_any_groups_member(?,online_group_ids):place_group_id:user_id";
     TABLE VIEW   RIGHTS indalarm;
     TABLE EDIT   RIGHTS system;
     TABLE INSERT RIGHTS system;
@@ -30,7 +30,7 @@ TABLE view_alarms SHAPE uaalarms  "Nem nyugtázott riasztások" {
     FIELD ack_user_ids      { FLAG HIDE;                                                                        }
     FIELD msg_user_ids      { FLAG HIDE;                                                                        }
     FIELD mail_user_ids     { FLAG HIDE;                                                                        }
-    AUTO REFRESH "0:0:30";
+    AUTO REFRESH "0:05:00";
     TABLE FEATURES ":max_rows=500:";   // Nincs (nem kéne) lapozás, de tul nagy tábla akkor sem lehet
 }
 
@@ -62,7 +62,7 @@ TABLE view_alarms SHAPE aaalarms "Nyugtázott aktív riasztások" {
     FIELD ack_user_ids      {                       TITLE "Nyugtázta",@;                                        }
     FIELD msg_user_ids      { FLAG HIDE;                                                                        }
     FIELD mail_user_ids     { FLAG HIDE;                                                                        }
-    AUTO REFRESH "0:0:30";
+    AUTO REFRESH "0:05:00";
 }
 
 DELETE SERVICE TYPE life_sign;

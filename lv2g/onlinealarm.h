@@ -26,6 +26,7 @@ private:
     QSplitter *     pMainSplitter;  /// Az ablak splittere: balra riasztások,  jobbra térkép
     QSplitter *     pAlarmSplitter; /// A bal oldali splitter, riasztások: fent a nem nyugtázott, lent a nyugtázott de aktív
     cRecordTable *  pRecTabNoAck;   /// A nem nyugtázott riasztások táblája (tree?)
+    cRecordTableModel *pNoAckModel;
     cRecordTable *  pRecTabAckAct;  /// A nyugtázott aktív riasztások táblála (tree?)
     QWidget *       pRightWidget;   /// A jobb oldali widget
     QVBoxLayout *   pRightVBLayout; /// A jobb oldali widget vertikális layout
