@@ -61,6 +61,7 @@ A könyvtár a következő osztályokat valósítja meg:\n
 
 class lv2g;
 class lv2gDesign;
+class cMainWindow;
 
 
 inline static const lv2gDesign& design();
@@ -81,6 +82,7 @@ public:
     static const QString    sDefaultSplitOrientation;
     static const QString    sMaxRows;
     static const QString    sSoundFileAlarm;
+    static cMainWindow *    pMainWindow;
 protected:
     const lv2gDesign *pDesign;
 };

@@ -77,6 +77,7 @@ public:
     QDialog         *pDialog;
     ///< A menü elemhez tartozó QAction objektum
     QAction         *pAction;
+    static QMap<QString, QAction *>    actionsMap;
 private:
     /// A type adattag beállítása
     void setType(enum eMenuActionType _t) {

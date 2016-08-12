@@ -1,4 +1,5 @@
 #include "onlinealarm.h"
+#include "mainwindow.h"
 
 const enum ePrivilegeLevel cOnlineAlarm::rights = PL_INDALARM;
 
@@ -265,7 +266,14 @@ void cOnlineAlarm::noAckDataReloded(const tRecords& _recs)
             isAlarm = true;
         }
     }
-    if (isAlarm) pSound->play();
+    if (isAlarm) {
+        pSound->play();
+        if (lv2g::pMainWindow != NULL) {
+            QTabWidget *tab = lv2g::pMainWindow->pTabWidget;
+            int i = tab->indexOf(pWidget());
+            if (i >= 0) tab->setCurrentIndex(i);
+        }
+    }
     else         pSound->stop();
 }
 

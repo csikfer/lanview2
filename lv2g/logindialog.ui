@@ -16,7 +16,7 @@
    </font>
   </property>
   <property name="windowTitle">
-   <string>BejelentkezĂŠs</string>
+   <string>Bejelentkezés</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

@@ -8,8 +8,12 @@
 cMainWindow::cMainWindow(QWidget *parent) :
     QMainWindow(parent)
 {
+    lv2g::pMainWindow = this;
+    QString title = trUtf8("LanView %1 V%2, API V%3")
+            .arg(lanView::appName, lanView::appVersion, lanView::libVersion);
+    setWindowTitle(title);
     pTabWidget = new QTabWidget(this);
-    connect(pTabWidget, SIGNAL(tabBarDoubleClicked(int)), this, SLOT(tabCloseRequested(int)));
+    connect(pTabWidget, SIGNAL(tabBarDoubleClicked(int)), this, SLOT(widgetSplitterOrientation(int)));
     // Central Widget
     setCentralWidget(pTabWidget);
     if (!lanView::dbIsOpen()) {   // Minimalista setup, nincs adatbázisunk, vagy csak ez kell
@@ -38,7 +42,7 @@ cMainWindow::cMainWindow(QWidget *parent) :
 
 cMainWindow::~cMainWindow()
 {
-    ;
+    lv2g::pMainWindow = NULL;
 }
 
 void cMainWindow::setSetupMenu()
@@ -85,12 +89,14 @@ void cMainWindow::setSetupMenu()
 void cMainWindow::action(QAction *pa, cMenuItem& _mi, QSqlQuery *pq)
 {
     _DBGFN() << _mi.toString() << endl;
+    pa->setObjectName(_mi.getName());
     if (!_mi.isNull(_sToolTip))     pa->setToolTip(_mi.getName(_sToolTip));
     if (!_mi.isNull(_sWhatsThis))   pa->setWhatsThis(_mi.getName(_sWhatsThis));
     QString mp;
     if (_mi.isFeature("sub")) {    // Almenük vannak
         cMenuItem sm;
         QMenu *pm = new QMenu(this);
+        pm->setObjectName(sm.getName());
         pa->setMenu(pm);
         if (pq == NULL) EXCEPTION(EPROGFAIL);
         if (sm.fetchFirstItem(*pq, _mi.getName(_sAppName), _mi.getId())) {
@@ -111,7 +117,7 @@ void cMainWindow::action(QAction *pa, cMenuItem& _mi, QSqlQuery *pq)
     DBGFNL();
 }
 
-void cMainWindow::tabCloseRequested(int index)
+void cMainWindow::widgetSplitterOrientation(int index)
 {
     QWidget *tab = pTabWidget->widget(index);
     if (tab == NULL) return;

@@ -2,7 +2,7 @@
 #include "lv2service.h"
 
 #define VERSION_MAJOR   0
-#define VERSION_MINOR   90
+#define VERSION_MINOR   91
 #define VERSION_STR     _STR(VERSION_MAJOR) "." _STR(VERSION_MINOR)
 
 // ****************************************************************************************************************

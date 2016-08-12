@@ -6,6 +6,8 @@
 #include "hsoperate.h"
 #include "apierrcodes.h"
 
+QMap<QString, QAction *>  cMenuAction::actionsMap;
+
 cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidget * par, eEx __ex)
     : QObject(par), type(MAT_ERROR)
 {
@@ -20,6 +22,7 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidge
     pMenuItem    = new cMenuItem(*pmi);
 
     setObjectName(pmi->getName());
+    actionsMap.insert(pa->objectName(), pa);
     QString feature;
     if      (!(feature = pmi->feature("shape")).isEmpty()) {
         if (pq == NULL) EXCEPTION(EPROGFAIL);   // Ha nincs adatbázis, akkor ezt nem kéne
@@ -105,6 +108,7 @@ cMenuAction::cMenuAction(const QString&  ps, QAction *pa, QTabWidget * par)
 
     setObjectName(ps);
     connect(pa, SIGNAL(triggered()), this, SLOT(executeIt()));
+    actionsMap.insert(pa->objectName(), pa);
 }
 
 cMenuAction::cMenuAction(cOwnTab *po, eOwnTab t, QAction *pa, QTabWidget * par)
@@ -120,6 +124,7 @@ cMenuAction::cMenuAction(cOwnTab *po, eOwnTab t, QAction *pa, QTabWidget * par)
     pMenuItem    = NULL;
 
     connect(pAction, SIGNAL(triggered()), this, SLOT(displayIt()));
+    actionsMap.insert(pa->objectName(), pa);
 }
 
 cMenuAction::~cMenuAction()

@@ -4,9 +4,6 @@
 
 #include "lv2g.h"
 #include "record_table.h"
-#include <QMainWindow>
-
-class cMainWindow;
 class cMenuAction;
 
 /// @class cMainWindow
@@ -28,7 +25,7 @@ private:
     void action(QAction *pa, cMenuItem& _mi, QSqlQuery *pq = NULL);
     void setSetupMenu();
 private slots:
-    void tabCloseRequested(int index);
+    void widgetSplitterOrientation(int index);
 };
 
 

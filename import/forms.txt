@@ -821,5 +821,22 @@ GUI lv2gui {
         TITLE "Eszközök";
         RIGHTS admin;
         import      OWN     parser          {   TITLE "Szöveges import",@; }
+        noalarm     OWN     noalarm         {   TITLE "Riasztások tiltása",@; }
+        hsop        OWN     hsop            {   TITLE "Servíz állpot manipulálás",@; }
+    }
+}
+
+
+GUI indalarm {
+    file MENU {
+        TITLE "fájl";
+        gsetup      OWN     gsetup          {   TITLE "GUI Beállítások",@;  }
+        restart     EXEC    restart         {   TITLE "Újraindítás";  }
+        exit        EXEC    exit            {   TITLE "Kilép";  }
+    }
+    events MENU {
+        TITLE "Események";
+        alarms_tree SHAPE   alarms_tree     {   TITLE "Riasztások (fa)",@;  }
+        olalarm     OWN     olalarm         {   TITLE "On-Line riasztások",@;  }
     }
 }

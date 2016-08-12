@@ -2,6 +2,7 @@
 #include "cerrormessagebox.h"
 #include "logon.h"
 
+cMainWindow *    lv2g::pMainWindow = NULL;
 bool lv2g::logonNeeded = false;
 bool lv2g::zoneNeeded  = true;
 const QString lv2g::sDefaultSplitOrientation= "defaultSplitOrientation";
