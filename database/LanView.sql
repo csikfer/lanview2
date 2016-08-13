@@ -354,10 +354,7 @@ INSERT INTO unusual_fkeys
   ( 'view_alarms',      'view_user_ids',     'property',    'users',        'user_id',      NULL),
   ( 'view_alarms',      'ack_user_ids',      'property',    'users',        'user_id',      NULL),
   ( 'view_alarms',      'msg_user_ids',      'property',    'users',        'user_id',      NULL),
-  ( 'view_alarms',      'mail_user_ids',     'property',    'users',        'user_id',      NULL)
-  ( 'view_alarms',      'node_id',           'property',    'nodes',        'node_id',      '{nodes, snmpdevices}'),
-  ( 'view_alarms',      'place_id',          'property',    'places',       'place_id',     NULL),
-  ( 'view_alarms',      'host_service_id',   'property',    'host_services','host_service_id', NULL);
+  ( 'view_alarms',      'mail_user_ids',     'property',    'users',        'user_id',      NULL);
 
 CREATE TABLE fkey_types (
     fkey_type_id        bigserial  NOT NULL PRIMARY KEY,

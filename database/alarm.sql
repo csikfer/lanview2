@@ -424,28 +424,43 @@ END
 $$ LANGUAGE plpgsql;
 
 CREATE VIEW view_alarms AS
+    WITH a AS (
+        SELECT
+            alarm_id,
+            host_service_id,
+            superior_alarm_id,
+            begin_time,
+            end_time,
+            first_status,
+            max_status,
+            last_status
+        FROM alarms WHERE NOT noalarm
+    )
     SELECT
-    a.alarm_id                                                  AS view_alarm_id,
-    a.host_service_id,
-    hs.node_id,
-    n.place_id,
-    a.superior_alarm_id,
-    a.begin_time,
-    a.end_time,
-    a.first_status,
-    a.max_status,
-    a.last_status,
-    alarm_message(host_service_id, max_status)                  AS msg,
-    COALESCE(hs.offline_group_ids, s.offline_group_ids)         AS offline_group_ids,
-    COALESCE(hs.online_group_ids,  s.online_group_ids)          AS online_group_ids,
-    ARRAY(SELECT user_id FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'notice')        AS notice_user_ids,
-    ARRAY(SELECT user_id FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'view')          AS view_user_ids,
-    ARRAY(SELECT user_id FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'acknowledge')   AS ack_user_ids,
-    ARRAY(SELECT user_id FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'sendmessage')   AS msg_user_ids,
-    ARRAY(SELECT user_id FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'sendmail')      AS mail_user_ids
-    FROM alarms        AS a
+        alarm_id AS view_alarm_id,
+        host_service_id,
+        host_service_id2name(host_service_id) AS host_service_name,
+        node_id,
+        node_name,
+        place_id,
+        place_name,
+        superior_alarm_id,
+        begin_time,
+        end_time,
+        first_status,
+        max_status,
+        last_status,
+        alarm_message(host_service_id, max_status)      	AS msg,
+        COALESCE(hs.offline_group_ids, s.offline_group_ids)     AS offline_group_ids,
+        COALESCE(hs.online_group_ids,  s.online_group_ids)      AS online_group_ids,
+        ARRAY(SELECT user_id FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'notice')        AS notice_user_ids,
+        ARRAY(SELECT user_id FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'view')          AS view_user_ids,
+        ARRAY(SELECT user_id FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'acknowledge')   AS ack_user_ids,
+        ARRAY(SELECT user_id FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'sendmessage')   AS msg_user_ids,
+        ARRAY(SELECT user_id FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'sendmail')      AS mail_user_ids
+    FROM a
     JOIN host_services AS hs USING(host_service_id)
     JOIN services      AS s  USING(service_id)
     JOIN nodes         AS n  USING(node_id)
-    WHERE NOT a.noalarm;
-    
+    JOIN places        AS p  USING(place_id)
+;

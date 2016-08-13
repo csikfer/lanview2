@@ -267,13 +267,16 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
 int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString& __sn, eEx __ex)
 {
     set();
-    (*this)[_sNodeId]    = cNode().descr().getIdByName(q, __hn, __ex);
-    (*this)[_sServiceId] = cService().descr().getIdByName(q, __sn, __ex);
+    qlonglong nodeId     = cNode().descr().getIdByName(q, __hn, __ex);
+    qlonglong serviceId  = cService().descr().getIdByName(q, __sn, __ex);
+    if (nodeId == NULL_ID || serviceId == NULL_ID) return 0;
+    (*this)[_sNodeId]    = nodeId;
+    (*this)[_sServiceId] = serviceId;
     (*this)[_sDeleted]   = false;
     int r = completion(q);
     if (r != 1) {
         QString e = trUtf8("HostService : %1:*.%2(*:*)").arg(__hn).arg(__sn);
-        if (__ex) {
+        if (__ex != EX_IGNORE) {
             if (r == 0) {
                 EXCEPTION(EFOUND,    r, e);
             }

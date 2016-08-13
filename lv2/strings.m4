@@ -400,6 +400,7 @@ STRDEF(Services, "services")
   STRDEF(Http, "http")
   STRDEF(Https, "https")
   STRDEF(Munin, "munin")
+  STRDEF(Ticket, "ticket")
  STRDEF(ServiceNote, "service_note")
  dnl protocol_id
  STRDEF(Port,"port")
@@ -494,7 +495,7 @@ STRDEF(Alarms, "alarms")
  dnl begin_time
  STRDEF(EventNote, "event_note")
  STRDEF(SuperiorAlarmId, "superior_alarm_id")
- STRDEF(Noalrm, "noalarm")
+ STRDEF(Noalarm, "noalarm")
  dnl end_time
 STRDEF(ViewAlarms, "view_alarms")
  STRDEF(ViewAlarmId, "view_alarm_id")

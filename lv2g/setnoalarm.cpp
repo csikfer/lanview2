@@ -379,7 +379,7 @@ void cSetNoAlarm::changeNodePattern(const QString& text)
     enum eFilterType ft = FT_LIKE;
     if      (text.isEmpty())               ft = FT_NO;
     else if (text.indexOf(QChar('%')) < 0) ft = FT_BEGIN;
-    pPlaceModel->setFilter(text, OT_DEFAULT, ft);
+    pNodeModel->setFilter(text, OT_DEFAULT, ft);
     pUi->comboBoxNodeSelect->setCurrentIndex(0);
 }
 
@@ -388,7 +388,7 @@ void cSetNoAlarm::changeServicePattern(const QString& text)
     enum eFilterType ft = FT_LIKE;
     if      (text.isEmpty())               ft = FT_NO;
     else if (text.indexOf(QChar('%')) < 0) ft = FT_BEGIN;
-    pPlaceModel->setFilter(text, OT_DEFAULT, ft);
+    pServiceModel->setFilter(text, OT_DEFAULT, ft);
     pUi->comboBoxServiceSelect->setCurrentIndex(0);
 }
 

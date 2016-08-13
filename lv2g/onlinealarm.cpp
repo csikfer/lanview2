@@ -69,6 +69,10 @@ cOnlineAlarm::cOnlineAlarm(QWidget *par) : cOwnTab(par)
         pAckButton = NULL;
     }
     noAckDataReloded(pNoAckModel->records());
+
+    // Létezik a virtuális ticket szolgáltatás ?
+    pTicket = new cHostService;
+    if (1 != pTicket->fetchByNames(*pq, _sNil, _sTicket, EX_IGNORE)) pDelete(pTicket);
 }
 
 cOnlineAlarm::~cOnlineAlarm()
@@ -237,7 +241,17 @@ void cOnlineAlarm::acknowledge()
     qlonglong aid = pActRecord->getId();
     cAckDialog dialog(*pActRecord, this);
     if (dialog.exec() == QDialog::Accepted) {
-        cUserEvent::insert(*pq, lanView::user().getId(), aid, UE_ACKNOWLEDGE, dialog.pUi->msgL->text());
+        QString msg = dialog.pUi->msgL->text();
+        cUserEvent::insert(*pq, lanView::user().getId(), aid, UE_ACKNOWLEDGE, msg);
+        if (dialog.pUi->checkBoxTicket->isChecked()) {
+            cAlarm a;
+            a[_sSuperiorAlarmId] = aid;
+            a[_sServiceId]       = pTicket->getId();
+            a[_sMaxStatus]       = pActRecord->get(_sMaxStatus);
+            a[_sEventNote]       = msg;
+            a[_sNoalarm]         = false;
+            a.insert(*pq);
+        }
     }
     pRecTabAckAct->refresh();
     pRecTabNoAck->refresh();
@@ -284,7 +298,7 @@ void cOnlineAlarm::notify(const QString & name, QSqlDriver::NotificationSource, 
 }
 
 
-cAckDialog::cAckDialog(const cRecord& __r, QWidget *par)
+cAckDialog::cAckDialog(const cRecord& __r, cOnlineAlarm *par)
     : QDialog(par)
 {
     pUi = new Ui_ackDialog;
@@ -301,6 +315,7 @@ cAckDialog::cAckDialog(const cRecord& __r, QWidget *par)
         pUi->toL->setText(__r.getName(_sEndTime));
     }
     connect(pUi->msgTE, SIGNAL(textChanged()), this, SLOT(changed()));
+    if (par->pTicket != NULL) pUi->checkBoxTicket->setEnabled(true);
 }
 
 cAckDialog::~cAckDialog()

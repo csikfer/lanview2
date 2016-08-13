@@ -13,10 +13,13 @@ TABLE view_alarms SHAPE uaalarms  "Nem nyugtázott riasztások" {
     TABLE DELETE RIGHTS admin;
     
     FIELD view_alarm_id     { FLAG HIDE;                                                                        }
-    FIELD host_service_id   { FLAG ON HIDE TABLE;   TITLE ,         "Felügyelő objektum neve";                  } 
-    FIELD node_id           {                       TITLE "Eszköz", "ESzköz neve";                              }
-    FIELD place_id          {                       TITLE "Hely",   "Az eszköz helye";                          }
-    FIELD superior_alarm_id { FLAG ON HIDE TABLE;   TITLE ,         "Fő felügyelő objektum neve";               }
+    FIELD host_service_id   { FLAG ON HIDE;                                                                     } 
+    FIELD host_service_name { FLAG ON HIDE TABLE;   TITLE ,         "Felügyelő objektum neve";                  } 
+    FIELD node_id           { FLAG ON HIDE;                                                                     }
+    FIELD node_name         {                       TITLE "Eszköz", "Eszköz neve";                              }
+    FIELD place_id          { FLAG ON HIDE;                                                                     }
+    FIELD place_name        {                       TITLE "Hely",   "Az eszköz helye";                          }
+    FIELD superior_alarm_id { FLAG ON HIDE;                                                                     }
     FIELD begin_time        {                       TITLE "Kezdete","A riasztás kezdete";                       }
     FIELD end_time          {                       TITLE "Vége",   "A riasztási állpot vége";                  }
     FIELD first_status      { FLAG ON HIDE TABLE;   TITLE ,         "Állapot a riasztás kezdetén";              }
@@ -45,9 +48,12 @@ TABLE view_alarms SHAPE aaalarms "Nyugtázott aktív riasztások" {
     TABLE INSERT RIGHTS system;
     TABLE DELETE RIGHTS admin;
     FIELD view_alarm_id     { FLAG HIDE;                                                                        }
-    FIELD host_service_id   { FLAG ON HIDE TABLE;   TITLE ,         "Felügyelő objektum neve";                  } 
-    FIELD node_id           {                       TITLE "Eszköz", "Eszköz neve";                              }
-    FIELD place_id          {                       TITLE "Hely",   "Az eszköz helye";                          }
+    FIELD host_service_id   { FLAG ON HIDE;                                                                     } 
+    FIELD host_service_name { FLAG ON HIDE TABLE;   TITLE ,         "Felügyelő objektum neve";                  } 
+    FIELD node_id           { FLAG ON HIDE;                                                                     }
+    FIELD node_name         {                       TITLE "Eszköz", "Eszköz neve";                              }
+    FIELD place_id          { FLAG ON HIDE;                                                                     }
+    FIELD place_name        {                       TITLE "Hely",   "Az eszköz helye";                          }
     FIELD superior_alarm_id { FLAG ON HIDE TABLE;   TITLE ,         "Fő felügyelő objektum neve";               }
     FIELD begin_time        {                       TITLE "Kezdete","A riasztás kezdete";                       }
     FIELD end_time          { FLAG HIDE;                                                                        }

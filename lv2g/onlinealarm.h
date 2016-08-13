@@ -5,8 +5,11 @@
 #include "record_table.h"
 #include "QSound"
 
+class  cAckDialog;
+
 class  LV2GSHARED_EXPORT cOnlineAlarm : public cOwnTab
 {
+    friend class  cAckDialog;
     Q_OBJECT
 public:
     cOnlineAlarm(QWidget *par);
@@ -37,6 +40,8 @@ private:
     QPushButton *   pAckAllButton;  /// Több sor nyugtázás gomb (Admin)
     cRecord  *      pActRecord;     /// A kiválasztott rekord a nem nyugtázott riasztások táblában
     QSound *        pSound;
+protected:
+    cHostService *  pTicket;
 private slots:
     void curRowChgNoAck(QItemSelection, QItemSelection);
     void curRowChgAckAct(QItemSelection sel, QItemSelection);
@@ -55,7 +60,7 @@ private slots:
 class  cAckDialog : public QDialog {
     Q_OBJECT
 public:
-    cAckDialog(const cRecord &__r, QWidget *par = NULL);
+    cAckDialog(const cRecord &__r, cOnlineAlarm *par);
     ~cAckDialog();
     Ui_ackDialog *pUi;
 private slots:

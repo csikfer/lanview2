@@ -1,4 +1,8 @@
-SERVICE local        "local service"    { NIL;      }
+NODE VIRTUAL nil "Hipotetikus eszköz, eszköz föggetlen.";
+SERVICE ticket   "Hiba jegyek" { NIL; }
+HOST SERVICE nil.ticket "Hiba jegyek";
+
+SERVICE local       "local service"     { NIL;      }
 SERVICE  ssh         ssh                { TCP 22;   }
 SERVICE snmp        snmp                { UDP 161;  }
 SERVICE "tcp.rs"    "TCP serial port gateway"{TCP 4001; }
