@@ -191,6 +191,23 @@ EXT_ bool execSql(QSqlQuery& q, const QString& sql, const QVariant& v1, const QV
     return q.first();
 }
 
+EXT_ bool execSql(QSqlQuery& q, const QString& sql, const QVariantList& vl)
+{
+    if (vl.isEmpty()) {
+        if (!q.exec(sql)) SQLQUERYERR(q);
+    }
+    else {
+        if (!q.prepare(sql)) SQLPREPERR(q, sql);
+        int i = 0;
+        foreach (QVariant v, vl) {
+            q.bindValue(i, v);
+            ++i;
+        }
+        if (!q.exec()) SQLQUERYERR(q);
+    }
+    return q.first();
+}
+
 EXT_ bool execSqlFunction(QSqlQuery& q, const QString& fn, const QVariant& v1, const QVariant& v2, const QVariant& v3, const QVariant& v4, const QVariant& v5)
 {
     QString sql = "SELECT " + fn + QChar('(');

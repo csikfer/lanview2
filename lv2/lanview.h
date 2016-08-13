@@ -79,9 +79,8 @@ A program kilépésével kapcsolatos műveleteket a lanView destruktora végzi l
 
 Egy példa a main() -re (a saját származtatott osztály a myLanView) :
 @code
-#define VERSION_MAJOR   0
-#define VERSION_MINOR   01
-#define VERSION_STR     _STR(VERSION_MAJOR) "." _STR(VERSION_MINOR)
+#define VERSION_MAJOR   1
+#define VERSION_MINOR   23
 
 // Saját kiegészítés a help üzenethez (jelenleg egy üres string)
 const QString& setAppHelp()
@@ -101,7 +100,7 @@ int main (int argc, char * argv[])
     myLanView   mo; // A saját példány létrehozása. A myLanView osztály a lanView osztály leszármazotja.
 
     if (mo.lastError) {  // Ha hiba volt, vagy vége
-        return mo.lastError->mErrorCode; // a mo destruktora majd kiírja a hibaüzenetet.
+        return mo.lastError->mErrorCode; // a mo destruktora majd kiírja a hibaüzenetet, ha volt
     }
     int r = app.exec();
     exit(mo.lastError == NULL ? r : mo.lastError->mErrorCode);
@@ -115,7 +114,7 @@ A headerben is szükség van néhány definícióra. A header első néhány sor
 
 #define APPNAME "myapp"
 #undef  __MODUL_NAME__
-#define __MODUL_NAME__  MYAPP
+#define __MODUL_NAME__  APP
 @endcode
 A megadott modul névnek szerepelnie kell a cDebug::eMask enumerációs értékek között. Ez alapján dönti el a cDebug objektum, hogy milyen
 üzeneteket kell kiírni. Vitatható módszer, valószínüleg ki kell találni helyette valami mást.
@@ -132,7 +131,7 @@ myLanView::myLanView() : lanView()
 @endcode
 Ha a lanView konstruktora olyan parancs paramétert dolgoz fel, ami után ki kell lépnie a programnak (pl. a verzió kiírása),
 akkor dob egy kizárást, egy olyan cError objektummal, melyben a hibakód az EOK, vagyis a nincs hiba.
-Az API hiba esetén dob egy kizárást a cError objektum pointerével. Ezt a Qt eseménykezelője nem támogatja.
+Az API hiba esetén kizárást dob egy cError objektum pointerével. Ezt a Qt eseménykezelője nem támogatja.
 Ezért, ha ezeket a kizárásokat rendesen le szeretnénk kezelni, akkor a QApplication objektumból származtatnunk kell
 egy osztályt, ahhol újra implementáljuk a notify metódust. Pl. egy GUI-s alkalmazás esetén a következőkeppen:
 @code
@@ -149,7 +148,7 @@ bool myApp::notify(QObject * receiver, QEvent * event)
     try {
         return QApplication::notify(receiver, event);
     }
-    catch(no_init_&) { // Már letiltottuk a cError dobálást
+    catch(no_init_&) { // Már letiltottuk a cError dobálást, hibakezelés közben újabb hiba
         PDEB(VERBOSE) << "Dropped cError..." << endl;
         return false;
     }
@@ -375,5 +374,9 @@ public:
     /// Az esetleges kizárásokat is elkapja.
     virtual bool notify(QObject * receiver, QEvent * event);
 };
+
+/// Elvileg titkosít, gyakorlatilag egy túró, de mégse virít pucéran a konfigban a jelszó.
+QString scramble(const QString& _s);
+
 
 #endif // LANVIEW_H

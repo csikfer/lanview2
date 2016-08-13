@@ -2456,7 +2456,7 @@ hsrv_p  : PRIME_T SERVICE_T srvid ';'           { pHostServices->sets(_sPrimeSer
 fhs
 // Csak az eszköz és a szervíz típus neve(minta) van megadva:  <host>.<service>
         : str '.' str                           { NEWOBJ(pHostService2, cHostService());
-                                                  $$ = pHostService2->fetchFirstByNamePatterns(qq(), sp2s($1), sp2s($3), EX_IGNORE); }
+                                                  $$ = pHostService2->fetchByNames(qq(), sp2s($1), sp2s($3), EX_IGNORE); }
 // Csak az eszköz és a szervíz típus neve van megadva:  <host>:<port>.<service>
 // Ha a port nevet elhagyjuk, akkor ott NULL-t vár
         | str ':' str '.' str                 { NEWOBJ(pHostService2, cHostService());

@@ -138,6 +138,13 @@ EXT_ bool sqlRollback(QSqlQuery& q);
 /// @return amit a q.first() visszaad a query végrehajtása után
 EXT_ bool execSql(QSqlQuery& q, const QString& sql, const QVariant& v1 = QVariant(), const QVariant& v2 = QVariant(), const QVariant& v3 = QVariant(), const QVariant& v4 = QVariant(), const QVariant& v5 = QVariant());
 
+/// Végrehajt egy query-t
+/// @param q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.
+/// @param sql Az SQL query string.
+/// @param vl A query paraméterei
+/// @return amit a q.first() visszaad a query végrehajtása után
+EXT_ bool execSql(QSqlQuery& q, const QString& sql, const QVariantList& vl);
+
 /// Végrehajt ill összeállít és végrehajt egy query-t ami egy SQL függvényhívás.
 /// @param q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.
 /// @param fn Az SQL függvény neve. Maximum négy paramétert tudunk átadni.

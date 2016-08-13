@@ -84,7 +84,7 @@ void cGSetupWidget::applicateAndClose()
 
 void cGSetupWidget::selectAlarmFile()
 {
-    QString fp = QFileDialog::getOpenFileName(this, trUtf8("Hang fájl kiválasztása"), trUtf8("Hang fájlok (*.vaw)"));
+    QString fp = QFileDialog::getOpenFileName(this, trUtf8("Hang fájl kiválasztása"), trUtf8("Hang fájlok (*.wav)"));
     if (fp.isEmpty()) return;
     pUi->pushButtonAlarmTest->setEnabled(true);
     pUi->lineEditAlarm->setText(fp);

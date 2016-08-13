@@ -62,6 +62,7 @@ public:
     static const cService& _nul() { if (pNull == NULL) pNull = new cService(); return *pNull; }
     static void clearServicesCache() { services.clear(); }
     STATICIX(cService, ixProtocolId)
+    static const qlonglong nilId;
 };
 
 enum eNoalarmType {
@@ -102,40 +103,33 @@ public:
     /// A hálózati elem, és a szolgáltatás típus neve alapján olvassa be egy rekordot.
     /// Ha több rekord is létezik, akkor az első kerül beolvasásra.
     /// @param q Az adatbázis művelethez használlt objektum.
-    /// @param __hn A hálózati elem (nodes) neve
-    /// @param __sn A szolgáltatás típus (services) neve
-    /// @param __ex Ha nincs ilyen rekord, vagy több van, és értéke true, akkor dob egy kizárást.
+    /// @param __hn A hálózati elem (nodes) név minta (LIKE)
+    /// @param __sn A szolgáltatás típus (services) minta (LIKE)
+    /// @param __ex Ha nincs ilyen rekord, és értéke nem EX_IGNORE, vagy tőbb van és értéke EX_WARNING, akkor kizárást generál.
     /// @return A megadott nevekkel azonosított szolgáltatáspéldányok száma.
     int fetchByNames(QSqlQuery& q, const QString& __hn, const QString& __sn, enum eEx __ex = EX_ERROR);
     /// A hálózati elem, port és a szolgáltatás típus neve alapján olvassa be egy rekordot.
     /// Ha több rekord is létezik, akkor az első kerül beolvasásra.
     /// @param q Az adatbázis művelethez használlt objektum.
-    /// @param __hn A hálózati elem (nodes) neve
-    /// @param __sn A szolgáltatás típus (services) neve
-    /// @param __pn A szolgáltatáspéldányhoz rendelt port neve, az üres string esetén nincs definiálva a példányhoz port.
+    /// @param __hn A hálózati elem (nodes) név minta (LIKE)
+    /// @param __sn A szolgáltatás típus (services) minta (LIKE)
+    /// @param __pn A szolgáltatáspéldányhoz rendelt port név minta (LIKE), az üres string esetén nincs definiálva a példányhoz port.
     ///             Fugyelem az üres string olyan rekordot jelent amelyben a port_id éeréke NULL!
-    /// @param __ex Ha nincs ilyen rekord, vagy több van, és értéke true, akkor dob egy kizárást.
+    /// @param __ex Ha nincs ilyen rekord, és értéke nem EX_IGNORE, vagy tőbb van és értéke EX_WARNING, akkor kizárást generál.
     /// @return A megadott nevekkel azonosított szolgáltatáspéldányok száma.
-    int fetchByNames(QSqlQuery& q, const QString &__hn, const QString& __sn, const QString& __pn, enum eEx __ex = EX_ERROR);
+    int fetchByNames(QSqlQuery& q, const QString &__hn, const QString& __sn, const QString& __pn, enum eEx __ex = EX_WARNING);
     /// A hálózati elem, port,  szolgáltatás típus valamit a proto és prome szolgáltatás típus nevek alapján olvassa be egy rekordot.
     /// Ha több rekord is létezik, akkor az első kerül beolvasásra.
     /// @param q Az adatbázis művelethez használlt objektum.
-    /// @param __hn A hálózati elem (nodes) neve
-    /// @param __sn A szolgáltatás típus (services) neve
-    /// @param __pn A szolgáltatáspéldányhoz rendelt port neve, az üres string esetén nincs definiálva a példányhoz port.
+    /// @param __hn A hálózati elem (nodes) név minta (LIKE)
+    /// @param __sn A szolgáltatás típus (services) minta (LIKE)
+    /// @param __pn A szolgáltatáspéldányhoz rendelt port név minta (LIKE), az üres string esetén nincs definiálva a példányhoz port.
     ///             Fugyelem az üres string olyan rekordot jelent amelyben a port_id éeréke NULL!
-    /// @param __pron A szolgáltatáspéldányhoz rendelt protocol szolgáltatás neve, az üres string esetén nincs definiálva a példányhoz potokol.
-    /// @param __prin A szolgáltatáspéldányhoz rendelt prime szolgáltatás neve, az üres string esetén nincs definiálva a példányhoz rime sz..
-    /// @param __ex Ha nincs ilyen rekord, vagy több van, és értéke true, akkor dob egy kizárást.
+    /// @param __pron A szolgáltatáspéldányhoz rendelt protocol szolgáltatás név minta, az üres string esetén nincs "nil".
+    /// @param __prin A szolgáltatáspéldányhoz rendelt prime szolgáltatás név minta, az üres string esetén nincs "nil".
+    /// @param __ex Ha nincs ilyen rekord, és értéke nem EX_IGNORE, vagy tőbb van és értéke EX_WARNING, akkor kizárást generál.
     /// @return A megadott nevekkel azonosított szolgáltatáspéldányok száma.
-    int fetchByNames(QSqlQuery& q, const QString& __hn, const QString& __sn, const QString& __pn, const QString& __pron, const QString& __prin, enum eEx __ex = EX_ERROR);
-    /// A hálózati elem, és a szolgáltatás típus név minták alapján olvassa be az első rekordot.
-    /// @param q Az adatbázis művelethez használlt objektum.
-    /// @param __hn A hálózati elem (nodes) neve
-    /// @param __sn A szolgáltatás típus (services) neve
-    /// @param __ex Ha nincs egy ilyen rekord sem, és értéke true, akkor dob egy kizárást.
-    /// @return A megadott név mintákkal azonosított szolgáltatáspéldányok száma.
-    int fetchFirstByNamePatterns(QSqlQuery& q, const QString& __hn, const QString& __sn, enum eEx __ex = EX_ERROR);
+    int fetchByNames(QSqlQuery& q, const QString& __hn, const QString& __sn, const QString& __pn, const QString& __pron, const QString& __prin, enum eEx __ex = EX_WARNING);
     /// A hálózati elem, és a szolgáltatás típus ID-k alapján olvas be egy rekordot
     /// @param q Az adatbázis művelethez használlt objektum.
     /// @param __hid A hálózati elem (nodes) ID
@@ -181,7 +175,11 @@ public:
     const cService& getPrimeService(QSqlQuery& __q, enum eEx __ex = EX_ERROR)
     {
         qlonglong id = getId(_sPrimeServiceId);
-        return id == NULL_ID ? cService::_nul() : cService::service(__q, id, __ex);
+        if (id == NULL_ID) {
+            if (__ex == EX_WARNING) EXCEPTION(EDATA);
+            return cService::_nul();
+        }
+        return cService::service(__q, id, __ex);
     }
     /// A proto_service mező álltal hivatkozott cService objektummal tér vissza.
     /// Ha a mező ártéke NULL, akkor egy üres objektum referenciájával.
@@ -191,7 +189,16 @@ public:
     const cService& getProtoService(QSqlQuery& __q, enum eEx __ex = EX_ERROR)
     {
         qlonglong id = getId(_sProtoServiceId);
-        return id == NULL_ID ? cService::_nul() : cService::service(__q, id, __ex);
+        if (id == NULL_ID) {
+            if (__ex == EX_WARNING) EXCEPTION(EDATA);
+            return cService::_nul();
+        }
+        return cService::service(__q, id, __ex);
+    }
+    static qlonglong ticketId(QSqlQuery& q, eEx __ex = EX_ERROR) {
+        cHostService o;
+        if (o.fetchByNames(q, _sNil, _sTicket, __ex) == 1) return o.getId();
+        return NULL_ID;
     }
 };
 

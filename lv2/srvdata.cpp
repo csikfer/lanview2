@@ -65,6 +65,8 @@ void cAlarmMsg::replaces(QSqlQuery& __q, qlonglong __stid, const QStringList& __
     }
 }
 
+/* -------------------------------------------------------------- */
+
 cService::cService() : cRecord(), _protocol()
 {
     _pFeatures = NULL;
@@ -84,12 +86,16 @@ cService::~cService()
 }
 
 int             cService::_ixProtocolId = NULL_IX;
-int             cService::_ixFeatures = NULL_IX;
+int             cService::_ixFeatures   = NULL_IX;
+const qlonglong cService::nilId         = -1;
+
 const cRecStaticDescr&  cService::descr() const
 {
     if (initPDescr<cService>(_sServices)) {
         _ixProtocolId = _descr_cService().toIndex(_sProtocolId);
         _ixFeatures = _descr_cService().toIndex(_sFeatures);
+        qlonglong id = _pRecordDescr->getIdByName(_sNil);
+        if (nilId != id) EXCEPTION(EDATA, id, _sNil);
     }
     return *_pRecordDescr;
 }
@@ -267,121 +273,124 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
 int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString& __sn, eEx __ex)
 {
     set();
-    qlonglong nodeId     = cNode().descr().getIdByName(q, __hn, __ex);
-    qlonglong serviceId  = cService().descr().getIdByName(q, __sn, __ex);
-    if (nodeId == NULL_ID || serviceId == NULL_ID) return 0;
-    (*this)[_sNodeId]    = nodeId;
-    (*this)[_sServiceId] = serviceId;
-    (*this)[_sDeleted]   = false;
-    int r = completion(q);
-    if (r != 1) {
-        QString e = trUtf8("HostService : %1:*.%2(*:*)").arg(__hn).arg(__sn);
-        if (__ex != EX_IGNORE) {
-            if (r == 0) {
-                EXCEPTION(EFOUND,    r, e);
-            }
-            else {
-                EXCEPTION(AMBIGUOUS, r, e);
-            }
-        }
-        return r;
-    }
-    return 1;
-}
-
-int cHostService::fetchByNames(QSqlQuery& q, const QString& __hn, const QString& __sn, const QString& __pn, eEx __ex)
-{
-    set();
-    (*this)[_sNodeId]    = cNode().descr().getIdByName(q, __hn, __ex);
-    (*this)[_sServiceId] = cService().descr().getIdByName(q, __sn, __ex);
-    if (__pn.isEmpty() == false) {
-        qlonglong pid = cNPort().getPortIdByName(q, __pn,  __hn, __ex);
-        if (pid == NULL_ID) return 0;
-        (*this)[_sPortId] = pid;
-    }
-    (*this)[_sDeleted]   = false;
-    int r = 0;
-    if (fetch(q, false, mask(_sNodeId, _sServiceId, _sPortId, _sDeleted))) r = q.size();
-    if (r != 1) {
-        QString e = trUtf8("HostService : %1:%2.%3(*:*)").arg(__hn).arg(__pn).arg(__sn);
-        if (__ex) {
-            if (r == 0) {
-                EXCEPTION(EFOUND,    r, e);
-            }
-            else {
-                EXCEPTION(AMBIGUOUS, r, e);
-            }
-        }
-        return r;
-    }
-    return 1;
-}
-
-int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString& __sn, const QString& __pn, const QString& __pron, const QString& __prin, eEx __ex)
-{
-    set();
-    (*this)[_sNodeId]    = cNode().descr().getIdByName(q, __hn, __ex);
-    (*this)[_sServiceId] = cService().descr().getIdByName(q, __sn, __ex);
-    qlonglong id;
-    if (__pn.isEmpty() == false) {
-        id = cNPort().getPortIdByName(q, __pn,  __hn, __ex);
-        if (id == NULL_ID) return 0;
-        (*this)[_sPortId] = id;
-    }
-    if (__pron.isEmpty() == false && _sNil != __pron) {
-        id = cService().getIdByName(q, __pron, __ex);
-        if (id == NULL_ID) return 0;
-    }
-    else id = -1;   //nil
-    (*this)[_sProtoServiceId] = id;
-    if (__prin.isEmpty() == false && _sNil != __prin) {
-        qlonglong id = cService().getIdByName(q, __prin, __ex);
-        if (id == NULL_ID) return 0;
-    }
-    else id = -1;   //nil
-    (*this)[_sPrimeServiceId] = id;
-
-    (*this)[_sDeleted]   = false;
-    int r = 0;
-    if (fetch(q, false, mask(_sNodeId, _sServiceId, _sPortId, _sDeleted) | mask(_sProtoServiceId, _sPrimeServiceId))) r = q.size();
-    if (r != 1) {
-        QString e = trUtf8("HostService : %1:%2.%3(%4:%5)").arg(__hn).arg(__pn).arg(__sn).arg(__pron).arg(__prin);
-        if (__ex) {
-            if (r == 0) {
-                EXCEPTION(EFOUND,    r, e);
-            }
-            else {
-                EXCEPTION(AMBIGUOUS, r, e);
-            }
-        }
-        return r;
-    }
-    return 1;
-}
-
-int cHostService::fetchFirstByNamePatterns(QSqlQuery& q, const QString& __hn, const QString& __sn, eEx __ex)
-{
-    QString sql =
+    static const QString sql =
             "SELECT host_services.* "
               "FROM host_services "
               "JOIN nodes USING(node_id) "
               "JOIN services USING(service_id) "
               "WHERE node_name LIKE ? "
                 "AND service_name LIKE ?";
-    if (!q.prepare(sql)) SQLPREPERR(q, sql);
-    q.bindValue(0, __hn);
-    q.bindValue(1, __sn);
-    if (!q.exec()) SQLQUERYERR(q);
-    if (q.first()) {
+    int n = 0;
+    if (execSql(q, sql, __hn, __sn)) {
         set(q);
-        return q.size();
+        n = q.size();
+        if (n == 1 || __ex < EX_WARNING) return n;
     }
-    QString e = trUtf8("HostService not found, pattern: \"%1\".\"%2\"").arg(__hn).arg(__sn);
-    if (__ex) EXCEPTION(EFOUND, 0, e);
-    DWAR() << e << endl;
-    return 0;
+    else {
+        if (__ex == EX_IGNORE) return 0;
+    }
+    QString e = trUtf8("HostService pattern: \"%1\".\"%2\"").arg(__hn).arg(__sn);
+    if (n) { EXCEPTION(AMBIGUOUS, n, e); }
+    else   { EXCEPTION(EFOUND, 0, e);    }
+    return -1;
 }
 
+int cHostService::fetchByNames(QSqlQuery& q, const QString& __hn, const QString& __sn, const QString& __pn, eEx __ex)
+{
+    set();
+    QVariantList bind;
+    QString sql =
+            "SELECT hs.* "
+              "FROM host_services AS hs "
+              "JOIN nodes             USING(node_id) "
+              "JOIN services AS s     USING(service_id) ";
+    // host, service
+    QString where =
+            "WHERE node_name    LIKE ? "
+              "AND service_name LIKE ? ";
+    bind << __hn << __sn;
+    // port
+    if (__pn.isEmpty()) {
+        where += "AND hs.port_id IS NULL ";
+    }
+    else {
+        sql   += "LEFT OUTER JOIN nports USING(port_id) ";
+        where += "AND port_name LIKE ? ";
+        bind  += __pn;
+    }
+    // QUERY
+    sql += where;
+    int n = 0;
+    if (execSql(q, sql, bind)) {
+        set(q);
+        n = q.size();
+        if (n == 1 || __ex < EX_WARNING) return n;
+    }
+    else {
+        if (__ex == EX_IGNORE) return 0;
+    }
+    QString e = trUtf8("HostService : %1:%2.%3").arg(__hn).arg(__pn).arg(__sn);
+    if (n) { EXCEPTION(AMBIGUOUS, n, e); }
+    else   { EXCEPTION(EFOUND, 0, e);    }
+    return -1;
+}
+
+int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString& __sn, const QString& __pn, const QString& __pron, const QString& __prin, eEx __ex)
+{
+    set();
+    QVariantList bind;
+    QString sql =
+            "SELECT hs.* "
+              "FROM host_services AS hs "
+              "JOIN nodes             USING(node_id) "
+              "JOIN services AS s     USING(service_id) ";
+    // host, service
+    QString where =
+            "WHERE node_name    LIKE ? "
+              "AND service_name LIKE ? ";
+    bind << __hn << __sn;
+    // port
+    if (__pn.isEmpty()) {
+        where += "AND hs.port_id IS NULL ";
+    }
+    else {
+        sql   += "LEFT OUTER JOIN nports USING(port_id) ";
+        where += "AND port_name LIKE ? ";
+        bind  += __pn;
+    }
+    // protocol service
+    if (__pron.isEmpty()) {
+        where += QString("AND proto_service_id = %1 ").arg(cService::nilId);
+    }
+    else {
+        sql   += "JOIN services AS prot  ON prot.service_id = hs.proto_service_id ";
+        where += "AND prot.service_name LIKE ? ";
+        bind  << __pron;
+    }
+    // prime service
+    if (__prin.isEmpty()) {
+        where += QString("AND prime_service_id = %1 ").arg(cService::nilId);
+    }
+    else {
+        sql   += "JOIN services AS prim  ON prim.service_id = hs.prime_service_id ";
+        where += "AND prim.service_name LIKE ? ";
+        bind  << __prin;
+    }
+    sql += where;
+    int n = 0;
+    if (execSql(q, sql, bind)) {
+        set(q);
+        n = q.size();
+        if (n == 1 || __ex < EX_WARNING) return n;
+    }
+    else {
+        if (__ex == EX_IGNORE) return 0;
+    }
+    QString e = trUtf8("HostService : %1:%2.%3(%4:%5)").arg(__hn).arg(__pn).arg(__sn).arg(__pron).arg(__prin);
+    if (n) { EXCEPTION(AMBIGUOUS, n, e); }
+    else   { EXCEPTION(EFOUND, 0, e);    }
+    return -1;
+}
 
 bool cHostService::fetchByIds(QSqlQuery& q, qlonglong __hid, qlonglong __sid, eEx __ex)
 {

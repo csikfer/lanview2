@@ -9,27 +9,20 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>656</width>
+    <width>555</width>
     <height>511</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Riasztási esemény nyugtázása</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
+  <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,1,0">
    <item>
     <layout class="QFormLayout" name="formLayout">
      <item row="0" column="0">
       <widget class="QLabel" name="labelPlace">
        <property name="text">
         <string>Helye:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="1">
-      <widget class="QLabel" name="placeL">
-       <property name="text">
-        <string>?place</string>
        </property>
       </widget>
      </item>
@@ -40,24 +33,10 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="1">
-      <widget class="QLabel" name="nodeL">
-       <property name="text">
-        <string>?node</string>
-       </property>
-      </widget>
-     </item>
      <item row="2" column="0">
       <widget class="QLabel" name="labelMsg">
        <property name="text">
         <string>Üzenet:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="1">
-      <widget class="QLabel" name="msgL">
-       <property name="text">
-        <string>?msg</string>
        </property>
       </widget>
      </item>
@@ -68,13 +47,6 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="1">
-      <widget class="QLabel" name="fromL">
-       <property name="text">
-        <string>?from</string>
-       </property>
-      </widget>
-     </item>
      <item row="4" column="0">
       <widget class="QLabel" name="labelTo">
        <property name="text">
@@ -82,10 +54,38 @@
        </property>
       </widget>
      </item>
+     <item row="0" column="1">
+      <widget class="QLineEdit" name="lineEditPlace">
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QLineEdit" name="lineEditNode">
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QLineEdit" name="lineEditMsg">
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QLineEdit" name="lineEditFrom">
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
      <item row="4" column="1">
-      <widget class="QLabel" name="toL">
-       <property name="text">
-        <string>?to</string>
+      <widget class="QLineEdit" name="lineEditTo">
+       <property name="readOnly">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
@@ -123,7 +123,7 @@
     </layout>
    </item>
    <item>
-    <widget class="QTextEdit" name="msgTE"/>
+    <widget class="QTextEdit" name="textEditMsg"/>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">

@@ -13,10 +13,10 @@ DROP  TABLE                                   IF EXISTS alarms;
 DROP  TABLE                                   IF EXISTS alarm_messages;
 
 CREATE TABLE alarms (
-    alarm_id        bigserial      PRIMARY KEY,
-    host_service_id bigint
+    alarm_id        bigserial   PRIMARY KEY,
+    host_service_id bigint      NOT NULL
             REFERENCES host_services(host_service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE,
-    daemon_id       bigint     DEFAULT NULL
+    daemon_id       bigint      DEFAULT NULL
             REFERENCES host_services(host_service_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL,
     first_status    notifswitch NOT NULL,
     max_status      notifswitch NOT NULL,
@@ -433,7 +433,8 @@ CREATE VIEW view_alarms AS
             end_time,
             first_status,
             max_status,
-            last_status
+            last_status,
+            event_note
         FROM alarms WHERE NOT noalarm
     )
     SELECT
@@ -450,6 +451,7 @@ CREATE VIEW view_alarms AS
         first_status,
         max_status,
         last_status,
+        event_note,
         alarm_message(host_service_id, max_status)      	AS msg,
         COALESCE(hs.offline_group_ids, s.offline_group_ids)     AS offline_group_ids,
         COALESCE(hs.online_group_ids,  s.online_group_ids)      AS online_group_ids,

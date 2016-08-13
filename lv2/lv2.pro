@@ -1,5 +1,8 @@
 CONFIG -= debug_and_release
 
+REVISION = $$system(git rev-list --count HEAD)
+DEFINES += REVISION=$$REVISION
+
 #bison definition
 bison.name = Bison
 bison.input = BISONSOURCES

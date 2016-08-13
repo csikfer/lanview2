@@ -17,11 +17,11 @@ cSetupWidget::cSetupWidget(QSettings &__s, QWidget *par)
 
     bool forced = !lanView::dbIsOpen();
 
-    connect(pUi->PBApplicateAndRestart,SIGNAL(clicked()),    this,   SLOT(applicateAndRestart()));
-    connect(pUi->PBApplicateAndExit,  SIGNAL(clicked()),    this,   SLOT(applicateAndExit()));
-    connect(pUi->PBCancel,             SIGNAL(clicked()),    this,   SLOT(endIt()));
+    connect(pUi->PBApplicateAndRestart,SIGNAL(clicked()),   this,   SLOT(applicateAndRestart()));
+    connect(pUi->PBApplicateAndExit,   SIGNAL(clicked()),   this,   SLOT(applicateAndExit()));
+    connect(pUi->PBCancel,             SIGNAL(clicked()),   this,   SLOT(endIt()));
     pUi->PBCancel->setDisabled(forced);
-    connect(pUi->PBApplicateAndClose,  SIGNAL(clicked()),    this,   SLOT(applicateAndClose()));
+    connect(pUi->PBApplicateAndClose,  SIGNAL(clicked()),   this,   SLOT(applicateAndClose()));
     pUi->PBApplicateAndClose->setDisabled(forced);
 
     connect(pUi->logLevelMore,   SIGNAL(clicked()),      this,   SLOT(logLevelMoreClicked()));
@@ -36,8 +36,8 @@ cSetupWidget::cSetupWidget(QSettings &__s, QWidget *par)
     pUi->homeDirLE->setText(qset.value(_sHomeDir, lanView::homeDefault).toString());
     pUi->sqlHostLE->setText(qset.value(_sSqlHost, _sLocalHost).toString());
     pUi->sqlPortSB->setValue(qset.value(_sSqlPort, 5432).toInt());
-    pUi->sqlUserLE->setText(qset.value(_sSqlUser, _sLanView2) .toString());
-    pUi->sqlPassLE->setText(qset.value(_sSqlPass).toString());
+    pUi->sqlUserLE->setText(scramble(qset.value(_sSqlUser, scramble(_sLanView2)) .toString()));
+    pUi->sqlPassLE->setText(scramble(qset.value(_sSqlPass).toString()));
     pUi->dbNameLE-> setText(qset.value(_sDbName,  _sLanView2) .toString());
 
     QRegExp regExp("\\d+|0x[\\dA-Za-z]*");
@@ -79,8 +79,8 @@ void cSetupWidget::applicate()
     qset.setValue(_sHomeDir, pUi->homeDirLE->text());
     qset.setValue(_sSqlHost, pUi->sqlHostLE->text());
     qset.setValue(_sSqlPort, pUi->sqlPortSB->value());
-    qset.setValue(_sSqlUser, pUi->sqlUserLE->text());
-    qset.setValue(_sSqlPass, pUi->sqlPassLE->text());
+    qset.setValue(_sSqlUser, scramble(pUi->sqlUserLE->text()));
+    qset.setValue(_sSqlPass, scramble(pUi->sqlPassLE->text()));
     qset.setValue(_sDbName,  pUi->dbNameLE->text());
     qset.setValue(_sDebugLevel, pUi->debugLevelLE->text().toLongLong(&ok, 0));
     if (!ok) DERR() << "Invalid log level : " << pUi->logFileNameLE->text() << endl;

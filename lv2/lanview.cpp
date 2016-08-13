@@ -2,8 +2,8 @@
 #include "lv2service.h"
 
 #define VERSION_MAJOR   0
-#define VERSION_MINOR   91
-#define VERSION_STR     _STR(VERSION_MAJOR) "." _STR(VERSION_MINOR)
+#define VERSION_MINOR   92
+#define VERSION_STR     _STR(VERSION_MAJOR) "." _STR(VERSION_MINOR) "(" _STR(REVISION) ")"
 
 // ****************************************************************************************************************
 int findArg(char __c, const char * __s, int argc, char * argv[])
@@ -76,7 +76,7 @@ const QString lanView::orgName(ORGNAME);
 const QString lanView::orgDomain(ORGDOMAIN);
 const short lanView::libVersionMajor = VERSION_MAJOR;
 const short lanView::libVersionMinor = VERSION_MINOR;
-const QString lanView::libVersion(_STR(VERSION_MAJOR) "." _STR(VERSION_MINOR));
+const QString lanView::libVersion(VERSION_STR);
 #ifdef Q_OS_WIN
 const QString lanView::homeDefault("C:\\lanview2");
 #else
@@ -306,6 +306,7 @@ lanView::~lanView()
     DBGFNL();
 }
 
+
 bool lanView::openDatabase(eEx __ex)
 {
     closeDatabase();
@@ -314,8 +315,8 @@ bool lanView::openDatabase(eEx __ex)
     if (!pDb->isValid()) SQLOERR(*pDb);
     pDb->setHostName(pSet->value(_sSqlHost).toString());
     pDb->setPort(pSet->value(_sSqlPort).toUInt());
-    pDb->setUserName(pSet->value(_sSqlUser).toString());
-    pDb->setPassword(pSet->value(_sSqlPass).toString());
+    pDb->setUserName(scramble(pSet->value(_sSqlUser).toString()));
+    pDb->setPassword(scramble(pSet->value(_sSqlPass).toString()));
     pDb->setDatabaseName(pSet->value(_sDbName).toString());
     bool r = pDb->open();
     if (!r && __ex) // SQLOERR(*pDb);
@@ -720,3 +721,16 @@ bool cLv2QApp::notify(QObject * receiver, QEvent * event)
     QCoreApplication::exit(lastError->mErrorCode);  // kilépünk.
     return false;
 }
+
+QString scramble(const QString& _s)
+{
+    QString r;
+    qsrand(32572345U);
+    foreach (QChar c, _s) {
+        ushort u = c.unicode();
+        u ^= (ushort)qrand();
+        r += QChar(u);
+    }
+    return r;
+}
+

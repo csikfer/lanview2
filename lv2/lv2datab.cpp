@@ -2009,10 +2009,10 @@ void cColStaticDescrInterval::setDefValue()
 }
 /* ******************************************************************************************************* */
 
-cColStaticDescrList::cColStaticDescrList()
+cColStaticDescrList::cColStaticDescrList(cRecStaticDescr *par)
     : QList<cColStaticDescr *>()
 {
-    ;
+    pParent = par;
 }
 
 cColStaticDescrList::~cColStaticDescrList()
@@ -2025,21 +2025,21 @@ cColStaticDescrList::~cColStaticDescrList()
 cColStaticDescrList& cColStaticDescrList::operator<<(cColStaticDescr * __o)
 {
     *(list *)this << __o;
-    if (size() != __o->pos) EXCEPTION(EDBDATA,0,QString("pos = %1, and list síze = %2, is not equal.").arg(__o->pos).arg(size()));
+    if (size() != __o->pos) EXCEPTION(EDBDATA,0,QString("Table : %1, pos = %2, and list síze = %3, is not equal.").arg(tableName()).arg(__o->pos).arg(size()));
     return *this;
 }
 
 int cColStaticDescrList::toIndex(const QString& __n, eEx __ex) const
 {
     if (__n.isEmpty()) {
-        static QString msg = QObject::trUtf8("Empty field name");
+        static QString msg = QObject::trUtf8("Empty field name, table %1").arg(tableName());
         if (__ex) EXCEPTION(EDATA,-1, msg);
         DERR() << msg << endl;
         return NULL_IX;
     }
     const_iterator  i;
     for (i = constBegin(); i != constEnd(); i++) if (**i == __n) return (*i)->pos -1;
-    if (__ex) EXCEPTION(ENOFIELD, -1, __n);
+    if (__ex) EXCEPTION(ENOFIELD, -1, fullColName(__n));
     return NULL_IX;
 }
 
@@ -2047,27 +2047,36 @@ int cColStaticDescrList::toIndex(const QString& __n, eEx __ex) const
 cColStaticDescr& cColStaticDescrList::operator[](const QString& __n)
 {
     int i = toIndex(__n);
-    if (i < 0 || i > size() -1) EXCEPTION(EPROGFAIL, i, __n);
+    if (i < 0 || i > size() -1) EXCEPTION(EPROGFAIL, i, fullColName(__n));
     return (*this)[i];
 }
 
 const cColStaticDescr& cColStaticDescrList::operator[](const QString& __n) const
 {
     int i = toIndex(__n);
-    if (i < 0 || i > size() -1) EXCEPTION(EPROGFAIL, i, __n);
+    if (i < 0 || i > size() -1) EXCEPTION(EPROGFAIL, i, fullColName(__n));
     return (*this)[i];
 }
 
 cColStaticDescr& cColStaticDescrList::operator[](int i)
 {
-    if (i < 0 || i >= size()) EXCEPTION(ENOINDEX, i);
+    if (i < 0 || i >= size()) EXCEPTION(ENOINDEX, i, tableName());
     return *(*(list *)this)[i];
 }
 
 const cColStaticDescr& cColStaticDescrList::operator[](int i) const
 {
-    if (i < 0 || i >= size()) EXCEPTION(ENOINDEX, i);
+    if (i < 0 || i >= size()) EXCEPTION(ENOINDEX, i, tableName());
     return *(*(const list *)this)[i];
+}
+
+QString cColStaticDescrList::fullColName(const QString& _col) const {
+    if (pParent == NULL) return mCat(_sNULL, _col);
+    return mCat(pParent->tableName(), _col);
+}
+QString cColStaticDescrList::tableName() const {
+    if (pParent == NULL) return _sNULL;
+    return pParent->tableName();
 }
 
 /* ******************************************************************************************************* */
@@ -2080,7 +2089,7 @@ cRecStaticDescr::cRecStaticDescr(const QString &__t, const QString &__s)
     , _tableName()
     , _viewName()
     , _tableRecord()
-    , _columnDescrs()
+    , _columnDescrs(this)
     , _primaryKeyMask()
     , _nameKeyMask()
     , _uniqueMasks()

@@ -25,6 +25,7 @@ TABLE view_alarms SHAPE uaalarms  "Nem nyugtázott riasztások" {
     FIELD first_status      { FLAG ON HIDE TABLE;   TITLE ,         "Állapot a riasztás kezdetén";              }
     FIELD max_status        { FLAG ON HIDE TABLE;   TITLE ,         "A legsújosabb állapot a riasztás alatt";   }
     FIELD last_status       { FLAG ON HIDE TABLE;   TITLE ,         "Az utolsó állapot a riasztás alatt";       }
+    FIELD event_note        { FLAG ON HIDE TABLE;   TITLE ,         "Az állapothoz csatolt üzenet";             }
     FIELD msg               { FLAG ON HUGE;         TITLE "Üzenet", "Riasztási üzenet";                         } 
     FIELD offline_group_ids { FLAG HIDE;                                                                        }
     FIELD online_group_ids  { FLAG HIDE;                                                                        }
@@ -60,6 +61,7 @@ TABLE view_alarms SHAPE aaalarms "Nyugtázott aktív riasztások" {
     FIELD first_status      { FLAG ON HIDE TABLE;   TITLE ,         "Állapot a riasztás kezdetén";              }
     FIELD max_status        { FLAG ON HIDE TABLE;   TITLE ,         "A legsújosabb állapot a riasztás alatt";   }
     FIELD last_status       { FLAG ON HIDE TABLE;   TITLE ,         "Az utolsó állapot a riasztás alatt";       }
+    FIELD event_note        { FLAG ON HIDE TABLE;   TITLE ,         "Az állapothoz csatolt üzenet";             }
     FIELD msg               { FLAG ON HUGE;         TITLE "Üzenet", "Riasztási üzenet";                         } 
     FIELD offline_group_ids { FLAG HIDE;                                                                        }
     FIELD online_group_ids  { FLAG HIDE;                                                                        }

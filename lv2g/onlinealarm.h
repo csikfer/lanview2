@@ -21,6 +21,11 @@ private:
         pMapText->setText(_sNul);
         pMap->clearDraws();
         pMap->setText(_sNul);
+        if (isTicket) {
+            isTicket = false;
+            delete pTagetRec;
+            pTagetRec = NULL;
+        }
     }
 
     QSqlQuery *     pq;
@@ -38,10 +43,17 @@ private:
     cImageWidget *  pMap;           /// A térkép/alaprajz (image)
     QPushButton *   pAckButton;     /// A nyugtázás gomb
     QPushButton *   pAckAllButton;  /// Több sor nyugtázás gomb (Admin)
-    cRecord  *      pActRecord;     /// A kiválasztott rekord a nem nyugtázott riasztások táblában
     QSound *        pSound;
 protected:
+    cRecord *       pActRecord;     /// A kiválasztott rekord a nem nyugtázott riasztások táblában
+    cRecord *       pTagetRec;      /// Normál esetben azonos a pActRecord -al, ticket esetén az eredeti rekordot tartalmazza
+    bool            isTicket;       /// Normál esetben false, ticket esetén true
+    cPlace          place;
+    cNode           node;
     cHostService *  pTicket;
+    static QString  sTicket;
+    static QString  sPlaceTitle;
+    static QString  sNodeTitle;
 private slots:
     void curRowChgNoAck(QItemSelection, QItemSelection);
     void curRowChgAckAct(QItemSelection sel, QItemSelection);
@@ -60,7 +72,7 @@ private slots:
 class  cAckDialog : public QDialog {
     Q_OBJECT
 public:
-    cAckDialog(const cRecord &__r, cOnlineAlarm *par);
+    cAckDialog(cOnlineAlarm *par);
     ~cAckDialog();
     Ui_ackDialog *pUi;
 private slots:

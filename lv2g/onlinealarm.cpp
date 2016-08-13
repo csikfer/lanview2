@@ -3,12 +3,17 @@
 
 const enum ePrivilegeLevel cOnlineAlarm::rights = PL_INDALARM;
 
+QString  cOnlineAlarm::sPlaceTitle;
+QString  cOnlineAlarm::sNodeTitle;
+QString  cOnlineAlarm::sTicket;
+
 cOnlineAlarm::cOnlineAlarm(QWidget *par) : cOwnTab(par)
 {
     lanView::getInstance()->subsDbNotif(_sAlarm);
     connect(getSqlDb()->driver(), SIGNAL(notification(QString,QSqlDriver::NotificationSource,QVariant)),
             this,                 SLOT(notify(QString,QSqlDriver::NotificationSource,QVariant)));
-    pActRecord = NULL;
+    pTagetRec = pActRecord = NULL;
+    isTicket  = false;
     pSound = new QSound(lv2g::getInstance()->sounFileAlarm, this);
     pSound->setLoops(QSound::Infinite);
     pq = newQuery();
@@ -78,11 +83,18 @@ cOnlineAlarm::cOnlineAlarm(QWidget *par) : cOwnTab(par)
 cOnlineAlarm::~cOnlineAlarm()
 {
     delete pq;
+    if (isTicket) delete pTagetRec;
 }
 
 void cOnlineAlarm::map()
 {
+    static const QString _sBr = "<br>";
     if (pActRecord == NULL) EXCEPTION(EPROGFAIL);
+    if (isTicket) {
+        isTicket = false;
+        pDelete(pTagetRec);
+    }
+    pTagetRec = pActRecord;
     QVariantList ids = pActRecord->get(_sViewUserIds).toList();
     qlonglong uid = lanView::user().getId();
     qlonglong aid = pActRecord->getId();
@@ -93,23 +105,37 @@ void cOnlineAlarm::map()
         noAckDataReloded(pNoAckModel->records());
     }
 
-    static const QString sPlaceTitle = cTableShape::getFieldDialogTitle(*pq, _sPlaces, _sPlaceName);
-    static const QString sNodeTitle  = cTableShape::getFieldDialogTitle(*pq, _sNodes,  _sNodeName);
+    if (sNodeTitle.isEmpty()) {
+        sNodeTitle  = cTableShape::getFieldDialogTitle(*pq, _sNodes,  _sNodeName);
+        sPlaceTitle = cTableShape::getFieldDialogTitle(*pq, _sPlaces, _sPlaceName);
+        sTicket     = trUtf8("Hiba jegy");
+    }
+    static const qlonglong ticketId  = cHostService::ticketId(*pq, EX_IGNORE);
     QString text;   // HTML text
-    // Alarm location, based on the place_id
-    qlonglong placeId = pActRecord->getId(_sPlaceId);
-    cPlace place;
+
+    if (ticketId != NULL_ID && ticketId == pActRecord->getId(_sHostServiceId)) {    // Ticket
+        isTicket = true;
+        text = sTicket + " :<br>";
+        qlonglong id = pActRecord->getId(_sSuperiorAlarmId);
+        pTagetRec = pActRecord->newObj();
+        pTagetRec->fetchById(*pq, id);
+    }
+    qlonglong placeId = pTagetRec->getId(_sPlaceId);
     place.fetchById(*pq, placeId);
-    // node
-    qlonglong nodeId  = pActRecord->getId(_sNodeId);
-    cNode node;
+    qlonglong nodeId = pTagetRec->getId(_sNodeId);
     node.fetchById(*pq, nodeId);
-    text  = sPlaceTitle + " : <b>" + place.getName() + "</b>, <i>" + place.getNote() + "</i><br>";
-    text += sNodeTitle  + " : <b>" + node.getName()  + "</b>, <i>" + node.getNote()  + "</i><br>";
-    text += "<b><i>" + pActRecord->getName(_sMsg) + "</i></b>";
-    if (pActRecord->get(_sAckUserIds).toList().isEmpty() == false) {
-        text += "<br>" + trUtf8("Nyugtázva : ") + "<b>" + pActRecord->view(*pq, _sAckUserIds) + "</b><br>";
-        text += "<i>" + pActRecord->getName(_sMsg) + "</i>";
+    text += _sBr + sPlaceTitle + " : <b>" + place.getName() + "</b>, <i>" + place.getNote() + "</i>";
+    text += _sBr + sNodeTitle  + " : <b>" + node.getName()  + "</b>, <i>" + node.getNote()  + "</i>";
+    text += _sBr + trUtf8("Riasztás oka : ") + "<b><i>" + pTagetRec->getName(_sMsg) + "</i></b>";
+    text += _sBr + trUtf8("Csatolt üzenet : ") + "<b><i>" + pTagetRec->getName(_sEventNote) + "</i></b>";
+    if (pTagetRec->get(_sAckUserIds).toList().isEmpty() == false) {
+        text += _sBr + trUtf8("Nyugtázva : ") + "<b>" + pTagetRec->view(*pq, _sAckUserIds) + "</b>";
+        if (isTicket) {
+            text += _sBr + trUtf8("Hiba jegyhez fűzött megjegyzés : ") + "<b>" + pActRecord->getName(_sEventNote) + "</b>";
+        }
+    }
+    if (isTicket  && pActRecord->get(_sAckUserIds).toList().isEmpty() == false) {
+        text += _sBr + trUtf8("Hiba jegyet nyugtázta : ") + "<b>" + pActRecord->view(*pq, _sAckUserIds) + "</b>";
     }
     // A parent alaprajza
     bool ok;
@@ -238,16 +264,18 @@ void cOnlineAlarm::actRecordDestroyed(QObject *pO)
 void cOnlineAlarm::acknowledge()
 {
     if (pActRecord == NULL) EXCEPTION(EPROGFAIL);
-    qlonglong aid = pActRecord->getId();
-    cAckDialog dialog(*pActRecord, this);
+    qlonglong aid = pTagetRec->getId();
+    cAckDialog dialog(this);
     if (dialog.exec() == QDialog::Accepted) {
-        QString msg = dialog.pUi->msgL->text();
+        QString msg = dialog.pUi->textEditMsg->toPlainText();
         cUserEvent::insert(*pq, lanView::user().getId(), aid, UE_ACKNOWLEDGE, msg);
         if (dialog.pUi->checkBoxTicket->isChecked()) {
             cAlarm a;
             a[_sSuperiorAlarmId] = aid;
-            a[_sServiceId]       = pTicket->getId();
+            a[_sHostServiceId]   = pTicket->getId();
+            a[_sFirstStatus]     = pActRecord->get(_sFirstStatus);
             a[_sMaxStatus]       = pActRecord->get(_sMaxStatus);
+            a[_sLastStatus]      = pActRecord->get(_sLastStatus);
             a[_sEventNote]       = msg;
             a[_sNoalarm]         = false;
             a.insert(*pq);
@@ -298,24 +326,27 @@ void cOnlineAlarm::notify(const QString & name, QSqlDriver::NotificationSource, 
 }
 
 
-cAckDialog::cAckDialog(const cRecord& __r, cOnlineAlarm *par)
+cAckDialog::cAckDialog(cOnlineAlarm *par)
     : QDialog(par)
 {
     pUi = new Ui_ackDialog;
     pUi->setupUi(this);
-    pUi->placeL->setText(__r.getName(_sPlaceName));
-    pUi->nodeL->setText(__r.getName(_sNodeName));
-    pUi->msgL->setText(__r.getName("msg"));
-    pUi->fromL->setText(__r.getName(_sBeginTime));
-    if (__r.isNull(_sEndTime)) {
-        pUi->toL->hide();
+    if (par->isTicket) setWindowTitle(trUtf8("Hiba jegy nyugtázása"));
+    pUi->labelPlace->setText(par->sPlaceTitle);
+    pUi->lineEditPlace->setText(par->pTagetRec->getName(_sPlaceName));
+    pUi->labelNode->setText(par->sNodeTitle);
+    pUi->lineEditNode->setText(par->pTagetRec->getName(_sNodeName));
+    pUi->lineEditMsg->setText(par->pTagetRec->getName("msg"));
+    pUi->lineEditFrom->setText(par->pTagetRec->getName(_sBeginTime));
+    if (par->pTagetRec->isNull(_sEndTime)) {
         pUi->labelTo->hide();
+        pUi->lineEditTo->hide();
     }
     else {
-        pUi->toL->setText(__r.getName(_sEndTime));
+        pUi->lineEditTo->setText(par->pTagetRec->getName(_sEndTime));
     }
-    connect(pUi->msgTE, SIGNAL(textChanged()), this, SLOT(changed()));
-    if (par->pTicket != NULL) pUi->checkBoxTicket->setEnabled(true);
+    connect(pUi->textEditMsg, SIGNAL(textChanged()), this, SLOT(changed()));
+    if (par->pTicket != NULL && !par->isTicket) pUi->checkBoxTicket->setEnabled(true);
 }
 
 cAckDialog::~cAckDialog()
@@ -326,7 +357,7 @@ cAckDialog::~cAckDialog()
 #define MIN_MSG_SIZE 8
 void cAckDialog::changed()
 {
-    pUi->ackPB->setDisabled(pUi->msgTE->toPlainText().size() < MIN_MSG_SIZE);
+    pUi->ackPB->setDisabled(pUi->textEditMsg->toPlainText().size() < MIN_MSG_SIZE);
 }
 
 

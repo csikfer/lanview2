@@ -147,6 +147,7 @@ TSTREAMO(cColEnumType)
 /* ******************************************************************************************************
    *                                         cColStaticDescr                                            *
    ******************************************************************************************************/
+class cRecStaticDescr;
 class cRecord;
 
 /*!
@@ -450,7 +451,7 @@ public:
     typedef QList<cColStaticDescr *>::const_iterator    const_iterator;
     typedef QList<cColStaticDescr *>                    list;
     /// üres listát létrehozó konstruktor
-    cColStaticDescrList();
+    cColStaticDescrList(cRecStaticDescr *par);
     /// Copy konstruktor, nem támogatott, dob egy kizárást.
     cColStaticDescrList(const cColStaticDescrList&) : QList<cColStaticDescr *>() { EXCEPTION(ENOTSUPP); }
     /// Destruktor
@@ -481,6 +482,10 @@ public:
     /// @exception cError* Ha nincs ilyen mező, akkor dob egy kizárást.
     /// @param i a keresett mező indexe (0,1,...).
     const cColStaticDescr& operator[](int i) const;
+    /// parent
+    const cRecStaticDescr *pParent;
+    QString fullColName(const QString& _col) const;
+    QString tableName() const ;
 };
 
 /* ******************************************************************************************************
