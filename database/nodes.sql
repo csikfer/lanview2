@@ -1,6 +1,6 @@
 
 CREATE TYPE nodetype AS ENUM ('patch','node', 'host', 'switch', 'hub', 'virtual', 'snmp', 'converter', 'printer', 'gateway',
-                              'workstation', 'mobile', 'device');
+                              'ap', 'workstation', 'mobile', 'device');
 ALTER TYPE nodetype OWNER TO lanview2;
 COMMENT ON TYPE nodetype IS '
 Típus azonosítók
@@ -11,6 +11,10 @@ Típus azonosítók
 "hub"           HUB
 "virtual"       Virtuális eszköz
 "snmp"          SNMP képes eszköz
+"converter"     Media, stb... konverter
+"printer"       Printer
+"gateway"
+"ap"            Access Point
 "workstation"   Munkaállomás, felhasználói gép
 "mobile"        Mobil eszköz
 "device"        
@@ -432,6 +436,9 @@ ALTER TABLE nodes OWNER TO lanview2;
 COMMENT ON TABLE  nodes         IS 'Passzív vagy aktív hálózati elemek táblája';
 COMMENT ON COLUMN nodes.node_stat IS 'Az eszköz állapota.';
 COMMENT ON COLUMN nodes.node_type IS 'Típus azonosítók. ha NULL, akkor a trigger f. {node}-ra állítja.';
+
+INSERT INTO nodes(node_id, node_name, node_note,    node_type )
+           VALUES(-1,      'nil',    'Independent', '{node, virtual}' );
 
 -- //// LAN.SNMPDEVICES
 CREATE TYPE snmpver AS ENUM ('1'/*, '2'*/, '2c'/*, '3'*/);

@@ -26,7 +26,9 @@ COMMENT ON COLUMN service_types.service_type_name IS 'service csoport ill. típu
 COMMENT ON COLUMN service_types.service_type_note IS 'Megjegyzés.';
 
 INSERT INTO service_types (service_type_id, service_type_name) VALUES 
-    ( -1,        'unmarked');
+    ( -1,        'unmarked'),
+    (  0,        'ticket');
+    
 
 
 CREATE TABLE services (
@@ -96,13 +98,16 @@ COMMENT ON COLUMN services.max_check_attempts    IS 'Hibás eredmények maximál
 COMMENT ON COLUMN services.normal_check_interval IS 'Ellenörzések ütemezése, ha nincs hiba. Alapértelmezett érték.';
 COMMENT ON COLUMN services.retry_check_interval  IS 'Ellenörzések ütemezése, hiba esetén a riasztás kiadásáig. Alapértelmezett érték.';
 
+
 ALTER TABLE services ADD COLUMN offline_group_ids bigint[] DEFAULT NULL;
 COMMENT ON COLUMN services.offline_group_ids IS 'off-line riasztás küldése, az user_froup_id-k alapján a tagoknak, alapértelmezés';
 ALTER TABLE services ADD COLUMN online_group_ids  bigint[] DEFAULT NULL;
 COMMENT ON COLUMN services.online_group_ids  IS 'on-line riasztás küldése, az user_froup_id-k alapján a tagoknak, alapértelmezés';
 
-INSERT INTO services (service_id, service_name, service_note) VALUES
-    ( -1, 'nil', 'A NULL-t reprezentálja, de összehasonlítható');
+INSERT INTO services (service_id, service_name, service_note)
+     VALUES          ( -1,        'nil',        'A NULL-t reprezentálja, de összehasonlítható');
+INSERT INTO services (service_id, service_name, service_note, disabled)
+     VALUES          (  0,        'ticket',     'Hiba jegy',  true );
 
 CREATE OR REPLACE FUNCTION service_name2id(text) RETURNS bigint AS $$
 DECLARE
@@ -226,6 +231,10 @@ COMMENT ON COLUMN host_services.last_changed IS 'Utolsó állapot változás id�
 COMMENT ON COLUMN host_services.last_touched IS 'Utolsó ellenözzés időpontja';
 COMMENT ON COLUMN host_services.act_alarm_log_id IS 'Riasztási állapot esetén az aktuális riasztás log rekord ID-je';
 COMMENT ON COLUMN host_services.last_alarm_log_id IS 'Az utolsó riasztás log rekord ID-je';
+
+INSERT INTO host_services (host_service_id, node_id, service_id, host_service_note)
+     VALUES               ( 0,              -1,      0,          'Hiba jegy.');
+
 
 CREATE OR REPLACE FUNCTION host_service_id2name(bigint) RETURNS TEXT AS $$
 DECLARE
@@ -595,60 +604,4 @@ BEGIN
     RETURN TRUE;
 END
 $$ LANGUAGE plpgsql;
-
-
--- ///////////////////////////
--- Views
--- ///////////////////////////
-
-CREATE OR REPLACE VIEW view_host_services AS
-    SELECT
-        hs.host_service_id          AS host_service_id,
-        host_service_id2name(hs.host_service_id) AS host_service_name,
-        hs.host_service_note        AS host_service_note,
-        hs.node_id                  AS node_id,
-        n.node_name                 AS node_name,
-        hs.service_id               AS service_id,
-        s.service_name              AS service_name,
-        hs.prime_service_id         AS prime_service_id,
-        prime_s.service_name        AS prime_service_name,
-        hs.port_id                  AS port_id,
-        p.port_name                 AS port_name,
-        hs.delegate_host_state      AS delegate_host_state,
-        COALESCE(hs.check_cmd,             s.check_cmd)              AS check_cmd,
-        s.features                  AS default_features,
-        hs.features                 AS features,
-        hs.superior_host_service_id AS superior_host_service_id,
-        superior_hs_h.node_name     AS superior_host_service_host_name,
-        superior_hs_s.service_name  AS superior_host_service_service_name,
-        COALESCE(hs.max_check_attempts,    s.max_check_attempts)     AS max_check_attempts,
-        COALESCE(hs.normal_check_interval, s.normal_check_interval)  AS normal_check_interval,
-        COALESCE(hs.retry_check_interval,  s.retry_check_interval)   AS retry_check_interval,
-        COALESCE(hs.flapping_interval,     s.flapping_interval)      AS flapping_interval,
-        COALESCE(hs.flapping_max_change,   s.flapping_max_change)    AS flapping_max_change,
-        hs.timeperiod_id            AS timeperiod_id,
-        tp.timeperiod_name          AS timeperiod_name,
-        hs.noalarm_flag             AS noalarm_flag,
-        hs.noalarm_from             AS noalarm_from,
-        hs.noalarm_to               AS noalarm_to,
-        COALESCE(hs.offline_group_id, s.offline_group_id)            AS offline_group_id,
-        COALESCE(hs.online_group_id, s.online_group_id)              AS online_group_id,
-        hs.host_service_state       AS host_service_state,
-        hs.soft_state               AS soft_state,
-        hs.hard_state               AS hard_state,
-        hs.check_attempts           AS check_attempts,
-        hs.last_changed             AS last_changed,
-        hs.last_touched             AS last_touched,
-        hs.act_alarm_log_id         AS act_alarm_log_id,
-        hs.last_alarm_log_id        AS last_alarm_log_id,
-        hs.deleted                  AS deleted
-    FROM     host_services      AS  hs
-        LEFT JOIN services      AS  s               ON hs.service_id            = s.service_id
-        LEFT JOIN nodes         AS  n               ON hs.node_id               = n.node_id
-        LEFT JOIN nports        AS  p               ON hs.port_id               = p.port_id
-        LEFT JOIN timeperiods   AS  tp              ON COALESCE(hs.timeperiod_id, s.timeperiod_id)  = tp.timeperiod_id
-        LEFT JOIN services      AS  prime_s         ON hs.prime_service_id      = prime_s.service_id
-        LEFT JOIN host_services AS  superior_hs     ON hs.superior_host_service_id = superior_hs.host_service_id
-        LEFT JOIN nodes         AS  superior_hs_h   ON superior_hs.node_id      = superior_hs_h.node_id
-        LEFT JOIN services      AS  superior_hs_s   ON superior_hs.service_id   = superior_hs_s.service_id;
 

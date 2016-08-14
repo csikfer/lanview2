@@ -1,6 +1,3 @@
-NODE VIRTUAL nil "Hipotetikus eszköz, eszköz föggetlen.";
-SERVICE ticket   "Hiba jegyek" { NIL; }
-HOST SERVICE nil.ticket "Hiba jegyek";
 
 SERVICE local       "local service"     { NIL;      }
 SERVICE  ssh         ssh                { TCP 22;   }

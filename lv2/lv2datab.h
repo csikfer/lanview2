@@ -303,8 +303,6 @@ public:
     QStringList fKeyTables;
     /// Egy opcionális függvény név, ami ID-k esetén elvégzi a stringgé (névvé) konvertálást
     QString     fnToName;
-    /// A mező alapértelmezett értéke, az adott típusra konvertálva (ha nincs akkor "invalid")
-    QVariant    defValue;
     /// Az objektum tartalmát striggé konvertálja pl. nyomkövetésnél használható.
     QString toString() const;
     /// Az objektum tartalmát striggé konvertálja pl. nyomkövetésnél használható.
@@ -323,8 +321,6 @@ protected:
         else                        return cColStaticDescr::VC_DEFAULT;  // NULL / DEFAULT
     }
     eValueCheck ifExcep(eValueCheck result, eValueCheck acceptable, const QVariant &val) const;
-    /// Ha van default érték, akkor azt konvertálja a megfelelő típusba, vagyis beállítja a defValue adattag értékét.
-    virtual void setDefValue();
     QString fKeyId2name(QSqlQuery &q, qlonglong id) const;
 };
 TSTREAMO(cColStaticDescr)
@@ -346,8 +342,6 @@ public:
     virtual qlonglong toId(const QVariant& _f) const;
     virtual QString toView(QSqlQuery&, const QVariant& _f) const;
     virtual cColStaticDescr *dup() const;
-protected:
-    virtual void setDefValue();
 private:
     void init();
 };
@@ -368,9 +362,7 @@ private:
         virtual QVariant  set(const QVariant& _f, qlonglong &rst) const; \
         virtual QString   toName(const QVariant& _f) const; \
         virtual qlonglong toId(const QVariant& _f) const; \
-        virtual cColStaticDescr *dup() const; \
-  protected: \
-        virtual void setDefValue();
+        virtual cColStaticDescr *dup() const;
 
 /// @class cColStaticDescrAddr
 /// Az ős cColStaticDescr osztályt az macaddr, inet és cidr típus konverziós függvényivel egészíti ki.
@@ -674,6 +666,9 @@ public:
     /// A teljes mező névvel (tábla és ha szükséges a séma névvel kiegészített) tér vissza. a nevek idézőjelbe vannak rakva.
     /// @param _c (rövid) mező név
     QString fullColumnNameQ(const QString& _c) const { return mCat(fullTableNameQ(), dQuoted(_c)); }
+    ///
+    QStringList columnNames(QBitArray mask) const;
+    QStringList columnNames(tIntVector ixs) const;
     /// A tábla típusával tér vissza
     quint16 tableType() const                       { return _tableType; }
     /// A visszaadott objektum referenciában a Primary Key-hez rendelt mezükkel azonos indexű bitek 1-be vannak
@@ -1144,6 +1139,9 @@ public:
     /// Tisztán virtuális függvényt hív, konstruktorból nem hívható.
     /// @param _c A kiegészítendő mező (oszlop) neve
     QString fullColumnNameQ(const QString& _c) const { return descr().fullColumnNameQ(_c); }
+    ///
+    QStringList columnNames(QBitArray mask) const { return descr().columnNames(mask); }
+    QStringList columnNames(tIntVector ixs) const { return descr().columnNames(ixs); }
     /// A tábla típusával tér vissza
     /// Tisztán virtuális függvényt hív, konstruktorból nem hívható.
     quint16 tableType() const                       { return descr().tableType(); }
