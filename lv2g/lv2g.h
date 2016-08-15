@@ -76,11 +76,13 @@ public:
     static bool     zoneNeeded;
     qlonglong       zoneId;
     int             maxRows;
+    int             dialogRows;
     enum Qt::Orientation    defaultSplitOrientation;
     QString                 sounFileAlarm;
     // Identifier strings
     static const QString    sDefaultSplitOrientation;
     static const QString    sMaxRows;
+    static const QString    sDialogRows;
     static const QString    sSoundFileAlarm;
     static cMainWindow *    pMainWindow;
 protected:

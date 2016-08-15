@@ -222,9 +222,6 @@ private:
 /// Egy dummy osztály dummy példány, hogy lehessen referencia az osztályra.
 extern no_init_ _no_init_;
 
-EXT_ QString pointCat(const QString& s1, const QString& s2);
-EXT_ QString pointCat(const QString& s1, const QString& s2, const QString& s3);
-
 /* ******************************  ****************************** */
 
 void writeRollLog(QFile& __log, const QByteArray& __data, qlonglong __size, int __arc);

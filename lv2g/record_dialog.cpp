@@ -391,39 +391,27 @@ void cRecordDialog::init()
     int maxFields;
     DBGFN();
     bool ok;
-    maxFields = tableShape.feature(pointCat(_sDialog, _sHeight)).toInt(&ok);
-    if (!ok) maxFields = 10;    // Default
+    maxFields = tableShape.feature(mCat(_sDialog, _sHeight)).toInt(&ok);
+    if (!ok) maxFields = lv2g::getInstance()->dialogRows;    // Default
 
     pFormLayout = new QFormLayout;
     pFormLayout->setObjectName(name + "_Form");
-    int n = tableShape.shapeFields.size();
-    if (n > maxFields) {
-        pSplittLayout = new QBoxLayout(QBoxLayout::LeftToRight);
-        pSplitter     = new QSplitter(_pWidget);
-        pSplittLayout->addWidget(pSplitter);
-    }
+//    int n = tableShape.shapeFields.size();
+    pSplittLayout = new QBoxLayout(QBoxLayout::LeftToRight);
+    pSplitter     = new QSplitter(_pWidget);
+    pSplittLayout->addWidget(pSplitter);
     if (_pButtons != NULL) {
         pVBoxLayout = new QVBoxLayout;
         pVBoxLayout->setObjectName(name + "_VBox");
         _pWidget->setLayout(pVBoxLayout);
-        if (n > maxFields) {
-            pVBoxLayout->addLayout(pSplittLayout, 1);
-            pSplitter->addWidget(_frame(pFormLayout, _pWidget));
-        }
-        else {
-            pVBoxLayout->addLayout(pFormLayout, 1);
-        }
+        pVBoxLayout->addLayout(pSplittLayout, 1);
+        pSplitter->addWidget(_frame(pFormLayout, _pWidget));
         pVBoxLayout->addWidget(_pButtons->pWidget(), 0);
     }
     else {
         pVBoxLayout = NULL;
-        if (n > maxFields) {
-             _pWidget->setLayout(pSplittLayout);
-             pSplitter->addWidget(_frame(pFormLayout, _pWidget));
-        }
-        else {
-            _pWidget->setLayout(pFormLayout);
-        }
+         _pWidget->setLayout(pSplittLayout);
+         pSplitter->addWidget(_frame(pFormLayout, _pWidget));
     }
     tTableShapeFields::const_iterator i, e = tableShape.shapeFields.cend();
     _pRecord = new cRecordAny(&rDescr);
@@ -444,17 +432,12 @@ void cRecordDialog::init()
     for (i = tableShape.shapeFields.cbegin(); i != e; ++i) {
         const cTableShapeField& mf = **i;
         if (mf.getBool(_sFieldFlags, FF_DIALOG_HIDE)) continue;
-        if (++cnt > maxFields) {
-            cnt = 0;
-            pFormLayout = new QFormLayout;  // !!!
-            pSplitter->addWidget(_frame(pFormLayout, _pWidget));
-        }
         int fieldIx = rDescr.toIndex(mf.getName());
         bool setRo = _isReadOnly || mf.getBool(_sFieldFlags, FF_READ_ONLY);
         cFieldEditBase *pFW = cFieldEditBase::createFieldWidget(tableShape, mf, (*_pRecord)[fieldIx], setRo, this);
         fields.append(pFW);
         QWidget * pw = pFW->pWidget();
-        qlonglong stretch = mf.feature(pointCat(_sStretch, _sVertical), 0);
+        qlonglong stretch = mf.feature(mCat(_sStretch, _sVertical), 0);
         if (stretch > 0) {
             QSizePolicy sp = pw->sizePolicy();
             sp.setVerticalStretch(stretch);
@@ -462,6 +445,13 @@ void cRecordDialog::init()
         }
         pw->setObjectName(mf.getName());
         PDEB(VVERBOSE) << "Add row to form : " << mf.getName() << " widget : " << typeid(*pFW).name() << QChar('/') << fieldWidgetType(pFW->wType()) << endl;
+        int h = pFW->height();
+        cnt += h;
+        if (cnt > maxFields) {
+            cnt = h;
+            pFormLayout = new QFormLayout;  // !!!
+            pSplitter->addWidget(_frame(pFormLayout, _pWidget));
+        }
         pFormLayout->addRow(mf.getName(_sDialogTitle), pw);
         if (!_pRecord->isNull(fieldIx)) {
             pFW->set(_pRecord->get(fieldIx));

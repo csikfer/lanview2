@@ -10,6 +10,7 @@ cGSetupWidget::cGSetupWidget(QSettings &__s, QWidget *par)
     bool splOrient = lv2g::getInstance()->defaultSplitOrientation;
     QString sounFileAlarm = lv2g::getInstance()->sounFileAlarm;
     int maxRows = lv2g::getInstance()->maxRows;
+    int dialogRows = lv2g::getInstance()->dialogRows;
     pUi = new Ui_GSetup;
     pUi->setupUi(this);
     pUi->radioButtonHorizontal->setChecked(splOrient);
@@ -17,6 +18,7 @@ cGSetupWidget::cGSetupWidget(QSettings &__s, QWidget *par)
     pUi->lineEditAlarm->setText(sounFileAlarm);
     pUi->pushButtonAlarmTest->setDisabled(sounFileAlarm.isEmpty());
     pUi->spinBoxMaxRows->setValue(maxRows);
+    pUi->spinBoxDialogRows->setValue(dialogRows);
 
     connect(pUi->PBApplicateAndRestart,SIGNAL(clicked()),    this,   SLOT(applicateAndRestart()));
     connect(pUi->PBApplicateAndExit,   SIGNAL(clicked()),    this,   SLOT(applicateAndExit()));
@@ -41,6 +43,8 @@ void cGSetupWidget::applicate()
     qset.setValue(lv2g::sDefaultSplitOrientation, v);
     lv2g::getInstance()->maxRows = pUi->spinBoxMaxRows->value();
     qset.setValue(lv2g::sMaxRows, lv2g::getInstance()->maxRows);
+    lv2g::getInstance()->dialogRows = pUi->spinBoxDialogRows->value();
+    qset.setValue(lv2g::sDialogRows, lv2g::getInstance()->dialogRows);
     lv2g::getInstance()->sounFileAlarm = pUi->lineEditAlarm->text();
     qset.setValue(lv2g::sSoundFileAlarm, lv2g::getInstance()->sounFileAlarm);
     qset.sync();

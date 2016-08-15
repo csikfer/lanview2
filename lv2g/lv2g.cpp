@@ -8,6 +8,7 @@ bool lv2g::zoneNeeded  = true;
 const QString lv2g::sDefaultSplitOrientation= "defaultSplitOrientation";
 const QString lv2g::sMaxRows                = "max_rows";
 const QString lv2g::sSoundFileAlarm         = "sound_file_alarm";
+const QString lv2g::sDialogRows             = "dialog-rows";
 
 lv2g::lv2g() :
     lanView(),
@@ -30,6 +31,7 @@ lv2g::lv2g() :
             bool ok;
             maxRows = pSet->value(sMaxRows, maxRows).toInt(&ok);
             if (!ok) maxRows = (int)cSysParam::getIntSysParam(q, sMaxRows, 100);
+            dialogRows = pSet->value(sDialogRows, 16).toInt();
             sounFileAlarm = pSet->value(sSoundFileAlarm).toString();
         }
         else if (logonNeeded) EXCEPTION(ESQLOPEN, 0, trUtf8("Nincs elérhető adatbázis."));

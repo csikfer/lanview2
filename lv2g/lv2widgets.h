@@ -167,7 +167,8 @@ public:
 //  QString fieldToName()                   { if (_pFieldRef == NULL) EXCEPTION(EPROGFAIL); return (QString)*_pFieldRef; }
     /// A widgethez rendelt mező objektum inexével a rekordban tér vissza, ha nincs mező rendelve a widgethez, akkor dob egy kizárást.
     int fieldIndex() const { return _colDescr.fieldIndex(); }
-
+    /// A widget magassága ~sor
+    virtual int height();
     /// Parent objektum
     cRecordDialogBase *_pParentDialog;
     /// A mező leíró objektum referenciája
@@ -228,6 +229,7 @@ public:
     cSetWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase* _par);
     ~cSetWidget();
     virtual int set(const QVariant& v);
+    virtual int height();
 protected:
     /// A radio-button-okat kezelő obkeltum
     QButtonGroup   *pButtons;
@@ -255,6 +257,7 @@ public:
     cEnumRadioWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase* _par);
     ~cEnumRadioWidget();
     virtual int set(const QVariant& v);
+    virtual int height();
 protected:
     /// A radio-button-okat kezelő obkeltum
     QButtonGroup   *pButtons;
@@ -302,6 +305,7 @@ public:
     cFieldLineWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef _fr, bool _ro, cRecordDialogBase* _par);
     ~cFieldLineWidget();
     virtual int set(const QVariant& v);
+    virtual int height();
 protected:
     /// Védett konstruktor. cArrayWidget osztályhoz.
     /// Nem lehet ReadOnly, adat szinkronizálás csak a valid slot-on keresztül.
@@ -339,6 +343,7 @@ public:
     cArrayWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase *_par);
     ~cArrayWidget();
     virtual int set(const QVariant& v);
+    virtual int height();
 protected:
     void setButtons();
     Ui_arrayEd       *pUi;
@@ -373,6 +378,7 @@ public:
     cPolygonWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase* _par);
     ~cPolygonWidget();
     virtual int set(const QVariant& v);
+    virtual int height();
 protected:
     enum ePic {
         NO_ANY_PIC,

@@ -388,6 +388,11 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
     }
 }
 
+int cFieldEditBase::height()
+{
+    return 1;
+}
+
 /* **************************************** cNullWidget **************************************** */
 cNullWidget::cNullWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase* _par)
     : cFieldEditBase(_tm, _tf, __fr, _ro, _par)
@@ -459,6 +464,11 @@ int cSetWidget::set(const QVariant& v)
         }
     }
     return r;
+}
+
+int cSetWidget::height()
+{
+    return _colDescr.enumType().enumValues.size();
 }
 
 void cSetWidget::setFromEdit(int id)
@@ -533,6 +543,11 @@ int cEnumRadioWidget::set(const QVariant& v)
         }
     }
     return r;
+}
+
+int cEnumRadioWidget::height()
+{
+    return _colDescr.enumType().enumValues.size();
 }
 
 void cEnumRadioWidget::setFromEdit(int id)
@@ -700,6 +715,12 @@ int cFieldLineWidget::set(const QVariant& v)
     return r;
 }
 
+int cFieldLineWidget::height()
+{
+    if (_wType == FEW_LINE) return 1;
+    else                    return 4;
+}
+
 void cFieldLineWidget::setFromEdit()
 {
     QString  s;
@@ -766,6 +787,11 @@ int cArrayWidget::set(const QVariant& v)
         setButtons();
     }
     return r;
+}
+
+int cArrayWidget::height()
+{
+    return 6;
 }
 
 void cArrayWidget::setButtons()
@@ -990,6 +1016,11 @@ int cPolygonWidget::set(const QVariant& v)
     }
     getImage();    // Feltételezi, hogy az rekord ID ha van elöbb lett megadva
     return r;
+}
+
+int cPolygonWidget::height()
+{
+    return 6;
 }
 
 /// Ha a feltételek teljesülnek, akkor kitölti a pCImage objektumot.
