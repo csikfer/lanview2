@@ -376,7 +376,7 @@ public:
 };
 
 /// Elvileg titkosít, gyakorlatilag egy túró, de mégse virít pucéran a konfigban a jelszó.
-QString scramble(const QString& _s);
+EXT_ QString scramble(const QString& _s);
 
 
 #endif // LANVIEW_H
