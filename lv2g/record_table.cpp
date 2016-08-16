@@ -673,7 +673,7 @@ void cRecordsViewBase::insert()
                     else if (flags & RTF_IGROUP) {    // Group, tagja listába van a beillesztés?
                         ok = cGroupAny(*pRec, *(pUpper->actRecord())).insert(*pq, EX_IGNORE);
                         if (!ok) {
-                            QMessageBox::warning(pWidget(), trUtf8("Hiba"), trUtf8("A kijelölt tag felvétele az új csoportba sikertelen"),QMessageBox::Ok);
+                            QMessageBox::warning(pWidget(), design().titleError, trUtf8("A kijelölt tag felvétele az új csoportba sikertelen"),QMessageBox::Ok);
                             refresh();
                             break;
                         }
@@ -884,6 +884,12 @@ void cRecordsViewBase::remove()
 {
     DBGFN();
     QModelIndexList mil = selectedRows();
+    int r =
+        QMessageBox::warning(pWidget(),
+                     design().titleWarning,
+                     trUtf8("Valóban törölni kívánja a kijelölt sor(ok)at ?\nA művelet nem vonható vissza!"),
+                     QMessageBox::Ok, QMessageBox::Cancel);
+    if (QMessageBox::Ok != r) return;
     pModel->removeRecords(mil);
 }
 

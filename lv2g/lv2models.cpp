@@ -295,7 +295,7 @@ bool cRecordListModel::setFilter(const QString& _par, enum eOrderType __o, enum 
     QString fn, nn;
     QString in = descr.columnNameQ(descr.idIndex());
     if (toNameFName.isEmpty()) {
-        nn = descr.columnNameQ(descr.nameIndex());
+        nn = descr.nameName();
     }
     else {
         fn = toNameFName + QChar('(') + in +QChar(')') + QChar(' ');

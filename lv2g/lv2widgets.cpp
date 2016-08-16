@@ -1749,7 +1749,7 @@ void cBinaryWidget::loadDataFromFile()
     if (fn.isEmpty()) return;
     QFile f(fn);
     if (f.open(QIODevice::ReadOnly) == false && f.isReadable() == false) {
-        QMessageBox::warning(pWidget(), trUtf8("Hiba"), trUtf8("A megadott fájl nem olvasható"));
+        QMessageBox::warning(pWidget(), design().titleError, trUtf8("A megadott fájl nem olvasható"));
         return;
     }
     data = f.readAll();

@@ -25,7 +25,7 @@ cMainWindow::cMainWindow(QWidget *parent) :
         if (!mi.fetchFirstItem(*pqm, lanView::getInstance()->appName)) {
             QString msg = trUtf8("Nincs menü a GUI applikációhoz");
             if (lanView::isAuthorized(PL_ADMIN)) {
-                QMessageBox::warning(NULL, trUtf8("Figyelmeztetés!"), msg);
+                QMessageBox::warning(NULL, design().titleWarning, msg);
                 setSetupMenu();
             }
             else {

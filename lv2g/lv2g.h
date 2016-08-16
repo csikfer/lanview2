@@ -78,12 +78,13 @@ public:
     int             maxRows;
     int             dialogRows;
     enum Qt::Orientation    defaultSplitOrientation;
-    QString                 sounFileAlarm;
+    QString                 soundFileAlarm;
     // Identifier strings
     static const QString    sDefaultSplitOrientation;
     static const QString    sMaxRows;
     static const QString    sDialogRows;
     static const QString    sSoundFileAlarm;
+    /// Main window object pointer
     static cMainWindow *    pMainWindow;
 protected:
     const lv2gDesign *pDesign;

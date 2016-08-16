@@ -14,7 +14,7 @@ cOnlineAlarm::cOnlineAlarm(QWidget *par) : cOwnTab(par)
             this,                 SLOT(notify(QString,QSqlDriver::NotificationSource,QVariant)));
     pTagetRec = pActRecord = NULL;
     isTicket  = false;
-    pSound = new QSound(lv2g::getInstance()->sounFileAlarm, this);
+    pSound = new QSound(lv2g::getInstance()->soundFileAlarm, this);
     pSound->setLoops(QSound::Infinite);
     pq = newQuery();
     isAdmin = lanView::user().privilegeLevel() >= PL_ADMIN;

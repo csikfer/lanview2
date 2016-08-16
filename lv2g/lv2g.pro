@@ -79,7 +79,8 @@ FORMS += \
     gsetup.ui \
     edit_field.ui \
     noalarm.ui \
-    hsoperate.ui
+    hsoperate.ui \
+    add_phs_link.ui
 INCLUDEPATH += ../lv2
 unix:LIBS += -lsnmp
 msvc:LIBS += -lSecur32

@@ -8,7 +8,7 @@ cGSetupWidget::cGSetupWidget(QSettings &__s, QWidget *par)
 {
     pSound = NULL;
     bool splOrient = lv2g::getInstance()->defaultSplitOrientation;
-    QString sounFileAlarm = lv2g::getInstance()->sounFileAlarm;
+    QString sounFileAlarm = lv2g::getInstance()->soundFileAlarm;
     int maxRows = lv2g::getInstance()->maxRows;
     int dialogRows = lv2g::getInstance()->dialogRows;
     pUi = new Ui_GSetup;
@@ -45,8 +45,8 @@ void cGSetupWidget::applicate()
     qset.setValue(lv2g::sMaxRows, lv2g::getInstance()->maxRows);
     lv2g::getInstance()->dialogRows = pUi->spinBoxDialogRows->value();
     qset.setValue(lv2g::sDialogRows, lv2g::getInstance()->dialogRows);
-    lv2g::getInstance()->sounFileAlarm = pUi->lineEditAlarm->text();
-    qset.setValue(lv2g::sSoundFileAlarm, lv2g::getInstance()->sounFileAlarm);
+    lv2g::getInstance()->soundFileAlarm = pUi->lineEditAlarm->text();
+    qset.setValue(lv2g::sSoundFileAlarm, lv2g::getInstance()->soundFileAlarm);
     qset.sync();
     QSettings::Status st = qset.status();
     if (QSettings::NoError != st) {
@@ -96,10 +96,9 @@ void cGSetupWidget::selectAlarmFile()
 
 void cGSetupWidget::testAlarmFile()
 {
-    QString warning =trUtf8("Figyelmeztetés");
     QString fn = pUi->lineEditAlarm->text();
     if (fn.isEmpty()) {
-        QMessageBox::warning(this, warning, trUtf8("Nincs megadva hang fájl."));
+        QMessageBox::warning(this, design().titleWarning, trUtf8("Nincs megadva hang fájl."));
         return;
     }
     pDelete(pSound);

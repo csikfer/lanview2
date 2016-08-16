@@ -3,6 +3,8 @@
 
 #include "record_table.h"
 #include "record_link_model.h"
+#include "lv2models.h"
+#include "ui_add_phs_link.h"
 
 /// @class cRecordLink
 /// Egy adatbázis link nézet tábla megjelenítését végző objektum.
@@ -24,25 +26,53 @@ public:
 
 };
 
-/*
 /// @class cLinkDialog
 /// @brief Link rekord szerkesztés dialógus objektum, Csak a fizikai linkeket lehet szerkeszteni.
-/// Tartalmazza (felépíti) a rekord mezőinek a megjelenítését, ill. a szerkesztést megvalósító widget-eket is.
-class LV2GSHARED_EXPORT cLinkDialog : public cRecordDialogBase {
+class LV2GSHARED_EXPORT cLinkDialog : public QDialog {
+    Q_OBJECT
 public:
     /// Konstruktor
-    /// @param rec Az editálandó adat objktum referenciája
-    /// @param __tm A rekord/tábla megjelenítését ill szerkesztését vezérlő leíró
-    /// @param _buttons A megjelenítendő nyomógombok bit maszkja
-    /// @param dialog Ha a dialóus ablakot QDialog-ból kell létrehozni, akkor true, ha fals, akkor QWidget-ből.
-    /// @param parent Az szülő widget opcionális parent pointere
-    cLinkDialog(cPhsLink rec, const cTableShape &__tm, bool dialog = true, QWidget * parent = NULL);
-    /// A rekord adattag tartalmának a megjelenítése/megjelenítés visszaállítása
-    virtual void restore(cRecord *_pRec = NULL);
-    /// A megjelenített értékek kiolvasása
-    virtual bool accept();
-    virtual cFieldEditBase * operator[](const QString& __fn);
-    static const int buttons;
+    /// @param parent Az szülő objektum pointere
+    cLinkDialog(cRecordLink * __parent = NULL);
+    ~cLinkDialog();
+private:
+    void init();
+    QString nodeFilter(const cPlace& place);
+    QString portFilter(const cPatch& node);
+
+    cRecordLink * parent;
+    QSqlQuery *   pq;
+    cRecord *     pActRecord;
+    qlonglong     parentOwnerId;
+    cPatch        node1, node2;
+    cNPort *      pPrt1, *pPrt2;
+    cPlaceGroup   pgrp1, pgrp2;
+    cPlace        plac1, plac2;
+    Ui_DialogAddPhsLink *pUi;
+    bool                utter1;
+    bool                utter2;
+    QButtonGroup       *pButtonsLink1Type;
+    QButtonGroup       *pButtonsLink2Type;
+    cRecordListModel   *pModelZone1;
+    cRecordListModel   *pModelZone2;
+    cRecordListModel   *pModelPlace1;
+    cRecordListModel   *pModelPlace2;
+    cRecordListModel   *pModelNode1;
+    cRecordListModel   *pModelNode2;
+    cRecordListModel   *pModelPort1;
+    cRecordListModel   *pModelPort2;
+    cRecordListModel   *pModelPort1Share;
+private slots:
+    void zone1CurrentIndex(int i);
+    void zone2CurrentIndex(int i);
+    void place1CurrentIndex(int i);
+    void place2CurrentIndex(int i);
+    void node1CurrentIndex(int i);
+    void node2CurrentIndex(int i);
+    void port1CurrentIndex(int i);
+    void pore2CurrentIndex(int i);
+    void port1ShareCurrentIndex(int i);
+
 };
-*/
+
 #endif // RECORD_LINK

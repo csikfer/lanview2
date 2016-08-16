@@ -32,7 +32,7 @@ lv2g::lv2g() :
             maxRows = pSet->value(sMaxRows, maxRows).toInt(&ok);
             if (!ok) maxRows = (int)cSysParam::getIntSysParam(q, sMaxRows, 100);
             dialogRows = pSet->value(sDialogRows, 16).toInt();
-            sounFileAlarm = pSet->value(sSoundFileAlarm).toString();
+            soundFileAlarm = pSet->value(sSoundFileAlarm).toString();
         }
         else if (logonNeeded) EXCEPTION(ESQLOPEN, 0, trUtf8("Nincs elérhető adatbázis."));
         defaultSplitOrientation = Qt::Horizontal;
