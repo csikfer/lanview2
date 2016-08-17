@@ -179,7 +179,7 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus exit
 
 void cInspectorProcess::processReadyRead()
 {
-    DBGFN();
+    // DBGFN();
     if (logNull) {
         (void)readAllStandardOutput();
     }

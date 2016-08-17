@@ -199,7 +199,8 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
                 }
                 else {  // Nincs link ? Trunk-nél!
                     // Ha van "link_is_invisible_for_LLDP" paraméter, és igaz, akkor nem pampogunk a link hiánya miatt
-                    if (np.getBoolParam(linkIsInvisibleForLLDPTypeId, EX_IGNORE) == TS_TRUE) continue;
+                    eTristate f = host().ports[ix]->getBoolParam(linkIsInvisibleForLLDPTypeId, EX_IGNORE);
+                    if (f == TS_TRUE) continue;
                     msg = trUtf8("A %1:%2 trunk %3 tagjához nincs link rendelve.")
                             .arg(host().getName(), np.getName(), host().ports[ix]->getName());
                     APPMEMO(__q, msg, RS_WARNING);

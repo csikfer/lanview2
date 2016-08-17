@@ -21,6 +21,9 @@
        <property name="text">
         <string>Hálózati elem</string>
        </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
       </widget>
      </item>
      <item row="1" column="1">
@@ -31,12 +34,18 @@
        <property name="text">
         <string>Port :</string>
        </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
       </widget>
      </item>
      <item row="2" column="2">
       <widget class="QLabel" name="labelPort1Share">
        <property name="text">
         <string>Megosztás :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
       </widget>
      </item>
@@ -51,12 +60,18 @@
        <property name="text">
         <string>Zóna :</string>
        </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
       </widget>
      </item>
      <item row="0" column="2">
       <widget class="QLabel" name="labelPlace1">
        <property name="text">
         <string>Hely :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
       </widget>
      </item>
@@ -130,6 +145,9 @@
        <property name="text">
         <string>Typusa :</string>
        </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
       </widget>
      </item>
      <item row="2" column="1">
@@ -154,6 +172,9 @@
       <widget class="QLabel" name="labelLink1Type">
        <property name="text">
         <string>Link Típusa :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
       </widget>
      </item>
@@ -194,41 +215,17 @@
     </layout>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout">
-     <item>
-      <widget class="Line" name="line_4">
-       <property name="lineWidth">
-        <number>2</number>
-       </property>
-       <property name="midLineWidth">
-        <number>4</number>
-       </property>
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="pushButtonSwap">
-       <property name="text">
-        <string>Portok felcserélése</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="Line" name="line_3">
-       <property name="lineWidth">
-        <number>2</number>
-       </property>
-       <property name="midLineWidth">
-        <number>4</number>
-       </property>
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-      </widget>
-     </item>
-    </layout>
+    <widget class="Line" name="line_4">
+     <property name="lineWidth">
+      <number>2</number>
+     </property>
+     <property name="midLineWidth">
+      <number>4</number>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,1,1,1,1">
@@ -236,6 +233,9 @@
       <widget class="QLabel" name="labelLink2">
        <property name="text">
         <string>Link Típusa :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
       </widget>
      </item>
@@ -289,6 +289,9 @@
        <property name="text">
         <string>Hálózati elem</string>
        </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
       </widget>
      </item>
      <item row="1" column="1">
@@ -299,6 +302,9 @@
        <property name="text">
         <string>Zóna :</string>
        </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
       </widget>
      </item>
      <item row="0" column="1">
@@ -308,6 +314,9 @@
       <widget class="QLabel" name="labelPlace2">
        <property name="text">
         <string>Hely :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
       </widget>
      </item>
@@ -329,6 +338,9 @@
        <property name="text">
         <string>Típusa :</string>
        </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
       </widget>
      </item>
      <item row="2" column="1">
@@ -343,6 +355,9 @@
        <property name="text">
         <string>Port :</string>
        </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
       </widget>
      </item>
      <item row="1" column="3">
@@ -352,6 +367,9 @@
       <widget class="QLabel" name="labelPrt2Share">
        <property name="text">
         <string>Megosztás :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
       </widget>
      </item>
@@ -427,6 +445,9 @@
         <widget class="QLabel" name="labelColision">
          <property name="text">
           <string>Útköző linkek :</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
          </property>
         </widget>
        </item>
@@ -525,39 +546,6 @@
     </layout>
    </item>
   </layout>
-  <zorder>labelNode1</zorder>
-  <zorder>comboBoxNode1</zorder>
-  <zorder>labelNode1Type</zorder>
-  <zorder>lineEditNode1Type</zorder>
-  <zorder>pushButtonNode1Type</zorder>
-  <zorder>labelPort1</zorder>
-  <zorder>comboBoxPort1</zorder>
-  <zorder>labelPort1Share</zorder>
-  <zorder>comboBoxPort1Share</zorder>
-  <zorder>labelPort1SharePort</zorder>
-  <zorder>comboBoxPort1SharePort</zorder>
-  <zorder>line</zorder>
-  <zorder>line_2</zorder>
-  <zorder>layoutWidget</zorder>
-  <zorder>line_3</zorder>
-  <zorder>line_4</zorder>
-  <zorder>label_3</zorder>
-  <zorder>labelLink2</zorder>
-  <zorder>radioButtonLink2Term</zorder>
-  <zorder>radioButtonLink2Front</zorder>
-  <zorder>radioButtonLink2Back</zorder>
-  <zorder>horizontalSpacer</zorder>
-  <zorder>layoutWidget_2</zorder>
-  <zorder>checkBoxCollisions</zorder>
-  <zorder>labelNode2Type</zorder>
-  <zorder>textEdit</zorder>
-  <zorder>labelColision</zorder>
-  <zorder>line_5</zorder>
-  <zorder>pushButtonSave</zorder>
-  <zorder>pushButtonOk</zorder>
-  <zorder>pushButtonCancel</zorder>
-  <zorder>horizontalSpacer_3</zorder>
-  <zorder>horizontalSpacer_4</zorder>
  </widget>
  <resources/>
  <connections/>

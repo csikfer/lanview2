@@ -262,3 +262,44 @@ QString cLinkDialog::portFilter(const cPatch &node)
     const static QString sql = "node_id = %1";
     return sql.arg(node.getId());
 }
+
+void cLinkDialog::zone1CurrentIndex(int i)
+{
+
+}
+
+void cLinkDialog::zone2CurrentIndex(int i)
+{
+
+}
+void cLinkDialog::place1CurrentIndex(int i)
+{
+
+}
+void cLinkDialog::place2CurrentIndex(int i)
+{
+
+}
+void cLinkDialog::node1CurrentIndex(int i)
+{
+
+}
+void cLinkDialog::node2CurrentIndex(int i)
+
+{
+
+}
+void cLinkDialog::port1CurrentIndex(int i)
+{
+
+}
+void cLinkDialog::pore2CurrentIndex(int i)
+{
+
+}
+void cLinkDialog::port1ShareCurrentIndex(int i)
+{
+
+}
+
+
