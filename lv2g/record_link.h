@@ -4,7 +4,6 @@
 #include "record_table.h"
 #include "record_link_model.h"
 #include "lv2models.h"
-#include "ui_add_phs_link.h"
 
 /// @class cRecordLink
 /// Egy adatbázis link nézet tábla megjelenítését végző objektum.
@@ -18,6 +17,7 @@ public:
     cRecordLink(cTableShape *pts, bool _isDialog, cRecordsViewBase *_upper = NULL, QWidget * par = NULL);
     /// destruktor
     ~cRecordLink();
+    virtual void init();
     virtual QStringList where(QVariantList& qParams);
     virtual void insert();
     virtual void modify(enum eEx __ex = EX_ERROR);
@@ -26,52 +26,34 @@ public:
 
 };
 
+class phsLinkWidget;
 /// @class cLinkDialog
 /// @brief Link rekord szerkesztés dialógus objektum, Csak a fizikai linkeket lehet szerkeszteni.
 class LV2GSHARED_EXPORT cLinkDialog : public QDialog {
+    friend class phsLinkWidget;
     Q_OBJECT
 public:
     /// Konstruktor
     /// @param parent Az szülő objektum pointere
-    cLinkDialog(cRecordLink * __parent = NULL);
+    cLinkDialog(bool isInsert, cRecordLink * __parent = NULL);
     ~cLinkDialog();
-private:
+protected:
     void init();
-    QString nodeFilter(const cPlace& place);
-    QString portFilter(const cPatch& node);
+
+    QLabel      * pLabelCollisions;
+    QPushButton * pPushButtonCollisions;
+    QCheckBox   * pCheckBoxCollisions;
+    QTextEdit   * pTextEditCollisions;
 
     cRecordLink * parent;
     QSqlQuery *   pq;
     cRecord *     pActRecord;
     qlonglong     parentOwnerId;
-    cPatch        node1, node2;
-    cNPort *      pPrt1, *pPrt2;
-    cPlaceGroup   pgrp1, pgrp2;
-    cPlace        plac1, plac2;
-    Ui_DialogAddPhsLink *pUi;
-    bool                utter1;
-    bool                utter2;
-    QButtonGroup       *pButtonsLink1Type;
-    QButtonGroup       *pButtonsLink2Type;
-    cRecordListModel   *pModelZone1;
-    cRecordListModel   *pModelZone2;
-    cRecordListModel   *pModelPlace1;
-    cRecordListModel   *pModelPlace2;
-    cRecordListModel   *pModelNode1;
-    cRecordListModel   *pModelNode2;
-    cRecordListModel   *pModelPort1;
-    cRecordListModel   *pModelPort2;
-    cRecordListModel   *pModelPort1Share;
+    phsLinkWidget  *pLink1;
+    phsLinkWidget  *pLink2;
+    cDialogButtons *pButtons;
+
 private slots:
-    void zone1CurrentIndex(int i);
-    void zone2CurrentIndex(int i);
-    void place1CurrentIndex(int i);
-    void place2CurrentIndex(int i);
-    void node1CurrentIndex(int i);
-    void node2CurrentIndex(int i);
-    void port1CurrentIndex(int i);
-    void pore2CurrentIndex(int i);
-    void port1ShareCurrentIndex(int i);
 
 };
 

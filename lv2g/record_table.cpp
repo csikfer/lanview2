@@ -1008,18 +1008,21 @@ void cRecordsViewBase::initShape(cTableShape *pts)
 
 cRecordsViewBase *cRecordsViewBase::newRecordView(cTableShape *pts, cRecordsViewBase * own, QWidget *par)
 {
+    cRecordsViewBase *r;
     qlonglong type = pts->getId(_sTableShapeType);
     if ((type & ENUM2SET(TS_MEMBER)) && own != NULL) EXCEPTION(ENOTSUPP);
     if ((type & ENUM2SET(TS_GROUP))  && own != NULL) EXCEPTION(ENOTSUPP);
     if (type & ENUM2SET(TS_TREE)) {
-        return new cRecordTree( pts, false, own, par);
+        r = new cRecordTree( pts, false, own, par);
     }
     if (type & ENUM2SET(TS_LINK)) {
-        return new cRecordLink(pts, false, own, par);
+        r = new cRecordLink(pts, false, own, par);
     }
     else {
-        return new cRecordTable(pts, false, own, par);
+        r = new cRecordTable(pts, false, own, par);
     }
+    r->init();
+    return r;
 }
 
 cRecordsViewBase *cRecordsViewBase::newRecordView(QSqlQuery& q, qlonglong shapeId, cRecordsViewBase * own, QWidget *par)
@@ -1375,7 +1378,6 @@ cRecordTable::cRecordTable(const QString& _mn, bool _isDialog, QWidget * par)
     pTableShape = new cTableShape();
     if (!pTableShape->fetchByName(*pq, _mn)) EXCEPTION(EDATA,-1,_mn);
     initShape();
-    init();
 }
 
 cRecordTable::cRecordTable(cTableShape *pts, bool _isDialog, cRecordsViewBase *_upper, QWidget * par)
@@ -1384,7 +1386,6 @@ cRecordTable::cRecordTable(cTableShape *pts, bool _isDialog, cRecordsViewBase *_
     pMaster = pUpper = _upper;
     if (pMaster != NULL && pUpper->pMaster != NULL) pMaster = pUpper->pMaster;
     initShape(pts);
-    init();
 }
 
 

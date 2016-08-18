@@ -19,7 +19,7 @@ public:
     cRecordTree(cTableShape *pts, bool _isDialog, cRecordsViewBase * _upper, QWidget * par = NULL);
 
     ~cRecordTree();
-    void init();
+    virtual void init();
 
     bool queryNodeChildrens(QSqlQuery &q, cTreeNode *pn);
 

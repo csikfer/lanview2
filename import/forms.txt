@@ -54,13 +54,14 @@ TABLE phs_links_shape SHAPE phs_links "Fizikai linkek" {
     ADD FIELD port_name1        {  TITLE "Port",        "Port név";     ADD FILTERS begin, like, similar, regexp, regexpi; }
     ADD FIELD port_index1       {  TITLE "Index",       "Port index";   ADD FILTERS big,litle,interval; }
     ADD FIELD phs_link_type1    {  TITLE "Típus",       "Típus";        ADD FILTERS begin, like; }
-    ADD FIELD link_type         {  TITLE "Busz",        "Busz";         ADD FILTERS begin, like; }
-    ADD FIELD port_shared       {  TITLE "Megosztás",   "Megosztás";    ADD FILTERS begin, like; }
+    ADD FIELD port_shared1      {  TITLE "Megosztás",   "Megosztás";    ADD FILTERS begin, like; }
     ADD FIELD phs_link_note     {  TITLE "Megjegyzés",  "Megjegyzés";   ADD FILTERS begin, like, similar, regexp, regexpi; }
     ADD FIELD node_name2        {  TITLE "Linked",      "Linked elem";  ADD FILTERS begin, like, similar, regexp, regexpi; }
     ADD FIELD port_name2        {  TITLE "port",        "Linked port";  ADD FILTERS begin, like, similar, regexp, regexpi; }
     ADD FIELD port_index2       {  TITLE "index",   "Linked port index";ADD FILTERS big,litle,interval; }
     ADD FIELD phs_link_type2    {  TITLE "Típus",       "Típus";        ADD FILTERS begin, like; }
+    ADD FIELD port_shared2      {  TITLE "Megosztás",   "Megosztás";    ADD FILTERS begin, like; }
+    ADD FIELD link_type         {  TITLE "Busz",        "Busz";         ADD FILTERS begin, like; }
     FIELD port_index1, port_name1, phs_link_type1             ORD asc,desc,no;
     FIELD node_name2, port_name2, port_index2, phs_link_type2 ORD no, asc, desc;
     TABLE FEATURES ":pports.owner=port_id1:hostports.owner=port_id1:"; 

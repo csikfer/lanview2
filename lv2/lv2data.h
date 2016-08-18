@@ -464,6 +464,9 @@ public:
     qlonglong parentImageId(QSqlQuery& q);
 };
 
+#define UNKNOWN_PLACE_ID  0LL
+#define ROOT_PLACE_ID     1LL
+
 /*!
 @class cPlaceGroup
 @brief A places tábla egy rekordját reprezentáló osztály.
@@ -480,6 +483,9 @@ public:
 };
 
 typedef tGroup<cPlaceGroup, cPlace> cGroupPlace;
+
+#define NONE_PLACE_GROUP_ID 0LL
+#define ALL_PLACE_GROUP_ID  1LL
 
 /* ******************************  ****************************** */
 

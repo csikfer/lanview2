@@ -34,7 +34,8 @@ SOURCES += \
     record_link_model.cpp \
     gsetupwidget.cpp \
     setnoalarm.cpp \
-    hsoperate.cpp
+    hsoperate.cpp \
+    phslinkform.cpp
 
 HEADERS +=\
     lv2g_global.h \
@@ -61,7 +62,8 @@ HEADERS +=\
     record_link_model.h \
     gsetupwidget.h \
     setnoalarm.h \
-    hsoperate.h
+    hsoperate.h \
+    phslinkform.h
 
 FORMS += \
     column_filter.ui \
@@ -80,7 +82,7 @@ FORMS += \
     edit_field.ui \
     noalarm.ui \
     hsoperate.ui \
-    add_phs_link.ui
+    phslinkform.ui
 INCLUDEPATH += ../lv2
 unix:LIBS += -lsnmp
 msvc:LIBS += -lSecur32

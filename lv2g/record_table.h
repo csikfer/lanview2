@@ -256,6 +256,8 @@ public:
     const cRecStaticDescr& inhRecDescr(qlonglong i) const;
     const cRecStaticDescr& inhRecDescr(const QString& tn) const;
 
+    virtual void init() = 0;
+
     // egy gomb megnyomására hívandó virtuális metódusok
     /// Dialogus ablak esetén hívja a done() metódust a paraméterrel.
     /// Egyébként a closeIt() hívja.
@@ -400,7 +402,7 @@ public:
 
     /// A táblázatot megjelenítő widget
     QTableView     *pTableView;
-    void init();
+    virtual void init();
     virtual void initSimple(QWidget *pW);
     virtual QStringList filterWhere(QVariantList& qParams);
     void _refresh(bool all = true);

@@ -11,7 +11,6 @@ cRecordTree::cRecordTree(cTableShape *pts, bool _isDialog, cRecordsViewBase *_up
     if (pMaster != NULL && pUpper->pMaster != NULL) pMaster = pUpper->pMaster;
     disableFilters = true;
     initShape(pts);
-    init();
 }
 
 cRecordTree::~cRecordTree()

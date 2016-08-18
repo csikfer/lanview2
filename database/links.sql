@@ -74,7 +74,7 @@ COMMENT ON COLUMN phs_links_table.port_id1          IS 'Port''s ID(1) which conn
 COMMENT ON COLUMN phs_links_table.phs_link_type1    IS $$Link típusa(1), végpont 'Term', patch panel előlap 'Front', vagy hátlap 'Back'$$;
 COMMENT ON COLUMN phs_links_table.port_id2          IS 'Port''s ID(2) which connects to physical link';
 COMMENT ON COLUMN phs_links_table.phs_link_type2    IS $$Link típusa(2), végpont 'Term', patch panel előlap 'Front', vagy hátlap 'Back'$$;
-COMMENT ON COLUMN phs_links_table.port_shared       IS $$Mindíg a 'Front' patch portra vonatkozik, ha mindkettő 'Back' patch port, akkor csak '' lehet, vagyis a megosztás tiltott$$;
+COMMENT ON COLUMN phs_links_table.port_shared       IS $$Mindíg a 'Front' patch portra vonatkozik, ha mindkettő 'Front' patch port, vagy egyik sem, akkor csak '' lehet, vagyis a megosztás tiltott$$;
 COMMENT ON COLUMN phs_links_table.phs_link_note     IS 'Megjegyzés';
 COMMENT ON COLUMN phs_links_table.create_time       IS 'Time setting up the physical link';
 COMMENT ON COLUMN phs_links_table.create_user_id    IS 'User ID for who set this physical link';
@@ -117,10 +117,33 @@ COMMENT ON VIEW log_named_links IS 'Symmetric View Table for logical links with 
 
 CREATE OR REPLACE VIEW phs_links_shape AS
     SELECT phs_link_id, 
-           port_id1, n1.node_id AS node_id1, n1.node_name AS node_name1, p1.port_name AS port_name1, p1.port_index AS port_index1, n1.node_name || ':' || p1.port_name AS port_full_name1, phs_link_type1,
-           port_id2, n2.node_id AS node_id2, n2.node_name AS node_name2, p2.port_name AS port_name2, p2.port_index AS port_index2, n2.node_name || ':' || p2.port_name AS port_full_name2, phs_link_type2,
-           phs_link_note, port_shared, link_type,
-           create_time, create_user_id, modify_time, modify_user_id, forward
+           port_id1,
+            n1.node_id AS node_id1,
+            n1.node_name AS node_name1,
+            p1.port_name AS port_name1,
+            p1.port_index AS port_index1,
+            n1.node_name || ':' || p1.port_name AS port_full_name1,
+            phs_link_type1,
+            CASE WHEN phs_link_type1 = 'Front'::phslinktype THEN port_shared
+                                                            ELSE ''::portshare
+            END AS port_shared1,
+           port_id2,
+            n2.node_id AS node_id2,
+            n2.node_name AS node_name2,
+            p2.port_name AS port_name2,
+            p2.port_index AS port_index2,
+            n2.node_name || ':' || p2.port_name AS port_full_name2,
+            phs_link_type2,
+            CASE WHEN phs_link_type2 = 'Front'::phslinktype THEN port_shared
+                                                            ELSE ''::portshare
+            END AS port_shared2,
+           phs_link_note,
+           link_type,
+           create_time,
+           create_user_id,
+           modify_time,
+           modify_user_id,
+           forward
     FROM phs_links JOIN ( nports AS p1 JOIN patchs AS n1 USING(node_id)) ON p1.port_id = port_id1
                    JOIN ( nports AS p2 JOIN patchs AS n2 USING(node_id)) ON p2.port_id = port_id2;
 COMMENT ON VIEW phs_links_shape IS 'Symmetric View Table for physical links with shape';

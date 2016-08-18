@@ -27,6 +27,7 @@ cOnlineAlarm::cOnlineAlarm(QWidget *par) : cOwnTab(par)
     pMainSplitter->addWidget(pAlarmSplitter);
 
     pRecTabNoAck  = new cRecordTable("uaalarms", false, pAlarmSplitter);    // nem nyugtázott riasztások tábla; bal felső
+    pRecTabNoAck->init();
     if (isAdmin) {
         pRecTabNoAck->tableView()->setSelectionMode(QAbstractItemView::ExtendedSelection);  // Több soros kijelölés
     }
@@ -39,6 +40,7 @@ cOnlineAlarm::cOnlineAlarm(QWidget *par) : cOwnTab(par)
     connect(pNoAckModel, SIGNAL(dataReloded(tRecords)), this, SLOT(noAckDataReloded(tRecords)));
 
     pRecTabAckAct = new cRecordTable("aaalarms", false, pAlarmSplitter);    // Nyugtázott. aktív riasztások; bal alsó
+    pRecTabAckAct->init();
     pRecTabAckAct->tableView()->setSelectionMode(QAbstractItemView::SingleSelection);   // Nincs több soros kijelölés
     connect(pRecTabAckAct->tableView()->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
             this, SLOT(curRowChgAckAct(QItemSelection,QItemSelection)));
