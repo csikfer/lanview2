@@ -23,6 +23,10 @@ public:
     void uiSetLinkType();
     void uiSetShared(const QString& _sh);
 
+    bool firstGetPlace();
+    bool firstGetNode();
+    bool firstGetPort();
+
     Ui::phsLinkForm *   pUi;
     cLinkDialog *       parent;
     QSqlQuery *         pq;
@@ -47,11 +51,13 @@ public:
     QString             sPhsLinkTypeX;
     QString             sPortSharedX;
 private slots:
+    void changeLinkType(int id);
+    void toglePlaceEqu(bool f);
     void zoneCurrentIndex(int i);
     void placeCurrentIndex(int i);
     void nodeCurrentIndex(int i);
     void portCurrentIndex(int i);
-    void portShareCurrentIndex(int i);
+    void portShareCurrentText(const QString &s);
 };
 
 
