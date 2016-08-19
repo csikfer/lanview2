@@ -154,6 +154,20 @@ COMMENT ON COLUMN nports.node_id    IS 'Csomópont azonosító, idegen kulcs a t
 COMMENT ON COLUMN nports.port_index IS 'Opcionális port index. Egyes leszármazottaknál kötelező, ha meg van adva, akkor a port_name -hez hasonlóan egyedinek kell lennie.';
 COMMENT ON COLUMN nports.deleted    IS 'Ha igaz, akkor a port logikailag törölve lett.';
 
+CREATE OR REPLACE VIEW patchable_ports AS
+    SELECT 
+        port_id,
+        port_name,
+        port_note,
+        port_tag,
+        iftype_id,
+        node_id,
+        port_index,
+        deleted
+    FROM nports JOIN iftypes USING(iftype_id)
+        WHERE iftype_link_type IN ('ptp', 'bus', 'patch');
+COMMENT ON VIEW patchable_ports IS 'Az nports-ra egy szűrés, csak a patch-elhető portok.';
+
 CREATE TABLE patchs (
     node_id     bigserial       PRIMARY KEY,    -- Sequence: patchs_node_id_seq
     node_name   text            NOT NULL UNIQUE,

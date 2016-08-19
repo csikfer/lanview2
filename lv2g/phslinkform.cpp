@@ -2,8 +2,16 @@
 #include "phslinkform.h"
 #include "ui_phslinkform.h"
 
+#define BEGIN_SLOT  if (stat != READY) return; stat = SET
+#define END_SLOT    stat = READY
+#define SAVE_STAT   eState _save_stat_ = stat; stat = SET
+#define REST_STAT   stat = _save_stat_
+#define SAVE_OSTAT  eState _save_o_stat_ = pOther->stat; pOther->stat = SET
+#define REST_OSTAT  pOther->stat = _save_o_stat_
+
 phsLinkWidget::phsLinkWidget(cLinkDialog * par) :  QWidget(par)
 {
+    stat = INIT;
     parent = par;
     pUi = new Ui::phsLinkForm;
     pUi->setupUi(this);
@@ -29,7 +37,9 @@ phsLinkWidget::phsLinkWidget(cLinkDialog * par) :  QWidget(par)
     pUi->comboBoxPlace->setModel(pModelPlace);
     pModelNode = new cRecordListModel(node.descr());
     pUi->comboBoxNode->setModel(pModelNode);
-    pModelPort = new cRecordListModel(cNPort().descr());
+    // Az nports tábla helyett a patchable_ports view-t használjuk, hogy csak a patch-elhető portokat listázza.
+    const cRecStaticDescr *ppDescr = cRecStaticDescr::get("patchable_ports");
+    pModelPort = new cRecordListModel(*ppDescr);
     pUi->comboBoxPort->setModel(pModelPort);
 
     connect(pButtonsLinkType,       SIGNAL(buttonClicked(int)),         this, SLOT(changeLinkType(int)));
@@ -69,6 +79,7 @@ void phsLinkWidget::setFirst(bool f)
 
 void phsLinkWidget::init()
 {
+    stat = INIT;
     pUi->comboBoxZone->setCurrentText(_sAll);
     pModelPlace->setFilter();              // Az all zónára nem kell szürni
     qlonglong id;
@@ -81,8 +92,12 @@ void phsLinkWidget::init()
         id = node.getId(_sPlaceId);
         plac.setById(*pq, id);
 
-        if (!first) pUi->checkBoxPlaceEqu->setChecked(plac == pOther->plac);
-
+        if (!first) {
+            bool f = plac == pOther->plac;
+            pUi->checkBoxPlaceEqu->setChecked(f);
+            pUi->comboBoxZone->setDisabled(f);
+            pUi->comboBoxPlace->setDisabled(f);
+        }
         pUi->comboBoxPlace->setCurrentText(plac.getName());
         nodeFilter();
         pUi->comboBoxNode->setCurrentText(node.getName());
@@ -100,7 +115,11 @@ void phsLinkWidget::init()
         pDelete(pPrt);
         node.clear();
 
-        if (!first) pUi->checkBoxPlaceEqu->setChecked(true);
+        if (!first) {
+            pUi->checkBoxPlaceEqu->setChecked(true);
+            pUi->comboBoxZone->setDisabled(true);
+            pUi->comboBoxPlace->setDisabled(true);
+        }
 
         if (first && parent->parentOwnerId != NULL_ID) {
             id = parent->parentOwnerId;
@@ -130,10 +149,12 @@ void phsLinkWidget::init()
             if (id == NULL_ID) {
                 pUi->comboBoxNode->setDisabled(true);
                 pModelPort->setFilter(_sFaile, OT_ASC, FT_SQL_WHERE);
+                pUi->lineEditNodeType->setText(_sNul);
             }
             else {
                 pUi->comboBoxNode->setEnabled(true);
                 node.setById(id);
+                pUi->lineEditNodeType->setText(node.getName(_sNodeType));
                 portFilter();
             }
         }
@@ -150,6 +171,7 @@ void phsLinkWidget::init()
         }
     }
     uiSetLinkType();
+    stat = READY;
 }
 
 void phsLinkWidget::placeFilter()
@@ -164,7 +186,6 @@ bool phsLinkWidget::nodeFilter()
     bool r;
     if (plac.isEmpty_()) {
         pModelNode->setFilter(_sFalse, OT_ASC, FT_SQL_WHERE);
-        node.clear();
         r = false;
     }
     else  {
@@ -173,8 +194,9 @@ bool phsLinkWidget::nodeFilter()
         pModelNode->setFilter(sql, OT_ASC, FT_SQL_WHERE);
         r = pModelNode->rowCount() > 0;
     }
-    if (r) {
+    if (!r) {
         node.clear();
+        pUi->lineEditNodeType->setText(_sNul);
         portFilter();
     }
     pUi->comboBoxNode->setEnabled(r);
@@ -201,19 +223,18 @@ bool phsLinkWidget::portFilter()
 
 void phsLinkWidget::uiSetLinkType()
 {
+    SAVE_STAT;
     int checkedId = pButtonsLinkType->checkedId();
     switch (linkType) {
     case LT_FRONT:
+        pUi->radioButtonLinkFront->setCheckable(true);
+        pUi->radioButtonLinkBack->setCheckable(true);
         if (checkedId != LT_FRONT) pButtonsLinkType->button(LT_FRONT)->setChecked(true);
-        pUi->comboBoxPortShare->setEnabled(true);
-        pUi->comboBoxPortShare->setCurrentText(shared);
         pUi->radioButtonLinkTerm->setCheckable(false);
-        // Mindkét oldalon nem lehet a shared (pOther a konstruktorban még NULL)
-        if (shared.isEmpty() == false && pOther != NULL && pOther->shared.isEmpty() == false) {
-            pOther->uiSetShared(_sNul);
-        }
         break;
     case LT_BACK:
+        pUi->radioButtonLinkFront->setCheckable(true);
+        pUi->radioButtonLinkBack->setCheckable(true);
         if (checkedId != LT_BACK) pButtonsLinkType->button(LT_BACK)->setChecked(true);
         pUi->comboBoxPortShare->setEnabled(false);
         pUi->comboBoxPortShare->setCurrentIndex(0);
@@ -221,6 +242,7 @@ void phsLinkWidget::uiSetLinkType()
         shared = _sNul;
         break;
     case LT_TERM:
+        pUi->radioButtonLinkTerm->setCheckable(true);
         if (checkedId != LT_TERM) pButtonsLinkType->button(LT_TERM)->setChecked(true);
         pUi->comboBoxPortShare->setEnabled(false);
         pUi->comboBoxPortShare->setCurrentIndex(0);
@@ -238,12 +260,25 @@ void phsLinkWidget::uiSetLinkType()
         shared = _sNul;
         break;
     }
+    uiSetShared();
+    REST_STAT;
 }
 
-void phsLinkWidget::uiSetShared(const QString& _sh)
+void phsLinkWidget::uiSetShared()
 {
-    shared = _sh;
+    bool enable;
+    //
+    enable = linkType == LT_FRONT && pOther->linkType != LT_FRONT;
+    if (!enable) shared = _sNul;
     pUi->comboBoxPortShare->setCurrentText(shared);
+    pUi->comboBoxPortShare->setEnabled(enable);
+    // Other
+    SAVE_OSTAT;
+    enable = linkType != LT_FRONT && pOther->linkType == LT_FRONT;
+    if (!enable) pOther->shared = _sNul;
+    pOther->pUi->comboBoxPortShare->setCurrentText(pOther->shared);
+    pOther->pUi->comboBoxPortShare->setEnabled(enable);
+    REST_OSTAT;
 }
 
 bool phsLinkWidget::firstGetPlace()
@@ -275,6 +310,7 @@ bool phsLinkWidget::firstGetNode()
     pUi->comboBoxNode->setCurrentIndex(0);
     id = pModelNode->atId(0);
     node.setById(*pq, id);
+    pUi->lineEditNodeType->setText(node.getName(_sNodeType));
     return true;
 }
 
@@ -291,80 +327,99 @@ bool phsLinkWidget::firstGetPort()
     qlonglong id = pModelPort->atId(0);
     pDelete(pPrt);
     pPrt = cNPort::getPortObjById(*pq, id);
+    if (pPrt->descr() == cPPort().descr()) linkType = LT_FRONT;
+    else                                   linkType = LT_TERM;
+    uiSetLinkType();
     return true;
 }
 
 void phsLinkWidget::changeLinkType(int id)
 {
-    if (id != LT_FRONT) {
-        uiSetShared(_sNul);
-    }
+    BEGIN_SLOT;
+    linkType = id;
+    uiSetShared();
+    END_SLOT;
 }
 
 void phsLinkWidget::toglePlaceEqu(bool f)
 {
-    if (f) {
-        pgrp.clone(pOther->pgrp);
-        int i = pOther->pUi->comboBoxZone->currentIndex();
-        pUi->comboBoxZone->setCurrentIndex(i);
-        qlonglong id = plac.getId();
-        if (id == pOther->plac.getId()) {
-            i = pModelPlace->atId(id);
-            pUi->comboBoxPlace->setCurrentIndex(i);
+    BEGIN_SLOT;
+    if (f && !(pgrp == pOther->pgrp && plac == pOther->plac)) {
+        if (pgrp != pOther->pgrp) {
+            pgrp.clone(pOther->pgrp);
+            int i = pOther->pUi->comboBoxZone->currentIndex();
+            pUi->comboBoxZone->setCurrentIndex(i);
         }
-        else {
-            i = pOther->pUi->comboBoxPlace->currentIndex();
+        if (plac != pOther->plac) {
+            plac.clone(pOther->plac);
+            int i = pOther->pUi->comboBoxPlace->currentIndex();
             pUi->comboBoxPlace->setCurrentIndex(i);
-            placeCurrentIndex(i);
+            nodeFilter() && firstGetNode() && portFilter() && firstGetPort();
         }
     }
     pUi->comboBoxZone->setDisabled(f);
     pUi->comboBoxPlace->setDisabled(f);
+    END_SLOT;
 }
 
 void phsLinkWidget::zoneCurrentIndex(int i)
 {
+    BEGIN_SLOT;
     qlonglong id = pModelZone->atId(i);
-    if (pgrp.getId() == id) return;
-    pgrp.setById(*pq, id);
-    placeFilter();
-    firstGetPlace() && nodeFilter() && firstGetNode() && portFilter() && firstGetPort();
+    if (pgrp.getId() != id) {
+        pgrp.setById(*pq, id);
+        placeFilter();
+        firstGetPlace() && nodeFilter() && firstGetNode() && portFilter() && firstGetPort();
+        if (first && pOther->pUi->checkBoxPlaceEqu->isChecked() && pgrp != pOther->pgrp) {
+            pOther->toglePlaceEqu(true);
+        }
+    }
+    END_SLOT;
 }
 
 void phsLinkWidget::placeCurrentIndex(int i)
 {
+    BEGIN_SLOT;
     qlonglong id = pModelPlace->atId(i);
-    if (plac.getId() == id) return;
-    plac.setById(*pq, id);
-    nodeFilter() && firstGetNode() && portFilter() && firstGetPort();
+    if (plac.getId() != id) {
+        plac.setById(*pq, id);
+        nodeFilter() && firstGetNode() && portFilter() && firstGetPort();
+    }
+    END_SLOT;
 }
 
 void phsLinkWidget::nodeCurrentIndex(int i)
 {
+    BEGIN_SLOT;
     qlonglong id = pModelNode->atId(i);
-    if (node.getId() == id) return;
-    node.setById(*pq, id);
-    portFilter() && firstGetPort();
+    if (node.getId() != id) {
+        node.setById(*pq, id);
+        pUi->lineEditNodeType->setText(node.getName(_sNodeType));
+        portFilter() && firstGetPort();
+    }
+    END_SLOT;
 }
 
 void phsLinkWidget::portCurrentIndex(int i)
 {
+    BEGIN_SLOT;
     qlonglong id = pModelPort->atId(i);
-    if (pPrt != NULL && pPrt->getId() == id) return;
-    pDelete(pPrt);
-    pPrt = cNPort::getPortObjById(*pq, id);
+    if (pPrt == NULL || pPrt->getId() != id) {
+        pDelete(pPrt);
+        pPrt = cNPort::getPortObjById(*pq, id);
+        if (pPrt->descr() == cPPort().descr()) linkType = LT_FRONT;
+        else                                   linkType = LT_TERM;
+        uiSetLinkType();
+    }
+    END_SLOT;
 }
 
 void phsLinkWidget::portShareCurrentText(const QString& s)
 {
+    BEGIN_SLOT;
     shared = s;
-    if (s.isEmpty()) return;
-    if (pPrt == NULL || !pUi->radioButtonLinkFront->isChecked()) {
-        uiSetShared(_sNul);
-    }
-    else {
-        pOther->uiSetShared(_sNul);
-    }
+    uiSetShared();
+    END_SLOT;
 }
 
 

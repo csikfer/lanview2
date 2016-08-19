@@ -21,12 +21,13 @@ public:
     bool nodeFilter();
     bool portFilter();
     void uiSetLinkType();
-    void uiSetShared(const QString& _sh);
+    void uiSetShared();
 
     bool firstGetPlace();
     bool firstGetNode();
     bool firstGetPort();
 
+    enum eState { INIT, SET, READY } stat;
     Ui::phsLinkForm *   pUi;
     cLinkDialog *       parent;
     QSqlQuery *         pq;
