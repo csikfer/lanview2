@@ -70,6 +70,7 @@ public:
     virtual bool insertRec(cRecord *pRec);
     virtual bool insertRow(cRecord *pRec) = 0;
     static bool SqlInsert(QSqlQuery &q, cRecord *pRec);
+    static QString sIrrevocable;
 };
 
 /// @class cRecordTableModel

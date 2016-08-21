@@ -131,11 +131,6 @@ void cRecordLink::modify(eEx __ex)
     }
 }
 
-void cRecordLink::remove()
-{
-
-}
-
 cLinkDialog::cLinkDialog(bool isInsert, cRecordLink * __parent)
     : QDialog(__parent == NULL ? NULL : __parent->pWidget())
 {

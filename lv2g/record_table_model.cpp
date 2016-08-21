@@ -2,6 +2,8 @@
 #include "record_table.h"
 #include "cerrormessagebox.h"
 
+QString cRecordViewModelBase::sIrrevocable;
+
 cRecordViewModelBase::cRecordViewModelBase(cRecordsViewBase& _rt)
     : _col2shape(), _col2field()
     , recordView(_rt)
@@ -9,6 +11,9 @@ cRecordViewModelBase::cRecordViewModelBase(cRecordsViewBase& _rt)
     , tableShape(_rt.tableShape())
     , columns(_rt.fields)
 {
+    if (sIrrevocable.isEmpty()) {
+        sIrrevocable = QObject::trUtf8("A művelet nem visszavonható.");
+    }
     _viewRowNumbers = true;
     _viewHeader     = true;
     _firstRowNumber =   0;
@@ -235,7 +240,7 @@ void cRecordTableModel::removeRecords(const QModelIndexList &mil)
     if (rb.count(true) == 0) return;
     int b = QMessageBox::warning(recordView.pWidget(),
                          trUtf8("Kijelölt objektu(mo)k törlése!"),
-                         trUtf8("Valóban törölni akarja a kijelölt objektumo(ka)t ?"),
+                         trUtf8("Valóban törölni akarja a kijelölt objektumo(ka)t ?\n") + sIrrevocable,
                          QMessageBox::Ok, QMessageBox::Cancel);
     if (b != QMessageBox::Ok) return;
     int s = rb.size();    // Az összes rekord száma

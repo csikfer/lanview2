@@ -12,3 +12,48 @@ cRecordLinkModel::~cRecordLinkModel()
     ;
 }
 
+void cRecordLinkModel::removeRecords(const QModelIndexList &mil)
+{
+    QBitArray   rb = index2map(mil);
+    if (rb.count(true) == 0) return;
+    int b = QMessageBox::warning(recordView.pWidget(),
+                         trUtf8("Kijelölt link(ek) törlése!"),
+                         trUtf8("Valóban törölni akarja a kijelölt linke(ke)t ?\n") + sIrrevocable,
+                         QMessageBox::Ok, QMessageBox::Cancel);
+    if (b != QMessageBox::Ok) return;
+    int s = rb.size();    // Az összes rekord száma
+    for (int i = s - 1; i >= 0; --i) {   // végigszaladunk a sorokon, visszafelé
+        if (rb[i]) removeRec(index(i, 0));
+    }
+
+}
+
+
+bool cRecordLinkModel::removeRec(const QModelIndex &mi)
+{
+    if (mi.isValid() && isContIx(_records, mi.row())) {
+        cRecord * pView = _records.at(mi.row());
+        QString viewTableName = pView->tableName();
+        cRecordAny o;
+        qlonglong id = pView->getId(0);
+        if      (0 == viewTableName.compare("lldp_links_shape")) {
+            o.setType(_sLldpLinksTable);
+            o.setId(id);
+        }
+        else if (0 == viewTableName.compare("phs_links_shape")) {
+            o.setType(_sPhsLinksTable);
+            o.setId(id);
+        }
+        else {
+            EXCEPTION(ENOTSUPP, id, viewTableName);
+        }
+
+        if (cErrorMessageBox::condMsgBox(o.tryRemove(*pq))) {
+            return removeRow(mi);
+        }
+        else {
+            recordView.refresh(true);
+        }
+    }
+    return false;
+}

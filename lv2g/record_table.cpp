@@ -884,12 +884,6 @@ void cRecordsViewBase::remove()
 {
     DBGFN();
     QModelIndexList mil = selectedRows();
-    int r =
-        QMessageBox::warning(pWidget(),
-                     design().titleWarning,
-                     trUtf8("Valóban törölni kívánja a kijelölt sor(ok)at ?\nA művelet nem vonható vissza!"),
-                     QMessageBox::Ok, QMessageBox::Cancel);
-    if (QMessageBox::Ok != r) return;
     pModel->removeRecords(mil);
 }
 

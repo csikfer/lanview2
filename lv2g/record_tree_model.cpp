@@ -297,7 +297,7 @@ bool cRecordTreeModel::removeRec(const QModelIndex & mi)
     cTreeNode *pn = nodeFromIndex(mi);
     int b = QMessageBox::warning(recordView.pWidget(),
                          trUtf8("Egy rész fa teljes törlése!"),
-                         trUtf8("Valóban törölni akarja a kijelölt %1 nevű objektumot, az összes alárendelt objektummal eggyütt ?").arg(pn->name()),
+                         trUtf8("Valóban törölni akarja a kijelölt %1 nevű objektumot, az összes alárendelt objektummal eggyütt ?\n").arg(pn->name()) + sIrrevocable,
                          QMessageBox::Ok, QMessageBox::Cancel);
     if (b != QMessageBox::Ok) return false;
     beginRemoveRows(mi.parent(), mi.row(), mi.row());

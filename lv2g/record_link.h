@@ -21,9 +21,6 @@ public:
     virtual QStringList where(QVariantList& qParams);
     virtual void insert();
     virtual void modify(enum eEx __ex = EX_ERROR);
-    virtual void remove();
-
-
 };
 
 class phsLinkWidget;
