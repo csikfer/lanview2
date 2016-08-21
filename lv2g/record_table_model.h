@@ -16,7 +16,7 @@ class cRecordViewModelBase {
 public:
 
     cRecordViewModelBase(cRecordsViewBase &_rt);
-    ~cRecordViewModelBase();
+    virtual ~cRecordViewModelBase();
     cRecord *qGetRecord(QSqlQuery& q);
 
     /// Kereszt index: Tábla oszlop - megjelenítő leíró, mező leíró index

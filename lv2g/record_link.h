@@ -27,6 +27,7 @@ public:
 };
 
 class phsLinkWidget;
+class cPhsLink;
 /// @class cLinkDialog
 /// @brief Link rekord szerkesztés dialógus objektum, Csak a fizikai linkeket lehet szerkeszteni.
 class LV2GSHARED_EXPORT cLinkDialog : public QDialog {
@@ -37,24 +38,33 @@ public:
     /// @param parent Az szülő objektum pointere
     cLinkDialog(bool isInsert, cRecordLink * __parent = NULL);
     ~cLinkDialog();
+    bool get(cPhsLink& link);
 protected:
     void init();
 
-    QLabel      * pLabelCollisions;
-    QPushButton * pPushButtonCollisions;
-    QCheckBox   * pCheckBoxCollisions;
-    QTextEdit   * pTextEditCollisions;
+    QLabel*         pLabelCollisions;
+    QCheckBox *     pCheckBoxCollisions;
+    QTextEdit *     pTextEditCollisions;
+    QTextEdit *     pTextEditNote;
+    QPushButton *   pPushButtonNote;
 
-    cRecordLink * parent;
-    QSqlQuery *   pq;
-    cRecord *     pActRecord;
-    qlonglong     parentOwnerId;
-    phsLinkWidget  *pLink1;
-    phsLinkWidget  *pLink2;
+    cRecordLink *   parent;
+    QSqlQuery *     pq;
+    cRecord *       pActRecord;
+    qlonglong       parentOwnerId;
+    phsLinkWidget * pLink1;
+    phsLinkWidget * pLink2;
     cDialogButtons *pButtons;
+    bool            insertOnly; /// Nincs ütközés
+    bool            imperfect;  /// Hiányos
+    bool            exists;     /// Létezik
+    qlonglong       linkId;     /// Ha létezik, akkor az utolsó
 
 private slots:
-
+    void changed();
+    void collisionsTogled(bool f);
+    void saveNote();
+    void modifyNote();
 };
 
 #endif // RECORD_LINK

@@ -416,16 +416,18 @@ void cRecordDialog::init()
     tTableShapeFields::const_iterator i, e = tableShape.shapeFields.cend();
     _pRecord = new cRecordAny(&rDescr);
 
-    if (_pOwnerTable != NULL && _pOwnerTable->owner_id != NULL_ID) {  // Ha van owner, akkor az ID-jét beállítjuk
-        int flags = _pOwnerTable->flags;
-        if (flags & RTF_CHILD) {
-            int oix = _pRecord->descr().ixToOwner();
-            _pRecord->setId(oix, _pOwnerTable->owner_id);
+    if (!tableShape.getStringList(_sTableShapeType).contains(_sReadOnly)) {
+        if (_pOwnerTable != NULL && _pOwnerTable->owner_id != NULL_ID) {  // Ha van owner, akkor az ID-jét beállítjuk
+            int flags = _pOwnerTable->flags;
+            if (flags & RTF_CHILD) {
+                int oix = _pRecord->descr().ixToOwner();
+                _pRecord->setId(oix, _pOwnerTable->owner_id);
+            }
         }
-    }
-    if (_pOwnerTable != NULL && _pOwnerTable->parent_id != NULL_ID) {  // Ha van parent, akkor az ID-jét beállítjuk  ????
-        int pix = _pRecord->descr().ixToParent();
-        _pRecord->setId(pix, _pOwnerTable->parent_id);
+        if (_pOwnerTable != NULL && _pOwnerTable->parent_id != NULL_ID) {  // Ha van parent, akkor az ID-jét beállítjuk  ????
+            int pix = _pRecord->descr().ixToParent(EX_IGNORE);  // Ha van önmagára mutató ID (öröklések miatt nem biztos)
+            if (pix != NULL_IX) _pRecord->setId(pix, _pOwnerTable->parent_id);
+        }
     }
 
     int cnt = 0;
@@ -563,8 +565,8 @@ void cRecordDialogInh::init()
             pRec->setId(oix, _pOwnerTable->owner_id);
         }
         if (_pOwnerTable != NULL && _pOwnerTable->parent_id != NULL_ID) {  // Ha van parent, akkor az ID-jét beállítjuk
-            int pix = pRec->descr().ixToParent();
-            pRec->setId(pix, _pOwnerTable->parent_id);
+            int pix = pRec->descr().ixToParent(EX_IGNORE);
+            if (pix != NULL_IX) pRec->setId(pix, _pOwnerTable->parent_id);
             pDlg->_isReadOnly = true;// ??
         }
         pDlg->_pRecord = pRec;

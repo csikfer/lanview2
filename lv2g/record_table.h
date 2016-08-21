@@ -335,6 +335,10 @@ signals:
 public:
     static cRecordsViewBase *newRecordView(cTableShape * pts, cRecordsViewBase * own = NULL, QWidget *par = NULL);
     static cRecordsViewBase *newRecordView(QSqlQuery &q, qlonglong shapeId, cRecordsViewBase * own = NULL, QWidget *par = NULL);
+    /// Az owner-re mutató ID mező indexét keressük.
+    /// Alapesetben ez kiderül a rekord idegen kilcsokból.
+    /// De megadható a features mezőben is, ha ez az idegen kilcsmezőkkel nem lehetséges, nem egyértelmű:
+    /// ekkor a <table shape name>.owner kulcs értéke a keresett mező neve. (nem a tábla, hanem a leíró neve van a kulcsban)
     int ixToOwner() {
         if (pUpper == NULL) EXCEPTION(EPROGFAIL);
         QString key = mCat(pUpper->pTableShape->getName(), _sOwner);

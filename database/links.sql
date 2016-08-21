@@ -472,9 +472,9 @@ DECLARE
     logl    log_links_table;
 BEGIN
     IF TG_OP = 'UPDATE' THEN
-        modif = !(OLD.port_id1       = NEW.port_id1       AND OLD.port_id2       = NEW.port_id2      AND
-                  OLD.port_shared    = NEW.port_shared    AND
-                  OLD.phs_link_type1 = NEW.phs_link_type1 AND OLD.phs_link_type2 = NEW.phs_link_type2);
+        modif = NOT (OLD.port_id1       = NEW.port_id1       AND OLD.port_id2       = NEW.port_id2      AND
+                     OLD.port_shared    = NEW.port_shared    AND
+                     OLD.phs_link_type1 = NEW.phs_link_type1 AND OLD.phs_link_type2 = NEW.phs_link_type2);
         NEW.modify_time = NOW();
     END IF;
     IF modif OR TG_OP = 'DELETE' THEN

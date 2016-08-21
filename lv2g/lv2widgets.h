@@ -19,6 +19,24 @@
 #include "lv2models.h"
 #include "imagedrv.h"
 
+inline static QFrame *line(int __w, int __mw, QWidget *par = NULL)
+{
+    QFrame *line = new QFrame(par);
+    line->setLineWidth(__w);
+    line->setMidLineWidth(__mw);
+    line->setFrameShape(QFrame::HLine);
+    line->setFrameShadow(QFrame::Sunken);
+    return line;
+}
+
+inline static QFrame *line(QWidget *par = NULL)
+{
+    QFrame *line = new QFrame(par);
+    line->setFrameShape(QFrame::HLine);
+    line->setFrameShadow(QFrame::Sunken);
+    return line;
+}
+
 /// @class cImageWidget
 /// Egy képet tartalmazó ablak objektum
 class LV2GSHARED_EXPORT cImageWidget : public QScrollArea {

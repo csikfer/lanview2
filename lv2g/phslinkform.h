@@ -4,6 +4,7 @@
 #include <QWidget>
 #include "lv2g.h"
 #include "record_link.h"
+#include "lv2link.h"
 
 namespace Ui {
 class phsLinkForm;
@@ -11,12 +12,17 @@ class phsLinkForm;
 
 class phsLinkWidget : public QWidget
 {
+    friend class cLinkDialog;
     Q_OBJECT
 public:
-    phsLinkWidget(cLinkDialog * par);
-    ~phsLinkWidget();
     void setFirst(bool f);
     void init();
+    qlonglong getPortId() const;
+    ePhsLinkType getLinkType() const;
+    ePortShare   getPortShare() const;
+protected:
+    phsLinkWidget(cLinkDialog * par);
+    ~phsLinkWidget();
     void placeFilter();
     bool nodeFilter();
     bool portFilter();
@@ -35,7 +41,6 @@ public:
     cNPort *            pPrt;
     cPlaceGroup         pgrp;
     cPlace              plac;
-    bool                utter;
     qlonglong           linkType;
     QString             shared;
     QButtonGroup *      pButtonsLinkType;
@@ -52,13 +57,15 @@ public:
     QString             sPhsLinkTypeX;
     QString             sPortSharedX;
 private slots:
-    void changeLinkType(int id);
+    void changeLinkType(int id, bool f);
     void toglePlaceEqu(bool f);
     void zoneCurrentIndex(int i);
     void placeCurrentIndex(int i);
     void nodeCurrentIndex(int i);
     void portCurrentIndex(int i);
     void portShareCurrentText(const QString &s);
+signals:
+    void changed();
 };
 
 

@@ -402,8 +402,9 @@ bool cRecordTreeModel::updateRow(const QModelIndex& mi, cRecord * pRec)
 
 bool cRecordTreeModel::insertRow(cRecord *pRec)
 {
-    int ixPId = pRec->descr().ixToParent();     // Az ősre mutató ID mező indexe
-    qlonglong pid = pRec->getId(ixPId);
+    int ixPId = pRec->descr().ixToParent(EX_IGNORE);     // Az ősre mutató ID mező indexe
+    // Az ős típusban nem biztos hogy van önmagára mutató ID mező (pl.: nports, interfaces)
+    qlonglong pid = ixPId == NULL_IX ? NULL_ID : pRec->getId(ixPId);
     QModelIndex pmi;        // Gyökér
     if (pid != NULL_ID) {   // Ha nem a gyökér a parent
         pmi = findNode(pid);

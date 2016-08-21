@@ -996,7 +996,7 @@ void cRecordsViewBase::initShape(cTableShape *pts)
         fields << p;
     }
     initView();
-    // Ha egy egyszerű táblát használnánk al táblaként
+    // Ha egy egyszerű táblát használnánk al táblaként, nem szívózunk, beállítjuk
     if (pUpper != NULL) {
         qlonglong st = shapeType & ~ENUM2SET2(TS_TABLE, TS_READ_ONLY);
         if (st == ENUM2SET(TS_SIMPLE) || st == ENUM2SET(TS_TREE)) {
@@ -1015,7 +1015,7 @@ cRecordsViewBase *cRecordsViewBase::newRecordView(cTableShape *pts, cRecordsView
     if (type & ENUM2SET(TS_TREE)) {
         r = new cRecordTree( pts, false, own, par);
     }
-    if (type & ENUM2SET(TS_LINK)) {
+    else if (type & ENUM2SET(TS_LINK)) {
         r = new cRecordLink(pts, false, own, par);
     }
     else {

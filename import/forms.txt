@@ -64,7 +64,6 @@ TABLE phs_links_shape SHAPE phs_links "Fizikai linkek" {
     ADD FIELD link_type         {  TITLE "Busz",        "Busz";         ADD FILTERS begin, like; }
     FIELD port_index1, port_name1, phs_link_type1             ORD asc,desc,no;
     FIELD node_name2, port_name2, port_index2, phs_link_type2 ORD no, asc, desc;
-    TABLE FEATURES ":pports.owner=port_id1:hostports.owner=port_id1:"; 
 }
 
 TABLE log_links_shape SHAPE log_links "Logikai linkek" {
@@ -78,7 +77,6 @@ TABLE log_links_shape SHAPE log_links "Logikai linkek" {
     ADD FIELD port_index2       {  TITLE "Index",  "Linked Port Index"; ADD FILTERS big,litle,interval; }
     FIELD port_index1                                     ORD asc,desc,no;
     FIELD port_name1, node_name2, port_name2, port_index2 ORD no, asc, desc;
-    TABLE FEATURES ":hostports.owner=port_id1:"; 
 }
 
 TABLE lldp_links_shape SHAPE lldp_links "LLDP linkek" {
@@ -92,7 +90,6 @@ TABLE lldp_links_shape SHAPE lldp_links "LLDP linkek" {
     ADD FIELD port_index2       {  TITLE "Index",  "Linked Port Index"; ADD FILTERS big,litle,interval; }
     FIELD port_index1                                     ORD asc,desc,no;
     FIELD port_name1, node_name2, port_name2, port_index2 ORD no, asc, desc;
-    TABLE FEATURES ":hostports.owner=port_id1:"; 
 }
 
 TABLE patchs SHAPE phsnodes "Hálózati elem" {
@@ -110,6 +107,15 @@ TABLE patchs SHAPE phsnodes "Hálózati elem" {
 // ***************************************************************************************
 // Objects:
 // Adattáblák (objektumok) megjelenítése
+
+TABLE SHAPE node_params "Eszköz paraméterek" {
+    SET DEFAULTS;
+    
+    TABLE               TITLE "Eszköz paraméterek", "Az eszközhöz rendelt paraméter",;
+    FIELD param_type_id { TITLE "Típus",@; ADD FILTERS begin, like, similar, regexp, regexpi; }
+    FIELD param_value   { TITLE "Érték",@; ADD FILTERS begin, like, similar, regexp, regexpi; }
+    FIELD param_type_id, param_value ORD asc,desc,no;
+}
 
 TABLE SHAPE port_params "Port paraméterek" {
     SET DEFAULTS;
@@ -153,7 +159,7 @@ TABLE SHAPE patchs "Pach panelek és fali csatlakozók" {
     FIELD node_type  FLAG HIDE, AUTO SET;
     TABLE TYPE OWNER;
     TABLE INHERIT TYPE only;
-    RIGHT SHAPE pports, port_params, phs_links;  // plussz a paraméter rekordok
+    RIGHT SHAPE pports, node_params, phs_links;  // plussz a paraméter rekordok
     FIELD node_name ORD asc,desc,no;
     FIELD node_note, place_id ORD no, asc, desc;
     FIELD node_name, node_note, place_id ADD FILTERS begin, like, similar, regexp, regexpi;
@@ -240,7 +246,7 @@ TABLE interfaces SHAPE hostports "Hálózati interfészek, portok (fa)" {
     FIELD iftype_id     TITLE "Típus", "A port típus";
     
     FIELD port_staple_id FEATURES ":owner=self:";
-    FIELD port_staple_id FLAG ON HIDE;
+    FIELD port_staple_id FLAG ON HIDE TABLE;
     FIELD port_ostat, port_astat READ ONLY;
     FIELD port_ostat DEFAULT VALUE unknown;
     FIELD port_astat DEFAULT VALUE unknown;
@@ -248,15 +254,6 @@ TABLE interfaces SHAPE hostports "Hálózati interfészek, portok (fa)" {
     FIELD port_name, port_tag, port_note, iftype_id ORD no, asc, desc;
 //  FIELD port_name, port_tag, port_note ADD FILTERS begin, like, similar, regexp, regexpi;
     TABLE FEATURES ":button.copy:";
-}
-
-TABLE SHAPE node_params "Eszköz paraméterek" {
-    SET DEFAULTS;
-    
-    TABLE               TITLE "Eszköz paraméterek", "Az eszközhöz rendelt paraméter",;
-    FIELD param_type_id { TITLE "Típus",@; ADD FILTERS begin, like, similar, regexp, regexpi; }
-    FIELD param_value   { TITLE "Érték",@; ADD FILTERS begin, like, similar, regexp, regexpi; }
-    FIELD param_type_id, param_value ORD asc,desc,no;
 }
 
 TABLE host_services SHAPE host_services_tree "A hostokhoz rendelt szervíz példányok (fa)" {
@@ -314,7 +311,7 @@ TABLE snmpdevices SHAPE allnodes "Hálózati elemek" {
     TABLE INHERIT TYPE listed_rev;      // Megjelenítjük az ős tábla elemeit is
     INHERIT TABLE NAMES nodes;          // A teljes lista: snmpdevices, nodes
     TABLE FEATURES ":button.copy:";
-    RIGHT SHAPE hostports, node_params, lldp_links, log_links, host_services, mactab_node;
+    RIGHT SHAPE hostports, node_params, phs_links, log_links, host_services, mactab_node;
     FIELD node_name ORD asc,desc,no;
     FIELD node_note, place_id, node_type ORD no, asc, desc;
     FIELD node_name, node_note, place_id, node_type, features, node_stat ADD FILTERS begin, like, similar, regexp, regexpi;
