@@ -5,6 +5,7 @@
 #include "guidata.h"
 #include "others.h"
 #include "ping.h"
+#include "lv2link.h"
 #undef  __MODUL_NAME__
 #define __MODUL_NAME__  PARSER
 #include "import_parser.h"
