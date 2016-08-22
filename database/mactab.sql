@@ -75,6 +75,24 @@ CREATE INDEX arps_first_time_index  ON arps(first_time);
 CREATE INDEX arps_last_time_index   ON arps(last_time);
 ALTER TABLE arps OWNER TO lanview2;
 
+CREATE VIEW arps_shape AS
+    SELECT
+        ipaddress,
+        hwaddress,
+        set_type,
+        host_service_id,
+        first_time,
+        last_time,
+        arp_note,
+        port_id2full_name(ip.port_id) AS port_by_ipa,
+        first_node_id2name(array_agg(ih.node_id)) AS node_by_hwa,
+        array_agg(port_id2name(ih.port_id)) AS ports_by_hwa
+    FROM arps AS a
+    LEFT OUTER JOIN interfaces  AS ih USING(hwaddress) -- many
+    LEFT OUTER JOIN ipaddresses AS ip ON ip.address = a.ipaddress
+    GROUP BY ipaddress, hwaddress, set_type, host_service_id, first_time, last_time, arp_note, ip.port_id
+;
+
 COMMENT ON TABLE arps IS
 'Az ARP tábla (vagy DHCP konfig) lekérdezések eredményét tartalmazó tábla.
 Az adatmanipulációs műveleteket nem közvetlenül, hanem a kezelő függvényeken keresztül kell elvégezni,
@@ -279,12 +297,16 @@ CREATE VIEW mactab_shape AS
         t.state_updated_time    AS state_updated_time,
         t.set_type              AS set_type,
         r.node_name             AS r_node_name,
-        port_id2name(i.port_id) AS r_port_name
+        port_id2name(i.port_id) AS r_port_name,
+        -- A rendszer nem kezeli a cím tömboket
+        ARRAY(SELECT ipaddress::text FROM arps        WHERE arps.hwaddress = t.hwaddress)    AS ipaddrs_by_arp,
+        ARRAY(SELECT address::text   FROM ipaddresses WHERE ipaddresses.port_id = i.port_id) AS ipaddrs_by_rif
     FROM mactab AS t
       JOIN nports AS p USING (port_id)
       JOIN nodes  AS n USING (node_id)
       LEFT OUTER JOIN interfaces AS i USING(hwaddress)
-      LEFT OUTER JOIN nodes      AS r ON r.node_id = i.node_id;
+      LEFT OUTER JOIN nodes      AS r ON r.node_id = i.node_id
+      ;
       
 ALTER TABLE mactab_shape OWNER TO lanview2;
 COMMENT ON VIEW mactab_shape IS 'A macteb táblázatos megjelenítéséhez.';

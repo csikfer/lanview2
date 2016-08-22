@@ -543,13 +543,17 @@ TABLE SHAPE iftypes "Port típusok" {
     TABLE TYPE SIMPLE;
 }
 
-TABLE SHAPE arps "ARP tábla" {
+TABLE arps_shape SHAPE arps "ARP tábla" {
     SET DEFAULTS;
     TABLE TYPE SIMPLE;
     FIELD ipaddress  TITLE "IP",     "IP cím";
     FIELD hwaddress  TITLE "MAC",    "MAC cím";
     FIELD first_time TITLE first,    "Első detektálás ideje";
     FIELD last_time  TITLE last,     "Utoló detektálás ideje";
+    FIELD arp_note   TITLE note,@;
+    FIELD port_by_ipa TITLE "By IP", "Port ai IP alapján";
+    FIELD node_by_hwa TITLE "By MAC", "Host a MAC alapján";
+    FIELD ports_by_hwa TITLE "By MAC", "Portok a MAC alapján";
     FIELD ipaddress ORD asc,desc,no;
     FIELD hwaddress, first_time, last_time ORD no,asc,desc;
 }

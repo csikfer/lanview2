@@ -156,7 +156,7 @@ COMMENT ON COLUMN nports.deleted    IS 'Ha igaz, akkor a port logikailag töröl
 
 CREATE OR REPLACE VIEW patchable_ports AS
     SELECT 
-        port_id,
+        port_id AS patchable_port,
         port_name,
         port_note,
         port_tag,
@@ -535,6 +535,14 @@ BEGIN
         PERFORM error('IdNotFound', $1, 'node_id', 'node_id2name()', 'patchs');
     END IF;
     RETURN id;
+END
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION first_node_id2name(bigint[]) RETURNS text AS $$
+DECLARE
+    id text;
+BEGIN
+    RETURN node_id2name($1[1]);
 END
 $$ LANGUAGE plpgsql;
 
