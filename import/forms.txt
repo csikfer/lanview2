@@ -719,11 +719,11 @@ TABLE SHAPE users "felhasználók" {
 }
 SET table_shapes[groups].right_shape_ids = ID TABLE SHAPE ( users );
 
-TABLE SHAPE place_groups "Hely és helyiség csoportok / Zónák" {
+TABLE SHAPE place_groups "Hely csoportok, kategóriák és zónák" {
     SET DEFAULTS;
     TABLE TYPE GROUP;
  // RIGHT SHAPE places;
-    TABLE TITLE "Hely csoportok","Hely csoport",,"Csoportok tagjai", "Coportoknak nem tagjai";
+    TABLE TITLE "Hely csoportok, kategóriák és zónák","Hely csoport, kategória vagy zóna",,"Csoport tagja(i)", "Coportoknak nem tagja(i)";
     FIELD place_group_name ORD asc,desc,no;
 }
 
@@ -759,7 +759,7 @@ GUI lv2gui {
         restart     EXEC    restart         {   TITLE "Újraindítás";  }
         exit        EXEC    exit            {   TITLE "Kilép";  }
     }
-    userss MENU  {
+    users MENU  {
         TITLE "Felhasználók";
         users       SHAPE   users           {   TITLE "Felhasználók",@;  }
         groups      SHAPE   groups          {   TITLE "Felhasználói csoportok",@;  }

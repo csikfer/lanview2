@@ -2519,7 +2519,7 @@ delete  : DELETE_T PLACE_T strs ';'             { foreach (QString s, *$3) { cPl
         | DELETE_T NODE_T strs PARAM_T str ';'  { delNodesParam(slp2sl($3), sp2s($5)); }
         ;
 scan    : SCAN_T LLDP_T snmph ';'               { scanByLldp(qq(), *$3, true); delete $3; }
-        | SCAN_T SNMP_T snmph SET_T ';'         { $3->setBySnmp(); }
+        | SCAN_T SNMP_T snmph SET_T ';'         { $3->setBySnmp();  delete $3; }
         ;
 snmph   : str                                   { if (!($$ = new cSnmpDevice())->fetchByName(qq(), sp2s($1))) yyerror("ismeretlen SNMP eszköz név"); }
         ;
@@ -2971,7 +2971,7 @@ recall:
                 if (c.isNull()) return 0;
                 continue;
             }
-            if (c2 == QChar('*')) { // commwnt '/*'
+            if (c2 == QChar('*')) { // comment '/*'
                 find_comment_end:
                 while (!(c = yyget()).isNull() && c != QChar('*'));
                 if (c.isNull() || (c = yyget()).isNull()) yyerror("EOF in commment.");

@@ -610,11 +610,23 @@ CREATE OR REPLACE FUNCTION check_port_id_before_insert() RETURNS TRIGGER AS $$
 DECLARE
     n bigint;
     t text;
-    node nodes;
 BEGIN
     SELECT COUNT(*) INTO n FROM nports WHERE port_id = NEW.port_id;
     IF n > 0 THEN
         PERFORM error('IdNotUni', NEW.port_id, 'port_id', 'port_check_before_insert()', TG_TABLE_NAME, TG_OP);
+    END IF;
+    IF 'pports' = TG_TABLE_NAME THEN
+        BEGIN
+            SELECT iftype_id INTO n FROM iftypes WHERE iftype_name = 'patch';
+            EXCEPTION
+                WHEN NO_DATA_FOUND THEN     -- nem találtunk
+                    PERFORM error('NameNotFound', -1, 'iftype_name = patch', 'check_port_id_before_insert()', TG_TABLE_NAME, TG_OP);
+                WHEN TOO_MANY_ROWS THEN     -- több találat is van, nem egyértelmű
+                    PERFORM error('NameNotUni', -1, 'iftype_name = patch', 'check_port_id_before_insert()', TG_TABLE_NAME, TG_OP);
+        END;
+        IF NEW.iftype_id IS NULL OR NEW.iftype_id <> n THEN
+            NEW.iftype_id := n;
+        END IF;
     END IF;
     RETURN NEW;
 END;

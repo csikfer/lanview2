@@ -65,10 +65,13 @@ COMMENT ON COLUMN places.parent_id  IS 'A térkép ill. alaprajz szülő, ha nin
 
 -- //// LOC.PLACE_GROUPS
 
+CREATE TYPE placegrouptype AS ENUM ('group', 'category', 'zone');
+
 CREATE TABLE place_groups (
     place_group_id      bigserial       PRIMARY KEY,
     place_group_name    text            NOT NULL UNIQUE,
-    place_group_note    text            DEFAULT NULL
+    place_group_note    text            DEFAULT NULL,
+    place_group_type    placegrouptype  DEFAULT 'group'
 );
 ALTER TABLE place_groups OWNER TO lanview2;
 COMMENT ON TABLE  place_groups                      IS 'Helyiségek, helyek csoportjai. Zónák.';
