@@ -5,6 +5,7 @@
 
 #include "lanview.h"
 #include "lv2service.h"
+#include "lv2link.h"
 
 #define APPNAME "portmac"
 #undef  __MODUL_NAME__
