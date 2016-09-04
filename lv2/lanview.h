@@ -205,7 +205,7 @@ public:
     /// @param pe A hiba objektum pointere
     /// @param __t A hibát generáló thread neve. Opcionális
     /// @return Ha kiírta az adatbázisba a rekordot, akkor a rekord id-vel tér vissza, egyébként NULL_ID-vel
-    static qlonglong sendError(const cError *pe, const QString& __t = QString());
+    static qlonglong sendError(const cError *pe, const QString& __t = QString(), lanView *_instance = NULL);
     /// Az adatbázisban inzertál egy applikáció hiba rekordot, ahol a hiba kód a 'Start' lessz.
     /// Ha a művelet sikertelen, akkor dob egy kizárást.
     void insertStart(QSqlQuery& q);

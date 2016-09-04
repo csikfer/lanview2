@@ -223,7 +223,7 @@ lanView::~lanView()
     // Ha volt hiba objektumunk, töröljük. Elötte kiírjuk a hibaüzenetet, ha tényleg hiba volt
     if (lastError && lastError->mErrorCode != eError::EOK) {
         PDEB(DERROR) << lastError->msg() << endl;         // A Hiba üzenet
-        qlonglong eid = sendError(lastError);
+        qlonglong eid = sendError(lastError, QString(), this);
         // Hibát kiírtuk, ki kell írni a staust is? (ha nem sikerült a hiba kiírása, kár a statussal próbálkozni)
         if (eid != NULL_ID && setSelfStateF) {
             if (pSelfHostService != NULL) {
@@ -404,7 +404,7 @@ void lanView::parseArg(void)
     DBGFNL();
 }
 
-qlonglong lanView::sendError(const cError *pe, const QString& __t)
+qlonglong lanView::sendError(const cError *pe, const QString& __t, lanView *_instance)
 {
     _DBGFN() << "Thread : " << __t << endl;
     // Ha nem is volt hiba, akkor kész.
@@ -414,21 +414,22 @@ qlonglong lanView::sendError(const cError *pe, const QString& __t)
     }
     PDEB(VVERBOSE) << QObject::trUtf8("sendError() : %1").arg(pe->msg()) << endl;
     // Ha van nyitott adatbázis, csinálunk egy hiba rekordot
-    if (instance == NULL || instance->pDb == NULL || !instance->pDb->isOpen()) {
+    lanView * pInst = _instance == NULL ? instance : _instance;
+    if (pInst == NULL || pInst->pDb == NULL || !pInst->pDb->isOpen()) {
         DWAR() << trUtf8("Dropp error object, no database object or not open.") << endl;
         return NULL_ID;
     }
-    QSqlQuery   q(*instance->pDb);
+    QSqlQuery   q(*pInst->pDb);
     // sqlRollback(q, false);
     // sqlBegin(q);
     cNamedList  fields;
     fields.add(_sAppName,       appName);
-    if (instance->pSelfNode != NULL && !selfNode().isNullId()) fields.add(_sNodeId, selfNode().getId());
+    if (pInst->pSelfNode != NULL && !selfNode().isNullId()) fields.add(_sNodeId, selfNode().getId());
     fields.add(_sPid,           QCoreApplication::applicationPid());
     fields.add(_sAppVer,        appVersion);
     fields.add(_sLibVer,        libVersion);
-    if (instance->pUser != NULL && !instance->pUser->isNullId()) fields.add(_sUserId, instance->user().getId());
-    if (instance->pSelfService != NULL && !instance->pSelfService->isNullId()) fields.add(_sServiceId, instance->pSelfService->getId());
+    if (pInst->pUser != NULL && !pInst->pUser->isNullId()) fields.add(_sUserId, pInst->user().getId());
+    if (pInst->pSelfService != NULL && !pInst->pSelfService->isNullId()) fields.add(_sServiceId, pInst->pSelfService->getId());
     fields.add(_sFuncName,      pe->mFuncName);
     fields.add(_sSrcName,       pe->mSrcName);
     fields.add(_sSrcLine,       pe->mSrcLine);
