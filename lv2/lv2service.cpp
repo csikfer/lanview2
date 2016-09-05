@@ -450,18 +450,12 @@ void cInspector::setSubs(QSqlQuery& q, const QString& qs)
             }
         } CATCHS(pe);
         if (pe != NULL) {
-            if (pe->mErrorCode == eError::EDATA) {  // Nem fatális hiba
-                ok = false;
-                cHostService hs;
-                QSqlQuery q3 = getQuery();
-                if (hs.fetchById(q3, hsid)) hs.setState(q3, _sCritical, pe->msg(), hostServiceId());
-                pDelete(p);
-                delete pe;
-            }
-            else {
-                pDelete(p);
-                pe->exception();
-            }
+            ok = false;
+            cHostService hs;
+            QSqlQuery q3 = getQuery();
+            if (hs.fetchById(q3, hsid)) hs.setState(q3, _sCritical, pe->msg(), hostServiceId());
+            pDelete(p);
+            delete pe;
         }
         if (p != NULL) {
             *pSubordinates << p;
