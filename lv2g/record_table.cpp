@@ -645,7 +645,8 @@ void cRecordsViewBase::insert()
         if (owner_id == NULL_ID) return;
     }
     if (pRecordDialog != NULL) {
-        EXCEPTION(EPROGFAIL);
+        pDelete(pRecordDialog);
+        // EXCEPTION(EPROGFAIL);
     }
     parent_id = NULL_ID;
     // Ha TREE, akkor a default parent a kiszelektált sor,
@@ -729,7 +730,8 @@ void cRecordsViewBase::modify(eEx __ex)
     if (index.isValid() == false) return;
     if (pRecordDialog != NULL) {
         // ESC-el lépett ki, Kideríteni mi ez, becsukja az ablakot, de nem lép ki a loop-bol.
-        EXCEPTION(EPROGFAIL);
+        pDelete(pRecordDialog);
+        // EXCEPTION(EPROGFAIL);
     }
 
     cRecord *pRec = actRecord(index);    // pointer az aktuális rekordra, a beolvasott/megjelenített rekord listában
