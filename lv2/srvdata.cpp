@@ -538,6 +538,14 @@ int cOui::replace(QSqlQuery& __q, eEx __ex)
     return (eReasons)reasons(r);
 }
 
+bool cOui::fetchByMac(QSqlQuery& q, const cMac& __mac)
+{
+    cMac mac(__mac.toLongLong() & 0x0ffffff000000);
+    clear();
+    setMac(_sOui, mac);
+    return 1 == completion(q);
+}
+
 /* ----------------------------------------------------------------- */
 CRECCNTR(cMacTab);
 

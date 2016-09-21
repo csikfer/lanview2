@@ -4,6 +4,7 @@
 #include "gparse.h"
 #include "setnoalarm.h"
 #include "hsoperate.h"
+#include "findbymac.h"
 #include "apierrcodes.h"
 
 QMap<QString, QAction *>  cMenuAction::actionsMap;
@@ -77,6 +78,10 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidge
         else if (0 == feature.compare("hsop", Qt::CaseInsensitive)) {       // "hsop"   host-services állpot man.
             ownType = OWN_HSOP;
             rights = cHSOperate::rights;
+        }
+        else if (0 == feature.compare("findmac", Qt::CaseInsensitive)) {    // "findmac"
+            ownType = OWN_FINDMAC;
+            rights = PL_VIEWER;
         }
         else {
             if (__ex) EXCEPTION(ENONAME, -1, feature);
@@ -159,6 +164,7 @@ A jelenleg implementállt lehetőségek:
 | errcodes  | OWN_ERRCODES | cErrcodesWidget | API hibakódok listája       |
 | noalarm   | OWN_NOALARM  | cSetNoAlarm     | Riasztás tiltások beállítása|
 | hsop      | OWN_HSOP     | cHSOperate      | host-services állapot man.  |
+| findmac   | OWN_FINDMAC  | cFindByMac      | MAC keresés
  */
 void cMenuAction::initOwn()
 {
@@ -183,6 +189,9 @@ void cMenuAction::initOwn()
         break;
     case OWN_HSOP:
         pOwnTab = new cHSOperate(pTabWidget);
+        break;
+    case OWN_FINDMAC:
+        pOwnTab = new cFindByMac(pTabWidget);
         break;
     default:
         EXCEPTION(EPROGFAIL);

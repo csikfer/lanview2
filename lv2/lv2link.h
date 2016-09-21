@@ -61,13 +61,31 @@ public:
 
 };
 
-/// Csak a cLogLink és cLldpLink objektumokkal használható. Figyelem, a hivás külön nem ellenörzi!
+/// A cLogLink és cLldpLink objektumokkal használható. Figyelem, a hivás külön nem ellenörzi!
+/// A cPhsLink objektum esetén csak akkor működik helyesen, ha a kiindulási port nem patch, ha a
+/// visszaadott port_id egy patch port, akkor nincs infó annak típusáról.
+/// cPhsLink objektum esetén, ha a kiindulási port patch port, akkor, mivel az
+/// több porttel is lehet linkbe, a hívás kizárást dobhat, nem egyértelmű eredmény miatt.
 /// Megadja, hogy az ID alapján megadott port, mely másik porttal van link-be
 /// @param q Az SQL lekérdezéshez használt objektum.
 /// @param o Az objektum, melyhez tartozó táblában keresni szeretnénk
 /// @param __pid port ID
 /// @return A talált port ID-je, vagy NULL_ID
 EXT_ qlonglong LinkGetLinked(QSqlQuery& q, cRecord& o, qlonglong __pid);
+/// A cLogLink és cLldpLink objektumokkal használható. Figyelem, a hivás külön nem ellenörzi!
+/// A cPhsLink objektum esetén csak akkor működik helyesen, ha a kiindulási port nem patch, ha a
+/// visszaadott port_id egy patch port, akkor nincs infó annak típusáról.
+/// cPhsLink objektum esetén, ha a kiindulási port patch port, akkor, mivel az
+/// több porttel is lehet linkbe, a hívás kizárást dobhat, nem egyértelmű eredmény miatt.
+/// Megadja, hogy az ID alapján megadott port, mely másik porttal van link-be
+/// @param q Az SQL lekérdezéshez használt objektum.
+/// @param __pid port ID
+/// @return A talált port ID-je, vagy NULL_ID
+template <class L> qlonglong LinkGetLinked(QSqlQuery& q, qlonglong __pid) {
+    L o;
+    return LinkGetLinked(q, o, __pid);
+}
+
 /// Csak a cLogLink és cLldpLink objektumokka használható. Figyelem, a hivás külön nem ellenörzi!
 /// Megadja, hogy az ID alapján megadott két port, link-be van-e
 /// @param q Az SQL lekérdezéshez használt objektum.

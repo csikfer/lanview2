@@ -1157,6 +1157,8 @@ public:
     cNPort * getPort(int __ix, enum eEx __ex = EX_ERROR);
     /// A port keresése a port név alapján.
     cNPort * getPort(const QString& __pn, enum eEx __ex = EX_ERROR);
+    /// Az ID alapján az eredeti rekord leírót adja vissza
+    const cRecStaticDescr *getOriginalDescr(QSqlQuery &q, eEx __ex = EX_ERROR);
     /// Allokál és beolvas egy node objektumot a megadott node_id alapján.
     /// Az allokált objektum típusa megfelel a táblának, ha a rekor az nodes, hosts, snmpdevices táblában van.
     /// @param __node_id A node rekord id-je (port_id)

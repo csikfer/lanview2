@@ -232,6 +232,7 @@ class LV2SHARED_EXPORT cOui  : public cRecord {
     CRECORD(cOui);
 public:
     virtual int replace(QSqlQuery& __q, enum eEx __ex = EX_ERROR);
+    bool fetchByMac(QSqlQuery& q, const cMac& __mac);
 };
 
 /* ---------------------------------------------------------------- */

@@ -323,8 +323,8 @@ CREATE TABLE mactab_logs (
     last_time_old   timestamp   NOT NULL,
     set_type_old    settype     NOT NULL,
     port_id_new     bigint DEFAULT NULL REFERENCES interfaces(port_id) MATCH SIMPLE ON DELETE CASCADE ON UPDATE RESTRICT,
-    mactab_state_new mactabstate[] NOT NULL,
-    set_type_new    settype     NOT NULL,
+    mactab_state_new mactabstate[] DEFAULT NULL,
+    set_type_new    settype     DEFAULT NULL,
     acknowledged    boolean     DEFAULT false
 );
 CREATE INDEX mactab_logs_hwaddress_index ON mactab_logs(hwaddress);

@@ -1847,6 +1847,25 @@ cNPort * cPatch::getPort(const QString& __pn, eEx __ex)
     return NULL;
 }
 
+const cRecStaticDescr *cPatch::getOriginalDescr(QSqlQuery& q, eEx __ex)
+{
+    qlonglong tableOID = fetchTableOId(q, __ex);
+    if (tableOID < 0LL) {
+        EXCEPTION(EDATA, getId(), trUtf8("Get tableoid"));
+        return NULL;
+    }
+    if (tableOID ==    tableoid()) return &descr();
+    cPatch pa;
+    if (tableOID == pa.tableoid()) return &pa.descr();
+    cNode   no;
+    if (tableOID == no.tableoid()) return &no.descr();
+    cSnmpDevice sn;
+    if (tableOID == sn.tableoid()) return &sn.descr();
+    if (__ex) EXCEPTION(EDATA, tableOID, trUtf8("Invalid tableoid"));
+    return NULL;
+
+}
+
 cPatch * cPatch::getNodeObjById(QSqlQuery& q, qlonglong __tableoid, qlonglong __node_id, eEx __ex)
 {
     if      (__tableoid == cPatch().      tableoid()) return getObjByIdT<cPatch>     (q, __node_id, __ex);

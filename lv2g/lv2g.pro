@@ -35,7 +35,8 @@ SOURCES += \
     gsetupwidget.cpp \
     setnoalarm.cpp \
     hsoperate.cpp \
-    phslinkform.cpp
+    phslinkform.cpp \
+    findbymac.cpp
 
 HEADERS +=\
     lv2g_global.h \
@@ -63,7 +64,8 @@ HEADERS +=\
     gsetupwidget.h \
     setnoalarm.h \
     hsoperate.h \
-    phslinkform.h
+    phslinkform.h \
+    findbymac.h
 
 FORMS += \
     column_filter.ui \
@@ -82,7 +84,8 @@ FORMS += \
     edit_field.ui \
     noalarm.ui \
     hsoperate.ui \
-    phslinkform.ui
+    phslinkform.ui \
+    findbymac.ui
 INCLUDEPATH += ../lv2
 unix:LIBS += -lsnmp
 msvc:LIBS += -lSecur32
