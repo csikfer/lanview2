@@ -84,6 +84,8 @@ public:
     static const QString    sMaxRows;
     static const QString    sDialogRows;
     static const QString    sSoundFileAlarm;
+    static const QString    sHorizontal;
+    static const QString    sVertical;
     /// Main window object pointer
     static cMainWindow *    pMainWindow;
 protected:

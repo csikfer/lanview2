@@ -3,6 +3,8 @@
 #include "scan.h"
 // #include "lv2service.h"
 #include "others.h"
+#include <algorithm>
+
 
 const QString& notifSwitch(int _ns, eEx __ex)
 {
@@ -1205,6 +1207,16 @@ eTristate cNPort::getBoolParam(qlonglong _typeId, eEx __ex) const
     return str2tristate(getTextParam(_typeId, __ex), __ex);
 }
 
+bool portLessThanByIndex(const cNPort * pp1, const cNPort * pp2)
+{
+    return pp1->getId(cNPort::ixPortIndex()) < pp2->getId(cNPort::ixPortIndex());
+}
+
+bool portLessThanByName(const cNPort * pp1, const cNPort * pp2)
+{
+    return pp1->getName() < pp2->getName();
+}
+
 /* ------------------------------ cPPort ------------------------------ */
 
  int portShare(const QString& _n, eEx __ex)
@@ -1900,6 +1912,16 @@ qlonglong cPatch::getIntParam(qlonglong _typeId, eEx __ex) const
 eTristate cPatch::getBoolParam(qlonglong _typeId, eEx __ex) const
 {
     return str2tristate(getTextParam(_typeId, __ex), __ex);
+}
+
+void cPatch::sortPortsByIndex()
+{
+    std::sort(ports.begin(), ports.end(), portLessThanByIndex);
+}
+
+void cPatch::sortPortsByName()
+{
+    std::sort(ports.begin(), ports.end(), portLessThanByName);
 }
 
 /* --------------------------------------------------------------------------- */

@@ -33,11 +33,11 @@ void cGSetupWidget::applicate()
     DBGFN();
     QString v;
     if (pUi->radioButtonVertikal->isChecked()) {
-        v = "Vertical";
+        v = lv2g::sVertical;
         lv2g::getInstance()->defaultSplitOrientation = Qt::Vertical;
     }
     else {
-        v = "Horizontal" ;
+        v = lv2g::sHorizontal;
         lv2g::getInstance()->defaultSplitOrientation = Qt::Horizontal;
     }
     qset.setValue(lv2g::sDefaultSplitOrientation, v);

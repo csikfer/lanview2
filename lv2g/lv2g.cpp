@@ -9,6 +9,8 @@ const QString lv2g::sDefaultSplitOrientation= "defaultSplitOrientation";
 const QString lv2g::sMaxRows                = "max_rows";
 const QString lv2g::sSoundFileAlarm         = "sound_file_alarm";
 const QString lv2g::sDialogRows             = "dialog-rows";
+const QString lv2g::sHorizontal             = "Horizontal";
+const QString lv2g::sVertical               = "Vertical";
 
 lv2g::lv2g() :
     lanView(),
@@ -36,7 +38,7 @@ lv2g::lv2g() :
         }
         else if (logonNeeded) EXCEPTION(ESQLOPEN, 0, trUtf8("Nincs elérhető adatbázis."));
         defaultSplitOrientation = Qt::Horizontal;
-        if (0 == QString("vertical").compare(pSet->value(sDefaultSplitOrientation).toString(), Qt::CaseInsensitive))
+        if (0 == sVertical.compare(pSet->value(sDefaultSplitOrientation).toString(), Qt::CaseInsensitive))
             defaultSplitOrientation = Qt::Vertical;
     } CATCHS(lastError)
     if (dbIsOpen() && !zoneNeeded) zoneId = cPlaceGroup().getIdByName(_sAll);

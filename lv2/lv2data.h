@@ -845,6 +845,9 @@ public:
 
 };
 
+EXT_ bool portLessThanByIndex(const cNPort * pp1, const cNPort * pp2);
+EXT_ bool portLessThanByName(const cNPort * pp1, const cNPort * pp2);
+
 class cPatch;
 
 enum ePortShare {
@@ -1199,6 +1202,9 @@ public:
     QString  getTextParam(qlonglong _typeId, eEx __ex = EX_ERROR) const;
     qlonglong getIntParam(qlonglong _typeId, eEx __ex = EX_ERROR) const;
     eTristate getBoolParam(qlonglong _typeId, eEx __ex = EX_ERROR) const;
+
+    void sortPortsByIndex();
+    void sortPortsByName();
 
 protected:
     /// Megosztások konténer. (csak a cPatch osztályban)
