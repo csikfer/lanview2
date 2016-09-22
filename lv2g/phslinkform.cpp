@@ -119,8 +119,9 @@ void phsLinkWidget::init()
         id = parent->pActRecord->getId(sPortIdX);
         pPrt = cNPort::getPortObjById(*pq, id, EX_ERROR);
         pUi->comboBoxPort->setCurrentText(pPrt->getName());
-
-        linkType  = parent->pActRecord->getId(sPhsLinkTypeX);
+        int ltix = parent->pActRecord->toIndex(sPhsLinkTypeX, EX_IGNORE);
+        if (ltix < 0) linkType = LT_TERM;   // LLDP linkből varázsolunk
+        else          linkType = parent->pActRecord->getId(ltix);
         if (linkType == LT_FRONT) shared = parent->pActRecord->getName(sPortSharedX);
         else                      shared = _sNul;
     }

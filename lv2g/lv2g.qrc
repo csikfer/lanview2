@@ -1,0 +1,29 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/add.ico</file>
+        <file>icons/delete.ico</file>
+        <file>icons/cancel.ico</file>
+        <file>icons/close.ico</file>
+        <file>icons/ok.ico</file>
+        <file>icons/export.ico</file>
+        <file>icons/undo.ico</file>
+        <file>icons/edit.ico</file>
+        <file>icons/bottom.ico</file>
+        <file>icons/down.ico</file>
+        <file>icons/first.ico</file>
+        <file>icons/last.ico</file>
+        <file>icons/next.ico</file>
+        <file>icons/previous.ico</file>
+        <file>icons/top.ico</file>
+        <file>icons/up.ico</file>
+        <file>icons/insert.ico</file>
+        <file>icons/minus.ico</file>
+        <file>icons/network-connect.ico</file>
+        <file>icons/save.ico</file>
+        <file>icons/refresh.ico</file>
+        <file>icons/restore.ico</file>
+        <file>icons/zoom.ico</file>
+        <file>icons/copy.ico</file>
+        <file>icons/check.ico</file>
+    </qresource>
+</RCC>

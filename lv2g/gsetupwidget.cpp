@@ -7,14 +7,14 @@ cGSetupWidget::cGSetupWidget(QSettings &__s, QWidget *par)
     , qset(__s)
 {
     pSound = NULL;
-    bool splOrient = lv2g::getInstance()->defaultSplitOrientation;
+    enum Qt::Orientation splOrient = lv2g::getInstance()->defaultSplitOrientation;
     QString sounFileAlarm = lv2g::getInstance()->soundFileAlarm;
     int maxRows = lv2g::getInstance()->maxRows;
     int dialogRows = lv2g::getInstance()->dialogRows;
     pUi = new Ui_GSetup;
     pUi->setupUi(this);
-    pUi->radioButtonHorizontal->setChecked(splOrient);
-    pUi->radioButtonVertikal->setChecked(!splOrient);
+    pUi->radioButtonHorizontal->setChecked(splOrient == Qt::Horizontal);
+    pUi->radioButtonVertikal->setChecked(splOrient != Qt::Horizontal);
     pUi->lineEditAlarm->setText(sounFileAlarm);
     pUi->pushButtonAlarmTest->setDisabled(sounFileAlarm.isEmpty());
     pUi->spinBoxMaxRows->setValue(maxRows);

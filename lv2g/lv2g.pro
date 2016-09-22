@@ -96,3 +96,6 @@ TRANSLATIONS    = lv2glib_hu.ts \
                   lv2glib_en.ts
 
 CODECFORSRC     = UTF-8
+
+RESOURCES += \
+    lv2g.qrc

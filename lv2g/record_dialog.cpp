@@ -82,27 +82,28 @@ cDialogButtons::cDialogButtons(const tIntVector& buttons, QWidget *par)
 void cDialogButtons::staticInit()
 {
     if (buttonNames.isEmpty()) {
-        appendCont(buttonNames, trUtf8("OK"),          icons, QIcon::fromTheme("emblem-default"), keys, Qt::Key_Enter,  DBT_OK);
-        appendCont(buttonNames, trUtf8("Bezár"),       icons, QIcon::fromTheme("window-close"),   keys, Qt::Key_Escape, DBT_CLOSE);
-        appendCont(buttonNames, trUtf8("Frissít"),     icons, QIcon::fromTheme("reload"),         keys, Qt::Key_F5,     DBT_REFRESH);
-        appendCont(buttonNames, trUtf8("Új"),          icons, QIcon::fromTheme("insert-image"),   keys, Qt::Key_Insert, DBT_INSERT);
-        appendCont(buttonNames, trUtf8("Módosít"),     icons, QIcon::fromTheme("text-editor"),    keys, 0,              DBT_MODIFY);
-        appendCont(buttonNames, trUtf8("Ment"),        icons, QIcon::fromTheme("list-add"),       keys, 0,              DBT_SAVE);
-        appendCont(buttonNames, trUtf8("Első"),        icons, QIcon::fromTheme("go-first"),       keys, Qt::Key_Home,   DBT_FIRST);
-        appendCont(buttonNames, trUtf8("Előző"),       icons, QIcon::fromTheme("go-previous"),    keys, Qt::Key_PageUp, DBT_PREV);
-        appendCont(buttonNames, trUtf8("Következő"),   icons, QIcon::fromTheme("go-next"),        keys, Qt::Key_PageDown,DBT_NEXT);
-        appendCont(buttonNames, trUtf8("Utolsó"),      icons, QIcon::fromTheme("go-last"),        keys, Qt::Key_End,    DBT_LAST);
-        appendCont(buttonNames, trUtf8("Töröl"),       icons, QIcon::fromTheme("list-remove"),    keys, Qt::Key_Delete, DBT_DELETE);
-        appendCont(buttonNames, trUtf8("Visszaállít"), icons, QIcon::fromTheme("edit-redo"),      keys, 0,              DBT_RESTORE);
-        appendCont(buttonNames, trUtf8("Elvet"),       icons, QIcon::fromTheme("gtk-cancel"),     keys, Qt::Key_Escape, DBT_CANCEL);
-        appendCont(buttonNames, trUtf8("Alapállapot"), icons, QIcon::fromTheme("go-first"),       keys, 0,              DBT_RESET);
-        appendCont(buttonNames, trUtf8("Betesz"),      icons, QIcon::fromTheme("insert-image"),   keys, Qt::Key_Plus,   DBT_PUT_IN);
-        appendCont(buttonNames, trUtf8("Kivesz"),      icons, QIcon::fromTheme("list-remove"),    keys, Qt::Key_Minus,  DBT_TAKE_OUT);
-        appendCont(buttonNames, trUtf8("Kibont"),      icons, QIcon::fromTheme("zoom-in"),        keys, Qt::Key_Plus,   DBT_EXPAND);
-        appendCont(buttonNames, trUtf8("Gyökér"),      icons, QIcon(),                            keys, 0,              DBT_ROOT);
-        appendCont(buttonNames, trUtf8("Másol"),       icons, QIcon::fromTheme("copy"),           keys, 0,              DBT_COPY);
-        appendCont(buttonNames, trUtf8("Nyugtáz"),     icons, QIcon(),                            keys, 0,              DBT_RECEIPT);
-        appendCont(buttonNames, trUtf8("Kiürít"),      icons, QIcon::fromTheme("edit-clear"),     keys, 0,              DBT_TRUNCATE);
+        appendCont(buttonNames, trUtf8("OK"),          icons, QIcon(":/icons/ok.ico"),      keys, Qt::Key_Enter,  DBT_OK);
+        appendCont(buttonNames, trUtf8("Bezár"),       icons, QIcon(":/icons/close.ico"),   keys, Qt::Key_Escape, DBT_CLOSE);
+        appendCont(buttonNames, trUtf8("Frissít"),     icons, QIcon(":/icons/refresh.ico"), keys, Qt::Key_F5,     DBT_REFRESH);
+        appendCont(buttonNames, trUtf8("Új"),          icons, QIcon(":/icons/insert.ico"),  keys, Qt::Key_Insert, DBT_INSERT);
+        appendCont(buttonNames, trUtf8("Módosít"),     icons, QIcon(":/icons/edit.ico"),    keys, 0,              DBT_MODIFY);
+        appendCont(buttonNames, trUtf8("Ment"),        icons, QIcon(":/icons/save.ico"),    keys, 0,              DBT_SAVE);
+        appendCont(buttonNames, trUtf8("Első"),        icons, QIcon(":/icons/first.ico"),   keys, Qt::Key_Home,   DBT_FIRST);
+        appendCont(buttonNames, trUtf8("Előző"),       icons, QIcon(":/icons/previous.ico"),keys, Qt::Key_PageUp, DBT_PREV);
+        appendCont(buttonNames, trUtf8("Következő"),   icons, QIcon(":/icons/next.ico"),    keys, Qt::Key_PageDown,DBT_NEXT);
+        appendCont(buttonNames, trUtf8("Utolsó"),      icons, QIcon(":/icons/last.ico"),    keys, Qt::Key_End,    DBT_LAST);
+        appendCont(buttonNames, trUtf8("Töröl"),       icons, QIcon(":/icons/delete.ico"),  keys, Qt::Key_Delete, DBT_DELETE);
+        appendCont(buttonNames, trUtf8("Visszaállít"), icons, QIcon(":/icons/undo.ico"),    keys, 0,              DBT_RESTORE);
+        appendCont(buttonNames, trUtf8("Elvet"),       icons, QIcon(":/icons/cancel.ico"),  keys, Qt::Key_Escape, DBT_CANCEL);
+        appendCont(buttonNames, trUtf8("Alapállapot"), icons, QIcon(":/icons/restore.ico"), keys, 0,              DBT_RESET);
+        appendCont(buttonNames, trUtf8("Betesz"),      icons, QIcon(":/icons/add.ico"),     keys, Qt::Key_Plus,   DBT_PUT_IN);
+        appendCont(buttonNames, trUtf8("Kivesz"),      icons, QIcon(":/icons/minus.ico"),   keys, Qt::Key_Minus,  DBT_TAKE_OUT);
+        appendCont(buttonNames, trUtf8("Kibont"),      icons, QIcon(":/icons/zoom.ico"),    keys, Qt::Key_Plus,   DBT_EXPAND);
+        appendCont(buttonNames, trUtf8("Gyökér"),      icons, QIcon(":/icons/restore.ico"), keys, 0,              DBT_ROOT);
+        appendCont(buttonNames, trUtf8("Másol"),       icons, QIcon(":/icons/copy.ico"),    keys, 0,              DBT_COPY);
+        appendCont(buttonNames, trUtf8("Nyugtáz"),     icons, QIcon(":/icons/check.ico"),   keys, 0,              DBT_RECEIPT);
+        appendCont(buttonNames, trUtf8("Kiürít"),      icons, QIcon(":/icons/delete.ico"),  keys, 0,              DBT_TRUNCATE);
+        appendCont(buttonNames, trUtf8("Kiegészítés"), icons, QIcon(":/icons/export.ico"),  keys, 0,              DBT_COMPLETE);
     }
     if (buttonNames.size() != _buttonNumbers) EXCEPTION(EPROGFAIL);
     if (      icons.size() != _buttonNumbers) EXCEPTION(EPROGFAIL);

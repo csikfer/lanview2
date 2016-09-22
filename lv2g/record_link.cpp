@@ -4,9 +4,12 @@
 cRecordLink::cRecordLink(cTableShape *pts, bool _isDialog, cRecordsViewBase *_upper, QWidget * par)
     : cRecordTable(pts, _isDialog, _upper, par)
 {
-    ;
+    QString sViewName = pts->getName(_sTableName);
+    if      (sViewName.startsWith("phs"))  linkType = LT_PHISICAL;
+    else if (sViewName.startsWith("log"))  linkType = LT_LOGICAL;
+    else if (sViewName.startsWith("lldp")) linkType = LT_LLDP;
+    else                                   EXCEPTION(EDATA, 0, sViewName);
 }
-
 
 cRecordLink::~cRecordLink()
 {
@@ -26,7 +29,12 @@ void cRecordLink::init()
     // Az alapértelmezett gombok:
     buttons << DBT_SPACER << DBT_REFRESH << DBT_FIRST << DBT_PREV << DBT_NEXT << DBT_LAST;
     if (!isReadOnly) {
-        buttons << DBT_BREAK << DBT_SPACER << DBT_DELETE << DBT_INSERT << DBT_MODIFY;
+        if (linkType == LT_LLDP) {
+            buttons << DBT_SPACER << DBT_COMPLETE;
+        }
+        else {
+            buttons << DBT_BREAK << DBT_SPACER << DBT_DELETE << DBT_INSERT << DBT_MODIFY;
+        }
     }
     flags = 0;
     switch (shapeType) {
@@ -83,6 +91,30 @@ QStringList cRecordLink::where(QVariantList& qParams)
     return wl;
 }
 
+void cRecordLink::buttonPressed(int id)
+{
+    _DBGFN() << " #" << id << endl;
+    switch (id) {
+    case DBT_CLOSE:     close();    break;
+    case DBT_REFRESH:   refresh();  break;
+    case DBT_INSERT:    insert();   break;
+    case DBT_MODIFY:    modify();   break;
+    case DBT_FIRST:     first();    break;
+    case DBT_PREV:      prev();     break;
+    case DBT_NEXT:      next();     break;
+    case DBT_LAST:      last();     break;
+    case DBT_DELETE:    remove();   break;
+    case DBT_COPY:      copy();     break;
+    case DBT_COMPLETE:  lldp2phs(); break;
+    default:
+        DWAR() << "Invalid button id : " << id << endl;
+        break;
+    }
+    DBGFNL();
+
+}
+
+
 void cRecordLink::insert()
 {
     if (isReadOnly) {
@@ -129,6 +161,14 @@ void cRecordLink::modify(eEx __ex)
             }
         } while (r == DBT_NEXT);
     }
+}
+
+void cRecordLink::lldp2phs()
+{
+    if (isReadOnly || linkType != LT_LLDP) return;
+    cRecord *pa = actRecord();
+    if (pa == NULL) return;
+    modify();
 }
 
 cLinkDialog::cLinkDialog(bool isInsert, cRecordLink * __parent)
