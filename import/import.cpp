@@ -33,9 +33,6 @@ int main (int argc, char * argv[])
     }
     PDEB(VVERBOSE) << "Saved original current dir : " << actDir << "; actDir : " << QDir::currentPath() << endl;
 
-    if (mo.lastError) {  // Ha hiba volt, vagy vége
-        return mo.lastError->mErrorCode; // a mo destruktora majd kiírja a hibaüzenetet.
-    }
     if (mo.daemonMode) {        // Daemon mód
         // A beragadt rekordok kikukázása
         mo.abortOldRecords();
@@ -75,48 +72,53 @@ void lv2import::abortOldRecords()
             "   SET exec_state = 'aborted',"
                 "   ended = CURRENT_TIMESTAMP,"
                 "   result_msg = 'Start imports server: old records aborted.'"
-            " WHERE exec_state = 'wait' AND exec_state = 'execute'";
+            " WHERE exec_state = 'wait' OR exec_state = 'execute'";
     if (!pq->exec(sql)) SQLPREPERR(*pq, sql);
     pq->finish();
 }
 
 void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource source, const QVariant &payload)
 {
-    cImport     imp;
+    cImport    *pImp = NULL;
     try {
         PDEB(INFO) << QString(trUtf8("DB notification : %1, %2, %3.")).arg(name).arg((int)source).arg(debVariantToString(payload)) << endl;
-        imp.setName(_sExecState, _sWait);
-        imp.fetch(*pq, false, imp.mask(_sExecState), imp.iTab(_sDateOf), 1);
-        if (imp.isEmpty_()) {
+        pImp = new cImport;
+        pImp->setName(_sExecState, _sWait);
+        pImp->fetch(*pq, false, pImp->mask(_sExecState), pImp->iTab(_sDateOf), 1);
+        if (pImp->isEmpty_()) {
             DWAR() << trUtf8("No waitig imports record, dropp notification.") << endl;
             return;
         }
-        imp.setName(_sExecState, _sExecute);
-        imp.set(_sStarted, QVariant(QDateTime::currentDateTime()));
-        imp.setId(_sPid, QCoreApplication::applicationPid());
-        imp.update(*pq, false, imp.mask(_sExecState, _sStarted, _sPid));
-        importParseText(imp.getName(_sImportText));
+        pImp->setName(_sExecState, _sExecute);
+        pImp->set(_sStarted, QVariant(QDateTime::currentDateTime()));
+        pImp->setId(_sPid, QCoreApplication::applicationPid());
+        pImp->update(*pq, false, pImp->mask(_sExecState, _sStarted, _sPid));
+        importParseText(pImp->getName(_sImportText));
     }
     CATCHS(lastError)
     cError *ipe = importGetLastError();
     if (ipe != NULL) lastError = ipe;
     if (lastError == NULL) {
-        imp.setName(_sExecState, _sOk);
-        imp.setName(_sResultMsg, _sOk);
-        imp.set(_sEnded, QVariant(QDateTime::currentDateTime()));
-        imp.clear(_sAppLogId);
-        imp.update(*pq, false, imp.mask(_sExecState, _sResultMsg, _sEnded, _sAppLogId));
+        pImp->setName(_sExecState, _sOk);
+        pImp->setName(_sResultMsg, _sOk);
+        pImp->set(_sEnded, QVariant(QDateTime::currentDateTime()));
+        pImp->clear(_sAppLogId);
+        pImp->update(*pq, false, pImp->mask(_sExecState, _sResultMsg, _sEnded, _sAppLogId));
     }
-    else {
+    else if (pImp != NULL) {
         qlonglong eid = sendError(lastError);
-        imp.setName(_sExecState, _sFaile);
-        imp.setName(_sResultMsg, lastError->msg());
+        pImp->setName(_sExecState, _sFaile);
+        pImp->setName(_sResultMsg, lastError->msg());
         delete lastError;
         lastError = NULL;
-        imp.set(_sEnded, QVariant(QDateTime::currentDateTime()));
-        imp.setId(_sAppLogId, eid);
-        imp.update(*pq, false, imp.mask(_sExecState, _sResultMsg, _sEnded, _sAppLogId));
+        pImp->set(_sEnded, QVariant(QDateTime::currentDateTime()));
+        pImp->setId(_sAppLogId, eid);
+        pImp->update(*pq, false, pImp->mask(_sExecState, _sResultMsg, _sEnded, _sAppLogId));
     }
+    else {
+        EXCEPTION(EPROGFAIL);
+    }
+    pDelete(pImp);
     QCoreApplication::exit(0);
 }
 
@@ -154,14 +156,17 @@ lv2import::lv2import() : lanView(), fileNm(), in()
         args.removeAt(i);;
         PDEB(INFO) << trUtf8("Set daemon mode.") << endl;
         daemonMode = true;
-        subsDbNotif();
     }
     if (args.count() > 1) DWAR() << trUtf8("Invalid arguments : ") << args.join(QChar(' ')) << endl;
     try {
         pq = newQuery();
-        if (daemonMode) return;
-        insertStart(*pq);
-        if (!userName.isNull()) setUser(userName);
+        if (daemonMode) {
+            subsDbNotif();
+        }
+        else {
+            insertStart(*pq);
+            if (!userName.isNull()) setUser(userName);
+        }
     } CATCHS(lastError)
 }
 

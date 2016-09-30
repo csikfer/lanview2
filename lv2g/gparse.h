@@ -24,7 +24,7 @@ private:
     Ui::GParseWidget *pUi;
 private slots:
     void loadClicked();
-    void saveCliecked();
+    void saveClicked();
     void parseClicked();
     void debugLine();
     void localParseFinished();

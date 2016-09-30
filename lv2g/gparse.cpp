@@ -16,7 +16,7 @@ cParseWidget::cParseWidget(QWidget *par)
     pUi->setupUi(this);
 
     connect(pUi->pushButtonLoad,  SIGNAL(clicked()), this, SLOT(loadClicked()));
-    connect(pUi->pushButtonSave,  SIGNAL(clicked()), this, SLOT(saveCliecked()));
+    connect(pUi->pushButtonSave,  SIGNAL(clicked()), this, SLOT(saveClicked()));
     connect(pUi->pushButtonParse, SIGNAL(clicked()), this, SLOT(parseClicked()));
     connect(pUi->pushButtonClose, SIGNAL(clicked()), this, SLOT(endIt()));
     connect(pUi->pushButtonBreak, SIGNAL(clicked()), this, SLOT(localParseBreak()));
@@ -52,7 +52,7 @@ void cParseWidget::loadClicked()
     pUi->textEditSrc->setText(QString::fromUtf8(file.readAll()));
 }
 
-void cParseWidget::saveCliecked()
+void cParseWidget::saveClicked()
 {
     QString fn;
     const QString& capt = trUtf8("Cél fájl kiválasztása");
@@ -148,6 +148,7 @@ void cParseWidget::remoteParse(const QString &src)
     imp.insert(*pq);
     QString msg = trUtf8("Végrehajtandó forrásszöveg kiírva az adatbázisba (ID = %1)\nVárakozás...").arg(imp.getId());
     sqlNotify(*pq, "import");
+    pUi->pushButtonBreak->setEnabled(true);
     int lastStat = ES_WAIT;
     while (true) {
         if (msg.isEmpty() == false) {
@@ -191,6 +192,7 @@ void cParseWidget::remoteParse(const QString &src)
     }
     pUi->textEditResult->clear();
     pUi->textEditResult->setText(msg);
+    pUi->pushButtonBreak->setEnabled(false);
 }
 
 void cParseWidget::debugLine()
