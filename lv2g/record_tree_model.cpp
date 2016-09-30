@@ -294,6 +294,7 @@ void cRecordTreeModel::removeRecords(const QModelIndexList& mil)
 
 bool cRecordTreeModel::removeRec(const QModelIndex & mi)
 {
+    static const QString tn = "delete_tree";
     cTreeNode *pn = nodeFromIndex(mi);
     int b = QMessageBox::warning(recordView.pWidget(),
                          trUtf8("Egy rész fa teljes törlése!"),
@@ -301,9 +302,10 @@ bool cRecordTreeModel::removeRec(const QModelIndex & mi)
                          QMessageBox::Ok, QMessageBox::Cancel);
     if (b != QMessageBox::Ok) return false;
     beginRemoveRows(mi.parent(), mi.row(), mi.row());
-    sqlBegin(*pq);
+    sqlBegin(*pq, tn);
     bool r = removeNode(pn);
-    r = r ? sqlEnd(*pq) : !sqlRollback(*pq);
+    if (r) sqlEnd(*pq, tn);
+    else   sqlRollback(*pq, tn);
     endRemoveRows();
     if (!r) recordView.refresh(true);
     return r;

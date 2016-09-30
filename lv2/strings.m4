@@ -10,8 +10,13 @@ STRDEF(Memb, "%1.%2")
 STRDEF(CondW, " = ?")
 STRDEF(CommaQ, `", ?"')
 STRDEF(IsNull, " IS NULL")
-STRDEF(At, "@");
+STRDEF(At, "@")
 __SDEF(DEFAULT)
+STRDEF(Space, " ")
+STRDEF(Semicolon, ";")
+STRDEF(SemicolonNl, ";\n")
+STRDEF(BraceBeginNl, "{\n")
+
 
 dnl Megosztás típusok
 __SDEF(A)
@@ -56,7 +61,7 @@ STRDEF(Version, "version")
 STRDEF(Help, "help")
 STRDEF(DebugLevel, "debug-level")
 STRDEF(LogFile,    "log-file")
-STRDEF(Lv2testSetSelfNname, "lv2test-set-self-name");
+STRDEF(Lv2testSetSelfNname, "lv2test-set-self-name")
 
 STRDEF(LocalHost, "localhost")
 STRDEF(MibPath, "MIBPATH")
@@ -128,12 +133,12 @@ STRDEF(ParamTypes, "param_types")
  STRDEF(ParamTypeName, "param_type_name")
   STRDEF(SuspectedUplink, "suspected_uplink")   dnl boolean (TABLE:mactab / APP:portmac)
   STRDEF(QueryMacTab,     "query_mac_tab")      dnl boolean (TABLE:mactab / APP:portmac)
-  STRDEF(LinkIsInvisibleForLLDP, "link_is_invisible_for_LLDP");dnl boolean (TABLE:mactab / APP:portmac)
+  STRDEF(LinkIsInvisibleForLLDP, "link_is_invisible_for_LLDP")  dnl boolean (TABLE:mactab / APP:portmac)
   STRDEF(SearchDomain, "search_domain")
  STRDEF(ParamTypeNote, "param_type_note")
  STRDEF(ParamTypeType, "param_type_type")
   dnl boolean
-  STRDEF(BigInt, "bigint");
+  STRDEF(BigInt, "bigint")
   STRDEF(DoublePrecision, "double precision")
   STRDEF(Text, "text")
   STRDEF(Interval, "interval")
@@ -193,6 +198,10 @@ STRDEF(PlaceGroups, "place_groups")
  STRDEF(PlaceGroupId, "place_group_id")
  STRDEF(PlaceGroupName, "place_group_name")
  STRDEF(PlaceGroupNote, "place_group_note")
+ STRDEF(PlaceGroupType, "place_group_type")
+  dnl group
+  STRDEF(Category, "category")
+  STRDEF(Zone, "zone")
 STRDEF(Users, "users")
  STRDEF(UserId, "user_id")
  STRDEF(UserName, "user_name")
@@ -285,10 +294,11 @@ STRDEF(Nodes,"nodes")
   STRDEF(Converter, "converter")
   STRDEF(Printer, "printer")
   STRDEF(Gateway, "gateway")
-  STRDEF(Ap, "ap");
+  STRDEF(Ap, "ap")
   STRDEF(Workstation, "workstation")
   STRDEF(Mobile, "mobile")
   STRDEF(Device, "device")
+  STRDEF(Controller, "controller")
   dnl virtual
  STRDEF(SnmpDevices,"snmpdevices")
  STRDEF(CommunityRd,"community_rd")
@@ -479,7 +489,7 @@ STRDEF(UserEvents, "user_events")
  dnl date_of user_id alarm_id
  STRDEF(EventType, "event_type")
   STRDEF(Notice, "notice")
-  STRDEF(View, "view");
+  STRDEF(View, "view")
   STRDEF(Acknowledge, "acknowledge")
   STRDEF(Sendmessage, "sendmessage")
   STRDEF(Sendmail, "sendmail")
@@ -571,10 +581,10 @@ STRDEF(PhsLinks, "phs_links")
  STRDEF(ModifyUserId, "modify_user_id")
  STRDEF(Forward, "forward")
 STRDEF(PhsLinksShape, "phs_links_shape")
-STRDEF(NodeId1, "node_id1");
-STRDEF(NodeId2, "node_id2");
- STRDEF(NodeName1, "node_name1");
- STRDEF(NodeName2, "node_name2");
+STRDEF(NodeId1, "node_id1")
+STRDEF(NodeId2, "node_id2")
+ STRDEF(NodeName1, "node_name1")
+ STRDEF(NodeName2, "node_name2")
  STRDEF(PortFullName1, "port_full_name1")
  STRDEF(PortFullName2, "port_full_name2")
  STRDEF(PortIndex1, "port_index1")
@@ -645,10 +655,10 @@ STRDEF(TableShapes, "table_shapes")
   STRDEF(Group, "group")
   STRDEF(Self, "self")
   STRDEF(Property, "property")
-  STRDEF(Height, "height");
-  STRDEF(Stretch, "stretch");
-  STRDEF(Horisontal, "horisontal");
-  STRDEF(Vertical, "vertical");
+  STRDEF(Height, "height")
+  STRDEF(Stretch, "stretch")
+  STRDEF(Horisontal, "horisontal")
+  STRDEF(Vertical, "vertical")
   dnl read_only
   STRDEF(IGroup, "igroup")
   STRDEF(NGroup, "ngroup")
@@ -691,7 +701,7 @@ STRDEF(TableShapeFields, "table_shape_fields")
   STRDEF(ReadOnly, "read_only")
   dnl passwd
   STRDEF(Huge, "huge")
-  STRDEF(BatchEdit, "batch_edit");
+  STRDEF(BatchEdit, "batch_edit")
  STRDEF(Expression, "expression")
  STRDEF(DefaultValue, "default_value")
  dnl features, tool_typ, is_read_only, view_rights, edit_rights flag
@@ -805,10 +815,10 @@ STRDEF(AppMemos, "app_memos")
  STRDEF(Importance, "importance")
  STRDEF(Memo, "memo")
 
-STRDEF(Selects, "selects");
+STRDEF(Selects, "selects")
  STRDEF(SelectType, "select_type")
  STRDEF(SelectNote, "select_note")
- STRDEF(Precedence, "precedence");
+ STRDEF(Precedence, "precedence")
  STRDEF(Pattern, "pattern")
  STRDEF(PatternType, "pattern_type")
   STRDEF(Equal, "equal")
@@ -817,7 +827,7 @@ STRDEF(Selects, "selects");
  STRDEF(Choice, "choice")
   __SDEF(ProCurve)
   __SDEF(ProCurveWeb)
-  __SDEF(3Com);
+  __SDEF(3Com)
   __SDEF(Cisco)
   __SDEF(HPAPC)
   __SDEF(Linux)

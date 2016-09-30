@@ -216,10 +216,40 @@ lanView::lanView()
     DBGFNL();
 }
 
+QStringList * lanView::getTransactioMapAndCondLock()
+{
+    if (isMainThread()) {
+        return &getInstance()->mainTrasactions;
+    }
+    else {
+        getInstance()->threadMutex.lock();
+        QMap<QString, QStringList>&  map = lanView::getInstance()->trasactionsThreadMap;
+        QString thread = currentThreadName();
+        QMap<QString, QStringList>::iterator i = map.find(thread);
+        if (i == map.end()) {
+            lanView::getInstance()->threadMutex.unlock();
+            EXCEPTION(EPROGFAIL, 0, thread);
+        }
+        return &i.value();
+    }
+}
+
+static void rollback_all(const QString& n, QSqlDatabase * pdb, QStringList& l)
+{
+    if (!l.isEmpty()) {
+        DWAR() << QObject::trUtf8("Rolback %1 all transactions : %2").arg(n,l.join(", ")) << endl;
+        QSqlQuery q(*pdb);
+        q.exec("ROLLBACK");
+        l.clear();
+    }
+}
+
 lanView::~lanView()
 {
     instance = NULL;    // "Kifelé" már nincs objektum
     PDEB(OBJECT) << QObject::trUtf8("delete (lanView *)%1").arg((qulonglong)this) << endl;
+    // fő szál tranzakciói (nem kéne lennie, ha mégis, akkor rolback mindegyikre)
+    rollback_all("main", pDb, mainTrasactions);
     // Ha volt hiba objektumunk, töröljük. Elötte kiírjuk a hibaüzenetet, ha tényleg hiba volt
     if (lastError && lastError->mErrorCode != eError::EOK) {
         PDEB(DERROR) << lastError->msg() << endl;         // A Hiba üzenet
@@ -271,6 +301,7 @@ lanView::~lanView()
         if (pdb != NULL){
             if (pdb->isValid()) {
                 if (pdb->isOpen()) {
+                    rollback_all(i.key(), pdb, trasactionsThreadMap[i.key()]);
                     pdb->close();
                     PDEB(SQL) << QObject::trUtf8("Close database.") << endl;
                 }
@@ -283,6 +314,7 @@ lanView::~lanView()
         }
     }
     dbThreadMap.clear();
+    trasactionsThreadMap.clear();
     threadMutex.unlock();
     // Töröljük az adatbázis objektumot, ha volt.
     closeDatabase();

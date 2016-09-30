@@ -20,7 +20,7 @@ CREATE TABLE service_types (
     service_type_note   text     DEFAULT NULL
 );
 ALTER TABLE service_types OWNER TO lanview2;
-COMMENT ON TABLE  service_types IS 'A service objektumok csoportosítását teszi lehetővé, egy rekord csak egy csoportba tartozhat./ Ez mire kellett ? Lehet, hogy törölni kéne.';
+COMMENT ON TABLE  service_types IS 'A service objektumok csoportosítását teszi lehetővé, egy rekord csak egy csoportba tartozhat. Alarm message.';
 COMMENT ON COLUMN service_types.service_type_id   IS 'service csoport ill. típus azonosító.';
 COMMENT ON COLUMN service_types.service_type_name IS 'service csoport ill. típus név.';
 COMMENT ON COLUMN service_types.service_type_note IS 'Megjegyzés.';
@@ -346,12 +346,15 @@ CREATE TABLE host_service_vars (
     service_var_note    text                DEFAULT NULL,
     host_service_id     bigint              NOT NULL
         REFERENCES host_services(host_service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    host_service_chart_id bigint	    DEFAULT NULL
+        REFERENCES host_service_charts(host_service_chart_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
     color               bigint              DEFAULT 0,
     service_var_type    servicevartype      DEFAULT 'GAUGE',
     draw_type           drawtype            DEFAULT 'LINE',
     cdef                text                DEFAULT NULL,
     negative            boolean             DEFAULT FALSE,
     dim                 text                DEFAULT NULL,
+    last_raw_value      double precision    DEFAULT NULL,
     last_value          double precision    DEFAULT NULL,
     last_time           timestamp           DEFAULT NULL,
     min_value           double precision    DEFAULT NULL,

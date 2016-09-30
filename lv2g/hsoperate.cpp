@@ -44,6 +44,7 @@ cHSOperate::cHSOperate(QWidget *par)
     pUi->radioButtonNodePattern->setChecked(true);
 
     pZoneModel = new cRecordListModel(cPlaceGroup().descr(), this);
+    pZoneModel->setConstFilter(_sPlaceGroupType + " = " + _sZone, FT_SQL_WHERE);
     pUi->comboBoxZone->setModel(pZoneModel);
     pZoneModel->setFilter();
     pUi->comboBoxZone->setCurrentText(_sAll);
@@ -296,6 +297,7 @@ void cHSOperate::fetch()
 
 void cHSOperate::set()
 {
+    static const QString tn = "HSOparateSet";
     pUi->pushButtonSet->setDisabled(true);
     int rows = pUi->tableWidget->rowCount();
     cHostService hs;
@@ -304,7 +306,7 @@ void cHSOperate::set()
     csf << _sHostServiceState << _sSoftState << _sHardState << _sStateMsg << _sCheckAttempts
         << _sLastChanged  << _sLastTouched << _sActAlarmLogId;
     QBitArray um_ClrState = hs.mask(csf);
-    sqlBegin(*pq2);
+    sqlBegin(*pq2, tn);
     for (int row = 0; row < rows; ++row) {
         QCheckBox *pCb = dynamic_cast<QCheckBox *>(pUi->tableWidget->cellWidget(row, TC_CHECK_BOX));
         if (pCb->isChecked()) {
@@ -330,7 +332,7 @@ void cHSOperate::set()
             if (um.count(true) > 0) {
                 hs.setId(id);
                 if (!cErrorMessageBox::condMsgBox(hs.tryUpdate(*pq2, false, um), this)) {
-                    sqlRollback(*pq2);
+                    sqlRollback(*pq2, tn);
                     return;
                 }
             }
@@ -350,13 +352,13 @@ void cHSOperate::set()
                 }
             } CATCHS(pe)
             if (pe != NULL) {
-                sqlRollback(*pq2);
+                sqlRollback(*pq2, tn);
                 cErrorMessageBox::messageBox(pe, this);
                 return;
             }
         }
     }
-    sqlEnd(*pq2);
+    sqlEnd(*pq2, tn);
     fetch();
 }
 

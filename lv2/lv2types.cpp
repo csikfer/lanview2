@@ -938,19 +938,19 @@ QString QPointTosString(const QPoint& p)
 
 QString QPointFTosString(const QPointF& p)
 {
-    return QString("(%1,%2)").arg(p.x()).arg(p.y());
+    return QString("[%1,%2]").arg(p.x()).arg(p.y());
 }
 
 QString tPolygonFToString(const tPolygonF& pol)
 {
-    QString r = QChar('(');
+    QString r = QChar('{');
     if (pol.size() > 0) {
         foreach (QPointF p, pol) {
             r += QPointFTosString(p) + QChar(',');
         }
         r.chop(1);
     }
-    return r + QChar(')');
+    return r + QChar('}');
 }
 
 

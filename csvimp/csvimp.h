@@ -18,9 +18,13 @@ class lv2csvimp : public lanView {
     ~lv2csvimp();
     QSqlQuery   *pq;
     QString     fileNm;
-    QFile       in;
+    QString     srcOutName;
+    QFile     * pOutputFile;
+    QTextStream *pOut;
+    QFile       inputFile;
     void readcsv();
     void csvrow(QStringList &fields);
+    QChar separator;
     QString floor;              ///< Emelet neve
     QString _room;              ///< Hely helyiség (szoba) neve
     QString side;               ///< Több fakk esetán a nevet kiegészíitó jel
@@ -31,6 +35,7 @@ class lv2csvimp : public lanView {
     QString swport;             ///< a port "túloldalán" észlelt switch port neve
     QString category;           ///< a helyiség kategória
     int     need;               ///< szükséges port szám a helyiségben (kiegészíti a kategóriát, ha van)
+    QStringList insertedCat;    ///< A forrásszövegben már inzertált kategóriák listája.
 
     cPlace      placeFloor;     ///< Emelet (a helyíség parent-je)
     cPlace      placeRoom;      ///< Helyiség

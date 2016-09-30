@@ -37,9 +37,7 @@ lv2portStat::lv2portStat() : lanView()
         try {
             pq = newQuery();
 
-            sqlBegin(*pq);
             insertStart(*pq);
-            sqlEnd(*pq);
 
             subsDbNotif();
 

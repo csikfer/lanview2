@@ -36,9 +36,7 @@ lv2ArpD::lv2ArpD() : lanView()
         try {
             pq = newQuery();
 
-            sqlBegin(*pq);
             insertStart(*pq);
-            sqlEnd(*pq);
 
             subsDbNotif();
 

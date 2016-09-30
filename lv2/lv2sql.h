@@ -122,11 +122,15 @@ Ha létrejön hiba objektum, azt nem szabadítja fel. Nem ellenörzi, volt-e ér
 EXT_ bool executeSqlScript(QFile& file, QSqlDatabase *pq = NULL, enum eEx __ex = EX_ERROR);
 
 /// Tranzakció indítása
-EXT_ bool sqlBegin(QSqlQuery& q);
+EXT_ void sqlBegin(QSqlQuery& q, const QString& tn);
 /// Tranzakció befejezése
-EXT_ bool sqlEnd(QSqlQuery& q);
+EXT_ void sqlEnd(QSqlQuery& q, const QString& tn);
 /// Tranzakció visszagörgetése
-EXT_ bool sqlRollback(QSqlQuery& q);
+EXT_ void sqlRollback(QSqlQuery& q, const QString& tn);
+
+/// Minden nem alfanumerikus vagy nem ASCII karakter '_' karakterrel helyettesít.
+/// Ha az első karakter szám, akkor beszúr elé egy '_' karaktert.
+EXT_ QString toSqlName(const QString& _n);
 
 /// Végrehajt egy query-t
 /// @param q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.

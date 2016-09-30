@@ -215,7 +215,8 @@ enum eNodeType {
     NT_AP,
     NT_WORKSTATION,
     NT_MOBILE,
-    NT_DEVICE
+    NT_DEVICE,
+    NT_CONTROLLER
 };
 
 /// Node típus név konverzió
@@ -462,10 +463,21 @@ class LV2SHARED_EXPORT cPlace : public cRecord {
     CRECORD(cPlace);
 public:
     qlonglong parentImageId(QSqlQuery& q);
+    QString   codeInsert(QSqlQuery &q, int indent = 0) const;
 };
 
 #define UNKNOWN_PLACE_ID  0LL
 #define ROOT_PLACE_ID     1LL
+
+enum ePlaceGroupType {
+    PG_INVALID = -1,
+    PG_GROUP,
+    PG_CATEGORY,
+    PG_ZONE
+};
+
+EXT_ const QString& placeGroupType(int e, eEx __ex = EX_ERROR);
+EXT_ int placeGroupType(const QString& s, eEx __ex = EX_ERROR);
 
 /*!
 @class cPlaceGroup
@@ -474,12 +486,13 @@ public:
 class LV2SHARED_EXPORT cPlaceGroup : public cRecord {
     CRECORD(cPlaceGroup);
 public:
+    QString   codeInsert(QSqlQuery &, int indent = 0) const;
     /// Egy új rekord beszúrása.
     /// @param __n A név mező értéke
     /// @param __d A descr mező értéke
     /// @return Az új rekord id-je.
-    static qlonglong insertNew(QSqlQuery q, const QString& __n, const QString& __d);
-    static qlonglong replaceNew(QSqlQuery q, const QString& __n, const QString& __d);
+    static qlonglong insertNew(QSqlQuery q, const QString& __n, const QString& __d, int _type);
+    static qlonglong replaceNew(QSqlQuery q, const QString& __n, const QString& __d, int _type);
 };
 
 typedef tGroup<cPlaceGroup, cPlace> cGroupPlace;
@@ -1073,6 +1086,8 @@ public:
     virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     virtual bool isContainerValid(qlonglong __mask) const;
     virtual void setContainerValid(qlonglong __set, qlonglong __clr = 0);
+    virtual void insertPort(QSqlQuery& q, int ix, const QString& _na, const QString& _no, const QString& _tag = QString());
+    virtual void updateShared(QSqlQuery& q, int __a, int __ab, int __b, int __bb, bool __cd);
 
     /// Kitölti a ports konténer adattagot. A node-hoz tartozó összes portot beolvassa a kontéberbe.
     /// Feltételezi, hogy a node_id mevű maző, vagyis a rekord ID ki ban töltve.
@@ -1096,6 +1111,8 @@ public:
     ///               Ha __ab, __b és __bb is negatív, és __cd értéke true, akkor az __a a indexű port nincs bekütbe.
     /// @return true, ha beállította a megosztásokat a ports objektumon, és false, ha hiba történt.
     virtual bool setShare(int __a, int __ab = -1, int __b = -1, int __bb = -1, bool __cd = false);
+    /// A megosztást is kiírja az adatbázisba.
+    virtual bool updateShare(QSqlQuery& __q, const cShareBack& s, eEx __ex = EX_ERROR);
     /// A megosztásokat is kiírja az adatbázisba.
     /// Feltételezi, hogy a ports konténerbe az adatbázis tartalma be lett olvasva
     /// @param __q Az adatbázis művelethet használt query objektum.
@@ -1206,6 +1223,8 @@ public:
     void sortPortsByIndex();
     void sortPortsByName();
 
+    virtual QString codeInsert_() const;
+
 protected:
     /// Megosztások konténer. (csak a cPatch osztályban)
     /// Nincs automatikusan feltöltve, de a clearToEnd(); törli, ill. az atEnd() törölheti.
@@ -1272,6 +1291,11 @@ public:
     virtual cPPort *addPort(const QString& __name, const QString &__note, int __ix);
     /// Hibát dob, ebben az osztályban nem támogatott, nem értelmezett
     virtual cPPort *addPorts(const QString& __np, int __noff, int __from, int __to, int __off);
+    /// Hibát dob, ebben az osztályban nem támogatott, nem értelmezett
+    virtual void insertPort(QSqlQuery& q, int ix, const QString& _na, const QString& _no, const QString& _tag = QString());
+    /// Hibát dob, ebben az osztályban nem támogatott, nem értelmezett
+    virtual void updateShared(QSqlQuery& q, int __a, int __ab, int __b, int __bb, bool __cd);
+
     /// Kiírja a ports konténer tartalmát is
     virtual QString toString() const;
 
@@ -1400,6 +1424,8 @@ public:
     /// @param __note node secriptorra/megjegyzés
     /// @param __ex Ha értéke true, akkor hiba esetén dob egy kizárást, ha false, akkor hiba esetén a ES_DEFECTIVE bitet állítja be.
     cNode& asmbNode(QSqlQuery& q, const QString& __name, const QStringPair* __port, const QStringPair *__addr, const QString *__sMac, const QString &__note = _sNul, qlonglong __place = NULL_ID, enum eEx __ex = EX_ERROR);
+    ///
+    virtual QString codeInsert_() const;
 };
 
 

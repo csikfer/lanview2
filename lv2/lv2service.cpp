@@ -826,15 +826,16 @@ bool cInspector::toRun(bool __timed)
         lastRun.start();
     }
     // Tesszük a dolgunkat bármi legyen is az, egy tranzakció lessz.
+    QString tn = toSqlName(name());
     try {
-        sqlBegin(*pq);
+        sqlBegin(*pq, tn);
         retStat      = run(*pq);
         statIsSet    = retStat & RS_STAT_SETTED;
         statSetRetry = retStat & RS_SET_RETRY;
         retStat      = (enum eNotifSwitch)(retStat & RS_STAT_MASK);
     } CATCHS(lastError);
     if (lastError != NULL) {    // Ha hívtuk a run metódust, és dobott egy hátast
-        sqlRollback(*pq);  // Hiba volt, inkább visszacsináljuk az egészet.
+        sqlRollback(*pq, tn);  // Hiba volt, inkább visszacsináljuk az egészet.
         if (pProcess != NULL && QProcess::NotRunning != pProcess->state()) {
             pProcess->kill();
         }
@@ -844,7 +845,7 @@ bool cInspector::toRun(bool __timed)
         if (plv->lastError == lastError) plv->lastError = NULL;
         pDelete(lastError);
         QString msg = QString(QObject::trUtf8("Hiba, ld.: app_errs.applog_id = %1")).arg(id);
-        sqlBegin(*pq);
+        sqlBegin(*pq, tn);
         hostService.setState(*pq, _sUnknown, msg, parentId(EX_IGNORE));
     }
     // Ha ugyan nem volt hiba, de sokat tököltünk
@@ -858,7 +859,7 @@ bool cInspector::toRun(bool __timed)
         QString msg = QString(QObject::trUtf8("Futási idő %1 ezred másodperc")).arg(lastRun.elapsed());
         hostService.setState(*pq, notifSwitch(retStat), msg, parentId(EX_IGNORE));
     }
-    sqlEnd(*pq);
+    sqlEnd(*pq, tn);
     _DBGFNL() << name() << endl;
     return statSetRetry;
 }

@@ -58,6 +58,17 @@ QString quotedString(const QString& __s, const QChar& __q)
     return r + __q;
 }
 
+EXT_ QString quotedStringList(const QStringList& __sl, const QChar &__q , const QChar &__s)
+{
+    QString r;
+    foreach (QString s, __sl) {
+        r += quotedString(s, __q) + __s;
+    }
+    r.chop(1);
+    return r;
+}
+
+
 cDebug *cDebug::instance = NULL;
 bool    cDebug::disabled = false;
 

@@ -53,6 +53,7 @@ cSetNoAlarm::cSetNoAlarm(QWidget *par)
     pUi->dateTimeEditTo->setMinimumDate(QDate::currentDate());
 
     pZoneModel = new cRecordListModel(cPlaceGroup().descr(), this);
+    pZoneModel->setConstFilter(_sPlaceGroupType + " = " + _sZone, FT_SQL_WHERE);
     pUi->comboBoxZone->setModel(pZoneModel);
     pZoneModel->setFilter();
     pUi->comboBoxZone->setCurrentText(_sAll);
@@ -284,13 +285,14 @@ void cSetNoAlarm::fetch()
 
 void cSetNoAlarm::set()
 {
+    static const QString tn = "setNoAlarmSet";
     pUi->pushButtonSet->setDisabled(true);
     int rows = pUi->tableWidget->rowCount();
     int nat  = pButtonGroupType->checkedId();
     if (noalarmtype(nat, EX_IGNORE).isEmpty()) return;
     cHostService hs;
     QBitArray um = hs.mask(_sNoalarmFlag, _sNoalarmFrom, _sNoalarmTo, _sLastNoalarmMsg);
-    sqlBegin(*pq2);
+    sqlBegin(*pq2, tn);
     for (int row = 0; row < rows; ++row) {
         QCheckBox *pCb = dynamic_cast<QCheckBox *>(pUi->tableWidget->cellWidget(row, TC_CHECK_BOX));
         if (pCb->isChecked()) {
@@ -302,12 +304,12 @@ void cSetNoAlarm::set()
             if (nat == NAT_FROM || nat == NAT_FROM_TO) hs.set(_sNoalarmFrom, pUi->dateTimeEditFrom->dateTime());
             if (nat == NAT_TO   || nat == NAT_FROM_TO) hs.set(_sNoalarmTo,   pUi->dateTimeEditTo->dateTime());
             if (!cErrorMessageBox::condMsgBox(hs.tryUpdate(*pq2, false, um), this)) {
-                sqlRollback(*pq2);
+                sqlRollback(*pq2, tn);
                 return;
             }
         }
     }
-    sqlEnd(*pq2);
+    sqlEnd(*pq2, tn);
     fetch();
 }
 

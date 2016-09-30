@@ -6,7 +6,7 @@ int phsLinkType(const QString& n, eEx __ex)
     if (0 == n.compare(_sFront, Qt::CaseInsensitive)) return LT_FRONT;
     if (0 == n.compare(_sBack,  Qt::CaseInsensitive)) return LT_BACK;
     if (0 == n.compare(_sTerm,  Qt::CaseInsensitive)) return LT_TERM;
-    if (__ex) EXCEPTION(EDATA, 0, n);
+    if (__ex) EXCEPTION(EENUMVAL, 0, n);
     return LT_INVALID;
 }
 
@@ -44,8 +44,9 @@ int cPhsLink::replace(QSqlQuery &__q, eEx __ex)
     bool tr = false;
     int r = 0;
     eReasons reason = R_INVALID;
+    static const QString tn = "ReplacePhsLink";
     try {
-        sqlBegin(__q);
+        sqlBegin(__q, tn);
         tr = true;
         PDEB(VVERBOSE) << toString() << endl;
         // Ütköző linkek törlése a bal oldali porthoz (1)
@@ -53,18 +54,18 @@ int cPhsLink::replace(QSqlQuery &__q, eEx __ex)
         // Ütköző linkek törlése a jobb oldali porthoz (2)
         r += unxlinks(__q, getId(_sPortId2), (ePhsLinkType)getId(_sPhsLinkType2), (ePortShare)getId(__sPortShared));
         if (!insert(__q, __ex)) {
-            sqlRollback(__q);
+            sqlRollback(__q, tn);
             reason = R_ERROR;
         }
         else {
-            sqlEnd(__q);
+            sqlEnd(__q, tn);
             reason = r ? R_UPDATE : R_INSERT;
         }
         tr = false;
     }
     CATCHS(pe)
     if (pe == NULL) return reason;
-    if (tr) sqlRollback(__q);
+    if (tr) sqlRollback(__q, tn);
     if (__ex) pe->exception();
     lanView::sendError(pe);
     return R_ERROR;

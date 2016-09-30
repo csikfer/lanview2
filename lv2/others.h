@@ -15,7 +15,6 @@ static inline bool isNumNull(const QVariant v)
     );
 }
 
-
 /// Létrehoz egy megadott méretű csupa 0 elemű bit tömböt, és annak egy megadot
 /// bitjét 1-be állítja.
 /// @param s A bit tömb mérete
@@ -234,6 +233,10 @@ template <class C, class T> T avarage(C c) {
     return r / c.size();
 }
 
+/* ******************************  ****************************** */
+
+#define INDENT_SIZE 4
+static inline QString indentSp(int n) { return QString(n * INDENT_SIZE, QChar(' ')); }
 
 #endif // OTHERS_H
 

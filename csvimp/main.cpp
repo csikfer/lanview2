@@ -1,6 +1,7 @@
 #include "lv2service.h"
 #include "others.h"
 #include <QCoreApplication>
+#include "lv2link.h"
 #include "csvimp.h"
 
 #define VERSION_MAJOR   0
@@ -13,7 +14,11 @@ void setAppHelp()
     lanView::appHelp += QObject::trUtf8("-U|--user-name <name>       Set user name\n");
     lanView::appHelp += QObject::trUtf8("-i|--input-file <path>      Set input file path\n");
     lanView::appHelp += QObject::trUtf8("-I|--input-stdin            Set input file is stdin\n");
+    lanView::appHelp += QObject::trUtf8("-O|--to-source              Set output source file\n");
+    lanView::appHelp += QObject::trUtf8("-s|--separator              Set field separator\n");
 }
+
+static const QString sComment = "// ";
 
 int main (int argc, char * argv[])
 {
@@ -34,13 +39,13 @@ int main (int argc, char * argv[])
     if (mo.lastError) {  // Ha hiba volt, vagy vége
         return mo.lastError->mErrorCode; // a mo destruktora majd kiírja a hibaüzenetet.
     }
-    // Ha nem daemon mód van, akkor visszaállítjuk az aktuális könyvtárt
+    // Visszaállítjuk az aktuális könyvtárt
     QDir::setCurrent(actDir);
     PDEB(VVERBOSE) << "Restore act dir : " << QDir::currentPath() << endl;
     try {
         if (mo.fileNm.isEmpty()) EXCEPTION(EDATA, -1, QObject::trUtf8("Nincs megadva forrás fájl!"));
         PDEB(VVERBOSE) << "BEGIN transaction ..." << endl;
-        sqlBegin(*mo.pq);
+        if (mo.pOut == NULL) sqlBegin(*mo.pq, lanView::appName);
         mo.readcsv();
     } catch(cError *e) {
         mo.lastError = e;
@@ -48,11 +53,11 @@ int main (int argc, char * argv[])
         mo.lastError = NEWCERROR(EUNKNOWN);
     }
     if (mo.lastError) {
-        sqlRollback(*mo.pq);
+        if (mo.pOut == NULL) sqlRollback(*mo.pq, lanView::appName);
         PDEB(DERROR) << "**** ERROR ****\n" << mo.lastError->msg() << endl;
     }
     else {
-        sqlEnd(*mo.pq);
+        if (mo.pOut == NULL) sqlEnd(*mo.pq, lanView::appName);
         PDEB(DERROR) << "**** OK ****" << endl;
     }
 
@@ -60,8 +65,12 @@ int main (int argc, char * argv[])
     return mo.lastError == NULL ? 0 : mo.lastError->mErrorCode;
 }
 
-lv2csvimp::lv2csvimp() : lanView(), fileNm(), in()
+lv2csvimp::lv2csvimp() : lanView(), fileNm()
 {
+    pOutputFile = NULL;
+    pOut        = NULL;
+    separator   = QChar(',');
+
     if (lastError != NULL) {
         pq     = NULL;
         return;
@@ -84,6 +93,16 @@ lv2csvimp::lv2csvimp() : lanView(), fileNm(), in()
         args.removeAt(i);
         args.removeAt(i);
     }
+    if (0 < (i = findArg('O', "to-source", args)) && (i + 1) < args.count()) {
+        srcOutName = args[i + 1];
+        args.removeAt(i);
+        args.removeAt(i);
+    }
+    if (0 < (i = findArg('s', "separator", args)) && (i + 1) < args.count()) {
+        separator = args[i + 1][0];
+        args.removeAt(i);
+        args.removeAt(i);
+    }
     if (args.count() > 1) DWAR() << trUtf8("Invalid arguments : ") << args.join(QChar(' ')) << endl;
     try {
         pq = newQuery();
@@ -98,34 +117,73 @@ lv2csvimp::~lv2csvimp()
         PDEB(VVERBOSE) << "delete pq ..." << endl;
         delete pq;
     }
+    pDelete(pOut);
+    pDelete(pOutputFile);
     DBGFNL();
 }
 
+// Mezők a CVS fájlban
 enum csvIndex {
-    CI_FLOR, CI_ROOM, CI_SIDE, CI_WMC, CI_WPORT, CI_SHARE,CI_SZG, CI_MAC, CI_SWITCH, CI_SWPORT, CI_NOTE, CI_CATEGORY, CI_NEED, CI_SIZE
+    CI_FLOR,    // Ápület és emelet
+    CI_ROOM,    // Szobaszám
+    CI_SIDE,    // Oldal (szaoba alszám)
+    CI_WMC,     // Fali csatlakozó
+    CI_WPORT,   // Fali csatlakozó port
+    CI_SHARE,   // Megosztás (külső)
+    CI_SZG,     // Számítógép neve (nem használt)
+    CI_MAC,     // Számítógép MAC (nem használt)
+    CI_SWITCH,  // Switch
+    CI_SWPORT,  // Switch port
+    CI_NOTE,    // Megjegyzés
+    CI_CATEGORY,// Szoba kategória
+    CI_NEED,    // Szükséges (tervezett) port szám
+    CI_SIZE
 };
 
+// A CSV beolvasása, feldolgozása
 void lv2csvimp::readcsv()
 {
-    QFile f(fileNm);
-    if (!f.open(QIODevice::ReadOnly)) {
+    QFileInfo fi(fileNm);
+    if (fi.fileName() == fileNm) {
+        fi = QFileInfo(QDir(homeDir), fileNm);
+        fileNm = fi.filePath();
+    }
+    inputFile.setFileName(fileNm);
+    if (srcOutName.isEmpty() == false) {
+        fi = QFileInfo(srcOutName);
+        if (fi.fileName() == srcOutName) {
+            fi = QFileInfo(QDir(homeDir), srcOutName);
+            srcOutName = fi.filePath();
+        }
+        pOutputFile = new QFile(srcOutName);
+        if (!pOutputFile->open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+            EXCEPTION(EFOPEN, 0, pOutputFile->errorString());
+        }
+        pOut = new QTextStream(pOutputFile);
+    }
+    if (!inputFile.open(QIODevice::ReadOnly)) {
         EXCEPTION(EFOPEN, 0, fileNm);
     }
 
-    QByteArray rawlin;
-    f.readLine();   // Első sor a fejléc, eldobjuk
-    while ((rawlin = f.readLine()).isEmpty() == false) {
+    QByteArray rawlin;  // Az aktuálisan beolvasott egy sor
+    inputFile.readLine();       // Első sor a fejléc, eldobjuk
+    while ((rawlin = inputFile.readLine()).isEmpty() == false) {
         QString line = QString::fromUtf8(rawlin);;
         if (line.endsWith(QChar('\n'))) line.chop(0);
         else {
             DWAR() << trUtf8("Input line nothing new line char : %1").arg(quotedString(line)) << endl;
             continue;
         }
-        QStringList fields = line.split(';');
-        if (fields.size() < CI_SIZE) {
-            DWAR() << trUtf8("Input line is short : %1").arg(quotedString(line)) << endl;
+        QStringList fields = line.split(separator);
+        int siz = fields.size();
+        if (siz < CI_SIZE) {
+            if (siz > 1) {
+                DWAR() << trUtf8("Input line is short : %1").arg(quotedString(line)) << endl;
+                if (pOut) *pOut << "// SHORT : " << line << endl;
+            }
             continue;
         }
+        // Az esetleges idézöjelek törlése (üres sorok szűrése)
         QMutableListIterator<QString>   i(fields);
         bool empty = true;
         while (i.hasNext()) {
@@ -143,19 +201,28 @@ void lv2csvimp::readcsv()
     }
 }
 
+// A mezőkre bontott CVS sor feldolgozása
 void lv2csvimp::csvrow(QStringList &fields)
 {
-    QString note = QString("By CSVIMP : %1, %2").arg(fileNm, QDateTime::currentDateTime().toString());
+    if (pOut) *pOut << "\n// *** " << fields.join(",") << endl;
+    // +1 mező értéke "skip", eldobjuk
+    if (fields.size() > CI_SIZE && 0 == fields.at(CI_SIZE).compare("skip", Qt::CaseInsensitive)) return;
+    category = fields[CI_CATEGORY];
+    // Nem létező vagy érdektelen szobaszámok
+    if (0 == category.compare("nincs", Qt::CaseInsensitive)) return;
+    if (0 == category.compare("WC",    Qt::CaseInsensitive)) return;
+    const static QString note = QString("By CSVIMP %1").arg(QDateTime::currentDateTime().toString());
     if (fields[CI_FLOR].isEmpty() == false) floor = fields[CI_FLOR].toUpper();
     if (fields[CI_ROOM].isEmpty() == false) {
         side.clear();
         _room  = fields[CI_ROOM].toUpper();
     }
-    if (fields[CI_SIDE].isEmpty() == false) side = fields[CI_SIDE];
+    if (fields[CI_SIDE].isEmpty() == false) side = fields[CI_SIDE].toUpper();
     if (floor.isEmpty() || _room.isEmpty()) {
         DWAR() << "Floor or room is empty" << endl;
         return;
     }
+    // A szoba neve
     if (side.isEmpty()) room = _room;
     else                room = _room + "/" + side;
     if (placeFloor.getName() != floor) {                    // új
@@ -165,7 +232,9 @@ void lv2csvimp::csvrow(QStringList &fields)
         pport.clear();
         placeRoom.clear();
         if (!placeFloor.fetchByName(*pq, floor)) {          // Nincs ilyenünk, eldobjuk
-            DWAR() << "Floor : place record not found." << endl;
+            QString msg = trUtf8("Floor : %1 place record not found.").arg(floor);
+            DWAR() << msg << endl;
+            if (pOut) *pOut << sComment << msg << endl;
             return;
         }
     }
@@ -177,28 +246,49 @@ void lv2csvimp::csvrow(QStringList &fields)
         nodeSwitch.clear();
         intSwitch.clear();
         pport.clear();
-        if (!placeRoom.fetchByName(*pq, room)) {            // Még nincs, Insert
+        if (!placeRoom.fetchByName(*pq, room)) {            // Ha még nincs, Insert
             // Insert ROOM
             placeRoom.setName(room);
             placeRoom.setId(_sParentId, placeFloor.getId());
             placeRoom.setNote(note);
-            placeRoom.insert(*pq);
+            if (pOut) {     // Nem közvetlen insert
+                *pOut << placeRoom.codeInsert(*pq) << endl;
+            }
+            else {
+                placeRoom.insert(*pq);
+            }
         }
-        category = fields[CI_CATEGORY];
-        if (category == "nincs") return;
+        if (pOut) {
+            *pOut << "SET PLACE " << room << ";" << endl;
+        }
         bool ok;
         int n = fields[CI_NEED].toInt(&ok);
         if (ok && n) category += QString("_%1").arg(n);
         if (category.isEmpty() == false) {  // Ha van kategória
             if (!plgrCat.fetchByName(category)) {   // Adatbázisban még nincs ilyen
                 plgrCat.setName(category);
-                plgrCat.setNote("Category, " + note);
-                plgrCat.insert(*pq);
+                plgrCat.setNote(note);
+                plgrCat.setId(_sPlaceGroupType, PG_CATEGORY);
+                if(pOut) {
+                    if (!insertedCat.contains(plgrCat.getName())) { // Generált szövegben sem inzertáltuk még?
+                        *pOut << plgrCat.codeInsert(*pq) << endl;
+                        insertedCat << plgrCat.getName();
+                    }
+                }
+                else {
+                    plgrCat.insert(*pq);
+                }
             }
             // A helyiséget betesszük a kategória csoportba
             tGroup<cPlaceGroup, cPlace> gsw(plgrCat, placeRoom);
-            if (NULL_ID == gsw.test(*pq)) {     // tagja ??
-                gsw.insert(*pq);
+            if (NULL_ID == gsw.test(*pq)) {     // már tagja ??
+                if (pOut) {
+                    *pOut << "PLACE GROUP " << quotedString(plgrCat.getName())
+                          << " ADD " << quotedString(placeRoom.getName()) << _sSemicolonNl;
+                }
+                else {
+                    gsw.insert(*pq);
+                }
             }
         }
     }
@@ -215,9 +305,14 @@ void lv2csvimp::csvrow(QStringList &fields)
         roomSocket.clear();
         roomSocket.setName(room + "_WS");
         roomSocket.setNote(note);
-        roomSocket.setName(_sNodeType, _sPatch);
-        roomSocket.setId(_sPlaceId, placeRoom.getId());
-        roomSocket.cRecord::replace(*pq);
+        if (pOut) {
+            *pOut << roomSocket.codeInsert_() << ";" << endl;
+        }
+        else {
+            roomSocket.setName(_sNodeType, _sPatch);
+            roomSocket.setId(_sPlaceId, placeRoom.getId());
+            roomSocket.cRecord::replace(*pq);
+        }
     }
     swname = fields[CI_SWITCH];
     if (false == nodeSwitch.isEmpty() && false == swname.isEmpty()) {
@@ -241,8 +336,9 @@ void lv2csvimp::csvrow(QStringList &fields)
             }
         }
     }
-    if (placePatch.isNull() && false == nodeSwitch.isNull() && nodeSwitch.getId(_sPlaceId) != NULL_ID) {
-        placePatch.setById(nodeSwitch.getId(_sPlaceId));
+    qlonglong swPlaceId = nodeSwitch.getId(_sPlaceId);
+    if (placePatch.isNull() && swPlaceId > 0LL) {     // Van switch, helye, és az nem az "unknown" aminek az ID-je nulla.
+        placePatch.setById(swPlaceId);
     }
     pport.clear();
     // Van egy rendezőnk?
@@ -270,14 +366,26 @@ void lv2csvimp::csvrow(QStringList &fields)
             if (nodeSwitch.ports.isEmpty()) nodeSwitch.fetchPorts(*pq);
             int ix = nodeSwitch.ports.indexOf(_sPortName, swport);
             if (ix >= 0) {
-                cPhsLink lnk;
-                lnk.setId(_sPortId1, pport.getId());
-                lnk.setId(_sPhsLinkType1, LT_FRONT);
-                lnk.setId(_sPortId2, nodeSwitch.ports.at(ix)->getId());
-                lnk.setId(_sPhsLinkType2, LT_TERM);
-                lnk.setName(_sPortShared, share);
-                lnk.setNote(note);
-                lnk.replace(*pq);
+                if (pOut) {
+                    *pOut << "LINKS FRONT TO TERM {"
+                          << quotedString(cPatch().getNameById(pport.getId(_sNodeId)))
+                          << ":" << pport.getId(_sPortIndex);
+                    if (!share.isEmpty()) *pOut <<"/" << share;
+                    *pOut << " & "
+                          << quotedString(nodeSwitch.getName())
+                          << ":" << nodeSwitch.ports.at(ix)->getId(_sPortIndex)
+                          << " }" << endl;
+                }
+                else {
+                    cPhsLink lnk;
+                    lnk.setId(_sPortId1, pport.getId());
+                    lnk.setId(_sPhsLinkType1, LT_FRONT);
+                    lnk.setId(_sPortId2, nodeSwitch.ports.at(ix)->getId());
+                    lnk.setId(_sPhsLinkType2, LT_TERM);
+                    lnk.setName(_sPortShared, share);
+                    lnk.setNote(note);
+                    lnk.replace(*pq);
+                }
             }
         }
     }
@@ -288,17 +396,35 @@ void lv2csvimp::csvrow(QStringList &fields)
         cNPort *pp = roomSocket.addPort(pn, note, n);
         pp->setName(_sPortTag, wport);
         pp->setId(_sNodeId, roomSocket.getId());
-        pp->replace(*pq);
+        if (pOut) {
+            *pOut << "ADD PATCH " << quotedString(roomSocket.getName())
+                  << " PORT " << n << " \"" << pn << "\" TAG " << quotedString(wport)
+                  << _sSemicolon << endl;
+        }
+        else {
+            pp->replace(*pq);
+        }
         // Fali kábel
         if (false == pport.isEmpty()) {
-            cPhsLink lnk;
-            lnk.setId(_sPortId1, pport.getId());
-            lnk.setId(_sPhsLinkType1, LT_BACK);
-            lnk.setId(_sPortId2, pp->getId());
-            lnk.setId(_sPhsLinkType2, LT_BACK);
-            lnk.setName(_sLinkType, _sPTP);
-            lnk.setNote(note);
-            lnk.replace(*pq);
+            if (pOut) {
+                *pOut << "LINKS BACK TO BACK {"
+                      << quotedString(cPatch().getNameById(pport.getId(_sNodeId)))
+                      << ":" << pport.getId(_sPortIndex)
+                      << " & "
+                      << quotedString(roomSocket.getName())
+                      << ":" << pp->getId(_sPortIndex)
+                      << " }" << endl;
+            }
+            else {
+                cPhsLink lnk;
+                lnk.setId(_sPortId1, pport.getId());
+                lnk.setId(_sPhsLinkType1, LT_BACK);
+                lnk.setId(_sPortId2, pp->getId());
+                lnk.setId(_sPhsLinkType2, LT_BACK);
+                lnk.setName(_sLinkType, _sPTP);
+                lnk.setNote(note);
+                lnk.replace(*pq);
+            }
         }
     }
 }

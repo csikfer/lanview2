@@ -176,6 +176,10 @@ class LV2SHARED_EXPORT lanView  : public QObject {
 #endif
     friend LV2SHARED_EXPORT QSqlDatabase *  getSqlDb(void);
     friend LV2SHARED_EXPORT void dropThreadDb(const QString &tn, enum eEx __ex);
+    friend LV2SHARED_EXPORT void sqlBegin(QSqlQuery& q, const QString& tn);
+    friend LV2SHARED_EXPORT void sqlEnd(QSqlQuery& q, const QString& tn);
+    friend LV2SHARED_EXPORT void sqlRollback(QSqlQuery& q, const QString& tn);
+
    Q_OBJECT
 public:
     /// Konstruktor. Inicializálja az API-t. Az objektum csak egy példányban hozható létre.
@@ -335,10 +339,14 @@ public:
     static eIPV6Pol         ipv6Pol;    ///< IPV6 cím kezelési policy (nincs kifejtve!)
 
    protected:
-    QSqlDatabase *  pDb;            ///< SQL database object
+    QStringList * getTransactioMapAndCondLock();
+    QSqlDatabase *  pDb;                ///< SQL database object
+    QStringList     mainTrasactions;    ///< Fő szál SQL tranzakciói (stack)
     /// A szálanként klónozott QSqlDatabase objektumok konténere, kulcs a szál kötelezően egyedi neve
     QMap<QString, QSqlDatabase *>   dbThreadMap;
-    /// Mutex objektum a dbThreadMap konténer kezeléséhez
+    /// A szálanként létrehozott tranzakció stack
+    QMap<QString, QStringList>      trasactionsThreadMap;
+    /// Mutex objektum a *ThreadMap konténerek kezeléséhez
     QMutex                          threadMutex;
 #ifdef MUST_USIGNAL
     cXSignal *      unixSignals;    ///< Unix signal helper object pointer

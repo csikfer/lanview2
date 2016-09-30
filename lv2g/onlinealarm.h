@@ -23,8 +23,8 @@ private:
         pMap->setText(_sNul);
         if (isTicket) {
             isTicket = false;
-            delete pTagetRec;
-            pTagetRec = NULL;
+            delete pTargetRec;
+            pTargetRec = NULL;
         }
     }
 
@@ -46,7 +46,7 @@ private:
     QSound *        pSound;
 protected:
     cRecord *       pActRecord;     /// A kiválasztott rekord a nem nyugtázott riasztások táblában
-    cRecord *       pTagetRec;      /// Normál esetben azonos a pActRecord -al, ticket esetén az eredeti rekordot tartalmazza
+    cRecord *       pTargetRec;      /// Normál esetben azonos a pActRecord -al, ticket esetén az eredeti rekordot tartalmazza
     bool            isTicket;       /// Normál esetben false, ticket esetén true
     cPlace          place;
     cNode           node;

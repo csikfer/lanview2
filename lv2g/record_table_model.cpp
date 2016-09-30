@@ -104,12 +104,9 @@ cRecord *cRecordViewModelBase::qGetRecord(QSqlQuery& q)
 
 int cRecordViewModelBase::updateRec(const QModelIndex& mi, cRecord *pRec)
 {
-    sqlBegin(*pq);
-    if (!cErrorMessageBox::condMsgBox(pRec->tryUpdate(*pq, false))) {
-        sqlRollback(*pq);
+    if (!cErrorMessageBox::condMsgBox(pRec->tryUpdate(*pq, false, QBitArray(), QBitArray(), true))) {
         return 0;
     }
-    sqlEnd(*pq);
     PDEB(VVERBOSE) << "Update returned : " << pRec->toString() << endl;
     return updateRow(mi, pRec) ? 1 : 0;
 }
@@ -123,12 +120,9 @@ bool cRecordViewModelBase::insertRec(cRecord *pRec)
 
 bool cRecordViewModelBase::SqlInsert(QSqlQuery& q, cRecord *pRec)
 {
-    sqlBegin(q);
-    if (!cErrorMessageBox::condMsgBox(pRec->tryInsert(q))) {
-        sqlRollback(q);
+    if (!cErrorMessageBox::condMsgBox(pRec->tryInsert(q, true))) {
         return false;
     }
-    sqlEnd(q);
     return true;
 }
 
@@ -255,13 +249,10 @@ bool cRecordTableModel::removeRec(const QModelIndex &mi)
     if (mi.isValid() && isContIx(_records, mi.row())) {
         cRecord * p = _records.at(mi.row());
         PDEB(INFO) << "Remove : " << p->toString() << endl;
-        sqlBegin(*pq);
-        if (cErrorMessageBox::condMsgBox(p->tryRemove(*pq))) {
-            sqlEnd(*pq);
+        if (cErrorMessageBox::condMsgBox(p->tryRemove(*pq, false, QBitArray(), true))) {
             return removeRow(mi);
         }
         else {
-            sqlRollback(*pq);
             recordView.refresh(true);
         }
     }

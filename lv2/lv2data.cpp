@@ -515,24 +515,83 @@ qlonglong cPlace::parentImageId(QSqlQuery& q)
     return iid.isNull() ? NULL_ID : variantToId(iid);
 }
 
+QString cPlace::codeInsert(QSqlQuery& q, int indent) const
+{
+    QString o;
+    o = indentSp(indent) + "PLACE " + quotedString(getName());
+    QString note = getNote();
+    if (note.isEmpty() == false) o += " " + quotedString(note);
+    QString p;
+    if (!isNull(_sParentId))p += indentSp(indent +1) + "PARENT " + quotedString(view(q, _sParentId)) + _sSemicolonNl;
+    if (!isNull(_sFrame))   p += indentSp(indent +1) + "FRAME "  + getName(_sFrame) + _sSemicolonNl;
+    if (!isNull(_sImageId)) p += indentSp(indent +1) + "IMAGE "  + quotedString(view(q, _sImageId))  + _sSemicolonNl;
+    if (!isNull(_sTels))    p += indentSp(indent +1) + "TEL "    + quotedStringList(getStringList(_sTels))   + _sSemicolonNl;
+    if (p.isEmpty()) o += _sSemicolon;
+    else             o +=  _sBraceBeginNl + p + indentSp(indent) + "}";
+    return o;
+}
+
 /* ------------------------------ place_froups ------------------------------ */
 
-DEFAULTCRECDEF(cPlaceGroup, _sPlaceGroups)
+const QString& placeGroupType(int e, eEx __ex)
+{
+    switch (e) {
+    case PG_GROUP:      return _sGroup;
+    case PG_CATEGORY:   return _sCategory;
+    case PG_ZONE:       return _sZone;
+    }
+    if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, e);
+    return _sNul;
+}
 
-qlonglong cPlaceGroup::insertNew(QSqlQuery q, const QString& __n, const QString& __d)
+int placeGroupType(const QString& s, eEx __ex)
+{
+    if (0 == s.compare(_sGroup,    Qt::CaseInsensitive)) return PG_GROUP;
+    if (0 == s.compare(_sCategory, Qt::CaseInsensitive)) return PG_CATEGORY;
+    if (0 == s.compare(_sZone,     Qt::CaseInsensitive)) return PG_ZONE;
+    if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, -1, s);
+    return PG_INVALID;
+}
+
+CRECCNTR(cPlaceGroup)
+CRECDEFD(cPlaceGroup)
+
+const cRecStaticDescr&  cPlaceGroup::descr() const
+{
+    if (initPDescr<cPlaceGroup>(_sPlaceGroups)) {
+        CHKENUM(_sPlaceGroupType, placeGroupType);
+    }
+    return *_pRecordDescr;
+}
+
+QString cPlaceGroup::codeInsert(QSqlQuery&, int indent) const
+{
+    QString o;
+    o = indentSp(indent) + "PLACE GROUP " + quotedString(getName());
+    QString note = getNote();
+    if (note.isEmpty() == false) o += " " + quotedString(note);
+    int typeIx = toIndex(_sPlaceGroupType);
+    if (!isNull(typeIx) && PG_GROUP != getId(typeIx)) o += " " + getName(typeIx).toUpper();
+    o += _sSemicolon;
+    return o;
+}
+
+qlonglong cPlaceGroup::insertNew(QSqlQuery q, const QString& __n, const QString& __d, int _type)
 {
     cPlaceGroup o;
     o.setName(__n);
     o.setName(_sPlaceGroupNote, __d);
+    o.setId(_type);
     o.insert(q);
     return o.getId();
 }
 
-qlonglong cPlaceGroup::replaceNew(QSqlQuery q, const QString& __n, const QString& __d)
+qlonglong cPlaceGroup::replaceNew(QSqlQuery q, const QString& __n, const QString& __d, int _type)
 {
     cPlaceGroup o;
     o.setName(__n);
     o.setName(_sPlaceGroupNote, __d);
+    o.setId(_type);
     o.replace(q);
     return o.getId();
 }
@@ -1679,6 +1738,29 @@ int cPatch::fetchPorts(QSqlQuery& __q)
     return n;
 }
 
+void cPatch::insertPort(QSqlQuery& q, int ix, const QString& _na, const QString& _no, const QString& _tag)
+{
+    cPPort  p;
+    p.setId(_sNodeId, getId());
+    p.setId(_sPortIndex, ix);
+    p.setName(_na);
+    p.setNote(_no);
+    p.setName(_sPortTag, _tag);
+    p.insert(q);
+}
+
+void cPatch::updateShared(QSqlQuery& q, int __a, int __ab, int __b, int __bb, bool __cd)
+{
+    // Csak létező portra lehet megosztást csinálni
+    if ((             !isContIx(ports, __a))
+     || (__b  >= 0 && !isContIx(ports, __b))
+     || (__ab >= 0 && !isContIx(ports, __ab))
+     || (__bb >= 0 && !isContIx(ports, __bb))) EXCEPTION(EDATA);
+    // A konstruktor is ellenőriz, egy port csak egyszer mind nem lehet negatív, ha mégis dob egy kizárást.
+    cShareBack  s(__a, __b, __ab, __bb, __cd);
+    updateShare(q, s);
+}
+
 int cPatch::fetchParams(QSqlQuery& q)
 {
     containerValid |= CV_NODE_PARAMS;
@@ -1716,6 +1798,43 @@ bool cPatch::setShare(int __a, int __ab, int __b, int __bb, bool __cd)
     shares() << s;
     return true;
 }
+
+
+bool cPatch::updateShare(QSqlQuery& __q, const cShareBack& s, eEx __ex)
+{
+    static const int sci = DESCR(cPPort).toIndex(_sSharedCable);
+    static const int spi = DESCR(cPPort).toIndex(_sSharedPortId);
+    static const QBitArray um = _bits(sci, spi);
+    static const QBitArray wm = DESCR(cPPort).primaryKey();
+    QString ss;
+    qlonglong pid = ports[s.getA()]->getId();
+    cPPort *p = ports[s.getA()]->reconvert<cPPort>();   // A bázis port A vagy AA megosztás
+    p->clear(spi);
+    if (s.isNC()) {     // NC
+        if (!p->setName(sci, _sNC ).update(__q, true, um, wm, __ex)) return false;
+        return true;
+    }
+    if (s.getAB() < 0) { // A
+        if (!p->setName(sci, _sA ).update(__q, true, um, wm, __ex)) return false;
+    }
+    else {                      // AA, AB / C
+        if (!p->setName(sci, _sAA).update(__q, true, um, wm, __ex)) return false;
+        p = ports[s.getAB()]->reconvert<cPPort>();
+        ss = s.isCD() ? _sC : _sAB;
+        if (!p->setName(sci, ss).setId(spi, pid).update(__q, true, um, wm, __ex)) return false;
+    }                           // B , BA / D
+    if (s.getB() >= 0) {
+        p = ports[s.getB()]->reconvert<cPPort>();
+        ss = s.getBB() < 0 ? _sB : s.isCD() ? _sD : _sBA;
+        if (!p->setName(sci, ss).setId(spi, pid).update(__q, true, um, wm, __ex)) return false;
+    }
+    if (s.getBB() >= 0) { // BB
+        p = ports[s.getB()]->reconvert<cPPort>();
+        if (!p->setName(sci, _sBB).setId(spi, pid).update(__q, true, um, wm, __ex)) return false;
+    }
+    return true;
+}
+
 bool cPatch::updateShares(QSqlQuery& __q, bool __clr, eEx __ex)
 {
     if (__clr) {
@@ -1727,37 +1846,8 @@ bool cPatch::updateShares(QSqlQuery& __q, bool __clr, eEx __ex)
         }
     }
     if (shares().isEmpty()) return true;
-    int sci = DESCR(cPPort).toIndex(_sSharedCable);
-    int spi = DESCR(cPPort).toIndex(_sSharedPortId);
-    QBitArray um = _bits(sci, spi);
-    QBitArray wm = DESCR(cPPort).primaryKey();
-    QString ss;
     foreach (const cShareBack& s, shares()) {
-        qlonglong pid = ports[s.getA()]->getId();
-        cPPort *p = ports[s.getA()]->reconvert<cPPort>();   // A bázis port A vagy AA megosztás
-        p->clear(spi);
-        if (s.isNC()) {     // NC
-            if (!p->setName(sci, _sNC ).update(__q, true, um, wm, __ex)) return false;
-            return true;
-        }
-        if (s.getAB() < 0) { // A
-            if (!p->setName(sci, _sA ).update(__q, true, um, wm, __ex)) return false;
-        }
-        else {                      // AA, AB / C
-            if (!p->setName(sci, _sAA).update(__q, true, um, wm, __ex)) return false;
-            p = ports[s.getAB()]->reconvert<cPPort>();
-            ss = s.isCD() ? _sC : _sAB;
-            if (!p->setName(sci, ss).setId(spi, pid).update(__q, true, um, wm, __ex)) return false;
-        }                           // B , BA / D
-        if (s.getB() >= 0) {
-            p = ports[s.getB()]->reconvert<cPPort>();
-            ss = s.getBB() < 0 ? _sB : s.isCD() ? _sD : _sBA;
-            if (!p->setName(sci, ss).setId(spi, pid).update(__q, true, um, wm, __ex)) return false;
-        }
-        if (s.getBB() >= 0) { // BB
-            p = ports[s.getB()]->reconvert<cPPort>();
-            if (!p->setName(sci, _sBB).setId(spi, pid).update(__q, true, um, wm, __ex)) return false;
-        }
+        updateShare(__q, s, __ex);
     }
     return true;
 }
@@ -1924,6 +2014,14 @@ void cPatch::sortPortsByName()
     std::sort(ports.begin(), ports.end(), portLessThanByName);
 }
 
+QString cPatch::codeInsert_() const
+{
+    QString o = "PATCH " + quotedString(getName());
+    QString note = getNote();
+    if (!note.isEmpty()) o += " " + quotedString(note);
+    return o;
+}
+
 /* --------------------------------------------------------------------------- */
 
 CRECCNTR(cNodeParam)
@@ -1988,6 +2086,7 @@ int nodeType(const QString& __n, eEx __ex)
     if (0 == __n.compare(_sWorkstation, Qt::CaseInsensitive)) return NT_WORKSTATION;
     if (0 == __n.compare(_sMobile,      Qt::CaseInsensitive)) return NT_MOBILE;
     if (0 == __n.compare(_sDevice,      Qt::CaseInsensitive)) return NT_DEVICE;
+    if (0 == __n.compare(_sController,  Qt::CaseInsensitive)) return NT_CONTROLLER;
     if (__ex != EX_IGNORE)   EXCEPTION(EDATA, -1, __n);
     return NT_INVALID;
 }
@@ -2009,6 +2108,7 @@ const QString& nodeType(int __e, eEx __ex)
     case NT_WORKSTATION:return _sWorkstation;
     case NT_MOBILE:     return _sMobile;
     case NT_DEVICE:     return _sDevice;
+    case NT_CONTROLLER: return _sController;
     }
     if (__ex != EX_IGNORE)   EXCEPTION(EDATA, __e);
     return _sNul;
@@ -2069,6 +2169,9 @@ bool cNode::setShare(int, int, int , int, bool)                 { EXCEPTION(ENOT
 bool cNode::updateShares(QSqlQuery&, bool, eEx)                 { EXCEPTION(ENOTSUPP); return false; }
 cPPort *cNode::addPort(const QString&, const QString &, int)    { EXCEPTION(ENOTSUPP); return NULL; }
 cPPort *cNode::addPorts(const QString&, int , int , int , int ) { EXCEPTION(ENOTSUPP); return NULL; }
+void cNode::insertPort(QSqlQuery&, int, const QString&, const QString&, const QString&) { EXCEPTION(ENOTSUPP); }
+void cNode::updateShared(QSqlQuery&, int, int, int, int, bool)  { EXCEPTION(ENOTSUPP); }
+
 
 CRECDEFNCD(cNode)
 
@@ -2133,14 +2236,15 @@ qlonglong cNode::getIdByName(QSqlQuery& __q, const QString& __n, eEx __ex) const
 {
     qlonglong id = descr().getIdByName(__q, __n, EX_IGNORE);
     if (id != NULL_ID) return id;
-    QString sql =
+    static const QString sql =
             "SELECT nodes.node_id FROM nodes WHERE "
                 "'host' = ANY (node_type) AND "
                 "node_name IN "
                     "( SELECT ? || '.' || param_value FROM sys_params JOIN param_types USING(param_type_id) WHERE param_type_name = ? ORDER BY sys_param_name ) "
                 "LIMIT 1";
-    __q.bindValue(1,_sSearchDomain);
+    if (!__q.prepare(sql)) SQLPREPERR(__q, sql);
     __q.bindValue(0,__n);
+    __q.bindValue(1,_sSearchDomain);
     if (!__q.exec()) SQLQUERYERR(__q);
     if (__q.first()) return __q.value(0).toLongLong();
     if (__ex) EXCEPTION(EFOUND,0,__n);
@@ -2639,6 +2743,25 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const QStringPair *_
     PDEB(VERBOSE) << toString() << endl;
     return *this;
 }
+
+QString cNode::codeInsert_() const
+{
+    qlonglong ts = getId(_sNodeType);
+    QString o;
+    if (ts & ENUM2SET(NT_NODE))  o = "HOST ";
+    else                         o = "NODE ";
+    QStringList types = getStringList(_sNodeType);
+    if (types.isEmpty()) types << _sNode;
+    foreach (QString t, types) {
+       o += t.toUpper() + ",";
+    }
+    o.chop(1);
+    o += " " + quotedString(getName());
+    QString note = getNote();
+    if (!note.isEmpty()) o += " " + quotedString(note);
+    return o;
+}
+
 
 /* ------------------------------ SNMPDEVICES : cSnmpDevice ------------------------------ */
 

@@ -39,9 +39,7 @@ lv2UpdateOui::lv2UpdateOui()
     if (lastError == NULL) {
         try {
 
-            sqlBegin(*pq);
             insertStart(*pq);
-            sqlEnd(*pq);
 
             QString sql =
                     "SELECT param_value FROM sys_params JOIN param_types USING(param_type_id)"

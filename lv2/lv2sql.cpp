@@ -18,6 +18,8 @@ QSqlDatabase *  getSqlDb(void)
             pDb = new QSqlDatabase(QSqlDatabase::cloneDatabase(*pSqlDb, tn));
             if (!pDb->open()) SQLOERR(*pDb);
             map.insert(tn, pDb);
+            QMap<QString, QStringList>& tm = lanView::getInstance()->trasactionsThreadMap;
+            tm.insert(tn, QStringList());
         }
         else {
             pDb = i.value();
@@ -34,18 +36,117 @@ void dropThreadDb(const QString& tn, enum eEx __ex)
 {
 
     lanView::getInstance()->threadMutex.lock();
-    QMap<QString, QSqlDatabase *>&  map = lanView::getInstance()->dbThreadMap;
-    QMap<QString, QSqlDatabase *>::iterator i = map.find(tn);
-    if (i == map.end()) {
-        lanView::getInstance()->threadMutex.unlock();
-        if (__ex) EXCEPTION(EPROGFAIL);
-        return;
+    {
+        QMap<QString, QSqlDatabase *>&  map = lanView::getInstance()->dbThreadMap;
+        QMap<QString, QSqlDatabase *>::iterator i = map.find(tn);
+        if (i == map.end()) {
+            lanView::getInstance()->threadMutex.unlock();
+            if (__ex) EXCEPTION(EPROGFAIL);
+            return;
+        }
+        delete i.value();
+        map.erase(i);
     }
-    delete i.value();
-    map.erase(i);
+    {
+        QMap<QString, QStringList>&  map = lanView::getInstance()->trasactionsThreadMap;
+        QMap<QString, QStringList>::iterator i = map.find(tn);
+        if (i == map.end()) {
+            lanView::getInstance()->threadMutex.unlock();
+            if (__ex) EXCEPTION(EPROGFAIL);
+            return;
+        }
+        map.erase(i);
+    }
     lanView::getInstance()->threadMutex.unlock();
 }
 
+/* --------------------------------------------------------------------------------------------- */
+
+void sqlBegin(QSqlQuery& q, const QString& tn)
+{
+    QStringList *pTrl = lanView::getInstance()->getTransactioMapAndCondLock();
+    bool r;
+    if (pTrl->isEmpty()) r = q.exec(_sBEGIN);
+    else                 r = q.exec("SAVEPOINT " + tn);
+    if (r) pTrl->push_back(tn);
+    if (!isMainThread()) {
+        lanView::getInstance()->threadMutex.unlock();
+    }
+    if (!r) SQLQUERYERR(q);
+}
+
+void sqlEnd(QSqlQuery& q, const QString& tn)
+{
+    QString msg;
+    QStringList *pTrl = lanView::getInstance()->getTransactioMapAndCondLock();
+    cError *pe = NULL;
+    bool r = false;
+    if (pTrl->isEmpty()) {
+        msg = QObject::trUtf8("End transaction, invalid name : %1; no pending transaction").arg(tn);
+        pe = NEWCERROR(EPROGFAIL, 0, msg);
+    }
+    else if (pTrl->last() != tn) {
+        QString msg = QObject::trUtf8("End transaction, invalid name : %1; pending transactions : %2").arg(tn, pTrl->join(", "));
+        pe = NEWCERROR(EPROGFAIL, 0, msg);
+    }
+    else {
+        if (pTrl->size() == 1) r = q.exec(_sEND);
+        else                   r = q.exec("RELEASE SAVEPOINT " + tn);
+        if (r) pTrl->pop_back();
+    }
+    if (!isMainThread()) {
+        lanView::getInstance()->threadMutex.unlock();
+    }
+    if (pe != NULL) pe->exception();
+    if (!r) SQLQUERYERR(q);
+}
+
+void sqlRollback(QSqlQuery& q, const QString& tn)
+{
+    QString msg;
+    QStringList *pTrl = lanView::getInstance()->getTransactioMapAndCondLock();
+    cError *pe = NULL;
+    bool r = false;
+    if (pTrl->isEmpty()) {
+        msg = QObject::trUtf8("Rollback transaction, invalid name : %1; no pending transaction").arg(tn);
+        pe = NEWCERROR(EPROGFAIL, 0, msg);
+    }
+    else if (!pTrl->contains(tn)) {
+        QString msg = QObject::trUtf8("Rollback transaction, invalid name : %1; pending transactions : %2").arg(tn, pTrl->join(", "));
+        pe = NEWCERROR(EPROGFAIL, 0, msg);
+    }
+    else {
+        if (pTrl->size() == 1) r = q.exec(_sROLLBACK);
+        else                   r = q.exec(_sROLLBACK + " TO SAVEPOINT " + tn);
+        if (r) {
+            QString last;
+            do {
+                last = pTrl->last();
+                pTrl->pop_back();
+            } while (last != tn);
+        }
+    }
+    if (!isMainThread()) {
+        lanView::getInstance()->threadMutex.unlock();
+    }
+    if (pe != NULL) pe->exception();
+    if (!r) SQLQUERYERR(q);
+}
+
+QString toSqlName(const QString& _n)
+{
+    int i, n = _n.size();
+    QString r;
+    for (i = 0; i < n; ++i) {
+        QChar c = _n[i];
+        if (c.unicode() < 128 && c.isLetterOrNumber()) r += c;
+        else                                           r += '_';
+    }
+    if (r[0].isNumber()) r.prepend('_');
+    return r;
+}
+
+/* ********************************************************************************************* */
 
 bool executeSqlScript(QFile& file, QSqlDatabase *pDb, enum eEx __ex)
 {
@@ -144,27 +245,6 @@ bool executeSqlScript(QFile& file, QSqlDatabase *pDb, enum eEx __ex)
 }
 
 /* ********************************************************************************************* */
-
-bool sqlBegin(QSqlQuery& q)
-{
-    if (q.exec(_sBEGIN)) return true;
-    SQLPREPERR(q, _sBEGIN);
-    return false;
-}
-
-bool sqlEnd(QSqlQuery& q)
-{
-    if (q.exec(_sEND)) return true;
-    SQLPREPERR(q, _sEND);
-    return false;
-}
-
-bool sqlRollback(QSqlQuery& q)
-{
-    if (q.exec(_sROLLBACK)) return true;
-    SQLPREPERR(q, _sROLLBACK);
-    return false;
-}
 
 EXT_ bool execSql(QSqlQuery& q, const QString& sql, const QVariant& v1, const QVariant& v2, const QVariant& v3, const QVariant& v4, const QVariant& v5)
 {

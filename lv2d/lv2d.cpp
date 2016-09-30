@@ -45,9 +45,7 @@ lv2d::lv2d()
         try {
             pq = newQuery();
 
-            sqlBegin(*pq);
             insertStart(*pq);
-            sqlEnd(*pq);
 
             subsDbNotif();
 

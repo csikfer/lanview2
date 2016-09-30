@@ -12,7 +12,7 @@ cOnlineAlarm::cOnlineAlarm(QWidget *par) : cOwnTab(par)
     lanView::getInstance()->subsDbNotif(_sAlarm);
     connect(getSqlDb()->driver(), SIGNAL(notification(QString,QSqlDriver::NotificationSource,QVariant)),
             this,                 SLOT(notify(QString,QSqlDriver::NotificationSource,QVariant)));
-    pTagetRec = pActRecord = NULL;
+    pTargetRec = pActRecord = NULL;
     isTicket  = false;
     pSound = new QSound(lv2g::getInstance()->soundFileAlarm, this);
     pSound->setLoops(QSound::Infinite);
@@ -85,7 +85,7 @@ cOnlineAlarm::cOnlineAlarm(QWidget *par) : cOwnTab(par)
 cOnlineAlarm::~cOnlineAlarm()
 {
     delete pq;
-    if (isTicket) delete pTagetRec;
+    if (isTicket) delete pTargetRec;
 }
 
 void cOnlineAlarm::map()
@@ -94,9 +94,9 @@ void cOnlineAlarm::map()
     if (pActRecord == NULL) EXCEPTION(EPROGFAIL);
     if (isTicket) {
         isTicket = false;
-        pDelete(pTagetRec);
+        pDelete(pTargetRec);
     }
-    pTagetRec = pActRecord;
+    pTargetRec = pActRecord;
     QVariantList ids = pActRecord->get(_sViewUserIds).toList();
     qlonglong uid = lanView::user().getId();
     qlonglong aid = pActRecord->getId();
@@ -119,19 +119,19 @@ void cOnlineAlarm::map()
         isTicket = true;
         text = sTicket + " :<br>";
         qlonglong id = pActRecord->getId(_sSuperiorAlarmId);
-        pTagetRec = pActRecord->newObj();
-        pTagetRec->fetchById(*pq, id);
+        pTargetRec = pActRecord->newObj();
+        pTargetRec->fetchById(*pq, id);
     }
-    qlonglong placeId = pTagetRec->getId(_sPlaceId);
+    qlonglong placeId = pTargetRec->getId(_sPlaceId);
     place.fetchById(*pq, placeId);
-    qlonglong nodeId = pTagetRec->getId(_sNodeId);
+    qlonglong nodeId = pTargetRec->getId(_sNodeId);
     node.fetchById(*pq, nodeId);
     text += _sBr + sPlaceTitle + " : <b>" + place.getName() + "</b>, <i>" + place.getNote() + "</i>";
     text += _sBr + sNodeTitle  + " : <b>" + node.getName()  + "</b>, <i>" + node.getNote()  + "</i>";
-    text += _sBr + trUtf8("Riasztás oka : ") + "<b><i>" + pTagetRec->getName(_sMsg) + "</i></b>";
-    text += _sBr + trUtf8("Csatolt üzenet : ") + "<b><i>" + pTagetRec->getName(_sEventNote) + "</i></b>";
-    if (pTagetRec->get(_sAckUserIds).toList().isEmpty() == false) {
-        text += _sBr + trUtf8("Nyugtázva : ") + "<b>" + pTagetRec->view(*pq, _sAckUserIds) + "</b>";
+    text += _sBr + trUtf8("Riasztás oka : ") + "<b><i>" + pTargetRec->getName(_sMsg) + "</i></b>";
+    text += _sBr + trUtf8("Csatolt üzenet : ") + "<b><i>" + pTargetRec->getName(_sEventNote) + "</i></b>";
+    if (pTargetRec->get(_sAckUserIds).toList().isEmpty() == false) {
+        text += _sBr + trUtf8("Nyugtázva : ") + "<b>" + pTargetRec->view(*pq, _sAckUserIds) + "</b>";
         if (isTicket) {
             text += _sBr + trUtf8("Hiba jegyhez fűzött megjegyzés : ") + "<b>" + pActRecord->getName(_sEventNote) + "</b>";
         }
@@ -266,7 +266,7 @@ void cOnlineAlarm::actRecordDestroyed(QObject *pO)
 void cOnlineAlarm::acknowledge()
 {
     if (pActRecord == NULL) EXCEPTION(EPROGFAIL);
-    qlonglong aid = pTagetRec->getId();
+    qlonglong aid = pTargetRec->getId();
     cAckDialog dialog(this);
     if (dialog.exec() == QDialog::Accepted) {
         QString msg = dialog.pUi->textEditMsg->toPlainText();
@@ -335,17 +335,17 @@ cAckDialog::cAckDialog(cOnlineAlarm *par)
     pUi->setupUi(this);
     if (par->isTicket) setWindowTitle(trUtf8("Hiba jegy nyugtázása"));
     pUi->labelPlace->setText(par->sPlaceTitle);
-    pUi->lineEditPlace->setText(par->pTagetRec->getName(_sPlaceName));
+    pUi->lineEditPlace->setText(par->pTargetRec->getName(_sPlaceName));
     pUi->labelNode->setText(par->sNodeTitle);
-    pUi->lineEditNode->setText(par->pTagetRec->getName(_sNodeName));
-    pUi->lineEditMsg->setText(par->pTagetRec->getName("msg"));
-    pUi->lineEditFrom->setText(par->pTagetRec->getName(_sBeginTime));
-    if (par->pTagetRec->isNull(_sEndTime)) {
+    pUi->lineEditNode->setText(par->pTargetRec->getName(_sNodeName));
+    pUi->lineEditMsg->setText(par->pTargetRec->getName("msg"));
+    pUi->lineEditFrom->setText(par->pTargetRec->getName(_sBeginTime));
+    if (par->pTargetRec->isNull(_sEndTime)) {
         pUi->labelTo->hide();
         pUi->lineEditTo->hide();
     }
     else {
-        pUi->lineEditTo->setText(par->pTagetRec->getName(_sEndTime));
+        pUi->lineEditTo->setText(par->pTargetRec->getName(_sEndTime));
     }
     connect(pUi->textEditMsg, SIGNAL(textChanged()), this, SLOT(changed()));
     if (par->pTicket != NULL && !par->isTicket) pUi->checkBoxTicket->setEnabled(true);

@@ -48,7 +48,6 @@ int main (int argc, char * argv[])
         try {
             if (mo.fileNm.isEmpty()) EXCEPTION(EDATA, -1, QObject::trUtf8("Nincs megadva forrás fájl!"));
             PDEB(VVERBOSE) << "BEGIN transaction ..." << endl;
-            sqlBegin(*mo.pq);
             importParseFile(mo.fileNm);
         } catch(cError *e) {
             mo.lastError = e;
@@ -58,11 +57,9 @@ int main (int argc, char * argv[])
         cError *ipe = importGetLastError();
         if (ipe != NULL) mo.lastError = ipe;
         if (mo.lastError) {
-            sqlRollback(*mo.pq);
             PDEB(DERROR) << "**** ERROR ****\n" << mo.lastError->msg() << endl;
         }
         else {
-            sqlEnd(*mo.pq);
             PDEB(DERROR) << "**** OK ****" << endl;
         }
 
@@ -94,13 +91,10 @@ void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource sour
             DWAR() << trUtf8("No waitig imports record, dropp notification.") << endl;
             return;
         }
-        sqlBegin(*pq);
         imp.setName(_sExecState, _sExecute);
         imp.set(_sStarted, QVariant(QDateTime::currentDateTime()));
         imp.setId(_sPid, QCoreApplication::applicationPid());
         imp.update(*pq, false, imp.mask(_sExecState, _sStarted, _sPid));
-        sqlEnd(*pq);
-        sqlBegin(*pq);
         importParseText(imp.getName(_sImportText));
     }
     CATCHS(lastError)
@@ -112,11 +106,8 @@ void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource sour
         imp.set(_sEnded, QVariant(QDateTime::currentDateTime()));
         imp.clear(_sAppLogId);
         imp.update(*pq, false, imp.mask(_sExecState, _sResultMsg, _sEnded, _sAppLogId));
-        sqlEnd(*pq);
     }
     else {
-        sqlRollback(*pq);
-        sqlBegin(*pq);
         qlonglong eid = sendError(lastError);
         imp.setName(_sExecState, _sFaile);
         imp.setName(_sResultMsg, lastError->msg());
@@ -125,7 +116,6 @@ void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource sour
         imp.set(_sEnded, QVariant(QDateTime::currentDateTime()));
         imp.setId(_sAppLogId, eid);
         imp.update(*pq, false, imp.mask(_sExecState, _sResultMsg, _sEnded, _sAppLogId));
-        sqlEnd(*pq);
     }
     QCoreApplication::exit(0);
 }

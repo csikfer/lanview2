@@ -36,9 +36,7 @@ lv2portMac::lv2portMac() : lanView()
         try {
             pq = newQuery();
 
-            sqlBegin(*pq);
             insertStart(*pq);
-            sqlEnd(*pq);
 
             subsDbNotif();
 

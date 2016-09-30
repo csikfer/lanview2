@@ -244,15 +244,21 @@ int importParse(eImportParserStat _st)
     if (importParserStat != IPS_READY)
         EXCEPTION(EPROGFAIL, (int)importParserStat);
     importParserStat = _st;
+    static const QString tn = "YYParser";
     int i = -1;
     try {
+        sqlBegin(qq(), tn);
         i = yyparse();
     }
     CATCHS(pImportLastError);
     if (pImportLastError != NULL) {
+        sqlRollback(qq(), tn);
         pImportLastError->mDataLine = importLineNo;
         pImportLastError->mDataName = importFileNm;
         pImportLastError->mDataMsg  = "lastLine : " + quotedString(lastLine) + "\n macbuff : " + quotedString(macbuff);
+    }
+    else {
+        sqlEnd(qq(), tn);
     }
     importParserStat = IPS_READY;
     return i;
@@ -371,9 +377,8 @@ void initImportParser()
     if (pArpServerDefs == NULL)
         pArpServerDefs = new cArpServerDefs();
     // notifswitch tömb = SET, minden on-ba, visszaolvasás listaként
-    if (piq == NULL) {
-        piq = newQuery();
-    }
+    pDelete(piq);
+    piq = newQuery();
 
     yyflags = 0;
     globalPlaceId = NULL_ID;
@@ -620,7 +625,7 @@ qlonglong& cLink::portId(eSide __e)
 /// @param __s Share type
 void cLink::side(eSide __e, QString * __n, QString *__p, int __s)
 {
-    qlonglong   nid;    // Node id
+    qlonglong   nid = NULL_ID;    // Node id
     if (__n->size() > 0) {  // Ha megadtunk node-ot
         nid = cPatch::getNodeIdByName(qq(), *__n);
     }
@@ -1088,35 +1093,51 @@ static enum ePortShare s2share(QString * __ps)
     return ES_;     // Hogy ne pofázzon a fordító
 }
 
-static void portSetShare(intList  *seql, QStringList *psl)
+static bool portChkShare(intList&  pl, QStringList *psl)
 {
-    intList     pl = *seql;
     QStringList sl = *psl;
-    delete seql;
     delete psl;
     int siz = pl.size();
     QString e = QObject::trUtf8("Helytelenül magadott kábelmegosztás #");
     if (siz != sl.size())  yyerror(e + "1");
     switch (siz) {
     case 2:
-        if      (sl[0] == _sA && sl[1] == _sB) pPatch->setShare(pl[0], -1, pl[1]);
-        else if (sl[0] == _sB && sl[1] == _sA) pPatch->setShare(pl[1], -1, pl[0]);
-        else yyerror(e + "2");
+        if      (sl[0] == _sA && sl[1] == _sB) { pl << -1 << -1;                          return false; }
+        else if (sl[0] == _sB && sl[1] == _sA) { pl.swap(0,1); pl << -1 << -1;            return false; }
+        else    yyerror(e + "2");
         break;
     case 3:
-        if      (sl[0] == _sA  && sl[1] == _sBA && sl[2] == _sBB) pPatch->setShare(pl[0], -1, pl[1], pl[2]);
-        else if (sl[0] == _sAA && sl[1] == _sAB && sl[2] == _sB ) pPatch->setShare(pl[0], pl[1],   pl[2]);
+        if      (sl[0] == _sA  && sl[1] == _sBA && sl[2] == _sBB) { pl.insert(1, -1);     return false; }
+        else if (sl[0] == _sAA && sl[1] == _sAB && sl[2] == _sB ) { pl << -1;             return false; }
         else    yyerror(e + "3");
         break;
     case 4:
-        if      (sl[0] == _sAA && sl[1] == _sAB && sl[2] == _sBA && sl[3] == _sBB) pPatch->setShare(pl[0], pl[1], pl[2], pl[3], false);
-        else if (sl[0] == _sAA && sl[1] == _sC  && sl[2] == _sD  && sl[3] == _sBB) pPatch->setShare(pl[0], pl[1], pl[2], pl[3], true);
+        if      (sl[0] == _sAA && sl[1] == _sAB && sl[2] == _sBA && sl[3] == _sBB)        return false;
+        else if (sl[0] == _sAA && sl[1] == _sC  && sl[2] == _sD  && sl[3] == _sBB)        return true;
         else    yyerror(e + "4");
         break;
     default:
         yyerror(e + "5");
     }
+    return false;   // WARNING
 }
+
+static void portSetShare(intList  *seql, QStringList *psl)
+{
+    intList pl = *seql;
+    delete seql;
+    bool f = portChkShare(pl, psl);
+    pPatch->setShare(pl[0], pl[1], pl[2], pl[3], f);
+}
+
+static void portUpdateShare(intList  *seql, QStringList *psl)
+{
+    intList pl = *seql;
+    delete seql;
+    bool f = portChkShare(pl, psl);
+    pPatch->updateShared(qq(), pl[0], pl[1], pl[2], pl[3], f);
+}
+
 
 static void portSetNC(intList *pi)
 {
@@ -1124,6 +1145,18 @@ static void portSetNC(intList *pi)
         pPatch->ports[i]->setName(_sSharedCable, _sNC);
     }
     delete pi;
+}
+
+static void portUpdateNc(intList  *seql, bool _f)
+{
+    intList pl = *seql;
+    delete seql;
+    foreach (qlonglong i, pl) {
+        cPPort *p = pPatch->ports[i]->reconvert<cPPort>();
+        p->setId(_sSharedCable, _f ? ES_NC : ES_);
+        p->clear(_sSharedPortId);
+        p->update(qq(), true, p->mask(_sSharedCable, _sSharedPortId));
+    }
 }
 
 static QString *toddef(QString * name, QString *  day, QString * fr, QString *  to, QString *descr)
@@ -1499,7 +1532,7 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
     cHostServices *hss;
 }
 
-%token      MACRO_T FOR_T DO_T TO_T SET_T CLEAR_T BEGIN_T END_T ROLLBACK_T
+%token      MACRO_T FOR_T DO_T TO_T SET_T CLEAR_T
 %token      VLAN_T SUBNET_T PORTS_T PORT_T NAME_T SHARED_T SENSORS_T
 %token      PLACE_T PATCH_T HUB_T SWITCH_T NODE_T HOST_T ADDRESS_T
 %token      PARENT_T IMAGE_T FRAME_T TEL_T NOTE_T MESSAGE_T BATCH_T
@@ -1527,7 +1560,7 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
 %token      DELETED_T PARAMS_T CONVERTER_T PRINTER_T GATEWAY_T DOMAIN_T
 %token      DIALOG_T AUTO_T PASSWD_T HUGE_T FLAG_T TREE_T NOTIFY_T
 %token      SIMPLE_T BARE_T OWNER_T CHILD_T MEMBER_T REFRESH_T SQL_T
-%token      ALARM_T
+%token      CATEGORY_T ZONE_T CONTROLLER_T
 
 %token <i>  INTEGER_V
 %token <r>  FLOAT_V
@@ -1537,7 +1570,7 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
 %type  <i>  int int_ iexpr lnktype shar ipprotp ipprot offs ix_z vlan_t set_t srvtid
 %type  <i>  vlan_id place_id iptype pix pix_z iptype_a step image_id tmod int0 replace
 %type  <i>  ptypen fhs hsid srvid grpid tmpid node_id port_id snet_id ift_id plg_id
-%type  <i>  usr_id ftmod p_seq int_z lnktypez fflags fflag tstypes tstype
+%type  <i>  usr_id ftmod p_seq int_z lnktypez fflags fflag tstypes tstype pgtype
 %type  <il> list_i p_seqs p_seqsl // ints
 %type  <b>  bool bool_on ifdef exclude cases
 %type  <r>  /* real */ num fexpr
@@ -1614,10 +1647,7 @@ list_m  : LIST_T iexpr TO_T iexpr MASK_T str                { $$ = listLoop($6, 
         | LIST_T iexpr TO_T iexpr STEP_T iexpr MASK_T str   { $$ = listLoop($8, $2, $4, $6); }
         ;
 // tranzakciókezelés
-sql     : BEGIN_T ';'                           { yySqlExec("BEGIN TRANSACTION"); }
-        | END_T ';'                             { yySqlExec("END TRANSACTION"); }
-        | ROLLBACK_T ';'                        { yySqlExec("ROLLBACK TRANSACTION"); }
-        | NOTIFY_T str ';'                      { yySqlExec("NOTIFY " + sp2s($2)); }
+sql     : NOTIFY_T str ';'                      { yySqlExec("NOTIFY " + sp2s($2)); }
         | RESET_T CACHE_T DATA_T ';'            { lanView::resetCacheData(); }
         | SQL_T '(' str ')' ';'                 { yySqlExec(sp2s($3)); }
         | SQL_T '(' str ',' vals ')' ';'        { yySqlExec(sp2s($3), $5); }
@@ -2022,10 +2052,10 @@ imgty   : str                       { $$ = $1;
 // Helyiség definíciók
 place   : PLACE_T replace str str_z             { REPOBJ(pPlace, cPlace, $2, $3, $4); pPlace->setId(_sParentId, globalPlaceId); }
           place_e                               { REPANDDEL(pPlace); }
-        | PLACE_T GROUP_T str str_z ';'         { if (globalReplaceFlag) cPlaceGroup::replaceNew(qq(), sp2s($3), sp2s($4));
-                                                   else                   cPlaceGroup::insertNew(qq(), sp2s($3), sp2s($4)); }
-        | PLACE_T GROUP_T REPLACE_T str str_z ';'{cPlaceGroup::replaceNew(qq(), sp2s($4), sp2s($5)); }
-        | PLACE_T GROUP_T INSERT_T str str_z ';'{ cPlaceGroup::insertNew(qq(), sp2s($4), sp2s($5)); }
+        | PLACE_T GROUP_T str str_z pgtype ';'  { if (globalReplaceFlag) cPlaceGroup::replaceNew(qq(), sp2s($3), sp2s($4), $5);
+                                                  else                   cPlaceGroup::insertNew( qq(), sp2s($3), sp2s($4), $5); }
+        | PLACE_T GROUP_T REPLACE_T str str_z pgtype ';'{cPlaceGroup::replaceNew(qq(), sp2s($4), sp2s($5), $6); }
+        | PLACE_T GROUP_T INSERT_T str str_z pgtype ';'{ cPlaceGroup::insertNew(qq(), sp2s($4), sp2s($5), $6); }
         | PLACE_T GROUP_T str ADD_T str ';'     { cGroupPlace gp(qq(), *$3, *$5); if (!gp.test(qq())) gp.insert(qq()); delete $3; delete $5; }
         | PLACE_T GROUP_T str REMOVE_T str ';'  { cGroupPlace gp(qq(), *$3, *$5); if (gp.test(qq())) gp.remove(qq()); delete $3; delete $5; }
         ;
@@ -2066,6 +2096,10 @@ plfn    : NOTE_T                    { $$ = new QString(_sPlaceNote); }
         | FRAME_T                   { $$ = new QString(_sFrame); }
         | TEL_T                     { $$ = new QString(_sTels); }
         ;
+pgtype  :                           { $$ = PG_GROUP; }
+        | CATEGORY_T                { $$ = PG_CATEGORY; }
+        | ZONE_T                    { $$ = PG_ZONE; }
+        ;
 iftype  : IFTYPE_T str str_z  IANA_T int TO_T int ';'
                                     { cIfType::insertNew(qq(), sp2s($2), sp2s($3), (int)$5, (int)$7); }
         ;
@@ -2074,6 +2108,12 @@ nodes   : patch
 patch   : patch_h                               { if (pPatch->isNull(_sPlaceId)) pPatch->setId(_sPlaceId, gPlace());
                                                   pPatch->containerValid = CV_ALL_PATCH; }
           patch_e                               { REPANDDEL(pPatch); }
+        | ADD_T PATCH_T str PORT_T              { NEWOBJ(pPatch, cPatch); pPatch->setByName(sp2s($3)); }
+          apport                                { DELOBJ(pPatch); }
+        ;
+        | SET_T PATCH_T str                     { NEWOBJ(pPatch, cPatch); pPatch->setByName(qq(), sp2s($3)); pPatch->fetchPorts(qq()); }
+          spport                                { DELOBJ(pPatch); }
+
         ;
 patch_h : PATCH_T replace str str_z                 { REPOBJ(pPatch, cPatch, $2, $3, $4); }
         | PATCH_T replace str str_z TEMPLATE_T str  { REPOBJ(pPatch, cPatch, $2, $3, $4); templates.get(_sPatchs, sp2s($6)); }
@@ -2177,6 +2217,12 @@ ptcfn   : PORTS_T                               { $$ = new QString(_sPorts); }
         | FEATURES_T                            { $$ = new QString(_sFeatures); }
         | DELETED_T                             { $$ = new QString(_sDeleted); }
         ;
+apport  : int str str_z ';'                     { pPatch->insertPort(qq(), $1, sp2s($2), sp2s($3)); }
+        | int str str_z TAG_T str ';'           { pPatch->insertPort(qq(), $1, sp2s($2), sp2s($3), sp2s($5)); }
+        ;
+spport  : PORTS_T p_seqs SHARED_T strs ';'      { portUpdateShare($2, $4); }
+        | PORTS_T p_seqs bool_on NC_T ';'       { portUpdateNc($2, $3); }
+        ;
 // nodes
 node_h  : NODE_T replace node_ts                { $$ = $3; setReplace($2); }
         ;
@@ -2204,6 +2250,7 @@ host_t  : SWITCH_T                              { $$ = new QString(_sSwitch); }
         | WORKSTATION_T                         { $$ = new QString(_sWorkstation); }
         | MOBILE_T                              { $$ = new QString(_sMobile); }
         | DEVICE_T                              { $$ = new QString(_sDevice); }
+        | CONTROLLER_T                          { $$ = new QString(_sController); }
         ;
 node    : node_h str str_z                          { newNode($1, $2, $3); pPatch->containerValid = CV_ALL_NODE; }
                 node_cf node_e                      { REPANDDEL(pPatch); }
@@ -2914,7 +2961,7 @@ static int yylex(void)
         const char *name;
         int         value;
     } sToken[] = {
-        TOK(MACRO) TOK(FOR) TOK(DO) TOK(TO) TOK(SET) TOK(CLEAR) TOK(BEGIN) TOK(END) TOK(ROLLBACK)
+        TOK(MACRO) TOK(FOR) TOK(DO) TOK(TO) TOK(SET) TOK(CLEAR)
         TOK(VLAN) TOK(SUBNET) TOK(PORTS) TOK(PORT) TOK(NAME) TOK(SHARED) TOK(SENSORS)
         TOK(PLACE) TOK(PATCH) TOK(HUB) TOK(SWITCH) TOK(NODE) TOK(HOST) TOK(ADDRESS)
         TOK(PARENT) TOK(IMAGE) TOK(FRAME) TOK(TEL) TOK(NOTE) TOK(MESSAGE) TOK(BATCH)
@@ -2942,7 +2989,7 @@ static int yylex(void)
         TOK(DELETED) TOK(PARAMS) TOK(CONVERTER) TOK(PRINTER) TOK(GATEWAY) TOK(DOMAIN)
         TOK(DIALOG) TOK(AUTO) TOK(PASSWD) TOK(HUGE) TOK(FLAG) TOK(TREE) TOK(NOTIFY)
         TOK(SIMPLE) TOK(BARE) TOK(OWNER) TOK(CHILD) TOK(MEMBER) TOK(REFRESH) TOK(SQL)
-        TOK(ALARM)
+        TOK(CATEGORY) TOK(ZONE) TOK(CONTROLLER)
         { "WST",    WORKSTATION_T }, // rövidítések
         { "ATC",    ATTACHED_T },
         { "INT",    INTEGER_T },
@@ -2954,6 +3001,7 @@ static int yylex(void)
         { "EXPR",   EXPRESSION_T },
         { "BOOL",   BOOLEAN_T },
         { "GW",     GATEWAY_T },
+        { "CAT",    CATEGORY_T },
         { NULL, 0 }
     };
     // DBGFN();

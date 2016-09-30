@@ -1293,8 +1293,9 @@ bool cRecordsViewBase::batchEdit(int logicalindex)
     }
     // Ha modosítottuk a táblát, majd volt rollback
     bool    spoiling = false;
+    static const QString tn = "batchEdit";
     while (pDialog->exec() == QDialog::Accepted) {
-        sqlBegin(*pq);
+        sqlBegin(*pq, tn);
         cError  *pe = NULL;
         bool first = true;
         foreach (QModelIndex mi, mil) {
@@ -1316,10 +1317,10 @@ bool cRecordsViewBase::batchEdit(int logicalindex)
         if (pe != NULL) {
             cErrorMessageBox::messageBox(pe, pDialog);
             pDelete(pe);
-            sqlRollback(*pq);
+            sqlRollback(*pq, tn);
             continue;
         }
-        sqlEnd(*pq);
+        sqlEnd(*pq, tn);
         spoiling = false;
         break;
     }

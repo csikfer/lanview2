@@ -190,7 +190,7 @@ void cLogOn::userNameEdited()
             " JOIN groups USING (group_id)"
             " JOIN place_groups USING(place_group_id)"
             " JOIN users USING(user_id)"
-            " WHERE user_name = ?";
+            " WHERE place_group_type = 'zone' AND user_name = ?";
     if (!q.prepare(sql)) SQLPREPERR(q, sql);
     q.bindValue(0, _inUser);
     if (!q.exec()) SQLQUERYERR(q);
