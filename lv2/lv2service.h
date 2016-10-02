@@ -68,6 +68,13 @@ enum eTimerStat {
 /// Belső status érték konvertálása stringgé, nem értelmezhető érték esetén dob egy kizárást
 EXT_ const QString& internalStatName(eInternalStat is);
 
+enum eNagiosPluginRetcode {
+    NR_OK       = 0,
+    NR_WARNING  = 1,
+    NR_CRITICAL = 2,
+    NR_UNKNOWN  = 3
+};
+
 class cInspector;
 
 /// @class cInspectorThread

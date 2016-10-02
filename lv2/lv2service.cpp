@@ -536,7 +536,7 @@ int cInspector::getInspectorProcess(const QString &value)
     case IT_PROCESS_TIMED   | IT_PROCESS_CARRIED:
         break;  // O.K.
     case IT_NO_PROCESS:
-        // Van megadva parancs, de nincs megadva időzítés
+        // Van megadva parancs, de nincs megadva process időzítés
         // A metódustol függően még jó lehet
     {
         int met = getInspectorMethod(feature(_sMethod));
@@ -906,10 +906,17 @@ enum eNotifSwitch cInspector::parse_munin(int _ec, QIODevice &text)
 
 enum eNotifSwitch cInspector::parse_nagios(int _ec, QIODevice &text)
 {
-    (void)_ec;
-    (void)text;
-    EXCEPTION(ENOTSUPP);    // majd...
-    return RS_INVALID;
+    QString s = _sUnknown;
+    int r = RS_STAT_SETTED | RS_SET_RETRY;
+    QString note = QString::fromUtf8(text.readAll());
+    switch (_ec) {
+    case NR_OK:         s = _sOn;       r = RS_STAT_SETTED;     break;
+    case NR_WARNING:    s = _sWarning;  break;
+    case NR_CRITICAL:   s = _sCritical; break;
+    case NR_UNKNOWN:    s = _sUnknown;  break;
+    }
+    hostService.setState(*pq, s, note);
+    return (enum eNotifSwitch)r;
 }
 
 enum eNotifSwitch cInspector::parse_qparse(int _ec, QIODevice& text)

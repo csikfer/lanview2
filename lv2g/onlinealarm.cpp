@@ -316,6 +316,7 @@ void cOnlineAlarm::noAckDataReloded(const tRecords& _recs)
             QTabWidget *tab = lv2g::pMainWindow->pTabWidget;
             int i = tab->indexOf(pWidget());
             if (i >= 0) tab->setCurrentIndex(i);
+            if (!lv2g::pMainWindow->isActiveWindow())lv2g::pMainWindow->activateWindow();
         }
     }
     else         pSound->stop();

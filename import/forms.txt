@@ -759,7 +759,7 @@ GUI lv2gui {
         restart     EXEC    restart         {   TITLE "Újraindítás";  }
         exit        EXEC    exit            {   TITLE "Kilép";  }
     }
-    users MENU  {
+    user MENU  {
         TITLE "Felhasználók";
         users       SHAPE   users           {   TITLE "Felhasználók",@;  }
         groups      SHAPE   groups          {   TITLE "Felhasználói csoportok",@;  }
