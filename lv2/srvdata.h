@@ -85,11 +85,14 @@ class LV2SHARED_EXPORT cHostService : public cRecord {
     CRECORD(cHostService);
     FEATURES(cHostService)
 public:
+    cHostService(QSqlQuery& q, const QString& __h, const QString& __p, const QString& __s, const QString& __n);
     cHostService& operator=(const cHostService& __o);
     virtual void toEnd();
     virtual bool toEnd(int i);
     virtual void clearToEnd();
     virtual int replace(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
+    /// A port_id mező kitöltése a port név alapján. A metódus számít rá, hogy a node_id mező már ki van töltve.
+    void setPort(QSqlQuery& q, const QString& __p) { setId(_sPortId, cNPort().getPortIdByName(q, __p, getId(_sNodeId))); }
     /// Státusz beállítása. A  set_service_stat() PL/pSQL függvényt hívja.
     /// @param __q Az adatbázis művelethez használt objektum.
     /// @param __st A szolgáltatással kapcsolatos művelet eredménye. Nem az új status, azt a set_service_stat()
@@ -163,7 +166,7 @@ public:
     /// @return A keresett mező értéke.
     /// @exceptions * cError Ha mindkét objektumban a keresett mező értéke null, vagy update esetén hiba történt.
     QVariant value(QSqlQuery& q, const cService& s, const QString& f);
-    /// Rekord azonosító nevekből képez egy stringet: node:szolgáltatés alakban.
+    /// Rekord azonosító nevekből képez egy stringet: node[:port].szolgáltatés alakban.
     /// A neveket az objektum nem tartalmazza, ezért azokat az adatbázisból kérdezi le.
     QString names(QSqlQuery& q);
     static QString names(QSqlQuery& q, qlonglong __id);

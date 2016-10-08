@@ -209,6 +209,17 @@ cHostService::~cHostService()
     pDelete(_pFeatures);
 }
 
+cHostService::cHostService(QSqlQuery& q, const QString& __h, const QString& __p, const QString& __s, const QString& __n)
+{
+    _pFeatures = NULL;
+    _set(cHostService::descr());
+    setId(_sNodeId,    cNode().getIdByName   (q, __h));
+    setId(_sServiceId, cService().getIdByName(q, __s));
+    if (!__p.isEmpty()) setPort(q, __p);
+    if (!__n.isEmpty()) setName(_sHostServiceNote, __n);
+}
+
+
 cHostService& cHostService::operator=(const cHostService& __o)
 {
     __cp(__o);

@@ -41,7 +41,7 @@ phsLinkWidget::phsLinkWidget(cLinkDialog * par) :  QWidget(par)
     pButtonsLinkType->addButton(pUi->radioButtonLinkBack,  LT_BACK);
 
     pModelZone = new cRecordListModel(pgrp.descr());
-    pModelZone->setConstFilter(_sPlaceGroupType + " = " + _sZone, FT_SQL_WHERE);
+    pModelZone->setConstFilter(_sPlaceGroupType + " = " + quoted(_sZone), FT_SQL_WHERE);
     pUi->comboBoxZone->setModel(pModelZone);
     pgrp.setById(*pq, ALL_PLACE_GROUP_ID);
     const static QString sf =

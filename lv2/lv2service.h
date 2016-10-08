@@ -352,7 +352,7 @@ public:
     qlonglong protoServiceId() const    { return protoService().getId(); }
     QString protoServiceName() const    { return protoService().getName(); }
     QString name() const;
-    QString getParValue(QSqlQuery &q, const QString& name, bool *pOk = NULL) const;
+    QString getParValue(QSqlQuery &q, const QString& name, bool *pOk = NULL);
 
     ///
     int timing() const { return inspectorType & IT_TIMING_MASK; }

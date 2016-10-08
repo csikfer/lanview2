@@ -1168,9 +1168,11 @@ QString cInspector::name() const
     return r;
 }
 
-QString cInspector::getParValue(QSqlQuery& q, const QString& name, bool *pOk) const
+QString cInspector::getParValue(QSqlQuery& q, const QString& name, bool *pOk)
 {
     if (pOk != NULL) *pOk = true;
+    QString v = feature(name, EX_IGNORE);
+    if (v.isEmpty() == false) return v;
     QStringList sl = name.split(QChar('.'));
     if (sl.size() > 1) {
         if (sl.size() > 2) {

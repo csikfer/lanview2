@@ -70,11 +70,6 @@ public:
             this->append(p);
         }
     }
-    void setsPort(QSqlQuery& q, const QString& pn) {
-        for (int i = 0; i < size(); ++i) {
-            at(i)->set(_sPortId, cNPort().getPortIdByName(q, pn, at(i)->getId(_sNodeId)));
-        }
-    }
     void cat(cHostServices *pp) {
         cHostService *p;
         while (NULL != (p = pp->pop_front(EX_IGNORE))) pp->append(p);
@@ -207,6 +202,7 @@ static QString lastLine;
 
 /// Alapértelmezett place_id. NULL-ra inicializált.
 static qlonglong        globalPlaceId = NULL_ID;
+static qlonglong        globalSuperiorId = NULL_ID;
 static bool             globalReplaceFlag;
 static bool             isReplace = false;
 static cTemplateMapMap  templates;
@@ -221,7 +217,7 @@ static cUser *          pUser = NULL;
 static cGroup *         pGroup = NULL;
 static cLink      *     pLink = NULL;
 static cService   *     pService = NULL;
-static cHostServices*   pHostServices = NULL;
+static cHostService*    pHostService = NULL;
 static cHostService*    pHostService2 = NULL;
 static cTableShape *    pTableShape = NULL;
 static qlonglong        alertServiceId = NULL_ID;
@@ -382,6 +378,7 @@ void initImportParser()
 
     yyflags = 0;
     globalPlaceId = NULL_ID;
+    globalSuperiorId = NULL_ID;
     actVlanId = -1;
     netType = NT_INVALID; // firstSubNet = ;
     alertServiceId = NULL_ID;
@@ -413,7 +410,7 @@ void downImportParser()
     pDelete(pGroup);
     pDelete(pLink);
     pDelete(pService);
-    pDelete(pHostServices);
+    pDelete(pHostService);
     pDelete(pHostService2);
     pDelete(pTableShape);
     ivars.clear();
@@ -2469,11 +2466,13 @@ srvmsgs : srvmsg
         ;
 srvmsg  : nsws_ ':' str str ';'                 { cAlarmMsg::replaces(qq(), id, slp2sl($1), sp2s($3), sp2s($4)); }
         ;
-hostsrv : HOST_T SERVICE_T str '.' str str_z    { NEWOBJ(pHostServices, cHostServices(qq(), $3, NULL, $5, $6)); }
-          hsrvend                               { pHostServices->insert(qq()); DELOBJ(pHostServices); }
+hostsrv : HOST_T SERVICE_T str '.' str str_z    { NEWOBJ(pHostService, cHostService(qq(), sp2s($3), _sNul, sp2s($5), sp2s($6)));
+                                                  pHostService->set(_sSuperiorHostServiceId, globalSuperiorId); }
+          hsrvend                               { pHostService->insert(qq()); DELOBJ(pHostService); }
         | HOST_T SERVICE_T str ':' str '.' str str_z
-                                                { NEWOBJ(pHostServices, cHostServices(qq(), $3, $5, $7, $8));  }
-          hsrvend                               { pHostServices->insert(qq()); DELOBJ(pHostServices); }
+                                                { NEWOBJ(pHostService, cHostService(qq(), sp2s($3), sp2s($5), sp2s($7), sp2s($8)));
+                                                  pHostService->set(_sSuperiorHostServiceId, globalSuperiorId); }
+          hsrvend                               { pHostService->insert(qq()); DELOBJ(pHostService); }
         ;
 hsrvend : '{' hsrv_ps '}'
         | ';'
@@ -2481,23 +2480,23 @@ hsrvend : '{' hsrv_ps '}'
 hsrv_ps : hsrv_p
         | hsrv_ps hsrv_p
         ;
-hsrv_p  : PRIME_T SERVICE_T srvid ';'           { pHostServices->sets(_sPrimeServiceId, $3); }
-        | PROTOCOL_T SERVICE_T srvid ';'        { pHostServices->sets(_sProtoServiceId, $3); }
-        | PORT_T str ';'                        { pHostServices->setsPort(qq(), *$2); delete $2; }
-        | DELEGATE_T HOST_T STATE_T bool_on ';' { pHostServices->sets(_sDelegateHostState, $4); }
-        | COMMAND_T str ';'                     { pHostServices->sets(_sCheckCmd, *$2); delete $2; }
-        | FEATURES_T str ';'                  { pHostServices->sets(_sFeatures, *$2); delete $2; }
-        | SUPERIOR_T SERVICE_T hsid ';'         { pHostServices->sets(_sSuperiorHostServiceId,  $3); }
-        | MAX_T CHECK_T ATTEMPTS_T int ';'      { pHostServices->sets(_sMaxCheckAttempts, $4); }
-        | NORMAL_T CHECK_T INTERVAL_T value ';' { pHostServices->sets(_sNormalCheckInterval, *$4); delete $4; }
-        | RETRY_T CHECK_T INTERVAL_T value ';'  { pHostServices->sets(_sRetryCheckInterval, *$4); delete $4; }
-        | FLAPPING_T INTERVAL_T value ';'       { pHostServices->sets(_sFlappingInterval, *$3); delete $3; }
-        | FLAPPING_T MAX_T CHANGE_T int ';'     { pHostServices->sets(_sFlappingMaxChange,  $4); }
-        | TIME_T PERIODS_T tmpid ';'            { pHostServices->sets(_sTimePeriodId, $3); }
-        | OFF_T LINE_T GROUP_T grpid ';'        { pHostServices->sets(_sOffLineGroupId, $4); }
-        | ON_T LINE_T GROUP_T grpid ';'         { pHostServices->sets(_sOnLineGroupId, $4); }
-        | SET_T str '=' value ';'               { pHostServices->sets(*$2, *$4); delete $2; delete $4; }
-        | bool_on DISABLE_T ';'                 { pHostServices->sets(_sDisabled,  $1); }
+hsrv_p  : PRIME_T SERVICE_T srvid ';'           { pHostService->set(_sPrimeServiceId, $3); }
+        | PROTOCOL_T SERVICE_T srvid ';'        { pHostService->set(_sProtoServiceId, $3); }
+        | PORT_T str ';'                        { pHostService->setPort(qq(), *$2); delete $2; }
+        | DELEGATE_T HOST_T STATE_T bool_on ';' { pHostService->set(_sDelegateHostState, $4); }
+        | COMMAND_T str ';'                     { pHostService->set(_sCheckCmd, *$2); delete $2; }
+        | FEATURES_T str ';'                    { pHostService->set(_sFeatures, *$2); delete $2; }
+        | SUPERIOR_T SERVICE_T hsid ';'         { pHostService->set(_sSuperiorHostServiceId,  $3); }
+        | MAX_T CHECK_T ATTEMPTS_T int ';'      { pHostService->set(_sMaxCheckAttempts, $4); }
+        | NORMAL_T CHECK_T INTERVAL_T value ';' { pHostService->set(_sNormalCheckInterval, *$4); delete $4; }
+        | RETRY_T CHECK_T INTERVAL_T value ';'  { pHostService->set(_sRetryCheckInterval, *$4); delete $4; }
+        | FLAPPING_T INTERVAL_T value ';'       { pHostService->set(_sFlappingInterval, *$3); delete $3; }
+        | FLAPPING_T MAX_T CHANGE_T int ';'     { pHostService->set(_sFlappingMaxChange,  $4); }
+        | TIME_T PERIODS_T tmpid ';'            { pHostService->set(_sTimePeriodId, $3); }
+        | OFF_T LINE_T GROUP_T grpid ';'        { pHostService->set(_sOffLineGroupId, $4); }
+        | ON_T LINE_T GROUP_T grpid ';'         { pHostService->set(_sOnLineGroupId, $4); }
+        | SET_T str '=' value ';'               { pHostService->set(*$2, *$4); delete $2; delete $4; }
+        | bool_on DISABLE_T ';'                 { pHostService->set(_sDisabled,  $1); }
         ;
 // host_services rekordok előkotrása, a kifelyezés értéke a kapott rekord szám, az első rekord a megallokált pHostService2-be
 // pHostService2-nek NULL-nak kell lennie. Több rekord a qq()-val kérhető be, ha el nem rontjuk a tartalmát.
@@ -2737,12 +2736,14 @@ modify  : SET_T str '[' strs ']' '.' str '=' value ';'
                                       lanView::resetCacheData(); }
         | SET_T ALERT_T SERVICE_T srvid ';'     { alertServiceId = $4; }
         | SET_T SUPERIOR_T hsid TO_T hsss ';'   { $5->sets(_sSuperiorHostServiceId, $3); delete $5; }
-        | SET_T PLACE_T place_id ';'            { globalPlaceId = $3; }
         | SET_T NODE_T str PORTS_T strs PARAM_T str str ';'
                                                 { setNodePortsParam(sp2s($3), slp2sl($5), sp2s($7), sp2s($8)); }
         | SET_T NODE_T strs PARAM_T str str ';' { setNodeParam(slp2sl($3), sp2s($5), sp2s($6)); }
-        | CLEAR_T PLACE_T ';'                   { globalPlaceId = NULL_ID; }
         | SET_T PLACE_T place_id NODE_T strs ';'{ setNodePlace(slp2sl($5), $3); }
+        | SET_T PLACE_T place_id ';'            { globalPlaceId = $3; }
+        | CLEAR_T PLACE_T ';'                   { globalPlaceId = NULL_ID; }
+        | SET_T SUPERIOR_T hsid ';'             { globalSuperiorId = $3; }
+        | CLEAR_T SUPERIOR_T ';'                { globalSuperiorId = NULL_ID; }
         // Felhasználó letiltása
         | DISABLE_T USER_T str ';'              { cUser().setByName(qq(), sp2s($3)).setBool(_sDisabled, true).update(qq(), true); }
         | ENABLE_T  USER_T str ';'              { cUser().setByName(qq(), sp2s($3)).setBool(_sDisabled, false).update(qq(), true); }

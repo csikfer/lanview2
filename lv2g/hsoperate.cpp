@@ -44,7 +44,7 @@ cHSOperate::cHSOperate(QWidget *par)
     pUi->radioButtonNodePattern->setChecked(true);
 
     pZoneModel = new cRecordListModel(cPlaceGroup().descr(), this);
-    pZoneModel->setConstFilter(_sPlaceGroupType + " = " + _sZone, FT_SQL_WHERE);
+    pZoneModel->setConstFilter(_sPlaceGroupType + " = " + quoted(_sZone), FT_SQL_WHERE);
     pUi->comboBoxZone->setModel(pZoneModel);
     pZoneModel->setFilter();
     pUi->comboBoxZone->setCurrentText(_sAll);
