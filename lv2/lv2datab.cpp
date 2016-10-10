@@ -2287,9 +2287,9 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
                 }
             }
         }
-        else {
-            PDEB(VERBOSE) << "No name field, _nameKeyMask is not set." << endl;
-        }
+        // else {
+        //     PDEB(VERBOSE) << "No name field, _nameKeyMask is not set." << endl;
+        // }
         // Ha találtunk ID-t, akkor az csak egyedüli egyedi kulcs lehet!
         if (_primaryKeyMask.count(true) != 1) _idIndex = NULL_IX;
         // Ha van ID-nk, akkor az elsődleges kulcs kell legyen

@@ -92,7 +92,7 @@ cDebug::cDebug() : mFName(fNameCnv(QString()))
     mThreadMsgQueue      = NULL;
     mThreadMsgQueueMutex = NULL;
 
-    mMask = DERROR | WARNING;
+    mMask = DERROR | WARNING | MODMASK;
     mCout = new debugStream(stderr);
     if (QTextStream::Ok != mCout->stream.status()) EXCEPTION(EFOPEN, -1, _sStdErr);
     disabled = false;
@@ -190,6 +190,7 @@ bool cDebug::pDeb(qlonglong mask)
     if (instance == NULL) {
         instance = new cDebug();
     }
+    if (mask & DERROR) return true;
     qlonglong mm = instance->mMask & mask;
     bool       r = mask && (mm) == mask;
     return r;

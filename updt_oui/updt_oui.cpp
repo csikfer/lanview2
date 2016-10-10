@@ -64,6 +64,7 @@ lv2UpdateOui::~lv2UpdateOui()
 
 bool ouiParser(QSqlQuery * pq, QByteArray& text)
 {
+    DBGFN();
     try {
         QTextStream src(&text, QIODevice::ReadOnly);
         QRegExp pat1("\\s*([\\da-f]{2})-([\\da-f]{2})-([\\da-f]{2})\\s+\\(hex\\)[\\s\\t]+(.+)\\s*", Qt::CaseInsensitive);
@@ -108,6 +109,7 @@ bool ouiParser(QSqlQuery * pq, QByteArray& text)
         }
     } CATCHS(lanView::getInstance()->lastError);
     return lanView::getInstance()->lastError == NULL;
+    DBGFNL();
 }
 
 Downloader::Downloader(QQueue<QUrl> &qr, QSqlQuery *_pq, QObject *parent) :
@@ -131,6 +133,7 @@ void Downloader::doDownload()
     }
     else {
         url = urlQueue.dequeue();
+        PDEB(INFO) << "Dovload : " << url.toString() << endl;
         manager->get(QNetworkRequest(url));
     }
 }

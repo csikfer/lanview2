@@ -1,5 +1,6 @@
 #include "lv2d.h"
 #include "time.h"
+#include <stdio.h>
 #define VERSION_MAJOR   0
 #define VERSION_MINOR   99
 #define VERSION_STR     _STR(VERSION_MAJOR) "." _STR(VERSION_MINOR)
@@ -11,6 +12,7 @@ const QString& setAppHelp()
 
 int main(int argc, char *argv[])
 {
+    printf("Start lv2d...\n");
     cLv2QApp app(argc, argv);
 
     SETAPP()

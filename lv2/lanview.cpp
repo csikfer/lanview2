@@ -59,7 +59,7 @@ int findArg(const QChar& __c, const QString& __s, const QStringList &args)
 #ifdef Q_OS_WIN
 #define DEFDEB 0
 #else
-#define DEFDEB cDebug::DERROR | cDebug::WARNING | cDebug::INFO | cDebug::VERBOSE | cDebug::LV2
+#define DEFDEB cDebug::DERROR | cDebug::WARNING | cDebug::INFO | cDebug::VERBOSE | cDebug::MODMASK
 #endif
 
 /// Default debug level

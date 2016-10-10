@@ -16,11 +16,12 @@ enum eTmStat {
 
 /// cInspect és leszármazottai objektum belső status
 enum eInternalStat {
-    IS_INIT,    ///< Internal status init
-    IS_DOWN,    ///< Internal status down
-    IS_REINIT,  ///< Internal status reinit
-    IS_RUN,     ///< Internal status runing (inited)
-    IS_STOPPED  ///< Hiba miatt nem fut
+    IS_INIT,        ///< Internal status init
+    IS_DOWN,        ///< Internal status down
+    IS_REINIT,      ///< Internal status reinit
+    IS_RUN,         ///< Internal status runing (inited)
+    IS_SUSPENDED,   ///< Felföggesztve, időzítésre várakozik
+    IS_STOPPED      ///< Lefutott, vagy hiba miatt nem fut
 };
 
 /// Az ellenörző eljárás típusa

@@ -167,8 +167,11 @@ public:
     /// @exceptions * cError Ha mindkét objektumban a keresett mező értéke null, vagy update esetén hiba történt.
     QVariant value(QSqlQuery& q, const cService& s, const QString& f);
     /// Rekord azonosító nevekből képez egy stringet: node[:port].szolgáltatés alakban.
-    /// A neveket az objektum nem tartalmazza, ezért azokat az adatbázisból kérdezi le.
+    /// Az eredmény stringet az ID alapján kérdezi le az adatbázisból. Csak az ID mezőnek kell kitöltve lennie,
+    /// az objektum többi mezőjének az értéke érdektelen az eredmény szempontjából.
     QString names(QSqlQuery& q);
+    /// Rekord azonosító nevekből képez egy stringet: node[:port].szolgáltatés alakban.
+    /// Az eredmény stringet a megadott ID alapján kérdezi le az adatbázisból.
     static QString names(QSqlQuery& q, qlonglong __id);
     /// A prime_service mező álltal hivatkozott cService objektummal tér vissza.
     /// Ha a mező ártéke NULL, akkor egy üres objektum referenciájával.

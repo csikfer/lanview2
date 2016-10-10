@@ -355,7 +355,7 @@ class LV2SHARED_EXPORT cDebug {
     typedef enum {
         SILENT     =  0x00000000UL,   ///< Debug mask érték: Nincsennek debug üzenetek
         EXCEPT     =  0x00000001UL,   ///< Debug mask bit: A fatális hibáknál a debug üzeneteket is kiírja
-        DERROR     =  0x00000002UL,   ///< Debug mask bit: A nem fatális hiba üzenetek kiírása
+        DERROR     =  0x00000002UL,   ///< Debug mask bit: A nem fatális hiba üzenetek kiírása (mindíg kiírja!)
         WARNING    =  0x00000004UL,   ///< Debug mask bit: A figyelmeztető üzenetek kiírása
         INFO       =  0x00000008UL,   ///< Debug mask bit: A információs üzenetek kiírása
         VERBOSE    =  0x00000010UL,   ///< Debug mask bit: A beszédesebb információs üzenetek kiírása
@@ -371,6 +371,7 @@ class LV2SHARED_EXPORT cDebug {
         LV2G       =  0x20000000UL,   ///< Debug mask bit: Az lv2g modul üzeneteinek a kiírása
         PARSER     =  0x10000000UL,
         APP        =  0x08000000UL,   ///< Debug mask bit: Az APP  üzeneteinek a kiírása
+        MODMASK    =  0xFF000000UL
 /*        TEST       =  APP,
         LV2D       =  APP,
         LV2GUI     =  APP,

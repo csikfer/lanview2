@@ -70,6 +70,7 @@ STRDEF(Local, "local")
 STRDEF(Init, "init")
 STRDEF(ReInit, "reinit")
 STRDEF(Run, "run")
+STRDEF(Stopped, "stopped")
 STRDEF(IPV4Pol, "IPV4Pol")
 STRDEF(IPV6Pol, "IPV6Pol")
 
