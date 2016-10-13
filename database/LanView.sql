@@ -347,14 +347,7 @@ INSERT INTO unusual_fkeys
   ( 'services',         'online_group_ids',  'property',    'groups',       'group_id',     NULL),
   ( 'services',         'offline_group_ids', 'property',    'groups',       'group_id',     NULL),
   ( 'host_services',    'online_group_ids',  'property',    'groups',       'group_id',     NULL),
-  ( 'host_services',    'offline_group_ids', 'property',    'groups',       'group_id',     NULL),
-  ( 'view_alarms',      'online_group_ids',  'property',    'groups',       'group_id',     NULL),
-  ( 'view_alarms',      'offline_group_ids', 'property',    'groups',       'group_id',     NULL),
-  ( 'view_alarms',      'notice_user_ids',   'property',    'users',        'user_id',      NULL),
-  ( 'view_alarms',      'view_user_ids',     'property',    'users',        'user_id',      NULL),
-  ( 'view_alarms',      'ack_user_ids',      'property',    'users',        'user_id',      NULL),
-  ( 'view_alarms',      'msg_user_ids',      'property',    'users',        'user_id',      NULL),
-  ( 'view_alarms',      'mail_user_ids',     'property',    'users',        'user_id',      NULL);
+  ( 'host_services',    'offline_group_ids', 'property',    'groups',       'group_id',     NULL);
 
 CREATE TABLE fkey_types (
     fkey_type_id        bigserial  NOT NULL PRIMARY KEY,

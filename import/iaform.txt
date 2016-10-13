@@ -1,24 +1,23 @@
 
 SET REPLACE;
 
-TABLE view_alarms SHAPE uaalarms  "Nem nyugtázott riasztások" {
+TABLE online_alarms SHAPE uaalarms  "Nem nyugtázott riasztások" {
     SET DEFAULTS;               // Az összes mező felvétele alapértelmezett tulajdonságokkal
     TABLE TYPE BARE;
     TABLE TITLE "Nem nyugtázott riasztások";
-    // Nincs nyugtázva, és zónán bellül
-    REFINE "COALESCE(array_length(ack_user_ids, 1) = 0, true) AND is_group_place(place_id, ?) AND user_is_any_groups_member(?,online_group_ids):place_group_id:user_id";
+    //      online                        Nincs nyugtázva                                       zónán bellül
+    REFINE "? = ANY (online_user_ids) AND COALESCE(array_length(ack_user_ids, 1) = 0, true) AND is_group_place(place_id, ?):user_id:place_group_id";
     TABLE VIEW   RIGHTS indalarm;
     TABLE EDIT   RIGHTS system;
     TABLE INSERT RIGHTS system;
     TABLE DELETE RIGHTS admin;
     
-    FIELD view_alarm_id     { FLAG HIDE;                                                                        }
-    FIELD host_service_id   { FLAG ON HIDE;                                                                     } 
+    FIELD online_alarm_id   { FLAG ON HIDE;                                                                     }
     FIELD host_service_name { FLAG ON HIDE TABLE;   TITLE ,         "Felügyelő objektum neve";                  } 
-    FIELD node_id           { FLAG ON HIDE;                                                                     }
     FIELD node_name         {                       TITLE "Eszköz", "Eszköz neve";                              }
-    FIELD place_id          { FLAG ON HIDE;                                                                     }
+    FIELD node_id           { FLAG ON HIDE;                                                                     }
     FIELD place_name        {                       TITLE "Hely",   "Az eszköz helye";                          }
+    FIELD place_id          { FLAG ON HIDE;                                                                     }
     FIELD superior_alarm_id { FLAG ON HIDE;                                                                     }
     FIELD begin_time        {                       TITLE "Kezdete","A riasztás kezdete";                       }
     FIELD end_time          {                       TITLE "Vége",   "A riasztási állpot vége";                  }
@@ -27,49 +26,42 @@ TABLE view_alarms SHAPE uaalarms  "Nem nyugtázott riasztások" {
     FIELD last_status       { FLAG ON HIDE TABLE;   TITLE ,         "Az utolsó állapot a riasztás alatt";       }
     FIELD event_note        { FLAG ON HIDE TABLE;   TITLE ,         "Az állapothoz csatolt üzenet";             }
     FIELD msg               { FLAG ON HUGE;         TITLE "Üzenet", "Riasztási üzenet";                         } 
-    FIELD offline_group_ids { FLAG HIDE;                                                                        }
-    FIELD online_group_ids  { FLAG HIDE;                                                                        }
+    FIELD online_user_ids   { FLAG ON HIDE TABLE;   TITLE ,         "Értesítendő felhasználók";                 }
     FIELD notice_user_ids   { FLAG ON HIDE TABLE;   TITLE ,         "Felhasználók láthatták a riasztást";       }
     FIELD view_user_ids     { FLAG ON HIDE TABLE;   TITLE ,         "Felhasználók megnézték a riasztást";       }
-    FIELD ack_user_ids      { FLAG HIDE;                                                                        }
-    FIELD msg_user_ids      { FLAG HIDE;                                                                        }
-    FIELD mail_user_ids     { FLAG HIDE;                                                                        }
+    FIELD ack_user_ids      { FLAG ON HIDE;                                                                     }
     AUTO REFRESH "0:05:00";
     TABLE FEATURES ":max_rows=500:";   // Nincs (nem kéne) lapozás, de tul nagy tábla akkor sem lehet
 }
 
-TABLE view_alarms SHAPE aaalarms "Nyugtázott aktív riasztások" {
+TABLE online_alarms SHAPE aaalarms "Nyugtázott aktív riasztások" {
     SET DEFAULTS;               // Az összes mező felvétele alapértelmezett tulajdonságokkal
     TABLE TYPE BARE;
     TABLE TITLE "Nyugtázott és aktív riasztások";
-    // Nyugtázva, de még fennál a riasztási állpot, és zónán bellül
-    REFINE "array_length(ack_user_ids, 1) > 0 AND end_time IS NULL AND is_group_place(place_id, ?) AND user_is_any_groups_member(?, online_group_ids):place_group_id:user_id";
+    //      online                        Nyugtázva,                     de még fennál a riasztási állpot, és zónán bellül
+    REFINE "? = ANY (online_user_ids) AND array_length(ack_user_ids, 1) > 0 AND end_time IS NULL AND is_group_place(place_id, ?):user_Id:place_group_id";
     TABLE VIEW   RIGHTS indalarm;
     TABLE EDIT   RIGHTS system;
     TABLE INSERT RIGHTS system;
     TABLE DELETE RIGHTS admin;
-    FIELD view_alarm_id     { FLAG HIDE;                                                                        }
-    FIELD host_service_id   { FLAG ON HIDE;                                                                     } 
+    FIELD online_alarm_id   { FLAG ON HIDE;                                                                     }
     FIELD host_service_name { FLAG ON HIDE TABLE;   TITLE ,         "Felügyelő objektum neve";                  } 
-    FIELD node_id           { FLAG ON HIDE;                                                                     }
     FIELD node_name         {                       TITLE "Eszköz", "Eszköz neve";                              }
-    FIELD place_id          { FLAG ON HIDE;                                                                     }
+    FIELD node_id           { FLAG ON HIDE;                                                                     }
     FIELD place_name        {                       TITLE "Hely",   "Az eszköz helye";                          }
+    FIELD place_id          { FLAG ON HIDE;                                                                     }
     FIELD superior_alarm_id { FLAG ON HIDE TABLE;   TITLE ,         "Fő felügyelő objektum neve";               }
     FIELD begin_time        {                       TITLE "Kezdete","A riasztás kezdete";                       }
-    FIELD end_time          { FLAG HIDE;                                                                        }
+    FIELD end_time          { FLAG ON HIDE;                                                                     }
     FIELD first_status      { FLAG ON HIDE TABLE;   TITLE ,         "Állapot a riasztás kezdetén";              }
     FIELD max_status        { FLAG ON HIDE TABLE;   TITLE ,         "A legsújosabb állapot a riasztás alatt";   }
     FIELD last_status       { FLAG ON HIDE TABLE;   TITLE ,         "Az utolsó állapot a riasztás alatt";       }
     FIELD event_note        { FLAG ON HIDE TABLE;   TITLE ,         "Az állapothoz csatolt üzenet";             }
     FIELD msg               { FLAG ON HUGE;         TITLE "Üzenet", "Riasztási üzenet";                         } 
-    FIELD offline_group_ids { FLAG HIDE;                                                                        }
-    FIELD online_group_ids  { FLAG HIDE;                                                                        }
+    FIELD online_user_ids   { FLAG ON HIDE TABLE;   TITLE ,         "Értesítendő felhasználók";                 }
     FIELD notice_user_ids   { FLAG ON HIDE TABLE;   TITLE ,         "Felhasználók láthatták a riasztást";       }
     FIELD view_user_ids     { FLAG ON HIDE TABLE;   TITLE ,         "Felhasználók megnézték a riasztást";       }
     FIELD ack_user_ids      {                       TITLE "Nyugtázta",@;                                        }
-    FIELD msg_user_ids      { FLAG HIDE;                                                                        }
-    FIELD mail_user_ids     { FLAG HIDE;                                                                        }
     AUTO REFRESH "0:05:00";
 }
 

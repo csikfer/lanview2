@@ -512,26 +512,77 @@ const QString& userEventType(int _i, eEx __ex)
     return _sNul;
 }
 
+int userEventState(const QString& _n, eEx __ex)
+{
+    if (0 == _n.compare(_sNecessary,   Qt::CaseInsensitive)) return UE_NECESSARY;
+    if (0 == _n.compare(_sHappened,    Qt::CaseInsensitive)) return UE_HAPPENED;
+    if (0 == _n.compare(_sDropped,     Qt::CaseInsensitive)) return UE_DROPPED;
+    if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, 0, _n);
+    return UE_INVALID;
+}
+
+const QString& userEventState(int _i, eEx __ex)
+{
+    switch(_i) {
+    case UE_NECESSARY:      return _sNecessary;
+    case UE_HAPPENED:       return _sHappened;
+    case UE_DROPPED:        return _sDropped;
+    default:
+        if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, _i);
+    }
+    return _sNul;
+}
+
 CRECCNTR(cUserEvent)
 CRECDEFD(cUserEvent)
 const cRecStaticDescr& cUserEvent::descr() const
 {
     if (initPDescr<cUserEvent>(_sUserEvents)) {
-        CHKENUM(_sEventType, userEventType);
+        CHKENUM(_sEventType,  userEventType);
+        CHKENUM(_sEventState, userEventState);
     }
     return *_pRecordDescr;
 }
 
-qlonglong cUserEvent::insert(QSqlQuery &q, qlonglong _uid, qlonglong _aid, eUserEventType _et, const QString& _m)
+qlonglong cUserEvent::insert(QSqlQuery &q, qlonglong _uid, qlonglong _aid, eUserEventType _et)
 {
     cUserEvent ue;
     ue.setId(_sUserId,  _uid);
     ue.setId(_sAlarmId, _aid);
     ue.setId(_sEventType,_et);
-    if (!_m.isNull()) ue.setName(_sUserEventNote, _m);
+    // ue.setId(_sEventState, UE_NECESSARY);    // DEFAULT
     ue.cRecord::insert(q);
     return ue.getId();
 }
+
+qlonglong cUserEvent::insertHappened(QSqlQuery &q, qlonglong _uid, qlonglong _aid, eUserEventType _et, const QString& _m)
+{
+    cUserEvent ue;
+    ue.setId(_sUserId,  _uid);
+    ue.setId(_sAlarmId, _aid);
+    ue.setId(_sEventType,_et);
+    ue.setId(_sEventState, UE_HAPPENED);
+    ue.setName(_sUserEventNote, _m);
+    ue.cRecord::insert(q);
+    return ue.getId();
+}
+
+void cUserEvent::happened(QSqlQuery& q, qlonglong _uid, qlonglong _aid, eUserEventType _et)
+{
+    static const QString sql =
+            "UPDATE user_events SET event_state = 'happened'"
+            " WHERE user_id = ? AND alarm_id = ? AND event_type = ?";
+    execSql(q, sql, _uid, _aid, userEventType(_et));
+}
+
+void cUserEvent::dropped(QSqlQuery& q, qlonglong _uid, qlonglong _aid, eUserEventType _et)
+{
+    static const QString sql =
+            "UPDATE user_events SET event_state = 'dropped'"
+            " WHERE user_id = ? AND alarm_id = ? AND event_type = ?";
+    execSql(q, sql, _uid, _aid, userEventType(_et));
+}
+
 
 /* ----------------------------------------------------------------- */
 DEFAULTCRECDEF(cAlarm, _sAlarms)

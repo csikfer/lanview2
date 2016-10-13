@@ -100,8 +100,8 @@ void cOnlineAlarm::map()
     QVariantList ids = pActRecord->get(_sViewUserIds).toList();
     qlonglong uid = lanView::user().getId();
     qlonglong aid = pActRecord->getId();
-    if (ids.indexOf(uid) < 0) {     // uid not found
-        cUserEvent::insert(*pq, uid, aid, UE_VIEW);
+    if (ids.indexOf(uid) < 0) {     // Ha még nem nézte meg
+        cUserEvent::insertHappened(*pq, uid, aid, UE_VIEW);
         ids << uid;
         pActRecord->set(_sViewUserIds, ids);
         noAckDataReloded(pNoAckModel->records());
@@ -239,6 +239,7 @@ void cOnlineAlarm::allAcknowledge()
 {
     if (!isAdmin) EXCEPTION(EPROGFAIL);
     QModelIndexList mil = pRecTabNoAck->tableView()->selectionModel()->selectedRows();
+    qlonglong uid = lanView::user().getId();
     foreach (QModelIndex mi, mil) {
         int row = mi.row();
         const cRecord *pr = pRecTabNoAck->recordAt(row, EX_IGNORE);
@@ -247,7 +248,7 @@ void cOnlineAlarm::allAcknowledge()
             continue;
         }
         qlonglong aid = pr->getId();
-        cUserEvent::insert(*pq, lanView::user().getId(), aid, UE_ACKNOWLEDGE);
+        cUserEvent::insertHappened(*pq, uid, aid, UE_ACKNOWLEDGE);
     }
     pRecTabAckAct->refresh();
     pRecTabNoAck->refresh();
@@ -267,10 +268,11 @@ void cOnlineAlarm::acknowledge()
 {
     if (pActRecord == NULL) EXCEPTION(EPROGFAIL);
     qlonglong aid = pTargetRec->getId();
+    qlonglong uid = lanView::user().getId();
     cAckDialog dialog(this);
     if (dialog.exec() == QDialog::Accepted) {
         QString msg = dialog.pUi->textEditMsg->toPlainText();
-        cUserEvent::insert(*pq, lanView::user().getId(), aid, UE_ACKNOWLEDGE, msg);
+        cUserEvent::insertHappened(*pq, uid, aid, UE_ACKNOWLEDGE, msg);
         if (dialog.pUi->checkBoxTicket->isChecked()) {
             cAlarm a;
             a[_sSuperiorAlarmId] = aid;
@@ -290,38 +292,36 @@ void cOnlineAlarm::acknowledge()
 void cOnlineAlarm::noAckDataReloded(const tRecords& _recs)
 {
     bool isAlarm = false;
-    qlonglong uid = lanView::user().getId();
-    qlonglong aid;
-    QVariantList ids;
+    qlonglong uid = lanView::user().getId();    // My User ID
     QListIterator<cRecord *>    i(_recs);
     while (i.hasNext()) {
         cRecord *p = i.next();
-        aid = p->getId();
-        ids = p->get(_sNoticeUserIds).toList();
-        if (ids.indexOf(uid) < 0) {     // uid not found
-            cUserEvent::insert(*pq, uid, aid, UE_NOTICE);
-            ids << uid;
-            p->set(_sNoticeUserIds, ids);
-            isAlarm = true;
+        QVariantList uids = p->get(_sNoticeUserIds).toList();   // User ID list, nekik már megjelent
+        if (uids.indexOf(uid) < 0) {     // uid not found
+            cUserEvent::happened(*pq, uid, p->getId(), UE_NOTICE);
+            uids << uid;        // mostmár neki is megjelent
+            p->set(_sNoticeUserIds, uids);
+            isAlarm = true;     // Ez neki újonnan jelenik meg, riasztunk
         }
         if (isAlarm) continue;
-        ids = p->get(_sViewUserIds).toList();
-        if (ids.indexOf(uid) < 0) {     // uid not found
-            isAlarm = true;
+        uids = p->get(_sViewUserIds).toList();                  // User ID list, ők már megnézték
+        if (uids.indexOf(uid) < 0) {
+            isAlarm = true;     // Nem nézte még meg, riasztunk
         }
     }
-    if (isAlarm) {
-        pSound->play();
-        if (lv2g::pMainWindow != NULL) {
+    if (isAlarm) {                  // Riasztás
+        pSound->play();             // Sziréna (ha van hangfájl.)
+        if (lv2g::pMainWindow != NULL) {    // Aktíváljuk az ablakot
             QTabWidget *tab = lv2g::pMainWindow->pTabWidget;
             int i = tab->indexOf(pWidget());
-            if (i >= 0) tab->setCurrentIndex(i);
+            if (i >= 0) tab->setCurrentIndex(i);    // A tabot is
             if (!lv2g::pMainWindow->isActiveWindow())lv2g::pMainWindow->activateWindow();
         }
     }
-    else         pSound->stop();
+    else         pSound->stop();    // Nincs riasztás, hanjelzés kikapcsol
 }
 
+// Változás, frissíteni kell
 void cOnlineAlarm::notify(const QString & name, QSqlDriver::NotificationSource, const QVariant & payload)
 {
     PDEB(INFO) << name << " / " << debVariantToString(payload) << endl;

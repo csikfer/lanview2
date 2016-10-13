@@ -85,7 +85,8 @@ SOURCES += lanview.cpp \
     lv2daterr.cpp \
     qtelnet.cpp \
     srvdata.cpp \
-    lv2link.cpp
+    lv2link.cpp \
+    syscronthread.cpp
 
 HEADERS += lanview.h \
     lv2_global.h \
@@ -112,7 +113,8 @@ HEADERS += lanview.h \
     lv2daterr.h \
     qtelnet.h \
     srvdata.h \
-    lv2link.h
+    lv2link.h \
+    syscronthread.h
 
 unix:SOURCES += usignal.cpp
 unix:HEADERS += usignal.h

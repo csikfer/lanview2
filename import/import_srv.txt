@@ -1,9 +1,15 @@
+SERVICE syscron     "System cron" {
+    NIL;
+    FEATURES ":timing=timed,thread:";
+    SUPERIOR SERVICE MASK lv2d;
+    NORMAL CHECK INTERVAL  60;
+}
 
 SERVICE local       "local service"     { NIL;      }
 SERVICE  ssh         ssh                { TCP 22;   }
 SERVICE snmp        snmp                { UDP 161;  }
 SERVICE "tcp.rs"    "TCP serial port gateway"{TCP 4001; }
-SERVICE dhcp        "DHCP server"       { UDP 67; }
+SERVICE DHCP        "DHCP monitorozás"  { UDP 67; }
 
 
 SERVICE "dhcp.conf"  "DHCP config fájl, local vagy ssh-n keresztül"      { NIL; FEATURES ":file=/etc/dhcp/dhcpd.conf:"; }

@@ -367,16 +367,12 @@ public:
     bool needStart() const { return !(inspectorType & IT_TIMING_PASSIVE); }
     /// A statikus adattagokat (tableoid-k) inicializálja, ha ez még nem történt meg (értékük NULL_ID).
     /// A tableoid értékek csak a main objektum (lnaview2) létrehozása után kérdezhetőek le, miután már meg lett nyitva az adatbázis.
-    static void initStatic() {
-        if (nodeOid == NULL_ID) {   // Ha még nincsenek inicializálva az OID-k
-            nodeOid = cNode().tableoid();
-            sdevOid = cSnmpDevice().tableoid();
-        }
-    }
+    static void initStatic();
     // A lehetséges node típusok tableoid értékei
     // Erre ki kéne találni valamit, hogy ne lehessen elrontani
     static qlonglong nodeOid;
     static qlonglong sdevOid;
+    static qlonglong syscronId;
 protected:
     /// Az időzítés módosítása
     void toRetryInterval();

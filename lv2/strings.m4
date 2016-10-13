@@ -404,6 +404,7 @@ STRDEF(Services, "services")
  STRDEF(ServiceId, "service_id")
  STRDEF(ServiceName, "service_name")
   dnl local
+  STRDEF(Syscron, "syscron")
   STRDEF(Snmp, "snmp")
   STRDEF(TcpRs, "tcp.rs")
   STRDEF(Ssh, "ssh")
@@ -487,13 +488,19 @@ STRDEF(HostServiceCharts, "host_service_charts")
 dnl host_service_vars ...
 STRDEF(UserEvents, "user_events")
  STRDEF(UserEventId, "user_event_id")
- dnl date_of user_id alarm_id
+ STRDEF(Created, "created")
+ STRDEF(Happened, "happened")
+ dnl user_id alarm_id
  STRDEF(EventType, "event_type")
   STRDEF(Notice, "notice")
   STRDEF(View, "view")
   STRDEF(Acknowledge, "acknowledge")
   STRDEF(Sendmessage, "sendmessage")
   STRDEF(Sendmail, "sendmail")
+ STRDEF(EventState, "event_state")
+  STRDEF(Necessary, "necessary")
+  dnl happened
+  STRDEF(Dropped, "dropped")
  STRDEF(UserEventNote, "user_event_note")
 STRDEF(Alarms, "alarms")
   STRDEF(Alarm, "alarm")    dnl Database notify channel name
@@ -508,15 +515,14 @@ STRDEF(Alarms, "alarms")
  STRDEF(SuperiorAlarmId, "superior_alarm_id")
  STRDEF(Noalarm, "noalarm")
  dnl end_time
-STRDEF(ViewAlarms, "view_alarms")
- STRDEF(ViewAlarmId, "view_alarm_id")
- dnl host_service_id node_id place_id SuperiorAlarmId begin_time end_time first_status max_status last_status
+STRDEF(OnlineAlarms, "online_alarms")
+ STRDEF(OnlineAlarmId, "online_alarm_id")
+ dnl host_service_id host_service_name node_name place_name place_id superior_alarm_id begin_time end_time first_status max_status last_status event_note
  STRDEF(Msg, "msg")
+ STRDEF(OnlineUserIds, "online_user_ids")
  STRDEF(NoticeUserIds, "notice_user_ids")
  STRDEF(ViewUserIds, "view_user_ids")
  STRDEF(AckUserIds, "ack_user_ids")
- STRDEF(MsgUserIds, "msg_user_ids")
- STRDEF(MailUserIds, "mail_user_ids")
 STRDEF(Arps, "arps")
  STRDEF(IpAddress, "ipaddress")
  dnl hwaddress, first_time, last_time

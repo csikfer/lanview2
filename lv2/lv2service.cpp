@@ -4,6 +4,7 @@
 //#include "scan.h"
 #include "lv2service.h"
 #include "time.h"
+#include "syscronthread.h"
 
 
 cInspectorThread::cInspectorThread(cInspector *pp)
@@ -36,6 +37,7 @@ void cInspectorThread::timerEvent(QTimerEvent * e)
     inspector.timerEvent(e);
     _DBGFNL() << inspector.name() << endl;
 }
+
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -204,6 +206,9 @@ qlonglong cInspector::nodeOid = NULL_ID;
 /// "inicializálatlan"! Az első alkalommal hívott konstruktor inicializálja: initStatic().
 /// A snmpdevices táblát azonosító OID
 qlonglong cInspector::sdevOid = NULL_ID;
+/// "inicializálatlan"! Az első alkalommal hívott konstruktor inicializálja: initStatic().
+/// A syscron szolgáltatást azonosító ID
+qlonglong cInspector::syscronId;
 
 void cInspector::preInit()
 {
@@ -230,6 +235,16 @@ void cInspector::preInit()
     pService = NULL;
     initStatic();
 }
+
+void cInspector::initStatic()
+{
+    if (nodeOid == NULL_ID) {   // Ha még nincsenek inicializálva a static-ok
+        nodeOid = cNode().tableoid();
+        sdevOid = cSnmpDevice().tableoid();
+        syscronId = cService().getIdByName(_sSyscron);
+    }
+}
+
 
 cInspector::cInspector(cInspector * __par)
     : QObject(__par), hostService(), lastRun()
@@ -378,7 +393,9 @@ cInspector *cInspector::newSubordinate(QSqlQuery& _q, qlonglong _hsid, qlonglong
 cInspectorThread *cInspector::newThread()
 {
     _DBGFN() << name() << endl;
-    cInspectorThread *p = new cInspectorThread(this);
+    cInspectorThread *p = NULL;
+    if (serviceId() == syscronId) p = new cSysCronThread(this);
+    else                          p = new cInspectorThread(this);
     p->setObjectName(name());
     return p;
 }
@@ -775,7 +792,9 @@ int cInspector::getCheckCmd(QSqlQuery& q)
 void cInspector::timerEvent(QTimerEvent *)
 {
     if (internalStat != IS_SUSPENDED && internalStat != IS_STOPPED) {
-        PDEB(VERBOSE) << __PRETTY_FUNCTION__ << " skip " << name() << ", internalStat = " << internalStatName() << endl;
+        QString msg = trUtf8("%1  skip %2, internalStat = %3").arg( __PRETTY_FUNCTION__, name(), internalStatName());
+        PDEB(WARNING) << msg << endl;
+        APPMEMO(*pq, msg, RS_WARNING);
         return;
     }
     internalStat = IS_RUN;
@@ -791,6 +810,7 @@ void cInspector::timerEvent(QTimerEvent *)
         }
         if (!n) EXCEPTION(NOTODO, 1);
         hostService.touch(*pq, _sLastTouched);
+        internalStat = IS_RUN;
         return;
     }
     if (!isTimed()) EXCEPTION(EPROGFAIL, (int)inspectorType, name());

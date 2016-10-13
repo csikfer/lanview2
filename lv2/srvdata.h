@@ -218,13 +218,25 @@ enum eUserEventType {
     UE_SENDMAIL
 };
 
+enum eUserEventState {
+    UE_NECESSARY,
+    UE_HAPPENED,
+    UE_DROPPED
+};
+
 EXT_ int userEventType(const QString& _n, eEx __ex = EX_ERROR);
 EXT_ const QString& userEventType(int _i, eEx __ex = EX_ERROR);
+
+EXT_ int userEventState(const QString& _n, eEx __ex = EX_ERROR);
+EXT_ const QString& userEventState(int _i, eEx __ex = EX_ERROR);
 
 class LV2SHARED_EXPORT cUserEvent  : public cRecord {
     CRECORD(cUserEvent);
 public:
-    static qlonglong insert(QSqlQuery &q, qlonglong _uid, qlonglong _aid, eUserEventType _et, const QString &_m = QString());
+    static qlonglong insert(QSqlQuery &q, qlonglong _uid, qlonglong _aid, eUserEventType _et);
+    static qlonglong insertHappened(QSqlQuery &q, qlonglong _uid, qlonglong _aid, eUserEventType _et, const QString& _m = QString());
+    static void happened(QSqlQuery& q, qlonglong _uid, qlonglong _aid, eUserEventType _et);
+    static void dropped(QSqlQuery& q, qlonglong _uid, qlonglong _aid, eUserEventType _et);
 };
 
 /* ---------------------------------------------------------------- */

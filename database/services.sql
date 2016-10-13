@@ -79,7 +79,7 @@ process      Az szolgáltatás ellenörzése egy program, paraméterek:
 superior    Alárendelteket ellenörző eljárásokat hív
     <üres>      Alárendelt viszony,autómatikus
 method
-    custom      saját/ismeretlen (alapérte,mezett)
+    custom      saját/ismeretlen (alapértelmezett)
     nagios      Egy Nagios plugin
     munin       Egy Munin plugin
     qparser     query parser
@@ -103,6 +103,7 @@ ALTER TABLE services ADD COLUMN offline_group_ids bigint[] DEFAULT NULL;
 COMMENT ON COLUMN services.offline_group_ids IS 'off-line riasztás küldése, az user_froup_id-k alapján a tagoknak, alapértelmezés';
 ALTER TABLE services ADD COLUMN online_group_ids  bigint[] DEFAULT NULL;
 COMMENT ON COLUMN services.online_group_ids  IS 'on-line riasztás küldése, az user_froup_id-k alapján a tagoknak, alapértelmezés';
+ALTER TABLE services ADD COLUMN heartbeat_time interval;
 
 INSERT INTO services (service_id, service_name, service_note)
      VALUES          ( -1,        'nil',        'A NULL-t reprezentálja, de összehasonlítható');
@@ -231,6 +232,8 @@ COMMENT ON COLUMN host_services.last_changed IS 'Utolsó állapot változás id�
 COMMENT ON COLUMN host_services.last_touched IS 'Utolsó ellenözzés időpontja';
 COMMENT ON COLUMN host_services.act_alarm_log_id IS 'Riasztási állapot esetén az aktuális riasztás log rekord ID-je';
 COMMENT ON COLUMN host_services.last_alarm_log_id IS 'Az utolsó riasztás log rekord ID-je';
+
+ALTER TABLE host_services ADD COLUMN heartbeat_time interval;
 
 INSERT INTO host_services (host_service_id, node_id, service_id, host_service_note)
      VALUES               ( 0,              -1,      0,          'Hiba jegy.');
@@ -607,4 +610,30 @@ BEGIN
     RETURN TRUE;
 END
 $$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION service_cron(did bigint) RETURNS int AS $$
+DECLARE
+    hsr host_services;
+    msg text;
+    cnt int;
+BEGIN
+    cnt := 0;
+    FOR hsr IN SELECT hs.*
+         FROM host_services AS hs
+         JOIN services      AS s  USING(service_id)
+         WHERE
+           host_service_state <> 'unknown' AND
+           (NOW() - last_touched) > COALESCE(hs.heartbeat_time, s.heartbeat_time)
+    LOOP
+	msg := 'Expired "' || hsr.host_service_state::text || '" state : ' || (NOW() - hsr.last_touched)::text;
+	-- RAISE NOTICE '%1 : %2', host_service_id2name(hsr.host_service_id), msg;
+	PERFORM set_service_stat(hsr.host_service_id, 'unknown'::notifswitch, msg, did, true);
+	cnt := cnt +1;
+    END LOOP;
+    RETURN cnt;
+END
+$$ LANGUAGE plpgsql;
+
+
 

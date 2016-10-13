@@ -8,7 +8,7 @@ DELETE FROM host_service_logs;
 UPDATE host_services  SET act_alarm_log_id = NULL, last_alarm_log_id = NULL;
 DROP  TABLE                                   IF EXISTS user_events;
 DROP  TYPE                                    IF EXISTS usereventtype;
-DROP  VIEW                                    IF EXISTS view_alarms;
+DROP  VIEW                                    IF EXISTS online_alarms;
 DROP  TABLE                                   IF EXISTS alarms;
 DROP  TABLE                                   IF EXISTS alarm_messages;
 
@@ -54,37 +54,58 @@ ALTER TABLE host_service_logs ADD FOREIGN KEY (superior_alarm_id)
 
 CREATE TYPE usereventtype AS ENUM ('notice', 'view', 'acknowledge', 'sendmessage', 'sendmail');
 COMMENT ON TYPE usereventtype IS 'User Event Types';
+CREATE TYPE usereventstate AS ENUM ('necessary', 'happened', 'dropped');
 
 CREATE TABLE user_events (
     user_event_id       bigserial       PRIMARY KEY,
-    date_of             timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created             timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    happened            timestamp       DEFAULT NULL,
     user_id             bigint          NOT NULL
         REFERENCES users(user_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE,
     alarm_id            bigint          NOT NULL
         REFERENCES alarms(alarm_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE,
     event_type          usereventtype   NOT NULL,
-    user_event_note     text            DEFAULT NULL
+    event_state         usereventstate  DEFAULT 'necessary',
+    user_event_note     text            DEFAULT NULL,
+    UNIQUE (user_id, alarm_id, event_type)
 );
-CREATE INDEX user_events_date_of_index ON user_events (date_of);
 ALTER TABLE user_events OWNER TO lanview2;
 
-CREATE INDEX user_events_date_of  ON user_events (date_of);
-CREATE INDEX user_events_alarm_id  ON user_events (alarm_id);
-CREATE INDEX user_events_alarm_id_event_type  ON user_events (alarm_id, event_type);
+CREATE INDEX user_events_created_index              ON user_events (created);
+CREATE INDEX user_events_happened_index             ON user_events (happened);
+CREATE INDEX user_events_alarm_id_event_type_index  ON user_events (alarm_id, event_type);
 
 
 CREATE OR REPLACE FUNCTION alarm_notice() RETURNS TRIGGER AS $$
+DECLARE
+    gids bigint[];
 BEGIN
     IF NOT NEW.noalarm OR NEW.superior_alarm_id IS NULL THEN
---        IF  (TG_OP = 'UPDATE' AND NEW.max_status > OLD.max_status) OR TG_OP = 'INSERT' THEN
-            NOTIFY alarm;
---        END IF;
+        SELECT COALESCE(online_group_ids, (SELECT online_group_ids FROM services WHERE service_id = host_services.service_id))
+                INTO gids FROM host_services WHERE host_service_id = NEW.host_service_id;
+        IF gids IS NOT NULL THEN
+            INSERT INTO user_events(user_id, alarm_id, event_type)
+                SELECT DISTINCT user_id, NEW.alarm_id, 'notice'::usereventtype   FROM group_users WHERE group_id = ANY (gids);
+        END IF;
+        SELECT COALESCE(offline_group_ids, (SELECT offline_group_ids FROM services WHERE service_id = host_services.service_id))
+                INTO gids FROM host_services WHERE host_service_id = NEW.host_service_id;
+        IF gids IS NOT NULL THEN
+            INSERT INTO user_events(user_id, alarm_id, event_type)
+                SELECT DISTINCT user_id, NEW.alarm_id, 'sendmail'::usereventtype FROM group_users WHERE group_id = ANY (gids);
+        END IF;
+        NOTIFY alarm;
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER alarms_before_insert_or_update  BEFORE UPDATE OR INSERT ON alarms  FOR EACH ROW EXECUTE PROCEDURE alarm_notice();
+INSERT INTO sys_params
+    (sys_param_name,                    param_type_id,                 param_value,    sys_param_note) VALUES
+    ('user_notice_timeout_if_ack',      param_type_name2id('interval'), '1 day',       'user_events notice time-out, if alarm is ack.'),
+    ('user_notice_timeout_if_no_ack',   param_type_name2id('interval'),'30 days',      'user_events notice time-out, if alarm is no ack.');
+
+
+CREATE TRIGGER alarms_before_insert_or_update  AFTER UPDATE OR INSERT ON alarms  FOR EACH ROW EXECUTE PROCEDURE alarm_notice();
 
 CREATE OR REPLACE FUNCTION alarm_id2name(bigint) RETURNS TEXT AS $$
 DECLARE
@@ -195,7 +216,8 @@ CREATE OR REPLACE FUNCTION set_service_stat(
     hsid        bigint,             -- A host_services rekord id-je
     state       notifswitch,        -- Az új státusz
     note        text DEFAULT '',    -- Az eseményhez tartozó üzenet (opcionális)
-    dmid        bigint DEFAULT NULL)-- Daemon host_service_id
+    dmid        bigint DEFAULT NULL,-- Daemon host_service_id
+    forced      boolean DEFAULT false)  -- Hiba esetén azonnali statusz állítás (nem számolgat)
 RETURNS host_services AS $$
 DECLARE
     hs          host_services;  -- Az új host_services rekord
@@ -231,7 +253,7 @@ BEGIN
                 hs.soft_state := state;
                 hs.host_service_state := state;
                 hs.check_attempts := 0;
-            ELSE                            -- mostm vagy nem rég romlott el, hihető?
+            ELSE                            -- most vagy nem rég romlott el, hihető?
                 IF hs.soft_state = 'on' THEN
                     hs.check_attempts := 1; -- pont most lett rossz, kezdünk számolni
                 ELSE
@@ -246,9 +268,10 @@ BEGIN
                         hs.max_check_attempts := s.max_check_attempts;
                     END IF;
                 END IF;
-                IF hs.check_attempts >= hs.max_check_attempts THEN  -- Elhisszük, hogy baj van
+                IF forced OR hs.check_attempts >= hs.max_check_attempts THEN  -- Elhisszük, hogy baj van
                     hs.hard_state := state;
                     hs.host_service_state := state;
+                    hs.check_attempts := 0;
                 END IF;
             END IF;
         ELSE
@@ -331,6 +354,7 @@ BEGIN
             host_service_state = hs.host_service_state,
             hard_state         = hs.hard_state,
             soft_state         = hs.soft_state,
+            state_msg          = note,
             check_attempts     = hs.check_attempts,
             last_changed       = hs.last_changed,
             act_alarm_log_id   = hs.act_alarm_log_id,
@@ -388,7 +412,7 @@ BEGIN
         END IF;
     END IF;
 
-    msg := replace(msg, '$st',       st::text);
+    msg := replace(msg, '$st', st::text);
     IF msg LIKE '%$hs.%' THEN 
         IF msg LIKE '%$hs.name%' THEN
             msg := replace(msg, '$hs.name',  host_service_id2name(hs.host_service_id));
@@ -423,28 +447,20 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE VIEW view_alarms AS
+CREATE OR REPLACE VIEW online_alarms AS
     WITH a AS (
-        SELECT
-            alarm_id,
-            host_service_id,
-            superior_alarm_id,
-            begin_time,
-            end_time,
-            first_status,
-            max_status,
-            last_status,
-            event_note
-        FROM alarms WHERE NOT noalarm
+        SELECT *, ARRAY(SELECT user_id FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'notice' AND event_state <> 'dropped') AS online_user_ids
+        FROM alarms AS a
+        WHERE NOT noalarm AND COALESCE((end_time + (SELECT param_value FROM sys_params WHERE sys_param_name = 'user_notice_timeout_if_no_ack')::interval) > now(), true)
     )
     SELECT
-        alarm_id AS view_alarm_id,
+        alarm_id AS online_alarm_id,
         host_service_id,
         host_service_id2name(host_service_id) AS host_service_name,
-        node_id,
         node_name,
-        place_id,
+        node_id,
         place_name,
+        place_id,
         superior_alarm_id,
         begin_time,
         end_time,
@@ -453,16 +469,30 @@ CREATE VIEW view_alarms AS
         last_status,
         event_note,
         alarm_message(host_service_id, max_status)      	AS msg,
-        COALESCE(hs.offline_group_ids, s.offline_group_ids)     AS offline_group_ids,
-        COALESCE(hs.online_group_ids,  s.online_group_ids)      AS online_group_ids,
-        ARRAY(SELECT user_id FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'notice')        AS notice_user_ids,
+        online_user_ids,
+        ARRAY(SELECT user_id FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'notice' AND event_state = 'happened') AS notice_user_ids,
         ARRAY(SELECT user_id FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'view')          AS view_user_ids,
-        ARRAY(SELECT user_id FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'acknowledge')   AS ack_user_ids,
-        ARRAY(SELECT user_id FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'sendmessage')   AS msg_user_ids,
-        ARRAY(SELECT user_id FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'sendmail')      AS mail_user_ids
+        ARRAY(SELECT user_id FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'acknowledge')   AS ack_user_ids
     FROM a
-    JOIN host_services AS hs USING(host_service_id)
-    JOIN services      AS s  USING(service_id)
-    JOIN nodes         AS n  USING(node_id)
-    JOIN places        AS p  USING(place_id)
-;
+    JOIN host_services AS h USING (host_service_id)
+    JOIN services      AS s USING(service_id)
+    JOIN nodes         AS n USING(node_id)
+    JOIN places        AS p USING(place_id)
+    WHERE array_length(online_user_ids,1) > 0;
+    
+COMMENT ON VIEW online_alarms                     IS 'Riasztások megjelenítése, on-line riasztások';
+COMMENT ON COLUMN online_alarms.online_alarm_id   IS '= alarms.alarm_id';
+COMMENT ON COLUMN online_alarms.msg               IS 'Alarm message';
+COMMENT ON COLUMN online_alarms.online_user_ids   IS 'Akiket értesíteni kell.';
+COMMENT ON COLUMN online_alarms.notice_user_ids   IS 'Akik láthatták, a nevük alatt futó programon megjelent a listában';
+COMMENT ON COLUMN online_alarms.view_user_ids     IS 'Akik megnézték';
+COMMENT ON COLUMN online_alarms.ack_user_ids      IS 'Akik nyugtázták';
+
+INSERT INTO unusual_fkeys
+  ( table_name,         column_name,        unusual_fkeys_type, f_table_name,   f_column_name) VALUES
+  ( 'online_alarms',    'notice_user_ids',    'property',       'users',        'user_id'),
+  ( 'online_alarms',    'view_user_ids',      'property',       'users',        'user_id'),
+  ( 'online_alarms',    'ack_user_ids',       'property',       'users',        'user_id');
+
+
+    
