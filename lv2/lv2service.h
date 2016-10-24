@@ -5,6 +5,7 @@
 #include "lanview.h"
 #include "lv2data.h"
 #include "others.h"
+#include <QTimer>
 
 /*// Várakozási állapot
 enum eTmStat {
@@ -18,10 +19,10 @@ enum eTmStat {
 enum eInternalStat {
     IS_INIT,        ///< Internal status init
     IS_DOWN,        ///< Internal status down
-    IS_REINIT,      ///< Internal status reinit
     IS_RUN,         ///< Internal status runing (inited)
     IS_SUSPENDED,   ///< Felföggesztve, időzítésre várakozik
-    IS_STOPPED      ///< Lefutott, vagy hiba miatt nem fut
+    IS_STOPPED,     ///< Lefutott
+    IS_ERROR        ///< Hiba miatt leállt
 };
 
 /// Az ellenörző eljárás típusa
@@ -67,7 +68,7 @@ enum eTimerStat {
 };
 
 /// Belső status érték konvertálása stringgé, nem értelmezhető érték esetén dob egy kizárást
-EXT_ const QString& internalStatName(eInternalStat is);
+EXT_ QString internalStatName(eInternalStat is);
 
 enum eNagiosPluginRetcode {
     NR_OK       = 0,
@@ -81,13 +82,20 @@ class cInspector;
 /// @class cInspectorThread
 /// Időzített thread
 class LV2SHARED_EXPORT cInspectorThread : public QThread {
+    friend class cInspector;
     Q_OBJECT
 public:
     cInspectorThread(cInspector * pp);
-    virtual void timerEvent(QTimerEvent * e);
     cInspector& inspector;
+    cError     *pLastError;
 protected:
     virtual void run();
+    virtual void doInit();
+    virtual void doDown();
+    virtual void doRun();
+    QTimer      *pTimer;
+protected slots:
+    virtual void timerEvent();
 };
 
 class LV2SHARED_EXPORT cInspectorProcess : public QProcess {
@@ -152,7 +160,7 @@ public:
     /// A rum metódus által visszaadott érték, vagy az esetleges hiba alapján beállítja az adatbázisban a szolgáltatáspéldány állapotát,
     /// valamint állít az időzítésen, ha ez szükséges (normal/retry időzítés kezelése)
     virtual void timerEvent(QTimerEvent * );
-    virtual bool toRun(bool __timed);
+    virtual bool doRun(bool __timed);
     /// A szolgáltatáshoz tartozó tevékenységet végrehajtó virtuális metódus.
     /// A alap objektumban a metódus ha pProcess = NULL, akkor nem csinál semmit (egy debug üzenet feltételes kiírásán túl),
     /// csak visszatér egy RS_ON értékkel.
@@ -174,6 +182,7 @@ public:
     /// @param _par A parent objekrum
     virtual cInspector *newSubordinate(QSqlQuery& q, qlonglong _hsid, qlonglong _toid = NULL_ID, cInspector *_par = NULL);
     /// A QThread objektum ill. az abból származtatott objektum allokálása. Az alap metódus egy cInspectorThread objektumot allokál.
+    /// Amennyiben a szervíz a 'syscron', akkor a megallokált objektum a cSysCronThread.
     virtual cInspectorThread *newThread();
     virtual cInspectorProcess *newProcess();
     /// Feltölti a subordinates konténert. Hiba esetén dob egy kizárást, de ha nincs mivel feltölteni a subordinatest, az nem hiba.
@@ -182,18 +191,21 @@ public:
     /// @param qs Opcionális query string, A stringben a %1 karakter a hostServiceId-vel helyettesítődik.
     virtual void setSubs(QSqlQuery& q, const QString& qs = _sNul);
     /// A pHost, pService és hostService adattagok feltöltése után az inicializálás befejezése
+    /// Logikailag a konstruktor része lenne, de a virtuális metódusok miatt külön kell hívni a konstruktor után.
     /// @param q Superior tulajdonság esetén az alárendeltek beolvasásához használt objektum, a setSubs-nak adja át
     /// @param qs Szintén az opcionális alárendeltek beolvasásáoz egy opcionális query string, a setSubs második paramétere.
     virtual void postInit(QSqlQuery &q, const QString &qs = QString());
 
     /// hasonló a cRecord get(const QString& __n) metódusához. A mezőt elöszőr a hostService adattagban keresi, ha viszont az NULL,
-    /// akkor aservices adattagból olvassa be, majd a prome és végül a proto szervíz rekordbol (ha van).
+    /// akkor aservices adattagból olvassa be, majd a prime és végül a proto szervíz rekordbol (ha van).
     /// @param __n A mező név
     /// @return A mező értéke.
     cRecordFieldConstRef get(const QString& __n) const;
-    /// A services és a host_services rekordban a features nezőt vágja szát, és az elemeket elhelyezi a pFeatures pointer által mutatott konténerbe.
+    /// A services és a host_services rekordban a features nezőt vágja szét, és az elemeket elhelyezi a pFeatures pointer által mutatott konténerbe.
     /// Ha pFeatures egy NULL pointer, akkor a művelet elött megallokálja a konténert, ha nem NULL, akkor pedig törli a konténer tartalmát.
     /// A feldolgozás sorrendje: proto, prime, servece, host_service, lásd még a cFeatures osztály split() metódusát
+    /// Az egymás utáni feldolgozott features mezők eredményét összefésüli, egy ismételten megadott paraméter érték az előzőt fellülírja,
+    /// a '!' érték pedig törli.
     cFeatures& splitFeature(enum eEx __ex = EX_ERROR);
     /// Visszaadja a pMagicMap által mutatott konténer referenciáját. Ha pMagicMap értéke NULL, akkor hívja a splitMagic() metódust, ami megallokálja
     /// és feltölti a konténert.
@@ -214,7 +226,7 @@ public:
     /// @param __sn Szolgálltatás neve (lsd.: teszt opció fentebb!)
     void self(QSqlQuery& q, const QString& __sn);
     /// A belső statuszt konvertálja stringgé.
-    const QString& internalStatName() { return ::internalStatName(internalStat); }
+    QString internalStatName() { return ::internalStatName(internalStat); }
     /// A parancs string, és behelyettesítéseinek a végrahajtása.
     /// A parancs path a checkCmd adattagba, a paraméterei pedig a checkCmdArgs konténerbe kerülnek.
     /// @return 0, ha nincs parancs string, 1, ha van és checkCmd beállítva, -1 ha a parancs az éppen futó process
@@ -247,7 +259,7 @@ public:
     /// Az előző két run metódus hívás között eltelt idő ms-ben
     qlonglong           lastElapsedTime;
     /// Ha ő egy thread, akkor a QThread objektumra mutat, egyébként NULL
-    QThread            *pThread;
+    cInspectorThread   *pInspectorThread;
     /// Opcionális parancs
     QString             checkCmd;
     /// Opcionális parancs argumentumok
@@ -370,8 +382,8 @@ public:
     static void initStatic();
     // A lehetséges node típusok tableoid értékei
     // Erre ki kéne találni valamit, hogy ne lehessen elrontani
-    static qlonglong nodeOid;
-    static qlonglong sdevOid;
+    static qlonglong nodeOId;
+    static qlonglong sdevOId;
     static qlonglong syscronId;
 protected:
     /// Az időzítés módosítása
@@ -384,13 +396,9 @@ protected:
     void down();
     ///
     void startSubs();
-    /// A thread run() metódusa hívja.
-    /// Ha időzített a thread esetén indít egy timer-t, és hívja a thread exec() metódust.
-    ///
-    virtual bool threadPrelude(QThread& t);
 private:
     /// Alaphelyzetbe állítja az adattagokat (a konstruktorokhoz)
-    void preInit();
+    void preInit(cInspector *__par);
 public:
     static qlonglong rnd(qlonglong i, qlonglong m = 1000);
 };

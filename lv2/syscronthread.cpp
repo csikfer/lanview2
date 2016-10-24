@@ -1,48 +1,34 @@
 #include "syscronthread.h"
+#include "SmtpMime"
 
 cSysCronThread::cSysCronThread(cInspector *pp)
     : cInspectorThread(pp)
 {
-    ;
+    DBGFN();
 }
 
-void cSysCronThread::timerEvent(QTimerEvent * e)
+void cSysCronThread::timerEvent()
 {
-    (void)e;
     _DBGFN() << inspector.name() << endl;
-    if (inspector.internalStat != IS_SUSPENDED) {
-        APPMEMO(*inspector.pq, trUtf8("..."), RS_WARNING);
-        return;
-    }
     inspector.internalStat = IS_RUN;
-    cron();
-    inspector.internalStat = IS_SUSPENDED;
-    _DBGFNL() << inspector.name() << endl;
-}
-
-
-void cSysCronThread::cron()
-{
     statMsg.clear();
     state = RS_ON;
     dbCron();
     mailCron();
     smsCron();
     inspector.hostService.setState(*inspector.pq, notifSwitch(state), statMsg);
+    inspector.internalStat = IS_SUSPENDED;
 }
 
 void cSysCronThread::dbCron()
 {
+    DBGFN();
     if (!statMsg.isEmpty()) statMsg += "\n\n";
     cError *pe = NULL;
     try {
         sqlBegin(*inspector.pq, _sSyscron);
-        bool ok;
-        int n = execSqlIntFunction(*inspector.pq, &ok, "service_cron", inspector.hostServiceId());
-        QString msg = trUtf8("Number of expired states %1.").arg(n);
-        PDEB(INFO) << msg << endl;
+        execSqlFunction(*inspector.pq, "service_cron", inspector.hostServiceId());
         sqlEnd(*inspector.pq, _sSyscron);
-        statMsg += "dbCron : " + msg;
     } CATCHS(pe);
     if (pe != NULL) {
         sqlRollback(*inspector.pq, _sSyscron);
@@ -52,40 +38,94 @@ void cSysCronThread::dbCron()
     }
 }
 
+/// Elküldésre váró levelek kézbesítése a riasztásokról.
+/// Rendszerváltozók:
+/// MailServer::text = a mail szerver címe, default: localhost
+/// SenderAddress::text = a feladó e-mail címe
 void cSysCronThread::mailCron()
 {
+    DBGFN();
+    bool r = true;
     QSqlQuery& q = *inspector.pq;
+
+    // alrms, and user events
     QSqlQuery  q2 = getQuery();
     cUserEvent e;
     e.setId(_sEventType,  UE_SENDMAIL);
     e.setId(_sEventState, UE_NECESSARY);
-    QMap<qlonglong, QList<qlonglong> >  uidMapByAid;
-    QMap<qlonglong, QList<qlonglong> >  aidMapByUid;
+    QMap<qlonglong, QList<qlonglong> >  uidMapByAid;    // User ID list map by alarm ID
+    QMap<qlonglong, QList<qlonglong> >  aidMapByUid;    // Alarm ID list map by User ID
     qlonglong uid, aid;
     if (e.completion(q)) do {
         uid = e.getId(_sUserId);
         aid = e.getId(_sAlarmId);
-        uidMapByAid[aid] << uid;    // For sendmail
-        aidMapByUid[uid] << aid;    // For set stats
+        uidMapByAid[aid] << uid;
+        aidMapByUid[uid] << aid;
     } while (e.next(q));
+    else {
+        statMsg += "No mail sent. ";
+        return;
+    }
 
-    QMap<qlonglong, QString >  MsgMapByUid;
+    // e-mail sender obj.
+    QString mailServer = cSysParam::getTextSysParam(q, "MailServer", "localhost");
+    int port = 25;
+    if (mailServer.contains(':')) {
+        QStringList sl = mailServer.split(':');
+        bool ok;
+        port = sl.at(1).toInt(&ok);
+        if (!ok || sl.size() != 2) {
+            APPMEMO(q, trUtf8("Invalid parameter format MailServer = %1").arg(mailServer), RS_CRITICAL);
+            return;
+        }
+        mailServer = sl.first();
+    }
+    SimpleMail::Sender sendmail(mailServer, port, SimpleMail::Sender::TcpConnection);
+    // sender e-mail address
+    QString sSenderAddress = cSysParam::getTextSysParam(q, "SenderAddress");
+    SimpleMail::EmailAddress senderAddress(sSenderAddress, ORGNAME);
+
+    // Set message(s)
+    QMap<qlonglong, QString >  MsgMapByUid;             // Messages map by user ID
     foreach (aid, uidMapByAid.keys()) {
-        QString msg;
-        // message ...
+        QString msg = cAlarm::htmlText(q, aid);
         foreach (uid, uidMapByAid[aid]) {
             QString emsg = MsgMapByUid[uid];
-            if (!emsg.isEmpty()) emsg += "\n***************************\n";
+            if (!emsg.isEmpty()) emsg += "<hr width=\"80%\"><br>";
             MsgMapByUid[uid] = emsg + msg;
         }
     }
 
+    // Send mesage(s) to recipient(s)
     foreach (uid, aidMapByUid.keys()) {
-        // sendmail ...
-        foreach (aid, aidMapByUid[uid]) {
-            // set status
+        cUser u; u.setById(q, uid);
+        QStringList addresses = u.getStringList(_sAddresses);
+        if (addresses.isEmpty()) {
+            cUserEvent:: dropped(q, uid, aid, UE_SENDMAIL, trUtf8("Not specified address"));
+            r = false;
+        }
+        else {
+            SimpleMail::MimeHtml htmlText;
+            htmlText.setHtml(MsgMapByUid[uid]);
+            SimpleMail::MimeMessage message;
+            message.setSender(senderAddress);
+            foreach (QString ea, addresses) {
+                SimpleMail::EmailAddress to(ea, u.fullName());
+                message.addTo(to);
+            }
+            message.addPart(&htmlText);
+            message.setSubject("Alarm");
+            bool     res = sendmail.sendMail(message);
+            QString  msg = sendmail.responseText();
+            r = r && res;
+            foreach (aid, aidMapByUid[uid]) {
+                if (res) cUserEvent::happened(q, uid, aid, UE_SENDMAIL, msg);
+                else     cUserEvent:: dropped(q, uid, aid, UE_SENDMAIL, msg);
+            }
         }
     }
+    if (!r) statMsg += "Sendmail error. ";
+    else    statMsg += "Sendmail OK. ";
 }
 
 void cSysCronThread::smsCron()

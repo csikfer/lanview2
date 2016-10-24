@@ -6,9 +6,8 @@ class cSysCronThread : cInspectorThread {
     friend class cInspector;
 protected:
     cSysCronThread(cInspector * pp);
-    virtual void timerEvent(QTimerEvent * e);
+    virtual void timerEvent();
 private:
-    void cron();
     void dbCron();
     void mailCron();
     void smsCron();

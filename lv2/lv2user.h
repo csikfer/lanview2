@@ -85,7 +85,9 @@ public:
     ///
     enum ePrivilegeLevel getRights(QSqlQuery& q);
     ///
-    enum ePrivilegeLevel    privilegeLevel() const;
+    enum ePrivilegeLevel privilegeLevel() const;
+    ///
+    QString fullName() { return trUtf8("%2 %1").arg(getName(_sFirstName), getName(_sLastName)); }
 protected:
     ///
     enum ePrivilegeLevel    _privilegeLevel;

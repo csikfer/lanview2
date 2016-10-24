@@ -277,23 +277,6 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
--- //////////////////// Helyek/helyiségek ////////////////////
-\i locations.sql
--- //////////////////// Felhasználók  ////////////////////
-\i users.sql
-
-\i nodes.sql
-\i services.sql
--- //////////////////// ERROR LOGOK ////////////////////
-\i errlogs.sql
-
-\i mactab.sql
-\i links.sql
-\i imports.sql
--- //////////////////// ALARM  ////////////////////
-\i alarm.sql
--- \i indalarm.sql
-
 CREATE TYPE unusualfkeytype AS ENUM ('property', 'self', 'owner');
 COMMENT ON TYPE unusualfkeytype IS
 'Az adatbázisban nem természetes módon definiált távoli kulcsok/hivatkozások típusa:
@@ -325,6 +308,42 @@ COMMENT ON COLUMN unusual_fkeys.f_table_name IS 'A hivatkozott tábla neve';
 COMMENT ON COLUMN unusual_fkeys.f_table_schema IS 'A hivatkozott tábla elsődleges kulcsmezóje, ill. a hivatkozott mező';
 COMMENT ON COLUMN unusual_fkeys.f_inherited_tables IS 'Azon leszármazott táblák nevei, melyekre még vonatkozhat a hivatkozás (a séma név azonos)';
 
+CREATE TABLE fkey_types (
+    fkey_type_id        bigserial  NOT NULL PRIMARY KEY,
+    table_schema        text     NOT NULL DEFAULT 'public',
+    table_name          text     NOT NULL,
+    column_name         text     NOT NULL,
+    unusual_fkeys_type  unusualfkeytype NOT NULL DEFAULT 'owner',
+    UNIQUE (table_schema, table_name, column_name)
+);
+
+COMMENT ON TABLE fkey_types IS 'A távoli kulcsok típusát definiáló tábla (a nem property tíousoknál)';
+COMMENT ON COLUMN fkey_types.table_schema IS 'A tábla séma neve, melyben a hivatkozó mezőt definiáljuk';
+COMMENT ON COLUMN fkey_types.table_name  IS 'A tábla neve, melyben a hivatkozó mezőt definiáljuk';
+COMMENT ON COLUMN fkey_types.column_name IS 'A hivatkozó/mutató mező neve';
+COMMENT ON COLUMN fkey_types.unusual_fkeys_type IS 'A hivatkozás/távoli kulcs típusa';
+
+
+-- //////////////////// Helyek/helyiségek ////////////////////
+\i locations.sql
+-- //////////////////// Felhasználók  ////////////////////
+\i users.sql
+
+\i nodes.sql
+\i services.sql
+-- //////////////////// ERROR LOGOK ////////////////////
+\i errlogs.sql
+
+\i mactab.sql
+\i links.sql
+\i imports.sql
+-- //////////////////// ALARM  ////////////////////
+\i alarm.sql
+-- \i indalarm.sql
+
+-- CRON
+\i cron.sql
+
 INSERT INTO unusual_fkeys
   ( table_name,         column_name,    unusual_fkeys_type, f_table_name,   f_column_name,  f_inherited_tables) VALUES
   ( 'nports',           'node_id',           'owner',       'nodes',        'node_id',      '{nodes, snmpdevices}'),
@@ -348,21 +367,6 @@ INSERT INTO unusual_fkeys
   ( 'services',         'offline_group_ids', 'property',    'groups',       'group_id',     NULL),
   ( 'host_services',    'online_group_ids',  'property',    'groups',       'group_id',     NULL),
   ( 'host_services',    'offline_group_ids', 'property',    'groups',       'group_id',     NULL);
-
-CREATE TABLE fkey_types (
-    fkey_type_id        bigserial  NOT NULL PRIMARY KEY,
-    table_schema        text     NOT NULL DEFAULT 'public',
-    table_name          text     NOT NULL,
-    column_name         text     NOT NULL,
-    unusual_fkeys_type  unusualfkeytype NOT NULL DEFAULT 'owner',
-    UNIQUE (table_schema, table_name, column_name)
-);
-
-COMMENT ON TABLE fkey_types IS 'A távoli kulcsok típusát definiáló tábla (a nem property tíousoknál)';
-COMMENT ON COLUMN fkey_types.table_schema IS 'A tábla séma neve, melyben a hivatkozó mezőt definiáljuk';
-COMMENT ON COLUMN fkey_types.table_name  IS 'A tábla neve, melyben a hivatkozó mezőt definiáljuk';
-COMMENT ON COLUMN fkey_types.column_name IS 'A hivatkozó/mutató mező neve';
-COMMENT ON COLUMN fkey_types.unusual_fkeys_type IS 'A hivatkozás/távoli kulcs típusa';
 
 INSERT INTO fkey_types
   ( table_name,             column_name,            unusual_fkeys_type) VALUES

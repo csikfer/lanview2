@@ -1,6 +1,7 @@
 #include "srvdata.h"
 #include "lv2service.h"
 #include "import_parser.h"
+#include "guidata.h"
 
 QString getParName(QString::const_iterator& i, const QString::const_iterator& e, eEx __ex)
 {
@@ -567,25 +568,74 @@ qlonglong cUserEvent::insertHappened(QSqlQuery &q, qlonglong _uid, qlonglong _ai
     return ue.getId();
 }
 
-void cUserEvent::happened(QSqlQuery& q, qlonglong _uid, qlonglong _aid, eUserEventType _et)
+void cUserEvent::happened(QSqlQuery& q, qlonglong _uid, qlonglong _aid, eUserEventType _et, const QString &_m)
 {
-    static const QString sql =
-            "UPDATE user_events SET event_state = 'happened'"
-            " WHERE user_id = ? AND alarm_id = ? AND event_type = ?";
-    execSql(q, sql, _uid, _aid, userEventType(_et));
+    if (_m.isEmpty()) {
+        static const QString sql =
+                "UPDATE user_events SET event_state = 'happened'"
+                " WHERE user_id = ? AND alarm_id = ? AND event_type = ?";
+        execSql(q, sql, _uid, _aid, userEventType(_et));
+    }
+    else {
+        static const QString sql =
+                "UPDATE user_events SET event_state = 'happened', user_event_note = ?"
+                " WHERE user_id = ? AND alarm_id = ? AND event_type = ?";
+        execSql(q, sql, _m, _uid, _aid, userEventType(_et));
+    }
 }
 
-void cUserEvent::dropped(QSqlQuery& q, qlonglong _uid, qlonglong _aid, eUserEventType _et)
+void cUserEvent::dropped(QSqlQuery& q, qlonglong _uid, qlonglong _aid, eUserEventType _et, const QString &_m)
 {
-    static const QString sql =
-            "UPDATE user_events SET event_state = 'dropped'"
-            " WHERE user_id = ? AND alarm_id = ? AND event_type = ?";
-    execSql(q, sql, _uid, _aid, userEventType(_et));
+    if (_m.isEmpty()) {
+        static const QString sql =
+                "UPDATE user_events SET event_state = 'dropped'"
+                " WHERE user_id = ? AND alarm_id = ? AND event_type = ?";
+        execSql(q, sql, _uid, _aid, userEventType(_et));
+    }
+    else {
+        static const QString sql =
+                "UPDATE user_events SET event_state = 'dropped', user_event_note = ?"
+                " WHERE user_id = ? AND alarm_id = ? AND event_type = ?";
+        execSql(q, sql, _m, _uid, _aid, userEventType(_et));
+    }
 }
 
 
 /* ----------------------------------------------------------------- */
 DEFAULTCRECDEF(cAlarm, _sAlarms)
+
+QString cAlarm::htmlText(QSqlQuery& q, qlonglong _id)
+{
+    static const qlonglong ticketId = cService().getIdByName(q, _sTicket, EX_IGNORE);
+    static const QString sNodeTitle  = cTableShape::getFieldDialogTitle(q, _sNodes,  _sNodeName);
+    static const QString sPlaceTitle = cTableShape::getFieldDialogTitle(q, _sPlaces, _sPlaceName);
+    static const QString sTicket     = trUtf8("Hiba jegy");
+    static const QString _sBr = "<br>";
+
+    bool isTicket = false;
+    cAlarm a;
+    cRecord *pTargetRec = &a;
+    a.setById(q, _id);
+    QString text;   // HTML text
+
+    if (ticketId != NULL_ID && ticketId == a.getId(_sHostServiceId)) {    // Ticket
+        isTicket = true;
+        text = sTicket + " :<br>";
+        qlonglong id = a.getId(_sSuperiorAlarmId);
+        pTargetRec = a.newObj();
+        pTargetRec->fetchById(q, id);
+    }
+    cHostService hs; hs.   setById(q, pTargetRec->getId(_sHostServiceId));
+    cNode  node;     node. setById(q, hs.         getId(_sNodeId));
+    cPlace place;    place.setById(q, node.       getId(_sPlaceId));
+    QString aMsg = execSqlTextFunction(q, "alarm_message", hs.getId(), a.get(_sMaxStatus));
+    text += _sBr + sPlaceTitle + " : <b>" + place.getName() + "</b>, <i>" + place.getNote() + "</i>";
+    text += _sBr + sNodeTitle  + " : <b>" + node.getName()  + "</b>, <i>" + node.getNote()  + "</i>";
+    text += _sBr + trUtf8("Riasztás oka : ") + "<b><i>" + aMsg + "</i></b>";
+    text += _sBr + trUtf8("Csatolt üzenet : ") + "<b><i>" + pTargetRec->getName(_sEventNote) + "</i></b>";
+    if (isTicket) delete pTargetRec;
+    return text;
+}
 
 /* ----------------------------------------------------------------- */
 DEFAULTCRECDEF(cOui, _sOuis)

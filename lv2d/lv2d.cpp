@@ -102,7 +102,6 @@ void lv2d::down()
 
 void lv2d::reSet()
 {
-    pSelf->setInternalStat(IS_REINIT);
     try {
         down();
         setup();

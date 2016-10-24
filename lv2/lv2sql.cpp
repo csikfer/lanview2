@@ -64,10 +64,18 @@ void dropThreadDb(const QString& tn, enum eEx __ex)
 
 void sqlBegin(QSqlQuery& q, const QString& tn)
 {
-    QStringList *pTrl = lanView::getInstance()->getTransactioMapAndCondLock();
+    QStringList *pTrl = lanView::getInstance()->getTransactioMapAndCondLock();  // If trhread, then mutex is locked !!
     bool r;
-    if (pTrl->isEmpty()) r = q.exec(_sBEGIN);
-    else                 r = q.exec("SAVEPOINT " + tn);
+    QString sql;
+    if (pTrl->isEmpty()) {
+        sql = _sBEGIN;
+        PDEB(SQL) << sql << endl;
+    }
+    else {
+        sql = "SAVEPOINT " + tn;
+        PDEB(SQL) << sql << " (" << pTrl->join(",") << ")" << endl;
+    }
+    r = q.exec(sql);
     if (r) pTrl->push_back(tn);
     if (!isMainThread()) {
         lanView::getInstance()->threadMutex.unlock();
@@ -90,8 +98,16 @@ void sqlEnd(QSqlQuery& q, const QString& tn)
         pe = NEWCERROR(EPROGFAIL, 0, msg);
     }
     else {
-        if (pTrl->size() == 1) r = q.exec(_sEND);
-        else                   r = q.exec("RELEASE SAVEPOINT " + tn);
+        QString sql;
+        if (pTrl->size() == 1) {
+            sql = _sEND;
+            PDEB(SQL) << sql << endl;
+        }
+        else {
+            sql = "RELEASE SAVEPOINT " + tn;
+            PDEB(SQL) << sql << " (" << pTrl->mid(0, pTrl->size() -1).join(",") << ")" << endl;
+        }
+        r = q.exec(sql);
         if (r) pTrl->pop_back();
     }
     if (!isMainThread()) {
@@ -107,23 +123,28 @@ void sqlRollback(QSqlQuery& q, const QString& tn)
     QStringList *pTrl = lanView::getInstance()->getTransactioMapAndCondLock();
     cError *pe = NULL;
     bool r = false;
+    int i = pTrl->indexOf(tn);
     if (pTrl->isEmpty()) {
         msg = QObject::trUtf8("Rollback transaction, invalid name : %1; no pending transaction").arg(tn);
         pe = NEWCERROR(EPROGFAIL, 0, msg);
     }
-    else if (!pTrl->contains(tn)) {
+    else if (i < 0) {
         QString msg = QObject::trUtf8("Rollback transaction, invalid name : %1; pending transactions : %2").arg(tn, pTrl->join(", "));
         pe = NEWCERROR(EPROGFAIL, 0, msg);
     }
     else {
-        if (pTrl->size() == 1) r = q.exec(_sROLLBACK);
-        else                   r = q.exec(_sROLLBACK + " TO SAVEPOINT " + tn);
+        QString sql;
+        if (i == 0) {
+            sql = _sROLLBACK;
+            PDEB(SQL) << sql << endl;
+        }
+        else {
+            sql = _sROLLBACK + " TO SAVEPOINT " + tn;
+            PDEB(SQL) << sql << " (" << pTrl->mid(0, i).join(",") << ")" << endl;
+        }
+        r = q.exec(sql);
         if (r) {
-            QString last;
-            do {
-                last = pTrl->last();
-                pTrl->pop_back();
-            } while (last != tn);
+            *pTrl = pTrl->mid(0, i);
         }
     }
     if (!isMainThread()) {

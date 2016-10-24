@@ -88,6 +88,10 @@ SOURCES += lanview.cpp \
     lv2link.cpp \
     syscronthread.cpp
 
+# simple-mail : https://github.com/cutelyst/simple-mail.git
+unix:INCLUDEPATH += ../../simple-mail/src
+
+
 HEADERS += lanview.h \
     lv2_global.h \
     qsnmp.h \
@@ -122,6 +126,7 @@ unix:HEADERS += usignal.h
 FORMS += 
 
 unix:LIBS += -lsnmp
+LIBS += -L../../simple-mail-build/src -lsimplemail-qt5
 
 TRANSLATIONS    = lv2lib_hu.ts \
                   lv2lib_en.ts

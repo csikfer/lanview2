@@ -10,7 +10,6 @@
 Nyomkövetést segítő objektumok, függvények és makrók.
 */
 
-//Faszom...windows
 #if defined (Q_OS_WIN)
 #define __PRETTY_FUNCTION__ __FUNCTION__
 #endif

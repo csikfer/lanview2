@@ -196,3 +196,14 @@ void writeRollLog(QFile& __log, const QByteArray& __data, qlonglong __size, int 
         }
     }
 }
+
+QString hrmlFrame(const QString& title, const QString& body)
+{
+    const QString frame =
+            "<!DOCTYPE html>\n"
+            "<html>\n"
+            "<head> <title> %1 </title> </head>\n"
+            "<body>\n %2\n</body>"
+            "</html>\n";
+    return frame.arg(title, body);
+}

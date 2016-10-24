@@ -235,14 +235,15 @@ class LV2SHARED_EXPORT cUserEvent  : public cRecord {
 public:
     static qlonglong insert(QSqlQuery &q, qlonglong _uid, qlonglong _aid, eUserEventType _et);
     static qlonglong insertHappened(QSqlQuery &q, qlonglong _uid, qlonglong _aid, eUserEventType _et, const QString& _m = QString());
-    static void happened(QSqlQuery& q, qlonglong _uid, qlonglong _aid, eUserEventType _et);
-    static void dropped(QSqlQuery& q, qlonglong _uid, qlonglong _aid, eUserEventType _et);
+    static void happened(QSqlQuery& q, qlonglong _uid, qlonglong _aid, eUserEventType _et, const QString& _m = QString());
+    static void dropped(QSqlQuery& q, qlonglong _uid, qlonglong _aid, eUserEventType _et, const QString& _m = QString());
 };
 
 /* ---------------------------------------------------------------- */
 class LV2SHARED_EXPORT cAlarm  : public cRecord {
     CRECORD(cAlarm);
 public:
+    static QString htmlText(QSqlQuery &q, qlonglong _id);
 };
 
 /* ---------------------------------------------------------------- */

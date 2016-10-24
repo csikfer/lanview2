@@ -75,23 +75,35 @@ CREATE INDEX user_events_created_index              ON user_events (created);
 CREATE INDEX user_events_happened_index             ON user_events (happened);
 CREATE INDEX user_events_alarm_id_event_type_index  ON user_events (alarm_id, event_type);
 
+CREATE OR REPLACE FUNCTION user_events_before() RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.happened IS NULL AND NEW.event_state <> 'necessary'::usereventstate THEN
+        NEW.happened := NOW();
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER user_events_before_insert_or_update  BEFORE UPDATE OR INSERT ON user_events  FOR EACH ROW EXECUTE PROCEDURE user_events_before();
 
 CREATE OR REPLACE FUNCTION alarm_notice() RETURNS TRIGGER AS $$
 DECLARE
     gids bigint[];
 BEGIN
     IF NOT NEW.noalarm OR NEW.superior_alarm_id IS NULL THEN
-        SELECT COALESCE(online_group_ids, (SELECT online_group_ids FROM services WHERE service_id = host_services.service_id))
-                INTO gids FROM host_services WHERE host_service_id = NEW.host_service_id;
-        IF gids IS NOT NULL THEN
-            INSERT INTO user_events(user_id, alarm_id, event_type)
-                SELECT DISTINCT user_id, NEW.alarm_id, 'notice'::usereventtype   FROM group_users WHERE group_id = ANY (gids);
-        END IF;
-        SELECT COALESCE(offline_group_ids, (SELECT offline_group_ids FROM services WHERE service_id = host_services.service_id))
-                INTO gids FROM host_services WHERE host_service_id = NEW.host_service_id;
-        IF gids IS NOT NULL THEN
-            INSERT INTO user_events(user_id, alarm_id, event_type)
-                SELECT DISTINCT user_id, NEW.alarm_id, 'sendmail'::usereventtype FROM group_users WHERE group_id = ANY (gids);
+        IF TG_OP = 'INSERT' THEN 
+            SELECT COALESCE(online_group_ids, (SELECT online_group_ids FROM services WHERE service_id = host_services.service_id))
+                    INTO gids FROM host_services WHERE host_service_id = NEW.host_service_id;
+            IF gids IS NOT NULL THEN
+                INSERT INTO user_events(user_id, alarm_id, event_type)
+                    SELECT DISTINCT user_id, NEW.alarm_id, 'notice'::usereventtype   FROM group_users WHERE group_id = ANY (gids);
+            END IF;
+            SELECT COALESCE(offline_group_ids, (SELECT offline_group_ids FROM services WHERE service_id = host_services.service_id))
+                    INTO gids FROM host_services WHERE host_service_id = NEW.host_service_id;
+            IF gids IS NOT NULL THEN
+                INSERT INTO user_events(user_id, alarm_id, event_type)
+                    SELECT DISTINCT user_id, NEW.alarm_id, 'sendmail'::usereventtype FROM group_users WHERE group_id = ANY (gids);
+            END IF;
         END IF;
         NOTIFY alarm;
     END IF;
@@ -100,9 +112,8 @@ END;
 $$ LANGUAGE plpgsql;
 
 INSERT INTO sys_params
-    (sys_param_name,                    param_type_id,                 param_value,    sys_param_note) VALUES
-    ('user_notice_timeout_if_ack',      param_type_name2id('interval'), '1 day',       'user_events notice time-out, if alarm is ack.'),
-    ('user_notice_timeout_if_no_ack',   param_type_name2id('interval'),'30 days',      'user_events notice time-out, if alarm is no ack.');
+    (sys_param_name,              param_type_id,                 param_value,    sys_param_note) VALUES
+    ('user_notice_timeout',      param_type_name2id('interval'), '30 days',       'user_events notice time-out.');
 
 
 CREATE TRIGGER alarms_before_insert_or_update  AFTER UPDATE OR INSERT ON alarms  FOR EACH ROW EXECUTE PROCEDURE alarm_notice();
@@ -451,7 +462,7 @@ CREATE OR REPLACE VIEW online_alarms AS
     WITH a AS (
         SELECT *, ARRAY(SELECT user_id FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'notice' AND event_state <> 'dropped') AS online_user_ids
         FROM alarms AS a
-        WHERE NOT noalarm AND COALESCE((end_time + (SELECT param_value FROM sys_params WHERE sys_param_name = 'user_notice_timeout_if_no_ack')::interval) > now(), true)
+        WHERE NOT noalarm AND COALESCE((end_time + (SELECT param_value FROM sys_params WHERE sys_param_name = 'user_notice_timeout')::interval) > now(), true)
     )
     SELECT
         alarm_id AS online_alarm_id,
@@ -490,6 +501,7 @@ COMMENT ON COLUMN online_alarms.ack_user_ids      IS 'Akik nyugtázták';
 
 INSERT INTO unusual_fkeys
   ( table_name,         column_name,        unusual_fkeys_type, f_table_name,   f_column_name) VALUES
+  ( 'online_alarms',    'online_user_ids',    'property',       'users',        'user_id'),
   ( 'online_alarms',    'notice_user_ids',    'property',       'users',        'user_id'),
   ( 'online_alarms',    'view_user_ids',      'property',       'users',        'user_id'),
   ( 'online_alarms',    'ack_user_ids',       'property',       'users',        'user_id');

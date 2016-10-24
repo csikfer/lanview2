@@ -238,5 +238,7 @@ template <class C, class T> T avarage(C c) {
 #define INDENT_SIZE 4
 static inline QString indentSp(int n) { return QString(n * INDENT_SIZE, QChar(' ')); }
 
+QString hrmlFrame(const QString &title, const QString& body);
+
 #endif // OTHERS_H
 
