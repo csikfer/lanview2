@@ -402,15 +402,19 @@ TABLE SHAPE timeperiods "Időintervallumok" {
 
 TABLE SHAPE user_events "Felhasználói események" {
     SET DEFAULTS;
-    TABLE TYPE READ ONLY, CHILD;
-    FIELD date_of ORD desc, asc, no;
-    FIELD user_id, event_type ORD no, asc, desc;
-    FIELD date_of, user_id, event_type, user_event_note ADD FILTERS begin, like, similar, regexp, regexpi;
+    TABLE TYPE CHILD;
+    FIELD happened ORD desc, asc, no;
+    FIELD user_id, event_type, event_state ORD no, asc, desc;
+    FIELD created, happened, user_id, event_type, event_state, user_event_note ADD FILTERS begin, like, similar, regexp, regexpi;
+    TABLE VIEW RIGHTS indalarm;
+    TABLE EDIT RIGHTS admin;
+    TABLE DELETE RIGHTS admin;
+    TABLE INSERT RIGHTS system;
 }
 
 TABLE alarms SHAPE alarms_tree "Riasztások (fa)" {
     SET DEFAULTS;
-    TABLE TYPE TREE, READ ONLY, OWNER;
+    TABLE TYPE TREE, OWNER;
     RIGHT SHAPE user_events;
     TABLE                   TITLE "Riasztási események", "Riasztási esemény",;
     FIELD alarm_id          TITLE "ID",            "Riasztás egyedi azonosító kódja";
@@ -418,20 +422,23 @@ TABLE alarms SHAPE alarms_tree "Riasztások (fa)" {
     FIELD daemon_id         TITLE "daemon",        "Lekérdező daemon";
     FIELD first_status      TITLE "kezdő áll.",    "Állapot a risztás kezdetekor";
     FIELD max_status        TITLE "krit. áll.",    "Legkritikusabb állapot a riasztás alatt";
+    FIELD last_status       TITLE "utolsó áll.",   "Utolsó állapot a riasztás alatt";
     FIELD begin_time        TITLE "kezdete",       "A kritikus esemény kezdete";
     FIELD event_note        TITLE "üzenet",        "A riasztást dezektáló folyamat üzenete";
     FIELD superior_alarm_id FLAG ON HIDE;
     FIELD noalarm           TITLE "letiltva",      "Az értesítés letiltása";
     FIELD end_time          TITLE "vége",          "A kritikus esemény vége";
-    FIELD event_note FLAG ON HUGE;
     FIELD begin_time ORD desc, asc, no;
     FIELD end_time ORD no, desc, asc;
-    
+    TABLE VIEW RIGHTS indalarm;
+    TABLE EDIT RIGHTS admin;
+    TABLE DELETE RIGHTS admin;
+    TABLE INSERT RIGHTS system;
 }
 
 TABLE SHAPE alarms "Riasztások (tábla)" {
     SET DEFAULTS;
-    TABLE TYPE READ ONLY, OWNER;
+    TABLE TYPE OWNER;
     RIGHT SHAPE user_events;
     TABLE                   TITLE "Riasztási események", "Riasztási esemény",;
     FIELD alarm_id          TITLE "ID",            "Riasztás egyedi azonosító kódja";
@@ -439,6 +446,7 @@ TABLE SHAPE alarms "Riasztások (tábla)" {
     FIELD daemon_id         TITLE "daemon",        "Lekérdező daemon";
     FIELD first_status      TITLE "kezdő áll.",    "Állapot a risztás kezdetekor";
     FIELD max_status        TITLE "krit. áll.",    "Legkritikusabb állapot a riasztás alatt";
+    FIELD last_status       TITLE "utolsó áll.",   "Utolsó állapot a riasztás alatt";
     FIELD begin_time        TITLE "kezdete",       "A kritikus esemény kezdete";
     FIELD event_note        TITLE "üzenet",        "A riasztást dezektáló folyamat üzenete";
     FIELD superior_alarm_id TITLE "Superior",@;
@@ -449,21 +457,27 @@ TABLE SHAPE alarms "Riasztások (tábla)" {
     FIELD begin_time, end_time ADD FILTERS big, litle, interval;
     FIELD begin_time ORD desc, asc, no;
     FIELD end_time ORD no, desc, asc;
+    TABLE VIEW RIGHTS indalarm;
+    TABLE EDIT RIGHTS admin;
+    TABLE DELETE RIGHTS admin;
+    TABLE INSERT RIGHTS system;
 }
 
 TABLE SHAPE db_errs "Adatbázis hiba napló" {
     SET DEFAULTS;
-    TABLE READ ONLY;
     FIELD dblog_id FLAG HIDE;
     FIELD date_of ORD desc,asc,no;
     FIELD error_id, user_id, table_name, trigger_op, err_subcode, err_msg, func_name, reapeat, date_of_last, acknowledged ORD no, asc,desc;
     FIELD error_id, user_id, table_name, trigger_op, err_subcode, err_msg, func_name, acknowledged ADD FILTERS begin, like, similar, regexp, regexpi;
     FIELD error_id, date_of, reapeat, date_of_last ADD FILTERS big, litle, interval;
+    TABLE VIEW RIGHTS   indalarm;
+    TABLE EDIT RIGHTS   system;
+    TABLE DELETE RIGHTS admin;
+    TABLE INSERT RIGHTS system;
 }
 
 TABLE SHAPE app_errs "Applikáció hiba napló" {
     SET DEFAULTS;
-    TABLE READ ONLY;
     FIELD date_of       TITLE "időpontja", "Az esemény időpontja";
     FIELD app_name      TITLE "App.", "A program neve";
     FIELD node_id       TITLE "Host", "A futtató szg. neve";
@@ -499,6 +513,10 @@ TABLE SHAPE app_errs "Applikáció hiba napló" {
           thread_name, sql_driver_text, sql_db_text, sql_query, sql_bounds, data_msg
                 ADD FILTERS begin, like, similar, regexp, regexpi;
     FIELD pid, src_line, err_code, err_subcode, err_syscode ADD FILTERS big, litle, interval;
+    TABLE VIEW RIGHTS   indalarm;
+    TABLE EDIT RIGHTS   system;
+    TABLE DELETE RIGHTS admin;
+    TABLE INSERT RIGHTS system;
 }
 
 TABLE SHAPE app_memos "Applikáció napló" {
@@ -519,12 +537,14 @@ TABLE SHAPE app_memos "Applikáció napló" {
     FIELD date_of ADD FILTERS big, litle, interval;
     FIELD memo, app_name, node_id, user_id, func_name, src_name, thread_name, importance, acknowledged  ADD FILTERS begin, like, similar, regexp, regexpi;
     FIELD pid, src_line ADD FILTERS big, litle, interval;
-    
+    TABLE VIEW RIGHTS   indalarm;
+    TABLE EDIT RIGHTS   system;
+    TABLE DELETE RIGHTS admin;
+    TABLE INSERT RIGHTS system;
 }
 
 TABLE SHAPE host_service_logs "A szervíz példányok log rekordjai" {
     SET DEFAULTS;
-    TABLE READ ONLY;
     TABLE TYPE SIMPLE;
     FIELD date_of ORD desc,asc,no;
     FIELD host_service_id, event_note, superior_alarm_id, noalarm ORD no, asc, desc;
@@ -532,6 +552,10 @@ TABLE SHAPE host_service_logs "A szervíz példányok log rekordjai" {
                            new_state, new_soft_state, new_hard_state, event_note, superior_alarm_id, noalarm
                     ADD FILTERS begin, like, similar, regexp, regexpi;
     FIELD date_of ADD FILTERS big, litle, interval;
+    TABLE VIEW RIGHTS   indalarm;
+    TABLE EDIT RIGHTS   system;
+    TABLE DELETE RIGHTS admin;
+    TABLE INSERT RIGHTS system;
 }
 
 // ***************************************************************************************

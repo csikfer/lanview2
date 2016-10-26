@@ -48,21 +48,16 @@ class lv2portStat : public lanView {
 public:
     lv2portStat();
     ~lv2portStat();
-    /// Szignál kezelés
-    virtual bool uSigRecv(int __i);
     /// Indulás
     void setup();
     /// Leállás, mindent lebont, hogy hívható legyen a setup()
     void down();
     /// Újra inicializáló metódus
-    void reSet();
+    virtual void reSet();
     ///
     QSqlQuery      *pq;
     /// A saját (superior) szolgáltatás és host objektumok
     cPortStat      *pSelf;
-protected slots:
-    /// Adatbázis "NOTIF" ill. event
-    void dbNotif(const QString &name, QSqlDriver::NotificationSource source, const QVariant &payload);
 };
 
 

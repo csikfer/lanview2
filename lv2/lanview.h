@@ -203,6 +203,8 @@ public:
     /// Egy UNIX signal-t kezelő virtuális metódus.
     /// Windows esetén egy üres függvény.
     virtual bool uSigRecv(int __i);
+    /// Minden adat újraolvasása, az alap metódus csak a
+    virtual void reSet();
     /// Az alapértelmezett program paraméterek értelmezése
     void parseArg(void);
     /// A hiba objektum tartalmának a kiírása a app_errs táblába.

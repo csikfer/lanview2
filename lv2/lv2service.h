@@ -33,7 +33,7 @@ enum eInspectorType {
     IT_TIMING_TIMED         = 0x0001,   ///< Időzített, a fő szálban
     IT_TIMING_THREAD        = 0x0002,   ///< Saját szálként
     IT_TIMING_TIMEDTHREAD   = 0x0003,   ///< Időzített saját szálként
-    IT_TIMING_PASSIVE       = 0x0004,   ///< a superior lekérdezés eredményéhez kapcsolódik
+    IT_TIMING_PASSIVE       = 0x0004,   ///< Inaktív eleme a lekérdezés fának.
     IT_TIMING_POLLING       = 0x0008,   ///< Időzítés nélkül egyszer fut/szekvenciális
     IT_TIMING_MASK          = 0x000F,   ///< Maszk: ütemezés
 
@@ -151,19 +151,18 @@ public:
     /// Destruktor
     virtual ~cInspector();
 
-    /// Belső státusz beállítása. Virtuális metódus, a bázis osztály esetén az objektum belső státuszát vagyis az intStat adattagot állítja a megadott értékre.
-    virtual void setInternalStat(enum eInternalStat is);
-    /// Az objektumhoz időzítéséhez tartozó metódus.
-    /// Ha az internalStat értéke nem IS_RUN, akkor nem csinál semmit.
+    /// Az objektumhoz időzítéséhez tartozó metódus. (külön szál esetén is ez a metódus kerül meghívásra).
+    /// Ha az internalStat értéke nem IS_SUSPENDED vagy IS_STOPPED, akkor csak letesz egy app_memos rekordot..
     /// Ha a szolgáltatás nem időzített, ill. az állapota alapján nem kéne óra eseménynek bekövetkeznie, akkor kizárást dob.
-    /// Futó (IS_RUN), és időzített szolgáltatás esetén egy try blokkban meghívja a run() virtuális metódust.
-    /// A rum metódus által visszaadott érték, vagy az esetleges hiba alapján beállítja az adatbázisban a szolgáltatáspéldány állapotát,
-    /// valamint állít az időzítésen, ha ez szükséges (normal/retry időzítés kezelése)
+    /// Időzített szolgáltatás esetén meghívja a doRun() virtuális metódust.
+    /// A doRum metódus által visszaadott állpot érték alapján állít az időzítésen, ha ez szükséges (normal/retry időzítés kezelése)
     virtual void timerEvent(QTimerEvent * );
+    /// Végrehajtja a run() virtuális metódust. A visszatérési érték és futási idő alapján állítja a szolgáltatás
+    /// példány állpotát. A run() metüdust egy try blokba, és SQL tranzakció blokkban hívja.
     virtual bool doRun(bool __timed);
     /// A szolgáltatáshoz tartozó tevékenységet végrehajtó virtuális metódus.
     /// A alap objektumban a metódus ha pProcess = NULL, akkor nem csinál semmit (egy debug üzenet feltételes kiírásán túl),
-    /// csak visszatér egy RS_ON értékkel.
+    /// csak visszatér egy RS_UNKNOWN értékkel.
     /// Ha pProcess pointer nem NULL, akkor végrehajtja a megadott parancsot, és az eredménnyel hívja a parse() metódust.
     /// @return A szolgáltatás állpota, ill. a tevékenység eredménye.
     virtual enum eNotifSwitch run(QSqlQuery& q);
@@ -172,8 +171,9 @@ public:
     virtual enum eNotifSwitch parse(int _ec, QIODevice &text);
     /// Futás időzítés indítása
     virtual void start();
-    /// Futás/időzítés leállítása, ha nem futott, és __ex = true, akkor dob egy kizárást.
-    virtual void stop(enum eEx __ex = EX_ERROR);
+    /// Futás/időzítés leállítása, ha időzített, de nem volt időzítés, és __ex = EX_ERROR, akkor dob egy kizárást.
+    /// Csak az aktuális objektumot stoppolja le, a sub objektumokat törli: dropSubs() -al.
+    virtual void drop(enum eEx __ex = EX_ERROR);
     /// Egy alárendelt szolgáltatás objektum létrehozása. Alapértelmezetten egy cInspector objektumot hoz létre.
     /// Az alapőértelmezett setSubs() metódus hívja a gyerek objektumok létrehozásához, ha azt akarjuk,
     /// hogy ijenkkor egy cIspector leszármazott jöjjön létre, akkor a metódus fellüldefiniálandü.
@@ -375,8 +375,8 @@ public:
     bool isTimed() const { return inspectorType & (IT_TIMING_TIMED | IT_PROCESS_TIMED) ; }
     /// Ha az objektum önálló szálon fut
     bool isThread() const { return inspectorType & IT_TIMING_THREAD; }
-    /// Ha a lekérdezést el kell indítani / nem passzív
-    bool needStart() const { return !(inspectorType & IT_TIMING_PASSIVE); }
+    /// Ha a lekérdezést passzív
+    bool passive() const { return inspectorType & IT_TIMING_PASSIVE; }
     /// A statikus adattagokat (tableoid-k) inicializálja, ha ez még nem történt meg (értékük NULL_ID).
     /// A tableoid értékek csak a main objektum (lnaview2) létrehozása után kérdezhetőek le, miután már meg lett nyitva az adatbázis.
     static void initStatic();

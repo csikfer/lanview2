@@ -56,28 +56,6 @@ lv2ArpD::~lv2ArpD()
     down();
 }
 
-bool lv2ArpD::uSigRecv(int __i)
-{
-    if (__i == SIGHUP) {
-        if (pSelf != NULL && pSelf->internalStat == IS_RUN) {
-            PDEB(INFO) << trUtf8("Sygnal : SIGHUP; reset ...") << endl;
-            reSet();
-        }
-        else {
-            PDEB(INFO) << trUtf8("Sygnal : SIGHUP; dropped ...") << endl;
-        }
-        return false;
-    }
-    return true;
-}
-void lv2ArpD::dbNotif(const QString& name, QSqlDriver::NotificationSource source, const QVariant &payload)
-{
-    lanView::dbNotif(name, source, payload);    // DEBUG
-    if (pSelf != NULL && pSelf->internalStat != IS_RUN) return;
-    PDEB(INFO) << trUtf8("Event from DB, call reSet()... ") << endl;
-    reSet();
-}
-
 void lv2ArpD::setup()
 {
     pSelf = new cArpDaemon(*pq, appName);
@@ -94,9 +72,9 @@ void lv2ArpD::down()
 
 void lv2ArpD::reSet()
 {
-    pSelf->setInternalStat(IS_REINIT);
     try {
         down();
+        lanView::reSet();
         setup();
     } CATCHS(lastError)
     if (lastError != NULL) QCoreApplication::exit(lastError->mErrorCode);

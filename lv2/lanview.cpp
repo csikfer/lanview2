@@ -520,14 +520,24 @@ void lanView::instAppTransl()
 
 bool lanView::uSigRecv(int __i)
 {
-    return (__i == __i);    // Hogy örüljön a fordító, használom az __i-t
+    if (__i == SIGHUP) {
+        PDEB(INFO) << trUtf8("Esemény : SIGHUP; reset ...") << endl;
+        reSet();
+        return false;
+    }
+    return true;
+}
+
+void lanView::reSet()
+{
+    resetCacheData();
 }
 
 void lanView::uSigSlot(int __i)
 {
     if (uSigRecv(__i)) switch (__i) {
         case SIGINT:
-            PDEB(INFO) << QObject::trUtf8("Signal SIGINT, call exit.") << endl;;
+            PDEB(INFO) << QObject::trUtf8("Signal SIGINT, call exit.") << endl;
             QCoreApplication::exit(0);
             break;
         default:
@@ -547,6 +557,12 @@ void    lanView::dbNotif(const QString& name, QSqlDriver::NotificationSource sou
         default:                        src = "Unknown";    break;
         }
         cDebug::cout() << QObject::trUtf8("Database notifycation : %1, source %2, payload :").arg(name).arg(src) << debVariantToString(payload) << endl;
+    }
+    QString sPayload = payload.toString();
+    if (0 == appName.compare(name,     Qt::CaseInsensitive)
+     && 0 == _sReset.compare(sPayload, Qt::CaseInsensitive)) {
+        PDEB(INFO) << trUtf8("Esemény : NOTIFY %1  %2; reset ...").arg(name, sPayload) << endl;
+        reSet();
     }
 }
 

@@ -41,6 +41,8 @@ STRDEF(Permissive, "permissive")
 STRDEF(Strict, "strict")
 STRDEF(Ignored, "ignored")
 STRDEF(Params, "params")
+STRDEF(Reset, "reset")
+
 
 dnl Thread nevek
 STRDEF(MainThread, "mainThread")

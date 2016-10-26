@@ -61,30 +61,6 @@ lv2d::~lv2d()
     down();
 }
 
-#ifdef MUST_USIGNAL
-bool lv2d::uSigRecv(int __i)
-{
-    if (__i == SIGHUP) {
-        if (pSelf != NULL && pSelf->internalStat == IS_RUN) {
-            PDEB(INFO) << trUtf8("Sygnal : SIGHUP; reset ...") << endl;
-            reSet();
-        }
-        else {
-            PDEB(INFO) << trUtf8("Sygnal : SIGHUP; dropped ...") << endl;
-        }
-        return false;
-    }
-    return true;
-}
-#endif
-void lv2d::dbNotif(const QString& name, QSqlDriver::NotificationSource source, const QVariant &payload)
-{
-    lanView::dbNotif(name, source, payload);    // DEBUG
-    if (pSelf != NULL && pSelf->internalStat != IS_RUN) return;
-    PDEB(INFO) << trUtf8("Event from DB, call reSet()... ") << endl;
-    reSet();
-}
-
 void lv2d::setup()
 {
     pSelf = new cInspector(*pq, appName);
@@ -104,6 +80,7 @@ void lv2d::reSet()
 {
     try {
         down();
+        lanView::reSet();
         setup();
     } CATCHS(lastError)
     if (lastError != NULL) QCoreApplication::exit(lastError->mErrorCode);

@@ -971,7 +971,9 @@ void cRecordsViewBase::initShape(cTableShape *pts)
 
     pTableShape->setParent(this);
 
-    if (pTableShape->shapeFields.isEmpty() && 0 == pTableShape->fetchFields(*pq)) EXCEPTION(EDATA, pTableShape->getId(), pTableShape->getName());
+    if (pTableShape->shapeFields.isEmpty() && 0 == pTableShape->fetchFields(*pq))
+        EXCEPTION(EDATA, pTableShape->getId(),
+                  trUtf8("A %1 nevű táblában nincs egyetlen oszlop sem.").arg(pTableShape->getName()));
 
     pRecDescr = cRecStaticDescr::get(pTableShape->getName(_sTableName));
     // Extra típus értékek miatt nem használható a mező alap konverziós metódusa !

@@ -51,27 +51,6 @@ lv2portMac::~lv2portMac()
     down();
 }
 
-bool lv2portMac::uSigRecv(int __i)
-{
-    if (__i == SIGHUP) {
-        if (pSelf != NULL && pSelf->internalStat == IS_RUN) {
-            PDEB(INFO) << trUtf8("Sygnal : SIGHUP; reset ...") << endl;
-            reSet();
-        }
-        else {
-            PDEB(INFO) << trUtf8("Sygnal : SIGHUP; dropped ...") << endl;
-        }
-        return false;
-    }
-    return true;
-}
-void lv2portMac::dbNotif(const QString& name, QSqlDriver::NotificationSource source, const QVariant &payload)
-{
-    lanView::dbNotif(name, source, payload);    // DEBUG
-    if (pSelf != NULL && pSelf->internalStat != IS_RUN) return;
-    PDEB(INFO) << trUtf8("Event from DB, call reSet()... ") << endl;
-    reSet();}
-
 void lv2portMac::setup()
 {
     pSelf = new cPortMac(*pq, appName);
@@ -89,8 +68,8 @@ void lv2portMac::down()
 void lv2portMac::reSet()
 {
     try {
-        pSelf->setInternalStat(IS_REINIT);
         down();
+        lanView::reSet();
         setup();
     } CATCHS(lastError);
     if (lastError != NULL) QCoreApplication::exit(lastError->mErrorCode);

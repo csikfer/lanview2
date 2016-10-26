@@ -19,18 +19,13 @@ public:
     ~lv2d();
     void setup();
     void down();
-    void reSet();
-#ifdef MUST_USIGNAL
-    bool uSigRecv(int __i);
-#endif
+    virtual void reSet();
     /// Saját hoszt/szolgáltatás cInspector objektum
     cInspector  *pSelf;
     ///
     QSqlQuery *pq;
     /// A futó démonok száma
     int     runingCnt;
-private slots:
-    void dbNotif(const QString &name, QSqlDriver::NotificationSource source, const QVariant &payload);
 };
 
 
