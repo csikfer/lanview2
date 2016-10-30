@@ -73,8 +73,8 @@ void lv2import::abortOldRecords()
                 "   ended = CURRENT_TIMESTAMP,"
                 "   result_msg = 'Start imports server: old records aborted.'"
             " WHERE exec_state = 'wait' OR exec_state = 'execute'";
-    if (!pq->exec(sql)) SQLPREPERR(*pq, sql);
-    pq->finish();
+    if (!pQuery->exec(sql)) SQLPREPERR(*pQuery, sql);
+    pQuery->finish();
 }
 
 void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource source, const QVariant &payload)
@@ -84,7 +84,7 @@ void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource sour
         PDEB(INFO) << QString(trUtf8("DB notification : %1, %2, %3.")).arg(name).arg((int)source).arg(debVariantToString(payload)) << endl;
         pImp = new cImport;
         pImp->setName(_sExecState, _sWait);
-        pImp->fetch(*pq, false, pImp->mask(_sExecState), pImp->iTab(_sDateOf), 1);
+        pImp->fetch(*pQuery, false, pImp->mask(_sExecState), pImp->iTab(_sDateOf), 1);
         if (pImp->isEmpty_()) {
             DWAR() << trUtf8("No waitig imports record, dropp notification.") << endl;
             return;
@@ -92,7 +92,7 @@ void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource sour
         pImp->setName(_sExecState, _sExecute);
         pImp->set(_sStarted, QVariant(QDateTime::currentDateTime()));
         pImp->setId(_sPid, QCoreApplication::applicationPid());
-        pImp->update(*pq, false, pImp->mask(_sExecState, _sStarted, _sPid));
+        pImp->update(*pQuery, false, pImp->mask(_sExecState, _sStarted, _sPid));
         importParseText(pImp->getName(_sImportText));
     }
     CATCHS(lastError)
@@ -103,7 +103,7 @@ void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource sour
         pImp->setName(_sResultMsg, _sOk);
         pImp->set(_sEnded, QVariant(QDateTime::currentDateTime()));
         pImp->clear(_sAppLogId);
-        pImp->update(*pq, false, pImp->mask(_sExecState, _sResultMsg, _sEnded, _sAppLogId));
+        pImp->update(*pQuery, false, pImp->mask(_sExecState, _sResultMsg, _sEnded, _sAppLogId));
     }
     else if (pImp != NULL) {
         qlonglong eid = sendError(lastError);
@@ -113,7 +113,7 @@ void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource sour
         lastError = NULL;
         pImp->set(_sEnded, QVariant(QDateTime::currentDateTime()));
         pImp->setId(_sAppLogId, eid);
-        pImp->update(*pq, false, pImp->mask(_sExecState, _sResultMsg, _sEnded, _sAppLogId));
+        pImp->update(*pQuery, false, pImp->mask(_sExecState, _sResultMsg, _sEnded, _sAppLogId));
     }
     else {
         EXCEPTION(EPROGFAIL);
@@ -127,7 +127,6 @@ lv2import::lv2import() : lanView(), fileNm(), in()
 {
     daemonMode = false;
     if (lastError != NULL) {
-        pq     = NULL;
         return;
     }
 
@@ -159,12 +158,11 @@ lv2import::lv2import() : lanView(), fileNm(), in()
     }
     if (args.count() > 1) DWAR() << trUtf8("Invalid arguments : ") << args.join(QChar(' ')) << endl;
     try {
-        pq = newQuery();
         if (daemonMode) {
             subsDbNotif();
         }
         else {
-            insertStart(*pq);
+            insertStart(*pQuery);
             if (!userName.isNull()) setUser(userName);
         }
     } CATCHS(lastError)
@@ -173,10 +171,5 @@ lv2import::lv2import() : lanView(), fileNm(), in()
 lv2import::~lv2import()
 {
     DBGFN();
-    if (pq     != NULL) {
-        PDEB(VVERBOSE) << "delete pq ..." << endl;
-        delete pq;
-    }
-    DBGFNL();
 }
 

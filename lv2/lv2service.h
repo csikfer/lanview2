@@ -294,12 +294,12 @@ public:
     /// A szolgáltatás cService objektumára mutató referenciával tér vissza
     /// @param __ex Ha értéke true, és nem ismert a szolgáltatás objektum (pService értéke NULL) akkor dob egy kizárást
     /// @return A szolgáltatás objektum referenciája, ha __ex értéke false, és nem ismert a szolgáltatés, akkor egy üres objektum őpintere.
-    const cService& service(enum eEx __ex = EX_ERROR) const {
+    const cService *service(enum eEx __ex = EX_ERROR) const {
         if (pService == NULL) {
             if (__ex) EXCEPTION(EDATA);
-            return cService::_nul();
+            return NULL;
         }
-        return *pService;
+        return pService;
     }
     /// A megadott nevű szolgáltatás cService objektumára mutató referenciával tér vissza, továbbá beállítja az objektumra a pService pointert.
     /// Ha egy üres paraméterrel tért vissza, akkor a pService értéke NULL lessz, és nem az üres objektumra fog mutatni.
@@ -307,10 +307,9 @@ public:
     /// @param __sn A szolgáltatás név
     /// @param __ex Ha értéke true, és nem ismert a megadott nevű szolgáltatás objektum (pService értéke NULL) akkor dob egy kizárást
     /// @return A szolgáltatás objektum referenciája, ha __ex értéke false, és nem ismert a szolgáltatés, akkor egy üres objektum pointere.
-    const cService& service(QSqlQuery& __q, const QString& __sn, enum eEx __ex = EX_ERROR) {
-        pService = &cService::service(__q, __sn, __ex);
-        if (__ex == EX_IGNORE && pService->isNull()) pService = NULL;
-        return service();
+    const cService *service(QSqlQuery& __q, const QString& __sn, enum eEx __ex = EX_ERROR) {
+        pService = cService::service(__q, __sn, __ex);
+        return service(__ex);
     }
     /// A megadott azonosítójú szolgáltatás cService objektumára mutató referenciával tér vissza, továbbá beállítja az objektumra a pService pointert.
     /// Ha egy üres paraméterrel tért vissza, akkor a pService értéke NULL lessz, és nem az üres objektumra fog mutatni.
@@ -318,10 +317,9 @@ public:
     /// @param __sn A szolgáltatás ID
     /// @param __ex Ha értéke true, és nem ismert a megadott nevű szolgáltatás objektum (pService értéke NULL) akkor dob egy kizárást
     /// @return A szolgáltatás objektum referenciája, ha __ex értéke false, és nem ismert a szolgáltatés, akkor egy üres objektum pointere.
-    const cService& service(QSqlQuery& __q, qlonglong __id, enum eEx __ex = EX_ERROR) {
-        pService = &cService::service(__q, __id, __ex);
-        if (__ex == EX_IGNORE && pService->isNull()) pService = NULL;
-        return service();
+    const cService *service(QSqlQuery& __q, qlonglong __id, enum eEx __ex = EX_ERROR) {
+        pService = cService::service(__q, __id, __ex);
+        return service(__ex);
     }
     /// A szolgáltatás cService objektumára mutató pointert állítja be
     /// @param _ps A szolgálltatás típus objektumra mutató pointer

@@ -17,13 +17,6 @@ class lv2d : public lanView {
 public:
     lv2d();
     ~lv2d();
-    void setup();
-    void down();
-    virtual void reSet();
-    /// Saját hoszt/szolgáltatás cInspector objektum
-    cInspector  *pSelf;
-    ///
-    QSqlQuery *pq;
     /// A futó démonok száma
     int     runingCnt;
 };

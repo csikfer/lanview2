@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
         return mo.lastError->mErrorCode; // a mo destruktora majd kiírja a hibaüzenetet.
     }
 
-    int r = mo.pSelf->inspectorType;
+    int r = mo.pSelfInspector->inspectorType;
     r = r & (IT_TIMING_POLLING | IT_PROCESS_POLLING);
     if (r) {
         PDEB(INFO) << QObject::trUtf8("Nothing start event loop, exit OK.") << endl;
@@ -41,17 +41,12 @@ int main(int argc, char *argv[])
 
 lv2d::lv2d()
 {
-    pq = NULL;
-    pSelf = NULL;
+    pSelfInspector = NULL;
     if (lastError == NULL) {
         try {
-            pq = newQuery();
-
-            insertStart(*pq);
-
+            insertStart(*pQuery);
             subsDbNotif();
-
-            setup();
+            setup(TS_FALSE);
         } CATCHS(lastError)
     }
 }
@@ -59,30 +54,5 @@ lv2d::lv2d()
 lv2d::~lv2d()
 {
     down();
-}
-
-void lv2d::setup()
-{
-    pSelf = new cInspector(*pq, appName);
-    pSelf->postInit(*pq);
-    pSelf->start();
-}
-
-void lv2d::down()
-{
-    if (pSelf != NULL) {
-        delete pSelf;
-        pSelf = NULL;
-    }
-}
-
-void lv2d::reSet()
-{
-    try {
-        down();
-        lanView::reSet();
-        setup();
-    } CATCHS(lastError)
-    if (lastError != NULL) QCoreApplication::exit(lastError->mErrorCode);
 }
 

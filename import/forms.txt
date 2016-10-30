@@ -190,7 +190,7 @@ TABLE SHAPE nodes "Passzív, felügyeletbe bevont elemek (Csak dialógus!)" {
     SET DEFAULTS;
     
     TABLE            TITLE ,"Hálózati végberendszés","Nem SNMP eszköz";
-    FIELD node_name  TITLE "Név",@;
+    FIELD node_name  TITLE "Név","Eszköz (host) neve";
     FIELD node_note  TITLE "Megjegyzés",@;
     FIELD place_id { TITLE "Hely", "Az eszköz helye";           FLAG ON BATCH EDIT; }
     FIELD features   TITLE "paraméterek", "Egyébb paraméterek";
@@ -759,6 +759,7 @@ TABLE places SHAPE places_tree "Helyiségek (fa)" {
     TABLE TITLE "Helyek, helyiségek", "Hely helyiség",,"Csoportoknak tagja", "Csoportoknak nem tagja";
     FIELD place_name ORD asc,desc,no;
     FIELD parent_id FLAG HIDE TABLE;
+    FIELD place_name TITLE "Név", "Hely helyiség neve";
 }
 
 TABLE SHAPE places "Helyiségek (tábla)" {

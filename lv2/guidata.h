@@ -209,13 +209,15 @@ public:
     /// dialog_title mező értékét. Ha valamelyik rekord hiányzik, és __ex értéke nem EX_WARNING vagy
     /// EX_NOOP, akkor _fn-t adja vissza. Ha hiányzik valamelyik rekord, és __ex értéke EX_WARNING vagy
     /// EX_NOOP, akkor kizárást dob.
-    static QString getFieldDialogTitle(QSqlQuery& q, const QString& _sn, const QString& _fn, eEx __ex = EX_ERROR);
+    static const QString& getFieldDialogTitle(QSqlQuery& q, const QString& _sn, const QString& _fn, eEx __ex = EX_ERROR);
+    static void resetCacheData() { fieldDialogTitleMap.clear(); }
 
     tTableShapeFields   shapeFields;
 protected:
     QString emFildsIsEmpty();
     QString emFieldNotFound(const QString& __f);
     static int              _ixTableShapeType;
+    static QMap<QString, QString>   fieldDialogTitleMap;
 };
 
 class cTableShapeFilter;

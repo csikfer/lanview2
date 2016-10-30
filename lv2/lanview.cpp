@@ -1,5 +1,6 @@
 #include "lanview.h"
 #include "lv2service.h"
+#include "guidata.h"
 
 #define VERSION_MAJOR   0
 #define VERSION_MINOR   92
@@ -90,6 +91,7 @@ QString    lanView::appVersion;
 QString    lanView::testSelfName;
 eIPV4Pol   lanView::ipv4Pol = IPV4_STRICT;
 eIPV6Pol   lanView::ipv6Pol = IPV6_PERMISSIVE;
+bool       lanView::setupTransactionFlag = false;
 
 
 // ****************************************************************************************************************
@@ -111,7 +113,8 @@ lanView::lanView()
     pSelfHostService = NULL;
     pUser = NULL;
     setSelfStateF = false;
-
+    pSelfInspector = NULL;
+    pQuery = NULL;
 
     try {
         lang = getEnvVar("LANG");
@@ -178,29 +181,8 @@ lanView::lanView()
         // Kapcsolódunk az adatbázishoz, ha kell
         if (sqlNeeded != SN_NO_SQL) {
             if (openDatabase(bool2ex(sqlNeeded == SN_SQL_NEED))) {
-                // SELF:
-                QSqlQuery q = getQuery();
-                pSelfNode = new cNode;
-                if (pSelfNode->fetchSelf(q, EX_IGNORE)) {
-                    pSelfService = new cService;
-                    if (pSelfService->fetchByName(q, appName)) {
-                        pSelfHostService = new cHostService();
-                        pSelfHostService->setId(_sNodeId,    pSelfNode->getId());
-                        pSelfHostService->setId(_sServiceId, pSelfService->getId());
-                        if (1 == pSelfHostService->completion(q)) {
-                            setSelfStateF = true;
-                        }
-                        else {// Nincs, vagy nem egyértelmű
-                            pDelete(pSelfHostService);
-                        }
-                    }
-                    else {
-                        pDelete(pSelfService);
-                    }
-                }
-                else {
-                    pDelete(pSelfNode);
-                }
+                pQuery = newQuery();
+                setSelfObjects();
             }
         }
         // SNMP init, ha kell
@@ -256,23 +238,21 @@ lanView::~lanView()
         qlonglong eid = sendError(lastError, QString(), this);
         // Hibát kiírtuk, ki kell írni a staust is? (ha nem sikerült a hiba kiírása, kár a statussal próbálkozni)
         if (eid != NULL_ID && setSelfStateF) {
-            if (pSelfHostService != NULL) {
-                QSqlQuery   q(*pDb);
+            if (pSelfHostService != NULL && pQuery != NULL) {
                 try {
-                    pSelfHostService->setState(q, _sCritical, lastError->msg());
+                    pSelfHostService->setState(*pQuery, _sCritical, lastError->msg());
                 } catch(...) {
                     DERR() << "!!!!" << endl;
                 }
             }
             else {
-                DERR() << trUtf8("A pSelfHostService pointer NULL.") << endl;
+                DERR() << trUtf8("A pSelfHostService oe pQuery pointer NULL.") << endl;
             }
         }
         setSelfStateF = false;
     }
     else if (setSelfStateF) {
-        if (pSelfHostService != NULL && pDb != NULL) {
-            QSqlQuery   q(*pDb);
+        if (pSelfHostService != NULL && pQuery != NULL) {
             try {
                 int rs = RS_ON;
                 QString n;
@@ -281,14 +261,14 @@ lanView::~lanView()
                     n  = lastError->mErrorSubMsg;       // A megjegyzés a status-hoz
                 }
                 if ((rs & RS_STAT_SETTED) == 0) {        // A stusban jelezheti, hogy már megvolt a kiírás!
-                    pSelfHostService->setState(q, notifSwitch(rs), n);
+                    pSelfHostService->setState(*pQuery, notifSwitch(rs), n);
                 }
             } catch(...) {
                 DERR() << "!!!!" << endl;
             }
         }
         else {
-            DERR() << trUtf8("A pSefHostService vagy a pDb pointer NULL.") << endl;
+            DERR() << trUtf8("A pSefHostService vagy a pQuery pointer NULL.") << endl;
         }
     }
     pDelete(lastError);
@@ -317,6 +297,7 @@ lanView::~lanView()
     trasactionsThreadMap.clear();
     threadMutex.unlock();
     // Töröljük az adatbázis objektumot, ha volt.
+    pDelete(pQuery);
     closeDatabase();
     // Töröljük a QSettings objektumunkat
     if (pSet != NULL) {
@@ -379,6 +360,31 @@ void lanView::closeDatabase()
             pDb = NULL;
         }
         PDEB(SQL) << QObject::trUtf8("pDb deleted.") << endl;
+    }
+}
+
+void lanView::setSelfObjects()
+{
+    if (pDb != NULL && pDb->isOpen()) {
+        if (!isMainThread()) EXCEPTION(EPROGFAIL);
+        pSelfNode = new cNode;
+        if (pSelfNode->fetchSelf(*pQuery, EX_IGNORE)) {
+            pSelfService = cService::service(*pQuery, appName, EX_IGNORE);
+            if (pSelfService != NULL) {
+                pSelfHostService = new cHostService();
+                pSelfHostService->setId(_sNodeId,    pSelfNode->getId());
+                pSelfHostService->setId(_sServiceId, pSelfService->getId());
+                if (1 == pSelfHostService->completion(*pQuery)) {
+                    setSelfStateF = true;
+                }
+                else {// Nincs, vagy nem egyértelmű
+                    pDelete(pSelfHostService);
+                }
+            }
+        }
+        else {
+            pDelete(pSelfNode);
+        }
     }
 }
 
@@ -530,7 +536,42 @@ bool lanView::uSigRecv(int __i)
 
 void lanView::reSet()
 {
-    resetCacheData();
+    try {
+        down();
+        resetCacheData();
+        setSelfObjects();
+        setup();
+    } CATCHS(lastError)
+    if (lastError != NULL) QCoreApplication::exit(lastError->mErrorCode);
+}
+
+void lanView::setup(eTristate _tr)
+{
+    switch (_tr) {
+    case TS_NULL:                                 break;
+    case TS_FALSE:  setupTransactionFlag = false; break;
+    case TS_TRUE:   setupTransactionFlag = true;  break;
+    }
+    QString tn;
+    if (setupTransactionFlag) {
+        tn = appName + "_setup";
+        sqlBegin(*pQuery, tn);
+    }
+    if (pSelfInspector == NULL) pSelfInspector = new cInspector(*pQuery, appName);
+    pSelfInspector->postInit(*pQuery);
+    if (pSelfInspector->passive() && (pSelfInspector->pSubordinates == NULL || pSelfInspector->pSubordinates->isEmpty())) EXCEPTION(NOTODO);
+    if (setupTransactionFlag) {
+        sqlEnd(*pQuery, tn);
+    }
+    pSelfInspector->start();
+}
+
+void lanView::down()
+{
+    pDelete(pSelfNode);
+    pSelfService = NULL;    // cache!
+    pDelete(pSelfHostService);
+    pDelete(pSelfInspector);
 }
 
 void lanView::uSigSlot(int __i)
@@ -684,7 +725,8 @@ void lanView::resetCacheData()
     if (!exist()) EXCEPTION(EPROGFAIL);
     QSqlQuery q = getQuery();
     cIfType::fetchIfTypes(q);
-    cService::clearServicesCache();
+    cService::resetCacheData();
+    cTableShape::resetCacheData();
     if (instance->pUser != NULL) {
         instance->pUser->setById(q);
         instance->pUser->getRights(q);

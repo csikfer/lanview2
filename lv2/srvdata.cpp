@@ -133,37 +133,36 @@ CRECDEF(cService)
 
 
 tRecordList<cService> cService::services;
-cService *cService::pNull;
-const cService& cService::service(QSqlQuery& __q, const QString& __nm, eEx __ex)
+const cService * cService::service(QSqlQuery& __q, const QString& __nm, eEx __ex)
 {
-    int i = services.indexOf(_nul().nameIndex(), QVariant(__nm));
+    int i = services.indexOf(_descr_cService().nameIndex(), QVariant(__nm));
     if (i < 0) {
         cService *p = new cService();
         if (!p->fetchByName(__q, __nm)) {
             if (__ex) EXCEPTION(EFOUND, -1, QString(QObject::trUtf8("Ismeretlen szolgáltatás név : %1")).arg(__nm));
             delete p;
-            return _nul();
+            return NULL;
         }
         services << p;
-        return *p;
+        return p;
     }
-    return *services.at(i);
+    return services.at(i);
 }
 
-const cService& cService::service(QSqlQuery &__q, qlonglong __id, eEx __ex)
+const cService *cService::service(QSqlQuery &__q, qlonglong __id, eEx __ex)
 {
-    int i = services.indexOf(_nul().idIndex(), QVariant(__id));
+    int i = services.indexOf(_descr_cService().idIndex(), QVariant(__id));
     if (i < 0) {
         cService *p = new cService();
         if (!p->fetchById(__q, __id)) {
             if (__ex) EXCEPTION(EFOUND, __id, QObject::trUtf8("Ismeretlen szolgáltatás azonosító."));
             delete p;
-            return _nul();
+            return NULL;
         }
         services << p;
-        return *p;
+        return p;
     }
-    return *services.at(i);
+    return services.at(i);
 }
 
 /* ----------------------------------------------------------------- */
@@ -607,8 +606,8 @@ DEFAULTCRECDEF(cAlarm, _sAlarms)
 QString cAlarm::htmlText(QSqlQuery& q, qlonglong _id)
 {
     static const qlonglong ticketId = cService().getIdByName(q, _sTicket, EX_IGNORE);
-    static const QString sNodeTitle  = cTableShape::getFieldDialogTitle(q, _sNodes,  _sNodeName);
-    static const QString sPlaceTitle = cTableShape::getFieldDialogTitle(q, _sPlaces, _sPlaceName);
+    const QString& sNodeTitle  = cTableShape::getFieldDialogTitle(q, _sNodes,  _sNodeName);
+    const QString& sPlaceTitle = cTableShape::getFieldDialogTitle(q, _sPlaces, _sPlaceName);
     static const QString sTicket     = trUtf8("Hiba jegy");
     static const QString _sBr = "<br>";
 

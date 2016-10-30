@@ -30,18 +30,11 @@ int main (int argc, char * argv[])
 
 lv2portMac::lv2portMac() : lanView()
 {
-    pq    = NULL;
-    pSelf = NULL;
     if (lastError == NULL) {
         try {
-            pq = newQuery();
-
-            insertStart(*pq);
-
+            insertStart(*pQuery);
             subsDbNotif();
-
-            cDevicePMac::pSrvSnmp   = &cService::service(*pq, _sSnmp);
-            setup();
+            setup(TS_FALSE);
         } CATCHS(lastError)
     }
 }
@@ -51,28 +44,15 @@ lv2portMac::~lv2portMac()
     down();
 }
 
-void lv2portMac::setup()
+void lv2portMac::setup(eTristate _tr)
 {
-    pSelf = new cPortMac(*pq, appName);
-    pSelf->postInit(*pq);
-    if (pSelf->pSubordinates == NULL || pSelf->pSubordinates->isEmpty()) EXCEPTION(NOTODO);
-    pSelf->start();
+    staticInit(pQuery);
+    tSetup<cPortMac>(_tr);
 }
 
-void lv2portMac::down()
+void lv2portMac::staticInit(QSqlQuery *pq)
 {
-    if (pSelf != NULL) delete pSelf;
-    pSelf = NULL;
-}
-
-void lv2portMac::reSet()
-{
-    try {
-        down();
-        lanView::reSet();
-        setup();
-    } CATCHS(lastError);
-    if (lastError != NULL) QCoreApplication::exit(lastError->mErrorCode);
+    cDevicePMac::pSrvSnmp   = cService::service(*pq, _sSnmp);
 }
 
 /******************************************************************************/
@@ -122,7 +102,7 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
         hostService.set(_sProtoServiceId, pSrvSnmp->getId());
         QSqlQuery q2 = getQuery();
         hostService.update(q2, false, hostService.mask(_sProtoServiceId));
-        pProtoService = &hostService.getProtoService(q2);
+        pProtoService = hostService.getProtoService(q2);
     }
     // Csak az SNMP lekérdezés támogatott
     if (protoServiceId() != pSrvSnmp->getId()) {

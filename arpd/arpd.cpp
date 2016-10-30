@@ -30,23 +30,12 @@ int main (int argc, char * argv[])
 
 lv2ArpD::lv2ArpD() : lanView()
 {
-    pq    = NULL;
-    pSelf = NULL;
+    pSelfInspector = NULL;
     if (lastError == NULL) {
         try {
-            pq = newQuery();
-
-            insertStart(*pq);
-
+            insertStart(*pQuery);
             subsDbNotif();
-
-            cDeviceArp::pPSLocal   = &cService::service(*pq, _sLocal);
-            cDeviceArp::pPSSnmp    = &cService::service(*pq, _sSnmp);
-            cDeviceArp::pPSSsh     = &cService::service(*pq, _sSsh);
-            cDeviceArp::pPSArpProc = &cService::service(*pq, "arp.proc");
-            cDeviceArp::pPSDhcpConf= &cService::service(*pq, "dhcp.conf");
-
-            setup();
+            setup(TS_FALSE);
         } CATCHS(lastError)
     }
 }
@@ -56,29 +45,23 @@ lv2ArpD::~lv2ArpD()
     down();
 }
 
-void lv2ArpD::setup()
+void lv2ArpD::staticInit(QSqlQuery *pq)
 {
-    pSelf = new cArpDaemon(*pq, appName);
-    pSelf->postInit(*pq);
-    if (pSelf->pSubordinates == NULL || pSelf->pSubordinates->isEmpty()) EXCEPTION(NOTODO);
-    pSelf->start();
+    cDeviceArp::pPSLocal   = cService::service(*pq, _sLocal);
+    cDeviceArp::pPSSnmp    = cService::service(*pq, _sSnmp);
+    cDeviceArp::pPSSsh     = cService::service(*pq, _sSsh);
+    cDeviceArp::pPSArpProc = cService::service(*pq, "arp.proc");
+    cDeviceArp::pPSDhcpConf= cService::service(*pq, "dhcp.conf");
 }
 
-void lv2ArpD::down()
+
+
+void lv2ArpD::setup(eTristate _tr)
 {
-    if (pSelf != NULL) delete pSelf;
-    pSelf = NULL;
+    staticInit(pQuery);
+    tSetup<cArpDaemon>(_tr);
 }
 
-void lv2ArpD::reSet()
-{
-    try {
-        down();
-        lanView::reSet();
-        setup();
-    } CATCHS(lastError)
-    if (lastError != NULL) QCoreApplication::exit(lastError->mErrorCode);
-}
 
 /******************************************************************************/
 

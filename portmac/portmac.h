@@ -74,15 +74,8 @@ public:
     lv2portMac();
     ~lv2portMac();
     /// Indulás
-    void setup();
-    /// Leállás, mindent lebont, hogy hívható legyen a setup()
-    void down();
-    /// Újra inicializáló metódus
-    virtual void reSet();
-    ///
-    QSqlQuery      *pq;
-    /// A saját (superior) szolgáltatás és host objektumok
-    cPortMac      *pSelf;
+    void setup(eTristate _tr = TS_NULL);
+    static void staticInit(QSqlQuery *pq);
 };
 
 

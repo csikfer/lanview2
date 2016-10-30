@@ -167,6 +167,8 @@ const QString& filterType(int e, eEx __ex)
 
 /* ------------------------------ cTableShape ------------------------------ */
 
+QMap<QString, QString>   cTableShape::fieldDialogTitleMap;
+
 cTableShape::cTableShape() : cRecord(), shapeFields(this)
 {
     _pFeatures = NULL;
@@ -640,21 +642,31 @@ QString cTableShape::emFieldNotFound(const QString& __f)
     return trUtf8("A %1 nevű shape objektumban nincs %2 nevű mező objektum").arg(getName(), __f);
 }
 
-QString cTableShape::getFieldDialogTitle(QSqlQuery& q, const QString& _sn, const QString& _fn, eEx __ex)
+const QString &cTableShape::getFieldDialogTitle(QSqlQuery& q, const QString& _sn, const QString& _fn, eEx __ex)
 {
-    cTableShape ts;
-    if (!ts.fetchByName(q, _sn)) {
-        if (__ex > EX_ERROR) EXCEPTION(EFOUND, 0, _sn);
-        return _fn;
+    QString key = mCat(_sn, _fn);
+    QMap<QString, QString>::const_iterator i = fieldDialogTitleMap.find(key);
+    if (i == fieldDialogTitleMap.constEnd()) {
+        cTableShape ts;
+        QString r = _fn;
+        if (ts.fetchByName(q, _sn)) {
+            cTableShapeField fs;
+            fs.setId(_sTableShapeId, ts.getId());
+            fs.setName(_fn);
+            if (fs.completion(q) == 1) {
+                r = fs.getName(_sDialogTitle);
+            }
+            else {
+                if (__ex > EX_ERROR) EXCEPTION(EFOUND, 0, key);
+            }
+        }
+        else {
+            if (__ex > EX_ERROR) EXCEPTION(EFOUND, 0, key);
+        }
+        i = fieldDialogTitleMap.insert(key, r);
     }
-    cTableShapeField fs;
-    fs.setId(_sTableShapeId, ts.getId());
-    fs.setName(_fn);
-    if (fs.completion(q) == 1) return fs.getName(_sDialogTitle);
-    if (__ex > EX_ERROR) EXCEPTION(EFOUND, 0, _sn);
-    return _fn;
+    return *i;
 }
-
 
 /* ------------------------------ cTableShapeField ------------------------------ */
 

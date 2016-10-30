@@ -118,13 +118,15 @@ A headerben is szükség van néhány definícióra. A header első néhány sor
 @endcode
 A megadott modul névnek szerepelnie kell a cDebug::eMask enumerációs értékek között. Ez alapján dönti el a cDebug objektum, hogy milyen
 üzeneteket kell kiírni. Vitatható módszer, valószínüleg ki kell találni helyette valami mást.
-A származtatott objektum konstruktorában meg kell viszgállni, hogy a labView konstruktora ne dobott-e hibát pl.:
+A származtatott objektum konstruktorában meg kell viszgállni, hogy a lanView konstruktora nem dobott-e hibát pl.:
 @code
 myLanView::myLanView() : lanView()
 {
+    pq = NULL;
     if (lastError == NULL) {
         try {
-            setup(); // saját init
+            QSqlQuery *pq = newQuery();
+            setup(pq); // saját init
         } CATCH(lastError)
     }
 }
@@ -205,6 +207,38 @@ public:
     virtual bool uSigRecv(int __i);
     /// Minden adat újraolvasása, az alap metódus csak a
     virtual void reSet();
+    /// A fő inspector objektum betöltése, inicializálása, és elindítása.
+    /// Az objektumot csak akkor allokálja meg, ha a pSelfInspector pointer értéke NULL,
+    /// ekkor feltételezi, hogy a servíz név azonos az alpplikáció nevével.
+    /// Ha az opcionális _tr értéke true, akkor az inicializálást egy SQL tranzakcióba fogja.
+    virtual void setup(eTristate _tr = TS_NULL);
+    /// A fő inspector objektum betöltése, inicializálása, és elindítása.
+    /// Az objektum típusa a template paraméter, mely a cInspector leszármazozja.
+    /// feltételezi, hogy a servíz név azonos az alpplikáció nevével.
+    /// Ha az opcionális _tr értéke true, akkor az inicializálást egy SQL tranzakcióba fogja.
+    template <class T> void tSetup(eTristate _tr = TS_NULL)
+    {
+        switch (_tr) {
+        case TS_NULL:                                 break;
+        case TS_FALSE:  setupTransactionFlag = false; break;
+        case TS_TRUE:   setupTransactionFlag = true;  break;
+        }
+        QString tn;
+        if (setupTransactionFlag) {
+            tn = appName + "_setup";
+            sqlBegin(*pQuery, tn);
+        }
+        T *p = new T(*pQuery, appName); // Saját (fő) inspector objektum
+        pSelfInspector = p;
+        p->postInit(*pQuery);           // init
+        if (p->pSubordinates == NULL || p->pSubordinates->isEmpty()) EXCEPTION(NOTODO);
+        if (setupTransactionFlag) {
+            sqlEnd(*pQuery, tn);
+        }
+        p->start();                         // és start
+    }
+    /// Törli a pSelfInspector -t, ha nem NULL
+    virtual void down();
     /// Az alapértelmezett program paraméterek értelmezése
     void parseArg(void);
     /// A hiba objektum tartalmának a kiírása a app_errs táblába.
@@ -230,6 +264,8 @@ public:
     bool openDatabase(enum eEx __ex = EX_ERROR);
     /// Az adatbázis bezárása.
     void closeDatabase();
+    ///
+    void setSelfObjects();
     /// Ha létre lett hozva a lanView (vagy laszármazotjának) a példánya, akkor annak a pointervel tér vissza, ha nem
     /// akkor dob egy kizárást.
     static lanView*    getInstance(void) { if (instance == NULL) EXCEPTION(EPROGFAIL); return instance; }
@@ -270,7 +306,7 @@ public:
     static const cUser& user();
     static qlonglong getUserId(eEx __ex);
     static cNode&          selfNode()        { cNode        *p = getInstance()->pSelfNode;        if (p == NULL) EXCEPTION(EPROGFAIL); return *p; }
-    static cService&       selfService()     { cService     *p = getInstance()->pSelfService;     if (p == NULL) EXCEPTION(EPROGFAIL); return *p; }
+    static const cService& selfService()     {const cService*p = getInstance()->pSelfService;     if (p == NULL) EXCEPTION(EPROGFAIL); return *p; }
     static cHostService&   selfHostService() { cHostService *p = getInstance()->pSelfHostService; if (p == NULL) EXCEPTION(EPROGFAIL); return *p; }
     /// Ellenörzi az aktuális felhasználó jogosultsági szintjét
     static bool isAuthorized(enum ePrivilegeLevel pl) {
@@ -290,17 +326,20 @@ public:
     QString         homeDir;    ///< Home mappa neve
     QString         binPath;    ///< Bin kereső path
     QSettings      *pSet;       ///< Pointer to applicaton settings object
-    cError *        lastError;  ///< Pointer to last error object or NULL
+    cError         *lastError;  ///< Pointer to last error object or NULL
     QStringList     args;       ///< Argumentum lista
     QString         lang;       ///< nyelv
     QTranslator    *libTranslator;  ///< translator az API-hoz
     QTranslator    *appTranslator;  ///< translator az APP-hoz
 
     cNode          *pSelfNode;          ///< Saját host objektum pointere, vagy NULL, ha nem ismert
-    cService       *pSelfService;       ///< Saját service objektum pointere, vagy NULL, ha nem ismert
+    const cService *pSelfService;       ///< Saját service objektum pointere, vagy NULL, ha nem ismert
     cHostService   *pSelfHostService;   ///< Saját service példány objektum pointere, vagy NULL, ha nem ismert
     bool            setSelfStateF;      ///< Ha igaz, akkor kilépéskor (destruktor) be kell állítani az aktuális service példány állapotát.
     cUser          *pUser;              ///< A felhasználót azonosító objektum pointere, vagy NULL
+    cInspector     *pSelfInspector;
+    QSqlQuery      *pQuery;
+
 
     static QString    appName;          ///< Az APP neve
     static short      appVersionMinor;  ///< Az APP al verzió száma
@@ -339,6 +378,8 @@ public:
 
     static eIPV4Pol         ipv4Pol;    ///< IPV4 cím kezelési policy (nincs kifejtve!)
     static eIPV6Pol         ipv6Pol;    ///< IPV6 cím kezelési policy (nincs kifejtve!)
+
+    static bool             setupTransactionFlag;
 
    protected:
     QStringList * getTransactioMapAndCondLock();

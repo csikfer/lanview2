@@ -162,7 +162,7 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
                 if (!ok) EXCEPTION(EPROGFAIL, 0, s);
             }
         }
-        actLogFile.setFileName(lanView::getInstance()->homeDir + "/log/" +  inspector.service().getName() + ".log");
+        actLogFile.setFileName(lanView::getInstance()->homeDir + "/log/" +  inspector.service()->getName() + ".log");
         if (!actLogFile.open(QIODevice::Append | QIODevice::WriteOnly)) {
             EXCEPTION(EFOPEN, -1, actLogFile.fileName());
         }
@@ -311,7 +311,7 @@ void cInspector::initStatic()
     if (nodeOId == NULL_ID) {   // Ha még nincsenek inicializálva a static-ok
         nodeOId   = cNode().tableoid();
         sdevOId   = cSnmpDevice().tableoid();
-        syscronId = cService().getIdByName(_sSyscron);
+        syscronId = cService::name2id(*lanView::getInstance()->pQuery, _sSyscron);
     }
 }
 
@@ -333,8 +333,8 @@ cInspector::cInspector(QSqlQuery& q, const QString &sn)
     // Ha van specifikált port is
     if (! hostService.isNull(_sPortId)) pPort = cNPort::getPortObjById(q, hostService.getId(_sPortId));
     // A prime és proto service, ha van
-    pPrimeService = &hostService.getPrimeService(q);
-    pProtoService = &hostService.getProtoService(q);
+    pPrimeService = hostService.getPrimeService(q);
+    pProtoService = hostService.getProtoService(q);
     getInspectorType(q);
 }
 
@@ -372,8 +372,8 @@ cInspector::cInspector(QSqlQuery& q, qlonglong __host_service_id, qlonglong __ta
     // Ha van specifikált port is
     if (! hostService.isNull(_sPortId)) pPort = cNPort::getPortObjById(q2, hostService.getId(_sPortId));
     // A prime és proto service, ha van
-    pPrimeService = &hostService.getPrimeService(q2);
-    pProtoService = &hostService.getProtoService(q2);
+    pPrimeService = hostService.getPrimeService(q2);
+    pProtoService = hostService.getProtoService(q2);
     // features mező értelmezése
     getInspectorType(q2);
     _DBGFNL() << name() << endl;
@@ -550,7 +550,7 @@ void cInspector::setSubs(QSqlQuery& q, const QString& qs)
 cRecordFieldConstRef cInspector::get(const QString& __n) const
 {
     cRecordFieldConstRef r = hostService[__n];
-    if (r.isNull()) r = service()[__n];
+    if (r.isNull())                          r = (*service())    [__n];
     if (r.isNull() && pPrimeService != NULL) r = (*pPrimeService)[__n];
     if (r.isNull() && pProtoService != NULL) r = (*pProtoService)[__n];
     return r;
@@ -565,7 +565,7 @@ cFeatures& cInspector::splitFeature(eEx __ex)
 
     if (pProtoService != NULL) _pFeatures->split(pProtoService->getName(ixFeatures), __ex);
     if (pPrimeService != NULL) _pFeatures->split(pPrimeService->getName(ixFeatures), __ex);
-    _pFeatures->split(service().  getName(ixFeatures), __ex);
+    _pFeatures->split(service()-> getName(ixFeatures), __ex);
     _pFeatures->split(hostService.getName(_sFeatures), __ex);
     PDEB(VVERBOSE) << name() << " features : " << _pFeatures->join() << endl;
     return *_pFeatures;
@@ -727,12 +727,12 @@ void cInspector::self(QSqlQuery& q, const QString& __sn)
     pDelete(_pFeatures);
     hostService.clear();
     // Előkotorjuk a szolgáltatás típus rekordot.
-    pService = &cService::service(q, __sn);
+    pService = cService::service(q, __sn);
     // Jelenleg feltételezzük, hogy a node az egy host
     pNode = lanView::getInstance()->selfNode().dup()->reconvert<cNode>();
     pNode->fetchSelf(q);
     // És a host_services rekordot is előszedjük.
-    hostService.fetchByIds(q, pNode->getId(), service().getId());
+    hostService.fetchByIds(q, pNode->getId(), service()->getId());
 }
 
 int cInspector::getCheckCmd(QSqlQuery& q)
@@ -749,7 +749,7 @@ int cInspector::getCheckCmd(QSqlQuery& q)
             else            checkCmd = val;
         }
     }
-    val = service().getName(ixCheckCmd);
+    val = service()->getName(ixCheckCmd);
     if (!val.isEmpty()) {
         if (val == "!") checkCmd.clear();
         else            checkCmd = val;
@@ -858,8 +858,8 @@ void cInspector::timerEvent(QTimerEvent *)
     }
     internalStat = IS_RUN;
     _DBGFN() << " Run: " << hostService.getId() << QChar(' ')
-             << host().getName()   << QChar('(') << host().getId()    << QChar(')') << QChar(',')
-             << service().getName()<< QChar('(') << service().getId() << QChar(')') << _sCommaSp
+             << host().getName()    << QChar('(') << host().getId()    << QChar(')') << QChar(',')
+             << service()->getName()<< QChar('(') << service()->getId() << QChar(')') << _sCommaSp
              << "Thread: " << (isMainThread() ? "Main" : objectName()) <<  endl;
     if (inspectorType & IT_TIMING_PASSIVE) {
         if (pSubordinates == NULL) EXCEPTION(EPROGFAIL);    //?!
@@ -1258,7 +1258,7 @@ QString cInspector::name() const
     else                                                     r += qq;
     r +=  QChar(':');
     if (pPort != NULL) r += nPort().getName() + QChar(':');
-    if (pService != NULL) r += service().getName();
+    if (pService != NULL) r += service()->getName();
     else                  r += qq;
     if (pPrimeService != NULL || pProtoService != NULL) {
         r += "(";
@@ -1287,7 +1287,7 @@ QString cInspector::getParValue(QSqlQuery& q, const QString& name, bool *pOk)
         QString fn = sl[1];
         if (0 == on.compare("host_service",   Qt::CaseInsensitive)) return hostService.getName(fn);
         if (0 == on.compare("hostservice",    Qt::CaseInsensitive)) return hostService.getName(fn);
-        if (0 == on.compare("service",        Qt::CaseInsensitive)) return service().getName(fn);
+        if (0 == on.compare("service",        Qt::CaseInsensitive)) return service()->getName(fn);
         if (0 == on.compare(_sNode,           Qt::CaseInsensitive)) return node().getName(fn);
         if (0 == on.compare(_sHost,           Qt::CaseInsensitive)) return node().getName(fn);
         if (0 == on.compare(_sInterface,      Qt::CaseInsensitive)) return nPort().getName(fn);
@@ -1298,7 +1298,7 @@ QString cInspector::getParValue(QSqlQuery& q, const QString& name, bool *pOk)
     else {
         if (0 == name.compare("host_service", Qt::CaseInsensitive)) return hostService.getName();
         if (0 == name.compare("hostservice",  Qt::CaseInsensitive)) return hostService.getName();
-        if (0 == name.compare("service",      Qt::CaseInsensitive)) return service().getName();
+        if (0 == name.compare("service",      Qt::CaseInsensitive)) return service()->getName();
         if (0 == name.compare(_sNode,         Qt::CaseInsensitive)) return node().getName();
         if (0 == name.compare(_sHost,         Qt::CaseInsensitive)) return node().getName();
         if (0 == name.compare(_sInterface,    Qt::CaseInsensitive)) return nPort().getName();
@@ -1315,7 +1315,7 @@ QString cInspector::getParValue(QSqlQuery& q, const QString& name, bool *pOk)
         if (0 == name.compare(_sAddress,      Qt::CaseInsensitive)) return host().getIpAddress().toString();
         if (0 == name.compare(_sProtocol,     Qt::CaseInsensitive)) return protoService().getName();
         if (0 == name.compare("ipproto",      Qt::CaseInsensitive)) {
-            qlonglong pid = service().getId(_sProtocolId);
+            qlonglong pid = service()->getId(_sProtocolId);
             if (pid == NULL_ID) pid = protoService().getId(_sProtocolId);
             if (pid == NULL_ID) {
                 if (pOk == NULL) EXCEPTION(EDATA, 0, name);
@@ -1325,7 +1325,7 @@ QString cInspector::getParValue(QSqlQuery& q, const QString& name, bool *pOk)
             return cService().getNameById(q, pid);
         }
         if (0 == name.compare(_sPort,         Qt::CaseInsensitive)) {
-            qlonglong pn = service().getId(_sPort);
+            qlonglong pn = service()->getId(_sPort);
             if (pn == NULL_ID) pn = protoService().getId(_sPort);
             if (pn == NULL_ID) {
                 if (pOk == NULL) EXCEPTION(EDATA, 0, name);

@@ -31,18 +31,11 @@ int main (int argc, char * argv[])
 
 lv2portStat::lv2portStat() : lanView()
 {
-    pq    = NULL;
-    pSelf = NULL;
+    pSelfInspector = NULL;
     if (lastError == NULL) {
         try {
-            pq = newQuery();
-
-            insertStart(*pq);
-
+            insertStart(*pQuery);
             subsDbNotif();
-
-            cDevicePSt::pRLinkStat = &cService::service(*pq, "rlinkstat");
-            cDevicePSt::pSrvSnmp   = &cService::service(*pq, _sSnmp);
             setup();
         } CATCHS(lastError)
     }
@@ -53,28 +46,18 @@ lv2portStat::~lv2portStat()
     down();
 }
 
-void lv2portStat::setup()
+void lv2portStat::staticInit(QSqlQuery *pq)
 {
-    pSelf = new cPortStat(*pq, appName);
-    pSelf->postInit(*pq);
-    if (pSelf->pSubordinates == NULL || pSelf->pSubordinates->isEmpty()) EXCEPTION(NOTODO);
-    pSelf->start();
+    cDevicePSt::pRLinkStat = cService::service(*pq, "rlinkstat");
+    cDevicePSt::pSrvSnmp   = cService::service(*pq, _sSnmp);
 }
 
-void lv2portStat::down()
+void lv2portStat::setup(eTristate _tr)
 {
-    pDelete(pSelf);
+    staticInit(pQuery);
+    lanView::setup(_tr);
 }
 
-void lv2portStat::reSet()
-{
-    try {
-        down();
-        lanView::reSet();
-        setup();
-    } CATCHS(lastError);
-    if (lastError != NULL) QCoreApplication::exit(lastError->mErrorCode);
-}
 
 /******************************************************************************/
 
@@ -109,7 +92,7 @@ cDevicePSt::cDevicePSt(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __
         hostService.set(_sProtoServiceId, pSrvSnmp->getId());
         QSqlQuery q2 = getQuery();
         hostService.update(q2, false, hostService.mask(_sProtoServiceId));
-        pProtoService = &hostService.getProtoService(q2);
+        pProtoService = hostService.getProtoService(q2);
     }
     /// Csak az SNMP lekérdezés támogatott (egyenlőre)
     if (protoServiceId() != pSrvSnmp->getId())

@@ -51,16 +51,24 @@ protected:
     /// Konténer ill. gyorstár a cService rekordoknak.
     /// Nem frissül automatikusan, ha változik az adattábla.
     static tRecordList<cService> services;
-    /// Egy üres objektumra mutató pointer. Az első használat alkalmával jön létre ld,: _nul()
-    static cService *pNull;
+//    /// Egy üres objektumra mutató pointer. Az első használat alkalmával jön létre ld,: _nul()
+//    static cService *pNull;
 public:
     /// Egy services objektumot ad vissza a név alapján.
     /// Ha nincs ilyen nevű szervíz, akkor dob egy kizárást, vagy egy öres obbjektummal tér vissza.
-    static const cService& service(QSqlQuery &__q, const QString& __nm, enum eEx __ex = EX_ERROR);
+    static const cService *service(QSqlQuery &__q, const QString& __nm, enum eEx __ex = EX_ERROR);
     /// Egy services objektumot ad vissza az ID alapján, ha nincs ilyen nevű típus, akkor dob egy kizárást.
-    static const cService& service(QSqlQuery &__q, qlonglong __id, enum eEx __ex = EX_ERROR);
-    static const cService& _nul() { if (pNull == NULL) pNull = new cService(); return *pNull; }
-    static void clearServicesCache() { services.clear(); }
+    static const cService *service(QSqlQuery &__q, qlonglong __id, enum eEx __ex = EX_ERROR);
+//  static const cService& _nul() { if (pNull == NULL) pNull = new cService(); return *pNull; }
+    static void resetCacheData() { services.clear(); }
+    static qlonglong name2id(QSqlQuery &__q, const QString& __nm, enum eEx __ex = EX_ERROR) {
+        const cService *p = service(__q, __nm, __ex);
+        return p == NULL ? NULL_ID : p->getId();
+    }
+    static QString id2name(QSqlQuery &__q, qlonglong __id, enum eEx __ex = EX_ERROR) {
+        const cService *p = service(__q, __id, __ex);
+        return p == NULL ? _sNul : p->getName();
+    }
     STATICIX(cService, ixProtocolId)
     static const qlonglong nilId;
 };
@@ -178,12 +186,12 @@ public:
     /// @param Az esetleges SQL lekérdezéshez használlt objektum (ha már be van olvasva a keresett objektum, akkor nem fordul az adatbázishoz)
     /// @param __ex Hiba esetén vagy, ha az id nem NULL, de mégsem találja az objektumot, akkor nem üres objektummal tér vissza, hanem dob egy kizárást, ha __ex értéke true.
     /// @return A keresett objektum referenciája, ill. ha hiba volt és __ex nem true, ill. ha az ID NULL, akkor egy üres objektum pointere.
-    const cService& getPrimeService(QSqlQuery& __q, enum eEx __ex = EX_ERROR)
+    const cService *getPrimeService(QSqlQuery& __q, enum eEx __ex = EX_ERROR)
     {
         qlonglong id = getId(_sPrimeServiceId);
         if (id == NULL_ID) {
             if (__ex == EX_WARNING) EXCEPTION(EDATA);
-            return cService::_nul();
+            return NULL;
         }
         return cService::service(__q, id, __ex);
     }
@@ -192,15 +200,16 @@ public:
     /// @param Az esetleges SQL lekérdezéshez használlt objektum (ha már be van olvasva a keresett objektum, akkor nem fordul az adatbázishoz)
     /// @param __ex Hiba esetén vagy, ha az id nem NULL, de mégsem találja az objektumot, akkor nem üres objektummal tér vissza, hanem dob egy kizárást, ha __ex értéke true.
     /// @return A keresett objektum referenciája, ill. ha hiba volt és __ex nem true, ill. ha az ID NULL, akkor egy üres objektum pointere.
-    const cService& getProtoService(QSqlQuery& __q, enum eEx __ex = EX_ERROR)
+    const cService *getProtoService(QSqlQuery& __q, enum eEx __ex = EX_ERROR)
     {
         qlonglong id = getId(_sProtoServiceId);
         if (id == NULL_ID) {
             if (__ex == EX_WARNING) EXCEPTION(EDATA);
-            return cService::_nul();
+            return NULL;
         }
         return cService::service(__q, id, __ex);
     }
+    ///
     static qlonglong ticketId(QSqlQuery& q, eEx __ex = EX_ERROR) {
         cHostService o;
         if (o.fetchByNames(q, _sNil, _sTicket, __ex) == 1) return o.getId();

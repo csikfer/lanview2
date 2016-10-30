@@ -17,7 +17,7 @@ class lv2import : public lanView {
     lv2import();
     ~lv2import();
     void abortOldRecords();
-    QSqlQuery   *pq;
+    QSqlQuery   *pQuery;
     QString     fileNm;
     QFile       in;
     bool        daemonMode;

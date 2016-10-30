@@ -48,16 +48,9 @@ class lv2portStat : public lanView {
 public:
     lv2portStat();
     ~lv2portStat();
-    /// Indulás
-    void setup();
-    /// Leállás, mindent lebont, hogy hívható legyen a setup()
-    void down();
+    static void staticInit(QSqlQuery *pq);
     /// Újra inicializáló metódus
-    virtual void reSet();
-    ///
-    QSqlQuery      *pq;
-    /// A saját (superior) szolgáltatás és host objektumok
-    cPortStat      *pSelf;
+    virtual void setup(eTristate _tr = TS_NULL);
 };
 
 

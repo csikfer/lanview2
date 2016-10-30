@@ -52,15 +52,8 @@ public:
     lv2ArpD();
     ~lv2ArpD();
     /// Indulás
-    void setup();
-    /// Leállás, mindent lebont, hogy hívható legyen a setup()
-    void down();
-    /// Újra inicializáló metódus
-    virtual void reSet();
-    ///
-    QSqlQuery      *pq;
-    /// A saját (superior) szolgáltatás és host objektumok
-    cArpDaemon      *pSelf;
+    virtual void setup(eTristate _tr = TS_NULL);
+    static void staticInit(QSqlQuery *pq);
 };
 
 #endif // ARPD_H
