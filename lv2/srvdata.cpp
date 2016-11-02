@@ -605,10 +605,7 @@ DEFAULTCRECDEF(cAlarm, _sAlarms)
 
 QString cAlarm::htmlText(QSqlQuery& q, qlonglong _id)
 {
-    static const qlonglong ticketId = cService().getIdByName(q, _sTicket, EX_IGNORE);
-    const QString& sNodeTitle  = cTableShape::getFieldDialogTitle(q, _sNodes,  _sNodeName);
-    const QString& sPlaceTitle = cTableShape::getFieldDialogTitle(q, _sPlaces, _sPlaceName);
-    static const QString sTicket     = trUtf8("Hiba jegy");
+    const qlonglong ticketSrvId  = cService::service(q, _sTicket, EX_IGNORE)->getId();
     static const QString _sBr = "<br>";
 
     bool isTicket = false;
@@ -617,9 +614,9 @@ QString cAlarm::htmlText(QSqlQuery& q, qlonglong _id)
     a.setById(q, _id);
     QString text;   // HTML text
 
-    if (ticketId != NULL_ID && ticketId == a.getId(_sHostServiceId)) {    // Ticket
+    if (ticketSrvId != NULL_ID && ticketSrvId == a.getId(_sHostServiceId)) {    // Ticket
         isTicket = true;
-        text = sTicket + " :<br>";
+        text = trUtf8("Hiba jegy") + " :<br>";
         qlonglong id = a.getId(_sSuperiorAlarmId);
         pTargetRec = a.newObj();
         pTargetRec->fetchById(q, id);
@@ -627,11 +624,22 @@ QString cAlarm::htmlText(QSqlQuery& q, qlonglong _id)
     cHostService hs; hs.   setById(q, pTargetRec->getId(_sHostServiceId));
     cNode  node;     node. setById(q, hs.         getId(_sNodeId));
     cPlace place;    place.setById(q, node.       getId(_sPlaceId));
+    const cService *pSrv = cService::service(q,hs.getId(_sServiceId));
     QString aMsg = execSqlTextFunction(q, "alarm_message", hs.getId(), a.get(_sMaxStatus));
-    text += _sBr + sPlaceTitle + " : <b>" + place.getName() + "</b>, <i>" + place.getNote() + "</i>";
-    text += _sBr + sNodeTitle  + " : <b>" + node.getName()  + "</b>, <i>" + node.getNote()  + "</i>";
-    text += _sBr + trUtf8("Riasztás oka : ") + "<b><i>" + aMsg + "</i></b>";
-    text += _sBr + trUtf8("Csatolt üzenet : ") + "<b><i>" + pTargetRec->getName(_sEventNote) + "</i></b>";
+    text += _sBr + trUtf8("Riasztási állpot kezdete") + " : <b>" + pTargetRec->view(q, _sBeginTime) + "</b>";
+    text += _sBr + trUtf8("A hállózati elem helye")   + " : <b>" + place.getName() + "</b>, <i>" + place.getNote() + "</i>";
+    text += _sBr + trUtf8("A hállózati elem neve")    + " : <b>" + node.getName()  + "</b>, <i>" + node.getNote()  + "</i>";
+    text += _sBr + trUtf8("Szolgáltatás neve")        + " : <b>" + pSrv->getName() + "</b>, <i>" + pSrv->getNote() + "</i>";
+    text += _sBr + trUtf8("Riasztás oka")          + " : <b><i>" + aMsg + "</i></b>";
+    text += _sBr + trUtf8("Csatolt üzenet")        + " : <b><i>" + pTargetRec->getName(_sEventNote) + "</i></b>";
+    if (a.isNull(_sEndTime)) {
+        text += _sBr + trUtf8("A riasztási állapot az üzenetküdéskor még aktív volt.");
+    }
+    else {
+        text += _sBr + trUtf8("A riasztási állapot az üzenetküdéskor már nem volt aktív.");
+        text += _sBr + trUtf8("A riasztási állapot vége : ") + "<b>" + pTargetRec->view(q, _sEndTime) + "</i></b>";
+    }
+
     if (isTicket) delete pTargetRec;
     return text;
 }

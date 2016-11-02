@@ -91,7 +91,7 @@ void cSysCronThread::mailCron()
         QString msg = cAlarm::htmlText(q, aid);
         foreach (uid, uidMapByAid[aid]) {
             QString emsg = MsgMapByUid[uid];
-            if (!emsg.isEmpty()) emsg += "<hr width=\"80%\"><br>";
+            if (!emsg.isEmpty()) emsg += "<hr width=\"80%\"><br>"; // Line separator
             MsgMapByUid[uid] = emsg + msg;
         }
     }
