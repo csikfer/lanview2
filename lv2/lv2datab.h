@@ -2167,7 +2167,7 @@ template <class R> const cRecStaticDescr *getPDescr(const QString& _tn, const QS
         virtual cRecord *newObj() const; \
         virtual cRecord *dup()const; \
         virtual R& clone(const cRecord& __o); \
-        static const cRecStaticDescr& _descr_##R() { if (R::_pRecordDescr == NULL) EXCEPTION(EPROGFAIL); return *R::_pRecordDescr; } \
+        static const cRecStaticDescr& _descr_##R() { if (R::_pRecordDescr == NULL) R().descr(); return *R::_pRecordDescr; } \
     protected: \
         static const cRecStaticDescr * _pRecordDescr
 
