@@ -85,8 +85,9 @@ SOURCES += lanview.cpp \
     lv2daterr.cpp \
     qtelnet.cpp \
     srvdata.cpp \
-    lv2link.cpp \
-    syscronthread.cpp
+    lv2link.cpp
+
+unix:SOURCES += syscronthread.cpp
 
 # simple-mail : https://github.com/cutelyst/simple-mail.git
 unix:INCLUDEPATH += ../../simple-mail/src
@@ -117,8 +118,9 @@ HEADERS += lanview.h \
     lv2daterr.h \
     qtelnet.h \
     srvdata.h \
-    lv2link.h \
-    syscronthread.h
+    lv2link.h
+
+unix:HEADERS += syscronthread.h
 
 unix:SOURCES += usignal.cpp
 unix:HEADERS += usignal.h
@@ -126,7 +128,7 @@ unix:HEADERS += usignal.h
 FORMS += 
 
 unix:LIBS += -lsnmp
-LIBS += -L../../simple-mail-build/src -lsimplemail-qt5
+unix:LIBS += -L../../simple-mail-build/src -lsimplemail-qt5
 
 TRANSLATIONS    = lv2lib_hu.ts \
                   lv2lib_en.ts

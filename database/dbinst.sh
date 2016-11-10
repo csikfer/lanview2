@@ -33,5 +33,5 @@ CREATE DATABASE $MYNAME
 END
 
 echo Execute $1 script...
-su $MYNAME -c "psql -f $1"
+su $MYNAME -s /bin/bash -c "psql -f $1"
 

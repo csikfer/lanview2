@@ -524,6 +524,7 @@ void lanView::instAppTransl()
     }
 }
 
+#ifdef MUST_USIGNAL
 bool lanView::uSigRecv(int __i)
 {
     if (__i == SIGHUP) {
@@ -533,6 +534,7 @@ bool lanView::uSigRecv(int __i)
     }
     return true;
 }
+#endif
 
 void lanView::reSet()
 {
@@ -574,6 +576,7 @@ void lanView::down()
     pDelete(pSelfInspector);
 }
 
+#ifdef MUST_USIGNAL
 void lanView::uSigSlot(int __i)
 {
     if (uSigRecv(__i)) switch (__i) {
@@ -586,6 +589,7 @@ void lanView::uSigSlot(int __i)
             break;
     }
 }
+#endif
 
 void    lanView::dbNotif(const QString& name, QSqlDriver::NotificationSource source, const QVariant &payload)
 {
