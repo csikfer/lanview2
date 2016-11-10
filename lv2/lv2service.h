@@ -182,7 +182,7 @@ public:
     /// @param _par A parent objekrum
     virtual cInspector *newSubordinate(QSqlQuery& q, qlonglong _hsid, qlonglong _toid = NULL_ID, cInspector *_par = NULL);
     /// A QThread objektum ill. az abból származtatott objektum allokálása. Az alap metódus egy cInspectorThread objektumot allokál.
-    /// Amennyiben a szervíz a 'syscron', akkor a megallokált objektum a cSysCronThread.
+    /// Amennyiben a szervíz a 'syscron', akkor a megallokált objektum a cSysCronThread (Win: not supported).
     virtual cInspectorThread *newThread();
     virtual cInspectorProcess *newProcess();
     /// Feltölti a subordinates konténert. Hiba esetén dob egy kizárást, de ha nincs mivel feltölteni a subordinatest, az nem hiba.

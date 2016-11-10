@@ -202,9 +202,11 @@ public:
     ///
     /// A konstruktor minden általa inicializált objektumot megkísérel felszabadítani.
     ~lanView();
+#ifdef MUST_USIGNAL
     /// Egy UNIX signal-t kezelő virtuális metódus.
     /// Windows esetén egy üres függvény.
     virtual bool uSigRecv(int __i);
+#endif
     /// Minden adat újraolvasása, az alap metódus csak a
     virtual void reSet();
     /// A fő inspector objektum betöltése, inicializálása, és elindítása.
@@ -398,7 +400,9 @@ public:
     void            instAppTransl();
 protected slots:
     virtual void    dbNotif(const QString & name, QSqlDriver::NotificationSource source, const QVariant & payload);
+#ifdef MUST_USIGNAL
     void            uSigSlot(int __i);
+#endif
 };
 
 #define INSERROR(ec, ...) { \
