@@ -1645,6 +1645,8 @@ list_m  : LIST_T iexpr TO_T iexpr MASK_T str                { $$ = listLoop($6, 
         ;
 // tranzakciókezelés
 sql     : NOTIFY_T str ';'                      { yySqlExec("NOTIFY " + sp2s($2)); }
+        | NOTIFY_T str ',' str ';'              { yySqlExec(QString("NOTIFY %1, '%2'").arg(sp2s($2), sp2s($4))); }
+        | RESET_T str ';'                       { yySqlExec(QString("NOTIFY %1, 'reset'").arg(sp2s($2))); }
         | RESET_T CACHE_T DATA_T ';'            { lanView::resetCacheData(); }
         | SQL_T '(' str ')' ';'                 { yySqlExec(sp2s($3)); }
         | SQL_T '(' str ',' vals ')' ';'        { yySqlExec(sp2s($3), $5); }

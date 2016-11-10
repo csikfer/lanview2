@@ -481,9 +481,9 @@ CREATE OR REPLACE VIEW online_alarms AS
         event_note,
         alarm_message(host_service_id, max_status)      	AS msg,
         online_user_ids,
-        ARRAY(SELECT user_id FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'notice' AND event_state = 'happened') AS notice_user_ids,
-        ARRAY(SELECT user_id FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'view')          AS view_user_ids,
-        ARRAY(SELECT user_id FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'acknowledge')   AS ack_user_ids
+        (SELECT array_agg(user_id) FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'notice' AND event_state = 'happened') AS notice_user_ids,
+        (SELECT array_agg(user_id) FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'view')          AS view_user_ids,
+        (SELECT array_agg(user_id) FROM user_events WHERE alarm_id = a.alarm_id AND event_type = 'acknowledge')   AS ack_user_ids
     FROM a
     JOIN host_services AS h USING (host_service_id)
     JOIN services      AS s USING(service_id)
