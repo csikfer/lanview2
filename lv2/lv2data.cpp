@@ -1439,7 +1439,7 @@ bool cInterface::insert(QSqlQuery &__q, eEx __ex)
 }
 
 /// Az cInterface nem önálló objektum.
-/// A Hívása elött a cNode törli az összes IP cím rekordot, igy az IP címekhet nem a replace() hanem az insert() metódust kell hívni,
+/// A Hívása elött a cNode törli az összes IP cím rekordot, igy az IP címekhez nem a replace() hanem az insert() metódust kell hívni,
 bool cInterface::rewrite(QSqlQuery &__q, eEx __ex)
 {
     bool r = cNPort::rewrite(__q, __ex) && (trunkMembers.size() == updateTrunkMembers(__q, __ex));
@@ -2114,11 +2114,11 @@ const QString& nodeType(int __e, eEx __ex)
     return _sNul;
 }
 
-
 cNode::cNode() : cPatch(_no_init_)
 {
 //  DBGOBJ();
     _set(cNode::descr());
+    bDelCollisionByMac = bDelCollisionByIp = false;
 }
 
 cNode::cNode(const cNode& __o) : cPatch(_no_init_)
@@ -2129,6 +2129,8 @@ cNode::cNode(const cNode& __o) : cPatch(_no_init_)
     if (__o.pShares != NULL) EXCEPTION(EPROGFAIL,0,__o.toString());
     ports.append(__o.ports);
     params.append(__o.params);
+    bDelCollisionByMac = __o.bDelCollisionByMac;
+    bDelCollisionByIp  = __o.bDelCollisionByIp;
 }
 
 /// A többi clone() metódushoz képest eltérés, hogy nem csak azonos típust (azonos descriptor) lehet másolni.
@@ -2153,6 +2155,7 @@ cNode::cNode(const QString& __name, const QString& __descr) : cPatch(_no_init_)
     _set(cNode::descr());
     _set(_descr_cNode().nameIndex(),  __name);
     _set(_descr_cNode().noteIndex(), __descr);
+    bDelCollisionByMac = bDelCollisionByIp = false;
 }
 
 // -- virtual
@@ -2193,6 +2196,9 @@ bool cNode::insert(QSqlQuery &__q, eEx __ex)
         }
         setId(ixNodeType, nt);
     }
+    // Ütköző objektumok feltételes törlése
+    delCollisionByIp(__q);
+    delCollisionByMac(__q);
     return cPatch::insert(__q, __ex);
 }
 
@@ -2203,7 +2209,10 @@ bool cNode::rewrite(QSqlQuery &__q, eEx __ex)
             "(SELECT port_id FROM nports WHERE node_id = ?)";
     qlonglong id = cNode().getIdByName(__q, getName());
     execSql(__q, sql, id);
-
+    // Ütköző objektumok feltételes törlése
+    setId(id);
+    delCollisionByIp(__q);
+    delCollisionByMac(__q);
     if (!tRewrite(__q, ports, CV_PORTS, params, CV_NODE_PARAMS, __ex)) return false;
     return true;
 }
@@ -2762,6 +2771,89 @@ QString cNode::codeInsert_() const
     return o;
 }
 
+int cNode::delCollisionByMac(QSqlQuery &__q)
+{
+    int n = -1;
+    QList<cMac> macs;
+    if (bDelCollisionByMac) {
+        int ixHwAddress = cInterface().toIndex(_sHwAddress);
+        QListIterator<cNPort *> i(ports);
+        n = 0;
+        while (i.hasNext()) {
+            const cNPort *pp = i.next();
+            if (!pp->isIndex(ixHwAddress)) continue;
+            cMac mac = pp->getMac(ixHwAddress);
+            if (macs.indexOf(mac) < 0) macs << mac;
+        }
+        if (!macs.isEmpty()) {
+            QString sql;
+            QVariant id = get(idIndex());
+            if (id.isNull()) {
+                sql = "DELETE FROM nodes WHERE node_id IN "
+                        "(SELECT DISTINCT(node_id) FROM interfaces WHERE hwaddress = ?)";
+            }
+            else {
+                sql = "DELETE FROM nodes WHERE node_id IN "
+                        "(SELECT DISTINCT(node_id) FROM interfaces WHERE hwaddress = ? AND node_id <> ?)";
+            }
+            foreach (cMac mac, macs) {
+                execSql(__q, sql, mac.toString(), id);
+                int nn = __q.numRowsAffected();
+                if (nn) {
+                    n += nn;
+                    PDEB(INFO) << "Delete node for collision " << mac.toString() << " mac" << endl;
+                }
+            }
+        }
+    }
+    return n;
+}
+
+int cNode::delCollisionByIp(QSqlQuery& __q)
+{
+    int n = -1;
+    QList<QHostAddress> ips;
+    if (bDelCollisionByIp) {
+        QListIterator<cNPort *> i(ports);
+        n = 0;
+        while (i.hasNext()) {
+            const cNPort *pp = i.next();
+            if (pp->tableName() != _sInterfaces) continue;
+            QListIterator<cIpAddress *> j(pp->creconvert<cInterface>()->addresses);
+            while (j.hasNext()) {
+                cIpAddress *pip = j.next();
+                qlonglong type = pip->getId(_sIpAddressType);
+                if (type != AT_DYNAMIC && type != AT_PRIVATE) {
+                    ips << pip->address();
+                }
+            }
+        }
+        if (!ips.isEmpty()) {
+            QString sql;
+            QVariant id = get(idIndex());
+            if (id.isNull()) {
+                sql = "DELETE FROM nodes WHERE node_id IN "
+                        "(SELECT node_id FROM interfaces JOIN ipaddresses USING(port_id)"
+                        " WHERE address = ?)";
+            }
+            else {
+                sql = "DELETE FROM nodes WHERE node_id IN "
+                        "(SELECT node_id FROM interfaces JOIN ipaddresses USING(port_id)"
+                        " WHERE address = ? AND node_id <> ?)";
+            }
+            foreach (QHostAddress ip, ips) {
+                execSql(__q, sql, ip.toString(), id);
+                int nn = __q.numRowsAffected();
+                if (nn) {
+                    n += nn;
+                    PDEB(INFO) << "Delete node for collision " << ip.toString() << " IP" << endl;
+                }
+            }
+        }
+    }
+    return n;
+}
+
 
 /* ------------------------------ SNMPDEVICES : cSnmpDevice ------------------------------ */
 
@@ -2811,6 +2903,9 @@ bool cSnmpDevice::insert(QSqlQuery &__q, eEx __ex)
         if (ports.size() > 8) nt |= enum2set(NT_SWITCH);
         setId(ixNodeType, nt);
     }
+    // Ütköző objektumok feltételes törlése
+    delCollisionByIp(__q);
+    delCollisionByMac(__q);
     return cPatch::insert(__q, __ex);
 }
 

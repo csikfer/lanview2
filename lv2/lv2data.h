@@ -1426,6 +1426,12 @@ public:
     cNode& asmbNode(QSqlQuery& q, const QString& __name, const QStringPair* __port, const QStringPair *__addr, const QString *__sMac, const QString &__note = _sNul, qlonglong __place = NULL_ID, enum eEx __ex = EX_ERROR);
     ///
     virtual QString codeInsert_() const;
+    ///
+    bool bDelCollisionByMac;
+    bool bDelCollisionByIp;
+    int delCollisionByMac(QSqlQuery &__q);
+    int delCollisionByIp(QSqlQuery &__q);
+
 };
 
 

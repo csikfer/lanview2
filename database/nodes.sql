@@ -705,7 +705,7 @@ BEGIN
     END IF;
     SELECT COUNT(*) INTO n FROM interfaces WHERE node_id <> NEW.node_id AND hwaddress = NEW.hwaddress;
     IF n > 0 THEN
-        PERFORM error('IdNotUni', NEW.port_id, NEW.hwaddress, 'check_interface()', TG_TABLE_NAME, TG_OP);
+        PERFORM error('IdNotUni', NEW.port_id, NEW.hwaddress::text, 'check_interface()', TG_TABLE_NAME, TG_OP);
         RETURN NULL;
     END IF;
     RETURN NEW;

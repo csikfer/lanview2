@@ -804,7 +804,9 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
     cNPort *plp = NULL;
 
     rDev.clear();
+    rDev.bDelCollisionByIp = rDev.bDelCollisionByMac = true;    // Ütköző objektumok törlése
     rHost.clear();
+    rHost.bDelCollisionByIp = rHost.bDelCollisionByMac = true;  // Ütköző objektumok törlése
     lPort.clear();
     rPort.clear();
     rPortIx = -1;
