@@ -20,7 +20,7 @@ public:
     virtual void init();
     virtual QStringList where(QVariantList& qParams);
     virtual void buttonPressed(int id);
-    virtual void insert();
+    virtual void insert(bool _similar = false);
     virtual void modify(enum eEx __ex = EX_ERROR);
     void lldp2phs();
     enum eLinkType {

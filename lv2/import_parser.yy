@@ -778,7 +778,7 @@ void cLink::replace(QString *__hn1, qlonglong __pi1, QString *__hn2, qlonglong _
     while (__n--) {
         lnk[_sPortId1] = cNPort::getPortIdByIndex(qq(), __pi1, nid1, EX_ERROR);
         lnk[_sPortId2] = cNPort::getPortIdByIndex(qq(), __pi2, nid2, EX_ERROR);
-        lnk.insert(qq());
+        lnk.replace(qq());
         lnk.clear(lnk.idIndex());   // töröljük az id-t mert a köv insert-nél baj lessz.
         __pi1++;                    // Léptetjük az indexeket
         __pi2++;
@@ -998,7 +998,6 @@ static void yyskip(bool b)
 static int yylex(void);
 static void forLoopMac(QString *_in, QVariantList *_lst);
 static void forLoop(QString *_in, QVariantList *_lst);
-static void forLoop(QString *m, qlonglong fr, qlonglong to, qlonglong st);
 static QStringList *listLoop(QString *m, qlonglong fr, qlonglong to, qlonglong st);
 static intList *listLoop(qlonglong fr, qlonglong to, qlonglong st);
 
@@ -1565,7 +1564,7 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
 %token <mac> MAC_V 
 %token <ip> IPV4_V IPV6_V
 %type  <i>  int int_ iexpr lnktype shar ipprotp ipprot offs ix_z vlan_t set_t srvtid
-%type  <i>  vlan_id place_id iptype pix pix_z iptype_a step image_id tmod int0 replace
+%type  <i>  vlan_id place_id iptype pix pix_z iptype_a image_id tmod int0 replace
 %type  <i>  ptypen fhs hsid srvid grpid tmpid node_id port_id snet_id ift_id plg_id
 %type  <i>  usr_id ftmod p_seq int_z lnktypez fflags fflag tstypes tstype pgtype
 %type  <il> list_i p_seqs p_seqsl // ints
@@ -1634,10 +1633,6 @@ macro   : MACRO_T            NAME_V str ';'                 { templates.set (_sM
 // Ciklusok
 for_m   : FOR_T vals  DO_T MACRO_T NAME_V ';'               { forLoopMac($5, $2); }
         | FOR_T vals  DO_T str ';'                          { forLoop($4, $2); }
-        | FOR_T iexpr TO_T iexpr step MASK_T str ';'        { forLoop($7, $2, $4, $5); }
-        ;
-step    :                                                   { $$ = 1; }
-        | STEP_T iexpr                                      { $$ = $2; }
         ;
 // Listák
 list_m  : LIST_T iexpr TO_T iexpr MASK_T str                { $$ = listLoop($6, $2, $4, 1);  }
@@ -1717,6 +1712,7 @@ int_    : INTEGER_V                             { $$ = $1; }
         | ID_T TABLE_T SHAPE_T '(' ftmod ')'    { $$ = $5; }
         | '#' NAME_V                            { $$ = vint(*$2); delete $2; }
         | '#' '+' NAME_V                        { $$ = (vint(*$3) += 1); delete $3; }
+        | '#' '-' NAME_V                        { $$ = (vint(*$3) -= 1); delete $3; }
         ;
 int     : int_                                  { $$ = $1; }
         | '-' INTEGER_V                         { $$ =-$2; }
@@ -3207,16 +3203,6 @@ static void forLoop(QString *_in, QVariantList *_lst)
     templates.set (_sMacros, *pmm, *_in);
     delete _in;
     forLoopMac(pmm, _lst);
-}
-
-static void forLoop(QString *m, qlonglong fr, qlonglong to, qlonglong st)
-{
-    QString s;
-    for (qlonglong i = fr; i <= to; i += st) {
-        s += nameAndNumber(*m, i) + QChar(' ');
-    }
-    insertCode(s);
-    delete m;
 }
 
 static QStringList *listLoop(QString *m, qlonglong fr, qlonglong to, qlonglong st)

@@ -579,21 +579,22 @@ void cRecordsViewBase::buttonPressed(int id)
 {
     _DBGFN() << " #" << id << endl;
     switch (id) {
-    case DBT_CLOSE:     close();    break;
-    case DBT_REFRESH:   refresh();  break;
-    case DBT_INSERT:    insert();   break;
-    case DBT_MODIFY:    modify();   break;
-    case DBT_FIRST:     first();    break;
-    case DBT_PREV:      prev();     break;
-    case DBT_NEXT:      next();     break;
-    case DBT_LAST:      last();     break;
-    case DBT_DELETE:    remove();   break;
-    case DBT_RESET:     reset();    break;
-    case DBT_PUT_IN:    putIn();    break;
-    case DBT_TAKE_OUT:  takeOut();  break;
-    case DBT_COPY:      copy();     break;
-    case DBT_RECEIPT:   receipt();  break;
-    case DBT_TRUNCATE:  truncate(); break;
+    case DBT_CLOSE:     close();        break;
+    case DBT_REFRESH:   refresh();      break;
+    case DBT_INSERT:    insert();       break;
+    case DBT_SIMILAR:   insert(true);   break;
+    case DBT_MODIFY:    modify();       break;
+    case DBT_FIRST:     first();        break;
+    case DBT_PREV:      prev();         break;
+    case DBT_NEXT:      next();         break;
+    case DBT_LAST:      last();         break;
+    case DBT_DELETE:    remove();       break;
+    case DBT_RESET:     reset();        break;
+    case DBT_PUT_IN:    putIn();        break;
+    case DBT_TAKE_OUT:  takeOut();      break;
+    case DBT_COPY:      copy();         break;
+    case DBT_RECEIPT:   receipt();      break;
+    case DBT_TRUNCATE:  truncate();     break;
     default:
         DWAR() << "Invalid button id : " << id << endl;
         break;
@@ -638,14 +639,14 @@ void cRecordsViewBase::refresh(bool first)
     DBGFNL();
 }
 
-void cRecordsViewBase::insert()
+void cRecordsViewBase::insert(bool _similar)
 {
     if (flags & RTF_CHILD) {
         if (pUpper == NULL) EXCEPTION(EPROGFAIL);
         if (owner_id == NULL_ID) return;
     }
     if (pRecordDialog != NULL) {
-        pDelete(pRecordDialog);
+        pDelete(pRecordDialog); // !!!???
         // EXCEPTION(EPROGFAIL);
     }
     parent_id = NULL_ID;
@@ -663,6 +664,16 @@ void cRecordsViewBase::insert()
     case TIT_ONLY: {
         cRecordDialog   rd(*pTableShape, buttons, true, NULL, this, pWidget());  // A rekord szerkesztő dialógus
         pRecordDialog = &rd;
+        if (_similar) {
+            cRecord *pRec = actRecord();    // pointer az aktuális rekordra, a beolvasott/megjelenített rekord listában
+            if (pRec != NULL) {
+                cRecord *pR = pRec->dup();
+                QBitArray c = pR->autoIncrement();
+                pR->clear(c);
+                rd.restore(pR);
+                delete pR;
+            }
+        }
         while (1) {
             int r = rd.exec();
             if (r == DBT_INSERT || r == DBT_OK) {   // Csak az OK, és Insert gombra csinálunk valamit
@@ -696,6 +707,17 @@ void cRecordsViewBase::insert()
         tRecordList<cTableShape> *pShapes = getShapes();
         cRecordDialogInh rd(*pTableShape, *pShapes, buttons, true, NULL, this, pWidget());
         pRecordDialog = &rd;
+        pRecordDialog = &rd;
+        if (_similar) {
+            cRecord *pRec = actRecord();    // pointer az aktuális rekordra, a beolvasott/megjelenített rekord listában
+            if (pRec != NULL) {
+                cRecord *pR = pRec->dup();
+                QBitArray c = pR->autoIncrement();
+                pR->clear(c);
+                rd.restore(pR);
+                delete pR;
+            }
+        }
         while (1) {
             int r = rd.exec();
             if (r == DBT_INSERT || r == DBT_OK) {
@@ -1001,7 +1023,6 @@ void cRecordsViewBase::initShape(cTableShape *pts)
             shapeType = (shapeType & ~ENUM2SET(TS_SIMPLE)) | ENUM2SET(TS_CHILD);
         }
     }
-
 }
 
 cRecordsViewBase *cRecordsViewBase::newRecordView(cTableShape *pts, cRecordsViewBase * own, QWidget *par)
@@ -1092,8 +1113,8 @@ void cRecordsViewBase::initMaster()
     pRightTables = new tRecordsViewBaseList;    // A jobb oldali elemek listája (objektum)
     if ((flags & (RTF_MEMBER | RTF_GROUP))) {   // Az első elem esetén lehet Group/member táblák
         createRightTab();                       // Ez eleve két tábla a jobb oldalon, tab widget kell.
-        initGroup(vlids);                       // A két tag-nem tag tábla (vlids első eleme)
-        rightTabs(vlids);                       // A maradék táblák, ha vannak (első elem törölve)
+        initGroup(vlids);                       // A két tag-nem tag tábla (egy table_shape objektum, vlids első eleme)
+        rightTabs(vlids);                       // A maradék táblák, ha vannak (az első elem törölve a vlids listából)
     }
     else if (vlids.size() == 1) {               // Ha nem kell a tab widget
         id = vlids.at(0).toLongLong(&ok);
@@ -1124,19 +1145,21 @@ void cRecordsViewBase::initGroup(QVariantList& vlids)
     }
     cRecordsViewBase *prvb = NULL;
     cTableShape *pts = new cTableShape();
-    bool ok;
-    qlonglong id = vlids.at(0).toLongLong(&ok);   // A froup, vagy member tábla a lista első eleme kell legyen !!!!!
-    if (!ok) EXCEPTION(EDATA);
-    vlids.pop_front();                  // A maradék lista, chhild obj-ek
-    pts->fetchById(*pq, id);            // A jobb oldali táblák megjelenítését leíró (minta) rekord
+    bool ok = false;
+    qlonglong id;
+    if (vlids.size() > 0) id = vlids.at(0).toLongLong(&ok);   // A group, vagy member tábla a lista első eleme kell legyen !!!!!
+    if (!ok) EXCEPTION(EPROGFAIL);
+    vlids.pop_front();                  // A maradék lista, további chhild obj-ek
+    pts->fetchById(*pq, id);            // Az első két jobb oldali tábla megjelenítését leíró (minta) rekord
+    // Az első tábla
     pts->setShapeType(it);     // Itt ez a típus kell, az adatbázisban nem létező értékek
-    prvb = cRecordsViewBase::newRecordView(dynamic_cast<cTableShape *>(pts->dup()), this);
+    prvb = cRecordsViewBase::newRecordView(dup(pts), this);
     prvb->setParent(this);
     *pRightTables << prvb;
     pRightTabWidget->addTab(prvb->pWidget(), prvb->tableShape().getName(_sMemberTitle));  // TITLE!!!!
-
+    // A második tábla
     pts->setShapeType(nt);
-    prvb = cRecordsViewBase::newRecordView(dynamic_cast<cTableShape *>(pts->dup()), this);
+    prvb = cRecordsViewBase::newRecordView(pts, this);
     prvb->setParent(this);
     *pRightTables << prvb;
     pRightTabWidget->addTab(prvb->pWidget(), prvb->tableShape().getName(_sNotMemberTitle));  // TITLE!!!!
@@ -1157,7 +1180,9 @@ void cRecordTable::setEditButtons()
         buttonDisable(DBT_MODIFY,                n != 1);
         buttonDisable(DBT_TAKE_OUT,              n <  1);
         buttonDisable(DBT_PUT_IN,                n <  1);
-        buttonDisable(DBT_INSERT,  isNoInsert || ((flags & (RTF_IGROUP | RTF_IMEMBER | RTF_CHILD)) && (owner_id == NULL_ID)));
+        bool fi = isNoInsert || ((flags & (RTF_IGROUP | RTF_IMEMBER | RTF_CHILD)) && (owner_id == NULL_ID));
+        buttonDisable(DBT_INSERT,  fi);
+        buttonDisable(DBT_SIMILAR, fi || n != 1);
     }
     buttonDisable(DBT_DELETE,  isNoDelete || n <  1 );
     buttonDisable(DBT_RECEIPT, n < 1);
@@ -1406,7 +1431,7 @@ void cRecordTable::init()
         buttons << DBT_SPACER << DBT_RECEIPT;
     }
     if (isReadOnly == false) {
-        buttons << DBT_BREAK << DBT_SPACER << DBT_DELETE << DBT_INSERT << DBT_MODIFY;
+        buttons << DBT_BREAK << DBT_SPACER << DBT_DELETE << DBT_INSERT << DBT_SIMILAR << DBT_MODIFY;
     }
     flags = 0;
     switch (shapeType & ~ENUM2SET2(TS_TABLE, TS_READ_ONLY)) {
@@ -1447,23 +1472,23 @@ void cRecordTable::init()
         if (pUpper == NULL) EXCEPTION(EDATA);
         if (tableInhType != TIT_NO && tableInhType != TIT_ONLY) EXCEPTION(EDATA);
         buttons.clear();
-        buttons << DBT_REFRESH << DBT_SPACER;
+        buttons << DBT_REFRESH << DBT_FIRST << DBT_PREV << DBT_NEXT << DBT_LAST << DBT_SPACER;
         switch (shapeType) {
         case ENUM2SET(TS_IGROUP):
             flags = RTF_SLAVE | RTF_IGROUP;
-            if (isReadOnly == false) buttons << DBT_TAKE_OUT << DBT_DELETE << DBT_INSERT << DBT_MODIFY;
+            if (isReadOnly == false) buttons << DBT_BREAK << DBT_SPACER << DBT_TAKE_OUT << DBT_DELETE << DBT_INSERT << DBT_SIMILAR << DBT_MODIFY;
             break;
         case ENUM2SET(TS_NGROUP):
             flags = RTF_SLAVE | RTF_NGROUP;
-            if (isReadOnly == false) buttons << DBT_INSERT << DBT_PUT_IN;
+            if (isReadOnly == false) buttons << DBT_BREAK << DBT_SPACER << DBT_INSERT << DBT_SIMILAR << DBT_PUT_IN;
             break;
         case ENUM2SET(TS_IMEMBER):
             flags = RTF_SLAVE | RTF_IMEMBER;
-            if (isReadOnly == false) buttons << DBT_TAKE_OUT;
+            if (isReadOnly == false) buttons << DBT_BREAK << DBT_SPACER << DBT_TAKE_OUT;
             break;
         case ENUM2SET(TS_NMEMBER):
             flags = RTF_SLAVE | RTF_NMEMBER;
-            if (isReadOnly == false) buttons << DBT_PUT_IN;
+            if (isReadOnly == false) buttons << DBT_BREAK << DBT_SPACER << DBT_PUT_IN;
             break;
         default:
             EXCEPTION(EPROGFAIL);

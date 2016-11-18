@@ -16,6 +16,7 @@ enum eDialogButtons {
     DBT_CLOSE,          ///< Close
     DBT_REFRESH,        ///< Ablak tartalmának a frissítése
     DBT_INSERT,         ///< Beszúrás
+    DBT_SIMILAR,        ///< Beszúrás, az aktív rekordhoz hasonlót (azzal inicializált dialóg)
     DBT_MODIFY,         ///< modosítás
     DBT_SAVE,           ///< Mentés
     DBT_FIRST,          ///< Lapozás az elsőoldalra

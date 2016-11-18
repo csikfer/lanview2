@@ -553,6 +553,23 @@ QString cColStaticDescr::toView(QSqlQuery& q, const QVariant &_f) const
     return toName(_f);
 }
 
+QString cColStaticDescr::toValue(QSqlQuery& q, const QVariant &_f) const
+{
+    if (_f.isNull())           return QString();
+    if (eColType == FT_BINARY) return toView(q, _f);
+    if (eColType == FT_INTEGER) {
+        if (fKeyType != FT_NONE) {
+            qlonglong id = toId(_f);
+            if (id == NULL_ID) return QString(); //?!
+            return dQuoted(fKeyId2name(q, id));
+        }
+        return _f.toString();
+    }
+    if (eColType == FT_REAL) return _f.toString();
+    return dQuoted(_f.toString());
+}
+
+
 #define CDDUPDEF(T)     cColStaticDescr *T::dup() const { return new T(*this); }
 
 /*
@@ -738,6 +755,13 @@ QString cColStaticDescrBool::toView(QSqlQuery&, const QVariant& _f) const
 {
     return langBool(_f.toBool());
 }
+
+QString cColStaticDescrBool::toValue(QSqlQuery&, const QVariant& _f) const
+{
+    if (_f.toBool()) return _sOn;
+    else             return _sOff;
+}
+
 void cColStaticDescrBool::init()
 {
     const cColEnumType *pt = cColEnumType::find(_sBoolean);
@@ -1032,6 +1056,27 @@ QString cColStaticDescrArray::toView(QSqlQuery &q, const QVariant &_f) const
     return viewList.join(QChar(','));
 }
 
+QString cColStaticDescrArray::toValue(QSqlQuery &q, const QVariant &_f) const
+{
+    if (_f.isNull()) return QString();
+    QStringList viewList;
+    if (eColType == FT_INTEGER_ARRAY && fKeyType != FT_NONE) {
+        foreach (QVariant vid, _f.toList()) {
+            qlonglong id = vid.toLongLong();
+            viewList << dQuoted(fKeyId2name(q, id));
+        }
+    }
+    else if (eColType == FT_TEXT_ARRAY) {
+        foreach (QVariant v, _f.toList()) {
+            viewList << dQuoted(v.toString());
+        }
+    }
+    else {
+        viewList = _f.toStringList();
+    }
+    return viewList.join(", ");
+}
+
 /*
 static bool getArray(const QString& def, QString& array)
 {
@@ -1135,6 +1180,12 @@ qlonglong cColStaticDescrEnum::toId(const QVariant& _f) const
     if (i < 0) EXCEPTION(EDATA, -1, s);
     return i;
 }
+
+QString cColStaticDescrEnum::toValue(QSqlQuery &q, const QVariant &_f) const
+{
+    return QString();   // !!!
+}
+
 
 CDDUPDEF(cColStaticDescrEnum)
 
@@ -1245,6 +1296,12 @@ qlonglong cColStaticDescrSet::toId(const QVariant& _f) const
     if (_f.isNull()) return 0;
     return enumType().lst2set(_f.toStringList(), EX_IGNORE);
 }
+
+QString cColStaticDescrSet::toValue(QSqlQuery &q, const QVariant &_f) const
+{
+    return QString();   // !!!
+}
+
 
 CDDUPDEF(cColStaticDescrSet)
 
@@ -3632,6 +3689,93 @@ int cRecord::updateFieldByIds(QSqlQuery& q, const QList<qlonglong>& _il, const Q
         }
     }
     return r;
+}
+
+QString cRecord::objectExport(QSqlQuery& q, int _indent)
+{
+    cRecordAny syntax(_sObjectSyntaxs);
+    syntax.setByName(q, tableName());
+    QString sentence = syntax.getName(_sSentence);
+    QStringList lines = sentence.split('\n');
+    QString rr, r;
+    foreach (QString line, lines) {
+        if (line.isEmpty()) continue;
+        QString::const_iterator i = sentence.constBegin();
+        int c = i->toLatin1();
+        r.clear();
+        // Az első karakter egy szám, akkor az az indentálást jelenti
+        if (i->isDigit()) {
+            c -= '0';
+            c += _indent;
+            if (c) r += indentSp(c);
+            ++i;
+        }
+        else if (_indent) r += indentSp(_indent);
+
+        char protect = 0;
+        while (i != sentence.constEnd()) {
+            QChar qc = *i;
+            c = qc.toLatin1();
+            ++i;
+            if (protect != 0) {
+                if (protect == c) protect = 0;
+                r += qc;
+                continue;
+            }
+            if (c == '"' || c == '\'') {
+                protect = c;
+                r += qc;
+                continue;
+            }
+            if (c == '\\') {
+                ++i;
+                if ((i == sentence.constEnd())) EXCEPTION(EDATA, syntax.getId(), sentence);
+                r += *i;
+                continue;
+            }
+            if (c == '$') {
+                if (i->toLatin1() == '$') { // $$ => $
+                    ++i;
+                }
+                else {
+                    bool cond = false;
+                    if (i->toLatin1() == '!') { // Feltételes
+                        cond = true;
+                        ++i;
+                    }
+                    QString vname;
+                    vname = getParName(i, sentence.constEnd());
+                    QString val = getParValue(q, vname);
+                    if (val.isEmpty() && cond) {
+                        r.clear();  // Dobjuk a sort
+                        break;
+                    }
+                    r += val;
+                    continue;
+                }
+            }
+            r += qc;
+        }
+        if (!r.isEmpty()) rr += r + '\n';
+    }
+    return rr;
+}
+
+QString cRecord::getParValue(QSqlQuery& q, const QString& vname)
+{
+    QStringList sl = vname.split(QChar('.'));
+    int n = sl.size();
+    if (n > 2 || n < 0) EXCEPTION(EDATA, n, vname);
+    int ix = -1;
+    QString name = sl.first();
+    if      (name == "ID")   ix = idIndex();
+    else if (name == "NAME") ix = nameIndex();
+    else if (name == "NOTE") ix = noteIndex();
+    else                     ix = toIndex(sl.first());
+    if (n == 1) {
+        return descr().colDescr(ix).toValue(q, get(ix));
+    }
+    return QString();   //////////!!!!!!!!!
 }
 
 

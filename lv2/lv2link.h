@@ -21,10 +21,10 @@ typedef QPair<qlonglong, ePhsLinkType> tPhsLinkPort;
 class LV2SHARED_EXPORT cPhsLink : public cRecord {
     CRECORD(cPhsLink);
 public:
-    /// @return Vigyázat a visszaadott érték értelmezése más, mint a röbbi replace metódusnál:
+    /// @return Vigyázat a visszaadott érték értelmezése más, mint a többi replace metódusnál:
     /// Ha felvette az új rekordot, és nem kellet törölni egyet sem, akkor R_INSERT, ha törölni kellett rekordokat, akkor
     /// R_UPDATE, ha viszont nem sikerült felvenni ez új rekordot, akkor R_ERROR.
-    /// A műveleteket tranzakcióba zárja, és hiba eseté R_ERROR visszagörgeti.
+    /// A műveleteket tranzakcióba zárja, és hiba esetén R_ERROR visszagörgeti.
     /// @param __ex Ha értéke nem EX_IGNORE, akkor hiba esetén kizárást dob.
     virtual int replace(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     /// Nem támogatott, kizárást dob, ha __ex értéke nem EX_IGNORE, egyébként nem csinál semmit és false-val tér vissza.

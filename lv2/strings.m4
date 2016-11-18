@@ -844,6 +844,10 @@ STRDEF(Selects, "selects")
   __SDEF(Linux)
   __SDEF(Empty)
 
+STRDEF(ObjectSyntaxs, "object_syntaxs")
+ STRDEF(ObjectSyntaxId, "objects_syntax_id")
+ STRDEF(ObjectSyntaxName, "objects_syntax_name")
+ STRDEF(Sentence, "sentence")
 dnl SQL function names
 STRDEF(SetServiceStat, "set_service_stat")
 

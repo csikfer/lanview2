@@ -265,7 +265,7 @@ public:
     /// Újraolvassa az adatbázist
     virtual void refresh(bool all = true);
     /// Egy új rekord neszúrása
-    virtual void insert();
+    virtual void insert(bool _similar = false);
     /// Egy kijelölt rekord modosítása
     virtual void modify(enum eEx __ex = EX_ERROR);
     /// Nem kötelezően implementálandó metódus. Ha nincs újraimplementálva, de mégis meghívjuk, akkor kizárást dob

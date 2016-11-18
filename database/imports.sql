@@ -69,14 +69,23 @@ COMMENT ON COLUMN import_templates.template_text IS 'A makró vagy minta tartalm
 CREATE TYPE parsertype AS ENUM ('prep', 'parse', 'post');
 
 CREATE TABLE query_parsers (
-    query_parser_id             bigserial     PRIMARY KEY,
-    query_parser_note           text          DEFAULT NULL,
-    service_id                  bigint        NOT NULL REFERENCES services(service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE,
-    parse_type                  parsertype    DEFAULT 'parse',
-    item_sequence_number        integer       DEFAULT NULL,
-    case_sensitive              boolean       DEFAULT false,
-    regular_expression          text          DEFAULT NULL,
-    import_expression           text          NOT NULL,
+    query_parser_id             bigserial       PRIMARY KEY,
+    query_parser_note           text            DEFAULT NULL,
+    service_id                  bigint          NOT NULL REFERENCES services(service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE,
+    parse_type                  parsertype      DEFAULT 'parse',
+    item_sequence_number        integer         DEFAULT NULL,
+    case_sensitive              boolean         DEFAULT false,
+    regular_expression          text            DEFAULT NULL,
+    import_expression           text            NOT NULL,
     CONSTRAINT check_expression CHECK ((parse_type = 'parse' AND regular_expression IS NOT NULL) OR (parse_type <> 'parse' AND regular_expression IS NULL))
 );
 ALTER TABLE query_parsers OWNER TO lanview2;
+
+
+CREATE TABLE object_syntaxs (
+    object_syntax_id            bigserial       PRIMARY KEY,
+    object_syntax_name          text            NOT NULL UNIQUE,
+    sentence                    text            NOT NULL
+);
+ALTER TABLE object_syntaxs OWNER TO lanview2;
+

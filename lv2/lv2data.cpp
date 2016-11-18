@@ -591,7 +591,7 @@ qlonglong cPlaceGroup::replaceNew(QSqlQuery q, const QString& __n, const QString
     cPlaceGroup o;
     o.setName(__n);
     o.setName(_sPlaceGroupNote, __d);
-    o.setId(_type);
+    o.setId(_sPlaceGroupType, _type);
     o.replace(q);
     return o.getId();
 }
@@ -2949,6 +2949,17 @@ bool cSnmpDevice::setBySnmp(const QString& __com, eEx __ex, QString *pEs)
         }
     }
     setName(_sCommunityRd, community);
+    if (ports.isEmpty()) {
+        if (isNullId()) {
+            if (__ex != EX_IGNORE) EXCEPTION(EPROGFAIL);
+            return false;
+        }
+        QSqlQuery q = getQuery();
+        if (!fetchPorts(q)) {
+            if (__ex != EX_IGNORE) EXCEPTION(EDATA);
+            return false;
+        }
+    }
     if (setSysBySnmp(*this, __ex, pEs) > 0 && setPortsBySnmp(*this, __ex, pEs)) {
         if (isNull(_sNodeType)) {   // Ha nics típus beállítva
             qlonglong nt = enum2set(NT_HOST, NT_SNMP);

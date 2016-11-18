@@ -107,7 +107,7 @@ void cError::circulation()
     }
     if (pPrevError && (pThread == pLastThread || ++mErrCount > mMaxErrCount)) {
         QTextStream cerr(stderr, QIODevice::WriteOnly);
-        cerr << QObject::trUtf8("*** Error circulation **** Thread object name %1").arg(pThread->objectName()) << endl;
+        cerr << QObject::trUtf8("*** Error circulation **** Thread object name %1").arg(mThreadName) << endl;
         int n = 1;
         for (cError *p = this; p; p = p->pPrevError) {
             cerr << QChar('[') << n++ << QChar(']') << QChar(' ') << p->msg() << endl;

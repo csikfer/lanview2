@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
         return mo.lastError->mErrorCode; // a mo destruktora majd kiírja a hibaüzenetet.
     }
     try {
-        cRecordAny a1;
+/*        cRecordAny a1;
         cRecordAny a2;
         cNode       n;
         cSnmpDevice s;
@@ -38,7 +38,17 @@ int main(int argc, char *argv[])
         n.clone(a2);
         n.clone(n);
         n.clone(s);
-        s.clone(a1);
+        s.clone(a1);*/
+        cEnumVal oev;
+        QSqlQuery q = getQuery();
+        if (oev.fetch(*mo.pq, false, QBitArray(1))) {
+            do {
+                QString exp = oev.objectExport(q, 1);
+                PDEB(INFO) << exp << endl;
+            } while (oev.next(*mo.pq));
+        }
+
+
     } CATCHS(mo.lastError)
     cDebug::end();
     return mo.lastError == NULL ? 0 : mo.lastError->mErrorCode;

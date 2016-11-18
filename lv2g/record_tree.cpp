@@ -27,7 +27,7 @@ void cRecordTree::init()
         buttons << DBT_COPY << DBT_SPACER;
     }
     buttons << DBT_EXPAND << DBT_REFRESH << DBT_ROOT << DBT_RESTORE;
-    if (isReadOnly == false) buttons << DBT_SPACER << DBT_DELETE << DBT_INSERT << DBT_MODIFY;
+    if (isReadOnly == false) buttons << DBT_SPACER << DBT_DELETE << DBT_INSERT << DBT_SIMILAR << DBT_MODIFY;
     switch (shapeType) {
     case ENUM2SET2(TS_TREE, TS_BARE):
         if (pUpper != NULL) EXCEPTION(EDATA);
@@ -61,11 +61,11 @@ void cRecordTree::init()
         switch (shapeType) {
         case ENUM2SET2(TS_TREE, TS_IGROUP):
             flags = RTF_SLAVE | RTF_IGROUP;
-            if (isReadOnly == false) buttons << DBT_TAKE_OUT << DBT_DELETE << DBT_INSERT << DBT_MODIFY;
+            if (isReadOnly == false) buttons << DBT_TAKE_OUT << DBT_DELETE << DBT_INSERT << DBT_SIMILAR << DBT_MODIFY;
             break;
         case ENUM2SET2(TS_TREE, TS_NGROUP):
             flags = RTF_SLAVE | RTF_NGROUP;
-            if (isReadOnly == false) buttons << DBT_INSERT << DBT_PUT_IN;
+            if (isReadOnly == false) buttons << DBT_INSERT << DBT_SIMILAR << DBT_PUT_IN;
             break;
         case ENUM2SET2(TS_TREE, TS_IMEMBER):
             flags = RTF_SLAVE | RTF_IMEMBER;
@@ -270,6 +270,7 @@ void cRecordTree::buttonPressed(int id)
     case DBT_REFRESH:   refresh(false); break;
     case DBT_DELETE:    remove();       break;
     case DBT_INSERT:    insert();       break;
+    case DBT_SIMILAR:   insert(true);       break;
     case DBT_MODIFY:    modify();       break;
     case DBT_PREV:      prev();         break;
     case DBT_ROOT:      setRoot();      break;

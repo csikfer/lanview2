@@ -86,6 +86,7 @@ void cDialogButtons::staticInit()
         appendCont(buttonNames, trUtf8("Bezár"),       icons, QIcon(":/icons/close.ico"),   keys, Qt::Key_Escape, DBT_CLOSE);
         appendCont(buttonNames, trUtf8("Frissít"),     icons, QIcon(":/icons/refresh.ico"), keys, Qt::Key_F5,     DBT_REFRESH);
         appendCont(buttonNames, trUtf8("Új"),          icons, QIcon(":/icons/insert.ico"),  keys, Qt::Key_Insert, DBT_INSERT);
+        appendCont(buttonNames, trUtf8("Hasonló"),     icons, QIcon(":/icons/insert.ico"),  keys, 0,              DBT_SIMILAR);
         appendCont(buttonNames, trUtf8("Módosít"),     icons, QIcon(":/icons/edit.ico"),    keys, 0,              DBT_MODIFY);
         appendCont(buttonNames, trUtf8("Ment"),        icons, QIcon(":/icons/save.ico"),    keys, 0,              DBT_SAVE);
         appendCont(buttonNames, trUtf8("Első"),        icons, QIcon(":/icons/first.ico"),   keys, Qt::Key_Home,   DBT_FIRST);
@@ -271,79 +272,6 @@ int cRecordDialogBase::exec(bool _close)
     return r;
 }
 
-/*
-cRecord * cRecordDialogBase::insertDialog(QSqlQuery& q, cTableShape *pTableShape, const cRecStaticDescr *pRecDescr, QWidget * _par)
-{
-    eTableInheritType tit = (eTableInheritType)pTableShape->getId(_sTableInheritType);
-    // A dialógusban megjelenítendő nyomógombok.
-    int buttons = enum2set(DBT_OK, DBT_INSERT, DBT_CANCEL);
-    switch (tit) {
-    case TIT_NO:
-    case TIT_ONLY: {
-        cRecordAny rec(pRecDescr);
-        cRecordDialog   rd(*pTableShape, buttons, true, _par);  // A rekord szerkesztő dialógus
-        rd.dialog().setModal(true);
-        rd.restore(&rec);
-        while (1) {
-            int r = rd.exec();
-            if (r == DBT_INSERT || r == DBT_OK) {   // Csak az OK, és Insert gombra csinálunk valamit
-                bool ok = rd.accept();
-                cRecord *pRec = rd.record().dup();
-                if (ok) {
-                    ok = cRecordViewModelBase::SqlInsert(q, pRec);
-                }
-                if (ok) {
-                    if (r == DBT_OK) {  // Ha OK-t nyomott becsukjuk az dialóg-ot
-                        return pRec;
-                    }
-                    pDelete(pRec);
-                    continue;               // Ha Insert-et, akkor folytathatja a következővel
-                }
-                else {
-                    pDelete(pRec);
-                    continue;
-                }
-            }
-            break;
-        }
-    }   break;
-    case TIT_LISTED_REV: {
-        tRecordList<cTableShape>    shapes;
-        QStringList tableNames;
-        tableNames << pTableShape->getName(_sTableName);
-        tableNames << pTableShape->get(_sInheritTableNames).toStringList();;
-        tableNames.removeDuplicates();
-        foreach (QString tableName, tableNames) {
-            shapes << cRecordsViewBase::getInhShape(q, pTableShape, tableName);
-        }
-        cRecordDialogInh rd(*pTableShape, shapes, buttons, NULL_ID, NULL_ID, true, _par);
-        while (1) {
-            int r = rd.exec();
-            if (r == DBT_INSERT || r == DBT_OK) {
-                bool ok = rd.accept();
-                cRecord *pRec = rd.record().dup();
-                if (ok) {
-                    ok = cRecordViewModelBase::SqlInsert(q, pRec);
-                }
-                if (ok) {
-                    if (r == DBT_OK) {      // Ha OK-t nyomott becsukjuk az dialóg-ot
-                        return pRec;
-                    }
-                    continue;               // Ha Insert-et, akkor folytathatja a következővel
-                }
-                else {
-                    continue;
-                }
-            }
-            break;
-        }
-    }   break;
-    default:
-        EXCEPTION(ENOTSUPP);
-    }
-    return NULL;
-}
-*/
 /// Slot a megnyomtak egy gombot szignálra.
 void cRecordDialogBase::_pressed(int id)
 {
@@ -466,13 +394,9 @@ void cRecordDialog::init()
 
 void cRecordDialog::restore(cRecord *_pRec)
 {
-    if (_pRec != NULL) {
-        pDelete(_pRecord);
-        _pRecord = _pRec->dup();
-    }
-    else if (_pRecord == NULL) {
-        _pRecord = new cRecordAny(&rDescr);
-    }
+    pDelete(_pRecord);
+    _pRecord = new cRecordAny(&rDescr);
+    if (_pRec != NULL) _pRecord->set(*_pRec);
     int i, n = fields.size();
     for (i = 0; i < n; i++) {
         cFieldEditBase& field = *fields[i];
@@ -617,8 +541,10 @@ cFieldEditBase * cRecordDialogInh::operator[](const QString& __fn)
 
 void cRecordDialogInh::restore(cRecord *_pRec)
 {
-    (void)_pRec;
+    if (_pRec == NULL) return;
     if (disabled()) return;
-    EXCEPTION(EPROGFAIL);
+    foreach (cRecordDialog *pTab, tabs) {
+        pTab->restore(_pRec);
+    };
 }
 

@@ -462,7 +462,7 @@ qlonglong lanView::sendError(const cError *pe, const QString& __t, lanView *_ins
     // sqlBegin(q);
     cNamedList  fields;
     fields.add(_sAppName,       appName);
-    if (pInst->pSelfNode != NULL && !selfNode().isNullId()) fields.add(_sNodeId, selfNode().getId());
+    if (pInst->pSelfNode != NULL && !pInst->pSelfNode->isNullId()) fields.add(_sNodeId, pInst->pSelfNode->getId());
     fields.add(_sPid,           QCoreApplication::applicationPid());
     fields.add(_sAppVer,        appVersion);
     fields.add(_sLibVer,        libVersion);

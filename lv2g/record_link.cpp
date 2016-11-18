@@ -115,8 +115,9 @@ void cRecordLink::buttonPressed(int id)
 }
 
 
-void cRecordLink::insert()
+void cRecordLink::insert(bool _similar)
 {
+    (void)_similar;     // Itt nincs
     if (isReadOnly) {
         return;
     }
