@@ -212,7 +212,7 @@ public:
     static const QString& getFieldDialogTitle(QSqlQuery& q, const QString& _sn, const QString& _fn, eEx __ex = EX_ERROR);
     static void resetCacheData() { fieldDialogTitleMap.clear(); }
     ///
-    QString codeInsert(QSqlQuery& q, int indent) const;
+    virtual QString objectExport(QSqlQuery& q, int indent) const;
     ///
     tTableShapeFields   shapeFields;
 protected:

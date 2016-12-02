@@ -1,0 +1,25 @@
+SET REPLACE;
+
+SYNTAX object_syntaxs   $$0SYNTAX $NAME $sentence;$$;
+
+SYNTAX enum_valse       $$0ENUM $enum_type_name $enum_val_name TITLE $NOTE;  // $ID$$;
+
+SYNTAX users                 $$0USER $NAME $NOTE.Z { // $ID
+1DOMAIN USER $!domain_users;
+1HOST NOTIF PERIOD $host_notif_period;
+1SERVICE NOTIF PERIOD $serv_notif_period;
+1HOST NOTIF SWITCH $host_notif_switchs notifswitch;
+1SERVICE NOTIF SWITCH $serv_notif_switchs notifswitch;
+1HOST NOTIF COMMAND $!host_notif_cmd;
+1SERVICE NOTIF COMMAND $!serv_notif_cmd;
+1TEL $!tels;
+1ADDRESS $!addresses;
+1PLACE $!place_id;
+1?enabled:ENABLE:DISABLE:;
+0}$$
+
+SYNTAX table_shapes $$0TABLE $table_name SHAPE $NAME $NOTE.Z {
+1TITLE $table_title, $dialog_title$member_title.CZ$not_member_title.CZ;
+1TABLE TYPE $tale_shape_type;
+1@table_shape_fields
+0}$$

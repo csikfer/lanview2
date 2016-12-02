@@ -3,7 +3,7 @@
 #include "import_parser.h"
 #include "guidata.h"
 
-QString getParName(QString::const_iterator& i, const QString::const_iterator& e, eEx __ex)
+QString getParName(QString::const_iterator& i, const QString::const_iterator& e, bool _point, eEx __ex)
 {
     QString r;
     if (i == e) return r;
@@ -18,7 +18,7 @@ QString getParName(QString::const_iterator& i, const QString::const_iterator& e,
     }
     for (; i != e; ++i) {
         QChar c = *i;
-        if (c.isLetterOrNumber() || c == QChar('.') || c == QChar('_')) {
+        if (c.isLetterOrNumber() || c == QChar('_') || (_point && c == QChar('.'))) {
             r += c;
         }
         else {

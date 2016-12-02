@@ -39,11 +39,22 @@ int main(int argc, char *argv[])
         n.clone(n);
         n.clone(s);
         s.clone(a1);*/
-        cEnumVal oev;
+        QString exp;
         QSqlQuery q = getQuery();
+
+        cUser u;
+        if (u.fetch(*mo.pq, false, QBitArray(1))) {
+            do {
+                exp = u.objectExport(q, 1);
+                PDEB(INFO) << exp << endl;
+            } while (u.next(*mo.pq));
+        }
+
+
+        cEnumVal oev;
         if (oev.fetch(*mo.pq, false, QBitArray(1))) {
             do {
-                QString exp = oev.objectExport(q, 1);
+                exp = oev.objectExport(q, 1);
                 PDEB(INFO) << exp << endl;
             } while (oev.next(*mo.pq));
         }

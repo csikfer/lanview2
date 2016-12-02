@@ -5,7 +5,7 @@
 #include "lv2cont.h"
 
 /// Paraméter név
-EXT_ QString getParName(QString::const_iterator& i, const QString::const_iterator& e, enum eEx __ex = EX_ERROR);
+EXT_ QString getParName(QString::const_iterator& i, const QString::const_iterator& e, bool _point = true, enum eEx __ex = EX_ERROR);
 
 
 /// @class cIpProtocol

@@ -624,10 +624,10 @@ TABLE SHAPE object_syntaxs "Objektum szintaxisok" {
     FIELD object_syntax_name TITLE "Név", "Objektum ill. tábla név";
     FIELD sentence TITLE "Minta", "Az objektum definíció szintaxisa";
     FIELD sentence FLAG ON HUGE;
-    TABLE VIEW operator;
-    TABLE INSERT admin;
-    TABLE DELETE admin;
-    TABLE EDIT admin;
+    TABLE VIEW RIGHTS operator;
+    TABLE INSERT RIGHTS admin;
+    TABLE DELETE RIGHTS admin;
+    TABLE EDIT RIGHTS admin;
 }
 
 // ***************************************************************************************

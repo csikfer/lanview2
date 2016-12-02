@@ -161,6 +161,7 @@ Az alap osztály a numerikus skalár, és string típusú mezők adatkonverziói
 */
 class LV2SHARED_EXPORT cColStaticDescr : public QString {
     friend class cRecStaticDescr;
+    friend class cRecord;
 public:
     /// A mező típus konstansok
     enum eFieldType {
@@ -252,8 +253,6 @@ public:
     /// @param _f Forrás adat, a mező értéke.
     /// @return A strinngé konvertált érték.
     virtual QString toView(QSqlQuery& q, const QVariant& _f) const;
-    /// Hasonló a toName() vagy toView() metódusokhoz. De az értéket az interpreter által értelmezhető formában írja ki.
-    virtual QString toValue(QSqlQuery& q, const QVariant& _f) const;
     /// Clone object
     virtual cColStaticDescr *dup() const;
     /// Az enumeráció kezelés konzisztenciájának ellenörzése.
@@ -323,7 +322,7 @@ protected:
         else                        return cColStaticDescr::VC_DEFAULT;  // NULL / DEFAULT
     }
     eValueCheck ifExcep(eValueCheck result, eValueCheck acceptable, const QVariant &val) const;
-    QString fKeyId2name(QSqlQuery &q, qlonglong id) const;
+    QString fKeyId2name(QSqlQuery &q, qlonglong id, eEx __ex = EX_IGNORE) const;
 };
 TSTREAMO(cColStaticDescr)
 
@@ -343,7 +342,6 @@ public:
     virtual QString   toName(const QVariant& _f) const;
     virtual qlonglong toId(const QVariant& _f) const;
     virtual QString toView(QSqlQuery&, const QVariant& _f) const;
-    virtual QString toValue(QSqlQuery& q, const QVariant& _f) const;
     virtual cColStaticDescr *dup() const;
 private:
     void init();
@@ -377,7 +375,6 @@ CSD_INHERITOR(cColStaticDescrAddr)
 CSD_INHERITOR(cColStaticDescrArray)
 public:
 virtual QString toView(QSqlQuery& q, const QVariant& _f) const;
-virtual QString toValue(QSqlQuery& q, const QVariant& _f) const;
 };
 
 /// @class cColStaticDescrPolygon
@@ -388,13 +385,11 @@ CSD_INHERITOR(cColStaticDescrPolygon)
 /// @class cColStaticDescrEnum
 /// Az ős cColStaticDescr osztályt automatikusan kezelt enumeráció konverziós függvényivel egészíti ki.
 CSD_INHERITOR(cColStaticDescrEnum)
-virtual QString toValue(QSqlQuery& q, const QVariant& _f) const;
 };
 
 /// @class cColStaticDescrSet
 /// Az ós cColStaticDescr osztályt automatikusan kezelt set (enumeráció tömb) konverziós függvényivel egészíti ki.
 CSD_INHERITOR(cColStaticDescrSet)
-virtual QString toValue(QSqlQuery& q, const QVariant& _f) const;
 };
 
 /// @class cColStaticDescrDate
@@ -2027,11 +2022,15 @@ public:
         return indentSp(_indent) + _kw + " " + quotedString(getName(_fn)) + _sSemicolonNl;
     }
 
-    virtual QString objectExport(QSqlQuery &q, int _indent = 0);
-    virtual QString getParValue(QSqlQuery& q, const QString& vname);
+    virtual QString objectExport(QSqlQuery &q, int _indent = 0) const;
+    virtual QString getFieldValue(QSqlQuery& q, const QString& vname, const QString &prefix = QString(), const QStringList &pl = QStringList()) const;
 
 
 protected:
+    QString getCondString(QSqlQuery& q, QString::const_iterator& i, const QString::const_iterator& e) const;
+    QString parseString(QSqlQuery& q, const QString& src, const QStringList &pl, int indent) const;
+    void parseParams(QSqlQuery& q, QStringList &pl, int ss) const;
+
     qlonglong _defectiveFieldMask() const {
         return _stat >> 16;
     }

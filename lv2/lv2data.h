@@ -463,7 +463,6 @@ class LV2SHARED_EXPORT cPlace : public cRecord {
     CRECORD(cPlace);
 public:
     qlonglong parentImageId(QSqlQuery& q);
-    QString   codeInsert(QSqlQuery &q, int indent = 0) const;
 };
 
 #define UNKNOWN_PLACE_ID  0LL
@@ -486,7 +485,6 @@ EXT_ int placeGroupType(const QString& s, eEx __ex = EX_ERROR);
 class LV2SHARED_EXPORT cPlaceGroup : public cRecord {
     CRECORD(cPlaceGroup);
 public:
-    QString   codeInsert(QSqlQuery &, int indent = 0) const;
     /// Egy új rekord beszúrása.
     /// @param __n A név mező értéke
     /// @param __d A descr mező értéke
@@ -1223,8 +1221,6 @@ public:
     void sortPortsByIndex();
     void sortPortsByName();
 
-    virtual QString codeInsert_() const;
-
 protected:
     /// Megosztások konténer. (csak a cPatch osztályban)
     /// Nincs automatikusan feltöltve, de a clearToEnd(); törli, ill. az atEnd() törölheti.
@@ -1424,8 +1420,6 @@ public:
     /// @param __note node secriptorra/megjegyzés
     /// @param __ex Ha értéke true, akkor hiba esetén dob egy kizárást, ha false, akkor hiba esetén a ES_DEFECTIVE bitet állítja be.
     cNode& asmbNode(QSqlQuery& q, const QString& __name, const QStringPair* __port, const QStringPair *__addr, const QString *__sMac, const QString &__note = _sNul, qlonglong __place = NULL_ID, enum eEx __ex = EX_ERROR);
-    ///
-    virtual QString codeInsert_() const;
     ///
     bool bDelCollisionByMac;
     bool bDelCollisionByIp;

@@ -515,22 +515,6 @@ qlonglong cPlace::parentImageId(QSqlQuery& q)
     return iid.isNull() ? NULL_ID : variantToId(iid);
 }
 
-QString cPlace::codeInsert(QSqlQuery& q, int indent) const
-{
-    QString o;
-    o = indentSp(indent) + "PLACE " + quotedString(getName());
-    QString note = getNote();
-    if (note.isEmpty() == false) o += " " + quotedString(note);
-    QString p;
-    if (!isNull(_sParentId))p += indentSp(indent +1) + "PARENT " + quotedString(view(q, _sParentId)) + _sSemicolonNl;
-    if (!isNull(_sFrame))   p += indentSp(indent +1) + "FRAME "  + getName(_sFrame) + _sSemicolonNl;
-    if (!isNull(_sImageId)) p += indentSp(indent +1) + "IMAGE "  + quotedString(view(q, _sImageId))  + _sSemicolonNl;
-    if (!isNull(_sTels))    p += indentSp(indent +1) + "TEL "    + quotedStringList(getStringList(_sTels))   + _sSemicolonNl;
-    if (p.isEmpty()) o += _sSemicolon;
-    else             o +=  _sBraceBeginNl + p + indentSp(indent) + "}";
-    return o;
-}
-
 /* ------------------------------ place_froups ------------------------------ */
 
 const QString& placeGroupType(int e, eEx __ex)
@@ -562,18 +546,6 @@ const cRecStaticDescr&  cPlaceGroup::descr() const
         CHKENUM(_sPlaceGroupType, placeGroupType);
     }
     return *_pRecordDescr;
-}
-
-QString cPlaceGroup::codeInsert(QSqlQuery&, int indent) const
-{
-    QString o;
-    o = indentSp(indent) + "PLACE GROUP " + quotedString(getName());
-    QString note = getNote();
-    if (note.isEmpty() == false) o += " " + quotedString(note);
-    int typeIx = toIndex(_sPlaceGroupType);
-    if (!isNull(typeIx) && PG_GROUP != getId(typeIx)) o += " " + getName(typeIx).toUpper();
-    o += _sSemicolon;
-    return o;
 }
 
 qlonglong cPlaceGroup::insertNew(QSqlQuery q, const QString& __n, const QString& __d, int _type)
@@ -2014,14 +1986,6 @@ void cPatch::sortPortsByName()
     std::sort(ports.begin(), ports.end(), portLessThanByName);
 }
 
-QString cPatch::codeInsert_() const
-{
-    QString o = "PATCH " + quotedString(getName());
-    QString note = getNote();
-    if (!note.isEmpty()) o += " " + quotedString(note);
-    return o;
-}
-
 /* --------------------------------------------------------------------------- */
 
 CRECCNTR(cNodeParam)
@@ -2751,24 +2715,6 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const QStringPair *_
     p->addIpAddress(ha, ipt).setOn(_sPreferred);
     PDEB(VERBOSE) << toString() << endl;
     return *this;
-}
-
-QString cNode::codeInsert_() const
-{
-    qlonglong ts = getId(_sNodeType);
-    QString o;
-    if (ts & ENUM2SET(NT_NODE))  o = "HOST ";
-    else                         o = "NODE ";
-    QStringList types = getStringList(_sNodeType);
-    if (types.isEmpty()) types << _sNode;
-    foreach (QString t, types) {
-       o += t.toUpper() + ",";
-    }
-    o.chop(1);
-    o += " " + quotedString(getName());
-    QString note = getNote();
-    if (!note.isEmpty()) o += " " + quotedString(note);
-    return o;
 }
 
 int cNode::delCollisionByMac(QSqlQuery &__q)

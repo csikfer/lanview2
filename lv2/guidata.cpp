@@ -632,14 +632,15 @@ void cTableShape::addRightShape(QStringList& _snl)
     set(ix, QVariant::fromValue(list));
 }
 
-QString cTableShape::codeInsert(QSqlQuery& q, int indent) const
+QString cTableShape::objectExport(QSqlQuery& q, int indent) const
 {
-    QString o;
-    o = indentSp(indent) + "TABLE " + quotedString(getName(_sTableName)) + " SHAPE " + quotedString(getName());
-    QString note = getNote();
-    if (note.isEmpty() == false) o += " " + quotedString(note);
-    o += "{\n";
-
+    if (isNull(idIndex())) {    // Memóriából
+        EXCEPTION(ENOTSUPP);
+        return QString();
+    }
+    else {
+        return cRecord::objectExport(q, indent);
+    }
 }
 
 QString cTableShape::emFildsIsEmpty()

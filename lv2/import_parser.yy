@@ -1528,7 +1528,7 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
     cHostServices *hss;
 }
 
-%token      MACRO_T FOR_T DO_T TO_T SET_T CLEAR_T
+%token      MACRO_T FOR_T DO_T TO_T SET_T CLEAR_T SYNTAX_T
 %token      VLAN_T SUBNET_T PORTS_T PORT_T NAME_T SHARED_T SENSORS_T
 %token      PLACE_T PATCH_T HUB_T SWITCH_T NODE_T HOST_T ADDRESS_T
 %token      PARENT_T IMAGE_T FRAME_T TEL_T NOTE_T MESSAGE_T BATCH_T
@@ -1555,7 +1555,7 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
 %token      REPLACE_T RANGE_T EXCLUDE_T PREP_T POST_T CASE_T RECTANGLE_T
 %token      DELETED_T PARAMS_T CONVERTER_T PRINTER_T GATEWAY_T DOMAIN_T
 %token      DIALOG_T AUTO_T PASSWD_T HUGE_T FLAG_T TREE_T NOTIFY_T
-%token      SIMPLE_T BARE_T OWNER_T CHILD_T MEMBER_T REFRESH_T SQL_T
+%token      REFRESH_T SQL_T
 %token      CATEGORY_T ZONE_T CONTROLLER_T
 
 %token <i>  INTEGER_V
@@ -1568,7 +1568,7 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
 %type  <i>  ptypen fhs hsid srvid grpid tmpid node_id port_id snet_id ift_id plg_id
 %type  <i>  usr_id ftmod p_seq int_z lnktypez fflags fflag tstypes tstype pgtype
 %type  <il> list_i p_seqs p_seqsl // ints
-%type  <b>  bool bool_on ifdef exclude cases
+%type  <b>  bool bool_on ifdef exclude cases replfl
 %type  <r>  /* real */ num fexpr
 %type  <s>  str str_ str_z str_zz name_q time tod _toddef sexpr pnm mac_q ha nsw ips rights
 %type  <s>  imgty tsintyp usrfn usrgfn plfn ptcfn node_t host_t copy_from
@@ -1629,6 +1629,9 @@ macro   : MACRO_T            NAME_V str ';'                 { templates.set (_sM
         | TEMPLATE_T NODE_T  NAME_V str ';'                 { templates.set (_sNodes,  sp2s($3), sp2s($4));           }
         | TEMPLATE_T NODE_T  NAME_V str SAVE_T str_z ';'    { templates.save(_sNodes,  sp2s($3), sp2s($4), sp2s($6)); }
         | for_m
+        | SYNTAX_T replfl str str ';'                       { cRecordAny o; o.setName(sp2s($3)).setName(_sSentence, sp2s($4));
+                                                              if ($2) o.replace(qq()); else o.insert(qq());
+                                                            }
         ;
 // Ciklusok
 for_m   : FOR_T vals  DO_T MACRO_T NAME_V ';'               { forLoopMac($5, $2); }
@@ -1832,6 +1835,12 @@ replace :                           { $$ = REPLACE_DEF; }
         | REPLACE_T                 { $$ = REPLACE_ON;  }
         | INSERT_T                  { $$ = REPLACE_OFF; }
         ;
+replfl  : replace                   { switch ($1) {
+                                        case REPLACE_ON:    $$ = true;      break;
+                                        case REPLACE_OFF:   $$ = false;     break;
+                                        case REPLACE_DEF:   $$ = isReplace; break;
+                                      }
+                                    }
 // felhasználók, felhesználói csoportok definíciója.
 user    : USER_T replace str str_z              { REPOBJ(pUser, cUser(), $2, $3, $4); pUser->setId(_sPlaceId, gPlace()); }
             user_e                              { REPANDDEL(pUser); }
@@ -2642,17 +2651,7 @@ tmodp   : SET_T DEFAULTS_T ';'                  { pTableShape->setDefaults(qq())
 tstypes : tstype                                { $$ = $1; }
         | tstypes ',' tstype                    { $$ = $1 | $3; }
         ;
-tstype  : SIMPLE_T                              { $$ = ENUM2SET(TS_SIMPLE); }
-        | TREE_T                                { $$ = ENUM2SET(TS_TREE); }
-        | BARE_T                                { $$ = ENUM2SET(TS_BARE); }
-        | OWNER_T                               { $$ = ENUM2SET(TS_OWNER); }
-        | CHILD_T                               { $$ = ENUM2SET(TS_CHILD); }
-        | LINK_T                                { $$ = ENUM2SET(TS_LINK); }
-        | DIALOG_T                              { $$ = ENUM2SET(TS_DIALOG); }
-        | TABLE_T                               { $$ = ENUM2SET(TS_TABLE); }
-        | MEMBER_T                              { $$ = ENUM2SET(TS_MEMBER); }
-        | GROUP_T                               { $$ = ENUM2SET(TS_GROUP); }
-        | READ_T ONLY_T                         { $$ = ENUM2SET(TS_READ_ONLY); }
+tstype  : str                                   { $$ = ENUM2SET(tableShapeType(sp2s($1))); }
         ;
 tsintyp : str                           { $$ = $1; cTableShape().descr()[_sTableInheritType].check(*$1, cColStaticDescr::VC_OK); }
         ;
@@ -2960,7 +2959,7 @@ static int yylex(void)
         const char *name;
         int         value;
     } sToken[] = {
-        TOK(MACRO) TOK(FOR) TOK(DO) TOK(TO) TOK(SET) TOK(CLEAR)
+        TOK(MACRO) TOK(FOR) TOK(DO) TOK(TO) TOK(SET) TOK(CLEAR) TOK(SYNTAX)
         TOK(VLAN) TOK(SUBNET) TOK(PORTS) TOK(PORT) TOK(NAME) TOK(SHARED) TOK(SENSORS)
         TOK(PLACE) TOK(PATCH) TOK(HUB) TOK(SWITCH) TOK(NODE) TOK(HOST) TOK(ADDRESS)
         TOK(PARENT) TOK(IMAGE) TOK(FRAME) TOK(TEL) TOK(NOTE) TOK(MESSAGE) TOK(BATCH)
@@ -2987,7 +2986,7 @@ static int yylex(void)
         TOK(REPLACE) TOK(RANGE) TOK(EXCLUDE) TOK(PREP) TOK(POST) TOK(CASE) TOK(RECTANGLE)
         TOK(DELETED) TOK(PARAMS) TOK(CONVERTER) TOK(PRINTER) TOK(GATEWAY) TOK(DOMAIN)
         TOK(DIALOG) TOK(AUTO) TOK(PASSWD) TOK(HUGE) TOK(FLAG) TOK(TREE) TOK(NOTIFY)
-        TOK(SIMPLE) TOK(BARE) TOK(OWNER) TOK(CHILD) TOK(MEMBER) TOK(REFRESH) TOK(SQL)
+        TOK(REFRESH) TOK(SQL)
         TOK(CATEGORY) TOK(ZONE) TOK(CONTROLLER)
         { "WST",    WORKSTATION_T }, // rövidítések
         { "ATC",    ATTACHED_T },
