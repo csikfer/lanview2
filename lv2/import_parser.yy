@@ -1507,25 +1507,25 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
 %}
 
 %union {
-    void *          u;
-    qlonglong       i;
-    intList *      il;
-    QList<qlonglong> *idl;
-    bool            b;
-    QString *       s;
-    QStringList *  sl;
-    cMac *        mac;
-    double          r;
-    QHostAddress * ip;
-    netAddress *    n;
-    QVariant *      v;
-    QVariantList * vl;
-    QPointF *     pnt;
-    tPolygonF *   pol;
-    QStringPair *  ss;
-    QStringPairList *ssl;
-    cSnmpDevice *  sh;
-    cHostServices *hss;
+    void *              u;
+    qlonglong           i;
+    intList *           il;
+    QList<qlonglong> *  idl;
+    bool                b;
+    QString *           s;
+    QStringList *       sl;
+    cMac *              mac;
+    double              r;
+    QHostAddress *      ip;
+    netAddress *        n;
+    QVariant *          v;
+    QVariantList *      vl;
+    QPointF *           pnt;
+    tPolygonF *         pol;
+    QStringPair *       ss;
+    QStringPairList *   ssl;
+    cSnmpDevice *       sh;
+    cHostServices *     hss;
 }
 
 %token      MACRO_T FOR_T DO_T TO_T SET_T CLEAR_T SYNTAX_T
@@ -1629,7 +1629,8 @@ macro   : MACRO_T            NAME_V str ';'                 { templates.set (_sM
         | TEMPLATE_T NODE_T  NAME_V str ';'                 { templates.set (_sNodes,  sp2s($3), sp2s($4));           }
         | TEMPLATE_T NODE_T  NAME_V str SAVE_T str_z ';'    { templates.save(_sNodes,  sp2s($3), sp2s($4), sp2s($6)); }
         | for_m
-        | SYNTAX_T replfl str str ';'                       { cRecordAny o; o.setName(sp2s($3)).setName(_sSentence, sp2s($4));
+        | SYNTAX_T replfl str str ';'                       { cRecordAny o(_sObjectSyntaxs);
+                                                              o.setName(sp2s($3)).setName(_sSentence, sp2s($4));
                                                               if ($2) o.replace(qq()); else o.insert(qq());
                                                             }
         ;
@@ -1836,9 +1837,9 @@ replace :                           { $$ = REPLACE_DEF; }
         | INSERT_T                  { $$ = REPLACE_OFF; }
         ;
 replfl  : replace                   { switch ($1) {
-                                        case REPLACE_ON:    $$ = true;      break;
-                                        case REPLACE_OFF:   $$ = false;     break;
-                                        case REPLACE_DEF:   $$ = isReplace; break;
+                                        case REPLACE_ON:    $$ = true;              break;
+                                        case REPLACE_OFF:   $$ = false;             break;
+                                        case REPLACE_DEF:   $$ = globalReplaceFlag; break;
                                       }
                                     }
 // felhasználók, felhesználói csoportok definíciója.

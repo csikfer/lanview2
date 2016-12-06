@@ -304,6 +304,7 @@ STRDEF(Nodes,"nodes")
   STRDEF(Mobile, "mobile")
   STRDEF(Device, "device")
   STRDEF(Controller, "controller")
+  STRDEF(Ups, "ups")
   dnl virtual
  STRDEF(SnmpDevices,"snmpdevices")
  STRDEF(CommunityRd,"community_rd")

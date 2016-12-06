@@ -2051,6 +2051,7 @@ int nodeType(const QString& __n, eEx __ex)
     if (0 == __n.compare(_sMobile,      Qt::CaseInsensitive)) return NT_MOBILE;
     if (0 == __n.compare(_sDevice,      Qt::CaseInsensitive)) return NT_DEVICE;
     if (0 == __n.compare(_sController,  Qt::CaseInsensitive)) return NT_CONTROLLER;
+    if (0 == __n.compare(_sUps,         Qt::CaseInsensitive)) return NT_UPS;
     if (__ex != EX_IGNORE)   EXCEPTION(EDATA, -1, __n);
     return NT_INVALID;
 }
@@ -2073,6 +2074,7 @@ const QString& nodeType(int __e, eEx __ex)
     case NT_MOBILE:     return _sMobile;
     case NT_DEVICE:     return _sDevice;
     case NT_CONTROLLER: return _sController;
+    case NT_UPS:        return _sUps;
     }
     if (__ex != EX_IGNORE)   EXCEPTION(EDATA, __e);
     return _sNul;

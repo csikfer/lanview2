@@ -216,7 +216,8 @@ enum eNodeType {
     NT_WORKSTATION,
     NT_MOBILE,
     NT_DEVICE,
-    NT_CONTROLLER
+    NT_CONTROLLER,
+    NT_UPS
 };
 
 /// Node típus név konverzió

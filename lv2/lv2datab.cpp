@@ -513,9 +513,10 @@ qlonglong cColStaticDescr::toId(const QVariant& _f) const
 
 QString cColStaticDescr::fKeyId2name(QSqlQuery& q, qlonglong id, eEx __ex) const
 {
-    QString r = "#" + QString::number(id);
+    QString n = QString::number(id);
+    QString r = "#" + n;
     if (fnToName.isEmpty() == false) {
-        QString sql = "SELECT " + fnToName + parentheses(r);
+        QString sql = "SELECT " + fnToName + parentheses(n);
         if (!q.exec(sql)) {
             if (__ex != EX_IGNORE) SQLPREPERR(q, sql);
             SQLPREPERRDEB(q, sql);
@@ -3636,13 +3637,49 @@ int cRecord::updateFieldByIds(QSqlQuery& q, const QList<qlonglong>& _il, const Q
     return r;
 }
 
-void cRecord::parseParams(QSqlQuery &q, QStringList& pl, int ss) const
+bool cRecord::isEmpty(int _ix) const
+{
+    if (isNull(_ix)) return true;
+    if (colDescr(_ix).eColType & cColStaticDescr::FT_ARRAY) {
+        return get(_ix).toList().isEmpty();
+    }
+    switch (colDescr(_ix).eColType) {
+    case cColStaticDescr::FT_INTEGER:
+    case cColStaticDescr::FT_INTERVAL:
+        return getId(_ix) == 0;
+    case cColStaticDescr::FT_REAL:
+        return get(_ix).toDouble() == 0.0;
+    case cColStaticDescr::FT_POLYGON:
+        return get(_ix).value<tPolygonF>().isEmpty();
+    case cColStaticDescr::FT_TEXT:
+    case cColStaticDescr::FT_ENUM:
+    case cColStaticDescr::FT_BINARY:
+        return getName(_ix).isEmpty();
+    case cColStaticDescr::FT_BOOLEAN:
+        return getBool(_ix);
+//  case cColStaticDescr::FT_MAC:
+//  case cColStaticDescr::FT_INET:
+//  case cColStaticDescr::FT_CIDR:
+//  case cColStaticDescr::FT_TIME:
+//  case cColStaticDescr::FT_DATE:
+//  case cColStaticDescr::FT_DATE_TIME:
+    }
+    return true;
+}
+
+int cRecord::parseParams(QSqlQuery &q, QStringList& pl, int ss) const
 {
     int i, n = pl.size();
+    int fix = NULL_IX;
     for (i = 0; i < n; ++i) {
-        pl[i] = parseString(q, pl.at(i), pl, 0);
+        QString s = pl.at(i);
+        s = s.trimmed();
+        int temp = NULL_IX;
+        pl[i] = parseString(q, s, pl, 0, temp);
+        if (i == 0) fix = temp;
     }
     while (pl.size() < ss) pl << QString();
+    return fix;
 }
 
 QString cRecord::getCondString(QSqlQuery &q, QString::const_iterator& i, const QString::const_iterator& e) const
@@ -3655,28 +3692,55 @@ QString cRecord::getCondString(QSqlQuery &q, QString::const_iterator& i, const Q
     if (i < e) ++i;
     if (s.isEmpty()) return s;
     QStringList params = s.split(':');
-    enum eIfType { IF, IFE, IFN } t;
+    enum eIfType { IF_NULL, IF_NOTNULL, IF_EMPTY, IF_NOTEMPTY, IF_EQU, IF_NOTEQU, IF_LITLE, IF_GREATER } t;
     s = params.first(); // type string
-    int n;
-    if      (0 == s.compare("IF",   Qt::CaseInsensitive)) { t = IF;   n = 3; }
-    else if (0 == s.compare("IFE",  Qt::CaseInsensitive)) { t = IFE;  n = 4; }
-    else if (0 == s.compare("IFN",  Qt::CaseInsensitive)) { t = IFN;  n = 4; }
+    int n;  // mezők száma
+    if      (0 == s.compare("I", Qt::CaseInsensitive)) { t = IF_NULL;       n = 3; }
+    else if (0 == s.compare("V", Qt::CaseInsensitive)) { t = IF_NOTNULL;    n = 3; }
+    else if (0 == s.compare("Z", Qt::CaseInsensitive)) { t = IF_EMPTY;      n = 3; }
+    else if (0 == s.compare("N", Qt::CaseInsensitive)) { t = IF_NOTEMPTY;   n = 3; }
+    else if (0 == s.compare("E", Qt::CaseInsensitive)) { t = IF_EQU;        n = 4; }
+    else if (0 == s.compare("D", Qt::CaseInsensitive)) { t = IF_NOTEQU;     n = 4; }
+    else if (0 == s.compare("L", Qt::CaseInsensitive)) { t = IF_LITLE;      n = 4; }
+    else if (0 == s.compare("G", Qt::CaseInsensitive)) { t = IF_GREATER;    n = 4; }
     else    EXCEPTION(EDATA, 0, params.join(","));
     params.pop_front();
-    parseParams(q, params, n);
+    int fix = parseParams(q, params, n);    // fix = első mező ben az objektum mező indexe (ha van hivatkozás)
+    bool f;                                 // A feltétel eredménye
+    int true_ix  = n - 2;                   // Az "igaz" mező indexe
+    int false_ix = n - 1;                   // A "hamis" mező indexe
+    bool inverz = false;
     switch (t) {
-    case IF:
-        s = params.at(0);
-        if (s.isEmpty() || s == "\"\"" || s == _sOff) return params.at(2);
-        else                                          return params.at(1);
-    case IFE:
-        if (params.at(0) == params.at(1)) return params.at(2);
-        else                              return params.at(3);
-    case IFN:
-        if (params.at(0) != params.at(1)) return params.at(2);
-        else                              return params.at(3);
+    case IF_NOTNULL:
+        inverz = true;
+    case IF_NULL:
+        if (fix != NULL_IX) f = isNull(fix);
+        else                f = params.at(0).isEmpty();
+        if (inverz) f = !f;
+        break;
+    case IF_NOTEMPTY:
+        inverz = true;
+    case IF_EMPTY:
+        if (fix != NULL_IX) f = isEmpty(fix);
+        else                f = params.at(0).isEmpty();
+        if (inverz) f = !f;
+        break;
+    case IF_NOTEQU:
+        inverz = true;
+    case IF_EQU:
+        if (fix != NULL_IX) f = getName(fix) == params.at(1);
+        else                f = params.at(0) == params.at(1);
+        if (inverz) f = !f;
+        break;
+    case IF_GREATER:
+        inverz = true;
+    case IF_LITLE:
+        if (fix != NULL_IX) f = get(fix).    toDouble() < params.at(1).toDouble();
+        else                f = params.at(0).toDouble() < params.at(1).toDouble();
+        if (inverz) f = !f;
+        break;
     }
-    return QString();   // WARNING ???
+    return params.at(f ? true_ix : false_ix);
 }
 
 static void nIndent(int &indent, QString& s)
@@ -3687,7 +3751,7 @@ static void nIndent(int &indent, QString& s)
     }
 }
 
-QString cRecord::parseString(QSqlQuery& q, const QString& src, const QStringList &pl, int indent) const
+QString cRecord::parseString(QSqlQuery& q, const QString& src, const QStringList &pl, int indent, int& _ix) const
 {
     if (src.simplified().isEmpty()) return QString();
     QString::const_iterator ite = src.constBegin();
@@ -3703,17 +3767,9 @@ QString cRecord::parseString(QSqlQuery& q, const QString& src, const QStringList
             r += *ite;
             continue;
         case '$': {
-            QString prefix;
-            if (QString("$#\"").contains(*ite)) {       // $ # "
-                prefix += *ite;
-                ++ite;
-                if (prefix == "$" && *ite == QChar('\"')) {  // $"
-                    prefix += *ite;
-                    ++ite;
-                }
-            }
             s  = getParName(ite, end, false);
-            r += getFieldValue(q, s, prefix, pl);
+            _ix = toIndex(s, EX_IGNORE);
+            r += getFieldValue(q, s, pl);
             continue;
           }
         case '?':     // Feltételes kifejezés
@@ -3723,13 +3779,27 @@ QString cRecord::parseString(QSqlQuery& q, const QString& src, const QStringList
           {
             if (r.simplified().isEmpty()) r.clear();
             else                          r += QChar('\n');
-            s = getParName(ite, end);
+            s = getParName(ite, end, true);
             QStringList sl = s.split(QChar('.'));
-            cRecordAny co(sl.first());
-            if (sl.size() < 2) sl << idName();
-            co.setId(sl.at(1), getId());
+            tIntVector order;
+            cRecordAny co(sl.at(0));
+            while (sl.size() > 2) {    // ORDER(s)
+                QString sOrd = sl.at(1);
+                if (sOrd == "ASC" || sOrd == "DESC") {
+                    int ix = co.toIndex(sl.at(2));
+                    if (sOrd == "DESC") ix = -ix;
+                    order << ix;
+                    sl.removeAt(1);
+                    sl.removeAt(1);
+                }
+            }
+            if (sl.size() < 2) sl << idName();  // OWNER ID NAME
+            int oIdIx = co.toIndex(sl.at(1));
+            QBitArray fm(oIdIx +1);
+            fm[oIdIx] = true;
+            co.setId(oIdIx, getId());
             QSqlQuery qq = getQuery();
-            if (co.completion(q)) do {
+            if (co.fetch(q, true, fm, order)) do {
                 r += co.objectExport(qq, indent);
             } while (co.next(q));
           }
@@ -3739,59 +3809,130 @@ QString cRecord::parseString(QSqlQuery& q, const QString& src, const QStringList
     return r;
 }
 
-QString cRecord::objectExport(QSqlQuery& q, int _indent) const
+QString cRecord::objectSyntax(QSqlQuery& q) const
 {
     cRecordAny syntax(_sObjectSyntaxs);
     syntax.setByName(q, tableName());
-    QString sentence = syntax.getName(_sSentence);
+    return syntax.getName(_sSentence);
+}
+
+QString cRecord::objectExportLine(QSqlQuery& q, int _indent, QString& line) const
+{
+    QString r;
+    if (line.endsWith(QChar('\n'))) line.chop(1);
+    if (line.isEmpty()) return r;
+    int i = 0;
+    int c = line[i].toLatin1();
+    int indent = _indent;
+    // Ha az első karakter egy szám, akkor az az indentálást jelenti
+    nIndent(indent, line);
+    if (c == '?') { // Feltételes sor
+        QString::const_iterator ite = line.constBegin() +1; // ? átugrása
+        QString::const_iterator end = line.constEnd();
+        r = getCondString(q, ite, end);
+        if (ite != end) EXCEPTION(EDATA, 0, line);
+    }
+    else {
+        int dummy;
+        r = parseString(q, line, QStringList(), indent, dummy);
+    }
+    if (!r.isEmpty()) r = indentSp(indent) + r + "\n";
+    return r;
+}
+
+QString cRecord::objectExport(QSqlQuery& q, int _indent) const
+{
+    QString sentence = objectSyntax(q);
     QStringList lines = sentence.split('\n');
     QString rr, r;
     foreach (QString line, lines) {
-        if (line.endsWith(QChar('\n'))) line.chop(1);
-        if (line.isEmpty()) continue;
-        int i = 0;
-        int c = line[i].toLatin1();
-        int indent = _indent;
-        // Ha az első karakter egy szám, akkor az az indentálást jelenti
-        nIndent(indent, line);
-        r.clear();
-        if (c == '?') { // Feltételes sor
-            QString::const_iterator ite = line.constBegin() +1; // ? átugrása
-            QString::const_iterator end = line.constEnd();
-            r = getCondString(q, ite, end);
-            if (ite != end) EXCEPTION(EDATA, 0, line);
-        }
-        else {
-            r = parseString(q, line, QStringList(), indent);
-        }
-        if (!r.isEmpty()) rr += indentSp(indent) + r + "\n";
+        rr += objectExportLine(q, _indent, line);
     }
     return rr;
 }
 
-QString cRecord::getFieldValue(QSqlQuery& q, const QString& vname, const QString& prefix, const QStringList& pl) const
+QString cRecord::getFieldValue(QSqlQuery& q, const QString& vname, const QStringList& pl) const
 {
+    QString r;
     bool ok;
     int ix = vname.toInt(&ok);
     if (ok) {
-        if (ix >= 0 && ix <= pl.size()) return pl.at(ix);
-        return QString();
+        if (ix <= 0 || ix > pl.size()) {
+            EXCEPTION(EDATA, ix);
+        }
+        r = pl.at(ix -1);
     }
-    if      (vname == "ID")   ix = idIndex();
-    else if (vname == "NAME") ix = nameIndex();
-    else if (vname == "NOTE") ix = noteIndex();
-    else                      ix = toIndex(vname);
-    if (prefix.isEmpty())   return getName(ix);
-    if (prefix == "\"")     return dQuoted(getName(ix));
-    if (prefix == "#")      return QString::number(getId(ix));
-    if (prefix[0] == QChar('$')) {
-        qlonglong id = getId(ix);
-        QString s = colDescr(ix).fKeyId2name(q, id, EX_ERROR);
-        if (prefix.size() > 1 && prefix.at(1) == QChar('"')) return dQuoted(s);
-        return s;
+    else {
+        if      (vname == "ID")   ix = idIndex();
+        else if (vname == "NAME") ix = nameIndex();
+        else if (vname == "NOTE") ix = noteIndex();
+        else                      ix = toIndex(vname);
+        r = exportFieldValue(q, ix);
     }
-    EXCEPTION(EDATA, -1, prefix);
-    return QString();
+    return r;
+}
+
+QString cRecord::exportFieldValue(QSqlQuery& q, int ix) const
+{
+    QString r;
+    switch (colDescr(ix).eColType) {
+    case cColStaticDescr::FT_INTEGER:
+        if (colDescr(ix).fKeyType != cColStaticDescr::FT_NONE) {
+            qlonglong id = getId(ix);
+            if (id != NULL_ID) {
+                r = colDescr(ix).fKeyId2name(q, id, EX_ERROR);
+                r = quotedString(r);
+            }
+            break;
+        }
+        // else continue ...
+    case cColStaticDescr::FT_REAL:
+    case cColStaticDescr::FT_MAC:
+    case cColStaticDescr::FT_INET:
+    case cColStaticDescr::FT_CIDR:
+    case cColStaticDescr::FT_POLYGON:
+        r = getName(ix);
+        break;
+    case cColStaticDescr::FT_TIME:
+        r = get(ix).toTime().toString("hh:mm:ss.zzz");
+        break;
+    case cColStaticDescr::FT_INTERVAL:
+        r = QString::number(getId(ix) / 1000);  //msec to sec
+        break;
+    case cColStaticDescr::FT_TEXT:
+    case cColStaticDescr::FT_ENUM:
+        r = quotedString(getName(ix));
+        break;
+    case cColStaticDescr::FT_BOOLEAN:
+        r = getBool(ix) ? _sTrue : _sFalse;
+        r = r.toUpper();
+        break;
+    case cColStaticDescr::FT_INTEGER_ARRAY:
+        if (colDescr(ix).fKeyType != cColStaticDescr::FT_NONE) {
+            foreach(QVariant v, get(ix).toList()) {
+                qlonglong id = v.toLongLong();
+                QString s = colDescr(ix).fKeyId2name(q, id, EX_ERROR);
+                r += quotedString(s) + ", ";
+            }
+            if (!r.isEmpty()) r.chop(2);
+            break;
+        }
+        // else continue ...
+    case cColStaticDescr::FT_REAL_ARRAY:
+        foreach(QVariant v, get(ix).toList()) r += v.toString() + ", ";
+        if (!r.isEmpty()) r.chop(2);
+        break;
+    case cColStaticDescr::FT_TEXT_ARRAY:
+    case cColStaticDescr::FT_SET:
+        foreach(QVariant v, get(ix).toList()) r += quotedString(v.toString()) + ", ";
+        if (!r.isEmpty()) r.chop(2);
+        break;
+    case cColStaticDescr::FT_DATE:
+    case cColStaticDescr::FT_DATE_TIME:
+    case cColStaticDescr::FT_BINARY:
+        EXCEPTION(ENOTSUPP);
+    }
+    return r;
 }
 
 

@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
         QString exp;
         QSqlQuery q = getQuery();
 
-        cUser u;
+/*        cUser u;
         if (u.fetch(*mo.pq, false, QBitArray(1))) {
             do {
                 exp = u.objectExport(q, 1);
@@ -57,11 +57,13 @@ int main(int argc, char *argv[])
                 exp = oev.objectExport(q, 1);
                 PDEB(INFO) << exp << endl;
             } while (oev.next(*mo.pq));
-        }
-
+        }*/
+        cTableShape ts;
+        ts.setByName(q, "nodes");
+        exp = ts.objectExport(q);
+        PDEB(INFO) << exp << endl;
 
     } CATCHS(mo.lastError)
-    cDebug::end();
     return mo.lastError == NULL ? 0 : mo.lastError->mErrorCode;
 }
 

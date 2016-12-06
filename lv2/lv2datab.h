@@ -2023,13 +2023,18 @@ public:
     }
 
     virtual QString objectExport(QSqlQuery &q, int _indent = 0) const;
-    virtual QString getFieldValue(QSqlQuery& q, const QString& vname, const QString &prefix = QString(), const QStringList &pl = QStringList()) const;
+    virtual QString getFieldValue(QSqlQuery& q, const QString& vname, const QStringList &pl = QStringList()) const;
+    QString exportFieldValue(QSqlQuery& q, int ix) const;
+    bool isEmpty(int _ix) const;
+
 
 
 protected:
+    QString objectSyntax(QSqlQuery& q) const;
+    QString objectExportLine(QSqlQuery& q, int _indent, QString& line) const;
     QString getCondString(QSqlQuery& q, QString::const_iterator& i, const QString::const_iterator& e) const;
-    QString parseString(QSqlQuery& q, const QString& src, const QStringList &pl, int indent) const;
-    void parseParams(QSqlQuery& q, QStringList &pl, int ss) const;
+    QString parseString(QSqlQuery& q, const QString& src, const QStringList &pl, int indent, int &_ix) const;
+    int parseParams(QSqlQuery& q, QStringList &pl, int ss) const;
 
     qlonglong _defectiveFieldMask() const {
         return _stat >> 16;
