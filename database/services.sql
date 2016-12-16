@@ -318,24 +318,8 @@ COMMENT ON COLUMN host_service_noalarms.noalarm_from IS 'Ha a tíltás időhöz 
 COMMENT ON COLUMN host_service_noalarms.noalarm_to IS 'Ha a tíltás időhöz kötött, akkor a tiltás vége, egyébkét NULL';
 COMMENT ON COLUMN host_service_noalarms.user_id IS 'A tíltást kiadó felhasználó azonosítója.';
 
-CREATE TABLE host_service_charts (
-    host_service_chart_id bigserial     PRIMARY KEY,
-    host_service_id     bigint          REFERENCES host_services(host_service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    rrd_file_name       text            DEFAULT NULL,
-    graph_order         bigint[]        DEFAULT NULL,
-    graph_args          text            DEFAULT NULL,
-    graph_vlabel        text            DEFAULT NULL,
-    graph_scale         boolean         DEFAULT NULL,   -- ??
-    graph_info          text            DEFAULT NULL,   -- ??
-    graph_category      text            DEFAULT NULL,   -- ??
-    graph_period        text            DEFAULT NULL,   -- ??
-    graph_height        bigint          DEFAULT 300,
-    graph_width         bigint          DEFAULT 600,
-    features            text            DEFAULT NULL,
-    deleted             boolean         NOT NULL DEFAULT false
-);
-ALTER TABLE host_service_charts OWNER TO lanview2;
-
+CREATE TYPE aggregatetype AS ENUM ('AVERAGE', 'MIN', 'MAX');
+ALTER TYPE aggregatetype OWNER TO lanview2;
 
 CREATE TYPE servicevartype AS ENUM ('DERIVE','COUNTER', 'GAUGE', 'ABSOLUTE', 'COMPUTE');
 ALTER TYPE servicevartype OWNER TO lanview2;
@@ -343,34 +327,97 @@ ALTER TYPE servicevartype OWNER TO lanview2;
 CREATE TYPE drawtype AS ENUM ('LINE', 'AREA', 'STACK');
 ALTER TYPE drawtype OWNER TO lanview2;
 
-CREATE TABLE host_service_vars (
-    service_var_id      bigserial           PRIMARY KEY,
-    service_var_name    text                NOT NULL,
-    service_var_note    text                DEFAULT NULL,
-    host_service_id     bigint              NOT NULL
-        REFERENCES host_services(host_service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    host_service_chart_id bigint	    DEFAULT NULL
-        REFERENCES host_service_charts(host_service_chart_id) MATCH SIMPLE ON DELETE SET NULL ON UPDATE RESTRICT,
-    color               bigint              DEFAULT 0,
-    service_var_type    servicevartype      DEFAULT 'GAUGE',
-    draw_type           drawtype            DEFAULT 'LINE',
-    cdef                text                DEFAULT NULL,
-    negative            boolean             DEFAULT FALSE,
-    dim                 text                DEFAULT NULL,
-    last_raw_value      double precision    DEFAULT NULL,
-    last_value          double precision    DEFAULT NULL,
-    last_time           timestamp           DEFAULT NULL,
-    min_value           double precision    DEFAULT NULL,
-    max_value           double precision    DEFAULT NULL,
-    warning_max         double precision    DEFAULT NULL,
-    warning_min         double precision    DEFAULT NULL,
-    critical_max        double precision    DEFAULT NULL,
-    critical_min        double precision    DEFAULT NULL,
+CREATE TABLE rrd_beats (
+    rrd_beat_id         bigserial           PRIMARY KEY,
+    rrd_beat_name       text                NOT NULL UNIQUE,
+    rrd_beat_note       text                DEFAULT NULL,
+    step                interval            NOT NULL CHECK (extract(epoch from step) > 10),
+    heartbeat           interval            NOT NULL,
+    daily_step          integer             DEFAULT NULL CHECK (daily_step > 0),
+    daily_size          integer             DEFAULT NULL CHECK (daily_size > 0),
+    daily_aggregates    aggregatetype[]     NOT NULL DEFAULT ARRAY[]::aggregatetype[],
+    weekly_step         integer             DEFAULT NULL CHECK (weekly_step > 0),
+    weekly_size         integer             DEFAULT NULL CHECK (weekly_size > 0),
+    weekly_aggregates   aggregatetype[]     NOT NULL DEFAULT ARRAY[]::aggregatetype[],
+    monthly_step        integer             DEFAULT NULL CHECK (monthly_step > 0),
+    monthly_size        integer             DEFAULT NULL CHECK (monthly_size > 0),
+    monthly_aggregates  aggregatetype[]     NOT NULL DEFAULT ARRAY[]::aggregatetype[],
+    yearly_step         integer             DEFAULT NULL CHECK (yearly_step > 0),
+    yearly_size         integer             DEFAULT NULL CHECK (yearly_size > 0),
+    yearly_aggregates   aggregatetype[]     NOT NULL DEFAULT ARRAY[]::aggregatetype[],
     features            text                DEFAULT NULL,
-    deleted             boolean             NOT NULL DEFAULT FALSE,
-    UNIQUE (host_service_id, service_var_name)
+    deleted             boolean             NOT NULL DEFAULT false,
+    CHECK (heartbeat > step),
+    CHECK ((daily_aggregates   = ARRAY[]::aggregatetype[]) = (daily_step   IS NULL)),
+    CHECK ((weekly_aggregates  = ARRAY[]::aggregatetype[]) = (weekly_step  IS NULL)),
+    CHECK ((monthly_aggregates = ARRAY[]::aggregatetype[]) = (monthly_step IS NULL)),
+    CHECK ((yearly_aggregates  = ARRAY[]::aggregatetype[]) = (yearly_step  IS NULL))
 );
-ALTER TABLE host_service_vars OWNER TO lanview2;
+
+INSERT INTO rrd_beats
+    (rrd_beat_name, rrd_beat_note, step, heartbeat, daily_step, daily_size, daily_aggregates, weekly_step, weekly_size, 
+        weekly_aggregates, monthly_step, monthly_size, monthly_aggregates, yearly_step, yearly_size, yearly_aggregates) VALUES
+    ('std5min', 'Normál 5 percenkénti lekérdezés', '5:00', '10:00',
+        1, 400, '{AVERAGE}',            -- ~33.3 hour/  5 min.
+        6, 400, '{AVERAGE, MIN, MAX}',  -- ~ 8.5 day / 30 min.
+       24, 400, '{AVERAGE, MIN, MAX}',  -- ~33.3 day /  2 hour
+      288, 400, '{AVERAGE, MIN, MAX}'), -- 400   day /  1 day
+    ('std1min', 'Normál 1 percenkénti lekérdezés', '1:00',  '5:00',
+        5, 400, '{AVERAGE, MIN, MAX}',  -- ~33.3 hour/  5 min.
+       30, 400, '{AVERAGE, MIN, MAX}',  -- ~ 8.5 day / 30 min.
+      120, 400, '{AVERAGE, MIN, MAX}',  -- ~33.3 day /  2 hour
+     1440, 400, '{AVERAGE, MIN, MAX}'); -- 400   day /  1 day
+
+
+CREATE TABLE query_parameter_types (
+    query_parameter_type_id   bigserial         PRIMARY KEY,
+    query_parameter_type_name text              NOT NULL UNIQUE,
+    query_parameter_type_note text              DEFAULT NULL,
+    rrd_beat_id             bigint              NOT NULL
+        REFERENCES rrd_beats(rrd_beat_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
+    service_var_type        servicevartype      DEFAULT 'GAUGE',
+    draw_type               drawtype            DEFAULT 'LINE',
+    cdef                    text                DEFAULT NULL,
+--  negative                boolean             DEFAULT FALSE,
+    dim                     text                DEFAULT NULL,
+    min_value               double precision    DEFAULT NULL,
+    max_value               double precision    DEFAULT NULL,
+    warning_max             double precision    DEFAULT NULL,
+    warning_min             double precision    DEFAULT NULL,
+    critical_max            double precision    DEFAULT NULL,
+    critical_min            double precision    DEFAULT NULL,
+    features                text                DEFAULT NULL,
+    deleted                 boolean             NOT NULL DEFAULT FALSE,
+    CHECK (min_value    < COALESCE(critical_min, warning_min, warning_max, critical_max, max_value)),
+    CHECK (critical_min < COALESCE(warning_min, warning_max, critical_max, max_value)),
+    CHECK (warning_min  < COALESCE(warning_max, critical_max, max_value)),
+    CHECK (warning_max  < COALESCE(critical_max, max_value)),
+    CHECK (critical_max < max_value),
+    CHECK (max_value    > COALESCE(critical_max, warning_max, warning_min, critical_min, min_value)),
+    CHECK (critical_max > COALESCE(warning_max, warning_min, critical_min, min_value)),
+    CHECK (warning_max  > COALESCE(warning_min, critical_min, min_value)),
+    CHECK (warning_min  > COALESCE(critical_min, min_value)),
+    CHECK (critical_min > min_value)
+);
+ALTER TABLE query_parameter_types OWNER TO lanview2;
+
+CREATE TABLE query_parameters (
+    query_parameter_id      bigserial           PRIMARY KEY,
+    query_parameter_name    text                NOT NULL UNIQUE,
+    query_parameter_note    text                DEFAULT NULL,
+    query_parameter_type_id bigint              NOT NULL
+        REFERENCES query_parameter_types(query_parameter_type_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
+    host_service_id         bigint              NOT NULL
+        REFERENCES host_services(host_service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    
+)
+ALTER TABLE query_parameters OWNER TO lanview2;
+
+
+
+
+
+
 
 CREATE TABLE app_memos (
     app_memo_id         bigserial       PRIMARY KEY,

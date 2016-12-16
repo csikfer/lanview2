@@ -1371,35 +1371,30 @@ void setReplace(int er)
     pDelete(p); \
     setLastPort(NULL, NULL_IX)  // Törli
 
-static void newNode(QStringList * t, QString *name, QString *note)
-{
-    _DBGFN() << "@(" << *name << QChar(',') << *note << ")" << endl;
-    cNode *pNode = new cNode();
-    pPatch = pNode;
-    pNode->asmbNode(qq(), *name, NULL, NULL, NULL, *note, gPlace());
-    pNode->set(_sNodeType, *t);
-    pDelete(t);
-    pDelete(name); pDelete(note);
-}
-
-/// Egy új host vagy snmp eszköz létrehozása (a paraméterként megadott pointereket felszabadítja)
-/// @param name Az eszköz nevére mutató pointer, vagy a "LOOKUP" stringre mutató pointer
+/// Egy új node/host vagy snmp eszköz létrehozása (a paraméterként megadott pointereket felszabadítja)
+/// @param name Az eszköz nevére mutató pointer, vagy a "LOOKUP" stringre mutató pointer.
 /// @param ip Pointer egy string pár, az első elem az IP cím, vagy az ARP ill. LOOKUP string, ha az ip címet a MAC címből ill.
-///           a névből kell meghatározni. A második elem az ip cím típus neve.
+///           a névből kell meghatározni. A második elem az ip cím típus neve. Ha NULL nincs IP hivatkozás.
 /// @param mac Vagy a MAC stringgé konvertálva, vagy az ARP string, ha az IP címből kell meghatározni, vagy NULL, ha nincs MAC
-/// @param d Port secriptorra/megjegyzés  mutató pointer, üres string esetln az NULL lessz.
+/// @param d Megjegyzés  mutató pointer, üres string esetén az NULL lessz.
 /// @return Az új objektum pointere
-static void newHost(QStringList * t, QString *name, QStringPair *ip, QString *mac, QString *d)
+static void newHost(qlonglong t, QString *name, QStringPair *ip, QString *mac, QString *d)
 {
     cNode *pNode;
-    if (t->contains(_sSnmp, Qt::CaseInsensitive)) pNode = new cSnmpDevice();
-    else                                          pNode = new cNode();
+    if (t & ENUM2SET(NT_SNMP)) pNode = new cSnmpDevice();
+    else                       pNode = new cNode();
     pPatch = pNode;
-    pNode->asmbNode(qq(), *name, NULL, ip, mac, *d, gPlace());
-    pNode->set(_sNodeType, *t);
-    pDelete(t);
+    pNode->setId(_sNodeType, t);
+    if (ip == NULL || mac == NULL ) {
+        pNode->setName(*name);
+        if (d != NULL) pNode->setNote(*d);
+        setLastPort(NULL, NULL_IX);
+    }
+    else {
+        pNode->asmbNode(qq(), *name, NULL, ip, mac, *d, gPlace());
+        setLastPort(pNode->ports.first());
+    }
     pDelete(name); pDelete(ip); pDelete(mac); pDelete(d);
-    setLastPort(pNode->ports.first());
 }
 
 static void yySqlExec(const QString& _cmd, QVariantList *pvl = NULL, QVariantList * _ret = NULL)
@@ -1503,7 +1498,41 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
     }
 }
 
-
+void  setSysParam(QString *pt, QString *pn, QVariant *pv)
+{
+    qlonglong tt = paramTypeType(*pt, EX_IGNORE);   // Lehet típus név is, nem csak alap típus
+    bool ok = true;
+    qlonglong i;
+    switch (tt) {
+    case PT_TEXT:
+        ok = pv->userType() == QVariant::String;
+        if (ok) cSysParam::setTextSysParam(qq(), *pn, pv->toString());
+        break;
+    case PT_BOOLEAN:
+        ok = pv->userType() == QVariant::Bool;
+        if (ok)   cSysParam::setBoolSysParam(qq(), *pn, pv->toBool());
+        break;
+    case PT_BIGINT:
+        i = pv->toLongLong(&ok);
+        if (ok) cSysParam::setIntSysParam(qq(), *pn, i);
+        break;
+    case PT_INTERVAL:
+        ok = pv->userType() == QVariant::String;
+        if (ok) cSysParam::setSysParam(qq(), *pn, pv->toString(), _sInterval);
+        else {
+            i = pv->toLongLong(&ok);
+            if (ok) cSysParam::setSysParam(qq(), *pn, i, _sInterval);
+        }
+        break;
+    default:
+        cSysParam::setSysParam(qq(), *pn, *pv, *pt);
+        break;
+    }
+    if (!ok) yyerror(QObject::trUtf8("Invalid data."));
+    delete pn;
+    delete pv;
+    delete pt;
+}
 %}
 
 %union {
@@ -1530,9 +1559,9 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
 
 %token      MACRO_T FOR_T DO_T TO_T SET_T CLEAR_T SYNTAX_T
 %token      VLAN_T SUBNET_T PORTS_T PORT_T NAME_T SHARED_T SENSORS_T
-%token      PLACE_T PATCH_T HUB_T SWITCH_T NODE_T HOST_T ADDRESS_T
+%token      PLACE_T PATCH_T SWITCH_T NODE_T HOST_T ADDRESS_T
 %token      PARENT_T IMAGE_T FRAME_T TEL_T NOTE_T MESSAGE_T BATCH_T
-%token      PARAM_T TEMPLATE_T COPY_T FROM_T NULL_T VIRTUAL_T TERM_T
+%token      PARAM_T TEMPLATE_T COPY_T FROM_T NULL_T TERM_T
 %token      INCLUDE_T PSEUDO_T OFFS_T IFTYPE_T WRITE_T RE_T SYS_T
 %token      ADD_T READ_T UPDATE_T ARPS_T ARP_T SERVER_T FILE_T BY_T
 %token      SNMP_T SSH_T COMMUNITY_T DHCPD_T LOCAL_T PROC_T CONFIG_T
@@ -1546,17 +1575,16 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
 %token      MASK_T LIST_T VLANS_T ID_T DYNAMIC_T FIXIP_T PRIVATE_T PING_T
 %token      NOTIF_T ALL_T RIGHTS_T REMOVE_T SUB_T FEATURES_T MAC_T EXTERNAL_T
 %token      LINK_T LLDP_T SCAN_T TABLE_T FIELD_T SHAPE_T TITLE_T REFINE_T
-%token      DEFAULTS_T ENUM_T RIGHT_T VIEW_T INSERT_T EDIT_T AP_T
+%token      DEFAULTS_T ENUM_T RIGHT_T VIEW_T INSERT_T EDIT_T
 %token      INHERIT_T NAMES_T HIDE_T VALUE_T DEFAULT_T FILTER_T FILTERS_T
 %token      ORD_T SEQUENCE_T MENU_T GUI_T OWN_T TOOL_T TIP_T WHATS_T THIS_T
-%token      EXEC_T TAG_T BOOLEAN_T IPADDRESS_T REAL_T ENABLE_T MOBILE_T
-%token      BYTEA_T DATE_T DISABLE_T EXPRESSION_T PREFIX_T RESET_T CACHE_T
-%token      DATA_T IANA_T IFDEF_T IFNDEF_T NC_T QUERY_T PARSER_T DEVICE_T
+%token      EXEC_T TAG_T REAL_T ENABLE_T
+%token      DATE_T DISABLE_T EXPRESSION_T PREFIX_T RESET_T CACHE_T
+%token      DATA_T IANA_T IFDEF_T IFNDEF_T NC_T QUERY_T PARSER_T
 %token      REPLACE_T RANGE_T EXCLUDE_T PREP_T POST_T CASE_T RECTANGLE_T
-%token      DELETED_T PARAMS_T CONVERTER_T PRINTER_T GATEWAY_T DOMAIN_T
+%token      DELETED_T PARAMS_T DOMAIN_T
 %token      DIALOG_T AUTO_T PASSWD_T HUGE_T FLAG_T TREE_T NOTIFY_T
-%token      REFRESH_T SQL_T
-%token      CATEGORY_T ZONE_T CONTROLLER_T
+%token      REFRESH_T SQL_T CATEGORY_T ZONE_T
 
 %token <i>  INTEGER_V
 %token <r>  FLOAT_V
@@ -1564,16 +1592,17 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
 %token <mac> MAC_V 
 %token <ip> IPV4_V IPV6_V
 %type  <i>  int int_ iexpr lnktype shar ipprotp ipprot offs ix_z vlan_t set_t srvtid
-%type  <i>  vlan_id place_id iptype pix pix_z iptype_a image_id tmod int0 replace
-%type  <i>  ptypen fhs hsid srvid grpid tmpid node_id port_id snet_id ift_id plg_id
+%type  <i>  vlan_id place_id iptype iptype_a pix pix_z image_id tmod int0 replace
+%type  <i>  fhs hsid srvid grpid tmpid node_id port_id snet_id ift_id plg_id
 %type  <i>  usr_id ftmod p_seq int_z lnktypez fflags fflag tstypes tstype pgtype
+%type  <i>  node_h node_ts
 %type  <il> list_i p_seqs p_seqsl // ints
 %type  <b>  bool bool_on ifdef exclude cases replfl
 %type  <r>  /* real */ num fexpr
 %type  <s>  str str_ str_z str_zz name_q time tod _toddef sexpr pnm mac_q ha nsw ips rights
-%type  <s>  imgty tsintyp usrfn usrgfn plfn ptcfn node_t host_t copy_from
-%type  <sl> strs strs_z strs_zz alert list_m nsws nsws_ node_h host_h
-%type  <sl> usrfns usrgfns plfns ptcfns node_ts host_ts
+%type  <s>  imgty tsintyp usrfn usrgfn plfn ptcfn copy_from
+%type  <sl> strs strs_z strs_zz alert list_m nsws nsws_
+%type  <sl> usrfns usrgfns plfns ptcfns
 %type  <v>  value mac_qq
 %type  <vl> vals
 %type  <n>  subnet
@@ -1966,28 +1995,10 @@ params  : ptype
         | syspar
         ;
 // Paraméter típus definíciók
-ptype   : PARAM_T TYPE_T str str ptypen str_z ';'{ cParamType::insertNew(qq(), sp2s($3), sp2s($4), $5, sp2s($6)); }
-        | PARAM_T TYPE_T str ptypen str_z ';'{ cParamType::insertNew(qq(), sp2s($3), QString(), $4, sp2s($5)); }
-        ;
-// Adat típusok
-ptypen  : BOOLEAN_T                 { $$ = PT_BOOLEAN; }
-        | INTEGER_T                 { $$ = PT_BIGINT; }
-        | REAL_T                    { $$ = PT_DOUBLE_PRECISION; }
-        | STRING_T                  { $$ = PT_TEXT; }
-        | INTERVAL_T                { $$ = PT_INTERVAL; }
-        | IPADDRESS_T               { $$ = PT_INET; }
-        | DATE_T                    { $$ = PT_DATE; }
-        | TIME_T                    { $$ = PT_TIME; }
-        | DATE_T  TIME_T            { $$ = PT_TIMESTAMP; }
-        | BYTEA_T                   { $$ = PT_BYTEA; }
+ptype   : PARAM_T str str_z TYPE_T str str_z ';'{ cParamType::insertNew(qq(), sp2s($2), sp2s($3), paramTypeType(sp2s($5)), sp2s($6)); }
         ;
 // Renddszerparaméterek definiálása
-syspar  : SYS_T PARAM_T str str '=' str ';' { cSysParam::setSysParam(qq(), *$4, *$6, *$3); delete $3; delete $4; delete $6; }
-        | SYS_T STRING_T str '=' str ';'    { cSysParam::setTextSysParam(qq(), *$3, *$5); delete $3; delete $5; }
-        | SYS_T BOOLEAN_T str '=' bool ';'  { cSysParam::setBoolSysParam(qq(), *$3, $5); delete $3; }
-        | SYS_T INTEGER_T str '=' int ';'   { cSysParam::setIntSysParam(qq(), *$3, $5); delete $3; }
-        | SYS_T INTERVAL_T str '=' str ';'  { cSysParam::setSysParam(qq(), *$3, *$5, _sInterval); delete $3; delete $5; }
-        | SYS_T INTERVAL_T str '=' int ';'  { cSysParam::setSysParam(qq(), *$3, $5 * 1000, _sInterval); delete $3; }
+syspar  : SYS_T str PARAM_T str '=' value ';'   { setSysParam($2, $4, $6); }
         ;
 // VLAN definíciók
 vlan    : VLAN_T int str str_z      {
@@ -2231,33 +2242,10 @@ spport  : PORTS_T p_seqs SHARED_T strs ';'      { portUpdateShare($2, $4); }
 // nodes
 node_h  : NODE_T replace node_ts                { $$ = $3; setReplace($2); }
         ;
-node_ts :                                       { $$ = new QStringList; *$$ << _sNode; }
-        | node_ts node_t                        { *$$ << sp2s($2); }
+node_ts :                                       { $$ = ENUM2SET(NT_NODE); }
+        | '(' strs ')'                          { $$ = 0; foreach (QString s, *$2) { $$ |= ENUM2SET(nodeType(s)); } delete $2; }
         ;
-node_t  : SWITCH_T                              { $$ = new QString(_sSwitch); }
-        | HUB_T                                 { $$ = new QString(_sHub); }
-        | VIRTUAL_T                             { $$ = new QString(_sVirtual); }
-        | CONVERTER_T                           { $$ = new QString(_sConverter); }
-        | PRINTER_T                             { $$ = new QString(_sPrinter); }
-        ;
-host_h  : HOST_T replace host_ts                { $$ = $3; setReplace($2); }
-        ;
-host_ts :                                       { $$ = new QStringList; *$$ << _sHost; }
-        | host_ts host_t                        { *$$ << sp2s($2); }
-        ;
-host_t  : SWITCH_T                              { $$ = new QString(_sSwitch); }
-        | VIRTUAL_T                             { $$ = new QString(_sVirtual); }
-        | SNMP_T                                { $$ = new QString(_sSnmp); }
-        | CONVERTER_T                           { $$ = new QString(_sConverter); }
-        | PRINTER_T                             { $$ = new QString(_sPrinter); }
-        | GATEWAY_T                             { $$ = new QString(_sGateway); }
-        | AP_T                                  { $$ = new QString(_sAp); }
-        | WORKSTATION_T                         { $$ = new QString(_sWorkstation); }
-        | MOBILE_T                              { $$ = new QString(_sMobile); }
-        | DEVICE_T                              { $$ = new QString(_sDevice); }
-        | CONTROLLER_T                          { $$ = new QString(_sController); }
-        ;
-node    : node_h str str_z                          { newNode($1, $2, $3); pPatch->containerValid = CV_ALL_NODE; }
+node    : node_h str str_z                          { newHost($1, NULL, NULL, $2, $3); pPatch->containerValid = CV_ALL_NODE; }
                 node_cf node_e                      { REPANDDEL(pPatch); }
         | ATTACHED_T str str_z ';'                  { if (globalReplaceFlag) replaceAttachedNode(sp2s($2), sp2s($3));
                                                       else                       newAttachedNode(sp2s($2), sp2s($3)); }
@@ -2270,7 +2258,7 @@ node    : node_h str str_z                          { newNode($1, $2, $3); pPatc
                                                     { replaceAttachedNodes(sp2s($3), sp2s($4), $6, $8); }
         | ATTACHED_T INSERT_T str str_z FROM_T int TO_T int ';'
                                                     {     newAttachedNodes(sp2s($3), sp2s($4), $6, $8); }
-        | host_h name_q ip_q mac_q str_z            { newHost($1, $2, $3, $4, $5); pPatch->containerValid = CV_ALL_HOST; }
+        | node_h name_q ip_q mac_q str_z            { newHost($1, $2, $3, $4, $5); pPatch->containerValid = CV_ALL_HOST; }
             node_cf node_e                          { REPANDDEL(pPatch); }
         | WORKSTATION_T str mac str_z ';'           { if (globalReplaceFlag) replaceWorkstation(sp2s($2), *$3, sp2s($4));
                                                       else                       newWorkstation(sp2s($2), *$3, sp2s($4));
@@ -2962,9 +2950,9 @@ static int yylex(void)
     } sToken[] = {
         TOK(MACRO) TOK(FOR) TOK(DO) TOK(TO) TOK(SET) TOK(CLEAR) TOK(SYNTAX)
         TOK(VLAN) TOK(SUBNET) TOK(PORTS) TOK(PORT) TOK(NAME) TOK(SHARED) TOK(SENSORS)
-        TOK(PLACE) TOK(PATCH) TOK(HUB) TOK(SWITCH) TOK(NODE) TOK(HOST) TOK(ADDRESS)
+        TOK(PLACE) TOK(PATCH) TOK(NODE) TOK(HOST) TOK(ADDRESS)
         TOK(PARENT) TOK(IMAGE) TOK(FRAME) TOK(TEL) TOK(NOTE) TOK(MESSAGE) TOK(BATCH)
-        TOK(PARAM) TOK(TEMPLATE) TOK(COPY) TOK(FROM) TOK(NULL) TOK(VIRTUAL) TOK(TERM)
+        TOK(PARAM) TOK(TEMPLATE) TOK(COPY) TOK(FROM) TOK(NULL) TOK(TERM)
         TOK(INCLUDE) TOK(PSEUDO) TOK(OFFS) TOK(IFTYPE) TOK(WRITE) TOK(RE) TOK(SYS)
         TOK(ADD) TOK(READ) TOK(UPDATE) TOK(ARPS) TOK(ARP) TOK(SERVER) TOK(FILE) TOK(BY)
         TOK(SNMP) TOK(SSH) TOK(COMMUNITY) TOK(DHCPD) TOK(LOCAL) TOK(PROC) TOK(CONFIG)
@@ -2978,17 +2966,16 @@ static int yylex(void)
         TOK(MASK) TOK(LIST) TOK(VLANS) TOK(ID) TOK(DYNAMIC) TOK(FIXIP) TOK(PRIVATE) TOK(PING)
         TOK(NOTIF) TOK(ALL) TOK(RIGHTS) TOK(REMOVE) TOK(SUB) TOK(FEATURES) TOK(MAC) TOK(EXTERNAL)
         TOK(LINK) TOK(LLDP) TOK(SCAN) TOK(TABLE) TOK(FIELD) TOK(SHAPE) TOK(TITLE) TOK(REFINE)
-        TOK(DEFAULTS) TOK(ENUM) TOK(RIGHT) TOK(VIEW) TOK(INSERT) TOK(EDIT) TOK(AP)
+        TOK(DEFAULTS) TOK(ENUM) TOK(RIGHT) TOK(VIEW) TOK(INSERT) TOK(EDIT)
         TOK(INHERIT) TOK(NAMES) TOK(HIDE) TOK(VALUE) TOK(DEFAULT) TOK(FILTER) TOK(FILTERS)
         TOK(ORD) TOK(SEQUENCE) TOK(MENU) TOK(GUI) TOK(OWN) TOK(TOOL) TOK(TIP) TOK(WHATS) TOK(THIS)
-        TOK(EXEC) TOK(TAG) TOK(BOOLEAN) TOK(IPADDRESS) TOK(REAL) TOK(ENABLE) TOK(MOBILE)
-        TOK(BYTEA) TOK(DATE) TOK(DISABLE) TOK(EXPRESSION) TOK(PREFIX) TOK(RESET) TOK(CACHE)
-        TOK(DATA) TOK(IANA) TOK(IFDEF) TOK(IFNDEF) TOK(NC) TOK(QUERY) TOK(PARSER) TOK(DEVICE)
+        TOK(EXEC) TOK(TAG) TOK(ENABLE)
+        TOK(DATE) TOK(DISABLE) TOK(EXPRESSION) TOK(PREFIX) TOK(RESET) TOK(CACHE)
+        TOK(DATA) TOK(IANA) TOK(IFDEF) TOK(IFNDEF) TOK(NC) TOK(QUERY) TOK(PARSER)
         TOK(REPLACE) TOK(RANGE) TOK(EXCLUDE) TOK(PREP) TOK(POST) TOK(CASE) TOK(RECTANGLE)
-        TOK(DELETED) TOK(PARAMS) TOK(CONVERTER) TOK(PRINTER) TOK(GATEWAY) TOK(DOMAIN)
+        TOK(DELETED) TOK(PARAMS) TOK(DOMAIN)
         TOK(DIALOG) TOK(AUTO) TOK(PASSWD) TOK(HUGE) TOK(FLAG) TOK(TREE) TOK(NOTIFY)
-        TOK(REFRESH) TOK(SQL)
-        TOK(CATEGORY) TOK(ZONE) TOK(CONTROLLER)
+        TOK(REFRESH) TOK(SQL) TOK(CATEGORY) TOK(ZONE)
         { "WST",    WORKSTATION_T }, // rövidítések
         { "ATC",    ATTACHED_T },
         { "INT",    INTEGER_T },
@@ -2998,8 +2985,6 @@ static int yylex(void)
         { "SEQ",    SEQUENCE_T },
         { "DEL",    DELETE_T },
         { "EXPR",   EXPRESSION_T },
-        { "BOOL",   BOOLEAN_T },
-        { "GW",     GATEWAY_T },
         { "CAT",    CATEGORY_T },
         { NULL, 0 }
     };
