@@ -287,7 +287,7 @@ CREATE TABLE host_service_logs (
     new_state           notifswitch     NOT NULL,
     new_soft_state      notifswitch     NOT NULL,
     new_hard_state      notifswitch     NOT NULL,
-    event_note          text    DEFAULT NULL,
+    event_note          text            DEFAULT NULL,
     superior_alarm_id   bigint          DEFAULT NULL,
     noalarm             boolean         NOT NULL
 );
@@ -369,16 +369,13 @@ INSERT INTO rrd_beats
      1440, 400, '{AVERAGE, MIN, MAX}'); -- 400   day /  1 day
 
 
-CREATE TABLE query_parameter_types (
-    query_parameter_type_id   bigserial         PRIMARY KEY,
-    query_parameter_type_name text              NOT NULL UNIQUE,
-    query_parameter_type_note text              DEFAULT NULL,
+CREATE TABLE service_var_types (
+    service_var_type_id   bigserial             PRIMARY KEY,
+    service_var_type_name text                  NOT NULL UNIQUE,
+    service_var_type_note text                  DEFAULT NULL,
     rrd_beat_id             bigint              NOT NULL
         REFERENCES rrd_beats(rrd_beat_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
     service_var_type        servicevartype      DEFAULT 'GAUGE',
-    draw_type               drawtype            DEFAULT 'LINE',
-    cdef                    text                DEFAULT NULL,
---  negative                boolean             DEFAULT FALSE,
     dim                     text                DEFAULT NULL,
     min_value               double precision    DEFAULT NULL,
     max_value               double precision    DEFAULT NULL,
@@ -399,25 +396,49 @@ CREATE TABLE query_parameter_types (
     CHECK (warning_min  > COALESCE(critical_min, min_value)),
     CHECK (critical_min > min_value)
 );
-ALTER TABLE query_parameter_types OWNER TO lanview2;
+ALTER TABLE service_var_types OWNER TO lanview2;
 
-CREATE TABLE query_parameters (
-    query_parameter_id      bigserial           PRIMARY KEY,
-    query_parameter_name    text                NOT NULL UNIQUE,
-    query_parameter_note    text                DEFAULT NULL,
-    query_parameter_type_id bigint              NOT NULL
-        REFERENCES query_parameter_types(query_parameter_type_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
+CREATE TABLE service_vars (
+    service_var_id          bigserial           PRIMARY KEY,
+    service_var_name        text                NOT NULL UNIQUE,
+    service_var_note        text                DEFAULT NULL,
+    service_var_type_id     bigint              NOT NULL
+        REFERENCES service_var_types(service_var_type_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
     host_service_id         bigint              NOT NULL
         REFERENCES host_services(host_service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    
-)
-ALTER TABLE query_parameters OWNER TO lanview2;
-
--- --------
-
-
+    features                text                DEFAULT NULL,
+    deleted                 boolean             NOT NULL DEFAULT FALSE,
+    UNIQUE (service_var_name, host_service_id)
+);
+ALTER TABLE service_vars OWNER TO lanview2;
 
 
+CREATE TABLE graphs (
+    graph_id                bigserial           PRIMARY KEY,
+    graph_name              text                UNIQUE,
+    graph_note              text                DEFAULT NULL,
+    graph_title             text                DEFAULT NULL,
+    -- ...
+    features                text                DEFAULT NULL,
+    deleted                 boolean             NOT NULL DEFAULT FALSE    
+);
+ALTER TABLE graphs OWNER TO lanview2;
+
+CREATE TABLE graph_vars (
+    graph_var_id            bigserial           PRIMARY KEY,
+    graph_var_note          text                DEFAULT NULL,
+    graph_id                bigint              NOT DEFAULT
+        REFERENCES graphs(graph_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    service_var_id          bigint              NOT DEFAULT
+        REFERENCES service_vars(service_var_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
+    draw_type               drawtype            NOT NULL DEFAULT 'LINE'
+    -- ...
+    features                text                DEFAULT NULL,
+    deleted                 boolean             NOT NULL DEFAULT FALSE    
+);
+ALTER TABLE graph_vars OWNER TO lanview2;
+
+-- --------------------------------------------------------------------------------------------------
 
 CREATE TABLE app_memos (
     app_memo_id         bigserial       PRIMARY KEY,
