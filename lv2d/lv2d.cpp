@@ -56,3 +56,7 @@ lv2d::~lv2d()
     down();
 }
 
+void lv2d::setup(eTristate _tr)
+{
+    tSetup<cSysInspector>(_tr);
+}

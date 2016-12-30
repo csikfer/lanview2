@@ -549,23 +549,7 @@ void lanView::reSet()
 
 void lanView::setup(eTristate _tr)
 {
-    switch (_tr) {
-    case TS_NULL:                                 break;
-    case TS_FALSE:  setupTransactionFlag = false; break;
-    case TS_TRUE:   setupTransactionFlag = true;  break;
-    }
-    QString tn;
-    if (setupTransactionFlag) {
-        tn = appName + "_setup";
-        sqlBegin(*pQuery, tn);
-    }
-    if (pSelfInspector == NULL) pSelfInspector = new cInspector(*pQuery, appName);
-    pSelfInspector->postInit(*pQuery);
-    if (pSelfInspector->passive() && (pSelfInspector->pSubordinates == NULL || pSelfInspector->pSubordinates->isEmpty())) EXCEPTION(NOTODO);
-    if (setupTransactionFlag) {
-        sqlEnd(*pQuery, tn);
-    }
-    pSelfInspector->start();
+    tSetup<cInspector>(_tr);
 }
 
 void lanView::down()

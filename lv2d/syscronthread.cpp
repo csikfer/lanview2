@@ -132,3 +132,39 @@ void cSysCronThread::smsCron()
 {
     ;
 }
+
+cSysInspector::cSysInspector(QSqlQuery& q, const QString &sn)
+    : cInspector(q, sn)
+{
+    ;
+}
+
+cSysInspector::cSysInspector(QSqlQuery& q, qlonglong __host_service_id, qlonglong __tableoid, cInspector *__par)
+    : cInspector(q, __host_service_id, __tableoid, __par)
+{
+    ;
+}
+
+
+cInspectorThread *cSysInspector::newThread()
+{
+    _DBGFN() << name() << endl;
+    cInspectorThread *p = NULL;
+    if (serviceId() == syscronId) {
+#if (defined(Q_OS_UNIX) || defined(Q_OS_LINUX)) && defined(Q_PROCESSOR_X86_64)
+        p = new cSysCronThread(this);
+#else
+        EXCEPTION(ENOTSUPP,0,_sSyscron);
+#endif
+    }
+    else {
+        p = new cInspectorThread(this);
+    }
+    p->setObjectName(name());
+    return p;
+}
+
+cInspector *cSysInspector::newSubordinate(QSqlQuery& _q, qlonglong _hsid, qlonglong _toid, cInspector * _par)
+{
+    return new cSysInspector(_q, _hsid, _toid, _par);
+}

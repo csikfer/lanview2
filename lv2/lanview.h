@@ -218,7 +218,7 @@ public:
     /// Az objektum típusa a template paraméter, mely a cInspector leszármazozja.
     /// feltételezi, hogy a servíz név azonos az alpplikáció nevével.
     /// Ha az opcionális _tr értéke true, akkor az inicializálást egy SQL tranzakcióba fogja.
-    template <class T> void tSetup(eTristate _tr = TS_NULL)
+    template <class T> void tSetup(eTristate _tr)
     {
         switch (_tr) {
         case TS_NULL:                                 break;
@@ -233,7 +233,7 @@ public:
         T *p = new T(*pQuery, appName); // Saját (fő) inspector objektum
         pSelfInspector = p;
         p->postInit(*pQuery);           // init
-        if (p->pSubordinates == NULL || p->pSubordinates->isEmpty()) EXCEPTION(NOTODO);
+        if (p->passive() && (p->pSubordinates == NULL || p->pSubordinates->isEmpty())) EXCEPTION(NOTODO);
         if (setupTransactionFlag) {
             sqlEnd(*pQuery, tn);
         }

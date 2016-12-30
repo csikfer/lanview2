@@ -4,7 +4,7 @@
 #include "QtCore"
 
 #include "lanview.h"
-#include "lv2service.h"
+#include "syscronthread.h"
 
 #define APPNAME "lv2d"
 #undef  __MODUL_NAME__
@@ -17,6 +17,7 @@ class lv2d : public lanView {
 public:
     lv2d();
     ~lv2d();
+    virtual void setup(eTristate _tr = TS_NULL);
     /// A futó démonok száma
     int     runingCnt;
 };

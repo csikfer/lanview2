@@ -19,10 +19,22 @@ TEMPLATE = app
 
 
 SOURCES += lv2d.cpp
-HEADERS += lv2d.h
+HEADERS += lv2d.h \
+           syscronthread.h
 INCLUDEPATH += ../lv2
 LIBS += -L../lv2 -llv2
-unix:LIBS += -lsnmp
+
+unix {
+    contains(QMAKE_HOST.arch, x86_64) {
+        message("Unix, x86")
+        SOURCES += syscronthread.cpp
+        # simple-mail : https://github.com/cutelyst/simple-mail.git
+        INCLUDEPATH += ../../simple-mail/src
+        unix:LIBS += -L../../simple-mail-build/src -lsimplemail-qt5
+    }
+    else: message("ARM or x86_32")
+}
+
 
  TRANSLATIONS    = lv2d_hu.ts \
                    lv2d_en.ts

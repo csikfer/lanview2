@@ -373,8 +373,6 @@ CREATE TABLE service_var_types (
     service_var_type_id   bigserial             PRIMARY KEY,
     service_var_type_name text                  NOT NULL UNIQUE,
     service_var_type_note text                  DEFAULT NULL,
-    rrd_beat_id             bigint              NOT NULL
-        REFERENCES rrd_beats(rrd_beat_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
     service_var_type        servicevartype      DEFAULT 'GAUGE',
     dim                     text                DEFAULT NULL,
     min_value               double precision    DEFAULT NULL,
@@ -418,6 +416,8 @@ CREATE TABLE graphs (
     graph_name              text                UNIQUE,
     graph_note              text                DEFAULT NULL,
     graph_title             text                DEFAULT NULL,
+    rrd_beat_id             bigint              NOT NULL
+        REFERENCES rrd_beats(rrd_beat_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
     -- ...
     features                text                DEFAULT NULL,
     deleted                 boolean             NOT NULL DEFAULT FALSE    

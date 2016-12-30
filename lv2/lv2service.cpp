@@ -3,9 +3,6 @@
 //#include "scan.h"
 #include "lv2service.h"
 #include "time.h"
-#if (defined(Q_OS_UNIX) || defined(Q_OS_LINUX))
-#include "syscronthread.h"
-#endif
 
 #define THREADMAXINITTIME 200000
 #define THREADMAXDWENTIME 200000
@@ -450,11 +447,7 @@ cInspectorThread *cInspector::newThread()
     _DBGFN() << name() << endl;
     cInspectorThread *p = NULL;
     if (serviceId() == syscronId) {
-#if (defined(Q_OS_UNIX) || defined(Q_OS_LINUX))
-        p = new cSysCronThread(this);
-#else
         EXCEPTION(ENOTSUPP,0,_sSyscron);
-#endif
     }
     else {
         p = new cInspectorThread(this);
