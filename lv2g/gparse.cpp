@@ -2,6 +2,10 @@
 #include "import_parser.h"
 #include "cerrormessagebox.h"
 
+#if defined(Q_CC_GNU)
+#include <unistd.h>
+#endif
+
 const enum ePrivilegeLevel cParseWidget::rights = PL_OPERATOR;
 
 cParseWidget::cParseWidget(QWidget *par)

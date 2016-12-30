@@ -87,7 +87,7 @@ FORMS += \
     phslinkform.ui \
     findbymac.ui
 INCLUDEPATH += ../lv2
-unix:LIBS += -lsnmp
+#unix:LIBS += -lsnmp
 msvc:LIBS += -lSecur32
 LIBS += -L../lv2 -llv2
 

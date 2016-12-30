@@ -2,14 +2,15 @@
 #include "ping.h"
 #include "lanview.h"
 
-#ifdef Q_OS_LINUX
+#ifndef Q_OS_WIN
+#include <sys/types.h>
+#include <unistd.h>
 #include <iostream>
 #include <netdb.h>
 #include <netinet/ip_icmp.h>
 #include <netinet/ip.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
-
 #include <sys/time.h>
 
 #define BIG_HDR(s)  s

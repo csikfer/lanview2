@@ -20,7 +20,7 @@ HEADERS  += \
 
 INCLUDEPATH += ../lv2 ../lv2g
 LIBS += -L../lv2 -L../lv2g -llv2 -llv2g
-unix:LIBS += -lsnmp
+#unix:LIBS += -lsnmp
 
 TRANSLATIONS    = lv2gui_hu.ts \
                   lv2gui_en.ts

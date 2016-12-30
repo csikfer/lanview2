@@ -105,7 +105,7 @@ void sqlEnd(QSqlQuery& q, const QString& tn)
         }
         else {
             sql = "RELEASE SAVEPOINT " + tn;
-            PDEB(SQL) << sql << " (" << pTrl->mid(0, pTrl->size() -1).join(",") << ")" << endl;
+            PDEB(SQL) << sql << " (" << pTrl->join(_sCommaSp) << ")" << endl;
         }
         r = q.exec(sql);
         if (r) pTrl->pop_back();
@@ -140,7 +140,7 @@ void sqlRollback(QSqlQuery& q, const QString& tn)
         }
         else {
             sql = _sROLLBACK + " TO SAVEPOINT " + tn;
-            PDEB(SQL) << sql << " (" << pTrl->mid(0, i).join(",") << ")" << endl;
+            PDEB(SQL) << sql << " (" << pTrl->join(_sCommaSp) << ")" << endl;
         }
         r = q.exec(sql);
         if (r) {

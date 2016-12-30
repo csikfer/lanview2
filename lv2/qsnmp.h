@@ -36,7 +36,7 @@ Egyébb használlt MIB-ek útvonalával is ki kell egészíteni!
 #include "lv2_global.h"
 #include "lv2types.h"
 
-#if defined(Q_OS_UNIX) || defined(Q_OS_LINUX)
+#if defined(Q_PROCESSOR_X86) && (defined(Q_OS_UNIX) || defined(Q_OS_LINUX))
 #define MUST_SNMP
 #endif
 

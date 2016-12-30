@@ -5,6 +5,8 @@
 #include <security.h>
 #include <secext.h>
 #else
+#include <unistd.h>
+#include <sys/types.h>
 #include <pwd.h>
 #endif
 

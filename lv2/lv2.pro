@@ -114,14 +114,14 @@ HEADERS += lanview.h \
     srvdata.h \
     lv2link.h
 
-unix:HEADERS +=
-
 unix:SOURCES += usignal.cpp
 unix:HEADERS += usignal.h
 
 FORMS += 
 
-unix:LIBS += -lsnmp
+unix {
+    contains(QMAKE_HOST.arch, x86_):LIBS += -lsnmp
+}
 
 TRANSLATIONS    = lv2lib_hu.ts \
                   lv2lib_en.ts
