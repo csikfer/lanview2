@@ -427,11 +427,11 @@ ALTER TABLE graphs OWNER TO lanview2;
 CREATE TABLE graph_vars (
     graph_var_id            bigserial           PRIMARY KEY,
     graph_var_note          text                DEFAULT NULL,
-    graph_id                bigint              NOT DEFAULT
+    graph_id                bigint              NOT NULL
         REFERENCES graphs(graph_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    service_var_id          bigint              NOT DEFAULT
+    service_var_id          bigint              NOT NULL
         REFERENCES service_vars(service_var_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    draw_type               drawtype            NOT NULL DEFAULT 'LINE'
+    draw_type               drawtype            NOT NULL DEFAULT 'LINE',
     -- ...
     features                text                DEFAULT NULL,
     deleted                 boolean             NOT NULL DEFAULT FALSE    

@@ -378,7 +378,7 @@ BEGIN
     RETURN hs;
 END
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION set_service_stat(hsid bigint, state notifswitch, note text, dmid bigint) IS
+COMMENT ON FUNCTION set_service_stat(hsid bigint, state notifswitch, note text, dmid bigint, forced boolean) IS
 'Adminisztrálja a megadott szolgáltatás megállpított új állapotát.';
 
 CREATE TABLE alarm_messages (

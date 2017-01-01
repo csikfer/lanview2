@@ -1,8 +1,7 @@
-
 #include "scan.h"
+#ifdef MUST_SCAN
 #include "lv2link.h"
 
-#ifdef MUST_SCAN
 nmap::nmap(const netAddress& net, int opt, QObject *parent) : processXml(parent), host()
 {
     QString par;
@@ -1748,4 +1747,7 @@ void lldpInfo(QSqlQuery q, const cSnmpDevice& __dev, bool _parser)
     delete pDev;
 }
 
+#else
+#error "Invalid projects file ?"
 #endif // MUST_SCAN
+

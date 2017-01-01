@@ -24,16 +24,24 @@ HEADERS += lv2d.h \
 INCLUDEPATH += ../lv2
 LIBS += -L../lv2 -llv2
 
+#Cross compiler not supported !!!
+message($$QMAKE_HOST.arch)
 unix {
-    contains(QMAKE_HOST.arch, x86_64) {
-        message("Unix, x86")
-        SOURCES += syscronthread.cpp
-        # simple-mail : https://github.com/cutelyst/simple-mail.git
-        INCLUDEPATH += ../../simple-mail/src
-        unix:LIBS += -L../../simple-mail-build/src -lsimplemail-qt5
+    contains(QMAKE_HOST.arch,x86_\d+):{
+    message("Unix, x86_??")
+        LIBS += -lsnmp
+        contains(QMAKE_HOST.arch,x86_64):{
+            message("Unix, x86_64")
+            SOURCES += syscronthread.cpp
+            # simple-mail : https://github.com/cutelyst/simple-mail.git
+            INCLUDEPATH += ../../simple-mail/src
+            LIBS += -L../../simple-mail-build/src -lsimplemail-qt5
+        }
+        else:message("Unix x86_32")
     }
-    else: message("ARM or x86_32")
+    else: message("Unix ARM (?)")
 }
+else: message("Windows (?)")
 
 
  TRANSLATIONS    = lv2d_hu.ts \

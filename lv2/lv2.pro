@@ -75,7 +75,6 @@ SOURCES += lanview.cpp \
     lv2data.cpp \
     lv2user.cpp \
     lv2xml.cpp \
-    scan.cpp \
     ping.cpp \
     lv2service.cpp \
     others.cpp \
@@ -114,13 +113,16 @@ HEADERS += lanview.h \
     srvdata.h \
     lv2link.h
 
-unix:SOURCES += usignal.cpp
-unix:HEADERS += usignal.h
+#FORMS +=
 
-FORMS += 
-
-unix {
-    contains(QMAKE_HOST.arch, x86_):LIBS += -lsnmp
+unix:{
+    SOURCES += usignal.cpp
+    HEADERS += usignal.h
+    contains(QMAKE_HOST.arch,x86_\d+):{
+        message("Unix, x86_??")
+        SOURCES += scan.cpp
+        LIBS += -lsnmp
+    }
 }
 
 TRANSLATIONS    = lv2lib_hu.ts \

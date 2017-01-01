@@ -3,7 +3,7 @@
 
 #include    "lanview.h"
 
-#if (defined(Q_OS_UNIX) || defined(Q_OS_LINUX)) && defined(MUST_SNMP)
+#if defined(Q_PROCESSOR_X86) && (defined(Q_OS_UNIX) || defined(Q_OS_LINUX))
 #define MUST_SCAN
 #endif
 
@@ -11,8 +11,7 @@
 #ifdef MUST_SCAN
 #include "lv2xml.h"
 
-class nmap : public processXml {
-    Q_OBJECT
+class LV2SHARED_EXPORT nmap : public processXml {
 public:
     /// A hívott nmap opciók:
     enum eNmapOpts {
@@ -97,7 +96,7 @@ private:
     QDomElement host;
 };
 
-class cArpTable : public QMap<QHostAddress, cMac> {
+class LV2SHARED_EXPORT cArpTable : public QMap<QHostAddress, cMac> {
 public:
     cArpTable() : QMap<QHostAddress, cMac>() { ; }
     cArpTable(const cArpTable& __o) : QMap<QHostAddress, cMac>(__o) { ; }
@@ -117,10 +116,10 @@ protected:
     const QString& token(QIODevice& __f);
 };
 
-extern bool setPortsBySnmp(cSnmpDevice &node, enum eEx __ex = EX_ERROR, QString *pEs = NULL);
-extern int setSysBySnmp(cSnmpDevice &node, enum eEx __ex = EX_ERROR, QString *pEs = NULL);
+EXT_ bool setPortsBySnmp(cSnmpDevice &node, enum eEx __ex = EX_ERROR, QString *pEs = NULL);
+EXT_ int setSysBySnmp(cSnmpDevice &node, enum eEx __ex = EX_ERROR, QString *pEs = NULL);
 
-extern QString lookup(const QHostAddress& ha, enum eEx __ex = EX_ERROR);
+EXT_ QString lookup(const QHostAddress& ha, enum eEx __ex = EX_ERROR);
 
 /// Az LLDP protokol alapján felfedezi a hálózati switch-eket, és a kapcsolódásukat.
 /// Az újonnan felfedezett switch-eket SNMP protokollal lekérdezi
@@ -129,9 +128,9 @@ extern QString lookup(const QHostAddress& ha, enum eEx __ex = EX_ERROR);
 /// Az objektum neve az IP cím alapján a DNS-szerver álltal visszaadott név.
 /// @param q Az adatbázis műveletekhez használlható query objektum
 /// @param __dev A kiíndulási eszköz, adatbázisban rögzített, onnen feltöltött objektum.
-extern void scanByLldp(QSqlQuery q, const cSnmpDevice& __dev, bool _parser = false);
+EXT_ void scanByLldp(QSqlQuery q, const cSnmpDevice& __dev, bool _parser = false);
 
-extern void lldpInfo(QSqlQuery q, const cSnmpDevice& __dev, bool _parser);
+EXT_ void lldpInfo(QSqlQuery q, const cSnmpDevice& __dev, bool _parser);
 
 
 #else  // MUST_SCAN

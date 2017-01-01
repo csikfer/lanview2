@@ -4,7 +4,6 @@
 
 #if (defined(Q_OS_UNIX) || defined(Q_OS_LINUX)) && defined(Q_PROCESSOR_X86_64)
 class cSysCronThread : public cInspectorThread {
-    friend class cInspector;
 public:
     cSysCronThread(cInspector * pp);
     virtual void timerEvent();
