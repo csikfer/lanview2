@@ -1446,7 +1446,7 @@ public:
     virtual cNPort * addPort(const cIfType& __t, const QString& __name, const QString &__note, int __ix);
     /// Az SNMP verzió konstanst adja vissza (net-snmp híváshoz)
     int snmpVersion() const;
-    ///
+    /// SNMP lekérdezésekkel feltölti az objektumot
     bool setBySnmp(const QString& __com = _sNul, enum eEx __ex = EX_ERROR, QString *pEs = NULL);
     ///
     int open(QSqlQuery &q, cSnmp& snmp, enum eEx __ex = EX_ERROR) const;

@@ -484,7 +484,7 @@ void cRecordDialogInh::init()
     for (i = 0; i < n; ++i) {
         const cTableShape& shape = *tabDescriptors[i];
         cRecordDialog * pDlg = new cRecordDialog(shape, 0, false, this, _pOwnerTable, pTabWidget);
-        cRecord * pRec = new cRecordAny(shape.getName(_sTableName), shape.getName(_sSchemaName));
+/*      cRecord * pRec = new cRecordAny(shape.getName(_sTableName), shape.getName(_sSchemaName));
         if (_pOwnerTable != NULL && _pOwnerTable->owner_id != NULL_ID) {  // Ha van owner, akkor az ID-jét beállítjuk
             int oix = pRec->descr().ixToOwner();
             pRec->setId(oix, _pOwnerTable->owner_id);
@@ -495,7 +495,7 @@ void cRecordDialogInh::init()
             pDlg->_isReadOnly = true;// ??
         }
         pDlg->_pRecord = pRec;
-        pDlg->restore();
+        pDlg->restore(); */
         tabs << pDlg;
         pTabWidget->addTab(pDlg->pWidget(), shape.getName(_sDialogTabTitle));
     }

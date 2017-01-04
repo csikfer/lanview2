@@ -1060,7 +1060,7 @@ bool cNPort::rewrite(QSqlQuery &__q, eEx __ex)
 /// Ellenörzi, hogy a parent pointere konvertálható-e cPatch * típusű pinterré.
 /// Ha nem, vagy a parent NULL, akkor kizárást dob.
 /// A tulajdonos objektum containerValid adattagját maszkolja a __mask
-/// paraméterrel, ha az eredmény nem null, akkor true értékkel tér vissza.
+/// paraméterrel, ha az eredmény nem nulla, akkor true értékkel tér vissza.
 bool cNPort::isContainerValid(qlonglong __mask) const
 {
     QObject *p = parent();
@@ -2914,6 +2914,8 @@ bool cSnmpDevice::setBySnmp(const QString& __com, eEx __ex, QString *pEs)
             if (ports.size() > 7) nt |= enum2set(NT_SWITCH); // több mint 7 port, meghasaljuk, hogy switch
             setId(_sNodeType, nt);
         }
+
+        containerValid = CV_ALL_NODE | CV_PORTS_ADDRESSES; // VLAN-ok nincsenek (még) lekérdezve!! | CV_PORT_VLANS;
         return true;
     }
 #else // MUST_SCAN
@@ -2952,6 +2954,7 @@ int cSnmpDevice::open(QSqlQuery& q, cSnmp& snmp, eEx __ex) const
     return -1;
 #endif // MUST_SCAN
 }
+
 
 
 /* ----------------------------------------------------------------- */

@@ -470,7 +470,7 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs)
         QString         name = tab[_sIfDescr][i].toString();
         int             type = tab[_sIfType][i].toInt(&ok);
         if (!ok) EX(EDATA, -1, QString("SNMP ifType: '%1'").arg(tab[_sIfType][i].toString()));
-        // IANA típusból következtetönk az objektum típusára és iftype_name -ra
+        // IANA típusból következtetünk az objektum típusára és iftype_name -ra
         const cIfType  *pIfType = cIfType::fromIana(type);
         if (pIfType == NULL) {
             DWAR() << "Unhandled interface type " << type << " : #" << tab[_sIfIndex][i]
@@ -534,15 +534,22 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs)
     return true;
 }
 
-#define SNMPSET(s, f)   if (0 != (e = snmp.get(n = s))) { \
-                            es = "cSnmp::get(" + n + ") error : " + snmp.emsg; \
-                            DERR() << es << endl;\
-                            node.clear(f); \
-                            if (pEs != NULL) *pEs += es + " "; \
-                            r = 0; /* WARNING */ \
-                        } else { \
-                            node.set(f, snmp.value()); \
-                        }
+static inline bool snmpset(cSnmpDevice &node, cSnmp &snmp, QString *pEs, const QString& s, const QString& f)
+{
+    if (0 != snmp.get(s)) {
+        QString es = "cSnmp::get(" + s + ") error : " + snmp.emsg;
+        DERR() << "Node \"" << node.getName() << "\" : " << es << endl;
+        node.clear(f);
+        if (pEs != NULL) {
+            *pEs += es + " ";
+        }
+        return true; /* WARNING */
+    }
+    else {
+        node.set(f, snmp.value());
+    }
+    return false; /* OK */
+}
 
 int setSysBySnmp(cSnmpDevice &node, eEx __ex, QString *pEs)
 {
@@ -565,14 +572,14 @@ int setSysBySnmp(cSnmpDevice &node, eEx __ex, QString *pEs)
         if (pEs != NULL) *pEs += es;
         return -1;  // ERROR
     }
-    QString n;
-    int e;
-    SNMPSET("SNMPv2-MIB::sysDescr.0",       _sSysDescr);
-    SNMPSET("SNMPv2-MIB::sysObjectID.0",    _sSysObjectId);
-    SNMPSET("SNMPv2-MIB::sysContact.0",     _sSysContact);
-    SNMPSET("SNMPv2-MIB::sysName.0",        _sSysName);
-    SNMPSET("SNMPv2-MIB::sysLocation.0",    _sSysLocation);
-    SNMPSET("SNMPv2-MIB::sysServices.0",    _sSysServices);
+    bool war = false;
+    war = snmpset(node, snmp, pEs, "SNMPv2-MIB::sysDescr.0",    _sSysDescr)    || war;
+    war = snmpset(node, snmp, pEs, "SNMPv2-MIB::sysObjectID.0", _sSysObjectId) || war;
+    war = snmpset(node, snmp, pEs, "SNMPv2-MIB::sysContact.0",  _sSysContact)  || war;
+    war = snmpset(node, snmp, pEs, "SNMPv2-MIB::sysName.0",     _sSysName)     || war;
+    war = snmpset(node, snmp, pEs, "SNMPv2-MIB::sysLocation.0", _sSysLocation) || war;
+    war = snmpset(node, snmp, pEs, "SNMPv2-MIB::sysServices.0", _sSysServices) || war;
+    if (war) r = 0;
     return r;
 }
 

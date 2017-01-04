@@ -676,7 +676,7 @@ void cRecordsViewBase::insert(bool _similar)
         }
         while (1) {
             int r = rd.exec();
-            if (r == DBT_INSERT || r == DBT_OK) {   // Csak az OK, és Insert gombra csinálunk valamit
+            if (r == DBT_INSERT || r == DBT_OK) {   // Csak az OK, és Insert gombra csinálunk valamit (egyébként: break)
                 bool ok = rd.accept();
                 if (ok) {
                     cRecord *pRec = rd.record().dup();
@@ -700,20 +700,19 @@ void cRecordsViewBase::insert(bool _similar)
                     continue;
                 }
             }
-            break;
+            break;  // while
         }
-    }   break;
+    }   break;      // switch
     case TIT_LISTED_REV: {
         tRecordList<cTableShape> *pShapes = getShapes();
         cRecordDialogInh rd(*pTableShape, *pShapes, buttons, true, NULL, this, pWidget());
         pRecordDialog = &rd;
-        pRecordDialog = &rd;
         if (_similar) {
             cRecord *pRec = actRecord();    // pointer az aktuális rekordra, a beolvasott/megjelenített rekord listában
             if (pRec != NULL) {
-                cRecord *pR = pRec->dup();
+                cRecord *pR = pRec->dup();  // Lemásoljuk
                 QBitArray c = pR->autoIncrement();
-                pR->clear(c);
+                pR->clear(c);               // Töröljük az "auto increment" típusú mezőket
                 rd.restore(pR);
                 delete pR;
             }

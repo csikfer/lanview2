@@ -1385,7 +1385,7 @@ static void newHost(qlonglong t, QString *name, QStringPair *ip, QString *mac, Q
     else                       pNode = new cNode();
     pPatch = pNode;
     pNode->setId(_sNodeType, t);
-    if (ip == NULL || mac == NULL ) {
+    if (ip == NULL) {
         pNode->setName(*name);
         if (d != NULL) pNode->setNote(*d);
         setLastPort(NULL, NULL_IX);
@@ -2561,7 +2561,7 @@ delete  : DELETE_T PLACE_T strs ';'             { foreach (QString s, *$3) { cPl
         | DELETE_T NODE_T strs PARAM_T str ';'  { delNodesParam(slp2sl($3), sp2s($5)); }
         ;
 scan    : SCAN_T LLDP_T snmph ';'               { scanByLldp(qq(), *$3, true); delete $3; }
-        | SCAN_T SNMP_T snmph SET_T ';'         { $3->setBySnmp();  delete $3; }
+        | SCAN_T SNMP_T snmph SET_T ';'         { if ($3->setBySnmp()) $3->rewrite(qq());  delete $3; }
         ;
 snmph   : str                                   { if (!($$ = new cSnmpDevice())->fetchByName(qq(), sp2s($1))) yyerror("ismeretlen SNMP eszköz név"); }
         ;

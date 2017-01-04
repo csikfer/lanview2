@@ -1488,7 +1488,7 @@ public:
         }
         return r;
     }
-    /// Sablon metódus, ha két járulékos tábla terozik a rekordhoz, ami az objektum tulajdona
+    /// Sablon metódus, ha két járulékos tábla tartozik a rekordhoz, ami az objektum tulajdona
     template<class L1, class L2> bool tRewrite(QSqlQuery& __q, L1& __ch1, qlonglong __m1, L2& __ch2, qlonglong __m2, enum eEx __ex = EX_ERROR)
     {
         bool r = cRecord::rewrite(__q, __ex);   // Kiírjuk magát a rekordot
