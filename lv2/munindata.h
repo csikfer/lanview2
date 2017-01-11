@@ -42,9 +42,9 @@ EXT_ const QString& varDrawType(int _i, eEx __ex = EX_ERROR);
 @class cRrdBeats
 @brief
 */
-class LV2SHARED_EXPORT cRrdBeats : public cRecord {
-    CRECORD(cRrdBeats);
-    FEATURES(cRrdBeats)
+class LV2SHARED_EXPORT cRrdBeat : public cRecord {
+    CRECORD(cRrdBeat);
+    FEATURES(cRrdBeat)
 public:
 };
 

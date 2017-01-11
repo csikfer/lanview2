@@ -67,11 +67,11 @@ const QString& varDrawType(int _i, eEx __ex)
 
 /* **************************************************************************** */
 
-CRECDEF(cRrdBeats)
+CRECCNTR(cRrdBeat)
 
-const cRecStaticDescr&  cRrdBeats::descr() const
+const cRecStaticDescr&  cRrdBeat::descr() const
 {
-    if (initPDescr<cRrdBeats>(_sRrdBeats)) {
+    if (initPDescr<cRrdBeat>(_sRrdBeats)) {
         CHKENUM(_sDailyAggregates,   varAggregateType);
         CHKENUM(_sWeeklyAggregates,  varAggregateType);
         CHKENUM(_sMonthlyAggregates, varAggregateType);
@@ -80,3 +80,4 @@ const cRecStaticDescr&  cRrdBeats::descr() const
     return *_pRecordDescr;
 }
 
+CRECDEFD(cRrdBeat)
