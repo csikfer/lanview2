@@ -3,7 +3,7 @@
 #include "guidata.h"
 
 #define VERSION_MAJOR   0
-#define VERSION_MINOR   92
+#define VERSION_MINOR   93
 #define VERSION_STR     _STR(VERSION_MAJOR) "." _STR(VERSION_MINOR) "(" _STR(REVISION) ")"
 
 // ****************************************************************************************************************

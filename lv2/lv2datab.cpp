@@ -3692,9 +3692,9 @@ QString cRecord::getCondString(QSqlQuery &q, QString::const_iterator& i, const Q
     if (i < e) ++i;
     if (s.isEmpty()) return s;
     QStringList params = s.split(':');
-    enum eIfType { IF_NULL, IF_NOTNULL, IF_EMPTY, IF_NOTEMPTY, IF_EQU, IF_NOTEQU, IF_LITLE, IF_GREATER } t;
+    enum eIfType { IF_NULL, IF_NOTNULL, IF_EMPTY, IF_NOTEMPTY, IF_EQU, IF_NOTEQU, IF_LITLE, IF_GREATER } t = IF_NULL;
     s = params.first(); // type string
-    int n;  // mezők száma
+    int n = 0;  // mezők száma (inicializáljuk, mert warning-ol a fordító)
     if      (0 == s.compare("I", Qt::CaseInsensitive)) { t = IF_NULL;       n = 3; }
     else if (0 == s.compare("V", Qt::CaseInsensitive)) { t = IF_NOTNULL;    n = 3; }
     else if (0 == s.compare("Z", Qt::CaseInsensitive)) { t = IF_EMPTY;      n = 3; }

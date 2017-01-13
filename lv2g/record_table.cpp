@@ -1145,7 +1145,7 @@ void cRecordsViewBase::initGroup(QVariantList& vlids)
     cRecordsViewBase *prvb = NULL;
     cTableShape *pts = new cTableShape();
     bool ok = false;
-    qlonglong id;
+    qlonglong id = NULL_ID; // comp. warning
     if (vlids.size() > 0) id = vlids.at(0).toLongLong(&ok);   // A group, vagy member tábla a lista első eleme kell legyen !!!!!
     if (!ok) EXCEPTION(EPROGFAIL);
     vlids.pop_front();                  // A maradék lista, további chhild obj-ek

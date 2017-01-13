@@ -158,7 +158,7 @@ COMMENT ON COLUMN nports.deleted    IS 'Ha igaz, akkor a port logikailag töröl
 
 CREATE OR REPLACE VIEW patchable_ports AS
     SELECT 
-        port_id AS patchable_port,
+        port_id AS patchable_port_id,
         port_name,
         port_note,
         port_tag,
@@ -723,7 +723,7 @@ CREATE TRIGGER interfaces_check_port_id_before_insert           BEFORE INSERT ON
 CREATE TRIGGER nports_restrict_modfy_port_id_before_update      BEFORE UPDATE ON nports      FOR EACH ROW EXECUTE PROCEDURE restrict_modfy_port_id_before_update();
 CREATE TRIGGER pports_restrict_modfy_port_id_before_update      BEFORE UPDATE ON pports      FOR EACH ROW EXECUTE PROCEDURE restrict_modfy_port_id_before_update();
 CREATE TRIGGER interfaces_restrict_modfy_port_id_before_update  BEFORE UPDATE ON interfaces  FOR EACH ROW EXECUTE PROCEDURE restrict_modfy_port_id_before_update();
-CREATE TRIGGER intergaces_check_interface                       BEFORE INSERT OR UPDATE ON interfaces FOR EACH ROW EXECUTE PROCEDURE check_interface();
+CREATE TRIGGER interfaces_check_interface                       BEFORE INSERT OR UPDATE ON interfaces FOR EACH ROW EXECUTE PROCEDURE check_interface();
 -- port_id idegen kulcs hivatkozások ellenözése (létrehozás, és módosítás)
 CREATE TRIGGER port_params_check_reference_port_id BEFORE UPDATE OR INSERT ON port_params FOR EACH ROW EXECUTE PROCEDURE check_reference_port_id();
 CREATE TRIGGER port_vlans_check_reference_port_id        BEFORE UPDATE OR INSERT ON port_vlans        FOR EACH ROW EXECUTE PROCEDURE check_reference_port_id('false', 'interfaces');

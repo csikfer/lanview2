@@ -110,7 +110,7 @@ Hiba esetén, ha __e értéke true (vagy nem adtuk meg), akkor dob egy kizárás
 Ha file nincs megnyitva, akkor olvasásra megnyitja, és nem zárja be.
 Feltételezi, hogy egy sorban noncs több SQL parancs, vagyis a kommentek és szóközök leválasztása után a pontosvessző
 a sor végén lessz, minden parancs utolsó sorában.
-Ha hibét dob, akkor ha a lanView objektum már létezik, a hiba objektum (cError) pointerét beírja a lastError adattagba.
+Ha hibát dob, akkor ha a lanView objektum már létezik, a hiba objektum (cError) pointerét beírja a lastError adattagba.
 Ha lanView objektumpéldány nem létezik, és __e értéke hamis, a hiba objektum pointerét eldobja.
 Ha létrejön hiba objektum, azt nem szabadítja fel. Nem ellenörzi, volt-e érték lastError-ban.
 @param file A beolvasandó fájl objektum
