@@ -324,7 +324,7 @@ ALTER TYPE aggregatetype OWNER TO lanview2;
 CREATE TYPE servicevartype AS ENUM ('DERIVE','COUNTER', 'GAUGE', 'ABSOLUTE', 'COMPUTE');
 ALTER TYPE servicevartype OWNER TO lanview2;
 
-CREATE TYPE drawtype AS ENUM ('LINE', 'AREA', 'STACK');
+CREATE TYPE drawtype AS ENUM ('LINE', 'AREA', 'STACK', 'NONE');
 ALTER TYPE drawtype OWNER TO lanview2;
 
 CREATE TABLE rrd_beats (
@@ -432,6 +432,7 @@ CREATE TABLE graph_vars (
     service_var_id          bigint              NOT NULL
         REFERENCES service_vars(service_var_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     draw_type               drawtype            NOT NULL DEFAULT 'LINE',
+    sequence_number         integer             NOT NULL,
     -- ...
     features                text                DEFAULT NULL,
     deleted                 boolean             NOT NULL DEFAULT FALSE    

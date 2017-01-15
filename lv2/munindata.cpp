@@ -50,6 +50,7 @@ int varDrawType(const QString& _n, eEx __ex)
     if (0 == _n.compare(_sLINE,  Qt::CaseInsensitive)) return VDT_LINE;
     if (0 == _n.compare(_sAREA,  Qt::CaseInsensitive)) return VDT_AREA;
     if (0 == _n.compare(_sSTACK, Qt::CaseInsensitive)) return VDT_STACK;
+    if (0 == _n.compare(_sNONE,  Qt::CaseInsensitive)) return VDT_NONE;
     if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, -1, _n);
     return SVT_INVALID;
 }
@@ -60,6 +61,7 @@ const QString& varDrawType(int _i, eEx __ex)
     case VDT_LINE:  return _sLINE;
     case VDT_AREA:  return _sAREA;
     case VDT_STACK: return _sSTACK;
+    case VDT_NONE:  return _sNONE;
     }
     if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, _i);
     return _sNul;
@@ -81,3 +83,37 @@ const cRecStaticDescr&  cRrdBeat::descr() const
 }
 
 CRECDEFD(cRrdBeat)
+
+
+/* ---------------------------------------------------------------------------- */
+
+CRECCNTR(cServiceVarType)
+
+const cRecStaticDescr&  cServiceVarType::descr() const
+{
+    if (initPDescr<cServiceVarType>(_sServiceVarTypes)) {
+        CHKENUM(_sServiceVarType, serviceVarType);
+    }
+    return *_pRecordDescr;
+}
+
+CRECDEFD(cServiceVarType)
+
+/* ---------------------------------------------------------------------------- */
+DEFAULTCRECDEF(cServiceVar, _sServiceVars)
+
+/* ---------------------------------------------------------------------------- */
+DEFAULTCRECDEF(cGraph, _sGraphs)
+/* ---------------------------------------------------------------------------- */
+
+CRECCNTR(cGraphVar)
+
+const cRecStaticDescr&  cGraphVar::descr() const
+{
+    if (initPDescr<cGraphVar>(_sGraphVars)) {
+        CHKENUM(_sDrawType, varDrawType);
+    }
+    return *_pRecordDescr;
+}
+
+CRECDEFD(cGraphVar)

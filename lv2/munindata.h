@@ -28,10 +28,11 @@ EXT_ int serviceVarType(const QString& _n, eEx __ex = EX_ERROR);
 EXT_ const QString& serviceVarType(int _i, eEx __ex = EX_ERROR);
 
 enum eVarDrawType {
-    VDT_NVALID = -1,
+    VDT_INVALID = -1,
     VDT_LINE = 0,
     VDT_AREA,
-    VDT_STACK
+    VDT_STACK,
+    VDT_NONE
 };
 
 EXT_ int varDrawType(const QString& _n, eEx __ex = EX_ERROR);
@@ -47,6 +48,47 @@ class LV2SHARED_EXPORT cRrdBeat : public cRecord {
     FEATURES(cRrdBeat)
 public:
 };
+
+/*!
+@class cServiceVarType
+@brief
+ */
+class LV2SHARED_EXPORT cServiceVarType : public cRecord {
+    CRECORD(cServiceVarType);
+    FEATURES(cServiceVarType)
+public:
+};
+
+/*!
+@class cServiceVar
+@brief
+ */
+class LV2SHARED_EXPORT cServiceVar : public cRecord {
+    CRECORD(cServiceVar);
+    FEATURES(cServiceVar)
+public:
+};
+
+/*!
+@class cGraph
+@brief
+ */
+class LV2SHARED_EXPORT cGraph : public cRecord {
+    CRECORD(cGraph);
+    FEATURES(cGraph)
+public:
+};
+
+/*!
+@class cGraphVar
+@brief
+ */
+class LV2SHARED_EXPORT cGraphVar : public cRecord {
+    CRECORD(cGraphVar);
+    FEATURES(cGraphVar)
+public:
+};
+
 
 
 #endif // MUNINDATA

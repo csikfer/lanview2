@@ -379,11 +379,9 @@ INSERT INTO fkey_types
 
 \i gui.sql
 
--- //////////////////// Initial Data ////////////////////
-
-END;
-
-BEGIN;
+-- //////////////////// Update ////////////////////
+\i update-1.2.sql
+-- LOG
 SELECT error('Ok', 0, 'First log message / Init lanview2 database ...');
 END;
 
