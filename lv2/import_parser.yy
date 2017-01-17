@@ -1578,7 +1578,7 @@ void  setSysParam(QString *pt, QString *pn, QVariant *pv)
 %token      DEFAULTS_T ENUM_T RIGHT_T VIEW_T INSERT_T EDIT_T
 %token      INHERIT_T NAMES_T HIDE_T VALUE_T DEFAULT_T FILTER_T FILTERS_T
 %token      ORD_T SEQUENCE_T MENU_T GUI_T OWN_T TOOL_T TIP_T WHATS_T THIS_T
-%token      EXEC_T TAG_T REAL_T ENABLE_T
+%token      EXEC_T TAG_T REAL_T ENABLE_T SERIAL_T INVENTORY_T NUMBER_T
 %token      DATE_T DISABLE_T EXPRESSION_T PREFIX_T RESET_T CACHE_T
 %token      DATA_T IANA_T IFDEF_T IFNDEF_T NC_T QUERY_T PARSER_T
 %token      REPLACE_T RANGE_T EXCLUDE_T PREP_T POST_T CASE_T RECTANGLE_T
@@ -2143,6 +2143,10 @@ patch_ps: patch_p patch_ps
         ;
 patch_p : NOTE_T str ';'                        { pPatch->setName(_sNodeNote, sp2s($2)); }
         | PLACE_T place_id ';'                  { pPatch->set(_sPlaceId, $2); }
+        | SET_T str '=' value ';'               { pPatch->set(sp2s($2), vp2v($4)); }
+        | PARAM_T str '=' value ';'             { pPatch->setParam(sp2s($2), vp2v($4)); }
+        | INVENTORY_T NUMBER_T str ';'          { pPatch->setName(_sInventoryNumber, sp2s($3)); }
+        | SERIAL_T NUMBER_T str ';'             { pPatch->setName(_sSerialNumber, sp2s($3)); }
         | ADD_T PORT_T int str str_z ';'        { setLastPort(pPatch->addPort(sp2s($4), sp2s($5), $3)); }
         | ADD_T PORTS_T offs FROM_T int TO_T int offs str ';'
                                                 { setLastPort(pPatch->addPorts(sp2s($9), $8, $5, $7, $3)); }
@@ -2152,6 +2156,8 @@ patch_p : NOTE_T str ';'                        { pPatch->setName(_sNodeNote, sp
         | PORT_T pnm TAG_T str ';'              { setLastPort(pPatch->portSet(sp2s($2), _sPortTag, sp2s($4))); }
         | PORT_T pix SET_T str '=' vals ';'     { setLastPort(pPatch->portSet($2, sp2s($4), vlp2vl($6))); }
         | PORT_T pnm SET_T str '=' value ';'    { setLastPort(pPatch->portSet(sp2s($2), sp2s($4), vp2v($6))); }
+        | PORT_T pnm PARAM_T str '=' value ';'  { setLastPort(pPatch->portSetParam(sp2s($2), sp2s($4), vp2v($6))); }
+        | PORT_T pix PARAM_T str '=' vals ';'   { setLastPort(pPatch->portSetParam($2, sp2s($4), vlp2vl($6))); }
         | PORTS_T p_seqs SHARED_T strs ';'      { portSetShare($2, $4); }
         | PORT_T  p_seqs NC_T ';'               { portSetNC($2); }
         | for_m
@@ -2247,31 +2253,23 @@ node_ts :                                       { $$ = ENUM2SET(NT_NODE); }
         ;
 node    : node_h str str_z                          { newHost($1, NULL, NULL, $2, $3); pPatch->containerValid = CV_ALL_NODE; }
                 node_cf node_e                      { REPANDDEL(pPatch); }
-        | ATTACHED_T str str_z ';'                  { if (globalReplaceFlag) replaceAttachedNode(sp2s($2), sp2s($3));
-                                                      else                       newAttachedNode(sp2s($2), sp2s($3)); }
-        | ATTACHED_T REPLACE_T str str_z ';'        { replaceAttachedNode(sp2s($3), sp2s($4)); }
-        | ATTACHED_T INSERT_T str str_z ';'         {     newAttachedNode(sp2s($3), sp2s($4)); }
-        | ATTACHED_T str str_z FROM_T int TO_T int ';'
-                                                    { if (globalReplaceFlag) replaceAttachedNodes(sp2s($2), sp2s($3), $5, $7);
-                                                      else                       newAttachedNodes(sp2s($2), sp2s($3), $5, $7);}
-        | ATTACHED_T REPLACE_T str str_z FROM_T int TO_T int ';'
-                                                    { replaceAttachedNodes(sp2s($3), sp2s($4), $6, $8); }
-        | ATTACHED_T INSERT_T str str_z FROM_T int TO_T int ';'
-                                                    {     newAttachedNodes(sp2s($3), sp2s($4), $6, $8); }
+        | ATTACHED_T replfl str str_z ';'           { if ($2) replaceAttachedNode(sp2s($3), sp2s($4));
+                                                      else        newAttachedNode(sp2s($3), sp2s($4)); }
+        | ATTACHED_T replfl str str_z FROM_T int TO_T int ';'
+                                                    { if ($2) replaceAttachedNodes(sp2s($3), sp2s($4), $6, $8);
+                                                      else        newAttachedNodes(sp2s($3), sp2s($4), $6, $8);}
         | node_h name_q ip_q mac_q str_z            { newHost($1, $2, $3, $4, $5); pPatch->containerValid = CV_ALL_HOST; }
             node_cf node_e                          { REPANDDEL(pPatch); }
-        | WORKSTATION_T str mac str_z ';'           { if (globalReplaceFlag) replaceWorkstation(sp2s($2), *$3, sp2s($4));
-                                                      else                       newWorkstation(sp2s($2), *$3, sp2s($4));
-                                                      delete $3; }
-        | WORKSTATION_T REPLACE_T str mac str_z ';' { replaceWorkstation(sp2s($3), *$4, sp2s($5)); delete $4; }
-        | WORKSTATION_T INSERT_T str mac str_z ';'  {     newWorkstation(sp2s($3), *$4, sp2s($5)); delete $4; }
+        | WORKSTATION_T replfl str mac str_z ';'    { if ($2) replaceWorkstation(sp2s($3), *$4, sp2s($5));
+                                                      else        newWorkstation(sp2s($3), *$4, sp2s($5));
+                                                      delete $4; }
         ;
 node_e  : '{' node_ps '}'
         | ';'
         ;
 node_ps : node_p node_ps
         | 
-        ; 
+        ;
 node_cf :
         | TEMPLATE_T str                        { templates.get(_sNodes, sp2s($2)); }
                 node_ps
@@ -2280,6 +2278,8 @@ node_p  : NOTE_T str ';'                        { node().setName(_sNodeNote, sp2
         | PLACE_T place_id ';'                  { node().setId(_sPlaceId, $2); }
         | SET_T str '=' value ';'               { node().set(sp2s($2), vp2v($4)); }
         | PARAM_T str '=' value ';'             { node().setParam(sp2s($2), vp2v($4)); }
+        | INVENTORY_T NUMBER_T str ';'          { node().setName(_sInventoryNumber, sp2s($3)); }
+        | SERIAL_T NUMBER_T str ';'             { node().setName(_sSerialNumber, sp2s($3)); }
         | ADD_T PORTS_T str offs FROM_T int TO_T int offs str ';'
                                                 { setLastPort(node().addPorts(sp2s($3), sp2s($10), $9, $6, $8, $4)); }
         | ADD_T PORT_T pix_z str str str_z ';'  { setLastPort(node().addPort(sp2s($4), sp2s($5), sp2s($6), $3)); }
@@ -2969,7 +2969,7 @@ static int yylex(void)
         TOK(DEFAULTS) TOK(ENUM) TOK(RIGHT) TOK(VIEW) TOK(INSERT) TOK(EDIT)
         TOK(INHERIT) TOK(NAMES) TOK(HIDE) TOK(VALUE) TOK(DEFAULT) TOK(FILTER) TOK(FILTERS)
         TOK(ORD) TOK(SEQUENCE) TOK(MENU) TOK(GUI) TOK(OWN) TOK(TOOL) TOK(TIP) TOK(WHATS) TOK(THIS)
-        TOK(EXEC) TOK(TAG) TOK(ENABLE)
+        TOK(EXEC) TOK(TAG) TOK(ENABLE) TOK(SERIAL) TOK(INVENTORY) TOK(NUMBER)
         TOK(DATE) TOK(DISABLE) TOK(EXPRESSION) TOK(PREFIX) TOK(RESET) TOK(CACHE)
         TOK(DATA) TOK(IANA) TOK(IFDEF) TOK(IFNDEF) TOK(NC) TOK(QUERY) TOK(PARSER)
         TOK(REPLACE) TOK(RANGE) TOK(EXCLUDE) TOK(PREP) TOK(POST) TOK(CASE) TOK(RECTANGLE)

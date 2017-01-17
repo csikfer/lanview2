@@ -153,7 +153,7 @@ BEGIN
             PERFORM error('DataError', NEW.iftype_id, 'iftype_id', 'port_check_before_insert()', TG_TABLE_NAME, TG_OP);
         END IF;
     END IF;
-    SELECT COUNT(*) INTO n FROM nports WHERE port_name = NEW.port_name;
+    SELECT COUNT(*) INTO n FROM nports WHERE port_name = NEW.port_name AND node_id = NEW.node_id;
     IF n > 0 THEN
         PERFORM error('NameNotUni', -1, 'port_name', 'port_check_before_insert()', TG_TABLE_NAME, TG_OP);
     END IF;
@@ -174,7 +174,7 @@ BEGIN
         PERFORM error('DataError', NEW.iftype_id, 'iftype_id', 'port_check_before_update()', TG_TABLE_NAME, TG_OP);
     END IF;
     IF NEW.port_name <> OLD.port_name THEN
-        SELECT COUNT(*) INTO n FROM nports WHERE port_name = NEW.port_name;
+        SELECT COUNT(*) INTO n FROM nports WHERE port_name = NEW.port_name AND node_id = NEW.node_id;
         IF n > 0 THEN
             PERFORM error('NameNotUni', NEW.port_id, 'port_name = ' || NEW.ports_name, 'port_check_before_update()', TG_TABLE_NAME, TG_OP);
         END IF;

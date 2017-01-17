@@ -9,6 +9,7 @@ cFindByMac::cFindByMac(QWidget *parent) :
 {
     pq = newQuery();
     pUi->setupUi(this);
+    // Query: All known MAC
     QString sql =
             "SELECT hwaddress FROM ("
                " SELECT DISTINCT(hwaddress) FROM arps"
