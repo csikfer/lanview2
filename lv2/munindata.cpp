@@ -71,6 +71,7 @@ const QString& varDrawType(int _i, eEx __ex)
 
 CRECCNTR(cRrdBeat)
 
+int  cRrdBeat::_ixFeatures = NULL_IX;
 const cRecStaticDescr&  cRrdBeat::descr() const
 {
     if (initPDescr<cRrdBeat>(_sRrdBeats)) {
@@ -89,6 +90,7 @@ CRECDEFD(cRrdBeat)
 
 CRECCNTR(cServiceVarType)
 
+int  cServiceVarType::_ixFeatures = NULL_IX;
 const cRecStaticDescr&  cServiceVarType::descr() const
 {
     if (initPDescr<cServiceVarType>(_sServiceVarTypes)) {
@@ -100,14 +102,17 @@ const cRecStaticDescr&  cServiceVarType::descr() const
 CRECDEFD(cServiceVarType)
 
 /* ---------------------------------------------------------------------------- */
+int  cServiceVar::_ixFeatures = NULL_IX;
 DEFAULTCRECDEF(cServiceVar, _sServiceVars)
 
 /* ---------------------------------------------------------------------------- */
+int  cGraph::_ixFeatures = NULL_IX;
 DEFAULTCRECDEF(cGraph, _sGraphs)
 /* ---------------------------------------------------------------------------- */
 
 CRECCNTR(cGraphVar)
 
+int  cGraphVar::_ixFeatures = NULL_IX;
 const cRecStaticDescr&  cGraphVar::descr() const
 {
     if (initPDescr<cGraphVar>(_sGraphVars)) {
