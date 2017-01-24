@@ -160,12 +160,17 @@ QVariant cRecordTableModel::data(const QModelIndex &index, int role) const
     int row = index.row();      // Sor index a táblázatban
     int col = index.column();   // oszlop index a táblázatban
     if (row < _records.size() && col < _col2field.size()) {
-        int fix = _col2field[col];  // Mező index a rekordbam
+        const cRecord *pr = _records.at(row);
+        int fix = _col2field[col];  // Mező index a (fő)rekordbam
         int mix = _col2shape[col];  // Index a leíróban (shape)
+        if (recDescr != pr->descr()) { // A mező sorrend nem feltétlenül azonos
+            const QString& fn = recDescr.columnName(fix);
+            fix = pr->toIndex(fn, EX_IGNORE);
+        }
         // _DBGFN() << VDEB(row) << VDEB(col) << VDEB(role) << endl;
-        if (role == Qt::DisplayRole)       return _records.at(row)->view(*pq, fix);
+        if (role == Qt::DisplayRole)       return pr->view(*pq, fix);
         if (role == Qt::TextAlignmentRole) return columns[mix]->dataAlign;
-        const colorAndFont&   cf = _records.at(row)->isNull(fix)
+        const colorAndFont&   cf = pr->isNull(fix)
                 ?   design().null
                 :   design()[columns[mix]->dataRole];
         switch (role) {

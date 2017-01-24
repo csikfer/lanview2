@@ -958,29 +958,27 @@ void cRecordsViewBase::truncate()
 void cRecordsViewBase::initView()
 {
     tableInhType = (eTableInheritType)pTableShape->getId(_sTableInheritType);
-    if (tableInhType == TIT_NO) return;
+    if (tableInhType == TIT_NO) return;     // Nincs öröklés, nem kell view
     inheritTableList = pTableShape->get(_sInheritTableNames).toStringList();
-    if (inheritTableList.isEmpty()) return;
+    if (inheritTableList.isEmpty()) return; // Üres a lista, mégnincs öröklés
     QString schema = pTableShape->getName(_sSchemaName);
-    viewName = pTableShape->getName(_sTableName) + "_view";
+    viewName = pTableShape->getName(_sTableName) + "_view"; // Az ideiglenes view tábla neve
     QString sql = "CREATE OR REPLACE TEMP VIEW " + viewName + " AS ";
     sql += "SELECT tableoid, * FROM ONLY";
     sql += recDescr().fullTableNameQ();
-    if (! inheritTableList.isEmpty()) {
-        pInhRecDescr = new QMap<qlonglong,const cRecStaticDescr *>;
-        foreach (QString tn, inheritTableList) {
-            const cRecStaticDescr * p = cRecStaticDescr::get(tn, schema);
-            pInhRecDescr->insert(p->tableoid(), p);
-            sql += "\nUNION\n SELECT tableoid";
-            const cRecStaticDescr& d = inhRecDescr(tn);
-            int i, n = recDescr().cols();
-            for (i = 0; i < n; ++i) {   // Végihrohanunk az első tábla mezőin
-                QString fn = recDescr().columnName(i);
-                sql += _sCommaSp;
-                sql += d.toIndex(fn, EX_IGNORE) < 0 ? _sNULL : fn;  // Ha nincs akkor NULL
-            }
-            sql += " FROM ONLY " + p->fullTableNameQ();
+    pInhRecDescr = new QMap<qlonglong,const cRecStaticDescr *>;
+    foreach (QString tn, inheritTableList) {
+        const cRecStaticDescr * p = cRecStaticDescr::get(tn, schema);
+        pInhRecDescr->insert(p->tableoid(), p);
+        sql += "\nUNION\n SELECT tableoid";
+        const cRecStaticDescr& d = inhRecDescr(tn);
+        int i, n = recDescr().cols();
+        for (i = 0; i < n; ++i) {   // Végihrohanunk az első tábla mezőin
+            QString fn = recDescr().columnName(i);
+            sql += _sCommaSp;
+            sql += d.toIndex(fn, EX_IGNORE) < 0 ? _sNULL : fn;  // Ha nincs akkor NULL
         }
+        sql += " FROM ONLY " + p->fullTableNameQ();
     }
     PDEB(VVERBOSE) << "Create view : " << sql << endl;
     if (!pq->exec(sql)) SQLPREPERR(*pq, sql);

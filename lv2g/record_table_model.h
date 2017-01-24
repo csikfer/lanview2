@@ -51,7 +51,7 @@ public:
     int  firstRowNumber() const                 { return _firstRowNumber; }
     void setFirstRowNumber(int _fn)             { _firstRowNumber = _fn;  }
 
-    /// A model hederData() virzuális metódus alap algoritmusa
+    /// A model hederData() virtuális metódus alap algoritmusa
     QVariant _headerData(int section, Qt::Orientation orientation, int role) const;
 
     virtual void removeRecords(const QModelIndexList& mil) = 0;
