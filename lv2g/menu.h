@@ -25,7 +25,8 @@ enum eOwnTab {          /// Egyedi GUI tab widget elemek
     OWN_ERRCODES,       /// Program hiba kód táblázat
     OWN_NOALARM,        /// A riasztások időleges vagy permanens tiltása/engedélyezése
     OWN_HSOP,           /// a szervíz példányok (host_services) állpot manipuláció
-    OWN_FINDMAC         /// Keresés egy MAC-re
+    OWN_FINDMAC,        /// Keresés egy MAC-re
+    OWN_WORKSTATION     /// Új munkaállomás, vagy modosítás űrlap
 
 };
 

@@ -63,9 +63,13 @@ COMMENT ON COLUMN table_shapes.table_shape_name     IS 'A shape neve, egyedi azo
 COMMENT ON COLUMN table_shapes.table_shape_note     IS 'A shape leírása ill. megjegyzés.';
 COMMENT ON COLUMN table_shapes.table_title          IS 'A táblázat címe.';
 COMMENT ON COLUMN table_shapes.dialog_title         IS 'A dialógus címe.';
-COMMENT ON COLUMN table_shapes.dialog_tab_title     IS 'A tab címe, dialógus esetén (öröklés)';
+COMMENT ON COLUMN table_shapes.dialog_tab_title     IS 'A tab címe, dialógus esetén (öröklésnál vannak tab-ok)';
+COMMENT ON COLUMN table_shapes.member_title         IS 'Tagok altábla (jobb oldali tábla) címe';
+COMMENT ON COLUMN table_shapes.member_title         IS 'Nem tagok altábla (jobb oldali tábla) címe';
 COMMENT ON COLUMN table_shapes.table_shape_type     IS 'A megjelenítés típusa.';
-COMMENT ON COLUMN table_shapes.table_name           IS 'A shape álltal megjelenítendő tábla neve';
+COMMENT ON COLUMN table_shapes.table_name           IS 'A shape álltal megjelenítendő tábla neve, a mező hivatkozások mindíg erre vonatkoznak';
+COMMENT ON COLUMN table_shapes.table_inherit_type   IS 'Öröklés esetén a geyerek/szülő táblák kezelési módja';
+COMMENT ON COLUMN table_shapes.inherit_table_names  IS 'A megjelenítendő rokon táblák listája, a table_name mezőben megadott táblanavet nem tartalmazza';
 COMMENT ON COLUMN table_shapes.refine               IS 'Egy opcionális feltétel, ha a táblának csak egy részhalmaza kell (WHERE clause)';
 COMMENT ON COLUMN table_shapes.features             IS 'További paraméterek.';
 COMMENT ON COLUMN table_shapes.right_shape_ids      IS 'A jobb oldali, gyerek, vagy csoport táblákat megjelenítő leírókra mutatnak az elemei';

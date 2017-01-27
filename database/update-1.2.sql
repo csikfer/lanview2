@@ -193,4 +193,8 @@ CREATE TRIGGER interfaces_check_before_update   BEFORE UPDATE ON interfaces  FOR
 -- SET database version: 1.2
 SELECT set_db_version(1, 2);
 
+ALTER TABLE mactab     ADD CONSTRAINT mactab_check_mac     CHECK (NOT (hwaddress = '00:00:00:00:00:00' OR hwaddress = 'ff:ff:ff:ff:ff:ff'));
+ALTER TABLE arps       ADD CONSTRAINT arps_check_mac       CHECK (NOT (hwaddress = '00:00:00:00:00:00' OR hwaddress = 'ff:ff:ff:ff:ff:ff'));
+ALTER TABLE interfaces ADD CONSTRAINT interfaces_check_mac CHECK (NOT (hwaddress = '00:00:00:00:00:00' OR hwaddress = 'ff:ff:ff:ff:ff:ff'));
+
 END;

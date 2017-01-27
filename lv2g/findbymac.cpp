@@ -16,13 +16,11 @@ cFindByMac::cFindByMac(QWidget *parent) :
               " UNION DISTINCT"
                " SELECT hwaddress FROM mactab"
               " UNION DISTINCT"
-               " SELECT DISTINCT(hwaddress) FROM interfaces) AS macs"
+               " SELECT DISTINCT(hwaddress) FROM interfaces WHERE hwaddress IS NOT NULL) AS macs"
              " ORDER BY hwaddress ASC";
     if (execSql(*pq, sql)) do {
         QString mac = pq->value(0).toString();
-        if (!mac.isEmpty() && mac != "00:00:00:00:00:00") {
-            pUi->comboBox->addItem(mac);
-        }
+        pUi->comboBox->addItem(mac);
     } while (pq->next());
     connect(pUi->pushButtonClose,   SIGNAL(clicked()), this, SLOT(endIt()));
     connect(pUi->pushButtonFindMac, SIGNAL(clicked()), this, SLOT(find()));

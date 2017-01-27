@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>wstWidget</class>
+ <widget class="QWidget" name="wstWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>915</width>
+    <height>598</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QSplitter" name="splitter">
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="opaqueResize">
+      <bool>false</bool>
+     </property>
+     <property name="handleWidth">
+      <number>6</number>
+     </property>
+     <widget class="QFrame" name="frame">
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayoutNode">
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="autoFillBackground">
+          <bool>true</bool>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::NoFrame</enum>
+         </property>
+         <property name="text">
+          <string>Munkaállomás</string>
+         </property>
+         <property name="textFormat">
+          <enum>Qt::PlainText</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QFormLayout" name="formLayoutNode">
+         <item row="0" column="0">
+          <widget class="QLabel" name="labelName">
+           <property name="text">
+            <string>Neve</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="lineEditName"/>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="labelNote">
+           <property name="text">
+            <string>Megjegyzés :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="lineEditNote"/>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="labelPlace">
+           <property name="text">
+            <string>Hely, helyiség :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QComboBox" name="comboBoxPlace"/>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="labelSerial">
+           <property name="text">
+            <string>Széria szám :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <widget class="QLineEdit" name="lineEditSerial"/>
+         </item>
+         <item row="5" column="0">
+          <widget class="QLabel" name="labelInventory">
+           <property name="text">
+            <string>Leltári szám :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="1">
+          <widget class="QLineEdit" name="lineEditInventory"/>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="labelZone">
+           <property name="text">
+            <string>Zóna :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QComboBox" name="comboBoxZone"/>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QFrame" name="frame">
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayoutPort">
+       <item>
+        <widget class="QLabel" name="labelPort">
+         <property name="text">
+          <string>Hálózati port</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QFormLayout" name="formLayoutPort">
+         <item row="0" column="0">
+          <widget class="QLabel" name="labelPName">
+           <property name="text">
+            <string>Neve :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="lineEditPName">
+           <property name="text">
+            <string>ethernet</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="labelPNote">
+           <property name="text">
+            <string>Megjegyzés :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="lineEditPNote"/>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="labelPTag">
+           <property name="text">
+            <string>Cimke :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QLineEdit" name="lineEditPTag"/>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="labelPMAC">
+           <property name="text">
+            <string>MAC :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QLineEdit" name="lineEditPMAC"/>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QFrame" name="frame">
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayoutIp">
+       <item>
+        <widget class="QLabel" name="labelIP">
+         <property name="text">
+          <string>IP</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QFormLayout" name="formLayoutIp">
+         <item row="0" column="0">
+          <widget class="QLabel" name="labelAddress">
+           <property name="text">
+            <string>Cím :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="lineEditAddress"/>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="labelIpType">
+           <property name="text">
+            <string>Cím típus :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QComboBox" name="comboBoxIpType"/>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="labelSubnet">
+           <property name="text">
+            <string>Subnet :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QComboBox" name="comboBoxSubnet"/>
+         </item>
+         <item row="3" column="1">
+          <widget class="QLineEdit" name="lineEditSubnet"/>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="labelVLan">
+           <property name="text">
+            <string>VLan :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <widget class="QComboBox" name="comboBoxVlan"/>
+         </item>
+         <item row="5" column="1">
+          <widget class="QSpinBox" name="spinBoxVLan">
+           <property name="minimum">
+            <number>0</number>
+           </property>
+           <property name="maximum">
+            <number>4095</number>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_3">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+   <item>
+    <widget class="Line" name="line">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>Fizikai link (patch) :</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

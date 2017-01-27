@@ -6,6 +6,7 @@
 #include "hsoperate.h"
 #include "findbymac.h"
 #include "apierrcodes.h"
+#include "workstation.h"
 
 QMap<QString, QAction *>  cMenuAction::actionsMap;
 
@@ -83,6 +84,10 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidge
             ownType = OWN_FINDMAC;
             rights = PL_VIEWER;
         }
+        else if (0 == feature.compare(_sWorkstation, Qt::CaseInsensitive)) { // "workstation"
+            ownType = OWN_WORKSTATION;
+            rights = PL_VIEWER;
+        }
         else {
             if (__ex) EXCEPTION(ENONAME, -1, feature);
             return;
@@ -155,16 +160,17 @@ void cMenuAction::initRecordTable()
 
 A menüben az "own=<típus>" stringgel lehet megadni a properties mezőben megjelenítő típusát.
 A jelenleg implementállt lehetőségek:
-| Típus név | Konstans név | Objektum név    | Funkció                     |
-|-----------|--------------|-----------------|-----------------------------|
-| setup     | OWN_SETUP    | cSetupWidget    | Alapbeállítások megadása    |
-| gsetup    | OWN_GSETUP   | cGSetupWidget   | Megjelenítési beállítások   |
-| parser    | OWN_PARSER   | cParseWidget    | A parser hvása              |
-| olalarm   | OWN_OLALARM  | cOnlineAlarm    | OnLine riasztások           |
-| errcodes  | OWN_ERRCODES | cErrcodesWidget | API hibakódok listája       |
-| noalarm   | OWN_NOALARM  | cSetNoAlarm     | Riasztás tiltások beállítása|
-| hsop      | OWN_HSOP     | cHSOperate      | host-services állapot man.  |
-| findmac   | OWN_FINDMAC  | cFindByMac      | MAC keresés
+| Típus név  | Konstans név   | Objektum név    | Funkció                     |
+|------------|----------------|-----------------|-----------------------------|
+| setup      | OWN_SETUP      | cSetupWidget    | Alapbeállítások megadása    |
+| gsetup     | OWN_GSETUP     | cGSetupWidget   | Megjelenítési beállítások   |
+| parser     | OWN_PARSER     | cParseWidget    | A parser hvása              |
+| olalarm    | OWN_OLALARM    | cOnlineAlarm    | OnLine riasztások           |
+| errcodes   | OWN_ERRCODES   | cErrcodesWidget | API hibakódok listája       |
+| noalarm    | OWN_NOALARM    | cSetNoAlarm     | Riasztás tiltások beállítása|
+| hsop       | OWN_HSOP       | cHSOperate      | host-services állapot man.  |
+| findmac    | OWN_FINDMAC    | cFindByMac      | MAC keresés                 |
+| workstation| OWN_WORKSTATION| cWorkstation    | Munkaállomás új/modosít     |
  */
 void cMenuAction::initOwn()
 {
@@ -192,6 +198,9 @@ void cMenuAction::initOwn()
         break;
     case OWN_FINDMAC:
         pOwnTab = new cFindByMac(pTabWidget);
+        break;
+    case OWN_WORKSTATION:
+        pOwnTab = new cWorkstation(pTabWidget);
         break;
     default:
         EXCEPTION(EPROGFAIL);

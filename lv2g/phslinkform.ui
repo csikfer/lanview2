@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>529</width>
+    <width>763</width>
     <height>143</height>
    </rect>
   </property>
@@ -130,7 +130,7 @@
      <item row="2" column="0">
       <widget class="QLabel" name="labelNodeType">
        <property name="text">
-        <string>Typusa :</string>
+        <string>Típusa :</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
