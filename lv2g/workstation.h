@@ -7,7 +7,6 @@
 
 namespace Ui {
     class wstWidget;
-    class phsLinkForm;
 }
 class cDialogButtons;
 
@@ -18,12 +17,14 @@ public:
     cWorkstation(QWidget *parent = 0);
     ~cWorkstation();
 private:
+    const QStringList& placesInZone(const QString& sZone);
     Ui::wstWidget   *pUi;
     QSqlQuery *pq;
     /// A workstation objektum
     cNode      *pWorkstation;
     cInterface *pInterface;
     cIpAddress *pIpAddress;
+    cPlace     *pPlace;
     enum eDataOkBits {
         DO_NAME = 0,
         DO_PORT_NAME,
@@ -35,26 +36,27 @@ private:
     QMap<QString, QStringList>  mapZones;
 
     // A (fizikai) link:
-    Ui::phsLinkForm    *pLinkUi;
-    QWidget            *pLinkWidget;
     cPatch             *pLinkNode;
     cNPort             *pLinkPrt;
     qlonglong           linkType;
     QString             linkShared;
     QButtonGroup *      pLinkButtonsLinkType;
-    cRecordListModel   *pModelNode;
-    cRecordListModel   *pModelPort;
+    cRecordListModel   *pModelLinkNode;
+    cRecordListModel   *pModelLinkPort;
     cRecordListModel   *pModelPortShare;
     //
     cDialogButtons     *pButtons;
 protected slots:
+    void zoneCurrentIndex(const QString& s);
+    void placeCurrentIndex(const QString& s);
+
     void linkChangeLinkType(int id, bool f);
     void linkToglePlaceEqu(bool f);
-    void linkZoneCurrentIndex(int i);
-    void linkPlaceCurrentIndex(int i);
+    void linkZoneCurrentIndex(const QString& s);
+    void linkPlaceCurrentIndex(const QString &s);
     void linkNodeCurrentIndex(int i);
     void linkPortCurrentIndex(int i);
-    void linkPortShareCurrentText(const QString &s);
+    void linkPortShareCurrentIndex(const QString &s);
 
 };
 

@@ -7,13 +7,13 @@
     <x>0</x>
     <y>0</y>
     <width>915</width>
-    <height>598</height>
+    <height>597</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
+  <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0,0,10,0">
    <item>
     <widget class="QSplitter" name="splitter">
      <property name="frameShape">
@@ -28,7 +28,7 @@
      <property name="handleWidth">
       <number>6</number>
      </property>
-     <widget class="QFrame" name="frame">
+     <widget class="QFrame" name="frameNode">
       <property name="frameShape">
        <enum>QFrame::StyledPanel</enum>
       </property>
@@ -53,8 +53,14 @@
         <layout class="QFormLayout" name="formLayoutNode">
          <item row="0" column="0">
           <widget class="QLabel" name="labelName">
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
            <property name="text">
-            <string>Neve</string>
+            <string>Neve :</string>
            </property>
           </widget>
          </item>
@@ -73,6 +79,12 @@
          </item>
          <item row="3" column="0">
           <widget class="QLabel" name="labelPlace">
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
            <property name="text">
             <string>Hely, helyiség :</string>
            </property>
@@ -103,6 +115,12 @@
          </item>
          <item row="2" column="0">
           <widget class="QLabel" name="labelZone">
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
            <property name="text">
             <string>Zóna :</string>
            </property>
@@ -121,14 +139,14 @@
          <property name="sizeHint" stdset="0">
           <size>
            <width>20</width>
-           <height>40</height>
+           <height>0</height>
           </size>
          </property>
         </spacer>
        </item>
       </layout>
      </widget>
-     <widget class="QFrame" name="frame">
+     <widget class="QFrame" name="framePort">
       <property name="frameShape">
        <enum>QFrame::StyledPanel</enum>
       </property>
@@ -144,6 +162,12 @@
         <layout class="QFormLayout" name="formLayoutPort">
          <item row="0" column="0">
           <widget class="QLabel" name="labelPName">
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
            <property name="text">
             <string>Neve :</string>
            </property>
@@ -178,6 +202,12 @@
          </item>
          <item row="3" column="0">
           <widget class="QLabel" name="labelPMAC">
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
            <property name="text">
             <string>MAC :</string>
            </property>
@@ -203,7 +233,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QFrame" name="frame">
+     <widget class="QFrame" name="frameIp">
       <property name="frameShape">
        <enum>QFrame::StyledPanel</enum>
       </property>
@@ -219,6 +249,13 @@
         <layout class="QFormLayout" name="formLayoutIp">
          <item row="0" column="0">
           <widget class="QLabel" name="labelAddress">
+           <property name="font">
+            <font>
+             <weight>50</weight>
+             <italic>false</italic>
+             <bold>false</bold>
+            </font>
+           </property>
            <property name="text">
             <string>Cím :</string>
            </property>
@@ -229,16 +266,39 @@
          </item>
          <item row="1" column="0">
           <widget class="QLabel" name="labelIpType">
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
            <property name="text">
             <string>Cím típus :</string>
            </property>
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QComboBox" name="comboBoxIpType"/>
+          <widget class="QComboBox" name="comboBoxIpType">
+           <item>
+            <property name="text">
+             <string>dynamic</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>fixip</string>
+            </property>
+           </item>
+          </widget>
          </item>
          <item row="2" column="0">
           <widget class="QLabel" name="labelSubnet">
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
            <property name="text">
             <string>Subnet :</string>
            </property>
@@ -252,6 +312,12 @@
          </item>
          <item row="4" column="0">
           <widget class="QLabel" name="labelVLan">
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
            <property name="text">
             <string>VLan :</string>
            </property>
@@ -280,13 +346,230 @@
          <property name="sizeHint" stdset="0">
           <size>
            <width>20</width>
-           <height>40</height>
+           <height>0</height>
           </size>
          </property>
         </spacer>
        </item>
       </layout>
      </widget>
+    </widget>
+   </item>
+   <item>
+    <widget class="Line" name="line_2">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QFrame" name="frameLink">
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QLabel" name="labelLink">
+        <property name="text">
+         <string>Fizikai link (patch) :</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QGridLayout" name="gridLayout" columnstretch="1,1,1,1,1">
+        <item row="0" column="0">
+         <widget class="QLabel" name="labelLinkZone">
+          <property name="text">
+           <string>Zóna :</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QComboBox" name="comboBoxLinkZone">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2">
+         <widget class="QLabel" name="labelLinkPlace">
+          <property name="text">
+           <string>Hely :</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="labelLinkNode">
+          <property name="text">
+           <string>Hálózati elem</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QComboBox" name="comboBoxLinkNode">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2">
+         <widget class="QLabel" name="labelLinkPort">
+          <property name="text">
+           <string>Port :</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="2">
+         <widget class="QLabel" name="labelLinkPortShare">
+          <property name="text">
+           <string>Megosztás :</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="3">
+         <widget class="QComboBox" name="comboBoxLinkPortShare">
+          <item>
+           <property name="text">
+            <string/>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>A</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>B</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item row="1" column="3">
+         <widget class="QComboBox" name="comboBoxLinkPort"/>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="labelLinkNodeType">
+          <property name="text">
+           <string>Hálózati elem típusa :</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QLineEdit" name="lineEditLinkNodeType">
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="3">
+         <widget class="QComboBox" name="comboBoxLinkPlace"/>
+        </item>
+        <item row="0" column="4">
+         <widget class="QCheckBox" name="checkBoxPlaceEqu">
+          <property name="text">
+           <string>Hely azonos</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayoutLink" stretch="1,1,1,1,1">
+        <item>
+         <widget class="QLabel" name="labelLinkType">
+          <property name="text">
+           <string>Link Típusa :</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="radioButtonLinkTerm">
+          <property name="text">
+           <string>Végpont</string>
+          </property>
+          <property name="checkable">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="radioButtonLinkFront">
+          <property name="text">
+           <string>Előlapi</string>
+          </property>
+          <property name="checkable">
+           <bool>false</bool>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="radioButtonLinkBack">
+          <property name="text">
+           <string>Hátlapi</string>
+          </property>
+          <property name="checkable">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacerLink">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayoutLinkNote">
+        <item>
+         <widget class="QLabel" name="labelLinkNote">
+          <property name="text">
+           <string>Megjegyzés :</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="lineEditLinkNote"/>
+        </item>
+       </layout>
+      </item>
+     </layout>
     </widget>
    </item>
    <item>
@@ -297,11 +580,52 @@
     </widget>
    </item>
    <item>
-    <widget class="QLabel" name="label_2">
-     <property name="text">
-      <string>Fizikai link (patch) :</string>
+    <widget class="QTextEdit" name="textEdit">
+     <property name="readOnly">
+      <bool>true</bool>
      </property>
     </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayoutButtons">
+     <item>
+      <spacer name="horizontalSpacerButtons">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonReplace">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Lecserél, módosít</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonSave">
+       <property name="text">
+        <string>Ment</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonCancel">
+       <property name="text">
+        <string>Elvet</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>
