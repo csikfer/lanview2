@@ -188,39 +188,63 @@ public:
     /// A szűrés típusát FT_BEGIN -re állítja, a pattern üres lessz, a megjelenített lista is üres lessz.
     /// Az objektum egy saját QSqlQuery objektumot allokál a lekérdezésekhez.
     /// A lista feltöltése a setPattern() metódussal lehetséges.
-    /// @par __d A rekord leíró objektum
-    /// @par _par Parent
+    /// @param __d A rekord leíró objektum
+    /// @param _par Parent
     cRecordListModel(const cRecStaticDescr& __d, QObject * __par = NULL);
+    /// Konstruktor.
+    /// Eltárolja a statikus descriptor objektumot (referencia).
+    /// A szűrés típusát FT_BEGIN -re állítja, a pattern üres lessz, a megjelenített lista is üres lessz.
+    /// Az objektum egy saját QSqlQuery objektumot allokál a lekérdezésekhez.
+    /// A lista feltöltése a setPattern() metódussal lehetséges.
+    /// @param __t A rekord tábla név
+    /// @param __s Az opcionális schema név
+    /// @param _par Parent
+    cRecordListModel(const QString& __t, const QString& __s = QString(), QObject * __par = NULL);
     ~cRecordListModel();
     /// Opcionális konstans szűrési feltétel megadása, nincs lista frissítés
     /// Az itt megadott feltétel és kapcsolatban lessz a setFilter() metódusban megadottnak.
+    /// @param _par A szűrő paramétere
+    /// @param __f A szűrés típusa
     void setConstFilter(const QString& _par, eFilterType __f);
     /// Szűrési feltételek megadása, és a lista frissítése
-    bool setFilter(const QString& _par = QString(), enum eOrderType __o = OT_DEFAULT, enum eFilterType __f = FT_DEFAULT);
+    /// @param _par A szűrő paramétere
+    /// @param __o A lista rendezésének a típusa
+    /// @param __f A szűrés típusa
+    bool setFilter(const QVariant &_par = QVariant(), enum eOrderType __o = OT_DEFAULT, enum eFilterType __f = FT_DEFAULT);
     /// Az opcionális név konvertáló függvény megadása.
     /// Az SQL függvény a rekord ID-ből egy nevet ad vissza.
     void setToNameF(const QString& _fn) { toNameFName = _fn; }
+    /// A megadott nevű elem indexe a listában, vagy -1 ha nincs ilyen elem
     int indexOf(const QString __s)  { return stringList.indexOf(__s); }
+    /// A megadott ID-jű elem indexe a listában, vagy -1 ha nincs ilyen elem
     int indexOf(qlonglong __id)     { return idList.indexOf(__id); }
     QString at(int __i)             { return __i < 0 || __i >= stringList.size() ? QString() : stringList[__i]; }
+    /// A megadott sorszámú elem ID-je, vagy NULL_ID, ha nincs ilyen sorszámú elem.
     qlonglong atId(int __i)         { return __i < 0 || __i >= idList.size() ? NULL_ID : idList[__i]; }
+    /// A megadott sorszámú elem neve, vagy üres string, ha nincs ilyen sorszámú elem.
     qlonglong idOf(const QString& __s);
+    /// Az ID alapján adja vissza a nevet a listából
     QString nameOf(qlonglong __id);
+    /// Ha értéke true, akkor a lista első eleme NULL (a név üres, az ID pedig NULL_ID)
+    /// A konstruktorok false-re inicializálják.
     bool                nullable;
+    QString             sFkeyName;
+    const cRecStaticDescr&  descr;  ///< A rekord leíró
 private:
     QString where(QString s = QString());
-    enum eOrderType     order;
-    enum eFilterType    filter;
-    QString             pattern;
-    QString             cnstFlt;
-    QStringList         stringList;
-    QList<qlonglong>    idList;
-    const cRecStaticDescr&  descr;
+    enum eOrderType     order;      ///< Az aktuális rendezés típusa
+    enum eFilterType    filter;     ///< Az aktuális szűrés típusa
+    QString             pattern;    ///< Minta, szűrés paramétere
+    qlonglong           fkey_id;    ///< A szűrés paramétere FT_FKEY_ID esetén
+    QString             cnstFlt;    ///< A konstans szűrő (SQL kifejezés)
+    QStringList         stringList; ///< Az aktuális név lista (sorrend azonos mint az idList-ben
+    QList<qlonglong>    idList;     ///< Az aktuális ID lista (sorrend azonos mint az stringList-ben
     QSqlQuery *         pq;
     bool                firstTime;
-    QString             toNameFName;
+    QString             toNameFName;///< Név konvertáló SQL függvény neve, ha a rekordban nincs név mező
 public slots:
-    void setPatternSlot(const QString& __pat);
+    /// Hívja a setFilter() metódust, de csak a szűrés paramétere adható meg.
+    void setPatternSlot(const QVariant& __pat);
 };
 
 

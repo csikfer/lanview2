@@ -228,7 +228,18 @@ cPolygonTableModel& cPolygonTableModel::remove(QModelIndexList& mil)
 /* **************************************** cRecordListModel ****************************************  */
 
 cRecordListModel::cRecordListModel(const cRecStaticDescr& __d, QObject * __par)
-    : QStringListModel(__par), pattern(), cnstFlt(), stringList(), idList(), descr(__d)
+    : QStringListModel(__par), descr(__d), pattern(), cnstFlt(), stringList(), idList()
+{
+    order = OT_ASC;
+    filter = FT_NO;
+    pq = newQuery();
+    setStringList(stringList);
+    firstTime = true;
+    nullable  = false;
+}
+
+cRecordListModel::cRecordListModel(const QString& __t, const QString& __s, QObject * __par)
+    : QStringListModel(__par), descr(*cRecStaticDescr::get(__t, __s)), pattern(), cnstFlt(), stringList(), idList()
 {
     order = OT_ASC;
     filter = FT_NO;
@@ -279,13 +290,28 @@ QString cRecordListModel::where(QString s)
     }
 }
 
-bool cRecordListModel::setFilter(const QString& _par, enum eOrderType __o, enum eFilterType __f)
+bool cRecordListModel::setFilter(const QVariant& _par, enum eOrderType __o, enum eFilterType __f)
 {
     _DBGFN() << "@(" << _par << ")" << endl;
     firstTime = false;
     if (__o != OT_DEFAULT) order   = __o;
     if (__f != FT_DEFAULT) filter  = __f;
-    if (!_par.isEmpty())   pattern = _par;
+    bool ok;
+    if (!_par.isNull()) {
+        switch (filter) {
+        case FT_NO:         break;
+        case FT_LIKE:
+        case FT_SIMILAR:
+        case FT_REGEXP:
+        case FT_REGEXPI:
+        case FT_BEGIN:
+        case FT_SQL_WHERE:  pattern = _par.toString();
+                            break;
+        case FT_FKEY_ID:    fkey_id = _par.toLongLong(&ok);
+                            if (ok) break;
+        default:            EXCEPTION(EPROGFAIL, filter, _par.toString());
+        }
+    }
     stringList.clear();
     idList.clear();
     if (nullable) {
@@ -310,12 +336,26 @@ bool cRecordListModel::setFilter(const QString& _par, enum eOrderType __o, enum 
     case FT_REGEXPI:    sql += where(nn + " ~* " +         quoted(pattern));        break;
     case FT_BEGIN:      sql += where(nn + " LIKE " + quoted(pattern + QChar('%'))); break;
     case FT_SQL_WHERE:  sql += where(pattern);                                      break;
+    case FT_FKEY_ID:    {
+        if (fkey_id == NULL_ID) {
+            sql += " FALSE ";
+            break;  // üres
+        }
+        if (sFkeyName.isEmpty()) {  // Ha nem owner vayg parent ID, akkor a mezőnevet be kel állítani elsőre!!!
+            int ix = descr.ixToOwner(EX_IGNORE);
+            if (ix < 0) ix = descr.ixToParent();
+            sFkeyName = descr.columnName(ix);
+        }
+        sql += sFkeyName + " = " + QString::number(fkey_id);
+        break;
+    }
     default:            EXCEPTION(EPROGFAIL);
     }
     switch (order) {
-    case OT_NO:  break;
-    case OT_ASC: sql += " ORDER BY " + nn;   break;
-    case OT_DESC:sql += " ORDER BY " + nn + " DESC"; break;
+    case OT_NO:     break;
+    case OT_ASC:    sql += " ORDER BY " + nn;               break;
+    case OT_DESC:   sql += " ORDER BY " + nn + " DESC";     break;
+    case OT_ID_ASC: sql += " ORDER BY " + descr.idName();   break;
     default:    EXCEPTION(EPROGFAIL);  // lehetetlen, de warningol
     }
     if (!pq->exec(sql)) SQLPREPERR(*pq, sql);
@@ -344,9 +384,9 @@ QString cRecordListModel::nameOf(qlonglong __id)
 }
 
 
-void cRecordListModel::setPatternSlot(const QString& __pat)
+void cRecordListModel::setPatternSlot(const QVariant &__pat)
 {
-    PDEB(VVERBOSE) << __PRETTY_FUNCTION__ << " __pat = "  << __pat << endl;
+    PDEB(VVERBOSE) << __PRETTY_FUNCTION__ << " __pat = "  << __pat.toString() << endl;
     setFilter(__pat);
 }
 

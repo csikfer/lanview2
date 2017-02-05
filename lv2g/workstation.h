@@ -21,10 +21,12 @@ private:
     Ui::wstWidget   *pUi;
     QSqlQuery *pq;
     /// A workstation objektum
-    cNode      *pWorkstation;
-    cInterface *pInterface;
-    cIpAddress *pIpAddress;
-    cPlace     *pPlace;
+    cNode      *pWorkstation;   ///< A munkaállomás objektum
+    cRecordListModel*pModelNode;
+    cInterface *pInterface;     ///< A munkaállomás elsődleges interfésze
+    cIpAddress *pIpAddress;     ///< Az elsődleges interfész IP címe
+    cPlace     *pPlace;         ///< A munkaállomás helye
+    cNPort     *pPort2;         ///< Opcionális másodlagos portja(vagy interfésze) a munkaállomásnak
     enum eDataOkBits {
         DO_NAME = 0,
         DO_PORT_NAME,
@@ -33,7 +35,14 @@ private:
         DO_END
     };
     int     dataOkBits;
-    QMap<QString, QStringList>  mapZones;
+    QMap<QString, QStringList>  mapZones;   ///< A zonákhoz tartozó hely nevek listái.
+    QStringList                 zones;      ///< A zónák listája sorrendben
+    tRecordList<cSubNet>        subnets;
+    QStringList                 subnetnamelist;
+    QStringList                 subnetaddrlist;
+    tRecordList<cVLan>          vlans;
+    QStringList                 vlannamelist;
+    QStringList                 vlanidlist;
 
     // A (fizikai) link:
     cPatch             *pLinkNode;
@@ -43,12 +52,30 @@ private:
     QButtonGroup *      pLinkButtonsLinkType;
     cRecordListModel   *pModelLinkNode;
     cRecordListModel   *pModelLinkPort;
-    cRecordListModel   *pModelPortShare;
+    // A (fizikai) link2:
+    cPatch             *pLinkNode2;
+    cNPort             *pLinkPrt2;
+    qlonglong           linkType2;
+    QString             linkShared2;
+    QButtonGroup *      pLinkButtonsLinkType2;
+    cRecordListModel   *pModelLinkNode2;
+    cRecordListModel   *pModelLinkPort2;
     //
-    cDialogButtons     *pButtons;
+
 protected slots:
+    void nodeCurrentIndex(int);
+    void nodeNameChanged(const QString& s);
     void zoneCurrentIndex(const QString& s);
     void placeCurrentIndex(const QString& s);
+    void portNameChanged(const QString& s);
+    void portTypeCurrentIndex(const QString& s);
+    void macAddressChanged(const QString& s);
+    void ipAddressChanged(const QString& s);
+    void ipAddressTypeCurrentIndex(const QString& s);
+    void subNetCurrentIndex(const QString& s);
+    void subNetAddrCurrentIndex(const QString& s);
+    void vLanCurrentIndex(const QString& s);
+    void vLanIdCurrentIndex(const QString& s);
 
     void linkChangeLinkType(int id, bool f);
     void linkToglePlaceEqu(bool f);
@@ -57,6 +84,18 @@ protected slots:
     void linkNodeCurrentIndex(int i);
     void linkPortCurrentIndex(int i);
     void linkPortShareCurrentIndex(const QString &s);
+
+    void portNameChanged2(const QString& s);
+    void portTypeCurrentIndex2(const QString& s);
+    void macAddressChanged2(const QString& s);
+
+    void linkChangeLinkType2(int id, bool f);
+    void linkToglePlaceEqu2(bool f);
+    void linkZoneCurrentIndex2(const QString& s);
+    void linkPlaceCurrentIndex2(const QString &s);
+    void linkNodeCurrentIndex2(int i);
+    void linkPortCurrentIndex2(int i);
+    void linkPortShareCurrentIndex2(const QString &s);
 
 };
 

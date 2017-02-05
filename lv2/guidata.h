@@ -69,11 +69,12 @@ EXT_ const QString& tableInheritType(int e, eEx __ex = EX_ERROR);
 /// Rendezési lehetőségek
 enum eOrderType {
     OT_UNKNOWN =-1, ///< ismeretlen, csak hibajelzésre
-    OT_NO = 0,   ///< Nincs rendezés
-    OT_ASC,      ///< Rendezés növekvő sorrendbe
-    OT_DESC,     ///< Rendezés csökkenő sorrendbe
-    OT_DEFAULT,  ///< Az előző, vagy az alapértelmezett metódus megtartása (a string konvertáló függvény nem kezeli!)
-    OT_NEXT      ///< A következő metódus (NO->INC->DEC) (a string konvertáló függvény nem kezeli!)
+    OT_NO = 0,      ///< Nincs rendezés
+    OT_ASC,         ///< Rendezés növekvő sorrendbe
+    OT_DESC,        ///< Rendezés csökkenő sorrendbe
+    OT_DEFAULT,     ///< Az előző, vagy az alapértelmezett metódus megtartása (a string konvertáló függvény nem kezeli!)
+    OT_NEXT,        ///< A következő metódus (NO->INC->DEC) (a string konvertáló függvény nem kezeli!)
+    OT_ID_ASC       ///< Növekvő sorrend az ID alapján, csak a cRecordListModel -ben (a string konvertáló függvény nem kezeli!)
 };
 /// Konverziós függvény a eOrderType enumerációs típushoz
 /// @param n Az enumerációs értéket reprezentáló string az adatbázisban
@@ -114,8 +115,10 @@ enum eFilterType {
     FT_INTERVAL, ///< Numerikus mező értéke a magadott tartományban
     FT_PROC,     ///< Szűrés egy függvényen (PL) keresztül.
     FT_SQL_WHERE,///< SQL WHERE ...
+    // A további konstansokat a string konvertáló függvény nem kezeli!
     FT_DEFAULT,  ///< Az előző, vagy az alapértelmezett metódus megtartása (a string konvertáló függvény nem kezeli!)
-    FT_NO        ///< nincs szűrés
+    FT_NO,       ///< nincs szűrés(a string konvertáló függvény nem kezeli!)
+    FT_FKEY_ID   ///< Szűrés a tulajdonos, vagy valamilyen tulajdonság objektum ID-je alapján (a string konvertáló függvény nem kezeli!)
 };
 /// Konverziós függvény a eFilterType enumerációs típushoz
 /// @param n Az enumerációs értéket reprezentáló string az adatbázisban
