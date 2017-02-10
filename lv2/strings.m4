@@ -351,7 +351,7 @@ STRDEF(Interfaces,"interfaces")
  STRDEF(PortStapleId,"port_staple_id")
  STRDEF(DualFaceType, "dualface_type")
  
-STRDEF(IpAddresses, "ipaddresses")
+STRDEF(IpAddresses, "ip_addresses")
  STRDEF(IpAddressId, "ip_address_ip")
  STRDEF(IpAddressNote, "ip_address_note")
  STRDEF(Address,"address")

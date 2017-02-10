@@ -254,6 +254,7 @@ public:
     /// @return A strinngé konvertált érték.
     virtual QString toView(QSqlQuery& q, const QVariant& _f) const;
     /// Clone object
+    /// Az eredeti osztály copy konstruktorát hívja az alapértelmezett definíció.
     virtual cColStaticDescr *dup() const;
     /// Az enumeráció kezelés konzisztenciájának ellenörzése.
     /// Enumeráció esetén a numerikus érték az adatbázisban az enum típusban megadott listabeli sorszáma (0,1 ...)
@@ -1270,11 +1271,10 @@ public:
     QString getName(int i) const                    { return descr()[i].toName(get(i)); }
     /// Egy mező értékével tér vissza, feltételezve, hogy az egy string, ill. annak értékét stringgé konvertálja.
     QString getName(const QString& __n) const       { return getName(toIndex(__n)); }
-    /// Az név (name) mező értékével tér vissza, ha van,és nem NULL.
+    /// Az név (name) mező értékével tér vissza, ha van.
     /// Ha nincs név mező megkísérli a rekord ID-ből az id2name SQL föggvénnyel konvertálni a nevet.
-    /// Ha se név se id mező nincs kizárást dob.
-    /// Ha a név mező NULL, de nincs ID mező, vagy konvertáló függvén akkor kizárást dob.
-    /// Ha a név és ID mező is NULL, akkor egy NULL stringgel tér vissza.
+    /// Ha a nibcs név mező, és nincs ID mező, vagy konvertáló függvény akkor kizárást dob.
+    /// Ha nincs név és az ID mező értéke NULL, akkor egy NULL stringgel tér vissza.
     QString getName() const;
     /// Feltételezve, hogy a megadott indexű mező egy MAC, annk értékével tér vissza.
     cMac    getMac(int __i, enum eEx __ex = EX_ERROR) const;
@@ -1504,6 +1504,36 @@ public:
         }
         return r;
     }
+    virtual bool rewriteById(QSqlQuery& __q, enum eEx __ex = EX_ERROR);
+    /// Sablon metódus, egy járulékos tábla tartozik a rekordhoz, ami az objektum tulajdona
+    /// @param __ch Gyerek objektum konténer
+    /// @param __m  eContainerValid maszk, vagy 0, ha nincs feltétele a végrehajtásnak.
+    template<class L> bool tRewriteById(QSqlQuery& __q, L& __ch, qlonglong __m, enum eEx __ex = EX_ERROR)
+    {
+        bool r = cRecord::rewriteById(__q, __ex);   // Kiírjuk magát a rekordot
+        if (!r) return false;   // Ha nem sikerült, nincs több dolgunk :(
+        if (__m == 0 || isContainerValid(__m)) {
+            __ch.setsOwnerId();
+            r = __ch.replaceById(__q, __ex);
+        }
+        return r;
+    }
+    /// Sablon metódus, ha két járulékos tábla tartozik a rekordhoz, ami az objektum tulajdona
+    template<class L1, class L2> bool tRewriteById(QSqlQuery& __q, L1& __ch1, qlonglong __m1, L2& __ch2, qlonglong __m2, enum eEx __ex = EX_ERROR)
+    {
+        bool r = cRecord::rewriteById(__q, __ex);   // Kiírjuk magát a rekordot
+        if (!r) return false;   // Ha nem sikerült, nincs több dolgunk :(
+        if (__m1 == 0 || isContainerValid(__m1)) {
+            __ch1.setsOwnerId();
+            r =__ch1.replaceById(__q, __ex);
+            if (!r) return false;   // Ha nem sikerült, nincs több dolgunk :(
+        }
+        if (__m2 == 0 || isContainerValid(__m2)) {
+            __ch2.setsOwnerId();
+            r = __ch2.replaceById(__q, __ex);
+        }
+        return r;
+    }
     /// Beszúr vagy fellülír egy rekordot a megfelelő adattáblába. Az insert utasításban azok a mezők
     /// lesznek megadva, melyeknek nem NULL az értékük. Feelülírásnál a NULL értékú mezőknél ha van az
     /// alapértelmezett érték lesz kiírva, ha nincs akkor a NULL.
@@ -1630,7 +1660,7 @@ public:
     /// @param __name Opcionális név paraméter, ha nem adjuk meg, akkor az objektum aktuális neve alapján olvassa be a rekordot.
     /// @return a (bázis!) objektum referenciájával tér vissza
     cRecord& setByName(const QString& __name = QString())                   { if (!fetchByName(__name)) EXCEPTION(EFOUND,-1, __name); return *this; }
-    /// A tábla egy rekord módosítása az adatbázisban. Az első rekordot visszaolvassa.
+    /// A tábla rekord(ok) módosítása az adatbázisban. Az első rekordot visszaolvassa.
     /// Lásd még a whereString(QBitArray& __fm) metódust is.
     /// @param __q A művelethez használt QSqlQuery objektum.
     /// @param __only A módosításokat csak a megadott táblában, a leszármazottakban nem, ha true

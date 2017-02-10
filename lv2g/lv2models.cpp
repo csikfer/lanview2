@@ -236,6 +236,8 @@ cRecordListModel::cRecordListModel(const cRecStaticDescr& __d, QObject * __par)
     setStringList(stringList);
     firstTime = true;
     nullable  = false;
+    nullIdIsAll = false;
+    only = false;
 }
 
 cRecordListModel::cRecordListModel(const QString& __t, const QString& __s, QObject * __par)
@@ -247,6 +249,8 @@ cRecordListModel::cRecordListModel(const QString& __t, const QString& __s, QObje
     setStringList(stringList);
     firstTime = true;
     nullable  = false;
+    nullIdIsAll = false;
+    only = false;
 }
 
 cRecordListModel::~cRecordListModel()
@@ -296,7 +300,7 @@ bool cRecordListModel::setFilter(const QVariant& _par, enum eOrderType __o, enum
     firstTime = false;
     if (__o != OT_DEFAULT) order   = __o;
     if (__f != FT_DEFAULT) filter  = __f;
-    bool ok;
+    bool ok = true;
     if (!_par.isNull()) {
         switch (filter) {
         case FT_NO:         break;
@@ -307,7 +311,7 @@ bool cRecordListModel::setFilter(const QVariant& _par, enum eOrderType __o, enum
         case FT_BEGIN:
         case FT_SQL_WHERE:  pattern = _par.toString();
                             break;
-        case FT_FKEY_ID:    fkey_id = _par.toLongLong(&ok);
+        case FT_FKEY_ID:    fkey_id = _par.isNull() ? NULL_ID : _par.toLongLong(&ok);
                             if (ok) break;
         default:            EXCEPTION(EPROGFAIL, filter, _par.toString());
         }
@@ -327,7 +331,8 @@ bool cRecordListModel::setFilter(const QVariant& _par, enum eOrderType __o, enum
         fn = toNameFName + QChar('(') + in +QChar(')') + QChar(' ');
         nn = quotedString(_sName);
     }
-    QString sql = "SELECT " + in + QChar(',') + fn + nn + " FROM " + descr.tableName();
+    QString sOnly = only ? " ONLY " : _sNul;
+    QString sql = "SELECT " + in + QChar(',') + fn + nn + " FROM " + sOnly + descr.tableName();
     switch (filter) {
     case FT_NO:         sql += where();                                             break;
     case FT_LIKE:       sql += where(nn + " LIKE " + quoted(pattern));              break;
@@ -337,16 +342,19 @@ bool cRecordListModel::setFilter(const QVariant& _par, enum eOrderType __o, enum
     case FT_BEGIN:      sql += where(nn + " LIKE " + quoted(pattern + QChar('%'))); break;
     case FT_SQL_WHERE:  sql += where(pattern);                                      break;
     case FT_FKEY_ID:    {
+        QString s;
         if (fkey_id == NULL_ID) {
-            sql += " FALSE ";
-            break;  // üres
+            if (!nullIdIsAll) s = " FALSE ";
         }
-        if (sFkeyName.isEmpty()) {  // Ha nem owner vayg parent ID, akkor a mezőnevet be kel állítani elsőre!!!
-            int ix = descr.ixToOwner(EX_IGNORE);
-            if (ix < 0) ix = descr.ixToParent();
-            sFkeyName = descr.columnName(ix);
+        else {
+            if (sFkeyName.isEmpty()) {  // Ha nem owner vayg parent ID, akkor a mezőnevet be kel állítani elsőre!!!
+                int ix = descr.ixToOwner(EX_IGNORE);
+                if (ix < 0) ix = descr.ixToParent();
+                sFkeyName = descr.columnName(ix);
+            }
+            s = sFkeyName + " = " + QString::number(fkey_id);
         }
-        sql += sFkeyName + " = " + QString::number(fkey_id);
+        sql += where(s);
         break;
     }
     default:            EXCEPTION(EPROGFAIL);
@@ -358,6 +366,7 @@ bool cRecordListModel::setFilter(const QVariant& _par, enum eOrderType __o, enum
     case OT_ID_ASC: sql += " ORDER BY " + descr.idName();   break;
     default:    EXCEPTION(EPROGFAIL);  // lehetetlen, de warningol
     }
+    PDEB(VERBOSE) << "SQL : \"" << sql << "\"" << endl;
     if (!pq->exec(sql)) SQLPREPERR(*pq, sql);
     bool r = pq->first();
     if (r) do {

@@ -661,7 +661,7 @@ long cVLan::insertNew(long __i, const QString& __n, const QString& __d, bool __s
     return __i;
 }
 
-/* ------------------------------ ipaddresses ------------------------------ */
+/* ------------------------------ ip_addresses ------------------------------ */
 
 cIpAddress::cIpAddress() : cRecord()
 {
@@ -701,16 +701,16 @@ const cRecStaticDescr&  cIpAddress::descr() const
     return *_pRecordDescr;
 }
 
-bool cIpAddress::rewrite(QSqlQuery &, eEx)
+bool cIpAddress::rewrite(QSqlQuery &, eEx __ex)
 {
-    EXCEPTION(ENOTSUPP);
-    return false; // warning...
+    if (__ex != EX_IGNORE) EXCEPTION(ENOTSUPP);
+    return false;
 }
 
-int cIpAddress::replace(QSqlQuery &, eEx)
+int cIpAddress::replace(QSqlQuery &, eEx __ex)
 {
-    EXCEPTION(ENOTSUPP);
-    return R_ERROR; // warning...
+    if (__ex != EX_IGNORE) EXCEPTION(ENOTSUPP);
+    return R_ERROR;
 }
 
 cIpAddress& cIpAddress::setAddress(const QHostAddress& __a, const QString& __t)
@@ -1056,6 +1056,11 @@ bool cNPort::rewrite(QSqlQuery &__q, eEx __ex)
    return tRewrite(__q, params, CV_PORT_PARAMS, __ex);
 }
 
+bool cNPort::rewriteById(QSqlQuery &__q, eEx __ex)
+{
+   return tRewriteById(__q, params, CV_PORT_PARAMS, __ex);
+}
+
 /// Feltételezi, hogy a parent (QObject *) pointer a tulajdonos objektumra mutat.
 /// Ellenörzi, hogy a parent pointere konvertálható-e cPatch * típusű pinterré.
 /// Ha nem, vagy a parent NULL, akkor kizárást dob.
@@ -1380,6 +1385,7 @@ void cInterface::clearToEnd()
     cNPort::clearToEnd();
     vlans.clear();
     trunkMembers.clear();
+    addresses.clear();
 }
 
 void cInterface::toEnd()
@@ -1417,6 +1423,20 @@ bool cInterface::rewrite(QSqlQuery &__q, eEx __ex)
     bool r = cNPort::rewrite(__q, __ex) && (trunkMembers.size() == updateTrunkMembers(__q, __ex));
     if (!r) return false;
     r = vlans.replace(__q, __ex);
+    if (!r) return false;
+    if (addresses.count() > 0) {
+        r = 0 < addresses.insert(__q, __ex);
+    }
+    return r;
+}
+
+/// Az cInterface nem önálló objektum.
+/// A Hívása elött a cNode törli az összes IP cím rekordot, igy az IP címekhez nem a replace() hanem az insert() metódust kell hívni,
+bool cInterface::rewriteById(QSqlQuery &__q, eEx __ex)
+{
+    bool r = cNPort::rewriteById(__q, __ex) && (trunkMembers.size() == updateTrunkMembers(__q, __ex));
+    if (!r) return false;
+    r = vlans.replaceById(__q, __ex);
     if (!r) return false;
     if (addresses.count() > 0) {
         r = 0 < addresses.insert(__q, __ex);
@@ -1481,7 +1501,7 @@ int cInterface::fetchByMac(QSqlQuery& q, const cMac& a)
 bool cInterface::fetchByIp(QSqlQuery& q, const QHostAddress& a)
 {
     clear();
-    QString sql = "SELECT interfaces.* FROM interfaces JOIN ipaddresses USING(port_id) WHERE address = ?";
+    QString sql = "SELECT interfaces.* FROM interfaces JOIN ip_addresses USING(port_id) WHERE address = ?";
     if (execSql(q, sql, a.toString())) {
         set(q);
         return true;
@@ -1643,7 +1663,7 @@ void cPatch::clearToEnd()
     ports.clear();
     params.clear();
     if (pShares != NULL) clearShares();
-    containerValid &= ~(CV_NODE_PARAMS | CV_PORTS);
+    containerValid = 0;
 }
 
 void cPatch::toEnd()
@@ -1685,6 +1705,14 @@ bool cPatch::rewrite(QSqlQuery &__q, eEx __ex)
     if (pShares == NULL) return true;
     return updateShares(__q, false, __ex);
 }
+
+bool cPatch::rewriteById(QSqlQuery &__q, eEx __ex)
+{
+    (void)__q;
+    if (__ex != EX_IGNORE) EXCEPTION(ENOTSUPP);
+    return false;
+}
+
 
 bool cPatch::isContainerValid(qlonglong __mask) const
 {
@@ -2097,6 +2125,7 @@ cNode::cNode(const cNode& __o) : cPatch(_no_init_)
     params.append(__o.params);
     bDelCollisionByMac = __o.bDelCollisionByMac;
     bDelCollisionByIp  = __o.bDelCollisionByIp;
+    containerValid = __o.containerValid;
 }
 
 /// A többi clone() metódushoz képest eltérés, hogy nem csak azonos típust (azonos descriptor) lehet másolni.
@@ -2108,9 +2137,12 @@ cNode& cNode::clone(const cRecord &__o)
     __cp(__o);
     set(__o);
     if (typeid(__o) != typeid(cRecordAny)) {
-        const cNode& r = *dynamic_cast<const cNode*>(&__o);
-        ports.append(r.ports);
-        params.append(r.params);
+        const cNode& o = *dynamic_cast<const cNode*>(&__o);
+        ports.clear().append(o.ports);
+        params.clear().append(o.params);
+        bDelCollisionByMac = o.bDelCollisionByMac;
+        bDelCollisionByIp  = o.bDelCollisionByIp;
+        containerValid = o.containerValid;
     }
     return *this;
 }
@@ -2171,7 +2203,7 @@ bool cNode::insert(QSqlQuery &__q, eEx __ex)
 bool cNode::rewrite(QSqlQuery &__q, eEx __ex)
 {
     // Töröljők az összes régi IP címet (IP címekre nincs replace/rewrite metódus)
-    QString sql = "DELETE FROM ipaddresses WHERE port_id IN "
+    QString sql = "DELETE FROM ip_addresses WHERE port_id IN "
             "(SELECT port_id FROM nports WHERE node_id = ?)";
     qlonglong id = cNode().getIdByName(__q, getName());
     execSql(__q, sql, id);
@@ -2180,6 +2212,20 @@ bool cNode::rewrite(QSqlQuery &__q, eEx __ex)
     delCollisionByIp(__q);
     delCollisionByMac(__q);
     if (!tRewrite(__q, ports, CV_PORTS, params, CV_NODE_PARAMS, __ex)) return false;
+    return true;
+}
+
+bool cNode::rewriteById(QSqlQuery &__q, eEx __ex)
+{
+    // Töröljők az összes régi IP címet (IP címekre nincs replace/rewrite metódus)
+    QString sql = "DELETE FROM ip_addresses WHERE port_id IN "
+            "(SELECT port_id FROM nports WHERE node_id = ?)";
+    qlonglong id = getId();
+    execSql(__q, sql, id);
+    // Ütköző objektumok feltételes törlése
+    delCollisionByIp(__q);
+    delCollisionByMac(__q);
+    if (!tRewriteById(__q, ports, CV_PORTS, params, CV_NODE_PARAMS, __ex)) return false;
     return true;
 }
 
@@ -2204,6 +2250,7 @@ int  cNode::fetchPorts(QSqlQuery& __q)
         ports << p;
     } while (__q.next());
     __q.finish();
+    containerValid |= CV_PORTS;
     return ports.count();
 }
 
@@ -2308,7 +2355,7 @@ cNPort *cNode::addSensors(const QString& __np, int __noff, int __from, int __to,
 bool cNode::fetchByIp(QSqlQuery& q, const QHostAddress& a, eEx __ex)
 {
     clear();
-    QString sql = QString("SELECT DISTINCT %1.* FROM %1 JOIN interfaces USING(node_id) JOIN ipaddresses USING(port_id) WHERE address = ?").arg(tableName());
+    QString sql = QString("SELECT DISTINCT %1.* FROM %1 JOIN interfaces USING(node_id) JOIN ip_addresses USING(port_id) WHERE address = ?").arg(tableName());
     QString as = hostAddressToString(a);
     if (execSql(q, sql, as)) {
         set(q);
@@ -2326,7 +2373,7 @@ bool cNode::fetchOnePortByIp(QSqlQuery& q, const QHostAddress& a, eEx __ex)
 {
     ports.clear();
     QString sql =
-            "SELECT interfaces.*, ipaddresses.*  FROM interfaces JOIN ipaddresses USING(port_id)"
+            "SELECT interfaces.*, ip_addresses.*  FROM interfaces JOIN ip_addresses USING(port_id)"
             " WHERE address = ? AND node_id = ?";
     QString as = hostAddressToString(a);
     if (execSql(q, sql, as, getId(_sNodeId))) {
@@ -2445,7 +2492,7 @@ cInterface *cNode::portSetVlans(int __port_index, const QList<qlonglong>& _ids)
 QList<QHostAddress> cNode::fetchAllIpAddress(QSqlQuery& q, qlonglong __id) const
 {
     QString sql =
-            "SELECT address FROM interfaces JOIN ipaddresses USING(port_id)"
+            "SELECT address FROM interfaces JOIN ip_addresses USING(port_id)"
                " WHERE node_id = ?"
                " ORDER BY preferred ASC";
     QList<QHostAddress> r;
@@ -2781,12 +2828,12 @@ int cNode::delCollisionByIp(QSqlQuery& __q)
             QVariant id = get(idIndex());
             if (id.isNull()) {
                 sql = "DELETE FROM nodes WHERE node_id IN "
-                        "(SELECT node_id FROM interfaces JOIN ipaddresses USING(port_id)"
+                        "(SELECT node_id FROM interfaces JOIN ip_addresses USING(port_id)"
                         " WHERE address = ?)";
             }
             else {
                 sql = "DELETE FROM nodes WHERE node_id IN "
-                        "(SELECT node_id FROM interfaces JOIN ipaddresses USING(port_id)"
+                        "(SELECT node_id FROM interfaces JOIN ip_addresses USING(port_id)"
                         " WHERE address = ? AND node_id <> ?)";
             }
             foreach (QHostAddress ip, ips) {
@@ -2831,9 +2878,12 @@ cSnmpDevice& cSnmpDevice::clone(const cRecord& __o)
 {
     copy(__o);
     if (typeid(cRecordAny) != typeid(__o)) {
-        const cSnmpDevice& r = *dynamic_cast<const cSnmpDevice*>(&__o);
-        ports.clear().append(r.ports);
-        params.clear().append(r.params);
+        const cSnmpDevice& o = *dynamic_cast<const cSnmpDevice*>(&__o);
+        ports.clear().append(o.ports);
+        params.clear().append(o.params);
+        bDelCollisionByMac = o.bDelCollisionByMac;
+        bDelCollisionByIp  = o.bDelCollisionByIp;
+        containerValid = o.containerValid;
     }
     return *this;
 }

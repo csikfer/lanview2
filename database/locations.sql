@@ -219,3 +219,18 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION is_group_place(bigint, bigint) IS
 'Lekérdezi, hogy az idr azonosítójú places tagja-e az idq-azonosítójú place_groups csoportnak,
 vagy valamelyik parentje tag-e';
+
+CREATE OR REPLACE FUNCTION is_group_place(idr bigint, grn text) RETURNS boolean AS $$
+DECLARE
+    gid bigint;
+BEGIN
+    SELECT place_group_id INTO gid FROM place_groups WHERE place_group_name = grn;
+    IF NOT FOUND THEN
+        PERFORM error('NameNotFound', -1, grn, 'is_group_place()', 'place_groups');
+    END IF;
+    RETURN is_group_place(idr, gid);
+END
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION is_group_place(bigint, bigint) IS
+'Lekérdezi, hogy az idr azonosítójú places tagja-e az grn-nevű place_groups csoportnak,
+vagy valamelyik parentje tag-e';

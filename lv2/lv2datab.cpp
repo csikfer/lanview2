@@ -1988,7 +1988,12 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
     _tableName      = __t;
     _viewName       = __t;
 
-    QString baseName = __t.endsWith('s') ? __t.mid(0, __t.size() -1) : _sNul;
+    QString baseName = __t;
+    if (baseName.endsWith('s')) {
+        baseName.chop(1);
+        // s-el végződő bázis név esetén az 's' utótag helyett 'es' utótag is lehet.
+        if (baseName.endsWith("se")) baseName.chop(1);
+    }
 
     QSqlQuery   *pq  = newQuery();
     QSqlQuery   *pq2 = newQuery();
@@ -2106,14 +2111,14 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
         if (columnDescr.eColType == cColStaticDescr::FT_TEXT) {
             #define NAME_INDEX  1
             #define DESCR_INDEX 2
-            static QString nameSufix  = "_name";
-            static QString descrSufix = "_note";
+            static QString nameSufix = "_name";
+            static QString noteSufix = "_note";
             if (!baseName.isEmpty()) {
                 if (_nameIndex < 0 && 0 == columnDescr.colName().compare(baseName + nameSufix))  _nameIndex  = i -1;
-                if (_noteIndex < 0 && 0 == columnDescr.colName().compare(baseName + descrSufix)) _noteIndex = i -1;
+                if (_noteIndex < 0 && 0 == columnDescr.colName().compare(baseName + noteSufix)) _noteIndex = i -1;
             }
             if (_nameIndex  < 0 && i == (NAME_INDEX  +1) && columnDescr.colName().endsWith(nameSufix))  _nameIndex  = NAME_INDEX;
-            if (_noteIndex  < 0 && i == (DESCR_INDEX +1) && columnDescr.colName().endsWith(descrSufix)) _noteIndex = DESCR_INDEX;
+            if (_noteIndex  < 0 && i == (DESCR_INDEX +1) && columnDescr.colName().endsWith(noteSufix)) _noteIndex = DESCR_INDEX;
         }
         // A távoli kulcs mezők detektálása:
         if (columnDescr.eColType == cColStaticDescr::FT_INTEGER         // Feltételezzük, hogy távoli kulcs csak egész szám (ID) lehet
@@ -2952,7 +2957,7 @@ const QVariant& cRecord::_get(int __i) const
 }
 
 QString cRecord::getName() const {
-    if (isEmpty_()) return QString();
+    if (_isNull()) return QString();
     const cRecStaticDescr& d = descr();
     int ixN = d._nameIndex;
     if (isIndex(ixN) && !isNull(ixN)) return getName(ixN); // Ha van név mező és nem null
@@ -3172,6 +3177,19 @@ cError *cRecord::tryRewrite(QSqlQuery& __q, bool __tr)
     }
     return pe;
 }
+
+bool cRecord::rewriteById(QSqlQuery& __q, enum eEx __ex)
+{
+    if (isNullId()) {
+        if (__ex != EX_IGNORE) EXCEPTION(EPROGFAIL, 0, trUtf8("Az ID értéke nem lehet NULL"));
+        return false;
+    }
+    QBitArray set(cols(), 1);                   // Összes mező
+    QBitArray where = _mask(cols(), idIndex()); // Az ID mező
+    set = set & ~where;                         // Összes kivéve ID
+    return 1 == update(__q, true, set, where, EX_NOOP);
+}
+
 
 int cRecord::replace(QSqlQuery& __q, eEx __ex)
 {

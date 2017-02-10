@@ -557,7 +557,7 @@ public:
 /* ******************************  ****************************** */
 /*!
 @class cIpAddress
-@brief A ipaddresses tábla egy rekordját reprezentáló osztály.
+@brief A ip_addresses tábla egy rekordját reprezentáló osztály.
 Az objektum automatikusan kezeli a subnet_id mezőt (és subNet adattagot). Vagyis az IP cím megadásánál
 kitölti azt is, ill. ha ez nem lehetséges, akkor törli azt.
 */
@@ -733,6 +733,7 @@ public:
     /// Beszúr egy port rekordot az adatbázisba a járulékos adatokkal (rekordokkal) együtt.
     virtual bool insert(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
+    virtual bool rewriteById(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     virtual bool isContainerValid(qlonglong __mask) const;
     virtual void setContainerValid(qlonglong __set, qlonglong __clr = 0);
 
@@ -931,6 +932,7 @@ public:
     virtual bool toEnd(int i);
     virtual bool insert(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
+    virtual bool rewriteById(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     virtual QString toString() const;
     // A trunkMembers konténer adattaghoz hozzáad egy port indexet
     void addTrunkMember(int __ix) { trunkMembers << __ix;  }
@@ -1083,6 +1085,7 @@ public:
     virtual bool toEnd(int i);
     virtual bool insert(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
+    virtual bool rewriteById(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     virtual bool isContainerValid(qlonglong __mask) const;
     virtual void setContainerValid(qlonglong __set, qlonglong __clr = 0);
     virtual void insertPort(QSqlQuery& q, int ix, const QString& _na, const QString& _no, const QString& _tag = QString());
@@ -1268,7 +1271,9 @@ public:
     virtual bool insert(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     /// Az objektum frissítése után hívja a rewrite() metódust a
     /// paraméter ás port konténerre is.
+    /// Az újra írandó objektum azonosítása név szerint történik, az objektum ID mezője figyelmenkívül lasz hagyva.
     virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
+    virtual bool rewriteById(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     /// Kitölti a ports adattagot, hiba esetén dob egy kizárást.
     /// Ha a port típusa cInterface, akkor az IP címeket is.
     virtual int  fetchPorts(QSqlQuery& __q);
@@ -1342,7 +1347,7 @@ public:
     cNPort *addPorts(const QString& __t, const QString& __np, int __noff, int __from, int __to, int __off)
         { return addPorts(cIfType::ifType(__t), __np, __noff, __from, __to, __off); }
     /// Hasonló mint az addPorts hívás, de a létrehozott portok típusa "sensor", továbbá kitölti az ip címet.
-    /// A MAC NULL lessz, az ip cím típusa pedig "pseudo", és csak IPV4 formályú cím lehet
+    /// A MAC NULL lessz, az ip cím típusa pedig "pseudo", és csak IPV4 formájú cím lehet
     cNPort *addSensors(const QString& __np, int __noff, int __from, int __to, int __off, const QHostAddress& __pip);
 
     /// Beolvas egy objektumot/rekordot az IP alapján. A metódus elöbb megkeresi a megadott IP címmel rendelkező

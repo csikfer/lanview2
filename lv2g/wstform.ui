@@ -36,6 +36,9 @@
       </property>
      </widget>
      <widget class="QRadioButton" name="radioButtonMod">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
       <property name="geometry">
        <rect>
         <x>360</x>
@@ -91,7 +94,7 @@
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QComboBox" name="comboBoxName"/>
+        <widget class="QComboBox" name="comboBoxNode"/>
        </item>
        <item row="2" column="0">
         <widget class="QLabel" name="labelNewName">
@@ -370,7 +373,7 @@
            </item>
           </widget>
          </item>
-         <item row="2" column="0">
+         <item row="3" column="0">
           <widget class="QLabel" name="labelSubNet">
            <property name="font">
             <font>
@@ -383,13 +386,21 @@
            </property>
           </widget>
          </item>
-         <item row="2" column="1">
-          <widget class="QComboBox" name="comboBoxSubNet"/>
-         </item>
          <item row="3" column="1">
-          <widget class="QComboBox" name="comboBoxSubNetAddr"/>
+          <widget class="QComboBox" name="comboBoxSubNet">
+           <property name="currentText">
+            <string notr="true"/>
+           </property>
+          </widget>
          </item>
-         <item row="4" column="0">
+         <item row="4" column="1">
+          <widget class="QComboBox" name="comboBoxSubNetAddr">
+           <property name="currentText">
+            <string notr="true"/>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="0">
           <widget class="QLabel" name="labelVLan">
            <property name="font">
             <font>
@@ -402,25 +413,43 @@
            </property>
           </widget>
          </item>
-         <item row="4" column="1">
-          <widget class="QComboBox" name="comboBoxVLan"/>
-         </item>
          <item row="5" column="1">
-          <widget class="QComboBox" name="comboBoxVLanId"/>
+          <widget class="QComboBox" name="comboBoxVLan">
+           <property name="currentText">
+            <string notr="true"/>
+           </property>
+          </widget>
          </item>
-         <item row="3" column="0">
+         <item row="6" column="1">
+          <widget class="QComboBox" name="comboBoxVLanId">
+           <property name="currentText">
+            <string notr="true"/>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="0">
           <widget class="QLabel" name="labelSunNetAddr">
            <property name="text">
             <string>Subnet tartomány :</string>
            </property>
           </widget>
          </item>
-         <item row="5" column="0">
+         <item row="6" column="0">
           <widget class="QLabel" name="labelVLanId">
            <property name="text">
             <string>VLan ID :</string>
            </property>
           </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="labelIpNote">
+           <property name="text">
+            <string>Megjegyzés :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QLineEdit" name="lineEditIpNote"/>
          </item>
         </layout>
        </item>
@@ -653,7 +682,7 @@
          <item row="1" column="1">
           <widget class="QComboBox" name="comboBoxLinkNode">
            <property name="enabled">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -719,7 +748,7 @@
          <item row="2" column="1">
           <widget class="QLineEdit" name="lineEditLinkNodeType">
            <property name="enabled">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
            <property name="readOnly">
             <bool>true</bool>
@@ -858,7 +887,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QRadioButton" name="radioButtonSrvIns">
+          <widget class="QCheckBox" name="checkBoxSrvIns">
            <property name="enabled">
             <bool>false</bool>
            </property>
@@ -868,7 +897,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QRadioButton" name="radioButtonSrvDel">
+          <widget class="QCheckBox" name="checkBoxSrvDel">
            <property name="enabled">
             <bool>false</bool>
            </property>
@@ -1168,7 +1197,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QRadioButton" name="radioButtonSrvIns_2">
+          <widget class="QCheckBox" name="checkBoxSrvIns_2">
            <property name="enabled">
             <bool>false</bool>
            </property>
@@ -1178,7 +1207,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QRadioButton" name="radioButtonSrvDel_2">
+          <widget class="QCheckBox" name="checkBoxSrvDel_2">
            <property name="enabled">
             <bool>false</bool>
            </property>
@@ -1238,6 +1267,13 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayoutButtons">
      <item>
+      <widget class="QPushButton" name="pushButtonRefresh">
+       <property name="text">
+        <string>Frissítés</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <spacer name="horizontalSpacerButtons">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -1284,7 +1320,7 @@
  <tabstops>
   <tabstop>radioButtonNew</tabstop>
   <tabstop>radioButtonMod</tabstop>
-  <tabstop>comboBoxName</tabstop>
+  <tabstop>comboBoxNode</tabstop>
   <tabstop>lineEditName</tabstop>
   <tabstop>lineEditNote</tabstop>
   <tabstop>comboBoxZone</tabstop>
@@ -1313,8 +1349,8 @@
   <tabstop>radioButtonLinkFront</tabstop>
   <tabstop>radioButtonLinkBack</tabstop>
   <tabstop>lineEditLinkNote</tabstop>
-  <tabstop>radioButtonSrvIns</tabstop>
-  <tabstop>radioButtonSrvDel</tabstop>
+  <tabstop>checkBoxSrvIns</tabstop>
+  <tabstop>checkBoxSrvDel</tabstop>
   <tabstop>checkBoxSrvEna</tabstop>
   <tabstop>lineEditSrvNote</tabstop>
   <tabstop>pushButtonLinkOther</tabstop>
@@ -1334,8 +1370,8 @@
   <tabstop>radioButtonLinkFront_2</tabstop>
   <tabstop>radioButtonLinkBack_2</tabstop>
   <tabstop>lineEditLinkNote_2</tabstop>
-  <tabstop>radioButtonSrvIns_2</tabstop>
-  <tabstop>radioButtonSrvDel_2</tabstop>
+  <tabstop>checkBoxSrvIns_2</tabstop>
+  <tabstop>checkBoxSrvDel_2</tabstop>
   <tabstop>checkBoxSrvEna_2</tabstop>
   <tabstop>lineEditSrvNote_2</tabstop>
   <tabstop>pushButtonLinkOther_2</tabstop>

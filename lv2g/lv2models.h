@@ -228,7 +228,15 @@ public:
     /// Ha értéke true, akkor a lista első eleme NULL (a név üres, az ID pedig NULL_ID)
     /// A konstruktorok false-re inicializálják.
     bool                nullable;
+    /// Ha ID-re szűrés van megadva, és automatikusan nem megállapítható, hogy melyik mezőről van szó
+    /// (nincs owner, vagy parant), akkor az id mező neve. NULL-ra van inicializálva.
     QString             sFkeyName;
+    /// Ha Ha ID-re szűrés van megadva, és az ID értéke NULL, akkor ha értéke igaz, akkor az az
+    /// összes rekordot jelenti szűrés nélkül. Ha értéke hamis, akkor nincs egyetlen rekord sem, ami illeszkedik.
+    /// false-ra van inicializálva.
+    bool                nullIdIsAll;
+    ///
+    bool                only;
     const cRecStaticDescr&  descr;  ///< A rekord leíró
 private:
     QString where(QString s = QString());

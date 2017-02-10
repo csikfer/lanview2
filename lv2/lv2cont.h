@@ -677,6 +677,35 @@ public:
         removeMarked(__q);    // Ha flag = true maradt, akkor töröljük
         return r == QList<C *>::size();
     }
+    /// Az ID-k alapján írja újra a rekordokat.
+    /// Ha az objektumnak az ID-je NULL, akkor rewruteById() metüdus helyett az insert() metódust hívja
+    bool replaceById(QSqlQuery &__q, eEx __ex = EX_ERROR) {
+        // Ha nincs új rekord, csak a régieket töröljük
+        if (tRecordList<C>::size() == 0) {
+            removeByOwn(__q, __ex);
+            return true;
+        }
+        // Megjelöljük a régi rekordokat, ha egy sincs akkor csak beillesztjük az újakat
+        if (mark(__q) == 0) {
+            insert(__q, EX_NOOP);
+            return true;
+        }
+        int r = 0;
+        typename QList<C *>::const_iterator    i;
+        for (i = QList<C *>::constBegin(); i < QList<C *>::constEnd(); i++) {
+            PDEB(VERBOSE) << "ReplaceById : " << (*i)->toString() << endl;
+            (*i)->setFlag(false);
+            if ((*i)->isNullId()) {
+                if ((*i)->insert(__q, __ex)) ++r;
+            }
+            else {
+                if ((*i)->rewriteById(__q, __ex)) ++r;
+            }
+        }
+        removeMarked(__q);    // Ha flag = true maradt, akkor töröljük
+        return r == QList<C *>::size();
+    }
+
     int mark(QSqlQuery &__q) const {
         if (pOwner == NULL) EXCEPTION(EPROGFAIL);
         qlonglong oid = pOwner->getId();
