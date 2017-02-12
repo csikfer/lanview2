@@ -34,7 +34,8 @@ private:
     const QStringList& placesInZone(const QString& sZone);
     int checkWrkCollision(int ix, const QString& s);
     qlonglong placeCurrentIndex(const QString& sPlace, QComboBox *pComboBoxZone,
-                                QComboBox *pComboBoxNode, cRecordListModel *pModel);
+                                QComboBox *pComboBoxNode, cRecordListModel *pModel,
+                                const QString &_patt = QString());
     Ui::wstWidget   *pUi;
     QSqlQuery *pq;
     /// Kiválasztott workstation objektum (modosítandó eredetije vagy minta)
@@ -106,6 +107,10 @@ protected slots:
     void togleNewMod(bool f);
     void save();
     void refresh();
+
+    void filterZoneCurrentIndex(const QString& s);
+    void filterPlaceCurrentIndex(const QString& s);
+    void filterPatternChanged(const QString& s);
 
     void nodeCurrentIndex(int i);
     void nodeNameChanged(const QString& s);

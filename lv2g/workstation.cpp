@@ -57,6 +57,11 @@ cWorkstation::cWorkstation(QWidget *parent) :
     pModelNode->setFilter(_sNul, OT_ASC, FT_SQL_WHERE); // NULL string (nincs további szűrés)
     pUi->comboBoxNode->setCurrentIndex(0);  // első elem, NULL kiválasztva
 
+    pUi->comboBoxFilterZone->addItems(zones);
+    pUi->comboBoxFilterZone->setCurrentIndex(0);          // Első elem 'all' zóna
+    pUi->comboBoxFilterPlace->addItems(mapZones[_sAll]);
+    pUi->comboBoxFilterPlace->setCurrentIndex(0);         // Első elem <NULL>/nincs megadva hely
+
     pUi->comboBoxZone->addItems(zones);
     pUi->comboBoxZone->setCurrentIndex(0);          // Első elem 'all' zóna
     pUi->comboBoxPlace->addItems(mapZones[_sAll]);
@@ -107,6 +112,9 @@ cWorkstation::cWorkstation(QWidget *parent) :
     connect(pUi->pushButtonCancel,      SIGNAL(pressed()),                    this, SLOT(endIt()));
     connect(pUi->pushButtonSave,        SIGNAL(pressed()),                    this, SLOT(save()));
     connect(pUi->pushButtonRefresh,     SIGNAL(pressed()),                    this, SLOT(refresh()));
+    connect(pUi->comboBoxFilterZone,    SIGNAL(currentIndexChanged(QString)), this, SLOT(filterZoneCurrentIndex(QString)));
+    connect(pUi->comboBoxFilterPlace,   SIGNAL(currentIndexChanged(QString)), this, SLOT(filterPlaceCurrentIndex(QString)));
+    connect(pUi->lineEditFilterPattern, SIGNAL(textChanged(QString)),         this, SLOT(filterPatternChanged(QString)));
     // Workstation:
     connect(pUi->comboBoxNode,          SIGNAL(currentIndexChanged(int)),     this, SLOT(nodeCurrentIndex(int)));
     connect(pUi->lineEditName,          SIGNAL(textChanged(QString)),         this, SLOT(nodeNameChanged(QString)));
@@ -268,7 +276,8 @@ int cWorkstation::checkWrkCollision(int ix, const QString& s)
 }
 
 qlonglong cWorkstation::placeCurrentIndex(const QString& sPlace, QComboBox *pComboBoxZone,
-                                          QComboBox *pComboBoxNode, cRecordListModel *pModel)
+                                          QComboBox *pComboBoxNode, cRecordListModel *pModel,
+                                          const QString& _patt)
 {
     qlonglong pid = NULL_ID;
     QString expr;
@@ -287,6 +296,12 @@ qlonglong cWorkstation::placeCurrentIndex(const QString& sPlace, QComboBox *pCom
     else {
         pid = cPlace().getIdByName(*pq, sPlace);
         expr = QString("is_parent_place(place_id, %1)").arg(pid);
+    }
+    if (!_patt.isEmpty()) {
+        QString patt = _patt;
+        if (!patt.contains(QChar('%'))) patt += QChar('%');
+        if (!expr.isEmpty()) expr += " AND ";
+        expr += "node_name LIKE " + quoted(patt);
     }
     lockSlot = true;
     /* lockSlot */ pModel->setFilter(expr);
@@ -670,6 +685,30 @@ void cWorkstation::refresh()
     // MAJD
 }
 
+void cWorkstation::filterZoneCurrentIndex(const QString& s)
+{
+    const QStringList& pl = placesInZone(s);    // Helyek a zónában
+    QString placeName = pUi->comboBoxFilterPlace->currentText();
+    int i = pl.indexOf(placeName);      // Az aktuális hely indexe az új listában
+    if (i < 0) i = 0;       // Ha nincs az aktuális helyiség a kiválasztott zónában
+    pUi->comboBoxFilterPlace->clear();
+    pUi->comboBoxFilterPlace->addItems(pl);
+    pUi->comboBoxFilterPlace->setCurrentIndex(i);
+    filterPlaceCurrentIndex(pl.at(i));
+}
+
+void cWorkstation::filterPlaceCurrentIndex(const QString& s)
+{
+    QString patt = pUi->lineEditFilterPattern->text();
+    placeCurrentIndex(s, pUi->comboBoxFilterZone, pUi->comboBoxNode, pModelNode, patt);
+}
+
+void cWorkstation::filterPatternChanged(const QString& s)
+{
+    QString place_name = pUi->comboBoxFilterPlace->currentText();
+    placeCurrentIndex(place_name, pUi->comboBoxFilterZone, pUi->comboBoxNode, pModelNode, s);
+}
+
 // Workstation (node) slots
 void cWorkstation::nodeCurrentIndex(int i)
 {
@@ -741,16 +780,15 @@ void cWorkstation::placeCurrentIndex(const QString& s)
 {
     if (lockSlot) return;
     withinSlot++;
-    qlonglong pid = placeCurrentIndex(s, pUi->comboBoxZone, pUi->comboBoxNode, pModelNode);
-    if (pid == NULL_ID) {   // Nincs kiválasztva hely ?
+    if (s.isEmpty()) {   // Nincs kiválasztva hely ?
         pPlace->clear();
         states.nodePlace = IS_EMPTY;
     }
     else {
-        pPlace->setById(*pq, pid);
+        pPlace->setByName(*pq, s);
         states.nodePlace = IS_OK;
     }
-    pWorkstation->setId(_sPlaceId, pid);
+    pWorkstation->setId(_sPlaceId, pPlace->getId());
     if (pUi->checkBoxPlaceEqu->isChecked())   linkToglePlaceEqu(true, true);    // Elsődleges
     if (pUi->checkBoxPlaceEqu_2->isChecked()) linkToglePlaceEqu(true, false);   // Mésodlagos
     withinSlot--;

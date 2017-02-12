@@ -172,6 +172,8 @@ enum eSqlNeed {
     SN_SQL_TRY
 };
 
+EXT_ bool checkDbVersion(QSqlQuery& q, QString& msg);
+
 class LV2SHARED_EXPORT lanView  : public QObject {
 #ifdef MUST_USIGNAL
     friend void unixSignalHandler(int __i);

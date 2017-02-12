@@ -1263,9 +1263,9 @@ protected:
 public:
     cNode(const QString& __name, const QString& __note);
 //  cNode& operator=(const cNode& __o);
-    // virtual void clearToEnd();
+    virtual void clearToEnd();
     // virtual void toEnd();
-    // virtual bool toEnd(int i);
+    virtual bool toEnd(int i);
     /// A cPatch::insert(QSqlQuery &__q, eEx __ex) hívása elött beállítja a
     /// node_type értékét, ha az NULL.
     virtual bool insert(QSqlQuery &__q, enum eEx __ex = EX_ERROR);

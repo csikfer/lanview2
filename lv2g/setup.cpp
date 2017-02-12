@@ -306,11 +306,18 @@ QSqlDatabase * cSetupWidget::SqlOpen()
     pDb->setUserName(   pUi->sqlUserLE->text());
     pDb->setPassword(   pUi->sqlPassLE->text());
     pDb->setDatabaseName(pUi->dbNameLE->text());
+    QString msg;
     if (!pDb->open()) {
         QSqlError le = pDb->lastError();
-        QString msg = QString("SQL open ERROR #") + QString::number(le.number()) + "\n"
+        msg = QString("SQL open ERROR #") + QString::number(le.number()) + "\n"
                     + "driverText   : " + le.driverText() + "\n"
                     + "databaseText : " + le.databaseText();
+        QMessageBox::warning(this, design().titleError, msg);
+        delete pDb;
+        return NULL;
+    }
+    QSqlQuery q(*pDb);
+    if (!checkDbVersion(q, msg)) {
         QMessageBox::warning(this, design().titleError, msg);
         delete pDb;
         return NULL;

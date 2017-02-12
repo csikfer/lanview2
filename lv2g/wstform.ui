@@ -7,51 +7,113 @@
     <x>0</x>
     <y>0</y>
     <width>1154</width>
-    <height>812</height>
+    <height>841</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_3">
+  <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,0,0,0,0,1,0">
    <item>
-    <widget class="QGroupBox" name="groupBoxNewOrMod">
-     <property name="title">
-      <string/>
-     </property>
-     <widget class="QRadioButton" name="radioButtonNew">
-      <property name="geometry">
-       <rect>
-        <x>140</x>
-        <y>0</y>
-        <width>211</width>
-        <height>22</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Új munkaállomás felvétele</string>
-      </property>
-      <property name="checked">
-       <bool>true</bool>
-      </property>
-     </widget>
-     <widget class="QRadioButton" name="radioButtonMod">
-      <property name="enabled">
-       <bool>false</bool>
-      </property>
-      <property name="geometry">
-       <rect>
-        <x>360</x>
-        <y>0</y>
-        <width>411</width>
-        <height>22</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Regisztrált munkaállomás adatainak a módosítása</string>
-      </property>
-     </widget>
-    </widget>
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,1">
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_4">
+       <item>
+        <widget class="QLabel" name="labelNewMod">
+         <property name="text">
+          <string>Az űrlap funkciója :</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_5">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="radioButtonNew">
+         <property name="text">
+          <string>Új munkaállomás felvétele</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="radioButtonMod">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>Regisztrált munkaállomás adatainak a módosítása</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayoutFilter">
+       <item>
+        <widget class="QLabel" name="label_4">
+         <property name="text">
+          <string>Szűrők a minrta vagy modosítandó munkaálomás kiválasztásához :</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QFormLayout" name="formLayoutFilter">
+         <item row="0" column="0">
+          <widget class="QLabel" name="labelFilterZone">
+           <property name="text">
+            <string>Zóna :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QComboBox" name="comboBoxFilterZone">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="labelFilterPlace">
+           <property name="text">
+            <string>Hely, helyiség :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QComboBox" name="comboBoxFilterPlace">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="labelFilterPattern">
+           <property name="text">
+            <string>Név minta :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QLineEdit" name="lineEditFilterPattern"/>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </item>
+    </layout>
    </item>
    <item>
     <widget class="QSplitter" name="splitterWorkstation">
@@ -1316,10 +1378,25 @@
     </layout>
    </item>
   </layout>
+  <zorder>splitterWorkstation</zorder>
+  <zorder>line_2</zorder>
+  <zorder>splitterLink</zorder>
+  <zorder>line</zorder>
+  <zorder>textEditMsg</zorder>
+  <zorder>radioButtonNew</zorder>
+  <zorder>radioButtonMod</zorder>
+  <zorder>pushButtonCancel</zorder>
+  <zorder>comboBoxFilterZone</zorder>
+  <zorder>labelFilterZone</zorder>
+  <zorder>comboBoxFilterPlace</zorder>
+  <zorder>labelFilterPlace</zorder>
+  <zorder>labelFilterPattern</zorder>
+  <zorder>lineEditFilterPattern</zorder>
+  <zorder>label_4</zorder>
+  <zorder>labelNewMod</zorder>
+  <zorder>verticalSpacer_5</zorder>
  </widget>
  <tabstops>
-  <tabstop>radioButtonNew</tabstop>
-  <tabstop>radioButtonMod</tabstop>
   <tabstop>comboBoxNode</tabstop>
   <tabstop>lineEditName</tabstop>
   <tabstop>lineEditNote</tabstop>

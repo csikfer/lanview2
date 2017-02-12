@@ -1662,7 +1662,7 @@ void cPatch::clearToEnd()
 {
     ports.clear();
     params.clear();
-    if (pShares != NULL) clearShares();
+    clearShares();
     containerValid = 0;
 }
 
@@ -1675,9 +1675,11 @@ bool cPatch::toEnd(int i)
 {
     if (i == idIndex()) {
         if (atEndCont(ports, _sNodeId)) {
-            params.clear();
-            containerValid &= ~(CV_NODE_PARAMS | CV_PORTS);
-            if (pShares != NULL) clearShares();
+            containerValid &= ~CV_PORTS;
+            clearShares();
+        }
+        if (atEndCont(params, _sNodeId)) {
+            containerValid &= ~CV_NODE_PARAMS;
         }
         return true;
     }
@@ -2172,6 +2174,27 @@ cPPort *cNode::addPort(const QString&, const QString &, int)    { EXCEPTION(ENOT
 cPPort *cNode::addPorts(const QString&, int , int , int , int ) { EXCEPTION(ENOTSUPP); return NULL; }
 void cNode::insertPort(QSqlQuery&, int, const QString&, const QString&, const QString&) { EXCEPTION(ENOTSUPP); }
 void cNode::updateShared(QSqlQuery&, int, int, int, int, bool)  { EXCEPTION(ENOTSUPP); }
+
+void cNode::clearToEnd()
+{
+    ports.clear();
+    params.clear();
+    containerValid = 0;
+}
+
+bool cNode::toEnd(int i)
+{
+    if (i == idIndex()) {
+        if (atEndCont(ports, _sNodeId)) {
+            containerValid &= ~(CV_PORTS | CV_PORT_PARAMS | CV_PORT_VLANS);
+        }
+        if (atEndCont(params, _sNodeId)) {
+            containerValid &= ~CV_NODE_PARAMS;
+        }
+        return true;
+    }
+    return false;
+}
 
 
 CRECDEFNCD(cNode)

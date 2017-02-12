@@ -3,8 +3,11 @@
 #include "guidata.h"
 
 #define VERSION_MAJOR   0
-#define VERSION_MINOR   93
+#define VERSION_MINOR   94
 #define VERSION_STR     _STR(VERSION_MAJOR) "." _STR(VERSION_MINOR) "(" _STR(REVISION) ")"
+
+#define DB_VERSION_MAJOR 1
+#define DB_VERSION_MINOR 3
 
 // ****************************************************************************************************************
 int findArg(char __c, const char * __s, int argc, char * argv[])
@@ -319,6 +322,26 @@ lanView::~lanView()
     DBGFNL();
 }
 
+bool checkDbVersion(QSqlQuery& q, QString& msg)
+{
+    // A cSysParam objektumot nem használhatjuk !!
+    bool ok1, ok2;
+    int vmajor = (int)execSqlIntFunction(q, &ok1, "get_int_sys_param", "version_major");
+    int vminor = (int)execSqlIntFunction(q, &ok2, "get_int_sys_param", "version_minor");
+    if (!(ok1 && ok2)) {
+        msg = QObject::trUtf8("The database version numbers wrong format or missing");
+        DERR() << msg << endl;
+        return false;
+    }
+    if (DB_VERSION_MAJOR != vmajor || DB_VERSION_MINOR != vminor) {
+        msg = QObject::trUtf8("Incorrect database version. The expected version is "
+                             _STR(DB_VERSION_MAJOR) "." _STR(DB_VERSION_MINOR)
+                             "The current database version is %1.%2").arg(vmajor).arg(vminor);
+        DERR() << msg << endl;
+        return false;
+    }
+    return true;
+}
 
 bool lanView::openDatabase(eEx __ex)
 {
@@ -332,11 +355,17 @@ bool lanView::openDatabase(eEx __ex)
     pDb->setPassword(scramble(pSet->value(_sSqlPass).toString()));
     pDb->setDatabaseName(pSet->value(_sDbName).toString());
     bool r = pDb->open();
-    if (!r && __ex) // SQLOERR(*pDb);
+    if (!r && __ex != EX_IGNORE) // SQLOERR(*pDb);
     {
         QSqlError le = (*pDb).lastError();
         _sql_err_deb_(le, __FILE__, __LINE__, __PRETTY_FUNCTION__);
         EXCEPTION(ESQLOPEN, le.number(), le.text());
+    }
+    if (r) {
+        QSqlQuery q(*pDb);
+        QString msg;
+        r = checkDbVersion(q, msg);
+        if (!r && __ex != EX_IGNORE) EXCEPTION(ESQLOPEN, 0, msg);
     }
     if (!r) closeDatabase();
     return r;
