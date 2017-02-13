@@ -1320,7 +1320,8 @@ cPPort& cPPort::clone(const cRecord&__o)
 {
     copy(__o);  // Ellenörzi az adat típust (descriptor)
     if (typeid(__o) != typeid(cRecordAny)) {    // A cRecordAny -ban nincs konténer, nem konvertálható
-        params.clear().append(dynamic_cast<const cPPort *>(&__o)->params);
+        params.clear();
+        params.append(dynamic_cast<const cPPort *>(&__o)->params);
     }
     return *this;
 }
@@ -1345,9 +1346,6 @@ cInterface::cInterface(const cInterface& __o)
 //    DBGOBJ();
     __cp(__o);
     _copy(__o, _descr_cInterface());
-    params.append(__o.params);
-    vlans.append(__o.vlans);
-    addresses.append(__o.addresses);
     trunkMembers = __o.trunkMembers;
 }
 // -- virtual
@@ -1642,8 +1640,10 @@ cPatch& cPatch::clone(const cRecord &__o)
     if (typeid(cRecordAny) != typeid(__o)) {
         const cPatch& r = *dynamic_cast<const cPatch*>(&__o);
         containerValid = r.containerValid;
-        params.clear().append(r.params);
-        ports.clear().append(r.ports);
+        params.clear();
+        ports.clear();
+        params.append(r.params);
+        ports.append(r.ports);
         if (r.pShares == NULL) EXCEPTION(EPROGFAIL,0,__o.toString());
         *pShares = *r.pShares;
     }
@@ -2140,8 +2140,10 @@ cNode& cNode::clone(const cRecord &__o)
     set(__o);
     if (typeid(__o) != typeid(cRecordAny)) {
         const cNode& o = *dynamic_cast<const cNode*>(&__o);
-        ports.clear().append(o.ports);
-        params.clear().append(o.params);
+        ports.clear();
+        params.clear();
+        ports.append(o.ports);
+        params.append(o.params);
         bDelCollisionByMac = o.bDelCollisionByMac;
         bDelCollisionByIp  = o.bDelCollisionByIp;
         containerValid = o.containerValid;
@@ -2273,7 +2275,7 @@ int  cNode::fetchPorts(QSqlQuery& __q)
         ports << p;
     } while (__q.next());
     __q.finish();
-    containerValid |= CV_PORTS;
+    containerValid |= CV_PORTS | CV_PORT_VLANS;
     return ports.count();
 }
 
@@ -2902,8 +2904,10 @@ cSnmpDevice& cSnmpDevice::clone(const cRecord& __o)
     copy(__o);
     if (typeid(cRecordAny) != typeid(__o)) {
         const cSnmpDevice& o = *dynamic_cast<const cSnmpDevice*>(&__o);
-        ports.clear().append(o.ports);
-        params.clear().append(o.params);
+        ports.clear();
+        params.clear();
+        ports.append(o.ports);
+        params.append(o.params);
         bDelCollisionByMac = o.bDelCollisionByMac;
         bDelCollisionByIp  = o.bDelCollisionByIp;
         containerValid = o.containerValid;

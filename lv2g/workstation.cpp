@@ -367,18 +367,19 @@ static inline QString italic(const QString& text) {
 void cWorkstation::setMessage()
 {
     if (withinSlot != 0) return;
-    QString text;
+    QString errText;
+    QString infText;
     bool ok = true;
     switch (states.nodeName) {
     case IS_EMPTY:
         ok = false;
-        text += redBold(trUtf8("Nincs megadva a munkaállomás neve."));
+        errText += redBold(trUtf8("Nincs megadva a munkaállomás neve."));
         break;
     case IS_OK:
         break;
     case IS_COLLISION:
         ok = false;
-        text += redBold(trUtf8("A megadott munkaállomás név ütközik egy másikkal."));
+        errText += redBold(trUtf8("A megadott munkaállomás név ütközik egy másikkal."));
         break;
     case IS_INVALID:
         EXCEPTION(EPROGFAIL);
@@ -386,13 +387,13 @@ void cWorkstation::setMessage()
     }
     switch (states.serialNumber) {
     case IS_EMPTY:
-        text += trUtf8("Nincs megadva a munkaállomás széria száma.") + br;
+        errText += trUtf8("Nincs megadva a munkaállomás széria száma.") + br;
         break;
     case IS_OK:
         break;
     case IS_COLLISION:
         ok = false;
-        text += redBold(trUtf8("A megadott munkaállomás széria szám ütközik egy másikkal."));
+        errText += redBold(trUtf8("A megadott munkaállomás széria szám ütközik egy másikkal."));
         break;
     case IS_INVALID:
         EXCEPTION(EPROGFAIL);
@@ -400,83 +401,83 @@ void cWorkstation::setMessage()
     }
     switch (states.inventoraNumber) {
     case IS_EMPTY:
-        text += trUtf8("Nincs megadva a munkaállomás leltári száma.") + br;
+        errText += trUtf8("Nincs megadva a munkaállomás leltári száma.") + br;
         break;
     case IS_OK:
         break;
     case IS_COLLISION:
         ok = false;
-        text += redBold(trUtf8("A megadott munkaállomás leltári szám ütközik egy másikkal."));
+        errText += redBold(trUtf8("A megadott munkaállomás leltári szám ütközik egy másikkal."));
         break;
     default:
         EXCEPTION(EPROGFAIL);
         break;
     }
     if (states.nodePlace == IS_EMPTY) {
-        text += trUtf8("Nincs megadva a munkaállomás helye.") + br;
+        errText += trUtf8("Nincs megadva a munkaállomás helye.") + br;
     }
     if (states.portName == IS_EMPTY) {
         ok = false;
-        text += redBold(trUtf8("Nincs megadva a munkaállomás elsődleges interfészének a neve."));
+        errText += redBold(trUtf8("Nincs megadva a munkaállomás elsődleges interfészének a neve."));
     }
     switch (states.mac) {
     case IS_EMPTY:
-        text += trUtf8("Nincs megadva a munkaállomás elsődleges interfészének a MAC-je.") + br;
+        errText += trUtf8("Nincs megadva a munkaállomás elsődleges interfészének a MAC-je.") + br;
         break;
     case IS_OK:
         break;
     case IS_COLLISION:
         ok = false;
-        text += redBold(trUtf8("A megadott munkaállomás elsődleges interfész MAC ütközik egy másikkal."));
+        errText += redBold(trUtf8("A megadott munkaállomás elsődleges interfész MAC ütközik egy másikkal."));
         break;
     case IS_INVALID:
         ok = false;
-        text += redBold(trUtf8("A megadott munkaállomás elsődleges interfész MAC hibás."));
+        errText += redBold(trUtf8("A megadott munkaállomás elsődleges interfész MAC hibás."));
         break;
     }
     switch (states.ipAddr) {
     case IS_EMPTY:
         if (states.ipNeed) {
-            text += trUtf8("Nincs megadva az IP cím.") + br;
+            errText += trUtf8("Nincs megadva az IP cím.") + br;
         }
         break;
     case IS_OK:
         break;
     case IS_COLLISION:
         ok = false;
-        text += redBold(trUtf8("A megadott IP cím ütközik egy másikkal."));
+        errText += redBold(trUtf8("A megadott IP cím ütközik egy másikkal."));
         break;
     case IS_INVALID:
         ok = false;
-        text += redBold(trUtf8("A megadott IP cím hibás vagy hányos."));
+        errText += redBold(trUtf8("A megadott IP cím hibás vagy hányos."));
         break;
     case IS_LOOPBACK:
         ok = false;
-        text += redBold(trUtf8("A megadott IP cím egy loopback cím."));
+        errText += redBold(trUtf8("A megadott IP cím egy loopback cím."));
         break;
     case IS_EXTERNAL:
         ok = false;
-        text += redBold(trUtf8("Csak belső cím adható meg."));
+        errText += redBold(trUtf8("Csak belső cím adható meg."));
         break;
     default:
         EXCEPTION(EPROGFAIL);
         break;
     }
     if (states.subNetNeed && states.subNet == IS_EMPTY) {
-        text += trUtf8("Nincs megadva IP tartomány illetve VLAN.") + br;
+        errText += trUtf8("Nincs megadva IP tartomány illetve VLAN.") + br;
     }
     switch (states.port2Name) {
     case IS_EMPTY:
         if (states.port2Need) {
             ok = false;
-            text += redBold(trUtf8("Nincs megadva a másodlagos port neve."));
+            errText += redBold(trUtf8("Nincs megadva a másodlagos port neve."));
         }
         break;
     case IS_OK:
         break;
     case IS_COLLISION:
         ok = false;
-        text += redBold(trUtf8("A megadott a másodlagos port név nem lehet azonos az elsődlegessel."));
+        errText += redBold(trUtf8("A megadott a másodlagos port név nem lehet azonos az elsődlegessel."));
         break;
     default:
         EXCEPTION(EPROGFAIL);
@@ -485,22 +486,23 @@ void cWorkstation::setMessage()
     switch (states.mac2) {
     case IS_EMPTY:
         if (states.mac2need) {
-            text += trUtf8("Nincs megadva a munkaállomás második interfészének a MAC-je.") + br;
+            errText += trUtf8("Nincs megadva a munkaállomás második interfészének a MAC-je.") + br;
         }
         break;
     case IS_OK:
         break;
     case IS_COLLISION:
         ok = false;
-        text += redBold(trUtf8("A munkaállomás második interfészének a MAC-je ütközik egy másikkal."));
+        errText += redBold(trUtf8("A munkaállomás második interfészének a MAC-je ütközik egy másikkal."));
         break;
     case IS_INVALID:
         ok = false;
-        text += redBold(trUtf8("A munkaállomás második interfészének a MAC-je hibás."));
+        errText += redBold(trUtf8("A munkaállomás második interfészének a MAC-je hibás."));
         break;
     }
-    pUi->textEditMsg->setText(text);
+    pUi->textEditErr->setText(errText);
     pUi->pushButtonSave->setEnabled(ok);
+    pUi->textEditMsg->setText(infText);
 }
 
 void cWorkstation::parseObject()
@@ -611,6 +613,17 @@ void cWorkstation::parseObject()
     if (pIpAddress->isNull(_sAddress)) s = _sNul;
     else                               s = pIpAddress->getName(_sAddress);
     pUi->lineEditAddress->setText(s);                       // emit ipAddressChanged(s);
+    if (s.isEmpty()) {  // NULL cím esetén nics VLAN állítás!
+        qlonglong snid = pIpAddress->getId(_sSubNetId);
+        ix = 0;
+        if (snid != NULL_ID) {
+            ix = subnets.indexOf(snid);
+            if (ix < 0) EXCEPTION(EDATA,snid,trUtf8("Missing subnet ID"));
+            ix++;
+        }
+        subNetVLan(ix, -1);
+    }
+    pUi->lineEditIpNote->setText(pIpAddress->getNote());
 
     if (pPort2 == NULL) {
         pUi->comboBoxPType_2->setCurrentIndex(0);   // nincs port
@@ -626,6 +639,76 @@ void cWorkstation::parseObject()
     portTypeCurrentIndex2(0);
 
     withinSlot--;
+    setMessage();
+}
+
+void cWorkstation::subNetVLan(int sni, int vli)
+{
+    int ix;
+    cSubNet   *psn = NULL;
+    cVLan     *pvl = NULL;
+    qlonglong vlid = NULL_ID;
+    if (vli < 0) {                          // sni: SubNet index
+        if (sni < 0) EXCEPTION(EPROGFAIL);
+        if (sni == 0) {
+            states.subNet =  IS_EMPTY;
+            vli = 0;
+        }
+        else {
+            states.subNet = IS_OK;
+            ix = sni - 1;     // Első elem a comboBox-ban egy üres string
+            psn = subnets[ix];
+            vlid = psn->getId(_sVlanId);
+            if (vlid != NULL_ID) {
+                ix = vlans.indexOf(vlid);
+                if (ix >= 0) pvl = vlans[ix];
+                vli = ix +1;
+            }
+            else {
+                vli = 0;
+            }
+        }
+
+    }
+    else {                                  // lvi: VLan index
+        if (vli == 0) {
+            states.subNet =  IS_EMPTY;
+            sni = 0;
+        }
+        else {
+            states.subNet = IS_OK;
+            ix = vli - 1;     // Első elem a comboBox-ban egy üres string
+            pvl = vlans[ix];
+            qlonglong vlid = pvl->getId();
+            ix = subnets.indexOf(_sVlanId, vlid); // Elvileg több találat is lehet !!! Egyelőre nem foglakozunk vele...
+            if (ix >= 0) psn = subnets[ix];
+            vli = ix +1;
+        }
+    }
+    if (psn != NULL) {
+        pIpAddress->setId(_sSubNetId, psn->getId());
+    }
+    else {
+        pIpAddress->setId(_sSubNetId, NULL_ID);
+    }
+    if (pvl != NULL) {
+        if (pInterface->vlans.isEmpty()) {
+            pInterface->vlans << new cPortVlan();
+        }
+        cPortVlan& pv = *pInterface->vlans.first();
+        pv.setId(_sVlanId, pvl->getId());
+        pv.setId(_sVlanType, VT_HARD);
+        pv.setId(_sSetType, ST_MANUAL);
+    }
+    else {
+        pInterface->vlans.clear();
+    }
+    lockSlot = true;
+    /* lockSlot */ pUi->comboBoxSubNet->setCurrentIndex(sni);
+    /* lockSlot */ pUi->comboBoxSubNetAddr->setCurrentIndex(sni);
+    /* lockSlot */ pUi->comboBoxVLan->setCurrentIndex(vli);
+    /* lockSlot */ pUi->comboBoxVLanId->setCurrentIndex(vli);
+    lockSlot = false;
     setMessage();
 }
 
@@ -723,7 +806,7 @@ void cWorkstation::nodeCurrentIndex(int i)
     pIpAddress = NULL;
     pPort2     = NULL;
     pWorkstation->clone(*pSample);
-    pPlace->setById(pWorkstation->getId(_sPlaceId));
+    pPlace->fetchById(*pq, pWorkstation->getId(_sPlaceId));
     parseObject();
 }
 
@@ -896,20 +979,19 @@ void cWorkstation::ipAddressChanged(const QString& s)
                 cNode no;
                 if (no.fetchByIp(*pq, a, EX_IGNORE) && !(states.modify && pSample->getId() == no.getId())) {
                     states.ipAddr = IS_COLLISION;
-                }
-                else {
+                    ok = false;
                     cSubNet sn;
                     int ix = sn.getByAddress(*pq, a);
                     switch (ix) {  // Hány subnet-re illeszkedik a cím
                     case 0: // Nincs hozzá subnet
-                        states.ipAddr = IS_EXTERNAL;
+                        if (ok) states.ipAddr = IS_EXTERNAL;
                         break;
                     case 1: // 1 subnet, OK, belső cím
                         ix = pUi->comboBoxSubNet->findText(sn.getName());
                         if (ix < 0) EXCEPTION(EDATA);
-                        states.ipAddr = IS_OK;
+                        if (ok) states.ipAddr = IS_OK;
                         pIpAddress->setAddress(a);
-                        pUi->comboBoxSubNet->setCurrentIndex(ix);   // emit subNetCurrentIndex();
+                        subNetVLan(ix, -1);
                         break;
                     default:
                         if (ix > 0) {
@@ -927,7 +1009,7 @@ void cWorkstation::ipAddressChanged(const QString& s)
             }
         }
     }
-    bool f = states.ipAddr == IS_OK;    // Ha van IP cím, nem változtatható a subnet és a VLAN (ITT!! feltételezzük, hogy nincs átfedés a véan-ok között)
+    bool f = !s.isEmpty();
     pUi->comboBoxSubNet->setDisabled(f);
     pUi->comboBoxSubNetAddr->setDisabled(f);
     pUi->comboBoxVLan->setDisabled(f);
@@ -958,75 +1040,25 @@ void cWorkstation::ipAddressTypeCurrentIndex(const QString& s)
 void cWorkstation::subNetCurrentIndex(int i)
 {
     if (lockSlot) return;
-    // withinSlot++;
-    lockSlot = true;
-    /* lockSlot */ pUi->comboBoxSubNetAddr->setCurrentIndex(i);
-    lockSlot = false;
-    int ix = 0;
-    if ((i == 0)) {
-        states.subNet =  IS_EMPTY;
-        pIpAddress->clear(_sSubNetId);
-    }
-    else {
-        states.subNet = IS_OK;
-        ix = i - 1;     // Első elem a comboBox-ban egy öres string
-        cSubNet& sn = *subnets[ix];
-        qlonglong vlid = sn.getId(_sVlanId);
-        if (vlid != NULL_ID) {
-            cVLan vl;
-            vl.setById(*pq, vlid);
-            ix = pUi->comboBoxVLan->findText(vl.getName());
-            if (ix < 0) EXCEPTION(EDATA);
-        }
-        pIpAddress->setId(_sSubNetId, sn.getId());
-    }
-    // withinSlot++;
-    lockSlot = true;
-    /* lockSlot */ pUi->comboBoxVLan->setCurrentIndex(ix);
-    /* lockSlot */ pUi->comboBoxVLanId->setCurrentIndex(ix);
-    lockSlot = false;
-    // withinSlot--;
-    setMessage();
+    subNetVLan(i, -1);
 }
 
 void cWorkstation::subNetAddrCurrentIndex(int i)
 {
     if (lockSlot) return;
-    // withinSlot++;
-    pUi->comboBoxSubNet->setCurrentIndex(i);
-    // withinSlot--;
+    subNetVLan(i, -1);
 }
 
 void cWorkstation::vLanCurrentIndex(int i)
 {
     if (lockSlot) return;
-    withinSlot++;
-    int ix = 0;
-    if (i != 0) {
-        ix = i - 1;
-        cVLan&   vl = *vlans[ix];
-        cSubNet sn;
-        ix = sn.toIndex(_sVlanId);
-        sn.setId(ix, vl.getId());
-        if (sn.fetch(*pq, false, _bit(ix))) {   // Elvileg lehet tobb találat, de most nem foglakozunk vele!!!!
-            ix = pUi->comboBoxSubNet->findText(sn.getName());
-            if (ix < 0) EXCEPTION(EDATA);
-        }
-        else {
-            ix = 0;
-        }
-    }
-    pUi->comboBoxSubNet->setCurrentIndex(ix);
-    withinSlot--;
-    setMessage();
+    subNetVLan(-1, i);
 }
 
 void cWorkstation::vLanIdCurrentIndex(int i)
 {
     if (lockSlot) return;
-    // withinSlot++;
-    pUi->comboBoxVLan->setCurrentIndex(i);
-    // withinSlot--;
+    subNetVLan(-1, i);
 }
 
 // LINK 1 slots

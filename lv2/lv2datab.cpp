@@ -2770,14 +2770,14 @@ cRecord& cRecord::set()
 {
     return _set(descr());
     clearToEnd();
-    cleared();
+    emit cleared();
 }
 
 cRecord& cRecord::clear()
 {
     _clear();
     clearToEnd();
-    cleared();
+    emit cleared();
     return *this;
 }
 

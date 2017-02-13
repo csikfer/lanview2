@@ -102,7 +102,7 @@ private:
     void linkToglePlaceEqu(bool f, bool primary);
     void setMessage();
     void parseObject();
-
+    void subNetVLan(int sni, int vli);
 protected slots:
     void togleNewMod(bool f);
     void save();

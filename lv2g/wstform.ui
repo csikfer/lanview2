@@ -13,11 +13,11 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,0,0,0,0,1,0">
+  <layout class="QVBoxLayout" name="verticalLayout_6" stretch="1,1,0,1,0,100,0">
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,1">
      <item>
-      <layout class="QVBoxLayout" name="verticalLayout_4">
+      <layout class="QVBoxLayout" name="verticalLayout_4" stretch="0,1,0,0">
        <item>
         <widget class="QLabel" name="labelNewMod">
          <property name="text">
@@ -1320,10 +1320,75 @@
     </widget>
    </item>
    <item>
-    <widget class="QTextEdit" name="textEditMsg">
-     <property name="readOnly">
-      <bool>true</bool>
+    <widget class="QSplitter" name="splitter">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
      </property>
+     <widget class="QWidget" name="">
+      <layout class="QVBoxLayout" name="verticalLayout_5">
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <item>
+          <widget class="QLabel" name="labelErr">
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">QLabel { color : red; }</string>
+           </property>
+           <property name="text">
+            <string>Hibaüzenetek</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="labelWarn">
+           <property name="text">
+            <string>, figyelmeztetések :</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QTextEdit" name="textEditErr"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="">
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <widget class="QLabel" name="labelInf">
+         <property name="text">
+          <string>Információk :</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QTextEdit" name="textEditMsg">
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
    <item>
@@ -1378,23 +1443,6 @@
     </layout>
    </item>
   </layout>
-  <zorder>splitterWorkstation</zorder>
-  <zorder>line_2</zorder>
-  <zorder>splitterLink</zorder>
-  <zorder>line</zorder>
-  <zorder>textEditMsg</zorder>
-  <zorder>radioButtonNew</zorder>
-  <zorder>radioButtonMod</zorder>
-  <zorder>pushButtonCancel</zorder>
-  <zorder>comboBoxFilterZone</zorder>
-  <zorder>labelFilterZone</zorder>
-  <zorder>comboBoxFilterPlace</zorder>
-  <zorder>labelFilterPlace</zorder>
-  <zorder>labelFilterPattern</zorder>
-  <zorder>lineEditFilterPattern</zorder>
-  <zorder>label_4</zorder>
-  <zorder>labelNewMod</zorder>
-  <zorder>verticalSpacer_5</zorder>
  </widget>
  <tabstops>
   <tabstop>comboBoxNode</tabstop>

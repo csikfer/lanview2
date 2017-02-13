@@ -1275,7 +1275,8 @@ public:
     virtual bool rewrite(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     virtual bool rewriteById(QSqlQuery &__q, enum eEx __ex = EX_ERROR);
     /// Kitölti a ports adattagot, hiba esetén dob egy kizárást.
-    /// Ha a port típusa cInterface, akkor az IP címeket is.
+    /// Ha a port típusa cInterface, akkor az IP címeket és vlan-okat is.
+    /// A port paramétereket nem tölti be!
     virtual int  fetchPorts(QSqlQuery& __q);
     /// A név alapján visszaadja a rekord ID-t, az objektum értéke nem változik.
     /// Ha a node típusban be lett állítva a host bit, akkor ha nincs találat a névre, akkor

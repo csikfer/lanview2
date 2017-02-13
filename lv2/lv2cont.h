@@ -159,6 +159,8 @@ public:
     }
     /// Copy operátor.
     /// Nem támogatott. Helyettesíthető a clear().append(__o) hívással.
+    /// @note A tOwnRecords osztálynál a clear().append(__o); forma használata hibás,
+    /// mert a tRecordList::append() lesz meghívva a tOwnRecords::append() helyett!
     /// Volt belőle komoly gond, inkább nem kell.
     tRecordList& operator=(const tRecordList& __o)
     {
@@ -584,8 +586,9 @@ public:
     tOwnRecords(O *__po) : tRecordList<C>(), ixOwnerId(C().descr().ixToOwner()), pOwner(__po) {
         if (pOwner == NULL) EXCEPTION(EPROGFAIL);
     }
-    /// Konstruktor
+    /// Konstruktor (cpy konstruktor helyett)
     tOwnRecords(O *__po, const tOwnRecords& __c) : tRecordList<C>(), ixOwnerId(C().descr().ixToOwner()), pOwner(__po) {
+        if (pOwner == NULL) EXCEPTION(EPROGFAIL);
         append(__c);
     }
     /// Copy konstruktor. Nem támogatott
