@@ -961,10 +961,10 @@ void cWorkstation::ipAddressChanged(const QString& s)
             bool ok = !a.isNull();
             // PDEB(VERBOSE) << s << " -> " << a.toString() << " / " << DBOOL(a.isNull()) << ", " << DBOOL(loopback) << endl;
             if (ok) {
+                static const QRegExp pattern("\\d+\\.\\d+\\.\\d+\\.\\d+");
                 QAbstractSocket::NetworkLayerProtocol prot = a.protocol();
                 switch (prot) {
                 case QAbstractSocket::IPv4Protocol: // A Qt engedékenyebb a cím megadásnál mint szeretném
-                    static const QRegExp pattern("\\d+\\.\\d+\\.\\d+\\.\\d+");
                     ok = pattern.exactMatch(s);
                     break;
                 case QAbstractSocket::IPv6Protocol:

@@ -23,6 +23,7 @@
 #include <QtCore>
 #include <QtNetwork>
 #include <QSqlRecord>
+#include <QProcess>
 
 /*! @file lv2types.h
   Az LV2-ben használlt néhény alap adat típus, osztály, ill. makró definíciója.
