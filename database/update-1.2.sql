@@ -14,7 +14,7 @@ CREATE OR REPLACE VIEW patchable_ports AS
         port_index,
         deleted
     FROM nports JOIN iftypes USING(iftype_id)
-        WHERE iftype_link_type IN ('ptp', 'bus');
+        WHERE iftype_link_type IN ('ptp', 'bus', 'patch');
 
 ALTER TABLE patchs ADD COLUMN inventory_number text DEFAULT NULL;
 ALTER TABLE patchs ADD COLUMN serial_number    text DEFAULT NULL;

@@ -1,12 +1,6 @@
 ﻿#ifndef LV2DATAB_H
 #define LV2DATAB_H
-#include "lv2_global.h"
-#include "strings.h"
-#include "cdebug.h"
-#include "cerror.h"
-#include "lv2types.h"
-#include "lv2sql.h"
-#include "others.h"
+#include "lanview.h"
 #include <typeinfo>
 
 /*!
@@ -69,6 +63,17 @@ EXT_ qlonglong tableoid(QSqlQuery q, const QString& __t, qlonglong __sid = NULL_
 /// @return A first adattag a tábla neve, a second pedig a séma név.
 EXT_ QStringPair tableoid2name(QSqlQuery q, qlonglong toid);
 
+/// @def CHKENUM
+/// @brief Egy enumerációs típus konverziós függvényeinek az ellenörzése.
+///
+/// Makró, a chkEnum() hívására egy cRecord leszármazot egy metódusában, tipikusan a statikus rekord leíró inicializálása után.
+/// A rekord leíró objektum példányra mutató pointer neve _pRecordDescr.
+/// A makró feltételezi, hogy a két konverziós függvény neve azonos, és csak a típusuk különböző (tE2S és tS2E)
+/// Ha az enumeráció kezelés a hívás szerint hibás, akkor dob egy kizárást.
+/// @param n Az enumeráció típusú mező neve, vagy indexe
+/// @param f A konverziós függvény(ek) neve. A két függvény azonos nevű, de más típusú.
+#define CHKENUM(n, f)   (*_pRecordDescr)[n].checkEnum( f, f, __FILE__, __LINE__,__PRETTY_FUNCTION__);
+
 /// Az enumerációs típus (int) stringgé konvertáló függvény pointerének a típusa.
 typedef const QString& (*tE2S)(int e, eEx __ex);
 /// A stringet enumerációs típussá (int) konvertáló függvény pointerének a típusa.
@@ -77,7 +82,7 @@ typedef int (*tS2E)(const QString& n, eEx __ex);
 /// @enum eReasons
 /// @brief Okok ill. műveletek eredményei
 enum eReasons {
-    R_INVALID = -1, ///< Csak hiba jelzésre
+    REASON_INVALID = -1,
     R_NEW     =  0, ///< Új elem
     R_INSERT,       ///< Új elem beszúrása/beszúrva.
     R_REMOVE,       ///< Elem eltávolítása/eltávolítva

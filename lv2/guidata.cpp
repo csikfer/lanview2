@@ -1,5 +1,6 @@
-#include "guidata.h"
 
+#include "guidata.h"
+#include "lv2user.h"
 
 int tableShapeType(const QString& n, enum eEx __ex)
 {
@@ -253,7 +254,7 @@ cTableShape& cTableShape::setShapeType(qlonglong __t)
     if (extraValues & __t) {   // extra érték (bit)?
         if (_fields.isEmpty()) cRecord::set();
         _fields[_ixTableShapeType] = set2lst(tableShapeType, __t, EX_IGNORE);
-        _stat |= ES_MODIFY | ES_INVALID;
+        _stat |= ES_MODIFY | ES_DEFECTIVE;
         // toEnd(__i);          // Feltételezzük, hogy most nem kell
         // fieldModified(__i);  // Feltételezzük, hogy most nem kell
         return *this;

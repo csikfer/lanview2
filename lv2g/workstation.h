@@ -4,6 +4,7 @@
 #include <QWidget>
 #include "lv2g.h"
 #include "lv2models.h"
+#include "lv2link.h"
 
 namespace Ui {
     class wstWidget;
@@ -16,7 +17,8 @@ enum {
     IS_COLLISION,   ///< Más értékkel ütközik
     IS_INVALID,     ///< Nem megengedett érték (értéktattományon kívül)
     IS_LOOPBACK,    ///< Egy loopback cím lett megadva.
-    IS_EXTERNAL
+    IS_EXTERNAL,
+    IS_IMPERFECT = IS_INVALID
 };
 
 class LV2GSHARED_EXPORT cWorkstation : public cOwnTab
@@ -29,13 +31,30 @@ private:
     /// A komboBox-okhoz legenerálja az állandó listákat.
     void initLists();
     /// A zónához tartozó helyek listáját adja vissza.
-    /// A mapZones tömb tartalmazza a listákat, ha a lista üres, akkor lekérdezi.
+    /// A mapZones tömb tartalmazza a listákat, ha a lista üres, akkor lekérdezi/feltölti.
     /// @param sZone A zóna neve
     const QStringList& placesInZone(const QString& sZone);
     int checkWrkCollision(int ix, const QString& s);
-    qlonglong placeCurrentIndex(const QString& sPlace, QComboBox *pComboBoxZone,
+    /// Beállítja a szűrési feltételeket a node-okra, a model-nem.
+    /// Ha a kiválasztott node az új listában is szerepel, akkor a pComboBoxNode
+    /// aktuális indexét erre állítja, ha nem akkor az első üres elemre.
+    /// A pComboBoxNode widget beállításakor a slot-ok le vannak tíltva (lockSlot = true).
+    /// A metüdusból való kilépéskor lockSlot értéke fals lessz (nem menti).
+    /// @param sPlace Az aktuális hely neve (vagy üres string, ha nincs kiválasztva egy sem)
+    /// @param sZone Az aktuális zóna neve
+    /// @param pComboBoxNode A node listát megjelenító comboBox Widget pointere.
+    /// @param pModel A node-ok lekérdezését végző (rekord) lista model
+    /// @param _patt Egy opcionális minta string, ha megadható a névre ls egy szűrő (LIKE)
+    /// @return a pComboBoxNode új aktuális indexe (0: nincs kiválasztva node)
+    int _placeCurrentIndex(const QString& sPlace, const QString& sZone,
                                 QComboBox *pComboBoxNode, cRecordListModel *pModel,
                                 const QString &_patt = QString());
+    int _linkNodeCurrentIndex(int i, cRecordListModel *pModelPort, QComboBox * pComboBoxPort,
+                                cPatch *pNode = NULL, cRecordAny *pPort = NULL,
+                                ePhsLinkType  *pLinkType = NULL, ePortShare *pLinkShared = NULL);
+    int _linkPortCurrentIndex(const QString& s,
+                                QButtonGroup * pLinkType, QComboBox *pComboBoxShare, eTristate _isPatch,
+                                cRecordAny *pPort = NULL, ePhsLinkType *pType = NULL, ePortShare *pShare = NULL);
     Ui::wstWidget   *pUi;
     QSqlQuery *pq;
     /// Kiválasztott workstation objektum (modosítandó eredetije vagy minta)
@@ -64,13 +83,16 @@ private:
         unsigned    mac2need:1;         // bool
         unsigned    mac2:2;             // EMPTY, OK, COLLISION, INVALID
         unsigned    modify:1;           // bool (false: new object, true: modify existing object)
-        unsigned    linkPossible:1;
-        unsigned    link:2;
+        unsigned    linkPossible:1;     // bool
+        unsigned    link:2;             // EMPTY, OK, COLLISION, IMPERFECT
         unsigned    link2Possible:1;
         unsigned    link2:2;
     }   states;
+    QString     linkCollisionsMsg;
+    QString     linkCollisionsMsg2;
 
     QMap<QString, QStringList>  mapZones;   ///< A zonákhoz tartozó hely nevek listái.
+    QList<qlonglong>            placeIdList;///< place_id -k listája, sorrend azonos mint a mapZones[_sAll] (összes hely név)-ben
     QStringList                 zones;      ///< A zónák listája sorrendben
     tRecordList<cSubNet>        subnets;
     QStringList                 subnetnamelist;
@@ -81,17 +103,17 @@ private:
 
     // A (fizikai) link:
     cPatch             *pLinkNode;
-    cNPort             *pLinkPrt;
-    qlonglong           linkType;
-    QString             linkShared;
+    cRecordAny         *pLinkPort;
+    ePhsLinkType        linkType;
+    ePortShare          linkShared;
     QButtonGroup *      pLinkButtonsLinkType;
     cRecordListModel   *pModelLinkNode;
     cRecordListModel   *pModelLinkPort;
     // A (fizikai) link2:
     cPatch             *pLinkNode2;
-    cNPort             *pLinkPrt2;
-    qlonglong           linkType2;
-    QString             linkShared2;
+    cRecordAny         *pLinkPort2;
+    ePhsLinkType        linkType2;
+    ePortShare          linkShared2;
     QButtonGroup *      pLinkButtonsLinkType2;
     cRecordListModel   *pModelLinkNode2;
     cRecordListModel   *pModelLinkPort2;
@@ -99,7 +121,7 @@ private:
     int                 withinSlot;
     bool                lockSlot;
     //
-    void linkToglePlaceEqu(bool f, bool primary);
+    void _linkToglePlaceEqu(bool f, bool primary);
     void setMessage();
     void parseObject();
     void subNetVLan(int sni, int vli);
@@ -129,15 +151,15 @@ protected slots:
     void vLanIdCurrentIndex(int i);
 
     void linkChangeLinkType(int id, bool f);
-    void linkToglePlaceEqu(bool f);
+    void _linkToglePlaceEqu(bool f);
     void linkZoneCurrentIndex(const QString& s);
     void linkPlaceCurrentIndex(const QString &s);
     void linkNodeCurrentIndex(int i);
-    void linkPortCurrentIndex(int i);
+    void linkPortCurrentIndex(const QString &s);
     void linkPortShareCurrentIndex(const QString &s);
 
     void portNameChanged2(const QString& s);
-    void portTypeCurrentIndex2(int i);
+    void portTypeCurrentIndex2(const QString &s);
     void macAddressChanged2(const QString& s);
 
     void linkChangeLinkType2(int id, bool f);

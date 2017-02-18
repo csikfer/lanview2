@@ -43,7 +43,7 @@ int cPhsLink::replace(QSqlQuery &__q, eEx __ex)
     cError *pe = NULL;
     bool tr = false;
     int r = 0;
-    eReasons reason = R_INVALID;
+    eReasons reason = REASON_INVALID;
     static const QString tn = "ReplacePhsLink";
     try {
         sqlBegin(__q, tn);

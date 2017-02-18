@@ -397,7 +397,7 @@ COMMENT ON TYPE settype IS
 'Egy paraméter megállapításának módja:
 auto    autómatikus
 query   lekérdező program töltötte ki
-cpnfig	Konfigurációs állományból importálva
+config	Konfigurációs állományból importálva
 manual  kézzel megadva';
 
 CREATE TABLE port_vlans (

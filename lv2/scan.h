@@ -11,6 +11,9 @@
 #ifdef MUST_SCAN
 #include "lv2xml.h"
 
+class cArp;
+class cSnmpDevice;
+
 class LV2SHARED_EXPORT nmap : public processXml {
 public:
     /// A hívott nmap opciók:

@@ -1,5 +1,8 @@
 #ifndef CMUNIN_H
 #define CMUNIN_H
+#include "lanview.h"
+#include "lv2data.h"
+#include "srvdata.h"
 #include "lv2service.h"
 
 

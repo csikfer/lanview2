@@ -2,7 +2,6 @@
 #define FINDBYMAC_H
 
 #include <QWidget>
-#include "lv2g.h"
 
 #include "lv2g.h"
 namespace Ui {

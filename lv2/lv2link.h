@@ -4,7 +4,7 @@
 
 /// Fizikai link típusa
 enum ePhsLinkType {
-    LT_INVALID = -1,    ///< Csak hibajelzésre
+    LT_INVALID = ENUM_INVALID,
     LT_FRONT   = 0,     ///< Patch oanel, fali csatlakozü előlapi/külső link
     LT_BACK,            ///< Patch oanel, fali csatlakozü játlapi/belső link
     LT_TERM             ///< Hálózati elem/végpont linkje
@@ -49,7 +49,15 @@ public:
     /// @param __id A port ID, amihez a link trtozik.
     /// @return a törölt rekordok száma
     int unlink(QSqlQuery &q, qlonglong __pid, ePhsLinkType __t = LT_INVALID, ePortShare __s = ES_NC) const;
-    bool isExist(QSqlQuery &q, qlonglong __pid, ePhsLinkType __t, ePortShare __s);
+    /// Lekérdezi, hogy a megadott porthoz létezik-e fizikai link rekord.
+    /// Ha a kereset link rekord létezik, akkor feltölti az objektumot a rekord alapján,
+    /// ha nem, akkor az objektum tartalma nem változik.
+    /// @param q Az SQL lekérdezéshez használt objektum.
+    /// @param __pid A port ID-je
+    /// @param __t A link típusa
+    /// @param __s Az esetleges megosztás típusa
+    /// @return False, ha nincs találat, true, ha van és betöltötte a talált rekordot.
+    bool isExist(QSqlQuery &q, qlonglong __pid, ePhsLinkType __t, ePortShare __s = ES_);
     bool addIfCollision(QSqlQuery &q, tRecordList<cPhsLink>& list, qlonglong __pid, ePhsLinkType __t, ePortShare __s = ES_NC);
     int collisions(QSqlQuery& __q, tRecordList<cPhsLink> &list, qlonglong __pid, ePhsLinkType __t, ePortShare __s);
     /// Ütközö linkek törlése

@@ -5,6 +5,7 @@
 #include <QVariant>
 #include <QMap>
 #include <QBitArray>
+#include <QFile>
 
 static inline bool isNumNull(const QVariant v)
 {
@@ -239,6 +240,11 @@ template <class C, class T> T avarage(C c) {
 static inline QString indentSp(int n) { return QString(n * INDENT_SIZE, QChar(' ')); }
 
 QString hrmlFrame(const QString &title, const QString& body);
+
+
+/// Paraméter név
+EXT_ QString getParName(QString::const_iterator& i, const QString::const_iterator& e, bool _point = true, enum eEx __ex = EX_ERROR);
+
 
 #endif // OTHERS_H
 

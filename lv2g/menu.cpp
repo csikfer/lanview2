@@ -1,4 +1,7 @@
 #include "menu.h"
+#include "record_table.h"
+#include "record_tree.h"
+#include "onlinealarm.h"
 #include "setup.h"
 #include "gsetupwidget.h"
 #include "gparse.h"

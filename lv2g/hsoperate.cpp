@@ -1,4 +1,5 @@
 #include "hsoperate.h"
+#include "srvdata.h"
 
 const enum ePrivilegeLevel cHSOperate::rights = PL_OPERATOR;
 

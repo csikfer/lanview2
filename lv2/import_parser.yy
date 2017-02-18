@@ -209,7 +209,7 @@ static cTemplateMapMap  templates;
 static qlonglong        actVlanId = -1;
 static QString          actVlanName;
 static QString          actVlanNote;
-static enum eSubNetType netType = NT_INVALID; // firstSubNet = ;
+static int              netType = ENUM_INVALID; // firstSubNet = ;
 static cPatch *         pPatch = NULL;
 static cImage *         pImage = NULL;
 static cPlace *         pPlace = NULL;
@@ -380,7 +380,7 @@ void initImportParser()
     globalPlaceId = NULL_ID;
     globalSuperiorId = NULL_ID;
     actVlanId = -1;
-    netType = NT_INVALID; // firstSubNet = ;
+    netType = ENUM_INVALID; // firstSubNet = ;
     alertServiceId = NULL_ID;
 
     pDelete(pImportLastError);
@@ -480,12 +480,12 @@ static inline QVariantList& varray(const QString& n){
 }
 
 static inline const QString& nextNetType() {
-    enum eSubNetType r = netType;
+    int r = netType;
     switch (r) {
     case NT_PRIMARY:    netType = NT_SECONDARY;      break;
     case NT_SECONDARY:  break;
     case NT_PRIVATE:
-    case NT_PSEUDO:     netType = NT_INVALID;        break;
+    case NT_PSEUDO:     netType = ENUM_INVALID;        break;
     default:            yyerror(QObject::trUtf8("Compiler error."));
     }
     return subNetType(r);
@@ -2008,9 +2008,9 @@ vlan    : VLAN_T int str str_z      {
                                     }
             '{' subnets '}'         { actVlanId = -1; }
         | PRIVATE_T SUBNET_T        { actVlanId = -1; netType = NT_PRIVATE; }
-          subnet                    { netType = NT_INVALID; }
+          subnet                    { netType = ENUM_INVALID; }
         | PSEUDO_T  SUBNET_T        { actVlanId = -1; netType = NT_PSEUDO;  }
-          subnet                    { netType = NT_INVALID; }
+          subnet                    { netType = ENUM_INVALID; }
         ;
 subnets : subnet                    { actVlanName.clear(); actVlanNote.clear(); }
         | subnets subnet

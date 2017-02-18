@@ -4,10 +4,6 @@
 #include "lv2data.h"
 #include "lv2cont.h"
 
-/// Paraméter név
-EXT_ QString getParName(QString::const_iterator& i, const QString::const_iterator& e, bool _point = true, enum eEx __ex = EX_ERROR);
-
-
 /// @class cIpProtocol
 class LV2SHARED_EXPORT cIpProtocol : public cRecord {
     CRECORD(cIpProtocol);
@@ -74,7 +70,6 @@ public:
 };
 
 enum eNoalarmType {
-    NAT_INVALID = -1,
     NAT_OFF     =  0,
     NAT_ON,
     NAT_TO,
@@ -219,7 +214,6 @@ public:
 
 /* ---------------------------------------------------------------- */
 enum eUserEventType {
-    UE_INVALID = -1,
     UE_NOTICE,
     UE_VIEW,
     UE_ACKNOWLEDGE,
@@ -325,7 +319,6 @@ public:
 
 /* ---------------------------------------------------------------- */
 enum eExecState {
-    ES_INVALID = -1,
     ES_WAIT    =  0,
     ES_EXECUTE,
     ES_OK,

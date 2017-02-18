@@ -42,22 +42,10 @@ EXT_ const QString& notifSwitch(int _ns, enum eEx __ex = EX_ERROR);
 /// numerikus értékké.
 EXT_ int notifSwitch(const QString& _nm, enum eEx __ex = EX_ERROR);
 
-/// @def CHKENUM
-/// @brief Egy enumerációs típus konverziós függvényeinek az ellenörzése.
-///
-/// Makró, a chkEnum() hívására egy cRecord leszármazot egy metódusában, pl. a statikus rekord leíró inicializálása után.
-/// A rekord leíró objektum példányra mutató pointer neve _pRecordDescr.
-/// A makró feltételezi, hogy a két konverziós függvény neve azonos, és csak a típusuk különböző (tE2S és tS2E)
-/// Ha az enumeráció kezelés a hívás szerint hibás, akkor dob egy kizárást.
-/// @param n Az enumeráció típusú mező neve, vagy indexe
-/// @param f A konverziós függvény(ek) neve. A két függvény azonos nevű, de más típusú.
-#define CHKENUM(n, f)   (*_pRecordDescr)[n].checkEnum( f, f, __FILE__, __LINE__,__PRETTY_FUNCTION__);
-
 /* -------------------- Enum, enum - string konverziók -------------------- */
 /// @enum eSubNetType
 /// @brief SubNet típusok
 enum eSubNetType {
-    NT_INVALID = -1,    ///< Csak hiba jelzésre
     NT_PRIMARY =  0,    ///< Elsődleges IP tartomány
     NT_SECONDARY,       ///< Másodlagos tartomány azonos fizikai hálózaton
     NT_PSEUDO,          ///< Nem valós tartomány
@@ -66,7 +54,7 @@ enum eSubNetType {
 
 /// Cím tartomány típus stringgel (az adatbázísban a típust reprezentáló értékkel) tér vissza, a megadott konstans alapján.
 /// @param __at A típus konstans.
-/// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást. (NT_INVALID esetén is).
+/// @param __ex Ha nem megengedett értékkel hívjuk és értéke true, akkor dob egy kizárást.
 /// @return A típus string, ha nem megengedett konstanssal hívtuk, és __ex false volt, akkor a NULL string.
 EXT_ const QString& subNetType(int __at, enum eEx __ex = EX_ERROR);
 /// Cím típus konstanssal tér vissza, a megadott típus név alapján
@@ -75,7 +63,6 @@ EXT_ int subNetType(const QString& __at, enum eEx __ex = EX_ERROR);
 /// @enum eAddressType
 /// @brief Ip cím típusok
 enum eAddressType {
-    AT_INVALID = -1,    ///< Csak hiba jelzésre
     AT_FIXIP   =  0,    ///< Egyedi fix IP cím
     AT_PRIVATE,         ///< Csak lokálisan használt valós cím, ütközhet bármilyen egyébb IP címmel.
     AT_EXTERNAL,        ///< Külső cím (fix cím, de nincs hozzá subnet
@@ -96,7 +83,6 @@ EXT_ int addrType(const QString& __at, enum eEx __ex = EX_ERROR);
 
 /// Port - VLAN összerendelés típusa
 enum eVlanType {
-    VT_INVALID = -1,    ///< Csak hiba jelzésre
     VT_NO      =  0,    ///< Nincs összerendelés
     VT_NOTKNOWN,        ///< Ismeretlen
     VT_FORBIDDEN,       ///< Tiltott
@@ -121,7 +107,6 @@ EXT_ const QString& vlanType(int __e, enum eEx __ex = EX_ERROR);
 
 /// Port - VLAN összerendelés forrása
 enum eSetType  {
-    ST_INVALID = -1,    ///< Csak hiba jelzésre
     ST_AUTO,            ///< automatikus
     ST_QUERY,           ///< Egy lekérdezés eredménye
     ST_CONFIG,          ///< Konfig import
@@ -141,7 +126,6 @@ EXT_ const QString& setType(int __e, enum eEx __ex = EX_ERROR);
 
 /// Image types
 enum eImageType {
-    IT_INVALID = -1,    ///< Csak hiba jelzésre
     IT_BMP,             ///< Windows bit map
     IT_GIF,             ///< GIF
     IT_JPG,             ///< Jpeg
@@ -174,7 +158,6 @@ EXT_ const char *    _imageType(int __e, enum eEx __ex = EX_ERROR);
 /// @enum eParamType
 /// Paraméter adattípus konstansok
 enum eParamType {
-    PT_INVALID = -1,        ///< Nem valós típus, csak hibajelzésre
     PT_BOOLEAN,             ///< boolean típus
     PT_BIGINT,              ///< 8bype egész szám
     PT_DOUBLE_PRECISION,    ///< duplapontosságú lebegőpontos szám
@@ -201,7 +184,6 @@ EXT_ const QString& paramTypeType(int __e, enum eEx __ex = EX_ERROR);
 /// @enum eNodeType
 /// Hálózati elemek típus azonosítók (set)
 enum eNodeType {
-    // NT_INVALID = -1,
     NT_PATCH  = 0,
     NT_NODE,
     NT_HOST,
@@ -470,7 +452,6 @@ public:
 #define ROOT_PLACE_ID     1LL
 
 enum ePlaceGroupType {
-    PG_INVALID = -1,
     PG_GROUP,
     PG_CATEGORY,
     PG_ZONE
@@ -643,6 +624,29 @@ protected:
 // / Port paraméter értékek listája
 // typedef tOwnParams<cPortParam> cPortParams;
 /* ------------------------------------------------------------------------ */
+
+/// A port típus a link alapján
+enum eLinkType {
+    LT_PTP = 0,         ///< Point to point /pecselhető
+    LT_BUS,             ///< BUS (egyenlőre ugyanúgy kezeljük mint a ptp -t)
+    LT_PATCH,           ///< Patch port Frot<-->Back / pecselhető az előlap és a hátlap is
+    LT_LOGICAL,         ///< Nincs link / nem pecselhető
+    LT_WIRELESS,        ///< Nincs link / nem pecselhető
+    LT_UNKNOWN          ///< Nincs link / nem pecselhető
+};
+
+EXT_ int linkType(const QString& __n, eEx __ex);
+EXT_ const QString&  linkType(int __e, eEx __ex);
+
+enum ePortObjType {
+    PO_NPORT = 0,
+    PO_PPORT,
+    PO_INTERFACE,
+    PO_UNKNOWN
+};
+
+EXT_ int portObjeType(const QString& __n, eEx __ex);
+EXT_ const QString&  portObjeType(int __e, eEx __ex);
 
 class LV2SHARED_EXPORT cIfType : public cRecord {
     CRECORD(cIfType);
@@ -913,7 +917,6 @@ class LV2SHARED_EXPORT cInterface : public cNPort {
 public:
     /// Interfész állapotok
     typedef enum {
-        PS_INVALID = -1,    ///< Csak hibajelzésre
         UP,                 ///< SNMP interfész státusz up
         DOWN,               ///< SNMP interfész státusz down
         TESTING,            ///< SNMP interfész státusz teszt

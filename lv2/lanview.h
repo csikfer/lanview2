@@ -7,19 +7,19 @@
 @brief Az API init objektuma
 */
 
-#include "lv2_global.h"
 #include <signal.h>
+
+#include "lv2_global.h"
+#include "strings.h"
 #include "cdebug.h"
 #include "cerror.h"
-#include "usignal.h"
-#include "qsnmp.h"
-#include "lv2sql.h"
 #include "lv2types.h"
-#include "srvdata.h"
-#include "lv2user.h"
-#include "lv2daterr.h"
+#include "others.h"
+#include "lv2sql.h"
+#include "usignal.h"
+#include "lv2datab.h"
+#include "qsnmp.h"
 #include "lv2xml.h"
-#include "scan.h"
 
 
 #define ORGNAME     "LanView"
@@ -54,6 +54,8 @@ static inline QString langFileName(const QString& an, const QString& ln)
     return ls;
 }
 
+#define ENUM_INVALID    -1
+
 enum eIPV6Pol {
     IPV6_UNKNOWN = -1,
     IPV6_IGNORED =  0,
@@ -66,6 +68,15 @@ enum eIPV4Pol {
     IPV4_IGNORED =  0,
     IPV4_PERMISSIVE,
     IPV4_STRICT
+};
+
+enum ePrivilegeLevel {
+    PL_NONE,     ///< Nincs jogosultsága
+    PL_VIEWER,   ///<
+    PL_INDALARM, ///< Riasztások, riasztások nyugtázása
+    PL_OPERATOR,
+    PL_ADMIN,
+    PL_SYSTEM
 };
 
 /*!
@@ -173,6 +184,12 @@ enum eSqlNeed {
 };
 
 EXT_ bool checkDbVersion(QSqlQuery& q, QString& msg);
+
+class cUser;
+class cNode;
+class cService;
+class cHostService;
+class cInspector;
 
 class LV2SHARED_EXPORT lanView  : public QObject {
 #ifdef MUST_USIGNAL
@@ -313,14 +330,11 @@ public:
     static const cService& selfService()     {const cService*p = getInstance()->pSelfService;     if (p == NULL) EXCEPTION(EPROGFAIL); return *p; }
     static cHostService&   selfHostService() { cHostService *p = getInstance()->pSelfHostService; if (p == NULL) EXCEPTION(EPROGFAIL); return *p; }
     /// Ellenörzi az aktuális felhasználó jogosultsági szintjét
-    static bool isAuthorized(enum ePrivilegeLevel pl) {
-        enum ePrivilegeLevel act = user().privilegeLevel();
-        return act  >= pl;
-    }
+    static bool isAuthorized(enum ePrivilegeLevel pl);
     /// Ellenörzi az aktuális felhasználó jogosultsági szintjét
-    static bool isAuthorized(qlonglong pl) { return pl > PL_INVALID && isAuthorized((enum ePrivilegeLevel) pl); }
+    static bool isAuthorized(qlonglong pl) { return pl > ENUM_INVALID && isAuthorized((enum ePrivilegeLevel) pl); }
     /// Ellenörzi az aktuális felhasználó jogosultsági szintjét
-    static bool isAuthorized(const QString& pl) { return isAuthorized((enum ePrivilegeLevel)privilegeLevel(pl)); }
+    static bool isAuthorized(const QString& pl);
     /// Az api könynvtér által gyorstárazott adatokat újra tülti,
     static void resetCacheData();
     /// A könyvtár neve, statikus konstans string, a LIBNAME makró által definiált: "lv2lib"

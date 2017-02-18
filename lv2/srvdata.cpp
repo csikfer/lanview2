@@ -1,32 +1,9 @@
+#include "lanview.h"
+#include "lv2data.h"
 #include "srvdata.h"
 #include "lv2service.h"
 #include "import_parser.h"
 #include "guidata.h"
-
-QString getParName(QString::const_iterator& i, const QString::const_iterator& e, bool _point, eEx __ex)
-{
-    QString r;
-    if (i == e) return r;
-    if (*i == QChar('{')) {
-        for (++i; i != e && *i != QChar('}'); ++i) r += *i;
-        if (i == e) {
-            if (__ex) EXCEPTION(EDATA);
-            return _sNul;
-        }
-        ++i;
-        return r;
-    }
-    for (; i != e; ++i) {
-        QChar c = *i;
-        if (c.isLetterOrNumber() || c == QChar('_') || (_point && c == QChar('.'))) {
-            r += c;
-        }
-        else {
-            break;
-        }
-    }
-    return r;
-}
 
 /* ******************************  ****************************** */
 DEFAULTCRECDEF(cIpProtocol, _sIpProtocols)
@@ -175,7 +152,7 @@ int noalarmtype(const QString& _n, enum eEx __ex)
     if (0 == _n.compare(_sFrom,   Qt::CaseInsensitive)) return NAT_FROM;
     if (0 == _n.compare(_sFromTo, Qt::CaseInsensitive)) return NAT_FROM_TO;
     if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, 0, _n);
-    return NAT_INVALID;
+    return ENUM_INVALID;
 }
 
 const QString& noalarmtype(int _e, enum eEx __ex)
@@ -495,7 +472,7 @@ int userEventType(const QString& _n, eEx __ex)
     if (0 == _n.compare(_sSendmessage, Qt::CaseInsensitive)) return UE_SENDMESSAGE;
     if (0 == _n.compare(_sSendmail,    Qt::CaseInsensitive)) return UE_SENDMAIL;
     if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, 0, _n);
-    return UE_INVALID;
+    return ENUM_INVALID;
 }
 
 const QString& userEventType(int _i, eEx __ex)
@@ -518,7 +495,7 @@ int userEventState(const QString& _n, eEx __ex)
     if (0 == _n.compare(_sHappened,    Qt::CaseInsensitive)) return UE_HAPPENED;
     if (0 == _n.compare(_sDropped,     Qt::CaseInsensitive)) return UE_DROPPED;
     if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, 0, _n);
-    return UE_INVALID;
+    return ENUM_INVALID;
 }
 
 const QString& userEventState(int _i, eEx __ex)

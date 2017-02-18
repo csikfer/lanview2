@@ -130,7 +130,7 @@ cDeviceArp::~cDeviceArp()
 enum eNotifSwitch cDeviceArp::run(QSqlQuery& q)
 {
     _DBGFN() << QChar(' ') << name() << endl;
-    int setType = ST_INVALID;
+    int setType = ENUM_INVALID;
     cArpTable at;
     if (*pPSSnmp == protoService()) {
         setType = ST_QUERY;     // SNMP lekérdezés:

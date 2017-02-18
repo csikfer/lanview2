@@ -1,8 +1,7 @@
+#include <time.h>
 #include "lanview.h"
-#include "lv2data.h"
-//#include "scan.h"
 #include "lv2service.h"
-#include "time.h"
+#include "scan.h"
 
 #define THREADMAXINITTIME 200000
 #define THREADMAXDWENTIME 200000

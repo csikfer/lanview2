@@ -6,7 +6,7 @@ int varAggregateType(const QString& _n, eEx __ex)
     if (0 == _n.compare(_sMIN,     Qt::CaseInsensitive)) return VAT_MIN;
     if (0 == _n.compare(_sMAX,     Qt::CaseInsensitive)) return VAT_MAX;
     if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, -1, _n);
-    return VAT_INVALID;
+    return ENUM_INVALID;
 }
 
 const QString& varAggregateType(int _i, eEx __ex)
@@ -28,7 +28,7 @@ int serviceVarType(const QString& _n, eEx __ex)
     if (0 == _n.compare(_sABSOLUTE, Qt::CaseInsensitive)) return SVT_ABSOLUTE;
     if (0 == _n.compare(_sCOMPUTE,  Qt::CaseInsensitive)) return SVT_COMPUTE;
     if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, -1, _n);
-    return SVT_INVALID;
+    return ENUM_INVALID;
 }
 
 const QString& serviceVarType(int _i, eEx __ex)
@@ -52,7 +52,7 @@ int varDrawType(const QString& _n, eEx __ex)
     if (0 == _n.compare(_sSTACK, Qt::CaseInsensitive)) return VDT_STACK;
     if (0 == _n.compare(_sNONE,  Qt::CaseInsensitive)) return VDT_NONE;
     if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, -1, _n);
-    return SVT_INVALID;
+    return ENUM_INVALID;
 }
 
 const QString& varDrawType(int _i, eEx __ex)

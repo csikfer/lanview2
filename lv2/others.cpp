@@ -207,3 +207,29 @@ QString hrmlFrame(const QString& title, const QString& body)
             "</html>\n";
     return frame.arg(title, body);
 }
+
+
+QString getParName(QString::const_iterator& i, const QString::const_iterator& e, bool _point, eEx __ex)
+{
+    QString r;
+    if (i == e) return r;
+    if (*i == QChar('{')) {
+        for (++i; i != e && *i != QChar('}'); ++i) r += *i;
+        if (i == e) {
+            if (__ex) EXCEPTION(EDATA);
+            return _sNul;
+        }
+        ++i;
+        return r;
+    }
+    for (; i != e; ++i) {
+        QChar c = *i;
+        if (c.isLetterOrNumber() || c == QChar('_') || (_point && c == QChar('.'))) {
+            r += c;
+        }
+        else {
+            break;
+        }
+    }
+    return r;
+}

@@ -11,7 +11,7 @@ int privilegeLevel(const QString& n, eEx __ex)
     if (0 == n.compare(_sSystem,   Qt::CaseInsensitive)) return PL_SYSTEM;
     if (EX_IGNORE != __ex) EXCEPTION(EDATA, -1, n);
     if (n.isEmpty()) return PL_NONE;
-    return PL_INVALID;
+    return ENUM_INVALID;
 }
 
 const QString& privilegeLevel(int e, eEx __ex)
@@ -46,7 +46,7 @@ CRECDDCR(cUser, _sUsers)
 cUser::cUser() : cRecord()
 {
     _set(cUser::descr());
-    _privilegeLevel = PL_INVALID;
+    _privilegeLevel = ENUM_INVALID;
 }
 
 cUser::cUser(const cUser& __o) : cRecord()
@@ -106,15 +106,15 @@ enum ePrivilegeLevel cUser::getRights(QSqlQuery& q)
     QString sql = "SELECT MAX(group_rights) FROM group_users JOIN groups USING(group_id) WHERE user_id = ?";
     if (!execSql(q, sql, get(idIndex()))) EXCEPTION(EDATA, 0, trUtf8("Nem azonosítható a felhasználói ID, vagy név"));
     _privilegeLevel = (enum ePrivilegeLevel)::privilegeLevel(q.value(0).toString(), EX_IGNORE);
-    return _privilegeLevel;
+    return (ePrivilegeLevel)_privilegeLevel;
 }
 
 enum ePrivilegeLevel cUser::privilegeLevel() const
 {
-    if (_privilegeLevel == PL_INVALID) {
+    if (_privilegeLevel == ENUM_INVALID) {
         QSqlQuery q = getQuery();
         return const_cast<cUser *>(this)->getRights(q);
     }
-    return _privilegeLevel;
+    return (ePrivilegeLevel)_privilegeLevel;
 }
 

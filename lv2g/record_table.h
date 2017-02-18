@@ -1,9 +1,11 @@
 #ifndef RECORD_TABLE_H
 #define RECORD_TABLE_H
 
+#include    <QModelIndex>
+
+#include    "lv2g.h"
 #include    "record_dialog.h"
 #include    "record_table_model.h"
-#include    <QModelIndex>
 
 #if defined(LV2G_LIBRARY)
 #include    "ui_column_filter.h"

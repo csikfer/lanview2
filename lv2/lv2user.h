@@ -1,16 +1,7 @@
 #ifndef LV2USER_H
 #define LV2USER_H
-#include "lv2datab.h"
+#include "lv2data.h"
 
-enum ePrivilegeLevel {
-    PL_INVALID = -1, ///< Csak hibajelzésre
-    PL_NONE,     ///< Nincs jogosultsága
-    PL_VIEWER,   ///<
-    PL_INDALARM, ///< Riasztások, riasztások nyugtázása
-    PL_OPERATOR,
-    PL_ADMIN,
-    PL_SYSTEM
-};
 
 EXT_ int privilegeLevel(const QString& n, enum eEx __ex = EX_ERROR);
 EXT_ const QString& privilegeLevel(int e, enum eEx __ex = EX_ERROR);
@@ -90,7 +81,7 @@ public:
     QString fullName() { return trUtf8("%2 %1").arg(getName(_sFirstName), getName(_sLastName)); }
 protected:
     ///
-    enum ePrivilegeLevel    _privilegeLevel;
+    int    _privilegeLevel;
 };
 
 /// @typedef cGroupUser

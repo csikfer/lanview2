@@ -1,5 +1,6 @@
 #ifndef LV2CONT_H
 #define LV2CONT_H
+#include <typeinfo>
 
 /*!
 @file lv2cont.h

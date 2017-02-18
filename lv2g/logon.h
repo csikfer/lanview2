@@ -2,6 +2,7 @@
 #define LOGON
 
 #include "lv2g.h"
+#include "lv2user.h"
 #include "ui_logindialog.h"
 
 enum eLogOnResult {

@@ -1,6 +1,11 @@
 #include "lanview.h"
+#include "lv2data.h"
+#include "srvdata.h"
+#include "lv2daterr.h"
+#include "lv2user.h"
 #include "lv2service.h"
 #include "guidata.h"
+
 
 #define VERSION_MAJOR   0
 #define VERSION_MINOR   94
@@ -736,6 +741,19 @@ qlonglong lanView::getUserId(eEx __ex)
     }
     return instance->pUser->getId();
 }
+
+bool lanView::isAuthorized(enum ePrivilegeLevel pl)
+{
+    enum ePrivilegeLevel act = user().privilegeLevel();
+    return act  >= pl;
+}
+
+bool lanView::isAuthorized(const QString& pl)
+{
+    return isAuthorized((enum ePrivilegeLevel)privilegeLevel(pl));
+}
+
+
 
 void lanView::resetCacheData()
 {

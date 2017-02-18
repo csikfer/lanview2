@@ -2,6 +2,7 @@
 #define GPARSE_H
 
 #include "lv2g.h"
+#include "import_parser.h"
 
 #include "lv2g.h"
 #if defined(LV2G_LIBRARY)
@@ -11,7 +12,6 @@ namespace Ui {
     class GParseWidget;
 }
 #endif
-
 
 class  LV2GSHARED_EXPORT cParseWidget : public cOwnTab
 {

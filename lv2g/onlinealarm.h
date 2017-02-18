@@ -2,6 +2,8 @@
 #define CONLINEALARM_H
 
 #include "lv2g.h"
+#include "srvdata.h"
+#include "lv2user.h"
 #include "record_table.h"
 #include "QSound"
 

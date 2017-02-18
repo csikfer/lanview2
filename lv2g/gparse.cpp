@@ -1,4 +1,5 @@
 #include "gparse.h"
+#include "srvdata.h"
 #include "import_parser.h"
 #include "cerrormessagebox.h"
 

@@ -1,11 +1,9 @@
 #ifndef MENU_H
 #define MENU_H
 
-#include "lv2g.h"
-#include "record_table.h"
-#include "record_tree.h"
 #include <QMainWindow>
-#include "onlinealarm.h"
+
+#include "lv2g.h"
 
 enum eMenuActionType {
     MAT_ERROR,          ///< Az objektum inicializálása sikertelen
@@ -29,6 +27,8 @@ enum eOwnTab {          /// Egyedi GUI tab widget elemek
     OWN_WORKSTATION     /// Új munkaállomás, vagy modosítás űrlap
 
 };
+
+class cRecordsViewBase;
 
 /// @class cMenuAction
 /// A menu pontok funkcióit megvalósító objektum.

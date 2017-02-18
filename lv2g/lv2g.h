@@ -56,6 +56,7 @@ A könyvtár a következő osztályokat valósítja meg:\n
 #define __MODUL_NAME__  LV2G
 #undef ERCODES_H_DECLARE
 #include "errcodes.h"
+#include "lv2data.h"
 #include "guidata.h"
 #include <QtWidgets>
 

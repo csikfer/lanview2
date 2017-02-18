@@ -1,9 +1,10 @@
+#include <algorithm>
 #include "lanview.h"
 #include "lv2data.h"
+#include "srvdata.h"
+#include "lv2user.h"
 #include "scan.h"
 // #include "lv2service.h"
-#include "others.h"
-#include <algorithm>
 
 
 const QString& notifSwitch(int _ns, eEx __ex)
@@ -54,7 +55,7 @@ int reasons(const QString& _r, eEx __ex)
     if (0 == _r.compare(_sError,    Qt::CaseInsensitive)) return R_ERROR;
     if (0 == _r.compare(_sAmbiguous,Qt::CaseInsensitive)) return R_AMBIGUOUS;
     if (__ex != EX_IGNORE) EXCEPTION(EDATA, -1, _r);
-    return R_INVALID;
+    return ENUM_INVALID;
 }
 
 const QString& reasons(int _r, eEx __ex)
@@ -97,7 +98,7 @@ int paramTypeType(const QString& __n, eEx __ex)
     if (0 == __n.compare(_sINet,      Qt::CaseInsensitive))         return PT_INET;
     if (0 == __n.compare(_sByteA,     Qt::CaseInsensitive))         return PT_BYTEA;
     if (__ex != EX_IGNORE)  EXCEPTION(EDATA, -1, __n);
-    return PT_INVALID;
+    return ENUM_INVALID;
 }
 
 const QString& paramTypeType(int __e, eEx __ex)
@@ -219,7 +220,7 @@ QString cParamType::paramToString(eParamType __t, const QVariant& __v, eEx __ex)
                 ok = true;
             }
         }
-        case PT_INVALID:
+        default:
             EXCEPTION(ENOTSUPP, __t);
         }
     }
@@ -463,7 +464,7 @@ int imageType(const QString& __n, eEx __ex)
     if (__n == _sXPM) return IT_XPM;
     if (__n == _sBIN) return IT_BIN;
     if (__ex) EXCEPTION(EDATA, -1, __n);
-    return IT_INVALID;
+    return ENUM_INVALID;
 }
 
 const QString&  imageType(int __e, eEx __ex)
@@ -534,7 +535,7 @@ int placeGroupType(const QString& s, eEx __ex)
     if (0 == s.compare(_sCategory, Qt::CaseInsensitive)) return PG_CATEGORY;
     if (0 == s.compare(_sZone,     Qt::CaseInsensitive)) return PG_ZONE;
     if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, -1, s);
-    return PG_INVALID;
+    return ENUM_INVALID;
 }
 
 CRECCNTR(cPlaceGroup)
@@ -642,7 +643,7 @@ int subNetType(const QString& __at, eEx __ex)
     if (__at == _sPseudo)   return NT_PSEUDO;
     if (__at == _sPrivate)  return NT_PRIVATE;
     if (__ex) EXCEPTION(EDATA,-1,__at);
-    return NT_INVALID;
+    return ENUM_INVALID;
 }
 
 /* ------------------------------ vlans ------------------------------ */
@@ -810,7 +811,7 @@ int addrType(const QString& __at, eEx __ex)
     if (__at == _sPrivate) return AT_PRIVATE;
     if (__at == _sExternal)return AT_EXTERNAL;
     if (__ex) EXCEPTION(EDATA, -1, __at);
-    return AT_INVALID;
+    return ENUM_INVALID;
 }
 
 /* ******************************  ****************************** */
@@ -861,7 +862,67 @@ void    cPortParam::clearToEnd()
 
 
 /* ------------------------------ cIfType ------------------------------ */
-DEFAULTCRECDEF(cIfType, _sIfTypes)
+
+
+int linkType(const QString& __n, eEx __ex)
+{
+    if (0 == _sPTP.     compare(__n, Qt::CaseInsensitive)) return LT_PTP;
+    if (0 == _sBus.     compare(__n, Qt::CaseInsensitive)) return LT_BUS;
+    if (0 == _sPatch.   compare(__n, Qt::CaseInsensitive)) return LT_PATCH;
+    if (0 == _sLogical. compare(__n, Qt::CaseInsensitive)) return LT_LOGICAL;
+    if (0 == _sWireless.compare(__n, Qt::CaseInsensitive)) return LT_WIRELESS;
+    if (0 == _sUnknown. compare(__n, Qt::CaseInsensitive)) return LT_UNKNOWN;
+    if (__ex) EXCEPTION(EDATA, -1, __n);
+    return ENUM_INVALID;
+}
+
+const QString&  linkType(int __e, eEx __ex)
+{
+    switch (__e) {
+    case LT_PTP:        return _sPTP;
+    case LT_BUS:        return _sBus;
+    case LT_PATCH:      return _sPatch;
+    case LT_LOGICAL:    return _sLogical;
+    case LT_WIRELESS:   return _sWireless;
+    case LT_UNKNOWN:    return _sUnknown;
+    default:  if (__ex) EXCEPTION(EDATA, __e);
+    }
+    return _sNul;
+}
+
+int portObjeType(const QString& __n, eEx __ex)
+{
+    if (0 == _sNPort.    compare(__n, Qt::CaseInsensitive)) return PO_NPORT;
+    if (0 == _sPPort.    compare(__n, Qt::CaseInsensitive)) return PO_PPORT;
+    if (0 == _sInterface.compare(__n, Qt::CaseInsensitive)) return PO_INTERFACE;
+    if (0 == _sUnknown.  compare(__n, Qt::CaseInsensitive)) return PO_UNKNOWN;
+    if (__ex) EXCEPTION(EDATA, -1, __n);
+    return ENUM_INVALID;
+}
+
+const QString&  portObjeType(int __e, eEx __ex)
+{
+    switch (__e) {
+    case PO_NPORT:      return _sNPort;
+    case PO_PPORT:      return _sPPort;
+    case PO_INTERFACE:  return _sInterface;
+    case PO_UNKNOWN:    return _sUnknown;
+    default:  if (__ex) EXCEPTION(EDATA, __e);
+    }
+    return _sNul;
+}
+
+
+CRECCNTR(cIfType) CRECDEFD(cIfType)
+
+const cRecStaticDescr&  cIfType::descr() const
+{
+    if (initPDescr<cIfType>(_sIfTypes)) {
+        CHKENUM(_sIfTypeLinkType, linkType);
+        CHKENUM(_sIfTypeObjType, portObjeType);
+    }
+    return *_pRecordDescr;
+}
 
 tRecordList<cIfType> cIfType::ifTypes;
 cIfType *cIfType::pNull = NULL;
@@ -1268,7 +1329,7 @@ bool portLessThanByName(const cNPort * pp1, const cNPort * pp2)
      if (0 == _n.compare(_sD,   Qt::CaseInsensitive)) return ES_D;
      if (0 == _n.compare(_sNC,  Qt::CaseInsensitive)) return ES_NC;
      if (__ex) EXCEPTION(EDATA, -1, _n);
-     return ES_INVALID;
+     return ENUM_INVALID;
  }
 
 const QString& portShare(int _i, eEx __ex)
@@ -1553,7 +1614,7 @@ int ifStatus(const QString& _n, enum eEx __ex)
     if (0 == _n.compare(_sBroken,         Qt::CaseInsensitive)) return cInterface::IA_BROKEN;
     if (0 == _n.compare(_sError,          Qt::CaseInsensitive)) return cInterface::IA_ERROR;
     if (__ex) EXCEPTION(EDATA, -1, _n);
-    return cInterface::PS_INVALID;
+    return ENUM_INVALID;
 }
 
 const QString& ifStatus(int _i, enum eEx __ex)
@@ -2083,7 +2144,7 @@ int nodeType(const QString& __n, eEx __ex)
     if (0 == __n.compare(_sController,  Qt::CaseInsensitive)) return NT_CONTROLLER;
     if (0 == __n.compare(_sUps,         Qt::CaseInsensitive)) return NT_UPS;
     if (__ex != EX_IGNORE)   EXCEPTION(EDATA, -1, __n);
-    return NT_INVALID;
+    return ENUM_INVALID;
 }
 
 const QString& nodeType(int __e, eEx __ex)
@@ -3045,7 +3106,7 @@ int execState(const QString& _n, enum eEx __ex)
     if (0 == _n.compare(_sFaile,    Qt::CaseInsensitive)) return ES_FAILE;
     if (0 == _n.compare(_sAborted,  Qt::CaseInsensitive)) return ES_ABORTED;
     if (__ex) EXCEPTION(EDATA, -1, _n);
-    return ES_INVALID;
+    return ENUM_INVALID;
 }
 
 const QString& execState(int _e, enum eEx __ex)
@@ -3129,7 +3190,7 @@ int vlanType(const QString& __n, eEx __ex)
     if (0 == __n.compare(_sVirtual,   Qt::CaseInsensitive)) return VT_VIRTUAL;
     if (0 == __n.compare(_sHard,      Qt::CaseInsensitive)) return VT_HARD;
     if (__ex) EXCEPTION(EDATA, -1, __n);
-    return VT_INVALID;
+    return ENUM_INVALID;
 }
 
 const QString& vlanType(int __e, eEx __ex)
@@ -3156,7 +3217,7 @@ int  setType(const QString& __n, eEx __ex)
     if (0 == __n.compare(_sConfig, Qt::CaseInsensitive)) return ST_CONFIG;
     if (0 == __n.compare(_sManual, Qt::CaseInsensitive)) return ST_MANUAL;
     if (__ex) EXCEPTION(EDATA, -1, __n);
-    return ST_INVALID;
+    return ENUM_INVALID;
 }
 
 const QString& setType(int __e, eEx __ex)

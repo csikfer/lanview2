@@ -1,11 +1,12 @@
 #ifndef LV2SERVICE_H
 #define LV2SERVICE_H
 
-#include "lv2_global.h"
+#include <QTimer>
+
 #include "lanview.h"
 #include "lv2data.h"
+#include "srvdata.h"
 #include "others.h"
-#include <QTimer>
 
 /*// Várakozási állapot
 enum eTmStat {

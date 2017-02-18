@@ -1,4 +1,5 @@
 #include "setnoalarm.h"
+#include "srvdata.h"
 
 const enum ePrivilegeLevel cSetNoAlarm::rights = PL_OPERATOR;
 

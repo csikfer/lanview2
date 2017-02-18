@@ -1,5 +1,9 @@
 #include "scan.h"
 #ifdef MUST_SCAN
+#
+
+#include "lv2data.h"
+#include "srvdata.h"
 #include "lv2link.h"
 
 nmap::nmap(const netAddress& net, int opt, QObject *parent) : processXml(parent), host()

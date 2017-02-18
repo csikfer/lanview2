@@ -1,8 +1,9 @@
-#include "guidata.h"
 #include "record_table.h"
+#include "lv2user.h"
 #include "record_tree.h"
 #include "record_link.h"
 #include "cerrormessagebox.h"
+
 
 
 Ui::noRightsForm * noRightsSetup(QWidget *_pWidget, qlonglong _need, const QString& _obj, const QString& _html)

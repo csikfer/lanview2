@@ -7,7 +7,7 @@ A megjelenítéssel kapcsolatos adattáblákat kezelő objektumok.
 */
 
 #include "lanview.h"
-#include "lv2datab.h"
+#include "lv2cont.h"
 
 /// @enum eTableShapeType
 /// Tábla Shape típusok (set)
