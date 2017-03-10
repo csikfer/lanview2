@@ -3,6 +3,7 @@
 
 #include "lv2data.h"
 #include "lv2user.h"
+#include "srvdata.h"
 
 enum eImportParserStat {
     IPS_READY,

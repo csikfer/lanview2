@@ -1,5 +1,7 @@
 #include "record_table.h"
 #include "ui_no_rights.h"
+#include "QRegExp"
+#include "lv2validator.h"
 
 
 /* ************************************************************************************************* */
@@ -548,3 +550,529 @@ void cRecordDialogInh::restore(cRecord *_pRec)
     };
 }
 
+/* ************************************************************************* */
+
+cRecord * insertRecordDialog(QSqlQuery& q, const QString& sn, QWidget *pPar)
+{
+    cTableShape shape;
+    shape.setByName(q, sn);
+    shape.fetchFields(q);
+    // A dialógusban megjelenítendő nyomógombok.
+    int buttons = enum2set(DBT_OK, DBT_CANCEL);
+    cRecordDialog   rd(shape, buttons, true, NULL, NULL, pPar);  // A rekord szerkesztő dialógus
+    while (true) {
+        int r = rd.exec(false);
+        if (r == DBT_CANCEL) return NULL;
+        if (!rd.accept()) continue;
+        if (!cErrorMessageBox::condMsgBox(rd.record().tryInsert(q, true))) continue;
+        break;
+    }
+    rd.close();
+    return rd.record().dup();
+}
+
+/* ************************************************************************* */
+
+cPPortTableLine::cPPortTableLine(int r, cInsertPatchDialog *par)
+{
+    parent = par;
+    tableWidget = par->pUi->tableWidgetPorts;
+    row    = r;
+    sharedPortRow = -1;
+    comboBoxShare  = new QComboBox();
+    for (int i = ES_; i <= ES_NC; ++i) comboBoxShare->addItem(portShare(i));
+    tableWidget->setCellWidget(row, CPP_SH_TYPE, comboBoxShare);
+    comboBoxPortIx = new QComboBox();
+    tableWidget->setCellWidget(row, CPP_SH_IX, comboBoxPortIx);
+
+    connect(comboBoxShare,  SIGNAL(currentIndexChanged(int)), this, SLOT(changeShared(int)));
+    connect(comboBoxPortIx, SIGNAL(currentIndexChanged(int)), this, SLOT(changePortIx(int)));
+}
+
+void cPPortTableLine::changeShared(int _sh)
+{
+    (void)_sh;
+    if (parent->lockSlot) return;
+    parent->updateSharedIndexs();
+}
+
+void cPPortTableLine::changePortIx(int ix)
+{
+    if (parent->lockSlot) return;
+    if (ix == 0) sharedPortRow = -1;
+    else {
+        int i = ix -1;
+        if (!isContIx(listPortIxRow, i)) EXCEPTION(EDATA, ix);
+        sharedPortRow = listPortIxRow[i];
+    }
+    parent->updateSharedIndexs();
+}
+
+QString cInsertPatchDialog::sPortRefForm;
+
+cInsertPatchDialog::cInsertPatchDialog(QWidget *parent)
+    : QDialog(parent)
+    , pUi(new Ui::patchSimpleDialog)
+{
+    pq = newQuery();
+    if (sPortRefForm.isEmpty()) sPortRefForm = trUtf8("#%1 (%2/%3)");
+    zoneNames = cPlaceGroup::getAllZones(*pq, &zoneIds);
+    pUi->setupUi(this);
+    pModelPlace = new cRecordListModel(cPlace::_descr_cPlace());
+    pModelPlace->nullable = true;
+    sPlaceFilterSQL = "is_group_place(place_id, %1)";
+    pUi->comboBoxZone->addItems(zoneNames);
+    pUi->comboBoxZone->setCurrentIndex(0);
+    QString sql = QString(sPlaceFilterSQL).arg(ALL_PLACE_GROUP_ID);
+    pModelPlace->setFilter(QVariant(), OT_ASC, FT_NO);
+    pUi->comboBoxPlace->setModel(pModelPlace);
+    pUi->comboBoxPlace->setCurrentIndex(0);
+    pUi->buttonBox->button(QDialogButtonBox::Ok)->setDisabled(true);
+    cIntValidator *intValidator = new cIntValidator(false);
+    pUi->tableWidgetPorts->setItemDelegateForColumn(CPP_INDEX, new cItemDelegateValidator(intValidator));
+
+    connect(pUi->lineEditName,      SIGNAL(textChanged(QString)),       this, SLOT(changeName(QString)));
+    connect(pUi->comboBoxZone,      SIGNAL(currentIndexChanged(int)),   this, SLOT(changeFilterZone(int)));
+    connect(pUi->toolButtonNewPlace,SIGNAL(pressed()),                  this, SLOT(newPlace()));
+    connect(pUi->spinBoxFrom,       SIGNAL(valueChanged(int)),          this, SLOT(changeFrom(int)));
+    connect(pUi->spinBoxTo,         SIGNAL(valueChanged(int)),          this, SLOT(changeTo(int)));
+    connect(pUi->pushButtonAddPorts,SIGNAL(pressed()),                  this, SLOT(addPorts()));
+    connect(pUi->tableWidgetPorts,  SIGNAL(cellActivated(int,int)),     this, SLOT(cellActivated(int,int)));
+    connect(pUi->tableWidgetPorts,  SIGNAL(cellChanged(int,int)),       this, SLOT(cellChanged(int, int)));
+    connect(pUi->tableWidgetPorts->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
+            this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
+    connect(pUi->pushButtonDelPort, SIGNAL(pressed()),                  this, SLOT(delPorts()));
+    connect(pUi->pushButtonPort1,   SIGNAL(pressed()),                  this, SLOT(set1port()));
+    connect(pUi->pushButtonPort2,   SIGNAL(pressed()),                  this, SLOT(set2port()));
+    connect(pUi->pushButtonPort2Shared, SIGNAL(pressed()),              this, SLOT(set2sharedPort()));
+    shOk = pNamesOk = pIxOk = true;
+    lockSlot = false;
+}
+
+cInsertPatchDialog::~cInsertPatchDialog()
+{
+    delete pq;
+}
+
+cPatch * cInsertPatchDialog::getPatch()
+{
+    cPatch *p = new cPatch();
+    p->setName(pUi->lineEditName->text());
+    p->setNote(pUi->lineEditNote->text());
+    int i = pUi->comboBoxPlace->currentIndex();
+    if (i > 0) p->setId(_sPlaceId, pModelPlace->atId(i));
+    int n = pUi->tableWidgetPorts->rowCount();
+    for (i = 0; i < n; i++) {
+        cPPort *pp = new cPPort();
+        pp->setName(             getText(pUi->tableWidgetPorts, i, CPP_NAME));
+        pp->setNote(             getText(pUi->tableWidgetPorts, i, CPP_NOTE));
+        pp->setName(_sPortTag,   getText(pUi->tableWidgetPorts, i, CPP_TAG));
+        pp->setName(_sPortIndex, getText(pUi->tableWidgetPorts, i, CPP_INDEX));
+        p->ports << pp;
+    }
+    return p;
+}
+
+void cInsertPatchDialog::clearRows()
+{
+    while (!rowsData.isEmpty()) {
+        delete rowsData.takeLast();
+    }
+    pUi->tableWidgetPorts->clearContents();
+    pUi->tableWidgetPorts->setRowCount(0);
+    /*
+    int n1 = rowsData.size();
+    int n2 = pUi->tableWidgetPorts->rowCount();
+    if (n1 != n2) {
+        EXCEPTION(EPROGFAIL);
+    }
+    */
+}
+
+void cInsertPatchDialog::setRows(int rows)
+{
+    int i = pUi->tableWidgetPorts->rowCount();
+    if (i != rowsData.size()) EXCEPTION(EDATA);
+    if (i == rows) return;
+    if (i < rows) {
+        pUi->tableWidgetPorts->setRowCount(rows);
+        for (; i < rows; ++i) {
+            rowsData << new cPPortTableLine(i, this);
+        }
+    }
+    else {
+        while (rows < rowsData.size()) {
+            delete rowsData.takeLast();
+        }
+        pUi->tableWidgetPorts->setRowCount(rows);
+    }
+}
+
+void cInsertPatchDialog::setPortShare(int row, int sh)
+{
+    if (!isContIx(rowsData, row)) EXCEPTION(ENOINDEX, row);
+    rowsData[row]->comboBoxShare->setCurrentIndex(sh);
+}
+
+#define _LOCKSLOTS()    _lockSlotSave_ = lockSlot; lockSlot = true
+#define LOCKSLOTS()     bool _LOCKSLOTS()
+#define UNLOCKSLOTS()   lockSlot = _lockSlotSave_
+
+void cInsertPatchDialog::updateSharedIndexs()
+{
+    // Az összes elsödleges megosztás listája (sor indexek)
+    shPrimRows.clear();
+    foreach (cPPortTableLine *pRow, rowsData) {
+        int sh = pRow->comboBoxShare->currentIndex();          // megosztás típusa
+        if (sh == ES_A || sh == ES_AA) shPrimRows << pRow->row;// Ha elsődleges megosztás (amire hivatkozik a többi)
+    }
+    // MAP az elsődleges megosztásokra mutatók listái
+    shPrimMap.clear();
+    QList<int> secondIxs;
+    foreach (cPPortTableLine *pRow, rowsData) {
+        int sh = pRow->comboBoxShare->currentIndex();   // megosztás típusa
+        if (sh == ES_AB || sh == ES_B || sh == ES_BA || sh == ES_BB || sh == ES_C || sh ==  ES_D) {
+            int shrow = pRow->sharedPortRow;        // Mutató az elsődleges megosztott portra
+            if (shrow >= 0 && !shPrimRows.contains(shrow)) {
+                shrow = -1;  // megszűnt
+                pRow->sharedPortRow = -1;
+            }
+            if (shrow >= 0) shPrimMap[shrow] << pRow->row;  // Van mutató, csoportosítéshoz a MAP-ba
+            secondIxs << pRow->row;
+        }
+    }
+    shOk = true;
+    LOCKSLOTS();
+    // Végigszaladunk az összes soron, és frissítjük az elsődlegesre hivatkozások comboBox-át
+    foreach (cPPortTableLine *pRow, rowsData) {
+        if (secondIxs.contains(pRow->row)) {    // Másodlagos megosztott port (lehet hivatkozás, a)
+            QStringList sl;             // Az eredmény lista (ezekre lehet hivatkozni) a teljes lista leválogatásának a célja
+            pRow->listPortIxRow.clear();// A táblázatbeli sor idexek (hogy tudjuk is mire hivatkozik a fenti lista)
+            int mysh = pRow->comboBoxShare->currentIndex(); // Az aktuális másodlagos megosztás típusa
+            // Elsödleges megosztott portokhoz rendelések vizsgálata
+            foreach (int pix, shPrimRows) {     // Végivesszük a lehetőségeket (elsödleges megosztások listája)
+                QList<int> secs = shPrimMap[pix];       // Ezek a másodlagosak hivatkoznak rá
+                QString item = refName(pix);            // A comboBox-ban megjelenő string formátuma
+                if (secs.isEmpty()) {   // Erre az elsődlegesre nem hivatkozik senki, akkor bárhol választható
+                    sl                  << item;
+                    pRow->listPortIxRow << pix;
+                }
+                else {                  // Van rá hivatkozás, akkor vizsgálódunk
+                    int psh = rowsData[pix]->comboBoxShare->currentIndex(); // Az aktuális elsődleges megosztás
+                    // ütközés az elsődlegessel
+                    if (psh == ES_A && (mysh == ES_AB || mysh == ES_C || mysh == ES_D)) continue;
+                    bool collision = false;
+                    foreach (int six, secs) {
+                        if (six == pRow->row) continue;     // Saját magával nincs értelme az ütközésvizsgálatnak
+                        int ssh = rowsData[six]->comboBoxShare->currentIndex(); // akt, másodlagos megosztás
+                        if (mysh == ssh) {                  // Azonos megosztás tuti nem lehetséges
+                            collision = true;
+                            break;
+                        }
+                        switch (mysh) { // tételesen az összeférhetetlen megosztások
+                        case ES_AB:
+                            collision = ssh == ES_C || ssh == ES_D;
+                            break;
+                        case ES_B:
+                            collision = ssh == ES_BA || ssh == ES_BB || ssh == ES_C || ssh == ES_D;
+                            break;
+                        case ES_BA:
+                            collision = ssh == ES_B || ssh == ES_C || ssh == ES_D;
+                        case ES_BB:
+                            collision = ssh == ES_B;
+                        case ES_C:
+                        case ES_D:
+                            collision = ssh == ES_B || ssh == ES_AB;
+                        default:
+                            EXCEPTION(EDATA);
+                            break;
+                        }
+                        if (collision) break;   // volt ütközés, nem kell tovább vizsgálódni
+                    }
+                    if (collision) continue;    // Ha ütközés van, nem kerülhet a választási lehetőségek közé.
+                    sl                  << item;// Hozzáadjuk a lehetőségek listá(i)hoz
+                    pRow->listPortIxRow << pix;
+                }
+            }
+            pRow->comboBoxPortIx->clear();
+            pRow->comboBoxPortIx->addItem(_sNul);
+            pRow->comboBoxPortIx->addItems(sl);
+            if (pRow->sharedPortRow >= 0 && pRow->listPortIxRow.contains(pRow->sharedPortRow)) {
+                int ix = pRow->listPortIxRow.indexOf(pRow->sharedPortRow);
+                pRow->comboBoxPortIx->setCurrentIndex(ix +1);
+            }
+            else {
+                pRow->sharedPortRow = -1;
+                pRow->comboBoxPortIx->setCurrentIndex(0);
+                shOk = false;   // Nincs megadva az elsődleges, az nem OK.
+            }
+        }
+        else {                                  // Elsodleges megosztott, vagy nem megosztott
+            pRow->comboBoxPortIx->clear();      // Nem hivatkozik senkire
+            pRow->sharedPortRow = -1;
+        }
+    }
+    UNLOCKSLOTS();
+    changeName(pUi->lineEditName->text());  // Menthető ?
+}
+
+void cInsertPatchDialog::updatePNameIxOk()
+{
+    QStringList nameList;
+    QList<int>  indexList;
+    pNamesOk = pIxOk = true;
+    int n = pUi->tableWidgetPorts->rowCount();
+    for (int i = 0; i < n; ++i) {
+        if (pNamesOk) {
+            QString s = getText(pUi->tableWidgetPorts, i, CPP_NAME);
+            if (s.isEmpty() || nameList.contains(s)) {
+                pNamesOk = false;
+                if (!pIxOk) break;
+            }
+            nameList << s;
+        }
+        if (pIxOk) {
+            bool ok;
+            int ix = getText(pUi->tableWidgetPorts, i, CPP_INDEX).toInt(&ok);
+            if (!ok || indexList.contains(ix)) {
+                pIxOk = false;
+                if (!pNamesOk) break;
+            }
+            indexList << ix;
+        }
+    }
+}
+
+QString cInsertPatchDialog::refName(int row)
+{
+    return refName(row, getText(pUi->tableWidgetPorts, row, CPP_NAME),
+                        getText(pUi->tableWidgetPorts, row, CPP_INDEX));
+}
+
+
+/* SLOTS */
+void cInsertPatchDialog::changeName(const QString& name)
+{
+    bool f = name.isEmpty() || pUi->tableWidgetPorts->rowCount() == 0 || !shOk || !pNamesOk || !pIxOk;
+    pUi->buttonBox->button(QDialogButtonBox::Ok)->setDisabled(f);
+}
+
+void cInsertPatchDialog::set1port()
+{
+    LOCKSLOTS();
+    clearRows();
+    setRows(1);
+    QTableWidgetItem *pItem;
+    pItem = new QTableWidgetItem("J1");
+    pUi->tableWidgetPorts->setItem(0, CPP_NAME, pItem);
+    pItem = new QTableWidgetItem("1");
+    pUi->tableWidgetPorts->setItem(0, CPP_INDEX, pItem);
+    bool f = pUi->lineEditName->text().isEmpty();
+    pUi->buttonBox->button(QDialogButtonBox::Ok)->setDisabled(f);
+    UNLOCKSLOTS();
+}
+
+void cInsertPatchDialog::set2port()
+{
+    set1port();
+    LOCKSLOTS();
+    setRows(2);
+    QTableWidgetItem *pItem;
+    pItem = new QTableWidgetItem("J2");
+    pUi->tableWidgetPorts->setItem(1, CPP_NAME, pItem);
+    pItem = new QTableWidgetItem("2");
+    pUi->tableWidgetPorts->setItem(1, CPP_INDEX, pItem);
+    UNLOCKSLOTS();
+}
+
+void cInsertPatchDialog::set2sharedPort()
+{
+    set2port();
+    setPortShare(0, ES_A);
+    setPortShare(1, ES_B);
+    rowsData[1]->comboBoxPortIx->setCurrentIndex(1);    // Az első portra mutat
+}
+
+void cInsertPatchDialog::addPorts()
+{
+    int from = pUi->spinBoxFrom->value();
+    int to   = pUi->spinBoxTo->value();
+    int n = to - from +1;
+    if (n <= 0) return;
+    int row = pUi->tableWidgetPorts->rowCount();
+    LOCKSLOTS();
+    setRows(row + n);
+    QString namePattern = pUi->lineEditNamePattern->text();
+    QString tagPattern  = pUi->lineEditTagPattern->text();
+    int nameOffs = pUi->spinBoxNameOffs->value();
+    int tagOffs  = pUi->spinBoxTagOffs->value();
+    QTableWidgetItem *pItem;
+    for (int i = from; i <= to; i++, row++) {
+        QString name = nameAndNumber(namePattern, i + nameOffs);
+        QString tag;
+        if (!tagPattern.isEmpty()) tag = nameAndNumber(tagPattern, i + tagOffs);
+        pItem = new QTableWidgetItem(name);
+        pUi->tableWidgetPorts->setItem(row, CPP_NAME, pItem);
+        pItem = new QTableWidgetItem(QString::number(i));
+        pUi->tableWidgetPorts->setItem(row, CPP_INDEX, pItem);
+        pItem = new QTableWidgetItem(tag);
+        pUi->tableWidgetPorts->setItem(row, CPP_TAG, pItem);
+    }
+    UNLOCKSLOTS();
+    updatePNameIxOk();
+    changeName(pUi->lineEditName->text());
+}
+
+void cInsertPatchDialog::delPorts()
+{
+    QModelIndexList mil = pUi->tableWidgetPorts->selectionModel()->selectedRows();
+    QList<int>  rows;   // Törlendő sorok sorszámai
+    foreach (QModelIndex mi, mil) {
+        rows << mi.row();
+    }
+    // sorba rendezzük, mert majd a vége felül törlünk
+    std::sort(rows.begin(), rows.end());
+    // A hivatkozásokat töröljük a törlendő sorokra
+    for (int j = 0; j < rowsData.size(); ++j) {
+        int i = rowsData[j]->sharedPortRow;
+        if (rows.contains(i)) rowsData[j]->sharedPortRow = -1;  // Törölt sorra nem hivatkozhatunk
+    }
+    // Törlés a vége felöl
+    while (rows.size() > 0) {
+        int row = rows.takeLast();
+        rowsData.removeAt(row);
+        pUi->tableWidgetPorts->removeRow(row);
+    }
+    // Sor indexek ujra számolása:
+    for (int i = 0; i < rowsData.size(); ++i) {
+        int old = rowsData[i]->row;
+        rowsData[i]->row = i;
+        for (int j = 0; j < rowsData.size(); ++j) {
+            if (rowsData[j]->sharedPortRow == old) rowsData[j]->sharedPortRow = i;
+        }
+    }
+    updateSharedIndexs();
+    // Mentés gomb enhedélyezés, ha ok
+    changeName(pUi->lineEditName->text());
+}
+
+void cInsertPatchDialog::changeFrom(int i)
+{
+    bool f = (pUi->spinBoxTo->value() - i) >= 0;
+    pUi->pushButtonAddPorts->setEnabled(f);
+}
+
+void cInsertPatchDialog::changeTo(int i)
+{
+    bool f = (i - pUi->spinBoxFrom->value()) >= 0;
+    pUi->pushButtonAddPorts->setEnabled(f);
+}
+
+void cInsertPatchDialog::changeFilterZone(int i)
+{
+    if (!isContIx(zoneIds, i)) EXCEPTION(EDATA, i);
+    qlonglong id = zoneIds.at(i);
+    if (id == ALL_PLACE_GROUP_ID) {
+        pModelPlace->setFilter(QVariant(), OT_ASC, FT_NO);
+    }
+    else {
+        QString sql = QString(sPlaceFilterSQL).arg(id);
+        pModelPlace->setFilter(sql, OT_ASC, FT_SQL_WHERE);
+    }
+}
+
+void cInsertPatchDialog::newPlace()
+{
+    cRecord *p = insertRecordDialog(*pq, _sPlaces, this);
+    if (p != NULL) {
+        changeFilterZone(pUi->comboBoxZone->currentIndex());
+        QString placeName = p->getName();
+        int ix = pUi->comboBoxPlace->findText(placeName);
+        if (ix > 0) pUi->comboBoxPlace->setCurrentIndex(ix);
+        delete p;
+    }
+}
+
+void cInsertPatchDialog::cellChanged(int row, int col)
+{
+    if (lockSlot) return;
+    QString text = getText(pUi->tableWidgetPorts, row, col);
+    int n = pUi->tableWidgetPorts->rowCount();
+    QString sRefName;
+    switch (col) {
+    case CPP_NAME: {
+        if (text.isEmpty()) {
+            pNamesOk = false;
+        }
+        else {
+            pNamesOk = true;
+            QStringList nameList;
+            for (int i = 0; i < n; ++i) {
+                QString s = getText(pUi->tableWidgetPorts, i, CPP_NAME);
+                if (s.isEmpty() || nameList.contains(s)) {
+                    pNamesOk = false;
+                    break;
+                }
+                nameList << s;
+            }
+        }
+        sRefName = refName(row, text, getText(pUi->tableWidgetPorts, row, CPP_INDEX));
+        break;
+    }
+    case CPP_INDEX: {
+        QList<int>  ixList;
+        pIxOk = true;
+        for (int i = 0; i < n; ++i) {
+            bool ok;
+            int ix = getText(pUi->tableWidgetPorts, i, CPP_INDEX).toInt(&ok);
+            if (!ok || ixList.contains(ix)) {   // Nem szám, vagy nem egyedi
+                pIxOk = false;
+                break;
+            }
+            ixList << ix;
+        }
+        sRefName = refName(row, getText(pUi->tableWidgetPorts, row, CPP_NAME), text);
+        break;
+    }
+    default:    return;     // Mással nem foglalkozunk
+    }
+    // Ha vannak index hivatkozások, akkor a generált hivatkozás nevek megváltoztak!
+    if (shPrimRows.contains(row)) {
+        foreach (cPPortTableLine *pRow, rowsData) {
+            QList<int> refList = pRow->listPortIxRow;
+            int ix = refList.indexOf(row);
+            if (ix < 0) continue;
+            pRow->comboBoxPortIx->setItemText(ix + 1, sRefName);
+        }
+    }
+    changeName(pUi->lineEditName->text());
+}
+
+void cInsertPatchDialog::selectionChanged(const QItemSelection &, const QItemSelection &)
+{
+    QModelIndexList mil = pUi->tableWidgetPorts->selectionModel()->selectedRows();
+    pUi->pushButtonDelPort->setDisabled(mil.isEmpty());
+}
+
+void cInsertPatchDialog::cellActivated(int row, int col)
+{
+    PDEB(INFO) << VDEB(row) << VDEB(col) << endl;
+}
+
+cPatch * insertPatchDialog(QSqlQuery& q, QWidget *pPar)
+{
+    cInsertPatchDialog dialog(pPar);
+    cPatch *p;
+    while (true) {
+        int r = dialog.exec();
+        if (r != QDialog::Accepted) return NULL;
+        p = dialog.getPatch();
+        if (p == NULL) continue;
+        if (!cErrorMessageBox::condMsgBox(p->tryInsert(q, true))) {
+            delete p;
+            continue;
+        }
+        break;
+    }
+    return p;
+}

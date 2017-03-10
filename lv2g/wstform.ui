@@ -6,18 +6,18 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1154</width>
-    <height>841</height>
+    <width>1198</width>
+    <height>913</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_6" stretch="1,1,0,1,0,100,0">
+  <layout class="QVBoxLayout" name="verticalLayout_8" stretch="1,1,1,1,1,10,1">
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,1">
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,0,1">
      <item>
-      <layout class="QVBoxLayout" name="verticalLayout_4" stretch="0,1,0,0">
+      <layout class="QVBoxLayout" name="verticalLayout_4" stretch="0,1,0,0,0,0">
        <item>
         <widget class="QLabel" name="labelNewMod">
          <property name="text">
@@ -39,9 +39,29 @@
         </spacer>
        </item>
        <item>
+        <widget class="QRadioButton" name="radioButtonWorkstation">
+         <property name="text">
+          <string>Munkaállomás</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+         <property name="autoExclusive">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="radioButtonPassive">
+         <property name="text">
+          <string>Passzív (IndAlarm) védett eszköz</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QRadioButton" name="radioButtonNew">
          <property name="text">
-          <string>Új munkaállomás felvétele</string>
+          <string>Új munkaállomás ill. védett eszköz felvétele</string>
          </property>
          <property name="checked">
           <bool>true</bool>
@@ -54,18 +74,25 @@
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Regisztrált munkaállomás adatainak a módosítása</string>
+          <string>Regisztrált munkaállomás ill. védett eszköz adatainak a módosítása</string>
          </property>
         </widget>
        </item>
       </layout>
      </item>
      <item>
+      <widget class="Line" name="line_3">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
       <layout class="QVBoxLayout" name="verticalLayoutFilter">
        <item>
         <widget class="QLabel" name="label_4">
          <property name="text">
-          <string>Szűrők a minrta vagy modosítandó munkaálomás kiválasztásához :</string>
+          <string>Szűrők a minrta vagy modosítandó munkaálomás ill. védett eszköz kiválasztásához :</string>
          </property>
         </widget>
        </item>
@@ -117,147 +144,192 @@
    </item>
    <item>
     <widget class="QSplitter" name="splitterWorkstation">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
-     <widget class="QFrame" name="frameNode">
-      <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
-      </property>
-      <layout class="QFormLayout" name="formLayout">
-       <item row="0" column="0">
-        <widget class="QLabel" name="labelWorkstation">
-         <property name="autoFillBackground">
-          <bool>true</bool>
-         </property>
+     <widget class="QWidget" name="layoutWidget_6">
+      <layout class="QVBoxLayout" name="verticalLayout_6">
+       <item>
+        <widget class="QFrame" name="frameNode">
          <property name="frameShape">
-          <enum>QFrame::NoFrame</enum>
+          <enum>QFrame::StyledPanel</enum>
          </property>
-         <property name="text">
-          <string>Munkaállomás</string>
-         </property>
-         <property name="textFormat">
-          <enum>Qt::PlainText</enum>
-         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_7">
+          <item>
+           <widget class="QLabel" name="labelWorkstation">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <italic>false</italic>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="autoFillBackground">
+             <bool>false</bool>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">QLabel { background-color: rgb(0, 0, 0); color :rgb(255,255,255) ;}</string>
+            </property>
+            <property name="frameShape">
+             <enum>QFrame::NoFrame</enum>
+            </property>
+            <property name="text">
+             <string>Munkaállomás</string>
+            </property>
+            <property name="textFormat">
+             <enum>Qt::PlainText</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QFormLayout" name="formLayout">
+            <item row="0" column="0">
+             <widget class="QLabel" name="labelName">
+              <property name="font">
+               <font>
+                <weight>50</weight>
+                <italic>true</italic>
+                <bold>false</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>Név (minta) :</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QComboBox" name="comboBoxNode"/>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="labelNewName">
+              <property name="font">
+               <font>
+                <weight>75</weight>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>Új név :</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QLineEdit" name="lineEditName"/>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="labelNote">
+              <property name="text">
+               <string>Megjegyzés :</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QLineEdit" name="lineEditNote"/>
+            </item>
+            <item row="3" column="0">
+             <widget class="QLabel" name="labelZone">
+              <property name="font">
+               <font>
+                <weight>75</weight>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>Zóna :</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QComboBox" name="comboBoxZone"/>
+            </item>
+            <item row="4" column="0">
+             <widget class="QLabel" name="labelPlace">
+              <property name="font">
+               <font>
+                <weight>75</weight>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>Hely, helyiség :</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="1">
+             <layout class="QHBoxLayout" name="horizontalLayoutPlace">
+              <item>
+               <widget class="QComboBox" name="comboBoxPlace"/>
+              </item>
+              <item>
+               <widget class="QToolButton" name="toolButtonAddPlace">
+                <property name="text">
+                 <string>+</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item row="5" column="0">
+             <widget class="QLabel" name="labelSerial">
+              <property name="text">
+               <string>Széria szám :</string>
+              </property>
+             </widget>
+            </item>
+            <item row="5" column="1">
+             <widget class="QLineEdit" name="lineEditSerial"/>
+            </item>
+            <item row="6" column="0">
+             <widget class="QLabel" name="labelInventory">
+              <property name="text">
+               <string>Leltári szám :</string>
+              </property>
+             </widget>
+            </item>
+            <item row="6" column="1">
+             <widget class="QLineEdit" name="lineEditInventory"/>
+            </item>
+           </layout>
+          </item>
+         </layout>
         </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="labelName">
-         <property name="font">
-          <font>
-           <weight>50</weight>
-           <italic>true</italic>
-           <bold>false</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>Név (minta) :</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QComboBox" name="comboBoxNode"/>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="labelNewName">
-         <property name="font">
-          <font>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>Új név :</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QLineEdit" name="lineEditName"/>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="labelNote">
-         <property name="text">
-          <string>Megjegyzés :</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1">
-        <widget class="QLineEdit" name="lineEditNote"/>
-       </item>
-       <item row="4" column="0">
-        <widget class="QLabel" name="labelZone">
-         <property name="font">
-          <font>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>Zóna :</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QComboBox" name="comboBoxZone"/>
-       </item>
-       <item row="5" column="0">
-        <widget class="QLabel" name="labelPlace">
-         <property name="font">
-          <font>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>Hely, helyiség :</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="1">
-        <widget class="QComboBox" name="comboBoxPlace"/>
-       </item>
-       <item row="6" column="0">
-        <widget class="QLabel" name="labelSerial">
-         <property name="text">
-          <string>Széria szám :</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="1">
-        <widget class="QLineEdit" name="lineEditSerial"/>
-       </item>
-       <item row="7" column="0">
-        <widget class="QLabel" name="labelInventory">
-         <property name="text">
-          <string>Leltári szám :</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="1">
-        <widget class="QLineEdit" name="lineEditInventory"/>
-       </item>
-       <item row="8" column="0">
-        <spacer name="verticalSpacer_2">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>0</height>
-          </size>
-         </property>
-        </spacer>
        </item>
       </layout>
      </widget>
      <widget class="QFrame" name="framePort">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="frameShape">
        <enum>QFrame::StyledPanel</enum>
       </property>
       <layout class="QVBoxLayout" name="verticalLayoutPort">
        <item>
         <widget class="QLabel" name="labelPort">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QLabel { background-color: rgb(0, 0, 255); color :rgb(255,255,255) ;}</string>
+         </property>
          <property name="text">
           <string>Hálózati port (elsődleges)</string>
          </property>
@@ -329,33 +401,7 @@
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QComboBox" name="comboBoxPType">
-           <item>
-            <property name="text">
-             <string>ethernet</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>wireless</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>adsl</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>tunnel</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>virtual</string>
-            </property>
-           </item>
-          </widget>
+          <widget class="QComboBox" name="comboBoxPType"/>
          </item>
         </layout>
        </item>
@@ -381,6 +427,15 @@
       <layout class="QVBoxLayout" name="verticalLayoutIp">
        <item>
         <widget class="QLabel" name="labelIP">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QLabel { background-color: rgb(0, 0, 255); color :rgb(255,255,255) ;}</string>
+         </property>
          <property name="text">
           <string>IP (elsődleges port)</string>
          </property>
@@ -537,6 +592,15 @@
       <layout class="QVBoxLayout" name="verticalLayoutPort_2">
        <item>
         <widget class="QLabel" name="labelPort_2">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QLabel { background-color: rgb(0, 128, 128); color :rgb(255,255,255) ;}</string>
+         </property>
          <property name="text">
           <string>További  opcionális port</string>
          </property>
@@ -579,36 +643,6 @@
            <property name="enabled">
             <bool>true</bool>
            </property>
-           <item>
-            <property name="text">
-             <string>Nincs másodlagos port</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>attach</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>ethernet</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>usb</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>rs232</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>rs485</string>
-            </property>
-           </item>
           </widget>
          </item>
          <item row="2" column="0">
@@ -697,6 +731,15 @@
       <layout class="QVBoxLayout" name="verticalLayout">
        <item>
         <widget class="QLabel" name="labelLink">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QLabel { background-color: rgb(0, 0, 255); color :rgb(255,255,255) ;}</string>
+         </property>
          <property name="text">
           <string>Fizikai link (patch, elsődleges) :</string>
          </property>
@@ -834,6 +877,16 @@
            </property>
            <property name="checked">
             <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="4">
+          <widget class="QPushButton" name="pushButtonNewPatch">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>Új csatlakozó</string>
            </property>
           </widget>
          </item>
@@ -1007,6 +1060,15 @@
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
         <widget class="QLabel" name="labelLink_2">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QLabel { background-color: rgb(0, 128, 128); color :rgb(255,255,255) ;}</string>
+         </property>
          <property name="text">
           <string>Fizikai link (patch, opcionális port)  :</string>
          </property>
@@ -1144,6 +1206,16 @@
            </property>
            <property name="checked">
             <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="4">
+          <widget class="QPushButton" name="pushButtonNewPatch_2">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>Új csatlakozó</string>
            </property>
           </widget>
          </item>
@@ -1320,14 +1392,21 @@
     </widget>
    </item>
    <item>
-    <widget class="QSplitter" name="splitter">
+    <widget class="QSplitter" name="splitterMsg">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
-     <widget class="QWidget" name="">
+     <widget class="QWidget" name="layoutWidget_5">
       <layout class="QVBoxLayout" name="verticalLayout_5">
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <item>
+          <widget class="QLabel" name="labelWarn">
+           <property name="text">
+            <string>Hibaüzenetek, figyelmeztetések :</string>
+           </property>
+          </widget>
+         </item>
          <item>
           <widget class="QLabel" name="labelErr">
            <property name="font">
@@ -1340,29 +1419,9 @@
             <string notr="true">QLabel { color : red; }</string>
            </property>
            <property name="text">
-            <string>Hibaüzenetek</string>
+            <string/>
            </property>
           </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="labelWarn">
-           <property name="text">
-            <string>, figyelmeztetések :</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_2">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
          </item>
         </layout>
        </item>
@@ -1371,7 +1430,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="">
+     <widget class="QWidget" name="layoutWidget_3">
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
         <widget class="QLabel" name="labelInf">
@@ -1395,8 +1454,11 @@
     <layout class="QHBoxLayout" name="horizontalLayoutButtons">
      <item>
       <widget class="QPushButton" name="pushButtonRefresh">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Törli az eéőre beolvasott adatokat.&lt;/p&gt;&lt;p&gt;(a combo box-okhoz tartozó listákat újra olvassa).&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; color:#ff0000;&quot;&gt;A nem mentett modosítások törölve kesznek!&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
-        <string>Frissítés</string>
+        <string>Frissítés!</string>
        </property>
       </widget>
      </item>
@@ -1463,7 +1525,6 @@
   <tabstop>comboBoxSubNetAddr</tabstop>
   <tabstop>comboBoxVLan</tabstop>
   <tabstop>comboBoxVLanId</tabstop>
-  <tabstop>checkBoxPlaceEqu</tabstop>
   <tabstop>comboBoxLinkZone</tabstop>
   <tabstop>comboBoxLinkPlace</tabstop>
   <tabstop>comboBoxLinkNode</tabstop>
@@ -1478,13 +1539,11 @@
   <tabstop>checkBoxSrvDel</tabstop>
   <tabstop>checkBoxSrvEna</tabstop>
   <tabstop>lineEditSrvNote</tabstop>
-  <tabstop>pushButtonLinkOther</tabstop>
   <tabstop>lineEditPName_2</tabstop>
   <tabstop>comboBoxPType_2</tabstop>
   <tabstop>lineEditPNote_2</tabstop>
   <tabstop>lineEditPTag_2</tabstop>
   <tabstop>lineEditPMAC_2</tabstop>
-  <tabstop>checkBoxPlaceEqu_2</tabstop>
   <tabstop>comboBoxLinkZone_2</tabstop>
   <tabstop>comboBoxLinkPlace_2</tabstop>
   <tabstop>comboBoxLinkNode_2</tabstop>
@@ -1499,7 +1558,6 @@
   <tabstop>checkBoxSrvDel_2</tabstop>
   <tabstop>checkBoxSrvEna_2</tabstop>
   <tabstop>lineEditSrvNote_2</tabstop>
-  <tabstop>pushButtonLinkOther_2</tabstop>
   <tabstop>textEditMsg</tabstop>
   <tabstop>pushButtonSave</tabstop>
   <tabstop>pushButtonCancel</tabstop>

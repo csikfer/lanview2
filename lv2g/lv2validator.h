@@ -2,6 +2,8 @@
 #define LV2VALIDATOR_H
 #include "lv2g.h"
 #include <QValidator>
+#include <QItemDelegate>
+
 
 /// @class cIntValidator
 /// @brief Input validátor az egészekhez, megengedve feltételesen az üres inputot
@@ -67,6 +69,25 @@ public:
     State validate(QString &input, int &pos) const;
 private:
     bool nullable;
+};
+
+class LV2GSHARED_EXPORT cItemDelegateValidator : public QItemDelegate
+{
+    Q_OBJECT
+public:
+    explicit cItemDelegateValidator(QValidator *pVal, QObject *parent = 0);
+
+protected:
+    QWidget* createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+    void setEditorData(QWidget * editor, const QModelIndex & index) const;
+    void setModelData(QWidget * editor, QAbstractItemModel * model, const QModelIndex & index) const;
+    void updateEditorGeometry(QWidget * editor, const QStyleOptionViewItem & option, const QModelIndex & index) const;
+
+    QValidator *pValidator;
+signals:
+
+public slots:
+
 };
 
 #endif // LV2VALIDATOR_H

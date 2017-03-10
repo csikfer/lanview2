@@ -218,4 +218,113 @@ private:
     void init();
 };
 
+/* ************************************************************************** */
+
+_GEX cRecord * insertRecordDialog(QSqlQuery& q, const QString& sn, QWidget *pPar = NULL);
+
+static inline QString getText(QTableWidget *pW, int row, int col) {
+    QString r;
+    QTableWidgetItem *pItem = pW->item(row, col);
+    if (pItem != NULL) r = pItem->text();
+    return r;
+}
+
+static inline void setText(const QString& text, QTableWidget *pW, int row, int col) {
+    QTableWidgetItem *pItem = pW->item(row, col);
+    if (pItem == NULL) {
+        pItem = new QTableWidgetItem(text);
+        pW->setItem(row, col, pItem);
+    }
+    else {
+        pItem->setText(text);
+    }
+}
+
+namespace Ui {
+    class patchSimpleDialog;
+}
+class cInsertPatchDialog;
+class cPPortTableLine;
+
+#if defined(LV2G_LIBRARY)
+#  include "ui_dialogpatchsimple.h"
+    class cPPortTableLine : public QObject {
+        friend class cInsertPatchDialog;
+        Q_OBJECT
+    public:
+        cPPortTableLine(int r, cInsertPatchDialog *par);
+        int                 row;
+        int                 sharedPortRow;
+        cInsertPatchDialog* parent;
+        QTableWidget *      tableWidget;
+        QComboBox *         comboBoxShare;  ///< Hátlapi megosztás típusa
+        QComboBox *         comboBoxPortIx; ///< Az elsődleges megosztott port indexe
+        QList<int>          listPortIxRow;  ///< A comboBoxPortIx hivatkozott táblázat sor számok
+    private:
+        bool lockSlot;
+    protected slots:
+        void changeShared(int sh);
+        void changePortIx(int ix);
+    };
+
+#endif
+
+enum {
+    CPP_NAME, CPP_TAG, CPP_INDEX, CPP_SH_TYPE, CPP_SH_IX, CPP_NOTE
+};
+
+class LV2GSHARED_EXPORT cInsertPatchDialog : public QDialog {
+    friend class cPPortTableLine;
+    Q_OBJECT
+public:
+    cInsertPatchDialog(QWidget *parent = NULL);
+    ~cInsertPatchDialog();
+    cPatch * getPatch();
+protected:
+    QSqlQuery              *pq;
+    Ui::patchSimpleDialog  *pUi;
+    cRecordListModel       *pModelPlace;
+    QStringList             zoneNames;
+    QList<qlonglong>        zoneIds;
+    QString                 sPlaceFilterSQL;
+    bool                    lockSlot;
+    QList<cPPortTableLine *>rowsData;
+    QList<int>              shPrimRows;
+    QMap<int, QList<int> >  shPrimMap;
+    bool                    shOk;
+    bool                    pNamesOk;
+    bool                    pIxOk;
+    static QString          sPortRefForm;
+    void clearRows();
+    void setRows(int rows);
+    void setPortShare(int row, int sh);
+    void updateSharedIndexs();
+    void updatePNameIxOk();
+    static QString refName(int row, const QString& name, int ix) {
+        return sPortRefForm.arg(row +1).arg(name).arg(ix);
+    }
+    static QString refName(int row, const QString& name, const QString& ix) {
+        return sPortRefForm.arg(row +1).arg(name, ix);
+    }
+    QString refName(int row);
+
+private slots:
+    void changeName(const QString& name);
+    void set1port();
+    void set2port();
+    void set2sharedPort();
+    void addPorts();
+    void delPorts();
+    void changeFrom(int i);
+    void changeTo(int i);
+    void changeFilterZone(int i);
+    void newPlace();
+    void cellChanged(int row, int col);
+    void selectionChanged(const QItemSelection &, const QItemSelection &);
+    void cellActivated(int row, int col);
+};
+
+_GEX cPatch * insertPatchDialog(QSqlQuery& q, QWidget *pPar);
+
+
 #endif // RECORD_DIALOG_H

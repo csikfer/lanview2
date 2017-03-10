@@ -438,6 +438,8 @@ public:
     STATICIX(cImage, ixImageHash)
 };
 
+#define UNKNOWN_PLACE_ID  0LL
+#define ROOT_PLACE_ID     1LL
 /*!
 @class cPlace
 @brief A places tábla egy rekordját reprezentáló osztály.
@@ -446,10 +448,11 @@ class LV2SHARED_EXPORT cPlace : public cRecord {
     CRECORD(cPlace);
 public:
     qlonglong parentImageId(QSqlQuery& q);
+    bool isUnknown() { return getId() <= UNKNOWN_PLACE_ID; }
+    bool isRoot()    { return getId() == ROOT_PLACE_ID; }
+    bool isValid()   { return getId() >  ROOT_PLACE_ID; }
 };
 
-#define UNKNOWN_PLACE_ID  0LL
-#define ROOT_PLACE_ID     1LL
 
 enum ePlaceGroupType {
     PG_GROUP,
@@ -473,6 +476,7 @@ public:
     /// @return Az új rekord id-je.
     static qlonglong insertNew(QSqlQuery q, const QString& __n, const QString& __d, int _type);
     static qlonglong replaceNew(QSqlQuery q, const QString& __n, const QString& __d, int _type);
+    static QStringList getAllZones(QSqlQuery q, QList<qlonglong> *pIds = NULL, eEx __ex = EX_ERROR);
 };
 
 typedef tGroup<cPlaceGroup, cPlace> cGroupPlace;
@@ -1393,7 +1397,7 @@ public:
     cInterface *portSetVlans(int __port_index, const QList<qlonglong>& _ids);
     /// A beolvasott port és cím rekoedokból kikeresi az első címet.
     QHostAddress getIpAddress() const;
-
+    int fetchAllAddress(QSqlQuery& q, tRecordList<cIpAddress> &cont, qlonglong __id = NULL_ID) const;
     QList<QHostAddress> fetchAllIpAddress(QSqlQuery &q, qlonglong __id = NULL_ID) const;
     /// Összeállít egy nodes és egy nports rekordot
     /// A port neve és típusa is 'attach" lessz.

@@ -9,6 +9,7 @@
 #undef  __MODUL_NAME__
 #define __MODUL_NAME__  PARSER
 #include "import_parser.h"
+#include "scan.h"
 
 #define  YYERROR_VERBOSE
 

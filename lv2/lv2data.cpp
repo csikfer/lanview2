@@ -569,6 +569,39 @@ qlonglong cPlaceGroup::replaceNew(QSqlQuery q, const QString& __n, const QString
     return o.getId();
 }
 
+QStringList cPlaceGroup::getAllZones(QSqlQuery q, QList<qlonglong> *pIds, eEx __ex)
+{
+    QStringList zones;
+    // Nem üres zónák listája
+    static const QString sql =
+            "SELECT place_group_name, place_group_id FROM place_groups"
+            " WHERE place_group_type = 'zone'"
+             " AND 0 < (SELECT COUNT(*) FROM place_group_places WHERE place_group_places.place_group_id = place_groups.place_group_id)"
+            " ORDER BY place_group_name ASC";
+    // Az összes zóna neve (place_groups rekord, zone_type = 'zone', betürendben, de az all az első
+    if (!execSql(q, sql)) {
+        if (__ex != EX_IGNORE) EXCEPTION(EDATA, 0, "No any zone.");
+        return zones;
+    }
+    zones << _sAll;
+    if (pIds != NULL) {
+        pIds->clear();
+        *pIds << ALL_PLACE_GROUP_ID;
+    }
+    do {
+        QString name = q.value(0).toString();
+        if (name != _sAll) {
+            zones << name;
+            if (pIds != NULL) {
+                bool ok;
+                *pIds << q.value(1).toLongLong(&ok);
+                if (!ok) EXCEPTION(EDATA);
+            }
+        }
+    } while (q.next());
+    return zones;
+}
+
 /* ------------------------------ subnets ------------------------------ */
 CRECCNTR(cSubNet)
 CRECDEFD(cSubNet)
@@ -2573,6 +2606,23 @@ cInterface *cNode::portSetVlans(int __port_index, const QList<qlonglong>& _ids)
         t = VT_TAGGED;
     }
     return p;
+}
+
+int cNode::fetchAllAddress(QSqlQuery& q, tRecordList<cIpAddress>& cont, qlonglong __id) const
+{
+    QString sql =
+            "SELECT * FROM interfaces JOIN ip_addresses USING(port_id)"
+               " WHERE node_id = ?"
+               " ORDER BY preferred ASC";
+
+    qlonglong id = __id < 0 ? getId() : __id;
+    PDEB(VERBOSE) << VDEB(id) << endl;
+    if (execSql(q, sql, id)) do {
+        cIpAddress *pA = new cIpAddress();
+        pA->set(q);
+        cont << pA;
+    } while (q.next());
+    return cont.size();
 }
 
 QList<QHostAddress> cNode::fetchAllIpAddress(QSqlQuery& q, qlonglong __id) const

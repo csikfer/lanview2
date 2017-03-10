@@ -88,7 +88,8 @@ FORMS += \
     hsoperate.ui \
     phslinkform.ui \
     findbymac.ui \
-    wstform.ui
+    wstform.ui \
+    dialogpatchsimple.ui
 INCLUDEPATH += ../lv2
 #unix:LIBS += -lsnmp
 msvc:LIBS += -lSecur32
