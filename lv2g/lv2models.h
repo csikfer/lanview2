@@ -180,6 +180,8 @@ private:
 
 
 /// Model: QStringListModel leszármazottja. Egy megadott rekord típus neveinek a listája.
+/// A model lekérdezi és tárolja a rekord ID-ket is. A megadott rekord típusnak
+/// rendelkeznie kell id és név mezővel is.
 class LV2GSHARED_EXPORT cRecordListModel : public QStringListModel {
     Q_OBJECT
 public:
@@ -210,7 +212,7 @@ public:
     /// @param _par A szűrő paramétere
     /// @param __o A lista rendezésének a típusa
     /// @param __f A szűrés típusa
-    bool setFilter(const QVariant &_par = QVariant(), enum eOrderType __o = OT_DEFAULT, enum eFilterType __f = FT_DEFAULT);
+    virtual bool setFilter(const QVariant &_par = QVariant(), enum eOrderType __o = OT_DEFAULT, enum eFilterType __f = FT_DEFAULT);
     /// Az opcionális név konvertáló függvény megadása.
     /// Az SQL függvény a rekord ID-ből egy nevet ad vissza.
     void setToNameF(const QString& _fn) { toNameFName = _fn; }
@@ -225,6 +227,8 @@ public:
     qlonglong idOf(const QString& __s);
     /// Az ID alapján adja vissza a nevet a listából
     QString nameOf(qlonglong __id);
+    ///
+    cRecordListModel& copy(const cRecordListModel& _o);
     /// Ha értéke true, akkor a lista első eleme NULL (a név üres, az ID pedig NULL_ID)
     /// A konstruktorok false-re inicializálják.
     bool                nullable;
@@ -238,8 +242,10 @@ public:
     ///
     bool                only;
     const cRecStaticDescr&  descr;  ///< A rekord leíró
-private:
+protected:
     QString where(QString s = QString());
+    QString select();
+    void setPattern(const QVariant& _par);
     enum eOrderType     order;      ///< Az aktuális rendezés típusa
     enum eFilterType    filter;     ///< Az aktuális szűrés típusa
     QString             pattern;    ///< Minta, szűrés paramétere
@@ -248,12 +254,48 @@ private:
     QStringList         stringList; ///< Az aktuális név lista (sorrend azonos mint az idList-ben
     QList<qlonglong>    idList;     ///< Az aktuális ID lista (sorrend azonos mint az stringList-ben
     QSqlQuery *         pq;
-    bool                firstTime;
     QString             toNameFName;///< Név konvertáló SQL függvény neve, ha a rekordban nincs név mező
 public slots:
     /// Hívja a setFilter() metódust, de csak a szűrés paramétere adható meg.
     void setPatternSlot(const QVariant& __pat);
 };
 
+/// Model: cRecordListModel leszármazottja. A zónákat  (a place_groups táblát) kérdezi le.
+/// A konstans szűrési feltétel a típus, ami 'zone' lesz a konstruktorban beállítva.
+/// Ha az eredmény string tartalmazza az 'all' zónát akkor az mindíg az első elem.
+class LV2GSHARED_EXPORT cZoneListModel : public cRecordListModel {
+    /// Konstruktor.
+    /// A szűrés alapértelmezése az összes zóna.
+    /// Az objektum egy saját QSqlQuery objektumot allokál a lekérdezésekhez.
+    /// A lista modosítása a setPattern() metódussal lehetséges.
+    /// @param _par Parent
+    cZoneListModel(QObject * __par = NULL);
+    /// Szűrési feltételek megadása, és a lista frissítése
+    /// @param _par A szűrő paramétere, a zóna ID-je
+    /// @param __o A lista rendezésének a típusa
+    /// @param __f Nem használt paraméter.
+    virtual bool setFilter(const QVariant &_par = QVariant(), enum eOrderType __o = OT_DEFAULT, enum eFilterType __f = FT_DEFAULT);
+};
+
+/// Model: cRecordListModel leszármazottja. A places táblát kérdezi le, a szűrési feltétel mindíg a zóna (place_group_id).
+/// Egy helyiség akkor tartozik a zónába, ha tagja az a zónát reprezentáló place_groups csoportnak, vagy valamelyik
+/// parentje tag. A nullable adattag alapértelmezése true. A listából mindíg kimarad a "root" és az "unknown" helyek.
+class LV2GSHARED_EXPORT cPlacesInZoneModel : public cRecordListModel {
+    /// Konstruktor.
+    /// A szűrés típus nincs értelmezve, a pattern (zóna ill. place_group_id) az "ALL" ill ALL_PLACE_GROUP_ID lessz,
+    /// a megjelenített lista az összes hely listája lessz.
+    /// Az objektum egy saját QSqlQuery objektumot allokál a lekérdezésekhez.
+    /// A lista modosítása a setPattern() metódussal lehetséges.
+    /// @param _par Parent
+    cPlacesInZoneModel(QObject * __par = NULL);
+    /// Szűrési feltételek megadása, és a lista frissítése
+    /// @param _par A szűrő paramétere, a zóna ID-je
+    /// @param __o A lista rendezésének a típusa
+    /// @param __f Nem használt paraméter.
+    virtual bool setFilter(const QVariant &_par = QVariant(), enum eOrderType __o = OT_DEFAULT, enum eFilterType __f = FT_DEFAULT);
+protected:
+    static const QString sqlSelect;
+    static const QString sqlSelectAll;
+};
 
 #endif // LV2MODELS_H

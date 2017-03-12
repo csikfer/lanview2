@@ -234,7 +234,6 @@ cRecordListModel::cRecordListModel(const cRecStaticDescr& __d, QObject * __par)
     filter = FT_NO;
     pq = newQuery();
     setStringList(stringList);
-    firstTime = true;
     nullable  = false;
     nullIdIsAll = false;
     only = false;
@@ -247,7 +246,6 @@ cRecordListModel::cRecordListModel(const QString& __t, const QString& __s, QObje
     filter = FT_NO;
     pq = newQuery();
     setStringList(stringList);
-    firstTime = true;
     nullable  = false;
     nullIdIsAll = false;
     only = false;
@@ -297,31 +295,29 @@ QString cRecordListModel::where(QString s)
 bool cRecordListModel::setFilter(const QVariant& _par, enum eOrderType __o, enum eFilterType __f)
 {
     _DBGFN() << "@(" << _par << ")" << endl;
-    firstTime = false;
     if (__o != OT_DEFAULT) order   = __o;
     if (__f != FT_DEFAULT) filter  = __f;
-    bool ok = true;
-    if (!_par.isNull()) {
-        switch (filter) {
-        case FT_NO:         break;
-        case FT_LIKE:
-        case FT_SIMILAR:
-        case FT_REGEXP:
-        case FT_REGEXPI:
-        case FT_BEGIN:
-        case FT_SQL_WHERE:  pattern = _par.toString();
-                            break;
-        case FT_FKEY_ID:    fkey_id = _par.isNull() ? NULL_ID : _par.toLongLong(&ok);
-                            if (ok) break;
-        default:            EXCEPTION(EPROGFAIL, filter, _par.toString());
-        }
-    }
+    if (!_par.isNull()) setPattern(_par);
     stringList.clear();
     idList.clear();
     if (nullable) {
         stringList << _sNul;
         idList     << NULL_ID;
     }
+    QString sql = select();
+    if (!pq->exec(sql)) SQLPREPERR(*pq, sql);
+    bool r = pq->first();
+    if (r) do {
+        idList     << variantToId(pq->value(0));
+        stringList << pq->value(1).toString();
+    } while (pq->next());
+    PDEB(VVERBOSE) << "name list :" << stringList.join(_sCommaSp) << endl;
+    setStringList(stringList);
+    return r;
+}
+
+QString cRecordListModel::select()
+{
     QString fn, nn;
     QString in = descr.columnNameQ(descr.idIndex());
     if (toNameFName.isEmpty()) {
@@ -367,15 +363,25 @@ bool cRecordListModel::setFilter(const QVariant& _par, enum eOrderType __o, enum
     default:    EXCEPTION(EPROGFAIL);  // lehetetlen, de warningol
     }
     PDEB(VERBOSE) << "SQL : \"" << sql << "\"" << endl;
-    if (!pq->exec(sql)) SQLPREPERR(*pq, sql);
-    bool r = pq->first();
-    if (r) do {
-        idList     << variantToId(pq->value(0));
-        stringList << pq->value(1).toString();
-    } while (pq->next());
-    PDEB(VVERBOSE) << "name list :" << stringList.join(_sCommaSp) << endl;
-    setStringList(stringList);
-    return r;
+    return sql;
+}
+
+void cRecordListModel::setPattern(const QVariant& _par)
+{
+    bool ok = true;
+    switch (filter) {
+    case FT_NO:         break;
+    case FT_LIKE:
+    case FT_SIMILAR:
+    case FT_REGEXP:
+    case FT_REGEXPI:
+    case FT_BEGIN:
+    case FT_SQL_WHERE:  pattern = _par.toString();
+                        break;
+    case FT_FKEY_ID:    fkey_id = _par.isNull() ? NULL_ID : _par.toLongLong(&ok);
+                        if (ok) break;
+    default:            EXCEPTION(EPROGFAIL, filter, _par.toString());
+    }
 }
 
 qlonglong cRecordListModel::idOf(const QString& __s)
@@ -397,5 +403,124 @@ void cRecordListModel::setPatternSlot(const QVariant &__pat)
 {
     PDEB(VVERBOSE) << __PRETTY_FUNCTION__ << " __pat = "  << __pat.toString() << endl;
     setFilter(__pat);
+}
+
+cRecordListModel& cRecordListModel::copy(const cRecordListModel& _o)
+{
+    if (descr != _o.descr) EXCEPTION(EDATA, 0, trUtf8("Copy model type: %1 to %2").arg(descr.tableName(), _o.descr.tableName()));
+    nullable    = _o.nullable;
+    nullIdIsAll = _o.nullIdIsAll;
+    only        = _o.only;
+
+    order       = _o.order;
+    filter      = _o.filter;
+    pattern     = _o.pattern;
+    fkey_id     = _o.fkey_id;
+    cnstFlt     = _o.cnstFlt;
+    stringList  = _o.stringList;
+    idList      = _o.idList;
+    toNameFName = _o.toNameFName;
+    setStringList(stringList);
+    return *this;
+}
+
+/* ************************************************ cZoneListModel ***************************************************** */
+cZoneListModel::cZoneListModel(QObject * __par)
+    : cRecordListModel(_sPlaceGroups, _sPublic, __par)
+{
+    setConstFilter("place_group_type = 'zone'", FT_SQL_WHERE);
+    setFilter(QVariant(), OT_ASC, FT_NO);
+}
+
+bool cZoneListModel::setFilter(const QVariant &_par, eOrderType __o, eFilterType __f)
+{
+    _DBGFN() << "@(" << _par << ")" << endl;
+    if (__o != OT_DEFAULT) order   = __o;
+    if (__f != FT_DEFAULT) filter  = __f;
+    if (!_par.isNull()) setPattern(_par);
+    stringList.clear();
+    idList.clear();
+    QString sql = select();
+    if (!pq->exec(sql)) SQLPREPERR(*pq, sql);
+    bool all = false;
+    bool r = pq->first();
+    if (r) do {
+        qlonglong id =variantToId(pq->value(0));
+        if (id == ALL_PLACE_GROUP_ID) {
+            all = true;
+            continue;
+        }
+        idList     << id;
+        stringList << pq->value(1).toString();
+    } while (pq->next());
+    if (all) {
+        stringList.push_front(_sAll);
+        idList.push_front(ALL_PLACE_GROUP_ID);
+    }
+    if (nullable) {
+        stringList.push_front(_sNul);
+        idList.push_front(NULL_ID);
+    }
+    PDEB(VVERBOSE) << "name list :" << stringList.join(_sCommaSp) << endl;
+    setStringList(stringList);
+    return r;
+}
+
+/* ************************************************ cPlacesInZoneModel ***************************************************** */
+
+const QString cPlacesInZoneModel::sqlSelect =
+        "WITH RECURSIVE tree AS"
+        " (SELECT place_id, place_name, parent_id FROM places JOIN place_group_places USING(place_id) WHERE place_group_id = %1"
+         " UNION"
+         " SELECT places.place_id, places.place_name, places.parent_id FROM places INNER JOIN tree ON places.parent_id = tree.place_id"
+         ")"
+         " SELECT place_id, place_name FROM tree ";
+const QString cPlacesInZoneModel::sqlSelectAll =
+        "SELECT place_id, place_name FROM places ";
+
+cPlacesInZoneModel::cPlacesInZoneModel(QObject * __par)
+    : cRecordListModel(_sPlaces, _sPublic, __par)
+{
+    nullable = true;
+    setFilter(QVariant(ALL_PLACE_GROUP_ID));
+}
+
+bool cPlacesInZoneModel::setFilter(const QVariant& _par, enum eOrderType __o, enum eFilterType __f)
+{
+    _DBGFN() << "@(" << _par << ")" << endl;
+    (void)__f;
+    if (__o != OT_DEFAULT) order = __o;
+    bool ok = true;
+    if (!_par.isNull()) {
+        fkey_id = _par.toLongLong(&ok);
+        if (!ok) EXCEPTION(EPROGFAIL, 0, _par.toString());
+    }
+    stringList.clear();
+    idList.clear();
+    if (nullable) {
+        stringList << _sNul;
+        idList     << NULL_ID;
+    }
+    QString sql = fkey_id == ALL_PLACE_GROUP_ID ? sqlSelectAll : sqlSelect.arg(fkey_id);
+    sql += where();
+    switch (order) {
+    case OT_NO:     break;
+    case OT_ASC:    sql += " ORDER BY place_name";      break;
+    case OT_DESC:   sql += " ORDER BY place_name DESC"; break;
+    case OT_ID_ASC: sql += " ORDER BY place_id";        break;
+    default:    EXCEPTION(EPROGFAIL);  // lehetetlen, de warningol
+    }
+    PDEB(VERBOSE) << "SQL : \"" << sql << "\"" << endl;
+    if (!pq->exec(sql)) SQLPREPERR(*pq, sql);
+    bool r = pq->first();
+    if (r) do {
+        qlonglong id = variantToId(pq->value(0));
+        if (id == UNKNOWN_PLACE_ID || id == ROOT_PLACE_ID) continue;
+        idList     << id;
+        stringList << pq->value(1).toString();
+    } while (pq->next());
+    PDEB(VVERBOSE) << "name list :" << stringList.join(_sCommaSp) << endl;
+    setStringList(stringList);
+    return r;
 }
 
