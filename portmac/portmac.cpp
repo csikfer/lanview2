@@ -1,4 +1,5 @@
 #include "portmac.h"
+#include "lv2daterr.h"
 
 #define VERSION_MAJOR   1
 #define VERSION_MINOR   01

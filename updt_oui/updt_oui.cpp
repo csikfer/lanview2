@@ -1,5 +1,7 @@
 #include <QCoreApplication>
 #include "updt_oui.h"
+#include "srvdata.h"
+#include "lv2daterr.h"
 #include "QRegExp"
 
 #define VERSION_MAJOR   0

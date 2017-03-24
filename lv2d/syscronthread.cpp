@@ -1,4 +1,5 @@
 #include "syscronthread.h"
+#include "lv2user.h"
 #include "SmtpMime"
 
 cSysCronThread::cSysCronThread(cInspector *pp)

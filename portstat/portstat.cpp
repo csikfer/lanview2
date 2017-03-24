@@ -1,4 +1,5 @@
 #include "portstat.h"
+#include "lv2daterr.h"
 
 
 #define VERSION_MAJOR   1
