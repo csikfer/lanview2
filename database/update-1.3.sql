@@ -199,4 +199,11 @@ CREATE OR REPLACE VIEW arps_shape AS
 
 -- SET database version: 1.3
 SELECT set_db_version(1, 3);
+
+-- hibajavítás
+ALTER TABLE phs_links_table ADD CONSTRAINT phs_links_table_create_user_id_fkey FOREIGN KEY (create_user_id)
+      REFERENCES users(user_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL;
+ALTER TABLE phs_links_table ADD CONSTRAINT phs_links_table_modify_user_id_fkey FOREIGN KEY (modify_user_id)
+      REFERENCES users(user_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL;
+
 END;

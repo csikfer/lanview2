@@ -1310,7 +1310,7 @@ int cNPort::fetchParams(QSqlQuery& q)
 
 QString cNPort::getFullName(QSqlQuery& q, eEx __ex) const
 {
-    return cNode().getNameById(q, getId(_ixNodeId), __ex) + ':' + getName();
+    return cPatch().getNameById(q, getId(_ixNodeId), __ex) + ':' + getName();
 }
 
 QString cNPort::getFullNameById(QSqlQuery& q, qlonglong _id)

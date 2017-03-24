@@ -22,7 +22,11 @@ enum {
     IS_IMPERFECT = IS_INVALID,
     IS_NONEXIST = 0,
     IS_EXIST,
-    IS_ENABLE
+    IS_ENABLE,
+    IS_NOT_POSSIBLE = 0,
+    IS_POSSIBLE,
+    IS_MUST
+
 };
 
 class LV2GSHARED_EXPORT cWorkstation : public cOwnTab
@@ -37,13 +41,7 @@ private:
     /// Újra építi az állandó listákat
     void _fullRefresh();
     void _refreshPlaces(QComboBox *pComboBoxZone, QComboBox *pComboBoxPlace);
-    /// A zónához tartozó helyek listáját adja vissza.
-    /// A mapZones tömb tartalmazza a listákat, ha a lista üres, akkor lekérdezi/feltölti.
-    /// @param sZone A zóna neve
-    const QStringList& _placesInZone(const QString& sZone);
     QString _changeZone(QComboBox *pComboBoxPlace, const QString& sZone, const QString& _placeName = QString());
-    void _setPlace(const QString& placeName, QComboBox *pComboBoxPlace, QComboBox *pComboBoxZone);
-    int _setCurrentIndex(const QString& name, QComboBox * pComboBox, eEx __ex = EX_ERROR );
     int _checkNodeCollision(int ix, const QString& s);
     /// Beállítja a szűrési feltételeket a node-okra, a model-nem.
     /// Ha a kiválasztott node az új listában is szerepel, akkor a pComboBoxNode
@@ -89,7 +87,7 @@ private:
         unsigned    portName:1;         // EMPTY, OK
         unsigned    macNeed:1;          // bool
         unsigned    mac:2;              // EMPTY, OK, COLLISION, INVALID
-        unsigned    ipNeed:1;           // bool
+        unsigned    ipNeed:2;           //
         unsigned    ipAddr:3;           // EMPTY, OK, COLLISION, INVALID, LOOPBACK
         unsigned    subNetNeed:1;       // bool
         unsigned    subNet:1;           // EMPTY, OK
@@ -109,14 +107,15 @@ private:
         unsigned    alarm2New:2;
     }   states;
     QString     addrCollisionInfo;
-    QString     linkCollisionsMsg;
-    QString     linkCollisionsMsg2;
+    QString     linkInfoMsg;
+    QString     linkInfoMsg2;
 
     QButtonGroup               *pPassiveButtons;
     QButtonGroup               *pModifyButtons;
-    QMap<QString, QStringList>  mapZones;   ///< A zonákhoz tartozó hely nevek listái.
-    QList<qlonglong>            placeIdList;///< place_id -k listája, sorrend azonos mint a mapZones[_sAll] (összes hely név)-ben
-    QStringList                 zones;      ///< A zónák listája sorrendben
+    cZoneListModel             *pFilterZoneModel;
+    cPlacesInZoneModel         *pFilterPlaceModel;
+    cZoneListModel             *pZoneModel;
+    cPlacesInZoneModel         *pPlaceModel;
     tRecordList<cSubNet>        subnets;
     QStringList                 subnetnamelist;
     QStringList                 subnetaddrlist;
@@ -130,6 +129,8 @@ private:
     ePhsLinkType        linkType;
     ePortShare          linkShared;
     QButtonGroup *      pLinkButtonsLinkType;
+    cZoneListModel     *pLinkZoneModel;
+    cPlacesInZoneModel *pLinkPlaceModel;
     cRecordListModel   *pModelLinkNode;
     cRecordListModel   *pModelLinkPort;
     // A (fizikai) link2:
@@ -138,6 +139,8 @@ private:
     ePhsLinkType        linkType2;
     ePortShare          linkShared2;
     QButtonGroup *      pLinkButtonsLinkType2;
+    cZoneListModel     *pLinkZoneModel2;
+    cPlacesInZoneModel *pLinkPlaceModel2;
     cRecordListModel   *pModelLinkNode2;
     cRecordListModel   *pModelLinkPort2;
 
@@ -154,8 +157,8 @@ private:
     void _parseObject();
     void _addressChanged(const QString& sType, const QString& sAddr = QString());
     void _subNetVLan(int sni, int vli);
-    void _changePortType(bool primary, int cix);
-    void _setLinkLinkType(bool primary, int id);
+    bool _changePortType(bool primary, int cix);
+    void _changeLink(bool primary);
 protected slots:
     void toglePassive(int id, bool f);
     void togleModify(int id, bool f);

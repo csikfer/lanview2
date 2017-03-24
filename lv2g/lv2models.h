@@ -264,6 +264,7 @@ public slots:
 /// A konstans szűrési feltétel a típus, ami 'zone' lesz a konstruktorban beállítva.
 /// Ha az eredmény string tartalmazza az 'all' zónát akkor az mindíg az első elem.
 class LV2GSHARED_EXPORT cZoneListModel : public cRecordListModel {
+public:
     /// Konstruktor.
     /// A szűrés alapértelmezése az összes zóna.
     /// Az objektum egy saját QSqlQuery objektumot allokál a lekérdezésekhez.
@@ -279,8 +280,9 @@ class LV2GSHARED_EXPORT cZoneListModel : public cRecordListModel {
 
 /// Model: cRecordListModel leszármazottja. A places táblát kérdezi le, a szűrési feltétel mindíg a zóna (place_group_id).
 /// Egy helyiség akkor tartozik a zónába, ha tagja az a zónát reprezentáló place_groups csoportnak, vagy valamelyik
-/// parentje tag. A nullable adattag alapértelmezése true. A listából mindíg kimarad a "root" és az "unknown" helyek.
+/// parentje tag. A nullable adattag alapértelmezése true. A listából mindíg kimarad a "root" és az "unknown" hely.
 class LV2GSHARED_EXPORT cPlacesInZoneModel : public cRecordListModel {
+public:
     /// Konstruktor.
     /// A szűrés típus nincs értelmezve, a pattern (zóna ill. place_group_id) az "ALL" ill ALL_PLACE_GROUP_ID lessz,
     /// a megjelenített lista az összes hely listája lessz.

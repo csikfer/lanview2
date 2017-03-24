@@ -490,10 +490,15 @@ bool cPlacesInZoneModel::setFilter(const QVariant& _par, enum eOrderType __o, en
     _DBGFN() << "@(" << _par << ")" << endl;
     (void)__f;
     if (__o != OT_DEFAULT) order = __o;
-    bool ok = true;
     if (!_par.isNull()) {
-        fkey_id = _par.toLongLong(&ok);
-        if (!ok) EXCEPTION(EPROGFAIL, 0, _par.toString());
+        if (_par.userType() == QVariant::String) {
+            fkey_id = cPlaceGroup().getIdByName(*pq, _par.toString());
+        }
+        else {
+            bool ok;
+            fkey_id = _par.toLongLong(&ok);
+            if (!ok) EXCEPTION(EPROGFAIL, 0, _par.toString());
+        }
     }
     stringList.clear();
     idList.clear();

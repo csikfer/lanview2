@@ -64,7 +64,7 @@ függvényeket tartalmazza az adatkezelés megkönnyítésére (lásd még: lv2s
 - bool sqlBegin(QSqlQuery& q, enum eEx __ex)
 - bool sqlEnd(QSqlQuery& q, enum eEx __ex)
 - bool sqlRollback(QSqlQuery& q, enum eEx __ex)
-- bool execSql(QSqlQuery& q, const QString& sql, const QVariant v1, const QVariant v2, const QVariant v3, const QVariant v4, const QVariant v5);
+- bool execSql(QSqlQuery& q, const QString& sql, const QVariant& v1, const QVariant& v2, const QVariant& v3, const QVariant& v4, const QVariant& v5);
 - bool execSqlFunction(QSqlQuery& q, const QString& fn, const QVariant& v1, const QVariant& v2, const QVariant& v3, const QVariant& v4, const QVariant& v5);
 - qlonglong execSqlIntFunction(QSqlQuery& q, bool *pOk, const QString& fn, const QVariant& v1, const QVariant& v2, const QVariant& v3, const QVariant& v4, const QVariant& v5);
 - QString execSqlTextFunction(QSqlQuery& q, const QString& fn, const QVariant& v1, const QVariant& v2, const QVariant& v3, const QVariant& v4, const QVariant& v5);

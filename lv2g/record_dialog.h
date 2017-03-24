@@ -9,6 +9,10 @@
 #include <QEventLoop>
 #include "lv2widgets.h"
 
+_GEX int _setCurrentIndex(const QString& name, QComboBox * pComboBox, eEx __ex = EX_ERROR );
+_GEX int _setPlaceComboBoxs(qlonglong pid, QComboBox *pComboBoxZone, QComboBox *pComboBoxPlace, bool refresh);
+
+
 /// @enum eDialogButtons
 /// @brief A dialógus ablakokban kezelt nyomógombok típusait reprezentáló enumerációs konstansok.
 enum eDialogButtons {
@@ -222,14 +226,14 @@ private:
 
 _GEX cRecord * insertRecordDialog(QSqlQuery& q, const QString& sn, QWidget *pPar = NULL);
 
-static inline QString getText(QTableWidget *pW, int row, int col) {
+static inline QString getTableItemText(QTableWidget *pW, int row, int col) {
     QString r;
     QTableWidgetItem *pItem = pW->item(row, col);
     if (pItem != NULL) r = pItem->text();
     return r;
 }
 
-static inline void setText(const QString& text, QTableWidget *pW, int row, int col) {
+static inline void setTableItemText(const QString& text, QTableWidget *pW, int row, int col) {
     QTableWidgetItem *pItem = pW->item(row, col);
     if (pItem == NULL) {
         pItem = new QTableWidgetItem(text);
@@ -240,26 +244,45 @@ static inline void setText(const QString& text, QTableWidget *pW, int row, int c
     }
 }
 
+static inline int getTableItemComboBoxCurrentIndex(QTableWidget *pW, int row, int col)
+{
+    QWidget *pWidget = pW->cellWidget(row, col);
+    if (pWidget == NULL) return -1;
+    if (!pWidget->inherits("QComboBox")) EXCEPTION(EDATA,0, QObject::trUtf8("A %1 objektum nem konvertálható QComboBox pointerré").
+                                                   arg(typeid(pWidget).name()));
+    QComboBox *pComboBox = qobject_cast<QComboBox *>(pWidget);
+    return pComboBox->currentIndex();
+}
+
 namespace Ui {
     class patchSimpleDialog;
 }
-class cInsertPatchDialog;
+class cPatchDialog;
 class cPPortTableLine;
 
 #if defined(LV2G_LIBRARY)
 #  include "ui_dialogpatchsimple.h"
+    /// Az objektum a cPatchDialog dialogus port táblázatának egy sora.
     class cPPortTableLine : public QObject {
-        friend class cInsertPatchDialog;
+        friend class cPatchDialog;
         Q_OBJECT
     public:
-        cPPortTableLine(int r, cInsertPatchDialog *par);
+        cPPortTableLine(int r, cPatchDialog *par);
+        /// A táblázatban a sor száma (0,1, ...)
         int                 row;
+        /// Másodlagos megosztott port esetén az elsődleges port sorszáma a táblázatban.
+        /// Ha nincs megadva akkor -1.
         int                 sharedPortRow;
-        cInsertPatchDialog* parent;
+        /// A parent dialógus pointere
+        cPatchDialog*       parent;
+        /// A táblázat aminek az objektum egy sora
         QTableWidget *      tableWidget;
-        QComboBox *         comboBoxShare;  ///< Hátlapi megosztás típusa
-        QComboBox *         comboBoxPortIx; ///< Az elsődleges megosztott port indexe
-        QList<int>          listPortIxRow;  ///< A comboBoxPortIx hivatkozott táblázat sor számok
+        /// Megosztás típusok comboBox widget.
+        QComboBox *         comboBoxShare;
+        /// comboBox widget, másodlagos megosztáshoz tartozó választható elsődleges portok listája.
+        QComboBox *         comboBoxPortIx;
+        /// Másodlagos megosztáshoz tartozó választható elsődleges portok listája (sor indexek).
+        QList<int>          listPortIxRow;
     private:
         bool lockSlot;
     protected slots:
@@ -273,20 +296,19 @@ enum {
     CPP_NAME, CPP_TAG, CPP_INDEX, CPP_SH_TYPE, CPP_SH_IX, CPP_NOTE
 };
 
-class LV2GSHARED_EXPORT cInsertPatchDialog : public QDialog {
+class LV2GSHARED_EXPORT cPatchDialog : public QDialog {
     friend class cPPortTableLine;
     Q_OBJECT
 public:
-    cInsertPatchDialog(QWidget *parent = NULL);
-    ~cInsertPatchDialog();
+    cPatchDialog(QWidget *parent = NULL);
+    ~cPatchDialog();
     cPatch * getPatch();
+    void setPatch(const cPatch *pSample);
 protected:
     QSqlQuery              *pq;
     Ui::patchSimpleDialog  *pUi;
-    cRecordListModel       *pModelPlace;
-    QStringList             zoneNames;
-    QList<qlonglong>        zoneIds;
-    QString                 sPlaceFilterSQL;
+    cZoneListModel         *pModelZone;
+    cPlacesInZoneModel     *pModelPlace;
     bool                    lockSlot;
     QList<cPPortTableLine *>rowsData;
     QList<int>              shPrimRows;
@@ -321,10 +343,9 @@ private slots:
     void newPlace();
     void cellChanged(int row, int col);
     void selectionChanged(const QItemSelection &, const QItemSelection &);
-    void cellActivated(int row, int col);
 };
 
-_GEX cPatch * insertPatchDialog(QSqlQuery& q, QWidget *pPar);
+_GEX cPatch * patchDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample = NULL);
 
 
 #endif // RECORD_DIALOG_H

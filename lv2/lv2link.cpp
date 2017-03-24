@@ -166,7 +166,7 @@ int cPhsLink::unlink(QSqlQuery &q, qlonglong __pid, ePhsLinkType __t, ePortShare
     return r;
 }
 
-bool cPhsLink::isExist(QSqlQuery &q, qlonglong __pid, ePhsLinkType __t, ePortShare __s)
+int cPhsLink::isExist(QSqlQuery &q, qlonglong __pid, ePhsLinkType __t, ePortShare __s)
 {
     clear();
     if (__pid == NULL_ID) return false;
@@ -178,15 +178,15 @@ bool cPhsLink::isExist(QSqlQuery &q, qlonglong __pid, ePhsLinkType __t, ePortSha
         s = portShare(__s);
     }
     if (!execSql(q, sql, __pid, phsLinkType(__t), s)) {
-        return false;
+        return 0;
     }
     set(q);
-    return true;
+    return q.size();
 }
 
 bool cPhsLink::addIfCollision(QSqlQuery &q, tRecordList<cPhsLink>& list, qlonglong __pid, ePhsLinkType __t, ePortShare __s)
 {
-    if (!isExist(q, __pid, __t, __s)) return false;
+    if (0 == isExist(q, __pid, __t, __s)) return false;
     list << *this;
     return true;
 }
@@ -314,6 +314,20 @@ int cPhsLink::unxlinks(QSqlQuery& __q, qlonglong __pid, ePhsLinkType __t, ePortS
     default:    EXCEPTION(EDATA);
     }
     return -1;
+}
+
+cPhsLink& cPhsLink::swap()
+{
+    int ix1, ix2;
+    ix1 = toIndex(_sPortId1);
+    ix2 = toIndex(_sPortId2);
+    _fields[ix1].swap(_fields[ix2]);
+    ix1 = toIndex(_sPhsLinkType1);
+    ix2 = toIndex(_sPhsLinkType2);
+    _fields[ix1].swap(_fields[ix2]);
+    ix1 = toIndex(_sForward);
+    setBool(ix1, !getBool(ix1));
+    return *this;
 }
 
 /* ----------------------------------------------------------------- */

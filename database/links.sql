@@ -86,11 +86,11 @@ COMMENT ON COLUMN phs_links_table.forward           IS 'értéke mindíg true, a
 
 CREATE OR REPLACE VIEW phs_links AS
     SELECT phs_link_id,             port_id1,            port_id2,                   phs_link_type1,                    phs_link_type2,
-           phs_link_note, port_shared, link_type, create_time, create_user_id, modify_time, modify_user_id, forward
+           phs_link_note, port_shared, link_type, create_time, create_user_id, modify_time, modify_user_id, 't'::boolean AS forward
        FROM phs_links_table
     UNION
     SELECT phs_link_id, port_id2 AS port_id1, port_id1 AS port_id2, phs_link_type2 AS phs_link_type1, phs_link_type1 AS phs_link_type2,
-           phs_link_note, port_shared, link_type, create_time, create_user_id, modify_time, modify_user_id, 'f'
+           phs_link_note, port_shared, link_type, create_time, create_user_id, modify_time, modify_user_id, 'f'::boolean AS forward
        FROM phs_links_table
 ;
 ALTER TABLE phs_links OWNER TO lanview2;
@@ -350,37 +350,23 @@ BEGIN
             NEW.create_user_id := CAST(uid AS bigint);
         END IF;
     END IF;
-    NEW.forward := CAST('f' AS boolean);
+    NEW.forward := CAST('t' AS boolean);
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TYPE linkdirection AS ENUM ('Left', 'Right');
-ALTER TYPE linkdirection OWNER TO lanview2;
--- Előkapjuk a következő linket a megadott irányban
--- Vigyázz! A beolvasott link rekorddal ha tovább megyünk, az legyen mindíg Right, vagy visszafordulunk!
 CREATE OR REPLACE FUNCTION next_phs_link(
-    rec   phs_links,      -- Az aktuális fizikai link rekord, majd a következő
-    sh    portshare,      -- SHARE, ha NULL, akkor nincs következő rekord
-    dir   linkdirection   -- Irány Right: 1-2->, Left <-1-2
+    lid   bigint,	-- phs_link_id
+    pid   bigint,	-- phs_link_id
+    link_type   phslinktype,    -- link/csatlakozás típusa a megadott irányban
+    sh    portshare       -- SHARE, ha 'NC', akkor nincs következő rekord
 )   RETURNS phs_links AS  -- A visszaadott rekordban van tárolva az eredő megosztás, tehát ez a mező nem a rekordbeli értéket tartalmazza.
 $$
 DECLARE
-    lid         bigint;        -- phs_link_id
-    pid         bigint;        -- port_id a megadott irányban
-    link_type   phslinktype;    -- link/csatlakozás típusa a megadott irányban
     port        pports;         -- port rekord a megadott irányban
     osh         portshare;      -- eredő share
     orec        phs_links;      -- Visszaadott értésk
 BEGIN
-    IF dir = 'Right' THEN
-        pid         := rec.port_id2;
-        link_type   := rec.phs_link_type2;
-    ELSE
-        pid         := rec.port_id1;
-        link_type   := rec.phs_link_type1;
-    END IF;
-    lid := rec.phs_link_id;
     osh := sh;
     BEGIN   -- Előkapjuk a pports rekordot, pontosan egynek kell lennie
         SELECT * INTO STRICT port FROM pports WHERE port_id = pid;
@@ -390,12 +376,13 @@ BEGIN
             WHEN TOO_MANY_ROWS THEN     -- több találat is van, nem egyértelmű, ez is nagyon gáz
                 PERFORM error('Ambiguous',pid, 'port_id', 'next_phs_link()', 'pports');
     END;
+    RAISE INFO 'port = %:%', node_id2name(port.node_id), port.port_name;
     IF link_type = 'Front' THEN        -- Ha Front, akkor hátlapon megyünk tovább
-        -- RAISE INFO 'next_phs_link() Front #% DIR:%  port: %:%(%)/%', lid, dir, port.node_id, port.port_name, port.port_id, link_type;
+        RAISE INFO 'next_phs_link() Front #% port: %:%(%)/%', lid, port.node_id, port.port_name, port.port_id, link_type;
         IF port.shared_cable <> '' THEN             -- Ha van hátlapi kábel megosztás
             osh := min_shared(port.shared_cable, sh);-- A két share minimuma, van átjárás ?
-            IF osh IS NULL THEN  -- A hátlapi megosztás miatt ez rossz irány, nincs átjárás
-                -- RAISE INFO 'RETURN: osh IS NULL';
+            IF osh = 'NC' THEN  -- A hátlapi megosztás miatt ez rossz irány, nincs átjárás
+                RAISE INFO 'RETURN: osh = NC';
                 RETURN NULL;         -- NULL, nincs következő link
             END IF;
             -- A hátlapi link csak az egyik megosztásra van megadva, beolvassuk azt a portot
@@ -405,42 +392,43 @@ BEGIN
         END IF;
         BEGIN -- Hátlapi összeköttetés csak egy lehet, a share máshogy van lerendezve
             SELECT * INTO STRICT orec FROM phs_links
-                WHERE port_id1 = port.port_id AND phs_link_type1 = 'Back' AND phs_link_id <> lid;
+                WHERE port_id1 = port.port_id AND phs_link_type1 = 'Back' AND phs_link_id <> COALESCE(lid, -1);
             EXCEPTION
                 WHEN NO_DATA_FOUND THEN -- Nincs következő link
-                    -- RAISE INFO 'RETURN: sh IS NULL';
+                    RAISE INFO 'RETURN: NULL (break)';
                     RETURN NULL;
                 WHEN TOO_MANY_ROWS THEN     -- Ez viszont hiba
                     PERFORM error('Ambiguous', -1, 'port_id1', 'next_phs_link()', 'phs_links');
         END;
-        -- RAISE INFO 'RETURN osh = "%"; orec : id = % % -> %', osh, orec.phs_link_id, orec.port_id1, orec.port_id2;
+        RAISE INFO 'RETURN osh = "%"; orec : id = % % -> %', osh, orec.phs_link_id, orec.port_id1, orec.port_id2;
         orec.port_shared := min_shared(orec.port_shared, osh);
         RETURN orec;    -- Megvan, és kész (az eredmény (Back) 2-es portján nem foglalkoztunk a share-val)
     ELSIF link_type = 'Back' THEN          -- Ha hátlap, akkor az előlap felé megyünk
-        -- RAISE INFO 'next_phs_link() Back #% DIR:%  port: %:%(%)/%', lid, dir, port.node_id, port.port_name, port.port_id, link_type;
+        RAISE INFO 'next_phs_link() Back #% port: %:%(%)/%', lid, port.node_id, port.port_name, port.port_id, link_type;
         -- hátlapi megosztás esetán, lehet, hogy nem ez az előlapi port
-        IF port.shared_cable <> '' AND min_shared(port.shared_cable, sh) IS NULL THEN
+        IF port.shared_cable <> '' AND min_shared(port.shared_cable, sh) = 'NC' THEN
+            RAISE INFO 'Shared cable, find port...';
             -- tényleg nem ez az, keressük meg
             FOR port IN SELECT * FROM pports WHERE port_id = port.shared_port_id LOOP
-                EXIT WHEN min_shared(port.shared_cable, sh) IS NOT NULL;
+                EXIT WHEN min_shared(port.shared_cable, sh) <> 'NC';
             END LOOP;
             osh := min_shared(port.shared_cable, sh);
-            IF osh IS NULL THEN  -- Ha nem találtuk meg, akkor nincs link.
-                -- RAISE INFO 'RETURN: osh IS NULL';
+            IF osh = 'NC' THEN  -- Ha nem találtuk meg, akkor nincs link.
+                RAISE INFO 'RETURN: osh IS NULL (shared cable, shared port not found)';
                 RETURN NULL;
             END IF;
         END IF; -- Megvan az előlapi port
         -- A kábelmegosztások miatt megint keresni kell az igazi linket.
-        FOR orec IN SELECT * FROM phs_links WHERE port_id1 = port.port_id AND phs_link_type1 = 'Front' AND phs_link_id <> lid LOOP
-            -- RAISE INFO 'for : orec.phs_link_id = %, orec.port_shared = %', orec.phs_link_id, orec.port_shared;
-            EXIT WHEN min_shared(osh, orec.port_shared) IS NOT NULL;
+        FOR orec IN SELECT * FROM phs_links WHERE port_id1 = port.port_id AND phs_link_type1 = 'Front' AND phs_link_id <> COALESCE(lid, -1) LOOP
+            RAISE INFO 'for : orec.phs_link_id = %, orec.port_shared = %', orec.phs_link_id, orec.port_shared;
+            EXIT WHEN min_shared(osh, orec.port_shared) <> 'NC';
         END LOOP;
         osh := min_shared(sh, orec.port_shared);
-        IF orec IS NULL OR osh IS NULL THEN
-            -- RAISE INFO 'RETURN: NULL';
+        IF orec IS NULL OR osh = 'NC' THEN
+            RAISE INFO 'RETURN: NULL (break)';
             RETURN NULL;
         END IF;
-        -- RAISE INFO 'RETURN sh = "%"; rrec id = % % -> %', sh, orec.phs_link_id, orec.port_id1, orec.port_id2;
+        RAISE INFO 'RETURN sh = "%"; rrec id = % % -> %', sh, orec.phs_link_id, orec.port_id1, orec.port_id2;
         orec.port_shared := osh;
         RETURN orec; -- Ha van találat sh nem NULL.
     ELSE
@@ -450,6 +438,30 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE TYPE linkdirection AS ENUM ('Left', 'Right');
+ALTER TYPE linkdirection OWNER TO lanview2;
+-- Előkapjuk a következő linket a megadott irányban
+-- Vigyázz! A beolvasott link rekorddal ha tovább megyünk, az legyen mindíg Right, vagy visszafordulunk!
+CREATE OR REPLACE FUNCTION next_phs_link(
+    rec   phs_links,      -- Az aktuális fizikai link rekord, majd a következő
+    sh    portshare,      -- SHARE, ha 'NC', akkor nincs következő rekord
+    dir   linkdirection   -- Irány Right: 1-2->, Left <-1-2
+)   RETURNS phs_links AS  -- A visszaadott rekordban van tárolva az eredő megosztás, tehát ez a mező nem a rekordbeli értéket tartalmazza.
+$$
+DECLARE
+    pid         bigint;        -- port_id a megadott irányban
+    link_type   phslinktype;    -- link/csatlakozás típusa a megadott irányban
+BEGIN
+    IF dir = 'Right' THEN
+        pid         := rec.port_id2;
+        link_type   := rec.phs_link_type2;
+    ELSE
+        pid         := rec.port_id1;
+        link_type   := rec.phs_link_type1;
+    END IF;
+    RETURN next_phs_link(rec.phs_link_id, pid, link_type, sh);
+END;
+$$ LANGUAGE plpgsql;
 -- Fizikai link beinzertálása után, kitaláljuk a logikai linket.
 
 CREATE OR REPLACE FUNCTION post_insert_phs_links()

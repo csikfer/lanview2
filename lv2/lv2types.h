@@ -177,11 +177,11 @@ class LV2SHARED_EXPORT cMac {
     qlonglong toULongLong() const           { return (qulonglong)val; }
     /// Ha a val adattag értéke 0, akkor true-val tér vissza
     bool isEmpty() const                    { return val == 0LL; }
-    /// Ha a MAC 64 bites ábrázolásában (val adattag) a fölösleges bitek bármelyike nem nulla,
-    /// akkor false-val tér vissza, egyébként true-val.
-    bool isValid() const                    { return (val & ~mask) == 0LL; }
     ///
-    static bool isValid(qlonglong v)        { return (v   & ~mask) == 0LL; }
+    static bool isValid(qlonglong v)        { return (v != 0) && ((v   & ~mask) == 0LL); }
+    /// Ha a MAC 64 bites ábrázolásában (val adattag) a fölösleges bitek bármelyike nem nulla,
+    /// vagy a szám értéke nulla, akkor false-val tér vissza, egyébként true-val.
+    bool isValid() const                    { return isValid(val); }
     static bool isValid(const QString& v);
     static bool isValid(const QByteArray& v);
     static bool isValid(const QVariant& v);

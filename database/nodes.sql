@@ -233,26 +233,27 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION check_shared(portshare, portshare) IS
 'Megvizsgálja, hogy a megadott két megosztás típus átfedi-e egymást,ha nem akkor igazzal tér vissza.';
 
--- Legkisebb SHARE meghatározása, ha a két share kombináció nem ad semmilyen összeköttetést, akkor NULL
 CREATE OR REPLACE FUNCTION min_shared(portshare, portshare) RETURNS portshare AS $$
 BEGIN
     IF $1 = 'NC' OR $2 = 'NC' THEN
-        PERFORM error('DataError', -1, 'shared_cable', 'min_shared()', 'pports');
+        PERFORM error('DataWarn', -1, 'shared_cable', 'min_shared()', 'pports');
+    ELSE
+        IF $1 > $2 THEN
+		RETURN min_shared($2, $1);
+	END IF;
+	IF ( $1 = $2 ) OR ( $1 = '' )
+	  OR ( $1 = 'A' AND ( $2 = 'AA' OR $2 = 'AB' ) )
+	  OR ( $1 = 'B' AND ( $2 = 'BA' OR $2 = 'BB' ) ) THEN
+	    RAISE INFO 'min_shared(%,%) = %', $1,$2,$2;
+	    RETURN $2;
+	END IF;
     END IF;
-    IF $1 > $2 THEN
-        RETURN min_shared($2, $1);
-    END IF;
-    IF ( $1 = $2 ) OR ( $1 = '' )
-    OR ( $1 = 'A' AND ( $2 = 'AA' OR $2 = 'AB' ) )
-    OR ( $1 = 'B' AND ( $2 = 'BA' OR $2 = 'BB' ) ) THEN
-        RAISE INFO 'min_shared(%,%) = %', $1,$2,$2;
-        RETURN $2;
-    END IF;
-    -- RAISE INFO 'min_shared(%,%) = NULL', $1,$2;
-    RETURN NULL;
+    RAISE INFO 'min_shared(%,%) = NC', $1,$2;
+    RETURN 'NC';
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION min_shared(portshare, portshare) IS 'Legkisebb SHARE meghatározása, ha a két share kombináció nem ad semmilyen összeköttetést, akkor NULL';
+COMMENT ON FUNCTION min_shared(portshare, portshare) IS 'Legkisebb SHARE meghatározása, ha a két share kombináció nem ad semmilyen összeköttetést, akkor NC';
+
 
 -- Egy portshare tömbnek azon elemeivel tér vissza, melyek nem ütköznek a második paraméterrel
 CREATE OR REPLACE FUNCTION shares_filt(shares portshare[], sh portshare) RETURNS portshare[] AS $$
