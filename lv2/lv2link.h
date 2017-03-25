@@ -5,15 +5,15 @@
 /// Fizikai link típusa
 enum ePhsLinkType {
     LT_INVALID = ENUM_INVALID,
-    LT_FRONT   = 0,     ///< Patch oanel, fali csatlakozü előlapi/külső link
-    LT_BACK,            ///< Patch oanel, fali csatlakozü játlapi/belső link
+    LT_FRONT   = 0,     ///< Patch panel, fali csatlakozü előlapi/külső link
+    LT_BACK,            ///< Patch panel, fali csatlakozü játlapi/belső link
     LT_TERM             ///< Hálózati elem/végpont linkje
 };
 
 EXT_ int phsLinkType(const QString& n, enum eEx __ex = EX_ERROR);
 EXT_ const QString& phsLinkType(int e, enum eEx __ex = EX_ERROR);
 
-typedef QPair<qlonglong, ePhsLinkType> tPhsLinkPort;
+// typedef QPair<qlonglong, ePhsLinkType> tPhsLinkPort;
 
 /// @class cPhsLink
 /// Fizikai link objektumok. Patch és fali kábeleket reprezentáló objektum.
@@ -106,22 +106,33 @@ template <class L> qlonglong LinkGetLinked(QSqlQuery& q, qlonglong __pid) {
 /// @return true, ha a portok linkben vannak, ekkor a link rekord beolvasásra kerül o-ba.
 EXT_ bool LinkIsLinked(QSqlQuery& q, cRecord& o, qlonglong __pid1, qlonglong __pid2);
 
+/// @class cLogLink
+/// A logikai linkek tábláját (ill. a hozzátartozó szimmetrikus viewt) kezelő objektum.
+/// A tábla csak olvasható. Azt az adatbázis logika folyamatosan aktualizálja, ha
+/// a fizikai linkek változnak. A logikai link a végpontok közti kapcsolatot írja le,
+/// végighaladva a fizikai linkek láncán végponttól végpontig.
 class LV2SHARED_EXPORT cLogLink : public cRecord {
     CRECORD(cLogLink);
 public:
-    /// A tábla írása automatikus, az insert metódus tiltott
+    /// A tábla írása automatikus, az insert metódus tiltott, kizárást dob.
     virtual bool insert(QSqlQuery &, bool);
-    /// A tábla írása automatikus, az insert metódus tiltott
+    /// A tábla írása automatikus, az insert metódus tiltott, kizárást dob.
     virtual int replace(QSqlQuery &, bool);
-    /// A tábla írása automatikus, az update metódus tiltott
+    /// A tábla írása automatikus, az update metódus tiltott, kizárást dob.
     virtual bool update(QSqlQuery &, bool, const QBitArray &, const QBitArray &, bool);
     /// A logikai link tábla alapján megadja, hogy a megadott id-jű port mely másik portal van összekötve
     /// Az aktuális link rekordot beolvassa, ha van találat.
     /// @param A port id, melyel linkelt portot keressük.
     /// @return A linkelt port id-je, vagy NULL_ID, ha nincs linkbe másik port a megadottal.
     qlonglong getLinked(QSqlQuery& q, qlonglong __pid) { return LinkGetLinked(q, *this, __pid); }
+    /// A logikai link tábla alapján megadja, hogy a két port linkelve ven-e.
+    /// Ha igen, akkor beolvassa a link rekordot.
+    /// @param q Az SQL lekérdezéshez használt objektum.
+    /// @param __pid1 Az egyik port ID-je (port_id1)
+    /// @param __pid1 Az másik port ID-je (port_id2)
+    /// @return ha a két port linkelve van, akkor true, egyébként false
+    /// @exception Ha megadott portokra két találat van a táblában (ami elvileg lehetetlen).
     bool isLinked(QSqlQuery& q, qlonglong __pid1, qlonglong __pid2) { return LinkIsLinked(q, *this, __pid1, __pid2); }
-
 };
 
 class LV2SHARED_EXPORT cLldpLink : public cRecord {
@@ -133,11 +144,19 @@ public:
     /// @param __pid Port id (port_id1)
     /// @return true, ha törölt egy rekordot, false, ha nem
     bool unlink(QSqlQuery &q, qlonglong __pid);
-    /// A logikai link tábla alapján megadja, hogy a megadott id-jű port mely másik portal van összekötve
+    /// Az LLDP-vel federített link tábla alapján megadja, hogy a megadott id-jű port mely másik portal van összekötve
     /// Az aktuális link rekordot beolvassa, ha van találat.
+    /// @param q Az SQL lekérdezéshez használt objektum.
     /// @param A port id, melyel linkelt portot keressük.
     /// @return A linkelt port id-je, vagy NULL_ID, ha nincs linkbe másik port a megadottal.
     qlonglong getLinked(QSqlQuery& q, qlonglong __pid) { return LinkGetLinked(q, *this, __pid); }
+    /// Az LLDP-vel federített link tábla alapján megadja, hogy a két port linkelve ven-e.
+    /// Ha igen, akkor beolvassa a link rekordot.
+    /// @param q Az SQL lekérdezéshez használt objektum.
+    /// @param __pid1 Az egyik port ID-je (port_id1)
+    /// @param __pid1 Az másik port ID-je (port_id2)
+    /// @return ha a két port linkelve van, akkor true, egyébként false
+    /// @exception Ha megadott portokra két találat van a táblában (ami elvileg lehetetlen).
     bool isLinked(QSqlQuery& q, qlonglong __pid1, qlonglong __pid2) { return LinkIsLinked(q, *this, __pid1, __pid2); }
 };
 

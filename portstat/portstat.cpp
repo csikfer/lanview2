@@ -123,7 +123,7 @@ void cDevicePSt::postInit(QSqlQuery &q, const QString&)
             QString msg;
             cInterface *p = dynamic_cast<cInterface *>(np);
              // Mivel van linkelve?
-            qlonglong lpid, lpid1, lpid2;     // Linkelt port ID
+            qlonglong lpid, lpid1, lpid2;     // Linkelt port ID(k)
             lpid = cLldpLink().getLinked(q, p->getId());
             if (lpid != NULL_ID) {
                 lpid1 = cLogLink().getLinked(q, p->getId());

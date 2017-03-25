@@ -4,6 +4,7 @@
 #include "lv2service.h"
 #include "import_parser.h"
 #include "guidata.h"
+#include "scan.h"
 
 /* ******************************  ****************************** */
 DEFAULTCRECDEF(cIpProtocol, _sIpProtocols)
