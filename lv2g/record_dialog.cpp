@@ -132,15 +132,15 @@ void cDialogButtons::staticInit()
     if (buttonNames.isEmpty()) {
         appendCont(buttonNames, trUtf8("OK"),          icons, QIcon(":/icons/ok.ico"),      keys, Qt::Key_Enter,  DBT_OK);
         appendCont(buttonNames, trUtf8("Bezár"),       icons, QIcon(":/icons/close.ico"),   keys, Qt::Key_Escape, DBT_CLOSE);
-        appendCont(buttonNames, trUtf8("Frissít"),     icons, QIcon(":/icons/refresh.ico"), keys, Qt::Key_F5,     DBT_REFRESH);
+        appendCont(buttonNames, _sNul,                 icons, QIcon(":/icons/refresh.ico"), keys, Qt::Key_F5,     DBT_REFRESH);
         appendCont(buttonNames, trUtf8("Új"),          icons, QIcon(":/icons/insert.ico"),  keys, Qt::Key_Insert, DBT_INSERT);
         appendCont(buttonNames, trUtf8("Hasonló"),     icons, QIcon(":/icons/insert.ico"),  keys, 0,              DBT_SIMILAR);
         appendCont(buttonNames, trUtf8("Módosít"),     icons, QIcon(":/icons/edit.ico"),    keys, 0,              DBT_MODIFY);
         appendCont(buttonNames, trUtf8("Ment"),        icons, QIcon(":/icons/save.ico"),    keys, 0,              DBT_SAVE);
-        appendCont(buttonNames, trUtf8("Első"),        icons, QIcon(":/icons/first.ico"),   keys, Qt::Key_Home,   DBT_FIRST);
-        appendCont(buttonNames, trUtf8("Előző"),       icons, QIcon(":/icons/previous.ico"),keys, Qt::Key_PageUp, DBT_PREV);
-        appendCont(buttonNames, trUtf8("Következő"),   icons, QIcon(":/icons/next.ico"),    keys, Qt::Key_PageDown,DBT_NEXT);
-        appendCont(buttonNames, trUtf8("Utolsó"),      icons, QIcon(":/icons/last.ico"),    keys, Qt::Key_End,    DBT_LAST);
+        appendCont(buttonNames, _sNul,                 icons, QIcon(":/icons/first.ico"),   keys, Qt::Key_Home,   DBT_FIRST);
+        appendCont(buttonNames, _sNul,                 icons, QIcon(":/icons/previous.ico"),keys, Qt::Key_PageUp, DBT_PREV);
+        appendCont(buttonNames, _sNul,                 icons, QIcon(":/icons/next.ico"),    keys, Qt::Key_PageDown,DBT_NEXT);
+        appendCont(buttonNames, _sNul,                 icons, QIcon(":/icons/last.ico"),    keys, Qt::Key_End,    DBT_LAST);
         appendCont(buttonNames, trUtf8("Töröl"),       icons, QIcon(":/icons/delete.ico"),  keys, Qt::Key_Delete, DBT_DELETE);
         appendCont(buttonNames, trUtf8("Visszaállít"), icons, QIcon(":/icons/undo.ico"),    keys, 0,              DBT_RESTORE);
         appendCont(buttonNames, trUtf8("Elvet"),       icons, QIcon(":/icons/cancel.ico"),  keys, Qt::Key_Escape, DBT_CANCEL);
@@ -159,9 +159,16 @@ void cDialogButtons::staticInit()
     if (       keys.size() != _buttonNumbers) EXCEPTION(EPROGFAIL);
 }
 
-QPushButton *cDialogButtons::addPB(int id, QWidget *par)
+QAbstractButton *cDialogButtons::addPB(int id, QWidget *par)
 {
-    QPushButton *pPB = new QPushButton(icons[id], buttonNames[id], par);
+    QAbstractButton *pPB;
+    if (buttonNames.isEmpty()) {
+        pPB = new QToolButton(par);
+        pPB->setIcon(icons[id]);
+    }
+    else {
+        pPB = new QPushButton(icons[id], buttonNames[id], par);
+    }
     int key = keys[id];
     if (key > 0) pPB->setShortcut(QKeySequence(key));
     addButton(pPB, id);

@@ -29,6 +29,15 @@ template <class C1, class M1, class C2, class M2, class C3, class M3>
     c3 << m3;
 }
 
+template <class C1, class M1, class C2, class M2, class C3, class M3, class C4, class M4>
+    void appendCont(C1& c1, const M1& m1, C2& c2, const M2& m2, C3& c3, const M3& m3, C4& c4, const M4& m4, int i) {
+    if (c1.size() != i || c2.size() != i || c3.size() != i || c4.size() != i) EXCEPTION(EPROGFAIL, i);
+    c1 << m1;
+    c2 << m2;
+    c3 << m3;
+    c4 << m4;
+}
+
 /*!
 @class tRecordList
 Template osztály. Rekord lista konténer.

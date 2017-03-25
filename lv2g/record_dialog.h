@@ -55,7 +55,7 @@ public:
     void enabeAll();
     void disable(qlonglong __idSet);
     void disableExcept(qlonglong __idSet = ENUM2SET2(DBT_CANCEL, DBT_CLOSE));
-    QPushButton *addPB(int id, QWidget *par);
+    QAbstractButton *addPB(int id, QWidget *par);
 protected:
     void init(int buttons, QBoxLayout *pL);
     static void staticInit();
