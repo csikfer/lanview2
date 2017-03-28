@@ -29,11 +29,11 @@ enum {
 
 };
 
-class LV2GSHARED_EXPORT cWorkstation : public cOwnTab
+class LV2GSHARED_EXPORT cWorkstation : public cIntSubObj
 {
     Q_OBJECT
 public:
-    cWorkstation(QWidget *parent = 0);
+    cWorkstation(QMdiArea *parent = 0);
     ~cWorkstation();
 private:
     /// A komboBox-okhoz legenerálja az állandó listákat.

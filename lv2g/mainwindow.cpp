@@ -12,10 +12,15 @@ cMainWindow::cMainWindow(QWidget *parent) :
     QString title = trUtf8("LanView %1 V%2, API V%3")
             .arg(lanView::appName, lanView::appVersion, lanView::libVersion);
     setWindowTitle(title);
-    pTabWidget = new QTabWidget(this);
-    connect(pTabWidget, SIGNAL(tabBarDoubleClicked(int)), this, SLOT(widgetSplitterOrientation(int)));
+    pMdiArea = new QMdiArea(this);
+    pMdiArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    pMdiArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    pMdiArea->setDocumentMode(true);
+    pMdiArea->setViewMode(QMdiArea::TabbedView);
+    pMdiArea->setTabsMovable(true);
+    pMdiArea->setTabsClosable(true);
     // Central Widget
-    setCentralWidget(pTabWidget);
+    setCentralWidget(pMdiArea);
     if (!lanView::dbIsOpen()) {   // Minimalista setup, nincs adatbázisunk, vagy csak ez kell
         setSetupMenu();
     }
@@ -55,19 +60,19 @@ void cMainWindow::setSetupMenu()
 
     QString nm = trUtf8("Setup");
     pa = pm->addAction(nm);
-    cOwnTab *pot =  new cSetupWidget(*lanView::getInstance()->pSet, NULL);
+    cIntSubObj *pot =  new cSetupWidget(NULL);
     pot->setObjectName(nm);
-    po  = new cMenuAction(pot, OWN_SETUP, pa, pTabWidget);
+    po  = new cMenuAction(pot, INT_SETUP, pa, pMdiArea);
     po->setObjectName(nm);
 
     nm = trUtf8("Restart");
     pa = pm->addAction(nm);
-    po  = new cMenuAction(nm, pa, pTabWidget);
+    po  = new cMenuAction(nm, pa, pMdiArea);
     po->setObjectName(nm);
 
     nm = trUtf8("Exit");
     pa = pm->addAction(nm);
-    po  = new cMenuAction(nm, pa, pTabWidget);
+    po  = new cMenuAction(nm, pa, pMdiArea);
     po->setObjectName(nm);
 
     if (lanView::dbIsOpen()) {
@@ -79,9 +84,9 @@ void cMainWindow::setSetupMenu()
 
         QString nm = trUtf8("Import");
         pa = pm->addAction(nm);
-        cOwnTab *pot =  new cParseWidget(NULL);
+        cIntSubObj *pot =  new cParseWidget(NULL);
         pot->setObjectName(nm);
-        po  = new cMenuAction(pot, OWN_PARSER, pa, pTabWidget);
+        po  = new cMenuAction(pot, INT_PARSER, pa, pMdiArea);
         po->setObjectName(nm);
     }
 }
@@ -112,11 +117,12 @@ void cMainWindow::action(QAction *pa, cMenuItem& _mi, QSqlQuery *pq)
         else DWAR() << trUtf8("üres menü : ") << _mi.getName(_sMenuTitle) << endl;
     }
     else {
-        new cMenuAction(pq, &_mi, pa, pTabWidget);
+        new cMenuAction(pq, &_mi, pa, pMdiArea);
     }
     DBGFNL();
 }
 
+/*
 void cMainWindow::widgetSplitterOrientation(int index)
 {
     QWidget *tab = pTabWidget->widget(index);
@@ -137,4 +143,4 @@ void cMainWindow::widgetSplitterOrientation(int index)
     case Qt::Vertical:      psp->setOrientation(Qt::Horizontal); break;
     }
 }
-
+*/

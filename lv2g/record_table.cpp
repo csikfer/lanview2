@@ -1207,7 +1207,7 @@ QStringList cRecordsViewBase::refineWhere(QVariantList& qParams)
     if (! pTableShape->isNull(_sRefine)) {  // Ha megadtak egy általános érvényű szűrőt
         QString refine = pTableShape->getName(_sRefine);
         if (refine.isEmpty()) return r;     // Mégsincs megadva, üres
-        QStringList rl = refine.split(QChar(':'));
+        QStringList rl = splitBy(refine);
         r << rl.at(0);
         if ((rl.at(0).count(QChar('?')) + 1) != rl.size())
             EXCEPTION(EDATA, -1, trUtf8("Inkonzisztens adat; refine = %1").arg(rl.join(QChar(':'))));

@@ -2,9 +2,9 @@
 
 const enum ePrivilegeLevel cGSetupWidget::rights = PL_VIEWER;
 
-cGSetupWidget::cGSetupWidget(QSettings &__s, QWidget *par)
-    : cOwnTab(par)
-    , qset(__s)
+cGSetupWidget::cGSetupWidget(QMdiArea *par)
+    : cIntSubObj(par)
+    , qset(*lanView::getInstance()->pSet)
 {
     pSound = NULL;
     enum Qt::Orientation splOrient = lv2g::getInstance()->defaultSplitOrientation;

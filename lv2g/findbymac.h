@@ -8,11 +8,11 @@ namespace Ui {
     class FindByMac;
 }
 
-class LV2GSHARED_EXPORT cFindByMac : public cOwnTab
+class LV2GSHARED_EXPORT cFindByMac : public cIntSubObj
 {
     Q_OBJECT
 public:
-    explicit cFindByMac(QWidget *parent = 0);
+    explicit cFindByMac(QMdiArea *parent = 0);
     ~cFindByMac();
 private:
     Ui::FindByMac *pUi;

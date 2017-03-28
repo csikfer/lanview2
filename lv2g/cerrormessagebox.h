@@ -13,8 +13,12 @@ public:
     explicit cErrorMessageBox(cError * _pe, QWidget *parent = 0);
     static int messageBox(cError * _pe, QWidget *parent = 0) { return cErrorMessageBox(_pe, parent).exec(); }
     static int condMsgBox(cError * _pe, QWidget *parent = 0);
+protected:
+    void row(const QString &l, const QString& val, Qt::AlignmentFlag a = Qt::AlignLeft);
+    QFormLayout *pForm;
+    QString text;
 public slots:
-    void endIt();
+    void pushed(int id);
 };
 
 #endif // CERRORMESSAGEBOX_H

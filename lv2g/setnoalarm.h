@@ -8,11 +8,11 @@
 #include "ui_noalarm.h"
 #include "lv2models.h"
 
-class LV2GSHARED_EXPORT cSetNoAlarm : public cOwnTab
+class LV2GSHARED_EXPORT cSetNoAlarm : public cIntSubObj
 {
     Q_OBJECT
 public:
-    cSetNoAlarm(QWidget *par);
+    cSetNoAlarm(QMdiArea *par);
     ~cSetNoAlarm();
     static const enum ePrivilegeLevel rights;
 protected:

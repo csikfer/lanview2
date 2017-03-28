@@ -141,6 +141,9 @@ template <class T> bool isContIx(const T& cont, qlonglong ix) {
 /// @return Az eredmény stringgel tér vissza
 EXT_ QString nameAndNumber(const QString& __pat, int __num, char __c = '?');
 
+EXT_ QStringList splitBy(const QString& s, const QChar& sep = QChar(':'), const QChar& esc = QChar('\\'));
+
+
 /// @class cFeatures
 /// \brief A features mezőt kezelő osztály. A kulcs a metódusokban mindíg kisbetüssé van konvertálva.
 class LV2SHARED_EXPORT cFeatures : public QMap<QString, QString>

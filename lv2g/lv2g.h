@@ -169,12 +169,17 @@ static inline QWidget *newFrame(int _st, QWidget * p = NULL)
 static inline QWidget *newHLine(QWidget * p = NULL) { return newFrame(QFrame::HLine, p); }
 static inline QWidget *newVLine(QWidget * p = NULL) { return newFrame(QFrame::VLine, p); }
 
-// A tab-os megjelenítéshez egy segéd osztály,
-class LV2GSHARED_EXPORT cOwnTab : public QWidget {
+class cMenuAction;
+// A  megjelenítéshez egy segéd osztály,
+class LV2GSHARED_EXPORT cIntSubObj : public QWidget {
+    friend class cMenuAction;
     Q_OBJECT
 public:
-    cOwnTab(QWidget *par);
+    cIntSubObj(QMdiArea *par);
     QWidget *pWidget() { return (QWidget *)this; }
+protected:
+    QMdiSubWindow *pSubWindow;
+
 signals:
     // A widget-et be kell csukni, el kell távolítani ...
     void closeIt();

@@ -13,11 +13,11 @@ namespace Ui {
 #endif
 
 
-class  LV2GSHARED_EXPORT cErrcodesWidget : public cOwnTab
+class  LV2GSHARED_EXPORT cErrcodesWidget : public cIntSubObj
 {
     Q_OBJECT
 public:
-    cErrcodesWidget(QWidget *par);
+    cErrcodesWidget(QMdiArea *par);
     ~cErrcodesWidget();
     static const enum ePrivilegeLevel rights;
 private:

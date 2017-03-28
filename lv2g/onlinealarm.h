@@ -9,12 +9,12 @@
 
 class  cAckDialog;
 
-class  LV2GSHARED_EXPORT cOnlineAlarm : public cOwnTab
+class  LV2GSHARED_EXPORT cOnlineAlarm : public cIntSubObj
 {
     friend class  cAckDialog;
     Q_OBJECT
 public:
-    cOnlineAlarm(QWidget *par);
+    cOnlineAlarm(QMdiArea *par);
     ~cOnlineAlarm();
     static const enum ePrivilegeLevel rights;
 private:

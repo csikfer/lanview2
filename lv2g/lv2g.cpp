@@ -195,12 +195,24 @@ void _setFonts()
 }
 
 
-cOwnTab::cOwnTab(QWidget *par) :QWidget(par)
+cIntSubObj::cIntSubObj(QMdiArea *par) :QWidget(par)
 {
-    ;
+    if (par == NULL) {
+        pSubWindow = NULL;
+    }
+    else {
+#if 0
+        pSubWindow = par->addSubWindow(pWidget());
+#else
+        pSubWindow = new QMdiSubWindow;
+        pSubWindow->setWidget(pWidget());
+        pSubWindow->setAttribute(Qt::WA_DeleteOnClose);
+        par->addSubWindow(pSubWindow);
+#endif
+    }
 }
 
-void cOwnTab::endIt()
+void cIntSubObj::endIt()
 {
     closeIt();
 }

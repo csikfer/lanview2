@@ -18,14 +18,15 @@ public:
     /// Ha _setupOnly false, akkor üres üres tab mellett, felolvassa az adatbáziskól a menüt, és megjeleníti.
     cMainWindow(QWidget *parent = 0);
     ~cMainWindow();
-    /// A QTabWidget objektum pointere, a fő ablak munkaterülete.
-    QTabWidget *pTabWidget;
+    /// A QMdiArea objektum pointere, a fő ablak munkaterülete.
+    QMdiArea   *pMdiArea;
 private:
     ///
     void action(QAction *pa, cMenuItem& _mi, QSqlQuery *pq = NULL);
+    /// Ha nincs menű, akkor a beállításokat lehetővétevő menu beállítása.
     void setSetupMenu();
-private slots:
-    void widgetSplitterOrientation(int index);
+// private slots:
+//    void widgetSplitterOrientation(int index);
 };
 
 

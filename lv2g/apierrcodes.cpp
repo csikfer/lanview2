@@ -2,8 +2,8 @@
 
 const enum ePrivilegeLevel cErrcodesWidget::rights = PL_OPERATOR;
 
-cErrcodesWidget::cErrcodesWidget(QWidget *par)
-: cOwnTab(par)
+cErrcodesWidget::cErrcodesWidget(QMdiArea *par)
+: cIntSubObj(par)
 {
     pUi = new Ui::apiErrorCodes();
     pUi->setupUi(this);

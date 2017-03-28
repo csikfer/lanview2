@@ -153,8 +153,8 @@ static void buttonSets(QAbstractButton *p, bool e, bool c)
 
 /* ************************************************************************************************* */
 
-cWorkstation::cWorkstation(QWidget *parent) :
-    cOwnTab(parent),
+cWorkstation::cWorkstation(QMdiArea *parent) :
+    cIntSubObj(parent),
     pUi(new Ui::wstWidget),
     pq(newQuery()),
     pSample(new cNode),

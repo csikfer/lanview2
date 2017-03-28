@@ -7,7 +7,7 @@ QString  cOnlineAlarm::sPlaceTitle;
 QString  cOnlineAlarm::sNodeTitle;
 QString  cOnlineAlarm::sTicket;
 
-cOnlineAlarm::cOnlineAlarm(QWidget *par) : cOwnTab(par)
+cOnlineAlarm::cOnlineAlarm(QMdiArea *par) : cIntSubObj(par)
 {
     lanView::getInstance()->subsDbNotif(_sAlarm);
     connect(getSqlDb()->driver(), SIGNAL(notification(QString,QSqlDriver::NotificationSource,QVariant)),
@@ -312,10 +312,7 @@ void cOnlineAlarm::noAckDataReloded(const tRecords& _recs)
     if (isAlarm) {                  // Riasztás
         pSound->play();             // Sziréna (ha van hangfájl.)
         if (lv2g::pMainWindow != NULL) {    // Aktíváljuk az ablakot
-            QTabWidget *tab = lv2g::pMainWindow->pTabWidget;
-            int i = tab->indexOf(pWidget());
-            if (i >= 0) tab->setCurrentIndex(i);    // A tabot is
-            if (!lv2g::pMainWindow->isActiveWindow())lv2g::pMainWindow->activateWindow();
+            lv2g::pMainWindow->pMdiArea->setActiveSubWindow(pSubWindow);
         }
     }
     else         pSound->stop();    // Nincs riasztás, hanjelzés kikapcsol

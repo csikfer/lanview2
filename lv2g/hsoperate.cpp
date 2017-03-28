@@ -20,8 +20,8 @@ enum eTableColumnIx {
 };
 
 
-cHSOperate::cHSOperate(QWidget *par)
-    : cOwnTab(par)
+cHSOperate::cHSOperate(QMdiArea *par)
+    : cIntSubObj(par)
 {
     pq  = newQuery();
     pq2 = newQuery();
@@ -132,7 +132,7 @@ void cHSOperate::fetch()
     if (zone != _sAll) {
         int       ci  = pUi->comboBoxZone->currentIndex();
         qlonglong gid = pZoneModel->atId(ci);
-        where << " is_group_place(place_id, ?)";
+        where << " is_group_place(place_id, ?::bigint)";
         bind  << gid;
     }
     // Filter by place

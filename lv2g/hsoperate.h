@@ -8,11 +8,11 @@
 #include "ui_hsoperate.h"
 #include "lv2models.h"
 
-class LV2GSHARED_EXPORT cHSOperate : public cOwnTab
+class LV2GSHARED_EXPORT cHSOperate : public cIntSubObj
 {
     Q_OBJECT
 public:
-    cHSOperate(QWidget *par);
+    cHSOperate(QMdiArea *par);
     ~cHSOperate();
     static const enum ePrivilegeLevel rights;
 protected:

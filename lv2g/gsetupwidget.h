@@ -7,11 +7,11 @@
 #include "lv2g.h"
 #include "ui_gsetup.h"
 
-class LV2GSHARED_EXPORT cGSetupWidget : public cOwnTab
+class LV2GSHARED_EXPORT cGSetupWidget : public cIntSubObj
 {
     Q_OBJECT
 public:
-    cGSetupWidget(QSettings &__s, QWidget *par);
+    cGSetupWidget(QMdiArea *par);
     static const enum ePrivilegeLevel rights;
 protected:
     void applicate();

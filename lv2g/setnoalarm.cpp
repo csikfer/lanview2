@@ -19,8 +19,8 @@ enum eTableColumnIx {
 
 #define MSG_MIN_SIZE 8
 
-cSetNoAlarm::cSetNoAlarm(QWidget *par)
-    : cOwnTab(par)
+cSetNoAlarm::cSetNoAlarm(QMdiArea *par)
+    : cIntSubObj(par)
 {
     pq  = newQuery();
     pq2 = newQuery();
@@ -140,7 +140,7 @@ void cSetNoAlarm::fetch()
     if (zone != _sAll) {
         int       ci  = pUi->comboBoxZone->currentIndex();
         qlonglong gid = pZoneModel->atId(ci);
-        where << " is_group_place(place_id, ?)";
+        where << " is_group_place(place_id, ?::bigint)";
         bind  << gid;
     }
     // Filter by place

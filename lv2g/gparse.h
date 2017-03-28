@@ -13,11 +13,11 @@ namespace Ui {
 }
 #endif
 
-class  LV2GSHARED_EXPORT cParseWidget : public cOwnTab
+class  LV2GSHARED_EXPORT cParseWidget : public cIntSubObj
 {
     Q_OBJECT
 public:
-    cParseWidget(QWidget *par);
+    cParseWidget(QMdiArea *par);
     ~cParseWidget();
     static const enum ePrivilegeLevel rights;
 private:

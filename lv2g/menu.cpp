@@ -13,15 +13,12 @@
 
 QMap<QString, QAction *>  cMenuAction::actionsMap;
 
-cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidget * par, eEx __ex)
+cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QMdiArea * par, eEx __ex)
     : QObject(par), type(MAT_ERROR)
 {
-    pTabWidget   = par;
-    pTableShape  = NULL;
-    pRecordView  = NULL;
-    pOwnTab      = NULL;
-    pWidget      = NULL;
-    ownType      = OWN_UNKNOWN;
+    pMdiArea     = par;
+    pIntSubObj      = NULL;
+    intType      = INT_UNKNOWN;
     pDialog      = NULL;
     pAction      = pa;
     pMenuItem    = new cMenuItem(*pmi);
@@ -33,10 +30,9 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidge
         if (pq == NULL) EXCEPTION(EPROGFAIL);   // Ha nincs adatbázis, akkor ezt nem kéne
         setObjectName(feature);
         setType(MAT_SHAPE);
-        pTableShape = new cTableShape();
-        pTableShape->setParent(this);
-        pTableShape->setByName(feature);
-        if (lanView::isAuthorized(pTableShape->getId(_sViewRights))) {           // Jog?
+        cTableShape tableShape;;
+        tableShape.setByName(feature);
+        if (lanView::isAuthorized(tableShape.getId(_sViewRights))) {           // Jog?
             connect(pAction, SIGNAL(triggered()), this, SLOT(displayIt()));
         }
         else {
@@ -56,39 +52,39 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidge
     else if (!(feature = pmi->feature("own")).isEmpty()) { // "own"    Egyedi előre definiált cOwnTab leszármazott hívása
         enum ePrivilegeLevel rights = PL_SYSTEM;
         if (0 == feature.compare("setup", Qt::CaseInsensitive)) {            // "setup"      Alap beállítások szerkesztése widget
-            ownType = OWN_SETUP;
+            intType = INT_SETUP;
             rights = cSetupWidget::rights;
         }
         else if (0 == feature.compare("gsetup", Qt::CaseInsensitive)) {      // "gsetup"     GUI beállítások szerkesztése widget
-            ownType = OWN_GSETUP;
+            intType = INT_GSETUP;
             rights = cGSetupWidget::rights;
         }
         else if (0 == feature.compare("parser", Qt::CaseInsensitive)) {      // "parser"     A parser widget
-            ownType = OWN_PARSER;
+            intType = INT_PARSER;
             rights = cParseWidget::rights;
         }
         else if (0 == feature.compare("olalarm", Qt::CaseInsensitive)) {     // "olalarm"    On-Line riasztások widget
-            ownType = OWN_OLALARM;
+            intType = INT_OLALARM;
             rights = cOnlineAlarm::rights;
         }
         else if (0 == feature.compare("errcodes", Qt::CaseInsensitive)) {    // "errcodes"   API hibakódok
-            ownType = OWN_ERRCODES;
+            intType = INT_ERRCODES;
             rights = cErrcodesWidget::rights;
         }
         else if (0 == feature.compare("noalarm", Qt::CaseInsensitive)) {     // "noalarm"   Riasztás tiltások beállítása
-            ownType = OWN_NOALARM;
+            intType = INT_NOALARM;
             rights = cSetNoAlarm::rights;
         }
         else if (0 == feature.compare("hsop", Qt::CaseInsensitive)) {       // "hsop"   host-services állpot man.
-            ownType = OWN_HSOP;
+            intType = INT_HSOP;
             rights = cHSOperate::rights;
         }
         else if (0 == feature.compare("findmac", Qt::CaseInsensitive)) {    // "findmac"
-            ownType = OWN_FINDMAC;
+            intType = INT_FINDMAC;
             rights = PL_VIEWER;
         }
         else if (0 == feature.compare(_sWorkstation, Qt::CaseInsensitive)) { // "workstation"
-            ownType = OWN_WORKSTATION;
+            intType = INT_WORKSTATION;
             rights = PL_VIEWER;
         }
         else {
@@ -106,15 +102,12 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QTabWidge
     else if (__ex) EXCEPTION(EDBDATA);
 }
 
-cMenuAction::cMenuAction(const QString&  ps, QAction *pa, QTabWidget * par)
+cMenuAction::cMenuAction(const QString&  ps, QAction *pa, QMdiArea * par)
     : QObject(par), type(MAT_EXEC)
 {
-    pTabWidget   = par;
-    pTableShape  = NULL;
-    pRecordView  = NULL;
-    pOwnTab      = NULL;
-    ownType      = OWN_UNKNOWN;
-    pWidget      = NULL;
+    pMdiArea     = par;
+    pIntSubObj   = NULL;
+    intType      = INT_UNKNOWN;
     pDialog      = NULL;
     pAction      = pa;
     pMenuItem    = NULL;
@@ -124,14 +117,12 @@ cMenuAction::cMenuAction(const QString&  ps, QAction *pa, QTabWidget * par)
     actionsMap.insert(pa->objectName(), pa);
 }
 
-cMenuAction::cMenuAction(cOwnTab *po, eOwnTab t, QAction *pa, QTabWidget * par)
+cMenuAction::cMenuAction(cIntSubObj *po, eIntSubWin t, QAction *pa, QMdiArea * par)
     : QObject(par), type(MAT_WIDGET)
 {
-    pTabWidget   = par;
-    pTableShape  = NULL;
-    pRecordView  = NULL;
-    ownType      = t;
-    pWidget      = po;
+    pMdiArea     = par;
+    intType      = t;
+    pIntSubObj   = po;
     pDialog      = NULL;
     pAction      = pa;
     pMenuItem    = NULL;
@@ -147,135 +138,81 @@ cMenuAction::~cMenuAction()
 
 void cMenuAction::initRecordTable()
 {
-    if (pTableShape == NULL) {
-        QString shape = objectName();
-        pTableShape = new cTableShape();
-        pTableShape->setParent(this);
-        pTableShape->setByName(shape);
-    }
-    pRecordView = cRecordsViewBase::newRecordView(pTableShape, NULL, pTabWidget);
-    pWidget = pRecordView->pWidget();
-    connect(pRecordView, SIGNAL(closeIt()),   this, SLOT(removeIt()));
-    connect(pRecordView, SIGNAL(destroyed()), this, SLOT(destroyedChild()));
+     pIntSubObj = new cTableSubWin(objectName(), pMdiArea);
+     connect(pIntSubObj,             SIGNAL(closeIt()),   this, SLOT(removeIt()));
+     connect(pIntSubObj->pSubWindow, SIGNAL(destroyed()), this, SLOT(destroyedChild()));
 }
 
-/** Egy megjelenítést végző cOwnTab leszármazott objektum létrehozása
+/** Egy megjelenítést végző cIntSubObj leszármazott objektum létrehozása
 
 A menüben az "own=<típus>" stringgel lehet megadni a properties mezőben megjelenítő típusát.
 A jelenleg implementállt lehetőségek:
 | Típus név  | Konstans név   | Objektum név    | Funkció                     |
 |------------|----------------|-----------------|-----------------------------|
-| setup      | OWN_SETUP      | cSetupWidget    | Alapbeállítások megadása    |
-| gsetup     | OWN_GSETUP     | cGSetupWidget   | Megjelenítési beállítások   |
-| parser     | OWN_PARSER     | cParseWidget    | A parser hvása              |
-| olalarm    | OWN_OLALARM    | cOnlineAlarm    | OnLine riasztások           |
-| errcodes   | OWN_ERRCODES   | cErrcodesWidget | API hibakódok listája       |
-| noalarm    | OWN_NOALARM    | cSetNoAlarm     | Riasztás tiltások beállítása|
-| hsop       | OWN_HSOP       | cHSOperate      | host-services állapot man.  |
-| findmac    | OWN_FINDMAC    | cFindByMac      | MAC keresés                 |
-| workstation| OWN_WORKSTATION| cWorkstation    | Munkaállomás új/modosít     |
+| setup      | INT_SETUP      | cSetupWidget    | Alapbeállítások megadása    |
+| gsetup     | INT_GSETUP     | cGSetupWidget   | Megjelenítési beállítások   |
+| parser     | INT_PARSER     | cParseWidget    | A parser hvása              |
+| olalarm    | INT_OLALARM    | cOnlineAlarm    | OnLine riasztások           |
+| errcodes   | INT_ERRCODES   | cErrcodesWidget | API hibakódok listája       |
+| noalarm    | INT_NOALARM    | cSetNoAlarm     | Riasztás tiltások beállítása|
+| hsop       | INT_HSOP       | cHSOperate      | host-services állapot man.  |
+| findmac    | INT_FINDMAC    | cFindByMac      | MAC keresés                 |
+| workstation| INT_WORKSTATION| cWorkstation    | Munkaállomás új/modosít     |
  */
-void cMenuAction::initOwn()
+void cMenuAction::initInt()
 {
-    switch (ownType) {
-    case OWN_SETUP:
-        pOwnTab = new cSetupWidget(*lanView::getInstance()->pSet, pTabWidget);
-        break;
-    case OWN_GSETUP:
-        pOwnTab = new cGSetupWidget(*lanView::getInstance()->pSet, pTabWidget);
-        break;
-    case OWN_PARSER:
-        pOwnTab = new cParseWidget(pTabWidget);
-        break;
-    case OWN_OLALARM:
-        pOwnTab = new cOnlineAlarm(pTabWidget);
-        break;
-    case OWN_ERRCODES:
-        pOwnTab = new cErrcodesWidget(pTabWidget);
-        break;
-    case OWN_NOALARM:
-        pOwnTab = new cSetNoAlarm(pTabWidget);
-        break;
-    case OWN_HSOP:
-        pOwnTab = new cHSOperate(pTabWidget);
-        break;
-    case OWN_FINDMAC:
-        pOwnTab = new cFindByMac(pTabWidget);
-        break;
-    case OWN_WORKSTATION:
-        pOwnTab = new cWorkstation(pTabWidget);
-        break;
+    switch (intType) {
+#define CREATEINTWIN(c,t)    case INT_##c: pIntSubObj = new t(pMdiArea); break
+    CREATEINTWIN(SETUP,      cSetupWidget);
+    CREATEINTWIN(GSETUP,     cGSetupWidget);
+    CREATEINTWIN(PARSER,     cParseWidget);
+    CREATEINTWIN(OLALARM,    cOnlineAlarm);
+    CREATEINTWIN(ERRCODES,   cErrcodesWidget);
+    CREATEINTWIN(NOALARM,    cSetNoAlarm);
+    CREATEINTWIN(HSOP,       cHSOperate);
+    CREATEINTWIN(FINDMAC,    cFindByMac);
+    CREATEINTWIN(WORKSTATION,cWorkstation);
+#undef CREATEINTWIN
     default:
         EXCEPTION(EPROGFAIL);
         break;
     }
-    pWidget = pOwnTab->pWidget();
-    connect(pOwnTab,      SIGNAL(closeIt()),   this, SLOT(removeIt()));
-    connect(pWidget,      SIGNAL(destroyed()), this, SLOT(destroyedChild()));
+    connect(pIntSubObj,      SIGNAL(closeIt()),   this, SLOT(removeIt()));
+    connect(pIntSubObj->pSubWindow,      SIGNAL(destroyed()), this, SLOT(destroyedChild()));
 }
 
 void cMenuAction::displayIt()
 {
-    switch (type) {
-    case MAT_SHAPE:
-        if (pWidget == NULL) initRecordTable();
-        break;
-    case MAT_OWN:
-        if (pWidget == NULL) initOwn();
-        break;
-    case MAT_WIDGET:
-        if (pWidget == NULL) {
-            EXCEPTION(EPROGFAIL,-1,"pWidget is NULL.");
+    if (pMdiArea == NULL) {
+        EXCEPTION(EPROGFAIL, -1, trUtf8("pMdiArea is NULL"));
+    }
+    if (pIntSubObj == NULL) {
+        switch (type) {
+        case MAT_SHAPE:     initRecordTable();                          break;
+        case MAT_OWN:       initInt();                                  break;
+        case MAT_WIDGET:    EXCEPTION(ENOTSUPP, type);                  break;
+        default:            EXCEPTION(EPROGFAIL,-1,"Invalid signal.");  break;
         }
-        break;
-    default:
-        EXCEPTION(EPROGFAIL,-1,"Invalid signal.");
-        break;
+        pIntSubObj->setWindowTitle(pMenuItem->getName(_sTabTitle));
     }
-    if (pTabWidget == NULL) {
-        EXCEPTION(EPROGFAIL, -1, trUtf8("pTabWidget is NULL"));
-    }
-    int i = pTabWidget->indexOf(pWidget);
-    if (i < 0) {
-        QString title =  pMenuItem == NULL ? objectName() : pMenuItem->getName(_sTabTitle);
-        i = pTabWidget->addTab(pWidget, title);
-    }
-    pTabWidget->setCurrentIndex(i);
+    pMdiArea->setActiveSubWindow(pIntSubObj->pSubWindow);
+    pIntSubObj->pWidget()->show();
 }
 
 void cMenuAction::removeIt()
 {
-    if (pWidget == NULL) {
-        DWAR() << "pWidget is NULL." << endl;
+    if (pIntSubObj == NULL) {
+        DWAR() << "pIntSubObj is NULL." << endl;
         return;
     }
-    int i = pTabWidget->indexOf(pWidget);
-    if (i < 0) EXCEPTION(EPROGFAIL);
-    pTabWidget->removeTab(i);
-    pWidget->setVisible(false);
-    switch (type) {
-    case MAT_SHAPE:
-        pDelete(pRecordView);
-        pTableShape = NULL; // A fenti obj. destruktora ezt is törölte!!
-        break;
-    case MAT_OWN:
-        pDelete(pOwnTab);
-        break;
-    case MAT_WIDGET:
-        return; // itt nem kéne nullázni a pWidget-et
-        break;
-    default:
-        EXCEPTION(EPROGFAIL,type,"Invalid type.");
-        break;
-    }
-    pWidget = NULL;
+    pMdiArea->removeSubWindow(pIntSubObj->pSubWindow);
+    pDelete(pIntSubObj);
 }
 
 void cMenuAction::destroyedChild()
 {
     DBGFN();
-    pWidget = NULL;         // A tab tényleg elintézi a többit?
-    pRecordView = NULL;
+    pDelete(pIntSubObj);
 }
 
 void  cMenuAction::executeIt()
@@ -293,6 +230,9 @@ void  cMenuAction::executeIt()
         QString name = objectName();
         if      (0 == name.compare("exit",    Qt::CaseInsensitive)) qApp->exit(0);
         else if (0 == name.compare("restart", Qt::CaseInsensitive)) appReStart();
+        else if (0 == name.compare("tabs",    Qt::CaseInsensitive)) pMdiArea->setViewMode(QMdiArea::TabbedView);
+        else if (0 == name.compare("windows", Qt::CaseInsensitive)) pMdiArea->setViewMode(QMdiArea::SubWindowView);
+        else if (0 == name.compare("close",   Qt::CaseInsensitive)) pMdiArea->closeAllSubWindows();
         else    EXCEPTION(EDBDATA,-1, name);
     }
         break;
@@ -302,3 +242,16 @@ void  cMenuAction::executeIt()
     }
 }
 
+cTableSubWin::cTableSubWin(const QString& shape, QMdiArea * pMdiArea)
+    : cIntSubObj(pMdiArea)
+{
+    pTableShape = new cTableShape();
+    pTableShape->setParent(this);
+    pTableShape->setByName(shape);
+    pRecordsView = cRecordsViewBase::newRecordView(pTableShape, NULL, this);
+    QHBoxLayout *pHBL = new QHBoxLayout;
+    pWidget()->setLayout(pHBL);
+    pHBL->addWidget(pRecordsView->pWidget());
+    connect(pRecordsView, SIGNAL(closeIt()),   this, SLOT(removeIt()));
+    connect(pRecordsView, SIGNAL(destroyed()), this, SLOT(destroyedChild()));
+}

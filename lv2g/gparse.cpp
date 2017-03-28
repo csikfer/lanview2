@@ -9,8 +9,8 @@
 
 const enum ePrivilegeLevel cParseWidget::rights = PL_OPERATOR;
 
-cParseWidget::cParseWidget(QWidget *par)
-: cOwnTab(par)
+cParseWidget::cParseWidget(QMdiArea *par)
+: cIntSubObj(par)
 , fileFilter(trUtf8("Szöveg fájlok (*.txt *.src *.imp)"))
 {
     PDEB(OBJECT) << __PRETTY_FUNCTION__ << QChar(' ') << QChar(',') << VDEBPTR(this) << endl;

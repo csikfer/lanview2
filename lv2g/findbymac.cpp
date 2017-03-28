@@ -5,8 +5,8 @@
 
 #include "ui_findbymac.h"
 
-cFindByMac::cFindByMac(QWidget *parent) :
-    cOwnTab(parent),
+cFindByMac::cFindByMac(QMdiArea *parent) :
+    cIntSubObj(parent),
     pUi(new Ui::FindByMac)
 {
     pq = newQuery();

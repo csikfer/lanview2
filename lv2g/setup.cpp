@@ -5,10 +5,10 @@
 
 const enum ePrivilegeLevel cSetupWidget::rights = PL_ADMIN;
 
-cSetupWidget::cSetupWidget(QSettings &__s, QWidget *par)
-: cOwnTab(par)
+cSetupWidget::cSetupWidget(QMdiArea *par)
+: cIntSubObj(par)
 , logFile()
-, qset(__s)
+, qset(*lanView::getInstance()->pSet)
 {
     PDEB(OBJECT) << __PRETTY_FUNCTION__ << QChar(' ') << QChar(',') << VDEBPTR(this) << endl;
     pLl = NULL;

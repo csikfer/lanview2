@@ -2,8 +2,10 @@
 #include "record_dialog.h"
 
 
-static inline QWidget *row(const QString& val, Qt::AlignmentFlag a = Qt::AlignLeft)
+void cErrorMessageBox::row(const QString& l,const QString& val, Qt::AlignmentFlag a)
 {
+    if (!text.isEmpty()) text += "\n";
+    QWidget *pW;
     if (val.size() > 64 || val.contains('\n')) {
         QTextEdit   *pTE = new QTextEdit();
         pTE->setText(val);
@@ -11,24 +13,26 @@ static inline QWidget *row(const QString& val, Qt::AlignmentFlag a = Qt::AlignLe
         QSizePolicy sp = pTE->sizePolicy();
         sp.setVerticalStretch(1);
         pTE->setSizePolicy(sp);
-
-        return pTE;
+        pW = pTE;
+        text += l + "\n" + val;
     }
     else {
         QLineEdit   *pLE = new QLineEdit();
         pLE->setText(val);
         pLE->setReadOnly(true);
         pLE->setAlignment(a);
-        return pLE;
+        pW = pLE;
+        text += l + " : " + val;
     }
+    pForm->addRow(l + " : ", pW);
 }
 
-#define _R(l, v)    pForm->addRow(trUtf8(l " : "), row(v))
-#define IR(l, v)    pForm->addRow(trUtf8(l " : "), row(QString::number(v), Qt::AlignRight))
+#define _R(l, v)    row(trUtf8(l), v)
+#define IR(l, v)    row(trUtf8(l), QString::number(v), Qt::AlignRight)
 #define NR(l, v)    if (v > 1) IR(l,v)
 #define PR(l, v)    if (v != -1) IR(l,v)
 #define ZR(l, v)    if (!v.isEmpty()) _R(l,v)
-#define LIN         pForm->addWidget(newHLine(this))
+#define LIN         pForm->addWidget(newHLine(this)); text += "\n"
 
 cErrorMessageBox::cErrorMessageBox(cError *_pe, QWidget *parent) :
     QDialog(parent)
@@ -36,16 +40,12 @@ cErrorMessageBox::cErrorMessageBox(cError *_pe, QWidget *parent) :
     QVBoxLayout *pVBox = new QVBoxLayout();
     setLayout(pVBox);
 
-    QHBoxLayout *pHBox = new QHBoxLayout();
-    QPushButton *pPush = new QPushButton(trUtf8("Bezár"));
-    connect(pPush, SIGNAL(clicked()), this, SLOT(endIt()));
-    pHBox->addStretch();
-    pHBox->addWidget(pPush);
-    pHBox->addStretch();
+    cDialogButtons *pButtons = new cDialogButtons(ENUM2SET2(DBT_COPY, DBT_CLOSE));
+    connect(pButtons, SIGNAL(buttonClicked(int)), this, SLOT(pushed(int)));
 
-    QFormLayout *pForm = new QFormLayout();
+    pForm = new QFormLayout();
     pVBox->addLayout(pForm);
-    pVBox->addWidget(pPush);
+    pVBox->addWidget(pButtons->pWidget());
 
     IR("Hiba kód",                              _pe->mErrorCode);
     _R("Hiba típus",                            _pe->errorMsg());
@@ -78,9 +78,17 @@ cErrorMessageBox::cErrorMessageBox(cError *_pe, QWidget *parent) :
     }
 }
 
-void cErrorMessageBox::endIt()
+void cErrorMessageBox::pushed(int id)
 {
-    accept();
+    switch (id) {
+    case DBT_CLOSE:
+        accept();
+        break;
+    case DBT_COPY:
+        PDEB(INFO) << "Text to clipboard : \n" << text << endl;
+        QApplication::clipboard()->setText(text, QClipboard::Clipboard);
+        break;
+    }
 }
 
 /// Feltételes hiba ablak megjelenítése:
