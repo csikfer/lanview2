@@ -1189,3 +1189,19 @@ cPatch * patchDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample)
     }
     return p;
 }
+
+cRecord *insertDialogByName(const QString& name, QSqlQuery& q, QWidget *pPar, cRecord * _pSample)
+{
+    if (0 == name.compare("cPatchDialog", Qt::CaseInsensitive)) {
+        cPatch *pSample = NULL;
+        if (_pSample != NULL) {
+            pSample = new cPatch;
+            pSample->setById(q, _pSample->getId());
+            pSample->fetchPorts(q);
+        }
+        cRecord *pRec = patchDialog(q, pPar, pSample);
+        pDelete(pSample);
+        return pRec;
+    }
+    EXCEPTION(EFOUND, 0, QObject::trUtf8("Nincs %1 nevű insert dialogus.").arg(name));
+}

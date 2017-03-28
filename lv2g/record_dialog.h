@@ -347,5 +347,7 @@ private slots:
 
 _GEX cPatch * patchDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample = NULL);
 
+_GEX cRecord *insertDialogByName(const QString& name, QSqlQuery& q, QWidget *pPar, cRecord * _pSample = NULL);
+
 
 #endif // RECORD_DIALOG_H

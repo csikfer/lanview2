@@ -642,6 +642,18 @@ void cRecordsViewBase::refresh(bool first)
 
 void cRecordsViewBase::insert(bool _similar)
 {
+    QString sInsertDialog = pTableShape->feature(_sInsert);
+    if (!sInsertDialog.isEmpty()) {
+        cRecord *pRec = NULL;
+        if (_similar) {
+            pRec = actRecord();    // pointer az aktuális rekordra, a beolvasott/megjelenített rekord listában
+        }
+        pRec = insertDialogByName(sInsertDialog, *pq, this->pWidget(), pRec);
+        if (pRec == NULL) return;
+        pDelete(pRec);
+        refresh();
+        return;
+    }
     if (flags & RTF_CHILD) {
         if (pUpper == NULL) EXCEPTION(EPROGFAIL);
         if (owner_id == NULL_ID) return;
