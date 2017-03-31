@@ -126,7 +126,7 @@ CREATE TABLE arp_logs (
 );
 CREATE INDEX arp_logs_date_of_index   ON arp_logs(date_of);
 ALTER TABLE arp_logs OWNER TO lanview2;
-COMMENT ON TABLE arp_logs IS 'Az arps tábla változásainag a napló táblája.';
+COMMENT ON TABLE arp_logs IS 'Az arps tábla változásainak a napló táblája.';
 
 CREATE TABLE dyn_ipaddress_logs (
     dyn_ipaddress_log_id    bigserial   PRIMARY KEY,
