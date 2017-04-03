@@ -20,10 +20,12 @@ cFindByMac::cFindByMac(QMdiArea *parent) :
               " UNION DISTINCT"
                " SELECT DISTINCT(hwaddress) FROM interfaces WHERE hwaddress IS NOT NULL) AS macs"
              " ORDER BY hwaddress ASC";
+    QStringList items;
     if (execSql(*pq, sql)) do {
-        QString mac = pq->value(0).toString();
-        pUi->comboBox->addItem(mac);
+        // pUi->comboBox->addItem(pq->value(0).toString()); // SLOW !!
+        items << pq->value(0).toString();
     } while (pq->next());
+    pUi->comboBox->addItems(items);
     connect(pUi->pushButtonClose,   SIGNAL(clicked()), this, SLOT(endIt()));
     connect(pUi->pushButtonFindMac, SIGNAL(clicked()), this, SLOT(find()));
 }
