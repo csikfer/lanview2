@@ -1937,9 +1937,10 @@ usrfn   : NOTE_T                        { $$ = new QString(_sUserNote); }
         | SERVICE_T NOTIF_T SWITCH_T    { $$ = new QString(_sServNotifSwitchs); }
         | HOST_T NOTIF_T COMMAND_T      { $$ = new QString(_sHostNotifCmd); }
         | SERVICE_T NOTIF_T COMMAND_T   { $$ = new QString(_sServNotifCmd); }
-        | TEL_T strs ';'                { $$ = new QString(_sTels); }
-        | ADDRESS_T ';'                 { $$ = new QString(_sAddresses); }
+        | TEL_T                         { $$ = new QString(_sTels); }
+        | ADDRESS_T                     { $$ = new QString(_sAddresses); }
         | PLACE_T                       { $$ = new QString(_sPlaceId); }
+        | str                           { $$ = $1; }
         ;
 // Felhasználói csoportok tulajdonságai
 ugrp_e  : ';'
@@ -1969,6 +1970,7 @@ usrgfn  : NOTE_T                                { $$ = new QString(_sGroupNote);
         | RIGHTS_T                              { $$ = new QString(_sGroupRights); }
         | PLACE_T GROUP_T                       { $$ = new QString(_sPlaceGroupId); }
         | FEATURES_T                            { $$ = new QString(_sFeatures); }
+        | str                                   { $$ = $1; }
         ;
 usrgfns : usrgfn                                { $$ = new QStringList(); *$$ << *$1; delete $1; }
         | usrgfns ',' usrgfn                    { $$ = $1;                *$$ << *$3; delete $3; }
@@ -2723,6 +2725,8 @@ modify  : SET_T str '[' strs ']' '.' str '=' value ';'
                                       lanView::resetCacheData(); }
         | SET_T ALERT_T SERVICE_T srvid ';'     { alertServiceId = $4; }
         | SET_T SUPERIOR_T hsid TO_T hsss ';'   { $5->sets(_sSuperiorHostServiceId, $3); delete $5; }
+        | SET_T NODE_T str SERIAL_T NUMBER_T str ';'    { cNode::setSeralNumber(qq(), sp2s($3), sp2s($6)); }
+        | SET_T NODE_T str INVENTORY_T NUMBER_T str ';' { cNode::setInventoryNumber(qq(), sp2s($3), sp2s($6)); }
         | SET_T NODE_T str PORTS_T strs PARAM_T str str ';'
                                                 { setNodePortsParam(sp2s($3), slp2sl($5), sp2s($7), sp2s($8)); }
         | SET_T NODE_T strs PARAM_T str str ';' { setNodeParam(slp2sl($3), sp2s($5), sp2s($6)); }

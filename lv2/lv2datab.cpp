@@ -3462,6 +3462,22 @@ cError *cRecord::tryUpdate(QSqlQuery& __q, bool __only, const QBitArray& __set, 
     return pe;
 }
 
+bool cRecord::updateByName(QSqlQuery &__q, const QString& _name, const QString& _fn, const QVariant& val, eEx __ex)
+{
+    setName(_name);
+    int ix = toIndex(_fn);
+    set(ix, val);
+    return update(__q, false, _bit(ix), _bit(nameIndex()), __ex);
+}
+
+bool cRecord::updateById(QSqlQuery &__q, qlonglong _id, const QString& _fn, const QVariant& val, eEx __ex)
+{
+    setId(_id);
+    int ix = toIndex(_fn);
+    set(ix, val);
+    return update(__q, false, _bit(ix), _bit(idIndex()), __ex);
+}
+
 int cRecord::mark(QSqlQuery& __q, const QBitArray &__where, bool __flag) const
 {
     cRecord *p = dup();

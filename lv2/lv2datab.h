@@ -1677,6 +1677,9 @@ public:
     /// @return A modosított rekordok száma.
     int update(QSqlQuery& __q, bool __only, const QBitArray& __set = QBitArray(), const QBitArray& __where = QBitArray(), enum eEx __ex = EX_NOOP);
     cError *tryUpdate(QSqlQuery& __q, bool __only, const QBitArray& __set = QBitArray(), const QBitArray& __where = QBitArray(), bool __tr = false);
+    ///
+    bool updateByName(QSqlQuery &__q, const QString& _name, const QString& _fn, const QVariant& val, eEx __ex = EX_NOOP);
+    bool updateById(QSqlQuery &__q, qlonglong _id, const QString& _fn, const QVariant& val, eEx __ex = EX_NOOP);
     /// Beállítja a 'flag' nevű mező értékét a kiválasztott rekordokban. Az objektum értéke nem változik.
     /// @param __q A művelethez használt QSqlQuery objektum.
     /// @param __flag A flag mezőbe beállítandó érték, alapértelmezettem true.
