@@ -33,5 +33,7 @@ CREATE OR REPLACE FUNCTION service_cron(did bigint) RETURNS VOID AS $$
 BEGIN
     PERFORM services_heartbeat(did);
     PERFORM expired_online_alarm(did);
+    PERFORM refresh_mactab();
+    PERFORM refresh_arps();
 END
 $$ LANGUAGE plpgsql;
