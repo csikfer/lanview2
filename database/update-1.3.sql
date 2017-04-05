@@ -205,5 +205,9 @@ ALTER TABLE phs_links_table ADD CONSTRAINT phs_links_table_create_user_id_fkey F
       REFERENCES users(user_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL;
 ALTER TABLE phs_links_table ADD CONSTRAINT phs_links_table_modify_user_id_fkey FOREIGN KEY (modify_user_id)
       REFERENCES users(user_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL;
+      
+-- felesleges, nem használtuk semmire:
+ALTER TABLE services DROP COLUMN protocol_id;
+DROP TABLE ipprotocols;
 
 END;

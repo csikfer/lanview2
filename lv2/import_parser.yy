@@ -446,14 +446,6 @@ QSqlQuery& qq2()
 }
 
 
-enum {
-    EP_NIL = -1,
-    EP_IP  = 0,
-    EP_ICMP = 1,
-    EP_TCP = 6,
-    EP_UDP = 17
-};
-
 /* */
 
 // QMap<QString, duble>        rvars;
@@ -1567,7 +1559,7 @@ void  setSysParam(QString *pt, QString *pn, QVariant *pv)
 %token      ADD_T READ_T UPDATE_T ARPS_T ARP_T SERVER_T FILE_T BY_T
 %token      SNMP_T SSH_T COMMUNITY_T DHCPD_T LOCAL_T PROC_T CONFIG_T
 %token      ATTACHED_T LOOKUP_T WORKSTATION_T LINKS_T BACK_T FRONT_T
-%token      TCP_T UDP_T ICMP_T IP_T NIL_T COMMAND_T SERVICE_T PRIME_T
+%token      IP_T COMMAND_T SERVICE_T PRIME_T
 %token      MAX_T CHECK_T ATTEMPTS_T NORMAL_T INTERVAL_T RETRY_T 
 %token      FLAPPING_T CHANGE_T TRUE_T FALSE_T ON_T OFF_T YES_T NO_T
 %token      DELEGATE_T STATE_T SUPERIOR_T TIME_T PERIODS_T LINE_T GROUP_T
@@ -1592,7 +1584,7 @@ void  setSysParam(QString *pt, QString *pn, QVariant *pv)
 %token <s>  STRING_V NAME_V
 %token <mac> MAC_V 
 %token <ip> IPV4_V IPV6_V
-%type  <i>  int int_ iexpr lnktype shar ipprotp ipprot offs ix_z vlan_t set_t srvtid
+%type  <i>  int int_ iexpr lnktype shar offs ix_z vlan_t set_t srvtid
 %type  <i>  vlan_id place_id iptype iptype_a pix pix_z image_id tmod int0 replace
 %type  <i>  fhs hsid srvid grpid tmpid node_id port_id snet_id ift_id plg_id
 %type  <i>  usr_id ftmod p_seq int_z lnktypez fflags fflag tstypes tstype pgtype
@@ -2435,9 +2427,7 @@ srvend  : '{' srv_ps '}'
 srv_ps  : srv_p
         | srv_ps srv_p
         ;
-srv_p   : ipprotp int ';'                       { (*pService)[_sProtocolId] = $1; (*pService)[_sPort] = $2; }
-        | ipprot ix_z ';'                       { (*pService)[_sProtocolId] = $1; if ($2 >= 0) (*pService)[_sPort] = $2; }
-        | SUPERIOR_T SERVICE_T MASK_T str ';'   { (*pService)[_sSuperiorServiceMask] = *$4; delete $4; }
+srv_p   : SUPERIOR_T SERVICE_T MASK_T str ';'   { (*pService)[_sSuperiorServiceMask] = *$4; delete $4; }
         | COMMAND_T str  ';'                    { (*pService)[_sCheckCmd]   = *$2; delete $2; }
         | FEATURES_T str ';'                  { (*pService)[_sFeatures] = *$2; delete $2; }
         | MAX_T CHECK_T ATTEMPTS_T int ';'      { (*pService)[_sMaxCheckAttempts]    = $4; }
@@ -2451,14 +2441,6 @@ srv_p   : ipprotp int ';'                       { (*pService)[_sProtocolId] = $1
         | SET_T str '=' value ';'               { (*pService)[*$2] = *$4; delete $2; delete $4; }
         | TYPE_T str ';'                        { (*pService)[*$2] = cServiceType().getIdByName(qq(), sp2s($2)); delete $2; }
         | bool_on DISABLE_T ';'                 { (*pService)[_sDisabled] = $1; }
-        ;
-ipprotp : TCP_T                     { $$ = EP_TCP; }
-        | UDP_T                     { $$ = EP_UDP; }
-        ;
-ipprot  : ICMP_T                    { $$ = EP_ICMP; }
-        | IP_T                      { $$ = EP_IP; }
-        | NIL_T                     { $$ = EP_NIL; }
-        | PROTOCOL_T str            { $$ = cIpProtocol().getIdByName(qq(), *$2, EX_ERROR); delete $2; }
         ;
 srvmsgs : srvmsg
         | srvmsgs srvmsg
@@ -2962,7 +2944,7 @@ static int yylex(void)
         TOK(ADD) TOK(READ) TOK(UPDATE) TOK(ARPS) TOK(ARP) TOK(SERVER) TOK(FILE) TOK(BY)
         TOK(SNMP) TOK(SSH) TOK(COMMUNITY) TOK(DHCPD) TOK(LOCAL) TOK(PROC) TOK(CONFIG)
         TOK(ATTACHED) TOK(LOOKUP) TOK(WORKSTATION) TOK(LINKS) TOK(BACK) TOK(FRONT)
-        TOK(TCP) TOK(UDP) TOK(ICMP) TOK(IP) TOK(NIL) TOK(COMMAND) TOK(SERVICE) TOK(PRIME)
+        TOK(IP) TOK(COMMAND) TOK(SERVICE) TOK(PRIME)
         TOK(MAX) TOK(CHECK) TOK(ATTEMPTS) TOK(NORMAL) TOK(INTERVAL) TOK(RETRY)
         TOK(FLAPPING) TOK(CHANGE) { "TRUE", TRUE_T },{ "FALSE", FALSE_T }, TOK(ON) TOK(OFF) TOK(YES) TOK(NO)
         TOK(DELEGATE) TOK(STATE) TOK(SUPERIOR) TOK(TIME) TOK(PERIODS) TOK(LINE) TOK(GROUP)

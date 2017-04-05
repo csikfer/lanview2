@@ -12,6 +12,7 @@ cMainWindow::cMainWindow(QWidget *parent) :
     QString title = trUtf8("LanView %1 V%2, API V%3")
             .arg(lanView::appName, lanView::appVersion, lanView::libVersion);
     setWindowTitle(title);
+    setWindowIcon(QIcon("://net.ico"));
     pMdiArea = new QMdiArea(this);
     pMdiArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     pMdiArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);

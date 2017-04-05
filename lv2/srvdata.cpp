@@ -7,8 +7,6 @@
 #include "scan.h"
 
 /* ******************************  ****************************** */
-DEFAULTCRECDEF(cIpProtocol, _sIpProtocols)
-/* -------------------------------------------------------------- */
 DEFAULTCRECDEF(cServiceType, _sServiceTypes)
 
 qlonglong cServiceType::insertNew(QSqlQuery& __q, const QString& __name, const QString& __note, eEx __ex)
@@ -46,13 +44,13 @@ void cAlarmMsg::replaces(QSqlQuery& __q, qlonglong __stid, const QStringList& __
 
 /* -------------------------------------------------------------- */
 
-cService::cService() : cRecord(), _protocol()
+cService::cService() : cRecord()
 {
     _pFeatures = NULL;
     _set(cService::descr());
 }
 
-cService::cService(const cService& __o) : cRecord(), _protocol(__o._protocol)
+cService::cService(const cService& __o) : cRecord()
 {
     _fields = __o._fields;      // Nincs öröklés !
     _stat    = __o._stat;
@@ -64,14 +62,12 @@ cService::~cService()
     pDelete(_pFeatures);
 }
 
-int             cService::_ixProtocolId = NULL_IX;
 int             cService::_ixFeatures   = NULL_IX;
 const qlonglong cService::nilId         = -1;
 
 const cRecStaticDescr&  cService::descr() const
 {
     if (initPDescr<cService>(_sServices)) {
-        _ixProtocolId = _descr_cService().toIndex(_sProtocolId);
         _ixFeatures = _descr_cService().toIndex(_sFeatures);
         qlonglong id = _pRecordDescr->getIdByName(_sNil);
         if (nilId != id) EXCEPTION(EDATA, id, _sNil);
@@ -80,19 +76,11 @@ const cRecStaticDescr&  cService::descr() const
 }
 void cService::toEnd()
 {
-    cService::toEnd(_ixProtocolId);
     cService::toEnd(_ixFeatures);
 }
 
 bool cService::toEnd(int i)
 {
-    if (i == _ixProtocolId) {
-        if (get(i).isValid()) {
-            _protocol.fetchById(getId(i));
-        }
-        else _protocol.set();
-        return true;
-    }
     if (i == _ixFeatures) {
         if (_pFeatures != NULL) {
             delete _pFeatures;
@@ -105,7 +93,7 @@ bool cService::toEnd(int i)
 
 void cService::clearToEnd()
 {
-    _protocol.set();
+    ;
 }
 CRECDEF(cService)
 

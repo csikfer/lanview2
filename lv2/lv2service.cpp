@@ -1316,16 +1316,6 @@ QString cInspector::getParValue(QSqlQuery& q, const QString& name, bool *pOk)
         }
         if (0 == name.compare(_sAddress,      Qt::CaseInsensitive)) return host().getIpAddress().toString();
         if (0 == name.compare(_sProtocol,     Qt::CaseInsensitive)) return protoService().getName();
-        if (0 == name.compare("ipproto",      Qt::CaseInsensitive)) {
-            qlonglong pid = service()->getId(_sProtocolId);
-            if (pid == NULL_ID) pid = protoService().getId(_sProtocolId);
-            if (pid == NULL_ID) {
-                if (pOk == NULL) EXCEPTION(EDATA, 0, name);
-                *pOk = false;
-                return QString();
-            }
-            return cService().getNameById(q, pid);
-        }
         if (0 == name.compare(_sPort,         Qt::CaseInsensitive)) {
             qlonglong pn = service()->getId(_sPort);
             if (pn == NULL_ID) pn = protoService().getId(_sPort);
@@ -1336,9 +1326,9 @@ QString cInspector::getParValue(QSqlQuery& q, const QString& name, bool *pOk)
             }
             return QString::number(pn);
         }
-        if (0 == name.compare("host_service_id",Qt::CaseInsensitive))return QString::number(hostServiceId());
-        if (0 == name.compare("host_id",        Qt::CaseInsensitive))return QString::number(nodeId());
-        if (0 == name.compare("service_id",     Qt::CaseInsensitive))return QString::number(serviceId());
+        if (0 == name.compare(_sHostServiceId,Qt::CaseInsensitive))return QString::number(hostServiceId());
+        if (0 == name.compare(_sNodeId,       Qt::CaseInsensitive))return QString::number(nodeId());
+        if (0 == name.compare(_sServiceId,    Qt::CaseInsensitive))return QString::number(serviceId());
 
         if (pOk == NULL) EXCEPTION(EDATA, 1, name);
         *pOk = false;

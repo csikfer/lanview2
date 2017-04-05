@@ -25,5 +25,6 @@
         <file>icons/zoom.ico</file>
         <file>icons/copy.ico</file>
         <file>icons/check.ico</file>
+        <file>net.ico</file>
     </qresource>
 </RCC>

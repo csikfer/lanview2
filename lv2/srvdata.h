@@ -39,11 +39,7 @@ public:
     virtual void toEnd();
     virtual bool toEnd(int i);
     virtual void clearToEnd();
-    const cIpProtocol protocol() { return _protocol; }
-    QString protocolName() { return protocol().getName(); }
-    int protocolId()  { return (int)protocol().getId(); }
 protected:
-    cIpProtocol             _protocol;
     /// Konténer ill. gyorstár a cService rekordoknak.
     /// Nem frissül automatikusan, ha változik az adattábla.
     static tRecordList<cService> services;
@@ -65,7 +61,6 @@ public:
         const cService *p = service(__q, __id, __ex);
         return p == NULL ? _sNul : p->getName();
     }
-    STATICIX(cService, ixProtocolId)
     static const qlonglong nilId;
 };
 
