@@ -1205,9 +1205,13 @@ public:
     /// Ha __ex értéke igaz, és az __m több elemet tartalmaz, mint az objektum mezőt, akkor dob egy kizárást, egyébként figyelmenkívül hagyja az
     /// exzta biteket.
     cRecord& clear(const QBitArray& __m, enum eEx __ex = EX_ERROR);
-    /// A felsorolt nevű mezőkre hívja a clear(int) metódust. Ha __ex igaz, és a listában olyan név van, ami nem mezőnév, dob egy kizárást,
+    /// A felsorolt nevű mezőkre hívja a clear(QString) metódust. Ha __ex igaz, és a listában olyan név van, ami nem mezőnév, dob egy kizárást,
     /// ha hamis akkor a nevet figyelmenkívöl hagyja.
     cRecord& clear(const QStringList& __fl, enum eEx __ex = EX_ERROR) { return clear(mask(__fl, __ex)); }
+    ///
+    cRecord& clearId()      { return clear(idIndex()); }
+    cRecord& clearName()    { return clear(nameIndex()); }
+    cRecord& clearNote()    { return clear(noteIndex()); }
     /// Ha nincs rekord deszkriptor a status szerint, akkor true-val tér vissza.
     /// Csak a cRecordAny leszármazott osztály esetén lehet hamis. A leírót statikus adattagként tartalmazó leszármazottak esetén mindig false a
     /// visszadott érták.

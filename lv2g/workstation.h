@@ -56,7 +56,7 @@ private:
     int _changePlace(const QString& placeNme, const QString& zoneName,
                      QComboBox *pComboBoxNode, cRecordListModel *pModel,
                      const QString &_patt = QString());
-    int _changeLinkNode(QString nodeName, cRecordListModel *pModelPort, QComboBox * pComboBoxPort,
+    int _changeLinkNode(const QString &nodeName, cRecordListModel *pModelPort, QComboBox * pComboBoxPort,
                         cPatch *pNode = NULL, cRecordAny *pPort = NULL,
                         ePhsLinkType  *pLinkType = NULL, ePortShare *pLinkShared = NULL);
     int _changeLinkPort(const QString& s,
@@ -158,7 +158,7 @@ private:
     void _addressChanged(const QString& sType, const QString& sAddr = QString());
     void _subNetVLan(int sni, int vli);
     bool _changePortType(bool primary, int cix);
-    void _changeLink(bool primary);
+    // void _changeLink(bool primary);
 protected slots:
     void toglePassive(int id, bool f);
     void togleModify(int id, bool f);

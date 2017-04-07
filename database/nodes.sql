@@ -934,14 +934,20 @@ BEGIN
     END IF;
     CASE TG_TABLE_NAME
         WHEN 'patchs' THEN
-            NEW.node_type = '{patch}';
+            NEW.node_type = '{patch}';  -- constant field
         WHEN 'nodes' THEN
             IF NEW.node_type IS NULL THEN
                 NEW.node_type = '{node}';
             END IF;
+            IF 'patch'::nodetype = ANY (NEW.node_type) THEN
+                PERFORM error('DataError', NEW.node_id, 'node_type', 'node_check_before_insert()', TG_TABLE_NAME, TG_OP);
+            END IF;
         WHEN 'snmpdevices' THEN
             IF NEW.node_type IS NULL THEN
                 NEW.node_type = '{host,snmp}';
+            END IF;
+            IF 'patch'::nodetype = ANY (NEW.node_type) THEN
+                PERFORM error('DataError', NEW.node_id, 'node_type', 'node_check_before_insert()', TG_TABLE_NAME, TG_OP);
             END IF;
         ELSE
             PERFORM error('DataError', NEW.node_id, 'node_id', 'node_check_before_insert()', TG_TABLE_NAME, TG_OP);
