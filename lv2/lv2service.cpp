@@ -220,7 +220,10 @@ int cInspectorProcess::startProcess(bool conn, int startTo, int stopTo)
 void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus exitStatus)
 {
     _DBGFN() << VDEB(_exitCode) << VDEB(exitStatus) << endl;
-    if (inspector.internalStat != IS_RUN && inspector.internalStat != IS_STOPPED) return;
+    if (inspector.internalStat != IS_RUN && inspector.internalStat != IS_STOPPED) {
+        DERR() << trUtf8("Invalid event, internalStat = %1").arg(internalStatName(inspector.internalStat)) << endl;
+        return;
+    }
     if (inspector.inspectorType & (IT_PROCESS_CONTINUE | IT_PROCESS_RESPAWN)) {   // Program indítás volt időzités nélkül
         if (inspector.inspectorType & IT_PROCESS_CONTINUE || _exitCode != 0 || exitStatus ==  QProcess::CrashExit) {
             ++reStartCnt;
@@ -672,11 +675,11 @@ int cInspector::getInspectorType(QSqlQuery& q)
 {
     _DBGFN() << name() << " " << endl;
     inspectorType = 0;
+    if (isFeature(_sSuperior)) inspectorType |= IT_SUPERIOR;
     if (pParent == NULL) inspectorType |= IT_MAIN;
     int r = getCheckCmd(q);
     switch (r) {
     case  0:        // Nincs program hívás
-        if (isFeature(_sSuperior)) inspectorType |= IT_SUPERIOR;
         inspectorType |= getInspectorTiming(feature(_sTiming));
         inspectorType |= getInspectorMethod(feature(_sMethod));
         break;
@@ -701,7 +704,6 @@ int cInspector::getInspectorType(QSqlQuery& q)
         }
         break;
     case -1:        // Van Check Cmd, de éppen a hívot app vagyunk
-        if (isFeature(_sSuperior)) inspectorType |= IT_SUPERIOR;
         inspectorType |= getInspectorTiming(feature(_sTiming));
         r = getInspectorMethod(feature(_sMethod));
         inspectorType |= r;
@@ -867,7 +869,12 @@ void cInspector::timerEvent(QTimerEvent *)
         if (pSubordinates == NULL) EXCEPTION(EPROGFAIL);    //?!
         int n = 0;  // Hány alárendelt fut még?
         foreach (cInspector * pSub, *pSubordinates) {
-            if (pSub != NULL && (pSub->internalStat == IS_RUN || pSub->internalStat == IS_SUSPENDED)) ++n;  // IS_STOPPED ???!???
+            if (pSub != NULL
+             && (pSub->internalStat == IS_RUN           // Éppen fut
+              || pSub->internalStat == IS_SUSPENDED     // Lefutott, várakozik
+              || pSub->internalStat == IS_STOPPED)) {   // Leállt, várakozik
+                ++n;
+            }
         }
         if (!n) EXCEPTION(NOTODO, 1);
         hostService.touch(*pq, _sLastTouched);
@@ -954,7 +961,7 @@ enum eNotifSwitch cInspector::run(QSqlQuery& q)
     (void)q;
     if (pProcess != NULL) {
         if (checkCmd.isEmpty()) EXCEPTION(EPROGFAIL);
-        PDEB(VERBOSE) << "Run : " << checkCmd << endl;
+        PDEB(VERBOSE) << "Run : " << checkCmd << " " << checkCmdArgs.join(" ") << endl;
         int ec = pProcess->startProcess(false, 5000, 60000);    //Paraméterezni!!!
         if (ec == -1) return RS_STAT_SETTED;    // sended: RS_CRITICAL
         return parse(ec, *pProcess);
@@ -1275,11 +1282,23 @@ QString cInspector::name() const
 
 QString cInspector::getParValue(QSqlQuery& q, const QString& name, bool *pOk)
 {
+    static const QString _sHostservice = "hostservice";
+    static const QString _sHostService = "host_service";
     if (pOk != NULL) *pOk = true;
     QString v = feature(name, EX_IGNORE);
     if (v.isEmpty() == false) return v;
     QStringList sl = name.split(QChar('.'));
     if (sl.size() > 1) {
+        if (0 == sl.first().compare("parent", Qt::CaseInsensitive)) {
+            if (pParent == NULL) {
+                if (pOk == NULL) EXCEPTION(EDATA, -1, name);
+                *pOk = false;
+                return QString();
+            }
+            sl.pop_front();
+            QString pnm = sl.join('.');
+            return pParent->getParValue(q, pnm, pOk);
+        }
         if (sl.size() > 2) {
             if (pOk == NULL) EXCEPTION(EDATA, sl.size(), name);
             *pOk = false;
@@ -1287,9 +1306,9 @@ QString cInspector::getParValue(QSqlQuery& q, const QString& name, bool *pOk)
         }
         QString on = sl[0];
         QString fn = sl[1];
-        if (0 == on.compare("host_service",   Qt::CaseInsensitive)) return hostService.getName(fn);
-        if (0 == on.compare("hostservice",    Qt::CaseInsensitive)) return hostService.getName(fn);
-        if (0 == on.compare("service",        Qt::CaseInsensitive)) return service()->getName(fn);
+        if (0 == on.compare(_sHostService,    Qt::CaseInsensitive)) return hostService.getName(fn);
+        if (0 == on.compare(_sHostservice,    Qt::CaseInsensitive)) return hostService.getName(fn);
+        if (0 == on.compare(_sService,        Qt::CaseInsensitive)) return service()->getName(fn);
         if (0 == on.compare(_sNode,           Qt::CaseInsensitive)) return node().getName(fn);
         if (0 == on.compare(_sHost,           Qt::CaseInsensitive)) return node().getName(fn);
         if (0 == on.compare(_sInterface,      Qt::CaseInsensitive)) return nPort().getName(fn);
@@ -1298,9 +1317,9 @@ QString cInspector::getParValue(QSqlQuery& q, const QString& name, bool *pOk)
         return QString();
     }
     else {
-        if (0 == name.compare("host_service", Qt::CaseInsensitive)) return hostService.getName();
-        if (0 == name.compare("hostservice",  Qt::CaseInsensitive)) return hostService.getName();
-        if (0 == name.compare("service",      Qt::CaseInsensitive)) return service()->getName();
+        if (0 == name.compare(_sHostService,  Qt::CaseInsensitive)) return hostService.getName();
+        if (0 == name.compare(_sHostservice,  Qt::CaseInsensitive)) return hostService.getName();
+        if (0 == name.compare(_sService,      Qt::CaseInsensitive)) return service()->getName();
         if (0 == name.compare(_sNode,         Qt::CaseInsensitive)) return node().getName();
         if (0 == name.compare(_sHost,         Qt::CaseInsensitive)) return node().getName();
         if (0 == name.compare(_sInterface,    Qt::CaseInsensitive)) return nPort().getName();
@@ -1314,7 +1333,7 @@ QString cInspector::getParValue(QSqlQuery& q, const QString& name, bool *pOk)
             if (lanView::testSelfName.isEmpty()) return _sNul;
             return "-S " + lanView::testSelfName;
         }
-        if (0 == name.compare(_sAddress,      Qt::CaseInsensitive)) return host().getIpAddress().toString();
+        if (0 == name.compare(_sAddress,      Qt::CaseInsensitive)) return host().getIpAddress(q).toString();
         if (0 == name.compare(_sProtocol,     Qt::CaseInsensitive)) return protoService().getName();
         if (0 == name.compare(_sPort,         Qt::CaseInsensitive)) {
             qlonglong pn = service()->getId(_sPort);

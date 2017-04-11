@@ -2353,7 +2353,8 @@ int  cNode::fetchPorts(QSqlQuery& __q)
     ports.clear();
     // A ports objektum fetch metódusa csak azonos rekord típusok esetén jó...
     QSqlQuery q = getQuery(); // A copy construktor vagy másolás az nem jó!! (shadow copy)
-    QString sql = "SELECT tableoid, port_id FROM nports WHERE node_id = ? AND NOT deleted";
+    QString sql = "SELECT tableoid, port_id FROM nports WHERE node_id = ? AND NOT deleted"
+                  " ORDER BY port_index NULLS LAST";
     if (execSql(__q, sql, getId())) do {
         qlonglong tableoid = variantToId(__q.value(0));
         qlonglong port_id  = variantToId(__q.value(1));
@@ -2644,6 +2645,14 @@ QList<QHostAddress> cNode::fetchAllIpAddress(QSqlQuery& q, qlonglong __id) const
     return r;
 }
 
+QHostAddress cNode::getIpAddress(QSqlQuery& q)
+{
+    if (containerValid | CV_PORTS) {
+        fetchPorts(q);
+    }
+    return getIpAddress();
+}
+
 QHostAddress cNode::getIpAddress() const
 {
     DBGFN();
@@ -2651,6 +2660,9 @@ QHostAddress cNode::getIpAddress() const
         _DBGFNL() << trUtf8(" A %1 elemnek nincsen portja, így IP címe sem.").arg(getName()) << endl;
         return QHostAddress();
     }
+    QHostAddress ra;
+    qlonglong preferred = LLONG_MAX;
+    int ixPreferred = cIpAddress().toIndex(_sPreferred);
     for (tRecordList<cNPort>::const_iterator pi = ports.constBegin(); pi < ports.constEnd(); ++pi) {
         const cNPort *pp = *pi;
         if (pp->tableoid() == cInterface::_descr_cInterface().tableoid()) {
@@ -2660,13 +2672,22 @@ QHostAddress cNode::getIpAddress() const
                 QHostAddress a = ip.address();
                 if (a.isNull()) {
                     _DBGFNL() << trUtf8(" A %1 elemnek nincsen fix IP címe.").arg(getName()) << endl;
+                    continue;
                 }
-                return a;
+                if (ra.isNull() || (!ip.isNull(ixPreferred) && preferred > ip.getId(ixPreferred))) {
+                    ra =  a;
+                    if (!ip.isNull(ixPreferred)) preferred = getId(ixPreferred);
+                }
             }
         }
     }
-    _DBGFNL() << trUtf8(" A %1 elemnek nincsen IP címe.").arg(getName()) << endl;
-    return QHostAddress();
+    if (ra.isNull()) {
+        _DBGFNL() << trUtf8(" A %1 elemnek nincsen IP címe.").arg(getName()) << endl;
+    }
+    else {
+        _DBGFNL() << trUtf8(" A %1 elem IP címe : %2.").arg(getName(), ra.toString()) << endl;
+    }
+    return ra;
 }
 
 cNode& cNode::asmbAttached(const QString& __n, const QString& __d, qlonglong __place)

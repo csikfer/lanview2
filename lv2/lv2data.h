@@ -1404,6 +1404,9 @@ public:
     cInterface *portSetVlans(int __port_index, const QList<qlonglong>& _ids);
     /// A beolvasott port és cím rekoedokból kikeresi az első címet.
     QHostAddress getIpAddress() const;
+    /// Ha nincsenek beolvasva a portok, akkor beolvassa azokat.
+    /// A beolvasott port és cím rekoedokból kikeresi az első címet.
+    QHostAddress getIpAddress(QSqlQuery& q);
     int fetchAllAddress(QSqlQuery& q, tRecordList<cIpAddress> &cont, qlonglong __id = NULL_ID) const;
     QList<QHostAddress> fetchAllIpAddress(QSqlQuery &q, qlonglong __id = NULL_ID) const;
     /// Összeállít egy nodes és egy nports rekordot
