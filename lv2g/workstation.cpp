@@ -460,7 +460,7 @@ void cWorkstation::_refreshPlaces(QComboBox *pComboBoxZone, QComboBox *pComboBox
     ((cZoneListModel *)pComboBoxZone->model())->setFilter();
     _setCurrentIndex(sZone, pComboBoxZone, EX_IGNORE);
     sZone = pComboBoxZone->currentText();
-    ((cPlacesInZoneModel *)pComboBoxPlace->model())->setFilter(sZone);
+    ((cPlacesInZoneModel *)pComboBoxPlace->model())->setZone(sZone);
     _setCurrentIndex(sPlace, pComboBoxPlace, EX_IGNORE);
     UNLOCKSLOTS();
 }
@@ -490,7 +490,7 @@ QString cWorkstation::_changeZone(QComboBox *pComboBoxPlace, const QString& sZon
     QString placeName = _placeName.isNull() ? pComboBoxPlace->currentText() : _placeName;
     LOCKSLOTS();
     cPlacesInZoneModel *pModel = (cPlacesInZoneModel *)pComboBoxPlace->model();
-    pModel->setFilter(sZone);
+    pModel->setZone(sZone);
     int i = _setCurrentIndex(placeName, pComboBoxPlace, EX_IGNORE);
     UNLOCKSLOTS();
     return pModel->at(i);
@@ -1866,7 +1866,7 @@ void cWorkstation::placeCurrentIndex(const QString& s)
 
 void cWorkstation::nodeAddPlace()
 {
-    cRecord *pRec = insertRecordDialog(*pq, _sPlaces, this);
+    cRecord *pRec = recordInsertDialog(*pq, _sPlaces, this);
     if (pRec == NULL) return;
     qlonglong pid = pRec->getId(_sPlaceId);
     QString sPlace = pRec->getName();

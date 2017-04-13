@@ -135,6 +135,7 @@ private slots:
     void changeParamDT2(QDateTime dt);
     void changeClosed1(bool f);
     void changeClosed2(bool f);
+    void changeBoolean(bool f);
 };
 
 class LV2GSHARED_EXPORT cRecordTableColumn {
@@ -245,10 +246,10 @@ public:
     qlonglong   parent_id;
     /// A dialogus ablak megnyitásához allokál egy objektumot a megadott record tábla név alapján
     /// Hiba esetén dob egy kizárást.
-    static cTableShape *   getInhShape(QSqlQuery &q, cTableShape *pTableShape, const QString& _tn);
+    static cTableShape *   getInhShape(QSqlQuery &q, cTableShape *pTableShape, const QString& _tn, bool ro = false);
     /// A dialogus ablak megnyitásához allokál egy objektumot a megadott record descriptor alapján
     /// Hiba esetén dob egy kizárást.
-    cTableShape *   getInhShape(cTableShape *pTableShape, const cRecStaticDescr& d) { return getInhShape(*pq, pTableShape, d.tableName()); }
+    cTableShape *   getInhShape(cTableShape *pTableShape, const cRecStaticDescr& d) { return getInhShape(*pq, pTableShape, d.tableName(), isReadOnly); }
     QStringList         inheritTableList;
     QMap<qlonglong, const cRecStaticDescr *> * pInhRecDescr;
     QString             viewName;   // A TEMP VIEW neve, vagy NULL, ha nincs

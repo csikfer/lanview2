@@ -33,6 +33,7 @@ public:
     ~cRecordTreeModel();
     cTreeNode * pActRootNode;
     cTreeNode * pRootNode;
+    qlonglong   rootId;
 
     /// Egy node keresése az id alapján (rekurzív)
     /// @param pid a keresett ID

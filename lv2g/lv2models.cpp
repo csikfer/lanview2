@@ -256,30 +256,62 @@ cRecordListModel::~cRecordListModel()
     delete pq;
 }
 
-void cRecordListModel::setConstFilter(const QString& _par, enum eFilterType __f)
+void cRecordListModel::setConstFilter(const QVariant& _par, enum eFilterType __f)
 {
-    QString fn, nn;
+    QString nn;
+    QString pat;
+    qlonglong id;
+    bool b;
+    bool ok = true;
+    switch (__f) {
+    case FT_NO:         break;
+    case FT_LIKE:
+    case FT_SIMILAR:
+    case FT_REGEXP:
+    case FT_REGEXPI:
+    case FT_BEGIN:
+    case FT_SQL_WHERE:  pat = _par.toString();
+                        break;
+    case FT_BOOLEAN:    b = _par.toBool();
+                        break;
+    case FT_FKEY_ID:    id = _par.isNull() ? NULL_ID : _par.toLongLong(&ok);
+                        if (ok) break;
+    default:            EXCEPTION(EPROGFAIL, __f, _par.toString());
+    }
     QString in = descr.columnNameQ(descr.idIndex());
     if (toNameFName.isEmpty()) {
         nn = descr.columnNameQ(descr.nameIndex());
     }
     else {
-        fn = toNameFName + QChar('(') + in +QChar(')') + QChar(' ');
         nn = _sName;
     }
     switch (__f) {
     case FT_NO:         cnstFlt.clear();    break;
-    case FT_LIKE:       cnstFlt = nn + " LIKE " +       quoted(_par);   break;
-    case FT_SIMILAR:    cnstFlt = nn + " SIMILAR TO " + quoted(_par);   break;
-    case FT_REGEXP:     cnstFlt = nn + " ~ " +          quoted(_par);   break;
-    case FT_REGEXPI:    cnstFlt = nn + " ~* " +         quoted(_par);   break;
-    case FT_BEGIN:      cnstFlt = nn + " LIKE " + quoted(_par + QChar('%')); break;
-    case FT_SQL_WHERE:  cnstFlt = _par;                                 break;
+    case FT_LIKE:       cnstFlt = nn + " LIKE " +       quoted(pat);           break;
+    case FT_SIMILAR:    cnstFlt = nn + " SIMILAR TO " + quoted(pat);           break;
+    case FT_REGEXP:     cnstFlt = nn + " ~ " +          quoted(pat);           break;
+    case FT_REGEXPI:    cnstFlt = nn + " ~* " +         quoted(pat);           break;
+    case FT_BEGIN:      cnstFlt = nn + " LIKE " + quoted(pat + QChar('%'));    break;
+    case FT_SQL_WHERE:  cnstFlt = pat;                                         break;
+    case FT_BOOLEAN:    cnstFlt = (b ? _sSpace : " NOT ") + nn + "::boolean";  break;
+    case FT_FKEY_ID:
+        if (id == NULL_ID) {
+            if (!nullIdIsAll) cnstFlt = " FALSE ";
+        }
+        else {
+            if (sFkeyName.isEmpty()) {  // Ha nem owner vagy parent ID, akkor a mezőnevet be kel állítani elsőre!!!
+                int ix = descr.ixToOwner(EX_IGNORE);
+                if (ix < 0) ix = descr.ixToParent();
+                sFkeyName = descr.columnName(ix);
+            }
+            cnstFlt = sFkeyName + " = " + QString::number(id);
+        }
+        break;
     default:            EXCEPTION(EPROGFAIL);
     }
 }
 
-QString cRecordListModel::where(QString s)
+QString cRecordListModel::_where(QString s)
 {
     if (cnstFlt.isEmpty()) {
         if (s.isEmpty()) return QString();
@@ -316,6 +348,49 @@ bool cRecordListModel::setFilter(const QVariant& _par, enum eOrderType __o, enum
     return r;
 }
 
+QString cRecordListModel::where(const QString& nameName)
+{
+    QString w;
+    switch (filter) {
+    case FT_NO:                                                           break;
+    case FT_LIKE:       w = nameName + " LIKE " + quoted(pattern);              break;
+    case FT_SIMILAR:    w = nameName + " SIMILAR TO " + quoted(pattern);        break;
+    case FT_REGEXP:     w = nameName + " ~ " +          quoted(pattern);        break;
+    case FT_REGEXPI:    w = nameName + " ~* " +         quoted(pattern);        break;
+    case FT_BEGIN:      w = nameName + " LIKE " + quoted(pattern + QChar('%')); break;
+    case FT_SQL_WHERE:  w = pattern;                                      break;
+    case FT_BOOLEAN:    w = (str2bool(pattern) ? _sSpace : " NOT ") + nameName + "::boolean";   break;
+    case FT_FKEY_ID:
+        if (fkey_id == NULL_ID) {
+            if (!nullIdIsAll) w = " FALSE ";
+        }
+        else {
+            if (sFkeyName.isEmpty()) {  // Ha nem owner vayg parent ID, akkor a mezőnevet be kel állítani elsőre!!!
+                int ix = descr.ixToOwner(EX_IGNORE);
+                if (ix < 0) ix = descr.ixToParent();
+                sFkeyName = descr.columnName(ix);
+            }
+            w = sFkeyName + " = " + QString::number(fkey_id);
+        }
+        break;
+    default:            EXCEPTION(EPROGFAIL);
+    }
+    return _where(w);
+}
+
+QString cRecordListModel::_order(const QString& nameName, const QString& idName)
+{
+    QString o;
+    switch (order) {
+    case OT_NO:     break;
+    case OT_ASC:    o = " ORDER BY " + nameName;             break;
+    case OT_DESC:   o = " ORDER BY " + nameName + " DESC";   break;
+    case OT_ID_ASC: o = " ORDER BY " + idName;               break;
+    default:    EXCEPTION(EPROGFAIL);  // lehetetlen, de warningol
+    }
+    return o;
+}
+
 QString cRecordListModel::select()
 {
     QString fn, nn;
@@ -329,39 +404,8 @@ QString cRecordListModel::select()
     }
     QString sOnly = only ? " ONLY " : _sNul;
     QString sql = "SELECT " + in + QChar(',') + fn + nn + " FROM " + sOnly + descr.tableName();
-    switch (filter) {
-    case FT_NO:         sql += where();                                             break;
-    case FT_LIKE:       sql += where(nn + " LIKE " + quoted(pattern));              break;
-    case FT_SIMILAR:    sql += where(nn + " SIMILAR TO " + quoted(pattern));        break;
-    case FT_REGEXP:     sql += where(nn + " ~ " +          quoted(pattern));        break;
-    case FT_REGEXPI:    sql += where(nn + " ~* " +         quoted(pattern));        break;
-    case FT_BEGIN:      sql += where(nn + " LIKE " + quoted(pattern + QChar('%'))); break;
-    case FT_SQL_WHERE:  sql += where(pattern);                                      break;
-    case FT_FKEY_ID:    {
-        QString s;
-        if (fkey_id == NULL_ID) {
-            if (!nullIdIsAll) s = " FALSE ";
-        }
-        else {
-            if (sFkeyName.isEmpty()) {  // Ha nem owner vayg parent ID, akkor a mezőnevet be kel állítani elsőre!!!
-                int ix = descr.ixToOwner(EX_IGNORE);
-                if (ix < 0) ix = descr.ixToParent();
-                sFkeyName = descr.columnName(ix);
-            }
-            s = sFkeyName + " = " + QString::number(fkey_id);
-        }
-        sql += where(s);
-        break;
-    }
-    default:            EXCEPTION(EPROGFAIL);
-    }
-    switch (order) {
-    case OT_NO:     break;
-    case OT_ASC:    sql += " ORDER BY " + nn;               break;
-    case OT_DESC:   sql += " ORDER BY " + nn + " DESC";     break;
-    case OT_ID_ASC: sql += " ORDER BY " + descr.idName();   break;
-    default:    EXCEPTION(EPROGFAIL);  // lehetetlen, de warningol
-    }
+    sql += where(nn);
+    sql += _order(nn, descr.idName());
     PDEB(VERBOSE) << "SQL : \"" << sql << "\"" << endl;
     return sql;
 }
@@ -377,6 +421,8 @@ void cRecordListModel::setPattern(const QVariant& _par)
     case FT_REGEXPI:
     case FT_BEGIN:
     case FT_SQL_WHERE:  pattern = _par.toString();
+                        break;
+    case FT_BOOLEAN:    pattern = _par.toBool() ? _sTrue : _sFalse;
                         break;
     case FT_FKEY_ID:    fkey_id = _par.isNull() ? NULL_ID : _par.toLongLong(&ok);
                         if (ok) break;
@@ -440,8 +486,14 @@ bool cZoneListModel::setFilter(const QVariant &_par, eOrderType __o, eFilterType
     if (!_par.isNull()) setPattern(_par);
     stringList.clear();
     idList.clear();
-    QString sql = select();
+
+    QString sql = "SELECT place_group_id , place_group_name  FROM place_groups ";
+    sql += where(_sPlaceGroupName);
+    sql += _order(_sPlaceGroupName, _sPlaceGroupId);
+
+    PDEB(SQL) << "SQL : " << sql << endl;
     if (!pq->exec(sql)) SQLPREPERR(*pq, sql);
+
     bool all = false;
     bool r = pq->first();
     if (r) do {
@@ -481,51 +533,58 @@ const QString cPlacesInZoneModel::sqlSelectAll =
 cPlacesInZoneModel::cPlacesInZoneModel(QObject * __par)
     : cRecordListModel(_sPlaces, _sPublic, __par)
 {
-    nullable = true;
-    setFilter(QVariant(ALL_PLACE_GROUP_ID));
+    nullable    = true;
+    skipUnknown = true;
+    zoneId      = ALL_PLACE_GROUP_ID;
+    setFilter();
 }
 
 bool cPlacesInZoneModel::setFilter(const QVariant& _par, enum eOrderType __o, enum eFilterType __f)
 {
     _DBGFN() << "@(" << _par << ")" << endl;
-    (void)__f;
-    if (__o != OT_DEFAULT) order = __o;
-    if (!_par.isNull()) {
-        if (_par.userType() == QVariant::String) {
-            fkey_id = cPlaceGroup().getIdByName(*pq, _par.toString());
-        }
-        else {
-            bool ok;
-            fkey_id = _par.toLongLong(&ok);
-            if (!ok) EXCEPTION(EPROGFAIL, 0, _par.toString());
-        }
-    }
+    if (__o != OT_DEFAULT) order   = __o;
+    if (__f != FT_DEFAULT) filter  = __f;
+    if (!_par.isNull()) setPattern(_par);
     stringList.clear();
     idList.clear();
     if (nullable) {
         stringList << _sNul;
         idList     << NULL_ID;
     }
-    QString sql = fkey_id == ALL_PLACE_GROUP_ID ? sqlSelectAll : sqlSelect.arg(fkey_id);
-    sql += where();
-    switch (order) {
-    case OT_NO:     break;
-    case OT_ASC:    sql += " ORDER BY place_name";      break;
-    case OT_DESC:   sql += " ORDER BY place_name DESC"; break;
-    case OT_ID_ASC: sql += " ORDER BY place_id";        break;
-    default:    EXCEPTION(EPROGFAIL);  // lehetetlen, de warningol
+    QString sql;
+    if (zoneId == ALL_PLACE_GROUP_ID) {
+        sql = sqlSelectAll;
     }
+    else {
+        sql = sqlSelect.arg(zoneId);
+    }
+    sql += where(_sPlaceName);
+    sql += _order(_sPlaceName, _sPlaceId);
     PDEB(VERBOSE) << "SQL : \"" << sql << "\"" << endl;
     if (!pq->exec(sql)) SQLPREPERR(*pq, sql);
     bool r = pq->first();
     if (r) do {
         qlonglong id = variantToId(pq->value(0));
-        if (id == UNKNOWN_PLACE_ID || id == ROOT_PLACE_ID) continue;
+        if (id == ROOT_PLACE_ID) continue;
+        if (skipUnknown && id == UNKNOWN_PLACE_ID) continue;
+        QString name = pq->value(1).toString();
         idList     << id;
-        stringList << pq->value(1).toString();
+        stringList << name;
     } while (pq->next());
     PDEB(VVERBOSE) << "name list :" << stringList.join(_sCommaSp) << endl;
     setStringList(stringList);
     return r;
+}
+
+void cPlacesInZoneModel::setZone(const QString& name)
+{
+    zoneId = cPlaceGroup().getIdByName(*pq, name);
+    setFilter();
+}
+
+void cPlacesInZoneModel::setZone(qlonglong id)
+{
+    zoneId = id;
+    setFilter();
 }
 

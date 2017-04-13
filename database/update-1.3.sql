@@ -210,4 +210,7 @@ ALTER TABLE phs_links_table ADD CONSTRAINT phs_links_table_modify_user_id_fkey F
 ALTER TABLE services DROP COLUMN protocol_id;
 DROP TABLE ipprotocols;
 
+-- Plussz egy szűrés típus:
+ALTER TYPE filtertype ADD VALUE 'boolean';
+
 END;

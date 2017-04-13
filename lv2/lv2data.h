@@ -1189,16 +1189,21 @@ public:
     /// Az ID alapján az eredeti rekord leírót adja vissza
     const cRecStaticDescr *getOriginalDescr(QSqlQuery &q, eEx __ex = EX_ERROR);
     /// Allokál és beolvas egy node objektumot a megadott node_id alapján.
-    /// Az allokált objektum típusa megfelel a táblának, ha a rekor az nodes, hosts, snmpdevices táblában van.
-    /// @param __node_id A node rekord id-je (port_id)
+    /// Az allokált objektum típusa megfelel a táblának, ha a rekor a patchs nodes, snmpdevices táblában van.
+    /// @param __node_id A node rekord id-je (node_id)
     /// @param __ex Ha értéke true, és nem találja a rekordot, tableoid-t akkor dob egy kizárást. Egyébként NULL-lal tér vissza
     static cPatch * getNodeObjById(QSqlQuery& q, qlonglong __node_id, enum eEx __ex = EX_ERROR);
     /// Allokál és beolvas egy node objektumot a megadott node_id alapján.
     /// Az allokált objektum típusa megfelel a táblának, aminek a tableoid értékét megadtuk.
-    /// @param __node_id A node rekord id-je (port_id)
+    /// @param __node_id A node rekord id-je (node_id)
     /// @param __tableoid Az allokálandó objektum típusát, ill. a hozzázatozó táblát azonosító OID
     /// @param __ex Ha értéke true, és nem találja a rekordot, tableoid-t akkor dob egy kizárást. Egyébként NULL-lal tér vissza
     static cPatch * getNodeObjById(QSqlQuery& q, qlonglong __tableoid, qlonglong __node_id, enum eEx __ex = EX_ERROR);
+    /// Allokál és beolvas egy node objektumot a megadott node_name alapján.
+    /// Az allokált objektum típusa megfelel a táblának, ha a rekor a patchs,  nodes, snmpdevices táblában van.
+    /// @param __node_name A node rekord neve (node_name)
+    /// @param __ex Ha értéke true, és nem találja a rekordot, tableoid-t akkor dob egy kizárást. Egyébként NULL-lal tér vissza
+    static cPatch * getNodeObjByName(QSqlQuery& q, const QString&  __node_name, enum eEx __ex = EX_ERROR);
 
     /// Egy node neve alapján visszaadja az id-t
     static qlonglong getNodeIdByName(QSqlQuery& q, const QString& _n, enum eEx __ex = EX_ERROR) {

@@ -115,7 +115,7 @@ public:
     /// Az objektum neve
     const QString           name;
     virtual cFieldEditBase * operator[](const QString& __fn) = 0;
-    virtual void restore(cRecord *_pRec = NULL) = 0;
+    virtual void restore(const cRecord *_pRec = NULL) = 0;
     virtual bool accept() = 0;
 public slots:
     /// Hiba ablakunk van, megnyomták a close gombot...
@@ -163,7 +163,7 @@ public:
     /// @param parent Az szülő widget opcionális parent pointere
     cRecordDialog(const cTableShape &__tm, qlonglong _buttons, bool dialog = true, cRecordDialogBase *ownDialog = NULL, cRecordsViewBase  * ownTab = NULL, QWidget * parent = NULL);
     /// A rekord adattag tartalmának a megjelenítése/megjelenítés visszaállítása
-    virtual void restore(cRecord *_pRec = NULL);
+    virtual void restore(const cRecord *_pRec = NULL);
     /// A megjelenített értékek kiolvasása
     virtual bool accept();
     virtual cFieldEditBase * operator[](const QString& __fn);
@@ -213,7 +213,7 @@ public:
     void setTabEnabled(int index, bool enable) { pTabWidget->setTabEnabled(index, enable); }
     tRecordList<cTableShape>&tabDescriptors;
     virtual cFieldEditBase * operator[](const QString& __fn);
-    virtual void restore(cRecord *_pRec = NULL);
+    virtual void restore(const cRecord *_pRec = NULL);
 protected:
     QVBoxLayout            *pVBoxLayout;
     QTabWidget             *pTabWidget;
@@ -224,7 +224,7 @@ private:
 
 /* ************************************************************************** */
 
-_GEX cRecord * insertRecordDialog(QSqlQuery& q, const QString& sn, QWidget *pPar = NULL);
+_GEX cRecord * recordInsertDialog(QSqlQuery& q, const QString& sn, QWidget *pPar = NULL, const cRecord *pSample = NULL, bool ro = false);
 
 static inline QString getTableItemText(QTableWidget *pW, int row, int col) {
     QString r;
@@ -347,7 +347,7 @@ private slots:
 
 _GEX cPatch * patchDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample = NULL);
 
-_GEX cRecord *insertDialogByName(const QString& name, QSqlQuery& q, QWidget *pPar, cRecord * _pSample = NULL);
+_GEX cRecord *recordDialogByName(const QString& name, QSqlQuery& q, QWidget *pPar, cRecord * _pSample = NULL);
 
 
 #endif // RECORD_DIALOG_H

@@ -68,7 +68,7 @@
        <item>
         <widget class="QStackedWidget" name="stackedWidget">
          <property name="currentIndex">
-          <number>2</number>
+          <number>6</number>
          </property>
          <widget class="QWidget" name="page_FilterNo">
           <layout class="QGridLayout" name="gridLayout_2">
@@ -415,6 +415,40 @@
            </item>
            <item row="1" column="1">
             <widget class="QDateTimeEdit" name="dateTimeEdit_DT2"/>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="page_boolean">
+          <layout class="QVBoxLayout" name="verticalLayout">
+           <item>
+            <widget class="QRadioButton" name="radioButtonTrue">
+             <property name="text">
+              <string>Ha a mező értéke igaz</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="radioButtonFalse">
+             <property name="text">
+              <string>Ha a mező értéke hamis</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="verticalSpacer">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>528</height>
+              </size>
+             </property>
+            </spacer>
            </item>
           </layout>
          </widget>

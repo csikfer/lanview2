@@ -125,6 +125,10 @@ QString cRecordTableFilter::where(QVariantList& qparams)
         case FT_SQL_WHERE:
             r = param1.toString();
             break;
+        case FT_BOOLEAN:
+            if (!param1.toBool()) r = " NOT";
+            r += c + "::boolean";
+            break;
         default:
             EXCEPTION(EPROGFAIL);
         }
@@ -244,6 +248,8 @@ cRecordTableFODialog::cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase &_rt)
         connect(pForm->checkBox_closeF2,    SIGNAL(toggled(bool)),              this, SLOT(changeClosed2(bool)));
         connect(pForm->checkBox_closeDT1,   SIGNAL(toggled(bool)),              this, SLOT(changeClosed1(bool)));
         connect(pForm->checkBox_closeDT2,   SIGNAL(toggled(bool)),              this, SLOT(changeClosed2(bool)));
+
+        connect(pForm->radioButtonTrue,     SIGNAL(toggled(bool)),              this, SLOT(changeBoolean(bool)));
 
         pForm->comboBox_colName->setCurrentIndex(0);
         pForm->comboBox_FiltType->setCurrentIndex(0);
@@ -388,6 +394,12 @@ void cRecordTableFODialog::setFilterDialog()
             pForm->stackedWidget->setCurrentWidget(pForm->page_FilterText);
             pForm->textEdit_FiltParam->setPlainText(filter().param1.toString());
             break;
+        case FT_BOOLEAN: {
+                pForm->stackedWidget->setCurrentWidget(pForm->page_boolean);
+                bool f = filter().param1.toBool();
+                pForm->radioButtonTrue->setChecked(f);
+            }
+            break;
         }
         QString title = filter().shapeFilter().getName(_sTableShapeFilterNote);
         if (title.isEmpty()) title = cEnumVal::title(*recordView.pq, filter().shapeFilter().getName(_sFilterType), "filtertype");
@@ -463,6 +475,7 @@ void cRecordTableFODialog::changeParamDT1(QDateTime dt) { filter().param1 = dt; 
 void cRecordTableFODialog::changeParamDT2(QDateTime dt) { filter().param2 = dt; }
 void cRecordTableFODialog::changeClosed1(bool f)    { filter().closed1 = f; }
 void cRecordTableFODialog::changeClosed2(bool f)    { filter().closed2 = f; }
+void cRecordTableFODialog::changeBoolean(bool f)    { filter().param1 = f; }
 
 /* ***************************************************************************************************** */
 
@@ -539,11 +552,12 @@ void cRecordsViewBase::buttonDisable(int id, bool d)
     p->setDisabled(d);
 }
 
-cTableShape * cRecordsViewBase::getInhShape(QSqlQuery& q, cTableShape *pTableShape, const QString &_tn)
+cTableShape * cRecordsViewBase::getInhShape(QSqlQuery& q, cTableShape *pTableShape, const QString &_tn, bool ro)
 {
     cTableShape *p = new cTableShape();
     // Az alapértelmezett azonos tábla és shape rekord név
     if (p->fetchByName(q, _tn) && _tn == p->getName(_sTableName)) {
+        if (ro) p->enum2setOn(_sTableShapeType, TS_READ_ONLY);
         p->fetchFields(q);
         return p;
     }
@@ -648,7 +662,7 @@ void cRecordsViewBase::insert(bool _similar)
         if (_similar) {
             pRec = actRecord();    // pointer az aktuális rekordra, a beolvasott/megjelenített rekord listában
         }
-        pRec = insertDialogByName(sInsertDialog, *pq, this->pWidget(), pRec);
+        pRec = recordDialogByName(sInsertDialog, *pq, this->pWidget(), pRec);
         if (pRec == NULL) return;
         pDelete(pRec);
         refresh();
@@ -771,9 +785,15 @@ void cRecordsViewBase::modify(eEx __ex)
     cRecord *pRec = actRecord(index);    // pointer az aktuális rekordra, a beolvasott/megjelenített rekord listában
     if (pRec == NULL) return;
     pRec = pRec->dup();           // Saját másolat
-    int buttons = enum2set(DBT_OK, DBT_CANCEL, DBT_NEXT, DBT_PREV);
-    if (recDescr().toIndex(_sAcknowledged, EX_IGNORE) >= 0)  {
-        buttons |= enum2set(DBT_RECEIPT);
+    int buttons;
+    if (isReadOnly) {
+        buttons = enum2set(DBT_CANCEL, DBT_NEXT, DBT_PREV);
+    }
+    else {
+        buttons = enum2set(DBT_OK, DBT_CANCEL, DBT_NEXT, DBT_PREV);
+        if (recDescr().toIndex(_sAcknowledged, EX_IGNORE) >= 0)  {
+            buttons |= enum2set(DBT_RECEIPT);
+        }
     }
 
     cRecordDialogBase *pRd  = NULL;
@@ -809,7 +829,7 @@ void cRecordsViewBase::modify(eEx __ex)
 
     int id = DBT_NEXT;
     while (1) {
-        // Hívjuk a megfelelő diaogot
+        // Hívjuk a megfelelő dialogot
         if (pRdt != NULL) {
             int i, n = pShapes->size();
             bool e = false;

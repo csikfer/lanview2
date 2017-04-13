@@ -115,6 +115,7 @@ enum eFilterType {
     FT_INTERVAL, ///< Numerikus mező értéke a magadott tartományban
     FT_PROC,     ///< Szűrés egy függvényen (PL) keresztül.
     FT_SQL_WHERE,///< SQL WHERE ...
+    FT_BOOLEAN,  ///< Szűrés igaz, vagy hamis értékre
     // A további konstansokat a string konvertáló függvény nem kezeli!
     FT_DEFAULT,  ///< Az előző, vagy az alapértelmezett metódus megtartása (a string konvertáló függvény nem kezeli!)
     FT_NO,       ///< nincs szűrés(a string konvertáló függvény nem kezeli!)

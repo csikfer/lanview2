@@ -53,11 +53,12 @@ cSetNoAlarm::cSetNoAlarm(QMdiArea *par)
     pUi->dateTimeEditFrom->setMinimumDate(QDate::currentDate());
     pUi->dateTimeEditTo->setMinimumDate(QDate::currentDate());
 
-    pZoneModel = new cRecordListModel(cPlaceGroup().descr(), this);
-    pZoneModel->setConstFilter(_sPlaceGroupType + " = " + quoted(_sZone), FT_SQL_WHERE);
+    pZoneModel = new cZoneListModel;
     pUi->comboBoxZone->setModel(pZoneModel);
     pZoneModel->setFilter();
     pUi->comboBoxZone->setCurrentText(_sAll);
+
+    connect(pUi->comboBoxZone,      SIGNAL(currentIndexChanged(int)), this, SLOT(zoneChanged(int)));
 
     connect(pUi->pushButtonClose,   SIGNAL(clicked()),  this,   SLOT(endIt()));
     connect(pUi->pushButtonSet,     SIGNAL(clicked()),  this,   SLOT(set()));
@@ -76,9 +77,9 @@ cSetNoAlarm::cSetNoAlarm(QMdiArea *par)
     connect(pUi->lineEditServicePattern, SIGNAL(textChanged(QString)), this, SLOT(changeServicePattern(QString)));
     connect(pUi->textEditMsg,            SIGNAL(textChanged()),        this, SLOT(changeMsg()));
 
-    pPlaceModel = new cRecordListModel(cPlace().descr(), this);
+    pPlaceModel = new cPlacesInZoneModel;
     pUi->comboBoxPlaceSelect->setModel(pPlaceModel);
-    pPlaceModel->setFilter();   // Nincs szűrés, rendezés növekvő sorrendben
+    pPlaceModel->setFilter();   // Nincs szűrés, nincs NULL
     pUi->comboBoxPlaceSelect->setCurrentIndex(0);
 
 
@@ -99,6 +100,10 @@ cSetNoAlarm::~cSetNoAlarm()
     delete pq2;
 }
 
+void cSetNoAlarm::zoneChanged(int ix)
+{
+    pPlaceModel->setZone(pZoneModel->atId(ix));
+}
 
 void cSetNoAlarm::fetch()
 {
@@ -112,11 +117,15 @@ void cSetNoAlarm::fetch()
                 " hs.noalarm_from,"                                 // TC_FROM
                 " hs.noalarm_to"                                    // TC_TO
             " FROM host_services AS hs"
-            " JOIN nodes  AS n USING(node_id)"
-            " JOIN places AS p USING(place_id)";
+            " JOIN nodes AS n USING(node_id)"
+            " JOIN places AS p USING(place_id)"
+            " JOIN services AS s USING(service_id)";
     QStringList     where;
     QVariantList    bind;
     bool            empty = false;
+
+    where << " NOT hs.disabled";
+    where << " NOT  s.disabled";
 
     bool idOff    = pUi->checkBoxOff->isChecked();
     bool idOn     = pUi->checkBoxOn->isChecked();
@@ -167,7 +176,7 @@ void cSetNoAlarm::fetch()
     }
     // Filter by node
     if (!empty && pUi->checkBoxNode->isChecked()) {
-        if (pUi->radioButtonNodePattern) {
+        if (pUi->radioButtonNodePattern->isChecked()) {
             QString pat = pUi->lineEditNodePattern->text();
             if (!pat.isEmpty()) {
                 where << " n.node_name LIKE ?";
@@ -180,14 +189,14 @@ void cSetNoAlarm::fetch()
             qlonglong id = pNodeModel->atId(i);
             if (id == NULL_ID) empty = true;
             else {
-                where << " ns.node_id = ?";
+                where << " s.node_id = ?";
                 bind  << id;
             }
         }
     }
     // Filter by service
     if (!empty && pUi->checkBoxService->isChecked()) {
-        if (pUi->radioButtonServicePattern) {
+        if (pUi->radioButtonServicePattern->isChecked()) {
             QString pat = pUi->lineEditServicePattern->text();
             if (!pat.isEmpty()) {
                 sql +=  " JOIN services AS s USING(service_id)";
@@ -209,7 +218,7 @@ void cSetNoAlarm::fetch()
     idList.clear();
     if (!empty) {
         cHostService hs;
-        if (!where.isEmpty()) sql += " WHERE" + where.join(" AND");
+        sql += " WHERE" + where.join(" AND");
         sql += " ORDER BY hsn ASC";
         if (!pq->prepare(sql)) SQLPREPERR(*pq, sql);
         int i = 0;

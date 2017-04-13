@@ -4,11 +4,6 @@
 #include "lv2data.h"
 #include "lv2cont.h"
 
-/// @class cIpProtocol
-class LV2SHARED_EXPORT cIpProtocol : public cRecord {
-    CRECORD(cIpProtocol);
-};
-
 /// @class cServiceType
 /// A service objektumokat csoportosítására bevezetett elem.
 /// A sevízek állapotaihoz rendelt üzenetek ősszeállításánál van szerepe.
@@ -29,6 +24,7 @@ public:
         replaces(__q, id, __stats, __shortMsg, __msg);
     }
 };
+
 
 class cHostService;
 

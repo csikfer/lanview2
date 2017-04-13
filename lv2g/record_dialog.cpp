@@ -447,7 +447,7 @@ void cRecordDialog::init()
     DBGFNL();
 }
 
-void cRecordDialog::restore(cRecord *_pRec)
+void cRecordDialog::restore(const cRecord *_pRec)
 {
     pDelete(_pRecord);
     _pRecord = new cRecordAny(&rDescr);
@@ -594,7 +594,7 @@ cFieldEditBase * cRecordDialogInh::operator[](const QString& __fn)
     return actDialog()[__fn];
 }
 
-void cRecordDialogInh::restore(cRecord *_pRec)
+void cRecordDialogInh::restore(const cRecord *_pRec)
 {
     if (_pRec == NULL) return;
     if (disabled()) return;
@@ -605,17 +605,30 @@ void cRecordDialogInh::restore(cRecord *_pRec)
 
 /* ************************************************************************* */
 
-cRecord * insertRecordDialog(QSqlQuery& q, const QString& sn, QWidget *pPar)
+cRecord * recordInsertDialog(QSqlQuery& q, const QString& sn, QWidget *pPar, const cRecord *pSample, bool ro)
 {
     cTableShape shape;
-    shape.setByName(q, sn);
+    if (!shape.fetchByName(q, sn)) {
+        shape.setName(_sTableName, sn);
+        int n = shape.completion(q);
+        if (n == 0) EXCEPTION(EDATA, 0, sn);
+        if (n >  1) EXCEPTION(AMBIGUOUS, n, sn);
+    }
+    if (ro) shape.enum2setOn(_sTableShapeType, TS_READ_ONLY);
     shape.fetchFields(q);
-    // A dialógusban megjelenítendő nyomógombok.
-    int buttons = enum2set(DBT_OK, DBT_CANCEL);
+    // A dialógusban megjelenítendő nyomógombok. (Csak az explicit read-only van lekezelve!!))
+    int buttons;
+    if (shape.getBool(_sTableShapeType, TS_READ_ONLY)) {
+        buttons = enum2set(DBT_CANCEL);
+    }
+    else {
+        buttons = enum2set(DBT_OK, DBT_CANCEL);
+    }
     cRecordDialog   rd(shape, buttons, true, NULL, NULL, pPar);  // A rekord szerkesztő dialógus
+    rd.restore(pSample);
     while (true) {
         int r = rd.exec(false);
-        if (r == DBT_CANCEL) return NULL;
+        if (r == DBT_CANCEL || ro) return NULL;
         if (!rd.accept()) continue;
         if (!cErrorMessageBox::condMsgBox(rd.record().tryInsert(q, true))) continue;
         break;
@@ -1098,7 +1111,7 @@ void cPatchDialog::changeFilterZone(int i)
 
 void cPatchDialog::newPlace()
 {
-    cRecord *p = insertRecordDialog(*pq, _sPlaces, this);
+    cRecord *p = recordInsertDialog(*pq, _sPlaces, this);
     if (p != NULL) {
         changeFilterZone(pUi->comboBoxZone->currentIndex());
         QString placeName = p->getName();
@@ -1190,7 +1203,7 @@ cPatch * patchDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample)
     return p;
 }
 
-cRecord *insertDialogByName(const QString& name, QSqlQuery& q, QWidget *pPar, cRecord * _pSample)
+cRecord *recordDialogByName(const QString& name, QSqlQuery& q, QWidget *pPar, cRecord * _pSample)
 {
     if (0 == name.compare("cPatchDialog", Qt::CaseInsensitive)) {
         cPatch *pSample = NULL;
@@ -1204,4 +1217,5 @@ cRecord *insertDialogByName(const QString& name, QSqlQuery& q, QWidget *pPar, cR
         return pRec;
     }
     EXCEPTION(EFOUND, 0, QObject::trUtf8("Nincs %1 nevű insert dialogus.").arg(name));
+    return NULL;    // Warning miatt
 }

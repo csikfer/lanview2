@@ -143,6 +143,7 @@ int filterType(const QString& n, eEx __ex)
     if (0 == n.compare(_sInterval, Qt::CaseInsensitive)) return FT_INTERVAL;
     if (0 == n.compare(_sProc,     Qt::CaseInsensitive)) return FT_PROC;
     if (0 == n.compare(_sSQL,      Qt::CaseInsensitive)) return FT_SQL_WHERE;
+    if (0 == n.compare(_sBoolean,  Qt::CaseInsensitive)) return FT_BOOLEAN;
     if (__ex) EXCEPTION(EENUMVAL, -1, n);
     return FT_UNKNOWN;
 }
@@ -160,6 +161,7 @@ const QString& filterType(int e, eEx __ex)
     case FT_INTERVAL:   return _sInterval;
     case FT_PROC:       return _sProc;
     case FT_SQL_WHERE:  return _sSQL;
+    case FT_BOOLEAN:    return _sBoolean;
     default:            break;
     }
     if (__ex) EXCEPTION(EENUMVAL, e);

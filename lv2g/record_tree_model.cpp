@@ -51,7 +51,8 @@ cRecordTreeModel::cRecordTreeModel(cRecordTree&  _rt)
     , cRecordViewModelBase(_rt)
 {
     pActRootNode = NULL;
-    pRootNode = NULL;
+    pRootNode    = NULL;
+    rootId       = NULL_ID;
     _viewRowNumbers = false;    // NINCS!!
     pq = newQuery();
 }
@@ -205,7 +206,7 @@ cTreeNode * cRecordTreeModel::nodeFromIndex(const QModelIndex& index) const
 void cRecordTreeModel::refresh(bool first)
 {
     first = first || (pRootNode == NULL) || (pRootNode == pActRootNode);
-    qlonglong rid = NULL_ID;
+    qlonglong rid = rootId;
     if (!first) {           // Ha rész fa van
         if (pActRootNode->pData == NULL) EXCEPTION(EPROGFAIL);
         rid = pActRootNode->pData->getId();

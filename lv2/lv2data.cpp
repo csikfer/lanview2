@@ -2080,6 +2080,16 @@ cPatch * cPatch::getNodeObjById(QSqlQuery& q, qlonglong __node_id, eEx __ex)
     return getNodeObjById(q, tableoid, __node_id, __ex);
 }
 
+cPatch * cPatch::getNodeObjByName(QSqlQuery& q, const QString&  __node_name, enum eEx __ex)
+{
+    cPatch o;
+    qlonglong tableoid = o.setName(__node_name).fetchTableOId(q, __ex);
+    qlonglong id       = o.getIdByName(q, __node_name);
+    if (tableoid < 0LL) return NULL;
+    return getNodeObjById(q, tableoid, id, __ex);
+}
+
+
 QString  cPatch::getTextParam(qlonglong _typeId, eEx __ex) const
 {
     const cNodeParam *ppp = params.get(_sParamTypeId, _typeId, __ex);

@@ -22,8 +22,8 @@ protected:
     QButtonGroup   *pButtonGroupNode;
     QButtonGroup   *pButtonGroupType;
 
-    cRecordListModel *pZoneModel;
-    cRecordListModel *pPlaceModel;
+    cZoneListModel   *pZoneModel;
+    cPlacesInZoneModel*pPlaceModel;
     cRecordListModel *pNodeModel;
     cRecordListModel *pServiceModel;
 
@@ -39,6 +39,9 @@ protected slots:
     void all();
     /// A táblázat összes sorában a kijelülés törlése
     void none();
+    ///
+    void zoneChanged(int ix);
+    ///
     void off(bool f);
     void on(bool f);
     void to(bool f);

@@ -207,7 +207,7 @@ public:
     /// Az itt megadott feltétel és kapcsolatban lessz a setFilter() metódusban megadottnak.
     /// @param _par A szűrő paramétere
     /// @param __f A szűrés típusa
-    void setConstFilter(const QString& _par, eFilterType __f);
+    void setConstFilter(const QVariant &_par, eFilterType __f);
     /// Szűrési feltételek megadása, és a lista frissítése
     /// @param _par A szűrő paramétere
     /// @param __o A lista rendezésének a típusa
@@ -243,7 +243,9 @@ public:
     bool                only;
     const cRecStaticDescr&  descr;  ///< A rekord leíró
 protected:
-    QString where(QString s = QString());
+    QString _where(QString s = QString());
+    QString where(const QString &nameName);
+    QString _order(const QString& nameName, const QString& idName);
     QString select();
     void setPattern(const QVariant& _par);
     enum eOrderType     order;      ///< Az aktuális rendezés típusa
@@ -278,9 +280,11 @@ public:
     virtual bool setFilter(const QVariant &_par = QVariant(), enum eOrderType __o = OT_DEFAULT, enum eFilterType __f = FT_DEFAULT);
 };
 
-/// Model: cRecordListModel leszármazottja. A places táblát kérdezi le, a szűrési feltétel mindíg a zóna (place_group_id).
+/// Model: cRecordListModel leszármazottja. A places táblát kérdezi le, a konstans szűrési feltétel mindíg a zóna (place_group_id).
 /// Egy helyiség akkor tartozik a zónába, ha tagja az a zónát reprezentáló place_groups csoportnak, vagy valamelyik
-/// parentje tag. A nullable adattag alapértelmezése true. A listából mindíg kimarad a "root" és az "unknown" hely.
+/// parentje tag. A nullable adattag alapértelmezése true. A listából mindíg kimarad a "root".
+/// Az "unknown" hely akkor marad ki, ha a skipUnknown adattag értéke true. A konstruktor true-ra inicialozálja a
+/// skipUnknown adattagot.
 class LV2GSHARED_EXPORT cPlacesInZoneModel : public cRecordListModel {
 public:
     /// Konstruktor.
@@ -290,14 +294,23 @@ public:
     /// A lista modosítása a setPattern() metódussal lehetséges.
     /// @param _par Parent
     cPlacesInZoneModel(QObject * __par = NULL);
-    /// Szűrési feltételek megadása, és a lista frissítése
+    /// Szűrési feltételek megadása, és/vagy a lista frissítése
     /// @param _par A szűrő paramétere, a zóna ID-je
     /// @param __o A lista rendezésének a típusa
     /// @param __f Nem használt paraméter.
     virtual bool setFilter(const QVariant &_par = QVariant(), enum eOrderType __o = OT_DEFAULT, enum eFilterType __f = FT_DEFAULT);
+    /// Beállítja a zónát a konstans szűrési feltételként. Ha _par értéke NULL, akkor az "ALL" zóna lesz beállítva,
+    /// ami azt jelenti, hogy nincs szűrés zónára.
+    /// A metódus kiad egy setFilter() hívást paraméterek nélkül, és frissíti a listát.
+    /// @param _par A zóna ID, vagy név. Ha a paraméter nem azonosítható zóna név vagy ID-ként, akkor kizárást dob a hívás.
+    void setZone(qlonglong id);
+    void setZone(const QString& name);
+    ///
+    bool    skipUnknown;
 protected:
     static const QString sqlSelect;
     static const QString sqlSelectAll;
+    qlonglong            zoneId;
 };
 
 #endif // LV2MODELS_H
