@@ -524,22 +524,22 @@ void cHSOperate::set()
                 qlonglong id = idList.at(row);
                 if (disable) {
                     hs.setBool(_sDisabled, true);
-                    um = um_disabled;
+                    um |= um_disabled;
                     rec.setValue(RX_DISABLED, true);
                 }
                 else if (enable) {
                     hs.setBool(_sDisabled, false);
-                    um = um_disabled;
+                    um |= um_disabled;
                     rec.setValue(RX_DISABLED, false);
                 }
                 if (alarmOn) {
                     hs.setName(_sNoalarmFlag, _sOff);
-                    um = um_noalarm;
+                    um |= um_noalarm;
                     rec.setValue(RX_NOALARM, _sOff);
                 }
                 else if (alarmOff) {
                     hs.setName(_sNoalarmFlag, _sOn);
-                    um = um_noalarm;
+                    um |= um_noalarm;
                     rec.setValue(RX_NOALARM, _sOn);
                 }
                 if (clrStat) {
@@ -708,7 +708,7 @@ void cHSOperate::doubleClickCell(const QModelIndex& mi)
     QTableWidgetItem *pi = pUi->tableWidget->item(row, col);
     QString s;
     if (pi == NULL) {
-        if (col != TC_EXT) return;
+        if (col != TC_EXT && col != TC_CBOX_NSUB) return;
     }
     else {
         s = pi->text();
@@ -765,6 +765,13 @@ void cHSOperate::doubleClickCell(const QModelIndex& mi)
         recordInsertDialog(*pq2, hs.tableName(), this, &hs, true);
         break;
      }
+    case TC_CBOX_NSUB: {
+        QWidget *pW = pUi->tableWidget->cellWidget(row, TC_CBOX_NSUB);
+        if (pW == NULL) break;
+        subNone();
+        ((QCheckBox *)pW)->setChecked(true);
+        fetchSubs();
+      }
     default:    break;
     }
 }
