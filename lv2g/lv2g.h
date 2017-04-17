@@ -120,10 +120,11 @@ enum eDesignRole {
     GDR_KEY,            ///< kulcs mező (de nem elsődleges, ID vagy Név)
     GDR_FNAME,          ///< távoli kulcs, a hivatkozott rekord név mezője
     GDR_DERIVED,        ///< távoli kulcs, a hivatkozott rekordból származtatott név jellegű adat
-    GDR_TREE,           ///< saját rekordra mutató távoli kulcs (ráf vagy fa)
+    GDR_TREE,           ///< saját rekordra mutató távoli kulcs (gráf vagy fa)
     GDR_FOREIGN,        ///< távoli kulcs érték
     GDR_NULL,           ///< NULL adat
-    GDR_WARNING         ///< Figyelmeztető üzenet
+    GDR_WARNING,        ///< Figyelmeztető üzenet
+    GDR_COLOR           ///< Szín (név)
 };
 
 class LV2GSHARED_EXPORT lv2gDesign : public QObject {
@@ -201,5 +202,17 @@ public:
 };
 
 _GEX QPolygonF convertPolygon(const tPolygonF __pol);
+
+_GEX const QColor& bgColorByEnum(const QString& __v, const QString& __t = QString());
+inline const QColor& bgColorByBool(bool __v, const QString& __t = QString())
+{
+    return bgColorByEnum(__v ? _sTrue : _sFalse, __t);
+}
+
+_GEX const QColor& fgColorByEnum(const QString& __v, const QString& __t = QString());
+inline const QColor& fgColorByBool(bool __v, const QString& __t = QString())
+{
+    return fgColorByEnum(__v ? _sTrue : _sFalse, __t);
+}
 
 #endif // LV2G_H

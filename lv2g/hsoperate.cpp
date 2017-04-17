@@ -5,6 +5,160 @@
 
 const enum ePrivilegeLevel cHSOperate::rights = PL_OPERATOR;
 
+enum eFieldIx {
+    RX_ID,
+    RX_HOST_NAME, RX_SERVICE_NAME, RX_PORT_NAME, RX_SRV_EXT,
+    RX_PLACE_NAME, RX_PLACE_TYPE, RX_NOALARM, RX_FROM, RX_TO,
+    RX_DISABLED, RX_SRV_DISABLED, RX_STATE, RX_NSUB,
+    RX_SUPERIOR_ID, RX_SUPERIOR_NAME
+};
+
+const QString cHSOperate::_sql =
+        "SELECT"
+            " hs.host_service_id, "         // RX_ID
+            " node_name, "                  // RX_HOST_NAME
+            " service_name, "               // RX_SERVICE_NAME
+            " CASE WHEN hs.port_id IS NULL THEN NULL"
+                 " ELSE port_id2name(hs.port_id)"
+                 " END, "                   // RX_PORT_NAME
+            " CASE WHEN proto_service_id < 0 AND prime_service_id < 0 THEN NULL"
+                 " WHEN prime_service_id < 0 THEN service_id2name(proto_service_id) || ':'"
+                 " WHEN proto_service_id < 0 THEN ':' || service_id2name(prime_service_id)"
+                 " ELSE service_id2name(proto_service_id) || ':' || service_id2name(prime_service_id)"
+                 " END, "                   // RX_SRV_EXT
+            " p.place_name, "               // RX_PLACE_NAME
+            " p.place_type,"                // RX_PLACE_TYPE
+            " hs.noalarm_flag, "            // RX_NOALARM
+            " hs.noalarm_from, "            // RX_FROM
+            " hs.noalarm_to, "              // RX_TO
+            " hs.disabled, "                // RX_DISABLED
+            " s.disabled AS sd,"            // RX_SRV_DISABLED
+            " hs.host_service_state, "      // RX_STATE
+            " (SELECT COUNT(*) FROM host_services AS shs WHERE shs.superior_host_service_id = hs.host_service_id), "    // RX_NSUB
+            " hs.superior_host_service_id, "// RX_SUPERIOR_ID
+            " CASE WHEN hs.superior_host_service_id IS NULL THEN NULL"
+                 " ELSE host_service_id2name(hs.superior_host_service_id)"
+                 " END"                     // RX_SUPERIOR_NAME
+        " FROM host_services AS hs"
+        " JOIN nodes  AS n USING(node_id)"
+        " JOIN places AS p USING(place_id)"
+        " JOIN services AS s USING(service_id)";
+const QString cHSOperate::_ord = " ORDER BY node_name, service_name, hs.port_id ASC";
+
+
+cHSORow::cHSORow(QSqlQuery& q, cHSOState *par)
+    : QObject(par), nsub(0), rec(q.record())
+{
+    set = true;
+    sub = false;
+    pq = par->pq;
+    bool ok;
+    id  = rec.value(RX_ID).toLongLong(&ok);
+    if (!ok) EXCEPTION(EDATA, RX_ID, rec.value(RX_ID).toString());
+    QVariant v = rec.value(RX_NSUB);
+    if (v.isValid()) {
+        nsub  = v.toLongLong(&ok);
+        if (!ok) EXCEPTION(EDATA, RX_NSUB, v.toString());
+    }
+}
+
+QCheckBox * cHSORow::getCheckBoxSet()
+{
+    QCheckBox *p = new QCheckBox;
+    p->setChecked(set);
+    connect(p, SIGNAL(toggled(bool)), this, SLOT(togleSet(bool)));
+    return p;
+}
+
+QCheckBox * cHSORow::getCheckBoxSub()
+{
+    if (nsub == 0) return NULL;
+    QCheckBox *p = new QCheckBox;
+    p->setChecked(sub);
+    connect(p, SIGNAL(toggled(bool)), this, SLOT(togleSub(bool)));
+    return p;
+}
+
+
+QTableWidgetItem * cHSORow::item(int vix)
+{
+    QVariant v = rec.value(vix);
+    if (v.isNull()) return NULL;
+    return new QTableWidgetItem(v.toString());
+}
+
+QTableWidgetItem * cHSORow::item(int ix, const QString& eType)
+{
+    QString s = rec.value(ix).toString();
+    QTableWidgetItem *pi = new QTableWidgetItem(s);
+    pi->setBackground(bgColorByEnum(s, eType));
+    return pi;
+}
+
+QTableWidgetItem * cHSORow::item(int vix, int eix, const QString& eType)
+{
+    QString s = rec.value(vix).toString();
+    QTableWidgetItem *pi = new QTableWidgetItem(s);
+    s = rec.value(eix).toString();
+    pi->setBackground(bgColorByEnum(s, eType));
+    return pi;
+}
+QTableWidgetItem * cHSORow::item(int ix, const cColStaticDescr &cd)
+{
+    QVariant v = rec.value(ix);
+    if (v.isNull()) return NULL;
+    v = cd.fromSql(v);
+    QString s = cd.toView(*pq, v);
+    return new QTableWidgetItem(s);
+}
+
+QTableWidgetItem * cHSORow::boolItem(int ix, const QString& eType)
+{
+    bool     b = rec.value(ix).toBool();
+    QString  s = langBool(b);
+    QTableWidgetItem *pi = new QTableWidgetItem(s);
+    pi->setBackground(bgColorByBool(b, eType));
+    return pi;
+
+}
+
+cHSOState::cHSOState(QSqlQuery& q, const QString& _sql, const QVariantList _binds, cHSOperate *par)
+    : QObject(par), sql(_sql), binds(_binds)
+{
+    size = nsup = 0;
+    pq = par->pq2;
+    if (!q.prepare(sql)) SQLPREPERR(q, sql);
+    int i = 0;
+    foreach (QVariant v, binds) {
+        q.bindValue(i, v);
+        ++i;
+    }
+    if (!q.exec()) SQLQUERYERR(q);
+    if (q.first()) do {
+        cHSORow *p = new cHSORow(q, this);
+        if (p->nsub > 0) ++nsup;
+        rows << p;
+    } while(q.next());
+    size = rows.size();
+}
+
+QStringList cHSOState::getSupIds()
+{
+    QStringList r;
+    foreach (cHSORow *pRow, rows) {
+        if (pRow->sub) r << QString::number(pRow->id);
+    }
+    return r;
+}
+
+cHSORow * cHSOState::rowAtId(qlonglong id)
+{
+    foreach (cHSORow *p, rows) {
+        if (p->id == id) return p;
+    }
+    return NULL;
+}
+
 enum eFilterButtonId {
     FT_PATTERN, FT_SELECT
 };
@@ -19,6 +173,7 @@ enum eTableColumnIx {
     TC_FROM,
     TC_TO,
     TC_DISABLED,
+    TC_DISABLED_SRV,
     TC_STATE,
     TC_CBOX_SEL,
     TC_NSUB,
@@ -33,7 +188,7 @@ cHSOperate::cHSOperate(QMdiArea *par)
     pq  = newQuery();
     pq2 = newQuery();
     pUi = new Ui_hostServiceOp;
-    historyIx = -1;
+    stateIx = -1;
     pUi->setupUi(this);
     if (TC_COUNT != pUi->tableWidget->columnCount()) EXCEPTION(EDATA);
 
@@ -85,6 +240,8 @@ cHSOperate::cHSOperate(QMdiArea *par)
     connect(pUi->toolButtonForward,SIGNAL(clicked()),     this, SLOT(forward()));
     connect(pUi->toolButtonClear,  SIGNAL(clicked()),     this, SLOT(clear()));
 
+    connect(pUi->pushButtonRefresh,SIGNAL(clicked()),     this, SLOT(refresh()));
+
     pPlaceModel = new cPlacesInZoneModel();
     pUi->comboBoxPlaceSelect->setModel(pPlaceModel);
     pPlaceModel->setFilter();   // Nincs szűrés, rendezés növekvő sorrendben
@@ -100,38 +257,8 @@ cHSOperate::cHSOperate(QMdiArea *par)
     pUi->comboBoxServiceSelect->setModel(pServiceModel);
     pServiceModel->setFilter();
     pUi->comboBoxServiceSelect->setCurrentIndex(0);
-
-    _sql =
-            "SELECT"
-                " hs.host_service_id, "         // RX_ID
-                " node_name, "                  // RX_HOST
-                " service_name, "               // RX_SERVICE
-                " hs.port_id, "                 // RX_PORT (ID)
-                " proto_service_id, "           // RX_PROTO_SRV (ID)
-                " prime_service_id, "           // RX_PRIME_SRV (ID)
-                " p.place_name, "               // RX_PLACE
-                " hs.noalarm_flag, "            // RX_NOALARM
-                " hs.noalarm_from, "            // RX_FROM
-                " hs.noalarm_to, "              // RX_TO
-                " hs.disabled, "                // RX_DISABLED
-                " s.disabled AS sd,"            // RX_SRV_DISABLED
-                " hs.host_service_state,"        // RX_STATE
-                " (SELECT COUNT(*) FROM host_services AS shs WHERE shs.superior_host_service_id = hs.host_service_id) AS nsub, "
-                " CASE WHEN hs.superior_host_service_id IS NULL THEN NULL"
-                     " ELSE host_service_id2name(hs.superior_host_service_id) END"
-            " FROM host_services AS hs"
-            " JOIN nodes  AS n USING(node_id)"
-            " JOIN places AS p USING(place_id)"
-            " JOIN services AS s USING(service_id)";
-    _ord = " ORDER BY node_name, service_name, hs.port_id ASC";
 }
 
-enum eFieldIx {
-    RX_ID,
-    RX_HOST, RX_SERVICE, RX_PORT, RX_PROTO_SRV, RX_PRIME_SRV,
-    RX_PLACE, RX_NOALARM, RX_FROM, RX_TO,
-    RX_DISABLED, RX_SRV_DISABLED, RX_STATE, RX_NSUB, RX_SUPERIOR
-};
 
 cHSOperate::~cHSOperate()
 {
@@ -139,194 +266,78 @@ cHSOperate::~cHSOperate()
     delete pq2;
 }
 
-void cHSOperate::refreshTable(QList<QSqlRecord> &recs)
+void cHSOperate::refreshTable()
 {
     QVariant v;
     QString s;
-    QTableWidgetItem *pi;
-    const cColStaticDescr *pCd;
     cHostService hs;
-    QCheckBox *pCb;
-    qlonglong id;
 
     int row = 0;
-    QColor gray_color("gray");
-    QBrush gray(gray_color);
-    QFont  italic;
-    italic.setItalic(true);
     pUi->tableWidget->setRowCount(0);
-    pUi->tableWidget->setRowCount(recs.size());
-    idList.clear();
-    supIdMap.clear();
-    for (QList<QSqlRecord>::const_iterator i = recs.begin(); i < recs.end(); ++i) {
-        const QSqlRecord& r = *i;
-        v = r.value(RX_ID);
-        qlonglong hsid = v.toLongLong();
-        idList << hsid;
-
-        v = r.value(RX_HOST);
-        s = v.toString();
-        pUi->tableWidget->setItem(row, TC_HOST, new QTableWidgetItem(s));
-
-        v = r.value(RX_SERVICE);
-        s = v.toString();
-        pUi->tableWidget->setItem(row, TC_SERVICE, new QTableWidgetItem(s));
-
-        v = r.value(RX_PORT);
-        if (!v.isNull()) {
-            id = v.toLongLong();
-            s = cNPort().getNameById(*pq2, id);
-            pUi->tableWidget->setItem(row, TC_PORT, new QTableWidgetItem(s));
-        }
-
-        // TC_EXT
-        QString pro, pri;
-        v = r.value(RX_PROTO_SRV);
-        if (!v.isNull() && (id = v.toLongLong()) != cService::nilId) {
-            pro = cService::id2name(*pq2, id);
-        }
-        v = r.value(RX_PRIME_SRV);
-        if (!v.isNull() && (id = v.toLongLong()) != cService::nilId) {
-            pri = cService::id2name(*pq2, id);
-        }
-        if (!(pro.isEmpty() && pri.isEmpty())) {
-            s = QString("%1:%2").arg(pro, pri);
-            pUi->tableWidget->setItem(row, TC_EXT, new QTableWidgetItem(s));
-        }
-
-        v = r.value(RX_PLACE);
-        s = v.toString();
-        pi = new QTableWidgetItem(s);
-        if (s == _sUnknown) {
-            pi->setForeground(gray);
-            pi->setFont(italic);
-        }
-        pUi->tableWidget->setItem(row, TC_PLACE, pi);
-
-        v = r.value(RX_NOALARM);
-        pCd = &hs.colDescr(hs.toIndex(_sNoalarmFlag));
-        v = pCd->fromSql(v);
-        s = pCd->toView(*pq2, v);
-        pi = new QTableWidgetItem(s);
-        Qt::GlobalColor c;
-        switch (pCd->toId(v)) {
-        case NAT_ON:    c = Qt::red;        break;
-        case NAT_OFF:   c = Qt::green;      break;
-        default:        c = Qt::yellow;     break;
-        }
-        pi->setBackground(QBrush(c));
-        pUi->tableWidget->setItem(row, TC_NOALARM, pi);
-
-        v = r.value(RX_FROM);
-        if (!v.isNull()) {
-            pCd = &hs.colDescr(hs.toIndex(_sNoalarmFrom));
-            v = pCd->fromSql(v);
-            s = pCd->toView(*pq2, v);
-            pi = new QTableWidgetItem(s);
-            pUi->tableWidget->setItem(row, TC_FROM, pi);
-        }
-
-        v = r.value(RX_TO);
-        if (!v.isNull()) {
-            pCd = &hs.colDescr(hs.toIndex(_sNoalarmTo));
-            v = pCd->fromSql(v);
-            s = pCd->toView(*pq2, v);
-            pi = new QTableWidgetItem(s);
-            pUi->tableWidget->setItem(row, TC_TO, pi);
-        }
-
-        v = r.value(RX_SRV_DISABLED);
-        pCd = &hs.colDescr(hs.toIndex(_sDisabled));
-        v = pCd->fromSql(v);
-        bool sd = v.toBool();
-        v = r.value(RX_DISABLED);
-        v = pCd->fromSql(v);
-        s = pCd->toView(*pq2, v);
-        pi = new QTableWidgetItem(s);
-        if (sd) {
-            c = Qt::magenta;
-            pi->setToolTip(trUtf8("Disabled by service."));
-        }
-        else if (v.toBool()) {
-            c = Qt::red;
-        }
-        else {
-            c = Qt::green;
-        }
-        pi->setBackground(QBrush(c));
-        pUi->tableWidget->setItem(row, TC_DISABLED, pi);
-
-        v = r.value(RX_STATE);
-        pCd = &hs.colDescr(hs.toIndex(_sHardState));
-        v = pCd->fromSql(v);
-        s = pCd->toView(*pq2, v);
-        pi = new QTableWidgetItem(s);
-        switch (pCd->toId(v)) {
-        case RS_ON:
-        case RS_RECOVERED:      c = Qt::green;      break;
-        case RS_WARNING:        c = Qt::yellow;     break;
-        case RS_CRITICAL:
-        case RS_UNREACHABLE:
-        case RS_DOWN:           c = Qt::red;        break;
-        case RS_FLAPPING:       c = Qt::magenta;    break;
-        case RS_UNKNOWN:
-        default:                c = Qt::white;      break;
-        }
-        pi->setBackground(QBrush(c));
-        pUi->tableWidget->setItem(row, TC_STATE, pi);
-
-        pCb = new QCheckBox;
-        pCb->setChecked(true);
-        pUi->tableWidget->setCellWidget(row, TC_CBOX_SEL, pCb);
-
-        v = r.value(RX_NSUB);
-        int n = v.toInt();
-        pi = new QTableWidgetItem(QString::number(n));
-        pUi->tableWidget->setItem(row, TC_NSUB, pi);
-        if (n > 0) {
-            pCb = new QCheckBox;
-            pUi->tableWidget->setCellWidget(row, TC_CBOX_NSUB, pCb);
-            supIdMap[row] = hsid;
-        }
-
-        v = r.value(RX_SUPERIOR);
-        if (!v.isNull()) {
-            s = v.toString();
-            pi = new QTableWidgetItem(s);
-            pUi->tableWidget->setItem(row, TC_SUPERIOR, pi);
-        }
-
+    pUi->tableWidget->setRowCount(actState()->size);
+    foreach (cHSORow *pRow, actState()->rows) {
+        setCell(row, TC_HOST,    pRow->item(RX_HOST_NAME));
+        setCell(row, TC_SERVICE, pRow->item(RX_SERVICE_NAME));
+        setCell(row, TC_PORT,    pRow->item(RX_PORT_NAME));
+        setCell(row, TC_EXT,     pRow->item(RX_SRV_EXT));
+        setCell(row, TC_PLACE,   pRow->item(RX_PLACE_NAME, RX_PLACE_TYPE, "placetype"));
+        setCell(row, TC_NOALARM, pRow->item(RX_NOALARM, "noalarmtype"));
+        setCell(row, TC_FROM,    pRow->item(RX_FROM, hs.colDescr(hs.toIndex(_sNoalarmFrom))));
+        setCell(row, TC_TO,      pRow->item(RX_TO, hs.colDescr(hs.toIndex(_sNoalarmTo))));
+        setCell(row, TC_DISABLED,pRow->boolItem(RX_DISABLED, mCat(_sHostServices, _sDisabled)));
+        setCell(row, TC_DISABLED_SRV, pRow->boolItem(RX_SRV_DISABLED, mCat(_sServices, _sDisabled)));
+        setCell(row, TC_STATE,   pRow->item(RX_STATE, "notifswitch"));
+        setCell(row, TC_CBOX_SEL,pRow->getCheckBoxSet());
+        setCell(row, TC_NSUB,    pRow->item(RX_NSUB));
+        setCell(row, TC_CBOX_NSUB,pRow->getCheckBoxSub());
+        setCell(row, TC_SUPERIOR,pRow->item(RX_SUPERIOR_NAME));
         row++;
     }
+    bool noSup = actState()->nsup == 0;
     pUi->tableWidget->resizeColumnsToContents();
     pUi->pushButtonAll->setDisabled(false);
     pUi->pushButtonNone->setDisabled(false);
-    pUi->pushButtonSubAll->setDisabled(supIdMap.isEmpty());
-    pUi->pushButtonSubNone->setDisabled(supIdMap.isEmpty());
-    pUi->pushButtonSub->setDisabled(supIdMap.isEmpty());
+    pUi->pushButtonSubAll->setDisabled(noSup);
+    pUi->pushButtonSubNone->setDisabled(noSup);
+    pUi->pushButtonSub->setDisabled(noSup);
     setButton();
     return;
 }
 
-void cHSOperate::fetch()
+bool cHSOperate::fetch(const QString& sql, const QVariantList& bind)
 {
-
-    if (!pq->exec()) SQLQUERYERR(*pq);
-    if (pq->first()) {
-        QList<QSqlRecord>   recs;
-        do {
-            recs << pq->record();
-        } while(pq->next());
-        while (history.size() > (historyIx +1)) history.pop_back();
-        history << recs;
-        historyIx++;
-        pUi->toolButtonBack->setEnabled(historyIx > 0);
-        pUi->toolButtonClear->setEnabled(historyIx > 0);
-        pUi->toolButtonForward->setDisabled(true);
-        refreshTable(recs);
+    cHSOState *pState = new cHSOState(*pq, sql, bind, this);
+    if (pState->size == 0) {
+        delete pState;
+        return false;
     }
+    while (states.size() > (stateIx +1)) delete states.takeLast();
+    states << pState;
+    stateIx++;
+    refreshTable();
+    pUi->toolButtonBack->setEnabled(stateIx > 0);
+    pUi->toolButtonClear->setEnabled(stateIx > 0);
+    pUi->toolButtonForward->setDisabled(true);
+    pUi->pushButtonRefresh->setEnabled(true);
+    return true;
 }
 
+void cHSOperate::refresh()
+{
+    cHSOState *p = new cHSOState(*pq, actState()->sql, actState()->binds, this);
+    cHSOState *pOld = actState();
+    foreach (cHSORow *pRow, p->rows) {
+        qlonglong id = pRow->id;
+        cHSORow *pOldRow = pOld->rowAtId(id);
+        if (pOldRow != NULL) {
+            pRow->set = pOldRow->set;
+            pRow->sub = pOldRow->sub;
+        }
+    }
+    states[stateIx] = p;
+    delete pOld;
+    refreshTable();
+}
 
 void cHSOperate::fetchByFilter()
 {
@@ -455,25 +466,12 @@ void cHSOperate::fetchByFilter()
     }
     if (!where.isEmpty()) sql += " WHERE" + where.join(" AND");
     sql += _ord;
-    if (!pq->prepare(sql)) SQLPREPERR(*pq, sql);
-    int i = 0;
-    foreach (QVariant v, bind) {
-        pq->bindValue(i, v);
-        ++i;
-    }
-    fetch();
+    fetch(sql, bind);
 }
 
 void cHSOperate::fetchSubs()
 {
-    if (supIdMap.isEmpty()) return;
-    QList<QString> ids;
-    foreach (int row, supIdMap.keys()) {
-        QWidget *pW = pUi->tableWidget->cellWidget(row, TC_CBOX_NSUB);
-        if (pW == NULL) EXCEPTION(EPROGFAIL);
-        QCheckBox *pCb = dynamic_cast<QCheckBox *>(pW);
-        if (pCb->isChecked()) ids << QString::number(idList.at(row));
-    }
+    QStringList ids = actState()->getSupIds();
     if (ids.isEmpty()) return;
     QString sql = _sql + " WHERE superior_host_service_id = ";
     if (ids.size() == 0) {
@@ -483,9 +481,7 @@ void cHSOperate::fetchSubs()
         sql += "ANY ('{" + ids.join(QChar(',')) + "}')";
     }
     sql += _ord;
-    PDEB(SQL) << "SQL : " << dQuoted(sql) << endl;
-    if (!pq->prepare(sql)) SQLPREPERR(*pq, sql);
-    fetch();
+    fetch(sql);
 }
 
 void cHSOperate::set()
@@ -500,8 +496,6 @@ void cHSOperate::set()
     csf << _sHostServiceState << _sSoftState << _sHardState << _sStateMsg << _sCheckAttempts
         << _sLastChanged  << _sLastTouched << _sActAlarmLogId;
     QBitArray um_ClrState = hs.mask(csf);
-    if (!isContIx(history, historyIx)) EXCEPTION(ENOINDEX, historyIx);
-    QList<QSqlRecord> recs = history.at(historyIx);
     bool disable = pUi->checkBoxDisable->isChecked();
     bool enable  = pUi->checkBoxEnable->isChecked();
     bool alarmOn = pUi->checkBoxAlarmOn->isChecked();
@@ -514,14 +508,12 @@ void cHSOperate::set()
     sqlBegin(*pq2, tn);
     try {
         for (int row = 0; row < rows; ++row) {
-            QCheckBox *pCb = dynamic_cast<QCheckBox *>(pUi->tableWidget->cellWidget(row, TC_CBOX_SEL));
-            if (pCb->isChecked()) {
-                // pUi->tableWidget->selectRow(row);
-                if (!isContIx(recs, row)) EXCEPTION(ENOINDEX, row);
-                QSqlRecord& rec = recs[row];
+            cHSORow *pRow = actState()->rows.at(row);
+            if (pRow->set) {
+                QSqlRecord& rec = pRow->rec;
                 hs.clear();
                 QBitArray um(hs.cols());
-                qlonglong id = idList.at(row);
+                qlonglong id = pRow->id;
                 if (disable) {
                     hs.setBool(_sDisabled, true);
                     um |= um_disabled;
@@ -546,7 +538,7 @@ void cHSOperate::set()
                     hs.setId(_sHostServiceState, RS_UNKNOWN);
                     hs.setId(_sSoftState, RS_UNKNOWN);
                     hs.setId(_sHardState, RS_UNKNOWN);
-                    hs.setId(__sCheckAttempts, 0);
+                    hs.setId(_sCheckAttempts, 0);
                     um |= um_ClrState;
                     rec.setValue(RX_STATE, _sUnknown);
                 }
@@ -573,21 +565,28 @@ void cHSOperate::set()
     if (pe != NULL) {
         sqlRollback(*pq2, tn);
         cErrorMessageBox::messageBox(pe, this);
+        refresh();  // Elrontottuk, újra olvassuk
     }
     sqlEnd(*pq2, tn);
-    history[historyIx] = recs;
-    refreshTable(recs);
+    refreshTable();
 }
 
 void cHSOperate::setButton()
 {
-    bool f = !idList.isEmpty()
+    bool f = !states.isEmpty()
           && (pUi->checkBoxDisable->isChecked()
            || pUi->checkBoxEnable->isChecked()
            || pUi->checkBoxClrStat->isChecked()
            || pUi->checkBoxAlarmOn->isChecked()
            || pUi->checkBoxAlarmOff->isChecked());
     pUi->pushButtonSet->setEnabled(f);
+}
+
+cHSOState * cHSOperate::actState(eEx __ex)
+{
+    if (__ex == EX_IGNORE && stateIx < 0) return NULL;
+    if (!isContIx(states, stateIx)) EXCEPTION(ENOINDEX, stateIx);
+    return states.at(stateIx);
 }
 
 void cHSOperate::all()
@@ -610,24 +609,24 @@ void cHSOperate::none()
 
 void cHSOperate::subAll()
 {
-    foreach (int row, supIdMap.keys()) {
-        QWidget *pW = pUi->tableWidget->cellWidget(row, TC_CBOX_NSUB);
-        if (pW == NULL) EXCEPTION(EPROGFAIL);
-        QCheckBox *pCb = dynamic_cast<QCheckBox *>(pW);
+    int rows = pUi->tableWidget->rowCount();
+    for (int row = 0; row < rows; ++row) {
+        QWidget *pw = pUi->tableWidget->cellWidget(row, TC_CBOX_NSUB);
+        if (pw == NULL) continue;
+        QCheckBox *pCb = dynamic_cast<QCheckBox *>(pw);
         pCb->setChecked(true);
     }
-//    pUi->pushButtonSub->setEnabled(true);
 }
 
 void cHSOperate::subNone()
 {
-    foreach (int row, supIdMap.keys()) {
-        QWidget *pW = pUi->tableWidget->cellWidget(row, TC_CBOX_NSUB);
-        if (pW == NULL) EXCEPTION(EPROGFAIL);
-        QCheckBox *pCb = dynamic_cast<QCheckBox *>(pW);
+    int rows = pUi->tableWidget->rowCount();
+    for (int row = 0; row < rows; ++row) {
+        QWidget *pw = pUi->tableWidget->cellWidget(row, TC_CBOX_NSUB);
+        if (pw == NULL) continue;
+        QCheckBox *pCb = dynamic_cast<QCheckBox *>(pw);
         pCb->setChecked(false);
     }
-//    pUi->pushButtonSub->setDisabled(true);
 }
 
 void cHSOperate::zoneChanged(int ix)
@@ -735,7 +734,7 @@ void cHSOperate::doubleClickCell(const QModelIndex& mi)
       }
     case TC_EXT: {
         cHostService hs;
-        hs.setById(*pq2, idList.at(row));
+        hs.setById(*pq2, actState()->rows.at(row)->id);
         recordInsertDialog(*pq2, hs.tableName(), this, &hs, true);
         break;
      }
@@ -753,14 +752,14 @@ void cHSOperate::doubleClickCell(const QModelIndex& mi)
         cRecordTree rt(pTs, true, NULL, this);
         rt.init();
         cRecordTreeModel *pModel = (cRecordTreeModel *)rt.pModel;
-        pModel->rootId = idList.at(row);
+        pModel->rootId = actState()->rows.at(row)->id;
         rt.refresh();
         rt.dialog().exec();
         break;
       }
     case TC_SUPERIOR: {
         cHostService hs;
-        hs.setById(*pq2, idList.at(row));
+        hs.setById(*pq2, actState()->rows.at(row)->id);
         hs.setById(*pq2, hs.getId(_sSuperiorHostServiceId));
         recordInsertDialog(*pq2, hs.tableName(), this, &hs, true);
         break;
@@ -778,35 +777,32 @@ void cHSOperate::doubleClickCell(const QModelIndex& mi)
 
 void cHSOperate::back()
 {
-    if (history.isEmpty() || historyIx < 0) return;
-    if (historyIx > 0) {
-        --historyIx;
-        refreshTable(history[historyIx]);
-        pUi->toolButtonBack->setEnabled(historyIx > 0);
+    if (states.isEmpty() || stateIx < 0) return;
+    if (stateIx > 0) {
+        --stateIx;
+        refreshTable();
+        pUi->toolButtonBack->setEnabled(stateIx > 0);
         pUi->toolButtonForward->setEnabled(true);
     }
 }
 
 void cHSOperate::forward()
 {
-    if (history.isEmpty() || historyIx < 0) return;
-    int last = history.size() -1;
-    if (last > historyIx) {
-        ++historyIx;
-        refreshTable(history[historyIx]);
+    if (states.isEmpty() || stateIx < 0) return;
+    int last = states.size() -1;
+    if (last > stateIx) {
+        ++stateIx;
+        refreshTable();
         pUi->toolButtonBack->setEnabled(true);
-        pUi->toolButtonForward->setEnabled(last > historyIx);
+        pUi->toolButtonForward->setEnabled(last > stateIx);
     }
 }
 
 void cHSOperate::clear()
 {
-    if (history.isEmpty() || historyIx < 0) return;
-    QList<QSqlRecord> recs = history.takeAt(historyIx);
-    history.clear();
-    history << recs;
-    historyIx = 0;
-    pUi->toolButtonBack->setDisabled(true);
-    pUi->toolButtonForward->setDisabled(true);
-    pUi->toolButtonClear->setDisabled(true);
+    if (states.isEmpty() || stateIx < 0) return;
+    cHSOState *pState = states.takeAt(stateIx);
+    while (!states.isEmpty()) delete states.takeLast();
+    states << pState;
+    stateIx = 0;
 }

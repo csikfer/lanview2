@@ -844,16 +844,31 @@ const cRecStaticDescr&  cTableShapeFilter::descr() const
 
 CRECDEFD(cTableShapeFilter)
 /* ------------------------------ cEnumVal ------------------------------ */
-DEFAULTCRECDEF(cEnumVal, _sEnumVals)
+CRECCNTR(cEnumVal) CRECDEFD(cEnumVal)
 
-QString cEnumVal::title(QSqlQuery& q, const QString& _ev, const QString& _tn)
+int cEnumVal::_ixBgColor  = NULL_IX;
+int cEnumVal::_ixFgColor  = NULL_IX;
+int cEnumVal::_ixTypeName = NULL_IX;
+int cEnumVal::_ixValName  = NULL_IX;
+int cEnumVal::_ixToolTip  = NULL_IX;
+int cEnumVal::_ixViewShort= NULL_IX;
+int cEnumVal::_ixViewLong = NULL_IX;
+tRecordList<cEnumVal> cEnumVal::enumVals;
+QMap<QString, QMap<QString, cEnumVal *> > cEnumVal::mapValues;
+cEnumVal *cEnumVal::cEnumVal::pNull = NULL;
+
+const cRecStaticDescr&  cEnumVal::descr() const
 {
-    QString sql = "SELECT enum_name2note(" + quoted(_ev);
-    if (_tn.isEmpty() == false) sql += QChar(',') + quoted(_tn);
-    sql += ")";
-    if (!q.exec(sql)) SQLPREPERR(q, sql);
-    if (!q.first()) EXCEPTION(EDBDATA); // Az SQL függvény akkor is ad értéket, ha nincs rekord.
-    return q.value(0).toString();
+    if (initPDescr<cEnumVal>(_sEnumVals, _sPublic)) {
+        _ixTypeName = _descr_cEnumVal().toIndex(_sEnumTypeName);
+        _ixValName  = _descr_cEnumVal().toIndex(_sEnumValName);
+        _ixBgColor  = _descr_cEnumVal().toIndex(_sBgColor);
+        _ixFgColor  = _descr_cEnumVal().toIndex(_sFgColor);
+        _ixToolTip  = _descr_cEnumVal().toIndex(_sToolTip);
+        _ixViewShort= _descr_cEnumVal().toIndex(_sViewShort);
+        _ixViewLong = _descr_cEnumVal().toIndex(_sViewLong);
+    }
+    return *_pRecordDescr;
 }
 
 int cEnumVal::delByTypeName(QSqlQuery& q, const QString& __n, bool __pat)
@@ -870,6 +885,81 @@ bool cEnumVal::delByNames(QSqlQuery& q, const QString& __t, const QString& __n)
     if (!q.exec(sql)) SQLPREPERR(q, sql);
     int n = q.numRowsAffected();
     return  (bool)n;
+}
+
+void cEnumVal::fetchEnumVals(QSqlQuery& __q)
+{
+    if (pNull == NULL) pNull = new cEnumVal();
+    QBitArray   ba(1, false);   // Nem null, egyeseket nem tartalmazó maszk, minden rekord kiválasztásához
+    if (enumVals.count() == 0) {
+        cEnumVal *p = new cEnumVal();
+        enumVals.fetch(__q, true, ba, p);
+        remap();
+        return;
+    }
+    // UPDATE
+    int found = enumVals.count();   // Megtalálandó rekordok száma
+    int n = 0;                      // Megtalált rekordok számláló
+    cEnumVal ev;
+    if (ev.fetch(__q, false, ba)) do {
+        cEnumVal *pEv = enumVals.get(ev.getId(), EX_IGNORE);    // ID alapján rákeresünk
+        if (pEv == NULL) {   // Ez egy új rekord
+            enumVals << ev;
+        }
+        else {                // Frissít
+            pEv->set(ev);
+            ++n;
+        }
+    } while (ev.next(__q));
+    if (n < found) EXCEPTION(EPROGFAIL);
+    if (n > found) EXCEPTION(EDATA, n - found, trUtf8("Deleted enum_values record."));
+    remap();
+}
+
+const cEnumVal& cEnumVal::enumVal(const QString &_tn, const QString &_ev, eEx __ex)
+{
+    if (pNull == NULL) {
+        QSqlQuery q(getQuery());
+        fetchEnumVals(q);
+    }
+    cEnumVal *p = NULL;
+    QMap<QString, QMap<QString, cEnumVal *> >::const_iterator i = mapValues.find(_tn);
+    if (mapValues.end() != i) {
+        QMap<QString, cEnumVal *>::const_iterator j = (*i).find(_ev);
+        if ((*i).end() != j) {
+            p = *j;
+        }
+    }
+    if (p == NULL) {
+        if (EX_WARNING <= __ex) EXCEPTION(EFOUND, 0, mCat(_tn, _ev));
+        p = pNull;
+    }
+    return *p;
+}
+
+void cEnumVal::remap()
+{
+    mapValues.clear();
+    const QList<cEnumVal *>& list = enumVals;
+    foreach (cEnumVal *p, list) {
+        QString sType = p->getName(_ixTypeName);
+        QString sName = p->getName(_ixValName);
+        mapValues[sType][sName] = p;
+    }
+}
+
+QString cEnumVal::viewShort(const QString& _ev, const QString& _tn)
+{
+    const cEnumVal& ev = enumVal(_ev, _tn);
+    if (ev.isEmpty_()) return _ev;
+    return ev.getName(_ixViewShort);
+}
+
+QString cEnumVal::viewLong(const QString& _ev, const QString& _tn)
+{
+    const cEnumVal& ev = enumVal(_ev, _tn);
+    if (ev.isEmpty_()) return _ev;
+    return ev.getName(_ixViewLong);
 }
 
 /* ------------------------------ cMenuItems ------------------------------ */

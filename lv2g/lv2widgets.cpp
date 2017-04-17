@@ -157,6 +157,7 @@ QString fieldWidgetType(int _t)
     case FEW_INTERVAL:      return "cIntervalWidget";
     case FEW_BINARY:        return "cBinaryWidget";
     case FEW_NULL:          return "cNullWidget";
+    case FEW_COLOR:         return "cColorWidget";
     default:                return sInvalidEnum();
     }
 }
@@ -304,6 +305,8 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
         case cColStaticDescr::FT_BINARY:
         case cColStaticDescr::FT_INTERVAL:
             break;
+        case cColStaticDescr::FT_TEXT:
+            if (_tf.isFeature(_sColor)) break;
         default: {
             cFieldLineWidget *p =  new cFieldLineWidget(_tm, _tf, _fr, true, _par);
             _DBGFNL() << " new cFieldLineWidget" << endl;
@@ -312,15 +315,24 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
         }
     }
     switch (et) {
+    // LineEdit kivételek
     case cColStaticDescr::FT_INTEGER:
         if (_fr.descr().fKeyType != cColStaticDescr::FT_NONE) {
             cFKeyWidget *p = new cFKeyWidget(_tm, _tf, _fr, _par);
             _DBGFNL() << " new cFKeyWidget" << endl;
             return p;
         }
-        // Nincs break; !!
-    case cColStaticDescr::FT_REAL:
+        goto case_FieldLineWidget;
     case cColStaticDescr::FT_TEXT:
+        if (_tf.isFeature(_sColor)) {
+            cColorWidget *p = new cColorWidget(_tm, _tf, _fr, ro, _par);
+            _DBGFNL() << " new cColorWidget" << endl;
+            return p;
+        }
+        goto case_FieldLineWidget;
+    // LineEdit kivételek vége
+    case_FieldLineWidget:
+    case cColStaticDescr::FT_REAL:
     case cColStaticDescr::FT_MAC:
     case cColStaticDescr::FT_INET:
     case cColStaticDescr::FT_CIDR: {
@@ -423,7 +435,7 @@ cSetWidget::cSetWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRec
     int id = 0;
     _bits = _colDescr.toId(_value);
     foreach (QString e, _colDescr.enumType().enumValues) {
-        QString t = cEnumVal::title(*pq, e, _colDescr.udtName);
+        QString t = cEnumVal::viewShort(e, _colDescr.udtName);
         QCheckBox *pCB = new QCheckBox(t, pWidget());
         pButtons->addButton(pCB, id);
         pLayout->addWidget(pCB);
@@ -505,14 +517,15 @@ cEnumRadioWidget::cEnumRadioWidget(const cTableShape& _tm, const cTableShapeFiel
     widget().setLayout(pLayout);
     int id = 0;
     eval = _colDescr.toId(_value);
-    QSqlQuery q = getQuery();
     foreach (QString e, _colDescr.enumType().enumValues) {
-        QString t = cEnumVal::title(q, e, _colDescr.udtName);
+        QString t = cEnumVal::viewShort(e, _colDescr.udtName);
         QRadioButton *pRB = new QRadioButton(t, pWidget());
         pButtons->addButton(pRB, id);
         pLayout->addWidget(pRB);
         pRB->setChecked(id == eval);
         pRB->setDisabled(_readOnly);
+        t = cEnumVal::toolTip(e, _colDescr.udtName);
+        if (!t.isEmpty()) pRB->setToolTip(t);
         ++id;
     }
     if (!_nullView.isEmpty()) {
@@ -1994,4 +2007,73 @@ void cFKeyArrayWidget::doubleClickRow(const QModelIndex & index)
     if (isContIx(sl, row)) {
         pUi->lineEdit->setText(sl.at(row));
     }*/
+}
+
+/* **************************************** cColorWidget ****************************************  */
+
+
+cColorWidget::cColorWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool ro, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, __fr, false, _par), pixmap(24, 24)
+{
+    _wType = FEW_COLOR;
+    _pWidget = new QWidget(_par == NULL ? NULL : _par->pWidget());
+    QHBoxLayout *pLayout = new QHBoxLayout;
+    _pWidget->setLayout(pLayout);
+    pLineEdit = new QLineEdit(_value.toString());
+    pLineEdit->setReadOnly(ro);
+    pLayout->addWidget(pLineEdit, 1);
+    pLabel = new QLabel;
+    pLayout->addWidget(pLabel);
+    if (!_readOnly) {
+        QToolButton *pButton = new QToolButton;
+        pButton->setIcon(QIcon("://colorize.ico"));
+        pLayout->addWidget(pButton, 0);
+        connect(pLineEdit, SIGNAL(textChanged(QString)),  this, SLOT(setFromEdit(QString)));
+        connect(pButton,   SIGNAL(pressed()),             this, SLOT(colorDialog()));
+        sTitle = trUtf8("Szín kiválasztása");
+    }
+    setColor(_value.toString());
+}
+
+cColorWidget::~cColorWidget()
+{
+    ;
+}
+
+void cColorWidget::setColor(const QString& text)
+{
+    color.setNamedColor(text);
+    if (color.isValid()) {
+        pixmap.fill(color);
+        pLabel->setPixmap(pixmap);
+    }
+    else {
+        QIcon icon("://dialog-no.ico");
+        pLabel->setPixmap(icon.pixmap(pixmap.size()));
+    }
+}
+
+int cColorWidget::set(const QVariant& v)
+{
+    bool r = cFieldEditBase::set(v);
+    if (r == 1) {
+        QString cn = v.toString();
+        pLineEdit->setText(cn);
+    }
+    return r;
+}
+
+void cColorWidget::setFromEdit(const QString& text)
+{
+    if (text.isEmpty()) setFromWidget(QVariant());
+    else                setFromWidget(QVariant(text));
+    setColor(text);
+}
+
+void cColorWidget::colorDialog()
+{
+    QColor c = QColorDialog::getColor(color, pWidget(), sTitle);
+    if (c.isValid()) {
+        pLineEdit->setText(c.name());
+    }
 }

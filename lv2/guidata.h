@@ -268,7 +268,7 @@ public:
     /// Ha nincs ilyen érték, akkor az enumerációs értékkel tér vissza.
     /// Ha az enumerációs érték egyértelmüen azonosítható a típus megadásának a hiányában is, akkor azt nem szükséges megadni.
     /// Ha nem adtunk meg enumerációs típust, és a lekérdezés eredménye nem egyértelmű, akkor SQL hibát kapunk (kizárást dob).
-    static QString title(QSqlQuery& q, const QString& _ev, const QString& _tn = _sNul);
+    static QString title(QSqlQuery& q, const QString& _ev, const QString& _tn);
     /// Rekord(ok) törlésa az enumeráció típus név alapján
     /// @param  q
     /// @param __n Az enum_type_name mező értéke, vagy minta a mezőre
@@ -281,6 +281,72 @@ public:
     /// @param __n Az enum__name mező értéke
     /// @return true ha törölt rekordt
     bool delByNames(QSqlQuery& q, const QString& __t, const QString& __n);
+protected:
+    /// Az összes enum_vals rekordot tartalmazó konténer
+    /// Nem frissül automatikusan, ha változik az adattábla.
+    static tRecordList<cEnumVal>                        enumVals;
+    /// A típus, és név alapján az enumVals elemei.
+    static QMap<QString, QMap<QString, cEnumVal *> >    mapValues;
+    /// Egy üres objektumra mutató pointer.
+    /// Az enumVals feltöltésekor hozza létre az abjektumot a fetchEnumVals();
+    static cEnumVal *pNull;
+public:
+    /// Feltölti az adatbázisból az enumVals adattagot, ha nem üres a konténer, akkor frissíti.
+    /// Iniciaéizálja a pNull pountert, ha az NULL. Egy üres objektumra fog mutatni.
+    /// Frissítés esetén feltételezi, hogy rekordot törölni nem lehet, ezt ellenörzi.
+    static void fetchEnumVals(QSqlQuery& __q);
+    /// Egy cEnumVal objektumot ad vissza a név alapján, ha nincs ilyen nevű objektum, akkor dob egy kizárást.
+    /// Az enumVals adattagban keres, ha enumVals üres, akkor feltölti az adatbázisból
+    /// Ha __ex értéke EX_VARNING-nál kisebb, akkor kizárás helyett, egy üres objektummal tér vissza (amire a pNull adattag mutat)
+    static const cEnumVal& enumVal(const QString& _ev, const QString& _tn, enum eEx __ex = EX_ERROR);
+    /// A háttér szín mező értékét adja vissza. Az enumVals konténerben keres.
+    /// Ha nem találja a rekordot, akkor üres (_sNul) stringgel tér vissza.
+    /// @param _tn Enumerációs típus neve
+    /// @param _ev Enumerációs érték neve
+    static QString bgColor(const QString& _tn, const QString& _ev, eEx __ex = EX_ERROR)
+        { const cEnumVal& ev = enumVal(_tn, _ev, __ex) ;  return ev.getName(_ixBgColor); }
+    /// A karakter szín mező értékét adja vissza. Az enumVals konténerben keres.
+    /// Ha nem találja a rekordot, akkor üres (_sNul) stringgel tér vissza.
+    /// @param _tn Enumerációs típus neve
+    /// @param _ev Enumerációs érték neve
+    static QString fgColor(const QString& _tn, const QString& _ev, eEx __ex = EX_ERROR)
+        { const cEnumVal& ev = enumVal(_tn, _ev, __ex) ;  return ev.getName(_ixFgColor); }
+    /// A háttér szín mező értékét adja vissza. Az enumVals konténerben keres.
+    /// Boolean típusú adatnál a szín beállításhoz az értékeket a enum_type_name = teljes mező név: (<tábla>.<mező>),
+    /// és enum_val_name = "true"|"false" rekordból olvassa ki.
+    /// Ha nem találja a rekordot, akkor üres (_sNul) stringgel tér vissza.
+    /// @param _tn A bool típusú mező tábla név
+    /// @param _fn A bool típusú mező neve
+    /// @param _f  A bool mező értéke.
+    static QString bgColor(const QString& _tn, const QString& _fn, bool _f, eEx __ex = EX_ERROR)
+        { const cEnumVal& ev = enumVal(mCat(_tn, _fn), _f ? _sTrue : _sFalse, __ex); return ev.getName(_ixBgColor); }
+    /// A karakter szín mező értékét adja vissza. Az enumVals konténerben keres.
+    /// Boolean típusú adatnál a szín beállításhoz az értékeket a enum_type_name = teljes mező név: (<tábla>.<mező>),
+    /// és enum_val_name = "true"|"false" rekordból olvassa ki.
+    /// Ha nem találja a rekordot, akkor üres (_sNul) stringgel tér vissza.
+    /// @param _tn A bool típusú mező tábla név
+    /// @param _fn A bool típusú mező neve
+    /// @param _f  A bool mező értéke.
+    static QString fgColor(const QString& _tn, const QString& _fn, bool _f, eEx __ex = EX_ERROR)
+        { const cEnumVal& ev = enumVal(mCat(_tn, _fn), _f ? _sTrue : _sFalse, __ex);  return ev.getName(_ixFgColor); }
+    /// A hívás lekéri az enumerációhoz tartozó beszédesebb nevet, ha van.
+    /// Ha nincs ilyen érték, akkor az enumerációs értékkel tér vissza.
+    /// Ha az enumerációs érték egyértelmüen azonosítható a típus megadásának a hiányában is, akkor azt nem szükséges megadni.
+    /// Ha nem adtunk meg enumerációs típust, és a lekérdezés eredménye nem egyértelmű, akkor SQL hibát kapunk (kizárást dob).
+    static QString viewShort(const QString& _ev, const QString& _tn);
+    static QString viewLong(const QString& _ev, const QString& _tn);
+    static QString toolTip(const QString& _ev, const QString& _tn)
+        { const cEnumVal& ev = enumVal(_tn, _ev); return ev.getName(_ixToolTip); }
+protected:
+    /// Az enumVals konténer tartalmát típus és név szerint elhelyezi a mapValues konténerbe.
+    static void remap();
+    STATICIX(cEnumVal, ixTypeName)
+    STATICIX(cEnumVal, ixValName)
+    STATICIX(cEnumVal, ixBgColor)
+    STATICIX(cEnumVal, ixFgColor)
+    STATICIX(cEnumVal, ixToolTip)
+    STATICIX(cEnumVal, ixViewShort)
+    STATICIX(cEnumVal, ixViewLong)
 };
 
 class LV2SHARED_EXPORT cMenuItem : public cRecord {

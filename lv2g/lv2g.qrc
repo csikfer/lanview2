@@ -26,5 +26,7 @@
         <file>icons/copy.ico</file>
         <file>icons/check.ico</file>
         <file>net.ico</file>
+        <file>colorize.ico</file>
+        <file>dialog-no.ico</file>
     </qresource>
 </RCC>

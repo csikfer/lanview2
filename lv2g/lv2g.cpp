@@ -266,3 +266,35 @@ _GEX QPolygonF convertPolygon(const tPolygonF __pol)
     return pol;
 }
 
+_GEX const QColor& bgColorByEnum(const QString& __v, const QString& __t)
+{
+    static QMap<QString, QMap<QString, QColor> >   colorCache;
+
+    QColor& c = colorCache[__t][__v];
+    if (c.isValid()) return c;
+    QString cn = cEnumVal::bgColor(__v, __t);
+    if (cn.isEmpty()) {
+        c = QPalette().color(QPalette::Base);
+    }
+    else {
+        c.setNamedColor(cn);
+    }
+    return c;
+}
+
+_GEX const QColor& fgColorByEnum(const QString& __v, const QString& __t)
+{
+    static QMap<QString, QMap<QString, QColor> >   colorCache;
+
+    QColor& c = colorCache[__t][__v];
+    if (c.isValid()) return c;
+    QString cn = cEnumVal::fgColor(__v, __t);
+    if (cn.isEmpty()) {
+        c = QPalette().color(QPalette::Base);
+    }
+    else {
+        c.setNamedColor(cn);
+    }
+    return c;
+}
+

@@ -153,9 +153,16 @@ QVariant    cRecordTreeModel::data(const QModelIndex & index, int role) const
 //        _DBGFN() << " name = " << node->name() << "; " << VDEB(col) << VDEB(role) << endl;
         if (role == Qt::DisplayRole)       return node->pData->view(*pq, fix);
         if (role == Qt::TextAlignmentRole) return columns[mix]->dataAlign;
+        eDesignRole dataRole = columns[mix]->dataRole;
+        if (dataRole == GDR_COLOR) {    // Szin mező, csak a háttérszin lessz az mező érték alapján beállítva, ha az nem NULL
+            dataRole = GDR_DATA;        // Egyébként egyébb adat
+            if (role == Qt::BackgroundRole && !node->pData->isNull(fix)) {
+                return QColor(node->pData->getName(fix));
+            }
+        }
         const colorAndFont&   cf = node->pData->isNull(fix)
                 ?   design().null
-                :   design()[columns[mix]->dataRole];
+                :   design()[dataRole];
         switch (role) {
         case Qt::ForegroundRole:    return cf.fg;
         case Qt::BackgroundRole:    return cf.bg;

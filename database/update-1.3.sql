@@ -213,4 +213,8 @@ DROP TABLE ipprotocols;
 -- Plussz egy szűrés típus:
 ALTER TYPE filtertype ADD VALUE 'boolean';
 
+-- Enumerációs értékek - opcionális szín összerendelés
+ALTER TABLE enum_vals ADD COLUMN bg_color text DEFAULT NULL;
+ALTER TABLE enum_vals ADD COLUMN fg_color text DEFAULT NULL;
+
 END;

@@ -402,7 +402,7 @@ void cRecordTableFODialog::setFilterDialog()
             break;
         }
         QString title = filter().shapeFilter().getName(_sTableShapeFilterNote);
-        if (title.isEmpty()) title = cEnumVal::title(*recordView.pq, filter().shapeFilter().getName(_sFilterType), "filtertype");
+        if (title.isEmpty()) title = cEnumVal::viewLong(filter().shapeFilter().getName(_sFilterType), "filtertype");
         pForm->lineEdit_typeTitle->setText(title);
     }
 }
@@ -490,7 +490,16 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
     dataAlign = Qt::AlignVCenter;
     if (colDescr.eColType == cColStaticDescr::FT_INTEGER && colDescr.fKeyType == cColStaticDescr::FT_NONE) dataAlign |= Qt::AlignRight;
     else if (colDescr.eColType == cColStaticDescr::FT_REAL)                                                dataAlign |= Qt::AlignRight;
-    dataRole = lv2gDesign::desRole(recDescr, fieldIndex);
+    // 'color' feature: csak text, enum vagy boolean típusú mezőknél!
+    if (sf.isFeature(_sColor)
+     && (colDescr.eColType == cColStaticDescr::FT_TEXT
+      || colDescr.eColType == cColStaticDescr::FT_ENUM
+      || colDescr.eColType == cColStaticDescr::FT_BOOLEAN)) {
+        dataRole = GDR_COLOR;
+    }
+    else {
+        dataRole = lv2gDesign::desRole(recDescr, fieldIndex);
+    }
 }
 
 /* ***************************************************************************************************** */

@@ -1014,8 +1014,8 @@ void cIfType::fetchIfTypes(QSqlQuery& __q)
             ++n;
         }
     } while (ift.next(__q));
-    if (n < found) EXCEPTION(EPROGFAIL);
-    if (n > found) EXCEPTION(EDATA, n - found, trUtf8("Deleted if_tpes record."));
+    if (n > found) EXCEPTION(EPROGFAIL);
+    if (n < found) EXCEPTION(EDATA, n - found, trUtf8("Deleted if_tpes record."));
 }
 
 const cIfType& cIfType::ifType(const QString& __nm, eEx __ex)

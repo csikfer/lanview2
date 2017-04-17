@@ -273,7 +273,12 @@
          </column>
          <column>
           <property name="text">
-           <string>Letiltva</string>
+           <string>Tilt.</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Tilt.</string>
           </property>
          </column>
          <column>
@@ -385,6 +390,16 @@
             </widget>
            </item>
           </layout>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButtonRefresh">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>Újraolvas</string>
+           </property>
+          </widget>
          </item>
          <item>
           <spacer name="verticalSpacer_2">

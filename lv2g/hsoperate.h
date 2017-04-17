@@ -8,8 +8,48 @@
 #include "ui_hsoperate.h"
 #include "lv2models.h"
 
+class cHSOState;
+
+class LV2GSHARED_EXPORT cHSORow : public QObject {
+    Q_OBJECT
+public:
+    cHSORow(QSqlQuery& q, cHSOState *par);
+    QCheckBox * getCheckBoxSet();
+    QCheckBox * getCheckBoxSub();
+    QTableWidgetItem * item(int vix);
+    QTableWidgetItem * item(int ix, const QString& eType);
+    QTableWidgetItem * item(int vix, int eix, const QString& eType);
+    QTableWidgetItem * item(int ix, const cColStaticDescr& cd);
+    QTableWidgetItem * boolItem(int ix, const QString& eType);
+    qlonglong   id;             /// A példány ID-je
+    int         nsub;           /// Az al szolgáltatáspéldányok szűáma
+    QSqlRecord  rec;            /// Adatok
+    QSqlQuery  *pq;
+    bool        set, sub;
+protected slots:
+    void togleSet(bool f) { set = f; }
+    void togleSub(bool f) { sub = f; }
+};
+
+class cHSOperate;
+
+class LV2GSHARED_EXPORT cHSOState : public QObject {
+    Q_OBJECT
+public:
+    cHSOState(QSqlQuery &q, const QString& _sql, const QVariantList _binds, cHSOperate *par);
+    QStringList getSupIds();
+    cHSORow * rowAtId(qlonglong);
+    QString         sql;    /// Az SQL string
+    QVariantList    binds;  /// Az SQL string paraméterei
+    QList<cHSORow *>   rows;   /// A sorok tartalma
+    int             size;   /// Rekordok/sorok száma
+    int             nsup;   /// Az al szolgáltatás pédányokat is tartalmazó szolgáltatás pédányok száma
+    QSqlQuery      *pq;
+};
+
 class LV2GSHARED_EXPORT cHSOperate : public cIntSubObj
 {
+    friend class cHSOState;
     Q_OBJECT
 public:
     cHSOperate(QMdiArea *par);
@@ -29,18 +69,19 @@ protected:
 
     QSqlQuery       *pq;
     QSqlQuery       *pq2;
-    QList<qlonglong>    idList;     /// Beolvasott sorokhoz tartozó host_service_id értékek listája
-    QMap<int,qlonglong> supIdMap;   /// A beolvasott al példányokkal rendelkező pédányok id-i, index a tábla sora
-    QList<QList<QSqlRecord> > history; /// Lekérdezés history, mentett query-k eredménye
-    int                 historyIx;  /// Lekérdezés history aktuális pozició
-    QString         _sql;
-    QString         _ord;
+    QList<cHSOState *> states;     /// Lekérdezés history, mentett query-k eredménye
+    int             stateIx;    /// Lekérdezés history aktuális pozició
+    cHSOState *    actState(eEx __ex = EX_ERROR);
+
+    static const QString _sql;
+    static const QString _ord;
 
 protected:
-    /// találatok beolvasása/megjelenítése
-    void refreshTable(QList<QSqlRecord>& recs);
-    void fetch();
+    /// találatok megjelenítése
+    void refreshTable();
+    bool fetch(const QString& sql, const QVariantList& bind = QVariantList());
 protected slots:
+    void refresh();
     /// Al példányok megjelenítése
     void fetchSubs();
     /// találatok beolvasása/megjelenítése a beállított filterek alakján
@@ -69,6 +110,17 @@ protected slots:
     void forward();
     /// A lekérdezések törlése az aktuális kivételével.
     void clear();
+private:
+    void setCell(int row, int col, QTableWidgetItem * pi) {
+        if (pi != NULL) {
+            pUi->tableWidget->setItem(row, col, pi);
+        }
+    }
+    void setCell(int row, int col, QWidget * pw) {
+        if (pw != NULL) {
+            pUi->tableWidget->setCellWidget(row, col, pw);
+        }
+    }
 };
 
 #endif // HSOPERATE_H

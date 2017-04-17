@@ -44,6 +44,7 @@ STRDEF(Strict, "strict")
 STRDEF(Ignored, "ignored")
 STRDEF(Params, "params")
 STRDEF(Reset, "reset")
+STRDEF(Color, "color")
 
 
 dnl Thread nevek
@@ -796,6 +797,10 @@ STRDEF(EnumVals, "enum_vals")
  STRDEF(EnumValName, "enum_val_name")
  STRDEF(EnumValNote, "enum_val_note")
  STRDEF(EnumTypeName, "enum_type_name")
+ STRDEF(BgColor, "bg_color")
+ STRDEF(FgColor, "fg_color")
+ STRDEF(ViewShort, "view_short")
+ STRDEF(ViewLong, "view_long")
 STRDEF(MenuItems, "menu_items")
  STRDEF(MenuItemId, "menu_item_id")
  STRDEF(MenuItemName,"menu_item_name")

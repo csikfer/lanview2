@@ -114,7 +114,8 @@ enum eFieldWidgetType {
     FEW_DATE_TIME,      ///< cDateTimeWidget
     FEW_INTERVAL,       ///< cIntervalWidget
     FEW_BINARY,         ///< cBinaryWidget
-    FEW_NULL            ///< cNullWidget
+    FEW_NULL,           ///< cNullWidget
+    FEW_COLOR           ///< cColorWidget
 };
 /// Az enum eFieldWidgetType értékeket stringgé konvertálja.
 /// Vissza konverzió nincs, ez is csak nyomkövetési céllal.
@@ -617,6 +618,29 @@ private slots:
     void delRow();
     void clrRows();
     void doubleClickRow(const QModelIndex & index);
+};
+
+/// @class cColorWidget
+/// Egy dátun megjelenítése ill. szerkesztése
+class LV2GSHARED_EXPORT cColorWidget : public cFieldEditBase {
+    Q_OBJECT
+public:
+    /// Konstruktor.
+    /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
+    /// @param _par A parent pointere
+    cColorWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, bool ro, cRecordDialogBase* _par);
+    ~cColorWidget();
+    virtual int set(const QVariant& v);
+private:
+    void setColor(const QString &cn);
+    QLineEdit  *pLineEdit; // A szín neve (edit mező)
+    QLabel     *pLabel;    // Szín minta
+    QString     sTitle;
+    QColor      color;
+    QPixmap     pixmap;
+private slots:
+    void setFromEdit(const QString& text);
+    void colorDialog();
 };
 
 #endif // LV2WIDGETS_H

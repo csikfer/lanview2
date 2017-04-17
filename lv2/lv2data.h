@@ -671,7 +671,7 @@ protected:
     /// Az ifTypes feltöltésekor hozza létre az abjektumot a fetchIfTypes();
     static cIfType *pNull;
 public:
-    /// Feltölti az adatbázisból az ifTypes adattagot, ha nem öres a konténer, akkor frissíti.
+    /// Feltölti az adatbázisból az ifTypes adattagot, ha nem üres a konténer, akkor frissíti.
     /// Iniciaéizálja a pNull pountert, ha az NULL. Egy üres objektumra fog mutatni.
     /// Frissítés esetén feltételezi, hogy rekordot törölni nem lehet, ezt ellenörzi.
     static void fetchIfTypes(QSqlQuery& __q);
@@ -685,11 +685,11 @@ public:
     static const cIfType& ifType(qlonglong __id, enum eEx __ex = EX_ERROR);
     /// Egy ifTypes objektum Azonosítóját adja vissza a név alapján, ha nincs ilyen nevű típus, akkor dob egy kizárást.
     /// Az ifTypes adattagban keres, ha ifTypes üres, akkor feltölti az adatbázisból
-    /// Ha __ex értéke hamis, akkor kizárás helyett, NULL_ID -vel tér vissza.
+    /// Ha __ex értéke EX_IGNORE, akkor kizárás helyett, NULL_ID -vel tér vissza.
     static qlonglong ifTypeId(const QString& __nm, enum eEx __ex = EX_ERROR) { return ifType(__nm, __ex).getId(); }
     /// Egy ifTypes objektum nevét adja vissza az ID alapján, ha nincs ilyen azonosítójú típus, akkor dob egy kizárást.
     /// Az ifTypes adattagban keres, ha ifTypes üres, akkor feltölti az adatbázisból
-    /// Ha __ex értéke hamis, akkor kizárás helyett, üres stringgel tér vissza.
+    /// Ha __ex értéke EX_IGNORE, akkor kizárás helyett, üres stringgel tér vissza.
     static QString   ifTypeName(qlonglong __id, enum eEx __ex = EX_ERROR)    { return ifType(__id, __ex).getName(); }
     /// Visszakeresi az ifTypes konténer azon elemét, melynek az iftype_iana_id értéke megeggyezik a
     /// a paraméterben magadott értékkel, és a preferred értéke true. Ha van ilyen objektum a
