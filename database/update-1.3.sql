@@ -216,5 +216,10 @@ ALTER TYPE filtertype ADD VALUE 'boolean';
 -- Enumerációs értékek - opcionális szín összerendelés
 ALTER TABLE enum_vals ADD COLUMN bg_color text DEFAULT NULL;
 ALTER TABLE enum_vals ADD COLUMN fg_color text DEFAULT NULL;
+ALTER TABLE enum_vals ADD COLUMN font text DEFAULT NULL;
+ALTER TABLE enum_vals ADD COLUMN view_short text DEFAULT NULL;
+ALTER TABLE enum_vals ADD COLUMN view_long text DEFAULT NULL;
+ALTER TABLE enum_vals ADD COLUMN tool_tip text DEFAULT NULL;
+
 
 END;
