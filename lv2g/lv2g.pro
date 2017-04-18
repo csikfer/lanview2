@@ -37,7 +37,8 @@ SOURCES += \
     hsoperate.cpp \
     phslinkform.cpp \
     findbymac.cpp \
-    workstation.cpp
+    workstation.cpp \
+    object_dialog.cpp
 
 HEADERS +=\
     lv2g_global.h \
@@ -67,7 +68,8 @@ HEADERS +=\
     hsoperate.h \
     phslinkform.h \
     findbymac.h \
-    workstation.h
+    workstation.h \
+    object_dialog.h
 
 FORMS += \
     column_filter.ui \
@@ -89,7 +91,8 @@ FORMS += \
     phslinkform.ui \
     findbymac.ui \
     wstform.ui \
-    dialogpatchsimple.ui
+    dialogpatchsimple.ui \
+    dialog_enum_vals.ui
 INCLUDEPATH += ../lv2
 #unix:LIBS += -lsnmp
 msvc:LIBS += -lSecur32

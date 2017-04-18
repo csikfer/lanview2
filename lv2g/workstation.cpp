@@ -3,6 +3,7 @@
 #include "lv2user.h"
 #include "lv2link.h"
 #include "record_dialog.h"
+#include "object_dialog.h"
 #include "workstation.h"
 #include "ui_wstform.h"
 #include "ui_phslinkform.h"

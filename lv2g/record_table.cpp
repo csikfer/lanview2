@@ -673,7 +673,7 @@ void cRecordsViewBase::insert(bool _similar)
         if (_similar) {
             pRec = actRecord();    // pointer az aktuális rekordra, a beolvasott/megjelenített rekord listában
         }
-        pRec = recordDialogByName(sInsertDialog, *pq, this->pWidget(), pRec);
+        pRec = objectDialog(sInsertDialog, *pq, this->pWidget(), pRec);
         if (pRec == NULL) return;
         pDelete(pRec);
         refresh();
