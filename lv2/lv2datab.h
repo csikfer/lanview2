@@ -584,7 +584,7 @@ public:
     /// Ha nem, akkor létrehozza, inicializálja, beteszi a _recDescCache konténerbe, és a pointerrel tér vissza.
     /// @param _t SQL tábla neve
     /// @param _s SQL tábla schema név, opcionális
-    /// @param find_only Ha true, akkor NULL pointerrel tér vissza
+    /// @param find_only Ha true, akkor csak a konténerben keres, na nem találja az objektumot, akkor NULL-al tér vissza.
     /// @exception cError * Ha _setReCallCnt értéke nagyobb vagy egyenlő mint 10, és objektumot kellene kreálni, akkor dob egy kizárást.
     static const cRecStaticDescr *get(const QString& _t, const QString& _s = QString(), bool find_only = false);
     /// Egy objektum "beszerzése". Ha a _recDescrMap, vagy a _recDescCache konténerben megtalálja az objektumot, akkor a pointerével tér vissza.
@@ -2068,7 +2068,8 @@ public:
     virtual QString getFieldValue(QSqlQuery& q, const QString& vname, const QStringList &pl = QStringList()) const;
     QString exportFieldValue(QSqlQuery& q, int ix) const;
     bool isEmpty(int _ix) const;
-
+    /// Rekord azonosító szöveg. Pl. hibaüzeneteknél az objektum beazonosításához.
+    QString identifying();
 
 
 protected:
@@ -2516,7 +2517,14 @@ template <class R> void _SplitFeatureT(R& o, eEx __ex = EX_ERROR)
         if (__ex >= EX_WARNING) EXCEPTION(EREDO);
         o._pFeatures->clear();
     }
-    o._pFeatures->split(o.getName(R::ixFeatures()), __ex);
+    QString fv = o.getName(R::ixFeatures());
+    if (!o._pFeatures->split(fv, EX_IGNORE)) {
+        QString msg = QObject::trUtf8(
+                    "feature mezőjének a formátuma nem megfelelő."
+                    "A feature mező értéke : %1. %2").
+                arg(dQuoted(fv), o.identifying());
+        EXCEPTION(EDATA, 0, msg);
+    }
 }
 /// Egy módosított map visszaírása a "features" mezőbe. Nem hiívja az cRecord::atEnd(int) metódust.
 /// A sablon föggvény számít arra, hogy az objektumnak van egy

@@ -490,15 +490,17 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
     dataAlign = Qt::AlignVCenter;
     if (colDescr.eColType == cColStaticDescr::FT_INTEGER && colDescr.fKeyType == cColStaticDescr::FT_NONE) dataAlign |= Qt::AlignRight;
     else if (colDescr.eColType == cColStaticDescr::FT_REAL)                                                dataAlign |= Qt::AlignRight;
-    // 'color' feature: csak text, enum vagy boolean típusú mezőknél!
-    if (sf.isFeature(_sColor)
-     && (colDescr.eColType == cColStaticDescr::FT_TEXT
-      || colDescr.eColType == cColStaticDescr::FT_ENUM
-      || colDescr.eColType == cColStaticDescr::FT_BOOLEAN)) {
-        dataRole = GDR_COLOR;
-    }
-    else {
-        dataRole = lv2gDesign::desRole(recDescr, fieldIndex);
+    dataRole = lv2gDesign::desRole(recDescr, fieldIndex);
+    // 'color' és/vagy 'font' feature: csak text, enum vagy boolean típusú mezőknél!
+    if (colDescr.eColType == cColStaticDescr::FT_TEXT
+     || colDescr.eColType == cColStaticDescr::FT_ENUM
+     || colDescr.eColType == cColStaticDescr::FT_BOOLEAN) {
+        if (sf.isFeature(_sColor)) {
+            dataRole |= GDR_COLOR;
+        }
+        if (sf.isFeature(_sFont)) {
+            dataRole |= GDR_FONT;
+        }
     }
 }
 
@@ -1082,6 +1084,42 @@ cRecordsViewBase *cRecordsViewBase::newRecordView(cTableShape *pts, cRecordsView
     r->init();
     return r;
 }
+
+int cRecordsViewBase::ixToOwner()
+{
+    if (pUpper == NULL) EXCEPTION(EPROGFAIL);
+    QString key = mCat(pUpper->pTableShape->getName(), _sOwner);
+    QString ofn = pTableShape->feature(key);
+    int r;
+    if (ofn.isEmpty()) {
+        r = recDescr().ixToOwner(EX_IGNORE);
+        if (r < 0) {
+            QString msg = trUtf8(
+                    "A %1 al tábla nézetben (%2 tábla)\n a tulajdonos objektum táblára "
+                    "(nézet : %3, tábla %4) mutató ID mező neve (idegen kilcs) nem állpítható meg. "
+                    "A tábla nézetben a %5 feature változóban kell megadni a mező nevét, "
+                    "ha nincs definiált a távoli kulcs mint owner, és a használandó távoli kulcs így nem állapítható meg.")
+                    .arg(pTableShape->getName(), pTableShape->getName(_sTableName),
+                         pUpper->pTableShape->getName(), pUpper->pTableShape->getName(_sTableName),
+                         key);
+            EXCEPTION(EFOUND, 0, msg);
+        }
+    }
+    else {
+        r = recDescr().toIndex(ofn, EX_IGNORE);
+        if (r < 0) {
+            QString msg = trUtf8(
+                    "A %1 al tábla nézetben (%2 tábla) a %3 feature változó értéke %4. "
+                    "Nincs ilyen nevű mező! A változónak a tulajdonos táblára "
+                    "(nézet : %5, tábla %6) mutató mező nevét (idegen kulcs) kellene deifiniálnia.")
+                    .arg(pTableShape->getName(), pTableShape->getName(_sTableName), key, ofn,
+                         pUpper->pTableShape->getName(), pUpper->pTableShape->getName(_sTableName));
+            EXCEPTION(EFOUND, 0, msg);
+        }
+    }
+    return r;
+}
+
 
 cRecordsViewBase *cRecordsViewBase::newRecordView(QSqlQuery& q, qlonglong shapeId, cRecordsViewBase * own, QWidget *par)
 {

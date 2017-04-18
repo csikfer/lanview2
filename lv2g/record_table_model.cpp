@@ -151,62 +151,75 @@ int cRecordTableModel::columnCount(const QModelIndex &) const
     return _col2field.size();
 }
 
+bool cRecordViewModelBase::dataColor(const cRecord *pr, int fix, int role, int& dataRole, QVariant& r) const
+{
+    // Ha nem létezik, nem szines mező, vagy értéke NULL
+    if (fix < 0 || 0 == (dataRole & GDR_COLOR) || pr->isNull(fix)) return false;
+    const cColStaticDescr& cd = pr->descr().colDescr(fix);
+    QString cn;
+    switch (cd.eColType) {          // Adat típus
+    case cColStaticDescr::FT_TEXT:      // Text = color (az adat maga a szín, csak a háttér)
+        if (role == Qt::BackgroundRole) {
+            r = QColor(pr->getName(fix));
+            return true;
+        }
+        break;
+    case cColStaticDescr::FT_ENUM:        // enum colored (típus, és érték alapján)
+        switch (role) {
+        case Qt::ForegroundRole: cn = cEnumVal::fgColor(cd.udtName, pr->getName(fix)); break;
+        case Qt::BackgroundRole: cn = cEnumVal::bgColor(cd.udtName, pr->getName(fix)); break;
+        }
+        if (!cn.isEmpty()) {
+            r = QColor(cn);
+            return true;
+        }
+        break;
+    case cColStaticDescr::FT_BOOLEAN:    // boolean colored (mező teljex név, és az érték alapján)
+        switch (role) {     // Eredeti táblanevet használjuk, a mező név az aktuálisból, mivel a fix arra vonatkozik!
+        case Qt::ForegroundRole: cn = cEnumVal::fgColor(recDescr.tableName(), pr->descr().columnName(fix), pr->getBool(fix)); break;
+        case Qt::BackgroundRole: cn = cEnumVal::bgColor(recDescr.tableName(), pr->descr().columnName(fix), pr->getBool(fix)); break;
+        }
+        if (!cn.isEmpty()) {
+            r = QColor(cn);
+            return true;
+        }
+        break;
+    }
+    return false;
+}
+
 QVariant cRecordTableModel::data(const QModelIndex &index, int role) const
 {
-    if (!index.isValid()) {
-        //DWAR() << "Invalid modelIndex." << endl;
-        return QVariant();
-    }
+    QVariant r;
+    if (!index.isValid())           return r;
     int row = index.row();      // Sor index a táblázatban
+    if (row >= _records.size())     return r;
     int col = index.column();   // oszlop index a táblázatban
-    if (row < _records.size() && col < _col2field.size()) {
-        const cRecord *pr = _records.at(row);
-        int fix = _col2field[col];  // Mező index a (fő)rekordbam
-        int mix = _col2shape[col];  // Index a leíróban (shape)
-        if (recDescr != pr->descr()) { // A mező sorrend nem feltétlenül azonos (öröklés)
-            const QString& fn = recDescr.columnName(fix);
-            fix = pr->toIndex(fn, EX_IGNORE);   // Nem biztos, hogy van ilyen mező (ős)
-        }
-        // _DBGFN() << VDEB(row) << VDEB(col) << VDEB(role) << endl;
-        if (role == Qt::DisplayRole)       return pr->view(*pq, fix);
-        if (role == Qt::TextAlignmentRole) return columns[mix]->dataAlign;
-        eDesignRole dataRole = columns[mix]->dataRole;
-        if (dataRole == GDR_COLOR) {    // Szines mező, csak a háttérszin lessz az mező érték alapján beállítva, ha az nem NULL
-            dataRole = GDR_DATA;        // Egyébként egyébb adat
-            if (!pr->isNull(fix)) {     // Ha nem NULL
-                const cColStaticDescr& cd = recDescr.colDescr(fix);
-                QString cn;
-                switch (cd.eColType) {          // Adat típus
-                case cColStaticDescr::FT_TEXT:      // Text = color (az adat maga a szín, csak a háttér)
-                    if (role == Qt::BackgroundRole) {
-                        return QColor(pr->getName(fix));
-                    }
-                    break;
-                case cColStaticDescr::FT_ENUM:        // enum colored (típus, és érték alapján)
-                    switch (role) {
-                    case Qt::ForegroundRole: cn = cEnumVal::fgColor(cd.udtName, pr->getName(fix)); break;
-                    case Qt::BackgroundRole: cn = cEnumVal::bgColor(cd.udtName, pr->getName(fix)); break;
-                    }
-                    if (!cn.isEmpty()) return QColor(cn);
-                    break;
-                case cColStaticDescr::FT_BOOLEAN:    // boolean colored (mező teljex név, és az érték alapján)
-                    switch (role) {
-                    case Qt::ForegroundRole: cn = cEnumVal::fgColor(pr->descr().tableName(), pr->descr().columnName(fix), pr->getBool(fix)); break;
-                    case Qt::BackgroundRole: cn = cEnumVal::bgColor(pr->descr().tableName(), pr->descr().columnName(fix), pr->getBool(fix)); break;
-                    }
-                    if (!cn.isEmpty()) return QColor(cn);
-                    break;
-                }
-            }
-        }
-        const colorAndFont&   cf = pr->isNull(fix)
-                ?   design().null
-                :   design()[dataRole];
-        switch (role) {
-        case Qt::ForegroundRole:    return cf.fg;
-        case Qt::BackgroundRole:    return cf.bg;
-        case Qt::FontRole:          return cf.font;
-        }
+    if (col >= _col2field.size())   return r;
+    const cRecord *pr = _records.at(row);
+    int fix = _col2field[col];  // Mező index a (fő)rekordbam
+    int mix = _col2shape[col];  // Index a leíróban (shape)
+    if (recDescr != pr->descr()) { // A mező sorrend nem feltétlenül azonos (öröklés)
+        const QString& fn = recDescr.columnName(fix);
+        fix = pr->toIndex(fn, EX_IGNORE);   // Nem biztos, hogy van ilyen mező (ős)
+    }
+    // _DBGFN() << VDEB(row) << VDEB(col) << VDEB(role) << endl;
+    int dataRole = columns[mix]->dataRole;
+    switch (role) {
+    case Qt::DisplayRole:       return pr->view(*pq, fix);
+    case Qt::TextAlignmentRole: return columns[mix]->dataAlign;
+    case Qt::ForegroundRole:
+    case Qt::BackgroundRole:    if (dataColor(pr, fix, role, dataRole, r)) return r;
+    case Qt::FontRole:          break;
+    default:                    return r;
+    }
+    const colorAndFont&   cf = pr->isNull(fix)
+            ?   design().null
+            :   design()[dataRole];
+    switch (role) {
+    case Qt::ForegroundRole:    return cf.fg;
+    case Qt::BackgroundRole:    return cf.bg;
+    case Qt::FontRole:          return cf.font;
     }
     return QVariant();
 }

@@ -45,6 +45,7 @@ STRDEF(Ignored, "ignored")
 STRDEF(Params, "params")
 STRDEF(Reset, "reset")
 STRDEF(Color, "color")
+STRDEF(Font, "font")
 
 
 dnl Thread nevek

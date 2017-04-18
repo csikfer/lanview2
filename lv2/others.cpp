@@ -67,18 +67,18 @@ QStringList splitBy(const QString& s, const QChar& sep, const QChar& esc)
 
 /******************************************************************************/
 
-cFeatures& cFeatures::split(const QString& __ms, eEx __ex)
+bool cFeatures::split(const QString& __ms, eEx __ex)
 {
     QString msg = QString(QObject::trUtf8("Invalid magic string : %1")).arg(quotedString(__ms));
-    if (__ms.isEmpty()) return *this;
+    if (__ms.isEmpty()) return true;
     QStringList sl = splitBy(__ms);
     // Első és utolsó karakter a szeparátor, tehát az első és utolsó elem üres
     if (sl.isEmpty() || !(sl.first().isEmpty() && sl.last().isEmpty())) {
         if (__ex) EXCEPTION(EDATA, -1, msg);
         DERR() << msg << endl;
-        return *this;
+        return false;
     }
-    if (sl.size() <= 2) return *this; // űres
+    if (sl.size() <= 2) return true; // űres
     sl.pop_back();  // utolsó ures elem
     sl.pop_front(); // első üres elem
     foreach (QString s, sl) {
@@ -86,14 +86,14 @@ cFeatures& cFeatures::split(const QString& __ms, eEx __ex)
         if (pv.count()  > 2) {
             if (__ex) EXCEPTION(EDATA, -1, msg);
             DERR() << msg << endl;
-            return *this;
+            return false;
         }
         QString key = pv[0].toLower();
         QString val = pv.count() == 2 ? pv[1] : _sNul;
         if (val == "!") remove(key);        // Törli (ha van)
         else            (*this)[key] = val;
     }
-    return *this;
+    return true;
 }
 
 QString cFeatures::join() const

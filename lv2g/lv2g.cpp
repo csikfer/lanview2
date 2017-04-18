@@ -119,7 +119,7 @@ lv2gDesign::~lv2gDesign()
 
 const colorAndFont&   lv2gDesign::operator[](int role) const
 {
-    switch (role) {
+    switch (role & ~(GDR_COLOR | GDR_FONT)) {
     case GDR_HEAD:      return head;
     case GDR_DATA:      return data;
     case GDR_ID:        return id;

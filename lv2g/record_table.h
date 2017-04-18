@@ -148,7 +148,7 @@ public:
     const QVariant&         header;
     int                     dataAlign;      // Qt::AlignmentFlag
     int                     headAlign;      // Qt::AlignmentFlag
-    eDesignRole             dataRole;
+    int                     dataRole;
 };
 
 /// A tábla viszonyát meghatározó flag értékek
@@ -342,13 +342,7 @@ public:
     /// Alapesetben ez kiderül a rekord idegen kilcsokból.
     /// De megadható a features mezőben is, ha ez az idegen kilcsmezőkkel nem lehetséges, nem egyértelmű:
     /// ekkor a <table shape name>.owner kulcs értéke a keresett mező neve. (nem a tábla, hanem a leíró neve van a kulcsban)
-    int ixToOwner() {
-        if (pUpper == NULL) EXCEPTION(EPROGFAIL);
-        QString key = mCat(pUpper->pTableShape->getName(), _sOwner);
-        QString ofn = pTableShape->feature(key);
-        if (ofn.isEmpty()) return recDescr().ixToOwner();
-        else               return recDescr().toIndex(ofn);
-    }
+    int ixToOwner();
 
 private:
     void rightTabs(QVariantList &vlids);

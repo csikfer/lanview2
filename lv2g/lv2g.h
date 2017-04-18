@@ -124,7 +124,8 @@ enum eDesignRole {
     GDR_FOREIGN,        ///< távoli kulcs érték
     GDR_NULL,           ///< NULL adat
     GDR_WARNING,        ///< Figyelmeztető üzenet
-    GDR_COLOR           ///< Szín (név)
+    GDR_COLOR  = 0x100, ///< Egyedi szín
+    GDR_FONT   = 0x200  ///< Egyedi font
 };
 
 class LV2GSHARED_EXPORT lv2gDesign : public QObject {

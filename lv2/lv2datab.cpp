@@ -3701,6 +3701,46 @@ bool cRecord::isEmpty(int _ix) const
     return true;
 }
 
+QString cRecord::identifying()
+{
+    QString otype = typeid(*this).name();
+    QString table = tableName();
+    QString record = trUtf8("Objektum típus : %1 (%2 tábla).").arg(otype, table);
+    if (isEmpty_()) record += trUtf8(" Üres objektum.");
+    else {
+        QSqlQuery q(getQuery());
+        QString name = view(q, nameIndex(EX_IGNORE));
+        QString   id = view(q,   idIndex(EX_IGNORE));
+        record += trUtf8(" név = %1, id = %2.").arg(dQuoted(name), dQuoted(id));
+        foreach (const cColStaticDescr *pCd, (QList<cColStaticDescr *>&)descr().columnDescrs()) {
+            if (pCd->fKeyType == cColStaticDescr::FT_OWNER) {
+                const cRecStaticDescr *pRd = cRecStaticDescr::get(pCd->fKeyTable, pCd->fKeySchema, true);
+                record += trUtf8(" Tulajdonos : ");
+                if (pRd == NULL) {
+                    record += trUtf8(" jelenleg nem megállapítható (tábla : %1)").arg(dQuotedCat(pCd->fKeyTable, pCd->fKeySchema));
+                }
+                else {
+                    cRecordAny o(pRd);
+                    record += trUtf8(" tábla : %1.").arg(pRd->fullTableNameQ());
+                    int fix = pCd->pos -1;
+                    qlonglong oid = getId(fix);
+                    if (oid == NULL_ID) record += trUtf8(" Tulajdonos rekord nincs (NULL).");
+                    else {
+                        if (o.fetchById(q, oid)) {
+                            record += trUtf8(" Tulajdonos rekord : %1").arg(o.identifying());
+                        }
+                        else {
+                            record += trUtf8(" Tulajdonos rekord nem található (ID = %1).").arg(oid);
+                        }
+                    }
+                }
+                break;  // Csak egy lehet
+            }
+        }
+    }
+    return record;
+}
+
 int cRecord::parseParams(QSqlQuery &q, QStringList& pl, int ss) const
 {
     int i, n = pl.size();

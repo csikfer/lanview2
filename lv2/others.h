@@ -157,8 +157,8 @@ public:
     /// Ha a paraméter érték a felkiáltójel, akkor az adott kulcs türülve lessz.
     /// @param __ms A feldolgozandó paraméter string
     /// @param __ex Nem megfelelő formátumú string esetén kizárást dob.
-    /// @return Az eredmény ill. az objektum referencia
-    cFeatures& split(const QString& __ms, enum eEx __ex = EX_ERROR);
+    /// @return true, ha nincs hiba. Hiba esetén (ha __ex = EX_IGNORE) false.
+    bool split(const QString& __ms, enum eEx __ex = EX_ERROR);
     /// Kiemeli a megadott nevű paraméter ártéket.
     /// @param _nm A paraméter neve (kisbetüssé lesz konvertálva)
     /// @return Egy string, a paraméter érték, ha nincs ilyen paraméter, akkor a NULL string,

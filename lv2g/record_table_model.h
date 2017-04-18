@@ -71,6 +71,8 @@ public:
     virtual bool insertRow(cRecord *pRec) = 0;
     static bool SqlInsert(QSqlQuery &q, cRecord *pRec);
     static QString sIrrevocable;
+    bool dataColor(const cRecord *pr, int fix, int role, int &dataRole, QVariant& r) const;
+
 };
 
 /// @class cRecordTableModel

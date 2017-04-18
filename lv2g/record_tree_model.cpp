@@ -139,37 +139,39 @@ int         cRecordTreeModel::columnCount(const QModelIndex & parent) const
 
 QVariant    cRecordTreeModel::data(const QModelIndex & index, int role) const
 {
-    if (!index.isValid()) {
-        //DWAR() << "Invalid modelIndex." << endl;
-        return QVariant();
-    }
+    QVariant r;
+    if (!index.isValid())           return r;
     cTreeNode *node = nodeFromIndex(index);
-    if (node == NULL) return QVariant();
+    if (node == NULL)               return r;
     int col = index.column();
-    if (col < _col2field.size()) {
-        int fix = _col2field[col];  // Mező index a rekordbam
-        int mix = _col2shape[col];  // Index a leíróban
-        // Ettöl a DEBUG üzenettől nagyon belassul!!!
-//        _DBGFN() << " name = " << node->name() << "; " << VDEB(col) << VDEB(role) << endl;
-        if (role == Qt::DisplayRole)       return node->pData->view(*pq, fix);
-        if (role == Qt::TextAlignmentRole) return columns[mix]->dataAlign;
-        eDesignRole dataRole = columns[mix]->dataRole;
-        if (dataRole == GDR_COLOR) {    // Szin mező, csak a háttérszin lessz az mező érték alapján beállítva, ha az nem NULL
-            dataRole = GDR_DATA;        // Egyébként egyébb adat
-            if (role == Qt::BackgroundRole && !node->pData->isNull(fix)) {
-                return QColor(node->pData->getName(fix));
-            }
-        }
-        const colorAndFont&   cf = node->pData->isNull(fix)
-                ?   design().null
-                :   design()[dataRole];
-        switch (role) {
-        case Qt::ForegroundRole:    return cf.fg;
-        case Qt::BackgroundRole:    return cf.bg;
-        case Qt::FontRole:          return cf.font;
-        }
+    if (col >= _col2field.size())   return r;
+    int fix = _col2field[col];  // Mező index a rekordbam
+    int mix = _col2shape[col];  // Index a leíróban
+    cRecord *pr = node->pData;
+    if (recDescr != pr->descr()) { // A mező sorrend nem feltétlenül azonos (öröklés)
+        const QString& fn = recDescr.columnName(fix);
+        fix = pr->toIndex(fn, EX_IGNORE);   // Nem biztos, hogy van ilyen mező (ős)
     }
-    return QVariant();
+    // Ettöl a DEBUG üzenettől nagyon belassul!!!
+//        _DBGFN() << " name = " << node->name() << "; " << VDEB(col) << VDEB(role) << endl;
+    int dataRole = columns[mix]->dataRole;
+    switch (role) {
+    case Qt::DisplayRole:       return pr->view(*pq, fix);
+    case Qt::TextAlignmentRole: return columns[mix]->dataAlign;
+    case Qt::ForegroundRole:
+    case Qt::BackgroundRole:    if (dataColor(pr, fix, role, dataRole, r)) return r;
+    case Qt::FontRole:          break;
+    default:                    return r;
+    }
+    const colorAndFont&   cf = pr->isNull(fix)
+            ?   design().null
+            :   design()[dataRole];
+    switch (role) {
+    case Qt::ForegroundRole:    return cf.fg;
+    case Qt::BackgroundRole:    return cf.bg;
+    case Qt::FontRole:          return cf.font;
+    }
+    return r;
 }
 
 QVariant    cRecordTreeModel::headerData(int section, Qt::Orientation orientation, int role) const
