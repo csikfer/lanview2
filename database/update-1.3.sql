@@ -227,5 +227,7 @@ ALTER TABLE enum_vals ADD COLUMN tool_tip text DEFAULT NULL;
 ALTER TABLE enum_vals ADD COLUMN font_family text DEFAULT NULL;
 ALTER TABLE enum_vals ADD COLUMN font_attr fontattr[] DEFAULT NULL;
 
+CREATE TYPE datacharacter AS ENUM ('head','data', 'id', 'name', 'primary', 'key', 'fname', 'derived', 'tree', 'foreign', 'null', 'warning');
+ALTER TYPE datacharacter OWNER TO lanview2;
 
 END;
