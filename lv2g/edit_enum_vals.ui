@@ -1,0 +1,600 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>enumValsWidget</class>
+ <widget class="QWidget" name="enumValsWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1019</width>
+    <height>893</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Dialog</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="currentIndex">
+      <number>1</number>
+     </property>
+     <widget class="QWidget" name="tabEnumValue">
+      <attribute name="title">
+       <string>Enumerációs érték</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <layout class="QFormLayout" name="formLayoutVal">
+         <property name="sizeConstraint">
+          <enum>QLayout::SetDefaultConstraint</enum>
+         </property>
+         <item row="0" column="0">
+          <widget class="QLabel" name="labelValType">
+           <property name="text">
+            <string>A szerkesztendő típus kiválasztása :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QComboBox" name="comboBoxValType"/>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="labelValTypeNote">
+           <property name="text">
+            <string>Megjegyzés a típushoz :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="lineEditValTypeNote">
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="labelValVal">
+           <property name="text">
+            <string>A szerkesztendő érték kiválasztása :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QComboBox" name="comboBoxValVal"/>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="labelValShort">
+           <property name="text">
+            <string>Rövid megjelenített név :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <widget class="QLineEdit" name="lineEditValShort"/>
+         </item>
+         <item row="5" column="0">
+          <widget class="QLabel" name="labelValLong">
+           <property name="text">
+            <string>Hosszú megjelenített név :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="1">
+          <widget class="QLineEdit" name="lineEditValLong"/>
+         </item>
+         <item row="6" column="0">
+          <widget class="QLabel" name="labelValBgColor">
+           <property name="text">
+            <string>Háttér szín :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="0">
+          <widget class="QLabel" name="labelValFgColor">
+           <property name="text">
+            <string>Karakter szín</string>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="0">
+          <widget class="QLabel" name="labelValFontFamily">
+           <property name="text">
+            <string>Karakter típus :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="10" column="0">
+          <widget class="QLabel" name="labelValValNote">
+           <property name="text">
+            <string>Megjegyzés :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="10" column="1">
+          <widget class="QLineEdit" name="lineEditValValNote"/>
+         </item>
+         <item row="11" column="0">
+          <widget class="QLabel" name="labelValValToolTip">
+           <property name="text">
+            <string>Helyi súgó (Tool Típ) :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="11" column="1">
+          <widget class="QTextEdit" name="textEditValValTolTip"/>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="labelValTypeToolTip">
+           <property name="text">
+            <string>Helyi súgó (Tool Tip) :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QTextEdit" name="textEditValTypeToolTip">
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="9" column="0">
+          <widget class="QLabel" name="labelValFontAttr">
+           <property name="text">
+            <string>Karakter attibutum(ok) :</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>134</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tabEnumType">
+      <attribute name="title">
+       <string>Enumerációs típus</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,10">
+       <item>
+        <layout class="QFormLayout" name="formLayoutType">
+         <item row="0" column="0">
+          <widget class="QLabel" name="labelTypeType">
+           <property name="text">
+            <string>A szerkesztendő típus kiválasztása :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QComboBox" name="comboBoxTypeType"/>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="labelTypeTypeToolTip">
+           <property name="text">
+            <string>Helyi súgó (Tool Tip) :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <widget class="QTextEdit" name="textEditTypeTypeToolTip">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>80</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="labelTypeLong">
+           <property name="text">
+            <string>Hosszú megjelenített név :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="labelTypeShort">
+           <property name="text">
+            <string>Rövid megjelenített név :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="lineEditTypeShort"/>
+         </item>
+         <item row="2" column="1">
+          <widget class="QLineEdit" name="lineEditTypeLong"/>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="labelTypeTypeNote">
+           <property name="text">
+            <string>Megjegyzés a típushoz :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QLineEdit" name="lineEditTypeTypeNote"/>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QTableWidget" name="tableWidgetType">
+         <property name="editTriggers">
+          <set>QAbstractItemView::AllEditTriggers</set>
+         </property>
+         <property name="dragEnabled">
+          <bool>true</bool>
+         </property>
+         <property name="dragDropMode">
+          <enum>QAbstractItemView::DragDrop</enum>
+         </property>
+         <property name="defaultDropAction">
+          <enum>Qt::CopyAction</enum>
+         </property>
+         <attribute name="horizontalHeaderCascadingSectionResizes">
+          <bool>false</bool>
+         </attribute>
+         <attribute name="horizontalHeaderStretchLastSection">
+          <bool>true</bool>
+         </attribute>
+         <attribute name="verticalHeaderCascadingSectionResizes">
+          <bool>false</bool>
+         </attribute>
+         <column>
+          <property name="text">
+           <string>Érték</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Rövid megn.</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Hosszú megnevezés</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Háttér szín</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Karakter szín</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Betű típus</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Betű hatás</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Megjegyzés</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Súgó</string>
+          </property>
+         </column>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tabBoolean">
+      <attribute name="title">
+       <string>Boolean típusok</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_6" stretch="0,0,1">
+       <item>
+        <layout class="QFormLayout" name="formLayoutBool">
+         <item row="0" column="0">
+          <widget class="QLabel" name="labelBoolTable">
+           <property name="text">
+            <string>Tábla neve :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QComboBox" name="comboBoxBoolTable"/>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="labelBoolField">
+           <property name="text">
+            <string>A boolean típusú mező neve :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QComboBox" name="comboBoxBoolField"/>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="labelBoolTypeShort">
+           <property name="text">
+            <string>Rövid megjelenített név :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QLineEdit" name="lineEditBoolTypeShort"/>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="labelBoolTypeLong">
+           <property name="text">
+            <string>Hosszú megjelenített név :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QLineEdit" name="lineEditBoolTypeLong"/>
+         </item>
+         <item row="5" column="0">
+          <widget class="QLabel" name="labelBoolToolTip">
+           <property name="text">
+            <string>Helyi súgó (Tool Tip) :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="1">
+          <widget class="QTextEdit" name="textEditBoolToolTip"/>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="labelBoolTypeNote">
+           <property name="text">
+            <string>Megjegyzés :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <widget class="QLineEdit" name="lineEditBoolTypeNote"/>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="Line" name="line">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSplitter" name="splitterBool">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <widget class="QWidget" name="layoutWidget">
+          <layout class="QVBoxLayout" name="verticalLayout_4">
+           <item>
+            <widget class="QLabel" name="labelTrue">
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>Igaz érték </string>
+             </property>
+             <property name="textFormat">
+              <enum>Qt::AutoText</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QFormLayout" name="formLayoutTrue">
+             <item row="0" column="0">
+              <widget class="QLabel" name="labelTrueShort">
+               <property name="text">
+                <string>Rövid megjelenített név :</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLineEdit" name="lineEditTrueShort"/>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="labelTrueLong">
+               <property name="text">
+                <string>Hosszű megjelenített név :</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QLineEdit" name="lineEditTrueLong"/>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="labelTrueBgColor">
+               <property name="text">
+                <string>Háttér szín :</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0">
+              <widget class="QLabel" name="labelTrueFgColor">
+               <property name="text">
+                <string>Karakter szín</string>
+               </property>
+              </widget>
+             </item>
+             <item row="6" column="0">
+              <widget class="QLabel" name="labelTrueNote">
+               <property name="text">
+                <string>Megjegyzés :</string>
+               </property>
+              </widget>
+             </item>
+             <item row="6" column="1">
+              <widget class="QLineEdit" name="lineEditTrueNote"/>
+             </item>
+             <item row="7" column="0">
+              <widget class="QLabel" name="labelTrueToolTip">
+               <property name="text">
+                <string>Helyi súgó (Tool Tip) :</string>
+               </property>
+              </widget>
+             </item>
+             <item row="7" column="1">
+              <widget class="QTextEdit" name="textEditTrueToolTip"/>
+             </item>
+             <item row="4" column="0">
+              <widget class="QLabel" name="labelTrueFontFam">
+               <property name="text">
+                <string>Karakter típus :</string>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="0">
+              <widget class="QLabel" name="labelTrueFntAtt">
+               <property name="text">
+                <string>Karakter attibutum(ok) :</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="layoutWidget">
+          <layout class="QVBoxLayout" name="verticalLayoutFlae">
+           <item>
+            <widget class="QLabel" name="label_17">
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>Hamis érték</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QFormLayout" name="formLayoutFalse">
+             <item row="0" column="0">
+              <widget class="QLabel" name="labelFalseShort">
+               <property name="text">
+                <string>Rövid megjelenített név :</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLineEdit" name="lineEditFalseShort"/>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="labelFalseLong">
+               <property name="text">
+                <string>Hosszű megjelenített név :</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QLineEdit" name="lineEditFalseLong"/>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="labelFalseBgColor">
+               <property name="text">
+                <string>Háttér szín :</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0">
+              <widget class="QLabel" name="labelFalseFgColor">
+               <property name="text">
+                <string>Karakter szín</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="0">
+              <widget class="QLabel" name="labelFalseFntFam">
+               <property name="text">
+                <string>Karakter típus :</string>
+               </property>
+              </widget>
+             </item>
+             <item row="6" column="0">
+              <widget class="QLabel" name="labelFalseNote">
+               <property name="text">
+                <string>Megjegyzés :</string>
+               </property>
+              </widget>
+             </item>
+             <item row="6" column="1">
+              <widget class="QLineEdit" name="lineEditFalseNote"/>
+             </item>
+             <item row="7" column="0">
+              <widget class="QLabel" name="labelFlaseToolTip">
+               <property name="text">
+                <string>Helyi súgó (Tool Tip) :</string>
+               </property>
+              </widget>
+             </item>
+             <item row="7" column="1">
+              <widget class="QTextEdit" name="textEditFalseToolTip"/>
+             </item>
+             <item row="5" column="0">
+              <widget class="QLabel" name="labelFalseFntAtt">
+               <property name="text">
+                <string>Karakter attibutum(ok) :</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok|QDialogButtonBox::Save</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

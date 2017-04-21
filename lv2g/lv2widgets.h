@@ -115,7 +115,9 @@ enum eFieldWidgetType {
     FEW_INTERVAL,       ///< cIntervalWidget
     FEW_BINARY,         ///< cBinaryWidget
     FEW_NULL,           ///< cNullWidget
-    FEW_COLOR           ///< cColorWidget
+    FEW_COLOR,          ///< cColorWidget
+    FEW_FONT_FAMILY,    ///< cFontFamilyWidget
+    FEW_FONT_ATTR       ///< cFontAttrWidget
 };
 /// Az enum eFieldWidgetType értékeket stringgé konvertálja.
 /// Vissza konverzió nincs, ez is csak nyomkövetési céllal.
@@ -641,6 +643,71 @@ private:
 private slots:
     void setFromEdit(const QString& text);
     void colorDialog();
+};
+
+
+/// @class cFontFamilyWidget
+/// Font csalás kiválasztása
+class LV2GSHARED_EXPORT cFontFamilyWidget : public cFieldEditBase {
+    Q_OBJECT
+public:
+    /// Konstruktor.
+    /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
+    /// @param _par A parent pointere
+    cFontFamilyWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, cRecordDialogBase* _par);
+    ~cFontFamilyWidget();
+    virtual int set(const QVariant& v);
+private:
+    QIcon           iconNull;
+    QIcon           iconNotNull;
+    QToolButton    *pToolButtonNull;
+    QFontComboBox  *pFontComboBox;
+private slots:
+    void togleNull(bool f);
+    void changeFont(const QFont&);
+};
+
+enum eFontAttr {
+    FA_BOOLD, FA_ITALIC, FA_UNDERLINE, FA_STRIKEOUT
+};
+
+/// @class cFontAttrWidget
+/// Font csalás kiválasztása
+class LV2GSHARED_EXPORT cFontAttrWidget : public cFieldEditBase {
+    Q_OBJECT
+public:
+    /// Konstruktor.
+    /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
+    /// @param _par A parent pointere
+    cFontAttrWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, cRecordDialogBase* _par);
+    ~cFontAttrWidget();
+    virtual int set(const QVariant& v);
+private:
+    const cColEnumType *pEnumType;
+    QIcon           iconNull;
+    QIcon           iconNotNull;
+    QIcon           iconBold;
+    QIcon           iconBoldNo;
+    QIcon           iconItalic;
+    QIcon           iconItalicNo;
+    QIcon           iconUnderline;
+    QIcon           iconUnderlineNo;
+    QIcon           iconStrikeout;
+    QIcon           iconStrikeoutNo;
+
+    QToolButton    *pToolButtonNull;
+    QToolButton    *pToolButtonBold;
+    QToolButton    *pToolButtonItalic;
+    QToolButton    *pToolButtonUnderline;
+    QToolButton    *pToolButtonStrikeout;
+    QLineEdit      *pLine;
+    qlonglong       m;
+private slots:
+    void togleNull(bool f);
+    void togleBoold(bool f);
+    void togleItelic(bool f);
+    void togleUnderline(bool f);
+    void togleStrikeout(bool f);
 };
 
 #endif // LV2WIDGETS_H

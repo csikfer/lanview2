@@ -10,6 +10,7 @@
 #include "findbymac.h"
 #include "apierrcodes.h"
 #include "workstation.h"
+#include "object_dialog.h"
 
 QMap<QString, QAction *>  cMenuAction::actionsMap;
 
@@ -17,7 +18,7 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QMdiArea 
     : QObject(par), type(MAT_ERROR)
 {
     pMdiArea     = par;
-    pIntSubObj      = NULL;
+    pIntSubObj   = NULL;
     intType      = INT_UNKNOWN;
     pDialog      = NULL;
     pAction      = pa;
@@ -86,6 +87,10 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QMdiArea 
         else if (0 == feature.compare(_sWorkstation, Qt::CaseInsensitive)) { // "workstation"
             intType = INT_WORKSTATION;
             rights = PL_VIEWER;
+        }
+        else if (0 == feature.compare("enumedit", Qt::CaseInsensitive)) { // "workstation"
+            intType = INT_ENUMEDIT;
+            rights = cEnumValsEdit::rights;
         }
         else {
             if (__ex) EXCEPTION(ENONAME, -1, feature);
@@ -158,6 +163,7 @@ A jelenleg implementállt lehetőségek:
 | hsop       | INT_HSOP       | cHSOperate      | host-services állapot man.  |
 | findmac    | INT_FINDMAC    | cFindByMac      | MAC keresés                 |
 | workstation| INT_WORKSTATION| cWorkstation    | Munkaállomás új/modosít     |
+| enumedit   | INT_ENUMEDIT   | cEnumValsEdit   | Enumerációk                 |
  */
 void cMenuAction::initInt()
 {
@@ -172,6 +178,7 @@ void cMenuAction::initInt()
     CREATEINTWIN(HSOP,       cHSOperate);
     CREATEINTWIN(FINDMAC,    cFindByMac);
     CREATEINTWIN(WORKSTATION,cWorkstation);
+    CREATEINTWIN(ENUMEDIT,   cEnumValsEdit);
 #undef CREATEINTWIN
     default:
         EXCEPTION(EPROGFAIL);

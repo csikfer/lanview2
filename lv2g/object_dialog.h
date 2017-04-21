@@ -4,6 +4,8 @@
 #include "lv2models.h"
 #include "lv2widgets.h"
 #include "record_dialog.h"
+#include "ui_edit_enum_vals.h"
+
 
 namespace Ui {
     class patchSimpleDialog;
@@ -100,46 +102,107 @@ private slots:
 _GEX cPatch * patchDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample = NULL);
 
 namespace Ui {
-    class enumValsDialog;
+    class enumValsWidget;
 }
-class cEnumValsDialog;
+class cEnumValsEditWidget;
 class cEnumValRow;
 
 #if defined(LV2G_LIBRARY)
-#  include "ui_dialog_enum_vals.h"
     class cEnumValRow : public QObject {
         Q_OBJECT
     public:
-        cEnumValRow(QSqlQuery& q, const QString& _val, int _row, cEnumValsDialog *par);
-        cEnumValsDialog *parent;
+        cEnumValRow(QSqlQuery& q, const QString& _val, int _row, cEnumValsEditWidget *par);
+        void save(QSqlQuery &q);
+        cEnumValsEditWidget*parent;
         QTableWidget   *pTableWidget;
         const int       row;
         cEnumVal        rec;
         cColorWidget   *pBgColorWidget;
         cColorWidget   *pFgColorWidget;
+        cFontFamilyWidget *pFntFamWidget;
+        cFontAttrWidget *pFntAttWidget;
     };
 
     enum {
-        CEV_NAME, CEV_SHORT, CEV_LONG, CEV_BG_COLOR, CEV_FG_COLOR, CEV_FONT, CEV_NOTE
+        CEV_NAME, CEV_SHORT, CEV_LONG, CEV_BG_COLOR, CEV_FG_COLOR, CEV_FNT_FAM, CEV_FNT_ATT, CEV_NOTE, CEV_TOOL_TIP,
+        CEV_COUNT
     };
 #endif
 
-class LV2GSHARED_EXPORT cEnumValsDialog : public QDialog {
+inline static void formSetField(QFormLayout *pFormLayout, QWidget *pLabel, QWidget *pField)
+{
+    int i, row;
+    QFormLayout::ItemRole ir;
+    i = pFormLayout->indexOf(pLabel);
+    pFormLayout->getItemPosition(i, &row, &ir);
+    pFormLayout->setWidget(row, QFormLayout::FieldRole, pField);
+}
+
+class LV2GSHARED_EXPORT cEnumValsEditWidget : public QWidget {
     friend class cEnumValRow;
     Q_OBJECT
 public:
-    cEnumValsDialog(QWidget *parent = NULL);
-    ~cEnumValsDialog();
+    cEnumValsEditWidget(QWidget *parent = NULL);
+    ~cEnumValsEditWidget();
 protected:
+    bool save();
+    bool saveValue();
+    bool saveType();
+    bool saveBoolean();
+
     QSqlQuery          *pq;
-    Ui::enumValsDialog *pUi;
+    Ui::enumValsWidget *pUi;
     cTableShape        *pShape;
     cRecordDialog      *pSinge;
-    QString             enumTypeName;
-    const cColEnumType *pEnumType;
+    bool                lockSlot;
+    // Val
+    QString             enumValTypeName;
+    const cColEnumType *pEnumValType;
+    cEnumVal            val;
+    cColorWidget       *pWidgetValBgColor;
+    cColorWidget       *pWidgetValFgColor;
+    cFontFamilyWidget  *pWidgetValFntFam;
+    cFontAttrWidget    *pWidgetValFntAtt;
+    // Type
+    QString             enumTypeTypeName;
+    cEnumVal            type;
+    const cColEnumType *pEnumTypeType;
+    QList<cEnumValRow *>    rows;
+    // Boolean
+        // true
+    cEnumVal boolType, boolTrue, boolFalse;
+    cColorWidget       *pWidgetTrueBgColor;
+    cColorWidget       *pWidgetTrueFgColor;
+    cFontFamilyWidget  *pWidgetTrueFntFam;
+    cFontAttrWidget    *pWidgetTrueFntAtt;
+        // false
+    cColorWidget       *pWidgetFalseBgColor;
+    cColorWidget       *pWidgetFalseFgColor;
+    cFontFamilyWidget  *pWidgetFalseFntFam;
+    cFontAttrWidget    *pWidgetFalseFntAtt;
+signals:
+    void closeWidget();
 protected slots:
     void clicked(QAbstractButton *pButton);
-    void setEnumType(const QString& etn);
+
+    void setEnumValType(const QString& etn);
+    void setEnumValVal(const QString& ev);
+
+    void setEnumTypeType(const QString& etn);
+
+    void setBoolTable(const QString& tn);
+    void setBoolField(const QString& fn);
+};
+
+class LV2GSHARED_EXPORT cEnumValsEdit
+        : public    cIntSubObj
+{
+    Q_OBJECT
+public:
+    cEnumValsEdit(QMdiArea *par);
+    ~cEnumValsEdit();
+    static const enum ePrivilegeLevel rights;
+    cEnumValsEditWidget *pEditWidget;
 };
 
 #endif // OBJECT_DIALOG

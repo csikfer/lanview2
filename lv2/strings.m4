@@ -802,6 +802,13 @@ STRDEF(EnumVals, "enum_vals")
  STRDEF(FgColor, "fg_color")
  STRDEF(ViewShort, "view_short")
  STRDEF(ViewLong, "view_long")
+ dnl ToolTip
+ STRDEF(FontFamily, "font_family")
+ STRDEF(FontAttr, "font_attr")
+  STRDEF(Bold, "bold");
+  STRDEF(Italic, "italic")
+  STRDEF(Undeline, "underline")
+  STRDEF(Strikeout, "strikeout")
 STRDEF(MenuItems, "menu_items")
  STRDEF(MenuItemId, "menu_item_id")
  STRDEF(MenuItemName,"menu_item_name")

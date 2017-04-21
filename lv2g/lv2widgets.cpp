@@ -158,6 +158,8 @@ QString fieldWidgetType(int _t)
     case FEW_BINARY:        return "cBinaryWidget";
     case FEW_NULL:          return "cNullWidget";
     case FEW_COLOR:         return "cColorWidget";
+    case FEW_FONT_FAMILY:   return "cFontFamilyWidget";
+    case FEW_FONT_ATTR:     return "cFontAttrWidget";
     default:                return sInvalidEnum();
     }
 }
@@ -2076,4 +2078,201 @@ void cColorWidget::colorDialog()
     if (c.isValid()) {
         pLineEdit->setText(c.name());
     }
+}
+
+/* **************************************** cFontFamilyWidget ****************************************  */
+
+
+cFontFamilyWidget::cFontFamilyWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, __fr, false, _par)
+    , iconNull("://dialog-no.ico"), iconNotNull("://dialog-no-off.png")
+{
+    _wType = FEW_FONT_FAMILY;
+    _pWidget = new QWidget(_par == NULL ? NULL : _par->pWidget());
+    QHBoxLayout *pLayout = new QHBoxLayout;
+    _pWidget->setLayout(pLayout);
+    bool isNull = __fr.isNull();
+    pToolButtonNull = new QToolButton;
+    pToolButtonNull->setIcon(isNull ? iconNull : iconNotNull);
+    pToolButtonNull->setIcon(iconNull);
+    pToolButtonNull->setCheckable(true);
+    pToolButtonNull->setChecked(isNull);
+    pLayout->addWidget(pToolButtonNull);
+
+    pFontComboBox = new QFontComboBox;
+    pFontComboBox->setDisabled(isNull);
+    if (!isNull) pFontComboBox->setCurrentFont(QFont((QString)__fr));
+    pLayout->addWidget(pFontComboBox);
+    pLayout->addStretch(0);
+    connect(pToolButtonNull, SIGNAL(toggled(bool)),             this, SLOT(togleNull(bool)));
+    connect(pFontComboBox,   SIGNAL(currentFontChanged(QFont)), this, SLOT(changeFont(QFont)));
+}
+
+cFontFamilyWidget::~cFontFamilyWidget()
+{
+    ;
+}
+
+
+int cFontFamilyWidget::set(const QVariant& v)
+{
+    bool r = cFieldEditBase::set(v);
+    if (r == 1) {
+        bool isNull = v.isNull();
+        pToolButtonNull->setChecked(isNull);
+        pFontComboBox->setDisabled(isNull);
+        if (!isNull) pFontComboBox->setCurrentFont(QFont(v.toString()));
+    }
+    return r;
+}
+
+void cFontFamilyWidget::togleNull(bool f)
+{
+    pFontComboBox->setDisabled(f);
+    setFromWidget(f ? QVariant(pFontComboBox->currentText()) : QVariant());
+    pToolButtonNull->setIcon(f ? iconNull : iconNotNull);
+}
+
+void cFontFamilyWidget::changeFont(const QFont&)
+{
+    setFromWidget(QVariant(pFontComboBox->currentText()));
+}
+
+
+/* **************************************** cFontAttrWidget ****************************************  */
+
+
+cFontAttrWidget::cFontAttrWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, __fr, false, _par)
+    , iconNull("://dialog-no.ico"), iconNotNull("://dialog-no-off.png")
+    , iconBold("://icons/format-text-bold.ico"), iconBoldNo("://icons/format-text-bold-no.png")
+    , iconItalic("://icons/format-text-italic.ico"), iconItalicNo("://icons/format-text-italic-no.png")
+    , iconUnderline("://icons/format-text-underline.ico"), iconUnderlineNo("://icons/format-text-underline-no.png")
+    , iconStrikeout("://icons/format-text-strikethrough.ico"), iconStrikeoutNo("://icons/format-text-strikethrough-no.png")
+{
+    _wType = FEW_FONT_ATTR;
+    bool isNull = __fr.isNull();
+    m = isNull ? 0 : (qlonglong)__fr;
+    _pWidget = new QWidget(_par == NULL ? NULL : _par->pWidget());
+    QHBoxLayout *pLayout = new QHBoxLayout;
+    _pWidget->setLayout(pLayout);
+    pToolButtonNull       = new QToolButton();
+    pToolButtonNull->setIcon(isNull ? iconNull : iconNotNull);
+    pToolButtonNull->setCheckable(true);
+    pToolButtonNull->setChecked(isNull);
+    pLayout->addWidget(pToolButtonNull);
+
+    bool f = m & ENUM2SET(FA_BOOLD);
+    pToolButtonBold       = new QToolButton();
+    pToolButtonBold->setIcon(f ? iconBold : iconBoldNo);
+    pToolButtonBold->setStyleSheet("QPushButton { font: bold }");
+    pToolButtonBold->setCheckable(true);
+    pToolButtonBold->setChecked(f);
+    pToolButtonBold->setDisabled(isNull);
+    pLayout->addWidget(pToolButtonBold);
+
+    f = m & ENUM2SET(FA_ITALIC);
+    pToolButtonItalic     = new QToolButton();
+    pToolButtonItalic->setIcon(f ? iconItalic : iconItalicNo);
+    pToolButtonItalic->setCheckable(true);
+    pToolButtonItalic->setChecked(f);
+    pToolButtonItalic->setDisabled(isNull);
+    pLayout->addWidget(pToolButtonItalic);
+
+    f = m & ENUM2SET(FA_UNDERLINE);
+    pToolButtonUnderline  = new QToolButton();
+    pToolButtonUnderline->setIcon(f ? iconUnderline : iconUnderlineNo);
+    pToolButtonUnderline->setCheckable(true);
+    pToolButtonUnderline->setChecked(f);
+    pToolButtonUnderline->setDisabled(isNull);
+    pLayout->addWidget(pToolButtonUnderline);
+
+    f = m & ENUM2SET(FA_STRIKEOUT);
+    pToolButtonStrikeout  = new QToolButton();
+    pToolButtonStrikeout->setIcon(f ? iconStrikeout : iconStrikeoutNo);
+    pToolButtonStrikeout->setCheckable(true);
+    pToolButtonStrikeout->setChecked(f);
+    pToolButtonStrikeout->setDisabled(isNull);
+    pLayout->addWidget(pToolButtonStrikeout);
+    pLayout->addStretch(0);
+
+    QSqlQuery q = getQuery();
+    pEnumType = cColEnumType::fetchOrGet(q, "fontattr");
+    connect(pToolButtonNull,      SIGNAL(toggled(bool)), this, SLOT(togleNull(bool)));
+    connect(pToolButtonBold,      SIGNAL(toggled(bool)), this, SLOT(togleBoold(bool)));
+    connect(pToolButtonItalic,    SIGNAL(toggled(bool)), this, SLOT(togleItelic(bool)));
+    connect(pToolButtonUnderline, SIGNAL(toggled(bool)), this, SLOT(togleUnderline(bool)));
+    connect(pToolButtonStrikeout, SIGNAL(toggled(bool)), this, SLOT(togleStrikeout(bool)));
+}
+
+cFontAttrWidget::~cFontAttrWidget()
+{
+    ;
+}
+
+
+int cFontAttrWidget::set(const QVariant& v)
+{
+    bool r = cFieldEditBase::set(v);
+    if (r == 1) {
+        bool isNull = v.isNull();
+        if (!isNull) {
+            m = pEnumType->lst2set(v.toStringList());
+            pToolButtonBold->setChecked(m & ENUM2SET(FA_BOOLD));
+            pToolButtonItalic->setChecked(m & ENUM2SET(FA_ITALIC));
+            pToolButtonUnderline->setChecked(m & ENUM2SET(FA_UNDERLINE));
+            pToolButtonStrikeout->setChecked(m & ENUM2SET(FA_STRIKEOUT));
+        }
+        pToolButtonBold->setDisabled(isNull);
+        pToolButtonItalic->setDisabled(isNull);
+        pToolButtonUnderline->setDisabled(isNull);
+        pToolButtonStrikeout->setDisabled(isNull);
+    }
+    return r;
+}
+
+void cFontAttrWidget::togleNull(bool f)
+{
+    setFromWidget(f ? QVariant() : QVariant(m));
+    pToolButtonNull->setIcon(f ? iconNull : iconNotNull);
+    pToolButtonBold->setDisabled(f);
+    pToolButtonItalic->setDisabled(f);
+    pToolButtonUnderline->setDisabled(f);
+    pToolButtonStrikeout->setDisabled(f);
+}
+
+void cFontAttrWidget::togleBoold(bool f)
+{
+    if (f == ((bool)(m & ENUM2SET(FA_BOOLD)))) return;
+    if (f) m |=  ENUM2SET(FA_BOOLD);
+    else   m &= ~ENUM2SET(FA_BOOLD);
+    setFromWidget(QVariant(m));
+    pToolButtonBold->setIcon(f ? iconBold : iconBoldNo);
+}
+
+void cFontAttrWidget::togleItelic(bool f)
+{
+    if (f == ((bool)(m & ENUM2SET(FA_ITALIC)))) return;
+    if (f) m |=  ENUM2SET(FA_ITALIC);
+    else   m &= ~ENUM2SET(FA_ITALIC);
+    setFromWidget(QVariant(m));
+    pToolButtonItalic->setIcon(f ? iconItalic : iconItalicNo);
+}
+
+void cFontAttrWidget::togleUnderline(bool f)
+{
+    if (f == ((bool)(m & ENUM2SET(FA_UNDERLINE)))) return;
+    if (f) m |=  ENUM2SET(FA_UNDERLINE);
+    else   m &= ~ENUM2SET(FA_UNDERLINE);
+    setFromWidget(QVariant(m));
+    pToolButtonUnderline->setIcon(f ? iconUnderline : iconUnderlineNo);
+}
+
+void cFontAttrWidget::togleStrikeout(bool f)
+{
+    if (f == ((bool)(m & ENUM2SET(FA_STRIKEOUT)))) return;
+    if (f) m |=  ENUM2SET(FA_STRIKEOUT);
+    else   m &= ~ENUM2SET(FA_STRIKEOUT);
+    setFromWidget(QVariant(m));
+    pToolButtonStrikeout->setIcon(f ? iconStrikeout : iconStrikeoutNo);
 }

@@ -28,5 +28,14 @@
         <file>net.ico</file>
         <file>colorize.ico</file>
         <file>dialog-no.ico</file>
+        <file>dialog-no-off.png</file>
+        <file>icons/format-text-bold-no.png</file>
+        <file>icons/format-text-bold.ico</file>
+        <file>icons/format-text-italic-no.png</file>
+        <file>icons/format-text-italic.ico</file>
+        <file>icons/format-text-strikethrough-no.png</file>
+        <file>icons/format-text-strikethrough.ico</file>
+        <file>icons/format-text-underline-no.png</file>
+        <file>icons/format-text-underline.ico</file>
     </qresource>
 </RCC>

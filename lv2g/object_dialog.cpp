@@ -571,21 +571,25 @@ cPatch * patchDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample)
 /* ********************************************************************************************** */
 
 
-cEnumValRow::cEnumValRow(QSqlQuery& q, const QString& _val, int _row, cEnumValsDialog *par)
+cEnumValRow::cEnumValRow(QSqlQuery& q, const QString& _val, int _row, cEnumValsEditWidget *par)
     :QObject(par), row(_row)
 {
     parent = par;
-    pTableWidget = par->pUi->tableWidget;
-    rec.setName(_sEnumTypeName, parent->enumTypeName);
+    pTableWidget = par->pUi->tableWidgetType;
+    rec.setName(_sEnumTypeName, parent->enumTypeTypeName);
     rec.setName(_sEnumValName, _val);
     int r = rec.completion(q);
-    if (1 < r) EXCEPTION(AMBIGUOUS, r, mCat(parent->enumTypeName, _val));
-    if (r == 0) {   // Még nincs az adatbázisban
-        // Set default
-        rec.setName(_sEnumTypeName, parent->enumTypeName);
+    switch (r) {
+    case 1:     // Beolvasva
+        break;
+    case 0:     // Még nincs az adatbázisban  Set default
+        rec.setName(_sEnumTypeName, parent->enumTypeTypeName);
         rec.setName(_sEnumValName, _val);
         rec.setName(_sViewShort,   _val);
         rec.setName(_sViewLong,    _val);
+        break;
+    default:
+        EXCEPTION(AMBIGUOUS, r, mCat(parent->enumTypeTypeName, _val));
     }
     setTableItemText(_val,                     pTableWidget, row, CEV_NAME);
     setTableItemText(rec.getName(_sViewShort), pTableWidget, row, CEV_SHORT);
@@ -594,66 +598,423 @@ cEnumValRow::cEnumValRow(QSqlQuery& q, const QString& _val, int _row, cEnumValsD
     pTableWidget->setCellWidget(row, CEV_BG_COLOR, pBgColorWidget->pWidget());
     pFgColorWidget = new cColorWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sFgColor), rec[_sFgColor], false, NULL);
     pTableWidget->setCellWidget(row, CEV_FG_COLOR, pFgColorWidget->pWidget());
-    // font ...
+    pFntFamWidget  = new cFontFamilyWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sFontFamily), rec[_sFontFamily], NULL);
+    pTableWidget->setCellWidget(row, CEV_FNT_FAM, pFntFamWidget->pWidget());
+    pFntAttWidget  = new cFontAttrWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sFontAttr), rec[_sFontAttr], NULL);
+    pTableWidget->setCellWidget(row, CEV_FNT_ATT, pFntAttWidget->pWidget());
     setTableItemText(rec.getName(_sEnumValNote),  pTableWidget, row, CEV_NOTE);
+    setTableItemText(rec.getName(_sToolTip),  pTableWidget, row, CEV_TOOL_TIP);
 }
 
-
-cEnumValsDialog::cEnumValsDialog(QWidget *parent)
-    : QDialog(parent)
+void cEnumValRow::save(QSqlQuery& q)
 {
-    pEnumType = NULL;
+    rec.clearId();
+    rec[_sViewShort]   = getTableItemText(pTableWidget, row, CEV_SHORT);
+    rec[_sViewLong]    = getTableItemText(pTableWidget, row, CEV_LONG);
+    rec[_sBgColor]     = pBgColorWidget->get();
+    rec[_sFgColor]     = pFgColorWidget->get();
+    rec[_sFontFamily]  = pFntFamWidget->get();
+    rec[_sFontAttr]    = pFntAttWidget->get();
+    rec[_sEnumValNote] = getTableItemText(pTableWidget, row, CEV_NOTE);
+    rec[_sToolTip]     = getTableItemText(pTableWidget, row, CEV_TOOL_TIP);
+    rec.replace(q);
+}
+
+cEnumValsEditWidget::cEnumValsEditWidget(QWidget *parent)
+    : QWidget(parent)
+{
+    pEnumTypeType = NULL;
+    pEnumValType  = NULL;
     pq = newQuery();
-    pUi = new Ui::enumValsDialog;
+    pUi = new Ui::enumValsWidget;
     pUi->setupUi(this);
     pUi->buttonBox->button(QDialogButtonBox::Ok)->setDisabled(true);
     pUi->buttonBox->button(QDialogButtonBox::Save)->setDisabled(true);
     connect(pUi->buttonBox, SIGNAL(clicked(QAbstractButton*)), this, SLOT(clicked(QAbstractButton*)));
-    // Egy rekord (az első tab lesst)
+    pShape = new cTableShape;
     if (!pShape->fetchByName(*pq, _sEnumVals)) {
         EXCEPTION(EDATA, 0, _sEnumVals);
     }
     pShape->fetchFields(*pq);
-    pSinge = new cRecordDialog(*pShape, 0, true, NULL, NULL, this);  // Az egy rekordot szerkesztő dialógus
-    pUi->tabWidget->insertTab(0, pSinge->pWidget(), trUtf8("Egy enumerációs érték"));
     // Kellenek az enumerációs típusok listája
     QString sql = "SELECT typname FROM pg_catalog.pg_type WHERE typcategory = 'E' ORDER BY typname ASC";
     QStringList typeList;
     if (execSql(*pq, sql)) do {
         typeList << pq->value(0).toString();
     } while (pq->next());
-    pUi->comboBox->addItems(typeList);
-    connect(pUi->comboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(setEnumType(QString)));
-    // ...
+    // A bool mezőket tartalmazó táblák listáka
+    QStringList tableList;
+    sql = "SELECT DISTINCT(table_name) FROM information_schema.columns WHERE table_schema = 'public'"
+          " AND (data_type = 'boolean' OR (data_type = 'ARRAY' AND udt_name = 'boolean'))"
+            " ORDER BY table_name ASC";
+    if (execSql(*pq, sql)) do {
+        tableList << pq->value(0).toString();
+    } while (pq->next());
 
+
+    pShape = new cTableShape;
+    pShape->setParent(this);
+    pShape->setByName(*pq, _sEnumVals);
+    pShape->fetchFields(*pq);
+
+    // VAL
+    pWidgetValBgColor = new cColorWidget(*pShape, *pShape->shapeFields.get(_sBgColor), val[_sBgColor], false, NULL);
+    pWidgetValBgColor->setParent(this);
+    formSetField(pUi->formLayoutVal, pUi->labelValBgColor, pWidgetValBgColor->pWidget());
+
+    pWidgetValFgColor = new cColorWidget(*pShape, *pShape->shapeFields.get(_sFgColor), val[_sFgColor], false, NULL);
+    pWidgetValFgColor->setParent(this);
+    formSetField(pUi->formLayoutVal, pUi->labelValFgColor, pWidgetValFgColor->pWidget());
+
+    pWidgetValFntFam  = new cFontFamilyWidget(*pShape, *pShape->shapeFields.get(_sFontFamily), val[_sFontFamily], NULL);
+    pWidgetValFntFam->setParent(this);
+    formSetField(pUi->formLayoutVal, pUi->labelValFontFamily, pWidgetValFntFam->pWidget());
+
+    pWidgetValFntAtt  = new cFontAttrWidget(*pShape, *pShape->shapeFields.get(_sFontAttr), val[_sFontAttr], NULL);
+    pWidgetValFntAtt->setParent(this);
+    formSetField(pUi->formLayoutVal, pUi->labelValFontAttr, pWidgetValFntAtt->pWidget());
+
+    connect(pUi->comboBoxValType,  SIGNAL(currentIndexChanged(QString)), this, SLOT(setEnumValType(QString)));
+    connect(pUi->comboBoxValVal,   SIGNAL(currentIndexChanged(QString)), this, SLOT(setEnumValVal(QString)));
+    pUi->comboBoxValType->addItems(typeList);
+
+    // Type
+    connect(pUi->comboBoxTypeType, SIGNAL(currentIndexChanged(QString)), this, SLOT(setEnumTypeType(QString)));
+    pUi->comboBoxTypeType->addItems(typeList);
+
+    // Boolean
+        // true
+    pWidgetTrueBgColor = new cColorWidget(*pShape, *pShape->shapeFields.get(_sBgColor), boolTrue[_sBgColor], false, NULL);
+    pWidgetTrueBgColor->setParent(this);
+    formSetField(pUi->formLayoutTrue, pUi->labelTrueBgColor, pWidgetTrueBgColor->pWidget());
+
+    pWidgetTrueFgColor = new cColorWidget(*pShape, *pShape->shapeFields.get(_sFgColor), boolTrue[_sFgColor], false, NULL);
+    pWidgetTrueFgColor->setParent(this);
+    formSetField(pUi->formLayoutTrue, pUi->labelTrueFgColor, pWidgetTrueFgColor->pWidget());
+
+    pWidgetTrueFntFam  = new cFontFamilyWidget(*pShape, *pShape->shapeFields.get(_sFontFamily), boolTrue[_sFontFamily], NULL);
+    pWidgetTrueFntFam->setParent(this);
+    formSetField(pUi->formLayoutTrue, pUi->labelTrueFontFam, pWidgetTrueFntFam->pWidget());
+
+    pWidgetTrueFntAtt  = new cFontAttrWidget(*pShape, *pShape->shapeFields.get(_sFontAttr), boolTrue[_sFontAttr], NULL);
+    pWidgetTrueFntAtt->setParent(this);
+    formSetField(pUi->formLayoutTrue, pUi->labelTrueFntAtt, pWidgetTrueFntAtt->pWidget());
+        // false
+    pWidgetFalseBgColor = new cColorWidget(*pShape, *pShape->shapeFields.get(_sBgColor), boolFalse[_sBgColor], false, NULL);
+    pWidgetFalseBgColor->setParent(this);
+    formSetField(pUi->formLayoutFalse, pUi->labelFalseBgColor, pWidgetFalseBgColor->pWidget());
+
+    pWidgetFalseFgColor = new cColorWidget(*pShape, *pShape->shapeFields.get(_sFgColor), boolFalse[_sFgColor], false, NULL);
+    pWidgetFalseFgColor->setParent(this);
+    formSetField(pUi->formLayoutFalse, pUi->labelFalseFgColor, pWidgetFalseFgColor->pWidget());
+
+    pWidgetFalseFntFam  = new cFontFamilyWidget(*pShape, *pShape->shapeFields.get(_sFontFamily), boolFalse[_sFontFamily], NULL);
+    pWidgetFalseFntFam->setParent(this);
+    formSetField(pUi->formLayoutFalse, pUi->labelFalseFntFam, pWidgetFalseFntFam->pWidget());
+
+    pWidgetFalseFntAtt  = new cFontAttrWidget(*pShape, *pShape->shapeFields.get(_sFontAttr), boolFalse[_sFontAttr], NULL);
+    pWidgetFalseFntAtt->setParent(this);
+    formSetField(pUi->formLayoutFalse, pUi->labelFalseFntAtt, pWidgetFalseFntAtt->pWidget());
+
+    connect(pUi->comboBoxBoolTable, SIGNAL(currentIndexChanged(QString)), this, SLOT(setBoolTable(QString)));
+    connect(pUi->comboBoxBoolField, SIGNAL(currentIndexChanged(QString)), this, SLOT(setBoolField(QString)));
+    pUi->comboBoxBoolTable->addItems(tableList);
 }
 
-cEnumValsDialog::~cEnumValsDialog()
+cEnumValsEditWidget::~cEnumValsEditWidget()
 {
     delete pq;
-    delete pShape;
 }
 
-void cEnumValsDialog::clicked(QAbstractButton *pButton)
+bool cEnumValsEditWidget::save()
+{
+    QWidget *pW =  pUi->tabWidget->currentWidget();
+    if      (pW == pUi->tabEnumValue) return saveValue();
+    else if (pW == pUi->tabEnumType)  return saveType();
+    else if (pW == pUi->tabBoolean)   return saveBoolean();
+    else                              EXCEPTION(EPROGFAIL);
+    return false;
+}
+
+bool cEnumValsEditWidget::saveValue()
+{
+    val.clearId();
+    val[_sEnumValNote]  = pUi->lineEditValValNote->text();
+    val[_sBgColor]      = pWidgetValBgColor->get();
+    val[_sFgColor]      = pWidgetValFgColor->get();
+    val[_sViewShort]    = pUi->lineEditValShort->text();
+    val[_sViewLong]     = pUi->lineEditValLong->text();
+    val[_sToolTip]      = pUi->textEditValValTolTip->toPlainText();
+    val[_sFontFamily]   = pWidgetValFntFam->get();
+    val[_sFontAttr]     = pWidgetValFntAtt->get();
+
+    return cErrorMessageBox::condMsgBox(val.tryReplace(*pq, true));
+}
+
+bool cEnumValsEditWidget::saveType()
+{
+    type.clearId();
+    val[_sEnumValNote]  = pUi->lineEditTypeTypeNote->text();
+    val[_sViewShort]    = pUi->lineEditTypeShort->text();
+    val[_sViewLong]     = pUi->lineEditTypeLong->text();
+    val[_sToolTip]      = pUi->textEditTypeTypeToolTip->toPlainText();
+
+    cError *pe = NULL;
+    static const QString tn = "cEnumValsEdit";
+    sqlBegin(*pq, tn);
+    try {
+        val.replace(*pq);
+        foreach (cEnumValRow *p, rows) {
+            p->save(*pq);
+        }
+        sqlEnd(*pq, tn);
+    }
+    CATCHS(pe);
+    if (pe != NULL) {
+        sqlRollback(*pq, tn);
+        cErrorMessageBox::messageBox(pe, this);
+        delete pe;
+        return false;
+    }
+    return true;
+}
+
+bool cEnumValsEditWidget::saveBoolean()
+{
+    QString type = mCat(pUi->comboBoxBoolTable->currentText(), pUi->comboBoxBoolField->currentText());
+
+    boolType[_sEnumValName]  = _sNul;
+    boolType[_sEnumValNote]  = pUi->lineEditBoolTypeNote->text();
+    boolType[_sEnumTypeName] = type;
+    boolType[_sViewShort]    = pUi->lineEditBoolTypeShort->text();
+    boolType[_sViewLong]     = pUi->lineEditBoolTypeLong->text();
+    boolType[_sToolTip]      = pUi->textEditBoolToolTip->toPlainText();
+
+    boolTrue[_sEnumValName]  = _sTrue;
+    boolTrue[_sEnumValNote]  = pUi->lineEditTrueNote->text();
+    boolTrue[_sEnumTypeName] = type;
+    boolTrue[_sBgColor]      = pWidgetTrueBgColor->get();
+    boolTrue[_sFgColor]      = pWidgetTrueFgColor->get();
+    boolTrue[_sViewShort]    = pUi->lineEditTrueShort->text();
+    boolTrue[_sViewLong]     = pUi->lineEditTrueLong->text();
+    boolTrue[_sToolTip]      = pUi->textEditTrueToolTip->toPlainText();
+    boolTrue[_sFontFamily]   = pWidgetTrueFntFam->get();
+    boolTrue[_sFontAttr]     = pWidgetTrueFntAtt->get();
+
+    boolFalse[_sEnumValName] = _sFalse;
+    boolFalse[_sEnumValNote] = pUi->lineEditFalseNote->text();
+    boolFalse[_sEnumTypeName]= type;
+    boolFalse[_sBgColor]     = pWidgetFalseBgColor->get();
+    boolFalse[_sFgColor]     = pWidgetFalseFgColor->get();
+    boolFalse[_sViewShort]   = pUi->lineEditFalseShort->text();
+    boolFalse[_sViewLong]    = pUi->lineEditFalseLong->text();
+    boolFalse[_sToolTip]     = pUi->textEditFalseToolTip->toPlainText();
+    boolFalse[_sFontFamily]  = pWidgetFalseFntFam->get();
+    boolFalse[_sFontAttr]    = pWidgetFalseFntAtt->get();
+
+    cError *pe = NULL;
+    static const QString tn = "cEnumValsEdit";
+    sqlBegin(*pq, tn);
+    try {
+        boolType.replace(*pq);
+        boolTrue.replace(*pq);
+        boolFalse.replace(*pq);
+        sqlEnd(*pq, tn);
+    }
+    CATCHS(pe);
+    if (pe != NULL) {
+        sqlRollback(*pq, tn);
+        cErrorMessageBox::messageBox(pe, this);
+        delete pe;
+        return false;
+    }
+    return true;
+}
+
+
+void cEnumValsEditWidget::clicked(QAbstractButton *pButton)
 {
     int sb = pUi->buttonBox->standardButton(pButton);
     switch (sb) {
     case QDialogButtonBox::Ok:
-        // ...
+        if (save()) closeWidget();
         break;
     case QDialogButtonBox::Save:
-        // ...
+        save();
         break;
     case QDialogButtonBox::Cancel:
-        reject();
+        closeWidget();
         break;
     }
 }
 
-void cEnumValsDialog::setEnumType(const QString& etn)
+void cEnumValsEditWidget::setEnumValType(const QString& etn)
 {
-    enumTypeName = etn;
-    pDelete(pEnumType);
-    pEnumType = cColEnumType::fetchOrGet(*pq, enumTypeName);
+    enumValTypeName = etn;
+    pEnumValType = cColEnumType::fetchOrGet(*pq, enumValTypeName);
+    pUi->comboBoxValVal->clear();
+    pUi->comboBoxValVal->addItems(pEnumValType->enumValues);
+}
+
+void cEnumValsEditWidget::setEnumValVal(const QString& ev)
+{
+    if (pEnumValType  == NULL || enumValTypeName.isEmpty()) return;
+    val.clear();
+    val[_sEnumValName]  = ev;
+    val[_sEnumTypeName] = enumValTypeName;
+    int n = val.completion(*pq);
+    switch (n) {
+    case 1:     // Beolvasva
+        break;
+    case 0:     // Not found (az enumVal-t törölte a completion() metódus)
+        val[_sEnumValName]  = ev;
+        val[_sEnumTypeName] = enumValTypeName;
+        val[_sViewShort]    = ev;
+        val[_sViewLong]     = ev;
+        break;
+    default:    EXCEPTION(AMBIGUOUS, n, val.identifying());
+    }
+    pWidgetValBgColor->set(val[_sBgColor]);
+    pWidgetValFgColor->set(val[_sFgColor]);
+    pUi->lineEditValShort->setText(val[_sViewShort].toString());
+    pUi->lineEditValLong->setText(val[_sViewLong].toString());
+    pUi->lineEditValValNote->setText(val[_sEnumValNote].toString());
+    pUi->textEditValValTolTip->setText(val[_sToolTip].toString());
+    pWidgetValFntFam->set(val[_sFontFamily]);
+    pWidgetValFntAtt->set(val[_sFontAttr]);
+}
+
+
+void cEnumValsEditWidget::setEnumTypeType(const QString& etn)
+{
+    enumTypeTypeName = etn;
+    while (!rows.isEmpty()) delete rows.takeLast();
+    pUi->tableWidgetType->setRowCount(0);
+    pEnumTypeType = cColEnumType::fetchOrGet(*pq, enumTypeTypeName);
+
+    type.clear();
+    type[_sEnumValName]  = _sNul;
+    type[_sEnumTypeName] = enumTypeTypeName;
+    int n = type.completion(*pq);
+    switch (n) {
+    case 1:     // Beolvasva
+        break;
+    case 0:     // Not found (törölte a completion() metódus)
+        type[_sEnumValName]  = _sNul;
+        type[_sEnumTypeName] = enumValTypeName;
+        type[_sViewShort]    = enumValTypeName;
+        type[_sViewLong]     = enumValTypeName;
+        break;
+    default:    EXCEPTION(AMBIGUOUS, n, type.identifying());
+    }
+    pUi->lineEditTypeShort->setText(type[_sViewShort].toString());
+    pUi->lineEditTypeLong->setText(type[_sViewLong].toString());
+    pUi->lineEditTypeTypeNote->setText(type[_sViewLong].toString());
+    pUi->textEditTypeTypeToolTip->setText(type[_sToolTip].toString());
+
+    int row = 0;
+    foreach (QString val, pEnumTypeType->enumValues) {
+        pUi->tableWidgetType->setRowCount(row +1);
+        rows << new cEnumValRow(*pq, val, row, this);
+        ++row;
+    }
+    pUi->tableWidgetType->resizeRowsToContents();
+    pUi->tableWidgetType->resizeColumnsToContents();
+}
+
+void cEnumValsEditWidget::setBoolTable(const QString& tn)
+{
+    QString sql =
+       "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = ?"
+          " AND (data_type = 'boolean' OR (data_type = 'ARRAY' AND udt_name = 'boolean'))"
+            " ORDER BY column_name ASC";
+    QStringList fieldList;
+    if (execSql(*pq, sql, tn)) do {
+        fieldList << pq->value(0).toString();
+    } while (pq->next());
+    pUi->comboBoxBoolField->clear();
+    pUi->comboBoxBoolField->addItems(fieldList);
+}
+
+void cEnumValsEditWidget::setBoolField(const QString& fn)
+{
+    QString typeName = mCat(pUi->comboBoxBoolTable->currentText(), fn);
+
+    boolType.clear();
+    boolType.setName(_sEnumTypeName, typeName);
+    boolType.setName(_sEnumValName,  _sNul);
+    int n = boolType.completion(*pq);
+    switch (n) {
+    case 1:     // beolvasva
+        break;
+    case 0:     // not found
+        boolType.setName(_sEnumTypeName, typeName);
+        boolType.setName(_sEnumValName,  _sNul);
+    }
+    pUi->lineEditBoolTypeShort->setText(boolType[_sViewShort].toString());
+    pUi->lineEditBoolTypeLong->setText(boolType[_sViewLong].toString());
+    pUi->lineEditBoolTypeNote->setText(boolType[_sViewLong].toString());
+    pUi->textEditBoolToolTip->setText(boolType[_sToolTip].toString());
+
+    boolTrue.clear();
+    boolTrue.setName(_sEnumTypeName, typeName);
+    boolTrue.setName(_sEnumValName,  _sTrue);
+    n = boolTrue.completion(*pq);
+    switch (n) {
+    case 1:     // beolvasva
+        break;
+    case 0:     // not found
+        boolTrue.setName(_sEnumTypeName, typeName);
+        boolTrue.setName(_sEnumValName,  _sTrue);
+        boolTrue.setName(_sViewShort, langBool(true));
+        boolTrue.setName(_sViewLong, langBool(true));
+    }
+    pUi->lineEditTrueShort->setText(boolTrue[_sViewShort].toString());
+    pUi->lineEditTrueLong->setText(boolTrue[_sViewLong].toString());
+    pUi->lineEditTrueNote->setText(boolTrue[_sViewLong].toString());
+    pUi->textEditBoolToolTip->setText(type[_sToolTip].toString());
+    pWidgetTrueBgColor->set(boolTrue[_sBgColor]);
+    pWidgetTrueFgColor->set(boolTrue[_sFgColor]);
+    pWidgetTrueFntFam->set(boolTrue[_sFontFamily]);
+    pWidgetTrueFntAtt->set(boolTrue[_sFontAttr]);
+
+    boolFalse.clear();
+    boolFalse.setName(_sEnumTypeName, typeName);
+    boolFalse.setName(_sEnumValName,  _sFalse);
+    n = boolFalse.completion(*pq);
+    switch (n) {
+    case 1:     // beolvasva
+        break;
+    case 0:     // not found
+        boolFalse.setName(_sEnumTypeName, typeName);
+        boolFalse.setName(_sEnumValName,  _sFalse);
+        boolFalse.setName(_sViewShort, langBool(false));
+        boolFalse.setName(_sViewLong, langBool(false));
+    }
+    pUi->lineEditFalseShort->setText(boolTrue[_sViewShort].toString());
+    pUi->lineEditFalseLong->setText(boolTrue[_sViewLong].toString());
+    pUi->lineEditFalseNote->setText(boolTrue[_sViewLong].toString());
+    pUi->textEditBoolToolTip->setText(boolTrue[_sToolTip].toString());
+    pWidgetFalseBgColor->set(boolFalse[_sBgColor]);
+    pWidgetFalseFgColor->set(boolFalse[_sFgColor]);
+    pWidgetFalseFntFam->set(boolFalse[_sFontFamily]);
+    pWidgetFalseFntAtt->set(boolFalse[_sFontAttr]);
+}
+
+const enum ePrivilegeLevel cEnumValsEdit::rights = PL_ADMIN;
+
+cEnumValsEdit::cEnumValsEdit(QMdiArea *par)
+    : cIntSubObj(par)
+{
+    QHBoxLayout *pLayout = new QHBoxLayout;
+    this->setLayout(pLayout);
+    pEditWidget = new cEnumValsEditWidget;
+    pLayout->addWidget(pEditWidget);
+    connect(pEditWidget, SIGNAL(closeWidget()), this, SLOT(endIt()));
+}
+
+cEnumValsEdit::~cEnumValsEdit()
+{
 
 }
+

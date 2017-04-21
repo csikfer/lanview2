@@ -24,7 +24,8 @@ enum eIntSubWin {          /// Egyedi GUI tab widget elemek
     INT_NOALARM,        /// A riasztások időleges vagy permanens tiltása/engedélyezése
     INT_HSOP,           /// a szervíz példányok (host_services) állpot manipuláció
     INT_FINDMAC,        /// Keresés egy MAC-re
-    INT_WORKSTATION     /// Új munkaállomás, vagy modosítás űrlap
+    INT_WORKSTATION,    /// Új munkaállomás, vagy modosítás űrlap
+    INT_ENUMEDIT
 };
 
 class cRecordsViewBase;

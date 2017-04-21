@@ -92,7 +92,7 @@ FORMS += \
     findbymac.ui \
     wstform.ui \
     dialogpatchsimple.ui \
-    dialog_enum_vals.ui
+    edit_enum_vals.ui
 INCLUDEPATH += ../lv2
 #unix:LIBS += -lsnmp
 msvc:LIBS += -lSecur32

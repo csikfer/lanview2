@@ -1177,7 +1177,7 @@ public:
     int idIndex(enum eEx __ex = EX_ERROR) const     { return descr().idIndex(__ex); }
     /// Az NAME mező indexével tér vissza, ha nincs név, vagy nem ismert az indexe, és __ex értéke true, akkor dob egy kizárást.
     int nameIndex(enum eEx __ex = EX_ERROR) const   { return descr().nameIndex(__ex); }
-    /// Az DESCR mező indexével tér vissza, ha nincs név, vagy nem ismert az indexe, és __ex értéke true, akkor dob egy kizárást.
+    /// Az NOTE mező indexével tér vissza, ha nincs név, vagy nem ismert az indexe, és __ex értéke true, akkor dob egy kizárást.
     int noteIndex(enum eEx __ex = EX_ERROR) const   { return descr().noteIndex(__ex); }
     /// Az deleted mező indexével tér vissza, ha nincs deleted, vagy nem ismert az indexe, és __ex értéke true, akkor dob egy kizárást.
     int deletedIndex(enum eEx __ex = EX_ERROR) const{ return descr().deletedIndex(__ex); }
