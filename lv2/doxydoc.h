@@ -198,7 +198,7 @@ A GUI-val kapcsolatos osztályok az lv2-ven:
 - cTableShape   Egy adattábla megjelenítését, ill. azok kapcsolatát írja le.
 - cTableShapeField A tábla mezők megjelenítését leíró osztály (része a cTableShape osztálynak)
 - cTableShapeFilter A mezőkre megadható filtereket írja le (része a cTableShapeField osztálynak)
-- cEnumVal Enumerációs értékek megjelenítése ill. szótár
+- cEnumVal Enumerációs értékek megjelenítése ill. szótár. Az objektumon ill táblán keresztül adhatóak meg a színek, és fontok is.
 
 @section others Az API saját egyéb adat típusai.
 - cMac  Ethernet cím (MAC)

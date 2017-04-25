@@ -915,7 +915,7 @@ int cEnumVal::_ixFontFamily=NULL_IX;
 int cEnumVal::_ixFontAttr = NULL_IX;
 QList<cEnumVal *> cEnumVal::enumVals;
 QMap<QString, QVector<cEnumVal *> > cEnumVal::mapValues;
-cEnumVal *cEnumVal::cEnumVal::pNull = NULL;
+cEnumVal *cEnumVal::pNull = NULL;
 
 const cRecStaticDescr&  cEnumVal::descr() const
 {
