@@ -109,6 +109,7 @@ QWidget *cItemDelegateValidator::createEditor(QWidget *parent,
                                     const QStyleOptionViewItem &option,
                                     const QModelIndex &index) const
 {
+    (void)option; (void)index;
     QLineEdit *editor = new QLineEdit(parent);
     editor->setValidator(pValidator);
     return editor;
@@ -138,5 +139,6 @@ void cItemDelegateValidator::updateEditorGeometry(QWidget *editor,
                                         const QStyleOptionViewItem &option,
                                         const QModelIndex &index) const
 {
+    (void)index;
     editor->setGeometry(option.rect);
 }

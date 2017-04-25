@@ -311,7 +311,7 @@ public:
     /// Feltölti az adatbázisból az enumVals adattagot, ha nem üres a konténer, akkor frissíti.
     /// Iniciaéizálja a pNull pountert, ha az NULL. Egy üres objektumra fog mutatni.
     /// Frissítés esetén feltételezi, hogy rekordot törölni nem lehet, ezt ellenörzi.
-    static void fetchEnumVals(QSqlQuery& __q);
+    static void fetchEnumVals();
     /// Egy cEnumVal objektumot ad vissza a típus és érték alapján, ha nincs ilyen nevű objektum, akkor dob egy kizárást.
     /// Az enumVals adattagban keres, ha enumVals még nincs feltöltve, akkor feltülti.
     /// Ha __ex értéke EX_WARNING-nál kisebb, akkor kizárás helyett, egy üres objektummal tér vissza

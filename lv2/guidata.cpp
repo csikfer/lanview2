@@ -949,24 +949,26 @@ bool cEnumVal::delByNames(QSqlQuery& q, const QString& __t, const QString& __n)
     return  (bool)n;
 }
 
-void cEnumVal::fetchEnumVals(QSqlQuery& __q)
+void cEnumVal::fetchEnumVals()
 {
     if (pNull == NULL) pNull = new cEnumVal();
     QBitArray   ba(1, false);   // Nem null, egyeseket nem tartalmazó maszk, minden rekord kiválasztásához
     int n = enumVals.count();   // Megtalálandó rekordok száma
     QList<cEnumVal *> oldList = enumVals;   // Eredeti lista
     mapValues.clear();
+    enumVals.clear();
     int found = 0;                  // Megtalált rekordok számláló
     cEnumVal ev;                    // objektum a fetch-hez
     QString currentTypeName;        // Ha típust váltun, észre kell vennünk
-    const cColEnumType *pE;         // Az enumerációs típus leírója
+    const cColEnumType *pE = NULL;  // Az enumerációs típus leírója
     bool          isBool = false;   // Nem csak valós enumok lesznek!!
-    QSqlQuery q2 = getQuery();      // Az enum típusokhoz másik query obj.
     int e;                          // Enumerációs érték (int) (a -1 a típus 'indexe', a név ekkor üres)
     QVector<cEnumVal *> *pActV = NULL;
 
+    QSqlQuery q  = getQuery();
+    QSqlQuery q2 = getQuery();
     // Minden rekord, rendezve a típus névre
-    if (ev.fetch(__q, false, ba, ev.iTab(_sEnumTypeName))) do {
+    if (ev.fetch(q, false, ba, ev.iTab(_sEnumTypeName))) do {
         QString typeName = ev.getName(ev.ixTypeName());
         QString val      = ev.getName(ev.ixValName());
         if (currentTypeName != typeName) {
@@ -1017,7 +1019,7 @@ void cEnumVal::fetchEnumVals(QSqlQuery& __q)
         p = ev.dup()->reconvert<cEnumVal>();
         (*pActV)[e + 1] = p;
         enumVals << p;
-    } while (ev.next(__q));
+    } while (ev.next(q));
     if (n < found) EXCEPTION(EPROGFAIL);    // Több találat, mint amannyit kerestünk ?!
     if (n > found) {
         QString em = trUtf8("Deleted enum_values record(s) : \n");
@@ -1032,8 +1034,7 @@ void cEnumVal::fetchEnumVals(QSqlQuery& __q)
 const cEnumVal& cEnumVal::enumVal(const QString &_tn, int e, eEx __ex)
 {
     if (pNull == NULL) {
-        QSqlQuery q(getQuery());
-        fetchEnumVals(q);
+        fetchEnumVals();
     }
     cEnumVal *p = NULL;
     QMap<QString, QVector<cEnumVal *> >::const_iterator i = mapValues.find(_tn);

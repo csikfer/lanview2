@@ -868,16 +868,24 @@ void cInspector::timerEvent(QTimerEvent *)
     if (inspectorType & IT_TIMING_PASSIVE) {
         if (pSubordinates == NULL) EXCEPTION(EPROGFAIL);    //?!
         int n = 0;  // Hány alárendelt fut még?
+        int maxState = RS_UNKNOWN;
+        int minState = RS_ON;
         foreach (cInspector * pSub, *pSubordinates) {
             if (pSub != NULL
              && (pSub->internalStat == IS_RUN           // Éppen fut
               || pSub->internalStat == IS_SUSPENDED     // Lefutott, várakozik
               || pSub->internalStat == IS_STOPPED)) {   // Leállt, várakozik
                 ++n;
+                int state = (int)pSub->hostService.getId(_sHostServiceState);
+                if (minState < state) minState = state;
+                if (maxState > state) maxState = state;
             }
         }
         if (!n) EXCEPTION(NOTODO, 1);
-        hostService.touch(*pq, _sLastTouched);
+        QString msg = trUtf8("Runing sub services : %1/%2; states : %3 - %4")
+                .arg(n).arg(pSubordinates->size())
+                .arg(notifSwitch(maxState), notifSwitch(minState));
+        hostService.setState(*pq, _sOk, msg);
         internalStat = IS_SUSPENDED;
         return;
     }

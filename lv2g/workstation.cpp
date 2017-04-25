@@ -146,11 +146,11 @@ static void buttonCheckEnable(QButtonGroup * pGroup, int id, bool check, bool en
     pButton->setChecked(check);
 }
 
-static void buttonSets(QAbstractButton *p, bool e, bool c)
+/*static void buttonSets(QAbstractButton *p, bool e, bool c)
 {
     p->setEnabled(e);
     p->setChecked(c);
-}
+}*/
 
 /* ************************************************************************************************* */
 
