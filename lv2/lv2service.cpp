@@ -881,11 +881,11 @@ void cInspector::timerEvent(QTimerEvent *)
                 if (maxState > state) maxState = state;
             }
         }
-        if (!n) EXCEPTION(NOTODO, 1);
+        if (!n) EXCEPTION(NOTODO, 1, trUtf8("No runing any (%1) sub services. Abort.").arg(n));
         QString msg = trUtf8("Runing sub services : %1/%2; states : %3 - %4")
                 .arg(n).arg(pSubordinates->size())
                 .arg(notifSwitch(maxState), notifSwitch(minState));
-        hostService.setState(*pq, _sOk, msg);
+        hostService.setState(*pq, _sOn, msg);
         internalStat = IS_SUSPENDED;
         return;
     }

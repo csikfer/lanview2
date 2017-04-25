@@ -260,8 +260,8 @@ void cRecordListModel::setConstFilter(const QVariant& _par, enum eFilterType __f
 {
     QString nn;
     QString pat;
-    qlonglong id;
-    bool b;
+    qlonglong id = NULL_ID;
+    bool b  = false;
     bool ok = true;
     switch (__f) {
     case FT_NO:         break;
