@@ -298,6 +298,40 @@ QStringList cColEnumType::normalize(const QStringList& lst, bool *pok) const
     return set2lst(r);
 }
 
+void cColEnumType::checkEnum(tE2S e2s, tS2E s2e) const
+{
+
+    int n = enumValues.size();
+    int i;
+    if (n == 0) { // Ez nem hihető.
+        EXCEPTION(EPROGFAIL,2, QObject::trUtf8("A %1 enumerációs típusnak nincs értékkészlete.").arg(toString()));
+    }
+    for (i = 0; i < n; ++i) {
+        const QString& s = enumValues[i];
+        int ii = (*s2e)(s, EX_IGNORE);
+        if (i != ii) {
+            EXCEPTION(EENUMVAL, 1, QObject::trUtf8("%1 : #%2/%3 : s2e(%3) ~ %4")
+                      .arg(toString()).arg(i).arg(s).arg(ii) )
+        }
+        const QString& ss = (*e2s)(i, EX_IGNORE);
+        if (0 != s.compare(ss, Qt::CaseInsensitive)) {
+            EXCEPTION(EENUMVAL, 4, QObject::trUtf8("%1 : #%2/%3 : e2s(%4) ~ %5")
+                      .arg(toString()).arg(i).arg(s).arg(ii).arg(ss) )
+        }
+    }
+    const QString e = (*e2s)(i, EX_IGNORE);
+    if (e.isEmpty() == false) {    // Nem lehet több elem a konverziós függvény szerint!
+        EXCEPTION(EENUMVAL, 5, QObject::trUtf8("A %1 adatvázis típus hiényos, extra elem : #%2/%3")
+                  .arg(toString()).arg(i).arg(e))
+    }
+}
+
+void cColEnumType::checkEnum(QSqlQuery& q, const QString& _type, tE2S e2s, tS2E s2e)
+{
+    const cColEnumType *p = fetchOrGet(q, _type);
+    p->checkEnum(e2s, s2e);
+}
+
 /* ******************************************************************************************************* */
 
 cColStaticDescr::cColStaticDescr(int __t)
@@ -2979,7 +3013,8 @@ const QVariant& cRecord::get(int __i) const
 
 QString cRecord::view(QSqlQuery& q, int __i) const
 {
-    if (isIndex(__i) == false) return QObject::trUtf8("[nincs]");
+    static const QString  rHaveNo = QObject::trUtf8("[HAVE NO]");
+    if (isIndex(__i) == false) return rHaveNo;
     return descr()[__i].toView(q, get(__i));
 }
 
@@ -3701,7 +3736,7 @@ bool cRecord::isEmpty(int _ix) const
     return true;
 }
 
-QString cRecord::identifying()
+QString cRecord::identifying() const
 {
     QString otype = typeid(*this).name();
     QString table = tableName();

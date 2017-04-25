@@ -51,7 +51,7 @@ void cParseWidget::loadClicked()
     QFile file(fileName);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         const QString msg = trUtf8("A %1 forrás fájl nem nyitható meg.\n%2").arg(fileName).arg(file.errorString());
-        QMessageBox::warning(this, design().titleError, msg);
+        QMessageBox::warning(this, dcViewShort(DC_ERROR), msg);
         return;
     }
     pUi->textEditSrc->setText(QString::fromUtf8(file.readAll()));
@@ -67,7 +67,7 @@ void cParseWidget::saveClicked()
     QFile file(fileName);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         const QString msg = trUtf8("A %1 cél fájl nem nyitható meg.\n%2").arg(fileName).arg(file.errorString());
-        QMessageBox::warning(this, design().titleError, msg);
+        QMessageBox::warning(this, dcViewShort(DC_ERROR), msg);
         return;
     }
     file.write(pUi->textEditSrc->toPlainText().toUtf8());

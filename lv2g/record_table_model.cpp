@@ -14,6 +14,23 @@ cRecordViewModelBase::cRecordViewModelBase(cRecordsViewBase& _rt)
     if (sIrrevocable.isEmpty()) {
         sIrrevocable = QObject::trUtf8("A művelet nem visszavonható.");
     }
+    lineBgColorEnumIx = NULL_IX;  // Nincs teljes sor háttérszinezés
+    QString fn = tableShape.feature(_sBgColor);
+    if (!fn.isEmpty()) {    // Teljes sor háttérszíne a megadott mező (enum!) szerint
+        lineBgColorEnumIx = recDescr.toIndex(fn, EX_IGNORE);
+        if (lineBgColorEnumIx >= 0) {
+            if (recDescr.colDescr(lineBgColorEnumIx).eColType == cColStaticDescr::FT_ENUM) {
+                lineBgColorEnumType = recDescr.colDescr(lineBgColorEnumIx).enumType();
+            }
+            else {  // Ha nem enum, akkor figyelmen kívül hagyjuk
+                lineBgColorEnumIx = NULL_IX;
+                DWAR() << QObject::trUtf8("Invalid field type (%1), Shape : %2").arg(_sBgColor + "=" + fn, tableShape.identifying()) << endl;
+            }
+        }
+        else {
+            DWAR() << QObject::trUtf8("Invalid field name (%1), Shape : %2").arg(_sBgColor + "=" + fn, tableShape.identifying()) << endl;
+        }
+    }
     _viewRowNumbers = true;
     _viewHeader     = true;
     _firstRowNumber =   0;
@@ -23,7 +40,7 @@ cRecordViewModelBase::cRecordViewModelBase(cRecordsViewBase& _rt)
     int i, n = columns.size();
     for (i = 0; i < n; ++i) {
         const cRecordTableColumn&  column = *columns[i];
-        if (column.shapeField.getBool(_sFieldFlags, FF_TABLE_HIDE)) {
+        if (column.shapeField.getBool(_sFieldFlags, FF_TABLE_HIDE)) {   // Ha aem kel megjeleníteni
             PDEB(VVERBOSE) << "Hidden field : " << columns[i]->shapeField.getName(_sTableShapeFieldName) << endl;
             continue;
         }
@@ -37,6 +54,31 @@ cRecordViewModelBase::cRecordViewModelBase(cRecordsViewBase& _rt)
 cRecordViewModelBase::~cRecordViewModelBase()
 {
     delete pq;
+}
+
+QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const cRecord *pr, int role) const
+{
+    if (Qt::BackgroundRole == role && 0 <= lineBgColorEnumIx) {
+        return bgColorByEnum(lineBgColorEnumType, pr->getId(lineBgColorEnumIx));
+    }
+    if (fix < 0)           return dcRole(DC_HAVE_NO, role);
+    if (pr->isNull(fix))   return dcRole(DC_NULL,    role);
+    const QString& et = column.enumTypeName;
+    if (et.isEmpty()) {
+        if (role == Qt::DisplayRole) return pr->view(*pq, fix);
+        return dcRole(column.dataCharacter, role);
+    }
+    qlonglong& ff = column.fieldFlags;
+    int        id = (int)pr->getId(fix);
+    int        dd = column.dataCharacter;
+    switch (role) {
+    case Qt::TextColorRole: return (ff & ENUM2SET(FF_FG_COLOR)) ? fgColorByEnum(et, id) : dcFgColor(dd);
+    case Qt::BackgroundRole:return (ff & ENUM2SET(FF_BG_COLOR)) ? bgColorByEnum(et, id) : dcBgColor(dd);
+    case Qt::DisplayRole:   return cEnumVal::viewShort(et, id, pr->view(*pq, fix));
+    case Qt::ToolTipRole:   return (ff & ENUM2SET(FF_TOOL_TIP)) ? cEnumVal::toolTip(et, id) : QVariant();
+    case Qt::FontRole:      return (ff & ENUM2SET(FF_FONT))     ? fontByEnum(et, id) : dcFont(dd);
+    default:                return QVariant();
+    }
 }
 
 QVariant cRecordViewModelBase::_headerData(int section, Qt::Orientation orientation, int role) const
@@ -63,17 +105,8 @@ QVariant cRecordViewModelBase::_headerData(int section, Qt::Orientation orientat
             case Qt::DisplayRole:
                 if (_viewHeader) r = columns[mix]->header;
                 break;
-            case Qt::TextAlignmentRole:
-                r = columns[mix]->headAlign;
-                break;
-            case Qt::ForegroundRole:
-                r = design().head.fg;
-                break;
-            case Qt::BackgroundRole:
-                r = design().head.bg;
-                break;
-            case Qt::FontRole:
-                r = design().head.font;
+            default:
+                return dcRole(DC_HEAD, role);
                 break;
             }
         }
@@ -151,43 +184,6 @@ int cRecordTableModel::columnCount(const QModelIndex &) const
     return _col2field.size();
 }
 
-bool cRecordViewModelBase::dataColor(const cRecord *pr, int fix, int role, int& dataRole, QVariant& r) const
-{
-    // Ha nem létezik, nem szines mező, vagy értéke NULL
-    if (fix < 0 || 0 == (dataRole & GDR_COLOR) || pr->isNull(fix)) return false;
-    const cColStaticDescr& cd = pr->descr().colDescr(fix);
-    QString cn;
-    switch (cd.eColType) {          // Adat típus
-    case cColStaticDescr::FT_TEXT:      // Text = color (az adat maga a szín, csak a háttér)
-        if (role == Qt::BackgroundRole) {
-            r = QColor(pr->getName(fix));
-            return true;
-        }
-        break;
-    case cColStaticDescr::FT_ENUM:        // enum colored (típus, és érték alapján)
-        switch (role) {
-        case Qt::ForegroundRole: cn = cEnumVal::fgColor(cd.udtName, pr->getName(fix)); break;
-        case Qt::BackgroundRole: cn = cEnumVal::bgColor(cd.udtName, pr->getName(fix)); break;
-        }
-        if (!cn.isEmpty()) {
-            r = QColor(cn);
-            return true;
-        }
-        break;
-    case cColStaticDescr::FT_BOOLEAN:    // boolean colored (mező teljex név, és az érték alapján)
-        switch (role) {     // Eredeti táblanevet használjuk, a mező név az aktuálisból, mivel a fix arra vonatkozik!
-        case Qt::ForegroundRole: cn = cEnumVal::fgColor(recDescr.tableName(), pr->descr().columnName(fix), pr->getBool(fix)); break;
-        case Qt::BackgroundRole: cn = cEnumVal::bgColor(recDescr.tableName(), pr->descr().columnName(fix), pr->getBool(fix)); break;
-        }
-        if (!cn.isEmpty()) {
-            r = QColor(cn);
-            return true;
-        }
-        break;
-    }
-    return false;
-}
-
 QVariant cRecordTableModel::data(const QModelIndex &index, int role) const
 {
     QVariant r;
@@ -203,25 +199,7 @@ QVariant cRecordTableModel::data(const QModelIndex &index, int role) const
         const QString& fn = recDescr.columnName(fix);
         fix = pr->toIndex(fn, EX_IGNORE);   // Nem biztos, hogy van ilyen mező (ős)
     }
-    // _DBGFN() << VDEB(row) << VDEB(col) << VDEB(role) << endl;
-    int dataRole = columns[mix]->dataRole;
-    switch (role) {
-    case Qt::DisplayRole:       return pr->view(*pq, fix);
-    case Qt::TextAlignmentRole: return columns[mix]->dataAlign;
-    case Qt::ForegroundRole:
-    case Qt::BackgroundRole:    if (dataColor(pr, fix, role, dataRole, r)) return r;
-    case Qt::FontRole:          break;
-    default:                    return r;
-    }
-    const colorAndFont&   cf = pr->isNull(fix)
-            ?   design().null
-            :   design()[dataRole];
-    switch (role) {
-    case Qt::ForegroundRole:    return cf.fg;
-    case Qt::BackgroundRole:    return cf.bg;
-    case Qt::FontRole:          return cf.font;
-    }
-    return QVariant();
+    return _data(fix, *columns[mix], pr, role);
 }
 
 QVariant cRecordTableModel::headerData(int section, Qt::Orientation orientation, int role) const

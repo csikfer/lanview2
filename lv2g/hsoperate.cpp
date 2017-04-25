@@ -45,13 +45,17 @@ const QString cHSOperate::_sql =
         " JOIN services AS s USING(service_id)";
 const QString cHSOperate::_ord = " ORDER BY node_name, service_name, hs.port_id ASC";
 
+const cColEnumType    *cHSORow::pPlaceType   = NULL;
+const cColEnumType    *cHSORow::pNoAlarmType = NULL;
+const cColEnumType    *cHSORow::pNotifSwitch = NULL;
 
 cHSORow::cHSORow(QSqlQuery& q, cHSOState *par)
     : QObject(par), nsub(0), rec(q.record())
 {
+    pq = par->pq;
+    staticInit();
     set = true;
     sub = false;
-    pq = par->pq;
     bool ok;
     id  = rec.value(RX_ID).toLongLong(&ok);
     if (!ok) EXCEPTION(EDATA, RX_ID, rec.value(RX_ID).toString());
@@ -59,6 +63,16 @@ cHSORow::cHSORow(QSqlQuery& q, cHSOState *par)
     if (v.isValid()) {
         nsub  = v.toLongLong(&ok);
         if (!ok) EXCEPTION(EDATA, RX_NSUB, v.toString());
+    }
+}
+
+void cHSORow::staticInit()
+{
+    if (pPlaceType == NULL) {
+        QSqlQuery q = getQuery();
+        pPlaceType   = cColEnumType::fetchOrGet(q, "placetype");
+        pNoAlarmType = cColEnumType::fetchOrGet(q, "noalarmtype");
+        pNotifSwitch = cColEnumType::fetchOrGet(q, "notifswitch");
     }
 }
 
@@ -87,20 +101,20 @@ QTableWidgetItem * cHSORow::item(int vix)
     return new QTableWidgetItem(v.toString());
 }
 
-QTableWidgetItem * cHSORow::item(int ix, const QString& eType)
+QTableWidgetItem * cHSORow::item(int ix, const cColEnumType *pType)
 {
     QString s = rec.value(ix).toString();
     QTableWidgetItem *pi = new QTableWidgetItem(s);
-    pi->setBackground(bgColorByEnum(s, eType));
+    pi->setBackground(bgColorByEnum(*pType, pType->str2enum(s)));
     return pi;
 }
 
-QTableWidgetItem * cHSORow::item(int vix, int eix, const QString& eType)
+QTableWidgetItem * cHSORow::item(int vix, int eix, const cColEnumType * pType)
 {
     QString s = rec.value(vix).toString();
     QTableWidgetItem *pi = new QTableWidgetItem(s);
     s = rec.value(eix).toString();
-    pi->setBackground(bgColorByEnum(s, eType));
+    pi->setBackground(bgColorByEnum(*pType, pType->str2enum(s)));
     return pi;
 }
 QTableWidgetItem * cHSORow::item(int ix, const cColStaticDescr &cd)
@@ -112,12 +126,12 @@ QTableWidgetItem * cHSORow::item(int ix, const cColStaticDescr &cd)
     return new QTableWidgetItem(s);
 }
 
-QTableWidgetItem * cHSORow::boolItem(int ix, const QString& eType)
+QTableWidgetItem * cHSORow::boolItem(int ix, const QString& tn, const QString& fn)
 {
     bool     b = rec.value(ix).toBool();
     QString  s = langBool(b);
     QTableWidgetItem *pi = new QTableWidgetItem(s);
-    pi->setBackground(bgColorByBool(b, eType));
+    pi->setBackground(bgColorByBool(tn, fn, bool2boolVal(b)));
     return pi;
 
 }
@@ -280,13 +294,13 @@ void cHSOperate::refreshTable()
         setCell(row, TC_SERVICE, pRow->item(RX_SERVICE_NAME));
         setCell(row, TC_PORT,    pRow->item(RX_PORT_NAME));
         setCell(row, TC_EXT,     pRow->item(RX_SRV_EXT));
-        setCell(row, TC_PLACE,   pRow->item(RX_PLACE_NAME, RX_PLACE_TYPE, "placetype"));
-        setCell(row, TC_NOALARM, pRow->item(RX_NOALARM, "noalarmtype"));
+        setCell(row, TC_PLACE,   pRow->item(RX_PLACE_NAME, RX_PLACE_TYPE, cHSORow::pPlaceType));
+        setCell(row, TC_NOALARM, pRow->item(RX_NOALARM, cHSORow::pNoAlarmType));
         setCell(row, TC_FROM,    pRow->item(RX_FROM, hs.colDescr(hs.toIndex(_sNoalarmFrom))));
         setCell(row, TC_TO,      pRow->item(RX_TO, hs.colDescr(hs.toIndex(_sNoalarmTo))));
-        setCell(row, TC_DISABLED,pRow->boolItem(RX_DISABLED, mCat(_sHostServices, _sDisabled)));
-        setCell(row, TC_DISABLED_SRV, pRow->boolItem(RX_SRV_DISABLED, mCat(_sServices, _sDisabled)));
-        setCell(row, TC_STATE,   pRow->item(RX_STATE, "notifswitch"));
+        setCell(row, TC_DISABLED,pRow->boolItem(RX_DISABLED, _sHostServices, _sDisabled));
+        setCell(row, TC_DISABLED_SRV, pRow->boolItem(RX_SRV_DISABLED, _sServices, _sDisabled));
+        setCell(row, TC_STATE,   pRow->item(RX_STATE, cHSORow::pNotifSwitch));
         setCell(row, TC_CBOX_SEL,pRow->getCheckBoxSet());
         setCell(row, TC_NSUB,    pRow->item(RX_NSUB));
         setCell(row, TC_CBOX_NSUB,pRow->getCheckBoxSub());

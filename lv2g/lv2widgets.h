@@ -166,7 +166,7 @@ public:
     ///
     QWidget&    widget()    { return *_pWidget; }
     QWidget    *pWidget()   { return  _pWidget; }
-    /// Egy megfelelő típusú widget objektum létrehozása
+    /// Egy megfelelő típusú 'widget' objektum létrehozása
     /// @param _tm A tábla megjelenítését/szerkesztését leíró objektum
     /// @param _tf A mező megjelenítését/szerkesztését leíró objektum
     /// @param _fr A mező referencia objektuma
@@ -188,9 +188,9 @@ public:
 //  QString fieldToName()                   { if (_pFieldRef == NULL) EXCEPTION(EPROGFAIL); return (QString)*_pFieldRef; }
     /// A widgethez rendelt mező objektum inexével a rekordban tér vissza, ha nincs mező rendelve a widgethez, akkor dob egy kizárást.
     int fieldIndex() const { return _colDescr.fieldIndex(); }
-    /// A widget magassága ~sor
+    /// A widget magassága ~sor. Az alap metódus 1-et ad vissza.
     virtual int height();
-    /// Parent objektum
+    /// Parent objektum (opcionális, ha nincs dialógus parent, akkor NULL)
     cRecordDialogBase *_pParentDialog;
     /// A mező leíró objektum referenciája
     const cColStaticDescr&  _colDescr;
@@ -202,17 +202,30 @@ public:
     const cRecStaticDescr& _recDescr;
 protected:
     void setFromWidget(QVariant v);
+    /// A parent dialógusban egy másik mező szerkesztő objektumot keresi meg a .
+    /// @param __fn A keresett mező leíró neve (cTableShapeField.getName())
+    /// @param __ex Ha értéke nem EX_IGNORE és nincs parent, vagy men találja az objektumot, akkor kizárást dob.
+    /// @return A talált objektum pointere, vagy NULL.
     cFieldEditBase * anotherField(const QString& __fn, eEx __ex = EX_ERROR);
 //  cRecordFieldRef    *_pFieldRef;     ///< A mező referencia objektum pointere
     bool                _readOnly;      ///< Ha nem szerkeszthető, akkor értéke true
     bool                _nullable;      ///< Amező értéke NULL is lehet
-    bool                _hasDefault;    ///< Ha a mezó rendelkezik alapértelmezett értékkel, akkor treu
+    bool                _hasDefault;    ///< Ha a mezó rendelkezik alapértelmezett értékkel, akkor true
+    bool                _hasAuto;
     bool                _isInsert;      ///< Ha egy új rekord, akkor true, ha modosítás, akkor false
-    QString             _nullView;      ///< Ha megadható NULL érték, akkor annak a megjelenése (NULL vagy Default)
+    int                 _dcNull;        ///< Ha megadható NULL érték, akkor annak a megjelenése (NULL vagy Default)
     eFieldWidgetType    _wType;         ///< A widget típusa (a leszármazott objektumot azonosítja)
     QVariant            _value;         ///< A mező aktuális értéke
     QWidget            *_pWidget;       ///< A megjelenítéshez létrejozptt QWidget (valós widget objektum pointere)
     QSqlQuery          *pq;             ///< Amennyiben szükslges a megjelenítéshez adatbázis hozzáférés, akkor a QSqlQuery objektum pointere.
+    cEnumVal            enumVal;
+    QFont               font;
+    QColor              bgColor;
+    QColor              fgColor;
+    cEnumVal            defEnumVal;
+    QFont               defFont;
+    QColor              defBgColor;
+    QColor              defFgColor;
 /*
 protected slots:
     void modRec();                  ///< A rekord módosult, aktualizálandó a megjelenítés
@@ -230,9 +243,8 @@ public:
     /// Konstruktor
     /// @param _tm A megjelenítő leíró objektum referenciája.
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
-    /// @param _ro Ha true nem szerkeszthető
-    /// @param parent A parent widget pointere
-    cNullWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase* _par);
+    /// @param _par A parent widget pointere
+    cNullWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, cRecordDialogBase* _par);
     ~cNullWidget();
 };
 
@@ -306,6 +318,7 @@ public:
 protected:
     void setWidget();
     qlonglong  eval;
+    eNullType  nulltype;
 private slots:
     void setFromEdit(int id);
 };
@@ -667,10 +680,6 @@ private slots:
     void changeFont(const QFont&);
 };
 
-enum eFontAttr {
-    FA_BOOLD, FA_ITALIC, FA_UNDERLINE, FA_STRIKEOUT
-};
-
 /// @class cFontAttrWidget
 /// Font csalás kiválasztása
 class LV2GSHARED_EXPORT cFontAttrWidget : public cFieldEditBase {
@@ -679,9 +688,10 @@ public:
     /// Konstruktor.
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
     /// @param _par A parent pointere
-    cFontAttrWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, cRecordDialogBase* _par);
+    cFontAttrWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase* _par);
     ~cFontAttrWidget();
     virtual int set(const QVariant& v);
+    static const QString sEnumTypeName;
 private:
     const cColEnumType *pEnumType;
     QIcon           iconNull;
@@ -700,8 +710,14 @@ private:
     QToolButton    *pToolButtonItalic;
     QToolButton    *pToolButtonUnderline;
     QToolButton    *pToolButtonStrikeout;
+    QLabel         *pLabelNull;
+    QLabel         *pLabelBold;
+    QLabel         *pLabelItalic;
+    QLabel         *pLabelUnderline;
+    QLabel         *pLabelStrikeout;
     QLineEdit      *pLine;
     qlonglong       m;
+    QSize           iconSize;
 private slots:
     void togleNull(bool f);
     void togleBoold(bool f);

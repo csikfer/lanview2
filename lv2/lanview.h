@@ -332,7 +332,15 @@ public:
     /// Ellenörzi az aktuális felhasználó jogosultsági szintjét
     static bool isAuthorized(enum ePrivilegeLevel pl);
     /// Ellenörzi az aktuális felhasználó jogosultsági szintjét
-    static bool isAuthorized(qlonglong pl) { return pl > ENUM_INVALID && isAuthorized((enum ePrivilegeLevel) pl); }
+    static bool isAuthorized(qlonglong pl) {
+        if (pl < 0 || pl > PL_SYSTEM) return false;
+        return isAuthorized((enum ePrivilegeLevel)pl);
+    }
+    /// Ellenörzi az aktuális felhasználó jogosultsági szintjét, NULL_ID esetén OK.
+    static bool isAuthOrNull(qlonglong pl) {
+        if (pl == NULL_ID) return true;
+        return isAuthorized((enum ePrivilegeLevel)pl);
+    }
     /// Ellenörzi az aktuális felhasználó jogosultsági szintjét
     static bool isAuthorized(const QString& pl);
     /// Az api könynvtér által gyorstárazott adatokat újra tülti,

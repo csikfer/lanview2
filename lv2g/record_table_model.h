@@ -17,6 +17,9 @@ public:
 
     cRecordViewModelBase(cRecordsViewBase &_rt);
     virtual ~cRecordViewModelBase();
+
+    QVariant _data(int fix, cRecordTableColumn& column, const cRecord *pr, int role) const;
+
     cRecord *qGetRecord(QSqlQuery& q);
 
     /// Kereszt index: Tábla oszlop - megjelenítő leíró, mező leíró index
@@ -41,7 +44,10 @@ public:
     const cTableShape&          tableShape;
     /// Megjelenített oszlokok vezérlő objektumai
     const tRecordTableColumns&  columns;
-
+    /// A teljes sor háttérszíne egy enumeráció típusú mező alapján. Enum típus név:
+    QString lineBgColorEnumType;
+    /// A teljes sor háttérszíne egy enumeráció típusú mező alapján. Enum típus név:
+    int     lineBgColorEnumIx;
     bool rowNumbers() const                     { return _viewRowNumbers; }
     void setRowNumers(bool b)                   { _viewRowNumbers = b; }
     bool viewHeader() const                     { return _viewHeader; }
@@ -71,8 +77,6 @@ public:
     virtual bool insertRow(cRecord *pRec) = 0;
     static bool SqlInsert(QSqlQuery &q, cRecord *pRec);
     static QString sIrrevocable;
-    bool dataColor(const cRecord *pr, int fix, int role, int &dataRole, QVariant& r) const;
-
 };
 
 /// @class cRecordTableModel

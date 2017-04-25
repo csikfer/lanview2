@@ -62,9 +62,9 @@ void cGSetupWidget::applicate()
                 err = trUtf8("Invalid QSettings status : ") + QString::number((int)st);
                 break;
         }
-        QMessageBox::warning(this, design().titleError, err);
+        QMessageBox::warning(this, dcViewShort(DC_ERROR), err);
     }
-    else QMessageBox::information(this, design().titleInfo, trUtf8("New settings accepted."));
+    else QMessageBox::information(this, dcViewShort(DC_INFO), trUtf8("New settings accepted."));
     DBGFNL();
 }
 
@@ -98,7 +98,7 @@ void cGSetupWidget::testAlarmFile()
 {
     QString fn = pUi->lineEditAlarm->text();
     if (fn.isEmpty()) {
-        QMessageBox::warning(this, design().titleWarning, trUtf8("Nincs megadva hang fájl."));
+        QMessageBox::warning(this, dcViewShort(DC_WARNING), trUtf8("Nincs megadva hang fájl."));
         return;
     }
     pDelete(pSound);

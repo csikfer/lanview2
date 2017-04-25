@@ -588,3 +588,86 @@ void cPlacesInZoneModel::setZone(qlonglong id)
     setFilter();
 }
 
+/* ************************************************ cEnumListModel ***************************************************** */
+
+cEnumListModel::cEnumListModel(const QString& __t, eNullType _nullable, QObject * __par)
+    : QAbstractListModel(__par)
+{
+    pType = NULL;
+    pq = NULL;
+    setEnum(__t, _nullable);
+}
+
+cEnumListModel::cEnumListModel(const cColEnumType *_pType, eNullType _nullable, QObject * __par)
+    : QAbstractListModel(__par)
+{
+    pType = NULL;
+    pq = NULL;
+    setEnum(_pType, _nullable);
+}
+
+cEnumListModel::~cEnumListModel()
+{
+    pDelete(pq);
+}
+
+int cEnumListModel::setEnum(const QString& __t, eNullType _nullable, eEx __ex)
+{
+    if (pq == NULL) pq = newQuery();
+    return setEnum(cColEnumType::fetchOrGet(*pq, __t, __ex), _nullable, __ex);
+}
+
+int cEnumListModel::setEnum(const cColEnumType *_pType, eNullType _nullable, eEx __ex)
+{
+    beginResetModel();
+    enumVals.clear();
+    pType = _pType;
+    if (pType == NULL) {
+        if (__ex != EX_IGNORE) EXCEPTION(ENONAME);
+        endResetModel();
+        return 0;
+    }
+    nulltype = _nullable;
+    if (nulltype != NT_NOT_NULL) {
+        enumVals <<  &cEnumVal::enumVal(_sDatacharacter, nulltype, __ex);
+    }
+    for (int i = 0; i < pType->enumValues.size(); ++i) {
+        const QString& typeName = *(const QString *)pType;
+        const cEnumVal& ee = cEnumVal::enumVal(typeName, i, __ex);
+        if (ee.isEmpty_()) {
+            cEnumVal *p = new cEnumVal;
+            p->setParent(this);
+            const QString& s = pType->enumValues.at(i);
+            p->setName(cEnumVal::ixTypeName(),  typeName);
+            p->setName(cEnumVal::ixValName(),   s);
+            p->setName(cEnumVal::ixViewShort(), s);
+            enumVals << p;
+        }
+        else {
+            enumVals <<  &ee;
+        }
+    }
+    endResetModel();
+    return enumVals.size();
+}
+
+void cEnumListModel::clear()
+{
+    beginResetModel();
+    nulltype = NT_NOT_NULL;
+    pType = NULL;
+    enumVals.clear();
+    endResetModel();
+}
+
+int cEnumListModel::rowCount(const QModelIndex &) const
+{
+    return enumVals.size();
+}
+
+QVariant cEnumListModel::data(const QModelIndex &index, int role) const
+{
+    int row = index.row();
+    if (!isContIx(enumVals, row)) return QVariant();
+    return enumRole(*enumVals[row], role, row);
+}

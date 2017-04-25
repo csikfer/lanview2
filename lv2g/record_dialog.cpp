@@ -470,7 +470,7 @@ bool cRecordDialog::accept()
         cFieldEditBase& field = *fields[i];
         int rfi = field.fieldIndex();
         if (field.isReadOnly()) continue;      // Feltételezzük, hogy RO esetén az van a mezőben aminek lennie kell.
-        if (field._fieldShape.getBool(_sFieldFlags, FF_AUTO_SET)) continue; // Ezt sem kell ellenörizni
+        // ?! if (field._fieldShape.getBool(_sFieldFlags, FF_AUTO_SET)) continue; // Ezt sem kell ellenörizni
         qlonglong s = _pRecord->_stat;                   // Mentjük a hiba bitet,
         _pRecord->_stat &= ~ES_DEFECTIVE; // majd töröljük, mert mezőnkként kell
         QVariant fv = fields[i]->get();     // A mező widget-jéből kivesszük az értéket

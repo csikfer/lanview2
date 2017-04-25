@@ -313,4 +313,26 @@ protected:
     qlonglong            zoneId;
 };
 
+enum eNullType {
+    NT_NOT_NULL, NT_NULL = DC_NULL, NT_AUTO = DC_AUTO, NT_DEFAULT = DC_DEFAULT
+};
+
+class LV2GSHARED_EXPORT cEnumListModel : public QAbstractListModel {
+public:
+    cEnumListModel(QObject * __par = NULL) : QAbstractListModel(__par) { pType = NULL; pq = NULL; nulltype = NT_NOT_NULL; }
+    cEnumListModel(const QString& __t, eNullType _nullable = NT_NOT_NULL, QObject * __par = NULL);
+    cEnumListModel(const cColEnumType *_pType, eNullType _nullable = NT_NOT_NULL, QObject * __par = NULL);
+    ~cEnumListModel();
+    int setEnum(const QString& __t, eNullType _nullable = NT_NOT_NULL, eEx __ex = EX_ERROR);
+    int setEnum(const cColEnumType *_pType, eNullType _nullable = NT_NOT_NULL, eEx __ex = EX_ERROR);
+    void clear();
+    virtual int rowCount(const QModelIndex & = QModelIndex()) const;
+    virtual QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const;
+protected:
+    QSqlQuery   *pq;
+    eNullType nulltype;
+    const cColEnumType *pType;
+    QVector<const cEnumVal *> enumVals;
+};
+
 #endif // LV2MODELS_H

@@ -104,11 +104,14 @@ int fieldFlag(const QString& n, eEx __ex)
 {
     if (0 == n.compare(_sTableHide, Qt::CaseInsensitive)) return FF_TABLE_HIDE;
     if (0 == n.compare(_sDialogHide,Qt::CaseInsensitive)) return FF_DIALOG_HIDE;
-    if (0 == n.compare(_sAutoSet,   Qt::CaseInsensitive)) return FF_AUTO_SET;
     if (0 == n.compare(_sReadOnly,  Qt::CaseInsensitive)) return FF_READ_ONLY;
     if (0 == n.compare(_sPasswd,    Qt::CaseInsensitive)) return FF_PASSWD;
     if (0 == n.compare(_sHuge,      Qt::CaseInsensitive)) return FF_HUGE;
     if (0 == n.compare(_sBatchEdit, Qt::CaseInsensitive)) return FF_BATCH_EDIT;
+    if (0 == n.compare(_sBgColor,   Qt::CaseInsensitive)) return FF_BG_COLOR;
+    if (0 == n.compare(_sFgColor,   Qt::CaseInsensitive)) return FF_FG_COLOR;
+    if (0 == n.compare(_sFont,      Qt::CaseInsensitive)) return FF_FONT;
+    if (0 == n.compare(_sToolTip,   Qt::CaseInsensitive)) return FF_TOOL_TIP;
     if (__ex) EXCEPTION(EENUMVAL, -1, n);
     return FF_UNKNOWN;
 }
@@ -118,11 +121,14 @@ const QString& fieldFlag(int e, eEx __ex)
     switch(e) {
     case FF_TABLE_HIDE: return _sTableHide;
     case FF_DIALOG_HIDE:return _sDialogHide;
-    case FF_AUTO_SET:   return _sAutoSet;
     case FF_READ_ONLY:  return _sReadOnly;
     case FF_PASSWD:     return _sPasswd;
     case FF_HUGE:       return _sHuge;
     case FF_BATCH_EDIT: return _sBatchEdit;
+    case FF_BG_COLOR:   return _sBgColor;
+    case FF_FG_COLOR:   return _sFgColor;
+    case FF_FONT:       return _sFont;
+    case FF_TOOL_TIP:   return _sToolTip;
     default:            break;
     }
     if (__ex) EXCEPTION(EENUMVAL, e);
@@ -167,6 +173,58 @@ const QString& filterType(int e, eEx __ex)
     if (__ex) EXCEPTION(EENUMVAL, e);
     return _sNul;
 }
+
+int dataCharacter(const QString& n, eEx __ex)
+{
+    if (0 == n.compare(_sHead,   Qt::CaseInsensitive)) return DC_HEAD;
+    if (0 == n.compare(_sData,   Qt::CaseInsensitive)) return DC_DATA;
+    if (0 == n.compare(_sId,     Qt::CaseInsensitive)) return DC_ID;
+    if (0 == n.compare(_sName,   Qt::CaseInsensitive)) return DC_NAME;
+    if (0 == n.compare(_sPrimary,Qt::CaseInsensitive)) return DC_PRIMARY;
+    if (0 == n.compare(_sKey,    Qt::CaseInsensitive)) return DC_KEY;
+    if (0 == n.compare(_sFname,  Qt::CaseInsensitive)) return DC_FNAME;
+    if (0 == n.compare(_sDerived,Qt::CaseInsensitive)) return DC_DERIVED;
+    if (0 == n.compare(_sTree,   Qt::CaseInsensitive)) return DC_TREE;
+    if (0 == n.compare(_sForeign,Qt::CaseInsensitive)) return DC_FOREIGN;
+    if (0 == n.compare(_sNull,   Qt::CaseInsensitive)) return DC_NULL;
+    if (0 == n.compare(_sDefault,Qt::CaseInsensitive)) return DC_DEFAULT;
+    if (0 == n.compare(_sAuto,   Qt::CaseInsensitive)) return DC_AUTO;
+    if (0 == n.compare(_sInfo,   Qt::CaseInsensitive)) return DC_INFO;
+    if (0 == n.compare(_sWarning,Qt::CaseInsensitive)) return DC_WARNING;
+    if (0 == n.compare(_sError,  Qt::CaseInsensitive)) return DC_ERROR;
+    if (0 == n.compare(_sNotPermit,Qt::CaseInsensitive))return DC_NOT_PERMIT;
+    if (0 == n.compare(_sHaveNo, Qt::CaseInsensitive)) return DC_HAVE_NO;
+    if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, -1, n);
+    return DC_INVALID;
+}
+
+const QString& dataCharacter(int e, eEx __ex)
+{
+    switch (e) {
+    case DC_HEAD:       return _sHead;
+    case DC_DATA:       return _sData;
+    case DC_ID:         return _sId;
+    case DC_NAME:       return _sName;
+    case DC_PRIMARY:    return _sPrimary;
+    case DC_KEY:        return _sKey;
+    case DC_FNAME:      return _sFname;
+    case DC_DERIVED:    return _sDerived;
+    case DC_TREE:       return _sTree;
+    case DC_FOREIGN:    return _sForeign;
+    case DC_NULL:       return _sNull;
+    case DC_DEFAULT:    return _sDefault;
+    case DC_AUTO:       return _sAuto;
+    case DC_INFO:       return _sInfo;
+    case DC_WARNING:    return _sWarning;
+    case DC_ERROR:      return _sError;
+    case DC_NOT_PERMIT: return _sNotPermit;
+    case DC_HAVE_NO:    return _sHaveNo;
+    default:            break;
+    }
+    if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, e);
+    return _sNul;
+}
+
 
 /* ------------------------------ cTableShape ------------------------------ */
 
@@ -853,8 +911,10 @@ int cEnumVal::_ixValName  = NULL_IX;
 int cEnumVal::_ixToolTip  = NULL_IX;
 int cEnumVal::_ixViewShort= NULL_IX;
 int cEnumVal::_ixViewLong = NULL_IX;
-tRecordList<cEnumVal> cEnumVal::enumVals;
-QMap<QString, QMap<QString, cEnumVal *> > cEnumVal::mapValues;
+int cEnumVal::_ixFontFamily=NULL_IX;
+int cEnumVal::_ixFontAttr = NULL_IX;
+QList<cEnumVal *> cEnumVal::enumVals;
+QMap<QString, QVector<cEnumVal *> > cEnumVal::mapValues;
 cEnumVal *cEnumVal::cEnumVal::pNull = NULL;
 
 const cRecStaticDescr&  cEnumVal::descr() const
@@ -867,6 +927,8 @@ const cRecStaticDescr&  cEnumVal::descr() const
         _ixToolTip  = _descr_cEnumVal().toIndex(_sToolTip);
         _ixViewShort= _descr_cEnumVal().toIndex(_sViewShort);
         _ixViewLong = _descr_cEnumVal().toIndex(_sViewLong);
+        _ixFontFamily=_descr_cEnumVal().toIndex(_sFontFamily);
+        _ixFontAttr = _descr_cEnumVal().toIndex(_sFontAttr);
     }
     return *_pRecordDescr;
 }
@@ -891,75 +953,118 @@ void cEnumVal::fetchEnumVals(QSqlQuery& __q)
 {
     if (pNull == NULL) pNull = new cEnumVal();
     QBitArray   ba(1, false);   // Nem null, egyeseket nem tartalmazó maszk, minden rekord kiválasztásához
-    if (enumVals.count() == 0) {
-        cEnumVal *p = new cEnumVal();
-        enumVals.fetch(__q, true, ba, p);
-        remap();
-        return;
-    }
-    // UPDATE
-    int found = enumVals.count();   // Megtalálandó rekordok száma
-    int n = 0;                      // Megtalált rekordok számláló
-    cEnumVal ev;
-    if (ev.fetch(__q, false, ba)) do {
-        cEnumVal *pEv = enumVals.get(ev.getId(), EX_IGNORE);    // ID alapján rákeresünk
-        if (pEv == NULL) {   // Ez egy új rekord
-            enumVals << ev;
+    int n = enumVals.count();   // Megtalálandó rekordok száma
+    QList<cEnumVal *> oldList = enumVals;   // Eredeti lista
+    mapValues.clear();
+    int found = 0;                  // Megtalált rekordok számláló
+    cEnumVal ev;                    // objektum a fetch-hez
+    QString currentTypeName;        // Ha típust váltun, észre kell vennünk
+    const cColEnumType *pE;         // Az enumerációs típus leírója
+    bool          isBool = false;   // Nem csak valós enumok lesznek!!
+    QSqlQuery q2 = getQuery();      // Az enum típusokhoz másik query obj.
+    int e;                          // Enumerációs érték (int) (a -1 a típus 'indexe', a név ekkor üres)
+    QVector<cEnumVal *> *pActV = NULL;
+
+    // Minden rekord, rendezve a típus névre
+    if (ev.fetch(__q, false, ba, ev.iTab(_sEnumTypeName))) do {
+        QString typeName = ev.getName(ev.ixTypeName());
+        QString val      = ev.getName(ev.ixValName());
+        if (currentTypeName != typeName) {
+            pE = cColEnumType::fetchOrGet(q2, typeName, EX_IGNORE);
+            isBool = (pE == NULL);
+            if (isBool) {   // Nincs ijen ENUM!
+                if (1 != typeName.contains(QChar('.'))) {
+                    APPMEMO(q2, trUtf8("Hibás 'enum_vals' objektum : ") + ev.toString(), RS_WARNING);
+                    currentTypeName.clear();
+                    continue;
+                }
+                mapValues[typeName].fill((cEnumVal*)NULL, 3);
+            }
+            else {
+                mapValues[typeName].fill((cEnumVal*)NULL, pE->size() +1);
+            }
+            pActV = &mapValues[typeName];
+            currentTypeName = typeName;
         }
-        else {                // Frissít
-            pEv->set(ev);
-            ++n;
+        else {
+            if (!isBool && pE == NULL) EXCEPTION(EPROGFAIL);
         }
+        e = NULL_IX;    // Nem O.K.
+        if (val.isEmpty())  e = -1; // A típus indexe
+        else {
+            if (isBool) {
+               if      (val == _sFalse) e =  0;
+               else if (val == _sTrue)  e =  1;
+            }
+            else {
+                e = pE->enumValues.indexOf(val);
+                if (e < 0) e = NULL_IX;
+            }
+        }
+        if (e == NULL_IX || !isContIx(*pActV, (e +1))) {
+            QString em = trUtf8("Hibás 'enum_vals' objektum : ") + ev.toString();
+            APPMEMO(q2, em, RS_WARNING);
+            continue;   // Eldobjuk
+        }
+        cEnumVal *p;
+        foreach (p, oldList) {
+            if (p->getId() == ev.getId()) {
+                found++;
+                if (1 != oldList.removeAll(p)) EXCEPTION(EPROGFAIL);
+                delete p;
+            }
+        }
+        p = ev.dup()->reconvert<cEnumVal>();
+        (*pActV)[e + 1] = p;
+        enumVals << p;
     } while (ev.next(__q));
-    if (n < found) EXCEPTION(EPROGFAIL);
-    if (n > found) EXCEPTION(EDATA, n - found, trUtf8("Deleted enum_values record."));
-    remap();
+    if (n < found) EXCEPTION(EPROGFAIL);    // Több találat, mint amannyit kerestünk ?!
+    if (n > found) {
+        QString em = trUtf8("Deleted enum_values record(s) : \n");
+        foreach (cEnumVal *p, oldList) {
+            em += p->identifying() + '\n';
+        }
+        em.chop(1);
+        EXCEPTION(EDATA, n - found, em);
+    }
 }
 
-const cEnumVal& cEnumVal::enumVal(const QString &_tn, const QString &_ev, eEx __ex)
+const cEnumVal& cEnumVal::enumVal(const QString &_tn, int e, eEx __ex)
 {
     if (pNull == NULL) {
         QSqlQuery q(getQuery());
         fetchEnumVals(q);
     }
     cEnumVal *p = NULL;
-    QMap<QString, QMap<QString, cEnumVal *> >::const_iterator i = mapValues.find(_tn);
+    QMap<QString, QVector<cEnumVal *> >::const_iterator i = mapValues.find(_tn);
     if (mapValues.end() != i) {
-        QMap<QString, cEnumVal *>::const_iterator j = (*i).find(_ev);
-        if ((*i).end() != j) {
-            p = *j;
+        const QVector<cEnumVal *>& v = i.value();
+        int ix = e + 1;
+        if (isContIx(v, ix)) {
+            p = v[ix];
         }
     }
     if (p == NULL) {
-        if (EX_WARNING <= __ex) EXCEPTION(EFOUND, 0, mCat(_tn, _ev));
+        if (EX_WARNING <= __ex) EXCEPTION(EFOUND, e, _tn);
         p = pNull;
     }
     return *p;
 }
 
-void cEnumVal::remap()
+QString cEnumVal::viewShort(const QString& _tn, int e, const QString& _d)
 {
-    mapValues.clear();
-    const QList<cEnumVal *>& list = enumVals;
-    foreach (cEnumVal *p, list) {
-        QString sType = p->getName(_ixTypeName);
-        QString sName = p->getName(_ixValName);
-        mapValues[sType][sName] = p;
-    }
+    const cEnumVal& ev = enumVal(_tn, e);
+    QString r = ev.getName(_ixViewShort);
+    if (r.isEmpty()) return _d;
+    return r;
 }
 
-QString cEnumVal::viewShort(const QString& _ev, const QString& _tn)
+QString cEnumVal::viewLong(const QString& _tn, int e, const QString &_d)
 {
-    const cEnumVal& ev = enumVal(_ev, _tn);
-    if (ev.isEmpty_()) return _ev;
-    return ev.getName(_ixViewShort);
-}
-
-QString cEnumVal::viewLong(const QString& _ev, const QString& _tn)
-{
-    const cEnumVal& ev = enumVal(_ev, _tn);
-    if (ev.isEmpty_()) return _ev;
-    return ev.getName(_ixViewLong);
+    const cEnumVal& ev = enumVal(_tn, e);
+    QString r = ev.getName(_ixViewLong);;
+    if (r.isEmpty()) return _d;
+    return r;
 }
 
 /* ------------------------------ cMenuItems ------------------------------ */

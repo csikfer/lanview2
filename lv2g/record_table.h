@@ -148,7 +148,10 @@ public:
     const QVariant&         header;
     int                     dataAlign;      // Qt::AlignmentFlag
     int                     headAlign;      // Qt::AlignmentFlag
-    int                     dataRole;
+    int                     dataCharacter;  // eDataCharacter
+    const cEnumVal&         defaultDc;
+    QString                 enumTypeName;
+    qlonglong               fieldFlags;
 };
 
 /// A tábla viszonyát meghatározó flag értékek

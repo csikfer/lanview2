@@ -13,14 +13,14 @@ const QString lv2g::sHorizontal             = "Horizontal";
 const QString lv2g::sVertical               = "Vertical";
 
 lv2g::lv2g() :
-    lanView(),
-    pDesign(0)
+    lanView()//,
+//    pDesign(0)
 {
     if (lastError != 0) return;
     try {
         zoneId = NULL_ID;
         #include "errcodes.h"
-        pDesign = new lv2gDesign(this);
+//        pDesign = new lv2gDesign(this);
         if (dbIsOpen()) {
             switch (cLogOn::logOn(zoneNeeded ? &zoneId : NULL)) {
             case LR_OK:         break;
@@ -41,7 +41,12 @@ lv2g::lv2g() :
         if (0 == sVertical.compare(pSet->value(sDefaultSplitOrientation).toString(), Qt::CaseInsensitive))
             defaultSplitOrientation = Qt::Vertical;
     } CATCHS(lastError)
-    if (dbIsOpen() && !zoneNeeded) zoneId = cPlaceGroup().getIdByName(_sAll);
+    if (dbIsOpen()) {
+        QSqlQuery q = getQuery();
+        if (!zoneNeeded) zoneId = cPlaceGroup().getIdByName(q, _sAll);
+        // A datacarakter típus nem tartozik táblához, külön csekkoljuk
+        cColEnumType::checkEnum(q, _sDatacharacter, dataCharacter, dataCharacter);
+    }
 }
 
 lv2g::~lv2g()
@@ -49,8 +54,36 @@ lv2g::~lv2g()
     ;
 }
 
+int defaultDataCharter(const cRecStaticDescr& __d, int __ix)
+{
+    __d.chkIndex(__ix);
+    if (__ix == __d.idIndex(EX_IGNORE))      return DC_ID;
+    if (__ix == __d.nameIndex(EX_IGNORE))    return DC_NAME;
+    if (__d.primaryKey()[__ix])     return DC_PRIMARY;
+    const cColStaticDescr& cd = __d[__ix];
+    switch (cd.fKeyType) {
+    case cColStaticDescr::FT_SELF:
+        return DC_TREE;
+    case cColStaticDescr::FT_PROPERTY:
+    case cColStaticDescr::FT_OWNER:
+    {
+        cRecordAny *pF = cd.pFRec;
+        if (pF == NULL) pF = new cRecordAny(cd.fKeyTable, cd.fKeySchema);
+        bool n = pF->isIndex(pF->nameIndex(EX_IGNORE));
+        if (cd.pFRec == NULL) delete pF;
+        if (n) return DC_FNAME;
+        if (!cd.fnToName.isEmpty())     return DC_DERIVED;
+        return DC_FOREIGN;
+    }
+        break;
+    default:
+        break;
+    }
+    if (__d.isKey(__ix)) return DC_KEY;
+    return DC_DATA;
+}
 
-
+/*
 QPalette *colorAndFont::pal = NULL;
 
 colorAndFont::colorAndFont()
@@ -193,7 +226,7 @@ void _setFonts()
     pHeadFont->setBold(true);
     pNullFont->setItalic(true);
 }
-
+*/
 
 cIntSubObj::cIntSubObj(QMdiArea *par) :QWidget(par)
 {
@@ -266,35 +299,212 @@ _GEX QPolygonF convertPolygon(const tPolygonF __pol)
     return pol;
 }
 
-_GEX const QColor& bgColorByEnum(const QString& __v, const QString& __t)
+const QColor& bgColorByEnum(const QString& __t, int e)
 {
-    static QMap<QString, QMap<QString, QColor> >   colorCache;
+    static QMap<QString, QVector<QColor> > colorCache;
+    static QColor defCol(Qt::white);
+    if (__t.isEmpty()) {
+        colorCache.clear();
+        return defCol;
+    }
 
-    QColor& c = colorCache[__t][__v];
-    if (c.isValid()) return c;
-    QString cn = cEnumVal::bgColor(__v, __t);
-    if (cn.isEmpty()) {
-        c = QPalette().color(QPalette::Base);
+    QMap<QString, QVector<QColor> >::const_iterator it = colorCache.find(__t);
+    if (it == colorCache.constEnd()) {
+        QSqlQuery q = getQuery();
+        const cColEnumType *pType = cColEnumType::fetchOrGet(q, __t, EX_IGNORE);
+        int n;
+        if (pType == NULL) {        // boolean ??
+            if (__t.count(QChar('.') != 1)) EXCEPTION(EFOUND, 0, __t);
+            n = 3;
+        }
+        else {
+            n = pType->enumValues.size() +1;
+        }
+        QVector<QColor> v(n, defCol);
+        // for (int i = 0; i < n; i++) {
+        //     PDEB(VVERBOSE) << "BG Color default : " << __t << "#" << n << " = " << v[i].name() << endl;
+        // }
+        for (int i = 0; i < n; i++) {
+            const cEnumVal& o = cEnumVal::enumVal(__t, i -1);
+            if (!o.isNull(cEnumVal::ixBgColor())) {
+                v[i] = QColor(o.getName(cEnumVal::ixBgColor()));
+            }
+            PDEB(VVERBOSE) << "BG Color : " << __t << "#" << i << " = " << v[i].name() << endl;
+        }
+        colorCache[__t] = v;
+        return v[e +1];
     }
     else {
-        c.setNamedColor(cn);
+        return colorCache[__t][e +1];
     }
-    return c;
 }
 
-_GEX const QColor& fgColorByEnum(const QString& __v, const QString& __t)
+const QColor& fgColorByEnum(const QString& __t, int e)
 {
-    static QMap<QString, QMap<QString, QColor> >   colorCache;
+    static QMap<QString, QVector<QColor> >   colorCache;
+    static QColor defCol(Qt::black);
+    if (__t.isEmpty()) {
+        colorCache.clear();
+        return defCol;
+    }
 
-    QColor& c = colorCache[__t][__v];
-    if (c.isValid()) return c;
-    QString cn = cEnumVal::fgColor(__v, __t);
-    if (cn.isEmpty()) {
-        c = QPalette().color(QPalette::Base);
+    QMap<QString, QVector<QColor> >::const_iterator it = colorCache.find(__t);
+    if (it == colorCache.constEnd()) {
+        QSqlQuery q = getQuery();
+        const cColEnumType *pType = cColEnumType::fetchOrGet(q, __t, EX_IGNORE);
+        int n;
+        if (pType == NULL) {        // boolean ??
+            if (__t.count(QChar('.') != 1)) EXCEPTION(EFOUND, 0, __t);
+            n = 3;
+        }
+        else {
+            n = pType->enumValues.size() +1;
+        }
+        QVector<QColor> v(n, defCol);
+        for (int i = 0; i < n; i++) {
+            const cEnumVal& o = cEnumVal::enumVal(__t, i -1);
+            if (!o.isNull(cEnumVal::ixFgColor())) {
+                v[i] = QColor(o.getName(cEnumVal::ixFgColor()));
+            }
+            PDEB(VVERBOSE) << "FG Color : " << __t << "#" << i << " = " << v[i].name() << endl;
+        }
+        colorCache[__t] = v;
+        return v[e +1];
     }
     else {
-        c.setNamedColor(cn);
+        return colorCache[__t][e +1];
     }
-    return c;
 }
 
+const QFont& fontByEnum(const QString& __t, int _e)
+{
+    static QMap<QString, QMap<int, QFont> >   fontCache;
+    static QFont dummy;
+    if (__t.isEmpty()) {
+        fontCache.clear();
+        return dummy;
+    }
+    // Megkeressük.
+    QMap<QString, QMap<int, QFont> >::const_iterator i = fontCache.find(__t);
+    if (i != fontCache.constEnd()) {
+        const QMap<int, QFont>& m = i.value();
+        const QMap<int, QFont>::const_iterator j = m.find(_e);
+        if (j != m.constEnd()) {
+            return j.value();
+        }
+    }
+    // Ha nem találtuk, akkor létrehozzuk
+    QFont& font = fontCache[__t][_e];
+    const cEnumVal& e = cEnumVal::enumVal(__t, _e);
+    QString family = e.getName(cEnumVal::ixFontFamily());
+    if (!family.isEmpty()) {
+        font.setFamily(family);
+    }
+    if (!e.isNull(cEnumVal::ixFontAttr())) {
+        bool f;
+        f = e.getBool(cEnumVal::ixFontAttr(), FA_BOOLD);
+        if (font.bold()      != f) font.setBold(f);
+        f = e.getBool(cEnumVal::ixFontAttr(), FA_ITALIC);
+        if (font.italic()    != f) font.setItalic(f);
+        f = e.getBool(cEnumVal::ixFontAttr(), FA_UNDERLINE);
+        if (font.underline() != f) font.setUnderline(f);
+        f = e.getBool(cEnumVal::ixFontAttr(), FA_STRIKEOUT);
+        if (font.strikeOut() != f) font.setStrikeOut(f);
+    }
+    return font;
+}
+
+void enumSetD(QWidget *pW, const QString& _t, int id)
+{
+    const cEnumVal& ev = cEnumVal::enumVal(_t, id);
+    if (ev.isNull()) return;
+    enumSetColor(pW, _t, id);
+    QString family = ev.getName(cEnumVal::ixFontFamily());
+    if (ev.isNull(_sFontAttr) && family.isNull()) {
+        QFont font = pW->font();
+        if (!family.isEmpty()) {
+            font.setFamily(family);
+        }
+        if (!ev.isNull(cEnumVal::ixFontAttr())) {
+            bool f;
+            f = ev.getBool(cEnumVal::ixFontAttr(), FA_BOOLD);
+            if (font.bold()      != f) font.setBold(f);
+            f = ev.getBool(cEnumVal::ixFontAttr(), FA_ITALIC);
+            if (font.italic()    != f) font.setItalic(f);
+            f = ev.getBool(cEnumVal::ixFontAttr(), FA_UNDERLINE);
+            if (font.underline() != f) font.setUnderline(f);
+            f = ev.getBool(cEnumVal::ixFontAttr(), FA_STRIKEOUT);
+            if (font.strikeOut() != f) font.setStrikeOut(f);
+        }
+        pW->setFont(font);
+    }
+    QString sToolTip = ev.getName(cEnumVal::ixToolTip());
+    if (!sToolTip.isEmpty()) pW->setToolTip(sToolTip);
+}
+
+void enumSetD(QWidget *pW, const QString& _t, int id, qlonglong ff, int dcId)
+{
+    QString sType;
+    int     iVal;
+
+    if (ff & ENUM2SET(FF_BG_COLOR)) { sType = _t;              iVal = id; }
+    else                            { sType = _sDatacharacter; iVal = dcId; }
+    enumSetBgColor(pW, sType, iVal);
+
+    if (ff & ENUM2SET(FF_FG_COLOR)) { sType = _t;              iVal = id; }
+    else                            { sType = _sDatacharacter; iVal = dcId; }
+    enumSetFgColor(pW, sType, iVal);
+
+    if (ff & ENUM2SET(FF_FONT))     { sType = _t;              iVal = id; }
+    else                            { sType = _sDatacharacter; iVal = dcId; }
+    const cEnumVal& ev = cEnumVal::enumVal(sType, iVal);
+    if (!(ev.isEmpty(cEnumVal::ixFontFamily()) && ev.isEmpty(cEnumVal::ixFontAttr()))) {
+        pW->setFont(fontByEnum(sType, iVal));
+    }
+}
+
+QVariant enumRole(const cEnumVal& ev, int role, int e)
+{
+    QString s;
+    switch (role) {
+    case Qt::TextColorRole:
+        s = ev.getName(cEnumVal::ixFgColor());
+        return s.isEmpty() ? QVariant() : QColor(s);
+    case Qt::BackgroundRole:
+        s = ev.getName(cEnumVal::ixBgColor());
+        return s.isEmpty() ? QVariant() : QColor(s);
+    case Qt::DisplayRole:
+        s = ev.getName(cEnumVal::ixViewShort());
+        return s;
+    case Qt::ToolTipRole:
+        return ev.getName(cEnumVal::ixToolTip());
+    case Qt::FontRole:
+        return fontByEnum(ev.getName(cEnumVal::ixTypeName()), e);
+    default:
+        return QVariant();
+    }
+}
+
+QVariant enumRole(const QString& _t, int id, int role, const QString& dData)
+{
+    switch (role) {
+    case Qt::TextColorRole:     return fgColorByEnum(_t, id);
+    case Qt::BackgroundRole:    return bgColorByEnum(_t, id);
+    case Qt::DisplayRole:       return cEnumVal::viewShort(_t, id, dData);
+    case Qt::ToolTipRole:       return cEnumVal::toolTip(_t, id);
+    case Qt::FontRole:          return fontByEnum(_t, id);
+    default:                    return QVariant();
+    }
+}
+
+QVariant dcRole(int id, int role)
+{
+    switch (role) {
+    case Qt::TextColorRole:     return dcFgColor(id);
+    case Qt::BackgroundRole:    return dcBgColor(id);
+    case Qt::DisplayRole:       return dcViewShort(id);
+    case Qt::ToolTipRole:       return cEnumVal::toolTip(_sDatacharacter, id);
+    case Qt::FontRole:          return fontByEnum(_sDatacharacter, id);
+    default:                    return QVariant();
+    }
+}

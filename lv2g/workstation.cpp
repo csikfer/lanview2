@@ -763,6 +763,7 @@ void cWorkstation::_setLinkType(bool primary)
 
 void cWorkstation::_setAlarmState(bool primary)
 {
+    (void)primary; /*
     bool alarmPosible = false;
     if (primary && states.link != IS_OK) {
         states.alarmPossibe = alarmPosible = false;
@@ -812,7 +813,7 @@ void cWorkstation::_setAlarmState(bool primary)
         }
         return;
     }
-
+*/
 }
 
 void cWorkstation::_setMessage()

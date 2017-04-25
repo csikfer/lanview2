@@ -9,29 +9,35 @@
 #include "lv2models.h"
 
 class cHSOState;
+class cHSOperate;
 
 class LV2GSHARED_EXPORT cHSORow : public QObject {
+    friend class cHSOperate;
     Q_OBJECT
 public:
     cHSORow(QSqlQuery& q, cHSOState *par);
     QCheckBox * getCheckBoxSet();
     QCheckBox * getCheckBoxSub();
     QTableWidgetItem * item(int vix);
-    QTableWidgetItem * item(int ix, const QString& eType);
-    QTableWidgetItem * item(int vix, int eix, const QString& eType);
+    QTableWidgetItem * item(int ix, const cColEnumType *pType);
+    QTableWidgetItem * item(int vix, int eix, const cColEnumType *pType);
     QTableWidgetItem * item(int ix, const cColStaticDescr& cd);
-    QTableWidgetItem * boolItem(int ix, const QString& eType);
+    QTableWidgetItem * boolItem(int ix, const QString& tn, const QString &fn);
     qlonglong   id;             /// A példány ID-je
-    int         nsub;           /// Az al szolgáltatáspéldányok szűáma
+    int         nsub;           /// Az al szolgáltatáspéldányok száma
     QSqlRecord  rec;            /// Adatok
     QSqlQuery  *pq;
     bool        set, sub;
+protected:
+    static void staticInit();
+    static const cColEnumType    *pPlaceType;
+    static const cColEnumType    *pNoAlarmType;
+    static const cColEnumType    *pNotifSwitch;
 protected slots:
     void togleSet(bool f) { set = f; }
     void togleSub(bool f) { sub = f; }
 };
 
-class cHSOperate;
 
 class LV2GSHARED_EXPORT cHSOState : public QObject {
     Q_OBJECT

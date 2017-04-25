@@ -119,7 +119,7 @@ cPatch * cPatchDialog::getPatch()
             if (!r) {
                 QString msg = trUtf8("A megadott kábelmegosztás nem állítható be (%1,%2,%3,%4,%5)").
                         arg(a).arg(b).arg(ab).arg(bb).arg(cd ? _sTrue : _sFalse);
-                QMessageBox::warning(this, design().titleError, msg,QMessageBox::Ok);
+                QMessageBox::warning(this, dcViewShort(DC_ERROR), msg,QMessageBox::Ok);
             }
         }
     }
@@ -157,14 +157,14 @@ void cPatchDialog::setPatch(const cPatch *pSample)
             if (ix < 0) {       //
                 QString msg = trUtf8("A %1 nevű megosztott port a %2 ID-jű portra hivatkozik, amit nem találok.").
                         arg(pp->getName()).arg(spid);
-                QMessageBox::warning(this, design().titleError, msg,QMessageBox::Ok);
+                QMessageBox::warning(this, dcViewShort(DC_ERROR), msg,QMessageBox::Ok);
                 continue;
             }
             ix = rowsData[i]->listPortIxRow.indexOf(ix);    // Kiválasztható ?
             if (ix < 0) {                   // nem találta
                 QString msg = trUtf8("A %1 nevű megosztott port a %2 ID-jű portra hivatkozik, amit nem választható ki.").
                         arg(pp->getName()).arg(spid);
-                QMessageBox::warning(this, design().titleError, msg,QMessageBox::Ok);
+                QMessageBox::warning(this, dcViewShort(DC_ERROR), msg,QMessageBox::Ok);
                 continue;
             }
             rowsData[i]->comboBoxPortIx->setCurrentIndex(ix);
@@ -591,7 +591,8 @@ cEnumValRow::cEnumValRow(QSqlQuery& q, const QString& _val, int _row, cEnumValsE
     default:
         EXCEPTION(AMBIGUOUS, r, mCat(parent->enumTypeTypeName, _val));
     }
-    setTableItemText(_val,                     pTableWidget, row, CEV_NAME);
+    QTableWidgetItem *p = setTableItemText(_val, pTableWidget, row, CEV_NAME);
+    p->setFlags(p->flags() & ~Qt::ItemIsEditable);
     setTableItemText(rec.getName(_sViewShort), pTableWidget, row, CEV_SHORT);
     setTableItemText(rec.getName(_sViewLong),  pTableWidget, row, CEV_LONG);
     pBgColorWidget = new cColorWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sBgColor), rec[_sBgColor], false, NULL);
@@ -600,7 +601,7 @@ cEnumValRow::cEnumValRow(QSqlQuery& q, const QString& _val, int _row, cEnumValsE
     pTableWidget->setCellWidget(row, CEV_FG_COLOR, pFgColorWidget->pWidget());
     pFntFamWidget  = new cFontFamilyWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sFontFamily), rec[_sFontFamily], NULL);
     pTableWidget->setCellWidget(row, CEV_FNT_FAM, pFntFamWidget->pWidget());
-    pFntAttWidget  = new cFontAttrWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sFontAttr), rec[_sFontAttr], NULL);
+    pFntAttWidget  = new cFontAttrWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sFontAttr), rec[_sFontAttr], false, NULL);
     pTableWidget->setCellWidget(row, CEV_FNT_ATT, pFntAttWidget->pWidget());
     setTableItemText(rec.getName(_sEnumValNote),  pTableWidget, row, CEV_NOTE);
     setTableItemText(rec.getName(_sToolTip),  pTableWidget, row, CEV_TOOL_TIP);
@@ -628,8 +629,8 @@ cEnumValsEditWidget::cEnumValsEditWidget(QWidget *parent)
     pq = newQuery();
     pUi = new Ui::enumValsWidget;
     pUi->setupUi(this);
-    pUi->buttonBox->button(QDialogButtonBox::Ok)->setDisabled(true);
-    pUi->buttonBox->button(QDialogButtonBox::Save)->setDisabled(true);
+    // pUi->buttonBox->button(QDialogButtonBox::Ok)->setDisabled(true);
+    // pUi->buttonBox->button(QDialogButtonBox::Save)->setDisabled(true);
     connect(pUi->buttonBox, SIGNAL(clicked(QAbstractButton*)), this, SLOT(clicked(QAbstractButton*)));
     pShape = new cTableShape;
     if (!pShape->fetchByName(*pq, _sEnumVals)) {
@@ -670,7 +671,7 @@ cEnumValsEditWidget::cEnumValsEditWidget(QWidget *parent)
     pWidgetValFntFam->setParent(this);
     formSetField(pUi->formLayoutVal, pUi->labelValFontFamily, pWidgetValFntFam->pWidget());
 
-    pWidgetValFntAtt  = new cFontAttrWidget(*pShape, *pShape->shapeFields.get(_sFontAttr), val[_sFontAttr], NULL);
+    pWidgetValFntAtt  = new cFontAttrWidget(*pShape, *pShape->shapeFields.get(_sFontAttr), val[_sFontAttr], false, NULL);
     pWidgetValFntAtt->setParent(this);
     formSetField(pUi->formLayoutVal, pUi->labelValFontAttr, pWidgetValFntAtt->pWidget());
 
@@ -696,7 +697,7 @@ cEnumValsEditWidget::cEnumValsEditWidget(QWidget *parent)
     pWidgetTrueFntFam->setParent(this);
     formSetField(pUi->formLayoutTrue, pUi->labelTrueFontFam, pWidgetTrueFntFam->pWidget());
 
-    pWidgetTrueFntAtt  = new cFontAttrWidget(*pShape, *pShape->shapeFields.get(_sFontAttr), boolTrue[_sFontAttr], NULL);
+    pWidgetTrueFntAtt  = new cFontAttrWidget(*pShape, *pShape->shapeFields.get(_sFontAttr), boolTrue[_sFontAttr], false, NULL);
     pWidgetTrueFntAtt->setParent(this);
     formSetField(pUi->formLayoutTrue, pUi->labelTrueFntAtt, pWidgetTrueFntAtt->pWidget());
         // false
@@ -712,7 +713,7 @@ cEnumValsEditWidget::cEnumValsEditWidget(QWidget *parent)
     pWidgetFalseFntFam->setParent(this);
     formSetField(pUi->formLayoutFalse, pUi->labelFalseFntFam, pWidgetFalseFntFam->pWidget());
 
-    pWidgetFalseFntAtt  = new cFontAttrWidget(*pShape, *pShape->shapeFields.get(_sFontAttr), boolFalse[_sFontAttr], NULL);
+    pWidgetFalseFntAtt  = new cFontAttrWidget(*pShape, *pShape->shapeFields.get(_sFontAttr), boolFalse[_sFontAttr], false, NULL);
     pWidgetFalseFntAtt->setParent(this);
     formSetField(pUi->formLayoutFalse, pUi->labelFalseFntAtt, pWidgetFalseFntAtt->pWidget());
 
@@ -856,10 +857,12 @@ void cEnumValsEditWidget::setEnumValType(const QString& etn)
     pUi->comboBoxValVal->addItems(pEnumValType->enumValues);
 }
 
-void cEnumValsEditWidget::setEnumValVal(const QString& ev)
+void cEnumValsEditWidget::setEnumValVal(const QString& _ev)
 {
     if (pEnumValType  == NULL || enumValTypeName.isEmpty()) return;
     val.clear();
+    QString ev = _ev;
+    if (ev.isNull()) ev = QString("");  // Üres lehet, de NULL nem!
     val[_sEnumValName]  = ev;
     val[_sEnumTypeName] = enumValTypeName;
     int n = val.completion(*pq);
@@ -991,10 +994,10 @@ void cEnumValsEditWidget::setBoolField(const QString& fn)
         boolFalse.setName(_sViewShort, langBool(false));
         boolFalse.setName(_sViewLong, langBool(false));
     }
-    pUi->lineEditFalseShort->setText(boolTrue[_sViewShort].toString());
-    pUi->lineEditFalseLong->setText(boolTrue[_sViewLong].toString());
-    pUi->lineEditFalseNote->setText(boolTrue[_sViewLong].toString());
-    pUi->textEditBoolToolTip->setText(boolTrue[_sToolTip].toString());
+    pUi->lineEditFalseShort->setText(boolFalse[_sViewShort].toString());
+    pUi->lineEditFalseLong->setText(boolFalse[_sViewLong].toString());
+    pUi->lineEditFalseNote->setText(boolFalse[_sViewLong].toString());
+    pUi->textEditBoolToolTip->setText(boolFalse[_sToolTip].toString());
     pWidgetFalseBgColor->set(boolFalse[_sBgColor]);
     pWidgetFalseFgColor->set(boolFalse[_sFgColor]);
     pWidgetFalseFntFam->set(boolFalse[_sFontFamily]);

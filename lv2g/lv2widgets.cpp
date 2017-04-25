@@ -164,6 +164,24 @@ QString fieldWidgetType(int _t)
     }
 }
 
+inline bool tableIsReadOnly(const cTableShape &_tm, const cRecord& _r)
+{
+    if (!(_r.isUpdatable()))                             return true;   // A tábla nem modosítható
+    if (_tm.getBool(_sTableShapeType, TS_READ_ONLY))     return true;   // Read only flag a tábla megj, leíróban
+    if (!lanView::isAuthorized(_tm.getId(_sEditRights))) return true;   // Az aktuális user-nek nics joga modosítani a táblát
+    return false;
+}
+
+inline bool fieldIsReadOnly(const cTableShape &_tm, const cTableShapeField &_tf, const cRecordFieldRef& _fr)
+{
+    if (tableIsReadOnly(_tm, _fr.record()))              return true;   // A táblát nem lehet/szabad modosítani
+    if (!(_fr.descr().isUpdatable))                      return true;   // A mező nem modosítható
+    if (_tf.getBool(_sFieldFlags,     FF_READ_ONLY))     return true;   // Read only flag a mező megj, leíróban
+    if (!lanView::isAuthOrNull(_tf.getId(_sEditRights))) return true;   // Az aktuális user-nek nics joga modosítani a mezőt
+    if (_fr.recDescr().autoIncrement()[_fr.index()])     return true;   // Az autoincrement mezőt nem modosítjuk.
+    return false;
+}
+
 cFieldEditBase::cFieldEditBase(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef _fr, bool _ro, cRecordDialogBase *_par)
     : QObject(_par)
     , _pParentDialog(_par)
@@ -174,21 +192,23 @@ cFieldEditBase::cFieldEditBase(const cTableShape &_tm, const cTableShapeField &_
     , _value()
 {
     _wType      = FEW_UNKNOWN;
-    _readOnly   = _ro;
-    if (!_fieldShape.isNull(_sEditRights)) {
-        _ro = !lanView::isAuthorized(_fieldShape.getId(_sEditRights));
-    }
+    _readOnly   = _ro || fieldIsReadOnly(_tm, _tf, _fr);
     _value      = _fr;
     _pWidget    = NULL;
     pq          = newQuery();
     _nullable   = _fr.isNullable();
     _hasDefault = _fr.descr().colDefault.isNull() == false;
-    _isInsert   = _fr.record().isEmpty_();
+    _hasAuto    = _fr.recDescr().autoIncrement()[_fr.index()];
+    _isInsert   = _fr.record().isEmpty_();      // ??!
+    _dcNull     = DC_INVALID;
     if (_isInsert && _hasDefault) {
-        _nullView = design().valDefault;
+        _dcNull = DC_DEFAULT;       // Megadható NULL, mert van alapértelmezett érték
+    }
+    else if (_hasAuto) {
+        _dcNull = DC_AUTO;          // Automatikus érték
     }
     else if (_nullable) {
-        _nullView = design().valNull;
+        _dcNull = DC_NULL;          // Lehet NULL a mező
     }
 
     _DBGFNL() << VDEB(_nullable) << VDEB(_hasDefault) << VDEB(_isInsert) << " Index = " << fieldIndex() << " _value = " << debVariantToString(_value) << endl;
@@ -251,16 +271,16 @@ void cFieldEditBase::setFromWidget(QVariant v)
 cFieldEditBase * cFieldEditBase::anotherField(const QString& __fn, eEx __ex)
 {
     if (_pParentDialog == NULL) {
-        QString se = trUtf8("A keresett %1 mező, nem található, nincs parent dialügus.")
-                .arg(__fn);
+        QString se = trUtf8("A keresett %1 nevű mező szerkesztő objektum, nem található, nincs parent dialugus.\nMező Leiró : %2")
+                .arg(__fn, _fieldShape.identifying());
         if (__ex != EX_IGNORE) EXCEPTION(EDATA, -1, se);
         DERR() << se << endl;
         return NULL;
     }
     cFieldEditBase *p = (*_pParentDialog)[__fn];
     if (p == NULL) {
-        QString se = trUtf8("A keresett %1 mező, nem található a '%2'.'%3'-ból.")
-                .arg(__fn).arg(_pParentDialog->name).arg(_colDescr.colName());
+        QString se = trUtf8("A keresett %1 mező, nem található a '%2'.'%3'-ból.\nMező Leiró : %2")
+                .arg(__fn, _pParentDialog->name, _colDescr.colName(), _fieldShape.identifying());
         if (__ex != EX_IGNORE) EXCEPTION(EDATA, -1, se);
         DERR() << se << endl;
     }
@@ -290,16 +310,18 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
     PDEB(VVERBOSE) << "Field value = " << debVariantToString(_fr) << endl;
     PDEB(VVERBOSE) << "Field descr = " << _fr.descr().allToString() << endl;
     if (!_tf.isNull(_sViewRights) && !lanView::isAuthorized(_tf.getId(_sViewRights))) {
-        cNullWidget *p = new cNullWidget(_tm, _tf, _fr, true, _par);
+        cNullWidget *p = new cNullWidget(_tm, _tf, _fr, _par);
         _DBGFNL() << " new cNullWidget" << endl;
         return p;
     }
     int et = _fr.descr().eColType;
-    bool ro = _ro || !(_fr.record().isUpdatable()) || !(_fr.descr().isUpdatable);
-    ro = ro || (et == cColStaticDescr::FT_INTEGER && _fr.record().autoIncrement()[_fr.index()]);    // Ha auto increment, akkor RO.
-    if (ro) {
+    bool ro = _ro || fieldIsReadOnly(_tm, _tf, _fr);
+    qlonglong fieldFlags = _tf.getId(_sFieldFlags);
+    static const QString sRadioButtons = "radioButtons";
+    if (ro) {       // Néhány widget-nek nincs read-only módja, azok helyett read-only esetén egy soros megj.
         switch (et) {
         // ReadOnly esetén a felsoroltak kivételével egysoros megjelenítés
+        case cColStaticDescr::FT_SET:
         case cColStaticDescr::FT_POLYGON:
         case cColStaticDescr::FT_INTEGER_ARRAY:
         case cColStaticDescr::FT_REAL_ARRAY:
@@ -307,32 +329,44 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
         case cColStaticDescr::FT_BINARY:
         case cColStaticDescr::FT_INTERVAL:
             break;
-        case cColStaticDescr::FT_TEXT:
-            if (_tf.isFeature(_sColor)) break;
+        case cColStaticDescr::FT_TEXT:  // Ha a text egy szín, akkor nem szövegként jelenítjük meg!
+            if (fieldFlags && ENUM2SET2(FF_FG_COLOR, FF_BG_COLOR)) break;
+            goto if_ro_cFieldLineWidget;
+        case cColStaticDescr::FT_BOOLEAN:
+        case cColStaticDescr::FT_ENUM:
+            if (_tf.isFeature(sRadioButtons)) break;
+            goto if_ro_cFieldLineWidget;
+        if_ro_cFieldLineWidget:
         default: {
             cFieldLineWidget *p =  new cFieldLineWidget(_tm, _tf, _fr, true, _par);
             _DBGFNL() << " new cFieldLineWidget" << endl;
             return  p;
-        }
+          }
         }
     }
     switch (et) {
-    // LineEdit kivételek
+    // adattípus és a kivételek szerinti szerkesztő objektum típus kiválasztás.
     case cColStaticDescr::FT_INTEGER:
-        if (_fr.descr().fKeyType != cColStaticDescr::FT_NONE) {
+        if (_fr.descr().fKeyType != cColStaticDescr::FT_NONE) {     // Ha ez egy idegen kulcs
             cFKeyWidget *p = new cFKeyWidget(_tm, _tf, _fr, _par);
             _DBGFNL() << " new cFKeyWidget" << endl;
             return p;
         }
-        goto case_FieldLineWidget;
+        goto case_FieldLineWidget;                                  // Egy soros text...
     case cColStaticDescr::FT_TEXT:
-        if (_tf.isFeature(_sColor)) {
+        if (fieldFlags && ENUM2SET2(FF_FG_COLOR, FF_BG_COLOR)) {    // Ez egy szín, mint text
             cColorWidget *p = new cColorWidget(_tm, _tf, _fr, ro, _par);
             _DBGFNL() << " new cColorWidget" << endl;
             return p;
         }
-        goto case_FieldLineWidget;
-    // LineEdit kivételek vége
+        if (fieldFlags && ENUM2SET(FF_FONT)) {                      // Font család neve
+            if (ro) EXCEPTION(EPROGFAIL);     // nem lehet r.o.
+            cFontFamilyWidget *p = new cFontFamilyWidget(_tm, _tf, _fr, _par);
+            _DBGFNL() << " new cFontFamilyWidget" << endl;
+            return p;
+        }
+        goto case_FieldLineWidget;                                  // Egy soros text...
+    // Egy soros bevitel (LineEdit) kivételek vége
     case_FieldLineWidget:
     case cColStaticDescr::FT_REAL:
     case cColStaticDescr::FT_MAC:
@@ -342,13 +376,28 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
         _DBGFNL() << " new cFieldLineWidget" << endl;
         return p;
     }
-    case cColStaticDescr::FT_BOOLEAN:
-    case cColStaticDescr::FT_ENUM: {
-        cEnumComboWidget *p = new cEnumComboWidget(_tm, _tf, _fr, _par);
-        _DBGFNL() << " new cEnumComboWidget" << endl;
-        return p;
+    case cColStaticDescr::FT_BOOLEAN:                               // Enumeráció (spec esete) -ként kezeljük
+    case cColStaticDescr::FT_ENUM: {                                // Enumeráció mint radio-button-ok
+        if (_tf.isFeature(sRadioButtons)) {
+            cEnumRadioWidget *p = new cEnumRadioWidget(_tm, _tf, _fr, ro, _par);
+            _DBGFNL() << " new cEnumRadioWidget" << endl;
+            return p;
+        }
+        else {                                                      // Enumeráció : alapértelmezetten comb-box
+            cEnumComboWidget *p = new cEnumComboWidget(_tm, _tf, _fr, _par);
+            _DBGFNL() << " new cEnumComboWidget" << endl;
+            return p;
+        }
     }
     case cColStaticDescr::FT_SET: {
+        if (fieldFlags && ENUM2SET(FF_FONT)) {                      // Font attributum
+            // Csak ez a típus lehet!
+            if (_fr.descr().enumType() == cFontAttrWidget::sEnumTypeName) {
+                cFontAttrWidget *p = new cFontAttrWidget(_tm, _tf, _fr, ro, _par);
+                _DBGFNL() << " new cFontAttrWidget" << endl;
+                return p;
+            }
+        }
         cSetWidget *p = new cSetWidget(_tm, _tf, _fr, ro, _par);
         _DBGFNL() << " new cSetWidget" << endl;
         return p;
@@ -359,7 +408,7 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
         return p;
     }
     case cColStaticDescr::FT_INTEGER_ARRAY:
-        if (_fr.descr().fKeyType != cColStaticDescr::FT_NONE) {
+        if (_fr.descr().fKeyType != cColStaticDescr::FT_NONE) {     // nem szám, hanem a hivatkozott rekordok kezelése
             cFKeyArrayWidget *p = new cFKeyArrayWidget(_tm, _tf, _fr, ro, _par);
             _DBGFNL() << " new cFKeyArrayWidget" << endl;
             return p;
@@ -408,19 +457,20 @@ int cFieldEditBase::height()
 }
 
 /* **************************************** cNullWidget **************************************** */
-cNullWidget::cNullWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase* _par)
-    : cFieldEditBase(_tm, _tf, __fr, _ro, _par)
+cNullWidget::cNullWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, cRecordDialogBase* _par)
+    : cFieldEditBase(_tm, _tf, __fr, true, _par)
 {
+    _DBGOBJ() << _tf.identifying() << endl;
     _wType = FEW_NULL;
-    QLabel *pL = new QLabel(_par == NULL ? NULL : _par->pWidget());
+    QLineEdit *pL = new QLineEdit(_par == NULL ? NULL : _par->pWidget());
     _pWidget = pL;
-    pL->setText(trUtf8("Nem elérhető"));
-    pL->setFont(design()[GDR_NULL].font);
+    pL->setReadOnly(true);
+    dcSetShort(pL, DC_NOT_PERMIT);
 }
 
 cNullWidget::~cNullWidget()
 {
-    ;
+    DBGOBJ();
 }
 
 /* **************************************** cSetWidget **************************************** */
@@ -428,32 +478,30 @@ cNullWidget::~cNullWidget()
 cSetWidget::cSetWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase *_par)
     : cFieldEditBase(_tm, _tf, __fr, _ro, _par)
 {
+    _DBGOBJ() << _tf.identifying() << endl;
     _wType = FEW_SET;
     _pWidget  = new QWidget(_par == NULL ? NULL : _par->pWidget());
     pButtons  = new QButtonGroup(pWidget());
     pLayout   = new QVBoxLayout;
     pButtons->setExclusive(false);      // SET, több opció is kiválasztható
     widget().setLayout(pLayout);
-    int id = 0;
     _bits = _colDescr.toId(_value);
-    foreach (QString e, _colDescr.enumType().enumValues) {
-        QString t = cEnumVal::viewShort(e, _colDescr.udtName);
-        QCheckBox *pCB = new QCheckBox(t, pWidget());
-        pButtons->addButton(pCB, id);
-        pLayout->addWidget(pCB);
-        pCB->setChecked(enum2set(id) & _bits);
-        pCB->setDisabled(_readOnly);
-        ++id;
+    int id;
+    for (id = 0; id < _colDescr.enumType().enumValues.size(); ++id) {
+        QCheckBox *pCheckBox = new QCheckBox(pWidget());
+        enumSetShort(pCheckBox, _colDescr.enumType(), id, _colDescr.enumType().enum2str(id), _tf.getId(_sFieldFlags));
+        pButtons->addButton(pCheckBox, id);
+        pLayout->addWidget(pCheckBox);
+        pCheckBox->setChecked(enum2set(id) & _bits);
+        pCheckBox->setDisabled(_readOnly);
     }
-    if (_nullView.isEmpty() == false) {
-        QCheckBox *pCB = new QCheckBox(_nullView, pWidget());
-        pCB->setFont(design().null.font);
-        QPalette p = pCB->palette();
-        p.setColor(QPalette::Active, QPalette::WindowText, design().null.fg);
-        pCB->setPalette(p);
-        pButtons->addButton(pCB, id);
-        pLayout->addWidget(pCB);
-        pCB->setChecked(__fr.isNull());
+    if (_dcNull != DC_INVALID) {
+        QCheckBox *pCheckBox = new QCheckBox(pWidget());
+        dcSetShort(pCheckBox, _dcNull);
+        pButtons->addButton(pCheckBox, id);
+        pLayout->addWidget(pCheckBox);
+        pCheckBox->setChecked(__fr.isNull());
+        pCheckBox->setDisabled(_readOnly);
     }
     connect(pButtons, SIGNAL(buttonClicked(int)), this, SLOT(setFromEdit(int)));
 }
@@ -482,7 +530,7 @@ int cSetWidget::set(const QVariant& v)
 
 int cSetWidget::height()
 {
-    return _colDescr.enumType().enumValues.size();
+    return pButtons->buttons().size();
 }
 
 void cSetWidget::setFromEdit(int id)
@@ -519,23 +567,21 @@ cEnumRadioWidget::cEnumRadioWidget(const cTableShape& _tm, const cTableShapeFiel
     widget().setLayout(pLayout);
     int id = 0;
     eval = _colDescr.toId(_value);
-    foreach (QString e, _colDescr.enumType().enumValues) {
-        QString t = cEnumVal::viewShort(e, _colDescr.udtName);
-        QRadioButton *pRB = new QRadioButton(t, pWidget());
-        pButtons->addButton(pRB, id);
-        pLayout->addWidget(pRB);
-        pRB->setChecked(id == eval);
-        pRB->setDisabled(_readOnly);
-        t = cEnumVal::toolTip(e, _colDescr.udtName);
-        if (!t.isEmpty()) pRB->setToolTip(t);
-        ++id;
+    for (id = 0; id < _colDescr.enumType().enumValues.size(); ++id) {
+        QRadioButton *pRadioButton = new QRadioButton(pWidget());
+        enumSetShort(pRadioButton, _colDescr.enumType(), id, _colDescr.enumType().enum2str(id), _tf.getId(_sFieldFlags));
+        pButtons->addButton(pRadioButton, id);
+        pLayout->addWidget(pRadioButton);
+        pRadioButton->setChecked(id == eval);
+        pRadioButton->setDisabled(_readOnly);
     }
-    if (!_nullView.isEmpty()) {
-        QRadioButton *pRB = new QRadioButton(_nullView, pWidget());
-        pButtons->addButton(pRB, id);
-        pLayout->addWidget(pRB);
-        pRB->setChecked(eval < 0);
-        pRB->setDisabled(_readOnly);
+    if (_dcNull != DC_INVALID) {
+        QRadioButton *pRadioButton = new QRadioButton(pWidget());
+        dcSetShort(pRadioButton, _dcNull);
+        pButtons->addButton(pRadioButton, id);
+        pLayout->addWidget(pRadioButton);
+        pRadioButton->setChecked(eval < 0);
+        pRadioButton->setDisabled(_readOnly);
     }
     connect(pButtons, SIGNAL(buttonClicked(int)),  this, SLOT(setFromEdit(int)));
 }
@@ -562,7 +608,7 @@ int cEnumRadioWidget::set(const QVariant& v)
 
 int cEnumRadioWidget::height()
 {
-    return _colDescr.enumType().enumValues.size();
+    return pButtons->buttons().size();
 }
 
 void cEnumRadioWidget::setFromEdit(int id)
@@ -590,15 +636,15 @@ void cEnumRadioWidget::setFromEdit(int id)
 cEnumComboWidget::cEnumComboWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, cRecordDialogBase *_par)
     : cFieldEditBase(_tm, _tf, __fr, false, _par)
 {
+    if (_readOnly && _par != NULL) EXCEPTION(EPROGFAIL, 0, _tf.identifying() + "\n" + __fr.record().identifying());
     eval = getId();
     _wType = FEW_ENUM_COMBO;
     QComboBox *pCB = new QComboBox(_par == NULL ? NULL : _par->pWidget());
     _pWidget = pCB;
-    pCB->addItems(_colDescr.enumType().enumValues);                 // A lehetséges értékek nevei
-    if (_nullView.isEmpty() == false) {
-        pCB->addItem(_nullView);   // A NULL érték
-    }
-    pCB->setEditable(false);                        // Nem editálható, választás csak a listából
+    nulltype = _dcNull == DC_INVALID ? NT_NOT_NULL : (eNullType)_dcNull;
+    cEnumListModel *pModel = new cEnumListModel(&_colDescr.enumType(), nulltype);
+    pCB->setModel(pModel);
+    pCB->setEditable(false);                  // Nem editálható, választás csak a listából
     setWidget();
     connect(pCB, SIGNAL(activated(int)), this, SLOT(setFromEdit(int)));
 }
@@ -610,9 +656,17 @@ cEnumComboWidget::~cEnumComboWidget()
 
 void cEnumComboWidget::setWidget()
 {
-    QComboBox *pCB = (QComboBox *)_pWidget;
-    if (isContIx(_colDescr.enumType().enumValues, eval)) pCB->setCurrentIndex(eval);
-    else pCB->setCurrentIndex(_colDescr.enumType().enumValues.size());
+    QComboBox *pComboBox = (QComboBox *)_pWidget;
+    if (isContIx(_colDescr.enumType().enumValues, eval)) {
+        int ix = eval;
+        if (nulltype != NT_NOT_NULL) ++ix;
+        pComboBox->setCurrentIndex(ix);
+    }
+    else {
+        if (nulltype != NT_NOT_NULL) eval = 0;
+        else                         eval = NULL_ID;
+        pComboBox->setCurrentIndex(0);
+    }
 }
 
 int cEnumComboWidget::set(const QVariant& v)
@@ -628,9 +682,13 @@ int cEnumComboWidget::set(const QVariant& v)
 
 void cEnumComboWidget::setFromEdit(int id)
 {
-    if (eval == id) return;
-    qlonglong v = id;
-    if (id == _colDescr.enumType().enumValues.size()) v = NULL_ID;
+    qlonglong newEval = id;
+    if (nulltype != NT_NOT_NULL) {
+        if (id == 0) newEval = NULL_ID;
+        else         newEval--;
+    }
+    if (eval == newEval) return;
+    qlonglong v = newEval;
     qlonglong dummy;
     setFromWidget(_colDescr.set(QVariant(v), dummy));
 }
@@ -647,7 +705,6 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
         _wType = FEW_TEXT;  // Widget típus azonosító
         pTE = new QPlainTextEdit(_par == NULL ? NULL : _par->pWidget());
         _pWidget = pTE;
-
     }
     else {
         _wType = FEW_LINE;  // Widget típus azonosító
@@ -690,10 +747,12 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
             tx = "********";
         }
         else if (_isInsert) {
-            if (_recDescr.autoIncrement()[fieldIndex()]) tx = design().valAuto;
-            else if (_hasDefault) tx = design().valDefault;
+            if (_wType == FEW_LINE) {
+                if      (_hasAuto)    dcSetShort(pLE, DC_AUTO);
+                else if (_hasDefault) dcSetShort(pLE, DC_DEFAULT);;
+            }
         }
-        if (pLE != NULL) {
+        if (_wType == FEW_LINE) {
             pLE->setText(tx);
             pLE->setReadOnly(true);
         }
@@ -1328,8 +1387,8 @@ void cPolygonWidget::setted(QPolygonF pol)
 cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, cRecordDialogBase *_par)
     : cFieldEditBase(_tm, _tf, __fr, false, _par)
 {
+    if (_readOnly && _par != NULL) EXCEPTION(EPROGFAIL, 0, _tf.identifying() + "\n" + __fr.record().identifying());
     _wType = FEW_FKEY;
-
     _pWidget = new QWidget(_par == NULL ? NULL : _par->pWidget());
     pUi = new Ui_fKeyEd;
     pUi->setupUi(_pWidget);
@@ -1508,6 +1567,7 @@ void cDateWidget::setFromEdit(QDate d)
 cTimeWidget::cTimeWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, cRecordDialogBase *_par)
     : cFieldEditBase(_tm, _tf, __fr, false, _par)
 {
+    if (_readOnly && _par != NULL) EXCEPTION(EPROGFAIL, 0, _tf.identifying() + "\n" + __fr.record().identifying());
     _wType = FEW_TIME;
     QTimeEdit * pTE = new QTimeEdit(_par == NULL ? NULL : _par->pWidget());
     _pWidget = pTE;
@@ -1539,6 +1599,7 @@ void cTimeWidget::setFromEdit(QTime d)
 cDateTimeWidget::cDateTimeWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, cRecordDialogBase *_par)
     : cFieldEditBase(_tm, _tf, __fr,false, _par)
 {
+    if (_readOnly && _par != NULL) EXCEPTION(EPROGFAIL, 0, _tf.identifying() + "\n" + __fr.record().identifying());
     _wType = FEW_DATE_TIME;
     QDateTimeEdit * pDTE = new QDateTimeEdit(_par == NULL ? NULL : _par->pWidget());
     _pWidget = pDTE;
@@ -1764,7 +1825,7 @@ void cBinaryWidget::loadDataFromFile()
     if (fn.isEmpty()) return;
     QFile f(fn);
     if (f.open(QIODevice::ReadOnly) == false && f.isReadable() == false) {
-        QMessageBox::warning(pWidget(), design().titleError, trUtf8("A megadott fájl nem olvasható"));
+        QMessageBox::warning(pWidget(), dcViewShort(DC_ERROR), trUtf8("A megadott %1 nevű fájl nem olvasható").arg(fn));
         return;
     }
     data = f.readAll();
@@ -2003,7 +2064,9 @@ void cFKeyArrayWidget::clrRows()
 }
 
 void cFKeyArrayWidget::doubleClickRow(const QModelIndex & index)
-{ /*
+{
+    (void)index;
+    /*
     const QStringList& sl = pModel->stringList();
     int row = index.row();
     if (isContIx(sl, row)) {
@@ -2035,6 +2098,7 @@ cColorWidget::cColorWidget(const cTableShape& _tm, const cTableShapeField &_tf, 
         sTitle = trUtf8("Szín kiválasztása");
     }
     setColor(_value.toString());
+    pLayout->addStretch();
 }
 
 cColorWidget::~cColorWidget()
@@ -2087,6 +2151,7 @@ cFontFamilyWidget::cFontFamilyWidget(const cTableShape& _tm, const cTableShapeFi
     : cFieldEditBase(_tm, _tf, __fr, false, _par)
     , iconNull("://dialog-no.ico"), iconNotNull("://dialog-no-off.png")
 {
+    if (_readOnly && _par != NULL) EXCEPTION(EPROGFAIL, 0, _tf.identifying() + "\n" + __fr.record().identifying());
     _wType = FEW_FONT_FAMILY;
     _pWidget = new QWidget(_par == NULL ? NULL : _par->pWidget());
     QHBoxLayout *pLayout = new QHBoxLayout;
@@ -2141,14 +2206,16 @@ void cFontFamilyWidget::changeFont(const QFont&)
 
 /* **************************************** cFontAttrWidget ****************************************  */
 
+const QString cFontAttrWidget::sEnumTypeName = "fontattr";
 
-cFontAttrWidget::cFontAttrWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, cRecordDialogBase *_par)
-    : cFieldEditBase(_tm, _tf, __fr, false, _par)
+cFontAttrWidget::cFontAttrWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, __fr, _ro, _par)
     , iconNull("://dialog-no.ico"), iconNotNull("://dialog-no-off.png")
     , iconBold("://icons/format-text-bold.ico"), iconBoldNo("://icons/format-text-bold-no.png")
     , iconItalic("://icons/format-text-italic.ico"), iconItalicNo("://icons/format-text-italic-no.png")
     , iconUnderline("://icons/format-text-underline.ico"), iconUnderlineNo("://icons/format-text-underline-no.png")
     , iconStrikeout("://icons/format-text-strikethrough.ico"), iconStrikeoutNo("://icons/format-text-strikethrough-no.png")
+    , iconSize(22,22)
 {
     _wType = FEW_FONT_ATTR;
     bool isNull = __fr.isNull();
@@ -2156,53 +2223,100 @@ cFontAttrWidget::cFontAttrWidget(const cTableShape& _tm, const cTableShapeField 
     _pWidget = new QWidget(_par == NULL ? NULL : _par->pWidget());
     QHBoxLayout *pLayout = new QHBoxLayout;
     _pWidget->setLayout(pLayout);
-    pToolButtonNull       = new QToolButton();
-    pToolButtonNull->setIcon(isNull ? iconNull : iconNotNull);
-    pToolButtonNull->setCheckable(true);
-    pToolButtonNull->setChecked(isNull);
-    pLayout->addWidget(pToolButtonNull);
+    QWidget *pW;
+    QIcon icon = isNull ? iconNull : iconNotNull;
+    if (_readOnly) {
+        pW = pLabelNull = new QLabel;
+        pLabelNull->setPixmap(icon.pixmap(iconSize));
+        pToolButtonNull = NULL;
+    }
+    else {
+        pW = pToolButtonNull = new QToolButton();
+        pToolButtonNull->setIcon(icon);
+        pToolButtonNull->setCheckable(true);
+        pToolButtonNull->setChecked(isNull);
+        pLabelNull = NULL;
+    }
+    pLayout->addWidget(pW);
 
     bool f = m & ENUM2SET(FA_BOOLD);
-    pToolButtonBold       = new QToolButton();
-    pToolButtonBold->setIcon(f ? iconBold : iconBoldNo);
-    pToolButtonBold->setStyleSheet("QPushButton { font: bold }");
-    pToolButtonBold->setCheckable(true);
-    pToolButtonBold->setChecked(f);
-    pToolButtonBold->setDisabled(isNull);
-    pLayout->addWidget(pToolButtonBold);
+    icon = f ? iconBold : iconBoldNo;
+    if (_readOnly) {
+        pW = pLabelBold = new QLabel;
+        pLabelBold->setPixmap(icon.pixmap(iconSize));
+        pToolButtonBold = NULL;
+    }
+    else {
+        pW = pToolButtonBold = new QToolButton();
+        pToolButtonBold->setIcon(icon);
+        pToolButtonBold->setCheckable(true);
+        pToolButtonBold->setChecked(f);
+        pToolButtonBold->setDisabled(isNull);
+        pLabelBold = NULL;
+    }
+    pLayout->addWidget(pW);
 
     f = m & ENUM2SET(FA_ITALIC);
-    pToolButtonItalic     = new QToolButton();
-    pToolButtonItalic->setIcon(f ? iconItalic : iconItalicNo);
-    pToolButtonItalic->setCheckable(true);
-    pToolButtonItalic->setChecked(f);
-    pToolButtonItalic->setDisabled(isNull);
-    pLayout->addWidget(pToolButtonItalic);
+    icon = f ? iconItalic : iconItalicNo;
+    if (_readOnly) {
+        pW = pLabelItalic = new QLabel;
+        pLabelItalic->setPixmap(icon.pixmap(iconSize));
+        pToolButtonItalic = NULL;
+    }
+    else {
+        pW = pToolButtonItalic = new QToolButton();
+        pToolButtonItalic->setIcon(icon);
+        pToolButtonItalic->setCheckable(true);
+        pToolButtonItalic->setChecked(f);
+        pToolButtonItalic->setDisabled(isNull);
+        pLabelItalic = NULL;
+    }
+    pLayout->addWidget(pW);
 
     f = m & ENUM2SET(FA_UNDERLINE);
-    pToolButtonUnderline  = new QToolButton();
-    pToolButtonUnderline->setIcon(f ? iconUnderline : iconUnderlineNo);
-    pToolButtonUnderline->setCheckable(true);
-    pToolButtonUnderline->setChecked(f);
-    pToolButtonUnderline->setDisabled(isNull);
-    pLayout->addWidget(pToolButtonUnderline);
+    icon = f ? iconUnderline : iconUnderlineNo;
+    if (_readOnly) {
+        pW = pLabelUnderline = new QLabel;
+        pLabelUnderline->setPixmap(icon.pixmap(iconSize));
+        pToolButtonUnderline = NULL;
+    }
+    else {
+        pW = pToolButtonUnderline  = new QToolButton();
+        pToolButtonUnderline->setIcon(icon);
+        pToolButtonUnderline->setCheckable(true);
+        pToolButtonUnderline->setChecked(f);
+        pToolButtonUnderline->setDisabled(isNull);
+        pLabelUnderline = NULL;
+    }
+    pLayout->addWidget(pW);
 
     f = m & ENUM2SET(FA_STRIKEOUT);
-    pToolButtonStrikeout  = new QToolButton();
-    pToolButtonStrikeout->setIcon(f ? iconStrikeout : iconStrikeoutNo);
-    pToolButtonStrikeout->setCheckable(true);
-    pToolButtonStrikeout->setChecked(f);
-    pToolButtonStrikeout->setDisabled(isNull);
-    pLayout->addWidget(pToolButtonStrikeout);
+    icon = f ? iconStrikeout : iconStrikeoutNo;
+    if (_readOnly) {
+        pW = pLabelStrikeout = new QLabel;
+        pLabelStrikeout->setPixmap(icon.pixmap(iconSize));
+        pToolButtonStrikeout = NULL;
+    }
+    else {
+        pW = pToolButtonStrikeout  = new QToolButton();
+        pToolButtonStrikeout->setIcon(icon);
+        pToolButtonStrikeout->setCheckable(true);
+        pToolButtonStrikeout->setChecked(f);
+        pToolButtonStrikeout->setDisabled(isNull);
+        pLabelStrikeout = NULL;
+    }
+    pLayout->addWidget(pW);
     pLayout->addStretch(0);
 
     QSqlQuery q = getQuery();
-    pEnumType = cColEnumType::fetchOrGet(q, "fontattr");
-    connect(pToolButtonNull,      SIGNAL(toggled(bool)), this, SLOT(togleNull(bool)));
-    connect(pToolButtonBold,      SIGNAL(toggled(bool)), this, SLOT(togleBoold(bool)));
-    connect(pToolButtonItalic,    SIGNAL(toggled(bool)), this, SLOT(togleItelic(bool)));
-    connect(pToolButtonUnderline, SIGNAL(toggled(bool)), this, SLOT(togleUnderline(bool)));
-    connect(pToolButtonStrikeout, SIGNAL(toggled(bool)), this, SLOT(togleStrikeout(bool)));
+    pEnumType = cColEnumType::fetchOrGet(q, sEnumTypeName);
+    if (!_readOnly) {
+        connect(pToolButtonNull,      SIGNAL(toggled(bool)), this, SLOT(togleNull(bool)));
+        connect(pToolButtonBold,      SIGNAL(toggled(bool)), this, SLOT(togleBoold(bool)));
+        connect(pToolButtonItalic,    SIGNAL(toggled(bool)), this, SLOT(togleItelic(bool)));
+        connect(pToolButtonUnderline, SIGNAL(toggled(bool)), this, SLOT(togleUnderline(bool)));
+        connect(pToolButtonStrikeout, SIGNAL(toggled(bool)), this, SLOT(togleStrikeout(bool)));
+    }
 }
 
 cFontAttrWidget::~cFontAttrWidget()
@@ -2216,17 +2330,27 @@ int cFontAttrWidget::set(const QVariant& v)
     bool r = cFieldEditBase::set(v);
     if (r == 1) {
         bool isNull = v.isNull();
-        if (!isNull) {
+        if (_readOnly) {
             m = pEnumType->lst2set(v.toStringList());
-            pToolButtonBold->setChecked(m & ENUM2SET(FA_BOOLD));
-            pToolButtonItalic->setChecked(m & ENUM2SET(FA_ITALIC));
-            pToolButtonUnderline->setChecked(m & ENUM2SET(FA_UNDERLINE));
-            pToolButtonStrikeout->setChecked(m & ENUM2SET(FA_STRIKEOUT));
+            pLabelNull->     setPixmap((isNull                     ? iconNull      : iconNotNull    ).pixmap(iconSize));
+            pLabelBold->     setPixmap((m & ENUM2SET(FA_BOOLD)     ? iconBold      : iconBoldNo     ).pixmap(iconSize));
+            pLabelItalic->   setPixmap((m & ENUM2SET(FA_ITALIC)    ? iconItalic    : iconItalicNo   ).pixmap(iconSize));
+            pLabelUnderline->setPixmap((m & ENUM2SET(FA_UNDERLINE) ? iconUnderline : iconUnderlineNo).pixmap(iconSize));
+            pLabelStrikeout->setPixmap((m & ENUM2SET(FA_STRIKEOUT) ? iconStrikeout : iconStrikeoutNo).pixmap(iconSize));
         }
-        pToolButtonBold->setDisabled(isNull);
-        pToolButtonItalic->setDisabled(isNull);
-        pToolButtonUnderline->setDisabled(isNull);
-        pToolButtonStrikeout->setDisabled(isNull);
+        else {
+            if (!isNull) {
+                m = pEnumType->lst2set(v.toStringList());
+                pToolButtonBold->setChecked(m & ENUM2SET(FA_BOOLD));
+                pToolButtonItalic->setChecked(m & ENUM2SET(FA_ITALIC));
+                pToolButtonUnderline->setChecked(m & ENUM2SET(FA_UNDERLINE));
+                pToolButtonStrikeout->setChecked(m & ENUM2SET(FA_STRIKEOUT));
+            }
+            pToolButtonBold->setDisabled(isNull);
+            pToolButtonItalic->setDisabled(isNull);
+            pToolButtonUnderline->setDisabled(isNull);
+            pToolButtonStrikeout->setDisabled(isNull);
+        }
     }
     return r;
 }

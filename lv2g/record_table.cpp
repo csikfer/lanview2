@@ -402,7 +402,7 @@ void cRecordTableFODialog::setFilterDialog()
             break;
         }
         QString title = filter().shapeFilter().getName(_sTableShapeFilterNote);
-        if (title.isEmpty()) title = cEnumVal::viewLong(filter().shapeFilter().getName(_sFilterType), "filtertype");
+        if (title.isEmpty()) title = cEnumVal::viewLong("filtertype", filter().shapeFilter().getId(_sFilterType), filter().shapeFilter().getName(_sFilterType));
         pForm->lineEdit_typeTitle->setText(title);
     }
 }
@@ -485,21 +485,23 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
     , fieldIndex(recDescr.toIndex(shapeField.getName()))
     , colDescr(recDescr.colDescr(fieldIndex))
     , header(shapeField.get(_sTableTitle))
+    , dataCharacter(defaultDataCharter(recDescr, fieldIndex))
+    , defaultDc(cEnumVal::enumVal(_sDatacharacter, dataCharacter))
 {
-    headAlign = Qt::AlignVCenter | Qt::AlignHCenter;
-    dataAlign = Qt::AlignVCenter;
+    fieldFlags = shapeField.getId(_sFieldFlags);
+    headAlign  = Qt::AlignVCenter | Qt::AlignHCenter;
+    dataAlign  = Qt::AlignVCenter;
     if (colDescr.eColType == cColStaticDescr::FT_INTEGER && colDescr.fKeyType == cColStaticDescr::FT_NONE) dataAlign |= Qt::AlignRight;
     else if (colDescr.eColType == cColStaticDescr::FT_REAL)                                                dataAlign |= Qt::AlignRight;
-    dataRole = lv2gDesign::desRole(recDescr, fieldIndex);
-    // 'color' és/vagy 'font' feature: csak text, enum vagy boolean típusú mezőknél!
-    if (colDescr.eColType == cColStaticDescr::FT_TEXT
-     || colDescr.eColType == cColStaticDescr::FT_ENUM
-     || colDescr.eColType == cColStaticDescr::FT_BOOLEAN) {
-        if (sf.isFeature(_sColor)) {
-            dataRole |= GDR_COLOR;
-        }
-        if (sf.isFeature(_sFont)) {
-            dataRole |= GDR_FONT;
+    // 'XX_color' vagy 'font' vagy 'tool_tip' flagesetén kell az enum típusa!
+    if (colDescr.eColType == cColStaticDescr::FT_ENUM || colDescr.eColType == cColStaticDescr::FT_BOOLEAN) {
+        if (fieldFlags && ENUM2SET4(FF_BG_COLOR, FF_FG_COLOR, FF_FONT, FF_TOOL_TIP)) {
+            if (colDescr.eColType == cColStaticDescr::FT_ENUM) {
+                enumTypeName = colDescr.enumType();
+            }
+            else {  // FT_BOOLEAN
+                enumTypeName = mCat(recDescr.tableName(), colDescr);
+            }
         }
     }
 }
@@ -723,7 +725,7 @@ void cRecordsViewBase::insert(bool _similar)
                     else if (flags & RTF_IGROUP) {    // Group, tagja listába van a beillesztés?
                         ok = cGroupAny(*pRec, *(pUpper->actRecord())).insert(*pq, EX_IGNORE);
                         if (!ok) {
-                            QMessageBox::warning(pWidget(), design().titleError, trUtf8("A kijelölt tag felvétele az új csoportba sikertelen"),QMessageBox::Ok);
+                            QMessageBox::warning(pWidget(), dcViewShort(DC_ERROR), trUtf8("A kijelölt tag felvétele az új csoportba sikertelen"),QMessageBox::Ok);
                             refresh();
                             break;
                         }

@@ -65,10 +65,10 @@ class lv2gDesign;
 class cMainWindow;
 
 
-inline static const lv2gDesign& design();
+// inline static const lv2gDesign& design();
 
 class LV2GSHARED_EXPORT lv2g : public lanView {
-    friend const lv2gDesign& design();
+//    friend const lv2gDesign& design();
 public:
     lv2g();
     ~lv2g();
@@ -90,9 +90,10 @@ public:
     /// Main window object pointer
     static cMainWindow *    pMainWindow;
 protected:
-    const lv2gDesign *pDesign;
+//    const lv2gDesign *pDesign;
 };
 
+/*
 inline static const lv2gDesign& design()
 {
     return *(lv2g::getInstance()->pDesign);
@@ -128,6 +129,7 @@ enum eDesignRole {
     GDR_FONT   = 0x200  ///< Egyedi font
 };
 
+
 class LV2GSHARED_EXPORT lv2gDesign : public QObject {
     Q_OBJECT
 protected:
@@ -158,9 +160,12 @@ public:
     const colorAndFont&   operator[](int role) const;
     static eDesignRole desRole(const cRecStaticDescr& __d, int __ix);
 };
+*/
 
-typedef QList<QHBoxLayout *> hBoxLayoutList;
-typedef QList<QLabel *>     labelList;
+_GEX int defaultDataCharter(const cRecStaticDescr& __d, int __ix);
+
+// typedef QList<QHBoxLayout *> hBoxLayoutList;
+// typedef QList<QLabel *>     labelList;
 
 static inline QWidget *newFrame(int _st, QWidget * p = NULL)
 {
@@ -204,16 +209,111 @@ public:
 
 _GEX QPolygonF convertPolygon(const tPolygonF __pol);
 
-_GEX const QColor& bgColorByEnum(const QString& __v, const QString& __t = QString());
-inline const QColor& bgColorByBool(bool __v, const QString& __t = QString())
+_GEX const QColor& bgColorByEnum(const QString& __t, int e);
+inline const QColor& bgColorByBool(const QString& _tn, const QString& _fn, int e)
 {
-    return bgColorByEnum(__v ? _sTrue : _sFalse, __t);
+    return bgColorByEnum(mCat(_tn, _fn), e);
 }
 
-_GEX const QColor& fgColorByEnum(const QString& __v, const QString& __t = QString());
-inline const QColor& fgColorByBool(bool __v, const QString& __t = QString())
+_GEX const QColor& fgColorByEnum(const QString& __t, int e);
+inline const QColor& fgColorByBool(const QString& _tn, const QString& _fn, int e)
 {
-    return fgColorByEnum(__v ? _sTrue : _sFalse, __t);
+    return fgColorByEnum(mCat(_tn, _fn), e);
 }
+
+_GEX const QFont& fontByEnum(const QString& __t, int _e);
+
+static inline QColor  dcBgColor(int id)   { return bgColorByEnum(_sDatacharacter, id); }
+static inline QColor  dcFgColor(int id)   { return fgColorByEnum(_sDatacharacter, id); }
+static inline QFont   dcFont(int id)      { return fontByEnum(_sDatacharacter, id); }
+
+static inline void enumSetColor(QWidget *pW, const QString& _t, int id) {
+    const QColor& bgc = bgColorByEnum(_t, id);
+    const QColor& fgc = fgColorByEnum(_t, id);
+    if (bgc.isValid() || fgc.isValid()) {
+        QPalette palette = pW->palette();
+        if (bgc.isValid()) { palette.setColor(QPalette::Background, bgc); }
+        if (fgc.isValid()) { palette.setColor(QPalette::Base,       fgc); }
+        pW->setPalette(palette);
+    }
+}
+
+static inline void enumSetBgColor(QWidget *pW, const QString& _t, int id) {
+    const QColor& bgc = bgColorByEnum(_t, id);
+    if (bgc.isValid()) {
+        QPalette palette = pW->palette();
+        if (bgc.isValid()) { palette.setColor(QPalette::Background, bgc); }
+        pW->setPalette(palette);
+    }
+}
+
+static inline void enumSetFgColor(QWidget *pW, const QString& _t, int id) {
+    const QColor& fgc = fgColorByEnum(_t, id);
+    if (fgc.isValid()) {
+        QPalette palette = pW->palette();
+        if (fgc.isValid()) { palette.setColor(QPalette::Base,       fgc); }
+        pW->setPalette(palette);
+    }
+}
+
+static inline void dcSetColor(QWidget *pW, int id) { enumSetColor(pW, _sDatacharacter, id); }
+static inline void dcSetBgColor(QWidget *pW, int id) { enumSetBgColor(pW, _sDatacharacter, id); }
+static inline void dcSetFbColor(QWidget *pW, int id) { enumSetFgColor(pW, _sDatacharacter, id); }
+
+/// Widget kinézetének a beállítása a megadott enumeráció típus és értékhez rendelt paraméterek alapján
+/// @param pW A beállítandó wideget pointere.
+/// @param _t Enumerációs típus neve
+/// @param id Az enumeráció numerikus értéke
+_GEX void enumSetD(QWidget *pW, const QString& _t, int id);
+
+/// Widget kinézetének a beállítása a megadott enumeráció típus és értékhez rendelt paraméterek alapján
+/// feltételesen, figyelembe véve a megadott field_flags értéket.
+/// @param pW A beállítandó wideget pointere.
+/// @param _t Enumerációs típus neve
+/// @param id Az enumeráció numerikus értéke
+_GEX void enumSetD(QWidget *pW, const QString& _t, int id, qlonglong ff, int dcId = DC_DATA);
+
+/// Widget kinézetének a beállítása az alap data_character típus nevű enumerációhoz
+/// rendelt paraméterek alapján.
+/// @param pW A beállítandó wideget pointere.
+/// @param id Az enumeráció numerikus értéke
+static inline void dcSetD(QWidget *pW, int id) { enumSetD(pW, _sDatacharacter, id); }
+
+/// Widget kinézetének a beállítása a megadott enumeráció típus és értékhez rendelt paraméterek alapján,
+/// Továbbá a widget szövegének  beállítása a viewShort mező alapján.
+/// @param pW A beállítandó wideget pointere.
+/// @param _t Enumerációs típus neve
+/// @param id Az enumeráció numerikus értéke
+/// @param _ds Az alapértelmezett szöveg, ha nics az enumerációhoz paraméter rekord (cEnumVal/"enum_vals").
+template <class W> void enumSetShort(W *pW, const QString& __t, int id, const QString& _ds) {
+    enumSetD(pW, __t, id);
+    pW->setText(cEnumVal::viewShort(__t, id, _ds));
+}
+
+/// Widget kinézetének a beállítása a megadott enumeráció típus és értékhez rendelt paraméterek alapján
+/// feltételesen, figyelembe véve a megadott field_flags értéket.
+/// Továbbá a widget szövegének  beállítása a viewShort mező alapján.
+/// @param pW A beállítandó wideget pointere.
+/// @param _t Enumerációs típus neve
+/// @param id Az enumeráció numerikus értéke
+/// @param _ds Az alapértelmezett szöveg, ha nics az enumerációhoz paraméter rekord (cEnumVal/"enum_vals").
+/// @param ff A mező szerkesztő leíróban a field_flags mező numerikus értéke
+template <class W> void enumSetShort(W *pW, const QString& __t, int id, const QString& _ds, qlonglong ff, int dcId = DC_DATA) {
+    enumSetD(pW, __t, id, ff, dcId);
+    pW->setText(cEnumVal::viewShort(__t, id, _ds));
+}
+
+/// Widget kinézetének a beállítása az alap data_character típus nevű enumerációhoz
+/// rendelt paraméterek alapján. Továbbá a widget szövegének  beállítása a viewShort mező alapján.
+/// @param pW A beállítandó wideget pointere.
+/// @param id Az enumeráció numerikus értéke
+template <class W> void dcSetShort(W *pW, int id) {
+    dcSetD(pW, id);
+    pW->setText(cEnumVal::viewShort(_sDatacharacter, id, dataCharacter(id)));
+}
+
+_GEX QVariant enumRole(const cEnumVal& ev, int role, int e);
+_GEX QVariant enumRole(const QString& _t, int id, int role, const QString& dData);
+_GEX QVariant dcRole(int id, int role);
 
 #endif // LV2G_H

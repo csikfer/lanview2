@@ -137,6 +137,8 @@ public:
     qlonglong lst2set(const QStringList& s, enum eEx __ex = EX_ERROR) const;
     QString     normalize(const QString& nm, bool *pok = NULL) const;
     QStringList normalize(const QStringList& lst, bool *pok = NULL) const;
+    void checkEnum(tE2S e2s, tS2E s2e) const;
+    static void checkEnum(QSqlQuery &q, const QString &_type, tE2S e2s, tS2E s2e);
 private:
     // Egy belső konstruktor a kereséshez
     cColEnumType(const QString& _n) :QString(_n), typeId(NULL_ID) , enumValues() { ; }
@@ -294,6 +296,8 @@ public:
     const cColEnumType *pEnumType;
     /// Enumerációs ill. set típus leíró referenciája, ha nincs dob egy kizárást.
     const cColEnumType& enumType() const { if (pEnumType == NULL) EXCEPTION(EDATA); return *pEnumType; }
+    /// Enumerációs ill. set típus leíró pointere, vagy NULL
+    const cColEnumType *getPEnumType() const { return pEnumType; }
     /// A mező (oszlop) típusa, lásd: eFieldType
     int         eColType;
     /// Ha a mező módosítható, akkor értéke igaz
@@ -1315,7 +1319,12 @@ public:
     /// Az megadott mező értékét állítja be, feltételezve, hogy az egy string, ill. az új érték egy string lessz.
     /// @param __i A mező indexe
     /// @param __n Az mező új értéke, ha null stringet adunk át, akkor NULL lessz.
-    cRecord& setName(int __i, const QString& __n)   { if (__n.isNull()) clear(__i); else set(__i, QVariant(__n)); return *this; }
+    cRecord& setName(int __i, const QString& __n)   {
+        if (__n.isNull())
+            clear(__i);
+        else
+            set(__i, QVariant(__n));
+        return *this; }
     /// Az megadott mező értékét állítja be, feltételezve, hogy az egy string, ill. az új érték egy string lessz.
     /// @param __i A mező neve
     /// @param __n Az mező új értéke, ha null stringet adunk át, akkor NULL lessz.
@@ -2069,7 +2078,7 @@ public:
     QString exportFieldValue(QSqlQuery& q, int ix) const;
     bool isEmpty(int _ix) const;
     /// Rekord azonosító szöveg. Pl. hibaüzeneteknél az objektum beazonosításához.
-    QString identifying();
+    QString identifying() const;
 
 
 protected:
@@ -2433,7 +2442,7 @@ public:
     /// A hivatkozott objektum leíró objektumának a referenciája
     const cColStaticDescr& descr() const    { return _record.descr().colDescr(_index); }
     /// A hivatkozott mező indexe
-    int index()                             { return _index; }
+    int index() const                       { return _index; }
     /// A mező névvel tár vissza
     const QString& columnName() const { return descr().colName(); }
     /// A teljes (tábla névvel kiegészített) mező névvel tér vissza

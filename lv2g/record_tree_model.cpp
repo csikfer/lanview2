@@ -152,26 +152,7 @@ QVariant    cRecordTreeModel::data(const QModelIndex & index, int role) const
         const QString& fn = recDescr.columnName(fix);
         fix = pr->toIndex(fn, EX_IGNORE);   // Nem biztos, hogy van ilyen mező (ős)
     }
-    // Ettöl a DEBUG üzenettől nagyon belassul!!!
-//        _DBGFN() << " name = " << node->name() << "; " << VDEB(col) << VDEB(role) << endl;
-    int dataRole = columns[mix]->dataRole;
-    switch (role) {
-    case Qt::DisplayRole:       return pr->view(*pq, fix);
-    case Qt::TextAlignmentRole: return columns[mix]->dataAlign;
-    case Qt::ForegroundRole:
-    case Qt::BackgroundRole:    if (dataColor(pr, fix, role, dataRole, r)) return r;
-    case Qt::FontRole:          break;
-    default:                    return r;
-    }
-    const colorAndFont&   cf = pr->isNull(fix)
-            ?   design().null
-            :   design()[dataRole];
-    switch (role) {
-    case Qt::ForegroundRole:    return cf.fg;
-    case Qt::BackgroundRole:    return cf.bg;
-    case Qt::FontRole:          return cf.font;
-    }
-    return r;
+    return _data(fix, *columns[mix], pr, role);
 }
 
 QVariant    cRecordTreeModel::headerData(int section, Qt::Orientation orientation, int role) const

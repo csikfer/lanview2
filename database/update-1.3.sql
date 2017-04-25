@@ -227,7 +227,33 @@ ALTER TABLE enum_vals ADD COLUMN tool_tip text DEFAULT NULL;
 ALTER TABLE enum_vals ADD COLUMN font_family text DEFAULT NULL;
 ALTER TABLE enum_vals ADD COLUMN font_attr fontattr[] DEFAULT NULL;
 
-CREATE TYPE datacharacter AS ENUM ('head','data', 'id', 'name', 'primary', 'key', 'fname', 'derived', 'tree', 'foreign', 'null', 'warning');
+CREATE TYPE datacharacter AS ENUM ('head','data', 'id', 'name', 'primary', 'key', 'fname', 'derived', 'tree', 'foreign', 'null', 'default', 'auto', 'info', 'warning', 'error', 'not_permit', 'have_no');
 ALTER TYPE datacharacter OWNER TO lanview2;
+
+-- change field flags set (enum array) type (remove: 'auto_set')
+ALTER TYPE fieldflag RENAME TO fieldflag_old;
+
+CREATE TYPE fieldflag AS ENUM ('table_hide', 'dialog_hide', 'read_only', 'passwd', 'huge', 'batch_edit',
+                               'bg_color', 'fg_color', 'font', 'tool_tip');
+ALTER TYPE fieldflag OWNER TO lanview2;
+COMMENT ON TYPE fieldflag IS
+'A mező tulajdonságok logokai (igen/nem):
+table_hide      A táblázatos megjelenítésnél a mező rejtett
+dialog_hide     A dialógusban (insert, modosít) a mező rejtett
+read_only       A mező nem szerkeszthető
+passwd          A mező egy jelszó (tartlma rejtett)
+huge            A TEXT típusú mező több soros
+batch_edit      A mező kötegelten modosítható
+bg_color        Háttér szín beállítása enum_vals szerint.
+fg_color        karakter szín beállítása enum_vals szerint.
+font            Font beállítása enum_vals szerint.
+tool_tip        Tool tip beállítása enum_vals szerint.
+';
+
+ALTER TABLE table_shape_fields ALTER COLUMN field_flags DROP DEFAULT;
+ALTER TABLE table_shape_fields ALTER COLUMN field_flags TYPE fieldflag[]
+    USING(array_remove(field_flags::text[], 'auto_set')::fieldflag[]);
+ALTER TABLE table_shape_fields ALTER COLUMN field_flags SET DEFAULT '{}'::fieldflag[];
+DROP TYPE fieldflag_old;
 
 END;

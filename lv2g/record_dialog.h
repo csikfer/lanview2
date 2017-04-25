@@ -233,7 +233,7 @@ static inline QString getTableItemText(QTableWidget *pW, int row, int col) {
     return r;
 }
 
-static inline void setTableItemText(const QString& text, QTableWidget *pW, int row, int col) {
+static inline QTableWidgetItem * setTableItemText(const QString& text, QTableWidget *pW, int row, int col) {
     QTableWidgetItem *pItem = pW->item(row, col);
     if (pItem == NULL) {
         pItem = new QTableWidgetItem(text);
@@ -242,6 +242,7 @@ static inline void setTableItemText(const QString& text, QTableWidget *pW, int r
     else {
         pItem->setText(text);
     }
+    return pItem;
 }
 
 static inline int getTableItemComboBoxCurrentIndex(QTableWidget *pW, int row, int col)
