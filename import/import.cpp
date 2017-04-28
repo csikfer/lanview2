@@ -67,14 +67,14 @@ int main (int argc, char * argv[])
 
 void lv2import::abortOldRecords()
 {
+    QSqlQuery q = getQuery();
     QString sql =
             "UPDATE imports "
             "   SET exec_state = 'aborted',"
                 "   ended = CURRENT_TIMESTAMP,"
                 "   result_msg = 'Start imports server: old records aborted.'"
             " WHERE exec_state = 'wait' OR exec_state = 'execute'";
-    if (!pQuery->exec(sql)) SQLPREPERR(*pQuery, sql);
-    pQuery->finish();
+    if (!q.exec(sql)) SQLPREPERR(*pQuery, sql);
 }
 
 void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource source, const QVariant &payload)
