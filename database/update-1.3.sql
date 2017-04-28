@@ -256,4 +256,24 @@ ALTER TABLE table_shape_fields ALTER COLUMN field_flags TYPE fieldflag[]
 ALTER TABLE table_shape_fields ALTER COLUMN field_flags SET DEFAULT '{}'::fieldflag[];
 DROP TYPE fieldflag_old;
 
+ALTER TABLE table_shapes ADD COLUMN style_sheet TEXT;
+
+ALTER TABLE interfaces ADD COLUMN  ifmtu            integer;
+ALTER TABLE interfaces ADD COLUMN  ifspeed          bigint;
+ALTER TABLE interfaces ADD COLUMN  ifinoctets       bigint;
+ALTER TABLE interfaces ADD COLUMN  ifinucastpkts    bigint;
+ALTER TABLE interfaces ADD COLUMN  ifinnucastpkts   bigint;
+ALTER TABLE interfaces ADD COLUMN  ifindiscards     bigint;
+ALTER TABLE interfaces ADD COLUMN  ifinerrors       bigint;
+ALTER TABLE interfaces ADD COLUMN  ifoutoctets      bigint;
+ALTER TABLE interfaces ADD COLUMN  ifoutucastpkts   bigint;
+ALTER TABLE interfaces ADD COLUMN  ifoutnucastpkts  bigint;
+ALTER TABLE interfaces ADD COLUMN  ifoutdiscards    bigint;
+ALTER TABLE interfaces ADD COLUMN  ifouterrors      bigint;
+ALTER TABLE interfaces ADD COLUMN  ifdescr          text;
+ALTER TABLE interfaces ADD COLUMN  stat_last_modify timestamp;
+
+ALTER TABLE host_services ADD COLUMN flag boolean DEFAULT false;
+
+
 END;

@@ -58,7 +58,9 @@ cRecordViewModelBase::~cRecordViewModelBase()
 
 QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const cRecord *pr, int role) const
 {
-    if (Qt::BackgroundRole == role && 0 <= lineBgColorEnumIx) {
+    qlonglong& ff = column.fieldFlags;
+    //  Háttér szín                   az egész sorra              erre a mezőre saját
+    if (Qt::BackgroundRole == role && 0 <= lineBgColorEnumIx && !(ff & ENUM2SET(FF_BG_COLOR))) {
         return bgColorByEnum(lineBgColorEnumType, pr->getId(lineBgColorEnumIx));
     }
     if (fix < 0)           return dcRole(DC_HAVE_NO, role);
@@ -68,7 +70,6 @@ QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const 
         if (role == Qt::DisplayRole) return pr->view(*pq, fix);
         return dcRole(column.dataCharacter, role);
     }
-    qlonglong& ff = column.fieldFlags;
     int        id = (int)pr->getId(fix);
     int        dd = column.dataCharacter;
     switch (role) {

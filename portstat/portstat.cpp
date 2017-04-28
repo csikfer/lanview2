@@ -51,12 +51,29 @@ void lv2portStat::staticInit(QSqlQuery *pq)
 {
     cDevicePSt::pRLinkStat = cService::service(*pq, "rlinkstat");
     cDevicePSt::pSrvSnmp   = cService::service(*pq, _sSnmp);
+    cInterface i;
+    cDevicePSt::ixPortOStat         = i.toIndex(_sPortOStat);
+    cDevicePSt::ixPortAStat         = i.toIndex(_sPortAStat);
+    cDevicePSt::ixIfdescr           = i.toIndex(_sIfDescr.toLower());
+    cDevicePSt::ixIfmtu             = i.toIndex(_sIfMtu.toLower());
+    cDevicePSt::ixIfspeed           = i.toIndex(_sIfSpeed.toLower());
+    cDevicePSt::ixIfinoctets        = i.toIndex(_sIfInOctets.toLower());
+    cDevicePSt::ixIfinucastpkts     = i.toIndex(_sIfInUcastPkts.toLower());
+    cDevicePSt::ixIfinnucastpkts    = i.toIndex(_sIfInUcastPkts.toLower());
+    cDevicePSt::ixIfindiscards      = i.toIndex(_sIfInDiscards.toLower());
+    cDevicePSt::ixIfinerrors        = i.toIndex(_sIfInErrors.toLower());
+    cDevicePSt::ixIfoutoctets       = i.toIndex(_sIfOutOctets.toLower());
+    cDevicePSt::ixIfoutucastpkts    = i.toIndex(_sIfOutUcastPkts.toLower());
+    cDevicePSt::ixIfoutnucastpkts   = i.toIndex(_sIfOutNUcastPkts.toLower());
+    cDevicePSt::ixIfoutdiscards     = i.toIndex(_sIfOutDiscards.toLower());
+    cDevicePSt::ixIfouterrors       = i.toIndex(_sIfOutErrors.toLower());
+    cDevicePSt::ixStatLastModify    = i.toIndex(_sStatLastModify);
 }
 
 void lv2portStat::setup(eTristate _tr)
 {
     staticInit(pQuery);
-    lanView::setup(_tr);
+    lanView::tSetup<cPortStat>(_tr);
 }
 
 
@@ -82,6 +99,23 @@ cInspector * cPortStat::newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong h
 
 const cService *cDevicePSt::pRLinkStat = NULL;
 const cService *cDevicePSt::pSrvSnmp   = NULL;
+int cDevicePSt::ixPortOStat = NULL_IX;
+int cDevicePSt::ixPortAStat = NULL_IX;
+int cDevicePSt::ixIfdescr = NULL_IX;
+int cDevicePSt::ixIfmtu = NULL_IX;
+int cDevicePSt::ixIfspeed = NULL_IX;
+int cDevicePSt::ixIfinoctets = NULL_IX;
+int cDevicePSt::ixIfinucastpkts = NULL_IX;
+int cDevicePSt::ixIfinnucastpkts = NULL_IX;
+int cDevicePSt::ixIfindiscards = NULL_IX;
+int cDevicePSt::ixIfinerrors = NULL_IX;
+int cDevicePSt::ixIfoutoctets = NULL_IX;
+int cDevicePSt::ixIfoutucastpkts = NULL_IX;
+int cDevicePSt::ixIfoutnucastpkts = NULL_IX;
+int cDevicePSt::ixIfoutdiscards = NULL_IX;
+int cDevicePSt::ixIfouterrors = NULL_IX;
+int cDevicePSt::ixStatLastModify = NULL_IX;
+
 
 
 cDevicePSt::cDevicePSt(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector * _par)
@@ -109,93 +143,198 @@ void cDevicePSt::postInit(QSqlQuery &q, const QString&)
 {
     DBGFN();
     cInspector::postInit(q);
-    if (pSubordinates != NULL) EXCEPTION(EDATA);    // Ha a superior=custom nem volt megadva
+    if (pSubordinates != NULL)
+        EXCEPTION(EDATA, -1,
+                  trUtf8("A 'superior=custom'' nem volt megadva? (feature = %1) :\n%2")
+                  .arg(dQuoted(hostService.getName(_sFeatures)))
+                  .arg(hostService.identifying())   );
     pSubordinates = new QList<cInspector *>;
-    /// A host eredeti objektum típusa
+    inspectorMap.clear();
+    // Azokat az al szolgáltatásokat, ami (már) nem tartozik hozzánk, le kell választani!
+    cHostService hsf;   // A flag biteket true-ba tesszük
+    hsf.setId(_sSuperiorHostServiceId, hostServiceId());    // Ha a mi al szolgáltatásunk
+    hsf.setBool(_sDisabled, false);                         // nincs letiltva
+    hsf.setBool(_sDeleted,  false);                         // vagy törölve
+    hsf.setBool(_sFlag, true);
+    QBitArray hsfWhereBits = hsf.mask(_sSuperiorHostServiceId, _sDisabled, _sDeleted);
+    hsf.update(q, false, hsf.mask(_sFlag), hsfWhereBits, EX_ERROR);
+    // A host eredeti objektum típusa
     cSnmpDevice& dev = snmpDev();
     dev.open(q, snmp);
     dev.fetchPorts(q);
-    tRecordList<cNPort>::iterator i, n = dev.ports.end();
-    for (i = dev.ports.begin(); i != n; ++i) {      // Végigvesszük a portokat
-        cNPort *np = *i;
-        cInspector *pnas = NULL;    // Al szolgáltatás,ha van
-        if (np->descr() >= cInterface::_descr_cInterface()) {      // interface-nél alacsonyabb típussal nem foglalkozunk
-            QString msg;
-            cInterface *p = dynamic_cast<cInterface *>(np);
-             // Mivel van linkelve?
-            qlonglong lpid, lpid1, lpid2;     // Linkelt port ID(k)
-            lpid = cLldpLink().getLinked(q, p->getId());
-            if (lpid != NULL_ID) {
-                lpid1 = cLogLink().getLinked(q, p->getId());
-                lpid2 = cLogLink().getLinked(q, lpid);
-                if (lpid1 != NULL_ID && lpid1 != lpid) { // Ez egy ellentmondás!!!
-                    msg += trUtf8("A szervíz %1 port logikai linkje %2 porthoz, ötközik az LLDP klinkkel a %3 porthoz, ezért törölkük a fizikai link első elemét. ")
-                            .arg(p->getFullName(q))
-                            .arg(cNPort::getFullNameById(q, lpid1))
-                            .arg(cNPort::getFullNameById(q, lpid));
-                    cPhsLink().unlink(q, p->getId(), LT_TERM, ES_);
-                }
-                if (lpid2 != NULL_ID && lpid2 != p->getId()) { // Ez egy ellentmondás!!!
-                    msg += trUtf8("A kliens %1 port logikai linkje %2 porthoz, ötközik az LLDP klinkkel a %3 porthoz, ezért törölkük a fizikai link utolsó elemét. ")
-                            .arg(cNPort::getFullNameById(q, lpid))
-                            .arg(cNPort::getFullNameById(q, lpid2))
-                            .arg(p->getFullName(q));
-                    cPhsLink().unlink(q, lpid, LT_TERM, ES_);
-                }
-            }
-            else {      // nem volt LLDP-vel felfedezett link
-                lpid = cLogLink().getLinked(q, p->getId());     // Logikai link ?
-                if (lpid != NULL_ID) {
-                    lpid2 = cLldpLink().getLinked(q, lpid);
-                    if (lpid2 != NULL_ID) {     // Elvileg lehetetlen, hogy jó legyen ha ez van az ellenkező irány meg nincs.
-                        msg += trUtf8("A kliens %1 port lldp linkje %2 porthoz, ötközik a logikai klinkkel a %3 porthoz, ezért törölkük a fizikai link utolsó elemét. ")
-                                .arg(cNPort::getFullNameById(q, lpid))
-                                .arg(cNPort::getFullNameById(q, lpid2))
-                                .arg(p->getFullName(q));
-                        cPhsLink().unlink(q, lpid, LT_TERM, ES_);
-                        lpid = NULL_ID;     // nem ok link, töröltük
-                    }
-                }
-            }
-            if (lpid != NULL_ID) {  // A linkelt port ID-je
-                pnas = new cInspector(this);
-                pnas->service(pRLinkStat);
-                pnas->pPort = cNPort::getPortObjById(q, lpid);
-                cRecord *pn = cNode::getNodeObjById(q, pnas->pPort->getId(_sNodeId), EX_IGNORE);
-                if (pn == NULL) {  // Bizonyára egy HUB, nem foglakozunk vele
-                    pDelete(pnas);
+    tRecordList<cNPort>::iterator it, n = dev.ports.end();
+    for (it = dev.ports.begin(); it != n; ++it) {      // Végigvesszük a portokat
+        cNPort     *pPort    = *it;
+        // interface-nél alacsonyabb típussal nem foglalkozunk, nincs állpota
+        if (!(pPort->descr() >= cInterface::_descr_cInterface())) continue;
+        // Interface, van/kell statusz
+        cInterface *pInterface = dynamic_cast<cInterface *>(pPort);
+        qlonglong   pid = pInterface->getId();
+        cInspector *pRLnkSt  = NULL;    // Al szolgáltatás, ha van. Csak rlinkstat lehet/támogatott
+        QString wMsg;   // Gyanús dolgok
+         // Mivel van linkelve?
+        qlonglong lldp_pid;     // Linkelt port by LLDP
+        qlonglong logl_pid;      // Linkelt port by log_links table
+        cLldpLink lldp;
+        cLogLink  logl;
+        lldp_pid = lldp.getLinked(q, pid);  // Az LLDP szerint ?
+        logl_pid = logl.getLinked(q, pid);  // A logikai linkek szerint
+        if (lldp_pid != NULL_ID && logl_pid != NULL_ID && lldp_pid != logl_pid) { // Ez egy ellentmondás!!!
+            // A probléma leírása :
+            wMsg = trUtf8(
+                        "A %1 port logikai linkje a %2 porthoz, ötközik az LLDP linkkel a %3 porthoz."
+                        " Szolgáltatás példány : %4\n"    )
+                    .arg(pInterface->getFullName(q))
+                    .arg(cNPort::getFullNameById(q, lldp_pid))
+                    .arg(cNPort::getFullNameById(q, logl_pid))
+                    .arg(hostService.names(q));
+            wMsg += lldp.show(true) + "\n";
+            wMsg += logl.show(true) + "\n";
+            wMsg += trUtf8("A fizikai linkek lánca :\n");
+            wMsg += logl.showChain().join("\n");
+            APPMEMO(q, wMsg, RS_WARNING);
+            lldp_pid = logl_pid = NULL_ID;   // Nem hisszük el egyiket sem
+        }
+        else if (logl_pid != NULL_ID && lldp_pid != logl_pid && lldp_pid == logl_pid) { // Ez a tuti
+            wMsg = trUtf8("A log és LLDP link azonos.");
+        }
+        else if (lldp_pid == NULL_ID && logl_pid != NULL_ID) {
+            lldp_pid = logl_pid;     // Ha nincs az LLDP szerint, akkor elhisszük a logikait
+            wMsg = trUtf8("Nincs LLDP link, csak logika.");
+        }
+        else if (lldp_pid != NULL_ID && logl_pid == NULL_ID) {
+            wMsg = trUtf8("Nincs logikai link, csak LLDP.");
+        }
+        // A hihető linkelt port ID az lldp_pid -ben
+        if (lldp_pid == NULL_ID) continue;
+        pRLnkSt = new cInspector(this);                     // Passzív (még) üres objektum
+        pRLnkSt->service(pRLinkStat);                       // szervíz
+        pRLnkSt->pPort = cNPort::getPortObjById(q, lldp_pid);   // port, .. node
+        pRLnkSt->pNode = cNode::getNodeObjById(q, pRLnkSt->pPort->getId(_sNodeId))->reconvert<cNode>();
+        cHostService& hs = pRLnkSt->hostService;
+         // Van host_services rekord ?
+        hs.fetchByIds(q, pRLnkSt->nodeId(), pRLnkSt->serviceId(), lldp_pid, EX_IGNORE);
+        int n = q.size();
+        // Több rekord nem lehet(ne), ha töröljük mindet, aminek nem nil a proto és prime szolg.-a,
+        // akkor meg kell szünnie a redundanciának.
+        if (n  > 1) {
+            QSqlQuery qq = getQuery();
+            cHostService hsc = hs;
+            hs.clear();
+            do {
+                if (hsc.getId(_sPrimeServiceId) != cService::nilId || hsc.getId(_sProtoServiceId) != cService::nilId) {
+                    QString msg = trUtf8("Hibás host_service objektum : %1\n"
+                                     "A rekord törlő gazda (superior) szolgáltatás : %2"
+                                     ).arg(hsc.names(q), hostService.names(q));
+                    hsc.remove(qq);
+                    APPMEMO(qq, msg, RS_WARNING);
+                    --n;
                 }
                 else {
-                    pnas->pNode = pn->reconvert<cNode>();
-                    cHostService& hs = pnas->hostService;
-                    if (hs.fetchByIds(q, pnas->nodeId(), pnas->serviceId(), EX_IGNORE)) { // Van host_services rekord
-                        if (hs.getId(_sSuperiorHostServiceId) != hostServiceId()) {  // máshova mutat a superior, a link szerint viszont a mienk !!!
-                            hs.setId(_sSuperiorHostServiceId, hostServiceId());
-                        }
-                        if (hs.getId(_sPortId) != lpid) {                           // nem stimmel a port
-                            hs.setId(_sPortId, lpid);
-                        }
-                        if (hs.isModify_()) {                                       // volt javítás, update
-                            hs.update(q, true);
-                        }
-                    }
-                    else {
-                        hs.clear();
-                        hs.setId(_sNodeId, pnas->nodeId());
-                        hs.setId(_sServiceId, pnas->serviceId());
-                        hs.setId(_sSuperiorHostServiceId, hostServiceId());
-                        hs.setId(_sPortId, lpid);
-                        hs.setName(_sHostServiceNote, trUtf8("Automatikusan generálva a portstat által."));
-                        hs.setName(_sNoalarmFlag, _sOn);    // Nem kérünk riasztást az automatikusan generált rekordhoz.
-                        hs.insert(q);
-                    }
+                    hs = hsc;
+                }
+            } while (hsc.next(q));
+        }
+        if (n  > 1) EXCEPTION(EPROGFAIL, n); // ez képtelenség
+        if (n == 1) {   // Van, és (most már) egyedi, ha kell javítjuk
+            QBitArray sets(hostService.cols(), false);
+            if (hs.getBool(_sDisabled) || hs.getBool(_sDeleted)) {
+                // Ha disabled, vagy deleted, akkor nem bántjuk, nem foglakozunk vele
+                delete pRLinkStat;
+                continue;
+            }
+            // máshova mutat a superior, a link szerint viszont a mienk !!!
+            qlonglong hsid  = hostServiceId();
+            qlonglong shsid = hs.getId(_sSuperiorHostServiceId);
+            if (shsid != hsid) {
+                int rs;
+                QString msg;
+                if (shsid == NULL_ID) {
+                    wMsg += trUtf8(" Gazda szolgáltatás (superior) beállítása : NULL -> %1")
+                            .arg(hostService.names(q));
+                    msg = wMsg;
+                    rs = RS_RECOVERED;
+                }
+                else {
+                    wMsg += trUtf8(" Gazda szolgáltatás (superior) csere : %1 -> %2")
+                            .arg(cHostService::names(q, shsid))
+                            .arg(hostService.names(q));
+                    msg = wMsg + "\nAktuális service státusz : "
+                        + hs.getName(_sHostServiceState) + ", "
+                        + hs.getName(_sHardState) + ", "
+                        + hs.getName(_sSoftState) + " utolsó modosítás : "
+                        + hs.getName(_sLastChanged) + " / "
+                        + hs.getName(_sLastTouched);
+                    // Fordított logika, ha ok a státusz akkor igazán gáz a váltás
+                    rs = hs.getId(_sHostServiceState) > RS_WARNING ? RS_WARNING : RS_CRITICAL;
+                }
+                APPMEMO(q, msg, rs);
+                hs.setId(_sSuperiorHostServiceId, hsid);
+                sets.setBit(hs.toIndex(_sSuperiorHostServiceId));
+            }
+            if (!wMsg.isEmpty()) {
+                QString s = hs.getNote();
+                if (!s.contains(wMsg)) {
+                    s += " " + wMsg;
+                    hs.setNote(s);
+                    sets.setBit(hs.toIndex(_sHostServiceNote));
                 }
             }
-            if (!msg.isEmpty()) {
-                cDbErr::insertNew(q, cDbErrType::_sDataWarn, msg);
-            }
+            hs.setBool(_sFlag, false);  // Mienk, töröljük a flag-et
+            sets.setBit(hs.toIndex(_sFlag));
+            hs.update(q, true, sets);
         }
-        *pSubordinates << pnas;
+        else {          // Nincs (már vagy még) létrehozzuk
+            hs.clear();
+            hs.setId(_sNodeId, pRLnkSt->nodeId());
+            hs.setId(_sServiceId, pRLnkSt->serviceId());
+            hs.setId(_sSuperiorHostServiceId, hostServiceId());
+            hs.setId(_sPortId, lldp_pid);
+            hs.setBool(_sFlag, false);
+            QString note =
+                    trUtf8("Automatikusan generálva a portstat (%1) által. ")
+                    .arg(hostService.identifying());
+            hs.setNote(note + wMsg);
+            // Nem kérünk riasztást az automatikusan generált rekordhoz.
+            hs.setName(_sNoalarmFlag, _sOn);
+            hs.insert(q);
+        }
+        *pSubordinates << pRLnkSt;
+        inspectorMap[pid] = pRLnkSt;
+    }
+    hsfWhereBits.setBit(hsf.toIndex(_sFlag));   // Ha maradt a true flag, akkor leválasztjuk
+    hsf.clear(_sSuperiorHostServiceId);
+    QString msg = trUtf8("Leválasztva %1 ről.").arg(hostService.names(q));
+    hsf.setNote(msg);
+    int un = hsf.update(q, false, hsf.mask(_sSuperiorHostServiceId, _sHostServiceNote), hsfWhereBits, EX_ERROR);
+    if (un > 0) {
+        msg += trUtf8(" %1 services.").arg(un);
+        APPMEMO(q, msg, RS_WARNING);
+    }
+}
+
+static void setString(QString s, int ix, cInterface& iface, QBitArray& mask)
+{
+    if (s != iface.getName(ix)) {
+        iface.setName(ix, s);
+        mask.setBit(ix);
+    }
+}
+void cDevicePSt::setInt(QVariant v, int ix, cInterface& iface, QBitArray& mask, QSqlQuery& q)
+{
+    bool ok;
+    qlonglong i = v.toLongLong(&ok);
+    if (!ok) {
+        QString msg = trUtf8("Invalid numeric : %1, Service : %2, interface : %3")
+                .arg(debVariantToString(v))
+                .arg(iface.identifying(false))
+                .arg(hostService.names(q));
+        APPMEMO(q, msg, RS_CRITICAL);
+        return;
+    }
+    if (i != iface.getId(ix)) {
+        iface.setId(ix, i);
+        mask.setBit(ix);
     }
 }
 
@@ -207,7 +346,10 @@ enum eNotifSwitch cDevicePSt::run(QSqlQuery& q)
     }
     cTable      tab;    // Interface table container
     QStringList cols;   // Table col names container
-    cols << _sIfIndex << _sIfAdminStatus << _sIfOperStatus << _sIfDescr;
+    cols << _sIfIndex << _sIfAdminStatus << _sIfOperStatus << _sIfDescr << _sIfMtu <<_sIfSpeed
+         << _sIfInOctets << _sIfInUcastPkts << _sIfInNUcastPkts << _sIfInDiscards << _sIfInErrors
+         << _sIfOutOctets << _sIfOutUcastPkts << _sIfOutNUcastPkts << _sIfOutDiscards << _sIfOutErrors;
+
     int r = snmp.getTable(_sIfMib, cols, tab);
     if (r) {
         EXCEPTION(ESNMP, r, QString(QObject::trUtf8("SNMP get table error : %1 in %2").arg(snmp.emsg).arg(name())));
@@ -226,34 +368,68 @@ enum eNotifSwitch cDevicePSt::run(QSqlQuery& q)
         int ix = host().ports.indexOf(_sPortIndex, QVariant(ifIndex));
         if (ix < 0)
             continue;   // Nincs ilyen indexű portunk, eldobjuk
-
-        QString ifDescr = tab[_sIfDescr][i].toString();
-
-        QString opstat = snmpIfStatus(tab[_sIfOperStatus][i].toInt(&ok));
-        if (!ok) EXCEPTION(ESNMP, -1, QString(QObject::trUtf8("ifOperStatus is not numeric : %1")).arg(tab[_sIfOperStatus][i].toString()));
-
-        QString adstat = snmpIfStatus(tab[_sIfAdminStatus][i].toInt(&ok));
-        if (!ok) EXCEPTION(ESNMP, -1, QString(QObject::trUtf8("ifAdminStatus is not numeric : %1")).arg(tab[_sIfAdminStatus][i].toString()));
-
         // Előkapjuk az interface objektumunkat, a konténerből, ehhez kell az indexük
         cInterface&     iface = * dynamic_cast<cInterface *>(host().ports[ix]);
-        if (opstat != iface.getName(_sPortOStat) || adstat != iface.getName(_sPortAStat)) {
-            iface.setName(_sPortOStat, opstat);
-            iface.setName(_sPortAStat, adstat);
-            PDEB(VERBOSE) << "Update port stat: " << pNode->getName() << QChar(':') << ifDescr << endl;
-            if (!iface.update(q, false, iface.mask(_sPortOStat, _sPortAStat), iface.mask(_sNodeId, _sPortIndex), EX_IGNORE)) {
-                DERR() << "Update error : host " << pNode->getName() << " port index : " << ifIndex << endl;
-            }
+
+        QString ifDescr = tab[_sIfDescr][i].toString();
+        QString eMsg;
+
+        QString opstat = snmpIfStatus(tab[_sIfOperStatus][i].toInt(&ok));
+        if (!ok) {
+            eMsg = QObject::trUtf8("ifOperStatus is not numeric : %1").arg(tab[_sIfOperStatus][i].toString());
+            opstat = _sUnknown;
         }
-        if ((*pSubordinates)[ix] == NULL) continue;   // Nincs szolgáltatás, kész
-        // Előkapjuk a kapcsolódó szolgálltatást
-        cInspector& ns   = *(*pSubordinates)[ix];
-        QString state = _sUnKnown;
-        if      (opstat == _sUp)   state = _sOn;        // On
-        else if (adstat == _sUp)   state = _sDown;      // Off
-        else if (adstat == _sDown) state = _sWarning;   // Disabled
-        ns.hostService.setState(q, state, trUtf8("if state : op:%1/adm:%2").arg(opstat).arg(adstat), parentId());
-        ns.flag = true; // beállítva;
+
+        QString adstat = snmpIfStatus(tab[_sIfAdminStatus][i].toInt(&ok));
+        if (!ok) {
+            if (!eMsg.isEmpty()) eMsg += "\n";
+            eMsg += QObject::trUtf8("ifAdminStatus is not numeric : %1").arg(tab[_sIfAdminStatus][i].toString());
+            adstat = _sUnknown;
+        }
+
+        // Ha van kapcolódó al szolgáltatás:
+        QMap<qlonglong, cInspector *>::iterator it = inspectorMap.find(iface.getId());
+        if (it != inspectorMap.end()) {
+            // Előkapjuk a kapcsolódó szolgálltatást
+            cInspector& ns   = **it;
+            QString state = _sUnKnown;
+            if      (opstat == _sUp)   state = _sOn;        // On
+            else if (adstat == _sUp)   state = _sDown;      // Off
+            else if (adstat == _sDown) state = _sWarning;   // Disabled
+            QString msg = trUtf8("if state : op:%1/adm:%2").arg(opstat).arg(adstat);
+            if (!eMsg.isEmpty()) msg += "\n" + eMsg;
+            ns.hostService.setState(q, state, msg, parentId());
+            ns.flag = true; // beállítva;
+        }
+
+        // Interface állapot:
+        QBitArray bitsSet(iface.cols(), false);     // modosítandó mezők mask
+        iface.setName(ixStatLastModify, "NOW");     // utolsó status állítás ideje, most.
+        bitsSet.setBit(ixStatLastModify);
+        setString(ifDescr, ixIfdescr,   iface, bitsSet);
+        setString(opstat,  ixPortOStat, iface, bitsSet);
+        setString(adstat,  ixPortAStat, iface, bitsSet);
+        setInt(tab[_sIfMtu][i],             ixIfmtu,            iface, bitsSet, q);
+        setInt(tab[_sIfSpeed][i],           ixIfspeed,          iface, bitsSet, q);
+        setInt(tab[_sIfInOctets][i],        ixIfinoctets,       iface, bitsSet, q);
+        setInt(tab[_sIfInUcastPkts][i],     ixIfinucastpkts,    iface, bitsSet, q);
+        setInt(tab[_sIfInNUcastPkts][i],    ixIfinnucastpkts,   iface, bitsSet, q);
+        setInt(tab[_sIfInDiscards][i],      ixIfindiscards,     iface, bitsSet, q);
+        setInt(tab[_sIfInErrors][i],        ixIfinerrors,       iface, bitsSet, q);
+        setInt(tab[_sIfOutOctets][i],       ixIfoutoctets,      iface, bitsSet, q);
+        setInt(tab[_sIfOutUcastPkts][i],    ixIfoutucastpkts,   iface, bitsSet, q);
+        setInt(tab[_sIfOutNUcastPkts][i],   ixIfoutnucastpkts,  iface, bitsSet, q);
+        setInt(tab[_sIfOutDiscards][i],     ixIfoutdiscards,    iface, bitsSet, q);
+        setInt(tab[_sIfOutErrors][i],       ixIfouterrors,      iface, bitsSet, q);
+        PDEB(VERBOSE) << "Update port stat: " << pNode->getName() << QChar(':') << ifDescr << endl;
+        int un = iface.update(q, false, bitsSet);
+        if (un != 1) {
+            QString msg = trUtf8("Az update visszatérési érték %1 hiba, Service : %2, interface : %3")
+                    .arg(un)
+                    .arg(iface.identifying(false))
+                    .arg(hostService.names(q));
+            APPMEMO(q, msg, RS_CRITICAL);
+        }
     }
     foreach (cInspector *ps, *pSubordinates) {
         if (ps != NULL && ps->flag == false) {   // be lett állítva státusz ??? Ha még nem:

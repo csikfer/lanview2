@@ -2077,9 +2077,13 @@ public:
     virtual QString getFieldValue(QSqlQuery& q, const QString& vname, const QStringList &pl = QStringList()) const;
     QString exportFieldValue(QSqlQuery& q, int ix) const;
     bool isEmpty(int _ix) const;
-    /// Rekord azonosító szöveg. Pl. hibaüzeneteknél az objektum beazonosításához.
-    QString identifying() const;
-
+    /// Áltaéános rekord azonosító szöveg. Pl. hibaüzeneteknél az objektum beazonosításához.
+    /// @param t A típust is beteszi a kimenetbe, ha igaz. Alapértelmezetten igaz.
+    QString identifying(bool t = true) const;
+    /// Rekord azonosító szöveg. Alapértelmezetten az identifying() -al azonos,
+    /// De virtuális, és objektumonként megadható a kimenet tartalma
+    /// @param t A típust is beteszi a kimenetbe, ha igaz. Alapértelmezetten hamis.
+    virtual QString show(bool t = false) const;
 
 protected:
     QString objectSyntax(QSqlQuery& q) const;
@@ -2197,10 +2201,12 @@ TSTREAMO(cRecord)
 /// Hash készítése egy cRecord objektumból, a hash-t az első mező intté konvertált értékéből képzi, mely álltalában az ID.
 inline static uint qHash(const cRecord& key) { return qHash(key.getId(0)); }
 
-/// A statikus rekord leíró objektum pointer inicializálása.
+/// A rekord leíró objektum pointer inicializálása.
 /// Ha a _pRecordDescr adattag NULL, akkor a cRecStaticDescr::get(const QString&, const QString&) hívással
 /// kér egyet, és ez lessz _pRecordDescr új értéke, és ekkor true-val tér vissza.
-/// Ha a _pRecordDescr adattag nem NULL, akkor visszatér egy false értékkel.
+/// Ha a _pRecordDescr adattag nem NULL volt, akkor visszatér egy false értékkel.
+/// Az R osztály a cRecord egy leszármazottja kell legyen, és rendelkeznie kell egy
+/// _pRecordDescr (cRecStaticDescr * típusú) adattaggal.
 /// @relates cRecord
 /// @return Ha inicializálni kellett a pointert, akkor true.
 template <class R> bool initPDescr(const QString& _tn, const QString& _sn = _sPublic)

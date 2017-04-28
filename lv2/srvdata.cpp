@@ -377,9 +377,36 @@ bool cHostService::fetchByIds(QSqlQuery& q, qlonglong __hid, qlonglong __sid, eE
     (*this)[_sDeleted]   = false;
     int r = completion(q);
     if (r != 1) {
-        QString e = trUtf8("HostService : %1(%2):%3(%4)")
+        QString e = trUtf8("HostService : #%1(%2):#%3(%4)")
                 .arg(__hid).arg(cNode().   getNameById(__hid, EX_IGNORE))
                 .arg(__sid).arg(cService().getNameById(__sid, EX_IGNORE));
+        if (__ex) {
+            if (r == 0) {
+                EXCEPTION(EFOUND,    r, e);
+            }
+            else {
+                EXCEPTION(AMBIGUOUS, r, e);
+            }
+        }
+        return false;
+    }
+    return true;
+}
+
+bool cHostService::fetchByIds(QSqlQuery& q, qlonglong __hid, qlonglong __sid, qlonglong __pid, eEx __ex)
+{
+    set();
+    (*this)[_sNodeId]    = __hid;
+    (*this)[_sServiceId] = __sid;
+    (*this)[_sPortId]    = __pid;
+    (*this)[_sDeleted]   = false;
+    int r = completion(q);
+    if (r != 1) {
+        QSqlQuery qq = getQuery();
+        QString e = trUtf8("HostService : %1(%2):%3(%4).%5(%6)")
+                .arg(__hid).arg(cNode().   getNameById(qq, __hid, EX_IGNORE))
+                .arg(__pid).arg(cNPort().  getFullNameById(qq, __pid))
+                .arg(__sid).arg(cService().getNameById(qq, __sid, EX_IGNORE));
         if (__ex) {
             if (r == 0) {
                 EXCEPTION(EFOUND,    r, e);

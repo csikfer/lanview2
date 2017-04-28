@@ -330,6 +330,49 @@ cPhsLink& cPhsLink::swap()
     return *this;
 }
 
+QString cPhsLink::show12(QSqlQuery& q, bool _12) const
+{
+    QString sp;
+    cNPort *p = cNPort::getPortObjById(q, getId(_12 ? _sPortId1 : _sPortId2));
+    int ix = p->toIndex(_sSharedCable, EX_IGNORE);  // PPort ?
+    if (ix == NULL_IX) {    // NPort or Interface
+        sp = p->getFullName(q);
+    }
+    else {                  // Patch port
+        sp  = getName(_12 ? _sPhsLinkType1 : _sPhsLinkType2) + " ";
+        sp += p->getFullName(q);
+        if (getId(_12 ? _sPhsLinkType1 : _sPhsLinkType2) == LT_FRONT) {
+            QString sh = getName(_sPortShared);
+            if (!sh.isEmpty()) sp += "/" + sh;
+        }
+        else {              // LT_BACK
+            QString sh = p->getName(_sSharedCable);
+            if (!sh.isEmpty()) {
+                qlonglong sid = p->getId(_sSharedPortId);
+                if (sid != NULL_ID) {
+                    sh.prepend(cNPort::getFullNameById(q, sid) + "/");
+                }
+                else {
+                    sh.prepend("?:?/");
+                }
+                sp.prepend(parentheses(sh));
+            }
+        }
+    }
+    return sp;
+}
+
+QString cPhsLink::show(bool t) const
+{
+    QSqlQuery q = getQuery();
+    QString r;
+    if (!t) r = trUtf8("Fizikai link. ");
+    r += show12(q, true) + " <==> " + show12(q, false);
+    QString note = getNote();
+    if (!note.isEmpty()) r += " " + parentheses(note);
+    return r;
+}
+
 /* ----------------------------------------------------------------- */
 qlonglong LinkGetLinked(QSqlQuery& q, cRecord& o, qlonglong __pid)
 {
@@ -389,6 +432,57 @@ bool cLogLink::update(QSqlQuery &, bool, const QBitArray &, const QBitArray &, b
 
 CRECDEFD(cLogLink)
 
+QString cLogLink::show(bool t) const
+{
+    QSqlQuery q = getQuery();
+    QString r;
+    if (!t) r = trUtf8("Logikai link. ");
+    r += cNPort::getFullNameById(q, getId(_sPortId1)) + " <==> " + cNPort::getFullNameById(q, getId(_sPortId2));
+    QString note = getNote();
+    if (!note.isEmpty()) r += " " + parentheses(note);
+    return r;
+}
+
+QStringList cLogLink::showChain() const
+{
+    QVariantList vids = get(__sPhsLinkChain).toList();
+    if (vids.isEmpty()) return QStringList(trUtf8("Üres lánc"));
+    QString e = trUtf8("A lánc hibás");
+    qlonglong apid = getId(_sPortId1);  // Megyünk portról - portra, ez az első
+    qlonglong rpid = getId(_sPortId2);  // Ha fordított az irány, akkor ez az első
+    bool first   = true;
+    bool reverse = false;
+    QStringList lines;
+    foreach (QVariant sid, vids) {
+        cPhsLink pl;
+        bool ok;
+        qlonglong id = sid.toLongLong(&ok);
+        if (!ok) EXCEPTION(EDATA, -1, sid.toString());
+        pl.setById(id);
+        if (first) {
+            first = false;
+            if      (pl.getId(_sPortId1) == apid) { apid = pl.getId(_sPortId2); }
+            else if (pl.getId(_sPortId2) == apid) { apid = pl.swap().getId(_sPortId2);  }
+            else if (pl.getId(_sPortId1) == rpid) { apid = pl.getId(_sPortId2);         reverse = true; }
+            else if (pl.getId(_sPortId2) == rpid) { apid = pl.swap().getId(_sPortId2);  reverse = true; }
+            else                                  { lines << e; break; }
+        }
+        else {
+            if      (pl.getId(_sPortId1) == apid) { apid = pl.getId(_sPortId2); }
+            else if (pl.getId(_sPortId2) == apid) { apid = pl.swap().getId(_sPortId2);  }
+            else                                  { lines << e; break; }
+        }
+        lines << pl.show();
+    }
+    if (reverse) {
+        QStringList tmp;
+        while (!lines.isEmpty()) tmp << lines.takeLast();
+        return tmp;
+    }
+    return lines;
+}
+
+
 /* ----------------------------------------------------------------- */
 
 CRECCNTR(cLldpLink)
@@ -408,5 +502,16 @@ bool cLldpLink::unlink(QSqlQuery& q, qlonglong __pid)
     QString sql = "DELETE FROM " + descr().fullTableNameQ() + " WHERE port_id1 = " + pid + " OR port_id2 = " + pid;
     execSql(q, sql);
     return q.numRowsAffected() != 0;
+}
+
+QString cLldpLink::show(bool t) const
+{
+    QSqlQuery q = getQuery();
+    QString r;
+    if (!t) r = trUtf8("LLDP link. ");
+    r += cNPort::getFullNameById(q, getId(_sPortId1)) + " <==> " + cNPort::getFullNameById(q, getId(_sPortId2));
+    QString note = getNote();
+    if (!note.isEmpty()) r += " " + parentheses(note);
+    return r;
 }
 

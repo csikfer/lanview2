@@ -219,13 +219,14 @@ const QString& cColEnumType::enum2str(qlonglong e, eEx __ex) const
     if (isContIx(enumValues, e)) {
         return enumValues[e];
     }
-    if (__ex) EXCEPTION(EDATA, e, QObject::trUtf8("Nem megengedett enumerációs érték : %1").arg(*this));
+    if (__ex) EXCEPTION(EDATA, e, QObject::trUtf8("Nem megengedett enumerációs érték : %1.#%2").arg(*this).arg(e));
     return _sNul;
 }
 
 QStringList cColEnumType::set2lst(qlonglong b, eEx __ex) const
 {
-    if (__ex && !checkSet(b)) EXCEPTION(EDATA, b, QObject::trUtf8("Nem megengedett enumerációs érték : %1").arg(*this));
+    if (__ex && !checkSet(b))
+        EXCEPTION(EDATA, b, QObject::trUtf8("Nem megengedett enumerációs érték : [%1]").arg(*this, QString::number(b, 2)));
     QStringList r;
     for (int i = 0; i < enumValues.size(); ++i) {
         if (b & (1LL << i)) r << enumValues[i];
@@ -321,8 +322,8 @@ void cColEnumType::checkEnum(tE2S e2s, tS2E s2e) const
     }
     const QString e = (*e2s)(i, EX_IGNORE);
     if (e.isEmpty() == false) {    // Nem lehet több elem a konverziós függvény szerint!
-        EXCEPTION(EENUMVAL, 5, QObject::trUtf8("A %1 adatvázis típus hiényos, extra elem : #%2/%3")
-                  .arg(toString()).arg(i).arg(e))
+        EXCEPTION(EENUMVAL, 5, QObject::trUtf8("A %1 adatbázis típus hiényos, extra elem : #%2/%3")
+                  .arg(toString()).arg(i).arg(e));
     }
 }
 
@@ -469,7 +470,7 @@ enum cColStaticDescr::eValueCheck cColStaticDescr::check(const QVariant& v, cCol
         }
         return ifExcep(r, acceptable, v);
     default:
-        EXCEPTION(EPROGFAIL);
+        EXCEPTION(EPROGFAIL, eColType);
         break;
     }
     return ifExcep(VC_INVALID, acceptable, v);
@@ -528,7 +529,7 @@ QVariant cColStaticDescr::set(const QVariant& _f, qlonglong &str) const
         r = _f.toByteArray();
         break;
     default:
-        EXCEPTION(EPROGFAIL);
+        EXCEPTION(EPROGFAIL, eColType);
         break;
     }
     if (!ok) str |= ES_DEFECTIVE;
@@ -3158,7 +3159,11 @@ bool cRecord::insert(QSqlQuery& __q, eEx _ex)
         // PDEB(VERBOSE) << "Insert RETURNING :" << toString() << endl;
         return true;
     }
-    if (_ex) EXCEPTION(EDATA, 0, trUtf8("A beszúrás utáni újraolvasás sikertelen, nincs adat.."));
+    if (_ex) {
+        cError *pe = NEWCERROR(EDATA, 0,
+            trUtf8("A beszúrás utáni újraolvasás sikertelen, nincs adat. Objektum azonosító : ") + identifying());
+        _sql_err_ex(pe, __q.lastError(), sql, _sql_err_bound(__q));
+    }
     return false;
 }
 
@@ -3736,12 +3741,15 @@ bool cRecord::isEmpty(int _ix) const
     return true;
 }
 
-QString cRecord::identifying() const
+QString cRecord::identifying(bool t) const
 {
     QString otype = typeid(*this).name();
     QString table = tableName();
-    QString record = trUtf8("Objektum típus : %1 (%2 tábla).").arg(otype, table);
-    if (isEmpty_()) record += trUtf8(" Üres objektum.");
+    QString record;
+    if (!t) {
+        record = trUtf8("Objektum típus : %1 (%2 tábla). ").arg(otype, table);
+    }
+    if (isEmpty_()) record += trUtf8("Üres objektum.");
     else {
         QSqlQuery q(getQuery());
         QString name = view(q, nameIndex(EX_IGNORE));
@@ -3775,6 +3783,12 @@ QString cRecord::identifying() const
     }
     return record;
 }
+
+QString cRecord::show(bool t) const
+{
+    return identifying(t);
+}
+
 
 int cRecord::parseParams(QSqlQuery &q, QStringList& pl, int ss) const
 {

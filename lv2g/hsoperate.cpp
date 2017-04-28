@@ -19,7 +19,7 @@ const QString cHSOperate::_sql =
             " node_name, "                  // RX_HOST_NAME
             " service_name, "               // RX_SERVICE_NAME
             " CASE WHEN hs.port_id IS NULL THEN NULL"
-                 " ELSE port_id2name(hs.port_id)"
+                 " ELSE port_id2full_name(hs.port_id)"
                  " END, "                   // RX_PORT_NAME
             " CASE WHEN proto_service_id < 0 AND prime_service_id < 0 THEN NULL"
                  " WHEN prime_service_id < 0 THEN service_id2name(proto_service_id) || ':'"

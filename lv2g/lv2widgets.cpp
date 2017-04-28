@@ -330,7 +330,7 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
         case cColStaticDescr::FT_INTERVAL:
             break;
         case cColStaticDescr::FT_TEXT:  // Ha a text egy szín, akkor nem szövegként jelenítjük meg!
-            if (fieldFlags && ENUM2SET2(FF_FG_COLOR, FF_BG_COLOR)) break;
+            if (fieldFlags & ENUM2SET2(FF_FG_COLOR, FF_BG_COLOR)) break;
             goto if_ro_cFieldLineWidget;
         case cColStaticDescr::FT_BOOLEAN:
         case cColStaticDescr::FT_ENUM:
@@ -354,12 +354,12 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
         }
         goto case_FieldLineWidget;                                  // Egy soros text...
     case cColStaticDescr::FT_TEXT:
-        if (fieldFlags && ENUM2SET2(FF_FG_COLOR, FF_BG_COLOR)) {    // Ez egy szín, mint text
+        if (fieldFlags & ENUM2SET2(FF_FG_COLOR, FF_BG_COLOR)) {    // Ez egy szín, mint text
             cColorWidget *p = new cColorWidget(_tm, _tf, _fr, ro, _par);
             _DBGFNL() << " new cColorWidget" << endl;
             return p;
         }
-        if (fieldFlags && ENUM2SET(FF_FONT)) {                      // Font család neve
+        if (fieldFlags & ENUM2SET(FF_FONT)) {                      // Font család neve
             if (ro) EXCEPTION(EPROGFAIL);     // nem lehet r.o.
             cFontFamilyWidget *p = new cFontFamilyWidget(_tm, _tf, _fr, _par);
             _DBGFNL() << " new cFontFamilyWidget" << endl;
@@ -390,7 +390,7 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
         }
     }
     case cColStaticDescr::FT_SET: {
-        if (fieldFlags && ENUM2SET(FF_FONT)) {                      // Font attributum
+        if (fieldFlags & ENUM2SET(FF_FONT)) {                      // Font attributum
             // Csak ez a típus lehet!
             if (_fr.descr().enumType() == cFontAttrWidget::sEnumTypeName) {
                 cFontAttrWidget *p = new cFontAttrWidget(_tm, _tf, _fr, ro, _par);

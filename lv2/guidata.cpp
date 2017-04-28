@@ -248,14 +248,14 @@ cTableShape::~cTableShape()
     clearToEnd();
 }
 
-int  cTableShape::_ixFeatures = NULL_IX;
+int  cTableShape::_ixFeatures       = NULL_IX;
 int  cTableShape::_ixTableShapeType = NULL_IX;
 const cRecStaticDescr&  cTableShape::descr() const
 {
     if (initPDescr<cTableShape>(_sTableShapes)) {
-        _ixFeatures = _descr_cTableShape().toIndex(_sFeatures);
+        _ixFeatures       = _descr_cTableShape().toIndex(_sFeatures);
         _ixTableShapeType = _descr_cTableShape().toIndex(_sTableShapeType);
-        CHKENUM(_ixTableShapeType, tableShapeType);
+        CHKENUM(_ixTableShapeType,  tableShapeType);
         CHKENUM(_sTableInheritType, tableInheritType);
     }
     return *_pRecordDescr;
@@ -774,7 +774,7 @@ const cRecStaticDescr&  cTableShapeField::descr() const
     if (initPDescr<cTableShapeField>(_sTableShapeFields)) {
         _ixFeatures = _descr_cTableShapeField().toIndex(_sFeatures);
         _ixTableShapeId = _descr_cTableShapeField().toIndex(_sTableShapeId);
-        CHKENUM(_sOrdTypes, orderType);
+        CHKENUM(_sOrdTypes,   orderType);
         CHKENUM(_sFieldFlags, fieldFlag);
     }
     return *_pRecordDescr;

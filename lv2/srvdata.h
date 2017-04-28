@@ -134,6 +134,7 @@ public:
     /// @param __ex Ha nincs ilyen rekord, vagy több van, és értéke true, akkor dob egy kizárást.
     /// @return true, ha van egy és csakis egy ilyen rekord.
     bool fetchByIds(QSqlQuery& q, qlonglong __hid, qlonglong __sid, enum eEx __ex = EX_ERROR);
+    bool fetchByIds(QSqlQuery& q, qlonglong __hid, qlonglong __sid, qlonglong __pid, eEx __ex = EX_ERROR);
     /// A megadott nevek alapján türli a megadott rekord(ok)at
     /// @param q Az adatbázis művelethez használlt objektum.
     /// @param __nn A node neve, vagy egy minta
@@ -160,7 +161,7 @@ public:
     /// @return A keresett mező értéke.
     /// @exceptions * cError Ha mindkét objektumban a keresett mező értéke null, vagy update esetén hiba történt.
     QVariant value(QSqlQuery& q, const cService& s, const QString& f);
-    /// Rekord azonosító nevekből képez egy stringet: node[:port].szolgáltatés alakban.
+    /// Rekord azonosító nevekből képez egy stringet: node[:port].szolgáltatás alakban.
     /// Az eredmény stringet az ID alapján kérdezi le az adatbázisból. Csak az ID mezőnek kell kitöltve lennie,
     /// az objektum többi mezőjének az értéke érdektelen az eredmény szempontjából.
     QString names(QSqlQuery& q);

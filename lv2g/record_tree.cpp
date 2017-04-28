@@ -125,10 +125,11 @@ void cRecordTree::initSimple(QWidget *pW)
     pMainLayout->addWidget(pTreeView);
     pMainLayout->addWidget(pButtons->pWidget());
     pTreeView->setModel(pTreeModel());
-
     pTreeView->setSelectionBehavior(QAbstractItemView::SelectRows);     // Csak sor jelölhető ki
     pTreeView->setSelectionMode(QAbstractItemView::SingleSelection);    // Egyszerre csak egy sor kijelölése
     pTreeView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    QString style = tableShape().getName(_sStyleSheet);
+    if (!style.isEmpty()) pTreeView->setStyleSheet(style);
 
     connect(pButtons,    SIGNAL(buttonPressed(int)),   this, SLOT(buttonPressed(int)));
     if (!isReadOnly) {

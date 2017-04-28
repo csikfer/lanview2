@@ -69,7 +69,9 @@ public:
     int unxlinks(QSqlQuery& __q, qlonglong __pid, ePhsLinkType __t, ePortShare __s = ES_) const;
     /// Felcsréli a link irányát
     cPhsLink& swap();
-
+    virtual QString show(bool t = false) const;
+private:
+    QString show12(QSqlQuery &q, bool _12) const;
 };
 
 /// A cLogLink és cLldpLink objektumokkal használható. Figyelem, a hivás külön nem ellenörzi!
@@ -133,6 +135,8 @@ public:
     /// @return ha a két port linkelve van, akkor true, egyébként false
     /// @exception Ha megadott portokra két találat van a táblában (ami elvileg lehetetlen).
     bool isLinked(QSqlQuery& q, qlonglong __pid1, qlonglong __pid2) { return LinkIsLinked(q, *this, __pid1, __pid2); }
+    virtual QString show(bool t = false) const;
+    QStringList showChain() const;
 };
 
 class LV2SHARED_EXPORT cLldpLink : public cRecord {
@@ -158,6 +162,7 @@ public:
     /// @return ha a két port linkelve van, akkor true, egyébként false
     /// @exception Ha megadott portokra két találat van a táblában (ami elvileg lehetetlen).
     bool isLinked(QSqlQuery& q, qlonglong __pid1, qlonglong __pid2) { return LinkIsLinked(q, *this, __pid1, __pid2); }
+    virtual QString show(bool t) const;
 };
 
 #endif // LV2LINK

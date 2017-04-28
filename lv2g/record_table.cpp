@@ -1631,6 +1631,8 @@ void cRecordTable::initSimple(QWidget * pW)
     pTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
     pTableView->setSelectionMode(QAbstractItemView::ExtendedSelection);
     pTableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    QString style = tableShape().getName(_sStyleSheet);
+    if (!style.isEmpty()) pTableView->setStyleSheet(style);
 
     connect(pButtons,    SIGNAL(buttonPressed(int)),   this, SLOT(buttonPressed(int)));
     connect(pTableView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
