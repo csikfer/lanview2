@@ -923,11 +923,12 @@ bool cInspector::doRun(bool __timed)
         lastElapsedTime = 0;
         lastRun.start();
     }
+    QString runMsg;
     // Tesszük a dolgunkat bármi legyen is az, egy tranzakció lessz.
     QString tn = toSqlName(name());
     try {
         sqlBegin(*pq, tn);
-        retStat      = run(*pq);
+        retStat      = run(*pq, runMsg);
         statIsSet    = retStat & RS_STAT_SETTED;
         statSetRetry = retStat & RS_SET_RETRY;
         retStat      = (enum eNotifSwitch)(retStat & RS_STAT_MASK);
@@ -963,10 +964,11 @@ bool cInspector::doRun(bool __timed)
     return statSetRetry;
 }
 
-enum eNotifSwitch cInspector::run(QSqlQuery& q)
+enum eNotifSwitch cInspector::run(QSqlQuery& q, QString& runMsg)
 {
     _DBGFN() << name() << endl;
     (void)q;
+    (void)runMsg;
     if (pProcess != NULL) {
         if (checkCmd.isEmpty()) EXCEPTION(EPROGFAIL);
         PDEB(VERBOSE) << "Run : " << checkCmd << " " << checkCmdArgs.join(" ") << endl;

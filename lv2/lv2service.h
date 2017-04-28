@@ -166,7 +166,7 @@ public:
     /// csak visszatér egy RS_UNKNOWN értékkel.
     /// Ha pProcess pointer nem NULL, akkor végrehajtja a megadott parancsot, és az eredménnyel hívja a parse() metódust.
     /// @return A szolgáltatás állpota, ill. a tevékenység eredménye.
-    virtual enum eNotifSwitch run(QSqlQuery& q);
+    virtual enum eNotifSwitch run(QSqlQuery& q, QString &runMsg);
     /// Szöveg (parancs kimenet) értelmezése.
     /// Ha meg van adva kölső ellenörző program, akkor az alapértelmezett run() metódus hívja a végrehajtott parancs kimenetével.
     virtual enum eNotifSwitch parse(int _ec, QIODevice &text);
@@ -322,7 +322,8 @@ public:
         pService = cService::service(__q, __id, __ex);
         return service(__ex);
     }
-    /// A szolgáltatás cService objektumára mutató pointert állítja be
+    /// A szolgáltatás cService objektumára mutató pointert állítja be.
+    /// A pointer a cIspector tulajdonába kerúl, a destruktora felszabadítja!
     /// @param _ps A szolgálltatás típus objektumra mutató pointer
     /// @return A szolgáltatás objektum referenciája.
     const cService& service(const cService * _ps)  { return *(pService = _ps); }

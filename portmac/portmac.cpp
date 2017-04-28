@@ -204,8 +204,9 @@ void cDevicePMac::postInit(QSqlQuery &q, const QString&)
 }
 
 
-enum eNotifSwitch cDevicePMac::run(QSqlQuery& q)
+enum eNotifSwitch cDevicePMac::run(QSqlQuery& q, QString& runMsg)
 {
+    (void)runMsg;
     _DBGFN() << QChar(' ') << name() << endl;
     if (!snmp.isOpened()) {
         EXCEPTION(ESNMP,-1, trUtf8("SNMP open error : %1 in %2").arg(snmp.emsg).arg(name()));

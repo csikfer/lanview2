@@ -207,9 +207,9 @@ void cDevicePSt::postInit(QSqlQuery &q, const QString&)
         }
         // A hihető linkelt port ID az lldp_pid -ben
         if (lldp_pid == NULL_ID) continue;
-        pRLnkSt = new cInspector(this);                     // Passzív (még) üres objektum
-        pRLnkSt->service(pRLinkStat);                       // szervíz
-        pRLnkSt->pPort = cNPort::getPortObjById(q, lldp_pid);   // port, .. node
+        pRLnkSt = new cInspector(this);                             // Passzív (még) üres objektum
+        pRLnkSt->service(pRLinkStat->dup()->reconvert<cService>()); // szervíz
+        pRLnkSt->pPort = cNPort::getPortObjById(q, lldp_pid);       // port, .. node
         pRLnkSt->pNode = cNode::getNodeObjById(q, pRLnkSt->pPort->getId(_sNodeId))->reconvert<cNode>();
         cHostService& hs = pRLnkSt->hostService;
          // Van host_services rekord ?
@@ -240,7 +240,7 @@ void cDevicePSt::postInit(QSqlQuery &q, const QString&)
             QBitArray sets(hostService.cols(), false);
             if (hs.getBool(_sDisabled) || hs.getBool(_sDeleted)) {
                 // Ha disabled, vagy deleted, akkor nem bántjuk, nem foglakozunk vele
-                delete pRLinkStat;
+                delete pRLnkSt;
                 continue;
             }
             // máshova mutat a superior, a link szerint viszont a mienk !!!
@@ -338,9 +338,11 @@ void cDevicePSt::setInt(QVariant v, int ix, cInterface& iface, QBitArray& mask, 
     }
 }
 
-enum eNotifSwitch cDevicePSt::run(QSqlQuery& q)
+enum eNotifSwitch cDevicePSt::run(QSqlQuery& q, QString &runMsg)
 {
+    enum eNotifSwitch rs = RS_ON;
     _DBGFN() << QChar(' ') << name() << endl;
+    qlonglong parid = parentId(EX_IGNORE);
     if (!snmp.isOpened()) {
         EXCEPTION(ESNMP,-1, QString(QObject::trUtf8("SNMP open error : %1 in %2").arg(snmp.emsg).arg(name())));
     }
@@ -352,7 +354,11 @@ enum eNotifSwitch cDevicePSt::run(QSqlQuery& q)
 
     int r = snmp.getTable(_sIfMib, cols, tab);
     if (r) {
-        EXCEPTION(ESNMP, r, QString(QObject::trUtf8("SNMP get table error : %1 in %2").arg(snmp.emsg).arg(name())));
+        runMsg = trUtf8("SNMP get table error : %1 in %2 host, from %3 parent service.")
+                .arg(snmp.emsg)
+                .arg(name())
+                .arg(parid == NULL_ID ? "NULL" : cHostService::names(q, parid));
+        return RS_UNREACHABLE;
     }
     int n = tab.rows();
     int i;
@@ -362,8 +368,17 @@ enum eNotifSwitch cDevicePSt::run(QSqlQuery& q)
     for (i = 0; i < n; i++) {
         bool    ok;
 
+        QString ifDescr = tab[_sIfDescr][i].toString();
         int     ifIndex = tab[_sIfIndex][i].toInt(&ok);
-        if (!ok) EXCEPTION(ESNMP, -1, QString(QObject::trUtf8("ifIndex is not numeric : %1")).arg(tab[_sIfIndex][i].toString()));
+        if (!ok) {
+            rs = RS_CRITICAL;
+            QVariant v = tab[_sIfIndex][i];
+            runMsg += trUtf8("ifIndex (%1) is not numeric : %2, in %3 host, from %4 parent service. ")
+                    .arg(ifDescr)
+                    .arg(debVariantToString(v))
+                    .arg(name())
+                    .arg(parid == NULL_ID ? "NULL" : cHostService::names(q, parid));
+        }
 
         int ix = host().ports.indexOf(_sPortIndex, QVariant(ifIndex));
         if (ix < 0)
@@ -371,7 +386,6 @@ enum eNotifSwitch cDevicePSt::run(QSqlQuery& q)
         // Előkapjuk az interface objektumunkat, a konténerből, ehhez kell az indexük
         cInterface&     iface = * dynamic_cast<cInterface *>(host().ports[ix]);
 
-        QString ifDescr = tab[_sIfDescr][i].toString();
         QString eMsg;
 
         QString opstat = snmpIfStatus(tab[_sIfOperStatus][i].toInt(&ok));
@@ -398,13 +412,13 @@ enum eNotifSwitch cDevicePSt::run(QSqlQuery& q)
             else if (adstat == _sDown) state = _sWarning;   // Disabled
             QString msg = trUtf8("if state : op:%1/adm:%2").arg(opstat).arg(adstat);
             if (!eMsg.isEmpty()) msg += "\n" + eMsg;
-            ns.hostService.setState(q, state, msg, parentId());
+            ns.hostService.setState(q, state, msg, parid);
             ns.flag = true; // beállítva;
         }
 
         // Interface állapot:
         QBitArray bitsSet(iface.cols(), false);     // modosítandó mezők mask
-        iface.setName(ixStatLastModify, "NOW");     // utolsó status állítás ideje, most.
+        iface.set(ixStatLastModify, QDateTime::currentDateTime());  // utolsó status állítás ideje, most.
         bitsSet.setBit(ixStatLastModify);
         setString(ifDescr, ixIfdescr,   iface, bitsSet);
         setString(opstat,  ixPortOStat, iface, bitsSet);
@@ -433,10 +447,10 @@ enum eNotifSwitch cDevicePSt::run(QSqlQuery& q)
     }
     foreach (cInspector *ps, *pSubordinates) {
         if (ps != NULL && ps->flag == false) {   // be lett állítva státusz ??? Ha még nem:
-            ps->hostService.setState(q, _sUnreachable, trUtf8("No data") , parentId());
+            ps->hostService.setState(q, _sUnreachable, trUtf8("No data") , parid);
         }
     }
     DBGFNL();
-    return RS_ON;
+    return rs;
 }
 

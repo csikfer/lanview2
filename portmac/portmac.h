@@ -52,7 +52,7 @@ public:
     virtual void postInit(QSqlQuery &q, const QString &qs);
     /// A lekérdezést végző virtuális metódus.
     /// @par q A lekerdezés eredményét a q objetummal írja az adatbázisba.
-    virtual enum eNotifSwitch run(QSqlQuery& q);
+    virtual enum eNotifSwitch run(QSqlQuery& q, QString &runMsg);
     /// SNMP objektum a lekérdezéshez
     cSnmp           snmp;
     /// Az "snmp" szolgáltatás protokol típus. A pointert az lv2portStat konstruktora inicializálja.

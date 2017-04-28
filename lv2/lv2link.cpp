@@ -510,8 +510,6 @@ QString cLldpLink::show(bool t) const
     QString r;
     if (!t) r = trUtf8("LLDP link. ");
     r += cNPort::getFullNameById(q, getId(_sPortId1)) + " <==> " + cNPort::getFullNameById(q, getId(_sPortId2));
-    QString note = getNote();
-    if (!note.isEmpty()) r += " " + parentheses(note);
     return r;
 }
 

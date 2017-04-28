@@ -129,8 +129,9 @@ cDeviceArp::~cDeviceArp()
 }
 
 
-enum eNotifSwitch cDeviceArp::run(QSqlQuery& q)
+enum eNotifSwitch cDeviceArp::run(QSqlQuery& q, QString& runMsg)
 {
+    (void)runMsg;
     _DBGFN() << QChar(' ') << name() << endl;
     int setType = ENUM_INVALID;
     cArpTable at;
