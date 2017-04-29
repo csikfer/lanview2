@@ -2674,12 +2674,18 @@ QString cRecStaticDescr::toString() const
 int cRecStaticDescr::ixToOwner(eEx __ex) const
 {
     int fix;
+    QList<int> props;
     for (fix = 0; fix < _columnsNum; ++fix) {          // Az ownerre mutató mezőt keressük
         const cColStaticDescr& cd = columnDescrs()[fix];
         cColStaticDescr::eFKeyType t = cd.fKeyType;
         if (t == cColStaticDescr::FT_OWNER) break;
+        if (t == cColStaticDescr::FT_PROPERTY) props << fix;
+
     }
     if (fix >= _columnsNum) {
+        if (props.size() == 1) {   // Ha csak egy van, akkor elfogadjuk
+            return props.first();
+        }
         if (__ex) EXCEPTION(EDATA, -1, toString());
         return NULL_IX;
     }
