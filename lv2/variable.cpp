@@ -1,4 +1,4 @@
-#include "munin.h"
+#include "variable.h"
 
 /*cInspMunin::cInspMunin(QSqlQuery &q, const QString& sn) : cInspector(q, sn)
 {

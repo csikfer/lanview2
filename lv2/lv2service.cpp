@@ -923,17 +923,22 @@ bool cInspector::doRun(bool __timed)
         lastElapsedTime = 0;
         lastRun.start();
     }
-    QString runMsg;
+    QString statMsg;
     // Tesszük a dolgunkat bármi legyen is az, egy tranzakció lessz.
     QString tn = toSqlName(name());
     try {
         sqlBegin(*pq, tn);
-        retStat      = run(*pq, runMsg);
+        retStat      = run(*pq, statMsg);
         statIsSet    = retStat & RS_STAT_SETTED;
         statSetRetry = retStat & RS_SET_RETRY;
         retStat      = (enum eNotifSwitch)(retStat & RS_STAT_MASK);
     } CATCHS(lastError);
-    if (lastError != NULL) {    // Ha hívtuk a run metódust, és dobott egy hátast
+    // Ha többet csúszott az idúzítás mint 50%
+    if (__timed  && lastElapsedTime > ((interval*3)/2)) {
+        // Ha a státusz már rögzítve, és nincs egyéb hiba, ez nem fog megjelenni sehol
+        statMsg = msgCat(statMsg, trUtf8("Az időzítés csúszott: %1 > %2").arg(lastElapsedTime).arg(interval));
+    }
+    if (lastError != NULL) {   // Ha hívtuk a run metódust, és dobott egy hátast
         sqlRollback(*pq, tn);  // Hiba volt, inkább visszacsináljuk az egészet.
         if (pProcess != NULL && QProcess::NotRunning != pProcess->state()) {
             pProcess->kill();
@@ -943,21 +948,20 @@ bool cInspector::doRun(bool __timed)
         qlonglong id = lanView::sendError(lastError);
         if (plv->lastError == lastError) plv->lastError = NULL;
         pDelete(lastError);
-        QString msg = QString(QObject::trUtf8("Hiba, ld.: app_errs.applog_id = %1")).arg(id);
+        statMsg = msgCat(statMsg, trUtf8("Hiba, ld.: app_errs.applog_id = %1").arg(id));
         sqlBegin(*pq, tn);
-        hostService.setState(*pq, _sUnknown, msg, parentId(EX_IGNORE));
+        hostService.setState(*pq, _sUnknown, statMsg, parentId(EX_IGNORE));
         internalStat = IS_STOPPED;
     }
     // Ha ugyan nem volt hiba, de sokat tököltünk
     else if (retStat < RS_WARNING
-             && ((interval > 0 && lastRun.hasExpired(interval))
-                 || (__timed   && lastElapsedTime > ((interval*3)/2)))) {
-        QString msg = QString(QObject::trUtf8("Idő tullépés, futási idö %1 ezred másodperc")).arg(lastRun.elapsed());
-        hostService.setState(*pq, notifSwitch(RS_WARNING), msg, parentId(EX_IGNORE));
+             && ((interval > 0 && lastRun.hasExpired(interval)))) {
+        statMsg = msgCat(statMsg, trUtf8("Időtúllépés, futási idö %1 ezred másodperc").arg(lastRun.elapsed()));
+        hostService.setState(*pq, notifSwitch(RS_WARNING), statMsg, parentId(EX_IGNORE));
     }
     else if (!statIsSet) {   // Ha nem volt status állítás
-        QString msg = QString(QObject::trUtf8("Futási idő %1 ezred másodperc")).arg(lastRun.elapsed());
-        hostService.setState(*pq, notifSwitch(retStat), msg, parentId(EX_IGNORE));
+       statMsg = msgCat(statMsg, trUtf8("Futási idő %1 ezred másodperc").arg(lastRun.elapsed()));
+        hostService.setState(*pq, notifSwitch(retStat), statMsg, parentId(EX_IGNORE));
     }
     sqlEnd(*pq, tn);
     _DBGFNL() << name() << endl;

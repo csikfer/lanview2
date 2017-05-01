@@ -63,8 +63,12 @@ QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const 
     if (Qt::BackgroundRole == role && 0 <= lineBgColorEnumIx && !(ff & ENUM2SET(FF_BG_COLOR))) {
         return bgColorByEnum(lineBgColorEnumType, pr->getId(lineBgColorEnumIx));
     }
-    if (fix < 0)           return dcRole(DC_HAVE_NO, role);
-    if (pr->isNull(fix))   return dcRole(DC_NULL,    role);
+    if (fix < 0) {          // A mező nem létezik
+        return dcRole(DC_HAVE_NO, role);
+    }
+    if (pr->isNull(fix)) {  // A mező értéke NULL
+        return dcRole(DC_NULL,    role);
+    }
     const QString& et = column.enumTypeName;
     if (et.isEmpty()) {
         if (role == Qt::DisplayRole) return pr->view(*pq, fix);

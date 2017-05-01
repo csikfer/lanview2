@@ -85,8 +85,8 @@ SOURCES += lanview.cpp \
     qtelnet.cpp \
     srvdata.cpp \
     lv2link.cpp \
-    munin.cpp \
-    munindata.cpp
+    vardata.cpp \
+    variable.cpp
 
 HEADERS += lanview.h \
     lv2_global.h \
@@ -114,8 +114,8 @@ HEADERS += lanview.h \
     qtelnet.h \
     srvdata.h \
     lv2link.h \
-    munin.h \
-    munindata.h
+    vardata.h \
+    variable.h
 
 #FORMS +=
 

@@ -974,7 +974,7 @@ void cEnumVal::fetchEnumVals()
         if (currentTypeName != typeName) {
             pE = cColEnumType::fetchOrGet(q2, typeName, EX_IGNORE);
             isBool = (pE == NULL);
-            if (isBool) {   // Nincs ijen ENUM!
+            if (isBool) {   // Nincs ilyen ENUM!
                 if (1 != typeName.contains(QChar('.'))) {
                     APPMEMO(q2, trUtf8("Hibás 'enum_vals' objektum : ") + ev.toString(), RS_WARNING);
                     currentTypeName.clear();
@@ -983,7 +983,7 @@ void cEnumVal::fetchEnumVals()
                 mapValues[typeName].fill((cEnumVal*)NULL, 3);
             }
             else {
-                mapValues[typeName].fill((cEnumVal*)NULL, pE->size() +1);
+                mapValues[typeName].fill((cEnumVal*)NULL, pE->enumValues.size() +1);
             }
             pActV = &mapValues[typeName];
             currentTypeName = typeName;

@@ -244,10 +244,17 @@ static inline QString indentSp(int n) { return QString(n * INDENT_SIZE, QChar(' 
 
 QString hrmlFrame(const QString &title, const QString& body);
 
-
 /// Paraméter név
 EXT_ QString getParName(QString::const_iterator& i, const QString::const_iterator& e, bool _point = true, enum eEx __ex = EX_ERROR);
 
+/// Két üzenet szövegének az összefűzése
+inline QString msgCat(const QString msg1, const QString& msg2, const QString& sep = _sSpace)
+{
+    QString r = msg1;
+    if ((!msg1.isEmpty()) && (!msg2.isEmpty())) r += sep;
+    r += msg2;
+    return r;
+}
 
 #endif // OTHERS_H
 

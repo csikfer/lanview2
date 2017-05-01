@@ -7,7 +7,8 @@
 enum eVarAggregateType {
     VAT_AVARAGE =  0,
     VAT_MIN,
-    VAT_MAX
+    VAT_MAX,
+    VAT_LAST
 };
 
 EXT_ int varAggregateType(const QString& _n, eEx __ex = EX_ERROR);
@@ -15,9 +16,11 @@ EXT_ const QString& varAggregateType(int _i, eEx __ex = EX_ERROR);
 
 
 enum eServiceVarType {
-    SVT_DERIVE  =  0,
+    SVT_GAUGE  =  0,
     SVT_COUNTER,
-    SVT_GAUGE,
+    SVT_DCOUNTER,
+    SVT_DERIVE,
+    SVT_DDERIVE,
     SVT_ABSOLUTE,
     SVT_COMPUTE
 };
@@ -64,6 +67,13 @@ class LV2SHARED_EXPORT cServiceVar : public cRecord {
     CRECORD(cServiceVar);
     FEATURES(cServiceVar)
 public:
+    virtual void clearToEnd();
+    virtual void toEnd();
+    virtual bool toEnd(int _ix);
+    cServiceVarType& varType(QSqlQuery& q, eEx __ex = EX_ERROR);
+protected:
+    cServiceVarType _varType;
+    STATICIX(cServiceVar, ixServiceVarTypeId)
 };
 
 /*!
