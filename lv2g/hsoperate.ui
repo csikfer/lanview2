@@ -240,25 +240,40 @@
           <property name="text">
            <string>Szolgáltatás</string>
           </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A szolgáltatás neve.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
          </column>
          <column>
           <property name="text">
            <string>Port</string>
+          </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A szolgáltatáshoz rendelt opcionális port neve.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </column>
          <column>
           <property name="text">
            <string>Ext.</string>
           </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A protokolt, vagy matódust azonosító opcionális szolgáltatások neve(i).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
          </column>
          <column>
           <property name="text">
            <string>Hely</string>
           </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A hoszt helyének a helyiség neve.&lt;/p&gt;&lt;p&gt;Ha nincs megadva, akkor 'unknown'.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
          </column>
          <column>
           <property name="text">
            <string>Riasztás tiltás</string>
+          </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A riasztás tiltása, ill. annak müdja:&lt;/p&gt;&lt;p&gt;'off'	Nincs tiltás&lt;/p&gt;&lt;p&gt;'on'	Permanens tiltás&lt;/p&gt;&lt;p&gt;'from'	Tiltás a megadott időponttól.&lt;/p&gt;&lt;p&gt;'to'	Tiltás a megadott időpontig.&lt;/p&gt;&lt;p&gt;'from-to'	Tiltás a megadott időpontok között.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </column>
          <column>
@@ -275,30 +290,48 @@
           <property name="text">
            <string>Tilt.</string>
           </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A szolgáltatás példány le van tiltva, a példány rekordon keresztül.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
          </column>
          <column>
           <property name="text">
            <string>Tilt.</string>
+          </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A szolgáltatás le van tiltva. A szolgáltatás rekordon keresztül, a szolgáltatás összes példánya le ven tiltva.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </column>
          <column>
           <property name="text">
            <string>Állapot</string>
           </property>
+          <property name="toolTip">
+           <string>A szolgáltatás állpota.</string>
+          </property>
          </column>
          <column>
           <property name="text">
            <string>Kiválasztás</string>
+          </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A szolgáltatás kiválasztása a modosításra.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </column>
          <column>
           <property name="text">
            <string>Al példány</string>
           </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A szolgáltatás al példányainak a száma.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
          </column>
          <column>
           <property name="text">
            <string>Köv.</string>
+          </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A szolgáltatás kiválasztása az al példányok megjelenítésére.&lt;/p&gt;&lt;p&gt;Kettös klikk (a cellán) esetén a szolgáltatás példány al al példányainak a megjelenítése.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </column>
          <column>
@@ -309,6 +342,9 @@
          <column>
           <property name="text">
            <string>Restart</string>
+          </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A szolgáltatás/lekérdezés újraindítása, ha ez táűmogatott.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </column>
         </widget>

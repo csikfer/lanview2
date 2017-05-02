@@ -1476,7 +1476,14 @@ public:
     int snmpVersion() const;
     /// SNMP lekérdezésekkel feltölti az objektumot
     bool setBySnmp(const QString& __com = _sNul, enum eEx __ex = EX_ERROR, QString *pEs = NULL);
-    ///
+    /// Inicializálja az SNMP session-t. És próbaképpen lekéri a SNMPv2-MIB::sysDescr -t.
+    /// Sorra végigveszi az eszköz IP címeit, ha nem sikerül a lekérdezés.
+    /// Ha a próba lekérdezés sikertelen, és elfogytak a címek, akkor ha __ex értéke
+    /// EX_IGNORE a(z utolsó) hiba koddal tér vissza, egyébként kizárást dob. Siker esetén 0-val tér vissza.
+    /// @param a Lekérdezéshez hasnálható query obj., ha szükséges (nincsenek beolvasva a portok, ill. IP címek).
+    /// @param snmp Az SNMP modul objektum.
+    /// @param __ex Ha értéke nem EX_IGNORE, akkor hiba esetén kizárást dob.
+    /// @return Az SNMP hiba kód (siker esetén 0).
     int open(QSqlQuery &q, cSnmp& snmp, enum eEx __ex = EX_ERROR) const;
 };
 

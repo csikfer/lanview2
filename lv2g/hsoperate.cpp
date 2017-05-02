@@ -98,7 +98,7 @@ QToolButton* cHSORow::getButtonReset()
 {
     static QStringList srvList;
     if (srvList.isEmpty()) {    // újraindítható szolgáltatások/lekérdezések nevei
-        srvList << "lv2d" << "portmac" << "porstat" << "arpd";
+        srvList << "lv2d" << "portmac" << "portstat" << "arpd";
     }
     QString srvName = rec.value(RX_SERVICE_NAME).toString();
     bool disabled = rec.value(RX_DISABLED).toBool();

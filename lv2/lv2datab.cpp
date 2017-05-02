@@ -2717,9 +2717,9 @@ cRecord::cRecord() : QObject(), _fields(), _likeMask()
     _stat = ES_NULL;
 }
 
-cRecord::cRecord(const cRecord&) : QObject(), _fields(), _likeMask()
+cRecord::cRecord(const cRecord& o) : QObject(), _fields(), _likeMask()
 {
-    EXCEPTION(ENOTSUPP);
+    EXCEPTION(ENOTSUPP, -1, o.identifying());
     //__o.descr();  // Inaktív kód, csak hogy ne ugasson a fordító.
 }
 
@@ -2739,7 +2739,7 @@ cRecord& cRecord::_clear()
 cRecord& cRecord::_clear(int __ix)
 {
     if (isNull()) return *this;
-    if (_fields.size() <= __ix) EXCEPTION(EPROGFAIL, __ix);
+    if (_fields.size() <= __ix) EXCEPTION(EPROGFAIL, __ix, identifying());
     _fields[__ix].clear();
     if  (isEmpty()) _stat  = ES_NULL;
     else            _stat |= ES_MODIFY;
@@ -2836,7 +2836,7 @@ cRecord& cRecord::clear(const QBitArray& __m, eEx __ex)
 {
     int n = __m.size();
     if (n > cols()) {
-        if (__ex) EXCEPTION(EDATA, n);
+        if (__ex) EXCEPTION(EDATA, n, identifying());
         n = cols();
     }
     for (int i = 0; i < n; ++i) if (__m[i]) clear(i);
@@ -2948,7 +2948,7 @@ void cRecord::fieldsCopy(const cRecord& __o, const QBitArray& __m)
 {
     if (descr() != __o.descr()) EXCEPTION(EDATA, 0, trUtf8("%1 != %2").arg(descr().fullTableName()).arg(__o.descr().fullTableName()));
     int n = __m.size();
-    if (n > cols()) EXCEPTION(EDATA, n);
+    if (n > cols()) EXCEPTION(EDATA, n, identifying());
     for (int i = 0; i < n; i++) if (__m[i]) set(i, __o.get(i));
 }
 
@@ -3005,7 +3005,7 @@ QString cRecord::getName() const {
     int ixI = d._idIndex;
     if (!isIndex(ixI)) {
         if (isIndex(ixN)) return QString();     // Nincs ID elfogadjukk a névre a NULL-t
-        EXCEPTION(EDATA, -1, trUtf8("A rekord neve nem állpítható meg. Nincs sem név, sem ID mező."));
+        EXCEPTION(EDATA, -1, trUtf8("A rekord neve nem állpítható meg. Nincs sem név, sem ID mező :\n") + identifying());
     }
     if (isNull(d.idIndex())) return QString();
     QSqlQuery q = getQuery();
@@ -3027,13 +3027,13 @@ QString cRecord::view(QSqlQuery& q, int __i) const
 
 bool cRecord::isContainerValid(qlonglong) const
 {
-    EXCEPTION(EPROGFAIL);
+    EXCEPTION(EPROGFAIL, -1, identifying());
     return false;
 }
 
 void cRecord::setContainerValid(qlonglong, qlonglong)
 {
-    EXCEPTION(EPROGFAIL);
+    EXCEPTION(EPROGFAIL, -1, identifying());
 }
 
 cMac    cRecord::getMac(int __i, eEx __ex) const
@@ -3044,7 +3044,7 @@ cMac    cRecord::getMac(int __i, eEx __ex) const
         if (!isNull(__i)) r = get(__i).value<cMac>();
         return r;
     }
-    if (__ex) EXCEPTION(EDATA, t, trUtf8("A %1 mező típusa nem MAC.").arg(fullColumnName(columnName(__i))));
+    if (__ex) EXCEPTION(EDATA, t, trUtf8("A %1 mező típusa nem MAC :\n").arg(fullColumnName(columnName(__i))) + identifying());
     return r;
 }
 
@@ -3052,7 +3052,7 @@ cRecord& cRecord::setMac(int __i, const cMac& __a, eEx __ex)
 {
     int t = colDescr(__i).eColType;
     if (t != cColStaticDescr::FT_MAC) {
-        if (__ex) EXCEPTION(EDATA, t, trUtf8("A %1 mező típusa nem MAC.").arg(fullColumnName(columnName(__i))));
+        if (__ex) EXCEPTION(EDATA, t, trUtf8("A %1 mező típusa nem MAC :\n").arg(fullColumnName(columnName(__i))) + identifying());
     }
     else {
         if (!__a) clear(__i);
@@ -3065,7 +3065,7 @@ cRecord& cRecord::setIp(int __i, const QHostAddress& __a, eEx __ex)
 {
     int t = colDescr(__i).eColType;
     if (t != cColStaticDescr::FT_INET) {
-        if (__ex) EXCEPTION(EDATA, t, trUtf8("A %1 mező típusa nem IP cím.").arg(fullColumnName(columnName(__i))));
+        if (__ex) EXCEPTION(EDATA, t, trUtf8("A %1 mező típusa nem IP cím :\n").arg(fullColumnName(columnName(__i))) + identifying());
     }
     else {
         if (__a.isNull()) clear(__i);
@@ -3752,7 +3752,7 @@ QString cRecord::identifying(bool t) const
     QString otype = typeid(*this).name();
     QString table = tableName();
     QString record;
-    if (!t) {
+    if (t) {
         record = trUtf8("Objektum típus : %1 (%2 tábla). ").arg(otype, table);
     }
     if (isEmpty_()) record += trUtf8("Üres objektum.");

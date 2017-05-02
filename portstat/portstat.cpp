@@ -160,7 +160,10 @@ void cDevicePSt::postInit(QSqlQuery &q, const QString&)
     hsf.update(q, false, hsf.mask(_sFlag), hsfWhereBits, EX_ERROR);
     // A host eredeti objektum típusa
     cSnmpDevice& dev = snmpDev();
-    dev.open(q, snmp);
+    if (0 != dev.open(q, snmp, EX_IGNORE)) {
+        hostService.setState(q, _sUnreachable, "SNMP Open error: " + snmp.emsg);
+        EXCEPTION(EOK);
+    }
     dev.fetchPorts(q);
     tRecordList<cNPort>::iterator it, n = dev.ports.end();
     for (it = dev.ports.begin(); it != n; ++it) {      // Végigvesszük a portokat

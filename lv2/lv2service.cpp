@@ -540,9 +540,11 @@ void cInspector::setSubs(QSqlQuery& q, const QString& qs)
         } CATCHS(pe);
         if (pe != NULL) {
             ok = false;
-            cHostService hs;
-            QSqlQuery q3 = getQuery();
-            if (hs.fetchById(q3, hsid)) hs.setState(q3, _sCritical, pe->msg(), hostServiceId());
+            if (pe->mErrorCode != eError::EOK) {
+                cHostService hs;
+                QSqlQuery q3 = getQuery();
+                if (hs.fetchById(q3, hsid)) hs.setState(q3, _sCritical, pe->msg(), hostServiceId());
+            }
             pDelete(p);
             delete pe;
         }
