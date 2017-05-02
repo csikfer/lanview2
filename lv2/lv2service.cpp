@@ -505,10 +505,15 @@ void cInspector::postInit(QSqlQuery& q, const QString& qs)
             EXCEPTION(ETO, 0, trUtf8("%1 thread init.").arg(name()));
         }
     }
-    // Van superior. (Thread-nél ezt a thread-ben kell, process-nél pedig a hívott app-ban)
-    else if (pProcess == NULL && inspectorType & IT_SUPERIOR) {
-        pSubordinates = new QList<cInspector *>;
-        setSubs(q, qs);
+    // Van superior. (Thread-nél ezt a thread-ben kell)
+    else if (inspectorType & IT_SUPERIOR) {
+        // process-nél a mi dolgunk ?
+        bool f = pProcess == NULL;
+        f = f || !(inspectorType & (IT_PROCESS_CONTINUE | IT_PROCESS_POLLING));
+        if (f) {
+            pSubordinates = new QList<cInspector *>;
+            setSubs(q, qs);
+        }
     }
 }
 
