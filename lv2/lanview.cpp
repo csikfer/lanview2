@@ -619,7 +619,7 @@ void    lanView::dbNotif(const QString& name, QSqlDriver::NotificationSource sou
         case QSqlDriver::UnknownSource:
         default:                        src = "Unknown";    break;
         }
-        cDebug::cout() << QObject::trUtf8("Database notifycation : %1, source %2, payload :").arg(name).arg(src) << debVariantToString(payload) << endl;
+        cDebug::cout() << HEAD() << QObject::trUtf8("Database notifycation : %1, source %2, payload :").arg(name).arg(src) << debVariantToString(payload) << endl;
     }
     QString sPayload = payload.toString();
     if (0 == appName.compare(name,     Qt::CaseInsensitive)

@@ -37,5 +37,6 @@
         <file>icons/format-text-strikethrough.ico</file>
         <file>icons/format-text-underline-no.png</file>
         <file>icons/format-text-underline.ico</file>
+        <file>icons/system-restart.ico</file>
     </qresource>
 </RCC>

@@ -369,7 +369,7 @@ EXT_ bool execSqlRecFunction(QSqlQuery& q, const QString& fn, const QVariant& v1
 EXT_ void sqlNotify(QSqlQuery& q, const QString& channel, const QString& payload)
 {
     QString sql = "NOTIFY " + channel;
-    if (!payload.isEmpty()) sql += ", " + payload;
+    if (!payload.isEmpty()) sql += ", " + quoted(payload);
     if (!q.exec(sql)) SQLQUERYERR(q);
 }
 

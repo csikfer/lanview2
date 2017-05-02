@@ -18,6 +18,7 @@ public:
     cHSORow(QSqlQuery& q, cHSOState *par);
     QCheckBox * getCheckBoxSet();
     QCheckBox * getCheckBoxSub();
+    QToolButton *getButtonReset();
     QTableWidgetItem * item(int vix);
     QTableWidgetItem * item(int ix, const cColEnumType *pType);
     QTableWidgetItem * item(int vix, int eix, const cColEnumType *pType);
@@ -36,6 +37,7 @@ protected:
 protected slots:
     void togleSet(bool f) { set = f; }
     void togleSub(bool f) { sub = f; }
+    void pressReset();
 };
 
 
@@ -47,7 +49,7 @@ public:
     cHSORow * rowAtId(qlonglong);
     QString         sql;    /// Az SQL string
     QVariantList    binds;  /// Az SQL string paraméterei
-    QList<cHSORow *>   rows;   /// A sorok tartalma
+    QList<cHSORow *> rows;  /// A sorok tartalma
     int             size;   /// Rekordok/sorok száma
     int             nsup;   /// Az al szolgáltatás pédányokat is tartalmazó szolgáltatás pédányok száma
     QSqlQuery      *pq;
@@ -116,6 +118,7 @@ protected slots:
     void forward();
     /// A lekérdezések törlése az aktuális kivételével.
     void clear();
+    void root();
 private:
     void setCell(int row, int col, QTableWidgetItem * pi) {
         if (pi != NULL) {

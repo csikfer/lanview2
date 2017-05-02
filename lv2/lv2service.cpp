@@ -219,7 +219,7 @@ int cInspectorProcess::startProcess(bool conn, int startTo, int stopTo)
 
 void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus exitStatus)
 {
-    _DBGFN() << VDEB(_exitCode) << VDEB(exitStatus) << endl;
+    _DBGFN() << VDEB(_exitCode) << VDEB(exitStatus) << ", program : " << inspector.checkCmd << endl;
     if (inspector.internalStat != IS_RUN && inspector.internalStat != IS_STOPPED) {
         DERR() << trUtf8("Invalid event, internalStat = %1").arg(internalStatName(inspector.internalStat)) << endl;
         return;
@@ -228,8 +228,12 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus exit
         if (inspector.inspectorType & IT_PROCESS_CONTINUE || _exitCode != 0 || exitStatus ==  QProcess::CrashExit) {
             ++reStartCnt;
             QString msg;
-            if (exitStatus ==  QProcess::CrashExit) msg = trUtf8("A program összeomlott.");
-            else                                    msg = trUtf8("A program kilépett, exit = %1.").arg(_exitCode);
+            if (exitStatus ==  QProcess::CrashExit) {
+                msg = trUtf8("A %1 program összeomlott.").arg(inspector.checkCmd);
+            }
+            else {
+                msg = trUtf8("A %1 program kilépett, exit = %1.").arg(inspector.checkCmd).arg(_exitCode);
+            }
             if (reStartCnt > reStartMax) {
                 inspector.hostService.setState(*inspector.pq, _sDown, msg + " Nincs újraindítás.");
                 inspector.internalStat = IS_STOPPED;
@@ -501,8 +505,8 @@ void cInspector::postInit(QSqlQuery& q, const QString& qs)
             EXCEPTION(ETO, 0, trUtf8("%1 thread init.").arg(name()));
         }
     }
-    // Van superior. (Thread-nél ezt a thread-ben kell.)
-    else if (inspectorType & IT_SUPERIOR) {
+    // Van superior. (Thread-nél ezt a thread-ben kell, process-nél pedig a hívott app-ban)
+    else if (pProcess == NULL && inspectorType & IT_SUPERIOR) {
         pSubordinates = new QList<cInspector *>;
         setSubs(q, qs);
     }

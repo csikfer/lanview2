@@ -184,7 +184,7 @@ EXT_ qlonglong variantToId(const QVariant& v, enum eEx __ex = EX_ERROR, qlonglon
 /// Egy QString érték konvertálása numerikussá (qlonglong).
 /// @param v A konvertálandó adat, ha nem konvertálható (és nem null, ill. empty) akkor dob egy kizárást.
 /// @param _ex Ha értéke true, akkor a NULL érték hibát dob, egyébként a def vagy annak alapértelmezett értékével NULL:ID-vel tér vissza.
-/// @param def Ha engedélyezett a null érték, akkor ezzrl térvissza, ha nincs megadva, akkor NULL:ID-vel
+/// @param def Ha engedélyezett a null érték, akkor ezzel térvissza, ha nincs megadva, akkor NULL_ID-vel
 /// @return A konvertált vagy alapértelmezett érték.
 EXT_ qlonglong stringToId(const QString& v, enum eEx __ex = EX_ERROR, qlonglong def = NULL_ID);
 

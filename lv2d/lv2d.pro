@@ -24,6 +24,18 @@ HEADERS += lv2d.h \
 INCLUDEPATH += ../lv2
 LIBS += -L../lv2 -llv2
 
+# Get/Compile simple-mail :
+# $git clone https://github.com/cutelyst/simple-mail.git
+# $cd simple-mail
+# $mkdir build
+# $cd build
+# $cmake ..
+# $make
+# $cd ../..
+# $mkdir simple-mail-build
+# $cd simple-mail-build
+# $ln -s ../simple-mail/build/src src
+
 #Cross compiler not supported !!!
 message($$QMAKE_HOST.arch)
 unix {
@@ -33,7 +45,6 @@ unix {
         contains(QMAKE_HOST.arch,x86_64):{
             message("Unix, x86_64")
             SOURCES += syscronthread.cpp
-            # simple-mail : https://github.com/cutelyst/simple-mail.git
             INCLUDEPATH += ../../simple-mail/src
             LIBS += -L../../simple-mail-build/src -lsimplemail-qt5
         }

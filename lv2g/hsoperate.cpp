@@ -94,6 +94,25 @@ QCheckBox * cHSORow::getCheckBoxSub()
 }
 
 
+QToolButton* cHSORow::getButtonReset()
+{
+    static QStringList srvList;
+    if (srvList.isEmpty()) {    // újraindítható szolgáltatások/lekérdezések nevei
+        srvList << "lv2d" << "portmac" << "porstat" << "arpd";
+    }
+    QString srvName = rec.value(RX_SERVICE_NAME).toString();
+    bool disabled = rec.value(RX_DISABLED).toBool();
+    disabled = disabled || rec.value(RX_SRV_DISABLED).toBool();
+    QToolButton *pButton = NULL;
+    if (!disabled && srvList.contains(srvName)) {
+        pButton = new QToolButton();
+        pButton->setIcon(QIcon("://icons/system-restart.ico"));
+        connect(pButton, SIGNAL(clicked()), this, SLOT(pressReset()));
+    }
+    return pButton;
+}
+
+
 QTableWidgetItem * cHSORow::item(int vix)
 {
     QVariant v = rec.value(vix);
@@ -135,6 +154,13 @@ QTableWidgetItem * cHSORow::boolItem(int ix, const QString& tn, const QString& f
     return pi;
 
 }
+
+void cHSORow::pressReset()
+{
+    QString srvName = rec.value(RX_SERVICE_NAME).toString();
+    sqlNotify(*pq, srvName, _sReset);
+}
+
 
 cHSOState::cHSOState(QSqlQuery& q, const QString& _sql, const QVariantList _binds, cHSOperate *par)
     : QObject(par), sql(_sql), binds(_binds)
@@ -193,6 +219,7 @@ enum eTableColumnIx {
     TC_NSUB,
     TC_CBOX_NSUB,
     TC_SUPERIOR,
+    TC_RESTART,
     TC_COUNT
 };
 
@@ -255,6 +282,7 @@ cHSOperate::cHSOperate(QMdiArea *par)
     connect(pUi->toolButtonClear,  SIGNAL(clicked()),     this, SLOT(clear()));
 
     connect(pUi->pushButtonRefresh,SIGNAL(clicked()),     this, SLOT(refresh()));
+    connect(pUi->pushButtonRoot,   SIGNAL(clicked()),     this, SLOT(root()));
 
     pPlaceModel = new cPlacesInZoneModel();
     pUi->comboBoxPlaceSelect->setModel(pPlaceModel);
@@ -305,6 +333,7 @@ void cHSOperate::refreshTable()
         setCell(row, TC_NSUB,    pRow->item(RX_NSUB));
         setCell(row, TC_CBOX_NSUB,pRow->getCheckBoxSub());
         setCell(row, TC_SUPERIOR,pRow->item(RX_SUPERIOR_NAME));
+        setCell(row, TC_RESTART, pRow->getButtonReset());
         row++;
     }
     bool noSup = actState()->nsup == 0;
@@ -371,31 +400,21 @@ void cHSOperate::fetchByFilter()
     QString         sql = _sql;
     QStringList     where;
     QVariantList    bind;
+    QStringList     wl;
 
+    where.clear();
     if (!(isHsDis == isHsEna)) {
-        QStringList wl;
-        if (isHsDis) wl << " hs.disabled ";
-        if (isHsEna) wl << " NOT hs.disabled ";
-        if (!wl.isEmpty()) {
-            QString w = where.join("OR ");
-            if (wl.size() > 1) w = "(" + w + ") ";
-            where << w;
-        }
+        if (isHsDis) where << " hs.disabled ";
+        if (isHsEna) where << " NOT hs.disabled ";
     }
 
     if (!(isSDis == isSEna)) {
-        QStringList wl;
-        if (isSDis) wl << " s.disabled ";
-        if (isSEna) wl << " NOT s.disabled ";
-        if (!wl.isEmpty()) {
-            QString w = wl.join("OR ");
-            if (wl.size() > 1) w = "(" + w + ") ";
-            where << w;
-        }
+        if (isSDis) where << " s.disabled ";
+        if (isSEna) where << " NOT s.disabled ";
     }
 
     if ((isOff || isOn || isTo || isFrom || isFromTo) && !(isOff && isOn && isTo && isFrom && isFromTo)) {
-        QStringList wl;
+        wl.clear();
         if (isOff)  wl << " hs.noalarm_flag = 'off' ";
         if (isOn)   wl << " hs.noalarm_flag = 'on' ";
         if (isTo)   wl << " hs.noalarm_flag = 'to' ";
@@ -431,8 +450,6 @@ void cHSOperate::fetchByFilter()
             qlonglong id = pPlaceModel->atId(i);
             if (id == NULL_ID) return;
             else {
-                where << " n.place_id = ?";
-                bind  << id;
                 where << " is_parent_place(?, n.place_id)";
                 bind  << id;
             }
@@ -819,4 +836,14 @@ void cHSOperate::clear()
     while (!states.isEmpty()) delete states.takeLast();
     states << pState;
     stateIx = 0;
+}
+
+void cHSOperate::root()
+{
+    pUi->checkBoxPlace->setChecked(false);
+    pUi->checkBoxService->setChecked(true);
+    pUi->checkBoxNode->setChecked(false);
+    _setCurrentIndex("lv2d", pUi->comboBoxServiceSelect);
+    pUi->radioButtonServiceSelect->setChecked(true);
+    fetchByFilter();
 }
