@@ -214,8 +214,8 @@ enum eNotifSwitch cDevicePMac::run(QSqlQuery& q, QString& runMsg)
     QMap<cMac, int> macs;
     enum eNotifSwitch r;
 
-    if (RS_ON != (r = snmpQuery(*pOId1, macs))) return r;
-    if (RS_ON != (r = snmpQuery(*pOId2, macs))) return r;
+    if (RS_ON != (r = snmpQuery(*pOId1, macs, runMsg))) return r;
+    if (RS_ON != (r = snmpQuery(*pOId2, macs, runMsg))) return r;
 
     QMap<cMac, int>::iterator   i;
     for (i = macs.begin(); i != macs.end(); ++i) {
@@ -234,43 +234,35 @@ enum eNotifSwitch cDevicePMac::run(QSqlQuery& q, QString& runMsg)
     return RS_ON;
 }
 
-enum eNotifSwitch cDevicePMac::snmpQuery(const cOId& __o, QMap<cMac, int>& macs)
+enum eNotifSwitch cDevicePMac::snmpQuery(const cOId& __o, QMap<cMac, int>& macs, QString& runMsg)
 {
     _DBGFN() << QChar(' ') << __o.toString() << endl;
     cOId    o = __o;
     do {
         int r = snmp.getNext(o);
         if (r) {
-            QString msg = trUtf8("A %1 node SNMP hiba. OID:%2")
-                    .arg(host().getName())
+            runMsg = trUtf8("SNMP hiba #%1 (%2). OID:%3")
+                    .arg(r).arg(snmp.emsg)
                     .arg(__o.toString());
-            DERR() << msg << ", #" << r << endl;
-            cDbErr::insertNew(cDbErrType::_sRunTime, msg, r, _sNil, APPNAME);
-            break;
+            return RS_CRITICAL;
         }
         if (!(__o < snmp.name())) break;
         o = snmp.name();
         bool ok;
         int pix = snmp.value().toInt(&ok);
         if (!ok) {
-            QString msg = trUtf8("A %1 node SNMP válasz: nem értelmezhető index. OID:%2 = %3")
-                    .arg(host().getName())
+            runMsg = trUtf8("Az SNMP válaszban: nem értelmezhető index. OID:%1 = %2")
                     .arg(__o.toString())
                     .arg(debVariantToString(snmp.value()));
-            DERR() << msg << endl;
-            cDbErr::insertNew(cDbErrType::_sRunTime, msg, 0, _sNil, APPNAME);
-            break;
+            return RS_CRITICAL;
         }
         if (!(ports.contains(pix))) continue;
         cMac mac = snmp.name().toMac();
         if (!mac) {
-            QString msg = trUtf8("A %1 node SNMP válasz: nem értelmezhető MAC. OID:%2 = %3")
-                    .arg(host().getName())
+            runMsg = trUtf8("Az SNMP válaszban: nem értelmezhető MAC. OID:%1 = %2")
                     .arg(__o.toString())
                     .arg(snmp.value().toString());
-            DERR() << msg << endl;
-            cDbErr::insertNew(cDbErrType::_sRunTime, msg, 0, _sNil, APPNAME);
-            break;
+            return RS_CRITICAL;
         }
         macs.insert(mac, pix); // inser or replace
         PDEB(VVERBOSE) << "#" << pix << ":" << mac.toString() << endl;

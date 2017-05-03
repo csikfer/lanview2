@@ -325,6 +325,8 @@ public:
     static const QString valueCheck(int e);
     ///
     int fieldIndex() const { return pos -1; }
+    static const QString  rNul;
+    static const QString  rBin;
 protected:
     eValueCheck checkIfNull() const {
         if (isNullable)             return cColStaticDescr::VC_NULL;     // NULL / OK

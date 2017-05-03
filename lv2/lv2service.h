@@ -53,11 +53,12 @@ enum eInspectorType {
     IT_METHOD_QPARSE        = 0x0300,   ///< Query parser
     IT_METHOD_PARSER        = 0x0400,   ///< Parser szülő objektum a query parser(ek)hez
     IT_METHOD_CARRIED       = 0x0800,   ///<
-    IT_METHOD_MASK          = 0x0F00,
+    IT_METHOD_INSPECTOR     = 0x1000,   ///< Egy LanView2 service (cInspector) APP
+    IT_METHOD_MASK          = 0x1F00,
 
-    IT_SUPERIOR             = 0x1000,   ///< Alárendelt funkciók vannak
-    IT_MAIN                 = 0x2000,   ///< Fő folyamat, nincs parent
-    IT_OWNER_QUERY_PARSER   = 0x4000    ///< A megallokált pQparse pointer tulajdonosa
+    IT_SUPERIOR             = 0x2000,   ///< Alárendelt funkciók vannak
+    IT_MAIN                 = 0x4000,   ///< Fő folyamat, nincs parent
+    IT_OWNER_QUERY_PARSER   = 0x8000    ///< A megallokált pQparse pointer tulajdonosa
 };
 
 /// Az időzítés típusa ill. állapota
@@ -399,6 +400,8 @@ protected:
 private:
     /// Alaphelyzetbe állítja az adattagokat (a konstruktorokhoz)
     void preInit(cInspector *__par);
+    /// Típus hiba üzenethez azonosító adatok
+    QString typeErrMsg(QSqlQuery &q);
 public:
     static qlonglong rnd(qlonglong i, qlonglong m = 1000);
 };

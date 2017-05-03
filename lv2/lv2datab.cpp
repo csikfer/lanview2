@@ -575,10 +575,11 @@ QString cColStaticDescr::fKeyId2name(QSqlQuery& q, qlonglong id, eEx __ex) const
     return r;
 }
 
+const QString  cColStaticDescr::rNul = "[NULL]";
+const QString  cColStaticDescr::rBin = "[BINARY]";
+
 QString cColStaticDescr::toView(QSqlQuery& q, const QVariant &_f) const
 {
-    static const QString  rNul = QObject::trUtf8("[NULL]");
-    static const QString  rBin = QObject::trUtf8("[BINARY]");
     if (_f.isNull())           return rNul;
     if (eColType == FT_BINARY) return rBin;
     if (eColType == FT_INTEGER && fKeyType != FT_NONE) {
@@ -3165,7 +3166,7 @@ bool cRecord::insert(QSqlQuery& __q, eEx _ex)
         // PDEB(VERBOSE) << "Insert RETURNING :" << toString() << endl;
         return true;
     }
-    if (_ex) {
+    if (_ex > EX_ERROR) {
         cError *pe = NEWCERROR(EDATA, 0,
             trUtf8("A beszúrás utáni újraolvasás sikertelen, nincs adat. Objektum azonosító : ") + identifying());
         _sql_err_ex(pe, __q.lastError(), sql, _sql_err_bound(__q));

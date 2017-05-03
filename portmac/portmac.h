@@ -63,7 +63,7 @@ public:
     static cOId    *pOId1;
     static cOId    *pOId2;
 private:
-    enum eNotifSwitch snmpQuery(const cOId& __o, QMap<cMac, int>& macs);
+    enum eNotifSwitch snmpQuery(const cOId& __o, QMap<cMac, int>& macs, QString &runMsg);
 };
 
 

@@ -133,8 +133,7 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
     logNull     = false;
     setProcessChannelMode(QProcess::MergedChannels);    // stderr + stdout ==> stdout
 
-    bool nolog = inspector.isFeature(_sLognull)
-             || (inspector.inspectorType & (IT_METHOD_NAGIOS | IT_METHOD_MUNIN | IT_METHOD_QPARSE));
+    bool nolog = inspector.method() != IT_METHOD_INSPECTOR  || inspector.isFeature(_sLognull);
     if (nolog) {
         logNull = true;
         maxArcLog = maxLogSize = 0;
@@ -172,9 +171,9 @@ int cInspectorProcess::startProcess(bool conn, int startTo, int stopTo)
     _DBGFN() << VDEBBOOL(conn) << VDEB(startTo) << VDEB(stopTo) << endl;
     QString msg;
     if (inspector.checkCmd.isEmpty()) EXCEPTION(EPROGFAIL);
-    PDEB(VVERBOSE) << "START : " << inspector.checkCmd << "; and wait ..." << endl;
+    PDEB(VVERBOSE) << "START : " << inspector.checkCmd << " " << inspector.checkCmdArgs.join(" ") << "; and wait ..." << endl;
     if (conn) {
-        PDEB(VVERBOSE) << "Set connects .." << endl;
+        PDEB(VVERBOSE) << "Set connects for path through log. ..." << endl;
         connect(this, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(processFinished(int, QProcess::ExitStatus)));
         connect(this, SIGNAL(readyRead()),                         this, SLOT(processReadyRead()));
     }
@@ -232,7 +231,7 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus exit
                 msg = trUtf8("A %1 program összeomlott.").arg(inspector.checkCmd);
             }
             else {
-                msg = trUtf8("A %1 program kilépett, exit = %1.").arg(inspector.checkCmd).arg(_exitCode);
+                msg = trUtf8("A %1 program kilépett, exit = %2.").arg(inspector.checkCmd).arg(_exitCode);
             }
             if (reStartCnt > reStartMax) {
                 inspector.hostService.setState(*inspector.pq, _sDown, msg + " Nincs újraindítás.");
@@ -352,7 +351,7 @@ cInspector::cInspector(QSqlQuery& q, qlonglong __host_service_id, qlonglong __ta
     if      (__tableoid == nodeOId
           || __tableoid == NULL_ID) pNode = new cNode();
     else if (__tableoid == sdevOId) pNode = new cSnmpDevice();
-    else    EXCEPTION(EDATA, __tableoid, QObject::trUtf8("Invalid node tableOID."));
+    else    EXCEPTION(EDATA, __tableoid, QObject::trUtf8("Invalid node tableOID = %1. ID = %2").arg(__tableoid).arg(__host_service_id));
     // Ha a host_service_id NULL, akkor már be van olvasva a két (host_services és nodes vagy snmpdevices) rekord !!!
     if (__host_service_id != NULL_ID) {
         QString sql = QString(
@@ -497,7 +496,6 @@ void cInspector::postInit(QSqlQuery& q, const QString& qs)
         EXCEPTION(EDATA, interval, QObject::trUtf8("%1 időzített lekérdezés, időzítés nélkül.").arg(name()));
     }
     // Saját szál ?
-
     if (isThread()) {
         pInspectorThread = newThread();     //
         pInspectorThread->start();          // Init, Init után leáll
@@ -509,7 +507,7 @@ void cInspector::postInit(QSqlQuery& q, const QString& qs)
     else if (inspectorType & IT_SUPERIOR) {
         // process-nél a mi dolgunk ?
         bool f = pProcess == NULL;
-        f = f || !(inspectorType & (IT_PROCESS_CONTINUE | IT_PROCESS_POLLING));
+        f = f || !(inspectorType & (IT_METHOD_INSPECTOR));
         if (f) {
             pSubordinates = new QList<cInspector *>;
             setSubs(q, qs);
@@ -605,8 +603,10 @@ int cInspector::getInspectorTiming(const QString& value)
     case IT_TIMING_PASSIVE | IT_TIMING_THREAD:
     case IT_TIMING_POLLING:
         break;  // O.K.
-    default:
-        EXCEPTION(EDATA, r, trUtf8("Invalid feature in %1 timing = %2").arg(name()).arg(value));
+    default: {
+        QSqlQuery q = getQuery();
+        EXCEPTION(EDATA, r, trUtf8("Invalid 'timing'\n") + typeErrMsg(q));
+      }
     }
     PDEB(VVERBOSE) << name() << VDEB(value) << " timing = " << r << endl;
     return r;
@@ -631,6 +631,7 @@ int cInspector::getInspectorProcess(const QString &value)
     case IT_PROCESS_CARRIED:
     case IT_PROCESS_POLLING | IT_PROCESS_CARRIED:
     case IT_PROCESS_TIMED   | IT_PROCESS_CARRIED:
+        r |= getInspectorMethod(feature(_sMethod));
         break;  // O.K.
     case IT_NO_PROCESS:
         // Van megadva parancs, de nincs megadva process időzítés
@@ -644,13 +645,18 @@ int cInspector::getInspectorProcess(const QString &value)
         case IT_METHOD_QPARSE:
         case IT_METHOD_QPARSE | IT_METHOD_PARSER:
             return r | met;
-        default:
+        default: {
             // Nem OK
-            EXCEPTION(EDATA, met, trUtf8("Invalid feature in %1 process = %2, metod = %3").arg(name(),value,feature(_sMethod)));
+            QSqlQuery q = getQuery();
+            EXCEPTION(EDATA, met, trUtf8("Invalid 'process', 'method'\n") + typeErrMsg(q));
+          }
         }
     }
-    default:
-        EXCEPTION(EDATA, r, trUtf8("Invalid feature in %1 process = %2").arg(name(),value));
+    default: {
+        // Nem OK
+        QSqlQuery q = getQuery();
+        EXCEPTION(EDATA, r, trUtf8("Invalid 'process''\n") + typeErrMsg(q));
+      }
     }
     PDEB(VVERBOSE) << name() << VDEB(value) << " process = " << r << endl;
     return r;
@@ -666,6 +672,7 @@ int cInspector::getInspectorMethod(const QString &value)
     if (vl.contains(_sCarried,  Qt::CaseInsensitive)) r |= IT_METHOD_CARRIED;
     if (vl.contains(_sQparse,   Qt::CaseInsensitive)) r |= IT_METHOD_QPARSE;
     if (vl.contains(_sParser,   Qt::CaseInsensitive)) r |= IT_METHOD_PARSER;
+    if (vl.contains(_sInspector,Qt::CaseInsensitive)) r |= IT_METHOD_INSPECTOR;
     switch (r) {
     case IT_METHOD_CUSTOM:
     case IT_METHOD_NAGIOS:
@@ -674,9 +681,12 @@ int cInspector::getInspectorMethod(const QString &value)
     case IT_METHOD_QPARSE:
     case IT_METHOD_PARSER:
     case IT_METHOD_QPARSE | IT_METHOD_PARSER:
+    case IT_METHOD_INSPECTOR:
         break;    // O.K.
-    default:
-        EXCEPTION(EDATA, r, trUtf8("Invalid feature in %1 method = %2").arg(name()).arg(value));
+    default: {
+        QSqlQuery q = getQuery();
+        EXCEPTION(EDATA, r, trUtf8("Invalid 'method'") + typeErrMsg(q));
+      }
     }
     PDEB(VVERBOSE) << name() << VDEB(value) << " method = " << r << endl;
     return r;
@@ -693,6 +703,9 @@ int cInspector::getInspectorType(QSqlQuery& q)
     case  0:        // Nincs program hívás
         inspectorType |= getInspectorTiming(feature(_sTiming));
         inspectorType |= getInspectorMethod(feature(_sMethod));
+        if ((method() & (IT_METHOD_MUNIN | IT_METHOD_NAGIOS | IT_METHOD_INSPECTOR)) != 0) {
+            EXCEPTION(EDATA, inspectorType, trUtf8("Nem értelmezhető inspectorType érték (#0) :\n") + typeErrMsg(q));
+        }
         break;
     case  1:        // Program hívása, a hívó applikációban
         r = getInspectorProcess(feature(_sProcess));
@@ -711,7 +724,8 @@ int cInspector::getInspectorType(QSqlQuery& q)
         case IT_CUSTOM:
         case IT_PROCESS_POLLING  | IT_TIMING_TIMED:
         case IT_PROCESS_TIMED    | IT_TIMING_TIMED:
-            EXCEPTION(EDATA, r, trUtf8("Invalid feature in %1 process = %2, timing = %3").arg(name()).arg(feature(_sProcess)).arg(feature(_sTiming)));
+            EXCEPTION(EDATA, inspectorType,
+                trUtf8("Nem értelmezhető inspectorType érték (#1) :\n") + typeErrMsg(q));
         }
         break;
     case -1:        // Van Check Cmd, de éppen a hívot app vagyunk
@@ -719,19 +733,19 @@ int cInspector::getInspectorType(QSqlQuery& q)
         r = getInspectorMethod(feature(_sMethod));
         inspectorType |= r;
         switch (r) {
-        case IT_METHOD_CUSTOM:
+        case IT_METHOD_INSPECTOR:
         case IT_METHOD_CARRIED:
             break;
         default:
-            EXCEPTION(EDATA, r, trUtf8("Invalid feature in %1 method = %2").arg(name()).arg(feature(_sMethod)));
+            EXCEPTION(EDATA, inspectorType,
+                trUtf8("Nem értelmezhető inspectorType érték (#1) :\n") + typeErrMsg(q));
         }
         break;
-    default: EXCEPTION(EPROGFAIL, r);
+    default: EXCEPTION(EPROGFAIL, r, name());
     }
     _DBGFNL() << name() << VDEB(inspectorType) << endl;
     return inspectorType;
 }
-
 
 void cInspector::self(QSqlQuery& q, const QString& __sn)
 {
@@ -1378,6 +1392,20 @@ QString cInspector::getParValue(QSqlQuery& q, const QString& name, bool *pOk)
         *pOk = false;
         return QString();
     }
+}
+
+QString cInspector::typeErrMsg(QSqlQuery& q)
+{
+    return trUtf8(
+           "Szervíz példány : %1\n"
+           "process = '%2', timing = '%3', method = '%4'\n"
+           "'features' mezők: %5 / %6 / %7 / %8.")
+             .arg(name())
+             .arg(feature(_sProcess)).arg(feature(_sTiming)).arg(feature(_sMethod))
+             .arg(hostService.view(q, _sFeatures))
+             .arg(service()->view(q, _sFeatures))
+             .arg(pProtoService == NULL ? cColStaticDescr::rNul : protoService().view(q, _sFeatures))
+             .arg(pPrimeService == NULL ? cColStaticDescr::rNul : primeService().view(q, _sFeatures));
 }
 
 /* ********************************************************************************** */
