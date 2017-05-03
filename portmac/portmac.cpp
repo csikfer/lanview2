@@ -251,20 +251,22 @@ enum eNotifSwitch cDevicePMac::snmpQuery(const cOId& __o, QMap<cMac, int>& macs,
         bool ok;
         int pix = snmp.value().toInt(&ok);
         if (!ok) {
-            runMsg = trUtf8("Az SNMP válaszban: nem értelmezhető index. OID:%1 = %2")
-                    .arg(__o.toString())
-                    .arg(debVariantToString(snmp.value()));
+            runMsg = msgCat(runMsg,
+                    trUtf8("Az SNMP válaszban: nem értelmezhető index. OID:%1: %2 = %3")
+                    .arg(__o.toString()).arg(o.toString())
+                    .arg(debVariantToString(snmp.value())), "\n");
             return RS_CRITICAL;
         }
         if (!(ports.contains(pix))) continue;
         cMac mac = snmp.name().toMac();
         if (!mac) {
-            runMsg = trUtf8("Az SNMP válaszban: nem értelmezhető MAC. OID:%1 = %2")
-                    .arg(__o.toString())
-                    .arg(snmp.value().toString());
-            return RS_CRITICAL;
+            runMsg =  msgCat(runMsg,
+                    trUtf8("Az SNMP válaszban: nem értelmezhető MAC. OID:%1: %2 = %3")
+                    .arg(__o.toString()).arg(o.toString())
+                    .arg(snmp.value().toString()), "\n");
+            continue;       // előfordul
         }
-        macs.insert(mac, pix); // inser or replace
+        macs.insert(mac, pix); // insert or replace
         PDEB(VVERBOSE) << "#" << pix << ":" << mac.toString() << endl;
     } while(true);
     DBGFNL();
