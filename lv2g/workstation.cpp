@@ -1721,7 +1721,7 @@ void cWorkstation::save()
     qlonglong id = node.getId();   // Hiba esetén vissza kell írni
     cError *pe = NULL;
     const static QString tkey = "Workstation_save";
-    node.setId(_sNodeType, ENUM2SET3(NT_PATCH, NT_HOST, NT_WORKSTATION));   // Ezt nem tudja elmenteni, kizárást dob (test)
+    node.setId(_sNodeType, ENUM2SET2(NT_HOST, NT_WORKSTATION));
     try {
         sqlBegin(*pq, tkey);
         if (states.modify) {
