@@ -1723,12 +1723,18 @@ void cWorkstation::save()
     const static QString tkey = "Workstation_save";
     node.setId(_sNodeType, ENUM2SET2(NT_HOST, NT_WORKSTATION));
     try {
+        PDEB(VERBOSE) << trUtf8("Start try (transaction %1)...").arg(tkey) << endl;
         sqlBegin(*pq, tkey);
+        // TEST
+        EXCEPTION(EOK);
+        // TEST
         if (states.modify) {
+            PDEB(VERBOSE) << trUtf8("Modify (rewriteById) : ") << node.identifying() << endl;
             node.rewriteById(*pq);
         }
         else {
             node.clearId();
+            PDEB(VERBOSE) << trUtf8("Insert : ") << node.identifying() << endl;
             node.insert(*pq);
         }
         if (linkType != LT_INVALID) {
@@ -1741,6 +1747,7 @@ void cWorkstation::save()
             QString s = pUi->lineEditLinkNote->text();
             if (!s.isEmpty()) link.setNote(s);
             link.setId(_sCreateUserId,  lanView::user().getId());
+            PDEB(VERBOSE) << trUtf8("Save link #1 : ") << link.toString() << endl;
             link.replace(*pq);
         }
         if (linkType2 != LT_INVALID) {
@@ -1753,13 +1760,17 @@ void cWorkstation::save()
             QString s = pUi->lineEditLinkNote_2->text();
             if (!s.isEmpty()) link.setNote(s);
             link.setId(_sCreateUserId,  lanView::user().getId());
+            PDEB(VERBOSE) << trUtf8("Save link #1 : ") << link.toString() << endl;
             link.replace(*pq);
         }
+        PDEB(VERBOSE) << trUtf8("End transaction : ") << tkey << endl;
         sqlEnd(*pq, tkey);
     } CATCHS(pe);
-    if (!cErrorMessageBox::condMsgBox(pe, this)) {
+    if (pe != NULL) {
+        DERR() << trUtf8("Error exception : ") << pe->msg() << endl;
         sqlRollback(*pq, tkey);
         node.setId(id);    // Vissza az ID
+        cErrorMessageBox::condMsgBox(pe, this);
     }
     _parseObject();
     DBGFNL();
