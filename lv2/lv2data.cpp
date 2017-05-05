@@ -704,8 +704,8 @@ cIpAddress::cIpAddress() : cRecord()
 
 cIpAddress::cIpAddress(const cIpAddress& __o) : cRecord()
 {
-    __cp(__o);
     _copy(__o, *_pRecordDescr);
+    __cp(__o);
 }
 
 cIpAddress::cIpAddress(const QHostAddress& __a, const QString& __t)  : cRecord()
@@ -1073,8 +1073,8 @@ cNPort::cNPort() : cRecord(), params(this)
 cNPort::cNPort(const cNPort& __o) : cRecord(), params(this, __o.params)
 {
     // DBGOBJ();
-    __cp(__o);
     _copy(__o, _descr_cNPort());
+    __cp(__o);
     params.append(__o.params);
 }
 
@@ -1393,8 +1393,8 @@ cPPort::cPPort() : cNPort(_no_init_)
 
 cPPort::cPPort(const cPPort& __o) : cNPort(_no_init_)
 {
-    __cp(__o);
     _copy(__o, _descr_cPPort());
+    __cp(__o);
     params.append(__o.params);
 }
 
@@ -1438,8 +1438,8 @@ cInterface::cInterface(const cInterface& __o)
     , trunkMembers()
 {
 //    DBGOBJ();
-    __cp(__o);
     _copy(__o, _descr_cInterface());
+    __cp(__o);
     trunkMembers = __o.trunkMembers;
 }
 // -- virtual
@@ -1719,8 +1719,8 @@ cPatch::cPatch(const cPatch& __o)
     , pShares(new QSet<cShareBack>)
 {
     DBGOBJ();
-    __cp(__o);
     _copy(__o, _descr_cPatch());
+    __cp(__o);
     containerValid = __o.containerValid;
     if (__o.pShares == NULL) EXCEPTION(EPROGFAIL,0,__o.toString());
     *pShares = *__o.pShares;
@@ -1819,6 +1819,14 @@ void cPatch::setContainerValid(qlonglong __set, qlonglong __clr)
 {
     containerValid = (containerValid & ~__clr) | __set;
 }
+
+void cPatch::clearIdsOnly()
+{
+    _get(idIndex()).clear();
+    ports.clearId();
+    ports.setsOwnerId();
+}
+
 
 int cPatch::fetchPorts(QSqlQuery& __q)
 {
@@ -2224,8 +2232,8 @@ cNode::cNode() : cPatch(_no_init_)
 cNode::cNode(const cNode& __o) : cPatch(_no_init_)
 {
 //  DBGOBJ();
-    __cp(__o);
     _copy(__o, _descr_cNode());
+    __cp(__o);
     if (__o.pShares != NULL) EXCEPTION(EPROGFAIL,0,__o.toString());
     ports.append(__o.ports);
     params.append(__o.params);
@@ -2346,6 +2354,7 @@ bool cNode::rewrite(QSqlQuery &__q, eEx __ex)
 
 bool cNode::rewriteById(QSqlQuery &__q, eEx __ex)
 {
+    if (isNullId()) EXCEPTION(EDATA, 0, identifying());
     // Töröljők az összes régi IP címet (IP címekre nincs replace/rewrite metódus)
     QString sql = "DELETE FROM ip_addresses WHERE port_id IN "
             "(SELECT port_id FROM nports WHERE node_id = ?)";
@@ -3027,8 +3036,8 @@ cSnmpDevice::cSnmpDevice() : cNode(_no_init_)
 cSnmpDevice::cSnmpDevice(const cSnmpDevice& __o) : cNode(_no_init_)
 {
     _set(cSnmpDevice::descr());
-    __cp(__o);
     _copy(__o, _descr_cSnmpDevice());
+    __cp(__o);
     ports.append(__o.ports);
     params.append(__o.params);
 }

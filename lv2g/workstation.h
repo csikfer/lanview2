@@ -70,10 +70,10 @@ private:
     cNode       node;   ///< A munkaállomás objektum
     /// A modosítandó vagy minta node objektum lista model.
     cRecordListModel*pModelNode;
-    cNPort     *pPort1;         ///< A munkaállomás elsődleges interfésze
-    cIpAddress *pIpAddress;     ///< Az elsődleges interfész IP címe
+    cNPort     *pPort1(eEx __ex = EX_ERROR);         ///< A munkaállomás elsődleges interfésze
+    cIpAddress *pIpAddress(eEx __ex = EX_ERROR);     ///< Az elsődleges interfész IP címe
     cPlace     *pPlace;         ///< A munkaállomás helye
-    cNPort     *pPort2;         ///< Opcionális másodlagos portja(vagy interfésze) a munkaállomásnak
+    cNPort     *pPort2(eEx __ex = EX_ERROR);         ///< Opcionális másodlagos portja(vagy interfésze) a munkaállomásnak
     QStringList portTypeList[2];
     QString     portType2No;
     QString     nodeListSql[2];
@@ -158,6 +158,7 @@ private:
     void _addressChanged(const QString& sType, const QString& sAddr = QString());
     void _subNetVLan(int sni, int vli);
     bool _changePortType(bool primary, int cix);
+    int _macStat(const QString& s);
     // void _changeLink(bool primary);
 protected slots:
     void toglePassive(int id, bool f);

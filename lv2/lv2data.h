@@ -1097,6 +1097,9 @@ public:
     virtual void setContainerValid(qlonglong __set, qlonglong __clr = 0);
     virtual void insertPort(QSqlQuery& q, int ix, const QString& _na, const QString& _no, const QString& _tag = QString());
     virtual void updateShared(QSqlQuery& q, int __a, int __ab, int __b, int __bb, bool __cd);
+    /// Törli az ID mezöket, de az objektum egyébb adattartalma nem változik.
+    /// Nem lesznek vérehajtva az toEnd() ill. clearToEnd(); metódusok.
+    void clearIdsOnly();
 
     /// Kitölti a ports konténer adattagot. A node-hoz tartozó összes portot beolvassa a kontéberbe.
     /// Feltételezi, hogy a node_id mevű maző, vagyis a rekord ID ki ban töltve.

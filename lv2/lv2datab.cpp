@@ -3228,7 +3228,7 @@ cError *cRecord::tryRewrite(QSqlQuery& __q, bool __tr)
 bool cRecord::rewriteById(QSqlQuery& __q, enum eEx __ex)
 {
     if (isNullId()) {
-        if (__ex != EX_IGNORE) EXCEPTION(EPROGFAIL, 0, trUtf8("Az ID értéke nem lehet NULL"));
+        if (__ex != EX_IGNORE) EXCEPTION(EPROGFAIL, 0, trUtf8("Az ID értéke nem lehet NULL. ") + identifying());
         return false;
     }
     QBitArray set(cols(), 1);                   // Összes mező

@@ -608,6 +608,7 @@ public:
     /// Copy operator. Nem támogatott
     tOwnRecords<C, O>& operator =(const tOwnRecords& __o) {
         EXCEPTION(EPROGFAIL, 0, typeid(C).name() + QString(" , ") + typeid(O).name() + " :: \n" + __o.toString());
+        return *this;   // warning
     }
 
     /// Bővíti a listát egy elemmel. A megadott pointer helyezi el a konténerben, nem készít másolatot.

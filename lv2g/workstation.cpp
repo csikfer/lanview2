@@ -161,10 +161,7 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     pSample(new cNode),
     node(),
     pModelNode(new cRecordListModel(node.descr())),
-    pPort1(new cInterface),
-    pIpAddress(new cIpAddress),
     pPlace(new cPlace),
-    pPort2(NULL),                                   // Ez lehet cNPort vagy cInterface objektum is.
     pPassiveButtons(new QButtonGroup(this)),
     pModifyButtons(new QButtonGroup(this)),
     pLinkNode(new cPatch),                          // Elvileg nem csak patch lehet, de ez az ős
@@ -200,11 +197,13 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     pModifyButtons->addButton(pUi->radioButtonNew, 0);
     pModifyButtons->addButton(pUi->radioButtonMod, 1);
     node.setId(_sNodeType, ENUM2SET(NT_WORKSTATION));
-    pPort1->  setName(_sEthernet);      // FORM: wstform !!! Azonos alap értékek kellenek!
-    pPort1->    setId(_sIfTypeId, cIfType::ifTypeId(_sEthernet));
-    pIpAddress->setId(_sIpAddressType, AT_DYNAMIC);
-    pPort1->reconvert<cInterface>()->addresses << pIpAddress;
-    node.ports   << pPort1;
+    cInterface *pi = new cInterface;
+    pi->  setName(_sEthernet);      // FORM: wstform !!! Azonos alap értékek kellenek!
+    pi->    setId(_sIfTypeId, cIfType::ifTypeId(_sEthernet));
+    cIpAddress *pa = new cIpAddress;
+    pa->setId(_sIpAddressType, AT_DYNAMIC);
+    pi->addresses << pa;
+    node.ports   << pi;
     pPlace->setById(UNKNOWN_PLACE_ID);     // NAME = 'unknown'
 
     _initLists();
@@ -753,10 +752,10 @@ void cWorkstation::_setLinkType(bool primary)
     }
     else {
         if (primary) {
-            states.link = _linkTest(*pq, stat, states.modify, pPort1->getId(), pLinkPort->getId(), linkType, linkShared, linkInfoMsg);
+            states.link = _linkTest(*pq, stat, states.modify, pPort1()->getId(), pLinkPort->getId(), linkType, linkShared, linkInfoMsg);
         }
         else {
-            states.link2 = _linkTest(*pq, stat, states.modify, pPort2->getId(), pLinkPort2->getId(), linkType2, linkShared2, linkInfoMsg2);
+            states.link2 = _linkTest(*pq, stat, states.modify, pPort2()->getId(), pLinkPort2->getId(), linkType2, linkShared2, linkInfoMsg2);
         }
     }
 }
@@ -993,42 +992,33 @@ void cWorkstation::_setMessage()
 
 void cWorkstation::_completionObject()
 {
-    pPort1 = NULL;
-    pPort2 = NULL;
-    pIpAddress = NULL;
     qlonglong pid = node.getId(_sPlaceId);
     if (pid > ROOT_PLACE_ID) pPlace->fetchById(*pq, pid);// Valid
     else                     pPlace->clear();
     QString pt1 = portTypeList[states.passive][0];  // Első port alapértelmezett típusa (iftypes.iftype_name)
     switch (node.ports.size()) {
     case 0:   // Nincs port
-        pPort1 = node.addPort(pt1, pt1, _sNul, NULL_IX);
-        if (0 == pPort1->chkObjType<cInterface>(EX_IGNORE)) {   // Interfész ?
-            pIpAddress = &(pPort1->reconvert<cInterface>()->addIpAddress(QHostAddress(), AT_DYNAMIC));
+        node.addPort(pt1, pt1, _sNul, NULL_IX);
+        if (0 == pPort1()->chkObjType<cInterface>(EX_IGNORE)) {   // Interfész ?
+            pPort1()->reconvert<cInterface>()->addIpAddress(QHostAddress(), AT_DYNAMIC);
         }
         break;
     case 1: // Egy portunk van
         if (states.passive) {   // Passive node
-            pPort1 = node.ports.first();
+            ;
         }
         else {                  // Aktív node : Workstation
             if (0 == node.ports.first()->chkObjType<cInterface>(EX_IGNORE)) {   // A port egy interfész ?
-                pPort1 = node.ports.first();
-                if (pPort1->reconvert<cInterface>()->addresses.isEmpty()) {     // Ha nincs címe, kap egy NULL, dinamikust
-                    pIpAddress = &(pPort1->reconvert<cInterface>()->addIpAddress(QHostAddress(), AT_DYNAMIC));
-                }
-                else {
-                    pIpAddress = pPort1->reconvert<cInterface>()->addresses.first();
+                if (pPort1()->reconvert<cInterface>()->addresses.isEmpty()) {     // Ha nincs címe, kap egy NULL, dinamikust
+                    pPort1()->reconvert<cInterface>()->addIpAddress(QHostAddress(), AT_DYNAMIC);
                 }
             }
             else {                                                              // Nem interfész
                 // Aktív eszköznek kell egy aktiv port (interfész), meg cím, a passzív lessz a második port
-                pPort2 = node.ports.first();
-                pPort1 = node.addPort(pt1, pt1, _sNul, NULL_IX);
-                pIpAddress = &(pPort1->reconvert<cInterface>()->addIpAddress(QHostAddress(), AT_DYNAMIC));
-                // Swap
-                node.ports[0] = pPort1;
-                node.ports[1] = pPort2;
+                cNPort *p = node.ports.takeFirst();
+                node.addPort(pt1, pt1, _sNul, NULL_IX);
+                pPort1()->reconvert<cInterface>()->addIpAddress(QHostAddress(), AT_DYNAMIC);
+                node.ports << p;
             }
         }
         break;
@@ -1038,56 +1028,43 @@ void cWorkstation::_completionObject()
         if (node.ports.at(0)->tableoid() != cInterface::tableoid_interfaces()
          && node.ports.at(1)->tableoid() == cInterface::tableoid_interfaces()) {
             // Akkor felcsréljük
-            pPort1 = node.ports.at(1)->reconvert<cInterface>();
-            pPort2     = node.ports.first();
-            node.ports[0] = pPort1;
-            node.ports[1] = pPort2;
+            cNPort *p = node.ports.takeFirst();
+            node.ports << p;
         }
         // Az első port egy interfész
         if (node.ports.first()->tableoid() == cInterface::tableoid_interfaces()) {
-            pPort1 = node.ports.first()->reconvert<cInterface>();
-            pPort2     = node.ports.at(1);
-            if (pPort1->reconvert<cInterface>()->addresses.isEmpty()) {  // Nincs IP cím az első porton (sorrend véletlen szerű!!)
-                if (pPort2->tableoid() == cInterface::tableoid_interfaces()    // A második is interfész ?
-                 && !pPort2->reconvert<cInterface>()->addresses.isEmpty()) {   // neki van címe ?
+            if (pPort1()->reconvert<cInterface>()->addresses.isEmpty()) {  // Nincs IP cím az első porton (sorrend véletlen szerű!!)
+                if (pPort2()->tableoid() == cInterface::tableoid_interfaces()    // A második is interfész ?
+                 && !pPort2()->reconvert<cInterface>()->addresses.isEmpty()) {   // neki van címe ?
                     // Akkor felcsréljük
-                    pPort1 = node.ports.at(1)->reconvert<cInterface>();
-                    pPort2     = node.ports.first();
-                    node.ports[0] = pPort1;
-                    node.ports[1] = pPort2;
-                    pIpAddress = pPort1->reconvert<cInterface>()->addresses.first();
+                    cNPort *p = node.ports.takeFirst();
+                    node.ports << p;
                 }
-                else {  // Nincs cím, csinálünk egy üreset:
-                    pPort1->reconvert<cInterface>()->addresses << (pIpAddress = new cIpAddress);
-                    pIpAddress->setId(_sIpAddressType, AT_DYNAMIC);
+                else {  // Nincs cím, csinálunk egy üreset:
+                    pPort1()->reconvert<cInterface>()->addIpAddress(QHostAddress(), AT_DYNAMIC);
                 }
-            }
-            else {  // Első porton van IP cím (csak egy IP cím lehet)
-                pIpAddress = pPort1->reconvert<cInterface>()->addresses.first();
             }
         }
         else {  // Egyik sem interfész, ez elsőt megkamuzzuk mint interfész
-            pPort1 = new cInterface();
-            pPort1->copy(*node.ports.first());
-            delete node.ports.first();
-            node.ports.first() = pPort1;
-            pPort1->setId(_sIfTypeId, cIfType::ifTypeId(_sEthernet));
-            node.ports.clear() << pPort1 ;
-            pPort1->reconvert<cInterface>()->addresses << (pIpAddress = new cIpAddress);
-            pIpAddress->setId(_sIpAddressType, AT_DYNAMIC);
+            cNPort    *pn = node.ports.pop_front();
+            cInterface*pi = new cInterface();
+            pi->copy(*pn);
+            delete pn;
+            pi->setId(_sIfTypeId, cIfType::ifTypeId(_sEthernet));
+            pi->addIpAddress(QHostAddress(), AT_DYNAMIC);
+            node.ports.push_front(pi);
         }
         break;
     default:    // A konstatns szűrési feltétel alapján ez lehetetlen
         EXCEPTION(EPROGFAIL);
         break;
     }
-    if (pPort1 == NULL)  EXCEPTION(EPROGFAIL);
-    if ((pPort1->chkObjType<cInterface>(EX_IGNORE) < 0) == (pIpAddress != NULL))  EXCEPTION(EPROGFAIL);
+    if ((pPort1()->chkObjType<cInterface>(EX_IGNORE) < 0) == (pIpAddress(EX_IGNORE) != NULL)) EXCEPTION(EPROGFAIL);
 
     // *** Link ***
     cPhsLink link;
     // Link port 1:
-    if (link.isExist(*pq, pPort1->getId(), LT_TERM)) {
+    if (link.isExist(*pq, pPort1()->getId(), LT_TERM)) {
         pLinkPort->setById(*pq, link.getId(_sPortId2));
         pLinkNode->setById(*pq, pLinkPort->getId(_sNodeId));
         linkType   = (ePhsLinkType)link.getId(_sPhsLinkType2);
@@ -1100,7 +1077,7 @@ void cWorkstation::_completionObject()
         linkShared = ES_NC;
     }
     // Link port 2:
-    if (pPort2 != NULL && link.isExist(*pq, pPort2->getId(), LT_TERM)) {
+    if (pPort2(EX_IGNORE) != NULL && link.isExist(*pq, pPort2()->getId(), LT_TERM)) {
         pLinkPort2->setById(*pq, link.getId(_sPortId2));
         pLinkNode2->setById(*pq, pLinkPort2->getId(_sNodeId));
         linkType2   = (ePhsLinkType)link.getId(_sPhsLinkType2);
@@ -1116,9 +1093,6 @@ void cWorkstation::_completionObject()
 
 void cWorkstation::_clearNode()
 {
-    pPort1     = NULL;
-    pIpAddress = NULL;
-    pPort2     = NULL;
     node.clear();
     _completionObject();
     _parseObject();
@@ -1163,37 +1137,37 @@ void cWorkstation::_parseObject()
     states.inventoryNumber = _checkNodeCollision(ix, s);
     // *** PORT 1 ***
     // Port 1 name
-    s = pPort1->getName();
+    s = pPort1()->getName();
     pUi->lineEditPName->setText(s);
     if (s.isEmpty()) EXCEPTION(EDATA);
     states.portName = IS_OK;
     // Port 1 note, tag
-    s = pPort1->getNote();
+    s = pPort1()->getNote();
     pUi->lineEditPNote->setText(s);
-    s = pPort1->getName(_sPortTag);
+    s = pPort1()->getName(_sPortTag);
     pUi->lineEditPTag->setText(s);
     // Port type
-    s  = cIfType::ifTypeName(pPort1->getId(_sIfTypeId));
+    s  = cIfType::ifTypeName(pPort1()->getId(_sIfTypeId));
     ix = pUi->comboBoxPType->findText(s);
     pUi->comboBoxPType->setCurrentIndex((ix >= 0) ? ix : 0);    // Nem a listában lávű típus, legyen a defíult (jobb mint kiakadni)
     _changePortType(true, ix);  // MAC and IP ADDRESS
     // *** PORT 2 ***
-    if (pPort2 == NULL) {   // Nincs második port
+    if (pPort2(EX_IGNORE) == NULL) {   // Nincs második port
         _changePortType(false, -1);  // MAC
     }
     else {
         // Port 2 name
-        s = pPort2->getName();
+        s = pPort2()->getName();
         pUi->lineEditPName_2->setText(s);
         if (s.isEmpty()) EXCEPTION(EDATA);
         states.port2Name = IS_OK;
         // Port 2 note, tag
-        s = pPort2->getNote();
+        s = pPort2()->getNote();
         pUi->lineEditPNote_2->setText(s);
-        s = pPort2->getName(_sPortTag);
+        s = pPort2()->getName(_sPortTag);
         pUi->lineEditPTag_2->setText(s);
         // Port type
-        s  = cIfType::ifTypeName(pPort2->getId(_sIfTypeId));
+        s  = cIfType::ifTypeName(pPort2()->getId(_sIfTypeId));
         ix = pUi->comboBoxPType_2->findText(s);
         pUi->comboBoxPType_2->setCurrentIndex((ix >= 1) ? ix : 1);    // Nem a listában lávű típus, legyen a defíult (jobb mint kiakadni)
         _changePortType(false, ix);  // MAC
@@ -1269,9 +1243,8 @@ void cWorkstation::_addressChanged(const QString& sType, const QString& sAddr)
 {
     addrCollisionInfo.clear();
     if (sType.isEmpty()) {
-        pIpAddress = NULL;
-        if (pPort1->chkObjType<cInterface>(EX_IGNORE) == 0) {
-            pPort1->reconvert<cInterface>()->addresses.clear();
+        if (pPort1()->chkObjType<cInterface>(EX_IGNORE) == 0) {
+            pPort1()->reconvert<cInterface>()->addresses.clear();
         }
         states.ipNeed = IS_NOT_POSSIBLE;
         states.ipAddr = IS_EMPTY;
@@ -1284,13 +1257,13 @@ void cWorkstation::_addressChanged(const QString& sType, const QString& sAddr)
         pUi->comboBoxVLanId->setDisabled(true);
         return;
     }
-    if (pIpAddress == NULL) {
-        pIpAddress = &(pPort1->reconvert<cInterface>()->addIpAddress(QHostAddress(), sType));
+    if (pIpAddress(EX_IGNORE) == NULL) {
+        pPort1()->reconvert<cInterface>()->addIpAddress(QHostAddress(), sType);
     }
     else {
-        pIpAddress->setName(cIpAddress::ixIpAddressType(), sType);
+        pIpAddress()->setName(cIpAddress::ixIpAddressType(), sType);
     }
-    switch (pIpAddress->getId(cIpAddress::ixIpAddressType())) {
+    switch (pIpAddress()->getId(cIpAddress::ixIpAddressType())) {
     case AT_FIXIP:
         states.ipNeed = IS_MUST;
         break;
@@ -1301,7 +1274,7 @@ void cWorkstation::_addressChanged(const QString& sType, const QString& sAddr)
         EXCEPTION(EPROGFAIL);
     }
     if (sAddr.isEmpty()) {
-        pIpAddress->clear(_sAddress);
+        pIpAddress()->clear(_sAddress);
         states.ipAddr = IS_EMPTY;
     }
     else {
@@ -1362,7 +1335,7 @@ void cWorkstation::_addressChanged(const QString& sType, const QString& sAddr)
                 case 1: // 1 subnet, OK, belső cím
                     ix = pUi->comboBoxSubNet->findText(sn.getName());
                     if (ix < 0) EXCEPTION(EDATA);
-                    pIpAddress->setAddress(a);
+                    pIpAddress()->setAddress(a);
                     _subNetVLan(ix, -1);
                     break;
                 default:
@@ -1394,7 +1367,7 @@ void cWorkstation::_addressChanged(const QString& sType, const QString& sAddr)
 
 void cWorkstation::_subNetVLan(int sni, int vli)
 {
-    if (pIpAddress == NULL) return;
+    if (pIpAddress(EX_IGNORE) == NULL) return;
     int ix;
     cSubNet   *psn = NULL;
     cVLan     *pvl = NULL;
@@ -1437,22 +1410,22 @@ void cWorkstation::_subNetVLan(int sni, int vli)
         }
     }
     if (psn != NULL) {
-        pIpAddress->setId(_sSubNetId, psn->getId());
+        pIpAddress()->setId(_sSubNetId, psn->getId());
     }
     else {
-        pIpAddress->setId(_sSubNetId, NULL_ID);
+        pIpAddress()->setId(_sSubNetId, NULL_ID);
     }
     if (pvl != NULL) {
-        if (pPort1->reconvert<cInterface>()->vlans.isEmpty()) {
-            pPort1->reconvert<cInterface>()->vlans << new cPortVlan();
+        if (pPort1()->reconvert<cInterface>()->vlans.isEmpty()) {
+            pPort1()->reconvert<cInterface>()->vlans << new cPortVlan();
         }
-        cPortVlan& pv = *pPort1->reconvert<cInterface>()->vlans.first();
+        cPortVlan& pv = *pPort1()->reconvert<cInterface>()->vlans.first();
         pv.setId(_sVlanId, pvl->getId());
         pv.setId(_sVlanType, VT_HARD);
         pv.setId(_sSetType, ST_MANUAL);
     }
     else {
-        pPort1->reconvert<cInterface>()->vlans.clear();
+        pPort1()->reconvert<cInterface>()->vlans.clear();
     }
     LOCKSLOTS();
     pUi->comboBoxSubNet->setCurrentIndex(sni);
@@ -1468,7 +1441,6 @@ bool cWorkstation::_changePortType(bool primary, int cix)
         if (primary) EXCEPTION(EDATA);  // Elsődlegesnek kell lennie
         if (node.ports.size() > 1) delete node.ports.pop_back();    // Ha volt töröljük
         if (node.ports.size() != 1) EXCEPTION(EPROGFAIL);           // Pont egy portnak kell lennie
-        pPort2 = NULL;
         linkType2 = LT_INVALID;  pLinkNode2->clear();    pLinkPort2->clear();
         LOCKSLOTS();
         pModelLinkPort2->setFilter(NULL_ID, OT_ASC, FT_FKEY_ID); // Nincs kiválasztott node, a lista üres
@@ -1498,7 +1470,7 @@ bool cWorkstation::_changePortType(bool primary, int cix)
         WENABLE(lineEditSrvNote_2, false);
         return false;
     }
-    cNPort *pPort = primary ? pPort1 : pPort2;
+    cNPort *pPort = primary ? pPort1() : pPort2();
     int ix = primary ? 0 : 1;   // port indexe a porst konténerben
     QString sType = (primary ? pUi->comboBoxPType : pUi->comboBoxPType_2)->itemText(cix);
     const cIfType& iftype = cIfType::ifType(sType);
@@ -1523,10 +1495,10 @@ bool cWorkstation::_changePortType(bool primary, int cix)
             QString sType = _sDynamic;
             QString sAddr = _sNul;
             qlonglong six = 0;
-            if (pIpAddress != NULL) {
-                sType = pIpAddress->getName(_sIpAddressType);
-                sAddr = pIpAddress->getName(_sAddress);
-                qlonglong sid = pIpAddress->getId(_sSubNetId);
+            if (pIpAddress(EX_IGNORE) != NULL) {
+                sType = pIpAddress()->getName(_sIpAddressType);
+                sAddr = pIpAddress()->getName(_sAddress);
+                qlonglong sid = pIpAddress()->getId(_sSubNetId);
                 if (sid != NULL_ID) {
                     QString subn  = cSubNet().getNameById(*pq, sid);
                     six = pUi->comboBoxSubNet->findText(subn);
@@ -1535,7 +1507,9 @@ bool cWorkstation::_changePortType(bool primary, int cix)
             pUi->lineEditAddress->setText(sAddr);
             _addressChanged(sType, sAddr);
             _subNetVLan(six, -1);
-            pUi->lineEditPMAC->setText(pPort1->getName(_sHwAddress));
+            QString s = pPort1()->getName(_sHwAddress);
+            pUi->lineEditPMAC->setText(s);
+            states.mac = _macStat(s);
         }
         else {
             _addressChanged(_sNul);
@@ -1547,7 +1521,9 @@ bool cWorkstation::_changePortType(bool primary, int cix)
     else {
         states.mac2need = isIface;
         if (isIface) {
-            pUi->lineEditPMAC_2->setText(pPort1->getName(_sHwAddress));
+            QString s = pPort1()->getName(_sHwAddress);
+            pUi->lineEditPMAC_2->setText(s);
+            states.mac2 = _macStat(s);
         }
         WENABLE(lineEditPName_2, true);
         WENABLE(lineEditPNote_2, true);
@@ -1633,21 +1609,19 @@ void cWorkstation::toglePassive(int id, bool f)
     states.subNetNeed = false;
     node.ports.clear();
     QString t = portTypeList[id].first();       // Az alapértelmezett port típus neve
-    pPort1 = node.addPort(t, t, _sNul, NULL_IX);// Hozzáadjuk a portot (alapértelmezett név a típus)
-    pIpAddress = NULL;                          // Cím objektum =még) nincs
+    node.addPort(t, t, _sNul, NULL_IX);// Hozzáadjuk a portot (alapértelmezett név a típus)
     switch (cIfType::ifType(t).getId(_sIfTypeObjType)) {
     case PO_INTERFACE:                          // Kell cím objektum
-        pIpAddress = &(pPort1->reconvert<cInterface>()->addIpAddress(QHostAddress(), AT_DYNAMIC));
+        pPort1()->reconvert<cInterface>()->addIpAddress(QHostAddress(), AT_DYNAMIC);
         break;
     case PO_NPORT:                              // Nem kell cím objektum
         break;
     case PO_PPORT:                              // Ez nem lehetséges
         EXCEPTION(EDATA);
     }
-    pPort2 = NULL;                              // Másodlagos port alapértelmezetten nincs
     pModelNode->setConstFilter(nodeListSql[id], FT_SQL_WHERE);  // A node típustol függő szűrés
     pModelNode->setFilter();                    // Frissítés. A konstans szűrő hívása nem frissít
-    bool fip = pIpAddress != NULL;              // Ha ninbcs IP, a kapcolódó widgetek tiltása, ha van engedélyezése
+    bool fip = pIpAddress(EX_IGNORE) != NULL;   // Ha ninbcs IP, a kapcolódó widgetek tiltása, ha van engedélyezése
     states.macNeed = fip;                       // Ha nincs IP (nem interface) nincs MAC sem
     lockSlot = true;                            // Slottok tiltása, majd a végén hívjuk, ami kell.
     pUi->comboBoxPType->clear();
@@ -1696,11 +1670,11 @@ void cWorkstation::togleModify(int id, bool f)
     nodeNameChanged(node.getName());
     serialChanged(node.getName(_sSerialNumber));
     inventoryChanged(node.getName(_sInventoryNumber));
-    if (pPort1->isIndex(_sHwAddress)) macAddressChanged(pPort1->getName(_sHwAddress));
-    if (pIpAddress != NULL) ipAddressChanged(pIpAddress->getName(cIpAddress::ixAddress()));
-    states.link = _linkTest(*pq, states.link, states.modify, pPort1->getId(), pLinkPort->getId(), linkType, linkShared, linkInfoMsg);
-    if (pPort2 != NULL) {
-        states.link2 = _linkTest(*pq, states.link2, states.modify, pPort2->getId(), pLinkPort2->getId(), linkType2, linkShared2, linkInfoMsg2);
+    if (pPort1()->isIndex(_sHwAddress)) macAddressChanged(pPort1()->getName(_sHwAddress));
+    if (pIpAddress(EX_IGNORE) != NULL) ipAddressChanged(pIpAddress()->getName(cIpAddress::ixAddress()));
+    states.link = _linkTest(*pq, states.link, states.modify, pPort1()->getId(), pLinkPort->getId(), linkType, linkShared, linkInfoMsg);
+    if (pPort2(EX_IGNORE) != NULL) {
+        states.link2 = _linkTest(*pq, states.link2, states.modify, pPort2()->getId(), pLinkPort2->getId(), linkType2, linkShared2, linkInfoMsg2);
     }
     ENDSLOTM();
 }
@@ -1710,36 +1684,54 @@ void cWorkstation::save()
     DBGFN();
     // Néhány érték nem íródik automatikusan az objektumba
     node.setNote(pUi->lineEditNote->text());
-    pPort1->setNote(pUi->lineEditPNote->text());
-    pPort1->setName(_sPortTag, pUi->lineEditPTag->text());
-    if (pIpAddress != NULL) {
-        pIpAddress->setNote(pUi->lineEditIpNote->text());
+    pPort1()->setNote(pUi->lineEditPNote->text());
+    pPort1()->setName(_sPortTag, pUi->lineEditPTag->text());
+    if (pIpAddress(EX_IGNORE) != NULL) {
+        pIpAddress()->setNote(pUi->lineEditIpNote->text());
     }
-    if (pPort2 != NULL) {
-        pPort2->setNote(pUi->lineEditPNote_2->text());
+    if (pPort2(EX_IGNORE) != NULL) {
+        pPort2()->setNote(pUi->lineEditPNote_2->text());
     }
-    qlonglong id = node.getId();   // Hiba esetén vissza kell írni
+    cNode *pSave = node.dup()->reconvert<cNode>();// Hiba esetén vissza kell állítani az eredetit
     cError *pe = NULL;
     const static QString tkey = "Workstation_save";
     node.setId(_sNodeType, ENUM2SET2(NT_HOST, NT_WORKSTATION));
+    QString p1name = pPort1()->getName();
+    int on = node.ports.size();
+    if (on != 1 && on != 2) EXCEPTION(EPROGFAIL, on);
     try {
         PDEB(VERBOSE) << trUtf8("Start try (transaction %1)...").arg(tkey) << endl;
+        // Az írási műveletnél, a ports konténer törlődik, újraolvasáskor pedig más lehet a sorrend!
         sqlBegin(*pq, tkey);
-        // TEST
-        EXCEPTION(EOK);
-        // TEST
         if (states.modify) {
             PDEB(VERBOSE) << trUtf8("Modify (rewriteById) : ") << node.identifying() << endl;
             node.rewriteById(*pq);
         }
         else {
-            node.clearId();
+            node.clearIdsOnly(); // Az ID-ket törölni kell
             PDEB(VERBOSE) << trUtf8("Insert : ") << node.identifying() << endl;
             node.insert(*pq);
         }
+        node.fetchPorts(*pq);                   // A portokat újra visszaolvassuk
+        static const QString  cm = trUtf8("A munkaállomás adatainak a kiírása után, a visszaolvasott adatok hibásak : ");
+        int n = node.ports.size();
+        if (n != on) {
+            EXCEPTION(EDATA, 2, cm + trUtf8("Kiírtunk %1 db. portot, de %2 portot olvastubk vissza.").arg(on).arg(n));
+        }
+        if (pPort1()->getName() != p1name) {    // Ha megváltozott a sorrend ?
+            if (pPort2(EX_IGNORE) == NULL) {
+                EXCEPTION(EDATA, 2, cm + trUtf8("Csak egy port van, de annak nem egyezik a neve a kiírttal."));
+            }
+            if (pPort2()->getName() != p1name) {
+                EXCEPTION(EDATA, 2, cm + trUtf8("Két port van, de egyik neve sem egyezik a kiírt elő port nevével."));
+            }
+            // Felcseréljük
+            cNPort *p = node.ports.takeFirst();
+            node.ports << p;
+        }
         if (linkType != LT_INVALID) {
             cPhsLink link;
-            link.setId(_sPortId1,       pPort1->getId());
+            link.setId(_sPortId1,       pPort1()->getId());
             link.setId(_sPhsLinkType1,  LT_TERM);
             link.setId(_sPortId2,       pLinkPort->getId());
             link.setId(_sPhsLinkType2,  linkType);
@@ -1752,7 +1744,7 @@ void cWorkstation::save()
         }
         if (linkType2 != LT_INVALID) {
             cPhsLink link;
-            link.setId(_sPortId1,       pPort2->getId());
+            link.setId(_sPortId1,       pPort2()->getId());
             link.setId(_sPhsLinkType1,  LT_TERM);
             link.setId(_sPortId2,       pLinkPort2->getId());
             link.setId(_sPhsLinkType2,  linkType2);
@@ -1769,9 +1761,10 @@ void cWorkstation::save()
     if (pe != NULL) {
         DERR() << trUtf8("Error exception : ") << pe->msg() << endl;
         sqlRollback(*pq, tkey);
-        node.setId(id);    // Vissza az ID
+        node.clone(*pSave);  // Visszaállítjuk
         cErrorMessageBox::condMsgBox(pe, this);
     }
+    delete pSave;
     _parseObject();
     DBGFNL();
 }
@@ -1816,9 +1809,6 @@ void cWorkstation::nodeCurrentIndex(int i)
     BEGINSLOT(i);
     pSample->setById(*pq, id);
     pSample->fetchPorts(*pq);
-    pPort1 = NULL;  // A klonozásnál fel lesznek szabadítva!!!
-    pIpAddress = NULL;
-    pPort2     = NULL;
     node.clone(*pSample);
     _completionObject();
     _parseObject();
@@ -1894,7 +1884,7 @@ void cWorkstation::nodeAddPlace()
 void cWorkstation::portNameChanged(const QString& s)
 {
     BEGINSLOT(s);
-    pPort1->setName(s);
+    pPort1()->setName(s);
     states.portName = s.isEmpty() ? IS_EMPTY : IS_OK;
     ENDSLOTM();
 }
@@ -1908,28 +1898,44 @@ void cWorkstation::portTypeCurrentIndex(int i)
     ENDSLOTM();
 }
 
-void cWorkstation::macAddressChanged(const QString& s)
+int cWorkstation::_macStat(const QString& s)
 {
-    BEGINSLOT(s);
     if (s.isEmpty()) {
-        pPort1->clear(_sHwAddress);
-        states.mac = IS_EMPTY;
+        return IS_EMPTY;
     }
     else {
         cMac mac(s);
         if (mac.isValid()) {
-            pPort1->setMac(_sHwAddress, mac);
             cNode no;
             if (no.fetchByMac(*pq, mac) && !(states.modify && pSample->getId() == no.getId())) {
-                states.mac = IS_COLLISION;
+                return IS_COLLISION;
             }
             else {
-                states.mac = IS_OK;
+                return IS_OK;
             }
         }
         else {
-            states.mac = IS_INVALID;
+            return IS_INVALID;
         }
+    }
+}
+
+void cWorkstation::macAddressChanged(const QString& s)
+{
+    BEGINSLOT(s);
+    int i = _macStat(s);
+    states.mac = i;
+    switch (i) {
+    case IS_EMPTY:
+    case IS_COLLISION:
+    case IS_INVALID:
+        pPort1()->clear(_sHwAddress);
+        break;
+    case IS_OK:
+        pPort1()->setName(_sHwAddress, s);
+        break;
+    default:
+        EXCEPTION(EPROGFAIL);
     }
     ENDSLOTM();
 }
@@ -1937,18 +1943,18 @@ void cWorkstation::macAddressChanged(const QString& s)
 // Workstation address slots
 void cWorkstation::ipAddressChanged(const QString& s)
 {
-    if (pIpAddress == NULL) return;
+    if (pIpAddress(EX_IGNORE) == NULL) return;
     BEGINSLOT(s);
-    QString sType = pIpAddress->getName(_sIpAddressType);
+    QString sType = pIpAddress()->getName(_sIpAddressType);
     _addressChanged(sType, s);
     ENDSLOTM();
 }
 
 void cWorkstation::ipAddressTypeCurrentIndex(const QString& s)
 {
-    if (pIpAddress == NULL) return;
+    if (pIpAddress(EX_IGNORE) == NULL) return;
     BEGINSLOT(s);
-    QString sAddr = pIpAddress->getName(_sAddress);
+    QString sAddr = pIpAddress()->getName(_sAddress);
     _addressChanged(s, sAddr);
     ENDSLOTM();
 }
@@ -1988,7 +1994,7 @@ void cWorkstation::linkChangeLinkType(int id, bool f)
     BEGINSLOT((QString::number(id) + ", " + DBOOL(f)));
     if (f && id != linkType) {
         linkType = (ePhsLinkType)id;
-        states.link = _linkTest(*pq, states.link, states.modify, pPort1->getId(), pLinkPort->getId(), linkType, linkShared, linkInfoMsg);
+        states.link = _linkTest(*pq, states.link, states.modify, pPort1()->getId(), pLinkPort->getId(), linkType, linkShared, linkInfoMsg);
     }
     ENDSLOTM();
 }
@@ -2038,7 +2044,7 @@ void cWorkstation::linkPortCurrentIndex(const QString& s)
 {
     BEGINSLOT(s);
     states.link = _changeLinkPort(s, pLinkButtonsLinkType, pUi->comboBoxLinkPortShare, TS_NULL, pLinkPort, &linkType, &linkShared);
-    states.link = _linkTest(*pq, states.link, states.modify, pPort1->getId(), pLinkPort->getId(), linkType, linkShared, linkInfoMsg);
+    states.link = _linkTest(*pq, states.link, states.modify, pPort1()->getId(), pLinkPort->getId(), linkType, linkShared, linkInfoMsg);
     ENDSLOTM();
 }
 
@@ -2046,7 +2052,7 @@ void cWorkstation::linkPortShareCurrentIndex(const QString &s)
 {
     BEGINSLOT(s);
     linkShared = (ePortShare)portShare(s);
-    states.link = _linkTest(*pq, states.link, states.modify, pPort1->getId(), pLinkPort->getId(), linkType, linkShared, linkInfoMsg);
+    states.link = _linkTest(*pq, states.link, states.modify, pPort1()->getId(), pLinkPort->getId(), linkType, linkShared, linkInfoMsg);
     ENDSLOTM();
 }
 
@@ -2097,26 +2103,19 @@ void cWorkstation::portTypeCurrentIndex2(int i)
 void cWorkstation::macAddressChanged2(const QString& s)
 {
     BEGINSLOT(s);
-    if (pPort2 == NULL) return;
-    if (s.isEmpty()) {
-        pPort2->clear(_sHwAddress);
-        states.mac2 = IS_EMPTY;
-    }
-    else {
-        cMac mac(s);
-        if (mac.isValid()) {
-            pPort2->setMac(_sHwAddress, mac);
-            cNode no;
-            if (no.fetchByMac(*pq, mac) && !(states.modify && pSample->getId() == no.getId())) {
-                states.mac2 = IS_COLLISION;
-            }
-            else {
-                states.mac2 = IS_OK;
-            }
-        }
-        else {
-            states.mac2 = IS_INVALID;
-        }
+    int i = _macStat(s);
+    states.mac = i;
+    switch (i) {
+    case IS_EMPTY:
+    case IS_COLLISION:
+    case IS_INVALID:
+        pPort2()->clear(_sHwAddress);
+        break;
+    case IS_OK:
+        pPort2()->setName(_sHwAddress, s);
+        break;
+    default:
+        EXCEPTION(EPROGFAIL);
     }
     ENDSLOTM();
 }
@@ -2127,7 +2126,7 @@ void cWorkstation::linkChangeLinkType2(int id, bool f)
     BEGINSLOT(QString::number(id) + ", " + DBOOL(f));
     if (f && id != linkType2) {
         linkType2 = (ePhsLinkType)id;
-        states.link2 = _linkTest(*pq, states.link2, states.modify, pPort2->getId(), pLinkPort2->getId(), linkType2, linkShared2, linkInfoMsg2);
+        states.link2 = _linkTest(*pq, states.link2, states.modify, pPort2()->getId(), pLinkPort2->getId(), linkType2, linkShared2, linkInfoMsg2);
     }
     ENDSLOTM();
 }
@@ -2176,7 +2175,7 @@ void cWorkstation::linkPortCurrentIndex2(const QString& s)
 {
     BEGINSLOT(s);
     states.link2 = _changeLinkPort(s, pLinkButtonsLinkType2, pUi->comboBoxLinkPortShare_2, TS_NULL, pLinkPort2, &linkType2, &linkShared2);
-    states.link2 = _linkTest(*pq, states.link2, states.modify, pPort2->getId(), pLinkPort2->getId(), linkType2, linkShared2, linkInfoMsg2);
+    states.link2 = _linkTest(*pq, states.link2, states.modify, pPort2()->getId(), pLinkPort2->getId(), linkType2, linkShared2, linkInfoMsg2);
     ENDSLOTM();
 }
 
@@ -2184,7 +2183,7 @@ void cWorkstation::linkPortShareCurrentIndex2(const QString &s)
 {
     BEGINSLOT(s);
     linkShared2 = (ePortShare)portShare(s);
-    states.link2 = _linkTest(*pq, states.link2, states.modify, pPort2->getId(), pLinkPort2->getId(), linkType2, linkShared2, linkInfoMsg2);
+    states.link2 = _linkTest(*pq, states.link2, states.modify, pPort2()->getId(), pLinkPort2->getId(), linkType2, linkShared2, linkInfoMsg2);
     ENDSLOTM();
 }
 
@@ -2212,4 +2211,33 @@ void cWorkstation::newPatch2()
     }
     _setCurrentIndex(p->getName(), pUi->comboBoxLinkNode_2);
     delete p;
+}
+
+cNPort *cWorkstation::pPort1(eEx __ex)
+{
+    if (node.ports.size() >= 1) return  node.ports.at(0);
+    if (__ex != EX_IGNORE) EXCEPTION(EPROGFAIL);
+    return NULL;
+}
+
+cIpAddress *cWorkstation::pIpAddress(eEx __ex)
+{
+    cNPort *p = pPort1(EX_IGNORE);
+    if (p == NULL) {
+        if (__ex != EX_IGNORE) EXCEPTION(EPROGFAIL);
+        return NULL;
+    }
+    cInterface *pi = p->reconvert<cInterface>();
+    if (pi->addresses.size() < 1) {
+        if (__ex != EX_IGNORE) EXCEPTION(EPROGFAIL);
+        return NULL;
+    }
+    return pi->addresses.at(0);
+}
+
+cNPort     *cWorkstation::pPort2(eEx __ex)
+{
+    if (node.ports.size() >= 2) return  node.ports.at(1);
+    if (__ex != EX_IGNORE) EXCEPTION(EPROGFAIL);
+    return NULL;
 }
