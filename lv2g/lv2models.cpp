@@ -503,7 +503,8 @@ cRecordListModel& cRecordListModel::copy(const cRecordListModel& _o)
 
 void _setRecordListModel(QComboBox *pComboBox, cRecordListModel *pModel)
 {
-    new cComboColorToLine(pComboBox, pModel);
+    // Sajnos nem müködik :(
+    // new cComboColorToLine(pComboBox, pModel);
     pComboBox->setModel(pModel);
 }
 
@@ -523,7 +524,7 @@ cComboColorToLine::cComboColorToLine(QComboBox *_pComboBox, cRecordListModel *_p
 
 void cComboColorToLine::currentIndex(int i)
 {
-#if 1
+#if 0
     QLineEdit *pLineEdit = pComboBox->lineEdit();
     QString s = pModel->atView(i);
     if (pLineEdit == NULL) {

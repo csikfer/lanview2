@@ -755,16 +755,16 @@ bool cEnumValsEditWidget::saveValue()
 bool cEnumValsEditWidget::saveType()
 {
     type.clearId();
-    val[_sEnumValNote]  = pUi->lineEditTypeTypeNote->text();
-    val[_sViewShort]    = pUi->lineEditTypeShort->text();
-    val[_sViewLong]     = pUi->lineEditTypeLong->text();
-    val[_sToolTip]      = pUi->textEditTypeTypeToolTip->toPlainText();
+    type[_sEnumValNote]  = pUi->lineEditTypeTypeNote->text();
+    type[_sViewShort]    = pUi->lineEditTypeShort->text();
+    type[_sViewLong]     = pUi->lineEditTypeLong->text();
+    type[_sToolTip]      = pUi->textEditTypeTypeToolTip->toPlainText();
 
     cError *pe = NULL;
     static const QString tn = "cEnumValsEdit";
     sqlBegin(*pq, tn);
     try {
-        val.replace(*pq);
+        type.replace(*pq);
         foreach (cEnumValRow *p, rows) {
             p->save(*pq);
         }
@@ -904,9 +904,9 @@ void cEnumValsEditWidget::setEnumTypeType(const QString& etn)
         break;
     case 0:     // Not found (törölte a completion() metódus)
         type[_sEnumValName]  = _sNul;
-        type[_sEnumTypeName] = enumValTypeName;
-        type[_sViewShort]    = enumValTypeName;
-        type[_sViewLong]     = enumValTypeName;
+        type[_sEnumTypeName] = enumTypeTypeName;
+        type[_sViewShort]    = enumTypeTypeName;
+        type[_sViewLong]     = enumTypeTypeName;
         break;
     default:    EXCEPTION(AMBIGUOUS, n, type.identifying());
     }
