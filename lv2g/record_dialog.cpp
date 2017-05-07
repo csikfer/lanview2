@@ -20,6 +20,23 @@ int _setCurrentIndex(const QString& name, QComboBox * pComboBox, eEx __ex)
     pComboBox->setCurrentIndex(ix);
     return ix;
 }
+/// Tartalom alapján beállítja az aktuális indexet a megadott comboBox-on
+/// @param name Az érték, amire az aktuális indexnek mutatnia kell.
+/// @param pComboBox A QComboBox objektum pointere, ahhol az indexet be kell állítani.
+/// @param pListModel A model pointere (a név, és a megjelenített item nem azonos)
+/// @param __ex Ha értéke EX_IGNORE, akkor ha nem találja a megfelelő elemet, amire az indexet állítani kell,
+/// akkor az index a 0 lessz. Ha értéke nem EX_IGNORE, akkor ha nincs megadott elem dob egy kizárást.
+/// @return A beállitott index értékkel tér vissza
+int _setCurrentIndex(const QString& name, QComboBox * pComboBox, cRecordListModel *pListModel, eEx __ex)
+{
+    int ix = pListModel->indexOf(name);
+    if (ix < 0) {
+        if (EX_IGNORE != __ex) EXCEPTION(EDATA, 0, name);
+        ix = 0;
+    }
+    pComboBox->setCurrentIndex(ix);
+    return ix;
+}
 
 /// Egy magadott zóna és hely comboBox pároson állítja be a megadott helyet.
 /// A helyeket megjelenítő comboBox-nál feltételezi, hogy a beállított model objektum típusa

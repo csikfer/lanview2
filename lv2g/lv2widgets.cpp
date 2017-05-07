@@ -1396,7 +1396,7 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
     pRDescr = cRecStaticDescr::get(_colDescr.fKeyTable, _colDescr.fKeySchema);
     pModel = new cRecordListModel(*pRDescr, pWidget());
     pModel->nullable = _colDescr.isNullable;
-    pModel->setToNameF(_colDescr.fnToName);
+    pModel->setViewExpr(_colDescr.fnToName);
     QString owner = _fieldShape.feature(_sOwner);
     if (0 == owner.compare(_sSelf, Qt::CaseInsensitive)) {
         if (_pParentDialog == NULL) {

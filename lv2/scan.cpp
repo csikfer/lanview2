@@ -1472,10 +1472,13 @@ bool cLldpScan::rowProCurve(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& e
         HEREIN(em, QObject::trUtf8("Hiányzik az eszköz azonosító MAC cím."), RS_WARNING);
         return false;
     }
-    rPortIx = row.pname.toInt(&ok);
+    rPortIx = row.pname.toInt(&ok);         // A port név = index
     if (!ok) {
-        HEREIN(em, QObject::trUtf8("A '%1' nem értelmezhető port indexként.").arg(row.pname), RS_WARNING);
-        return false;
+        rPortIx = row.pdescr.toInt(&ok);    // vagy port descr = index (pl.: 1820-Gx)
+        if (!ok) {
+            HEREIN(em, QObject::trUtf8("A '%1' nem értelmezhető port indexként.").arg(row.pname), RS_WARNING);
+            return false;
+        }
     }
     exists = !rHost.isEmpty();
     if (exists) {

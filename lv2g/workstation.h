@@ -191,8 +191,8 @@ protected slots:
     void linkToglePlaceEqu(bool f);
     void linkZoneCurrentIndex(const QString& s);
     void linkPlaceCurrentIndex(const QString &s);
-    void linkNodeCurrentIndex(const QString &s);
-    void linkPortCurrentIndex(const QString &s);
+    void linkNodeCurrentIndex(int i);
+    void linkPortCurrentIndex(int i);
     void linkPortShareCurrentIndex(const QString &s);
     void newPatch();
 
@@ -204,8 +204,8 @@ protected slots:
     void linkToglePlaceEqu2(bool f);
     void linkZoneCurrentIndex2(const QString& s);
     void linkPlaceCurrentIndex2(const QString &s);
-    void linkNodeCurrentIndex2(const QString &s);
-    void linkPortCurrentIndex2(const QString &s);
+    void linkNodeCurrentIndex2(int i);
+    void linkPortCurrentIndex2(int i);
     void linkPortShareCurrentIndex2(const QString &s);
     void newPatch2();
 

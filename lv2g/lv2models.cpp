@@ -228,24 +228,26 @@ cPolygonTableModel& cPolygonTableModel::remove(QModelIndexList& mil)
 /* **************************************** cRecordListModel ****************************************  */
 
 cRecordListModel::cRecordListModel(const cRecStaticDescr& __d, QObject * __par)
-    : QStringListModel(__par), descr(__d), pattern(), cnstFlt(), stringList(), idList()
+    : QStringListModel(__par)
+    , descr(__d), pattern(), cnstFlt(), nameList(), viewList(), idList()
 {
     order = OT_ASC;
     filter = FT_NO;
     pq = newQuery();
-    setStringList(stringList);
+    setStringList(viewList);
     nullable  = false;
     nullIdIsAll = false;
     only = false;
 }
 
 cRecordListModel::cRecordListModel(const QString& __t, const QString& __s, QObject * __par)
-    : QStringListModel(__par), descr(*cRecStaticDescr::get(__t, __s)), pattern(), cnstFlt(), stringList(), idList()
+    : QStringListModel(__par)
+    , descr(*cRecStaticDescr::get(__t, __s)), pattern(), cnstFlt(), nameList(), viewList(), idList()
 {
     order = OT_ASC;
     filter = FT_NO;
     pq = newQuery();
-    setStringList(stringList);
+    setStringList(viewList);
     nullable  = false;
     nullIdIsAll = false;
     only = false;
@@ -254,6 +256,18 @@ cRecordListModel::cRecordListModel(const QString& __t, const QString& __s, QObje
 cRecordListModel::~cRecordListModel()
 {
     delete pq;
+}
+
+QVariant cRecordListModel::data(const QModelIndex &index, int role) const
+{
+    int row = index.row();
+    if (nullable && row == 0) { // NULL
+        return dcRole(DC_NULL, role);
+    }
+    if (role == Qt::DisplayRole) {
+        return viewList[row];
+    }
+    return dcRole(dcData, role);
 }
 
 void cRecordListModel::setConstFilter(const QVariant& _par, enum eFilterType __f)
@@ -330,21 +344,30 @@ bool cRecordListModel::setFilter(const QVariant& _par, enum eOrderType __o, enum
     if (__o != OT_DEFAULT) order   = __o;
     if (__f != FT_DEFAULT) filter  = __f;
     if (!_par.isNull()) setPattern(_par);
-    stringList.clear();
+    nameList.clear();
+    viewList.clear();
     idList.clear();
     if (nullable) {
-        stringList << _sNul;
-        idList     << NULL_ID;
+        nameList << _sNul;
+        viewList << dcViewShort(DC_NULL);
+        idList   << NULL_ID;
     }
     QString sql = select();
     if (!pq->exec(sql)) SQLPREPERR(*pq, sql);
     bool r = pq->first();
     if (r) do {
         idList     << variantToId(pq->value(0));
-        stringList << pq->value(1).toString();
+        nameList << pq->value(1).toString();
+        if (viewExpr.isEmpty()) {
+            viewList << nameList.last();
+        }
+        else {
+            viewList << pq->value(2).toString();
+        }
     } while (pq->next());
-    PDEB(VVERBOSE) << "name list :" << stringList.join(_sCommaSp) << endl;
-    setStringList(stringList);
+    PDEB(VVERBOSE) << "name list :" << nameList.join(_sCommaSp) << endl;
+    PDEB(VVERBOSE) << "view list :" << viewList.join(_sCommaSp) << endl;
+    setStringList(viewList);
     return r;
 }
 
@@ -393,17 +416,23 @@ QString cRecordListModel::_order(const QString& nameName, const QString& idName)
 
 QString cRecordListModel::select()
 {
-    QString fn, nn;
+    QString fn, nn, view;
     QString in = descr.columnNameQ(descr.idIndex());
     if (toNameFName.isEmpty()) {
         nn = descr.nameName();
+        dcData = DC_NAME;
     }
     else {
         fn = toNameFName + QChar('(') + in +QChar(')') + QChar(' ');
         nn = quotedString(_sName);
+        dcData = DC_DATA;
+    }
+    if (!viewExpr.isEmpty()) {
+        view = ", " + viewExpr;
+        dcData = DC_DERIVED;
     }
     QString sOnly = only ? " ONLY " : _sNul;
-    QString sql = "SELECT " + in + QChar(',') + fn + nn + " FROM " + sOnly + descr.tableName();
+    QString sql = "SELECT " + in + QChar(',') + fn + nn + view + " FROM " + sOnly + descr.tableName();
     sql += where(nn);
     sql += _order(nn, descr.idName());
     PDEB(VERBOSE) << "SQL : \"" << sql << "\"" << endl;
@@ -441,7 +470,7 @@ QString cRecordListModel::nameOf(qlonglong __id)
 {
     int ix = indexOf(__id);
     if (ix < 0) return QString();
-    return stringList[ix];
+    return nameList[ix];
 }
 
 
@@ -463,11 +492,67 @@ cRecordListModel& cRecordListModel::copy(const cRecordListModel& _o)
     pattern     = _o.pattern;
     fkey_id     = _o.fkey_id;
     cnstFlt     = _o.cnstFlt;
-    stringList  = _o.stringList;
+    nameList    = _o.nameList;
+    viewList    = _o.viewList;
     idList      = _o.idList;
     toNameFName = _o.toNameFName;
-    setStringList(stringList);
+    viewExpr    = _o.viewExpr;
+    setStringList(viewList);
     return *this;
+}
+
+void _setRecordListModel(QComboBox *pComboBox, cRecordListModel *pModel)
+{
+    new cComboColorToLine(pComboBox, pModel);
+    pComboBox->setModel(pModel);
+}
+
+cComboColorToLine::cComboColorToLine(QComboBox *_pComboBox, cRecordListModel *_pModel)
+    : QObject(_pComboBox)
+{
+    pComboBox = _pComboBox;
+    pModel    = _pModel;
+    palette   = _pComboBox->palette();
+    font      = _pComboBox->font();
+    nullPalette = palette;
+    nullPalette.setColor(QPalette::Text, dcFgColor(DC_NULL));
+    nullPalette.setColor(QPalette::Base, dcBgColor(DC_NULL));
+    nullFont  = dcFont(DC_NULL);
+    connect(_pComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(currentIndex(int)));
+}
+
+void cComboColorToLine::currentIndex(int i)
+{
+#if 1
+    QLineEdit *pLineEdit = pComboBox->lineEdit();
+    QString s = pModel->atView(i);
+    if (pLineEdit == NULL) {
+        pLineEdit = new QLineEdit(s);
+        pLineEdit->setReadOnly(true);
+        pComboBox->setLineEdit(pLineEdit);
+    }
+    else {
+        pLineEdit->setText(s);
+    }
+    if (pModel->nullable && i == 0) {
+        pLineEdit->setPalette(nullPalette);
+        pLineEdit->setFont(nullFont);
+    }
+    else {
+        pLineEdit->setPalette(palette);
+        pLineEdit->setFont(font);
+    }
+#else
+    if (pModel->nullable && i == 0) {
+        pComboBox->setPalette(nullPalette);
+        pComboBox->setFont(nullFont);
+    }
+    else {
+        pComboBox->setPalette(palette);
+        QModelIndex mi = pModel->index(i, 0);
+        pComboBox->setFont(pModel->data(mi, Qt::FontRole).value<QFont>());
+    }
+#endif
 }
 
 /* ************************************************ cZoneListModel ***************************************************** */
@@ -484,7 +569,7 @@ bool cZoneListModel::setFilter(const QVariant &_par, eOrderType __o, eFilterType
     if (__o != OT_DEFAULT) order   = __o;
     if (__f != FT_DEFAULT) filter  = __f;
     if (!_par.isNull()) setPattern(_par);
-    stringList.clear();
+    nameList.clear();
     idList.clear();
 
     QString sql = "SELECT place_group_id , place_group_name  FROM place_groups ";
@@ -503,18 +588,20 @@ bool cZoneListModel::setFilter(const QVariant &_par, eOrderType __o, eFilterType
             continue;
         }
         idList     << id;
-        stringList << pq->value(1).toString();
+        nameList << pq->value(1).toString();
     } while (pq->next());
     if (all) {
-        stringList.push_front(_sAll);
+        nameList.push_front(_sAll);
         idList.push_front(ALL_PLACE_GROUP_ID);
     }
     if (nullable) {
-        stringList.push_front(_sNul);
+        nameList.push_front(_sNul);
         idList.push_front(NULL_ID);
     }
-    PDEB(VVERBOSE) << "name list :" << stringList.join(_sCommaSp) << endl;
-    setStringList(stringList);
+    PDEB(VVERBOSE) << "name list :" << nameList.join(_sCommaSp) << endl;
+    viewList = nameList;
+    dcData = DC_NAME;
+    setStringList(nameList);
     return r;
 }
 
@@ -545,10 +632,10 @@ bool cPlacesInZoneModel::setFilter(const QVariant& _par, enum eOrderType __o, en
     if (__o != OT_DEFAULT) order   = __o;
     if (__f != FT_DEFAULT) filter  = __f;
     if (!_par.isNull()) setPattern(_par);
-    stringList.clear();
+    nameList.clear();
     idList.clear();
     if (nullable) {
-        stringList << _sNul;
+        nameList << _sNul;
         idList     << NULL_ID;
     }
     QString sql;
@@ -569,10 +656,12 @@ bool cPlacesInZoneModel::setFilter(const QVariant& _par, enum eOrderType __o, en
         if (skipUnknown && id == UNKNOWN_PLACE_ID) continue;
         QString name = pq->value(1).toString();
         idList     << id;
-        stringList << name;
+        nameList << name;
     } while (pq->next());
-    PDEB(VVERBOSE) << "name list :" << stringList.join(_sCommaSp) << endl;
-    setStringList(stringList);
+    PDEB(VVERBOSE) << "name list :" << nameList.join(_sCommaSp) << endl;
+    viewList = nameList;
+    dcData = DC_NAME;
+    setStringList(nameList);
     return r;
 }
 

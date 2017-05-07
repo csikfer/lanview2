@@ -223,9 +223,9 @@ inline const QColor& fgColorByBool(const QString& _tn, const QString& _fn, int e
 
 _GEX const QFont& fontByEnum(const QString& __t, int _e);
 
-static inline QColor  dcBgColor(int id)   { return bgColorByEnum(_sDatacharacter, id); }
-static inline QColor  dcFgColor(int id)   { return fgColorByEnum(_sDatacharacter, id); }
-static inline QFont   dcFont(int id)      { return fontByEnum(_sDatacharacter, id); }
+static inline const QColor&  dcBgColor(int id)   { return bgColorByEnum(_sDatacharacter, id); }
+static inline const QColor&  dcFgColor(int id)   { return fgColorByEnum(_sDatacharacter, id); }
+static inline const QFont&   dcFont(int id)      { return fontByEnum(_sDatacharacter, id); }
 
 static inline void enumSetColor(QWidget *pW, const QString& _t, int id) {
     const QColor& bgc = bgColorByEnum(_t, id);

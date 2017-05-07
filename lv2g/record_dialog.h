@@ -9,7 +9,8 @@
 #include <QEventLoop>
 #include "lv2widgets.h"
 
-_GEX int _setCurrentIndex(const QString& name, QComboBox * pComboBox, eEx __ex = EX_ERROR );
+_GEX int _setCurrentIndex(const QString& name, QComboBox * pComboBox, eEx __ex = EX_ERROR);
+_GEX int _setCurrentIndex(const QString& name, QComboBox * pComboBox, cRecordListModel *pListModel, eEx __ex = EX_ERROR);
 _GEX int _setPlaceComboBoxs(qlonglong pid, QComboBox *pComboBoxZone, QComboBox *pComboBoxPlace, bool refresh);
 
 

@@ -203,6 +203,7 @@ public:
     /// @param _par Parent
     cRecordListModel(const QString& __t, const QString& __s = QString(), QObject * __par = NULL);
     ~cRecordListModel();
+    virtual QVariant data(const QModelIndex &index, int role) const;
     /// Opcionális konstans szűrési feltétel megadása, nincs lista frissítés
     /// Az itt megadott feltétel és kapcsolatban lessz a setFilter() metódusban megadottnak.
     /// @param _par A szűrő paramétere
@@ -216,17 +217,21 @@ public:
     /// Az opcionális név konvertáló függvény megadása.
     /// Az SQL függvény a rekord ID-ből egy nevet ad vissza.
     void setToNameF(const QString& _fn) { toNameFName = _fn; }
+    /// Az opcionális név konvertáló függvény megadása.
+    /// Az SQL függvény a rekord ID-ből egy nevet ad vissza.
+    void setViewExpr(const QString& _sve) { viewExpr = _sve; }
     /// A megadott nevű elem indexe a listában, vagy -1 ha nincs ilyen elem
-    int indexOf(const QString __s)  { return stringList.indexOf(__s); }
+    int indexOf(const QString __s)  { return nameList.indexOf(__s); }
     /// A megadott ID-jű elem indexe a listában, vagy -1 ha nincs ilyen elem
     int indexOf(qlonglong __id)     { return idList.indexOf(__id); }
-    QString at(int __i)             { return __i < 0 || __i >= stringList.size() ? QString() : stringList[__i]; }
+    QString at(int __i)             { return __i < 0 || __i >= nameList.size() ? QString() : nameList[__i]; }
     /// A megadott sorszámú elem ID-je, vagy NULL_ID, ha nincs ilyen sorszámú elem.
     qlonglong atId(int __i)         { return __i < 0 || __i >= idList.size() ? NULL_ID : idList[__i]; }
     /// A megadott sorszámú elem neve, vagy üres string, ha nincs ilyen sorszámú elem.
     qlonglong idOf(const QString& __s);
     /// Az ID alapján adja vissza a nevet a listából
     QString nameOf(qlonglong __id);
+    QString atView(int __i)         { return __i < 0 || __i >= viewList.size() ? QString() : viewList[__i]; }
     ///
     cRecordListModel& copy(const cRecordListModel& _o);
     /// Ha értéke true, akkor a lista első eleme NULL (a név üres, az ID pedig NULL_ID)
@@ -241,6 +246,7 @@ public:
     bool                nullIdIsAll;
     ///
     bool                only;
+    eDataCharacter      dcData;
     const cRecStaticDescr&  descr;  ///< A rekord leíró
 protected:
     QString _where(QString s = QString());
@@ -253,14 +259,35 @@ protected:
     QString             pattern;    ///< Minta, szűrés paramétere
     qlonglong           fkey_id;    ///< A szűrés paramétere FT_FKEY_ID esetén
     QString             cnstFlt;    ///< A konstans szűrő (SQL kifejezés)
-    QStringList         stringList; ///< Az aktuális név lista (sorrend azonos mint az idList-ben
+    QStringList         nameList;   ///< Az aktuális név lista (sorrend azonos mint az idList-ben
+    QStringList         viewList;   ///< A megjelenített stringek lista (alapértelmezetten azonos a nameList-el;
     QList<qlonglong>    idList;     ///< Az aktuális ID lista (sorrend azonos mint az stringList-ben
     QSqlQuery *         pq;
     QString             toNameFName;///< Név konvertáló SQL függvény neve, ha a rekordban nincs név mező
+    QString             viewExpr;   ///< Opc. kifejezés, a megjelenített stringre (ha nincs, akkor a név jelenik meg)
 public slots:
     /// Hívja a setFilter() metódust, de csak a szűrés paramétere adható meg.
     void setPatternSlot(const QVariant& __pat);
 };
+
+_GEX void _setRecordListModel(QComboBox *pComboBox, cRecordListModel *pModel);
+
+class LV2GSHARED_EXPORT cComboColorToLine : public QObject {
+    friend void _setRecordListModel(QComboBox *pComboBox, cRecordListModel *pModel);
+    Q_OBJECT
+protected:
+    cComboColorToLine(QComboBox *_pComboBox, cRecordListModel *_pModel);
+private:
+    QComboBox  *pComboBox;
+    cRecordListModel *pModel;
+    QPalette    palette;
+    QPalette    nullPalette;
+    QFont       font;
+    QFont       nullFont;
+private slots:
+    void currentIndex(int i);
+};
+
 
 /// Model: cRecordListModel leszármazottja. A zónákat  (a place_groups táblát) kérdezi le.
 /// A konstans szűrési feltétel a típus, ami 'zone' lesz a konstruktorban beállítva.

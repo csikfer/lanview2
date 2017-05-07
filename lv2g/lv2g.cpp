@@ -249,7 +249,7 @@ const QFont& fontByEnum(const QString& __t, int _e)
         }
     }
     // Ha nem találtuk, akkor létrehozzuk
-    QFont& font = fontCache[__t][_e];
+    QFont& font = fontCache[__t][_e] = QGuiApplication::font();
     const cEnumVal& e = cEnumVal::enumVal(__t, _e);
     QString family = e.getName(cEnumVal::ixFontFamily());
     if (!family.isEmpty()) {
