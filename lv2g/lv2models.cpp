@@ -504,7 +504,7 @@ cRecordListModel& cRecordListModel::copy(const cRecordListModel& _o)
 void _setRecordListModel(QComboBox *pComboBox, cRecordListModel *pModel)
 {
     // Sajnos nem müködik :(
-    // new cComboColorToLine(pComboBox, pModel);
+    new cComboColorToLine(pComboBox, pModel);
     pComboBox->setModel(pModel);
 }
 
