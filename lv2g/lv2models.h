@@ -272,11 +272,11 @@ public slots:
 
 _GEX void _setRecordListModel(QComboBox *pComboBox, cRecordListModel *pModel);
 
-class LV2GSHARED_EXPORT cComboColorToLine : public QObject {
+class LV2GSHARED_EXPORT cComboColorToRecName : public QObject {
     friend void _setRecordListModel(QComboBox *pComboBox, cRecordListModel *pModel);
     Q_OBJECT
 protected:
-    cComboColorToLine(QComboBox *_pComboBox, cRecordListModel *_pModel);
+    cComboColorToRecName(QComboBox *_pComboBox, cRecordListModel *_pModel);
 private:
     QComboBox  *pComboBox;
     cRecordListModel *pModel;
@@ -345,6 +345,7 @@ enum eNullType {
 };
 
 class LV2GSHARED_EXPORT cEnumListModel : public QAbstractListModel {
+    friend class cComboColorToEnumName;
 public:
     cEnumListModel(QObject * __par = NULL) : QAbstractListModel(__par) { pType = NULL; pq = NULL; nulltype = NT_NOT_NULL; }
     cEnumListModel(const QString& __t, eNullType _nullable = NT_NOT_NULL, QObject * __par = NULL);
@@ -360,6 +361,21 @@ protected:
     eNullType nulltype;
     const cColEnumType *pType;
     QVector<const cEnumVal *> enumVals;
+};
+
+_GEX void _setEnumListModel(QComboBox *pComboBox, cEnumListModel *pModel);
+
+class LV2GSHARED_EXPORT cComboColorToEnumName : public QObject {
+    friend void _setEnumListModel(QComboBox *pComboBox, cEnumListModel *pModel);
+    Q_OBJECT
+protected:
+    cComboColorToEnumName(QComboBox *_pComboBox, cEnumListModel *_pModel);
+private:
+    QComboBox  *pComboBox;
+    cEnumListModel *pModel;
+    QPalette palette;
+private slots:
+    void currentIndex(int i);
 };
 
 #endif // LV2MODELS_H

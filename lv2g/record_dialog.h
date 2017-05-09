@@ -155,6 +155,7 @@ protected:
 /// @brief Rekord szerkesztés dialógus objektum
 /// Tartalmazza (felépíti) a rekord mezőinek a megjelenítését, ill. a szerkesztést megvalósító widget-eket is.
 class LV2GSHARED_EXPORT cRecordDialog : public cRecordDialogBase {
+    friend class cFKeyWidget;
 public:
     /// Konstruktor
     /// @param rec Az editálandó adat objktum referenciája

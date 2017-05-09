@@ -232,8 +232,8 @@ static inline void enumSetColor(QWidget *pW, const QString& _t, int id) {
     const QColor& fgc = fgColorByEnum(_t, id);
     if (bgc.isValid() || fgc.isValid()) {
         QPalette palette = pW->palette();
-        if (bgc.isValid()) { palette.setColor(QPalette::Background, bgc); }
-        if (fgc.isValid()) { palette.setColor(QPalette::Base,       fgc); }
+        if (bgc.isValid()) { palette.setColor(QPalette::Base, bgc); }
+        if (fgc.isValid()) { palette.setColor(QPalette::Text, fgc); }
         pW->setPalette(palette);
     }
 }
@@ -242,7 +242,7 @@ static inline void enumSetBgColor(QWidget *pW, const QString& _t, int id) {
     const QColor& bgc = bgColorByEnum(_t, id);
     if (bgc.isValid()) {
         QPalette palette = pW->palette();
-        if (bgc.isValid()) { palette.setColor(QPalette::Background, bgc); }
+        if (bgc.isValid()) { palette.setColor(QPalette::Base, bgc); }
         pW->setPalette(palette);
     }
 }
@@ -251,7 +251,7 @@ static inline void enumSetFgColor(QWidget *pW, const QString& _t, int id) {
     const QColor& fgc = fgColorByEnum(_t, id);
     if (fgc.isValid()) {
         QPalette palette = pW->palette();
-        if (fgc.isValid()) { palette.setColor(QPalette::Base,       fgc); }
+        if (fgc.isValid()) { palette.setColor(QPalette::Text, fgc); }
         pW->setPalette(palette);
     }
 }

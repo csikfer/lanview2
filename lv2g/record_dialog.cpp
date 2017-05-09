@@ -5,7 +5,7 @@
 #include "object_dialog.h"
 
 /// Tartalom alapján beállítja az aktuális indexet a megadott comboBox-on
-/// @param name Az érték, amire az aktuális indexnek mutatnia kell.
+/// @param name Az érték, amire az aktuális indexnek mutatnia kell (megjelenített)
 /// @param pComboBox A QComboBox objektum pointere, ahhol az indexet be kell állítani.
 /// @param __ex Ha értéke EX_IGNORE, akkor ha nem találja a megfelelő elemet, amire az indexet állítani kell,
 /// akkor az index a 0 lessz. Ha értéke nem EX_IGNORE, akkor ha nincs megadott elem dob egy kizárást.
@@ -21,7 +21,7 @@ int _setCurrentIndex(const QString& name, QComboBox * pComboBox, eEx __ex)
     return ix;
 }
 /// Tartalom alapján beállítja az aktuális indexet a megadott comboBox-on
-/// @param name Az érték, amire az aktuális indexnek mutatnia kell.
+/// @param name Az érték, amire az aktuális indexnek mutatnia kell. (rekord név!)
 /// @param pComboBox A QComboBox objektum pointere, ahhol az indexet be kell állítani.
 /// @param pListModel A model pointere (a név, és a megjelenített item nem azonos)
 /// @param __ex Ha értéke EX_IGNORE, akkor ha nem találja a megfelelő elemet, amire az indexet állítani kell,
@@ -437,8 +437,8 @@ void cRecordDialog::init()
         const cTableShapeField& mf = **i;
         if (mf.getBool(_sFieldFlags, FF_DIALOG_HIDE)) continue;
         int fieldIx = rDescr.toIndex(mf.getName());
-        bool setRo = _isReadOnly || mf.getBool(_sFieldFlags, FF_READ_ONLY);
-        cFieldEditBase *pFW = cFieldEditBase::createFieldWidget(tableShape, mf, (*_pRecord)[fieldIx], setRo, this);
+        int flags = _isReadOnly || mf.getBool(_sFieldFlags, FF_READ_ONLY) ? FEB_READ_ONLY : FEB_EDIT;   // FEB_INSERT !!
+        cFieldEditBase *pFW = cFieldEditBase::createFieldWidget(tableShape, mf, (*_pRecord)[fieldIx], flags, this);
         fields.append(pFW);
         QWidget * pw = pFW->pWidget();
         qlonglong stretch = mf.feature(mCat(_sStretch, _sVertical), 0);

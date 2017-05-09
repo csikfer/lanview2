@@ -297,6 +297,7 @@ public:
     /// @param __n Az enum__name mező értéke
     /// @return true ha törölt rekordt
     bool delByNames(QSqlQuery& q, const QString& __t, const QString& __n);
+    int toInt(eEx __ex = EX_ERROR) const;
 
 protected:
     /// Az összes enum_vals rekordot tartalmazó konténer

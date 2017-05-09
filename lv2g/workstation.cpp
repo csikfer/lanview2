@@ -207,7 +207,6 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     pPlace->setById(UNKNOWN_PLACE_ID);     // NAME = 'unknown'
 
     _initLists();
-    pUi->comboBoxNode->setModel(pModelNode);
     nodeListSql[0] = // Workstation: Konstans szűrő a nodes táblára, SQL kifejezés:
             // Típusa 'workstation' (is)
             quoted(_sWorkstation) + " = ANY " + parentheses(_sNodeType)
@@ -225,6 +224,7 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     pModelNode->setConstFilter(nodeListSql[0], FT_SQL_WHERE);
     pModelNode->nullable = true;        // Az első elem a semmi lessz
     pModelNode->setFilter(_sNul, OT_ASC, FT_SQL_WHERE); // NULL string (nincs további szűrés)
+    _setRecordListModel(pUi->comboBoxNode, pModelNode);
     pUi->comboBoxNode->setCurrentIndex(0);  // első elem, NULL kiválasztva
 
     pFilterZoneModel = new cZoneListModel;
@@ -238,7 +238,7 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     pUi->comboBoxZone->setModel(pZoneModel);
     pUi->comboBoxZone->setCurrentIndex(0);          // Első elem 'all' zóna
     pPlaceModel = new cPlacesInZoneModel;
-    pUi->comboBoxPlace->setModel(pPlaceModel);
+    _setRecordListModel(pUi->comboBoxPlace, pPlaceModel);
     pUi->comboBoxPlace->setCurrentIndex(0);         // Első elem <NULL>/nincs megadva hely
 
     pUi->comboBoxPType->addItems(portTypeList[0]);
@@ -275,8 +275,8 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     pModelLinkPort->sFkeyName   = _sNodeId;
     static const QString sViewLinkPort = "concat(port_name, ' (\"', port_tag, '\", #', port_index, ')')";
     pModelLinkPort->setViewExpr(sViewLinkPort);
-    pUi->comboBoxLinkPort->setModel(pModelLinkPort);
     pModelLinkPort->setFilter(QVariant(), OT_ASC, FT_FKEY_ID); // Nincs kiválasztott node, a lista üres
+    _setRecordListModel(pUi->comboBoxLinkPort, pModelLinkPort);
     portType2No = trUtf8("Nincs másodlagos port");
     pUi->comboBoxPType_2->addItem(portType2No);
     pUi->comboBoxPType_2->addItems(portTypeList[1]);
@@ -309,7 +309,7 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     connect(pUi->pushButtonSave,        SIGNAL(pressed()),                    this, SLOT(save()));
     connect(pUi->pushButtonRefresh,     SIGNAL(pressed()),                    this, SLOT(refresh()));
     connect(pUi->comboBoxFilterZone,    SIGNAL(currentIndexChanged(QString)), this, SLOT(filterZoneCurrentIndex(QString)));
-    connect(pUi->comboBoxFilterPlace,   SIGNAL(currentIndexChanged(QString)), this, SLOT(filterPlaceCurrentIndex(QString)));
+    connect(pUi->comboBoxFilterPlace,   SIGNAL(currentIndexChanged(int)),     this, SLOT(filterPlaceCurrentIndex(int)));
     connect(pUi->lineEditFilterPattern, SIGNAL(textChanged(QString)),         this, SLOT(filterPatternChanged(QString)));
     // Workstation:
     connect(pUi->comboBoxNode,          SIGNAL(currentIndexChanged(int)),     this, SLOT(nodeCurrentIndex(int)));
@@ -317,7 +317,7 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     connect(pUi->lineEditSerial,        SIGNAL(textChanged(QString)),         this, SLOT(serialChanged(QString)));
     connect(pUi->lineEditInventory,     SIGNAL(textChanged(QString)),         this, SLOT(inventoryChanged(QString)));
     connect(pUi->comboBoxZone,          SIGNAL(currentIndexChanged(QString)), this, SLOT(zoneCurrentIndex(QString)));
-    connect(pUi->comboBoxPlace,         SIGNAL(currentIndexChanged(QString)), this, SLOT(placeCurrentIndex(QString)));
+    connect(pUi->comboBoxPlace,         SIGNAL(currentIndexChanged(int)),     this, SLOT(placeCurrentIndex(int)));
     connect(pUi->toolButtonAddPlace,    SIGNAL(pressed()),                    this, SLOT(nodeAddPlace()));
     connect(pUi->lineEditPName,         SIGNAL(textChanged(QString)),         this, SLOT(portNameChanged(QString)));
     connect(pUi->comboBoxPType,         SIGNAL(currentIndexChanged(int)),     this, SLOT(portTypeCurrentIndex(int)));
@@ -335,7 +335,7 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     // Link:
     connect(pUi->checkBoxPlaceEqu,      SIGNAL(toggled(bool)),                this, SLOT(linkToglePlaceEqu(bool)));
     connect(pUi->comboBoxLinkZone,      SIGNAL(currentIndexChanged(QString)), this, SLOT(linkZoneCurrentIndex(QString)));
-    connect(pUi->comboBoxLinkPlace,     SIGNAL(currentIndexChanged(QString)), this, SLOT(linkPlaceCurrentIndex(QString)));
+    connect(pUi->comboBoxLinkPlace,     SIGNAL(currentIndexChanged(int)),     this, SLOT(linkPlaceCurrentIndex(int)));
     connect(pUi->comboBoxLinkNode,      SIGNAL(currentIndexChanged(int)),     this, SLOT(linkNodeCurrentIndex(int)));
     connect(pUi->comboBoxLinkPort,      SIGNAL(currentIndexChanged(int)),     this, SLOT(linkPortCurrentIndex(int)));
     connect(pUi->comboBoxLinkPortShare, SIGNAL(currentIndexChanged(QString)), this, SLOT(linkPortShareCurrentIndex(QString)));
@@ -345,7 +345,7 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     // Link2:
     connect(pUi->checkBoxPlaceEqu_2,    SIGNAL(toggled(bool)),                this, SLOT(linkToglePlaceEqu2(bool)));
     connect(pUi->comboBoxLinkZone_2,    SIGNAL(currentIndexChanged(QString)), this, SLOT(linkZoneCurrentIndex2(QString)));
-    connect(pUi->comboBoxLinkPlace_2,   SIGNAL(currentIndexChanged(QString)), this, SLOT(linkPlaceCurrentIndex2(QString)));
+    connect(pUi->comboBoxLinkPlace_2,   SIGNAL(currentIndexChanged(int)),     this, SLOT(linkPlaceCurrentIndex2(int)));
     connect(pUi->comboBoxLinkNode_2,    SIGNAL(currentIndexChanged(int)),     this, SLOT(linkNodeCurrentIndex2(int)));
     connect(pUi->comboBoxLinkPort_2,    SIGNAL(currentIndexChanged(int)),     this, SLOT(linkPortCurrentIndex2(int)));
     connect(pUi->comboBoxLinkPortShare_2,SIGNAL(currentIndexChanged(QString)),this, SLOT(linkPortShareCurrentIndex2(QString)));
@@ -458,7 +458,7 @@ void cWorkstation::_fullRefresh()
 void cWorkstation::_refreshPlaces(QComboBox *pComboBoxZone, QComboBox *pComboBoxPlace)
 {
     QString sZone  = pComboBoxZone->currentText();
-    QString sPlace = pComboBoxPlace->currentText();
+    QString sPlace = pPlaceModel->at(pComboBoxPlace->currentIndex());
     LOCKSLOTS();
     ((cZoneListModel *)pComboBoxZone->model())->setFilter();
     _setCurrentIndex(sZone, pComboBoxZone, EX_IGNORE);
@@ -488,15 +488,23 @@ int cWorkstation::_checkNodeCollision(int ix, const QString& s)
     return r ? IS_COLLISION : IS_OK;
 }
 
-QString cWorkstation::_changeZone(QComboBox *pComboBoxPlace, const QString& sZone, const QString &_placeName)
+int cWorkstation::_changeZone(QComboBox *pComboBoxPlace, const QString& sZone, const QString &_placeName)
 {
-    QString placeName = _placeName.isNull() ? pComboBoxPlace->currentText() : _placeName;
+    QString placeName;
+    if (_placeName.isNull()) {
+        cPlacesInZoneModel *pModel = dynamic_cast<cPlacesInZoneModel *>(pComboBoxPlace->model());
+        if (pModel == NULL) EXCEPTION(EPROGFAIL);
+        placeName = pModel->at(pComboBoxPlace->currentIndex());
+    }
+    else {
+        placeName = _placeName;
+    }
     LOCKSLOTS();
     cPlacesInZoneModel *pModel = (cPlacesInZoneModel *)pComboBoxPlace->model();
     pModel->setZone(sZone);
     int i = _setCurrentIndex(placeName, pComboBoxPlace, EX_IGNORE);
     UNLOCKSLOTS();
-    return pModel->at(i);
+    return i;
 }
 
 int cWorkstation::_changePlace(const QString& placeNme, const QString& zoneName,
@@ -504,10 +512,10 @@ int cWorkstation::_changePlace(const QString& placeNme, const QString& zoneName,
                                const QString& _patt)
 {
     QString expr;
-    QString actNode = pComboBoxNode->currentText();     // Az aktuálisan kiválasztott node neve
+    QString actNode = pModel->at(pComboBoxNode->currentIndex());     // Az aktuálisan kiválasztott node neve
     if (placeNme.isEmpty()) {          // Nincs kiválasztva hely ?
         // Ha nincs kiválasztott hely, akkor az aktuális zóna szerint szűrünk
-        if (zoneName == _sAll) {
+        if (zoneName.isEmpty() || zoneName == _sAll) {
             expr = _sNul;   // ALL zóna: nincs további szűrés
         }
         else {
@@ -531,7 +539,7 @@ int cWorkstation::_changePlace(const QString& placeNme, const QString& zoneName,
     }
     LOCKSLOTS();
     pModel->setFilter(expr);
-    int ix = _setCurrentIndex(actNode, pComboBoxNode, EX_IGNORE);
+    int ix = _setCurrentIndex(actNode, pComboBoxNode, pModel, EX_IGNORE);
     UNLOCKSLOTS();
     return ix;
 }
@@ -639,6 +647,7 @@ void cWorkstation::_linkToglePlaceEqu(bool primary, eTristate __f)
     LOCKSLOTS();
     QComboBox *pComboBoxZone;
     QComboBox *pComboBoxPlace;
+    cPlacesInZoneModel *pLPlaceModel;
     QComboBox *pComboBoxNode;
     cRecordListModel *pModelNode;
     QComboBox *pComboBoxPort;
@@ -651,6 +660,7 @@ void cWorkstation::_linkToglePlaceEqu(bool primary, eTristate __f)
     if (primary) {
         pComboBoxZone  = pUi->comboBoxLinkZone;
         pComboBoxPlace = pUi->comboBoxLinkPlace;
+        pLPlaceModel   = pLinkPlaceModel;
         pComboBoxNode  = pUi->comboBoxLinkNode;
         pModelNode     = pModelLinkNode;
         pComboBoxPort  = pUi->comboBoxLinkPort;
@@ -663,6 +673,7 @@ void cWorkstation::_linkToglePlaceEqu(bool primary, eTristate __f)
     else {
         pComboBoxZone  = pUi->comboBoxLinkZone_2;
         pComboBoxPlace = pUi->comboBoxLinkPlace_2;
+        pLPlaceModel   = pLinkPlaceModel2;
         pComboBoxNode  = pUi->comboBoxLinkNode_2;
         pModelNode     = pModelLinkNode2;
         pComboBoxPort  = pUi->comboBoxLinkPort_2;
@@ -678,13 +689,14 @@ void cWorkstation::_linkToglePlaceEqu(bool primary, eTristate __f)
         if (ixPlace < 0 || ixZone < 0) EXCEPTION(EPROGFAIL);    // Ha nincs találat akkor elkutyultunk valamit
         QString sZone   = pZoneModel->at(ixZone);           // Az aktuális zóna (ahol a munkaállomás van)
         QString sPlace  = pPlaceModel->at(ixPlace);         // És az aktuálisan megadott hely neve, vagy üres string
+        QString sLinkPlace  = pLPlaceModel->at(pComboBoxPlace->currentIndex());
         if (sZone  != pComboBoxZone->currentText()
-         || sPlace != pComboBoxPlace->currentText()) {  // Ha nincs változás, akkor nem kell tenni semmit
+         || sPlace != sLinkPlace) {  // Ha nincs változás, akkor nem kell tenni semmit
             pComboBoxZone->setCurrentIndex(ixZone);     // A zónát csak ki kell választani
-            ((cPlacesInZoneModel *)pComboBoxPlace->model())->setFilter(sZone);  // Frissítjük a listát
-            _setCurrentIndex(sPlace, pComboBoxPlace);   // Béállítjuk a helyet is
+            pLPlaceModel->setFilter(sZone);  // Frissítjük a listát
+            _setCurrentIndex(sPlace, pComboBoxPlace, pLPlaceModel);   // Béállítjuk a helyet is
             int ix = _changePlace(sPlace, sZone, pComboBoxNode, pModelNode);    // SLOT tiltva volt
-            QString s = pComboBoxNode->itemText(ix);
+            QString s = pModelNode->at(ix); // A név, nem ami megjelenik
             if (__f != TS_NULL) {
                 int st = _changeLinkNode(s, pModelPort, pComboBoxPort, pNode, pPort, pLinkType, pShare);
                 if (primary) states.link  = st;
@@ -938,39 +950,38 @@ void cWorkstation::_setMessage()
     if (states.subNetNeed && states.subNet == IS_EMPTY) {
         errText += info(trUtf8("Nincs megadva IP tartomány illetve VLAN."));
     }
-    switch (states.port2Name) {
-    case IS_EMPTY:
-        if (states.port2Need) {
-            ok = false;
+    if (states.port2Need) {
+        switch (states.port2Name) {
+        case IS_EMPTY:
             errText += error(trUtf8("Nincs megadva a másodlagos port neve."));
+            break;
+        case IS_OK:
+            break;
+        case IS_COLLISION:
+            ok = false;
+            errText += error(trUtf8("A megadott a másodlagos port név nem lehet azonos az elsődlegessel."));
+            break;
+        default:
+            EXCEPTION(EPROGFAIL);
+            break;
         }
-        break;
-    case IS_OK:
-        break;
-    case IS_COLLISION:
-        ok = false;
-        errText += error(trUtf8("A megadott a másodlagos port név nem lehet azonos az elsődlegessel."));
-        break;
-    default:
-        EXCEPTION(EPROGFAIL);
-        break;
-    }
-    switch (states.mac2) {
-    case IS_EMPTY:
-        if (states.mac2need) {
-            errText += info(trUtf8("Nincs megadva a munkaállomás második interfészének a MAC-je."));
+        switch (states.mac2) {
+        case IS_EMPTY:
+            if (states.mac2need) {
+                errText += info(trUtf8("Nincs megadva a munkaállomás második interfészének a MAC-je."));
+            }
+            break;
+        case IS_OK:
+            break;
+        case IS_COLLISION:
+            ok = false;
+            errText += error(trUtf8("A munkaállomás második interfészének a MAC-je ütközik egy másikkal."));
+            break;
+        case IS_INVALID:
+            ok = false;
+            errText += error(trUtf8("A munkaállomás második interfészének a MAC-je hibás."));
+            break;
         }
-        break;
-    case IS_OK:
-        break;
-    case IS_COLLISION:
-        ok = false;
-        errText += error(trUtf8("A munkaállomás második interfészének a MAC-je ütközik egy másikkal."));
-        break;
-    case IS_INVALID:
-        ok = false;
-        errText += error(trUtf8("A munkaállomás második interfészének a MAC-je hibás."));
-        break;
     }
     if (states.linkPossible) switch (states.link) {
     case IS_EMPTY:
@@ -1181,7 +1192,8 @@ void cWorkstation::_parseObject()
     if (linkType  != LT_INVALID) {      // Van linkje
         id = pLinkNode->getId(_sPlaceId);
         _setPlaceComboBoxs(id, pUi->comboBoxLinkZone, pUi->comboBoxLinkPlace, true);
-        _changePlace(pUi->comboBoxLinkPlace->currentText(), pUi->comboBoxLinkZone->currentText(), pUi->comboBoxLinkNode, pModelLinkNode);
+        QString sPlace = pLinkPlaceModel->at(pUi->comboBoxLinkPlace->currentIndex());
+        _changePlace(sPlace, pUi->comboBoxLinkZone->currentText(), pUi->comboBoxLinkNode, pModelLinkNode);
         s = pLinkNode->getName();
         _setCurrentIndex(s, pUi->comboBoxLinkNode);
         _changeLinkNode(s, pModelLinkPort, pUi->comboBoxLinkPort);
@@ -1210,7 +1222,8 @@ void cWorkstation::_parseObject()
     if (linkType2 != LT_INVALID) {      // Van linkje
         id = pLinkNode2->getId(_sPlaceId);
         _setPlaceComboBoxs(id, pUi->comboBoxLinkZone_2, pUi->comboBoxLinkPlace_2, true);
-        _changePlace(pUi->comboBoxLinkPlace_2->currentText(), pUi->comboBoxLinkZone_2->currentText(), pUi->comboBoxLinkNode_2, pModelLinkNode2);
+        QString sPlace = pLinkPlaceModel2->at(pUi->comboBoxLinkPlace_2->currentIndex());
+        _changePlace(sPlace, pUi->comboBoxLinkZone_2->currentText(), pUi->comboBoxLinkNode_2, pModelLinkNode2);
         s = pLinkNode2->getName();
         _setCurrentIndex(s, pUi->comboBoxLinkNode_2);
         _changeLinkNode(s, pModelLinkPort2, pUi->comboBoxLinkPort_2);
@@ -1473,20 +1486,23 @@ bool cWorkstation::_changePortType(bool primary, int cix)
         WENABLE(lineEditSrvNote_2, false);
         return false;
     }
-    cNPort *pPort = primary ? pPort1() : pPort2();
-    int ix = primary ? 0 : 1;   // port indexe a porst konténerben
+    cNPort *pPort = primary ? pPort1() : pPort2(EX_IGNORE);
+    int ix = primary ? 0 : 1;   // port indexe a port konténerben
     QString sType = (primary ? pUi->comboBoxPType : pUi->comboBoxPType_2)->itemText(cix);
     const cIfType& iftype = cIfType::ifType(sType);
     if (pPort == NULL || iftype.getId() != pPort->getId(_sIfTypeId)) {    // Megváltozott az objektum típusa!!
         cNPort *pPortNew = cNPort::newPortObj(iftype);
         if (pPort != NULL) {
-            node.ports[ix] = pPortNew; // csare
+            node.ports[ix] = pPortNew;  // csere
             pPortNew->set(*pPort);      // Amit lehet átmásoljuk
             delete pPort;
         }
-        else {
+        else {  // Ha NULL, akkor az a port2 / primary == false
             if (ix != 1 && node.ports.size() != 1) EXCEPTION(EDATA);
+            pPortNew->setName(sType);
             node.ports << pPortNew;
+            pUi->lineEditPName_2->setText(sType);
+            states.port2Name = sType == pPort1()->getName() ? IS_COLLISION : IS_OK;
         }
         pPort = pPortNew;
     }
@@ -1522,7 +1538,8 @@ bool cWorkstation::_changePortType(bool primary, int cix)
         WENABLE(lineEditAddress, isIface);
     }
     else {
-        states.mac2need = isIface;
+        states.port2Need = true;
+        states.mac2need  = isIface;
         if (isIface) {
             QString s = pPort1()->getName(_sHwAddress);
             pUi->lineEditPMAC_2->setText(s);
@@ -1694,6 +1711,7 @@ void cWorkstation::save()
     }
     if (pPort2(EX_IGNORE) != NULL) {
         pPort2()->setNote(pUi->lineEditPNote_2->text());
+        pPort1()->setName(_sPortTag, pUi->lineEditPTag_2->text());
     }
     cNode *pSave = node.dup()->reconvert<cNode>();// Hiba esetén vissza kell állítani az eredetit
     cError *pe = NULL;
@@ -1780,25 +1798,35 @@ void cWorkstation::refresh()
 void cWorkstation::filterZoneCurrentIndex(const QString& s)
 {
     BEGINSLOT(s);
-    QString placeName = _changeZone(pUi->comboBoxFilterPlace, s);
-    filterPlaceCurrentIndex(placeName);
+    int pix = _changeZone(pUi->comboBoxFilterPlace, s);
+    filterPlaceCurrentIndex(pix);
     ENDSLOT();
 }
 
-void cWorkstation::filterPlaceCurrentIndex(const QString& s)
+void cWorkstation::filterPlaceCurrentIndex(int i)
 {
-    BEGINSLOT(s);
+    BEGINSLOT(i);
     QString patt       = pUi->lineEditFilterPattern->text();
     QString zone_name  = pUi->comboBoxFilterZone->currentText();
-    _changePlace(s, zone_name, pUi->comboBoxNode, pModelNode, patt);
+    QString place_name;
+    if (i > 0) {
+        place_name = pUi->comboBoxFilterPlace->currentText();
+    }
+    _changePlace(place_name, zone_name, pUi->comboBoxNode, pModelNode, patt);
     ENDSLOT();
 }
 
 void cWorkstation::filterPatternChanged(const QString& s)
 {
     _DBGFN() << " (" << s << ")" << endl;
-    QString place_name = pUi->comboBoxFilterPlace->currentText();
-    QString zone_name  = pUi->comboBoxFilterZone->currentText();
+    QString place_name;
+    QString zone_name;
+    if (pUi->comboBoxFilterZone->currentIndex() > 0) {  // NOT ALL
+        zone_name = pUi->comboBoxFilterZone->currentText();
+    }
+    if (pUi->comboBoxFilterPlace->currentIndex() > 0) { // NOT NULL
+        place_name = pUi->comboBoxFilterPlace->currentText();
+    }
     _changePlace(place_name, zone_name, pUi->comboBoxNode, pModelNode, s);
     DBGFNL();
 }
@@ -1848,19 +1876,20 @@ void cWorkstation::zoneCurrentIndex(const QString& s)
 {
     BEGINSLOT(s);
     QString sPlace = pPlace->isValid() ? pPlace->getName() : _sNul;
-    sPlace = _changeZone(pUi->comboBoxPlace, s, sPlace);
-    placeCurrentIndex(sPlace);
+    int pix = _changeZone(pUi->comboBoxPlace, s, sPlace);
+    placeCurrentIndex(pix);
     ENDSLOTM();
 }
 
-void cWorkstation::placeCurrentIndex(const QString& s)
+void cWorkstation::placeCurrentIndex(int i)
 {
-    BEGINSLOT(s);
-    if (s.isEmpty()) {   // Nincs kiválasztva hely ?
+    BEGINSLOT(i);
+    if (i == 0) {   // Nincs kiválasztva hely ?
         pPlace->clear();
         states.nodePlace = IS_EMPTY;
     }
     else {
+        QString s = pUi->comboBoxPlace->currentText();
         pPlace->setByName(*pq, s);
         states.nodePlace = IS_OK;
     }
@@ -1875,12 +1904,11 @@ void cWorkstation::nodeAddPlace()
     cRecord *pRec = recordInsertDialog(*pq, _sPlaces, this);
     if (pRec == NULL) return;
     qlonglong pid = pRec->getId(_sPlaceId);
-    QString sPlace = pRec->getName();
     LOCKSLOTS();
-    _setPlaceComboBoxs(pid, pUi->comboBoxZone, pUi->comboBoxPlace, true);
+    int pix = _setPlaceComboBoxs(pid, pUi->comboBoxZone, pUi->comboBoxPlace, true);
     UNLOCKSLOTS();
     delete pRec;
-    placeCurrentIndex(sPlace);
+    placeCurrentIndex(pix);
 }
 
 // Workstation ports slots
@@ -2012,15 +2040,16 @@ void cWorkstation::linkToglePlaceEqu(bool f)
 void cWorkstation::linkZoneCurrentIndex(const QString &s)
 {
     BEGINSLOT(s);
-    QString sPlace = _changeZone(pUi->comboBoxLinkPlace, s);
-    linkPlaceCurrentIndex(sPlace);
+    int pix = _changeZone(pUi->comboBoxLinkPlace, s);
+    linkPlaceCurrentIndex(pix);
     ENDSLOTM();
 }
 
-void cWorkstation::linkPlaceCurrentIndex(const QString& s)
+void cWorkstation::linkPlaceCurrentIndex(int i)
 {
-    BEGINSLOT(s);
-    int ix = _changePlace(s, pUi->comboBoxLinkZone->currentText(), pUi->comboBoxLinkNode, pModelLinkNode);
+    BEGINSLOT(i);
+    QString sPlace = pLinkPlaceModel->at(i);
+    int ix = _changePlace(sPlace, pUi->comboBoxLinkZone->currentText(), pUi->comboBoxLinkNode, pModelLinkNode);
     pUi->comboBoxLinkNode->setCurrentIndex(ix);
     ENDSLOTM();
 }
@@ -2092,7 +2121,10 @@ void cWorkstation::newPatch()
 void cWorkstation::portNameChanged2(const QString& s)
 {
     BEGINSLOT(s);
-    ;
+    pPort2()->setName(s);
+    if      (s.isEmpty())               states.port2Name = IS_EMPTY;
+    else if (s == pPort1()->getName())  states.port2Name = IS_COLLISION;
+    else                                states.port2Name = IS_OK;
     ENDSLOTM();
 }
 
@@ -2146,15 +2178,16 @@ void cWorkstation::linkToglePlaceEqu2(bool f)
 void cWorkstation::linkZoneCurrentIndex2(const QString &s)
 {
     BEGINSLOT(s);
-    QString sPlace = _changeZone(pUi->comboBoxLinkPlace_2, s);
-    linkPlaceCurrentIndex2(sPlace);
+    int pix = _changeZone(pUi->comboBoxLinkPlace_2, s);
+    linkPlaceCurrentIndex2(pix);
     ENDSLOTM();
 }
 
-void cWorkstation::linkPlaceCurrentIndex2(const QString& s)
+void cWorkstation::linkPlaceCurrentIndex2(int i)
 {
-    BEGINSLOT(s);
-    int ix = _changePlace(s, pUi->comboBoxLinkZone_2->currentText(), pUi->comboBoxLinkNode_2, pModelLinkNode2);
+    BEGINSLOT(i);
+    QString sPlace = pLinkPlaceModel2->at(i);
+    int ix = _changePlace(sPlace, pUi->comboBoxLinkZone_2->currentText(), pUi->comboBoxLinkNode_2, pModelLinkNode2);
     pUi->comboBoxLinkNode_2->setCurrentIndex(ix);
     ENDSLOTM();
 }

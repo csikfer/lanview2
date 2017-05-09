@@ -182,7 +182,7 @@ inline bool fieldIsReadOnly(const cTableShape &_tm, const cTableShapeField &_tf,
     return false;
 }
 
-cFieldEditBase::cFieldEditBase(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef _fr, bool _ro, cRecordDialogBase *_par)
+cFieldEditBase::cFieldEditBase(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef _fr, int _fl, cRecordDialogBase *_par)
     : QObject(_par)
     , _pParentDialog(_par)
     , _colDescr(_fr.descr())
@@ -192,14 +192,14 @@ cFieldEditBase::cFieldEditBase(const cTableShape &_tm, const cTableShapeField &_
     , _value()
 {
     _wType      = FEW_UNKNOWN;
-    _readOnly   = _ro || fieldIsReadOnly(_tm, _tf, _fr);
+    _readOnly   = (_fl & FEB_READ_ONLY) || fieldIsReadOnly(_tm, _tf, _fr);
     _value      = _fr;
     _pWidget    = NULL;
     pq          = newQuery();
     _nullable   = _fr.isNullable();
     _hasDefault = _fr.descr().colDefault.isNull() == false;
     _hasAuto    = _fr.recDescr().autoIncrement()[_fr.index()];
-    _isInsert   = _fr.record().isEmpty_();      // ??!
+    _isInsert   = (_fl & FEB_INSERT);      // ??!
     _dcNull     = DC_INVALID;
     if (_isInsert && _hasDefault) {
         _dcNull = DC_DEFAULT;       // Megadható NULL, mert van alapértelmezett érték
@@ -304,7 +304,7 @@ void cFieldEditBase::modField(int ix)
 }
 */
 
-cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef _fr, bool _ro, cRecordDialogBase *_par)
+cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef _fr, int _fl, cRecordDialogBase *_par)
 {
     _DBGFN() << QChar(' ') << _tm.tableName() << _sCommaSp << _fr.fullColumnName() << " ..." << endl;
     PDEB(VVERBOSE) << "Field value = " << debVariantToString(_fr) << endl;
@@ -315,8 +315,9 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
         return p;
     }
     int et = _fr.descr().eColType;
-    bool ro = _ro || fieldIsReadOnly(_tm, _tf, _fr);
+    bool ro = (_fl & FEB_READ_ONLY) || fieldIsReadOnly(_tm, _tf, _fr);
     qlonglong fieldFlags = _tf.getId(_sFieldFlags);
+    int fl = ro ? (_fl | FEB_READ_ONLY) : _fl;
     static const QString sRadioButtons = "radioButtons";
     if (ro) {       // Néhány widget-nek nincs read-only módja, azok helyett read-only esetén egy soros megj.
         switch (et) {
@@ -338,7 +339,7 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
             goto if_ro_cFieldLineWidget;
         if_ro_cFieldLineWidget:
         default: {
-            cFieldLineWidget *p =  new cFieldLineWidget(_tm, _tf, _fr, true, _par);
+            cFieldLineWidget *p =  new cFieldLineWidget(_tm, _tf, _fr, fl, _par);
             _DBGFNL() << " new cFieldLineWidget" << endl;
             return  p;
           }
@@ -355,7 +356,7 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
         goto case_FieldLineWidget;                                  // Egy soros text...
     case cColStaticDescr::FT_TEXT:
         if (fieldFlags & ENUM2SET2(FF_FG_COLOR, FF_BG_COLOR)) {    // Ez egy szín, mint text
-            cColorWidget *p = new cColorWidget(_tm, _tf, _fr, ro, _par);
+            cColorWidget *p = new cColorWidget(_tm, _tf, _fr, fl, _par);
             _DBGFNL() << " new cColorWidget" << endl;
             return p;
         }
@@ -475,8 +476,8 @@ cNullWidget::~cNullWidget()
 
 /* **************************************** cSetWidget **************************************** */
 
-cSetWidget::cSetWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase *_par)
-    : cFieldEditBase(_tm, _tf, __fr, _ro, _par)
+cSetWidget::cSetWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, __fr, _fl, _par)
 {
     _DBGOBJ() << _tf.identifying() << endl;
     _wType = FEW_SET;
@@ -556,8 +557,8 @@ void cSetWidget::setFromEdit(int id)
 
 /* **************************************** cEnumRadioWidget ****************************************  */
 
-cEnumRadioWidget::cEnumRadioWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase *_par)
-    : cFieldEditBase(_tm, _tf, __fr, _ro, _par)
+cEnumRadioWidget::cEnumRadioWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, __fr, _fl, _par)
 {
     _wType = FEW_ENUM_RADIO;
     _pWidget = new QWidget(_par == NULL ? NULL : _par->pWidget());
@@ -643,7 +644,7 @@ cEnumComboWidget::cEnumComboWidget(const cTableShape& _tm, const cTableShapeFiel
     _pWidget = pCB;
     nulltype = _dcNull == DC_INVALID ? NT_NOT_NULL : (eNullType)_dcNull;
     cEnumListModel *pModel = new cEnumListModel(&_colDescr.enumType(), nulltype);
-    pCB->setModel(pModel);
+    _setEnumListModel(pCB, pModel);
     pCB->setEditable(false);                  // Nem editálható, választás csak a listából
     setWidget();
     connect(pCB, SIGNAL(activated(int)), this, SLOT(setFromEdit(int)));
@@ -691,12 +692,14 @@ void cEnumComboWidget::setFromEdit(int id)
     qlonglong v = newEval;
     qlonglong dummy;
     setFromWidget(_colDescr.set(QVariant(v), dummy));
+    QComboBox *pCB = dynamic_cast<QComboBox *>(_pWidget);
+
 }
 
 /* **************************************** cFieldLineWidget ****************************************  */
 
-cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef _fr, bool _ro, cRecordDialogBase *_par)
-    : cFieldEditBase(_tm, _tf, _fr, _ro, _par)
+cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef _fr, int _fl, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, _fr, _fl, _par)
 {
     QLineEdit *pLE = NULL;
     QPlainTextEdit *pTE = NULL;
@@ -812,8 +815,8 @@ void cFieldLineWidget::setFromEdit()
 /* **************************************** cArrayWidget ****************************************  */
 
 
-cArrayWidget::cArrayWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase *_par)
-    : cFieldEditBase(_tm, _tf, __fr, _ro, _par)
+cArrayWidget::cArrayWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, __fr, _fl, _par)
     , last()
 {
     _wType   = FEW_ARRAY;
@@ -1001,8 +1004,8 @@ void cArrayWidget::doubleClickRow(const QModelIndex & index)
                 rekord ID alapján visszaadta egy kép (images.image_id) azonosítóját, akkor feltesz egy plussz gombot, ami megjeleníti
                 a képet, és azon klikkelve is felvehetünk pontokat.
  */
-cPolygonWidget::cPolygonWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase *_par)
-    : cFieldEditBase(_tm, _tf, __fr, _ro, _par)
+cPolygonWidget::cPolygonWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, __fr, _fl, _par)
     , xPrev(), yPrev()
 {
     _wType = FEW_POLYGON;
@@ -1398,29 +1401,51 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
     pModel->nullable = _colDescr.isNullable;
     pModel->setToNameF(_colDescr.fnToName);
     QString owner = _fieldShape.feature(_sOwner);
-    if (0 == owner.compare(_sSelf, Qt::CaseInsensitive)) {
-        if (_pParentDialog == NULL) {
-            QAPPMEMO(trUtf8("Invalid feature %1.%2 'owner=self', invalid context.").arg(_tableShape.getName(), _fieldShape.getName()), RS_CRITICAL | RS_BREAK);
+    if (!owner.isEmpty()) {
+        if (0 == owner.compare(_sSelf, Qt::CaseInsensitive)) {  // TREE
+            if (_pParentDialog == NULL) {
+                QAPPMEMO(trUtf8("Invalid feature %1.%2 'owner=self', invalid context.").arg(_tableShape.getName(), _fieldShape.getName()), RS_CRITICAL | RS_BREAK);
+            }
+            owner_ix = __fr.record().descr().ixToOwner(EX_IGNORE);
+            if (owner_ix < 0) {
+                QAPPMEMO(trUtf8("Invalid feature %1.%2 'owner=self', owner id index not found.").arg(_tableShape.getName(), _fieldShape.getName()), RS_CRITICAL | RS_BREAK);
+            }
+            ownerId = NULL_ID;
+            if (_pParentDialog->_pOwnerTable != NULL) {
+                ownerId = _pParentDialog->_pOwnerTable->owner_id;
+            }
+            else if (_pParentDialog->_pOwnerDialog != NULL) {
+                EXCEPTION(ENOTSUPP);
+            }
+            if (ownerId == NULL_ID) {
+                EXCEPTION(EDATA);
+            }
+            QString sql = __fr.record().descr().columnName(owner_ix) + " = " + QString::number(ownerId);
+            pModel->setConstFilter(sql, FT_SQL_WHERE);
+            pModel->setFilter(_sNul, OT_ASC, FT_NO);
         }
-        owner_ix = __fr.record().descr().ixToOwner(EX_IGNORE);
-        if (owner_ix < 0) {
-            QAPPMEMO(trUtf8("Invalid feature %1.%2 'owner=self', owner id index not found.").arg(_tableShape.getName(), _fieldShape.getName()), RS_CRITICAL | RS_BREAK);
+        else {
+            // Ha nincs parent dialog, akkor ez nem fog menni
+            if (_pParentDialog == NULL) EXCEPTION(EDATA, -1, _tableShape.identifying(false));
+            cRecordDialog *pDialog = dynamic_cast<cRecordDialog *>(_pParentDialog);
+            if (pDialog == NULL) EXCEPTION(EDATA, -1, _tableShape.identifying(false));
+            QList<cFieldEditBase *>::iterator it = pDialog->fields.begin(); // A hivatkozott mező a jelenlegi elött!!
+            for (;it < pDialog->fields.end(); ++it) {
+                if (0 == (*it)->_fieldShape.getName().compare(owner, Qt::CaseInsensitive)) {
+                    cFieldEditBase *pfeb = *it;
+                    ownerId = pfeb->getId();
+                    connect(pfeb, SIGNAL(changedValue(cFieldEditBase*)), this, SLOT(modifyOwnerId(cFieldEditBase*)));
+                    pModel->setFilter(ownerId, OT_ASC, FT_FKEY_ID);
+                    break;
+                }
+            }
+            if (it >= pDialog->fields.end()) EXCEPTION(EDATA);
         }
-        ownerId = NULL_ID;
-        if (_pParentDialog->_pOwnerTable != NULL) {
-            ownerId = _pParentDialog->_pOwnerTable->owner_id;
-        }
-        else if (_pParentDialog->_pOwnerDialog != NULL) {
-            EXCEPTION(ENOTSUPP);
-        }
-        if (ownerId == NULL_ID) {
-            EXCEPTION(EDATA);
-        }
-        QString sql = __fr.record().descr().columnName(owner_ix) + " = " + QString::number(ownerId);
-        pModel->setConstFilter(sql, FT_SQL_WHERE);
     }
-    pModel->setFilter(_sNul, OT_ASC, FT_NO);
-    pUi->comboBox->setModel(pModel);
+    else {
+        pModel->setFilter(_sNul, OT_ASC, FT_NO);
+    }
+    _setRecordListModel(pUi->comboBox, pModel);
     pUi->pushButtonEdit->setDisabled(true);
     _value = pModel->atId(0);
     pTableShape = new cTableShape();
@@ -1530,6 +1555,16 @@ void cFKeyWidget::modifyF()
     delete pDialog;
     return;
 }
+
+// Megváltozott az owner id
+void cFKeyWidget::modifyOwnerId(cFieldEditBase* pof)
+{
+    ownerId = pof->getId();
+    pModel->setFilter(ownerId, OT_ASC, FT_FKEY_ID);
+    pUi->comboBox->setCurrentIndex(0);
+    setFromEdit(0);
+}
+
 /* **************************************** cDateWidget ****************************************  */
 
 
@@ -1629,8 +1664,8 @@ void cDateTimeWidget::setFromEdit(QDateTime d)
 /* **************************************** cIntervalWidget ****************************************  */
 
 
-cIntervalWidget::cIntervalWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase *_par)
-    : cFieldEditBase(_tm, _tf, __fr, _ro, _par)
+cIntervalWidget::cIntervalWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, __fr, _fl, _par)
 {
     _wType = FEW_INTERVAL;
     _pWidget = new QWidget(_par == NULL ? NULL : _par->pWidget());
@@ -1707,8 +1742,8 @@ void cIntervalWidget::setFromEdit()
 
 /* **************************************** cBinaryWidget ****************************************  */
 
-cBinaryWidget::cBinaryWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase *_par)
-    : cFieldEditBase(_tm, _tf, __fr, _ro, _par)
+cBinaryWidget::cBinaryWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, __fr, _fl, _par)
     , data()
 {
     _init();
@@ -1902,8 +1937,8 @@ void cBinaryWidget::destroyedImage(QObject *p)
 /* **************************************** cFKeyArrayWidget ****************************************  */
 
 
-cFKeyArrayWidget::cFKeyArrayWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase *_par)
-    : cFieldEditBase(_tm, _tf, __fr, _ro, _par)
+cFKeyArrayWidget::cFKeyArrayWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, __fr, _fl, _par)
     , last()
 {
     _wType   = FEW_FKEY_ARRAY;
@@ -2077,15 +2112,15 @@ void cFKeyArrayWidget::doubleClickRow(const QModelIndex & index)
 /* **************************************** cColorWidget ****************************************  */
 
 
-cColorWidget::cColorWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool ro, cRecordDialogBase *_par)
-    : cFieldEditBase(_tm, _tf, __fr, false, _par), pixmap(24, 24)
+cColorWidget::cColorWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, __fr, _fl, _par), pixmap(24, 24)
 {
     _wType = FEW_COLOR;
     _pWidget = new QWidget(_par == NULL ? NULL : _par->pWidget());
     QHBoxLayout *pLayout = new QHBoxLayout;
     _pWidget->setLayout(pLayout);
     pLineEdit = new QLineEdit(_value.toString());
-    pLineEdit->setReadOnly(ro);
+    pLineEdit->setReadOnly(_fl);
     pLayout->addWidget(pLineEdit, 1);
     pLabel = new QLabel;
     pLayout->addWidget(pLabel);
@@ -2208,8 +2243,8 @@ void cFontFamilyWidget::changeFont(const QFont&)
 
 const QString cFontAttrWidget::sEnumTypeName = "fontattr";
 
-cFontAttrWidget::cFontAttrWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase *_par)
-    : cFieldEditBase(_tm, _tf, __fr, _ro, _par)
+cFontAttrWidget::cFontAttrWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, __fr, _fl, _par)
     , iconNull("://dialog-no.ico"), iconNotNull("://dialog-no-off.png")
     , iconBold("://icons/format-text-bold.ico"), iconBoldNo("://icons/format-text-bold-no.png")
     , iconItalic("://icons/format-text-italic.ico"), iconItalicNo("://icons/format-text-italic-no.png")

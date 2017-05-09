@@ -157,7 +157,7 @@ _GEX QPolygonF convertPolygon(const tPolygonF __pol)
 const QColor& bgColorByEnum(const QString& __t, int e)
 {
     static QMap<QString, QVector<QColor> > colorCache;
-    static QColor defCol(Qt::white);
+    static const QColor defCol(Qt::white);
     if (__t.isEmpty()) {
         colorCache.clear();
         return defCol;
@@ -197,7 +197,7 @@ const QColor& bgColorByEnum(const QString& __t, int e)
 const QColor& fgColorByEnum(const QString& __t, int e)
 {
     static QMap<QString, QVector<QColor> >   colorCache;
-    static QColor defCol(Qt::black);
+    static const QColor defCol(Qt::black);
     if (__t.isEmpty()) {
         colorCache.clear();
         return defCol;
@@ -255,6 +255,7 @@ const QFont& fontByEnum(const QString& __t, int _e)
     if (!family.isEmpty()) {
         font.setFamily(family);
     }
+#if 0
     if (!e.isNull(cEnumVal::ixFontAttr())) {
         bool f;
         f = e.getBool(cEnumVal::ixFontAttr(), FA_BOOLD);
@@ -266,6 +267,12 @@ const QFont& fontByEnum(const QString& __t, int _e)
         f = e.getBool(cEnumVal::ixFontAttr(), FA_STRIKEOUT);
         if (font.strikeOut() != f) font.setStrikeOut(f);
     }
+#else
+    font.setBold(     e.getBool(cEnumVal::ixFontAttr(), FA_BOOLD));
+    font.setItalic(   e.getBool(cEnumVal::ixFontAttr(), FA_ITALIC));
+    font.setUnderline(e.getBool(cEnumVal::ixFontAttr(), FA_UNDERLINE));
+    font.setStrikeOut(e.getBool(cEnumVal::ixFontAttr(), FA_STRIKEOUT));
+#endif
     return font;
 }
 

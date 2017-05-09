@@ -503,12 +503,12 @@ cRecordListModel& cRecordListModel::copy(const cRecordListModel& _o)
 
 void _setRecordListModel(QComboBox *pComboBox, cRecordListModel *pModel)
 {
-    // Sajnos nem müködik :(
-    new cComboColorToLine(pComboBox, pModel);
+    // Qt 5.7 és a felett möködik
+    new cComboColorToRecName(pComboBox, pModel);
     pComboBox->setModel(pModel);
 }
 
-cComboColorToLine::cComboColorToLine(QComboBox *_pComboBox, cRecordListModel *_pModel)
+cComboColorToRecName::cComboColorToRecName(QComboBox *_pComboBox, cRecordListModel *_pModel)
     : QObject(_pComboBox)
 {
     pComboBox = _pComboBox;
@@ -516,13 +516,13 @@ cComboColorToLine::cComboColorToLine(QComboBox *_pComboBox, cRecordListModel *_p
     palette   = _pComboBox->palette();
     font      = _pComboBox->font();
     nullPalette = palette;
-    nullPalette.setColor(QPalette::Text, dcFgColor(DC_NULL));
-    nullPalette.setColor(QPalette::Base, dcBgColor(DC_NULL));
+    nullPalette.setColor(QPalette::ButtonText, dcFgColor(DC_NULL));
+    nullPalette.setColor(QPalette::Button, dcBgColor(DC_NULL));
     nullFont  = dcFont(DC_NULL);
     connect(_pComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(currentIndex(int)));
 }
 
-void cComboColorToLine::currentIndex(int i)
+void cComboColorToRecName::currentIndex(int i)
 {
 #if 0
     QLineEdit *pLineEdit = pComboBox->lineEdit();
@@ -760,4 +760,32 @@ QVariant cEnumListModel::data(const QModelIndex &index, int role) const
     int row = index.row();
     if (!isContIx(enumVals, row)) return QVariant();
     return enumRole(*enumVals[row], role, row);
+}
+
+void _setEnumListModel(QComboBox *pComboBox, cEnumListModel *pModel)
+{
+    // Qt 5.7 és a felett möködik
+    new cComboColorToEnumName(pComboBox, pModel);
+    pComboBox->setModel(pModel);
+}
+
+cComboColorToEnumName::cComboColorToEnumName(QComboBox *_pComboBox, cEnumListModel *_pModel)
+{
+    pComboBox = _pComboBox;
+    pModel    = _pModel;
+    palette   = _pComboBox->palette();
+    connect(_pComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(currentIndex(int)));
+}
+
+void cComboColorToEnumName::currentIndex(int i)
+{
+    QPalette pal = palette;
+    if (!isContIx(pModel->enumVals, i)) return ;
+    const cEnumVal& ev = *pModel->enumVals[i];
+    QString type = ev.getName(cEnumVal::ixTypeName());
+    int     eval = ev.toInt();
+    if (!ev.isNull(cEnumVal::ixBgColor())) pal.setColor(QPalette::Button,     bgColorByEnum(type, eval));
+    if (!ev.isNull(cEnumVal::ixFgColor())) pal.setColor(QPalette::ButtonText, fgColorByEnum(type, eval));
+    pComboBox->setPalette(pal);
+    pComboBox->setFont(fontByEnum(type, eval));
 }

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>289</width>
+    <width>297</width>
     <height>45</height>
    </rect>
   </property>
@@ -17,7 +17,7 @@
    <item>
     <widget class="QComboBox" name="comboBox">
      <property name="editable">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <property name="currentText">
       <string notr="true"/>

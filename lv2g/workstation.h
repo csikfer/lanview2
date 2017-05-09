@@ -41,7 +41,7 @@ private:
     /// Újra építi az állandó listákat
     void _fullRefresh();
     void _refreshPlaces(QComboBox *pComboBoxZone, QComboBox *pComboBoxPlace);
-    QString _changeZone(QComboBox *pComboBoxPlace, const QString& sZone, const QString& _placeName = QString());
+    int _changeZone(QComboBox *pComboBoxPlace, const QString& sZone, const QString& _placeName = QString());
     int _checkNodeCollision(int ix, const QString& s);
     /// Beállítja a szűrési feltételeket a node-okra, a model-nem.
     /// Ha a kiválasztott node az új listában is szerepel, akkor a pComboBoxNode
@@ -167,7 +167,7 @@ protected slots:
     void refresh();
 
     void filterZoneCurrentIndex(const QString& s);
-    void filterPlaceCurrentIndex(const QString& s);
+    void filterPlaceCurrentIndex(int i);
     void filterPatternChanged(const QString& s);
 
     void nodeCurrentIndex(int i);
@@ -175,7 +175,7 @@ protected slots:
     void serialChanged(const QString& s);
     void inventoryChanged(const QString& s);
     void zoneCurrentIndex(const QString& s);
-    void placeCurrentIndex(const QString& s);
+    void placeCurrentIndex(int i);
     void nodeAddPlace();
     void portNameChanged(const QString& s);
     void portTypeCurrentIndex(int i);
@@ -190,7 +190,7 @@ protected slots:
     void linkChangeLinkType(int id, bool f);
     void linkToglePlaceEqu(bool f);
     void linkZoneCurrentIndex(const QString& s);
-    void linkPlaceCurrentIndex(const QString &s);
+    void linkPlaceCurrentIndex(int i);
     void linkNodeCurrentIndex(int i);
     void linkPortCurrentIndex(int i);
     void linkPortShareCurrentIndex(const QString &s);
@@ -203,7 +203,7 @@ protected slots:
     void linkChangeLinkType2(int id, bool f);
     void linkToglePlaceEqu2(bool f);
     void linkZoneCurrentIndex2(const QString& s);
-    void linkPlaceCurrentIndex2(const QString &s);
+    void linkPlaceCurrentIndex2(int i);
     void linkNodeCurrentIndex2(int i);
     void linkPortCurrentIndex2(int i);
     void linkPortShareCurrentIndex2(const QString &s);

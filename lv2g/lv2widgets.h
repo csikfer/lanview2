@@ -125,6 +125,12 @@ _GEX QString fieldWidgetType(int _t);
 
 class cRecordDialogBase;
 
+enum eLV2WidgetFlags {
+    FEB_EDIT      = 0,
+    FEB_READ_ONLY = 1,
+    FEB_INSERT    = 2
+};
+
 /// @class cFieldEditBase
 /// @brief Bázis objekktum a mező megjelenítő/módosító widget-ekhez
 /// Az objektum nem a QWidget leszármazotja, a konkrét megjelenítéshez létrehozott widget
@@ -137,9 +143,9 @@ public:
     /// @param _tm A rekord megjelenítését leíró objektum referenciája
     /// @param _tf A mező megjelenítését leíró objektum referenciája
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
-    /// @param _ro Ha true nem szerkeszthető. Egyes leszármazottnál a true nem értelmezhető, ekkor kizárást dob a konstruktor.
+    /// @param _fl
     /// @param parent A parent widget pointere
-    cFieldEditBase(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase* _par);
+    cFieldEditBase(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase* _par);
     /// Destruktor
     ~cFieldEditBase();
     /// Az objektum típusát megadó enumerációs értékkel tér vissza (_wType adattag értéke)
@@ -170,10 +176,10 @@ public:
     /// @param _tm A tábla megjelenítését/szerkesztését leíró objektum
     /// @param _tf A mező megjelenítését/szerkesztését leíró objektum
     /// @param _fr A mező referencia objektuma
-    /// @param _ro Ha a mező nem szerkeszthető, akkor true
+    /// @param _fl
     /// @param _par Parent
     /// @return A létrehozott objektum pointere
-    static cFieldEditBase *createFieldWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef _fr, bool _ro, cRecordDialogBase *_par);
+    static cFieldEditBase *createFieldWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef _fr, int _fl, cRecordDialogBase *_par);
     /// A Widget-ben megjelenített értéket adja vissza. ld.: get() metódust.
     operator QVariant() const   { return get(); }
     /// A Widget-ben megjelenített értéket adja vissza, qlonglong-á konvertálva, Konvertáló függvény a mező leíró objektum szerint.
@@ -257,9 +263,9 @@ public:
     /// Konstruktor
     /// @param _tm A megjelenítő leíró objektum referenciája.
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
-    /// @param _ro Ha true nem szerkeszthető
+    /// @param _fl
     /// @param parent A parent widget pointere
-    cSetWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase* _par);
+    cSetWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase* _par);
     ~cSetWidget();
     virtual int set(const QVariant& v);
     virtual int height();
@@ -285,9 +291,9 @@ public:
     /// Konstruktor
     /// @param _tm A megjelenítő leíró objektum referenciája.
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
-    /// @param _ro Ha true nem szerkeszthető
+    /// @param _fl
     /// @param par A parent widget pointere
-    cEnumRadioWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase* _par);
+    cEnumRadioWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase* _par);
     ~cEnumRadioWidget();
     virtual int set(const QVariant& v);
     virtual int height();
@@ -334,9 +340,9 @@ class LV2GSHARED_EXPORT cFieldLineWidget : public cFieldEditBase {
 public:
     /// Konstruktor
     /// @param _fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
-    /// @param _ro Ha nem szerkeszthető, értéke true.
+    /// @param _fl
     /// @param parent A parent widget pointere
-    cFieldLineWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef _fr, bool _ro, cRecordDialogBase* _par);
+    cFieldLineWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef _fr, int _fl, cRecordDialogBase* _par);
     ~cFieldLineWidget();
     virtual int set(const QVariant& v);
     virtual int height();
@@ -372,9 +378,9 @@ class LV2GSHARED_EXPORT cArrayWidget : public cFieldEditBase {
 public:
     /// Konstruktor
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
-    /// @param _ro Ha nem szerkeszthető, értéke true
+    /// @param _fl
     /// @param _par A parent pointere
-    cArrayWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase *_par);
+    cArrayWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase *_par);
     ~cArrayWidget();
     virtual int set(const QVariant& v);
     virtual int height();
@@ -407,9 +413,9 @@ class LV2GSHARED_EXPORT cPolygonWidget : public cFieldEditBase {
 public:
     /// Konstruktor.
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
-    /// @param _ro Ha nem szerkeszthető, értéke true
+    /// @param _fl
     /// @param parent A parent widget pointere
-    cPolygonWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase* _par);
+    cPolygonWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase* _par);
     ~cPolygonWidget();
     virtual int set(const QVariant& v);
     virtual int height();
@@ -493,6 +499,7 @@ private slots:
 //  void _edited(QString _txt);
     void insertF();
     void modifyF();
+    void modifyOwnerId(cFieldEditBase* pof);
 };
 
 /// @class cDateWidget
@@ -548,7 +555,7 @@ public:
     /// Konstruktor.
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
     /// @param parent A parent widget pointere
-    cIntervalWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase* _par);
+    cIntervalWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase* _par);
     ~cIntervalWidget();
     virtual int set(const QVariant& v);
 protected:
@@ -571,7 +578,7 @@ public:
     /// Konstruktor.
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
     /// @param parent A parent widget pointere
-    cBinaryWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase* _par);
+    cBinaryWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase* _par);
     ~cBinaryWidget();
     virtual int set(const QVariant& v);
 protected:
@@ -608,9 +615,9 @@ class LV2GSHARED_EXPORT cFKeyArrayWidget : public cFieldEditBase {
 public:
     /// Konstruktor
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
-    /// @param _ro Ha nem szerkeszthető, értéke true
+    /// @param _fl
     /// @param _par A parent pointere
-    cFKeyArrayWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase *_par);
+    cFKeyArrayWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase *_par);
     ~cFKeyArrayWidget();
     virtual int set(const QVariant& v);
 protected:
@@ -643,7 +650,7 @@ public:
     /// Konstruktor.
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
     /// @param _par A parent pointere
-    cColorWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, bool ro, cRecordDialogBase* _par);
+    cColorWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase* _par);
     ~cColorWidget();
     virtual int set(const QVariant& v);
 private:
@@ -688,7 +695,7 @@ public:
     /// Konstruktor.
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
     /// @param _par A parent pointere
-    cFontAttrWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, bool _ro, cRecordDialogBase* _par);
+    cFontAttrWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase* _par);
     ~cFontAttrWidget();
     virtual int set(const QVariant& v);
     static const QString sEnumTypeName;
