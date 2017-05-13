@@ -12,7 +12,7 @@ enum ePermit {
 
 enum eFieldIx {
     RX_ID,
-    RX_HOST_NAME, RX_SERVICE_NAME, RX_PORT_NAME, RX_SRV_EXT,
+    RX_HOST_NAME, RX_SERVICE_NAME, RX_PORT_ID, RX_PORT_NAME, RX_SRV_EXT,
     RX_PLACE_NAME, RX_PLACE_TYPE, RX_NOALARM, RX_FROM, RX_TO,
     RX_DISABLED, RX_SRV_DISABLED, RX_STATE, RX_NSUB,
     RX_SUPERIOR_ID, RX_SUPERIOR_NAME
@@ -23,7 +23,9 @@ const QString cHSOperate::_sql =
             " hs.host_service_id, "         // RX_ID
             " node_name, "                  // RX_HOST_NAME
             " service_name, "               // RX_SERVICE_NAME
+            " hs.port_id,"                  // RX_PORT_ID
             " CASE WHEN hs.port_id IS NULL THEN NULL"
+                 " WHEN np.node_id = hs.node_id THEN np.port_name"
                  " ELSE port_id2full_name(hs.port_id)"
                  " END, "                   // RX_PORT_NAME
             " CASE WHEN proto_service_id < 0 AND prime_service_id < 0 THEN NULL"
@@ -45,7 +47,8 @@ const QString cHSOperate::_sql =
                  " ELSE host_service_id2name(hs.superior_host_service_id)"
                  " END"                     // RX_SUPERIOR_NAME
         " FROM host_services AS hs"
-        " JOIN nodes  AS n USING(node_id)"
+        " LEFT JOIN nports AS np ON np.port_id = hs.port_id"
+        " JOIN nodes  AS n ON n.node_id = hs.node_id"
         " JOIN places AS p USING(place_id)"
         " JOIN services AS s USING(service_id)";
 const QString cHSOperate::_ord = " ORDER BY node_name, service_name, hs.port_id ASC";
@@ -270,10 +273,11 @@ cHSOperate::cHSOperate(QMdiArea *par)
     lastAlramButtonId = -1;
     sStart = trUtf8("Start");
     sStop  = trUtf8("Stop");
-    privilegLevel = lanView::getInstance()->user().privilegeLevel();
 
     pUi->setupUi(this);
     if (TC_COUNT != pUi->tableWidget->columnCount()) EXCEPTION(EDATA);
+    // Jogosultsági szintek:
+    privilegLevel = lanView::getInstance()->user().privilegeLevel();
     switch (privilegLevel) {
     case PL_NONE:
         endIt();                // Becsuk, semmijen jogy nincs
@@ -282,17 +286,17 @@ cHSOperate::cHSOperate(QMdiArea *par)
     case PL_INDALARM:
         permit = PERMIT_NO;     // Csak nézelődhet
         pUi->textEditJustify->setDisabled(true);
-        pUi->splitter->widget(1)->hide();   // ...Justify
+        pUi->splitter->widget(1)->hide();   // Nem kell, nincs mit indokolnia
         break;
     case PL_OPERATOR:
-        permit = PERMIT_PART;   // Csak időkörlátos tiltás, kötelező indoklás
+        permit = PERMIT_PART;   // Csak riasztás tiltás, kötelező indoklással
         pUi->splitter->setStretchFactor(0, 3);
         pUi->splitter->setStretchFactor(1, 1);
         connect(pUi->textEditJustify, SIGNAL(textChanged()), this, SLOT(changeJustify()));
         break;
     case PL_ADMIN:
     case PL_SYSTEM:
-        permit = PERMIT_ALL;      // Mindent szabad
+        permit = PERMIT_ALL;    // Mindent szabad
         pUi->splitter->setStretchFactor(0, 1);
         pUi->splitter->setStretchFactor(1, 0);
         break;
@@ -987,11 +991,12 @@ void cHSOperate::doubleClickCell(const QModelIndex& mi)
         break;
       }
     case TC_PORT: {
-        QString nodeName = getTableItemText(pUi->tableWidget, row, TC_HOST);
-        qlonglong pid = cNPort().getPortIdByName(*pq2, s, nodeName);
-        cNPort *pPort = cNPort::getPortObjById(*pq2, pid);
-        recordInsertDialog(*pq2, pPort->tableName(), this, pPort, true);
-        pDelete(pPort);
+        QVariant vpid = actState()->rows.at(row)->rec.value(RX_PORT_ID);
+        if (vpid.isValid()) {
+            cNPort *pPort = cNPort::getPortObjById(*pq2, vpid.toLongLong());
+            recordInsertDialog(*pq2, pPort->tableName(), this, pPort, true);
+            pDelete(pPort);
+        }
         break;
       }
     case TC_EXT: {
