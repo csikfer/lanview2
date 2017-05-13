@@ -33,7 +33,6 @@ SOURCES += \
     record_link.cpp \
     record_link_model.cpp \
     gsetupwidget.cpp \
-    setnoalarm.cpp \
     hsoperate.cpp \
     phslinkform.cpp \
     findbymac.cpp \
@@ -64,7 +63,6 @@ HEADERS +=\
     record_link.h \
     record_link_model.h \
     gsetupwidget.h \
-    setnoalarm.h \
     hsoperate.h \
     phslinkform.h \
     findbymac.h \
@@ -86,7 +84,6 @@ FORMS += \
     fkeyarrayed.ui \
     gsetup.ui \
     edit_field.ui \
-    noalarm.ui \
     hsoperate.ui \
     phslinkform.ui \
     findbymac.ui \

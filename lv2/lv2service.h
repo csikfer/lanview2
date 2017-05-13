@@ -167,7 +167,7 @@ public:
     /// csak visszatér egy RS_UNKNOWN értékkel.
     /// Ha pProcess pointer nem NULL, akkor végrehajtja a megadott parancsot, és az eredménnyel hívja a parse() metódust.
     /// @return A szolgáltatás állpota, ill. a tevékenység eredménye.
-    virtual enum eNotifSwitch run(QSqlQuery& q, QString &runMsg);
+    virtual int run(QSqlQuery& q, QString &runMsg);
     /// Szöveg (parancs kimenet) értelmezése.
     /// Ha meg van adva kölső ellenörző program, akkor az alapértelmezett run() metódus hívja a végrehajtott parancs kimenetével.
     virtual enum eNotifSwitch parse(int _ec, QIODevice &text);
@@ -197,6 +197,9 @@ public:
     /// @param q Superior tulajdonság esetén az alárendeltek beolvasásához használt objektum, a setSubs-nak adja át
     /// @param qs Szintén az opcionális alárendeltek beolvasásáoz egy opcionális query string, a setSubs második paramétere.
     virtual void postInit(QSqlQuery &q, const QString &qs = QString());
+    /// A thread inicializáló rutinjában meghívorr metódus, az objektum egyedi initje
+    /// Alapértelmezetten egy üres (azonnal visszatér) metódus.
+    virtual void threadPreInit();
 
     /// hasonló a cRecord get(const QString& __n) metódusához. A mezőt elöszőr a hostService adattagban keresi, ha viszont az NULL,
     /// akkor aservices adattagból olvassa be, majd a prime és végül a proto szervíz rekordbol (ha van).

@@ -341,7 +341,7 @@ void cDevicePSt::setInt(QVariant v, int ix, cInterface& iface, QBitArray& mask, 
     }
 }
 
-enum eNotifSwitch cDevicePSt::run(QSqlQuery& q, QString &runMsg)
+int cDevicePSt::run(QSqlQuery& q, QString &runMsg)
 {
     enum eNotifSwitch rs = RS_ON;
     _DBGFN() << QChar(' ') << name() << endl;

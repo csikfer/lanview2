@@ -5,7 +5,6 @@
 #include "setup.h"
 #include "gsetupwidget.h"
 #include "gparse.h"
-#include "setnoalarm.h"
 #include "hsoperate.h"
 #include "findbymac.h"
 #include "apierrcodes.h"
@@ -71,10 +70,6 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QMdiArea 
         else if (0 == feature.compare("errcodes", Qt::CaseInsensitive)) {    // "errcodes"   API hibakódok
             intType = INT_ERRCODES;
             rights = cErrcodesWidget::rights;
-        }
-        else if (0 == feature.compare("noalarm", Qt::CaseInsensitive)) {     // "noalarm"   Riasztás tiltások beállítása
-            intType = INT_NOALARM;
-            rights = cSetNoAlarm::rights;
         }
         else if (0 == feature.compare("hsop", Qt::CaseInsensitive)) {       // "hsop"   host-services állpot man.
             intType = INT_HSOP;
@@ -159,7 +154,6 @@ A jelenleg implementállt lehetőségek:
 | parser     | INT_PARSER     | cParseWidget    | A parser hvása              |
 | olalarm    | INT_OLALARM    | cOnlineAlarm    | OnLine riasztások           |
 | errcodes   | INT_ERRCODES   | cErrcodesWidget | API hibakódok listája       |
-| noalarm    | INT_NOALARM    | cSetNoAlarm     | Riasztás tiltások beállítása|
 | hsop       | INT_HSOP       | cHSOperate      | host-services állapot man.  |
 | findmac    | INT_FINDMAC    | cFindByMac      | MAC keresés                 |
 | workstation| INT_WORKSTATION| cWorkstation    | Munkaállomás új/modosít     |
@@ -174,7 +168,6 @@ void cMenuAction::initInt()
     CREATEINTWIN(PARSER,     cParseWidget);
     CREATEINTWIN(OLALARM,    cOnlineAlarm);
     CREATEINTWIN(ERRCODES,   cErrcodesWidget);
-    CREATEINTWIN(NOALARM,    cSetNoAlarm);
     CREATEINTWIN(HSOP,       cHSOperate);
     CREATEINTWIN(FINDMAC,    cFindByMac);
     CREATEINTWIN(WORKSTATION,cWorkstation);

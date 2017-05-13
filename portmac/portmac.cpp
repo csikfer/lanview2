@@ -78,8 +78,9 @@ cInspector * cPortMac::newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong ho
 }
 
 ///
-enum eNotifSwitch cPortMac::run(QSqlQuery &__q)
+int cPortMac::run(QSqlQuery &__q, QString& runMsg)
 {
+    (void)runMsg;
     cMacTab::refresStats(__q);
     return RS_ON;
 }
@@ -204,7 +205,7 @@ void cDevicePMac::postInit(QSqlQuery &q, const QString&)
 }
 
 
-enum eNotifSwitch cDevicePMac::run(QSqlQuery& q, QString& runMsg)
+int cDevicePMac::run(QSqlQuery& q, QString& runMsg)
 {
     (void)runMsg;
     _DBGFN() << QChar(' ') << name() << endl;

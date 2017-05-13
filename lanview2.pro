@@ -40,3 +40,8 @@ unix {
     import.subdirs = import
     import.depends = lv2
 }
+
+# non free!
+SUBDIRS += icontsrv
+icontsrv.subdirs = icontsrv
+icontsrv.depends = lv2

@@ -239,11 +239,12 @@ int cHostService::replace(QSqlQuery &__q, eEx __ex)
 
 cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const QString& __note, qlonglong __did)
 {
+    _DBGFN() << names(__q) << VDEB(__st) << VDEB(__note) << endl;
     QVariant did;
     if (__did != NULL_ID) did = __did;
     if (!execSqlRecFunction(__q, _sSetServiceStat, getId(), __st, __note, did)) SQLERR(__q, EQUERY);
     set(__q);
-    // DBGFNL();
+    DBGFNL() << toString() << endl;
     return *this;
 }
 

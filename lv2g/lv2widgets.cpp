@@ -692,7 +692,7 @@ void cEnumComboWidget::setFromEdit(int id)
     qlonglong v = newEval;
     qlonglong dummy;
     setFromWidget(_colDescr.set(QVariant(v), dummy));
-    QComboBox *pCB = dynamic_cast<QComboBox *>(_pWidget);
+    //QComboBox *pCB = dynamic_cast<QComboBox *>(_pWidget);
 
 }
 

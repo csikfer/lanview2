@@ -15,9 +15,9 @@ class LV2GSHARED_EXPORT cHSORow : public QObject {
     friend class cHSOperate;
     Q_OBJECT
 public:
-    cHSORow(QSqlQuery& q, cHSOState *par);
+    cHSORow(QSqlQuery& q, cHSOState *par, int _row);
     QCheckBox * getCheckBoxSet();
-    QCheckBox * getCheckBoxSub();
+    QWidget *   getWidgetSub();
     QToolButton *getButtonReset();
     QTableWidgetItem * item(int vix);
     QTableWidgetItem * item(int ix, const cColEnumType *pType);
@@ -27,16 +27,21 @@ public:
     qlonglong   id;             /// A példány ID-je
     int         nsub;           /// Az al szolgáltatáspéldányok száma
     QSqlRecord  rec;            /// Adatok
+    const int   row;
     QSqlQuery  *pq;
     bool        set, sub;
+    QCheckBox  *pCheckBoxSub;
+    QCheckBox  *pCheckBoxSet;
 protected:
+    cHSOperate *pDialog;
     static void staticInit();
     static const cColEnumType    *pPlaceType;
     static const cColEnumType    *pNoAlarmType;
     static const cColEnumType    *pNotifSwitch;
 protected slots:
-    void togleSet(bool f) { set = f; }
+    void togleSet(bool f);
     void togleSub(bool f) { sub = f; }
+    void goSub();
     void pressReset();
 };
 
@@ -47,6 +52,7 @@ public:
     cHSOState(QSqlQuery &q, const QString& _sql, const QVariantList _binds, cHSOperate *par);
     QStringList getSupIds();
     cHSORow * rowAtId(qlonglong);
+    cHSOperate * pDialog;
     QString         sql;    /// Az SQL string
     QVariantList    binds;  /// Az SQL string paraméterei
     QList<cHSORow *> rows;  /// A sorok tartalma
@@ -58,6 +64,7 @@ public:
 class LV2GSHARED_EXPORT cHSOperate : public cIntSubObj
 {
     friend class cHSOState;
+    friend class cHSORow;
     Q_OBJECT
 public:
     cHSOperate(QMdiArea *par);
@@ -65,10 +72,12 @@ public:
     static const enum ePrivilegeLevel rights;
 protected:
     void setButton();
+    bool    lockSetButton;
     Ui_hostServiceOp *pUi;
     QButtonGroup   *pButtonGroupPlace;
     QButtonGroup   *pButtonGroupService;
     QButtonGroup   *pButtonGroupNode;
+    QButtonGroup   *pButtonGroupAlarm;
 
     cZoneListModel   *pZoneModel;
     cPlacesInZoneModel*pPlaceModel;
@@ -85,9 +94,18 @@ protected:
     static const QString _ord;
 
 protected:
+    virtual void timerEvent(QTimerEvent *event);
     /// találatok megjelenítése
     void refreshTable();
     bool fetch(const QString& sql, const QVariantList& bind = QVariantList());
+    void goSub(int row);
+    ePrivilegeLevel privilegLevel;
+    int permit;
+    int refreshTime;
+    int timerId;
+    int lastAlramButtonId;
+    QString sStart;
+    QString sStop;
 protected slots:
     void refresh();
     /// Al példányok megjelenítése
@@ -106,8 +124,7 @@ protected slots:
     void disable(bool f);
     void enable(bool f);
     void clrStat(bool f);
-    void disableAlarm(bool f);
-    void enableAlarm(bool f);
+    void setAlarmButtons(int id);
     void changePlacePattern(const QString& text);
     void changeNodePattern(const QString& text);
     void changeServicePattern(const QString& text);
@@ -119,6 +136,12 @@ protected slots:
     /// A lekérdezések törlése az aktuális kivételével.
     void clear();
     void root();
+    // refresh
+    void startRefresh();
+    void changeRefreshInterval(int v);
+    void changeDataTime(QDateTime&);
+    //
+    void changeJustify();
 private:
     void setCell(int row, int col, QTableWidgetItem * pi) {
         if (pi != NULL) {

@@ -34,6 +34,7 @@ void cInspectorThread::run()
     if (pLastError) {
         inspector.internalStat = IS_ERROR;
     }
+    DBGFNL();
 }
 
 void cInspectorThread::doInit()
@@ -41,6 +42,7 @@ void cInspectorThread::doInit()
     _DBGFN() << inspector.name() << endl;
     pDelete(inspector.pq);
     inspector.pq = newQuery();
+    inspector.threadPreInit();
     if (inspector.inspectorType & IT_SUPERIOR) {
         if (inspector.pSubordinates != NULL) EXCEPTION(EPROGFAIL);
         inspector.pSubordinates = new QList<cInspector *>;
@@ -515,6 +517,11 @@ void cInspector::postInit(QSqlQuery& q, const QString& qs)
     }
 }
 
+void cInspector::threadPreInit()
+{
+    return;
+}
+
 void cInspector::setSubs(QSqlQuery& q, const QString& qs)
 {
     _DBGFN() << name() << VDEB(qs) << endl;
@@ -937,10 +944,10 @@ void cInspector::timerEvent(QTimerEvent *)
 bool cInspector::doRun(bool __timed)
 {
     _DBGFN() << name() << (__timed ? _sTimed : _sNul) << endl;
-    enum eNotifSwitch retStat = RS_UNKNOWN;     // A lekérdezés státusza
-    bool statIsSet    = false;                  // A statusz beállítva
-    bool statSetRetry = false;                  // Időzítés modosítása
-    cError * lastError = NULL;                  // Hiba leíró
+    int  retStat = RS_UNKNOWN;  // A lekérdezés státusza
+    bool statIsSet    = false;  // A statusz beállítva
+    bool statSetRetry = false;  // Időzítés modosítása
+    cError * lastError = NULL;  // Hiba leíró
     if (lastRun.isValid()) {
         lastElapsedTime = lastRun.restart();
     }
@@ -956,7 +963,7 @@ bool cInspector::doRun(bool __timed)
         retStat      = run(*pq, statMsg);
         statIsSet    = retStat & RS_STAT_SETTED;
         statSetRetry = retStat & RS_SET_RETRY;
-        retStat      = (enum eNotifSwitch)(retStat & RS_STAT_MASK);
+        retStat      = (retStat & RS_STAT_MASK);
     } CATCHS(lastError);
     // Ha többet csúszott az idúzítás mint 50%
     if (__timed  && lastElapsedTime > ((interval*3)/2)) {
@@ -993,7 +1000,7 @@ bool cInspector::doRun(bool __timed)
     return statSetRetry;
 }
 
-enum eNotifSwitch cInspector::run(QSqlQuery& q, QString& runMsg)
+int cInspector::run(QSqlQuery& q, QString& runMsg)
 {
     _DBGFN() << name() << endl;
     (void)q;

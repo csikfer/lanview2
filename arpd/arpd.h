@@ -29,7 +29,7 @@ public:
     ~cDeviceArp();
     /// A lekérdezést végző virtuális metódus.
     /// @param q A lekerdezés eredményét a q objetummal írja az adatbázisba.
-    virtual enum eNotifSwitch run(QSqlQuery& q, QString &runMsg);
+    virtual int run(QSqlQuery& q, QString &runMsg);
     /// SNMP objektum a lekérdezéshez, ha kell
     cSnmp      *pSnmp;
     /// Az ARP proc fájl, vagy a dhcp.conf fájl path, ha kell

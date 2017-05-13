@@ -61,11 +61,11 @@ public:
 };
 
 enum eNoalarmType {
-    NAT_OFF     =  0,
-    NAT_ON,
-    NAT_TO,
-    NAT_FROM,
-    NAT_FROM_TO
+    NAT_OFF     =  0,   ///< A riasztás nincs letiltva
+    NAT_ON,             ///< A riasztás le van tiltva
+    NAT_TO,             ///< A riasztás ketiltva a megadott időpontig
+    NAT_FROM,           ///< A riasztás ketiltva a megadott időponttól
+    NAT_FROM_TO         ///< A riasztás ketiltva a megadott időpontok között
 };
 
 EXT_ int noalarmtype(const QString& _n, enum eEx __ex = EX_ERROR);

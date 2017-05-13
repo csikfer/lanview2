@@ -32,7 +32,7 @@ public:
     virtual void postInit(QSqlQuery &q, const QString &qs);
     /// A lekérdezést végző virtuális metódus.
     /// @par q A lekerdezés eredményét a q objetummal írja az adatbázisba.
-    virtual enum eNotifSwitch run(QSqlQuery& q, QString& runMsg);
+    virtual int run(QSqlQuery& q, QString& runMsg);
     /// MAP az al rlinkstat szolgáltatások, port(ID) szerinti kereséséhez
     QMap<qlonglong, cInspector *>  inspectorMap;
     /// SNMP objektum a lekérdezéshez

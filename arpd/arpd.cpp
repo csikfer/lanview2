@@ -129,7 +129,7 @@ cDeviceArp::~cDeviceArp()
 }
 
 
-enum eNotifSwitch cDeviceArp::run(QSqlQuery& q, QString& runMsg)
+int cDeviceArp::run(QSqlQuery& q, QString& runMsg)
 {
     (void)runMsg;
     _DBGFN() << QChar(' ') << name() << endl;
