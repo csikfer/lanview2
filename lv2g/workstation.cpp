@@ -1199,6 +1199,7 @@ void cWorkstation::_parseObject()
         _changeLinkNode(s, pModelLinkPort, pUi->comboBoxLinkPort);
         pUi->lineEditLinkNodeType->setText(pLinkNode->getName(_sNodeType));
         id = pLinkPort->getId();
+        s  = pLinkPort->getName();
         _setCurrentIndex(s, pUi->comboBoxLinkPort, pModelLinkPort);
 
         cIfType iftype = cIfType::ifType(pLinkPort->getId(_sIfTypeId));
@@ -1229,6 +1230,7 @@ void cWorkstation::_parseObject()
         _changeLinkNode(s, pModelLinkPort2, pUi->comboBoxLinkPort_2);
         pUi->lineEditLinkNodeType_2->setText(pLinkNode2->getName(_sNodeType));
         id = pLinkPort2->getId();
+        s  = pLinkPort2->getName();
         _setCurrentIndex(s, pUi->comboBoxLinkPort_2, pModelLinkPort2);
 
         cIfType iftype = cIfType::ifType(pLinkPort2->getId(_sIfTypeId));
