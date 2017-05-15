@@ -1480,10 +1480,6 @@ bool cWorkstation::_changePortType(bool primary, int cix)
         WENABLE(comboBoxLinkPortShare_2, false);
         WENABLE(pushButtonLinkOther_2, false);
         WENABLE(lineEditLinkNote_2, false);
-        WENABLE(checkBoxSrvIns_2, false);
-        WENABLE(checkBoxSrvDel_2, false);
-        WENABLE(checkBoxSrvEna_2, false);
-        WENABLE(lineEditSrvNote_2, false);
         return false;
     }
     cNPort *pPort = primary ? pPort1() : pPort2(EX_IGNORE);

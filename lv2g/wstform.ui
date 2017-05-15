@@ -989,68 +989,6 @@
          </item>
         </layout>
        </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayoutSrv">
-         <item>
-          <widget class="QLabel" name="labelSrv">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-           <property name="text">
-            <string>Jelenlét érzékelés (indalarm riasztás) :</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="checkBoxSrvIns">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="text">
-            <string>Létrehoz</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="checkBoxSrvDel">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="text">
-            <string>Töröl</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="checkBoxSrvEna">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="text">
-            <string>Engedélyez</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayoutSrvNote">
-         <item>
-          <widget class="QLabel" name="labelSrvNote">
-           <property name="text">
-            <string>Megjegyzés (a riasztáshoz) :</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="lineEditSrvNote">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
       </layout>
      </widget>
      <widget class="QFrame" name="frameLink_2">
@@ -1318,68 +1256,6 @@
          </item>
         </layout>
        </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayoutSrv_2">
-         <item>
-          <widget class="QLabel" name="labelSrv_2">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-           <property name="text">
-            <string>Jelenlét érzékelés (indalarm riasztás) :</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="checkBoxSrvIns_2">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="text">
-            <string>Létrehoz</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="checkBoxSrvDel_2">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="text">
-            <string>Töröl</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="checkBoxSrvEna_2">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="text">
-            <string>Engedélyez</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayoutSrvNote_2">
-         <item>
-          <widget class="QLabel" name="labelSrvNote_2">
-           <property name="text">
-            <string>Megjegyzés (a riasztáshoz) :</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="lineEditSrvNote_2">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
       </layout>
      </widget>
     </widget>
@@ -1535,10 +1411,6 @@
   <tabstop>radioButtonLinkFront</tabstop>
   <tabstop>radioButtonLinkBack</tabstop>
   <tabstop>lineEditLinkNote</tabstop>
-  <tabstop>checkBoxSrvIns</tabstop>
-  <tabstop>checkBoxSrvDel</tabstop>
-  <tabstop>checkBoxSrvEna</tabstop>
-  <tabstop>lineEditSrvNote</tabstop>
   <tabstop>lineEditPName_2</tabstop>
   <tabstop>comboBoxPType_2</tabstop>
   <tabstop>lineEditPNote_2</tabstop>
@@ -1554,10 +1426,6 @@
   <tabstop>radioButtonLinkFront_2</tabstop>
   <tabstop>radioButtonLinkBack_2</tabstop>
   <tabstop>lineEditLinkNote_2</tabstop>
-  <tabstop>checkBoxSrvIns_2</tabstop>
-  <tabstop>checkBoxSrvDel_2</tabstop>
-  <tabstop>checkBoxSrvEna_2</tabstop>
-  <tabstop>lineEditSrvNote_2</tabstop>
   <tabstop>textEditMsg</tabstop>
   <tabstop>pushButtonSave</tabstop>
   <tabstop>pushButtonCancel</tabstop>
