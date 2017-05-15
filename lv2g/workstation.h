@@ -59,7 +59,7 @@ private:
     int _changeLinkNode(const QString &nodeName, cRecordListModel *pModelPort, QComboBox * pComboBoxPort,
                         cPatch *pNode = NULL, cRecordAny *pPort = NULL,
                         ePhsLinkType  *pLinkType = NULL, ePortShare *pLinkShared = NULL);
-    int _changeLinkPort(const QString& s,
+    int _changeLinkPort(qlonglong portId,
                         QButtonGroup * pLinkType, QComboBox *pComboBoxShare, eTristate _isPatch,
                         cRecordAny *pPort = NULL, ePhsLinkType *pType = NULL, ePortShare *pShare = NULL);
     Ui::wstWidget   *pUi;

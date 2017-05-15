@@ -582,13 +582,13 @@ int cWorkstation::_changeLinkNode(const QString& nodeName, cRecordListModel *pMo
     return r;
 }
 
-int cWorkstation::_changeLinkPort(const QString& s,
+int cWorkstation::_changeLinkPort(qlonglong portId,
                                         QButtonGroup * pLinkType, QComboBox *pComboBoxShare, eTristate _isPatch,
                                         cRecordAny *pPort, ePhsLinkType *pType, ePortShare *pShare)
 {
     int r = IS_OK;
     LOCKSLOTS();    // !!
-    if (s.isEmpty()) {
+    if (portId == NULL_ID) {
         if (pPort  != NULL) pPort->clear();
         if (pType  != NULL) *pType = LT_INVALID;
         if (pShare != NULL) *pShare = ES_NC;
@@ -602,7 +602,7 @@ int cWorkstation::_changeLinkPort(const QString& s,
     else {
         eTristate isPatch = _isPatch;
         if (pPort != NULL) {
-            pPort->setByName(*pq, s);
+            pPort->setById(*pq, portId);
             isPatch = pPort->getId(_sIfTypeId) == cIfType::ifTypeId(_sPatch) ? TS_TRUE : TS_FALSE;
         }
         if (pShare != NULL) *pShare = ES_;
@@ -1198,12 +1198,12 @@ void cWorkstation::_parseObject()
         _setCurrentIndex(s, pUi->comboBoxLinkNode);
         _changeLinkNode(s, pModelLinkPort, pUi->comboBoxLinkPort);
         pUi->lineEditLinkNodeType->setText(pLinkNode->getName(_sNodeType));
-        s = pLinkPort->getName();
+        id = pLinkPort->getId();
         _setCurrentIndex(s, pUi->comboBoxLinkPort, pModelLinkPort);
 
         cIfType iftype = cIfType::ifType(pLinkPort->getId(_sIfTypeId));
         eTristate isPatch = iftype.getName() == _sPatch ? TS_TRUE : TS_FALSE;
-        states.link = _changeLinkPort(s, pLinkButtonsLinkType, pUi->comboBoxLinkPortShare, isPatch);
+        states.link = _changeLinkPort(id, pLinkButtonsLinkType, pUi->comboBoxLinkPortShare, isPatch);
         if (isPatch == TS_TRUE) {
             _setCurrentIndex(portShare(linkShared), pUi->comboBoxLinkPortShare);
             pUi->comboBoxLinkPortShare->setEnabled(true);
@@ -1216,7 +1216,7 @@ void cWorkstation::_parseObject()
     else {
         _changeLinkNode(_sNul, pModelLinkPort, pUi->comboBoxLinkPort);
         pUi->lineEditLinkNodeType->setText(_sNul);
-        states.link = _changeLinkPort(_sNul, pLinkButtonsLinkType, pUi->comboBoxLinkPortShare, TS_NULL);
+        states.link = _changeLinkPort(NULL_ID, pLinkButtonsLinkType, pUi->comboBoxLinkPortShare, TS_NULL);
     }
     // Link port 2:
     if (linkType2 != LT_INVALID) {      // Van linkje
@@ -1228,12 +1228,12 @@ void cWorkstation::_parseObject()
         _setCurrentIndex(s, pUi->comboBoxLinkNode_2);
         _changeLinkNode(s, pModelLinkPort2, pUi->comboBoxLinkPort_2);
         pUi->lineEditLinkNodeType_2->setText(pLinkNode2->getName(_sNodeType));
-        s = pLinkPort2->getName();
+        id = pLinkPort2->getId();
         _setCurrentIndex(s, pUi->comboBoxLinkPort_2, pModelLinkPort2);
 
         cIfType iftype = cIfType::ifType(pLinkPort2->getId(_sIfTypeId));
         eTristate isPatch = iftype.getName() == _sPatch ? TS_TRUE : TS_FALSE;
-        states.link2 = _changeLinkPort(s, pLinkButtonsLinkType2, pUi->comboBoxLinkPortShare_2, isPatch);
+        states.link2 = _changeLinkPort(id, pLinkButtonsLinkType2, pUi->comboBoxLinkPortShare_2, isPatch);
         if (isPatch == TS_TRUE) {
            _setCurrentIndex(portShare(linkShared2), pUi->comboBoxLinkPortShare_2);
             pUi->comboBoxLinkPortShare_2->setEnabled(true);
@@ -1246,7 +1246,7 @@ void cWorkstation::_parseObject()
     else {
         _changeLinkNode(_sNul, pModelLinkPort2, pUi->comboBoxLinkPort_2);
         pUi->lineEditLinkNodeType_2->setText(_sNul);
-        states.link2 = _changeLinkPort(_sNul, pLinkButtonsLinkType2, pUi->comboBoxLinkPortShare_2, TS_NULL);
+        states.link2 = _changeLinkPort(NULL_ID, pLinkButtonsLinkType2, pUi->comboBoxLinkPortShare_2, TS_NULL);
     }
 
     withinSlot--;
@@ -2072,8 +2072,8 @@ void cWorkstation::linkNodeCurrentIndex(int i)
 void cWorkstation::linkPortCurrentIndex(int i)
 {
     BEGINSLOT(i);
-    QString s = pModelLinkPort->at(i);
-    states.link = _changeLinkPort(s, pLinkButtonsLinkType, pUi->comboBoxLinkPortShare, TS_NULL, pLinkPort, &linkType, &linkShared);
+    qlonglong id = pModelLinkPort->atId(i);
+    states.link = _changeLinkPort(id, pLinkButtonsLinkType, pUi->comboBoxLinkPortShare, TS_NULL, pLinkPort, &linkType, &linkShared);
     states.link = _linkTest(*pq, states.link, states.modify, pPort1()->getId(), pLinkPort->getId(), linkType, linkShared, linkInfoMsg);
     ENDSLOTM();
 }
@@ -2209,8 +2209,8 @@ void cWorkstation::linkNodeCurrentIndex2(int i)
 void cWorkstation::linkPortCurrentIndex2(int i)
 {
     BEGINSLOT(i);
-    QString s = pModelLinkPort2->at(i);
-    states.link2 = _changeLinkPort(s, pLinkButtonsLinkType2, pUi->comboBoxLinkPortShare_2, TS_NULL, pLinkPort2, &linkType2, &linkShared2);
+    qlonglong id = pModelLinkPort2->atId(i);
+    states.link2 = _changeLinkPort(id, pLinkButtonsLinkType2, pUi->comboBoxLinkPortShare_2, TS_NULL, pLinkPort2, &linkType2, &linkShared2);
     states.link2 = _linkTest(*pq, states.link2, states.modify, pPort2()->getId(), pLinkPort2->getId(), linkType2, linkShared2, linkInfoMsg2);
     ENDSLOTM();
 }
