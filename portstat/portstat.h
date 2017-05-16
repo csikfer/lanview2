@@ -29,7 +29,7 @@ public:
     /// Destruktor
     ~cDevicePSt();
     ///
-    virtual void postInit(QSqlQuery &q, const QString &qs);
+    virtual void postInit(QSqlQuery &_q, const QString &qs);
     /// A lekérdezést végző virtuális metódus.
     /// @par q A lekerdezés eredményét a q objetummal írja az adatbázisba.
     virtual int run(QSqlQuery& q, QString& runMsg);

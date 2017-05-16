@@ -1,4 +1,5 @@
 #include "lv2g.h"
+#include "mainwindow.h"
 #include "cerrormessagebox.h"
 #include "logon.h"
 
@@ -18,11 +19,12 @@ lv2g::lv2g() :
 {
     if (lastError != 0) return;
     try {
+        new cMainWindow;
         zoneId = NULL_ID;
         #include "errcodes.h"
 //        pDesign = new lv2gDesign(this);
         if (dbIsOpen()) {
-            switch (cLogOn::logOn(zoneNeeded ? &zoneId : NULL)) {
+            switch (cLogOn::logOn(zoneNeeded ? &zoneId : NULL, pMainWindow)) {
             case LR_OK:         break;
             case LR_INVALID:    EXCEPTION(ELOGON, LR_INVALID, trUtf8("Tul sok hibás bejelentkezési próbálkozás."));
             case LR_CANCEL:     EXCEPTION(ELOGON, LR_CANCEL, trUtf8("Mégsem."));
@@ -169,7 +171,7 @@ const QColor& bgColorByEnum(const QString& __t, int e)
         const cColEnumType *pType = cColEnumType::fetchOrGet(q, __t, EX_IGNORE);
         int n;
         if (pType == NULL) {        // boolean ??
-            if (__t.count(QChar('.') != 1)) EXCEPTION(EFOUND, 0, __t);
+            if (__t.count(QChar('.')) != 1) EXCEPTION(EFOUND, 0, __t);
             n = 3;
         }
         else {
@@ -209,7 +211,7 @@ const QColor& fgColorByEnum(const QString& __t, int e)
         const cColEnumType *pType = cColEnumType::fetchOrGet(q, __t, EX_IGNORE);
         int n;
         if (pType == NULL) {        // boolean ??
-            if (__t.count(QChar('.') != 1)) EXCEPTION(EFOUND, 0, __t);
+            if (__t.count(QChar('.')) != 1) EXCEPTION(EFOUND, 0, __t);
             n = 3;
         }
         else {

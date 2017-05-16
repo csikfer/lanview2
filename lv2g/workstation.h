@@ -150,7 +150,6 @@ private:
     void _linkToglePlaceEqu(bool primary, bool f) { _linkToglePlaceEqu(primary, f ? TS_TRUE : TS_FALSE); }
     void _linkToglePlaceEqu(bool primary, eTristate __f = TS_NULL);
     void _setLinkType(bool primary);
-    void _setAlarmState(bool primary);
     void _setMessage();
     void _completionObject();
     void _clearNode();

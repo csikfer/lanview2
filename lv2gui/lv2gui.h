@@ -21,7 +21,6 @@ public:
     lv2Gui();
     ~lv2Gui();
     bool        dbIsOpen;       ///< Ha az adatbázis nyitva, akkor true, egyébként false
-    cMainWindow *pMainWindow;
     static bool _setup;
     static enum eScreen { NORMAL, MAXIMIZE, FULLSCREEN } _screen;
     static int  _nScreen;

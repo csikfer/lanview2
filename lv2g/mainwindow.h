@@ -18,6 +18,8 @@ public:
     /// Ha _setupOnly false, akkor üres üres tab mellett, felolvassa az adatbáziskól a menüt, és megjeleníti.
     cMainWindow(QWidget *parent = 0);
     ~cMainWindow();
+    /// Init
+    void init();
     /// A QMdiArea objektum pointere, a fő ablak munkaterülete.
     QMdiArea   *pMdiArea;
 private:

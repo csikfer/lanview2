@@ -99,12 +99,14 @@ eLogOnResult    cLogOn::checkState()
 
 eLogOnResult cLogOn::logOn(qlonglong *pZoneId, QWidget *par)
 {
-    cLogOn  dialog(pZoneId != NULL, par);
-    dialog.exec();
+    cLogOn  *pDialog = new cLogOn(pZoneId != NULL, par);
+    pDialog->exec();
     if (pZoneId) {
-        *pZoneId = dialog.getZoneId();
+        *pZoneId = pDialog->getZoneId();
     }
-    return dialog._state;
+    eLogOnResult r = pDialog->_state;
+    delete pDialog;
+    return r;
 }
 
 qlonglong cLogOn::getZoneId() const

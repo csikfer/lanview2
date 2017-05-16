@@ -2519,6 +2519,7 @@ delete  : DELETE_T PLACE_T strs ';'             { foreach (QString s, *$3) { cPl
         | DELETE_T GROUP_T strs ';'             { foreach (QString s, *$3) { cGroup(). delByName(qq(), s, true); }       delete $3; }
         | DELETE_T PATCH_T strs ';'             { foreach (QString s, *$3) { cPatch(). delByName(qq(), s, true, true); } delete $3; }
         | DELETE_T NODE_T  strs ';'             { foreach (QString s, *$3) { cNode().  delByName(qq(), s, true, false); }delete $3; }
+        | DELETE_T PORT_T str ':' strs ';'      { foreach (QString s, *$5) { cNPort::delPortByName(qq(), *$3, s, true); }delete $3; delete $5; }
         | DELETE_T VLAN_T  strs ';'             { foreach (QString s, *$3) { cVLan().  delByName(qq(), s, true); }       delete $3; }
         | DELETE_T SUBNET_T strs ';'            { foreach (QString s, *$3) { cSubNet().delByName(qq(), s, true); }       delete $3; }
         | DELETE_T SERVICE_T strs ';'           { foreach (QString s, *$3) { cService().delByName(qq(),s, true); }       delete $3; }

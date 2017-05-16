@@ -4,6 +4,7 @@
 #include "lv2link.h"
 #include "record_dialog.h"
 #include "object_dialog.h"
+#include "report.h"
 #include "workstation.h"
 #include "ui_wstform.h"
 #include "ui_phslinkform.h"
@@ -775,61 +776,6 @@ void cWorkstation::_setLinkType(bool primary)
     }
 }
 
-void cWorkstation::_setAlarmState(bool primary)
-{
-    (void)primary; /*
-    bool alarmPosible = false;
-    if (primary && states.link != IS_OK) {
-        states.alarmPossibe = alarmPosible = false;
-    }
-    else if (!primary && states.link2 != IS_OK) {
-        states.alarm2Possibe = alarmPosible = false;
-    }
-    else {
-        cRecord *pLPort = primary ? pLinkPort : pLinkPort2;
-        qlonglong pid = pLPort->getId();
-        qlonglong nid = pLPort->getId(_sNodeId);
-        qlonglong hsid = NULL_ID;
-        if (primary) {
-            qlonglong sid = cService::name2id(*pq, "pstat");
-            cHostService hs;
-            if (hs.fetchByIds(*pq, nid, sid, EX_IGNORE)) {
-                hsid = hs.getId();
-            }
-        }
-        else {
-            QString nn = cNode().getNameById(*pq, nid);
-            cHostService hs;
-            if (1 == hs.fetchByNames(*pq, nn, "indalarmif%", EX_IGNORE)) {
-                hsid = hs.getId();
-            }
-        }
-
-    }
-
-
-
-
-    if (!alarmPosible) {
-        if (primary) {
-            states.alarmNew = states.alarmOld = IS_NONEXIST;
-            buttonSets(pUi->checkBoxSrvIns, false, false);
-            buttonSets(pUi->checkBoxSrvDel, false, false);
-            buttonSets(pUi->checkBoxSrvEna, false, false);
-            pUi->lineEditSrvNote->setEnabled(false);
-        }
-        else {
-            states.alarm2New = states.alarm2Old = IS_NONEXIST;
-            buttonSets(pUi->checkBoxSrvIns_2, false, false);
-            buttonSets(pUi->checkBoxSrvDel_2, false, false);
-            buttonSets(pUi->checkBoxSrvEna_2, false, false);
-            pUi->lineEditSrvNote_2->setEnabled(false);
-        }
-        return;
-    }
-*/
-}
-
 void cWorkstation::_setMessage()
 {
     _DBGFN() << VDEB(withinSlot) << endl;
@@ -839,10 +785,21 @@ void cWorkstation::_setMessage()
         infText += info(QObject::trUtf8("Első port :"));
         if (!addrCollisionInfo.isEmpty()) infText += warning(addrCollisionInfo);
         infText += linkInfoMsg;
+
+    }
+    if (states.macNeed && states.mac == IS_OK) {
+        QString sMac = pPort1()->getName(_sHwAddress);
+        infText += warning(sMac);
+        infText += reportByMac(*pq, sMac);
     }
     if (!linkInfoMsg2.isEmpty()) {
         infText += info(QObject::trUtf8("Második port :"));
         infText += linkInfoMsg2;
+    }
+    if (states.mac2need && states.mac2 == IS_OK) {
+        QString sMac = pPort2()->getName(_sHwAddress);
+        infText += warning(sMac);
+        infText += reportByMac(*pq, sMac);
     }
     QString errText;
     bool ok = true;

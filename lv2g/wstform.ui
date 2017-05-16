@@ -210,7 +210,11 @@
              </widget>
             </item>
             <item row="0" column="1">
-             <widget class="QComboBox" name="comboBoxNode"/>
+             <widget class="QComboBox" name="comboBoxNode">
+              <property name="editable">
+               <bool>false</bool>
+              </property>
+             </widget>
             </item>
             <item row="1" column="0">
              <widget class="QLabel" name="labelNewName">
@@ -270,7 +274,11 @@
             <item row="4" column="1">
              <layout class="QHBoxLayout" name="horizontalLayoutPlace">
               <item>
-               <widget class="QComboBox" name="comboBoxPlace"/>
+               <widget class="QComboBox" name="comboBoxPlace">
+                <property name="editable">
+                 <bool>false</bool>
+                </property>
+               </widget>
               </item>
               <item>
                <widget class="QToolButton" name="toolButtonAddPlace">

@@ -22,20 +22,16 @@ void cRecordLink::init()
     pTableView = NULL;
     // A read-only flag eket újra ki kell értékelni! (most mind true)
     isReadOnly = pTableShape->getBool(_sTableShapeType, TS_READ_ONLY);
-    isReadOnly = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sEditRights));
     isNoDelete = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sRemoveRights));
     isNoInsert = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sInsertRights));
+    isReadOnly = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sEditRights));
 
     // Az alapértelmezett gombok:
     buttons << DBT_SPACER << DBT_REFRESH << DBT_FIRST << DBT_PREV << DBT_NEXT << DBT_LAST;
-    if (!isReadOnly) {
-        if (linkType == LT_LLDP) {
-            buttons << DBT_SPACER << DBT_COMPLETE;
-        }
-        else {
-            buttons << DBT_BREAK << DBT_SPACER << DBT_DELETE << DBT_INSERT << DBT_MODIFY;
-        }
-    }
+    buttons << DBT_SPACER;
+    if (!isNoDelete) buttons << DBT_DELETE;
+    if (!isReadOnly) buttons << DBT_MODIFY;
+    if (!isNoInsert) buttons << DBT_INSERT;
     flags = 0;
     switch (shapeType) {
     case ENUM2SET2(TS_CHILD, TS_LINK):

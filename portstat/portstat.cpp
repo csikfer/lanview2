@@ -139,10 +139,10 @@ cDevicePSt::~cDevicePSt()
     ;
 }
 
-void cDevicePSt::postInit(QSqlQuery &q, const QString&)
+void cDevicePSt::postInit(QSqlQuery &_q, const QString&)
 {
     DBGFN();
-    cInspector::postInit(q);
+    cInspector::postInit(_q);
     if (pSubordinates != NULL)
         EXCEPTION(EDATA, -1,
                   trUtf8("A 'superior=custom'' nem volt megadva? (feature = %1) :\n%2")
@@ -157,14 +157,14 @@ void cDevicePSt::postInit(QSqlQuery &q, const QString&)
     hsf.setBool(_sDeleted,  false);                         // vagy törölve
     hsf.setBool(_sFlag, true);
     QBitArray hsfWhereBits = hsf.mask(_sSuperiorHostServiceId, _sDisabled, _sDeleted);
-    hsf.update(q, false, hsf.mask(_sFlag), hsfWhereBits, EX_ERROR);
+    hsf.update(_q, false, hsf.mask(_sFlag), hsfWhereBits, EX_ERROR);
     // A host eredeti objektum típusa
     cSnmpDevice& dev = snmpDev();
-    if (0 != dev.open(q, snmp, EX_IGNORE)) {
-        hostService.setState(q, _sUnreachable, "SNMP Open error: " + snmp.emsg);
+    if (0 != dev.open(_q, snmp, EX_IGNORE)) {
+        hostService.setState(_q, _sUnreachable, "SNMP Open error: " + snmp.emsg);
         EXCEPTION(EOK);
     }
-    dev.fetchPorts(q);
+    dev.fetchPorts(_q);
     tRecordList<cNPort>::iterator it, n = dev.ports.end();
     for (it = dev.ports.begin(); it != n; ++it) {      // Végigvesszük a portokat
         cNPort     *pPort    = *it;
@@ -180,22 +180,22 @@ void cDevicePSt::postInit(QSqlQuery &q, const QString&)
         qlonglong logl_pid;      // Linkelt port by log_links table
         cLldpLink lldp;
         cLogLink  logl;
-        lldp_pid = lldp.getLinked(q, pid);  // Az LLDP szerint ?
-        logl_pid = logl.getLinked(q, pid);  // A logikai linkek szerint
+        lldp_pid = lldp.getLinked(_q, pid);  // Az LLDP szerint ?
+        logl_pid = logl.getLinked(_q, pid);  // A logikai linkek szerint
         if (lldp_pid != NULL_ID && logl_pid != NULL_ID && lldp_pid != logl_pid) { // Ez egy ellentmondás!!!
             // A probléma leírása :
             wMsg = trUtf8(
                         "A %1 port logikai linkje a %2 porthoz, ötközik az LLDP linkkel a %3 porthoz."
                         " Szolgáltatás példány : %4\n"    )
-                    .arg(pInterface->getFullName(q))
-                    .arg(cNPort::getFullNameById(q, lldp_pid))
-                    .arg(cNPort::getFullNameById(q, logl_pid))
-                    .arg(hostService.names(q));
+                    .arg(pInterface->getFullName(_q))
+                    .arg(cNPort::getFullNameById(_q, lldp_pid))
+                    .arg(cNPort::getFullNameById(_q, logl_pid))
+                    .arg(hostService.names(_q));
             wMsg += lldp.show(true) + "\n";
             wMsg += logl.show(true) + "\n";
             wMsg += trUtf8("A fizikai linkek lánca :\n");
             wMsg += logl.showChain().join("\n");
-            APPMEMO(q, wMsg, RS_WARNING);
+            APPMEMO(_q, wMsg, RS_WARNING);
             lldp_pid = logl_pid = NULL_ID;   // Nem hisszük el egyiket sem
         }
         else if (logl_pid != NULL_ID && lldp_pid != logl_pid && lldp_pid == logl_pid) { // Ez a tuti
@@ -212,12 +212,12 @@ void cDevicePSt::postInit(QSqlQuery &q, const QString&)
         if (lldp_pid == NULL_ID) continue;
         pRLnkSt = new cInspector(this);                             // Passzív (még) üres objektum
         pRLnkSt->service(pRLinkStat->dup()->reconvert<cService>()); // szervíz
-        pRLnkSt->pPort = cNPort::getPortObjById(q, lldp_pid);       // port, .. node
-        pRLnkSt->pNode = cNode::getNodeObjById(q, pRLnkSt->pPort->getId(_sNodeId))->reconvert<cNode>();
+        pRLnkSt->pPort = cNPort::getPortObjById(_q, lldp_pid);       // port, .. node
+        pRLnkSt->pNode = cNode::getNodeObjById(_q, pRLnkSt->pPort->getId(_sNodeId))->reconvert<cNode>();
         cHostService& hs = pRLnkSt->hostService;
          // Van host_services rekord ?
-        hs.fetchByIds(q, pRLnkSt->nodeId(), pRLnkSt->serviceId(), lldp_pid, EX_IGNORE);
-        int n = q.size();
+        hs.fetchByIds(_q, pRLnkSt->nodeId(), pRLnkSt->serviceId(), lldp_pid, EX_IGNORE);
+        int n = _q.size();
         // Több rekord nem lehet(ne), ha töröljük mindet, aminek nem nil a proto és prime szolg.-a,
         // akkor meg kell szünnie a redundanciának.
         if (n  > 1) {
@@ -228,7 +228,7 @@ void cDevicePSt::postInit(QSqlQuery &q, const QString&)
                 if (hsc.getId(_sPrimeServiceId) != cService::nilId || hsc.getId(_sProtoServiceId) != cService::nilId) {
                     QString msg = trUtf8("Hibás host_service objektum : %1\n"
                                      "A rekord törlő gazda (superior) szolgáltatás : %2"
-                                     ).arg(hsc.names(q), hostService.names(q));
+                                     ).arg(hsc.names(_q), hostService.names(_q));
                     hsc.remove(qq);
                     APPMEMO(qq, msg, RS_WARNING);
                     --n;
@@ -236,7 +236,7 @@ void cDevicePSt::postInit(QSqlQuery &q, const QString&)
                 else {
                     hs = hsc;
                 }
-            } while (hsc.next(q));
+            } while (hsc.next(_q));
         }
         if (n  > 1) EXCEPTION(EPROGFAIL, n); // ez képtelenség
         if (n == 1) {   // Van, és (most már) egyedi, ha kell javítjuk
@@ -254,15 +254,15 @@ void cDevicePSt::postInit(QSqlQuery &q, const QString&)
                 QString msg;
                 if (shsid == NULL_ID) {
                     wMsg += trUtf8(" Gazda szolgáltatás (superior) beállítása : NULL -> %1")
-                            .arg(hostService.names(q));
+                            .arg(hostService.names(_q));
                     msg = wMsg;
                     rs = RS_RECOVERED;
                 }
                 else {
                     wMsg += trUtf8(" Gazda szolgáltatás (superior) csere : %1 -> %2")
-                            .arg(cHostService::names(q, shsid))
-                            .arg(hostService.names(q));
-                    msg = wMsg + "\nAktuális service státusz : "
+                            .arg(cHostService::names(_q, shsid))
+                            .arg(hostService.names(_q));
+                    msg = wMsg + trUtf8("\nAktuális service (%1) státusz : ").arg(hs.names(_q))
                         + hs.getName(_sHostServiceState) + ", "
                         + hs.getName(_sHardState) + ", "
                         + hs.getName(_sSoftState) + " utolsó modosítás : "
@@ -271,7 +271,7 @@ void cDevicePSt::postInit(QSqlQuery &q, const QString&)
                     // Fordított logika, ha ok a státusz akkor igazán gáz a váltás
                     rs = hs.getId(_sHostServiceState) > RS_WARNING ? RS_WARNING : RS_CRITICAL;
                 }
-                APPMEMO(q, msg, rs);
+                APPMEMO(_q, msg, rs);
                 hs.setId(_sSuperiorHostServiceId, hsid);
                 sets.setBit(hs.toIndex(_sSuperiorHostServiceId));
             }
@@ -285,7 +285,7 @@ void cDevicePSt::postInit(QSqlQuery &q, const QString&)
             }
             hs.setBool(_sFlag, false);  // Mienk, töröljük a flag-et
             sets.setBit(hs.toIndex(_sFlag));
-            hs.update(q, true, sets);
+            hs.update(_q, true, sets);
         }
         else {          // Nincs (már vagy még) létrehozzuk
             hs.clear();
@@ -300,19 +300,19 @@ void cDevicePSt::postInit(QSqlQuery &q, const QString&)
             hs.setNote(note + wMsg);
             // Nem kérünk riasztást az automatikusan generált rekordhoz.
             hs.setName(_sNoalarmFlag, _sOn);
-            hs.insert(q);
+            hs.insert(_q);
         }
         *pSubordinates << pRLnkSt;
         inspectorMap[pid] = pRLnkSt;
     }
     hsfWhereBits.setBit(hsf.toIndex(_sFlag));   // Ha maradt a true flag, akkor leválasztjuk
     hsf.clear(_sSuperiorHostServiceId);
-    QString msg = trUtf8("Leválasztva %1 ről.").arg(hostService.names(q));
+    QString msg = trUtf8("Leválasztva %1 ről.").arg(hostService.names(_q));
     hsf.setNote(msg);
-    int un = hsf.update(q, false, hsf.mask(_sSuperiorHostServiceId, _sHostServiceNote), hsfWhereBits, EX_ERROR);
+    int un = hsf.update(_q, false, hsf.mask(_sSuperiorHostServiceId, _sHostServiceNote), hsfWhereBits, EX_ERROR);
     if (un > 0) {
         msg += trUtf8(" %1 services.").arg(un);
-        APPMEMO(q, msg, RS_WARNING);
+        APPMEMO(_q, msg, RS_WARNING);
     }
 }
 

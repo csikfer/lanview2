@@ -86,7 +86,8 @@ SOURCES += lanview.cpp \
     srvdata.cpp \
     lv2link.cpp \
     vardata.cpp \
-    variable.cpp
+    variable.cpp \
+    report.cpp
 
 HEADERS += lanview.h \
     lv2_global.h \
@@ -115,7 +116,8 @@ HEADERS += lanview.h \
     srvdata.h \
     lv2link.h \
     vardata.h \
-    variable.h
+    variable.h \
+    report.h
 
 #FORMS +=
 

@@ -106,11 +106,10 @@ int  lv2Gui::_nScreen = 1;
 lv2Gui::lv2Gui() : lv2g()
 {
     DBGFN();
-    pMainWindow = NULL;
-    if (!lastError) {
+    if (lastError == NULL) {
         try {
-            pMainWindow = new cMainWindow();
-            pMainWindow->show();
+            if (pMainWindow == NULL) EXCEPTION(EPROGFAIL);
+            pMainWindow->init();
         } CATCHS(lastError)
     }
     DBGFNL();

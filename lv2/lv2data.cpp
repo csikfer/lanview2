@@ -1318,6 +1318,18 @@ QString cNPort::getFullNameById(QSqlQuery& q, qlonglong _id)
     return execSqlTextFunction(q, "port_id2full_name", _id);
 }
 
+int cNPort::delPortByName(QSqlQuery &q, const QString &_nn, const QString &_pn, bool __pat)
+{
+    qlonglong nid = cPatch().getIdByName(_nn);
+    QString sql = "DELETE FROM nports"
+          " WHERE port_name" + QString(__pat ? " LIKE " : " = ") + quoted(_pn)
+          + " AND node_id = " + QString::number(nid);
+    if (!q.exec(sql)) SQLPREPERR(q, sql);
+    int n = q.numRowsAffected();
+    return  n;
+}
+
+
 QString  cNPort::getTextParam(qlonglong _typeId, eEx __ex) const
 {
     const cPortParam *ppp = params.get(_sParamTypeId, _typeId, __ex);

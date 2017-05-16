@@ -8,6 +8,7 @@
 cMainWindow::cMainWindow(QWidget *parent) :
     QMainWindow(parent)
 {
+    if (lv2g::pMainWindow != NULL) EXCEPTION(EPROGFAIL);
     lv2g::pMainWindow = this;
     QString title = trUtf8("LanView %1 V%2, API V%3")
             .arg(lanView::appName, lanView::appVersion, lanView::libVersion);
@@ -20,8 +21,12 @@ cMainWindow::cMainWindow(QWidget *parent) :
     pMdiArea->setViewMode(QMdiArea::TabbedView);
     pMdiArea->setTabsMovable(true);
     pMdiArea->setTabsClosable(true);
-    // Central Widget
     setCentralWidget(pMdiArea);
+}
+
+void cMainWindow::init()
+{
+    // Central Widget
     if (!lanView::dbIsOpen()) {   // Minimalista setup, nincs adatbázisunk, vagy csak ez kell
         setSetupMenu();
     }

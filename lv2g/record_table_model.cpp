@@ -262,12 +262,21 @@ void cRecordTableModel::removeRecords(const QModelIndexList &mil)
 {
     QBitArray   rb = index2map(mil);
     if (rb.count(true) == 0) return;
+    QString text = trUtf8("Valóban törölni akarja a kijelölt objektumo(ka)t ?\n") + sIrrevocable;
+    text += trUtf8("\nTörlésre kijelölt objektu(mok) :");
+    int s = rb.size();    // Az összes rekord száma
+    for (int i = 0; i < s; ++i) {   // végigszaladunk a sorokon
+        if (rb[i]) {
+            cRecord * p = _records.at(i);
+            text += trUtf8("\n %1 tábla : ").arg(p->tableName()) + p->identifying(false);
+        }
+    }
+
     int b = QMessageBox::warning(recordView.pWidget(),
                          trUtf8("Kijelölt objektu(mo)k törlése!"),
-                         trUtf8("Valóban törölni akarja a kijelölt objektumo(ka)t ?\n") + sIrrevocable,
+                         text,
                          QMessageBox::Ok, QMessageBox::Cancel);
     if (b != QMessageBox::Ok) return;
-    int s = rb.size();    // Az összes rekord száma
     for (int i = s - 1; i >= 0; --i) {   // végigszaladunk a sorokon, visszafelé
         if (rb[i]) removeRec(index(i, 0));
     }

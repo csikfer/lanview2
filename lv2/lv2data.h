@@ -845,6 +845,7 @@ public:
     /// @param q Az adatbázis lekérdezéshez használt query objektum.
     QString getFullName(QSqlQuery& q, enum eEx __ex = EX_ERROR) const;
     static QString getFullNameById(QSqlQuery& q, qlonglong _id);
+    static int delPortByName(QSqlQuery &q, const QString &_nn, const QString &_pn, bool __pat);
     /// Port paraméterek, nincs automatikusan feltöltve
     tOwnRecords<cPortParam, cNPort>   params;
     ///
