@@ -804,7 +804,7 @@ void cFieldLineWidget::setFromEdit()
     if (_wType == FEW_LINE) s = pLineEdit()->text();
     else                    s = pTextEdit()->toPlainText();
     QVariant v; // NULL
-    if (!(isPwd && s.isEmpty())) {
+    if (!s.isEmpty() || !(isPwd || _nullable || (_isInsert && _hasDefault))) {
         v = QVariant(s);
     }
     setFromWidget(v);
