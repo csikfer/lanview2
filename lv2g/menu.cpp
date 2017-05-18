@@ -187,6 +187,7 @@ void cMenuAction::displayIt()
         EXCEPTION(EPROGFAIL, -1, trUtf8("pMdiArea is NULL"));
     }
     if (pIntSubObj == NULL) {
+        cnt = 1;
         switch (type) {
         case MAT_SHAPE:     initRecordTable();                          break;
         case MAT_OWN:       initInt();                                  break;
@@ -194,6 +195,17 @@ void cMenuAction::displayIt()
         default:            EXCEPTION(EPROGFAIL,-1,"Invalid signal.");  break;
         }
         pIntSubObj->setWindowTitle(pMenuItem->getName(_sTabTitle));
+    }
+    else {
+        // Tábla, több példányos
+        if (MAT_SHAPE == type && pMenuItem->isFeature("multi")) {
+            cIntSubObj *p = new cTableSubWin(objectName(), pMdiArea);
+            p->setWindowTitle(pMenuItem->getName(_sTabTitle) + QString(" (%1)").arg(++cnt));
+            connect(p,             SIGNAL(closeIt()),   this, SLOT(deleteLater()));
+            pMdiArea->setActiveSubWindow(p->pSubWindow);
+            p->pWidget()->show();
+            return;
+        }
     }
     pMdiArea->setActiveSubWindow(pIntSubObj->pSubWindow);
     pIntSubObj->pWidget()->show();

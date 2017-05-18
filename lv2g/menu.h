@@ -61,6 +61,7 @@ public:
     cMenuItem   *pMenuItem;
     /// Amennyiben egy belső widget/sub window, akkor a bázis objektum pointere
     cIntSubObj     *pIntSubObj;
+    int cnt;
     enum eIntSubWin  intType;
     /// Amennyiben egy dialógus ablakként jelenik meg, akkor a dialogus ablak pointere
     QDialog         *pDialog;

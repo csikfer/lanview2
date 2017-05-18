@@ -1446,6 +1446,10 @@ QVariant  cColStaticDescrAddr::toSql(const QVariant& _f) const
     if (r.toString().isEmpty()) EXCEPTION(EDATA,-1,QObject::trUtf8("Invalid data type."));
     return r;
 }
+
+/// A mező adat letárolása.
+/// MAC tíous esetén cMac típusú adat lessz a QVariant értékbe letárolva.
+/// Más címek esetén pedig netAddress objektum.
 QVariant  cColStaticDescrAddr::set(const QVariant& _f, qlonglong &str) const
 {
     int mtid = _f.userType();

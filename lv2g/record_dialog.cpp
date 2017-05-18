@@ -422,7 +422,9 @@ void cRecordDialog::init()
         if (_pOwnerTable != NULL && _pOwnerTable->owner_id != NULL_ID) {  // Ha van owner, akkor az ID-jét beállítjuk
             int flags = _pOwnerTable->flags;
             if (flags & RTF_CHILD) {
-                int oix = _pRecord->descr().ixToOwner();
+                int oix;
+                if (_pOwnerTable == NULL) oix = _pRecord->descr().ixToOwner();
+                else                      oix = _pOwnerTable->ixToOwner();
                 _pRecord->setId(oix, _pOwnerTable->owner_id);
             }
         }

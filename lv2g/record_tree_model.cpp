@@ -358,9 +358,10 @@ int cRecordTreeModel::updateRec(const QModelIndex& mi, cRecord *pRec)
     int row = mi.row(); // A modosított rekord eredeti sorszáma a parentjében
     cTreeNode *pn = nodeFromIndex(mi);  // A modosított elem (node)
     cTreeNode *pp = pn->parent;         // A szülő
-    // Az eredeti sort eltávolítjuk.
     switch (chkr) {
     case 1: {
+        delete pn->pData;
+        pn->pData = pRec;
         QModelIndex topLeft     = index(row, 0,                    mi.parent());
         QModelIndex bottomRight = index(row, _col2field.size() -1, mi.parent());
         dataChanged(topLeft, bottomRight);
