@@ -117,10 +117,13 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
     // Csinálunk a releváns portokhoz egy index táblát
     for (i = host().ports.begin(); i < host().ports.end(); ++i) {
         cNPort  &np = **i;
-        np.fetchParams(__q);
-        eTristate queryFlag = np.getBoolParam(queryMacTabTypeId, EX_IGNORE);
         int ix = -1;
         if (np.descr() < cInterface::_descr_cInterface()) continue; // buta portok érdektelenek
+        np.fetchParams(__q);
+        eTristate queryFlag = np.getBoolParam(queryMacTabTypeId, EX_IGNORE);
+        // Ha van "query_mac_tab" paraméter, és hamis, akkor tiltott a lekérdezés a portra
+        // Ha van "suspected_uplink" paraméter, és igaz, akkor nem foglalkozunk vele (csiki-csuki elkerülése)
+        if (queryFlag == TS_FALSE || np.getBoolParam(suspectrdUpLinkTypeId, EX_IGNORE) == TS_TRUE) continue;
         QString ifTypeName = np.ifType().getName();
         if (ifTypeName == _sEthernet) {
             // Ha ez egy TRUNK tagja, akkor nem érdekes.
@@ -128,7 +131,7 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
             // Ki kéne még hajítani az uplinkeket
             if (NULL_ID != cLldpLink().getLinked(__q, np.getId())) { // Ez egy LLDP-vel felderített uplink
                 // Ha van "query_mac_tab" paraméter, és igaz, akkor a link ellenére lekérdezzük
-                if (queryFlag == TS_TRUE) continue;
+                if (queryFlag != TS_TRUE) continue;
             }
             // mehet a ports konténerbe az indexe
         }
@@ -184,9 +187,6 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
             // Más típusű port nem érdekes.
             continue;
         }
-        // Ha van "query_mac_tab" paraméter, és hamis, akkor tiltott a lekérdezés a portra
-        // Ha van "suspected_uplink" paraméter, és igaz, akkor nem foglalkozunk vele (csiki-csuki elkerülése)
-        if (queryFlag == TS_FALSE || np.getBoolParam(suspectrdUpLinkTypeId, EX_IGNORE) == TS_TRUE) continue;
         ports.insert((int)np.getId(_sPortIndex), np.reconvert<cInterface>());
     }
 }
