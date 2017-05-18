@@ -95,6 +95,7 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
     : cInspector(__q, __host_service_id, __tableoid, _par)
     , snmp()
 {
+    _DBGFN() << hostService.names(__q) << endl;
     QString msg;
     static const qlonglong suspectrdUpLinkTypeId        = cParamType().getIdByName(__q, _sSuspectedUplink);
     static const qlonglong queryMacTabTypeId            = cParamType().getIdByName(__q, _sQueryMacTab);
@@ -121,9 +122,13 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
         if (np.descr() < cInterface::_descr_cInterface()) continue; // buta portok érdektelenek
         np.fetchParams(__q);
         eTristate queryFlag = np.getBoolParam(queryMacTabTypeId, EX_IGNORE);
+        eTristate suspFlag  = np.getBoolParam(suspectrdUpLinkTypeId, EX_IGNORE);
         // Ha van "query_mac_tab" paraméter, és hamis, akkor tiltott a lekérdezés a portra
         // Ha van "suspected_uplink" paraméter, és igaz, akkor nem foglalkozunk vele (csiki-csuki elkerülése)
-        if (queryFlag == TS_FALSE || np.getBoolParam(suspectrdUpLinkTypeId, EX_IGNORE) == TS_TRUE) continue;
+        if (queryFlag == TS_FALSE || suspFlag == TS_TRUE) {
+            PDEB(VERBOSE) << trUtf8("Disable %1 port query, suspFlag = %2, queryFlag = %3").arg(np.getName()).arg((int)suspFlag).arg((int)queryFlag) << endl; 
+            continue;
+        }
         QString ifTypeName = np.ifType().getName();
         if (ifTypeName == _sEthernet) {
             // Ha ez egy TRUNK tagja, akkor nem érdekes.
@@ -132,6 +137,7 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
             if (NULL_ID != cLldpLink().getLinked(__q, np.getId())) { // Ez egy LLDP-vel felderített uplink
                 // Ha van "query_mac_tab" paraméter, és igaz, akkor a link ellenére lekérdezzük
                 if (queryFlag != TS_TRUE) continue;
+                PDEB(VERBOSE) << trUtf8("Force query %1 port.").arg(np.getName()) << endl;
             }
             // mehet a ports konténerbe az indexe
         }
@@ -184,9 +190,10 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
             if (queryFlag == TS_TRUE) continue;
         }
         else {
-            // Más típusű port nem érdekes.
+            // Más típusú port nem érdekes.
             continue;
         }
+        PDEB(VERBOSE) << trUtf8("Set query %1 port.").arg(np.getName()) << endl;
         ports.insert((int)np.getId(_sPortIndex), np.reconvert<cInterface>());
     }
 }
