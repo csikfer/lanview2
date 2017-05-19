@@ -631,7 +631,7 @@ int cWorkstation::_changeLinkPort(qlonglong portId,
 
 void cWorkstation::_linkToglePlaceEqu(bool primary, eTristate __f)
 {
-    bool f;
+    bool f = false;
     switch (__f) {
     case TS_TRUE:   f = true;   break;      // Azonosság lett beállítva (slot hívta)
     case TS_FALSE:  f = false;  break;      // Nem azonos lett beállítva (slot hívta)
