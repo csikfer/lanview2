@@ -275,5 +275,67 @@ ALTER TABLE interfaces ADD COLUMN  stat_last_modify timestamp;
 
 ALTER TABLE host_services ADD COLUMN flag boolean DEFAULT false;
 
+-- ---
+
+
+CREATE OR REPLACE FUNCTION refresh_mactab() RETURNS integer AS $$
+DECLARE
+    mt  mactab;
+    ret integer := 0;
+BEGIN
+    FOR mt IN SELECT * FROM mactab
+        WHERE  state_updated_time < (CURRENT_TIMESTAMP - get_interval_sys_param('mactab_check_stat_interval'))
+    LOOP
+        IF 'update' = mactab_changestat(mt, current_mactab_stat(mt.port_id, mt.hwaddress, mt.mactab_state)) THEN
+            ret := ret + 1;
+        END IF;
+    END LOOP;
+    
+    FOR mt IN SELECT * FROM mactab
+        WHERE ( last_time < (CURRENT_TIMESTAMP - get_interval_sys_param('mactab_suspect_expire_interval'))  AND mactab_state && ARRAY['suspect']::mactabstate[] )
+           OR ( last_time < (CURRENT_TIMESTAMP - get_interval_sys_param('mactab_reliable_expire_interval')) AND mactab_state && ARRAY['likely', 'arp', 'oui']::mactabstate[] )
+           OR ( last_time < (CURRENT_TIMESTAMP - get_interval_sys_param('mactab_expire_interval'))          AND mactab_state =  ARRAY[]::mactabstate[] )
+    LOOP
+        PERFORM mactab_remove(mt, 'expired');
+        ret := ret +1;
+    END LOOP;
+    
+    FOR mt IN SELECT DISTINCT(mactab.*)
+	FROM mactab
+	JOIN port_params USING(port_id)
+	JOIN param_types USING(param_type_id)
+	WHERE (param_type_name = 'query_mac_tab'    AND NOT param_value::boolean) 
+	   OR (param_type_name = 'suspected_uplink' AND param_value::boolean) 
+    LOOP
+        PERFORM mactab_remove(mt, 'discard');
+        ret := ret +1;
+    END LOOP;
+    
+    FOR mt IN SELECT mactab.*
+ 	FROM mactab
+	JOIN lldp_links ON port_id = port_id1
+	WHERE NOT get_bool_port_param(port_id, 'query_mac_tab')
+    LOOP
+        PERFORM mactab_remove(mt, 'discard');
+        ret := ret +1;
+    END LOOP;
+   
+    RETURN ret;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION refresh_mactab() IS
+'Frissíti a mactab tábla rekordokban a mactab_state mezőket.
+Törli azokat a rekordokat a mactab táblából, melyeknál a last_time értéke túl régi.
+A lejárati időintervallumokat a "mactab_suspect_expire_interval", "mactab_reliable_expire_interval"
+és "mactab_expire_interval" rendszerváltozó tartalmazza.
+Azt, hogy melyik lejárati idő érvényes, azt a rekord mactab_state mező értéke határozza meg.
+A törlés oka "expired"lessz.
+Szintén törl azokat a rekordokat, melyeknél a portra létezik a "query_mac_tab" paraméter hamis értékkel,
+vagy a "suspected_uplink" paraméter igaz értékkel. Ebben az esetben a törlés oka "discard" lesz.
+Végül azokat a rekordokat is törli, melyre portokra létezik lldp_links rekord, és nincs a portra
+"query_mac_tab" paraméter igaz értékkel. Ebben az esetben is "discard" lesz a törlés oka.
+Visszatérési érték a törölt rekordok száma. ';
+
+
 
 END;
