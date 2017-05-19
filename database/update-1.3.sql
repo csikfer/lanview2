@@ -277,6 +277,37 @@ ALTER TABLE host_services ADD COLUMN flag boolean DEFAULT false;
 
 -- ---
 
+CREATE OR REPLACE FUNCTION current_mactab_stat(
+    pid bigint,
+    mac macaddr,        
+    mst mactabstate[] DEFAULT '{}'
+) RETURNS mactabstate[] AS $$
+DECLARE
+    ret mactabstate[] := '{}';
+    suspect boolean;
+BEGIN
+    suspect := mst && ARRAY['suspect'::mactabstate];
+    IF is_content_oui(mac) THEN
+        ret = array_append(ret, 'oui'::mactabstate);
+        suspect := false;
+    END IF;
+    IF 0 < COUNT(*) FROM interfaces WHERE hwaddress = mac THEN
+        ret := array_append(ret, 'likely'::mactabstate);
+        suspect := false;
+        IF is_linked(pid, mac) THEN
+            ret := array_append(ret, 'link'::mactabstate);
+        END IF;
+    END IF;
+    IF is_content_arp(mac) THEN
+        ret := array_append(ret, 'arp'::mactabstate);
+    END IF;
+    IF suspect THEN
+        ret := array_append(ret, 'suspect'::mactabstate);
+    END IF;
+    RETURN ret;
+END;
+$$ LANGUAGE plpgsql;
+
 
 CREATE OR REPLACE FUNCTION refresh_mactab() RETURNS integer AS $$
 DECLARE
@@ -284,7 +315,7 @@ DECLARE
     ret integer := 0;
 BEGIN
     FOR mt IN SELECT * FROM mactab
-        WHERE  state_updated_time < (CURRENT_TIMESTAMP - get_interval_sys_param('mactab_check_stat_interval'))
+        WHERE  state_updated_time < (now() - get_interval_sys_param('mactab_check_stat_interval'))
     LOOP
         IF 'update' = mactab_changestat(mt, current_mactab_stat(mt.port_id, mt.hwaddress, mt.mactab_state)) THEN
             ret := ret + 1;
@@ -292,9 +323,9 @@ BEGIN
     END LOOP;
     
     FOR mt IN SELECT * FROM mactab
-        WHERE ( last_time < (CURRENT_TIMESTAMP - get_interval_sys_param('mactab_suspect_expire_interval'))  AND mactab_state && ARRAY['suspect']::mactabstate[] )
-           OR ( last_time < (CURRENT_TIMESTAMP - get_interval_sys_param('mactab_reliable_expire_interval')) AND mactab_state && ARRAY['likely', 'arp', 'oui']::mactabstate[] )
-           OR ( last_time < (CURRENT_TIMESTAMP - get_interval_sys_param('mactab_expire_interval'))          AND mactab_state =  ARRAY[]::mactabstate[] )
+        WHERE ( last_time < (now() - get_interval_sys_param('mactab_suspect_expire_interval'))  AND mactab_state && ARRAY['suspect']::mactabstate[] )
+           OR ( last_time < (now() - get_interval_sys_param('mactab_expire_interval'))      AND NOT mactab_state && ARRAY['arp','likely']::mactabstate[] )
+           OR ( last_time < (now() - get_interval_sys_param('mactab_reliable_expire_interval')))
     LOOP
         PERFORM mactab_remove(mt, 'expired');
         ret := ret +1;
