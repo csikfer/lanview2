@@ -898,6 +898,7 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
     // A típus szerinti elágazáshoz
     sel.choice(q, "lldp.descr", row.descr);
     choice = sel.getName(cSelect::ixChoice());
+    lPortIx   = -1;
 
     // Lokális port objektum Az LLDP-ben nem biztos, hogy azonos a portok indexelése (gratula annak aki ezt kitalálta)
     // És az sem biztos, hogy a portDescr mező az interfész descriptort tartalmazza, ez a 3COM esetén az portId-ben van (brávó-brávó, gondolom létezik több elcseszett variáció is)
@@ -922,10 +923,13 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
     case 2: // portComponent
     case 4: // networkAddress
     case 6: // agentCircuitId
-    case 7: // local
     default:
         portMac.clear();
         portId.clear();
+        break;
+    case 7: // local
+        lPortIx = snmp.value().toInt(&f);
+        if (!f) lPortIx = -3;
         break;
     case 3: // macAddress
         portMac.set(snmp.value());
@@ -934,8 +938,14 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
         portId  = snmp.value().toString();
         break;
     }
-    lPortIx   = -1;
-    for (i = 0; i < pDev->ports.size(); ++i) {
+
+    if (lPortIx >= 0) {
+        cNPort *pnp = pDev->ports.get(_sPortIndex, lPortIx, EX_IGNORE);
+        if (pnp == NULL && 0 != pnp->chkObjType<cInterface>(EX_IGNORE)) {
+            lPortIx = -3;   // nem ok
+        }
+    }
+    else for (i = 0; i < pDev->ports.size(); ++i) {
         cNPort *pnp = pDev->ports.at(i);
         if (0 != pnp->chkObjType<cInterface>(EX_IGNORE)) continue;
         cInterface *pif = dynamic_cast<cInterface *>(pnp);
@@ -956,11 +966,16 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
         }
     }
     if (lPortIx < 0) {
-        if (lPortIx == -2) {
-            HEREIN(em, QObject::trUtf8("A %1 LLDP indexű lokális port sikertelen azonosítás, nem egyértelmű. portDescr = %2, portId = %3, portMac = %4.").arg(port_ix).arg(portDescr, portId, portMac.toString()), RS_WARNING);
-        }
-        else {
+        switch (lPortIx) {
+        case -1:
             HEREIN(em, QObject::trUtf8("A %1 LLDP indexű lokális port sikertelen azonosítás, nincs találat. portDescr = %2, portId = %3, portMac = %4.").arg(port_ix).arg(portDescr, portId, portMac.toString()), RS_WARNING);
+            break;
+        case -2:
+            HEREIN(em, QObject::trUtf8("A %1 LLDP indexű lokális port sikertelen azonosítás, nem egyértelmű. portDescr = %2, portId = %3, portMac = %4.").arg(port_ix).arg(portDescr, portId, portMac.toString()), RS_WARNING);
+            break;
+        case -3:
+            HEREIN(em, QObject::trUtf8("A %1 LLDP indexű lokális port sikertelen azonosítás, a lokális %2 index nem értelmezhető, vagy hihető").arg(port_ix).arg(snmp.value().toString()), RS_WARNING);
+            break;
         }
         goto scanByLldpDevRow_error;
     }
