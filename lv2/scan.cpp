@@ -868,7 +868,7 @@ void cLldpScan::memo(cAppMemo em, QSqlQuery& q, int port_ix, rowData& row)
 }
 
 // DEBUG
-#define LLDP_WRITE_CSV  0
+#define LLDP_WRITE_CSV  1
 
 void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData& row)
 {
@@ -943,6 +943,9 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
         cNPort *pnp = pDev->ports.get(_sPortIndex, lPortIx, EX_IGNORE);
         if (pnp == NULL && 0 != pnp->chkObjType<cInterface>(EX_IGNORE)) {
             lPortIx = -3;   // nem ok
+        }
+        else {
+            plp = pnp;
         }
     }
     else for (i = 0; i < pDev->ports.size(); ++i) {
