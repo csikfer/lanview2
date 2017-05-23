@@ -1641,7 +1641,13 @@ bool cLldpScan::row3COM(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& em)
         return setRPortFromIx(em);
     }
     else {
-        rPortIx = portDescr2Ix(q, snmp, row.addr, row.pdescr, em);
+        rPortIx = -1;
+        if (!row.pdescr.isEmpty()) {
+            rPortIx = portDescr2Ix(q, snmp, row.addr, row.pdescr, em);
+        }
+        if (rPortIx < 0 && !row.pname.isEmpty()) {
+            rPortIx = portDescr2Ix(q, snmp, row.addr, row.pname, em);
+        }
         // Lehetne keresni a MAC alapján is, ha van ???
         if (rPortIx < 0) {
             return false;
