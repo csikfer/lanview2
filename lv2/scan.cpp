@@ -939,16 +939,16 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
         break;
     }
 
-    if (lPortIx >= 0) {
-        cNPort *pnp = pDev->ports.get(_sPortIndex, lPortIx, EX_IGNORE);
-        if (pnp == NULL && 0 != pnp->chkObjType<cInterface>(EX_IGNORE)) {
-            lPortIx = -3;   // nem ok
+    if (lPortIx >= 0) {     // Van indexünk ?
+        plp = pDev->ports.get(_sPortIndex, lPortIx, EX_IGNORE);
+        if (plp != NULL && 0 != plp->chkObjType<cInterface>(EX_IGNORE)) {
+            lPortIx = -3;       // nem ok, nem interface
         }
-        else {
-            plp = pnp;
+        else if (plp == NULL) { // Nincs
+            lPortIx = -3;
         }
     }
-    else for (i = 0; i < pDev->ports.size(); ++i) {
+    if (lPortIx < 0) for (i = 0; i < pDev->ports.size(); ++i) {     // Nincs index, vagy nem ok, nézzük a neveket
         cNPort *pnp = pDev->ports.at(i);
         if (0 != pnp->chkObjType<cInterface>(EX_IGNORE)) continue;
         cInterface *pif = dynamic_cast<cInterface *>(pnp);
@@ -958,8 +958,8 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
         r = r || (portId.isEmpty() == false && portId  == name);
         r = r || (portMac.isValid()         && portMac == pmac);
         if (r) {
-            if (lPortIx < 0) {  // Volt találat
-                lPortIx = pif->getId(_sPortIndex);
+            if (lPortIx < 0) {  // Volt már egy találat ?
+                lPortIx = pif->getId(_sPortIndex);  // ez az első
                 plp = pnp;
             }
             else {              // Több találat nem lehet !!!
@@ -1654,7 +1654,7 @@ bool cLldpScan::row3COM(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& em)
         }
         rDev.setId(_sNodeType, enum2set(NT_HOST, NT_SWITCH, NT_SNMP));
     }
-    ma = _sARP; // row.cmac.toString(); // az eszköz MAC nem jelenik meg sehol, men azonos a port MAC-al
+    ma = QString(); // row.cmac.toString(); // az eszköz MAC nem jelenik meg sehol, men azonos a port MAC-al
     ip.first  = row.addr.toString();
     ip.second = _sFixIp;
     return rowTail(q, ma, ip, em, exists);
