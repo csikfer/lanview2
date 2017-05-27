@@ -1,8 +1,11 @@
-DROP IF EXISTS TABLE rrd_beats;
-DROP IF EXISTS TYPE aggregatetype;
-DROP IF EXISTS TYPE servicevartype;
-DROP IF EXISTS TYPE drawtype;
-
+﻿DROP TABLE IF EXISTS rrd_beats CASCADE;
+DROP TABLE IF EXISTS service_var_types CASCADE;
+DROP TABLE IF EXISTS service_vars CASCADE;
+DROP TABLE IF EXISTS graphs CASCADE;
+DROP TABLE IF EXISTS graph_vars CASCADE;
+DROP TYPE IF EXISTS aggregatetype;
+DROP TYPE IF EXISTS servicevartype;
+DROP TYPE IF EXISTS Drawtype;
 
 CREATE TYPE aggregatetype AS ENUM ('AVERAGE', 'MIN', 'MAX', 'LAST');
 ALTER TYPE aggregatetype OWNER TO lanview2;
@@ -59,43 +62,38 @@ INSERT INTO rrd_beats
 SELECT nextval('rrd_beats_rrd_beat_id_seq');
 
 CREATE TABLE service_var_types (
-    service_var_type_id   bigserial             PRIMARY KEY,
-    service_var_type_name text                  NOT NULL UNIQUE,
-    service_var_type_note text                  DEFAULT NULL,
-    service_var_type        servicevartype      DEFAULT 'GAUGE',
-    dim                     text                DEFAULT NULL,
-    min_value               double precision    DEFAULT NULL,
-    max_value               double precision    DEFAULT NULL,
-    warning_max             double precision    DEFAULT NULL,
-    warning_min             double precision    DEFAULT NULL,
-    critical_max            double precision    DEFAULT NULL,
-    critical_min            double precision    DEFAULT NULL,
+    service_var_type_id     bigserial           PRIMARY KEY,
+    service_var_type_name   text                NOT NULL UNIQUE,
+    service_var_type_note   text                DEFAULT NULL,
+    param_type_id           bigint              NOT NULL
+        REFERENCES param_types(param_type_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
+    service_var_type        servicevartype      DEFAULT NULL,
+    plausibility_type       filtertype          DEFAULT NULL,
+    plausibility_param1     text                DEFAULT NULL,
+    plausibility_param2     text                DEFAULT NULL,
+    warning_type            filtertype          DEFAULT NULL,
+    warning_param1          text                DEFAULT NULL,
+    warning_param2          text                DEFAULT NULL,
+    critical_type          filtertype          DEFAULT NULL,
+    critical_param1         text                DEFAULT NULL,
+    critical_param2         text                DEFAULT NULL,
     features                text                DEFAULT NULL,
-    deleted                 boolean             NOT NULL DEFAULT FALSE,
-    CHECK (min_value    < COALESCE(critical_min, warning_min, warning_max, critical_max, max_value)),
-    CHECK (critical_min < COALESCE(warning_min, warning_max, critical_max, max_value)),
-    CHECK (warning_min  < COALESCE(warning_max, critical_max, max_value)),
-    CHECK (warning_max  < COALESCE(critical_max, max_value)),
-    CHECK (critical_max < max_value),
-    CHECK (max_value    > COALESCE(critical_max, warning_max, warning_min, critical_min, min_value)),
-    CHECK (critical_max > COALESCE(warning_max, warning_min, critical_min, min_value)),
-    CHECK (warning_max  > COALESCE(warning_min, critical_min, min_value)),
-    CHECK (warning_min  > COALESCE(critical_min, min_value)),
-    CHECK (critical_min > min_value)
+    deleted                 boolean             NOT NULL DEFAULT FALSE
 );
 ALTER TABLE service_var_types OWNER TO lanview2;
 
 CREATE TABLE service_vars (
     service_var_id          bigserial           PRIMARY KEY,
-    service_var_name        text                NOT NULL UNIQUE,
+    service_var_name        text                NOT NULL,
     service_var_note        text                DEFAULT NULL,
     service_var_type_id     bigint              NOT NULL
         REFERENCES service_var_types(service_var_type_id) MATCH FULL ON DELETE RESTRICT ON UPDATE RESTRICT,
     host_service_id         bigint              NOT NULL
         REFERENCES host_services(host_service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
-    rrd_beat_id             bigint              NOT NULL DEFAULT 0, -- DEFAULT std5min
+    rrd_beat_id             bigint              DEFAULT NULL,
     features                text                DEFAULT NULL,
     deleted                 boolean             NOT NULL DEFAULT FALSE,
+    var_state               notifswitch         DEFAULT 'unknown',
     UNIQUE (service_var_name, host_service_id)
 );
 ALTER TABLE service_vars OWNER TO lanview2;

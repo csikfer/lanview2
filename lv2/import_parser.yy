@@ -10,6 +10,7 @@
 #define __MODUL_NAME__  PARSER
 #include "import_parser.h"
 #include "scan.h"
+#include "vardata.h"
 
 #define  YYERROR_VERBOSE
 
@@ -220,6 +221,7 @@ static cLink      *     pLink = NULL;
 static cService   *     pService = NULL;
 static cHostService*    pHostService = NULL;
 static cHostService*    pHostService2 = NULL;
+static cServiceVarType* pServiceVarType = NULL;
 static cTableShape *    pTableShape = NULL;
 static qlonglong        alertServiceId = NULL_ID;
 static QMap<QString, qlonglong>    ivars;
@@ -413,6 +415,7 @@ void downImportParser()
     pDelete(pService);
     pDelete(pHostService);
     pDelete(pHostService2);
+    pDelete (pServiceVarType);
     pDelete(pTableShape);
     ivars.clear();
     svars.clear();
@@ -1575,8 +1578,8 @@ void  setSysParam(QString *pt, QString *pn, QVariant *pv)
 %token      DATE_T DISABLE_T EXPRESSION_T PREFIX_T RESET_T CACHE_T
 %token      DATA_T IANA_T IFDEF_T IFNDEF_T NC_T QUERY_T PARSER_T
 %token      REPLACE_T RANGE_T EXCLUDE_T PREP_T POST_T CASE_T RECTANGLE_T
-%token      DELETED_T PARAMS_T DOMAIN_T
-%token      DIALOG_T AUTO_T FLAG_T TREE_T NOTIFY_T
+%token      DELETED_T PARAMS_T DOMAIN_T VAR_T PLAUSIBILITY_T CRITICAL_T
+%token      DIALOG_T AUTO_T FLAG_T TREE_T NOTIFY_T WARNING_T
 %token      REFRESH_T SQL_T CATEGORY_T ZONE_T
 
 %token <i>  INTEGER_V
@@ -2414,6 +2417,7 @@ shar    :                                           { $$ = ES_; }
 srv     : service
         | hostsrv
         | qparse
+        | srvars
         ;
 service : SERVICE_T replace str str_z           { REPOBJ(pService, cService(), $2, $3, $4); }
           srvend                                { REPANDDEL(pService); }
@@ -2510,6 +2514,32 @@ hss     : fhs                                   { $$ = new cHostServices(qq(), p
         ;
 hsss    : hss                                   { $$ = $1; }
         | hsss ',' hss                          { ($$ = $1)->cat($3); }
+        ;
+srvars  : SERVICE_T VAR_T TYPE_T replace str str_z  { REPOBJ(pServiceVarType, cServiceVarType(), $4, $5, $6); }
+         '{' varts '}'                              { REPANDDEL(pServiceVarType); }
+        ;
+varts   : vart
+        | varts vart
+        ;
+vart    : TYPE_T str ';'                        { pServiceVarType->setId(_sParamTypeId, cParamType().getIdByName(qq(), sp2s($2))); }
+        | TYPE_T str str ';'                    { pServiceVarType->setId(_sParamTypeId, cParamType().getIdByName(qq(), sp2s($2)));
+                                                  pServiceVarType->setId(_sServiceVarType, serviceVarType(sp2s($3)));  }
+        | PLAUSIBILITY_T str value ';'          { pServiceVarType->setId(_sPlausibilityType, filterType(sp2s($2)));
+                                                  pServiceVarType->set(_sPlausibilityParam1, vp2v($3));  }
+        | PLAUSIBILITY_T str value ',' value ';'{ pServiceVarType->setId(_sPlausibilityType, filterType(sp2s($2)));
+                                                  pServiceVarType->set(_sPlausibilityParam1, vp2v($3));
+                                                  pServiceVarType->set(_sPlausibilityParam2, vp2v($5));  }
+        | WARNING_T str value ';'               { pServiceVarType->setId(_sWarningType, filterType(sp2s($2)));
+                                                  pServiceVarType->set(_sWarningParam1, vp2v($3));  }
+        | WARNING_T str value ',' value ';'     { pServiceVarType->setId(_sWarningType, filterType(sp2s($2)));
+                                                  pServiceVarType->set(_sWarningParam1, vp2v($3));
+                                                  pServiceVarType->set(_sWarningParam2, vp2v($5));  }
+        | CRITICAL_T str value ';'              { pServiceVarType->setId(_sCriticalType, filterType(sp2s($2)));
+                                                  pServiceVarType->set(_sCriticalParam1, vp2v($3));  }
+        | CRITICAL_T str value ',' value ';'    { pServiceVarType->setId(_sCriticalType, filterType(sp2s($2)));
+                                                  pServiceVarType->set(_sCriticalParam1, vp2v($3));
+                                                  pServiceVarType->set(_sCriticalParam2, vp2v($5));  }
+        | FEATURES_T str ';'                    { pServiceVarType->setName(_sFeatures, sp2s($2)); }
         ;
 /*******/
 delete  : DELETE_T PLACE_T strs ';'             { foreach (QString s, *$3) { cPlace(). delByName(qq(), s, true); }       delete $3; }
@@ -2954,8 +2984,8 @@ static int yylex(void)
         TOK(DATE) TOK(DISABLE) TOK(EXPRESSION) TOK(PREFIX) TOK(RESET) TOK(CACHE)
         TOK(DATA) TOK(IANA) TOK(IFDEF) TOK(IFNDEF) TOK(NC) TOK(QUERY) TOK(PARSER)
         TOK(REPLACE) TOK(RANGE) TOK(EXCLUDE) TOK(PREP) TOK(POST) TOK(CASE) TOK(RECTANGLE)
-        TOK(DELETED) TOK(PARAMS) TOK(DOMAIN)
-        TOK(DIALOG) TOK(AUTO) TOK(FLAG) TOK(TREE) TOK(NOTIFY)
+        TOK(DELETED) TOK(PARAMS) TOK(DOMAIN) TOK(VAR) TOK(PLAUSIBILITY) TOK(CRITICAL)
+        TOK(DIALOG) TOK(AUTO) TOK(FLAG) TOK(TREE) TOK(NOTIFY) TOK(WARNING)
         TOK(REFRESH) TOK(SQL) TOK(CATEGORY) TOK(ZONE)
         { "WST",    WORKSTATION_T }, // rövidítések
         { "ATC",    ATTACHED_T },

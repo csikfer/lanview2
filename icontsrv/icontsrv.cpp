@@ -193,6 +193,7 @@ int cGateway::run(QSqlQuery &q, QString &runMsg)
 int cGateway::open(QSqlQuery& q, QString& msg)
 {
     DBGFN();
+    (void)q;
     bool r;
     switch (type) {
     case EP_LOCAL:  /* OPEN Serial Port */

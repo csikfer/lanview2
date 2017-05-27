@@ -428,6 +428,7 @@ void cInspector::down()
     pDelete(pPort);
     pDelete(pNode);
     pDelete(_pFeatures);
+    pDelete(pVars);
     inspectorType = IT_CUSTOM;
 }
 
@@ -485,6 +486,8 @@ void cInspector::postInit(QSqlQuery& q, const QString& qs)
     _DBGFN() << name() << endl;
     if (pSubordinates    != NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 pSubordinates pointer nem NULL!").arg(name()));
     if (pInspectorThread != NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 pThread pointer nem NULL!").arg(name()));
+    if (pVars            != NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 pVars pointer nem NULL!").arg(name()));
+    pVars = fechVars(q);    // Változók, ha vannak
     // Ha még nincs meg a típus
     if (inspectorType == IT_CUSTOM) getInspectorType(q);
     // Ha meg van adva az ellenörző parancs, akkor a QProcess objektum létrehozása
@@ -567,6 +570,21 @@ void cInspector::setSubs(QSqlQuery& q, const QString& qs)
         EXCEPTION(EDATA);
     }
 }
+
+tOwnRecords<cServiceVar, cHostService> *cInspector::fechVars(QSqlQuery& q)
+{
+    tOwnRecords<cServiceVar, cHostService> *p = new tOwnRecords<cServiceVar, cHostService>(&hostService);
+    int n = p->fetch(q);
+    if (0 < n) {
+        for (int i = 0; i < n; ++i) {
+            p->at(i)->fetchType(q);
+        }
+        return p;
+    }
+    delete p;
+    return NULL;
+}
+
 
 cRecordFieldConstRef cInspector::get(const QString& __n) const
 {

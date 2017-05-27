@@ -50,7 +50,6 @@ const QString& serviceVarType(int _i, eEx __ex)
     return _sNul;
 }
 
-
 int varDrawType(const QString& _n, eEx __ex)
 {
     if (0 == _n.compare(_sLINE,  Qt::CaseInsensitive)) return VDT_LINE;
@@ -151,6 +150,15 @@ cServiceVarType& cServiceVar::varType(QSqlQuery& q, eEx __ex)
         }
     }
     return _varType;
+}
+
+bool cServiceVar::fetchType(QSqlQuery& q, eEx __ex)
+{
+    if (!isNull(_ixServiceVarTypeId)) {
+        if (_varType.fetchById(q, getId(_ixServiceVarTypeId))) return true;
+    }
+    if (__ex != EX_IGNORE) EXCEPTION(EDATA, getId(_ixServiceVarTypeId), identifying(false));
+    return false;
 }
 
 /* ---------------------------------------------------------------------------- */

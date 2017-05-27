@@ -57,6 +57,7 @@ class LV2SHARED_EXPORT cServiceVarType : public cRecord {
     CRECORD(cServiceVarType);
     FEATURES(cServiceVarType)
 public:
+
 };
 
 /*!
@@ -70,6 +71,7 @@ public:
     virtual void clearToEnd();
     virtual void toEnd();
     virtual bool toEnd(int _ix);
+    bool fetchType(QSqlQuery& q, eEx __ex = EX_ERROR);
     cServiceVarType& varType(QSqlQuery& q, eEx __ex = EX_ERROR);
 protected:
     cServiceVarType _varType;

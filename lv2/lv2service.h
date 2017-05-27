@@ -6,6 +6,7 @@
 #include "lanview.h"
 #include "lv2data.h"
 #include "srvdata.h"
+#include "vardata.h"
 #include "others.h"
 
 /*// Várakozási állapot
@@ -200,7 +201,8 @@ public:
     /// A thread inicializáló rutinjában meghívorr metódus, az objektum egyedi initje
     /// Alapértelmezetten egy üres (azonnal visszatér) metódus.
     virtual void threadPreInit();
-
+    /// Beolvassa a szolgáltatás példányhoz tartozó változókat
+    tOwnRecords<cServiceVar, cHostService> *fechVars(QSqlQuery& q);
     /// hasonló a cRecord get(const QString& __n) metódusához. A mezőt elöszőr a hostService adattagban keresi, ha viszont az NULL,
     /// akkor aservices adattagból olvassa be, majd a prime és végül a proto szervíz rekordbol (ha van).
     /// @param __n A mező név
@@ -285,6 +287,8 @@ public:
     const cService     *pPrimeService;
     /// Szabad felhasználású flag
     bool    flag;
+    /// Változók, ha vannak, vagy NULL.
+    tOwnRecords<cServiceVar, cHostService>    *pVars;
 protected:
     /// A lekérdezés típusát azonosító services rekord objektum pointere, vagy NULL ha ismeretlen, vagy még nincs beállítva.
     /// Nem kell/szabad felszabadítani a pointert!
