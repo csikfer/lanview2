@@ -2823,11 +2823,11 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const QStringPair *_
     QList<QHostAddress> hal;
     QHostAddress ha;
     cMac ma;
-    if (__sMac != NULL) {
+    if (__sMac != NULL && !__sMac->isEmpty()) {
         if (*__sMac != _sARP && !ma.set(*__sMac)) {
             _stat |= ES_DEFECTIVE;
             em = trUtf8("Nem értelmezhető MAC : %1; Node : %2").arg(*__sMac).arg(toString());
-            if (__ex) EXCEPTION(EDATA, -1, em);
+            if (__ex != EX_IGNORE) EXCEPTION(EDATA, -1, em);
             DERR() << em << endl;
             APPMEMO(q, em, RS_CRITICAL);
             return *this;
@@ -2839,7 +2839,7 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const QStringPair *_
             if (!ma) {
                 _stat |= ES_DEFECTIVE;
                 em = trUtf8("A név nem deríthető ki, nincs adat. Node : %1").arg(toString());
-                if (__ex) EXCEPTION(EDATA, -1, ma);
+                if (__ex != EX_IGNORE) EXCEPTION(EDATA, -1, ma);
                 DERR() << em << endl;
                 APPMEMO(q, em, RS_CRITICAL);
                 return *this;
@@ -2850,11 +2850,11 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const QStringPair *_
                 _stat |= ES_DEFECTIVE;
                 if (n < 1) {
                     em = trUtf8("A név nem deríthető ki, a %1 MAC-hez nincs IP cím.  Node : %2").arg(*__sMac).arg(toString());
-                    if (__ex) EXCEPTION(EFOUND, n, em);
+                    if (__ex != EX_IGNORE) EXCEPTION(EFOUND, n, em);
                 }
                 else{
                     em = trUtf8("A név nem deríthető ki, a %1 MAC-hez több IP cím tartozik. Node : %2").arg(*__sMac).arg(toString());
-                    if (__ex) EXCEPTION(AMBIGUOUS,n, em);
+                    if (__ex != EX_IGNORE) EXCEPTION(AMBIGUOUS,n, em);
                 }
                 DERR() << em << endl;
                 APPMEMO(q, em, RS_CRITICAL);
@@ -2866,7 +2866,7 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const QStringPair *_
             if (!ha.setAddress(ips)) {
                 _stat |= ES_DEFECTIVE;
                 em = trUtf8("Nem értelmezhatő IP cím %1. Node : %2").arg(ips).arg(toString());
-                if (__ex) EXCEPTION(EDATA, -1, em);
+                if (__ex != EX_IGNORE) EXCEPTION(EDATA, -1, em);
                 DERR() << em << endl;
                 APPMEMO(q, em, RS_CRITICAL);
                 return *this;
@@ -2874,16 +2874,18 @@ cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const QStringPair *_
             else if (!ma) {  // Nincs MAC, van IP
                 if (__sMac == NULL) {
                     em = trUtf8("Hiányzó MAC cím. Node : %1").arg(toString());
-                    if (__ex) EXCEPTION(EDATA, -1, em);
+                    if (__ex >= EX_WARNING) EXCEPTION(EDATA, -1, em);
                 }
-                else if (*__sMac == _sARP) ma = cArp::ip2mac(q, ha);
+                else if (*__sMac == _sARP) ma = cArp::ip2mac(q, ha, __ex);
                 if (!ma) {
                     _stat |= ES_DEFECTIVE;
                     if (em.isEmpty()) em = trUtf8("A %1 cím alapján nem deríthatő ki a MAC.").arg(ips);
-                    if (__ex) EXCEPTION(EDATA, -1, em);
-                    DERR() << em << endl;
-                    APPMEMO(q, em, RS_CRITICAL);
-                    return *this;
+                    if (__ex != EX_IGNORE) EXCEPTION(EDATA, -1, em);
+                    if (__ex >= EX_WARNING) {
+                        DERR() << em << endl;
+                        APPMEMO(q, em, RS_CRITICAL);
+                        return *this;
+                    }
                 }
             }
         }
