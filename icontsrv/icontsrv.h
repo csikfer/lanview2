@@ -25,7 +25,6 @@ extern const QString _sIndAlarmIf2;
 
 /// @class Egy védett eszköz pszeudo szolgáltatást reprezentáló objektum
 /// A szolgáltatás a védet nod passzív virtuális szolgáltatása
-/// A pPort adattag viszont eltérően az őstől a szenzor portot tartalmazza
 /// nem pedig a virtuális szolgáltatáshoz rendelt attach típusú portot.
 class cAttached : public cInspector {
 public:

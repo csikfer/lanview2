@@ -367,6 +367,13 @@ Végül azokat a rekordokat is törli, melyre portokra létezik lldp_links rekor
 "query_mac_tab" paraméter igaz értékkel. Ebben az esetben is "discard" lesz a törlés oka.
 Visszatérési érték a törölt rekordok száma. ';
 
+-- Plussz szűrés típus, ahol kellhet a negált érték:
+ALTER TYPE filtertype ADD VALUE 'notbegin';
+ALTER TYPE filtertype ADD VALUE 'notlike';
+ALTER TYPE filtertype ADD VALUE 'notsimilar';
+ALTER TYPE filtertype ADD VALUE 'notregexp';
+ALTER TYPE filtertype ADD VALUE 'notregexpi';
+ALTER TYPE filtertype ADD VALUE 'notinterval';
 
 
 END;
