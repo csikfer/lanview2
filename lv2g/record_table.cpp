@@ -23,6 +23,7 @@ Ui::noRightsForm * noRightsSetup(QWidget *_pWidget, qlonglong _need, const QStri
 
 /* ***************************************************************************************************** */
 
+QString      cRecordTableFilter::sNoFilter;
 cRecordTableFilter::cRecordTableFilter(cRecordTableFODialog &_par, cRecordTableColumn& _rtc)
     : QObject(&_par)
     , field(_rtc)
@@ -30,17 +31,19 @@ cRecordTableFilter::cRecordTableFilter(cRecordTableFODialog &_par, cRecordTableC
     , param1(), param2()
     , typeList()
 {
-    closed1 = closed2 = true;
-    tTableShapeFilters& filters = field.shapeField.shapeFilters;
-    tTableShapeFilters::const_iterator i, e = filters.constEnd();
-    types = 0;
-    typeList << trUtf8("Nincs szűrés");
-    for (i = filters.constBegin(); i != e; ++i) {
-        const cTableShapeFilter& filt = **i;
-        types |= enum2set(filt.getId(_sFilterType));
-        typeList << filt.getName(_sFilterType);
+    if (sNoFilter.isEmpty()) {
+        sNoFilter = trUtf8("Nincs szűrés");
     }
-    pFilter = NULL;
+    closed1 = closed2 = true;
+    types   = field.shapeField.getId(_sFilterTypes);
+    if (types > 0) {
+        qlonglong m, i;
+        for (i = 0, m = 1; m < types; m <<= 1, ++i) {
+            if (types & m) {
+                typeList << &cEnumVal::enumVal(_sFiltertype, i);
+            }
+        }
+    }
     iFilter = -1;
 }
 
@@ -52,7 +55,6 @@ cRecordTableFilter::~cRecordTableFilter()
 void cRecordTableFilter::setFilter(int i)
 {
     if (i < 0) {
-        pFilter = NULL;
         iFilter = -1;
         param1.clear();
         param2.clear();
@@ -64,9 +66,6 @@ void cRecordTableFilter::setFilter(int i)
             param2.clear();
             closed1 = closed2 = true;
         }
-        tTableShapeFilters& filters = field.shapeField.shapeFilters;
-        if (!isContIx(filters, i)) EXCEPTION(EDATA);
-        pFilter = filters[i];
         iFilter = i;
     }
 }
@@ -85,26 +84,37 @@ QString cRecordTableFilter::where(QVariantList& qparams)
     if (field.colDescr.eColType == cColStaticDescr::FT_INTEGER && !field.colDescr.fnToName.isEmpty()) {
         cs = field.colDescr.fnToName + "(" + c + ")";
     }
-    if (pFilter != NULL) {
-        switch (pFilter->getId(_sFilterType)) {
+    if (iFilter >= 0) {
+        int eFilter = typeList.at(iFilter)->toInt();
+        r = "NOT "; // Ha mégse negált, akkor töröljük.
+        switch (eFilter) {
+        case FT_NOTBEGIN:   eFilter = FT_BEGIN;     break;
+        case FT_NOTLIKE:    eFilter = FT_LIKE;      break;
+        case FT_NOTSIMILAR: eFilter = FT_SIMILAR;   break;
+        case FT_NOTREGEXP:  eFilter = FT_REGEXP;    break;
+        case FT_NOTREGEXPI: eFilter = FT_REGEXPI;   break;
+        case FT_NOTINTERVAL:eFilter = FT_INTERVAL;  break;
+        default:            r.clear();              break;
+        }
+        switch (eFilter) {
         case FT_BEGIN:
-            r = cs + " LIKE ?";
+            r += cs + " LIKE ?";
             qparams << QVariant(param1.toString() + "%");
             break;
         case FT_LIKE:
-            r = cs + " LIKE ?";
+            r += cs + " LIKE ?";
             qparams << param1;
             break;
         case FT_SIMILAR:
-            r = cs + " SIMILAR ?";
+            r += cs + " SIMILAR ?";
             qparams << param1;
             break;
         case FT_REGEXP:
-            r = cs + " ~ ?";
+            r += cs + " ~ ?";
             qparams << param1;
             break;
         case FT_REGEXPI:
-            r = cs + " ~* ?";
+            r += cs + " ~* ?";
             qparams << param1;
             break;
         case FT_BIG:
@@ -116,7 +126,7 @@ QString cRecordTableFilter::where(QVariantList& qparams)
             qparams << param2;
             break;
         case FT_INTERVAL:
-            r = c + (closed1 ? " >= ?" : " > ?") + " AND " + c + (closed2 ? " <= ?" : " < ?");
+            r += c + (closed1 ? " >= ?" : " > ?") + " AND " + c + (closed2 ? " <= ?" : " < ?");
             qparams << param1 << param2;
             break;
         case FT_PROC:
@@ -202,6 +212,7 @@ cRecordTableFODialog::cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase &_rt)
     , recordView(_rt)
     , filters(), ords()
 {
+    (void)*pq;
     pForm = new Ui::dialogTabFiltOrd();
     pForm->setupUi(this);
 
@@ -215,7 +226,7 @@ cRecordTableFODialog::cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase &_rt)
             connect(pOrd, SIGNAL(moveUp(cRecordTableOrd*)),   this, SLOT(ordMoveUp(cRecordTableOrd*)));
             connect(pOrd, SIGNAL(moveDown(cRecordTableOrd*)), this, SLOT(ordMoveDown(cRecordTableOrd*)));
         }
-        if (recordView.disableFilters == false && tsf.fetchFilters(*pq)) {
+        if (recordView.disableFilters == false && tsf.getId(_sFilterTypes) > 0) {
             cRecordTableFilter *pFilt = new cRecordTableFilter(*this, **i);
             filters << pFilt;
             pForm->comboBox_colName->addItem(tsf.getName(_sTableShapeFieldName));
@@ -229,7 +240,14 @@ cRecordTableFODialog::cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase &_rt)
     iSelFilterType = -1;
     if (!filters.isEmpty()) {
         pSelFilter = filters.first();
-        pForm->comboBox_FiltType->addItems(pSelFilter->typeList);
+        {
+            QStringList items;
+            items << cRecordTableFilter::sNoFilter;
+            foreach (const cEnumVal *pe, pSelFilter->typeList) {
+                items << pe->getName(_sViewShort);
+            }
+            pForm->comboBox_FiltType->addItems(items);
+        }
         connect(pForm->comboBox_colName,    SIGNAL(currentIndexChanged(int)),   this, SLOT(filtCol(int)));
         connect(pForm->comboBox_FiltType,   SIGNAL(currentIndexChanged(int)),   this, SLOT(filtType(int)));
 
@@ -326,20 +344,25 @@ void cRecordTableFODialog::setFilterDialog()
 {
     pForm->lineEdit_colDescr->setText(filter().field.shapeField.getName(_sDialogTitle));
     pForm->comboBox_FiltType->setDisabled(false);
+    filter().setFilter(iSelFilterType);
     if (iSelFilterType < 0) {
-        filter().setFilter(iSelFilterType);
         pForm->stackedWidget->setCurrentWidget(pForm->page_FilterNo);
         pForm->lineEdit_typeTitle->setText(_sNul);
     }
     else {
-        filter().setFilter(iSelFilterType);
-        int fType = filter().shapeFilter().getId(_sFilterType);
+        const cEnumVal *pType = filter().typeList.at(iSelFilterType);
+        int fType = pType->toInt();
         switch (fType) {
         case FT_BEGIN:
+        case FT_NOTBEGIN:
         case FT_LIKE:
+        case FT_NOTLIKE:
         case FT_SIMILAR:
+        case FT_NOTSIMILAR:
         case FT_REGEXP:
+        case FT_NOTREGEXP:
         case FT_REGEXPI:
+        case FT_NOTREGEXPI:
         case FT_PROC:
             pForm->stackedWidget->setCurrentWidget(pForm->page_FilterLine);
             pForm->lineEdit_FiltParam->setText(filter().param1.toString());
@@ -347,6 +370,7 @@ void cRecordTableFODialog::setFilterDialog()
         case FT_BIG:
         case FT_LITLE:
         case FT_INTERVAL:
+        case FT_NOTINTERVAL:
             switch (filter().fieldType()) {
             case cColStaticDescr::FT_INTEGER:
                 pForm->stackedWidget->setCurrentWidget(pForm->page_interval);
@@ -401,9 +425,7 @@ void cRecordTableFODialog::setFilterDialog()
             }
             break;
         }
-        QString title = filter().shapeFilter().getName(_sTableShapeFilterNote);
-        if (title.isEmpty()) title = cEnumVal::viewLong("filtertype", filter().shapeFilter().getId(_sFilterType), filter().shapeFilter().getName(_sFilterType));
-        pForm->lineEdit_typeTitle->setText(title);
+        pForm->lineEdit_typeTitle->setText(pType->getName(_sViewLong));
     }
 }
 
@@ -443,7 +465,11 @@ void cRecordTableFODialog::filtCol(int _c)
     pForm->lineEdit_colDescr->setText(filter().field.shapeField.getName(_sDialogTitle));
     while (pForm->comboBox_FiltType->count() > 1) pForm->comboBox_FiltType->removeItem(1);
     if (pSelFilter->typeList.size() > 1) {
-        pForm->comboBox_FiltType->addItems(pSelFilter->typeList.mid(1));
+        QStringList items;
+        foreach (const cEnumVal *pe, pSelFilter->typeList) {
+            items << pe->getName(_sViewShort);
+            pForm->comboBox_FiltType->addItems(items);
+        }
         pForm->comboBox_FiltType->setEnabled(true);
     }
     else {
@@ -1513,6 +1539,7 @@ void cRecordTable::init()
         buttons << DBT_BREAK << DBT_SPACER << DBT_DELETE << DBT_INSERT << DBT_SIMILAR << DBT_MODIFY;
     }
     flags = 0;
+    if (pUpper != NULL) shapeType |= ENUM2SET(TS_CHILD);
     switch (shapeType & ~ENUM2SET2(TS_TABLE, TS_READ_ONLY)) {
     case ENUM2SET(TS_BARE):
         if (pUpper != NULL) EXCEPTION(EDATA);

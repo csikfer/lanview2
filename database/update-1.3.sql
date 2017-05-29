@@ -375,5 +375,14 @@ ALTER TYPE filtertype ADD VALUE 'notregexp';
 ALTER TYPE filtertype ADD VALUE 'notregexpi';
 ALTER TYPE filtertype ADD VALUE 'notinterval';
 
+-- Szűrés típusoknak nem kell külön tábla, elég egy tömb is
+ALTER TABLE table_shape_fields ADD COLUMN filter_types filtertype[];
+UPDATE table_shape_fields AS f
+    SET filter_types = t.types 
+FROM (SELECT table_shape_field_id AS id, array_agg(filter_type) AS types FROM table_shape_filters GROUP BY table_shape_field_id) AS t
+    WHERE t.id = f.table_shape_field_id;
+DROP TABLE table_shape_filters;
+DELETE FROM table_shape WHERE table_name = 'table_shape_filters';
+-- A table_shape_fields rekordban van egy nem szabályos távoli kulcs hivatkozás, a törölt rekord ID-re, azt is törölni kell!!
 
 END;

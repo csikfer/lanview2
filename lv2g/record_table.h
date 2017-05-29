@@ -40,18 +40,17 @@ public:
     ~cRecordTableFilter();
     QString             where(QVariantList &qparams);
     void setFilter(int i);
-    cTableShapeFilter& shapeFilter() { if (pFilter == NULL) EXCEPTION(EDATA); return *pFilter; }
     int fieldType();                ///< A mező (oszlop) típusa
     cRecordTableColumn& field;      ///< A megjelenítés mező (oszlop) leírója
     cRecordTableFODialog &dialog;   ///< A szűrési feltétel megadásának a dialógusa
-    cTableShapeFilter * pFilter;    ///< A kiválasztott szűrő leíró objektumam vagy NULL, ha nincs aktív szűrő
     int                 iFilter;    ///< A kiválasztott szűrő leíró indexe vagy -1, ha nincs aktív szűrő
     QVariant            param1;     ///< Szűrés (opcionális) paramétere
     bool                closed1;    ///< Ha a szűrési paraméter egy értékhatár, akkor ha true. akkor zárt intervallumként kell értelmezni.
     QVariant            param2;     ///< Szűrés (opcionális) paramétere, ha két paraméter van
     bool                closed2;    ///< Ha a második szűrési paraméter egy értékhatár, akkor ha true. akkor zárt intervallumként kell értelmezni.
     qlonglong           types;      ///< A szűrés típusa, reláció a paraméter(ek)el
-    QStringList         typeList;   ///< A választható szűrés típusok (?)
+    QList<const cEnumVal *> typeList;   ///< A választható szűrés típusok
+    static QString      sNoFilter;
 };
 
 /*!

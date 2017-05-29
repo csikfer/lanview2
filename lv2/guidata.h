@@ -119,6 +119,12 @@ enum eFilterType {
     FT_PROC,     ///< Szűrés egy függvényen (PL) keresztül.
     FT_SQL_WHERE,///< SQL WHERE ...
     FT_BOOLEAN,  ///< Szűrés igaz, vagy hamis értékre
+    FT_NOTBEGIN,
+    FT_NOTLIKE,
+    FT_NOTSIMILAR,
+    FT_NOTREGEXP,
+    FT_NOTREGEXPI,
+    FT_NOTINTERVAL,
     // A további konstansokat a string konvertáló függvény nem kezeli!
     FT_DEFAULT,  ///< Az előző, vagy az alapértelmezett metódus megtartása (a string konvertáló függvény nem kezeli!)
     FT_NO,       ///< nincs szűrés(a string konvertáló függvény nem kezeli!)
@@ -176,17 +182,16 @@ public:
     /// Egy új szűrő objektum hozzáadáse a mező leíróhoz
     /// @param _fnl A mező neve a táblában, melynek a leírója az objektum
     /// @param _t A szűrő típusa
-    /// @param _d A szűrő megjelenített neve/leírása
     /// @param __ex Ha értéke true, akkor hiba esetén (nincs ilyen nevű mező) dob egy kizárást.
     /// @return Ha beállította minden megadott mezőre az értéket, akkor true.
-    bool addFilter(const QString& _fn, const QString& _t, const QString& _d, eEx __ex = EX_ERROR);
+    bool addFilter(const QString& _fn, const QString& _t, eEx __ex = EX_ERROR);
     /// Egy új szűrő objektum hozzáadáse a mező leíróhoz
     /// @param _fnl A mezők nevei a táblában, melynek a leíróta az objektum
     /// @param _t A szűrő típusa
     /// @param _d A szűrő megjelenített neve/leírása
     /// @param __ex Ha értéke true, akkor hiba esetén (nincs ilyen nevű mező) dob egy kizárást.
     /// @return Ha beállította minden megadott mezőre az értéket, akkor true.
-    bool addFilter(const QStringList& _fnl, const QString& _t, const QString& _d, eEx __ex = EX_ERROR);
+    bool addFilter(const QStringList& _fnl, const QString& _t, eEx __ex = EX_ERROR);
     bool addFilter(const QStringList& _fnl, const QStringList& _ftl, eEx __ex = EX_ERROR);
     bool setAllOrders(QStringList& _ord, eEx __ex = EX_ERROR);
     bool setOrders(const QStringList& _fnl, QStringList& _ord, eEx __ex = EX_ERROR);
@@ -229,9 +234,7 @@ protected:
     static QMap<QString, QString>   fieldDialogTitleMap;
 };
 
-class cTableShapeFilter;
 class cTableShapeField;
-typedef tOwnRecords<cTableShapeFilter, cTableShapeField> tTableShapeFilters;
 /*!
 @class cTableShapeField
 @brief Adattáblák mezőinek a megjelenítési leírói
@@ -243,23 +246,12 @@ public:
     cTableShapeField(QSqlQuery& q);
     virtual void toEnd();
     virtual bool toEnd(int i);
-    virtual void clearToEnd();
-    virtual bool insert(QSqlQuery &__q, eEx __ex = EX_ERROR);
-    virtual bool rewrite(QSqlQuery &__q, eEx __ex = EX_ERROR);
     void setTitle(const QStringList& _tt);
-    int fetchFilters(QSqlQuery& q);
-    bool addFilter(const QString& _t, const QString& _d = QString(), eEx __ex = EX_ERROR);
     bool fetchByNames(QSqlQuery& q, const QString& tsn, const QString& fn, eEx __ex = EX_ERROR);
     static qlonglong getIdByNames(QSqlQuery& q, const QString& tsn, const QString& fn);
-    tTableShapeFilters shapeFilters;
     STATICIX( cTableShapeField, ixTableShapeId)
 protected:
     static cRecStaticDescr  _staticDescr;
-};
-
-class LV2SHARED_EXPORT cTableShapeFilter : public cRecord {
-    CRECORD(cTableShapeFilter);
-    STATICIX(cTableShapeFilter, ixTableShapeFieldId)
 };
 
 enum eFontAttr {
