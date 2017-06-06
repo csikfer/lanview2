@@ -122,6 +122,7 @@ lanView::lanView()
     pUser = NULL;
     setSelfStateF = false;
     pSelfInspector = NULL;
+    selfHostServiceId = NULL_ID;
     pQuery = NULL;
 
     try {
@@ -402,7 +403,14 @@ void lanView::setSelfObjects()
     if (pDb != NULL && pDb->isOpen()) {
         if (!isMainThread()) EXCEPTION(EPROGFAIL);
         pSelfNode = new cNode;
-        if (pSelfNode->fetchSelf(*pQuery, EX_IGNORE)) {
+        if (selfHostServiceId != NULL_ID) {
+            pSelfHostService = new cHostService();
+            pSelfHostService->setById(*pQuery, selfHostServiceId);
+            pSelfNode->setById(*pQuery, pSelfHostService->getId(_sNodeId));
+            pSelfService = cService::service(*pQuery, pSelfHostService->getId(_sServiceId));
+            setSelfStateF = true;
+        }
+        else if (pSelfNode->fetchSelf(*pQuery, EX_IGNORE)) {
             pSelfService = cService::service(*pQuery, appName, EX_IGNORE);
             if (pSelfService != NULL) {
                 pSelfHostService = new cHostService();
@@ -440,6 +448,7 @@ void lanView::parseArg(void)
         QStdOut << trUtf8("-L|--log-file <file name>   Set log file name") << endl;
         QStdOut << trUtf8("-V|--lib-version            Print lib version") << endl;
         QStdOut << trUtf8("-S|--test-self-name         Test option") << endl;
+        QStdOut << trUtf8("-R|--host-service-id        Root host-service id") << endl;
         QStdOut << trUtf8("-h|--help                   Print help") << endl;
         EXCEPTION(EOK, RS_STAT_SETTED); // Exit program
     }
@@ -470,6 +479,14 @@ void lanView::parseArg(void)
     if (0 < (i = findArg(QChar('S'), _sLv2testSetSelfNname, args))
      && (i + 1) < args.count()) {
         testSelfName = args[i + 1];
+        args.removeAt(i);
+        args.removeAt(i);
+    }
+    if (0 < (i = findArg(QChar('R'), QString(_sHostServiceId).replace(QChar('_'), QChar('-')), args))
+     && (i + 1) < args.count()) {
+        bool ok;
+        selfHostServiceId = args[i + 1].toLongLong(&ok, 0);
+        if (!ok) DERR() << trUtf8("Invalid numeric argument parameter : %1 %2").arg(args[i]).arg(args[i + 1])  << endl;
         args.removeAt(i);
         args.removeAt(i);
     }

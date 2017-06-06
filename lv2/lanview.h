@@ -230,7 +230,7 @@ public:
     virtual void reSet();
     /// A fő inspector objektum betöltése, inicializálása, és elindítása.
     /// Az objektumot csak akkor allokálja meg, ha a pSelfInspector pointer értéke NULL,
-    /// ekkor feltételezi, hogy a servíz név azonos az alpplikáció nevével.
+    /// ekkor feltételezi, hogy a servíz név azonos az applikáció nevével.
     /// Ha az opcionális _tr értéke true, akkor az inicializálást egy SQL tranzakcióba fogja.
     virtual void setup(eTristate _tr = TS_NULL);
     /// A fő inspector objektum betöltése, inicializálása, és elindítása.
@@ -363,6 +363,7 @@ public:
     cHostService   *pSelfHostService;   ///< Saját service példány objektum pointere, vagy NULL, ha nem ismert
     bool            setSelfStateF;      ///< Ha igaz, akkor kilépéskor (destruktor) be kell állítani az aktuális service példány állapotát.
     cUser          *pUser;              ///< A felhasználót azonosító objektum pointere, vagy NULL
+    qlonglong       selfHostServiceId;  ///< Ha megadták a saját gyökér hostService rekord ID-je, vagy null_id;
     cInspector     *pSelfInspector;
     QSqlQuery      *pQuery;
 
