@@ -302,6 +302,7 @@ void cInspector::preInit(cInspector *__par)
     pProtoService = NULL;
     pPrimeService = NULL;
     pService = NULL;
+    pVars    = NULL;
     initStatic();
 
     pParent = __par;
@@ -780,13 +781,22 @@ void cInspector::self(QSqlQuery& q, const QString& __sn)
     pDelete(pPort);
     pDelete(_pFeatures);
     hostService.clear();
-    // Előkotorjuk a szolgáltatás típus rekordot.
-    pService = cService::service(q, __sn);
-    // Jelenleg feltételezzük, hogy a node az egy host
-    pNode = lanView::getInstance()->selfNode().dup()->reconvert<cNode>();
-    pNode->fetchSelf(q);
-    // És a host_services rekordot is előszedjük.
-    hostService.fetchByIds(q, pNode->getId(), service()->getId());
+    // Ha már beolvastuk..
+    if (lanView::getInstance()->pSelfHostService != NULL
+     && lanView::getInstance()->pSelfService     != NULL) {
+        pService = &lanView::selfService();
+        pNode    =  lanView::selfNode().dup()->reconvert<cNode>();
+        hostService.clone(lanView::selfHostService());
+    }
+    else {
+        // Előkotorjuk a szolgáltatás típus rekordot.
+        pService = cService::service(q, __sn);
+        // Jelenleg feltételezzük, hogy a node az egy host
+        pNode = lanView::selfNode().dup()->reconvert<cNode>();   // ??!
+        pNode->fetchSelf(q);
+        // És a host_services rekordot is előszedjük.
+        hostService.fetchByIds(q, pNode->getId(), service()->getId());
+    }
 }
 
 int cInspector::getCheckCmd(QSqlQuery& q)
