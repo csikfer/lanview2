@@ -440,6 +440,7 @@ QString cColStaticDescr::allToString() const
     return r;
 }
 
+// TEST!!!
 enum cColStaticDescr::eValueCheck cColStaticDescr::check(const QVariant& v, cColStaticDescr::eValueCheck acceptable) const
 {
     cColStaticDescr::eValueCheck r = VC_INVALID;
@@ -1711,15 +1712,20 @@ QVariant  cColStaticDescrDateTime::set(const QVariant& _f, qlonglong& str) const
         return QVariant();
     }
     QDateTime   dt;
-    bool ok = true;
-    if (_f.canConvert<QDateTime>()) dt = _f.toDateTime();
-    else if (variantIsInteger(_f))  dt = QDateTime::fromTime_t(_f.toUInt(&ok));
-    else if (variantIsString(_f)) {
+    bool ok = false;
+
+    if (_f.canConvert<QDateTime>()) {
+        dt = _f.toDateTime();
+        ok = !dt.isNull();
+    }
+    if (!ok && variantIsInteger(_f)) {
+        dt = QDateTime::fromTime_t(_f.toUInt(&ok));
+    }
+    if (!ok && variantIsString(_f)) {
         QString sDt = _f.toString();
         if (sDt.compare(_sNOW, Qt::CaseInsensitive) == 0) return QVariant(sDt);
         dt = QDateTime::fromString(sDt);
     }
-    else ok = false;
     if (ok && dt.isNull()) {
         DERR() << QObject::trUtf8("Az adat nem értelmezhető dátum és idő ként.") << endl;
         str |= ES_DEFECTIVE;

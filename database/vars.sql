@@ -91,9 +91,13 @@ CREATE TABLE service_vars (
     host_service_id         bigint              NOT NULL
         REFERENCES host_services(host_service_id) MATCH FULL ON DELETE CASCADE ON UPDATE RESTRICT,
     rrd_beat_id             bigint              DEFAULT NULL,
+    service_var_value       text                DEFAULT NULL,
+    var_state               notifswitch         DEFAULT 'unknown',
+    delegate_service_state  boolean             DEFAULT FALSE,
+    last_time               timestamp           DEFAULT NULL,
+    raw_value               text                DEFAULT NULL,
     features                text                DEFAULT NULL,
     deleted                 boolean             NOT NULL DEFAULT FALSE,
-    var_state               notifswitch         DEFAULT 'unknown',
     UNIQUE (service_var_name, host_service_id)
 );
 ALTER TABLE service_vars OWNER TO lanview2;

@@ -202,7 +202,7 @@ public:
     /// Alapértelmezetten egy üres (azonnal visszatér) metódus.
     virtual void threadPreInit();
     /// Beolvassa a szolgáltatás példányhoz tartozó változókat
-    tOwnRecords<cServiceVar, cHostService> *fechVars(QSqlQuery& q);
+    tOwnRecords<cServiceVar, cHostService> *fetchVars(QSqlQuery& q);
     /// hasonló a cRecord get(const QString& __n) metódusához. A mezőt elöszőr a hostService adattagban keresi, ha viszont az NULL,
     /// akkor aservices adattagból olvassa be, majd a prime és végül a proto szervíz rekordbol (ha van).
     /// @param __n A mező név
@@ -238,6 +238,12 @@ public:
     /// A parancs path a checkCmd adattagba, a paraméterei pedig a checkCmdArgs konténerbe kerülnek.
     /// @return 0, ha nincs parancs string, 1, ha van és checkCmd beállítva, -1 ha a parancs az éppen futó process
     virtual int getCheckCmd(QSqlQuery &q);
+    /// Egy változó objektum elöszedése, név szerint
+    cServiceVar *getServiceVar(const QString& name);
+    /// Szervíz változó értékének a beállításe
+    int setServiceVar(QSqlQuery& q, const QString& name, qulonglong val, int &state);
+    /// Szervíz változó értékének a beállításe
+    int setServiceVar(QSqlQuery& q, const QString& name, double val, int &state);
     // Adattagok
     /// Objektum típus
     int inspectorType;

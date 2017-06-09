@@ -493,7 +493,7 @@ void cInspector::postInit(QSqlQuery& q, const QString& qs)
     if (pSubordinates    != NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 pSubordinates pointer nem NULL!").arg(name()));
     if (pInspectorThread != NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 pThread pointer nem NULL!").arg(name()));
     if (pVars            != NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 pVars pointer nem NULL!").arg(name()));
-    pVars = fechVars(q);    // Változók, ha vannak
+    pVars = fetchVars(q);    // Változók, ha vannak
     // Ha még nincs meg a típus
     if (inspectorType == IT_CUSTOM) getInspectorType(q);
     // Ha meg van adva az ellenörző parancs, akkor a QProcess objektum létrehozása
@@ -577,7 +577,7 @@ void cInspector::setSubs(QSqlQuery& q, const QString& qs)
     }
 }
 
-tOwnRecords<cServiceVar, cHostService> *cInspector::fechVars(QSqlQuery& q)
+tOwnRecords<cServiceVar, cHostService> *cInspector::fetchVars(QSqlQuery& q)
 {
     tOwnRecords<cServiceVar, cHostService> *p = new tOwnRecords<cServiceVar, cHostService>(&hostService);
     int n = p->fetch(q);
@@ -1446,6 +1446,37 @@ QString cInspector::typeErrMsg(QSqlQuery& q)
              .arg(service()->view(q, _sFeatures))
              .arg(pProtoService == NULL ? cColStaticDescr::rNul : protoService().view(q, _sFeatures))
              .arg(pPrimeService == NULL ? cColStaticDescr::rNul : primeService().view(q, _sFeatures));
+}
+
+
+cServiceVar *cInspector::getServiceVar(const QString& name)
+{
+
+    if (pVars == NULL || pVars->isEmpty()) return NULL;
+    return pVars->get(name, EX_IGNORE);
+}
+
+int cInspector::setServiceVar(QSqlQuery& q, const QString& name, qulonglong val, int &state)
+{
+    cServiceVar *pVar = getServiceVar(name);
+    if (pVar == NULL) {
+        DWAR() << trUtf8("ASrvice var %1 not fod.").arg(name) << endl;
+        return RS_UNKNOWN;
+    }
+    qlonglong heartbeat = (qlonglong)get(_sHeartbeatTime);
+    return pVar->setValue(q, val, state, heartbeat);
+}
+
+int cInspector::setServiceVar(QSqlQuery& q, const QString& name, double val, int &state)
+{
+    cServiceVar *pVar = getServiceVar(name);
+    if (pVar == NULL) {
+        DWAR() << trUtf8("ASrvice var %1 not fod.").arg(name) << endl;
+        return RS_UNKNOWN;
+    }
+    qlonglong heartbeat = (qlonglong)get(_sHeartbeatTime
+                                         );
+    return pVar->setValue(q, val, state, heartbeat);
 }
 
 /* ********************************************************************************** */

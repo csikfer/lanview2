@@ -385,4 +385,17 @@ DROP TABLE table_shape_filters;
 DELETE FROM table_shape WHERE table_name = 'table_shape_filters';
 -- A table_shape_fields rekordban van egy nem szabályos távoli kulcs hivatkozás, a törölt rekord ID-re, azt is törölni kell!!
 
+ALTER TABLE interfaces DROP COLUMN ifmtu;
+ALTER TABLE interfaces DROP COLUMN ifspeed;
+ALTER TABLE interfaces DROP COLUMN ifinoctets;
+ALTER TABLE interfaces DROP COLUMN ifinucastpkts;
+ALTER TABLE interfaces DROP COLUMN ifinnucastpkts;
+ALTER TABLE interfaces DROP COLUMN ifindiscards;
+ALTER TABLE interfaces DROP COLUMN ifinerrors;
+ALTER TABLE interfaces DROP COLUMN ifoutoctets;
+ALTER TABLE interfaces DROP COLUMN ifoutucastpkts;
+ALTER TABLE interfaces DROP COLUMN ifoutnucastpkts;
+ALTER TABLE interfaces DROP COLUMN ifoutdiscards;
+ALTER TABLE interfaces DROP COLUMN ifouterrors;
+
 END;

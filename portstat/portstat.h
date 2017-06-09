@@ -30,22 +30,27 @@ public:
     ~cDevicePSt();
     ///
     virtual void postInit(QSqlQuery &_q, const QString &qs);
+    void varsInit(QSqlQuery &_q, cInterface *pInterface);
     /// A lekérdezést végző virtuális metódus.
     /// @par q A lekerdezés eredményét a q objetummal írja az adatbázisba.
     virtual int run(QSqlQuery& q, QString& runMsg);
     /// MAP az al rlinkstat szolgáltatások, port(ID) szerinti kereséséhez
-    QMap<qlonglong, cInspector *>  inspectorMap;
+    QMap<qlonglong, cInspector *>  rlinkMap;
+    /// MAP az al portvars szolgáltatások, port(ID) szerinti kereséséhez
+    QMap<qlonglong, cInspector *>  pVarsMap;
     /// SNMP objektum a lekérdezéshez
     cSnmp           snmp;
     ///
-    void setInt(QVariant v, int ix, cInterface& iface, QBitArray& mask, QSqlQuery &q);
+    // void setInt(QVariant v, int ix, cInterface& iface, QBitArray& mask, QSqlQuery &q);
     /// Az "rlinkstat" szolgáltatás típus. A pointert az lv2portStat konstruktora inicializálja.
     static const cService *pRLinkStat;
+    static const cService *pPortVars;
     /// Az "snmp" szolgáltatás típus. A pointert az lv2portStat konstruktora inicializálja.
     static const cService *pSrvSnmp;
     static int ixPortOStat;
     static int ixPortAStat;
     static int ixIfdescr;
+    /*
     static int ixIfmtu;
     static int ixIfspeed;
     static int ixIfinoctets;
@@ -58,6 +63,7 @@ public:
     static int ixIfoutnucastpkts;
     static int ixIfoutdiscards;
     static int ixIfouterrors;
+    */
     static int ixStatLastModify;
 };
 

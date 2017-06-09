@@ -2,7 +2,8 @@
 #define MUNINDATA
 
 #include "lanview.h"
-#include "lv2datab.h"
+#include "guidata.h"
+#include "srvdata.h"
 
 enum eVarAggregateType {
     VAT_AVARAGE =  0,
@@ -73,9 +74,23 @@ public:
     virtual bool toEnd(int _ix);
     bool fetchType(QSqlQuery& q, eEx __ex = EX_ERROR);
     cServiceVarType& varType(QSqlQuery& q, eEx __ex = EX_ERROR);
+    int setValue(QSqlQuery& q, double val, int& state, qlonglong heartbeat);
+    int setValue(QSqlQuery& q, qulonglong val, int& state, qlonglong heartbeat);
 protected:
+    int setCounter(QSqlQuery &q, qulonglong val, int svt, int& state, qlonglong heartbeat);
+    int setDerive(QSqlQuery &q, double val, int& state, qlonglong heartbeat);
+    int updateVar(QSqlQuery& q, qulonglong val, int& state, qlonglong heartbeat);
+    int updateVar(QSqlQuery& q, double val, int& state, qlonglong heartbeat);
+    int noValue(QSqlQuery& q, int& state, qlonglong heartbeat);
+    eTristate checkIntValue(qulonglong val, qlonglong ft, const QVariant &_p1, const QVariant &_p2);
+    eTristate checkRealValue(qulonglong val, qlonglong ft, const QVariant& _p1, const QVariant& _p2);
     cServiceVarType _varType;
+    double      lastValue;      ///< Derived esetén az előző érték
+    qulonglong  lastCount;      ///< Ha számláló a lekérdezett érték, akkor az előző érték
+    QDateTime   lastTime;       ///< Ha számláló a lekérdezett érték, akkor az előző érték időpontja
+    eNotifSwitch state;
     STATICIX(cServiceVar, ixServiceVarTypeId)
+    STATICIX(cServiceVar, ixServiceVarValue)
 };
 
 /*!

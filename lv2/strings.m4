@@ -476,6 +476,7 @@ STRDEF(Services, "services")
  dnl max_check_attempt, normal_check_interval, retry_check_interval
  STRDEF(FlappingInterval, "flapping_interval")
  STRDEF(FlappingMaxChange, "flapping_max_change")
+ STRDEF(HeartbeatTime, "heartbeat_time")
 STRDEF(HostServices, "host_services")
  STRDEF(HostServiceId, "host_service_id")
  dnl node_id, service_id, port_id
@@ -567,6 +568,10 @@ STRDEF(ServiceVars, "service_vars")
  STRDEF(ServiceVarId, "service_var_id")
  STRDEF(ServiceVarName, "service_var_name")
  STRDEF(ServiceVarNote, "service_var_note")
+ STRDEF(ServiceVarValue, "service_var_value")
+ STRDEF(VarState, "var_state")
+ STRDEF(DelegateServiceState, "delegate_service_state")
+ STRDEF(RawValue, "raw_value")
  dnl service_var_types host_service_id features deleted
 STRDEF(Graphs, "graphs")
  STRDEF(GraphId, "graph_id")

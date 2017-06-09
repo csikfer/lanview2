@@ -1098,8 +1098,12 @@ cRecordsViewBase *cRecordsViewBase::newRecordView(cTableShape *pts, cRecordsView
 {
     cRecordsViewBase *r;
     qlonglong type = pts->getId(_sTableShapeType);
-    if ((type & ENUM2SET(TS_MEMBER)) && own != NULL) EXCEPTION(ENOTSUPP);
-    if ((type & ENUM2SET(TS_GROUP))  && own != NULL) EXCEPTION(ENOTSUPP);
+    if ((type & ENUM2SET(TS_MEMBER)) && own != NULL) { // EXCEPTION(ENOTSUPP);
+        pts->setId(_sTableShapeType, type &~ENUM2SET(TS_MEMBER));   // Inkább töröljük
+    }
+    if ((type & ENUM2SET(TS_GROUP))  && own != NULL) { // EXCEPTION(ENOTSUPP);
+        pts->setId(_sTableShapeType, type &~ENUM2SET(TS_GROUP));
+    }
     if (type & ENUM2SET(TS_TREE)) {
         r = new cRecordTree( pts, false, own, par);
     }
@@ -1119,7 +1123,7 @@ int cRecordsViewBase::ixToOwner()
     QString key = mCat(pUpper->pTableShape->getName(), _sOwner);
     QString ofn = pTableShape->feature(key);
     int r;
-    if (ofn.isEmpty()) {
+    if (ofn.isEmpty()) {    // Ki kell találni
         r = recDescr().ixToOwner(EX_IGNORE);
         if (r < 0) {
             QString msg = trUtf8(
@@ -1133,7 +1137,7 @@ int cRecordsViewBase::ixToOwner()
             EXCEPTION(EFOUND, 0, msg);
         }
     }
-    else {
+    else {  // A features mezőben definiáltuk
         r = recDescr().toIndex(ofn, EX_IGNORE);
         if (r < 0) {
             QString msg = trUtf8(
@@ -1539,7 +1543,7 @@ void cRecordTable::init()
         buttons << DBT_BREAK << DBT_SPACER << DBT_DELETE << DBT_INSERT << DBT_SIMILAR << DBT_MODIFY;
     }
     flags = 0;
-    if (pUpper != NULL) shapeType |= ENUM2SET(TS_CHILD);
+    if (pUpper != NULL && shapeType < ENUM2SET(TS_LINK)) shapeType |= ENUM2SET(TS_CHILD);
     switch (shapeType & ~ENUM2SET2(TS_TABLE, TS_READ_ONLY)) {
     case ENUM2SET(TS_BARE):
         if (pUpper != NULL) EXCEPTION(EDATA);

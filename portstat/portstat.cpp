@@ -50,11 +50,13 @@ lv2portStat::~lv2portStat()
 void lv2portStat::staticInit(QSqlQuery *pq)
 {
     cDevicePSt::pRLinkStat = cService::service(*pq, "rlinkstat");
+    cDevicePSt::pPortVars  = cService::service(*pq, "portvars");
     cDevicePSt::pSrvSnmp   = cService::service(*pq, _sSnmp);
     cInterface i;
     cDevicePSt::ixPortOStat         = i.toIndex(_sPortOStat);
     cDevicePSt::ixPortAStat         = i.toIndex(_sPortAStat);
     cDevicePSt::ixIfdescr           = i.toIndex(_sIfDescr.toLower());
+    /*
     cDevicePSt::ixIfmtu             = i.toIndex(_sIfMtu.toLower());
     cDevicePSt::ixIfspeed           = i.toIndex(_sIfSpeed.toLower());
     cDevicePSt::ixIfinoctets        = i.toIndex(_sIfInOctets.toLower());
@@ -67,6 +69,7 @@ void lv2portStat::staticInit(QSqlQuery *pq)
     cDevicePSt::ixIfoutnucastpkts   = i.toIndex(_sIfOutNUcastPkts.toLower());
     cDevicePSt::ixIfoutdiscards     = i.toIndex(_sIfOutDiscards.toLower());
     cDevicePSt::ixIfouterrors       = i.toIndex(_sIfOutErrors.toLower());
+    */
     cDevicePSt::ixStatLastModify    = i.toIndex(_sStatLastModify);
 }
 
@@ -98,10 +101,12 @@ cInspector * cPortStat::newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong h
 /******************************************************************************/
 
 const cService *cDevicePSt::pRLinkStat = NULL;
+const cService *cDevicePSt::pPortVars  = NULL;
 const cService *cDevicePSt::pSrvSnmp   = NULL;
 int cDevicePSt::ixPortOStat = NULL_IX;
 int cDevicePSt::ixPortAStat = NULL_IX;
 int cDevicePSt::ixIfdescr = NULL_IX;
+/*
 int cDevicePSt::ixIfmtu = NULL_IX;
 int cDevicePSt::ixIfspeed = NULL_IX;
 int cDevicePSt::ixIfinoctets = NULL_IX;
@@ -114,8 +119,8 @@ int cDevicePSt::ixIfoutucastpkts = NULL_IX;
 int cDevicePSt::ixIfoutnucastpkts = NULL_IX;
 int cDevicePSt::ixIfoutdiscards = NULL_IX;
 int cDevicePSt::ixIfouterrors = NULL_IX;
+*/
 int cDevicePSt::ixStatLastModify = NULL_IX;
-
 
 
 cDevicePSt::cDevicePSt(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector * _par)
@@ -149,7 +154,7 @@ void cDevicePSt::postInit(QSqlQuery &_q, const QString&)
                   .arg(dQuoted(hostService.getName(_sFeatures)))
                   .arg(hostService.identifying())   );
     pSubordinates = new QList<cInspector *>;
-    inspectorMap.clear();
+    rlinkMap.clear();
     // Azokat az al szolgáltatásokat, ami (már) nem tartozik hozzánk, le kell választani!
     cHostService hsf;   // A flag biteket true-ba tesszük
     hsf.setId(_sSuperiorHostServiceId, hostServiceId());    // Ha a mi al szolgáltatásunk
@@ -173,11 +178,12 @@ void cDevicePSt::postInit(QSqlQuery &_q, const QString&)
         // Interface, van/kell statusz
         cInterface *pInterface = dynamic_cast<cInterface *>(pPort);
         qlonglong   pid = pInterface->getId();
-        cInspector *pRLnkSt  = NULL;    // Al szolgáltatás, ha van. Csak rlinkstat lehet/támogatott
+        varsInit(_q, pInterface);
+        cInspector *pRLnkSt  = NULL;    // Al szolgáltatás, ha van. Csak rlinkstat lehet/támogatott (és portvars, amit az elöbb kezeltünk)
         QString wMsg;   // Gyanús dolgok
          // Mivel van linkelve?
         qlonglong lldp_pid;     // Linkelt port by LLDP
-        qlonglong logl_pid;      // Linkelt port by log_links table
+        qlonglong logl_pid;     // Linkelt port by log_links table
         cLldpLink lldp;
         cLogLink  logl;
         lldp_pid = lldp.getLinked(_q, pid);  // Az LLDP szerint ?
@@ -212,7 +218,7 @@ void cDevicePSt::postInit(QSqlQuery &_q, const QString&)
         if (lldp_pid == NULL_ID) continue;
         pRLnkSt = new cInspector(this);                             // Passzív (még) üres objektum
         pRLnkSt->service(pRLinkStat->dup()->reconvert<cService>()); // szervíz
-        pRLnkSt->pPort = cNPort::getPortObjById(_q, lldp_pid);       // port, .. node
+        pRLnkSt->pPort = cNPort::getPortObjById(_q, lldp_pid);      // port, .. node
         pRLnkSt->pNode = cNode::getNodeObjById(_q, pRLnkSt->pPort->getId(_sNodeId))->reconvert<cNode>();
         cHostService& hs = pRLnkSt->hostService;
          // Van host_services rekord ?
@@ -303,7 +309,7 @@ void cDevicePSt::postInit(QSqlQuery &_q, const QString&)
             hs.insert(_q);
         }
         *pSubordinates << pRLnkSt;
-        inspectorMap[pid] = pRLnkSt;
+        rlinkMap[pid] = pRLnkSt;
     }
     hsfWhereBits.setBit(hsf.toIndex(_sFlag));   // Ha maradt a true flag, akkor leválasztjuk
     hsf.clear(_sSuperiorHostServiceId);
@@ -316,27 +322,67 @@ void cDevicePSt::postInit(QSqlQuery &_q, const QString&)
     }
 }
 
+void cDevicePSt::varsInit(QSqlQuery &_q, cInterface *pInterface)
+{
+    qlonglong pid = pInterface->getId();
+    cInspector *pPVars;
+    pPVars = new cInspector(this);                              // Passzív (még) üres objektum
+    pPVars->service(pPortVars->dup()->reconvert<cService>());   // szervíz
+    pPVars->pPort = cNPort::getPortObjById(_q, pid);            // port
+    pPVars->pNode = host().dup()->reconvert<cNode>();
+    cHostService& hs = pPVars->hostService;
+    // Van a porthoz portvars host_services rekord ?
+    hs.fetchByIds(_q, pPVars->nodeId(), pPVars->serviceId(), pPVars->portId(), EX_IGNORE);
+    int n = _q.size();
+    if (n  > 1) EXCEPTION(AMBIGUOUS, n, name());
+    if (n == 0) {
+        hs.setId(_sServiceId, pPortVars->getId());
+        hs.setId(_sNodeId,    host().getId());
+        hs.setId(_sPortId,    pid);
+        hs.setId(_sSuperiorHostServiceId, hostServiceId());
+        hs.setId(_sPrimeServiceId, cService::nilId);
+        hs.setId(_sProtoServiceId, cService::nilId);
+        hs.setName(_sNoalarmFlag, _sOn);
+        hs.insert(_q);
+    }
+    else if (hostServiceId() != hs.getId(_sSuperiorHostServiceId)) {
+        // Nem a mienk!!!???
+        hs.setId(_sSuperiorHostServiceId, hostServiceId());
+        hs.update(_q, false, hs.mask(_sSuperiorHostServiceId));
+    }
+    pPVars->pVars = pPVars->fetchVars(_q);  // A változók beolvasása
+    if (pPVars->pVars == NULL) pPVars->pVars = new tOwnRecords<cServiceVar, cHostService>(&(pPVars->hostService));
+    QStringList vnames, vtypes;
+    // Ezek a változó navek kellenek
+    vnames << _sIfMtu << _sIfSpeed
+           << _sIfInOctets  << _sIfInUcastPkts  << _sIfInNUcastPkts  << _sIfInDiscards  << _sIfInErrors
+           << _sIfOutOctets << _sIfOutUcastPkts << _sIfOutNUcastPkts << _sIfOutDiscards << _sIfOutErrors;
+    // Ezek a default típus nevek, ha létre kell hozni
+    vtypes << _sIfMtu.toLower() << _sIfSpeed.toLower()
+           << "ifbytes" << "ifpacks" << "ifpacks" << "ifpacks" << "ifpacks"
+           << "ifbytes" << "ifpacks" << "ifpacks" << "ifpacks" << "ifpacks";
+    n = vnames.size();
+    if (n != vtypes.size()) EXCEPTION(EPROGFAIL);
+    for (int i = 0; i < n; ++i) {
+        const QString& name = vnames.at(i);
+        cServiceVar *pVar = pPVars->pVars->get(name, EX_IGNORE);
+        if (pVar == NULL) {
+            pVar = new cServiceVar;
+            pVar->setName(name);
+            pVar->setId(_sServiceVarTypeId, cServiceVarType().getIdByName(_q, vtypes.at(i)));
+            pVar->setId(_sHostServiceId, pPVars->hostServiceId());
+            pVar->insert(_q);
+            *(pPVars->pVars) << pVar;
+        }
+    }
+    pVarsMap[pid] = pPVars;
+    *pSubordinates << pPVars;
+}
+
 static void setString(QString s, int ix, cInterface& iface, QBitArray& mask)
 {
     if (s != iface.getName(ix)) {
         iface.setName(ix, s);
-        mask.setBit(ix);
-    }
-}
-void cDevicePSt::setInt(QVariant v, int ix, cInterface& iface, QBitArray& mask, QSqlQuery& q)
-{
-    bool ok;
-    qlonglong i = v.toLongLong(&ok);
-    if (!ok) {
-        QString msg = trUtf8("Invalid numeric : %1, Service : %2, interface : %3")
-                .arg(debVariantToString(v))
-                .arg(iface.identifying(false))
-                .arg(hostService.names(q));
-        APPMEMO(q, msg, RS_CRITICAL);
-        return;
-    }
-    if (i != iface.getId(ix)) {
-        iface.setId(ix, i);
         mask.setBit(ix);
     }
 }
@@ -404,9 +450,9 @@ int cDevicePSt::run(QSqlQuery& q, QString &runMsg)
             adstat = _sUnknown;
         }
 
-        // Ha van kapcolódó al szolgáltatás:
-        QMap<qlonglong, cInspector *>::iterator it = inspectorMap.find(iface.getId());
-        if (it != inspectorMap.end()) {
+        // Ha van kapcsolódó rlinkstat al szolgáltatás:
+        QMap<qlonglong, cInspector *>::iterator it = rlinkMap.find(iface.getId());
+        if (it != rlinkMap.end()) {
             // Előkapjuk a kapcsolódó szolgálltatást
             cInspector& ns   = **it;
             QString state = _sUnKnown;
@@ -426,18 +472,6 @@ int cDevicePSt::run(QSqlQuery& q, QString &runMsg)
         setString(ifDescr, ixIfdescr,   iface, bitsSet);
         setString(opstat,  ixPortOStat, iface, bitsSet);
         setString(adstat,  ixPortAStat, iface, bitsSet);
-        setInt(tab[_sIfMtu][i],             ixIfmtu,            iface, bitsSet, q);
-        setInt(tab[_sIfSpeed][i],           ixIfspeed,          iface, bitsSet, q);
-        setInt(tab[_sIfInOctets][i],        ixIfinoctets,       iface, bitsSet, q);
-        setInt(tab[_sIfInUcastPkts][i],     ixIfinucastpkts,    iface, bitsSet, q);
-        setInt(tab[_sIfInNUcastPkts][i],    ixIfinnucastpkts,   iface, bitsSet, q);
-        setInt(tab[_sIfInDiscards][i],      ixIfindiscards,     iface, bitsSet, q);
-        setInt(tab[_sIfInErrors][i],        ixIfinerrors,       iface, bitsSet, q);
-        setInt(tab[_sIfOutOctets][i],       ixIfoutoctets,      iface, bitsSet, q);
-        setInt(tab[_sIfOutUcastPkts][i],    ixIfoutucastpkts,   iface, bitsSet, q);
-        setInt(tab[_sIfOutNUcastPkts][i],   ixIfoutnucastpkts,  iface, bitsSet, q);
-        setInt(tab[_sIfOutDiscards][i],     ixIfoutdiscards,    iface, bitsSet, q);
-        setInt(tab[_sIfOutErrors][i],       ixIfouterrors,      iface, bitsSet, q);
         PDEB(VERBOSE) << "Update port stat: " << pNode->getName() << QChar(':') << ifDescr << endl;
         int un = iface.update(q, false, bitsSet);
         if (un != 1) {
@@ -446,6 +480,30 @@ int cDevicePSt::run(QSqlQuery& q, QString &runMsg)
                     .arg(iface.identifying(false))
                     .arg(hostService.names(q));
             APPMEMO(q, msg, RS_CRITICAL);
+        }
+        // Ha van kapcsolódó portvars al szolgáltatás:
+        it = pVarsMap.find(iface.getId());
+        if (it != pVarsMap.end()) {
+            // Előkapjuk a kapcsolódó szolgálltatást
+            cInspector& ns  = **it;
+            int state = RS_ON;
+            ns.setServiceVar(q, _sIfMtu,          tab[_sIfMtu          ][i].toULongLong(), state);
+            ns.setServiceVar(q, _sIfSpeed,        tab[_sIfSpeed        ][i].toULongLong(), state);
+            ns.setServiceVar(q, _sIfInOctets,     tab[_sIfInOctets     ][i].toULongLong(), state);
+            ns.setServiceVar(q, _sIfInUcastPkts,  tab[_sIfInUcastPkts  ][i].toULongLong(), state);
+            ns.setServiceVar(q, _sIfInNUcastPkts, tab[_sIfInNUcastPkts ][i].toULongLong(), state);
+            ns.setServiceVar(q, _sIfInDiscards,   tab[_sIfInDiscards   ][i].toULongLong(), state);
+            ns.setServiceVar(q, _sIfInErrors,     tab[_sIfInErrors     ][i].toULongLong(), state);
+            ns.setServiceVar(q, _sIfOutOctets,    tab[_sIfOutOctets    ][i].toULongLong(), state);
+            ns.setServiceVar(q, _sIfOutUcastPkts, tab[_sIfOutUcastPkts ][i].toULongLong(), state);
+            ns.setServiceVar(q, _sIfOutNUcastPkts,tab[_sIfOutNUcastPkts][i].toULongLong(), state);
+            ns.setServiceVar(q, _sIfOutDiscards,  tab[_sIfOutDiscards  ][i].toULongLong(), state);
+            ns.setServiceVar(q, _sIfOutErrors,    tab[_sIfOutErrors    ][i].toULongLong(), state);
+            ns.hostService.setState(q, notifSwitch(state), _sNul, parid);
+            ns.flag = true; // beállítva;
+        }
+        else {
+            PDEB(INFO) << trUtf8("No variables : %1/%2").arg(name(), ifDescr) << endl;
         }
     }
     foreach (cInspector *ps, *pSubordinates) {

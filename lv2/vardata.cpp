@@ -108,14 +108,28 @@ const cRecStaticDescr&  cServiceVarType::descr() const
 CRECDEFD(cServiceVarType)
 
 /* ---------------------------------------------------------------------------- */
-CRECCNTR(cServiceVar)
 int cServiceVar::_ixFeatures         = NULL_IX;
 int cServiceVar::_ixServiceVarTypeId = NULL_IX;
+int cServiceVar::_ixServiceVarValue  = NULL_IX;
+
+cServiceVar::cServiceVar() : cRecord()
+{
+    _set(cServiceVar::descr());
+    lastCount = 0;
+}
+cServiceVar::cServiceVar(const cServiceVar& __o) : cRecord()
+{
+    _cp(__o);
+    lastCount = __o.lastCount;
+    lastTime  = __o.lastTime;
+}
 
 const cRecStaticDescr&  cServiceVar::descr() const
 {
     if (initPDescr<cServiceVar>(_sServiceVars)) {
-        _ixFeatures = _descr_cServiceVar().toIndex(_sFeatures);
+        _ixFeatures         = _descr_cServiceVar().toIndex(_sFeatures);
+        _ixServiceVarTypeId = _descr_cServiceVar().toIndex(_sServiceVarTypeId);
+        _ixServiceVarValue  = _descr_cServiceVar().toIndex(_sServiceVarValue);
     }
     return *_pRecordDescr;
 }
@@ -159,6 +173,212 @@ bool cServiceVar::fetchType(QSqlQuery& q, eEx __ex)
     }
     if (__ex != EX_IGNORE) EXCEPTION(EDATA, getId(_ixServiceVarTypeId), identifying(false));
     return false;
+}
+
+int cServiceVar::setValue(QSqlQuery& q, double val, int& state, qlonglong heartbeat)
+{
+    qlonglong svt = varType(q).getId(_sServiceVarType);
+    switch (svt) {
+    case SVT_ABSOLUTE:
+        if (val < 0) val = - val;
+    case NULL_ID:
+    case SVT_GAUGE:
+        return updateVar(q, val, state, heartbeat);
+    case SVT_COUNTER:
+    case SVT_DCOUNTER:
+        return setCounter(q, (qulonglong)(val + 0.5), (int)svt, state, heartbeat);
+    case SVT_DERIVE:
+    case SVT_DDERIVE:
+         return setDerive(q, val, state, heartbeat);
+    case SVT_COMPUTE:
+    default:
+        EXCEPTION(EDATA, svt, identifying(false));
+    }
+    return RS_INVALID;
+}
+
+int cServiceVar::setValue(QSqlQuery& q, qulonglong val, int &state, qlonglong heartbeat)
+{
+    qlonglong svt = varType(q).getId(_sServiceVarType);
+    switch (svt) {
+    case SVT_ABSOLUTE:
+    case NULL_ID:
+    case SVT_GAUGE:
+        return updateVar(q, val, state, heartbeat);
+    case SVT_COUNTER:
+    case SVT_DCOUNTER:
+    case SVT_DERIVE:
+    case SVT_DDERIVE:
+         return setCounter(q, val, (int)svt, state, heartbeat);
+    case SVT_COMPUTE:
+    default:
+        EXCEPTION(EDATA, svt, identifying(false));
+    }
+    return RS_INVALID;
+}
+
+int cServiceVar::setCounter(QSqlQuery& q, qulonglong val, int svt, int &state, qlonglong heartbeat)
+{
+    QDateTime now = QDateTime::currentDateTime();
+    if (!lastTime.isValid()) {
+        lastCount = val;
+        lastTime  = now;
+        return noValue(q, state, heartbeat);
+    }
+    qulonglong delta;
+    switch (svt) {
+    case SVT_COUNTER:
+    case SVT_DERIVE:    // A számláló tulcsordulás (32 bit)
+        if (lastCount > val) {
+            delta = val + 0x100000000LL - lastCount;
+            if (delta > 0x100000000LL) {
+                lastCount = val;
+                lastTime  = now;
+                return noValue(q, state, heartbeat);
+            }
+            break;
+        }
+        delta = val - lastCount;
+        break;
+    case SVT_DDERIVE:   //
+    case SVT_DCOUNTER:
+        delta = val - lastCount;
+        break;
+    default:
+        EXCEPTION(EPROGFAIL);
+        break;
+    }
+    lastCount = val;
+    qulonglong dt = lastTime.secsTo(now);
+    lastTime = now;
+    double dVal = (double)delta / (double)dt;
+    return updateVar(q, dVal, state, heartbeat);
+}
+
+int cServiceVar::setDerive(QSqlQuery &q, double val, int& state, qlonglong heartbeat)
+{
+    QDateTime now = QDateTime::currentDateTime();
+    if (!lastTime.isValid()) {
+        lastValue = val;
+        lastTime  = now;
+        return noValue(q, state, heartbeat);
+    }
+    double delta = val - lastValue;
+    lastValue = val;
+    qulonglong dt = lastTime.secsTo(now);
+    lastTime = now;
+    double dVal = delta / (double)dt;
+    return updateVar(q, dVal, state, heartbeat);
+
+}
+
+int cServiceVar::updateVar(QSqlQuery& q, qulonglong val, int &state, qlonglong heartbeat)
+{
+    setName(_sRawValue, QString::number(val));
+    setName(_sLastTime, _sNOW);
+    if (TS_FALSE == checkIntValue(val, _varType.getId(_sPlausibilityType), _varType.get(_sPlausibilityParam1), _varType.get(_sPlausibilityParam2))) {
+        return noValue(q, state, heartbeat);
+    }
+    int rs = RS_ON;
+    if (TS_TRUE == checkIntValue(val, _varType.getId(_sCriticalType), _varType.get(_sCriticalParam1), _varType.get(_sCriticalParam2))) {
+        rs = RS_CRITICAL;
+    }
+    else if (TS_TRUE == checkIntValue(val, _varType.getId(_sWarningType), _varType.get(_sWarningParam1), _varType.get(_sWarningParam2))) {
+        rs = RS_WARNING;
+    }
+    if (getBool(_sDelegateServiceState) && state < rs) state = rs;
+    setId(_sVarState, rs);
+    setName(_sServiceVarValue, QString::number(val));
+    setName(_sLastTime, _sNOW);
+    update(q, false, mask(_sVarState, _sServiceVarValue, _sLastTime, _sRawValue));
+    return rs;
+}
+
+int cServiceVar::updateVar(QSqlQuery& q, double val, int& state, qlonglong heartbeat)
+{
+    setName(_sRawValue, QString::number(val));
+    setName(_sLastTime, _sNOW);
+    if (TS_FALSE == checkRealValue(val, _varType.getId(_sPlausibilityType), _varType.get(_sPlausibilityParam1), _varType.get(_sPlausibilityParam2))) {
+        return noValue(q, state, heartbeat);
+    }
+    int rs = RS_ON;
+    if (TS_TRUE == checkRealValue(val, _varType.getId(_sCriticalType), _varType.get(_sCriticalParam1), _varType.get(_sCriticalParam2))) {
+        rs = RS_CRITICAL;
+    }
+    else if (TS_TRUE == checkRealValue(val, _varType.getId(_sWarningType), _varType.get(_sWarningParam1), _varType.get(_sWarningParam2))) {
+        rs = RS_WARNING;
+    }
+    if (getBool(_sDelegateServiceState) && state < rs) state = rs;
+    setId(_sVarState, rs);
+    setName(_sServiceVarValue, QString::number(val));
+    update(q, false, mask(_sVarState, _sServiceVarValue, _sLastTime, _sRawValue));
+    return rs;
+}
+
+int cServiceVar::noValue(QSqlQuery& q, int &state, qlonglong heartbeat)
+{
+    QDateTime last = get(_sLastTime).toDateTime();
+    if (heartbeat != NULL_ID && heartbeat < last.msecsTo(QDateTime::currentDateTime())) {
+        setId(_sVarState, RS_UNKNOWN);
+        clear(_sServiceVarValue);
+        update(q, false, mask(_sVarState, _sRawValue, _sLastTime, _sServiceVarValue));
+        if (getBool(_sDelegateServiceState)) state = RS_UNKNOWN;
+    }
+    return RS_UNKNOWN;
+}
+
+eTristate cServiceVar::checkIntValue(qulonglong val, qlonglong ft, const QVariant& _p1, const QVariant& _p2)
+{
+    if (ft == NULL_ID) return TS_NULL;
+    bool ok1, ok2;
+    eTristate r = TS_NULL;
+    qulonglong p1 = _p1.toULongLong(&ok1);
+    qulonglong p2 = _p2.toULongLong(&ok2);
+    switch (ft) {
+    case FT_BOOLEAN:
+        r = str2tristate(_p1.toString(), EX_IGNORE);
+        if (r != TS_NULL) r = ((val == 0) == (r == TS_FALSE)) ? TS_TRUE : TS_FALSE;
+        break;
+    case FT_INTERVAL:
+        r = !(ok1 && ok2) ? TS_NULL : (val >= p1 && val <= p2) ? TS_TRUE : TS_FALSE;
+        break;
+    case FT_NOTINTERVAL:
+        r = !(ok1 && ok2) ? TS_NULL : (val >= p1 && val <= p2) ? TS_FALSE : TS_TRUE;
+        break;
+    case FT_BIG:
+        r = !ok1 ? TS_NULL : (val >= p1) ? TS_FALSE : TS_TRUE;
+        break;
+    case FT_LITLE:
+        r = !ok1 ? TS_NULL : (val <= p1) ? TS_FALSE : TS_TRUE;
+        break;
+    default:                EXCEPTION(EDATA, ft, identifying());
+    }
+    return r;
+}
+
+eTristate cServiceVar::checkRealValue(qulonglong val, qlonglong ft, const QVariant& _p1, const QVariant& _p2)
+{
+    if (ft == NULL_ID) return TS_NULL;
+    bool ok1, ok2;
+    eTristate r = TS_NULL;
+    double p1 = _p1.toDouble(&ok1);
+    double p2 = _p2.toDouble(&ok2);
+    switch (ft) {
+    case FT_INTERVAL:
+        r = !(ok1 && ok2) ? TS_NULL : (val > p1 && val < p2) ? TS_TRUE : TS_FALSE;
+        break;
+    case FT_NOTINTERVAL:
+        r = !(ok1 && ok2) ? TS_NULL : (val > p1 && val < p2) ? TS_FALSE : TS_TRUE;
+        break;
+    case FT_BIG:
+        r = !ok1 ? TS_NULL : (val > p1) ? TS_FALSE : TS_TRUE;
+        break;
+    case FT_LITLE:
+        r = !ok1 ? TS_NULL : (val < p1) ? TS_FALSE : TS_TRUE;
+        break;
+    default:                EXCEPTION(EDATA, ft, identifying());
+    }
+    return r;
 }
 
 /* ---------------------------------------------------------------------------- */
