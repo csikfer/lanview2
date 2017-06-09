@@ -177,6 +177,7 @@ bool cServiceVar::fetchType(QSqlQuery& q, eEx __ex)
 
 int cServiceVar::setValue(QSqlQuery& q, double val, int& state, qlonglong heartbeat)
 {
+    setName(_sRawValue, QString::number(val));
     qlonglong svt = varType(q).getId(_sServiceVarType);
     switch (svt) {
     case SVT_ABSOLUTE:
@@ -199,6 +200,7 @@ int cServiceVar::setValue(QSqlQuery& q, double val, int& state, qlonglong heartb
 
 int cServiceVar::setValue(QSqlQuery& q, qulonglong val, int &state, qlonglong heartbeat)
 {
+    setName(_sRawValue, QString::number(val));
     qlonglong svt = varType(q).getId(_sServiceVarType);
     switch (svt) {
     case SVT_ABSOLUTE:
@@ -225,7 +227,7 @@ int cServiceVar::setCounter(QSqlQuery& q, qulonglong val, int svt, int &state, q
         lastTime  = now;
         return noValue(q, state, heartbeat);
     }
-    qulonglong delta;
+    qulonglong delta = 0;
     switch (svt) {
     case SVT_COUNTER:
     case SVT_DERIVE:    // A számláló tulcsordulás (32 bit)
@@ -274,7 +276,6 @@ int cServiceVar::setDerive(QSqlQuery &q, double val, int& state, qlonglong heart
 
 int cServiceVar::updateVar(QSqlQuery& q, qulonglong val, int &state, qlonglong heartbeat)
 {
-    setName(_sRawValue, QString::number(val));
     setName(_sLastTime, _sNOW);
     if (TS_FALSE == checkIntValue(val, _varType.getId(_sPlausibilityType), _varType.get(_sPlausibilityParam1), _varType.get(_sPlausibilityParam2))) {
         return noValue(q, state, heartbeat);
@@ -296,7 +297,6 @@ int cServiceVar::updateVar(QSqlQuery& q, qulonglong val, int &state, qlonglong h
 
 int cServiceVar::updateVar(QSqlQuery& q, double val, int& state, qlonglong heartbeat)
 {
-    setName(_sRawValue, QString::number(val));
     setName(_sLastTime, _sNOW);
     if (TS_FALSE == checkRealValue(val, _varType.getId(_sPlausibilityType), _varType.get(_sPlausibilityParam1), _varType.get(_sPlausibilityParam2))) {
         return noValue(q, state, heartbeat);

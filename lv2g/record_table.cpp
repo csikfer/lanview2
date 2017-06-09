@@ -464,12 +464,12 @@ void cRecordTableFODialog::filtCol(int _c)
     pSelFilter = filters[iSelFilterCol];
     pForm->lineEdit_colDescr->setText(filter().field.shapeField.getName(_sDialogTitle));
     while (pForm->comboBox_FiltType->count() > 1) pForm->comboBox_FiltType->removeItem(1);
-    if (pSelFilter->typeList.size() > 1) {
+    if (pSelFilter->typeList.size() > 0) {
         QStringList items;
         foreach (const cEnumVal *pe, pSelFilter->typeList) {
             items << pe->getName(_sViewShort);
-            pForm->comboBox_FiltType->addItems(items);
         }
+        pForm->comboBox_FiltType->addItems(items);
         pForm->comboBox_FiltType->setEnabled(true);
     }
     else {
