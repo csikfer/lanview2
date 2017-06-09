@@ -346,10 +346,10 @@ eTristate cServiceVar::checkIntValue(qulonglong val, qlonglong ft, const QVarian
         r = !(ok1 && ok2) ? TS_NULL : (val >= p1 && val <= p2) ? TS_FALSE : TS_TRUE;
         break;
     case FT_BIG:
-        r = !ok1 ? TS_NULL : (val >= p1) ? TS_FALSE : TS_TRUE;
+        r = !ok1 ? TS_NULL : (val >= p1) ? TS_TRUE : TS_FALSE;
         break;
     case FT_LITLE:
-        r = !ok1 ? TS_NULL : (val <= p1) ? TS_FALSE : TS_TRUE;
+        r = !ok1 ? TS_NULL : (val <= p1) ? TS_TRUE : TS_FALSE;
         break;
     default:                EXCEPTION(EDATA, ft, identifying());
     }
@@ -371,10 +371,10 @@ eTristate cServiceVar::checkRealValue(qulonglong val, qlonglong ft, const QVaria
         r = !(ok1 && ok2) ? TS_NULL : (val > p1 && val < p2) ? TS_FALSE : TS_TRUE;
         break;
     case FT_BIG:
-        r = !ok1 ? TS_NULL : (val > p1) ? TS_FALSE : TS_TRUE;
+        r = !ok1 ? TS_NULL : (val > p1) ? TS_TRUE : TS_FALSE;
         break;
     case FT_LITLE:
-        r = !ok1 ? TS_NULL : (val < p1) ? TS_FALSE : TS_TRUE;
+        r = !ok1 ? TS_NULL : (val < p1) ? TS_TRUE : TS_FALSE;
         break;
     default:                EXCEPTION(EDATA, ft, identifying());
     }
