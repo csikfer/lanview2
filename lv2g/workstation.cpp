@@ -8,31 +8,7 @@
 #include "workstation.h"
 #include "ui_wstform.h"
 #include "ui_phslinkform.h"
-
-static inline QString warning(const QString& text) {
-    return "<div><b>" + text + "</b></div>";
-}
-static inline QString info(const QString& text) {
-    return "<div>" + text + "</div>";
-}
-static inline QString error(const QString& text) {
-    return "<div style=\"color:red\"><b>" + text + "</b></div>";
-}
-static inline QString italic(const QString& text) {
-    return "<i>" + text + "</i>";
-}
-
-static QString tableLine(const QStringList& fl, const QString& ft)
-{
-    QString r = "<tr>\n";
-    foreach (QString f, fl) {
-        r += "\t<" + ft + "> ";
-        r += f;
-        r += " </" + ft + ">\n";
-    }
-    r += "</tr>\n";
-    return r;
-}
+#include "report.h"
 
 static QString _linkTable(QSqlQuery& q, tRecordList<cPhsLink>& list, bool _swap = false)
 {
@@ -48,7 +24,7 @@ static QString _linkTable(QSqlQuery& q, tRecordList<cPhsLink>& list, bool _swap 
          << QObject::trUtf8("Felhasználó")
          << QObject::trUtf8("Modosítva")
          << QObject::trUtf8("Felhasználó");
-    table += tableLine(head, "th");
+    table += htmlTableLine(head, "th");
     int i, n = list.size();
     for (i = 0; i < n; ++i) {
         cPhsLink& link = *list[i];
@@ -65,7 +41,7 @@ static QString _linkTable(QSqlQuery& q, tRecordList<cPhsLink>& list, bool _swap 
             << link.view(q, _sCreateUserId)
             << link.getName(_sModifyTime)
             << link.view(q, _sModifyUserId);
-        table += tableLine(col, "td");
+        table += htmlTableLine(col, "td");
         delete p;
     }
     table += "</table>\n";
@@ -97,7 +73,7 @@ static int _linkTest(QSqlQuery& q, int stat, bool modify, qlonglong _pid, qlongl
         }
     }
     if (list.size() > 0) {
-        msg += info(QObject::trUtf8("A megadott link a következő link(ek)el ütközik:"));
+        msg += htmlInfo(QObject::trUtf8("A megadott link a következő link(ek)el ütközik:"));
         msg += _linkTable(q, list);
         r = IS_COLLISION;
     }
@@ -121,13 +97,13 @@ static int _linkTest(QSqlQuery& q, int stat, bool modify, qlonglong _pid, qlongl
         }
         if (list.size() > 0) {
             if (link.getId(_sPhsLinkType2) == LT_TERM) {
-                msg += info(QObject::trUtf8("A linkel lánca, végponttól - végpontig:"));
+                msg += htmlInfo(QObject::trUtf8("A linkel lánca, végponttól - végpontig:"));
             }
             else {
-                msg += info(QObject::trUtf8("A linkek lánca, csonka, nem ér el a másik végpontig :"));
+                msg += htmlInfo(QObject::trUtf8("A linkek lánca, csonka, nem ér el a másik végpontig :"));
             }
             msg += _linkTable(q, list);
-            if (link.getId(_sPhsLinkType2) != LT_TERM && list.size() > 10) msg += error("...");
+            if (link.getId(_sPhsLinkType2) != LT_TERM && list.size() > 10) msg += htmlError("...");
         }
     }
     _DBGFNL() << r << endl;
@@ -782,23 +758,23 @@ void cWorkstation::_setMessage()
     if (withinSlot != 0) return;
     QString infText;
     if (!linkInfoMsg.isEmpty() || !addrCollisionInfo.isEmpty()) {
-        infText += info(QObject::trUtf8("Első port :"));
-        if (!addrCollisionInfo.isEmpty()) infText += warning(addrCollisionInfo);
+        infText += htmlInfo(QObject::trUtf8("Első port :"));
+        if (!addrCollisionInfo.isEmpty()) infText += htmlWarning(addrCollisionInfo);
         infText += linkInfoMsg;
 
     }
     if (states.macNeed && states.mac == IS_OK) {
         QString sMac = pPort1()->getName(_sHwAddress);
-        infText += warning(sMac);
+        infText += htmlWarning(sMac);
         infText += reportByMac(*pq, sMac);
     }
     if (!linkInfoMsg2.isEmpty()) {
-        infText += info(QObject::trUtf8("Második port :"));
+        infText += htmlInfo(QObject::trUtf8("Második port :"));
         infText += linkInfoMsg2;
     }
     if (states.mac2need && states.mac2 == IS_OK) {
         QString sMac = pPort2()->getName(_sHwAddress);
-        infText += warning(sMac);
+        infText += htmlWarning(sMac);
         infText += reportByMac(*pq, sMac);
     }
     QString errText;
@@ -806,13 +782,13 @@ void cWorkstation::_setMessage()
     switch (states.nodeName) {
     case IS_EMPTY:
         ok = false;
-        errText += error(trUtf8("Nincs megadva a munkaállomás neve."));
+        errText += htmlError(trUtf8("Nincs megadva a munkaállomás neve."));
         break;
     case IS_OK:
         break;
     case IS_COLLISION:
         ok = false;
-        errText += error(trUtf8("A megadott munkaállomás név ütközik egy másikkal."));
+        errText += htmlError(trUtf8("A megadott munkaállomás név ütközik egy másikkal."));
         break;
     case IS_INVALID:
         EXCEPTION(EPROGFAIL);
@@ -820,13 +796,13 @@ void cWorkstation::_setMessage()
     }
     switch (states.serialNumber) {
     case IS_EMPTY:
-        errText += info(trUtf8("Nincs megadva a munkaállomás széria száma."));
+        errText += htmlInfo(trUtf8("Nincs megadva a munkaállomás széria száma."));
         break;
     case IS_OK:
         break;
     case IS_COLLISION:
         ok = false;
-        errText += error(trUtf8("A megadott munkaállomás széria szám ütközik egy másikkal."));
+        errText += htmlError(trUtf8("A megadott munkaállomás széria szám ütközik egy másikkal."));
         break;
     case IS_INVALID:
         EXCEPTION(EPROGFAIL);
@@ -834,48 +810,48 @@ void cWorkstation::_setMessage()
     }
     switch (states.inventoryNumber) {
     case IS_EMPTY:
-        errText += info(trUtf8("Nincs megadva a munkaállomás leltári száma."));
+        errText += htmlInfo(trUtf8("Nincs megadva a munkaállomás leltári száma."));
         break;
     case IS_OK:
         break;
     case IS_COLLISION:
         ok = false;
-        errText += error(trUtf8("A megadott munkaállomás leltári szám ütközik egy másikkal."));
+        errText += htmlError(trUtf8("A megadott munkaállomás leltári szám ütközik egy másikkal."));
         break;
     default:
         EXCEPTION(EPROGFAIL);
         break;
     }
     if (states.nodePlace == IS_EMPTY) {
-        errText += info(trUtf8("Nincs megadva a munkaállomás helye."));
+        errText += htmlInfo(trUtf8("Nincs megadva a munkaállomás helye."));
     }
     if (states.portName == IS_EMPTY) {
         ok = false;
-        errText += error(trUtf8("Nincs megadva a munkaállomás elsődleges interfészének a neve."));
+        errText += htmlError(trUtf8("Nincs megadva a munkaállomás elsődleges interfészének a neve."));
     }
     switch (states.mac) {
     case IS_EMPTY:
         if (states.macNeed) {
-            errText += info(trUtf8("Nincs megadva a munkaállomás elsődleges interfészének a MAC-je."));
+            errText += htmlInfo(trUtf8("Nincs megadva a munkaállomás elsődleges interfészének a MAC-je."));
         }
         break;
     case IS_OK:
         break;
     case IS_COLLISION:
         ok = false;
-        errText += error(trUtf8("A megadott munkaállomás elsődleges interfész MAC ütközik egy másikkal."));
+        errText += htmlError(trUtf8("A megadott munkaállomás elsődleges interfész MAC ütközik egy másikkal."));
         break;
     case IS_INVALID:
         ok = false;
-        errText += error(trUtf8("A megadott munkaállomás elsődleges interfész MAC hibás."));
+        errText += htmlError(trUtf8("A megadott munkaállomás elsődleges interfész MAC hibás."));
         break;
     }
     switch (states.ipAddr) {
     case IS_EMPTY:
         switch (states.ipNeed) {
         case IS_NOT_POSSIBLE:   break;
-        case IS_POSSIBLE:       errText += info(trUtf8("Nincs megadva az IP cím."));        break;
-        case IS_MUST:           errText += error(trUtf8("Nincs megadva a fix IP cím."));    ok = false; break;
+        case IS_POSSIBLE:       errText += htmlInfo(trUtf8("Nincs megadva az IP cím."));        break;
+        case IS_MUST:           errText += htmlError(trUtf8("Nincs megadva a fix IP cím."));    ok = false; break;
         default:                EXCEPTION(EDATA);
         }
         break;
@@ -883,40 +859,40 @@ void cWorkstation::_setMessage()
         break;
     case IS_COLLISION:
         ok = false;
-        errText += error(trUtf8("A megadott IP cím ütközik egy másikkal."));
+        errText += htmlError(trUtf8("A megadott IP cím ütközik egy másikkal."));
         break;
     case IS_INVALID:
         ok = false;
-        errText += error(trUtf8("A megadott IP cím hibás vagy hányos."));
+        errText += htmlError(trUtf8("A megadott IP cím hibás vagy hányos."));
         break;
     case IS_LOOPBACK:
         ok = false;
-        errText += error(trUtf8("A megadott IP cím egy loopback cím."));
+        errText += htmlError(trUtf8("A megadott IP cím egy loopback cím."));
         break;
     case IS_EXTERNAL:
         ok = false;
-        errText += error(trUtf8("Csak belső cím adható meg."));
+        errText += htmlError(trUtf8("Csak belső cím adható meg."));
         break;
     case IS_SOFT_COLL:
-        errText += warning(trUtf8("A megadott IP cím ütközik egy másik dinamikus címmel."));
+        errText += htmlWarning(trUtf8("A megadott IP cím ütközik egy másik dinamikus címmel."));
         break;
     default:
         EXCEPTION(EPROGFAIL);
         break;
     }
     if (states.subNetNeed && states.subNet == IS_EMPTY) {
-        errText += info(trUtf8("Nincs megadva IP tartomány illetve VLAN."));
+        errText += htmlInfo(trUtf8("Nincs megadva IP tartomány illetve VLAN."));
     }
     if (states.port2Need) {
         switch (states.port2Name) {
         case IS_EMPTY:
-            errText += error(trUtf8("Nincs megadva a másodlagos port neve."));
+            errText += htmlError(trUtf8("Nincs megadva a másodlagos port neve."));
             break;
         case IS_OK:
             break;
         case IS_COLLISION:
             ok = false;
-            errText += error(trUtf8("A megadott a másodlagos port név nem lehet azonos az elsődlegessel."));
+            errText += htmlError(trUtf8("A megadott a másodlagos port név nem lehet azonos az elsődlegessel."));
             break;
         default:
             EXCEPTION(EPROGFAIL);
@@ -925,36 +901,36 @@ void cWorkstation::_setMessage()
         switch (states.mac2) {
         case IS_EMPTY:
             if (states.mac2need) {
-                errText += info(trUtf8("Nincs megadva a munkaállomás második interfészének a MAC-je."));
+                errText += htmlInfo(trUtf8("Nincs megadva a munkaállomás második interfészének a MAC-je."));
             }
             break;
         case IS_OK:
             break;
         case IS_COLLISION:
             ok = false;
-            errText += error(trUtf8("A munkaállomás második interfészének a MAC-je ütközik egy másikkal."));
+            errText += htmlError(trUtf8("A munkaállomás második interfészének a MAC-je ütközik egy másikkal."));
             break;
         case IS_INVALID:
             ok = false;
-            errText += error(trUtf8("A munkaállomás második interfészének a MAC-je hibás."));
+            errText += htmlError(trUtf8("A munkaállomás második interfészének a MAC-je hibás."));
             break;
         }
     }
     if (states.linkPossible) switch (states.link) {
     case IS_EMPTY:
-        errText += info(trUtf8("Nincs megadva link (patch)."));
+        errText += htmlInfo(trUtf8("Nincs megadva link (patch)."));
         break;
     case IS_OK:
         break;
     case IS_COLLISION:
         break;
     case IS_IMPERFECT:
-        errText += error(trUtf8("Nincs megadva a linkelt (patch-elt) port."));
+        errText += htmlError(trUtf8("Nincs megadva a linkelt (patch-elt) port."));
         ok = false;
         break;
     }
     if (!ok) {
-        errText += warning(trUtf8("Hiba miatt a mentés nem lehetséges."));
+        errText += htmlWarning(trUtf8("Hiba miatt a mentés nem lehetséges."));
     }
     pUi->textEditErr->setText(errText);
     pUi->pushButtonSave->setEnabled(ok);
@@ -1298,7 +1274,7 @@ void cWorkstation::_addressChanged(const QString& sType, const QString& sAddr)
                         states.ipAddr = IS_SOFT_COLL;
                     }
                     if (states.ipAddr != IS_OK) {
-                        addrCollisionInfo = info(trUtf8("A %1 cím a %2 nevű eszköz címével ötközik").arg(a.toString(), no.getName()));
+                        addrCollisionInfo = htmlInfo(trUtf8("A %1 cím a %2 nevű eszköz címével ötközik").arg(a.toString(), no.getName()));
                     }
                 }
                 cSubNet sn;

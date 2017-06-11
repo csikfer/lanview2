@@ -1,6 +1,32 @@
 #include "report.h"
 #include "lv2link.h"
 #include "srvdata.h"
+#include "guidata.h"
+
+QString htmlTableLine(const QStringList& fl, const QString& ft)
+{
+    QString r = tag("tr");
+    foreach (QString f, fl) {
+        r += tag(ft);
+        r += f;
+        r += tag("/" + ft);
+    }
+    r += tag("/tr");
+    return r + "\n";
+}
+
+QString htmlTable(QStringList head, QList<QStringList> matrix)
+{
+    QString table;
+    table += "\n<table border=\"1\"> ";
+    table += htmlTableLine(head, "th");
+    foreach (QStringList line, matrix) {
+        table += htmlTableLine(line, "td");
+    }
+    table += "</table>\n";
+    return table;
+}
+
 
 QString reportByMac(QSqlQuery& q, const QString& sMac)
 {

@@ -123,6 +123,7 @@ void cOnlineAlarm::map()
         pTargetRec->fetchById(*pq, id);
     }
     qlonglong placeId = pTargetRec->getId(_sPlaceId);
+    /*
     place.fetchById(*pq, placeId);
     qlonglong nodeId = pTargetRec->getId(_sNodeId);
     node.fetchById(*pq, nodeId);
@@ -130,6 +131,8 @@ void cOnlineAlarm::map()
     text += _sBr + sNodeTitle  + " : <b>" + node.getName()  + "</b>, <i>" + node.getNote()  + "</i>";
     text += _sBr + trUtf8("Riasztás oka : ") + "<b><i>" + pTargetRec->getName(_sMsg) + "</i></b>";
     text += _sBr + trUtf8("Csatolt üzenet : ") + "<b><i>" + pTargetRec->getName(_sEventNote) + "</i></b>";
+    */
+    text += cAlarm::htmlText(*pq, pTargetRec->getId());
     if (pTargetRec->get(_sAckUserIds).toList().isEmpty() == false) {
         text += _sBr + trUtf8("Nyugtázva : ") + "<b>" + pTargetRec->view(*pq, _sAckUserIds) + "</b>";
         if (isTicket) {

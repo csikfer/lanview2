@@ -812,6 +812,7 @@ STRDEF(TableShapeFields, "table_shape_fields")
   STRDEF(Huge, "huge")
   STRDEF(BatchEdit, "batch_edit")
   STRDEF(Font, "font")
+  STRDEF(HTML, "HTML")
  STRDEF(Expression, "expression")
  STRDEF(DefaultValue, "default_value")
  dnl features, tool_typ, is_read_only, view_rights, edit_rights flag

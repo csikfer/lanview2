@@ -112,6 +112,7 @@ int fieldFlag(const QString& n, eEx __ex)
     if (0 == n.compare(_sFgColor,   Qt::CaseInsensitive)) return FF_FG_COLOR;
     if (0 == n.compare(_sFont,      Qt::CaseInsensitive)) return FF_FONT;
     if (0 == n.compare(_sToolTip,   Qt::CaseInsensitive)) return FF_TOOL_TIP;
+    if (0 == n.compare(_sHTML,      Qt::CaseInsensitive)) return FF_HTML;
     if (__ex) EXCEPTION(EENUMVAL, -1, n);
     return FF_UNKNOWN;
 }
