@@ -19,3 +19,9 @@ UPDATE host_services SET
 	act_alarm_log_id = NULL,
 	last_alarm_log_id = NULL,
 	last_noalarm_msg = NULL;
+UPDATE service_vars SET
+	service_var_value = NULL,
+	raw_value = NULL,
+	var_state = 'unknown',
+	last_time = NULL;
+	

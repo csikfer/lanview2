@@ -147,7 +147,7 @@ void cOnlineAlarm::map()
         text += _sBr + trUtf8("Hiba jegyet nyugtázta : ") + "<b>" + pActRecord->view(*pq, _sAckUserIds) + "</b>";
     }
     // A parent alaprajza
-    bool ok;
+    bool ok = place.fetchById(*pq, placeId);
     qlonglong id = execSqlIntFunction(*pq, &ok, "get_parent_image", placeId);
     cImage  image;
     QVariant vPol = place.get(_sFrame);
@@ -155,9 +155,9 @@ void cOnlineAlarm::map()
     QPoint    center;
     ok = ok && image.fetchById(*pq, id);
     ok = ok && image.dataIsPic();
+    clearMap();
     if (ok) {
         text += trUtf8("<br>Alaprejz: %1, %2").arg(image.getName(), image.getNote());
-        pMap->clearDraws();
         if (vPol.isNull() == false) {
             pMap->setBrush(QBrush(QColor(Qt::red))).addDraw(vPol);
             pol = convertPolygon(vPol.value<tPolygonF>());
@@ -170,7 +170,6 @@ void cOnlineAlarm::map()
     ok = ok && pMap->setImage(image);
     if (!ok) {
         text += trUtf8("<br><br><b>Nincs megjeleníthető alaprajz.</b>");
-        pMap->clearDraws();
     }
     else {
         if (vPol.isNull() == false) {

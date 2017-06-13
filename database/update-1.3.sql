@@ -529,13 +529,15 @@ COMMENT ON VIEW online_alarm_acks IS 'On-line nyugtázott, még aktív riasztás
 
 INSERT INTO unusual_fkeys
   ( table_name,             column_name,        unusual_fkeys_type, f_table_name,   f_column_name) VALUES
-  ( 'online_alarms_noack',  'online_user_ids',    'property',       'users',        'user_id'),
-  ( 'online_alarms_noack',  'notice_user_ids',    'property',       'users',        'user_id'),
-  ( 'online_alarms_noack',  'view_user_ids',      'property',       'users',        'user_id'),
-  ( 'online_alarms_ack',    'online_user_ids',    'property',       'users',        'user_id'),
-  ( 'online_alarms_ack',    'notice_user_ids',    'property',       'users',        'user_id'),
-  ( 'online_alarms_ack',    'view_user_ids',      'property',       'users',        'user_id'),
-  ( 'online_alarms_ack',    'ack_user_ids',       'property',       'users',        'user_id');
+  ( 'online_alarm_noacks', 'online_user_ids',    'property',       'users',        'user_id'),
+  ( 'online_alarm_noacks', 'notice_user_ids',    'property',       'users',        'user_id'),
+  ( 'online_alarm_noacks', 'view_user_ids',      'property',       'users',        'user_id'),
+  ( 'online_alarm_noacks', 'superior_alarm_id',  'property',       'host_services','host_service_id'),
+  ( 'online_alarm_acks',   'online_user_ids',    'property',       'users',        'user_id'),
+  ( 'online_alarm_acks',   'notice_user_ids',    'property',       'users',        'user_id'),
+  ( 'online_alarm_acks',   'view_user_ids',      'property',       'users',        'user_id'),
+  ( 'online_alarm_acks',   'ack_user_ids',       'property',       'users',        'user_id'),
+  ( 'online_alarm_acks',   'superior_alarm_id',  'property',       'host_services','host_service_id');
 
 -- A nyugtázatlan ill. még nem kiértesített azonos szolgáltatáspéldányhoz tartozó user_event rekordok státuszát is dropped-re kell állítani.
 -- Normál körülmények esetén ez felesleges, de ha nem megy a cron, akkor kellemetlenül felszaporodhatnak a felesleges riasztás értesítések.
@@ -543,7 +545,7 @@ CREATE OR REPLACE FUNCTION alarm_notice() RETURNS TRIGGER AS $$
 DECLARE
     gids bigint[];
 BEGIN
-    IF NOT NEW.noalarm OR NEW.superior_alarm_id IS NULL THEN
+    IF NOT NEW.noalarm AND NEW.superior_alarm_id IS NULL THEN
         IF TG_OP = 'INSERT' THEN
             UPDATE user_events SET event_state = 'dropped'
                 WHERE alarm_id IN ( SELECT alarm_id FROM alarms WHERE host_service_id = NEW.host_service_id)
