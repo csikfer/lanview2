@@ -421,28 +421,6 @@ COMMENT ON FUNCTION is_place_in_zone(bigint, bigint) IS
 'Lekérdezi, hogy az idr azonosítójú places tagja-e az idq-azonosítójú place_groups zónának,
 vagy valamelyik parentje tag-e';
 
-CREATE OR REPLACE FUNCTION is_place_in_zone(idr bigint, grn text) RETURNS boolean AS $$
-DECLARE
-    gid bigint;
-BEGIN
-    CASE grn
-        WHEN 'none' THEN
-            RETURN FALSE;
-        WHEN 'all'  THEN
-            RETURN TRUE;
-        ELSE
-            SELECT place_group_id INTO gid FROM place_groups WHERE place_group_name = grn;
-            IF NOT FOUND THEN
-                PERFORM error('NameNotFound', -1, grn, 'is_place_in_zone', 'place_groups');
-            END IF;
-            RETURN is_place_in_zone(idr, gid);
-    END CASE;
-END
-$$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION is_place_in_zone(bigint, bigint) IS
-'Lekérdezi, hogy az idr azonosítójú places tagja-e az grn-nevű place_groups zónának,
-vagy valamelyik parentje tag-e';
-
 -- Az online_alarms helyett külön VIEW a nyugtázott és nyugtázatlan riasztásoknak, a régi iszonyat lassú volt.
 
 DROP VIEW IF EXISTS online_alarm_acks;

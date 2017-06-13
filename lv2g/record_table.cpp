@@ -1323,11 +1323,13 @@ QStringList cRecordsViewBase::refineWhere(QVariantList& qParams)
         if ((rl.at(0).count(QChar('?')) + 1) != rl.size())
             EXCEPTION(EDATA, -1, trUtf8("Inkonzisztens adat; refine = %1").arg(rl.join(QChar(':'))));
         for (int i = 1; i < rl.size(); ++i) {  // Paraméter helyettesítések...
-            if      (!rl.at(i).compare(_sUserId,         Qt::CaseInsensitive)) qParams << QVariant(lanView::user().getId());
-            else if (!rl.at(i).compare(_sUserName,       Qt::CaseInsensitive)) qParams << QVariant(lanView::user().getName());
-            else if (!rl.at(i).compare(_sPlaceGroupId,   Qt::CaseInsensitive)) qParams << QVariant(lv2g::getInstance()->zoneId);
-            else if (!rl.at(i).compare(_sPlaceId,        Qt::CaseInsensitive)) qParams << QVariant(lanView::user().getId(_sPlaceId));
-            else EXCEPTION(EDATA, i, trUtf8("Ismeretlen változónév a refine mezőben %1").arg(rl.at(i)));
+            QString n = rl.at(i);
+            if      (0 == n.compare(_sUserId,         Qt::CaseInsensitive)) qParams << QVariant(lanView::user().getId());
+            else if (0 == n.compare(_sUserName,       Qt::CaseInsensitive)) qParams << QVariant(lanView::user().getName());
+            else if (0 == n.compare(_sPlaceGroupId,   Qt::CaseInsensitive)) qParams << QVariant(lv2g::getInstance()->zoneId);
+            else if (0 == n.compare(_sPlaceId,        Qt::CaseInsensitive)) qParams << QVariant(lanView::user().getId(_sPlaceId));
+            else if (0 == n.compare(_sNodeId,         Qt::CaseInsensitive)) qParams << QVariant(lanView::getInstance()->selfNode().getId());
+            else EXCEPTION(EDATA, i, trUtf8("Ismeretlen változónév a refine mezőben %1").arg(n));
         }
     }
     return r;
