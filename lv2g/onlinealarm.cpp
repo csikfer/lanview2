@@ -133,8 +133,12 @@ void cOnlineAlarm::map()
     text += _sBr + trUtf8("Csatolt üzenet : ") + "<b><i>" + pTargetRec->getName(_sEventNote) + "</i></b>";
     */
     text += cAlarm::htmlText(*pq, pTargetRec->getId());
-    if (pTargetRec->get(_sAckUserIds).toList().isEmpty() == false) {
+    if (pTargetRec->isIndex(_sAckUserIds) && pTargetRec->get(_sAckUserIds).toList().isEmpty() == false) {
         text += _sBr + trUtf8("Nyugtázva : ") + "<b>" + pTargetRec->view(*pq, _sAckUserIds) + "</b>";
+        QString note = pTargetRec->getName(_sAckUserNote);
+        if (!note.isEmpty()) {
+            _sBr + trUtf8("Nyugtázó(k) megjegyzése(i) : ") + "<i>" + note.replace(QString("\n"), _sBr);
+        }
         if (isTicket) {
             text += _sBr + trUtf8("Hiba jegyhez fűzött megjegyzés : ") + "<b>" + pActRecord->getName(_sEventNote) + "</b>";
         }

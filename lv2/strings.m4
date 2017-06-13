@@ -623,6 +623,7 @@ STRDEF(OnlineAlarms, "online_alarms")
  STRDEF(NoticeUserIds, "notice_user_ids")
  STRDEF(ViewUserIds, "view_user_ids")
  STRDEF(AckUserIds, "ack_user_ids")
+ STRDEF(AckUserNote, "ack_user_note")
 STRDEF(Arps, "arps")
  STRDEF(IpAddress, "ipaddress")
  dnl hwaddress, first_time, last_time

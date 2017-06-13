@@ -398,4 +398,188 @@ ALTER TABLE interfaces DROP COLUMN ifoutnucastpkts;
 ALTER TABLE interfaces DROP COLUMN ifoutdiscards;
 ALTER TABLE interfaces DROP COLUMN ifouterrors;
 
+
+DROP FUNCTION IF EXISTS is_group_place(bigint, text);
+DROP FUNCTION IF EXISTS is_group_place(bigint, bigint);
+
+CREATE OR REPLACE FUNCTION is_place_in_zone(idr bigint, idq bigint) RETURNS boolean AS $$
+DECLARE
+    n integer;
+BEGIN
+    CASE idq
+        WHEN 0 THEN -- none
+            RETURN FALSE;
+        WHEN 1 THEN -- all
+            RETURN TRUE;
+        ELSE
+            SELECT COUNT(*) INTO n FROM place_group_places WHERE place_group_id = idq AND (place_id = idr OR is_parent_place(idr, place_id));
+            RETURN n > 0;
+    END CASE;
+END
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION is_place_in_zone(bigint, bigint) IS
+'Lekérdezi, hogy az idr azonosítójú places tagja-e az idq-azonosítójú place_groups zónának,
+vagy valamelyik parentje tag-e';
+
+CREATE OR REPLACE FUNCTION is_place_in_zone(idr bigint, grn text) RETURNS boolean AS $$
+DECLARE
+    gid bigint;
+BEGIN
+    CASE grn
+        WHEN 'none' THEN
+            RETURN FALSE;
+        WHEN 'all'  THEN
+            RETURN TRUE;
+        ELSE
+            SELECT place_group_id INTO gid FROM place_groups WHERE place_group_name = grn;
+            IF NOT FOUND THEN
+                PERFORM error('NameNotFound', -1, grn, 'is_place_in_zone', 'place_groups');
+            END IF;
+            RETURN is_place_in_zone(idr, gid);
+    END CASE;
+END
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION is_place_in_zone(bigint, bigint) IS
+'Lekérdezi, hogy az idr azonosítójú places tagja-e az grn-nevű place_groups zónának,
+vagy valamelyik parentje tag-e';
+
+-- Az online_alarms helyett külön VIEW a nyugtázott és nyugtázatlan riasztásoknak, a régi iszonyat lassú volt.
+
+DROP VIEW IF EXISTS online_alarm_acks;
+DROP VIEW IF EXISTS online_alarm_unacks;
+DROP VIEW IF EXISTS online_alarms;
+DELETE FROM unusual_fkeys WHERE table_name = 'online_alarms' OR table_name = 'online_alarms_ack' OR table_name = 'online_alarms_unack';
+
+CREATE OR REPLACE VIEW online_alarms AS
+        SELECT
+         alarm_id, array_agg(user_id) AS online_user_ids
+        FROM user_events
+        JOIN alarms USING(alarm_id)
+        WHERE event_type  =  'notice'
+          AND event_state <> 'dropped'
+     --   AND (end_time IS NULL OR end_time + (SELECT param_value FROM sys_params WHERE sys_param_name = 'user_notice_timeout')::interval > now())
+        GROUP BY (alarm_id, begin_time)
+        ORDER BY begin_time;
+
+CREATE OR REPLACE VIEW online_alarm_unacks AS
+    SELECT 
+        alarm_id AS online_alarm_unack_id,
+        host_service_id,
+        host_service_id2name(host_service_id) AS host_service_name,
+        node_name,
+        place_name,
+        place_id,
+        superior_alarm_id,
+        begin_time,
+        end_time,
+        first_status,
+        max_status,
+        last_status,
+        event_note,
+        alarm_message(host_service_id, max_status)      	AS msg,
+        online_user_ids,
+        (SELECT array_agg(user_id) FROM user_events WHERE alarm_id = alarms.alarm_id AND event_type = 'notice' AND user_id = ANY (online_user_ids) AND event_state = 'happened') AS notice_user_ids,
+        (SELECT array_agg(user_id) FROM user_events WHERE alarm_id = alarms.alarm_id AND event_type = 'view'   AND user_id = ANY (online_user_ids)) AS view_user_ids
+    FROM online_alarms
+    JOIN alarms USING(alarm_id)
+    JOIN host_services AS h USING (host_service_id)
+    JOIN services      AS s USING(service_id)
+    JOIN nodes         AS n USING(node_id)
+    JOIN places        AS p USING(place_id)
+    WHERE 0 = (SELECT COUNT(*) FROM user_events WHERE alarm_id = alarms.alarm_id AND event_type = 'acknowledge');
+COMMENT ON VIEW online_alarm_unacks IS 'On-line nem nyugtázott riasztások';
+    
+CREATE OR REPLACE VIEW online_alarm_acks AS
+    WITH oaa AS (
+	SELECT
+	    *,
+            (SELECT array_agg(user_id) FROM user_events WHERE alarm_id = e.alarm_id AND user_id = ANY (online_user_ids) AND event_type = 'notice' AND event_state = 'happened') AS notice_user_ids,
+            (SELECT array_agg(user_id) FROM user_events WHERE alarm_id = e.alarm_id AND user_id = ANY (online_user_ids) AND event_type = 'view')  AS view_user_ids,
+            (SELECT array_agg(user_id) FROM user_events WHERE alarm_id = e.alarm_id AND event_type = 'acknowledge') AS ack_user_ids
+        FROM online_alarms AS e
+    )
+    SELECT 
+        alarm_id AS online_alarm_ack_id,
+        host_service_id,
+        host_service_id2name(host_service_id) AS host_service_name,
+        node_name,
+        place_name,
+        place_id,
+        superior_alarm_id,
+        begin_time,
+        first_status,
+        max_status,
+        last_status,
+        event_note,
+        alarm_message(host_service_id, max_status)      	AS msg,
+        online_user_ids,
+        notice_user_ids,
+        view_user_ids,
+        ack_user_ids,
+        (SELECT string_agg(user_event_note, '\n') FROM user_events WHERE alarm_id = oaa.alarm_id AND event_type = 'acknowledge') AS ack_user_note
+    FROM oaa
+    JOIN alarms USING(alarm_id)
+    JOIN host_services AS h USING (host_service_id)
+    JOIN services      AS s USING(service_id)
+    JOIN nodes         AS n USING(node_id)
+    JOIN places        AS p USING(place_id)
+    WHERE end_time IS NULL
+      AND 0 < array_length(ack_user_ids, 1);
+COMMENT ON VIEW online_alarm_acks IS 'On-line nyugtázott, még aktív riasztások';
+
+INSERT INTO unusual_fkeys
+  ( table_name,             column_name,        unusual_fkeys_type, f_table_name,   f_column_name) VALUES
+  ( 'online_alarms_noack',  'online_user_ids',    'property',       'users',        'user_id'),
+  ( 'online_alarms_noack',  'notice_user_ids',    'property',       'users',        'user_id'),
+  ( 'online_alarms_noack',  'view_user_ids',      'property',       'users',        'user_id'),
+  ( 'online_alarms_ack',    'online_user_ids',    'property',       'users',        'user_id'),
+  ( 'online_alarms_ack',    'notice_user_ids',    'property',       'users',        'user_id'),
+  ( 'online_alarms_ack',    'view_user_ids',      'property',       'users',        'user_id'),
+  ( 'online_alarms_ack',    'ack_user_ids',       'property',       'users',        'user_id');
+
+-- A nyugtázatlan ill. még nem kiértesített azonos szolgáltatáspéldányhoz tartozó user_event rekordok státuszát is dropped-re kell állítani.
+-- Normál körülmények esetén ez felesleges, de ha nem megy a cron, akkor kellemetlenül felszaporodhatnak a felesleges riasztás értesítések.
+CREATE OR REPLACE FUNCTION alarm_notice() RETURNS TRIGGER AS $$
+DECLARE
+    gids bigint[];
+BEGIN
+    IF NOT NEW.noalarm OR NEW.superior_alarm_id IS NULL THEN
+        IF TG_OP = 'INSERT' THEN
+            UPDATE user_events SET event_state = 'dropped'
+                WHERE alarm_id IN ( SELECT alarm_id FROM alarms WHERE host_service_id = NEW.host_service_id)
+                  AND event_state = 'necessary';
+            SELECT COALESCE(online_group_ids, (SELECT online_group_ids FROM services WHERE service_id = host_services.service_id))
+                    INTO gids FROM host_services WHERE host_service_id = NEW.host_service_id;
+            IF gids IS NOT NULL THEN
+                INSERT INTO user_events(user_id, alarm_id, event_type)
+                    SELECT DISTINCT user_id, NEW.alarm_id, 'notice'::usereventtype   FROM group_users WHERE group_id = ANY (gids);
+            END IF;
+            SELECT COALESCE(offline_group_ids, (SELECT offline_group_ids FROM services WHERE service_id = host_services.service_id))
+                    INTO gids FROM host_services WHERE host_service_id = NEW.host_service_id;
+            IF gids IS NOT NULL THEN
+                INSERT INTO user_events(user_id, alarm_id, event_type)
+                    SELECT DISTINCT user_id, NEW.alarm_id, 'sendmail'::usereventtype FROM group_users WHERE group_id = ANY (gids);
+            END IF;
+        END IF;
+        NOTIFY alarm;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS alarms_before_insert_or_update ON alarms;
+DROP TRIGGER IF EXISTS alarms_after_insert_or_update ON alarms;
+CREATE TRIGGER alarms_after_insert_or_update  AFTER UPDATE OR INSERT ON alarms  FOR EACH ROW EXECUTE PROCEDURE alarm_notice();
+
+CREATE OR REPLACE FUNCTION expired_online_alarm(did bigint) RETURNS VOID AS $$
+DECLARE
+    expi interval;
+BEGIN
+    SELECT param_value::interval INTO expi FROM sys_params WHERE sys_param_name = 'user_notice_timeout';
+    UPDATE user_events SET event_state = 'dropped'
+        WHERE event_state = 'necessary' AND (created + expi) < NOW();
+END
+$$ LANGUAGE plpgsql;
+
+
 END;
