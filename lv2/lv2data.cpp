@@ -3184,8 +3184,12 @@ int cSnmpDevice::open(QSqlQuery& q, cSnmp& snmp, eEx __ex) const
     foreach (QHostAddress a, la) {
         r = snmp.open(a.toString(), comn, ver);
         if (r != 0) continue;
-        r = snmp.getNext(QString("SNMPv2-MIB::sysDescr"));
+        static const QString o = "SNMPv2-MIB::sysDescr";
+        r = snmp.getNext(o);
         if (r == 0) break;  // O.K.
+        DWAR() << trUtf8("Error snmp.getNext(%1) #%2 (%3); address: %4, node: %5")
+                  .arg(o).arg(r).arg(snmp.emsg, a.toString(), identifying(false))
+               << endl;
     }
     if (__ex && r) EXCEPTION(ESNMP, r, snmp.emsg);
     return r;

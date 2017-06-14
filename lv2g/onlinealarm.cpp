@@ -158,8 +158,10 @@ void cOnlineAlarm::map()
     clearMap();
     if (ok) {
         text += trUtf8("<br>Alaprejz: %1, %2").arg(image.getName(), image.getNote());
-        if (vPol.isNull() == false) {
-            pMap->setBrush(QBrush(QColor(Qt::red))).addDraw(vPol);
+        if (vPol.isNull() == false) {   // Van polygon
+            QColor color(Qt::red);      // Piros
+            color.setAlpha(128);        // félig átlátszó
+            pMap->setBrush(QBrush(color)).addDraw(vPol);
             pol = convertPolygon(vPol.value<tPolygonF>());
             center = avarage<QPolygonF, QPointF>(pol).toPoint();
         }

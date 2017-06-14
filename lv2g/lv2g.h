@@ -64,15 +64,12 @@ class lv2g;
 class lv2gDesign;
 class cMainWindow;
 
-
-// inline static const lv2gDesign& design();
-
 class LV2GSHARED_EXPORT lv2g : public lanView {
-//    friend const lv2gDesign& design();
 public:
     lv2g();
     ~lv2g();
     static lv2g*    getInstance(void) { return (lv2g *)lanView::getInstance(); }
+    void            changeZone(QWidget * par = NULL);
     static bool     logonNeeded;
     static bool     zoneNeeded;
     qlonglong       zoneId;
@@ -90,77 +87,7 @@ public:
     /// Main window object pointer
     static cMainWindow *    pMainWindow;
 protected:
-//    const lv2gDesign *pDesign;
 };
-
-/*
-inline static const lv2gDesign& design()
-{
-    return *(lv2g::getInstance()->pDesign);
-}
-
-class LV2GSHARED_EXPORT colorAndFont {
-    friend class lv2gDesign;
-public:
-    static QPalette& palette();
-    QFont   font;
-    QColor  fg;
-    QColor  bg;
-protected:
-    colorAndFont();
-    static QPalette *pal;
-};
-
-enum eDesignRole {
-    GDR_INVALID = -1,   ///< Csak hibajelzésre
-    GDR_HEAD = 0,       ///< Táblázat fejléce
-    GDR_DATA,           ///< egyébb adat mező
-    GDR_ID,             ///< ID mező
-    GDR_NAME,           ///< Név mező
-    GDR_PRIMARY,        ///< elsődleges kulcs (de nem ID vagy Név)
-    GDR_KEY,            ///< kulcs mező (de nem elsődleges, ID vagy Név)
-    GDR_FNAME,          ///< távoli kulcs, a hivatkozott rekord név mezője
-    GDR_DERIVED,        ///< távoli kulcs, a hivatkozott rekordból származtatott név jellegű adat
-    GDR_TREE,           ///< saját rekordra mutató távoli kulcs (gráf vagy fa)
-    GDR_FOREIGN,        ///< távoli kulcs érték
-    GDR_NULL,           ///< NULL adat
-    GDR_WARNING,        ///< Figyelmeztető üzenet
-    GDR_COLOR  = 0x100, ///< Egyedi szín
-    GDR_FONT   = 0x200  ///< Egyedi font
-};
-
-
-class LV2GSHARED_EXPORT lv2gDesign : public QObject {
-    Q_OBJECT
-protected:
-    friend class lv2g;
-    lv2gDesign(QObject *par);
-    ~lv2gDesign();
-public:
-    QString titleWarning;
-    QString titleError;
-    QString titleInfo;
-
-    QString valNull;
-    QString valDefault;
-    QString valAuto;
-
-    colorAndFont    head;
-    colorAndFont    data;
-    colorAndFont    name;
-    colorAndFont    id;
-    colorAndFont    primary;
-    colorAndFont    key;
-    colorAndFont    fname;
-    colorAndFont    derived;
-    colorAndFont    tree;
-    colorAndFont    foreign;
-    colorAndFont    null;
-    colorAndFont    warning;
-    const colorAndFont&   operator[](int role) const;
-    static eDesignRole desRole(const cRecStaticDescr& __d, int __ix);
-};
-*/
 
 _GEX int defaultDataCharter(const cRecStaticDescr& __d, int __ix);
 

@@ -2,6 +2,7 @@
 #include "mainwindow.h"
 #include "cerrormessagebox.h"
 #include "logon.h"
+#include "QInputDialog"
 
 cMainWindow *    lv2g::pMainWindow = NULL;
 bool lv2g::logonNeeded = false;
@@ -54,6 +55,31 @@ lv2g::lv2g() :
 lv2g::~lv2g()
 {
     ;
+}
+
+/// Zóna váltás dialóg
+void lv2g::changeZone(QWidget * par)
+{
+    QSqlQuery q = getQuery();
+    cPlaceGroup pg;
+    pg.setId(_sPlaceGroupType, PG_ZONE);
+    QStringList items;
+    items << _sAll;
+    if (!pg.fetch(q, false, pg.mask(_sPlaceGroupType), pg.iTab(_sPlaceGroupName))) EXCEPTION(EDATA,0,trUtf8("Nincsenek zónák !"));
+    do {
+        QString s = pg.getName();
+        if (s == _sAll) continue;
+        items << s;
+
+    } while (pg.next(q));
+    int current = 0;
+    if (pg.fetchById(q, zoneId)) current = items.indexOf(pg.getName());
+    if (current < 0) current = 0;
+    bool ok;
+    QString zoneName = QInputDialog::getItem(par, trUtf8("Zóna váltás"), trUtf8("A zóna neve :"), items, current, false, &ok);
+    if (ok) {
+        zoneId = pg.getIdByName(q, zoneName);
+    }
 }
 
 int defaultDataCharter(const cRecStaticDescr& __d, int __ix)

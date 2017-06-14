@@ -245,6 +245,7 @@ void  cMenuAction::executeIt()
         else if (0 == name.compare("tabs",    Qt::CaseInsensitive)) pMdiArea->setViewMode(QMdiArea::TabbedView);
         else if (0 == name.compare("windows", Qt::CaseInsensitive)) pMdiArea->setViewMode(QMdiArea::SubWindowView);
         else if (0 == name.compare("close",   Qt::CaseInsensitive)) pMdiArea->closeAllSubWindows();
+        else if (0 == name.compare("zone",    Qt::CaseInsensitive)) lv2g::getInstance()->changeZone();
         else    EXCEPTION(EDBDATA,-1, name);
     }
         break;
