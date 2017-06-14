@@ -193,11 +193,16 @@ int cInspectorProcess::startProcess(bool conn, int startTo, int stopTo)
     }
     switch (state()) {
     case QProcess::Running:
-        PDEB(VVERBOSE) << "Runing..." << endl;
-        if (conn) return 0; // RUN...
+        if (conn) {
+            PDEB(VVERBOSE) << "Runing and continue ..." << endl;
+            return 0; // RUN...
+        }
+        else {
+            PDEB(VVERBOSE) << "Runing and wait for finished ..." << endl;
+        }
         if (stopTo) {
             if (!waitForFinished(stopTo)) {
-                msg = trUtf8("'waitForFinished()' hiba: '%1'.").arg(ProcessError2Message(error()));
+                msg = trUtf8("'waitForFinished(%1)' hiba: '%2'.").arg(stopTo).arg(ProcessError2Message(error()));
                 DERR() << msg << endl;
                 inspector.hostService.setState(*inspector.pq, _sUnknown, msg);
                 inspector.internalStat = IS_STOPPED;
@@ -219,6 +224,7 @@ int cInspectorProcess::startProcess(bool conn, int startTo, int stopTo)
     }
     inspector.internalStat = IS_STOPPED;
     msg = trUtf8("A '%1' program elszállt : %2").arg(inspector.checkCmd).arg(ProcessError2Message(error()));
+    PDEB(VVERBOSE) << msg << endl;
     inspector.hostService.setState(*inspector.pq, _sCritical, msg);
     return -1;
 }
@@ -1474,8 +1480,7 @@ int cInspector::setServiceVar(QSqlQuery& q, const QString& name, double val, int
         DWAR() << trUtf8("ASrvice var %1 not fod.").arg(name) << endl;
         return RS_UNKNOWN;
     }
-    qlonglong heartbeat = (qlonglong)get(_sHeartbeatTime
-                                         );
+    qlonglong heartbeat = (qlonglong)get(_sHeartbeatTime);
     return pVar->setValue(q, val, state, heartbeat);
 }
 

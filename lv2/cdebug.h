@@ -89,7 +89,7 @@ EXT_ QString quotedStringList(const QStringList& __sl, const QChar &__q = QChar(
 /// @relates cDebug
 #define DBGOBJ()    _DBGOBJ() << endl
 
-#define __DERRH(fi, li, fu)    QObject::trUtf8("Error in ") << fi << "[" << li << "] " << fu << " : "
+#define __DERRH(fi, li, fu) head << QObject::trUtf8("Error in ") << _HEAD(fi, li, fu)
 #define _DERRH()    __DERRH(__FILE__, __LINE__, __PRETTY_FUNCTION__)
 /// @def DERR()
 /// Hasonló a PDEB() makróhoz, de itt a mask (PDEB() paramétere) DERROR, és kiírja az
@@ -105,7 +105,7 @@ EXT_ QString quotedStringList(const QStringList& __sl, const QChar &__q = QChar(
 /// Hasonló a PDEB() makróhoz, de itt a mask (PDEB() paramétere) WARNING, és kiírja az
 /// aktuális forrásfájl nevét abban a sotrszámot, valamint az aktuális függvény teljes nevét is.
 /// @relates cDebug
-#define __DWARH(fi, li, fu)    QObject::trUtf8("Warning in ") << fi << "[" << li << "] " << fu << " : "
+#define __DWARH(fi, li, fu) head << QObject::trUtf8("Warning in ") << _HEAD(fi, li, fu)
 #define _DWARH()    __DWARH(__FILE__, __LINE__, __PRETTY_FUNCTION__)
 #define DWAR()      _PDEB(WARNING) << _DWARH()
 

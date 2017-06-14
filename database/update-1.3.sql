@@ -507,10 +507,10 @@ COMMENT ON VIEW online_alarm_acks IS 'On-line nyugtázott, még aktív riasztás
 
 INSERT INTO unusual_fkeys
   ( table_name,             column_name,        unusual_fkeys_type, f_table_name,   f_column_name) VALUES
-  ( 'online_alarm_noacks', 'online_user_ids',    'property',       'users',        'user_id'),
-  ( 'online_alarm_noacks', 'notice_user_ids',    'property',       'users',        'user_id'),
-  ( 'online_alarm_noacks', 'view_user_ids',      'property',       'users',        'user_id'),
-  ( 'online_alarm_noacks', 'superior_alarm_id',  'property',       'host_services','host_service_id'),
+  ( 'online_alarm_unacks', 'online_user_ids',    'property',       'users',        'user_id'),
+  ( 'online_alarm_unacks', 'notice_user_ids',    'property',       'users',        'user_id'),
+  ( 'online_alarm_unacks', 'view_user_ids',      'property',       'users',        'user_id'),
+  ( 'online_alarm_unacks', 'superior_alarm_id',  'property',       'host_services','host_service_id'),
   ( 'online_alarm_acks',   'online_user_ids',    'property',       'users',        'user_id'),
   ( 'online_alarm_acks',   'notice_user_ids',    'property',       'users',        'user_id'),
   ( 'online_alarm_acks',   'view_user_ids',      'property',       'users',        'user_id'),

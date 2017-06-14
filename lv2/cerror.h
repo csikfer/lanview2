@@ -299,7 +299,7 @@ static inline QString _sql_err_bound(QSqlQuery& q)
 static inline void _sql_err_deb_(const QSqlError& le, const char * _fi, int _li, const char * _fu, const QString& s = QString())
 {
     if (ONDB(DERROR)) {
-        cDebug::cout() << head << __DERRH(_fi, _li, _fu) << " ...\n";
+        cDebug::cout() <<  __DERRH(_fi, _li, _fu) << " ...\n";
         cDebug::cout() << QObject::trUtf8("SQL ERROR #")     << le.number()
                        << QObject::trUtf8("; type:") << SqlErrorTypeToString(le.type()) << "\n";
         cDebug::cout() << QObject::trUtf8("driverText   : ") << le.driverText() << "\n";
