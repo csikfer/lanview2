@@ -28,7 +28,7 @@ enum eNotifSwitch {
     RS_UNREACHABLE,         ///< Az aktuális futási eredmény 'unreachable'
     RS_DOWN,                ///< Az aktuális futási eredmény 'down'
     RS_FLAPPING,            ///< Az aktuális futási eredmény 'flapping'
-    RS_UNKNOWN              ///< Az aktuális futási eredmény 'unknown'
+    RS_UNKNOWN              ///< Ismeretlen, még nincs beállítva, nem futási eredmény
 };
 
 

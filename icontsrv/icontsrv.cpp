@@ -935,7 +935,7 @@ int cIndAlarmIf::query(cGateway& g, QSqlQuery& q, QString& msg)
         strncpy(qm2.endMark,   "\r\n", sizeof(qm2.endMark));
         first = false;
     }
-    int rep = RS_UNKNOWN;
+    int rep = RS_UNREACHABLE;
     switch (type) {
     case IAIF1S:
     case IAIF1M:

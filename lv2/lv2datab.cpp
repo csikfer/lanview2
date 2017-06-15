@@ -192,7 +192,7 @@ const cColEnumType *cColEnumType::fetchOrGet(QSqlQuery& q, const QString& name, 
     if (r != NULL) return r;        // Ha a típust már beolvastuk
     QString sql = QString(
                 "SELECT pg_enum.enumlabel, pg_enum.enumtypid FROM  pg_catalog.pg_enum JOIN pg_catalog.pg_type ON pg_type.oid = pg_enum.enumtypid "
-                "WHERE pg_type.typname = '%1' ORDER BY pg_enum.oid").arg(name);
+                "WHERE pg_type.typname = '%1' ORDER BY pg_enum.enumsortorder ASC").arg(name);
     if (!q.exec(sql)) SQLPREPERR(q, sql);
     if (q.first()) {
         qlonglong id = q.value(1).toLongLong();

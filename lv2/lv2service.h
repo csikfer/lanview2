@@ -113,7 +113,7 @@ public:
     /// @param startTo Maximális várakozási dő a parancs indulására millisec-ben, alapértelmezetten 5 másodperc.
     /// @param sync Ha értéke true, akkor megvárja, amíg kilép a hívott program, ha false, akkor a slot-okat cstlakoztatja, és kilép.
     /// @param stopTo Maximális várakozási dő a parancs lefutására millisec-ben, alapértelmezetten 30 másodperc. Ha sync értéke false, akkor érdektelen.
-    virtual int startProcess(bool conn = false, int startTo = 5000, int stopTo = 0);
+    virtual int startProcess(int startTo, int stopTo = 0);
     cInspector& inspector;
 protected slots:
     virtual void processFinished(int _exitCode, QProcess::ExitStatus exitStatus);
@@ -165,7 +165,7 @@ public:
     virtual bool doRun(bool __timed);
     /// A szolgáltatáshoz tartozó tevékenységet végrehajtó virtuális metódus.
     /// A alap objektumban a metódus ha pProcess = NULL, akkor nem csinál semmit (egy debug üzenet feltételes kiírásán túl),
-    /// csak visszatér egy RS_UNKNOWN értékkel.
+    /// csak visszatér egy RS_UNREACHABLE értékkel.
     /// Ha pProcess pointer nem NULL, akkor végrehajtja a megadott parancsot, és az eredménnyel hívja a parse() metódust.
     /// @return A szolgáltatás állpota, ill. a tevékenység eredménye.
     virtual int run(QSqlQuery& q, QString &runMsg);
@@ -221,6 +221,7 @@ public:
     /// és feltölti.
     /// @return Egy string, a paraméter érték, ha nincs ilyen paraméter, akkor a NULL string, ha viszont nincs paraméternek értéke, akkor egy üres string
     QString feature(const QString& __nm, enum eEx __ex = EX_ERROR) { return features(__ex).value(__nm); }
+    /// Ha létezik ez a kulcs vagy paraméter akkor igaz értékkel tér vissza
     bool isFeature( const QString& __nm, enum eEx __ex = EX_ERROR) { return features(__ex).contains(__nm); }
     ///
     int getInspectorType(QSqlQuery &q);
@@ -265,6 +266,10 @@ public:
     qint64              interval;
     /// Hiba esetén az időzítés
     qint64              retryInt;
+    /// Start TimeOut
+    quint64             startTimeOut;
+    /// Stop TimeOut
+    quint64             stopTimeOut;
     /// Az időzítő QTimer azonosítója
     int                 timerId;
     /// Objektum a futási idő mérésére

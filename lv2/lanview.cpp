@@ -192,6 +192,8 @@ lanView::lanView()
             if (openDatabase(bool2ex(sqlNeeded == SN_SQL_NEED))) {
                 pQuery = newQuery();
                 setSelfObjects();
+                // A reasons típus nem tartozik olyan táblához amihez osztály is van definiálva, külön csekkoljuk
+                cColEnumType::checkEnum(*pQuery, "reasons", reasons, reasons);
             }
         }
         // SNMP init, ha kell

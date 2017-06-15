@@ -83,7 +83,8 @@ typedef int (*tS2E)(const QString& n, eEx __ex);
 /// @brief Okok ill. műveletek eredményei
 enum eReasons {
     REASON_INVALID = -1,
-    R_NEW     =  0, ///< Új elem
+    REASON_OK = 0,  ///< OK
+    R_NEW,          ///< Új elem
     R_INSERT,       ///< Új elem beszúrása/beszúrva.
     R_REMOVE,       ///< Elem eltávolítása/eltávolítva
     R_EXPIRED,      ///< Lejárt, elévült
@@ -96,11 +97,11 @@ enum eReasons {
     R_NOTFOUND,     ///< Nincs találat, valamelyik objektum hiányzik.
     R_DISCARD,      ///< Nincs művelet, az adat eldobásra került.
     R_CAVEAT,       ///< Valamilyen ellentmondás van az adatok között
-    R_ERROR,        ///< Egyébb hiba
     R_AMBIGUOUS,    ///< kétértelmüség
-    R_DB_ENUM_SIZE, ///< Az adatbázis enum típusban definiált értékek száma
-    REASON_OK,      ///< OK
-    REASON_TO       ///< Idő tullépés történt
+    R_ERROR,        ///< Egyébb hiba
+    R_CLOSE,        ///< Lezárva
+    R_TIMEOUT,      ///< Idő tullépés történt
+    R_UNKNOWN       ///< Ismeretlen
 };
 
 class cRecord;

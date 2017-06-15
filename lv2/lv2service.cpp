@@ -3,10 +3,6 @@
 #include "lv2service.h"
 #include "scan.h"
 
-#define THREADMAXINITTIME 200000
-#define THREADMAXDWENTIME 200000
-#define PROCMAXDWENTIME   2000
-
 cInspectorThread::cInspectorThread(cInspector *pp)
     : QThread(), inspector(*pp)
 {
@@ -173,13 +169,13 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
     }
 }
 
-int cInspectorProcess::startProcess(bool conn, int startTo, int stopTo)
+int cInspectorProcess::startProcess(int startTo, int stopTo)
 {
-    _DBGFN() << VDEBBOOL(conn) << VDEB(startTo) << VDEB(stopTo) << endl;
+    _DBGFN() << VDEB(startTo) << VDEB(stopTo) << endl;
     QString msg;
     if (inspector.checkCmd.isEmpty()) EXCEPTION(EPROGFAIL);
     PDEB(VVERBOSE) << "START : " << inspector.checkCmd << " " << inspector.checkCmdArgs.join(" ") << "; and wait ..." << endl;
-    if (conn) {
+    if (stopTo == 0) {
         PDEB(VVERBOSE) << "Set connects for path through log. ..." << endl;
         connect(this, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(processFinished(int, QProcess::ExitStatus)));
         connect(this, SIGNAL(readyRead()),                         this, SLOT(processReadyRead()));
@@ -193,35 +189,30 @@ int cInspectorProcess::startProcess(bool conn, int startTo, int stopTo)
     }
     switch (state()) {
     case QProcess::Running:
-        if (conn) {
+        if (stopTo == 0) {
             PDEB(VVERBOSE) << "Runing and continue ..." << endl;
             return 0; // RUN...
         }
-        else {
-            PDEB(VVERBOSE) << "Runing and wait for finished ..." << endl;
+        PDEB(VVERBOSE) << "Runing and wait for finished ..." << endl;
+        if (!waitForFinished(stopTo)) {
+            msg = trUtf8("'waitForFinished(%1)' hiba: '%2'.").arg(stopTo).arg(ProcessError2Message(error()));
+            DERR() << msg << endl;
+            inspector.hostService.setState(*inspector.pq, _sUnreachable, msg);
+            inspector.internalStat = IS_STOPPED;
+            return -1;
         }
-        if (stopTo) {
-            if (!waitForFinished(stopTo)) {
-                msg = trUtf8("'waitForFinished(%1)' hiba: '%2'.").arg(stopTo).arg(ProcessError2Message(error()));
-                DERR() << msg << endl;
-                inspector.hostService.setState(*inspector.pq, _sUnknown, msg);
-                inspector.internalStat = IS_STOPPED;
-                return -1;
-            }
-            break;          // EXITED
-        }
-        else EXCEPTION(EPROGFAIL);
-        break;
+        break;              // EXITED
     case QProcess::NotRunning:
         break;              // EXITED
     default:
         EXCEPTION(EPROGFAIL);
     }
-    if (exitStatus() == QProcess::NormalExit) {
+    if (exitStatus() == QProcess::NormalExit) { // OK
         inspector.internalStat = inspector.inspectorType & IT_PROCESS_TIMED ? IS_SUSPENDED : IS_STOPPED;
         PDEB(VVERBOSE) << trUtf8("A '%1' lefutott, kilépéso kód : %2").arg(inspector.checkCmd).arg(exitCode()) << endl;
         return exitCode();
     }
+    // Error
     inspector.internalStat = IS_STOPPED;
     msg = trUtf8("A '%1' program elszállt : %2").arg(inspector.checkCmd).arg(ProcessError2Message(error()));
     PDEB(VVERBOSE) << msg << endl;
@@ -257,7 +248,7 @@ void cInspectorProcess::processFinished(int _exitCode, QProcess::ExitStatus exit
         }
         PDEB(VERBOSE) << "ReStart : " << inspector.checkCmd << endl;
         inspector.internalStat = IS_RUN;
-        startProcess(true);
+        startProcess(inspector.startTimeOut);
     }
     else {  // ?! Nem szabadna itt lennünk.
         EXCEPTION(EPROGFAIL, inspector.inspectorType, inspector.name());
@@ -302,6 +293,8 @@ void cInspector::preInit(cInspector *__par)
     _pFeatures= NULL;
     interval = -1;
     retryInt = -1;
+    startTimeOut =  2000;   // Default  2s
+    stopTimeOut  = 10000;   // Default 10s
     timerId  = -1;
     lastRun.invalidate();
     lastElapsedTime = -1;
@@ -425,7 +418,7 @@ void cInspector::down()
     drop(EX_IGNORE);
     if (pInspectorThread != NULL) {
         pInspectorThread->start();  // Indítás az IS_DOWN állapottal timert leállítja, QSqlQuerry objektumo(ka)t törli
-        if (!pInspectorThread->wait(THREADMAXDWENTIME)) pInspectorThread->terminate();
+        if (!pInspectorThread->wait(stopTimeOut)) pInspectorThread->terminate();
         dropThreadDb(pInspectorThread->objectName(), EX_IGNORE);
         pDelete( pInspectorThread);
     }
@@ -516,7 +509,7 @@ void cInspector::postInit(QSqlQuery& q, const QString& qs)
     if (isThread()) {
         pInspectorThread = newThread();     //
         pInspectorThread->start();          // Init, Init után leáll
-        if (!pInspectorThread->wait(THREADMAXINITTIME)) {   // Az init még szinkron, megvárjuk a végét
+        if (!pInspectorThread->wait(startTimeOut)) {   // Az init még szinkron, megvárjuk a végét
             EXCEPTION(ETO, 0, trUtf8("%1 thread init.").arg(name()));
         }
     }
@@ -732,6 +725,29 @@ int cInspector::getInspectorMethod(const QString &value)
 int cInspector::getInspectorType(QSqlQuery& q)
 {
     _DBGFN() << name() << " " << endl;
+    // Nem típus, de itt előkotorjuk az esetleges Time out értékeket is, ha vannak
+    // "stopTimeOut"  Program indítás, millisec-ben
+    // "startTimeOut" vagy "timeOut" program futás, vagy más folyamatra szán idő szintén millisec-ben
+    bool ok;
+    quint64 to;
+    QString sto;
+    sto = feature("startTimeout");
+    if (!sto.isEmpty()) {
+        to = sto.toULongLong(&ok);
+        if (ok) startTimeOut = to;
+    }
+    sto = feature("stopTimeout");
+    if (sto.isEmpty()) sto = feature(_sTimeout);
+    if (!sto.isEmpty()) {
+        to = sto.toULongLong(&ok);
+        if (ok) stopTimeOut = to;
+    }
+    if (startTimeOut <= 0 || stopTimeOut <= 0) {
+        EXCEPTION(EDATA, 0,
+                  trUtf8("Invalid time out value in %1. startTimeOut = %2, stopTimeOut = %3")
+                  .arg(name()).arg(startTimeOut).arg(stopTimeOut));
+    }
+    // Típus:
     inspectorType = 0;
     if (isFeature(_sSuperior)) inspectorType |= IT_SUPERIOR;
     if (pParent == NULL) inspectorType |= IT_MAIN;
@@ -983,7 +999,7 @@ void cInspector::timerEvent(QTimerEvent *)
 bool cInspector::doRun(bool __timed)
 {
     _DBGFN() << name() << (__timed ? _sTimed : _sNul) << endl;
-    int  retStat = RS_UNKNOWN;  // A lekérdezés státusza
+    int  retStat = RS_UNREACHABLE;  // A lekérdezés alapértelmezett státusza
     bool statIsSet    = false;  // A statusz beállítva
     bool statSetRetry = false;  // Időzítés modosítása
     cError * lastError = NULL;  // Hiba leíró
@@ -1021,7 +1037,7 @@ bool cInspector::doRun(bool __timed)
         pDelete(lastError);
         statMsg = msgCat(statMsg, trUtf8("Hiba, ld.: app_errs.applog_id = %1").arg(id));
         sqlBegin(*pq, tn);
-        hostService.setState(*pq, _sUnknown, statMsg, parentId(EX_IGNORE));
+        hostService.setState(*pq, _sUnreachable, statMsg, parentId(EX_IGNORE));
         internalStat = IS_STOPPED;
     }
     // Ha ugyan nem volt hiba, de sokat tököltünk
@@ -1047,7 +1063,7 @@ int cInspector::run(QSqlQuery& q, QString& runMsg)
     if (pProcess != NULL) {
         if (checkCmd.isEmpty()) EXCEPTION(EPROGFAIL);
         PDEB(VERBOSE) << "Run : " << checkCmd << " " << checkCmdArgs.join(" ") << endl;
-        int ec = pProcess->startProcess(false, 5000, 60000);    //Paraméterezni!!!
+        int ec = pProcess->startProcess(startTimeOut, stopTimeOut);
         if (ec == -1) return RS_STAT_SETTED;    // sended: RS_CRITICAL
         return parse(ec, *pProcess);
     }
@@ -1055,7 +1071,7 @@ int cInspector::run(QSqlQuery& q, QString& runMsg)
         PDEB(VVERBOSE) << " * NOOP *" << endl;
         internalStat = isTimed() ? IS_SUSPENDED : IS_STOPPED;
     }
-    return RS_UNKNOWN;
+    return RS_UNREACHABLE;
 }
 
 enum eNotifSwitch cInspector::parse(int _ec, QIODevice& text)
@@ -1083,14 +1099,14 @@ enum eNotifSwitch cInspector::parse_munin(int _ec, QIODevice &text)
 
 enum eNotifSwitch cInspector::parse_nagios(int _ec, QIODevice &text)
 {
-    QString s = _sUnknown;
+    QString s = _sDown;
     int r = RS_STAT_SETTED | RS_SET_RETRY;
     QString note = QString::fromUtf8(text.readAll());
     switch (_ec) {
-    case NR_OK:         s = _sOn;       r = RS_STAT_SETTED;     break;
-    case NR_WARNING:    s = _sWarning;  break;
-    case NR_CRITICAL:   s = _sCritical; break;
-    case NR_UNKNOWN:    s = _sUnknown;  break;
+    case NR_OK:         s = _sOn;           r = RS_STAT_SETTED;     break;
+    case NR_WARNING:    s = _sWarning;      break;
+    case NR_CRITICAL:   s = _sCritical;     break;
+    case NR_UNKNOWN:    s = _sUnreachable;  break;
     }
     hostService.setState(*pq, s, note);
     return (enum eNotifSwitch)r;
@@ -1177,7 +1193,7 @@ void cInspector::start()
         if (checkCmd.isEmpty()) EXCEPTION(EPROGFAIL);
         internalStat = IS_RUN;
         PDEB(VERBOSE) << "Start : " << checkCmd << endl;
-        pProcess->startProcess(true);
+        pProcess->startProcess(startTimeOut);
         _DBGFNL() << " (process) " << name() << " internalStat = " << internalStatName() << endl;
         return;
     }
@@ -1243,7 +1259,7 @@ void cInspector::drop(eEx __ex)
         else if (pInspectorThread->isRunning()) {
             PDEB(VVERBOSE) << "Stop " << pInspectorThread->objectName() << " thread..." << endl;
             pInspectorThread->quit();
-            pInspectorThread->wait(10000);
+            pInspectorThread->wait(stopTimeOut);
             if (pInspectorThread->isRunning()) {
                 DWAR() << "Thread " << pInspectorThread->objectName() << " quit time out" << endl;
                 pInspectorThread->terminate();
@@ -1255,13 +1271,13 @@ void cInspector::drop(eEx __ex)
     }
     internalStat = IS_DOWN;
     if (isTimed()) {
-        if (timerId == 0) {
+        if (timerId <= 0) {
             if (!isThread()) {
                 EXCEPTION(EPROGFAIL);
             }
             else if (pInspectorThread != NULL) {
-                pInspectorThread->start();
-                pInspectorThread->wait(THREADMAXINITTIME);
+                pInspectorThread->start();  // status down-ban, ráadjuk a vezérlést, hogy le tudjon állni
+                pInspectorThread->wait(stopTimeOut);
             }
         }
         else if (timerId > 0) {
@@ -1467,7 +1483,7 @@ int cInspector::setServiceVar(QSqlQuery& q, const QString& name, qulonglong val,
     cServiceVar *pVar = getServiceVar(name);
     if (pVar == NULL) {
         DWAR() << trUtf8("ASrvice var %1 not fod.").arg(name) << endl;
-        return RS_UNKNOWN;
+        return RS_UNREACHABLE;
     }
     qlonglong heartbeat = (qlonglong)get(_sHeartbeatTime);
     return pVar->setValue(q, val, state, heartbeat);
@@ -1478,7 +1494,7 @@ int cInspector::setServiceVar(QSqlQuery& q, const QString& name, double val, int
     cServiceVar *pVar = getServiceVar(name);
     if (pVar == NULL) {
         DWAR() << trUtf8("ASrvice var %1 not fod.").arg(name) << endl;
-        return RS_UNKNOWN;
+        return RS_UNREACHABLE;
     }
     qlonglong heartbeat = (qlonglong)get(_sHeartbeatTime);
     return pVar->setValue(q, val, state, heartbeat);

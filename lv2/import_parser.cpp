@@ -156,7 +156,7 @@ int cImportParseThread::push(const QString& src, cError *& pe)
         else {
             pe = importGetLastError();                      // Időtullépés
             if (NULL == pe) pe = NEWCERROR(ETO);
-            r = REASON_TO;
+            r = R_TIMEOUT;
         }
     }
     else {

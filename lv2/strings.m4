@@ -149,9 +149,9 @@ STRDEF(Found, "found")
 STRDEF(Notfound, "notfound")
 STRDEF(Discard, "discard")
 STRDEF(Caveat, "caveat")
-STRDEF(TimeOut, "time out")
-dnl error
+STRDEF(Timeout, "timeout")
 STRDEF(Ambiguous, "ambiguous")
+STRDEF(Close, "close")
 
 dnl Tábla és mező nevek
 STRDEF(ParamTypes, "param_types")

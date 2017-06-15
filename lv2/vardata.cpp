@@ -319,12 +319,12 @@ int cServiceVar::noValue(QSqlQuery& q, int &state, qlonglong heartbeat)
 {
     QDateTime last = get(_sLastTime).toDateTime();
     if (heartbeat != NULL_ID && heartbeat < last.msecsTo(QDateTime::currentDateTime())) {
-        setId(_sVarState, RS_UNKNOWN);
+        setId(_sVarState, RS_UNREACHABLE);
         clear(_sServiceVarValue);
         update(q, false, mask(_sVarState, _sRawValue, _sLastTime, _sServiceVarValue));
-        if (getBool(_sDelegateServiceState)) state = RS_UNKNOWN;
+        if (getBool(_sDelegateServiceState)) state = RS_UNREACHABLE;
     }
-    return RS_UNKNOWN;
+    return RS_UNREACHABLE;
 }
 
 eTristate cServiceVar::checkIntValue(qulonglong val, qlonglong ft, const QVariant& _p1, const QVariant& _p2)

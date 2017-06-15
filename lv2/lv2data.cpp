@@ -39,6 +39,7 @@ int notifSwitch(const QString& _nm, eEx __ex)
 
 int reasons(const QString& _r, eEx __ex)
 {
+    if (0 == _r.compare(_sOk,       Qt::CaseInsensitive)) return REASON_OK;
     if (0 == _r.compare(_sNew,      Qt::CaseInsensitive)) return R_NEW;
     if (0 == _r.compare(_sInsert,   Qt::CaseInsensitive)) return R_INSERT;
     if (0 == _r.compare(_sRemove,   Qt::CaseInsensitive)) return R_REMOVE;
@@ -52,8 +53,11 @@ int reasons(const QString& _r, eEx __ex)
     if (0 == _r.compare(_sNotfound, Qt::CaseInsensitive)) return R_NOTFOUND;
     if (0 == _r.compare(_sDiscard,  Qt::CaseInsensitive)) return R_DISCARD;
     if (0 == _r.compare(_sCaveat,   Qt::CaseInsensitive)) return R_CAVEAT;
-    if (0 == _r.compare(_sError,    Qt::CaseInsensitive)) return R_ERROR;
     if (0 == _r.compare(_sAmbiguous,Qt::CaseInsensitive)) return R_AMBIGUOUS;
+    if (0 == _r.compare(_sError,    Qt::CaseInsensitive)) return R_ERROR;
+    if (0 == _r.compare(_sClose,    Qt::CaseInsensitive)) return R_CLOSE;
+    if (0 == _r.compare(_sTimeout,  Qt::CaseInsensitive)) return R_TIMEOUT;
+    if (0 == _r.compare(_sUnknown,  Qt::CaseInsensitive)) return R_UNKNOWN;
     if (__ex != EX_IGNORE) EXCEPTION(EDATA, -1, _r);
     return ENUM_INVALID;
 }
@@ -61,6 +65,7 @@ int reasons(const QString& _r, eEx __ex)
 const QString& reasons(int _r, eEx __ex)
 {
     switch (_r) {
+    case REASON_OK:     return _sOk;
     case R_NEW:         return _sNew;
     case R_INSERT:      return _sInsert;
     case R_REMOVE:      return _sRemove;
@@ -74,10 +79,11 @@ const QString& reasons(int _r, eEx __ex)
     case R_NOTFOUND:    return _sNotfound;
     case R_DISCARD:     return _sDiscard;
     case R_CAVEAT:      return _sCaveat;
-    case R_ERROR:       return _sError;
     case R_AMBIGUOUS:   return _sAmbiguous;
-    case REASON_OK:     return _sOk;
-    case REASON_TO:     return _sTimeOut;
+    case R_ERROR:       return _sError;
+    case R_TIMEOUT:     return _sTimeout;
+    case R_CLOSE:       return _sClose;
+    case R_UNKNOWN:     return _sUnknown;
     }
     if (__ex != EX_IGNORE) EXCEPTION(EDATA, _r);
     return _sNul;
