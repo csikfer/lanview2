@@ -587,9 +587,8 @@ DECLARE
     tflapp      interval;       -- Flapping figyelés időablakának a hossza
     iflapp      integer;        -- Az isőablakon bellüli státuszváltozások száma
     alid        bigint;
-    aldo        reasons;
+    aldo        reasons := 'unknown';
 BEGIN
-    aldo := 'unknown';
     hs := touch_host_service(hsid);
     SELECT * INTO  s FROM services WHERE service_id = hs.service_id;
     IF NOT FOUND THEN
@@ -600,23 +599,18 @@ BEGIN
     END IF;
     old_hs := hs;
     alid := old_hs.act_alarm_log_id;
-    IF hs.alarm_id IS NOT NULL THEN
-        SELECT alarm_id INTO alid FROM alarms WHERE alarm_id = hs.alarm_id;
-    END IF;
     CASE state
         WHEN 'on','recovered' THEN
             hs.host_service_state := state;
             hs.hard_state := 'on';
             hs.soft_state := 'on';
             hs.check_attempts := 0;
-            aldo := 'close';
         WHEN 'warning', 'unreachable','down','unknown','critical' THEN
             IF hs.hard_state <> 'on' THEN   -- nem most rommlott el
                 hs.hard_state := state;
                 hs.soft_state := state;
                 hs.host_service_state := state;
                 hs.check_attempts := 0;
-                aldo := 'modify';
             ELSE                            -- most vagy nem rég romlott el, hihető?
                 IF hs.soft_state = 'on' THEN
                     hs.check_attempts := 1; -- pont most lett rossz, kezdünk számolni
@@ -637,7 +631,6 @@ BEGIN
                     hs.host_service_state := state;
                     hs.check_attempts := 0;
                 END IF;
-                aldo := 'discard';  -- változhat
             END IF;
         ELSE
             PERFORM error('Params', state, 'notifswitch', 'set_service_stat()');    -- kilép!
@@ -708,7 +701,8 @@ BEGIN
                 WHERE alarm_id = hs.act_alarm_log_id;
             aldo := 'modify';
         ELSE
-             RAISE INFO 'No mod alarms, old_hs = %, hs = %' ,old_hs, hs;
+            RAISE INFO 'No mod alarms, old_hs = %, hs = %' ,old_hs, hs;
+            aldo := 'unchange';
     END CASE;
     UPDATE host_services SET
             max_check_attempts = hs.max_check_attempts,

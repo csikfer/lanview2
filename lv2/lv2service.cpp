@@ -730,14 +730,16 @@ int cInspector::getInspectorType(QSqlQuery& q)
     // "startTimeOut" vagy "timeOut" program futás, vagy más folyamatra szán idő szintén millisec-ben
     bool ok;
     quint64 to;
-    QString sto;
-    sto = feature("startTimeout");
+    QString sto, stod;
+    stod = feature(_sTimeout);
+    sto  = feature("startTimeout");
+    if (sto.isEmpty()) sto = stod;
     if (!sto.isEmpty()) {
         to = sto.toULongLong(&ok);
         if (ok) startTimeOut = to;
     }
-    sto = feature("stopTimeout");
-    if (sto.isEmpty()) sto = feature(_sTimeout);
+    sto  = feature("stopTimeout");
+    if (sto.isEmpty()) sto = stod;
     if (!sto.isEmpty()) {
         to = sto.toULongLong(&ok);
         if (ok) stopTimeOut = to;
@@ -1200,8 +1202,18 @@ void cInspector::start()
     // Start timer
     if (isTimed()) {
         internalStat = IS_SUSPENDED;
-        qlonglong t = rnd(interval);
-        PDEB(VERBOSE) << "Start " << name() << " timer " << interval << QChar('/') << t << "ms"
+        qlonglong t;
+        QDateTime last;
+        if (!hostService.isNull(_sLastTouched)) {
+            last = hostService.get(_sLastTouched).toDateTime();
+            qlonglong ms = last.msecsTo(QDateTime::currentDateTime());
+            if (ms < interval) t = interval - ms;
+            else               t = rnd(retryInt);
+        }
+        else {
+            t = rnd(interval);
+        }
+        PDEB(VERBOSE) << "Start " << name() << " timer " << interval << QChar('/') << t << "ms, Last time = " << last.toString()
                       << " object thread : " << thread()->objectName() << endl;
         timerId = startTimer(t);
         if (0 == timerId) EXCEPTION(EPROGFAIL, interval, trUtf8("Timer not started."));

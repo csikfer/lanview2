@@ -346,9 +346,8 @@ bool cGateway::openSocket()
 {
     if (pSock == NULL) EXCEPTION(EPROGFAIL, -1, trUtf8("Nincs socket objektumunk."));
     pSock->connectToHost(sockAddr, sockPort);
-    return pSock->waitForConnected(retryInt);
+    return pSock->waitForConnected(startTimeOut);
 }
-
 
 QIODevice *cGateway::getIoDev()
 {
@@ -412,8 +411,6 @@ bool cGateway::waitForRead(int msec)
     return r;
 }
 
-/// Blokk kommunikáció time-out mSec-ben
-#define COM_TO  200
 /// Egy command blokk küldése és a válasz vétele
 bool cGateway::com_s(void * io, size_t size)
 {
@@ -423,7 +420,7 @@ bool cGateway::com_s(void * io, size_t size)
         DERR() << "IO Device is NULL." << endl;
         return false;
     }
-    int to = COM_TO;
+    int to = stopTimeOut;
     PDEB(INFO) << QObject::trUtf8("Küldés : ") << QByteArray((char *)io, size) << endl;
     qint64  wr = pIO->write((char *)io, size);
     PDEB(VVERBOSE) << "Write result : " << wr << endl;
@@ -431,7 +428,7 @@ bool cGateway::com_s(void * io, size_t size)
         DERR() << "Write error." << endl;
         return false;
     }
-    bool wt = waitForWritten(to);
+    bool wt = waitForWritten(startTimeOut);
     if (!wt) {
         DERR() << "Wait for writen error." << endl;
         return false;
@@ -439,7 +436,7 @@ bool cGateway::com_s(void * io, size_t size)
     size_t   n = 0;
     QElapsedTimer   t;
     t.start();
-    while ((to = COM_TO - t.elapsed()) > 0) {
+    while ((to = stopTimeOut - t.elapsed()) > 0) {
         bool r = waitForRead(to);
         if (!r) break;
         char c;
@@ -470,7 +467,7 @@ int cGateway::com_q(struct qMsg * out, struct aMsg * in, QString &msg)
         DERR() << msg << endl;
         return RS_UNREACHABLE;
     }
-    int to = COM_TO;
+    int to = stopTimeOut;
     static const char kstat[] = "ONDAISCUEaiscue";
     PDEB(INFO) << QObject::trUtf8("Küldés : ") << QByteArray((char *)out, sizeof(struct qMsg)) << endl;
     qint64  wr = pIO->write((char *)out, sizeof(struct qMsg));
@@ -480,7 +477,7 @@ int cGateway::com_q(struct qMsg * out, struct aMsg * in, QString &msg)
         DERR() << msg << endl;
         return RS_UNREACHABLE;
     }
-    bool wt = waitForWritten(to);
+    bool wt = waitForWritten(startTimeOut);
     if (!wt) {
         msg = trUtf8("Quit for writen error.");
         DERR() << msg << endl;
@@ -490,7 +487,7 @@ int cGateway::com_q(struct qMsg * out, struct aMsg * in, QString &msg)
     QElapsedTimer   t;
     t.start();
     QString data, dropped;
-    while ((to = COM_TO - t.elapsed()) > 0) {
+    while ((to = stopTimeOut - t.elapsed()) > 0) {
         bool r = waitForRead(to);
         if (!r) break;
         char c;
@@ -560,7 +557,7 @@ int cGateway::com_q(struct qMsg2 * out, struct aMsg2 * in, QString& msg)
         DERR() << msg << endl;
         return RS_UNREACHABLE;
     }
-    int to = COM_TO; // 200mSec
+    int to = stopTimeOut; // 200mSec
     static const char kstat[] = "ONDAISCUEaiscue";
     PDEB(INFO) << QObject::trUtf8("Küldés : ") << QByteArray((char *)out, sizeof(struct qMsg2)) << endl;
     qint64  wr = pIO->write((char *)out, sizeof(struct qMsg2));
@@ -570,7 +567,7 @@ int cGateway::com_q(struct qMsg2 * out, struct aMsg2 * in, QString& msg)
         DERR() << msg << endl;
         return RS_UNREACHABLE;
     }
-    bool wt = waitForWritten(to);
+    bool wt = waitForWritten(startTimeOut);
     if (!wt) {
         msg = trUtf8("Quit for writen error.");
         DERR() << msg << endl;
@@ -580,7 +577,7 @@ int cGateway::com_q(struct qMsg2 * out, struct aMsg2 * in, QString& msg)
     QElapsedTimer   t;
     t.start();
     QString data, dropped;
-    while ((to = COM_TO - t.elapsed()) > 0) {
+    while ((to = stopTimeOut - t.elapsed()) > 0) {
         bool r = waitForRead(to);
         if (!r) break;
         char c;
