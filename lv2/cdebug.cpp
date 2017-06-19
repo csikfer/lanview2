@@ -431,10 +431,15 @@ void debugStream::sRedyLineFromThread()
     flush();
 }
 
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 8, 0))
+#define HEAD_DT_FORMAT Qt::ISODateWithMs
+#else
+#define HEAD_DT_FORMAT Qt::ISODate
+#endif
 
 debugStream &  head(debugStream & __ds)
 {
-    __ds << QDateTime::currentDateTime().toString(Qt::ISODateWithMs) << QChar(' ')
+    __ds << QDateTime::currentDateTime().toString(HEAD_DT_FORMAT) << QChar(' ')
          << QCoreApplication::applicationName()
          << QChar('[')  << QString::number(QCoreApplication::applicationPid());
     if (__ds.isMain() == false) {
