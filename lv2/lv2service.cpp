@@ -4,13 +4,29 @@
 #include "scan.h"
 
 cInspectorThread::cInspectorThread(cInspector *pp)
-    : QThread(), inspector(*pp)
+    : QThread(pp), inspector(*pp), acceptor(NULL)
 {
     _DBGFN() << inspector.name() << endl;
     pTimer     = NULL;
     pLastError = NULL;
-    moveToThread(this);
+    setObjectName(inspector.name());
+    acceptor.moveToThread(this);
     DBGFNL();
+}
+
+cInspectorThread::~cInspectorThread()
+{
+    if (isRunning()) {
+        QString msg = trUtf8("%1 thread is run. Wait 30 sec.").arg(inspector.name());
+        QAPPMEMO(msg, RS_WARNING);
+        terminate();
+        wait(30000);
+        if (isRunning()) {
+            QString msg = trUtf8("%1 thread is run. Exit app.").arg(inspector.name());
+            QAPPMEMO(msg, RS_CRITICAL);
+            exit(1);
+        }
+    }
 }
 
 void cInspectorThread::run()
@@ -19,9 +35,9 @@ void cInspectorThread::run()
     try {
         _DBGFN() << inspector.name() << inspector.internalStat << endl;
         switch (inspector.internalStat) {
-        case IS_DOWN:   doDown();   return;
-        case IS_INIT:   doInit();   return;
-        case IS_RUN:    doRun();    return;
+        case IS_INIT:   doInit();   break;
+        case IS_RUN:    doRun();    break;
+        case IS_DOWN:   doDown();   break;
         default:
             EXCEPTION(EPROGFAIL, inspector.internalStat, internalStatName(inspector.internalStat));
             return;
@@ -44,17 +60,6 @@ void cInspectorThread::doInit()
         inspector.pSubordinates = new QList<cInspector *>;
         inspector.setSubs(*inspector.pq);
     }
-}
-
-void cInspectorThread::doDown()
-{
-    _DBGFN() << inspector.name() << endl;
-    if (inspector.isTimed() && pTimer != NULL) {
-        pDelete(pTimer);
-        inspector.timerId = -1;
-    }
-    inspector.dropSubs();
-    pDelete(inspector.pq);
 }
 
 void cInspectorThread::doRun()
@@ -87,6 +92,17 @@ void cInspectorThread::doRun()
     exec();
     PDEB(INFO) << QObject::trUtf8("Stopp %1 event loop ...").arg(inspector.name()) << endl;
     inspector.internalStat = IS_STOPPED;
+}
+
+void cInspectorThread::doDown()
+{
+    _DBGFN() << inspector.name() << endl;
+    if (inspector.isTimed() && pTimer != NULL) {
+        pDelete(pTimer);
+        inspector.timerId = -1;
+    }
+    inspector.dropSubs();
+    pDelete(inspector.pq);
 }
 
 void cInspectorThread::timerEvent()
@@ -311,8 +327,7 @@ void cInspector::preInit(cInspector *__par)
 
     pParent = __par;
     if (pParent != NULL) {
-        if (pParent->pInspectorThread != NULL) setParent(pParent->pInspectorThread);
-        else                                   setParent(pParent);
+        setParent(pParent->useParent());
     }
     DBGFNL();
 }
@@ -510,7 +525,13 @@ void cInspector::postInit(QSqlQuery& q, const QString& qs)
         pInspectorThread = newThread();     //
         pInspectorThread->start();          // Init, Init után leáll
         if (!pInspectorThread->wait(startTimeOut)) {   // Az init még szinkron, megvárjuk a végét
+
             EXCEPTION(ETO, 0, trUtf8("%1 thread init.").arg(name()));
+        }
+        if (pInspectorThread->pLastError != NULL) {
+            cError *pe = pInspectorThread->pLastError;
+            pInspectorThread->pLastError = NULL;
+            pe->exception();
         }
     }
     // Van superior. (Thread-nél ezt a thread-ben kell)
@@ -1262,6 +1283,7 @@ void cInspector::drop(eEx __ex)
 {
     _DBGFN() << name() << endl;
 
+    internalStat = IS_DOWN;
     if (isThread()) {
         if (pInspectorThread == NULL) {
             QString m = QObject::trUtf8("%1 pThread egy NULL pointer.").arg(name());
@@ -1281,7 +1303,6 @@ void cInspector::drop(eEx __ex)
             }
         }
     }
-    internalStat = IS_DOWN;
     if (isTimed()) {
         if (timerId <= 0) {
             if (!isThread()) {

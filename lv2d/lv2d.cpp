@@ -5,8 +5,6 @@
 #define VERSION_MINOR   99
 #define VERSION_STR     _STR(VERSION_MAJOR) "." _STR(VERSION_MINOR)
 
-#define COREDUMP 1
-
 const QString& setAppHelp()
 {
     return _sNul;
@@ -26,11 +24,6 @@ int main(int argc, char *argv[])
     if (mo.lastError) {  // Ha hiba volt, vagy vége
         return mo.lastError->mErrorCode; // a mo destruktora majd kiírja a hibaüzenetet.
     }
-#if COREDUMP
-    static const QString cmd = "ulimit -c 1000000";
-    int rr = QProcess::execute(cmd);
-    PDEB(INFO) << QString("Exec : \"%1\", return : %2").arg(cmd).arg(rr) << endl;
-#endif
 
     int r = mo.pSelfInspector->inspectorType;
     r = r & (IT_TIMING_POLLING | IT_PROCESS_POLLING);

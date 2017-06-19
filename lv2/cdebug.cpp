@@ -140,6 +140,7 @@ cDebug::cDebug(qlonglong _mMask, const QString& _fn) : mFName(_fn)
 
 cDebug::~cDebug()
 {
+    flushAll();
     disabled = true;
     if (mThreadMsgQueueMutex != NULL) {
         mThreadMsgQueueMutex->tryLock(1000);
@@ -147,7 +148,6 @@ cDebug::~cDebug()
         mThreadMsgQueueMutex = NULL;
     }
     if (mThreadMsgQueue != NULL) {
-        // Flush ??
         delete mThreadMsgQueue;
     }
     if (mThreadStreamsMapMutex != NULL) {
@@ -297,6 +297,25 @@ QString cDebug::fNameCnv(const QString& _fn)
     }
 }
 
+void cDebug::flushAll()
+{
+    if (cDebug::disabled
+     || !isMainThread()
+     || instance == NULL
+     || instance->mThreadMsgQueueMutex == NULL
+     || instance->mThreadMsgQueue == NULL
+     || instance->mThreadMsgQueue->isEmpty()
+     || NULL == instance->mCout)
+        return;
+    *instance->mCout << QObject::trUtf8("Flush thread messages :") << endl;
+    instance->mThreadMsgQueueMutex->lock();
+    foreach (QString msg, *instance->mThreadMsgQueue) {
+        *instance->mCout << msg;
+    }
+    instance->mThreadMsgQueueMutex->unlock();
+    *instance->mCout << QObject::trUtf8("Flush thread messages end.") << endl;
+}
+
 /* **************************************************************************************** */
 debugStream *debugStream::mainInstance = NULL;
 
@@ -415,7 +434,7 @@ void debugStream::sRedyLineFromThread()
 
 debugStream &  head(debugStream & __ds)
 {
-    __ds << QDateTime::currentDateTime().toString() << QChar(' ')
+    __ds << QDateTime::currentDateTime().toString(Qt::ISODateWithMs) << QChar(' ')
          << QCoreApplication::applicationName()
          << QChar('[')  << QString::number(QCoreApplication::applicationPid());
     if (__ds.isMain() == false) {

@@ -78,21 +78,21 @@ public:
     /// Konstruktor
     cGateway(QSqlQuery& q, qlonglong hsid, qlonglong hoid, cInspector * par);
     ~cGateway();
-    /// Leklrdező objektumok (cIndAlarmIf) beolvasása / pSubordinates feltöltése
+    /// Lekérdező objektumok (cIndAlarmIf) beolvasása / pSubordinates feltöltése
     virtual void setSubs(QSqlQuery& q, const QString& qs = _sNul);
     virtual void threadPreInit();
     virtual int run(QSqlQuery &q, QString &runMsg);
-    int open(QSqlQuery& q, QString &msg);
+    int open(QSqlQuery& q, QString &msg, int to);
     void close();
     bool reOpen(QSqlQuery& q);
     QIODevice *getIoDev();
     bool waitForRead(int msec);
     bool waitForWritten(int msec);
-    bool com_s(void * io, size_t size);
+    bool com_s(void * io, size_t size, cInspector *pInsp);
     /// Egy query blokk küldése, és válasz fogadása
-    int com_q(struct qMsg  * out, struct aMsg  * in, QString &msg);
+    int com_q(struct qMsg  * out, struct aMsg  * in, QString &msg, cInspector *pInsp);
     /// Egy query blokk küldése, és válasz fogadása
-    int com_q(struct qMsg2 * out, struct aMsg2 * in, QString &msg);
+    int com_q(struct qMsg2 * out, struct aMsg2 * in, QString &msg, cInspector *pInsp);
 
     int com_err(QString &msg, const QString &data, const QString &dropped);
 
@@ -106,7 +106,7 @@ private:
     void getSerialParams();
     bool openSerial(QString &msg);
     void getSocketParams();
-    bool openSocket();
+    bool openSocket(int to);
     /// A serial port objektum pointere, ha a kommunikáció közvetlenül egy serial porton keresztül történik.
     QSerialPort  *pSerio;
     // Serial params:

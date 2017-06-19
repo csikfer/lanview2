@@ -82,6 +82,11 @@ enum eNagiosPluginRetcode {
 
 class cInspector;
 
+/// Ha a megadott objektum az aktuális szálhoz tartozik, akkor true-vel tér vissza
+static inline bool checkThread(QObject *po) {
+    return po->thread() == QThread::currentThread();
+}
+
 /// @class cInspectorThread
 /// Időzített thread
 class LV2SHARED_EXPORT cInspectorThread : public QThread {
@@ -89,13 +94,18 @@ class LV2SHARED_EXPORT cInspectorThread : public QThread {
     Q_OBJECT
 public:
     cInspectorThread(cInspector * pp);
+    ~cInspectorThread();
+    /// A tulajdonos/hívó objektum referenciája
     cInspector& inspector;
+    /// Az utolsó hiba objektum vagy NULL.
     cError     *pLastError;
+    /// A szálon bellüli objektumok tulajdonosa
+    QObject     acceptor;
 protected:
     virtual void run();
     virtual void doInit();
-    virtual void doDown();
     virtual void doRun();
+    virtual void doDown();
     QTimer      *pTimer;
 protected slots:
     virtual void timerEvent();
@@ -114,6 +124,7 @@ public:
     /// @param sync Ha értéke true, akkor megvárja, amíg kilép a hívott program, ha false, akkor a slot-okat cstlakoztatja, és kilép.
     /// @param stopTo Maximális várakozási dő a parancs lefutására millisec-ben, alapértelmezetten 30 másodperc. Ha sync értéke false, akkor érdektelen.
     virtual int startProcess(int startTo, int stopTo = 0);
+    /// A tulajdonos/hívó objektum referenciája
     cInspector& inspector;
 protected slots:
     virtual void processFinished(int _exitCode, QProcess::ExitStatus exitStatus);
@@ -404,6 +415,17 @@ public:
     static qlonglong nodeOId;
     static qlonglong sdevOId;
     static qlonglong syscronId;
+    /// Az aktuálisan használandó parent pointerét adja meg.
+    /// Normál esetben ez a this pointer.
+    /// Ha a cInspoector objektum saját szálat indított, akkor viszont a pInspectorThread pointerrel tér vissza.
+    /// Hiba esetén kozárást dob: A checkThread(this) false-val tért vissza, de a pInspectorThread pointer NULL, vagy nem az aktuális thread
+    QObject *useParent() {
+        if (checkThread(this)) return this;
+        if (pInspectorThread == NULL || (QThread *)pInspectorThread != QThread::currentThread()) {
+            EXCEPTION(EPROGFAIL, 0, name());
+        }
+        return &pInspectorThread->acceptor;
+    }
 protected:
     /// Az időzítés módosítása
     void toRetryInterval();

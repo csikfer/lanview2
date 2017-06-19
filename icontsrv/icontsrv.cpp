@@ -118,14 +118,7 @@ cGateway::cGateway(QSqlQuery& q, qlonglong hsid, qlonglong hoid, cInspector * pa
 
 cGateway::~cGateway()
 {
-    if (pSock != NULL) {
-        if (type != EP_TCP_RS) EXCEPTION(EPROGFAIL);
-        delete pSock;
-    }
-    if (pSerio != NULL) {
-        if (type != EP_LOCAL) EXCEPTION(EPROGFAIL);
-        delete pSerio;
-    }
+    ;
 }
 
 void cGateway::setSubs(QSqlQuery &q, const QString &)
@@ -190,7 +183,7 @@ int cGateway::run(QSqlQuery &q, QString &runMsg)
     return RS_STAT_SETTED | RS_ON;  // A lekérdezések beállítják a statust (többször is)
 }
 
-int cGateway::open(QSqlQuery& q, QString& msg)
+int cGateway::open(QSqlQuery& q, QString& msg, int to)
 {
     DBGFN();
     (void)q;
@@ -200,7 +193,7 @@ int cGateway::open(QSqlQuery& q, QString& msg)
         r = openSerial(msg);
         break;
     case EP_TCP_RS:
-        r = openSocket();
+        r = openSocket(to);
         if (!r) {
             msg = trUtf8("Open socket[%1:%2] time out.").arg(sockAddr.toString()).arg(sockPort);
         }
@@ -217,7 +210,7 @@ void cGateway::close()
     DBGFN();
     switch (type) {
     case EP_LOCAL:
-        /* OPEN Serial Port */
+        /* Serial Port */
         if (pSerio != NULL) {
             pSerio->close();
         }
@@ -226,7 +219,7 @@ void cGateway::close()
         }
         break;
     case EP_TCP_RS:
-        /* OPEN TCP SOCKET */
+        /* TCP SOCKET */
         if (pSock != NULL) {
             pSock->close();
         }
@@ -249,7 +242,7 @@ void cGateway::getSerialParams()
     QString s = pPort->getName();
     const static QString devdir = "/dev/";
     if (s.indexOf("/dev/") != 0) s = devdir + s;
-    pSerio = new QSerialPort(s);
+    pSerio = new QSerialPort(s, useParent());
     s = feature(_sSerial);                  // A serial port beállításai
     if (s.isEmpty()) s = sSerialDefault;    // Az alapértelmezés
     QStringList sl = s.split(QChar(' '));
@@ -335,18 +328,28 @@ void cGateway::getSocketParams()
     if (!ok)  sockPort = protoService().getId(_sPort);
     if (sockPort < 1 || sockPort > 65535) EXCEPTION(EDATA, sockPort, feature(_sTcp));
     QSqlQuery qq = getQuery();
-    pNode->fetchPorts(qq);  // Az IP cím kitalálásához kelleni fognak a portok
-    sockAddr = host().getIpAddress();
+    if (checkThread(&host())) {
+        host().fetchPorts(qq);  // Az IP cím kitalálásához kelleni fognak a portok
+        sockAddr = host().getIpAddress();
+    }
+    else {
+        cNode h(host());    // Pampog, ha másik szálé az objektum, másolatot készítünk
+        h.fetchPorts(qq);
+        sockAddr = h.getIpAddress();
+    }
     if (sockAddr.isNull()) EXCEPTION(EDATA, -1, QObject::trUtf8("Invalid host address, or address not found."));
-    pSock = new QTcpSocket();
+    QObject *p = useParent();
+    QString m = trUtf8("%1(%2) : current %3").arg(p2string(p), p2string(p->thread()), p2string(QThread::currentThread()));
+    PDEB(VVERBOSE) << m << endl;
+    pSock = new QTcpSocket(p);
     PDEB(VVERBOSE) << "Socket : " << sockAddr.toString() << ":" << sockPort << endl;
 }
 
-bool cGateway::openSocket()
+bool cGateway::openSocket(int to)
 {
     if (pSock == NULL) EXCEPTION(EPROGFAIL, -1, trUtf8("Nincs socket objektumunk."));
     pSock->connectToHost(sockAddr, sockPort);
-    return pSock->waitForConnected(startTimeOut);
+    return pSock->waitForConnected(to);
 }
 
 QIODevice *cGateway::getIoDev()
@@ -412,7 +415,7 @@ bool cGateway::waitForRead(int msec)
 }
 
 /// Egy command blokk küldése és a válasz vétele
-bool cGateway::com_s(void * io, size_t size)
+bool cGateway::com_s(void * io, size_t size, cInspector *pInsp)
 {
     DBGFN();
     QIODevice * pIO = getIoDev();
@@ -420,7 +423,7 @@ bool cGateway::com_s(void * io, size_t size)
         DERR() << "IO Device is NULL." << endl;
         return false;
     }
-    int to = stopTimeOut;
+    int to = pInsp->stopTimeOut;
     PDEB(INFO) << QObject::trUtf8("Küldés : ") << QByteArray((char *)io, size) << endl;
     qint64  wr = pIO->write((char *)io, size);
     PDEB(VVERBOSE) << "Write result : " << wr << endl;
@@ -428,7 +431,7 @@ bool cGateway::com_s(void * io, size_t size)
         DERR() << "Write error." << endl;
         return false;
     }
-    bool wt = waitForWritten(startTimeOut);
+    bool wt = waitForWritten(pInsp->startTimeOut);
     if (!wt) {
         DERR() << "Wait for writen error." << endl;
         return false;
@@ -436,7 +439,7 @@ bool cGateway::com_s(void * io, size_t size)
     size_t   n = 0;
     QElapsedTimer   t;
     t.start();
-    while ((to = stopTimeOut - t.elapsed()) > 0) {
+    while ((to = pInsp->stopTimeOut - t.elapsed()) > 0) {
         bool r = waitForRead(to);
         if (!r) break;
         char c;
@@ -458,7 +461,7 @@ bool cGateway::com_s(void * io, size_t size)
 
 static inline bool ishex(char c) { return isdigit(c) || (tolower(c) >= 'a' && tolower(c) <= 'f'); }
 /// Egy query blokk küldése, és válasz fogadása
-int cGateway::com_q(struct qMsg * out, struct aMsg * in, QString &msg)
+int cGateway::com_q(struct qMsg * out, struct aMsg * in, QString &msg, cInspector *pInsp)
 {
     DBGFN();
     QIODevice * pIO = getIoDev();
@@ -467,7 +470,7 @@ int cGateway::com_q(struct qMsg * out, struct aMsg * in, QString &msg)
         DERR() << msg << endl;
         return RS_UNREACHABLE;
     }
-    int to = stopTimeOut;
+    int to = pInsp->stopTimeOut;
     static const char kstat[] = "ONDAISCUEaiscue";
     PDEB(INFO) << QObject::trUtf8("Küldés : ") << QByteArray((char *)out, sizeof(struct qMsg)) << endl;
     qint64  wr = pIO->write((char *)out, sizeof(struct qMsg));
@@ -477,7 +480,7 @@ int cGateway::com_q(struct qMsg * out, struct aMsg * in, QString &msg)
         DERR() << msg << endl;
         return RS_UNREACHABLE;
     }
-    bool wt = waitForWritten(startTimeOut);
+    bool wt = waitForWritten(pInsp->startTimeOut);
     if (!wt) {
         msg = trUtf8("Quit for writen error.");
         DERR() << msg << endl;
@@ -487,7 +490,7 @@ int cGateway::com_q(struct qMsg * out, struct aMsg * in, QString &msg)
     QElapsedTimer   t;
     t.start();
     QString data, dropped;
-    while ((to = stopTimeOut - t.elapsed()) > 0) {
+    while ((to = pInsp->stopTimeOut - t.elapsed()) > 0) {
         bool r = waitForRead(to);
         if (!r) break;
         char c;
@@ -548,7 +551,7 @@ int cGateway::com_q(struct qMsg * out, struct aMsg * in, QString &msg)
 }
 
 /// Egy query blokk küldése, és válasz fogadása
-int cGateway::com_q(struct qMsg2 * out, struct aMsg2 * in, QString& msg)
+int cGateway::com_q(struct qMsg2 * out, struct aMsg2 * in, QString& msg, cInspector *pInsp)
 {
     DBGFN();
     QIODevice * pIO = getIoDev();
@@ -557,7 +560,7 @@ int cGateway::com_q(struct qMsg2 * out, struct aMsg2 * in, QString& msg)
         DERR() << msg << endl;
         return RS_UNREACHABLE;
     }
-    int to = stopTimeOut; // 200mSec
+    int to = pInsp->stopTimeOut;
     static const char kstat[] = "ONDAISCUEaiscue";
     PDEB(INFO) << QObject::trUtf8("Küldés : ") << QByteArray((char *)out, sizeof(struct qMsg2)) << endl;
     qint64  wr = pIO->write((char *)out, sizeof(struct qMsg2));
@@ -567,7 +570,7 @@ int cGateway::com_q(struct qMsg2 * out, struct aMsg2 * in, QString& msg)
         DERR() << msg << endl;
         return RS_UNREACHABLE;
     }
-    bool wt = waitForWritten(startTimeOut);
+    bool wt = waitForWritten(pInsp->startTimeOut);
     if (!wt) {
         msg = trUtf8("Quit for writen error.");
         DERR() << msg << endl;
@@ -577,7 +580,7 @@ int cGateway::com_q(struct qMsg2 * out, struct aMsg2 * in, QString& msg)
     QElapsedTimer   t;
     t.start();
     QString data, dropped;
-    while ((to = stopTimeOut - t.elapsed()) > 0) {
+    while ((to = pInsp->stopTimeOut - t.elapsed()) > 0) {
         bool r = waitForRead(to);
         if (!r) break;
         char c;
@@ -816,27 +819,31 @@ void cIndAlarmIf::postInit(QSqlQuery &q, const QString &)
     if (masterId == 0) EXCEPTION(EDATA, masterId, QObject::trUtf8("Az RS485 Bus ID nem lehet nulla !"));
     switch (type) {
     case IAIF1M:
+        PDEB(VVERBOSE) << "IaIf V1 master..." << endl;
         if (slaveId != 0) EXCEPTION(EDATA, slaveId, QObject::trUtf8("Master interfész, de az IIC Bus ID nem nulla !"));
         sensors1Count = IAIF1PORTS;
         sensors2Count = 0;
         break;
     case IAIF1S:
+        PDEB(VVERBOSE) << "IaIf V1 slave..." << endl;
         if (slaveId == 0) EXCEPTION(EDATA, slaveId, QObject::trUtf8("Az IIC Bus ID nem lehet nulla !"));
         sensors1Count = IAIF1PORTS;
         sensors2Count = 0;
         break;
     case IAIF2:
+        PDEB(VVERBOSE) << "IaIf V2..." << endl;
         if (slaveId != 0) EXCEPTION(EDATA, slaveId, QObject::trUtf8("Nincs IIC Bus, de a Bus ID nem nulla !"));
         sensors1Count = IAIF2PORTS;
         sensors2Count = IAIF2SWS;
         break;
-    default:        EXCEPTION(EPROGFAIL);
+    default:        EXCEPTION(EPROGFAIL, type, trUtf8("Invalid interface type."));
     }
     int allSensorCount = sensors1Count + sensors2Count;
     for (int i = 0; i < allSensorCount; ++i) (*pSubordinates) << NULL;
     if (node().ports.size() == 0) node().fetchPorts(q);
     const qlonglong ptid = cIfType::ifType(_sSensor).getId();
     tRecordList<cNPort>::iterator i, n = node().ports.end();
+    PDEB(VERBOSE) << "Find sensors..." << endl;
     for (i = node().ports.begin(); i != n; ++i) {
         cNPort *pp = *i;
         if (pp->getId(_sIfTypeId) != ptid) continue; /// Csak a sensor típusú portokkal foglalkozunk
@@ -865,7 +872,7 @@ void cIndAlarmIf::postInit(QSqlQuery &q, const QString &)
                 if (hs.isModify_()) {                                       // volt javítás, update
                     hs.update(q, true);
                 }
-
+                PDEB(INFO) << "Attached : " << at.name() << endl;
             }
             else {  // Nincs host_services rekordunk
                 hs.clear();
@@ -876,14 +883,20 @@ void cIndAlarmIf::postInit(QSqlQuery &q, const QString &)
                 hs.setName(_sHostServiceNote, trUtf8("Autómatikusan generálva az icontsrv által."));
                 hs.setName(_sNoalarmFlag, _sOn);    // Nem kérünk riasztást az autómatikusan generált rekordhoz.
                 hs.insert(q);
+                PDEB(INFO) << "New Attached : " << at.name() << endl;
             }
             at.postInit(q);
         }
+        else {
+            PDEB(INFO) << "Not linked, drop." << endl;
+        }
     }
+    DBGFNL();
 }
 
 int cIndAlarmIf::run(QSqlQuery& q, QString &runMsg)
 {
+    DBGFN();
     cGateway *pGate;
     {
         cInspector *p = pParent;;
@@ -895,7 +908,8 @@ int cIndAlarmIf::run(QSqlQuery& q, QString &runMsg)
         if (typeid(*p) != typeid(cGateway)) EXCEPTION(EPROGFAIL);   // Egy cGateway objektum kell legyen.
         pGate = (cGateway *)p;
     }
-    int r = pGate->open(q, runMsg);
+    PDEB(VVERBOSE) << "Gateway : " << pGate->name() << " Open..." << endl;
+    int r = pGate->open(q, runMsg, startTimeOut);
     if (r == RS_ON) {
         r = query(*pGate, q, runMsg);
         pGate->close();
@@ -904,8 +918,8 @@ int cIndAlarmIf::run(QSqlQuery& q, QString &runMsg)
     else {
         pGate->hostService.setState(q, notifSwitch(r), runMsg);
     }
+    DBGFNL();
     return r;
-
 }
 
 int cIndAlarmIf::query(cGateway& g, QSqlQuery& q, QString& msg)
@@ -938,11 +952,11 @@ int cIndAlarmIf::query(cGateway& g, QSqlQuery& q, QString& msg)
     case IAIF1M:
         id2cc(masterId, qm.tMaster);
         id2cc(slaveId,  qm.tSlave);
-        rep = g.com_q(&qm, &am, msg);
+        rep = g.com_q(&qm, &am, msg, this);
         break;
     case IAIF2:
         id2cc(masterId, qm2.tMaster);
-        rep = g.com_q(&qm2, &am2, msg);
+        rep = g.com_q(&qm2, &am2, msg, this);
         break;
     default:        EXCEPTION(EPROGFAIL);
     }

@@ -120,7 +120,10 @@ void cError::circulation()
 void cError::exception(void)
 {
     QString m = QObject::trUtf8("throw this : %1").arg(msg());
-    if (cDebug::getInstance() != NULL) PDEB(EXCEPT) << m << endl;
+    if (cDebug::getInstance() != NULL) {
+        PDEB(EXCEPT) << m << endl;
+        cDebug::flushAll();
+    }
     throw(this);
     {
         QString mm = QObject::trUtf8("Exception (throw) is not working, exit.");

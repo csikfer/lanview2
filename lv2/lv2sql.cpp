@@ -8,7 +8,7 @@ QSqlDatabase *  getSqlDb(void)
     if (pSqlDb == NULL) EXCEPTION(EPROGFAIL, -1, "lanView::instance->pDb is NULL.");
     if (!pSqlDb->isOpen()) EXCEPTION(EPROGFAIL, -1, "cLanView::instance->pDb is set, but database is not opened.");
     if (!isMainThread()) {  // Minden thread-nak saját objektum kell!
-        PDEB(INFO) << "Lock by threadMutex, in getSqlDb() ..." << endl;
+        // PDEB(INFO) << "Lock by threadMutex, in getSqlDb() ..." << endl;
         lanView::getInstance()->threadMutex.lock();
         QSqlDatabase *pDb;
         QString tn = currentThreadName();

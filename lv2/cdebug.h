@@ -462,6 +462,7 @@ class LV2SHARED_EXPORT cDebug {
     /// ill. az 'stderr' stringgel, ha a debug üzenetek az stderr-re mennek.
     /// @throw cError* ha nincs cDebug objektum.
     static const QString& fName()       { chk(); return instance->mFName; }
+    static void flushAll();
    protected:
      /*!
       * @brief A cDebug objektum alapértelmezett konstruktora.
