@@ -210,7 +210,7 @@ void phsLinkWidget::init()
 
 void phsLinkWidget::placeFilter()
 {
-    const static QString _sql = "is_group_place(place_id, %1)";
+    const static QString _sql = "is_place_in_zone(place_id, %1)";
     QString sql = _sql.arg(pgrp.getId());
     pModelPlace->setFilter(sql, OT_ASC, FT_SQL_WHERE);
 }

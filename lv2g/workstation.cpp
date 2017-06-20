@@ -499,7 +499,7 @@ int cWorkstation::_changePlace(const QString& placeNme, const QString& zoneName,
             // Csak a zónában lévő node-ok
             qlonglong zid = cPlaceGroup().getIdByName(*pq, zoneName);
             // Azok a node-ok, melyeknek helye, vagy a hely valamelyik parentje benne van az aktuális zónában
-            expr = QString("is_group_place(place_id, %1)").arg(zid);
+            expr = QString("is_place_in_zone(place_id, %1)").arg(zid);
         }
     }
     else {

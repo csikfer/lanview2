@@ -570,7 +570,7 @@ void cHSOperate::fetchByFilter()
     if (zone != _sAll) {
         int       ci  = pUi->comboBoxZone->currentIndex();
         qlonglong gid = pZoneModel->atId(ci);
-        where << " is_group_place(place_id, ?::bigint)";
+        where << " is_place_in_zone(place_id, ?::bigint)";
         bind  << gid;
     }
     // Filter by place
