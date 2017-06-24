@@ -1059,7 +1059,6 @@ cPolygonWidget::cPolygonWidget(const cTableShape& _tm, const cTableShapeField &_
     pModel = new cPolygonTableModel(this);
     pModel->setPolygon(polygon);
     pUi->tableViewPolygon->setModel(pModel);
-    setButtons();
     if (!_readOnly) {
         connect(pUi->tableViewPolygon->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(tableSelectionChanged(QItemSelection,QItemSelection)));
         connect(pUi->tableViewPolygon, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(tableDoubleclicked(QModelIndex)));
@@ -1076,6 +1075,7 @@ cPolygonWidget::cPolygonWidget(const cTableShape& _tm, const cTableShapeField &_
         connect(pUi->doubleSpinBoxZoom, SIGNAL(valueChanged(double)), this, SLOT(zoom(double)));
         (void)getImage();
     }
+    setButtons();
 }
 
 cPolygonWidget::~cPolygonWidget()
