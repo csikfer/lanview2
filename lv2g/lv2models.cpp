@@ -365,8 +365,9 @@ bool cRecordListModel::setFilter(const QVariant& _par, enum eOrderType __o, enum
             viewList << pq->value(2).toString();
         }
     } while (pq->next());
-    PDEB(VVERBOSE) << "name list :" << nameList.join(_sCommaSp) << endl;
-    PDEB(VVERBOSE) << "view list :" << viewList.join(_sCommaSp) << endl;
+    // Túl nagyok a listák: pl. a szolgáltatás példányok kezelhetetlen, hálózati elemek is túl nagy :( EZT javítani KELL
+//    PDEB(VVERBOSE) << "name list :" << nameList.join(_sCommaSp) << endl;
+//    PDEB(VVERBOSE) << "view list :" << viewList.join(_sCommaSp) << endl;
     setStringList(viewList);
     return r;
 }

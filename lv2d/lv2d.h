@@ -18,8 +18,6 @@ public:
     lv2d();
     ~lv2d();
     virtual void setup(eTristate _tr = TS_NULL);
-    /// A futó démonok száma
-    int     runingCnt;
 };
 
 
