@@ -101,6 +101,62 @@ eIPV4Pol   lanView::ipv4Pol = IPV4_STRICT;
 eIPV6Pol   lanView::ipv6Pol = IPV6_PERMISSIVE;
 bool       lanView::setupTransactionFlag = false;
 
+qlonglong sendError(const cError *pe, lanView *_instance)
+{
+    // Ha nem is volt hiba, akkor kész.
+    if (pe == NULL || pe->mErrorCode == eError::EOK) {
+        return NULL_ID;
+    }
+    // Ha van nyitott adatbázis, csinálunk egy hiba rekordot
+    lanView * pInst = _instance == NULL ? lanView::instance : _instance;
+    if (pInst == NULL || pInst->pDb == NULL || !pInst->pDb->isOpen()) {
+        return NULL_ID;
+    }
+    QSqlQuery   q(*pInst->pDb);
+    // sqlRollback(q, false);
+    // sqlBegin(q);
+    cNamedList  fields;
+    fields.add(_sAppName,       lanView::appName);
+    if (pInst->pSelfNode != NULL && !pInst->pSelfNode->isNullId()) fields.add(_sNodeId, pInst->pSelfNode->getId());
+    fields.add(_sPid,           QCoreApplication::applicationPid());
+    fields.add(_sAppVer,        lanView::appVersion);
+    fields.add(_sLibVer,        lanView::libVersion);
+    if (pInst->pUser != NULL && !pInst->pUser->isNullId()) fields.add(_sUserId, pInst->user().getId());
+    if (pInst->pSelfService != NULL && !pInst->pSelfService->isNullId()) fields.add(_sServiceId, pInst->pSelfService->getId());
+    fields.add(_sFuncName,      pe->mFuncName);
+    fields.add(_sSrcName,       pe->mSrcName);
+    fields.add(_sSrcLine,       pe->mSrcLine);
+    fields.add("err_code",      pe->mErrorCode);
+    fields.add("err_name",      pe->errorMsg());
+    fields.add("err_subcode",   pe->mErrorSubCode);
+    fields.add("err_syscode",   pe->mErrorSysCode);
+    fields.add("err_submsg",    pe->mErrorSubMsg);
+    fields.add(_sThreadName,    pe->mThreadName);
+    fields.add("sql_err_num",   pe->mSqlErrNum);
+    fields.add("sql_err_type",  pe->mSqlErrType);
+    fields.add("sql_driver_text",pe->mSqlErrDrText);
+    fields.add("sql_db_text",   pe->mSqlErrDbText);
+    fields.add("sql_query",     pe->mSqlQuery);
+    fields.add("sql_bounds",    pe->mSqlBounds);
+    fields.add("data_line",     pe->mDataLine);
+    fields.add("data_pos",      pe->mDataPos);
+    fields.add("data_msg",      pe->mDataMsg);
+    fields.add("data_name",     pe->mDataName);
+
+    QString sql ="INSERT INTO app_errs (" + fields.names().join(", ") + ") VALUES (" + fields.quotes() + ") RETURNING applog_id";
+    if (! q.prepare(sql)) {
+        return NULL_ID;
+    }
+    int n = fields.size();
+    for (int i = 0; i < n; ++i) q.bindValue(i, fields.value(i));
+    if (!q.exec()) {
+        return NULL_ID;
+    }
+    qlonglong   eid = NULL_ID;
+    if (q.first()) eid = variantToId(q.value(0));
+    // sqlEnd(q);
+    return eid;
+}
 
 // ****************************************************************************************************************
 lanView::lanView()
@@ -244,9 +300,9 @@ lanView::~lanView()
     // fő szál tranzakciói (nem kéne lennie, ha mégis, akkor rolback mindegyikre)
     rollback_all("main", pDb, mainTrasactions);
     // Ha volt hiba objektumunk, töröljük. Elötte kiírjuk a hibaüzenetet, ha tényleg hiba volt
-    if (lastError && lastError->mErrorCode != eError::EOK) {
+    if (lastError != NULL && lastError->mErrorCode != eError::EOK) {    // Hiba volt
         PDEB(DERROR) << lastError->msg() << endl;         // A Hiba üzenet
-        qlonglong eid = sendError(lastError, QString(), this);
+        qlonglong eid = sendError(lastError, this);
         // Hibát kiírtuk, ki kell írni a staust is? (ha nem sikerült a hiba kiírása, kár a statussal próbálkozni)
         if (eid != NULL_ID && setSelfStateF) {
             if (pSelfHostService != NULL && pQuery != NULL) {
@@ -257,7 +313,7 @@ lanView::~lanView()
                 }
             }
             else {
-                DERR() << trUtf8("A pSelfHostService oe pQuery pointer NULL.") << endl;
+                DERR() << trUtf8("A pSelfHostService vagy a pQuery pointer értéke NULL.") << endl;
             }
         }
         setSelfStateF = false;
@@ -271,7 +327,7 @@ lanView::~lanView()
                     rs = lastError->mErrorSubCode;      // Ide kéne rakni a kiírandó staust
                     n  = lastError->mErrorSubMsg;       // A megjegyzés a status-hoz
                 }
-                if ((rs & RS_STAT_SETTED) == 0) {        // A stusban jelezheti, hogy már megvolt a kiírás!
+                if ((rs & RS_STAT_SETTED) == 0) {        // Jelezheti, hogy már megvolt a kiírás!
                     pSelfHostService->setState(*pQuery, notifSwitch(rs), n);
                 }
             } catch(...) {
@@ -279,10 +335,19 @@ lanView::~lanView()
             }
         }
         else {
-            DERR() << trUtf8("A pSefHostService vagy a pQuery pointer NULL.") << endl;
+            DERR() << trUtf8("A pSefHostService vagy a pQuery pointer értéke NULL.") << endl;
         }
     }
     pDelete(lastError);
+    int en = cError::errCount();
+    if (en) {   // Ennek illene üresnek lennie
+        DERR() << trUtf8("A hiba objektum konténer nem üres! %1 db kezeletlen objektum.").arg(en) << endl;
+        do {
+            cError *pe = cError::errorList.first();
+            sendError(pe, this);
+            delete pe;
+        } while (cError::errCount());
+    }
     // Lelőjük az összes Thread-et ...? Azoknak elvileg már nem szabadna mennie, sőt a konténernek is illik üresnek lennie
     // A thread-ek adatbázis objektumait töröljük.
     PDEB(INFO) << QObject::trUtf8("Lock by threadMutex, in lanView destructor ...") << endl;
@@ -493,75 +558,6 @@ void lanView::parseArg(void)
         args.removeAt(i);
     }
     DBGFNL();
-}
-
-qlonglong lanView::sendError(const cError *pe, const QString& __t, lanView *_instance)
-{
-    _DBGFN() << "Thread : " << __t << endl;
-    // Ha nem is volt hiba, akkor kész.
-    if (pe == NULL || pe->mErrorCode == eError::EOK) {
-        _DBGFNL() << "No error." << endl;
-        return NULL_ID;
-    }
-    PDEB(VVERBOSE) << QObject::trUtf8("sendError() : %1").arg(pe->msg()) << endl;
-    // Ha van nyitott adatbázis, csinálunk egy hiba rekordot
-    lanView * pInst = _instance == NULL ? instance : _instance;
-    if (pInst == NULL || pInst->pDb == NULL || !pInst->pDb->isOpen()) {
-        DWAR() << trUtf8("Dropp error object, no database object or not open.") << endl;
-        return NULL_ID;
-    }
-    QSqlQuery   q(*pInst->pDb);
-    // sqlRollback(q, false);
-    // sqlBegin(q);
-    cNamedList  fields;
-    fields.add(_sAppName,       appName);
-    if (pInst->pSelfNode != NULL && !pInst->pSelfNode->isNullId()) fields.add(_sNodeId, pInst->pSelfNode->getId());
-    fields.add(_sPid,           QCoreApplication::applicationPid());
-    fields.add(_sAppVer,        appVersion);
-    fields.add(_sLibVer,        libVersion);
-    if (pInst->pUser != NULL && !pInst->pUser->isNullId()) fields.add(_sUserId, pInst->user().getId());
-    if (pInst->pSelfService != NULL && !pInst->pSelfService->isNullId()) fields.add(_sServiceId, pInst->pSelfService->getId());
-    fields.add(_sFuncName,      pe->mFuncName);
-    fields.add(_sSrcName,       pe->mSrcName);
-    fields.add(_sSrcLine,       pe->mSrcLine);
-    fields.add("err_code",      pe->mErrorCode);
-    fields.add("err_name",      pe->errorMsg());
-    fields.add("err_subcode",   pe->mErrorSubCode);
-    fields.add("err_syscode",   pe->mErrorSysCode);
-    fields.add("err_submsg",    pe->mErrorSubMsg);
-    fields.add(_sThreadName,    pe->mThreadName);
-    fields.add("sql_err_num",   pe->mSqlErrNum);
-    fields.add("sql_err_type",  pe->mSqlErrType);
-    fields.add("sql_driver_text",pe->mSqlErrDrText);
-    fields.add("sql_db_text",   pe->mSqlErrDbText);
-    fields.add("sql_query",     pe->mSqlQuery);
-    fields.add("sql_bounds",    pe->mSqlBounds);
-    fields.add("data_line",     pe->mDataLine);
-    fields.add("data_pos",      pe->mDataPos);
-    fields.add("data_msg",      pe->mDataMsg);
-    fields.add("data_name",     pe->mDataName);
-
-    QString sql ="INSERT INTO app_errs (" + fields.names().join(", ") + ") VALUES (" + fields.quotes() + ") RETURNING applog_id";
-    PDEB(VVERBOSE) << QObject::trUtf8("sendError() : Prepare ...") << endl;
-    if (! q.prepare(sql)) {
-        DERR() << trUtf8("Dropp error object ... ") << endl;
-        SQLPREPERRDEB(q, sql);
-        return NULL_ID;
-    }
-    // PDEB(VVERBOSE) << "Bindings ..." << endl;
-    int n = fields.size();
-    for (int i = 0; i < n; ++i) q.bindValue(i, fields.value(i));
-    // PDEB(VVERBOSE) << "Exec ..." << endl;
-    if (!q.exec()) {
-        DERR() << trUtf8("Dropp error object ... ") << endl;
-        SQLQUERYERRDEB(q);
-        return NULL_ID;
-    }
-    qlonglong   eid = NULL_ID;
-    if (q.first()) eid = variantToId(q.value(0));
-    DBGFNL();
-    // sqlEnd(q);
-    return eid;
 }
 
 void lanView::instAppTransl()

@@ -79,6 +79,13 @@ enum ePrivilegeLevel {
     PL_SYSTEM
 };
 
+class lanView;
+/// A hiba objektum tartalmának a kiírása a app_errs táblába.
+/// @param pe A hiba objektum pointere
+/// @param __t A hibát generáló thread neve. Opcionális
+/// @return Ha kiírta az adatbázisba a rekordot, akkor a rekord id-vel tér vissza, egyébként NULL_ID-vel
+EXT_ qlonglong sendError(const cError *pe, lanView *_instance = NULL);
+
 /*!
 @class lanView
 @brief "main" bázis objektum. Minden az API-t hasznéló alkalmazásnak létre kell hoznia a saját példányát.
@@ -200,7 +207,7 @@ class LV2SHARED_EXPORT lanView  : public QObject {
     friend LV2SHARED_EXPORT void sqlBegin(QSqlQuery& q, const QString& tn);
     friend LV2SHARED_EXPORT void sqlEnd(QSqlQuery& q, const QString& tn);
     friend LV2SHARED_EXPORT void sqlRollback(QSqlQuery& q, const QString& tn);
-
+    friend LV2SHARED_EXPORT qlonglong sendError(const cError *pe, lanView *_instance);
    Q_OBJECT
 public:
     /// Konstruktor. Inicializálja az API-t. Az objektum csak egy példányban hozható létre.
@@ -262,11 +269,6 @@ public:
     virtual void down();
     /// Az alapértelmezett program paraméterek értelmezése
     void parseArg(void);
-    /// A hiba objektum tartalmának a kiírása a app_errs táblába.
-    /// @param pe A hiba objektum pointere
-    /// @param __t A hibát generáló thread neve. Opcionális
-    /// @return Ha kiírta az adatbázisba a rekordot, akkor a rekord id-vel tér vissza, egyébként NULL_ID-vel
-    static qlonglong sendError(const cError *pe, const QString& __t = QString(), lanView *_instance = NULL);
     /// Az adatbázisban inzertál egy applikáció hiba rekordot, ahol a hiba kód a 'Start' lessz.
     /// Ha a művelet sikertelen, akkor dob egy kizárást.
     void insertStart(QSqlQuery& q);

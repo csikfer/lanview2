@@ -67,7 +67,8 @@ int cPhsLink::replace(QSqlQuery &__q, eEx __ex)
     if (pe == NULL) return reason;
     if (tr) sqlRollback(__q, tn);
     if (__ex) pe->exception();
-    lanView::sendError(pe);
+    sendError(pe);
+    delete pe;
     return R_ERROR;
 }
 

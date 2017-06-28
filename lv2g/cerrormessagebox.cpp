@@ -61,7 +61,7 @@ cErrorMessageBox::cErrorMessageBox(cError *_pe, QWidget *parent) :
     _R("A hibát dobó föggvény",                 _pe->mFuncName);
     _R("A hibát dobó kód forrás neve",          _pe->mSrcName);
     IR("A hibát dobó kód forrás sor száma",     _pe->mSrcLine);
-    NR("Hiba objektum számláló",                _pe->mErrCount);
+    NR("Hiba objektum számláló",                cError::errCount());
     if (_pe->mSqlErrType != QSqlError::NoError) {
         LIN;
         _R("SQL hiba típus",                        SqlErrorTypeToString(_pe->mSqlErrType));

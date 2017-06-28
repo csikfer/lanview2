@@ -21,12 +21,12 @@
 #include "cdebug.h"
 #include "cerror.h"
 #include <iostream>
+class lanView;
+extern qlonglong sendError(const cError *pe, lanView *_instance = NULL);
 
-cError  *cError::pLastError = NULL;
-QThread *cError::pLastThread = NULL;
-int      cError::mErrCount   = 0;
-int      cError::mMaxErrCount= 4;
-bool     cError::mDropAll = false;
+QList<cError *> cError::errorList;
+int         cError::mMaxErrCount= 6;
+bool        cError::mDropAll = false;
 QMap<int, QString>  cError::mErrorStringMap;
 
 cError::cError()
@@ -90,31 +90,35 @@ cError::cError(const QString& _mSrcName, int _mSrcLine, const QString& _mFuncNam
 
 cError::~cError()
 {
-    --mErrCount;
-    if (pLastError == this) pLastError = NULL;
+    int i = errorList.removeAll(this);
+    if (i != 1) {
+        DERR() << "Invalid error object ..." << endl;
+    }
 }
 
 void cError::circulation()
 {
-    pPrevError = pLastError;
-    pLastError = this;
-    QThread *pThread = QThread::currentThread();
+    pThread = QThread::currentThread();
+    errorList << this;
     if (pThread == QCoreApplication::instance()->thread()) {
         mThreadName = _sMainThread;
     }
     else {
         mThreadName = pThread->objectName();
     }
-    if (pPrevError && (pThread == pLastThread || ++mErrCount > mMaxErrCount)) {
+
+    if (errCount() > mMaxErrCount) {
         QTextStream cerr(stderr, QIODevice::WriteOnly);
         cerr << QObject::trUtf8("*** Error circulation **** Thread object name %1").arg(mThreadName) << endl;
         int n = 1;
-        for (cError *p = this; p; p = p->pPrevError) {
-            cerr << QChar('[') << n++ << QChar(']') << QChar(' ') << p->msg() << endl;
+        foreach (cError * pe, errorList) {
+            qlonglong eid = sendError(pe);
+            QString em = eid == NULL_ID ? QObject::trUtf8("\n --- A hiba rekord kiírása sikertelen.") : QObject::trUtf8("\n --- Kiírt hiba rekord id : %1").arg(eid);
+            cerr << "[#" << n++ << QChar(']') << QChar(' ') << pe->msg() << em << endl;
+            ++n;
         }
         exit(-1);
     }
-    pLastThread = pThread;
 }
 
 void cError::exception(void)

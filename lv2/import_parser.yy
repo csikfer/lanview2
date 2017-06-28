@@ -249,7 +249,7 @@ int importParse(eImportParserStat _st)
         sqlBegin(qq(), tn);
         i = yyparse();
     }
-    CATCHS(pImportLastError);
+    CATCHS(pImportLastError)
     if (pImportLastError != NULL) {
         sqlRollback(qq(), tn);
         pImportLastError->mDataLine = importLineNo;

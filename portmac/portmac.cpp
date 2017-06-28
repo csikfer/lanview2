@@ -100,8 +100,8 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
     static const qlonglong suspectrdUpLinkTypeId        = cParamType().getIdByName(__q, _sSuspectedUplink);
     static const qlonglong queryMacTabTypeId            = cParamType().getIdByName(__q, _sQueryMacTab);
     static const qlonglong linkIsInvisibleForLLDPTypeId = cParamType().getIdByName(__q, _sLinkIsInvisibleForLLDP);
-    // Ha nincs megadva protocol szervíz, akkor SNMP device esetén az az SNMP lessz
-    if (protoService().isEmpty_() && __tableoid == cSnmpDevice().tableoid()) {
+    // Ha nincs megadva protocol szervíz ('nil'), akkor SNMP device esetén az az SNMP lessz
+    if (protoServiceId() == cService::nilId && __tableoid == cSnmpDevice().tableoid()) {
         hostService.set(_sProtoServiceId, pSrvSnmp->getId());
         QSqlQuery q2 = getQuery();
         hostService.update(q2, false, hostService.mask(_sProtoServiceId));

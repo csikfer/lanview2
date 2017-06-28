@@ -109,8 +109,7 @@ void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource sour
         qlonglong eid = sendError(lastError);
         pImp->setName(_sExecState, _sFaile);
         pImp->setName(_sResultMsg, lastError->msg());
-        delete lastError;
-        lastError = NULL;
+        pDelete(lastError);
         pImp->set(_sEnded, QVariant(QDateTime::currentDateTime()));
         pImp->setId(_sAppLogId, eid);
         pImp->update(*pQuery, false, pImp->mask(_sExecState, _sResultMsg, _sEnded, _sAppLogId));

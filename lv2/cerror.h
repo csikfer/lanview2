@@ -268,11 +268,10 @@ Az adattagok inicializálása után hívja a circulation() metódust
     int     mDataPos;
     QString mDataMsg;               ///< Source file name
     QString mDataName;              ///< Source file name
+    QThread *pThread;               ///< A hibaobjektumot létrehozó szál
 
-    static cError  *pLastError;     ///< Az utolsó hiba objektum pointere, vagy NULL
-    cError         *pPrevError;     ///< Az előző hiba objektum pointere, vagy NULL
-    static QThread *pLastThread;    ///< Az utolsó hiba objektum ot létrehozó szál neve
-    static int      mErrCount;      ///< Az eddig létrehozott cError objektumok száma
+    static QList<cError *> errorList;
+    static int errCount() { return errorList.size(); }
     static int      mMaxErrCount;   ///< A maximálisan létrehozhatü cError objektumok széma
     static bool     mDropAll;       ///< Ha értéke true, akkor nem hoz létre hiba objektumokat, a továbbiakban no_init_ objektummal dobja a hibát
 protected:

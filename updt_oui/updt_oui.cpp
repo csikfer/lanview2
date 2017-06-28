@@ -160,7 +160,7 @@ void Downloader::replyFinished (QNetworkReply *reply)
         QByteArray list = reply->readAll();
         if (!ouiParser(pq, list)) {
             lanView& mo = *lanView::getInstance();
-            mo.sendError(mo.lastError);
+            sendError(mo.lastError);
             pDelete(mo.lastError);
         }
     }

@@ -1055,7 +1055,7 @@ bool cInspector::doRun(bool __timed)
         }
         // A hibárol LOG az adatbázisba, amugy töröljük a hibát
         lanView  *plv = lanView::getInstance();
-        qlonglong id = lanView::sendError(lastError);
+        qlonglong id = sendError(lastError);
         if (plv->lastError == lastError) plv->lastError = NULL;
         pDelete(lastError);
         statMsg = msgCat(statMsg, trUtf8("Hiba, ld.: app_errs.applog_id = %1").arg(id));
@@ -1287,7 +1287,7 @@ void cInspector::drop(eEx __ex)
     if (isThread()) {
         if (pInspectorThread == NULL) {
             QString m = QObject::trUtf8("%1 pThread egy NULL pointer.").arg(name());
-            if(__ex) EXCEPTION(EPROGFAIL, -1, m);
+            if(__ex != EX_IGNORE) EXCEPTION(EPROGFAIL, -1, m);
             DWAR() << m << endl;
         }
         else if (pInspectorThread->isRunning()) {
@@ -1306,7 +1306,7 @@ void cInspector::drop(eEx __ex)
     if (isTimed()) {
         if (timerId <= 0) {
             if (!isThread()) {
-                EXCEPTION(EPROGFAIL);
+                if(__ex != EX_IGNORE) EXCEPTION(EPROGFAIL);
             }
             else if (pInspectorThread != NULL) {
                 pInspectorThread->start();  // status down-ban, ráadjuk a vezérlést, hogy le tudjon állni
@@ -1319,23 +1319,27 @@ void cInspector::drop(eEx __ex)
         }
         else if (__ex != EX_IGNORE) {
             QString m = QObject::trUtf8("El sem indított %1 óra leállítása.").arg(name());
-            EXCEPTION(EDATA, -1, m);
+            if(__ex != EX_IGNORE) EXCEPTION(EDATA, -1, m);
             DWAR() << m << endl;
         }
         timerStat = TS_STOP;
     }
     if (inspectorType & IT_OWNER_QUERY_PARSER) {
-        if (pQparser == NULL) EXCEPTION(EPROGFAIL, (qlonglong)pQparser, name());
-        cError *pe = NULL;
-        pQparser->post(pe);
-        if (pe != NULL) DERR() << pe->msg() << endl;
-        PDEB(VVERBOSE) << trUtf8("%1: Free QParser : %2").arg(name()).arg((qlonglong)pQparser) << endl;
-        pDelete(pQparser);
-        inspectorType &= ~IT_OWNER_QUERY_PARSER;
-        if (pSubordinates != NULL) {
-            // Az gyerkőcöknél is törölni kell, feltételezzük, hogy 1*-es a mélység, és csak ez az egy parser van a rész fában.
-            foreach (cInspector *pi, *pSubordinates) {
-                pi->pQparser = NULL;
+        if (pQparser == NULL) {
+            if(__ex != EX_IGNORE) EXCEPTION(EPROGFAIL, (qlonglong)pQparser, name());
+        }
+        else {
+            cError *pe = NULL;
+            pQparser->post(pe);
+            if (pe != NULL) DERR() << pe->msg() << endl;
+            PDEB(VVERBOSE) << trUtf8("%1: Free QParser : %2").arg(name()).arg((qlonglong)pQparser) << endl;
+            pDelete(pQparser);
+            inspectorType &= ~IT_OWNER_QUERY_PARSER;
+            if (pSubordinates != NULL) {
+                // Az gyerkőcöknél is törölni kell, feltételezzük, hogy 1*-es a mélység, és csak ez az egy parser van a rész fában.
+                foreach (cInspector *pi, *pSubordinates) {
+                    pi->pQparser = NULL;
+                }
             }
         }
     }
