@@ -128,12 +128,12 @@ cDevicePSt::cDevicePSt(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __
     , snmp()
 {
     // Ha nincs megadva protocol szervíz ('nil'), akkor SNMP device esetén az az SNMP lessz
-/*    if (protoServiceId() == cService::nilId && __tableoid == cSnmpDevice().tableoid()) {
+    if (protoServiceId() == cService::nilId && __tableoid == cSnmpDevice().tableoid()) {
         hostService.set(_sProtoServiceId, pSrvSnmp->getId());
         QSqlQuery q2 = getQuery();
         hostService.update(q2, false, hostService.mask(_sProtoServiceId));
         pProtoService = hostService.getProtoService(q2);
-    }*/
+    }
     /// Csak az SNMP lekérdezés támogatott (egyenlőre)
     if (protoServiceId() != pSrvSnmp->getId())
         EXCEPTION(EDATA, protoServiceId(), QObject::trUtf8("Nem megfelelő proto_service_id!"));
