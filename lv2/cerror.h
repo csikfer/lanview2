@@ -81,6 +81,14 @@ if (i < 0 || i >= size()) EXCEPTION(ENOINDEX, i);
 // Error codes
 #include "errcodes.h"
 
+#ifdef Q_CC_GNU
+#define _ATR_NORET_ __attribute__((noreturn))
+#elif  Q_CC_MSVC
+#define _ATR_NORET_ __declspec(noreturn)
+#else
+#define _ATR_NORET_
+#endif
+
 /*!
 @class cError
 @brief Hiba kezelő objektum
@@ -209,9 +217,9 @@ Az adattagok inicializálása után hívja a circulation() metódust
     virtual ~cError();
     /// Dob egy kizárást a this pointerrel.
     /// @return A metódus nem tér vissza
-    [[noreturn]] virtual void exception(void);
+    _ATR_NORET_ virtual void exception(void);
 
-    [[noreturn]] static void exception(const char * _mSrcName, int _mSrcLine, const char * _mFuncName, int _mErrorCode,
+    _ATR_NORET_ static void exception(const char * _mSrcName, int _mSrcLine, const char * _mFuncName, int _mErrorCode,
            int _mErrorSubCode = 0, const QString& _mErrorSubMsg = QString())
     {
         (new cError(_mSrcName, _mSrcLine, _mFuncName, _mErrorCode, _mErrorSubCode, _mErrorSubMsg))->exception();
