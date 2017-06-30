@@ -272,7 +272,7 @@ void cParamType::fetchParamTypes(QSqlQuery& __q)
     QBitArray   ba(1, false);   // Nem null, egyeseket nem tartalmazó maszk, minden rekord kiválasztásához
     if (paramTypes.count() == 0) {
         cParamType *p = new cParamType();
-        if (0 == paramTypes.fetch(__q, true, ba, p)) EXCEPTION(EDATA, 0, trUtf8("Load cache: The if_types table is empty."));
+        if (0 == paramTypes.fetch(__q, false, ba, p)) EXCEPTION(EDATA, 0, trUtf8("Load cache: The if_types table is empty."));
         return;
     }
     // UPDATE
@@ -1002,7 +1002,7 @@ void cIfType::fetchIfTypes(QSqlQuery& __q)
     QBitArray   ba(1, false);   // Nem null, egyeseket nem tartalmazó maszk, minden rekord kiválasztásához
     if (ifTypes.count() == 0) {
         cIfType *p = new cIfType();
-        if (0 == ifTypes.fetch(__q, true, ba, p)) EXCEPTION(EDATA, 0, trUtf8("Load cache: The if_types table is empty."));
+        if (0 == ifTypes.fetch(__q, false, ba, p)) EXCEPTION(EDATA, 0, trUtf8("Load cache: The if_types table is empty."));
         return;
     }
     // UPDATE
@@ -1621,12 +1621,12 @@ bool cInterface::fetchByIp(QSqlQuery& q, const QHostAddress& a)
 
 int cInterface::fetchVlans(QSqlQuery& q)
 {
-    return vlans.fetch(q, getId());
+    return vlans.fetch(q);
 }
 
 int cInterface::fetchAddressess(QSqlQuery& q)
 {
-    return addresses.fetch(q, getId());
+    return addresses.fetch(q);
 }
 
 cIpAddress& cInterface::addIpAddress(const cIpAddress& __a)
@@ -2385,7 +2385,7 @@ bool cNode::rewriteById(QSqlQuery &__q, eEx __ex)
     return true;
 }
 
-int  cNode::fetchPorts(QSqlQuery& __q)
+int  cNode::fetchPorts(QSqlQuery& __q, int flags)
 {
     ports.clear();
     // A ports objektum fetch metódusa csak azonos rekord típusok esetén jó...
@@ -2400,14 +2400,15 @@ int  cNode::fetchPorts(QSqlQuery& __q)
         if (p == NULL) return -1;
         if (tableoid == cNPort::tableoid_interfaces()) {
             cInterface *pi = p->reconvert<cInterface>();
-            pi->fetchAddressess(q);
-            pi->fetchVlans(q);
+            if (flags & CV_PORTS_ADDRESSES) pi->fetchAddressess(q);
+            if (flags & CV_PORT_VLANS)      pi->fetchVlans(q);
             q.finish();
         }
+        if (flags & CV_PORT_PARAMS) p->fetchParams(q);
         ports << p;
     } while (__q.next());
     __q.finish();
-    containerValid |= CV_PORTS | CV_PORT_VLANS;
+    containerValid |= CV_PORTS | (flags & (CV_PORTS_ADDRESSES | CV_PORT_VLANS | CV_PORT_PARAMS));
     return ports.count();
 }
 

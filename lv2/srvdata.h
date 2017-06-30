@@ -35,20 +35,19 @@ public:
     virtual void toEnd();
     virtual bool toEnd(int i);
     virtual void clearToEnd();
-protected:
+    RECACHEHED(cService, service)
+    /*
     /// Konténer ill. gyorstár a cService rekordoknak.
     /// Nem frissül automatikusan, ha változik az adattábla.
     static tRecordList<cService> services;
-//    /// Egy üres objektumra mutató pointer. Az első használat alkalmával jön létre ld,: _nul()
-//    static cService *pNull;
 public:
     /// Egy services objektumot ad vissza a név alapján.
     /// Ha nincs ilyen nevű szervíz, akkor dob egy kizárást, vagy egy öres obbjektummal tér vissza.
     static const cService *service(QSqlQuery &__q, const QString& __nm, enum eEx __ex = EX_ERROR);
     /// Egy services objektumot ad vissza az ID alapján, ha nincs ilyen nevű típus, akkor dob egy kizárást.
     static const cService *service(QSqlQuery &__q, qlonglong __id, enum eEx __ex = EX_ERROR);
-//  static const cService& _nul() { if (pNull == NULL) pNull = new cService(); return *pNull; }
     static void resetCacheData() { services.clear(); }
+    */
     static qlonglong name2id(QSqlQuery &__q, const QString& __nm, enum eEx __ex = EX_ERROR) {
         const cService *p = service(__q, __nm, __ex);
         return p == NULL ? NULL_ID : p->getId();
@@ -74,7 +73,7 @@ EXT_ const QString& noalarmtype(int _e, enum eEx __ex = EX_ERROR);
 
 
 class LV2SHARED_EXPORT cHostService : public cRecord {
-    template <class S> friend void _SplitMagicT(S& o, enum eEx __ex = EX_ERROR);
+    template <class S> friend void _SplitMagicT(S& o, enum eEx __ex);
     template <class S> friend void _Magic2PropT(S& o);
     CRECORD(cHostService);
     FEATURES(cHostService)
@@ -168,11 +167,13 @@ public:
     /// Rekord azonosító nevekből képez egy stringet: node[:port].szolgáltatés alakban.
     /// Az eredmény stringet a megadott ID alapján kérdezi le az adatbázisból.
     static QString names(QSqlQuery& q, qlonglong __id);
-    /// A prime_service mező álltal hivatkozott cService objektummal tér vissza.
-    /// Ha a mező ártéke NULL, akkor egy üres objektum referenciájával.
-    /// @param Az esetleges SQL lekérdezéshez használlt objektum (ha már be van olvasva a keresett objektum, akkor nem fordul az adatbázishoz)
-    /// @param __ex Hiba esetén vagy, ha az id nem NULL, de mégsem találja az objektumot, akkor nem üres objektummal tér vissza, hanem dob egy kizárást, ha __ex értéke true.
-    /// @return A keresett objektum referenciája, ill. ha hiba volt és __ex nem true, ill. ha az ID NULL, akkor egy üres objektum pointere.
+    /// A prime_service_id mező álltal hivatkozott cService objektummal tér vissza.
+    /// Ha a mező ártéke NULL, akkor egy NULL pointerrel tér vissza.
+    /// @param __q Az esetleges SQL lekérdezéshez használlt objektum (ha már be van olvasva a keresett objektum, akkor nem fordul az adatbázishoz)
+    /// @param __ex Hiba esetén vagy, ha az id nem NULL, de mégsem találja az objektumot, akkor nem NULL pointerrel tér vissza, hanem dob egy kizárást,
+    ///             ha __ex értéke nem EX_IGNORE. Ha __ex értéke EX_WARNING és a mező érték NULL, szintén kizárást dob.
+    /// @return A keresett objektum pointere, vagy NULL pointer.
+    /// @note A prime_service_id mező nem lehet NULL az adatbázisban. Az alapértelmezett érték a 'nil' nevű szolgáltatásra mutat.
     const cService *getPrimeService(QSqlQuery& __q, enum eEx __ex = EX_ERROR)
     {
         qlonglong id = getId(_sPrimeServiceId);
@@ -182,11 +183,13 @@ public:
         }
         return cService::service(__q, id, __ex);
     }
-    /// A proto_service mező álltal hivatkozott cService objektummal tér vissza.
-    /// Ha a mező ártéke NULL, akkor egy üres objektum referenciájával.
-    /// @param Az esetleges SQL lekérdezéshez használlt objektum (ha már be van olvasva a keresett objektum, akkor nem fordul az adatbázishoz)
-    /// @param __ex Hiba esetén vagy, ha az id nem NULL, de mégsem találja az objektumot, akkor nem üres objektummal tér vissza, hanem dob egy kizárást, ha __ex értéke true.
-    /// @return A keresett objektum referenciája, ill. ha hiba volt és __ex nem true, ill. ha az ID NULL, akkor egy üres objektum pointere.
+    /// A proto_service_id mező álltal hivatkozott cService objektummal tér vissza.
+    /// Ha a mező ártéke NULL, akkor egy NULL pointerrel tér vissza.
+    /// @param __q Az esetleges SQL lekérdezéshez használlt objektum (ha már be van olvasva a keresett objektum, akkor nem fordul az adatbázishoz)
+    /// @param __ex Hiba esetén vagy, ha az id nem NULL, de mégsem találja az objektumot, akkor nem NULL pointerrel tér vissza, hanem dob egy kizárást,
+    ///             ha __ex értéke nem EX_IGNORE. Ha __ex értéke EX_WARNING és a mező érték NULL, szintén kizárást dob.
+    /// @return A keresett objektum pointere, vagy NULL pointer.
+    /// @note A proto_service_id mező nem lehet NULL az adatbázisban. Az alapértelmezett érték a 'nil' nevű szolgáltatásra mutat.
     const cService *getProtoService(QSqlQuery& __q, enum eEx __ex = EX_ERROR)
     {
         qlonglong id = getId(_sProtoServiceId);

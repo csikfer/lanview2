@@ -150,6 +150,9 @@ class LV2SHARED_EXPORT cInspector : public QObject {
 public:
     /// Üres konstruktor
     cInspector(cInspector *_par = NULL);
+    /// Konstruktor
+    /// A hostService adattagban csak a megadott objektumok ID-jét írja be.
+    cInspector(cInspector * __par, cNode *pN, const cService *pS, cNPort *pP = NULL);
     /// Az objektumot mint saját szolgálltatás tölti fel
     /// @param q Az adatbázis művelethez használható QSqlQuery objektum referenciája.
     /// @param sn A szolgáltatás neve

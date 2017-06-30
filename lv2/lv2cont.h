@@ -579,6 +579,35 @@ template<class T> QTextStream& operator<<(QTextStream& __t, const tRecordList<T>
     return __t << toString(__v);
 }
 
+#define RECACHEHED(R, n) \
+    protected: \
+        static tRecordList<R> n##s; \
+    public: \
+        static void resetCacheData() { n##s.clear(); } \
+        static const R * n(QSqlQuery& __q, const QString& ident, eEx __ex = EX_ERROR); \
+        static const R * n(QSqlQuery &__q, qlonglong      ident, eEx __ex = EX_ERROR);
+
+#define RECACHEFN(R, n, T, ff) \
+        const R * R::n(QSqlQuery& __q, T ident, eEx __ex) { \
+            int i = n##s.indexOf(ident); \
+            if (i >= 0) return n##s.at(i); \
+            R *p = new R(); \
+            if (!p->ff(__q, ident)) { \
+                if (__ex != EX_IGNORE) EXCEPTION(EFOUND, -1, QString(QObject::trUtf8("Rekord azonosító : %1")).arg(ident)); \
+                pDelete(p); \
+            } \
+            else { \
+                n##s << p; \
+            } \
+            return p; \
+        }
+
+#define RECACHEDEF(R, n) \
+        tRecordList<R> R::n##s; \
+        RECACHEFN(R, n, const QString&, fetchByName) \
+        RECACHEFN(R, n, qlonglong,      fetchById)
+
+
 /// cRecoed típusú objektum részobjektumait tároló konténer.
 /// A konténer C típusú objektumokat táro, és a rulajdonos objektum tíousa O.
 /// A QList ösnek nem minden metódusa lett újra implementálva!

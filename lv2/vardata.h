@@ -57,8 +57,7 @@ public:
 class LV2SHARED_EXPORT cServiceVarType : public cRecord {
     CRECORD(cServiceVarType);
     FEATURES(cServiceVarType)
-public:
-
+    RECACHEHED(cServiceVarType, srvartype)
 };
 
 /*!
@@ -72,8 +71,7 @@ public:
     virtual void clearToEnd();
     virtual void toEnd();
     virtual bool toEnd(int _ix);
-    bool fetchType(QSqlQuery& q, eEx __ex = EX_ERROR);
-    cServiceVarType& varType(QSqlQuery& q, eEx __ex = EX_ERROR);
+    const cServiceVarType * varType(QSqlQuery& q, eEx __ex = EX_ERROR);
     int setValue(QSqlQuery& q, double val, int& state, qlonglong heartbeat);
     int setValue(QSqlQuery& q, qulonglong val, int& state, qlonglong heartbeat);
 protected:
@@ -84,7 +82,7 @@ protected:
     int noValue(QSqlQuery& q, int& state, qlonglong heartbeat);
     eTristate checkIntValue(qulonglong val, qlonglong ft, const QVariant &_p1, const QVariant &_p2);
     eTristate checkRealValue(qulonglong val, qlonglong ft, const QVariant& _p1, const QVariant& _p2);
-    cServiceVarType _varType;
+    const cServiceVarType *pVarType;
     double      lastValue;      ///< Derived esetén az előző érték
     qulonglong  lastCount;      ///< Ha számláló a lekérdezett érték, akkor az előző érték
     QDateTime   lastTime;       ///< Ha számláló a lekérdezett érték, akkor az előző érték időpontja

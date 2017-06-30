@@ -98,8 +98,9 @@ void cService::clearToEnd()
     ;
 }
 CRECDEF(cService)
+RECACHEDEF(cService, service)
 
-
+/*
 tRecordList<cService> cService::services;
 const cService * cService::service(QSqlQuery& __q, const QString& __nm, eEx __ex)
 {
@@ -132,7 +133,7 @@ const cService *cService::service(QSqlQuery &__q, qlonglong __id, eEx __ex)
     }
     return services.at(i);
 }
-
+*/
 /* ----------------------------------------------------------------- */
 
 int noalarmtype(const QString& _n, enum eEx __ex)

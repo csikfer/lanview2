@@ -144,6 +144,9 @@ cDevicePSt::~cDevicePSt()
     ;
 }
 
+#define _DM PDEB(VVERBOSE)
+#define DM  _DM << endl;
+
 void cDevicePSt::postInit(QSqlQuery &_q, const QString&)
 {
     DBGFN();
@@ -169,16 +172,19 @@ void cDevicePSt::postInit(QSqlQuery &_q, const QString&)
         hostService.setState(_q, _sUnreachable, "SNMP Open error: " + snmp.emsg);
         EXCEPTION(EOK);
     }
-    dev.fetchPorts(_q);
-    tRecordList<cNPort>::iterator it, n = dev.ports.end();
-    for (it = dev.ports.begin(); it != n; ++it) {      // Végigvesszük a portokat
+    dev.fetchPorts(_q, 0);  // Csak a portok beolvasása. Címek, vlan-ok és paraméterek nem.
+    tRecordList<cNPort>::iterator it, eit = dev.ports.end();
+    for (it = dev.ports.begin(); it != eit; ++it) {      // Végigvesszük a portokat
         cNPort     *pPort    = *it;
+        _DM << pPort->getName() << endl;
         // interface-nél alacsonyabb típussal nem foglalkozunk, nincs állpota
         if (!(pPort->descr() >= cInterface::_descr_cInterface())) continue;
         // Interface, van/kell statusz
         cInterface *pInterface = dynamic_cast<cInterface *>(pPort);
         qlonglong   pid = pInterface->getId();
+        DM;
         varsInit(_q, pInterface);
+        DM;
         cInspector *pRLnkSt  = NULL;    // Al szolgáltatás, ha van. Csak rlinkstat lehet/támogatott (és portvars, amit az elöbb kezeltünk)
         QString wMsg;   // Gyanús dolgok
          // Mivel van linkelve?
@@ -188,6 +194,7 @@ void cDevicePSt::postInit(QSqlQuery &_q, const QString&)
         cLogLink  logl;
         lldp_pid = lldp.getLinked(_q, pid);  // Az LLDP szerint ?
         logl_pid = logl.getLinked(_q, pid);  // A logikai linkek szerint
+        DM;
         if (lldp_pid != NULL_ID && logl_pid != NULL_ID && lldp_pid != logl_pid) { // Ez egy ellentmondás!!!
             // A probléma leírása :
             wMsg = trUtf8(
@@ -216,14 +223,14 @@ void cDevicePSt::postInit(QSqlQuery &_q, const QString&)
         }
         // A hihető linkelt port ID az lldp_pid -ben
         if (lldp_pid == NULL_ID) continue;
-        pRLnkSt = new cInspector(this);                             // Passzív (még) üres objektum
-        pRLnkSt->service(pRLinkStat->dup()->reconvert<cService>()); // szervíz
-        pRLnkSt->pPort = cNPort::getPortObjById(_q, lldp_pid);      // port, .. node
-        pRLnkSt->pNode = cNode::getNodeObjById(_q, pRLnkSt->pPort->getId(_sNodeId))->reconvert<cNode>();
+        DM;
+        // Passzív objektum,
+        cNPort *p = cNPort::getPortObjById(_q, lldp_pid);      // port, .. node
+        pRLnkSt = new cInspector(this, cNode::getNodeObjById(_q, p->getId(_sNodeId))->reconvert<cNode>(), pRLinkStat, p);
         cHostService& hs = pRLnkSt->hostService;
-         // Van host_services rekord ?
-        hs.fetchByIds(_q, pRLnkSt->nodeId(), pRLnkSt->serviceId(), lldp_pid, EX_IGNORE);
-        int n = _q.size();
+        DM;
+        // Van host_services rekord ?
+        int n = hs.completion(_q);
         // Több rekord nem lehet(ne), ha töröljük mindet, aminek nem nil a proto és prime szolg.-a,
         // akkor meg kell szünnie a redundanciának.
         if (n  > 1) {
@@ -245,6 +252,7 @@ void cDevicePSt::postInit(QSqlQuery &_q, const QString&)
             } while (hsc.next(_q));
         }
         if (n  > 1) EXCEPTION(EPROGFAIL, n); // ez képtelenség
+        DM;
         if (n == 1) {   // Van, és (most már) egyedi, ha kell javítjuk
             QBitArray sets(hostService.cols(), false);
             if (hs.getBool(_sDisabled) || hs.getBool(_sDeleted)) {
@@ -311,6 +319,7 @@ void cDevicePSt::postInit(QSqlQuery &_q, const QString&)
         *pSubordinates << pRLnkSt;
         rlinkMap[pid] = pRLnkSt;
     }
+    DM;
     hsfWhereBits.setBit(hsf.toIndex(_sFlag));   // Ha maradt a true flag, akkor leválasztjuk
     hsf.clear(_sSuperiorHostServiceId);
     QString msg = trUtf8("Leválasztva %1 ről.").arg(hostService.names(_q));
@@ -320,29 +329,26 @@ void cDevicePSt::postInit(QSqlQuery &_q, const QString&)
         msg += trUtf8(" %1 services.").arg(un);
         APPMEMO(_q, msg, RS_WARNING);
     }
+    DM;
 }
 
 void cDevicePSt::varsInit(QSqlQuery &_q, cInterface *pInterface)
 {
     qlonglong pid = pInterface->getId();
-    cInspector *pPVars;
-    pPVars = new cInspector(this);                              // Passzív (még) üres objektum
-    pPVars->service(pPortVars->dup()->reconvert<cService>());   // szervíz
-    pPVars->pPort = cNPort::getPortObjById(_q, pid);            // port
-    pPVars->pNode = host().dup()->reconvert<cNode>();
+    // Passzív objektum, hostService adattag csak részben inicializálva
+    cInspector *pPVars = new cInspector(this, host().dup()->reconvert<cNode>(), pPortVars, pInterface->dup()->reconvert<cNPort>());
     cHostService& hs = pPVars->hostService;
     // Van a porthoz portvars host_services rekord ?
-    hs.fetchByIds(_q, pPVars->nodeId(), pPVars->serviceId(), pPVars->portId(), EX_IGNORE);
-    int n = _q.size();
+    int n = hs.completion(_q);
     if (n  > 1) EXCEPTION(AMBIGUOUS, n, name());
-    if (n == 0) {
+    if (n == 0) {   // Nincs létrehozzuk...
         hs.setId(_sServiceId, pPortVars->getId());
         hs.setId(_sNodeId,    host().getId());
         hs.setId(_sPortId,    pid);
         hs.setId(_sSuperiorHostServiceId, hostServiceId());
         hs.setId(_sPrimeServiceId, cService::nilId);
         hs.setId(_sProtoServiceId, cService::nilId);
-        hs.setName(_sNoalarmFlag, _sOn);
+        hs.setName(_sNoalarmFlag, _sOn);    // Tiltott alarm
         hs.insert(_q);
     }
     else if (hostServiceId() != hs.getId(_sSuperiorHostServiceId)) {
@@ -350,8 +356,14 @@ void cDevicePSt::varsInit(QSqlQuery &_q, cInterface *pInterface)
         hs.setId(_sSuperiorHostServiceId, hostServiceId());
         hs.update(_q, false, hs.mask(_sSuperiorHostServiceId));
     }
+    DM;
     pPVars->pVars = pPVars->fetchVars(_q);  // A változók beolvasása
-    if (pPVars->pVars == NULL) pPVars->pVars = new tOwnRecords<cServiceVar, cHostService>(&(pPVars->hostService));
+    DM;
+    if (pPVars->pVars == NULL) {
+        DM;
+        pPVars->pVars = new tOwnRecords<cServiceVar, cHostService>(&(pPVars->hostService));
+    }
+    DM;
     QStringList vnames, vtypes;
     // Ezek a változó navek kellenek
     vnames << _sIfMtu << _sIfSpeed
@@ -363,6 +375,7 @@ void cDevicePSt::varsInit(QSqlQuery &_q, cInterface *pInterface)
            << "ifbytes" << "ifpacks" << "ifpacks" << "ifpacks" << "ifpacks";
     n = vnames.size();
     if (n != vtypes.size()) EXCEPTION(EPROGFAIL);
+    DM;
     for (int i = 0; i < n; ++i) {
         const QString& name = vnames.at(i);
         cServiceVar *pVar = pPVars->pVars->get(name, EX_IGNORE);

@@ -106,6 +106,7 @@ const cRecStaticDescr&  cServiceVarType::descr() const
 }
 
 CRECDEFD(cServiceVarType)
+RECACHEDEF(cServiceVarType, srvartype)
 
 /* ---------------------------------------------------------------------------- */
 int cServiceVar::_ixFeatures         = NULL_IX;
@@ -114,14 +115,16 @@ int cServiceVar::_ixServiceVarValue  = NULL_IX;
 
 cServiceVar::cServiceVar() : cRecord()
 {
-    _set(cServiceVar::descr());
+    pVarType = NULL;
     lastCount = 0;
+    _set(cServiceVar::descr());
 }
 cServiceVar::cServiceVar(const cServiceVar& __o) : cRecord()
 {
-    _cp(__o);
+    pVarType  = __o.pVarType;
     lastCount = __o.lastCount;
     lastTime  = __o.lastTime;
+    _cp(__o);
 }
 
 const cRecStaticDescr&  cServiceVar::descr() const
@@ -138,7 +141,9 @@ CRECDEFD(cServiceVar)
 
 void cServiceVar::clearToEnd()
 {
-    _varType.clear();
+    pVarType = NULL;
+    lastCount = 0;
+    lastTime = QDateTime();
 }
 
 void cServiceVar::toEnd()
@@ -149,36 +154,24 @@ void cServiceVar::toEnd()
 bool cServiceVar::toEnd(int _ix)
 {
     if (_ix == _ixServiceVarTypeId) {
-        if (getId(_ixServiceVarTypeId) != _varType.getId()) _varType.clear();
+        if (pVarType != NULL && getId(_ixServiceVarTypeId) != pVarType->getId()) pVarType = NULL;
         return true;
     }
     return false;
 }
 
-cServiceVarType& cServiceVar::varType(QSqlQuery& q, eEx __ex)
+const cServiceVarType *cServiceVar::varType(QSqlQuery& q, eEx __ex)
 {
-    qlonglong tid = getId(_ixServiceVarTypeId);
-    if (_varType.getId() != tid) {
-        if (!_varType.fetchById(q, tid)) {
-            if (__ex != EX_IGNORE) EXCEPTION(EFOUND, tid, identifying(false));
-        }
+    if (pVarType == NULL || pVarType->getId() != getId(_ixServiceVarTypeId)) {
+        pVarType = cServiceVarType::srvartype(q, getId(_ixServiceVarTypeId), __ex);
     }
-    return _varType;
-}
-
-bool cServiceVar::fetchType(QSqlQuery& q, eEx __ex)
-{
-    if (!isNull(_ixServiceVarTypeId)) {
-        if (_varType.fetchById(q, getId(_ixServiceVarTypeId))) return true;
-    }
-    if (__ex != EX_IGNORE) EXCEPTION(EDATA, getId(_ixServiceVarTypeId), identifying(false));
-    return false;
+    return pVarType;
 }
 
 int cServiceVar::setValue(QSqlQuery& q, double val, int& state, qlonglong heartbeat)
 {
     setName(_sRawValue, QString::number(val));
-    qlonglong svt = varType(q).getId(_sServiceVarType);
+    qlonglong svt = varType(q)->getId(_sServiceVarType);
     switch (svt) {
     case SVT_ABSOLUTE:
         if (val < 0) val = - val;
@@ -201,7 +194,7 @@ int cServiceVar::setValue(QSqlQuery& q, double val, int& state, qlonglong heartb
 int cServiceVar::setValue(QSqlQuery& q, qulonglong val, int &state, qlonglong heartbeat)
 {
     setName(_sRawValue, QString::number(val));
-    qlonglong svt = varType(q).getId(_sServiceVarType);
+    qlonglong svt = varType(q)->getId(_sServiceVarType);
     switch (svt) {
     case SVT_ABSOLUTE:
     case NULL_ID:
@@ -277,14 +270,14 @@ int cServiceVar::setDerive(QSqlQuery &q, double val, int& state, qlonglong heart
 int cServiceVar::updateVar(QSqlQuery& q, qulonglong val, int &state, qlonglong heartbeat)
 {
     setName(_sLastTime, _sNOW);
-    if (TS_FALSE == checkIntValue(val, _varType.getId(_sPlausibilityType), _varType.get(_sPlausibilityParam1), _varType.get(_sPlausibilityParam2))) {
+    if (TS_FALSE == checkIntValue(val, varType(q)->getId(_sPlausibilityType), varType(q)->get(_sPlausibilityParam1), varType(q)->get(_sPlausibilityParam2))) {
         return noValue(q, state, heartbeat);
     }
     int rs = RS_ON;
-    if (TS_TRUE == checkIntValue(val, _varType.getId(_sCriticalType), _varType.get(_sCriticalParam1), _varType.get(_sCriticalParam2))) {
+    if (TS_TRUE == checkIntValue(val, varType(q)->getId(_sCriticalType), varType(q)->get(_sCriticalParam1), varType(q)->get(_sCriticalParam2))) {
         rs = RS_CRITICAL;
     }
-    else if (TS_TRUE == checkIntValue(val, _varType.getId(_sWarningType), _varType.get(_sWarningParam1), _varType.get(_sWarningParam2))) {
+    else if (TS_TRUE == checkIntValue(val, varType(q)->getId(_sWarningType), varType(q)->get(_sWarningParam1), varType(q)->get(_sWarningParam2))) {
         rs = RS_WARNING;
     }
     if (getBool(_sDelegateServiceState) && state < rs) state = rs;
@@ -298,14 +291,14 @@ int cServiceVar::updateVar(QSqlQuery& q, qulonglong val, int &state, qlonglong h
 int cServiceVar::updateVar(QSqlQuery& q, double val, int& state, qlonglong heartbeat)
 {
     setName(_sLastTime, _sNOW);
-    if (TS_FALSE == checkRealValue(val, _varType.getId(_sPlausibilityType), _varType.get(_sPlausibilityParam1), _varType.get(_sPlausibilityParam2))) {
+    if (TS_FALSE == checkRealValue(val, varType(q)->getId(_sPlausibilityType), varType(q)->get(_sPlausibilityParam1), varType(q)->get(_sPlausibilityParam2))) {
         return noValue(q, state, heartbeat);
     }
     int rs = RS_ON;
-    if (TS_TRUE == checkRealValue(val, _varType.getId(_sCriticalType), _varType.get(_sCriticalParam1), _varType.get(_sCriticalParam2))) {
+    if (TS_TRUE == checkRealValue(val, varType(q)->getId(_sCriticalType), varType(q)->get(_sCriticalParam1), varType(q)->get(_sCriticalParam2))) {
         rs = RS_CRITICAL;
     }
-    else if (TS_TRUE == checkRealValue(val, _varType.getId(_sWarningType), _varType.get(_sWarningParam1), _varType.get(_sWarningParam2))) {
+    else if (TS_TRUE == checkRealValue(val, varType(q)->getId(_sWarningType), varType(q)->get(_sWarningParam1), varType(q)->get(_sWarningParam2))) {
         rs = RS_WARNING;
     }
     if (getBool(_sDelegateServiceState) && state < rs) state = rs;

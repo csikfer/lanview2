@@ -1974,7 +1974,9 @@ public:
     const cRecord& bind(int _ix, QSqlQuery& __q, int _i) const {
         const cColStaticDescr& f = colDescr(_ix);
         QSql::ParamType t = f.eColType == cColStaticDescr::FT_BINARY ? QSql::In | QSql::Binary : QSql::In;
-        __q.bindValue(_i, f.toSql(get(_ix)), t);
+        QVariant v = f.toSql(get(_ix));
+        // PDEB(VVERBOSE) << QString("#%1 << [%2] = %3").arg(_i).arg(_ix).arg(debVariantToString(v)) << endl;
+        __q.bindValue(_i, v, t);
         return *this;
     }
     /// Paraméter megadása (bind) egy SQL lekérdezéshez, ahol a paraméter érték a rekord objektum egy mezője.

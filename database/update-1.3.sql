@@ -734,4 +734,17 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
+-- Néhány lekérdezés nagyon lassú, mert nincsenek indexek...
+CREATE INDEX pports_node_id_index       ON pports(node_id);
+CREATE INDEX nports_node_id_index       ON nports(node_id);
+CREATE INDEX interfaces_node_id_index   ON interfaces(node_id);
+CREATE INDEX host_services_superior_index ON host_services(superior_host_service_id);
+CREATE INDEX ip_addresses_port_id_index ON ip_addresses(port_id);
+CREATE INDEX mactab_port_id_index       ON mactab(port_id);
+CREATE INDEX node_params_node_id_index  ON node_params(node_id);
+CREATE INDEX port_params_port_id_index  ON port_params(port_id);
+CREATE INDEX port_vlans_port_id_index   ON port_vlans(port_id);
+CREATE INDEX table_shape_fields_shape_index ON table_shape_fields(table_shape_id);
+
+
 END;

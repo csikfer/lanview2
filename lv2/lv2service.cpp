@@ -299,7 +299,7 @@ qlonglong cInspector::syscronId;
 
 void cInspector::preInit(cInspector *__par)
 {
-    DBGFN();
+//  DBGFN();
     inspectorType= IT_CUSTOM;
     internalStat = IS_INIT;
     timerStat    = TS_STOP;
@@ -329,7 +329,7 @@ void cInspector::preInit(cInspector *__par)
     if (pParent != NULL) {
         setParent(pParent->useParent());
     }
-    DBGFNL();
+//  DBGFNL();
 }
 
 void cInspector::initStatic()
@@ -348,6 +348,22 @@ cInspector::cInspector(cInspector * __par)
     _DBGFN() << " parent : " << (__par == NULL ? "NULL" : __par->name()) << endl;
     preInit(__par);
     inspectorType = IT_TIMING_PASSIVE;
+}
+
+cInspector::cInspector(cInspector * __par, cNode *pN, const cService *pS, cNPort *pP)
+    : QObject(NULL), hostService(), lastRun()
+{
+    _DBGFN() << " (" << (__par == NULL ? "NULL" : __par->name()) << ", "
+             << pN->getName() << ", " << pS->getName() << ", " << (pP == NULL ? "NULL" : pP->getName())
+             << ")" << endl;
+    preInit(__par);
+    inspectorType = IT_TIMING_PASSIVE;
+    pNode    = pN;
+    pService = pS;
+    pPort    = pP;
+    hostService.setId(_sNodeId,    pNode->getId());
+    hostService.setId(_sServiceId, pService->getId());
+    if (pPort != NULL) hostService.setId(_sPortId, pPort->getId());
 }
 
 cInspector::cInspector(QSqlQuery& q, const QString &sn)
@@ -603,7 +619,7 @@ tOwnRecords<cServiceVar, cHostService> *cInspector::fetchVars(QSqlQuery& q)
     int n = p->fetch(q);
     if (0 < n) {
         for (int i = 0; i < n; ++i) {
-            p->at(i)->fetchType(q);
+            p->at(i)->varType(q);
         }
         return p;
     }

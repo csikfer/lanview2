@@ -3280,6 +3280,7 @@ void cRecord::query(QSqlQuery& __q, const QString& sql, const tIntVector& __arg)
 
 void cRecord::query(QSqlQuery& __q, const QString& sql, const QBitArray& _fm) const
 {
+    // _DBGFN() << sql << endl;
     if (!__q.prepare(sql)) SQLPREPERR(__q, sql);
     int i,j;
     for (i = j = 0; _fm.size() > i; i++) {
@@ -3288,6 +3289,7 @@ void cRecord::query(QSqlQuery& __q, const QString& sql, const QBitArray& _fm) co
         }
     }
     if (!__q.exec()) SQLQUERYERR(__q);
+    // DBGFNL();
 }
 
 QString cRecord::whereString(QBitArray& _fm) const
@@ -3345,7 +3347,7 @@ bool cRecord::fetchQuery(QSqlQuery& __q, bool __only, const QBitArray& _fm, cons
 
 bool cRecord::fetch(QSqlQuery& __q, bool __only, const QBitArray& _fm, const tIntVector& __ord, int __lim, int __off)
 {
-    // _DBGFN() << " @(" << _fm << _sCommaSp << __ord << _sCommaSp << __lim << _sCommaSp << __off << QChar(')') << endl;
+    _DBGFN() << " @(" << _fm << _sCommaSp << __ord << _sCommaSp << __lim << _sCommaSp << __off << QChar(')') << endl;
     if (fetchQuery(__q,__only, _fm, __ord, __lim, __off)) {
         set(__q.record());
         _stat |= ES_EXIST;

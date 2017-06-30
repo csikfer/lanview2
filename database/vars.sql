@@ -101,6 +101,7 @@ CREATE TABLE service_vars (
     UNIQUE (service_var_name, host_service_id)
 );
 ALTER TABLE service_vars OWNER TO lanview2;
+CREATE INDEX service_vars_host_service_id_index ON service_vars(host_service_id);
 
 INSERT INTO fkey_types
   ( table_name,             column_name,            unusual_fkeys_type) VALUES
