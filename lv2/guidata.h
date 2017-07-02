@@ -394,7 +394,7 @@ enum eDataCharacter {
 EXT_ int dataCharacter(const QString& n, eEx __ex = EX_ERROR);
 EXT_ const QString& dataCharacter(int e, eEx __ex = EX_ERROR);
 
-static inline QString dcViewShort(int id) { return cEnumVal::viewShort(_sDatacharacter, id, dataCharacter(id)); }
+EXT_ QString dcViewShort(int id);
 static inline QString dcViewLong(int id)  { return cEnumVal::viewLong( _sDatacharacter, id, dataCharacter(id)); }
 
 class LV2SHARED_EXPORT cMenuItem : public cRecord {

@@ -109,7 +109,12 @@ lv2Gui::lv2Gui() : lv2g()
     if (lastError == NULL) {
         try {
             if (pMainWindow == NULL) EXCEPTION(EPROGFAIL);
-            pMainWindow->init();
+            if (nonFatal) {
+                cErrorMessageBox::messageBox(nonFatal);
+                pDelete(nonFatal);
+                _setup = true;
+            }
+            pMainWindow->init(_setup);
         } CATCHS(lastError)
     }
     DBGFNL();

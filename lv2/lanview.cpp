@@ -166,6 +166,7 @@ lanView::lanView()
     debug       = debugDefault;
     pSet        = NULL;
     lastError   = NULL;
+    nonFatal    = NULL;
     pDb         = NULL;
 #ifdef MUST_USIGNAL
     unixSignals = NULL;
@@ -207,9 +208,15 @@ lanView::lanView()
         QDir    d(homeDir);
         if (!QDir::setCurrent(d.path())) {
             // Ha GUI, és nem volt megadva könyvtár, akkor az user home könyvtár lessz a home
-            if (gui && pSet->value(_sHomeDir).isNull()) {
-                d = QDir::homePath();
-                homeDir = d.path();
+            if (gui) {
+                if (pSet->value(_sHomeDir).isNull()) {
+                    d = QDir::homePath();
+                    homeDir = d.path();
+                }
+                else {
+                    // Nem kéne leszállni, inkább setup
+                    nonFatal = NEWCERROR(ENODIR, 0, d.path());
+                }
             }
             else {
                 EXCEPTION(ENODIR, -1, d.path());

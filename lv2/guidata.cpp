@@ -238,6 +238,14 @@ const QString& dataCharacter(int e, eEx __ex)
     return _sNul;
 }
 
+QString dcViewShort(int id)
+{
+    if (!lanView::dbIsOpen()) {  // Nincs adatbázis
+        return dataCharacter(id);
+    }
+    return cEnumVal::viewShort(_sDatacharacter, id, dataCharacter(id));
+}
+
 
 /* ------------------------------ cTableShape ------------------------------ */
 

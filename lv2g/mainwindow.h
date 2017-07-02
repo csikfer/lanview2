@@ -19,7 +19,7 @@ public:
     cMainWindow(QWidget *parent = 0);
     ~cMainWindow();
     /// Init
-    void init();
+    void init(bool _setup = false);
     /// A QMdiArea objektum pointere, a fő ablak munkaterülete.
     QMdiArea   *pMdiArea;
 private:

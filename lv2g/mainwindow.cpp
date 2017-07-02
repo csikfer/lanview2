@@ -24,10 +24,10 @@ cMainWindow::cMainWindow(QWidget *parent) :
     setCentralWidget(pMdiArea);
 }
 
-void cMainWindow::init()
+void cMainWindow::init(bool _setup)
 {
     // Central Widget
-    if (!lanView::dbIsOpen()) {   // Minimalista setup, nincs adatbázisunk, vagy csak ez kell
+    if (_setup || !lanView::dbIsOpen()) {   // Minimalista setup, nincs adatbázisunk, vagy csak ez kell
         setSetupMenu();
     }
     else {        // Menu

@@ -355,6 +355,7 @@ public:
     QString         binPath;    ///< Bin kereső path
     QSettings      *pSet;       ///< Pointer to applicaton settings object
     cError         *lastError;  ///< Pointer to last error object or NULL
+    cError         *nonFatal;   ///< Init, nem fatális hiba
     QStringList     args;       ///< Argumentum lista
     QString         lang;       ///< nyelv
     QTranslator    *libTranslator;  ///< translator az API-hoz
