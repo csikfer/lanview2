@@ -75,6 +75,7 @@ public:
     int setValue(QSqlQuery& q, double val, int& state, qlonglong heartbeat);
     int setValue(QSqlQuery& q, qulonglong val, int& state, qlonglong heartbeat);
 protected:
+    void preSetValue(const QString& val);
     int setCounter(QSqlQuery &q, qulonglong val, int svt, int& state, qlonglong heartbeat);
     int setDerive(QSqlQuery &q, double val, int& state, qlonglong heartbeat);
     int updateVar(QSqlQuery& q, qulonglong val, int& state, qlonglong heartbeat);
@@ -86,9 +87,11 @@ protected:
     double      lastValue;      ///< Derived esetén az előző érték
     qulonglong  lastCount;      ///< Ha számláló a lekérdezett érték, akkor az előző érték
     QDateTime   lastTime;       ///< Ha számláló a lekérdezett érték, akkor az előző érték időpontja
+    QDateTime   lastLast;       ///< last_time mező előző értéke
     eNotifSwitch state;
     STATICIX(cServiceVar, ixServiceVarTypeId)
     STATICIX(cServiceVar, ixServiceVarValue)
+    static QBitArray updateMask;
 };
 
 /*!

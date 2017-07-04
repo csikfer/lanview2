@@ -112,6 +112,7 @@ RECACHEDEF(cServiceVarType, srvartype)
 int cServiceVar::_ixFeatures         = NULL_IX;
 int cServiceVar::_ixServiceVarTypeId = NULL_IX;
 int cServiceVar::_ixServiceVarValue  = NULL_IX;
+QBitArray cServiceVar::updateMask;
 
 cServiceVar::cServiceVar() : cRecord()
 {
@@ -133,6 +134,7 @@ const cRecStaticDescr&  cServiceVar::descr() const
         _ixFeatures         = _descr_cServiceVar().toIndex(_sFeatures);
         _ixServiceVarTypeId = _descr_cServiceVar().toIndex(_sServiceVarTypeId);
         _ixServiceVarValue  = _descr_cServiceVar().toIndex(_sServiceVarValue);
+        updateMask = _descr_cServiceVar().mask(_sVarState, _sServiceVarValue, _sLastTime, _sRawValue);
     }
     return *_pRecordDescr;
 }
@@ -170,7 +172,7 @@ const cServiceVarType *cServiceVar::varType(QSqlQuery& q, eEx __ex)
 
 int cServiceVar::setValue(QSqlQuery& q, double val, int& state, qlonglong heartbeat)
 {
-    setName(_sRawValue, QString::number(val));
+    preSetValue(QString::number(val));
     qlonglong svt = varType(q)->getId(_sServiceVarType);
     switch (svt) {
     case SVT_ABSOLUTE:
@@ -193,7 +195,7 @@ int cServiceVar::setValue(QSqlQuery& q, double val, int& state, qlonglong heartb
 
 int cServiceVar::setValue(QSqlQuery& q, qulonglong val, int &state, qlonglong heartbeat)
 {
-    setName(_sRawValue, QString::number(val));
+    preSetValue(QString::number(val));
     qlonglong svt = varType(q)->getId(_sServiceVarType);
     switch (svt) {
     case SVT_ABSOLUTE:
@@ -210,6 +212,13 @@ int cServiceVar::setValue(QSqlQuery& q, qulonglong val, int &state, qlonglong he
         EXCEPTION(EDATA, svt, identifying(false));
     }
     return RS_INVALID;
+}
+
+void cServiceVar::preSetValue(const QString& val)
+{
+    setName(_sRawValue, val);
+    lastLast = get(_sLastTime).toDateTime();
+    setName(_sLastTime, _sNOW);
 }
 
 int cServiceVar::setCounter(QSqlQuery& q, qulonglong val, int svt, int &state, qlonglong heartbeat)
@@ -269,7 +278,6 @@ int cServiceVar::setDerive(QSqlQuery &q, double val, int& state, qlonglong heart
 
 int cServiceVar::updateVar(QSqlQuery& q, qulonglong val, int &state, qlonglong heartbeat)
 {
-    setName(_sLastTime, _sNOW);
     if (TS_FALSE == checkIntValue(val, varType(q)->getId(_sPlausibilityType), varType(q)->get(_sPlausibilityParam1), varType(q)->get(_sPlausibilityParam2))) {
         return noValue(q, state, heartbeat);
     }
@@ -283,14 +291,12 @@ int cServiceVar::updateVar(QSqlQuery& q, qulonglong val, int &state, qlonglong h
     if (getBool(_sDelegateServiceState) && state < rs) state = rs;
     setId(_sVarState, rs);
     setName(_sServiceVarValue, QString::number(val));
-    setName(_sLastTime, _sNOW);
-    update(q, false, mask(_sVarState, _sServiceVarValue, _sLastTime, _sRawValue));
+    update(q, false, updateMask);
     return rs;
 }
 
 int cServiceVar::updateVar(QSqlQuery& q, double val, int& state, qlonglong heartbeat)
 {
-    setName(_sLastTime, _sNOW);
     if (TS_FALSE == checkRealValue(val, varType(q)->getId(_sPlausibilityType), varType(q)->get(_sPlausibilityParam1), varType(q)->get(_sPlausibilityParam2))) {
         return noValue(q, state, heartbeat);
     }
@@ -304,17 +310,17 @@ int cServiceVar::updateVar(QSqlQuery& q, double val, int& state, qlonglong heart
     if (getBool(_sDelegateServiceState) && state < rs) state = rs;
     setId(_sVarState, rs);
     setName(_sServiceVarValue, QString::number(val));
-    update(q, false, mask(_sVarState, _sServiceVarValue, _sLastTime, _sRawValue));
+    update(q, false, updateMask);
     return rs;
 }
 
 int cServiceVar::noValue(QSqlQuery& q, int &state, qlonglong heartbeat)
 {
-    QDateTime last = get(_sLastTime).toDateTime();
-    if (heartbeat != NULL_ID && heartbeat < last.msecsTo(QDateTime::currentDateTime())) {
+    if (lastLast.isNull() || isNull(_sServiceVarValue)
+     || heartbeat != NULL_ID && heartbeat < lastLast.msecsTo(QDateTime::currentDateTime())) {
         setId(_sVarState, RS_UNREACHABLE);
         clear(_sServiceVarValue);
-        update(q, false, mask(_sVarState, _sRawValue, _sLastTime, _sServiceVarValue));
+        update(q, false, updateMask);
         if (getBool(_sDelegateServiceState)) state = RS_UNREACHABLE;
     }
     return RS_UNREACHABLE;

@@ -1535,7 +1535,7 @@ int cInspector::setServiceVar(QSqlQuery& q, const QString& name, qulonglong val,
 {
     cServiceVar *pVar = getServiceVar(name);
     if (pVar == NULL) {
-        DWAR() << trUtf8("ASrvice var %1 not fod.").arg(name) << endl;
+        DWAR() << trUtf8("Service var %1 not fod.").arg(name) << endl;
         return RS_UNREACHABLE;
     }
     qlonglong heartbeat = (qlonglong)get(_sHeartbeatTime);
