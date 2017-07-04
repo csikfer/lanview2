@@ -112,6 +112,7 @@ RECACHEDEF(cServiceVarType, srvartype)
 int cServiceVar::_ixFeatures         = NULL_IX;
 int cServiceVar::_ixServiceVarTypeId = NULL_IX;
 int cServiceVar::_ixServiceVarValue  = NULL_IX;
+int cServiceVar::_ixStateMsg         = NULL_IX;
 QBitArray cServiceVar::updateMask;
 
 cServiceVar::cServiceVar() : cRecord()
@@ -134,7 +135,9 @@ const cRecStaticDescr&  cServiceVar::descr() const
         _ixFeatures         = _descr_cServiceVar().toIndex(_sFeatures);
         _ixServiceVarTypeId = _descr_cServiceVar().toIndex(_sServiceVarTypeId);
         _ixServiceVarValue  = _descr_cServiceVar().toIndex(_sServiceVarValue);
-        updateMask = _descr_cServiceVar().mask(_sVarState, _sServiceVarValue, _sLastTime, _sRawValue);
+        _ixStateMsg         = _descr_cServiceVar().toIndex(_sStateMsg);
+        updateMask = _descr_cServiceVar().mask(_sVarState, _sLastTime, _sRawValue)
+                   | _descr_cServiceVar().mask(_ixServiceVarValue, _ixStateMsg);
     }
     return *_pRecordDescr;
 }
@@ -177,6 +180,7 @@ int cServiceVar::setValue(QSqlQuery& q, double val, int& state, qlonglong heartb
     switch (svt) {
     case SVT_ABSOLUTE:
         if (val < 0) val = - val;
+        addMsg("Negált érték.");
     case NULL_ID:
     case SVT_GAUGE:
         return updateVar(q, val, state, heartbeat);
@@ -216,6 +220,8 @@ int cServiceVar::setValue(QSqlQuery& q, qulonglong val, int &state, qlonglong he
 
 void cServiceVar::preSetValue(const QString& val)
 {
+    oldStateMsg = getName(_ixStateMsg);
+    clear(_ixStateMsg);
     setName(_sRawValue, val);
     lastLast = get(_sLastTime).toDateTime();
     setName(_sLastTime, _sNOW);
@@ -227,6 +233,7 @@ int cServiceVar::setCounter(QSqlQuery& q, qulonglong val, int svt, int &state, q
     if (!lastTime.isValid()) {
         lastCount = val;
         lastTime  = now;
+        addMsg(trUtf8("Első érték, nincs elég adat."));
         return noValue(q, state, heartbeat);
     }
     qulonglong delta = 0;
@@ -234,10 +241,12 @@ int cServiceVar::setCounter(QSqlQuery& q, qulonglong val, int svt, int &state, q
     case SVT_COUNTER:
     case SVT_DERIVE:    // A számláló tulcsordulás (32 bit)
         if (lastCount > val) {
+            addMsg(trUtf8("A számláló túlcsordult."));
             delta = val + 0x100000000LL - lastCount;
             if (delta > 0x100000000LL) {
                 lastCount = val;
                 lastTime  = now;
+                addMsg(trUtf8("Többszörös túlcsordulás?"));
                 return noValue(q, state, heartbeat);
             }
             break;
@@ -265,6 +274,7 @@ int cServiceVar::setDerive(QSqlQuery &q, double val, int& state, qlonglong heart
     if (!lastTime.isValid()) {
         lastValue = val;
         lastTime  = now;
+        addMsg(trUtf8("Első érték, nincs elég adat."));
         return noValue(q, state, heartbeat);
     }
     double delta = val - lastValue;
@@ -279,6 +289,7 @@ int cServiceVar::setDerive(QSqlQuery &q, double val, int& state, qlonglong heart
 int cServiceVar::updateVar(QSqlQuery& q, qulonglong val, int &state, qlonglong heartbeat)
 {
     if (TS_FALSE == checkIntValue(val, varType(q)->getId(_sPlausibilityType), varType(q)->get(_sPlausibilityParam1), varType(q)->get(_sPlausibilityParam2))) {
+        addMsg(trUtf8("Az érték nem hihető."));
         return noValue(q, state, heartbeat);
     }
     int rs = RS_ON;
@@ -290,7 +301,7 @@ int cServiceVar::updateVar(QSqlQuery& q, qulonglong val, int &state, qlonglong h
     }
     if (getBool(_sDelegateServiceState) && state < rs) state = rs;
     setId(_sVarState, rs);
-    setName(_sServiceVarValue, QString::number(val));
+    setName(_ixServiceVarValue, QString::number(val));
     update(q, false, updateMask);
     return rs;
 }
@@ -298,6 +309,7 @@ int cServiceVar::updateVar(QSqlQuery& q, qulonglong val, int &state, qlonglong h
 int cServiceVar::updateVar(QSqlQuery& q, double val, int& state, qlonglong heartbeat)
 {
     if (TS_FALSE == checkRealValue(val, varType(q)->getId(_sPlausibilityType), varType(q)->get(_sPlausibilityParam1), varType(q)->get(_sPlausibilityParam2))) {
+        addMsg(trUtf8("Az érték nem hihető."));
         return noValue(q, state, heartbeat);
     }
     int rs = RS_ON;
@@ -309,19 +321,25 @@ int cServiceVar::updateVar(QSqlQuery& q, double val, int& state, qlonglong heart
     }
     if (getBool(_sDelegateServiceState) && state < rs) state = rs;
     setId(_sVarState, rs);
-    setName(_sServiceVarValue, QString::number(val));
+    setName(_ixServiceVarValue, QString::number(val));
     update(q, false, updateMask);
     return rs;
 }
 
 int cServiceVar::noValue(QSqlQuery& q, int &state, qlonglong heartbeat)
 {
-    if (lastLast.isNull() || isNull(_sServiceVarValue)
-     || heartbeat != NULL_ID && heartbeat < lastLast.msecsTo(QDateTime::currentDateTime())) {
+    if (lastLast.isNull() || isNull(_ixServiceVarValue)
+     || (heartbeat != NULL_ID && heartbeat < lastLast.msecsTo(QDateTime::currentDateTime()))) {
         setId(_sVarState, RS_UNREACHABLE);
-        clear(_sServiceVarValue);
+        clear(_ixServiceVarValue);
         update(q, false, updateMask);
         if (getBool(_sDelegateServiceState)) state = RS_UNREACHABLE;
+    }
+    else {  // Nincs adat, türelmi idő nem járt le, csak az eredeti üzenethez csapjuk hozzá a dátumot, és az okot.
+        oldStateMsg += "\n" + QDateTime::currentDateTime().toString() + "\n";
+        oldStateMsg += getName(_ixStateMsg);
+        setName(_ixStateMsg, oldStateMsg);
+        update(q, false, _bit(_ixStateMsg));
     }
     return RS_UNREACHABLE;
 }

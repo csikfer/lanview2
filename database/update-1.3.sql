@@ -746,5 +746,33 @@ CREATE INDEX port_params_port_id_index  ON port_params(port_id);
 CREATE INDEX port_vlans_port_id_index   ON port_vlans(port_id);
 CREATE INDEX table_shape_fields_shape_index ON table_shape_fields(table_shape_id);
 
+ALTER TABLE service_vars ADD COLUMN state_msg text;
 
-END;
+CREATE OR REPLACE VIEW portvars AS 
+ SELECT
+    service_vars.service_var_id AS portvar_id,
+    service_vars.service_var_name,
+    service_vars.service_var_note,
+    service_vars.service_var_type_id,
+    service_vars.host_service_id,
+    host_services.port_id,
+    service_vars.rrd_beat_id,
+    service_vars.service_var_value,
+    service_vars.var_state,
+    service_vars.last_time,
+    service_vars.features,
+    service_vars.raw_value,
+    service_vars.delegate_service_state,
+    service_vars.state_msg
+   FROM service_vars
+     JOIN host_services USING (host_service_id)
+   WHERE NOT service_vars.deleted;
+
+INSERT INTO unusual_fkeys
+  ( table_name, column_name,           unusual_fkeys_type, f_table_name,       f_column_name, f_inherited_tables) VALUES
+  ( 'portvars', 'port_id',             'owner',            'nports',           'port_id',     '{nports, interfaces}');
+INSERT INTO unusual_fkeys
+  ( table_name, column_name,           unusual_fkeys_type, f_table_name,        f_column_name) VALUES
+  ( 'portvars', 'service_var_type_id', 'property',         'service_var_types', 'service_var_type_id'),
+  ( 'portvars', 'host_service_id',     'property',         'host_services',     'host_service_id');
+  

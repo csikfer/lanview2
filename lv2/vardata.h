@@ -83,6 +83,12 @@ protected:
     int noValue(QSqlQuery& q, int& state, qlonglong heartbeat);
     eTristate checkIntValue(qulonglong val, qlonglong ft, const QVariant &_p1, const QVariant &_p2);
     eTristate checkRealValue(qulonglong val, qlonglong ft, const QVariant& _p1, const QVariant& _p2);
+    void addMsg(const QString& _msg) {
+        QString msg = getName(_ixStateMsg);
+        if (!msg.isEmpty()) msg += "\n";
+        setName(_ixStateMsg, msg + _msg);
+    }
+    QString oldStateMsg;
     const cServiceVarType *pVarType;
     double      lastValue;      ///< Derived esetén az előző érték
     qulonglong  lastCount;      ///< Ha számláló a lekérdezett érték, akkor az előző érték
@@ -91,6 +97,7 @@ protected:
     eNotifSwitch state;
     STATICIX(cServiceVar, ixServiceVarTypeId)
     STATICIX(cServiceVar, ixServiceVarValue)
+    STATICIX(cServiceVar, ixStateMsg)
     static QBitArray updateMask;
 };
 
