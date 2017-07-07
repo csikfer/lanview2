@@ -299,7 +299,20 @@ public:
     int indexOf (const QString& __name) const {
         typename QList<T *>::const_iterator    i = QList<T *>::constBegin();
         for (; i < QList<T *>::constEnd(); i++) {
-            if ((*i)->isNullName() == false && (*i)->getName() == __name) return i - QList<T *>::constBegin();
+            if ((*i)->getName() == __name) return i - QList<T *>::constBegin();
+        }
+        return -1;
+    }
+    /// Keresés név alapján.
+    /// @param __name   A keresett név (csak az owner id-vel együtt egyedi)
+    /// @param __oid Az tulajdonos id
+    /// @return A listában megtaéállt első lista elem sorszáma, vagy -1, ha nem talállt semmit.
+    int indexOf (const QString& __name, qlonglong _oid) const {
+        if (QList<T *>::isEmpty()) return -1;
+        const qlonglong ixoid = QList<T *>::first()->descr().ixToOwner();
+        typename QList<T *>::const_iterator    i = QList<T *>::constBegin();
+        for (; i < QList<T *>::constEnd(); i++) {
+            if ((*i)->getId(ixoid) == _oid && (*i)->getName() == __name) return i - QList<T *>::constBegin();
         }
         return -1;
     }

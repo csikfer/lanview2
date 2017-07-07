@@ -113,7 +113,9 @@ int cServiceVar::_ixFeatures         = NULL_IX;
 int cServiceVar::_ixServiceVarTypeId = NULL_IX;
 int cServiceVar::_ixServiceVarValue  = NULL_IX;
 int cServiceVar::_ixStateMsg         = NULL_IX;
-QBitArray cServiceVar::updateMask;
+QBitArray                   cServiceVar::updateMask;
+tRecordList<cServiceVar>    cServiceVar::serviceVars;
+QMap<qlonglong, qlonglong>  cServiceVar::heartbeats;
 
 cServiceVar::cServiceVar() : cRecord()
 {
@@ -173,7 +175,7 @@ const cServiceVarType *cServiceVar::varType(QSqlQuery& q, eEx __ex)
     return pVarType;
 }
 
-int cServiceVar::setValue(QSqlQuery& q, double val, int& state, qlonglong heartbeat)
+int cServiceVar::setValue(QSqlQuery& q, double val, int& state)
 {
     preSetValue(QString::number(val));
     qlonglong svt = varType(q)->getId(_sServiceVarType);
@@ -183,13 +185,13 @@ int cServiceVar::setValue(QSqlQuery& q, double val, int& state, qlonglong heartb
         addMsg("Negált érték.");
     case NULL_ID:
     case SVT_GAUGE:
-        return updateVar(q, val, state, heartbeat);
+        return updateVar(q, val, state);
     case SVT_COUNTER:
     case SVT_DCOUNTER:
-        return setCounter(q, (qulonglong)(val + 0.5), (int)svt, state, heartbeat);
+        return setCounter(q, (qulonglong)(val + 0.5), (int)svt, state);
     case SVT_DERIVE:
     case SVT_DDERIVE:
-         return setDerive(q, val, state, heartbeat);
+         return setDerive(q, val, state);
     case SVT_COMPUTE:
     default:
         EXCEPTION(EDATA, svt, identifying(false));
@@ -197,7 +199,7 @@ int cServiceVar::setValue(QSqlQuery& q, double val, int& state, qlonglong heartb
     return RS_INVALID;
 }
 
-int cServiceVar::setValue(QSqlQuery& q, qulonglong val, int &state, qlonglong heartbeat)
+int cServiceVar::setValue(QSqlQuery& q, qulonglong val, int &state)
 {
     preSetValue(QString::number(val));
     qlonglong svt = varType(q)->getId(_sServiceVarType);
@@ -205,17 +207,34 @@ int cServiceVar::setValue(QSqlQuery& q, qulonglong val, int &state, qlonglong he
     case SVT_ABSOLUTE:
     case NULL_ID:
     case SVT_GAUGE:
-        return updateVar(q, val, state, heartbeat);
+        return updateVar(q, val, state);
     case SVT_COUNTER:
     case SVT_DCOUNTER:
     case SVT_DERIVE:
     case SVT_DDERIVE:
-         return setCounter(q, val, (int)svt, state, heartbeat);
+         return setCounter(q, val, (int)svt, state);
     case SVT_COMPUTE:
     default:
         EXCEPTION(EDATA, svt, identifying(false));
     }
     return RS_INVALID;
+}
+
+int cServiceVar::setValue(QSqlQuery& q, qlonglong _hsid, const QString& _name, const QVariant& val)
+{
+    int state;  // Dummy
+    cServiceVar *p = serviceVar(q, _hsid, _name);
+    if (variantIsInteger(val)) {
+        bool ok;
+        qulonglong u = val.toULongLong(&ok);
+        if (ok) return p->setValue(q, u, state);
+        EXCEPTION(ENOTSUPP);
+    }
+    else if (variantIsFloat(val)) {
+        return p->setValue(q, val.toDouble(), state);
+    }
+    EXCEPTION(ENOTSUPP);
+    return RS_UNREACHABLE;
 }
 
 void cServiceVar::preSetValue(const QString& val)
@@ -227,14 +246,14 @@ void cServiceVar::preSetValue(const QString& val)
     setName(_sLastTime, _sNOW);
 }
 
-int cServiceVar::setCounter(QSqlQuery& q, qulonglong val, int svt, int &state, qlonglong heartbeat)
+int cServiceVar::setCounter(QSqlQuery& q, qulonglong val, int svt, int &state)
 {
     QDateTime now = QDateTime::currentDateTime();
     if (!lastTime.isValid()) {
         lastCount = val;
         lastTime  = now;
         addMsg(trUtf8("Első érték, nincs elég adat."));
-        return noValue(q, state, heartbeat);
+        return noValue(q, state);
     }
     qulonglong delta = 0;
     switch (svt) {
@@ -247,7 +266,7 @@ int cServiceVar::setCounter(QSqlQuery& q, qulonglong val, int svt, int &state, q
                 lastCount = val;
                 lastTime  = now;
                 addMsg(trUtf8("Többszörös túlcsordulás?"));
-                return noValue(q, state, heartbeat);
+                return noValue(q, state);
             }
             break;
         }
@@ -265,32 +284,32 @@ int cServiceVar::setCounter(QSqlQuery& q, qulonglong val, int svt, int &state, q
     qulonglong dt = lastTime.secsTo(now);
     lastTime = now;
     double dVal = (double)delta / (double)dt;
-    return updateVar(q, dVal, state, heartbeat);
+    return updateVar(q, dVal, state);
 }
 
-int cServiceVar::setDerive(QSqlQuery &q, double val, int& state, qlonglong heartbeat)
+int cServiceVar::setDerive(QSqlQuery &q, double val, int& state)
 {
     QDateTime now = QDateTime::currentDateTime();
     if (!lastTime.isValid()) {
         lastValue = val;
         lastTime  = now;
         addMsg(trUtf8("Első érték, nincs elég adat."));
-        return noValue(q, state, heartbeat);
+        return noValue(q, state);
     }
     double delta = val - lastValue;
     lastValue = val;
     qulonglong dt = lastTime.secsTo(now);
     lastTime = now;
     double dVal = delta / (double)dt;
-    return updateVar(q, dVal, state, heartbeat);
+    return updateVar(q, dVal, state);
 
 }
 
-int cServiceVar::updateVar(QSqlQuery& q, qulonglong val, int &state, qlonglong heartbeat)
+int cServiceVar::updateVar(QSqlQuery& q, qulonglong val, int &state)
 {
     if (TS_FALSE == checkIntValue(val, varType(q)->getId(_sPlausibilityType), varType(q)->get(_sPlausibilityParam1), varType(q)->get(_sPlausibilityParam2))) {
         addMsg(trUtf8("Az érték nem hihető."));
-        return noValue(q, state, heartbeat);
+        return noValue(q, state);
     }
     int rs = RS_ON;
     if (TS_TRUE == checkIntValue(val, varType(q)->getId(_sCriticalType), varType(q)->get(_sCriticalParam1), varType(q)->get(_sCriticalParam2))) {
@@ -306,11 +325,11 @@ int cServiceVar::updateVar(QSqlQuery& q, qulonglong val, int &state, qlonglong h
     return rs;
 }
 
-int cServiceVar::updateVar(QSqlQuery& q, double val, int& state, qlonglong heartbeat)
+int cServiceVar::updateVar(QSqlQuery& q, double val, int& state)
 {
     if (TS_FALSE == checkRealValue(val, varType(q)->getId(_sPlausibilityType), varType(q)->get(_sPlausibilityParam1), varType(q)->get(_sPlausibilityParam2))) {
         addMsg(trUtf8("Az érték nem hihető."));
-        return noValue(q, state, heartbeat);
+        return noValue(q, state);
     }
     int rs = RS_ON;
     if (TS_TRUE == checkRealValue(val, varType(q)->getId(_sCriticalType), varType(q)->get(_sCriticalParam1), varType(q)->get(_sCriticalParam2))) {
@@ -326,10 +345,11 @@ int cServiceVar::updateVar(QSqlQuery& q, double val, int& state, qlonglong heart
     return rs;
 }
 
-int cServiceVar::noValue(QSqlQuery& q, int &state, qlonglong heartbeat)
+int cServiceVar::noValue(QSqlQuery& q, int &state)
 {
+    qlonglong hbt = heartbeat(q, EX_ERROR);
     if (lastLast.isNull() || isNull(_ixServiceVarValue)
-     || (heartbeat != NULL_ID && heartbeat < lastLast.msecsTo(QDateTime::currentDateTime()))) {
+     || (hbt != NULL_ID && hbt < lastLast.msecsTo(QDateTime::currentDateTime()))) {
         setId(_sVarState, RS_UNREACHABLE);
         clear(_ixServiceVarValue);
         update(q, false, updateMask);
@@ -396,6 +416,81 @@ eTristate cServiceVar::checkRealValue(qulonglong val, qlonglong ft, const QVaria
     default:                EXCEPTION(EDATA, ft, identifying());
     }
     return r;
+}
+
+cServiceVar * cServiceVar::serviceVar(QSqlQuery&__q, qlonglong hsid, const QString& name, eEx __ex)
+{
+    int i = serviceVars.indexOf(name, hsid);
+    if (i >= 0) return serviceVars.at(i);
+    cServiceVar *p = new cServiceVar();
+    p->setName(name);
+    p->setId(_sHostServiceId, hsid);
+    if (1 != p->completion(__q)) {
+        if (__ex != EX_IGNORE) EXCEPTION(EFOUND, -1, QString(QObject::trUtf8("Rekord azonosító : %1")).arg(hsid));
+        pDelete(p);
+    }
+    else {
+        serviceVars << p;
+    } \
+    return p;
+}
+
+cServiceVar * cServiceVar::serviceVar(QSqlQuery&__q, qlonglong svid, eEx __ex)
+{
+    int i = serviceVars.indexOf(svid);
+    if (i >= 0) return serviceVars.at(i);
+    cServiceVar *p = new cServiceVar();
+    if (!p->fetchById(__q, svid)) {
+        if (__ex != EX_IGNORE) EXCEPTION(EFOUND, -1, QString(QObject::trUtf8("Rekord azonosító : %1")).arg(svid));
+        pDelete(p);
+    }
+    else {
+        serviceVars << p;
+    }
+    return p;
+}
+
+qlonglong cServiceVar::heartbeat(QSqlQuery&__q, eEx __ex)
+{
+    qlonglong id = getId();
+    if (NULL_ID == id) {
+        if (__ex != EX_IGNORE) EXCEPTION(EOID, 0, identifying(false));
+        return NULL_ID;
+    }
+    if (heartbeats.contains(id)) return heartbeats[id];
+    qlonglong hbt;
+    id = getId(_sHostServiceId);
+    cHostService hs;
+    if (id == NULL_ID || !hs.fetchById(__q, id)) {
+        if (__ex != EX_IGNORE) EXCEPTION(EOID, id, identifying(false));
+        return NULL_ID;
+    }
+    hbt = hs.getId(_sHeartbeatTime);
+    if (hbt <=  0) {
+        id = hs.getId(_sServiceId);
+        cService s;
+        if (id == NULL_ID || !s.fetchById(__q, id)) {
+            if (__ex != EX_IGNORE) EXCEPTION(EOID, id, hs.identifying(false));
+            return NULL_ID;
+        }
+        qlonglong hbt = s.getId(_sHeartbeatTime);
+        if (hbt <= 0) {
+            bool f;
+            f = (id = getId(_sPrimeServiceId)) != NULL_ID
+              && s.fetchById(__q, id)
+              && (hbt = s.getId(_sHeartbeatTime)) > 0;
+            f = f || (
+                (id = getId(_sProtoServiceId)) != NULL_ID
+              && s.fetchById(__q, id)
+              && (hbt = s.getId(_sHeartbeatTime)) > 0
+              );
+            if (!f) {
+                if (__ex >= EX_WARNING) EXCEPTION(EDATA, hbt, identifying(false));
+            }
+        }
+    }
+    heartbeats[getId()] = hbt;
+    return hbt;
 }
 
 /* ---------------------------------------------------------------------------- */

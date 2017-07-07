@@ -1523,7 +1523,6 @@ QString cInspector::typeErrMsg(QSqlQuery& q)
              .arg(pPrimeService == NULL ? cColStaticDescr::rNul : primeService().view(q, _sFeatures));
 }
 
-
 cServiceVar *cInspector::getServiceVar(const QString& name)
 {
 
@@ -1538,8 +1537,7 @@ int cInspector::setServiceVar(QSqlQuery& q, const QString& name, qulonglong val,
         DWAR() << trUtf8("Service var %1 not fod.").arg(name) << endl;
         return RS_UNREACHABLE;
     }
-    qlonglong heartbeat = (qlonglong)get(_sHeartbeatTime);
-    return pVar->setValue(q, val, state, heartbeat);
+    return pVar->setValue(q, val, state);
 }
 
 int cInspector::setServiceVar(QSqlQuery& q, const QString& name, double val, int &state)
@@ -1549,8 +1547,7 @@ int cInspector::setServiceVar(QSqlQuery& q, const QString& name, double val, int
         DWAR() << trUtf8("ASrvice var %1 not fod.").arg(name) << endl;
         return RS_UNREACHABLE;
     }
-    qlonglong heartbeat = (qlonglong)get(_sHeartbeatTime);
-    return pVar->setValue(q, val, state, heartbeat);
+    return pVar->setValue(q, val, state);
 }
 
 /* ********************************************************************************** */

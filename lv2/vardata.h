@@ -72,15 +72,16 @@ public:
     virtual void toEnd();
     virtual bool toEnd(int _ix);
     const cServiceVarType * varType(QSqlQuery& q, eEx __ex = EX_ERROR);
-    int setValue(QSqlQuery& q, double val, int& state, qlonglong heartbeat);
-    int setValue(QSqlQuery& q, qulonglong val, int& state, qlonglong heartbeat);
+    int setValue(QSqlQuery& q, double val, int& state);
+    int setValue(QSqlQuery& q, qulonglong val, int& state);
+    static int setValue(QSqlQuery& q, qlonglong _hsid, const QString& _name, const QVariant& val);
 protected:
     void preSetValue(const QString& val);
-    int setCounter(QSqlQuery &q, qulonglong val, int svt, int& state, qlonglong heartbeat);
-    int setDerive(QSqlQuery &q, double val, int& state, qlonglong heartbeat);
-    int updateVar(QSqlQuery& q, qulonglong val, int& state, qlonglong heartbeat);
-    int updateVar(QSqlQuery& q, double val, int& state, qlonglong heartbeat);
-    int noValue(QSqlQuery& q, int& state, qlonglong heartbeat);
+    int setCounter(QSqlQuery &q, qulonglong val, int svt, int& state);
+    int setDerive(QSqlQuery &q, double val, int& state);
+    int updateVar(QSqlQuery& q, qulonglong val, int& state);
+    int updateVar(QSqlQuery& q, double val, int& state);
+    int noValue(QSqlQuery& q, int& state);
     eTristate checkIntValue(qulonglong val, qlonglong ft, const QVariant &_p1, const QVariant &_p2);
     eTristate checkRealValue(qulonglong val, qlonglong ft, const QVariant& _p1, const QVariant& _p2);
     void addMsg(const QString& _msg) {
@@ -88,7 +89,9 @@ protected:
         if (!msg.isEmpty()) msg += "\n";
         setName(_ixStateMsg, msg + _msg);
     }
-    QString oldStateMsg;
+    static tRecordList<cServiceVar>     serviceVars;  ///< Cache
+    static QMap<qlonglong, qlonglong>   heartbeats;   ///< Heartbeat cache
+    QString oldStateMsg;        ///< Az előző állpot üzenet
     const cServiceVarType *pVarType;
     double      lastValue;      ///< Derived esetén az előző érték
     qulonglong  lastCount;      ///< Ha számláló a lekérdezett érték, akkor az előző érték
@@ -98,7 +101,15 @@ protected:
     STATICIX(cServiceVar, ixServiceVarTypeId)
     STATICIX(cServiceVar, ixServiceVarValue)
     STATICIX(cServiceVar, ixStateMsg)
+protected:
     static QBitArray updateMask;
+public:
+    static void resetCacheData() { serviceVars.clear(); heartbeats.clear(); }
+    static cServiceVar * serviceVar(QSqlQuery&__q, qlonglong hsid, const QString& name, eEx __ex = EX_ERROR);
+    static cServiceVar * serviceVar(QSqlQuery&__q, qlonglong svid, eEx __ex = EX_ERROR);
+    /// A heartbeat értéket olvassa ki a host_services vagy services rekordból, az értéket csak az első alkalommal
+    /// olvassa ki az adatbázisból, és letárolja a heartbeats konténerbe. ...
+    qlonglong heartbeat(QSqlQuery&__q, eEx __ex = EX_ERROR);
 };
 
 /*!

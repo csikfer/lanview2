@@ -9,7 +9,7 @@ Az adatbázis interfész bázis objektuma, és a rekord ill. mező leíró/kezel
 */
 
 /// Egy adat típusról dönti el, hogy egész számként értelmezhető-e
-/// @param id A típushoz tartozó QmetaType::Type érték.
+/// @param id A típushoz tartozó QMetaType::Type érték.
 EXT_  bool metaIsInteger(int id);
 /// Egy QVariant adat típusáról dönti el, hogy egész számként értelmezhető-e
 /// @param _v Az adat referenciája

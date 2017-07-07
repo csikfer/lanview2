@@ -2507,13 +2507,15 @@ hsid    : fhs                                   { if ($1 == 0) yyerror("Not foun
                                                   if ($1 != 1) yyerror("Ambiguous");
                                                   $$ = pHostService2->getId();  DELOBJ(pHostService2); }
         ;
-hss     : fhs                                   { $$ = new cHostServices(qq(), pHostService2); }
+hss     : fhs                                   { $$ = new cHostServices(qq(), pHostService2); } // Ez nem biztos, hogy így jó!!!
         ;
 hsss    : hss                                   { $$ = $1; }
         | hsss ',' hss                          { ($$ = $1)->cat($3); }
         ;
 srvars  : SERVICE_T VAR_T TYPE_T replace str str_z  { REPOBJ(pServiceVarType, cServiceVarType(), $4, $5, $6); }
          '{' varts '}'                              { REPANDDEL(pServiceVarType); }
+//      | HOST_T SERVICE_T hsid VAR_T replace str str_z TYPE_T str ';'
+        | HOST_T SERVICE_T hsid VAR_T str '=' value ';' { cServiceVar::setValue(qq(), $3, sp2s($5), vp2v($7)); }
         ;
 varts   : vart
         | varts vart
