@@ -2728,6 +2728,29 @@ QHostAddress cNode::getIpAddress() const
     return ra;
 }
 
+QList<cMac> cNode::getMacs() const
+{
+    DBGFN();
+    QList<cMac> r;
+    if (ports.isEmpty()) {
+        _DBGFNL() << trUtf8(" A %1 elemnek nincsen portja, így MAC címe sem.").arg(getName()) << endl;
+        return r;
+    }
+    int ix = cInterface().ixHwAddress();
+    for (tRecordList<cNPort>::const_iterator pi = ports.constBegin(); pi < ports.constEnd(); ++pi) {
+        const cNPort *pp = *pi;
+        if (pp->tableoid() == cInterface::_descr_cInterface().tableoid()) {
+            const cInterface& i = *(const cInterface *)pp;
+            if (!i.isNull(ix)) {
+                cMac mac = i.getMac(ix);
+                if (r.contains(mac)) continue;  // csak egy példány a listába
+                r << mac;
+            }
+        }
+    }
+    return r;
+}
+
 cNode& cNode::asmbAttached(const QString& __n, const QString& __d, qlonglong __place)
 {
     clear();

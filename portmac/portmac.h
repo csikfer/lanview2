@@ -50,6 +50,7 @@ public:
     ~cDevicePMac();
     ///
     virtual void postInit(QSqlQuery &q, const QString &qs);
+    virtual cInspector *newSubordinate(QSqlQuery &_q, qlonglong _hsid, qlonglong _toid, cInspector *_par);
     /// A lekérdezést végző virtuális metódus.
     /// @par q A lekerdezés eredményét a q objetummal írja az adatbázisba.
     virtual int run(QSqlQuery& q, QString &runMsg);
@@ -64,6 +65,13 @@ public:
     static cOId    *pOId2;
 private:
     enum eNotifSwitch snmpQuery(const cOId& __o, QMap<cMac, int>& macs, QString &runMsg);
+};
+
+class cRightMac : public cInspector {
+public:
+    cRightMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector *_par);
+    //qlonglong portId;
+    QList<cMac> rightMacList;
 };
 
 

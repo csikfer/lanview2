@@ -1419,6 +1419,7 @@ public:
     QHostAddress getIpAddress(QSqlQuery& q);
     int fetchAllAddress(QSqlQuery& q, tRecordList<cIpAddress> &cont, qlonglong __id = NULL_ID) const;
     QList<QHostAddress> fetchAllIpAddress(QSqlQuery &q, qlonglong __id = NULL_ID) const;
+    QList<cMac> getMacs() const;
     /// Összeállít egy nodes és egy nports rekordot
     /// A port neve és típusa is 'attach" lessz.
     /// @param __n A node neve

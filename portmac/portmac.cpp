@@ -211,6 +211,13 @@ void cDevicePMac::postInit(QSqlQuery &q, const QString&)
     snmpDev().open(q, snmp);
 }
 
+cInspector *cDevicePMac::newSubordinate(QSqlQuery &_q, qlonglong _hsid, qlonglong _toid, cInspector *_par)
+{
+     cRightMac *p = new cRightMac(_q, _hsid, _toid, _par);
+     if (p->flag) return p; // Ha nem volt hiba
+     delete p;              // Ha valami nem OK, töröljük, a statust a konstruktor beállította.
+     return NULL;           // Ez az elem nem kerül a listába
+}
 
 int cDevicePMac::run(QSqlQuery& q, QString& runMsg)
 {
@@ -281,3 +288,38 @@ enum eNotifSwitch cDevicePMac::snmpQuery(const cOId& __o, QMap<cMac, int>& macs,
     return RS_ON;
 }
 
+cRightMac::cRightMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector *_par)
+    : cInspector(__q, __host_service_id, __tableoid, _par)
+{
+    flag = true;   // Most hibajelzésre használjuk
+    QString sMacList  = feature("MAC");
+    QString sNodeList = feature("node");
+    QString msg;
+    foreach (QString sMac, sMacList.split(",")) {
+        cMac mac(sMac.simplified());
+        if (mac.isValid()) rightMacList << mac;
+        else {
+            msg += trUtf8("Helytelen MAC : %1\n").arg(sMac);
+            flag = false;
+        }
+    }
+    QSqlQuery q = getQuery();
+    cNode node;
+    foreach (QString sNode, sNodeList.split(",")) {
+        if (node.fetchByName(q, sNode.simplified())) {
+            node.fetchPorts(q, 0);  // csak a portokat olvassuk be
+            rightMacList << node.getMacs();
+        }
+        else {
+            msg += trUtf8("Helytelen eszköz név : %1\n").arg(sNode);
+            flag = false;
+        }
+    }
+    if (pPort == NULL) {
+        msg += trUtf8("Nincs megadva port.\n");
+        flag = false;
+    }
+    if (!flag) {    // Hiba
+        hostService.setState(q, _sUnreachable, msg);
+    }
+}
