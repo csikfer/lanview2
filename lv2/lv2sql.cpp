@@ -69,11 +69,11 @@ void sqlBegin(QSqlQuery& q, const QString& tn)
     QString sql;
     if (pTrl->isEmpty()) {
         sql = _sBEGIN;
-        PDEB(SQL) << sql << endl;
+        PDEB(SQL) << sql << VDEBSTR(tn) << endl;
     }
     else {
         sql = "SAVEPOINT " + tn;
-        PDEB(SQL) << sql << " (" << pTrl->join(",") << ")" << endl;
+        PDEB(SQL) << sql << " (" << pTrl->join(",") << ")" << VDEBSTR(tn) << endl;
     }
     r = q.exec(sql);
     if (r) pTrl->push_back(tn);
@@ -101,7 +101,7 @@ void sqlEnd(QSqlQuery& q, const QString& tn)
         QString sql;
         if (pTrl->size() == 1) {
             sql = _sEND;
-            PDEB(SQL) << sql << endl;
+            PDEB(SQL) << sql << VDEBSTR(tn) << endl;
         }
         else {
             sql = "RELEASE SAVEPOINT " + tn;
@@ -136,7 +136,7 @@ void sqlRollback(QSqlQuery& q, const QString& tn)
         QString sql;
         if (i == 0) {
             sql = _sROLLBACK;
-            PDEB(SQL) << sql << endl;
+            PDEB(SQL) << sql << VDEBSTR(tn) << endl;
         }
         else {
             sql = _sROLLBACK + " TO SAVEPOINT " + tn;
@@ -270,7 +270,7 @@ bool executeSqlScript(QFile& file, QSqlDatabase *pDb, enum eEx __ex)
 EXT_ bool execSql(QSqlQuery& q, const QString& sql, const QVariant& v1, const QVariant& v2, const QVariant& v3, const QVariant& v4, const QVariant& v5)
 {
     if (!v1.isValid()) {
-        if (!q.exec(sql)) SQLQUERYERR(q);
+        EXECSQL(q, sql);
     }
     else {
         if (!q.prepare(sql)) SQLPREPERR(q, sql);
@@ -287,7 +287,7 @@ EXT_ bool execSql(QSqlQuery& q, const QString& sql, const QVariant& v1, const QV
                 }
             }
         }
-        if (!q.exec()) SQLQUERYERR(q);
+        _EXECSQL(q);
     }
     return q.first();
 }
@@ -295,7 +295,7 @@ EXT_ bool execSql(QSqlQuery& q, const QString& sql, const QVariant& v1, const QV
 EXT_ bool execSql(QSqlQuery& q, const QString& sql, const QVariantList& vl)
 {
     if (vl.isEmpty()) {
-        if (!q.exec(sql)) SQLQUERYERR(q);
+        EXECSQL(q, sql);
     }
     else {
         if (!q.prepare(sql)) SQLPREPERR(q, sql);
@@ -304,7 +304,7 @@ EXT_ bool execSql(QSqlQuery& q, const QString& sql, const QVariantList& vl)
             q.bindValue(i, v);
             ++i;
         }
-        if (!q.exec()) SQLQUERYERR(q);
+        _EXECSQL(q);
     }
     return q.first();
 }

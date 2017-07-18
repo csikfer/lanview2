@@ -553,12 +553,7 @@ QString cColStaticDescr::fKeyId2name(QSqlQuery& q, qlonglong id, eEx __ex) const
     QString r = "#" + n;
     if (fnToName.isEmpty() == false) {
         QString sql = "SELECT " + fnToName + parentheses(n);
-        if (!q.exec(sql)) {
-            if (__ex != EX_IGNORE) SQLPREPERR(q, sql);
-            SQLPREPERRDEB(q, sql);
-            static const QString e = QObject::trUtf8("[SQL ERROR]");
-            return r + e;
-        }
+        EXECSQL(q, sql);
         if (q.first()) return q.value(0).toString();
         return r;
     }
@@ -2551,7 +2546,7 @@ qlonglong cRecStaticDescr::getIdByName(QSqlQuery& __q, const QString& __n, eEx _
     QString sql = QString("SELECT %1 FROM %2 WHERE %3 = '%4'")
                   .arg(dQuoted(idName()), fullTableNameQ(), dQuoted(nameName()), __n);
     // PDEB(VERBOSE) << __PRETTY_FUNCTION__ << " SQL : " << sql << endl;
-    if (!__q.exec(sql)) SQLQUERYERR(__q)
+    EXECSQL(__q, sql);
     if (!__q.first()) {
         QString msg = QObject::trUtf8("A %1 táblában nincs %2 nevű rekord (ahol a név mező %3)")
                 .arg(fullTableNameQ())
@@ -2578,7 +2573,7 @@ QString cRecStaticDescr::getNameById(QSqlQuery& __q, qlonglong __id, eEx ex) con
 {
     QString sql = QString("SELECT %1 FROM %2 WHERE %3 = %4")
             .arg(dQuoted(nameName()), fullTableNameQ(), dQuoted(idName())). arg(__id);
-    if (!__q.exec(sql)) SQLQUERYERR(__q)
+    EXECSQL(__q, sql);
     if (!__q.first()) {
         if (ex) EXCEPTION(EFOUND, __id);
         return QString();
@@ -3169,7 +3164,7 @@ bool cRecord::insert(QSqlQuery& __q, eEx _ex)
         if (!isNull(ix)) bind(ix, __q, i++);
     }
     PDEB(VVERBOSE) << "Insert :" << sql << " / Bind { " + _sql_err_bound(__q) + "}" << endl;
-    if (!__q.exec()) SQLQUERYERR(__q);
+    _EXECSQL(__q);
     if (__q.first()) {
         set(__q);
         _stat =  ES_EXIST | ES_COMPLETE | ES_IDENTIF;
@@ -3275,7 +3270,7 @@ void cRecord::query(QSqlQuery& __q, const QString& sql, const tIntVector& __arg)
     for (int i = 0; i < __arg.size(); ++i) {
         bind(__arg[i], __q, i);
     }
-    if (!__q.exec()) SQLQUERYERR(__q);
+    _EXECSQL(__q);
 }
 
 void cRecord::query(QSqlQuery& __q, const QString& sql, const QBitArray& _fm) const
@@ -3288,7 +3283,7 @@ void cRecord::query(QSqlQuery& __q, const QString& sql, const QBitArray& _fm) co
             bind(i, __q, j++);
         }
     }
-    if (!__q.exec()) SQLQUERYERR(__q);
+    _EXECSQL(__q);
     // DBGFNL();
 }
 
@@ -3494,7 +3489,7 @@ int cRecord::update(QSqlQuery& __q, bool __only, const QBitArray& __set, const Q
         }
     }
 
-    if (!__q.exec()) SQLQUERYERR(__q)
+    _EXECSQL(__q);
     if (__q.first()) {
         set(__q);
         _stat =  ES_EXIST | ES_COMPLETE | ES_IDENTIF;
@@ -3663,7 +3658,7 @@ int cRecord::delByName(QSqlQuery& q, const QString& __n, bool __pat, bool __only
         sql = "DELETE FROM " + only + tableName()
             + " WHERE " + dQuoted(nameName()) + (__pat ? " LIKE " : " = ") + quoted(__n);
     }
-    if (!q.exec(sql)) SQLPREPERR(q, sql);
+    EXECSQL(q, sql);
     int n = q.numRowsAffected();
     // PDEB(VVERBOSE) << QObject::trUtf8("delByName SQL : \"%1\" removed %1 record(s).").arg(sql).arg(n) << endl;
     return  n;

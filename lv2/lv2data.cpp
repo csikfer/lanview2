@@ -1330,7 +1330,7 @@ int cNPort::delPortByName(QSqlQuery &q, const QString &_nn, const QString &_pn, 
     QString sql = "DELETE FROM nports"
           " WHERE port_name" + QString(__pat ? " LIKE " : " = ") + quoted(_pn)
           + " AND node_id = " + QString::number(nid);
-    if (!q.exec(sql)) SQLPREPERR(q, sql);
+    EXECSQL(q, sql);
     int n = q.numRowsAffected();
     return  n;
 }
@@ -1961,11 +1961,7 @@ bool cPatch::updateShares(QSqlQuery& __q, bool __clr, eEx __ex)
 {
     if (__clr) {
         QString sql = "UPDATE pports SET shared_cable = DEFAULT, shared_port_id = DEFAULT WHERE port_id = " + QString::number(getId());
-        if (__q.exec(sql)) {
-            if (__ex == EX_IGNORE && __q.lastError().type() == QSqlError::StatementError) SQLQUERYERRDEB(__q)
-            else                                                                      SQLQUERYERR(__q)
-            return false;
-        }
+        EXECSQL(__q, sql);
     }
     if (shares().isEmpty()) return true;
     foreach (const cShareBack& s, shares()) {
@@ -2425,7 +2421,7 @@ qlonglong cNode::getIdByName(QSqlQuery& __q, const QString& __n, eEx __ex) const
     if (!__q.prepare(sql)) SQLPREPERR(__q, sql);
     __q.bindValue(0,__n);
     __q.bindValue(1,_sSearchDomain);
-    if (!__q.exec()) SQLQUERYERR(__q);
+    _EXECSQL(__q);
     if (__q.first()) return __q.value(0).toLongLong();
     if (__ex) EXCEPTION(EFOUND,0,__n);
     return NULL_ID;
@@ -3457,7 +3453,7 @@ cSelect& cSelect::choice(QSqlQuery q, const QString& _type, const QString& _val,
     if (!q.prepare(sql)) SQLPREPERR(q, sql);
     q.bindValue(":styp", _type);
     q.bindValue(":sval", _val);
-    if (!q.exec()) SQLQUERYERR(q);
+    _EXECSQL(q);
     if (q.first()) set(q);
     else {
         if (__ex >= EX_WARNING) EXCEPTION(EFOUND, 0, _type + " : " + _val);
@@ -3477,7 +3473,7 @@ cSelect& cSelect::choice(QSqlQuery q, const QString& _type, const cMac _val, eEx
     if (!q.prepare(sql)) SQLPREPERR(q, sql);
     q.bindValue(":styp", _type);
     q.bindValue(":mac", _val.toString());
-    if (!q.exec()) SQLQUERYERR(q);
+    _EXECSQL(q);
     if (q.first()) set(q);
     else {
         if (__ex >= EX_WARNING) EXCEPTION(EFOUND, 0, _type + " : " + _val.toString());

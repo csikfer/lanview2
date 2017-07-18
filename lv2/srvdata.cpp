@@ -434,7 +434,7 @@ int cHostService::delByNames(QSqlQuery& q, const QString& __nn, const QString& _
     if (!q.prepare(sql)) SQLPREPERR(q, sql);
     q.bindValue(0, __nn);
     q.bindValue(1, __sn);
-    if (!q.exec()) SQLQUERYERR(q);
+    _EXECSQL(q);
     QList<qlonglong>    idl;
     if (q.first()) {
         do {
@@ -703,7 +703,7 @@ int cMacTab::replace(QSqlQuery& __q, eEx __ex)
     int i = 2;
     if (!isNull(_ixSetType))     bind(_ixSetType, __q, i++);
     if (!isNull(_ixMacTabState)) bind(_ixMacTabState, __q, i);
-    if (!__q.exec()) SQLQUERYERR(__q);
+    _EXECSQL(__q);
     __q.first();
     enum eReasons r = (enum eReasons) reasons(__q.value(0).toString(), EX_IGNORE);
     return r;
@@ -761,7 +761,7 @@ int cArp::replace(QSqlQuery& __q, eEx __ex)
     int i = 2;
     if (!isNull(_ixSetType))       bind(_ixSetType,       __q, i++);
     if (!isNull(_ixHostServiceId)) bind(_ixHostServiceId, __q, i);
-    if (!__q.exec()) SQLQUERYERR(__q);
+    _EXECSQL(__q);
     __q.first();
     enum eReasons r = (enum eReasons) reasons(__q.value(0).toString(), EX_IGNORE);
     return r;
@@ -865,7 +865,7 @@ int cDynAddrRange::isDynamic(QSqlQuery &q, const QHostAddress& a)
               "AND NOT (begin_address <= :ip AND end_address >= :ip AND exclude)";
     if (!q.prepare(sql)) SQLPREPERR(q, sql);
     q.bindValue(":ip", a.toString());
-    if (!q.exec()) SQLQUERYERR(q);
+    _EXECSQL(q);
     if (!q.first()) EXCEPTION(EDBDATA);
     n = q.value(0).toInt();
     return n > 0 ? AT_DYNAMIC : AT_FIXIP;
@@ -1023,7 +1023,7 @@ int cQueryParser::delByServiceName(QSqlQuery &q, const QString &__n, bool __pat)
             "DELETE FROM query_parsers WHERE service_id IN "
                 "(SELECT service_id FROM services WHERE service_name %1 '%2')"
             ).arg(__pat ? "LIKE" : "=").arg(__n);
-    if (!q.exec(sql)) SQLPREPERR(q, sql);
+    EXECSQL(q, sql);
     int n = q.numRowsAffected();
     return  n;
 

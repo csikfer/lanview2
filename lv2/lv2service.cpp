@@ -400,7 +400,7 @@ cInspector::cInspector(QSqlQuery& q, qlonglong __host_service_id, qlonglong __ta
                   "AND NOT s.deleted  AND NOT hs.deleted "    // törölt
 
             ).arg(pNode->tableName()).arg(__host_service_id);
-        if (!q.exec(sql)) SQLPREPERR(q, sql);
+        EXECSQL(q, sql);
         if (!q.first()) EXCEPTION(EDATA, __host_service_id, QObject::trUtf8("host_services record not found."));
     }
     int i = 0;
@@ -581,7 +581,7 @@ void cInspector::setSubs(QSqlQuery& q, const QString& qs)
                "AND NOT s.deleted  AND NOT hs.deleted "    // töröltek sem kellenek
             ;
     sql = ssi(sql, qs, hostServiceId());
-    if (!q.exec(sql)) SQLPREPERR(q, sql);
+    EXECSQL(q, sql);
     if (q.first()) do {
         qlonglong       hsid = variantToId(q.value(0));  // host_service_id      A szervíz rekord amit be kell olvasni
         qlonglong       hoid = variantToId(q.value(1));  // node tableoid        A node típusa

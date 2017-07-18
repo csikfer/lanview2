@@ -132,6 +132,22 @@ EXT_ void sqlRollback(QSqlQuery& q, const QString& tn);
 /// Ha az első karakter szám, akkor beszúr elé egy '_' karaktert.
 EXT_ QString toSqlName(const QString& _n);
 
+#if 1
+#define _EXECSQL(Q) \
+    PDEB(SQL) << dQuoted(Q.lastQuery()) << endl; \
+    if (!(Q).exec()) SQLQUERYERR(Q);
+
+#define EXECSQL(Q, S) \
+    PDEB(SQL) << dQuoted(S) << endl; \
+    if (!(Q).exec(S)) SQLPREPERR(Q, S);
+#else
+#define _EXECSQL(Q) \
+    if (!(Q).exec()) SQLQUERYERR(Q);
+
+#define EXECSQL(Q, S) \
+    if (!(Q).exec(S)) SQLPREPERR(Q, S);
+#endif
+
 /// Végrehajt egy query-t
 /// @param q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.
 /// @param sql Az SQL query string.
