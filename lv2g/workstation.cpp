@@ -1708,7 +1708,7 @@ void cWorkstation::save()
             link.replace(*pq);
         }
         PDEB(VERBOSE) << trUtf8("End transaction : ") << tkey << endl;
-        sqlEnd(*pq, tkey);
+        sqlCommit(*pq, tkey);
     } CATCHS(pe);
     if (pe != NULL) {
         DERR() << trUtf8("Error exception : ") << pe->msg() << endl;

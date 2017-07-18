@@ -1093,7 +1093,7 @@ bool cInspector::doRun(bool __timed)
        statMsg = msgCat(statMsg, trUtf8("Futási idő %1 ezred másodperc").arg(lastRun.elapsed()));
         hostService.setState(*pq, notifSwitch(retStat), statMsg, parentId(EX_IGNORE));
     }
-    sqlEnd(*pq, tn);
+    sqlCommit(*pq, tn);
     _DBGFNL() << name() << endl;
     return statSetRetry;
 }

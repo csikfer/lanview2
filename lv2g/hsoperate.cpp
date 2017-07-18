@@ -767,7 +767,7 @@ void cHSOperate::set()
         cErrorMessageBox::messageBox(pe, this);
         refresh();  // Elrontottuk, újra olvassuk
     }
-    sqlEnd(*pq2, tn);
+    sqlCommit(*pq2, tn);
     refreshTable();
 }
 

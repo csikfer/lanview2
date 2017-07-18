@@ -295,7 +295,7 @@ bool cRecordTreeModel::removeRec(const QModelIndex & mi)
     beginRemoveRows(mi.parent(), mi.row(), mi.row());
     sqlBegin(*pq, tn);
     bool r = removeNode(pn);
-    if (r) sqlEnd(*pq, tn);
+    if (r) sqlCommit(*pq, tn);
     else   sqlRollback(*pq, tn);
     endRemoveRows();
     if (!r) recordView.refresh(true);

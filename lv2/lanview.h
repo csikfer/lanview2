@@ -191,6 +191,8 @@ enum eSqlNeed {
 };
 
 EXT_ bool checkDbVersion(QSqlQuery& q, QString& msg);
+EXT_ void settingIntParameter(QSqlQuery& q, const QString& pname);
+
 
 class cUser;
 class cNode;
@@ -205,7 +207,7 @@ class LV2SHARED_EXPORT lanView  : public QObject {
     friend LV2SHARED_EXPORT QSqlDatabase *  getSqlDb(void);
     friend LV2SHARED_EXPORT void dropThreadDb(const QString &tn, enum eEx __ex);
     friend LV2SHARED_EXPORT void sqlBegin(QSqlQuery& q, const QString& tn);
-    friend LV2SHARED_EXPORT void sqlEnd(QSqlQuery& q, const QString& tn);
+    friend LV2SHARED_EXPORT void sqlCommit(QSqlQuery& q, const QString& tn);
     friend LV2SHARED_EXPORT void sqlRollback(QSqlQuery& q, const QString& tn);
     friend LV2SHARED_EXPORT qlonglong sendError(const cError *pe, lanView *_instance);
    Q_OBJECT
@@ -261,7 +263,7 @@ public:
         p->postInit(*pQuery);           // init
         if (p->passive() && (p->pSubordinates == NULL || p->pSubordinates->isEmpty())) EXCEPTION(NOTODO);
         if (setupTransactionFlag) {
-            sqlEnd(*pQuery, tn);
+            sqlCommit(*pQuery, tn);
         }
         p->start();                         // és start
     }

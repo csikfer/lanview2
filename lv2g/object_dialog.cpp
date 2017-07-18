@@ -768,7 +768,7 @@ bool cEnumValsEditWidget::saveType()
         foreach (cEnumValRow *p, rows) {
             p->save(*pq);
         }
-        sqlEnd(*pq, tn);
+        sqlCommit(*pq, tn);
     }
     CATCHS(pe);
     if (pe != NULL) {
@@ -820,7 +820,7 @@ bool cEnumValsEditWidget::saveBoolean()
         boolType.replace(*pq);
         boolTrue.replace(*pq);
         boolFalse.replace(*pq);
-        sqlEnd(*pq, tn);
+        sqlCommit(*pq, tn);
     }
     CATCHS(pe);
     if (pe != NULL) {

@@ -1458,7 +1458,7 @@ bool cRecordsViewBase::batchEdit(int logicalindex)
             sqlRollback(*pq, tn);
             continue;
         }
-        sqlEnd(*pq, tn);
+        sqlCommit(*pq, tn);
         spoiling = false;
         break;
     }

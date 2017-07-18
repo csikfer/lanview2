@@ -159,6 +159,16 @@ qlonglong sendError(const cError *pe, lanView *_instance)
 }
 
 // ****************************************************************************************************************
+
+void settingIntParameter(QSqlQuery& q, const QString& pname)
+{
+    int i = cSysParam::getIntSysParam(q, pname);
+    if (i > 0) {
+        QString sql = QString("SET %1 TO %2").arg(pname).arg(i);
+        EXECSQL(q, sql);
+    }
+}
+
 lanView::lanView()
     : QObject(), libName(LIBNAME), debFile("-"), homeDir(), binPath(), args(), lang("en"), dbThreadMap(), threadMutex()
 {
@@ -254,6 +264,8 @@ lanView::lanView()
         if (sqlNeeded != SN_NO_SQL) {
             if (openDatabase(bool2ex(sqlNeeded == SN_SQL_NEED))) {
                 pQuery = newQuery();
+                settingIntParameter(*pQuery, "lock_timeout");
+                settingIntParameter(*pQuery, "statement_timeout");
                 setSelfObjects();
                 // A reasons típus nem tartozik olyan táblához amihez osztály is van definiálva, külön csekkoljuk
                 cColEnumType::checkEnum(*pQuery, "reasons", reasons, reasons);

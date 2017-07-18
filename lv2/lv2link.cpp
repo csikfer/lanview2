@@ -58,7 +58,7 @@ int cPhsLink::replace(QSqlQuery &__q, eEx __ex)
             reason = R_ERROR;
         }
         else {
-            sqlEnd(__q, tn);
+            sqlCommit(__q, tn);
             reason = r ? R_UPDATE : R_INSERT;
         }
         tr = false;

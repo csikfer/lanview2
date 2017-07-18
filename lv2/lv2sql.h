@@ -124,7 +124,7 @@ EXT_ bool executeSqlScript(QFile& file, QSqlDatabase *pq = NULL, enum eEx __ex =
 /// Tranzakció indítása
 EXT_ void sqlBegin(QSqlQuery& q, const QString& tn);
 /// Tranzakció befejezése
-EXT_ void sqlEnd(QSqlQuery& q, const QString& tn);
+EXT_ void sqlCommit(QSqlQuery& q, const QString& tn);
 /// Tranzakció visszagörgetése
 EXT_ void sqlRollback(QSqlQuery& q, const QString& tn);
 

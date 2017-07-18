@@ -3188,7 +3188,7 @@ cError *cRecord::tryInsert(QSqlQuery &__q, bool __tr)
     }
     CATCHS(pe);
     if (__tr) {
-        if (pe == NULL) sqlEnd(__q, tableName());
+        if (pe == NULL) sqlCommit(__q, tableName());
         else            sqlRollback(__q, tableName());
     }
     return pe;
@@ -3224,7 +3224,7 @@ cError *cRecord::tryRewrite(QSqlQuery& __q, bool __tr)
     }
     CATCHS(pe);
     if (__tr) {
-        if (pe == NULL) sqlEnd(__q, tableName());
+        if (pe == NULL) sqlCommit(__q, tableName());
         else            sqlRollback(__q, tableName());
     }
     return pe;
@@ -3258,7 +3258,7 @@ cError *cRecord::tryReplace(QSqlQuery& __q, bool __tr)
     }
     CATCHS(pe);
     if (__tr) {
-        if (pe == NULL) sqlEnd(__q, tableName());
+        if (pe == NULL) sqlCommit(__q, tableName());
         else            sqlRollback(__q, tableName());
     }
     return pe;
@@ -3512,7 +3512,7 @@ cError *cRecord::tryUpdate(QSqlQuery& __q, bool __only, const QBitArray& __set, 
     }
     CATCHS(pe);
     if (__tr) {
-        if (pe == NULL) sqlEnd(__q, tableName());
+        if (pe == NULL) sqlCommit(__q, tableName());
         else            sqlRollback(__q, tableName());
     }
     return pe;
@@ -3586,7 +3586,7 @@ cError *cRecord::tryRemove(QSqlQuery& __q, bool __only, const QBitArray& _fm, bo
     }
     CATCHS(pe);
     if (__tr) {
-        if (pe == NULL) sqlEnd(__q, tableName());
+        if (pe == NULL) sqlCommit(__q, tableName());
         else            sqlRollback(__q, tableName());
     }
     return pe;

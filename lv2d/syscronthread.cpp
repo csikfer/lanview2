@@ -29,7 +29,7 @@ void cSysCronThread::dbCron()
     try {
         sqlBegin(*inspector.pq, _sSyscron);
         execSqlFunction(*inspector.pq, "service_cron", inspector.hostServiceId());
-        sqlEnd(*inspector.pq, _sSyscron);
+        sqlCommit(*inspector.pq, _sSyscron);
     } CATCHS(pe);
     if (pe != NULL) {
         sqlRollback(*inspector.pq, _sSyscron);

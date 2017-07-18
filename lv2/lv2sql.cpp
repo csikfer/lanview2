@@ -83,7 +83,7 @@ void sqlBegin(QSqlQuery& q, const QString& tn)
     if (!r) SQLQUERYERR(q);
 }
 
-void sqlEnd(QSqlQuery& q, const QString& tn)
+void sqlCommit(QSqlQuery& q, const QString& tn)
 {
     QString msg;
     QStringList *pTrl = lanView::getInstance()->getTransactioMapAndCondLock();
@@ -100,7 +100,7 @@ void sqlEnd(QSqlQuery& q, const QString& tn)
     else {
         QString sql;
         if (pTrl->size() == 1) {
-            sql = _sEND;
+            sql = "COMMIT";
             PDEB(SQL) << sql << VDEBSTR(tn) << endl;
         }
         else {
