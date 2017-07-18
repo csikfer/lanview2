@@ -257,7 +257,7 @@ int importParse(eImportParserStat _st)
         pImportLastError->mDataMsg  = "lastLine : " + quotedString(lastLine) + "\n macbuff : " + quotedString(macbuff);
     }
     else {
-        sqlEnd(qq(), tn);
+        sqlCommit(qq(), tn);
     }
     importParserStat = IPS_READY;
     return i;

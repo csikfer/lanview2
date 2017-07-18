@@ -154,7 +154,7 @@ qlonglong sendError(const cError *pe, lanView *_instance)
     }
     qlonglong   eid = NULL_ID;
     if (q.first()) eid = variantToId(q.value(0));
-    // sqlEnd(q);
+    // sqlCommit(q);
     return eid;
 }
 
