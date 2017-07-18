@@ -247,7 +247,7 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
     if (__did != NULL_ID) did = __did;
     if (!execSqlRecFunction(__q, _sSetServiceStat, getId(), __st, __note, did)) SQLERR(__q, EQUERY);
     set(__q);
-    DBGFNL() << toString() << endl;
+    _DBGFNL() << toString() << endl;
     return *this;
 }
 

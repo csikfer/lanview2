@@ -40,6 +40,8 @@ public:
  */
 };
 
+class cRightMac;
+
 /// @class cDevicePMac
 /// Az egy lekérdezendő eszközt reprezentál
 class cDevicePMac : public cInspector {
@@ -59,7 +61,11 @@ public:
     /// Az "snmp" szolgáltatás protokol típus. A pointert az lv2portStat konstruktora inicializálja.
     static const cService *pSrvSnmp;
     /// A releváns port objektumok pinterei, indexelve az SNMP id-re
-    QMap<int, cInterface *>  ports;
+    QMap<int, cInterface *>         ports;
+    /// Mac fehér lista ellenörzések a portokra.
+    QMap<qlonglong, cRightMac *>    rightMap;
+    /// Talált mac címek a protokhoz
+    QMap<qlonglong, QSet<cMac> >    foundMacs;
     /// Az SNMP lekérdezés OID-i.
     static cOId    *pOId1;
     static cOId    *pOId2;
@@ -70,8 +76,10 @@ private:
 class cRightMac : public cInspector {
 public:
     cRightMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector *_par);
+    void checkMacs(QSqlQuery &q, const QSet<cMac>& macs);
     //qlonglong portId;
-    QList<cMac> rightMacList;
+    QSet<cMac> rightMacs;
+    static qlonglong rightMacId;
 };
 
 

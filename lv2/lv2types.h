@@ -207,10 +207,10 @@ class LV2SHARED_EXPORT cMac {
     /// ld.: set(const QVariant& __mac)
     cMac& operator=(const QVariant& __mac)  { return set(__mac); }
     /// Ha a két MAC azonos (val adattag) true-val tér vissza. A teljes 64 bites értéket hasonlítja össza.
-    /// Az értékeket nem ellenörzi.
+    /// Az értékek helyességét nem ellenörzi.
     bool  operator==(const cMac& __mac) const { return val == __mac.val; }
     /// A teljes 64 bites értéket hasonlítja össza. ( Ha a QMap-ban kulcsként akarjuk használni, ez elég )
-    /// Az értékeket nem ellenörzi.
+    /// Az értékek helyességét nem ellenörzi.
     bool  operator<(const cMac& __mac) const  { return val < __mac.val; }
 };
 

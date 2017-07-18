@@ -320,7 +320,8 @@ lanView::~lanView()
                 }
             }
             else {
-                DERR() << trUtf8("A pSelfHostService vagy a pQuery pointer értéke NULL.") << endl;
+                if (pSelfHostService == NULL) DERR() << trUtf8("A pSelfHostService pointer értéke NULL.") << endl;
+                if (pQuery           == NULL) DERR() << trUtf8("A pQuery pointer értéke NULL.") << endl;
             }
         }
         setSelfStateF = false;

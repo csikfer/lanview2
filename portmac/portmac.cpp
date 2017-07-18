@@ -206,8 +206,7 @@ cDevicePMac::~cDevicePMac()
 void cDevicePMac::postInit(QSqlQuery &q, const QString&)
 {
     DBGFN();
-    cInspector::postInit(q);
-    if (pSubordinates != NULL) EXCEPTION(EPROGFAIL);
+    cInspector::postInit(q);    // Beolvassa a MAC figyelő al szolgálltatásokat (rightmac)
     snmpDev().open(q, snmp);
 }
 
@@ -232,6 +231,7 @@ int cDevicePMac::run(QSqlQuery& q, QString& runMsg)
     if (RS_ON != (r = snmpQuery(*pOId1, macs, runMsg))) return r;
     if (RS_ON != (r = snmpQuery(*pOId2, macs, runMsg))) return r;
 
+    foundMacs.clear();
     QMap<cMac, int>::iterator   i;
     for (i = macs.begin(); i != macs.end(); ++i) {
         const int   ix  = i.value();
@@ -239,10 +239,19 @@ int cDevicePMac::run(QSqlQuery& q, QString& runMsg)
         if (pi == ports.end()) continue;    // Csak a konténerben lévő portok érdekesek
         cMacTab mt;
         cMac mac = i.key();
+        qlonglong pid = pi.value()->getId();
         mt.setMac(_sHwAddress, mac);
-        mt.setId(_sPortId, pi.value()->getId());
+        mt.setId(_sPortId, pid);
         int r = mt.replace(q);
         if (r == R_DISCARD) ports.remove(ix);   // Lett neki egy "suspected_uplink" paramétere, igaz értékkel!
+        else {
+            foundMacs[pid] |= mac;  // Talált MAC-ek a rightmac-hoz
+        }
+    }
+    QMap<qlonglong, cRightMac *>::iterator j;
+    for (j = rightMap.begin(); j != rightMap.end(); ++j) {
+        qlonglong pid = j.key();
+        j.value()->checkMacs(q, foundMacs[pid]);
     }
 
     DBGFNL();
@@ -288,38 +297,101 @@ enum eNotifSwitch cDevicePMac::snmpQuery(const cOId& __o, QMap<cMac, int>& macs,
     return RS_ON;
 }
 
+qlonglong cRightMac::rightMacId = NULL_ID;
+
 cRightMac::cRightMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector *_par)
     : cInspector(__q, __host_service_id, __tableoid, _par)
 {
     flag = true;   // Most hibajelzésre használjuk
-    QString sMacList  = feature("MAC");
-    QString sNodeList = feature("node");
-    QString msg;
-    foreach (QString sMac, sMacList.split(",")) {
-        cMac mac(sMac.simplified());
-        if (mac.isValid()) rightMacList << mac;
-        else {
-            msg += trUtf8("Helytelen MAC : %1\n").arg(sMac);
-            flag = false;
-        }
-    }
     QSqlQuery q = getQuery();
-    cNode node;
-    foreach (QString sNode, sNodeList.split(",")) {
-        if (node.fetchByName(q, sNode.simplified())) {
-            node.fetchPorts(q, 0);  // csak a portokat olvassuk be
-            rightMacList << node.getMacs();
+    if (rightMacId == NULL_ID) {
+        rightMacId = cService::service(q, "rightmac")->getId();
+    }
+    QString msg;
+    if (rightMacId != serviceId()) {
+        flag = false;   // Nem lehet más szolgáltatás, hibás konfig !
+        msg = trUtf8("Nem támogatott szervíz : %1. Itt csak a 'rightmac' szervíz támogatott.").arg(service()->getName());
+    }
+    else {
+        if (pPort == NULL || 0 != pPort->chkObjType<cInterface>(EX_IGNORE)) {
+            flag = false;
+            if (pPort == NULL) msg = trUtf8("Nincs megadva port.\n");
+            else               msg = trUtf8("A port típusa csak interface lehet.\n");
         }
         else {
-            msg += trUtf8("Helytelen eszköz név : %1\n").arg(sNode);
-            flag = false;
+            QString sMacList  = feature("MAC");
+            QString sNodeList = feature("node");
+            const QString sep = ",";
+            if (!sMacList.isEmpty()) {
+                foreach (QString sMac, sMacList.split(sep)) {
+                    cMac mac(sMac.simplified());
+                    if (mac.isValid()) rightMacs |= mac;
+                    else {
+                        msg += trUtf8("Helytelen MAC : %1\n").arg(sMac);
+                        flag = false;
+                    }
+                }
+            }
+            cNode node;
+            if (!sNodeList.isEmpty()) {
+                foreach (QString sNode, sNodeList.split(sep)) {
+                    if (node.fetchByName(q, sNode.simplified())) {
+                        node.fetchPorts(q, 0);  // csak a portokat olvassuk be
+                        rightMacs |= node.getMacs().toSet();
+                    }
+                    else {
+                        msg += trUtf8("Helytelen eszköz név : %1\n").arg(sNode);
+                        flag = false;
+                    }
+                }
+            }
+            // Van logikai (end to end) link ?
+            qlonglong lpid = cLogLink().getLinked(q, portId());
+            if (lpid != NULL_ID) {
+                cNPort *p = cNPort::getPortObjById(q, lpid);
+                if (0 == p->chkObjType<cInterface>(EX_IGNORE) && !p->isNull(_sHwAddress)) {
+                    rightMacs |= p->getMac(_sHwAddress);
+                }
+            }
+            if (flag && rightMacs.isEmpty()) {
+                msg += ("A MAC fehér lista üres.");
+            }
         }
-    }
-    if (pPort == NULL) {
-        msg += trUtf8("Nincs megadva port.\n");
-        flag = false;
     }
     if (!flag) {    // Hiba
         hostService.setState(q, _sUnreachable, msg);
     }
+    else {
+        ((cDevicePMac&)parent()).rightMap[portId()] = this;
+    }
+}
+
+void cRightMac::checkMacs(QSqlQuery& q, const QSet<cMac>& macs)
+{
+    QString stat, msg;
+    if (macs.isEmpty()) {
+        stat = _sOn;
+        msg  = trUtf8("Nincs talált MAC.");
+    }
+    else {
+        static const QString sep = ", ";
+        QStringList slAuth, slUnauth;
+        QSet<cMac> unauth = macs - rightMacs;
+        QSet<cMac> auth   = macs & rightMacs;
+        foreach (cMac mac, auth) {
+            slAuth << mac.toString();
+        }
+        foreach (cMac mac, unauth) {
+            slUnauth << mac.toString();
+        }
+        if (unauth.isEmpty()) {
+            stat = _sOn;
+            msg  = trUtf8("Nincs engedélyezetlen MAC. Talált cím lista : %1").arg(slAuth.join(sep));
+        }
+        else {
+            stat = _sOff;
+            msg  = trUtf8("Engedélyezetlen MAC : %1. Talált cím lista : %2").arg(slUnauth.join(sep) ,slAuth.join(sep));
+        }
+    }
+    hostService.setState(q, stat, msg);
 }
