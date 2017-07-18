@@ -781,6 +781,7 @@ int cInspector::getInspectorType(QSqlQuery& q)
         to = sto.toULongLong(&ok);
         if (ok) stopTimeOut = to;
     }
+    PDEB(VERBOSE) << VDEB(startTimeOut) << VDEB(stopTimeOut) << endl;
     if (startTimeOut <= 0 || stopTimeOut <= 0) {
         EXCEPTION(EDATA, 0,
                   trUtf8("Invalid time out value in %1. startTimeOut = %2, stopTimeOut = %3")
@@ -793,6 +794,7 @@ int cInspector::getInspectorType(QSqlQuery& q)
     int r = getCheckCmd(q);
     switch (r) {
     case  0:        // Nincs program hívás
+        PDEB(VERBOSE) << trUtf8("Nincs program hívás") << endl;
         inspectorType |= getInspectorTiming(feature(_sTiming));
         inspectorType |= getInspectorMethod(feature(_sMethod));
         if ((method() & (IT_METHOD_MUNIN | IT_METHOD_NAGIOS | IT_METHOD_INSPECTOR)) != 0) {
@@ -800,6 +802,7 @@ int cInspector::getInspectorType(QSqlQuery& q)
         }
         break;
     case  1:        // Program hívása, a hívó applikációban
+	PDEB(VERBOSE) << trUtf8("A %1 program hívása").arg(checkCmd) << endl;
         r = getInspectorProcess(feature(_sProcess));
         inspectorType |= r;
         if ((r & IT_PROCESS_MASK) == IT_NO_PROCESS) {
@@ -821,6 +824,7 @@ int cInspector::getInspectorType(QSqlQuery& q)
         }
         break;
     case -1:        // Van Check Cmd, de éppen a hívot app vagyunk
+	PDEB(VERBOSE) << trUtf8("A hívott alprogramban...") << endl;
         inspectorType |= getInspectorTiming(feature(_sTiming));
         r = getInspectorMethod(feature(_sMethod));
         inspectorType |= r;

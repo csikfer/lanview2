@@ -3347,13 +3347,15 @@ bool cRecord::fetchQuery(QSqlQuery& __q, bool __only, const QBitArray& _fm, cons
 
 bool cRecord::fetch(QSqlQuery& __q, bool __only, const QBitArray& _fm, const tIntVector& __ord, int __lim, int __off)
 {
-    _DBGFN() << " @(" << _fm << _sCommaSp << __ord << _sCommaSp << __lim << _sCommaSp << __off << QChar(')') << endl;
+    _DBGFN() << " @(" << _fm << _sCommaSp << __ord << _sCommaSp << __lim << _sCommaSp << __off << QChar(')') << identifying() << endl;
     if (fetchQuery(__q,__only, _fm, __ord, __lim, __off)) {
         set(__q.record());
         _stat |= ES_EXIST;
+        _DBGFNL() << _sTrue << endl;
         return true;
     }
     set();
+    _DBGFNL() << _sFalse << endl;
     return false;
 }
 
