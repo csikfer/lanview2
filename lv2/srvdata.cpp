@@ -632,9 +632,12 @@ QString cAlarm::htmlText(QSqlQuery& q, qlonglong _id)
     text += _sBr + trUtf8("Riasztás oka")          + " : <b><i>" + aMsg + "</i></b>";
     text += _sBr + trUtf8("Csatolt üzenet")        + " : <b><i>" + pTargetRec->getName(_sEventNote) + "</i></b>";
     if (n)  {
-        cTableShape shape;
-        shape.setByName(q, _sServiceVars);
-        text += _sBr + trUtf8("Változók : ") + _sBr + list2html(q, vars, shape);
+        cTableShape *pShape = NULL;
+        if (pShape == NULL) {
+            pShape = new cTableShape;
+            pShape->setByName(q, _sServiceVars);
+        }
+        text += _sBr + trUtf8("Változók : ") + _sBr + list2html(q, vars, *pShape);
     }
     if (a.isNull(_sEndTime)) {
         text += _sBr + trUtf8("A riasztási állapot az üzenetküdéskor még aktív volt.");

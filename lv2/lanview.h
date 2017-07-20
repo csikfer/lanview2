@@ -244,7 +244,7 @@ public:
     virtual void setup(eTristate _tr = TS_NULL);
     /// A fő inspector objektum betöltése, inicializálása, és elindítása.
     /// Az objektum típusa a template paraméter, mely a cInspector leszármazozja.
-    /// feltételezi, hogy a servíz név azonos az alpplikáció nevével.
+    /// feltételezi, hogy a servíz név azonos az applikáció nevével.
     /// Ha az opcionális _tr értéke true, akkor az inicializálást egy SQL tranzakcióba fogja.
     template <class T> void tSetup(eTristate _tr)
     {
