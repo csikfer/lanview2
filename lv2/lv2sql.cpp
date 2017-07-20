@@ -31,9 +31,8 @@ QSqlDatabase *  getSqlDb(void)
         if (pSqlDb == NULL) EXCEPTION(EPROGFAIL, -1, QString("Thread %1 pdb is NULL.").arg(tn));
         if (!pSqlDb->isOpen()) EXCEPTION(EPROGFAIL, -1, QString("Thread %1 pdb is set, but database is not opened.").arg(tn));
         if (n != 0) {
-            QString nn = lanView::appName + "_" + QString::number(n);
             QSqlQuery q(*pSqlDb);
-            EXECSQL(q, QString("SET application_name TO '%1'").arg(nn));
+            dbOpenPost(q, n);
         }
     }
     return pSqlDb;

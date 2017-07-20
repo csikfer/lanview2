@@ -169,6 +169,15 @@ void settingIntParameter(QSqlQuery& q, const QString& pname)
     }
 }
 
+void dbOpenPost(QSqlQuery& q, int n)
+{
+    QString nn = lanView::appName;
+    if (n > 0) nn += "_" + QString::number(n);
+    EXECSQL(q, QString("SET application_name TO '%1'").arg(nn));
+    settingIntParameter(q, "lock_timeout");
+    settingIntParameter(q, "statement_timeout");
+}
+
 lanView::lanView()
     : QObject(), libName(LIBNAME), debFile("-"), homeDir(), binPath(), args(), lang("en"), dbThreadMap(), threadMutex()
 {
@@ -264,12 +273,10 @@ lanView::lanView()
         if (sqlNeeded != SN_NO_SQL) {
             if (openDatabase(bool2ex(sqlNeeded == SN_SQL_NEED))) {
                 pQuery = newQuery();
-                EXECSQL(*pQuery, QString("SET application_name TO '%1'").arg(appName));
-                settingIntParameter(*pQuery, "lock_timeout");
-                settingIntParameter(*pQuery, "statement_timeout");
-                setSelfObjects();
+                dbOpenPost(*pQuery);
                 // A reasons típus nem tartozik olyan táblához amihez osztály is van definiálva, külön csekkoljuk
                 cColEnumType::checkEnum(*pQuery, "reasons", reasons, reasons);
+                setSelfObjects();
             }
         }
         // SNMP init, ha kell
