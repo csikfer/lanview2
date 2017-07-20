@@ -264,7 +264,7 @@ lanView::lanView()
         if (sqlNeeded != SN_NO_SQL) {
             if (openDatabase(bool2ex(sqlNeeded == SN_SQL_NEED))) {
                 pQuery = newQuery();
-                EXECSQL(*pQuery, QString("SET application_name TO %1").arg(appName));
+                EXECSQL(*pQuery, QString("SET application_name TO '%1'").arg(appName));
                 settingIntParameter(*pQuery, "lock_timeout");
                 settingIntParameter(*pQuery, "statement_timeout");
                 setSelfObjects();

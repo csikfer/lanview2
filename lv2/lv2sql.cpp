@@ -14,12 +14,14 @@ QSqlDatabase *  getSqlDb(void)
         QString tn = currentThreadName();
         QMap<QString, QSqlDatabase *>&  map = lanView::getInstance()->dbThreadMap;
         QMap<QString, QSqlDatabase *>::iterator i = map.find(tn);
+        int n = 0;
         if (i == map.end()) {
             pDb = new QSqlDatabase(QSqlDatabase::cloneDatabase(*pSqlDb, tn));
             if (!pDb->open()) SQLOERR(*pDb);
             map.insert(tn, pDb);
             QMap<QString, QStringList>& tm = lanView::getInstance()->trasactionsThreadMap;
             tm.insert(tn, QStringList());
+            n = map.size();
         }
         else {
             pDb = i.value();
@@ -28,6 +30,11 @@ QSqlDatabase *  getSqlDb(void)
         pSqlDb = pDb;
         if (pSqlDb == NULL) EXCEPTION(EPROGFAIL, -1, QString("Thread %1 pdb is NULL.").arg(tn));
         if (!pSqlDb->isOpen()) EXCEPTION(EPROGFAIL, -1, QString("Thread %1 pdb is set, but database is not opened.").arg(tn));
+        if (n != 0) {
+            QString nn = lanView::appName + "_" + QString::number(n);
+            QSqlQuery q(*pSqlDb);
+            EXECSQL(q, QString("SET application_name TO '%1'").arg(nn));
+        }
     }
     return pSqlDb;
 }
