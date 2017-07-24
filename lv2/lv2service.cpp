@@ -1245,14 +1245,18 @@ void cInspector::start()
         internalStat = IS_SUSPENDED;
         qlonglong t;
         QDateTime last;
-        if (!hostService.isNull(_sLastTouched)) {
-            last = hostService.get(_sLastTouched).toDateTime();
-            qlonglong ms = last.msecsTo(QDateTime::currentDateTime());
-            if (ms < interval) t = interval - ms;
-            else               t = rnd(retryInt);
-        }
-        else {
-            t = rnd(interval);
+        bool ok;
+        t = feature("delay").toLongLong(&ok);
+        if (!ok || t <= 0) {    // Ha nincs magadva késleltetés
+            if (!hostService.isNull(_sLastTouched)) {
+                last = hostService.get(_sLastTouched).toDateTime();
+                qlonglong ms = last.msecsTo(QDateTime::currentDateTime());
+                if (ms < interval) t = interval - ms;
+                else               t = rnd(retryInt);
+            }
+            else {
+                t = rnd(interval);
+            }
         }
         PDEB(VERBOSE) << "Start " << name() << " timer " << interval << QChar('/') << t << "ms, Last time = " << last.toString()
                       << " object thread : " << thread()->objectName() << endl;

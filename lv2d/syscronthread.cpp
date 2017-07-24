@@ -27,12 +27,9 @@ void cSysCronThread::dbCron()
     if (!statMsg.isEmpty()) statMsg += "\n\n";
     cError *pe = NULL;
     try {
-        sqlBegin(*inspector.pq, _sSyscron);
         execSqlFunction(*inspector.pq, "service_cron", inspector.hostServiceId());
-        sqlCommit(*inspector.pq, _sSyscron);
     } CATCHS(pe);
     if (pe != NULL) {
-        sqlRollback(*inspector.pq, _sSyscron);
         state = RS_CRITICAL;
         statMsg += trUtf8("ERROR in dbCron() : ") + pe->msg();
         delete pe;
