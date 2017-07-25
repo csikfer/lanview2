@@ -81,11 +81,23 @@ enum eNagiosPluginRetcode {
 };
 
 class cInspector;
+class cInspectorThread;
 
 /// Ha a megadott objektum az aktuális szálhoz tartozik, akkor true-vel tér vissza
 static inline bool checkThread(QObject *po) {
     return po->thread() == QThread::currentThread();
 }
+
+/// @class cThreadAcceptor
+class LV2SHARED_EXPORT cThreadAcceptor : public QObject {
+    friend class cInspectorThread;
+    Q_OBJECT
+protected:
+    cThreadAcceptor(cInspectorThread *pThread);
+    ~cThreadAcceptor();
+    virtual void timerEvent(QTimerEvent * e);
+    cInspector& inspector;
+};
 
 /// @class cInspectorThread
 /// Időzített thread
@@ -106,9 +118,8 @@ protected:
     virtual void doInit();
     virtual void doRun();
     virtual void doDown();
-    QTimer      *pTimer;
-protected slots:
-    virtual void timerEvent();
+
+    void timer(int ms, eTimerStat tst);
 };
 
 class LV2SHARED_EXPORT cInspectorProcess : public QProcess {
@@ -188,6 +199,7 @@ public:
     virtual enum eNotifSwitch parse(int _ec, QIODevice &text);
     /// Futás időzítés indítása
     virtual void start();
+    qlonglong firstDelay();
     /// Futás/időzítés leállítása, ha időzített, de nem volt időzítés, és __ex = EX_ERROR, akkor dob egy kizárást.
     /// Csak az aktuális objektumot stoppolja le, a sub objektumokat törli: dropSubs() -al.
     virtual void drop(enum eEx __ex = EX_ERROR);

@@ -3,14 +3,30 @@
 #include "lv2service.h"
 #include "scan.h"
 
-cInspectorThread::cInspectorThread(cInspector *pp)
-    : QThread(pp), inspector(*pp), acceptor(NULL)
+cThreadAcceptor::cThreadAcceptor(cInspectorThread *pThread)
+    : QObject(NULL), inspector(pThread->inspector)
+{
+    moveToThread(pThread);
+}
+
+cThreadAcceptor::~cThreadAcceptor()
+{
+    ;
+}
+
+void cThreadAcceptor::timerEvent(QTimerEvent * e)
 {
     _DBGFN() << inspector.name() << endl;
-    pTimer     = NULL;
+    inspector.timerEvent(e);
+    _DBGFNL() << inspector.name() << endl;
+}
+
+cInspectorThread::cInspectorThread(cInspector *pp)
+    : QThread(pp), inspector(*pp), acceptor(this)
+{
+    _DBGFN() << inspector.name() << endl;
     pLastError = NULL;
     setObjectName(inspector.name());
-    acceptor.moveToThread(this);
     DBGFNL();
 }
 
@@ -66,15 +82,10 @@ void cInspectorThread::doRun()
 {
     _DBGFN() << inspector.name() << endl;
     if (inspector.isTimed()) {
-        qlonglong t = inspector.rnd(inspector.interval);
+        qlonglong t = inspector.firstDelay();
         PDEB(VERBOSE) << "Start timer " << inspector.interval << QChar('/') << t << "ms in new thread " << inspector.name() << endl;
+        timer(t, TS_FIRST);
         inspector.timerStat = TS_FIRST;
-        if (pTimer != NULL) EXCEPTION(EPROGFAIL, 0, trUtf8("pTimer is not NULL"));
-        pTimer = new QTimer();
-        connect(pTimer, SIGNAL(timeout()), this, SLOT(timerEvent()));
-        pTimer->start(t);
-        if (!pTimer->isActive()) EXCEPTION(EPROGFAIL, t, trUtf8("Timer not started."));
-        inspector.timerId = 0;
     }
     else if (inspector.passive()) {
         if (inspector.pSubordinates == NULL || inspector.pSubordinates->isEmpty()) EXCEPTION(EDATA);
@@ -97,22 +108,22 @@ void cInspectorThread::doRun()
 void cInspectorThread::doDown()
 {
     _DBGFN() << inspector.name() << endl;
-    if (inspector.isTimed() && pTimer != NULL) {
-        pDelete(pTimer);
-        inspector.timerId = -1;
-    }
+    timer(0, TS_STOP);
     inspector.dropSubs();
     pDelete(inspector.pq);
 }
 
-void cInspectorThread::timerEvent()
+void cInspectorThread::timer(int ms, eTimerStat tst)
 {
-    QTimerEvent e(0);
-    _DBGFN() << inspector.name() << endl;
-    inspector.timerEvent(&e);
-    _DBGFNL() << inspector.name() << endl;
+    if (inspector.timerId > 0) {
+        if (tst == TS_FIRST) EXCEPTION(EPROGFAIL);
+        acceptor.killTimer(inspector.timerId);
+        inspector.timerId = -1;
+    }
+    if (tst == TS_STOP) return;
+    inspector.timerId = acceptor.startTimer(ms);
+    if (0 == inspector.timerId) EXCEPTION(EPROGFAIL, inspector.interval, trUtf8("Timer not started."));
 }
-
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -1243,23 +1254,7 @@ void cInspector::start()
     // Start timer
     if (isTimed()) {
         internalStat = IS_SUSPENDED;
-        qlonglong t;
-        QDateTime last;
-        bool ok;
-        t = feature("delay").toLongLong(&ok);
-        if (!ok || t <= 0) {    // Ha nincs magadva késleltetés
-            if (!hostService.isNull(_sLastTouched)) {
-                last = hostService.get(_sLastTouched).toDateTime();
-                qlonglong ms = last.msecsTo(QDateTime::currentDateTime());
-                if (ms < interval) t = interval - ms;
-                else               t = rnd(retryInt);
-            }
-            else {
-                t = rnd(interval);
-            }
-        }
-        PDEB(VERBOSE) << "Start " << name() << " timer " << interval << QChar('/') << t << "ms, Last time = " << last.toString()
-                      << " object thread : " << thread()->objectName() << endl;
+        qlonglong t = firstDelay();
         timerId = startTimer(t);
         if (0 == timerId) EXCEPTION(EPROGFAIL, interval, trUtf8("Timer not started."));
         timerStat = TS_FIRST;
@@ -1287,6 +1282,29 @@ void cInspector::start()
     if (inspectorType & IT_TIMING_POLLING) drop();
     _DBGFNL() << QChar(' ') << name() << " internalStat = " << internalStatName() << endl;
     return;
+}
+
+qlonglong cInspector::firstDelay()
+{
+    qlonglong t;
+    QDateTime last;
+    bool ok;
+    t = feature("delay").toLongLong(&ok);
+    if (!ok || t <= 0) {    // Ha nincs magadva késleltetés
+        if (!hostService.isNull(_sLastTouched)) {
+            last = hostService.get(_sLastTouched).toDateTime();
+            qlonglong ms = last.msecsTo(QDateTime::currentDateTime());
+            if (ms < interval) t = interval - ms;
+            else               t = rnd(retryInt);
+        }
+        else {
+            t = rnd(interval);
+        }
+    }
+    if (t < 1000) t = 1000;    // min 1 sec
+    PDEB(VERBOSE) << "Start " << name() << " timer " << interval << QChar('/') << t << "ms, Last time = " << last.toString()
+                  << " object thread : " << thread()->objectName() << endl;
+    return t;
 }
 
 void cInspector::startSubs()
@@ -1382,11 +1400,7 @@ void cInspector::toRetryInterval()
             EXCEPTION(EPROGFAIL,0, trUtf8("pInspectorThread is NULL"));
         if (QCoreApplication::instance()->thread() != (QThread *)pInspectorThread)
             EXCEPTION(EPROGFAIL,0, trUtf8("This is not inspector thread"));
-        if (pInspectorThread->pTimer == NULL)
-            EXCEPTION(EPROGFAIL,0, trUtf8("pInspectorThread->pTimer is NULL"));
-        if (timerId != 0)
-            EXCEPTION(EPROGFAIL,0, trUtf8("timerIs is not NULL"));
-        pInspectorThread->pTimer->start(retryInt);
+        pInspectorThread->timer(retryInt, timerStat);
     }
     else {
         killTimer(timerId);
@@ -1406,11 +1420,7 @@ void cInspector::toNormalInterval()
             EXCEPTION(EPROGFAIL,0, trUtf8("pInspectorThread is NULL"));
         if (QCoreApplication::instance()->thread() != (QThread *)pInspectorThread)
             EXCEPTION(EPROGFAIL,0, trUtf8("This is not inspector thread"));
-        if (pInspectorThread->pTimer == NULL)
-            EXCEPTION(EPROGFAIL,0, trUtf8("pInspectorThread->pTimer is NULL"));
-        if (timerId != 0)
-            EXCEPTION(EPROGFAIL,0, trUtf8("timerIs is not NULL"));
-        pInspectorThread->pTimer->start(interval);
+        pInspectorThread->timer(interval, timerStat);
     }
     else {
         killTimer(timerId);
