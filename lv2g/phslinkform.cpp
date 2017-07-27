@@ -151,7 +151,7 @@ void phsLinkWidget::init()
                 if (!nodeFilter()) EXCEPTION(EDATA);
                 pUi->comboBoxNode->setCurrentText(node.getName());
                 pUi->lineEditNodeType->setText(node.getName(_sNodeType));
-                if (portFilter()) EXCEPTION(EDATA);
+                if (!portFilter()) EXCEPTION(EDATA);
                 pUi->comboBoxPort->setCurrentText(pPrt->getName());
             }
             else {                                          // node

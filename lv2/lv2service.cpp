@@ -7,6 +7,7 @@ cThreadAcceptor::cThreadAcceptor(cInspectorThread *pThread)
     : QObject(NULL), inspector(pThread->inspector)
 {
     moveToThread(pThread);
+    pTimer = NULL;
 }
 
 cThreadAcceptor::~cThreadAcceptor()
@@ -14,10 +15,36 @@ cThreadAcceptor::~cThreadAcceptor()
     ;
 }
 
-void cThreadAcceptor::timerEvent(QTimerEvent * e)
+void cThreadAcceptor::timer(int ms, eTimerStat tst)
 {
+    if (pTimer != NULL) {
+        if (tst == TS_FIRST) EXCEPTION(EPROGFAIL);
+        if (!pTimer->isActive()) EXCEPTION(EPROGFAIL, 0, trUtf8("Inactive timer"));
+        pTimer->stop();
+    }
+    if (tst == TS_STOP) {
+        pDelete(pTimer);
+        return;
+    }
+    if (!checkThread(this)) {
+        EXCEPTION(EDATA, 0, trUtf8("Inv. thread : %1 != %2").arg(thread()->objectName(), QThread::currentThread()->objectName()));
+    }
+    if (pTimer == NULL) {
+        pTimer = new QTimer(this);
+        connect(pTimer, SIGNAL(timeout()), this, SLOT(timerEvent()));
+    }
+    inspector.timerId = 0;
+    pTimer->start(ms);
+    if (!pTimer->isActive()) {
+        EXCEPTION(EPROGFAIL, 0, trUtf8("Timer not started."));
+    }
+}
+
+void cThreadAcceptor::timerEvent()
+{
+    QTimerEvent e(0);
     _DBGFN() << inspector.name() << endl;
-    inspector.timerEvent(e);
+    inspector.timerEvent(&e);
     _DBGFNL() << inspector.name() << endl;
 }
 
@@ -115,14 +142,7 @@ void cInspectorThread::doDown()
 
 void cInspectorThread::timer(int ms, eTimerStat tst)
 {
-    if (inspector.timerId > 0) {
-        if (tst == TS_FIRST) EXCEPTION(EPROGFAIL);
-        acceptor.killTimer(inspector.timerId);
-        inspector.timerId = -1;
-    }
-    if (tst == TS_STOP) return;
-    inspector.timerId = acceptor.startTimer(ms);
-    if (0 == inspector.timerId) EXCEPTION(EPROGFAIL, inspector.interval, trUtf8("Timer not started."));
+    acceptor.timer(ms, tst);
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -1398,8 +1418,6 @@ void cInspector::toRetryInterval()
     if (isThread()) {
         if (pInspectorThread == NULL)
             EXCEPTION(EPROGFAIL,0, trUtf8("pInspectorThread is NULL"));
-        if (QCoreApplication::instance()->thread() != (QThread *)pInspectorThread)
-            EXCEPTION(EPROGFAIL,0, trUtf8("This is not inspector thread"));
         pInspectorThread->timer(retryInt, timerStat);
     }
     else {
@@ -1418,8 +1436,6 @@ void cInspector::toNormalInterval()
     if (isThread()) {
         if (pInspectorThread == NULL)
             EXCEPTION(EPROGFAIL,0, trUtf8("pInspectorThread is NULL"));
-        if (QCoreApplication::instance()->thread() != (QThread *)pInspectorThread)
-            EXCEPTION(EPROGFAIL,0, trUtf8("This is not inspector thread"));
         pInspectorThread->timer(interval, timerStat);
     }
     else {

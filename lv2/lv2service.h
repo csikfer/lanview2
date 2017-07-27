@@ -95,8 +95,11 @@ class LV2SHARED_EXPORT cThreadAcceptor : public QObject {
 protected:
     cThreadAcceptor(cInspectorThread *pThread);
     ~cThreadAcceptor();
-    virtual void timerEvent(QTimerEvent * e);
+    void timer(int ms, eTimerStat tst);
     cInspector& inspector;
+    QTimer *    pTimer;
+protected slots:
+    void timerEvent();
 };
 
 /// @class cInspectorThread
@@ -112,7 +115,7 @@ public:
     /// Az utolsó hiba objektum vagy NULL.
     cError     *pLastError;
     /// A szálon bellüli objektumok tulajdonosa
-    QObject     acceptor;
+    cThreadAcceptor acceptor;
 protected:
     virtual void run();
     virtual void doInit();
