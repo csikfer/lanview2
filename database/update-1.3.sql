@@ -382,7 +382,7 @@ UPDATE table_shape_fields AS f
 FROM (SELECT table_shape_field_id AS id, array_agg(filter_type) AS types FROM table_shape_filters GROUP BY table_shape_field_id) AS t
     WHERE t.id = f.table_shape_field_id;
 DROP TABLE table_shape_filters;
-DELETE FROM table_shape WHERE table_name = 'table_shape_filters';
+DELETE FROM table_shapes WHERE table_name = 'table_shape_filters';
 -- A table_shape_fields rekordban van egy nem szabályos távoli kulcs hivatkozás, a törölt rekord ID-re, azt is törölni kell!!
 
 ALTER TABLE interfaces DROP COLUMN ifmtu;
@@ -566,6 +566,7 @@ $$ LANGUAGE plpgsql;
 ALTER TYPE reasons ADD VALUE 'unknown';
 ALTER TYPE reasons ADD VALUE 'close' BEFORE 'unknown';
 ALTER TYPE reasons ADD VALUE 'timeout' BEFORE 'unknown';
+ALTER TYPE reasons ADD VALUE 'ok' BEFORE 'new';
 ALTER TABLE host_service_logs ADD COLUMN alarm_id bigint
     DEFAULT NULL
         REFERENCES alarms(alarm_id) MATCH SIMPLE ON UPDATE RESTRICT ON DELETE SET NULL;
