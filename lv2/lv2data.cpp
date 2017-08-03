@@ -3427,14 +3427,14 @@ const cRecStaticDescr&  cSelect::descr() const
 {
     if (initPDescr<cSelect>(_sSelects)) {
         _ixChoice   = _descr_cSelect().toIndex(_sChoice);
-        _ixFeatures = _descr_cSelect().toIndex(_sFeatures);
+//        _ixFeatures = _descr_cSelect().toIndex(_sFeatures);
 //        CHKENUM(_ixPatternType, patternType);
     }
     return *_pRecordDescr;
 }
 
 int cSelect::_ixChoice   = NULL_IX;
-int cSelect::_ixFeatures = NULL_IX;
+//int cSelect::_ixFeatures = NULL_IX;
 
 CRECDEFD(cSelect)
 

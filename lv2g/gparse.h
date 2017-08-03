@@ -32,8 +32,6 @@ private slots:
 private:
     void localParse(const QString &src);
     void remoteParse(const QString &src);
-    const QString fileFilter;
-    QString dirName();
     QString fileName;
     bool    isRuning;
     cImportParseThread *pLocalParser;

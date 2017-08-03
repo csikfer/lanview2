@@ -777,3 +777,6 @@ INSERT INTO unusual_fkeys
   ( 'portvars', 'service_var_type_id', 'property',         'service_var_types', 'service_var_type_id'),
   ( 'portvars', 'host_service_id',     'property',         'host_services',     'host_service_id');
   
+
+ALTER TABLE object_syntaxs ADD COLUMN features text;
+  

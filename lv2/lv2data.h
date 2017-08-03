@@ -1582,7 +1582,7 @@ public:
 
 class LV2SHARED_EXPORT cSelect : public cRecord {
     CRECORD(cSelect);
-    FEATURES(cSelect)
+//    FEATURES(cSelect)
 public:
     STATICIX(cSelect, ixChoice)
     cSelect& choice(QSqlQuery q, const QString& _type, const QString& _val, eEx __ex = EX_ERROR);

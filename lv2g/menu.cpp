@@ -5,6 +5,7 @@
 #include "setup.h"
 #include "gsetupwidget.h"
 #include "gparse.h"
+#include "exports.h"
 #include "hsoperate.h"
 #include "findbymac.h"
 #include "apierrcodes.h"
@@ -62,6 +63,10 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QMdiArea 
         else if (0 == feature.compare("parser", Qt::CaseInsensitive)) {      // "parser"     A parser widget
             intType = INT_PARSER;
             rights = cParseWidget::rights;
+        }
+        else if (0 == feature.compare("export", Qt::CaseInsensitive)) {      // "export"     A export widget
+            intType = INT_EXPORT;
+            rights = cExportsWidget::rights;
         }
         else if (0 == feature.compare("olalarm", Qt::CaseInsensitive)) {     // "olalarm"    On-Line riasztások widget
             intType = INT_OLALARM;
@@ -152,6 +157,7 @@ A jelenleg implementállt lehetőségek:
 | setup      | INT_SETUP      | cSetupWidget    | Alapbeállítások megadása    |
 | gsetup     | INT_GSETUP     | cGSetupWidget   | Megjelenítési beállítások   |
 | parser     | INT_PARSER     | cParseWidget    | A parser hvása              |
+| export     | INT_EXPORT     | cExportsWidget  | Táblák (objektumok) exportja|
 | olalarm    | INT_OLALARM    | cOnlineAlarm    | OnLine riasztások           |
 | errcodes   | INT_ERRCODES   | cErrcodesWidget | API hibakódok listája       |
 | hsop       | INT_HSOP       | cHSOperate      | host-services állapot man.  |
@@ -166,6 +172,7 @@ void cMenuAction::initInt()
     CREATEINTWIN(SETUP,      cSetupWidget);
     CREATEINTWIN(GSETUP,     cGSetupWidget);
     CREATEINTWIN(PARSER,     cParseWidget);
+    CREATEINTWIN(EXPORT,     cExportsWidget);
     CREATEINTWIN(OLALARM,    cOnlineAlarm);
     CREATEINTWIN(ERRCODES,   cErrcodesWidget);
     CREATEINTWIN(HSOP,       cHSOperate);

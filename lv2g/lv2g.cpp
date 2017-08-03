@@ -3,6 +3,7 @@
 #include "cerrormessagebox.h"
 #include "logon.h"
 #include "QInputDialog"
+#include "QFileDialog"
 
 cMainWindow *    lv2g::pMainWindow = NULL;
 bool lv2g::logonNeeded = false;
@@ -397,4 +398,47 @@ QVariant dcRole(int id, int role)
     case Qt::FontRole:          return fontByEnum(_sDatacharacter, id);
     default:                    return QVariant();
     }
+}
+
+static QString dirName(const QString& fileName)
+{
+    if (fileName.isEmpty()) return lanView::getInstance()->homeDir;
+    QFileInfo   fi(fileName);
+    return fi.dir().dirName();
+}
+
+static const QString fileFilter = QObject::trUtf8("Szöveg fájlok (*.txt *.src *.imp)");
+
+bool textToFile(QString &fileName, const QString &text, QWidget * par)
+{
+    QString fn;
+    const QString& capt = QObject::trUtf8("Cél fájl kiválasztása");
+    fn = QFileDialog::getSaveFileName(par, capt, dirName(fileName), fileFilter);
+    if (fn.isEmpty()) return false;
+    fileName = fn;
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        const QString msg = QObject::trUtf8("A %1 cél fájl nem nyitható meg.\n%2").arg(fileName).arg(file.errorString());
+        QMessageBox::warning(par, dcViewShort(DC_ERROR), msg);
+        return false;
+    }
+    QByteArray b = text.toUtf8();
+    return b.size() == file.write(b);
+}
+
+bool textFromFile(QString &fileName, QString &text, QWidget * par)
+{
+    QString fn;
+    const QString& capt = QObject::trUtf8("Forrás fájl kiválasztása");
+    fn = QFileDialog::getOpenFileName(par, capt, dirName(fileName), fileFilter);
+    if (fn.isEmpty()) return false;
+    fileName = fn;
+    QFile file(fileName);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        const QString msg = QObject::trUtf8("A %1 forrás fájl nem nyitható meg.\n%2").arg(fileName).arg(file.errorString());
+        QMessageBox::warning(par, dcViewShort(DC_ERROR), msg);
+        return false;
+    }
+    text = QString::fromUtf8(file.readAll());
+    return !text.isEmpty();
 }

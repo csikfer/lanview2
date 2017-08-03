@@ -243,4 +243,7 @@ _GEX QVariant enumRole(const cEnumVal& ev, int role, int e);
 _GEX QVariant enumRole(const QString& _t, int id, int role, const QString& dData);
 _GEX QVariant dcRole(int id, int role);
 
+_GEX bool textToFile(QString &fileName, const QString& text, QWidget *par = NULL);
+_GEX bool textFromFile(QString &fileName, QString &text, QWidget * par = NULL);
+
 #endif // LV2G_H

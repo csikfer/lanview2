@@ -11,7 +11,6 @@ const enum ePrivilegeLevel cParseWidget::rights = PL_OPERATOR;
 
 cParseWidget::cParseWidget(QMdiArea *par)
 : cIntSubObj(par)
-, fileFilter(trUtf8("Szöveg fájlok (*.txt *.src *.imp)"))
 {
     PDEB(OBJECT) << __PRETTY_FUNCTION__ << QChar(' ') << QChar(',') << VDEBPTR(this) << endl;
     isRuning = false;
@@ -34,43 +33,17 @@ cParseWidget::~cParseWidget()
     DBGFNL();
 }
 
-QString cParseWidget::dirName()
-{
-    if (fileName.isEmpty()) return lanView::getInstance()->homeDir;
-    QFileInfo   fi(fileName);
-    return fi.dir().dirName();
-}
-
 void cParseWidget::loadClicked()
 {
-    QString fn;
-    const QString& capt = trUtf8("Forrás fájl kiválasztása");
-    fn = QFileDialog::getOpenFileName(this, capt, dirName(), fileFilter);
-    if (fn.isEmpty()) return;
-    fileName = fn;
-    QFile file(fileName);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        const QString msg = trUtf8("A %1 forrás fájl nem nyitható meg.\n%2").arg(fileName).arg(file.errorString());
-        QMessageBox::warning(this, dcViewShort(DC_ERROR), msg);
-        return;
+    QString text;
+    if (textFromFile(fileName, text, this)) {
+        pUi->textEditSrc->setText(text);
     }
-    pUi->textEditSrc->setText(QString::fromUtf8(file.readAll()));
 }
 
 void cParseWidget::saveClicked()
 {
-    QString fn;
-    const QString& capt = trUtf8("Cél fájl kiválasztása");
-    fn = QFileDialog::getSaveFileName(this, capt, dirName(), fileFilter);
-    if (fn.isEmpty()) return;
-    fileName = fn;
-    QFile file(fileName);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        const QString msg = trUtf8("A %1 cél fájl nem nyitható meg.\n%2").arg(fileName).arg(file.errorString());
-        QMessageBox::warning(this, dcViewShort(DC_ERROR), msg);
-        return;
-    }
-    file.write(pUi->textEditSrc->toPlainText().toUtf8());
+    textToFile(fileName, pUi->textEditSrc->toPlainText(), this);
 }
 
 void cParseWidget::parseClicked()

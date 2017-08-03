@@ -19,6 +19,7 @@ enum eIntSubWin {          /// Egyedi GUI tab widget elemek
     INT_SETUP   =  0,   /// SETUP alap beállítások
     INT_GSETUP,         /// tobábbi beállítások a GUI-hoz
     INT_PARSER,         /// Parser hívása
+    INT_EXPORT,         /// Export
     INT_OLALARM,        /// On-Line riasztások
     INT_ERRCODES,       /// Program hiba kód táblázat
     INT_HSOP,           /// a szervíz példányok (host_services) állpot manipuláció, riasztás tiltások

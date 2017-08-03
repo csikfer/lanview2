@@ -225,8 +225,6 @@ public:
     static const QString& getFieldDialogTitle(QSqlQuery& q, const QString& _sn, const QString& _fn, eEx __ex = EX_ERROR);
     static void resetCacheData() { fieldDialogTitleMap.clear(); }
     ///
-    virtual QString objectExport(QSqlQuery& q, int indent = 0) const;
-    ///
     tTableShapeFields   shapeFields;
 protected:
     QString emFildsIsEmpty();

@@ -328,6 +328,7 @@ public:
     int fieldIndex() const { return pos -1; }
     static const QString  rNul;
     static const QString  rBin;
+    QString fKeyId2name(QSqlQuery &q, qlonglong id, eEx __ex = EX_IGNORE) const;
 protected:
     eValueCheck checkIfNull() const {
         if (isNullable)             return cColStaticDescr::VC_NULL;     // NULL / OK
@@ -335,7 +336,6 @@ protected:
         else                        return cColStaticDescr::VC_DEFAULT;  // NULL / DEFAULT
     }
     eValueCheck ifExcep(eValueCheck result, eValueCheck acceptable, const QVariant &val) const;
-    QString fKeyId2name(QSqlQuery &q, qlonglong id, eEx __ex = EX_IGNORE) const;
 };
 TSTREAMO(cColStaticDescr)
 
@@ -1198,19 +1198,19 @@ public:
     /// Ha a megadott nevű mező módosítható az adatbázisban, akkor true-val tér vissza.
     /// Ha nincs ilyen nevű mező, dob egy kizárást.
     bool isUpdatable(const QString& fn) const   { return descr().colDescr(toIndex(fn)).isUpdatable; }
-    /// Törli a rekordot. És meghívja a clearToEnd() virtuális metódust.
+    /// Törli az objektumot (fields konténert). Majd meghívja a clearToEnd() virtuális metódust.
     cRecord& clear();
-    /// Törli a megadott indexű mezőt. És meghívja a toEnd(int i) virtuális metódust.
+    /// Törli a megadott indexű mezőt az objektumban. És meghívja a toEnd(int i) virtuális metódust.
     /// @param __ix A törlendő mező indexe.
     /// @param __ex Ha értéke true, és nem létezik a megadott indexű mező, akkor dob egy kizárást, ha értéke false, és nem létezik a mező, akkor nem csinál semmit.
     cRecord& clear(int __ix, enum eEx __ex = EX_ERROR);
-    /// Törli a megadott nevű mezőt. És meghívja a toEnd(int i) virtuális metódust, ahol i a megnevezett mező indexe.
+    /// Törli a megadott nevű mezőt az objektumban. És meghívja a toEnd(int i) virtuális metódust, ahol i a megnevezett mező indexe.
     /// @param __n A törlendő mező neve.
     /// @param __ex Ha értéke true, és nem létezik a megadott mező, akkor dob egy kizárást, ha értéke false, és nem létezik a mező, akkor nem csinál semmit.
     cRecord& clear(const QString& __n, enum eEx __ex = EX_ERROR) { return clear(toIndex(__n, __ex), __ex); }
     /// Minden olyan mezőre hívja a clear(int) metódust, mellyel azonos idexű bit igaz az __m bitmap-ban.
     /// Ha __ex értéke igaz, és az __m több elemet tartalmaz, mint az objektum mezőt, akkor dob egy kizárást, egyébként figyelmenkívül hagyja az
-    /// exzta biteket.
+    /// extra biteket.
     cRecord& clear(const QBitArray& __m, enum eEx __ex = EX_ERROR);
     /// A felsorolt nevű mezőkre hívja a clear(QString) metódust. Ha __ex igaz, és a listában olyan név van, ami nem mezőnév, dob egy kizárást,
     /// ha hamis akkor a nevet figyelmenkívöl hagyja.
@@ -1754,6 +1754,7 @@ public:
         fetchQuery(__q, __only, __fm, tIntVector(), 0,0,QString("count(*)"));
         return __q.value(0).toInt();
     }
+    int existId(QSqlQuery& q, qlonglong __id) const;
     /// Megnézi létezik-e a rekord a név (és az azt kiegészítő, egyedivétevő mezők) alapján.
     /// Ha olyan mező alapján kell keresni, amely nincs kitöltve (NULL) azt kitölti az alapértelmezése szerint.
     /// Hívja a nemeKeyMask() metódust, ha egy a maszkban szereplő mező értéke NULL, és nincs alapértelmezett
@@ -2078,9 +2079,6 @@ public:
         return indentSp(_indent) + _kw + " " + quotedString(getName(_fn)) + _sSemicolonNl;
     }
 
-    virtual QString objectExport(QSqlQuery &q, int _indent = 0) const;
-    virtual QString getFieldValue(QSqlQuery& q, const QString& vname, const QStringList &pl = QStringList()) const;
-    QString exportFieldValue(QSqlQuery& q, int ix) const;
     bool isEmpty(int _ix) const;
     /// Áltaéános rekord azonosító szöveg. Pl. hibaüzeneteknél az objektum beazonosításához.
     /// @param t A típust is beteszi a kimenetbe, ha igaz. Alapértelmezetten igaz.
@@ -2091,10 +2089,9 @@ public:
     virtual QString show(bool t = false) const;
 
 protected:
-    QString objectSyntax(QSqlQuery& q) const;
     QString objectExportLine(QSqlQuery& q, int _indent, QString& line) const;
     QString getCondString(QSqlQuery& q, QString::const_iterator& i, const QString::const_iterator& e) const;
-    QString parseString(QSqlQuery& q, const QString& src, const QStringList &pl, int indent, int &_ix) const;
+    QString parseString(QSqlQuery& q, const QString& __src, const QStringList &__pl, int __indent, int *__pIx = NULL) const;
     int parseParams(QSqlQuery& q, QStringList &pl, int ss) const;
 
     qlonglong _defectiveFieldMask() const {
@@ -2493,7 +2490,7 @@ public:
     /// objektumot. Az objektum adatt tartalma (mező adat konténer) üres lessz, ill. azt törli.
     /// @param _tn Az adattáble neve
     /// @param _sn A schema név mely az adattáblát tartalmazza. Obcionális, alapértelmezett a "public".
-    cRecordAny& setType(const QString& _tn, const QString& _sn = _sNul);
+    cRecordAny& setType(const QString& _tn, const QString& _sn = _sNul, eEx __ex = EX_ERROR);
     /// A metódus az __o -ban már megadott, vagy ezt implicite tartalmazó adattáblához rendeli, ill. annak kezelésére készíti fel.
     /// Ha __o-nál nincs megadva adattábla, ill. ismeretlen a descriptor objektum, akkor dobni fog egy kizárást.
     cRecordAny& setType(const cRecord& __o);

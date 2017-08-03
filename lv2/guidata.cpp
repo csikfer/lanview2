@@ -717,17 +717,6 @@ void cTableShape::addRightShape(QStringList& _snl)
     set(ix, QVariant::fromValue(list));
 }
 
-QString cTableShape::objectExport(QSqlQuery& q, int indent) const
-{
-    if (isNull(idIndex())) {    // Memóriából
-        EXCEPTION(ENOTSUPP);
-        return QString();
-    }
-    else {
-        return cRecord::objectExport(q, indent);
-    }
-}
-
 QString cTableShape::emFildsIsEmpty()
 {
     return trUtf8("A shape Fields konténer üres.");

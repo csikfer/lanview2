@@ -1651,8 +1651,10 @@ macro   : MACRO_T            NAME_V str ';'                 { templates.set (_sM
         | TEMPLATE_T NODE_T  NAME_V str ';'                 { templates.set (_sNodes,  sp2s($3), sp2s($4));           }
         | TEMPLATE_T NODE_T  NAME_V str SAVE_T str_z ';'    { templates.save(_sNodes,  sp2s($3), sp2s($4), sp2s($6)); }
         | for_m
-        | SYNTAX_T replfl str str ';'                       { cRecordAny o(_sObjectSyntaxs);
+        | SYNTAX_T replfl str str str_z ';'                 { cRecordAny o(_sObjectSyntaxs);
                                                               o.setName(sp2s($3)).setName(_sSentence, sp2s($4));
+                                                              if (!$5->isEmpty()) o.setName(_sFeatures, *$5);
+                                                              delete $5;
                                                               if ($2) o.replace(qq()); else o.insert(qq());
                                                             }
         ;
@@ -2567,8 +2569,8 @@ delete  : DELETE_T PLACE_T strs ';'             { foreach (QString s, *$3) { cPl
         | DELETE_T LINK_T lnktypez str int ';'  { cPhsLink().unlink(qq(), sp2s($4), (ePhsLinkType)$3, $5); }
         | DELETE_T LINK_T lnktypez str int TO_T int ';'  { cPhsLink().unlink(qq(), sp2s($4), (ePhsLinkType)$3, $5, $7); }
         | DELETE_T TABLE_T SHAPE_T strs ';'     { foreach (QString s, *$4) { cTableShape().delByName(qq(), s, true, false); } delete $4; }
-        | DELETE_T ENUM_T TITLE_T  strs ';'     { foreach (QString s, *$4) { cEnumVal().delByTypeName(qq(), s, true); } delete $4; }
-        | DELETE_T ENUM_T TITLE_T  str strs ';' { foreach (QString s, *$5) { cEnumVal().delByNames(qq(), sp2s($4), s); } delete $5; }
+        | DELETE_T ENUM_T strs ';'              { foreach (QString s, *$3) { cEnumVal().delByTypeName(qq(), s, true); } delete $3; }
+        | DELETE_T ENUM_T str strs ';'          { foreach (QString s, *$4) { cEnumVal().delByNames(qq(), sp2s($3), s); } delete $4; }
         | DELETE_T GUI_T strs MENU_T ';'        { foreach (QString s, *$3) { cMenuItem().delByAppName(qq(), s, true); } delete $3; }
         | DELETE_T QUERY_T PARSER_T strs ';'    { foreach (QString s, *$4) { cQueryParser().delByServiceName(qq(), s, true); } delete $4; }
         | DELETE_T NODE_T str PORTS_T strs PARAM_T str ';'
