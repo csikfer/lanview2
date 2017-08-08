@@ -273,7 +273,7 @@ public slots:
 _GEX void _setRecordListModel(QComboBox *pComboBox, cRecordListModel *pModel);
 
 class LV2GSHARED_EXPORT cComboColorToRecName : public QObject {
-    friend LV2SHARED_EXPORT void _setRecordListModel(QComboBox *pComboBox, cRecordListModel *pModel);
+    friend LV2GSHARED_EXPORT void _setRecordListModel(QComboBox *pComboBox, cRecordListModel *pModel);
     Q_OBJECT
 protected:
     cComboColorToRecName(QComboBox *_pComboBox, cRecordListModel *_pModel);
@@ -366,7 +366,7 @@ protected:
 _GEX void _setEnumListModel(QComboBox *pComboBox, cEnumListModel *pModel);
 
 class LV2GSHARED_EXPORT cComboColorToEnumName : public QObject {
-    friend LV2SHARED_EXPORT void _setEnumListModel(QComboBox *pComboBox, cEnumListModel *pModel);
+    friend LV2GSHARED_EXPORT void _setEnumListModel(QComboBox *pComboBox, cEnumListModel *pModel);
     Q_OBJECT
 protected:
     cComboColorToEnumName(QComboBox *_pComboBox, cEnumListModel *_pModel);

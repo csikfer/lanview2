@@ -96,7 +96,7 @@ protected:
     QBitArray       where;
     tIntVector      ord;
     int             indent;
-    int             actIndndent;
+    int             actIndent;
     QSqlQuery       q1, q2;
     cParseSyntax *  pParent;
     void exec(cStringQueue *__psq);
@@ -125,12 +125,14 @@ private:
 };
 
 cParseSyntax::cParseSyntax(const QString& __on, int __in, const QString &__tn)
+    : indent(__in), actIndent(__in)
 {
     ixKey = ixMemb = NULL_IX;
     bHeadVal = false;
     q1 = getQuery();
     q2 = getQuery();
-    actIndndent = indent = __in;
+//  actIndent = __in;    // :-O VC : C2059 syntax error :';'
+//  indent = __in;
     pParent = NULL;
     name = __on;
     os.setByName(q1, name);
@@ -405,13 +407,13 @@ void cParseSyntax::exportRecordLine(QString &line)
     if (!lb.isEmpty()) EXCEPTION(EPROGFAIL);
     if (line.endsWith(QChar('\n'))) line.chop(1);
     if (line.isEmpty()) return;
-    actIndndent = indent;
+    actIndent = indent;
     // Ha az első karakter egy szám, akkor az az indentálást jelenti
-    nIndent(actIndndent, line);
+    nIndent(actIndent, line);
     if (line.startsWith("{:")) {  // Begin block
         QStringList sl = line.split(QChar(':'));
-        blocks << sIndent(actIndndent) + sl.first();
-        blocks << sIndent(actIndndent) + sl.at(1);
+        blocks << sIndent(actIndent) + sl.first();
+        blocks << sIndent(actIndent) + sl.at(1);
         blocks << QString();
         return;   // lb = NULL string
     }
@@ -426,7 +428,7 @@ void cParseSyntax::exportRecordLine(QString &line)
             lb = blocks.takeLast();
             blocks.pop_back();
             lb.prepend(blocks.takeLast() + QChar('\n'));
-            lb += sIndent(actIndndent) + line;
+            lb += sIndent(actIndent) + line;
         }
         return;
     }
@@ -601,13 +603,13 @@ void cParseSyntax::exportRecord()
         if (lb[0] == QChar('>')) {
             lb = lb.mid(1);
             if (lb.simplified().isEmpty()) continue;
-            divert += sIndent(actIndndent) + lb + '\n';
+            divert += sIndent(actIndent) + lb + '\n';
         }
         else {
             bool noend = lb.endsWith(QChar('\\'));
             if (noend) lb.chop(1);
             if (lb.simplified().isEmpty()) continue;
-            lb = sIndent(actIndndent) + lb;
+            lb = sIndent(actIndent) + lb;
             if (!noend) lb += QChar('\n');
             if (blocks.isEmpty()) pSQ->push(lb);
             else                  blocks.last() += lb;
@@ -639,7 +641,7 @@ void cParseSyntax::subExport(int __t, const QString &__tn)
     default:
         EXCEPTION(EPROGFAIL);
     }
-    cParseSyntax sos(n, actIndndent, t);
+    cParseSyntax sos(n, actIndent, t);
     sos.pParent = this;
     switch (__t) {
     case PST_CHILD:
