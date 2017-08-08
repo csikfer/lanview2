@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0,0">
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,1,1,0,0">
      <item>
       <widget class="QLabel" name="labelTable">
        <property name="text">
@@ -25,6 +25,13 @@
      </item>
      <item>
       <widget class="QComboBox" name="comboBoxTable"/>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="lineEditTableTitle">
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
      </item>
      <item>
       <spacer name="horizontalSpacer">
@@ -46,10 +53,20 @@
        </property>
       </widget>
      </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonStop">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Stop</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>
-    <widget class="QPlainTextEdit" name="plainTextEdit"/>
+    <widget class="QTextEdit" name="textEdit"/>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -85,22 +102,5 @@
   </layout>
  </widget>
  <resources/>
- <connections>
-  <connection>
-   <sender>pushButtonClear</sender>
-   <signal>clicked()</signal>
-   <receiver>plainTextEdit</receiver>
-   <slot>clear()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>51</x>
-     <y>764</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>593</x>
-     <y>396</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>

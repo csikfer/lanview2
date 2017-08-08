@@ -1826,6 +1826,10 @@ public:
     /// @return A megadott mezőre mutató konstans referencia objektummal tér vissza
     /// @exception Ha a megadott név nem egy valós mező neve.
     cRecordFieldConstRef operator[](const QString& __fn) const;
+    cRecordFieldRef ref(int _ix);
+    cRecordFieldConstRef cref(int _ix) const;
+    cRecordFieldRef ref(const QString& _fn);
+    cRecordFieldConstRef cref(const QString& _fn) const;
     /// Az id mező nevével tér vissza, ha van id mező, egyébként dob egy kizárást
     /// @param __ex Ha értéke hamis és nincs id mező, akkor nem dob kizárást, hanem egy üres stringgel tér vissza.
     const QString& idName(enum eEx __ex = EX_ERROR) const   { return descr().idName(__ex); }
@@ -2316,7 +2320,6 @@ template <class R> R * dup(R *p) { return dynamic_cast<R *>(p->dup()); }
 /// @relates cRecord
 class LV2SHARED_EXPORT cRecordFieldConstRef {
     friend class cRecord;
-    friend class cRecordFieldRef;
 protected:
     /// A hivatkozott objektum referenciája
     const cRecord *  _pRecord;
@@ -2347,7 +2350,8 @@ public:
     /// A hivatkozott mező értéke stringként
     operator QString() const    { return _pRecord->getName(_index); }
     /// A hivatkozott mező értéke stringként
-    QString toString() const    { return *this; }
+    QString toString() const    { return _pRecord->getName(_index); }
+    operator bool() const       { return _pRecord->getBool(_index); }
     /// A hivatkozott objektum statuszának a referenciája
     const qlonglong& stat() { return _pRecord->_stat; }
     /// A hivatkozott objektum referenciája
@@ -2460,6 +2464,11 @@ TSTREAMO(cRecordFieldRef)
 
 inline cRecordFieldRef cRecord::operator[](const QString& __fn)             { return (*this)[chkIndex(toIndex(__fn))]; }
 inline cRecordFieldConstRef cRecord::operator[](const QString& __fn) const  { return (*this)[chkIndex(toIndex(__fn))]; }
+inline cRecordFieldRef cRecord::ref(int _ix)                        { return (*this)[_ix]; }
+inline cRecordFieldConstRef cRecord::cref(int _ix) const            { return (*this)[_ix]; }
+inline cRecordFieldRef cRecord::ref(const QString& _fn)             { return (*this)[_fn]; }
+inline cRecordFieldConstRef cRecord::cref(const QString& _fn) const { return (*this)[_fn]; }
+
 
 /*!
 @class cRecordAny

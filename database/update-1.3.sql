@@ -779,4 +779,5 @@ INSERT INTO unusual_fkeys
   
 
 ALTER TABLE object_syntaxs ADD COLUMN features text;
+ALTER TABLE object_syntaxs ADD COLUMN listed boolean DEFAULT FALSE;
   

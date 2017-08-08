@@ -25,6 +25,47 @@ cObjectSyntax::cObjectSyntax(const cObjectSyntax& __o)
     _cp(__o);
 }
 
+/*      ----        ----        */
+
+cExportThread::cExportThread(QObject *par) : QThread(par)
+{
+    pLastError = NULL;
+    pStrQueue  = NULL;
+}
+
+cExportThread::~cExportThread()
+{
+    if (isRunning()) terminate();
+    wait();
+    pDelete(pLastError);
+}
+
+void cExportThread::run()
+{
+    if (pStrQueue != NULL) EXCEPTION(EPROGFAIL);
+    pStrQueue = new cStringQueue(this);
+    connect(pStrQueue, SIGNAL(ready()), this, SLOT(queue()));
+    pLastError = exportRecords(sTableName, *pStrQueue);
+    int nwait = 2;
+    while (!pStrQueue->isEmpty()) {
+        if (nwait == 0) EXCEPTION(EPROGFAIL);
+        --nwait;
+        msleep(50);
+    }
+    pDelete(pStrQueue);
+}
+
+void cExportThread::queue()
+{
+    if (pStrQueue == NULL) {
+        DWAR() << "pStrQueue is NULL" << endl;
+        return;
+    }
+    QString s = pStrQueue->pop();
+    if (s.isEmpty()) return;
+    sReady(s);
+}
+
 /*      ****        ****        */
 
 enum ePSType {
@@ -36,7 +77,7 @@ enum ePSType {
 };
 
 class cParseSyntax {
-    friend LV2SHARED_EXPORT cError * exportRecords(const QString& __tn, QString str);
+    friend LV2SHARED_EXPORT cError * exportRecords(const QString& __tn, cStringQueue& __sq );
 protected:
     cParseSyntax(const QString& __on, int __in = 0, const QString& __tn = QString());
     QString         name;
@@ -55,23 +96,32 @@ protected:
     QBitArray       where;
     tIntVector      ord;
     int             indent;
-    QString         divert;
+    int             actIndndent;
     QSqlQuery       q1, q2;
     cParseSyntax *  pParent;
-    QString exec();
+    void exec(cStringQueue *__psq);
 private:
-    QString exportRecordGroup();
-    QString exportRecordTree();
-    QString exportRecordSimple();
-    QString parseString(const QString& __src, const QStringList &__pl = QStringList(), int * __pIx = NULL);
+    void exportRecordGroup();
+    void exportRecordTree();
+    void exportRecordSimple();
+    void parseString(const QString& __src, const QStringList &__pl = QStringList());
     QString getRecordFieldValue(const QString& __s, QString::const_iterator& ite, QString::const_iterator& end, QString& emsg);
-    QString getFieldValue(const QString& vname, const QStringList& pl);
-    QString getCondString(QString::const_iterator& i, const QString::const_iterator& e);
-    int parseParams(QStringList& pl, int ss);
-    static QString exportFieldValue(QSqlQuery &q, const cRecord &oo, int ix);
-    QString exportRecordLine(QString &line);
-    QString exportRecord();
-    QString subExport(int __t, int _ind, const QString& __tn = QString());
+    QString getFieldValue(const QString& vname, const QStringList &pl = QStringList());
+    QString getCondString(QString::const_iterator& i, const QString::const_iterator& e, QStringList &pl);
+    static QString exportFieldValue(QSqlQuery &q, const cRecordFieldConstRef &fr);
+    void exportRecordLine(QString &line);
+    void exportRecord();
+    void subExport(int __t, const QString& __tn = QString());
+    QString         lb;     ///< Line buffer
+    QString         divert;
+    QStringList     blocks;
+    void            move2blk(QString& s) {
+        if (!s.simplified().isEmpty()) {
+            blocks.last() += s;
+        }
+        s.clear();
+    }
+    cStringQueue *  pSQ;
 };
 
 cParseSyntax::cParseSyntax(const QString& __on, int __in, const QString &__tn)
@@ -80,7 +130,7 @@ cParseSyntax::cParseSyntax(const QString& __on, int __in, const QString &__tn)
     bHeadVal = false;
     q1 = getQuery();
     q2 = getQuery();
-    indent = __in;
+    actIndndent = indent = __in;
     pParent = NULL;
     name = __on;
     os.setByName(q1, name);
@@ -130,24 +180,24 @@ cParseSyntax::cParseSyntax(const QString& __on, int __in, const QString &__tn)
     }
 }
 
-QString cParseSyntax::exec()
+void cParseSyntax::exec(cStringQueue * __psq)
 {
+    pSQ = __psq;
     if (type & ~PST_MASK && pParent == NULL) EXCEPTION(EPROGFAIL);
     switch (type & PST_MASK) {
-    case PST_SIMPLE:    return exportRecordSimple();
+    case PST_SIMPLE:    exportRecordSimple();   break;
     case PST_GROUP_HEAD:
-    case PST_GROUP:     return exportRecordGroup();
-    case PST_TREE:      return exportRecordTree();
+    case PST_GROUP:     exportRecordGroup();    break;
+    case PST_TREE:      exportRecordTree();     break;
     default:            EXCEPTION(EPROGFAIL);
     }
-    return _sNul;   // :-/
 }
 
-cError * exportRecords(const QString& __tn, QString str)
+cError * exportRecords(const QString& __tn, cStringQueue& __sq)
 {
-    cError *pe;
+    cError *pe = NULL;
     try {
-        str += cParseSyntax(__tn).exec();
+        cParseSyntax(__tn).exec(&__sq);
     } CATCHS(pe)
     return pe;
 }
@@ -156,34 +206,33 @@ cError * exportRecords(const QString& __tn, QString str)
 /// String behelyettesítések.
 /// @param __src a feldolgozandó string
 /// @param __pl a teljes string lista ($1, $2... behelyettesítéshez) feltételes kifelyezés esetén
-/// @param __pIx ha volt mező hivatkozás, és nem NULL, akkor ide kerül a mező index.
-QString cParseSyntax::parseString(const QString& __src, const QStringList &__pl, int * __pIx)
+void cParseSyntax::parseString(const QString& __src, const QStringList &__pl)
 {
-    if (__src.simplified().isEmpty()) return QString();
+    if (__src.simplified().isEmpty()) return;
     QString::const_iterator ite = __src.constBegin();
     QString::const_iterator end = __src.constEnd();
-    QString s, r;
+    QString s;
+    QStringList    pl;
     while (ite < end) {
         QChar c = *ite;
         ++ite;
         switch (c.toLatin1()) {
         case '\\':          // Védett karakter
-            ++ite;
             if (ite >= end) EXCEPTION(EDATA, end - ite, __pl.isEmpty() ? __src : __pl.join(","));
-            r += *ite;
+            lb += *ite;
+            ++ite;
             break;
         case '$': {         // Érték szerinti behelyettesítés, mező érték, vagy lista elem
             s  = getParName(ite, end, false);       // '.' nem lehet a névben
             if (ite != end && *ite == QChar('[')) { // idegen rekord hivatkozás ?
                 QString emsg;
-                r += getRecordFieldValue(s, ite, end, emsg);
+                lb += getRecordFieldValue(s, ite, end, emsg);
                 if (!emsg.isEmpty()) {      // OK?
                     EXCEPTION(EDATA, 0, emsg);
                 }
             }
             else {
-                if (__pIx != NULL) *__pIx = o.toIndex(s, EX_IGNORE);
-                r += getFieldValue(s, __pl);
+                lb += getFieldValue(s, __pl);
             }
             break;
           }
@@ -191,45 +240,42 @@ QString cParseSyntax::parseString(const QString& __src, const QStringList &__pl,
             if (!__pl.isEmpty()) {  // Ha már egy feltételes kifelyezésben vagyunk,
                 EXCEPTION(EDATA, 0, o.identifying());
             }
-            r += getCondString(ite, end);
+            pSQ->move(lb);
+            s = getCondString(ite, end, pl);
+            parseString(s, pl);
             break;
         case '@':   // Child object, vagy group, vagy tree
           {
-            if (r.simplified().isEmpty()) r.clear();
-            else                          r += QChar('\n');
+            lb += QChar('\n');
+            pSQ->move(lb);
             s = getParName(ite, end, false);
-            if      (s == "GROUP") r += subExport(PST_MEMBER,  indent);
-            else if (s == "TREE")  r += subExport(PST_SUB_TREE,indent);
-            else                   r += subExport(PST_CHILD,   indent, s);
+            if      (s == "GROUP") subExport(PST_MEMBER);
+            else if (s == "TREE")  subExport(PST_SUB_TREE);
+            else                   subExport(PST_CHILD, s);
             break;
           }
         default:
-            r += c;
+            lb += c;
             break;
         }
     }
-    return r;
 }
 
-int cParseSyntax::parseParams(QStringList& pl, int ss)
+static bool var2bool(const QVariant& v)
 {
-    int i, n = pl.size();
-    int fix = NULL_IX;
-    for (i = 0; i < n; ++i) {
-        QString s = pl.at(i);
-        s = s.trimmed();
-        pl[i] = parseString(s, pl, i == 0 ? &fix : NULL);
-    }
-    while (pl.size() < ss) pl << QString();
-    return fix;
+    if (v.isNull()) return false;
+    if (v.userType() == QMetaType::Bool) return v.toBool();
+    if (variantIsInteger(v)) return v.toLongLong() == 0;
+    if (variantIsString(v)) return str2bool(v.toString(), EX_IGNORE);
+    return false;
 }
 
 /// A feltételes kifelyezés értelmezése, a '?' után a string végéig, vagy az első '^' karakterig.
-/// A kifelyezésben a szeparátor a ':' karakter. Az első mező első karaktere a feltétel típusa (case insensitive):
-/// I
+/// A kifelyezésben a szeparátor a ':' karakter. Az első mező a feltétel
 /// @param i Iterátor a stringen, a '?' után
 /// @param e a string végét jeklző iterátor
-QString cParseSyntax::getCondString(QString::const_iterator& i, const QString::const_iterator& e)
+/// @param plo Feltétel paraméterek (kimenet)
+QString cParseSyntax::getCondString(QString::const_iterator& i, const QString::const_iterator& e, QStringList& plo)
 {
     QString s;
     while (i < e && *i != QChar('^')) {
@@ -237,64 +283,110 @@ QString cParseSyntax::getCondString(QString::const_iterator& i, const QString::c
         i++;
     }
     if (i < e) ++i;
-    if (s.isEmpty()) return s;
-    QStringList params = s.split(':');
-    enum eIfType
-    { IF_VALID, IF_NOT_EMPTY, IF_EQU, IF_LITLE, IF_GREATER, IF_IF, IF_ROOT }
-    t = IF_VALID;
+    if (s.isEmpty()) EXCEPTION(EDATA);
+    static const QChar sep = QChar(':');
+    static const QChar esc = QChar('\\');
+    QStringList params = s.split(sep);
+    for (int j = 1; j < (params.size() -1); ++j) {   // A "\:" védet szeparátor, korrekció (első, és utolsó mező nem kell)
+        if (params.endsWith(esc)) {
+            params[j].chop(1);
+            params[j] += sep + params.takeAt(j +1);
+            --j;
+        }
+    }
+    enum eIfType {
+        IF_VALID,       ///< Nem NULL és létező mező
+        IF_NOT_EMPTY,   ///< A mező érték stringgé konvertálva nem üres string
+        IF_EQU,         ///< Két érték összehasonlítása
+        IF_LITLE,       ///< kisebb (lebegőpontos értékké konvertálva)
+        IF_GREATER,     ///< nagyobb (lebegőpontos értékké konvertálva)
+        IF_IF,          ///< igaz (bool-lá konverálva)
+        IF_ROOT         ///< Tree esetén az aktuális elem egy gyökér elem (nincs parent-je)
+    }   t = IF_VALID;
     bool neg = false;
     s = params.first(); // type string
-    if (s.startsWith(QChar('!'))) {
+    if (s.startsWith(QChar('!'))) { // A feltétel inverálása
         neg = true;
         s = s.mid(1);
     }
-    if (s.size() != 1) EXCEPTION(EDATA, 0, params.join(","));   // Egybetüs feltétel jelek
     params.pop_front();
-    int n = 0;  // mezők száma (inicializáljuk, mert warning-ol a fordító) az utolsó mező (false-hoz tartozó érték opcionális)
-    switch (s[0].toUpper().toLatin1()) {
-    case 'V':   t = IF_VALID;      n = 3;   break;  // nem NULL mező
-    case 'N':   t = IF_NOT_EMPTY;  n = 3;   break;  //
-    case 'E':   t = IF_EQU;        n = 4;   break;  //
-    case 'L':   t = IF_LITLE;      n = 4;   break;  //
-    case 'G':   t = IF_GREATER;    n = 4;   break;  //
-    case 'I':   t = IF_IF;         n = 3;   break;  //
-    case 'R':   t = IF_ROOT;       n = 2;   break;  // tree root ?
-    default:    EXCEPTION(EDATA, 1, params.join(","));
+    int n = 0;  // A feltétel paramétereinek a száma
+    if      (s.isEmpty())   {   t = IF_IF;          n = 1;  }
+    else if (s == "V")      {   t = IF_VALID;       n = 1;  }
+    else if (s == "N")      {   t = IF_NOT_EMPTY;   n = 1;  }
+    else if (s == "=")      {   t = IF_EQU;         n = 2;  }
+    else if (s == ">")      {   t = IF_GREATER;     n = 2;  }
+    else if (s == "<")      {   t = IF_LITLE;       n = 2;  }
+    else if (s == ">=")     {   t = IF_LITLE;       n = 2;  neg = !neg; }
+    else if (s == "<=")     {   t = IF_GREATER;     n = 2;  neg = !neg; }
+    else if (s == "R")      {   t = IF_ROOT;        n = 0; }
+    else { EXCEPTION(EDATA, 1, params.join(",")); }
+    switch (params.size() - n) {
+    case 1:
+    case 2:     break;
+    default:    EXCEPTION(EDATA, params.size());
     }
-    int fix = parseParams(params, n);    // fix = első mező ben az objektum mező indexe (ha van hivatkozás)
+    plo.clear();    // Feltétel paraméter(ek) exportálható formátum
+    QVariantList pl;
+    for (int j = 0; j < n; ++j) {
+        QString sp = params.at(j);
+        pl  << QVariant();
+        plo << QString();
+        if (sp.startsWith(QChar('\\'))) {
+            pl.last()  = sp.mid(1);   // védett string, biztos nem mező érték
+            plo.last() = pl.last().toString();
+        }
+        else {
+            pl.last() = sp;                          // vagy string
+            plo.last() = pl.last().toString();
+            sp = sp.trimmed();
+            if (sp.startsWith(QChar('$'))) {    // vagy mező érték (space-k törölve)
+                sp = sp.mid(1).trimmed();
+                if (sp == "DEFAULT") {  // Ez első paraméterként hivatkozott mező alapértelmezett értéke
+                    QString fn = params.first();
+                    // Csak a második mező lehet, az első pedig mező hivatkozás kell legyen
+                    if (j != 1 || fn[0] != QChar('$')) EXCEPTION(EDATA);
+                    fn = fn.mid(1); // - $
+                    const cColStaticDescr&cd = o.colDescr(o.toIndex(fn));   // Mező leíró
+                    qlonglong st;   // status a set() hez, most nem érdekel...
+                    pl.last()  = cd.set(QVariant(cd.colDefault), st);    // Konvertálás tárolási típussá
+                    plo.last() = cd.colDefault;                 // string
+                }
+                else if (o.isIndex(sp)) {
+                    int ix = o.toIndex(sp);
+                    pl.last() = o.get(ix);
+                    plo.last() = exportFieldValue(q1, o.cref(ix));
+                }
+                else {
+                    if (j != 1 || t != IF_VALID) EXCEPTION(EDATA);    // Csak ennél a feltételnél lehet ismeretlen mező név
+                    pl.last().clear();
+                    plo.last().clear();
+                }
+            }
+        }
+    }
+    if (n) params = params.mid(n);
     bool f;                                 // A feltétel eredménye ide
-    int true_ix  = n - 2;                   // Az "igaz" mező indexe a mezőkre bontorr string kifelyezésben
-    int false_ix = n - 1;                   // A "hamis" mező indexe a mezőkre bontorr string kifelyezésben
     switch (t) {
-    case IF_VALID:
-        if (fix != NULL_IX) f = !o.isNull(fix);
-        else                f = !params.at(0).isEmpty();
-        break;
-    case IF_NOT_EMPTY:
-        f = !params.at(0).isEmpty();
-        break;
-    case IF_EQU:
-        f = params.at(0) == params.at(1);
-        break;
-    case IF_GREATER:
-        f = params.at(0).toDouble() > params.at(1).toDouble();
-        break;
-    case IF_LITLE:
-        f = params.at(0).toDouble() < params.at(1).toDouble();
-        break;
-    case IF_IF:
-        if (fix != NULL_IX) f = o.getBool(fix);
-        else                f = str2bool(params.at(0));
-        break;
-    case IF_ROOT:
-        f = !(type & PST_SUB_TREE);
-        break;
+    case IF_VALID:      f = pl[0].isValid();                     break;
+    case IF_NOT_EMPTY:  f = !pl[0].toString().isEmpty();         break;
+    case IF_EQU:        f = pl[0].toString() == pl[1].toString(); break;
+    case IF_GREATER:    f = pl[0].toDouble() >  pl[1].toDouble(); break;
+    case IF_LITLE:      f = pl[0].toDouble() <  pl[1].toDouble(); break;
+    case IF_IF:         f = var2bool(pl[0]);                     break;
+    case IF_ROOT:       f = !(type & PST_SUB_TREE);             break;
+    default:            EXCEPTION(EPROGFAIL);                   break;
     }
     if (neg) f = !f;
-    return params.at(f ? true_ix : false_ix);
+    switch (params.size()) {
+    case 1:     return f ? params[0] : QString();
+    case 2:     return f ? params[0] : params[1];
+    default:    EXCEPTION(EPROGFAIL);
+    }
+    return QString();
 }
 
-static void nIndent(int &indent, QString& s)
+static inline void nIndent(int &indent, QString& s)
 {
     if (s[0].isDigit()) {
         indent += s[0].toLatin1() - '0';
@@ -302,27 +394,57 @@ static void nIndent(int &indent, QString& s)
     }
 }
 
-QString cParseSyntax::exportRecordLine(QString &line)
+#define TABSIZE 4
+static inline QString sIndent(int indent)
 {
-    QString r;
+    return QString(indent * TABSIZE, QChar(' '));
+}
+
+void cParseSyntax::exportRecordLine(QString &line)
+{
+    if (!lb.isEmpty()) EXCEPTION(EPROGFAIL);
     if (line.endsWith(QChar('\n'))) line.chop(1);
-    if (line.isEmpty()) return r;
+    if (line.isEmpty()) return;
+    actIndndent = indent;
+    // Ha az első karakter egy szám, akkor az az indentálást jelenti
+    nIndent(actIndndent, line);
+    if (line.startsWith("{:")) {  // Begin block
+        QStringList sl = line.split(QChar(':'));
+        blocks << sIndent(actIndndent) + sl.first();
+        blocks << sIndent(actIndndent) + sl.at(1);
+        blocks << QString();
+        return;   // lb = NULL string
+    }
+    if (line == "}") {  // End block
+        if (blocks.size() < 3) EXCEPTION(EDATA);
+        if (blocks.last().simplified().isEmpty()) {
+            blocks.pop_back();
+            lb = blocks.takeLast();
+            blocks.pop_back();
+        }
+        else {
+            lb = blocks.takeLast();
+            blocks.pop_back();
+            lb.prepend(blocks.takeLast() + QChar('\n'));
+            lb += sIndent(actIndndent) + line;
+        }
+        return;
+    }
+
     int i = 0;
     int c = line[i].toLatin1();
-    int ind = indent;
-    // Ha az első karakter egy szám, akkor az az indentálást jelenti
-    nIndent(ind, line);
     if (c == '?') { // Feltételes sor
         QString::const_iterator ite = line.constBegin() +1; // ? átugrása
         QString::const_iterator end = line.constEnd();
-        r = getCondString(ite, end);
+        QStringList pl;
+        QString s = getCondString(ite, end, pl);
+        parseString(s, pl);
         if (ite != end) EXCEPTION(EDATA, 0, line);
     }
     else {
-        r = parseString(line);
+        parseString(line);
     }
-    if (!r.isEmpty()) r = indentSp(ind) + r + "\n";
-    return r;
+    return;
 }
 
 /// Rekord mező érték hivatkozás
@@ -368,27 +490,27 @@ QString cParseSyntax::getRecordFieldValue(const QString& __s, QString::const_ite
         emsg = QObject::trUtf8("Ismeretlen mező név : %1.%2").arg(__s, field);
         return QString();
     }
-    return exportFieldValue(q1, r, r.toIndex(field));
+    return exportFieldValue(q1, r.cref(field));
 RFV__syntax_error:
     emsg = QObject::trUtf8("Syntax error.");
     return QString();
 }
 
-QString cParseSyntax::getFieldValue(const QString& vname, const QStringList& pl)
+QString cParseSyntax::getFieldValue(const QString& vname, const QStringList &pl)
 {
     QString r;
     bool ok;
-    int ix = vname.toInt(&ok);
+    int ix = vname.toInt(&ok) -1;
     if (ok) {
-        if (ix <= 0 || ix > pl.size()) {
+        if (!isContIx(pl, ix)) {
             EXCEPTION(EDATA, ix);
         }
-        r = pl.at(ix -1);
+        r = pl.at(ix);
     }
     else {
         if (vname == "PARENT") {
             if (pParent == NULL) return r;
-            return exportFieldValue(q1, pParent->o, pParent->o.nameIndex());
+            return exportFieldValue(q1, pParent->o.cref(pParent->o.nameIndex()));
         }
         if      (vname == "ID")   ix = o.idIndex();
         else if (vname == "NAME") ix = o.nameIndex();
@@ -397,20 +519,23 @@ QString cParseSyntax::getFieldValue(const QString& vname, const QStringList& pl)
             if (o.isNull(ix)) return r;
         }
         else                      ix = o.toIndex(vname);
-        r = exportFieldValue(q1, o, ix);
+        r = exportFieldValue(q1, o.cref(ix));
     }
     return r;
 }
 
-QString cParseSyntax::exportFieldValue(QSqlQuery& q, const cRecord& oo, int ix)
+
+
+QString cParseSyntax::exportFieldValue(QSqlQuery& q, const cRecordFieldConstRef& fr)
 {
     QString r;
-    switch (oo.colDescr(ix).eColType) {
+    const QVariant& vr = fr;
+    switch (fr.descr().eColType) {
     case cColStaticDescr::FT_INTEGER:
-        if (oo.colDescr(ix).fKeyType != cColStaticDescr::FT_NONE) {
-            qlonglong id = oo.getId(ix);
+        if (fr.descr().fKeyType != cColStaticDescr::FT_NONE) {
+            qlonglong id = (qlonglong)fr;
             if (id != NULL_ID) {
-                r = oo.colDescr(ix).fKeyId2name(q, id, EX_ERROR);
+                r = fr.descr().fKeyId2name(q, id, EX_ERROR);
                 r = quotedString(r);
             }
             break;
@@ -421,27 +546,27 @@ QString cParseSyntax::exportFieldValue(QSqlQuery& q, const cRecord& oo, int ix)
     case cColStaticDescr::FT_INET:
     case cColStaticDescr::FT_CIDR:
     case cColStaticDescr::FT_POLYGON:
-        r = oo.getName(ix);
+        r = (QString)fr;
         break;
     case cColStaticDescr::FT_TIME:
-        r = oo.get(ix).toTime().toString("hh:mm:ss.zzz");
+        r = vr.toTime().toString("hh:mm:ss.zzz");
         break;
     case cColStaticDescr::FT_INTERVAL:
-        r =QString::number(oo.getId(ix) / 1000);  //msec to sec
+        r =QString::number(((qlonglong)fr) / 1000);  //msec to sec
         break;
     case cColStaticDescr::FT_TEXT:
     case cColStaticDescr::FT_ENUM:
-        r = quotedString(oo.getName(ix));
+        r = quotedString((QString)fr);
         break;
     case cColStaticDescr::FT_BOOLEAN:
-        r = oo.getBool(ix) ? _sTrue : _sFalse;
+        r = ((bool)fr) ? _sTrue : _sFalse;
         r = r.toUpper();
         break;
     case cColStaticDescr::FT_INTEGER_ARRAY:
-        if (oo.colDescr(ix).fKeyType != cColStaticDescr::FT_NONE) {
-            foreach(QVariant v, oo.get(ix).toList()) {
+        if (fr.descr().fKeyType != cColStaticDescr::FT_NONE) {
+            foreach(QVariant v, vr.toList()) {
                 qlonglong id = v.toLongLong();
-                QString s = oo.colDescr(ix).fKeyId2name(q, id, EX_ERROR);
+                QString s = fr.descr().fKeyId2name(q, id, EX_ERROR);
                 r += quotedString(s) + ", ";
             }
             if (!r.isEmpty()) r.chop(2);
@@ -449,12 +574,12 @@ QString cParseSyntax::exportFieldValue(QSqlQuery& q, const cRecord& oo, int ix)
         }
         // else continue ...
     case cColStaticDescr::FT_REAL_ARRAY:
-        foreach(QVariant v, oo.get(ix).toList()) r += v.toString() + ", ";
+        foreach(QVariant v, vr.toList()) r += v.toString() + ", ";
         if (!r.isEmpty()) r.chop(2);
         break;
     case cColStaticDescr::FT_TEXT_ARRAY:
     case cColStaticDescr::FT_SET:
-        foreach(QVariant v, oo.get(ix).toList()) r += quotedString(v.toString()) + ", ";
+        foreach(QVariant v, vr.toList()) r += quotedString(v.toString()) + ", ";
         if (!r.isEmpty()) r.chop(2);
         break;
     case cColStaticDescr::FT_DATE:
@@ -466,24 +591,35 @@ QString cParseSyntax::exportFieldValue(QSqlQuery& q, const cRecord& oo, int ix)
 }
 
 
-QString cParseSyntax::exportRecord()
+void cParseSyntax::exportRecord()
 {
+    blocks.clear();
     QString sentence = os.getName(_sSentence);
     QStringList lines = sentence.split('\n');
-    QString r;
     foreach (QString line, lines) {
-        QString l = exportRecordLine(line);
-        if (l[0] == QChar('>')) {
-            divert += l.mid(1);
+        exportRecordLine(line);
+        if (lb[0] == QChar('>')) {
+            lb = lb.mid(1);
+            if (lb.simplified().isEmpty()) continue;
+            divert += sIndent(actIndndent) + lb + '\n';
         }
         else {
-            r += l;
+            bool noend = lb.endsWith(QChar('\\'));
+            if (noend) lb.chop(1);
+            if (lb.simplified().isEmpty()) continue;
+            lb = sIndent(actIndndent) + lb;
+            if (!noend) lb += QChar('\n');
+            if (blocks.isEmpty()) pSQ->push(lb);
+            else                  blocks.last() += lb;
         }
+        lb.clear();
     }
-    return r;
+    if (blocks.size() > 0) {
+        EXCEPTION(EDATA);
+    }
 }
 
-QString cParseSyntax::subExport(int __t, int _ind, const QString &__tn)
+void cParseSyntax::subExport(int __t, const QString &__tn)
 {
     QString n, t;
     switch (__t) {
@@ -496,14 +632,14 @@ QString cParseSyntax::subExport(int __t, int _ind, const QString &__tn)
         n = mCat(name, sKey);
         break;
     case PST_SUB_TREE:
-        if (type != PST_TREE) EXCEPTION(EDATA);
+        if ((type & PST_MASK) != PST_TREE) EXCEPTION(EDATA);
         t = table;
         n = name;
         break;
     default:
         EXCEPTION(EPROGFAIL);
     }
-    cParseSyntax sos(n, _ind, t);
+    cParseSyntax sos(n, actIndndent, t);
     sos.pParent = this;
     switch (__t) {
     case PST_CHILD:
@@ -520,16 +656,16 @@ QString cParseSyntax::subExport(int __t, int _ind, const QString &__tn)
         if (sos.type != PST_SIMPLE) EXCEPTION(EDATA);   // örökli!
         sos.type = type | PST_MEMBER;
         break;
-    case PST_TREE:
+    case PST_SUB_TREE:
         if (sos.type != PST_TREE) EXCEPTION(EPROGFAIL); // azonos leíró
         sos.type = type | PST_SUB_TREE;
+        break;
     }
-    return sos.exec();
+    sos.exec(pSQ);
 }
 
-QString cParseSyntax::exportRecordGroup()
+void cParseSyntax::exportRecordGroup()
 {
-    QString r;
     switch (type) {
     case PST_GROUP:
     case PST_GROUP_HEAD:
@@ -541,6 +677,7 @@ QString cParseSyntax::exportRecordGroup()
     }
     // Fetch groups names
     QString sql = QString("SELECT DISTINCT %1 FROM %2").arg(sKey, o.tableName());
+    divert.clear();
     if (execSql(q2, sql)) {
         QString s;
         do {
@@ -557,17 +694,14 @@ QString cParseSyntax::exportRecordGroup()
                     o.setName(ixKey, group);    // visszarakjuk
                 }
             }
-            s = exportRecord();
-            PDEB(VERBOSE) << s << endl;
-            r += s;
+            exportRecord();
         } while (q2.next());
     }
-    return r;
+    pSQ->push(divert);
 }
 
-QString cParseSyntax::exportRecordTree()
+void cParseSyntax::exportRecordTree()
 {
-    QString r;
     divert.clear();
     if (pParent == NULL) {      // Nincs parent: gyökér
         if (bHeadVal) o.setName(ixKey, sHeadVal);
@@ -595,17 +729,14 @@ QString cParseSyntax::exportRecordTree()
         QString s;
         do {
             if (checkHead && o.get(pParent->ixMemb) == pParent->o.get(pParent->ixMemb)) continue;
-            s = exportRecord();
-            PDEB(VERBOSE) << s << endl;
-            r += s;
+            exportRecord();
         } while (o.next(q2));
     }
-    return r + divert;
+    pSQ->push(divert);
 }
 
-QString cParseSyntax::exportRecordSimple()
+void cParseSyntax::exportRecordSimple()
 {
-    QString r;
     divert.clear();
     if (pParent != NULL) {  // Van parent?
         switch (pParent->type) {
@@ -622,14 +753,11 @@ QString cParseSyntax::exportRecordSimple()
     }
     if (o.fetch(q2, false, where, ord)) {
         bool checkHead = pParent != NULL && pParent->type == PST_GROUP_HEAD;
-        QString s;
         do {
             if (checkHead && o.get(pParent->ixMemb) == pParent->o.get(pParent->ixMemb)) continue;
-            s = exportRecord();
-            PDEB(VERBOSE) << s << endl;
-            r += s;
+             exportRecord();
         } while (o.next(q2));
     }
-    return r + divert;
+    pSQ->push(divert);
 }
 

@@ -1651,7 +1651,7 @@ macro   : MACRO_T            NAME_V str ';'                 { templates.set (_sM
         | TEMPLATE_T NODE_T  NAME_V str ';'                 { templates.set (_sNodes,  sp2s($3), sp2s($4));           }
         | TEMPLATE_T NODE_T  NAME_V str SAVE_T str_z ';'    { templates.save(_sNodes,  sp2s($3), sp2s($4), sp2s($6)); }
         | for_m
-        | SYNTAX_T replfl str str str_z ';'                 { cRecordAny o(_sObjectSyntaxs);
+        | SYNTAX_T replfl str str str_z bool_on ';'         { cRecordAny o(_sObjectSyntaxs);
                                                               o.setName(sp2s($3)).setName(_sSentence, sp2s($4));
                                                               if (!$5->isEmpty()) o.setName(_sFeatures, *$5);
                                                               delete $5;

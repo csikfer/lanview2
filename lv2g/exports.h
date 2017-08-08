@@ -1,9 +1,7 @@
 #ifndef EXPORTS_H
 #define EXPORTS_H
 #include "lv2g.h"
-#include "import_parser.h"
-
-#include "lv2g.h"
+#include "lv2syntax.h"
 #if defined(LV2G_LIBRARY)
 #include "ui_exports.h"
 #else
@@ -21,11 +19,18 @@ public:
     static const enum ePrivilegeLevel rights;
     QString fileName;
 private:
+    void disable(bool f);
     Ui::Exports *pUi;
+    bool isStop;
+    cExportThread *pThread;
 protected slots:
-    void _export();
+    void start();
+    void stop();
     void save();
-    void changed();
+    void changedText();
+    void changedName(const QString &tn);
+    void text(const QString &s);
+    void ready();
 };
 
 #endif // EXPORTS_H

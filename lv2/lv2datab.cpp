@@ -59,7 +59,7 @@ bool variantIsFloat(const QVariant & _v)
 
 bool variantIsNum(const QVariant & _v)
 {
-    return metaIsFloat(_v.userType() || metaIsInteger(_v.userType()));
+    return metaIsFloat(_v.userType()) || metaIsInteger(_v.userType());
 }
 
 

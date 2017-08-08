@@ -87,7 +87,8 @@ SOURCES += lanview.cpp \
     lv2link.cpp \
     vardata.cpp \
     report.cpp \
-    lv2syntax.cpp
+    lv2syntax.cpp \
+    stringqueue.cpp
 
 HEADERS += lanview.h \
     lv2_global.h \
@@ -117,7 +118,8 @@ HEADERS += lanview.h \
     lv2link.h \
     vardata.h \
     report.h \
-    lv2syntax.h
+    lv2syntax.h \
+    stringqueue.h
 
 #FORMS +=
 
