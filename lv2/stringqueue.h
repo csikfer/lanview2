@@ -11,7 +11,7 @@ class LV2SHARED_EXPORT cStringQueue : public QObject
 {
     Q_OBJECT
 public:
-    explicit cStringQueue(QObject *parent = nullptr);
+    explicit cStringQueue(QObject *parent = NULL);
     ~cStringQueue();
     bool isEmpty();
     void push(const QString& s);
