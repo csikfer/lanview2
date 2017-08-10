@@ -374,6 +374,14 @@ QString cPhsLink::show(bool t) const
     return r;
 }
 
+bool cPhsLink::nextLink(QSqlQuery& q, qlonglong pid, enum ePhsLinkType type, enum ePortShare sh)
+{
+    static const QString sql = "SELECT * FROM next_phs_link(?, ?, ?, ?)";
+    execSql(q, sql, getId(), pid, phsLinkType(type), portShare(sh));
+    set(q);
+    return isNull(idIndex());
+}
+
 /* ----------------------------------------------------------------- */
 qlonglong LinkGetLinked(QSqlQuery& q, cRecord& o, qlonglong __pid)
 {

@@ -357,7 +357,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION next_phs_link(
     lid   bigint,	-- phs_link_id
-    pid   bigint,	-- phs_link_id
+    pid   bigint,	-- port_id
     link_type   phslinktype,    -- link/csatlakozás típusa a megadott irányban
     sh    portshare       -- SHARE, ha 'NC', akkor nincs következő rekord
 )   RETURNS phs_links AS  -- A visszaadott rekordban van tárolva az eredő megosztás, tehát ez a mező nem a rekordbeli értéket tartalmazza.

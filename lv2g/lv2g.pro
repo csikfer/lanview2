@@ -38,7 +38,8 @@ SOURCES += \
     findbymac.cpp \
     workstation.cpp \
     object_dialog.cpp \
-    exports.cpp
+    exports.cpp \
+    deducepatch.cpp
 
 HEADERS +=\
     lv2g_global.h \
@@ -69,7 +70,8 @@ HEADERS +=\
     findbymac.h \
     workstation.h \
     object_dialog.h \
-    exports.h
+    exports.h \
+    deducepatch.h
 
 FORMS += \
     column_filter.ui \
@@ -92,7 +94,8 @@ FORMS += \
     wstform.ui \
     dialogpatchsimple.ui \
     edit_enum_vals.ui \
-    exports.ui
+    exports.ui \
+    deducepatch.ui
 INCLUDEPATH += ../lv2
 #unix:LIBS += -lsnmp
 msvc:LIBS += -lSecur32

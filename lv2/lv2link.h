@@ -70,6 +70,11 @@ public:
     /// Felcsréli a link irányát
     cPhsLink& swap();
     virtual QString show(bool t = false) const;
+    /// A patch porthoz tartozó, vagy köveetkező link
+    /// @param pid Patch port ID
+    /// @param type Link típusa (csak LT_BACK vagy LT_FRONT lehet, különben kizárást dob)
+    /// @param Megosztás típusa
+    bool nextLink(QSqlQuery &q, qlonglong pid, enum ePhsLinkType type, enum ePortShare sh);
 private:
     QString show12(QSqlQuery &q, bool _12) const;
 };

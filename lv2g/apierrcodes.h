@@ -3,7 +3,6 @@
 
 #include "lv2g.h"
 
-#include "lv2g.h"
 #if defined(LV2G_LIBRARY)
 #include "ui_apierrcodes.h"
 #else
