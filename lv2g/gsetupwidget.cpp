@@ -19,6 +19,7 @@ cGSetupWidget::cGSetupWidget(QMdiArea *par)
     pUi->pushButtonAlarmTest->setDisabled(sounFileAlarm.isEmpty());
     pUi->spinBoxMaxRows->setValue(maxRows);
     pUi->spinBoxDialogRows->setValue(dialogRows);
+    pUi->checkBoxNatMenu->setChecked(!lv2g::getInstance()->nativeMenubar);
 
     connect(pUi->PBApplicateAndRestart,SIGNAL(clicked()),    this,   SLOT(applicateAndRestart()));
     connect(pUi->PBApplicateAndExit,   SIGNAL(clicked()),    this,   SLOT(applicateAndExit()));
@@ -47,6 +48,7 @@ void cGSetupWidget::applicate()
     qset.setValue(lv2g::sDialogRows, lv2g::getInstance()->dialogRows);
     lv2g::getInstance()->soundFileAlarm = pUi->lineEditAlarm->text();
     qset.setValue(lv2g::sSoundFileAlarm, lv2g::getInstance()->soundFileAlarm);
+    qset.setValue(lv2g::sNativeMenubar, QVariant(lv2g::getInstance()->nativeMenubar ? _sFalse : _sTrue));
     qset.sync();
     QSettings::Status st = qset.status();
     if (QSettings::NoError != st) {

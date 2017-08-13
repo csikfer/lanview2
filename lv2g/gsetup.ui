@@ -87,6 +87,20 @@
        </property>
       </widget>
      </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="label_5">
+       <property name="text">
+        <string>Natív menüsáv használata :</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QCheckBox" name="checkBoxNatMenu">
+       <property name="text">
+        <string>tiltás</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>

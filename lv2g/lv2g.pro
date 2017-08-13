@@ -39,7 +39,8 @@ SOURCES += \
     workstation.cpp \
     object_dialog.cpp \
     exports.cpp \
-    deducepatch.cpp
+    deducepatch.cpp \
+    tableexportdialog.cpp
 
 HEADERS +=\
     lv2g_global.h \
@@ -71,7 +72,8 @@ HEADERS +=\
     workstation.h \
     object_dialog.h \
     exports.h \
-    deducepatch.h
+    deducepatch.h \
+    tableexportdialog.h
 
 FORMS += \
     column_filter.ui \
@@ -95,7 +97,8 @@ FORMS += \
     dialogpatchsimple.ui \
     edit_enum_vals.ui \
     exports.ui \
-    deducepatch.ui
+    deducepatch.ui \
+    tableexportdialog.ui
 INCLUDEPATH += ../lv2
 #unix:LIBS += -lsnmp
 msvc:LIBS += -lSecur32

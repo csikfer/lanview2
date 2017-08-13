@@ -3,7 +3,7 @@
 #include "record_tree.h"
 #include "record_link.h"
 #include "cerrormessagebox.h"
-
+#include "tableexportdialog.h"
 
 
 Ui::noRightsForm * noRightsSetup(QWidget *_pWidget, qlonglong _need, const QString& _obj, const QString& _html)
@@ -1794,6 +1794,76 @@ void cRecordTable::takeOut()
         pModel->removeRow(pTableModel()->index(i, 0));
     }
     pUpper->pRightTables->at(1)->refresh();
+}
+
+#define MAXMAXROWS 100000
+
+void cRecordTable::copy()
+{
+    cTableExportDialog  dialog(pWidget());
+    if (QDialog::Accepted != dialog.exec()) return;
+    enum eTableExportWhat   w = dialog.what();
+    enum eTableExportTarget t = dialog.target();
+    enum eTableExportForm   f = dialog.form();
+    QString r;
+    switch (w) {
+    case TEW_NAME:
+        if (t == TET_CLIP && f == TEF_CSV) cRecordsViewBase::copy();
+        else EXCEPTION(EPROGFAIL);
+        return;
+    case TEW_SELECTED:
+        switch (f) {
+        case TEF_CSV:   r = pTableModel()->toCSV(selectedRows());     break;
+        case TEF_HTML:  r = pTableModel()->toHtml(selectedRows());    break;
+        default:        EXCEPTION(EPROGFAIL);
+        }
+    case TEW_VIEWED:
+        switch (f) {
+        case TEF_CSV:   r = pTableModel()->toCSV();     break;
+        case TEF_HTML:  r = pTableModel()->toHtml();    break;
+        default:        EXCEPTION(EPROGFAIL);
+        }
+    case TEW_ALL: {
+        int mr = pTableModel()->maxRows();
+        pTableModel()->_maxRows = MAXMAXROWS;
+        refresh(true);
+        switch (f) {
+        case TEF_CSV:   r = pTableModel()->toCSV();     break;
+        case TEF_HTML:  r = pTableModel()->toHtml();    break;
+        default:        EXCEPTION(EPROGFAIL);
+        }
+        pTableModel()->_maxRows = mr;
+        break;
+    }
+    default:
+        EXCEPTION(EPROGFAIL);
+    }
+    if (r.isEmpty()) {
+        QMessageBox::warning(pWidget(), dcViewShort(DC_ERROR), trUtf8("Nincs adat."));
+        return;
+    }
+    switch (t) {
+    case TET_CLIP:
+        QApplication::clipboard()->setText(r);
+        break;
+    case TET_FILE: {
+        QString path = dialog.path();
+        while (!path.isEmpty()) {
+            QFile f(path);
+            if (f.open(QIODevice::WriteOnly)) {
+                if (0 < f.write(r.toUtf8())) {
+                    f.close();
+                    return;
+                }
+            }
+            QMessageBox::warning(pWidget(), dcViewShort(DC_ERROR), trUtf8("Hiba a fájl kiírásánál."));
+            path = dialog.getOtherPath();
+        }
+    }
+        break;
+    default:
+        EXCEPTION(EPROGFAIL);
+    }
 }
 
 QStringList cRecordTable::filterWhere(QVariantList& qParams)

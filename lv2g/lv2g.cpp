@@ -14,6 +14,7 @@ const QString lv2g::sSoundFileAlarm         = "sound_file_alarm";
 const QString lv2g::sDialogRows             = "dialog-rows";
 const QString lv2g::sHorizontal             = "Horizontal";
 const QString lv2g::sVertical               = "Vertical";
+const QString lv2g::sNativeMenubar          = "nativeMenubar";
 
 lv2g::lv2g() :
     lanView()//,
@@ -21,6 +22,9 @@ lv2g::lv2g() :
 {
     if (lastError != 0) return;
     try {
+        // Ubuntu 16.04 Unity-ben  nincs (nem jelenik meg) a natív menü
+        nativeMenubar = str2bool(pSet->value(sNativeMenubar).toString(), EX_IGNORE);
+        if (!nativeMenubar) QApplication::setAttribute(Qt::AA_DontUseNativeMenuBar);
         new cMainWindow;
         zoneId = NULL_ID;
         #include "errcodes.h"

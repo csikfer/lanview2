@@ -1,6 +1,7 @@
 #include "record_table_model.h"
 #include "record_table.h"
 #include "cerrormessagebox.h"
+#include "report.h"
 
 QString cRecordViewModelBase::sIrrevocable;
 
@@ -338,6 +339,103 @@ cRecordTableModel& cRecordTableModel::clear()
     q.clear();
     return *this;
 }
+
+QList<QStringList>  cRecordTableModel::toStringTable()
+{
+    QList<QStringList> r;
+    int rows    = rowCount(QModelIndex());
+    int columns = columnCount(QModelIndex());
+    int col, row;
+    QStringList lrow;
+    for (col = 0; col <columns; ++col) {
+        lrow << headerData(col, Qt::Horizontal, Qt::DisplayRole).toString();
+    }
+    r << lrow;
+    for (row = 0; row < rows; ++row) {
+        lrow.clear();
+        for (col = 0; col <columns; ++col) {
+            QModelIndex mi = index(row, col);
+            lrow << data(mi, Qt::DisplayRole).toString();
+        }
+        r << lrow;
+    }
+    return r;
+}
+
+QString             cRecordTableModel::toCSV()
+{
+    QString r;
+    foreach (QStringList row, toStringTable()) {
+        foreach (QString cel, row) {
+            r += quotedString(cel) + ';';
+        }
+        r.chop(1);
+        r += '\n';
+    }
+    r.chop(1);
+    return r;
+}
+
+QString             cRecordTableModel::toHtml()
+{
+    QString r;
+    QList<QStringList>  m = toStringTable();
+    QStringList head = m.takeFirst();
+    r = htmlTable(head, m);
+    return r;
+}
+
+QList<QStringList>  cRecordTableModel::toStringTable(QModelIndexList mil)
+{
+    int rows    = rowCount(QModelIndex());
+    int columns = columnCount(QModelIndex());
+    int col, row;
+    QList<int> selectedRows;
+    foreach (QModelIndex mi, mil) {
+        row = mi.row();
+        if (!selectedRows.contains(row)) selectedRows << row;
+    }
+    QList<QStringList> r;
+    QStringList lrow;
+    for (col = 0; col <columns; ++col) {
+        lrow << headerData(col, Qt::Horizontal, Qt::DisplayRole).toString();
+    }
+    r << lrow;
+    for (row = 0; row < rows; ++row) {
+        if (!selectedRows.contains(row)) continue;
+        lrow.clear();
+        for (col = 0; col <columns; ++col) {
+            QModelIndex mi = index(row, col);
+            lrow << data(mi, Qt::DisplayRole).toString();
+        }
+        r << lrow;
+    }
+    return r;
+}
+
+QString             cRecordTableModel::toCSV(QModelIndexList mil)
+{
+    QString r;
+    foreach (QStringList row, toStringTable(mil)) {
+        foreach (QString cel, row) {
+            r += quotedString(cel) + ';';
+        }
+        r.chop(1);
+        r += '\n';
+    }
+    r.chop(1);
+    return r;
+}
+
+QString             cRecordTableModel::toHtml(QModelIndexList mil)
+{
+    QString r;
+    QList<QStringList>  m = toStringTable(mil);
+    QStringList head = m.takeFirst();
+    r = htmlTable(head, m);
+    return r;
+}
+
 
 int cRecordTableModel::setRecords(QSqlQuery& _q, bool _first)
 {

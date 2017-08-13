@@ -77,6 +77,7 @@ public:
     int             dialogRows;
     enum Qt::Orientation    defaultSplitOrientation;
     QString                 soundFileAlarm;
+    bool                    nativeMenubar;
     // Identifier strings
     static const QString    sDefaultSplitOrientation;
     static const QString    sMaxRows;
@@ -84,6 +85,8 @@ public:
     static const QString    sSoundFileAlarm;
     static const QString    sHorizontal;
     static const QString    sVertical;
+    static const QString    sNativeMenubar;
+
     /// Main window object pointer
     static cMainWindow *    pMainWindow;
 protected:

@@ -1137,9 +1137,14 @@ int cInspector::run(QSqlQuery& q, QString& runMsg)
     if (pProcess != NULL) {
         if (checkCmd.isEmpty()) EXCEPTION(EPROGFAIL);
         PDEB(VERBOSE) << "Run : " << checkCmd << " " << checkCmdArgs.join(" ") << endl;
-        int ec = pProcess->startProcess(startTimeOut, stopTimeOut);
-        if (ec == -1) return RS_STAT_SETTED;    // sended: RS_CRITICAL
-        return parse(ec, *pProcess);
+        if ((inspectorType & IT_METHOD_MASK) == IT_METHOD_MUNIN) {
+            return munin(q, runMsg);
+        }
+        else {
+            int ec = pProcess->startProcess(startTimeOut, stopTimeOut);
+            if (ec == -1) return RS_STAT_SETTED;    // sended: RS_CRITICAL
+            return parse(ec, *pProcess);
+        }
     }
     else {
         PDEB(VVERBOSE) << " * NOOP *" << endl;
@@ -1153,21 +1158,13 @@ enum eNotifSwitch cInspector::parse(int _ec, QIODevice& text)
     _DBGFN() <<  name() << endl;
     switch (inspectorType & IT_METHOD_MASK) {
 //  case IT_METHOD_CUSTOM:
-//  case IT_METHOD_CARRIED: return RS_STAT_SETTED;
-    case IT_METHOD_MUNIN:   return parse_munin(_ec, text);
+    case IT_METHOD_CARRIED: return RS_STAT_SETTED;
+    case IT_METHOD_MUNIN:   EXCEPTION(EPROGFAIL);
     case IT_METHOD_NAGIOS:  return parse_nagios(_ec, text);
     case IT_METHOD_QPARSE:  return parse_qparse(_ec, text);
     default:
         EXCEPTION(ENOTSUPP, inspectorType, name());
     }
-    return RS_INVALID;
-}
-
-enum eNotifSwitch cInspector::parse_munin(int _ec, QIODevice &text)
-{
-    (void)_ec;
-    (void)text;
-    EXCEPTION(ENOTSUPP);    // majd...
     return RS_INVALID;
 }
 
@@ -1227,6 +1224,12 @@ enum eNotifSwitch cInspector::parse_qparse(int _ec, QIODevice& text)
     _DBGFNL() << name() << " : " << (ok ? "OK" : "INVALID") << endl;
     return ok ? RS_ON : RS_INVALID;
 }
+
+enum eNotifSwitch cInspector::munin(QSqlQuery& q, QString& runMsg)
+{
+    return RS_INVALID;
+}
+
 
 void cInspector::start()
 {

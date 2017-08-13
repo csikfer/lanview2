@@ -397,6 +397,8 @@ public:
     void last();
     void putIn();
     void takeOut();
+    void copy();
+
 
     void setEditButtons();
     void setPageButtons();

@@ -110,6 +110,11 @@ cDeducePatch::cDeducePatch(QMdiArea *par)
 
 }
 
+cDeducePatch::~cDeducePatch()
+{
+
+}
+
 void cDeducePatch::clearTable()
 {
     foreach (cDPRow *p, rows) {

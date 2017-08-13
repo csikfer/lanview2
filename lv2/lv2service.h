@@ -131,7 +131,7 @@ public:
     cInspectorProcess(cInspector *pp);
     /// A inspector objektumban meghatározott checkCmd paramcsot elindítja,
     /// megvárja, míg elindul. Ezután, ha a sync igaz, akkor megvárja míg kilép.
-    /// Ha viszint sync hamis, akkor csatlakoztatja a processFinished(), és
+    /// Ha viszont sync hamis, akkor csatlakoztatja a processFinished(), és
     /// processReadyRead() slot-okat.
     /// Hiba esetén dob egy kizárást.
     /// @param startTo Maximális várakozási dő a parancs indulására millisec-ben, alapértelmezetten 5 másodperc.
@@ -336,9 +336,9 @@ protected:
     int getInspectorTiming(const QString &value);
     int getInspectorProcess(const QString &value);
     int getInspectorMethod(const QString &value);
-    enum eNotifSwitch parse_munin(int _ec, QIODevice &text);
     enum eNotifSwitch parse_nagios(int _ec, QIODevice &text);
     enum eNotifSwitch parse_qparse(int _ec, QIODevice &text);
+    enum eNotifSwitch munin(QSqlQuery &q, QString &runMsg);
 public:
     /// A szolgáltatás cService objektumára mutató referenciával tér vissza
     /// @param __ex Ha értéke true, és nem ismert a szolgáltatás objektum (pService értéke NULL) akkor dob egy kizárást
