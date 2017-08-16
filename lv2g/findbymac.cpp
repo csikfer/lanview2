@@ -6,6 +6,8 @@
 
 #include "ui_findbymac.h"
 
+const enum ePrivilegeLevel cFindByMac::rights = PL_VIEWER;
+
 cFindByMac::cFindByMac(QMdiArea *parent) :
     cIntSubObj(parent),
     pUi(new Ui::FindByMac)

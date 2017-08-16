@@ -1,5 +1,4 @@
 #include "report.h"
-#include "lv2link.h"
 #include "srvdata.h"
 #include "guidata.h"
 
@@ -172,4 +171,87 @@ QString reportByMac(QSqlQuery& q, const QString& sMac)
     }
     text += line;
     return text;
+}
+
+QString linksHtmlTable(QSqlQuery& q, tRecordList<cPhsLink>& list, bool _swap)
+{
+    QString table;
+    table += "\n<table border=\"1\"> ";
+    QStringList head;
+    head << QObject::trUtf8("Cél port")
+         << QObject::trUtf8("Megosztás")
+         << QObject::trUtf8("Típus")
+         << QObject::trUtf8("Megosztás")
+         << QObject::trUtf8("Megjegyzés")
+         << QObject::trUtf8("Létrehozva")
+         << QObject::trUtf8("Felhasználó")
+         << QObject::trUtf8("Modosítva")
+         << QObject::trUtf8("Felhasználó");
+    table += htmlTableLine(head, "th");
+    int i, n = list.size();
+    for (i = 0; i < n; ++i) {
+        cPhsLink& link = *list[i];
+        if (_swap) link.swap();
+        cNPort *p = cNPort::getPortObjById(q, link.getId(__sPortId2));
+        ePhsLinkType t = (ePhsLinkType)link.getId(_sPhsLinkType2);
+        QStringList col;
+        col << p->getFullName(q)
+            << (p->tableoid() == cNPort::tableoid_pports() ?  p->getName(_sSharedCable) : _sNul)
+            << phsLinkType(t)
+            << (t == LT_FRONT ? link.getName(_sPortShared) : _sNul)
+            << link.getNote()
+            << link.getName(_sCreateTime)
+            << link.view(q, _sCreateUserId)
+            << link.getName(_sModifyTime)
+            << link.view(q, _sModifyUserId);
+        table += htmlTableLine(col, "td");
+        delete p;
+    }
+    table += "</table>\n";
+    return table;
+}
+
+/// \brief linkColisionTest
+/// \return A link statusz (IS_OK vagy IS_COLLISION)
+/// @param q
+/// @param exists Ha a link már létezik, akkor értéke true lesz, egyébként false.
+/// @param _pl A link rekord
+/// @param msg  Üzenet string referencia. HTML stringként ide kerülnek az ötköző linkek.
+/// @return Ha van ütközés, akkor true-val tér vissza.
+bool linkColisionTest(QSqlQuery& q, bool& exists, const cPhsLink& _pl, QString& msg)
+{
+    DBGFN();
+    msg.clear();
+    cPhsLink link;  // Munka objektum
+    tRecordList<cPhsLink> list; // Ütközők listája
+    bool r;
+    exists = false;
+    link.collisions(q, list, _pl.getId(_sPortId1), (ePhsLinkType)_pl.getId(_sPhsLinkType1), (ePortShare)_pl.getId(_sPortShared));
+    link.collisions(q, list, _pl.getId(_sPortId2), (ePhsLinkType)_pl.getId(_sPhsLinkType2), (ePortShare)_pl.getId(_sPortShared));
+    if (list.size()) {
+        list.removeDuplicates();    // Beolvasott rekordok, van ID,
+        for (int i = 0; i < list.size(); ++i) { // Ha esetleg már létezik a rekord, az is a listában lesz, meg kell keresni
+            if (_pl.compare(*list.at(i), true)) {   // nem ID szerinti összehasonlítás, felcserélt iránnyal is
+                exists = true;
+                delete list.takeAt(i);
+            }
+        }
+    }
+    if (exists) {
+        msg += htmlInfo(QObject::trUtf8("A megadott link már létezik."));
+    }
+    if (list.size() > 0) {
+        msg += htmlInfo(QObject::trUtf8("A megadott link a következő link(ek)el ütközik:"));
+        msg += linksHtmlTable(q, list);
+        r = true;
+        if (exists) {
+            msg = QObject::trUtf8("Létező link nem ütközhet más linkekkel. Adatbázis hiba!\n") + msg;
+            EXCEPTION(EDATA, 0, msg);
+        }
+    }
+    else {
+        r = false;
+    }
+    _DBGFNL() << r << endl;
+    return r;
 }

@@ -25,6 +25,7 @@ enum eIntSubWin {          /// Egyedi GUI tab widget elemek
     INT_HSOP,           /// a szervíz példányok (host_services) állpot manipuláció, riasztás tiltások
     INT_FINDMAC,        /// Keresés egy MAC-re
     INT_WORKSTATION,    /// Új munkaállomás, vagy modosítás űrlap
+    INT_DEDUCEPATCH,    /// Falikábel felfedezés
     INT_ENUMEDIT
 };
 

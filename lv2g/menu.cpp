@@ -10,6 +10,7 @@
 #include "findbymac.h"
 #include "apierrcodes.h"
 #include "workstation.h"
+#include "deducepatch.h"
 #include "object_dialog.h"
 
 QMap<QString, QAction *>  cMenuAction::actionsMap;
@@ -52,46 +53,25 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QMdiArea 
     }
     else if (!(feature = pmi->feature("own")).isEmpty()) { // "own"    Egyedi előre definiált cOwnTab leszármazott hívása
         enum ePrivilegeLevel rights = PL_SYSTEM;
-        if (0 == feature.compare("setup", Qt::CaseInsensitive)) {            // "setup"      Alap beállítások szerkesztése widget
-            intType = INT_SETUP;
-            rights = cSetupWidget::rights;
+#define _SETINTWIN(S, D, C) \
+        if (0 == feature.compare(S, Qt::CaseInsensitive)) { \
+            intType = D; \
+            rights = C::rights; \
         }
-        else if (0 == feature.compare("gsetup", Qt::CaseInsensitive)) {      // "gsetup"     GUI beállítások szerkesztése widget
-            intType = INT_GSETUP;
-            rights = cGSetupWidget::rights;
-        }
-        else if (0 == feature.compare("parser", Qt::CaseInsensitive)) {      // "parser"     A parser widget
-            intType = INT_PARSER;
-            rights = cParseWidget::rights;
-        }
-        else if (0 == feature.compare("export", Qt::CaseInsensitive)) {      // "export"     A export widget
-            intType = INT_EXPORT;
-            rights = cExportsWidget::rights;
-        }
-        else if (0 == feature.compare("olalarm", Qt::CaseInsensitive)) {     // "olalarm"    On-Line riasztások widget
-            intType = INT_OLALARM;
-            rights = cOnlineAlarm::rights;
-        }
-        else if (0 == feature.compare("errcodes", Qt::CaseInsensitive)) {    // "errcodes"   API hibakódok
-            intType = INT_ERRCODES;
-            rights = cErrcodesWidget::rights;
-        }
-        else if (0 == feature.compare("hsop", Qt::CaseInsensitive)) {       // "hsop"   host-services állpot man.
-            intType = INT_HSOP;
-            rights = cHSOperate::rights;
-        }
-        else if (0 == feature.compare("findmac", Qt::CaseInsensitive)) {    // "findmac"
-            intType = INT_FINDMAC;
-            rights = PL_VIEWER;
-        }
-        else if (0 == feature.compare(_sWorkstation, Qt::CaseInsensitive)) { // "workstation"
-            intType = INT_WORKSTATION;
-            rights = PL_VIEWER;
-        }
-        else if (0 == feature.compare("enumedit", Qt::CaseInsensitive)) { // "workstation"
-            intType = INT_ENUMEDIT;
-            rights = cEnumValsEdit::rights;
-        }
+#define SETINTWIN(S, D, C) else _SETINTWIN(S, D, C)
+       _SETINTWIN("setup",      INT_SETUP,      cSetupWidget)
+        SETINTWIN("gsetup",     INT_GSETUP,     cGSetupWidget)
+        SETINTWIN("parser",     INT_PARSER,     cParseWidget)
+        SETINTWIN("export",     INT_EXPORT,     cExportsWidget)
+        SETINTWIN("olalarm",    INT_OLALARM,    cOnlineAlarm)
+        SETINTWIN("errcodes",   INT_ERRCODES,   cErrcodesWidget)
+        SETINTWIN("hsop",       INT_HSOP,       cHSOperate)
+        SETINTWIN("findmac",    INT_FINDMAC,    cFindByMac)
+        SETINTWIN(_sWorkstation,INT_WORKSTATION,cWorkstation)
+        SETINTWIN("enumedit",   INT_ENUMEDIT,   cEnumValsEdit)
+        SETINTWIN("deducepatch",INT_DEDUCEPATCH,cDeducePatch)
+#undef SETINTWIN
+#undef _SETINTWIN
         else {
             if (__ex) EXCEPTION(ENONAME, -1, feature);
             return;
@@ -163,22 +143,24 @@ A jelenleg implementállt lehetőségek:
 | hsop       | INT_HSOP       | cHSOperate      | host-services állapot man.  |
 | findmac    | INT_FINDMAC    | cFindByMac      | MAC keresés                 |
 | workstation| INT_WORKSTATION| cWorkstation    | Munkaállomás új/modosít     |
+| deducepath | INT_DEDUCEPATCH| cDeducePatch    | Fali kábel fefedező         |
 | enumedit   | INT_ENUMEDIT   | cEnumValsEdit   | Enumerációk                 |
  */
 void cMenuAction::initInt()
 {
     switch (intType) {
-#define CREATEINTWIN(c,t)    case INT_##c: pIntSubObj = new t(pMdiArea); break
-    CREATEINTWIN(SETUP,      cSetupWidget);
-    CREATEINTWIN(GSETUP,     cGSetupWidget);
-    CREATEINTWIN(PARSER,     cParseWidget);
-    CREATEINTWIN(EXPORT,     cExportsWidget);
-    CREATEINTWIN(OLALARM,    cOnlineAlarm);
-    CREATEINTWIN(ERRCODES,   cErrcodesWidget);
-    CREATEINTWIN(HSOP,       cHSOperate);
-    CREATEINTWIN(FINDMAC,    cFindByMac);
-    CREATEINTWIN(WORKSTATION,cWorkstation);
-    CREATEINTWIN(ENUMEDIT,   cEnumValsEdit);
+#define CREATEINTWIN(D,C)    case D: pIntSubObj = new C(pMdiArea); break
+    CREATEINTWIN(INT_SETUP,      cSetupWidget);
+    CREATEINTWIN(INT_GSETUP,     cGSetupWidget);
+    CREATEINTWIN(INT_PARSER,     cParseWidget);
+    CREATEINTWIN(INT_EXPORT,     cExportsWidget);
+    CREATEINTWIN(INT_OLALARM,    cOnlineAlarm);
+    CREATEINTWIN(INT_ERRCODES,   cErrcodesWidget);
+    CREATEINTWIN(INT_HSOP,       cHSOperate);
+    CREATEINTWIN(INT_FINDMAC,    cFindByMac);
+    CREATEINTWIN(INT_WORKSTATION,cWorkstation);
+    CREATEINTWIN(INT_DEDUCEPATCH,cDeducePatch);
+    CREATEINTWIN(INT_ENUMEDIT,   cEnumValsEdit);
 #undef CREATEINTWIN
     default:
         EXCEPTION(EPROGFAIL);

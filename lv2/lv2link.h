@@ -75,6 +75,8 @@ public:
     /// @param type Link típusa (csak LT_BACK vagy LT_FRONT lehet, különben kizárást dob)
     /// @param Megosztás típusa
     bool nextLink(QSqlQuery &q, qlonglong pid, enum ePhsLinkType type, enum ePortShare sh);
+    ///
+    bool compare(const cPhsLink& _o, bool _swap = false) const;
 private:
     QString show12(QSqlQuery &q, bool _12) const;
 };

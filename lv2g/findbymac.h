@@ -14,6 +14,7 @@ class LV2GSHARED_EXPORT cFindByMac : public cIntSubObj
 public:
     explicit cFindByMac(QMdiArea *parent = 0);
     ~cFindByMac();
+    static const enum ePrivilegeLevel rights;
 private:
     Ui::FindByMac *pUi;
     QSqlQuery *pq;

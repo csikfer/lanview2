@@ -192,6 +192,12 @@ bool cPhsLink::addIfCollision(QSqlQuery &q, tRecordList<cPhsLink>& list, qlonglo
     return true;
 }
 
+/// A porthoz magadandó fizikai link mely más fizikai linkekkel ütközik ? Az ütköző link rekordokat beolvassa.
+/// @param __q
+/// @param list Az ütköző link rekordok konténere (kimenet). Nem törli a konténert, hanem hozzáadja a találatokat.
+/// @param __pid A port ID
+/// @param __t a link típusa
+/// @param __s megosztás típusa. Ha nem adható meg megosztás, akkor figyelmen kívül hagyja.
 int cPhsLink::collisions(QSqlQuery& __q, tRecordList<cPhsLink>& list, qlonglong __pid, ePhsLinkType __t, ePortShare __s)
 {
     switch (__t) {
@@ -380,6 +386,25 @@ bool cPhsLink::nextLink(QSqlQuery& q, qlonglong pid, enum ePhsLinkType type, enu
     execSql(q, sql, getId(), pid, phsLinkType(type), portShare(sh));
     set(q);
     return isNull(idIndex());
+}
+
+bool cPhsLink::compare(const cPhsLink& _o, bool _swap) const
+{
+    if (getName(_sPortShared) != _o.getName(_sPortShared))    return false;
+    while (true) {
+        if (getId(_sPortId1)      != _o.getId(_sPortId1))       break;
+        if (getId(_sPortId2)      != _o.getId(_sPortId2))       break;
+        if (getId(_sPhsLinkType1) != _o.getId(_sPhsLinkType1))  break;
+        if (getId(_sPhsLinkType2) != _o.getId(_sPhsLinkType2))  break;
+        return true;        // mind egyezett
+        if (_swap) break;   // megprobáljuk fordítva ?
+        return false;       // kész, nem egyezett
+    }
+    if (getId(_sPortId1)      != _o.getId(_sPortId2))       return false;
+    if (getId(_sPortId2)      != _o.getId(_sPortId1))       return false;
+    if (getId(_sPhsLinkType1) != _o.getId(_sPhsLinkType2))  return false;
+    if (getId(_sPhsLinkType2) != _o.getId(_sPhsLinkType1))  return false;
+    return true;
 }
 
 /* ----------------------------------------------------------------- */

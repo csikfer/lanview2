@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1129</width>
+    <width>1267</width>
     <height>884</height>
    </rect>
   </property>
@@ -19,14 +19,14 @@
      <item>
       <layout class="QGridLayout" name="gridLayoutLeft">
        <item row="0" column="0">
-        <widget class="QLabel" name="labelZoneLeft">
+        <widget class="QLabel" name="labelZone">
          <property name="text">
           <string>Zóna :</string>
          </property>
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="QComboBox" name="comboBoxZoneLeft">
+        <widget class="QComboBox" name="comboBoxZone">
          <property name="sizePolicy">
           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -36,24 +36,24 @@
         </widget>
        </item>
        <item row="1" column="0">
-        <widget class="QLabel" name="labelPlaceLeft">
+        <widget class="QLabel" name="labelPlace">
          <property name="text">
           <string>Hely :</string>
          </property>
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QComboBox" name="comboBoxPlaceLeft"/>
+        <widget class="QComboBox" name="comboBoxPlace"/>
        </item>
        <item row="2" column="0">
-        <widget class="QLabel" name="labelPatchLeft">
+        <widget class="QLabel" name="labelPatch">
          <property name="text">
           <string>Panel :</string>
          </property>
         </widget>
        </item>
        <item row="2" column="1">
-        <widget class="QComboBox" name="comboBoxPatchLeft"/>
+        <widget class="QComboBox" name="comboBoxPatch"/>
        </item>
       </layout>
      </item>
@@ -71,6 +71,39 @@
       </spacer>
      </item>
      <item>
+      <widget class="QGroupBox" name="groupBox">
+       <property name="title">
+        <string>Módszer</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <widget class="QRadioButton" name="radioButtonLLDP">
+          <property name="text">
+           <string>LLDP alapján</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="radioButtonMAC">
+          <property name="text">
+           <string>Címtáblák alapján</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="radioButtonTag">
+          <property name="text">
+           <string>Azonos cimke</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
       <layout class="QVBoxLayout" name="verticalLayoutButtons">
        <item>
         <widget class="QPushButton" name="pushButtonStart">
@@ -81,19 +114,6 @@
           <string>Start</string>
          </property>
         </widget>
-       </item>
-       <item>
-        <spacer name="verticalSpacerButtons">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
        </item>
        <item>
         <widget class="QPushButton" name="pushButtonSave">
@@ -123,14 +143,20 @@
      <item>
       <layout class="QGridLayout" name="gridLayoutRight">
        <item row="0" column="0">
-        <widget class="QLabel" name="labelZoneRight">
+        <widget class="QLabel" name="labelZone2">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="text">
           <string>Zóna :</string>
          </property>
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="QComboBox" name="comboBoxZoneRight">
+        <widget class="QComboBox" name="comboBoxZone2">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -140,20 +166,34 @@
         </widget>
        </item>
        <item row="2" column="1">
-        <widget class="QComboBox" name="comboBoxPatchRight"/>
+        <widget class="QComboBox" name="comboBoxPatch2">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+        </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QComboBox" name="comboBoxPlaceRight"/>
+        <widget class="QComboBox" name="comboBoxPlace2">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+        </widget>
        </item>
        <item row="2" column="0">
-        <widget class="QLabel" name="labelPatchRight">
+        <widget class="QLabel" name="labelPatch2">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="text">
           <string>Panel :</string>
          </property>
         </widget>
        </item>
        <item row="1" column="0">
-        <widget class="QLabel" name="labelPlaceRight">
+        <widget class="QLabel" name="labelPlace2">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="text">
           <string>Hely :</string>
          </property>
@@ -173,7 +213,7 @@
      </attribute>
      <column>
       <property name="text">
-       <string>Patch port (bal)</string>
+       <string>Végponti port</string>
       </property>
      </column>
      <column>
@@ -183,12 +223,7 @@
      </column>
      <column>
       <property name="text">
-       <string>Hálózati elem</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Port</string>
+       <string>Patch port</string>
       </property>
      </column>
      <column>
@@ -232,12 +267,7 @@ LLDP alapján, ütközés a címtáblával.&lt;/p&gt;
      </column>
      <column>
       <property name="text">
-       <string>Port</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Hálózati elem</string>
+       <string>Patch port</string>
       </property>
      </column>
      <column>
@@ -247,7 +277,7 @@ LLDP alapján, ütközés a címtáblával.&lt;/p&gt;
      </column>
      <column>
       <property name="text">
-       <string>Patch port (jobb)</string>
+       <string>Végponti port</string>
       </property>
      </column>
     </widget>
@@ -255,5 +285,102 @@ LLDP alapján, ütközés a címtáblával.&lt;/p&gt;
   </layout>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>radioButtonTag</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>comboBoxZone2</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>550</x>
+     <y>138</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1179</x>
+     <y>39</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButtonTag</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>comboBoxPlace2</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>550</x>
+     <y>138</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1179</x>
+     <y>88</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButtonTag</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>comboBoxPatch2</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>550</x>
+     <y>138</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1179</x>
+     <y>137</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButtonTag</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>labelZone2</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>550</x>
+     <y>138</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1070</x>
+     <y>39</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButtonTag</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>labelPatch2</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>550</x>
+     <y>138</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1070</x>
+     <y>137</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButtonTag</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>labelPlace2</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>550</x>
+     <y>138</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1070</x>
+     <y>88</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

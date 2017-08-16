@@ -35,6 +35,7 @@ class LV2GSHARED_EXPORT cWorkstation : public cIntSubObj
 public:
     cWorkstation(QMdiArea *parent = 0);
     ~cWorkstation();
+    static const enum ePrivilegeLevel rights;
 private:
     /// A komboBox-okhoz legenerálja az állandó listákat.
     void _initLists();

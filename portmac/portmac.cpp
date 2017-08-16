@@ -389,7 +389,7 @@ void cRightMac::checkMacs(QSqlQuery& q, const QSet<cMac>& macs)
             msg  = trUtf8("Nincs engedélyezetlen MAC. Talált cím lista : %1").arg(slAuth.join(sep));
         }
         else {
-            stat = _sOff;
+            stat = _sCritical;
             msg  = trUtf8("Engedélyezetlen MAC : %1. Talált cím lista : %2").arg(slUnauth.join(sep) ,slAuth.join(sep));
         }
     }

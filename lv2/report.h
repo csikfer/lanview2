@@ -3,6 +3,7 @@
 #include "lanview.h"
 #include "lv2data.h"
 #include "guidata.h"
+#include "lv2link.h"
 
 static inline QString tag(const QString& t) {
     QString r = "<" + t;
@@ -58,5 +59,8 @@ QString list2html(QSqlQuery& q, const tRecordList<R>& list, cTableShape& shape, 
 
 EXT_ QString reportByMac(QSqlQuery& q, const QString& aMac);
 
+EXT_ QString linksHtmlTable(QSqlQuery& q, tRecordList<cPhsLink>& list, bool _swap = false);
+
+EXT_ bool linkColisionTest(QSqlQuery& q, bool& exists, const cPhsLink& _pl, QString& msg);
 
 #endif // REPORT_H

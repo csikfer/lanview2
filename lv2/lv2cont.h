@@ -585,6 +585,21 @@ public:
         QList<T *>::removeAt(ix);
         return p;
     }
+    /// Eltávolítja a duplikált elemeket. Az összehasonlítást a rekord ID-k alapján végzi! A rekord ID-nek léteznie kell, és az értékük nem lehet NULL.
+    int removeDuplicates() {
+        int r = 0;
+        for (int i = 0; i < QList<T *>::size(); ++i) {
+            const T& o = *QList<T *>::at(i);
+            for (int j = i +1; j < QList<T *>::size(); ++j) {
+                if (o == *QList<T *>::at(j)) {
+                    delete pullAt(j);
+                    --j;
+                    ++r;
+                }
+            }
+        }
+        return r;
+    }
 };
 
 template<class T> QTextStream& operator<<(QTextStream& __t, const tRecordList<T>& __v)

@@ -10,44 +10,6 @@
 #include "ui_phslinkform.h"
 #include "report.h"
 
-static QString _linkTable(QSqlQuery& q, tRecordList<cPhsLink>& list, bool _swap = false)
-{
-    QString table;
-    table += "\n<table border=\"1\"> ";
-    QStringList head;
-    head << QObject::trUtf8("Cél port")
-         << QObject::trUtf8("Megosztás")
-         << QObject::trUtf8("Típus")
-         << QObject::trUtf8("Megosztás")
-         << QObject::trUtf8("Megjegyzés")
-         << QObject::trUtf8("Létrehozva")
-         << QObject::trUtf8("Felhasználó")
-         << QObject::trUtf8("Modosítva")
-         << QObject::trUtf8("Felhasználó");
-    table += htmlTableLine(head, "th");
-    int i, n = list.size();
-    for (i = 0; i < n; ++i) {
-        cPhsLink& link = *list[i];
-        if (_swap) link.swap();
-        cNPort *p = cNPort::getPortObjById(q, link.getId(__sPortId2));
-        ePhsLinkType t = (ePhsLinkType)link.getId(_sPhsLinkType2);
-        QStringList col;
-        col << p->getFullName(q)
-            << (p->tableoid() == cNPort::tableoid_pports() ?  p->getName(_sSharedCable) : _sNul)
-            << phsLinkType(t)
-            << (t == LT_FRONT ? link.getName(_sPortShared) : _sNul)
-            << link.getNote()
-            << link.getName(_sCreateTime)
-            << link.view(q, _sCreateUserId)
-            << link.getName(_sModifyTime)
-            << link.view(q, _sModifyUserId);
-        table += htmlTableLine(col, "td");
-        delete p;
-    }
-    table += "</table>\n";
-    return table;
-}
-
 /// \brief linkText
 /// \return A link statusz (IS_OK vagy IS_COLLISION)
 /// @param stat link status
@@ -74,7 +36,7 @@ static int _linkTest(QSqlQuery& q, int stat, bool modify, qlonglong _pid, qlongl
     }
     if (list.size() > 0) {
         msg += htmlInfo(QObject::trUtf8("A megadott link a következő link(ek)el ütközik:"));
-        msg += _linkTable(q, list);
+        msg += linksHtmlTable(q, list);
         r = IS_COLLISION;
     }
     else {
@@ -102,7 +64,7 @@ static int _linkTest(QSqlQuery& q, int stat, bool modify, qlonglong _pid, qlongl
             else {
                 msg += htmlInfo(QObject::trUtf8("A linkek lánca, csonka, nem ér el a másik végpontig :"));
             }
-            msg += _linkTable(q, list);
+            msg += linksHtmlTable(q, list);
             if (link.getId(_sPhsLinkType2) != LT_TERM && list.size() > 10) msg += htmlError("...");
         }
     }
@@ -130,6 +92,8 @@ static void buttonCheckEnable(QButtonGroup * pGroup, int id, bool check, bool en
 }*/
 
 /* ************************************************************************************************* */
+
+const enum ePrivilegeLevel cWorkstation::rights = PL_OPERATOR;
 
 cWorkstation::cWorkstation(QMdiArea *parent) :
     cIntSubObj(parent),

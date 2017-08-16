@@ -1848,6 +1848,7 @@ void cPatch::clearIdsOnly()
 
 int cPatch::fetchPorts(QSqlQuery& __q)
 {
+    ports.clear();
     int n = 0;
     // A ports objektum fetch metódusa csak azonos rekord típusok esetén jó. Igaz, hogy egy típus van, de az nam az alap típus.
     cPPort p;
@@ -1855,7 +1856,7 @@ int cPatch::fetchPorts(QSqlQuery& __q)
     if (p.completion(__q)) do {
         ports << p;
         ++n;
-    } while (__q.next());
+    } while (p.next(__q));
     containerValid |= CV_PORTS;
     return n;
 }
