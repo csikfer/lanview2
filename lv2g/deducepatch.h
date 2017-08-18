@@ -2,6 +2,7 @@
 #define DEDUCEPATCH_H
 #include "lv2g.h"
 #include "lv2link.h"
+#include "srvdata.h"
 #include "lv2models.h"
 
 class cSelectNode : public QObject {
@@ -42,11 +43,14 @@ public:
     /// @param ppl Bal oldali patch port
     /// @param pll Fizikai link objektum il és ppl között.
     /// @param plr Jobb oldali patch porthoz tartozó végponti front link objektum
-    cDPRow(QSqlQuery& q, cDeducePatch *par, int _row, cNPort& il, cPPort& ppl, cPhsLink& pll, cPhsLink& plr);
+    cDPRow(QSqlQuery& q, cDeducePatch *par, int _row, cMacTab& mt, cNPort& il, cPPort& ppl, cPhsLink& pll, cPhsLink& plr);
+    cDeducePatch * parent;
     QTableWidget * pTable;
     const int      row;
     QCheckBox    * pCheckBox;
     cPhsLink       phsLink;
+private slots:
+    void checkBoxchange(bool f);
 };
 
 

@@ -1,5 +1,4 @@
 #include "deducepatch.h"
-#include "srvdata.h"
 #include "report.h"
 
 cSelectNode::cSelectNode(QComboBox *_pZone, QComboBox *_pPLace, QComboBox *_pNode, QLineEdit *_pFilt, const QString& _cFilt)
@@ -93,16 +92,18 @@ void cSelectNode::_nodeChanged(int ix)
 enum eFieldIx {
     CX_NPORT_LEFT, CX_SHARE_LEFT, CX_PPORT_LEFT,
     CX_STATE, CX_SAVE,
-    CX_PPORT_RIGHT, CX_SHARE_RIGHT, CX_NPORT_RIGHT
+    CX_PPORT_RIGHT, CX_SHARE_RIGHT, CX_NPORT_RIGHT,
+    CX_TIMES
 };
 
-cDPRow::cDPRow(QSqlQuery& q, cDeducePatch *par, int _row, cNPort &il, cPPort& ppl, cPhsLink& pll, cPhsLink& plr)
-    :QObject(par), pTable(par->pUi->tableWidget), row(_row)
+cDPRow::cDPRow(QSqlQuery& q, cDeducePatch *par, int _row, cMacTab &mt, cNPort &il, cPPort& ppl, cPhsLink& pll, cPhsLink& plr)
+    :QObject(par), parent(par), pTable(par->pUi->tableWidget), row(_row)
 {
     pCheckBox = NULL;
-    cPPort ppr;
+    cPPort ppr;     // Jobb oldali patch-port
     ppr.setById(q, plr.getId(_sPortId2));
     ePortShare sh = (ePortShare)ppl.getId(_sSharedCable);   // Ez nem a rekord beli share, hanem az eredő (ld.: nextLink() !)
+    (void)sh;   //
     ppl.setById(q); // újraolvassuk
 
     pTable->setRowCount(row +1);
@@ -112,17 +113,19 @@ cDPRow::cDPRow(QSqlQuery& q, cDeducePatch *par, int _row, cNPort &il, cPPort& pp
     phsLink.setId(_sPortId2, ppr.getId());
     phsLink.setId(_sPhsLinkType2, LT_BACK);
     phsLink.setId(_sPortShared, ES_);   // back-back nincs (nem lehet) megosztás a rekordban
+    bool reapeat = parent->findLink(phsLink);
     bool exists;
     QString colMsg;
-    bool colision = linkColisionTest(q, exists, phsLink, colMsg);
+    bool colision;
+    colision = linkColisionTest(q, exists, phsLink, colMsg);
     // Hátlapi megosztésok ellenörzése:
     ePortShare ppshl = (ePortShare)ppl.getId(_sSharedCable);
     ePortShare ppshr = (ePortShare)ppr.getId(_sSharedCable);
-    bool bBckShMism = ppshl != ppshr; // Ha nem OK
+    bool bBckShMism = ppshl != ppshr; // Ha nem OK (nem biztos, hogy hiba, operátor ellenőrizze!)
 
     qlonglong spidl = ppl.getId(_sSharedPortId);
     qlonglong spidr = ppr.getId(_sSharedPortId);
-    bool bBckShared = (!bBckShMism) && (spidl != NULL_ID || spidr != NULL_ID); // megosztott
+    bool bBckShared = spidl != NULL_ID || spidr != NULL_ID; // Mégosztott, másodlagos port
     // stat...
     QString state = QString("<b><u>MAC</u></b> ");
     QString sToolTip = htmlInfo(trUtf8("A port címtáblák alapján talált hátlapi csatlakozás."));
@@ -132,11 +135,12 @@ cDPRow::cDPRow(QSqlQuery& q, cDeducePatch *par, int _row, cNPort &il, cPPort& pp
     bool bTag  = pptagl.compare(pptagr, Qt::CaseInsensitive);
     if (bTag) {
         state    += "<b>TAG</b> ";
-        sToolTip += htmlInfo(QObject::trUtf8("A patch port cimkék azonosak : '%1'.").arg(pptagl));
+        sToolTip += htmlInfo(QObject::trUtf8("A patch port cimkék azonosak : '%1'.").arg(pptagl.toHtmlEscaped()));
     }
     else {
         state    += "<s>TAG</s> ";
-        sToolTip += htmlInfo(QObject::trUtf8("A patch port cimkék nem azonosak : '%1' <> '%2'.").arg(pptagl, pptagr));
+        sToolTip += htmlInfo(QObject::trUtf8("Nincsenek patch port cimkék, vagy nem nem azonosak : '%1' &ne; '%2'.")
+                             .arg(pptagl.toHtmlEscaped(), pptagr.toHtmlEscaped()));
     }
     // Van LLDP link a két végpont között?
     bool bLLDP = cLldpLink().isLinked(q, il.getId(), plr.getId(_sPortId1));
@@ -150,7 +154,7 @@ cDPRow::cDPRow(QSqlQuery& q, cDeducePatch *par, int _row, cNPort &il, cPPort& pp
     }
     if (bBckShMism) {
         sToolTip += htmlWarning(trUtf8("Ellenőrizze a megosztásokat!"));
-        state += "! ";
+        state += "<font color=\"red\"><b>!</b></font>";
     }
     if (bBckShared) {
         sToolTip += htmlError(trUtf8("A hátlapi megosztáshoz tartozó kapcsolat, nem tartozhat hozzá link rekord."));
@@ -183,8 +187,8 @@ cDPRow::cDPRow(QSqlQuery& q, cDeducePatch *par, int _row, cNPort &il, cPPort& pp
     pTable->setItem(row, CX_PPORT_LEFT, pi);
 
 
-    if (exists) {
-        pi = new QTableWidgetItem(_sOk);
+    if (exists || reapeat) {
+        pi = new QTableWidgetItem(reapeat ? "=" : _sOk);
         pTable->setItem(row, CX_SAVE, pi);
     }
     else {
@@ -214,9 +218,17 @@ cDPRow::cDPRow(QSqlQuery& q, cDeducePatch *par, int _row, cNPort &il, cPPort& pp
     pi = new QTableWidgetItem(cNPort().getFullNameById(q, plr.getId(_sPortId1)));
     pTable->setItem(row, CX_NPORT_RIGHT, pi);
 
+    s = mt.getName(_sFirstTime) + " < " + mt.getName(_sLastTime);
+    pi = new QTableWidgetItem(s);
+    pTable->setItem(row, CX_TIMES, pi);
+
 }
 
-
+void cDPRow::checkBoxchange(bool f)
+{
+    if (f) parent->pUi->pushButtonSave->setEnabled(true);
+    else   parent->setButtons();
+}
 
 /* --- */
 
@@ -277,6 +289,12 @@ void cDeducePatch::clearTable()
 
 void cDeducePatch::byLLDP(QSqlQuery& q)
 {
+    if (pUi->tableWidget->columnCount() < (CX_TIMES + 1)) {
+        pUi->tableWidget->setColumnCount(CX_TIMES +1);
+    }
+    QTableWidgetItem *pi = new QTableWidgetItem(trUtf8("Első < utolsó"));
+    pi->setToolTip(trUtf8("Az LLDP link észlelésének időintervalluma."));
+    pUi->tableWidget->setHorizontalHeaderItem(CX_TIMES, pi);
 
 }
 
@@ -300,6 +318,12 @@ static bool findMac(QSqlQuery& q, const cMac& mac, cMacTab& mt, cPhsLink& pl)
 
 void cDeducePatch::byMAC(QSqlQuery& q)
 {
+    if (pUi->tableWidget->columnCount() < (CX_TIMES + 1)) {
+        pUi->tableWidget->setColumnCount(CX_TIMES +1);
+    }
+    QTableWidgetItem *pi = new QTableWidgetItem(trUtf8("Első < utolsó"));
+    pi->setToolTip(trUtf8("A MAC cím észlelésének időintervalluma."));
+    pUi->tableWidget->setHorizontalHeaderItem(CX_TIMES, pi);
     cMac mac;
     cMacTab mt;
     cPhsLink pl1, pl2;
@@ -323,7 +347,7 @@ void cDeducePatch::byMAC(QSqlQuery& q)
             // interface
             mac = pnp->getMac(_sHwAddress);    // A MAC-je
             if (findMac(q, mac, mt, pl2)) {    // Keressük a port-cím táblában, és az ellenoldali linket
-                rows << new cDPRow(q, this, rows.size(), *pnp, *pp, pl1, pl2);
+                rows << new cDPRow(q, this, rows.size(), mt, *pnp, *pp, pl1, pl2);
             }
             delete pnp;
         }
@@ -332,6 +356,9 @@ void cDeducePatch::byMAC(QSqlQuery& q)
 
 void cDeducePatch::byTag(QSqlQuery &q)
 {
+    if (pUi->tableWidget->columnCount() > (CX_NPORT_RIGHT +1)) {
+        pUi->tableWidget->setColumnCount(CX_NPORT_RIGHT +1);
+    }
 
 }
 
@@ -367,6 +394,7 @@ void cDeducePatch::start()
     clearTable();
     patch.setById(q, nid);
     patch.fetchPorts(q);
+    patch.sortPortsByIndex();
     switch (methode) {
     case DPM_LLDP:  byLLDP(q);  break;
     case DPM_MAC:   byMAC(q);   break;
@@ -379,5 +407,30 @@ void cDeducePatch::start()
 
 void cDeducePatch::save()
 {
-
+    QString msg = trUtf8(
+                "Valóban menti a kijelölt linkeket?\n"
+                "Az ütköző linkek autómatikusan törlődnek."
+                "A művelet visszavonására nincs legetőség.");
+    if (QMessageBox::Ok != QMessageBox::warning(this, dcViewShort(DC_WARNING), msg, QMessageBox::Ok, QMessageBox::Cancel)) {
+        return;
+    }
+    QSqlQuery q = getQuery();
+    cError *pe = NULL;
+    QString tr = "deduce_patch";
+    try {
+        sqlBegin(q, tr);
+        foreach (cDPRow *pRow, rows) {
+            QCheckBox *pCB = pRow->pCheckBox;
+            if (pCB == NULL || pCB->isChecked() == false) continue;
+            pRow->phsLink.replace(q);
+        }
+        sqlCommit(q, tr);
+    }
+    CATCHS(pe)
+    if (pe != NULL) {
+        sqlRollback(q, tr);
+        cErrorMessageBox::messageBox(pe, this);
+        delete pe;
+    }
+    start();
 }
