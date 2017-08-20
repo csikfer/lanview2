@@ -130,13 +130,11 @@ class LV2SHARED_EXPORT cInspectorProcess : public QProcess {
 public:
     cInspectorProcess(cInspector *pp);
     /// A inspector objektumban meghatározott checkCmd paramcsot elindítja,
-    /// megvárja, míg elindul. Ezután, ha a sync igaz, akkor megvárja míg kilép.
-    /// Ha viszont sync hamis, akkor csatlakoztatja a processFinished(), és
-    /// processReadyRead() slot-okat.
+    /// megvárja, míg elindul. Ezután, ha a stopTo nem nulla, akkor megvárja míg kilép.
+    /// Ha viszont stopTo nulla, akkor csatlakoztatja a processFinished(), és processReadyRead() slot-okat.
     /// Hiba esetén dob egy kizárást.
     /// @param startTo Maximális várakozási dő a parancs indulására millisec-ben, alapértelmezetten 5 másodperc.
-    /// @param sync Ha értéke true, akkor megvárja, amíg kilép a hívott program, ha false, akkor a slot-okat cstlakoztatja, és kilép.
-    /// @param stopTo Maximális várakozási dő a parancs lefutására millisec-ben, alapértelmezetten 30 másodperc. Ha sync értéke false, akkor érdektelen.
+    /// @param stopTo Maximális várakozási dő a parancs lefutására millisec-ben, vagy nulla, ha nem vár.
     virtual int startProcess(int startTo, int stopTo = 0);
     /// A tulajdonos/hívó objektum referenciája
     cInspector& inspector;

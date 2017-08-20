@@ -1227,6 +1227,8 @@ enum eNotifSwitch cInspector::parse_qparse(int _ec, QIODevice& text)
 
 enum eNotifSwitch cInspector::munin(QSqlQuery& q, QString& runMsg)
 {
+    runMsg = trUtf8("Nem támogatott (még).");
+    (void)q;
     return RS_INVALID;
 }
 

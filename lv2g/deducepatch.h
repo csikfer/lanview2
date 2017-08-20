@@ -44,6 +44,7 @@ public:
     /// @param pll Fizikai link objektum il és ppl között.
     /// @param plr Jobb oldali patch porthoz tartozó végponti front link objektum
     cDPRow(QSqlQuery& q, cDeducePatch *par, int _row, cMacTab& mt, cNPort& il, cPPort& ppl, cPhsLink& pll, cPhsLink& plr);
+    cDPRow(QSqlQuery& q, cDeducePatch *par, int _row, bool unique, cPPort& ppl, cPPort& ppr);
     cDeducePatch * parent;
     QTableWidget * pTable;
     const int      row;
