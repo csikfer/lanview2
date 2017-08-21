@@ -89,6 +89,36 @@ void cSelectNode::_nodeChanged(int ix)
 
 /* *** */
 
+/// Egy MAC keresése a port-címtáblában. és a link rekord beolvasása
+/// @param mac A keresett MAC cím.
+/// @param mt A talált port címtábla rekord objektum, output, ha nincs találat, akkor üres.
+/// @param pl A fizikai link rekord, ami a talált port-címtábla rekordban hivatkozott porthoz (ID) tartozik
+/// @return true, ha van találat a port címtábla rekordban, és a hivatkozott porthoz van fizikai link (patch) is, és az front oldali.
+static bool findMac(QSqlQuery& q, const cMac& mac, cMacTab& mt, cPhsLink& pl)
+ {
+    mt.clear();
+    pl.clear();
+    if (mac.isEmpty()) return false;        // Nincs magadva MAC (NULL)
+    mt.setMac(_sHwAddress, mac);
+    if (!mt.completion(q)) return false;    // Nincs találat a címtáblában
+    qlonglong pid = mt.getId(_sPortId);
+    pl.setId(_sPortId1, pid);
+    if (1 != pl.completion(q)) return false;// Fizikai link, ha van
+    return pl.getId(_sPhsLinkType2) == LT_FRONT;    // A switch portnak a patch front oldali csatlakozása?
+}
+
+static eTristate checkMac(QSqlQuery& q, cInterface& if1, cInterface& if2)
+{
+    cMac mac = if1.getMac(_sHwAddress);
+    if (!mac.isValid()) return TS_NULL;
+    cMacTab mt;
+    if (mt.setMac(_sHwAddress, mac).completion(q) != 1) return TS_NULL;
+    if (mt.getId(_sPortId) == if2.getId()) return TS_TRUE;
+    return  TS_FALSE;
+}
+
+/* *** */
+
 enum eFieldIx {
     CX_NPORT_LEFT, CX_SHARE_LEFT, CX_PPORT_LEFT,
     CX_STATE, CX_SAVE,
@@ -103,7 +133,7 @@ cDPRow::cDPRow(QSqlQuery& q, cDeducePatch *par, int _row, cMacTab &mt, cNPort &i
     cPPort ppr;     // Jobb oldali patch-port
     ppr.setById(q, plr.getId(_sPortId2));
     ePortShare sh = (ePortShare)ppl.getId(_sSharedCable);   // Ez nem a rekord beli share, hanem az eredő (ld.: nextLink() !)
-    (void)sh;   //
+    (void)sh;       //
     ppl.setById(q); // újraolvassuk
 
     pTable->setRowCount(row +1);
@@ -227,7 +257,135 @@ cDPRow::cDPRow(QSqlQuery& q, cDeducePatch *par, int _row, cMacTab &mt, cNPort &i
 cDPRow::cDPRow(QSqlQuery& q, cDeducePatch *par, int _row, bool unique, cPPort& ppl, cPPort& ppr)
     : QObject(par), parent(par), pTable(par->pUi->tableWidget), row(_row)
 {
+    pTable->setRowCount(row +1);
 
+    phsLink.setId(_sPortId1, ppl.getId());
+    phsLink.setId(_sPhsLinkType1, LT_BACK);
+    phsLink.setId(_sPortId2, ppr.getId());
+    phsLink.setId(_sPhsLinkType2, LT_BACK);
+    phsLink.setId(_sPortShared, ES_);   // back-back nincs (nem lehet) megosztás a rekordban
+    bool exists;
+    QString colMsg;
+    bool colision;
+    colision = linkColisionTest(q, exists, phsLink, colMsg);
+    // Hátlapi megosztésok ellenörzése:
+    ePortShare ppshl = (ePortShare)ppl.getId(_sSharedCable);
+    ePortShare ppshr = (ePortShare)ppr.getId(_sSharedCable);
+    bool bBckShMism = ppshl != ppshr; // Ha nem OK (nem biztos, hogy hiba, operátor ellenőrizze!)
+
+    qlonglong spidl = ppl.getId(_sSharedPortId);
+    qlonglong spidr = ppr.getId(_sSharedPortId);
+    bool bBckShared = spidl != NULL_ID || spidr != NULL_ID; // Mégosztott, másodlagos port
+    // stat...
+    QString state = QString("<b><u>TAG</u></b> ");
+    QString sToolTip = htmlInfo(trUtf8("A port cimkék alapján talált hátlapi csatlakozás."));
+    // végponok
+    cPhsLink pll, plr;
+    // A MAC alapján?
+    cInterface ifl, ifr;
+    bool fl, fr;
+    fl = pll.setId(_sPortId1, ppl.getId()).completion(q) == 1;
+    fr = plr.setId(_sPortId1, ppr.getId()).completion(q) == 1;
+    fl = fl && ifl.fetchById(q, pll.getId(_sPortId2));
+    fr = fr && ifr.fetchById(q, plr.getId(_sPortId2));
+    eTristate bMac = TS_NULL;   // Nincs mit összehasonlitani
+    if (fl && fr) { // mindkét végpont megvan, és interfészek
+        bMac = checkMac(q, ifl, ifr);
+        if (bMac == TS_NULL) bMac = checkMac(q, ifr, ifl);
+    }
+    switch (bMac) {
+    case TS_NULL:
+        state    += "<s>MAC</s> ";
+        sToolTip += htmlInfo(QObject::trUtf8("A MAC táblában nincs találat."));
+        break;
+    case TS_TRUE:
+        state    += "<b>MAC</b> ";
+        sToolTip += htmlInfo(QObject::trUtf8("Találat a MAC táblában is."));
+        break;
+    case TS_FALSE:
+        state    += "<font color=\"red\"><s>MAC</s></font> ";
+        sToolTip += htmlInfo(QObject::trUtf8("Találat a MAC táblában, de más linkre."));
+        break;
+    }
+
+    // Van LLDP link a két végpont között?
+    bool bLLDP = false;
+    if (fl && fr) {
+        cLldpLink().isLinked(q, ifl.getId(), ifr.getId(_sPortId1));
+    }
+    if (bLLDP) {
+        state    += "<b>LLDP</b> ";
+        sToolTip += htmlInfo(QObject::trUtf8("A cím tábla értékhez van konzisztens LLDP link."));
+    }
+    else {
+        state    += "<s>LLDP</s> ";
+        sToolTip += htmlInfo(QObject::trUtf8("A cím tábla értékhez nincs konzisztens LLDP link."));
+    }
+    if (bBckShMism) {
+        sToolTip += htmlWarning(trUtf8("Ellenőrizze a megosztásokat!"));
+        state += "<font color=\"red\"><b>!</b></font>";
+    }
+    if (bBckShared) {
+        sToolTip += htmlError(trUtf8("A hátlapi megosztáshoz tartozó kapcsolat, nem tartozhat hozzá link rekord."));
+    }
+    if (colision) {
+        sToolTip += colMsg;
+    }
+
+    QString s;
+    //...
+    QTextEdit *pTextEdit = new QTextEdit(state);
+    pTextEdit->setReadOnly(true);
+    pTextEdit->setToolTip(sToolTip);
+    pTable->setCellWidget(row, CX_STATE, pTextEdit);
+
+    QTableWidgetItem *pi;
+
+    pi = new QTableWidgetItem(ifl.getFullName(q, EX_IGNORE));
+    pTable->setItem(row, CX_NPORT_LEFT, pi);
+
+    pi = new QTableWidgetItem(pll.getName(_sPortShared));
+    pTable->setItem(row, CX_SHARE_LEFT, pi);
+
+    s = ppl.getName();
+    if (ppshl != ES_) {
+        if (ppshl == ES_A) s += " (A)";
+        else               s += " (" + ppl.view(q, __sSharedPortId) + " <- " + portShare(ppshl) + ")";
+    }
+    pi = new QTableWidgetItem(s);
+    pTable->setItem(row, CX_PPORT_LEFT, pi);
+
+
+    if (exists) {
+        pi = new QTableWidgetItem(_sOk);
+        pTable->setItem(row, CX_SAVE, pi);
+    }
+    else {
+        if (bBckShared) {
+            pi = new QTableWidgetItem("-");
+            pTable->setItem(row, CX_SAVE, pi);
+        }
+        else {
+            pCheckBox = new QCheckBox();
+            bool checked = !(colision || bBckShMism || unique) || bMac != TS_TRUE;
+            pCheckBox->setChecked(checked);
+            pTable->setCellWidget(row, CX_SAVE, pCheckBox);
+        }
+    }
+
+    s = ppr.getFullName(q);
+    if (ppshr != ES_) {
+        if (ppshr == ES_A) s += " (A)";
+        else               s += " (" + ppr.view(q, __sSharedPortId) + " <- " + portShare(ppshr) + ")";
+    }
+    pi = new QTableWidgetItem(s);
+    pTable->setItem(row, CX_PPORT_RIGHT, pi);
+
+    pi = new QTableWidgetItem(plr.getName(_sPortShared));
+    pTable->setItem(row, CX_SHARE_RIGHT, pi);
+
+    pi = new QTableWidgetItem(ifr.getFullName(q, EX_IGNORE));
+    pTable->setItem(row, CX_NPORT_RIGHT, pi);
 }
 
 
@@ -296,41 +454,13 @@ void cDeducePatch::clearTable()
 
 void cDeducePatch::byLLDP(QSqlQuery& q)
 {
-    if (pUi->tableWidget->columnCount() < (CX_TIMES + 1)) {
-        pUi->tableWidget->setColumnCount(CX_TIMES +1);
-    }
-    QTableWidgetItem *pi = new QTableWidgetItem(trUtf8("Első < utolsó"));
-    pi->setToolTip(trUtf8("Az LLDP link észlelésének időintervalluma."));
-    pUi->tableWidget->setHorizontalHeaderItem(CX_TIMES, pi);
-
-}
-
-/// Egy MAC keresése a port-címtáblában. és a link rekord beolvasása
-/// @param mac A keresett MAC cím.
-/// @param mt A talált port címtábla rekord objektum, output, ha nincs találat, akkor üres.
-/// @param pl A fizikai link rekord, ami a talált port-címtábla rekordban hivatkozott porthoz (ID) tartozik
-/// @return true, ha van találat a port címtábla rekordban, és a hivatkozott porthoz van fizikai link (patch) is, és az front oldali.
-static bool findMac(QSqlQuery& q, const cMac& mac, cMacTab& mt, cPhsLink& pl)
- {
-    mt.clear();
-    pl.clear();
-    if (mac.isEmpty()) return false;        // Nincs magadva MAC (NULL)
-    mt.setMac(_sHwAddress, mac);
-    if (!mt.completion(q)) return false;    // Nincs találat a címtáblában
-    qlonglong pid = mt.getId(_sPortId);
-    pl.setId(_sPortId1, pid);
-    if (1 != pl.completion(q)) return false;// Fizikai link, ha van
-    return pl.getId(_sPhsLinkType2) == LT_FRONT;    // A switch portnak a patch front oldali csatlakozása?
+    pUi->tableWidget->setColumnHidden(CX_TIMES, false);
+    (void)q;
 }
 
 void cDeducePatch::byMAC(QSqlQuery& q)
 {
-    if (pUi->tableWidget->columnCount() < (CX_TIMES + 1)) {
-        pUi->tableWidget->setColumnCount(CX_TIMES +1);
-    }
-    QTableWidgetItem *pi = new QTableWidgetItem(trUtf8("Első < utolsó"));
-    pi->setToolTip(trUtf8("A MAC cím észlelésének időintervalluma."));
-    pUi->tableWidget->setHorizontalHeaderItem(CX_TIMES, pi);
+    pUi->tableWidget->setColumnHidden(CX_TIMES, false);
     cMac mac;
     cMacTab mt;
     cPhsLink pl1, pl2;
@@ -363,9 +493,7 @@ void cDeducePatch::byMAC(QSqlQuery& q)
 
 void cDeducePatch::byTag(QSqlQuery &q)
 {
-    if (pUi->tableWidget->columnCount() > (CX_NPORT_RIGHT +1)) {
-        pUi->tableWidget->setColumnCount(CX_NPORT_RIGHT +1);
-    }
+    pUi->tableWidget->setColumnHidden(CX_TIMES, true);
     cPatch pr;      // Jobb oldali patch panel
     int ixTag = pr.toIndex(_sPortTag);
     pr.setById(q, nid2);

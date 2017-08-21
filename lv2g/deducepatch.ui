@@ -78,6 +78,9 @@
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
          <widget class="QRadioButton" name="radioButtonLLDP">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="text">
            <string>LLDP alapján</string>
           </property>
@@ -278,6 +281,14 @@ LLDP alapján, ütközés a címtáblával.&lt;/p&gt;
      <column>
       <property name="text">
        <string>Végponti port</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Első &lt; utolsó</string>
+      </property>
+      <property name="toolTip">
+       <string>Az észlelésének időintervalluma.</string>
       </property>
      </column>
     </widget>
