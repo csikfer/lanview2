@@ -5,7 +5,7 @@
 #if (defined(Q_OS_UNIX) || defined(Q_OS_LINUX)) && defined(Q_PROCESSOR_X86_64)
 
 class cSysInspector : public cInspector {
-    Q_OBJECT
+//    Q_OBJECT
 public:
     cSysInspector(QSqlQuery &q, const QString& sn);
     cSysInspector(QSqlQuery& q, qlonglong __host_service_id = NULL_ID, qlonglong __tableoid = NULL_ID, cInspector * __par = NULL);
