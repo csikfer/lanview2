@@ -24,10 +24,13 @@ cInspector *cSysInspector::newSubordinate(QSqlQuery& _q, qlonglong _hsid, qlongl
     return new cSysInspector(_q, _hsid, _toid, _par);
 }
 
-void cSysInspector::timerEvent(QTimerEvent *)
+void cSysInspector::timerEvent(QTimerEvent *e)
 {
     _DBGFN() << name() << endl;
-    if (serviceId() != syscronId) EXCEPTION(EDATA, serviceId(), name());
+    if (serviceId() != syscronId) {
+	cInspector::timerEvent(e);
+	return;
+    }
     internalStat = IS_RUN;
     statMsg.clear();
     state = RS_ON;

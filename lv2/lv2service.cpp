@@ -521,12 +521,7 @@ cInspectorThread *cInspector::newThread()
 {
     _DBGFN() << name() << endl;
     cInspectorThread *p = NULL;
-    if (serviceId() == syscronId) {
-        EXCEPTION(ENOTSUPP,0,_sSyscron);
-    }
-    else {
-        p = new cInspectorThread(this);
-    }
+    p = new cInspectorThread(this);
     p->setObjectName(name());
     return p;
 }
