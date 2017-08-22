@@ -2,37 +2,57 @@
 #include "lv2user.h"
 #include "SmtpMime"
 
-cSysCronThread::cSysCronThread(cInspector *pp)
-    : cInspectorThread(pp)
+qlonglong cSysInspector::syscronId = NULL_ID;
+
+cSysInspector::cSysInspector(QSqlQuery& q, const QString &sn)
+    : cInspector(q, sn)
 {
-    DBGFN();
+    if (syscronId == NULL_ID) {
+        syscronId = cService::service(q, _sSyscron)->getId();
+    }
 }
 
-void cSysCronThread::timerEvent()
+cSysInspector::cSysInspector(QSqlQuery& q, qlonglong __host_service_id, qlonglong __tableoid, cInspector *__par)
+    : cInspector(q, __host_service_id, __tableoid, __par)
 {
-    _DBGFN() << inspector.name() << endl;
-    inspector.internalStat = IS_RUN;
+    ;
+}
+
+
+cInspector *cSysInspector::newSubordinate(QSqlQuery& _q, qlonglong _hsid, qlonglong _toid, cInspector * _par)
+{
+    return new cSysInspector(_q, _hsid, _toid, _par);
+}
+
+void cSysInspector::timerEvent(QTimerEvent *)
+{
+    _DBGFN() << name() << endl;
+    if (serviceId() != syscronId) EXCEPTION(EDATA, serviceId(), name());
+    internalStat = IS_RUN;
     statMsg.clear();
     state = RS_ON;
     dbCron();
     mailCron();
     smsCron();
-    inspector.hostService.setState(*inspector.pq, notifSwitch(state), statMsg);
-    inspector.internalStat = IS_SUSPENDED;
+    hostService.setState(*pq, notifSwitch(state), statMsg);
+    internalStat = IS_SUSPENDED;
 }
 
-void cSysCronThread::dbCron()
+void cSysInspector::dbCron()
 {
     DBGFN();
     if (!statMsg.isEmpty()) statMsg += "\n\n";
     cError *pe = NULL;
     try {
-        execSqlFunction(*inspector.pq, "service_cron", inspector.hostServiceId());
+        execSqlFunction(*pq, "service_cron", hostServiceId());
     } CATCHS(pe);
     if (pe != NULL) {
         state = RS_CRITICAL;
         statMsg += trUtf8("ERROR in dbCron() : ") + pe->msg();
         delete pe;
+    }
+    else {
+        statMsg += trUtf8("dbCron() OK.");
     }
 }
 
@@ -40,11 +60,11 @@ void cSysCronThread::dbCron()
 /// Rendszerváltozók:
 /// MailServer::text = a mail szerver címe, default: localhost
 /// SenderAddress::text = a feladó e-mail címe
-void cSysCronThread::mailCron()
+void cSysInspector::mailCron()
 {
     DBGFN();
     bool r = true;
-    QSqlQuery& q = *inspector.pq;
+    QSqlQuery& q = *pq;
 
     // alrms, and user events
     QSqlQuery  q2 = getQuery();
@@ -126,43 +146,8 @@ void cSysCronThread::mailCron()
     else    statMsg += "Sendmail OK. ";
 }
 
-void cSysCronThread::smsCron()
+void cSysInspector::smsCron()
 {
     ;
 }
 
-cSysInspector::cSysInspector(QSqlQuery& q, const QString &sn)
-    : cInspector(q, sn)
-{
-    ;
-}
-
-cSysInspector::cSysInspector(QSqlQuery& q, qlonglong __host_service_id, qlonglong __tableoid, cInspector *__par)
-    : cInspector(q, __host_service_id, __tableoid, __par)
-{
-    ;
-}
-
-
-cInspectorThread *cSysInspector::newThread()
-{
-    _DBGFN() << name() << endl;
-    cInspectorThread *p = NULL;
-    if (serviceId() == syscronId) {
-#if (defined(Q_OS_UNIX) || defined(Q_OS_LINUX)) && defined(Q_PROCESSOR_X86_64)
-        p = new cSysCronThread(this);
-#else
-        EXCEPTION(ENOTSUPP,0,_sSyscron);
-#endif
-    }
-    else {
-        p = new cInspectorThread(this);
-    }
-    p->setObjectName(name());
-    return p;
-}
-
-cInspector *cSysInspector::newSubordinate(QSqlQuery& _q, qlonglong _hsid, qlonglong _toid, cInspector * _par)
-{
-    return new cSysInspector(_q, _hsid, _toid, _par);
-}
