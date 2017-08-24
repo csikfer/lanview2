@@ -207,6 +207,7 @@ class LV2SHARED_EXPORT lanView  : public QObject {
 #endif
     friend LV2SHARED_EXPORT QSqlDatabase *  getSqlDb(void);
     friend LV2SHARED_EXPORT void dropThreadDb(const QString &tn, enum eEx __ex);
+    friend LV2SHARED_EXPORT eTristate trFlag(eTristate __tf);
     friend LV2SHARED_EXPORT void sqlBegin(QSqlQuery& q, const QString& tn);
     friend LV2SHARED_EXPORT void sqlCommit(QSqlQuery& q, const QString& tn);
     friend LV2SHARED_EXPORT void sqlRollback(QSqlQuery& q, const QString& tn);

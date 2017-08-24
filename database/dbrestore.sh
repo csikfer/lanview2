@@ -32,5 +32,5 @@ CREATE DATABASE $MYNAME
 END
 
 echo Execute $1 script...
-su $MYNAME -c "pg_restore -d $MYNAME $1"
+su $MYNAME -c "psql -d $MYNAME $1"
 

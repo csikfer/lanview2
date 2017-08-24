@@ -1488,13 +1488,13 @@ public:
     virtual bool insert(QSqlQuery& __q, enum eEx __ex = EX_ERROR);
     /// Hasonló az insert() metódushoz. Ha az insert metódus kizárást dobott, akkor a hiba objektum pointerével tér vissza.
     /// Ha rendben megtörtépnt a művelet, akkor NULL pointerrel.
-    cError *tryInsert(QSqlQuery& __q, bool __tr = false);
+    cError *tryInsert(QSqlQuery& __q, eTristate __tr = TS_NULL);
     /// Fellülír egy létező rekordot. A rekord azonosítása a nameKeyMask() alapján. A rekordot visszaolvassa.
     /// Ha a felülírás sikertelen, (nincs érintett rekord) és __ex értéke true, akkor dob egy kizárást.
     virtual bool rewrite(QSqlQuery& __q, enum eEx __ex = EX_ERROR);
     /// Fellülír egy létező rekordot. A rekord azonosítása a nameKeyMask() alapján. A rekordot visszaolvassa.
     /// Ha rendben megtörtépnt a művelet, akkor NULL pointerrel, egyébként a hiba objektum pointerével tér vissza.
-    cError *tryRewrite(QSqlQuery& __q, bool __tr = false);
+    cError *tryRewrite(QSqlQuery& __q, eTristate __tr = TS_NULL);
 
     /// Sablon metódus, egy járulékos tábla tartozik a rekordhoz, ami az objektum tulajdona
     /// @param __ch Gyerek objektum konténer
@@ -1568,7 +1568,7 @@ public:
     virtual int replace(QSqlQuery& __q, enum eEx __ex = EX_ERROR);
     /// Hasonló az replace() metódushoz. Ha a replace metódus kizárást dobott, akkor a hiba objektum pointerével tér vissza.
     /// Ha rendben megtörtépnt a művelet, akkor NULL pointerrel.
-    cError *tryReplace(QSqlQuery& __q, bool __tr = false);
+    cError *tryReplace(QSqlQuery& __q, eTristate __tr = TS_NULL);
     /// Egy WHERE stringet állít össze a következőképpen.
     /// A feltételben azok a mezők fognak szerepelni, melyek indexének megfelelő bit az __fm tömbben igaz.
     /// A feltétel, ha a mező NULL, akkor \<mező név\> IS NULL, ha nem NULL, akkor ha isLike() a mező indexére igaz,
@@ -1692,7 +1692,12 @@ public:
     /// @param __ex Ha EX_NOOP, és nincs egyetlen modosított rekord sem, akkor dob egy kizárást.
     /// @return A modosított rekordok száma.
     int update(QSqlQuery& __q, bool __only, const QBitArray& __set = QBitArray(), const QBitArray& __where = QBitArray(), enum eEx __ex = EX_NOOP);
-    cError *tryUpdate(QSqlQuery& __q, bool __only, const QBitArray& __set = QBitArray(), const QBitArray& __where = QBitArray(), bool __tr = false);
+    /// Hasonló, mint az update metódus, azt hívja egy try blokkban.
+    /// Hiba esetén, vagyis, ha a hívott update metódus kizárást dobott, akkor a hiba objektum pointerével tér vissza.
+    /// Ha a __tr paraméter értéke TS_TRUE, vagy TS_NULL és nem vagyunk egy lezáratlan tranzakción bellül, akkor az update() metódus hívását egy
+    /// tranzakciós blokba zárja. Ekkor hiba esetén a commit helyett a rolback parancssal zárja le azt. A __tr alapértelmezetten TS_NULL.
+    /// @return NULL, vagy a hiba objektum pointere, ha valamilyen hiba volt.
+    cError *tryUpdate(QSqlQuery& __q, bool __only, const QBitArray& __set = QBitArray(), const QBitArray& __where = QBitArray(), eTristate __tr = TS_NULL);
     ///
     bool updateByName(QSqlQuery &__q, const QString& _name, const QString& _fn, const QVariant& val, eEx __ex = EX_NOOP);
     bool updateById(QSqlQuery &__q, qlonglong _id, const QString& _fn, const QVariant& val, eEx __ex = EX_NOOP);
@@ -1725,7 +1730,7 @@ public:
     int remove(QSqlQuery& __q, bool __only = false, const QBitArray& __fm = QBitArray(), enum eEx __ex = EX_NOOP);
     /// Hasonló a remove metódushoz, de a hiba esetén a hiba objektum pointerével tér vissza, ha volt kizárás.
     /// Ha nem volt hiba akkor a visszaadott érték a NULL pointer.
-    cError *tryRemove(QSqlQuery& __q, bool __only = false, const QBitArray& __fm = QBitArray(), bool __tr = false);
+    cError *tryRemove(QSqlQuery& __q, bool __only = false, const QBitArray& __fm = QBitArray(), eTristate __tr = TS_NULL);
     /// Adat ellenőrzést végez
     /// Beállítja _stat értékét
     virtual bool checkData();

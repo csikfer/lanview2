@@ -128,7 +128,7 @@ void cRecordLink::insert(bool _similar)
                 if (!cErrorMessageBox::condMsgBox(link.tryInsert(*pq))) continue;
             }
             else {                  // replace
-                if (!cErrorMessageBox::condMsgBox(link.tryReplace(*pq, true))) continue;
+                if (!cErrorMessageBox::condMsgBox(link.tryReplace(*pq))) continue;
             }
             refresh(false);
         }
@@ -152,7 +152,7 @@ void cRecordLink::modify(eEx __ex)
                     if (!cErrorMessageBox::condMsgBox(link.tryInsert(*pq))) continue;
                 }
                 else {                  // replace
-                    if (!cErrorMessageBox::condMsgBox(link.tryReplace(*pq, true))) continue;
+                    if (!cErrorMessageBox::condMsgBox(link.tryReplace(*pq))) continue;
                 }
                 refresh(false);
             }

@@ -1569,6 +1569,15 @@ public:
 #define HEREIN(o, m, i)  o.herein(m, i, __PRETTY_FUNCTION__, __FILE__, __LINE__)
 
 
+/// @macro HEREINW(o, m, i)
+/// Ugyan az, mint a HEREIN(o,m,i) makró, de kiad egy warning típusú debug üzenetet is. lásd.: DWAR(s) makrót.
+#define HEREINW(o, m, i)  { \
+        QString message = m; \
+        HEREIN(o, message, i); \
+        DWAR() << message << endl; \
+    }
+
+
 class LV2SHARED_EXPORT cAppMemo : public cRecord {
     CRECORD(cAppMemo);
 public:

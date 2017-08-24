@@ -68,6 +68,22 @@ void dropThreadDb(const QString& tn, enum eEx __ex)
 
 /* --------------------------------------------------------------------------------------------- */
 
+eTristate trFlag(eTristate __tf)
+{
+    switch (__tf) {
+    case TS_TRUE:
+    case TS_FALSE:  return __tf;
+    case TS_NULL:   break;
+    default:        EXCEPTION(EPROGFAIL);
+    }
+    QStringList *pTrl = lanView::getInstance()->getTransactioMapAndCondLock();  // If trhread, then mutex is locked !!
+    eTristate tf = pTrl->isEmpty() ? TS_TRUE : TS_FALSE;
+    if (!isMainThread()) {
+        lanView::getInstance()->threadMutex.unlock();
+    }
+    return tf;
+}
+
 void sqlBegin(QSqlQuery& q, const QString& tn)
 {
     QStringList *pTrl = lanView::getInstance()->getTransactioMapAndCondLock();  // If trhread, then mutex is locked !!

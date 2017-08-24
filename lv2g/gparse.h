@@ -37,6 +37,7 @@ private:
     cImportParseThread *pLocalParser;
     cError             *pLocalError;
     QString            *pLocalParsedStr;
+    QStringList         debugLines;
 };
 
 #endif // GPARSE_H

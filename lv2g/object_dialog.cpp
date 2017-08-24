@@ -559,7 +559,7 @@ cPatch * patchDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample)
         if (r != QDialog::Accepted) return NULL;
         p = dialog.getPatch();
         if (p == NULL) continue;
-        if (!cErrorMessageBox::condMsgBox(p->tryInsert(q, true))) {
+        if (!cErrorMessageBox::condMsgBox(p->tryInsert(q))) {
             delete p;
             continue;
         }
@@ -749,7 +749,7 @@ bool cEnumValsEditWidget::saveValue()
     val[_sFontFamily]   = pWidgetValFntFam->get();
     val[_sFontAttr]     = pWidgetValFntAtt->get();
 
-    return cErrorMessageBox::condMsgBox(val.tryReplace(*pq, true));
+    return cErrorMessageBox::condMsgBox(val.tryReplace(*pq));
 }
 
 bool cEnumValsEditWidget::saveType()

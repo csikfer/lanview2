@@ -49,7 +49,7 @@ EXT_ QString quotedStringList(const QStringList& __sl, const QChar &__q = QChar(
 /// @def HEAD()
 #define _HEAD(fi, li, fu)   fi << "[" << li << "] " << fu << " : "
 /// @def _HEAD()
-#define HEAD()           head << _HEAD(__FILE__, __LINE__, __PRETTY_FUNCTION__)
+#define HEAD()      head << _HEAD(__FILE__, __LINE__, __PRETTY_FUNCTION__)
 /// @def PDEB(mask)
 /// Debug üzenet kiíratásához használlt makró.
 /// @param mask Debug üzenet kiírási feltételét definiáló maszk (modul infó nélkül)
@@ -213,6 +213,7 @@ Nem kizárás, a PDEB(DERROR) makróval csak a hibaüzenetet írja ki.
 class LV2SHARED_EXPORT debugStream : public QObject {
     Q_OBJECT
     friend class cDebug;
+    friend debugStream &  head(debugStream & __ds);
 protected:
     /// Egy szálhoz tartozó debugStream objektum konstruktora
     /// @param pMain A fő szálhoz tartozó debugStream objektum pointere.
@@ -248,6 +249,8 @@ protected:
     FILE *      pFILE;
     /// A fő szálhoz tartozó debugStream objektum pointere.
     static debugStream *mainInstance;
+    /// A legutobbi maszk
+    qlonglong   lastMask;
 signals:
     /// Ha GUI módban vagyunk, akkor itt jelezzük, hogy kész egy debug üzenet sor.
     void readyDebugLine();
@@ -401,6 +404,7 @@ class LV2SHARED_EXPORT cDebug {
      *  @return true ha a megadott maszk alapján az üzenetet ki kell írni.
      */
     static bool pDeb(qlonglong mask);
+    static bool __pDeb(qlonglong mask);
     /// Az aktuális debug objektum, fő szálához tartozó debugStream objektumának a pointerével tér vissza
     /// @throw cError*  Feltételezi, hogy van cDebug objektum (cDebug::instance != NULL).
     ///                 Valamint mCout nem NULL pointer.

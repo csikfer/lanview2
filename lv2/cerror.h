@@ -327,6 +327,11 @@ static inline void _sql_err_ex(cError *pe, const QSqlError& le, const QString& s
     pe->exception();
 }
 
+#define _SQLERR(le, e)  { \
+        _sql_err_deb_(le, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
+        _sql_err_ex(NEWCERROR(e, le.number(), le.text()), le); \
+    }
+
 /**
 @def SQLERR(o, e)
 Exception SQL error

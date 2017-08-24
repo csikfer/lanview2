@@ -83,6 +83,7 @@ cLogOn::cLogOn(bool __needZone, QWidget *parent) :
 
 cLogOn::~cLogOn()
 {
+    close();
     pDelete(_pMyUser);
 }
 

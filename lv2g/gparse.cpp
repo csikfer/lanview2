@@ -173,7 +173,21 @@ void cParseWidget::remoteParse(const QString &src)
     pUi->pushButtonBreak->setEnabled(false);
 }
 
+/// A debug rendszertől jött sorokat írja ki feltételesen a textEditResult nevű QTextEdit widgetre
+/// Az üzenetek elejéről leválasztja a maszk-ot, és csak azokat az üzeneteket irja a widget-be,
+/// melyek hiba, figyelmeztető, vagy információs üzenetek.
 void cParseWidget::debugLine()
 {
-    pUi->textEditResult->append(cDebug::getInstance()->dequeue());
+    QString s = cDebug::getInstance()->dequeue();
+    QRegExp  re("^([\\da-f]{8})\\s(.+)$");
+    if (re.exactMatch(s)) {
+        bool ok;
+        QString sm = re.cap(1);
+        qlonglong m = sm.toULongLong(&ok, 16);
+        if (!ok) EXCEPTION(EPROGFAIL);
+        if (m & (cDebug::INFO | cDebug::WARNING | cDebug::DERROR)) {
+            s = re.cap(2).trimmed();
+            pUi->textEditResult->append(s);
+        }
+    }
 }

@@ -19,6 +19,7 @@
  ***************************************************************************/
 #include <stdarg.h>
 #include <sys/types.h>
+#include <stdio.h>
 
 
 #include <QtCore>
@@ -184,6 +185,13 @@ cDebug::~cDebug()
 
 bool cDebug::pDeb(qlonglong mask)
 {
+    if (!__pDeb(mask)) return false;
+    cout().lastMask = mask;
+    return true;
+}
+
+bool cDebug::__pDeb(qlonglong mask)
+{
     if (disabled) {
         return false;
     }
@@ -195,6 +203,7 @@ bool cDebug::pDeb(qlonglong mask)
     bool       r = mask && (mm) == mask;
     return r;
 }
+
 
 debugStream *cDebug::pCout(void)
 {
@@ -222,7 +231,7 @@ debugStream& cDebug::cout(void)
     QMutexLocker locker(instance->mThreadStreamsMapMutex);
     pS = new debugStream(instance->mCout, QThread::currentThread());
     (*instance->mThreadStreamsMap)[n] = pS;
-    if (ONDB(INFO)) *pS << QObject::trUtf8("Create debugStream to %1 thread..").arg(n) << endl;
+    if (cDebug::__pDeb(cDebug::INFO | cDebug::LV2)) *pS << QObject::trUtf8("Create debugStream to %1 thread..").arg(n) << endl;
     return *pS;
 }
 
@@ -279,6 +288,7 @@ QString cDebug::dequeue()
     QString r = instance->mMsgQueue->dequeue();
     return r;
 }
+
 void cDebug::chk()
 {
     if (instance == NULL) EXCEPTION(EPROGFAIL);
@@ -381,6 +391,8 @@ void debugStream::sDestroyThread(QObject*)
     delete this;
 }
 
+#define __DEBUG__QUEUE 0
+
 debugStream& debugStream::flush()
 {
     if (cDebug::disabled || buff.isEmpty()) return *this;
@@ -392,10 +404,16 @@ debugStream& debugStream::flush()
         else                 oFile->write(buff.toUtf8());
         if (pD->mMsgQueue != NULL) {    // GUI?
             if (pD->mMsgQueueMutex == NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("cDebug::instance->mMsgQueueMutex is NULL pointer"));
+#if __DEBUG__QUEUE
+            QTextStream(stderr) << "Queued to GUI : " << quotedString(buff) << endl;
+#endif
             pD->mMsgQueueMutex->lock();
             pD->mMsgQueue->enqueue(buff);
             pD->mMsgQueueMutex->unlock();
             readyDebugLine();
+#if __DEBUG__QUEUE
+            QTextStream(stderr) << "Queued to GUI, ready." << endl;
+#endif
         }
         buff.clear();
         oFile->flush();
@@ -406,9 +424,15 @@ debugStream& debugStream::flush()
             pD->mThreadMsgQueueMutex = new QMutex();
             pD->mThreadMsgQueue = new QQueue<QString>();
         }
+#if __DEBUG__QUEUE
+        QTextStream(stderr) << "Queued from thread : " << quotedString(buff) << endl;
+#endif
         pD->mThreadMsgQueueMutex->lock();
         pD->mThreadMsgQueue->enqueue(buff);
         pD->mThreadMsgQueueMutex->unlock();
+#if __DEBUG__QUEUE
+        QTextStream(stderr) << "Queued from thread, ready." << endl;
+#endif
         buff.clear();
         emit redyLineFromThread();
     }
@@ -439,7 +463,8 @@ void debugStream::sRedyLineFromThread()
 
 debugStream &  head(debugStream & __ds)
 {
-    __ds << QDateTime::currentDateTime().toString(HEAD_DT_FORMAT) << QChar(' ')
+    __ds << QString("%1 ").arg(__ds.lastMask, 8, 16)    // Az utolsó (aktuális) maszk hexában
+         << QDateTime::currentDateTime().toString(HEAD_DT_FORMAT) << QChar(' ')
          << QCoreApplication::applicationName()
          << QChar('[')  << QString::number(QCoreApplication::applicationPid());
     if (__ds.isMain() == false) {

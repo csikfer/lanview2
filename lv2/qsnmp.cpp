@@ -491,7 +491,7 @@ void  cSnmp::_clear(void)
 int cSnmp::open(const char * __host, const char * __com, int __ver)
 {
 
-    PDEB(SNMP) << __PRETTY_FUNCTION__ << QChar('(') << __host << _sCommaSp << __ver << _sCommaSp << __ver << ")" << endl;
+    PDEB(VVERBOSE) << __PRETTY_FUNCTION__ << QChar('(') << __host << _sCommaSp << __ver << _sCommaSp << __ver << ")" << endl;
     _clear();
     snmp_sess_init(&session);
     session.peername        = strdup(__host);

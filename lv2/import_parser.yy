@@ -246,18 +246,18 @@ int importParse(eImportParserStat _st)
     static const QString tn = "YYParser";
     int i = -1;
     try {
-        sqlBegin(qq(), tn);
+        // sqlBegin(qq(), tn);
         i = yyparse();
     }
     CATCHS(pImportLastError)
     if (pImportLastError != NULL) {
-        sqlRollback(qq(), tn);
+        // sqlRollback(qq(), tn);
         pImportLastError->mDataLine = importLineNo;
         pImportLastError->mDataName = importFileNm;
         pImportLastError->mDataMsg  = "lastLine : " + quotedString(lastLine) + "\n macbuff : " + quotedString(macbuff);
     }
     else {
-        sqlCommit(qq(), tn);
+        // sqlCommit(qq(), tn);
     }
     importParserStat = IPS_READY;
     return i;
@@ -949,7 +949,7 @@ static QChar yyget()
     if (!macbuff.size()) {
         do {
             lastLine = macbuff  = yygetline();
-            PDEB(INFO) << "YYLine(" << importFileNm << "[" << importLineNo << "]) : \"" << lastLine << "\"" << endl;
+            PDEB(VVERBOSE) << "YYLine(" << importFileNm << "[" << importLineNo << "]) : \"" << lastLine << "\"" << endl;
             if (macbuff.isNull()) {
                 if (c_yyFile::size() > 0) {
                     c_yyFile::eoi();

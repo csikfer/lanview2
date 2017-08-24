@@ -240,14 +240,41 @@ int cHostService::replace(QSqlQuery &__q, eEx __ex)
     return R_ERROR;
 }
 
+#define _MAX_TRY_   5
 cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const QString& __note, qlonglong __did)
 {
-    _DBGFN() << names(__q) << VDEB(__st) << VDEB(__note) << endl;
+    QString sNames = names(__q);
+    _DBGFN() << sNames << VDEB(__st) << VDEB(__note) << endl;
     QVariant did;
     if (__did != NULL_ID) did = __did;
-    if (!execSqlRecFunction(__q, _sSetServiceStat, getId(), __st, __note, did)) SQLERR(__q, EQUERY);
-    set(__q);
-    _DBGFNL() << toString() << endl;
+    bool tf = trFlag(TS_NULL) == TS_TRUE;
+    sNames = toSqlName(sNames);
+    int cnt = 0;
+    while (true) {
+        if (tf) sqlBegin(__q, sNames);
+        if (execSqlRecFunction(__q, _sSetServiceStat, getId(), __st, __note, did)) {    // OK!
+            set(__q);
+            if (tf) sqlCommit(__q, sNames);
+            _DBGFNL() << toString() << endl;
+            return *this;
+        }
+        QSqlError le = __q.lastError();
+        if (tf) sqlRollback(__q, sNames);
+        QString s = le.databaseText().split('\n').first();  // első sor
+        cnt++;
+        if (s.contains("deadlock", Qt::CaseInsensitive) || cnt <= _MAX_TRY_) {
+            DERR() << trUtf8("Set stat %1 to %2 SQL PREPARE ERROR #%3 try #%4\n").arg(__st, sNames).arg(le.number()).arg(cnt)
+                << trUtf8("driverText   : ") << le.driverText() << "\n"
+                << trUtf8("databaseText : ") << le.databaseText() << endl;
+#if   defined(Q_CC_MSVC)
+            Sleep(200);
+#elif defined(Q_CC_GNU)
+            usleep(200);
+#endif
+            continue;
+        }
+        _SQLERR(le, EQUERY);
+    }
     return *this;
 }
 

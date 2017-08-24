@@ -3179,15 +3179,16 @@ bool cRecord::insert(QSqlQuery& __q, eEx _ex)
     return false;
 }
 
-cError *cRecord::tryInsert(QSqlQuery &__q, bool __tr)
+cError *cRecord::tryInsert(QSqlQuery &__q, eTristate __tr)
 {
     cError *pe = NULL;
-    if (__tr) sqlBegin(__q, tableName());
+    eTristate tr = trFlag(__tr);
+    if (tr == TS_TRUE) sqlBegin(__q, tableName());
     try {
         insert(__q, EX_ERROR);
     }
     CATCHS(pe);
-    if (__tr) {
+    if (tr == TS_TRUE) {
         if (pe == NULL) sqlCommit(__q, tableName());
         else            sqlRollback(__q, tableName());
     }
@@ -3215,15 +3216,16 @@ bool cRecord::rewrite(QSqlQuery &__q, eEx __ex)
     return false;
 }
 
-cError *cRecord::tryRewrite(QSqlQuery& __q, bool __tr)
+cError *cRecord::tryRewrite(QSqlQuery& __q, eTristate __tr)
 {
     cError *pe = NULL;
-    if (__tr) sqlBegin(__q, tableName());
+    eTristate tr = trFlag(__tr);
+    if (tr == TS_TRUE) sqlBegin(__q, tableName());
     try {
         rewrite(__q, EX_ERROR);
     }
     CATCHS(pe);
-    if (__tr) {
+    if (tr == TS_TRUE) {
         if (pe == NULL) sqlCommit(__q, tableName());
         else            sqlRollback(__q, tableName());
     }
@@ -3249,15 +3251,16 @@ int cRecord::replace(QSqlQuery& __q, eEx __ex)
     else                     return insert( __q, __ex) ? R_INSERT : R_ERROR; // Ha nincs, akkor insert
 }
 
-cError *cRecord::tryReplace(QSqlQuery& __q, bool __tr)
+cError *cRecord::tryReplace(QSqlQuery& __q, eTristate __tr)
 {
     cError *pe = NULL;
-    if (__tr) sqlBegin(__q, tableName());
+    eTristate tr = trFlag(__tr);
+    if (tr == TS_TRUE) sqlBegin(__q, tableName());
     try {
         replace(__q, EX_ERROR);
     }
     CATCHS(pe);
-    if (__tr) {
+    if (tr == TS_TRUE) {
         if (pe == NULL) sqlCommit(__q, tableName());
         else            sqlRollback(__q, tableName());
     }
@@ -3512,15 +3515,16 @@ int cRecord::update(QSqlQuery& __q, bool __only, const QBitArray& __set, const Q
     }
 }
 
-cError *cRecord::tryUpdate(QSqlQuery& __q, bool __only, const QBitArray& __set, const QBitArray& __where, bool __tr)
+cError *cRecord::tryUpdate(QSqlQuery& __q, bool __only, const QBitArray& __set, const QBitArray& __where, eTristate __tr)
 {
     cError *pe = NULL;
-    if (__tr) sqlBegin(__q, tableName());
+    eTristate tr = trFlag(__tr);
+    if (tr == TS_TRUE) sqlBegin(__q, tableName());
     try {
         update(__q, __only, __set, __where, EX_ERROR);
     }
     CATCHS(pe);
-    if (__tr) {
+    if (tr == TS_TRUE) {
         if (pe == NULL) sqlCommit(__q, tableName());
         else            sqlRollback(__q, tableName());
     }
@@ -3586,15 +3590,16 @@ int cRecord::remove(QSqlQuery& __q, bool __only, const QBitArray& _fm, eEx __ex)
     return r;
 }
 
-cError *cRecord::tryRemove(QSqlQuery& __q, bool __only, const QBitArray& _fm, bool __tr)
+cError *cRecord::tryRemove(QSqlQuery& __q, bool __only, const QBitArray& _fm, eTristate __tr)
 {
     cError *pe = NULL;
-    if (__tr) sqlBegin(__q, tableName());
+    eTristate tr = trFlag(__tr);
+    if (tr == TS_TRUE) sqlBegin(__q, tableName());
     try {
         remove(__q, __only, _fm, EX_ERROR);
     }
     CATCHS(pe);
-    if (__tr) {
+    if (tr == TS_TRUE) {
         if (pe == NULL) sqlCommit(__q, tableName());
         else            sqlRollback(__q, tableName());
     }

@@ -121,6 +121,11 @@ Ha létrejön hiba objektum, azt nem szabadítja fel. Nem ellenörzi, volt-e ér
  */
 EXT_ bool executeSqlScript(QFile& file, QSqlDatabase *pq = NULL, enum eEx __ex = EX_ERROR);
 
+/// Tranzakció indítása flag flag
+/// Ha a paraméter értéke TS_TRUE vagy TS_FALSE, akkor azzal tér vissza,
+/// ha viszont TS_NULL volt, akkor ha tranzakción bellül vagyunk, akkor TS_FALSE -val
+/// ha nem egy tarnzakcióban vagyunk, akkor TS_TRUE -val tér vissza.
+EXT_ eTristate trFlag(eTristate __tf);
 /// Tranzakció indítása
 EXT_ void sqlBegin(QSqlQuery& q, const QString& tn);
 /// Tranzakció befejezése

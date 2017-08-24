@@ -1022,7 +1022,7 @@ void cRecordsViewBase::receipt()
 void cRecordsViewBase::truncate()
 {
     cRecordAny r(&recDescr());
-    if (cErrorMessageBox::condMsgBox(r.tryRemove(*pq, false, QBitArray(1, false), EX_ERROR), pWidget())) {
+    if (cErrorMessageBox::condMsgBox(r.tryRemove(*pq, false, QBitArray(1, false)), pWidget())) {
         refresh();
     }
 }

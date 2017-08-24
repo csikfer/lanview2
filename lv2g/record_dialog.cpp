@@ -650,7 +650,7 @@ cRecord * recordInsertDialog(QSqlQuery& q, const QString& sn, QWidget *pPar, con
         int r = rd.exec(false);
         if (r == DBT_CANCEL || ro) return NULL;
         if (!rd.accept()) continue;
-        if (!cErrorMessageBox::condMsgBox(rd.record().tryInsert(q, true))) continue;
+        if (!cErrorMessageBox::condMsgBox(rd.record().tryInsert(q))) continue;
         break;
     }
     rd.close();
