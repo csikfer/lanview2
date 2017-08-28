@@ -213,7 +213,7 @@ Nem kizárás, a PDEB(DERROR) makróval csak a hibaüzenetet írja ki.
 class LV2SHARED_EXPORT debugStream : public QObject {
     Q_OBJECT
     friend class cDebug;
-    friend debugStream &  head(debugStream & __ds);
+    friend LV2SHARED_EXPORT debugStream &  head(debugStream & __ds);
 protected:
     /// Egy szálhoz tartozó debugStream objektum konstruktora
     /// @param pMain A fő szálhoz tartozó debugStream objektum pointere.

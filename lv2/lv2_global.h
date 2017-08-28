@@ -39,9 +39,9 @@ This file is part of LanView2.
 
 
 #if   defined(Q_CC_MSVC)
-
+    // OK
 #elif defined(Q_CC_GNU)
-
+    // OK
 #else
 #error "Nem támogatott C++ fordító használata."
 #endif

@@ -283,11 +283,7 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
                 DERR() << trUtf8("Set stat %1 to %2 SQL PREPARE ERROR #%3 try #%4\n").arg(__st, sNames).arg(le.number()).arg(cnt)
                     << trUtf8("driverText   : ") << le.driverText() << "\n"
                     << trUtf8("databaseText : ") << le.databaseText() << endl;
-#if   defined(Q_CC_MSVC)
-                Sleep(200);
-#elif defined(Q_CC_GNU)
-                usleep(200);
-#endif
+                QThread::msleep(200);
                 continue;   // retrying
             }
             _SQLERR(le, EQUERY);    // no return
