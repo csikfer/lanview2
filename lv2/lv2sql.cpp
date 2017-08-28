@@ -289,7 +289,34 @@ bool executeSqlScript(QFile& file, QSqlDatabase *pDb, enum eEx __ex)
 
 /* ********************************************************************************************* */
 
-EXT_ bool execSql(QSqlQuery& q, const QString& sql, const QVariant& v1, const QVariant& v2, const QVariant& v3, const QVariant& v4, const QVariant& v5)
+int _execSql(QSqlQuery& q, const QString& sql, const QVariant& v1, const QVariant& v2, const QVariant& v3, const QVariant& v4, const QVariant& v5)
+{
+    if (!v1.isValid()) {
+        PDEB(SQL) << dQuoted(sql) << endl; \
+        if (!q.exec(sql)) return -2;
+    }
+    else {
+        if (!q.prepare(sql)) return -1;
+        q.bindValue(0,v1);
+        if (v2.isValid()) {
+            q.bindValue(1,v2);
+            if (v3.isValid()) {
+                q.bindValue(2,v3);
+                if (v4.isValid()) {
+                    q.bindValue(3,v4);
+                    if (v5.isValid()) {
+                        q.bindValue(4,v5);
+                    }
+                }
+            }
+        }
+        PDEB(SQL) << dQuoted(q.lastQuery()) << endl; \
+        if (!q.exec()) return -1;
+    }
+    return q.first() ? 1 : 0;
+}
+
+bool execSql(QSqlQuery& q, const QString& sql, const QVariant& v1, const QVariant& v2, const QVariant& v3, const QVariant& v4, const QVariant& v5)
 {
     if (!v1.isValid()) {
         EXECSQL(q, sql);
@@ -314,7 +341,7 @@ EXT_ bool execSql(QSqlQuery& q, const QString& sql, const QVariant& v1, const QV
     return q.first();
 }
 
-EXT_ bool execSql(QSqlQuery& q, const QString& sql, const QVariantList& vl)
+bool execSql(QSqlQuery& q, const QString& sql, const QVariantList& vl)
 {
     if (vl.isEmpty()) {
         EXECSQL(q, sql);
@@ -331,7 +358,7 @@ EXT_ bool execSql(QSqlQuery& q, const QString& sql, const QVariantList& vl)
     return q.first();
 }
 
-EXT_ bool execSqlFunction(QSqlQuery& q, const QString& fn, const QVariant& v1, const QVariant& v2, const QVariant& v3, const QVariant& v4, const QVariant& v5)
+bool execSqlFunction(QSqlQuery& q, const QString& fn, const QVariant& v1, const QVariant& v2, const QVariant& v3, const QVariant& v4, const QVariant& v5)
 {
     QString sql = "SELECT " + fn + QChar('(');
     if (v1.isValid()) {
@@ -353,7 +380,7 @@ EXT_ bool execSqlFunction(QSqlQuery& q, const QString& fn, const QVariant& v1, c
     return execSql(q, sql,v1, v2, v3, v4, v5);
 }
 
-EXT_ qlonglong execSqlIntFunction(QSqlQuery& q, bool *pOk, const QString& fn, const QVariant& v1, const QVariant& v2, const QVariant& v3, const QVariant& v4, const QVariant& v5)
+qlonglong execSqlIntFunction(QSqlQuery& q, bool *pOk, const QString& fn, const QVariant& v1, const QVariant& v2, const QVariant& v3, const QVariant& v4, const QVariant& v5)
 {
     bool ok = execSqlFunction(q, fn, v1, v2, v3, v4, v5);
     qlonglong r = NULL_ID;
@@ -366,7 +393,7 @@ EXT_ qlonglong execSqlIntFunction(QSqlQuery& q, bool *pOk, const QString& fn, co
     return r;
 }
 
-EXT_ bool execSqlBoolFunction(QSqlQuery& q, const QString& fn, const QVariant& v1, const QVariant& v2, const QVariant& v3, const QVariant& v4, const QVariant& v5)
+bool execSqlBoolFunction(QSqlQuery& q, const QString& fn, const QVariant& v1, const QVariant& v2, const QVariant& v3, const QVariant& v4, const QVariant& v5)
 {
     bool ok = execSqlFunction(q, fn, v1, v2, v3, v4, v5);
     QString r;
@@ -374,7 +401,7 @@ EXT_ bool execSqlBoolFunction(QSqlQuery& q, const QString& fn, const QVariant& v
     return str2bool(r);
 }
 
-EXT_ QString execSqlTextFunction(QSqlQuery& q, const QString& fn, const QVariant& v1, const QVariant& v2, const QVariant& v3, const QVariant& v4, const QVariant& v5)
+QString execSqlTextFunction(QSqlQuery& q, const QString& fn, const QVariant& v1, const QVariant& v2, const QVariant& v3, const QVariant& v4, const QVariant& v5)
 {
     bool ok = execSqlFunction(q, fn, v1, v2, v3, v4, v5);;
     QString r;
@@ -382,13 +409,13 @@ EXT_ QString execSqlTextFunction(QSqlQuery& q, const QString& fn, const QVariant
     return r;
 }
 
-EXT_ bool execSqlRecFunction(QSqlQuery& q, const QString& fn, const QVariant& v1, const QVariant& v2, const QVariant& v3, const QVariant& v4, const QVariant& v5)
+bool execSqlRecFunction(QSqlQuery& q, const QString& fn, const QVariant& v1, const QVariant& v2, const QVariant& v3, const QVariant& v4, const QVariant& v5)
 {
     static const QString s = "* FROM ";
     return execSqlFunction(q, s + fn, v1, v2, v3, v4, v5);
 }
 
-EXT_ void sqlNotify(QSqlQuery& q, const QString& channel, const QString& payload)
+void sqlNotify(QSqlQuery& q, const QString& channel, const QString& payload)
 {
     QString sql = "NOTIFY " + channel;
     if (!payload.isEmpty()) sql += ", " + quoted(payload);

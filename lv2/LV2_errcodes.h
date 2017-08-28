@@ -45,5 +45,6 @@ ERRCOD( ESTAT,       "Invalid status.")
 ERRCOD( ESEM,        "Semaphore error.")
 ERRCOD( EDISP,       "Megjelenítési hiba.")
 ERRCOD( EREDO,       "Ismételten végrehajtott művelet.")
+ERRCOD( EENODATA,    "Nincs adat.")
 
 #define __LAST_ERROR_CODE__  EREDO

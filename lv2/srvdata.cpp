@@ -252,30 +252,41 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
     int cnt = 0;
     while (true) {
         if (tf) sqlBegin(__q, sNames);
-        if (execSqlRecFunction(__q, _sSetServiceStat, getId(), __st, __note, did)) {    // OK!
+        QString sql = QString("SELECT * FROM %1(?,?,?,?)").arg(_sSetServiceStat);
+        int r = _execSql(__q, sql, getId(), __st, __note, did);
+        switch (r) {
+        case 0:         // Nincs adat ?!
+            EXCEPTION(EENODATA, 0, trUtf8("SQL függvény: %1(%2,%3,%4,%5)")
+                      .arg(_sSetServiceStat).arg(getId()).arg(__st, __note).arg(__did)
+                      );
+            break;
+        case 1:         // OK
             set(__q);
             if (tf) sqlCommit(__q, sNames);
             _DBGFNL() << toString() << endl;
             return *this;
-        }
-        QSqlError le = __q.lastError();
-        if (tf) sqlRollback(__q, sNames);
-        QString s = le.databaseText().split('\n').first();  // első sor
-        cnt++;
-        if (s.contains("deadlock", Qt::CaseInsensitive) || cnt <= _MAX_TRY_) {
-            DERR() << trUtf8("Set stat %1 to %2 SQL PREPARE ERROR #%3 try #%4\n").arg(__st, sNames).arg(le.number()).arg(cnt)
-                << trUtf8("driverText   : ") << le.driverText() << "\n"
-                << trUtf8("databaseText : ") << le.databaseText() << endl;
+        case -1:    // prepare error
+        case -2:    // exec error
+            QSqlError le = __q.lastError();
+            if (tf) sqlRollback(__q, sNames);
+            QString s = le.databaseText().split('\n').first();  // első sor
+            cnt++;
+            // deadlock ?
+            if (s.contains("deadlock", Qt::CaseInsensitive) || cnt <= _MAX_TRY_) {
+                DERR() << trUtf8("Set stat %1 to %2 SQL PREPARE ERROR #%3 try #%4\n").arg(__st, sNames).arg(le.number()).arg(cnt)
+                    << trUtf8("driverText   : ") << le.driverText() << "\n"
+                    << trUtf8("databaseText : ") << le.databaseText() << endl;
 #if   defined(Q_CC_MSVC)
-            Sleep(200);
+                Sleep(200);
 #elif defined(Q_CC_GNU)
-            usleep(200);
+                usleep(200);
 #endif
-            continue;
+                continue;   // retrying
+            }
+            _SQLERR(le, EQUERY);    // no return
         }
-        _SQLERR(le, EQUERY);
     }
-    return *this;
+    return *this;   // To avoid a warning message
 }
 
 int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString& __sn, eEx __ex)

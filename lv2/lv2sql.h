@@ -153,6 +153,18 @@ EXT_ QString toSqlName(const QString& _n);
     if (!(Q).exec(S)) SQLPREPERR(Q, S);
 #endif
 
+/// Végrehajt egy SQL query-t.
+/// @param q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.
+/// @param sql Az SQL query string.
+/// @param v1 A query első paramétere, ha megadtuk, ha nem, akkor nincs egy paramétere sem.
+/// @param v2 A query második paramétere, ha megadtuk, ha nem, akkor egy paramétere van.
+/// @param v3 A query harmadik paramétere, ha megadtuk, ha nem, akkor kettő paramétere van.
+/// @param v4 A query negyedik paramétere, ha megadtuk, ha nem, akkor három paramétere van.
+/// @param v5 A query ötödik paramétere, ha megadtuk, ha nem, akkor négy paramétere van.
+/// @return 1: nam volt hiba, a first() true-val tért vissza, 0: nam volt hiba a first() false-val tért vissza,
+///         -1: a prepare() hibát jelzett, -2 az exec() hibát jelzett
+EXT_ int _execSql(QSqlQuery& q, const QString& sql, const QVariant& v1 = QVariant(), const QVariant& v2 = QVariant(), const QVariant& v3 = QVariant(), const QVariant& v4 = QVariant(), const QVariant& v5 = QVariant());
+
 /// Végrehajt egy query-t
 /// @param q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.
 /// @param sql Az SQL query string.
@@ -160,6 +172,7 @@ EXT_ QString toSqlName(const QString& _n);
 /// @param v2 A query második paramétere, ha megadtuk, ha nem, akkor egy paramétere van.
 /// @param v3 A query harmadik paramétere, ha megadtuk, ha nem, akkor kettő paramétere van.
 /// @param v4 A query negyedik paramétere, ha megadtuk, ha nem, akkor három paramétere van.
+/// @param v5 A query ötödik paramétere, ha megadtuk, ha nem, akkor négy paramétere van.
 /// @return amit a q.first() visszaad a query végrehajtása után
 EXT_ bool execSql(QSqlQuery& q, const QString& sql, const QVariant& v1 = QVariant(), const QVariant& v2 = QVariant(), const QVariant& v3 = QVariant(), const QVariant& v4 = QVariant(), const QVariant& v5 = QVariant());
 
@@ -177,6 +190,7 @@ EXT_ bool execSql(QSqlQuery& q, const QString& sql, const QVariantList& vl);
 /// @param v2 A hívott függvény második paramétere, ha megadtuk, ha nem, akkor a függvénynek egy paramétere van.
 /// @param v3 A hívott függvény harmadik paramétere, ha megadtuk, ha nem, akkor a függvénynek kettő paramétere van.
 /// @param v4 A hívott függvény negyedik paramétere, ha megadtuk, ha nem, akkor a függvénynek három paramétere van.
+/// @param v5 A query ötödik paramétere, ha megadtuk, ha nem, akkor négy paramétere van.
 /// @return a lekérdezés után a q.first() metódus visszatérési értéke
 EXT_ bool execSqlFunction(QSqlQuery& q, const QString& fn, const QVariant& v1 = QVariant(), const QVariant& v2 = QVariant(), const QVariant& v3 = QVariant(), const QVariant& v4 = QVariant(), const QVariant& v5 = QVariant());
 
@@ -188,6 +202,7 @@ EXT_ bool execSqlFunction(QSqlQuery& q, const QString& fn, const QVariant& v1 = 
 /// @param v2 A hívott függvény második paramétere, ha megadtuk, ha nem, akkor a függvénynek egy paramétere van.
 /// @param v3 A hívott függvény harmadik paramétere, ha megadtuk, ha nem, akkor a függvénynek kettő paramétere van.
 /// @param v4 A hívott függvény negyedik paramétere, ha megadtuk, ha nem, akkor a függvénynek három paramétere van.
+/// @param v5 A hívott függvény ötödik paramétere, ha megadtuk, ha nem, akkor négy paramétere van.
 /// @return A hívott függvény visszatérési értéke, vagy ha nincs ill. nem egész érték, akkor NULL_ID.
 EXT_ qlonglong execSqlIntFunction(QSqlQuery& q, bool *pOk, const QString& fn, const QVariant& v1 = QVariant(), const QVariant& v2 = QVariant(), const QVariant& v3 = QVariant(), const QVariant& v4 = QVariant(), const QVariant& v5 = QVariant());
 
@@ -198,6 +213,7 @@ EXT_ qlonglong execSqlIntFunction(QSqlQuery& q, bool *pOk, const QString& fn, co
 /// @param v2 A hívott függvény második paramétere, ha megadtuk, ha nem, akkor a függvénynek egy paramétere van.
 /// @param v3 A hívott függvény harmadik paramétere, ha megadtuk, ha nem, akkor a függvénynek kettő paramétere van.
 /// @param v4 A hívott függvény negyedik paramétere, ha megadtuk, ha nem, akkor a függvénynek három paramétere van.
+/// @param v5 A hívott függvény ötödik paramétere, ha megadtuk, ha nem, akkor négy paramétere van.
 /// @return A hívott függvény visszatérési értéke.
 EXT_ bool execSqlBoolFunction(QSqlQuery& q, const QString& fn, const QVariant& v1 = QVariant(), const QVariant& v2 = QVariant(), const QVariant& v3 = QVariant(), const QVariant& v4 = QVariant(), const QVariant& v5 = QVariant());
 
@@ -208,6 +224,7 @@ EXT_ bool execSqlBoolFunction(QSqlQuery& q, const QString& fn, const QVariant& v
 /// @param v2 A hívott függvény második paramétere, ha megadtuk, ha nem, akkor a függvénynek egy paramétere van.
 /// @param v3 A hívott függvény harmadik paramétere, ha megadtuk, ha nem, akkor a függvénynek kettő paramétere van.
 /// @param v4 A hívott függvény negyedik paramétere, ha megadtuk, ha nem, akkor a függvénynek három paramétere van.
+/// @param v5 A hívott függvény ötödik paramétere, ha megadtuk, ha nem, akkor négy paramétere van.
 /// @return A hívott függvény visszatérési értéke.
 EXT_ QString execSqlTextFunction(QSqlQuery& q, const QString& fn, const QVariant& v1 = QVariant(), const QVariant& v2 = QVariant(), const QVariant& v3 = QVariant(), const QVariant& v4 = QVariant(), const QVariant& v5 = QVariant());
 
