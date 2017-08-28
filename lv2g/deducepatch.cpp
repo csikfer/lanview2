@@ -257,6 +257,7 @@ cDPRow::cDPRow(QSqlQuery& q, cDeducePatch *par, int _row, cMacTab &mt, cNPort &i
 cDPRow::cDPRow(QSqlQuery& q, cDeducePatch *par, int _row, bool unique, cPPort& ppl, cPPort& ppr)
     : QObject(par), parent(par), pTable(par->pUi->tableWidget), row(_row)
 {
+    pCheckBox = NULL;
     pTable->setRowCount(row +1);
 
     phsLink.setId(_sPortId1, ppl.getId());
@@ -495,7 +496,7 @@ void cDeducePatch::byTag(QSqlQuery &q)
 {
     pUi->tableWidget->setColumnHidden(CX_TIMES, true);
     cPatch pr;      // Jobb oldali patch panel
-    int ixTag = pr.toIndex(_sPortTag);
+    int ixTag = cPPort().toIndex(_sPortTag);
     pr.setById(q, nid2);
     pr.fetchPorts(q);
     cPPort *ppl;    // Bal oldali patch port
@@ -509,10 +510,12 @@ void cDeducePatch::byTag(QSqlQuery &q)
         tag = ppl->getName(ixTag);
         if (tag.isEmpty()) continue;    // ha nincs cimke
         unique = 0 > patch.ports.indexOf(ixTag, tag, i +1); // egyedi cimke a bal oldalon
-        while (0 <= (ix = pr.ports.indexOf(ixTag, tag, 0))) {
+        ix = 0;
+        while (0 <= (ix = pr.ports.indexOf(ixTag, tag, ix))) {
             unique = unique && (0 > pr.ports.indexOf(ixTag, tag, ix +1));  // Több találat ugyanarra a cimkére
             ppr = pr.ports.at(ix)->reconvert<cPPort>();
             rows << new cDPRow(q, this, rows.size(), unique, *ppl, *ppr);
+            ++ix;
         }
     }
 
