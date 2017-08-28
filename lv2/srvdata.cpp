@@ -246,13 +246,20 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
     QString sNames = names(__q);
     _DBGFN() << sNames << VDEB(__st) << VDEB(__note) << endl;
     QVariant did;
-    if (__did != NULL_ID) did = __did;
+    QString sql;
+    if (__did != NULL_ID) {
+        did = __did;
+        sql = QString("SELECT * FROM %1(?,?,?,?)");
+    }
+    else {
+        sql = QString("SELECT * FROM %1(?,?,?)");
+    }
+    sql = sql.arg(_sSetServiceStat);
     bool tf = trFlag(TS_NULL) == TS_TRUE;
     sNames = toSqlName(sNames);
     int cnt = 0;
     while (true) {
         if (tf) sqlBegin(__q, sNames);
-        QString sql = QString("SELECT * FROM %1(?,?,?,?)").arg(_sSetServiceStat);
         int r = _execSql(__q, sql, getId(), __st, __note, did);
         switch (r) {
         case 0:         // Nincs adat ?!
