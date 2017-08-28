@@ -962,7 +962,7 @@ QVariant  cColStaticDescrArray::toSql(const QVariant& _f) const
     default:
         EXCEPTION(EPROGFAIL);
     }
-    return QVariant();  // Csak hogy ne legeyen warning...
+    return QVariant();  // Csak hogy ne legyen warning...
 }
 /**
 A megadott értéket konvertálja a tárolási típussá, ami :\n
@@ -2368,6 +2368,18 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
             _nameIndex      = 1;
         }
     }
+    sql = "SELECT field_name FROM field_attrs WHERE table_name = ? AND 'rewrite_protected' = ANY (attrs)";
+    if (execSql(*pq, sql, QVariant(_tableName))) {
+        _protectedForRewriting = QBitArray(cols());
+        do {
+            QString n = pq->value(0).toString();
+            int ix = toIndex(n, EX_IGNORE);
+            if (ix < 0) {
+                EXCEPTION(EDATA, 0, QObject::trUtf8("Hibás mező név a field_attrs táblában : %1").arg(n));
+            }
+            _protectedForRewriting[ix] = true;
+        } while (pq->next());
+    }
     delete pq;
     delete pq2;
     // ************************ init O.K
@@ -3198,11 +3210,17 @@ cError *cRecord::tryInsert(QSqlQuery &__q, eTristate __tr)
 bool cRecord::rewrite(QSqlQuery &__q, eEx __ex)
 {
     _DBGFN() << "@(," << DBOOL(__ex) << ") table : " << fullTableName() << endl;
-    QBitArray   sets(cols(), true);     // Minden mezőt kiírunk,
+    QBitArray   sets(cols(), true);         // Minden mezőt kiírunk,
     QBitArray   where = nameKeyMask();
-    sets &= ~where;              // kivéve a név mezőt ...
-    if (idIndex(EX_IGNORE) >= 0 && isNullId()) { // és az ID-t, ha van olyan és az értéke NULL
+    sets &= ~where;                             // kivéve a név mezőt ...
+    if (idIndex(EX_IGNORE) >= 0 && isNullId()) {// és az ID-t, ha van olyan és az értéke NULL
         sets.clearBit(idIndex());
+    }
+    const QBitArray& pfr = descr()._protectedForRewriting;  // Védet mezőket nem töröljük a NULL értékű mezökkel
+    if (!pfr.isEmpty()) {
+        for (int i = 0; i < pfr.size(); ++i) {
+            if (pfr[i] && isNull(i)) sets[i] = false;
+        }
     }
     int r = update(__q, true, sets, where,__ex);
     switch (r) {

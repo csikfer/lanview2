@@ -749,7 +749,7 @@ public:
         return r == QList<C *>::size();
     }
     /// Az ID-k alapján írja újra a rekordokat.
-    /// Ha az objektumnak az ID-je NULL, akkor rewruteById() metüdus helyett az insert() metódust hívja
+    /// Ha az objektumnak az ID-je NULL, akkor rewriteById() metódus helyett az insert() metódust hívja
     bool replaceById(QSqlQuery &__q, eEx __ex = EX_ERROR) {
         // Ha nincs új rekord, csak a régieket töröljük
         if (tRecordList<C>::size() == 0) {

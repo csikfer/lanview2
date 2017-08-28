@@ -566,6 +566,8 @@ protected:
     QBitArray           _autoIncrement;
     /// Az oszlopok száma a táblában
     int                 _columnsNum;
+    /// Az rewrite metódusban a védet mezők, amik csak akkor kerülnek fellülírásra, ha az új érték nem NULL.
+    QBitArray           _protectedForRewriting;
     /// Ha származtatott tábláról van szó (az adatbázisban), akkor az ős tábla rekord leíróinak a pointerei
     QVector<const cRecStaticDescr *>  _parents;
     /// Inicializálja az objektumot.
