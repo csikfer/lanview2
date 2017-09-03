@@ -46,5 +46,6 @@ ERRCOD( ESEM,        "Semaphore error.")
 ERRCOD( EDISP,       "Megjelenítési hiba.")
 ERRCOD( EREDO,       "Ismételten végrehajtott művelet.")
 ERRCOD( EENODATA,    "Nincs adat.")
+ERRCOD( ENESTED,     "Egymásba ágyazott hibák.")
 
-#define __LAST_ERROR_CODE__  EENODATA
+#define __LAST_ERROR_CODE__  ENESTED

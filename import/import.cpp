@@ -80,6 +80,11 @@ void lv2import::abortOldRecords()
 void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource source, const QVariant &payload)
 {
     cImport    *pImp = NULL;
+    lastError = NULL;
+    cError *ipe = importGetLastError(); // Töröljük a hiba objektumot, biztos ami biztos.
+    if (ipe != NULL) {  // Ennek NULL-nak kellene lennie !! Nem kezeltünk egy hibát?!
+        ERROR_NESTED(ipe).exception();
+    }
     try {
         PDEB(INFO) << QString(trUtf8("DB notification : %1, %2, %3.")).arg(name).arg((int)source).arg(debVariantToString(payload)) << endl;
         pImp = new cImport;
@@ -96,16 +101,24 @@ void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource sour
         importParseText(pImp->getName(_sImportText));
     }
     CATCHS(lastError)
-    cError *ipe = importGetLastError();
-    if (ipe != NULL) lastError = ipe;
-    if (lastError == NULL) {
+    ipe = importGetLastError();
+    if (ipe != NULL) {
+        if (lastError != NULL) {    // Többszörös hiba ??!!
+            QString m = lastError->msg() + "\n" + QString(40, QChar('*')) + "\n" + ipe->msg();
+            delete lastError;
+            delete ipe;
+            EXCEPTION(ENESTED, 0, m);
+        }
+        lastError = ipe;
+    }
+    if (lastError == NULL) {    // OK
         pImp->setName(_sExecState, _sOk);
         pImp->setName(_sResultMsg, _sOk);
         pImp->set(_sEnded, QVariant(QDateTime::currentDateTime()));
         pImp->clear(_sAppLogId);
         pImp->update(*pQuery, false, pImp->mask(_sExecState, _sResultMsg, _sEnded, _sAppLogId));
     }
-    else if (pImp != NULL) {
+    else if (pImp != NULL) {    // Hiba, a cImport objektum létre lett hozva
         qlonglong eid = sendError(lastError);
         pImp->setName(_sExecState, _sFaile);
         pImp->setName(_sResultMsg, lastError->msg());
@@ -114,8 +127,8 @@ void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource sour
         pImp->setId(_sAppLogId, eid);
         pImp->update(*pQuery, false, pImp->mask(_sExecState, _sResultMsg, _sEnded, _sAppLogId));
     }
-    else {
-        EXCEPTION(EPROGFAIL);
+    else {                      // A cImport objektum létrehozása sem sikerült
+        ERROR_NESTED(lastError).exception();
     }
     pDelete(pImp);
     QCoreApplication::exit(0);

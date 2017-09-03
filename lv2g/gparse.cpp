@@ -134,11 +134,7 @@ void cParseWidget::remoteParse(const QString &src)
             pUi->textEditResult->setText(msg);
             msg.clear();
         }
-#if   defined(Q_CC_MSVC)
-        Sleep(1000);
-#elif defined(Q_CC_GNU)
-        sleep(1);
-#endif
+        QThread::sleep(1);
         if (!imp.fetchById(*pq)) {
             msg = trUtf8("A kiírt imports rekordot nem tudom visszaolvasni (ID = %1).").arg(imp.getId());
             break;

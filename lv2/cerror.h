@@ -78,6 +78,8 @@ if (i < 0 || i >= size()) EXCEPTION(ENOINDEX, i);
  */
 #define EXCEPTION(ec, ...) (new cError(__FILE__, __LINE__,__PRETTY_FUNCTION__,eError::ec, ##__VA_ARGS__))->exception();
 
+#define ERROR_NESTED(pe) pe->nested(__FILE__, __LINE__, __PRETTY_FUNCTION__)
+
 // Error codes
 #include "errcodes.h"
 
@@ -225,6 +227,8 @@ Az adattagok inicializálása után hívja a circulation() metódust
         (new cError(_mSrcName, _mSrcLine, _mFuncName, _mErrorCode, _mErrorSubCode, _mErrorSubMsg))->exception();
     }
 
+    ///
+    cError &nested(const char * _mSrcName, int _mSrcLine, const char * _mFuncName);
     /*! Az objektum tartalmát egy stringgé konvertálja. */
     virtual QString msg(void) const;
     /*!

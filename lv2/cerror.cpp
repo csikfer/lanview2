@@ -151,6 +151,24 @@ QString cError::errorMsg(int __ErrorCode)
     return (QObject::trUtf8("Ismeretlen hiba kód"));
 }
 
+cError& cError::nested(const char * _mSrcName, int _mSrcLine, const char * _mFuncName)
+{
+    mErrorSubMsg    = msg();
+    mFuncName       = _mFuncName;
+    mSrcName        = _mSrcName;
+    mSrcLine        = _mSrcLine;
+    mErrorSubCode   = mErrorCode;          ///< Error sub code
+    mErrorCode      = eError::ENESTED;
+    pThread         = QThread::currentThread();
+    if (pThread == QCoreApplication::instance()->thread()) {
+        mThreadName = _sMainThread;
+    }
+    else {
+        mThreadName = pThread->objectName();
+    }
+    return *this;
+}
+
 QString cError::msg(void) const
 {
     QString r;
