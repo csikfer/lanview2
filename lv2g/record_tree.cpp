@@ -27,7 +27,10 @@ void cRecordTree::init()
         buttons << DBT_COPY << DBT_SPACER;
     }
     buttons << DBT_EXPAND << DBT_REFRESH << DBT_ROOT << DBT_RESTORE;
-    if (isReadOnly == false) buttons << DBT_SPACER << DBT_DELETE << DBT_INSERT << DBT_SIMILAR << DBT_MODIFY;
+    if (isReadOnly == false) {
+        buttons << DBT_SPACER << DBT_DELETE << DBT_INSERT << DBT_SIMILAR << DBT_MODIFY;
+    }
+    if (pUpper != NULL && shapeType < ENUM2SET(TS_LINK)) shapeType |= ENUM2SET(TS_CHILD);
     switch (shapeType) {
     case ENUM2SET2(TS_TREE, TS_BARE):
         if (pUpper != NULL) EXCEPTION(EDATA);
@@ -158,15 +161,22 @@ bool cRecordTree::queryNodeChildrens(QSqlQuery& q, cTreeNode *pn)
         return false;
     }
     int tfix = recDescr().ixToParent();
-    qlonglong parId = NULL_ID;
-    if (pn->pData != NULL && !pn->pData->isEmpty()) parId = pn->pData->getId();
-    wl << (recDescr().columnName(tfix) + (
-              (parId == NULL_ID) ? (" IS NULL")
-                                 : (" = " + QString::number(parId))
-                                         )
-          );
-    sql += " WHERE " + wl.join(" AND ");
-
+    if (pn->pData == NULL || pn->pData->isEmpty()) {    // gyökér vagy gyökerek
+        // A szűrés miatt nem jó a parent_id IS NULL-ra vizsgálni.
+        sql += " WHERE " + wl.join(" AND ");
+        // 'r' lessz a teljes szűrt rekord készlet. Ebből válogatjuk le a rész fák gyökereit.
+        sql  =  "WITH r AS (" + sql + ")";
+        // A parent_id vagy NULL
+        sql += " SELECT * FROM r WHERE " + recDescr().columnName(tfix) + " IS NULL"
+        // vagy a parent nincs a szűrt rekordkészletben (r)
+            +   " OR NOT " + recDescr().columnName(tfix) + " = ANY ("
+            +       " SELECT " + recDescr().idName() + " FROM r)";
+    }
+    else {
+        qlonglong parId = pn->pData->getId();
+        wl << (recDescr().columnName(tfix) + " = " + QString::number(parId));
+        sql += " WHERE " + wl.join(" AND ");
+    }
     if (pFODialog != NULL) {
         QString ord = pFODialog->ord();
         if (!ord.isEmpty()) sql += " ORDER BY " + ord;

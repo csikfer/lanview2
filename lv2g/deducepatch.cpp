@@ -231,6 +231,7 @@ cDPRow::cDPRow(QSqlQuery& q, cDeducePatch *par, int _row, cMacTab &mt, cNPort &i
             bool checked = !(colision || bBckShMism);
             pCheckBox->setChecked(checked);
             pTable->setCellWidget(row, CX_SAVE, pCheckBox);
+            connect(pCheckBox, SIGNAL(toggled(bool)), this, SLOT(checkBoxchange(bool)));
         }
     }
 
@@ -371,6 +372,7 @@ cDPRow::cDPRow(QSqlQuery& q, cDeducePatch *par, int _row, bool unique, cPPort& p
             bool checked = !(colision || bBckShMism || unique) || bMac != TS_TRUE;
             pCheckBox->setChecked(checked);
             pTable->setCellWidget(row, CX_SAVE, pCheckBox);
+            connect(pCheckBox, SIGNAL(toggled(bool)), this, SLOT(checkBoxchange(bool)));
         }
     }
 

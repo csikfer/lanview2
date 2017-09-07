@@ -40,7 +40,8 @@ SOURCES += \
     object_dialog.cpp \
     exports.cpp \
     deducepatch.cpp \
-    tableexportdialog.cpp
+    tableexportdialog.cpp \
+    linkgraph.cpp
 
 HEADERS +=\
     lv2g_global.h \
@@ -73,7 +74,8 @@ HEADERS +=\
     object_dialog.h \
     exports.h \
     deducepatch.h \
-    tableexportdialog.h
+    tableexportdialog.h \
+    linkgraph.h
 
 FORMS += \
     column_filter.ui \
@@ -104,6 +106,11 @@ INCLUDEPATH += ../lv2
 msvc:LIBS += -lSecur32
 LIBS += -L../lv2 -llv2
 
+exists(../../zodiacgraph) {
+    INCLUDEPATH += ../../zodiacgraph
+    LIBS += -L../../zodiacgraph.build -lzodiacgraph
+    DEFINES += ZODIACGRAPH
+}
 
 TRANSLATIONS    = lv2glib_hu.ts \
                   lv2glib_en.ts

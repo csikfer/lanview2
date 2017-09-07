@@ -1,48 +1,61 @@
 TEMPLATE = subdirs
 
-SUBDIRS = \
-    lv2 \
-    lv2g \
-    lv2gui \
-    lv2d \
-    updt_oui
-
+SUBDIRS = lv2
 lv2.subdir = lv2
 
-lv2g.subdir = lv2g
-lv2g.depends = lv2
+!exists(lv2g/miss) {
+    SUBDIRS += lv2g lv2gui
 
-lv2gui.subdir = lv2gui
-lv2gui.depends = lv2 lv2g
+    lv2g.subdir = lv2g
+    lv2g.depends = lv2
 
-lv2d.subdirs = lv2d
-lv2d.depends = lv2
+    lv2gui.subdir = lv2gui
+    lv2gui.depends = lv2 lv2g
+}
 
-updt_oui.subdirs = updt_oui
-updt_oui.depends = lv2
+!exists(lv2d/miss) {
+    SUBDIRS += lv2d
+    lv2d.subdirs = lv2d
+    lv2d.depends = lv2
+}
+
+!exists(updt_oui/miss) {
+    SUBDIRS += updt_oui
+    updt_oui.subdirs = updt_oui
+    updt_oui.depends = lv2
+}
 
 unix {
-    SUBDIRS += \
-        portmac \
-        portstat \
-        arpd \
-        import
 
+  !exists(portmac/miss) {
+    SUBDIRS += portmac
     portmac.subdirs = portmac
     portmac.depends = lv2
+  }
 
+  !exists(portstat/miss) {
+    SUBDIRS += portstat
     portstat.subdirs = portstat
     portstat.depends = lv2
+  }
 
+  !exists(arpd/miss) {
+    SUBDIRS += arpd
     arpd.subdirs = arpd
     arpd.depends = lv2
+  }
 
+  !exists(import/miss) {
+    SUBDIRS += import
     import.subdirs = import
     import.depends = lv2
+  }
 
-    # non free!
+  # non free!
+  exists(icontsrv/firmware) {
     SUBDIRS += icontsrv
     icontsrv.subdirs = icontsrv
     icontsrv.depends = lv2
+  }
 }
 
