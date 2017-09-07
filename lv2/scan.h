@@ -3,15 +3,9 @@
 
 #include    "lanview.h"
 
-#if defined(Q_PROCESSOR_X86) && (defined(Q_OS_UNIX) || defined(Q_OS_LINUX))
-#define MUST_SCAN
-#endif
-
-
-#ifdef MUST_SCAN
+#if 0   // Nincs használatban
 #include "lv2xml.h"
 
-class cArp;
 class cSnmpDevice;
 
 class LV2SHARED_EXPORT nmap : public processXml {
@@ -98,6 +92,12 @@ public:
 private:
     QDomElement host;
 };
+#endif
+
+#ifdef SNMP_IS_EXISTS
+
+class cArp;
+class cSnmpDevice;
 
 class LV2SHARED_EXPORT cArpTable : public QMap<QHostAddress, cMac> {
 public:
@@ -136,7 +136,7 @@ EXT_ void scanByLldp(QSqlQuery q, const cSnmpDevice& __dev, bool _parser = false
 EXT_ void lldpInfo(QSqlQuery q, const cSnmpDevice& __dev, bool _parser);
 
 
-#else  // MUST_SCAN
+#else  // SNMP_IS_EXIST
 
 class LV2SHARED_EXPORT cArpTable {
 public:
@@ -148,6 +148,6 @@ public:
 
 inline void scanByLldp(QSqlQuery, const cSnmpDevice&, bool _parser = false) { (void)_parser; EXCEPTION(ENOTSUPP); }
 
-#endif // MUST_SCAN
+#endif // SNMP_IS_EXIST
 
 #endif // SCAN_H

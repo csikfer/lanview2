@@ -36,23 +36,19 @@ LIBS += -L../lv2 -llv2
 # $cd simple-mail-build
 # $ln -s ../simple-mail/build/src src
 
-#Cross compiler not supported !!!
-message($$QMAKE_HOST.arch)
 unix {
-    contains(QMAKE_HOST.arch,x86_\d+):{
-    message("Unix, x86_??")
+    exists(/usr/include/net-snmp) {
         LIBS += -lsnmp
-        contains(QMAKE_HOST.arch,x86_64):{
-            message("Unix, x86_64")
-            SOURCES += syscronthread.cpp
-            INCLUDEPATH += ../../simple-mail/src
-            LIBS += -L../../simple-mail-build/src -lsimplemail-qt5
-        }
-        else:message("Unix x86_32")
+        DEFINES += SNMP_IS_EXISTS
     }
-    else: message("Unix ARM (?)")
 }
-else: message("Windows (?)")
+
+exists(../../simple-mail/src) {
+    DEFINES += SYSCRON
+    SOURCES += syscronthread.cpp
+    INCLUDEPATH += ../../simple-mail/src
+    LIBS += -L../../simple-mail-build/src -lsimplemail-qt5
+}
 
 
  TRANSLATIONS    = lv2d_hu.ts \

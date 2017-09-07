@@ -1,10 +1,10 @@
 #include "scan.h"
-#ifdef MUST_SCAN
-#
 
 #include "lv2data.h"
 #include "srvdata.h"
 #include "lv2link.h"
+
+#if 0
 
 nmap::nmap(const netAddress& net, int opt, QObject *parent) : processXml(parent), host()
 {
@@ -151,7 +151,10 @@ QMap<int, nmap::port> nmap::getPorts(bool udp)
     return r;
 }
 
+#endif
 /***************************************************************************************************************/
+#ifdef SNMP_IS_EXISTS
+
 cArpTable& cArpTable::getBySnmp(cSnmp& __snmp)
 {
     DBGFN();
@@ -1913,5 +1916,5 @@ void lldpInfo(QSqlQuery q, const cSnmpDevice& __dev, bool _parser)
 
 #else
 #error "Invalid projects file ?"
-#endif // MUST_SCAN
+#endif // SNMP_IS_EXISTS
 

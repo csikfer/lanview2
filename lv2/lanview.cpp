@@ -281,7 +281,7 @@ lanView::lanView()
         }
         // SNMP init, ha kell
         if (snmpNeeded) {
-#ifdef MUST_SNMP
+#ifdef SNMP_IS_EXISTS
             netSnmp::init();
 #else //  MUST_SNMP
             EXCEPTION(ENOTSUPP, -1, QObject::trUtf8("SNMP not supported."));
@@ -409,7 +409,7 @@ lanView::~lanView()
         delete pSet;
         pSet = NULL;
     }
-#ifdef MUST_SNMP
+#ifdef SNMP_IS_EXISTS
     netSnmp::down();
 #endif // MUST_SNMP
     if (appTranslator != NULL) {

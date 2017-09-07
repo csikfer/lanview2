@@ -3,6 +3,7 @@
 
 #include "QtCore"
 
+#define SNMP_IS_EXISTS
 #include "lanview.h"
 #include "lv2service.h"
 #include "lv2link.h"

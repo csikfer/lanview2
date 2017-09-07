@@ -126,10 +126,10 @@ HEADERS += lanview.h \
 unix:{
     SOURCES += usignal.cpp
     HEADERS += usignal.h
-    contains(QMAKE_HOST.arch,x86_\d+):{
-        message("Unix, x86_??")
+    exists(/usr/include/net-snmp) {
         SOURCES += scan.cpp
         LIBS += -lsnmp
+        DEFINES += SNMP_IS_EXISTS
     }
 }
 

@@ -19,7 +19,7 @@
  ***************************************************************************/
 #include "lanview.h"
 
-#ifdef MUST_SNMP
+#ifdef SNMP_IS_EXISTS
 
 const QString&  snmpIfStatus(int __i, eEx __ex)
 {

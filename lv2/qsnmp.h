@@ -36,13 +36,10 @@ Egyébb használlt MIB-ek útvonalával is ki kell egészíteni!
 #include "lv2_global.h"
 #include "lv2types.h"
 
-#if defined(Q_PROCESSOR_X86) && (defined(Q_OS_UNIX) || defined(Q_OS_LINUX))
-#define MUST_SNMP
-#endif
-
 EXT_ QString snmpNotSupMsg();
 
-#ifdef MUST_SNMP
+// NET-SNMP EXISTS?
+#ifdef SNMP_IS_EXISTS
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -364,7 +361,7 @@ class LV2SHARED_EXPORT cSnmp : public netSnmp {
     bool    checkOId(const cOIdVector& __o);
 };
 
-#else // MAST_SNMP
+#else // SNMP_IS_EXISTS
 enum eSnmp {
     SNMP_VERSION_1,
     SNMP_VERSION_2c,
@@ -376,5 +373,5 @@ public:
     cSnmp(const QString&, const QString& = _sNul, int = 0) { EXCEPTION(ENOTSUPP); }
 };
 
-#endif // MAST_SNMP
+#endif // SNMP_IS_EXISTS
 #endif // QSNMP_H

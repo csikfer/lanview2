@@ -2,7 +2,7 @@
 #define CSYSCRONTHREAD_H
 #include "lv2service.h"
 
-#if (defined(Q_OS_UNIX) || defined(Q_OS_LINUX)) && defined(Q_PROCESSOR_X86_64)
+#ifdef SYSCRON
 
 class cSysInspector : public cInspector {
 //    Q_OBJECT
