@@ -733,4 +733,48 @@ private slots:
     void togleStrikeout(bool f);
 };
 
+class cSelectPlace : public QObject {
+    Q_OBJECT
+public:
+    cSelectPlace(QComboBox *_pZone, QComboBox *_pPLace, QLineEdit *_pFilt = NULL, const QString& _constFilt = QString());
+private:
+    QComboBox *pComboBoxZone;
+    QComboBox *pComboBoxPLace;
+    QLineEdit *pLineEditPlaceFilt;
+    const QString    constFilterPlace;
+    cZoneListModel     *pZoneModel;
+    cPlacesInZoneModel *pPlaceModel;
+    bool                blockPlaceSignal;
+private slots:
+    void _zoneChanged(int ix);
+    void _placeChanged(int ix);
+    void _placePatternChanged(const QString& s);
+signals:
+    void placeNameChanged(const QString& name);
+    void placeIdChanged(qlonglong id);
+};
+
+
+class cSelectNode : public cSelectPlace {
+    Q_OBJECT
+public:
+    cSelectNode(QComboBox *_pZone, QComboBox *_pPlace, QComboBox *_pNode,
+                QLineEdit *_pPlaceFilt = NULL, QLineEdit *_pNodeFilt = NULL,
+                const QString& _placeConstFilt = QString(), const QString& _nodeConstFilt = QString());
+private:
+    QComboBox *         pComboBoxNode;
+    QLineEdit *         pLineEditNodeFilt;
+    const QString       constFilterNode;
+    cRecordListModel *  pNodeModel;
+    bool                blockNodeSignal;
+private slots:
+    void _placeIdChanged(qlonglong pid);
+    void _nodePatternChanged(const QString& s);
+    void _nodeChanged(int ix);
+signals:
+    void nodeNameChanged(const QString& name);
+    void nodeIdChanged(qlonglong id);
+};
+
+
 #endif // LV2WIDGETS_H

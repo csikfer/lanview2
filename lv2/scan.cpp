@@ -280,7 +280,6 @@ void cArpTable::getByDhcpdConf(QIODevice& __f, qlonglong _hid)
     static const QString _srange          = "range";
     QTextStream str(&__f);
     QString tok;
-    QString _s;
     QVariant hId;
     if (_hid != NULL_ID) hId = _hid;
     while (true) {
@@ -1188,7 +1187,10 @@ void cLldpScan::scanByLldpDev(QSqlQuery& q)
     cSnmp snmp;
     isBreakImportParser(parser);
     pDev->fetchPorts(q);
-    pDev->open(q, snmp);
+    if (pDev->open(q, snmp, EX_IGNORE, &em)) {
+        DWAR() << QObject::trUtf8("A %1 eszköz lekérdezése meghiusult : ").arg(pDev->getName()) << em << endl;
+        return;
+    }
     // ----- Egy eszköz lekérdezése
     PDEB(INFO) << QObject::trUtf8("**** SNMP eszköz %1 lekérdezése (SNMP/LLDP)...").arg(pDev->getName()) << endl;
     rRows.clear();

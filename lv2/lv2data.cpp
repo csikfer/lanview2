@@ -3157,7 +3157,7 @@ int cSnmpDevice::snmpVersion() const
 
 bool cSnmpDevice::setBySnmp(const QString& __com, eEx __ex, QString *pEs)
 {
-#ifdef MUST_SCAN
+#ifdef SNMP_IS_EXISTS
     QString community = __com;
     if (community.isEmpty()) {
         community = getName(_sCommunityRd);
@@ -3188,22 +3188,24 @@ bool cSnmpDevice::setBySnmp(const QString& __com, eEx __ex, QString *pEs)
         containerValid = CV_ALL_NODE | CV_PORTS_ADDRESSES; // VLAN-ok nincsenek (még) lekérdezve!! | CV_PORT_VLANS;
         return true;
     }
-#else // MUST_SCAN
+#else // SNMP_IS_EXISTS
     (void)__com;
     if (pEs != NULL) *pEs = snmpNotSupMsg();
     if (__ex != EX_IGNORE) EXCEPTION(ENOTSUPP, -1, snmpNotSupMsg());
-#endif // MUST_SCAN
+#endif // SNMP_IS_EXISTS
     return false;
 }
 
-int cSnmpDevice::open(QSqlQuery& q, cSnmp& snmp, eEx __ex) const
+int cSnmpDevice::open(QSqlQuery& q, cSnmp& snmp, eEx __ex, QString *pEMsg) const
 {
-#ifdef MUST_SCAN
+#ifdef SNMP_IS_EXISTS
     QList<QHostAddress> la = fetchAllIpAddress(q);
+    QString lastMsg;
     if (la.isEmpty()) {
-        QString em = trUtf8("A %1 SNMP eszköznek nincs IP címe").arg(getName());
-        if (__ex) EXCEPTION(EDATA, -1, em);
-        DERR() << em << endl;
+        lastMsg = trUtf8("A %1 SNMP eszköznek nincs IP címe").arg(getName());
+        if (__ex) EXCEPTION(EDATA, -1, lastMsg);
+        DERR() << lastMsg << endl;
+        if (pEMsg != NULL) *pEMsg = lastMsg;
         return -1;
     }
     QString comn = getName(_sCommunityRd);
@@ -3215,18 +3217,19 @@ int cSnmpDevice::open(QSqlQuery& q, cSnmp& snmp, eEx __ex) const
         static const QString o = "SNMPv2-MIB::sysDescr";
         r = snmp.getNext(o);
         if (r == 0) break;  // O.K.
-        DWAR() << trUtf8("Error snmp.getNext(%1) #%2 (%3); address: %4, node: %5")
-                  .arg(o).arg(r).arg(snmp.emsg, a.toString(), identifying(false))
-               << endl;
+        lastMsg = trUtf8("Error snmp.getNext(%1) #%2 (%3); address: %4, node: %5")
+                .arg(o).arg(r).arg(snmp.emsg, a.toString(), identifying(false));
+        DWAR() << lastMsg << endl;
     }
-    if (__ex && r) EXCEPTION(ESNMP, r, snmp.emsg);
+    if (__ex && r) EXCEPTION(ESNMP, r, lastMsg);
+    if (pEMsg != NULL) *pEMsg = lastMsg;
     return r;
-#else // MUST_SCAN
+#else // SNMP_IS_EXISTS
     (void)snmp;
     (void)q;
     if (__ex != EX_IGNORE) EXCEPTION(ENOTSUPP, -1, snmpNotSupMsg());
     return -1;
-#endif // MUST_SCAN
+#endif // SNMP_IS_EXISTS
 }
 
 
@@ -3445,7 +3448,7 @@ cSelect& cSelect::choice(QSqlQuery q, const QString& _type, const QString& _val,
     static QString sql =
             "SELECT * FROM selects "
                 "WHERE :styp = select_type "
-                  "AND ((pattern_type = 'equal'   AND :sval = pattern) "
+                  "AND ((pattern_type = 'equal'   AND COALESCE(:sval, '') = pattern) "
                     "OR (pattern_type = 'equali'  AND lower(:sval) = lower(pattern)) "
                     "OR (pattern_type = 'similar' AND :sval similar TO pattern) "
                     "OR (pattern_type = 'regexp'  AND :sval ~  pattern) "

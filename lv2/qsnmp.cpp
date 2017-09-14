@@ -808,7 +808,7 @@ QString snmpNotSupMsg()
     return _sNul;
 }
 
-#else  // MUST_SNMP
+#else  // SNMP_IS_EXISTS
 
 /*
 cSnmp::async::async()
@@ -847,4 +847,4 @@ QString snmpNotSupMsg()
     return QObject::trUtf8("Az snmp modul nincs engedélyezve");
 }
 
-#endif // MUST_SNMP
+#endif // SNMP_IS_EXISTS

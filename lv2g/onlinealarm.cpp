@@ -282,6 +282,16 @@ void cOnlineAlarm::acknowledge()
         QString msg = dialog.pUi->textEditMsg->toPlainText();
         cUserEvent::insertHappened(*pq, uid, aid, UE_ACKNOWLEDGE, msg);
         if (dialog.pUi->checkBoxTicket->isChecked()) {
+            QVariantList args;
+            args << pActRecord->get(_sLastStatus);  // stat (last_stat)
+            args << msg;                            // stat message (event_note)
+            // NULL                                    daemon ID
+            args << aid;                            // sup.alarm ID
+            args << pActRecord->get(_sFirstStatus); // firs_stat
+            args << pActRecord->get(_sMaxStatus);   // last_stat
+            QString sql = "SELECT ticket_alarm(?,?,NULL,?,?,?)";
+            execSql(*pq, sql, args);
+/*
             cAlarm a;
             a[_sSuperiorAlarmId] = aid;
             a[_sHostServiceId]   = pTicket->getId();
@@ -290,7 +300,8 @@ void cOnlineAlarm::acknowledge()
             a[_sLastStatus]      = pActRecord->get(_sLastStatus);
             a[_sEventNote]       = msg;
             a[_sNoalarm]         = false;
-            a.insert(*pq);
+            a.insert(*pq)
+*/
         }
     }
     pRecTabAckAct->refresh();

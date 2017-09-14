@@ -1,93 +1,7 @@
 #include "deducepatch.h"
 #include "report.h"
+#include "lv2widgets.h"
 
-cSelectNode::cSelectNode(QComboBox *_pZone, QComboBox *_pPLace, QComboBox *_pNode, QLineEdit *_pFilt, const QString& _cFilt)
-    : QObject()
-    , pComboBoxZone(_pZone)
-    , pComboBoxPLace(_pPLace)
-    , pComboBoxNode(_pNode)
-    , pLineEditFilt(_pFilt)
-    , constFilter(_cFilt)
-{
-    blockSignal = false;
-    pZoneModel = new cZoneListModel(this);
-    pComboBoxZone->setModel(pZoneModel);
-    pPlaceModel = new cPlacesInZoneModel(this);
-    pComboBoxPLace->setModel(pPlaceModel);
-    pComboBoxPLace->setCurrentIndex(0);
-    pNodeModel = new cRecordListModel(cPatch().descr(), this);
-    pNodeModel->nullable = true;
-    pComboBoxNode->setModel(pNodeModel);
-    if (!constFilter.isEmpty()) {
-        pNodeModel->setConstFilter(constFilter, FT_SQL_WHERE);
-    }
-    connect(pComboBoxZone,  SIGNAL(currentIndexChanged(int)),   this, SLOT(zoneChanged(int)));
-    connect(pComboBoxPLace, SIGNAL(currentIndexChanged(int)),   this, SLOT(placeChanged(int)));
-    if (_pFilt != NULL) {
-        connect(pLineEditFilt, SIGNAL(textChanged(QString)),    this, SLOT(patternChanged(QString)));
-    }
-    connect(pComboBoxNode,  SIGNAL(currentIndexChanged(int)),   this, SLOT(_nodeChanged(int)));
-}
-
-void cSelectNode::zoneChanged(int ix)
-{
-    qlonglong id = pZoneModel->atId(ix);
-    pPlaceModel->setZone(id);
-}
-
-void cSelectNode::placeChanged(int ix)
-{
-    qlonglong nid = pNodeModel->atId(pComboBoxNode->currentIndex());
-    blockSignal = true;
-    qlonglong pid = pPlaceModel->atId(ix);
-    QString sql = QString("place_id = %1").arg(pid);
-    if (!constFilter.isEmpty()) sql = "(" + sql + " AND " + constFilter + ")";
-    pNodeModel->setConstFilter(sql, FT_SQL_WHERE);
-    pNodeModel->setFilter();
-    int nix = pNodeModel->indexOf(nid);
-    if (nix < 0) {  // Nincs már megfelelő node -> NULL
-        pComboBoxNode->setCurrentIndex(0);
-        blockSignal = false;
-        _nodeChanged(0);
-    }
-    else {          // A node változatlan (csak az indexe változhatott)
-        pComboBoxNode->setCurrentIndex(nix);
-        blockSignal = false;
-    }
-}
-
-void cSelectNode::patternChanged(const QString& s)
-{
-    qlonglong nid = pNodeModel->atId(pComboBoxNode->currentIndex());
-    blockSignal = true;
-    if (s.isEmpty()) {
-        pNodeModel->setFilter(QVariant(), OT_DEFAULT, FT_NO);
-    }
-    else {
-        pNodeModel->setFilter(s, OT_DEFAULT, FT_LIKE);
-    }
-    int nix = pNodeModel->indexOf(nid);
-    if (nix < 0) {  // Nincs már megfelelő node -> NULL
-        pComboBoxNode->setCurrentIndex(0);
-        blockSignal = false;
-        _nodeChanged(0);
-    }
-    else {          // A node változatlan (csak az indexe változhatott)
-        pComboBoxNode->setCurrentIndex(nix);
-        blockSignal = false;
-    }
-}
-
-void cSelectNode::_nodeChanged(int ix)
-{
-    if (blockSignal) return;
-    QString   s  = pNodeModel->at(ix);
-    nodeChanged(s);
-    qlonglong id = pNodeModel->atId(ix);
-    nodeChanged(id);
-}
-
-/* *** */
 
 /// Egy MAC keresése a port-címtáblában. és a link rekord beolvasása
 /// @param mac A keresett MAC cím.
@@ -409,12 +323,12 @@ cDeducePatch::cDeducePatch(QMdiArea *par)
     pUi->setupUi(this);
     static const QString sql = "'patch' = SOME (node_type)";
     nid = nid2 = NULL_ID;
-    pSelNode  = new cSelectNode(pUi->comboBoxZone,  pUi->comboBoxPlace,  pUi->comboBoxPatch,  NULL, sql);
+    pSelNode  = new cSelectNode(pUi->comboBoxZone,  pUi->comboBoxPlace,  pUi->comboBoxPatch,NULL,  NULL, QString(), sql);
     pSelNode->setParent(this);
-    connect(pSelNode, SIGNAL(nodeChanged(qlonglong)), this, SLOT(changeNode(qlonglong)));
-    pSelNode2 = new cSelectNode(pUi->comboBoxZone2, pUi->comboBoxPlace2, pUi->comboBoxPatch2, NULL, sql);
+    connect(pSelNode, SIGNAL(nodeIdChanged(qlonglong)), this, SLOT(changeNode(qlonglong)));
+    pSelNode2 = new cSelectNode(pUi->comboBoxZone2, pUi->comboBoxPlace2, pUi->comboBoxPatch2, NULL, NULL, QString(), sql);
     pSelNode2->setParent(this);
-    connect(pSelNode2, SIGNAL(nodeChanged(qlonglong)), this, SLOT(changeNode2(qlonglong)));
+    connect(pSelNode2, SIGNAL(nodeIdChanged(qlonglong)), this, SLOT(changeNode2(qlonglong)));
 
     connect(pUi->radioButtonLLDP, SIGNAL(pressed()), this, SLOT(setMethodeLLDP()));
     connect(pUi->radioButtonMAC,  SIGNAL(pressed()), this, SLOT(setMethodeMAC()));

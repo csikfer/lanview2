@@ -163,7 +163,7 @@ bool cRecordTree::queryNodeChildrens(QSqlQuery& q, cTreeNode *pn)
     int tfix = recDescr().ixToParent();
     if (pn->pData == NULL || pn->pData->isEmpty()) {    // gyökér vagy gyökerek
         // A szűrés miatt nem jó a parent_id IS NULL-ra vizsgálni.
-        sql += " WHERE " + wl.join(" AND ");
+        if (!wl.isEmpty()) sql += " WHERE " + wl.join(" AND ");
         // 'r' lessz a teljes szűrt rekord készlet. Ebből válogatjuk le a rész fák gyökereit.
         sql  =  "WITH r AS (" + sql + ")";
         // A parent_id vagy NULL

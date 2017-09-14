@@ -367,17 +367,16 @@ int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString&
               "JOIN nodes             USING(node_id) "
               "JOIN services AS s     USING(service_id) ";
     // host, service
-    QString where =
-            "WHERE node_name    LIKE ? "
-              "AND service_name LIKE ? ";
+    QString where = "WHERE node_name    LIKE ? "
+                    "AND s.service_name LIKE ? ";
     bind << __hn << __sn;
     // port
     if (__pn.isEmpty()) {
-        where += "AND hs.port_id IS NULL ";
+        where += "AND    hs.port_id IS NULL ";
     }
     else {
         sql   += "LEFT OUTER JOIN nports USING(port_id) ";
-        where += "AND port_name LIKE ? ";
+        where += "AND port_name  LIKE ? ";
         bind  += __pn;
     }
     // protocol service
@@ -811,7 +810,7 @@ int cArp::replace(QSqlQuery& __q, eEx __ex)
     return r;
 }
 
-#ifdef MUST_SCAN
+#ifdef SNMP_IS_EXISTS
 int cArp::replaces(QSqlQuery& __q, const cArpTable& __t, int setType, qlonglong hsid)
 {
     int r = 0;
@@ -826,13 +825,13 @@ int cArp::replaces(QSqlQuery& __q, const cArpTable& __t, int setType, qlonglong 
     }
     return r;
 }
-#else  // MUST_SCAN
+#else  // SNMP_IS_EXISTS
 int cArp::replaces(QSqlQuery&, const cArpTable&, int, qlonglong)
 {
     EXCEPTION(ENOTSUPP);
     return 0;
 }
-#endif // MUST_SCAN
+#endif // SNMP_IS_EXISTS
 
 QList<QHostAddress> cArp::mac2ips(QSqlQuery& __q, const cMac& __m)
 {

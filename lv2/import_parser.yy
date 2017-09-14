@@ -501,7 +501,7 @@ static inline cSnmpDevice& snmpdev() {
 void cArpServerDef::updateArpTable(QSqlQuery& q)
 {
     DBGFN();
-#ifdef MUST_SCAN
+#ifdef SNMP_IS_EXISTS
     cArpTable at;
     switch (type) {
     case UNKNOWN:       break;
@@ -520,7 +520,7 @@ void cArpServerDef::updateArpTable(QSqlQuery& q)
     cArp::replaces(q, at);
     return;
 /*#else
-    #warning "SCAN functions is not supported."*/
+    #warning "SNMP functions is not supported."*/
 #endif
     (void)q;
     EXCEPTION(ENOTSUPP);

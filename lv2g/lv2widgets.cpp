@@ -2435,3 +2435,140 @@ void cFontAttrWidget::togleStrikeout(bool f)
     setFromWidget(QVariant(m));
     pToolButtonStrikeout->setIcon(f ? iconStrikeout : iconStrikeoutNo);
 }
+
+/* **** **** */
+
+cSelectPlace::cSelectPlace(QComboBox *_pZone, QComboBox *_pPLace, QLineEdit *_pFilt, const QString& _constFilt)
+    : QObject()
+    , pComboBoxZone(_pZone)
+    , pComboBoxPLace(_pPLace)
+    , pLineEditPlaceFilt(_pFilt)
+    , constFilterPlace(_constFilt)
+{
+    blockPlaceSignal = false;
+    pZoneModel = new cZoneListModel(this);
+    pComboBoxZone->setModel(pZoneModel);
+    pPlaceModel = new cPlacesInZoneModel(this);
+    pComboBoxPLace->setModel(pPlaceModel);
+    pComboBoxPLace->setCurrentIndex(0);
+    if (!constFilterPlace.isEmpty()) {
+        pPlaceModel->setConstFilter(constFilterPlace, FT_SQL_WHERE);
+    }
+    connect(pComboBoxZone,  SIGNAL(currentIndexChanged(int)),   this, SLOT(_zoneChanged(int)));
+    connect(pComboBoxPLace, SIGNAL(currentIndexChanged(int)),   this, SLOT(_placeChanged(int)));
+    if (_pFilt != NULL) {
+        connect(pLineEditPlaceFilt, SIGNAL(textChanged(QString)),    this, SLOT(_placePatternChanged(QString)));
+    }
+}
+
+void cSelectPlace::_zoneChanged(int ix)
+{
+    qlonglong id = pZoneModel->atId(ix);
+    pPlaceModel->setZone(id);
+}
+
+void cSelectPlace::_placeChanged(int ix)
+{
+    if (blockPlaceSignal) return;
+    QString   s  = pPlaceModel->at(ix);
+    placeNameChanged(s);
+    qlonglong id = pPlaceModel->atId(ix);
+    placeIdChanged(id);
+}
+
+void cSelectPlace::_placePatternChanged(const QString& s)
+{
+    qlonglong pid = pPlaceModel->atId(pComboBoxPLace->currentIndex());
+    blockPlaceSignal = true;
+    if (s.isEmpty()) {
+        pPlaceModel->setFilter(QVariant(), OT_DEFAULT, FT_NO);
+    }
+    else {
+        pPlaceModel->setFilter(s, OT_DEFAULT, FT_LIKE);
+    }
+    int pix = pPlaceModel->indexOf(pid);
+    if (pix < 0) {  // Nincs már megfelelő place -> NULL
+        pComboBoxPLace->setCurrentIndex(0);
+        blockPlaceSignal = false;
+        _placeChanged(0);
+    }
+    else {          // A node változatlan (csak az indexe változhatott)
+        pComboBoxPLace->setCurrentIndex(pix);
+        blockPlaceSignal = false;
+    }
+}
+
+/* **** **** */
+
+cSelectNode::cSelectNode(QComboBox *_pZone, QComboBox *_pPlace, QComboBox *_pNode,
+            QLineEdit *_pPlaceFilt, QLineEdit *_pNodeFilt,
+            const QString& _placeConstFilt, const QString& _nodeConstFilt)
+    : cSelectPlace(_pZone, _pPlace, _pPlaceFilt, _placeConstFilt)
+    , pComboBoxNode(_pNode)
+    , pLineEditNodeFilt(_pNodeFilt)
+    , constFilterNode(_nodeConstFilt)
+{
+    blockNodeSignal = false;
+    pNodeModel = new cRecordListModel(cPatch().descr(), this);
+    pNodeModel->nullable = true;
+    pComboBoxNode->setModel(pNodeModel);
+    if (!constFilterNode.isEmpty()) {
+        pNodeModel->setConstFilter(constFilterNode, FT_SQL_WHERE);
+    }
+    connect(this, SIGNAL(placeIdChanged(qlonglong)), this, SLOT(_placeIdChanged(qlonglong)));
+    if (pLineEditNodeFilt != NULL) {
+        connect(pLineEditNodeFilt, SIGNAL(textChanged(QString)),    this, SLOT(_nodePatternChanged(QString)));
+    }
+    connect(pComboBoxNode,  SIGNAL(currentIndexChanged(int)),   this, SLOT(_nodeChanged(int)));
+}
+
+void cSelectNode::_placeIdChanged(qlonglong pid)
+{
+    qlonglong nid = pNodeModel->atId(pComboBoxNode->currentIndex());
+    blockNodeSignal = true;
+    QString sql = QString("place_id = %1").arg(pid);
+    if (!constFilterNode.isEmpty()) sql = "(" + sql + " AND " + constFilterNode + ")";
+    pNodeModel->setConstFilter(sql, FT_SQL_WHERE);
+    pNodeModel->setFilter();
+    int nix = pNodeModel->indexOf(nid);
+    if (nix < 0) {  // Nincs már megfelelő node -> NULL
+        pComboBoxNode->setCurrentIndex(0);
+        blockNodeSignal = false;
+        _nodeChanged(0);
+    }
+    else {          // A node változatlan (csak az indexe változhatott)
+        pComboBoxNode->setCurrentIndex(nix);
+        blockNodeSignal = false;
+    }
+}
+
+void cSelectNode::_nodePatternChanged(const QString& s)
+{
+    qlonglong nid = pNodeModel->atId(pComboBoxNode->currentIndex());
+    blockNodeSignal = true;
+    if (s.isEmpty()) {
+        pNodeModel->setFilter(QVariant(), OT_DEFAULT, FT_NO);
+    }
+    else {
+        pNodeModel->setFilter(s, OT_DEFAULT, FT_LIKE);
+    }
+    int nix = pNodeModel->indexOf(nid);
+    if (nix < 0) {  // Nincs már megfelelő node -> NULL
+        pComboBoxNode->setCurrentIndex(0);
+        blockNodeSignal = false;
+        _nodeChanged(0);
+    }
+    else {          // A node változatlan (csak az indexe változhatott)
+        pComboBoxNode->setCurrentIndex(nix);
+        blockNodeSignal = false;
+    }
+}
+
+void cSelectNode::_nodeChanged(int ix)
+{
+    if (blockNodeSignal) return;
+    QString   s  = pNodeModel->at(ix);
+    nodeNameChanged(s);
+    qlonglong id = pNodeModel->atId(ix);
+    nodeIdChanged(id);
+}

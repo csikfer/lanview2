@@ -12,7 +12,7 @@
 #define VERSION_STR     _STR(VERSION_MAJOR) "." _STR(VERSION_MINOR) "(" _STR(REVISION) ")"
 
 #define DB_VERSION_MAJOR 1
-#define DB_VERSION_MINOR 4
+#define DB_VERSION_MINOR 5
 
 // ****************************************************************************************************************
 int findArg(char __c, const char * __s, int argc, char * argv[])
@@ -283,9 +283,9 @@ lanView::lanView()
         if (snmpNeeded) {
 #ifdef SNMP_IS_EXISTS
             netSnmp::init();
-#else //  MUST_SNMP
+#else //  SNMP_IS_EXISTS
             EXCEPTION(ENOTSUPP, -1, QObject::trUtf8("SNMP not supported."));
-#endif //  MUST_SNMP
+#endif //  SNMP_IS_EXISTS
         }
         PDEB(VVERBOSE) << "End " << __PRETTY_FUNCTION__ << " try block." << endl;
     } CATCHS(lastError)
@@ -411,7 +411,7 @@ lanView::~lanView()
     }
 #ifdef SNMP_IS_EXISTS
     netSnmp::down();
-#endif // MUST_SNMP
+#endif // SNMP_IS_EXISTS
     if (appTranslator != NULL) {
         QCoreApplication::removeTranslator(appTranslator);
         delete appTranslator;

@@ -1490,7 +1490,7 @@ public:
     /// @param snmp Az SNMP modul objektum.
     /// @param __ex Ha értéke nem EX_IGNORE, akkor hiba esetén kizárást dob.
     /// @return Az SNMP hiba kód (siker esetén 0).
-    int open(QSqlQuery &q, cSnmp& snmp, enum eEx __ex = EX_ERROR) const;
+    int open(QSqlQuery &q, cSnmp& snmp, enum eEx __ex = EX_ERROR, QString *pEMsg = NULL) const;
 };
 
 /* ---------------------------------------------------------------- */

@@ -5,32 +5,6 @@
 #include "srvdata.h"
 #include "lv2models.h"
 
-class cSelectNode : public QObject {
-    Q_OBJECT
-public:
-    cSelectNode(QComboBox *_pZone, QComboBox *_pPLace, QComboBox *_pNode, QLineEdit *_pFilt = NULL, const QString& _cFilt = QString());
-private:
-    QComboBox *pComboBoxZone;
-    QComboBox *pComboBoxPLace;
-    QComboBox *pComboBoxNode;
-    QLineEdit *pLineEditFilt;
-    const QString    constFilter;
-    cZoneListModel     *pZoneModel;
-    cPlacesInZoneModel *pPlaceModel;
-    cRecordListModel   *pNodeModel;
-    bool                blockSignal;
-private slots:
-    void zoneChanged(int ix);
-    void placeChanged(int ix);
-    void patternChanged(const QString& s);
-    void _nodeChanged(int ix);
-signals:
-    void nodeChanged(const QString& name);
-    void nodeChanged(qlonglong id);
-};
-
-/* *** */
-
 #if defined(LV2G_LIBRARY)
 #include "ui_deducepatch.h"
 class cDeducePatch;
@@ -62,6 +36,7 @@ namespace Ui {
 class cDPRow;
 #endif
 
+class cSelectNode;
 
 class cDeducePatch : public cIntSubObj {
     friend class cDPRow;
