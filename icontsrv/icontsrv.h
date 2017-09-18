@@ -6,6 +6,9 @@
 #include "lanview.h"
 #include "lv2service.h"
 
+// Az AVR-GCC -ben használt típusok (firmware)
+typedef unsigned char   uint8_t;
+typedef unsigned short  uint16_t;
 #include "firmware/IndAlarmIf1/indalarmif1_gl.h"
 #include "firmware/IndAlarmIf2/indalarmif2_gl.h"
 #include "QtSerialPort/QtSerialPort"
@@ -143,10 +146,6 @@ public:
     bool       allPortEnabled;
     static void staticInit(QSqlQuery *pq);
 };
-
-// Az AVR-GCC -ben használt típusok (firmware)
-typedef unsigned char   uint8_t;
-typedef unsigned short  uint16_t;
 
 static inline char i2h(uint8_t _i)
 {
