@@ -337,7 +337,8 @@ class LV2SHARED_EXPORT cQueryParser : public cRecord {
     CRECORD(cQueryParser);
 public:
     static void _insert(QSqlQuery& q, qlonglong _sid, const QString& _ty, bool _cs, const QString& _re, const QString& _cmd, const QString& _not, qlonglong _seq);
-    void setInspector(cInspector *pInsp);
+    void setInspector(cInspector *pInsp);       /// Inspector mod, közvetlen végrehajtás
+    void setMaps(tStringMap *pVM);   /// Csak fordítás, az interpretert nem hívja. A kimeneti szöveget a getText() adja vissza.
     int prep(cError *&pe);
     int parse(QString src, cError *&pe);
     int post(cError *&pe);
@@ -347,6 +348,7 @@ public:
     /// @param force Akkor is beolvassa a rekordokat, ha a konténerek léteznek, és _sid nem változott.
     int load(QSqlQuery& q, qlonglong _sid = NULL_ID, bool force = true, bool thread = true);
     int delByServiceName(QSqlQuery &q, const QString &__n, bool __pat);
+    QString getText() { CHKNULL(pText); return *pText; }
 protected:
     QString getParValue(const QString& name, const QStringList &args);
     QString substitutions(const QString& _cmd, const QStringList& args);
@@ -357,6 +359,8 @@ protected:
     QString             *pPostCmd;
     cInspector          *pInspector;
     cImportParseThread  *pParserThread;
+    tStringMap          *pVarMap;
+    QString             *pText;
 };
 
 #endif // SRVDATA

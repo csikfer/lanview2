@@ -2,6 +2,7 @@
 #include "srvdata.h"
 #include "import_parser.h"
 #include "cerrormessagebox.h"
+#include "lv2widgets.h"
 
 #if defined(Q_CC_GNU)
 #include <unistd.h>
@@ -13,17 +14,42 @@ cParseWidget::cParseWidget(QMdiArea *par)
 : cIntSubObj(par)
 {
     PDEB(OBJECT) << __PRETTY_FUNCTION__ << QChar(' ') << QChar(',') << VDEBPTR(this) << endl;
+    pq  = newQuery();
     isRuning = false;
     pLocalParser = NULL;
     pLocalParsedStr = NULL;
     pUi = new Ui::GParseWidget();
     pUi->setupUi(this);
 
+    pUi->labelQP->hide();
+    pUi->pushButtonClearQP->hide();
+    pUi->pushButtonLoadQP->hide();
+    pUi->pushButtonParseQP->hide();
+    pUi->pushButtonSaveQP->hide();
+    pUi->textEditQP->hide();
+    static const QString sql =
+            "SELECT DISTINCT(service_name) FROM query_parsers JOIN services USING (service_id) WHERE parse_type = 'parse'";
+    if (execSql(*pq, sql)) {
+        do { qParseList << pq->value(0).toString(); } while (pq->next());
+        pUi->comboBoxQP->addItems(qParseList);
+    }
+    else {
+        pUi->checkBoxQP->setDisabled(true);
+    }
+
+    setParams();
+
     connect(pUi->pushButtonLoad,  SIGNAL(clicked()), this, SLOT(loadClicked()));
     connect(pUi->pushButtonSave,  SIGNAL(clicked()), this, SLOT(saveClicked()));
     connect(pUi->pushButtonParse, SIGNAL(clicked()), this, SLOT(parseClicked()));
     connect(pUi->pushButtonClose, SIGNAL(clicked()), this, SLOT(endIt()));
     connect(pUi->pushButtonBreak, SIGNAL(clicked()), this, SLOT(localParseBreak()));
+
+    connect(pUi->pushButtonLoadQP,  SIGNAL(clicked()), this, SLOT(loadQPClicked()));
+    connect(pUi->pushButtonSaveQP,  SIGNAL(clicked()), this, SLOT(saveQPClicked()));
+    connect(pUi->pushButtonParseQP, SIGNAL(clicked()), this, SLOT(parseQPClicked()));
+    connect(pUi->pushButtonMap,     SIGNAL(clicked()), this, SLOT(paramClicked()));
+
     DBGFNL();
 }
 
@@ -122,7 +148,6 @@ void cParseWidget::remoteParse(const QString &src)
     imp.setId(_sUserId, lanView::user().getId());
     imp.setId(_sNodeId, lanView::selfNode().getId());
 
-    QSqlQuery   *pq  = newQuery();
     imp.insert(*pq);
     QString msg = trUtf8("Végrehajtandó forrásszöveg kiírva az adatbázisba (ID = %1)\nVárakozás...").arg(imp.getId());
     sqlNotify(*pq, "import");
@@ -169,6 +194,25 @@ void cParseWidget::remoteParse(const QString &src)
     pUi->pushButtonBreak->setEnabled(false);
 }
 
+void cParseWidget::setParams()
+{
+    cNode *pNode = lanView::getInstance()->pSelfNode;
+    const QString node = pNode == NULL ? _sNil : pNode->getName();
+    static const QString _sHostService = "host_service";
+    params[_sHostService]   = _sNul;
+    params[_sService]       = "import";
+    params[_sNode]          = node;
+    params[_sHost]          = node;
+    params[_sInterface]     = _sNul;
+    params["selfName"]      = node;
+    params[_sAddress]       = pNode == NULL ? _sNul : pNode->getIpAddress().toString();
+    params[_sProtocol]      = _sNil;
+    params[_sPort]          = _sNul;
+    params[_sHostServiceId] = _sNULL;
+    params[_sNodeId]        = pNode == NULL ? _sNULL : QString::number(pNode->getId());
+    params[_sServiceId]     = "0";
+}
+
 /// A debug rendszertől jött sorokat írja ki feltételesen a textEditResult nevű QTextEdit widgetre
 /// Az üzenetek elejéről leválasztja a maszk-ot, és csak azokat az üzeneteket irja a widget-be,
 /// melyek hiba, figyelmeztető, vagy információs üzenetek.
@@ -186,4 +230,50 @@ void cParseWidget::debugLine()
             pUi->textEditResult->append(s);
         }
     }
+}
+
+void cParseWidget::loadQPClicked()
+{
+    QString text;
+    if (textFromFile(fileNamePQ, text, this)) {
+        pUi->textEditQP->setText(text);
+    }
+}
+
+void cParseWidget::saveQPClicked()
+{
+    textToFile(fileNamePQ, pUi->textEditQP->toPlainText(), this);
+}
+
+void cParseWidget::parseQPClicked()
+{
+    cError *pe = NULL;
+    cQueryParser qp;
+    try {
+        qlonglong sid = cService::service(*pq, pUi->comboBoxQP->currentText())->getId();
+        qp.load(*pq, sid, false, false);
+        QString text = pUi->textEditQP->toPlainText();
+        qp.setMaps(&params);
+        qp.prep(pe);
+        if (pe == NULL) {
+            foreach (QString line, text.split('\n')) {
+                qp.parse(line.trimmed(), pe);
+                if (pe != NULL) break;
+            }
+            if (pe == NULL) {
+                qp.post(pe);
+            }
+        }
+    } CATCHS(pe);
+    pUi->textEditSrc->setPlainText(qp.getText());
+    if (pe != NULL) {
+        cErrorMessageBox::messageBox(pe, this);
+        pDelete(pe);
+    }
+}
+
+void cParseWidget::paramClicked()
+{
+    cStringMapEdit d(true, params, this);
+    d.dialog().exec();
 }

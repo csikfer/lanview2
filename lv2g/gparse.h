@@ -29,15 +29,25 @@ private slots:
     void debugLine();
     void localParseFinished();
     void localParseBreak();
+
+    void loadQPClicked();
+    void saveQPClicked();
+    void parseQPClicked();
+    void paramClicked();
 private:
     void localParse(const QString &src);
     void remoteParse(const QString &src);
+    void setParams();
+    QSqlQuery   *pq;
     QString fileName;
+    QString fileNamePQ;
     bool    isRuning;
     cImportParseThread *pLocalParser;
     cError             *pLocalError;
     QString            *pLocalParsedStr;
     QStringList         debugLines;
+    QStringList         qParseList;
+    tStringMap          params;
 };
 
 #endif // GPARSE_H

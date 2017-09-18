@@ -1587,7 +1587,7 @@ void  setSysParam(QString *pt, QString *pn, QVariant *pv)
 %type  <i>  int int_ iexpr lnktype shar offs ix_z vlan_t set_t srvtid
 %type  <i>  vlan_id place_id iptype iptype_a pix pix_z image_id tmod int0 replace
 %type  <i>  fhs hsid srvid grpid tmpid node_id port_id snet_id ift_id plg_id
-%type  <i>  usr_id ftmod p_seq int_z lnktypez fflags fflag tstypes tstype pgtype
+%type  <i>  usr_id ftmod p_seq lnktypez fflags fflag tstypes tstype pgtype
 %type  <i>  node_h node_ts
 %type  <il> list_i p_seqs p_seqsl // ints
 %type  <b>  bool bool_on ifdef exclude cases replfl
@@ -1745,9 +1745,7 @@ int_    : INTEGER_V                             { $$ = $1; }
 int     : int_                                  { $$ = $1; }
         | '-' INTEGER_V                         { $$ =-$2; }
         | '#' '[' iexpr ']'                     { $$ = $3; }
-        ;
-int_z   : int                                   { $$ = $1; }
-        |                                       { $$ = NULL_ID; }
+        | '#' NULL_T                            { $$ = NULL_ID; }
         ;
 // Név alapján a patchs (vagy leszármazottja) rekord ID-t adja vissza (node_id)
 node_id : str                                   { $$ = cPatch().getIdByName(qq(), *$1); delete $1; }
@@ -2508,6 +2506,7 @@ fhs
 hsid    : fhs                                   { if ($1 == 0) yyerror("Not found");
                                                   if ($1 != 1) yyerror("Ambiguous");
                                                   $$ = pHostService2->getId();  DELOBJ(pHostService2); }
+        | NULL_T                                { $$ = NULL_ID; }
         ;
 hss     : fhs                                   { $$ = new cHostServices(qq(), pHostService2); } // Ez nem biztos, hogy így jó!!!
         ;
@@ -2798,7 +2797,7 @@ iprange : REPLACE_T DYNAMIC_T ADDRESS_T RANGE_T exclude ip TO_T ip hsid ';'
 exclude : EXCLUDE_T                 { $$ = true;  }
         |                           { $$ = false; }
         ;
-reparp  : REPLACE_T ARP_T ip mac str int_z str_z ';'
+reparp  : REPLACE_T ARP_T ip mac str hsid str_z ';'
             { cArp arp;
               arp.setIp(_sIpAddress, *$3).setMac(_sHwAddress, *$4).setName(_sSetType, sp2s($5)).setId(_sHostServiceId, $6).setName(_sArpNote, sp2s($7));
               arp.replace(qq());

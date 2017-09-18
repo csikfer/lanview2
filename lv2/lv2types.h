@@ -804,6 +804,8 @@ typedef QVector<qlonglong>  tLongLongVector;
 /// @relates cRecord
 EXT_ tIntVector   iTab(int a = NULL_IX, int b = NULL_IX, int c = NULL_IX, int d = NULL_IX, int e = NULL_IX, int f = NULL_IX, int g = NULL_IX, int h = NULL_IX);
 
+typedef QMap<QString, QString>  tStringMap;
+
 /* ------------------------------------------------------------------ */
 
 Q_DECLARE_METATYPE(tPolygonF)

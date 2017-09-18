@@ -80,6 +80,8 @@ if (i < 0 || i >= size()) EXCEPTION(ENOINDEX, i);
 
 #define ERROR_NESTED(pe) pe->nested(__FILE__, __LINE__, __PRETTY_FUNCTION__)
 
+#define CHKNULL(p)  if (p == NULL) EXCEPTION(EPROGFAIL)
+
 // Error codes
 #include "errcodes.h"
 

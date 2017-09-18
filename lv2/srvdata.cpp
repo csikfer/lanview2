@@ -894,8 +894,17 @@ DEFAULTCRECDEF(cDynAddrRange, _sDynAddrRanges)
 
 eReasons cDynAddrRange::replace(QSqlQuery& q, const QHostAddress& b, const QHostAddress& e, qlonglong dhcpSrvId, bool exclude, qlonglong subnetId)
 {
-    QString r = execSqlTextFunction(q, "replace_dyn_addr_range", b.toString(), e.toString(), dhcpSrvId, exclude, subnetId == NULL_ID ? QVariant() : QVariant(subnetId));
-    return (eReasons)reasons(r);
+    QString sql = "SELECT replace_dyn_addr_range(?, ?";
+    QVariantList vl;
+    vl << b.toString() << e.toString();
+    if (dhcpSrvId == NULL_ID) sql += _sCommaSp + _sNULL;
+    else                    { sql += _sCommaQ; vl << dhcpSrvId; }
+    sql += _sCommaSp + (exclude ? _sTrue : _sFalse);
+    if (subnetId == NULL_ID)  sql += _sCommaSp + _sNULL;
+    else                    { sql += _sCommaQ; vl << subnetId; }
+    sql += ")";
+    execSql(q, sql, vl);
+    return (eReasons)reasons(q.value(0).toString());
 }
 
 int cDynAddrRange::isDynamic(QSqlQuery &q, const QHostAddress& a)
@@ -936,6 +945,8 @@ cQueryParser::cQueryParser() : cRecord()
     pListCmd = NULL;
     pListRExp = NULL;
     pInspector = NULL;
+    pVarMap    = NULL;
+    pText      = NULL;
     pParserThread = NULL;
     _set(cQueryParser::descr());
 }
@@ -975,6 +986,13 @@ void cQueryParser::_insert(QSqlQuery& q, qlonglong _sid, const QString& _ty, boo
 void cQueryParser::setInspector(cInspector *pInsp)
 {
     pInspector = pInsp;
+    pVarMap    = NULL;
+}
+
+void cQueryParser::setMaps(tStringMap *pVM)
+{
+    pVarMap    = pVM;
+    pInspector = NULL;
 }
 
 int cQueryParser::prep(cError *& pe)
@@ -983,8 +1001,16 @@ int cQueryParser::prep(cError *& pe)
     if (pParserThread != NULL) EXCEPTION(EPROGFAIL);
     QString cmd;
     if (pPrepCmd != NULL) cmd = substitutions(*pPrepCmd, QStringList());
-    pParserThread = new cImportParseThread(cmd, this);
-    return pParserThread->startParser(pe);
+    if (pInspector != NULL) {
+        pParserThread = new cImportParseThread(cmd, this);
+        return pParserThread->startParser(pe);
+    }
+    else if (pVarMap != NULL) {
+        pDelete(pText);
+        pText = new QString(cmd);
+    }
+    else EXCEPTION(EPROGFAIL);
+    return REASON_OK;
 }
 
 int cQueryParser::parse(QString src,  cError *&pe)
@@ -1009,10 +1035,12 @@ int cQueryParser::post(cError *& pe)
     pe = NULL;
     // Záró parancs elküldése, ha van
     if (pPostCmd != NULL) r = execute(pe, *pPostCmd);
-    if (pParserThread == NULL) EXCEPTION(EPROGFAIL);
-    pParserThread->stopParser();
-    // Töröljük a thread-et
-    pDelete(pParserThread);
+    if (pInspector != NULL) {
+        if (pParserThread == NULL) EXCEPTION(EPROGFAIL);
+        pParserThread->stopParser();
+        // Töröljük a thread-et
+        pDelete(pParserThread);
+    }
     return r;
 }
 
@@ -1081,9 +1109,15 @@ QString cQueryParser::getParValue(const QString& name, const QStringList& args)
         return args.at(i);
     }
     else {
-        QSqlQuery q = getQuery();
-        if (pInspector == NULL) EXCEPTION(EPROGFAIL);
-        return pInspector->getParValue(q, name);
+        if (pInspector != NULL) {
+            QSqlQuery q = getQuery();
+            return pInspector->getParValue(q, name);
+        }
+        else if (pVarMap != NULL) {
+            return (*pVarMap)[name];
+        }
+        else EXCEPTION(EPROGFAIL);
+        return _sNul;
     }
 }
 
@@ -1115,13 +1149,21 @@ int cQueryParser::execute(cError *&pe, const QString& _cmd, const QStringList& a
 {
     _DBGFN() << _cmd << "; " << args.join(_sCommaSp) << endl;
     QString cmd = substitutions(_cmd, args);
-    if (pParserThread == NULL) {
-        if (0 == importParseText(cmd)) return REASON_OK;
-        pe = importGetLastError();
-        return R_ERROR;
+    if (pInspector != NULL) {
+        if (pParserThread == NULL) {
+            if (0 == importParseText(cmd)) return REASON_OK;
+            pe = importGetLastError();
+            return R_ERROR;
+        }
+        else {
+            return pParserThread->push(cmd, pe);
+        }
     }
-    else {
-        return pParserThread->push(cmd, pe);
+    else if (pVarMap != NULL && pText != NULL) {
+        *pText += cmd + "\n";
+        return REASON_OK;
     }
+    else EXCEPTION(EPROGFAIL);
+    return R_ERROR;
 }
 

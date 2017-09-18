@@ -14,6 +14,7 @@
 #include <QDateTimeEdit>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QTableWidget>
 
 #include "lv2g.h"
 #include "lv2models.h"
@@ -733,7 +734,7 @@ private slots:
     void togleStrikeout(bool f);
 };
 
-class cSelectPlace : public QObject {
+class LV2GSHARED_EXPORT cSelectPlace : public QObject {
     Q_OBJECT
 public:
     cSelectPlace(QComboBox *_pZone, QComboBox *_pPLace, QLineEdit *_pFilt = NULL, const QString& _constFilt = QString());
@@ -755,7 +756,7 @@ signals:
 };
 
 
-class cSelectNode : public cSelectPlace {
+class LV2GSHARED_EXPORT cSelectNode : public cSelectPlace {
     Q_OBJECT
 public:
     cSelectNode(QComboBox *_pZone, QComboBox *_pPlace, QComboBox *_pNode,
@@ -776,5 +777,26 @@ signals:
     void nodeIdChanged(qlonglong id);
 };
 
+class cDialogButtons;
+
+class LV2GSHARED_EXPORT cStringMapEdit : public QObject {
+    Q_OBJECT
+public:
+    cStringMapEdit(bool _isDialog, tStringMap& _map, QWidget *par = NULL);
+    ~cStringMapEdit();
+    QWidget& widget() { return *_pWidget; }
+    QWidget *pWidget() { return _pWidget; }
+    QDialog& dialog();
+    const bool isDialog;
+    tStringMap& map;
+private:
+    QWidget *_pWidget;
+    QDialog *pDialog;
+    QTableWidget *pTableWidget;
+    cDialogButtons  *pButtons;
+private slots:
+    void clicked(int id);
+    void changed(int row, int column);
+};
 
 #endif // LV2WIDGETS_H

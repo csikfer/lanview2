@@ -1,5 +1,6 @@
 #include "record_table.h"
 #include "lv2validator.h"
+#include "record_dialog.h"
 #include "ui_polygoned.h"
 #include "ui_arrayed.h"
 #include "ui_fkeyed.h"
@@ -2571,4 +2572,75 @@ void cSelectNode::_nodeChanged(int ix)
     nodeNameChanged(s);
     qlonglong id = pNodeModel->atId(ix);
     nodeIdChanged(id);
+}
+
+/* *** */
+
+cStringMapEdit::cStringMapEdit(bool _isDialog, tStringMap& _map, QWidget *par)
+    : QObject(par), isDialog(_isDialog), map(_map)
+{
+    pButtons = NULL;
+    pTableWidget = new QTableWidget(par);
+    if (isDialog) {
+        _pWidget = new QDialog(par);
+        _pWidget->setWindowTitle(trUtf8("Paraméterek"));
+        QVBoxLayout *layout = new QVBoxLayout;
+        _pWidget->setLayout(layout);
+        layout->addWidget(pTableWidget, 1);
+        pButtons = new cDialogButtons(ENUM2SET(DBT_OK));
+        layout->addWidget(pButtons->pWidget());
+        connect(pButtons, SIGNAL(buttonClicked(int)), this, SLOT(clicked(int)));
+    }
+    else {
+        _pWidget = pTableWidget;
+    }
+    int rows = 0;
+    pTableWidget->setColumnCount(2);
+    Qt::ItemFlags flagConst = Qt::ItemIsEnabled;
+    Qt::ItemFlags flagEdit  = Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
+    QTableWidgetItem *pi;
+    pi = new QTableWidgetItem(trUtf8("Név"));
+    pi->setFlags(flagConst);
+    pTableWidget->setItem(0,0,pi);
+    pi = new QTableWidgetItem(trUtf8("Érték"));
+    pi->setFlags(flagConst);
+    pTableWidget->setItem(0,1,pi);
+    foreach (QString n, map.keys()) {
+        rows++;
+        pTableWidget->setRowCount(rows);
+        pi = new QTableWidgetItem(n);
+        pi->setFlags(flagConst);
+        pTableWidget->setItem(rows -1,0,pi);
+        pi = new QTableWidgetItem(map[n]);
+        pi->setFlags(flagEdit);
+        pTableWidget->setItem(rows -1,1,pi);
+    }
+    connect(pTableWidget, SIGNAL(cellChanged(int,int)), this, SLOT(changed(int,int)));
+}
+
+cStringMapEdit::~cStringMapEdit()
+{
+    delete _pWidget;
+}
+
+QDialog& cStringMapEdit::dialog()
+{
+    if (!isDialog) EXCEPTION(EPROGFAIL);
+    return *(QDialog *)_pWidget;
+}
+
+void cStringMapEdit::clicked(int id)
+{
+    switch (id) {
+    case DBT_OK:    dialog().accept();  break;
+    case DBT_CANCEL:dialog().reject();  break;
+    default:        EXCEPTION(EPROGFAIL);
+    }
+}
+
+void cStringMapEdit::changed(int row, int column)
+{
+    if (column != 1) return;
+    QString n = pTableWidget->takeItem(row, 0)->text();
+    map[n] = pTableWidget->takeItem(row, 1)->text();
 }

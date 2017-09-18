@@ -1,5 +1,9 @@
 ﻿-- Version 1.4 ==> 1.5
 
+-- INSERT INTO sys_params
+--    (sys_param_name,                    param_type_id,                 param_value,    sys_param_note) VALUES
+--    ('ticet_reapeat_time',              param_type_name2id('interval'),'14 days',      'Ha ennél régebbi az azonos tiket riasztás, akkor új riasztás');
+
 CREATE OR REPLACE FUNCTION ticket_alarm(
     lst notifswitch,        -- stat (last_state)
     msg text,               -- stat message
@@ -10,10 +14,22 @@ CREATE OR REPLACE FUNCTION ticket_alarm(
 ) RETURNS alarms AS $$
 DECLARE
     ar alarms;
+    repi interval;
 BEGIN
-    INSERT INTO alarms (host_service_id, daemon_id, first_status, max_status, last_status, event_note, superior_alarm_id, noalarm)
-                VALUES (0,               did, COALESCE(fst, lst), COALESCE(mst, lst), lst, msg,        aid,               false)
-        RETURNING * INTO ar;
+    repi := COALESCE(get_interval_sys_param('ticet_reapeat_time'), '14 days'::interval);
+    SELECT * INTO ar FROM alarms
+		WHERE (begin_time + repi) > NOW()
+		  AND end_time IS NULL
+		  AND lst = last_status
+		  AND COALESCE(aid, -1) = COALESCE(superior_alarm_id, -1)
+		  AND COALESCE(did, -1) = COALESCE(daemon_id, -1)
+		  AND msg = event_note
+		LIMIT 1;
+    IF NOT FOUND THEN
+	INSERT INTO alarms (host_service_id, daemon_id, first_status, max_status, last_status, event_note, superior_alarm_id, noalarm)
+		    VALUES (0,               did, COALESCE(fst, lst), COALESCE(mst, lst), lst, msg,        aid,               false)
+		RETURNING * INTO ar;
+    END IF;
     RETURN ar;
 END;
 $$ LANGUAGE plpgsql;
@@ -88,7 +104,7 @@ BEGIN
                     det text;
                     hnt text;
                 BEGIN
-                    RAISE INFO 'Update ip_address : % -> %', ipa, port_id2all_name(oip.port_id);
+                    RAISE INFO 'Update ip_address : % -> %', ipa, port_id2full_name(oip.port_id);
                     UPDATE ip_addresses SET address = ipa WHERE ip_address_id = oip.ip_address_id;
                 EXCEPTION WHEN OTHERS THEN
                     GET STACKED DIAGNOSTICS
