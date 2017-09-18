@@ -658,10 +658,10 @@ QString cAlarm::htmlText(QSqlQuery& q, qlonglong _id)
         pTargetRec = a.newObj();
         pTargetRec->fetchById(q, id);
     }
-    cHostService hs; hs.   setById(q, pTargetRec->getId(_sHostServiceId));
-    cNode  node;     node. setById(q, hs.         getId(_sNodeId));
-    cPlace place;    place.setById(q, node.       getId(_sPlaceId));
-    const cService *pSrv = cService::service(q,hs.getId(_sServiceId));
+    cHostService hs; hs.   fetchById(q, pTargetRec->getId(_sHostServiceId));
+    cNode  node;     node. fetchById(q, hs.         getId(_sNodeId));
+    cPlace place;    place.fetchById(q, node.       getId(_sPlaceId));
+    const cService *pSrv = cService::service(q,hs.getId(_sServiceId), EX_IGNORE);
     tOwnRecords<cServiceVar, cHostService> vars(&hs);
     int n = vars.fetch(q);
     QString aMsg = execSqlTextFunction(q, "alarm_message", hs.getId(), a.get(_sMaxStatus));
