@@ -15,7 +15,8 @@ enum eFieldIx {
     RX_HOST_NAME, RX_SERVICE_NAME, RX_PORT_ID, RX_PORT_NAME, RX_SRV_EXT,
     RX_PLACE_NAME, RX_PLACE_TYPE, RX_NOALARM, RX_FROM, RX_TO,
     RX_DISABLED, RX_SRV_DISABLED, RX_STATE, RX_NSUB,
-    RX_SUPERIOR_ID, RX_SUPERIOR_NAME
+    RX_SUPERIOR_ID, RX_SUPERIOR_NAME,
+    RX_LAST_TOUCHED
 };
 
 const QString cHSOperate::_sql =
@@ -45,7 +46,8 @@ const QString cHSOperate::_sql =
             " hs.superior_host_service_id, "// RX_SUPERIOR_ID
             " CASE WHEN hs.superior_host_service_id IS NULL THEN NULL"
                  " ELSE host_service_id2name(hs.superior_host_service_id)"
-                 " END"                     // RX_SUPERIOR_NAME
+                 " END,"                    // RX_SUPERIOR_NAME
+            "hs.last_touched"               // RX_LAST_TOUCHED
         " FROM host_services AS hs"
         " LEFT JOIN nports AS np ON np.port_id = hs.port_id"
         " JOIN nodes  AS n ON n.node_id = hs.node_id"
@@ -252,6 +254,7 @@ enum eTableColumnIx {
     TC_DISABLED,
     TC_DISABLED_SRV,
     TC_STATE,
+    TC_LAST_TM,
     TC_CBOX_SEL,
     TC_NSUB,
     TC_CBOX_NSUB,
@@ -460,6 +463,7 @@ void cHSOperate::refreshTable()
         setCell(row, TC_DISABLED,pRow->boolItem(RX_DISABLED, _sHostServices, _sDisabled));
         setCell(row, TC_DISABLED_SRV, pRow->boolItem(RX_SRV_DISABLED, _sServices, _sDisabled));
         setCell(row, TC_STATE,   pRow->item(RX_STATE, cHSORow::pNotifSwitch));
+        setCell(row, TC_LAST_TM, pRow->item(RX_LAST_TOUCHED));
         setCell(row, TC_CBOX_SEL,pRow->getCheckBoxSet());
         setCell(row, TC_NSUB,    pRow->item(RX_NSUB));
         setCell(row, TC_CBOX_NSUB,pRow->getWidgetSub());

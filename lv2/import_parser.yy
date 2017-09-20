@@ -4,7 +4,6 @@
 #include "lanview.h"
 #include "guidata.h"
 #include "others.h"
-#include "ping.h"
 #include "lv2link.h"
 #undef  __MODUL_NAME__
 #define __MODUL_NAME__  PARSER
@@ -238,12 +237,14 @@ cError *pImportLastError = NULL;
 /// A parse() hívása a hiba elkapásával.
 /// Hiba esetén a hiba objektumba menti a parser következő állpotváltozóit:
 /// Feldolgozott forrásállomány neve, aktuális sor sorszáma, tartalma, és a sor puffer (macbuff) tartalma.
+/// @param _st Az importParserStat változó új értéke IPS_RUN vagy IPS_THREAD.
+/// @exception Ha az importParserStat értéke nem IPS_READY, vagy _st értéke IPS_READY, akkor kizárást dob EPROGFAIL hibakóddal.
 int importParse(eImportParserStat _st)
 {
-    if (importParserStat != IPS_READY)
+    if (importParserStat != IPS_READY || _st == IPS_READY)
         EXCEPTION(EPROGFAIL, (int)importParserStat);
     importParserStat = _st;
-    static const QString tn = "YYParser";
+    // static const QString tn = "YYParser";
     int i = -1;
     try {
         // sqlBegin(qq(), tn);
@@ -2370,7 +2371,6 @@ arp     : ADD_T ARP_T SERVER_T ips BY_T SNMP_T COMMUNITY_T str ';'
                 { pArpServerDefs->append(qq(), cArpServerDef(cArpServerDef::DHCPD_LOCAL, QString(), sp2s($7))); }
         | RE_T UPDATE_T ARPS_T ';'              { pArpServerDefs->updateArpTable(qq()); }
         | PING_T ha ';'                         { QProcess::execute(QString("ping -c1 %1").arg(*$2)); delete $2; }
-                                              //{ Pinger().ping(*$2, 1); delete $2; }
         ;
 ha      : str                                   { $$ = $1; }
         | ip                                    { $$ = new QString($1->toString()); delete $1; }

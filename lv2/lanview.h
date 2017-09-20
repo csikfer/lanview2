@@ -389,6 +389,7 @@ public:
         appVersion      = QString::number(_vMajor) + QChar('.') + QString::number(_vMinor);
         appName         = _name;
         QCoreApplication::setApplicationName(appName);
+        QCoreApplication::instance()->thread()->setObjectName(appName + "-" + _sMainThread);
     }
     static const QString    orgName;
     static const QString    orgDomain;
@@ -464,6 +465,39 @@ public:
 
 /// Elvileg titkosít, gyakorlatilag egy túró, de mégse virít pucéran a konfigban a jelszó.
 EXT_ QString scramble(const QString& _s);
+
+enum eImportParserStat {
+    IPS_READY,
+    IPS_RUN,
+    IPS_THREAD
+};
+EXT_ bool callFromInterpreter();
+
+EXT_ enum eImportParserStat importParserStat;
+
+/// Egy opcionális Queue az interpreter által hívott funkciókhoz, ha van szöveges kimenet.
+/// A Queue-ban stringek helyezhetőek el, soremeléssel nem lezárt sorok, ill. paragrafusok.
+class LV2SHARED_EXPORT cExportQueue : public QObject, protected QQueue<QString>, QMutex {
+    Q_OBJECT
+protected:
+    cExportQueue();
+    ~cExportQueue();
+    static cExportQueue *_pInstanceByThread();
+    static cExportQueue *pInstance();
+    static cExportQueue *_pForParser;
+    static QMap<QString, cExportQueue *>    intMap;
+    static QMutex staticMutex;
+public:
+    static void push(const QString& s);
+    static QString pop();
+    static QString toText(bool fromInterpret, bool _clr = false);
+    /// Létrehozza az objeltum példányt, ha már létezett, akkor a példányt elötte törli.
+    static cExportQueue *init(bool fromInterpret);
+signals:
+    void ready();
+private slots:
+    void destroy_mq(QObject *p);
+};
 
 
 #endif // LANVIEW_H

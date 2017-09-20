@@ -75,7 +75,6 @@ SOURCES += lanview.cpp \
     lv2data.cpp \
     lv2user.cpp \
     lv2xml.cpp \
-    ping.cpp \
     lv2service.cpp \
     others.cpp \
     qsnmp.cpp \
@@ -101,7 +100,6 @@ HEADERS += lanview.h \
     lv2xml.h \
     LV2_errcodes.h \
     scan.h \
-    ping.h \
     lv2service.h \
     others.h \
     lv2datab.h \

@@ -4,7 +4,6 @@
 #include <Qt>
 #include <QPoint>
 #include "lanview.h"
-#include "ping.h"
 #include "guidata.h"
 
 #define APPNAME "import"

@@ -2,12 +2,24 @@
 #include "srvdata.h"
 #include "guidata.h"
 
+QString toHtml(const QString& text, bool chgBreaks, bool esc)
+{
+    static const QString br = " <br> ";
+    static const QChar   cr = QChar('\n');
+    QString r = text;
+    if (chgBreaks)  r = r.trimmed();
+    if (esc)        r = r.toHtmlEscaped();
+    if (chgBreaks)  r = r.replace(cr, br);
+    return r;
+}
+
+
 QString htmlTableLine(const QStringList& fl, const QString& ft)
 {
     QString r = tag("tr");
     foreach (QString f, fl) {
         r += tag(ft);
-        r += f;
+        r += f.toHtmlEscaped();
         r += tag("/" + ft);
     }
     r += tag("/tr");

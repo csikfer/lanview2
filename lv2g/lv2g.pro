@@ -112,6 +112,13 @@ exists(../../zodiacgraph) {
     DEFINES += ZODIACGRAPH
 }
 
+unix:{
+    exists(/usr/include/net-snmp) {
+        DEFINES += SNMP_IS_EXISTS
+    }
+}
+
+
 TRANSLATIONS    = lv2glib_hu.ts \
                   lv2glib_en.ts
 

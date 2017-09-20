@@ -22,14 +22,20 @@ inline static bool isMainThread()
 {
     return QCoreApplication::instance()->thread() == QThread::currentThread();
 }
+
+inline static QString threadName(QThread *p)
+{
+    QString r = p->objectName();
+    return r.isEmpty() ? (QCoreApplication::instance()->thread() == p ? _sMainThread : _sAnonimousThread) : r;
+}
+
 /*!
 Az aktuális thread nevével tér vissza, feltételezi, hogy minden szál kapott nevet (QObject::setObjectName()). Ha az aktuális QThread objektumnak nincs neve
 (akkor, ha az a main thread, a "mainThread", ha nem, az "anonimousThread" stringgel tér vissza.
  */
 inline static QString currentThreadName()
 {
-    QString r = QThread::currentThread()->objectName();
-    return r.isEmpty() ? (isMainThread() ? _sMainThread : _sAnonimousThread) : r;
+    return threadName(QThread::currentThread());
 }
 
 EXT_ QString quotedString(const QString& __s, const QChar &__q = QChar('"'));

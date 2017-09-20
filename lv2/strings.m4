@@ -127,6 +127,7 @@ STRDEF(HomeDir, "homedir")
 STRDEF(BinDir,  "bindir")
 STRDEF(Bin,  "bin")
 STRDEF(LanView2, "lanview2")
+STRDEF(ImportParser, "Import parser")
 
 dnl PgSQL típus nevek
 STRDEF(ARRAY, "ARRAY")                  dnl tömbök

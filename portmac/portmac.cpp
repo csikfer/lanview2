@@ -112,7 +112,7 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
         EXCEPTION(EDATA, protoServiceId(), QObject::trUtf8("Nem megfelelő proto_service_id!"));
     }
     // Beolvassuk a portokat is
-    host().fetchPorts(__q);
+    host().fetchPorts(__q, 0);  // IP cím VLAN nem kell
     // host().fetchParams(__q);
     tRecordList<cNPort>::iterator   i;
     // Csinálunk a releváns portokhoz egy index táblát
@@ -187,7 +187,7 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
                 }
             }
             // A Trunk-ot nem kérdezzük le, mert valószínüleg uplink, hacsak nincs "query_mac_tab = true"
-            if (queryFlag == TS_TRUE) continue;
+            if (queryFlag != TS_TRUE) continue;
         }
         else {
             // Más típusú port nem érdekes.
@@ -265,13 +265,14 @@ enum eNotifSwitch cDevicePMac::snmpQuery(const cOId& __o, QMap<cMac, int>& macs,
     do {
         int r = snmp.getNext(o);
         if (r) {
-            runMsg = trUtf8("SNMP hiba #%1 (%2). OID:%3")
+            runMsg = msgCat(runMsg,
+                    trUtf8("SNMP hiba #%1 (%2). OID:%3")
                     .arg(r).arg(snmp.emsg)
-                    .arg(__o.toString());
+                    .arg(__o.toString()), "\n");
             return RS_CRITICAL;
         }
-        if (!(__o < snmp.name())) break;
         o = snmp.name();
+        if (!(__o < o)) break;
         bool ok;
         int pix = snmp.value().toInt(&ok);
         if (!ok) {

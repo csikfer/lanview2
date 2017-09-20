@@ -16,22 +16,23 @@ static inline QString tag(const QString& t, const QString& p) {
     return r +">";
 }
 
-static inline QString htmlWarning(const QString& text) {
-    return "<div><b>" + text + "</b></div>";
-}
-static inline QString htmlInfo(const QString& text) {
-    return "<div>" + text + "</div>";
-}
-static inline QString htmlError(const QString& text) {
-    return "<div style=\"color:red\"><b>" + text + "</b></div>";
-}
-static inline QString htmlItalic(const QString& text) {
-    return "<i>" + text + "</i>";
-}
-static inline QString htmlBold(const QString& text) {
-    return "<b>" + text + "</b>";
-}
+EXT_ QString toHtml(const QString& text, bool chgBreaks = false, bool esc = true);
 
+static inline QString htmlWarning(const QString& text, bool chgBreaks = false, bool esc = true) {
+    return "<div><b>" + toHtml(text, chgBreaks, esc) + "</b></div>";
+}
+static inline QString htmlInfo(const QString& text, bool chgBreaks = false, bool esc = true) {
+    return "<div>" + toHtml(text, chgBreaks, esc) + "</div>";
+}
+static inline QString htmlError(const QString& text, bool chgBreaks = false, bool esc = true) {
+    return "<div style=\"color:red\"><b>" + toHtml(text, chgBreaks, esc) + "</b></div>";
+}
+static inline QString htmlItalic(const QString& text, bool chgBreaks = false, bool esc = true) {
+    return "<i>" + toHtml(text, chgBreaks, esc) + "</i>";
+}
+static inline QString htmlBold(const QString& text, bool chgBreaks = false, bool esc = true) {
+    return "<b>" + toHtml(text, chgBreaks, esc) + "</b>";
+}
 
 EXT_ QString htmlTableLine(const QStringList& fl, const QString& ft = "td");
 EXT_ QString htmlTable(QStringList head, QList<QStringList> matrix);
@@ -62,5 +63,21 @@ EXT_ QString reportByMac(QSqlQuery& q, const QString& aMac);
 EXT_ QString linksHtmlTable(QSqlQuery& q, tRecordList<cPhsLink>& list, bool _swap = false);
 
 EXT_ bool linkColisionTest(QSqlQuery& q, bool& exists, const cPhsLink& _pl, QString& msg);
+
+static inline void expWarning(const QString& text, bool chgBreaks = false, bool esc = true) {
+    cExportQueue::push(htmlWarning(text, chgBreaks, esc));
+}
+static inline void expInfo(const QString& text, bool chgBreaks = false, bool esc = true) {
+    cExportQueue::push(htmlInfo(text, chgBreaks, esc));
+}
+static inline void expError(const QString& text, bool chgBreaks = false, bool esc = true) {
+    cExportQueue::push(htmlError(text, chgBreaks, esc));
+}
+static inline void expItalic(const QString& text, bool chgBreaks = false, bool esc = true) {
+    cExportQueue::push(htmlItalic(text, chgBreaks, esc));
+}
+static inline void expBold(const QString& text, bool chgBreaks = false, bool esc = true) {
+    cExportQueue::push(htmlBold(text, chgBreaks, esc));
+}
 
 #endif // REPORT_H

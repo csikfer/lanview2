@@ -1,7 +1,6 @@
 #include <math.h>
 #include "lanview.h"
 #include "others.h"
-#include "ping.h"
 #undef  __MODUL_NAME__
 #define __MODUL_NAME__  PARSER
 #include "import_parser.h"
@@ -9,7 +8,6 @@
 QString      importFileNm;
 unsigned int importLineNo = 0;
 QTextStream* pImportInputStream = NULL;
-enum eImportParserStat importParserStat = IPS_READY;
 
 bool importSrcOpen(QFile& f)
 {
@@ -79,7 +77,7 @@ cImportParseThread::cImportParseThread(const QString& _inicmd, QObject *par)
     pSrc = NULL;
     if (pInstance != NULL) EXCEPTION(EPROGFAIL);
     pInstance = this;
-    setObjectName("Import parser");
+    setObjectName(_sImportParser);
 }
 
 #define IPT_SHORT_WAIT  5000
@@ -138,6 +136,10 @@ void	cImportParseThread::run()
     DBGFNL();
 }
 
+/// Forrás szöveg küldése a parsernek.
+/// @param src A lefordítandó szöveg.
+/// @param pe Hiba objektum pointer referencia. Hiba esetén a keletkezett hiba objektum pointere kerül bele.
+/// @return a hiba típusa. Ha nem REASON_OK, akkor a hiba objektum pointerét a pe-ben kapjuk vissza, amit a hívónak kell felszabadítani.
 int cImportParseThread::push(const QString& src, cError *& pe)
 {
     _DBGFN() << src << endl;
@@ -236,3 +238,4 @@ void cImportParseThread::stopParser()
     }
     DBGFNL();
 }
+

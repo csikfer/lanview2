@@ -5,14 +5,6 @@
 #include "lv2user.h"
 #include "srvdata.h"
 
-enum eImportParserStat {
-    IPS_READY,
-    IPS_RUN,
-    IPS_THREAD
-};
-
-EXT_ enum eImportParserStat importParserStat;
-
 EXT_ QString importFileNm;               ///< Source file name
 EXT_ unsigned int importLineNo;          ///< Source line counter
 EXT_ QTextStream* pImportInputStream;     ///< Source stream
@@ -28,7 +20,7 @@ EXT_ int importParseText(QString text);
 /// @param fn A feldolgozandó fájl neve lsd.: bool importSrcOpen(QFile& f);
 /// @return Ha nem volt hiba akkor 0, egyébként a hiba kód.
 EXT_ int importParseFile(const QString& fn);
-///
+
 EXT_ int importParse(eImportParserStat _st = IPS_RUN);
 
 /// Megnyitja olvasásra a megadott nevű forrás fájlt.

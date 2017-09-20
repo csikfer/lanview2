@@ -903,3 +903,167 @@ QString scramble(const QString& _s)
     return r;
 }
 
+enum eImportParserStat importParserStat = IPS_READY;
+
+bool callFromInterpreter()
+{
+    switch (importParserStat) {
+    case IPS_READY:                         // Nem fut az interpreter
+        return false;
+    case IPS_RUN:                           // A fő szálban fut az interpreter
+        if (isMainThread()) return true;    // Ez a fő szál
+        return false;                       // De ez nem a fő szál
+    case IPS_THREAD:                        // Egy thread-ban fut az interpreter
+        if (isMainThread()) return false;   // De ez a fő szál
+        if (QThread::currentThread()->objectName() == _sImportParser) return true;
+        return false;                       // Ez egy másik szál
+    default:
+        EXCEPTION(EPROGFAIL);
+        return false;
+    }
+}
+
+#define IMPQUEUEMAXWAIT 1000
+
+cExportQueue *cExportQueue::_pForParser = NULL;
+QMutex cExportQueue::staticMutex;
+QMap<QString, cExportQueue *>    cExportQueue::intMap;
+
+cExportQueue *cExportQueue::_pInstanceByThread()
+{
+    QString tn = currentThreadName();
+    QMap<QString, cExportQueue *>::iterator it = intMap.find(tn);
+    if (it == intMap.end()) return NULL;
+    return it.value();
+}
+
+cExportQueue *cExportQueue::pInstance()
+{
+    cExportQueue *r = NULL;
+    if (!staticMutex.tryLock(IMPQUEUEMAXWAIT)) EXCEPTION(ETO);
+    if (callFromInterpreter()) {
+        if (_pForParser == NULL) _pForParser = new cExportQueue;
+        r = _pForParser;
+    }
+    else {
+        r = _pInstanceByThread();
+    }
+    staticMutex.unlock();
+    return r;
+}
+
+cExportQueue::cExportQueue()
+    : QObject(), QQueue<QString>(), QMutex()
+{
+    ;
+}
+
+cExportQueue::~cExportQueue()
+{
+    ;
+}
+
+/// Ha nem az iterpreterből lett hivva a metódus nem csinál semmit, lásd callFromInterpreter() -t.
+/// Egyébként egy sor vagy paragrafus elhelyezése a queue-ban.
+/// A szöveg elhelyezése után kivált egy ready() szignált.
+/// A queue-hoz való hozzáféréshez egy belső mutex objektumot használ,
+/// időtullépés esetén kizárást dob.
+void cExportQueue::push(const QString &s)
+{
+    cExportQueue *r = pInstance();
+    if (r == NULL) return;
+    if (!r->tryLock(IMPQUEUEMAXWAIT)) EXCEPTION(ETO);
+    r->enqueue(s);
+    r->unlock();
+    r->ready();
+}
+
+/// Kivesz egy sort vagy paragrafust a queue-ból.
+/// Ha a queue üres, akkor egy null stringgel tér vissza.
+/// A queue-hoz való hozzáféréshez egy belső mutex objektumot használ,
+/// időtullépés esetén kizárást dob.
+QString cExportQueue::pop()
+{
+    cExportQueue *r = pInstance();
+    if (r == NULL) return QString();
+    if (!r->tryLock(IMPQUEUEMAXWAIT)) EXCEPTION(ETO);
+    QString s;
+    if (!r->isEmpty()) s = r->dequeue();
+    r->unlock();
+    return s;
+}
+
+/// Kiüríti a queue-t, az eredmény stringben a queue elemei közötti szeparátor a soremelés karakter.
+/// A queue-hoz való hozzáféréshez egy belső mutex objektumot használ,
+/// időtullépés esetén kizárást dob.
+/// ...
+QString cExportQueue::toText(bool fromInterpret, bool _clr)
+{
+    cExportQueue *p;
+    if (!staticMutex.tryLock(IMPQUEUEMAXWAIT)) EXCEPTION(ETO);
+    if (fromInterpret) {
+        p = _pForParser;
+    }
+    else {
+        p = _pInstanceByThread();
+    }
+    staticMutex.unlock();
+    QString s;
+    if (p != NULL) {
+        if (!p->tryLock(IMPQUEUEMAXWAIT)) EXCEPTION(ETO);
+        s = p->join("\n");
+        if (!fromInterpret && _clr) {
+            QString tn = currentThreadName();
+            p->unlock();
+            delete p;
+            intMap.remove(tn);
+            return s;
+        }
+        else {
+            p->clear();
+        }
+    }
+    p->unlock();
+    return s;
+}
+
+cExportQueue *cExportQueue::init(bool fromInterpret)
+{
+    cExportQueue *p;
+    if (!staticMutex.tryLock(IMPQUEUEMAXWAIT)) EXCEPTION(ETO);
+    if (fromInterpret) {
+        if (_pForParser != NULL) {
+            delete _pForParser;
+        }
+        _pForParser = p = new cExportQueue;
+    }
+    else {
+        QThread *th = QThread::currentThread();
+        QString  tn = threadName(th);
+        QMap<QString, cExportQueue *>::iterator it = intMap.find(tn);
+        if (it == intMap.end()) {
+            intMap[tn] = p = new cExportQueue;
+        }
+        else {
+            delete it.value();
+            it.value() = p = new cExportQueue;
+        }
+        connect(th, SIGNAL(destroyed(QObject*)), p, SLOT(destroy_mq(QObject*)));
+    }
+    staticMutex.unlock();
+    return p;
+}
+
+void cExportQueue::destroy_mq(QObject *p)
+{
+    QString tn = threadName((QThread *)p);
+    QMap<QString, cExportQueue *>::iterator it = intMap.find(tn);
+    if (it == intMap.end()) {
+        // Ettöl a sortol megkergül a fordító :-O
+        // DERR() << trUtf8("Object (thread) name %1 not found").arg(tn) << endl;
+    }
+    else {
+        delete it.value();
+        intMap.remove(tn);
+    }
+}

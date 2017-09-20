@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1153</width>
-    <height>791</height>
+    <width>2020</width>
+    <height>978</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -211,7 +211,7 @@
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
-     <widget class="QWidget" name="">
+     <widget class="QWidget" name="layoutWidget">
       <layout class="QGridLayout" name="gridLayout">
        <item row="0" column="0">
         <widget class="QLabel" name="labelTable">
@@ -311,6 +311,11 @@
           </property>
           <property name="toolTip">
            <string>A szolgáltatás állpota.</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Időp.</string>
           </property>
          </column>
          <column>

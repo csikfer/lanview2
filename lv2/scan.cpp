@@ -3,155 +3,8 @@
 #include "lv2data.h"
 #include "srvdata.h"
 #include "lv2link.h"
+#include "report.h"
 
-#if 0
-
-nmap::nmap(const netAddress& net, int opt, QObject *parent) : processXml(parent), host()
-{
-    QString par;
-    if (!(opt & UDPSCAN))   par  = "-sP ";
-    if (opt & TCPSCAN)      par  = "-sS ";
-    if (opt & UDPSCAN)      par += "-sU ";
-    if (opt & OSDETECT)     par += "-A ";
-    start(QString("sudo nmap %1-oX - %2").arg(par, net.toString()));
-}
-
-nmap::~nmap()
-{
-    ;
-}
-
-int nmap::count() const
-{
-    int r = -1;
-    if (getStat() == PROCESSED) {
-        QDomElement    hosts = (*this)[_sRunStatsHosts];
-        if (hosts.isNull()) EXCEPTION(EXML, -1, _sRunStatsHosts);
-        r = hosts.attributeNode(_sUp).value().toInt(); // Enyi hosztot talállt
-    }
-    return r;
-}
-
-const QDomElement& nmap::first()
-{
-    if (getStat() != PROCESSED) EXCEPTION(EPROGFAIL);
-    return host = (*this)[_sHost];
-}
-
-const QDomElement& nmap::next()
-{
-    if (getStat() != PROCESSED) EXCEPTION(EPROGFAIL);
-    if (host.isNull()) return host;
-    return host = host.nextSiblingElement(_sHost);
-}
-
-netAddressList  nmap::getAddress()
-{
-    QDomElement     dome;
-    netAddressList  r;
-    netAddress      a;
-    for (dome = host.firstChildElement(_sAddress); !dome.isNull(); dome = dome.nextSiblingElement(_sAddress)) {
-        PDEB(VVERBOSE | cDebug::ADDRESS) << "XML : address : " << dome.nodeName() << " = " << dome.nodeValue() << endl;
-        QString addrType = dome.attribute(_sAddrType);
-        QString addrVal  = dome.attribute(_sAddr);
-        PDEB(VVERBOSE | cDebug::ADDRESS) << "XML : address attr: " << addrType << " = " << addrVal << endl;
-        if      (addrType == _sIpV4) {
-            a.set(addrVal);
-            r << a;
-        }
-        else if (addrType == _sIpV6) {
-            a.set(addrVal);
-            r << a;
-        }
-    }
-    return r;
-}
-
-QString nmap::getName()
-{
-    QDomElement     dome;
-    QString r;
-    dome = host.firstChildElement(_sHostNames);
-    if (!dome.isNull()) {
-        dome = dome.firstChildElement(_sHostName);  // Csak az elsővel foglalkozunk
-        if (!dome.isNull()) {
-            r = dome.attribute(_sName);
-        }
-    }
-    return r;
-}
-
-nmap::mac nmap::getMAC()
-{
-    QDomElement     dome;
-    nmap::mac       r;
-    for (dome = host.firstChildElement(_sAddress); !dome.isNull(); dome = dome.nextSiblingElement(_sAddress)) {
-        PDEB(VVERBOSE | cDebug::ADDRESS) << "XML : address : " << dome.nodeName() << " = " << dome.nodeValue() << endl;
-        QString addrType = dome.attribute(_sAddrType);
-        QString addrVal  = dome.attribute(_sAddr);
-        PDEB(VVERBOSE | cDebug::ADDRESS) << "XML : address attr: " << addrType << " = " << addrVal << endl;
-        if      (addrType == _sMac) {
-            r.addr.set(addrVal);
-            r.vendor = dome.attribute(_sVendor);
-            return r;
-        }
-    }
-    return r;
-}
-
-QList<nmap::os> nmap::getOs()
-{
-    QList<os>       r;
-    QDomElement     dome = host.firstChildElement(_sOs);
-    if (dome.isNull()) return r;
-    nmap::os        o;
-    for (dome = dome.firstChildElement(_sOsClass); !dome.isNull(); dome = dome.nextSiblingElement(_sOsClass)) {
-        o.clear();
-        o.type     = dome.attribute(_sType);
-        o.vendor   = dome.attribute(_sVendor);
-        o.family   = dome.attribute(_sOsFamily);
-        o.gen      = dome.attribute(_sOsGen);
-        o.accuracy = dome.attribute(_sAccuracy).toInt();
-        r << o;
-    }
-    return r;
-}
-
-QMap<int, nmap::port> nmap::getPorts(bool udp)
-{
-    QMap<int, nmap::port>   r;
-    nmap::port              o;
-    QDomElement             dome = host.firstChildElement(_sPorts);
-    if (dome.isNull()) return r;
-    QString         sProt = udp ? "udp"     : "tcp";
-    port::eProto    eProt = udp ? port::UDP : port::TCP;
-    for (dome = dome.firstChildElement(_sPort); !dome.isNull(); dome = dome.nextSiblingElement(_sPort)) {
-        if (0 != sProt.compare(dome.attribute(_sProtocol), Qt::CaseInsensitive)) continue;
-        QDomElement de;
-        de = dome.firstChildElement(_sState);
-        // Status is open ?
-        if (de.isNull() || 0 != de.attribute(_sState).compare(_sOpen, Qt::CaseInsensitive)) continue;
-        o.clear();
-        o.proto = eProt;
-        o.id    = dome.attribute(_sPortId).toInt();
-        de = dome.firstChildElement(_sService);
-        if (!de.isNull()) {
-            o.name = de.attribute(_sName);
-            o.type = de.attribute(_sDeviceType);
-            o.prod = de.attribute(_sProduct);
-        }
-        for (de = dome.firstChildElement(_sScript); !de.isNull(); de = de.nextSiblingElement(_sScript)) {
-            QString id = de.attribute(_sId);
-            QString ou = de.attribute(_sOutput);
-            if (id.isNull() || ou.isNull()) EXCEPTION(EXML);
-            o.script[id] = ou;
-        }
-        r[o.id] = o;
-    }
-    return r;
-}
-
-#endif
 /***************************************************************************************************************/
 #ifdef SNMP_IS_EXISTS
 
@@ -1914,6 +1767,209 @@ void lldpInfo(QSqlQuery q, const cSnmpDevice& __dev, bool _parser)
     o.pDev = pDev;
     o.scanByLldpDev(q);
     delete pDev;
+}
+
+/* ************************************************************************************ */
+
+int ping(QHostAddress _ip)
+{
+    QString msg;
+    QString cmd = QString("ping -c4 %1").arg(_ip.toString());
+    QProcess proc;
+    proc.start(cmd);
+    proc.setProcessChannelMode(QProcess::MergedChannels);
+    if (!proc.waitForStarted()) {
+        msg = QObject::trUtf8("A ping parancsot nem lehet elindítani : %1").arg(proc.errorString());
+        DERR() << msg << endl;
+        expError(msg);
+        return -1;
+    }
+    if (!proc.waitForFinished()) {
+        msg = QObject::trUtf8("Probléma a ping futtatásakor : %1").arg(proc.errorString());
+        DERR() << msg << endl;
+        expError(msg);
+        return -1;
+    }
+    QString out = QString::fromUtf8(proc.readAll());
+    expItalic(out, true); // Több soros
+    return proc.exitCode();
+}
+
+static QSet<int> queryAddr(cSnmp& snmp, const cOId& __o, cMac& __mac)
+{
+    cOId    o = __o;
+    QSet<int>  r;
+    QString msg;
+    while(true) {
+        int e = snmp.getNext(o);
+        if (e) {
+            msg = QObject::trUtf8("SNMP hiba #%1 (%2). OID:%3").arg(e).arg(snmp.emsg).arg(__o.toString());
+            DERR() << msg << endl;
+            expError(msg);
+            break;
+        }
+        o = snmp.name();
+        if (!(__o < o)) {
+            PDEB(VERBOSE) << QObject::trUtf8("Nincs több cím. (IDs %1 < %2)").arg(__o.toString(), o.toString()) << endl;
+            break;
+        }
+        bool ok;
+        int pix = snmp.value().toInt(&ok);
+        if (!ok) {
+            msg = QObject::trUtf8("Az SNMP válaszban: nem értelmezhető index. OID:%1: %2 = %3")
+                    .arg(__o.toString()).arg(o.toString())
+                    .arg(debVariantToString(snmp.value()));
+            DERR() << msg << endl;
+            expError(msg);
+            continue;   // Ilyennek nem kéne lennie, pedig de.
+        }
+        cMac mac = o.toMac();
+        if (!mac) {
+            msg = QObject::trUtf8("Az SNMP válaszban: nem értelmezhető MAC. OID: %1 : %2 <= %3")
+                    .arg(__o.toString()).arg(o.toString()).arg(pix);
+            DWAR() << msg << endl;
+            // expWarning(msg); // zavaró
+            continue;       // előfordul, ugorjunk
+        }
+        if (__mac == mac) { // Találat
+            PDEB(VERBOSE) << "found #" << pix << " => " << mac.toString() << endl;
+            r += pix;
+        }
+        PDEB(VVERBOSE) << "#" << pix << " => " << mac.toString() << endl;
+    };
+    DBGFNL();
+    return r;
+}
+
+#define MAXLINK 20
+void exploreByAddress(cMac _mac, QHostAddress _ip, cSnmpDevice& _start)
+{
+    cError *pe = NULL;
+    QSqlQuery q = getQuery();
+    QString msg;
+    const int ixPortIndex = cNPort::ixPortIndex();
+    try {
+        cOId oId1("SNMPv2-SMI::mib-2.17.4.3.1.2");
+        cOId oId2("SNMPv2-SMI::mib-2.17.7.1.2.2.1.2");
+        if (!oId1) EXCEPTION(ESNMP, oId1.status, oId1.emsg);
+        if (!oId2) EXCEPTION(ESNMP, oId2.status, oId2.emsg);
+        if (0 != ping(_ip)) {
+            msg = QObject::trUtf8("A %1 cél eszköz pingelése sikertelen. Nincs keresés.").arg(_ip.toString());
+            expWarning(msg);
+            return;
+        }
+        cSnmpDevice dev(_start);
+        int cnt = 0;
+        while (cnt++ < MAXLINK) {    // Keresés a cím táblákban
+            // Az aktuális switch címtáblájának a lekérdezése:
+            cSnmp   snmp;
+            dev.open(q, snmp);
+            QString actNodeName = dev.getName();
+            QSet<int> ixl;
+            ixl  = queryAddr(snmp, oId1, _mac);
+            ixl |= queryAddr(snmp, oId2, _mac);
+            if (ixl.isEmpty()) {
+                msg = QObject::trUtf8("A %1 switch-en nincs találat a keresett %2 MAC-re.").arg(dev.getName(), _mac.toString());
+                PDEB(VERBOSE) << msg << endl;
+                expInfo(msg);
+                return;
+            }
+            tRecordList<cInterface> ifl;
+            dev.fetchPorts(q, 0);
+            qlonglong trk = cIfType::ifTypeId(_sMultiplexor);
+            int ixStapleId = cInterface().toIndex(_sPortStapleId);
+            // Az indexek alapján előszedjük a portokat, trunk esetén a tagok kerülnek a listába, ha nincs port eldobjuk az indexet
+            foreach (int ix, ixl) {
+                cNPort *p = dev.ports.get(ixPortIndex, QVariant(ix), EX_IGNORE);    // index -> port
+                // Ha nincs ilen interfész, eldobjuk
+                if (p == NULL || p->chkObjType<cInterface>(EX_IGNORE) < 0) continue;
+                cInterface *pi = p->reconvert<cInterface>();
+                if (pi->getId(_sIfTypeId) == trk) {   // Trunk?
+                    // Trunk-nel a member portok kellenek
+                    qlonglong pid = pi->getId();
+                    QList<cNPort *>::const_iterator it;
+                    it = dev.ports.constBegin();
+                    for (; it < dev.ports.constEnd(); it++) {   // végigszaladunk az összes porton
+                        if ((*it)->getId(ixStapleId) == pid) {  // member port ?
+                            p = *it;
+                            if (ifl.contains(p->getId())) continue;     // már van a konténerben
+                            if (p->chkObjType<cInterface>(EX_IGNORE) < 0) continue; // nem interfész
+                            pi = p->reconvert<cInterface>();
+                            ifl << *pi; // másolat!!
+                        }
+                    }
+                }
+                else {
+                    if (ifl.contains(pi->getId())) continue;     // már van a konténerben
+                    ifl << *pi;
+                }
+
+            }
+            // Minden indexet eldobtunk, mert nem tartozott regisztrált porthoz
+            if (ifl.isEmpty()) {
+                msg = QObject::trUtf8("A %1 switch-en nincs releváns találat a keresett %2 MAC-re.").arg(actNodeName, _mac.toString());
+                PDEB(VERBOSE) << msg << endl;
+                expInfo(msg);
+                return;
+            }
+            msg = QObject::trUtf8("A kereset MAC-re a %1 swich-en találat a köv. portokon : ").arg(actNodeName);
+            QList<cInterface *>::const_iterator it;
+            it = ifl.constBegin();
+            for (; it < ifl.constEnd(); it++) {
+                msg += (*it)->getName() + _sCommaSp;
+            }
+            msg.chop(_sCommaSp.size());
+            expInfo(msg);
+            // Megnézzük van-e a talált portokhoz LLDP link ?
+            cLldpLink lldp;
+            dev.clear();            // A linkelt objektum, még nincs
+            it = ifl.constBegin();
+            for (; it < ifl.constEnd(); it++) {
+                qlonglong lpid = lldp.getLinked(q, (*it)->getId());
+                if (lpid != NULL_ID) {      // van linkelt port
+                    cNPort p;
+                    p.setById(q, lpid);   // a linkelt port az id alapján
+                    msg = QObject::trUtf8("Link %1 ==> %2").arg((*it)->getFullName(q), p.getFullName(q));
+                    expInfo(msg);
+                    qlonglong nid = p.getId(_sNodeId);  // A linkelt eszköz ID
+                    if (dev.isEmpty_()) {               // Még nincs beolvasva
+                        if (!dev.fetchById(q, nid)) { // A következő lekérdezendő switch
+                            msg = QObject::trUtf8("LLDP link nem SNMP eszközre : %1").arg(cNode().getNameById(nid));
+                            expWarning(msg);
+                            continue;
+                        }
+                    }
+                    else if (dev.getId() != nid) {      // Ha több link van mindnek ugyanode kall mutatnia
+                        msg = QObject::trUtf8("Ellentmindás a linkek között, egynél több cél eszköz: %1, %2").arg(dev.getName(), cNode().getNameById(q, nid));
+                        expError(msg);
+                        return;
+                    }
+                }
+            }
+            if (!dev.isEmpty_()) {
+                msg = QObject::trUtf8("Következő SNMP eszköz : %1").arg(dev.getName());
+                expInfo(msg);
+                continue;
+            }
+            else {
+                msg = QObject::trUtf8("Végponti port(ok) %1:").arg(actNodeName);
+                it = ifl.constBegin();
+                for (; it < ifl.constEnd(); it++) {
+                    msg += (*it)->getName() + _sCommaSp;
+                }
+                msg.chop(_sCommaSp.size());
+                expInfo(msg);
+                return;
+            }
+        }
+    } CATCHS(pe);
+    if (pe != NULL) {
+        msg = pe->msg();
+        pDelete(pe);
+        expError(msg);
+    }
+    msg = QObject::trUtf8("Túl sok link, a keresés megszakítva.");
+    expError(msg);
 }
 
 #else

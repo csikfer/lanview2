@@ -16,10 +16,22 @@ public:
     ~cFindByMac();
     static const enum ePrivilegeLevel rights;
 private:
+    void setAllMac();
+    void setSwitchs();
+    void setButtons();
     Ui::FindByMac *pUi;
     QSqlQuery *pq;
-protected slots:
-    void find();
+    bool    fMAC, fIP, fSw;
+private slots:
+    void changeMAC(const QString& s);
+    void changeIP(const QString& s);
+    void hit_clear();
+    void hit_find();
+    void hit_explore();
+    void ip2mac();
+    void mac2ip();
 };
+
+
 
 #endif // FINDBYMAC_H
