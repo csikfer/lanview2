@@ -24,7 +24,7 @@ cFindByMac::cFindByMac(QMdiArea *parent) :
     pUi->comboBoxSw->hide();
     pUi->labelSw->hide();
     pUi->pushButtonExplore->hide();
-    fSw = fale;
+    fSw = false;
 #endif  // SNMP_IS_EXISTS
     connect(pUi->comboBoxMAC,       SIGNAL(currentTextChanged(QString)),    this, SLOT(changeMAC(QString)));
     connect(pUi->comboBoxIP ,       SIGNAL(currentTextChanged(QString)),    this, SLOT(changeIP(QString)));
