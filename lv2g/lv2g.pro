@@ -41,7 +41,8 @@ SOURCES += \
     exports.cpp \
     deducepatch.cpp \
     tableexportdialog.cpp \
-    linkgraph.cpp
+    linkgraph.cpp \
+    snmpdevquery.cpp
 
 HEADERS +=\
     lv2g_global.h \
@@ -75,7 +76,8 @@ HEADERS +=\
     exports.h \
     deducepatch.h \
     tableexportdialog.h \
-    linkgraph.h
+    linkgraph.h \
+    snmpdevquery.h
 
 FORMS += \
     column_filter.ui \
@@ -100,7 +102,8 @@ FORMS += \
     edit_enum_vals.ui \
     exports.ui \
     deducepatch.ui \
-    tableexportdialog.ui
+    tableexportdialog.ui \
+    snmpdevquery.ui
 INCLUDEPATH += ../lv2
 #unix:LIBS += -lsnmp
 msvc:LIBS += -lSecur32

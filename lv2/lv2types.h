@@ -47,6 +47,16 @@ enum eTristate {
     TS_TRUE =  1
 };
 
+static inline bool setBool(bool& b, eTristate v) {
+    switch (v) {
+    case TS_TRUE:   b = true;    break;
+    case TS_FALSE:  b = false;   break;
+    case TS_NULL:                break;
+    default:        EXCEPTION(EPROGFAIL);
+    }
+    return b;
+}
+
 /// Hiba string
 EXT_ QString sInvalidEnum();
 /*!

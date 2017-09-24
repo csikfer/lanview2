@@ -36,10 +36,11 @@ enum eDialogButtons {
     DBT_TAKE_OUT,       ///< Kivesz
     DBT_EXPAND,         ///< FA: kibont
     DBT_ROOT,           ///< FA: rész fa megjelenítése
-    DBT_COPY,           ///< Kijelölt sorok, mint név lista a vágó lapra
+    DBT_COPY,           ///< Másolás a vágó lapra, vagy CVS export
     DBT_RECEIPT,        ///< Üzenet, esemény nyugtázása
     DBT_TRUNCATE,       ///< Az összes rekord törlése
-    DBT_COMPLETE,     ///< Kiegészít, ...
+    DBT_COMPLETE,       ///< Kiegészít, ...
+//  DBT_TOOLS,          ///< Segédeszköz, egyedi dalogus megjelenítése
     DBT_BUTTON_NUMBERS, ///< Nem egy nyomógombot reprezentál, hanem azok számát
     DBT_SPACER,         ///< Nem nyomogomb, spacer
     DBT_BREAK           ///< Nem nyomógomb, "sortörés"
@@ -226,7 +227,7 @@ private:
 
 /* ************************************************************************** */
 
-_GEX cRecord * recordInsertDialog(QSqlQuery& q, const QString& sn, QWidget *pPar = NULL, const cRecord *pSample = NULL, bool ro = false);
+_GEX cRecord * recordDialog(QSqlQuery& q, const QString& sn, QWidget *pPar = NULL, const cRecord *pSample = NULL, bool ro = false);
 
 static inline QString getTableItemText(QTableWidget *pW, int row, int col) {
     QString r;
@@ -259,6 +260,6 @@ static inline int getTableItemComboBoxCurrentIndex(QTableWidget *pW, int row, in
 
 /* ************************************************************************** */
 
-_GEX cRecord *objectDialog(const QString& name, QSqlQuery& q, QWidget *pPar, cRecord * _pSample = NULL);
+_GEX cRecord *objectDialog(const QString& name, QSqlQuery& q, QWidget *pPar, cRecord * _pSample = NULL, bool ro = false);
 
 #endif // RECORD_DIALOG_H

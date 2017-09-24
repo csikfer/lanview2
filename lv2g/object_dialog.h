@@ -54,7 +54,7 @@ class LV2GSHARED_EXPORT cPatchDialog : public QDialog {
     friend class cPPortTableLine;
     Q_OBJECT
 public:
-    cPatchDialog(QWidget *parent = NULL);
+    cPatchDialog(QWidget *parent = NULL, bool ro = false);
     ~cPatchDialog();
     cPatch * getPatch();
     void setPatch(const cPatch *pSample);
@@ -99,7 +99,7 @@ private slots:
     void selectionChanged(const QItemSelection &, const QItemSelection &);
 };
 
-_GEX cPatch * patchDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample = NULL);
+_GEX cPatch * patchDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample = NULL, bool ro = false);
 
 namespace Ui {
     class enumValsWidget;

@@ -1246,7 +1246,7 @@ QVariant  cColStaticDescrSet::set(const QVariant& _f, qlonglong & str) const
     if (metaIsInteger(t)) {
         qlonglong bm = _f.toLongLong();
         sl = enumType().set2lst(bm, EX_IGNORE);
-        if (enumType().checkSet(bm)) str |= ES_DEFECTIVE;
+        if (!enumType().checkSet(bm)) str |= ES_DEFECTIVE;
         return QVariant(sl);
     }
     else if (metaIsString(t)) {

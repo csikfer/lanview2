@@ -1796,7 +1796,7 @@ void cWorkstation::placeCurrentIndex(int i)
 
 void cWorkstation::nodeAddPlace()
 {
-    cRecord *pRec = recordInsertDialog(*pq, _sPlaces, this);
+    cRecord *pRec = recordDialog(*pq, _sPlaces, this);
     if (pRec == NULL) return;
     qlonglong pid = pRec->getId(_sPlaceId);
     LOCKSLOTS();

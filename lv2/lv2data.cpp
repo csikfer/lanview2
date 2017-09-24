@@ -5,6 +5,7 @@
 #include "lv2user.h"
 #include "scan.h"
 // #include "lv2service.h"
+#include "report.h"
 
 
 const QString& notifSwitch(int _ns, eEx __ex)
@@ -2379,7 +2380,12 @@ bool cNode::rewriteById(QSqlQuery &__q, eEx __ex)
     // Ütköző objektumok feltételes törlése
     delCollisionByIp(__q);
     delCollisionByMac(__q);
-    if (!tRewriteById(__q, ports, CV_PORTS, params, CV_NODE_PARAMS, __ex)) return false;
+    if (ports.size() > 0 && ports.first()->isNullId()) {
+        if (!tRewrite(__q, ports, CV_PORTS, params, CV_NODE_PARAMS, __ex)) return false;
+    }
+    else {
+        if (!tRewriteById(__q, ports, CV_PORTS, params, CV_NODE_PARAMS, __ex)) return false;
+    }
     return true;
 }
 
@@ -3155,8 +3161,10 @@ int cSnmpDevice::snmpVersion() const
     return -1;  // Inactive
 }
 
-bool cSnmpDevice::setBySnmp(const QString& __com, eEx __ex, QString *pEs)
+bool cSnmpDevice::setBySnmp(const QString& __com, eEx __ex, QString *__pEs)
 {
+    QString errMsgX;
+    QString *pEs = __pEs == NULL ? &errMsgX :__pEs;
 #ifdef SNMP_IS_EXISTS
     QString community = __com;
     if (community.isEmpty()) {
@@ -3188,6 +3196,7 @@ bool cSnmpDevice::setBySnmp(const QString& __com, eEx __ex, QString *pEs)
         containerValid = CV_ALL_NODE | CV_PORTS_ADDRESSES; // VLAN-ok nincsenek (még) lekérdezve!! | CV_PORT_VLANS;
         return true;
     }
+    if (__pEs == NULL) expError(*pEs, true);
 #else // SNMP_IS_EXISTS
     (void)__com;
     if (pEs != NULL) *pEs = snmpNotSupMsg();

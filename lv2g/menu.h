@@ -26,6 +26,7 @@ enum eIntSubWin {          /// Egyedi GUI tab widget elemek
     INT_FINDMAC,        /// Keresés egy MAC-re
     INT_WORKSTATION,    /// Új munkaállomás, vagy modosítás űrlap
     INT_DEDUCEPATCH,    /// Falikábel felfedezés
+    INT_SNMPDQUERY,     /// SNMP device query; insert/refresh
     INT_ENUMEDIT
 };
 

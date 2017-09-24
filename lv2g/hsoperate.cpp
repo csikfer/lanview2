@@ -985,20 +985,20 @@ void cHSOperate::doubleClickCell(const QModelIndex& mi)
     switch (mi.column()) {
     case TC_HOST: {
         cPatch *pNode = cPatch::getNodeObjByName(*pq2, s);
-        recordInsertDialog(*pq2, pNode->tableName(), this, pNode, true);
+        recordDialog(*pq2, pNode->tableName(), this, pNode, true);
         pDelete(pNode);
         break;
       }
     case TC_SERVICE: {
         const cService *pSrv = cService().service(*pq2, s);
-        recordInsertDialog(*pq2, _sServices, this, pSrv, true);
+        recordDialog(*pq2, _sServices, this, pSrv, true);
         break;
       }
     case TC_PORT: {
         QVariant vpid = actState()->rows.at(row)->rec.value(RX_PORT_ID);
         if (vpid.isValid()) {
             cNPort *pPort = cNPort::getPortObjById(*pq2, vpid.toLongLong());
-            recordInsertDialog(*pq2, pPort->tableName(), this, pPort, true);
+            recordDialog(*pq2, pPort->tableName(), this, pPort, true);
             pDelete(pPort);
         }
         break;
@@ -1006,13 +1006,13 @@ void cHSOperate::doubleClickCell(const QModelIndex& mi)
     case TC_EXT: {
         cHostService hs;
         hs.setById(*pq2, actState()->rows.at(row)->id);
-        recordInsertDialog(*pq2, hs.tableName(), this, &hs, true);
+        recordDialog(*pq2, hs.tableName(), this, &hs, true);
         break;
      }
     case TC_PLACE: {
         cPlace p;
         p.setByName(*pq2, s);
-        recordInsertDialog(*pq2, p.tableName(), this, &p, true);
+        recordDialog(*pq2, p.tableName(), this, &p, true);
         break;
      }
     case TC_NSUB: {
@@ -1032,7 +1032,7 @@ void cHSOperate::doubleClickCell(const QModelIndex& mi)
         cHostService hs;
         hs.setById(*pq2, actState()->rows.at(row)->id);
         hs.setById(*pq2, hs.getId(_sSuperiorHostServiceId));
-        recordInsertDialog(*pq2, hs.tableName(), this, &hs, true);
+        recordDialog(*pq2, hs.tableName(), this, &hs, true);
         break;
      }
     default:    break;

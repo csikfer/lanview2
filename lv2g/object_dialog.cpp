@@ -41,13 +41,15 @@ void cPPortTableLine::changePortIx(int ix)
 
 QString cPatchDialog::sPortRefForm;
 
-cPatchDialog::cPatchDialog(QWidget *parent)
+cPatchDialog::cPatchDialog(QWidget *parent, bool ro)
     : QDialog(parent)
     , pUi(new Ui::patchSimpleDialog)
 {
     pq = newQuery();
     if (sPortRefForm.isEmpty()) sPortRefForm = trUtf8("#%1 (%2/%3)");
     pUi->setupUi(this);
+    // nem ciffrázzuk ro-nal le ven titva az ok gomb
+    if (ro) pUi->buttonBox->button(QDialogButtonBox::Ok)->setDisabled(true);
     pModelZone  = new cZoneListModel;
     pUi->comboBoxZone->setModel(pModelZone);
     pModelPlace = new cPlacesInZoneModel;
@@ -476,7 +478,7 @@ void cPatchDialog::changeFilterZone(int i)
 
 void cPatchDialog::newPlace()
 {
-    cRecord *p = recordInsertDialog(*pq, _sPlaces, this);
+    cRecord *p = recordDialog(*pq, _sPlaces, this);
     if (p != NULL) {
         changeFilterZone(pUi->comboBoxZone->currentIndex());
         QString placeName = p->getName();
@@ -547,9 +549,9 @@ void cPatchDialog::selectionChanged(const QItemSelection &, const QItemSelection
     pUi->pushButtonDelPort->setDisabled(mil.isEmpty());
 }
 
-cPatch * patchDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample)
+cPatch * patchDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample, bool ro)
 {
-    cPatchDialog dialog(pPar);
+    cPatchDialog dialog(pPar, ro);
     if (pSample != NULL) {
         dialog.setPatch(pSample);
     }
@@ -1021,3 +1023,4 @@ cEnumValsEdit::~cEnumValsEdit()
 
 }
 
+/* ****** */

@@ -625,7 +625,15 @@ void cRecordDialogInh::restore(const cRecord *_pRec)
 
 /* ************************************************************************* */
 
-cRecord * recordInsertDialog(QSqlQuery& q, const QString& sn, QWidget *pPar, const cRecord *pSample, bool ro)
+/// Dialógus ablak megjelenítése egy rekord beillesztéséhez. Ha mgnyomták az OK gombot, akkor
+/// nem illeszti be az adatbázisba a rekordot, az új adathekyességre ellenörzött rekord értékkel tér vissza.
+/// A dialógus ablak megjelenését, tartalmát és működését a megadott rekord leíró és table_shape rekord definiálja.
+/// @param q
+/// @param sn A table_shape (a megjelenítést leíró) rekord neve
+/// @param pPar parent widgewt pointere
+/// @param pSample minta rekord
+/// @param ro Read-only flag, ha igaz, akkor csak a pSample megjelenítése történik, nincs OK gomb.
+cRecord * recordDialog(QSqlQuery& q, const QString& sn, QWidget *pPar, const cRecord *pSample, bool ro)
 {
     cTableShape shape;
     if (!shape.fetchByName(q, sn)) {
@@ -657,7 +665,12 @@ cRecord * recordInsertDialog(QSqlQuery& q, const QString& sn, QWidget *pPar, con
     return rd.record().dup();
 }
 
-cRecord *objectDialog(const QString& name, QSqlQuery& q, QWidget *pPar, cRecord * _pSample)
+/// Dialógus ablak megjelenítése egy rekord beillesztéséhez. Hasonló a recordInsertDialog() híváshoz,
+/// de a name alapján más egyedi dialógust hív:
+/// | name         | hívott függvény neve |
+/// |--------------|----------------------|
+/// | cPatchDialog | patchDialog
+cRecord *objectDialog(const QString& name, QSqlQuery& q, QWidget *pPar, cRecord * _pSample, bool ro)
 {
     if (0 == name.compare("cPatchDialog", Qt::CaseInsensitive)) {
         cPatch *pSample = NULL;
@@ -666,10 +679,12 @@ cRecord *objectDialog(const QString& name, QSqlQuery& q, QWidget *pPar, cRecord 
             pSample->setById(q, _pSample->getId());
             pSample->fetchPorts(q);
         }
-        cRecord *pRec = patchDialog(q, pPar, pSample);
-        pDelete(pSample);
+        cRecord *pRec = patchDialog(q, pPar, pSample, ro);
         return pRec;
     }
     EXCEPTION(EFOUND, 0, QObject::trUtf8("Nincs %1 nevű insert dialogus.").arg(name));
     return NULL;    // Warning miatt
 }
+
+/* ************************************************************************* */
+

@@ -268,7 +268,7 @@ cArpTable& cArpTable::getFromDb(QSqlQuery& __q)
     else {  \
         es = cError::errorMsg(eError::ec) + " : " + _es + " "; \
         DERR() << es << endl; \
-        if (pEs != NULL) *pEs += es; \
+        if (pEs != NULL) *pEs += es + "\n"; \
     }   return  false; }
 
 
@@ -289,17 +289,17 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs)
         return false;
     }
 
-    cSnmp   snmp(hostAddr.toString(), node.getName(_sCommunityRd));
+    cSnmp   snmp(hostAddr.toString(), node.getName(_sCommunityRd), node.snmpVersion());
     if (!snmp.isOpened()) EX(ESNMP, 0, node.getName(_sAddress));
     cTable      tab;    // Interface table container
     QStringList cols;   // Table col names container
-    cols << _sIfIndex << _sIfDescr << _sIfType << _sIfMtu << _sIfSpeed << _sIfPhysAddress
-         << _sIfAdminStatus << _sIfOperStatus;
+    cols << _sIfIndex << _sIfDescr << _sIfType << _sIfMtu << _sIfSpeed << _sIfPhysAddress;
     int r = snmp.getTable(_sIfMib, cols, tab);
     if (r) EX(ESNMP, r, snmp.emsg);
     PDEB(VVERBOSE) << "*************************************************" << endl;
     PDEB(VVERBOSE) << "SNMP TABLE : " << endl << tab.toString() << endl;
     PDEB(VVERBOSE) << "*************************************************" << endl;
+    // A getTable() metódus nem tudja lekérdezni az IP címet, ezért ezt az oszlopot külön kérdezzük le.
     tab << _sIpAdEntAddr; // Add ip address (empty column) to table
     cOId oid(_sIpMib + _sIpAdEntIfIndex);
     bool ok;
@@ -379,6 +379,12 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs)
             found = true;
         }
         PDEB(VVERBOSE) << "Insert port : " << pPort->toString() << endl;
+        expInfo(QObject::trUtf8("Port #%1 %2 (%3) %4").arg(
+                    pPort->getName(_sPortIndex),
+                    dQuoted(pPort->getName()),
+                    cIfType::ifType(pPort->getId(_sIfTypeId)).getName(),
+                    (addr.isNull() ? _sNul : addr.toString())
+                    ) );
         node.ports << pPort;
         // Trunk port hozzárendelések lekérdezése
         if (ifTypeName == _sMultiplexor) {
@@ -431,6 +437,12 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs)
                 }
                 PDEB(VVERBOSE) << "Insert port : " << pPort->toString() << endl;
                 node.ports << pPort;
+                expInfo(QObject::trUtf8("Port #%1 %2 (%3) %4").arg(
+                            pPort->getName(_sPortIndex),
+                            dQuoted(pPort->getName()),
+                            cIfType::ifType(pPort->getId(_sIfTypeId)).getName(),
+                            addr.toString()
+                            ) );
                 found = true;
             }
         }
@@ -448,19 +460,22 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs)
 /// @param f A cél mező neve
 static inline bool snmpset(cSnmpDevice &node, cSnmp &snmp, QString *pEs, const QString& s, const QString& f)
 {
+    QString msg;
     if (0 != snmp.get(s)) {
-        QString es = "cSnmp::get(" + s + ") error : " + snmp.emsg;
-        DERR() << "Node \"" << node.getName() << "\" : " << es << endl;
+        msg = QObject::trUtf8("SNMP node \"%1\" : cSnmp::get(%2) error : %3").arg(node.getName(), s, snmp.emsg);
+        DERR() << msg << endl;
         node.clear(f);
         if (pEs != NULL) {
-            *pEs += es + " ";
+            *pEs += msg + "\n";
         }
-        return true; /* WARNING */
+        return false; /* WARNING */
     }
     else {
         node.set(f, snmp.value());
+        msg = QObject::trUtf8("%1.%2 <== %3").arg(node.getName(), f, node.getName(f));
+        expInfo(msg);
     }
-    return false; /* OK */
+    return true; /* OK */
 }
 
 int setSysBySnmp(cSnmpDevice &node, eEx __ex, QString *pEs)
@@ -475,7 +490,7 @@ int setSysBySnmp(cSnmpDevice &node, eEx __ex, QString *pEs)
         if (pEs != NULL) *pEs += es;
         return -1;  // ERROR
     }
-    cSnmp   snmp(ma, node.getName(_sCommunityRd));
+    cSnmp   snmp(ma, node.getName(_sCommunityRd), node.snmpVersion());
 
     if (!snmp.isOpened()) {
         es = QObject::trUtf8("SNMP open(%1, %2) error. ").arg(ma).arg(node.getName(_sCommunityRd));
@@ -491,7 +506,7 @@ int setSysBySnmp(cSnmpDevice &node, eEx __ex, QString *pEs)
     war = snmpset(node, snmp, pEs, "SNMPv2-MIB::sysName.0",     _sSysName)     || war;
     war = snmpset(node, snmp, pEs, "SNMPv2-MIB::sysLocation.0", _sSysLocation) || war;
     war = snmpset(node, snmp, pEs, "SNMPv2-MIB::sysServices.0", _sSysServices) || war;
-    if (war) r = 0;
+    if (!war) r = 0;
     return r;
 }
 
@@ -1966,7 +1981,7 @@ void exploreByAddress(cMac _mac, QHostAddress _ip, cSnmpDevice& _start)
     if (pe != NULL) {
         msg = pe->msg();
         pDelete(pe);
-        expError(msg);
+        expError(msg, true);
     }
     msg = QObject::trUtf8("Túl sok link, a keresés megszakítva.");
     expError(msg);

@@ -521,7 +521,7 @@ int cSetWidget::set(const QVariant& v)
         int nid = _colDescr.enumType().enumValues.size();
         QAbstractButton *pAB = pButtons->button(nid);
         if (pAB != NULL) pAB->setChecked(v.isNull());
-        _bits = _colDescr.toId(v);
+        _bits = _colDescr.toId(_value);
         if (_bits < 0) _bits = 0;
         for (int id = 0; id < nid && NULL != (pAB = pButtons->button(id)) ; id++) {
             pAB->setChecked(enum2set(id) & _bits);
@@ -2510,12 +2510,8 @@ cSelectNode::cSelectNode(QComboBox *_pZone, QComboBox *_pPlace, QComboBox *_pNod
     , constFilterNode(_nodeConstFilt)
 {
     blockNodeSignal = false;
-    pNodeModel = new cRecordListModel(cPatch().descr(), this);
-    pNodeModel->nullable = true;
-    pComboBoxNode->setModel(pNodeModel);
-    if (!constFilterNode.isEmpty()) {
-        pNodeModel->setConstFilter(constFilterNode, FT_SQL_WHERE);
-    }
+    pNodeModel = NULL;
+    setNodeModel(new cRecordListModel(cPatch().descr(), this), TS_TRUE);
     connect(this, SIGNAL(placeIdChanged(qlonglong)), this, SLOT(_placeIdChanged(qlonglong)));
     if (pLineEditNodeFilt != NULL) {
         connect(pLineEditNodeFilt, SIGNAL(textChanged(QString)),    this, SLOT(_nodePatternChanged(QString)));
@@ -2523,12 +2519,52 @@ cSelectNode::cSelectNode(QComboBox *_pZone, QComboBox *_pPlace, QComboBox *_pNod
     connect(pComboBoxNode,  SIGNAL(currentIndexChanged(int)),   this, SLOT(_nodeChanged(int)));
 }
 
+void cSelectNode::setNodeModel(cRecordListModel *  _pNodeModel, eTristate _nullable)
+{
+    setBool(_pNodeModel->nullable, _nullable);
+    pComboBoxNode->setModel(_pNodeModel);
+    if (!constFilterNode.isEmpty()) {
+        _pNodeModel->setConstFilter(constFilterNode, FT_SQL_WHERE);
+    }
+    pDelete(pNodeModel);
+    pNodeModel = _pNodeModel;
+}
+
+void cSelectNode::reset()
+{
+    blockNodeSignal = true;
+    pComboBoxZone->setCurrentIndex(0);
+    pComboBoxPLace->setCurrentIndex(0);
+    pComboBoxNode->setCurrentIndex(0);
+    blockNodeSignal = false;
+    if (pPlaceModel->rowCount() > 0) {
+        placeIdChanged(pPlaceModel->atId(0));
+    }
+    else {
+        placeIdChanged(NULL_ID);
+    }
+}
+
+void cSelectNode::nodeSetNull(bool _sig)
+{
+    blockNodeSignal = _sig;
+    pComboBoxNode->setCurrentIndex(0);
+    blockNodeSignal = false;
+}
+
 void cSelectNode::_placeIdChanged(qlonglong pid)
 {
     qlonglong nid = pNodeModel->atId(pComboBoxNode->currentIndex());
     blockNodeSignal = true;
-    QString sql = QString("place_id = %1").arg(pid);
-    if (!constFilterNode.isEmpty()) sql = "(" + sql + " AND " + constFilterNode + ")";
+    QString sql;
+    if (pid == NULL_ID) {
+        if (!constFilterNode.isEmpty()) sql = constFilterNode;
+        else                            sql = _sTrue;
+    }
+    else {
+        sql = QString("place_id = %1").arg(pid);
+        if (!constFilterNode.isEmpty()) sql = "(" + sql + " AND " + constFilterNode + ")";
+    }
     pNodeModel->setConstFilter(sql, FT_SQL_WHERE);
     pNodeModel->setFilter();
     int nix = pNodeModel->indexOf(nid);

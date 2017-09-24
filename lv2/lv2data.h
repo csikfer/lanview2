@@ -1481,7 +1481,7 @@ public:
     /// Az SNMP verzió konstanst adja vissza (net-snmp híváshoz)
     int snmpVersion() const;
     /// SNMP lekérdezésekkel feltölti az objektumot
-    bool setBySnmp(const QString& __com = _sNul, enum eEx __ex = EX_ERROR, QString *pEs = NULL);
+    bool setBySnmp(const QString& __com = _sNul, enum eEx __ex = EX_ERROR, QString *__pEs = NULL);
     /// Inicializálja az SNMP session-t. És próbaképpen lekéri a SNMPv2-MIB::sysDescr -t.
     /// Sorra végigveszi az eszköz IP címeit, ha nem sikerül a lekérdezés.
     /// Ha a próba lekérdezés sikertelen, és elfogytak a címek, akkor ha __ex értéke

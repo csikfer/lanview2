@@ -12,6 +12,7 @@
 #include "workstation.h"
 #include "deducepatch.h"
 #include "object_dialog.h"
+#include "snmpdevquery.h"
 
 QMap<QString, QAction *>  cMenuAction::actionsMap;
 
@@ -70,6 +71,7 @@ cMenuAction::cMenuAction(QSqlQuery *pq, cMenuItem * pmi, QAction * pa, QMdiArea 
         SETINTWIN(_sWorkstation,INT_WORKSTATION,cWorkstation)
         SETINTWIN("enumedit",   INT_ENUMEDIT,   cEnumValsEdit)
         SETINTWIN("deducepatch",INT_DEDUCEPATCH,cDeducePatch)
+        SETINTWIN("snmpdquery", INT_SNMPDQUERY, cSnmpDevQuery)
 #undef SETINTWIN
 #undef _SETINTWIN
         else {
@@ -144,6 +146,7 @@ A jelenleg implementállt lehetőségek:
 | findmac    | INT_FINDMAC    | cFindByMac      | MAC keresés                 |
 | workstation| INT_WORKSTATION| cWorkstation    | Munkaállomás új/modosít     |
 | deducepath | INT_DEDUCEPATCH| cDeducePatch    | Fali kábel fefedező         |
+| snmpdquery | INT_SNMPDQUERY | cSnmpDevQuery   | SNMP insert/refresh         |
 | enumedit   | INT_ENUMEDIT   | cEnumValsEdit   | Enumerációk                 |
  */
 void cMenuAction::initInt()
@@ -160,6 +163,7 @@ void cMenuAction::initInt()
     CREATEINTWIN(INT_FINDMAC,    cFindByMac);
     CREATEINTWIN(INT_WORKSTATION,cWorkstation);
     CREATEINTWIN(INT_DEDUCEPATCH,cDeducePatch);
+    CREATEINTWIN(INT_SNMPDQUERY, cSnmpDevQuery);
     CREATEINTWIN(INT_ENUMEDIT,   cEnumValsEdit);
 #undef CREATEINTWIN
     default:

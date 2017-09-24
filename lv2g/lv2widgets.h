@@ -734,11 +734,22 @@ private slots:
     void togleStrikeout(bool f);
 };
 
+/// Az osztály egy zóna ás hely QComboBox párossal egy hely kiválasztását teszi lehetővé.
+/// Opcionálisan megadható egy QLineEdit objektum is, a hely nevek szűrésének a megadásához.
 class LV2GSHARED_EXPORT cSelectPlace : public QObject {
     Q_OBJECT
 public:
+    /// Konstruktor.
+    /// @param _pZone   A comboBox objektum pointere a zóna kiválasztáshoz.
+    /// @param _pPlace  A comboBox objektum pointere a zónán bellüli hely kiválasztáshoz.
+    /// @param _pFilt   Opcionális lineEdit objektum pointere, a hely név szűréséhez.
+    /// @param _constFilt Egy opcionális konstans szűrő a helyek-hez.
     cSelectPlace(QComboBox *_pZone, QComboBox *_pPLace, QLineEdit *_pFilt = NULL, const QString& _constFilt = QString());
-private:
+    QString currentZoneName()   { return pZoneModel->at(pComboBoxZone->currentIndex()); }
+    qlonglong currentZoneId()   { return pZoneModel->atId(pComboBoxZone->currentIndex()); }
+    QString currentPlaceName()  { return pPlaceModel->at(pComboBoxPLace->currentIndex()); }
+    qlonglong currentPlaceId()  { return pPlaceModel->atId(pComboBoxPLace->currentIndex()); }
+protected:
     QComboBox *pComboBoxZone;
     QComboBox *pComboBoxPLace;
     QLineEdit *pLineEditPlaceFilt;
@@ -759,9 +770,24 @@ signals:
 class LV2GSHARED_EXPORT cSelectNode : public cSelectPlace {
     Q_OBJECT
 public:
+    /// Konstruktor.
+    /// @param _pZone   A comboBox objektum pointere a zóna kiválasztáshoz.
+    /// @param _pPlace  A comboBox objektum pointere a zónán bellüli hely kiválasztáshoz.
+    /// @param _pNode   A comboBox objektum pointere a zónán és/vagy a  helységben található eszköz kiválasztáshoz.
+    /// @param _pPlaceFilt Opcionális lineEdit objektum pointere, a hely név szűréséhez.
+    /// @param _pNodeFilt  Opcionális lineEdit objektum pointere, az eszköz név szűréséhez.
+    /// @param _placeConstFilt Egy opcionális konstans szűrő a helyek-hez.
+    /// @param _nodeConstFilt  Egy opcionális konstans szűrő az eszközökhöz
     cSelectNode(QComboBox *_pZone, QComboBox *_pPlace, QComboBox *_pNode,
                 QLineEdit *_pPlaceFilt = NULL, QLineEdit *_pNodeFilt = NULL,
                 const QString& _placeConstFilt = QString(), const QString& _nodeConstFilt = QString());
+    void setNodeModel(cRecordListModel *  _pNodeModel, eTristate _nullable = TS_NULL);
+    void reset();
+    /// A kurrens node-ot null-ra állítja. Feltételezi, hogy az lehet null, és az az első elem.
+    /// Ha _sig értéke true, vagy nem adtuk meg, akkor a aktív node megváltozásakori szignál nem lessz meghívva.
+    void nodeSetNull(bool _sig = true);
+    QString currentNodeName()  { return pNodeModel->at(pComboBoxNode->currentIndex()); }
+    qlonglong currentNodeId()  { return pNodeModel->atId(pComboBoxNode->currentIndex()); }
 private:
     QComboBox *         pComboBoxNode;
     QLineEdit *         pLineEditNodeFilt;
