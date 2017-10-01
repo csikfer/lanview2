@@ -482,26 +482,47 @@ cSetWidget::cSetWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRec
 {
     _DBGOBJ() << _tf.identifying() << endl;
     _wType = FEW_SET;
+    int cols, rows;
+    cols = _fieldShape.feature("column", 1);
+    rows = _colDescr.enumType().enumValues.size();
+    if (_dcNull != DC_INVALID) ++rows;
+    rows = (rows + cols -1) / cols;
     _pWidget  = new QWidget(_par == NULL ? NULL : _par->pWidget());
     pButtons  = new QButtonGroup(pWidget());
-    pLayout   = new QVBoxLayout;
+    QVBoxLayout *pVLayout   = new QVBoxLayout;
+    QHBoxLayout *pHLayout   = NULL;
     pButtons->setExclusive(false);      // SET, több opció is kiválasztható
-    widget().setLayout(pLayout);
+    if (cols > 1) {
+        pHLayout = new QHBoxLayout;
+        widget().setLayout(pHLayout);
+        pHLayout->addLayout(pVLayout);
+    }
+    else {
+        widget().setLayout(pVLayout);
+    }
     _bits = _colDescr.toId(_value);
     int id;
     for (id = 0; id < _colDescr.enumType().enumValues.size(); ++id) {
+        if (pHLayout != NULL && id != 0 && (id % rows) == 0) {
+            pVLayout   = new QVBoxLayout;
+            pHLayout->addLayout(pVLayout);
+        }
         QCheckBox *pCheckBox = new QCheckBox(pWidget());
         enumSetShort(pCheckBox, _colDescr.enumType(), id, _colDescr.enumType().enum2str(id), _tf.getId(_sFieldFlags));
         pButtons->addButton(pCheckBox, id);
-        pLayout->addWidget(pCheckBox);
+        pVLayout->addWidget(pCheckBox);
         pCheckBox->setChecked(enum2set(id) & _bits);
         pCheckBox->setDisabled(_readOnly);
     }
     if (_dcNull != DC_INVALID) {
+        if (pHLayout != NULL && (id % rows) == 0) {
+            pVLayout   = new QVBoxLayout;
+            pHLayout->addLayout(pVLayout);
+        }
         QCheckBox *pCheckBox = new QCheckBox(pWidget());
         dcSetShort(pCheckBox, _dcNull);
         pButtons->addButton(pCheckBox, id);
-        pLayout->addWidget(pCheckBox);
+        pVLayout->addWidget(pCheckBox);
         pCheckBox->setChecked(__fr.isNull());
         pCheckBox->setDisabled(_readOnly);
     }
@@ -563,8 +584,14 @@ cEnumRadioWidget::cEnumRadioWidget(const cTableShape& _tm, const cTableShapeFiel
 {
     _wType = FEW_ENUM_RADIO;
     _pWidget = new QWidget(_par == NULL ? NULL : _par->pWidget());
+    bool vert = _fieldShape.isFeature("horizontal");
     pButtons  = new QButtonGroup(pWidget());
-    pLayout   = new QVBoxLayout;
+    if (vert) {
+        pLayout = new QHBoxLayout;
+    }
+    else {
+        pLayout = new QVBoxLayout;
+    }
     pButtons->setExclusive(true);
     widget().setLayout(pLayout);
     int id = 0;

@@ -18,6 +18,7 @@
 
 #include "lv2g.h"
 #include "lv2models.h"
+#include "guidata.h"
 #include "imagedrv.h"
 
 inline static QFrame *line(int __w, int __mw, QWidget *par = NULL)
@@ -273,8 +274,6 @@ public:
 protected:
     /// A radio-button-okat kezelő obkeltum
     QButtonGroup   *pButtons;
-    /// A radio-button-okat tartalamzó layer.
-    QBoxLayout     *pLayout;
     /// Az aktuális érték (aradio-button-hoz rendelt bit a radio-button állapota.
     qlonglong       _bits;
 private slots:
