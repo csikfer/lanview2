@@ -7,6 +7,26 @@
 
 #include "ui_findbymac.h"
 
+cFBMExpThread::cFBMExpThread(cMac& _mac, QHostAddress& _ip, cSnmpDevice& _st, cFindByMac * _par)
+    : QThread(_par), pEQ(NULL), mac(_mac), ip(_ip), st(_st)
+{
+    ;
+}
+
+void cFBMExpThread::run()
+{
+    pEQ = cExportQueue::init(false);
+    connect(pEQ, SIGNAL(ready()), this, SLOT(readyLine()));
+    exploreByAddress(mac, ip, st);
+    QString s;
+    while (!(s = pEQ->pop()).isEmpty()) expLine(s);
+}
+
+void cFBMExpThread::readyLine()
+{
+    expLine(pEQ->pop());
+}
+
 const enum ePrivilegeLevel cFindByMac::rights = PL_VIEWER;
 
 cFindByMac::cFindByMac(QMdiArea *parent) :
@@ -14,6 +34,7 @@ cFindByMac::cFindByMac(QMdiArea *parent) :
     pUi(new Ui::FindByMac)
 {
     pq = newQuery();
+    pThread = NULL;
     fMAC = fIP = fSw = false;
     pUi->setupUi(this);
     setAllMac();
@@ -121,10 +142,14 @@ void cFindByMac::hit_explore()
         pUi->textEdit->setHtml(htmlError(trUtf8("Hibás adatok.")));
         return;
     }
-    cExportQueue::init(false);
-    exploreByAddress(mac, ip, sw);
-    QString text = cExportQueue::toText(false, true);   // Töröljük is
-    pUi->textEdit->setHtml(text);
+    pThread = new cFBMExpThread(mac, ip, sw, this);
+    connect(pThread, SIGNAL(expLine(QString)), this, SLOT(expLine(QString)));
+    connect(pThread, SIGNAL(finished()), this, SLOT(finished()));
+    pUi->pushButtonClear->setDisabled(true);
+    pUi->pushButtonExplore->setDisabled(true);
+    pUi->pushButtonFindMac->setDisabled(true);
+    pUi->pushButtonSave->setDisabled(true);
+    pThread->start();
 #endif
 }
 
@@ -144,4 +169,16 @@ void cFindByMac::mac2ip()
         pUi->comboBoxIP->addItem(a.toString());
     }
     pUi->comboBoxIP->setCurrentIndex(0);
+}
+
+void cFindByMac::expLine(QString s)
+{
+    pUi->textEdit->append(s);
+}
+
+void cFindByMac::finished()
+{
+    pUi->pushButtonClear->setDisabled(false);
+    pUi->pushButtonFindMac->setDisabled(false);
+    pUi->pushButtonSave->setDisabled(false);
 }

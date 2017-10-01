@@ -63,8 +63,11 @@ cPortMac::cPortMac(QSqlQuery& q, const QString& __sn)
 {
     cDevicePMac::pOId1 = new cOId("SNMPv2-SMI::mib-2.17.4.3.1.2");
     cDevicePMac::pOId2 = new cOId("SNMPv2-SMI::mib-2.17.7.1.2.2.1.2");
+    cDevicePMac::pOIdx = new cOId("SNMPv2-SMI::mib-2.17.1.4.1.2");
+
     if (!*cDevicePMac::pOId1) EXCEPTION(ESNMP, cDevicePMac::pOId1->status, cDevicePMac::pOId1->emsg);
     if (!*cDevicePMac::pOId2) EXCEPTION(ESNMP, cDevicePMac::pOId2->status, cDevicePMac::pOId2->emsg);
+    if (!*cDevicePMac::pOIdx) EXCEPTION(ESNMP, cDevicePMac::pOIdx->status, cDevicePMac::pOIdx->emsg);
 }
 
 cPortMac::~cPortMac()
@@ -90,6 +93,7 @@ int cPortMac::run(QSqlQuery &__q, QString& runMsg)
 const cService *cDevicePMac::pSrvSnmp   = NULL;
 cOId    *cDevicePMac::pOId1 = NULL;
 cOId    *cDevicePMac::pOId2 = NULL;
+cOId    *cDevicePMac::pOIdx = NULL;
 
 cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector * _par)
     : cInspector(__q, __host_service_id, __tableoid, _par)
@@ -109,13 +113,19 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
     }
     // Csak az SNMP lekérdezés támogatott
     if (protoServiceId() != pSrvSnmp->getId()) {
-        EXCEPTION(EDATA, protoServiceId(), QObject::trUtf8("Nem megfelelő proto_service_id!"));
+        EXCEPTION(EDATA, protoServiceId(), trUtf8("Nem megfelelő proto_service_id!"));
     }
     // Beolvassuk a portokat is
     host().fetchPorts(__q, 0);  // IP cím VLAN nem kell
     // host().fetchParams(__q);
     tRecordList<cNPort>::iterator   i;
     // Csinálunk a releváns portokhoz egy index táblát
+    QMap<int,int>   rxix;   // Kereszt index tábla, a lekérdezésnél használlt indexekre konvertáláshoz
+    snmpDev().open(__q, snmp);
+    int r = snmp.getXIndex(*pOIdx, rxix);
+    if (r) {
+        EXCEPTION(ESNMP, r, trUtf8("A kereszt index tábla lekérdezése sikertelen : %1").arg(name()));
+    }
     for (i = host().ports.begin(); i < host().ports.end(); ++i) {
         cNPort  &np = **i;
         int ix = -1;
@@ -193,8 +203,15 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
             // Más típusú port nem érdekes.
             continue;
         }
-        PDEB(VERBOSE) << trUtf8("Set query %1 port.").arg(np.getName()) << endl;
-        ports.insert((int)np.getId(_sPortIndex), np.reconvert<cInterface>());
+        ix = (int)np.getId(_sPortIndex);    // Eredeti port index
+        if (rxix.contains(ix)) {            // Van ilyen a kereszt index-ben?
+            ix = rxix[ix];                  // a lekérdezésben ezt az indexet fogja megkapni
+            PDEB(VERBOSE) << trUtf8("Set query %1 port, inex %2 (%3).").arg(np.getName()).arg(ix).arg(np.getId(_sPortIndex)) << endl;
+            ports.insert(ix, np.reconvert<cInterface>());
+        }
+        else {
+            PDEB(VERBOSE) << trUtf8("No set query %1 port, inex %2 not found.").arg(np.getName()).arg(ix) << endl;
+        }
     }
 }
 
@@ -207,7 +224,7 @@ void cDevicePMac::postInit(QSqlQuery &q, const QString&)
 {
     DBGFN();
     cInspector::postInit(q);    // Beolvassa a MAC figyelő al szolgálltatásokat (rightmac)
-    snmpDev().open(q, snmp);
+    // snmpDev().open(q, snmp);
 }
 
 cInspector *cDevicePMac::newSubordinate(QSqlQuery &_q, qlonglong _hsid, qlonglong _toid, cInspector *_par)
@@ -228,7 +245,7 @@ int cDevicePMac::run(QSqlQuery& q, QString& runMsg)
     QMap<cMac, int> macs;
     enum eNotifSwitch r;
 
-    if (RS_ON != (r = snmpQuery(*pOId1, macs, runMsg))) return r;
+    if (RS_ON != (r = snmpQuery(*pOId1, macs, runMsg))) return r;   // Az index nem feltétlenül az eredeti port index!
     if (RS_ON != (r = snmpQuery(*pOId2, macs, runMsg))) return r;
 
     foundMacs.clear();

@@ -1864,8 +1864,10 @@ void exploreByAddress(cMac _mac, QHostAddress _ip, cSnmpDevice& _start)
     QString msg;
     const int ixPortIndex = cNPort::ixPortIndex();
     try {
+        cOId oIdx("SNMPv2-SMI::mib-2.17.1.4.1.2");
         cOId oId1("SNMPv2-SMI::mib-2.17.4.3.1.2");
         cOId oId2("SNMPv2-SMI::mib-2.17.7.1.2.2.1.2");
+        if (!oIdx) EXCEPTION(ESNMP, oIdx.status, oIdx.emsg);
         if (!oId1) EXCEPTION(ESNMP, oId1.status, oId1.emsg);
         if (!oId2) EXCEPTION(ESNMP, oId2.status, oId2.emsg);
         if (0 != ping(_ip)) {
@@ -1893,8 +1895,22 @@ void exploreByAddress(cMac _mac, QHostAddress _ip, cSnmpDevice& _start)
             dev.fetchPorts(q, 0);
             qlonglong trk = cIfType::ifTypeId(_sMultiplexor);
             int ixStapleId = cInterface().toIndex(_sPortStapleId);
+            QMap<int,int> xix;   // A port indexek újra lehetnek számozva!, kell egy kereszt index
+            int e = snmp.getXIndex(oIdx, xix);
+            if (e) {
+                msg = QObject::trUtf8("A port keresztindex (OID : %1) lekérdezése sikertelen : #%2 ").arg(oIdx.toString()).arg(e);
+                PDEB(DERROR) << msg << endl;
+                expError(msg);
+                return;
+            }
             // Az indexek alapján előszedjük a portokat, trunk esetén a tagok kerülnek a listába, ha nincs port eldobjuk az indexet
             foreach (int ix, ixl) {
+                if (!xix.contains(ix)) {
+                    msg = QObject::trUtf8("A %1 index nem található a kereszt index táblában.").arg(ix);
+                    PDEB(VERBOSE) << msg << endl;
+                    continue;
+                }
+                ix = xix[ix];
                 cNPort *p = dev.ports.get(ixPortIndex, QVariant(ix), EX_IGNORE);    // index -> port
                 // Ha nincs ilen interfész, eldobjuk
                 if (p == NULL || p->chkObjType<cInterface>(EX_IGNORE) < 0) continue;

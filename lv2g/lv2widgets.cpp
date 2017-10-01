@@ -2439,8 +2439,8 @@ void cFontAttrWidget::togleStrikeout(bool f)
 
 /* **** **** */
 
-cSelectPlace::cSelectPlace(QComboBox *_pZone, QComboBox *_pPLace, QLineEdit *_pFilt, const QString& _constFilt)
-    : QObject()
+cSelectPlace::cSelectPlace(QComboBox *_pZone, QComboBox *_pPLace, QLineEdit *_pFilt, const QString& _constFilt, QObject *_par)
+    : QObject(_par)
     , pComboBoxZone(_pZone)
     , pComboBoxPLace(_pPLace)
     , pLineEditPlaceFilt(_pFilt)
@@ -2460,6 +2460,32 @@ cSelectPlace::cSelectPlace(QComboBox *_pZone, QComboBox *_pPLace, QLineEdit *_pF
     if (_pFilt != NULL) {
         connect(pLineEditPlaceFilt, SIGNAL(textChanged(QString)),    this, SLOT(_placePatternChanged(QString)));
     }
+}
+
+void cSelectPlace::copyCurrents(const cSelectPlace &_o)
+{
+    qlonglong pid = currentPlaceId();
+    blockPlaceSignal = true;
+    pComboBoxZone->setCurrentIndex(_o.pComboBoxZone->currentIndex());
+    pLineEditPlaceFilt->setText(_o.pLineEditPlaceFilt->text());
+    int pix = _o.pComboBoxPLace->currentIndex();
+    pComboBoxPLace->setCurrentIndex(pix);
+    blockPlaceSignal = false;
+    if (pid != currentPlaceId()) _placeChanged(pix);
+}
+
+void cSelectPlace::setEnabled(bool f)
+{
+    pComboBoxZone->setEnabled(f);
+    pLineEditPlaceFilt->setEnabled(f);
+    pComboBoxPLace->setEnabled(f);
+}
+
+void cSelectPlace::setDisabled(bool f)
+{
+    pComboBoxZone->setDisabled(f);
+    pLineEditPlaceFilt->setDisabled(f);
+    pComboBoxPLace->setDisabled(f);
 }
 
 void cSelectPlace::_zoneChanged(int ix)
@@ -2485,7 +2511,7 @@ void cSelectPlace::_placePatternChanged(const QString& s)
         pPlaceModel->setFilter(QVariant(), OT_DEFAULT, FT_NO);
     }
     else {
-        pPlaceModel->setFilter(s, OT_DEFAULT, FT_LIKE);
+        pPlaceModel->setFilter(condAddJoker(s), OT_DEFAULT, FT_LIKE);
     }
     int pix = pPlaceModel->indexOf(pid);
     if (pix < 0) {  // Nincs már megfelelő place -> NULL
@@ -2503,8 +2529,9 @@ void cSelectPlace::_placePatternChanged(const QString& s)
 
 cSelectNode::cSelectNode(QComboBox *_pZone, QComboBox *_pPlace, QComboBox *_pNode,
             QLineEdit *_pPlaceFilt, QLineEdit *_pNodeFilt,
-            const QString& _placeConstFilt, const QString& _nodeConstFilt)
-    : cSelectPlace(_pZone, _pPlace, _pPlaceFilt, _placeConstFilt)
+            const QString& _placeConstFilt, const QString& _nodeConstFilt,
+            QObject *_par)
+    : cSelectPlace(_pZone, _pPlace, _pPlaceFilt, _placeConstFilt, _par)
     , pComboBoxNode(_pNode)
     , pLineEditNodeFilt(_pNodeFilt)
     , constFilterNode(_nodeConstFilt)
@@ -2587,7 +2614,7 @@ void cSelectNode::_nodePatternChanged(const QString& s)
         pNodeModel->setFilter(QVariant(), OT_DEFAULT, FT_NO);
     }
     else {
-        pNodeModel->setFilter(s, OT_DEFAULT, FT_LIKE);
+        pNodeModel->setFilter(condAddJoker(s), OT_DEFAULT, FT_LIKE);
     }
     int nix = pNodeModel->indexOf(nid);
     if (nix < 0) {  // Nincs már megfelelő node -> NULL

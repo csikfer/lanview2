@@ -27,6 +27,7 @@ private slots:
     void saveClicked();
     void parseClicked();
     void debugLine();
+    void exportLine();
     void localParseFinished();
     void localParseBreak();
 
@@ -44,6 +45,7 @@ private:
     bool    isRuning;
     cImportParseThread *pLocalParser;
     cError             *pLocalError;
+    cExportQueue       *pExportQueue;
     QString            *pLocalParsedStr;
     QStringList         debugLines;
     QStringList         qParseList;

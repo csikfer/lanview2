@@ -802,6 +802,30 @@ int cSnmp::getTable(const cOIdVector& Ids, const QStringList& columns, cTable& r
     return 1;
 }
 
+int cSnmp::getXIndex(const cOId& xoid, QMap<int, int>& xix, bool reverse)
+{
+    int r = getNext(xoid);
+    if (r != 0) return r;
+    while (xoid < name()) {
+        cOId ko = name() - xoid;
+        if (ko.size() != 1) return -1;
+        bool ok;
+        int origIx = value().toInt(&ok);
+        if (!ok) return -1;
+        int newIx = ko.last();
+        if (reverse) {
+            xix[origIx] = newIx;
+        }
+        else {
+            xix[newIx] = origIx;
+        }
+        // PDEB(VVERBOSE) << QString("xix[%1] = %2").arg(k).arg(ix) << endl;
+        r = getNext();
+        if (r) return r;
+    }
+    return 0;
+}
+
 QString snmpNotSupMsg()
 {
     EXCEPTION(EPROGFAIL);

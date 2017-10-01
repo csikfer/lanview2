@@ -95,6 +95,46 @@ static void buttonCheckEnable(QButtonGroup * pGroup, int id, bool check, bool en
 
 const enum ePrivilegeLevel cWorkstation::rights = PL_OPERATOR;
 
+#if 1
+cWorkstation::cWorkstation(QMdiArea *parent) :
+    cIntSubObj(parent),
+    pUi(new Ui::wstWidget),
+    pq(newQuery())
+{
+    memset(&states, 0, sizeof(states)); // set all members: IS_EMPTY, false
+    states.portName = IS_OK;    // A form-ban van egy alapértelmezett név: "ethernet"
+    states.subNetNeed = true;   // A form-ban dinamikus cím van megadva, ahoz kell subnet;
+    states.macNeed = true;      // Alapértelmezetten MAC is kel az első port (interfész)-re
+
+    pUi->setupUi(this);
+    QList<int> sizes;
+    sizes << 300 << 300 << 300 << 300;
+    pUi->splitterWorkstation->setSizes(sizes);
+    pUi->splitterLink->setSizes(sizes);
+    pUi->splitterMsg->setSizes(sizes);
+    pModifyButtons = new QButtonGroup(this);
+    pModifyButtons->addButton(pUi->radioButtonNew, 0);
+    pModifyButtons->addButton(pUi->radioButtonMod, 1);
+    // Csak az egy portos eszközöket keressük, és persze nem patch paneleket
+    static const QString sNodeConstFilt = "(NOT 'patch'::nodetype = ANY (node_type) AND 1 = (SELECT count(*) FROM nports AS p WHERE patchs.node_id = p.node_id))";
+    pSelNode      = new cSelectNode(pUi->comboBoxFilterZone, pUi->comboBoxFilterPlace, pUi->comboBoxNode,
+                                    pUi->lineEditFilterPlace, pUi->lineEditName, _sNul, sNodeConstFilt, this);
+    pSelPlace     = new cSelectPlace(pUi->comboBoxZone, pUi->comboBoxPlace, pUi->lineEditPlacePat, _sNul, this);
+    pSelPlaceLink = new cSelectPlace(pUi->comboBoxLinkZone, pUi->comboBoxLinkPlace, pUi->lineEditLinkPlacePat, _sNul, this);
+
+}
+
+cWorkstation::~cWorkstation()
+{
+    ;
+}
+
+void cWorkstation::node2Gui()
+{
+
+}
+
+#else
 cWorkstation::cWorkstation(QMdiArea *parent) :
     cIntSubObj(parent),
     pUi(new Ui::wstWidget),
@@ -2175,4 +2215,45 @@ cNPort     *cWorkstation::pPort2(eEx __ex)
     if (node.ports.size() >= 2) return  node.ports.at(1);
     if (__ex != EX_IGNORE) EXCEPTION(EPROGFAIL);
     return NULL;
+}
+#endif
+
+void cWorkstation::on_comboBoxZone_currentIndexChanged(int index)
+{
+    if (pUi->checkBoxPlaceEqu->isCheckable()) pUi->comboBoxLinkZone->setCurrentIndex(index);
+}
+
+void cWorkstation::on_lineEditPlacePat_textChanged(const QString &arg1)
+{
+    if (pUi->checkBoxPlaceEqu->isCheckable()) pUi->lineEditLinkPlacePat->setText(arg1);
+}
+
+
+void cWorkstation::on_comboBoxPlace_currentIndexChanged(int index)
+{
+    if (pUi->checkBoxPlaceEqu->isCheckable()) pUi->comboBoxLinkPlace->setCurrentIndex(index);
+}
+
+void cWorkstation::on_checkBoxPlaceEqu_toggled(bool checked)
+{
+    if (checked) {
+        pSelPlaceLink->copyCurrents(*pSelPlace);
+        pSelPlaceLink->setDisabled();
+    }
+    else {
+        pSelPlaceLink->setEnabled();
+    }
+}
+
+void cWorkstation::on_comboBoxNode_currentIndexChanged(int index)
+{
+    if (index <= 0) {   // NULL
+        pSample->clear();
+    }
+    else {
+        qlonglong nid = pSelNode->currentNodeId();
+        pSample->setById(*pq, nid);
+        node.copy(*pSample);
+        node.fetchPorts(*pq, CV_PORTS_ADDRESSES);
+    }
 }

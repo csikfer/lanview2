@@ -984,12 +984,10 @@ void cExportQueue::push(const QString &s)
 /// időtullépés esetén kizárást dob.
 QString cExportQueue::pop()
 {
-    cExportQueue *r = pInstance();
-    if (r == NULL) return QString();
-    if (!r->tryLock(IMPQUEUEMAXWAIT)) EXCEPTION(ETO);
+    if (!tryLock(IMPQUEUEMAXWAIT)) EXCEPTION(ETO);
     QString s;
-    if (!r->isEmpty()) s = r->dequeue();
-    r->unlock();
+    if (!isEmpty()) s = dequeue();
+    unlock();
     return s;
 }
 

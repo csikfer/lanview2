@@ -70,6 +70,7 @@ public:
     /// Az SNMP lekérdezés OID-i.
     static cOId    *pOId1;
     static cOId    *pOId2;
+    static cOId    *pOIdx;
 private:
     enum eNotifSwitch snmpQuery(const cOId& __o, QMap<cMac, int>& macs, QString &runMsg);
 };

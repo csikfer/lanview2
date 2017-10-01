@@ -5,6 +5,7 @@
 #include "lv2g.h"
 #include "lv2models.h"
 #include "lv2link.h"
+#include "lv2widgets.h"
 
 namespace Ui {
     class wstWidget;
@@ -29,6 +30,54 @@ enum {
 
 };
 
+#if 1
+class LV2GSHARED_EXPORT cWorkstation : public cIntSubObj
+{
+    Q_OBJECT
+public:
+    cWorkstation(QMdiArea *parent = 0);
+    ~cWorkstation();
+    static const enum ePrivilegeLevel rights;
+private:
+    void node2Gui();
+
+    Ui::wstWidget   *pUi;
+    cSelectNode     *pSelNode;      /// A szerkesztendő, vagy minta eszköz kiválasztása
+    cSelectPlace    *pSelPlace;     /// Az eszköz helyének a megadása
+    cSelectPlace    *pSelPlaceLink; /// A linkelt port, vagy eszköz helye
+    QButtonGroup    *pModifyButtons;
+
+    struct cStates {
+        unsigned    passive:1;          // bool (false: workstation, true: passive node)
+        unsigned    modify:1;           // bool (false: new object, true: modify existing object)
+        unsigned    nodeName:2;         // EMPTY, OK, COLLISION
+        unsigned    nodePlace:1;        // EMPTY, OK
+        unsigned    serialNumber:2;     // EMPTY, OK, COLLISION
+        unsigned    inventoryNumber:2;  // EMPTY, OK, COLLISION
+        unsigned    portName:1;         // EMPTY, OK
+        unsigned    macNeed:1;          // bool
+        unsigned    mac:2;              // EMPTY, OK, COLLISION, INVALID
+        unsigned    ipNeed:2;           //
+        unsigned    ipAddr:3;           // EMPTY, OK, COLLISION, INVALID, LOOPBACK
+        unsigned    subNetNeed:1;       // bool
+        unsigned    subNet:1;           // EMPTY, OK
+        unsigned    linkPossible:1;     // bool
+        unsigned    link:2;             // EMPTY, OK, COLLISION, IMPERFECT
+    }   states;
+
+    QSqlQuery *pq;
+    /// Kiválasztott workstation objektum (modosítandó eredetije vagy minta)
+    cNode      *pSample;
+    /// A szerkesztett workstation objektum
+    cNode       node;   ///< A munkaállomás objektum
+private slots:
+    void on_comboBoxZone_currentIndexChanged(int index);
+    void on_lineEditPlacePat_textChanged(const QString &arg1);
+    void on_comboBoxPlace_currentIndexChanged(int index);
+    void on_checkBoxPlaceEqu_toggled(bool checked);
+    void on_comboBoxNode_currentIndexChanged(int index);
+};
+#else
 class LV2GSHARED_EXPORT cWorkstation : public cIntSubObj
 {
     Q_OBJECT
@@ -78,35 +127,6 @@ private:
     QStringList portTypeList[2];
     QString     portType2No;
     QString     nodeListSql[2];
-    struct cStates {
-        unsigned    passive:1;          // bool (false: workstation, true: passive node)
-        unsigned    modify:1;           // bool (false: new object, true: modify existing object)
-        unsigned    nodeName:2;         // EMPTY, OK, COLLISION
-        unsigned    nodePlace:1;        // EMPTY, OK
-        unsigned    serialNumber:2;     // EMPTY, OK, COLLISION
-        unsigned    inventoryNumber:2;  // EMPTY, OK, COLLISION
-        unsigned    portName:1;         // EMPTY, OK
-        unsigned    macNeed:1;          // bool
-        unsigned    mac:2;              // EMPTY, OK, COLLISION, INVALID
-        unsigned    ipNeed:2;           //
-        unsigned    ipAddr:3;           // EMPTY, OK, COLLISION, INVALID, LOOPBACK
-        unsigned    subNetNeed:1;       // bool
-        unsigned    subNet:1;           // EMPTY, OK
-        unsigned    port2Need:1;        // bool
-        unsigned    port2Name:2;        // EMPTY, OK, COLLISION
-        unsigned    mac2need:1;         // bool
-        unsigned    mac2:2;             // EMPTY, OK, COLLISION, INVALID
-        unsigned    linkPossible:1;     // bool
-        unsigned    link:2;             // EMPTY, OK, COLLISION, IMPERFECT
-        unsigned    link2Possible:1;
-        unsigned    link2:2;
-        unsigned    alarmPossibe:1;
-        unsigned    alarmOld:2;         // NONEXIST, EXIST, ENABLE
-        unsigned    alarmNew:2;
-        unsigned    alarm2Possibe:1;
-        unsigned    alarm2Old:2;
-        unsigned    alarm2New:2;
-    }   states;
     QString     addrCollisionInfo;
     QString     linkInfoMsg;
     QString     linkInfoMsg2;
@@ -210,5 +230,6 @@ protected slots:
     void newPatch2();
 
 };
+#endif
 
 #endif // CWORKSTATION_H

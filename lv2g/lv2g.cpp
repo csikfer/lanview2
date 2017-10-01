@@ -446,3 +446,11 @@ bool textFromFile(QString &fileName, QString &text, QWidget * par)
     text = QString::fromUtf8(file.readAll());
     return !text.isEmpty();
 }
+
+QString condAddJoker(const QString& pat)
+{
+    static const QChar joker('%');
+    static const QString re = "[%\?]";
+    if (!pat.contains(QRegExp(re))) return joker + pat + joker;
+    return pat;
+}

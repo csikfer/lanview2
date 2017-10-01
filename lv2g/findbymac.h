@@ -7,6 +7,23 @@
 namespace Ui {
     class FindByMac;
 }
+class cFindByMac;
+class cFBMExpThread : public QThread
+{
+    friend class cFindByMac;
+    Q_OBJECT
+protected:
+    cFBMExpThread(cMac &_mac, QHostAddress &_ip, cSnmpDevice& _st, cFindByMac * _par);
+    virtual void run();
+    cExportQueue *pEQ;
+    cMac         mac;
+    QHostAddress ip;
+    cSnmpDevice  st;
+private slots:
+    void readyLine();
+signals:
+    void expLine(QString s);
+};
 
 class LV2GSHARED_EXPORT cFindByMac : public cIntSubObj
 {
@@ -20,6 +37,7 @@ private:
     void setSwitchs();
     void setButtons();
     Ui::FindByMac *pUi;
+    cFBMExpThread *pThread;
     QSqlQuery *pq;
     bool    fMAC, fIP, fSw;
 private slots:
@@ -30,6 +48,8 @@ private slots:
     void hit_explore();
     void ip2mac();
     void mac2ip();
+    void expLine(QString s);
+    void finished();
 };
 
 

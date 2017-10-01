@@ -744,11 +744,12 @@ public:
     /// @param _pPlace  A comboBox objektum pointere a zónán bellüli hely kiválasztáshoz.
     /// @param _pFilt   Opcionális lineEdit objektum pointere, a hely név szűréséhez.
     /// @param _constFilt Egy opcionális konstans szűrő a helyek-hez.
-    cSelectPlace(QComboBox *_pZone, QComboBox *_pPLace, QLineEdit *_pFilt = NULL, const QString& _constFilt = QString());
+    cSelectPlace(QComboBox *_pZone, QComboBox *_pPLace, QLineEdit *_pFilt = NULL, const QString& _constFilt = QString(), QObject *_par = NULL);
     QString currentZoneName()   { return pZoneModel->at(pComboBoxZone->currentIndex()); }
     qlonglong currentZoneId()   { return pZoneModel->atId(pComboBoxZone->currentIndex()); }
     QString currentPlaceName()  { return pPlaceModel->at(pComboBoxPLace->currentIndex()); }
     qlonglong currentPlaceId()  { return pPlaceModel->atId(pComboBoxPLace->currentIndex()); }
+    void copyCurrents(const cSelectPlace& _o);
 protected:
     QComboBox *pComboBoxZone;
     QComboBox *pComboBoxPLace;
@@ -757,6 +758,9 @@ protected:
     cZoneListModel     *pZoneModel;
     cPlacesInZoneModel *pPlaceModel;
     bool                blockPlaceSignal;
+public slots:
+    void setEnabled(bool f = true);
+    void setDisabled(bool f = true);
 private slots:
     void _zoneChanged(int ix);
     void _placeChanged(int ix);
@@ -780,7 +784,8 @@ public:
     /// @param _nodeConstFilt  Egy opcionális konstans szűrő az eszközökhöz
     cSelectNode(QComboBox *_pZone, QComboBox *_pPlace, QComboBox *_pNode,
                 QLineEdit *_pPlaceFilt = NULL, QLineEdit *_pNodeFilt = NULL,
-                const QString& _placeConstFilt = QString(), const QString& _nodeConstFilt = QString());
+                const QString& _placeConstFilt = QString(), const QString& _nodeConstFilt = QString(),
+                QObject * _par = NULL);
     void setNodeModel(cRecordListModel *  _pNodeModel, eTristate _nullable = TS_NULL);
     void reset();
     /// A kurrens node-ot null-ra állítja. Feltételezi, hogy az lehet null, és az az első elem.

@@ -327,6 +327,12 @@ class LV2SHARED_EXPORT cSnmp : public netSnmp {
     ///         Hiba esetén az első hibás lejérdezés státusa.
     int getTable(const QString& baseId, const QStringList& columns, cTable& result);
     int getTable(const cOIdVector& ids, const QStringList& columns, cTable& result);
+    /// Egy kereszt index tábla lekérdezése
+    /// @param xoid Az OID, ami a keresztindexet tartalmazza: <xoid>.<új index>: <eredeti index>
+    /// @param xix Kereszt indexek, ahhol a kulcs az új index, érték az eredeti.
+    /// @param reverse Opcionális, ha megadjuk és true, akkor az eredmény QMap-ben felcseréli az érték kulcs párokat. Fordított konverzióhoz.
+    /// @return Ha a lekérdezés eredményes, akkor 0.
+    int getXIndex(const cOId& xoid, QMap<int, int> &xix, bool reverse = false);
     const netsnmp_variable_list *first(void)    { return actVar = ((response == NULL) ? NULL : response->variables); }
     const netsnmp_variable_list *next(void)     { return actVar = ((actVar   == NULL) ? NULL : actVar->next_variable); }
     static QVariant value(const netsnmp_variable_list * __var);

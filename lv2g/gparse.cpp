@@ -14,6 +14,7 @@ cParseWidget::cParseWidget(QMdiArea *par)
 : cIntSubObj(par)
 {
     PDEB(OBJECT) << __PRETTY_FUNCTION__ << QChar(' ') << QChar(',') << VDEBPTR(this) << endl;
+    pExportQueue = NULL;
     pq  = newQuery();
     isRuning = false;
     pLocalParser = NULL;
@@ -76,7 +77,7 @@ void cParseWidget::parseClicked()
 {
     QString src = pUi->textEditSrc->toPlainText();
     if (src.simplified().isEmpty()) {
-        pUi->textEditResult->setText(trUtf8("Üres szöveget adott át feldolgozásra, nincs művelet."));
+        pUi->textEditLog->setText(trUtf8("Üres szöveget adott át feldolgozásra, nincs művelet."));
         return;
     }
     if (pUi->radioButtonLocal->isChecked()) localParse(src);
@@ -93,11 +94,14 @@ void cParseWidget::localParse(const QString& src)
     pUi->pushButtonBreak->setDisabled(false);
 
     pUi->textEditResult->clear();
+    pUi->textEditLog->clear();
 
     pLocalError = NULL;
     debugStream *pDS = cDebug::getInstance()->pCout();
     connect(pDS, SIGNAL(readyDebugLine()), this, SLOT(debugLine()));
     cDebug::getInstance()->setGui();
+    pExportQueue = cExportQueue::init(true);
+    connect(pExportQueue, SIGNAL(ready()), this, SLOT(exportLine()));
 
     pLocalParser = new cImportParseThread(_sNul, pWidget());
 
@@ -116,10 +120,10 @@ void cParseWidget::localParseFinished()
     cDebug::getInstance()->setGui(false);
     // OK ?
     if (pLocalError == NULL) {
-        pUi->textEditResult->append(trUtf8("<p><b> O.K."));
+        pUi->textEditLog->append(trUtf8("<p><b> O.K."));
     }
     else {
-        pUi->textEditResult->append(trUtf8("<p><b> A fordító kizárást dobott. <p> %1.").arg(pLocalError->msg()));
+        pUi->textEditLog->append(trUtf8("<p><b> A fordító kizárást dobott. <p> %1.").arg(pLocalError->msg()));
         cErrorMessageBox::messageBox(pLocalError, this);
         pDelete(pLocalError);
     }
@@ -155,8 +159,8 @@ void cParseWidget::remoteParse(const QString &src)
     int lastStat = ES_WAIT;
     while (true) {
         if (msg.isEmpty() == false) {
-            pUi->textEditResult->clear();
-            pUi->textEditResult->setText(msg);
+            pUi->textEditLog->clear();
+            pUi->textEditLog->setText(msg);
             msg.clear();
         }
         QThread::sleep(1);
@@ -190,7 +194,9 @@ void cParseWidget::remoteParse(const QString &src)
         break;
     }
     pUi->textEditResult->clear();
-    pUi->textEditResult->setText(msg);
+    //pUi->textEditResult->setText(...);
+    pUi->textEditLog->clear();
+    pUi->textEditLog->setText(msg);
     pUi->pushButtonBreak->setEnabled(false);
 }
 
@@ -227,10 +233,18 @@ void cParseWidget::debugLine()
         if (!ok) EXCEPTION(EPROGFAIL);
         if (m & (cDebug::INFO | cDebug::WARNING | cDebug::DERROR)) {
             s = re.cap(2).trimmed();
-            pUi->textEditResult->append(s);
+            pUi->textEditLog->append(s);
         }
     }
 }
+
+void cParseWidget::exportLine()
+{
+    QString s = pExportQueue->pop();
+    if (s.isEmpty()) return;
+    pUi->textEditResult->append(s);
+}
+
 
 void cParseWidget::loadQPClicked()
 {

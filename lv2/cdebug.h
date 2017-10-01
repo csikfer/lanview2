@@ -20,7 +20,9 @@ Megvizsgálja, hogy a fő szálban (main thread) vagyunk-e
  */
 inline static bool isMainThread()
 {
-    return QCoreApplication::instance()->thread() == QThread::currentThread();
+    QThread *pCurrent = QThread::currentThread();
+    QThread *pMainThr = QCoreApplication::instance()->thread();
+    return pMainThr == pCurrent;
 }
 
 inline static QString threadName(QThread *p)
