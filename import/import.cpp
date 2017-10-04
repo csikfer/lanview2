@@ -79,7 +79,8 @@ void lv2import::abortOldRecords()
 
 void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource source, const QVariant &payload)
 {
-    cImport    *pImp = NULL;
+    cImport     *pImp = NULL;
+    cExportQueue::init(true);
     lastError = NULL;
     cError *ipe = importGetLastError(); // Töröljük a hiba objektumot, biztos ami biztos.
     if (ipe != NULL) {  // Ennek NULL-nak kellene lennie !! Nem kezeltünk egy hibát?!
@@ -102,6 +103,7 @@ void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource sour
     }
     CATCHS(lastError)
     ipe = importGetLastError();
+    static const QBitArray ufmask = pImp->mask(_sExecState, _sResultMsg, _sEnded, _sAppLogId) | pImp->mask( _sOutMsg);
     if (ipe != NULL) {
         if (lastError != NULL) {    // Többszörös hiba ??!!
             QString m = lastError->msg() + "\n" + QString(40, QChar('*')) + "\n" + ipe->msg();
@@ -111,12 +113,13 @@ void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource sour
         }
         lastError = ipe;
     }
+    pImp->setName(_sOutMsg, cExportQueue::toText(true));
     if (lastError == NULL) {    // OK
         pImp->setName(_sExecState, _sOk);
         pImp->setName(_sResultMsg, _sOk);
         pImp->set(_sEnded, QVariant(QDateTime::currentDateTime()));
         pImp->clear(_sAppLogId);
-        pImp->update(*pQuery, false, pImp->mask(_sExecState, _sResultMsg, _sEnded, _sAppLogId));
+        pImp->update(*pQuery, false, ufmask);
     }
     else if (pImp != NULL) {    // Hiba, a cImport objektum létre lett hozva
         qlonglong eid = sendError(lastError);
@@ -125,7 +128,7 @@ void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource sour
         pDelete(lastError);
         pImp->set(_sEnded, QVariant(QDateTime::currentDateTime()));
         pImp->setId(_sAppLogId, eid);
-        pImp->update(*pQuery, false, pImp->mask(_sExecState, _sResultMsg, _sEnded, _sAppLogId));
+        pImp->update(*pQuery, false, ufmask);
     }
     else {                      // A cImport objektum létrehozása sem sikerült
         ERROR_NESTED(lastError).exception();
@@ -138,10 +141,11 @@ void lv2import::dbNotif(const QString &name, QSqlDriver::NotificationSource sour
 lv2import::lv2import() : lanView(), fileNm(), in()
 {
     daemonMode = false;
+    pQuery = NULL;
     if (lastError != NULL) {
         return;
     }
-
+    pQuery = newQuery();
     int i;
     QString   userName;
     if (0 < (i = findArg('u', "user-id", args)) && (i + 1) < args.count()) {
@@ -183,5 +187,6 @@ lv2import::lv2import() : lanView(), fileNm(), in()
 lv2import::~lv2import()
 {
     DBGFN();
+    pDelete(pQuery);
 }
 

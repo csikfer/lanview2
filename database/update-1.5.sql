@@ -176,4 +176,6 @@ Visszatérési érték:
     Ha a cím összerendelés nem változott, de a set_type igen, akkor "update".
     Ha az IP cím egy másik MAC-hez lett rendelve, akkor "modfy".';
     
+ALTER TABLE imports ADD COLUMN out_msg text;
+    
 SELECT set_db_version(1, 5);

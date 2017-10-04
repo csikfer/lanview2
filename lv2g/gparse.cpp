@@ -163,7 +163,17 @@ void cParseWidget::remoteParse(const QString &src)
             pUi->textEditLog->setText(msg);
             msg.clear();
         }
-        QThread::sleep(1);
+
+        QEventLoop  *pLoop = new QEventLoop(this);
+        QTimer      timer;
+        connect(&timer, SIGNAL(timeout()), pLoop, SLOT(quit()));
+        timer.start(1000);  // 1 sec
+        QObject::connect(pUi->pushButtonBreak, &QPushButton::click, [=] () {
+            pLoop->exit(1);
+        } );
+        int r = pLoop->exec();
+        pDelete(pLoop);
+
         if (!imp.fetchById(*pq)) {
             msg = trUtf8("A kiírt imports rekordot nem tudom visszaolvasni (ID = %1).").arg(imp.getId());
             break;
@@ -175,7 +185,10 @@ void cParseWidget::remoteParse(const QString &src)
         case ES_EXECUTE:
             msg = trUtf8("Végrehajtás alatt (ID = %1, PID = %2).").arg(imp.getId()).arg(imp.getId(_sPid));
             if (!imp.isNull(_sStarted)) msg += trUtf8("Kezdete : %1\n").arg(imp.getName(_sStarted));
-            continue;
+            if (r == 0) continue;
+            // BREAK
+            msg = trUtf8("A válaszra való várakozás megszakítva. Az elküldött forrás szöveg értelmezését ez nem állítja meg.");
+            break;
         case ES_OK:
         case ES_FAILE:
         case ES_ABORTED:
@@ -197,6 +210,7 @@ void cParseWidget::remoteParse(const QString &src)
     //pUi->textEditResult->setText(...);
     pUi->textEditLog->clear();
     pUi->textEditLog->setText(msg);
+    pUi->textEditResult->setText(imp.getName(_sOutMsg));
     pUi->pushButtonBreak->setEnabled(false);
 }
 

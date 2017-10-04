@@ -723,6 +723,7 @@ STRDEF(Imports, "imports")
  STRDEF(Ended, "ended")
  STRDEF(ResultMsg, "result_msg")
  STRDEF(AppLogId, "applog_id")
+ STRDEF(OutMsg, "out_msg")
 
 STRDEF(ImportTemplates, "import_templates")
  STRDEF(ImportTemplateId, "import_template_id")
