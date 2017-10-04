@@ -651,12 +651,12 @@ QString cAlarm::htmlText(QSqlQuery& q, qlonglong _id)
     a.setById(q, _id);
     QString text;   // HTML text
 
-    if (ticketSrvId != NULL_ID && ticketSrvId == a.getId(_sHostServiceId)) {    // Ticket
+    if (ticketSrvId != NULL_ID && ticketSrvId == a.getId(_sServiceId)) {    // Ticket
         isTicket = true;
         text = trUtf8("Hiba jegy") + " :<br>";
         qlonglong id = a.getId(_sSuperiorAlarmId);
         pTargetRec = a.newObj();
-        pTargetRec->fetchById(q, id);
+        pTargetRec->setById(q, id);
     }
     cHostService hs; hs.   fetchById(q, pTargetRec->getId(_sHostServiceId));
     cNode  node;     node. fetchById(q, hs.         getId(_sNodeId));
