@@ -168,10 +168,17 @@ void cParseWidget::remoteParse(const QString &src)
         QTimer      timer;
         connect(&timer, SIGNAL(timeout()), pLoop, SLOT(quit()));
         timer.start(1000);  // 1 sec
-        QObject::connect(pUi->pushButtonBreak, &QPushButton::click, [=] () {
+        int r;
+#if QT_VERSION < QT_VERSION_CHECK(5, 8, 0)
+        connect(pUi->pushButtonBreak, SIGNAL(clicked()), pLoop, SLOT(quit()));
+        pLoop->exec();
+        r = timer.isActive();
+#else
+        connect(pUi->pushButtonBreak, &QPushButton::click, [=] () {
             pLoop->exit(1);
         } );
-        int r = pLoop->exec();
+        r = pLoop->exec();
+#endif
         pDelete(pLoop);
 
         if (!imp.fetchById(*pq)) {
