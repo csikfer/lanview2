@@ -642,7 +642,6 @@ DEFAULTCRECDEF(cAlarm, _sAlarms)
 
 QString cAlarm::htmlText(QSqlQuery& q, qlonglong _id)
 {
-    const qlonglong ticketSrvId  = cService::service(q, _sTicket, EX_IGNORE)->getId();
     static const QString _sBr = "<br>";
 
     bool isTicket = false;
@@ -651,16 +650,18 @@ QString cAlarm::htmlText(QSqlQuery& q, qlonglong _id)
     a.setById(q, _id);
     QString text;   // HTML text
 
-    if (ticketSrvId != NULL_ID && ticketSrvId == a.getId(_sServiceId)) {    // Ticket
+    if (0 == a.getId(_sHostServiceId)       // Ticket (ID = 0)
+     && !a.isNull(_sSuperiorAlarmId)) {     // Riasztáshoz csatolt ticket
+        // Az eredeti riasztás a ticket-hez
         isTicket = true;
         text = trUtf8("Hiba jegy") + " :<br>";
-        qlonglong id = a.getId(_sSuperiorAlarmId);
-        pTargetRec = a.newObj();
+        qlonglong id = a.getId(_sSuperiorAlarmId);  // Amire a ticket készült
+        pTargetRec = a.newObj();                    // Az eredeti riasztás, és jelezzük, hogy ticket
         pTargetRec->setById(q, id);
     }
-    cHostService hs; hs.   fetchById(q, pTargetRec->getId(_sHostServiceId));
-    cNode  node;     node. fetchById(q, hs.         getId(_sNodeId));
-    cPlace place;    place.fetchById(q, node.       getId(_sPlaceId));
+    cHostService hs; hs.   setById(q, pTargetRec->getId(_sHostServiceId));
+    cNode  node;     node. setById(q, hs.         getId(_sNodeId));
+    cPlace place;    place.setById(q, node.       getId(_sPlaceId));
     const cService *pSrv = cService::service(q,hs.getId(_sServiceId), EX_IGNORE);
     tOwnRecords<cServiceVar, cHostService> vars(&hs);
     int n = vars.fetch(q);
