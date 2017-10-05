@@ -59,7 +59,9 @@ enum eInspectorType {
 
     IT_SUPERIOR             = 0x2000,   ///< Alárendelt funkciók vannak
     IT_MAIN                 = 0x4000,   ///< Fő folyamat, nincs parent
-    IT_OWNER_QUERY_PARSER   = 0x8000    ///< A megallokált pQparse pointer tulajdonosa
+    IT_OWNER_QUERY_PARSER   = 0x8000,   ///< A megallokált pQparse pointer tulajdonosa
+
+    IT_AUTO_TRANSACTION       =0x10000L   ///< Nincs automatikus tranzakció kezelés
 };
 
 /// Az időzítés típusa ill. állapota

@@ -815,7 +815,8 @@ int cInspector::getInspectorType(QSqlQuery& q)
     }
     // Típus:
     inspectorType = 0;
-    if (isFeature(_sSuperior)) inspectorType |= IT_SUPERIOR;
+    if (isFeature("auto_transaction")) inspectorType |= IT_AUTO_TRANSACTION;
+    if (isFeature(_sSuperior))            inspectorType |= IT_SUPERIOR;
     if (pParent == NULL) inspectorType |= IT_MAIN;
     int r = getCheckCmd(q);
     switch (r) {
@@ -1080,10 +1081,10 @@ bool cInspector::doRun(bool __timed)
         lastRun.start();
     }
     QString statMsg;
-    // Tesszük a dolgunkat bármi legyen is az, egy tranzakció lessz.
+    // Tesszük a dolgunkat bármi legyen is az, egy tranzakció lessz, hacsak le nem tiltották
     QString tn = toSqlName(name());
     try {
-        sqlBegin(*pq, tn);
+        if (inspectorType & IT_AUTO_TRANSACTION) sqlBegin(*pq, tn);
         retStat      = run(*pq, statMsg);
         statIsSet    = retStat & RS_STAT_SETTED;
         statSetRetry = retStat & RS_SET_RETRY;
@@ -1095,7 +1096,7 @@ bool cInspector::doRun(bool __timed)
         statMsg = msgCat(statMsg, trUtf8("Az időzítés csúszott: %1 > %2").arg(lastElapsedTime).arg(interval));
     }
     if (lastError != NULL) {   // Ha hívtuk a run metódust, és dobott egy hátast
-        sqlRollback(*pq, tn);  // Hiba volt, inkább visszacsináljuk az egészet.
+        if (inspectorType & IT_AUTO_TRANSACTION) sqlRollback(*pq, tn);  // Hiba volt, inkább visszacsináljuk az egészet.
         if (pProcess != NULL && QProcess::NotRunning != pProcess->state()) {
             pProcess->kill();
         }
@@ -1105,21 +1106,21 @@ bool cInspector::doRun(bool __timed)
         if (plv->lastError == lastError) plv->lastError = NULL;
         pDelete(lastError);
         statMsg = msgCat(statMsg, trUtf8("Hiba, ld.: app_errs.applog_id = %1").arg(id));
-        sqlBegin(*pq, tn);
         hostService.setState(*pq, _sUnreachable, statMsg, parentId(EX_IGNORE));
         internalStat = IS_STOPPED;
     }
-    // Ha ugyan nem volt hiba, de sokat tököltünk
-    else if (retStat < RS_WARNING
-             && ((interval > 0 && lastRun.hasExpired(interval)))) {
-        statMsg = msgCat(statMsg, trUtf8("Időtúllépés, futási idö %1 ezred másodperc").arg(lastRun.elapsed()));
-        hostService.setState(*pq, notifSwitch(RS_WARNING), statMsg, parentId(EX_IGNORE));
+    else {
+        if (inspectorType & IT_AUTO_TRANSACTION) sqlCommit(*pq, tn);
+        if (retStat < RS_WARNING
+         && ((interval > 0 && lastRun.hasExpired(interval)))) { // Ha ugyan nem volt hiba, de sokat tököltünk
+            statMsg = msgCat(statMsg, trUtf8("Időtúllépés, futási idö %1 ezred másodperc").arg(lastRun.elapsed()));
+            hostService.setState(*pq, notifSwitch(RS_WARNING), statMsg, parentId(EX_IGNORE));
+        }
+        else if (!statIsSet) {   // Ha még nem volt status állítás
+            statMsg = msgCat(statMsg, trUtf8("Futási idő %1 ezred másodperc").arg(lastRun.elapsed()));
+            hostService.setState(*pq, notifSwitch(retStat), statMsg, parentId(EX_IGNORE));
+        }
     }
-    else if (!statIsSet) {   // Ha nem volt status állítás
-       statMsg = msgCat(statMsg, trUtf8("Futási idő %1 ezred másodperc").arg(lastRun.elapsed()));
-        hostService.setState(*pq, notifSwitch(retStat), statMsg, parentId(EX_IGNORE));
-    }
-    sqlCommit(*pq, tn);
     _DBGFNL() << name() << endl;
     return statSetRetry;
 }

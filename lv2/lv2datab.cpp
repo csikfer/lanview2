@@ -1204,8 +1204,10 @@ QVariant  cColStaticDescrSet::fromSql(const QVariant& _f) const
     if (s.size() < 2) EXCEPTION(EDATA, 0, em);  // ???
     if (s.at(0) != QChar('{') || !s.endsWith(QChar('}'))) EXCEPTION(EDBDATA, 1, em);
     s = s.mid(1, s.size() -2);  // Lekapjuk a kapcsos zárójelet
+    QStringList sl;
+    if (s.isEmpty()) return QVariant(sl);
     // Az elemek közötti szeparátor a vessző, elvileg nincsenek idézőjelek
-    QStringList sl = s.split(QChar(','),QString::KeepEmptyParts);
+    sl = s.split(QChar(','),QString::KeepEmptyParts);
     if (sl.isEmpty() && isNullable) return QVariant();
     return QVariant(sl);
 }
@@ -1242,6 +1244,7 @@ QVariant  cColStaticDescrSet::set(const QVariant& _f, qlonglong & str) const
         return QVariant();
     }
     QStringList sl;
+    QString s;
     bool ok = true;
     if (metaIsInteger(t)) {
         qlonglong bm = _f.toLongLong();
@@ -1250,7 +1253,8 @@ QVariant  cColStaticDescrSet::set(const QVariant& _f, qlonglong & str) const
         return QVariant(sl);
     }
     else if (metaIsString(t)) {
-        sl = _f.toString().split(QChar(','));
+        s = _f.toString();
+        if (!s.isEmpty()) sl = s.split(QChar(','));
     }
     else if (_f.canConvert(QMetaType::QStringList)) {
         sl = _f.toStringList();

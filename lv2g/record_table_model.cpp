@@ -20,10 +20,13 @@ cRecordViewModelBase::cRecordViewModelBase(cRecordsViewBase& _rt)
     if (!fn.isEmpty()) {    // Teljes sor háttérszíne a megadott mező (enum!) szerint
         lineBgColorEnumIx = recDescr.toIndex(fn, EX_IGNORE);
         if (lineBgColorEnumIx >= 0) {
-            if (recDescr.colDescr(lineBgColorEnumIx).eColType == cColStaticDescr::FT_ENUM) {
+            if (recDescr.colDescr(lineBgColorEnumIx).eColType == cColStaticDescr::FT_ENUM) {        // Enum ?
                 lineBgColorEnumType = recDescr.colDescr(lineBgColorEnumIx).enumType();
             }
-            else {  // Ha nem enum, akkor figyelmen kívül hagyjuk
+            else if (recDescr.colDescr(lineBgColorEnumIx).eColType == cColStaticDescr::FT_BOOLEAN) {// Boolean ?
+                lineBgColorEnumType = mCat(recDescr.tableName(), recDescr.columnName(lineBgColorEnumIx));
+            }
+            else {  // Ha nem enum, vagy boolean, akkor figyelmen kívül hagyjuk
                 lineBgColorEnumIx = NULL_IX;
                 DWAR() << QObject::trUtf8("Invalid field type (%1), Shape : %2").arg(_sBgColor + "=" + fn, tableShape.identifying()) << endl;
             }

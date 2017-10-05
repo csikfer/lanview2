@@ -1553,6 +1553,7 @@ void cRecordTable::init()
         buttons.pop_front();    // A close nem kell
         initSimple(_pWidget);
         break;
+    case 0:
     case ENUM2SET(TS_SIMPLE):
         if (pUpper != NULL) EXCEPTION(EDATA);
         flags = RTF_SINGLE;
