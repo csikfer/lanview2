@@ -145,7 +145,7 @@ A jelenleg implementállt lehetőségek:
 | hsop       | INT_HSOP       | cHSOperate      | host-services állapot man.  |
 | findmac    | INT_FINDMAC    | cFindByMac      | MAC keresés                 |
 | workstation| INT_WORKSTATION| cWorkstation    | Munkaállomás új/modosít     |
-| deducepath | INT_DEDUCEPATCH| cDeducePatch    | Fali kábel fefedező         |
+| deducepatch| INT_DEDUCEPATCH| cDeducePatch    | Fali kábel fefedező         |
 | snmpdquery | INT_SNMPDQUERY | cSnmpDevQuery   | SNMP insert/refresh         |
 | enumedit   | INT_ENUMEDIT   | cEnumValsEdit   | Enumerációk                 |
  */
