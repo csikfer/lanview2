@@ -5,7 +5,7 @@ if [ -z $1 ]
     exit
 fi
 
-PASSWD="edcrfv+11"
+PASSWD="password"
 MYNAME="lanview2"
 
 adduser --disabled-password --gecos "$MYNAME pseudo user" $MYNAME

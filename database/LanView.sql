@@ -382,6 +382,8 @@ INSERT INTO fkey_types
 -- //////////////////// Update ////////////////////
 \i update-1.2.sql
 \i update-1.3.sql
+\i update-1.4.sql
+\i update-1.5.sql
 -- LOG
 SELECT error('Ok', 0, 'First log message / Init lanview2 database ...');
 END;

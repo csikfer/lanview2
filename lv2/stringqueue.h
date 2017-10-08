@@ -6,6 +6,7 @@
 #include <QMutex>
 #include "lanview.h"
 
+// TÖRÖLNI! -> helyette cExportQueue
 
 class LV2SHARED_EXPORT cStringQueue : public QObject
 {
