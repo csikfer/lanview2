@@ -9,8 +9,8 @@
 // Az AVR-GCC -ben használt típusok (firmware)
 typedef unsigned char   uint8_t;
 typedef unsigned short  uint16_t;
-#include "firmware/IndAlarmIf1/indalarmif1_gl.h"
-#include "firmware/IndAlarmIf2/indalarmif2_gl.h"
+#include "../firmware/IndAlarmIf1/indalarmif1_gl.h"
+#include "../firmware/IndAlarmIf2/indalarmif2_gl.h"
 #include "QtSerialPort/QtSerialPort"
 #include <termios.h>
 #include <unistd.h>

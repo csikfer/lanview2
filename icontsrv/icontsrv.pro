@@ -20,8 +20,8 @@ SOURCES += \
 
 HEADERS += \
     icontsrv.h \
-    firmware/IndAlarmIf2/indalarmif2_gl.h \
-    firmware/IndAlarmIf1/indalarmif1_gl.h
+    ../firmware/IndAlarmIf2/indalarmif2_gl.h \
+    ../firmware/IndAlarmIf1/indalarmif1_gl.h
 
 INCLUDEPATH += ../../lanview2/lv2
 LIBS += -lsnmp -L../lv2 -llv2

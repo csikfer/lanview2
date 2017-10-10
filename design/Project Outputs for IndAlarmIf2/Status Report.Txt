@@ -1,0 +1,13 @@
+Output: NC Drill Files
+Type  : NC Drill
+From  : Project [IndAlarmIf2.PrjPCB]
+   Generated File[IndAlarmIf2.TXT]
+   Generated File[IndAlarmIf2.DRL]
+   Generated File[IndAlarmIf2.LDP]
+   Generated File[IndAlarmIf2.DRR]
+
+
+Files Generated   : 4
+Documents Printed : 0
+
+Finished Output Generation At 10:48:20 On 2012.03.21.
