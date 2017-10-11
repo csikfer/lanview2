@@ -2591,7 +2591,7 @@ QString cRecStaticDescr::getNameById(QSqlQuery& __q, qlonglong __id, eEx ex) con
             .arg(dQuoted(nameName()), fullTableNameQ(), dQuoted(idName())). arg(__id);
     EXECSQL(__q, sql);
     if (!__q.first()) {
-        if (ex) EXCEPTION(EFOUND, __id);
+        if (ex) EXCEPTION(EFOUND, __id, fullTableNameQ());
         return QString();
     }
     QVariant name = __q.value(0);
