@@ -692,6 +692,43 @@ QString cAlarm::htmlText(QSqlQuery& q, qlonglong _id)
     return text;
 }
 
+void cAlarm::ticket(QSqlQuery& _q,eNotifSwitch _st, const QString& _msg, qlonglong _did, qlonglong _said, eNotifSwitch _fst, eNotifSwitch _lst)
+{
+    QVariantList args;
+    QString sarg = "?, ?, ";
+    args << notifSwitch(_st);           // stat (last_stat)
+    args << _msg;                       // stat message (event_note)
+    if (_did != NULL_ID) {              // daemon ID
+        args << _did;
+        sarg += "?, ";
+    }
+    else {
+        sarg += "NULL, ";
+    }
+    if (_said != NULL_ID) {             // sup.alarm ID
+        args << _said;
+        sarg += "?, ";
+    }
+    else {
+        sarg += "NULL, ";
+    }
+    if (_fst == RS_INVALID) {
+        args << args.first();
+    }
+    else {
+        args << notifSwitch(_fst);
+    }
+    if (_lst == RS_INVALID) {
+        args << args.first();
+    }
+    else {
+        args << notifSwitch(_lst);
+    }
+    sarg += " ?, ?";
+    QString sql = "SELECT ticket_alarm(" + sarg + ")";
+    execSql(_q, sql, args);
+}
+
 /* ----------------------------------------------------------------- */
 DEFAULTCRECDEF(cOui, _sOuis)
 

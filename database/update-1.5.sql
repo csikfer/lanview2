@@ -14,11 +14,34 @@ CREATE OR REPLACE FUNCTION ticket_alarm(
 ) RETURNS alarms AS $$
 DECLARE
     ar alarms;
+    hs host_services;
     repi interval;
+    noa boolean;
+    sid bigint := 0;
 BEGIN
+    SELECT * INTO hs FROM host_services WHERE host_service_id = sid;
+    IF NOT FOUND THEN
+        IF 0 = COUNT(*) FROM nodes WHERE node_id = sid THEN
+            INSERT INTO nodes(node_id, node_name, node_note,    node_type )
+               VALUES        (sid,     'nil',   'Independent', '{node, virtual}');
+        END IF;
+        IF 0 = COUNT(*) FROM services WHERE service_id = sid THEN
+            INSERT INTO services (service_id, service_name, service_note, disabled, service_type_id)
+                 VALUES          (  sid,      'ticket',     'Hiba jegy',  true,     sid );
+        END IF;
+        INSERT INTO host_services (host_service_id, node_id, service_id,  host_service_note, disabled)
+             VALUES               (  sid,           sid,     sid,         'Hiba jegy',       true)
+             RETURNING * INTO hs;
+    END IF;
+    IF 'on' = is_noalarm(hs.noalarm_flag, hs.noalarm_from, hs.noalarm_to) THEN
+        noa := true;
+    ELSE
+        noa := false;
+    END IF;
     repi := COALESCE(get_interval_sys_param('ticet_reapeat_time'), '14 days'::interval);
     SELECT * INTO ar FROM alarms
-		WHERE (begin_time + repi) > NOW()
+		WHERE host_service_id = sid
+                  AND (begin_time + repi) > NOW()
 		  AND end_time IS NULL
 		  AND lst = last_status
 		  AND COALESCE(aid, -1) = COALESCE(superior_alarm_id, -1)
@@ -27,7 +50,7 @@ BEGIN
 		LIMIT 1;
     IF NOT FOUND THEN
 	INSERT INTO alarms (host_service_id, daemon_id, first_status, max_status, last_status, event_note, superior_alarm_id, noalarm)
-		    VALUES (0,               did, COALESCE(fst, lst), COALESCE(mst, lst), lst, msg,        aid,               false)
+		    VALUES (sid,             did, COALESCE(fst, lst), COALESCE(mst, lst), lst, msg,        aid,               noa)
 		RETURNING * INTO ar;
     END IF;
     RETURN ar;

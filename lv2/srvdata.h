@@ -242,6 +242,8 @@ class LV2SHARED_EXPORT cAlarm  : public cRecord {
     CRECORD(cAlarm);
 public:
     static QString htmlText(QSqlQuery &q, qlonglong _id);
+    static void ticket(QSqlQuery &_q, eNotifSwitch _st, const QString& _msg, qlonglong _did = NULL_ID, qlonglong _said = NULL_ID, eNotifSwitch _fst = RS_INVALID, eNotifSwitch _lst = RS_INVALID);
+
 };
 
 /* ---------------------------------------------------------------- */

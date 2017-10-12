@@ -191,8 +191,8 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
                     if (linkedNodeId != hid) {
                         msg = trUtf8("A %1:%2 trunk %3 tagja %4 -el, előző tagja %5 -al van linkben.")
                                 .arg(host().getName(), np.getName(), host().ports[ix]->getName())
-                                .arg(cNode().getNameById(__q, EX_IGNORE), lp.getFullName(__q, EX_IGNORE));
-                        APPMEMO(__q, msg, RS_CRITICAL);
+                                .arg(cNode().getNameById(__q, hid, EX_IGNORE), lp.getFullName(__q, EX_IGNORE));
+                        cAlarm::ticket(__q, RS_CRITICAL, msg, hostServiceId());
                     }
                 }
             }
