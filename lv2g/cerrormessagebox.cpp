@@ -34,7 +34,7 @@ void cErrorMessageBox::row(const QString& l,const QString& val, Qt::AlignmentFla
 #define ZR(l, v)    if (!v.isEmpty()) _R(l,v)
 #define LIN         pForm->addWidget(newHLine(this)); text += "\n"
 
-cErrorMessageBox::cErrorMessageBox(cError *_pe, QWidget *parent) :
+cErrorMessageBox::cErrorMessageBox(cError *_pe, QWidget *parent, const QString& sMainMsg) :
     QDialog(parent)
 {
     QVBoxLayout *pVBox = new QVBoxLayout();
@@ -42,6 +42,10 @@ cErrorMessageBox::cErrorMessageBox(cError *_pe, QWidget *parent) :
 
     cDialogButtons *pButtons = new cDialogButtons(ENUM2SET2(DBT_COPY, DBT_CLOSE));
     connect(pButtons, SIGNAL(buttonClicked(int)), this, SLOT(pushed(int)));
+
+    if (!sMainMsg.isEmpty()) {
+        pVBox->addWidget(new QLabel(sMainMsg));
+    }
 
     pForm = new QFormLayout();
     pVBox->addLayout(pForm);
@@ -95,10 +99,10 @@ void cErrorMessageBox::pushed(int id)
 /// @param _pe Hiba objektum pointere. Ha értéke NULL, akkor visszatér egy true értékkel,
 ///            ha nem NULL, akkor megjeleníti, majd a hiba ablak bezárásakor visszetér egy false értékkel.
 /// @param parent Parent widget pointere.
-int cErrorMessageBox::condMsgBox(cError * _pe, QWidget *parent)
+int cErrorMessageBox::condMsgBox(cError * _pe, QWidget *parent, const QString &sMainMsg)
 {
     if (_pe == NULL) return true;
-    cErrorMessageBox(_pe, parent).exec();
+    cErrorMessageBox(_pe, parent, sMainMsg).exec();
     delete _pe;
     return false;
 }

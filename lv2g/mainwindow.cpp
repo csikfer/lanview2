@@ -113,11 +113,21 @@ void cMainWindow::action(QAction *pa, cMenuItem& _mi, QSqlQuery *pq)
         if (sm.fetchFirstItem(*pq, _mi.getName(_sAppName), _mi.getId())) {
             PDEB(VERBOSE) << "Menu :" << _mi.getName(_sMenuTitle) << " #" << pq->size() << " sub menü:" << endl;
             do {
-                sm.splitFeature(); // features
-                PDEB(VERBOSE) << _mi.getName(_sMenuTitle) << " sub menu : " << sm.getName(_sMenuTitle) << endl;
-                QSqlQuery *pq2 = newQuery();
-                action(pm->addAction(sm.getName(_sMenuTitle)), sm, pq2);
-                delete pq2;
+                cError *pe = NULL;
+                try {
+                    sm.splitFeature(); // features
+                } CATCHS(pe);
+                if (pe == NULL) {
+                    PDEB(VERBOSE) << _mi.getName(_sMenuTitle) << " sub menu : " << sm.getName(_sMenuTitle) << endl;
+                    QSqlQuery *pq2 = newQuery();
+                    action(pm->addAction(sm.getName(_sMenuTitle)), sm, pq2);
+                    delete pq2;
+                }
+                else {  // Nem ok a features mező
+                    QString mm = trUtf8("A hiba miatt a %1:%2 nevű menüpont figyelmen kívül lessz hagyva.")
+                            .arg(sm.getName(_sAppName), sm.getName());
+                    cErrorMessageBox::messageBox(pe, this, mm);
+                }
             } while (sm.next(*pq));
         }
         else DWAR() << trUtf8("üres menü : ") << _mi.getName(_sMenuTitle) << endl;

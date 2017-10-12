@@ -200,5 +200,23 @@ Visszatérési érték:
     Ha az IP cím egy másik MAC-hez lett rendelve, akkor "modfy".';
     
 ALTER TABLE imports ADD COLUMN out_msg text;
+
+CREATE OR REPLACE FUNCTION alarm_id2name(bigint) RETURNS TEXT AS $$
+DECLARE
+    rname TEXT;
+BEGIN
+    IF $1 IS NULL THEN
+        return NULL;
+    END IF;
+    SELECT host_service_id2name(host_service_id) || '/' || alarm_message(host_service_id, max_status) INTO rname
+        FROM alarms
+        WHERE alarm_id = $1;
+    IF NOT FOUND THEN
+        rname := host_service_id2name(host_service_id) || '/ #' || $1 || 'not found'; 
+    END IF;
+    RETURN rname;
+END;
+$$ LANGUAGE plpgsql;
+
     
 SELECT set_db_version(1, 5);

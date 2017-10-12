@@ -33,10 +33,15 @@ void cRecordLink::init()
     if (!isReadOnly) buttons << DBT_MODIFY;
     if (!isNoInsert) buttons << DBT_INSERT;
     flags = 0;
+    if (pUpper != NULL) shapeType |= ENUM2SET(TS_CHILD);
     switch (shapeType) {
     case ENUM2SET2(TS_CHILD, TS_LINK):
         if (pUpper == NULL) EXCEPTION(EDATA);
         flags = RTF_SLAVE | RTF_CHILD;
+        initSimple(_pWidget);
+        break;
+    case ENUM2SET(TS_LINK):
+        flags = RTF_SINGLE;
         initSimple(_pWidget);
         break;
     default:
@@ -73,15 +78,17 @@ void cRecordLink::init()
 QStringList cRecordLink::where(QVariantList& qParams)
 {
     QStringList wl;
-    int ofix;
-    // node or port ?
-    if (pUpper->pRecDescr->isFieldName(_sPortId)) {
-        ofix = recDescr().toIndex(_sPortId1);
+    if (pUpper != NULL) {
+        int ofix;
+        // node or port ?
+        if (pUpper->pRecDescr->isFieldName(_sPortId)) {
+            ofix = recDescr().toIndex(_sPortId1);
+        }
+        else {
+            ofix = recDescr().toIndex(_sNodeId1);
+        }
+        wl << dQuoted(recDescr().columnName(ofix)) + " = " + QString::number(owner_id);
     }
-    else {
-        ofix = recDescr().toIndex(_sNodeId1);
-    }
-    wl << dQuoted(recDescr().columnName(ofix)) + " = " + QString::number(owner_id);
     wl << filterWhere(qParams);
     wl << refineWhere(qParams);
     return wl;

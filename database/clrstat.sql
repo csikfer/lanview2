@@ -6,7 +6,7 @@ DELETE FROM arp_logs;
 DELETE FROM db_errs;
 DELETE FROM host_service_logs;
 DELETE FROM host_service_noalarms;
-DELETE FROM mactab;
+-- DELETE FROM mactab;
 DELETE FROM mactab_logs;
 UPDATE host_services SET
 	host_service_state = 'unknown',

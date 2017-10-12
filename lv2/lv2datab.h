@@ -2543,7 +2543,8 @@ protected:
 /// @param o Az objektumpéldány
 /// @param __ex ha értéke EX_ERROR, akkor hiba esetén dob egy kizárást, EX_WARNING esetén akkor is, ha a konténer már létezik.
 /// @relates cRecord
-template <class R> void _SplitFeatureT(R& o, eEx __ex = EX_ERROR)
+/// @return Ha hibás a features mező, akkor false-val tér vissza, feltéve, hogy nem dobott kizárást (lásd: __ex)
+template <class R> bool _SplitFeatureT(R& o, eEx __ex = EX_ERROR)
 {
     if (o._pFeatures == NULL) o._pFeatures = new cFeatures();
     else {
@@ -2551,13 +2552,15 @@ template <class R> void _SplitFeatureT(R& o, eEx __ex = EX_ERROR)
         o._pFeatures->clear();
     }
     QString fv = o.getName(R::ixFeatures());
-    if (!o._pFeatures->split(fv, EX_IGNORE)) {
+    bool r = o._pFeatures->split(fv, EX_IGNORE);
+    if (!r) {
         QString msg = QObject::trUtf8(
                     "feature mezőjének a formátuma nem megfelelő."
                     "A feature mező értéke : %1. %2").
                 arg(dQuoted(fv), o.identifying());
         EXCEPTION(EDATA, 0, msg);
     }
+    return r;
 }
 /// Egy módosított map visszaírása a "features" mezőbe. Nem hiívja az cRecord::atEnd(int) metódust.
 /// A sablon föggvény számít arra, hogy az objektumnak van egy
@@ -2612,7 +2615,7 @@ template <class R> qlonglong intFeature(const R& o, const QString& key, qlonglon
 /// cFeatures&  splitFeature(eEx __ex);
 /// @code
 /// Feltölti (ha kell allokálja) a konténert. Ha a konténer létezett, akor elöszőr törli a tartalmát.
-/// Lásd: template <class R> void _SplitFeatureT(R& o, eEx __ex)
+/// Lásd: template <class R> bool _SplitFeatureT(R& o, eEx __ex)
 /// @code
 /// const cFeatures&  features(eEx __ex);
 /// @code
@@ -2636,7 +2639,7 @@ template <class R> qlonglong intFeature(const R& o, const QString& key, qlonglon
 /// (ha a konténer még nincs létrehozva, akkor létrehozza, és feltülti lásd: cFeatures&  features(eEx __ex);
 
 #define FEATURES(R) \
-    friend void _SplitFeatureT<R>(R& o, eEx __ex); \
+    friend bool _SplitFeatureT<R>(R& o, eEx __ex); \
     friend void _JoinFeatureT<R>(R& o); \
     STATICIX(R, ixFeatures) \
 protected: \
