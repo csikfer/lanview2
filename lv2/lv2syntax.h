@@ -2,14 +2,16 @@
 #define LV2SYNTAX_H
 
 #include "lv2data.h"
-#include "stringqueue.h"
 
 class LV2SHARED_EXPORT cObjectSyntax : public cRecord {
     CRECORD(cObjectSyntax);
     FEATURES(cObjectSyntax)
 };
 
-EXT_ cError * exportRecords(const QString& __tn, cStringQueue& __sq);
+/// Egy tábla tartalmának a kiexportálása az interpreter által értelmezhető formában
+/// @param __tn A tábla neve.
+/// @param __sq Cél objektum
+EXT_ cError * exportRecords(const QString& __tn);
 
 class LV2SHARED_EXPORT cExportThread : public QThread {
     Q_OBJECT
@@ -24,7 +26,7 @@ public:
     cError        * pLastError;
 private:
     QString         sTableName;
-    cStringQueue  * pStrQueue;
+    cExportQueue   *pEQ;
 private slots:
     void queue();
 signals:

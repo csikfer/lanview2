@@ -42,6 +42,7 @@ void cExportsWidget::start()
     if (pThread != NULL) EXCEPTION(EPROGFAIL);
     disable(true);
     isStop = false;
+    lineFragment.clear();
     QString tn = pUi->comboBoxTable->currentText();
     pThread = new cExportThread(this);
     connect(pThread, SIGNAL(finished()),      this, SLOT(ready()));
@@ -75,12 +76,24 @@ void cExportsWidget::changedName(const QString& tn)
     pUi->lineEditTableTitle->setText(ts.getName(_sTableTitle));
 }
 
-void cExportsWidget::text(const QString& s)
+void cExportsWidget::text(const QString& _s)
 {
-    if (s.isEmpty()) return;
-    pUi->textEdit->moveCursor(QTextCursor::End);
-    pUi->textEdit->insertPlainText(s);
-    pUi->textEdit->moveCursor(QTextCursor::End);
+    QString s;
+    if (lineFragment.isEmpty()) {
+        if (_s.isEmpty()) return;
+        s = _s;
+    }
+    else {
+        s = lineFragment + _s.trimmed();
+        lineFragment.clear();
+    }
+    if (s.endsWith("\\")) {
+        lineFragment = s;
+        lineFragment.chop(1);
+    }
+    else {
+        pUi->textEdit->append(s);
+    }
 }
 
 void cExportsWidget::ready()
@@ -92,9 +105,13 @@ void cExportsWidget::ready()
         cErrorMessageBox::messageBox(pe, this);
     }
     pDelete(pThread);
-    QString text = pUi->textEdit->toPlainText();
+    if (!lineFragment.isEmpty()) {
+        pUi->textEdit->append(lineFragment);
+        lineFragment.clear();
+    }
+/*    QString text = pUi->textEdit->toPlainText();
     text.replace(QRegExp("\\s+;"), ";");
     text.replace(QRegExp("\\s\\s+\\{"), " {");
-    pUi->textEdit->setPlainText(text);
+    pUi->textEdit->setPlainText(text);*/
     disable(false);
 }

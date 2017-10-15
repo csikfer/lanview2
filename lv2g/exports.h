@@ -23,13 +23,14 @@ private:
     Ui::Exports *pUi;
     bool isStop;
     cExportThread *pThread;
+    QString lineFragment;
 protected slots:
     void start();
     void stop();
     void save();
     void changedText();
     void changedName(const QString &tn);
-    void text(const QString &s);
+    void text(const QString &_s);
     void ready();
 };
 

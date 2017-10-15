@@ -489,6 +489,7 @@ protected:
     static QMutex staticMutex;
 public:
     static void push(const QString& s);
+    static void push(const QStringList& sl);
     QString pop();
     static QString toText(bool fromInterpret, bool _clr = false);
     /// Létrehozza az objeltum példányt, ha már létezett, akkor a példányt elötte törli.

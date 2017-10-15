@@ -978,6 +978,18 @@ void cExportQueue::push(const QString &s)
     r->ready();
 }
 
+void cExportQueue::push(const QStringList &sl)
+{
+    cExportQueue *r = pInstance();
+    if (r == NULL) return;
+    foreach (QString s, sl) {
+        if (!r->tryLock(IMPQUEUEMAXWAIT)) EXCEPTION(ETO);
+        r->enqueue(s);
+        r->unlock();
+        r->ready();
+    }
+}
+
 /// Kivesz egy sort vagy paragrafust a queue-ból.
 /// Ha a queue üres, akkor egy null stringgel tér vissza.
 /// A queue-hoz való hozzáféréshez egy belső mutex objektumot használ,
