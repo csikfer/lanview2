@@ -50,12 +50,11 @@ unix {
     import.subdirs = import
     import.depends = lv2
   }
+}
 
-  # non free!
-  exists(icontsrv/firmware) {
-    SUBDIRS += icontsrv
-    icontsrv.subdirs = icontsrv
-    icontsrv.depends = lv2
-  }
+!exists(icontsrv/miss) {
+  SUBDIRS += icontsrv
+  icontsrv.subdirs = icontsrv
+  icontsrv.depends = lv2
 }
 

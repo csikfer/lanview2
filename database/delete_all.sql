@@ -1,4 +1,6 @@
-﻿DELETE FROM alarms;
+﻿-- Delete all user data
+
+DELETE FROM alarms;
 DELETE FROM app_errs;
 DELETE FROM app_memos;
 DELETE FROM arp_logs;
@@ -22,3 +24,9 @@ DELETE FROM mactab;
 DELETE FROM lldp_links_table;
 DELETE FROM user_events;
 DELETE FROM db_errs;
+
+DELETE FROM groups WHERE group_name NOT IN ('system', 'indalarm', 'admin', 'operator', 'viewer', 'dispacher');
+DELETE FROM users WHERE user_name NOT IN ('admin', 'nobody', 'operator', 'system', 'test', 'viewer');
+
+DELETE FROM place_groups WHERE place_group_name NOT IN ('all', 'none', 'community', 'guestroom', 'none', 'office', 'schoolroom', 'student', 'technical_room');
+DELETE FROM places WHERE place_type = 'real';
