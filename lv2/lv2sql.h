@@ -83,7 +83,7 @@ static inline QString parentheses(const QString& __s)
 }
 
 /*!
-A lanView objektumpékdány pDb adattag értékével tér vissza, a fő thread esetén.
+A lanView objektumpéldány pDb adattag értékével tér vissza, a fő thread esetén.
 Ha még nincs létrehozva a lanView objektum (instance pointer értéke NULL), akkor dob egy kizárást.
 Ha a fő thread-ből hívjuk. és a pDb adattag értéke NULL, vagy az adatbázis nincs nyitva, szintén dob egy kizárást.
 @relates lanView
@@ -239,6 +239,8 @@ EXT_ QString execSqlTextFunction(QSqlQuery& q, const QString& fn, const QVariant
 EXT_ bool execSqlRecFunction(QSqlQuery& q, const QString& fn, const QVariant& v1 = QVariant(), const QVariant& v2 = QVariant(), const QVariant& v3 = QVariant(), const QVariant& v4 = QVariant(), const QVariant& v5 = QVariant());
 
 EXT_ void sqlNotify(QSqlQuery& q, const QString& channel, const QString& payload = QString());
+
+EXT_ int getListFromQuery(QSqlQuery q, QStringList& list, int __ix = 0);
 
 
 class LV2SHARED_EXPORT cNamedList {

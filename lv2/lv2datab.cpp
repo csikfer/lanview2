@@ -143,7 +143,7 @@ qlonglong tableoid(QSqlQuery q, const QString& __t, qlonglong __sid, eEx __ex)
     return q.value(0).toInt();
 }
 
-QStringPair tableoid2name(QSqlQuery q, qlonglong toid)
+tStringPair tableoid2name(QSqlQuery q, qlonglong toid)
 {
     QString sql =
             " SELECT pg_class.relname, pg_namespace.nspname"
@@ -152,7 +152,7 @@ QStringPair tableoid2name(QSqlQuery q, qlonglong toid)
             " WHERE pg_class.oid = " + QString::number(toid);
     if (!q.exec(sql)) SQLPREPERR(q, sql);
     if (!q.first()) EXCEPTION(EDBDATA, 0, QObject::trUtf8("Table OID %1 not found.").arg(toid));
-    QStringPair r;
+    tStringPair r;
     r.first  = q.value(0).toString();
     r.second = q.value(1).toString();
     return r;
@@ -335,8 +335,9 @@ void cColEnumType::checkEnum(QSqlQuery& q, const QString& _type, tE2S e2s, tS2E 
 
 /* ******************************************************************************************************* */
 
-cColStaticDescr::cColStaticDescr(int __t)
+cColStaticDescr::cColStaticDescr(const cRecStaticDescr *_p, int __t)
     : QString()
+    , pParent(_p)
     , colType()
     , udtName()
     , colDefault()
@@ -358,6 +359,7 @@ cColStaticDescr::cColStaticDescr(int __t)
 
 cColStaticDescr::cColStaticDescr(const cColStaticDescr& __o)
     : QString(__o)
+    , pParent(__o.pParent)
     , colType(__o.colType)
     , udtName(__o.udtName)
     , colDefault(__o.colDefault)
@@ -386,6 +388,7 @@ cColStaticDescr::~cColStaticDescr()
 cColStaticDescr& cColStaticDescr::operator=(const cColStaticDescr __o)
 {
     *(QString *)this = __o;
+    pParent     = __o.pParent;
     colType     = __o.colType;
     udtName     = __o.udtName;
     chrMaxLenghr= __o.chrMaxLenghr;
@@ -549,8 +552,11 @@ qlonglong cColStaticDescr::toId(const QVariant& _f) const
 
 QString cColStaticDescr::fKeyId2name(QSqlQuery& q, qlonglong id, eEx __ex) const
 {
+    if (fKeyType == FT_TEXT_ID) {
+        return textId2text(q, (int)id, pParent->tableName(), 0);
+    }
     QString n = QString::number(id);
-    QString r = "#" + n;
+    QString r = "#" + n;    // If fail
     if (fnToName.isEmpty() == false) {
         QString sql = "SELECT " + fnToName + parentheses(n);
         EXECSQL(q, sql);
@@ -586,22 +592,15 @@ QString cColStaticDescr::toView(QSqlQuery& q, const QVariant &_f) const
     return toName(_f);
 }
 
-#define CDDUPDEF(T)     cColStaticDescr *T::dup() const { return new T(*this); }
-
-/*
-static bool getString(const QString& def, QString& str)
+QString cColStaticDescr::toViewIx(QSqlQuery&q, const QVariant& _f, int _ix) const
 {
-    int n = def.size();
-    if (n > 4 && def[0] == QChar('\'')) {
-        n = def.indexOf(QChar('\''), 1);
-        if (n >= 1) {
-            str = def.mid(1, n -1);
-            return true;
-        }
+    if (eColType == FT_INTEGER && fKeyType == FT_TEXT_ID) {
+        return textId2text(q, (int)toId(_f), pParent->tableName(), _ix);
     }
-    return false;
+    return toView(q, _f);
 }
-*/
+
+#define CDDUPDEF(T)     cColStaticDescr *T::dup() const { return new T(*this); }
 
 CDDUPDEF(cColStaticDescr)
 
@@ -1983,16 +1982,18 @@ cRecStaticDescr::cRecStaticDescr(const QString &__t, const QString &__s)
     _tableType      = UNKNOWN_TABLE;
     _columnsNum     = 0;
     _tableOId       = _schemaOId = NULL_ID;
-    _idIndex        = _nameIndex = _noteIndex = _deletedIndex = _flagIndex = NULL_IX;
+    _idIndex        = _nameIndex = _noteIndex = _deletedIndex = _flagIndex = _textIdIndex = NULL_IX;
     _isUpdatable    = false;
-    _set(__t,__s);
+    _set(__t,__s);  // Setting by database
     addMap();
-    // Csak most tudjuk rendesen előszedni, esetleg megkreálni az id->name konverziós függvényeket
+    // Only now can we get it right, or maybe we'll call id-> name conversion functions
     int i, n = cols();
     QSqlQuery *pq = NULL;
     for (i = 0; i < n; ++i) {
         const cColStaticDescr& cd = colDescr(i);
-        if (cd.fKeyType != cColStaticDescr::FT_NONE && cd.fnToName.isEmpty()) {
+        if (cd.fKeyType != cColStaticDescr::FT_NONE     // If is foreign key
+         && cd.fKeyType != cColStaticDescr::FT_TEXT_ID  // but not a language text
+         && cd.fnToName.isEmpty()) {                    // and there is no conversion function yet
             if (pq == NULL) pq = newQuery();
             const_cast<cColStaticDescr *>(&cd)->fnToName = checkId2Name(*pq, cd.fKeyTable, cd.fKeySchema);
         }
@@ -2104,7 +2105,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
     int i = 0;
     do {
         ++i;    // Vigyázz, fizikus index! (1,2,...)
-        cColStaticDescr columnDescr;
+        cColStaticDescr columnDescr(this);
         columnDescr.colName() = pq->record().value("column_name").toString();
         columnDescr.pos       = i;
         columnDescr.ordPos    = pq->record().value("ordinal_position").toInt();
@@ -2118,7 +2119,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
         columnDescr.isUpdatable=pq->record().value("is_updatable").toString() == QString("YES");
         _isUpdatable = _isUpdatable || columnDescr.isUpdatable;
         // PDEB(INFO) << fullTableName() << " field #" << i << QChar('/') << columnDescr.ordPos << " : " << columnDescr.toString() << endl;
-        //Ez egy auto increment mező ?
+        // Is auto increment ?
         _autoIncrement.setBit(i -1, columnDescr.colDefault.indexOf("nextval('") == 0);
         // Megnézzük enum-e
         if (columnDescr.colType ==  _sUSER_DEFINED || columnDescr.colType ==  _sARRAY) {
@@ -2149,27 +2150,35 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
                 DWAR() << QObject::trUtf8("flag field is found, but type is not boolean, index : %1, type : %2").arg(i -1).arg(columnDescr.colType) << endl;
             }
         }
-        // Mező típus
+        // Column type
         columnDescr.typeDetect();
-        // A név és a descr : Kötött nevű szöveges mezők
-        // Vagy a sorszámuk adott a végződéssel
+        // Name or note : fix column name
+        // Or determined column index and sufix
         if (columnDescr.eColType == cColStaticDescr::FT_TEXT) {
             #define NAME_INDEX  1
             #define DESCR_INDEX 2
             static QString nameSufix = "_name";
             static QString noteSufix = "_note";
             if (!baseName.isEmpty()) {
-                if (_nameIndex < 0 && 0 == columnDescr.colName().compare(baseName + nameSufix))  _nameIndex  = i -1;
+                if (_nameIndex < 0 && 0 == columnDescr.colName().compare(baseName + nameSufix)) _nameIndex = i -1;
                 if (_noteIndex < 0 && 0 == columnDescr.colName().compare(baseName + noteSufix)) _noteIndex = i -1;
             }
-            if (_nameIndex  < 0 && i == (NAME_INDEX  +1) && columnDescr.colName().endsWith(nameSufix))  _nameIndex  = NAME_INDEX;
+            if (_nameIndex  < 0 && i == (NAME_INDEX  +1) && columnDescr.colName().endsWith(nameSufix)) _nameIndex = NAME_INDEX;
             if (_noteIndex  < 0 && i == (DESCR_INDEX +1) && columnDescr.colName().endsWith(noteSufix)) _noteIndex = DESCR_INDEX;
         }
-        // A távoli kulcs mezők detektálása:
-        if (columnDescr.eColType == cColStaticDescr::FT_INTEGER         // Feltételezzük, hogy távoli kulcs csak egész szám (ID) lehet
-         || columnDescr.eColType == cColStaticDescr::FT_INTEGER_ARRAY) {// Vannak tömbjeink is, ami kulcs, és a pg nem támogatja
+        // Detect foreign keys. They are not regular too.
+        if (columnDescr.eColType == cColStaticDescr::FT_INTEGER && columnDescr.colName() == _sTextId) { // text_id? (Localization)
+            columnDescr.fKeyType = cColStaticDescr::FT_TEXT_ID;
+            sql = "SELECT column_name FROM fkey_types WHERE table_schema = ? AND table_name = ? AND unusual_fkeys_type = 'text'";
+            execSql(*pq2, sql, _schemaName, _tableName);
+            QString t = pq2->value(0).toString();
+            columnDescr.pEnumType = cColEnumType::fetchOrGet(*pq2, t);
+            _textIdIndex = i - 1;
+        }
+        else if (columnDescr.eColType == cColStaticDescr::FT_INTEGER        // Feltételezzük, hogy távoli kulcs csak egész szám (ID) lehet
+         || columnDescr.eColType == cColStaticDescr::FT_INTEGER_ARRAY) {    // Vannak tömbjeink is, ami kulcs, és a pg nem támogatja
             bool regularFKey = false;
-            // Rendszer szinten támogatott kulcsok:
+            // Regular foreign keys
             if (columnDescr.eColType == cColStaticDescr::FT_INTEGER) {
                 sql = QString(
                             "SELECT f.table_schema, f.table_name, f.column_name, t.unusual_fkeys_type"
@@ -2210,11 +2219,11 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
                     if (_tableName != columnDescr.fKeyTable || _schemaName != columnDescr.fKeySchema) EXCEPTION(EDBDATA);
                     columnDescr.fKeyType = cColStaticDescr::FT_SELF;
                 }
-                else EXCEPTION(EDATA, -1, t);
+                else EXCEPTION(EDATA, -1, t);   // There is also 'text' type, but there is no point here
                 columnDescr.fKeyTables << columnDescr.fKeyTable;
                 // columnDescr.fnToName = pq2->value(4).toString();
             }
-            // Az ismert, de az adatbázisban kerülő uton (öröklés miatt, vagy mert tömb) kezelt távoli kulcsok
+            // Irregular foreign keys (inheritance or/and array)
             else  {
                 sql = QString(
                             "SELECT f_table_schema, f_table_name, f_column_name, unusual_fkeys_type, f_inherited_tables"
@@ -2222,7 +2231,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
                             "    WHERE table_schema = '%1' AND table_name = '%2' AND column_name = '%3'"
                             ).arg(_schemaName, _tableName, columnDescr.colName());
                 if (!pq2->exec(sql)) SQLPREPERR(*pq2, sql);
-                if (pq2->first()) { // Ha ő egy nem szokványos távoli kulcs
+                if (pq2->first()) { // This is irregular foreign key
                     columnDescr.fKeySchema = pq2->value(0).toString();
                     columnDescr.fKeyTable  = pq2->value(1).toString();
                     columnDescr.fKeyField  = pq2->value(2).toString();
@@ -2255,7 +2264,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
                 columnDescr.fnToName = checkId2Name(*pq2, columnDescr.fKeySchema, columnDescr.fnToName, EX_IGNORE);
             }
         }
-        // A távoli kulcs mezők detektálása VÉGE
+        // END Regular and irregular foreign keys detect
         // A konveziós függvények miatt a megfelelő típuso mező leíró objektumot kell a konténerbe rakni.
         switch (columnDescr.eColType) {
         case cColStaticDescr::FT_DATE:          _columnDescrs << new cColStaticDescrDate(columnDescr);      break;
@@ -2443,7 +2452,7 @@ const cRecStaticDescr *cRecStaticDescr::get(qlonglong _oid, bool find_only)
         return *i;
     }
     QSqlQuery *pq = newQuery();
-    QStringPair tsn = tableoid2name(*pq, _oid);
+    tStringPair tsn = tableoid2name(*pq, _oid);
     delete pq;
     _mapMutex.unlock();
     // Ha nem találjuk, létre kell hozni ?
@@ -2668,9 +2677,12 @@ QString cRecStaticDescr::toString() const
         }
         s += QChar(')') + '\n';
     }
-    if (_idIndex >= 0)   s += "-- _idIndex   = " + QString::number(_idIndex)   + '\n';
-    if (_nameIndex >= 0) s += "-- _nameIndex = " + QString::number(_nameIndex) + '\n';
-    if (_noteIndex >= 0) s += "-- _noteIndex = " + QString::number(_noteIndex) + '\n';
+    if (_idIndex >= 0)      s += "-- _idIndex   = "     + QString::number(_idIndex)   + '\n';
+    if (_nameIndex >= 0)    s += "-- _nameIndex = "     + QString::number(_nameIndex) + '\n';
+    if (_noteIndex >= 0)    s += "-- _noteIndex = "     + QString::number(_noteIndex) + '\n';
+    if (_deletedIndex >= 0) s += "-- _deletedIndex = "  + QString::number(_deletedIndex) + '\n';
+    if (_flagIndex >= 0)    s += "-- _flagIndex = "     + QString::number(_flagIndex) + '\n';
+    if (_textIdIndex >= 0)  s += "-- _textIdIndex = "   + QString::number(_textIdIndex) + '\n';
     s += QChar(')');
     if (_parents.size()) {
         s += " INHERITS(";
@@ -2737,6 +2749,8 @@ cRecord::cRecord() : QObject(), _fields(), _likeMask()
    // _DBGFN() << QChar(' ') << VDEBPTR(this) << endl;
     _deletedBehavior = NO_EFFECT ;
     _stat = ES_NULL;
+    pTextList = NULL;
+    containerValid  = 0;
 }
 
 cRecord::cRecord(const cRecord& o) : QObject(), _fields(), _likeMask()
@@ -2747,7 +2761,8 @@ cRecord::cRecord(const cRecord& o) : QObject(), _fields(), _likeMask()
 
 cRecord::~cRecord()
 {
-    // _DBGFN() << QChar(' ') << VDEBPTR(this) n0t0kaptus
+    // _DBGFN() << QChar(' ') << VDEBPTR(this)
+    pDelete(pTextList);
 }
 
 cRecord& cRecord::_clear()
@@ -2755,6 +2770,7 @@ cRecord& cRecord::_clear()
     _fields.clear();
     _stat = ES_NULL;
     _likeMask.clear();
+    condDelTextList();
     return *this;
 }
 
@@ -2765,6 +2781,7 @@ cRecord& cRecord::_clear(int __ix)
     _fields[__ix].clear();
     if  (isEmpty()) _stat  = ES_NULL;
     else            _stat |= ES_MODIFY;
+    condDelTextList(__ix);
     return *this;
 }
 
@@ -2800,6 +2817,7 @@ bool cRecord::toEnd(int i)
 {
     i = i;
     // _DBGFN() << " @(" << i << ") *** EMPTY ***" << endl;
+    // text ??!!??
     return false;
 }
 
@@ -2809,6 +2827,7 @@ cRecord& cRecord::_set(const cRecStaticDescr& __d)
     int i, n = __d.cols();
     for (i = 0; i < n; i++) _fields << QVariant();
     _stat = ES_EMPTY;
+    condDelTextList();
     return *this;
 }
 
@@ -2944,10 +2963,12 @@ bool cRecord::_copy(const cRecord &__o, const cRecStaticDescr &d)
     int n = __o.cols();    // Mezők száma a forrás rekordban
     for (i = 0; i < n; i++) {
         QString fn = __o.columnName(i);     // Mező név
-        int ii = d.toIndex(fn, EX_IGNORE);      // A cél azonos nevű mezőjének az indexe
+        int ii = d.toIndex(fn, EX_IGNORE);  // A cél azonos nevű mezőjének az indexe
         if (!d.isIndex((ii))) continue;     // A cél rekordban nincs ilyen mező
         if (__o.isNull(i))    continue;     // vagy null a forrás mező
-        _set(ii, __o.get(i));
+        QVariant v = __o.get(i);
+        condDelTextList(ii, v);
+        _set(ii, v);
         m = true;
     }
     return m;
@@ -2971,7 +2992,13 @@ void cRecord::fieldsCopy(const cRecord& __o, const QBitArray& __m)
     if (descr() != __o.descr()) EXCEPTION(EDATA, 0, trUtf8("%1 != %2").arg(descr().fullTableName()).arg(__o.descr().fullTableName()));
     int n = __m.size();
     if (n > cols()) EXCEPTION(EDATA, n, identifying());
-    for (int i = 0; i < n; i++) if (__m[i]) set(i, __o.get(i));
+    for (int i = 0; i < n; i++) {
+        if (__m[i]) {
+            QVariant v = __o.get(i);
+            condDelTextList(i, v);
+            set(i, v);
+        }
+    }
 }
 
 void cRecord::fieldsCopy(QSqlQuery& __q, QString *pName, const QBitArray& __m)
@@ -3002,6 +3029,7 @@ cRecord& cRecord::set(int __i, const QVariant& __v)
     if (_fields.isEmpty()) set();
     qlonglong _s = 0;
     _set(__i, descr()[__i].set(__v, _s));
+    if (__i == descr().textIdIndex(EX_IGNORE)) pDelete(pTextList);
     if (_s == ES_DEFECTIVE) {
         _stat |= ES_DEFECTIVE;
         _setDefectivFieldBit(__i);
@@ -3047,15 +3075,21 @@ QString cRecord::view(QSqlQuery& q, int __i) const
     return descr()[__i].toView(q, get(__i));
 }
 
-bool cRecord::isContainerValid(qlonglong) const
+bool cRecord::isContainerValid(qlonglong __mask) const
 {
-    EXCEPTION(EPROGFAIL, -1, identifying());
-    return false;
+    if (descr()._textIdIndex < 0) {
+        EXCEPTION(EPROGFAIL, -1, identifying());
+    }
+    return 0 != (containerValid & __mask);
 }
 
-void cRecord::setContainerValid(qlonglong, qlonglong)
+void cRecord::setContainerValid(qlonglong __set, qlonglong __clr)
 {
-    EXCEPTION(EPROGFAIL, -1, identifying());
+    if (descr()._textIdIndex < 0) {
+        EXCEPTION(EPROGFAIL, -1, identifying());
+    }
+    containerValid |=  __set;
+    containerValid &= ~__clr;
 }
 
 cMac    cRecord::getMac(int __i, eEx __ex) const
@@ -3201,7 +3235,13 @@ cError *cRecord::tryInsert(QSqlQuery &__q, eTristate __tr)
     eTristate tr = trFlag(__tr);
     if (tr == TS_TRUE) sqlBegin(__q, tableName());
     try {
+        QStringList savedTexts;
+        if (pTextList != NULL) savedTexts = *pTextList; // The update will delete it.
         insert(__q, EX_ERROR);
+        if (!savedTexts.isEmpty()) {
+            pTextList = new QStringList(savedTexts);
+            saveText(__q);
+        }
     }
     CATCHS(pe);
     if (tr == TS_TRUE) {
@@ -3553,6 +3593,32 @@ cError *cRecord::tryUpdate(QSqlQuery& __q, bool __only, const QBitArray& __set, 
     return pe;
 }
 
+cError *cRecord::tryUpdateById(QSqlQuery& __q, eTristate __tr)
+{
+    cError *pe = NULL;
+    int n = 0;
+    eTristate tr = trFlag(__tr);
+    if (tr == TS_TRUE) sqlBegin(__q, tableName());
+    try {
+        QStringList savedTexts;
+        if (pTextList != NULL) savedTexts = *pTextList; // The update will delete it.
+        n = update(__q, true);
+        if (n != 1) {
+            EXCEPTION(EOID);
+        }
+        if (!savedTexts.isEmpty()) {
+            pTextList = new QStringList(savedTexts);
+            saveText(__q);
+        }
+    }
+    CATCHS(pe);
+    if (tr == TS_TRUE) {
+        if (pe == NULL) sqlCommit(__q, tableName());
+        else            sqlRollback(__q, tableName());
+    }
+    return pe;
+}
+
 bool cRecord::updateByName(QSqlQuery &__q, const QString& _name, const QString& _fn, const QVariant& val, eEx __ex)
 {
     setName(_name);
@@ -3840,6 +3906,112 @@ QString cRecord::show(bool t) const
 {
     return identifying(t);
 }
+
+void cRecord::condDelTextList(int _ix, const QVariant& _tid)
+{
+    if (pTextList == NULL) return;  // There is no list, there is nothing to delete
+    int tix = descr()._textIdIndex;
+    if (tix < 0) {  // :-O
+        EXCEPTION(EPROGFAIL, 0, trUtf8("If there is no text_id, there could be no list : %1").arg(identifying()));
+    }
+    if (_ix != NULL_IX && _ix != tix) return;   // no change text id
+    if (_ix == NULL_IX || _tid.isNull()) {    // text_id is NULL
+        pDelete(pTextList);
+        setContainerValid(0, CV_LL_TEXT);
+    }
+    else {
+        qlonglong oldTid = getId(tix);              // Old text id
+        bool      ok;
+        qlonglong newTid = _tid.toLongLong(&ok);    // New text_id
+        if (!ok || oldTid != newTid) {              // Changed text_id (or new value is invalid)
+            pDelete(pTextList);
+            setContainerValid(0, CV_LL_TEXT);
+        }
+    }
+}
+
+QString cRecord::getText(int _tix, const QString& _d) const
+{
+    QString r;
+    if (pTextList != NULL && isContIx(*pTextList, _tix)) r = pTextList->at(_tix);
+    return r.isEmpty() ? _d : r;
+}
+
+QString cRecord::getText(const QString& _tn, const QString& _d) const
+{
+    int tidix = descr().textIdIndex();
+    const cColStaticDescr& cd = colDescr(tidix);
+    const cColEnumType *pcet = cd.pEnumType;
+    if (pcet == NULL) EXCEPTION(EPROGFAIL, 0, trUtf8("No text field list, missing enum; Object : %1").arg(identifying()));
+    int tix = pcet->str2enum(_tn);
+    return getText(tix, _d);
+}
+
+cRecord&    cRecord::setText(int _tix, const QString& _t)
+{
+    int tidix = descr().textIdIndex();
+    const cColEnumType *pet = colDescr(tidix).pEnumType;
+    int s = pet->enumValues.size();
+    if (pTextList == NULL) pTextList = new QStringList;
+    while (pTextList->size() < s) *pTextList << _sNul;
+    (*pTextList)[_tix] = _t;
+    return *this;
+}
+
+cRecord&    cRecord::setText(const QString& _tn, const QString& _t)
+{
+    int tidix = descr().textIdIndex();
+    const cColStaticDescr& cd = colDescr(tidix);
+    const cColEnumType *pcet = cd.pEnumType;
+    if (pcet == NULL) EXCEPTION(EPROGFAIL, 0, trUtf8("No text field list, missing enum; Object : %1").arg(identifying()));
+    int tix = pcet->str2enum(_tn);
+    return setText(tix, _t);
+}
+
+bool cRecord::fetchText(QSqlQuery& _q)
+{
+    int tidix = descr().textIdIndex();
+    qlonglong tid = getId(tidix);
+    pDelete(pTextList);
+    containerValid &= ~CV_LL_TEXT;
+    if (tid == NULL_ID) return false;
+    pTextList = new QStringList;
+    *pTextList = textId2texts(_q, tid, tableName());
+    containerValid |= CV_LL_TEXT;
+    return !pTextList->isEmpty();
+}
+
+void cRecord::saveText(QSqlQuery& _q)
+{
+    if (pTextList == NULL) return;
+    int tidix = descr().textIdIndex();
+    qlonglong tid = getId(tidix);
+    if (tid == NULL_ID) {
+        QString sql = QString(
+            "UPDATE %1 SET text_id = nextval('text_id_sequ') WHERE %2 = ? RETURNING text_id"
+                ).arg(tableName(), idName());
+        execSql(_q, sql, getId());
+        bool ok;
+        tid = _q.value(0).toLongLong(&ok);
+        if (!ok) EXCEPTION(EPROGFAIL, getId(), identifying());
+    }
+    int n = colDescr(tidix).pEnumType->size();
+    QString qs;
+    QVariantList vl;
+    vl << tid << tableName();
+    for (int i = 0; i < n; ++i) {
+        qs += "?,";
+        vl << getText(i);
+    }
+    qs.chop(1);
+    QString sql = QString(
+            "INSERT INTO localizations (text_id, table_for_text, language_id, texts) "
+                " VALUES (?, ?, get_language_id(), ARRAY[%1]) "
+            "ON CONFLICT ON CONSTRAINT localizations_pkey DO UPDATE SET texts = EXCLUDED.texts"
+                ).arg(qs);
+    execSql(_q, sql, vl);
+}
+
 
 /* ******************************************************************************************************* */
 cRecordFieldRef::cRecordFieldRef(const cRecordFieldRef& __r)

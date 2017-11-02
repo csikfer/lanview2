@@ -422,3 +422,13 @@ void sqlNotify(QSqlQuery& q, const QString& channel, const QString& payload)
     if (!q.exec(sql)) SQLQUERYERR(q);
 }
 
+int getListFromQuery(QSqlQuery q, QStringList& list, int __ix)
+{
+    int n = 0;
+    if (q.first()) do {
+        ++n;
+        list << q.value(__ix).toString();
+    } while (q.next());
+    return n;
+}
+

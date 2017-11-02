@@ -796,7 +796,7 @@ TSTREAMO(cMac)
 
 
 
-typedef QPair<QString, QString>     QStringPair;
+typedef QPair<QString, QString>     tStringPair;
 /// A QPolygonF osztály a GUI része, így nem használlható
 /// Mert vagy nem GUI-val fordítjuk, és akkor elszállhat (pl. a QVariant-ból való kikonvertáláskor)
 /// Vagy GUI-val fordítunk, de akkor meg nem fog elindulni tisztán konzolos módban
@@ -851,5 +851,14 @@ TSTREAMF(QVariantList,QVariantListToString)
 TSTREAMF(QPoint,      QPointTosString)
 TSTREAMF(QPointF,     QPointFTosString)
 TSTREAMF(tPolygonF,   tPolygonFToString)
+
+EXT_ int setLanguage(QSqlQuery& q, const QString& _l, const QString& _c = QString());
+EXT_ int setLanguage(QSqlQuery& q, int id);
+EXT_ int getLanguageId(QSqlQuery& q);
+EXT_ QString getLanguage(QSqlQuery& q, int lid);
+EXT_ QString textId2text(QSqlQuery& q, int id, const QString& _table, int index = 0);
+EXT_ QStringList textId2texts(QSqlQuery& q, int id, const QString& _table);
+EXT_ int textName2ix(QSqlQuery &q, const QString& _t, const QString& _n, eEx __ex = EX_ERROR);
+
 
 #endif //LV2TYPES_H_INCLUDED

@@ -72,17 +72,18 @@ void cRecordTableFilter::setFilter(int i)
 
 int cRecordTableFilter::fieldType()
 {
-    return field.colDescr.eColType;
+    return field.pColDescr->eColType;
 }
 
 QString cRecordTableFilter::where(QVariantList& qparams)
 {
     QString r;
-    QString c  = field.colDescr.colNameQ();
+    if (field.pColDescr == NULL) return r;      // !!!
+    QString c  = field.pColDescr->colNameQ();
     QString cs = c + "::text";
     // Egész, lehet ID is, van név konverzió
-    if (field.colDescr.eColType == cColStaticDescr::FT_INTEGER && !field.colDescr.fnToName.isEmpty()) {
-        cs = field.colDescr.fnToName + "(" + c + ")";
+    if (field.pColDescr->eColType == cColStaticDescr::FT_INTEGER && !field.pColDescr->fnToName.isEmpty()) {
+        cs = field.pColDescr->fnToName + "(" + c + ")";
     }
     if (iFilter >= 0) {
         int eFilter = typeList.at(iFilter)->toInt();
@@ -179,6 +180,7 @@ cRecordTableOrd::~cRecordTableOrd()
 QString cRecordTableOrd::ord()
 {
     QString r;
+    if (field.fieldIndex == NULL_IX) return r;  // !!!
     act = orderType(pType->currentText(), EX_IGNORE);
     switch (act) {
     case OT_ASC:    r = " ASC ";    break;
@@ -186,7 +188,7 @@ QString cRecordTableOrd::ord()
     case OT_NO:     return r;
     default:        EXCEPTION(EPROGFAIL);
     }
-    const cColStaticDescr& colDescr =  field.colDescr;
+    const cColStaticDescr& colDescr =  *field.pColDescr;
     if (colDescr.fKeyType == cColStaticDescr::FT_NONE) r = colDescr.colNameQ() + r;
     else {
         if (colDescr.fnToName.isEmpty()) EXCEPTION(EDATA, -1, QObject::trUtf8("Az ID->név konverziós függvény nincs definiálva."));
@@ -244,7 +246,7 @@ cRecordTableFODialog::cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase &_rt)
             QStringList items;
             items << cRecordTableFilter::sNoFilter;
             foreach (const cEnumVal *pe, pSelFilter->typeList) {
-                items << pe->getName(_sViewShort);
+                items << pe->getText(cEnumVal::LTX_VIEW_SHORT, pe->getName());
             }
             pForm->comboBox_FiltType->addItems(items);
         }
@@ -342,7 +344,7 @@ void cRecordTableFODialog::setGridLayoutOrder()
 }
 void cRecordTableFODialog::setFilterDialog()
 {
-    pForm->lineEdit_colDescr->setText(filter().field.shapeField.getName(_sDialogTitle));
+    pForm->lineEdit_colDescr->setText(filter().field.shapeField.getText(cTableShapeField::LTX_DIALOG_TITLE));
     pForm->comboBox_FiltType->setDisabled(false);
     filter().setFilter(iSelFilterType);
     if (iSelFilterType < 0) {
@@ -425,7 +427,7 @@ void cRecordTableFODialog::setFilterDialog()
             }
             break;
         }
-        pForm->lineEdit_typeTitle->setText(pType->getName(_sViewLong));
+        pForm->lineEdit_typeTitle->setText(pType->getText(cEnumVal::LTX_VIEW_LONG, pType->getName()));
     }
 }
 
@@ -462,12 +464,13 @@ void cRecordTableFODialog::filtCol(int _c)
     iSelFilterCol = _c;
     if (!isContIx(filters, iSelFilterCol)) EXCEPTION(EDATA, iSelFilterCol);
     pSelFilter = filters[iSelFilterCol];
-    pForm->lineEdit_colDescr->setText(filter().field.shapeField.getName(_sDialogTitle));
+    pForm->lineEdit_colDescr->setText(filter().field.shapeField.getText(cTableShapeField::LTX_DIALOG_TITLE,
+                                                                     filter().field.shapeField.getName()));
     while (pForm->comboBox_FiltType->count() > 1) pForm->comboBox_FiltType->removeItem(1);
     if (pSelFilter->typeList.size() > 0) {
         QStringList items;
         foreach (const cEnumVal *pe, pSelFilter->typeList) {
-            items << pe->getName(_sViewShort);
+            items << pe->getText(cEnumVal::LTX_VIEW_SHORT, pe->getName());
         }
         pForm->comboBox_FiltType->addItems(items);
         pForm->comboBox_FiltType->setEnabled(true);
@@ -508,25 +511,38 @@ void cRecordTableFODialog::changeBoolean(bool f)    { filter().param1 = f; }
 cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &table)
     : shapeField(sf)
     , recDescr(table.recDescr())
-    , fieldIndex(recDescr.toIndex(shapeField.getName()))
-    , colDescr(recDescr.colDescr(fieldIndex))
-    , header(shapeField.get(_sTableTitle))
-    , dataCharacter(defaultDataCharter(recDescr, fieldIndex))
+    , header(shapeField.getText(cTableShapeField::LTX_TABLE_TITLE, shapeField.getName()))
     , defaultDc(cEnumVal::enumVal(_sDatacharacter, dataCharacter))
 {
-    fieldFlags = shapeField.getId(_sFieldFlags);
+    fieldIndex = recDescr.toIndex(sf.getName(), EX_IGNORE);
+    pColDescr  = NULL;
+    textIndex  = NULL_IX;
+    pTextEnum  = NULL;
     headAlign  = Qt::AlignVCenter | Qt::AlignHCenter;
     dataAlign  = Qt::AlignVCenter;
-    if (colDescr.eColType == cColStaticDescr::FT_INTEGER && colDescr.fKeyType == cColStaticDescr::FT_NONE) dataAlign |= Qt::AlignRight;
-    else if (colDescr.eColType == cColStaticDescr::FT_REAL)                                                dataAlign |= Qt::AlignRight;
-    // 'XX_color' vagy 'font' vagy 'tool_tip' flagesetén kell az enum típusa!
-    if (colDescr.eColType == cColStaticDescr::FT_ENUM || colDescr.eColType == cColStaticDescr::FT_BOOLEAN) {
-        if (fieldFlags && ENUM2SET4(FF_BG_COLOR, FF_FG_COLOR, FF_FONT, FF_TOOL_TIP)) {
-            if (colDescr.eColType == cColStaticDescr::FT_ENUM) {
-                enumTypeName = colDescr.enumType();
-            }
-            else {  // FT_BOOLEAN
-                enumTypeName = mCat(recDescr.tableName(), colDescr);
+    fieldFlags = shapeField.getId(_sFieldFlags);
+    if (fieldIndex == NULL_IX) {
+        pTextEnum = recDescr.colDescr(recDescr.textIdIndex()).pEnumType;
+        if (pTextEnum == NULL) EXCEPTION(EDATA);
+        textIndex = pTextEnum->str2enum(sf.getName());
+        dataCharacter = DC_TEXT;
+    }
+    else {
+        pColDescr = &recDescr.colDescr(fieldIndex);
+        dataCharacter = defaultDataCharter(recDescr, fieldIndex);
+        if (pColDescr->eColType == cColStaticDescr::FT_INTEGER && pColDescr->fKeyType == cColStaticDescr::FT_NONE)
+            dataAlign |= Qt::AlignRight;
+        else if (pColDescr->eColType == cColStaticDescr::FT_REAL)
+            dataAlign |= Qt::AlignRight;
+        // 'XX_color' vagy 'font' vagy 'tool_tip' flagesetén kell az enum típusa!
+        if (pColDescr->eColType == cColStaticDescr::FT_ENUM ||pColDescr->eColType == cColStaticDescr::FT_BOOLEAN) {
+            if (fieldFlags && ENUM2SET4(FF_BG_COLOR, FF_FG_COLOR, FF_FONT, FF_TOOL_TIP)) {
+                if (pColDescr->eColType == cColStaticDescr::FT_ENUM) {
+                    enumTypeName = pColDescr->enumType();
+                }
+                else {  // FT_BOOLEAN
+                    enumTypeName = mCat(recDescr.tableName(), *pColDescr);
+                }
             }
         }
     }
@@ -1059,6 +1075,9 @@ void cRecordsViewBase::initView()
 void cRecordsViewBase::initShape(cTableShape *pts)
 {
     if (pts != NULL) pTableShape = pts;
+    if ((pTableShape->containerValid & ~CV_LL_TEXT) == 0) {
+        pTableShape->fetchText(*pq);
+    }
 
     pTableShape->setParent(this);
 
@@ -1081,8 +1100,18 @@ void cRecordsViewBase::initShape(cTableShape *pts)
 
     tTableShapeFields::iterator i, n = pTableShape->shapeFields.end();
     for (i = pTableShape->shapeFields.begin(); i != n; ++i) {
-        cRecordTableColumn *p = new cRecordTableColumn(**i, *this);
-        fields << p;
+        cError *pe = NULL;
+        cRecordTableColumn *p;
+        try {
+            p = new cRecordTableColumn(**i, *this);
+        } CATCHS(pe)
+        if (pe == NULL) {
+            fields << p;
+        }
+        else {
+            cErrorMessageBox::messageBox(pe, pWidget(), trUtf8("Column is ignored."));
+            delete pe;
+        }
     }
     initView();
     // Ha egy egyszerű táblát használnánk al táblaként, nem szívózunk, beállítjuk
@@ -1188,7 +1217,9 @@ void cRecordsViewBase::rightTabs(QVariantList& vlids)
         cRecordsViewBase *prvb = cRecordsViewBase::newRecordView(*pq, id, this);
         prvb->setParent(this);
         *pRightTables << prvb;
-        pRightTabWidget->addTab(prvb->pWidget(), prvb->tableShape().getName(_sTableTitle));
+        pRightTabWidget->addTab(prvb->pWidget(),
+                                prvb->tableShape().getText(cTableShape::LTX_TABLE_TITLE,
+                                                        prvb->tableShape().getName()));
     }
 }
 
@@ -1265,13 +1296,13 @@ void cRecordsViewBase::initGroup(QVariantList& vlids)
     prvb = cRecordsViewBase::newRecordView(dup(pts), this);
     prvb->setParent(this);
     *pRightTables << prvb;
-    pRightTabWidget->addTab(prvb->pWidget(), prvb->tableShape().getName(_sMemberTitle));  // TITLE!!!!
+    pRightTabWidget->addTab(prvb->pWidget(), prvb->tableShape().getText(cTableShape::LTX_MEMBER_TITLE));  // TITLE!!!!
     // A második tábla
     pts->setShapeType(nt);
     prvb = cRecordsViewBase::newRecordView(pts, this);
     prvb->setParent(this);
     *pRightTables << prvb;
-    pRightTabWidget->addTab(prvb->pWidget(), prvb->tableShape().getName(_sNotMemberTitle));  // TITLE!!!!
+    pRightTabWidget->addTab(prvb->pWidget(), prvb->tableShape().getText(cTableShape::LTX_NOT_MEMBER_TITLE));  // TITLE!!!!
 }
 
 /// Üres, nem kötelezően implemetálandó. Csak ha megadhatóak szűrők.
@@ -1426,7 +1457,7 @@ bool cRecordsViewBase::batchEdit(int logicalindex)
         cFieldEditBase *feb = cFieldEditBase::createFieldWidget(*pTableShape, sf, rfr, false, NULL);
         febList << feb;
         pEd->verticalLayout->insertWidget(i * 2, feb->pWidget());
-        QLabel *pLabel = new QLabel(sf.getName(_sDialogTitle));
+        QLabel *pLabel = new QLabel(sf.getText(cTableShapeField::LTX_DIALOG_TITLE));
         pEd->verticalLayout->insertWidget(i * 2, pLabel);
     }
     // Ha modosítottuk a táblát, majd volt rollback
@@ -1652,7 +1683,7 @@ void cRecordTable::initSimple(QWidget * pW)
     pTableView  = new QTableView();
     pModel      = new cRecordTableModel(*this);
     if (!pTableShape->getBool(_sTableShapeType, TS_BARE)) {
-        QString title = pTableShape->getName(_sTableTitle);
+        QString title = pTableShape->getText(cTableShape::LTX_TABLE_TITLE, pTableShape->getName());
         if (title.size() > 0) {
             QLabel *pl = new QLabel(title);
             pMainLayout->addWidget(pl);

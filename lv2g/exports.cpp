@@ -73,7 +73,7 @@ void cExportsWidget::changedName(const QString& tn)
 {
     cTableShape ts;
     ts.setByName(tn);
-    pUi->lineEditTableTitle->setText(ts.getName(_sTableTitle));
+    pUi->lineEditTableTitle->setText(ts.getText(cTableShape::LTX_TABLE_TITLE));
 }
 
 void cExportsWidget::text(const QString& _s)

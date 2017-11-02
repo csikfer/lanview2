@@ -187,14 +187,15 @@ void cMenuAction::displayIt()
         case MAT_WIDGET:    EXCEPTION(ENOTSUPP, type);                  break;
         default:            EXCEPTION(EPROGFAIL,-1,"Invalid signal.");  break;
         }
-        pIntSubObj->setWindowTitle(pMenuItem->getName(_sTabTitle));
+        pIntSubObj->setWindowTitle(pMenuItem->getText(cMenuItem::LTX_TAB_TITLE, pMenuItem->getName()));
     }
     else {
         // Tábla, több példányos
         if (MAT_SHAPE == type && pMenuItem->isFeature("multi")) {
             cIntSubObj *p = new cTableSubWin(objectName(), pMdiArea);
-            p->setWindowTitle(pMenuItem->getName(_sTabTitle) + QString(" (%1)").arg(++cnt));
-            connect(p,             SIGNAL(closeIt()),   this, SLOT(deleteLater()));
+            QString t = pMenuItem->getText(cMenuItem::LTX_TAB_TITLE, pMenuItem->getName());
+            p->setWindowTitle(t + QString(" (%1)").arg(++cnt));
+            connect(p, SIGNAL(closeIt()), this, SLOT(deleteLater()));
             pMdiArea->setActiveSubWindow(p->pSubWindow);
             p->pWidget()->show();
             return;
@@ -251,6 +252,8 @@ void  cMenuAction::executeIt()
 cTableSubWin::cTableSubWin(const QString& shape, QMdiArea * pMdiArea)
     : cIntSubObj(pMdiArea)
 {
+    pTableShape = NULL;
+    pRecordsView = NULL;
     pTableShape = new cTableShape();
     pTableShape->setParent(this);
     pTableShape->setByName(shape);

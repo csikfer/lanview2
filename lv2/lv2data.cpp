@@ -2789,7 +2789,7 @@ cNode& cNode::asmbWorkstation(QSqlQuery& q, const QString& __n, const cMac& __ma
     return *this;
 }
 
-cNPort& cNode::asmbHostPort(QSqlQuery& q, int ix, const QString& pt, const QString& pn, const QStringPair *ip, const QVariant *mac, const  QString& d)
+cNPort& cNode::asmbHostPort(QSqlQuery& q, int ix, const QString& pt, const QString& pn, const tStringPair *ip, const QVariant *mac, const  QString& d)
 {
     QHostAddress a;
     cMac m;
@@ -2842,7 +2842,7 @@ cNPort& cNode::asmbHostPort(QSqlQuery& q, int ix, const QString& pt, const QStri
 }
 
 
-cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const QStringPair *__port, const QStringPair *__addr, const QString *__sMac, const QString& __note, qlonglong __place, eEx __ex)
+cNode& cNode::asmbNode(QSqlQuery& q, const QString& __name, const tStringPair *__port, const tStringPair *__addr, const QString *__sMac, const QString& __note, qlonglong __place, eEx __ex)
 {
     QString em;
     QString name = __name;

@@ -21,6 +21,20 @@
 #include "guidata.h"
 #include "imagedrv.h"
 
+class cSelectLanguage : QObject {
+    Q_OBJECT
+public:
+    cSelectLanguage(QComboBox *_pComboBox, QObject *_pPar);
+    int currentLangId() { return pModel->atId(pComboBox->currentIndex()); }
+protected:
+    QComboBox *pComboBox;
+    cRecordListModel *pModel;
+private slots:
+    void _languageChanged(int ix);
+signals:
+    void languageIdChanged(int id);
+};
+
 inline static QFrame *line(int __w, int __mw, QWidget *par = NULL)
 {
     QFrame *line = new QFrame(par);
@@ -106,7 +120,7 @@ enum eFieldWidgetType {
     FEW_ENUM_COMBO,     ///< cEnumComboWidget
     FEW_ENUM_RADIO,     ///< cEnumRadioWidget
     FEW_LINE,           ///< cFieldLineWidget
-    FEW_TEXT,           ///< cFieldLineWidget/long text
+    FEW_LINES,          ///< cFieldLineWidget/long text
     FEW_ARRAY,          ///< cArrayWidget
     FEW_FKEY_ARRAY,     ///< cFKeyArrayWidget
     FEW_POLYGON,        ///< cPolygonWidget
@@ -119,7 +133,9 @@ enum eFieldWidgetType {
     FEW_NULL,           ///< cNullWidget
     FEW_COLOR,          ///< cColorWidget
     FEW_FONT_FAMILY,    ///< cFontFamilyWidget
-    FEW_FONT_ATTR       ///< cFontAttrWidget
+    FEW_FONT_ATTR,       ///< cFontAttrWidget
+    FEW_LTEXT,
+    FEW_LTEXT_LONG
 };
 /// Az enum eFieldWidgetType értékeket stringgé konvertálja.
 /// Vissza konverzió nincs, ez is csak nyomkövetési céllal.
@@ -234,6 +250,8 @@ protected:
     QFont               defFont;
     QColor              defBgColor;
     QColor              defFgColor;
+public:
+    bool isText()   { return _wType == FEW_LTEXT || _wType == FEW_LTEXT_LONG; }
 /*
 protected slots:
     void modRec();                  ///< A rekord módosult, aktualizálandó a megjelenítés
@@ -733,6 +751,40 @@ private slots:
     void togleStrikeout(bool f);
 };
 
+/// @class cTextWidget
+/// Egy text megjelenítése és módosítása
+/// Megjelenítés egy QLineEdit -el
+class LV2GSHARED_EXPORT cLTextWidget : public cFieldEditBase {
+    Q_OBJECT
+public:
+    /// Konstruktor
+    /// @param _fr A rekord text_id mezőjére mutató referencia objektum (nem objektum referencia!)
+    /// @param _ti Text index
+    /// @param _fl
+    /// @param parent A parent widget pointere
+    cLTextWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef _fr, int _ti, int _fl, cRecordDialogBase* _par);
+    ~cLTextWidget();
+    virtual int set(const QVariant& v);
+    virtual int height();
+protected:
+    int textIndex;
+    /// Az eredeti widget pointerrel tér visszta
+    QLineEdit *pLineEdit() {
+        QLineEdit *pLE = qobject_cast<QLineEdit *>(pWidget());
+        if (pLE == NULL) EXCEPTION(EPROGFAIL);
+        return pLE;
+    }
+    QTextEdit *pTextEdit() {
+        QTextEdit *pTE = qobject_cast<QTextEdit *>(pWidget());
+        if (pTE == NULL) EXCEPTION(EPROGFAIL);
+        return pTE;
+    }
+signals:
+    void valid();
+private slots:
+    void setFromEdit();
+};
+
 /// Az osztály egy zóna ás hely QComboBox párossal egy hely kiválasztását teszi lehetővé.
 /// Opcionálisan megadható egy QLineEdit objektum is, a hely nevek szűrésének a megadásához.
 class LV2GSHARED_EXPORT cSelectPlace : public QObject {
@@ -743,11 +795,12 @@ public:
     /// @param _pPlace  A comboBox objektum pointere a zónán bellüli hely kiválasztáshoz.
     /// @param _pFilt   Opcionális lineEdit objektum pointere, a hely név szűréséhez.
     /// @param _constFilt Egy opcionális konstans szűrő a helyek-hez.
-    cSelectPlace(QComboBox *_pZone, QComboBox *_pPLace, QLineEdit *_pFilt = NULL, const QString& _constFilt = QString(), QObject *_par = NULL);
+    cSelectPlace(QComboBox *_pZone, QComboBox *_pPLace, QLineEdit *_pFilt = NULL, const QString& _constFilt = QString(), QWidget *_par = NULL);
     QString currentZoneName()   { return pZoneModel->at(pComboBoxZone->currentIndex()); }
     qlonglong currentZoneId()   { return pZoneModel->atId(pComboBoxZone->currentIndex()); }
     QString currentPlaceName()  { return pPlaceModel->at(pComboBoxPLace->currentIndex()); }
     qlonglong currentPlaceId()  { return pPlaceModel->atId(pComboBoxPLace->currentIndex()); }
+    /// Átmásolja az aktuális értékeket a másik objektumból.
     void copyCurrents(const cSelectPlace& _o);
 protected:
     QComboBox *pComboBoxZone;
@@ -760,6 +813,10 @@ protected:
 public slots:
     void setEnabled(bool f = true);
     void setDisabled(bool f = true);
+    void refresh();
+    void insertPlace();
+    void setCurrentZone(qlonglong _zid);
+    void setCurrentPlace(qlonglong _pid);
 private slots:
     void _zoneChanged(int ix);
     void _placeChanged(int ix);
@@ -784,7 +841,7 @@ public:
     cSelectNode(QComboBox *_pZone, QComboBox *_pPlace, QComboBox *_pNode,
                 QLineEdit *_pPlaceFilt = NULL, QLineEdit *_pNodeFilt = NULL,
                 const QString& _placeConstFilt = QString(), const QString& _nodeConstFilt = QString(),
-                QObject * _par = NULL);
+                QWidget *_par = NULL);
     void setNodeModel(cRecordListModel *  _pNodeModel, eTristate _nullable = TS_NULL);
     void reset();
     /// A kurrens node-ot null-ra állítja. Feltételezi, hogy az lehet null, és az az első elem.

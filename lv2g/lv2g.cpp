@@ -333,7 +333,7 @@ void enumSetD(QWidget *pW, const QString& _t, int id)
         }
         pW->setFont(font);
     }
-    QString sToolTip = ev.getName(cEnumVal::ixToolTip());
+    QString sToolTip = ev.getText(cEnumVal::LTX_TOOL_TIP);
     if (!sToolTip.isEmpty()) pW->setToolTip(sToolTip);
 }
 
@@ -369,10 +369,9 @@ QVariant enumRole(const cEnumVal& ev, int role, int e)
         s = ev.getName(cEnumVal::ixBgColor());
         return s.isEmpty() ? QVariant() : QColor(s);
     case Qt::DisplayRole:
-        s = ev.getName(cEnumVal::ixViewShort());
-        return s;
+        return ev.getText(cEnumVal::LTX_VIEW_SHORT, ev.getName());
     case Qt::ToolTipRole:
-        return ev.getName(cEnumVal::ixToolTip());
+        return ev.getText(cEnumVal::LTX_TOOL_TIP);
     case Qt::FontRole:
         return fontByEnum(ev.getName(cEnumVal::ixTypeName()), e);
     default:

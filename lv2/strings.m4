@@ -66,6 +66,7 @@ STRDEF(Datacharacter, "datacharacter")
  STRDEF(Error, "error")
  STRDEF(NotPermit, "not_permit")
  STRDEF(HaveNo, "have_no");
+ dnl text
 
 dnl Thread nevek
 STRDEF(MainThread, "mainThread")
@@ -90,7 +91,6 @@ STRDEF(Lv2testSetSelfNname, "lv2test-set-self-name")
 
 STRDEF(LocalHost, "localhost")
 STRDEF(MibPath, "MIBPATH")
-STRDEF(Lang, "Lang")
 STRDEF(Local, "local")
 STRDEF(Init, "init")
 STRDEF(ReInit, "reinit")
@@ -155,6 +155,20 @@ STRDEF(Ambiguous, "ambiguous")
 STRDEF(Close, "close")
 
 dnl Tábla és mező nevek
+STRDEF(Languages, "languages")
+ STRDEF(LanguageId, "language_id")
+ STRDEF(LanguageName, "language_name")
+ STRDEF(LangId, "lang_id");
+ STRDEF(CountryId, "country_id")
+ STRDEF(CountryA2, "country_a2")
+ STRDEF(Lang2, "lang_2")
+ STRDEF(Lang3, "lang_3")
+ STRDEF(FlagImage, "flag_image")
+ STRDEF(NextId, "next_id")
+STRDEF(Localizations, "localizations")
+ STRDEF(TextId, "text_id")
+ STRDEF(TableForText, "table_for_text")
+ STRDEF(Texts, "texts")
 STRDEF(ParamTypes, "param_types")
  STRDEF(ParamTypeId, "param_type_id")
  STRDEF(ParamTypeName, "param_type_name")
@@ -422,8 +436,7 @@ STRDEF(NodeParams, "node_params")
   STRDEF(ServiceTypeNote, "service_type_note")
 STRDEF(AlarmMessages, "alarm_messages")
  dnl service_type_id status
- STRDEF(Message, "message")
- STRDEF(ShortMsg, "short_msg")
+dnl text_id
 STRDEF(Services, "services")
  STRDEF(ServiceId, "service_id")
  STRDEF(ServiceName, "service_name")
@@ -749,11 +762,7 @@ STRDEF(TableShapes, "table_shapes")
  STRDEF(TableShapeId, "table_shape_id")
  STRDEF(TableShapeName, "table_shape_name")
  STRDEF(TableShapeNote, "table_shape_note")
- STRDEF(TableTitle, "table_title")
- STRDEF(DialogTitle, "dialog_title")
- STRDEF(DialogTabTitle, "dialog_tab_title")
- STRDEF(MemberTitle, "member_title")
- STRDEF(NotMemberTitle, "not_member_title")
+ dnl text_id
  STRDEF(TableShapeType, "table_shape_type")
   STRDEF(Simple, "simple")
   dnl STRDEF(Tree, "tree")
@@ -799,7 +808,7 @@ STRDEF(TableShapeFields, "table_shape_fields")
  STRDEF(TableShapeFieldId, "table_shape_field_id")
  STRDEF(TableShapeFieldName, "table_shape_field_name")
  STRDEF(TableShapeFieldNote, "table_shape_field_note")
- dnl table_title, dialog_title, table_shape_id
+ dnl text_id, table_shape_id
  STRDEF(FieldSequenceNumber, "field_sequence_number")
  STRDEF(OrdTypes, "ord_types")
   dnl no
@@ -816,6 +825,7 @@ STRDEF(TableShapeFields, "table_shape_fields")
   STRDEF(BatchEdit, "batch_edit")
   STRDEF(Font, "font")
   STRDEF(HTML, "HTML")
+  STRDEF(ToolTip, "tool_tip")
  STRDEF(Expression, "expression")
  STRDEF(DefaultValue, "default_value")
  dnl features, tool_typ, is_read_only, view_rights, edit_rights flag
@@ -843,9 +853,7 @@ STRDEF(EnumVals, "enum_vals")
  STRDEF(EnumTypeName, "enum_type_name")
  STRDEF(BgColor, "bg_color")
  STRDEF(FgColor, "fg_color")
- STRDEF(ViewShort, "view_short")
- STRDEF(ViewLong, "view_long")
- dnl ToolTip
+ dnl text_id
  STRDEF(FontFamily, "font_family")
  STRDEF(FontAttr, "font_attr")
   STRDEF(Bold, "bold");
@@ -858,11 +866,7 @@ STRDEF(MenuItems, "menu_items")
  STRDEF(AppName, "app_name")
  STRDEF(UpperMenuItemId, "upper_menu_item_id")
  STRDEF(ItemSequenceNumber, "item_sequence_number")
- STRDEF(MenuTitle, "menu_title")
- STRDEF(TabTitle, "tab_title")
- dnl "features"
- STRDEF(ToolTip, "tool_tip")
- STRDEF(WhatsThis, "whats_this")
+ dnl "features" text_id
  STRDEF(MenuRights, "menu_rights")
 
 
@@ -933,6 +937,7 @@ STRDEF(Errors, "errors")
  STRDEF(ErrorName, "error_name")
  STRDEF(ErrorNote, "error_note")
  STRDEF(ErrorType, "error_type")
+ dnl text_id
 
 STRDEF(DbErrs, "db_errs")
  STRDEF(DbLogId, "dblog_id")

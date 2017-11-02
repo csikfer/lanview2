@@ -61,7 +61,7 @@ EXT_ qlonglong tableoid(QSqlQuery q, const QString& __t, qlonglong __sid = NULL_
 /// @param q Az adatbázis művelethez használható objektum.
 /// @param toid A table OID érték.
 /// @return A first adattag a tábla neve, a second pedig a séma név.
-EXT_ QStringPair tableoid2name(QSqlQuery q, qlonglong toid);
+EXT_ tStringPair tableoid2name(QSqlQuery q, qlonglong toid);
 
 /// @def CHKENUM
 /// @brief Egy enumerációs típus konverziós függvényeinek az ellenörzése.
@@ -109,19 +109,21 @@ class cRecordFieldRef;
 class cRecordFieldConstRef;
 template <class T> class tRecordList;
 class cRecordAny;
+class cColStaticDescrBool;
 
 /* ******************************************************************************************************
-   *                                         cColEnumType                                            *
+   *                                         cColEnumType                                               *
    ******************************************************************************************************/
 /*!
 @class cColEnumType
 @brief
-SQL enumerációs mező típus tulajdonságait tartalmazó objektum.
-
+Object containing SQL enumeration field type properties.
 */
 class LV2SHARED_EXPORT cColEnumType : public QString {
-public:
+    friend class cColStaticDescrBool;
+protected:
     cColEnumType(qlonglong id, const QString& name, const QStringList& values);
+public:
     cColEnumType(const cColEnumType& _o);
     static const cColEnumType *fetchOrGet(QSqlQuery& q, const QString& name, enum eEx __ex = EX_ERROR);
     QString     toString() const;
@@ -198,12 +200,13 @@ public:
         FT_CRYPTED  = 0x00000200L,
         FT_NEXT_TYPE= 0x00001000L ///< esetleges további típusok ...
     };
-    /// távoli kulcs típusok.
+    /// Foreingn keys, Not only are SQL supported keys
     enum eFKeyType {
-        FT_NONE     = 0,            ///< Nem távoli kulcs
-        FT_PROPERTY = FT_NEXT_TYPE, ///< A távoli kulcs egy tulajdonságot reprezentáló rekordra mutat
-        FT_OWNER,                   ///< A távoli kulcs egy tulajdonos objektumra mutat
-        FT_SELF                     ///< Önmagára mutató távoli kulcs (pl. fa struktúrát reprezentál)
+        FT_NONE     = 0,            ///< Not a foreign key
+        FT_PROPERTY = FT_NEXT_TYPE, ///< Foreign key to property
+        FT_OWNER,                   ///< Foreign key to owner
+        FT_SELF,                    ///< Foreign key to self (tree)
+        FT_TEXT_ID                  ///< This is text_id
     };
     /// Egy mező érték ellenörzésének az eredménye.
     enum eValueCheck {
@@ -216,7 +219,7 @@ public:
     };
     /// Konstruktor, egy üres objektumot hoz létre
     /// @param __t Ha megadjuk a paramétert, akkor az eColType adattag ezt az értéket fogja felvenni.
-    cColStaticDescr(int __t = FT_ANY);
+    cColStaticDescr(const cRecStaticDescr *_p, int __t = FT_ANY);
     /// Copy konstruktor
     cColStaticDescr(const cColStaticDescr& __o);
     virtual ~cColStaticDescr();
@@ -261,6 +264,8 @@ public:
     /// @param _f Forrás adat, a mező értéke.
     /// @return A strinngé konvertált érték.
     virtual QString toView(QSqlQuery& q, const QVariant& _f) const;
+    /// Usually identical as toView()
+    virtual QString toViewIx(QSqlQuery&q, const QVariant& _f, int _ix) const;
     /// Clone object
     /// Az eredeti osztály copy konstruktorát hívja az alapértelmezett definíció.
     virtual cColStaticDescr *dup() const;
@@ -277,6 +282,8 @@ public:
     /// @exception cError *, Ha sikerült eltérést detektálni a kétféle enum értelmezés között.
     void checkEnum(tE2S e2s, tS2E s2e, const char * src, int lin, const char * fn) const;
     // Adattagok
+    ///
+    const cRecStaticDescr *pParent;
     /// A mező pozíciója, nem zéró pozitív szám (1,2,3...)
     int         pos;
     /// A mező sorrendet jelző szám (ordinal_position), jó esetben azonos pos-al, de ha mező volt törölve, akkor nem folytonos
@@ -347,7 +354,7 @@ public:
     /// A konstruktor kitölti a enumType pointert is, hogy enumerációként is kezelhető legyen
     cColStaticDescrBool(const cColStaticDescr& __o) : cColStaticDescr(__o) { init(); }
     /// A konstruktor kitölti a enumType pointert is, hogy enumerációként is kezelhető legyen
-    cColStaticDescrBool(int t) : cColStaticDescr(t) { init(); }
+    cColStaticDescrBool(cRecStaticDescr *_p, int t) : cColStaticDescr(_p, t) { init(); }
     enum cColStaticDescr::eValueCheck  check(const QVariant& v, cColStaticDescr::eValueCheck acceptable = cColStaticDescr::VC_INVALID) const;
     virtual QVariant  fromSql(const QVariant& __f) const;
     virtual QVariant  toSql(const QVariant& __f) const;
@@ -368,7 +375,7 @@ private:
     class LV2SHARED_EXPORT T : public cColStaticDescr { \
     friend class cRecStaticDescr; \
       public: \
-        T(int t) : cColStaticDescr(t) { ; } \
+        T(cRecStaticDescr *_p, int t) : cColStaticDescr(_p, t) { ; } \
         T(const cColStaticDescr& __o) : cColStaticDescr(__o) { ; } \
         virtual enum cColStaticDescr::eValueCheck check(const QVariant& v, cColStaticDescr::eValueCheck acceptable = cColStaticDescr::VC_INVALID) const; \
         virtual QVariant  fromSql(const QVariant& __f) const; \
@@ -432,7 +439,7 @@ CSD_INHERITOR(cColStaticDescrInterval)
 /// Egy adatbázisból beolvasott bool értéket kovertál stringgé
 inline static const QString& boolFromSql(const QVariant& __f) { return __f.isNull() ? _sNul : str2bool(__f.toString(), EX_IGNORE) ? _sTrue : _sFalse; }
 /// Egy adatbázisból beolvasott text típusú tömb értéket konvertálja string listává
-inline static QStringList stringArrayFromSql(const QVariant& __f) { return cColStaticDescrArray(cColStaticDescr::FT_TEXT | cColStaticDescr::FT_ARRAY).fromSql(__f).toStringList(); }
+inline static QStringList stringArrayFromSql(const QVariant& __f) { return cColStaticDescrArray(NULL, cColStaticDescr::FT_TEXT | cColStaticDescr::FT_ARRAY).fromSql(__f).toStringList(); }
 /// Egy adatbázisból beolvasott text típusú tömb értéket konvertálja string listává, majd a join()-al egy stringgé.
 /// @param __f Akonvertálandó, adatbázisból kiolvasott nyers adat.
 /// @param __s Szeparátor a joint() híváshoz.
@@ -545,6 +552,8 @@ protected:
     int                 _deletedIndex;
     /// A flag mező indexe, vagy NULL_IX (negatív), ha nincs ilyen mező
     int                 _flagIndex;
+    ///
+    int                 _textIdIndex;
     /// A tábla tulajdonságát leíró adatrekord kerül ide beolvasásra
     QSqlRecord          _tableRecord;
     /// A tábla oszlopainak tulajdonságait leíró adatrekordok kerülnek ide beolvasásra.
@@ -721,6 +730,12 @@ public:
         if (__ex && !isIndex(_flagIndex)) EXCEPTION(EFOUND, _flagIndex, QObject::trUtf8("Table %1 nothing flag field.").arg(fullTableName()));
         return _flagIndex;
     }
+    /// Az text_id mező indexével tér vissza, ha nincs deleted mező, vagy nem ismert az indexe, és __ex értéke true, akkor dob egy kizárást.
+    int textIdIndex(enum eEx __ex = EX_ERROR) const   {
+        if (__ex && !isIndex(_textIdIndex)) EXCEPTION(EFOUND, _textIdIndex, QObject::trUtf8("Object nothing text_id field.").arg(fullTableName()));
+        return _textIdIndex;
+    }
+
     /// A mezők számával tér vissza
     int cols() const                                { return _columnsNum; }
     /// A parent táblák leíróinak a pointerei, amennyiben a tábla származtatott, egyébként NULL pointer
@@ -870,6 +885,8 @@ TSTREAMO(cRecStaticDescr)
 /// enum eStat: A hibás értékadásban résztvevő mező(ke)t azonosító bit(ek), bit_ix = mező_ix + 8
 #define ES_INV_FLD_MSK   0x0FFFFFFFFFFF0000LL
 
+/// containef valid flag : texts
+#define CV_LL_TEXT  1
 /*!
 @class cRecord
 @brief Az adat rekord objektumok tisztán virtuális ős objektuma.
@@ -1490,6 +1507,7 @@ public:
     virtual bool insert(QSqlQuery& __q, enum eEx __ex = EX_ERROR);
     /// Hasonló az insert() metódushoz. Ha az insert metódus kizárást dobott, akkor a hiba objektum pointerével tér vissza.
     /// Ha rendben megtörtépnt a művelet, akkor NULL pointerrel.
+    /// Manti a nyelvi szövegeket is ha vannak (saveText() metódust is hívja)
     cError *tryInsert(QSqlQuery& __q, eTristate __tr = TS_NULL);
     /// Fellülír egy létező rekordot. A rekord azonosítása a nameKeyMask() alapján. A rekordot visszaolvassa.
     /// Ha a felülírás sikertelen, (nincs érintett rekord) és __ex értéke true, akkor dob egy kizárást.
@@ -1700,6 +1718,11 @@ public:
     /// tranzakciós blokba zárja. Ekkor hiba esetén a commit helyett a rolback parancssal zárja le azt. A __tr alapértelmezetten TS_NULL.
     /// @return NULL, vagy a hiba objektum pointere, ha valamilyen hiba volt.
     cError *tryUpdate(QSqlQuery& __q, bool __only, const QBitArray& __set = QBitArray(), const QBitArray& __where = QBitArray(), eTristate __tr = TS_NULL);
+    /// Try blokkban frissíti egy rekord tartalmát, az azonosító az ID, minden egyébb mezőt frissít az objektum tartalma alapján.
+    /// Akkor is hibával tér vissza, ha nem csak egy rekordot modosított.
+    /// Kiírja a nyelvi szövegeket is, ha tartoznak ilyenek az objektumban, és a pTextList nem NULL.
+    cError *tryUpdateById(QSqlQuery& __q, eTristate __tr = TS_NULL);
+
     ///
     bool updateByName(QSqlQuery &__q, const QString& _name, const QString& _fn, const QVariant& val, eEx __ex = EX_NOOP);
     bool updateById(QSqlQuery &__q, qlonglong _id, const QString& _fn, const QVariant& val, eEx __ex = EX_NOOP);
@@ -2137,11 +2160,14 @@ protected:
         _stat    = __o._stat;
         _deletedBehavior = __o._deletedBehavior;
         _likeMask = __o._likeMask;
+        containerValid = __o.containerValid;
     }
     /// átmásolja ellenörzés nélkül az objektum adattagjait
     void _cp(const cRecord& __o) {
         _fields = __o._fields;
         __cp(__o);
+        pDelete(pTextList);
+        if (__o.pTextList != NULL) pTextList = new QStringList(*__o.pTextList);
     }
     /// Átmásolja a paraméterként megadott objektum mezőit. Előtte nem törli az objektum mező adatait.
     /// Ha a forrás olyan mezőt tartalmaz, amit a cél nem, akkor azokat figyelmen kívül hagyja.
@@ -2200,7 +2226,6 @@ protected:
            c.clear();
            return true;
     }
-
 signals:
     /// Signal: Ha egy mező értéke megváltozott (A modified szignált hívó metódus nem hívja ezt a szignált mezőnként)
     void fieldModified(int ix);
@@ -2208,6 +2233,19 @@ signals:
     void modified();
     /// Signal: Ha az adattartalma lett törölve az objektumnak
     void cleared();
+// Localization
+protected:
+    QStringList    *pTextList;
+    void        condDelTextList(int _ix = NULL_IX, const QVariant& _tid = QVariant());
+public:
+    qlonglong   getTextId(eEx __ex = EX_ERROR) { int ix = descr().textIdIndex(__ex); return 0 > ix ? NULL_ID : getId(ix); }
+    QString     getText(int _tix, const QString& _d = QString()) const;
+    QString     getText(const QString& _tn, const QString& _d = QString()) const;
+    cRecord&    setText(int _tix, const QString& _t);
+    cRecord&    setText(const QString& _tn, const QString& _t);
+    bool fetchText(QSqlQuery& _q);
+    void saveText(QSqlQuery& _q);
+    qlonglong   containerValid;
 };
 TSTREAMO(cRecord)
 
@@ -2319,8 +2357,6 @@ template <class R> const cRecStaticDescr *getPDescr(const QString& _tn, const QS
 /// @param tn Az adatbázis tábla neve
 /// Egy alapértelmezett cRecord leszármazott objektum teljes definíciója
 #define DEFAULTCRECDEF(R, tn)   CRECCNTR(R) CRECDEFD(R) CRECDDCR(R, tn)
-
-#define STFIELDIX(c,m)   _ix ## m = _descr_ ## c().toIndex(_s ## m)
 
 template <class R> R * dup(R *p) { return dynamic_cast<R *>(p->dup()); }
 
@@ -2589,17 +2625,30 @@ template <class R> qlonglong intFeature(const R& o, const QString& key, qlonglon
     return _def;
 }
 
+/// @def STATICIX(R, n)
+/// Deklarál (a cRecord leszármazott osztály definíción bellül) egy statikus mező index adattagot,
+/// és egy publikus függvényt az eléréséhez. A függvény, ha kell inicializálja az
+/// indexet, és ellenörzi, hiba esetén kizárást dob.
+/// Az inicializálást az objektum konstruktorának meghívásával kényszeríti ki.
+/// @param R Osztály név (cRecord leszármazott)
+/// @param n Az index neve a "_ix" előtag nélkül.
 #define STATICIX(R, n) \
  protected: \
-    static int _##n; \
+    static int _ix##n; \
  public: \
-    static int n() { \
-        if (_##n < 0) { \
+    static int ix ## n() { \
+        if (_ix##n < 0) { \
             R o; (void)o; \
-            if (_ ## n < 0) EXCEPTION(EPROGFAIL, 0, __STR(R::_##n)); \
+            if (_ix ## n < 0) EXCEPTION(EPROGFAIL, _ix ## n, __STR(R::_ix##n)); \
         } \
-        return _ ## n; \
+        return _ix ## n; \
     }
+
+/// @def STFIELDIX(R, n)
+/// A statikus index inicializálása (lásd:STATICIX() makrót is)
+/// @param c Osztály név (cRecord leszármazott)
+/// @param m Az index neve a "_ix" előtag nélkül.
+#define STFIELDIX(R,n)   _ix ## n = _descr_ ## R().toIndex(_s ## n)
 
 /// @def FEATURES()
 /// Egy cRecord leszármazott osztálydeklaráció törzsében használható makró.
@@ -2641,7 +2690,7 @@ template <class R> qlonglong intFeature(const R& o, const QString& key, qlonglon
 #define FEATURES(R) \
     friend bool _SplitFeatureT<R>(R& o, eEx __ex); \
     friend void _JoinFeatureT<R>(R& o); \
-    STATICIX(R, ixFeatures) \
+    STATICIX(R, Features) \
 protected: \
     cFeatures *_pFeatures; \
 public: \

@@ -385,7 +385,7 @@ CREATE TABLE alarm_messages (
     service_type_id     bigint          NOT NULL
         REFERENCES service_types(service_type_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE,
     status              notifswitch     NOT NULL,
-    short_msg           text     NOT NULL,
+    short_msg           text            NOT NULL,
     message             text            NOT NULL,
     PRIMARY KEY (service_type_id, status)
 );

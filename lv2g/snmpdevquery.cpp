@@ -97,7 +97,7 @@ void cSnmpDevQuery::on_pushButtonQuery_clicked()
     try {
         ui->pushButtonQuery->setDisabled(true);
         if (pDev->getId() == NULL_ID) {
-            QStringPair ip;
+            tStringPair ip;
             ip.first = a.toString();
             ip.second= _sFixIp;
             pDev->asmbNode(*pq, name, NULL, &ip, &_sARP, _sNul, NULL_ID);

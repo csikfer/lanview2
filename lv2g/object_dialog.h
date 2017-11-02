@@ -61,8 +61,9 @@ public:
 protected:
     QSqlQuery              *pq;
     Ui::patchSimpleDialog  *pUi;
-    cZoneListModel         *pModelZone;
-    cPlacesInZoneModel     *pModelPlace;
+    cSelectPlace           *pSelectPlace;
+    // cZoneListModel         *pModelZone;
+    // cPlacesInZoneModel     *pModelPlace;
     bool                    lockSlot;
     QList<cPPortTableLine *>rowsData;
     QList<int>              shPrimRows;
@@ -93,8 +94,6 @@ private slots:
     void delPorts();
     void changeFrom(int i);
     void changeTo(int i);
-    void changeFilterZone(int i);
-    void newPlace();
     void cellChanged(int row, int col);
     void selectionChanged(const QItemSelection &, const QItemSelection &);
 };
@@ -107,6 +106,7 @@ namespace Ui {
 class cEnumValsEditWidget;
 class cEnumValRow;
 
+// private class
 #if defined(LV2G_LIBRARY)
     class cEnumValRow : public QObject {
         Q_OBJECT
@@ -156,6 +156,8 @@ protected:
     cRecordDialog      *pSinge;
     bool                lockSlot;
     // Val
+    int                 langIdVal;
+    cSelectLanguage    *pSelLangVal;
     QString             enumValTypeName;
     const cColEnumType *pEnumValType;
     cEnumVal            val;

@@ -154,6 +154,15 @@ class LV2SHARED_EXPORT cTableShape : public cRecord {
     CRECORD(cTableShape);
     FEATURES(cTableShape)
 public:
+    enum eTextIndex {
+        LTX_TABLE_TITLE = 0,
+        LTX_DIALOG_TITLE,
+        LTX_DIALOG_TAB_TITLE,
+        LTX_MEMBER_TITLE,
+        LTX_NOT_MEMBER_TITLE,
+        LTX_TOOL_TIP
+    };
+
     virtual void toEnd();
     virtual bool toEnd(int i);
     virtual void clearToEnd();
@@ -229,8 +238,8 @@ public:
 protected:
     QString emFildsIsEmpty();
     QString emFieldNotFound(const QString& __f);
-    static int              _ixTableShapeType;
     static QMap<QString, QString>   fieldDialogTitleMap;
+    STATICIX(cTableShape, TableShapeType)
 };
 
 class cTableShapeField;
@@ -242,15 +251,23 @@ class LV2SHARED_EXPORT cTableShapeField : public cRecord {
     CRECORD(cTableShapeField);
     FEATURES(cTableShapeField)
 public:
+    enum eTextIndex {
+        LTX_TABLE_TITLE = 0,
+        LTX_DIALOG_TITLE,
+        LTX_TOOL_TIP,
+        LTX_WHATS_THIS
+    };
+
     cTableShapeField(QSqlQuery& q);
     virtual void toEnd();
     virtual bool toEnd(int i);
+    virtual void clearToEnd();
     void setTitle(const QStringList& _tt);
     bool fetchByNames(QSqlQuery& q, const QString& tsn, const QString& fn, eEx __ex = EX_ERROR);
     static qlonglong getIdByNames(QSqlQuery& q, const QString& tsn, const QString& fn);
-    STATICIX( cTableShapeField, ixTableShapeId)
 protected:
     static cRecStaticDescr  _staticDescr;
+    STATICIX(cTableShapeField, TableShapeId)
 };
 
 enum eFontAttr {
@@ -271,11 +288,12 @@ inline static int bool2boolVal(bool b) { return b ? BE_TRUE : BE_FALSE; }
 class LV2SHARED_EXPORT cEnumVal : public cRecord {
     CRECORD(cEnumVal);
 public:
-    /// A hívás lekéri az enumerációhoz tartozó beszédesebb nevet, ha van.
-    /// Ha nincs ilyen érték, akkor az enumerációs értékkel tér vissza.
-    /// Ha az enumerációs érték egyértelmüen azonosítható a típus megadásának a hiányában is, akkor azt nem szükséges megadni.
-    /// Ha nem adtunk meg enumerációs típust, és a lekérdezés eredménye nem egyértelmű, akkor SQL hibát kapunk (kizárást dob).
-    static QString title(QSqlQuery& q, const QString& _ev, const QString& _tn);
+    enum eTextIndex {
+        LTX_VIEW_LONG = 0,
+        LTX_VIEW_SHORT,
+        LTX_TOOL_TIP,
+        LTX_NUMBER
+    };
     /// Rekord(ok) törlésa az enumeráció típus név alapján
     /// @param  q
     /// @param __n Az enum_type_name mező értéke, vagy minta a mezőre
@@ -289,8 +307,8 @@ public:
     /// @return true ha törölt rekordt
     bool delByNames(QSqlQuery& q, const QString& __t, const QString& __n);
     int toInt(eEx __ex = EX_ERROR) const;
-
 protected:
+    QStringList texts;
     /// Az összes enum_vals rekordot tartalmazó konténer
     /// Nem frissül automatikusan, ha változik az adattábla.
     static QList<cEnumVal *>                        enumVals;
@@ -300,6 +318,7 @@ protected:
     /// Az enumVals feltöltésekor hozza létre az abjektumot a fetchEnumVals();
     static cEnumVal *pNull;
 public:
+    int textName2ix(QSqlQuery &q, const QString& _n, eEx __ex = EX_ERROR) const;
     /// Feltölti az adatbázisból az enumVals adattagot, ha nem üres a konténer, akkor frissíti.
     /// Iniciaéizálja a pNull pountert, ha az NULL. Egy üres objektumra fog mutatni.
     /// Frissítés esetén feltételezi, hogy rekordot törölni nem lehet, ezt ellenörzi.
@@ -346,25 +365,24 @@ public:
     /// @param _tn A típus név
     /// @param e A numerikus érték
     /// @param _d Ha nincs rövid név, akkor ezzel tér vissza
-    static QString viewShort(const QString& _tn, int e, const QString &_d);
+    static QString viewShort(const QString& _tn, int e, const QString &_d)
+        { return enumVal(_tn, e).getText(LTX_VIEW_SHORT, _d); }
     /// A hívás lekéri az enumerációhoz tartozó beszédesebb nevet, ha van.
     /// Ha nincs ilyen érték, akkor amegadott alapértelmezett értékkel tér vissza.
     /// @param _tn A típus név
     /// @param e A numerikus érték
     /// @param _d Ha nincs rövid név, akkor ezzel tér vissza
-    static QString viewLong(const QString& _tn, int e, const QString &_d);
+    static QString viewLong(const QString& _tn, int e, const QString &_d)
+        { return enumVal(_tn, e).getText(LTX_VIEW_LONG, _d); }
     static QString toolTip(const QString& _tn, int e)
-        { return enumVal(_tn, e).getName(_ixToolTip); }
+        { return enumVal(_tn, e).getText(LTX_TOOL_TIP); }
 
-    STATICIX(cEnumVal, ixTypeName)
-    STATICIX(cEnumVal, ixValName)
-    STATICIX(cEnumVal, ixBgColor)
-    STATICIX(cEnumVal, ixFgColor)
-    STATICIX(cEnumVal, ixToolTip)
-    STATICIX(cEnumVal, ixViewShort)
-    STATICIX(cEnumVal, ixViewLong)
-    STATICIX(cEnumVal, ixFontFamily)
-    STATICIX(cEnumVal, ixFontAttr)
+    STATICIX(cEnumVal, TypeName)
+    STATICIX(cEnumVal, ValName)
+    STATICIX(cEnumVal, BgColor)
+    STATICIX(cEnumVal, FgColor)
+    STATICIX(cEnumVal, FontFamily)
+    STATICIX(cEnumVal, FontAttr)
 };
 
 enum eDataCharacter {
@@ -386,7 +404,8 @@ enum eDataCharacter {
     DC_WARNING,
     DC_ERROR,
     DC_NOT_PERMIT,
-    DC_HAVE_NO
+    DC_HAVE_NO,
+    DC_TEXT
 };
 
 EXT_ int dataCharacter(const QString& n, eEx __ex = EX_ERROR);
@@ -399,13 +418,17 @@ class LV2SHARED_EXPORT cMenuItem : public cRecord {
     CRECORD(cMenuItem);
     FEATURES(cMenuItem)
 public:
+    enum eTextIndex {
+        LTX_MENU_TITLE = 0,
+        LTX_TAB_TITLE,
+        LTX_TOOL_TIP,
+        LTX_WHATS_THIS
+    };
+    virtual void toEnd();
+    virtual bool toEnd(int i);
+    virtual void clearToEnd();
     bool fetchFirstItem(QSqlQuery &q, const QString &_appName, qlonglong upId = NULL_ID);
     int delByAppName(QSqlQuery &q, const QString &__n, bool __pat = false) const;
-/*
-    static const cMenuItem& nullItem();
-private:
-    static cMenuItem *pNullItem;
-*/
 };
 
 #endif // GUIDATA_H

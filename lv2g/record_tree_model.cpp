@@ -148,11 +148,13 @@ QVariant    cRecordTreeModel::data(const QModelIndex & index, int role) const
     int fix = _col2field[col];  // Mező index a rekordbam
     int mix = _col2shape[col];  // Index a leíróban
     cRecord *pr = node->pData;
-    if (recDescr != pr->descr()) { // A mező sorrend nem feltétlenül azonos (öröklés)
+    cRecordTableColumn * pColumn = columns[mix];
+    bool bTxt = pColumn->textIndex != NULL_IX;
+    if (!bTxt && recDescr != pr->descr()) { // A mező sorrend nem feltétlenül azonos (öröklés)
         const QString& fn = recDescr.columnName(fix);
         fix = pr->toIndex(fn, EX_IGNORE);   // Nem biztos, hogy van ilyen mező (ős)
     }
-    return _data(fix, *columns[mix], pr, role);
+    return _data(fix, *columns[mix], pr, role, bTxt);
 }
 
 QVariant    cRecordTreeModel::headerData(int section, Qt::Orientation orientation, int role) const
@@ -352,7 +354,7 @@ int cRecordTreeModel::updateRec(const QModelIndex& mi, cRecord *pRec)
         QMessageBox::warning(recordView.pWidget(), trUtf8("Hibás adatok"), trUtf8("Nem megengedett szülő megadása. Hurok a fában."));
         return 0;
     }
-    if (!cErrorMessageBox::condMsgBox(pRec->tryUpdate(*pq, false))) {
+    if (!cErrorMessageBox::condMsgBox(pRec->tryUpdateById(*pq))) {
         return 0;
     }
     int row = mi.row(); // A modosított rekord eredeti sorszáma a parentjében

@@ -110,6 +110,25 @@ CREATE TYPE aggregatetype AS ENUM (
 ALTER TYPE aggregatetype OWNER TO lanview2;
 
 --
+-- Name: alarmmessagetext; Type: TYPE; Schema: public; Owner: lanview2
+--
+
+CREATE TYPE alarmmessagetext AS ENUM (
+    'message',
+    'short_msg'
+);
+
+
+ALTER TYPE alarmmessagetext OWNER TO lanview2;
+
+--
+-- Name: TYPE alarmmessagetext; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON TYPE alarmmessagetext IS 'In table "error_messages", because of the localization of languages, the names of text fields stored in the "localizations" table.';
+
+
+--
 -- Name: datacharacter; Type: TYPE; Schema: public; Owner: lanview2
 --
 
@@ -131,7 +150,8 @@ CREATE TYPE datacharacter AS ENUM (
     'warning',
     'error',
     'not_permit',
-    'have_no'
+    'have_no',
+    'text'
 );
 
 
@@ -174,6 +194,44 @@ CREATE TYPE drawtype AS ENUM (
 
 
 ALTER TYPE drawtype OWNER TO lanview2;
+
+--
+-- Name: enumvaltext; Type: TYPE; Schema: public; Owner: lanview2
+--
+
+CREATE TYPE enumvaltext AS ENUM (
+    'view_long',
+    'view_short',
+    'tool_tip'
+);
+
+
+ALTER TYPE enumvaltext OWNER TO lanview2;
+
+--
+-- Name: TYPE enumvaltext; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON TYPE enumvaltext IS 'In table "enum_vals", because of the localization of languages, the names of text fields stored in the "localizations" table.';
+
+
+--
+-- Name: errortext; Type: TYPE; Schema: public; Owner: lanview2
+--
+
+CREATE TYPE errortext AS ENUM (
+    'error_title'
+);
+
+
+ALTER TYPE errortext OWNER TO lanview2;
+
+--
+-- Name: TYPE errortext; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON TYPE errortext IS 'In table "errors", because of the localization of languages, the names of text fields stored in the "localizations" table.';
+
 
 --
 -- Name: errtype; Type: TYPE; Schema: public; Owner: lanview2
@@ -491,6 +549,27 @@ suspect	Gyanús, az észleléskor hibákat jelzett a port
 link	Megfeleltethető egy logikai linknek
 lldp	Megfeleltethető egy LLDP linknek (?!).
 ';
+
+
+--
+-- Name: menuitemtext; Type: TYPE; Schema: public; Owner: lanview2
+--
+
+CREATE TYPE menuitemtext AS ENUM (
+    'menu_title',
+    'tab_title',
+    'tool_tip',
+    'whats_this'
+);
+
+
+ALTER TYPE menuitemtext OWNER TO lanview2;
+
+--
+-- Name: TYPE menuitemtext; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON TYPE menuitemtext IS 'In table "menu_items", because of the localization of languages, the names of text fields stored in the "localizations" table.';
 
 
 --
@@ -907,6 +986,22 @@ COMMENT ON TYPE subnettype IS 'Egy subnet típusa
 
 
 --
+-- Name: tablefortext; Type: TYPE; Schema: public; Owner: lanview2
+--
+
+CREATE TYPE tablefortext AS ENUM (
+    'alarm_messages',
+    'errors',
+    'enum_vals',
+    'menu_items',
+    'table_shapes',
+    'table_shape_fields'
+);
+
+
+ALTER TYPE tablefortext OWNER TO lanview2;
+
+--
 -- Name: tableinherittype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
@@ -937,6 +1032,49 @@ reverse     Az ősöket is meg kell jeleníteni
 listed      Csak a felsorolt leszármazottak megjelenítése
 listed_rev  Csak a felsorolt ősök megjelenítése
 listed_all  Csak a felsorolt leszármazottak és ősök megjelenítése';
+
+
+--
+-- Name: tableshapefieldtext; Type: TYPE; Schema: public; Owner: lanview2
+--
+
+CREATE TYPE tableshapefieldtext AS ENUM (
+    'table_title',
+    'dialog_title',
+    'tool_tip',
+    'whats_this'
+);
+
+
+ALTER TYPE tableshapefieldtext OWNER TO lanview2;
+
+--
+-- Name: TYPE tableshapefieldtext; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON TYPE tableshapefieldtext IS 'In table "table_shape_fields", because of the localization of languages, the names of text fields stored in the "localizations" table.';
+
+
+--
+-- Name: tableshapetext; Type: TYPE; Schema: public; Owner: lanview2
+--
+
+CREATE TYPE tableshapetext AS ENUM (
+    'table_title',
+    'dialog_title',
+    'dialog_tab_title',
+    'member_title',
+    'not_member_title'
+);
+
+
+ALTER TYPE tableshapetext OWNER TO lanview2;
+
+--
+-- Name: TYPE tableshapetext; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON TYPE tableshapetext IS 'In table "table_shapes", because of the localization of languages, the names of text fields stored in the "localizations" table.';
 
 
 --
@@ -999,7 +1137,8 @@ ALTER TYPE templatetype OWNER TO lanview2;
 CREATE TYPE unusualfkeytype AS ENUM (
     'property',
     'self',
-    'owner'
+    'owner',
+    'text'
 );
 
 
@@ -1009,11 +1148,11 @@ ALTER TYPE unusualfkeytype OWNER TO lanview2;
 -- Name: TYPE unusualfkeytype; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE unusualfkeytype IS 'Az adatbázisban nem természetes módon definiált távoli kulcsok/hivatkozások típusa:
-property    Normál, egy tulajdonségra mutató kulcs
-self        Nem igazi távoli kulcs, saját (esetleg a leszármazott) táblára mutat
-owner       Szülő objektumra mutató kulcs
-';
+COMMENT ON TYPE unusualfkeytype IS 'SQL-supported and non-supported foreign keys types:
+"property"    A foreign key pointing to a property
+"self"        A foreign key pointing to the same type of parent (tree)
+"owner"       The foreign key to the owner
+"text"        Text ID';
 
 
 --
@@ -1131,12 +1270,14 @@ CREATE FUNCTION alarm_message(sid bigint, st notifswitch) RETURNS text
     LANGUAGE plpgsql
     AS $_$
 DECLARE
-    msg         text; 
+    msg         text;
     hs          host_services;
     stid        bigint;
     s           services;
     n           nodes;
     pl          places;
+    lid		integer;
+    tid         bigint DEFAULT NULL;         -- text id
 BEGIN
     SELECT * INTO hs FROM host_services WHERE host_service_id = sid;
     IF NOT FOUND THEN
@@ -1148,15 +1289,28 @@ BEGIN
         PERFORM error('IdNotFound', hs.service_id, 'service_id', 'alarm_message()', 'services');
     END IF;
     
-    SELECT message INTO msg FROM alarm_messages WHERE service_type_id = s.service_type_id AND status = st;
+    SELECT text_id INTO tid FROM alarm_messages WHERE service_type_id = s.service_type_id AND status = st;
     IF NOT FOUND THEN
-        SELECT message INTO msg FROM alarm_messages WHERE service_type_id = -1 AND status = st; -- service_type = unmarked
+        SELECT text_id INTO tid FROM alarm_messages WHERE service_type_id = -1 AND status = st; -- service_type = unmarked
+    END IF;
+    -- RAISE INFO 'text_id = %', tid;
+    IF tid IS NOT NULL THEN
+	lid = get_language_id();
+	-- RAISE INFO 'Get text, lid = %', lid;
+        SELECT texts[1] INTO msg FROM localizations WHERE text_id = tid AND table_for_text = 'alarm_messages' AND language_id = lid;
         IF NOT FOUND THEN
-            msg := '$hs.name is $st';
+            -- RAISE INFO 'localization (%) text (%) not found', lid, tid;
+            msg := COALESCE(
+                (SELECT texts[1] FROM localizations WHERE text_id = tid AND table_for_text = 'alarm_messages' AND language_id = get_int_sys_param('default_language')),
+                (SELECT texts[1] FROM localizations WHERE text_id = tid AND table_for_text = 'alarm_messages' AND language_id = get_int_sys_param('failower_language')));
         END IF;
     END IF;
+    IF msg IS NULL THEN
+	-- RAISE INFO 'localization text not found, set default';
+        msg := '$hs.name is $st';
+    END IF;
 
-    msg := replace(msg, '$st',       st::text);
+    msg := replace(msg, '$st', st::text);
     IF msg LIKE '%$hs.%' THEN 
         IF msg LIKE '%$hs.name%' THEN
             msg := replace(msg, '$hs.name',  host_service_id2name(hs.host_service_id));
@@ -1181,7 +1335,7 @@ BEGIN
         IF msg LIKE '%$pl.%' THEN
             SELECT * INTO pl FROM placess WHERE place_id = n.place_id;
             IF NOT FOUND THEN
-                PERFORM error('IdNotFound', n.place_id, 'plaxe_id', 'alarm_message()', 'places');
+                PERFORM error('IdNotFound', n.place_id, 'place_id', 'alarm_message()', 'places');
             END IF;
             msg := replace(msg, '$pl.name',     pl.place_name);
             msg := replace(msg, '$pl.note',     COALESCE(pl.place_note, ''));
@@ -1344,6 +1498,42 @@ Paraméterek
     re  A log rekordba irandó ok, alapértelmezetten ez a "remove".
 Nincs visszatérési érték.';
 
+
+--
+-- Name: check_after_localization_text(); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION check_after_localization_text() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $_$
+DECLARE
+    n integer;
+BEGIN
+    IF TG_OP = 'UPDATE' THEN
+        IF NEW.text_id <> OLD.text_id THEN
+            PERFORM error('Constant', OLD.text_id, NEW.text_id::text, 'text_id', TG_TABLE_NAME, TG_OP);
+        END IF;
+        IF NEW.table_for_text <> OLD.table_for_text THEN
+            PERFORM error('Constant', NEW.text_id, OLD.table_for_text || ' - ' || NEW.table_for_text, 'table_for_text', TG_TABLE_NAME, TG_OP);
+        END IF;
+    END IF;
+    EXECUTE 'SELECT count(*) FROM ' || NEW.table_for_text || ' WHERE text_id = $1'
+        INTO n
+        USING NEW.text_id;
+    IF n <> 1  THEN
+        IF n > 1 THEN
+            PERFORM error('IdNotUni', NEW.text_id, NEW.text_type, 'text_type', TG_TABLE_NAME, TG_OP);
+        ELSE
+            PERFORM error('IdNotFound', NEW.text_id, NEW.text_type, 'text_type', TG_TABLE_NAME, TG_OP);
+        END IF;
+        RETURN NULL;
+    END IF;
+    RETURN NEW;
+END;
+$_$;
+
+
+ALTER FUNCTION public.check_after_localization_text() OWNER TO lanview2;
 
 --
 -- Name: check_host_services(); Type: FUNCTION; Schema: public; Owner: lanview2
@@ -2313,6 +2503,22 @@ $$;
 ALTER FUNCTION public.delete_port_post() OWNER TO lanview2;
 
 --
+-- Name: delete_record_text(); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION delete_record_text() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    DELETE FROM localizations WHERE text_id = OLD.text_id AND table_for_text = TG_TABLE_NAME;
+    RETURN OLD;
+END;
+$$;
+
+
+ALTER FUNCTION public.delete_record_text() OWNER TO lanview2;
+
+--
 -- Name: dow2int(dayofweek); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
@@ -2445,6 +2651,20 @@ COMMENT ON FUNCTION error(text, bigint, text, text, text, text) IS 'Egy hiba rek
 
 
 --
+-- Name: text_id_sequ; Type: SEQUENCE; Schema: public; Owner: lanview2
+--
+
+CREATE SEQUENCE text_id_sequ
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE text_id_sequ OWNER TO lanview2;
+
+--
 -- Name: errors; Type: TABLE; Schema: public; Owner: lanview2
 --
 
@@ -2452,7 +2672,8 @@ CREATE TABLE errors (
     error_id bigint NOT NULL,
     error_name text NOT NULL,
     error_note text,
-    error_type errtype NOT NULL
+    error_type errtype NOT NULL,
+    text_id bigint DEFAULT nextval('text_id_sequ'::regclass) NOT NULL
 );
 
 
@@ -2897,6 +3118,25 @@ $$;
 
 
 ALTER FUNCTION public.get_interval_sys_param(pname text) OWNER TO lanview2;
+
+--
+-- Name: get_language_id(); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION get_language_id() RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    RETURN CAST(current_setting('lanview2.language_id') AS integer);
+    EXCEPTION
+        WHEN OTHERS THEN
+            RETURN COALESCE(get_int_sys_param('default_language'), get_int_sys_param('failower_language'));
+    RETURN id;
+END;
+$$;
+
+
+ALTER FUNCTION public.get_language_id() OWNER TO lanview2;
 
 --
 -- Name: get_parent_image(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
@@ -3506,6 +3746,27 @@ vagy valamelyik parentje tag-e';
 
 
 --
+-- Name: language_id2code(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION language_id2code(lid bigint) RETURNS text
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    n text;
+BEGIN
+    SELECT lang_2 || '_' || country_a2 INTO n FROM languages WHERE language_id = lid;
+    IF NOT FOUND THEN
+        PERFORM error('IdNotFound', lid, 'language_id', 'language_id2name()', 'languages');
+    END IF;
+    RETURN n;
+END;
+$$;
+
+
+ALTER FUNCTION public.language_id2code(lid bigint) OWNER TO lanview2;
+
+--
 -- Name: link_type(bigint, bigint, linktype); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
@@ -3556,6 +3817,67 @@ $_$;
 
 
 ALTER FUNCTION public.link_type12(linktype, linktype) OWNER TO lanview2;
+
+--
+-- Name: localizations; Type: TABLE; Schema: public; Owner: lanview2
+--
+
+CREATE TABLE localizations (
+    text_id bigint NOT NULL,
+    table_for_text tablefortext NOT NULL,
+    language_id integer NOT NULL,
+    texts text[] NOT NULL
+);
+
+
+ALTER TABLE localizations OWNER TO lanview2;
+
+--
+-- Name: localization_texts(bigint, tablefortext); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION localization_texts(tid bigint, tft tablefortext) RETURNS localizations
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    r   localizations;
+    lid integer;
+    lidd integer;
+    lidf integer;
+BEGIN
+    lid := get_language_id();	-- actual
+    SELECT * INTO r FROM localizations WHERE text_id = tid AND language_id = lid;
+    IF FOUND THEN
+        RETURN r;
+    END IF;
+    lidd := get_int_sys_param('default_language');	-- default
+    IF lid <> lidd THEN
+        SELECT * INTO r FROM localizations WHERE text_id = tid AND table_for_text = tft AND language_id = lidd;
+        IF FOUND THEN
+            RETURN r;
+        END IF;
+    END IF;
+    lidf := get_int_sys_param('failower_language');	-- failower
+    IF lid <> lidf AND lidd <> lidf THEN
+        SELECT * INTO r FROM localizations WHERE text_id = tid AND table_for_text = tft AND language_id = lidf;
+        IF FOUND THEN
+            RETURN r;
+        END IF;
+    END IF;
+    -- any
+    SELECT * INTO r FROM localizations WHERE text_id = tid AND table_for_text = tft LIMIT 1;
+    IF FOUND THEN
+        RETURN r;
+    END IF;
+    r.text_id := tid;
+    r.language_id := lid;
+    -- r.texts := ARRAY['Unknown text id ' || tft || '#' || tid::text];
+    return r;
+END;
+$$;
+
+
+ALTER FUNCTION public.localization_texts(tid bigint, tft tablefortext) OWNER TO lanview2;
 
 --
 -- Name: mactab; Type: TABLE; Schema: public; Owner: lanview2
@@ -3696,6 +4018,27 @@ ALTER FUNCTION public.min_shared(portshare, portshare) OWNER TO lanview2;
 
 COMMENT ON FUNCTION min_shared(portshare, portshare) IS 'Legkisebb SHARE meghatározása, ha a két share kombináció nem ad semmilyen összeköttetést, akkor NC';
 
+
+--
+-- Name: names2language_id(character varying, character varying); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION names2language_id(c character varying, l character varying) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    id integer;
+BEGIN
+    SELECT language_id INTO id FROM languages WHERE l = lang_2 AND c = country_a2;
+    IF NOT FOUND THEN
+        PERFORM error('NameNotFound', -1, c || '_' || l, 'names2language_id()', 'languages');
+    END IF;
+    RETURN id;
+END;
+$$;
+
+
+ALTER FUNCTION public.names2language_id(c character varying, l character varying) OWNER TO lanview2;
 
 --
 -- Name: next_dow(dayofweek); Type: FUNCTION; Schema: public; Owner: lanview2
@@ -5341,6 +5684,51 @@ $$;
 ALTER FUNCTION public.set_interval_sys_param(pname text, ival interval, tname text) OWNER TO lanview2;
 
 --
+-- Name: set_language(integer); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION set_language(id integer) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    PERFORM set_config('lanview2.language_id', id::text, false);
+    RETURN id;
+END;
+$$;
+
+
+ALTER FUNCTION public.set_language(id integer) OWNER TO lanview2;
+
+--
+-- Name: set_language(character varying, character varying); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION set_language(l character varying, c character varying DEFAULT NULL::character varying) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    id integer;
+BEGIN
+    IF c IS NULL THEN
+        id := language_id FROM languages WHERE l = lang_2 LIMIT 1;
+    ELSE 
+        id := COALESCE(
+            (SELECT language_id FROM languages WHERE l = lang_2 AND c = country_a2),
+            (SELECT language_id FROM languages WHERE l = lang_2 LIMIT 1),
+            (SELECT language_id FROM languages WHERE c = country_a2 LIMIT 1));
+    END IF;
+    IF id IS NULL THEN
+        id := COALESCE(get_int_sys_param('default_language'), get_int_sys_param('failower_language'));
+    END IF;
+    PERFORM set_config('lanview2.language_id', id::text, false);
+    RETURN id;
+END;
+$$;
+
+
+ALTER FUNCTION public.set_language(l character varying, c character varying) OWNER TO lanview2;
+
+--
 -- Name: set_service_stat(bigint, notifswitch, text, bigint, boolean); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
@@ -6431,8 +6819,7 @@ ALTER FUNCTION public.xor(boolean, boolean) OWNER TO lanview2;
 CREATE TABLE alarm_messages (
     service_type_id bigint NOT NULL,
     status notifswitch NOT NULL,
-    short_msg text NOT NULL,
-    message text NOT NULL
+    text_id bigint DEFAULT nextval('text_id_sequ'::regclass) NOT NULL
 );
 
 
@@ -6457,20 +6844,6 @@ COMMENT ON COLUMN alarm_messages.service_type_id IS 'Melyik szervíz típushoz/c
 --
 
 COMMENT ON COLUMN alarm_messages.status IS 'Milyen állapothoz tartozik a riasztási üzenet.';
-
-
---
--- Name: COLUMN alarm_messages.short_msg; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN alarm_messages.short_msg IS 'Rövide üzenet';
-
-
---
--- Name: COLUMN alarm_messages.message; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN alarm_messages.message IS 'Részletes üzenet minta.';
 
 
 --
@@ -7095,11 +7468,9 @@ CREATE TABLE enum_vals (
     enum_type_name text NOT NULL,
     bg_color text,
     fg_color text,
-    view_short text,
-    view_long text,
-    tool_tip text,
     font_family text,
-    font_attr fontattr[]
+    font_attr fontattr[],
+    text_id bigint DEFAULT nextval('text_id_sequ'::regclass) NOT NULL
 );
 
 
@@ -7229,35 +7600,35 @@ ALTER TABLE fkey_types OWNER TO lanview2;
 -- Name: TABLE fkey_types; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE fkey_types IS 'A távoli kulcsok típusát definiáló tábla (a nem property tíousoknál)';
+COMMENT ON TABLE fkey_types IS 'The table defining the type of foreign keys (for non property ties)';
 
 
 --
 -- Name: COLUMN fkey_types.table_schema; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN fkey_types.table_schema IS 'A tábla séma neve, melyben a hivatkozó mezőt definiáljuk';
+COMMENT ON COLUMN fkey_types.table_schema IS 'The name of the foreign key scheme';
 
 
 --
 -- Name: COLUMN fkey_types.table_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN fkey_types.table_name IS 'A tábla neve, melyben a hivatkozó mezőt definiáljuk';
+COMMENT ON COLUMN fkey_types.table_name IS 'The name of the foreign key table';
 
 
 --
 -- Name: COLUMN fkey_types.column_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN fkey_types.column_name IS 'A hivatkozó/mutató mező neve';
+COMMENT ON COLUMN fkey_types.column_name IS 'The name of the foreign key, or enum type name if type is text';
 
 
 --
 -- Name: COLUMN fkey_types.unusual_fkeys_type; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN fkey_types.unusual_fkeys_type IS 'A hivatkozás/távoli kulcs típusa';
+COMMENT ON COLUMN fkey_types.unusual_fkeys_type IS 'The remote key type';
 
 
 --
@@ -8040,6 +8411,81 @@ ALTER SEQUENCE ipaddresses_ip_address_id_seq OWNED BY ip_addresses.ip_address_id
 
 
 --
+-- Name: languages; Type: TABLE; Schema: public; Owner: lanview2
+--
+
+CREATE TABLE languages (
+    language_id integer NOT NULL,
+    language_name text NOT NULL,
+    lang_id integer NOT NULL,
+    country_id integer NOT NULL,
+    country_a2 character varying(2) NOT NULL,
+    lang_2 character varying(2) NOT NULL,
+    lang_3 character varying(3) NOT NULL,
+    flag_image bigint,
+    next_id integer
+);
+
+
+ALTER TABLE languages OWNER TO lanview2;
+
+--
+-- Name: COLUMN languages.lang_id; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN languages.lang_id IS 'Qt enum QLocale::Language';
+
+
+--
+-- Name: COLUMN languages.country_id; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN languages.country_id IS 'Qt enum QLocale::Country';
+
+
+--
+-- Name: COLUMN languages.country_a2; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN languages.country_a2 IS 'ISO Alpha-2';
+
+
+--
+-- Name: COLUMN languages.lang_2; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN languages.lang_2 IS 'ISO 639-1';
+
+
+--
+-- Name: COLUMN languages.lang_3; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN languages.lang_3 IS 'ISO 639-5';
+
+
+--
+-- Name: languages_language_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
+--
+
+CREATE SEQUENCE languages_language_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE languages_language_id_seq OWNER TO lanview2;
+
+--
+-- Name: languages_language_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
+--
+
+ALTER SEQUENCE languages_language_id_seq OWNED BY languages.language_id;
+
+
+--
 -- Name: lldp_links_table; Type: TABLE; Schema: public; Owner: lanview2
 --
 
@@ -8589,12 +9035,9 @@ CREATE TABLE menu_items (
     app_name text NOT NULL,
     upper_menu_item_id bigint,
     item_sequence_number integer,
-    menu_title text NOT NULL,
-    tab_title text,
     features text,
-    tool_tip text,
-    whats_this text,
-    menu_rights rights DEFAULT 'none'::rights NOT NULL
+    menu_rights rights DEFAULT 'none'::rights NOT NULL,
+    text_id bigint DEFAULT nextval('text_id_sequ'::regclass) NOT NULL
 );
 
 
@@ -8640,20 +9083,6 @@ COMMENT ON COLUMN menu_items.upper_menu_item_id IS 'Al menű esetén az elemet t
 --
 
 COMMENT ON COLUMN menu_items.item_sequence_number IS 'A sorrendet meghatározó szám';
-
-
---
--- Name: COLUMN menu_items.menu_title; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN menu_items.menu_title IS 'Megjelenített név.';
-
-
---
--- Name: COLUMN menu_items.tab_title; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN menu_items.tab_title IS 'A megjelenített tab neve.';
 
 
 --
@@ -10220,8 +10649,6 @@ CREATE TABLE table_shape_fields (
     table_shape_field_id bigint NOT NULL,
     table_shape_field_name text NOT NULL,
     table_shape_field_note text,
-    table_title text,
-    dialog_title text,
     table_shape_id bigint NOT NULL,
     field_sequence_number integer NOT NULL,
     ord_types ordtype[],
@@ -10231,12 +10658,11 @@ CREATE TABLE table_shape_fields (
     expression text,
     default_value text,
     features text,
-    tool_tip text,
-    whats_this text,
     view_rights rights,
     edit_rights rights,
     flag boolean DEFAULT false,
-    filter_types filtertype[]
+    filter_types filtertype[],
+    text_id bigint DEFAULT nextval('text_id_sequ'::regclass) NOT NULL
 );
 
 
@@ -10268,20 +10694,6 @@ COMMENT ON COLUMN table_shape_fields.table_shape_field_name IS 'Mező név, a qu
 --
 
 COMMENT ON COLUMN table_shape_fields.table_shape_field_note IS 'A mező dialog box-ban megjelenő neve';
-
-
---
--- Name: COLUMN table_shape_fields.table_title; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN table_shape_fields.table_title IS 'Megjelenített mező (oszlop) cím';
-
-
---
--- Name: COLUMN table_shape_fields.dialog_title; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN table_shape_fields.dialog_title IS 'Megjelenített mező név a dialogusban';
 
 
 --
@@ -10390,11 +10802,6 @@ CREATE TABLE table_shapes (
     table_shape_id bigint NOT NULL,
     table_shape_name text NOT NULL,
     table_shape_note text,
-    table_title text,
-    dialog_title text,
-    dialog_tab_title text,
-    member_title text,
-    not_member_title text,
     table_shape_type tableshapetype[] DEFAULT '{simple}'::tableshapetype[],
     table_name text NOT NULL,
     schema_name text DEFAULT 'public'::text NOT NULL,
@@ -10408,7 +10815,8 @@ CREATE TABLE table_shapes (
     edit_rights rights DEFAULT 'operator'::rights,
     insert_rights rights DEFAULT 'operator'::rights,
     remove_rights rights DEFAULT 'admin'::rights,
-    style_sheet text
+    style_sheet text,
+    text_id bigint DEFAULT nextval('text_id_sequ'::regclass) NOT NULL
 );
 
 
@@ -10440,27 +10848,6 @@ COMMENT ON COLUMN table_shapes.table_shape_name IS 'A shape neve, egyedi azonos�
 --
 
 COMMENT ON COLUMN table_shapes.table_shape_note IS 'A shape leírása ill. megjegyzés.';
-
-
---
--- Name: COLUMN table_shapes.table_title; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN table_shapes.table_title IS 'A táblázat címe.';
-
-
---
--- Name: COLUMN table_shapes.dialog_title; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN table_shapes.dialog_title IS 'A dialógus címe.';
-
-
---
--- Name: COLUMN table_shapes.dialog_tab_title; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN table_shapes.dialog_tab_title IS 'A tab címe, dialógus esetén (öröklés)';
 
 
 --
@@ -11114,6 +11501,13 @@ ALTER TABLE ONLY ip_addresses ALTER COLUMN ip_address_id SET DEFAULT nextval('ip
 
 
 --
+-- Name: language_id; Type: DEFAULT; Schema: public; Owner: lanview2
+--
+
+ALTER TABLE ONLY languages ALTER COLUMN language_id SET DEFAULT nextval('languages_language_id_seq'::regclass);
+
+
+--
 -- Name: lldp_link_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
@@ -11411,19 +11805,19 @@ ALTER TABLE ONLY users ALTER COLUMN user_id SET DEFAULT nextval('users_user_id_s
 -- Data for Name: alarm_messages; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY alarm_messages (service_type_id, status, short_msg, message) FROM stdin;
-20	down	Kikapcsolva.	A kontroller nem üzemel, az érzékelők állapota ismeretlen. Nincs védelem!
-20	unreachable	Nem elérhető.	A kontroller nem elérhető, az érzékelő adatok nem megbízhatóak. Nincs védelem!
-20	critical	Kritikus hiba.	Kontroller hiba, az érzékelők állpota ismeretlen. Nincs védelem!
-20	warning	Kontroller hiba	A kontroller hibát jelzett, az érzékelő adatok nem megbízhatóak. A védelem nem megbízható!
-20	unknown	Ismeretlen	A kontroller állpota ismeretlen. Nincs védelem!
-20	flapping	Billeg	A kontroller ismételt hibát jelzett, az érzékelő adatok nem megbízhatóak. A védelem nem megbízható!
-25	warning	Letíltva	Az érzékelés letíltva, állapot ismeretlen
-25	down	Nincs jelen	Az eszköz jelenléte nem érzékelhető
-25	unreachable	Ismeretlen	Az érzékelő ill. port állpota ismeretlen, nem elérhető, az eszköz jelenléte nem ismert
-25	unknown	Ismeretlen	Az érzékelő ill. port állpota ismeretlen, az eszköz jelenléte nem ismert
-25	flapping	Billeg	Az érzékelő ill. port állapota változó, billeg. A további riasztások letiltva.
-25	critical	Ismeretlen	Az érzékelő ill port állpota ismeretlen, hibás, az eszköz jelenléte nem ismert
+COPY alarm_messages (service_type_id, status, text_id) FROM stdin;
+20	down	1
+20	unreachable	2
+20	critical	3
+20	warning	4
+20	unknown	5
+20	flapping	6
+25	warning	7
+25	down	8
+25	unreachable	9
+25	unknown	10
+25	flapping	11
+25	critical	12
 \.
 
 
@@ -11439,7 +11833,7 @@ COPY alarms (alarm_id, host_service_id, daemon_id, first_status, max_status, las
 -- Name: alarms_alarm_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('alarms_alarm_id_seq', 66438, true);
+SELECT pg_catalog.setval('alarms_alarm_id_seq', 66439, true);
 
 
 --
@@ -11507,7 +11901,7 @@ COPY db_errs (dblog_id, date_of, error_id, user_id, table_name, trigger_op, err_
 -- Name: db_errs_dblog_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('db_errs_dblog_id_seq', 101275, true);
+SELECT pg_catalog.setval('db_errs_dblog_id_seq', 101283, true);
 
 
 --
@@ -11544,117 +11938,117 @@ SELECT pg_catalog.setval('dyn_ipaddress_logs_dyn_ipaddress_log_id_seq', 9214, tr
 -- Data for Name: enum_vals; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY enum_vals (enum_val_id, enum_val_name, enum_val_note, enum_type_name, bg_color, fg_color, view_short, view_long, tool_tip, font_family, font_attr) FROM stdin;
-1868	on	rendben	notifswitch	#00ff00	\N	on	rendben	\N	\N	{underline}
-1934	pseudo		addresstype	\N	#c800c8	hamis	Nem valós IP cím	Nem valós IP cím. Egyébb azonosítási szerep, vagy címzés	\N	{strikeout}
-1933	dynamic	\N	addresstype	\N	#d28800	dinamikus	Dinamikusan kiosztott IP cím	Dinamikusan kiosztott (állt. DHCP) IP cím.	\N	{italic}
-1861	sunday	vasárnap	dayofweek	red	\N	sunday	vasárnap	\N	\N	\N
-1867	saturday	szombat	dayofweek	yellow	\N	saturday	szombat	\N	\N	\N
-1900	on	Letiltva	noalarmtype	red	\N	on	Letiltva	\N	\N	\N
-1869	recovered	helyreállt	notifswitch	#aaff00	\N	recovered	helyreállt	\N	\N	\N
-1870	warning	figyelmeztetés	notifswitch	yellow	\N	warning	figyelmeztetés	\N	\N	\N
-1959		datacharacter	datacharacter	\N	\N	datacharacter	datacharacter		\N	\N
-1905	head	\N	datacharacter	\N	#000000	head	head	\N	\N	\N
-1906	data	\N	datacharacter	\N	#000000	data	data	\N	\N	{}
-1871	critical	kritikus	notifswitch	red	\N	critical	kritikus	\N	\N	\N
-1872	unreachable	nem válaszol	notifswitch	#c00000	\N	unreachable	nem válaszol	\N	\N	\N
-1873	down	kikapcsolva	notifswitch	#ffaa00	\N	down	kikapcsolva	\N	\N	\N
-1907	id	\N	datacharacter	\N	#aa0000	id	id	Numerikus objektum azonosító	\N	{underline}
-1908	name	\N	datacharacter	\N	#005500	name	name	\N	\N	{bold}
-1909	primary	\N	datacharacter	\N	#000000	primary	primary	\N	\N	{}
-1910	key	\N	datacharacter	\N	#5500ff	key	key	\N	\N	{}
-1911	fname	\N	datacharacter	\N	#000000	fname	fname	\N	\N	{}
-1912	derived	\N	datacharacter	\N	#aa00ff	derived	derived	\N	\N	{italic}
-1913	tree	\N	datacharacter	\N	#000000	tree	tree	\N	\N	{}
-1914	foreign	\N	datacharacter	\N	#5500ff	foreign	foreign	\N	\N	{}
-1915	null	\N	datacharacter	\N	#ff55ff	null	null	\N	\N	{strikeout}
-1916	default	\N	datacharacter	\N	#ff55ff	alapértelmezett	Alapértelmezett érték	\N	\N	{italic,strikeout}
-1917	auto	\N	datacharacter	\N	#ff55ff	automatikus	Automatikus értékadás	Automatikus értékadás	\N	{italic,strikeout}
-1918	info	\N	datacharacter	\N	#000000	információ	Információ	\N	\N	{}
-1919	warning	\N	datacharacter	\N	#ffaa00	Figyelmeztetés	Figyelmeztetés	\N	\N	{bold}
-1920	error	\N	datacharacter	\N	#ff0000	Hiba	Hiba	\N	\N	{bold,underline}
-1943	simple	\N	tableshapetype	\N	\N	egyszerű	simple	\N	\N	\N
-1944	tree	\N	tableshapetype	\N	\N	Fa	tree	\N	\N	\N
-1945	bare	\N	tableshapetype	\N	\N	alap	bare	\N	\N	\N
-1946	owner	\N	tableshapetype	\N	\N	owner	owner	\N	\N	\N
-1947	child	\N	tableshapetype	\N	\N	child	child	\N	\N	\N
-1948	link	\N	tableshapetype	\N	\N	link	link	\N	\N	\N
-1949	dialog	\N	tableshapetype	\N	\N	dialog	dialog	\N	\N	\N
-1950	table	\N	tableshapetype	\N	\N	table	table	\N	\N	\N
-1951	member	\N	tableshapetype	\N	\N	member	member	\N	\N	\N
-1862	monday	hétfő	dayofweek	\N	\N	monday	hétfő	\N	\N	\N
-1863	tuesday	kedd	dayofweek	\N	\N	tuesday	kedd	\N	\N	\N
-1864	wednesday	szerda	dayofweek	\N	\N	wednesday	szerda	\N	\N	\N
-1865	thursday	csütörtök	dayofweek	\N	\N	thursday	csütörtök	\N	\N	\N
-1866	friday	péntek	dayofweek	\N	\N	friday	péntek	\N	\N	\N
-1952	group	\N	tableshapetype	\N	\N	group	group	\N	\N	\N
-1953	read_only	\N	tableshapetype	\N	\N	read_only	read_only	\N	\N	\N
-1954	Fatal	\N	errtype	#ff0000	\N	Fatal	Fatal	\N	\N	\N
-1955	Error	\N	errtype	#ffaa7f	\N	Error	Error	\N	\N	\N
-1956	Warning	\N	errtype	#ffff00	\N	Warning	Warning	\N	\N	\N
-1899	off	Engedélyezve	noalarmtype	#00ff00	\N	off	Engedélyezve	\N	\N	\N
-1957	Ok	\N	errtype	#00ff00	\N	Ok	Ok	\N	\N	\N
-1958		addresstype	addresstype	\N	\N	addresstype	addresstype		\N	\N
-1904	fixip		addresstype	\N	\N	Fix IP	Fix IP		\N	{bold,underline}
-1931	private	\N	addresstype	\N	#00007f	private	Lokális egyedi cím	Lokális helyi cím. Csak néhány eszköz számára elérhető.	\N	{strikeout}
-1932	external	\N	addresstype	\N	#aa0000	külső	Külső IP cím	Hálózaton (intranet) kívüli IP cím	\N	{bold}
-1879	operator	operátor	rights	#ffaa00	\N	operator	operátor	\N	\N	\N
-1877	viewer	megfigyelő	rights	#aaff00	\N	viewer	megfigyelő	\N	\N	\N
-1876	none	jogosulatlan	rights	#00ff00	\N	none	jogosulatlan	\N	\N	\N
-1896	real	Valós hely	placetype	\N	\N	real	Valós hely	\N	\N	\N
-1895	false	A host_services.disabled boolean mező igaz értékéhez rendelt szín	host_services.disabled	#00ff00	\N	engedélyezve	Nincs letíltva a szolgáltatás példány		\N	{italic}
-1940	listed	\N	tableinherittype	\N	\N	listed	listed	\N	\N	\N
-1878	indalarm	rendész	rights	yellow	\N	indalarm	rendész	\N	\N	\N
-1941	listed_rev	\N	tableinherittype	\N	\N	listed_rev	listed_rev	\N	\N	\N
-1880	admin	adminisztrátor	rights	red	\N	admin	adminisztrátor	\N	\N	\N
-1881	system	rendszer	rights	magenta	\N	system	rendszer	\N	\N	\N
-1897	unknown	Ismeretlen	placetype	yellow	\N	unknown	Ismeretlen	\N	\N	\N
-1901	to	Időpontig tilt.	noalarmtype	yellow	\N	to	Időpontig tilt.	\N	\N	\N
-1902	from	Időponttól tilt.	noalarmtype	yellow	\N	from	Időponttól tilt.	\N	\N	\N
-1903	from_to	Intrval. tilt.	noalarmtype	yellow	\N	from_to	Intrval. tilt.	\N	\N	\N
-1898	root	Gyökér o.	placetype	cyan	\N	root	Gyökér o.	\N	\N	\N
-1942	listed_all	\N	tableinherittype	\N	\N	listed_all	listed_all	\N	\N	\N
-1923			iftypes.preferred	\N	\N				\N	\N
-1924	true	igen	iftypes.preferred	\N	\N	elsődleges	elsődleges cím		\N	{underline}
-1925	false	igen	iftypes.preferred	\N	#0000ff	másodlagos	másodlagos cím		\N	{italic}
-1921	not_permit		datacharacter	\N	#ff0000	nem elérhető	Az adat megtekintéséhez nincs elegendő jogosultsága.	Az adat megtekintéséhez nincs elegendő jogosultsága.	Ubuntu	{strikeout}
-1926			host_services.disabled	\N	\N				\N	\N
-1894	true	A host_services.disabled boolean mező igaz értékéhez rendelt szín	host_services.disabled	yellow	\N	letiltva	A szolgáltatás példány letiltva		\N	{underline}
-1922	have_no	\N	datacharacter	\N	#ff55ff	nincs	Nincs ilyen adat	Nincs ilyen adat.	\N	{strikeout}
-1960		filtertype	filtertype	\N	\N	filtertype	filtertype		\N	\N
-1882	begin	Szó eleji egyezés	filtertype	\N	\N	begin	Szó eleji egyezés	\N	\N	\N
-1930			services.disabled	\N	\N				\N	\N
-1892	true	A services.disabled boolean mező igaz értékéhez rendelt szín	services.disabled	#ffa050	\N	true	A szolgáltatás összes példánya le ven tiltva.	A szolgáltatás összes példánya le ven tiltva.	\N	\N
-1893	false	A services.disabled boolean mező igaz értékéhez rendelt szín	services.disabled	#7fff00	\N	true	A services.disabled boolean mező igaz értékéhez rendelt szín	A szolgáltatás példányai nincsenek egységesen letiltva.	\N	\N
-1927			services.deleted	\N	\N			A szolgáltatás összes példánya le ven tiltva.	\N	\N
-1928	true		services.deleted	\N	\N				\N	\N
-1929	false		services.deleted	\N	\N				\N	\N
-1874	flapping	billeg	notifswitch	magenta	\N	flapping	billeg	\N	\N	\N
-1875	unknown	ismeretlen	notifswitch	#c0c0c0	\N	unknown	ismeretlen	\N	\N	{strikeout}
-1935	no	\N	tableinherittype	\N	\N	no	no	\N	\N	\N
-1936	only	\N	tableinherittype	\N	\N	only	only	\N	\N	\N
-1937	on	\N	tableinherittype	\N	\N	on	on	\N	\N	\N
-1938	all	\N	tableinherittype	\N	\N	all	all	\N	\N	\N
-1939	reverse	\N	tableinherittype	\N	\N	reverse	reverse	\N	\N	\N
-1883	like	Minta illesztés a LIKE operátorral	filtertype	\N	\N	like	Minta illesztés a LIKE operátorral	\N	\N	\N
-1884	similar	Minta illesztés a SIMILAR operátorral	filtertype	\N	\N	similar	Minta illesztés a SIMILAR operátorral	\N	\N	\N
-1885	regexp	Minta illesztés reguláris kifelyezéssel, nagybetű érzékeny	filtertype	\N	\N	regexp	Minta illesztés reguláris kifelyezéssel, nagybetű érzékeny	\N	\N	\N
-1886	regexpi	Minta illesztés reguláris kifelyezéssel, nem nagybetű érzékeny	filtertype	\N	\N	regexpi	Minta illesztés reguláris kifelyezéssel, nem nagybetű érzékeny	\N	\N	\N
-1887	big	Csak egy értéknél nagyobbakat	filtertype	\N	\N	big	Csak egy értéknél nagyobbakat	\N	\N	\N
-1888	litle	Csak egy értéknél kisebbeket	filtertype	\N	\N	litle	Csak egy értéknél kisebbeket	\N	\N	\N
-1889	interval	Csak a megadott két érték közöttiek	filtertype	\N	\N	interval	Csak a megadott két érték közöttiek	\N	\N	\N
-1890	proc	Szűrés egy magadott SQL függvénnyel	filtertype	\N	\N	proc	Szűrés egy magadott SQL függvénnyel	\N	\N	\N
-1891	SQL	A szürési feltétel megadása SQL nyelven	filtertype	\N	\N	SQL	A szürési feltétel megadása SQL nyelven	\N	\N	\N
-1961	boolean	\N	filtertype	\N	\N	boolean	Szűrés logikai értékre	\N	\N	\N
-1962	notbegin	\N	filtertype	\N	\N	notbegin	Szó eleji nem egyezés	\N	\N	\N
-1963	notlike	\N	filtertype	\N	\N	notlike	Like minta illesztés, nincs egyezés.	\N	\N	\N
-1964	notsimilar	\N	filtertype	\N	\N	notsimilar	Similar minta illesztés, nincs egyezés.	\N	\N	\N
-1965	notregexp	\N	filtertype	\N	\N	notregexp	Reguláris kifejezés, nincs egyezés.	\N	\N	\N
-1968			alarms.noalarm	\N	\N				\N	\N
-1969	true	igen	alarms.noalarm	#d3d7cf	\N	rejtett	Nincs valós riasztás		\N	\N
-1970	false	nem	alarms.noalarm	#fce94f	\N	riaszt	riaszt		\N	\N
-1966	notregexpi	\N	filtertype	\N	\N	notregexpi	Reguláris kifejezés, nem nagybetű érzékeny, nincs egyezés.	\N	\N	\N
-1967	notinterval	\N	filtertype	\N	\N	notinterval	A megadott értékhatáron kívüliek.	\N	\N	\N
+COPY enum_vals (enum_val_id, enum_val_name, enum_val_note, enum_type_name, bg_color, fg_color, font_family, font_attr, text_id) FROM stdin;
+1868	on	rendben	notifswitch	#00ff00	\N	\N	{underline}	44
+1934	pseudo		addresstype	\N	#c800c8	\N	{strikeout}	45
+1933	dynamic	\N	addresstype	\N	#d28800	\N	{italic}	46
+1861	sunday	vasárnap	dayofweek	red	\N	\N	\N	47
+1867	saturday	szombat	dayofweek	yellow	\N	\N	\N	48
+1900	on	Letiltva	noalarmtype	red	\N	\N	\N	49
+1869	recovered	helyreállt	notifswitch	#aaff00	\N	\N	\N	50
+1870	warning	figyelmeztetés	notifswitch	yellow	\N	\N	\N	51
+1959		datacharacter	datacharacter	\N	\N	\N	\N	52
+1905	head	\N	datacharacter	\N	#000000	\N	\N	53
+1906	data	\N	datacharacter	\N	#000000	\N	{}	54
+1871	critical	kritikus	notifswitch	red	\N	\N	\N	55
+1872	unreachable	nem válaszol	notifswitch	#c00000	\N	\N	\N	56
+1873	down	kikapcsolva	notifswitch	#ffaa00	\N	\N	\N	57
+1907	id	\N	datacharacter	\N	#aa0000	\N	{underline}	58
+1908	name	\N	datacharacter	\N	#005500	\N	{bold}	59
+1909	primary	\N	datacharacter	\N	#000000	\N	{}	60
+1910	key	\N	datacharacter	\N	#5500ff	\N	{}	61
+1911	fname	\N	datacharacter	\N	#000000	\N	{}	62
+1912	derived	\N	datacharacter	\N	#aa00ff	\N	{italic}	63
+1913	tree	\N	datacharacter	\N	#000000	\N	{}	64
+1914	foreign	\N	datacharacter	\N	#5500ff	\N	{}	65
+1915	null	\N	datacharacter	\N	#ff55ff	\N	{strikeout}	66
+1916	default	\N	datacharacter	\N	#ff55ff	\N	{italic,strikeout}	67
+1917	auto	\N	datacharacter	\N	#ff55ff	\N	{italic,strikeout}	68
+1918	info	\N	datacharacter	\N	#000000	\N	{}	69
+1919	warning	\N	datacharacter	\N	#ffaa00	\N	{bold}	70
+1920	error	\N	datacharacter	\N	#ff0000	\N	{bold,underline}	71
+1943	simple	\N	tableshapetype	\N	\N	\N	\N	72
+1944	tree	\N	tableshapetype	\N	\N	\N	\N	73
+1945	bare	\N	tableshapetype	\N	\N	\N	\N	74
+1946	owner	\N	tableshapetype	\N	\N	\N	\N	75
+1947	child	\N	tableshapetype	\N	\N	\N	\N	76
+1948	link	\N	tableshapetype	\N	\N	\N	\N	77
+1949	dialog	\N	tableshapetype	\N	\N	\N	\N	78
+1950	table	\N	tableshapetype	\N	\N	\N	\N	79
+1951	member	\N	tableshapetype	\N	\N	\N	\N	80
+1862	monday	hétfő	dayofweek	\N	\N	\N	\N	81
+1863	tuesday	kedd	dayofweek	\N	\N	\N	\N	82
+1864	wednesday	szerda	dayofweek	\N	\N	\N	\N	83
+1865	thursday	csütörtök	dayofweek	\N	\N	\N	\N	84
+1866	friday	péntek	dayofweek	\N	\N	\N	\N	85
+1952	group	\N	tableshapetype	\N	\N	\N	\N	86
+1953	read_only	\N	tableshapetype	\N	\N	\N	\N	87
+1954	Fatal	\N	errtype	#ff0000	\N	\N	\N	88
+1955	Error	\N	errtype	#ffaa7f	\N	\N	\N	89
+1956	Warning	\N	errtype	#ffff00	\N	\N	\N	90
+1899	off	Engedélyezve	noalarmtype	#00ff00	\N	\N	\N	91
+1957	Ok	\N	errtype	#00ff00	\N	\N	\N	92
+1958		addresstype	addresstype	\N	\N	\N	\N	93
+1904	fixip		addresstype	\N	\N	\N	{bold,underline}	94
+1931	private	\N	addresstype	\N	#00007f	\N	{strikeout}	95
+1932	external	\N	addresstype	\N	#aa0000	\N	{bold}	96
+1879	operator	operátor	rights	#ffaa00	\N	\N	\N	97
+1877	viewer	megfigyelő	rights	#aaff00	\N	\N	\N	98
+1876	none	jogosulatlan	rights	#00ff00	\N	\N	\N	99
+1896	real	Valós hely	placetype	\N	\N	\N	\N	100
+1895	false	A host_services.disabled boolean mező igaz értékéhez rendelt szín	host_services.disabled	#00ff00	\N	\N	{italic}	101
+1940	listed	\N	tableinherittype	\N	\N	\N	\N	102
+1878	indalarm	rendész	rights	yellow	\N	\N	\N	103
+1941	listed_rev	\N	tableinherittype	\N	\N	\N	\N	104
+1880	admin	adminisztrátor	rights	red	\N	\N	\N	105
+1881	system	rendszer	rights	magenta	\N	\N	\N	106
+1897	unknown	Ismeretlen	placetype	yellow	\N	\N	\N	107
+1901	to	Időpontig tilt.	noalarmtype	yellow	\N	\N	\N	108
+1902	from	Időponttól tilt.	noalarmtype	yellow	\N	\N	\N	109
+1903	from_to	Intrval. tilt.	noalarmtype	yellow	\N	\N	\N	110
+1898	root	Gyökér o.	placetype	cyan	\N	\N	\N	111
+1942	listed_all	\N	tableinherittype	\N	\N	\N	\N	112
+1923			iftypes.preferred	\N	\N	\N	\N	113
+1924	true	igen	iftypes.preferred	\N	\N	\N	{underline}	114
+1925	false	igen	iftypes.preferred	\N	#0000ff	\N	{italic}	115
+1921	not_permit		datacharacter	\N	#ff0000	Ubuntu	{strikeout}	116
+1926			host_services.disabled	\N	\N	\N	\N	117
+1894	true	A host_services.disabled boolean mező igaz értékéhez rendelt szín	host_services.disabled	yellow	\N	\N	{underline}	118
+1922	have_no	\N	datacharacter	\N	#ff55ff	\N	{strikeout}	119
+1960		filtertype	filtertype	\N	\N	\N	\N	120
+1882	begin	Szó eleji egyezés	filtertype	\N	\N	\N	\N	121
+1930			services.disabled	\N	\N	\N	\N	122
+1892	true	A services.disabled boolean mező igaz értékéhez rendelt szín	services.disabled	#ffa050	\N	\N	\N	123
+1893	false	A services.disabled boolean mező igaz értékéhez rendelt szín	services.disabled	#7fff00	\N	\N	\N	124
+1927			services.deleted	\N	\N	\N	\N	125
+1928	true		services.deleted	\N	\N	\N	\N	126
+1929	false		services.deleted	\N	\N	\N	\N	127
+1874	flapping	billeg	notifswitch	magenta	\N	\N	\N	128
+1875	unknown	ismeretlen	notifswitch	#c0c0c0	\N	\N	{strikeout}	129
+1935	no	\N	tableinherittype	\N	\N	\N	\N	130
+1936	only	\N	tableinherittype	\N	\N	\N	\N	131
+1937	on	\N	tableinherittype	\N	\N	\N	\N	132
+1938	all	\N	tableinherittype	\N	\N	\N	\N	133
+1939	reverse	\N	tableinherittype	\N	\N	\N	\N	134
+1883	like	Minta illesztés a LIKE operátorral	filtertype	\N	\N	\N	\N	135
+1884	similar	Minta illesztés a SIMILAR operátorral	filtertype	\N	\N	\N	\N	136
+1885	regexp	Minta illesztés reguláris kifelyezéssel, nagybetű érzékeny	filtertype	\N	\N	\N	\N	137
+1886	regexpi	Minta illesztés reguláris kifelyezéssel, nem nagybetű érzékeny	filtertype	\N	\N	\N	\N	138
+1887	big	Csak egy értéknél nagyobbakat	filtertype	\N	\N	\N	\N	139
+1888	litle	Csak egy értéknél kisebbeket	filtertype	\N	\N	\N	\N	140
+1889	interval	Csak a megadott két érték közöttiek	filtertype	\N	\N	\N	\N	141
+1890	proc	Szűrés egy magadott SQL függvénnyel	filtertype	\N	\N	\N	\N	142
+1891	SQL	A szürési feltétel megadása SQL nyelven	filtertype	\N	\N	\N	\N	143
+1961	boolean	\N	filtertype	\N	\N	\N	\N	144
+1962	notbegin	\N	filtertype	\N	\N	\N	\N	145
+1963	notlike	\N	filtertype	\N	\N	\N	\N	146
+1964	notsimilar	\N	filtertype	\N	\N	\N	\N	147
+1965	notregexp	\N	filtertype	\N	\N	\N	\N	148
+1968			alarms.noalarm	\N	\N	\N	\N	149
+1969	true	igen	alarms.noalarm	#d3d7cf	\N	\N	\N	150
+1970	false	nem	alarms.noalarm	#fce94f	\N	\N	\N	151
+1966	notregexpi	\N	filtertype	\N	\N	\N	\N	152
+1967	notinterval	\N	filtertype	\N	\N	\N	\N	153
 \.
 
 
@@ -11669,38 +12063,38 @@ SELECT pg_catalog.setval('enum_vals_enum_val_id_seq', 1970, true);
 -- Data for Name: errors; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY errors (error_id, error_name, error_note, error_type) FROM stdin;
-0	Ok	O.K.	Ok
-1	Start	Start program or service 	Ok
-2	ReStart	Restart program or service 	Ok
-3	Info	Info 	Ok
-4	WParams	Parameter(s) warning 	Warning
-5	WNotFound	Warning, data not found 	Warning
-6	WDisabled	Warning, tiltott művelet 	Warning
-7	DataWarn	Inconsisten data warning 	Warning
-8	DropData	Az adat eldobásra került 	Warning
-9	RunTime	Futás idejű hiba 	Warning
-10	SysDataErr	System data Error in % table.	Fatal
-11	UnknErrorId	Unknown error id 	Fatal
-12	IdNotUni	Record ID is not unique 	Error
-13	NameNotUni	Record name is not unique 	Error
-14	InvRef	Invalid foreign key value 	Error
-15	DataError	Data or program error 	Error
-16	Constant	Modify constant data 	Error
-17	Params	Parameter(s) error 	Error
-18	UserName	Invalid User Name 	Error
-19	NameNotFound	Name is not found 	Error
-20	IdNotFound	Id is not found 	Error
-21	InvalidOp	Invalid operation 	Error
-22	InvalidNAddr	Invalid sub net address 	Error
-23	NotFound	A keresett adat nem létezik 	Error
-24	Ambiguous	Nem egyértelmű adat 	Error
-25	Collision	Ötközés 	Error
-26	Loop	Túl sok iteráció vagy körbe hivatkozás 	Error
-27	Disabled	Tiltott művelet 	Error
-28	NotNull	Az adat nem lehet NULL 	Error
-29	OutOfRange	Data Out off range 	Error
-30	FieldNotUni	Field is not unique 	Error
+COPY errors (error_id, error_name, error_note, error_type, text_id) FROM stdin;
+0	Ok	O.K.	Ok	13
+1	Start	Start program or service 	Ok	14
+2	ReStart	Restart program or service 	Ok	15
+3	Info	Info 	Ok	16
+4	WParams	Parameter(s) warning 	Warning	17
+5	WNotFound	Warning, data not found 	Warning	18
+6	WDisabled	Warning, tiltott művelet 	Warning	19
+7	DataWarn	Inconsisten data warning 	Warning	20
+8	DropData	Az adat eldobásra került 	Warning	21
+9	RunTime	Futás idejű hiba 	Warning	22
+10	SysDataErr	System data Error in % table.	Fatal	23
+11	UnknErrorId	Unknown error id 	Fatal	24
+12	IdNotUni	Record ID is not unique 	Error	25
+13	NameNotUni	Record name is not unique 	Error	26
+14	InvRef	Invalid foreign key value 	Error	27
+15	DataError	Data or program error 	Error	28
+16	Constant	Modify constant data 	Error	29
+17	Params	Parameter(s) error 	Error	30
+18	UserName	Invalid User Name 	Error	31
+19	NameNotFound	Name is not found 	Error	32
+20	IdNotFound	Id is not found 	Error	33
+21	InvalidOp	Invalid operation 	Error	34
+22	InvalidNAddr	Invalid sub net address 	Error	35
+23	NotFound	A keresett adat nem létezik 	Error	36
+24	Ambiguous	Nem egyértelmű adat 	Error	37
+25	Collision	Ötközés 	Error	38
+26	Loop	Túl sok iteráció vagy körbe hivatkozás 	Error	39
+27	Disabled	Tiltott művelet 	Error	40
+28	NotNull	Az adat nem lehet NULL 	Error	41
+29	OutOfRange	Data Out off range 	Error	42
+30	FieldNotUni	Field is not unique 	Error	43
 \.
 
 
@@ -11745,6 +12139,12 @@ COPY fkey_types (fkey_type_id, table_schema, table_name, column_name, unusual_fk
 6	public	user_events	alarm_id	owner
 3	public	ip_addresses	port_id	owner
 7	public	service_vars	host_service_id	owner
+12	public	alarm_messages	alarmmessagetext	text
+13	public	errors	errortext	text
+14	public	enum_vals	enumvaltext	text
+15	public	menu_items	menuitemtext	text
+16	public	table_shapes	tableshapetext	text
+17	public	table_shape_fields	tableshapefieldtext	text
 \.
 
 
@@ -11752,7 +12152,7 @@ COPY fkey_types (fkey_type_id, table_schema, table_name, column_name, unusual_fk
 -- Name: fkey_types_fkey_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('fkey_types_fkey_type_id_seq', 11, true);
+SELECT pg_catalog.setval('fkey_types_fkey_type_id_seq', 17, true);
 
 
 --
@@ -11838,7 +12238,7 @@ COPY host_service_logs (host_service_log_id, host_service_id, date_of, old_state
 -- Name: host_service_logs_host_service_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('host_service_logs_host_service_log_id_seq', 1471201, true);
+SELECT pg_catalog.setval('host_service_logs_host_service_log_id_seq', 1472518, true);
 
 
 --
@@ -11979,6 +12379,25 @@ SELECT pg_catalog.setval('ipaddresses_ip_address_id_seq', 6147, true);
 
 
 --
+-- Data for Name: languages; Type: TABLE DATA; Schema: public; Owner: lanview2
+--
+
+COPY languages (language_id, language_name, lang_id, country_id, country_a2, lang_2, lang_3, flag_image, next_id) FROM stdin;
+1	Magyar	50	98	HU	hu	hun	\N	\N
+2	US English	31	225	US	en	eng	\N	\N
+3	Deutsch	42	82	DE	de	deu	\N	\N
+4	UK English	31	224	GB	en	eng	\N	2
+\.
+
+
+--
+-- Name: languages_language_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
+--
+
+SELECT pg_catalog.setval('languages_language_id_seq', 4, true);
+
+
+--
 -- Data for Name: lldp_links_table; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
@@ -11991,6 +12410,1032 @@ COPY lldp_links_table (lldp_link_id, port_id1, port_id2, first_time, last_time) 
 --
 
 SELECT pg_catalog.setval('lldp_links_table_lldp_link_id_seq', 2911, true);
+
+
+--
+-- Data for Name: localizations; Type: TABLE DATA; Schema: public; Owner: lanview2
+--
+
+COPY localizations (text_id, table_for_text, language_id, texts) FROM stdin;
+1	alarm_messages	1	{"A kontroller nem üzemel, az érzékelők állapota ismeretlen. Nincs védelem!",Kikapcsolva.}
+2	alarm_messages	1	{"A kontroller nem elérhető, az érzékelő adatok nem megbízhatóak. Nincs védelem!","Nem elérhető."}
+3	alarm_messages	1	{"Kontroller hiba, az érzékelők állpota ismeretlen. Nincs védelem!","Kritikus hiba."}
+4	alarm_messages	1	{"A kontroller hibát jelzett, az érzékelő adatok nem megbízhatóak. A védelem nem megbízható!","Kontroller hiba"}
+5	alarm_messages	1	{"A kontroller állpota ismeretlen. Nincs védelem!",Ismeretlen}
+6	alarm_messages	1	{"A kontroller ismételt hibát jelzett, az érzékelő adatok nem megbízhatóak. A védelem nem megbízható!",Billeg}
+7	alarm_messages	1	{"Az érzékelés letíltva, állapot ismeretlen",Letíltva}
+8	alarm_messages	1	{"Az eszköz jelenléte nem érzékelhető","Nincs jelen"}
+9	alarm_messages	1	{"Az érzékelő ill. port állpota ismeretlen, nem elérhető, az eszköz jelenléte nem ismert",Ismeretlen}
+10	alarm_messages	1	{"Az érzékelő ill. port állpota ismeretlen, az eszköz jelenléte nem ismert",Ismeretlen}
+11	alarm_messages	1	{"Az érzékelő ill. port állapota változó, billeg. A további riasztások letiltva.",Billeg}
+12	alarm_messages	1	{"Az érzékelő ill port állpota ismeretlen, hibás, az eszköz jelenléte nem ismert",Ismeretlen}
+13	errors	1	{O.K.,Ok}
+14	errors	1	{"Start program or service ",Start}
+15	errors	1	{"Restart program or service ",ReStart}
+16	errors	1	{"Info ",Info}
+17	errors	1	{"Parameter(s) warning ",WParams}
+18	errors	1	{"Warning, data not found ",WNotFound}
+19	errors	1	{"Warning, tiltott művelet ",WDisabled}
+20	errors	1	{"Inconsisten data warning ",DataWarn}
+21	errors	1	{"Az adat eldobásra került ",DropData}
+22	errors	1	{"Futás idejű hiba ",RunTime}
+23	errors	1	{"System data Error in % table.",SysDataErr}
+24	errors	1	{"Unknown error id ",UnknErrorId}
+25	errors	1	{"Record ID is not unique ",IdNotUni}
+26	errors	1	{"Record name is not unique ",NameNotUni}
+27	errors	1	{"Invalid foreign key value ",InvRef}
+28	errors	1	{"Data or program error ",DataError}
+29	errors	1	{"Modify constant data ",Constant}
+30	errors	1	{"Parameter(s) error ",Params}
+31	errors	1	{"Invalid User Name ",UserName}
+32	errors	1	{"Name is not found ",NameNotFound}
+33	errors	1	{"Id is not found ",IdNotFound}
+34	errors	1	{"Invalid operation ",InvalidOp}
+35	errors	1	{"Invalid sub net address ",InvalidNAddr}
+36	errors	1	{"A keresett adat nem létezik ",NotFound}
+37	errors	1	{"Nem egyértelmű adat ",Ambiguous}
+38	errors	1	{"Ötközés ",Collision}
+39	errors	1	{"Túl sok iteráció vagy körbe hivatkozás ",Loop}
+40	errors	1	{"Tiltott művelet ",Disabled}
+41	errors	1	{"Az adat nem lehet NULL ",NotNull}
+42	errors	1	{"Data Out off range ",OutOfRange}
+43	errors	1	{"Field is not unique ",FieldNotUni}
+44	enum_vals	1	{rendben,on,NULL}
+45	enum_vals	1	{"Nem valós IP cím",hamis,"Nem valós IP cím. Egyébb azonosítási szerep, vagy címzés"}
+46	enum_vals	1	{"Dinamikusan kiosztott IP cím",dinamikus,"Dinamikusan kiosztott (állt. DHCP) IP cím."}
+47	enum_vals	1	{vasárnap,sunday,NULL}
+48	enum_vals	1	{szombat,saturday,NULL}
+49	enum_vals	1	{Letiltva,on,NULL}
+50	enum_vals	1	{helyreállt,recovered,NULL}
+51	enum_vals	1	{figyelmeztetés,warning,NULL}
+52	enum_vals	1	{datacharacter,datacharacter,""}
+53	enum_vals	1	{head,head,NULL}
+54	enum_vals	1	{data,data,NULL}
+55	enum_vals	1	{kritikus,critical,NULL}
+56	enum_vals	1	{"nem válaszol",unreachable,NULL}
+57	enum_vals	1	{kikapcsolva,down,NULL}
+58	enum_vals	1	{id,id,"Numerikus objektum azonosító"}
+59	enum_vals	1	{name,name,NULL}
+60	enum_vals	1	{primary,primary,NULL}
+61	enum_vals	1	{key,key,NULL}
+62	enum_vals	1	{fname,fname,NULL}
+63	enum_vals	1	{derived,derived,NULL}
+64	enum_vals	1	{tree,tree,NULL}
+65	enum_vals	1	{foreign,foreign,NULL}
+66	enum_vals	1	{"null","null",NULL}
+67	enum_vals	1	{"Alapértelmezett érték",alapértelmezett,NULL}
+333	table_shape_fields	1	{NULL,ID,NULL,NULL}
+68	enum_vals	1	{"Automatikus értékadás",automatikus,"Automatikus értékadás"}
+69	enum_vals	1	{Információ,információ,NULL}
+70	enum_vals	1	{Figyelmeztetés,Figyelmeztetés,NULL}
+71	enum_vals	1	{Hiba,Hiba,NULL}
+72	enum_vals	1	{simple,egyszerű,NULL}
+73	enum_vals	1	{tree,Fa,NULL}
+74	enum_vals	1	{bare,alap,NULL}
+75	enum_vals	1	{owner,owner,NULL}
+76	enum_vals	1	{child,child,NULL}
+77	enum_vals	1	{link,link,NULL}
+78	enum_vals	1	{dialog,dialog,NULL}
+79	enum_vals	1	{table,table,NULL}
+80	enum_vals	1	{member,member,NULL}
+81	enum_vals	1	{hétfő,monday,NULL}
+82	enum_vals	1	{kedd,tuesday,NULL}
+83	enum_vals	1	{szerda,wednesday,NULL}
+84	enum_vals	1	{csütörtök,thursday,NULL}
+85	enum_vals	1	{péntek,friday,NULL}
+86	enum_vals	1	{group,group,NULL}
+87	enum_vals	1	{read_only,read_only,NULL}
+88	enum_vals	1	{Fatal,Fatal,NULL}
+89	enum_vals	1	{Error,Error,NULL}
+90	enum_vals	1	{Warning,Warning,NULL}
+91	enum_vals	1	{Engedélyezve,off,NULL}
+92	enum_vals	1	{Ok,Ok,NULL}
+93	enum_vals	1	{addresstype,addresstype,""}
+94	enum_vals	1	{"Fix IP","Fix IP",""}
+95	enum_vals	1	{"Lokális egyedi cím",private,"Lokális helyi cím. Csak néhány eszköz számára elérhető."}
+96	enum_vals	1	{"Külső IP cím",külső,"Hálózaton (intranet) kívüli IP cím"}
+97	enum_vals	1	{operátor,operator,NULL}
+98	enum_vals	1	{megfigyelő,viewer,NULL}
+99	enum_vals	1	{jogosulatlan,none,NULL}
+100	enum_vals	1	{"Valós hely",real,NULL}
+101	enum_vals	1	{"Nincs letíltva a szolgáltatás példány",engedélyezve,""}
+102	enum_vals	1	{listed,listed,NULL}
+103	enum_vals	1	{rendész,indalarm,NULL}
+104	enum_vals	1	{listed_rev,listed_rev,NULL}
+105	enum_vals	1	{adminisztrátor,admin,NULL}
+106	enum_vals	1	{rendszer,system,NULL}
+107	enum_vals	1	{Ismeretlen,unknown,NULL}
+108	enum_vals	1	{"Időpontig tilt.",to,NULL}
+109	enum_vals	1	{"Időponttól tilt.",from,NULL}
+110	enum_vals	1	{"Intrval. tilt.",from_to,NULL}
+111	enum_vals	1	{"Gyökér o.",root,NULL}
+112	enum_vals	1	{listed_all,listed_all,NULL}
+113	enum_vals	1	{"","",""}
+114	enum_vals	1	{"elsődleges cím",elsődleges,""}
+115	enum_vals	1	{"másodlagos cím",másodlagos,""}
+116	enum_vals	1	{"Az adat megtekintéséhez nincs elegendő jogosultsága.","nem elérhető","Az adat megtekintéséhez nincs elegendő jogosultsága."}
+117	enum_vals	1	{"","",""}
+118	enum_vals	1	{"A szolgáltatás példány letiltva",letiltva,""}
+119	enum_vals	1	{"Nincs ilyen adat",nincs,"Nincs ilyen adat."}
+120	enum_vals	1	{filtertype,filtertype,""}
+121	enum_vals	1	{"Szó eleji egyezés",begin,NULL}
+122	enum_vals	1	{"","",""}
+123	enum_vals	1	{"A szolgáltatás összes példánya le ven tiltva.",true,"A szolgáltatás összes példánya le ven tiltva."}
+124	enum_vals	1	{"A services.disabled boolean mező igaz értékéhez rendelt szín",true,"A szolgáltatás példányai nincsenek egységesen letiltva."}
+125	enum_vals	1	{"","","A szolgáltatás összes példánya le ven tiltva."}
+126	enum_vals	1	{"","",""}
+127	enum_vals	1	{"","",""}
+128	enum_vals	1	{billeg,flapping,NULL}
+129	enum_vals	1	{ismeretlen,unknown,NULL}
+130	enum_vals	1	{no,no,NULL}
+131	enum_vals	1	{only,only,NULL}
+132	enum_vals	1	{on,on,NULL}
+133	enum_vals	1	{all,all,NULL}
+134	enum_vals	1	{reverse,reverse,NULL}
+135	enum_vals	1	{"Minta illesztés a LIKE operátorral",like,NULL}
+136	enum_vals	1	{"Minta illesztés a SIMILAR operátorral",similar,NULL}
+137	enum_vals	1	{"Minta illesztés reguláris kifelyezéssel, nagybetű érzékeny",regexp,NULL}
+138	enum_vals	1	{"Minta illesztés reguláris kifelyezéssel, nem nagybetű érzékeny",regexpi,NULL}
+139	enum_vals	1	{"Csak egy értéknél nagyobbakat",big,NULL}
+140	enum_vals	1	{"Csak egy értéknél kisebbeket",litle,NULL}
+141	enum_vals	1	{"Csak a megadott két érték közöttiek",interval,NULL}
+142	enum_vals	1	{"Szűrés egy magadott SQL függvénnyel",proc,NULL}
+143	enum_vals	1	{"A szürési feltétel megadása SQL nyelven",SQL,NULL}
+144	enum_vals	1	{"Szűrés logikai értékre",boolean,NULL}
+145	enum_vals	1	{"Szó eleji nem egyezés",notbegin,NULL}
+146	enum_vals	1	{"Like minta illesztés, nincs egyezés.",notlike,NULL}
+147	enum_vals	1	{"Similar minta illesztés, nincs egyezés.",notsimilar,NULL}
+148	enum_vals	1	{"Reguláris kifejezés, nincs egyezés.",notregexp,NULL}
+149	enum_vals	1	{"","",""}
+150	enum_vals	1	{"Nincs valós riasztás",rejtett,""}
+151	enum_vals	1	{riaszt,riaszt,""}
+152	enum_vals	1	{"Reguláris kifejezés, nem nagybetű érzékeny, nincs egyezés.",notregexpi,NULL}
+153	enum_vals	1	{"A megadott értékhatáron kívüliek.",notinterval,NULL}
+154	menu_items	1	{fájl,file,NULL,NULL}
+155	menu_items	1	{Beállítások,Beállítások,NULL,NULL}
+156	menu_items	1	{"GUI Beállítások","GUI Beállítások",NULL,NULL}
+157	menu_items	1	{"Rendszer paraméterek","Rendszer paraméterek",NULL,NULL}
+158	menu_items	1	{"Paraméter típus leírók","Paraméter típus leírók",NULL,NULL}
+159	menu_items	1	{Újraindítás,restart,NULL,NULL}
+160	menu_items	1	{Kilép,exit,NULL,NULL}
+161	menu_items	1	{Felhasználók,user,NULL,NULL}
+162	menu_items	1	{"Felhasználói csoportok","Felhasználói csoportok",NULL,NULL}
+163	menu_items	1	{Zónák,Zónák,NULL,NULL}
+164	menu_items	1	{Objektumok,objects,NULL,NULL}
+165	menu_items	1	{"Helyek, helyiségek (fa)","Helyek, helyiségek (fa)",NULL,NULL}
+166	menu_items	1	{"Helyek, helyiségek (tábla)","Helyek, helyiségek (tábla)",NULL,NULL}
+167	menu_items	1	{Szolgáltatások,Szolgáltatások,NULL,NULL}
+168	menu_items	1	{"Szolgáltatás típusok","Szolgáltatás típusok",NULL,NULL}
+169	menu_items	1	{"Lekérdezés fordító","Lekérdezés fordító",NULL,NULL}
+170	menu_items	1	{Alhálózatok,Alhálózatok,NULL,NULL}
+171	menu_items	1	{VLAN-ok,VLAN-ok,NULL,NULL}
+172	menu_items	1	{Képek,Képek,NULL,NULL}
+173	menu_items	1	{Időintervallumok,Időintervallumok,NULL,NULL}
+174	menu_items	1	{Események,events,NULL,NULL}
+175	menu_items	1	{Riasztások,Riasztások,NULL,NULL}
+176	menu_items	1	{"Riasztások (fa)","Riasztások (fa)",NULL,NULL}
+177	menu_items	1	{"Program hiba napló","Program hiba napló",NULL,NULL}
+178	menu_items	1	{"Program esemény napló","Program esemény napló",NULL,NULL}
+179	menu_items	1	{"Adatbázis hiba napló","Adatbázis hiba napló",NULL,NULL}
+180	menu_items	1	{"Szervíz állapot napló","Szervíz állapot napló",NULL,NULL}
+181	menu_items	1	{"On-Line riasztások","On-Line riasztások",NULL,NULL}
+182	menu_items	1	{"API hiba kódok","API hiba kódok",NULL,NULL}
+183	menu_items	1	{"Hálózati topológia",topology,NULL,NULL}
+184	menu_items	1	{"Egyébb hálózati adatok",netothers,NULL,NULL}
+185	menu_items	1	{"ARP tábla","ARP tábla",NULL,NULL}
+186	menu_items	1	{"ARP napló","ARP napló",NULL,NULL}
+187	menu_items	1	{"Port címtáblák","Port címtáblák",NULL,NULL}
+188	menu_items	1	{"Port címtáblak napló","Port címtáblak napló",NULL,NULL}
+189	menu_items	1	{"Dinamikus címtartományok","Dinamikus címtartományok",NULL,NULL}
+190	menu_items	1	{"Port típusok","Port típusok",NULL,NULL}
+191	menu_items	1	{"Idegen kulcs típusok","Idegen kulcs típusok",NULL,NULL}
+192	menu_items	1	{"Idegen kulcs és öröklődés","Idegen kulcs és öröklődés",NULL,NULL}
+193	menu_items	1	{"Figyelmeztető üzenetek szövege","Figyelmeztető üzenetek szövege",NULL,NULL}
+194	menu_items	1	{"Táblák megjelenítése","Táblák megjelenítése",NULL,NULL}
+195	menu_items	1	{"Patch panelek","Patch panelek",NULL,NULL}
+196	menu_items	1	{fájl,file,NULL,NULL}
+197	menu_items	1	{"GUI Beállítások","GUI Beállítások",NULL,NULL}
+198	menu_items	1	{Újraindítás,restart,NULL,NULL}
+199	menu_items	1	{Kilép,exit,NULL,NULL}
+200	menu_items	1	{Események,events,NULL,NULL}
+201	menu_items	1	{"Riasztások (fa)","Riasztások (fa)",NULL,NULL}
+202	menu_items	1	{"On-Line riasztások","On-Line riasztások",NULL,NULL}
+203	menu_items	1	{"Keresés MAC szerint",findmac,NULL,NULL}
+204	menu_items	1	{Megjelenítés,gui,"",""}
+205	menu_items	1	{Felhasználók,Felhasználók,"",""}
+206	menu_items	1	{"Szöveges import","Szöveges import","",""}
+207	menu_items	1	{"GUI menük fa","GUI menük fa","",""}
+208	menu_items	1	{"Belső vezérlő adatok",internals,NULL,NULL}
+209	menu_items	1	{"Szolgáltatás példányok (fa)","Szolgáltatás példányok (fa)",NULL,NULL}
+210	menu_items	1	{"Servíz állpot manipulálás","Servíz állpot manipulálás","",""}
+211	menu_items	1	{Enumerációk,Enumerációk,"Az enumerációs értékekhez  kapcsolódó megjelenítések.",NULL}
+212	menu_items	1	{"Hálózati elemek","Hálózati elemek",NULL,NULL}
+213	menu_items	1	{"Szolgáltatás példányok (tábla)","Szolgáltatás példányok (tábla)",NULL,NULL}
+214	menu_items	1	{"Objektum szintaxisok","Objektum szintaxisok",NULL,NULL}
+215	menu_items	1	{"Hálózati csomópontok","Hálózati csomópontok","",""}
+216	menu_items	1	{Munkaállomások,Munkaállomások,"",""}
+217	menu_items	1	{Minták,"Minta tár",NULL,NULL}
+218	menu_items	1	{Nézet,NULL,"",""}
+219	menu_items	1	{Tab,NULL,NULL,NULL}
+220	menu_items	1	{Ablakok,NULL,NULL,NULL}
+221	menu_items	1	{"Ablakok bezárása",NULL,NULL,NULL}
+222	menu_items	1	{"GUI menük","GUI menük","",""}
+223	menu_items	1	{Táblázat,"Enumerációval kapcsolatos paraméterek",NULL,NULL}
+224	menu_items	1	{Szerkesztés,"Enumerációk szerkesztése",NULL,NULL}
+225	menu_items	1	{Eszközök,tools,NULL,NULL}
+226	menu_items	1	{"Fizikai linkek","Fizikai linkek",NULL,NULL}
+227	menu_items	1	{"Logika linkek","Logikai linkek","A logikai linkek a fizikai linkek eredőjeként létrejött végponti kapcsolatok.",NULL}
+228	menu_items	1	{"Szolgáltatás változó típusok","Szolgáltatás változó típusok",NULL,NULL}
+229	menu_items	1	{"LLDP linkek","LLDP linkek",NULL,NULL}
+230	menu_items	1	{Helyiségek,"Helyiségekben található objektumok",NULL,NULL}
+231	menu_items	1	{"Szolgáltatás változók teljes lista","Szolgáltatás változók teljes lista",NULL,NULL}
+232	menu_items	1	{"Zóna váltás",NULL,NULL,NULL}
+233	menu_items	1	{"Szöveges export","Szöveges export",NULL,NULL}
+234	menu_items	1	{"Falikábel felfedezés","Falikábel felfedezése",NULL,NULL}
+235	menu_items	1	{"SNMP inser/refresh","SNMP inser/refresh",NULL,NULL}
+236	menu_items	1	{"Felhasználói események","Felhasználói események",NULL,NULL}
+237	table_shapes	1	{"LLDP linkek",NULL,NULL,NULL,NULL}
+238	table_shapes	1	{"Fizikai linkek","Fizikai link, patch",NULL,NULL,NULL}
+239	table_shapes	1	{"Logikai linkek",NULL,NULL,NULL,NULL}
+240	table_shapes	1	{vlans,vlans,vlans,NULL,NULL}
+241	table_shapes	1	{iftypes,iftypes,iftypes,NULL,NULL}
+242	table_shapes	1	{"Riasztási események","Riasztási esemény",alarms,NULL,NULL}
+243	table_shapes	1	{app_memos,app_memos,app_memos,NULL,NULL}
+244	table_shapes	1	{host_services_tree,host_services_tree,host_services_tree,NULL,NULL}
+245	table_shapes	1	{arp_logs,arp_logs,arp_logs,NULL,NULL}
+246	table_shapes	1	{app_errs,app_errs,app_errs,NULL,NULL}
+247	table_shapes	1	{arps,arps,arps,NULL,NULL}
+248	table_shapes	1	{db_errs,db_errs,db_errs,NULL,NULL}
+249	table_shapes	1	{dyn_addr_ranges,dyn_addr_ranges,dyn_addr_ranges,NULL,NULL}
+250	table_shapes	1	{host_service_logs,host_service_logs,host_service_logs,NULL,NULL}
+251	table_shapes	1	{mactab_port,mactab_port,mactab_port,NULL,NULL}
+252	table_shapes	1	{mactab_node,mactab_node,mactab_node,NULL,NULL}
+253	table_shapes	1	{images,images,images,NULL,NULL}
+254	table_shapes	1	{"IP ímek","IP cím",ipaddresses,NULL,NULL}
+255	table_shapes	1	{mactab,mactab,mactab,NULL,NULL}
+256	table_shapes	1	{host_services,host_services,host_services,NULL,NULL}
+257	table_shapes	1	{phsnodes,phsnodes,phsnodes,NULL,NULL}
+258	table_shapes	1	{"Eszköz paraméterek","Az eszközhöz rendelt paraméter",node_params,NULL,NULL}
+259	table_shapes	1	{nodes,"Hálózati végberendszés","Nem SNMP eszköz",NULL,NULL}
+260	table_shapes	1	{nports,"Passzív port","Passzív port",NULL,NULL}
+261	table_shapes	1	{"Pach panelek és fali csatlakozók","Pach panel vagy fali csatlakozó",patchs,NULL,NULL}
+262	table_shapes	1	{"Port paraméterek","A porthoz rendelt paraméter",port_params,NULL,NULL}
+263	table_shapes	1	{"A kiválasztott csatlakozó vagy panel portjai","Pach panel vagy fali csatlakozó port",pports,NULL,NULL}
+264	table_shapes	1	{query_parsers,query_parsers,query_parsers,NULL,NULL}
+265	table_shapes	1	{services,services,services,NULL,NULL}
+266	table_shapes	1	{service_types,service_types,service_types,NULL,NULL}
+267	table_shapes	1	{subnets,subnets,subnets,NULL,NULL}
+268	table_shapes	1	{timeperiods,timeperiods,timeperiods,NULL,NULL}
+269	table_shapes	1	{tpows,"Rész időintervallum",tpows,"Tag rész időintervallumok","Nem tag rész időintervallumok"}
+332	table_shape_fields	1	{NULL,"A riasztást megnézte, kiválasztotta",NULL,NULL}
+270	table_shapes	1	{"Nem nyugtázott riasztások",NULL,"Még nem nyugtázott riasztás",NULL,NULL}
+271	table_shapes	1	{user_events,user_events,user_events,NULL,NULL}
+272	table_shapes	1	{"Riasztási események","Riasztási esemény",alarms_tree,NULL,NULL}
+273	table_shapes	1	{"Helyek, helyiségek","Hely, helyiség",places,"Csoportoknak tagja","Csoportoknak nem tagja"}
+274	table_shapes	1	{"Felhasználói csoportok","Feljasználói csoport",groups,"Csoportok tagjai","Coportoknak nem tagjai"}
+275	table_shapes	1	{menu_items,menu_items,menu_items,NULL,NULL}
+276	table_shapes	1	{"Minta tár",Minta,selects,NULL,NULL}
+277	table_shapes	1	{sys_params,sys_params,sys_params,NULL,NULL}
+278	table_shapes	1	{unusual_fkeys,unusual_fkeys,unusual_fkeys,NULL,NULL}
+279	table_shapes	1	{alarm_messages,alarm_messages,alarm_messages,NULL,NULL}
+280	table_shapes	1	{"Helyek, helyiségek","Hely helyiség",places_tree,"Csoportoknak tagja","Csoportoknak nem tagja"}
+281	table_shapes	1	{enum_vals,enum_vals,enum_vals,NULL,NULL}
+282	table_shapes	1	{fkey_types,fkey_types,fkey_types,NULL,NULL}
+283	table_shapes	1	{mactab_logs,mactab_logs,mactab_logs,NULL,NULL}
+284	table_shapes	1	{"Aktív és passzív hálózati elemek","Aktív vagy passzív hálózati elem","Aktív SNMP eszköz",NULL,NULL}
+285	table_shapes	1	{"Objektum szintaxis minták","Objektum szintaxis minta",object_syntaxs,NULL,NULL}
+286	table_shapes	1	{param_types,param_types,param_types,NULL,NULL}
+287	table_shapes	1	{"Hely csoportok, kategóriák és zónák","Hely csoport, kategória vagy zóna",place_groups,"Csoport tagja(i)","Coportoknak nem tagja(i)"}
+288	table_shapes	1	{places_topol,places_topol,places_topol,NULL,NULL}
+289	table_shapes	1	{Felhasználók,Feljasználó,users,"Csoportoknak tagja","Csoportoknak nem tagja"}
+290	table_shapes	1	{portvars,portvars,portvars,NULL,NULL}
+291	table_shapes	1	{"Adattábla megjelenítés mező leírók","Adattábla megjelenítés mező leíró",table_shape_fields,NULL,NULL}
+292	table_shapes	1	{"Adattábla megjelenítés leírók","Adattábla megjelenítés leíró",table_shapes,NULL,NULL}
+293	table_shapes	1	{"Szervíz változó típusok",service_var_types,service_var_types,NULL,NULL}
+294	table_shapes	1	{"Hálózati interfészek és portok","Hálózati interfész vagy passzív port","Aktív port vagy interfész",NULL,NULL}
+295	table_shapes	1	{"Menu elemek tábéázat","Menü elem",menu_items_tab,NULL,NULL}
+296	table_shapes	1	{service_vars,service_vars,service_vars,NULL,NULL}
+297	table_shapes	1	{"Solgáltatás változók teljes lista","Szolgáltatás változó",NULL,NULL,NULL}
+298	table_shapes	1	{"Nyugtázott és aktív riasztások","Nyugtázott és aktív riasztás",NULL,NULL,NULL}
+299	table_shape_fields	1	{Linked,"Linked elem",NULL,NULL}
+300	table_shape_fields	1	{Node,log_links,NULL,NULL}
+301	table_shape_fields	1	{Node,Node,NULL,NULL}
+302	table_shape_fields	1	{warning_param1,warning_param1,NULL,NULL}
+303	table_shape_fields	1	{warning_param2,warning_param2,NULL,NULL}
+304	table_shape_fields	1	{critical_type,critical_type,NULL,NULL}
+305	table_shape_fields	1	{critical_param1,critical_param1,NULL,NULL}
+306	table_shape_fields	1	{critical_param2,critical_param2,NULL,NULL}
+307	table_shape_fields	1	{features,features,NULL,NULL}
+308	table_shape_fields	1	{deleted,deleted,NULL,NULL}
+309	table_shape_fields	1	{service_var_type_id,service_var_type_id,NULL,NULL}
+310	table_shape_fields	1	{Megjegyzés,Megjegyzés,NULL,NULL}
+311	table_shape_fields	1	{"Tárolási típus","Tárolási típus",NULL,NULL}
+312	table_shape_fields	1	{Altípus,Altípus,NULL,NULL}
+313	table_shape_fields	1	{Hihető,"Hihetőség vizsgálat típusa",NULL,NULL}
+314	table_shape_fields	1	{"Hihető, 1.par.","Hihtőség vizsgálat 1. paraméter",NULL,NULL}
+315	table_shape_fields	1	{warning_type,warning_type,NULL,NULL}
+316	table_shape_fields	1	{"Hihatő 2.par.","Hihtőség vizsgálat 2. paraméter",NULL,NULL}
+317	table_shape_fields	1	{Név,"Típus azonosító név",NULL,NULL}
+318	table_shape_fields	1	{NULL,"Szolgáltatás példány teljes név",NULL,NULL}
+319	table_shape_fields	1	{NULL,"Riasztás ID",NULL,NULL}
+320	table_shape_fields	1	{NULL,"Szervíz példány ID",NULL,NULL}
+321	table_shape_fields	1	{Eszköz,"Eszköz neve",NULL,NULL}
+322	table_shape_fields	1	{Hely,"Az eszköz helye",NULL,NULL}
+323	table_shape_fields	1	{NULL,"Hely egyedi azonosító (ID)",NULL,NULL}
+324	table_shape_fields	1	{NULL,"\\"szülő\\" szolgáltatás példány",NULL,NULL}
+325	table_shape_fields	1	{Kezdete,"A riasztás kezdete",NULL,NULL}
+326	table_shape_fields	1	{NULL,"A leg kritikusabb  állpot",NULL,NULL}
+327	table_shape_fields	1	{NULL,"Legutolsó állpot",NULL,NULL}
+328	table_shape_fields	1	{NULL,"Riasztás csatolt szövege, megjegyzés",NULL,NULL}
+329	table_shape_fields	1	{Üzenet,"Riasztási üzenet",NULL,NULL}
+330	table_shape_fields	1	{NULL,"On-line értesítendő felhasználók",NULL,NULL}
+331	table_shape_fields	1	{NULL,"Az üzenetet látta, láthatta",NULL,NULL}
+334	table_shape_fields	1	{Szolg.példány,"Szolgáltatőás példány teljes név",NULL,NULL}
+335	table_shape_fields	1	{Eszköz,"Eszköz neve",NULL,NULL}
+336	table_shape_fields	1	{NULL,"Hely ID",NULL,NULL}
+337	table_shape_fields	1	{NULL,"\\"szülő\\" szolgáltatás példány",NULL,NULL}
+338	table_shape_fields	1	{Kezdete,"A riasztás kezdete",NULL,NULL}
+339	table_shape_fields	1	{Vége,"A riasztási állpot vége",NULL,NULL}
+340	table_shape_fields	1	{NULL,"Állapot a riasztás kezdetekor",NULL,NULL}
+341	table_shape_fields	1	{NULL,"Leg kritikusabb állapot",NULL,NULL}
+342	table_shape_fields	1	{NULL,"Utolsó kritikus állpot",NULL,NULL}
+343	table_shape_fields	1	{Üzenet,"Riasztási üzenet",NULL,NULL}
+344	table_shape_fields	1	{NULL,"On-line értesítendő felhasználók",NULL,NULL}
+345	table_shape_fields	1	{NULL,"Látta, vagy láthatta",NULL,NULL}
+346	table_shape_fields	1	{NULL,"Megnézte, ill kiválasztotta",NULL,NULL}
+347	table_shape_fields	1	{Hely,"Az eszköz helye",NULL,NULL}
+348	table_shape_fields	1	{NULL,"Riasztási üzenet, megjegyzés","A riasztási állpotot létrehozó állpothoz csatolt opcionális üzenet.",NULL}
+349	table_shape_fields	1	{node_id,node_id,NULL,NULL}
+350	table_shape_fields	1	{"Filter típusok","Filter típusok",NULL,NULL}
+351	table_shape_fields	1	{port_id,port_id,NULL,NULL}
+352	table_shape_fields	1	{features,features,NULL,NULL}
+353	table_shape_fields	1	{deleted,deleted,NULL,NULL}
+354	table_shape_fields	1	{node_param_id,node_param_id,NULL,NULL}
+355	table_shape_fields	1	{Megosztva,"Másodlagos megosztáshoz tartozó elsődleges port",NULL,NULL}
+356	table_shape_fields	1	{node_id,node_id,NULL,NULL}
+357	table_shape_fields	1	{flag,flag,NULL,NULL}
+358	table_shape_fields	1	{port_param_id,port_param_id,NULL,NULL}
+359	table_shape_fields	1	{deleted,deleted,NULL,NULL}
+360	table_shape_fields	1	{port_id,port_id,NULL,NULL}
+361	table_shape_fields	1	{flag,flag,NULL,NULL}
+362	table_shape_fields	1	{node_id,node_id,NULL,NULL}
+363	table_shape_fields	1	{"Egyébb paraméterek","Egyébb paraméterek",NULL,NULL}
+364	table_shape_fields	1	{deleted,deleted,NULL,NULL}
+365	table_shape_fields	1	{port_id,port_id,NULL,NULL}
+366	table_shape_fields	1	{node_id,node_id,NULL,NULL}
+367	table_shape_fields	1	{deleted,deleted,NULL,NULL}
+368	table_shape_fields	1	{flag,flag,NULL,NULL}
+369	table_shape_fields	1	{node_id,node_id,NULL,NULL}
+370	table_shape_fields	1	{Hely,"Az eszköz helye",NULL,NULL}
+371	table_shape_fields	1	{paraméterek,"Egyébb paraméterek",NULL,NULL}
+372	table_shape_fields	1	{node_id,node_id,NULL,NULL}
+373	table_shape_fields	1	{deleted,deleted,NULL,NULL}
+374	table_shape_fields	1	{ip_address_id,ip_address_id,NULL,NULL}
+375	table_shape_fields	1	{Megjegyzés,Megjegyzés,NULL,NULL}
+376	table_shape_fields	1	{Cím,Cím,NULL,NULL}
+377	table_shape_fields	1	{preferred,preferred,NULL,NULL}
+378	table_shape_fields	1	{Alhálózat,Alhálózat,NULL,NULL}
+379	table_shape_fields	1	{port_id,port_id,NULL,NULL}
+380	table_shape_fields	1	{flag,flag,NULL,NULL}
+381	table_shape_fields	1	{node_id,node_id,NULL,NULL}
+382	table_shape_fields	1	{node_name,node_name,NULL,NULL}
+383	table_shape_fields	1	{port_id,port_id,NULL,NULL}
+384	table_shape_fields	1	{port_name,port_name,NULL,NULL}
+385	table_shape_fields	1	{hwaddress,hwaddress,NULL,NULL}
+386	table_shape_fields	1	{mactab_state,mactab_state,NULL,NULL}
+387	table_shape_fields	1	{first_time,first_time,NULL,NULL}
+388	table_shape_fields	1	{last_time,last_time,NULL,NULL}
+389	table_shape_fields	1	{state_updated_time,state_updated_time,NULL,NULL}
+390	table_shape_fields	1	{set_type,set_type,NULL,NULL}
+391	table_shape_fields	1	{r_node_name,r_node_name,NULL,NULL}
+392	table_shape_fields	1	{r_port_name,r_port_name,NULL,NULL}
+393	table_shape_fields	1	{ipaddrs_by_arp,ipaddrs_by_arp,NULL,NULL}
+394	table_shape_fields	1	{ipaddrs_by_rif,ipaddrs_by_rif,NULL,NULL}
+395	table_shape_fields	1	{service_var_id,service_var_id,NULL,NULL}
+396	table_shape_fields	1	{host_service_note,host_service_note,NULL,NULL}
+397	table_shape_fields	1	{prime_service_id,prime_service_id,NULL,NULL}
+398	table_shape_fields	1	{proto_service_id,proto_service_id,NULL,NULL}
+399	table_shape_fields	1	{check_cmd,check_cmd,NULL,NULL}
+400	table_shape_fields	1	{features,features,NULL,NULL}
+401	table_shape_fields	1	{max_check_attempts,max_check_attempts,NULL,NULL}
+402	table_shape_fields	1	{normal_check_interval,normal_check_interval,NULL,NULL}
+403	table_shape_fields	1	{retry_check_interval,retry_check_interval,NULL,NULL}
+404	table_shape_fields	1	{timeperiod_id,timeperiod_id,NULL,NULL}
+405	table_shape_fields	1	{flapping_interval,flapping_interval,NULL,NULL}
+406	table_shape_fields	1	{flapping_max_change,flapping_max_change,NULL,NULL}
+407	table_shape_fields	1	{noalarm_from,noalarm_from,NULL,NULL}
+408	table_shape_fields	1	{noalarm_to,noalarm_to,NULL,NULL}
+409	table_shape_fields	1	{offline_group_ids,offline_group_ids,NULL,NULL}
+410	table_shape_fields	1	{online_group_ids,online_group_ids,NULL,NULL}
+411	table_shape_fields	1	{node,"Hálózati elem",NULL,NULL}
+412	table_shape_fields	1	{check_attempts,check_attempts,NULL,NULL}
+413	table_shape_fields	1	{last_changed,last_changed,NULL,NULL}
+414	table_shape_fields	1	{noalarm_flag,noalarm_flag,NULL,NULL}
+415	table_shape_fields	1	{node_id,node_id,NULL,NULL}
+416	table_shape_fields	1	{disabled,disabled,NULL,NULL}
+417	table_shape_fields	1	{port_id,port_id,NULL,NULL}
+418	table_shape_fields	1	{flag,flag,NULL,NULL}
+419	table_shape_fields	1	{port_staple_id,port_staple_id,NULL,NULL}
+420	table_shape_fields	1	{dualface_type,dualface_type,NULL,NULL}
+421	table_shape_fields	1	{deleted,deleted,NULL,NULL}
+422	table_shape_fields	1	{Név,Név,NULL,NULL}
+423	table_shape_fields	1	{port_astat,port_astat,NULL,NULL}
+424	table_shape_fields	1	{Megjegyzés,Megjegyzés,NULL,NULL}
+425	table_shape_fields	1	{Cimke,Cimke,NULL,NULL}
+426	table_shape_fields	1	{Index,"A port sorszáma","SNMP eszköz esetén az index kötelező, és azonos az interfész SNMP azonosítójával.",NULL}
+427	table_shape_fields	1	{hwaddress,hwaddress,NULL,NULL}
+428	table_shape_fields	1	{Bounds,"SQL Bounds",NULL,NULL}
+429	table_shape_fields	1	{service,service,NULL,NULL}
+430	table_shape_fields	1	{superior_host_service_id,superior_host_service_id,NULL,NULL}
+431	table_shape_fields	1	{port,"Port (opcionális)",NULL,NULL}
+432	table_shape_fields	1	{delegate_host_state,delegate_host_state,NULL,NULL}
+433	table_shape_fields	1	{last_touched,last_touched,NULL,NULL}
+434	table_shape_fields	1	{last_noalarm_msg,last_noalarm_msg,NULL,NULL}
+435	table_shape_fields	1	{heartbeat_time,heartbeat_time,NULL,NULL}
+436	table_shape_fields	1	{host_service_note,host_service_note,NULL,NULL}
+437	table_shape_fields	1	{service_var_type_id,service_var_type_id,NULL,NULL}
+438	table_shape_fields	1	{host_service_id,host_service_id,NULL,NULL}
+439	table_shape_fields	1	{check_cmd,check_cmd,NULL,NULL}
+440	table_shape_fields	1	{rrd_beat_id,rrd_beat_id,NULL,NULL}
+441	table_shape_fields	1	{max_check_attempts,max_check_attempts,NULL,NULL}
+442	table_shape_fields	1	{normal_check_interval,normal_check_interval,NULL,NULL}
+443	table_shape_fields	1	{retry_check_interval,retry_check_interval,NULL,NULL}
+444	table_shape_fields	1	{flapping_interval,flapping_interval,NULL,NULL}
+445	table_shape_fields	1	{flapping_max_change,flapping_max_change,NULL,NULL}
+446	table_shape_fields	1	{noalarm_from,noalarm_from,NULL,NULL}
+447	table_shape_fields	1	{noalarm_to,noalarm_to,NULL,NULL}
+448	table_shape_fields	1	{features,features,NULL,NULL}
+449	table_shape_fields	1	{check_attempts,check_attempts,NULL,NULL}
+450	table_shape_fields	1	{last_changed,last_changed,NULL,NULL}
+451	table_shape_fields	1	{last_touched,last_touched,NULL,NULL}
+452	table_shape_fields	1	{last_noalarm_msg,last_noalarm_msg,NULL,NULL}
+453	table_shape_fields	1	{heartbeat_time,heartbeat_time,NULL,NULL}
+454	table_shape_fields	1	{node_id,node_id,NULL,NULL}
+455	table_shape_fields	1	{node_name,node_name,NULL,NULL}
+456	table_shape_fields	1	{port_id,port_id,NULL,NULL}
+457	table_shape_fields	1	{host_service_id,host_service_id,NULL,NULL}
+458	table_shape_fields	1	{service_var_note,service_var_note,NULL,NULL}
+459	table_shape_fields	1	{var_state,var_state,NULL,NULL}
+460	table_shape_fields	1	{deleted,deleted,NULL,NULL}
+461	table_shape_fields	1	{act_alarm_log_id,act_alarm_log_id,NULL,NULL}
+462	table_shape_fields	1	{last_alarm_log_id,last_alarm_log_id,NULL,NULL}
+463	table_shape_fields	1	{mactab_state,mactab_state,NULL,NULL}
+464	table_shape_fields	1	{act_alarm_log_id,act_alarm_log_id,NULL,NULL}
+465	table_shape_fields	1	{last_alarm_log_id,last_alarm_log_id,NULL,NULL}
+466	table_shape_fields	1	{port_id,port_id,NULL,NULL}
+467	table_shape_fields	1	{delegate_host_state,delegate_host_state,NULL,NULL}
+468	table_shape_fields	1	{features,features,NULL,NULL}
+469	table_shape_fields	1	{hard_state,hard_state,NULL,NULL}
+470	table_shape_fields	1	{deleted,deleted,NULL,NULL}
+471	table_shape_fields	1	{deleted,deleted,NULL,NULL}
+472	table_shape_fields	1	{timeperiod_id,timeperiod_id,NULL,NULL}
+473	table_shape_fields	1	{host_service_id,host_service_id,NULL,NULL}
+474	table_shape_fields	1	{ipaddrs_by_arp,ipaddrs_by_arp,NULL,NULL}
+475	table_shape_fields	1	{ipaddrs_by_rif,ipaddrs_by_rif,NULL,NULL}
+476	table_shape_fields	1	{node_id,node_id,NULL,NULL}
+477	table_shape_fields	1	{place_id,place_id,NULL,NULL}
+478	table_shape_fields	1	{place_note,place_note,NULL,NULL}
+479	table_shape_fields	1	{place_type,place_type,NULL,NULL}
+480	table_shape_fields	1	{"SNMP read community","SNMP read community",NULL,NULL}
+481	table_shape_fields	1	{"SNMP write community","SNMP write community",NULL,NULL}
+482	table_shape_fields	1	{sysdescr,sysdescr,NULL,NULL}
+483	table_shape_fields	1	{sysobjectid,sysobjectid,NULL,NULL}
+484	table_shape_fields	1	{sysuptime,sysuptime,NULL,NULL}
+485	table_shape_fields	1	{syscontact,syscontact,NULL,NULL}
+486	table_shape_fields	1	{sysname,sysname,NULL,NULL}
+487	table_shape_fields	1	{syslocation,syslocation,NULL,NULL}
+488	table_shape_fields	1	{sysservices,sysservices,NULL,NULL}
+489	table_shape_fields	1	{vendorname,vendorname,NULL,NULL}
+490	table_shape_fields	1	{superior_service_mask,superior_service_mask,NULL,NULL}
+491	table_shape_fields	1	{max_check_attempts,max_check_attempts,NULL,NULL}
+492	table_shape_fields	1	{normal_check_interval,normal_check_interval,NULL,NULL}
+493	table_shape_fields	1	{retry_check_interval,retry_check_interval,NULL,NULL}
+494	table_shape_fields	1	{timeperiod_id,timeperiod_id,NULL,NULL}
+495	table_shape_fields	1	{flapping_interval,flapping_interval,NULL,NULL}
+496	table_shape_fields	1	{flapping_max_change,flapping_max_change,NULL,NULL}
+497	table_shape_fields	1	{deleted,deleted,NULL,NULL}
+498	table_shape_fields	1	{offline_group_ids,offline_group_ids,NULL,NULL}
+499	table_shape_fields	1	{online_group_ids,online_group_ids,NULL,NULL}
+500	table_shape_fields	1	{heartbeat_time,heartbeat_time,NULL,NULL}
+501	table_shape_fields	1	{service_type_id,service_type_id,NULL,NULL}
+502	table_shape_fields	1	{service_type_name,service_type_name,NULL,NULL}
+503	table_shape_fields	1	{tels,tels,NULL,NULL}
+504	table_shape_fields	1	{Port,"Port ",NULL,NULL}
+505	table_shape_fields	1	{place_name,place_name,NULL,NULL}
+506	table_shape_fields	1	{parent_id,parent_id,NULL,NULL}
+507	table_shape_fields	1	{service_type_note,service_type_note,NULL,NULL}
+508	table_shape_fields	1	{query_parser_id,query_parser_id,NULL,NULL}
+509	table_shape_fields	1	{query_parser_note,query_parser_note,NULL,NULL}
+510	table_shape_fields	1	{frame,frame,NULL,NULL}
+511	table_shape_fields	1	{parse_type,parse_type,NULL,NULL}
+512	table_shape_fields	1	{image_id,image_id,NULL,NULL}
+513	table_shape_fields	1	{item_sequence_number,item_sequence_number,NULL,NULL}
+514	table_shape_fields	1	{case_sensitive,case_sensitive,NULL,NULL}
+515	table_shape_fields	1	{NULL,Nyugtázta,NULL,NULL}
+516	table_shape_fields	1	{subnet_id,subnet_id,NULL,NULL}
+517	table_shape_fields	1	{subnet_name,subnet_name,NULL,NULL}
+518	table_shape_fields	1	{subnet_note,subnet_note,NULL,NULL}
+519	table_shape_fields	1	{netaddr,netaddr,NULL,NULL}
+520	table_shape_fields	1	{vlan_id,vlan_id,NULL,NULL}
+521	table_shape_fields	1	{NULL,"Nyugtázási megjegyzés",NULL,NULL}
+522	table_shape_fields	1	{Riaszt.,"Kapcsolódó riasztás",NULL,NULL}
+523	table_shape_fields	1	{Riaszt.,"Kapcsolódó riasztás esemény",NULL,NULL}
+524	table_shape_fields	1	{portvar_id,portvar_id,NULL,NULL}
+525	table_shape_fields	1	{service_var_name,service_var_name,NULL,NULL}
+526	table_shape_fields	1	{service_var_note,service_var_note,NULL,NULL}
+527	table_shape_fields	1	{"SNMP verzió","SNMP verzió",NULL,NULL}
+528	table_shape_fields	1	{subnet_type,subnet_type,NULL,NULL}
+529	table_shape_fields	1	{Érték,"A változó aktuális értéke",NULL,NULL}
+530	table_shape_fields	1	{event_note,event_note,NULL,NULL}
+531	table_shape_fields	1	{service_var_type_id,service_var_type_id,NULL,NULL}
+532	table_shape_fields	1	{vlan_stat,vlan_stat,NULL,NULL}
+533	table_shape_fields	1	{flag,flag,NULL,NULL}
+534	table_shape_fields	1	{image_id,image_id,NULL,NULL}
+535	table_shape_fields	1	{host_service_id,host_service_id,NULL,NULL}
+536	table_shape_fields	1	{port_id,port_id,NULL,NULL}
+537	table_shape_fields	1	{rrd_beat_id,rrd_beat_id,NULL,NULL}
+538	table_shape_fields	1	{service_var_value,service_var_value,NULL,NULL}
+539	table_shape_fields	1	{image_data,image_data,NULL,NULL}
+540	table_shape_fields	1	{image_hash,image_hash,NULL,NULL}
+541	table_shape_fields	1	{dyn_addr_range_id,dyn_addr_range_id,NULL,NULL}
+542	table_shape_fields	1	{dyn_addr_range_note,dyn_addr_range_note,NULL,NULL}
+543	table_shape_fields	1	{exclude,exclude,NULL,NULL}
+544	table_shape_fields	1	{begin_address,begin_address,NULL,NULL}
+545	table_shape_fields	1	{end_address,end_address,NULL,NULL}
+546	table_shape_fields	1	{subnet_id,subnet_id,NULL,NULL}
+547	table_shape_fields	1	{host_service_id,host_service_id,NULL,NULL}
+548	table_shape_fields	1	{last_time,last_time,NULL,NULL}
+549	table_shape_fields	1	{flag,flag,NULL,NULL}
+550	table_shape_fields	1	{tpow_id,tpow_id,NULL,NULL}
+551	table_shape_fields	1	{var_state,var_state,NULL,NULL}
+552	table_shape_fields	1	{last_time,last_time,NULL,NULL}
+553	table_shape_fields	1	{features,features,NULL,NULL}
+554	table_shape_fields	1	{begin_time,begin_time,NULL,NULL}
+555	table_shape_fields	1	{end_time,end_time,NULL,NULL}
+556	table_shape_fields	1	{raw_value,raw_value,NULL,NULL}
+557	table_shape_fields	1	{delegate_service_state,delegate_service_state,NULL,NULL}
+558	table_shape_fields	1	{user_event_id,user_event_id,NULL,NULL}
+559	table_shape_fields	1	{ID,"Riasztás egyedi azonosító kódja",NULL,NULL}
+560	table_shape_fields	1	{host:service,"Szolgálltatás példány",NULL,NULL}
+561	table_shape_fields	1	{daemon,"Lekérdező daemon",NULL,NULL}
+562	table_shape_fields	1	{"kezdő áll.","Állapot a risztás kezdetekor",NULL,NULL}
+563	table_shape_fields	1	{"krit. áll.","Legkritikusabb állapot a riasztás alatt",NULL,NULL}
+564	table_shape_fields	1	{"utolsó áll.","Utolsó állapot a riasztás alatt",NULL,NULL}
+565	table_shape_fields	1	{alarm_id,alarm_id,NULL,NULL}
+566	table_shape_fields	1	{kezdete,"A kritikus esemény kezdete",NULL,NULL}
+567	table_shape_fields	1	{üzenet,"A riasztást dezektáló folyamat üzenete",NULL,NULL}
+568	table_shape_fields	1	{superior_alarm_id,superior_alarm_id,NULL,NULL}
+569	table_shape_fields	1	{letiltva,"Az értesítés letiltása",NULL,NULL}
+570	table_shape_fields	1	{vége,"A kritikus esemény vége",NULL,NULL}
+571	table_shape_fields	1	{ID,"Riasztás egyedi azonosító kódja",NULL,NULL}
+572	table_shape_fields	1	{"kezdő áll.","Állapot a risztás kezdetekor",NULL,NULL}
+573	table_shape_fields	1	{"utolsó áll.","Utolsó állapot a riasztás alatt",NULL,NULL}
+574	table_shape_fields	1	{eredeti,"Az eredeti beolvasott érték",NULL,NULL}
+575	table_shape_fields	1	{Superior,Superior,NULL,NULL}
+576	table_shape_fields	1	{"Állpot tov.","Az állapotát örökli a szolgáltatás",NULL,NULL}
+577	table_shape_fields	1	{dblog_id,dblog_id,NULL,NULL}
+578	table_shape_fields	1	{service_var_name,service_var_name,NULL,NULL}
+579	table_shape_fields	1	{state_msg,state_msg,NULL,NULL}
+580	table_shape_fields	1	{state_msg,state_msg,NULL,NULL}
+581	table_shape_fields	1	{state_msg,state_msg,NULL,NULL}
+582	table_shape_fields	1	{features,features,NULL,NULL}
+583	table_shape_fields	1	{"Model szám","Model szám",NULL,NULL}
+584	table_shape_fields	1	{"Model név","Model név",NULL,NULL}
+585	table_shape_fields	1	{"Model név","Model név",NULL,NULL}
+586	table_shape_fields	1	{P.ver.,"A progra verziószáma",NULL,NULL}
+587	table_shape_fields	1	{L.ver.,"A könyvtár verziószáma",NULL,NULL}
+588	table_shape_fields	1	{"Leltári szám","Leltári szám",NULL,NULL}
+589	table_shape_fields	1	{"Széria szám","Széria szám",NULL,NULL}
+590	table_shape_fields	1	{"Model szám","Model szám",NULL,NULL}
+591	table_shape_fields	1	{"Model szám","Model szám",NULL,NULL}
+592	table_shape_fields	1	{"Model név","Model név",NULL,NULL}
+593	table_shape_fields	1	{Lelt.sám,"Leltári szám",NULL,NULL}
+594	table_shape_fields	1	{SN,"Széria szám",NULL,NULL}
+595	table_shape_fields	1	{Mod.szám,"Model szám",NULL,NULL}
+596	table_shape_fields	1	{Model,"Model név",NULL,NULL}
+597	table_shape_fields	1	{deleted,deleted,NULL,NULL}
+598	table_shape_fields	1	{"SQL c.","SQL hiba kód",NULL,NULL}
+599	table_shape_fields	1	{"SQL t.","SQL hiba típus",NULL,NULL}
+600	table_shape_fields	1	{Megjegyzés,Megjegyzés,NULL,NULL}
+601	table_shape_fields	1	{"Adat sor","Feldolgozott sor",NULL,NULL}
+602	table_shape_fields	1	{"Adat poz","Feldolgozott pozíció",NULL,NULL}
+603	table_shape_fields	1	{disabled,disabled,NULL,NULL}
+604	table_shape_fields	1	{"Adat név","Feldolgozott neve",NULL,NULL}
+605	table_shape_fields	1	{Nyugta,Nugtázva,NULL,NULL}
+606	table_shape_fields	1	{set_type,set_type,NULL,NULL}
+607	table_shape_fields	1	{Típus,"Az eszköz típusa",NULL,NULL}
+608	table_shape_fields	1	{app_ver,app_ver,NULL,NULL}
+609	table_shape_fields	1	{lib_ver,lib_ver,NULL,NULL}
+610	table_shape_fields	1	{event_type,event_type,NULL,NULL}
+611	table_shape_fields	1	{host_service_id,host_service_id,NULL,NULL}
+612	table_shape_fields	1	{user_event_note,user_event_note,NULL,NULL}
+613	table_shape_fields	1	{event_state,event_state,NULL,NULL}
+614	table_shape_fields	1	{host_service_log_id,host_service_log_id,NULL,NULL}
+615	table_shape_fields	1	{func_name,func_name,NULL,NULL}
+616	table_shape_fields	1	{user_id,user_id,NULL,NULL}
+617	table_shape_fields	1	{created,created,NULL,NULL}
+618	table_shape_fields	1	{service_var_note,service_var_note,NULL,NULL}
+619	table_shape_fields	1	{iftype_id,iftype_id,NULL,NULL}
+620	table_shape_fields	1	{iftype_name,iftype_name,NULL,NULL}
+621	table_shape_fields	1	{iftype_note,iftype_note,NULL,NULL}
+622	table_shape_fields	1	{iftype_iana_id,iftype_iana_id,NULL,NULL}
+766	table_shape_fields	1	{tool_tip,tool_tip,NULL,NULL}
+623	table_shape_fields	1	{iftype_link_type,iftype_link_type,NULL,NULL}
+624	table_shape_fields	1	{iftype_obj_type,iftype_obj_type,NULL,NULL}
+625	table_shape_fields	1	{preferred,preferred,NULL,NULL}
+626	table_shape_fields	1	{iana_id_link,iana_id_link,NULL,NULL}
+627	table_shape_fields	1	{if_name_prefix,if_name_prefix,NULL,NULL}
+628	table_shape_fields	1	{host_service_id,host_service_id,NULL,NULL}
+629	table_shape_fields	1	{note,note,NULL,NULL}
+630	table_shape_fields	1	{"By IP","Port ai IP alapján",NULL,NULL}
+631	table_shape_fields	1	{arp_log_id,arp_log_id,NULL,NULL}
+632	table_shape_fields	1	{reason,reason,NULL,NULL}
+633	table_shape_fields	1	{date_of,date_of,NULL,NULL}
+634	table_shape_fields	1	{ipaddress,ipaddress,NULL,NULL}
+635	table_shape_fields	1	{hwaddress_new,hwaddress_new,NULL,NULL}
+636	table_shape_fields	1	{hwaddress_old,hwaddress_old,NULL,NULL}
+637	table_shape_fields	1	{set_type_old,set_type_old,NULL,NULL}
+638	table_shape_fields	1	{host_service_id_old,host_service_id_old,NULL,NULL}
+639	table_shape_fields	1	{first_time_old,first_time_old,NULL,NULL}
+640	table_shape_fields	1	{last_time_old,last_time_old,NULL,NULL}
+641	table_shape_fields	1	{acknowledged,acknowledged,NULL,NULL}
+642	table_shape_fields	1	{node_id,node_id,NULL,NULL}
+643	table_shape_fields	1	{rrd_beat_id,rrd_beat_id,NULL,NULL}
+644	table_shape_fields	1	{port_id,port_id,NULL,NULL}
+645	table_shape_fields	1	{service_var_value,service_var_value,NULL,NULL}
+646	table_shape_fields	1	{last_time,last_time,NULL,NULL}
+647	table_shape_fields	1	{features,features,NULL,NULL}
+648	table_shape_fields	1	{deleted,deleted,NULL,NULL}
+649	table_shape_fields	1	{raw_value,raw_value,NULL,NULL}
+650	table_shape_fields	1	{service_var_id,service_var_id,NULL,NULL}
+651	table_shape_fields	1	{service_var_type_id,service_var_type_id,NULL,NULL}
+652	table_shape_fields	1	{host_service_id,host_service_id,NULL,NULL}
+653	table_shape_fields	1	{service_var_name,service_var_name,NULL,NULL}
+654	table_shape_fields	1	{var_state,var_state,NULL,NULL}
+655	table_shape_fields	1	{ipaddrs_by_arp,ipaddrs_by_arp,NULL,NULL}
+656	table_shape_fields	1	{ipaddrs_by_rif,ipaddrs_by_rif,NULL,NULL}
+657	table_shape_fields	1	{mactab_log_id,mactab_log_id,NULL,NULL}
+658	table_shape_fields	1	{reason,reason,NULL,NULL}
+659	table_shape_fields	1	{"Port(s) By MAC","Portok a MAC alapján",NULL,NULL}
+660	table_shape_fields	1	{port_name,port_name,NULL,NULL}
+661	table_shape_fields	1	{delegate_service_state,delegate_service_state,NULL,NULL}
+662	table_shape_fields	1	{IP,"IP cím",NULL,NULL}
+663	table_shape_fields	1	{MAC,"MAC cím",NULL,NULL}
+664	table_shape_fields	1	{first,"Első detektálás ideje",NULL,NULL}
+665	table_shape_fields	1	{last,"Utoló detektálás ideje",NULL,NULL}
+666	table_shape_fields	1	{hwaddress,hwaddress,NULL,NULL}
+667	table_shape_fields	1	{be_void,be_void,NULL,NULL}
+668	table_shape_fields	1	{mactab_state_old,mactab_state_old,NULL,NULL}
+669	table_shape_fields	1	{first_time_old,first_time_old,NULL,NULL}
+670	table_shape_fields	1	{last_time_old,last_time_old,NULL,NULL}
+671	table_shape_fields	1	{set_type_old,set_type_old,NULL,NULL}
+672	table_shape_fields	1	{mactab_state_new,mactab_state_new,NULL,NULL}
+673	table_shape_fields	1	{set_type_new,set_type_new,NULL,NULL}
+674	table_shape_fields	1	{acknowledged,acknowledged,NULL,NULL}
+675	table_shape_fields	1	{fkey_type_id,fkey_type_id,NULL,NULL}
+676	table_shape_fields	1	{table_schema,table_schema,NULL,NULL}
+677	table_shape_fields	1	{table_name,table_name,NULL,NULL}
+678	table_shape_fields	1	{column_name,column_name,NULL,NULL}
+679	table_shape_fields	1	{unusual_fkeys_type,unusual_fkeys_type,NULL,NULL}
+680	table_shape_fields	1	{unusual_fkey_id,unusual_fkey_id,NULL,NULL}
+681	table_shape_fields	1	{table_schema,table_schema,NULL,NULL}
+682	table_shape_fields	1	{table_name,table_name,NULL,NULL}
+683	table_shape_fields	1	{column_name,column_name,NULL,NULL}
+684	table_shape_fields	1	{unusual_fkeys_type,unusual_fkeys_type,NULL,NULL}
+685	table_shape_fields	1	{f_table_schema,f_table_schema,NULL,NULL}
+686	table_shape_fields	1	{f_table_name,f_table_name,NULL,NULL}
+687	table_shape_fields	1	{f_column_name,f_column_name,NULL,NULL}
+688	table_shape_fields	1	{f_inherited_tables,f_inherited_tables,NULL,NULL}
+689	table_shape_fields	1	{service_type_id,service_type_id,NULL,NULL}
+690	table_shape_fields	1	{status,status,NULL,NULL}
+691	table_shape_fields	1	{short_msg,short_msg,NULL,NULL}
+692	table_shape_fields	1	{message,message,NULL,NULL}
+693	table_shape_fields	1	{date_of,date_of,NULL,NULL}
+694	table_shape_fields	1	{port_id_old,port_id_old,NULL,NULL}
+695	table_shape_fields	1	{"Oszlop címsora","Oszlop címsora a táblázatban",NULL,NULL}
+696	table_shape_fields	1	{"Mező címsora","Mező címsora a dialógusban",NULL,NULL}
+697	table_shape_fields	1	{"Mező sorrendiség","Mező sorrendiség",NULL,NULL}
+698	table_shape_fields	1	{Rendezés,"Az oszlop rendezési lehetőségei",NULL,NULL}
+699	table_shape_fields	1	{port_id_new,port_id_new,NULL,NULL}
+700	table_shape_fields	1	{Rendezve,"Az oszlop alapértelmezett rendezése",NULL,NULL}
+701	table_shape_fields	1	{"Mező rendezés sorrendiség","Mező rendezés sorrendiség",NULL,NULL}
+702	table_shape_fields	1	{expression,expression,NULL,NULL}
+703	table_shape_fields	1	{"Egyébb modosítók","Egyébb modosítók (features)",NULL,NULL}
+704	table_shape_fields	1	{"Tool Tip","Tool Tip",NULL,NULL}
+705	table_shape_fields	1	{"Whats this?","Whats this?",NULL,NULL}
+706	table_shape_fields	1	{table_shape_id,table_shape_id,NULL,NULL}
+707	table_shape_fields	1	{"Táblázat címsora","Táblázat címsora",NULL,NULL}
+708	table_shape_fields	1	{"Dialógus címsora","Dialógus címsora",NULL,NULL}
+709	table_shape_fields	1	{"Dialógus tab címsora","Dialógus tab címsora",NULL,NULL}
+710	table_shape_fields	1	{"Tagjai táblázat címsora","Tagjai táblázat címsora",NULL,NULL}
+711	table_shape_fields	1	{"Nem tagjai táblázat címsora","Nem tagjai táblázat címsora",NULL,NULL}
+712	table_shape_fields	1	{"Az adattábla séma neve","Az adattábla séma neve",NULL,NULL}
+713	table_shape_fields	1	{"Az ősök és/vagy leszármazottak","Az ősök és/vagy leszármazottak",NULL,NULL}
+714	table_shape_fields	1	{menu_item_id,menu_item_id,NULL,NULL}
+715	table_shape_fields	1	{upper_menu_item_id,upper_menu_item_id,NULL,NULL}
+716	table_shape_fields	1	{default_value,"Alapértelmezett érték",NULL,NULL}
+717	table_shape_fields	1	{flag,flag,NULL,NULL}
+718	table_shape_fields	1	{menu_title,menu_title,NULL,NULL}
+719	table_shape_fields	1	{tab_title,tab_title,NULL,NULL}
+720	table_shape_fields	1	{features,features,NULL,NULL}
+721	table_shape_fields	1	{menu_rights,menu_rights,NULL,NULL}
+722	table_shape_fields	1	{enum_val_id,enum_val_id,NULL,NULL}
+723	table_shape_fields	1	{Lelt.sz.,"Leltári szám",NULL,NULL}
+724	table_shape_fields	1	{"Jobb oldali meírók","Jobb oldali alárendelt leírók",NULL,NULL}
+725	table_shape_fields	1	{group_id,group_id,NULL,NULL}
+726	table_shape_fields	1	{group_name,group_name,NULL,NULL}
+727	table_shape_fields	1	{group_note,group_note,NULL,NULL}
+728	table_shape_fields	1	{place_group_id,place_group_id,NULL,NULL}
+729	table_shape_fields	1	{features,features,NULL,NULL}
+730	table_shape_fields	1	{user_id,user_id,NULL,NULL}
+731	table_shape_fields	1	{passwd,passwd,NULL,NULL}
+732	table_shape_fields	1	{enum_val_note,enum_val_note,NULL,NULL}
+733	table_shape_fields	1	{domain_users,domain_users,NULL,NULL}
+734	table_shape_fields	1	{Név,"Objektum ill. tábla név",NULL,NULL}
+735	table_shape_fields	1	{language,language,NULL,NULL}
+736	table_shape_fields	1	{tels,tels,NULL,NULL}
+737	table_shape_fields	1	{addresses,addresses,NULL,NULL}
+738	table_shape_fields	1	{enabled,enabled,NULL,NULL}
+739	table_shape_fields	1	{features,features,NULL,NULL}
+740	table_shape_fields	1	{host_notif_period,host_notif_period,NULL,NULL}
+741	table_shape_fields	1	{serv_notif_period,serv_notif_period,NULL,NULL}
+742	table_shape_fields	1	{host_notif_switchs,host_notif_switchs,NULL,NULL}
+743	table_shape_fields	1	{serv_notif_switchs,serv_notif_switchs,NULL,NULL}
+744	table_shape_fields	1	{host_notif_cmd,host_notif_cmd,NULL,NULL}
+745	table_shape_fields	1	{serv_notif_cmd,serv_notif_cmd,NULL,NULL}
+746	table_shape_fields	1	{place_group_id,place_group_id,NULL,NULL}
+747	table_shape_fields	1	{place_group_name,place_group_name,NULL,NULL}
+748	table_shape_fields	1	{place_group_note,place_group_note,NULL,NULL}
+749	table_shape_fields	1	{place_group_type,place_group_type,NULL,NULL}
+750	table_shape_fields	1	{whats_this,whats_this,NULL,NULL}
+751	table_shape_fields	1	{Név,"Hely, helyiség neve",NULL,NULL}
+752	table_shape_fields	1	{Megjegyzés,Megjegyzés,NULL,NULL}
+753	table_shape_fields	1	{Típus,Típus,NULL,NULL}
+754	table_shape_fields	1	{parent_id,parent_id,NULL,NULL}
+755	table_shape_fields	1	{sys_param_id,"Egyedi azonosító (ID)",NULL,NULL}
+756	table_shape_fields	1	{frame,"Keret az alaprajzon",NULL,NULL}
+757	table_shape_fields	1	{Térkép,"Térkép, alaprajz",NULL,NULL}
+758	table_shape_fields	1	{Megjegyzés,Megjegyzés,NULL,NULL}
+759	table_shape_fields	1	{Típus,"A paraméter típusa",NULL,NULL}
+760	table_shape_fields	1	{Érték,"A rendszer paraméter értéke",NULL,NULL}
+761	table_shape_fields	1	{object_syntax_id,object_syntax_id,NULL,NULL}
+762	table_shape_fields	1	{Minta,"Az objektum definíció szintaxisa",NULL,NULL}
+763	table_shape_fields	1	{SN,"Széria szám",NULL,NULL}
+764	table_shape_fields	1	{Lelt.sz.,"Leltári szám",NULL,NULL}
+765	table_shape_fields	1	{SN,"Széria szám",NULL,NULL}
+767	table_shape_fields	1	{place_id,"Egyedi azonosító (ID)",NULL,NULL}
+768	table_shape_fields	1	{Térkép,"Térkép, alaprajz",NULL,NULL}
+769	table_shape_fields	1	{frame,"Keret az alaprajzon",NULL,NULL}
+770	table_shape_fields	1	{Telefon,Telefonszám(ok),NULL,NULL}
+771	table_shape_fields	1	{place_id,"Egyedi azonosító (ID)",NULL,NULL}
+772	table_shape_fields	1	{iftype_id,iftype_id,NULL,NULL}
+773	table_shape_fields	1	{flag,flag,NULL,NULL}
+774	table_shape_fields	1	{service_id,"Egyedi azonosító (ID)",NULL,NULL}
+775	table_shape_fields	1	{table_shape_id,"A táblázat leíró",NULL,NULL}
+776	table_shape_fields	1	{table_shape_field_id,"Egyedi azonosító (ID)",NULL,NULL}
+777	table_shape_fields	1	{select_id,select_id,NULL,NULL}
+778	table_shape_fields	1	{Állapot,Állapot,NULL,NULL}
+779	table_shape_fields	1	{"Első állapot","Állapot a riasztás kezdetekor",NULL,NULL}
+780	table_shape_fields	1	{NULL,"Szolgáltatás példány ID",NULL,NULL}
+781	table_shape_fields	1	{applog_id,applog_id,NULL,NULL}
+782	table_shape_fields	1	{item_sequence_number,item_sequence_number,NULL,NULL}
+783	table_shape_fields	1	{menu_item_name,menu_item_name,NULL,NULL}
+784	table_shape_fields	1	{menu_item_id,menu_item_id,NULL,NULL}
+785	table_shape_fields	1	{menu_title,menu_title,NULL,NULL}
+786	table_shape_fields	1	{tab_title,tab_title,NULL,NULL}
+787	table_shape_fields	1	{features,features,NULL,NULL}
+788	table_shape_fields	1	{menu_rights,menu_rights,NULL,NULL}
+789	table_shape_fields	1	{item_sequence_number,item_sequence_number,NULL,NULL}
+790	table_shape_fields	1	{timeperiod_id,timeperiod_id,NULL,NULL}
+791	table_shape_fields	1	{group_rights,group_rights,NULL,NULL}
+792	table_shape_fields	1	{tool_tip,tool_tip,NULL,NULL}
+793	table_shape_fields	1	{whats_this,whats_this,NULL,NULL}
+794	table_shape_fields	1	{Típus,"A cím típusa",NULL,NULL}
+795	table_shape_fields	1	{Típltva,Letíltva,NULL,NULL}
+796	table_shape_fields	1	{view_short,view_short,NULL,NULL}
+797	table_shape_fields	1	{view_long,view_long,NULL,NULL}
+798	table_shape_fields	1	{font_family,font_family,NULL,NULL}
+799	table_shape_fields	1	{font_attr,font_attr,NULL,NULL}
+800	table_shape_fields	1	{node_type,node_type,NULL,NULL}
+801	table_shape_fields	1	{soft_state,soft_state,NULL,NULL}
+802	table_shape_fields	1	{"Háttér szín","Háttér szín",NULL,NULL}
+803	table_shape_fields	1	{"Betű szín","Betű szín",NULL,NULL}
+804	table_shape_fields	1	{"Style Sheet","Style Sheet",NULL,NULL}
+805	table_shape_fields	1	{port_ostat,port_ostat,NULL,NULL}
+806	table_shape_fields	1	{Típus,"A port típus",NULL,NULL}
+807	table_shape_fields	1	{state_msg,state_msg,NULL,NULL}
+808	table_shape_fields	1	{old_state,old_state,NULL,NULL}
+809	table_shape_fields	1	{first_time,first_time,NULL,NULL}
+810	table_shape_fields	1	{superior_host_service_id,superior_host_service_id,NULL,NULL}
+811	table_shape_fields	1	{last_time,last_time,NULL,NULL}
+812	table_shape_fields	1	{ifdescr,ifdescr,NULL,NULL}
+813	table_shape_fields	1	{paraméterek,"Egyébb paraméterek",NULL,NULL}
+814	table_shape_fields	1	{stat_last_modify,stat_last_modify,NULL,NULL}
+815	table_shape_fields	1	{param_type_id,param_type_id,NULL,NULL}
+816	table_shape_fields	1	{"host By MAC","Host a MAC alapján",NULL,NULL}
+817	table_shape_fields	1	{Név,"Rendszer paraméter neve",NULL,NULL}
+818	table_shape_fields	1	{Név,"Mező ill. oszlop név",NULL,NULL}
+819	table_shape_fields	1	{node_note,node_note,NULL,NULL}
+820	table_shape_fields	1	{host:service,"Szolgálltatás példány",NULL,NULL}
+821	table_shape_fields	1	{err_code,err_code,NULL,NULL}
+822	table_shape_fields	1	{Query,"SQL Query",NULL,NULL}
+823	table_shape_fields	1	{Típus,"Típus azonosító",NULL,NULL}
+824	table_shape_fields	1	{"Forrás sor","A kod sor száma",NULL,NULL}
+825	table_shape_fields	1	{Szál,"Program szál neve",NULL,NULL}
+826	table_shape_fields	1	{"SQL dr.","SQL Driver",NULL,NULL}
+827	table_shape_fields	1	{Cimke,Cimke,NULL,NULL}
+828	table_shape_fields	1	{Index,"A port sorszáma (opcionális)",NULL,NULL}
+829	table_shape_fields	1	{date_of,date_of,NULL,NULL}
+830	table_shape_fields	1	{vlan_name,vlan_name,NULL,NULL}
+831	table_shape_fields	1	{"Linked node","Linked node",NULL,NULL}
+832	table_shape_fields	1	{src_name,src_name,NULL,NULL}
+833	table_shape_fields	1	{tpow_note,tpow_note,NULL,NULL}
+834	table_shape_fields	1	{Név,Név,NULL,NULL}
+835	table_shape_fields	1	{Busz,Busz,NULL,NULL}
+836	table_shape_fields	1	{port_name,port_name,NULL,NULL}
+837	table_shape_fields	1	{acknowledged,acknowledged,NULL,NULL}
+838	table_shape_fields	1	{Index,"A port sorszáma (kötelező)",NULL,NULL}
+839	table_shape_fields	1	{Típus,"Az eszköz típusa",NULL,NULL}
+840	table_shape_fields	1	{Állapot,"Az eszköz állpota",NULL,NULL}
+841	table_shape_fields	1	{Megjegyzés,Megjegyzés,NULL,NULL}
+842	table_shape_fields	1	{node_name,node_name,NULL,NULL}
+843	table_shape_fields	1	{place_id,place_id,NULL,NULL}
+844	table_shape_fields	1	{Dimanzió,Dimanzió,NULL,NULL}
+845	table_shape_fields	1	{Név,"Szolgáltatás neve",NULL,NULL}
+846	table_shape_fields	1	{set_type,set_type,NULL,NULL}
+847	table_shape_fields	1	{offline_group_ids,offline_group_ids,NULL,NULL}
+848	table_shape_fields	1	{"Linked node","Linked node",NULL,NULL}
+849	table_shape_fields	1	{Index,Index,NULL,NULL}
+850	table_shape_fields	1	{Port,"Port név",NULL,NULL}
+851	table_shape_fields	1	{superior_alarm_id,superior_alarm_id,NULL,NULL}
+852	table_shape_fields	1	{import_expression,import_expression,NULL,NULL}
+853	table_shape_fields	1	{table_name,table_name,NULL,NULL}
+854	table_shape_fields	1	{r_port_name,r_port_name,NULL,NULL}
+855	table_shape_fields	1	{index,"Linked port index",NULL,NULL}
+856	table_shape_fields	1	{Típus,"A port típusa",NULL,NULL}
+857	table_shape_fields	1	{error_id,error_id,NULL,NULL}
+858	table_shape_fields	1	{Név,Neve,NULL,NULL}
+859	table_shape_fields	1	{trigger_op,trigger_op,NULL,NULL}
+860	table_shape_fields	1	{"Egyébb paraméterek","Egyébb paraméterek",NULL,NULL}
+861	table_shape_fields	1	{r_node_name,r_node_name,NULL,NULL}
+862	table_shape_fields	1	{vége,"A kritikus esemény vége",NULL,NULL}
+863	table_shape_fields	1	{Hely,"Az eszköz helye",NULL,NULL}
+864	table_shape_fields	1	{"Az adattábla neve","Az adattábla neve",NULL,NULL}
+865	table_shape_fields	1	{"Betekintési jog","Minimális jogosultság a megtekintéshez",NULL,NULL}
+866	table_shape_fields	1	{user_name,user_name,NULL,NULL}
+867	table_shape_fields	1	{src_line,src_line,NULL,NULL}
+868	table_shape_fields	1	{new_soft_state,new_soft_state,NULL,NULL}
+869	table_shape_fields	1	{image_note,image_note,NULL,NULL}
+870	table_shape_fields	1	{Megosztás,Megosztás,NULL,NULL}
+871	table_shape_fields	1	{Hely,Hely,NULL,NULL}
+872	table_shape_fields	1	{Host,"A futtató szg. neve",NULL,NULL}
+873	table_shape_fields	1	{user_id,user_id,NULL,NULL}
+874	table_shape_fields	1	{new_hard_state,new_hard_state,NULL,NULL}
+875	table_shape_fields	1	{memo,memo,NULL,NULL}
+876	table_shape_fields	1	{app_name,app_name,NULL,NULL}
+877	table_shape_fields	1	{upper_menu_item_id,upper_menu_item_id,NULL,NULL}
+878	table_shape_fields	1	{üzenet,"A riasztást dezektáló folyamat üzenete",NULL,NULL}
+879	table_shape_fields	1	{Megjegyzés,Megjegyzés,NULL,NULL}
+880	table_shape_fields	1	{service_id,service_id,NULL,NULL}
+881	table_shape_fields	1	{happened,happened,NULL,NULL}
+882	table_shape_fields	1	{letiltva,"Az értesítés letiltása",NULL,NULL}
+883	table_shape_fields	1	{vlan_note,vlan_note,NULL,NULL}
+884	table_shape_fields	1	{node_name,node_name,NULL,NULL}
+885	table_shape_fields	1	{node_id,node_id,NULL,NULL}
+886	table_shape_fields	1	{Név,Név,NULL,NULL}
+887	table_shape_fields	1	{Port,"Linked Port",NULL,NULL}
+888	table_shape_fields	1	{Állapot,"Az eszköz állpota",NULL,NULL}
+889	table_shape_fields	1	{Típus,Típus,NULL,NULL}
+890	table_shape_fields	1	{Linked,"Linked elem",NULL,NULL}
+891	table_shape_fields	1	{port,"Linked port",NULL,NULL}
+892	table_shape_fields	1	{Cimke,Cimke,NULL,NULL}
+893	table_shape_fields	1	{noalarm_flag,noalarm_flag,NULL,NULL}
+894	table_shape_fields	1	{"Hiba par.","Másodlagost hiba paraméter",NULL,NULL}
+895	table_shape_fields	1	{thread_name,thread_name,NULL,NULL}
+896	table_shape_fields	1	{Sorrend,Sorrend,NULL,NULL}
+897	table_shape_fields	1	{PID,"Folyamat azonosító (PID)",NULL,NULL}
+898	table_shape_fields	1	{enum_val_name,enum_val_name,NULL,NULL}
+899	table_shape_fields	1	{err_msg,err_msg,NULL,NULL}
+900	table_shape_fields	1	{prime_service_id,prime_service_id,NULL,NULL}
+901	table_shape_fields	1	{service_id,service_id,NULL,NULL}
+902	table_shape_fields	1	{reapeat,reapeat,NULL,NULL}
+903	table_shape_fields	1	{state_updated_time,state_updated_time,NULL,NULL}
+904	table_shape_fields	1	{"Adat üz.","Hiba üzenet",NULL,NULL}
+905	table_shape_fields	1	{Szűrő,"Konstans SQL szűrő kifejezés",NULL,NULL}
+906	table_shape_fields	1	{app_name,app_name,NULL,NULL}
+907	table_shape_fields	1	{daemon,"Lekérdező daemon",NULL,NULL}
+908	table_shape_fields	1	{features,features,NULL,NULL}
+909	table_shape_fields	1	{regular_expression,regular_expression,NULL,NULL}
+910	table_shape_fields	1	{last_name,last_name,NULL,NULL}
+911	table_shape_fields	1	{host_service_id,host_service_id,NULL,NULL}
+912	table_shape_fields	1	{node_type,node_type,NULL,NULL}
+913	table_shape_fields	1	{first_time,first_time,NULL,NULL}
+914	table_shape_fields	1	{Megosztás,Megosztás,NULL,NULL}
+915	table_shape_fields	1	{first_time,first_time,NULL,NULL}
+916	table_shape_fields	1	{"Mező tulajdonságok","Mező tulajdonságok",NULL,NULL}
+917	table_shape_fields	1	{app_name,app_name,NULL,NULL}
+918	table_shape_fields	1	{pid,pid,NULL,NULL}
+919	table_shape_fields	1	{"A megjelenített rokonok","A megjelenített rokonok",NULL,NULL}
+920	table_shape_fields	1	{"Szerkesztési jog","Minimális jogosultság a szerkesztéshez",NULL,NULL}
+921	table_shape_fields	1	{"Hozzáadási jog","Minimális jogosultság új rekord hozzáadásához",NULL,NULL}
+922	table_shape_fields	1	{Index,"Linked Port Index",NULL,NULL}
+923	table_shape_fields	1	{Típus,Típus,NULL,NULL}
+924	table_shape_fields	1	{"krit. áll.","Legkritikusabb állapot a riasztás alatt",NULL,NULL}
+925	table_shape_fields	1	{Szervíz,Szervíz,NULL,NULL}
+926	table_shape_fields	1	{Index,Index,NULL,NULL}
+927	table_shape_fields	1	{Port,Port,NULL,NULL}
+928	table_shape_fields	1	{soft_state,soft_state,NULL,NULL}
+929	table_shape_fields	1	{Felhasználó,Felhasználó,NULL,NULL}
+930	table_shape_fields	1	{Főggvény,"Függvény neve a forrásban",NULL,NULL}
+931	table_shape_fields	1	{image_name,image_name,NULL,NULL}
+932	table_shape_fields	1	{func_name,func_name,NULL,NULL}
+933	table_shape_fields	1	{new_state,new_state,NULL,NULL}
+934	table_shape_fields	1	{Megjegyzés,Megjegyzés,NULL,NULL}
+935	table_shape_fields	1	{set_type,set_type,NULL,NULL}
+936	table_shape_fields	1	{place_note,place_note,NULL,NULL}
+937	table_shape_fields	1	{Parancs,"Ellenörző parancs",NULL,NULL}
+938	table_shape_fields	1	{Port,"Linked Port",NULL,NULL}
+939	table_shape_fields	1	{Érték,Érték,NULL,NULL}
+940	table_shape_fields	1	{Megjegyzés,Megjegyzés,NULL,NULL}
+941	table_shape_fields	1	{Autóm.frissítés,"Táblázat automatikus frissítésének időköze",NULL,NULL}
+942	table_shape_fields	1	{"Törlési jog","Minimális jogosultság a törléshez",NULL,NULL}
+943	table_shape_fields	1	{"Forrás név","A forrás fájl neve",NULL,NULL}
+944	table_shape_fields	1	{tpow_name,tpow_name,NULL,NULL}
+945	table_shape_fields	1	{mactab_state,mactab_state,NULL,NULL}
+946	table_shape_fields	1	{"Leíró neve","Leíró neve",NULL,NULL}
+947	table_shape_fields	1	{user_note,user_note,NULL,NULL}
+948	table_shape_fields	1	{node_id,node_id,NULL,NULL}
+949	table_shape_fields	1	{date_of,date_of,NULL,NULL}
+950	table_shape_fields	1	{"Szerkesztési jog","Minimális jogosultság a szerkesztéshez",NULL,NULL}
+951	table_shape_fields	1	{user_id,user_id,NULL,NULL}
+952	table_shape_fields	1	{enum_type_name,enum_type_name,NULL,NULL}
+953	table_shape_fields	1	{kezdete,"A kritikus esemény kezdete",NULL,NULL}
+954	table_shape_fields	1	{Típus,Típus,NULL,NULL}
+955	table_shape_fields	1	{state_msg,state_msg,NULL,NULL}
+956	table_shape_fields	1	{dow,dow,NULL,NULL}
+957	table_shape_fields	1	{acknowledged,acknowledged,NULL,NULL}
+958	table_shape_fields	1	{date_of,date_of,NULL,NULL}
+959	table_shape_fields	1	{Megosztás,"A megosztás típusa",NULL,NULL}
+960	table_shape_fields	1	{Név,"Eszköz (host) neve",NULL,NULL}
+961	table_shape_fields	1	{hwaddress,hwaddress,NULL,NULL}
+962	table_shape_fields	1	{Megjegyzés,Megjegyzés,NULL,NULL}
+963	table_shape_fields	1	{App.,"A program neve",NULL,NULL}
+964	table_shape_fields	1	{Típus,Típus,NULL,NULL}
+965	table_shape_fields	1	{"Leíró típusa","Leíró típusa",NULL,NULL}
+966	table_shape_fields	1	{Index,"Linked Port Index",NULL,NULL}
+967	table_shape_fields	1	{Helye,"Felsőbb szintú hely",NULL,NULL}
+968	table_shape_fields	1	{Érték,Érték,NULL,NULL}
+969	table_shape_fields	1	{noalarm,noalarm,NULL,NULL}
+970	table_shape_fields	1	{r_port_name,r_port_name,NULL,NULL}
+971	table_shape_fields	1	{Megjegyzés,Megjegyzés,NULL,NULL}
+972	table_shape_fields	1	{Megjegyzés,Megjegyzés,NULL,NULL}
+973	table_shape_fields	1	{Név,"Hely helyiség neve",NULL,NULL}
+974	table_shape_fields	1	{vlan_id,vlan_id,NULL,NULL}
+975	table_shape_fields	1	{Telefonszám(ok),Telefonszám(ok),NULL,NULL}
+976	table_shape_fields	1	{image_type,image_type,NULL,NULL}
+977	table_shape_fields	1	{timeperiod_note,timeperiod_note,NULL,NULL}
+978	table_shape_fields	1	{Típus,"A minta típusa/szintaxisa",NULL,NULL}
+979	table_shape_fields	1	{online_group_ids,online_group_ids,NULL,NULL}
+980	table_shape_fields	1	{state_updated_time,state_updated_time,NULL,NULL}
+981	table_shape_fields	1	{image_sub_type,image_sub_type,NULL,NULL}
+982	table_shape_fields	1	{last_time,last_time,NULL,NULL}
+983	table_shape_fields	1	{Típus,"Hiba típusa",NULL,NULL}
+984	table_shape_fields	1	{menu_item_name,menu_item_name,NULL,NULL}
+985	table_shape_fields	1	{r_node_name,r_node_name,NULL,NULL}
+986	table_shape_fields	1	{hwaddress,hwaddress,NULL,NULL}
+987	table_shape_fields	1	{host_service_state,host_service_state,NULL,NULL}
+988	table_shape_fields	1	{Név,Név,NULL,NULL}
+989	table_shape_fields	1	{Megjegyzés,Megjegyzés,NULL,NULL}
+990	table_shape_fields	1	{Megjegyzés,Megjegyzés,NULL,NULL}
+991	table_shape_fields	1	{Index,"Port index",NULL,NULL}
+992	table_shape_fields	1	{"Paraméter típus név","Paraméter típus név",NULL,NULL}
+993	table_shape_fields	1	{expired,expired,NULL,NULL}
+994	table_shape_fields	1	{Minta,"A minta",NULL,NULL}
+995	table_shape_fields	1	{Érték,"Minta azonosító, találati érték",NULL,NULL}
+996	table_shape_fields	1	{Név,Név,NULL,NULL}
+997	table_shape_fields	1	{old_hard_state,old_hard_state,NULL,NULL}
+998	table_shape_fields	1	{Megjegyzés,Megjegyzés,NULL,NULL}
+999	table_shape_fields	1	{hard_state,hard_state,NULL,NULL}
+1000	table_shape_fields	1	{proto_service_id,proto_service_id,NULL,NULL}
+1001	table_shape_fields	1	{place_id,place_id,NULL,NULL}
+1002	table_shape_fields	1	{last_time,last_time,NULL,NULL}
+1003	table_shape_fields	1	{importance,importance,NULL,NULL}
+1004	table_shape_fields	1	{"Betekintési jog","Minimális jogosultság a megtekintéshez",NULL,NULL}
+1005	table_shape_fields	1	{Sys.,"Utolsó rendszer hiba típusa",NULL,NULL}
+1006	table_shape_fields	1	{err_subcode,err_subcode,NULL,NULL}
+1007	table_shape_fields	1	{"Hiba par.","Másodlagost hiba paraméter",NULL,NULL}
+1008	table_shape_fields	1	{Port,Port,NULL,NULL}
+1009	table_shape_fields	1	{date_of_last,date_of_last,NULL,NULL}
+1010	table_shape_fields	1	{"QSL db","SQL db",NULL,NULL}
+1011	table_shape_fields	1	{Típus,Típus,NULL,NULL}
+1012	table_shape_fields	1	{first_name,first_name,NULL,NULL}
+1013	table_shape_fields	1	{Típus,"A minta típusa/célja",NULL,NULL}
+1014	table_shape_fields	1	{app_memo_id,app_memo_id,NULL,NULL}
+1015	table_shape_fields	1	{old_soft_state,old_soft_state,NULL,NULL}
+1016	table_shape_fields	1	{"Egyébb modosítók","Egyébb modosítók (features)",NULL,NULL}
+1017	table_shape_fields	1	{"Adat típus","Adat típus",NULL,NULL}
+1018	table_shape_fields	1	{időpontja,"Az esemény időpontja",NULL,NULL}
+\.
 
 
 --
@@ -12035,90 +13480,90 @@ SELECT pg_catalog.setval('mactab_logs_mactab_log_id_seq', 389887, true);
 -- Data for Name: menu_items; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY menu_items (menu_item_id, menu_item_name, app_name, upper_menu_item_id, item_sequence_number, menu_title, tab_title, features, tool_tip, whats_this, menu_rights) FROM stdin;
-1559	file	lv2gui	\N	10	fájl	file	:sub:	\N	\N	none
-1560	setup	lv2gui	1559	10	Beállítások	Beállítások	:own=setup:	\N	\N	none
-1561	gsetup	lv2gui	1559	20	GUI Beállítások	GUI Beállítások	:own=gsetup:	\N	\N	none
-1562	sys_params	lv2gui	1559	30	Rendszer paraméterek	Rendszer paraméterek	:shape=sys_params:	\N	\N	none
-1563	param_types	lv2gui	1559	40	Paraméter típus leírók	Paraméter típus leírók	:shape=param_types:	\N	\N	none
-1564	restart	lv2gui	1559	50	Újraindítás	restart	:exec=restart:	\N	\N	none
-1565	exit	lv2gui	1559	60	Kilép	exit	:exec=exit:	\N	\N	none
-1566	user	lv2gui	\N	20	Felhasználók	user	:sub:	\N	\N	none
-1568	groups	lv2gui	1566	20	Felhasználói csoportok	Felhasználói csoportok	:shape=groups:	\N	\N	none
-1569	zones	lv2gui	1566	30	Zónák	Zónák	:shape=place_groups:	\N	\N	none
-1570	objects	lv2gui	\N	30	Objektumok	objects	:sub:	\N	\N	none
-1571	patchs	lv2gui	1570	10	Patch panelek	Patch panelek	:shape=patchs:	\N	\N	none
-1573	places_t	lv2gui	1570	30	Helyek, helyiségek (fa)	Helyek, helyiségek (fa)	:shape=places_tree:	\N	\N	none
-1574	places	lv2gui	1570	40	Helyek, helyiségek (tábla)	Helyek, helyiségek (tábla)	:shape=places:	\N	\N	none
-1575	services	lv2gui	1570	50	Szolgáltatások	Szolgáltatások	:shape=services:	\N	\N	none
-1576	service_types	lv2gui	1570	60	Szolgáltatás típusok	Szolgáltatás típusok	:shape=service_types:	\N	\N	none
-1577	query_parsers	lv2gui	1570	70	Lekérdezés fordító	Lekérdezés fordító	:shape=query_parsers:	\N	\N	none
-1580	subnets	lv2gui	1570	100	Alhálózatok	Alhálózatok	:shape=subnets:	\N	\N	none
-1581	vlans	lv2gui	1570	110	VLAN-ok	VLAN-ok	:shape=vlans:	\N	\N	none
-1582	images	lv2gui	1570	120	Képek	Képek	:shape=images:	\N	\N	none
-1583	timeperiods	lv2gui	1570	130	Időintervallumok	Időintervallumok	:shape=timeperiods:	\N	\N	none
-1584	events	lv2gui	\N	40	Események	events	:sub:	\N	\N	none
-1585	alarms	lv2gui	1584	10	Riasztások	Riasztások	:shape=alarms:	\N	\N	none
-1586	alarms_tree	lv2gui	1584	20	Riasztások (fa)	Riasztások (fa)	:shape=alarms_tree:	\N	\N	none
-1587	app_errs	lv2gui	1584	30	Program hiba napló	Program hiba napló	:shape=app_errs:	\N	\N	none
-1588	app_memos	lv2gui	1584	40	Program esemény napló	Program esemény napló	:shape=app_memos:	\N	\N	none
-1589	db_errs	lv2gui	1584	50	Adatbázis hiba napló	Adatbázis hiba napló	:shape=db_errs:	\N	\N	none
-1590	host_service_logs	lv2gui	1584	60	Szervíz állapot napló	Szervíz állapot napló	:shape=host_service_logs:	\N	\N	none
-1591	olalarm	lv2gui	1584	70	On-Line riasztások	On-Line riasztások	:own=olalarm:	\N	\N	none
-1592	api_ecodes	lv2gui	1584	80	API hiba kódok	API hiba kódok	:own=errcodes:	\N	\N	none
-1593	topology	lv2gui	\N	50	Hálózati topológia	topology	:sub:	\N	\N	none
-1595	netothers	lv2gui	\N	60	Egyébb hálózati adatok	netothers	:sub:	\N	\N	none
-1596	arps	lv2gui	1595	10	ARP tábla	ARP tábla	:shape=arps:	\N	\N	none
-1597	arp_logs	lv2gui	1595	20	ARP napló	ARP napló	:shape=arp_logs:	\N	\N	none
-1598	mactab	lv2gui	1595	30	Port címtáblák	Port címtáblák	:shape=mactab:	\N	\N	none
-1599	mactab_logs	lv2gui	1595	40	Port címtáblak napló	Port címtáblak napló	:shape=mactab_logs:	\N	\N	none
-1600	dyn_addr_ranges	lv2gui	1595	50	Dinamikus címtartományok	Dinamikus címtartományok	:shape=dyn_addr_ranges:	\N	\N	none
-1601	iftypes	lv2gui	1595	60	Port típusok	Port típusok	:shape=iftypes:	\N	\N	none
-1603	fkey_types	lv2gui	1602	10	Idegen kulcs típusok	Idegen kulcs típusok	:shape=fkey_types:	\N	\N	none
-1604	unusual_fkeys	lv2gui	1602	20	Idegen kulcs és öröklődés	Idegen kulcs és öröklődés	:shape=unusual_fkeys:	\N	\N	none
-1606	alarm_messages	lv2gui	1605	10	Figyelmeztető üzenetek szövege	Figyelmeztető üzenetek szövege	:shape=alarm_messages:	\N	\N	none
-1607	shapes	lv2gui	1605	20	Táblák megjelenítése	Táblák megjelenítése	:shape=table_shapes:	\N	\N	none
-1614	file	indalarm	\N	10	fájl	file	:sub:	\N	\N	none
-1615	gsetup	indalarm	1614	10	GUI Beállítások	GUI Beállítások	:own=gsetup:	\N	\N	none
-1616	restart	indalarm	1614	20	Újraindítás	restart	:exec=restart:	\N	\N	none
-1617	exit	indalarm	1614	30	Kilép	exit	:exec=exit:	\N	\N	none
-1618	events	indalarm	\N	20	Események	events	:sub:	\N	\N	none
-1619	alarms_tree	indalarm	1618	10	Riasztások (fa)	Riasztások (fa)	:shape=alarms_tree:	\N	\N	none
-1620	olalarm	indalarm	1618	20	On-Line riasztások	On-Line riasztások	:own=olalarm:	\N	\N	none
-1621	findmac	lv2gui	1610	40	Keresés MAC szerint	findmac	:own=findmac:	\N	\N	none
-1605	gui	lv2gui	\N	80	Megjelenítés	gui	:sub:			admin
-1567	users	lv2gui	1566	10	Felhasználók	Felhasználók	:shape=users:			none
-1611	import	lv2gui	1610	10	Szöveges import	Szöveges import	:own=parser:			admin
-1609	menus	lv2gui	1605	40	GUI menük fa	GUI menük fa	:shape=menu_items:			none
-1602	internals	lv2gui	\N	70	Belső vezérlő adatok	internals	:sub:	\N	\N	operator
-1578	host_services_t	lv2gui	1570	80	Szolgáltatás példányok (fa)	Szolgáltatás példányok (fa)	:shape=host_services_tree:multi:	\N	\N	none
-1613	hsop	lv2gui	1610	30	Servíz állpot manipulálás	Servíz állpot manipulálás	:own=hsop:			viewer
-1608	enums	lv2gui	1605	30	Enumerációk	Enumerációk	:sub:	Az enumerációs értékekhez  kapcsolódó megjelenítések.	\N	operator
-1572	nodes	lv2gui	1570	20	Hálózati elemek	Hálózati elemek	:shape=snmpdevices:multi:	\N	\N	none
-1579	host_services	lv2gui	1570	90	Szolgáltatás példányok (tábla)	Szolgáltatás példányok (tábla)	:shape=host_services:multi:	\N	\N	none
-1622	object_syntaxs	lv2gui	1602	30	Objektum szintaxisok	Objektum szintaxisok	:shape=object_syntaxs:	\N	\N	none
-1594	phsnodes	lv2gui	1593	10	Hálózati csomópontok	Hálózati csomópontok	:shape=phsnodes:			none
-1623	workstation	lv2gui	1610	50	Munkaállomások	Munkaállomások	:own=workstation:			none
-1624	selects	lv2gui	1602	40	Minták	Minta tár	:shape=selects:	\N	\N	operator
-1625	view	lv2gui	\N	15	Nézet	\N	:sub:			none
-1626	tab	lv2gui	1625	10	Tab	\N	:exec=tabs:	\N	\N	none
-1628	windows	lv2gui	1625	20	Ablakok	\N	:exec=windows:	\N	\N	none
-1629	closes	lv2gui	1625	30	Ablakok bezárása	\N	:exec=close:	\N	\N	none
-1631	menus_tab	lv2gui	1605	50	GUI menük	GUI menük	:shape=menu_items_tab:			none
-1632	enum_tab	lv2gui	1608	10	Táblázat	Enumerációval kapcsolatos paraméterek	:shape=enum_vals:	\N	\N	none
-1633	enums_edit	lv2gui	1608	20	Szerkesztés	Enumerációk szerkesztése	:own=enumedit:	\N	\N	none
-1610	tools	lv2gui	\N	90	Eszközök	tools	:sub:	\N	\N	viewer
-1649	all_phs_links	lv2gui	1593	30	Fizikai linkek	Fizikai linkek	:shape=phs_links:	\N	\N	none
-1650	all_log_links	lv2gui	1593	40	Logika linkek	Logikai linkek	:shape=log_links:	A logikai linkek a fizikai linkek eredőjeként létrejött végponti kapcsolatok.	\N	none
-1636	service_var_types	lv2gui	1570	65	Szolgáltatás változó típusok	Szolgáltatás változó típusok	:shape=service_var_types:	\N	\N	admin
-1652	all_lldp_links	lv2gui	1593	50	LLDP linkek	LLDP linkek	:shape=lldp_links:	\N	\N	none
-1639	place_topol	lv2gui	1593	20	Helyiségek	Helyiségekben található objektumok	:shape=places_topol:	\N	\N	operator
-1640	all_service_var	lv2gui	1570	67	Szolgáltatás változók teljes lista	Szolgáltatás változók teljes lista	:shape=allsrvvars:	\N	\N	operator
-1641	chgzone	lv2gui	1566	40	Zóna váltás	\N	:exec=zone:	\N	\N	operator
-1643	export	lv2gui	1610	15	Szöveges export	Szöveges export	:own=export:	\N	\N	operator
-1644	deducepatch	lv2gui	1610	60	Falikábel felfedezés	Falikábel felfedezése	:own=deducepatch:	\N	\N	operator
-1645	snmpdevquery	lv2gui	1610	70	SNMP inser/refresh	SNMP inser/refresh	:own=snmpdquery:	\N	\N	operator
-1648	user_events	lv2gui	1584	90	Felhasználói események	Felhasználói események	:shape=user_events:	\N	\N	none
+COPY menu_items (menu_item_id, menu_item_name, app_name, upper_menu_item_id, item_sequence_number, features, menu_rights, text_id) FROM stdin;
+1559	file	lv2gui	\N	10	:sub:	none	154
+1560	setup	lv2gui	1559	10	:own=setup:	none	155
+1561	gsetup	lv2gui	1559	20	:own=gsetup:	none	156
+1562	sys_params	lv2gui	1559	30	:shape=sys_params:	none	157
+1563	param_types	lv2gui	1559	40	:shape=param_types:	none	158
+1564	restart	lv2gui	1559	50	:exec=restart:	none	159
+1565	exit	lv2gui	1559	60	:exec=exit:	none	160
+1566	user	lv2gui	\N	20	:sub:	none	161
+1568	groups	lv2gui	1566	20	:shape=groups:	none	162
+1569	zones	lv2gui	1566	30	:shape=place_groups:	none	163
+1570	objects	lv2gui	\N	30	:sub:	none	164
+1573	places_t	lv2gui	1570	30	:shape=places_tree:	none	165
+1574	places	lv2gui	1570	40	:shape=places:	none	166
+1575	services	lv2gui	1570	50	:shape=services:	none	167
+1576	service_types	lv2gui	1570	60	:shape=service_types:	none	168
+1577	query_parsers	lv2gui	1570	70	:shape=query_parsers:	none	169
+1580	subnets	lv2gui	1570	100	:shape=subnets:	none	170
+1581	vlans	lv2gui	1570	110	:shape=vlans:	none	171
+1582	images	lv2gui	1570	120	:shape=images:	none	172
+1583	timeperiods	lv2gui	1570	130	:shape=timeperiods:	none	173
+1584	events	lv2gui	\N	40	:sub:	none	174
+1585	alarms	lv2gui	1584	10	:shape=alarms:	none	175
+1586	alarms_tree	lv2gui	1584	20	:shape=alarms_tree:	none	176
+1587	app_errs	lv2gui	1584	30	:shape=app_errs:	none	177
+1588	app_memos	lv2gui	1584	40	:shape=app_memos:	none	178
+1589	db_errs	lv2gui	1584	50	:shape=db_errs:	none	179
+1590	host_service_logs	lv2gui	1584	60	:shape=host_service_logs:	none	180
+1591	olalarm	lv2gui	1584	70	:own=olalarm:	none	181
+1592	api_ecodes	lv2gui	1584	80	:own=errcodes:	none	182
+1593	topology	lv2gui	\N	50	:sub:	none	183
+1595	netothers	lv2gui	\N	60	:sub:	none	184
+1596	arps	lv2gui	1595	10	:shape=arps:	none	185
+1597	arp_logs	lv2gui	1595	20	:shape=arp_logs:	none	186
+1598	mactab	lv2gui	1595	30	:shape=mactab:	none	187
+1599	mactab_logs	lv2gui	1595	40	:shape=mactab_logs:	none	188
+1600	dyn_addr_ranges	lv2gui	1595	50	:shape=dyn_addr_ranges:	none	189
+1601	iftypes	lv2gui	1595	60	:shape=iftypes:	none	190
+1603	fkey_types	lv2gui	1602	10	:shape=fkey_types:	none	191
+1604	unusual_fkeys	lv2gui	1602	20	:shape=unusual_fkeys:	none	192
+1606	alarm_messages	lv2gui	1605	10	:shape=alarm_messages:	none	193
+1607	shapes	lv2gui	1605	20	:shape=table_shapes:	none	194
+1571	patchs	lv2gui	1570	10	:shape=patchs:multi:	none	195
+1614	file	indalarm	\N	10	:sub:	none	196
+1615	gsetup	indalarm	1614	10	:own=gsetup:	none	197
+1616	restart	indalarm	1614	20	:exec=restart:	none	198
+1617	exit	indalarm	1614	30	:exec=exit:	none	199
+1618	events	indalarm	\N	20	:sub:	none	200
+1619	alarms_tree	indalarm	1618	10	:shape=alarms_tree:	none	201
+1620	olalarm	indalarm	1618	20	:own=olalarm:	none	202
+1621	findmac	lv2gui	1610	40	:own=findmac:	none	203
+1605	gui	lv2gui	\N	80	:sub:	admin	204
+1567	users	lv2gui	1566	10	:shape=users:	none	205
+1611	import	lv2gui	1610	10	:own=parser:	admin	206
+1609	menus	lv2gui	1605	40	:shape=menu_items:	none	207
+1602	internals	lv2gui	\N	70	:sub:	operator	208
+1578	host_services_t	lv2gui	1570	80	:shape=host_services_tree:multi:	none	209
+1613	hsop	lv2gui	1610	30	:own=hsop:	viewer	210
+1608	enums	lv2gui	1605	30	:sub:	operator	211
+1572	nodes	lv2gui	1570	20	:shape=snmpdevices:multi:	none	212
+1579	host_services	lv2gui	1570	90	:shape=host_services:multi:	none	213
+1622	object_syntaxs	lv2gui	1602	30	:shape=object_syntaxs:	none	214
+1594	phsnodes	lv2gui	1593	10	:shape=phsnodes:	none	215
+1623	workstation	lv2gui	1610	50	:own=workstation:	none	216
+1624	selects	lv2gui	1602	40	:shape=selects:	operator	217
+1625	view	lv2gui	\N	15	:sub:	none	218
+1626	tab	lv2gui	1625	10	:exec=tabs:	none	219
+1628	windows	lv2gui	1625	20	:exec=windows:	none	220
+1629	closes	lv2gui	1625	30	:exec=close:	none	221
+1631	menus_tab	lv2gui	1605	50	:shape=menu_items_tab:	none	222
+1632	enum_tab	lv2gui	1608	10	:shape=enum_vals:	none	223
+1633	enums_edit	lv2gui	1608	20	:own=enumedit:	none	224
+1610	tools	lv2gui	\N	90	:sub:	viewer	225
+1649	all_phs_links	lv2gui	1593	30	:shape=phs_links:	none	226
+1650	all_log_links	lv2gui	1593	40	:shape=log_links:	none	227
+1636	service_var_types	lv2gui	1570	65	:shape=service_var_types:	admin	228
+1652	all_lldp_links	lv2gui	1593	50	:shape=lldp_links:	none	229
+1639	place_topol	lv2gui	1593	20	:shape=places_topol:	operator	230
+1640	all_service_var	lv2gui	1570	67	:shape=allsrvvars:	operator	231
+1641	chgzone	lv2gui	1566	40	:exec=zone:	operator	232
+1643	export	lv2gui	1610	15	:own=export:	operator	233
+1644	deducepatch	lv2gui	1610	60	:own=deducepatch:	operator	234
+1645	snmpdevquery	lv2gui	1610	70	:own=snmpdquery:	operator	235
+1648	user_events	lv2gui	1584	90	:shape=user_events:	none	236
 \.
 
 
@@ -12164,7 +13609,7 @@ COPY nports (port_id, port_name, port_note, port_tag, iftype_id, node_id, port_i
 -- Name: nports_port_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('nports_port_id_seq', 22456, true);
+SELECT pg_catalog.setval('nports_port_id_seq', 22710, true);
 
 
 --
@@ -34866,7 +36311,7 @@ COPY patchs (node_id, node_name, node_note, node_type, place_id, features, delet
 -- Name: patchs_node_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('patchs_node_id_seq', 2978, true);
+SELECT pg_catalog.setval('patchs_node_id_seq', 3039, true);
 
 
 --
@@ -34881,7 +36326,7 @@ COPY phs_links_table (phs_link_id, port_id1, port_id2, phs_link_type1, phs_link_
 -- Name: phs_links_table_phs_link_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('phs_links_table_phs_link_id_seq', 5839, true);
+SELECT pg_catalog.setval('phs_links_table_phs_link_id_seq', 5913, true);
 
 
 --
@@ -34938,7 +36383,7 @@ COPY places (place_id, place_name, place_note, place_type, parent_id, image_id, 
 -- Name: places_place_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('places_place_id_seq', 931, true);
+SELECT pg_catalog.setval('places_place_id_seq', 994, true);
 
 
 --
@@ -35192,8 +36637,10 @@ COPY sys_params (sys_param_id, sys_param_name, sys_param_note, param_type_id, pa
 14	global_replace_flag	A parser alapértelmezetten beszúrás helyett a felülírás metódust használja.	1	true
 19	lock_timeout	Database lock timeout	5	0:00:15
 20	export_list	Az exports menüpontban kiexportálható táblák litája.	4	enum_vals,object_syntaxs,patchs,places,table_shapes,users,services
-1	version_minor	\N	2	5
 21	ticet_reapeat_time	Ha ennél régebbi az azonos tiket riasztás, akkor új riasztás	5	14 days
+22	default_language	\N	2	2
+23	failower_language	\N	2	1
+1	version_minor	\N	2	6
 \.
 
 
@@ -35201,734 +36648,734 @@ COPY sys_params (sys_param_id, sys_param_name, sys_param_note, param_type_id, pa
 -- Name: sys_params_sys_param_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('sys_params_sys_param_id_seq', 21, true);
+SELECT pg_catalog.setval('sys_params_sys_param_id_seq', 23, true);
 
 
 --
 -- Data for Name: table_shape_fields; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_shape_field_note, table_title, dialog_title, table_shape_id, field_sequence_number, ord_types, ord_init_type, ord_init_sequence_number, field_flags, expression, default_value, features, tool_tip, whats_this, view_rights, edit_rights, flag, filter_types) FROM stdin;
-27800	node_name1	\N	Linked	Linked elem	2438	5	{no,asc,desc}	no	5	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27801	node_name1	\N	Node	log_links	2439	5	{no,asc,desc}	no	5	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}
-27798	node_name1	\N	Node	Node	2440	5	{no,asc,desc}	no	5	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}
-27721	warning_param1	warning_param1	warning_param1	warning_param1	2494	100	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27722	warning_param2	warning_param2	warning_param2	warning_param2	2494	110	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27723	critical_type	critical_type	critical_type	critical_type	2494	120	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27724	critical_param1	critical_param1	critical_param1	critical_param1	2494	130	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27725	critical_param2	critical_param2	critical_param2	critical_param2	2494	140	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27726	features	features	features	features	2494	150	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27727	deleted	deleted	deleted	deleted	2494	160	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27712	service_var_type_id	service_var_type_id	service_var_type_id	service_var_type_id	2494	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27714	service_var_type_note	\N	Megjegyzés	Megjegyzés	2494	30	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{like}
-27715	param_type_id	\N	Tárolási típus	Tárolási típus	2494	40	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{like,notlike}
-27716	service_var_type	\N	Altípus	Altípus	2494	50	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{like}
-27717	plausibility_type	\N	Hihető	Hihetőség vizsgálat típusa	2494	60	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27718	plausibility_param1	\N	Hihető, 1.par.	Hihtőség vizsgálat 1. paraméter	2494	70	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27720	warning_type	warning_type	warning_type	warning_type	2494	90	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27719	plausibility_param2	\N	Hihatő 2.par.	Hihtőség vizsgálat 2. paraméter	2494	80	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27713	service_var_type_name	\N	Név	Típus azonosító név	2494	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}
-27081	host_service_name	\N	\N	Szolgáltatás példány teljes név	2437	30	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27079	online_alarm_ack_id	\N	\N	Riasztás ID	2437	10	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27080	host_service_id	\N	\N	Szervíz példány ID	2437	20	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27082	node_name	\N	Eszköz	Eszköz neve	2437	40	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27084	place_name	\N	Hely	Az eszköz helye	2437	60	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27085	place_id	\N	\N	Hely egyedi azonosító (ID)	2437	70	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27086	superior_alarm_id	\N	\N	"szülő" szolgáltatás példány	2437	80	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27087	begin_time	\N	Kezdete	A riasztás kezdete	2437	90	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27090	max_status	\N	\N	A leg kritikusabb  állpot	2437	120	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27091	last_status	\N	\N	Legutolsó állpot	2437	130	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27092	event_note	\N	\N	Riasztás csatolt szövege, megjegyzés	2437	140	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27093	msg	\N	Üzenet	Riasztási üzenet	2437	150	\N	no	\N	{read_only,huge}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27094	online_user_ids	\N	\N	On-line értesítendő felhasználók	2437	160	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27095	notice_user_ids	\N	\N	Az üzenetet látta, láthatta	2437	170	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27096	view_user_ids	\N	\N	A riasztást megnézte, kiválasztotta	2437	180	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27060	online_alarm_unack_id	\N	\N	ID	2436	10	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27062	host_service_name	\N	Szolg.példány	Szolgáltatőás példány teljes név	2436	30	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27063	node_name	\N	Eszköz	Eszköz neve	2436	40	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27066	place_id	\N	\N	Hely ID	2436	70	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27067	superior_alarm_id	\N	\N	"szülő" szolgáltatás példány	2436	80	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27068	begin_time	\N	Kezdete	A riasztás kezdete	2436	90	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27069	end_time	\N	Vége	A riasztási állpot vége	2436	100	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27070	first_status	\N	\N	Állapot a riasztás kezdetekor	2436	110	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27071	max_status	\N	\N	Leg kritikusabb állapot	2436	120	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27072	last_status	\N	\N	Utolsó kritikus állpot	2436	130	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27074	msg	\N	Üzenet	Riasztási üzenet	2436	150	\N	no	\N	{read_only,huge}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27075	online_user_ids	\N	\N	On-line értesítendő felhasználók	2436	160	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27076	notice_user_ids	\N	\N	Látta, vagy láthatta	2436	170	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27077	view_user_ids	\N	\N	Megnézte, ill kiválasztotta	2436	180	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27065	place_name	\N	Hely	Az eszköz helye	2436	60	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27073	event_note	\N	\N	Riasztási üzenet, megjegyzés	2436	140	\N	no	\N	{table_hide,read_only}	\N	\N	\N	A riasztási állpotot létrehozó állpothoz csatolt opcionális üzenet.	\N	\N	\N	f	\N
-27119	node_id	node_id	node_id	node_id	2441	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27728	filter_types	filter_types	Filter típusok	Filter típusok	2480	112	\N	no	112	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27136	port_id	port_id	port_id	port_id	2444	1000	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27124	features	features	features	features	2441	60	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27125	deleted	deleted	deleted	deleted	2441	70	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27126	node_param_id	node_param_id	node_param_id	node_param_id	2442	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27146	shared_port_id	shared_port_id	Megosztva	Másodlagos megosztáshoz tartozó elsődleges port	2444	110	\N	no	\N	{}	\N	\N	:owner=node_id:	\N	\N	\N	\N	f	\N
-27128	node_id	node_id	node_id	node_id	2442	30	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27130	flag	flag	flag	flag	2442	50	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27131	port_param_id	port_param_id	port_param_id	port_param_id	2443	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27169	deleted	deleted	deleted	deleted	2447	70	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27133	port_id	port_id	port_id	port_id	2443	30	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27135	flag	flag	flag	flag	2443	50	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27147	node_id	node_id	node_id	node_id	2445	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27152	features	features	Egyébb paraméterek	Egyébb paraméterek	2445	60	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27153	deleted	deleted	deleted	deleted	2445	70	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27154	port_id	port_id	port_id	port_id	2446	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27159	node_id	node_id	node_id	node_id	2446	60	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27161	deleted	deleted	deleted	deleted	2446	80	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27162	flag	flag	flag	flag	2446	90	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27163	node_id	node_id	node_id	node_id	2447	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27167	place_id	place_id	Hely	Az eszköz helye	2447	50	{no,asc,desc}	no	30	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27168	features	features	paraméterek	Egyébb paraméterek	2447	60	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27141	node_id	node_id	node_id	node_id	2444	60	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27143	deleted	deleted	deleted	deleted	2444	80	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27171	ip_address_id	ip_address_id	ip_address_id	ip_address_id	2448	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27172	ip_address_note	ip_address_note	Megjegyzés	Megjegyzés	2448	20	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27173	address	address	Cím	Cím	2448	30	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27175	preferred	preferred	preferred	preferred	2448	50	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27176	subnet_id	subnet_id	Alhálózat	Alhálózat	2448	60	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27177	port_id	port_id	port_id	port_id	2448	70	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27178	flag	flag	flag	flag	2448	80	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27179	node_id	node_id	node_id	node_id	2449	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27180	node_name	node_name	node_name	node_name	2449	20	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27181	port_id	port_id	port_id	port_id	2449	30	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27182	port_name	port_name	port_name	port_name	2449	40	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27183	hwaddress	hwaddress	hwaddress	hwaddress	2449	50	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27184	mactab_state	mactab_state	mactab_state	mactab_state	2449	60	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27185	first_time	first_time	first_time	first_time	2449	70	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27186	last_time	last_time	last_time	last_time	2449	80	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27187	state_updated_time	state_updated_time	state_updated_time	state_updated_time	2449	90	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27188	set_type	set_type	set_type	set_type	2449	100	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27189	r_node_name	r_node_name	r_node_name	r_node_name	2449	110	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27190	r_port_name	r_port_name	r_port_name	r_port_name	2449	120	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27191	ipaddrs_by_arp	ipaddrs_by_arp	ipaddrs_by_arp	ipaddrs_by_arp	2449	130	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27192	ipaddrs_by_rif	ipaddrs_by_rif	ipaddrs_by_rif	ipaddrs_by_rif	2449	140	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27729	service_var_id	service_var_id	service_var_id	service_var_id	2495	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27211	host_service_note	host_service_note	host_service_note	host_service_note	2451	50	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27212	prime_service_id	prime_service_id	prime_service_id	prime_service_id	2451	60	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27213	proto_service_id	proto_service_id	proto_service_id	proto_service_id	2451	70	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27215	check_cmd	check_cmd	check_cmd	check_cmd	2451	90	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27216	features	features	features	features	2451	100	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27219	max_check_attempts	max_check_attempts	max_check_attempts	max_check_attempts	2451	130	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27220	normal_check_interval	normal_check_interval	normal_check_interval	normal_check_interval	2451	140	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27221	retry_check_interval	retry_check_interval	retry_check_interval	retry_check_interval	2451	150	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27222	timeperiod_id	timeperiod_id	timeperiod_id	timeperiod_id	2451	160	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27223	flapping_interval	flapping_interval	flapping_interval	flapping_interval	2451	170	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27224	flapping_max_change	flapping_max_change	flapping_max_change	flapping_max_change	2451	180	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27226	noalarm_from	noalarm_from	noalarm_from	noalarm_from	2451	200	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27227	noalarm_to	noalarm_to	noalarm_to	noalarm_to	2451	210	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27228	offline_group_ids	offline_group_ids	offline_group_ids	offline_group_ids	2451	220	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27229	online_group_ids	online_group_ids	online_group_ids	online_group_ids	2451	230	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27208	node_id	node_id	node	Hálózati elem	2451	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27234	check_attempts	check_attempts	check_attempts	check_attempts	2451	280	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27235	last_changed	last_changed	last_changed	last_changed	2451	290	{no,asc,desc}	no	100	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27225	noalarm_flag	noalarm_flag	noalarm_flag	noalarm_flag	2451	190	\N	no	\N	{bg_color,fg_color}	\N	\N	:color:	\N	\N	\N	\N	f	\N
-27198	node_id	node_id	node_id	node_id	2450	1020	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27217	disabled	disabled	disabled	disabled	2451	110	\N	no	\N	{bg_color,fg_color}	\N	\N	:color:	\N	\N	\N	\N	f	\N
-27193	port_id	port_id	port_id	port_id	2450	1010	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27201	flag	flag	flag	flag	2450	1040	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27205	port_staple_id	port_staple_id	port_staple_id	port_staple_id	2450	1030	\N	no	\N	{table_hide}	\N	\N	:owner=self:	\N	\N	\N	\N	f	\N
-27206	dualface_type	dualface_type	dualface_type	dualface_type	2450	210	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27200	deleted	deleted	deleted	deleted	2450	1050	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27194	port_name	port_name	Név	Név	2450	10	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27204	port_astat	port_astat	port_astat	port_astat	2450	190	\N	no	\N	{read_only}	\N	unknown	:color:	\N	\N	\N	\N	f	\N
-27195	port_note	port_note	Megjegyzés	Megjegyzés	2450	20	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27196	port_tag	port_tag	Cimke	Cimke	2450	30	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27199	port_index	port_index	Index	A port sorszáma	2450	40	{no,asc,desc}	asc	10	{}	\N	\N	\N	SNMP eszköz esetén az index kötelező, és azonos az interfész SNMP azonosítójával.	\N	\N	\N	f	\N
-27202	hwaddress	hwaddress	hwaddress	hwaddress	2450	50	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27442	sql_bounds	sql_bounds	Bounds	SQL Bounds	2468	240	\N	no	\N	{huge}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27209	service_id	service_id	service	service	2451	30	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27218	superior_host_service_id	superior_host_service_id	superior_host_service_id	superior_host_service_id	2451	120	{no,asc,desc}	no	60	{table_hide}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27210	port_id	port_id	port	Port (opcionális)	2451	40	{no,asc,desc}	asc	30	{}	\N	\N	:owner=node_id:	\N	\N	\N	\N	f	\N
-27214	delegate_host_state	delegate_host_state	delegate_host_state	delegate_host_state	2451	80	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	{}
-27236	last_touched	last_touched	last_touched	last_touched	2451	300	{no,asc,desc}	no	110	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27240	last_noalarm_msg	last_noalarm_msg	last_noalarm_msg	last_noalarm_msg	2451	340	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27241	heartbeat_time	heartbeat_time	heartbeat_time	heartbeat_time	2451	350	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27246	host_service_note	host_service_note	host_service_note	host_service_note	2452	50	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27732	service_var_type_id	service_var_type_id	service_var_type_id	service_var_type_id	2495	40	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27733	host_service_id	host_service_id	host_service_id	host_service_id	2495	50	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27250	check_cmd	check_cmd	check_cmd	check_cmd	2452	90	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27734	rrd_beat_id	rrd_beat_id	rrd_beat_id	rrd_beat_id	2495	60	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27254	max_check_attempts	max_check_attempts	max_check_attempts	max_check_attempts	2452	130	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27255	normal_check_interval	normal_check_interval	normal_check_interval	normal_check_interval	2452	140	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27256	retry_check_interval	retry_check_interval	retry_check_interval	retry_check_interval	2452	150	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27258	flapping_interval	flapping_interval	flapping_interval	flapping_interval	2452	170	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27259	flapping_max_change	flapping_max_change	flapping_max_change	flapping_max_change	2452	180	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27261	noalarm_from	noalarm_from	noalarm_from	noalarm_from	2452	200	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27262	noalarm_to	noalarm_to	noalarm_to	noalarm_to	2452	210	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27735	features	features	features	features	2495	70	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27269	check_attempts	check_attempts	check_attempts	check_attempts	2452	280	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27270	last_changed	last_changed	last_changed	last_changed	2452	290	{no,asc,desc}	no	100	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27271	last_touched	last_touched	last_touched	last_touched	2452	300	{no,asc,desc}	no	110	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27275	last_noalarm_msg	last_noalarm_msg	last_noalarm_msg	last_noalarm_msg	2452	340	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27276	heartbeat_time	heartbeat_time	heartbeat_time	heartbeat_time	2452	350	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27277	node_id	node_id	node_id	node_id	2453	10	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27278	node_name	node_name	node_name	node_name	2453	20	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27279	port_id	port_id	port_id	port_id	2453	30	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27242	host_service_id	host_service_id	host_service_id	host_service_id	2452	1000	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27731	service_var_note	service_var_note	service_var_note	service_var_note	2495	1000	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27737	var_state	var_state	var_state	var_state	2495	30	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27736	deleted	deleted	deleted	deleted	2495	2000	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27237	act_alarm_log_id	act_alarm_log_id	act_alarm_log_id	act_alarm_log_id	2451	310	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27238	last_alarm_log_id	last_alarm_log_id	last_alarm_log_id	last_alarm_log_id	2451	320	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27282	mactab_state	mactab_state	mactab_state	mactab_state	2453	60	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27272	act_alarm_log_id	act_alarm_log_id	act_alarm_log_id	act_alarm_log_id	2452	310	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27273	last_alarm_log_id	last_alarm_log_id	last_alarm_log_id	last_alarm_log_id	2452	320	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27245	port_id	port_id	port_id	port_id	2452	40	{no,asc,desc}	asc	30	{}	\N	\N	:owner=node_id:	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}
-27249	delegate_host_state	delegate_host_state	delegate_host_state	delegate_host_state	2452	80	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	{boolean}
-27251	features	features	features	features	2452	100	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}
-27232	hard_state	hard_state	hard_state	hard_state	2451	260	{no,asc,desc}	no	90	{bg_color}	\N	\N	:color:	\N	\N	\N	\N	f	\N
-27239	deleted	deleted	deleted	deleted	2451	330	\N	no	\N	{table_hide,dialog_hide,read_only,bg_color,fg_color}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27274	deleted	deleted	deleted	deleted	2452	330	\N	no	\N	{table_hide,dialog_hide,read_only,bg_color,fg_color}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27257	timeperiod_id	timeperiod_id	timeperiod_id	timeperiod_id	2452	160	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27207	host_service_id	host_service_id	host_service_id	host_service_id	2451	1000	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27289	ipaddrs_by_arp	ipaddrs_by_arp	ipaddrs_by_arp	ipaddrs_by_arp	2453	130	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27290	ipaddrs_by_rif	ipaddrs_by_rif	ipaddrs_by_rif	ipaddrs_by_rif	2453	140	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27291	node_id	node_id	node_id	node_id	2454	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27738	place_id	place_id	place_id	place_id	2496	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27740	place_note	place_note	place_note	place_note	2496	30	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27741	place_type	place_type	place_type	place_type	2496	40	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27299	community_rd	community_rd	SNMP read community	SNMP read community	2454	90	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27300	community_wr	community_wr	SNMP write community	SNMP write community	2454	100	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27302	sysdescr	sysdescr	sysdescr	sysdescr	2454	120	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27303	sysobjectid	sysobjectid	sysobjectid	sysobjectid	2454	130	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27304	sysuptime	sysuptime	sysuptime	sysuptime	2454	140	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27305	syscontact	syscontact	syscontact	syscontact	2454	150	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27306	sysname	sysname	sysname	sysname	2454	160	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27307	syslocation	syslocation	syslocation	syslocation	2454	170	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27308	sysservices	sysservices	sysservices	sysservices	2454	180	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27309	vendorname	vendorname	vendorname	vendorname	2454	190	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27316	superior_service_mask	superior_service_mask	superior_service_mask	superior_service_mask	2455	70	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27320	max_check_attempts	max_check_attempts	max_check_attempts	max_check_attempts	2455	110	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27321	normal_check_interval	normal_check_interval	normal_check_interval	normal_check_interval	2455	120	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27322	retry_check_interval	retry_check_interval	retry_check_interval	retry_check_interval	2455	130	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27323	timeperiod_id	timeperiod_id	timeperiod_id	timeperiod_id	2455	140	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27324	flapping_interval	flapping_interval	flapping_interval	flapping_interval	2455	150	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27325	flapping_max_change	flapping_max_change	flapping_max_change	flapping_max_change	2455	160	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27326	deleted	deleted	deleted	deleted	2455	170	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27327	offline_group_ids	offline_group_ids	offline_group_ids	offline_group_ids	2455	180	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27328	online_group_ids	online_group_ids	online_group_ids	online_group_ids	2455	190	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27329	heartbeat_time	heartbeat_time	heartbeat_time	heartbeat_time	2455	200	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27330	service_type_id	service_type_id	service_type_id	service_type_id	2456	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27331	service_type_name	service_type_name	service_type_name	service_type_name	2456	20	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27745	tels	tels	tels	tels	2496	80	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27315	port	port	Port	Port 	2455	60	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27739	place_name	place_name	place_name	place_name	2496	20	{no,asc,desc}	asc	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}
-27742	parent_id	parent_id	parent_id	parent_id	2496	50	\N	no	\N	{table_hide}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27332	service_type_note	service_type_note	service_type_note	service_type_note	2456	30	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27333	query_parser_id	query_parser_id	query_parser_id	query_parser_id	2457	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27334	query_parser_note	query_parser_note	query_parser_note	query_parser_note	2457	20	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27744	frame	frame	frame	frame	2496	70	\N	no	\N	{table_hide}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27336	parse_type	parse_type	parse_type	parse_type	2457	40	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27743	image_id	image_id	image_id	image_id	2496	60	\N	no	\N	{table_hide}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27337	item_sequence_number	item_sequence_number	item_sequence_number	item_sequence_number	2457	50	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27338	case_sensitive	case_sensitive	case_sensitive	case_sensitive	2457	60	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27763	ack_user_ids	\N	\N	Nyugtázta	2437	190	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27341	subnet_id	subnet_id	subnet_id	subnet_id	2458	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27342	subnet_name	subnet_name	subnet_name	subnet_name	2458	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27343	subnet_note	subnet_note	subnet_note	subnet_note	2458	30	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27344	netaddr	netaddr	netaddr	netaddr	2458	40	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27345	vlan_id	vlan_id	vlan_id	vlan_id	2458	50	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27764	ack_user_note	\N	\N	Nyugtázási megjegyzés	2437	190	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27765	alarm_id	\N	Riaszt.	Kapcsolódó riasztás	2470	130	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27766	alarm_do	\N	Riaszt.	Kapcsolódó riasztás esemény	2470	140	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27767	portvar_id	portvar_id	portvar_id	portvar_id	2498	10	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27768	service_var_name	service_var_name	service_var_name	service_var_name	2498	20	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27769	service_var_note	service_var_note	service_var_note	service_var_note	2498	30	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27301	snmp_ver	snmp_ver	SNMP verzió	SNMP verzió	2454	110	\N	no	\N	{batch_edit}	\N	\N	:horizontal:	\N	\N	\N	\N	f	\N
-27346	subnet_type	subnet_type	subnet_type	subnet_type	2458	60	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27746	service_var_value	\N	Érték	A változó aktuális értéke	2495	25	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27473	event_note	event_note	event_note	event_note	2470	100	{no,asc,desc}	no	30	{huge}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27770	service_var_type_id	service_var_type_id	service_var_type_id	service_var_type_id	2498	40	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27350	vlan_stat	vlan_stat	vlan_stat	vlan_stat	2459	40	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27351	flag	flag	flag	flag	2459	50	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27352	image_id	image_id	image_id	image_id	2460	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27771	host_service_id	host_service_id	host_service_id	host_service_id	2498	50	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27772	port_id	port_id	port_id	port_id	2498	60	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27773	rrd_beat_id	rrd_beat_id	rrd_beat_id	rrd_beat_id	2498	70	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27774	service_var_value	service_var_value	service_var_value	service_var_value	2498	80	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27357	image_data	image_data	image_data	image_data	2460	60	\N	no	\N	{table_hide}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27358	image_hash	image_hash	image_hash	image_hash	2460	70	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27359	dyn_addr_range_id	dyn_addr_range_id	dyn_addr_range_id	dyn_addr_range_id	2461	10	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27360	dyn_addr_range_note	dyn_addr_range_note	dyn_addr_range_note	dyn_addr_range_note	2461	20	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27361	exclude	exclude	exclude	exclude	2461	30	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27362	begin_address	begin_address	begin_address	begin_address	2461	40	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27363	end_address	end_address	end_address	end_address	2461	50	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27364	subnet_id	subnet_id	subnet_id	subnet_id	2461	60	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27365	host_service_id	host_service_id	host_service_id	host_service_id	2461	70	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27366	last_time	last_time	last_time	last_time	2461	80	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27367	flag	flag	flag	flag	2461	90	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27368	tpow_id	tpow_id	tpow_id	tpow_id	2462	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27775	var_state	var_state	var_state	var_state	2498	90	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27776	last_time	last_time	last_time	last_time	2498	100	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27777	features	features	features	features	2498	110	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27372	begin_time	begin_time	begin_time	begin_time	2462	50	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27373	end_time	end_time	end_time	end_time	2462	60	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27778	raw_value	raw_value	raw_value	raw_value	2498	120	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27779	delegate_service_state	delegate_service_state	delegate_service_state	delegate_service_state	2498	130	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27377	user_event_id	user_event_id	user_event_id	user_event_id	2464	100	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27385	alarm_id	alarm_id	ID	Riasztás egyedi azonosító kódja	2465	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27386	host_service_id	host_service_id	host:service	Szolgálltatás példány	2465	20	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27387	daemon_id	daemon_id	daemon	Lekérdező daemon	2465	30	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27388	first_status	first_status	kezdő áll.	Állapot a risztás kezdetekor	2465	40	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27389	max_status	max_status	krit. áll.	Legkritikusabb állapot a riasztás alatt	2465	50	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27390	last_status	last_status	utolsó áll.	Utolsó állapot a riasztás alatt	2465	60	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27381	alarm_id	alarm_id	alarm_id	alarm_id	2464	50	{no,asc,desc}	no	40	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}
-27391	begin_time	begin_time	kezdete	A kritikus esemény kezdete	2465	70	{no,asc,desc}	desc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27392	event_note	event_note	üzenet	A riasztást dezektáló folyamat üzenete	2465	80	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27393	superior_alarm_id	superior_alarm_id	superior_alarm_id	superior_alarm_id	2465	90	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27394	noalarm	noalarm	letiltva	Az értesítés letiltása	2465	100	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27395	end_time	end_time	vége	A kritikus esemény vége	2465	110	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27396	alarm_id	alarm_id	ID	Riasztás egyedi azonosító kódja	2466	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27399	first_status	first_status	kezdő áll.	Állapot a risztás kezdetekor	2466	40	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27401	last_status	last_status	utolsó áll.	Utolsó állapot a riasztás alatt	2466	60	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27747	raw_value	\N	eredeti	Az eredeti beolvasott érték	2495	35	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27404	superior_alarm_id	superior_alarm_id	Superior	Superior	2466	90	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27748	delegate_service_state	\N	Állpot tov.	Az állapotát örökli a szolgáltatás	2495	37	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27407	dblog_id	dblog_id	dblog_id	dblog_id	2467	10	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27730	service_var_name	service_var_name	service_var_name	service_var_name	2495	20	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27780	state_msg	\N	state_msg	state_msg	2495	80	\N	no	\N	{read_only,huge}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27781	state_msg	\N	state_msg	state_msg	2498	140	\N	no	\N	{huge}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27782	state_msg	\N	state_msg	state_msg	2497	140	\N	no	\N	{huge}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27783	features	\N	features	features	2491	40	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27784	model_number	Model szám	Model szám	Model szám	2447	57	{no,asc,desc}	no	50	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,big,notbegin,notlike,notsimilar,notregexp,notregexpi}
-27786	model_name	Model név	Model név	Model név	2447	58	{no,asc,desc}	no	60	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,big,notbegin,notlike,notsimilar,notregexp,notregexpi}
-27790	model_name	Model név	Model név	Model név	2441	45	{no,asc,desc}	no	\N	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi,notinterval}
-27424	app_ver	app_ver	P.ver.	A progra verziószáma	2468	60	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27425	lib_ver	lib_ver	L.ver.	A könyvtár verziószáma	2468	70	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27787	inventory_number	Leltári szám	Leltári szám	Leltári szám	2441	42	{no,asc,desc}	no	42	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27788	serial_number	Széria szám	Széria szám	Széria szám	2441	43	{no,asc,desc}	no	43	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27789	model_number	Model szám	Model szám	Model szám	2441	44	{no,asc,desc}	no	44	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi,notinterval}
-27791	model_number	\N	Model szám	Model szám	2454	57	{no,asc,desc}	no	57	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}
-27792	model_name	\N	Model név	Model név	2454	58	{no,asc,desc}	no	58	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}
-27793	inventory_number	\N	Lelt.sám	Leltári szám	2445	80	{no,asc,desc}	no	80	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27794	serial_number	\N	SN	Széria szám	2445	90	{no,asc,desc}	no	90	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27795	model_number	\N	Mod.szám	Model szám	2445	100	{no,asc,desc}	no	100	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27797	model_name	\N	Model	Model név	2445	110	{no,asc,desc}	no	110	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27297	deleted	deleted	deleted	deleted	2454	1000	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27437	sql_err_num	sql_err_num	SQL c.	SQL hiba kód	2468	190	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27438	sql_err_type	sql_err_type	SQL t.	SQL hiba típus	2468	200	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27293	node_note	node_note	Megjegyzés	Megjegyzés	2454	65	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27443	data_line	data_line	Adat sor	Feldolgozott sor	2468	250	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27444	data_pos	data_pos	Adat poz	Feldolgozott pozíció	2468	260	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27252	disabled	disabled	disabled	disabled	2452	110	\N	no	\N	{batch_edit,bg_color,fg_color}	\N	\N	:color:	\N	\N	\N	\N	f	{boolean}
-27446	data_name	data_name	Adat név	Feldolgozott neve	2468	280	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27447	acknowledged	acknowledged	Nyugta	Nugtázva	2468	290	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27487	set_type	set_type	set_type	set_type	2472	30	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like}
-27294	node_type	node_type	Típus	Az eszköz típusa	2454	40	{no,asc,desc}	no	40	{batch_edit}	\N	\N	:column=2:	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27453	app_ver	app_ver	app_ver	app_ver	2469	60	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27454	lib_ver	lib_ver	lib_ver	lib_ver	2469	70	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27382	event_type	event_type	event_type	event_type	2464	60	{no,asc,desc}	no	50	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,notbegin,notlike}
-27459	host_service_id	host_service_id	host_service_id	host_service_id	2469	120	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27384	user_event_note	user_event_note	user_event_note	user_event_note	2464	80	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}
-27383	event_state	event_state	event_state	event_state	2464	70	{no,asc,desc}	no	60	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,notbegin,notlike}
-27464	host_service_log_id	host_service_log_id	host_service_log_id	host_service_log_id	2470	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27415	func_name	func_name	func_name	func_name	2467	90	{no,asc,desc}	no	80	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27380	user_id	user_id	user_id	user_id	2464	40	{no,asc,desc}	no	30	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}
-27378	created	created	created	created	2464	20	{no,asc,desc}	asc	10	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval,notinterval}
-27751	service_var_note	service_var_note	service_var_note	service_var_note	2497	30	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27476	iftype_id	iftype_id	iftype_id	iftype_id	2471	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27477	iftype_name	iftype_name	iftype_name	iftype_name	2471	20	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27478	iftype_note	iftype_note	iftype_note	iftype_note	2471	30	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27479	iftype_iana_id	iftype_iana_id	iftype_iana_id	iftype_iana_id	2471	40	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27480	iftype_link_type	iftype_link_type	iftype_link_type	iftype_link_type	2471	50	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27481	iftype_obj_type	iftype_obj_type	iftype_obj_type	iftype_obj_type	2471	60	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27482	preferred	preferred	preferred	preferred	2471	70	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27483	iana_id_link	iana_id_link	iana_id_link	iana_id_link	2471	80	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27484	if_name_prefix	if_name_prefix	if_name_prefix	if_name_prefix	2471	90	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27488	host_service_id	host_service_id	host_service_id	host_service_id	2472	40	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27491	arp_note	arp_note	note	note	2472	70	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27492	port_by_ipa	port_by_ipa	By IP	Port ai IP alapján	2472	80	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27495	arp_log_id	arp_log_id	arp_log_id	arp_log_id	2473	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27496	reason	reason	reason	reason	2473	20	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27497	date_of	date_of	date_of	date_of	2473	30	{no,asc,desc}	desc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27498	ipaddress	ipaddress	ipaddress	ipaddress	2473	40	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27499	hwaddress_new	hwaddress_new	hwaddress_new	hwaddress_new	2473	50	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27500	hwaddress_old	hwaddress_old	hwaddress_old	hwaddress_old	2473	60	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27501	set_type_old	set_type_old	set_type_old	set_type_old	2473	70	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27502	host_service_id_old	host_service_id_old	host_service_id_old	host_service_id_old	2473	80	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27503	first_time_old	first_time_old	first_time_old	first_time_old	2473	90	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27504	last_time_old	last_time_old	last_time_old	last_time_old	2473	100	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27505	acknowledged	acknowledged	acknowledged	acknowledged	2473	110	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27506	node_id	node_id	node_id	node_id	2474	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27754	rrd_beat_id	rrd_beat_id	rrd_beat_id	rrd_beat_id	2497	60	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27508	port_id	port_id	port_id	port_id	2474	30	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27755	service_var_value	service_var_value	service_var_value	service_var_value	2497	70	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27757	last_time	last_time	last_time	last_time	2497	90	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27758	features	features	features	features	2497	100	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27759	deleted	deleted	deleted	deleted	2497	110	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27760	raw_value	raw_value	raw_value	raw_value	2497	120	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27749	service_var_id	service_var_id	service_var_id	service_var_id	2497	10	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27752	service_var_type_id	service_var_type_id	service_var_type_id	service_var_type_id	2497	40	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}
-27753	host_service_id	host_service_id	host_service_id	host_service_id	2497	5	{no,asc,desc}	no	5	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}
-27750	service_var_name	service_var_name	service_var_name	service_var_name	2497	20	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}
-27756	var_state	var_state	var_state	var_state	2497	80	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}
-27518	ipaddrs_by_arp	ipaddrs_by_arp	ipaddrs_by_arp	ipaddrs_by_arp	2474	130	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27519	ipaddrs_by_rif	ipaddrs_by_rif	ipaddrs_by_rif	ipaddrs_by_rif	2474	140	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27520	mactab_log_id	mactab_log_id	mactab_log_id	mactab_log_id	2475	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27522	reason	reason	reason	reason	2475	30	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27494	ports_by_hwa	ports_by_hwa	Port(s) By MAC	Portok a MAC alapján	2472	100	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27509	port_name	port_name	port_name	port_name	2474	40	{no,asc,desc}	no	30	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27761	delegate_service_state	delegate_service_state	delegate_service_state	delegate_service_state	2497	130	{no,asc,desc}	no	60	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,notbegin,notlike}
-27485	ipaddress	ipaddress	IP	IP cím	2472	10	{no,asc,desc}	asc	10	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexpi,notbegin,notlike,notsimilar,notregexpi}
-27486	hwaddress	hwaddress	MAC	MAC cím	2472	20	{no,asc,desc}	no	20	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexpi,notbegin,notlike,notsimilar,notregexpi}
-27489	first_time	first_time	first	Első detektálás ideje	2472	50	{no,asc,desc}	no	30	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval,notinterval}
-27490	last_time	last_time	last	Utoló detektálás ideje	2472	60	{no,asc,desc}	no	40	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval,notinterval}
-27521	hwaddress	hwaddress	hwaddress	hwaddress	2475	20	{no,asc,desc}	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexpi}
-27523	be_void	be_void	be_void	be_void	2475	40	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27526	mactab_state_old	mactab_state_old	mactab_state_old	mactab_state_old	2475	70	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27527	first_time_old	first_time_old	first_time_old	first_time_old	2475	80	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27528	last_time_old	last_time_old	last_time_old	last_time_old	2475	90	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27529	set_type_old	set_type_old	set_type_old	set_type_old	2475	100	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27531	mactab_state_new	mactab_state_new	mactab_state_new	mactab_state_new	2475	120	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27532	set_type_new	set_type_new	set_type_new	set_type_new	2475	130	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27533	acknowledged	acknowledged	acknowledged	acknowledged	2475	140	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27534	fkey_type_id	fkey_type_id	fkey_type_id	fkey_type_id	2476	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27535	table_schema	table_schema	table_schema	table_schema	2476	20	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27536	table_name	table_name	table_name	table_name	2476	30	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27537	column_name	column_name	column_name	column_name	2476	40	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27538	unusual_fkeys_type	unusual_fkeys_type	unusual_fkeys_type	unusual_fkeys_type	2476	50	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27539	unusual_fkey_id	unusual_fkey_id	unusual_fkey_id	unusual_fkey_id	2477	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27540	table_schema	table_schema	table_schema	table_schema	2477	20	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27541	table_name	table_name	table_name	table_name	2477	30	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27542	column_name	column_name	column_name	column_name	2477	40	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27543	unusual_fkeys_type	unusual_fkeys_type	unusual_fkeys_type	unusual_fkeys_type	2477	50	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27544	f_table_schema	f_table_schema	f_table_schema	f_table_schema	2477	60	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27545	f_table_name	f_table_name	f_table_name	f_table_name	2477	70	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27546	f_column_name	f_column_name	f_column_name	f_column_name	2477	80	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27547	f_inherited_tables	f_inherited_tables	f_inherited_tables	f_inherited_tables	2477	90	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27548	service_type_id	service_type_id	service_type_id	service_type_id	2478	10	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27549	status	status	status	status	2478	20	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27550	short_msg	short_msg	short_msg	short_msg	2478	30	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27551	message	message	message	message	2478	40	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27524	date_of	date_of	date_of	date_of	2475	50	{no,asc,desc}	desc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval,notinterval}
-27525	port_id_old	port_id_old	port_id_old	port_id_old	2475	60	{no,asc,desc}	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}
-27561	table_title	table_title	Oszlop címsora	Oszlop címsora a táblázatban	2480	40	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27562	dialog_title	dialog_title	Mező címsora	Mező címsora a dialógusban	2480	50	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27564	field_sequence_number	field_sequence_number	Mező sorrendiség	Mező sorrendiség	2480	70	{no,asc,desc}	asc	200	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27565	ord_types	ord_types	Rendezés	Az oszlop rendezési lehetőségei	2480	80	{no,asc,desc}	no	80	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27530	port_id_new	port_id_new	port_id_new	port_id_new	2475	110	{no,asc,desc}	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}
-27566	ord_init_type	ord_init_type	Rendezve	Az oszlop alapértelmezett rendezése	2480	90	{no,asc,desc}	no	90	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27567	ord_init_sequence_number	ord_init_sequence_number	Mező rendezés sorrendiség	Mező rendezés sorrendiség	2480	100	{no,asc,desc}	no	100	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27569	expression	expression	expression	expression	2480	120	{no,asc,desc}	no	120	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27571	features	features	Egyébb modosítók	Egyébb modosítók (features)	2480	140	{no,asc,desc}	no	140	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27572	tool_tip	tool_tip	Tool Tip	Tool Tip	2480	150	{no,asc,desc}	no	150	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27573	whats_this	whats_this	Whats this?	Whats this?	2480	160	{no,asc,desc}	no	160	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27577	table_shape_id	table_shape_id	table_shape_id	table_shape_id	2481	10	{no,asc,desc}	no	10	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27580	table_title	table_title	Táblázat címsora	Táblázat címsora	2481	40	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27581	dialog_title	dialog_title	Dialógus címsora	Dialógus címsora	2481	50	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27582	dialog_tab_title	dialog_tab_title	Dialógus tab címsora	Dialógus tab címsora	2481	60	{no,asc,desc}	no	60	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27583	member_title	member_title	Tagjai táblázat címsora	Tagjai táblázat címsora	2481	70	{no,asc,desc}	no	70	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27584	not_member_title	not_member_title	Nem tagjai táblázat címsora	Nem tagjai táblázat címsora	2481	80	{no,asc,desc}	no	80	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27587	schema_name	schema_name	Az adattábla séma neve	Az adattábla séma neve	2481	110	{no,asc,desc}	no	110	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27588	table_inherit_type	table_inherit_type	Az ősök és/vagy leszármazottak	Az ősök és/vagy leszármazottak	2481	120	{no,asc,desc}	no	120	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27598	menu_item_id	menu_item_id	menu_item_id	menu_item_id	2482	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27601	upper_menu_item_id	upper_menu_item_id	upper_menu_item_id	upper_menu_item_id	2482	40	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27570	default_value	default_value	default_value	Alapértelmezett érték	2480	130	{no,asc,desc}	no	130	{table_hide}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27576	flag	flag	flag	flag	2480	190	{}	no	190	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27603	menu_title	menu_title	menu_title	menu_title	2482	60	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27604	tab_title	tab_title	tab_title	tab_title	2482	70	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27605	features	features	features	features	2482	80	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27608	menu_rights	menu_rights	menu_rights	menu_rights	2482	110	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27609	enum_val_id	enum_val_id	enum_val_id	enum_val_id	2483	10	{no,asc,desc}	asc	10	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27675	inventory_number	\N	Lelt.sz.	Leltári szám	2447	56	{no,asc,desc}	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27592	right_shape_ids	right_shape_ids	Jobb oldali meírók	Jobb oldali alárendelt leírók	2481	160	{no}	no	230	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27623	group_id	group_id	group_id	group_id	2486	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27624	group_name	group_name	group_name	group_name	2486	20	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27625	group_note	group_note	group_note	group_note	2486	30	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27627	place_group_id	place_group_id	place_group_id	place_group_id	2486	50	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27628	features	features	features	features	2486	60	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27629	user_id	user_id	user_id	user_id	2487	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27632	passwd	passwd	passwd	passwd	2487	40	\N	no	\N	{table_hide,passwd}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27611	enum_val_note	enum_val_note	enum_val_note	enum_val_note	2483	40	{no,asc,desc}	asc	40	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27633	domain_users	domain_users	domain_users	domain_users	2487	50	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27670	object_syntax_name	object_syntax_name	Név	Objektum ill. tábla név	2491	20	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27636	language	language	language	language	2487	80	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27637	tels	tels	tels	tels	2487	90	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27638	addresses	addresses	addresses	addresses	2487	100	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27641	enabled	enabled	enabled	enabled	2487	130	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27642	features	features	features	features	2487	140	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27643	host_notif_period	host_notif_period	host_notif_period	host_notif_period	2487	150	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27644	serv_notif_period	serv_notif_period	serv_notif_period	serv_notif_period	2487	160	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27645	host_notif_switchs	host_notif_switchs	host_notif_switchs	host_notif_switchs	2487	170	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27646	serv_notif_switchs	serv_notif_switchs	serv_notif_switchs	serv_notif_switchs	2487	180	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27647	host_notif_cmd	host_notif_cmd	host_notif_cmd	host_notif_cmd	2487	190	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27648	serv_notif_cmd	serv_notif_cmd	serv_notif_cmd	serv_notif_cmd	2487	200	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27649	place_group_id	place_group_id	place_group_id	place_group_id	2488	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27650	place_group_name	place_group_name	place_group_name	place_group_name	2488	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27651	place_group_note	place_group_note	place_group_note	place_group_note	2488	30	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27652	place_group_type	place_group_type	place_group_type	place_group_type	2488	40	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27607	whats_this	whats_this	whats_this	whats_this	2482	100	\N	no	\N	{huge}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27654	place_name	place_name	Név	Hely, helyiség neve	2489	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27655	place_note	place_note	Megjegyzés	Megjegyzés	2489	30	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27656	place_type	place_type	Típus	Típus	2489	40	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27657	parent_id	parent_id	parent_id	parent_id	2489	50	\N	no	\N	{table_hide}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27618	sys_param_id	sys_param_id	sys_param_id	Egyedi azonosító (ID)	2485	10	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27659	frame	frame	frame	Keret az alaprajzon	2489	70	\N	no	\N	{table_hide}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27658	image_id	image_id	Térkép	Térkép, alaprajz	2489	60	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27620	sys_param_note	sys_param_note	Megjegyzés	Megjegyzés	2485	30	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27621	param_type_id	param_type_id	Típus	A paraméter típusa	2485	40	{no,asc,desc}	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27622	param_value	param_value	Érték	A rendszer paraméter értéke	2485	50	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27669	object_syntax_id	object_syntax_id	object_syntax_id	object_syntax_id	2491	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27671	sentence	sentence	Minta	Az objektum definíció szintaxisa	2491	30	\N	no	\N	{huge}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27672	serial_number	\N	SN	Széria szám	2454	53	{no,asc,desc}	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27673	inventory_number	\N	Lelt.sz.	Leltári szám	2454	56	{no,asc,desc}	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27674	serial_number	\N	SN	Széria szám	2447	53	{no,asc,desc}	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27606	tool_tip	tool_tip	tool_tip	tool_tip	2482	90	\N	no	\N	{huge}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27661	place_id	place_id	place_id	Egyedi azonosító (ID)	2490	10	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27666	image_id	image_id	Térkép	Térkép, alaprajz	2490	60	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27667	frame	frame	frame	Keret az alaprajzon	2490	70	\N	no	\N	{table_hide}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27660	tels	tels	Telefon	Telefonszám(ok)	2489	80	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27653	place_id	place_id	place_id	Egyedi azonosító (ID)	2489	10	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27140	iftype_id	iftype_id	iftype_id	iftype_id	2444	50	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	4	\N	\N	\N	\N	\N	f	\N
-27144	flag	flag	flag	flag	2444	90	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27310	service_id	service_id	service_id	Egyedi azonosító (ID)	2455	10	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27563	table_shape_id	table_shape_id	table_shape_id	A táblázat leíró	2480	60	{no,asc,desc}	no	60	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27558	table_shape_field_id	table_shape_field_id	table_shape_field_id	Egyedi azonosító (ID)	2480	10	{no,asc,desc}	no	10	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27676	select_id	select_id	select_id	select_id	2492	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27230	host_service_state	host_service_state	Állapot	Állapot	2451	42	{no,asc,desc}	no	70	{}	\N	\N	:color:	\N	\N	\N	\N	f	\N
-27089	first_status	\N	Első állapot	Állapot a riasztás kezdetekor	2437	110	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27061	host_service_id	\N	\N	Szolgáltatás példány ID	2436	20	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27419	applog_id	applog_id	applog_id	applog_id	2468	10	{no,asc,desc}	no	100	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27602	item_sequence_number	item_sequence_number	item_sequence_number	item_sequence_number	2482	50	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27599	menu_item_name	menu_item_name	menu_item_name	menu_item_name	2482	20	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27684	menu_item_id	menu_item_id	menu_item_id	menu_item_id	2493	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27689	menu_title	menu_title	menu_title	menu_title	2493	60	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27690	tab_title	tab_title	tab_title	tab_title	2493	70	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27691	features	features	features	features	2493	80	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27694	menu_rights	menu_rights	menu_rights	menu_rights	2493	110	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27688	item_sequence_number	item_sequence_number	item_sequence_number	item_sequence_number	2493	50	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27374	timeperiod_id	timeperiod_id	timeperiod_id	timeperiod_id	2463	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27626	group_rights	group_rights	group_rights	group_rights	2486	40	{no,asc,desc}	no	\N	{}	\N	\N	:color:	\N	\N	\N	\N	f	\N
-27692	tool_tip	tool_tip	tool_tip	tool_tip	2493	90	\N	no	\N	{huge}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27693	whats_this	whats_this	whats_this	whats_this	2493	100	\N	no	\N	{huge}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27174	ip_address_type	ip_address_type	Típus	A cím típusa	2448	40	\N	no	\N	{}	\N	\N	:color:	\N	\N	\N	\N	f	\N
-27319	disabled	disabled	Típltva	Letíltva	2455	100	\N	no	\N	{batch_edit}	\N	\N	:color:	\N	\N	\N	\N	f	\N
-27698	view_short	view_short	view_short	view_short	2483	80	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27699	view_long	view_long	view_long	view_long	2483	90	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27697	font_family	\N	font_family	font_family	2483	70	\N	no	\N	{}	\N	\N	:font_family:	\N	\N	\N	\N	f	\N
-27700	font_attr	\N	font_attr	font_attr	2483	75	\N	no	\N	{}	\N	\N	:font_family:	\N	\N	\N	\N	f	\N
-27150	node_type	node_type	node_type	node_type	2445	40	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27231	soft_state	soft_state	soft_state	soft_state	2451	44	{no,asc,desc}	no	44	{bg_color}	\N	\N	:color:	\N	\N	\N	\N	f	\N
-27695	bg_color	\N	Háttér szín	Háttér szín	2483	50	\N	no	50	{bg_color}	\N	\N	:color:	\N	\N	\N	\N	f	\N
-27696	fg_color	\N	Betű szín	Betű szín	2483	60	\N	no	\N	{fg_color}	\N	\N	:color:	\N	\N	\N	\N	f	\N
-27701	style_sheet	\N	Style Sheet	Style Sheet	2481	300	\N	no	\N	{huge}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27203	port_ostat	port_ostat	port_ostat	port_ostat	2450	60	\N	no	\N	{read_only}	\N	unknown	:color:	\N	\N	\N	\N	f	\N
-27197	iftype_id	iftype_id	Típus	A port típus	2450	200	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27233	state_msg	state_msg	state_msg	state_msg	2451	46	\N	no	\N	{huge}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27467	old_state	old_state	old_state	old_state	2470	40	\N	no	\N	{}	\N	\N	:color:	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27710	first_time	first_time	first_time	first_time	2440	60	{no,asc,desc}	no	60	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval,notinterval}
-27253	superior_host_service_id	superior_host_service_id	superior_host_service_id	superior_host_service_id	2452	120	{no,asc,desc}	no	60	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}
-27711	last_time	last_time	last_time	last_time	2440	70	{no,asc,desc}	no	70	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval,notinterval}
-27706	ifdescr	ifdescr	ifdescr	ifdescr	2450	240	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27296	features	features	paraméterek	Egyébb paraméterek	2454	70	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27709	stat_last_modify	stat_last_modify	stat_last_modify	stat_last_modify	2450	250	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27613	param_type_id	param_type_id	param_type_id	param_type_id	2484	10	{no,asc,desc}	asc	10	{table_hide,read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27493	node_by_hwa	node_by_hwa	host By MAC	Host a MAC alapján	2472	90	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	\N
-27619	sys_param_name	sys_param_name	Név	Rendszer paraméter neve	2485	20	{no,asc,desc}	asc	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{like,begin,similar,regexpi}
-27559	table_shape_field_name	table_shape_field_name	Név	Mező ill. oszlop név	2480	20	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27121	node_note	node_note	node_note	node_note	2441	30	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27397	host_service_id	host_service_id	host:service	Szolgálltatás példány	2466	20	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27431	err_code	err_code	err_code	err_code	2468	130	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval}
-27441	sql_query	sql_query	Query	SQL Query	2468	230	\N	no	\N	{huge}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27313	service_type_id	service_type_id	Típus	Típus azonosító	2455	40	{no,asc,desc}	no	\N	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27430	src_line	src_line	Forrás sor	A kod sor száma	2468	120	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval}
-27436	thread_name	thread_name	Szál	Program szál neve	2468	180	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27439	sql_driver_text	sql_driver_text	SQL dr.	SQL Driver	2468	210	\N	no	\N	{huge}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27157	port_tag	port_tag	Cimke	Cimke	2446	40	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27160	port_index	port_index	Index	A port sorszáma (opcionális)	2446	70	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval}
-27408	date_of	date_of	date_of	date_of	2467	20	{no,asc,desc}	desc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval}
-27348	vlan_name	vlan_name	vlan_name	vlan_name	2459	20	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27116	node_name2	\N	Linked node	Linked node	2440	30	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27456	src_name	src_name	src_name	src_name	2469	90	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27370	tpow_note	tpow_note	tpow_note	tpow_note	2462	30	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27148	node_name	node_name	Név	Név	2445	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27108	link_type	\N	Busz	Busz	2438	110	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like}
-27280	port_name	port_name	port_name	port_name	2453	40	{no,asc,desc}	asc	10	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27463	acknowledged	acknowledged	acknowledged	acknowledged	2469	160	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27142	port_index	port_index	Index	A port sorszáma (kötelező)	2444	70	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval}
-27166	node_type	node_type	Típus	Az eszköz típusa	2447	40	\N	no	\N	{batch_edit}	\N	{node}	\N	\N	\N	\N	admin	f	{begin,like,similar,regexp,regexpi}
-27298	node_stat	node_stat	Állapot	Az eszköz állpota	2454	25	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27102	phs_link_note	\N	Megjegyzés	Megjegyzés	2438	50	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27507	node_name	node_name	node_name	node_name	2474	20	{no,asc,desc}	no	20	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27639	place_id	place_id	place_id	place_id	2487	110	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27617	param_type_dim	param_type_dim	Dimanzió	Dimanzió	2484	50	{no,asc,desc}	asc	50	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27311	service_name	service_name	Név	Szolgáltatás neve	2455	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27286	set_type	set_type	set_type	set_type	2453	100	{no,asc,desc}	no	50	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27263	offline_group_ids	offline_group_ids	offline_group_ids	offline_group_ids	2452	220	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27111	node_name2	\N	Linked node	Linked node	2439	30	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27115	port_index1	\N	Index	Index	2440	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval}
-27098	port_name1	\N	Port	Port név	2438	10	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27474	superior_alarm_id	superior_alarm_id	superior_alarm_id	superior_alarm_id	2470	110	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27340	import_expression	import_expression	import_expression	import_expression	2457	80	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27411	table_name	table_name	table_name	table_name	2467	50	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27288	r_port_name	r_port_name	r_port_name	r_port_name	2453	120	{no,asc,desc}	no	40	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27105	port_index2	\N	index	Linked port index	2438	80	{no,asc,desc}	no	60	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval}
-27158	iftype_id	iftype_id	Típus	A port típusa	2446	50	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	\N	\N	f	{like}
-27409	error_id	error_id	error_id	error_id	2467	30	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,big,litle,interval}
-27375	timeperiod_name	timeperiod_name	Név	Neve	2463	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27412	trigger_op	trigger_op	trigger_op	trigger_op	2467	60	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27683	features	features	Egyébb paraméterek	Egyébb paraméterek	2492	80	{no,asc,desc}	no	70	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27287	r_node_name	r_node_name	r_node_name	r_node_name	2453	110	{no,asc,desc}	no	30	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27406	end_time	end_time	vége	A kritikus esemény vége	2466	110	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval}
-27295	place_id	place_id	Hely	Az eszköz helye	2454	50	{no,asc,desc}	no	30	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27586	table_name	table_name	Az adattábla neve	Az adattábla neve	2481	100	{no,asc,desc}	no	100	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27594	view_rights	view_rights	Betekintési jog	Minimális jogosultság a megtekintéshez	2481	180	{no,asc,desc}	no	180	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27630	user_name	user_name	user_name	user_name	2487	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27457	src_line	src_line	src_line	src_line	2469	100	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval}
-27471	new_soft_state	new_soft_state	new_soft_state	new_soft_state	2470	80	\N	no	\N	{}	\N	\N	:color:	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27354	image_note	image_note	image_note	image_note	2460	30	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27101	port_shared1	\N	Megosztás	Megosztás	2438	40	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like}
-27151	place_id	place_id	Hely	Hely	2445	50	{no,asc,desc}	no	30	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27422	node_id	node_id	Host	A futtató szg. neve	2468	40	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27410	user_id	user_id	user_id	user_id	2467	40	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27472	new_hard_state	new_hard_state	new_hard_state	new_hard_state	2470	90	\N	no	\N	{}	\N	\N	:color:	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27462	memo	memo	memo	memo	2469	150	\N	no	\N	{huge}	\N	\N	:stretch.vertical=1:	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27600	app_name	app_name	app_name	app_name	2482	30	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27687	upper_menu_item_id	upper_menu_item_id	upper_menu_item_id	upper_menu_item_id	2493	40	{no,asc,desc}	asc	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27403	event_note	event_note	üzenet	A riasztást dezektáló folyamat üzenete	2466	80	\N	no	\N	{huge}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27678	select_note	select_note	Megjegyzés	Megjegyzés	2492	30	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27244	service_id	service_id	service_id	service_id	2452	30	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}
-27379	happened	happened	happened	happened	2464	30	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,notbegin,notlike}
-27405	noalarm	noalarm	letiltva	Az értesítés letiltása	2466	100	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{boolean}
-27349	vlan_note	vlan_note	vlan_note	vlan_note	2459	30	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27120	node_name	node_name	node_name	node_name	2441	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27458	node_id	node_id	node_id	node_id	2469	110	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27137	port_name	port_name	Név	Név	2444	20	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27117	port_name2	\N	Port	Linked Port	2440	40	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27170	node_stat	node_stat	Állapot	Az eszköz állpota	2447	25	{no,asc,desc}	no	40	{read_only}	\N	unknown	:color:	\N	\N	\N	admin	f	{begin,like,similar,regexp,regexpi}
-27100	phs_link_type1	\N	Típus	Típus	2438	30	{no,asc,desc}	asc	30	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like}
-27103	node_name2	\N	Linked	Linked elem	2438	60	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27104	port_name2	\N	port	Linked port	2438	70	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27139	port_tag	port_tag	Cimke	Cimke	2444	40	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27260	noalarm_flag	noalarm_flag	noalarm_flag	noalarm_flag	2452	190	\N	no	\N	{batch_edit,bg_color,fg_color}	\N	\N	:batch_edit_fields=noalarm_from,noalarm_to:color:	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27435	err_submsg	err_submsg	Hiba par.	Másodlagost hiba paraméter	2468	170	\N	no	\N	{huge}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27452	thread_name	thread_name	thread_name	thread_name	2469	50	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27679	precedence	precedence	Sorrend	Sorrend	2492	40	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	\N	\N	f	{litle,big,interval}
-27423	pid	pid	PID	Folyamat azonosító (PID)	2468	50	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval}
-27610	enum_val_name	enum_val_name	enum_val_name	enum_val_name	2483	30	{no,asc,desc}	asc	30	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27414	err_msg	err_msg	err_msg	err_msg	2467	80	{no,asc,desc}	no	70	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27247	prime_service_id	prime_service_id	prime_service_id	prime_service_id	2452	60	{no,asc,desc}	no	40	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27335	service_id	service_id	service_id	service_id	2457	30	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27416	reapeat	reapeat	reapeat	reapeat	2467	100	{no,asc,desc}	no	90	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval}
-27514	state_updated_time	state_updated_time	state_updated_time	state_updated_time	2474	90	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{litle,big,interval}
-27445	data_msg	data_msg	Adat üz.	Hiba üzenet	2468	270	\N	no	\N	{huge}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27590	refine	refine	Szűrő	Konstans SQL szűrő kifejezés	2481	140	{no,asc,desc}	no	140	{huge}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27686	app_name	app_name	app_name	app_name	2493	30	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27398	daemon_id	daemon_id	daemon	Lekérdező daemon	2466	30	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27318	features	features	features	features	2455	90	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27339	regular_expression	regular_expression	regular_expression	regular_expression	2457	70	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27635	last_name	last_name	last_name	last_name	2487	70	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27465	host_service_id	host_service_id	host_service_id	host_service_id	2470	20	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27122	node_type	node_type	node_type	node_type	2441	40	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27283	first_time	first_time	first_time	first_time	2453	70	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{litle,big,interval}
-27107	port_shared2	\N	Megosztás	Megosztás	2438	100	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like}
-27512	first_time	first_time	first_time	first_time	2474	70	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{litle,big,interval}
-27568	field_flags	field_flags	Mező tulajdonságok	Mező tulajdonságok	2480	110	{no,asc,desc}	no	110	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27450	app_name	app_name	app_name	app_name	2469	30	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27451	pid	pid	pid	pid	2469	40	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval}
-27589	inherit_table_names	inherit_table_names	A megjelenített rokonok	A megjelenített rokonok	2481	130	{no,asc,desc}	no	130	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27575	edit_rights	edit_rights	Szerkesztési jog	Minimális jogosultság a szerkesztéshez	2480	180	{no,asc,desc}	no	180	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27596	insert_rights	insert_rights	Hozzáadási jog	Minimális jogosultság új rekord hozzáadásához	2481	200	{no,asc,desc}	no	200	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27118	port_index2	\N	Index	Linked Port Index	2440	50	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval}
-27127	param_type_id	param_type_id	Típus	Típus	2442	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27400	max_status	max_status	krit. áll.	Legkritikusabb állapot a riasztás alatt	2466	50	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27427	service_id	service_id	Szervíz	Szervíz	2468	90	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27110	port_index1	\N	Index	Index	2439	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval}
-27114	port_name1	\N	Port	Port	2440	10	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27266	soft_state	soft_state	soft_state	soft_state	2452	44	{no,asc,desc}	no	80	{bg_color}	\N	\N	:color:	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27426	user_id	user_id	Felhasználó	Felhasználó	2468	80	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27428	func_name	func_name	Főggvény	Függvény neve a forrásban	2468	100	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27353	image_name	image_name	image_name	image_name	2460	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27455	func_name	func_name	func_name	func_name	2469	80	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27470	new_state	new_state	new_state	new_state	2470	70	\N	no	\N	{}	\N	\N	:color:	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27560	table_shape_field_note	table_shape_field_note	Megjegyzés	Megjegyzés	2480	30	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27515	set_type	set_type	set_type	set_type	2474	100	{no,asc,desc}	no	60	{read_only}	\N	\N	:color:	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27663	place_note	place_note	place_note	place_note	2490	30	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27317	check_cmd	check_cmd	Parancs	Ellenörző parancs	2455	80	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27112	port_name2	\N	Port	Linked Port	2439	40	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27134	param_value	param_value	Érték	Érték	2443	40	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27138	port_note	port_note	Megjegyzés	Megjegyzés	2444	30	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27593	auto_refresh	auto_refresh	Autóm.frissítés	Táblázat automatikus frissítésének időköze	2481	170	{no,asc,desc}	no	170	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,litle,big,interval}
-27597	remove_rights	remove_rights	Törlési jog	Minimális jogosultság a törléshez	2481	210	{no,asc,desc}	no	210	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27429	src_name	src_name	Forrás név	A forrás fájl neve	2468	110	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27369	tpow_name	tpow_name	tpow_name	tpow_name	2462	20	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27511	mactab_state	mactab_state	mactab_state	mactab_state	2474	60	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{like}
-27578	table_shape_name	table_shape_name	Leíró neve	Leíró neve	2481	20	{no,asc,desc}	asc	220	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27631	user_note	user_note	user_note	user_note	2487	30	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27243	node_id	node_id	node_id	node_id	2452	20	{no,asc,desc}	asc	10	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27466	date_of	date_of	date_of	date_of	2470	30	{no,asc,desc}	desc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval}
-27595	edit_rights	edit_rights	Szerkesztési jog	Minimális jogosultság a szerkesztéshez	2481	190	{no,asc,desc}	no	190	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27460	user_id	user_id	user_id	user_id	2469	130	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27612	enum_type_name	enum_type_name	enum_type_name	enum_type_name	2483	20	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27402	begin_time	begin_time	kezdete	A kritikus esemény kezdete	2466	70	{no,asc,desc}	desc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval}
-27132	param_type_id	param_type_id	Típus	Típus	2443	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27268	state_msg	state_msg	state_msg	state_msg	2452	46	\N	no	\N	{huge}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27371	dow	dow	dow	dow	2462	40	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27418	acknowledged	acknowledged	acknowledged	acknowledged	2467	120	{no,asc,desc}	no	110	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27449	date_of	date_of	date_of	date_of	2469	20	{no,asc,desc}	desc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval}
-27145	shared_cable	shared_cable	Megosztás	A megosztás típusa	2444	100	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27164	node_name	node_name	Név	Eszköz (host) neve	2447	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27510	hwaddress	hwaddress	hwaddress	hwaddress	2474	50	{no,asc,desc}	asc	10	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27312	service_note	service_note	Megjegyzés	Megjegyzés	2455	30	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27421	app_name	app_name	App.	A program neve	2468	30	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27106	phs_link_type2	\N	Típus	Típus	2438	90	{no,asc,desc}	no	70	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like}
-27585	table_shape_type	table_shape_type	Leíró típusa	Leíró típusa	2481	90	{no,asc,desc}	no	90	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27113	port_index2	\N	Index	Linked Port Index	2439	50	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval}
-27665	parent_id	parent_id	Helye	Felsőbb szintú hely	2490	50	{no,asc,desc}	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27129	param_value	param_value	Érték	Érték	2442	40	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27475	noalarm	noalarm	noalarm	noalarm	2470	120	{no,asc,desc}	no	50	{}	\N	\N	:color:	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27517	r_port_name	r_port_name	r_port_name	r_port_name	2474	120	{no,asc,desc}	no	50	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27615	param_type_note	param_type_note	Megjegyzés	Megjegyzés	2484	30	{no,asc,desc}	asc	30	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27149	node_note	node_note	Megjegyzés	Megjegyzés	2445	30	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27662	place_name	place_name	Név	Hely helyiség neve	2490	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27347	vlan_id	vlan_id	vlan_id	vlan_id	2459	10	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval}
-27668	tels	tels	Telefonszám(ok)	Telefonszám(ok)	2490	80	\N	no	\N	{table_hide}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27355	image_type	image_type	image_type	image_type	2460	40	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27376	timeperiod_note	timeperiod_note	timeperiod_note	timeperiod_note	2463	30	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27681	pattern_type	pattern_type	Típus	A minta típusa/szintaxisa	2492	60	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27264	online_group_ids	online_group_ids	online_group_ids	online_group_ids	2452	230	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27285	state_updated_time	state_updated_time	state_updated_time	state_updated_time	2453	90	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{litle,big,interval}
-27356	image_sub_type	image_sub_type	image_sub_type	image_sub_type	2460	50	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27513	last_time	last_time	last_time	last_time	2474	80	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{litle,big,interval}
-27432	err_name	err_name	Típus	Hiba típusa	2468	140	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27685	menu_item_name	menu_item_name	menu_item_name	menu_item_name	2493	20	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27516	r_node_name	r_node_name	r_node_name	r_node_name	2474	110	{no,asc,desc}	no	40	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27281	hwaddress	hwaddress	hwaddress	hwaddress	2453	50	{no,asc,desc}	no	20	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27265	host_service_state	host_service_state	host_service_state	host_service_state	2452	42	{no,asc,desc}	no	70	{}	\N	\N	:color:	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27292	node_name	node_name	Név	Név	2454	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27156	port_note	port_note	Megjegyzés	Megjegyzés	2446	30	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27165	node_note	node_note	Megjegyzés	Megjegyzés	2447	30	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27099	port_index1	\N	Index	Port index	2438	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval}
-27614	param_type_name	param_type_name	Paraméter típus név	Paraméter típus név	2484	20	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27640	expired	expired	expired	expired	2487	120	{no,asc,desc}	no	60	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval}
-27680	pattern	pattern	Minta	A minta	2492	50	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27682	choice	choice	Érték	Minta azonosító, találati érték	2492	70	{no,asc,desc}	no	60	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27155	port_name	port_name	Név	Név	2446	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27469	old_hard_state	old_hard_state	old_hard_state	old_hard_state	2470	60	\N	no	\N	{}	\N	\N	:color:	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27579	table_shape_note	table_shape_note	Megjegyzés	Megjegyzés	2481	30	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27267	hard_state	hard_state	hard_state	hard_state	2452	260	{no,asc,desc}	no	90	{bg_color}	\N	\N	:color:	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27248	proto_service_id	proto_service_id	proto_service_id	proto_service_id	2452	70	{no,asc,desc}	no	50	{batch_edit}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27123	place_id	place_id	place_id	place_id	2441	50	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27284	last_time	last_time	last_time	last_time	2453	80	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{litle,big,interval}
-27461	importance	importance	importance	importance	2469	140	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27574	view_rights	view_rights	Betekintési jog	Minimális jogosultság a megtekintéshez	2480	170	{no,asc,desc}	no	170	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27434	err_syscode	err_syscode	Sys.	Utolsó rendszer hiba típusa	2468	160	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval}
-27413	err_subcode	err_subcode	err_subcode	err_subcode	2467	70	{no,asc,desc}	no	60	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27433	err_subcode	err_subcode	Hiba par.	Másodlagost hiba paraméter	2468	150	\N	no	\N	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval}
-27109	port_name1	\N	Port	Port	2439	10	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27417	date_of_last	date_of_last	date_of_last	date_of_last	2467	110	{no,asc,desc}	no	100	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval}
-27440	sql_db_text	sql_db_text	QSL db	SQL db	2468	220	\N	no	\N	{huge}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27664	place_type	place_type	Típus	Típus	2490	40	\N	no	\N	{read_only}	\N	real	\N	\N	\N	\N	\N	f	{begin,like,similar}
-27634	first_name	first_name	first_name	first_name	2487	60	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27677	select_type	select_type	Típus	A minta típusa/célja	2492	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27448	app_memo_id	app_memo_id	app_memo_id	app_memo_id	2469	10	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	\N	\N	f	{interval}
-27468	old_soft_state	old_soft_state	old_soft_state	old_soft_state	2470	50	\N	no	\N	{}	\N	\N	:color:	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27591	features	features	Egyébb modosítók	Egyébb modosítók (features)	2481	150	{no,asc,desc}	no	150	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27616	param_type_type	param_type_type	Adat típus	Adat típus	2484	40	{no,asc,desc}	asc	40	{}	\N	\N	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}
-27420	date_of	date_of	időpontja	Az esemény időpontja	2468	20	{no,asc,desc}	desc	10	{}	\N	\N	\N	\N	\N	\N	\N	f	{big,litle,interval}
+COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_shape_field_note, table_shape_id, field_sequence_number, ord_types, ord_init_type, ord_init_sequence_number, field_flags, expression, default_value, features, view_rights, edit_rights, flag, filter_types, text_id) FROM stdin;
+27800	node_name1	\N	2438	5	{no,asc,desc}	no	5	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	299
+27801	node_name1	\N	2439	5	{no,asc,desc}	no	5	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}	300
+27798	node_name1	\N	2440	5	{no,asc,desc}	no	5	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}	301
+27721	warning_param1	warning_param1	2494	100	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	302
+27722	warning_param2	warning_param2	2494	110	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	303
+27723	critical_type	critical_type	2494	120	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	304
+27724	critical_param1	critical_param1	2494	130	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	305
+27725	critical_param2	critical_param2	2494	140	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	306
+27726	features	features	2494	150	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	307
+27727	deleted	deleted	2494	160	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	308
+27712	service_var_type_id	service_var_type_id	2494	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	309
+27714	service_var_type_note	\N	2494	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{like}	310
+27715	param_type_id	\N	2494	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{like,notlike}	311
+27716	service_var_type	\N	2494	50	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{like}	312
+27717	plausibility_type	\N	2494	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	313
+27718	plausibility_param1	\N	2494	70	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	314
+27720	warning_type	warning_type	2494	90	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	315
+27719	plausibility_param2	\N	2494	80	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	316
+27713	service_var_type_name	\N	2494	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}	317
+27081	host_service_name	\N	2437	30	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	318
+27079	online_alarm_ack_id	\N	2437	10	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	319
+27080	host_service_id	\N	2437	20	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	320
+27082	node_name	\N	2437	40	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	321
+27084	place_name	\N	2437	60	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	322
+27085	place_id	\N	2437	70	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	323
+27086	superior_alarm_id	\N	2437	80	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	324
+27087	begin_time	\N	2437	90	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	325
+27090	max_status	\N	2437	120	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	326
+27091	last_status	\N	2437	130	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	327
+27092	event_note	\N	2437	140	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	328
+27093	msg	\N	2437	150	\N	no	\N	{read_only,huge}	\N	\N	\N	\N	\N	f	\N	329
+27094	online_user_ids	\N	2437	160	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	330
+27095	notice_user_ids	\N	2437	170	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	331
+27096	view_user_ids	\N	2437	180	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	332
+27060	online_alarm_unack_id	\N	2436	10	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	333
+27062	host_service_name	\N	2436	30	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	334
+27063	node_name	\N	2436	40	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	335
+27066	place_id	\N	2436	70	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	336
+27067	superior_alarm_id	\N	2436	80	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	337
+27068	begin_time	\N	2436	90	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	338
+27069	end_time	\N	2436	100	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	339
+27070	first_status	\N	2436	110	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	340
+27071	max_status	\N	2436	120	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	341
+27072	last_status	\N	2436	130	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	342
+27074	msg	\N	2436	150	\N	no	\N	{read_only,huge}	\N	\N	\N	\N	\N	f	\N	343
+27075	online_user_ids	\N	2436	160	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	344
+27076	notice_user_ids	\N	2436	170	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	345
+27077	view_user_ids	\N	2436	180	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	346
+27065	place_name	\N	2436	60	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	347
+27073	event_note	\N	2436	140	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	348
+27119	node_id	node_id	2441	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	349
+27728	filter_types	filter_types	2480	112	\N	no	112	{batch_edit}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	350
+27136	port_id	port_id	2444	1000	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	351
+27124	features	features	2441	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	352
+27125	deleted	deleted	2441	70	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	353
+27126	node_param_id	node_param_id	2442	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	354
+27146	shared_port_id	shared_port_id	2444	110	\N	no	\N	{}	\N	\N	:owner=node_id:	\N	\N	f	\N	355
+27128	node_id	node_id	2442	30	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	356
+27130	flag	flag	2442	50	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	f	\N	357
+27131	port_param_id	port_param_id	2443	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	358
+27169	deleted	deleted	2447	70	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	359
+27133	port_id	port_id	2443	30	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	360
+27135	flag	flag	2443	50	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	f	\N	361
+27147	node_id	node_id	2445	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	362
+27152	features	features	2445	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	363
+27153	deleted	deleted	2445	70	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	364
+27154	port_id	port_id	2446	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	365
+27159	node_id	node_id	2446	60	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	366
+27161	deleted	deleted	2446	80	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	367
+27162	flag	flag	2446	90	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	f	\N	368
+27163	node_id	node_id	2447	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	369
+27167	place_id	place_id	2447	50	{no,asc,desc}	no	30	{batch_edit}	\N	\N	\N	\N	\N	f	\N	370
+27168	features	features	2447	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	371
+27141	node_id	node_id	2444	60	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	372
+27143	deleted	deleted	2444	80	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	373
+27171	ip_address_id	ip_address_id	2448	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	374
+27172	ip_address_note	ip_address_note	2448	20	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	\N	375
+27173	address	address	2448	30	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	\N	376
+27175	preferred	preferred	2448	50	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	\N	377
+27176	subnet_id	subnet_id	2448	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	378
+27177	port_id	port_id	2448	70	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	379
+27178	flag	flag	2448	80	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	f	\N	380
+27179	node_id	node_id	2449	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	381
+27180	node_name	node_name	2449	20	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	382
+27181	port_id	port_id	2449	30	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	383
+27182	port_name	port_name	2449	40	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	384
+27183	hwaddress	hwaddress	2449	50	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	385
+27184	mactab_state	mactab_state	2449	60	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	386
+27185	first_time	first_time	2449	70	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	387
+27186	last_time	last_time	2449	80	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	388
+27187	state_updated_time	state_updated_time	2449	90	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	389
+27188	set_type	set_type	2449	100	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	390
+27189	r_node_name	r_node_name	2449	110	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	391
+27190	r_port_name	r_port_name	2449	120	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	392
+27191	ipaddrs_by_arp	ipaddrs_by_arp	2449	130	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	393
+27192	ipaddrs_by_rif	ipaddrs_by_rif	2449	140	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	394
+27729	service_var_id	service_var_id	2495	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	395
+27211	host_service_note	host_service_note	2451	50	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	396
+27212	prime_service_id	prime_service_id	2451	60	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	\N	397
+27213	proto_service_id	proto_service_id	2451	70	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	f	\N	398
+27215	check_cmd	check_cmd	2451	90	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	399
+27216	features	features	2451	100	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	400
+27219	max_check_attempts	max_check_attempts	2451	130	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	401
+27220	normal_check_interval	normal_check_interval	2451	140	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	402
+27221	retry_check_interval	retry_check_interval	2451	150	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	403
+27222	timeperiod_id	timeperiod_id	2451	160	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	404
+27223	flapping_interval	flapping_interval	2451	170	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	405
+27224	flapping_max_change	flapping_max_change	2451	180	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	406
+27226	noalarm_from	noalarm_from	2451	200	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	407
+27227	noalarm_to	noalarm_to	2451	210	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	408
+27228	offline_group_ids	offline_group_ids	2451	220	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	409
+27229	online_group_ids	online_group_ids	2451	230	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	410
+27208	node_id	node_id	2451	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	\N	411
+27234	check_attempts	check_attempts	2451	280	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	412
+27235	last_changed	last_changed	2451	290	{no,asc,desc}	no	100	{}	\N	\N	\N	\N	\N	f	\N	413
+27225	noalarm_flag	noalarm_flag	2451	190	\N	no	\N	{bg_color,fg_color}	\N	\N	:color:	\N	\N	f	\N	414
+27198	node_id	node_id	2450	1020	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	415
+27217	disabled	disabled	2451	110	\N	no	\N	{bg_color,fg_color}	\N	\N	:color:	\N	\N	f	\N	416
+27193	port_id	port_id	2450	1010	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	417
+27201	flag	flag	2450	1040	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	f	\N	418
+27205	port_staple_id	port_staple_id	2450	1030	\N	no	\N	{table_hide}	\N	\N	:owner=self:	\N	\N	f	\N	419
+27206	dualface_type	dualface_type	2450	210	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	420
+27200	deleted	deleted	2450	1050	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	421
+27194	port_name	port_name	2450	10	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	\N	422
+27204	port_astat	port_astat	2450	190	\N	no	\N	{read_only}	\N	unknown	:color:	\N	\N	f	\N	423
+27195	port_note	port_note	2450	20	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	\N	424
+27196	port_tag	port_tag	2450	30	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	\N	425
+27199	port_index	port_index	2450	40	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	\N	426
+27202	hwaddress	hwaddress	2450	50	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	427
+27442	sql_bounds	sql_bounds	2468	240	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	428
+27209	service_id	service_id	2451	30	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	f	\N	429
+27218	superior_host_service_id	superior_host_service_id	2451	120	{no,asc,desc}	no	60	{table_hide}	\N	\N	\N	\N	\N	f	\N	430
+27210	port_id	port_id	2451	40	{no,asc,desc}	asc	30	{}	\N	\N	:owner=node_id:	\N	\N	f	\N	431
+27214	delegate_host_state	delegate_host_state	2451	80	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	{}	432
+27236	last_touched	last_touched	2451	300	{no,asc,desc}	no	110	{}	\N	\N	\N	\N	\N	f	\N	433
+27240	last_noalarm_msg	last_noalarm_msg	2451	340	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	434
+27241	heartbeat_time	heartbeat_time	2451	350	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	435
+27246	host_service_note	host_service_note	2452	50	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	436
+27732	service_var_type_id	service_var_type_id	2495	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	437
+27733	host_service_id	host_service_id	2495	50	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	438
+27250	check_cmd	check_cmd	2452	90	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	439
+27734	rrd_beat_id	rrd_beat_id	2495	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	440
+27254	max_check_attempts	max_check_attempts	2452	130	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	\N	441
+27255	normal_check_interval	normal_check_interval	2452	140	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	\N	442
+27256	retry_check_interval	retry_check_interval	2452	150	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	\N	443
+27258	flapping_interval	flapping_interval	2452	170	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	\N	444
+27259	flapping_max_change	flapping_max_change	2452	180	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	\N	445
+27261	noalarm_from	noalarm_from	2452	200	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	446
+27262	noalarm_to	noalarm_to	2452	210	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	447
+27735	features	features	2495	70	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	448
+27269	check_attempts	check_attempts	2452	280	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	449
+27270	last_changed	last_changed	2452	290	{no,asc,desc}	no	100	{}	\N	\N	\N	\N	\N	f	\N	450
+27271	last_touched	last_touched	2452	300	{no,asc,desc}	no	110	{}	\N	\N	\N	\N	\N	f	\N	451
+27275	last_noalarm_msg	last_noalarm_msg	2452	340	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	452
+27276	heartbeat_time	heartbeat_time	2452	350	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	453
+27277	node_id	node_id	2453	10	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	f	\N	454
+27278	node_name	node_name	2453	20	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	f	\N	455
+27279	port_id	port_id	2453	30	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	f	\N	456
+27242	host_service_id	host_service_id	2452	1000	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	457
+27731	service_var_note	service_var_note	2495	1000	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	458
+27737	var_state	var_state	2495	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	459
+27736	deleted	deleted	2495	2000	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	460
+27237	act_alarm_log_id	act_alarm_log_id	2451	310	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	461
+27238	last_alarm_log_id	last_alarm_log_id	2451	320	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	462
+27282	mactab_state	mactab_state	2453	60	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	463
+27272	act_alarm_log_id	act_alarm_log_id	2452	310	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	464
+27273	last_alarm_log_id	last_alarm_log_id	2452	320	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	465
+27245	port_id	port_id	2452	40	{no,asc,desc}	asc	30	{}	\N	\N	:owner=node_id:	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}	466
+27249	delegate_host_state	delegate_host_state	2452	80	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	{boolean}	467
+27251	features	features	2452	100	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}	468
+27232	hard_state	hard_state	2451	260	{no,asc,desc}	no	90	{bg_color}	\N	\N	:color:	\N	\N	f	\N	469
+27239	deleted	deleted	2451	330	\N	no	\N	{table_hide,dialog_hide,read_only,bg_color,fg_color}	\N	\N	\N	\N	\N	f	\N	470
+27274	deleted	deleted	2452	330	\N	no	\N	{table_hide,dialog_hide,read_only,bg_color,fg_color}	\N	\N	\N	\N	\N	f	\N	471
+27257	timeperiod_id	timeperiod_id	2452	160	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	472
+27207	host_service_id	host_service_id	2451	1000	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	473
+27289	ipaddrs_by_arp	ipaddrs_by_arp	2453	130	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	474
+27290	ipaddrs_by_rif	ipaddrs_by_rif	2453	140	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	475
+27291	node_id	node_id	2454	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	476
+27738	place_id	place_id	2496	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	477
+27740	place_note	place_note	2496	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	478
+27741	place_type	place_type	2496	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	479
+27299	community_rd	community_rd	2454	90	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	\N	480
+27300	community_wr	community_wr	2454	100	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	\N	481
+27302	sysdescr	sysdescr	2454	120	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	482
+27303	sysobjectid	sysobjectid	2454	130	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	483
+27304	sysuptime	sysuptime	2454	140	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	484
+27305	syscontact	syscontact	2454	150	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	485
+27306	sysname	sysname	2454	160	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	486
+27307	syslocation	syslocation	2454	170	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	487
+27308	sysservices	sysservices	2454	180	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	488
+27309	vendorname	vendorname	2454	190	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	489
+27316	superior_service_mask	superior_service_mask	2455	70	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	490
+27320	max_check_attempts	max_check_attempts	2455	110	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	\N	491
+27321	normal_check_interval	normal_check_interval	2455	120	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	\N	492
+27322	retry_check_interval	retry_check_interval	2455	130	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	\N	493
+27323	timeperiod_id	timeperiod_id	2455	140	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	\N	494
+27324	flapping_interval	flapping_interval	2455	150	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	\N	495
+27325	flapping_max_change	flapping_max_change	2455	160	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	\N	496
+27326	deleted	deleted	2455	170	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	497
+27327	offline_group_ids	offline_group_ids	2455	180	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	\N	498
+27328	online_group_ids	online_group_ids	2455	190	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	\N	499
+27329	heartbeat_time	heartbeat_time	2455	200	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	500
+27330	service_type_id	service_type_id	2456	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	501
+27331	service_type_name	service_type_name	2456	20	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	502
+27745	tels	tels	2496	80	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	503
+27315	port	port	2455	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	504
+27739	place_name	place_name	2496	20	{no,asc,desc}	asc	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}	505
+27742	parent_id	parent_id	2496	50	\N	no	\N	{table_hide}	\N	\N	\N	\N	\N	f	\N	506
+27332	service_type_note	service_type_note	2456	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	507
+27333	query_parser_id	query_parser_id	2457	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	508
+27334	query_parser_note	query_parser_note	2457	20	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	509
+27744	frame	frame	2496	70	\N	no	\N	{table_hide}	\N	\N	\N	\N	\N	f	\N	510
+27336	parse_type	parse_type	2457	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	511
+27743	image_id	image_id	2496	60	\N	no	\N	{table_hide}	\N	\N	\N	\N	\N	f	\N	512
+27337	item_sequence_number	item_sequence_number	2457	50	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	f	\N	513
+27338	case_sensitive	case_sensitive	2457	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	514
+27763	ack_user_ids	\N	2437	190	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	515
+27341	subnet_id	subnet_id	2458	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	516
+27342	subnet_name	subnet_name	2458	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	\N	517
+27343	subnet_note	subnet_note	2458	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	518
+27344	netaddr	netaddr	2458	40	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	\N	519
+27345	vlan_id	vlan_id	2458	50	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	\N	520
+27764	ack_user_note	\N	2437	190	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	521
+27765	alarm_id	\N	2470	130	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	522
+27766	alarm_do	\N	2470	140	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	523
+27767	portvar_id	portvar_id	2498	10	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	524
+27768	service_var_name	service_var_name	2498	20	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	525
+27769	service_var_note	service_var_note	2498	30	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	526
+27301	snmp_ver	snmp_ver	2454	110	\N	no	\N	{batch_edit}	\N	\N	:horizontal:	\N	\N	f	\N	527
+27346	subnet_type	subnet_type	2458	60	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	\N	528
+27746	service_var_value	\N	2495	25	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	529
+27473	event_note	event_note	2470	100	{no,asc,desc}	no	30	{huge}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	530
+27770	service_var_type_id	service_var_type_id	2498	40	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	531
+27350	vlan_stat	vlan_stat	2459	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	532
+27351	flag	flag	2459	50	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	f	\N	533
+27352	image_id	image_id	2460	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	534
+27771	host_service_id	host_service_id	2498	50	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	535
+27772	port_id	port_id	2498	60	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	536
+27773	rrd_beat_id	rrd_beat_id	2498	70	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	537
+27774	service_var_value	service_var_value	2498	80	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	538
+27357	image_data	image_data	2460	60	\N	no	\N	{table_hide}	\N	\N	\N	\N	\N	f	\N	539
+27358	image_hash	image_hash	2460	70	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	540
+27359	dyn_addr_range_id	dyn_addr_range_id	2461	10	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	f	\N	541
+27360	dyn_addr_range_note	dyn_addr_range_note	2461	20	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	542
+27361	exclude	exclude	2461	30	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	\N	543
+27362	begin_address	begin_address	2461	40	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	\N	544
+27363	end_address	end_address	2461	50	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	\N	545
+27364	subnet_id	subnet_id	2461	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	546
+27365	host_service_id	host_service_id	2461	70	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	547
+27366	last_time	last_time	2461	80	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	\N	548
+27367	flag	flag	2461	90	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	f	\N	549
+27368	tpow_id	tpow_id	2462	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	550
+27775	var_state	var_state	2498	90	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	551
+27776	last_time	last_time	2498	100	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	552
+27777	features	features	2498	110	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	553
+27372	begin_time	begin_time	2462	50	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	f	\N	554
+27373	end_time	end_time	2462	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	555
+27778	raw_value	raw_value	2498	120	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	556
+27779	delegate_service_state	delegate_service_state	2498	130	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	557
+27377	user_event_id	user_event_id	2464	100	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	558
+27385	alarm_id	alarm_id	2465	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	559
+27386	host_service_id	host_service_id	2465	20	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	560
+27387	daemon_id	daemon_id	2465	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	561
+27388	first_status	first_status	2465	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	562
+27389	max_status	max_status	2465	50	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	563
+27390	last_status	last_status	2465	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	564
+27381	alarm_id	alarm_id	2464	50	{no,asc,desc}	no	40	{read_only}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}	565
+27391	begin_time	begin_time	2465	70	{no,asc,desc}	desc	10	{}	\N	\N	\N	\N	\N	f	\N	566
+27392	event_note	event_note	2465	80	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	567
+27393	superior_alarm_id	superior_alarm_id	2465	90	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	f	\N	568
+27394	noalarm	noalarm	2465	100	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	569
+27395	end_time	end_time	2465	110	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	\N	570
+27396	alarm_id	alarm_id	2466	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	571
+27399	first_status	first_status	2466	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	572
+27401	last_status	last_status	2466	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	573
+27747	raw_value	\N	2495	35	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	\N	574
+27404	superior_alarm_id	superior_alarm_id	2466	90	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	575
+27748	delegate_service_state	\N	2495	37	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	\N	576
+27407	dblog_id	dblog_id	2467	10	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	f	\N	577
+27730	service_var_name	service_var_name	2495	20	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	f	\N	578
+27780	state_msg	\N	2495	80	\N	no	\N	{read_only,huge}	\N	\N	\N	\N	\N	f	\N	579
+27781	state_msg	\N	2498	140	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	\N	580
+27782	state_msg	\N	2497	140	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	\N	581
+27783	features	\N	2491	40	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	582
+27784	model_number	Model szám	2447	57	{no,asc,desc}	no	50	{batch_edit}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,big,notbegin,notlike,notsimilar,notregexp,notregexpi}	583
+27786	model_name	Model név	2447	58	{no,asc,desc}	no	60	{batch_edit}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,big,notbegin,notlike,notsimilar,notregexp,notregexpi}	584
+27790	model_name	Model név	2441	45	{no,asc,desc}	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi,notinterval}	585
+27424	app_ver	app_ver	2468	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	586
+27425	lib_ver	lib_ver	2468	70	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	587
+27787	inventory_number	Leltári szám	2441	42	{no,asc,desc}	no	42	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	588
+27788	serial_number	Széria szám	2441	43	{no,asc,desc}	no	43	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	589
+27789	model_number	Model szám	2441	44	{no,asc,desc}	no	44	{batch_edit}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi,notinterval}	590
+27791	model_number	\N	2454	57	{no,asc,desc}	no	57	{batch_edit}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}	591
+27792	model_name	\N	2454	58	{no,asc,desc}	no	58	{batch_edit}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}	592
+27793	inventory_number	\N	2445	80	{no,asc,desc}	no	80	{}	\N	\N	\N	\N	\N	f	\N	593
+27794	serial_number	\N	2445	90	{no,asc,desc}	no	90	{}	\N	\N	\N	\N	\N	f	\N	594
+27795	model_number	\N	2445	100	{no,asc,desc}	no	100	{batch_edit}	\N	\N	\N	\N	\N	f	\N	595
+27797	model_name	\N	2445	110	{no,asc,desc}	no	110	{batch_edit}	\N	\N	\N	\N	\N	f	\N	596
+27297	deleted	deleted	2454	1000	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	597
+27437	sql_err_num	sql_err_num	2468	190	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	598
+27438	sql_err_type	sql_err_type	2468	200	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	599
+27293	node_note	node_note	2454	65	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	600
+27443	data_line	data_line	2468	250	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	601
+27444	data_pos	data_pos	2468	260	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	602
+27252	disabled	disabled	2452	110	\N	no	\N	{batch_edit,bg_color,fg_color}	\N	\N	:color:	\N	\N	f	{boolean}	603
+27446	data_name	data_name	2468	280	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	604
+27447	acknowledged	acknowledged	2468	290	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	605
+27487	set_type	set_type	2472	30	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	{begin,like}	606
+27294	node_type	node_type	2454	40	{no,asc,desc}	no	40	{batch_edit}	\N	\N	:column=2:	\N	\N	f	{begin,like,similar,regexp,regexpi}	607
+27453	app_ver	app_ver	2469	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	608
+27454	lib_ver	lib_ver	2469	70	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	609
+27382	event_type	event_type	2464	60	{no,asc,desc}	no	50	{read_only}	\N	\N	\N	\N	\N	f	{begin,like,notbegin,notlike}	610
+27459	host_service_id	host_service_id	2469	120	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	611
+27384	user_event_note	user_event_note	2464	80	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}	612
+27383	event_state	event_state	2464	70	{no,asc,desc}	no	60	{}	\N	\N	\N	\N	\N	f	{begin,like,notbegin,notlike}	613
+27464	host_service_log_id	host_service_log_id	2470	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	614
+27415	func_name	func_name	2467	90	{no,asc,desc}	no	80	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	615
+27380	user_id	user_id	2464	40	{no,asc,desc}	no	30	{read_only}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}	616
+27378	created	created	2464	20	{no,asc,desc}	asc	10	{read_only}	\N	\N	\N	\N	\N	f	{big,litle,interval,notinterval}	617
+27751	service_var_note	service_var_note	2497	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	618
+27476	iftype_id	iftype_id	2471	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	619
+27477	iftype_name	iftype_name	2471	20	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	620
+27478	iftype_note	iftype_note	2471	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	621
+27479	iftype_iana_id	iftype_iana_id	2471	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	622
+27480	iftype_link_type	iftype_link_type	2471	50	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	623
+27481	iftype_obj_type	iftype_obj_type	2471	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	624
+27482	preferred	preferred	2471	70	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	625
+27483	iana_id_link	iana_id_link	2471	80	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	626
+27484	if_name_prefix	if_name_prefix	2471	90	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	627
+27488	host_service_id	host_service_id	2472	40	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	628
+27491	arp_note	arp_note	2472	70	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	629
+27492	port_by_ipa	port_by_ipa	2472	80	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	630
+27495	arp_log_id	arp_log_id	2473	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	631
+27496	reason	reason	2473	20	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	632
+27497	date_of	date_of	2473	30	{no,asc,desc}	desc	10	{}	\N	\N	\N	\N	\N	f	\N	633
+27498	ipaddress	ipaddress	2473	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	634
+27499	hwaddress_new	hwaddress_new	2473	50	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	635
+27500	hwaddress_old	hwaddress_old	2473	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	636
+27501	set_type_old	set_type_old	2473	70	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	637
+27502	host_service_id_old	host_service_id_old	2473	80	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	638
+27503	first_time_old	first_time_old	2473	90	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	639
+27504	last_time_old	last_time_old	2473	100	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	640
+27505	acknowledged	acknowledged	2473	110	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	641
+27506	node_id	node_id	2474	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	642
+27754	rrd_beat_id	rrd_beat_id	2497	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	643
+27508	port_id	port_id	2474	30	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	644
+27755	service_var_value	service_var_value	2497	70	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	645
+27757	last_time	last_time	2497	90	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	646
+27758	features	features	2497	100	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	647
+27759	deleted	deleted	2497	110	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	648
+27760	raw_value	raw_value	2497	120	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	649
+27749	service_var_id	service_var_id	2497	10	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	650
+27752	service_var_type_id	service_var_type_id	2497	40	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}	651
+27753	host_service_id	host_service_id	2497	5	{no,asc,desc}	no	5	{read_only}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}	652
+27750	service_var_name	service_var_name	2497	20	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}	653
+27756	var_state	var_state	2497	80	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}	654
+27518	ipaddrs_by_arp	ipaddrs_by_arp	2474	130	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	655
+27519	ipaddrs_by_rif	ipaddrs_by_rif	2474	140	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	656
+27520	mactab_log_id	mactab_log_id	2475	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	657
+27522	reason	reason	2475	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	658
+27494	ports_by_hwa	ports_by_hwa	2472	100	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	659
+27509	port_name	port_name	2474	40	{no,asc,desc}	no	30	{read_only}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	660
+27761	delegate_service_state	delegate_service_state	2497	130	{no,asc,desc}	no	60	{batch_edit}	\N	\N	\N	\N	\N	f	{begin,like,notbegin,notlike}	661
+27485	ipaddress	ipaddress	2472	10	{no,asc,desc}	asc	10	{read_only}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexpi,notbegin,notlike,notsimilar,notregexpi}	662
+27486	hwaddress	hwaddress	2472	20	{no,asc,desc}	no	20	{read_only}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexpi,notbegin,notlike,notsimilar,notregexpi}	663
+27489	first_time	first_time	2472	50	{no,asc,desc}	no	30	{read_only}	\N	\N	\N	\N	\N	f	{big,litle,interval,notinterval}	664
+27490	last_time	last_time	2472	60	{no,asc,desc}	no	40	{read_only}	\N	\N	\N	\N	\N	f	{big,litle,interval,notinterval}	665
+27521	hwaddress	hwaddress	2475	20	{no,asc,desc}	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexpi}	666
+27523	be_void	be_void	2475	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	667
+27526	mactab_state_old	mactab_state_old	2475	70	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	668
+27527	first_time_old	first_time_old	2475	80	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	669
+27528	last_time_old	last_time_old	2475	90	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	670
+27529	set_type_old	set_type_old	2475	100	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	671
+27531	mactab_state_new	mactab_state_new	2475	120	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	672
+27532	set_type_new	set_type_new	2475	130	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	673
+27533	acknowledged	acknowledged	2475	140	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	674
+27534	fkey_type_id	fkey_type_id	2476	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	675
+27535	table_schema	table_schema	2476	20	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	676
+27536	table_name	table_name	2476	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	677
+27537	column_name	column_name	2476	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	678
+27538	unusual_fkeys_type	unusual_fkeys_type	2476	50	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	679
+27539	unusual_fkey_id	unusual_fkey_id	2477	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	680
+27540	table_schema	table_schema	2477	20	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	681
+27541	table_name	table_name	2477	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	682
+27542	column_name	column_name	2477	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	683
+27543	unusual_fkeys_type	unusual_fkeys_type	2477	50	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	684
+27544	f_table_schema	f_table_schema	2477	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	685
+27545	f_table_name	f_table_name	2477	70	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	686
+27546	f_column_name	f_column_name	2477	80	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	687
+27547	f_inherited_tables	f_inherited_tables	2477	90	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	688
+27548	service_type_id	service_type_id	2478	10	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	689
+27549	status	status	2478	20	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	690
+27550	short_msg	short_msg	2478	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	691
+27551	message	message	2478	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	692
+27524	date_of	date_of	2475	50	{no,asc,desc}	desc	10	{}	\N	\N	\N	\N	\N	f	{big,litle,interval,notinterval}	693
+27525	port_id_old	port_id_old	2475	60	{no,asc,desc}	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}	694
+27561	table_title	table_title	2480	40	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	\N	695
+27562	dialog_title	dialog_title	2480	50	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	f	\N	696
+27564	field_sequence_number	field_sequence_number	2480	70	{no,asc,desc}	asc	200	{}	\N	\N	\N	\N	\N	f	\N	697
+27565	ord_types	ord_types	2480	80	{no,asc,desc}	no	80	{}	\N	\N	\N	\N	\N	f	\N	698
+27530	port_id_new	port_id_new	2475	110	{no,asc,desc}	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}	699
+27566	ord_init_type	ord_init_type	2480	90	{no,asc,desc}	no	90	{}	\N	\N	\N	\N	\N	f	\N	700
+27567	ord_init_sequence_number	ord_init_sequence_number	2480	100	{no,asc,desc}	no	100	{}	\N	\N	\N	\N	\N	f	\N	701
+27569	expression	expression	2480	120	{no,asc,desc}	no	120	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	f	\N	702
+27571	features	features	2480	140	{no,asc,desc}	no	140	{}	\N	\N	\N	\N	\N	f	\N	703
+27572	tool_tip	tool_tip	2480	150	{no,asc,desc}	no	150	{}	\N	\N	\N	\N	\N	f	\N	704
+27573	whats_this	whats_this	2480	160	{no,asc,desc}	no	160	{}	\N	\N	\N	\N	\N	f	\N	705
+27577	table_shape_id	table_shape_id	2481	10	{no,asc,desc}	no	10	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	706
+27580	table_title	table_title	2481	40	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	\N	707
+27581	dialog_title	dialog_title	2481	50	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	f	\N	708
+27582	dialog_tab_title	dialog_tab_title	2481	60	{no,asc,desc}	no	60	{}	\N	\N	\N	\N	\N	f	\N	709
+27583	member_title	member_title	2481	70	{no,asc,desc}	no	70	{}	\N	\N	\N	\N	\N	f	\N	710
+27584	not_member_title	not_member_title	2481	80	{no,asc,desc}	no	80	{}	\N	\N	\N	\N	\N	f	\N	711
+27587	schema_name	schema_name	2481	110	{no,asc,desc}	no	110	{}	\N	\N	\N	\N	\N	f	\N	712
+27588	table_inherit_type	table_inherit_type	2481	120	{no,asc,desc}	no	120	{}	\N	\N	\N	\N	\N	f	\N	713
+27598	menu_item_id	menu_item_id	2482	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	714
+27601	upper_menu_item_id	upper_menu_item_id	2482	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	715
+27570	default_value	default_value	2480	130	{no,asc,desc}	no	130	{table_hide}	\N	\N	\N	\N	\N	f	\N	716
+27576	flag	flag	2480	190	{}	no	190	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	717
+27603	menu_title	menu_title	2482	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	718
+27604	tab_title	tab_title	2482	70	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	719
+27605	features	features	2482	80	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	720
+27608	menu_rights	menu_rights	2482	110	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	721
+27609	enum_val_id	enum_val_id	2483	10	{no,asc,desc}	asc	10	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	722
+27675	inventory_number	\N	2447	56	{no,asc,desc}	no	\N	{}	\N	\N	\N	\N	\N	f	\N	723
+27592	right_shape_ids	right_shape_ids	2481	160	{no}	no	230	{}	\N	\N	\N	\N	\N	f	\N	724
+27623	group_id	group_id	2486	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	725
+27624	group_name	group_name	2486	20	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	726
+27625	group_note	group_note	2486	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	727
+27627	place_group_id	place_group_id	2486	50	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	728
+27628	features	features	2486	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	729
+27629	user_id	user_id	2487	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	730
+27632	passwd	passwd	2487	40	\N	no	\N	{table_hide,passwd}	\N	\N	\N	\N	\N	f	\N	731
+27611	enum_val_note	enum_val_note	2483	40	{no,asc,desc}	asc	40	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	732
+27633	domain_users	domain_users	2487	50	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	733
+27670	object_syntax_name	object_syntax_name	2491	20	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	\N	734
+27636	language	language	2487	80	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	735
+27637	tels	tels	2487	90	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	736
+27638	addresses	addresses	2487	100	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	737
+27641	enabled	enabled	2487	130	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	738
+27642	features	features	2487	140	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	739
+27643	host_notif_period	host_notif_period	2487	150	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	740
+27644	serv_notif_period	serv_notif_period	2487	160	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	741
+27645	host_notif_switchs	host_notif_switchs	2487	170	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	742
+27646	serv_notif_switchs	serv_notif_switchs	2487	180	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	743
+27647	host_notif_cmd	host_notif_cmd	2487	190	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	744
+27648	serv_notif_cmd	serv_notif_cmd	2487	200	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	745
+27649	place_group_id	place_group_id	2488	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	746
+27650	place_group_name	place_group_name	2488	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	\N	747
+27651	place_group_note	place_group_note	2488	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	748
+27652	place_group_type	place_group_type	2488	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	749
+27607	whats_this	whats_this	2482	100	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	\N	750
+27654	place_name	place_name	2489	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	\N	751
+27655	place_note	place_note	2489	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	752
+27656	place_type	place_type	2489	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	753
+27657	parent_id	parent_id	2489	50	\N	no	\N	{table_hide}	\N	\N	\N	\N	\N	f	\N	754
+27618	sys_param_id	sys_param_id	2485	10	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	755
+27659	frame	frame	2489	70	\N	no	\N	{table_hide}	\N	\N	\N	\N	\N	f	\N	756
+27658	image_id	image_id	2489	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	757
+27620	sys_param_note	sys_param_note	2485	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	758
+27621	param_type_id	param_type_id	2485	40	{no,asc,desc}	no	\N	{}	\N	\N	\N	\N	\N	f	\N	759
+27622	param_value	param_value	2485	50	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	760
+27669	object_syntax_id	object_syntax_id	2491	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	761
+27671	sentence	sentence	2491	30	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	\N	762
+27672	serial_number	\N	2454	53	{no,asc,desc}	no	\N	{}	\N	\N	\N	\N	\N	f	\N	763
+27673	inventory_number	\N	2454	56	{no,asc,desc}	no	\N	{}	\N	\N	\N	\N	\N	f	\N	764
+27674	serial_number	\N	2447	53	{no,asc,desc}	no	\N	{}	\N	\N	\N	\N	\N	f	\N	765
+27606	tool_tip	tool_tip	2482	90	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	\N	766
+27661	place_id	place_id	2490	10	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	767
+27666	image_id	image_id	2490	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	768
+27667	frame	frame	2490	70	\N	no	\N	{table_hide}	\N	\N	\N	\N	\N	f	\N	769
+27660	tels	tels	2489	80	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	770
+27653	place_id	place_id	2489	10	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	771
+27140	iftype_id	iftype_id	2444	50	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	4	\N	\N	\N	f	\N	772
+27144	flag	flag	2444	90	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	773
+27310	service_id	service_id	2455	10	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	774
+27563	table_shape_id	table_shape_id	2480	60	{no,asc,desc}	no	60	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	775
+27558	table_shape_field_id	table_shape_field_id	2480	10	{no,asc,desc}	no	10	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	776
+27676	select_id	select_id	2492	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	777
+27230	host_service_state	host_service_state	2451	42	{no,asc,desc}	no	70	{}	\N	\N	:color:	\N	\N	f	\N	778
+27089	first_status	\N	2437	110	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	779
+27061	host_service_id	\N	2436	20	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	780
+27419	applog_id	applog_id	2468	10	{no,asc,desc}	no	100	{read_only}	\N	\N	\N	\N	\N	f	\N	781
+27602	item_sequence_number	item_sequence_number	2482	50	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	f	\N	782
+27599	menu_item_name	menu_item_name	2482	20	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	\N	783
+27684	menu_item_id	menu_item_id	2493	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	784
+27689	menu_title	menu_title	2493	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	785
+27690	tab_title	tab_title	2493	70	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	786
+27691	features	features	2493	80	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	787
+27694	menu_rights	menu_rights	2493	110	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	788
+27688	item_sequence_number	item_sequence_number	2493	50	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	f	\N	789
+27374	timeperiod_id	timeperiod_id	2463	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	\N	790
+27626	group_rights	group_rights	2486	40	{no,asc,desc}	no	\N	{}	\N	\N	:color:	\N	\N	f	\N	791
+27692	tool_tip	tool_tip	2493	90	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	\N	792
+27693	whats_this	whats_this	2493	100	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	\N	793
+27174	ip_address_type	ip_address_type	2448	40	\N	no	\N	{}	\N	\N	:color:	\N	\N	f	\N	794
+27319	disabled	disabled	2455	100	\N	no	\N	{batch_edit}	\N	\N	:color:	\N	\N	f	\N	795
+27698	view_short	view_short	2483	80	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	796
+27699	view_long	view_long	2483	90	\N	no	\N	{}	\N	\N	\N	\N	\N	f	\N	797
+27697	font_family	\N	2483	70	\N	no	\N	{}	\N	\N	:font_family:	\N	\N	f	\N	798
+27700	font_attr	\N	2483	75	\N	no	\N	{}	\N	\N	:font_family:	\N	\N	f	\N	799
+27150	node_type	node_type	2445	40	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	f	\N	800
+27231	soft_state	soft_state	2451	44	{no,asc,desc}	no	44	{bg_color}	\N	\N	:color:	\N	\N	f	\N	801
+27695	bg_color	\N	2483	50	\N	no	50	{bg_color}	\N	\N	:color:	\N	\N	f	\N	802
+27696	fg_color	\N	2483	60	\N	no	\N	{fg_color}	\N	\N	:color:	\N	\N	f	\N	803
+27701	style_sheet	\N	2481	300	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	\N	804
+27203	port_ostat	port_ostat	2450	60	\N	no	\N	{read_only}	\N	unknown	:color:	\N	\N	f	\N	805
+27197	iftype_id	iftype_id	2450	200	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	f	\N	806
+27233	state_msg	state_msg	2451	46	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	\N	807
+27467	old_state	old_state	2470	40	\N	no	\N	{}	\N	\N	:color:	\N	\N	f	{begin,like,similar,regexp,regexpi}	808
+27710	first_time	first_time	2440	60	{no,asc,desc}	no	60	{}	\N	\N	\N	\N	\N	f	{big,litle,interval,notinterval}	809
+27253	superior_host_service_id	superior_host_service_id	2452	120	{no,asc,desc}	no	60	{batch_edit}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}	810
+27711	last_time	last_time	2440	70	{no,asc,desc}	no	70	{}	\N	\N	\N	\N	\N	f	{big,litle,interval,notinterval}	811
+27706	ifdescr	ifdescr	2450	240	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	812
+27296	features	features	2454	70	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	813
+27709	stat_last_modify	stat_last_modify	2450	250	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	814
+27613	param_type_id	param_type_id	2484	10	{no,asc,desc}	asc	10	{table_hide,read_only}	\N	\N	\N	\N	\N	f	\N	815
+27493	node_by_hwa	node_by_hwa	2472	90	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	\N	816
+27619	sys_param_name	sys_param_name	2485	20	{no,asc,desc}	asc	\N	{}	\N	\N	\N	\N	\N	f	{like,begin,similar,regexpi}	817
+27559	table_shape_field_name	table_shape_field_name	2480	20	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	818
+27121	node_note	node_note	2441	30	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	819
+27397	host_service_id	host_service_id	2466	20	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	820
+27431	err_code	err_code	2468	130	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{big,litle,interval}	821
+27441	sql_query	sql_query	2468	230	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	822
+27313	service_type_id	service_type_id	2455	40	{no,asc,desc}	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	823
+27430	src_line	src_line	2468	120	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{big,litle,interval}	824
+27436	thread_name	thread_name	2468	180	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	825
+27439	sql_driver_text	sql_driver_text	2468	210	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	826
+27157	port_tag	port_tag	2446	40	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	827
+27160	port_index	port_index	2446	70	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	f	{big,litle,interval}	828
+27408	date_of	date_of	2467	20	{no,asc,desc}	desc	10	{}	\N	\N	\N	\N	\N	f	{big,litle,interval}	829
+27348	vlan_name	vlan_name	2459	20	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	830
+27116	node_name2	\N	2440	30	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	831
+27456	src_name	src_name	2469	90	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	832
+27370	tpow_note	tpow_note	2462	30	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	833
+27148	node_name	node_name	2445	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	834
+27108	link_type	\N	2438	110	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like}	835
+27280	port_name	port_name	2453	40	{no,asc,desc}	asc	10	{read_only}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	836
+27463	acknowledged	acknowledged	2469	160	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	837
+27142	port_index	port_index	2444	70	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	{big,litle,interval}	838
+27166	node_type	node_type	2447	40	\N	no	\N	{batch_edit}	\N	{node}	\N	\N	admin	f	{begin,like,similar,regexp,regexpi}	839
+27298	node_stat	node_stat	2454	25	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	840
+27102	phs_link_note	\N	2438	50	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	841
+27507	node_name	node_name	2474	20	{no,asc,desc}	no	20	{read_only}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	842
+27639	place_id	place_id	2487	110	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	843
+27617	param_type_dim	param_type_dim	2484	50	{no,asc,desc}	asc	50	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	844
+27311	service_name	service_name	2455	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	845
+27286	set_type	set_type	2453	100	{no,asc,desc}	no	50	{read_only}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	846
+27263	offline_group_ids	offline_group_ids	2452	220	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	847
+27111	node_name2	\N	2439	30	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	848
+27115	port_index1	\N	2440	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	{big,litle,interval}	849
+27098	port_name1	\N	2438	10	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	850
+27474	superior_alarm_id	superior_alarm_id	2470	110	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	851
+27340	import_expression	import_expression	2457	80	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	852
+27411	table_name	table_name	2467	50	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	853
+27288	r_port_name	r_port_name	2453	120	{no,asc,desc}	no	40	{read_only}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	854
+27105	port_index2	\N	2438	80	{no,asc,desc}	no	60	{}	\N	\N	\N	\N	\N	f	{big,litle,interval}	855
+27158	iftype_id	iftype_id	2446	50	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	{like}	856
+27409	error_id	error_id	2467	30	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,big,litle,interval}	857
+27375	timeperiod_name	timeperiod_name	2463	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	858
+27412	trigger_op	trigger_op	2467	60	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	859
+27683	features	features	2492	80	{no,asc,desc}	no	70	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	860
+27287	r_node_name	r_node_name	2453	110	{no,asc,desc}	no	30	{read_only}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	861
+27406	end_time	end_time	2466	110	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	{big,litle,interval}	862
+27295	place_id	place_id	2454	50	{no,asc,desc}	no	30	{batch_edit}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	863
+27586	table_name	table_name	2481	100	{no,asc,desc}	no	100	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	864
+27594	view_rights	view_rights	2481	180	{no,asc,desc}	no	180	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	865
+27630	user_name	user_name	2487	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	866
+27457	src_line	src_line	2469	100	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{big,litle,interval}	867
+27471	new_soft_state	new_soft_state	2470	80	\N	no	\N	{}	\N	\N	:color:	\N	\N	f	{begin,like,similar,regexp,regexpi}	868
+27354	image_note	image_note	2460	30	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	869
+27101	port_shared1	\N	2438	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like}	870
+27151	place_id	place_id	2445	50	{no,asc,desc}	no	30	{batch_edit}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	871
+27422	node_id	node_id	2468	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	872
+27410	user_id	user_id	2467	40	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	873
+27472	new_hard_state	new_hard_state	2470	90	\N	no	\N	{}	\N	\N	:color:	\N	\N	f	{begin,like,similar,regexp,regexpi}	874
+27462	memo	memo	2469	150	\N	no	\N	{huge}	\N	\N	:stretch.vertical=1:	\N	\N	f	{begin,like,similar,regexp,regexpi}	875
+27600	app_name	app_name	2482	30	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	876
+27687	upper_menu_item_id	upper_menu_item_id	2493	40	{no,asc,desc}	asc	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	877
+27403	event_note	event_note	2466	80	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	878
+27678	select_note	select_note	2492	30	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	879
+27244	service_id	service_id	2452	30	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,notbegin,notlike,notsimilar,notregexp,notregexpi}	880
+27379	happened	happened	2464	30	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	{begin,like,notbegin,notlike}	881
+27405	noalarm	noalarm	2466	100	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{boolean}	882
+27349	vlan_note	vlan_note	2459	30	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	883
+27120	node_name	node_name	2441	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	884
+27458	node_id	node_id	2469	110	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	885
+27137	port_name	port_name	2444	20	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	886
+27117	port_name2	\N	2440	40	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	887
+27170	node_stat	node_stat	2447	25	{no,asc,desc}	no	40	{read_only}	\N	unknown	:color:	\N	admin	f	{begin,like,similar,regexp,regexpi}	888
+27100	phs_link_type1	\N	2438	30	{no,asc,desc}	asc	30	{}	\N	\N	\N	\N	\N	f	{begin,like}	889
+27103	node_name2	\N	2438	60	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	890
+27104	port_name2	\N	2438	70	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	891
+27139	port_tag	port_tag	2444	40	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	892
+27260	noalarm_flag	noalarm_flag	2452	190	\N	no	\N	{batch_edit,bg_color,fg_color}	\N	\N	:batch_edit_fields=noalarm_from,noalarm_to:color:	\N	\N	f	{begin,like,similar,regexp,regexpi}	893
+27435	err_submsg	err_submsg	2468	170	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	894
+27452	thread_name	thread_name	2469	50	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	895
+27679	precedence	precedence	2492	40	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	{litle,big,interval}	896
+27423	pid	pid	2468	50	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{big,litle,interval}	897
+27610	enum_val_name	enum_val_name	2483	30	{no,asc,desc}	asc	30	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	898
+27414	err_msg	err_msg	2467	80	{no,asc,desc}	no	70	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	899
+27247	prime_service_id	prime_service_id	2452	60	{no,asc,desc}	no	40	{batch_edit}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	900
+27335	service_id	service_id	2457	30	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	901
+27416	reapeat	reapeat	2467	100	{no,asc,desc}	no	90	{}	\N	\N	\N	\N	\N	f	{big,litle,interval}	902
+27514	state_updated_time	state_updated_time	2474	90	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	{litle,big,interval}	903
+27445	data_msg	data_msg	2468	270	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	904
+27590	refine	refine	2481	140	{no,asc,desc}	no	140	{huge}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	905
+27686	app_name	app_name	2493	30	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	906
+27398	daemon_id	daemon_id	2466	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	907
+27318	features	features	2455	90	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	908
+27339	regular_expression	regular_expression	2457	70	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	909
+27635	last_name	last_name	2487	70	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	910
+27465	host_service_id	host_service_id	2470	20	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	911
+27122	node_type	node_type	2441	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	912
+27283	first_time	first_time	2453	70	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	{litle,big,interval}	913
+27107	port_shared2	\N	2438	100	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like}	914
+27512	first_time	first_time	2474	70	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	{litle,big,interval}	915
+27568	field_flags	field_flags	2480	110	{no,asc,desc}	no	110	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	916
+27450	app_name	app_name	2469	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	917
+27451	pid	pid	2469	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{big,litle,interval}	918
+27589	inherit_table_names	inherit_table_names	2481	130	{no,asc,desc}	no	130	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	919
+27575	edit_rights	edit_rights	2480	180	{no,asc,desc}	no	180	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	920
+27596	insert_rights	insert_rights	2481	200	{no,asc,desc}	no	200	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	921
+27118	port_index2	\N	2440	50	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	f	{big,litle,interval}	922
+27127	param_type_id	param_type_id	2442	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	923
+27400	max_status	max_status	2466	50	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	924
+27427	service_id	service_id	2468	90	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	925
+27110	port_index1	\N	2439	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	{big,litle,interval}	926
+27114	port_name1	\N	2440	10	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	927
+27266	soft_state	soft_state	2452	44	{no,asc,desc}	no	80	{bg_color}	\N	\N	:color:	\N	\N	f	{begin,like,similar,regexp,regexpi}	928
+27426	user_id	user_id	2468	80	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	929
+27428	func_name	func_name	2468	100	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	930
+27353	image_name	image_name	2460	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	931
+27455	func_name	func_name	2469	80	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	932
+27470	new_state	new_state	2470	70	\N	no	\N	{}	\N	\N	:color:	\N	\N	f	{begin,like,similar,regexp,regexpi}	933
+27560	table_shape_field_note	table_shape_field_note	2480	30	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	934
+27515	set_type	set_type	2474	100	{no,asc,desc}	no	60	{read_only}	\N	\N	:color:	\N	\N	f	{begin,like,similar,regexp,regexpi}	935
+27663	place_note	place_note	2490	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	936
+27317	check_cmd	check_cmd	2455	80	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	937
+27112	port_name2	\N	2439	40	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	938
+27134	param_value	param_value	2443	40	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	939
+27138	port_note	port_note	2444	30	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	940
+27593	auto_refresh	auto_refresh	2481	170	{no,asc,desc}	no	170	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi,litle,big,interval}	941
+27597	remove_rights	remove_rights	2481	210	{no,asc,desc}	no	210	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	942
+27429	src_name	src_name	2468	110	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	943
+27369	tpow_name	tpow_name	2462	20	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	944
+27511	mactab_state	mactab_state	2474	60	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	{like}	945
+27578	table_shape_name	table_shape_name	2481	20	{no,asc,desc}	asc	220	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	946
+27631	user_note	user_note	2487	30	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	947
+27243	node_id	node_id	2452	20	{no,asc,desc}	asc	10	{batch_edit}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	948
+27466	date_of	date_of	2470	30	{no,asc,desc}	desc	10	{}	\N	\N	\N	\N	\N	f	{big,litle,interval}	949
+27595	edit_rights	edit_rights	2481	190	{no,asc,desc}	no	190	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	950
+27460	user_id	user_id	2469	130	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	951
+27612	enum_type_name	enum_type_name	2483	20	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	952
+27402	begin_time	begin_time	2466	70	{no,asc,desc}	desc	10	{}	\N	\N	\N	\N	\N	f	{big,litle,interval}	953
+27132	param_type_id	param_type_id	2443	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	954
+27268	state_msg	state_msg	2452	46	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	955
+27371	dow	dow	2462	40	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	956
+27418	acknowledged	acknowledged	2467	120	{no,asc,desc}	no	110	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	957
+27449	date_of	date_of	2469	20	{no,asc,desc}	desc	10	{}	\N	\N	\N	\N	\N	f	{big,litle,interval}	958
+27145	shared_cable	shared_cable	2444	100	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	959
+27164	node_name	node_name	2447	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	960
+27510	hwaddress	hwaddress	2474	50	{no,asc,desc}	asc	10	{read_only}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	961
+27312	service_note	service_note	2455	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	962
+27421	app_name	app_name	2468	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	963
+27106	phs_link_type2	\N	2438	90	{no,asc,desc}	no	70	{}	\N	\N	\N	\N	\N	f	{begin,like}	964
+27585	table_shape_type	table_shape_type	2481	90	{no,asc,desc}	no	90	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	965
+27113	port_index2	\N	2439	50	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	f	{big,litle,interval}	966
+27665	parent_id	parent_id	2490	50	{no,asc,desc}	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	967
+27129	param_value	param_value	2442	40	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	968
+27475	noalarm	noalarm	2470	120	{no,asc,desc}	no	50	{}	\N	\N	:color:	\N	\N	f	{begin,like,similar,regexp,regexpi}	969
+27517	r_port_name	r_port_name	2474	120	{no,asc,desc}	no	50	{read_only}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	970
+27615	param_type_note	param_type_note	2484	30	{no,asc,desc}	asc	30	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	971
+27149	node_note	node_note	2445	30	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	972
+27662	place_name	place_name	2490	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	973
+27347	vlan_id	vlan_id	2459	10	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	{big,litle,interval}	974
+27668	tels	tels	2490	80	\N	no	\N	{table_hide}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	975
+27355	image_type	image_type	2460	40	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	976
+27376	timeperiod_note	timeperiod_note	2463	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	977
+27681	pattern_type	pattern_type	2492	60	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	978
+27264	online_group_ids	online_group_ids	2452	230	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	979
+27285	state_updated_time	state_updated_time	2453	90	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	{litle,big,interval}	980
+27356	image_sub_type	image_sub_type	2460	50	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	981
+27513	last_time	last_time	2474	80	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	{litle,big,interval}	982
+27432	err_name	err_name	2468	140	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	983
+27685	menu_item_name	menu_item_name	2493	20	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	984
+27516	r_node_name	r_node_name	2474	110	{no,asc,desc}	no	40	{read_only}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	985
+27281	hwaddress	hwaddress	2453	50	{no,asc,desc}	no	20	{read_only}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	986
+27265	host_service_state	host_service_state	2452	42	{no,asc,desc}	no	70	{}	\N	\N	:color:	\N	\N	f	{begin,like,similar,regexp,regexpi}	987
+27292	node_name	node_name	2454	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	988
+27156	port_note	port_note	2446	30	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	989
+27165	node_note	node_note	2447	30	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	990
+27099	port_index1	\N	2438	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	{big,litle,interval}	991
+27614	param_type_name	param_type_name	2484	20	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	992
+27640	expired	expired	2487	120	{no,asc,desc}	no	60	{}	\N	\N	\N	\N	\N	f	{big,litle,interval}	993
+27680	pattern	pattern	2492	50	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	994
+27682	choice	choice	2492	70	{no,asc,desc}	no	60	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	995
+27155	port_name	port_name	2446	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	996
+27469	old_hard_state	old_hard_state	2470	60	\N	no	\N	{}	\N	\N	:color:	\N	\N	f	{begin,like,similar,regexp,regexpi}	997
+27579	table_shape_note	table_shape_note	2481	30	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	998
+27267	hard_state	hard_state	2452	260	{no,asc,desc}	no	90	{bg_color}	\N	\N	:color:	\N	\N	f	{begin,like,similar,regexp,regexpi}	999
+27248	proto_service_id	proto_service_id	2452	70	{no,asc,desc}	no	50	{batch_edit}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	1000
+27123	place_id	place_id	2441	50	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	1001
+27284	last_time	last_time	2453	80	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	{litle,big,interval}	1002
+27461	importance	importance	2469	140	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	1003
+27574	view_rights	view_rights	2480	170	{no,asc,desc}	no	170	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	1004
+27434	err_syscode	err_syscode	2468	160	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{big,litle,interval}	1005
+27413	err_subcode	err_subcode	2467	70	{no,asc,desc}	no	60	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	1006
+27433	err_subcode	err_subcode	2468	150	\N	no	\N	{}	\N	\N	\N	\N	\N	f	{big,litle,interval}	1007
+27109	port_name1	\N	2439	10	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	1008
+27417	date_of_last	date_of_last	2467	110	{no,asc,desc}	no	100	{}	\N	\N	\N	\N	\N	f	{big,litle,interval}	1009
+27440	sql_db_text	sql_db_text	2468	220	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	1010
+27664	place_type	place_type	2490	40	\N	no	\N	{read_only}	\N	real	\N	\N	\N	f	{begin,like,similar}	1011
+27634	first_name	first_name	2487	60	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	1012
+27677	select_type	select_type	2492	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	1013
+27448	app_memo_id	app_memo_id	2469	10	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	{interval}	1014
+27468	old_soft_state	old_soft_state	2470	50	\N	no	\N	{}	\N	\N	:color:	\N	\N	f	{begin,like,similar,regexp,regexpi}	1015
+27591	features	features	2481	150	{no,asc,desc}	no	150	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	1016
+27616	param_type_type	param_type_type	2484	40	{no,asc,desc}	asc	40	{}	\N	\N	\N	\N	\N	f	{begin,like,similar,regexp,regexpi}	1017
+27420	date_of	date_of	2468	20	{no,asc,desc}	desc	10	{}	\N	\N	\N	\N	\N	f	{big,litle,interval}	1018
 \.
 
 
@@ -35936,76 +37383,76 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 -- Name: table_shape_fields_table_shape_field_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('table_shape_fields_table_shape_field_id_seq', 27801, true);
+SELECT pg_catalog.setval('table_shape_fields_table_shape_field_id_seq', 27812, true);
 
 
 --
 -- Data for Name: table_shapes; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY table_shapes (table_shape_id, table_shape_name, table_shape_note, table_title, dialog_title, dialog_tab_title, member_title, not_member_title, table_shape_type, table_name, schema_name, table_inherit_type, inherit_table_names, refine, features, right_shape_ids, auto_refresh, view_rights, edit_rights, insert_rights, remove_rights, style_sheet) FROM stdin;
-2440	lldp_links	LLDP linkek	LLDP linkek	\N	\N	\N	\N	{link}	lldp_links_shape	public	no	\N	\N	\N	\N	\N	viewer	system	system	operator	\N
-2438	phs_links	Fizikai linkek	Fizikai linkek	Fizikai link, patch	\N	\N	\N	{link}	phs_links_shape	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	operator	\N
-2439	log_links	Logikai linkek	Logikai linkek	\N	\N	\N	\N	{link,read_only}	log_links_shape	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	admin	\N
-2459	vlans	VLAN-ok	vlans	vlans	vlans	\N	\N	{owner}	vlans	public	no	\N		:button.copy:	{2458}	\N	viewer	operator	operator	operator	\N
-2471	iftypes	Port típusok	iftypes	iftypes	iftypes	\N	\N	{simple}	iftypes	public	no	\N		\N	\N	\N	viewer	system	system	system	\N
-2466	alarms	Riasztások (tábla)	Riasztási események	Riasztási esemény	alarms	\N	\N	{owner}	alarms	public	no	\N	\N	:button.copy:bg_color=noalarm:	{2464}	\N	indalarm	admin	system	admin	\N
-2469	app_memos	Applikáció napló	app_memos	app_memos	app_memos	\N	\N	{simple}	app_memos	public	no	\N	\N	:dialog.height=13:	\N	\N	viewer	system	system	admin	
-2451	host_services_tree	A hostokhoz rendelt szervíz példányok (fa)	host_services_tree	host_services_tree	host_services_tree	\N	\N	{tree,owner}	host_services	public	no	\N	\N	:button.copy:bg_color=host_service_state:snmpdevices.owner=node_id:	{2495}	\N	viewer	operator	operator	admin	\N
-2473	arp_logs	ARP lekérdezés napló.	arp_logs	arp_logs	arp_logs	\N	\N	{simple,read_only}	arp_logs	public	no	\N		\N	\N	\N	viewer	system	system	operator	\N
-2468	app_errs	Applikáció hiba napló	app_errs	app_errs	app_errs	\N	\N	{simple}	app_errs	public	no	\N		\N	\N	\N	viewer	system	system	admin	\N
-2472	arps	ARP tábla	arps	arps	arps	\N	\N	{simple,read_only}	arps_shape	public	no	\N	\N	:button.copy:	\N	\N	viewer	operator	operator	operator	\N
-2467	db_errs	Adatbázis hiba napló	db_errs	db_errs	db_errs	\N	\N	{simple}	db_errs	public	no	\N		\N	\N	\N	viewer	system	system	system	\N
-2461	dyn_addr_ranges	Dinamikus címtartományok	dyn_addr_ranges	dyn_addr_ranges	dyn_addr_ranges	\N	\N	{simple}	dyn_addr_ranges	public	no	\N		\N	\N	\N	viewer	operator	operator	operator	\N
-2470	host_service_logs	A szervíz példányok log rekordjai	host_service_logs	host_service_logs	host_service_logs	\N	\N	{simple}	host_service_logs	public	no	\N		\N	\N	\N	viewer	system	system	system	\N
-2449	mactab_port	Port címtábla	mactab_port	mactab_port	mactab_port	\N	\N	{simple}	mactab_shape	public	no	\N	\N	:hostports.owner=port_id:	\N	\N	viewer	system	system	operator	\N
-2453	mactab_node	Port címtábla	mactab_node	mactab_node	mactab_node	\N	\N	{simple}	mactab_shape	public	no	\N	\N	:snmpdevices.owner=node_id:	\N	\N	viewer	system	system	operator	\N
-2460	images	\N	images	images	images	\N	\N	{simple}	images	public	no	\N		:button.copy:	\N	\N	viewer	operator	operator	admin	\N
-2448	ip_addresses	IP címek	IP ímek	IP cím	ipaddresses	\N	\N	{child}	ip_addresses	public	no	\N		\N	\N	\N	viewer	operator	operator	operator	\N
-2474	mactab	Port címtábla	mactab	mactab	mactab	\N	\N	{simple}	mactab_shape	public	no	\N	\N	\N	\N	\N	viewer	admin	system	operator	\N
-2452	host_services	A hostokhoz rendelt szervíz példányok (táblázat)	host_services	host_services	host_services	\N	\N	{owner}	host_services	public	no	\N	\N	:button.copy:snmpdevices.owner=node_id:bg_color=host_service_state:	{2495}	\N	viewer	operator	operator	admin	\N
-2441	phsnodes	Hálózati elem (aktív, passzív és csatlakozók)	phsnodes	phsnodes	phsnodes	\N	\N	{owner,read_only}	patchs	public	on	\N	\N	:button.copy:	{2438,2439,2440}	\N	viewer	system	system	system	\N
-2442	node_params	Eszköz paraméterek	Eszköz paraméterek	Az eszközhöz rendelt paraméter	node_params	\N	\N	{child}	node_params	public	no	\N		\N	\N	\N	viewer	operator	operator	operator	\N
-2447	nodes	Passzív, felügyeletbe bevont elemek (Csak dialógus!)	nodes	Hálózati végberendszés	Nem SNMP eszköz	\N	\N	{dialog}	nodes	public	only	\N		\N	\N	\N	viewer	operator	operator	operator	\N
-2446	nports	Passzív portok (Csak dialógus!)	nports	Passzív port	Passzív port	\N	\N	{dialog}	nports	public	no	\N		\N	\N	\N	viewer	operator	operator	operator	\N
-2445	patchs	Pach panelek és fali csatlakozók	Pach panelek és fali csatlakozók	Pach panel vagy fali csatlakozó	patchs	\N	\N	{owner}	patchs	public	only	\N		:button.copy:insert=cPatchDialog:	{2444,2442,2438}	\N	viewer	operator	operator	operator	\N
-2443	port_params	Port paraméterek	Port paraméterek	A porthoz rendelt paraméter	port_params	\N	\N	{child}	port_params	public	no	\N		\N	\N	\N	viewer	operator	operator	operator	\N
-2444	pports	Pach panel és fali csatlakozó portok	A kiválasztott csatlakozó vagy panel portjai	Pach panel vagy fali csatlakozó port	pports	\N	\N	{owner,child}	pports	public	only	\N		:button.copy:	{2443,2438}	\N	viewer	operator	operator	operator	\N
-2457	query_parsers	Lekérdezés értelmezések	query_parsers	query_parsers	query_parsers	\N	\N	{simple}	query_parsers	public	no	\N		\N	\N	\N	operator	system	system	system	\N
-2455	services	Szolgáltatások	services	services	services	\N	\N	{simple}	services	public	no	\N		:button.copy:	\N	\N	viewer	admin	admin	admin	\N
-2456	service_types	Szolgáltatás típusok	service_types	service_types	service_types	\N	\N	{simple}	service_types	public	no	\N		\N	\N	\N	viewer	admin	admin	admin	\N
-2458	subnets	Alhálózatok	subnets	subnets	subnets	\N	\N	{simple}	subnets	public	no	\N		:vlans.owner=vlan_id:	\N	\N	viewer	operator	operator	operator	\N
-2463	timeperiods	Időintervallumok	timeperiods	timeperiods	timeperiods	\N	\N	{group}	timeperiods	public	no	\N		\N	{2462}	\N	viewer	operator	operator	operator	\N
-2462	tpows	Időintervallumok, a hét napjaira	tpows	Rész időintervallum	tpows	Tag rész időintervallumok	Nem tag rész időintervallumok	{member}	tpows	public	no	\N		\N	\N	\N	viewer	operator	operator	operator	\N
-2436	uaalarms	Nem nyugtázott riasztások	Nem nyugtázott riasztások	\N	Még nem nyugtázott riasztás	\N	\N	{bare}	online_alarm_unacks	public	no	\N	? = ANY (online_user_ids)  AND is_place_in_zone(place_id, ?):user_id:place_group_id	\N	\N	00:05:00	indalarm	system	system	system	\N
-2464	user_events	\N	user_events	user_events	user_events	\N	\N	{}	user_events	public	no	\N	\N	\N	\N	\N	operator	admin	admin	admin	\N
-2465	alarms_tree	Riasztások (fa)	Riasztási események	Riasztási esemény	alarms_tree	\N	\N	{tree,owner,read_only}	alarms	public	no	\N	\N	\N	{2464}	\N	indalarm	system	system	admin	\N
-2486	groups	felhasználói csoportok	Felhasználói csoportok	Feljasználói csoport	groups	Csoportok tagjai	Coportoknak nem tagjai	{group}	groups	public	no	\N		\N	{2487}	\N	viewer	admin	admin	admin	\N
-2482	menu_items	Menu elemek	menu_items	menu_items	menu_items	\N	\N	{tree}	menu_items	public	no	\N		\N	\N	\N	viewer	system	system	system	\N
-2492	selects	Minta tár	Minta tár	Minta	selects	\N	\N	{simple}	selects	public	no	\N		\N	\N	\N	operator	system	system	system	\N
-2485	sys_params	Rendszer paraméterek	sys_params	sys_params	sys_params	\N	\N	{simple}	sys_params	public	no	\N		\N	\N	\N	operator	system	system	system	\N
-2477	unusual_fkeys	Nem tipikus távoli kulcsok	unusual_fkeys	unusual_fkeys	unusual_fkeys	\N	\N	{simple}	unusual_fkeys	public	no	\N	\N	\N	\N	\N	operator	system	system	system	\N
-2478	alarm_messages	Figyelmeztető üzenetek szövege	alarm_messages	alarm_messages	alarm_messages	\N	\N	{simple}	alarm_messages	public	no	\N		\N	\N	\N	viewer	admin	admin	admin	\N
-2489	places_tree	Helyiségek (fa)	Helyek, helyiségek	Hely helyiség	places_tree	Csoportoknak tagja	Csoportoknak nem tagja	{tree,member}	places	public	no	\N	\N	:map=get_parent_image:	{2488}	\N	viewer	operator	operator	admin	\N
-2483	enum_vals	Enumerációs értékek	enum_vals	enum_vals	enum_vals	\N	\N	{simple}	enum_vals	public	no	\N		\N	\N	\N	viewer	admin	admin	admin	\N
-2476	fkey_types	Távoli kulcs típusok	fkey_types	fkey_types	fkey_types	\N	\N	{simple,read_only}	fkey_types	public	no	\N		\N	\N	\N	operator	system	system	system	\N
-2475	mactab_logs	Port címtábla lekérdezés napló	mactab_logs	mactab_logs	mactab_logs	\N	\N	{simple,read_only}	mactab_logs	public	no	\N		\N	\N	\N	viewer	operator	operator	admin	\N
-2454	snmpdevices	Hálózati elemek	Aktív és passzív hálózati elemek	Aktív vagy passzív hálózati elem	Aktív SNMP eszköz	\N	\N	{owner}	snmpdevices	public	listed_rev	{nodes}	\N	:button.copy:	{2450,2442,2438,2439,2440,2452,2453,2451}	\N	viewer	operator	operator	operator	\N
-2491	object_syntaxs	Objektum szintaxisok	Objektum szintaxis minták	Objektum szintaxis minta	object_syntaxs	\N	\N	{simple}	object_syntaxs	public	no	\N		\N	\N	\N	operator	system	system	system	\N
-2484	param_types	Paraméter típus leírók	param_types	param_types	param_types	\N	\N	{simple}	param_types	public	no	\N		\N	\N	\N	viewer	admin	admin	admin	\N
-2488	place_groups	Hely csoportok, kategóriák és zónák	Hely csoportok, kategóriák és zónák	Hely csoport, kategória vagy zóna	place_groups	Csoport tagja(i)	Coportoknak nem tagja(i)	{group}	place_groups	public	no	\N		\N	{2490}	\N	viewer	operator	operator	operator	\N
-2490	places	Helyiségek (tábla)	Helyek, helyiségek	Hely, helyiség	places	Csoportoknak tagja	Csoportoknak nem tagja	{member}	places	public	no	\N		:map=get_parent_image:	{2488}	\N	viewer	operator	operator	operator	\N
-2496	places_topol	Helyek fa és a helységben lévő objektumok	places_topol	places_topol	places_topol	\N	\N	{tree,owner}	places	public	no	\N	\N	\N	{2441,2445,2454,2487}	\N	viewer	operator	operator	admin	\N
-2487	users	felhasználók	Felhasználók	Feljasználó	users	Csoportoknak tagja	Csoportoknak nem tagja	{member}	users	public	no	\N	\N	:places_topol.owner=place_id:	{2486}	\N	operator	admin	admin	admin	\N
-2498	portvars	\N	portvars	portvars	portvars	\N	\N	{child}	portvars	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	admin	\N
-2480	table_shape_fields	Tábla mezők megjelenítése	Adattábla megjelenítés mező leírók	Adattábla megjelenítés mező leíró	table_shape_fields	\N	\N	{child}	table_shape_fields	public	no	\N		\N	\N	\N	operator	admin	admin	admin	\N
-2481	table_shapes	Adattábla megjelenítő leíró	Adattábla megjelenítés leírók	Adattábla megjelenítés leíró	table_shapes	\N	\N	{owner}	table_shapes	public	no	\N		\N	{2480}	\N	operator	admin	admin	admin	\N
-2494	service_var_types	\N	Szervíz változó típusok	service_var_types	service_var_types	\N	\N	{simple}	service_var_types	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	admin	\N
-2450	hostports	Hálózati interfészek, portok (fa)	Hálózati interfészek és portok	Hálózati interfész vagy passzív port	Aktív port vagy interfész	\N	\N	{tree,owner,child}	interfaces	public	listed_rev	{nports}	\N	:button.copy:	{2448,2443,2449,2438,2439,2440,2498}	\N	viewer	operator	operator	operator	\N
-2493	menu_items_tab	Menu elemek táblázat	Menu elemek tábéázat	Menü elem	menu_items_tab	\N	\N	{simple}	menu_items	public	no	\N	\N	\N	\N	\N	viewer	admin	admin	admin	\N
-2495	service_vars	\N	service_vars	service_vars	service_vars	\N	\N	{child}	service_vars	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	admin	\N
-2497	allsrvvars	Solgáltatás változók teljes lista	Solgáltatás változók teljes lista	Szolgáltatás változó	\N	\N	\N	{simple}	service_vars	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	admin	\N
-2437	aaalarms	Nyugtázott aktív riasztások	Nyugtázott és aktív riasztások	Nyugtázott és aktív riasztás	\N	\N	\N	{bare,read_only}	online_alarm_acks	public	no	\N	? = ANY (online_user_ids)  AND is_place_in_zone(place_id, ?):user_id:place_group_id	\N	\N	00:05:00	indalarm	system	system	system	\N
+COPY table_shapes (table_shape_id, table_shape_name, table_shape_note, table_shape_type, table_name, schema_name, table_inherit_type, inherit_table_names, refine, features, right_shape_ids, auto_refresh, view_rights, edit_rights, insert_rights, remove_rights, style_sheet, text_id) FROM stdin;
+2440	lldp_links	LLDP linkek	{link}	lldp_links_shape	public	no	\N	\N	\N	\N	\N	viewer	system	system	operator	\N	237
+2438	phs_links	Fizikai linkek	{link}	phs_links_shape	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	operator	\N	238
+2439	log_links	Logikai linkek	{link,read_only}	log_links_shape	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	admin	\N	239
+2459	vlans	VLAN-ok	{owner}	vlans	public	no	\N		:button.copy:	{2458}	\N	viewer	operator	operator	operator	\N	240
+2471	iftypes	Port típusok	{simple}	iftypes	public	no	\N		\N	\N	\N	viewer	system	system	system	\N	241
+2466	alarms	Riasztások (tábla)	{owner}	alarms	public	no	\N	\N	:button.copy:bg_color=noalarm:	{2464}	\N	indalarm	admin	system	admin	\N	242
+2469	app_memos	Applikáció napló	{simple}	app_memos	public	no	\N	\N	:dialog.height=13:	\N	\N	viewer	system	system	admin		243
+2451	host_services_tree	A hostokhoz rendelt szervíz példányok (fa)	{tree,owner}	host_services	public	no	\N	\N	:button.copy:bg_color=host_service_state:snmpdevices.owner=node_id:	{2495}	\N	viewer	operator	operator	admin	\N	244
+2473	arp_logs	ARP lekérdezés napló.	{simple,read_only}	arp_logs	public	no	\N		\N	\N	\N	viewer	system	system	operator	\N	245
+2468	app_errs	Applikáció hiba napló	{simple}	app_errs	public	no	\N		\N	\N	\N	viewer	system	system	admin	\N	246
+2472	arps	ARP tábla	{simple,read_only}	arps_shape	public	no	\N	\N	:button.copy:	\N	\N	viewer	operator	operator	operator	\N	247
+2467	db_errs	Adatbázis hiba napló	{simple}	db_errs	public	no	\N		\N	\N	\N	viewer	system	system	system	\N	248
+2461	dyn_addr_ranges	Dinamikus címtartományok	{simple}	dyn_addr_ranges	public	no	\N		\N	\N	\N	viewer	operator	operator	operator	\N	249
+2470	host_service_logs	A szervíz példányok log rekordjai	{simple}	host_service_logs	public	no	\N		\N	\N	\N	viewer	system	system	system	\N	250
+2449	mactab_port	Port címtábla	{simple}	mactab_shape	public	no	\N	\N	:hostports.owner=port_id:	\N	\N	viewer	system	system	operator	\N	251
+2453	mactab_node	Port címtábla	{simple}	mactab_shape	public	no	\N	\N	:snmpdevices.owner=node_id:	\N	\N	viewer	system	system	operator	\N	252
+2460	images	\N	{simple}	images	public	no	\N		:button.copy:	\N	\N	viewer	operator	operator	admin	\N	253
+2448	ip_addresses	IP címek	{child}	ip_addresses	public	no	\N		\N	\N	\N	viewer	operator	operator	operator	\N	254
+2474	mactab	Port címtábla	{simple}	mactab_shape	public	no	\N	\N	\N	\N	\N	viewer	admin	system	operator	\N	255
+2452	host_services	A hostokhoz rendelt szervíz példányok (táblázat)	{owner}	host_services	public	no	\N	\N	:button.copy:snmpdevices.owner=node_id:bg_color=host_service_state:	{2495}	\N	viewer	operator	operator	admin	\N	256
+2441	phsnodes	Hálózati elem (aktív, passzív és csatlakozók)	{owner,read_only}	patchs	public	on	\N	\N	:button.copy:	{2438,2439,2440}	\N	viewer	system	system	system	\N	257
+2442	node_params	Eszköz paraméterek	{child}	node_params	public	no	\N		\N	\N	\N	viewer	operator	operator	operator	\N	258
+2447	nodes	Passzív, felügyeletbe bevont elemek (Csak dialógus!)	{dialog}	nodes	public	only	\N		\N	\N	\N	viewer	operator	operator	operator	\N	259
+2446	nports	Passzív portok (Csak dialógus!)	{dialog}	nports	public	no	\N		\N	\N	\N	viewer	operator	operator	operator	\N	260
+2445	patchs	Pach panelek és fali csatlakozók	{owner}	patchs	public	only	\N		:button.copy:insert=cPatchDialog:	{2444,2442,2438}	\N	viewer	operator	operator	operator	\N	261
+2443	port_params	Port paraméterek	{child}	port_params	public	no	\N		\N	\N	\N	viewer	operator	operator	operator	\N	262
+2444	pports	Pach panel és fali csatlakozó portok	{owner,child}	pports	public	only	\N		:button.copy:	{2443,2438}	\N	viewer	operator	operator	operator	\N	263
+2457	query_parsers	Lekérdezés értelmezések	{simple}	query_parsers	public	no	\N		\N	\N	\N	operator	system	system	system	\N	264
+2455	services	Szolgáltatások	{simple}	services	public	no	\N		:button.copy:	\N	\N	viewer	admin	admin	admin	\N	265
+2456	service_types	Szolgáltatás típusok	{simple}	service_types	public	no	\N		\N	\N	\N	viewer	admin	admin	admin	\N	266
+2458	subnets	Alhálózatok	{simple}	subnets	public	no	\N		:vlans.owner=vlan_id:	\N	\N	viewer	operator	operator	operator	\N	267
+2463	timeperiods	Időintervallumok	{group}	timeperiods	public	no	\N		\N	{2462}	\N	viewer	operator	operator	operator	\N	268
+2462	tpows	Időintervallumok, a hét napjaira	{member}	tpows	public	no	\N		\N	\N	\N	viewer	operator	operator	operator	\N	269
+2436	uaalarms	Nem nyugtázott riasztások	{bare}	online_alarm_unacks	public	no	\N	? = ANY (online_user_ids)  AND is_place_in_zone(place_id, ?):user_id:place_group_id	\N	\N	00:05:00	indalarm	system	system	system	\N	270
+2464	user_events	\N	{}	user_events	public	no	\N	\N	\N	\N	\N	operator	admin	admin	admin	\N	271
+2465	alarms_tree	Riasztások (fa)	{tree,owner,read_only}	alarms	public	no	\N	\N	\N	{2464}	\N	indalarm	system	system	admin	\N	272
+2490	places	Helyiségek (tábla)	{member}	places	public	no	\N	\N	:map=get_parent_image:button.copy:	{2488}	\N	viewer	operator	operator	operator	\N	273
+2486	groups	felhasználói csoportok	{group}	groups	public	no	\N		\N	{2487}	\N	viewer	admin	admin	admin	\N	274
+2482	menu_items	Menu elemek	{tree}	menu_items	public	no	\N		\N	\N	\N	viewer	system	system	system	\N	275
+2492	selects	Minta tár	{simple}	selects	public	no	\N		\N	\N	\N	operator	system	system	system	\N	276
+2485	sys_params	Rendszer paraméterek	{simple}	sys_params	public	no	\N		\N	\N	\N	operator	system	system	system	\N	277
+2477	unusual_fkeys	Nem tipikus távoli kulcsok	{simple}	unusual_fkeys	public	no	\N	\N	\N	\N	\N	operator	system	system	system	\N	278
+2478	alarm_messages	Figyelmeztető üzenetek szövege	{simple}	alarm_messages	public	no	\N		\N	\N	\N	viewer	admin	admin	admin	\N	279
+2489	places_tree	Helyiségek (fa)	{tree,member}	places	public	no	\N	\N	:map=get_parent_image:	{2488}	\N	viewer	operator	operator	admin	\N	280
+2483	enum_vals	Enumerációs értékek	{simple}	enum_vals	public	no	\N		\N	\N	\N	viewer	admin	admin	admin	\N	281
+2476	fkey_types	Távoli kulcs típusok	{simple,read_only}	fkey_types	public	no	\N		\N	\N	\N	operator	system	system	system	\N	282
+2475	mactab_logs	Port címtábla lekérdezés napló	{simple,read_only}	mactab_logs	public	no	\N		\N	\N	\N	viewer	operator	operator	admin	\N	283
+2454	snmpdevices	Hálózati elemek	{owner}	snmpdevices	public	listed_rev	{nodes}	\N	:button.copy:	{2450,2442,2438,2439,2440,2452,2453,2451}	\N	viewer	operator	operator	operator	\N	284
+2491	object_syntaxs	Objektum szintaxisok	{simple}	object_syntaxs	public	no	\N		\N	\N	\N	operator	system	system	system	\N	285
+2484	param_types	Paraméter típus leírók	{simple}	param_types	public	no	\N		\N	\N	\N	viewer	admin	admin	admin	\N	286
+2488	place_groups	Hely csoportok, kategóriák és zónák	{group}	place_groups	public	no	\N		\N	{2490}	\N	viewer	operator	operator	operator	\N	287
+2496	places_topol	Helyek fa és a helységben lévő objektumok	{tree,owner}	places	public	no	\N	\N	\N	{2441,2445,2454,2487}	\N	viewer	operator	operator	admin	\N	288
+2487	users	felhasználók	{member}	users	public	no	\N	\N	:places_topol.owner=place_id:	{2486}	\N	operator	admin	admin	admin	\N	289
+2498	portvars	\N	{child}	portvars	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	admin	\N	290
+2480	table_shape_fields	Tábla mezők megjelenítése	{child}	table_shape_fields	public	no	\N		\N	\N	\N	operator	admin	admin	admin	\N	291
+2481	table_shapes	Adattábla megjelenítő leíró	{owner}	table_shapes	public	no	\N		\N	{2480}	\N	operator	admin	admin	admin	\N	292
+2494	service_var_types	\N	{simple}	service_var_types	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	admin	\N	293
+2450	hostports	Hálózati interfészek, portok (fa)	{tree,owner,child}	interfaces	public	listed_rev	{nports}	\N	:button.copy:	{2448,2443,2449,2438,2439,2440,2498}	\N	viewer	operator	operator	operator	\N	294
+2493	menu_items_tab	Menu elemek táblázat	{simple}	menu_items	public	no	\N	\N	\N	\N	\N	viewer	admin	admin	admin	\N	295
+2495	service_vars	\N	{child}	service_vars	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	admin	\N	296
+2497	allsrvvars	Solgáltatás változók teljes lista	{simple}	service_vars	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	admin	\N	297
+2437	aaalarms	Nyugtázott aktív riasztások	{bare,read_only}	online_alarm_acks	public	no	\N	? = ANY (online_user_ids)  AND is_place_in_zone(place_id, ?):user_id:place_group_id	\N	\N	00:05:00	indalarm	system	system	system	\N	298
 \.
 
 
@@ -36013,7 +37460,14 @@ COPY table_shapes (table_shape_id, table_shape_name, table_shape_note, table_tit
 -- Name: table_shapes_table_shape_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('table_shapes_table_shape_id_seq', 2498, true);
+SELECT pg_catalog.setval('table_shapes_table_shape_id_seq', 2499, true);
+
+
+--
+-- Name: text_id_sequ; Type: SEQUENCE SET; Schema: public; Owner: lanview2
+--
+
+SELECT pg_catalog.setval('text_id_sequ', 1018, true);
 
 
 --
@@ -36172,7 +37626,7 @@ COPY user_events (user_event_id, created, happened, user_id, alarm_id, event_typ
 -- Name: user_events_user_event_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('user_events_user_event_id_seq', 166226, true);
+SELECT pg_catalog.setval('user_events_user_event_id_seq', 166236, true);
 
 
 --
@@ -36517,6 +37971,46 @@ ALTER TABLE ONLY ip_addresses
 
 
 --
+-- Name: languages_country_a2_lang_2_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
+--
+
+ALTER TABLE ONLY languages
+    ADD CONSTRAINT languages_country_a2_lang_2_key UNIQUE (country_a2, lang_2);
+
+
+--
+-- Name: languages_country_a2_lang_3_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
+--
+
+ALTER TABLE ONLY languages
+    ADD CONSTRAINT languages_country_a2_lang_3_key UNIQUE (country_a2, lang_3);
+
+
+--
+-- Name: languages_lang_id_country_id_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
+--
+
+ALTER TABLE ONLY languages
+    ADD CONSTRAINT languages_lang_id_country_id_key UNIQUE (lang_id, country_id);
+
+
+--
+-- Name: languages_language_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
+--
+
+ALTER TABLE ONLY languages
+    ADD CONSTRAINT languages_language_name_key UNIQUE (language_name);
+
+
+--
+-- Name: languages_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
+--
+
+ALTER TABLE ONLY languages
+    ADD CONSTRAINT languages_pkey PRIMARY KEY (language_id);
+
+
+--
 -- Name: lldp_links_table_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
@@ -36538,6 +38032,14 @@ ALTER TABLE ONLY lldp_links_table
 
 ALTER TABLE ONLY lldp_links_table
     ADD CONSTRAINT lldp_links_table_port_id2 UNIQUE (port_id2);
+
+
+--
+-- Name: localizations_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
+--
+
+ALTER TABLE ONLY localizations
+    ADD CONSTRAINT localizations_pkey PRIMARY KEY (text_id, table_for_text, language_id);
 
 
 --
@@ -37236,6 +38738,13 @@ CREATE INDEX ip_addresses_port_id_index ON ip_addresses USING btree (port_id);
 
 
 --
+-- Name: localization_texts_text_id_index; Type: INDEX; Schema: public; Owner: lanview2
+--
+
+CREATE INDEX localization_texts_text_id_index ON localizations USING btree (text_id, table_for_text);
+
+
+--
 -- Name: mactab_first_time_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
@@ -37355,10 +38864,24 @@ CREATE INDEX user_events_happened_index ON user_events USING btree (happened);
 
 
 --
+-- Name: alarm_messages_delete_record_text; Type: TRIGGER; Schema: public; Owner: lanview2
+--
+
+CREATE TRIGGER alarm_messages_delete_record_text AFTER DELETE ON errors FOR EACH ROW EXECUTE PROCEDURE delete_record_text();
+
+
+--
 -- Name: alarms_after_insert_or_update; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
 CREATE TRIGGER alarms_after_insert_or_update AFTER INSERT OR UPDATE ON alarms FOR EACH ROW EXECUTE PROCEDURE alarm_notice();
+
+
+--
+-- Name: check_after_localization_text_trigger; Type: TRIGGER; Schema: public; Owner: lanview2
+--
+
+CREATE TRIGGER check_after_localization_text_trigger AFTER INSERT OR UPDATE ON localizations FOR EACH ROW EXECUTE PROCEDURE check_after_localization_text();
 
 
 --
@@ -37404,6 +38927,20 @@ COMMENT ON TRIGGER db_errors_before_insert ON db_errs IS 'Ha két azonos nyugtá
 akkor a megelőző rekordnak csak a reapeat mezője lessz inkrementálva, és a date_of_last aktualizálva,
 az új rekord viszont nem kerül rögzítésre.
 Ha az új rekordban az acknowledged mező igaz, akkor mindenképpen rógzítve lessz az új rekord';
+
+
+--
+-- Name: enum_vals_delete_record_text; Type: TRIGGER; Schema: public; Owner: lanview2
+--
+
+CREATE TRIGGER enum_vals_delete_record_text AFTER DELETE ON enum_vals FOR EACH ROW EXECUTE PROCEDURE delete_record_text();
+
+
+--
+-- Name: errors_delete_record_text; Type: TRIGGER; Schema: public; Owner: lanview2
+--
+
+CREATE TRIGGER errors_delete_record_text AFTER DELETE ON errors FOR EACH ROW EXECUTE PROCEDURE delete_record_text();
 
 
 --
@@ -37453,6 +38990,13 @@ CREATE TRIGGER ipaddresses_check_before_modify_trigger BEFORE INSERT OR UPDATE O
 --
 
 CREATE TRIGGER log_links_table_check_log_links BEFORE INSERT OR UPDATE ON log_links_table FOR EACH ROW EXECUTE PROCEDURE check_log_links();
+
+
+--
+-- Name: menu_items_delete_record_text; Type: TRIGGER; Schema: public; Owner: lanview2
+--
+
+CREATE TRIGGER menu_items_delete_record_text AFTER DELETE ON menu_items FOR EACH ROW EXECUTE PROCEDURE delete_record_text();
 
 
 --
@@ -37600,6 +39144,20 @@ CREATE TRIGGER snmpdevices_restrict_modfy_node_id_before_update BEFORE UPDATE ON
 --
 
 CREATE TRIGGER subnets_check_before_update_trigger BEFORE UPDATE ON subnets FOR EACH ROW EXECUTE PROCEDURE subnet_check_before_update();
+
+
+--
+-- Name: table_shape_fields_delete_record_text; Type: TRIGGER; Schema: public; Owner: lanview2
+--
+
+CREATE TRIGGER table_shape_fields_delete_record_text AFTER DELETE ON table_shape_fields FOR EACH ROW EXECUTE PROCEDURE delete_record_text();
+
+
+--
+-- Name: table_shapes_delete_record_text; Type: TRIGGER; Schema: public; Owner: lanview2
+--
+
+CREATE TRIGGER table_shapes_delete_record_text AFTER DELETE ON table_shapes FOR EACH ROW EXECUTE PROCEDURE delete_record_text();
 
 
 --
@@ -37938,6 +39496,22 @@ ALTER TABLE ONLY ip_addresses
 
 
 --
+-- Name: languages_flag_image_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
+--
+
+ALTER TABLE ONLY languages
+    ADD CONSTRAINT languages_flag_image_fkey FOREIGN KEY (flag_image) REFERENCES images(image_id) ON UPDATE RESTRICT ON DELETE SET NULL;
+
+
+--
+-- Name: languages_next_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
+--
+
+ALTER TABLE ONLY languages
+    ADD CONSTRAINT languages_next_id_fkey FOREIGN KEY (next_id) REFERENCES languages(language_id) ON UPDATE RESTRICT ON DELETE SET NULL;
+
+
+--
 -- Name: lldp_links_table_port_id1_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
@@ -37951,6 +39525,14 @@ ALTER TABLE ONLY lldp_links_table
 
 ALTER TABLE ONLY lldp_links_table
     ADD CONSTRAINT lldp_links_table_port_id2_fkey FOREIGN KEY (port_id2) REFERENCES interfaces(port_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+
+
+--
+-- Name: localizations_language_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
+--
+
+ALTER TABLE ONLY localizations
+    ADD CONSTRAINT localizations_language_id_fkey FOREIGN KEY (language_id) REFERENCES languages(language_id) ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --

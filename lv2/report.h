@@ -49,7 +49,7 @@ QString list2html(QSqlQuery& q, const tRecordList<R>& list, cTableShape& shape, 
     for (i = 0; i < n; ++i) {
         const cTableShapeField& fs = *shape.shapeFields.at(i);
         if (shrt ? !fs.getBool(_sFieldFlags, FF_HTML) : fs.getBool(_sFieldFlags, FF_TABLE_HIDE)) continue;
-        head << fs.getName(_sTableTitle);
+        head << fs.getText(cTableShapeField::LTX_TABLE_TITLE, fs.getName());
         QString fn = fs.getName(_sTableShapeFieldName);
         for (j = 0; j < m; ++j) {
             data[j] << list.at(j)->view(q, fn);

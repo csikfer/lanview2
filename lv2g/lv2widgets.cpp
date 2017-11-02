@@ -5,6 +5,29 @@
 #include "ui_arrayed.h"
 #include "ui_fkeyed.h"
 #include "ui_fkeyarrayed.h"
+
+/* Language */
+
+cSelectLanguage::cSelectLanguage(QComboBox *_pComboBox, QObject *_pPar)
+    : QObject(_pPar)
+{
+    pComboBox = _pComboBox;
+    QSqlQuery q = getQuery();
+    pModel = new cRecordListModel(_sLanguages);
+    pComboBox->setModel(pModel);
+    pModel->setFilter();
+    int id = getLanguageId(q);
+    int ix = pModel->indexOf(id);
+    if (ix < 0) ix = 0;
+    pComboBox->setCurrentIndex(ix);
+    connect(pComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(_languageChanged(int)));
+}
+
+void cSelectLanguage::_languageChanged(int ix)
+{
+    languageIdChanged(pModel->atId(ix));
+}
+
 /* **************************************** cImageWindows ****************************************  */
 
 cImageWidget::cImageWidget(QWidget *__par)
@@ -147,7 +170,7 @@ QString fieldWidgetType(int _t)
     case FEW_ENUM_COMBO:    return "cEnumComboWidget";
     case FEW_ENUM_RADIO:    return "cEnumRadioWidget";
     case FEW_LINE:          return "cFieldLineWidget";
-    case FEW_TEXT:          return "cFieldLineWidget/long";
+    case FEW_LINES:          return "cFieldLineWidget/long";
     case FEW_ARRAY:         return "cArrayWidget";
     case FEW_FKEY_ARRAY:    return "cFKeyArrayWidget";
     case FEW_POLYGON:       return "cPolygonWidget";
@@ -733,7 +756,7 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
     QPlainTextEdit *pTE = NULL;
     isPwd = false;
     if (_colDescr.eColType == cColStaticDescr::FT_TEXT && _fieldShape.getBool(_sFieldFlags, FF_HUGE)) {
-        _wType = FEW_TEXT;  // Widget típus azonosító
+        _wType = FEW_LINES;  // Widget típus azonosító
         pTE = new QPlainTextEdit(_par == NULL ? NULL : _par->pWidget());
         _pWidget = pTE;
     }
@@ -1574,7 +1597,7 @@ void cFKeyWidget::modifyF()
         int keyId = pDialog->exec(false);
         if (keyId == DBT_CANCEL) break;
         if (!pDialog->accept()) continue;
-        if (!cErrorMessageBox::condMsgBox(pDialog->record().tryUpdate(*pq, true))) continue;
+        if (!cErrorMessageBox::condMsgBox(pDialog->record().tryUpdateById(*pq))) continue;
         pModel->setFilter(_sNul, OT_ASC, FT_NO);    // Refresh combo box
         pUi->comboBox->setCurrentIndex(pModel->indexOf(rec.getId()));
         break;
@@ -2466,7 +2489,78 @@ void cFontAttrWidget::togleStrikeout(bool f)
 
 /* **** **** */
 
-cSelectPlace::cSelectPlace(QComboBox *_pZone, QComboBox *_pPLace, QLineEdit *_pFilt, const QString& _constFilt, QObject *_par)
+cLTextWidget::cLTextWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef _fr, int _ti, int _fl, cRecordDialogBase* _par)
+    : cFieldEditBase(_tm, _tf, _fr, _fl, _par)
+{
+    _readOnly   = (_fl & FEB_READ_ONLY) || tableIsReadOnly(_tm, _fr.record())
+               || !(_fr.descr().isUpdatable)
+               || _tf.getBool(_sFieldFlags,     FF_READ_ONLY)
+               || !lanView::isAuthOrNull(_tf.getId(_sEditRights));
+    _value      = _fr.record().getText(_ti);
+    _nullable   = false;
+    _hasDefault = false;
+    _hasAuto    = false;
+    _dcNull     = DC_INVALID;
+
+    QLineEdit *pLE = NULL;
+    QTextEdit *pTE = NULL;
+    if (_fieldShape.getBool(_sFieldFlags, FF_HUGE)) {
+        _wType = FEW_LTEXT_LONG;  // Widget típus azonosító
+        pTE = new QTextEdit(_par == NULL ? NULL : _par->pWidget());
+        _pWidget = pTE;
+        pTE->setText(_value.toString());
+        pTE->setReadOnly(_readOnly);
+        connect(pTE, SIGNAL(textChanged()),  this, SLOT(setFromEdit()));
+    }
+    else {
+        _wType = FEW_LTEXT;  // Widget típus azonosító
+        pLE = new QLineEdit(_par == NULL ? NULL : _par->pWidget());
+        _pWidget = pLE;
+        pLE->setText(_value.toString());
+        pLE->setReadOnly(_readOnly);
+        connect(pLE, SIGNAL(editingFinished()),  this, SLOT(setFromEdit()));
+    }
+}
+
+cLTextWidget::~cLTextWidget()
+{
+
+}
+
+int cLTextWidget::set(const QVariant& v)
+{
+    QString t = v.toString();
+    if (t == _value.toString()) return 0;
+    _value = t;
+    changedValue(this);
+    if (_wType == FEW_LTEXT) pLineEdit()->setText(t);
+    else                     pTextEdit()->setText(t);
+    return 1;
+}
+
+int cLTextWidget::height()
+{
+    if (_wType == FEW_LTEXT) return 1;
+    else                     return 4;
+}
+
+void cLTextWidget::setFromEdit()
+{
+    QString  s;
+    if (_wType == FEW_LTEXT) s = pLineEdit()->text();
+    else                     s = pTextEdit()->toHtml();
+    QVariant v; // NULL
+    if (!s.isEmpty()) {
+        v = QVariant(s);
+    }
+    setFromWidget(v);
+    valid();
+}
+
+
+/* **** **** */
+
+cSelectPlace::cSelectPlace(QComboBox *_pZone, QComboBox *_pPLace, QLineEdit *_pFilt, const QString& _constFilt, QWidget *_par)
     : QObject(_par)
     , pComboBoxZone(_pZone)
     , pComboBoxPLace(_pPLace)
@@ -2515,6 +2609,56 @@ void cSelectPlace::setDisabled(bool f)
     pComboBoxPLace->setDisabled(f);
 }
 
+void cSelectPlace::refresh()
+{
+    qlonglong zid = currentZoneId();
+    qlonglong pid = currentPlaceId();
+    pZoneModel->setFilter();
+    setCurrentZone(zid);
+    pPlaceModel->setFilter();
+    setCurrentPlace(pid);
+}
+
+void cSelectPlace::insertPlace()
+{
+    QSqlQuery q = getQuery();
+    cRecord *p = recordDialog(q, _sPlaces, qobject_cast<QWidget *>(parent()));
+    if (p == NULL) return;
+    qlonglong pid = p->getId();
+    delete p;
+    pPlaceModel->setFilter();
+    setCurrentPlace(pid);
+}
+
+void cSelectPlace::setCurrentZone(qlonglong _zid)
+{
+    int ix = pZoneModel->indexOf(_zid);
+    if (ix < 0) EXCEPTION(EDATA);
+    pComboBoxZone->setCurrentIndex(ix);
+}
+
+void cSelectPlace::setCurrentPlace(qlonglong _pid)
+{
+    if (_pid == NULL_ID) {
+        if (pPlaceModel->nullable) {
+            pComboBoxPLace->setCurrentIndex(0);
+            return;
+        }
+        else {
+            EXCEPTION(EDATA);
+        }
+    }
+    int ix = pPlaceModel->indexOf(_pid);
+    if (ix < 0) {
+        if (pLineEditPlaceFilt != NULL) pLineEditPlaceFilt->setText(_sNul);
+        setCurrentZone(ALL_PLACE_GROUP_ID);
+        ix = pPlaceModel->indexOf(_pid);
+        if (ix < 0) EXCEPTION(EDATA);
+    }
+    pComboBoxPLace->setCurrentIndex(ix);
+
+}
+
 void cSelectPlace::_zoneChanged(int ix)
 {
     qlonglong id = pZoneModel->atId(ix);
@@ -2557,7 +2701,7 @@ void cSelectPlace::_placePatternChanged(const QString& s)
 cSelectNode::cSelectNode(QComboBox *_pZone, QComboBox *_pPlace, QComboBox *_pNode,
             QLineEdit *_pPlaceFilt, QLineEdit *_pNodeFilt,
             const QString& _placeConstFilt, const QString& _nodeConstFilt,
-            QObject *_par)
+            QWidget *_par)
     : cSelectPlace(_pZone, _pPlace, _pPlaceFilt, _placeConstFilt, _par)
     , pComboBoxNode(_pNode)
     , pLineEditNodeFilt(_pNodeFilt)

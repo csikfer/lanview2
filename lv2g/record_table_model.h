@@ -18,7 +18,7 @@ public:
     cRecordViewModelBase(cRecordsViewBase &_rt);
     virtual ~cRecordViewModelBase();
 
-    QVariant _data(int fix, cRecordTableColumn& column, const cRecord *pr, int role) const;
+    QVariant _data(int fix, cRecordTableColumn& column, const cRecord *pr, int role, bool bTxt) const;
 
     cRecord *qGetRecord(QSqlQuery& q);
 

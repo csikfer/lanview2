@@ -335,7 +335,7 @@
         <bool>true</bool>
        </property>
        <property name="cursorPosition">
-        <number>0</number>
+        <number>9</number>
        </property>
        <property name="dragEnabled">
         <bool>true</bool>
@@ -420,6 +420,16 @@
         <bool>true</bool>
        </property>
       </widget>
+     </item>
+     <item row="6" column="0">
+      <widget class="QLabel" name="label_10">
+       <property name="text">
+        <string>Nyelv kiválasztása :</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="1">
+      <widget class="QComboBox" name="comboBoxLang"/>
      </item>
      <item row="5" column="0">
       <widget class="QPushButton" name="CheckSql">

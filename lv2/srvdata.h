@@ -264,10 +264,10 @@ public:
     /// @return A peplace_arp függvény vissatérési értéke. Ld.: enum eReasons
     virtual int replace(QSqlQuery& __q, enum eEx __ex = EX_ERROR);
     static int refresStats(QSqlQuery& __q);
-    STATICIX(cMacTab, ixPortId)
-    STATICIX(cMacTab, ixHwAddress)
-    STATICIX(cMacTab, ixSetType)
-    STATICIX(cMacTab, ixMacTabState)
+    STATICIX(cMacTab, PortId)
+    STATICIX(cMacTab, HwAddress)
+    STATICIX(cMacTab, SetType)
+    STATICIX(cMacTab, MacTabState)
 };
 
 class cArpTable;

@@ -27,11 +27,12 @@ cMainWindow::cMainWindow(QWidget *parent) :
 void cMainWindow::init(bool _setup)
 {
     // Central Widget
-    if (_setup || !lanView::dbIsOpen()) {   // Minimalista setup, nincs adatbázisunk, vagy csak ez kell
+    if (_setup || !lanView::dbIsOpen()) {   // Minimal setup
         setSetupMenu();
     }
     else {        // Menu
         cMenuItem mi;
+        QSqlQuery *pq2 = newQuery();
         QSqlQuery *pqm = newQuery();
         if (!mi.fetchFirstItem(*pqm, lanView::getInstance()->appName)) {
             QString msg = trUtf8("Nincs menü a GUI applikációhoz");
@@ -44,10 +45,12 @@ void cMainWindow::init(bool _setup)
             }
         }
         else do {
-            QSqlQuery *pq2 = newQuery();
-            action(menuBar()->addAction(mi.getName(_sMenuTitle)), mi, pq2);
-            delete pq2;
+            mi.fetchText(*pq2);
+            QString t = mi.getText(cMenuItem::LTX_MENU_TITLE, mi.getName());
+            action(menuBar()->addAction(t), mi, pq2);
         } while(mi.next(*pqm));
+        delete pq2;
+        delete pqm;
     }
 }
 
@@ -101,9 +104,9 @@ void cMainWindow::action(QAction *pa, cMenuItem& _mi, QSqlQuery *pq)
 {
     _DBGFN() << _mi.toString() << endl;
     pa->setObjectName(_mi.getName());
-    if (!_mi.isNull(_sToolTip))     pa->setToolTip(_mi.getName(_sToolTip));
-    if (!_mi.isNull(_sWhatsThis))   pa->setWhatsThis(_mi.getName(_sWhatsThis));
-    QString mp;
+    QString s;
+    if (!(s = _mi.getText(cMenuItem::LTX_TOOL_TIP)  ).isEmpty()) pa->setToolTip(s);
+    if (!(s = _mi.getText(cMenuItem::LTX_WHATS_THIS)).isEmpty()) pa->setWhatsThis(s);
     if (_mi.isFeature("sub")) {    // Almenük vannak
         cMenuItem sm;
         QMenu *pm = new QMenu(this);
@@ -111,16 +114,18 @@ void cMainWindow::action(QAction *pa, cMenuItem& _mi, QSqlQuery *pq)
         pa->setMenu(pm);
         if (pq == NULL) EXCEPTION(EPROGFAIL);
         if (sm.fetchFirstItem(*pq, _mi.getName(_sAppName), _mi.getId())) {
-            PDEB(VERBOSE) << "Menu :" << _mi.getName(_sMenuTitle) << " #" << pq->size() << " sub menü:" << endl;
+            PDEB(VERBOSE) << "Menu :" << _mi.getName() << " #" << pq->size() << " sub menü:" << endl;
             do {
                 cError *pe = NULL;
                 try {
                     sm.splitFeature(); // features
                 } CATCHS(pe);
                 if (pe == NULL) {
-                    PDEB(VERBOSE) << _mi.getName(_sMenuTitle) << " sub menu : " << sm.getName(_sMenuTitle) << endl;
+                    PDEB(VERBOSE) << _mi.getName() << " sub menu : " << sm.getName() << endl;
                     QSqlQuery *pq2 = newQuery();
-                    action(pm->addAction(sm.getName(_sMenuTitle)), sm, pq2);
+                    sm.fetchText(*pq2);
+                    QString t = sm.getText(cMenuItem::LTX_MENU_TITLE, sm.getName());
+                    action(pm->addAction(t), sm, pq2);
                     delete pq2;
                 }
                 else {  // Nem ok a features mező
@@ -130,7 +135,7 @@ void cMainWindow::action(QAction *pa, cMenuItem& _mi, QSqlQuery *pq)
                 }
             } while (sm.next(*pq));
         }
-        else DWAR() << trUtf8("üres menü : ") << _mi.getName(_sMenuTitle) << endl;
+        else DWAR() << trUtf8("üres menü : ") << _mi.getName() << endl;
     }
     else {
         new cMenuAction(pq, &_mi, pa, pMdiArea);

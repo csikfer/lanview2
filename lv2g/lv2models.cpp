@@ -731,7 +731,7 @@ int cEnumListModel::setEnum(const cColEnumType *_pType, eNullType _nullable, eEx
             const QString& s = pType->enumValues.at(i);
             p->setName(cEnumVal::ixTypeName(),  typeName);
             p->setName(cEnumVal::ixValName(),   s);
-            p->setName(cEnumVal::ixViewShort(), s);
+//          p->setName(cEnumVal::ixViewShort(), s);
             enumVals << p;
         }
         else {

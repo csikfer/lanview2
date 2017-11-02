@@ -49,7 +49,7 @@ cRecordViewModelBase::cRecordViewModelBase(cRecordsViewBase& _rt)
             continue;
         }
         _col2shape << i;
-        _col2field << recDescr.toIndex(column.shapeField.getName());
+        _col2field << column.fieldIndex;
         PDEB(VVERBOSE) << "Visible field : " << column.shapeField.getName(_sTableShapeFieldName) << endl;
     }
     PDEB(VVERBOSE) << "X tabs : " << tIntVectorToString(_col2field) << QChar(' ') << tIntVectorToString(_col2shape) << endl;
@@ -60,22 +60,23 @@ cRecordViewModelBase::~cRecordViewModelBase()
     delete pq;
 }
 
-QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const cRecord *pr, int role) const
+QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const cRecord *pr, int role, bool bTxt) const
 {
     qlonglong& ff = column.fieldFlags;
+    if (bTxt) fix = column.textIndex;
     //  Háttér szín                   az egész sorra              erre a mezőre saját
     if (Qt::BackgroundRole == role && 0 <= lineBgColorEnumIx && !(ff & ENUM2SET(FF_BG_COLOR))) {
         return bgColorByEnum(lineBgColorEnumType, pr->getId(lineBgColorEnumIx));
     }
-    if (fix < 0) {          // A mező nem létezik
+    if (fix < 0) {          // A mező nem létezik, vagy text_id
         return dcRole(DC_HAVE_NO, role);
     }
-    if (pr->isNull(fix)) {  // A mező értéke NULL
+    if (!bTxt && pr->isNull(fix)) {  // A mező értéke NULL
         return dcRole(DC_NULL,    role);
     }
     const QString& et = column.enumTypeName;
     if (et.isEmpty()) {
-        if (role == Qt::DisplayRole) return pr->view(*pq, fix);
+        if (role == Qt::DisplayRole) return bTxt ? pr->getText(fix) : pr->view(*pq, fix);
         return dcRole(column.dataCharacter, role);
     }
     int        id = (int)pr->getId(fix);
@@ -141,12 +142,16 @@ cRecord *cRecordViewModelBase::qGetRecord(QSqlQuery& q)
         }
     }
     p->set(q);
+    if (recDescr.textIdIndex(EX_IGNORE) > 0) {
+        QSqlQuery q = getQuery();
+        p->fetchText(q);
+    }
     return p;
 }
 
 int cRecordViewModelBase::updateRec(const QModelIndex& mi, cRecord *pRec)
 {
-    if (!cErrorMessageBox::condMsgBox(pRec->tryUpdate(*pq, false, QBitArray(), QBitArray()))) {
+    if (!cErrorMessageBox::condMsgBox(pRec->tryUpdateById(*pq))) {
         return 0;
     }
     PDEB(VVERBOSE) << "Update returned : " << pRec->toString() << endl;
@@ -204,11 +209,13 @@ QVariant cRecordTableModel::data(const QModelIndex &index, int role) const
     const cRecord *pr = _records.at(row);
     int fix = _col2field[col];  // Mező index a (fő)rekordbam
     int mix = _col2shape[col];  // Index a leíróban (shape)
-    if (recDescr != pr->descr()) { // A mező sorrend nem feltétlenül azonos (öröklés)
+    cRecordTableColumn * pColumn = columns[mix];
+    bool bTxt = pColumn->textIndex != NULL_IX;
+    if (!bTxt && recDescr != pr->descr()) { // A mező sorrend nem feltétlenül azonos (öröklés miatt)
         const QString& fn = recDescr.columnName(fix);
         fix = pr->toIndex(fn, EX_IGNORE);   // Nem biztos, hogy van ilyen mező (ős)
     }
-    return _data(fix, *columns[mix], pr, role);
+    return _data(fix, *columns[mix], pr, role, bTxt);
 }
 
 QVariant cRecordTableModel::headerData(int section, Qt::Orientation orientation, int role) const

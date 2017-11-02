@@ -143,8 +143,10 @@ public:
     cTableShapeField&       shapeField;
     const cRecStaticDescr&  recDescr;
     int                     fieldIndex;
-    const cColStaticDescr&  colDescr;
-    const QVariant&         header;
+    int                     textIndex;
+    const cColStaticDescr * pColDescr;
+    const cColEnumType *    pTextEnum;
+    const QVariant          header;
     int                     dataAlign;      // Qt::AlignmentFlag
     int                     headAlign;      // Qt::AlignmentFlag
     int                     dataCharacter;  // eDataCharacter

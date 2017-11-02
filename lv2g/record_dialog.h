@@ -116,6 +116,8 @@ public:
     cRecordsViewBase  * _pOwnerTable;
     /// Az objektum neve
     const QString           name;
+    ///
+
     virtual cFieldEditBase * operator[](const QString& __fn) = 0;
     virtual void restore(const cRecord *_pRec = NULL) = 0;
     virtual bool accept() = 0;

@@ -11,6 +11,7 @@ namespace Ui {
 }
 #endif
 #include <QDialog>
+#include "lv2widgets.h"
 
 class cLogLevelDialog;
 
@@ -23,6 +24,7 @@ public:
     static const enum ePrivilegeLevel rights;
 private:
     Ui::SetupWidget *pUi;
+    cSelectLanguage *pSelLang;
 private slots:
     void applicateAndRestart();
     void applicateAndExit();

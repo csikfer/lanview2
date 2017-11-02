@@ -109,7 +109,7 @@ lv2Gui::lv2Gui() : lv2g()
     if (lastError == NULL) {
         try {
             if (pMainWindow == NULL) EXCEPTION(EPROGFAIL);
-            if (nonFatal) {
+            if (nonFatal != NULL) {
                 cErrorMessageBox::messageBox(nonFatal);
                 pDelete(nonFatal);
                 _setup = true;

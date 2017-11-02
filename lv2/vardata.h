@@ -98,9 +98,9 @@ protected:
     QDateTime   lastTime;       ///< Ha számláló a lekérdezett érték, akkor az előző érték időpontja
     QDateTime   lastLast;       ///< last_time mező előző értéke
     eNotifSwitch state;
-    STATICIX(cServiceVar, ixServiceVarTypeId)
-    STATICIX(cServiceVar, ixServiceVarValue)
-    STATICIX(cServiceVar, ixStateMsg)
+    STATICIX(cServiceVar, ServiceVarTypeId)
+    STATICIX(cServiceVar, ServiceVarValue)
+    STATICIX(cServiceVar, StateMsg)
 protected:
     static QBitArray updateMask;
 public:

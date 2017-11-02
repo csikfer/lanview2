@@ -12,7 +12,7 @@
 #define VERSION_STR     _STR(VERSION_MAJOR) "." _STR(VERSION_MINOR) "(" _STR(REVISION) ")"
 
 #define DB_VERSION_MAJOR 1
-#define DB_VERSION_MINOR 5
+#define DB_VERSION_MINOR 6
 
 // ****************************************************************************************************************
 int findArg(char __c, const char * __s, int argc, char * argv[])
@@ -172,14 +172,20 @@ void settingIntParameter(QSqlQuery& q, const QString& pname)
 void dbOpenPost(QSqlQuery& q, int n)
 {
     QString nn = lanView::appName;
-    if (n > 0) nn += "_" + QString::number(n);
+    if (n > 0) {
+        setLanguage(q, lanView::getInstance()->langId);
+        if (lanView::getInstance()->pUser != NULL) {
+            if (!q.exec(QString("SELECT set_user_id(%1)").arg(lanView::getInstance()->pUser->getId()))) SQLQUERYERR(q);
+        }
+        nn += "_" + QString::number(n);
+    }
     EXECSQL(q, QString("SET application_name TO '%1'").arg(nn));
     settingIntParameter(q, "lock_timeout");
     settingIntParameter(q, "statement_timeout");
 }
 
 lanView::lanView()
-    : QObject(), libName(LIBNAME), debFile("-"), homeDir(), binPath(), args(), lang("en"), dbThreadMap(), threadMutex()
+    : QObject(), libName(LIBNAME), debFile("-"), homeDir(), binPath(), args(), dbThreadMap(), threadMutex()
 {
     // DBGFN();
     debug       = debugDefault;
@@ -202,11 +208,6 @@ lanView::lanView()
     pQuery = NULL;
 
     try {
-        lang = getEnvVar("LANG");
-        if (!lang.isEmpty()) {
-            int i = lang.indexOf(QChar('.'));
-            if (i > 0) lang = lang.mid(0,i);
-        }
         cError::init(); // Hiba stringek feltöltése.
         initUserMetaTypes();
 
@@ -233,7 +234,7 @@ lanView::lanView()
                     homeDir = d.path();
                 }
                 else {
-                    // Nem kéne leszállni, inkább setup
+                    // You should not crashed, rather setup
                     nonFatal = NEWCERROR(ENODIR, 0, d.path());
                 }
             }
@@ -243,17 +244,8 @@ lanView::lanView()
         }
         binPath = d.filePath(_sBin);
         binPath = pSet->value(_sBinDir,  QVariant(binPath)).toString();
-        lang    = pSet->value(_sLang,    QVariant(lang)).toString();
         // Inicializáljuk a cDebug objektumot
         cDebug::init(debFile, debug);
-        libTranslator = new QTranslator(this);
-        if (libTranslator->load(libName + "_" + lang, homeDir)) {
-            QCoreApplication::installTranslator(libTranslator);
-        }
-        else {
-            delete libTranslator;
-            libTranslator = NULL;
-        }
         // Feldolgozzuk a program paramétereket
         args = QCoreApplication::arguments();
         parseArg();
@@ -266,10 +258,9 @@ lanView::lanView()
         cXSignal::setupUnixSignalHandlers();
         connect(unixSignals, SIGNAL(qsignal(int)), this, SLOT(uSigSlot(int)));
 #endif // MUST_USIGNAL
-        instAppTransl();
         if (instance != NULL) EXCEPTION(EPROGFAIL,-1,QObject::trUtf8("A lanView objektumból csak egy példány lehet."))
         instance = this;
-        // Kapcsolódunk az adatbázishoz, ha kell
+        // Connect database, if need
         if (sqlNeeded != SN_NO_SQL) {
             if (openDatabase(bool2ex(sqlNeeded == SN_SQL_NEED))) {
                 pQuery = newQuery();
@@ -279,6 +270,38 @@ lanView::lanView()
                 setSelfObjects();
             }
         }
+        // Language
+        bool lok;
+        langId = pSet->value(_sLangId).toInt(&lok);
+        if (!lok) langId = NULL_IX; // int !
+        if (lok && pQuery != NULL) {
+            setLanguage(*pQuery, langId);
+            sLang = getLanguage(*pQuery, langId);
+        }
+        if (sLang.isEmpty()) {
+            sLang = getEnvVar("LANG");
+            if (!sLang.isEmpty()) {
+                int i = sLang.indexOf(QChar('.'));
+                if (i > 0) sLang = sLang.mid(0,i);
+            }
+        }
+        if (!lok && pQuery != NULL && !sLang.isEmpty()) {
+            QStringList sl = sLang.split("_");
+            if (sl.size() < 2) sl << _sNul;
+            langId = setLanguage(*pQuery, sl.first(), sl.at(1));
+        }
+        if (!sLang.isEmpty()) {
+            libTranslator = new QTranslator(this);
+            if (libTranslator->load(libName + "_" + sLang, homeDir)
+             || libTranslator->load(libName + "_" + sLang, binPath)) {
+                QCoreApplication::installTranslator(libTranslator);
+            }
+            else {
+                delete libTranslator;
+                libTranslator = NULL;
+            }
+        }
+        instAppTransl();
         // SNMP init, ha kell
         if (snmpNeeded) {
 #ifdef SNMP_IS_EXISTS
@@ -430,14 +453,15 @@ bool checkDbVersion(QSqlQuery& q, QString& msg)
     int vmajor = (int)execSqlIntFunction(q, &ok1, "get_int_sys_param", "version_major");
     int vminor = (int)execSqlIntFunction(q, &ok2, "get_int_sys_param", "version_minor");
     if (!(ok1 && ok2)) {
-        msg = QObject::trUtf8("The database version numbers wrong format or missing");
+        msg = QObject::trUtf8("The database version numbers wrong format or missing.");
         DERR() << msg << endl;
         return false;
     }
     if (DB_VERSION_MAJOR != vmajor || DB_VERSION_MINOR != vminor) {
-        msg = QObject::trUtf8("Incorrect database version. The expected version is "
-                             _STR(DB_VERSION_MAJOR) "." _STR(DB_VERSION_MINOR)
-                             "The current database version is %1.%2").arg(vmajor).arg(vminor);
+        msg = QObject::trUtf8("Incorrect database version.\n"
+                              "The expected version is %1.%2\n"
+                              "The current database version is %3.%4")
+                .arg(DB_VERSION_MAJOR).arg(DB_VERSION_MINOR).arg(vmajor).arg(vminor);
         DERR() << msg << endl;
         return false;
     }
@@ -456,19 +480,25 @@ bool lanView::openDatabase(eEx __ex)
     pDb->setPassword(scramble(pSet->value(_sSqlPass).toString()));
     pDb->setDatabaseName(pSet->value(_sDbName).toString());
     bool r = pDb->open();
-    if (!r && __ex != EX_IGNORE) // SQLOERR(*pDb);
-    {
-        QSqlError le = (*pDb).lastError();
-        _sql_err_deb_(le, __FILE__, __LINE__, __PRETTY_FUNCTION__);
-        EXCEPTION(ESQLOPEN, le.number(), le.text());
-    }
+    cError *pe;
     if (r) {
         QSqlQuery q(*pDb);
         QString msg;
         r = checkDbVersion(q, msg);
-        if (!r && __ex != EX_IGNORE) EXCEPTION(ESQLOPEN, 0, msg);
+        if (!r) {
+            pe = NEWCERROR(ESQLOPEN, 0, msg);
+            if (__ex == EX_IGNORE) nonFatal = pe;
+            else pe->exception();
+            closeDatabase();
+        }
     }
-    if (!r) closeDatabase();
+    else {
+        QSqlError le = (*pDb).lastError();
+        _sql_err_deb_(le, __FILE__, __LINE__, __PRETTY_FUNCTION__);
+        pe = NEWCERROR(ESQLOPEN, le.number(), le.text());
+        if (__ex == EX_IGNORE) nonFatal = pe;
+        else pe->exception();
+    }
     return r;
 }
 
@@ -590,12 +620,18 @@ void lanView::parseArg(void)
 
 void lanView::instAppTransl()
 {
+    if (sLang.isEmpty()) {
+        appTranslator = NULL;
+        DERR() << QObject::trUtf8("Application language file not loaded, language string id is empty.") << endl;
+        return;
+    }
     appTranslator = new QTranslator(this);
-    if (appTranslator->load(langFileName(appName, lang), homeDir)) {
+    if (appTranslator->load(langFileName(appName, sLang), homeDir)
+     || appTranslator->load(langFileName(appName, sLang), binPath)) {
         QCoreApplication::installTranslator(appTranslator);
     }
     else {
-        DERR() << QObject::trUtf8("Application language file not loaded : %1/%2").arg(appName).arg(lang) << endl;
+        DERR() << QObject::trUtf8("Application language file not loaded : %1/%2").arg(appName).arg(sLang) << endl;
         delete appTranslator;
         appTranslator = NULL;
     }

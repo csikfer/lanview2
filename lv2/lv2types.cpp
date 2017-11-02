@@ -6,6 +6,7 @@
 #include "lv2types.h"
 #include "strings.h"
 #include <float.h>
+#include "lv2sql.h"
 
 /************************ enum converters ************************/
 QString sInvalidEnum() { return QObject::trUtf8("Invalid"); }
@@ -987,3 +988,70 @@ QString QVariantToString(const QVariant& _v, bool *pOk)
     return QString();
 }
 
+// Language localization
+
+int setLanguage(QSqlQuery& q, const QString& _l, const QString& _c)
+{
+    QVariant l, c;
+    if (_l.size() == 2) {
+        l = _l;
+        if (!_c.isEmpty()) {
+            if (_c.size() == 2) c = _c;
+            else EXCEPTION(ESETTING, 0, QObject::trUtf8("Invalid country : %1, (languagr : %2)").arg(_c, _l));
+        }
+    }
+    else if (_l.size() == 5 && _c.isNull()) {
+        QStringList sl = _l.split("_");
+        if (sl.size() == 2 && sl.first().size() == 2 && sl.at(1).size() == 2) {
+            l = sl.first();
+            c = sl.at(1);
+        }
+    }
+    if (l.isNull()) EXCEPTION(ESETTING, 0, QObject::trUtf8("Invalid language : %1, (country : %2)").arg(_l, _c));
+    return execSqlIntFunction(q, NULL, "set_language", l, c);
+}
+
+int setLanguage(QSqlQuery& q, int id)
+{
+    return execSqlIntFunction(q, NULL, "set_language", id);
+}
+
+int getLanguageId(QSqlQuery& q)
+{
+    return execSqlIntFunction(q, NULL, "get_language_id");
+}
+
+QString getLanguage(QSqlQuery& q, int lid)
+{
+    return execSqlTextFunction(q, "language_id2code", lid);
+}
+
+QString textId2text(QSqlQuery& q, int id, const QString& _table, int index)
+{
+    static const QString sql = "SELECT (localization_texts(?, ?)).texts[?]";
+    execSql(q, sql, id, _table, index +1);
+    return q.value(0).toString();
+}
+
+QStringList textId2texts(QSqlQuery& q, int id, const QString& _table)
+{
+    static const QString sql = "SELECT unnest((localization_texts(?, ?)).texts)";
+    QStringList sl;
+    if (execSql(q, sql, id, _table)) {
+        do {
+            sl << q.value(0).toString();
+        } while (q.next());
+    }
+    return sl;
+}
+
+int textName2ix(QSqlQuery &q, const QString& _t, const QString& _n, eEx __ex)
+{
+    QString sql = QString("SELECT array_length(enum_range(NULL, ?::%1), 1)").arg(_t);
+    execSql(q, sql, _n);
+    bool ok;
+    int ix = q.value(1).toInt(&ok);
+    if (!ok) ix = -1;
+    if (ix < 0 && __ex != EX_IGNORE) EXCEPTION(EENUMVAL, ix, mCat(_t, _n));
+    return ix;
+}

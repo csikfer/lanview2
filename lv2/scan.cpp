@@ -572,7 +572,7 @@ protected:
     bool setRPortFromIx(cAppMemo& em);
     bool setRPortFromMac(rowData &row, cAppMemo &em);
     int  portDescr2Ix(QSqlQuery &q, cSnmp &snmp, QHostAddress ha, const QString& pdescr, cAppMemo &em);
-    bool rowTail(QSqlQuery &q, const QString &ma, const QStringPair &ip, cAppMemo &em, bool exists);
+    bool rowTail(QSqlQuery &q, const QString &ma, const tStringPair &ip, cAppMemo &em, bool exists);
     void memo(cAppMemo em, QSqlQuery &q, int port_ix, rowData &row);
 
     typedef tRecordList<cSnmpDevice> tDevList;
@@ -1379,7 +1379,7 @@ int cLldpScan::portDescr2Ix(QSqlQuery &q, cSnmp &snmp, QHostAddress ha, const QS
     } while (true);
 }
 
-bool cLldpScan::rowTail(QSqlQuery &q, const QString& ma, const QStringPair& ip, cAppMemo& em, bool exists)
+bool cLldpScan::rowTail(QSqlQuery &q, const QString& ma, const tStringPair& ip, cAppMemo& em, bool exists)
 {
     QString es;
     cError *pe = NULL;
@@ -1426,7 +1426,7 @@ bool cLldpScan::rowProCurve(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& e
 {
     bool ok;
     bool exists;
-    QStringPair ip;
+    tStringPair ip;
     QString     ma;
     (void)snmp;
 
@@ -1467,7 +1467,7 @@ bool cLldpScan::rowProCurve(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& e
 bool cLldpScan::rowProCurveWeb(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em)
 {
     bool exists;
-    QStringPair ip;
+    tStringPair ip;
     QString     ma;
     cNPort     *pp;
 
@@ -1508,7 +1508,7 @@ bool cLldpScan::rowProCurveWeb(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo
 bool cLldpScan::row3COM(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& em)
 {
     bool exists;
-    QStringPair ip;
+    tStringPair ip;
     QString     ma;
     cNPort     *pp;
 
@@ -1561,7 +1561,7 @@ bool cLldpScan::row3COM(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& em)
 bool cLldpScan::rowCisco(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em)
 {
     bool exists;
-    QStringPair ip;
+    tStringPair ip;
     QString     ma;
     cNPort     *pp;
 

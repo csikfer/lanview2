@@ -361,7 +361,8 @@ public:
     cError         *lastError;  ///< Pointer to last error object or NULL
     cError         *nonFatal;   ///< Init, nem fatális hiba
     QStringList     args;       ///< Argumentum lista
-    QString         lang;       ///< nyelv
+    int             langId;     ///< Language ID
+    QString         sLang;      ///< Language string id
     QTranslator    *libTranslator;  ///< translator az API-hoz
     QTranslator    *appTranslator;  ///< translator az APP-hoz
 

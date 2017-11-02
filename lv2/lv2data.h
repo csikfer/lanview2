@@ -357,8 +357,8 @@ public:
         }
         return __def;
     }
-    STATICIX(cSysParam, ixParamTypeId)
-    STATICIX(cSysParam, ixParamValue)
+    STATICIX(cSysParam, ParamTypeId)
+    STATICIX(cSysParam, ParamValue)
 protected:
     /// A port paraméter értékhez tartozó típus rekord/objektum
     cParamType  paramType;
@@ -433,9 +433,9 @@ public:
     /// Ha az objektumban modosítkuk a image_data mezőt, akkor törölva lessz a image_hash mező, melyet az
     /// az adatbázis logika kiíráskor majd kiszámol. és kitölt
     bool hashIsNull() const         { return isNull(_ixImageHash); }
-    STATICIX(cImage, ixImageType)
-    STATICIX(cImage, ixImageData)
-    STATICIX(cImage, ixImageHash)
+    STATICIX(cImage, ImageType)
+    STATICIX(cImage, ImageData)
+    STATICIX(cImage, ImageHash)
 };
 
 #define UNKNOWN_PLACE_ID  0LL
@@ -517,9 +517,9 @@ public:
     /// @param __addr IP cím, melyet tartalmaznia kell a keresett subnet-nek.
     /// @return A feltételnek megfelelő rekordok száma
     int getByAddress(QSqlQuery & __q, const QHostAddress &__addr);
-    STATICIX(cSubNet, ixNetAddr)
-    STATICIX(cSubNet, ixVlanId)
-    STATICIX(cSubNet, ixSubnetType)
+    STATICIX(cSubNet, NetAddr)
+    STATICIX(cSubNet, VlanId)
+    STATICIX(cSubNet, SubnetType)
 };
 
 /*!
@@ -577,10 +577,10 @@ public:
     static QString lookup(const QHostAddress& ha, enum eEx __ex = EX_ERROR);
     static QHostAddress lookup(const QString& hn, enum eEx __ex = EX_ERROR);
     QHostAddress setIpByName(const QString& _hn, const QString &_t = _sNul, enum eEx __ex = EX_ERROR);
-    STATICIX(cIpAddress, ixPortId)
-    STATICIX(cIpAddress, ixAddress)
-    STATICIX(cIpAddress, ixSubNetId)
-    STATICIX(cIpAddress, ixIpAddressType)
+    STATICIX(cIpAddress, PortId)
+    STATICIX(cIpAddress, Address)
+    STATICIX(cIpAddress, SubNetId)
+    STATICIX(cIpAddress, IpAddressType)
 };
 
 /* ******************************  ****************************** */
@@ -618,8 +618,8 @@ public:
     cPortParam& setType(const QString& __n)    { paramType.fetchByName(__n); _set(_ixParamTypeId, paramType.getId()); return *this; }
     /// Értékadás az érték mezőnek.
     cPortParam& operator=(const QString& __v)  { setName(_sParamValue, __v); return *this; }
-    STATICIX(cPortParam, ixParamTypeId)
-    STATICIX(cPortParam, ixPortId)
+    STATICIX(cPortParam, ParamTypeId)
+    STATICIX(cPortParam, PortId)
 protected:
     /// A port paraméter értékhez tartozó típus rekord/objektum
     cParamType  paramType;
@@ -706,11 +706,11 @@ protected:
 /* ======================================================================== */
 
 enum eContainerValid {
-    CV_NODE_PARAMS      =  1,
-    CV_PORTS            =  2,
-    CV_PORT_PARAMS      =  4,
-    CV_PORTS_ADDRESSES  =  8,
-    CV_PORT_VLANS       = 16,
+    CV_NODE_PARAMS      = 0x0100,
+    CV_PORTS            = 0x0200,
+    CV_PORT_PARAMS      = 0x0400,
+    CV_PORTS_ADDRESSES  = 0x0800,
+    CV_PORT_VLANS       = 0x1000,
     CV_ALL_PATCH        = CV_NODE_PARAMS | CV_PORTS | CV_PORT_PARAMS,
     CV_ALL_NODE         = CV_ALL_PATCH,
     CV_ALL_HOST         = CV_ALL_NODE | CV_PORTS_ADDRESSES | CV_PORT_VLANS
@@ -861,9 +861,9 @@ public:
     static qlonglong tableoid_nports()      { return _tableoid_nports; }
     static qlonglong tableoid_pports()      { return _tableoid_pports; }
     static qlonglong tableoid_interfaces()  { return _tableoid_interfaces; }
-    STATICIX(cNPort, ixNodeId)
-    STATICIX(cNPort, ixPortIndex)
-    STATICIX(cNPort, ixIfTypeId)
+    STATICIX(cNPort, NodeId)
+    STATICIX(cNPort, PortIndex)
+    STATICIX(cNPort, IfTypeId)
 
 };
 
@@ -985,8 +985,8 @@ public:
     /// Ip címek listája (nincs automatikus feltöltés
     tOwnRecords<cIpAddress, cInterface> addresses;
     /// A MAC cím mező indexe
-    STATICIX(cInterface, ixHwAddress)
-    cMac mac() { return getMac(ixHwAddress()); }
+    STATICIX(cInterface, HwAddress)
+    cMac mac() { return getMac(_ixHwAddress); }
 protected:
     /// Trubk port esetén a trunk tagjainak az indexe (port_index mező)
     /// Nincs automatikusan feltöltve.
@@ -1028,8 +1028,8 @@ public:
     cNodeParam& operator=(const QString& __v)  { setName(_sParamValue, __v); return *this; }
     /// A Node paraméter értékhez tartozó típus rekord/objektum
     cParamType  paramType;
-    STATICIX(cNodeParam, ixParamTypeId)
-    STATICIX(cNodeParam, ixNodeId)
+    STATICIX(cNodeParam, ParamTypeId)
+    STATICIX(cNodeParam, NodeId)
 };
 
 /// @class cShareBack
@@ -1084,7 +1084,7 @@ protected:
     explicit cPatch(no_init_&) : cRecord(), ports(this), params(this), pShares(NULL)
     {
         cPatch::descr();
-        containerValid = 0;
+        // containerValid = 0;
     }
     cNPort *portSetParam(cNPort * __port, const QString& __par, const QVariant &__val);
 public:
@@ -1231,8 +1231,7 @@ public:
     tOwnRecords<cNPort, cPatch>     ports;
     /// Node paraméterek, nincs automatikusan feltöltve
     tOwnRecords<cNodeParam, cPatch> params;
-    ///
-    int containerValid;
+    // int containerValid;
 
     QString  getTextParam(qlonglong _typeId, eEx __ex = EX_ERROR) const;
     qlonglong getIntParam(qlonglong _typeId, eEx __ex = EX_ERROR) const;
@@ -1445,7 +1444,7 @@ public:
     ///           ha variant egy int, akkor az annak a Portnak az indexe (port_index érték!), melynek ugyanez a MAC cíne.
     /// @param d Port leírás/megjegyzés szöveg, üres string esetén az NULL lessz.
     /// @return Az új port objektum pointere
-    cNPort& asmbHostPort(QSqlQuery& q, int ix, const QString& pt, const QString& pn, const QStringPair *ip, const QVariant *mac, const  QString& d);
+    cNPort& asmbHostPort(QSqlQuery& q, int ix, const QString& pt, const QString& pn, const tStringPair *ip, const QVariant *mac, const  QString& d);
     /// Egy új host vagy snmp eszköz összeállítása
     /// @param __name Az eszköz neve, vagy a "LOOKUP" string
     /// @param __port port neve/port typusa, vagy NULL, ha default.
@@ -1454,7 +1453,7 @@ public:
     /// @param __sMac Vagy a MAC stringgé konvertálva, vagy az "ARP" string, ha az IP címből kell meghatározni.
     /// @param __note node secriptorra/megjegyzés
     /// @param __ex Ha értéke true, akkor hiba esetén dob egy kizárást, ha false, akkor hiba esetén a ES_DEFECTIVE bitet állítja be.
-    cNode& asmbNode(QSqlQuery& q, const QString& __name, const QStringPair* __port, const QStringPair *__addr, const QString *__sMac, const QString &__note = _sNul, qlonglong __place = NULL_ID, enum eEx __ex = EX_ERROR);
+    cNode& asmbNode(QSqlQuery& q, const QString& __name, const tStringPair* __port, const tStringPair *__addr, const QString *__sMac, const QString &__note = _sNul, qlonglong __place = NULL_ID, enum eEx __ex = EX_ERROR);
     ///
     bool bDelCollisionByMac;
     bool bDelCollisionByIp;
@@ -1543,10 +1542,10 @@ public:
     cPortVlan& setSetType(enum eSetType __e)    { setName(_ixSetType, setType(__e)); return *this; }
     cPortVlan& setSetType(const QString& __n)   { (void)setType(__n); setName(_ixSetType, __n); return *this; }
     enum eSetType getSetType(enum eEx __ex = EX_ERROR)  { return (enum eSetType)setType(getName(_ixSetType), __ex); }
-    STATICIX(cPortVlan, ixPortId)
-    STATICIX(cPortVlan, ixVlanId)
-    STATICIX(cPortVlan, ixVlanType)
-    STATICIX(cPortVlan, ixSetType)
+    STATICIX(cPortVlan, PortId)
+    STATICIX(cPortVlan, VlanId)
+    STATICIX(cPortVlan, VlanType)
+    STATICIX(cPortVlan, SetType)
 };
 
 /// @macro APPMEMO(q, m, i)
@@ -1593,7 +1592,7 @@ class LV2SHARED_EXPORT cSelect : public cRecord {
     CRECORD(cSelect);
 //    FEATURES(cSelect)
 public:
-    STATICIX(cSelect, ixChoice)
+    STATICIX(cSelect, Choice)
     cSelect& choice(QSqlQuery q, const QString& _type, const QString& _val, eEx __ex = EX_ERROR);
     cSelect& choice(QSqlQuery q, const QString& _type, const cMac _val, eEx __ex = EX_ERROR);
 

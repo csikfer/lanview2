@@ -301,7 +301,7 @@ public:
 
 #define UNKNOWN_PLACE_ID 0LL
 
-typedef QList<QStringPair> QStringPairList;
+typedef QList<tStringPair> QStringPairList;
 
 typedef QList<qlonglong> intList;
 
@@ -799,7 +799,7 @@ static QString e2 = "There is insufficient data.";
 ///           ha variant egy int, akkor az annak a Portnak az indexe, melynek ugyanez a MAC cíne.
 /// @param d Port leírás/megjegyzés szövegre mutató pointer, üres string esetén az NULL lessz.
 /// @return Az új port objektum pointere
-static cNPort *hostAddPort(int ix, QString *pt, QString *pn, QStringPair *ip, QVariant *mac, QString *d)
+static cNPort *hostAddPort(int ix, QString *pt, QString *pn, tStringPair *ip, QVariant *mac, QString *d)
 {
     cNPort& p = node().asmbHostPort(qq(), ix, *pt, *pn, ip, mac, *d);
     pDelete(pt);
@@ -810,7 +810,7 @@ static cNPort *hostAddPort(int ix, QString *pt, QString *pn, QStringPair *ip, QV
     return &p;
 }
 
-static cNPort *portAddAddress(cNPort *_p, QStringPair *ip, QString *d)
+static cNPort *portAddAddress(cNPort *_p, tStringPair *ip, QString *d)
 {
     cInterface *p = _p->reconvert<cInterface>();
     p->addIpAddress(QHostAddress(ip->first), ip->second, *d);
@@ -818,7 +818,7 @@ static cNPort *portAddAddress(cNPort *_p, QStringPair *ip, QString *d)
     return _p;
 }
 
-static cNPort *portAddAddress(QString *pn, QStringPair *ip, QString *d)
+static cNPort *portAddAddress(QString *pn, tStringPair *ip, QString *d)
 {
     cNPort *p = node().getPort(*pn);
     delete pn;
@@ -826,7 +826,7 @@ static cNPort *portAddAddress(QString *pn, QStringPair *ip, QString *d)
 
 }
 
-static cNPort *portAddAddress(int ix, QStringPair *ip, QString *d)
+static cNPort *portAddAddress(int ix, tStringPair *ip, QString *d)
 {
     cNPort *p = node().getPort(ix);
     return portAddAddress(p, ip, d);
@@ -863,8 +863,9 @@ static void newMenuMenu(const QString& _n)
     if (!menuItems.isEmpty()) {
         p->setId(_sUpperMenuItemId, actMenuItem().getId());
     }
-    p->setName(_sMenuTitle, _n);
-    p->setName(_sTabTitle, _n);
+    // Improve, replace!
+    // p->setName(_sMenuTitle, _n);
+    // p->setName(_sTabTitle, _n);
     p->setName(_sFeatures, ":sub:");
     p->insert(qq());
     menuItems << p;
@@ -887,8 +888,9 @@ static void newMenuItem(const QString& _n, const QString& _sn, const char * typ)
     p->setName(_n);
     p->set(_sAppName, *pMenuApp);
     p->setId(_sUpperMenuItemId, actMenuItem().getId());
-    p->setName(_sMenuTitle, _n);
-    p->setName(_sTabTitle, _n);
+    // Improve, replace!
+    // p->setName(_sMenuTitle, _n);
+    // p->setName(_sTabTitle, _n);
     p->setName(_sFeatures, QString(typ).arg(_sn));
     p->insert(qq());
     menuItems << p;
@@ -896,6 +898,8 @@ static void newMenuItem(const QString& _n, const QString& _sn, const char * typ)
 
 static void setMenuTitle(const QStringList& _tt)
 {
+    /* Improve, replace!
+
     QString n = actMenuItem().getName();
     if (_tt.size() > 0 && _tt.at(0).size() > 0) {
         if (_tt.at(0) != _sAt) n = _tt.at(0);
@@ -908,18 +912,23 @@ static void setMenuTitle(const QStringList& _tt)
 
         actMenuItem().update(qq(), false, actMenuItem().mask(_sMenuTitle, _sTabTitle));
     }
+    */
 }
 
 static void setMenuToolTip(const QString& _tt)
 {
+    /* Improve, replace!
     actMenuItem().setName(_sToolTip, _tt);
     actMenuItem().update(qq(), false, actMenuItem().mask(_sToolTip));
+    */
 }
 
 static void setMenuWhatsThis(const QString& _wt)
 {
+    /* Improve, replace!
     actMenuItem().setName(_sWhatsThis, _wt);
     actMenuItem().update(qq(), false, actMenuItem().mask(_sWhatsThis));
+    */
 }
 
 static void setMenuRights(const QString& _wt)
@@ -1372,7 +1381,7 @@ void setReplace(int er)
 /// @param mac Vagy a MAC stringgé konvertálva, vagy az ARP string, ha az IP címből kell meghatározni, vagy NULL, ha nincs MAC
 /// @param d Megjegyzés  mutató pointer, üres string esetén az NULL lessz.
 /// @return Az új objektum pointere
-static void newHost(qlonglong t, QString *name, QStringPair *ip, QString *mac, QString *d)
+static void newHost(qlonglong t, QString *name, tStringPair *ip, QString *mac, QString *d)
 {
     cNode *pNode;
     if (t & ENUM2SET(NT_SNMP)) pNode = new cSnmpDevice();
@@ -1545,7 +1554,7 @@ void  setSysParam(QString *pt, QString *pn, QVariant *pv)
     QVariantList *      vl;
     QPointF *           pnt;
     tPolygonF *         pol;
-    QStringPair *       ss;
+    tStringPair *       ss;
     QStringPairList *   ssl;
     cSnmpDevice *       sh;
     cHostServices *     hss;
@@ -2310,17 +2319,17 @@ node_p  : NOTE_T str ';'                        { node().setName(_sNodeNote, sp2
         | for_m
         | eqs
         ;
-ip_q    : ips iptype                            { $$ = new QStringPair(sp2s($1),  addrType($2)); }
-        | DYNAMIC_T                             { $$ = new QStringPair(QString(), _sDynamic); }
-        | LOOKUP_T                              { $$ = new QStringPair(_sLOOKUP,  _sFixIp); }
-        | ARP_T                                 { $$ = new QStringPair(_sARP,     _sFixIp); }
+ip_q    : ips iptype                            { $$ = new tStringPair(sp2s($1),  addrType($2)); }
+        | DYNAMIC_T                             { $$ = new tStringPair(QString(), _sDynamic); }
+        | LOOKUP_T                              { $$ = new tStringPair(_sLOOKUP,  _sFixIp); }
+        | ARP_T                                 { $$ = new tStringPair(_sARP,     _sFixIp); }
         ;
-ip_qq   : ips iptype                            { $$ = new QStringPair(sp2s($1),  addrType($2)); }
-        | DYNAMIC_T                             { $$ = new QStringPair(QString(), _sDynamic); }
+ip_qq   : ips iptype                            { $$ = new tStringPair(sp2s($1),  addrType($2)); }
+        | DYNAMIC_T                             { $$ = new tStringPair(QString(), _sDynamic); }
         | NULL_T                                { $$ = NULL; }
-        | ARP_T                                 { $$ = new QStringPair(_sARP,     _sFixIp); }
+        | ARP_T                                 { $$ = new tStringPair(_sARP,     _sFixIp); }
         ;
-ip_a    : ips iptype_a                          { $$ = new QStringPair(sp2s($1),  addrType($2)); }
+ip_a    : ips iptype_a                          { $$ = new tStringPair(sp2s($1),  addrType($2)); }
         ;
 mac     : MAC_V                                 { $$ = $1; }
         | MAC_T '(' sexpr ')'                   {
@@ -2603,7 +2612,7 @@ tmodp   : SET_T DEFAULTS_T ';'                  { pTableShape->setDefaults(qq())
         | TABLE_T TYPE_T ON_T tstypes ';'       { pTableShape->setOn( _sTableShapeType, $4); }
         | TABLE_T TYPE_T OFF_T tstypes ';'      { pTableShape->setOff(_sTableShapeType, $4); }
         // title, dialog title, member title (group), not member title (group)
-        | TABLE_T TITLE_T strs_zz  ';'          { pTableShape->setTitle(slp2sl($3)); }
+//        | TABLE_T TITLE_T strs_zz  ';'          { pTableShape->setTitle(slp2sl($3)); }
         | TABLE_T READ_T ONLY_T bool_on ';'     { pTableShape->enum2setBool(_sTableShapeType, TS_READ_ONLY, $4); }
         | TABLE_T FEATURES_T str ';'            { pTableShape->set(_sFeatures, sp2s($3)); }
         | AUTO_T REFRESH_T str ';'              { pTableShape->setName(_sAutoRefresh, sp2s($3)); }
@@ -2618,7 +2627,7 @@ tmodp   : SET_T DEFAULTS_T ';'                  { pTableShape->setDefaults(qq())
         | TABLE_T INSERT_T RIGHTS_T rights ';'  { pTableShape->setName(_sInsertRights, sp2s($4)); }
         | SET_T str '.' str '=' value ';'       { pTableShape->fset(sp2s($2), sp2s($4), vp2v($6)); }
         | SET_T '(' strs ')' '.' str '=' value ';'{ pTableShape->fsets(slp2sl($3), sp2s($6), vp2v($8)); }
-        | FIELD_T str TITLE_T strs_zz ';'       { pTableShape->shapeFields.get(sp2s($2))->setTitle(slp2sl($4)); }
+//        | FIELD_T str TITLE_T strs_zz ';'       { pTableShape->shapeFields.get(sp2s($2))->setTitle(slp2sl($4)); }
         | FIELD_T str NOTE_T str ';'            { pTableShape->fset(sp2s($2),_sTableShapeFieldNote, sp2s($4)); }
         | FIELD_T strs VIEW_T RIGHTS_T rights ';'{pTableShape->fsets(slp2sl($2), _sViewRights, sp2s($5)); }
         | FIELD_T strs EDIT_T RIGHTS_T rights ';'{pTableShape->fsets(slp2sl($2), _sEditRights, sp2s($5)); }
@@ -2640,8 +2649,8 @@ tmodp   : SET_T DEFAULTS_T ';'                  { pTableShape->setDefaults(qq())
                                                   delete $2;
                                                 }
         | FIELD_T str DEFAULT_T VALUE_T str ';' { pTableShape->fset(sp2s($2), _sDefaultValue, sp2s($5)); }
-        | FIELD_T str TOOL_T TIP_T str ';'      { pTableShape->fset(sp2s($2), _sToolTip, sp2s($5)); }
-        | FIELD_T str WHATS_T THIS_T str ';'    { pTableShape->fset(sp2s($2), _sWhatsThis, sp2s($5)); }
+//        | FIELD_T str TOOL_T TIP_T str ';'      { pTableShape->fset(sp2s($2), _sToolTip, sp2s($5)); }
+//        | FIELD_T str WHATS_T THIS_T str ';'    { pTableShape->fset(sp2s($2), _sWhatsThis, sp2s($5)); }
         | FIELD_T strs ADD_T FILTER_T strs ';'  { pTableShape->addFilter(slp2sl($2), *$5); delete $5; }
         | FIELD_T SEQUENCE_T int0 strs ';'      { pTableShape->setFieldSeq(slp2sl($4), $3); }
         | FIELD_T strs ORD_T strs ';'           { pTableShape->setOrders(*$2, *$4); delete $2; delete $4; }
@@ -2676,7 +2685,7 @@ fmodps  : fmodp
         | fmodps fmodp
         ;
 fmodp   : SET_T str '=' value ';'       { pTableShapeField->set(sp2s($2), vp2v($4)); }
-        | TITLE_T strs_zz ';'           { pTableShapeField->setTitle(slp2sl($2)); }
+//        | TITLE_T strs_zz ';'           { pTableShapeField->setTitle(slp2sl($2)); }
         | NOTE_T str ';'                { pTableShapeField->setName(_sTableShapeFieldNote, sp2s($2)); }
         | VIEW_T RIGHTS_T rights ';'    { pTableShapeField->setName(_sViewRights, sp2s($3)); }
         | EDIT_T RIGHTS_T rights ';'    { pTableShapeField->setName(_sEditRights, sp2s($3)); }
@@ -2686,8 +2695,8 @@ fmodp   : SET_T str '=' value ';'       { pTableShapeField->set(sp2s($2), vp2v($
         | FLAG_T ON_T fflags ';'        { pTableShapeField->setOn(_sFieldFlags, $3); }
         | FLAG_T OFF_T fflags ';'       { pTableShapeField->setOff(_sFieldFlags, $3); }
         | DEFAULT_T VALUE_T str ';'     { pTableShapeField->setName(_sDefaultValue, sp2s($3)); }
-        | TOOL_T TIP_T str ';'          { pTableShapeField->setBool(_sToolTip, $3); }
-        | WHATS_T THIS_T str ';'        { pTableShapeField->setBool(_sWhatsThis, $3); }
+//        | TOOL_T TIP_T str ';'          { pTableShapeField->setBool(_sToolTip, $3); }
+//        | WHATS_T THIS_T str ';'        { pTableShapeField->setBool(_sWhatsThis, $3); }
         | ADD_T FILTER_T strs ';'       { foreach (QString t, *$3) { pTableShape->addFilter(pTableShapeField->getName(), t); } delete $3; }
         ;
 appmenu : GUI_T str                     { pMenuApp = $2;}

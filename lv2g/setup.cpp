@@ -12,8 +12,12 @@ cSetupWidget::cSetupWidget(QMdiArea *par)
 {
     PDEB(OBJECT) << __PRETTY_FUNCTION__ << QChar(' ') << QChar(',') << VDEBPTR(this) << endl;
     pLl = NULL;
+    pSelLang = NULL;
     pUi = new Ui::SetupWidget();
     pUi->setupUi(this);
+    if (lanView::getInstance()->dbIsOpen()) {
+        pSelLang = new cSelectLanguage(pUi->comboBoxLang, this);
+    }
 
     bool forced = !lanView::dbIsOpen();
 
@@ -76,6 +80,10 @@ void cSetupWidget::applicate()
 {
     DBGFN();
     bool ok = false;
+    if (pSelLang != NULL) {
+        int langId = pSelLang->currentLangId();
+        qset.setValue(_sLangId,  langId);
+    }
     qset.setValue(_sHomeDir, pUi->homeDirLE->text());
     qset.setValue(_sSqlHost, pUi->sqlHostLE->text());
     qset.setValue(_sSqlPort, pUi->sqlPortSB->value());

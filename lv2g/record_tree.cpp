@@ -119,7 +119,7 @@ void cRecordTree::initSimple(QWidget *pW)
     pTreeView   = new QTreeView(pW);
     pModel      = new cRecordTreeModel(*this);
     if (!pTableShape->getBool(_sTableShapeType, TS_BARE)) {
-        QString title = pTableShape->getName(_sTableTitle);
+        QString title =  pTableShape->getText(cTableShape::LTX_TABLE_TITLE, pTableShape->getName());
         if (title.size() > 0) {
             QLabel *pl = new QLabel(title);
             pMainLayout->addWidget(pl);
