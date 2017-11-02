@@ -527,9 +527,9 @@ void cPatchDialog::selectionChanged(const QItemSelection &, const QItemSelection
     pUi->pushButtonDelPort->setDisabled(mil.isEmpty());
 }
 
-cPatch * patchDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample, bool ro)
+cPatch * patchInsertDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample)
 {
-    cPatchDialog dialog(pPar, ro);
+    cPatchDialog dialog(pPar, false);
     if (pSample != NULL) {
         dialog.setPatch(pSample);
     }
@@ -540,6 +540,28 @@ cPatch * patchDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample, bool ro)
         p = dialog.getPatch();
         if (p == NULL) continue;
         if (!cErrorMessageBox::condMsgBox(p->tryInsert(q))) {
+            delete p;
+            continue;
+        }
+        break;
+    }
+    return p;
+}
+
+cPatch * patchEditDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample, bool ro)
+{
+    cPatchDialog dialog(pPar, ro);
+    if (pSample == NULL) EXCEPTION(EPROGFAIL);
+    dialog.setPatch(pSample);
+    qlonglong id = pSample->getId();
+    if (id == NULL_ID) EXCEPTION(EDATA);
+    cPatch *p;
+    while (true) {
+        int r = dialog.exec();
+        if (r != QDialog::Accepted) return NULL;
+        p = dialog.getPatch();
+        if (p == NULL) continue;
+        if (!cErrorMessageBox::condMsgBox(p->setId(id).tryUpdateById(q))) {
             delete p;
             continue;
         }

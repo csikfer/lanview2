@@ -702,8 +702,9 @@ cRecord * recordDialog(QSqlQuery& q, const QString& sn, QWidget *pPar, const cRe
 /// | name         | hívott függvény neve |
 /// |--------------|----------------------|
 /// | cPatchDialog | patchDialog
-cRecord *objectDialog(const QString& name, QSqlQuery& q, QWidget *pPar, cRecord * _pSample, bool ro)
+cRecord *objectDialog(const QString& name, QSqlQuery& q, QWidget *pPar, cRecord * _pSample, bool ro, bool edit)
 {
+    edit = edit || ro;
     if (0 == name.compare("cPatchDialog", Qt::CaseInsensitive)) {
         cPatch *pSample = NULL;
         if (_pSample != NULL) {
@@ -711,7 +712,12 @@ cRecord *objectDialog(const QString& name, QSqlQuery& q, QWidget *pPar, cRecord 
             pSample->setById(q, _pSample->getId());
             pSample->fetchPorts(q);
         }
-        cRecord *pRec = patchDialog(q, pPar, pSample, ro);
+        else {
+            if (edit || ro) EXCEPTION(EPROGFAIL);
+        }
+        cRecord *pRec;
+        if (edit) pRec = patchEditDialog(q, pPar, pSample, ro);
+        else      pRec = patchInsertDialog(q, pPar, pSample);
         return pRec;
     }
     EXCEPTION(EFOUND, 0, QObject::trUtf8("Nincs %1 nevű insert dialogus.").arg(name));

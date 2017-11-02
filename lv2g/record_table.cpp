@@ -839,6 +839,15 @@ void cRecordsViewBase::modify(eEx __ex)
 
     cRecord *pRec = actRecord(index);    // pointer az aktuális rekordra, a beolvasott/megjelenített rekord listában
     if (pRec == NULL) return;
+    QString sModifyDialog = pTableShape->feature(_sModify);
+    if (!sModifyDialog.isEmpty()) {
+        pRec = objectDialog(sModifyDialog, *pq, this->pWidget(), pRec, isReadOnly, true);
+        if (pRec == NULL) return;
+        pDelete(pRec);
+        refresh();
+        return;
+    }
+
     pRec = pRec->dup();           // Saját másolat
     int buttons;
     if (isReadOnly) {

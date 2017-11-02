@@ -262,6 +262,6 @@ static inline int getTableItemComboBoxCurrentIndex(QTableWidget *pW, int row, in
 
 /* ************************************************************************** */
 
-_GEX cRecord *objectDialog(const QString& name, QSqlQuery& q, QWidget *pPar, cRecord * _pSample = NULL, bool ro = false);
+_GEX cRecord *objectDialog(const QString& name, QSqlQuery& q, QWidget *pPar, cRecord * _pSample = NULL, bool ro = false, bool edit = false);
 
 #endif // RECORD_DIALOG_H

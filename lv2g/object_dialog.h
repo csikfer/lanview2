@@ -98,7 +98,9 @@ private slots:
     void selectionChanged(const QItemSelection &, const QItemSelection &);
 };
 
-_GEX cPatch * patchDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample = NULL, bool ro = false);
+_GEX cPatch * patchInsertDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample = NULL);
+_GEX cPatch * patchEditDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample, bool ro = false);
+
 
 namespace Ui {
     class enumValsWidget;
