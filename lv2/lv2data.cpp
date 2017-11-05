@@ -391,8 +391,8 @@ bool cTimePeriod::isOnTime(QSqlQuery& q, const QDateTime& dt)
 bool cTimePeriod::isOnTime(QSqlQuery &q, qlonglong id, const QDateTime& dt)
 {
     switch (id) {
-    case -1:    return false;   // never
-    case  0:    return true;    // always
+    case NEVER_TIMEPERIOD_ID:   return false;   // never
+    case ALWAYS_TIMEPERIOD_ID:  return true;    // always
     }
     bool r = execSqlBoolFunction(q, "time_in_timeperiod", id, dt);
     return r;
@@ -407,6 +407,31 @@ bool cTimePeriod::isOnTime(QSqlQuery &q, const QString& name, const QDateTime& d
     return isOnTime(q, id, dt);
 }
 
+QDateTime cTimePeriod::nextOnTime(QSqlQuery& q, const QDateTime& dt)
+{
+    if (isNull(idIndex())) setByName(q, getName());
+    qlonglong id = getId();
+    return nextOnTime(q, id, dt);
+}
+
+QDateTime cTimePeriod::nextOnTime(QSqlQuery &q, qlonglong id, const QDateTime& dt)
+{
+    switch (id) {
+    case NEVER_TIMEPERIOD_ID:   return QDateTime(); // never
+    case ALWAYS_TIMEPERIOD_ID:  return dt;          // always
+    }
+    execSqlFunction(q, "timeperiod_next_on_time", id, dt);
+    return q.value(0).toDateTime();
+}
+
+QDateTime cTimePeriod::nextOnTime(QSqlQuery &q, const QString& name, const QDateTime& dt)
+{
+    if (name == _sNever)  return QDateTime();
+    if (name == _sAlways) return dt;
+    cTimePeriod o;
+    qlonglong id = o.getIdByName(q, name);
+    return nextOnTime(q, id, dt);
+}
 
 /* ------------------------------ images ------------------------------ */
 CRECCNTR(cImage)

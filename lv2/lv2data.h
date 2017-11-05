@@ -383,9 +383,15 @@ public:
     bool isOnTime(QSqlQuery &q, const QDateTime& dt = QDateTime::currentDateTime());
     static bool isOnTime(QSqlQuery &q, qlonglong id, const QDateTime& dt = QDateTime::currentDateTime());
     static bool isOnTime(QSqlQuery &q, const QString& name, const QDateTime& dt = QDateTime::currentDateTime());
+    QDateTime nextOnTime(QSqlQuery &q, const QDateTime& dt = QDateTime::currentDateTime());
+    static QDateTime nextOnTime(QSqlQuery &q, qlonglong id, const QDateTime& dt = QDateTime::currentDateTime());
+    static QDateTime nextOnTime(QSqlQuery &q, const QString& name, const QDateTime& dt = QDateTime::currentDateTime());
 };
 
 typedef tGroup<cTimePeriod, cTpow> tTimePeriodTpow;
+
+#define NEVER_TIMEPERIOD_ID     -1
+#define ALWAYS_TIMEPERIOD_ID     0
 
 /* ******************************  ****************************** */
 

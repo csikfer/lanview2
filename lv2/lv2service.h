@@ -23,6 +23,7 @@ enum eInternalStat {
     IS_DOWN,        ///< Internal status down
     IS_RUN,         ///< Internal status runing (inited)
     IS_SUSPENDED,   ///< Felföggesztve, időzítésre várakozik
+    IS_OMITTED,     ///< Felföggestve, időintervallumon (timeperiod) kívül.
     IS_STOPPED,     ///< Lefutott
     IS_ERROR        ///< Hiba miatt leállt
 };
@@ -69,7 +70,8 @@ enum eTimerStat {
     TS_STOP,    ///< nincs időzítés (vagy még nem elindított)
     TS_NORMAL,  ///< normál időzítés (normal_interval)
     TS_RETRY,   ///< Hiba miatt gyorsabb időzítés (retry_interval)
-    TS_FIRST    ///< Első alkalom (egy a normal_interval -nal rövidebb véletlenszerű időzítés)
+    TS_FIRST,   ///< Első alkalom (egy a normal_interval -nal rövidebb véletlenszerű időzítés)
+    TS_OMMIT    ///< Timeperiod felfüggesztve
 };
 
 /// Belső status érték konvertálása stringgé, nem értelmezhető érték esetén dob egy kizárást
@@ -301,6 +303,8 @@ public:
     quint64             stopTimeOut;
     /// Az időzítő QTimer azonosítója
     int                 timerId;
+    /// Timeperiod
+    cTimePeriod         timeperiod;
     /// Objektum a futási idő mérésére
     QElapsedTimer       lastRun;
     /// Az előző két run metódus hívás között eltelt idő ms-ben

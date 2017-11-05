@@ -549,6 +549,18 @@ void cInspector::postInit(QSqlQuery& q, const QString& qs)
     if (pSubordinates    != NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 pSubordinates pointer nem NULL!").arg(name()));
     if (pInspectorThread != NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 pThread pointer nem NULL!").arg(name()));
     if (pVars            != NULL) EXCEPTION(EPROGFAIL, -1, QObject::trUtf8("%1 pVars pointer nem NULL!").arg(name()));
+    qlonglong tpid = (qlonglong)get(_sTimePeriodId);
+    switch (tpid) {
+    case NULL_ID:               // Not Specified
+    case ALWAYS_TIMEPERIOD_ID:  // The "always", no exclusion, not read.
+        break;
+    case NEVER_TIMEPERIOD_ID:   // Never run
+        EXCEPTION(NOTODO);
+        break;
+    default:
+        timeperiod.setById(q);
+        break;
+    }
     pVars = fetchVars(q);    // Változók, ha vannak
     // Ha még nincs meg a típus
     if (inspectorType == IT_CUSTOM) getInspectorType(q);
@@ -1011,12 +1023,32 @@ int cInspector::getCheckCmd(QSqlQuery& q)
 
 void cInspector::timerEvent(QTimerEvent *)
 {
-    if (internalStat != IS_SUSPENDED && internalStat != IS_STOPPED) {
+    if (internalStat != IS_SUSPENDED && internalStat != IS_STOPPED && internalStat != IS_OMITTED) {
         QString msg = trUtf8("%1  skip %2, internalStat = %3").arg( __PRETTY_FUNCTION__, name(), internalStatName());
         PDEB(WARNING) << msg << endl;
         APPMEMO(*pq, msg, RS_WARNING);
         return;
     }
+    if (!timeperiod._isEmpty()) {
+        if (!timeperiod.isOnTime(*pq)) {
+            QDateTime now = QDateTime::currentDateTime();
+            int t = now.msecsTo(timeperiod.nextOnTime(*pq, now));
+            internalStat = IS_OMITTED;
+            timerStat    = TS_OMMIT;
+            if (isThread()) {
+                if (pInspectorThread == NULL)
+                    EXCEPTION(EPROGFAIL,0, trUtf8("pInspectorThread is NULL"));
+                pInspectorThread->timer(t, timerStat);
+            }
+            else {
+                killTimer(timerId);
+                timerId = startTimer(t);
+                if (0 == timerId) EXCEPTION(EPROGFAIL, retryInt, trUtf8("Timer not started."));
+            }
+            return;
+        }
+    }
+
     internalStat = IS_RUN;
     _DBGFN() << " Run: " << hostService.getId() << QChar(' ')
              << host().getName()    << QChar('(') << host().getId()    << QChar(')') << QChar(',')
@@ -1323,6 +1355,14 @@ qlonglong cInspector::firstDelay()
         }
     }
     if (t < 1000) t = 1000;    // min 1 sec
+    if (!timeperiod._isEmpty()) {   // timeperiod ?
+        QSqlQuery q = getQuery();
+        QDateTime now  = QDateTime::currentDateTime();
+        QDateTime next = now.addMSecs(t);
+        if (!timeperiod.isOnTime(q, next)) {
+            t = now.msecsTo(timeperiod.nextOnTime(q, next));
+        }
+    }
     PDEB(VERBOSE) << "Start " << name() << " timer " << interval << QChar('/') << t << "ms, Last time = " << last.toString()
                   << " object thread : " << thread()->objectName() << endl;
     return t;
