@@ -1634,6 +1634,7 @@ QString internalStatName(eInternalStat is)
     case IS_DOWN:       return _sDown;
     case IS_RUN:        return _sRun;
     case IS_SUSPENDED:  return "suspended";
+    case IS_OMITTED:    return "ommited";
     case IS_STOPPED:    return _sStopped;
     case IS_ERROR:      return _sError;
     }

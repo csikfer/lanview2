@@ -2167,7 +2167,8 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
             if (_noteIndex  < 0 && i == (DESCR_INDEX +1) && columnDescr.colName().endsWith(noteSufix)) _noteIndex = DESCR_INDEX;
         }
         // Detect foreign keys. They are not regular too.
-        if (columnDescr.eColType == cColStaticDescr::FT_INTEGER && columnDescr.colName() == _sTextId) { // text_id? (Localization)
+        if (columnDescr.eColType == cColStaticDescr::FT_INTEGER
+         && columnDescr.colName() == _sTextId && __t != __sLocalizations) { // text_id? (--> Localization)
             columnDescr.fKeyType = cColStaticDescr::FT_TEXT_ID;
             sql = "SELECT column_name FROM fkey_types WHERE table_schema = ? AND table_name = ? AND unusual_fkeys_type = 'text'";
             execSql(*pq2, sql, _schemaName, _tableName);
@@ -3270,10 +3271,10 @@ bool cRecord::rewrite(QSqlQuery &__q, eEx __ex)
     switch (r) {
     case 1: return true;
     case 0:
-        if (__ex) EXCEPTION(EFOUND, 0);
+        if (__ex != EX_IGNORE) SQLQUERYDERR(__q, EFOUND, 0, trUtf8("Nothing rewrite any record : %1").arg(identifying()));
         break;
     default:    // Ez nagyon gáz, egyedinek kellene lennie!!
-        EXCEPTION(AMBIGUOUS, r, trUtf8("Table %1, unique key problem.").arg(tableName()));
+        EXCEPTION(AMBIGUOUS, r, trUtf8("Object : %1; unique key problem.").arg(identifying()));
     }
     return false;
 }
@@ -3571,8 +3572,8 @@ int cRecord::update(QSqlQuery& __q, bool __only, const QBitArray& __set, const Q
         return __q.numRowsAffected();
     }
     else {
-        DWAR() << "Nothing modify any record." << endl;
-        if (__ex == EX_NOOP) EXCEPTION(EFOUND);
+        QString msg = trUtf8("Nothing modify any record : %1").arg(identifying());
+        if (__ex == EX_NOOP) SQLQUERYDERR(__q, EFOUND, 0, msg);
         return 0;
     }
 }
@@ -3674,7 +3675,10 @@ int cRecord::remove(QSqlQuery& __q, bool __only, const QBitArray& _fm, eEx __ex)
     sql += tableName() + whereString(fm);
     query(__q, sql, fm);
     int r = __q.numRowsAffected();
-    if (!r && __ex == EX_NOOP) EXCEPTION(EFOUND);
+    if (r == 0) {
+        QString msg = trUtf8("Nothing delete any record : %1").arg(identifying());
+        if (__ex == EX_NOOP) SQLQUERYDERR(__q, EFOUND, 0, msg);
+    }
     return r;
 }
 
@@ -3870,9 +3874,48 @@ QString cRecord::identifying(bool t) const
     if (isEmpty_()) record += trUtf8("Üres objektum.");
     else {
         QSqlQuery q(getQuery());
-        QString name = view(q, nameIndex(EX_IGNORE));
-        QString   id = view(q,   idIndex(EX_IGNORE));
-        record += trUtf8(" név = %1, id = %2.").arg(dQuoted(name), dQuoted(id));
+        QString name = trUtf8("Name(%1) = %2");
+        QString   id = trUtf8("ID(%1) = %2");
+        int i, ix;
+        ix = nameIndex(EX_IGNORE);
+        if (ix == NULL_IX) {
+            QBitArray m = nameKeyMask(EX_IGNORE);
+            if (m.count(true)) {
+                QStringList fl;
+                QStringList vl;
+                for (i = 0; i < cols(); ++i) if (m[i]) {
+                    fl << columnName(i);
+                    vl << quotedString(view(q, i));
+                }
+                name = name.arg(fl.join(_sCommaSp), vl.join(_sCommaSp));
+            }
+            else {
+                name = trUtf8("No name");
+            }
+        }
+        else {
+            name = name.arg(columnName(ix), quotedString(view(q, ix)));
+        }
+        ix = idIndex(EX_IGNORE);
+        if (ix == NULL_IX) {
+            QBitArray m = primaryKey();
+            if (m.count(true)) {
+                QStringList fl;
+                QStringList vl;
+                for (i = 0; i < cols(); ++i) if (m[i]) {
+                    fl << columnName(i);
+                    vl << quotedString(view(q, i));
+                }
+                id = id.arg(fl.join(_sCommaSp), vl.join(_sCommaSp));
+            }
+            else {
+                id = trUtf8("No ID, or primary key");
+            }
+        }
+        else {
+            id = id.arg(columnName(ix), quotedString(view(q, ix)));
+        }
+        record += QString(" %1 ; %2 .").arg(name, id);
         foreach (const cColStaticDescr *pCd, (QList<cColStaticDescr *>&)descr().columnDescrs()) {
             if (pCd->fKeyType == cColStaticDescr::FT_OWNER) {
                 const cRecStaticDescr *pRd = cRecStaticDescr::get(pCd->fKeyTable, pCd->fKeySchema, true);
@@ -3968,8 +4011,9 @@ cRecord&    cRecord::setText(const QString& _tn, const QString& _t)
     return setText(tix, _t);
 }
 
-bool cRecord::fetchText(QSqlQuery& _q)
+bool cRecord::fetchText(QSqlQuery& _q, bool __force)
 {
+    if (!__force && pTextList != NULL && !pTextList->isEmpty()) return true;
     int tidix = descr().textIdIndex();
     qlonglong tid = getId(tidix);
     pDelete(pTextList);

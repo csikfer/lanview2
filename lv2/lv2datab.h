@@ -1191,9 +1191,10 @@ public:
     /// Ha a név egyedi kulcs, akkor csak a név mező indexével azonos indexű bit egyes. Ha nem csak egy olyan mezőkombináció
     /// van ami trtalmazza a név mezőt, és egyedi kulcs, akkor dob egy kizárást, szintén kizárást dob, ha nincs név mező,
     /// vagy az egyetlen egyedi kulcsban sem szerepel.
-    const QBitArray& nameKeyMask() const
+    const QBitArray& nameKeyMask(eEx __ex = EX_ERROR) const
     {
-        if (descr()._nameKeyMask.count(true) == 0) EXCEPTION(EDATA, -1 , QObject::trUtf8("_nameKeyMask is empty."));
+        if (descr()._nameKeyMask.count(true) == 0 && __ex != EX_IGNORE)
+            EXCEPTION(EDATA, -1 , QObject::trUtf8("_nameKeyMask is empty."));
         return descr()._nameKeyMask;
     }
     /// Egy bit vektorral tér vissza, ahol minden bit true, mellyel azonos indexű mező autoincrement.
@@ -2243,7 +2244,7 @@ public:
     QString     getText(const QString& _tn, const QString& _d = QString()) const;
     cRecord&    setText(int _tix, const QString& _t);
     cRecord&    setText(const QString& _tn, const QString& _t);
-    bool fetchText(QSqlQuery& _q);
+    bool fetchText(QSqlQuery& _q, bool __force = true);
     void saveText(QSqlQuery& _q);
     qlonglong   containerValid;
 };

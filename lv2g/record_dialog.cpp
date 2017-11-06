@@ -495,12 +495,13 @@ void cRecordDialog::restore(const cRecord *_pRec)
     int i, n = fields.size();
     for (i = 0; i < n; i++) {
         cFieldEditBase& field = *fields[i];
+        QString tn = field._fieldShape.getName();
         if (field.isText()) {
-            QString tn = field._fieldShape.getName();
             field.set(_pRecord->getText(tn));
         }
         else {
-            field.set(_pRecord->get(field.fieldIndex()));
+            int ix = _pRecord->toIndex(tn, EX_IGNORE);
+            if (ix != NULL_IX) field.set(_pRecord->get(ix));
         }
     }
 }
@@ -587,7 +588,7 @@ void cRecordDialogInh::init()
     // Egyenként megcsináljuk a widgeteket a különböző rekord típusokra.
     int i, n = tabDescriptors.size();
     for (i = 0; i < n; ++i) {
-        const cTableShape& shape = *tabDescriptors[i];
+        cTableShape& shape = *tabDescriptors[i];
         cRecordDialog * pDlg = new cRecordDialog(shape, 0, false, this, _pOwnerTable, pTabWidget);
 /*      cRecord * pRec = new cRecordAny(shape.getName(_sTableName), shape.getName(_sSchemaName));
         if (_pOwnerTable != NULL && _pOwnerTable->owner_id != NULL_ID) {  // Ha van owner, akkor az ID-jét beállítjuk
@@ -602,7 +603,8 @@ void cRecordDialogInh::init()
         pDlg->_pRecord = pRec;
         pDlg->restore(); */
         tabs << pDlg;
-        pTabWidget->addTab(pDlg->pWidget(), shape.getText(cTableShape::LTX_DIALOG_TAB_TITLE));
+        shape.fetchText(*pq, false);
+        pTabWidget->addTab(pDlg->pWidget(), shape.getText(cTableShape::LTX_DIALOG_TAB_TITLE, shape.getName(_sTableName)));
     }
     pTabWidget->setCurrentIndex(0);
     _pWidget->adjustSize(); //?

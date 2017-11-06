@@ -24,6 +24,7 @@
 #include "others.h"
 #include <QtCore>
 #include <QSqlError>
+#include <QSqlQuery>
 
 
 /*!
@@ -322,6 +323,16 @@ static inline void _sql_err_deb_(const QSqlError& le, const char * _fi, int _li,
     }
 }
 
+static inline void _sql_derr_deb_(QSqlQuery& q, const char * _fi, int _li, const char * _fu, const QString& s = QString())
+{
+    if (ONDB(DERROR)) {
+        cDebug::cout() <<  __DERRH(_fi, _li, _fu) << " " << s << "\n";
+        cDebug::cout() << QObject::trUtf8("SQL string : ") << q.lastQuery() << "\n";
+        cDebug::cout() << QObject::trUtf8("SQL bounds : ") << _sql_err_bound(q);
+        cDebug::cout() << flush;
+    }
+}
+
 static inline void _sql_err_ex(cError *pe, const QSqlError& le, const QString& sql = QString(), const QString& bound = QString())
 {
     pe->mSqlErrNum    = le.number();
@@ -330,6 +341,13 @@ static inline void _sql_err_ex(cError *pe, const QSqlError& le, const QString& s
     pe->mSqlErrDbText = le.databaseText();
     pe->mSqlQuery     = sql;
     pe->mSqlBounds    = bound;
+    pe->exception();
+}
+
+static inline void _sql_derr_ex(cError *pe, QSqlQuery& q)
+{
+    pe->mSqlQuery     = q.lastQuery();
+    pe->mSqlBounds    = _sql_err_bound(q);
     pe->exception();
 }
 
@@ -381,6 +399,17 @@ Exception SQL error, a hibaüzenetbe beleteszi az SQL paramcsot is (lekérdezi).
         QSqlError le = (o).lastError(); \
         _sql_err_deb_(le, __FILE__, __LINE__, __PRETTY_FUNCTION__, (o).lastQuery() + " / Bind { " + _sql_err_bound(o) + "}"); \
         _sql_err_ex(NEWCERROR(EQUERY, le.number(), le.text()), le, (o).lastQuery(), _sql_err_bound(o)); \
+    }
+
+/**
+@def SQLQUERYDERR(o)
+Exception SQL result error, a hibaüzenetbe beleteszi az SQL paramcsot is (lekérdezi).
+@param o Objektum, amelyel kapcsolatban a hiba történt (QSqlQuery)
+@relates cError
+ */
+#define SQLQUERYDERR(o, e, i, s)  { \
+        _sql_derr_deb_(o, __FILE__, __LINE__, __PRETTY_FUNCTION__, s); \
+        _sql_derr_ex(NEWCERROR(e, i, s), o); \
     }
 
 #define CATCHS(pe) \

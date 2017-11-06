@@ -1110,7 +1110,7 @@ void cRecordsViewBase::initShape(cTableShape *pts)
     tTableShapeFields::iterator i, n = pTableShape->shapeFields.end();
     for (i = pTableShape->shapeFields.begin(); i != n; ++i) {
         cError *pe = NULL;
-        cRecordTableColumn *p;
+        cRecordTableColumn *p = NULL;
         try {
             p = new cRecordTableColumn(**i, *this);
         } CATCHS(pe)
