@@ -510,6 +510,7 @@ cSetWidget::cSetWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRec
     rows = _colDescr.enumType().enumValues.size();
     if (_dcNull != DC_INVALID) ++rows;
     rows = (rows + cols -1) / cols;
+    _height = rows;
     _pWidget  = new QWidget(_par == NULL ? NULL : _par->pWidget());
     pButtons  = new QButtonGroup(pWidget());
     QVBoxLayout *pVLayout   = new QVBoxLayout;
@@ -576,7 +577,7 @@ int cSetWidget::set(const QVariant& v)
 
 int cSetWidget::height()
 {
-    return pButtons->buttons().size();
+    return _height;
 }
 
 void cSetWidget::setFromEdit(int id)

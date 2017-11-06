@@ -294,6 +294,7 @@ protected:
     QButtonGroup   *pButtons;
     /// Az aktuális érték (aradio-button-hoz rendelt bit a radio-button állapota.
     qlonglong       _bits;
+    int             _height;
 private slots:
     /// A megadot id-jű (sorszám) radio-button értéke megváltozott
     void setFromEdit(int id);
