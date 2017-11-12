@@ -915,6 +915,20 @@ QVariant  cColStaticDescrArray::fromSql(const QVariant& _f) const
     return QVariant(sl);
 }
 
+QVariant stringListToSql(const QStringList& sl)
+{
+    bool    empty = true;
+    QString s = QChar('{');
+    foreach (const QString& si, sl) {
+        s += dQuoted(si) + QChar(',');
+        empty = false;
+    }
+    if (empty == false) s.chop(1);
+    s += QChar('}');
+    return QVariant(s);
+}
+
+
 QVariant  cColStaticDescrArray::toSql(const QVariant& _f) const
 {
     if (_f.isNull()) EXCEPTION(EDATA,-1,QObject::trUtf8("Data is NULL"));
@@ -949,14 +963,7 @@ QVariant  cColStaticDescrArray::toSql(const QVariant& _f) const
     }
     case FT_TEXT_ARRAY: {
         QStringList sl = _f.toStringList();
-        s = QChar('{');
-        foreach (const QString& si, sl) {
-            s += dQuoted(si) + QChar(',');
-            empty = false;
-        }
-        if (empty == false) s.chop(1);
-        s += QChar('}');
-        return QVariant(s);
+        return stringListToSql(sl);
     }
     default:
         EXCEPTION(EPROGFAIL);

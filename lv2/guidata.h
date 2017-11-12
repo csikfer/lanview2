@@ -105,43 +105,6 @@ enum eFieldFlag {
 EXT_ int fieldFlag(const QString& n, eEx __ex = EX_ERROR);
 EXT_ const QString& fieldFlag(int e, eEx __ex = EX_ERROR);
 
-/// @enum eFilterType
-/// Szűrési metódusok
-enum eFilterType {
-    FT_UNKNOWN = -1, ///< ismeretlen, csak hibajelzésre
-    FT_BEGIN ,   ///< Szó eleji eggyezés (ua. mint az FF_LIKE, de a pattern végéhezhez hozzá lessz fűzve egy '%')
-    FT_LIKE,     ///< Szűrés a LIKE operátorral
-    FT_SIMILAR,  ///< Szűrés a SIMILAR operátorral
-    FT_REGEXP,   ///< Szűrés reguláris kifejezéssel kisbetű-nagy betű érzékeny
-    FT_REGEXPI,  ///< Szűrés reguláris kifejezéssel nem kisbetű-nagy betű érzékeny
-    FT_BIG,      ///< Numerikus mező a magadott értéknél nagyobb
-    FT_LITLE,    ///< Numerikus mező a magadott kisebb nagyobb
-    FT_INTERVAL, ///< Numerikus mező értéke a magadott tartományban
-    FT_PROC,     ///< Szűrés egy függvényen (PL) keresztül.
-    FT_SQL_WHERE,///< SQL WHERE ...
-    FT_BOOLEAN,  ///< Szűrés igaz, vagy hamis értékre
-    FT_NOTBEGIN,
-    FT_NOTLIKE,
-    FT_NOTSIMILAR,
-    FT_NOTREGEXP,
-    FT_NOTREGEXPI,
-    FT_NOTINTERVAL,
-    // A további konstansokat a string konvertáló függvény nem kezeli!
-    FT_DEFAULT,  ///< Az előző, vagy az alapértelmezett metódus megtartása (a string konvertáló függvény nem kezeli!)
-    FT_NO,       ///< nincs szűrés(a string konvertáló függvény nem kezeli!)
-    FT_FKEY_ID   ///< Szűrés a tulajdonos, vagy valamilyen tulajdonság objektum ID-je alapján (a string konvertáló függvény nem kezeli!)
-};
-/// Konverziós függvény a eFilterType enumerációs típushoz
-/// @param n Az enumerációs értéket reprezentáló string az adatbázisban
-/// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs név esetén kizárást dob.
-/// @return Az enumerációs névhez tartozó enumeráxiós konstans, vagy FT_UNKNOWN, ha ismeretlen a név, és __ex hamis.
-EXT_ int filterType(const QString& n, eEx __ex = EX_ERROR);
-/// Konverziós függvény a eFilterType enumerációs típushoz
-/// @param e Az enumerációs konstans
-/// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs konstans esetén kizárást dob.
-/// @return Az enumerációs konstanshoz tartozó enumeráxiós név, vagy üres string, ha ismeretlen a konstams, és __ex hamis.
-EXT_ const QString&   filterType(int e, eEx __ex = EX_ERROR);
-
 class cTableShapeField;
 class cTableShape;
 typedef tRecordList<cTableShape>    tTableShapes;
@@ -189,20 +152,6 @@ public:
     /// @param __ex Ha értéke true, akkor hiba esetén (nincs ilyen nevű mező, vagy paraméter) dob egy kizárást.
     /// @return Ha beállította minden megadott mezőre az értéket, akkor true.
     bool fsets(const QStringList& _fnl, const QString& _fpn, const QVariant& _v, eEx __ex = EX_ERROR);
-    /// Egy új szűrő objektum hozzáadáse a mező leíróhoz
-    /// @param _fnl A mező neve a táblában, melynek a leírója az objektum
-    /// @param _t A szűrő típusa
-    /// @param __ex Ha értéke true, akkor hiba esetén (nincs ilyen nevű mező) dob egy kizárást.
-    /// @return Ha beállította minden megadott mezőre az értéket, akkor true.
-    bool addFilter(const QString& _fn, const QString& _t, eEx __ex = EX_ERROR);
-    /// Egy új szűrő objektum hozzáadáse a mező leíróhoz
-    /// @param _fnl A mezők nevei a táblában, melynek a leíróta az objektum
-    /// @param _t A szűrő típusa
-    /// @param _d A szűrő megjelenített neve/leírása
-    /// @param __ex Ha értéke true, akkor hiba esetén (nincs ilyen nevű mező) dob egy kizárást.
-    /// @return Ha beállította minden megadott mezőre az értéket, akkor true.
-    bool addFilter(const QStringList& _fnl, const QString& _t, eEx __ex = EX_ERROR);
-    bool addFilter(const QStringList& _fnl, const QStringList& _ftl, eEx __ex = EX_ERROR);
     bool setAllOrders(QStringList& _ord, eEx __ex = EX_ERROR);
     bool setOrders(const QStringList& _fnl, QStringList& _ord, eEx __ex = EX_ERROR);
     /// A mazők megjelenítésési sorrendjének a megváltoztatása
@@ -294,6 +243,8 @@ public:
         LTX_TOOL_TIP,
         LTX_NUMBER
     };
+    /// Konstruktor, az alapértelmezett értékek beállításával
+    cEnumVal(const QString _tn, const QString _en);
     /// Rekord(ok) törlésa az enumeráció típus név alapján
     /// @param  q
     /// @param __n Az enum_type_name mező értéke, vagy minta a mezőre
@@ -317,19 +268,26 @@ protected:
     /// Egy üres objektumra mutató pointer.
     /// Az enumVals feltöltésekor hozza létre az abjektumot a fetchEnumVals();
     static cEnumVal *pNull;
+    static QStringList forcedList;
 public:
     int textName2ix(QSqlQuery &q, const QString& _n, eEx __ex = EX_ERROR) const;
     /// Feltölti az adatbázisból az enumVals adattagot, ha nem üres a konténer, akkor frissíti.
-    /// Iniciaéizálja a pNull pountert, ha az NULL. Egy üres objektumra fog mutatni.
+    /// Iniciaéizálja a pNull pointert, ha az NULL. Egy üres objektumra fog mutatni.
     /// Frissítés esetén feltételezi, hogy rekordot törölni nem lehet, ezt ellenörzi.
     static void fetchEnumVals();
-    /// Egy cEnumVal objektumot ad vissza a típus és érték alapján, ha nincs ilyen nevű objektum, akkor dob egy kizárást.
+    /// Egy cEnumVal objektumot ad vissza a típus és érték alapján.
     /// Az enumVals adattagban keres, ha enumVals még nincs feltöltve, akkor feltülti.
     /// Ha __ex értéke EX_WARNING-nál kisebb, akkor kizárás helyett, egy üres objektummal tér vissza
     ///  (amire a pNull adattag mutat)
     /// @param _tn Az enumerációs típus neve
     /// @param e enumerációs érték, numerikus megfelelő, a -1 is értelmezve van mint típus
     static const cEnumVal& enumVal(const QString& _tn, int e, enum eEx __ex = EX_ERROR);
+    /// Ellenörzi, hogy az megadott nevű enumerációs típus összes értékéhez létezik-e az
+    /// cEnumVal objektum az enumVals konténerben, enumVal() hívásokkal.
+    /// Ha nem létezik, akkor egy alapértelmezett objektumot elhelyez az enumVals konténerbe.
+    /// @param _tn Az enumerációs típus neve
+    /// @return Ha a rekordok léteztek, akkor 0, ha létre kellett hozni őket, akkor azok száma.
+    static int enumForce(QSqlQuery& q, const QString& _tn);
     /// A háttér szín mező értékét adja vissza. Az enumVals konténerben keres.
     /// Ha nem találja a rekordot, akkor üres (_sNul) stringgel tér vissza.
     /// @param _tn Enumerációs típus neve

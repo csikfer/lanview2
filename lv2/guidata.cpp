@@ -136,57 +136,6 @@ const QString& fieldFlag(int e, eEx __ex)
     return _sNul;
 }
 
-
-
-int filterType(const QString& n, eEx __ex)
-{
-    if (0 == n.compare(_sBegin,    Qt::CaseInsensitive)) return FT_BEGIN;
-    if (0 == n.compare(_sLike,     Qt::CaseInsensitive)) return FT_LIKE;
-    if (0 == n.compare(_sSimilar,  Qt::CaseInsensitive)) return FT_SIMILAR;
-    if (0 == n.compare(_sRegexp,   Qt::CaseInsensitive)) return FT_REGEXP;
-    if (0 == n.compare(_sRegexpI,  Qt::CaseInsensitive)) return FT_REGEXPI;
-    if (0 == n.compare(_sBig,      Qt::CaseInsensitive)) return FT_BIG;
-    if (0 == n.compare(_sLitle,    Qt::CaseInsensitive)) return FT_LITLE;
-    if (0 == n.compare(_sInterval, Qt::CaseInsensitive)) return FT_INTERVAL;
-    if (0 == n.compare(_sProc,     Qt::CaseInsensitive)) return FT_PROC;
-    if (0 == n.compare(_sSQL,      Qt::CaseInsensitive)) return FT_SQL_WHERE;
-    if (0 == n.compare(_sBoolean,  Qt::CaseInsensitive)) return FT_BOOLEAN;
-    if (0 == n.compare(_sNotBegin,    Qt::CaseInsensitive)) return FT_NOTBEGIN;
-    if (0 == n.compare(_sNotLike,     Qt::CaseInsensitive)) return FT_NOTLIKE;
-    if (0 == n.compare(_sNotSimilar,  Qt::CaseInsensitive)) return FT_NOTSIMILAR;
-    if (0 == n.compare(_sNotRegexp,   Qt::CaseInsensitive)) return FT_NOTREGEXP;
-    if (0 == n.compare(_sNotRegexpI,  Qt::CaseInsensitive)) return FT_NOTREGEXPI;
-    if (0 == n.compare(_sNotInterval, Qt::CaseInsensitive)) return FT_NOTINTERVAL;
-    if (__ex) EXCEPTION(EENUMVAL, -1, n);
-    return FT_UNKNOWN;
-}
-
-const QString& filterType(int e, eEx __ex)
-{
-    switch(e) {
-    case FT_BEGIN:      return _sBegin;
-    case FT_LIKE:       return _sLike;
-    case FT_SIMILAR:    return _sSimilar;
-    case FT_REGEXP:     return _sRegexp;
-    case FT_REGEXPI:    return _sRegexpI;
-    case FT_BIG:        return _sBig;
-    case FT_LITLE:      return _sLitle;
-    case FT_INTERVAL:   return _sInterval;
-    case FT_PROC:       return _sProc;
-    case FT_SQL_WHERE:  return _sSQL;
-    case FT_BOOLEAN:    return _sBoolean;
-    case FT_NOTBEGIN:      return _sNotBegin;
-    case FT_NOTLIKE:       return _sNotLike;
-    case FT_NOTSIMILAR:    return _sNotSimilar;
-    case FT_NOTREGEXP:     return _sNotRegexp;
-    case FT_NOTREGEXPI:    return _sNotRegexpI;
-    case FT_NOTINTERVAL:   return _sNotInterval;
-    default:            break;
-    }
-    if (__ex) EXCEPTION(EENUMVAL, e);
-    return _sNul;
-}
-
 int dataCharacter(const QString& n, eEx __ex)
 {
     if (0 == n.compare(_sHead,   Qt::CaseInsensitive)) return DC_HEAD;
@@ -525,38 +474,6 @@ bool cTableShape::fsets(const QStringList& _fnl, const QString& _fpn, const QVar
     return r;
 }
 
-bool cTableShape::addFilter(const QString& _fn, const QString& _t, eEx __ex)
-{
-    int i = shapeFields.indexOf(_fn);
-    if (i < 0) {
-        if (__ex) EXCEPTION(EFOUND, -1, emFieldNotFound(_fn));
-        DERR() << emFieldNotFound(_fn) << endl;
-        return false;
-    }
-    cTableShapeField& f = *(shapeFields[i]);
-    qlonglong v = filterType(_t, __ex);
-    if (v < 0) return false;
-    f.setOn(_sFilterTypes, v);
-    return true;
-}
-
-bool cTableShape::addFilter(const QStringList& _fnl, const QString& _t, eEx __ex)
-{
-    bool r = true;
-    foreach (QString fn, _fnl) r = addFilter(fn, _t, __ex) && r;
-    return r;
-}
-
-bool cTableShape::addFilter(const QStringList& _fnl, const QStringList& _ftl, eEx __ex)
-{
-    bool r = true;
-    foreach (QString fn, _fnl) {
-        foreach (QString ft, _ftl) {
-            r = addFilter(fn, ft, __ex) && r;
-        }
-    }
-    return r;
-}
 
 bool cTableShape::setAllOrders(QStringList& _ord, eEx __ex)
 {
@@ -811,7 +728,6 @@ const cRecStaticDescr&  cTableShapeField::descr() const
         STFIELDIX(cTableShapeField, TableShapeId);
         CHKENUM(_sOrdTypes,   orderType);
         CHKENUM(_sFieldFlags, fieldFlag);
-        CHKENUM(_sFilterTypes,filterType);
     }
     return *_pRecordDescr;
 }
@@ -885,6 +801,7 @@ int cEnumVal::_ixFontAttr = NULL_IX;
 QList<cEnumVal *> cEnumVal::enumVals;
 QMap<QString, QVector<cEnumVal *> > cEnumVal::mapValues;
 cEnumVal *cEnumVal::pNull = NULL;
+QStringList     cEnumVal::forcedList;
 
 const cRecStaticDescr&  cEnumVal::descr() const
 {
@@ -899,6 +816,17 @@ const cRecStaticDescr&  cEnumVal::descr() const
         textName2ix(q, _sNul);
     }
     return *_pRecordDescr;
+}
+
+cEnumVal::cEnumVal(const QString _tn, const QString _en)
+    : cRecord()
+{
+    _set(cEnumVal::descr());
+    _fields[_ixTypeName] = _tn;
+    _fields[_ixValName]  = _en;
+    pTextList = new QStringList();
+    *pTextList << (_en.isEmpty() ? _tn : _en);  // LTX_VIEW_LONG
+    *pTextList << pTextList->first();           // LTX_VIEW_SHORT
 }
 
 int cEnumVal::delByTypeName(QSqlQuery& q, const QString& __n, bool __pat)
@@ -956,6 +884,9 @@ int cEnumVal::textName2ix(QSqlQuery& q, const QString& _n, eEx __ex) const
 void cEnumVal::fetchEnumVals()
 {
     if (pNull == NULL) pNull = new cEnumVal();
+    else {
+        EXCEPTION(EPROGFAIL);   // We do not handle re-reading well.
+    }
     QBitArray   ba(1, false);   // Nem null, egyeseket nem tartalmazó maszk, minden rekord kiválasztásához
     int n = enumVals.count();   // Megtalálandó rekordok száma
     QList<cEnumVal *> oldList = enumVals;   // Eredeti lista
@@ -975,7 +906,31 @@ void cEnumVal::fetchEnumVals()
     if (ev.fetch(q, false, ba, ev.iTab(_sEnumTypeName))) do {
         QString typeName = ev.getName(ev.ixTypeName());
         QString val      = ev.getName(ev.ixValName());
-        if (currentTypeName != typeName) {
+        if (currentTypeName != typeName) {  // This record belongs to another type
+            if (!currentTypeName.isEmpty()) {   // Old type, closure
+                QVector<cEnumVal *>& v = mapValues[currentTypeName];
+                for (int i = 0; i < v.size(); ++i) {
+                    cEnumVal *& o = v[i];
+                    if (o == NULL) {
+                        if (i == 0) o = new cEnumVal(currentTypeName, QString());
+                        else {
+                            if (isBool) {
+                                switch (i) {
+                                case 1: o = new cEnumVal(currentTypeName, _sFalse); break;
+                                case 2: o = new cEnumVal(currentTypeName, _sTrue);  break;
+                                default:    EXCEPTION(EPROGFAIL);   // Impossible.
+                                }
+                            }
+                            else {
+                                QString e = pE->enum2str(i -1);
+                                o = new cEnumVal(currentTypeName, e);
+                            }
+                        }
+                        enumVals << o;
+                    }
+                }
+            }
+            // New type, preparation
             pE = cColEnumType::fetchOrGet(q2, typeName, EX_IGNORE);
             isBool = (pE == NULL);
             if (isBool) {   // Is not ENUM!
@@ -1024,11 +979,26 @@ void cEnumVal::fetchEnumVals()
         (*pActV)[e + 1] = p;
         enumVals << p;
     } while (ev.next(q));
-    if (n < found) EXCEPTION(EPROGFAIL);    // Too many results
+    foreach (QString ft, forcedList) {
+        int nn = enumForce(q, ft);
+        if (nn == 0) continue;
+        cEnumVal *p;
+        foreach (p, oldList) {
+            if (p->getName(_sEnumTypeName) == ft) {
+                found++;
+                --nn;
+                if (1 != oldList.removeAll(p)) EXCEPTION(EPROGFAIL);
+                delete p;
+            }
+        }
+        if (nn != 0) EXCEPTION(EDATA, nn, ft);
+    }
+    if (n < found) EXCEPTION(EPROGFAIL);    // Too many results. Impossible.
     if (n > found) {
         QString em = trUtf8("Not found enum_values record(s) : \n");
         foreach (cEnumVal *p, oldList) {
             em += p->identifying() + '\n';
+            delete p;
         }
         em.chop(1);
         EXCEPTION(EDATA, n - found, em);
@@ -1054,6 +1024,29 @@ const cEnumVal& cEnumVal::enumVal(const QString &_tn, int e, eEx __ex)
         p = pNull;
     }
     return *p;
+}
+
+int cEnumVal::enumForce(QSqlQuery& q, const QString& _tn)
+{
+    if (pNull == NULL) {
+        fetchEnumVals();
+    }
+    QMap<QString, QVector<cEnumVal *> >::const_iterator i = mapValues.find(_tn);
+    if (mapValues.end() != i) {
+        if (!forcedList.contains(_tn)) forcedList << _tn;
+        const cColEnumType *pet = cColEnumType::fetchOrGet(q, _tn);
+        QVector<cEnumVal *>& v = mapValues[_tn];
+        cEnumVal *p = new cEnumVal(_tn, QString());
+        enumVals << p;
+        v        << p;
+        foreach (QString e, pet->enumValues) {
+            p = new cEnumVal(_tn, e);
+            enumVals << p;
+            v        << p;
+        }
+        return pet->enumValues.size() +1;
+    }
+    return 0;
 }
 
 /* ------------------------------ cMenuItems ------------------------------ */

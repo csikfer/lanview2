@@ -307,15 +307,15 @@ int cServiceVar::setDerive(QSqlQuery &q, double val, int& state)
 
 int cServiceVar::updateVar(QSqlQuery& q, qulonglong val, int &state)
 {
-    if (TS_FALSE == checkIntValue(val, varType(q)->getId(_sPlausibilityType), varType(q)->get(_sPlausibilityParam1), varType(q)->get(_sPlausibilityParam2))) {
+    if (TS_FALSE == checkIntValue(val, varType(q)->getId(_sPlausibilityType), varType(q)->get(_sPlausibilityParam1), varType(q)->get(_sPlausibilityParam2), varType(q)->getBool(_sPlausibilityInverse))) {
         addMsg(trUtf8("Az érték nem hihető."));
         return noValue(q, state);
     }
     int rs = RS_ON;
-    if (TS_TRUE == checkIntValue(val, varType(q)->getId(_sCriticalType), varType(q)->get(_sCriticalParam1), varType(q)->get(_sCriticalParam2))) {
+    if (TS_TRUE == checkIntValue(val, varType(q)->getId(_sCriticalType), varType(q)->get(_sCriticalParam1), varType(q)->get(_sCriticalParam2), varType(q)->getBool(_sCriticalInverse))) {
         rs = RS_CRITICAL;
     }
-    else if (TS_TRUE == checkIntValue(val, varType(q)->getId(_sWarningType), varType(q)->get(_sWarningParam1), varType(q)->get(_sWarningParam2))) {
+    else if (TS_TRUE == checkIntValue(val, varType(q)->getId(_sWarningType), varType(q)->get(_sWarningParam1), varType(q)->get(_sWarningParam2), varType(q)->getBool(_sWarningInverse))) {
         rs = RS_WARNING;
     }
     if (getBool(_sDelegateServiceState) && state < rs) state = rs;
@@ -327,15 +327,15 @@ int cServiceVar::updateVar(QSqlQuery& q, qulonglong val, int &state)
 
 int cServiceVar::updateVar(QSqlQuery& q, double val, int& state)
 {
-    if (TS_FALSE == checkRealValue(val, varType(q)->getId(_sPlausibilityType), varType(q)->get(_sPlausibilityParam1), varType(q)->get(_sPlausibilityParam2))) {
+    if (TS_FALSE == checkRealValue(val, varType(q)->getId(_sPlausibilityType), varType(q)->get(_sPlausibilityParam1), varType(q)->get(_sPlausibilityParam2), varType(q)->getBool(_sPlausibilityInverse))) {
         addMsg(trUtf8("Az érték nem hihető."));
         return noValue(q, state);
     }
     int rs = RS_ON;
-    if (TS_TRUE == checkRealValue(val, varType(q)->getId(_sCriticalType), varType(q)->get(_sCriticalParam1), varType(q)->get(_sCriticalParam2))) {
+    if (TS_TRUE == checkRealValue(val, varType(q)->getId(_sCriticalType), varType(q)->get(_sCriticalParam1), varType(q)->get(_sCriticalParam2), varType(q)->getBool(_sCriticalInverse))) {
         rs = RS_CRITICAL;
     }
-    else if (TS_TRUE == checkRealValue(val, varType(q)->getId(_sWarningType), varType(q)->get(_sWarningParam1), varType(q)->get(_sWarningParam2))) {
+    else if (TS_TRUE == checkRealValue(val, varType(q)->getId(_sWarningType), varType(q)->get(_sWarningParam1), varType(q)->get(_sWarningParam2), varType(q)->getBool(_sWarningInverse))) {
         rs = RS_WARNING;
     }
     if (getBool(_sDelegateServiceState) && state < rs) state = rs;
@@ -364,7 +364,7 @@ int cServiceVar::noValue(QSqlQuery& q, int &state)
     return RS_UNREACHABLE;
 }
 
-eTristate cServiceVar::checkIntValue(qulonglong val, qlonglong ft, const QVariant& _p1, const QVariant& _p2)
+eTristate cServiceVar::checkIntValue(qulonglong val, qlonglong ft, const QVariant& _p1, const QVariant& _p2, bool _inverse)
 {
     if (ft == NULL_ID) return TS_NULL;
     bool ok1, ok2;
@@ -376,24 +376,24 @@ eTristate cServiceVar::checkIntValue(qulonglong val, qlonglong ft, const QVarian
         r = str2tristate(_p1.toString(), EX_IGNORE);
         if (r != TS_NULL) r = ((val == 0) == (r == TS_FALSE)) ? TS_TRUE : TS_FALSE;
         break;
-    case FT_INTERVAL:
-        r = !(ok1 && ok2) ? TS_NULL : (val >= p1 && val <= p2) ? TS_TRUE : TS_FALSE;
-        break;
-    case FT_NOTINTERVAL:
-        r = !(ok1 && ok2) ? TS_NULL : (val >= p1 && val <= p2) ? TS_FALSE : TS_TRUE;
-        break;
-    case FT_BIG:
-        r = !ok1 ? TS_NULL : (val >= p1) ? TS_TRUE : TS_FALSE;
+    case FT_EQUAL:
+        r = !ok1 ? TS_NULL : (val == p1) ? TS_TRUE : TS_FALSE;
         break;
     case FT_LITLE:
         r = !ok1 ? TS_NULL : (val <= p1) ? TS_TRUE : TS_FALSE;
         break;
+    case FT_BIG:
+        r = !ok1 ? TS_NULL : (val >= p1) ? TS_TRUE : TS_FALSE;
+        break;
+    case FT_INTERVAL:
+        r = !(ok1 && ok2) ? TS_NULL : (val >= p1 && val <= p2) ? TS_TRUE : TS_FALSE;
+        break;
     default:                EXCEPTION(EDATA, ft, identifying());
     }
-    return r;
+    return _inverse ? inverse(r) : r;
 }
 
-eTristate cServiceVar::checkRealValue(qulonglong val, qlonglong ft, const QVariant& _p1, const QVariant& _p2)
+eTristate cServiceVar::checkRealValue(qulonglong val, qlonglong ft, const QVariant& _p1, const QVariant& _p2, bool _inverse)
 {
     if (ft == NULL_ID) return TS_NULL;
     bool ok1, ok2;
@@ -401,21 +401,21 @@ eTristate cServiceVar::checkRealValue(qulonglong val, qlonglong ft, const QVaria
     double p1 = _p1.toDouble(&ok1);
     double p2 = _p2.toDouble(&ok2);
     switch (ft) {
-    case FT_INTERVAL:
-        r = !(ok1 && ok2) ? TS_NULL : (val > p1 && val < p2) ? TS_TRUE : TS_FALSE;
-        break;
-    case FT_NOTINTERVAL:
-        r = !(ok1 && ok2) ? TS_NULL : (val > p1 && val < p2) ? TS_FALSE : TS_TRUE;
-        break;
-    case FT_BIG:
-        r = !ok1 ? TS_NULL : (val > p1) ? TS_TRUE : TS_FALSE;
+    case FT_EQUAL:
+        r = !ok1 ? TS_NULL : (val = p1) ? TS_TRUE : TS_FALSE;
         break;
     case FT_LITLE:
         r = !ok1 ? TS_NULL : (val < p1) ? TS_TRUE : TS_FALSE;
         break;
+    case FT_BIG:
+        r = !ok1 ? TS_NULL : (val > p1) ? TS_TRUE : TS_FALSE;
+        break;
+    case FT_INTERVAL:
+        r = !(ok1 && ok2) ? TS_NULL : (val > p1 && val < p2) ? TS_TRUE : TS_FALSE;
+        break;
     default:                EXCEPTION(EDATA, ft, identifying());
     }
-    return r;
+    return _inverse ? inverse(r) : r;
 }
 
 cServiceVar * cServiceVar::serviceVar(QSqlQuery&__q, qlonglong hsid, const QString& name, eEx __ex)

@@ -1055,3 +1055,92 @@ int textName2ix(QSqlQuery &q, const QString& _t, const QString& _n, eEx __ex)
     if (ix < 0 && __ex != EX_IGNORE) EXCEPTION(EENUMVAL, ix, mCat(_t, _n));
     return ix;
 }
+
+
+int filterType(const QString& n, eEx __ex)
+{
+    if (0 == n.compare(_sNo,       Qt::CaseInsensitive)) return FT_NO;
+    if (0 == n.compare(_sBegin,    Qt::CaseInsensitive)) return FT_BEGIN;
+    if (0 == n.compare(_sLike,     Qt::CaseInsensitive)) return FT_LIKE;
+    if (0 == n.compare(_sSimilar,  Qt::CaseInsensitive)) return FT_SIMILAR;
+    if (0 == n.compare(_sRegexp,   Qt::CaseInsensitive)) return FT_REGEXP;
+    if (0 == n.compare(_sEqual,    Qt::CaseInsensitive)) return FT_EQUAL;
+    if (0 == n.compare(_sLitle,    Qt::CaseInsensitive)) return FT_LITLE;
+    if (0 == n.compare(_sBig,      Qt::CaseInsensitive)) return FT_BIG;
+    if (0 == n.compare(_sInterval, Qt::CaseInsensitive)) return FT_INTERVAL;
+    if (0 == n.compare(_sBoolean,  Qt::CaseInsensitive)) return FT_BOOLEAN;
+    if (0 == n.compare(_sEnum,     Qt::CaseInsensitive)) return FT_ENUM;
+    if (0 == n.compare(_sSet,      Qt::CaseInsensitive)) return FT_SET;
+    if (0 == n.compare(_sNull,     Qt::CaseInsensitive)) return FT_NULL;
+    if (0 == n.compare(_sSQL,      Qt::CaseInsensitive)) return FT_SQL_WHERE;
+    if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, -1, n);
+    return FT_UNKNOWN;
+}
+
+const QString& filterType(int e, eEx __ex)
+{
+    switch(e) {
+    case FT_NO:         return _sNo;
+    case FT_BEGIN:      return _sBegin;
+    case FT_LIKE:       return _sLike;
+    case FT_SIMILAR:    return _sSimilar;
+    case FT_REGEXP:     return _sRegexp;
+    case FT_EQUAL:      return _sEqual;
+    case FT_LITLE:      return _sLitle;
+    case FT_BIG:        return _sBig;
+    case FT_INTERVAL:   return _sInterval;
+    case FT_BOOLEAN:    return _sBoolean;
+    case FT_ENUM:       return _sEnum;
+    case FT_SET:        return _sSet;
+    case FT_NULL:       return _sNull;
+    case FT_SQL_WHERE:  return _sSQL;
+    default:            break;
+    }
+    if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, e);
+    return _sNul;
+}
+
+int text2Type(const QString& n, eEx __ex)
+{
+    if (0 == n.compare(_sBigInt,            Qt::CaseInsensitive)) return T2T_INT;
+    if (0 == n.compare(_sDoublePrecision,   Qt::CaseInsensitive)) return T2T_REAL;
+    if (0 == n.compare(_sTime,              Qt::CaseInsensitive)) return T2T_TIME;
+    if (0 == n.compare(_sDate,              Qt::CaseInsensitive)) return T2T_DATE;
+    if (0 == n.compare(_sTimestamp,         Qt::CaseInsensitive)) return T2T_DATETIME;
+    if (0 == n.compare(_sInterval,          Qt::CaseInsensitive)) return T2T_INTERVAL;
+    if (0 == n.compare(_sINet,              Qt::CaseInsensitive)) return T2T_INET;
+    if (0 == n.compare(_sMacaddr,           Qt::CaseInsensitive)) return T2T_MAC;
+    if (__ex >  EX_ERROR)  EXCEPTION(EENUMVAL, -1, n);
+    if (0 == n.compare(_sText,              Qt::CaseInsensitive)) return T2T_TEXT;
+    if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, -1, n);
+    return FT_UNKNOWN;
+}
+
+const QString& text2Type(int e, eEx __ex)
+{
+    switch(e) {
+    case T2T_INT:       return _sBigInt;
+    case T2T_REAL:      return _sDoublePrecision;
+    case T2T_TIME:      return _sTime;
+    case T2T_DATE:      return _sDate;
+    case T2T_DATETIME:  return _sTimestamp;
+    case T2T_INTERVAL:  return _sInterval;
+    case T2T_INET:      return _sINet;
+    case T2T_MAC:       return _sMacaddr;
+    case T2T_TEXT:
+        if (__ex > EX_ERROR) EXCEPTION(EENUMVAL, e);
+        return _sText;
+    default:            break;
+    }
+    if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, e);
+    return _sNul;
+}
+
+QString text2FnName(const QString& e)
+{
+    (void)text2Type(e, EX_WARNING);
+    static const QChar sp = QChar(' ');
+    QString r = e.contains(sp) ? e.split(sp).first() : e;
+    return "text2" + r;
+}
+

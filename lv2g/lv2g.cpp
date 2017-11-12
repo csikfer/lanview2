@@ -52,8 +52,15 @@ lv2g::lv2g() :
     if (dbIsOpen()) {
         QSqlQuery q = getQuery();
         if (!zoneNeeded) zoneId = cPlaceGroup().getIdByName(q, _sAll);
-        // A datacarakter típus nem tartozik táblához, külön csekkoljuk
+        // Enumeration types that do not appear in the database table. Direct control.
         cColEnumType::checkEnum(q, _sDatacharacter, dataCharacter, dataCharacter);
+        cColEnumType::checkEnum(q, _sFiltertype, filterType, filterType);
+        cColEnumType::checkEnum(q, _sText2Type, text2Type, text2Type);
+        // In these types of enumeration, the cEnumVals objects must in any case be necessary.
+        cEnumVal::enumForce(q, _sDatacharacter);
+        cEnumVal::enumForce(q, _sFiltertype);
+        cEnumVal::enumForce(q, _sText2Type);
+
     }
 }
 

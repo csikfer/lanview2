@@ -82,8 +82,8 @@ protected:
     int updateVar(QSqlQuery& q, qulonglong val, int& state);
     int updateVar(QSqlQuery& q, double val, int& state);
     int noValue(QSqlQuery& q, int& state);
-    eTristate checkIntValue(qulonglong val, qlonglong ft, const QVariant &_p1, const QVariant &_p2);
-    eTristate checkRealValue(qulonglong val, qlonglong ft, const QVariant& _p1, const QVariant& _p2);
+    eTristate checkIntValue(qulonglong val, qlonglong ft, const QVariant &_p1, const QVariant &_p2, bool _inverse);
+    eTristate checkRealValue(qulonglong val, qlonglong ft, const QVariant& _p1, const QVariant& _p2, bool _inverse);
     void addMsg(const QString& _msg) {
         QString msg = getName(_ixStateMsg);
         if (!msg.isEmpty()) msg += "\n";

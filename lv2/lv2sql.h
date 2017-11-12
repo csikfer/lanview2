@@ -82,6 +82,11 @@ static inline QString parentheses(const QString& __s)
     return QChar('(') + __s  + QChar(')');
 }
 
+static inline QString fnCatParms(const QString& fn, const QString& parms)
+{
+    return fn + parentheses(parms);
+}
+
 /*!
 A lanView objektumpéldány pDb adattag értékével tér vissza, a fő thread esetén.
 Ha még nincs létrehozva a lanView objektum (instance pointer értéke NULL), akkor dob egy kizárást.

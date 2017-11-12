@@ -77,6 +77,7 @@ public:
     virtual bool updateRow(const QModelIndex &mi, cRecord *pRec);
 
     virtual bool insertRow(cRecord *pRec);
+    virtual void clear();
 
 };
 

@@ -9,7 +9,7 @@ cRecordTree::cRecordTree(cTableShape *pts, bool _isDialog, cRecordsViewBase *_up
 {
     pMaster = pUpper = _upper;
     if (pMaster != NULL && pUpper->pMaster != NULL) pMaster = pUpper->pMaster;
-    disableFilters = true;
+//    disableFilters = true;
     initShape(pts);
 }
 

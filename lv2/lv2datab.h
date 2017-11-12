@@ -390,6 +390,8 @@ private:
 CSD_INHERITOR(cColStaticDescrAddr)
 };
 
+EXT_ QVariant stringListToSql(const QStringList& sl);
+
 /// @class cColStaticDescrArray
 /// Az ős cColStaticDescr osztályt a általános tömb típus konverziós függvényivel egészíti ki.
 CSD_INHERITOR(cColStaticDescrArray)

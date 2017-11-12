@@ -41,6 +41,8 @@ public:
     QString             where(QVariantList &qparams);
     void setFilter(int i);
     int fieldType();                ///< A mező (oszlop) típusa
+    const cEnumVal *pActType();     ///< Filter type
+    const cColEnumType *pTex2Type() { QSqlQuery q = getQuery(); return cColEnumType::fetchOrGet(q, _sText2Type); }
     cRecordTableColumn& field;      ///< A megjelenítés mező (oszlop) leírója
     cRecordTableFODialog &dialog;   ///< A szűrési feltétel megadásának a dialógusa
     int                 iFilter;    ///< A kiválasztott szűrő leíró indexe vagy -1, ha nincs aktív szűrő
@@ -49,8 +51,31 @@ public:
     QVariant            param2;     ///< Szűrés (opcionális) paramétere, ha két paraméter van
     bool                closed2;    ///< Ha a második szűrési paraméter egy értékhatár, akkor ha true. akkor zárt intervallumként kell értelmezni.
     qlonglong           types;      ///< A szűrés típusa, reláció a paraméter(ek)el
+    bool                inverse;
+    bool                any;        ///< ARRAY all/any
+    bool                csi;        ///< Case insensitive
+    int                 toType;
+    qlonglong           setOn;
+    qlonglong           setOff;
+    QValidator *        pValidator1;
+    QValidator *        pValidator2;
     QList<const cEnumVal *> typeList;   ///< A választható szűrés típusok
-    static QString      sNoFilter;
+    static qlonglong type2filter(int _type, bool _nul);
+private:
+    QString whereLike(const QString &n, bool af);
+    QString whereLitle(const QString& n, bool af, bool inv, bool clo);
+    QString whereEnum(const QString &n, QVariantList& qparams);
+    void setValidator(int i);
+public slots:
+    void changedParam1(const QString& s);
+    void changedParam2(const QString& s);
+    void togledClosed1(bool f);
+    void togledClosed2(bool f);
+    void togledCaseSen(bool f);
+    void togledInverse(bool f);
+    void changedToType(int i);
+    void changedAnyAll(int i);
+    void changedText();
 };
 
 /*!
@@ -88,8 +113,19 @@ signals:
     void moveDown(cRecordTableOrd *p);
 };
 
-class cRecordsViewBase;
+class cEnumCheckBox : public QCheckBox {
+    Q_OBJECT
+public:
+    cEnumCheckBox(int _e, qlonglong *_pOn, qlonglong *_pOff, const QString& t);
+private:
+    qlonglong  m;
+    qlonglong *pOn;
+    qlonglong *pOff;
+private slots:
+    void _chageStat(int st);
+};
 
+class cRecordsViewBase;
 /// Szűrések és rendezés dialógus.
 /// A rendezés és szűrések állpota
 class LV2GSHARED_EXPORT cRecordTableFODialog : public QDialog {
@@ -113,10 +149,19 @@ public:
     int                         iSelFilterType;
     QList<cRecordTableOrd *>    ords;
     Ui::dialogTabFiltOrd *      pForm;  ///< Dialógus form
+    QPlainTextEdit *            pTextEdit;
+    QLineEdit *                 pLineEdit1;
+    QLineEdit *                 pLineEdit2;
 private:
     int indexOf(cRecordTableOrd * _po);
     void setGridLayoutOrder();
+    QComboBox * comboBoxAnyAll();
     void setFilterDialog();
+    void setFilterDialogPattern(int fType, int dType);
+    void setFilterDialogComp(int fType, int dType);
+    void setFilterDialogEnum(const cColEnumType& et);
+    void setFilterDialogSet(const cColEnumType& et);
+    static QString sCheckInverse;
 private slots:
     void clickOk();
     void clickDefault();
@@ -124,17 +169,6 @@ private slots:
     void ordMoveDown(cRecordTableOrd * _po);
     void filtCol(int _c);
     void filtType(int _t);
-    void changeParam(QString t);
-    void changeParam();
-    void changeParam1(int i);
-    void changeParam2(int i);
-    void changeParamF1(double d);
-    void changeParamF2(double d);
-    void changeParamDT1(QDateTime dt);
-    void changeParamDT2(QDateTime dt);
-    void changeClosed1(bool f);
-    void changeClosed2(bool f);
-    void changeBoolean(bool f);
 };
 
 class LV2GSHARED_EXPORT cRecordTableColumn {
@@ -153,6 +187,7 @@ public:
     const cEnumVal&         defaultDc;
     QString                 enumTypeName;
     qlonglong               fieldFlags;
+    static qlonglong        type2filter(int _type);
 };
 
 /// A tábla viszonyát meghatározó flag értékek
@@ -207,8 +242,8 @@ public:
     bool            isNoDelete;
     /// Ha a táblázatba nincs joga rekordot beszúrni
     bool            isNoInsert;
-    /// Ha bem engedélyezett a szűrők használata (tree esetén nem müködnek a szűrők, mert nem bejárható a fa)
-    bool            disableFilters;
+//    /// Ha bem engedélyezett a szűrők használata (tree esetén nem müködnek a szűrők, mert nem bejárható a fa)
+//    bool            disableFilters;
     /// A lekérdezésekhez (nem az alap lekérdezésekhez) használt query objektum.
     QSqlQuery      *pq;
     QSqlQuery      *pTabQuery;
@@ -411,7 +446,6 @@ public:
     QTableView     *pTableView;
     virtual void init();
     virtual void initSimple(QWidget *pW);
-    virtual QStringList filterWhere(QVariantList& qParams);
     void _refresh(bool all = true);
     // void refresh_lst_rev();
     cRecord *record(int i);

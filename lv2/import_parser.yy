@@ -1579,7 +1579,7 @@ void  setSysParam(QString *pt, QString *pn, QVariant *pv)
 %token      NOTIF_T ALL_T RIGHTS_T REMOVE_T SUB_T FEATURES_T MAC_T EXTERNAL_T
 %token      LINK_T LLDP_T SCAN_T TABLE_T FIELD_T SHAPE_T TITLE_T REFINE_T
 %token      DEFAULTS_T ENUM_T RIGHT_T VIEW_T INSERT_T EDIT_T
-%token      INHERIT_T NAMES_T VALUE_T DEFAULT_T FILTER_T
+%token      INHERIT_T NAMES_T VALUE_T DEFAULT_T
 %token      ORD_T SEQUENCE_T MENU_T GUI_T OWN_T TOOL_T TIP_T WHATS_T THIS_T
 %token      EXEC_T TAG_T REAL_T ENABLE_T SERIAL_T INVENTORY_T NUMBER_T
 %token      DATE_T DISABLE_T EXPRESSION_T PREFIX_T RESET_T CACHE_T
@@ -2651,7 +2651,6 @@ tmodp   : SET_T DEFAULTS_T ';'                  { pTableShape->setDefaults(qq())
         | FIELD_T str DEFAULT_T VALUE_T str ';' { pTableShape->fset(sp2s($2), _sDefaultValue, sp2s($5)); }
 //        | FIELD_T str TOOL_T TIP_T str ';'      { pTableShape->fset(sp2s($2), _sToolTip, sp2s($5)); }
 //        | FIELD_T str WHATS_T THIS_T str ';'    { pTableShape->fset(sp2s($2), _sWhatsThis, sp2s($5)); }
-        | FIELD_T strs ADD_T FILTER_T strs ';'  { pTableShape->addFilter(slp2sl($2), *$5); delete $5; }
         | FIELD_T SEQUENCE_T int0 strs ';'      { pTableShape->setFieldSeq(slp2sl($4), $3); }
         | FIELD_T strs ORD_T strs ';'           { pTableShape->setOrders(*$2, *$4); delete $2; delete $4; }
         | FIELD_T '*'  ORD_T strs ';'           { pTableShape->setAllOrders(*$4); delete $4; }
@@ -2697,7 +2696,6 @@ fmodp   : SET_T str '=' value ';'       { pTableShapeField->set(sp2s($2), vp2v($
         | DEFAULT_T VALUE_T str ';'     { pTableShapeField->setName(_sDefaultValue, sp2s($3)); }
 //        | TOOL_T TIP_T str ';'          { pTableShapeField->setBool(_sToolTip, $3); }
 //        | WHATS_T THIS_T str ';'        { pTableShapeField->setBool(_sWhatsThis, $3); }
-        | ADD_T FILTER_T strs ';'       { foreach (QString t, *$3) { pTableShape->addFilter(pTableShapeField->getName(), t); } delete $3; }
         ;
 appmenu : GUI_T str                     { pMenuApp = $2;}
             '{' menus '}'               { pDelete(pMenuApp); }
@@ -2992,7 +2990,7 @@ static int yylex(void)
         TOK(NOTIF) TOK(ALL) TOK(RIGHTS) TOK(REMOVE) TOK(SUB) TOK(FEATURES) TOK(MAC) TOK(EXTERNAL)
         TOK(LINK) TOK(LLDP) TOK(SCAN) TOK(TABLE) TOK(FIELD) TOK(SHAPE) TOK(TITLE) TOK(REFINE)
         TOK(DEFAULTS) TOK(ENUM) TOK(RIGHT) TOK(VIEW) TOK(INSERT) TOK(EDIT)
-        TOK(INHERIT) TOK(NAMES) TOK(VALUE) TOK(DEFAULT) TOK(FILTER)
+        TOK(INHERIT) TOK(NAMES) TOK(VALUE) TOK(DEFAULT)
         TOK(ORD) TOK(SEQUENCE) TOK(MENU) TOK(GUI) TOK(OWN) TOK(TOOL) TOK(TIP) TOK(WHATS) TOK(THIS)
         TOK(EXEC) TOK(TAG) TOK(ENABLE) TOK(SERIAL) TOK(INVENTORY) TOK(NUMBER)
         TOK(DATE) TOK(DISABLE) TOK(EXPRESSION) TOK(PREFIX) TOK(RESET) TOK(CACHE)

@@ -206,7 +206,7 @@ void cRecordTreeModel::refresh(bool first)
     }
     beginResetModel();
     pDelete(pRootNode);
-    pRootNode = pActRootNode = new cTreeNode();;
+    pRootNode = pActRootNode = new cTreeNode();
     fetchTree();
     endResetModel();
     if (rid != NULL_ID) {
@@ -415,4 +415,13 @@ bool cRecordTreeModel::insertRow(cRecord *pRec)
     ppn->addChild(pRec);
     endInsertRows();
     return true;
+}
+
+void cRecordTreeModel::clear()
+{
+    beginResetModel();
+    pDelete(pRootNode);
+    pActRootNode = NULL;
+    endResetModel();
+    pq->clear();
 }

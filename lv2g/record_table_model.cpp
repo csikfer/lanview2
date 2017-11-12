@@ -340,14 +340,13 @@ bool cRecordTableModel::insertRow(cRecord *pRec)
     return true;
 }
 
-cRecordTableModel& cRecordTableModel::clear()
+void cRecordTableModel::clear()
 {
     beginResetModel();
     _records.clear();
     _firstRowNumber = 0;
     endResetModel();
     q.clear();
-    return *this;
 }
 
 QList<QStringList>  cRecordTableModel::toStringTable()

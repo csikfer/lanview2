@@ -12,7 +12,7 @@
 #define VERSION_STR     _STR(VERSION_MAJOR) "." _STR(VERSION_MINOR) "(" _STR(REVISION) ")"
 
 #define DB_VERSION_MAJOR 1
-#define DB_VERSION_MINOR 6
+#define DB_VERSION_MINOR 7
 
 // ****************************************************************************************************************
 int findArg(char __c, const char * __s, int argc, char * argv[])
@@ -729,8 +729,12 @@ bool lanView::subsDbNotif(const QString& __n, eEx __ex)
     QString e;
     if (pDb != NULL && pDb->driver()->hasFeature(QSqlDriver::EventNotifications)) {
         QString name = __n.isEmpty() ? appName : __n;
+        if (!first && pDb->driver()->subscribedToNotifications().contains(name)) {
+            PDEB(INFO) << "Already subscribed NOTIF " << name << endl;
+            return true;
+        }
+        PDEB(INFO) << "Subscribe NOTIF " << name << endl;
         if (pDb->driver()->subscribeToNotification(name)) {
-            PDEB(INFO) << "Subscribed NOTIF " << name << endl;
             if (first) {
                 PDEB(VVERBOSE) << "Connect to notification(QString)" << endl;
                 connect(pDb->driver(),

@@ -282,7 +282,7 @@ void cRecordListModel::setConstFilter(const QVariant& _par, enum eFilterType __f
     case FT_LIKE:
     case FT_SIMILAR:
     case FT_REGEXP:
-    case FT_REGEXPI:
+//    case FT_REGEXPI:
     case FT_BEGIN:
     case FT_SQL_WHERE:  pat = _par.toString();
                         break;
@@ -304,7 +304,7 @@ void cRecordListModel::setConstFilter(const QVariant& _par, enum eFilterType __f
     case FT_LIKE:       cnstFlt = nn + " LIKE " +       quoted(pat);           break;
     case FT_SIMILAR:    cnstFlt = nn + " SIMILAR TO " + quoted(pat);           break;
     case FT_REGEXP:     cnstFlt = nn + " ~ " +          quoted(pat);           break;
-    case FT_REGEXPI:    cnstFlt = nn + " ~* " +         quoted(pat);           break;
+//    case FT_REGEXPI:    cnstFlt = nn + " ~* " +         quoted(pat);           break;
     case FT_BEGIN:      cnstFlt = nn + " LIKE " + quoted(pat + QChar('%'));    break;
     case FT_SQL_WHERE:  cnstFlt = pat;                                         break;
     case FT_BOOLEAN:    cnstFlt = (b ? _sSpace : " NOT ") + nn + "::boolean";  break;
@@ -380,7 +380,7 @@ QString cRecordListModel::where(const QString& nameName)
     case FT_LIKE:       w = nameName + " LIKE " + quoted(pattern);              break;
     case FT_SIMILAR:    w = nameName + " SIMILAR TO " + quoted(pattern);        break;
     case FT_REGEXP:     w = nameName + " ~ " +          quoted(pattern);        break;
-    case FT_REGEXPI:    w = nameName + " ~* " +         quoted(pattern);        break;
+//    case FT_REGEXPI:    w = nameName + " ~* " +         quoted(pattern);        break;
     case FT_BEGIN:      w = nameName + " LIKE " + quoted(pattern + QChar('%')); break;
     case FT_SQL_WHERE:  w = pattern;                                      break;
     case FT_BOOLEAN:    w = (str2bool(pattern) ? _sSpace : " NOT ") + nameName + "::boolean";   break;
@@ -448,7 +448,7 @@ void cRecordListModel::setPattern(const QVariant& _par)
     case FT_LIKE:
     case FT_SIMILAR:
     case FT_REGEXP:
-    case FT_REGEXPI:
+    //case FT_REGEXPI:
     case FT_BEGIN:
     case FT_SQL_WHERE:  pattern = _par.toString();
                         break;

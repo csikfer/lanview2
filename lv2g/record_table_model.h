@@ -64,6 +64,7 @@ public:
     virtual bool removeRec(const QModelIndex & mi) = 0;
     virtual bool removeRow(const QModelIndex & mi) = 0;
     virtual cRecord *record(const QModelIndex &mi) = 0;
+    virtual void clear() = 0;
 
     /// A megadott sorhoz tartozó rekord objektum pointert lecseréli. A megjelenített táblát frissíti.
     /// A megadott új adattartalommal frissíti az adatbázis tábla megfelelő rekordját.
@@ -110,7 +111,7 @@ public:
     virtual bool insertRow(cRecord *pRec);
 
     /// A megjelenítendő record set kiürítése, az üres táblázat újra rajzolása
-    virtual cRecordTableModel& clear();
+    virtual void clear();
     /// A megjelenítendő record set megadása, a táblázat újra rajzolása
     /// @return Ha a megadott rekord set üres, akkor false, egyébként true
     bool setRecords(const tRecords& __recs, int _firstNm = 0);
@@ -142,7 +143,6 @@ public:
     bool qNextResult()  { return (_firstRowNumber + _maxRows) <= qSize(); }
     bool qPrevResult()  { return _firstRowNumber > 0; }
 protected:
-    /// Shadow copy az aktuális lekérdezés eredményéről
     QSqlQuery   q;
 signals:
     void dataReloded(const tRecords& _recs);

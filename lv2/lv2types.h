@@ -57,6 +57,27 @@ static inline bool setBool(bool& b, eTristate v) {
     return b;
 }
 
+static inline bool toBool(eTristate v) {
+    switch (v) {
+    case TS_TRUE:   return true;
+    case TS_FALSE:
+    case TS_NULL:   return false;
+    default:        EXCEPTION(EPROGFAIL);
+    }
+    return false;
+}
+
+static inline eTristate inverse(eTristate v) {
+    switch (v) {
+    case TS_TRUE:   return TS_FALSE;
+    case TS_FALSE:  return TS_TRUE;
+    case TS_NULL:   return TS_NULL;
+    default:        EXCEPTION(EPROGFAIL);
+    }
+    return TS_NULL;
+}
+
+
 /// Hiba string
 EXT_ QString sInvalidEnum();
 /*!
@@ -860,5 +881,65 @@ EXT_ QString textId2text(QSqlQuery& q, int id, const QString& _table, int index 
 EXT_ QStringList textId2texts(QSqlQuery& q, int id, const QString& _table);
 EXT_ int textName2ix(QSqlQuery &q, const QString& _t, const QString& _n, eEx __ex = EX_ERROR);
 
+/// @enum eFilterType
+/// Szűrési metódusok
+enum eFilterType {
+    FT_UNKNOWN = -1, ///< ismeretlen, csak hibajelzésre
+    FT_NO,
+    FT_BEGIN ,   ///< Szó eleji eggyezés (ua. mint az FF_LIKE, de a pattern végéhezhez hozzá lessz fűzve egy '%')
+    FT_LIKE,     ///< Szűrés a LIKE operátorral
+    FT_SIMILAR,  ///< Szűrés a SIMILAR operátorral
+    FT_REGEXP,   ///< Szűrés reguláris kifejezéssel kisbetű-nagy betű érzékeny
+    FT_EQUAL,
+    FT_LITLE,    ///< Numerikus mező a magadott kisebb nagyobb
+    FT_BIG,      ///< Numerikus mező a magadott értéknél nagyobb
+    FT_INTERVAL, ///< Numerikus mező értéke a magadott tartományban
+    FT_BOOLEAN,  ///< Szűrés igaz, vagy hamis értékre
+    FT_ENUM,
+    FT_SET,
+    FT_NULL,
+    FT_SQL_WHERE,///< SQL WHERE ...
+    // A további konstansokat a string konvertáló függvény nem kezeli!
+    FT_DEFAULT,  ///< Az előző, vagy az alapértelmezett metódus megtartása (a string konvertáló függvény nem kezeli!)
+    FT_FKEY_ID   ///< Szűrés a tulajdonos, vagy valamilyen tulajdonság objektum ID-je alapján (a string konvertáló függvény nem kezeli!)
+};
+/// Konverziós függvény a eFilterType enumerációs típushoz
+/// @param n Az enumerációs értéket reprezentáló string az adatbázisban
+/// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs név esetén kizárást dob.
+/// @return Az enumerációs névhez tartozó enumerációs konstans, vagy FT_UNKNOWN, ha ismeretlen a név, és __ex = EX_IGNORE.
+EXT_ int filterType(const QString& n, eEx __ex = EX_ERROR);
+/// Konverziós függvény a eFilterType enumerációs típushoz
+/// @param e Az enumerációs konstans
+/// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs konstans esetén kizárást dob.
+/// @return Az enumerációs konstanshoz tartozó enumerációs név, vagy üres string, ha ismeretlen a konstams, és __ex  = EX_IGNORE.
+EXT_ const QString&   filterType(int e, eEx __ex = EX_ERROR);
+
+enum eText2Type {
+    T2T_UNKNOWN = -1, ///< ismeretlen, csak hibajelzésre
+    T2T_INT,
+    T2T_REAL,
+    T2T_TIME,
+    T2T_DATE,
+    T2T_DATETIME,
+    T2T_INTERVAL,
+    T2T_INET,
+    T2T_MAC,
+    T2T_COUNT,
+    T2T_TEXT
+};
+
+/// Konverziós függvény a eText2Type enumerációs típushoz
+/// @param n Az enumerációs értéket reprezentáló string az adatbázisban
+/// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs név esetén kizárást dob.
+/// @return Az enumerációs névhez tartozó enumerációs konstans, vagy FT_UNKNOWN, ha ismeretlen a név, és __ex = EX_IGNORE.
+EXT_ int text2Type(const QString& n, eEx __ex = EX_ERROR);
+/// Konverziós függvény a eFilterType enumerációs típushoz
+/// @param e Az enumerációs konstans
+/// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs konstans esetén kizárást dob.
+/// @return Az enumerációs konstanshoz tartozó enumerációs név, vagy üres string, ha ismeretlen a konstams, és __ex  = EX_IGNORE.
+EXT_ const QString&   text2Type(int e, eEx __ex = EX_ERROR);
+
+EXT_ QString text2FnName(const QString& e);
+inline QString text2FnName(int e) { return text2FnName(text2Type(e, EX_WARNING)); }
 
 #endif //LV2TYPES_H_INCLUDED
