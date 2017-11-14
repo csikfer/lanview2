@@ -65,6 +65,7 @@ private:
     QString whereLike(const QString &n, bool af);
     QString whereLitle(const QString& n, bool af, bool inv, bool clo);
     QString whereEnum(const QString &n, QVariantList& qparams);
+    QString whereSet(const QString &n, QVariantList& qparams);
     void setValidator(int i);
 public slots:
     void changedParam1(const QString& s);
@@ -119,7 +120,13 @@ public:
     cEnumCheckBox(int _e, qlonglong *_pOn, qlonglong *_pOff, const QString& t);
 private:
     qlonglong  m;
+    /// SET típusú maszk
+    /// ENUM: ha a bit on, akkor az az enumerációs érték kiválasztva (1 : checked, 0; unchecked)
+    /// SET:  Ha a bit on, akkor annak a bitnek a set-ben nem kell on-ba lennie (1 : partially; 0: unchecked)
     qlonglong *pOn;
+    /// SET típusú maszk
+    /// ENUM: = NULL
+    /// SET:  Ha a bit on, akkor az a bit a set-ben nem lehet on-ba lennie (1 : unchecked; 0 : partially )
     qlonglong *pOff;
 private slots:
     void _chageStat(int st);
@@ -159,8 +166,7 @@ private:
     void setFilterDialog();
     void setFilterDialogPattern(int fType, int dType);
     void setFilterDialogComp(int fType, int dType);
-    void setFilterDialogEnum(const cColEnumType& et);
-    void setFilterDialogSet(const cColEnumType& et);
+    void setFilterDialogEnum(const cColEnumType& et, bool _enum);
     static QString sCheckInverse;
 private slots:
     void clickOk();

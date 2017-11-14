@@ -155,17 +155,16 @@ QString reportByMac(QSqlQuery& q, const QString& sMac)
     }
     text += line;
     /* ** ARP ** */
-    QList<QHostAddress> al = cArp::mac2ips(q, mac);
-    if (al.isEmpty()) {
+    tRecordList<cArp> arps;
+    int n = cArp::mac2arps(q, mac, arps);
+    if (0 == n) {
         text += QObject::trUtf8("Nincs találat az arps táblában a megadott MAC-el");
     }
     else {
-        QString ips;
-        foreach (QHostAddress a, al) {
-            ips += a.toString() + ", ";
-        }
-        ips.chop(2);
-        text += QObject::trUtf8("Az arps táblában a megadott MAC-hez talált IP címek : <b>%1</b>").arg(ips);
+        text += QObject::trUtf8("Találatok at arps táblában :");
+        cTableShape shape;
+        shape.setByName(q, "arps_r");
+        text += list2html(q, arps, shape);
     }
     text += line;
     /* ** MAC TAB** */

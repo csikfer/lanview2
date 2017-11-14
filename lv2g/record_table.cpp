@@ -155,12 +155,39 @@ QString cRecordTableFilter::whereEnum(const QString& n, QVariantList& qparams)
 {
     const cColEnumType& et = field.pColDescr->enumType();
     QStringList ons = et.set2lst(setOn, EX_IGNORE);
+    if (ons.isEmpty()) {    // there is no adequate value
+        return inverse ? QString() : QString("%1 IS NULL").arg(n);
+    }
+    if (ons.size() == et.enumValues.size()) { // All values are appropriate
+        return inverse ? QString("%1 IS NULL").arg(n) : QString();
+    }
     qparams << stringListToSql(ons);
     QString r = n;
     r += (inverse ? " <> ALL" : " = ANY");
     r += QString(" (?::%1[])").arg(et);
     return r;
 }
+
+QString cRecordTableFilter::whereSet(const QString &n, QVariantList& qparams)
+{
+    const cColEnumType& et = field.pColDescr->enumType();
+    QStringList ons  = et.set2lst(~setOn, EX_IGNORE);    // inverse!
+    QStringList offs = et.set2lst(setOff, EX_IGNORE);
+    if (ons.isEmpty() && offs.isEmpty()) { // No any condition
+        return inverse ? QString("%1 IS NULL").arg(n) : QString();
+    }
+    QStringList sl;     // Max two expression
+    if (!ons.isEmpty()) {
+        sl << QString("%1 @> ?::%2[]").arg(n, et);
+        qparams << stringListToSql(ons);
+    }
+    if (!offs.isEmpty()) {
+        sl << QString("NOT %1 && ?::%2[]").arg(n, et);
+        qparams << stringListToSql(offs);
+    }
+    return sl.join(" AND ");
+}
+
 
 QString cRecordTableFilter::where(QVariantList& qparams)
 {
@@ -225,7 +252,7 @@ QString cRecordTableFilter::where(QVariantList& qparams)
             r = whereEnum(n, qparams);
             break;
         case FT_SET:
-            // !!!
+            r = whereSet(n, qparams);
             break;
         case FT_NULL:
             if (af) r = QString("array_lenght(%1, 1) %2 0").arg(n, inverse ? "<>" : "=");
@@ -374,14 +401,14 @@ cEnumCheckBox::cEnumCheckBox(int _e, qlonglong* _pOn, qlonglong* _pOff, const QS
     }
     else {
         if (m & *pOn) {
-            setCheckState(Qt::Checked);
+            setCheckState(Qt::PartiallyChecked);
             *pOff &= ~m;
         }
         else if (m & *pOff) {
             setCheckState(Qt::Unchecked);
         }
         else {
-            setCheckState(Qt::PartiallyChecked);
+            setCheckState(Qt::Checked);
         }
     }
     connect(this, SIGNAL(stateChanged(int)), this, SLOT(_chageStat(int)));
@@ -389,20 +416,19 @@ cEnumCheckBox::cEnumCheckBox(int _e, qlonglong* _pOn, qlonglong* _pOff, const QS
 
 void cEnumCheckBox::_chageStat(int st)
 {
-    switch (st) {
-    case Qt::Checked:
-        *pOn |=  m;
-        if (pOff != NULL) *pOff &= ~m;
-        break;
-    case Qt::Unchecked:
-        *pOn &= ~m;
-        if (pOff != NULL) *pOff |=  m;
-        break;
-    case Qt::PartiallyChecked:
-        if (pOff == NULL) EXCEPTION(EPROGFAIL);
-        *pOn  &= ~m;
-        *pOff &= ~m;
-        break;
+    if (pOff == NULL) { // ENUM
+        switch (st) {
+        case Qt::Checked:           *pOn |=  m;             break;
+        case Qt::Unchecked:         *pOn &= ~m;             break;
+        case Qt::PartiallyChecked:  EXCEPTION(EPROGFAIL);   break;
+        }
+    }
+    else {
+        switch (st) {   // on : inverse!
+        case Qt::Checked:           *pOn &= ~m; *pOff &= ~m;    break;
+        case Qt::Unchecked:         *pOn |=  m; *pOff |=  m;    break;
+        case Qt::PartiallyChecked:  *pOn |=  m; *pOff &= ~m;    break;
+        }
     }
 }
 
@@ -581,10 +607,8 @@ void cRecordTableFODialog::setFilterDialog()
         connect(pCheckBoxI, SIGNAL(toggled(bool)), &filter(), SLOT(togledInverse(bool)));
         break;
     case FT_ENUM:
-        setFilterDialogEnum(filter().field.pColDescr->enumType());
-        break;
     case FT_SET:
-        setFilterDialogSet(filter().field.pColDescr->enumType());
+        setFilterDialogEnum(filter().field.pColDescr->enumType(), fType == FT_ENUM);
         break;
     }
 }
@@ -686,24 +710,19 @@ void cRecordTableFODialog::setFilterDialogComp(int fType, int dType)
     }
 }
 
-void cRecordTableFODialog::setFilterDialogEnum(const cColEnumType &et)
+void cRecordTableFODialog::setFilterDialogEnum(const cColEnumType &et, bool _enum)
 {
     cRecordTableFilter& f = filter();
     QGridLayout *pGrid = pForm->gridLayoutFilter;
     int i;
     for (i = 0; i < et.enumValues.size(); ++i) {
         QString t = cEnumVal::viewShort(et, i, et.enum2str(i));
-        cEnumCheckBox *p = new cEnumCheckBox(i, &f.setOn, NULL, t);
+        cEnumCheckBox *p = new cEnumCheckBox(i, &f.setOn, _enum ? NULL : &f.setOff, t);
         pGrid->addWidget(p, i, 0);
     }
     QCheckBox *pCheckBoxI  = new QCheckBox(sCheckInverse);;
     pGrid->addWidget(pCheckBoxI,  0, 1);
     connect(pCheckBoxI, SIGNAL(toggled(bool)), &f, SLOT(togledInverse(bool)));
-}
-
-void cRecordTableFODialog::setFilterDialogSet(const cColEnumType &et)
-{
-
 }
 
 void cRecordTableFODialog::clickOk()

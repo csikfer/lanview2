@@ -130,6 +130,7 @@ const QString& fieldFlag(int e, eEx __ex)
     case FF_FG_COLOR:   return _sFgColor;
     case FF_FONT:       return _sFont;
     case FF_TOOL_TIP:   return _sToolTip;
+    case FF_HTML:       return _sHTML;
     default:            break;
     }
     if (__ex) EXCEPTION(EENUMVAL, e);

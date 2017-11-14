@@ -299,6 +299,7 @@ public:
     /// @param __t A módosításokat tartalmazó konténer
     /// @return a kiírt, vagy módosított rekordok száma
     static int replaces(QSqlQuery& __q, const cArpTable& __t, int setType = ST_QUERY, qlonglong hsid = NULL_ID);
+    static int mac2arps(QSqlQuery& __q, const cMac& __m, tRecordList<cArp>& arps);
     static QList<QHostAddress> mac2ips(QSqlQuery& __q, const cMac& __m);
     static QHostAddress mac2ip(QSqlQuery& __q, const cMac& __m, enum eEx __ex = EX_ERROR);
     static cMac ip2mac(QSqlQuery& __q, const QHostAddress& __a, enum eEx __ex = EX_ERROR);

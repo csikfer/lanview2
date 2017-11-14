@@ -872,6 +872,18 @@ int cArp::replaces(QSqlQuery&, const cArpTable&, int, qlonglong)
 }
 #endif // SNMP_IS_EXISTS
 
+int cArp::mac2arps(QSqlQuery& __q, const cMac& __m, tRecordList<cArp>& arps)
+{
+    int r = 0;
+    cArp arp;
+    arp = __m;
+    if (arp.fetch(__q, false, arp.mask(_ixHwAddress))) do {
+        arps << arp;
+        ++r;
+    } while (arp.next(__q));
+    return r;
+}
+
 QList<QHostAddress> cArp::mac2ips(QSqlQuery& __q, const cMac& __m)
 {
     QList<QHostAddress> r;

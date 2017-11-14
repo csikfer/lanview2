@@ -1758,6 +1758,10 @@ bool cLldpScan::rowEmpty(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em)
     *pi = row.cmac;
     rDev.setId(_sNodeType, enum2set(NT_HOST));
     pi->addIpAddress(a, cDynAddrRange::isDynamic(q, a), note);
+    cPortParam *pp = new cPortParam();
+    pp->setType(_sQueryMacTab);
+    pp->setName(_sParamValue, _sTrue);
+    pi->params << pp;
     cError *pe = rHost.tryInsert(q);
     if (pe != NULL) {
         HEREINW(em, QObject::trUtf8("A %1 MAC és %2 IP című felderített eszköz %3 kiírása sikertelen.\n Részletes hibaüzenet:\n%4\n")
