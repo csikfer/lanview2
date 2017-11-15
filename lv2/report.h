@@ -52,11 +52,19 @@ QString list2html(QSqlQuery& q, const tRecordList<R>& list, cTableShape& shape, 
         head << fs.getText(cTableShapeField::LTX_TABLE_TITLE, fs.getName());
         QString fn = fs.getName(_sTableShapeFieldName);
         for (j = 0; j < m; ++j) {   // ROWS
-            if (i == 0) data << QStringList();
+            if (i == 0) data << QStringList();  // first column: create row
             data[j] << list.at(j)->view(q, fn);
         }
     }
     return htmlTable(head, data);
+}
+
+QString query2html(QSqlQuery q, cTableShape& _shape, const QString& _where, const QVariantList &_par = QVariantList(), bool shrt = true);
+inline QString query2html(QSqlQuery q, const QString& _shapeName, const QString& _where, const QVariantList &_par = QVariantList(), bool shrt = true)
+{
+    cTableShape shape;
+    shape.setByName(q, _shapeName);
+    return query2html(q, shape, _where, _par, shrt);
 }
 
 EXT_ QString reportByMac(QSqlQuery& q, const QString& aMac);

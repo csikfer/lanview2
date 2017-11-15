@@ -38,6 +38,19 @@ QString htmlTable(QStringList head, QList<QStringList> matrix)
     return table;
 }
 
+QString query2html(QSqlQuery q, cTableShape &_shape, const QString& _where, const QVariantList& _par, bool shrt)
+{
+    cRecordAny rec(_shape.getName(_sTableName));
+    tRecordList<cRecordAny> list;
+    QString sql = QString("SELECT * FROM %1 WHERE ").arg(rec.tableName()) + _where;
+    if (execSql(q, sql, _par)) do {
+        rec.set(q);
+        list << rec;
+    } while (q.next());
+    if (list.size() == NULL) return QString();
+    return list2html(q, list, _shape, shrt);
+}
+
 
 QString reportByMac(QSqlQuery& q, const QString& sMac)
 {
@@ -155,16 +168,15 @@ QString reportByMac(QSqlQuery& q, const QString& sMac)
     }
     text += line;
     /* ** ARP ** */
-    tRecordList<cArp> arps;
-    int n = cArp::mac2arps(q, mac, arps);
-    if (0 == n) {
+    text += QObject::trUtf8("Találatok at arps táblában :");
+    QVariantList par;
+    par << mac.toString();
+    QString tab = query2html(q, "arps", "hwaddress = ? ORDER BY last_time", par, true);
+    if (tab.isEmpty()) {
         text += QObject::trUtf8("Nincs találat az arps táblában a megadott MAC-el");
     }
     else {
-        text += QObject::trUtf8("Találatok at arps táblában :");
-        cTableShape shape;
-        shape.setByName(q, "arps_r");
-        text += list2html(q, arps, shape);
+        text += tab;
     }
     text += line;
     /* ** MAC TAB** */
