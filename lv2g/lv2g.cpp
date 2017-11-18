@@ -380,7 +380,7 @@ QVariant enumRole(const cEnumVal& ev, int role, int e)
     case Qt::ToolTipRole:
         return ev.getText(cEnumVal::LTX_TOOL_TIP);
     case Qt::FontRole:
-        return fontByEnum(ev.getName(cEnumVal::ixTypeName()), e);
+        return fontByEnum(ev.typeName(), e == NULL_IX ? ev.toInt() : e);
     default:
         return QVariant();
     }

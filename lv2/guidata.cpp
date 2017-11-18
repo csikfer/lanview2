@@ -849,7 +849,7 @@ bool cEnumVal::delByNames(QSqlQuery& q, const QString& __t, const QString& __n)
 int cEnumVal::toInt(eEx __ex) const
 {
     if (isNull(_ixTypeName) || isNull(_ixValName)) {
-        EXCEPTION(EDATA, 0, trUtf8("Is NULL"));
+        if (__ex != EX_IGNORE) EXCEPTION(EDATA, 0, trUtf8("Is NULL"));
         return ENUM_INVALID;
     }
     QSqlQuery q = getQuery();

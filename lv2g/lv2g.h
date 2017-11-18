@@ -151,7 +151,14 @@ inline const QColor& fgColorByBool(const QString& _tn, const QString& _fn, int e
     return fgColorByEnum(mCat(_tn, _fn), e);
 }
 
+/// Font az enumerációs típus és (numerikus) érték alapján.
+/// A függvény minden értéket egy belső táblában gyűjt, ami nem frissül.
+/// @param __t Az enum típus neve
+/// @param _e Az enumerációs érték numerikusan
 _GEX const QFont& fontByEnum(const QString& __t, int _e);
+inline const QFont& fontByEnum(const cEnumVal& ev) {
+    return fontByEnum(ev.typeName(), ev.toInt());
+}
 
 static inline const QColor&  dcBgColor(int id)   { return bgColorByEnum(_sDatacharacter, id); }
 static inline const QColor&  dcFgColor(int id)   { return fgColorByEnum(_sDatacharacter, id); }
@@ -242,7 +249,11 @@ template <class W> void dcSetShort(W *pW, int id) {
     pW->setText(cEnumVal::viewShort(_sDatacharacter, id, dataCharacter(id)));
 }
 
-_GEX QVariant enumRole(const cEnumVal& ev, int role, int e);
+/// Model data() metódusában hhasználható függvény, az enumerációs objektum alapján adja vissza az adatot
+/// @param ev At enumerációs értékhez tartozó objektum.
+/// @param role A data() metódus role paramétere
+/// @param e Az enumeráció numerikus értéke, ha ismert (gyorsabb, ha meg van adva)
+_GEX QVariant enumRole(const cEnumVal& ev, int role, int e = NULL_IX);
 _GEX QVariant enumRole(const QString& _t, int id, int role, const QString& dData);
 _GEX QVariant dcRole(int id, int role);
 
