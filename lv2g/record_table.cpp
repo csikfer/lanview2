@@ -1694,6 +1694,8 @@ QStringList cRecordsViewBase::where(QVariantList& qParams)
 
 bool cRecordsViewBase::enabledBatchEdit(const cTableShapeField& tsf)
 {
+    // While it is incorrect in case of inheritance, it is disabled
+    if (tableInhType != TIT_NO) return false;
     if (!tsf.getBool(_sFieldFlags, FF_BATCH_EDIT)) return false;            // Mezőnként kell engedélyezni
     if (lanView::isAuthorized(PL_ADMIN)) return true;                       // ADMIN-nak ok
     ePrivilegeLevel pl = (ePrivilegeLevel)privilegeLevel(tsf.feature(_sBatchEdit), EX_IGNORE);
@@ -2129,12 +2131,14 @@ void cRecordTable::copy()
         case TEF_HTML:  r = pTableModel()->toHtml(selectedRows());    break;
         default:        EXCEPTION(EPROGFAIL);
         }
+        break;
     case TEW_VIEWED:
         switch (f) {
         case TEF_CSV:   r = pTableModel()->toCSV();     break;
         case TEF_HTML:  r = pTableModel()->toHtml();    break;
         default:        EXCEPTION(EPROGFAIL);
         }
+        break;
     case TEW_ALL: {
         int mr = pTableModel()->maxRows();
         pTableModel()->_maxRows = MAXMAXROWS;

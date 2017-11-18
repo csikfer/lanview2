@@ -572,6 +572,57 @@ cPatch * patchEditDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample, bool ro)
 
 /* ********************************************************************************************** */
 
+cIpEditWidget::cIpEditWidget(qlonglong _typeMask, QWidget *_par) : QWidget(_par)
+{
+    disabled = disableSignals = false;
+    pq = newQuery();
+    pUi = new Ui::editIp;
+    pUi->setupUi(this);
+    const cColEnumType& et = cIpAddress().colDescr(_sIpAddressType).enumType();
+    ipTypes = _typeMask & ((1LL << et.enumValues.size()) -1);
+    QStringList tl = et.set2lst(ipTypes);
+    pUi->comboBoxIpType->addItems(tl);
+    pSelectVlan = new cSelectVlan(pUi->comboBoxVLanId, pUi->comboBoxVLan);
+
+
+}
+
+cIpEditWidget::~cIpEditWidget()
+{
+    delete pq;
+}
+
+void cIpEditWidget::setAllDisabled(bool f)
+{
+    disableSignals = true;
+    disabled = f;
+    pSelectVlan->setDisable(f);
+    if (f) {
+        pUi->lineEditAddress->setText(_sNul);
+        pUi->comboBoxIpType->clear();
+        pUi->comboBoxSubNet->clear();
+        pUi->comboBoxSubNetAddr->clear();
+        actAddress.clear();
+    }
+    pUi->lineEditAddress->setDisabled(f);
+    pUi->comboBoxIpType->setDisabled(f);
+    pUi->comboBoxSubNet->setDisabled(f);
+    pUi->comboBoxSubNetAddr->setDisabled(f);
+    disableSignals = false;
+}
+
+void vlanIdChanged(qlonglong _vid)
+{
+
+}
+
+void subNetIdChanged(qlonglong _sid)
+{
+
+}
+
+/* ********************************************************************************************** */
+
 
 cEnumValRow::cEnumValRow(QSqlQuery& q, const QString& _val, int _row, cEnumValsEditWidget *par)
     :QObject(par), row(_row)
@@ -1051,3 +1102,4 @@ cEnumValsEdit::~cEnumValsEdit()
 }
 
 /* ****** */
+

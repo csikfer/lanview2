@@ -46,13 +46,17 @@ QString list2html(QSqlQuery& q, const tRecordList<R>& list, cTableShape& shape, 
     int i, j;
     int n = shape.shapeFields.size();
     int m = list.size();
+    for (i = 0; i < m; ++i) {
+        data << QStringList();
+    }
     for (i = 0; i < n; ++i) {   // COLUMNS
         const cTableShapeField& fs = *shape.shapeFields.at(i);
-        if (shrt ? !fs.getBool(_sFieldFlags, FF_HTML) : fs.getBool(_sFieldFlags, FF_TABLE_HIDE)) continue;
+        if (shrt ? !fs.getBool(_sFieldFlags, FF_HTML) : fs.getBool(_sFieldFlags, FF_TABLE_HIDE)) {
+            continue;
+        }
         head << fs.getText(cTableShapeField::LTX_TABLE_TITLE, fs.getName());
         QString fn = fs.getName(_sTableShapeFieldName);
         for (j = 0; j < m; ++j) {   // ROWS
-            if (i == 0) data << QStringList();  // first column: create row
             data[j] << list.at(j)->view(q, fn);
         }
     }

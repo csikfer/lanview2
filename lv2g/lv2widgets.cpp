@@ -2568,6 +2568,7 @@ cSelectPlace::cSelectPlace(QComboBox *_pZone, QComboBox *_pPLace, QLineEdit *_pF
     , pLineEditPlaceFilt(_pFilt)
     , constFilterPlace(_constFilt)
 {
+    pSlave = NULL;
     blockPlaceSignal = false;
     pZoneModel = new cZoneListModel(this);
     pComboBoxZone->setModel(pZoneModel);
@@ -2596,6 +2597,12 @@ void cSelectPlace::copyCurrents(const cSelectPlace &_o)
     if (pid != currentPlaceId()) _placeChanged(pix);
 }
 
+void cSelectPlace::setSlave(cSelectPlace *_pSlave)
+{
+    copyCurrents(*_pSlave);
+    pSlave = _pSlave;
+}
+
 void cSelectPlace::setEnabled(bool f)
 {
     pComboBoxZone->setEnabled(f);
@@ -2614,6 +2621,9 @@ void cSelectPlace::refresh()
 {
     qlonglong zid = currentZoneId();
     qlonglong pid = currentPlaceId();
+    if (pSlave) {
+        pSlave->refresh();
+    }
     pZoneModel->setFilter();
     setCurrentZone(zid);
     pPlaceModel->setFilter();
@@ -2627,6 +2637,9 @@ void cSelectPlace::insertPlace()
     if (p == NULL) return;
     qlonglong pid = p->getId();
     delete p;
+    if (pSlave) {
+        pSlave->pPlaceModel->setFilter();
+    }
     pPlaceModel->setFilter();
     setCurrentPlace(pid);
 }
@@ -2663,6 +2676,7 @@ void cSelectPlace::setCurrentPlace(qlonglong _pid)
 void cSelectPlace::_zoneChanged(int ix)
 {
     qlonglong id = pZoneModel->atId(ix);
+    if (pSlave) pSlave->pComboBoxZone->setCurrentIndex(ix);
     pPlaceModel->setZone(id);
 }
 
@@ -2673,11 +2687,13 @@ void cSelectPlace::_placeChanged(int ix)
     placeNameChanged(s);
     qlonglong id = pPlaceModel->atId(ix);
     placeIdChanged(id);
+    if (pSlave) pSlave->pComboBoxZone->setCurrentIndex(ix);
 }
 
 void cSelectPlace::_placePatternChanged(const QString& s)
 {
     qlonglong pid = pPlaceModel->atId(pComboBoxPLace->currentIndex());
+    if (pSlave) pSlave->pLineEditPlaceFilt->setText(s);
     blockPlaceSignal = true;
     if (s.isEmpty()) {
         pPlaceModel->setFilter(QVariant(), OT_DEFAULT, FT_NO);
@@ -2809,7 +2825,162 @@ void cSelectNode::_nodeChanged(int ix)
     nodeIdChanged(id);
 }
 
-/* *** */
+/* ********************************************************************************* */
+
+cSelectVlan::cSelectVlan(QComboBox *_pComboBoxId, QComboBox *_pComboBoxName, const QHostAddress &_a, eAddressType _t, QWidget *_par)
+    : QObject(_par)
+{
+    disableSignal = false;
+
+    pq = newQuery();
+    pComboBoxId   = _pComboBoxId;
+    pComboBoxName = _pComboBoxName;
+    actId   = NULL_ID;
+    actName = _sNul;
+    setAddress(_t, _a);
+    connect(pComboBoxId,   SIGNAL(currentIndexChanged(int)), this, SLOT(_changedId(int)));
+    connect(pComboBoxName, SIGNAL(currentIndexChanged(int)), this, SLOT(_changedName(int)));
+}
+
+cSelectVlan::~cSelectVlan()
+{
+    delete pq;
+}
+
+void cSelectVlan::setAddress(eAddressType _t, const QHostAddress &_a)
+{
+    disableSignal = true;
+    address       = _a;
+    addrType      = _t;
+    if (addrType == AT_EXTERNAL) {
+        pComboBoxId->clear();
+        pComboBoxId->setDisabled(true);
+        pComboBoxName->clear();
+        pComboBoxName->setDisabled(true);
+        disableSignal = false;
+        if (actId != NULL_ID) {
+            actId   = NULL_ID;
+            actName = _sNul;
+            changedId(actId);
+            changedName(actName);
+        }
+        return;
+    }
+    pComboBoxId->setEnabled(true);
+    pComboBoxName->setEnabled(true);
+    nameList.clear();
+    idList.clear();
+    sIdList.clear();
+    if (!address.isNull()) {
+        QString sql = "SELECT vlan_id, vlan_name FROM vlans JOIN subnets USING(vlan_id) WHERE netaddr >> ?::inet";
+        if (execSql(*pq, sql, address.toString())) do {
+            qlonglong id = pq->value(0).toLongLong();
+            idList   << id;
+            nameList << pq->value(1).toString();
+            sIdList  << QString::number(id);
+        } while (pq->next());
+    }
+    if (idList.isEmpty()) {
+        idList   << NULL_ID;
+        nameList << _sNul;
+        sIdList  << _sNul;
+        QString sql = "SELECT vlan_id, vlan_name FROM vlans";
+        if (execSql(*pq, sql)) do {
+            qlonglong id = pq->value(0).toLongLong();
+            idList   << id;
+            nameList << pq->value(1).toString();
+            sIdList  << QString::number(id);
+        } while (pq->next());
+    }
+    pComboBoxId->addItems(sIdList);
+    pComboBoxName->addItems(nameList);
+    disableSignal = false;
+    if (actId != idList.first()) {
+        actId   = idList.first();
+        actName = nameList.first();
+        changedId(actId);
+        changedName(actName);
+    }
+}
+
+bool cSelectVlan::setVlan(qlonglong _vid)
+{
+    if (idList.isEmpty()) return _vid == NULL_ID;
+    if (_vid == NULL_ID) {
+        if (actId == NULL_ID) return true;
+        if (idList.first() == NULL_ID) {
+            pComboBoxId->setCurrentIndex(0);
+            pComboBoxName->setCurrentIndex(0);
+            return true;
+        }
+        return false;
+    }
+    if (actId == _vid) return true;
+    int ix = idList.indexOf(_vid);
+    if (ix >= 0) {
+        pComboBoxId->setCurrentIndex(ix);
+        pComboBoxName->setCurrentIndex(ix);
+        return true;
+    }
+    return false;
+}
+
+bool cSelectVlan::setSubNet(qlonglong _sid)
+{
+    if (idList.isEmpty()) return _sid == NULL_ID;
+    if (_sid == NULL_ID) {
+        if (actId == NULL_ID) return true;
+        if (idList.first() == NULL_ID) {
+            pComboBoxId->setCurrentIndex(0);
+            pComboBoxName->setCurrentIndex(0);
+            return true;
+        }
+        return false;
+    }
+    cSubNet s;
+    s.setById(*pq, _sid);
+    qlonglong vid = s.getId(_sVlanId);
+    return setVlan(vid);
+}
+
+
+void cSelectVlan::clear()
+{
+    disableSignal = true;
+    actId   = NULL_ID;
+    actName = _sNul;
+    idList.clear();
+    nameList.clear();
+    sIdList.clear();
+    pComboBoxId->clear();
+    pComboBoxName->clear();
+    disableSignal = false;
+}
+
+void cSelectVlan::setDisable(bool f)
+{
+    if (f) clear();
+    pComboBoxId->setDisabled(f);
+    pComboBoxName->setDisabled(f);
+}
+
+void cSelectVlan::_changedId(int ix)
+{
+    if (disableSignal) return;
+    actId = idList.at(ix);
+    changedId(actId);
+    pComboBoxName->setCurrentIndex(ix);
+}
+
+void cSelectVlan::_changedName(int ix)
+{
+    if (disableSignal) return;
+    actName = nameList.at(ix);
+    changedName(actName);
+    pComboBoxId->setCurrentIndex(ix);
+}
+
+/* ********************************************************************************* */
 
 cStringMapEdit::cStringMapEdit(bool _isDialog, tStringMap& _map, QWidget *par)
     : QObject(par), isDialog(_isDialog), map(_map)

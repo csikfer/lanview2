@@ -168,14 +168,14 @@ QString reportByMac(QSqlQuery& q, const QString& sMac)
     }
     text += line;
     /* ** ARP ** */
-    text += QObject::trUtf8("Találatok at arps táblában :");
     QVariantList par;
     par << mac.toString();
-    QString tab = query2html(q, "arps", "hwaddress = ? ORDER BY last_time", par, true);
+    QString tab = query2html(q, _sArps, "hwaddress = ? ORDER BY last_time", par, true);
     if (tab.isEmpty()) {
         text += QObject::trUtf8("Nincs találat az arps táblában a megadott MAC-el");
     }
     else {
+        text += QObject::trUtf8("Találatok a MAC - IP (arps) táblában táblában :");
         text += tab;
     }
     text += line;
@@ -193,6 +193,18 @@ QString reportByMac(QSqlQuery& q, const QString& sMac)
         text += QObject::trUtf8("Nincs találat a switch címtáblákban a megadott MAC-el");
     }
     text += line;
+    // LOG
+    text += QObject::trUtf8("Napló bejegyzések:");
+    text += line;
+    // ARP LOG
+    par << par.first(); // MAC 2*
+    tab = query2html(q, "arp_logs", "hwaddress_new = ? OR hwaddress_old = ? ORDER BY date_of", par, true);
+    if (!tab.isEmpty()) {
+        text += QObject::trUtf8("MAC - IP változások (arp_logs) :");
+        text += tab + line;
+    }
+    // MACTAB LOG
+
     return text;
 }
 

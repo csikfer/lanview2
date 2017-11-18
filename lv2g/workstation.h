@@ -6,6 +6,7 @@
 #include "lv2models.h"
 #include "lv2link.h"
 #include "lv2widgets.h"
+#include "object_dialog.h"
 
 namespace Ui {
     class wstWidget;
@@ -39,16 +40,16 @@ public:
     ~cWorkstation();
     static const enum ePrivilegeLevel rights;
 private:
-    void node2Gui();
+    void node2gui();
 
     Ui::wstWidget   *pUi;
     cSelectNode     *pSelNode;      /// A szerkesztendő, vagy minta eszköz kiválasztása
     cSelectPlace    *pSelPlace;     /// Az eszköz helyének a megadása
-    cSelectPlace    *pSelPlaceLink; /// A linkelt port, vagy eszköz helye
+    cSelectNode     *pSelNodeLink; /// A linkelt port, ill. az eszköz kiválasztáse
     QButtonGroup    *pModifyButtons;
+    cIpEditWidget   *pIpEditWidget;
 
     struct cStates {
-        unsigned    passive:1;          // bool (false: workstation, true: passive node)
         unsigned    modify:1;           // bool (false: new object, true: modify existing object)
         unsigned    nodeName:2;         // EMPTY, OK, COLLISION
         unsigned    nodePlace:1;        // EMPTY, OK
@@ -64,16 +65,15 @@ private:
         unsigned    linkPossible:1;     // bool
         unsigned    link:2;             // EMPTY, OK, COLLISION, IMPERFECT
     }   states;
-
     QSqlQuery *pq;
     /// Kiválasztott workstation objektum (modosítandó eredetije vagy minta)
     cNode      *pSample;
     /// A szerkesztett workstation objektum
     cNode       node;   ///< A munkaállomás objektum
+    cNPort *    pnp;
+    cInterface *pif;
+    cIpAddress *pip;
 private slots:
-    void on_comboBoxZone_currentIndexChanged(int index);
-    void on_lineEditPlacePat_textChanged(const QString &arg1);
-    void on_comboBoxPlace_currentIndexChanged(int index);
     void on_checkBoxPlaceEqu_toggled(bool checked);
     void on_comboBoxNode_currentIndexChanged(int index);
 };

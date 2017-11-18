@@ -1999,6 +1999,8 @@ public:
     int touch(QSqlQuery& q, int _fi) { return touch(q, columnName(_fi)); }
     /// A megadott indexű mezőleíró objektum referenciájával tér vissza
     const cColStaticDescr& colDescr(int _ix) const { return descr().colDescr(_ix); }
+    /// A megadott nevű mezőleíró objektum referenciájával tér vissza
+    const cColStaticDescr& colDescr(const QString& _fn) const { return colDescr(toIndex(_fn)); }
     /// A megadott indexű mező értékét adja vissza, konvertálva az SQL-nek átadható formára.
     /// Hibás adat esetén kizárást dob!
     QVariant toSql(int __ix) const { return colDescr(__ix).toSql(get(__ix)); }

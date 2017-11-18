@@ -5,6 +5,7 @@
 #include "lv2widgets.h"
 #include "record_dialog.h"
 #include "ui_edit_enum_vals.h"
+#include "ui_edit_ip.h"
 
 
 namespace Ui {
@@ -101,13 +102,31 @@ private slots:
 _GEX cPatch * patchInsertDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample = NULL);
 _GEX cPatch * patchEditDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample, bool ro = false);
 
+namespace Ui { class editIp; }
+class LV2GSHARED_EXPORT cIpEditWidget : public QWidget {
+    Q_OBJECT
+public:
+    cIpEditWidget(qlonglong _typeMask = -1, QWidget *_par = NULL);
+    ~cIpEditWidget();
+private:
+    Ui::editIp *pUi;
+    QSqlQuery * pq;
+    qlonglong   ipTypes;
+    cSelectVlan *pSelectVlan;
+    QHostAddress actAddress;
+    bool disableSignals;
+    bool disabled;
+private slots:
+    void setAllDisabled(bool f = true);
+signals:
+    void ipAddressChanged(const QHostAddress& _a);
+    void vlanIdChanged(qlonglong _vid);
+    void subNetIdChanged(qlonglong _sid);
+};
 
-namespace Ui {
-    class enumValsWidget;
-}
+namespace Ui { class enumValsWidget; }
 class cEnumValsEditWidget;
 class cEnumValRow;
-
 // private class
 #if defined(LV2G_LIBRARY)
     class cEnumValRow : public QObject {

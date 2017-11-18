@@ -1,5 +1,9 @@
 ALTER TYPE fieldflag ADD VALUE 'HTML';
 
+INSERT INTO unusual_fkeys
+  ( table_name,     column_name,           unusual_fkeys_type, f_table_name,        f_column_name) VALUES
+  ( 'arps_shape',  'host_service_id',     'property',         'host_services',     'host_service_id');
+
 
 INSERT INTO port_params (param_type_id, port_id, param_value)
     (SELECT public.param_type_name2id('query_mac_tab'), si.port_id, 'true' 

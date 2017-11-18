@@ -21,6 +21,7 @@
 #include "guidata.h"
 #include "imagedrv.h"
 
+
 class cSelectLanguage : QObject {
     Q_OBJECT
 public:
@@ -803,6 +804,10 @@ public:
     qlonglong currentPlaceId()  { return pPlaceModel->atId(pComboBoxPLace->currentIndex()); }
     /// Átmásolja az aktuális értékeket a másik objektumból.
     void copyCurrents(const cSelectPlace& _o);
+    /// Set slave
+    void setSlave(cSelectPlace *_pSlave);
+    /// Disconnect slave
+    void disconnectSlave()  { pSlave = NULL; }
 protected:
     QComboBox *pComboBoxZone;
     QComboBox *pComboBoxPLace;
@@ -811,6 +816,7 @@ protected:
     cZoneListModel     *pZoneModel;
     cPlacesInZoneModel *pPlaceModel;
     bool                blockPlaceSignal;
+    cSelectPlace *      pSlave;
 public slots:
     void setEnabled(bool f = true);
     void setDisabled(bool f = true);
@@ -864,6 +870,39 @@ signals:
     void nodeNameChanged(const QString& name);
     void nodeIdChanged(qlonglong id);
 };
+
+class LV2GSHARED_EXPORT cSelectVlan : public QObject {
+    Q_OBJECT
+public:
+    cSelectVlan(QComboBox *_pComboBoxId, QComboBox *_pComboBoxName, const QHostAddress& _a = QHostAddress(), eAddressType t = AT_DYNAMIC, QWidget *_par = NULL);
+    ~cSelectVlan();
+    void setAddress(eAddressType t = AT_DYNAMIC, const QHostAddress& _a = QHostAddress());
+    bool setVlan(qlonglong _vid);
+    bool setSubNet(qlonglong _sid);
+    void setDisable(bool f);
+private:
+    QSqlQuery   *pq;
+    QComboBox   *pComboBoxId;
+    QComboBox   *pComboBoxName;
+    QHostAddress address;
+    eAddressType addrType;
+    QStringList  nameList;
+    QList<qlonglong> idList;
+    QStringList  sIdList;
+    QString     actName;
+    qlonglong   actId;
+    bool        disableSignal;
+private slots:
+    // Törli a listákat, és mindkét comboBox-ot. Az objektum slot-jai nem lesznek aktíválva.
+    void clear();
+    // Ha f igaz, letiltja, egyébkét engedélyezi a két comboBox-ot, ha f igaz hívja a clear() slot-ot is.
+    void _changedId(int ix);
+    void _changedName(int ix);
+signals:
+    void changedId(qlonglong _id);
+    void changedName(const QString& _n);
+};
+
 
 class cDialogButtons;
 

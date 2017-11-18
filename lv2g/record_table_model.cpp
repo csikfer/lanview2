@@ -422,7 +422,7 @@ QList<QStringList>  cRecordTableModel::toStringTable(QModelIndexList mil)
     return r;
 }
 
-QString             cRecordTableModel::toCSV(QModelIndexList mil)
+QString cRecordTableModel::toCSV(QModelIndexList mil)
 {
     QString r;
     foreach (QStringList row, toStringTable(mil)) {
@@ -436,7 +436,7 @@ QString             cRecordTableModel::toCSV(QModelIndexList mil)
     return r;
 }
 
-QString             cRecordTableModel::toHtml(QModelIndexList mil)
+QString cRecordTableModel::toHtml(QModelIndexList mil)
 {
     QString r;
     QList<QStringList>  m = toStringTable(mil);
