@@ -199,6 +199,11 @@ static inline void dcSetFbColor(QWidget *pW, int id) { enumSetFgColor(pW, _sData
 
 /// Widget kinézetének a beállítása a megadott enumeráció típus és értékhez rendelt paraméterek alapján
 /// @param pW A beállítandó wideget pointere.
+/// @param ev Enumerációs értékhez tartozó líró objektum
+/// @param id Az enumeráció numerikus értéke (opcionális, ev-böl kideríthető)
+_GEX void enumSetD(QWidget *pW, const cEnumVal& ev, int id = NULL_IX);
+/// Widget kinézetének a beállítása a megadott enumeráció típus és értékhez rendelt paraméterek alapján
+/// @param pW A beállítandó wideget pointere.
 /// @param _t Enumerációs típus neve
 /// @param id Az enumeráció numerikus értéke
 _GEX void enumSetD(QWidget *pW, const QString& _t, int id);

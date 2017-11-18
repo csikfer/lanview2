@@ -321,8 +321,8 @@ public:
     /*!
     Konstruktor.
     A megadott címmel, és maszk értékkel inicializálja az objektumot.
-    @par[in] __a    IP cím
-    @par[in] __m    A maszkban az 1-es bitek száma, opcionális.
+    @param[in] __a    IP cím
+    @param[in] __m    A maszkban az 1-es bitek száma, opcionális.
 
     Ha nincs megadva a maszk (vagy értéke -1), akkor a címtartomány hoszt címként lessz definiálva (IPV4-nél 32, IPV6-nál 128).
     Ha a megadott cím nem IPV4 vagy IPV6 cím, akkor a mask -1 -re lessz inicializálva, vagyis ez egyenértékű azzal,
@@ -339,15 +339,15 @@ public:
     netAddress(const QPair<QHostAddress, int>& __p) : QPair<QHostAddress, int>() { set(__p); }
     /*!
     A megadott IPV4 címmel, és maszk értékkel inicializálja az objektumot.
-    @par[in] __a IPV4 cím
-    @par[in] __m opcionális maszk, alapértelmezett értéke 32
+    @param[in] __a IPV4 cím
+    @param[in] __m opcionális maszk, alapértelmezett értéke 32
     @see set(quint32 __a, int __m)
      */
     netAddress(quint32 __a, int __m = 32) : QPair<QHostAddress, int>() { set(__a, __m); }
     /*!
     A megadott IPV6 címmel, és maszk értékkel inicializálja az objektumot.
-    @par[in] __a IPV6 cím
-    @par[in] __m opcionális maszk, alapértelmezett értéke 128
+    @param[in] __a IPV6 cím
+    @param[in] __m opcionális maszk, alapértelmezett értéke 128
     @see set(const Q_IPV6ADDR& __a, int __m)
      */
     netAddress(const Q_IPV6ADDR& __a, int __m = 128) : QPair<QHostAddress, int>() { set(__a, __m); }
@@ -355,8 +355,8 @@ public:
     A megadott címmel, és maszk értékkel inicializálja az objektumot. Ha a QString paraméter tartalmazza a
     maszkot is, akkor a második paraméter figyelmen kívül lessz hagyva.
     A cím értelmezésekor cím név feloldás nincsen.
-    @par[in] IP cím vagy IP cím tartomány szöveges formában.
-    @par[in] opcionális maszk.
+    @param[in] IP cím vagy IP cím tartomány szöveges formában.
+    @param[in] opcionális maszk.
     @see set(const QString& __s, int __m)
     */
     netAddress(const QString& __s, int __m = -1) : QPair<QHostAddress, int>() { set(__s, __m); }
@@ -372,8 +372,8 @@ public:
     netAddress& clear() { mask() = -1; addr().clear(); return *this; }
     /*!
     A megadott címmel, és maszk értékkel újra inicializálja az objektumot.
-    @par[in] __a    IP cím
-    @par[in] __m    A maszkban az 1-es bitek száma, opcionális.
+    @param[in] __a    IP cím
+    @param[in] __m    A maszkban az 1-es bitek száma, opcionális.
 
     Ha nincs megadva a maszk (vagy értéke -1), akkor a címtartomány hoszt címként lessz definiálva (IPV4-nél 32, IPV6-nál 128).
     Ha a megadott cím nem IPV4 vagy IPV6 cím, akkor a mask -1 -re lessz inicializálva, vagyis ez egyenértékű azzal,
@@ -383,23 +383,23 @@ public:
     netAddress& set(const QHostAddress& __a, int __m = -1);
     /*!
     A QPair objektumon keresztül megadott címmel, és maszk értékkel újra inicializálja az objektumot.
-    @par[in]    __p A címet és maszkot tartalmazó objektum referenciája.
+    @param[in]    __p A címet és maszkot tartalmazó objektum referenciája.
 
     Működése gyakorlatilag azonos a set(const QHostAddress& __a, int __m) metóduséval, beleértve a maszk érték kezelését is.
      */
     netAddress& set(const QPair<QHostAddress, int>& __p) { return set(__p.first, __p.second); }
     /*!
     IPV4 címtartomány beállítása.
-    @par[in] __a Az IPV4 cím 32bites numerikus értékként ábrázolva ( ld.: QHostAddress:setAddress(q1int32) )
-    @par[in] __m Opcionális maszk. Alapértelmezett érték 32.
+    @param[in] __a Az IPV4 cím 32bites numerikus értékként ábrázolva ( ld.: QHostAddress:setAddress(q1int32) )
+    @param[in] __m Opcionális maszk. Alapértelmezett érték 32.
 
     Az ip címben a maszk alapján felesleges bitek törlődnek.
      */
     netAddress& set(quint32 __a, int __m = 32);
     /*!
     IPV6 címtartomány beállítása.
-    @par[in] __a Az IPV6 cím
-    @par[in] __m Opcionális maszk. Alapértelmezett érték 128.
+    @param[in] __a Az IPV6 cím
+    @param[in] __m Opcionális maszk. Alapértelmezett érték 128.
 
     Az ip címben a maszk alapján felesleges bitek törlődnek.
      */

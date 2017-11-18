@@ -578,13 +578,10 @@ cIpEditWidget::cIpEditWidget(qlonglong _typeMask, QWidget *_par) : QWidget(_par)
     pq = newQuery();
     pUi = new Ui::editIp;
     pUi->setupUi(this);
-    const cColEnumType& et = cIpAddress().colDescr(_sIpAddressType).enumType();
-    ipTypes = _typeMask & ((1LL << et.enumValues.size()) -1);
-    QStringList tl = et.set2lst(ipTypes);
-    pUi->comboBoxIpType->addItems(tl);
+    pModelIpType = new cStringListEnumModel;
+    pModelIpType->setLists("addresstype", _typeMask);
+    pUi->comboBoxIpType->setModel(pModelIpType);
     pSelectVlan = new cSelectVlan(pUi->comboBoxVLanId, pUi->comboBoxVLan);
-
-
 }
 
 cIpEditWidget::~cIpEditWidget()
@@ -599,9 +596,6 @@ void cIpEditWidget::setAllDisabled(bool f)
     pSelectVlan->setDisable(f);
     if (f) {
         pUi->lineEditAddress->setText(_sNul);
-        pUi->comboBoxIpType->clear();
-        pUi->comboBoxSubNet->clear();
-        pUi->comboBoxSubNetAddr->clear();
         actAddress.clear();
     }
     pUi->lineEditAddress->setDisabled(f);
@@ -609,6 +603,13 @@ void cIpEditWidget::setAllDisabled(bool f)
     pUi->comboBoxSubNet->setDisabled(f);
     pUi->comboBoxSubNetAddr->setDisabled(f);
     disableSignals = false;
+}
+
+void cIpEditWidget::on_comboBoxIpType_currentIndexChanged(int index)
+{
+    const cEnumVal *pev = pModelIpType->getDecorationAt(index);
+    int             e   = pModelIpType->getIntAt(index);
+    enumSetD(pUi->comboBoxIpType, *pev, e);
 }
 
 void vlanIdChanged(qlonglong _vid)
@@ -1102,4 +1103,5 @@ cEnumValsEdit::~cEnumValsEdit()
 }
 
 /* ****** */
+
 

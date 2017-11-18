@@ -100,6 +100,54 @@ protected:
     bool        _rowNumbers;
 };
 
+/// @class cStringListDecModel
+/// Lista modell string lista megjelenítéséhez. + dekoráció
+class LV2GSHARED_EXPORT cStringListDecModel: public QAbstractListModel {
+public:
+    /// Konstruktor
+    cStringListDecModel(QObject *__par = NULL);
+    ~cStringListDecModel();
+    /// A _stringList konténer adattag méretét adja vissza
+    virtual int rowCount(const QModelIndex &parent) const;
+    /// Egy oszlopos megjelenítés (esetleg egy sorszám oszlop, mint heder), mindíg 1-el tér vissza.
+    virtual int columnCount(const QModelIndex &parent) const;
+    /// Cella adatként a _stringList megfelelő elemét, az igazítás típusaként pedig balra igazítást, egyébb esetben 'NULL'-t ad vissza.
+    virtual QVariant data(const QModelIndex &index, int role) const;
+    /// Ha sorszámozás van megadva, akkor a kért sorszámot adja vissza.
+    virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const;
+    /// Az aktuális string konténer referenciáját adja vissza.
+    const QStringList& stringList() const       { return _stringList; }
+    /// A megadott sring lista megjelenításe. A konténert bemásolja _stringList adattag konténerbe.
+    /// A dokoráció alapértelmezett lessz;
+    cStringListDecModel &setStringList(const QStringList& sl);
+    /// A megadott sring lista megjelenításe. A konténert bemásolja _stringList adattag konténerbe.
+    cStringListDecModel & setLists(const QStringList& sl, const QList<const cEnumVal *> &decs);
+    cStringListDecModel &setDecorationAt(int ix, const cEnumVal * pe);
+    cStringListDecModel &setDefDecoration(const cEnumVal * pe) { defDecoration = pe; return *this; }
+    const cEnumVal * getDefDecoration() { return defDecoration; }
+    const cEnumVal * getDecorationAt(int ix);
+protected:
+    /// Az aktuálisan megjelenített string lista konténer
+    QStringList _stringList;
+    /// Az alapértelmezett dekoráció
+    const cEnumVal * defDecoration;
+    /// A soronkénti dekorációk
+    QList<const cEnumVal *> * decorations;
+};
+
+class LV2GSHARED_EXPORT cStringListEnumModel : public cStringListDecModel {
+public:
+    /// Konstruktor
+    cStringListEnumModel(QObject *__par = NULL);
+    cStringListEnumModel& setLists(const QString& _t, qlonglong mask = -1, bool _null = false);
+    int getIntAt(int ix);
+    QString getNameAt(int ix);
+protected:
+    bool nullable;
+    const cColEnumType *pEnumType;
+    QList<int>  valList;
+};
+
 /// Model: polygon pontjainak megjelenítése egy QTableView objektummal
 class LV2GSHARED_EXPORT cPolygonTableModel : public QAbstractTableModel {
 public:

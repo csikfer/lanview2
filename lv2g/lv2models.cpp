@@ -125,6 +125,137 @@ cStringListModel& cStringListModel::down(const QModelIndexList& mil)
     return *this;
 }
 
+/* **************************************** cStringListDecModel ****************************************  */
+
+
+cStringListDecModel::cStringListDecModel(QObject *__par)
+    : QAbstractListModel(__par)
+{
+    defDecoration = &cEnumVal::enumVal(_sDatacharacter, DC_DATA);
+    decorations = new QList<const cEnumVal *>();
+}
+
+cStringListDecModel::~cStringListDecModel()
+{
+    delete decorations;
+}
+
+int cStringListDecModel::rowCount(const QModelIndex &parent) const
+{
+    (void)parent;
+    return _stringList.size();
+}
+
+int cStringListDecModel::columnCount(const QModelIndex &parent) const
+{
+    (void)parent;
+    return 1;
+}
+
+QVariant cStringListDecModel::data(const QModelIndex &index, int role) const
+{
+    int row = index.row();
+    if (!isContIx(_stringList, row)) EXCEPTION(ENOINDEX, row);
+    if (!isContIx(*decorations, row)) EXCEPTION(ENOINDEX, row);
+    if (role == Qt::DisplayRole) {
+        return _stringList.at(row);
+    }
+    return enumRole(*decorations->at(row), role);
+}
+
+QVariant cStringListDecModel::headerData(int section, Qt::Orientation orientation, int role) const
+{
+    (void)section;
+    (void)orientation;
+    (void)role;
+    return QVariant();
+}
+
+cStringListDecModel& cStringListDecModel::setStringList(const QStringList& sl)
+{
+    beginResetModel();
+    _stringList = sl;
+    decorations->clear();
+    for (int i = 0; i < _stringList.size(); ++i) *decorations << defDecoration;
+    endResetModel();
+    return *this;
+}
+
+cStringListDecModel &cStringListDecModel::setLists(const QStringList& sl, const QList<const cEnumVal *>& decs)
+{
+    beginResetModel();
+    _stringList = sl;
+    *decorations = decs;
+    endResetModel();
+    return *this;
+}
+
+cStringListDecModel &cStringListDecModel::setDecorationAt(int ix, const cEnumVal * pe)
+{
+    beginResetModel();
+    if (!isContIx(*decorations, ix)) EXCEPTION(ENOINDEX, ix);
+    (*decorations)[ix] = pe;
+    endResetModel();
+    return *this;
+}
+
+const cEnumVal * cStringListDecModel::getDecorationAt(int ix)
+{
+    if (!isContIx(*decorations, ix)) EXCEPTION(ENOINDEX, ix);
+    return (*decorations)[ix];
+}
+
+/* ---------------------------------------- cStringListEnumModel ----------------------------------------  */
+
+cStringListEnumModel::cStringListEnumModel(QObject *__par)
+    : cStringListDecModel(__par)
+{
+    nullable = false;
+    pEnumType = NULL;
+}
+
+cStringListEnumModel& cStringListEnumModel::setLists(const QString& _t, qlonglong mask, bool _null)
+{
+    QSqlQuery q = getQuery();
+    pEnumType = cColEnumType::fetchOrGet(q, _t);
+    nullable = _null;
+    beginResetModel();
+    _stringList.clear();
+    decorations->clear();
+    valList.clear();
+    if (nullable) {
+        _stringList  << dcViewShort(DC_NULL);
+        *decorations << &cEnumVal::enumVal(_t, DC_NULL);
+        valList      << -1;
+    }
+    int i, n = pEnumType->enumValues.size();
+    qlonglong m;
+    for (i = 0, m = 1; i < n; ++i, m << 1) {
+        if (mask & m) {
+            const cEnumVal& e = cEnumVal::enumVal(_t, i);
+            _stringList  << cEnumVal::viewShort(_t, i, e.getName());
+            *decorations << &e;
+            valList      << i;
+        }
+    }
+    endResetModel();
+    return *this;
+}
+
+int cStringListEnumModel::getIntAt(int ix)
+{
+    if (!isContIx(valList, ix)) EXCEPTION(ENOINDEX, ix);
+    return valList.at(ix);
+}
+
+QString cStringListEnumModel::getNameAt(int ix)
+{
+    int i = getIntAt(ix);
+    if (i < 0) return _sNul;
+    if (pEnumType == NULL) EXCEPTION(EPROGFAIL);
+    return pEnumType->enum2str(i);
+}
+
 
 /* **************************************** cPolygonTableModel ****************************************  */
 

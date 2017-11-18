@@ -113,11 +113,14 @@ private:
     QSqlQuery * pq;
     qlonglong   ipTypes;
     cSelectVlan *pSelectVlan;
+    cStringListEnumModel *pModelIpType;
     QHostAddress actAddress;
     bool disableSignals;
     bool disabled;
 private slots:
     void setAllDisabled(bool f = true);
+    void on_comboBoxIpType_currentIndexChanged(int index);
+
 signals:
     void ipAddressChanged(const QHostAddress& _a);
     void vlanIdChanged(qlonglong _vid);

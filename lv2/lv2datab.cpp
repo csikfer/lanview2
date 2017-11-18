@@ -225,8 +225,9 @@ const QString& cColEnumType::enum2str(qlonglong e, eEx __ex) const
 
 QStringList cColEnumType::set2lst(qlonglong b, eEx __ex) const
 {
-    if (__ex && !checkSet(b))
+    if (__ex >= EX_ERROR && !checkSet(b)) {
         EXCEPTION(EDATA, b, QObject::trUtf8("Nem megengedett enumerációs érték : [%1]").arg(*this, QString::number(b, 2)));
+    }
     QStringList r;
     for (int i = 0; i < enumValues.size(); ++i) {
         if (b & (1LL << i)) r << enumValues[i];

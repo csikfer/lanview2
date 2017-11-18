@@ -874,28 +874,25 @@ signals:
 class LV2GSHARED_EXPORT cSelectVlan : public QObject {
     Q_OBJECT
 public:
-    cSelectVlan(QComboBox *_pComboBoxId, QComboBox *_pComboBoxName, const QHostAddress& _a = QHostAddress(), eAddressType t = AT_DYNAMIC, QWidget *_par = NULL);
+    cSelectVlan(QComboBox *_pComboBoxId, QComboBox *_pComboBoxName, QWidget *_par = NULL);
     ~cSelectVlan();
-    void setAddress(eAddressType t = AT_DYNAMIC, const QHostAddress& _a = QHostAddress());
-    bool setVlan(qlonglong _vid);
-    bool setSubNet(qlonglong _sid);
+    bool setCurrentByVlan(qlonglong _vid);
+    bool setCurrentBySubNet(qlonglong _sid);
     void setDisable(bool f);
 private:
     QSqlQuery   *pq;
     QComboBox   *pComboBoxId;
     QComboBox   *pComboBoxName;
-    QHostAddress address;
-    eAddressType addrType;
-    QStringList  nameList;
-    QList<qlonglong> idList;
-    QStringList  sIdList;
+    cStringListDecModel *pModelId;
+    cStringListDecModel *pModelName;
+    QStringList       nameList;
+    QList<qlonglong>  idList;
+    QStringList       sIdList;
     QString     actName;
     qlonglong   actId;
     bool        disableSignal;
+    const cEnumVal *  pevNull;
 private slots:
-    // Törli a listákat, és mindkét comboBox-ot. Az objektum slot-jai nem lesznek aktíválva.
-    void clear();
-    // Ha f igaz, letiltja, egyébkét engedélyezi a két comboBox-ot, ha f igaz hívja a clear() slot-ot is.
     void _changedId(int ix);
     void _changedName(int ix);
 signals:
@@ -903,6 +900,40 @@ signals:
     void changedName(const QString& _n);
 };
 
+
+class LV2GSHARED_EXPORT cSelectSubNet : public QObject {
+    Q_OBJECT
+public:
+    cSelectSubNet(QComboBox *_pComboBoxNet, QComboBox *_pComboBoxName, const QHostAddress& _a = QHostAddress(), eAddressType t = AT_DYNAMIC, QWidget *_par = NULL);
+    ~cSelectSubNet();
+    void setCurrentByAddress(eAddressType t = AT_DYNAMIC, const QHostAddress& _a = QHostAddress());
+    bool setCurrentByVlan(qlonglong _vid);
+    bool setCurrentBySubNet(qlonglong _sid);
+    eTristate setCurrentByAddress(QHostAddress& _a);
+    void setDisable(bool f);
+private:
+    QSqlQuery   *pq;
+    QComboBox   *pComboBoxNet;
+    QComboBox   *pComboBoxName;
+    cStringListDecModel *pModelNet;
+    cStringListDecModel *pModelName;
+    QHostAddress address;
+    eAddressType addrType;
+    QStringList  nameList;
+    QList<qlonglong> idList;
+    QStringList  sNetList;
+    QList<netAddress> netList;
+    QString     actName;
+    qlonglong   actId;
+    bool        disableSignal;
+    const cEnumVal *  pevNull;
+private slots:
+    void _changedId(int ix);
+    void _changedName(int ix);
+signals:
+    void changedId(qlonglong _id);
+    void changedName(const QString& _n);
+};
 
 class cDialogButtons;
 

@@ -2827,19 +2827,45 @@ void cSelectNode::_nodeChanged(int ix)
 
 /* ********************************************************************************* */
 
-cSelectVlan::cSelectVlan(QComboBox *_pComboBoxId, QComboBox *_pComboBoxName, const QHostAddress &_a, eAddressType _t, QWidget *_par)
+cSelectVlan::cSelectVlan(QComboBox *_pComboBoxId, QComboBox *_pComboBoxName, QWidget *_par)
     : QObject(_par)
 {
     disableSignal = false;
-
     pq = newQuery();
+    pevNull = &cEnumVal::enumVal(_sDatacharacter, DC_NULL);
     pComboBoxId   = _pComboBoxId;
     pComboBoxName = _pComboBoxName;
+    actId         = NULL_ID;
+    actName       = _sNul;
+    pModelId      = new cStringListDecModel;
+    pModelName    = new cStringListDecModel;
+    pModelId->setDefDecoration(&cEnumVal::enumVal(_sDatacharacter, DC_ID));
+    pModelName->setDefDecoration(&cEnumVal::enumVal(_sDatacharacter, DC_NAME));
+    pComboBoxId->setModel(pModelId);
+    pComboBoxName->setModel(pModelName);
+
+    idList   << NULL_ID;
+    nameList << dcViewShort(DC_NULL);
+    sIdList  << dcViewShort(DC_NULL);
+    QString sql = "SELECT vlan_id, vlan_name FROM vlans";
+    if (execSql(*pq, sql)) do {
+        qlonglong id = pq->value(0).toLongLong();
+        idList   << id;
+        nameList << pq->value(1).toString();
+        sIdList  << QString::number(id);
+    } while (pq->next());
+    pModelId->setStringList(sIdList).setDecorationAt(0, pevNull);
+    pModelName->setStringList(nameList).setDecorationAt(0, pevNull);
+    pComboBoxId->setCurrentIndex(0);
+    pComboBoxName->setCurrentIndex(0);
     actId   = NULL_ID;
     actName = _sNul;
-    setAddress(_t, _a);
+
     connect(pComboBoxId,   SIGNAL(currentIndexChanged(int)), this, SLOT(_changedId(int)));
     connect(pComboBoxName, SIGNAL(currentIndexChanged(int)), this, SLOT(_changedName(int)));
+
+    changedId(actId);
+    changedName(actName);
 }
 
 cSelectVlan::~cSelectVlan()
@@ -2847,75 +2873,14 @@ cSelectVlan::~cSelectVlan()
     delete pq;
 }
 
-void cSelectVlan::setAddress(eAddressType _t, const QHostAddress &_a)
+bool cSelectVlan::setCurrentByVlan(qlonglong _vid)
 {
-    disableSignal = true;
-    address       = _a;
-    addrType      = _t;
-    if (addrType == AT_EXTERNAL) {
-        pComboBoxId->clear();
-        pComboBoxId->setDisabled(true);
-        pComboBoxName->clear();
-        pComboBoxName->setDisabled(true);
-        disableSignal = false;
-        if (actId != NULL_ID) {
-            actId   = NULL_ID;
-            actName = _sNul;
-            changedId(actId);
-            changedName(actName);
-        }
-        return;
-    }
-    pComboBoxId->setEnabled(true);
-    pComboBoxName->setEnabled(true);
-    nameList.clear();
-    idList.clear();
-    sIdList.clear();
-    if (!address.isNull()) {
-        QString sql = "SELECT vlan_id, vlan_name FROM vlans JOIN subnets USING(vlan_id) WHERE netaddr >> ?::inet";
-        if (execSql(*pq, sql, address.toString())) do {
-            qlonglong id = pq->value(0).toLongLong();
-            idList   << id;
-            nameList << pq->value(1).toString();
-            sIdList  << QString::number(id);
-        } while (pq->next());
-    }
-    if (idList.isEmpty()) {
-        idList   << NULL_ID;
-        nameList << _sNul;
-        sIdList  << _sNul;
-        QString sql = "SELECT vlan_id, vlan_name FROM vlans";
-        if (execSql(*pq, sql)) do {
-            qlonglong id = pq->value(0).toLongLong();
-            idList   << id;
-            nameList << pq->value(1).toString();
-            sIdList  << QString::number(id);
-        } while (pq->next());
-    }
-    pComboBoxId->addItems(sIdList);
-    pComboBoxName->addItems(nameList);
-    disableSignal = false;
-    if (actId != idList.first()) {
-        actId   = idList.first();
-        actName = nameList.first();
-        changedId(actId);
-        changedName(actName);
-    }
-}
-
-bool cSelectVlan::setVlan(qlonglong _vid)
-{
-    if (idList.isEmpty()) return _vid == NULL_ID;
-    if (_vid == NULL_ID) {
-        if (actId == NULL_ID) return true;
-        if (idList.first() == NULL_ID) {
-            pComboBoxId->setCurrentIndex(0);
-            pComboBoxName->setCurrentIndex(0);
-            return true;
-        }
-        return false;
-    }
     if (actId == _vid) return true;
+    if (_vid == NULL_ID) {
+        pComboBoxId->setCurrentIndex(0);
+        pComboBoxName->setCurrentIndex(0);
+        return true;
+    }
     int ix = idList.indexOf(_vid);
     if (ix >= 0) {
         pComboBoxId->setCurrentIndex(ix);
@@ -2925,48 +2890,32 @@ bool cSelectVlan::setVlan(qlonglong _vid)
     return false;
 }
 
-bool cSelectVlan::setSubNet(qlonglong _sid)
+bool cSelectVlan::setCurrentBySubNet(qlonglong _sid)
 {
-    if (idList.isEmpty()) return _sid == NULL_ID;
     if (_sid == NULL_ID) {
-        if (actId == NULL_ID) return true;
-        if (idList.first() == NULL_ID) {
-            pComboBoxId->setCurrentIndex(0);
-            pComboBoxName->setCurrentIndex(0);
-            return true;
-        }
-        return false;
+        return setCurrentByVlan(NULL_ID);
     }
     cSubNet s;
     s.setById(*pq, _sid);
     qlonglong vid = s.getId(_sVlanId);
-    return setVlan(vid);
-}
-
-
-void cSelectVlan::clear()
-{
-    disableSignal = true;
-    actId   = NULL_ID;
-    actName = _sNul;
-    idList.clear();
-    nameList.clear();
-    sIdList.clear();
-    pComboBoxId->clear();
-    pComboBoxName->clear();
-    disableSignal = false;
+    return setCurrentByVlan(vid);
 }
 
 void cSelectVlan::setDisable(bool f)
 {
-    if (f) clear();
+    disableSignal = true;
+    pComboBoxId->setCurrentIndex(0);
+    pComboBoxName->setCurrentIndex(0);
     pComboBoxId->setDisabled(f);
     pComboBoxName->setDisabled(f);
+    disableSignal = false;
 }
 
 void cSelectVlan::_changedId(int ix)
 {
     if (disableSignal) return;
+    const cEnumVal *pe = pModelId->getDecorationAt(ix);
+    enumSetD(pComboBoxId, *pe);
     actId = idList.at(ix);
     changedId(actId);
     pComboBoxName->setCurrentIndex(ix);
@@ -2975,9 +2924,141 @@ void cSelectVlan::_changedId(int ix)
 void cSelectVlan::_changedName(int ix)
 {
     if (disableSignal) return;
-    actName = nameList.at(ix);
+    const cEnumVal *pe = pModelName->getDecorationAt(ix);
+    enumSetD(pComboBoxName, *pe);
+    bool isNull = ix == 0 && idList.first() == NULL_ID;
+    actName = isNull ? _sNul :nameList.at(ix);
     changedName(actName);
     pComboBoxId->setCurrentIndex(ix);
+}
+
+/* ********************************************************************************* */
+
+cSelectSubNet::cSelectSubNet(QComboBox *_pComboBoxNet, QComboBox *_pComboBoxName, const QHostAddress &_a, eAddressType _t, QWidget *_par)
+    : QObject(_par)
+{
+    disableSignal = false;
+    pq = newQuery();
+    pevNull = &cEnumVal::enumVal(_sDatacharacter, DC_NULL);
+    pComboBoxNet  = _pComboBoxNet;
+    pComboBoxName = _pComboBoxName;
+    actId         = NULL_ID;
+    actName       = _sNul;
+    pModelNet     = new cStringListDecModel;
+    pModelName    = new cStringListDecModel;
+    pModelNet->setDefDecoration(&cEnumVal::enumVal(_sDatacharacter, DC_DATA));
+    pModelName->setDefDecoration(&cEnumVal::enumVal(_sDatacharacter, DC_NAME));
+    pComboBoxNet->setModel(pModelNet);
+    pComboBoxName->setModel(pModelName);
+
+    idList   << NULL_ID;
+    nameList << dcViewShort(DC_NULL);
+    sNetList << dcViewShort(DC_NULL);
+    netList  << netAddress();
+    QString sql = "SELECT subnet_id, subnet_name, netaddr FROM subnets";
+    if (execSql(*pq, sql)) do {
+        QString sNet = pq->value(2).toString();
+        idList   << pq->value(0).toLongLong();
+        nameList << pq->value(1).toString();
+        sNetList << sNet;
+        netList  << netAddress(sNet);
+    } while (pq->next());
+    pModelNet->setStringList(sNetList).setDecorationAt(0, pevNull);;
+    pModelName->setStringList(nameList).setDecorationAt(0, pevNull);;
+    pComboBoxNet->setCurrentIndex(0);
+    pComboBoxName->setCurrentIndex(0);
+
+    connect(pComboBoxNet,  SIGNAL(currentIndexChanged(int)), this, SLOT(_changedNet(int)));
+    connect(pComboBoxName, SIGNAL(currentIndexChanged(int)), this, SLOT(_changedName(int)));
+
+    changedId(actId);
+    changedName(actName);
+}
+
+cSelectSubNet::~cSelectSubNet()
+{
+    delete pq;
+}
+
+
+bool cSelectSubNet::setCurrentByVlan(qlonglong _vid)
+{
+    if (_vid == NULL_ID) {
+        return setCurrentByVlan(NULL_ID);
+    }
+    cSubNet sn;
+    sn.setId(_sVlanId, _vid);
+    int n = sn.completion(*pq);
+    while (n > 1 && sn.getId(__sSubnetType) != NT_PRIMARY) {
+        sn.next(*pq);
+    }
+    return setCurrentBySubNet(sn.getId());
+}
+
+bool cSelectSubNet::setCurrentBySubNet(qlonglong _sid)
+{
+    if (actId == _sid) return true;
+    if (_sid == NULL_ID) {
+        pComboBoxNet->setCurrentIndex(0);
+        pComboBoxName->setCurrentIndex(0);
+        return true;
+    }
+    int ix = idList.indexOf(_sid);
+    if (ix >= 0) {
+        pComboBoxNet->setCurrentIndex(ix);
+        pComboBoxName->setCurrentIndex(ix);
+        return true;
+    }
+    return false;
+}
+
+eTristate cSelectSubNet::setCurrentByAddress(QHostAddress& _a)
+{
+    if (_a.isNull()) {
+        pComboBoxNet->setCurrentIndex(0);
+        pComboBoxName->setCurrentIndex(0);
+        return TS_NULL;
+    }
+    for (int i = 1; i < netList.size(); ++i) {
+        const QPair<QHostAddress, int>& n = (const QPair<QHostAddress, int>&)netList.at(i);
+        if (_a.isInSubnet(n)) {
+            pComboBoxNet->setCurrentIndex(i);
+            pComboBoxName->setCurrentIndex(i);
+            return TS_TRUE;
+        }
+    }
+    return TS_FALSE;
+}
+
+void cSelectSubNet::setDisable(bool f)
+{
+    disableSignal = true;
+    pComboBoxNet->setCurrentIndex(0);
+    pComboBoxName->setCurrentIndex(0);
+    pComboBoxNet->setDisabled(f);
+    pComboBoxName->setDisabled(f);
+    disableSignal = false;
+}
+
+void cSelectSubNet::_changedId(int ix)
+{
+    if (disableSignal) return;
+    const cEnumVal *pe = pModelNet->getDecorationAt(ix);
+    enumSetD(pComboBoxNet, *pe);
+    actId = idList.at(ix);
+    changedId(actId);
+    pComboBoxName->setCurrentIndex(ix);
+}
+
+void cSelectSubNet::_changedName(int ix)
+{
+    if (disableSignal) return;
+    const cEnumVal *pe = pModelName->getDecorationAt(ix);
+    enumSetD(pComboBoxName, *pe);
+    bool isNull = ix == 0 && idList.first() == NULL_ID;
+    actName = isNull ? _sNul :nameList.at(ix);
+    changedName(actName);
+    pComboBoxNet->setCurrentIndex(ix);
 }
 
 /* ********************************************************************************* */

@@ -319,10 +319,16 @@ const QFont& fontByEnum(const QString& __t, int _e)
 void enumSetD(QWidget *pW, const QString& _t, int id)
 {
     const cEnumVal& ev = cEnumVal::enumVal(_t, id);
+    return enumSetD(pW, ev, id);
+}
+
+void enumSetD(QWidget *pW, const cEnumVal& ev, int _id)
+{
     if (ev.isNull()) return;
-    enumSetColor(pW, _t, id);
+    int id = _id == NULL_IX ? ev.toInt() : _id;
+    enumSetColor(pW, ev.typeName(), id);
     QString family = ev.getName(cEnumVal::ixFontFamily());
-    if (ev.isNull(_sFontAttr) && family.isNull()) {
+    if (!(ev.isNull(cEnumVal::ixFontAttr()) && family.isEmpty())) {
         QFont font = pW->font();
         if (!family.isEmpty()) {
             font.setFamily(family);
