@@ -124,8 +124,9 @@ public:
     cStringListDecModel & setLists(const QStringList& sl, const QList<const cEnumVal *> &decs);
     cStringListDecModel &setDecorationAt(int ix, const cEnumVal * pe);
     cStringListDecModel &setDefDecoration(const cEnumVal * pe) { defDecoration = pe; return *this; }
-    const cEnumVal * getDefDecoration() { return defDecoration; }
-    const cEnumVal * getDecorationAt(int ix);
+    const cEnumVal * getDefDecoration() const { return defDecoration; }
+    const cEnumVal * getDecorationAt(int ix) const;
+    int indexOf(const QString& s) const { return _stringList.indexOf(s); }
 protected:
     /// Az aktuálisan megjelenített string lista konténer
     QStringList _stringList;
@@ -142,6 +143,7 @@ public:
     cStringListEnumModel& setLists(const QString& _t, qlonglong mask = -1, bool _null = false);
     int getIntAt(int ix);
     QString getNameAt(int ix);
+    int indexOf(int e) const { return valList.indexOf(e); }
 protected:
     bool nullable;
     const cColEnumType *pEnumType;

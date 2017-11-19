@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1323</width>
-    <height>1146</height>
+    <width>902</width>
+    <height>648</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -837,31 +837,14 @@
      <widget class="QWidget" name="layoutWidget_5">
       <layout class="QVBoxLayout" name="verticalLayout_5">
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_2">
-         <item>
-          <widget class="QLabel" name="labelWarn">
-           <property name="text">
-            <string>Hibaüzenetek, figyelmeztetések :</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="labelErr">
-           <property name="font">
-            <font>
-             <weight>75</weight>
-             <bold>true</bold>
-            </font>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">QLabel { color : red; }</string>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-        </layout>
+        <widget class="QLabel" name="labelWarn">
+         <property name="styleSheet">
+          <string notr="true">QLabel { background-color: rgb(255,128,0); color :rgb() ;}</string>
+         </property>
+         <property name="text">
+          <string>Hibaüzenetek, figyelmeztetések :</string>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QTextEdit" name="textEditErr"/>
@@ -872,6 +855,9 @@
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
         <widget class="QLabel" name="labelInf">
+         <property name="styleSheet">
+          <string notr="true">QLabel { background-color: rgb(0, 255, 0); color :rgb(0,0,0) ;}</string>
+         </property>
          <property name="text">
           <string>Információk :</string>
          </property>

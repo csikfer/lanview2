@@ -2,6 +2,22 @@
 #include "object_dialog.h"
 #include "lv2validator.h"
 
+class pINetValidator;
+/*
+cObjectDialog::cObjectDialog(QWidget *parent, bool ro)
+    : QDialog(parent)
+{
+    pq = newQuery();
+    readOnly = ro;
+    lockSlot = false;
+}
+
+cObjectDialog~cObjectDialog()
+{
+    delete pq;
+}
+*/
+
 /* ************************************************************************* */
 
 cPPortTableLine::cPPortTableLine(int r, cPatchDialog *par)
@@ -582,6 +598,12 @@ cIpEditWidget::cIpEditWidget(qlonglong _typeMask, QWidget *_par) : QWidget(_par)
     pModelIpType->setLists("addresstype", _typeMask);
     pUi->comboBoxIpType->setModel(pModelIpType);
     pSelectVlan = new cSelectVlan(pUi->comboBoxVLanId, pUi->comboBoxVLan);
+    pSelectSubNet = new cSelectSubNet(pUi->comboBoxSubNetAddr, pUi->comboBoxSubNet);
+    pINetValidator = new cINetValidator(true, this);
+    pUi->lineEditAddress->setValidator(pINetValidator);
+    connect(pSelectVlan, SIGNAL(changedId(qlonglong)), pSelectSubNet, SLOT(setCurrentByVlan(qlonglong)));
+    connect(pSelectSubNet, SIGNAL(changedId(qlonglong)), pSelectVlan, SLOT(setCurrentBySubNet(qlonglong)));
+    _state = IES_IS_NULL;
 }
 
 cIpEditWidget::~cIpEditWidget()
@@ -589,6 +611,33 @@ cIpEditWidget::~cIpEditWidget()
     delete pq;
 }
 
+void cIpEditWidget::set(cIpAddress *po)
+{
+    disableSignals = true;
+    _state = 0;
+    actAddress = po->address();
+    if (actAddress.isNull()) _state |= IES_ADDRESS_IS_NULL;
+    pUi->lineEditAddress->setText(po->getName(_sAddress));
+    int ix = pModelIpType->cStringListDecModel::indexOf(po->getName(_sAddrType));
+    if (ix < 0) ix = 0; // ?!
+    pUi->comboBoxIpType->setCurrentIndex(ix);
+    if (ix == 0) _state |= IES_ADDRESS_TYPE_IS_NULL;
+    qlonglong snid = po->getId(_sSubNetId);
+    pSelectSubNet->setCurrentBySubNet(snid);
+    if (snid == NULL_ID) _state |= IES_SUBNET_IS_NULL;
+    pUi->lineEditIpNote->setText(po->getNote());
+    disableSignals = false;
+}
+
+cIpAddress *cIpEditWidget::get() const
+{
+    cIpAddress *po = new cIpAddress(actAddress, pUi->comboBoxIpType->currentText());
+    po->setNote(pUi->lineEditIpNote->text());
+    po->setId(pSelectSubNet->currentId());
+    return po;
+}
+
+// SLOTS
 void cIpEditWidget::setAllDisabled(bool f)
 {
     disableSignals = true;
@@ -610,17 +659,62 @@ void cIpEditWidget::on_comboBoxIpType_currentIndexChanged(int index)
     const cEnumVal *pev = pModelIpType->getDecorationAt(index);
     int             e   = pModelIpType->getIntAt(index);
     enumSetD(pUi->comboBoxIpType, *pev, e);
+    if (_state & IES_ADDRESS_TYPE_IS_NULL) {
+        if (index != 0) {
+            _state &= ~ IES_ADDRESS_TYPE_IS_NULL;
+        }
+        else {
+            return; // state unchanged
+        }
+    }
+    else {
+        if (index == 0) {
+            _state |=   IES_ADDRESS_TYPE_IS_NULL;
+        }
+        else {
+            return; // state unchanged
+        }
+    }
+    changedState(_state);
 }
 
-void vlanIdChanged(qlonglong _vid)
+void cIpEditWidget::on_lineEditAddress_textChanged(const QString &arg1)
 {
-
+    int oldState = _state;
+    _state &= ~(IES_ADDRESS_IS_INVALID | IES_ADDRESS_IS_NULL);
+    if (arg1.isEmpty()) {
+        actAddress.clear();
+        _state |= IES_ADDRESS_IS_NULL;
+    }
+    else {
+        actAddress.setAddress(arg1);
+        if (actAddress.isNull()) _state |= IES_ADDRESS_IS_INVALID;
+        else pSelectSubNet->setCurrentByAddress(actAddress);
+    }
+    if (oldState != _state) changedState(_state);
 }
 
-void subNetIdChanged(qlonglong _sid)
+void cIpEditWidget::_subNetIdChanged(qlonglong _id)
 {
-
+    if (_state & IES_SUBNET_IS_NULL) {
+        if (_id != NULL_ID) {
+            _state &= ~ IES_SUBNET_IS_NULL;
+        }
+        else {
+            return; // state unchanged
+        }
+    }
+    else {
+        if (_id == NULL_ID) {
+            _state |=   IES_SUBNET_IS_NULL;
+        }
+        else {
+            return; // state unchanged
+        }
+    }
+    changedState(_state);
 }
+
 
 /* ********************************************************************************************** */
 
@@ -1103,5 +1197,4 @@ cEnumValsEdit::~cEnumValsEdit()
 }
 
 /* ****** */
-
 

@@ -199,7 +199,7 @@ cStringListDecModel &cStringListDecModel::setDecorationAt(int ix, const cEnumVal
     return *this;
 }
 
-const cEnumVal * cStringListDecModel::getDecorationAt(int ix)
+const cEnumVal * cStringListDecModel::getDecorationAt(int ix) const
 {
     if (!isContIx(*decorations, ix)) EXCEPTION(ENOINDEX, ix);
     return (*decorations)[ix];
@@ -230,7 +230,7 @@ cStringListEnumModel& cStringListEnumModel::setLists(const QString& _t, qlonglon
     }
     int i, n = pEnumType->enumValues.size();
     qlonglong m;
-    for (i = 0, m = 1; i < n; ++i, m << 1) {
+    for (i = 0, m = 1; i < n; ++i, m <<= 1) {
         if (mask & m) {
             const cEnumVal& e = cEnumVal::enumVal(_t, i);
             _stringList  << cEnumVal::viewShort(_t, i, e.getName());

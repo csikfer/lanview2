@@ -2873,32 +2873,31 @@ cSelectVlan::~cSelectVlan()
     delete pq;
 }
 
-bool cSelectVlan::setCurrentByVlan(qlonglong _vid)
+void cSelectVlan::setCurrentByVlan(qlonglong _vid)
 {
-    if (actId == _vid) return true;
+    if (actId == _vid) return;
     if (_vid == NULL_ID) {
         pComboBoxId->setCurrentIndex(0);
         pComboBoxName->setCurrentIndex(0);
-        return true;
+        return;
     }
     int ix = idList.indexOf(_vid);
     if (ix >= 0) {
         pComboBoxId->setCurrentIndex(ix);
         pComboBoxName->setCurrentIndex(ix);
-        return true;
     }
-    return false;
 }
 
-bool cSelectVlan::setCurrentBySubNet(qlonglong _sid)
+void cSelectVlan::setCurrentBySubNet(qlonglong _sid)
 {
     if (_sid == NULL_ID) {
-        return setCurrentByVlan(NULL_ID);
+        setCurrentByVlan(NULL_ID);
+        return;
     }
     cSubNet s;
     s.setById(*pq, _sid);
     qlonglong vid = s.getId(_sVlanId);
-    return setCurrentByVlan(vid);
+    setCurrentByVlan(vid);
 }
 
 void cSelectVlan::setDisable(bool f)
@@ -2934,7 +2933,7 @@ void cSelectVlan::_changedName(int ix)
 
 /* ********************************************************************************* */
 
-cSelectSubNet::cSelectSubNet(QComboBox *_pComboBoxNet, QComboBox *_pComboBoxName, const QHostAddress &_a, eAddressType _t, QWidget *_par)
+cSelectSubNet::cSelectSubNet(QComboBox *_pComboBoxNet, QComboBox *_pComboBoxName, QWidget *_par)
     : QObject(_par)
 {
     disableSignal = false;
@@ -2980,11 +2979,18 @@ cSelectSubNet::~cSelectSubNet()
     delete pq;
 }
 
+qlonglong cSelectSubNet::currentId()
+{
+    int ix = pComboBoxNet->currentIndex();
+    return isContIx(idList, ix) ? idList.at(ix) : NULL_ID;
+}
 
-bool cSelectSubNet::setCurrentByVlan(qlonglong _vid)
+
+void cSelectSubNet::setCurrentByVlan(qlonglong _vid)
 {
     if (_vid == NULL_ID) {
-        return setCurrentByVlan(NULL_ID);
+        setCurrentByVlan(NULL_ID);
+        return;
     }
     cSubNet sn;
     sn.setId(_sVlanId, _vid);
@@ -2992,42 +2998,39 @@ bool cSelectSubNet::setCurrentByVlan(qlonglong _vid)
     while (n > 1 && sn.getId(__sSubnetType) != NT_PRIMARY) {
         sn.next(*pq);
     }
-    return setCurrentBySubNet(sn.getId());
+    setCurrentBySubNet(sn.getId());
 }
 
-bool cSelectSubNet::setCurrentBySubNet(qlonglong _sid)
+void cSelectSubNet::setCurrentBySubNet(qlonglong _sid)
 {
-    if (actId == _sid) return true;
+    if (actId == _sid) return;
     if (_sid == NULL_ID) {
         pComboBoxNet->setCurrentIndex(0);
         pComboBoxName->setCurrentIndex(0);
-        return true;
+        return;
     }
     int ix = idList.indexOf(_sid);
     if (ix >= 0) {
         pComboBoxNet->setCurrentIndex(ix);
         pComboBoxName->setCurrentIndex(ix);
-        return true;
     }
-    return false;
 }
 
-eTristate cSelectSubNet::setCurrentByAddress(QHostAddress& _a)
+void cSelectSubNet::setCurrentByAddress(QHostAddress& _a)
 {
     if (_a.isNull()) {
         pComboBoxNet->setCurrentIndex(0);
         pComboBoxName->setCurrentIndex(0);
-        return TS_NULL;
+        return;
     }
     for (int i = 1; i < netList.size(); ++i) {
         const QPair<QHostAddress, int>& n = (const QPair<QHostAddress, int>&)netList.at(i);
         if (_a.isInSubnet(n)) {
             pComboBoxNet->setCurrentIndex(i);
             pComboBoxName->setCurrentIndex(i);
-            return TS_TRUE;
+            return;
         }
     }
-    return TS_FALSE;
 }
 
 void cSelectSubNet::setDisable(bool f)
@@ -3040,7 +3043,7 @@ void cSelectSubNet::setDisable(bool f)
     disableSignal = false;
 }
 
-void cSelectSubNet::_changedId(int ix)
+void cSelectSubNet::_changedNet(int ix)
 {
     if (disableSignal) return;
     const cEnumVal *pe = pModelNet->getDecorationAt(ix);

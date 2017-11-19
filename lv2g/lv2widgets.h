@@ -876,8 +876,9 @@ class LV2GSHARED_EXPORT cSelectVlan : public QObject {
 public:
     cSelectVlan(QComboBox *_pComboBoxId, QComboBox *_pComboBoxName, QWidget *_par = NULL);
     ~cSelectVlan();
-    bool setCurrentByVlan(qlonglong _vid);
-    bool setCurrentBySubNet(qlonglong _sid);
+public slots:
+    void setCurrentByVlan(qlonglong _vid);
+    void setCurrentBySubNet(qlonglong _sid);
     void setDisable(bool f);
 private:
     QSqlQuery   *pq;
@@ -904,12 +905,13 @@ signals:
 class LV2GSHARED_EXPORT cSelectSubNet : public QObject {
     Q_OBJECT
 public:
-    cSelectSubNet(QComboBox *_pComboBoxNet, QComboBox *_pComboBoxName, const QHostAddress& _a = QHostAddress(), eAddressType t = AT_DYNAMIC, QWidget *_par = NULL);
+    cSelectSubNet(QComboBox *_pComboBoxNet, QComboBox *_pComboBoxName, QWidget *_par = NULL);
     ~cSelectSubNet();
-    void setCurrentByAddress(eAddressType t = AT_DYNAMIC, const QHostAddress& _a = QHostAddress());
-    bool setCurrentByVlan(qlonglong _vid);
-    bool setCurrentBySubNet(qlonglong _sid);
-    eTristate setCurrentByAddress(QHostAddress& _a);
+    qlonglong currentId();
+public slots:
+    void setCurrentByVlan(qlonglong _vid);
+    void setCurrentBySubNet(qlonglong _sid);
+    void setCurrentByAddress(QHostAddress& _a);
     void setDisable(bool f);
 private:
     QSqlQuery   *pq;
@@ -928,7 +930,7 @@ private:
     bool        disableSignal;
     const cEnumVal *  pevNull;
 private slots:
-    void _changedId(int ix);
+    void _changedNet(int ix);
     void _changedName(int ix);
 signals:
     void changedId(qlonglong _id);

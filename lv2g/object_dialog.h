@@ -3,11 +3,27 @@
 
 #include "lv2models.h"
 #include "lv2widgets.h"
+#include "lv2validator.h"
 #include "record_dialog.h"
 #include "ui_edit_enum_vals.h"
 #include "ui_edit_ip.h"
 
-
+/*
+class LV2GSHARED_EXPORT cObjectDialog : public QDialog {
+public:
+    cObjectDialog(QWidget *parent = NULL, bool ro = false);
+    ~cObjectDialog();
+    virtual cRecord *get() = 0;
+    virtual void set(cRecord *po) = 0;
+    static cRecord * insertDialog(QWidget *pPar, cRecord * pSample = NULL);
+    static cRecord * editDialog(QWidget *pPar, cRecord * pSample, bool ro = false);
+protected:
+    virtual bool checkObjectType(cRecord *po) = 0;
+    bool        readOnly;
+    bool        lockSlot;
+    QSqlQuery * pq;
+};
+*/
 namespace Ui {
     class patchSimpleDialog;
 }
@@ -47,7 +63,6 @@ class cPPortTableLine;
     enum {
         CPP_NAME, CPP_TAG, CPP_INDEX, CPP_SH_TYPE, CPP_SH_IX, CPP_NOTE
     };
-
 #endif
 
 
@@ -63,8 +78,6 @@ protected:
     QSqlQuery              *pq;
     Ui::patchSimpleDialog  *pUi;
     cSelectPlace           *pSelectPlace;
-    // cZoneListModel         *pModelZone;
-    // cPlacesInZoneModel     *pModelPlace;
     bool                    lockSlot;
     QList<cPPortTableLine *>rowsData;
     QList<int>              shPrimRows;
@@ -108,23 +121,40 @@ class LV2GSHARED_EXPORT cIpEditWidget : public QWidget {
 public:
     cIpEditWidget(qlonglong _typeMask = -1, QWidget *_par = NULL);
     ~cIpEditWidget();
+    void set(cIpAddress *po);
+    cIpAddress *get() const;
+    enum eState {
+        IES_OK                  = 0,
+        IES_ADDRESS_IS_NULL     = 1,
+        IES_ADDRESS_IS_INVALID  = 2,
+        IES_ADDRESS_TYPE_IS_NULL= 4,
+        IES_SUBNET_IS_NULL      = 8,
+        IES_IS_NULL = IES_ADDRESS_IS_NULL | IES_ADDRESS_TYPE_IS_NULL | IES_SUBNET_IS_NULL
+    };
+    int state() const { return _state; }
 private:
+    int _state;
     Ui::editIp *pUi;
     QSqlQuery * pq;
     qlonglong   ipTypes;
     cSelectVlan *pSelectVlan;
+    cSelectSubNet *pSelectSubNet;
     cStringListEnumModel *pModelIpType;
+    cINetValidator *pINetValidator;
     QHostAddress actAddress;
     bool disableSignals;
     bool disabled;
-private slots:
-    void setAllDisabled(bool f = true);
-    void on_comboBoxIpType_currentIndexChanged(int index);
 
+public slots:
+    void setAllDisabled(bool f = true);
+private slots:
+    void on_comboBoxIpType_currentIndexChanged(int index);
+    void on_lineEditAddress_textChanged(const QString &arg1);
+    void _subNetIdChanged(qlonglong _id);
 signals:
-    void ipAddressChanged(const QHostAddress& _a);
-    void vlanIdChanged(qlonglong _vid);
-    void subNetIdChanged(qlonglong _sid);
+//    void vlanIdChanged(qlonglong _vid);
+//    void subNetIdChanged(qlonglong _sid);
+    void changedState(int _st);
 };
 
 namespace Ui { class enumValsWidget; }
