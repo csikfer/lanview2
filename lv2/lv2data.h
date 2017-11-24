@@ -1112,7 +1112,7 @@ public:
     /// Feltételezi, hogy a node_id mevű maző, vagyis a rekord ID ki ban töltve.
     /// @param __q Az adatbázis művelethet használt query objektum.
     /// @return A baeolvasott portok száma.
-    virtual int fetchPorts(QSqlQuery& __q);
+    virtual int fetchPorts(QSqlQuery& __q, int flags = 0);
     /// Feltölti az adatbázisból a params konténert.
     int fetchParams(QSqlQuery& q);
     /// Paraméter létrehozása, vagy értékének a modosítása
@@ -1299,7 +1299,7 @@ public:
     /// Alapértelmezetten aa a port típusa cInterface, akkor az IP címeket és vlan-okat is, de a port paramétereket nem tölti be!
     /// Ha megadjuk a flags paramétert, akkor a eContainerValid típusú konstans(ok)al adható meg, mely konténer adattagokat kell feltölteni.
     /// A CV_PORTS -ot nem kell megadni.
-    virtual int  fetchPorts(QSqlQuery& __q, int flags = (CV_PORTS_ADDRESSES | CV_PORT_VLANS));
+    virtual int  fetchPorts(QSqlQuery& __q, int flags = 0);
     /// A név alapján visszaadja a rekord ID-t, az objektum értéke nem változik.
     /// Ha a node típusban be lett állítva a host bit, akkor ha nincs találat a névre, akkor
     /// a keresett nevet kiegészíti a kereső domain nevekkel, és az így kapott nevekkel végrehajt mégegy keresést.

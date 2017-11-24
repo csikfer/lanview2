@@ -119,7 +119,7 @@ namespace Ui { class editIp; }
 class LV2GSHARED_EXPORT cIpEditWidget : public QWidget {
     Q_OBJECT
 public:
-    cIpEditWidget(qlonglong _typeMask = -1, QWidget *_par = NULL);
+    cIpEditWidget(const tIntVector &_types = tIntVector(), QWidget *_par = NULL);
     ~cIpEditWidget();
     void set(cIpAddress *po);
     cIpAddress *get() const;
@@ -139,7 +139,7 @@ private:
     qlonglong   ipTypes;
     cSelectVlan *pSelectVlan;
     cSelectSubNet *pSelectSubNet;
-    cStringListEnumModel *pModelIpType;
+    cEnumListModel *pModelIpType;
     cINetValidator *pINetValidator;
     QHostAddress actAddress;
     bool disableSignals;

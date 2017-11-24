@@ -5,6 +5,16 @@
 #include "guidata.h"
 #include "lv2link.h"
 
+EXT_ const QString sHtmlLine;
+EXT_ const QString sHtmlTabBeg;
+EXT_ const QString sHtmlTabEnd;
+EXT_ const QString sHtmlRowBeg;
+EXT_ const QString sHtmlRowEnd;
+EXT_ const QString sHtmlTh;
+EXT_ const QString sHtmlTd;
+EXT_ const QString sHtmlBold;
+EXT_ const QString sHtmlBr;
+
 static inline QString tag(const QString& t) {
     QString r = "<" + t;
     return r +">";
@@ -71,7 +81,8 @@ inline QString query2html(QSqlQuery q, const QString& _shapeName, const QString&
     return query2html(q, shape, _where, _par, shrt);
 }
 
-EXT_ QString reportByMac(QSqlQuery& q, const QString& aMac);
+EXT_ QString htmlReportNode(QSqlQuery& q, cPatch& node, const QString& _sTitle = QString(),bool ports = true);
+EXT_ QString htmlReportByMac(QSqlQuery& q, const QString& aMac);
 
 EXT_ QString linksHtmlTable(QSqlQuery& q, tRecordList<cPhsLink>& list, bool _swap = false);
 

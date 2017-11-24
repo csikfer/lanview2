@@ -57,7 +57,7 @@ public:
     /// @param __t A link típusa
     /// @param __s Az esetleges megosztás típusa, ha nincs megadva, vagy ES_NC, akkor a link keresésekor
     ///            nincs szűrési feltétel a megosztás típusára. Több találat is lehetséges.
-    /// @return False, ha nincs találat, true, ha van és betöltötte a talált (első) rekordot.
+    /// @return A találatok száma.
     int isExist(QSqlQuery &q, qlonglong __pid, ePhsLinkType __t, ePortShare __s = ES_NC);
     bool addIfCollision(QSqlQuery &q, tRecordList<cPhsLink>& list, qlonglong __pid, ePhsLinkType __t, ePortShare __s = ES_NC);
     int collisions(QSqlQuery& __q, tRecordList<cPhsLink> &list, qlonglong __pid, ePhsLinkType __t, ePortShare __s);

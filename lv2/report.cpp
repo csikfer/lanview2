@@ -2,14 +2,25 @@
 #include "srvdata.h"
 #include "guidata.h"
 
+const QString sHtmlLine   = "\n<hr>\n";
+const QString sHtmlTabBeg = "<table border=\"1\" cellpadding=\"2\" cellspacing=\"2\">";
+const QString sHtmlTabEnd = "</table>\n";
+const QString sHtmlRowBeg = "<tr>";
+const QString sHtmlRowEnd = "</tr>\n";
+const QString sHtmlTh     = "<th> %1 </th>";
+const QString sHtmlTd     = "<td> %1 </td>";
+const QString sHtmlBold   = "<b>%1</b>";
+const QString sHtmlVoid   = " - ";
+const QString sHtmlBr     = "<br>";
+
+
 QString toHtml(const QString& text, bool chgBreaks, bool esc)
 {
-    static const QString br = " <br> ";
     static const QChar   cr = QChar('\n');
     QString r = text;
     if (chgBreaks)  r = r.trimmed();
     if (esc)        r = r.toHtmlEscaped();
-    if (chgBreaks)  r = r.replace(cr, br);
+    if (chgBreaks)  r = r.replace(cr, sHtmlBr);
     return r;
 }
 
@@ -47,24 +58,119 @@ QString query2html(QSqlQuery q, cTableShape &_shape, const QString& _where, cons
         rec.set(q);
         list << rec;
     } while (q.next());
-    if (list.size() == NULL) return QString();
+    if (list.isEmpty()) return QString();
     return list2html(q, list, _shape, shrt);
 }
 
-
-QString reportByMac(QSqlQuery& q, const QString& sMac)
+QString htmlReportNode(QSqlQuery& q, cPatch& node, const QString& _sTitle, bool ports)
 {
-    static const QString tbeg = "<table border=\"1\" cellpadding=\"2\" cellspacing=\"2\">";
-    static const QString tend = "</table>\n";
-    static const QString rbeg = "<tr>";
-    static const QString rend = "</tr>\n";
-    static const QString th   = "<th> %1 </th>";
-    static const QString td   = "<td> %1 </td>";
-    static const QString bold = "<b>%1</b>";
-    static const QString nil  = " - ";
-    static const QString sep  = ", ";
-    static const QString line = "\n<hr>\n";
-#define SEP_SIZE 2
+    QString text;
+    QString tablename = node.getOriginalDescr(q)->tableName();
+    bool isPatch = tablename == _sPatchs;
+    QString sTitle = _sTitle;
+    if (sTitle.isNull()) {
+        sTitle = isPatch ?
+                    QObject::trUtf8("Bejegyzett patch panel, vagy csatlakozó : %1"):
+                    QObject::trUtf8("Bejegyzett hálózati elem (%2) : %1");
+    }
+    text += htmlBold(sTitle.arg(node.getName(), tablename));
+    /* -- PARAM -- */
+    if (node.fetchParams(q)) {
+        text += sHtmlTabBeg + sHtmlRowBeg;
+        text += sHtmlTh.arg(QObject::trUtf8("Paraméter típus"));
+        text += sHtmlTh.arg(QObject::trUtf8("Érték"));
+        text += sHtmlTh.arg(QObject::trUtf8("Dim."));
+        text += sHtmlRowEnd;
+        QListIterator<cNodeParam *> li(node.params);
+        while (li.hasNext()) {
+             cNodeParam * p = li.next();
+             text += sHtmlRowBeg;
+             text += sHtmlTd.arg(p->name());
+             text += sHtmlTd.arg(p->value().toString());
+             text += sHtmlTd.arg(p->dim());
+             text += sHtmlRowEnd;
+        }
+        text += sHtmlTabEnd;
+    }
+    /* -- PORTS -- */
+    if (ports && node.fetchPorts(q)) {
+        node.sortPortsByIndex();
+        text += sHtmlTabBeg + sHtmlRowBeg;
+        text += sHtmlTh.arg(QObject::trUtf8("port"));
+        text += sHtmlTh.arg(QObject::trUtf8("típus"));
+        text += sHtmlTh.arg(QObject::trUtf8("MAC"));
+        text += sHtmlTh.arg(QObject::trUtf8("ip cím(ek)"));
+        text += sHtmlTh.arg(QObject::trUtf8("DNS név"));
+        text += sHtmlTh.arg(QObject::trUtf8("Fizikai link"));
+        text += sHtmlTh.arg(QObject::trUtf8("Logikai link"));
+        text += sHtmlTh.arg(QObject::trUtf8("LLDP link"));
+        text += sHtmlRowEnd;
+        QListIterator<cNPort *> li(node.ports);
+        while (li.hasNext()) {
+             cNPort * p = li.next();
+             text += sHtmlRowBeg;
+             text += sHtmlTd.arg(p->getName());
+             text += sHtmlTd.arg(cIfType::ifTypeName(p->getId(_sIfTypeId)));
+             if (p->descr() == cInterface::_descr_cInterface()) {  // Interface
+                 QString ips, dns;
+                 cInterface *i = p->reconvert<cInterface>();
+                 QListIterator<cIpAddress *> ii(i->addresses);
+                 while (ii.hasNext()) {
+                      cIpAddress * ia = ii.next();
+                      ips += sHtmlBold.arg(ia->view(q, _sAddress)) + "/" + ia->getName(_sIpAddressType) + _sCommaSp;
+                      QHostInfo hi = QHostInfo::fromName(ia->address().toString());
+                      dns += hi.hostName() + _sCommaSp;
+                 }
+                 ips.chop(_sCommaSp.size());
+                 dns.chop(_sCommaSp.size());
+                 text += sHtmlTd.arg(i->mac().toString());
+                 text += sHtmlTd.arg(ips);
+                 text += sHtmlTd.arg(dns);
+            }
+            else {
+                 text += sHtmlTd.arg(sHtmlVoid);
+                 text += sHtmlTd.arg(sHtmlVoid);
+                 text += sHtmlTd.arg(sHtmlVoid);
+            }
+            qlonglong id;
+            id = p->getId();
+            if (isPatch) {
+                cPhsLink pl;
+                pl.setId(_sPortId1, id);
+                int n = pl.completion(q);
+                QStringList sl;
+                if (n > 0) {
+                    do {
+                        QString sh = pl.getName(_sPortShared);
+                        QString sp = cNPort::getFullNameById(q, pl.getId(_sPortId2));
+                        sl << (sh.isEmpty() ? sp : (sh + ":" + sp));
+                    } while (pl.next(q));
+                }
+                text += sHtmlTd.arg(sl.isEmpty() ? sHtmlVoid : sl.join(sHtmlBr));
+                text += sHtmlTd.arg(sHtmlVoid) + sHtmlTd.arg(sHtmlVoid); // Nincs, nem lehet LLDP vagy Logikai link
+            }
+            else {
+                qlonglong lp;
+                lp = LinkGetLinked<cPhsLink>(q, id);
+                text += sHtmlTd.arg(lp == NULL_ID ? sHtmlVoid : cNPort::getFullNameById(q, lp));
+                lp = LinkGetLinked<cLogLink>(q, id);
+                text += sHtmlTd.arg(lp == NULL_ID ? sHtmlVoid : cNPort::getFullNameById(q, lp));
+                lp = LinkGetLinked<cLldpLink>(q, id);
+                text += sHtmlTd.arg(lp == NULL_ID ? sHtmlVoid : cNPort::getFullNameById(q, lp));
+            }
+
+            text += sHtmlRowEnd;
+        }
+        text += sHtmlTabEnd;
+    }
+    else if (ports) {
+        text += sHtmlBr + sHtmlBr + QObject::trUtf8("Nincs egyetlen portja sem az adatbázisban az eszköznek.") + "</b>";
+    }
+    return text;
+}
+
+QString htmlReportByMac(QSqlQuery& q, const QString& sMac)
+{
     QString text;
     cMac mac(sMac);
     if (!mac) {
@@ -74,99 +180,22 @@ QString reportByMac(QSqlQuery& q, const QString& sMac)
     /* ** OUI ** */
     cOui oui;
     if (oui.fetchByMac(q, mac)) {
-        text += QObject::trUtf8("OUI rekord : ") + oui.getName() + "<br>";
+        text += QObject::trUtf8("OUI rekord : ") + oui.getName() + sHtmlBr;
         text += oui.getNote();
     }
     else {
         text += QObject::trUtf8("Nincs OUI rekord.");
     }
-    text += line;
+    text += sHtmlLine;
     /* ** NODE ** */
     cNode node;
     if (node.fetchByMac(q, mac)) {
-        QString tablename = node.getOriginalDescr(q)->tableName();
-        text += QObject::trUtf8("Bejegyzett hálózati elem (%1) : ").arg(tablename);
-        text += bold.arg(node.getName());
-        /* -- PARAM -- */
-        if (node.fetchParams(q)) {
-            text += tbeg + rbeg;
-            text += th.arg(QObject::trUtf8("Paraméter típus"));
-            text += th.arg(QObject::trUtf8("Érték"));
-            text += th.arg(QObject::trUtf8("Dim."));
-            text += rend;
-            QListIterator<cNodeParam *> li(node.params);
-            while (li.hasNext()) {
-                 cNodeParam * p = li.next();
-                 text += rbeg;
-                 text += td.arg(p->name());
-                 text += td.arg(p->value().toString());
-                 text += td.arg(p->dim());
-                 text += rend;
-            }
-            text += tend;
-        }
-        /* -- PORTS -- */
-        if (node.fetchPorts(q)) {
-            node.sortPortsByIndex();
-            text += tbeg + rbeg;
-            text += th.arg(QObject::trUtf8("port"));
-            text += th.arg(QObject::trUtf8("típus"));
-            text += th.arg(QObject::trUtf8("MAC"));
-            text += th.arg(QObject::trUtf8("ip cím(ek)"));
-            text += th.arg(QObject::trUtf8("DNS név"));
-            text += th.arg(QObject::trUtf8("Fizikai link"));
-            text += th.arg(QObject::trUtf8("Logikai link"));
-            text += th.arg(QObject::trUtf8("LLDP link"));
-            text += rend;
-            QListIterator<cNPort *> li(node.ports);
-            while (li.hasNext()) {
-                 cNPort * p = li.next();
-                 text += rbeg;
-                 text += td.arg(p->getName());
-                 text += td.arg(cIfType::ifTypeName(p->getId(_sIfTypeId)));
-                 if (p->descr() == cInterface::_descr_cInterface()) {  // Interface
-                     QString ips, dns;
-                     cInterface *i = p->reconvert<cInterface>();
-                     QListIterator<cIpAddress *> ii(i->addresses);
-                     while (ii.hasNext()) {
-                          cIpAddress * ia = ii.next();
-                          ips += bold.arg(ia->view(q, _sAddress)) + "/" + ia->getName(_sIpAddressType) + sep;
-                          QHostInfo hi = QHostInfo::fromName(ia->address().toString());
-                          dns += hi.hostName() + sep;
-                     }
-                     ips.chop(SEP_SIZE);
-                     dns.chop(SEP_SIZE);
-                     text += td.arg(i->mac().toString());
-                     text += td.arg(ips);
-                     text += td.arg(dns);
-                 }
-                 else {
-                     text += td.arg(nil);
-                     text += td.arg(nil);
-                     text += td.arg(nil);
-                 }
-                 qlonglong id, lp;
-                 id = p->getId();
-                 lp = LinkGetLinked<cPhsLink>(q, id);
-                 text += td.arg(lp == NULL_ID ? nil : cNPort::getFullNameById(q, lp));
-                 lp = LinkGetLinked<cLogLink>(q, id);
-                 text += td.arg(lp == NULL_ID ? nil : cNPort::getFullNameById(q, lp));
-                 lp = LinkGetLinked<cLldpLink>(q, id);
-                 text += td.arg(lp == NULL_ID ? nil : cNPort::getFullNameById(q, lp));
-
-
-                 text += rend;
-            }
-            text += tend;
-        }
-        else {
-            text += "<br><b>" + QObject::trUtf8("Nincs egyetlen portja sem az adatbázisban az eszköznek.") + "</b>";
-        }
+        text += htmlReportNode(q, node);
     }
     else {
         text += QObject::trUtf8("Nincs bejegyzett hálózati elem ezzel a MAC-el");
     }
-    text += line;
+    text += sHtmlLine;
     /* ** ARP ** */
     QVariantList par;
     par << mac.toString();
@@ -178,7 +207,7 @@ QString reportByMac(QSqlQuery& q, const QString& sMac)
         text += QObject::trUtf8("Találatok a MAC - IP (arps) táblában táblában :");
         text += tab;
     }
-    text += line;
+    text += sHtmlLine;
     /* ** MAC TAB** */
     cMacTab mt;
     mt.setMac(_sHwAddress, mac);
@@ -192,16 +221,16 @@ QString reportByMac(QSqlQuery& q, const QString& sMac)
     else {
         text += QObject::trUtf8("Nincs találat a switch címtáblákban a megadott MAC-el");
     }
-    text += line;
+    text += sHtmlLine;
     // LOG
     text += QObject::trUtf8("Napló bejegyzések:");
-    text += line;
+    text += sHtmlLine;
     // ARP LOG
     par << par.first(); // MAC 2*
     tab = query2html(q, "arp_logs", "hwaddress_new = ? OR hwaddress_old = ? ORDER BY date_of", par, true);
     if (!tab.isEmpty()) {
         text += QObject::trUtf8("MAC - IP változások (arp_logs) :");
-        text += tab + line;
+        text += tab + sHtmlLine;
     }
     // MACTAB LOG
 

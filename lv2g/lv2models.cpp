@@ -205,58 +205,6 @@ const cEnumVal * cStringListDecModel::getDecorationAt(int ix) const
     return (*decorations)[ix];
 }
 
-/* ---------------------------------------- cStringListEnumModel ----------------------------------------  */
-
-cStringListEnumModel::cStringListEnumModel(QObject *__par)
-    : cStringListDecModel(__par)
-{
-    nullable = false;
-    pEnumType = NULL;
-}
-
-cStringListEnumModel& cStringListEnumModel::setLists(const QString& _t, qlonglong mask, bool _null)
-{
-    QSqlQuery q = getQuery();
-    pEnumType = cColEnumType::fetchOrGet(q, _t);
-    nullable = _null;
-    beginResetModel();
-    _stringList.clear();
-    decorations->clear();
-    valList.clear();
-    if (nullable) {
-        _stringList  << dcViewShort(DC_NULL);
-        *decorations << &cEnumVal::enumVal(_t, DC_NULL);
-        valList      << -1;
-    }
-    int i, n = pEnumType->enumValues.size();
-    qlonglong m;
-    for (i = 0, m = 1; i < n; ++i, m <<= 1) {
-        if (mask & m) {
-            const cEnumVal& e = cEnumVal::enumVal(_t, i);
-            _stringList  << cEnumVal::viewShort(_t, i, e.getName());
-            *decorations << &e;
-            valList      << i;
-        }
-    }
-    endResetModel();
-    return *this;
-}
-
-int cStringListEnumModel::getIntAt(int ix)
-{
-    if (!isContIx(valList, ix)) EXCEPTION(ENOINDEX, ix);
-    return valList.at(ix);
-}
-
-QString cStringListEnumModel::getNameAt(int ix)
-{
-    int i = getIntAt(ix);
-    if (i < 0) return _sNul;
-    if (pEnumType == NULL) EXCEPTION(EPROGFAIL);
-    return pEnumType->enum2str(i);
-}
-
-
 /* **************************************** cPolygonTableModel ****************************************  */
 
 cPolygonTableModel::cPolygonTableModel(QObject *__par)
@@ -360,7 +308,7 @@ cPolygonTableModel& cPolygonTableModel::remove(QModelIndexList& mil)
 
 cRecordListModel::cRecordListModel(const cRecStaticDescr& __d, QObject * __par)
     : QStringListModel(__par)
-    , descr(__d), pattern(), cnstFlt(), nameList(), viewList(), idList()
+    , pDescr(&__d), pattern(), cnstFlt(), nameList(), viewList(), idList()
 {
     order = OT_ASC;
     filter = FT_NO;
@@ -373,7 +321,7 @@ cRecordListModel::cRecordListModel(const cRecStaticDescr& __d, QObject * __par)
 
 cRecordListModel::cRecordListModel(const QString& __t, const QString& __s, QObject * __par)
     : QStringListModel(__par)
-    , descr(*cRecStaticDescr::get(__t, __s)), pattern(), cnstFlt(), nameList(), viewList(), idList()
+    , pDescr(cRecStaticDescr::get(__t, __s)), pattern(), cnstFlt(), nameList(), viewList(), idList()
 {
     order = OT_ASC;
     filter = FT_NO;
@@ -389,6 +337,16 @@ cRecordListModel::~cRecordListModel()
     delete pq;
 }
 
+/*
+void cRecordListModel::changeRecDescr(cRecStaticDescr * _descr)
+{
+    pDescr = _descr;
+    nameList.clear();
+    idList.clear();
+    viewList.clear();
+    setStringList(viewList);
+}
+*/
 QVariant cRecordListModel::data(const QModelIndex &index, int role) const
 {
     int row = index.row();
@@ -401,31 +359,43 @@ QVariant cRecordListModel::data(const QModelIndex &index, int role) const
     return dcRole(dcData, role);
 }
 
+void cRecordListModel::_setOwnerId(qlonglong _oid, const QString& _fn, eTristate _nullIsAll)
+{
+    if (!_fn.isEmpty()) sFkeyName = _fn;
+    setBool(nullIdIsAll, _nullIsAll);
+    if (_oid == NULL_ID) {
+        if (!nullIdIsAll) ownerFlt = _sFalse;     // Nincs egyetlen rekord sem
+        else              ownerFlt.clear();       // Nincs szűrés
+    }
+    else {
+        if (sFkeyName.isEmpty()) {  // Ha nem ismert owner vagy parent ID, akkor a mezőnevet be kel állítani elsőre!!!
+            int ix = pDescr->ixToOwner(EX_IGNORE);
+            if (ix < 0) ix = pDescr->ixToParent();
+            sFkeyName = pDescr->columnName(ix);
+        }
+        ownerFlt = sFkeyName + " = " + QString::number(_oid);
+    }
+}
+
 void cRecordListModel::setConstFilter(const QVariant& _par, enum eFilterType __f)
 {
     QString nn;
     QString pat;
-    qlonglong id = NULL_ID;
     bool b  = false;
-    bool ok = true;
     switch (__f) {
     case FT_NO:         break;
     case FT_LIKE:
     case FT_SIMILAR:
     case FT_REGEXP:
-//    case FT_REGEXPI:
     case FT_BEGIN:
     case FT_SQL_WHERE:  pat = _par.toString();
                         break;
     case FT_BOOLEAN:    b = _par.toBool();
                         break;
-    case FT_FKEY_ID:    id = _par.isNull() ? NULL_ID : _par.toLongLong(&ok);
-                        if (ok) break;
     default:            EXCEPTION(EPROGFAIL, __f, _par.toString());
     }
-    QString in = descr.columnNameQ(descr.idIndex());
     if (toNameFName.isEmpty()) {
-        nn = descr.columnNameQ(descr.nameIndex());
+        nn = pDescr->columnNameQ(pDescr->nameIndex());
     }
     else {
         nn = _sName;
@@ -435,38 +405,26 @@ void cRecordListModel::setConstFilter(const QVariant& _par, enum eFilterType __f
     case FT_LIKE:       cnstFlt = nn + " LIKE " +       quoted(pat);           break;
     case FT_SIMILAR:    cnstFlt = nn + " SIMILAR TO " + quoted(pat);           break;
     case FT_REGEXP:     cnstFlt = nn + " ~ " +          quoted(pat);           break;
-//    case FT_REGEXPI:    cnstFlt = nn + " ~* " +         quoted(pat);           break;
     case FT_BEGIN:      cnstFlt = nn + " LIKE " + quoted(pat + QChar('%'));    break;
     case FT_SQL_WHERE:  cnstFlt = pat;                                         break;
     case FT_BOOLEAN:    cnstFlt = (b ? _sSpace : " NOT ") + nn + "::boolean";  break;
-    case FT_FKEY_ID:
-        if (id == NULL_ID) {
-            if (!nullIdIsAll) cnstFlt = " FALSE ";
-        }
-        else {
-            if (sFkeyName.isEmpty()) {  // Ha nem owner vagy parent ID, akkor a mezőnevet be kel állítani elsőre!!!
-                int ix = descr.ixToOwner(EX_IGNORE);
-                if (ix < 0) ix = descr.ixToParent();
-                sFkeyName = descr.columnName(ix);
-            }
-            cnstFlt = sFkeyName + " = " + QString::number(id);
-        }
-        break;
     default:            EXCEPTION(EPROGFAIL);
     }
 }
 
 QString cRecordListModel::_where(QString s)
 {
-    if (cnstFlt.isEmpty()) {
-        if (s.isEmpty()) return QString();
-        return " WHERE " + s;
+    QStringList ws;
+    if (ownerFlt == _sFalse) {
+        ws << _sFalse;
     }
     else {
-        QString r = " WHERE " + cnstFlt;
-        if (s.isEmpty()) return r;
-        return r + " AND " + s;
+        if (!s.       isEmpty()) ws << s;
+        if (!cnstFlt. isEmpty()) ws << cnstFlt;
+        if (!ownerFlt.isEmpty()) ws << ownerFlt;
     }
+    if (ws.isEmpty()) return QString();
+    return " WHERE " + ws.join(" AND ");
 }
 
 bool cRecordListModel::setFilter(const QVariant& _par, enum eOrderType __o, enum eFilterType __f)
@@ -515,19 +473,6 @@ QString cRecordListModel::where(const QString& nameName)
     case FT_BEGIN:      w = nameName + " LIKE " + quoted(pattern + QChar('%')); break;
     case FT_SQL_WHERE:  w = pattern;                                      break;
     case FT_BOOLEAN:    w = (str2bool(pattern) ? _sSpace : " NOT ") + nameName + "::boolean";   break;
-    case FT_FKEY_ID:
-        if (fkey_id == NULL_ID) {
-            if (!nullIdIsAll) w = " FALSE ";
-        }
-        else {
-            if (sFkeyName.isEmpty()) {  // Ha nem owner vayg parent ID, akkor a mezőnevet be kel állítani elsőre!!!
-                int ix = descr.ixToOwner(EX_IGNORE);
-                if (ix < 0) ix = descr.ixToParent();
-                sFkeyName = descr.columnName(ix);
-            }
-            w = sFkeyName + " = " + QString::number(fkey_id);
-        }
-        break;
     default:            EXCEPTION(EPROGFAIL);
     }
     return _where(w);
@@ -549,9 +494,9 @@ QString cRecordListModel::_order(const QString& nameName, const QString& idName)
 QString cRecordListModel::select()
 {
     QString fn, nn, view;
-    QString in = descr.columnNameQ(descr.idIndex());
+    QString in = pDescr->columnNameQ(pDescr->idIndex());
     if (toNameFName.isEmpty()) {
-        nn = descr.nameName();
+        nn = pDescr->nameName();
         dcData = DC_NAME;
     }
     else {
@@ -564,16 +509,15 @@ QString cRecordListModel::select()
         dcData = DC_DERIVED;
     }
     QString sOnly = only ? " ONLY " : _sNul;
-    QString sql = "SELECT " + in + QChar(',') + fn + nn + view + " FROM " + sOnly + descr.tableName();
+    QString sql = "SELECT " + in + QChar(',') + fn + nn + view + " FROM " + sOnly + pDescr->tableName();
     sql += where(nn);
-    sql += _order(nn, descr.idName());
+    sql += _order(nn, pDescr->idName());
     PDEB(VERBOSE) << "SQL : \"" << sql << "\"" << endl;
     return sql;
 }
 
 void cRecordListModel::setPattern(const QVariant& _par)
 {
-    bool ok = true;
     switch (filter) {
     case FT_NO:         break;
     case FT_LIKE:
@@ -585,8 +529,6 @@ void cRecordListModel::setPattern(const QVariant& _par)
                         break;
     case FT_BOOLEAN:    pattern = _par.toBool() ? _sTrue : _sFalse;
                         break;
-    case FT_FKEY_ID:    fkey_id = _par.isNull() ? NULL_ID : _par.toLongLong(&ok);
-                        if (ok) break;
     default:            EXCEPTION(EPROGFAIL, filter, _par.toString());
     }
 }
@@ -614,7 +556,7 @@ void cRecordListModel::setPatternSlot(const QVariant &__pat)
 
 cRecordListModel& cRecordListModel::copy(const cRecordListModel& _o)
 {
-    if (descr != _o.descr) EXCEPTION(EDATA, 0, trUtf8("Copy model type: %1 to %2").arg(descr.tableName(), _o.descr.tableName()));
+    if (*pDescr != *_o.pDescr) EXCEPTION(EDATA, 0, trUtf8("Copy model type: %1 to %2").arg(pDescr->tableName(), _o.pDescr->tableName()));
     nullable    = _o.nullable;
     nullIdIsAll = _o.nullIdIsAll;
     only        = _o.only;
@@ -622,8 +564,9 @@ cRecordListModel& cRecordListModel::copy(const cRecordListModel& _o)
     order       = _o.order;
     filter      = _o.filter;
     pattern     = _o.pattern;
-    fkey_id     = _o.fkey_id;
     cnstFlt     = _o.cnstFlt;
+    ownerFlt    = _o.ownerFlt;
+    sFkeyName   = _o.sFkeyName;
     nameList    = _o.nameList;
     viewList    = _o.viewList;
     idList      = _o.idList;
@@ -633,59 +576,28 @@ cRecordListModel& cRecordListModel::copy(const cRecordListModel& _o)
     return *this;
 }
 
-void _setRecordListModel(QComboBox *pComboBox, cRecordListModel *pModel)
-{
-    // Qt 5.7 és a felett möködik
-    new cComboColorToRecName(pComboBox, pModel);
-    pComboBox->setModel(pModel);
-}
-
-cComboColorToRecName::cComboColorToRecName(QComboBox *_pComboBox, cRecordListModel *_pModel)
-    : QObject(_pComboBox)
+void cRecordListModel::joinWith(QComboBox *_pComboBox)
 {
     pComboBox = _pComboBox;
-    pModel    = _pModel;
     palette   = _pComboBox->palette();
     font      = _pComboBox->font();
     nullPalette = palette;
     nullPalette.setColor(QPalette::ButtonText, dcFgColor(DC_NULL));
     nullPalette.setColor(QPalette::Button, dcBgColor(DC_NULL));
     nullFont  = dcFont(DC_NULL);
-    connect(_pComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(currentIndex(int)));
+    connect(pComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(currentIndex(int)));
 }
 
-void cComboColorToRecName::currentIndex(int i)
+void cRecordListModel::currentIndex(int i)
 {
-#if 0
-    QLineEdit *pLineEdit = pComboBox->lineEdit();
-    QString s = pModel->atView(i);
-    if (pLineEdit == NULL) {
-        pLineEdit = new QLineEdit(s);
-        pLineEdit->setReadOnly(true);
-        pComboBox->setLineEdit(pLineEdit);
-    }
-    else {
-        pLineEdit->setText(s);
-    }
-    if (pModel->nullable && i == 0) {
-        pLineEdit->setPalette(nullPalette);
-        pLineEdit->setFont(nullFont);
-    }
-    else {
-        pLineEdit->setPalette(palette);
-        pLineEdit->setFont(font);
-    }
-#else
-    if (pModel->nullable && i == 0) {
+    if (nullable && i == 0) {
         pComboBox->setPalette(nullPalette);
         pComboBox->setFont(nullFont);
     }
     else {
         pComboBox->setPalette(palette);
-        QModelIndex mi = pModel->index(i, 0);
-        pComboBox->setFont(pModel->data(mi, Qt::FontRole).value<QFont>());
+        pComboBox->setFont(fontByEnum(_sDatacharacter, dcData));
     }
-#endif
 }
 
 /* ************************************************ cZoneListModel ***************************************************** */
@@ -812,20 +724,22 @@ void cPlacesInZoneModel::setZone(qlonglong id)
 
 /* ************************************************ cEnumListModel ***************************************************** */
 
-cEnumListModel::cEnumListModel(const QString& __t, eNullType _nullable, QObject * __par)
+cEnumListModel::cEnumListModel(const QString& __t, eNullType _nullable, const tIntVector &_eList, QObject * __par)
     : QAbstractListModel(__par)
 {
-    pType = NULL;
-    pq = NULL;
-    setEnum(__t, _nullable);
+    pType     = NULL;
+    pq        = NULL;
+    pComboBox = NULL;
+    setEnum(__t, _nullable, _eList);
 }
 
-cEnumListModel::cEnumListModel(const cColEnumType *_pType, eNullType _nullable, QObject * __par)
+cEnumListModel::cEnumListModel(const cColEnumType *_pType, eNullType _nullable, const tIntVector& _eList, QObject * __par)
     : QAbstractListModel(__par)
 {
-    pType = NULL;
-    pq = NULL;
-    setEnum(_pType, _nullable);
+    pType     = NULL;
+    pq        = NULL;
+    pComboBox = NULL;
+    setEnum(_pType, _nullable, _eList);
 }
 
 cEnumListModel::~cEnumListModel()
@@ -833,13 +747,13 @@ cEnumListModel::~cEnumListModel()
     pDelete(pq);
 }
 
-int cEnumListModel::setEnum(const QString& __t, eNullType _nullable, eEx __ex)
+int cEnumListModel::setEnum(const QString& __t, eNullType _nullable, const tIntVector& _eList, eEx __ex)
 {
     if (pq == NULL) pq = newQuery();
-    return setEnum(cColEnumType::fetchOrGet(*pq, __t, __ex), _nullable, __ex);
+    return setEnum(cColEnumType::fetchOrGet(*pq, __t, __ex), _nullable, _eList, __ex);
 }
 
-int cEnumListModel::setEnum(const cColEnumType *_pType, eNullType _nullable, eEx __ex)
+int cEnumListModel::setEnum(const cColEnumType *_pType, eNullType _nullable, const tIntVector& _eList, eEx __ex)
 {
     beginResetModel();
     enumVals.clear();
@@ -849,11 +763,14 @@ int cEnumListModel::setEnum(const cColEnumType *_pType, eNullType _nullable, eEx
         endResetModel();
         return 0;
     }
-    nulltype = _nullable;
-    if (nulltype != NT_NOT_NULL) {
-        enumVals <<  &cEnumVal::enumVal(_sDatacharacter, nulltype, __ex);
+    nullType = _nullable;
+    if (nullType != NT_NOT_NULL) {
+        enumVals <<  &cEnumVal::enumVal(_sDatacharacter, nullType, __ex);
     }
-    for (int i = 0; i < pType->enumValues.size(); ++i) {
+    tIntVector eList = _eList;
+    int i;
+    if (eList.isEmpty()) for (i = 0; i < pType->enumValues.size(); ++i) eList << i;
+    foreach (i, _eList) {
         const QString& typeName = *(const QString *)pType;
         const cEnumVal& ee = cEnumVal::enumVal(typeName, i, __ex);
         if (ee.isEmpty_()) {
@@ -862,7 +779,6 @@ int cEnumListModel::setEnum(const cColEnumType *_pType, eNullType _nullable, eEx
             const QString& s = pType->enumValues.at(i);
             p->setName(cEnumVal::ixTypeName(),  typeName);
             p->setName(cEnumVal::ixValName(),   s);
-//          p->setName(cEnumVal::ixViewShort(), s);
             enumVals << p;
         }
         else {
@@ -873,10 +789,18 @@ int cEnumListModel::setEnum(const cColEnumType *_pType, eNullType _nullable, eEx
     return enumVals.size();
 }
 
+void cEnumListModel::joinWith(QComboBox *_pComboBox)
+{
+    pComboBox = _pComboBox;
+    pComboBox->setModel(this);
+    palette   = pComboBox->palette();
+    connect(pComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(currentIndex(int)));
+}
+
 void cEnumListModel::clear()
 {
     beginResetModel();
-    nulltype = NT_NOT_NULL;
+    nullType = NT_NOT_NULL;
     pType = NULL;
     enumVals.clear();
     endResetModel();
@@ -891,29 +815,48 @@ QVariant cEnumListModel::data(const QModelIndex &index, int role) const
 {
     int row = index.row();
     if (!isContIx(enumVals, row)) return QVariant();
-    return enumRole(*enumVals[row], role, row);
+    const cEnumVal& ev = *enumVals[row];
+    int             e  = pType->str2enum(ev.getName());
+    return enumRole(ev, role, e);
 }
 
-void _setEnumListModel(QComboBox *pComboBox, cEnumListModel *pModel)
+int cEnumListModel::atInt(int ix) const
 {
-    // Qt 5.7 és a felett möködik
-    new cComboColorToEnumName(pComboBox, pModel);
-    pComboBox->setModel(pModel);
+    int r = ENUM_INVALID;
+    if (isContIx(enumVals, ix)) {
+        r = pType->str2enum(enumVals.at(ix)->getName());
+    }
+    return r;
 }
 
-cComboColorToEnumName::cComboColorToEnumName(QComboBox *_pComboBox, cEnumListModel *_pModel)
+QString cEnumListModel::at(int ix) const
 {
-    pComboBox = _pComboBox;
-    pModel    = _pModel;
-    palette   = _pComboBox->palette();
-    connect(_pComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(currentIndex(int)));
+    QString r;
+    if (isContIx(enumVals, ix)) {
+        r = enumVals.at(ix)->getName();
+    }
+    return r;
 }
 
-void cComboColorToEnumName::currentIndex(int i)
+int cEnumListModel::indexOf(int e) const
+{
+    return indexOf(pType->enum2str(e));
+}
+int cEnumListModel::indexOf(const QString& s) const
+{
+    int i = 0;
+    foreach (const cEnumVal * pev, enumVals) {
+        if (s == pev->getName()) return i;
+        ++i;
+    }
+    return -1;
+}
+
+void cEnumListModel::currentIndex(int i)
 {
     QPalette pal = palette;
-    if (!isContIx(pModel->enumVals, i)) return ;
-    const cEnumVal& ev = *pModel->enumVals[i];
+    if (!isContIx(enumVals, i)) return ;
+    const cEnumVal& ev = *enumVals[i];
     QString type = ev.getName(cEnumVal::ixTypeName());
     int     eval = ev.toInt();
     if (!ev.isNull(cEnumVal::ixBgColor())) pal.setColor(QPalette::Button,     bgColorByEnum(type, eval));
@@ -921,3 +864,5 @@ void cComboColorToEnumName::currentIndex(int i)
     pComboBox->setPalette(pal);
     pComboBox->setFont(fontByEnum(type, eval));
 }
+
+

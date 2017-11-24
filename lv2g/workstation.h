@@ -12,24 +12,7 @@ namespace Ui {
     class wstWidget;
 }
 class cDialogButtons;
-
-enum {
-    IS_EMPTY = 0,   ///< Üres, nincs megadva
-    IS_OK,          ///< OK
-    IS_COLLISION,   ///< Más értékkel ütközik
-    IS_INVALID,     ///< Nem megengedett érték (értéktattományon kívül)
-    IS_LOOPBACK,    ///< Egy loopback cím lett megadva.
-    IS_EXTERNAL,
-    IS_SOFT_COLL,   ///< Cím ütközés, dinamikus cím, törölhető
-    IS_IMPERFECT = IS_INVALID,
-    IS_NONEXIST = 0,
-    IS_EXIST,
-    IS_ENABLE,
-    IS_NOT_POSSIBLE = 0,
-    IS_POSSIBLE,
-    IS_MUST
-
-};
+class cWorkstation;
 
 class LV2GSHARED_EXPORT cWorkstation : public cIntSubObj
 {
@@ -39,31 +22,62 @@ public:
     ~cWorkstation();
     static const enum ePrivilegeLevel rights;
 private:
+    void setMessages(bool f = true);
+    class cBatchBlocker {
+    public:
+        typedef void (cWorkstation::*tPSet)(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
+        cBatchBlocker(cWorkstation *_po, tPSet _pFSet, cBatchBlocker * _par = NULL);
+        ~cBatchBlocker();
+        void        begin() { ++counter; }
+        bool        end(bool f);
+        bool        test() const;
+        bool        launch(bool f = true);
+        void setMessages(bool f = true) {
+            sErrors.clear(); sInfos.clear(); isOk = true;
+            (pOwner->*pFSet)(f, sErrors, sInfos, isOk);
+        }
+        const QStringList getInfos() const;
+        const QStringList getErrors() const;
+        bool getStat() const;
+    protected:
+        int             counter;
+        tPSet           pFSet;
+        cWorkstation *  pOwner;
+        cBatchBlocker * pParent;
+        QList<cBatchBlocker *> childList;
+        QStringList     sInfos;
+        QStringList     sErrors;
+        bool            isOk;
+    };
+    cBatchBlocker   bbNode;
+    cBatchBlocker   bbNodeName;
+    cBatchBlocker   bbNodeSerial;
+    cBatchBlocker   bbNodeInventory;
+    cBatchBlocker   bbPort;
+    cBatchBlocker   bbIp;
+    cBatchBlocker   bbLink;
+
+    void msgEmpty(QLineEdit * pLineEdit, QLabel *pLabel, const QString &fn, QStringList& sErrs, QStringList& sInfs, bool &isOk);
+
+    void setStatNode(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
+    void setStatNodeName(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
+    void setStatNodeSerial(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
+    void setStatNodeInventory(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
+    void setStatPort(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
+    void setStatIp(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
+    void setStatLink(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
+
     void node2gui();
 
+    bool isModify;
     Ui::wstWidget   *pUi;
     cSelectNode     *pSelNode;      /// A szerkesztendő, vagy minta eszköz kiválasztása
     cSelectPlace    *pSelPlace;     /// Az eszköz helyének a megadása
-    cSelectNode     *pSelNodeLink; /// A linkelt port, ill. az eszköz kiválasztáse
+    cSelectLinkedPort *pSelLinked;  /// A linkelt port, ill. az eszköz kiválasztáse
     QButtonGroup    *pModifyButtons;
+    QButtonGroup    *pLinkTypeButtons;
     cIpEditWidget   *pIpEditWidget;
 
-    struct cStates {
-        unsigned    modify:1;           // bool (false: new object, true: modify existing object)
-        unsigned    nodeName:2;         // EMPTY, OK, COLLISION
-        unsigned    nodePlace:1;        // EMPTY, OK
-        unsigned    serialNumber:2;     // EMPTY, OK, COLLISION
-        unsigned    inventoryNumber:2;  // EMPTY, OK, COLLISION
-        unsigned    portName:1;         // EMPTY, OK
-        unsigned    macNeed:1;          // bool
-        unsigned    mac:2;              // EMPTY, OK, COLLISION, INVALID
-        unsigned    ipNeed:2;           //
-        unsigned    ipAddr:3;           // EMPTY, OK, COLLISION, INVALID, LOOPBACK
-        unsigned    subNetNeed:1;       // bool
-        unsigned    subNet:1;           // EMPTY, OK
-        unsigned    linkPossible:1;     // bool
-        unsigned    link:2;             // EMPTY, OK, COLLISION, IMPERFECT
-    }   states;
     QSqlQuery *pq;
     /// Kiválasztott workstation objektum (modosítandó eredetije vagy minta)
     cNode      *pSample;
@@ -72,9 +86,13 @@ private:
     cNPort *    pnp;
     cInterface *pif;
     cIpAddress *pip;
+    cPhsLink    pl;
 private slots:
+    void modifyChanged(bool f);
     void on_checkBoxPlaceEqu_toggled(bool checked);
-    void on_comboBoxNode_currentIndexChanged(int index);
+    void selectedNode(qlonglong id);
+    void linkedNodeIdChanged(qlonglong _nid);
+    void linkChanged(qlonglong _pid, int _lt, int _sh);
 };
 
 #endif // CWORKSTATION_H

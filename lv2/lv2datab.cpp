@@ -261,6 +261,26 @@ qlonglong cColEnumType::lst2set(const QStringList &s, eEx __ex) const
     return r;
 }
 
+tIntVector cColEnumType::lst2lst(const QStringList& _lst, enum eEx __ex) const
+{
+    tIntVector r;
+    foreach (QString s, _lst) {
+        int e = str2enum(s, __ex);
+        if (e >= 0) r << e;
+    }
+    return r;
+}
+QStringList cColEnumType::lst2lst(const tIntVector& _lst, enum eEx __ex) const
+{
+    QStringList r;
+    foreach (int e, _lst) {
+        QString s = enum2str(e, __ex);
+        if (isContIx(enumValues, e)) r << s;    // The empty string can be real value as well
+    }
+    return r;
+}
+
+
 const cColEnumType *cColEnumType::find(const QString& name)
 {
      QSet<cColEnumType>::const_iterator i = colEnumTypes.find(cColEnumType(name));

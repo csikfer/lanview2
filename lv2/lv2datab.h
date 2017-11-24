@@ -138,6 +138,8 @@ public:
     qlonglong str2enum(const QString& s, enum eEx __ex = EX_ERROR) const;
     qlonglong str2set(const QString& s, enum eEx __ex = EX_ERROR) const;
     qlonglong lst2set(const QStringList& s, enum eEx __ex = EX_ERROR) const;
+    tIntVector lst2lst(const QStringList& _lst, enum eEx __ex = EX_ERROR) const;
+    QStringList lst2lst(const tIntVector& _lst, enum eEx __ex = EX_ERROR) const;
     QString     normalize(const QString& nm, bool *pok = NULL) const;
     QStringList normalize(const QStringList& lst, bool *pok = NULL) const;
     void checkEnum(tE2S e2s, tS2E s2e) const;

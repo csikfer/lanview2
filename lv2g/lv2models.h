@@ -136,20 +136,6 @@ protected:
     QList<const cEnumVal *> * decorations;
 };
 
-class LV2GSHARED_EXPORT cStringListEnumModel : public cStringListDecModel {
-public:
-    /// Konstruktor
-    cStringListEnumModel(QObject *__par = NULL);
-    cStringListEnumModel& setLists(const QString& _t, qlonglong mask = -1, bool _null = false);
-    int getIntAt(int ix);
-    QString getNameAt(int ix);
-    int indexOf(int e) const { return valList.indexOf(e); }
-protected:
-    bool nullable;
-    const cColEnumType *pEnumType;
-    QList<int>  valList;
-};
-
 /// Model: polygon pontjainak megjelenítése egy QTableView objektummal
 class LV2GSHARED_EXPORT cPolygonTableModel : public QAbstractTableModel {
 public:
@@ -253,7 +239,17 @@ public:
     /// @param _par Parent
     cRecordListModel(const QString& __t, const QString& __s = QString(), QObject * __par = NULL);
     ~cRecordListModel();
+//  void changeRecDescr(cRecStaticDescr * _descr);
     virtual QVariant data(const QModelIndex &index, int role) const;
+    /// Beállítja az owner ID-re szűrést, nem frissít.
+    void _setOwnerId(qlonglong _oid, const QString& _fn = QString(), eTristate _nullIsAll = TS_NULL);
+    /// Beállítja az owner ID-re szűrést, és frissít.
+    void setOwnerId(qlonglong _oid, const QString& _fn = QString(), eTristate _nullIsAll = TS_NULL)
+    {
+        _setOwnerId(_oid, _fn, _nullIsAll);
+        setFilter();
+    }
+
     /// Opcionális konstans szűrési feltétel megadása, nincs lista frissítés
     /// Az itt megadott feltétel és kapcsolatban lessz a setFilter() metódusban megadottnak.
     /// @param _par A szűrő paramétere
@@ -267,7 +263,7 @@ public:
     /// Az opcionális név konvertáló függvény megadása.
     /// Az SQL függvény a rekord ID-ből egy nevet ad vissza.
     void setToNameF(const QString& _fn) { toNameFName = _fn; }
-    /// Az opcionális név konvertáló függvény megadása.
+    /// Az opcionális név konvertáló kifejezés.
     /// Az SQL függvény a rekord ID-ből egy nevet ad vissza.
     void setViewExpr(const QString& _sve) { viewExpr = _sve; }
     /// A megadott nevű elem indexe a listában, vagy -1 ha nincs ilyen elem
@@ -297,7 +293,8 @@ public:
     ///
     bool                only;
     eDataCharacter      dcData;
-    const cRecStaticDescr&  descr;  ///< A rekord leíró
+    const cRecStaticDescr * pDescr;  ///< A rekord leíró
+    void joinWith(QComboBox *_pComboBox);
 protected:
     QString _where(QString s = QString());
     QString where(const QString &nameName);
@@ -307,8 +304,8 @@ protected:
     enum eOrderType     order;      ///< Az aktuális rendezés típusa
     enum eFilterType    filter;     ///< Az aktuális szűrés típusa
     QString             pattern;    ///< Minta, szűrés paramétere
-    qlonglong           fkey_id;    ///< A szűrés paramétere FT_FKEY_ID esetén
     QString             cnstFlt;    ///< A konstans szűrő (SQL kifejezés)
+    QString             ownerFlt;   ///< A szűrő az owner-re, vagy üres (SQL kifejezés)
     QStringList         nameList;   ///< Az aktuális név lista (sorrend azonos mint az idList-ben
     QStringList         viewList;   ///< A megjelenített stringek lista (alapértelmezetten azonos a nameList-el;
     QList<qlonglong>    idList;     ///< Az aktuális ID lista (sorrend azonos mint az stringList-ben
@@ -318,18 +315,8 @@ protected:
 public slots:
     /// Hívja a setFilter() metódust, de csak a szűrés paramétere adható meg.
     void setPatternSlot(const QVariant& __pat);
-};
-
-_GEX void _setRecordListModel(QComboBox *pComboBox, cRecordListModel *pModel);
-
-class LV2GSHARED_EXPORT cComboColorToRecName : public QObject {
-    friend LV2GSHARED_EXPORT void _setRecordListModel(QComboBox *pComboBox, cRecordListModel *pModel);
-    Q_OBJECT
-protected:
-    cComboColorToRecName(QComboBox *_pComboBox, cRecordListModel *_pModel);
 private:
     QComboBox  *pComboBox;
-    cRecordListModel *pModel;
     QPalette    palette;
     QPalette    nullPalette;
     QFont       font;
@@ -395,34 +382,28 @@ enum eNullType {
 };
 
 class LV2GSHARED_EXPORT cEnumListModel : public QAbstractListModel {
-    friend class cComboColorToEnumName;
+    Q_OBJECT
 public:
-    cEnumListModel(QObject * __par = NULL) : QAbstractListModel(__par) { pType = NULL; pq = NULL; nulltype = NT_NOT_NULL; }
-    cEnumListModel(const QString& __t, eNullType _nullable = NT_NOT_NULL, QObject * __par = NULL);
-    cEnumListModel(const cColEnumType *_pType, eNullType _nullable = NT_NOT_NULL, QObject * __par = NULL);
+    cEnumListModel(QObject * __par = NULL) : QAbstractListModel(__par) { pType = NULL; pq = NULL; pComboBox = NULL, nullType = NT_NOT_NULL; }
+    cEnumListModel(const QString& __t, eNullType _nullable = NT_NOT_NULL, const tIntVector &_eList = tIntVector(), QObject * __par = NULL);
+    cEnumListModel(const cColEnumType *_pType, eNullType _nullable = NT_NOT_NULL, const tIntVector &_eList = tIntVector(), QObject * __par = NULL);
     ~cEnumListModel();
-    int setEnum(const QString& __t, eNullType _nullable = NT_NOT_NULL, eEx __ex = EX_ERROR);
-    int setEnum(const cColEnumType *_pType, eNullType _nullable = NT_NOT_NULL, eEx __ex = EX_ERROR);
+    int setEnum(const QString& __t, eNullType _nullable = NT_NOT_NULL, const tIntVector& _eList = tIntVector(), eEx __ex = EX_ERROR);
+    int setEnum(const cColEnumType *_pType, eNullType _nullable = NT_NOT_NULL, const tIntVector& _eList = tIntVector(), eEx __ex = EX_ERROR);
+    void joinWith(QComboBox *_pComboBox);
     void clear();
     virtual int rowCount(const QModelIndex & = QModelIndex()) const;
     virtual QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const;
+    int atInt(int ix) const;
+    QString at(int ix) const;
+    int indexOf(int e) const;
+    int indexOf(const QString& s) const;
 protected:
-    QSqlQuery   *pq;
-    eNullType nulltype;
+    QSqlQuery *         pq;
+    eNullType           nullType;
     const cColEnumType *pType;
     QVector<const cEnumVal *> enumVals;
-};
-
-_GEX void _setEnumListModel(QComboBox *pComboBox, cEnumListModel *pModel);
-
-class LV2GSHARED_EXPORT cComboColorToEnumName : public QObject {
-    friend LV2GSHARED_EXPORT void _setEnumListModel(QComboBox *pComboBox, cEnumListModel *pModel);
-    Q_OBJECT
-protected:
-    cComboColorToEnumName(QComboBox *_pComboBox, cEnumListModel *_pModel);
-private:
-    QComboBox  *pComboBox;
-    cEnumListModel *pModel;
+    QComboBox  *        pComboBox;
     QPalette palette;
 private slots:
     void currentIndex(int i);

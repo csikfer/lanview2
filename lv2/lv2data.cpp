@@ -1336,7 +1336,7 @@ cNPort * cNPort::getPortObjById(QSqlQuery& q, qlonglong __port_id, eEx __ex)
 
 int cNPort::fetchParams(QSqlQuery& q)
 {
-    setContainerValid(CV_PORT_PARAMS);
+    // setContainerValid(CV_PORT_PARAMS);
     return params.fetch(q);
 }
 
@@ -1873,8 +1873,9 @@ void cPatch::clearIdsOnly()
 }
 
 
-int cPatch::fetchPorts(QSqlQuery& __q)
+int cPatch::fetchPorts(QSqlQuery& __q, int flags)
 {
+    (void)flags;
     ports.clear();
     int n = 0;
     // A ports objektum fetch metódusa csak azonos rekord típusok esetén jó. Igaz, hogy egy típus van, de az nam az alap típus.
@@ -2134,8 +2135,8 @@ cPatch * cPatch::getNodeObjByName(QSqlQuery& q, const QString&  __node_name, enu
 {
     cPatch o;
     qlonglong tableoid = o.setName(__node_name).fetchTableOId(q, __ex);
-    qlonglong id       = o.getIdByName(q, __node_name);
     if (tableoid < 0LL) return NULL;
+    qlonglong id       = o.getIdByName(q, __node_name);
     return getNodeObjById(q, tableoid, id, __ex);
 }
 
@@ -2416,6 +2417,7 @@ bool cNode::rewriteById(QSqlQuery &__q, eEx __ex)
 
 int  cNode::fetchPorts(QSqlQuery& __q, int flags)
 {
+    if (flags == 0) flags = (CV_PORTS_ADDRESSES | CV_PORT_VLANS);
     ports.clear();
     // A ports objektum fetch metódusa csak azonos rekord típusok esetén jó...
     QSqlQuery q = getQuery(); // A copy construktor vagy másolás az nem jó!! (shadow copy)
@@ -2427,6 +2429,7 @@ int  cNode::fetchPorts(QSqlQuery& __q, int flags)
         cNPort *p = cNPort::getPortObjById(q, tableoid, port_id, EX_ERROR);
         q.finish();
         if (p == NULL) return -1;
+        ports << p;
         if (tableoid == cNPort::tableoid_interfaces()) {
             cInterface *pi = p->reconvert<cInterface>();
             if (flags & CV_PORTS_ADDRESSES) pi->fetchAddressess(q);
@@ -2434,7 +2437,6 @@ int  cNode::fetchPorts(QSqlQuery& __q, int flags)
             q.finish();
         }
         if (flags & CV_PORT_PARAMS) p->fetchParams(q);
-        ports << p;
     } while (__q.next());
     __q.finish();
     containerValid |= CV_PORTS | (flags & (CV_PORTS_ADDRESSES | CV_PORT_VLANS | CV_PORT_PARAMS));

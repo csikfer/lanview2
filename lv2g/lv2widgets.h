@@ -20,7 +20,56 @@
 #include "lv2models.h"
 #include "guidata.h"
 #include "imagedrv.h"
+#include "lv2link.h"
 
+/// @class tBatchBlocker
+/// Egy objektumban szabályozza a kimeneti signálok kiadását, megakadályozandó,
+/// hogy egy több lépéses műveletsoron bellül azok kiadásra kerüljenek a részeredményekkel.
+template <class C> class tBatchBlocker {
+private:
+    /// Számláló, egy több lépéses művelet közben
+    int batchCount;
+    /// A kimeneti ssignal-okat kiadó metódus pointer típusa
+    typedef bool (C::*tPEmits)(bool);
+    /// A kimeneti signal-okat kiadó metódus pointere
+    tPEmits pf;
+    /// A tárgy objektum pointere
+    C *     po;
+public:
+    /// Konstruktor
+    /// @param _po Az objektum pointere, meljen a kimeneti signál-(ok)at szabályozni kell.
+    /// @param _pf A kimeneti signal-okat kiadó metódus.
+    tBatchBlocker(C *_po, tPEmits _pf) {
+        batchCount = 0; pf = _pf; po = _po;
+    }
+    /// Destruktor.
+    /// Ha a számláló nem nulla, akkor kiküld a hiba csatornára egy hibaüzenetet.
+    ~tBatchBlocker() {
+        if (batchCount != 0) DERR() << QString("Class %1; batchCount is not zero : %2.")
+                                       .arg(typeid(C).name()).arg(batchCount)
+                                    << endl;
+    }
+    /// Egy műveletsor indítása, amik közben a kimeneti signal(-ok) hívása tiltott
+    /// A batchCount -ot inkrementálja.
+    void begin() { ++batchCount; }
+    /// Egy műveletsor vége, amik közben a kimeneti signal(-ok) hívása tiltott
+    /// A batchCount -ot dekrementálja.
+    /// Ha batchCount nulla lett és f paraméter értéke is true (ez az alapértelmezett),
+    /// akkor hívja utána a pf pointerű metódust is a po objektumra,
+    /// ami kiadja a szignálokat.
+    /// @return true, ha vége a blokkos feldolgozásnak, batchCount értéke nulla lett.
+    bool end(bool f = true) {
+        if (batchCount <= 0) EXCEPTION(EPROGFAIL);
+        --batchCount;
+        if (f && batchCount == 0) {
+            (po->*pf)(true);
+            return true;
+        }
+        return false;
+    }
+    /// Teszteli, hogy szignálokat letíltó műveletsoron kívül vagyunk-e.
+    bool test() const { return batchCount == 0; }
+};
 
 class cSelectLanguage : QObject {
     Q_OBJECT
@@ -763,7 +812,7 @@ public:
     /// @param _fr A rekord text_id mezőjére mutató referencia objektum (nem objektum referencia!)
     /// @param _ti Text index
     /// @param _fl
-    /// @param parent A parent widget pointere
+    /// @param _par A parent dilog pointere
     cLTextWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef _fr, int _ti, int _fl, cRecordDialogBase* _par);
     ~cLTextWidget();
     virtual int set(const QVariant& v);
@@ -797,42 +846,46 @@ public:
     /// @param _pPlace  A comboBox objektum pointere a zónán bellüli hely kiválasztáshoz.
     /// @param _pFilt   Opcionális lineEdit objektum pointere, a hely név szűréséhez.
     /// @param _constFilt Egy opcionális konstans szűrő a helyek-hez.
+    /// @param _par Parent objektum
     cSelectPlace(QComboBox *_pZone, QComboBox *_pPLace, QLineEdit *_pFilt = NULL, const QString& _constFilt = QString(), QWidget *_par = NULL);
-    QString currentZoneName()   { return pZoneModel->at(pComboBoxZone->currentIndex()); }
-    qlonglong currentZoneId()   { return pZoneModel->atId(pComboBoxZone->currentIndex()); }
-    QString currentPlaceName()  { return pPlaceModel->at(pComboBoxPLace->currentIndex()); }
-    qlonglong currentPlaceId()  { return pPlaceModel->atId(pComboBoxPLace->currentIndex()); }
+    QString currentZoneName()  const { return pModelZone->at(pComboBoxZone->currentIndex()); }
+    qlonglong currentZoneId()  const { return pModelZone->atId(pComboBoxZone->currentIndex()); }
+    QString currentPlaceName() const { return pModelPlace->at(pComboBoxPLace->currentIndex()); }
+    qlonglong currentPlaceId() const { return pModelPlace->atId(pComboBoxPLace->currentIndex()); }
     /// Átmásolja az aktuális értékeket a másik objektumból.
     void copyCurrents(const cSelectPlace& _o);
-    /// Set slave
+    /// Set slave. A megadott objektumon tiltva lesznek a widgetek, és
+    /// minden változás szinkronízáva less a megadott objektum irányába.
+    /// Ha a _pSlave egy NULL pointer, akkor az aktuális szinkronizálás törlődik,
+    /// az edig szinkronizált objektum widgetjei engedélyezve lesznek.
     void setSlave(cSelectPlace *_pSlave);
-    /// Disconnect slave
-    void disconnectSlave()  { pSlave = NULL; }
+    void setDisablePlaceWidgets(bool f = true);
 protected:
+    tBatchBlocker<cSelectPlace>   bbPlace;
+    bool emitChangePlace(bool f = true);
+    ///
     QComboBox *pComboBoxZone;
     QComboBox *pComboBoxPLace;
     QLineEdit *pLineEditPlaceFilt;
     const QString    constFilterPlace;
-    cZoneListModel     *pZoneModel;
-    cPlacesInZoneModel *pPlaceModel;
-    bool                blockPlaceSignal;
+    cZoneListModel     *pModelZone;
+    cPlacesInZoneModel *pModelPlace;
     cSelectPlace *      pSlave;
 public slots:
-    void setEnabled(bool f = true);
-    void setDisabled(bool f = true);
+    virtual void setEnabled(bool f = true);
+    virtual void setDisabled(bool f = true);
     void refresh();
     void insertPlace();
     void setCurrentZone(qlonglong _zid);
     void setCurrentPlace(qlonglong _pid);
 private slots:
-    void _zoneChanged(int ix);
-    void _placeChanged(int ix);
-    void _placePatternChanged(const QString& s);
+    void on_comboBoxZone_currentIndexChanged(int ix);
+    void on_comboBoxPlace_currentIndexChanged(int ix);
+    void lineEditPlaceFilt_textChanged(const QString& s);
 signals:
     void placeNameChanged(const QString& name);
     void placeIdChanged(qlonglong id);
 };
-
 
 class LV2GSHARED_EXPORT cSelectNode : public cSelectPlace {
     Q_OBJECT
@@ -845,30 +898,86 @@ public:
     /// @param _pNodeFilt  Opcionális lineEdit objektum pointere, az eszköz név szűréséhez.
     /// @param _placeConstFilt Egy opcionális konstans szűrő a helyek-hez.
     /// @param _nodeConstFilt  Egy opcionális konstans szűrő az eszközökhöz
+    /// @param _par Parent objektum
     cSelectNode(QComboBox *_pZone, QComboBox *_pPlace, QComboBox *_pNode,
                 QLineEdit *_pPlaceFilt = NULL, QLineEdit *_pNodeFilt = NULL,
                 const QString& _placeConstFilt = QString(), const QString& _nodeConstFilt = QString(),
                 QWidget *_par = NULL);
+    /// Lecseréli a node lista modelt. Ha meg volt adva konstans filter, akkor azt átadja au új modelnek.
+    /// Ha _nullable értéke nem TS_NULL, akkor beállítja a nullable adattag értékét is.
     void setNodeModel(cRecordListModel *  _pNodeModel, eTristate _nullable = TS_NULL);
     void reset();
     /// A kurrens node-ot null-ra állítja. Feltételezi, hogy az lehet null, és az az első elem.
     /// Ha _sig értéke true, vagy nem adtuk meg, akkor a aktív node megváltozásakori szignál nem lessz meghívva.
-    void nodeSetNull(bool _sig = true);
-    QString currentNodeName()  { return pNodeModel->at(pComboBoxNode->currentIndex()); }
-    qlonglong currentNodeId()  { return pNodeModel->atId(pComboBoxNode->currentIndex()); }
-private:
+    void nodeSetNull(bool _sig = false);
+    /// Lekérdezi az aktuális node nevét
+    QString currentNodeName() const { return pModelNode->at(pComboBoxNode->currentIndex()); }
+    /// Lekérdezi az aktuális node ID-t
+    qlonglong currentNodeId() const { return pModelNode->atId(pComboBoxNode->currentIndex()); }
+public slots:
+
+protected:
+    tBatchBlocker<cSelectNode>  bbNode;
+    bool emitChangeNode(bool f = true);
     QComboBox *         pComboBoxNode;
     QLineEdit *         pLineEditNodeFilt;
     const QString       constFilterNode;
-    cRecordListModel *  pNodeModel;
-    bool                blockNodeSignal;
+    cRecordListModel *  pModelNode;
 private slots:
-    void _placeIdChanged(qlonglong pid);
-    void _nodePatternChanged(const QString& s);
-    void _nodeChanged(int ix);
+    void setPlaceId(qlonglong pid, bool _sig = false);
+    void on_lineEditNodeFilt_textChanged(const QString& s);
+    void on_comboBoxNode_currenstIndexChanged(int ix);
 signals:
     void nodeNameChanged(const QString& name);
     void nodeIdChanged(qlonglong id);
+};
+
+class LV2GSHARED_EXPORT cSelectLinkedPort : public cSelectNode {
+    Q_OBJECT
+public:
+    /// Konstruktor.
+    /// @param _pZone   A comboBox objektum pointere a zóna kiválasztáshoz.
+    /// @param _pPlace  A comboBox objektum pointere a zónán bellüli hely kiválasztáshoz.
+    /// @param _pNode   A comboBox objektum pointere a zónán és/vagy a  helységben található eszköz kiválasztáshoz.
+    /// @param _pPort   A comboBox objektum pointere a port kiválasztásához
+    /// @param _pShare  A comboBox objekrum pointere a megosztás típusának a kiválasztásához
+    /// @param _shList  A választható megosztás típusok, opcionális, ha üres listát adunk meg, akkor az összes érték kiválaszható.
+    /// @param _pType   A buttonsGroup objektum pointere a link típusának a megadásához
+    /// @param _pPlaceFilt Opcionális lineEdit objektum pointere, a hely név szűréséhez.
+    /// @param _pNodeFilt  Opcionális lineEdit objektum pointere, az eszköz név szűréséhez.
+    /// @param _placeConstFilt Egy opcionális konstans szűrő a helyek-hez.
+    /// @param _nodeConstFilt  Egy opcionális konstans szűrő az eszközökhöz
+    /// @param _par Parent objektum
+    cSelectLinkedPort(QComboBox *_pZone, QComboBox *_pPlace, QComboBox *_pNode,
+                QComboBox *_pPort, QButtonGroup *_Type, QComboBox *_pShare, const tIntVector& _shList = tIntVector(),
+                QLineEdit *_pPlaceFilt = NULL, QLineEdit *_pNodeFilt = NULL,
+                const QString& _placeConstFilt = QString(), const QString& _nodeConstFilt = QString(),
+                QWidget *_par = NULL);
+    ~cSelectLinkedPort();
+    qlonglong currentPortId() const { return pModelPort->atId(pComboBoxPort->currentIndex()); }
+    int       currentType()   const { return lastLinkType; }
+    int       currentShare()  const { return lastShare; }
+private:
+    QSqlQuery *     pq;
+    QComboBox *     pComboBoxPort;
+    QComboBox *     pComboBoxShare;
+    QButtonGroup *  pButtonGroupType;
+    cEnumListModel *pModelShare;
+    cRecordListModel *pModelPort;
+    bool        isPatch;
+    int         lastLinkType;
+    int         lastShare;
+    qlonglong   lastPortId;
+    bool        lockSlots;
+public slots:
+    void setLink(cPhsLink& _lnk);
+private slots:
+    void setNodeId(qlonglong _nid);
+    void setPortIdByIndex(int ix);
+    void setLinkTypeByButtons(int _id);
+    void changedShareType(int ix);
+signals:
+    void changedLink(qlonglong _pid, int _lt, int _sh);
 };
 
 class LV2GSHARED_EXPORT cSelectVlan : public QObject {

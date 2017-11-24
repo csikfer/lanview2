@@ -38,5 +38,7 @@
         <file>icons/format-text-underline-no.png</file>
         <file>icons/format-text-underline.ico</file>
         <file>icons/system-restart.ico</file>
+        <file>icons/network-wired.ico</file>
+        <file>icons/document-properties.ico</file>
     </qresource>
 </RCC>

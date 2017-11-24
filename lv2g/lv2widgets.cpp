@@ -1,5 +1,6 @@
 #include "record_table.h"
 #include "lv2validator.h"
+#include "lv2link.h"
 #include "record_dialog.h"
 #include "ui_polygoned.h"
 #include "ui_arrayed.h"
@@ -696,7 +697,7 @@ cEnumComboWidget::cEnumComboWidget(const cTableShape& _tm, const cTableShapeFiel
     _pWidget = pCB;
     nulltype = _dcNull == DC_INVALID ? NT_NOT_NULL : (eNullType)_dcNull;
     cEnumListModel *pModel = new cEnumListModel(&_colDescr.enumType(), nulltype);
-    _setEnumListModel(pCB, pModel);
+    pModel->joinWith(pCB);
     pCB->setEditable(false);                  // Nem editálható, választás csak a listából
     setWidget();
     connect(pCB, SIGNAL(activated(int)), this, SLOT(setFromEdit(int)));
@@ -1452,7 +1453,7 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
     pModel = new cRecordListModel(*pRDescr, pWidget());
     pModel->nullable = _colDescr.isNullable;
     pModel->setToNameF(_colDescr.fnToName);
-    QString owner = _fieldShape.feature(_sOwner);
+    QString owner = _fieldShape.feature(_sOwner);   //
     if (!owner.isEmpty()) {
         if (0 == owner.compare(_sSelf, Qt::CaseInsensitive)) {  // TREE
             if (_pParentDialog == NULL) {
@@ -1472,9 +1473,7 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
             if (ownerId == NULL_ID) {
                 EXCEPTION(EDATA);
             }
-            QString sql = __fr.record().descr().columnName(owner_ix) + " = " + QString::number(ownerId);
-            pModel->setConstFilter(sql, FT_SQL_WHERE);
-            pModel->setFilter(_sNul, OT_ASC, FT_NO);
+            pModel->_setOwnerId(ownerId, __fr.record().descr().columnName(owner_ix));
         }
         else {
             // Ha nincs parent dialog, akkor ez nem fog menni
@@ -1487,17 +1486,15 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
                     cFieldEditBase *pfeb = *it;
                     ownerId = pfeb->getId();
                     connect(pfeb, SIGNAL(changedValue(cFieldEditBase*)), this, SLOT(modifyOwnerId(cFieldEditBase*)));
-                    pModel->setFilter(ownerId, OT_ASC, FT_FKEY_ID);
+                    pModel->_setOwnerId(ownerId, owner);
                     break;
                 }
             }
             if (it >= pDialog->fields.end()) EXCEPTION(EDATA);
         }
     }
-    else {
-        pModel->setFilter(_sNul, OT_ASC, FT_NO);
-    }
-    _setRecordListModel(pUi->comboBox, pModel);
+    pModel->setFilter(_sNul, OT_ASC, FT_NO);
+    pModel->joinWith(pUi->comboBox);
     pUi->pushButtonEdit->setDisabled(true);
     _value = pModel->atId(0);
     pTableShape = new cTableShape();
@@ -1612,7 +1609,7 @@ void cFKeyWidget::modifyF()
 void cFKeyWidget::modifyOwnerId(cFieldEditBase* pof)
 {
     ownerId = pof->getId();
-    pModel->setFilter(ownerId, OT_ASC, FT_FKEY_ID);
+    pModel->setOwnerId(ownerId);
     pUi->comboBox->setCurrentIndex(0);
     setFromEdit(0);
 }
@@ -2563,71 +2560,100 @@ void cLTextWidget::setFromEdit()
 
 cSelectPlace::cSelectPlace(QComboBox *_pZone, QComboBox *_pPLace, QLineEdit *_pFilt, const QString& _constFilt, QWidget *_par)
     : QObject(_par)
+    , bbPlace(this, &cSelectPlace::emitChangePlace)
     , pComboBoxZone(_pZone)
     , pComboBoxPLace(_pPLace)
     , pLineEditPlaceFilt(_pFilt)
     , constFilterPlace(_constFilt)
 {
     pSlave = NULL;
-    blockPlaceSignal = false;
-    pZoneModel = new cZoneListModel(this);
-    pComboBoxZone->setModel(pZoneModel);
-    pPlaceModel = new cPlacesInZoneModel(this);
-    pComboBoxPLace->setModel(pPlaceModel);
+    pModelZone = new cZoneListModel(this);
+    pComboBoxZone->setModel(pModelZone);
+    pModelPlace = new cPlacesInZoneModel(this);
+    pComboBoxPLace->setModel(pModelPlace);
     pComboBoxPLace->setCurrentIndex(0);
     if (!constFilterPlace.isEmpty()) {
-        pPlaceModel->setConstFilter(constFilterPlace, FT_SQL_WHERE);
+        pModelPlace->setConstFilter(constFilterPlace, FT_SQL_WHERE);
     }
-    connect(pComboBoxZone,  SIGNAL(currentIndexChanged(int)),   this, SLOT(_zoneChanged(int)));
-    connect(pComboBoxPLace, SIGNAL(currentIndexChanged(int)),   this, SLOT(_placeChanged(int)));
-    if (_pFilt != NULL) {
-        connect(pLineEditPlaceFilt, SIGNAL(textChanged(QString)),    this, SLOT(_placePatternChanged(QString)));
+    connect(pComboBoxZone,  SIGNAL(currentIndexChanged(int)),   this, SLOT(on_comboBoxZone_currentIndexChanged(int)));
+    connect(pComboBoxPLace, SIGNAL(currentIndexChanged(int)),   this, SLOT(on_comboBoxPlace_currentIndexChanged(int)));
+    if (pLineEditPlaceFilt != NULL) {
+        connect(pLineEditPlaceFilt, SIGNAL(textChanged(QString)),    this, SLOT(lineEditPlaceFilt_textChanged(QString)));
     }
 }
 
 void cSelectPlace::copyCurrents(const cSelectPlace &_o)
 {
+    bbPlace.begin();
     qlonglong pid = currentPlaceId();
-    blockPlaceSignal = true;
     pComboBoxZone->setCurrentIndex(_o.pComboBoxZone->currentIndex());
-    pLineEditPlaceFilt->setText(_o.pLineEditPlaceFilt->text());
+    if (pLineEditPlaceFilt != NULL) {
+        QString pattern = _sNul;
+        if (_o.pLineEditPlaceFilt != NULL) {
+            pattern = _o.pLineEditPlaceFilt->text();
+        }
+        pLineEditPlaceFilt->setText(pattern);   // -> lineEditPlaceFilt_textChanged()
+    }
     int pix = _o.pComboBoxPLace->currentIndex();
-    pComboBoxPLace->setCurrentIndex(pix);
-    blockPlaceSignal = false;
-    if (pid != currentPlaceId()) _placeChanged(pix);
+    pComboBoxPLace->setCurrentIndex(pix);       // -> on_comboBoxPlace_currentIndexChanged()
+    bbPlace.end(pid != currentPlaceId());
 }
 
 void cSelectPlace::setSlave(cSelectPlace *_pSlave)
 {
-    copyCurrents(*_pSlave);
-    pSlave = _pSlave;
+    if (_pSlave == NULL) {
+        if (pSlave != NULL) pSlave->setDisablePlaceWidgets(false);
+        pSlave = NULL;
+    }
+    else {
+        if (pSlave != NULL && pSlave != _pSlave) EXCEPTION(EPROGFAIL);
+        pSlave = _pSlave;
+        pSlave->copyCurrents(*this);
+        pSlave->setDisablePlaceWidgets(true);
+    }
 }
+
+void cSelectPlace::setDisablePlaceWidgets(bool f)
+{
+    pComboBoxZone->setDisabled(f);
+    if (pLineEditPlaceFilt != NULL) pLineEditPlaceFilt->setDisabled(f);
+    pComboBoxPLace->setDisabled(f);
+}
+
+bool cSelectPlace::emitChangePlace(bool f)
+{
+    if (f && bbPlace.test()) {
+        placeNameChanged(currentPlaceName());
+        placeIdChanged(currentPlaceId());
+        return true;
+    }
+    return false;
+}
+
 
 void cSelectPlace::setEnabled(bool f)
 {
-    pComboBoxZone->setEnabled(f);
-    pLineEditPlaceFilt->setEnabled(f);
-    pComboBoxPLace->setEnabled(f);
+    setDisablePlaceWidgets(!f);
 }
 
 void cSelectPlace::setDisabled(bool f)
 {
-    pComboBoxZone->setDisabled(f);
-    pLineEditPlaceFilt->setDisabled(f);
-    pComboBoxPLace->setDisabled(f);
+    setDisablePlaceWidgets(f);
 }
 
 void cSelectPlace::refresh()
 {
+    bbPlace.begin();
     qlonglong zid = currentZoneId();
     qlonglong pid = currentPlaceId();
     if (pSlave) {
         pSlave->refresh();
     }
-    pZoneModel->setFilter();
+    pModelZone->setFilter();
     setCurrentZone(zid);
-    pPlaceModel->setFilter();
+    pModelPlace->setFilter();
     setCurrentPlace(pid);
+    bbPlace.end(pid != currentPlaceId());
 }
 
 void cSelectPlace::insertPlace()
@@ -2637,80 +2663,101 @@ void cSelectPlace::insertPlace()
     if (p == NULL) return;
     qlonglong pid = p->getId();
     delete p;
-    if (pSlave) {
-        pSlave->pPlaceModel->setFilter();
+    bbPlace.begin();
+    if (pSlave != NULL) {
+        pSlave->bbPlace.begin();
     }
-    pPlaceModel->setFilter();
+    pModelPlace->setFilter();
     setCurrentPlace(pid);
+    if (pSlave) {
+        pSlave->pModelPlace->setFilter();
+        pSlave->setCurrentPlace(pid);
+        pSlave->bbPlace.end();
+    }
+    bbPlace.end();
 }
 
 void cSelectPlace::setCurrentZone(qlonglong _zid)
 {
-    int ix = pZoneModel->indexOf(_zid);
+    int ix = pModelZone->indexOf(_zid);
     if (ix < 0) EXCEPTION(EDATA);
-    pComboBoxZone->setCurrentIndex(ix);
+    pComboBoxZone->setCurrentIndex(ix); // -> on_comboBoxZone_currentIndexChanged(ix)
 }
 
 void cSelectPlace::setCurrentPlace(qlonglong _pid)
 {
+    if (_pid == currentPlaceId()) return;
+    bbPlace.begin();
     if (_pid == NULL_ID) {
-        if (pPlaceModel->nullable) {
-            pComboBoxPLace->setCurrentIndex(0);
-            return;
+        if (pModelPlace->nullable) {
+            pComboBoxPLace->setCurrentIndex(0);  // -> on_comboBoxZone_currentIndexChanged(ix)
         }
         else {
             EXCEPTION(EDATA);
         }
     }
-    int ix = pPlaceModel->indexOf(_pid);
-    if (ix < 0) {
-        if (pLineEditPlaceFilt != NULL) pLineEditPlaceFilt->setText(_sNul);
-        setCurrentZone(ALL_PLACE_GROUP_ID);
-        ix = pPlaceModel->indexOf(_pid);
-        if (ix < 0) EXCEPTION(EDATA);
+    else { // NOT NULL
+        int ix = pModelPlace->indexOf(_pid);
+        if (ix < 0) {
+            if (pLineEditPlaceFilt != NULL) pLineEditPlaceFilt->setText(_sNul);
+            setCurrentZone(ALL_PLACE_GROUP_ID);
+            ix = pModelPlace->indexOf(_pid);
+            if (ix < 0) EXCEPTION(EDATA);
+        }
+        pComboBoxPLace->setCurrentIndex(ix);    // -> on_comboBoxZone_currentIndexChanged(ix)
     }
-    pComboBoxPLace->setCurrentIndex(ix);
-
+    bbPlace.end();
 }
 
-void cSelectPlace::_zoneChanged(int ix)
+void cSelectPlace::on_comboBoxZone_currentIndexChanged(int ix)
 {
-    qlonglong id = pZoneModel->atId(ix);
-    if (pSlave) pSlave->pComboBoxZone->setCurrentIndex(ix);
-    pPlaceModel->setZone(id);
+    if (ix) {
+        if (bbPlace.test()) {
+            DERR() << "Invalid index : " << ix << endl;
+        }
+        return;
+    }
+    bbPlace.begin();
+    qlonglong pid = currentPlaceId();
+    qlonglong zid = pModelZone->atId(ix);
+    pModelPlace->setZone(zid);
+    qlonglong cpid = currentPlaceId();
+    bbPlace.end(pid != cpid);
+    if (pSlave != NULL) {
+        pSlave->bbPlace.begin();
+        pid = pSlave->currentPlaceId();
+        pSlave->setCurrentZone(zid);
+        pSlave->setCurrentPlace(cpid);
+        pSlave->bbPlace.end(cpid != pid);
+    }
 }
 
-void cSelectPlace::_placeChanged(int ix)
+void cSelectPlace::on_comboBoxPlace_currentIndexChanged(int ix)
 {
-    if (blockPlaceSignal) return;
-    QString   s  = pPlaceModel->at(ix);
-    placeNameChanged(s);
-    qlonglong id = pPlaceModel->atId(ix);
-    placeIdChanged(id);
-    if (pSlave) pSlave->pComboBoxZone->setCurrentIndex(ix);
+    if (pSlave) pSlave->pComboBoxPLace->setCurrentIndex(ix);
+    emitChangePlace(bbPlace.test());
 }
 
-void cSelectPlace::_placePatternChanged(const QString& s)
+void cSelectPlace::lineEditPlaceFilt_textChanged(const QString& s)
 {
-    qlonglong pid = pPlaceModel->atId(pComboBoxPLace->currentIndex());
-    if (pSlave) pSlave->pLineEditPlaceFilt->setText(s);
-    blockPlaceSignal = true;
+    bbPlace.begin();
+    qlonglong pid = currentPlaceId();
     if (s.isEmpty()) {
-        pPlaceModel->setFilter(QVariant(), OT_DEFAULT, FT_NO);
+        pModelPlace->setFilter(QVariant(), OT_DEFAULT, FT_NO);
     }
     else {
-        pPlaceModel->setFilter(condAddJoker(s), OT_DEFAULT, FT_LIKE);
+        pModelPlace->setFilter(condAddJoker(s), OT_DEFAULT, FT_LIKE);
     }
-    int pix = pPlaceModel->indexOf(pid);
-    if (pix < 0) {  // Nincs már megfelelő place -> NULL
-        pComboBoxPLace->setCurrentIndex(0);
-        blockPlaceSignal = false;
-        _placeChanged(0);
+    int pix = pModelPlace->indexOf(pid);
+    if (pix < 0) pix = 0;
+    if (pSlave != NULL) {
+        pSlave->bbPlace.begin();
+        if (pSlave->pLineEditPlaceFilt != NULL) pSlave->pLineEditPlaceFilt->setText(s);
+        pSlave->setCurrentPlace(pModelPlace->atId(pix));
+        pSlave->bbPlace.end(pix == 0);
     }
-    else {          // A node változatlan (csak az indexe változhatott)
-        pComboBoxPLace->setCurrentIndex(pix);
-        blockPlaceSignal = false;
-    }
+    pComboBoxPLace->setCurrentIndex(pix);
+    bbPlace.end(pix == 0);
 }
 
 /* **** **** */
@@ -2720,109 +2767,222 @@ cSelectNode::cSelectNode(QComboBox *_pZone, QComboBox *_pPlace, QComboBox *_pNod
             const QString& _placeConstFilt, const QString& _nodeConstFilt,
             QWidget *_par)
     : cSelectPlace(_pZone, _pPlace, _pPlaceFilt, _placeConstFilt, _par)
+    , bbNode(this, &cSelectNode::emitChangeNode)
     , pComboBoxNode(_pNode)
     , pLineEditNodeFilt(_pNodeFilt)
     , constFilterNode(_nodeConstFilt)
 {
-    blockNodeSignal = false;
-    pNodeModel = NULL;
+    pModelNode = NULL;
     setNodeModel(new cRecordListModel(cPatch().descr(), this), TS_TRUE);
-    connect(this, SIGNAL(placeIdChanged(qlonglong)), this, SLOT(_placeIdChanged(qlonglong)));
-    if (pLineEditNodeFilt != NULL) {
-        connect(pLineEditNodeFilt, SIGNAL(textChanged(QString)),    this, SLOT(_nodePatternChanged(QString)));
+    pModelNode->setOwnerId(NULL_ID, _sPlaceId, TS_TRUE);    // place_id -re szűrünk, ha NULL nincs szűrés.
+    connect(this, SIGNAL(placeIdChanged(qlonglong)), this, SLOT(setPlaceId(qlonglong)));
+    if (pLineEditNodeFilt != NULL) {    // Ha van mintára szűrés
+        connect(pLineEditNodeFilt, SIGNAL(textChanged(QString)), this, SLOT(on_lineEditNodeFilt_textChanged(QString)));
     }
-    connect(pComboBoxNode,  SIGNAL(currentIndexChanged(int)),   this, SLOT(_nodeChanged(int)));
+    connect(pComboBoxNode, SIGNAL(currentIndexChanged(int)), this, SLOT(on_comboBoxNode_currenstIndexChanged(int)));
 }
 
 void cSelectNode::setNodeModel(cRecordListModel *  _pNodeModel, eTristate _nullable)
 {
     setBool(_pNodeModel->nullable, _nullable);
     pComboBoxNode->setModel(_pNodeModel);
-    if (!constFilterNode.isEmpty()) {
-        _pNodeModel->setConstFilter(constFilterNode, FT_SQL_WHERE);
-    }
-    pDelete(pNodeModel);
-    pNodeModel = _pNodeModel;
+    pDelete(pModelNode);
+    pModelNode = _pNodeModel;
 }
 
 void cSelectNode::reset()
 {
-    blockNodeSignal = true;
+    qlonglong nid = currentNodeId();
+    bbNode.begin();
     pComboBoxZone->setCurrentIndex(0);
     pComboBoxPLace->setCurrentIndex(0);
     pComboBoxNode->setCurrentIndex(0);
-    blockNodeSignal = false;
-    if (pPlaceModel->rowCount() > 0) {
-        placeIdChanged(pPlaceModel->atId(0));
-    }
-    else {
-        placeIdChanged(NULL_ID);
-    }
+    bbNode.end(nid != currentNodeId());
 }
 
 void cSelectNode::nodeSetNull(bool _sig)
 {
-    blockNodeSignal = _sig;
+    bbNode.begin();
     pComboBoxNode->setCurrentIndex(0);
-    blockNodeSignal = false;
+    bbNode.end(_sig);
 }
 
-void cSelectNode::_placeIdChanged(qlonglong pid)
+bool cSelectNode::emitChangeNode(bool f)
 {
-    qlonglong nid = pNodeModel->atId(pComboBoxNode->currentIndex());
-    blockNodeSignal = true;
-    QString sql;
-    if (pid == NULL_ID) {
-        if (!constFilterNode.isEmpty()) sql = constFilterNode;
-        else                            sql = _sTrue;
+    if (f && bbNode.test()) {
+        nodeIdChanged(currentNodeId());
+        nodeNameChanged(currentNodeName());
+        return true;
     }
-    else {
-        sql = QString("place_id = %1").arg(pid);
-        if (!constFilterNode.isEmpty()) sql = "(" + sql + " AND " + constFilterNode + ")";
-    }
-    pNodeModel->setConstFilter(sql, FT_SQL_WHERE);
-    pNodeModel->setFilter();
-    int nix = pNodeModel->indexOf(nid);
-    if (nix < 0) {  // Nincs már megfelelő node -> NULL
-        pComboBoxNode->setCurrentIndex(0);
-        blockNodeSignal = false;
-        _nodeChanged(0);
-    }
-    else {          // A node változatlan (csak az indexe változhatott)
-        pComboBoxNode->setCurrentIndex(nix);
-        blockNodeSignal = false;
-    }
+    return false;
 }
 
-void cSelectNode::_nodePatternChanged(const QString& s)
+void cSelectNode::setPlaceId(qlonglong pid, bool _sig)
 {
-    qlonglong nid = pNodeModel->atId(pComboBoxNode->currentIndex());
-    blockNodeSignal = true;
+    if (currentPlaceId() == pid) return;
+    bbPlace.begin();
+    setCurrentPlace(pid);
+    bbPlace.end(false);
+    bbNode.begin();
+    pModelNode->setOwnerId(pid);
+    pComboBoxNode->setCurrentIndex(0);
+    on_comboBoxNode_currenstIndexChanged(0);
+    bbNode.end(_sig);
+}
+
+void cSelectNode::on_lineEditNodeFilt_textChanged(const QString& s)
+{
+    qlonglong nid = currentNodeId();
+    bbNode.begin();
     if (s.isEmpty()) {
-        pNodeModel->setFilter(QVariant(), OT_DEFAULT, FT_NO);
+        pModelNode->setFilter(QVariant(), OT_DEFAULT, FT_NO);
     }
     else {
-        pNodeModel->setFilter(condAddJoker(s), OT_DEFAULT, FT_LIKE);
+        pModelNode->setFilter(condAddJoker(s), OT_DEFAULT, FT_LIKE);
     }
-    int nix = pNodeModel->indexOf(nid);
-    if (nix < 0) {  // Nincs már megfelelő node -> NULL
+    int nix = pModelNode->indexOf(nid);
+    if (nix < 0) {
+        nix = 0;
+    }
+    pComboBoxNode->setCurrentIndex(0);
+    bbNode.end(nid != currentNodeId());
+}
+
+void cSelectNode::on_comboBoxNode_currenstIndexChanged(int ix)
+{
+    (void)ix;
+    emitChangeNode();
+}
+
+
+/* ****** */
+
+cSelectLinkedPort::cSelectLinkedPort(QComboBox *_pZone, QComboBox *_pPlace, QComboBox *_pNode, QComboBox *_pPort, QButtonGroup *_pType, QComboBox *_pShare, const tIntVector &_shList,
+            QLineEdit *_pPlaceFilt, QLineEdit *_pNodeFilt, const QString& _placeConstFilt, const QString& _nodeConstFilt,
+            QWidget *_par)
+    : cSelectNode(_pZone, _pPlace, _pNode, _pPlaceFilt, _pNodeFilt, _placeConstFilt, _nodeConstFilt, _par)
+{
+    lockSlots = false;
+    pq = newQuery();
+    pComboBoxPort    = _pPort;
+    pComboBoxShare   = _pShare;
+    pButtonGroupType = _pType;
+    pModelShare      = new cEnumListModel("portshare", NT_NOT_NULL, _shList, this);
+    pModelShare->joinWith(pComboBoxShare);
+    //pModelShare->
+    pModelPort       = new cRecordListModel("patchable_ports", _sNul, this);
+    pModelPort->setOwnerId(NULL_ID, _sNodeId, TS_FALSE);    // Öres lista lessz
+    pModelPort->joinWith(pComboBoxPort);
+    lastLinkType = LT_FRONT;
+    lastShare    = pModelShare->atInt(0);
+    lastPortId   = 0;   // Mindegy mennyi, csak ne NULL_ID legyen
+    setNodeId(NULL_ID);
+    connect(this, SIGNAL(nodeIdChanged(qlonglong)), this, SLOT(setNodeId(qlonglong)));
+    connect(pButtonGroupType, SIGNAL(buttonClicked(int)), this, SLOT(setLinkTypeByButtons(int)));
+}
+
+cSelectLinkedPort::~cSelectLinkedPort()
+{
+    delete pq;
+}
+
+void cSelectLinkedPort::setLink(cPhsLink& _lnk)
+{
+    qlonglong pid = _lnk.getId(_sPortId2);
+    if (pid == NULL_ID) {
         pComboBoxNode->setCurrentIndex(0);
-        blockNodeSignal = false;
-        _nodeChanged(0);
+        return;
     }
-    else {          // A node változatlan (csak az indexe változhatott)
-        pComboBoxNode->setCurrentIndex(nix);
-        blockNodeSignal = false;
+    cNPort p;
+    cPatch *pn;
+    p.setById(*pq, pid);
+    pn = cNode::getNodeObjById(*pq, p.getId(_sNodeId));
+    setCurrentPlace(pn->getId(_sPlaceId));
+
+    int ix = pModelNode->indexOf(pn->getId());
+    if (ix <= 0) EXCEPTION(EPROGFAIL);
+    pComboBoxNode->setCurrentIndex(ix);
+
+    ix = pModelPort->indexOf(pid);
+    if (ix <= 0) EXCEPTION(EPROGFAIL);
+    pComboBoxPort->setCurrentIndex(ix);
+
+    ix = 0;
+    if (isPatch) {
+        ix = pModelShare->indexOf(_lnk.getId(_sPortShared));
+        if (ix < 0) EXCEPTION(EPROGFAIL);
+    }
+    lastShare = pModelShare->atInt(ix);
+    pComboBoxShare->setCurrentIndex(ix);
+    pComboBoxShare->setEnabled(isPatch);
+
+    pButtonGroupType->button(_lnk.getId(_sPhsLinkType2))->setChecked(true);
+    bool isPatch = pn->tableoid() == cPatch::_descr_cPatch().tableoid();
+    pButtonGroupType->button(LT_TERM)->setDisabled(isPatch);
+    pButtonGroupType->button(LT_FRONT)->setEnabled(isPatch);
+    pButtonGroupType->button(LT_BACK)->setEnabled(isPatch);
+    pComboBoxShare->setEnabled(isPatch);
+}
+
+void cSelectLinkedPort::setNodeId(qlonglong _nid)
+{
+    pModelPort->setOwnerId(_nid);
+    pComboBoxPort->setCurrentIndex(0);
+    bool nodeIsNull = _nid == NULL_ID;
+    pComboBoxPort->setDisabled(nodeIsNull);
+    if (!nodeIsNull) {
+        cPatch p;
+        p.setId(_nid);
+        qlonglong toid = p.fetchTableOId(*pq);  // Type?
+        isPatch = toid == p.tableoid();
     }
 }
 
-void cSelectNode::_nodeChanged(int ix)
+void cSelectLinkedPort::setPortIdByIndex(int ix)
 {
-    if (blockNodeSignal) return;
-    QString   s  = pNodeModel->at(ix);
-    nodeNameChanged(s);
-    qlonglong id = pNodeModel->atId(ix);
-    nodeIdChanged(id);
+    qlonglong pid = pModelPort->atId(ix);
+    if (pid == lastPortId) return;
+    lockSlots = true;
+    lastPortId = pid;
+    bool portIsNull = pid == NULL_ID;
+    if (!portIsNull) {
+        if (isPatch) {
+            if (lastLinkType == LT_TERM) lastLinkType = LT_FRONT;
+        }
+        else {
+            lastLinkType = LT_TERM;
+            lastShare = ES_;
+            pComboBoxShare->setCurrentIndex(0);
+        }
+        pButtonGroupType->button(lastLinkType)->setChecked(true);
+        pButtonGroupType->button(LT_TERM)->setDisabled(isPatch);
+        pButtonGroupType->button(LT_FRONT)->setEnabled(isPatch);
+        pButtonGroupType->button(LT_BACK)->setEnabled(isPatch);
+        pComboBoxShare->setEnabled(isPatch);
+    }
+    else {
+        pButtonGroupType->button(LT_TERM) ->setDisabled(true);
+        pButtonGroupType->button(LT_FRONT)->setDisabled(true);
+        pButtonGroupType->button(LT_BACK) ->setDisabled(true);
+        pComboBoxShare->setDisabled(true);
+    }
+    lockSlots = false;
+    changedLink(pid, lastLinkType, lastShare);
+}
+
+void cSelectLinkedPort::setLinkTypeByButtons(int _id)
+{
+    lastLinkType = _id;
+    if (lockSlots) return;
+    changedLink(currentPortId(), _id, lastShare);
+}
+
+void cSelectLinkedPort::changedShareType(int ix)
+{
+    int sh = pModelShare->atInt(ix);
+    if (lastShare == sh) return;
+    lastShare = sh;
+    changedLink(currentPortId(), lastLinkType, lastShare);
 }
 
 /* ********************************************************************************* */
@@ -2989,7 +3149,7 @@ qlonglong cSelectSubNet::currentId()
 void cSelectSubNet::setCurrentByVlan(qlonglong _vid)
 {
     if (_vid == NULL_ID) {
-        setCurrentByVlan(NULL_ID);
+        setCurrentBySubNet(NULL_ID);
         return;
     }
     cSubNet sn;

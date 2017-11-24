@@ -126,7 +126,7 @@ void cFindByMac::hit_clear()
 void cFindByMac::hit_find()
 {
     QString sMac = pUi->comboBoxMAC->currentText();
-    QString text = reportByMac(*pq, sMac);
+    QString text = htmlReportByMac(*pq, sMac);
     pUi->textEdit->setHtml(text);
 }
 

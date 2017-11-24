@@ -588,15 +588,14 @@ cPatch * patchEditDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample, bool ro)
 
 /* ********************************************************************************************** */
 
-cIpEditWidget::cIpEditWidget(qlonglong _typeMask, QWidget *_par) : QWidget(_par)
+cIpEditWidget::cIpEditWidget(const tIntVector& _types, QWidget *_par) : QWidget(_par)
 {
     disabled = disableSignals = false;
     pq = newQuery();
     pUi = new Ui::editIp;
     pUi->setupUi(this);
-    pModelIpType = new cStringListEnumModel;
-    pModelIpType->setLists("addresstype", _typeMask);
-    pUi->comboBoxIpType->setModel(pModelIpType);
+    pModelIpType = new cEnumListModel("addresstype", NT_NOT_NULL, _types);
+    pModelIpType->joinWith(pUi->comboBoxIpType);
     pSelectVlan = new cSelectVlan(pUi->comboBoxVLanId, pUi->comboBoxVLan);
     pSelectSubNet = new cSelectSubNet(pUi->comboBoxSubNetAddr, pUi->comboBoxSubNet);
     pINetValidator = new cINetValidator(true, this);
@@ -618,7 +617,7 @@ void cIpEditWidget::set(cIpAddress *po)
     actAddress = po->address();
     if (actAddress.isNull()) _state |= IES_ADDRESS_IS_NULL;
     pUi->lineEditAddress->setText(po->getName(_sAddress));
-    int ix = pModelIpType->cStringListDecModel::indexOf(po->getName(_sAddrType));
+    int ix = pModelIpType->indexOf(po->getName(_sIpAddressType));
     if (ix < 0) ix = 0; // ?!
     pUi->comboBoxIpType->setCurrentIndex(ix);
     if (ix == 0) _state |= IES_ADDRESS_TYPE_IS_NULL;
@@ -656,9 +655,6 @@ void cIpEditWidget::setAllDisabled(bool f)
 
 void cIpEditWidget::on_comboBoxIpType_currentIndexChanged(int index)
 {
-    const cEnumVal *pev = pModelIpType->getDecorationAt(index);
-    int             e   = pModelIpType->getIntAt(index);
-    enumSetD(pUi->comboBoxIpType, *pev, e);
     if (_state & IES_ADDRESS_TYPE_IS_NULL) {
         if (index != 0) {
             _state &= ~ IES_ADDRESS_TYPE_IS_NULL;
