@@ -33,7 +33,7 @@ bool cWorkstation::cBatchBlocker::end(bool f)
 {
     if (counter < 1) EXCEPTION(EPROGFAIL);
     --counter;
-    return launch(f);
+    return enforce(f);
 }
 
 bool cWorkstation::cBatchBlocker::test() const
@@ -45,23 +45,39 @@ bool cWorkstation::cBatchBlocker::test() const
     return true;
 }
 
-bool cWorkstation::cBatchBlocker::launch(bool f)
+bool cWorkstation::cBatchBlocker::enforce(bool f)
 {
     if (f && test()) {
-        setMessages();
-        if (pParent == NULL) {
-            bool ok = getStat();
-            pOwner->pUi->pushButtonSave->setEnabled(ok);
-            QStringList l;
-            l = getInfos();
-            pOwner->pUi->textEditMsg->setHtml(l.join(sHtmlLine));
-            l = getErrors();
-            pOwner->pUi->textEditErr->setHtml(l.join(sHtmlLine));
-        }
+        setState();
+        referState();
         return true;
     }
     return false;
 }
+
+void cWorkstation::cBatchBlocker::referState()
+{
+    cBatchBlocker *pRoot = this;
+    while (pRoot->pParent != NULL) pRoot = pRoot->pParent;
+    bool ok = getStat();
+    pOwner->pUi->pushButtonSave->setEnabled(ok);
+    QStringList l;
+    l = getInfos();
+    pOwner->pUi->textEditMsg->setHtml(l.join(sHtmlLine));
+    l = getErrors();
+    pOwner->pUi->textEditErr->setHtml(l.join(sHtmlLine));
+}
+
+void cWorkstation::cBatchBlocker::setState(bool f)
+{
+    if (!f) return;
+    sErrors.clear(); sInfos.clear(); isOk = true;
+    (pOwner->*pFSet)(f, sErrors, sInfos, isOk);
+    foreach (cBatchBlocker *pbb, childList) {
+        pbb->setState();
+    }
+}
+
 
 const QStringList cWorkstation::cBatchBlocker::getInfos() const
 {
@@ -97,12 +113,16 @@ bool cWorkstation::cBatchBlocker::getStat() const
 cWorkstation::cWorkstation(QMdiArea *parent) :
     cIntSubObj(parent),
     bbNode(this, &cWorkstation::setStatNode),
-    bbNodeName(this, &cWorkstation::setStatNodeName, &bbNode),
-    bbNodeSerial(this, &cWorkstation::setStatNodeSerial, &bbNode),
-    bbNodeInventory(this, &cWorkstation::setStatNodeInventory, &bbNode),
-    bbPort(this, &cWorkstation::setStatPort, &bbNode),
-    bbIp(this, &cWorkstation::setStatIp, &bbNode),
-    bbLink(this, &cWorkstation::setStatLink, &bbNode),
+     bbNodeName(this, &cWorkstation::setStatNodeName, &bbNode),
+     bbNodeSerial(this, &cWorkstation::setStatNodeSerial, &bbNode),
+     bbNodeInventory(this, &cWorkstation::setStatNodeInventory, &bbNode),
+     bbNodeType(this, &cWorkstation::setStatNodeType, &bbNode),
+     bbPort(this, &cWorkstation::setStatPort, &bbNode),
+      bbPortName(this, &cWorkstation::setStatPortName, &bbPort),
+      bbPortType(this, &cWorkstation::setStatPortType, &bbPort),
+       bbPortMac(this, &cWorkstation::setStatPortMac, &bbPortType),
+       bbIp(this, &cWorkstation::setStatIp, &bbPortType),
+       bbLink(this, &cWorkstation::setStatLink, &bbPortType),
     pUi(new Ui::wstWidget),
     pq(newQuery())
 {
@@ -110,15 +130,18 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     pnp = NULL;
     pif = NULL;
     pip = NULL;
+    isModify = false;
+    bbNode.begin();
     // Form
     pUi->setupUi(this);
     pIpEditWidget = new cIpEditWidget(iTab(AT_DYNAMIC, AT_FIXIP));
     pUi->verticalLayoutIp->insertWidget(1, pIpEditWidget);
     // small cosmetics
     QList<int> sizes;
-    sizes << 300 << 300;
+    sizes << 300 << 500;
     pUi->splitterMsg->setSizes(sizes);
-    sizes << 300;
+    sizes.pop_back();
+    sizes << 300 << 300 << 300;
     pUi->splitterWorkstation->setSizes(sizes);
     // Button groups
     pModifyButtons = new QButtonGroup(this);
@@ -129,6 +152,7 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     pLinkTypeButtons->addButton(pUi->radioButtonLinkFront, LT_FRONT);
     pLinkTypeButtons->addButton(pUi->radioButtonLinkBack,  LT_BACK);
 
+    // Select objects
     pSelNode     = new cSelectNode(pUi->comboBoxFilterZone, pUi->comboBoxFilterPlace, pUi->comboBoxNode,
                                    pUi->lineEditFilterPlace, pUi->lineEditFilterPattern, _sNul, _sNul, this);
     cRecordListModel *pnm = new cRecordListModel(_sNodes, _sNul, this);
@@ -139,19 +163,22 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     static const QString sNodeConstFilt = "1 = (SELECT count(*) FROM nports AS p WHERE nodes.node_id = p.node_id)";
     pnm->setConstFilter(sNodeConstFilt, FT_SQL_WHERE);
     pSelNode->setNodeModel(pnm);
+    pSelNode->refresh();
     pSelPlace    = new cSelectPlace(pUi->comboBoxZone, pUi->comboBoxPlace, pUi->lineEditPlacePat, _sNul, this);
     pSelLinked   = new cSelectLinkedPort(pUi->comboBoxLinkZone, pUi->comboBoxLinkPlace, pUi->comboBoxLinkNode,
                                    pUi->comboBoxLinkPort, pLinkTypeButtons, pUi->comboBoxLinkPortShare, iTab(ES_, ES_A, ES_B),
                                    pUi->lineEditLinkPlacePat, NULL, _sNul, _sNul, this);
-    pSelLinked->refresh();
-    pSelPlace->setSlave(pSelLinked);
-    pSelNode->refresh();
     pSelPlace->refresh();
-    modifyChanged(false);
+    pSelPlace->setSlave(pSelLinked);
+    pSelLinked->refresh();
+    // on_radioButtonMod_toggled(bool)
+    connect(pSelNode,   SIGNAL(nodeIdChanged(qlonglong)),       this, SLOT(selectedNode(qlonglong)));
+    // on_checkBoxPlaceEqu_toggled(bool)
+    connect(pSelLinked, SIGNAL(changedLink(qlonglong,int,int)), this, SLOT(linkChanged(qlonglong,int,int)));
+    // on_lineEditPName_textChanged(bool)
+    // on_comboBoxPType_currentIndexChanged(QString)
 
-    connect(pSelNode,           SIGNAL(placeIdChanged(qlonglong)),  this, SLOT(selectedNode(qlonglong)));
-    connect(pUi->radioButtonMod,SIGNAL(toggled(bool)),          this, SLOT(modifyChanged(bool)));
-    connect(pSelLinked,         SIGNAL(changedLink(qlonglong,int,int)), this, SLOT(linkChanged(qlonglong,int,int)));
+    bbNode.end();
 }
 
 cWorkstation::~cWorkstation()
@@ -183,9 +210,10 @@ void cWorkstation::msgEmpty(QLineEdit * pLineEdit, QLabel *pLabel, const QString
 
 void cWorkstation::setStatNode(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk)
 {
-    if (!f) return;
-    msgEmpty(pUi->lineEditModelName,   pUi->labelModelName, _sNul, sErrs, sInfs, isOk);
-    msgEmpty(pUi->lineEditModelNumber, pUi->labelModelNumber, _sNul, sErrs, sInfs, isOk);
+    (void)f;
+    (void)sErrs;
+    (void)sInfs;
+    (void)isOk;
 }
 
 void cWorkstation::setStatNodeName(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk)
@@ -221,11 +249,40 @@ void cWorkstation::setStatNodeInventory(bool f, QStringList& sErrs, QStringList&
     msgEmpty(pUi->lineEditInventory,   pUi->labelInventory, _sInventoryNumber, sErrs, sInfs, isOk);
 }
 
+void cWorkstation::setStatNodeType(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk)
+{
+    if (!f) return;
+    msgEmpty(pUi->lineEditModelName,   pUi->labelModelName, _sNul, sErrs, sInfs, isOk);
+    msgEmpty(pUi->lineEditModelNumber, pUi->labelModelNumber, _sNul, sErrs, sInfs, isOk);
+}
+
 void cWorkstation::setStatPort(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk)
+{
+    (void)f;
+    (void)sErrs;
+    (void)sInfs;
+    (void)isOk;
+}
+
+void cWorkstation::setStatPortName(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk)
+{
+    if (!f) return;
+    (void)sInfs;
+    QString s = pUi->lineEditPName->text();
+    if (s.isEmpty()) {
+        sErrs << htmlError(trUtf8("Nincs megadva a port név! Az név megadása kötelező."));
+        isOk = false;
+        return;
+    }
+}
+
+
+void cWorkstation::setStatPortType(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk)
 {
     if (!f) return;
 
 }
+
 
 void cWorkstation::setStatIp(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk)
 {
@@ -345,15 +402,10 @@ void cWorkstation::node2gui()
 
 // SLOTS:
 
-void cWorkstation::modifyChanged(bool f)
+void cWorkstation::on_radioButtonMod_toggled(bool checked)
 {
-    isModify = f;
-    bbNode.launch();
-}
-
-void cWorkstation::on_checkBoxPlaceEqu_toggled(bool checked)
-{
-    pSelPlace->setSlave(checked ? pSelLinked : NULL);   // -> linkedNodeIdChanged();
+    isModify = checked;
+    bbNode.enforce();
 }
 
 void cWorkstation::selectedNode(qlonglong id)
@@ -371,22 +423,72 @@ void cWorkstation::selectedNode(qlonglong id)
     node2gui();
 }
 
-void cWorkstation::linkedNodeIdChanged(qlonglong _nid)
+void cWorkstation::on_checkBoxPlaceEqu_toggled(bool checked)
 {
-    QString nodeType;
-    if (_nid != NULL_ID) {
-        cPatch n;
-        n.setById(*pq, _nid);
-        nodeType = n.view(*pq, _sNodeType);
-    }
-    pUi->lineEditLinkNodeType->setText(nodeType);
-    bbLink.launch(true);
+    pSelPlace->setSlave(checked ? pSelLinked : NULL);   // -> linkedNodeIdChanged();
 }
+
 
 void cWorkstation::linkChanged(qlonglong _pid, int _lt, int _sh)
 {
     (void)_pid;
     (void)_lt;
     (void)_sh;
-    bbLink.launch(true);
+    bbLink.enforce(true);
+}
+
+
+void cWorkstation::on_lineEditPName_textChanged(const QString &arg1)
+{
+    (void)arg1;
+    bbPortName.enforce(true);
+}
+
+void cWorkstation::on_comboBoxPType_currentIndexChanged(const QString &arg1)
+{
+    const cIfType& ifType = cIfType::ifType(arg1);  // New port type (ifType)
+    QString ot = ifType.getName(_sIfTypeObjType);  // New object type name
+    bool isInterface;
+    if      (ot == _sNPort)     isInterface = false;    // new type is interface
+    else if (ot == _sInterface) isInterface = true;     // new type is passive port
+    else                        EXCEPTION(EDATA, 0, ifType.identifying(false));
+    bool changeType = isInterface == (pif == NULL);     // Changed interface object típe?
+    int  linkType   = (int)ifType.getId(_sIfTypeLinkType);  // New port link type
+    bool isLinkage  = linkType == LT_PTP || linkType == LT_BUS; // Linkable?
+    bool togleLink  = isLinkage != pl.isNull();         // Change link ? !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    pnp->setId(_sIfTypeId, ifType.getId());
+    if (!(togleLink || changeType)) return;             // No any other change
+    bbPortType.begin();
+    if (changeType) { // Change port object type
+        if (isInterface) {  // cNPort => cInterface
+            pif = new cInterface;
+            pif->set(*pnp);
+            node.ports[0] = pif;
+            delete pnp;
+            pnp = pif;
+            pip = new cIpAddress;
+            pif->addresses << pip;
+            pIpEditWidget->set(pip);
+        }
+        else {              // cInterface => cNPort
+            pnp = new cNPort;
+            pnp->set(*pnp);
+            node.ports[0] = pif;
+            delete pif;
+            pif = NULL;
+            pip = NULL;
+        }
+        pUi->lineEditPMAC->setEnabled(isInterface);
+        pIpEditWidget->setAllDisabled(!isInterface);
+    }
+    if (togleLink) {
+        pl.clear();
+        if (isLinkage) {    // Enable link
+        }
+        else {              // Disable link
+        }
+        pSelLinked->setEnabled(isLinkage);
+    }
+
+    bbPortType.end();
 }

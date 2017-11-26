@@ -242,11 +242,18 @@ public:
 //  void changeRecDescr(cRecStaticDescr * _descr);
     virtual QVariant data(const QModelIndex &index, int role) const;
     /// Beállítja az owner ID-re szűrést, nem frissít.
-    void _setOwnerId(qlonglong _oid, const QString& _fn = QString(), eTristate _nullIsAll = TS_NULL);
+    /// @param _oid Az ID érték, a szőrés paramétere
+    /// @param _fn A rekordban az id mező neve, amire szűrönk, ha ez kideríthető, pl. egy szabályos child rekordnál, ott nem kell megadni,
+    ///            Továbbá csak az első híváskor kell megadni, a névet tárolja az objektum.
+    /// @param _nullIsAll Mi a teendő, ha a megadott ID érték NULL: TS_TRUE : nincs szőrés. TS_FLSE: minden rekord kiszűrve, TS_NULL: az előző mód.
+    /// @param _chkFn A szűrésnél alapértelmezett operátor az egyenlőség, de megadhatunk egy függvényt is, melnek két paramétere a rekordban
+    ///             a megadott id mező értéke, a második paraméter pedig a megadott ID paraméter. A föggvény egy boolean értéket ad vissza.
+    ///             Csak egyszer kell megadni, az objektum megjegyzi, ha törölni akarjuk, akkor az "=" stringet kell megadni.
+    void _setOwnerId(qlonglong _oid, const QString& _fn = QString(), eTristate _nullIsAll = TS_NULL, const QString& _chkFn = QString());
     /// Beállítja az owner ID-re szűrést, és frissít.
-    void setOwnerId(qlonglong _oid, const QString& _fn = QString(), eTristate _nullIsAll = TS_NULL)
+    void setOwnerId(qlonglong _oid, const QString& _fn = QString(), eTristate _nullIsAll = TS_NULL, const QString& _chkFn = QString())
     {
-        _setOwnerId(_oid, _fn, _nullIsAll);
+        _setOwnerId(_oid, _fn, _nullIsAll, _chkFn);
         setFilter();
     }
 
@@ -283,9 +290,11 @@ public:
     /// Ha értéke true, akkor a lista első eleme NULL (a név üres, az ID pedig NULL_ID)
     /// A konstruktorok false-re inicializálják.
     bool                nullable;
-    /// Ha ID-re szűrés van megadva, és automatikusan nem megállapítható, hogy melyik mezőről van szó
+    /// Ha ID-re szűrés is van megadva, és automatikusan nem megállapítható, hogy melyik mezőről van szó
     /// (nincs owner, vagy parant), akkor az id mező neve. NULL-ra van inicializálva.
     QString             sFkeyName;
+    /// Eg yopcionális függvénxy név, iz ID-re szűréshez, amit az egyenlőség operátor helyett lehet használni.
+    QString             sOwnCheck;
     /// Ha Ha ID-re szűrés van megadva, és az ID értéke NULL, akkor ha értéke igaz, akkor az az
     /// összes rekordot jelenti szűrés nélkül. Ha értéke hamis, akkor nincs egyetlen rekord sem, ami illeszkedik.
     /// false-ra van inicializálva.

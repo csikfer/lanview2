@@ -29,13 +29,11 @@ private:
         cBatchBlocker(cWorkstation *_po, tPSet _pFSet, cBatchBlocker * _par = NULL);
         ~cBatchBlocker();
         void        begin() { ++counter; }
-        bool        end(bool f);
+        bool        end(bool f = true);
         bool        test() const;
-        bool        launch(bool f = true);
-        void setMessages(bool f = true) {
-            sErrors.clear(); sInfos.clear(); isOk = true;
-            (pOwner->*pFSet)(f, sErrors, sInfos, isOk);
-        }
+        bool        enforce(bool f = true);
+        void        referState();
+        void        setState(bool f = true);
         const QStringList getInfos() const;
         const QStringList getErrors() const;
         bool getStat() const;
@@ -50,22 +48,30 @@ private:
         bool            isOk;
     };
     cBatchBlocker   bbNode;
-    cBatchBlocker   bbNodeName;
-    cBatchBlocker   bbNodeSerial;
-    cBatchBlocker   bbNodeInventory;
-    cBatchBlocker   bbPort;
-    cBatchBlocker   bbIp;
-    cBatchBlocker   bbLink;
+      cBatchBlocker   bbNodeName;
+      cBatchBlocker   bbNodeSerial;
+      cBatchBlocker   bbNodeInventory;
+      cBatchBlocker   bbNodeType;
+      cBatchBlocker   bbPort;
+        cBatchBlocker   bbPortName;
+        cBatchBlocker   bbPortType;
+          cBatchBlocker   bbIp;
+        cBatchBlocker   bbPortMac;
+     cBatchBlocker   bbLink;
 
     void msgEmpty(QLineEdit * pLineEdit, QLabel *pLabel, const QString &fn, QStringList& sErrs, QStringList& sInfs, bool &isOk);
 
     void setStatNode(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
-    void setStatNodeName(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
-    void setStatNodeSerial(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
-    void setStatNodeInventory(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
-    void setStatPort(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
-    void setStatIp(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
-    void setStatLink(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
+      void setStatNodeName(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
+      void setStatNodeSerial(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
+      void setStatNodeInventory(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
+      void setStatNodeType(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
+      void setStatPort(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
+        void setStatPortName(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
+        void setStatPortType(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
+          void setStatIp(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
+        void setStatPortMac(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
+      void setStatLink(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
 
     void node2gui();
 
@@ -83,16 +89,17 @@ private:
     cNode      *pSample;
     /// A szerkesztett workstation objektum
     cNode       node;   ///< A munkaállomás objektum
-    cNPort *    pnp;
-    cInterface *pif;
-    cIpAddress *pip;
-    cPhsLink    pl;
+    cNPort *    pnp;    ///< A munkaállomás egy portjára pointer
+    cInterface *pif;    ///< Ha a munkaállomás portja egy interface, akkor arra egy pointer
+    cIpAddress *pip;    ///< Ha a munkaállomás portja egy interface, akkor az ip cím objektumra pointer
+    cPhsLink    pl;     ///< A fizikai link
 private slots:
-    void modifyChanged(bool f);
-    void on_checkBoxPlaceEqu_toggled(bool checked);
+    void on_radioButtonMod_toggled(bool checked);           // connected
     void selectedNode(qlonglong id);
-    void linkedNodeIdChanged(qlonglong _nid);
+    void on_checkBoxPlaceEqu_toggled(bool checked);         // connected
     void linkChanged(qlonglong _pid, int _lt, int _sh);
+    void on_lineEditPName_textChanged(const QString &arg1);
+    void on_comboBoxPType_currentIndexChanged(const QString &arg1);
 };
 
 #endif // CWORKSTATION_H

@@ -842,15 +842,22 @@ class LV2GSHARED_EXPORT cSelectPlace : public QObject {
     Q_OBJECT
 public:
     /// Konstruktor.
-    /// @param _pZone   A comboBox objektum pointere a zóna kiválasztáshoz.
-    /// @param _pPlace  A comboBox objektum pointere a zónán bellüli hely kiválasztáshoz.
-    /// @param _pFilt   Opcionális lineEdit objektum pointere, a hely név szűréséhez.
-    /// @param _constFilt Egy opcionális konstans szűrő a helyek-hez.
+    /// @param _pZone   A QComboBox objektum pointere a zóna kiválasztáshoz.
+    /// @param _pPlace  A QComboBox objektum pointere a zónán bellüli hely kiválasztáshoz.
+    /// @param _pFilt   Opcionális QLineEdit objektum pointere, a hely név szűréséhez.
+    /// @param _constFilt Egy opcionális konstans szűrő a helyek-hez (típus : FT_SQL_WHERE).
     /// @param _par Parent objektum
+    /// A zóna kiválasztásánál nincs szűrési lehetőség, bármelyik zóna kiválasztható lessz,
+    /// az aktuális kiválasztott zóna pedig az "all" lessz.
+    /// A hely kiválasztásakor, a NULL megengedett, és ez lessz az aktuálisan kiválasztott.
     cSelectPlace(QComboBox *_pZone, QComboBox *_pPLace, QLineEdit *_pFilt = NULL, const QString& _constFilt = QString(), QWidget *_par = NULL);
+    /// Az aktuálisan kiválasztott zóna neve
     QString currentZoneName()  const { return pModelZone->at(pComboBoxZone->currentIndex()); }
+    /// Az aktuálisan kiválasztott zóna ID-je
     qlonglong currentZoneId()  const { return pModelZone->atId(pComboBoxZone->currentIndex()); }
+    /// Az aktuálisan kiválasztott hely neve
     QString currentPlaceName() const { return pModelPlace->at(pComboBoxPLace->currentIndex()); }
+    /// Az aktuálisan kiválasztott hely ID-je
     qlonglong currentPlaceId() const { return pModelPlace->atId(pComboBoxPLace->currentIndex()); }
     /// Átmásolja az aktuális értékeket a másik objektumból.
     void copyCurrents(const cSelectPlace& _o);
@@ -859,9 +866,11 @@ public:
     /// Ha a _pSlave egy NULL pointer, akkor az aktuális szinkronizálás törlődik,
     /// az edig szinkronizált objektum widgetjei engedélyezve lesznek.
     void setSlave(cSelectPlace *_pSlave);
+    /// Letiltja a widgeteket
     void setDisablePlaceWidgets(bool f = true);
 protected:
     tBatchBlocker<cSelectPlace>   bbPlace;
+    /// A két kimeneti signal hívása az aktuális hely név ill. ID-vel.
     bool emitChangePlace(bool f = true);
     ///
     QComboBox *pComboBoxZone;
@@ -874,7 +883,10 @@ protected:
 public slots:
     virtual void setEnabled(bool f = true);
     virtual void setDisabled(bool f = true);
-    void refresh();
+    /// Frissíti a lekérdezett listákat.
+    /// A kimeneti signal-t csak akkor küldi el, ha az aktuális
+    /// hely azonosítü place_id megváltozott, és ha f értéke true (ez az alapértelmezett).
+    virtual void refresh(bool f = true);
     void insertPlace();
     void setCurrentZone(qlonglong _zid);
     void setCurrentPlace(qlonglong _pid);
@@ -887,26 +899,37 @@ signals:
     void placeIdChanged(qlonglong id);
 };
 
+/// @class cSelectNode
+/// Egy hálózati elem kiválasztását segítő objektum.
+/// Egy hálózati elem kiválasztását a nodeNameChanged(); és nodeIdChanged();
+/// signal-okkal jelzi.
 class LV2GSHARED_EXPORT cSelectNode : public cSelectPlace {
     Q_OBJECT
 public:
     /// Konstruktor.
-    /// @param _pZone   A comboBox objektum pointere a zóna kiválasztáshoz.
-    /// @param _pPlace  A comboBox objektum pointere a zónán bellüli hely kiválasztáshoz.
-    /// @param _pNode   A comboBox objektum pointere a zónán és/vagy a  helységben található eszköz kiválasztáshoz.
+    /// @param _pZone   A QComboBox objektum pointere a zóna kiválasztáshoz.
+    /// @param _pPlace  A QComboBox objektum pointere a zónán bellüli hely kiválasztáshoz.
+    /// @param _pNode   A QComboBox objektum pointere a zónán és/vagy a  helységben található eszköz kiválasztáshoz.
     /// @param _pPlaceFilt Opcionális lineEdit objektum pointere, a hely név szűréséhez.
     /// @param _pNodeFilt  Opcionális lineEdit objektum pointere, az eszköz név szűréséhez.
     /// @param _placeConstFilt Egy opcionális konstans szűrő a helyek-hez.
     /// @param _nodeConstFilt  Egy opcionális konstans szűrő az eszközökhöz
     /// @param _par Parent objektum
+    /// A zóna és helyekről lásd az ős cSelectPlace konstruktort.
+    /// A hálózati elemek kiválasztásához a modell a cRecordListModel, a NULL megengedett.
+    /// A konstruktorban a hálózati elemek lekérdezése nem történik meg, az esetleges nagy számú
+    /// elem miatt. Ezért a konstruktor után vagy a modelt lecserélő setNodeModel(); metódust,
+    /// vagy a refresh(); metódust még meg kell hívni.
     cSelectNode(QComboBox *_pZone, QComboBox *_pPlace, QComboBox *_pNode,
                 QLineEdit *_pPlaceFilt = NULL, QLineEdit *_pNodeFilt = NULL,
                 const QString& _placeConstFilt = QString(), const QString& _nodeConstFilt = QString(),
                 QWidget *_par = NULL);
-    /// Lecseréli a node lista modelt. Ha meg volt adva konstans filter, akkor azt átadja au új modelnek.
+    /// Lecseréli a node lista modelt. Lekérdezi a listát, nincs kimeneti signal.
     /// Ha _nullable értéke nem TS_NULL, akkor beállítja a nullable adattag értékét is.
     void setNodeModel(cRecordListModel *  _pNodeModel, eTristate _nullable = TS_NULL);
-    void reset();
+    /// Az összes QComboBox objektumon kiválasztja az első elemet.
+    /// Ha az aktuális node megváltozott kiküldi a signal-okat, ha az f értéke true.
+    void reset(bool f = true);
     /// A kurrens node-ot null-ra állítja. Feltételezi, hogy az lehet null, és az az első elem.
     /// Ha _sig értéke true, vagy nem adtuk meg, akkor a aktív node megváltozásakori szignál nem lessz meghívva.
     void nodeSetNull(bool _sig = false);
@@ -914,8 +937,11 @@ public:
     QString currentNodeName() const { return pModelNode->at(pComboBoxNode->currentIndex()); }
     /// Lekérdezi az aktuális node ID-t
     qlonglong currentNodeId() const { return pModelNode->atId(pComboBoxNode->currentIndex()); }
+    void setIdFilter();
 public slots:
-
+    /// Frissíti a listákat, az ős objektumban is (zone, place).
+    /// hely azonosítü place_id megváltozott, és ha f értéke true (ez az alapértelmezett).
+    virtual void refresh(bool f = true);
 protected:
     tBatchBlocker<cSelectNode>  bbNode;
     bool emitChangeNode(bool f = true);
@@ -927,6 +953,7 @@ private slots:
     void setPlaceId(qlonglong pid, bool _sig = false);
     void on_lineEditNodeFilt_textChanged(const QString& s);
     void on_comboBoxNode_currenstIndexChanged(int ix);
+    void on_comboBoxZone_currenstIndexChanged(int);
 signals:
     void nodeNameChanged(const QString& name);
     void nodeIdChanged(qlonglong id);

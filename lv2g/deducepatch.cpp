@@ -324,9 +324,11 @@ cDeducePatch::cDeducePatch(QMdiArea *par)
     static const QString sql = "'patch' = SOME (node_type)";
     nid = nid2 = NULL_ID;
     pSelNode  = new cSelectNode(pUi->comboBoxZone,  pUi->comboBoxPlace,  pUi->comboBoxPatch,NULL,  NULL, QString(), sql);
+    pSelNode->refresh(false);
     pSelNode->setParent(this);
     connect(pSelNode, SIGNAL(nodeIdChanged(qlonglong)), this, SLOT(changeNode(qlonglong)));
     pSelNode2 = new cSelectNode(pUi->comboBoxZone2, pUi->comboBoxPlace2, pUi->comboBoxPatch2, NULL, NULL, QString(), sql);
+    pSelNode2->refresh(false);
     pSelNode2->setParent(this);
     connect(pSelNode2, SIGNAL(nodeIdChanged(qlonglong)), this, SLOT(changeNode2(qlonglong)));
 

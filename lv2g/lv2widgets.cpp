@@ -15,7 +15,7 @@ cSelectLanguage::cSelectLanguage(QComboBox *_pComboBox, QObject *_pPar)
     pComboBox = _pComboBox;
     QSqlQuery q = getQuery();
     pModel = new cRecordListModel(_sLanguages);
-    pComboBox->setModel(pModel);
+    pModel->joinWith(pComboBox);
     pModel->setFilter();
     int id = getLanguageId(q);
     int ix = pModel->indexOf(id);
@@ -2018,7 +2018,7 @@ cFKeyArrayWidget::cFKeyArrayWidget(const cTableShape& _tm, const cTableShapeFiel
 
     if (!_readOnly) {
         pFRecModel  = new cRecordListModel(*pRDescr, pWidget());
-        pUi->comboBox->setModel(pFRecModel);
+        pFRecModel->joinWith(pUi->comboBox);
         pFRecModel->setFilter();
         pUi->comboBox->setCurrentIndex(0);
 
@@ -2568,9 +2568,9 @@ cSelectPlace::cSelectPlace(QComboBox *_pZone, QComboBox *_pPLace, QLineEdit *_pF
 {
     pSlave = NULL;
     pModelZone = new cZoneListModel(this);
-    pComboBoxZone->setModel(pModelZone);
+    pModelZone->joinWith(pComboBoxZone);
     pModelPlace = new cPlacesInZoneModel(this);
-    pComboBoxPLace->setModel(pModelPlace);
+    pModelPlace->joinWith(pComboBoxPLace);
     pComboBoxPLace->setCurrentIndex(0);
     if (!constFilterPlace.isEmpty()) {
         pModelPlace->setConstFilter(constFilterPlace, FT_SQL_WHERE);
@@ -2580,6 +2580,7 @@ cSelectPlace::cSelectPlace(QComboBox *_pZone, QComboBox *_pPLace, QLineEdit *_pF
     if (pLineEditPlaceFilt != NULL) {
         connect(pLineEditPlaceFilt, SIGNAL(textChanged(QString)),    this, SLOT(lineEditPlaceFilt_textChanged(QString)));
     }
+
 }
 
 void cSelectPlace::copyCurrents(const cSelectPlace &_o)
@@ -2641,7 +2642,7 @@ void cSelectPlace::setDisabled(bool f)
     setDisablePlaceWidgets(f);
 }
 
-void cSelectPlace::refresh()
+void cSelectPlace::refresh(bool f)
 {
     bbPlace.begin();
     qlonglong zid = currentZoneId();
@@ -2653,7 +2654,7 @@ void cSelectPlace::refresh()
     setCurrentZone(zid);
     pModelPlace->setFilter();
     setCurrentPlace(pid);
-    bbPlace.end(pid != currentPlaceId());
+    bbPlace.end(f && pid != currentPlaceId());
 }
 
 void cSelectPlace::insertPlace()
@@ -2711,7 +2712,7 @@ void cSelectPlace::setCurrentPlace(qlonglong _pid)
 
 void cSelectPlace::on_comboBoxZone_currentIndexChanged(int ix)
 {
-    if (ix) {
+    if (ix < 0) {
         if (bbPlace.test()) {
             DERR() << "Invalid index : " << ix << endl;
         }
@@ -2774,8 +2775,9 @@ cSelectNode::cSelectNode(QComboBox *_pZone, QComboBox *_pPlace, QComboBox *_pNod
 {
     pModelNode = NULL;
     setNodeModel(new cRecordListModel(cPatch().descr(), this), TS_TRUE);
-    pModelNode->setOwnerId(NULL_ID, _sPlaceId, TS_TRUE);    // place_id -re szűrünk, ha NULL nincs szűrés.
     connect(this, SIGNAL(placeIdChanged(qlonglong)), this, SLOT(setPlaceId(qlonglong)));
+    // Ha a kiválasztott hely NULL, akkor kell a zóna változásra is reagálni.
+    connect(pComboBoxZone, SIGNAL(currentIndexChanged(int)), this, SLOT(on_comboBoxZone_currenstIndexChanged(int)));
     if (pLineEditNodeFilt != NULL) {    // Ha van mintára szűrés
         connect(pLineEditNodeFilt, SIGNAL(textChanged(QString)), this, SLOT(on_lineEditNodeFilt_textChanged(QString)));
     }
@@ -2784,20 +2786,23 @@ cSelectNode::cSelectNode(QComboBox *_pZone, QComboBox *_pPlace, QComboBox *_pNod
 
 void cSelectNode::setNodeModel(cRecordListModel *  _pNodeModel, eTristate _nullable)
 {
+    bbNode.begin();
     setBool(_pNodeModel->nullable, _nullable);
-    pComboBoxNode->setModel(_pNodeModel);
-    pDelete(pModelNode);
+    _pNodeModel->joinWith(pComboBoxNode);
+    pDelete(pModelNode);    // ?
     pModelNode = _pNodeModel;
+    pModelNode->setOwnerId(currentPlaceId(), _sPlaceId, TS_TRUE);
+    bbNode.end(false);
 }
 
-void cSelectNode::reset()
+void cSelectNode::reset(bool f)
 {
     qlonglong nid = currentNodeId();
     bbNode.begin();
     pComboBoxZone->setCurrentIndex(0);
     pComboBoxPLace->setCurrentIndex(0);
     pComboBoxNode->setCurrentIndex(0);
-    bbNode.end(nid != currentNodeId());
+    bbNode.end(f && nid != currentNodeId());
 }
 
 void cSelectNode::nodeSetNull(bool _sig)
@@ -2805,6 +2810,26 @@ void cSelectNode::nodeSetNull(bool _sig)
     bbNode.begin();
     pComboBoxNode->setCurrentIndex(0);
     bbNode.end(_sig);
+}
+
+void cSelectNode::setIdFilter()
+{
+    qlonglong pid = currentPlaceId();
+    if (pid != NULL_ID) {
+        pModelNode->setOwnerId(pid, _sPlaceId, TS_TRUE, "is_parent_place");
+    }
+    else {
+        pModelNode->setOwnerId(currentZoneId(), _sPlaceId, TS_TRUE, "is_place_in_zone");
+    }
+}
+
+void cSelectNode::refresh(bool f)
+{
+    qlonglong nid = currentNodeId();
+    bbNode.begin();
+    cSelectPlace::refresh();
+    setIdFilter();
+    bbNode.end(f && nid != currentNodeId());
 }
 
 bool cSelectNode::emitChangeNode(bool f)
@@ -2819,12 +2844,11 @@ bool cSelectNode::emitChangeNode(bool f)
 
 void cSelectNode::setPlaceId(qlonglong pid, bool _sig)
 {
-    if (currentPlaceId() == pid) return;
     bbPlace.begin();
     setCurrentPlace(pid);
     bbPlace.end(false);
     bbNode.begin();
-    pModelNode->setOwnerId(pid);
+    setIdFilter();
     pComboBoxNode->setCurrentIndex(0);
     on_comboBoxNode_currenstIndexChanged(0);
     bbNode.end(_sig);
@@ -2854,6 +2878,13 @@ void cSelectNode::on_comboBoxNode_currenstIndexChanged(int ix)
     emitChangeNode();
 }
 
+void cSelectNode::on_comboBoxZone_currenstIndexChanged(int)
+{
+    if (currentPlaceId() == NULL_ID) {  // Ha nincs hely, akkor zónára szűrünk
+        setPlaceId(NULL_ID);
+    }
+}
+
 
 /* ****** */
 
@@ -2871,7 +2902,7 @@ cSelectLinkedPort::cSelectLinkedPort(QComboBox *_pZone, QComboBox *_pPlace, QCom
     pModelShare->joinWith(pComboBoxShare);
     //pModelShare->
     pModelPort       = new cRecordListModel("patchable_ports", _sNul, this);
-    pModelPort->setOwnerId(NULL_ID, _sNodeId, TS_FALSE);    // Öres lista lessz
+    pModelPort->setOwnerId(NULL_ID, _sNodeId, TS_FALSE);    // Üres lista lessz
     pModelPort->joinWith(pComboBoxPort);
     lastLinkType = LT_FRONT;
     lastShare    = pModelShare->atInt(0);

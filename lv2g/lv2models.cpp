@@ -359,9 +359,13 @@ QVariant cRecordListModel::data(const QModelIndex &index, int role) const
     return dcRole(dcData, role);
 }
 
-void cRecordListModel::_setOwnerId(qlonglong _oid, const QString& _fn, eTristate _nullIsAll)
+void cRecordListModel::_setOwnerId(qlonglong _oid, const QString& _fn, eTristate _nullIsAll, const QString &_chkFn)
 {
-    if (!_fn.isEmpty()) sFkeyName = _fn;
+    if (!_fn.isEmpty())  sFkeyName = _fn;
+    if (!_chkFn.isEmpty()) {
+        if (_chkFn == "=") sOwnCheck.clear();
+        else               sOwnCheck = _chkFn;
+    }
     setBool(nullIdIsAll, _nullIsAll);
     if (_oid == NULL_ID) {
         if (!nullIdIsAll) ownerFlt = _sFalse;     // Nincs egyetlen rekord sem
@@ -373,7 +377,12 @@ void cRecordListModel::_setOwnerId(qlonglong _oid, const QString& _fn, eTristate
             if (ix < 0) ix = pDescr->ixToParent();
             sFkeyName = pDescr->columnName(ix);
         }
-        ownerFlt = sFkeyName + " = " + QString::number(_oid);
+        if (sOwnCheck.isEmpty()) {
+            ownerFlt = sFkeyName + " = " + QString::number(_oid);
+        }
+        else {
+            ownerFlt = sOwnCheck + parentheses(sFkeyName + _sCommaSp + QString::number(_oid));
+        }
     }
 }
 
@@ -469,7 +478,6 @@ QString cRecordListModel::where(const QString& nameName)
     case FT_LIKE:       w = nameName + " LIKE " + quoted(pattern);              break;
     case FT_SIMILAR:    w = nameName + " SIMILAR TO " + quoted(pattern);        break;
     case FT_REGEXP:     w = nameName + " ~ " +          quoted(pattern);        break;
-//    case FT_REGEXPI:    w = nameName + " ~* " +         quoted(pattern);        break;
     case FT_BEGIN:      w = nameName + " LIKE " + quoted(pattern + QChar('%')); break;
     case FT_SQL_WHERE:  w = pattern;                                      break;
     case FT_BOOLEAN:    w = (str2bool(pattern) ? _sSpace : " NOT ") + nameName + "::boolean";   break;
@@ -567,6 +575,7 @@ cRecordListModel& cRecordListModel::copy(const cRecordListModel& _o)
     cnstFlt     = _o.cnstFlt;
     ownerFlt    = _o.ownerFlt;
     sFkeyName   = _o.sFkeyName;
+    sOwnCheck   = _o.sOwnCheck;
     nameList    = _o.nameList;
     viewList    = _o.viewList;
     idList      = _o.idList;
@@ -586,6 +595,7 @@ void cRecordListModel::joinWith(QComboBox *_pComboBox)
     nullPalette.setColor(QPalette::Button, dcBgColor(DC_NULL));
     nullFont  = dcFont(DC_NULL);
     connect(pComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(currentIndex(int)));
+    pComboBox->setModel(this);
 }
 
 void cRecordListModel::currentIndex(int i)
