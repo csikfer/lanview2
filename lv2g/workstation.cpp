@@ -178,6 +178,15 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     // on_lineEditPName_textChanged(bool)
     // on_comboBoxPType_currentIndexChanged(QString)
 
+    pif = new cInterface;
+    pnp = pif;
+    node.ports << pnp;
+    const cIfType& ift = cIfType::ifType(pUi->comboBoxPType->currentText());
+    pif->setId(_sIfTypeId, ift.getId());
+    pif->setName(pUi->lineEditPName->text());
+    pip = pIpEditWidget->get();
+    pif->addresses << pip;
+    portIsLinkage = ift.isLinkage();
     bbNode.end();
 }
 
@@ -289,6 +298,13 @@ void cWorkstation::setStatIp(bool f, QStringList& sErrs, QStringList& sInfs, boo
     if (!f) return;
 
 }
+
+void cWorkstation::setStatPortMac(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk)
+{
+    if (!f) return;
+
+}
+
 
 void cWorkstation::setStatLink(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk)
 {
@@ -453,9 +469,8 @@ void cWorkstation::on_comboBoxPType_currentIndexChanged(const QString &arg1)
     else if (ot == _sInterface) isInterface = true;     // new type is passive port
     else                        EXCEPTION(EDATA, 0, ifType.identifying(false));
     bool changeType = isInterface == (pif == NULL);     // Changed interface object típe?
-    int  linkType   = (int)ifType.getId(_sIfTypeLinkType);  // New port link type
-    bool isLinkage  = linkType == LT_PTP || linkType == LT_BUS; // Linkable?
-    bool togleLink  = isLinkage != pl.isNull();         // Change link ? !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    bool isLinkage  = ifType.isLinkage();               // New port type is linkable?
+    bool togleLink  = isLinkage != portIsLinkage;       // Change link ?
     pnp->setId(_sIfTypeId, ifType.getId());
     if (!(togleLink || changeType)) return;             // No any other change
     bbPortType.begin();
@@ -482,6 +497,7 @@ void cWorkstation::on_comboBoxPType_currentIndexChanged(const QString &arg1)
         pIpEditWidget->setAllDisabled(!isInterface);
     }
     if (togleLink) {
+        portIsLinkage = isLinkage;
         pl.clear();
         if (isLinkage) {    // Enable link
         }

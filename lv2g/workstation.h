@@ -92,6 +92,7 @@ private:
     cNPort *    pnp;    ///< A munkaállomás egy portjára pointer
     cInterface *pif;    ///< Ha a munkaállomás portja egy interface, akkor arra egy pointer
     cIpAddress *pip;    ///< Ha a munkaállomás portja egy interface, akkor az ip cím objektumra pointer
+    bool        portIsLinkage;  ///< Ha a port linkelhető (fizikailag )satlakoztatható
     cPhsLink    pl;     ///< A fizikai link
 private slots:
     void on_radioButtonMod_toggled(bool checked);           // connected

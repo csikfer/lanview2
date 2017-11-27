@@ -703,6 +703,11 @@ public:
     /// Ha a talált rekordban az iana_id_link mező nem NULL, akkor annak értékével hívja a metódust rekorzívan.
     /// A metódus nem tartalmaz védelmet az esetleges végtelen rekurzióra!
     static const cIfType *fromIana(int _iana_id);
+    ///
+    bool isLinkage() const {
+        eLinkType lt = (eLinkType)getId(_sIfTypeLinkType);
+        return lt == LT_PTP || lt == LT_BUS || lt == LT_PATCH;
+    }
 protected:
     /// Ha nincs feltöltve az ifTypes adattag , akkor feltölti az adatbázisból,
     /// Vagyis hívja a void fetchIfTypes(QSqlQuery& __q); metódust.
