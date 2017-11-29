@@ -509,6 +509,13 @@ cSetWidget::cSetWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRec
     int cols, rows;
     cols = _fieldShape.feature("column", 1);
     rows = _colDescr.enumType().enumValues.size();
+    _hiddens = 0;
+    QString sHide = _fieldShape.feature("hide");
+    if (!sHide.isEmpty()) {
+        QStringList slh = sHide.split(QRegExp(",\\s*"));
+        rows -= slh.size();
+        _hiddens = _colDescr.enumType().lst2set(slh);
+    }
     if (_dcNull != DC_INVALID) ++rows;
     rows = (rows + cols -1) / cols;
     _height = rows;
@@ -526,9 +533,10 @@ cSetWidget::cSetWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRec
         widget().setLayout(pVLayout);
     }
     _bits = _colDescr.toId(_value);
-    int id;
-    for (id = 0; id < _colDescr.enumType().enumValues.size(); ++id) {
-        if (pHLayout != NULL && id != 0 && (id % rows) == 0) {
+    int i, id;
+    for (i = id = 0; id < _colDescr.enumType().enumValues.size(); ++id) {
+        if (ENUM2SET(id) & _hiddens) continue;
+        if (pHLayout != NULL && i != 0 && (i % rows) == 0) {
             pVLayout   = new QVBoxLayout;
             pHLayout->addLayout(pVLayout);
         }
@@ -538,6 +546,7 @@ cSetWidget::cSetWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRec
         pVLayout->addWidget(pCheckBox);
         pCheckBox->setChecked(enum2set(id) & _bits);
         pCheckBox->setDisabled(_readOnly);
+        ++i;
     }
     if (_dcNull != DC_INVALID) {
         if (pHLayout != NULL && (id % rows) == 0) {

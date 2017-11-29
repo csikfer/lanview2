@@ -2237,6 +2237,8 @@ int nodeType(const QString& __n, eEx __ex)
     if (0 == __n.compare(_sDevice,      Qt::CaseInsensitive)) return NT_DEVICE;
     if (0 == __n.compare(_sController,  Qt::CaseInsensitive)) return NT_CONTROLLER;
     if (0 == __n.compare(_sUps,         Qt::CaseInsensitive)) return NT_UPS;
+    if (0 == __n.compare(_sWindows,     Qt::CaseInsensitive)) return NT_WINDOWS;
+    if (0 == __n.compare(_sServer,      Qt::CaseInsensitive)) return NT_SERVER;
     if (__ex != EX_IGNORE)   EXCEPTION(EDATA, -1, __n);
     return ENUM_INVALID;
 }
@@ -2260,6 +2262,8 @@ const QString& nodeType(int __e, eEx __ex)
     case NT_DEVICE:     return _sDevice;
     case NT_CONTROLLER: return _sController;
     case NT_UPS:        return _sUps;
+    case NT_WINDOWS:    return _sWindows;
+    case NT_SERVER:     return _sServer;
     }
     if (__ex != EX_IGNORE)   EXCEPTION(EDATA, __e);
     return _sNul;

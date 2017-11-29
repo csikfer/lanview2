@@ -199,7 +199,9 @@ enum eNodeType {
     NT_MOBILE,
     NT_DEVICE,
     NT_CONTROLLER,
-    NT_UPS
+    NT_UPS,
+    NT_WINDOWS,
+    NT_SERVER
 };
 
 /// Node típus név konverzió

@@ -263,6 +263,8 @@ cArpTable& cArpTable::getFromDb(QSqlQuery& __q)
 
 /**********************************************************************************************/
 
+#define IFTYPE_IANA_ID_ETH  6
+
 #define EX(ec,ei,_es) {\
     if (__ex) { EXCEPTION(ec, ei, _es) } \
     else {  \
@@ -270,7 +272,6 @@ cArpTable& cArpTable::getFromDb(QSqlQuery& __q)
         DERR() << es << endl; \
         if (pEs != NULL) *pEs += es + "\n"; \
     }   return  false; }
-
 
 bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs)
 {
@@ -335,13 +336,16 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs)
     for (i = 0; i < n; i++) {
         QHostAddress    addr(tab[_sIpAdEntAddr][i].toString());
         QString         name = tab[_sIfDescr][i].toString();
+        QString         ifDescr = name;
         int             type = tab[_sIfType][i].toInt(&ok);
         if (!ok) EX(EDATA, -1, QString("SNMP ifType: '%1'").arg(tab[_sIfType][i].toString()));
         // IANA típusból következtetünk az objektum típusára és iftype_name -ra
         const cIfType  *pIfType = cIfType::fromIana(type);
         if (pIfType == NULL) {
-            PDEB(VERBOSE) << "Unhandled interface type " << type << " : #" << tab[_sIfIndex][i]
-                   << QChar(' ') << name << endl;
+            QString msg = QObject::trUtf8("Unhandled interface type %1 : #%2 %3")
+                    .arg(type).arg(tab[_sIfIndex][i].toInt()).arg(name);
+            PDEB(VERBOSE) << msg << endl;
+            expInfo(msg);
             continue;
         }
         name.prepend(pIfType->getName(_sIfNamePrefix));       // Esetleges előtag, a név ütközések elkerülésére
@@ -355,8 +359,20 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs)
             DWAR() << "Interface " << name << " Drop HW address " << mac.toString() << endl;
             mac.clear();
         }
+        // Windows (Egyedi baromságai)
+        if (node.getBool(_sNodeType, NT_WINDOWS)) {
+            // A név lehet ékezetes, de nem unicode
+            QByteArray ban = tab[_sIfDescr][i].toByteArray();
+            name = QString::fromLatin1(ban);
+            if (type == IFTYPE_IANA_ID_ETH) {    // Megtippeljük, kik a valódi ethernet interfészek
+                QRegExp pat("#[0-9]+$");   // A fizikai interface-re illeszkedő minta  pl.: ... #34
+                if (0 > pat.indexIn(name)) {
+                    pIfType = &cIfType::ifType("veth");
+                }
+            }
+        }
         // A SonicWall használhatatlan portneveket ad vissza, lekapjuk róla a megjegyzés részt
-        if (sysdescr.contains("sonicwall", Qt::CaseInsensitive)) {
+        else if (sysdescr.contains("sonicwall", Qt::CaseInsensitive)) {
             QStringList sl = name.split(QChar(' '));
             if (sl.size() > 1) {
                 pPort->setNote(name);
@@ -364,6 +380,7 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs)
             }
         }
         pPort->setName(name);
+        pPort->setName(_sIfDescr.toLower(), ifDescr);
         int ifIndex = tab[_sIfIndex][i].toInt();
         pPort->set(_sPortIndex, ifIndex);
         pPort->set(_sIfTypeId, pIfType->getId());
@@ -379,10 +396,11 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs)
             found = true;
         }
         PDEB(VVERBOSE) << "Insert port : " << pPort->toString() << endl;
-        expInfo(QObject::trUtf8("Port #%1 %2 (%3) %4").arg(
+        expInfo(QObject::trUtf8("Port #%1 %2 (%3) %4 %5").arg(
                     pPort->getName(_sPortIndex),
                     dQuoted(pPort->getName()),
                     cIfType::ifType(pPort->getId(_sIfTypeId)).getName(),
+                    (mac.isEmpty() ? _sNul : mac.toString()),
                     (addr.isNull() ? _sNul : addr.toString())
                     ) );
         node.ports << pPort;
@@ -507,6 +525,24 @@ int setSysBySnmp(cSnmpDevice &node, eEx __ex, QString *pEs)
     war = snmpset(node, snmp, pEs, "SNMPv2-MIB::sysLocation.0", _sSysLocation) || war;
     war = snmpset(node, snmp, pEs, "SNMPv2-MIB::sysServices.0", _sSysServices) || war;
     if (!war) r = 0;
+    else {
+        qlonglong type = node.getId(_sNodeType);
+        type &= ~ENUM2SET2(NT_NODE, NT_HUB);
+        type |=  ENUM2SET2(NT_SNMP, NT_HOST);
+        cSelect sel;
+        QSqlQuery q = getQuery();
+        sel.choice(q, "snmp.node_type", node.getName(_sSysDescr));
+        const cColEnumType* pnte = cColEnumType::fetchOrGet(q, "nodetype");
+        if (!sel.isEmpty()) {
+            QString s = sel.getName(_sChoice);
+            if (!s.isEmpty()) {
+                QStringList sl = s.split(QRegExp(",\\s*"));
+                type |= pnte->lst2set(sl);
+            }
+        }
+        node.setId(_sNodeType, type);
+        expInfo(QObject::trUtf8("Típus jelzők: %1").arg(pnte->set2lst(type).join(_sCommaSp)));
+    }
     return r;
 }
 

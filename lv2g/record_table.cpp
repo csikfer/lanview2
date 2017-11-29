@@ -1193,7 +1193,7 @@ void cRecordsViewBase::modify(eEx __ex)
         case DBT_PREV:
         case DBT_RECEIPT: {
             updateResult = 1;
-            if (id == DBT_RECEIPT) {
+            if (id == DBT_RECEIPT) {    // Nem szerkeszthető, a rekord nyugtázása
                 if (false == pRec->getBool(_sAcknowledged)) {
                     pRec->setOn(_sAcknowledged);
                     updateResult = pModel->updateRec(index, pRec);

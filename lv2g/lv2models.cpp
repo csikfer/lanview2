@@ -780,7 +780,7 @@ int cEnumListModel::setEnum(const cColEnumType *_pType, eNullType _nullable, con
     tIntVector eList = _eList;
     int i;
     if (eList.isEmpty()) for (i = 0; i < pType->enumValues.size(); ++i) eList << i;
-    foreach (i, _eList) {
+    foreach (i, eList) {
         const QString& typeName = *(const QString *)pType;
         const cEnumVal& ee = cEnumVal::enumVal(typeName, i, __ex);
         if (ee.isEmpty_()) {
@@ -825,6 +825,9 @@ QVariant cEnumListModel::data(const QModelIndex &index, int role) const
 {
     int row = index.row();
     if (!isContIx(enumVals, row)) return QVariant();
+    if (row == 0 && nullType != NT_NOT_NULL) {
+        return enumRole(_sDatacharacter, nullType, role, _sNul);
+    }
     const cEnumVal& ev = *enumVals[row];
     int             e  = pType->str2enum(ev.getName());
     return enumRole(ev, role, e);

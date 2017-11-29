@@ -228,6 +228,7 @@ cRecord *cRecordTree::nextRow(QModelIndex *pMi, int _upRes)
         *pMi = pTreeModel()->index(row, pMi->column(), pMi->parent());
         if (pMi->isValid()) {
             selectRow(*pMi);
+            pn = pTreeModel()->nodeFromIndex(*pMi);
             return pn->pData->dup();
         }
     }

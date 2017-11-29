@@ -1,4 +1,5 @@
 #include "snmpdevquery.h"
+#include "lv2validator.h"
 #include "ui_snmpdevquery.h"
 #include "report.h"
 
@@ -20,6 +21,8 @@ cSnmpDevQuery::cSnmpDevQuery(QMdiArea *parent) :
     pButtobGroupSnmpV = new QButtonGroup(this);
     pButtobGroupSnmpV->addButton(ui->radioButtonSnmpV1);
     pButtobGroupSnmpV->addButton(ui->radioButtonSnmpV2c);
+    QValidator *pVal = new cINetValidator(false);
+    ui->lineEditIp->setValidator(pVal);
     pSelectNode = new cSelectNode(ui->comboBoxZone, ui->comboBoxPlace, ui->comboBoxNode,
                                   ui->lineEditPatPlace, ui->lineEditPatName);
     cRecordListModel *pNodeModel = new cRecordListModel(_sSnmpDevices);

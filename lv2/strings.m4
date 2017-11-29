@@ -360,6 +360,8 @@ STRDEF(Nodes,"nodes")
   STRDEF(Device, "device")
   STRDEF(Controller, "controller")
   STRDEF(Ups, "ups")
+  STRDEF(Windows, "windows")
+  STRDEF(Server, "server")
   dnl virtual
  STRDEF(InventoryNumber, "inventory_number")
  STRDEF(SerialNumber, "serial_number")

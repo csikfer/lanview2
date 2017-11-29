@@ -345,6 +345,7 @@ protected:
     /// Az aktuális érték (aradio-button-hoz rendelt bit a radio-button állapota.
     qlonglong       _bits;
     int             _height;
+    qlonglong       _hiddens;
 private slots:
     /// A megadot id-jű (sorszám) radio-button értéke megváltozott
     void setFromEdit(int id);
