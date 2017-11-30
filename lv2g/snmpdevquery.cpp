@@ -125,6 +125,10 @@ void cSnmpDevQuery::on_pushButtonQuery_clicked()
 
 void cSnmpDevQuery::ipTextChanged(const QString &s)
 {
+    if (s.isEmpty()) {
+        a.clear();
+        return;
+    }
     QHostAddress newAddr;
     newAddr.setAddress(s);
     if (!pDev->isEmpty_() && !listA.contains(newAddr)) {    // Töröljük mert kavarodás van belöle.
@@ -138,8 +142,8 @@ void cSnmpDevQuery::ipTextChanged(const QString &s)
 
 void cSnmpDevQuery::nodeNameChange(const QString &name)
 {
+    ui->comboBoxIp->clear();
     if (name.isEmpty()) {
-        ui->comboBoxIp->clear();
         ui->lineEditName->clear();
         pDev->clear();
         ui->lineEditNodeId->setText(_sNul);
@@ -151,7 +155,6 @@ void cSnmpDevQuery::nodeNameChange(const QString &name)
     }
     if (pDev->fetchByName(*pq, name)) {
         listA = pDev->fetchAllIpAddress(*pq);
-        ui->comboBoxIp->clear();
         a.clear();
         if (!listA.isEmpty()) {
             QStringList items;
