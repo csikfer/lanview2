@@ -336,14 +336,17 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs)
     for (i = 0; i < n; i++) {
         QHostAddress    addr(tab[_sIpAdEntAddr][i].toString());
         QString         name = tab[_sIfDescr][i].toString();
+        QString         note;
         QString         ifDescr = name;
-        int             type = tab[_sIfType][i].toInt(&ok);
+        int             ifType = tab[_sIfType][i].toInt(&ok);
         if (!ok) EX(EDATA, -1, QString("SNMP ifType: '%1'").arg(tab[_sIfType][i].toString()));
+        int             ifIndex = tab[_sIfIndex][i].toInt(&ok);
+        if (!ok) EX(EDATA, -1, QString("SNMP ifIndex: '%1'").arg(tab[_sIfIndex][i].toString()));
         // IANA típusból következtetünk az objektum típusára és iftype_name -ra
-        const cIfType  *pIfType = cIfType::fromIana(type);
+        const cIfType  *pIfType = cIfType::fromIana(ifType);
         if (pIfType == NULL) {
             QString msg = QObject::trUtf8("Unhandled interface type %1 : #%2 %3")
-                    .arg(type).arg(tab[_sIfIndex][i].toInt()).arg(name);
+                    .arg(ifType).arg(ifIndex).arg(name);
             PDEB(VERBOSE) << msg << endl;
             expInfo(msg);
             continue;
@@ -355,16 +358,25 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs)
             EX(EDATA, -1, QObject::trUtf8("Invalid port object type"));
         }
         cMac            mac(tab[_sIfPhysAddress][i].toByteArray());
-        if (pPort->descr().tableName() == _sNPorts && mac.isValid()) {
-            DWAR() << "Interface " << name << " Drop HW address " << mac.toString() << endl;
-            mac.clear();
+        if (mac.isValid()) {
+            // MAC ütközések, sajnos előfordulhat Windows-oknál.
+            cInterface colIf;
+            colIf.setMac(_sHwAddress, mac);
+            if (colIf.completion(q) && colIf.getId(_sNodeId) != node.getId()) {
+                note += QObject::trUtf8("MAC %1 collision by %2, clear MAC.").arg(mac.toString(), colIf.getFullName(q));
+                expError(note);
+                // LOG, ha esetleg ez tényleg egy hiba miatt van
+                QString msg = QObject::trUtf8("Scan %1 : %2 port ").arg(hostAddr.toString(), name) + note;
+                APPMEMO(q, msg, RS_WARNING);
+                mac.clear();
+            }
         }
         // Windows (Egyedi baromságai)
         if (node.getBool(_sNodeType, NT_WINDOWS)) {
             // A név lehet ékezetes, de nem unicode
             QByteArray ban = tab[_sIfDescr][i].toByteArray();
             name = QString::fromLatin1(ban);
-            if (type == IFTYPE_IANA_ID_ETH) {    // Megtippeljük, kik a valódi ethernet interfészek
+            if (ifType == IFTYPE_IANA_ID_ETH) {    // Megtippeljük, kik a valódi ethernet interfészek
                 QRegExp pat("#[0-9]+$");   // A fizikai interface-re illeszkedő minta  pl.: ... #34
                 if (0 > pat.indexIn(name)) {
                     pIfType = &cIfType::ifType("veth");
@@ -380,8 +392,8 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs)
             }
         }
         pPort->setName(name);
+        pPort->setNote(note);
         pPort->setName(_sIfDescr.toLower(), ifDescr);
-        int ifIndex = tab[_sIfIndex][i].toInt();
         pPort->set(_sPortIndex, ifIndex);
         pPort->set(_sIfTypeId, pIfType->getId());
         if (mac.isValid())  pPort->set(_sHwAddress, mac.toString());

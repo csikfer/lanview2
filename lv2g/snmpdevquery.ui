@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_2">
+  <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,1,0">
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
@@ -64,9 +64,6 @@
           <string>Modosítandó eszköz kiválasztása :</string>
          </property>
         </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QComboBox" name="comboBoxNode"/>
        </item>
        <item row="5" column="0">
         <widget class="QLabel" name="labelName">
@@ -141,6 +138,29 @@
           <widget class="QRadioButton" name="radioButtonSnmpV1">
            <property name="text">
             <string>1</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="4" column="1">
+        <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="1,0">
+         <item>
+          <widget class="QComboBox" name="comboBoxNode"/>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="lineEditNodeId">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="readOnly">
+            <bool>true</bool>
            </property>
           </widget>
          </item>

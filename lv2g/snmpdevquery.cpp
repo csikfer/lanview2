@@ -15,7 +15,9 @@ cSnmpDevQuery::cSnmpDevQuery(QMdiArea *parent) :
     pDevShape = new cTableShape();              // A típus widgethez kellenek a leírók (shape)
     pDevShape->setByName(*pq, _sSnmpDevices);
     pDevShape->fetchFields(*pq);
-    pTypeWidget = new cSetWidget(*pDevShape, *pDevShape->shapeFields.get(_sNodeType), (*pDev)[_sNodeType], 0, NULL);
+    cTableShapeField *pFieldShape = pDevShape->shapeFields.get(_sNodeType);
+    pFieldShape->setName(_sFeatures, ":column=2:hide=patch,node,hub,host,snmp:");
+    pTypeWidget = new cSetWidget(*pDevShape, *pFieldShape, (*pDev)[_sNodeType], 0, NULL);
 
     ui->setupUi(this);
     pButtobGroupSnmpV = new QButtonGroup(this);
@@ -48,10 +50,11 @@ void cSnmpDevQuery::on_pushButtonSave_clicked()
 {
     QString name = ui->lineEditName->text();
     QString note = ui->lineEditNote->text();
-    qlonglong type = pTypeWidget->getId();
+    qlonglong type = pTypeWidget->getId() | ENUM2SET2(NT_SNMP, NT_HOST);
     cError *pe = NULL;
     QString msg;
-    if (pDev->getId() == NULL_ID) {
+    bool isInsert = pDev->getId() == NULL_ID;
+    if (isInsert) {
         msg = trUtf8("A %1 nevű eszköz beillesztése az adatbázisba.").arg(name);
         pDev->setName(name);
     }
@@ -70,7 +73,7 @@ void cSnmpDevQuery::on_pushButtonSave_clicked()
         pDev->setId(_sNodeType, type);
         pDev->setId(_sPlaceId, pSelectNode->currentPlaceId());
         sqlBegin(*pq, tn);
-        if (pDev->getId() == NULL_ID) {
+        if (isInsert) {
             pDev->insert(*pq);
         }
         else {
@@ -85,6 +88,7 @@ void cSnmpDevQuery::on_pushButtonSave_clicked()
     }
     else {
         ui->textEdit->append(_sOk);
+        ui->lineEditNodeId->setText(QString::number(pDev->getId()));
     }
 }
 
@@ -145,6 +149,7 @@ void cSnmpDevQuery::nodeNameChange(const QString &name)
         ui->lineEditIp->clear();
         ui->lineEditName->clear();
         pDev->clear();
+        ui->lineEditNodeId->setText(_sNul);
         ui->pushButtonQuery->setDisabled(true);
         ui->pushButtonSave->setDisabled(true);
         pTypeWidget->setId(ENUM2SET2(NT_HOST, NT_SNMP));
@@ -154,6 +159,7 @@ void cSnmpDevQuery::nodeNameChange(const QString &name)
     if (pDev->fetchByName(*pq, name)) {
         a = pDev->getIpAddress(*pq);
         ui->lineEditName->setText(name);
+        ui->lineEditNodeId->setText(QString::number(pDev->getId()));
         ui->lineEditIp->setText(a.toString());
         ui->lineEditCom->setText(pDev->getName(_sCommunityRd));
         pTypeWidget->setId(pDev->getId(_sNodeType));
