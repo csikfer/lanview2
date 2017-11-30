@@ -24,7 +24,7 @@ cSnmpDevQuery::cSnmpDevQuery(QMdiArea *parent) :
     pButtobGroupSnmpV->addButton(ui->radioButtonSnmpV1);
     pButtobGroupSnmpV->addButton(ui->radioButtonSnmpV2c);
     QValidator *pVal = new cINetValidator(false);
-    ui->lineEditIp->setValidator(pVal);
+    ui->comboBoxIp->setValidator(pVal);
     pSelectNode = new cSelectNode(ui->comboBoxZone, ui->comboBoxPlace, ui->comboBoxNode,
                                   ui->lineEditPatPlace, ui->lineEditPatName);
     cRecordListModel *pNodeModel = new cRecordListModel(_sSnmpDevices);
@@ -138,15 +138,10 @@ void cSnmpDevQuery::on_lineEditIp_textChanged(const QString &s)
     ui->pushButtonQuery->setEnabled(!a.isNull() && !ui->lineEditName->text().isEmpty());
 }
 
-void cSnmpDevQuery::on_lineEditName_textChanged(const QString &s)
-{
-    ui->pushButtonQuery->setEnabled(!a.isNull() && !s.isEmpty());
-}
-
 void cSnmpDevQuery::nodeNameChange(const QString &name)
 {
     if (name.isEmpty()) {
-        ui->lineEditIp->clear();
+        ui->comboBoxIp->clear();
         ui->lineEditName->clear();
         pDev->clear();
         ui->lineEditNodeId->setText(_sNul);
@@ -157,10 +152,20 @@ void cSnmpDevQuery::nodeNameChange(const QString &name)
         return;
     }
     if (pDev->fetchByName(*pq, name)) {
-        a = pDev->getIpAddress(*pq);
+        listA = pDev->fetchAllIpAddress(*pq);
+        ui->comboBoxIp->clear();
+        a.clear();
+        if (!listA.isEmpty()) {
+            QStringList items;
+            foreach (QHostAddress ha, listA) {
+                items << ha.toString();
+            }
+            ui->comboBoxIp->addItems(items);
+            a = listA.first();
+            ui->comboBoxIp->setCurrentIndex(0);
+        }
         ui->lineEditName->setText(name);
         ui->lineEditNodeId->setText(QString::number(pDev->getId()));
-        ui->lineEditIp->setText(a.toString());
         ui->lineEditCom->setText(pDev->getName(_sCommunityRd));
         pTypeWidget->setId(pDev->getId(_sNodeType));
         ui->pushButtonQuery->setDisabled(true);
@@ -177,3 +182,15 @@ void cSnmpDevQuery::nodeNameChange(const QString &name)
     ui->pushButtonSave->setDisabled(true);
 }
 
+
+void cSnmpDevQuery::on_comboBoxIp_currentIndexChanged(const QString &arg1)
+{
+    a.setAddress(arg1);
+    ui->pushButtonQuery->setEnabled(!a.isNull() && !arg1.isEmpty());
+}
+
+void cSnmpDevQuery::on_comboBoxIp_currentTextChanged(const QString &arg1)
+{
+    a.setAddress(arg1);
+    ui->pushButtonQuery->setEnabled(!a.isNull() && !arg1.isEmpty());
+}
