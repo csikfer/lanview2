@@ -273,11 +273,11 @@ cArpTable& cArpTable::getFromDb(QSqlQuery& __q)
         if (pEs != NULL) *pEs += es + "\n"; \
     }   return  false; }
 
-bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs)
+bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip)
 {
     QString es;
     // Előszedjük a címet
-    QHostAddress hostAddr = node.getIpAddress();
+    QHostAddress hostAddr = ip == NULL ? node.getIpAddress() : *ip;
     // Kell lennie legalább egy IP címnek!!
     bool    found = false;
     // A gyátrói baromságok kezeléséhez kell
@@ -508,11 +508,11 @@ static inline bool snmpset(cSnmpDevice &node, cSnmp &snmp, QString *pEs, const Q
     return true; /* OK */
 }
 
-int setSysBySnmp(cSnmpDevice &node, eEx __ex, QString *pEs)
+int setSysBySnmp(cSnmpDevice &node, eEx __ex, QString *pEs, QHostAddress *ip)
 {
     int r = 1;  //OK
     QString es;
-    QString ma = node.getIpAddress().toString();
+    QString ma = ip == NULL ? node.getIpAddress().toString() : ip->toString();
     if (ma.isEmpty()) {
         es = QObject::trUtf8("Hiányzó IP cím.");
         if (__ex) EXCEPTION(EDATA, -1, es);

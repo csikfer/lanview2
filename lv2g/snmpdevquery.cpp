@@ -32,10 +32,13 @@ cSnmpDevQuery::cSnmpDevQuery(QMdiArea *parent) :
     pSelectNode->reset();
     ui->formLayoutType->setWidget(0, QFormLayout::FieldRole, pTypeWidget->pWidget());
 
-    // connect(ui->pushButtonSave,     SIGNAL(clicked()),                  this, SLOT(on_pushButtonSave_clicked()));
-    // connect(ui->pushButtonQuery,    SIGNAL(clicked()),                  this, SLOT(on_pushButtonQuery_clicked()));
-    // connect(ui->lineEditIp,         SIGNAL(textChanged(QString)),       this, SLOT(on_lineEditIp_textChanged(QString)));
+    // on_pushButtonSave_clicked()
+    // on_pushButtonQuery_clicked()
+    // on_lineEditName_textChanged(QString)
     connect(pSelectNode,            SIGNAL(nodeNameChanged(QString)),   this, SLOT(nodeNameChange(QString)));
+    // on_comboBoxIp_currentIndexChanged(QString)
+    // on_comboBoxIp_currentTextChanged(QString)
+
 }
 
 cSnmpDevQuery::~cSnmpDevQuery()
@@ -101,23 +104,17 @@ void cSnmpDevQuery::on_pushButtonQuery_clicked()
     if (name.isEmpty()) return;
     cExportQueue::init(false);
     ui->textEdit->setHtml(htmlWarning(trUtf8("Lekérdezés indítása, kérem várjon!")));
+    QString msg;
     try {
         ui->pushButtonQuery->setDisabled(true);
-        if (pDev->getId() == NULL_ID) {
-            tStringPair ip;
-            ip.first = a.toString();
-            ip.second= _sFixIp;
-            pDev->asmbNode(*pq, name, NULL, &ip, &_sARP, _sNul, NULL_ID);
-            QString v = ui->radioButtonSnmpV1->isChecked() ? "1" : "2c";
-            pDev->setName(_sSnmpVer, v);
-        }
-        else if (pDev->getIpAddress().isNull()) {
+        if (a.isNull()) {
             ui->textEdit->setHtml(htmlError(trUtf8("Nincs IP cím!")));
             return;
         }
-        f = pDev->setBySnmp(comm);
+        f = pDev->setBySnmp(comm, EX_ERROR, &msg, &a);
     } CATCHS(pe);
     if (pe != NULL) {
+        pe->mDataMsg = msg;
         expError(pe->msg(), true);
         delete pe;
         f = false;
@@ -126,12 +123,13 @@ void cSnmpDevQuery::on_pushButtonQuery_clicked()
     ui->pushButtonSave->setEnabled(f);
 }
 
-void cSnmpDevQuery::on_lineEditIp_textChanged(const QString &s)
+void cSnmpDevQuery::ipTextChanged(const QString &s)
 {
     QHostAddress newAddr;
     newAddr.setAddress(s);
-    if (!pDev->isEmpty_() && a != newAddr) {    // Töröljük mert kavarodás van belöle.
+    if (!pDev->isEmpty_() && !listA.contains(newAddr)) {    // Töröljük mert kavarodás van belöle.
         pDev->clear();
+        ui->lineEditNodeId->clear();
         pSelectNode->nodeSetNull();
     }
     a = newAddr;
@@ -182,15 +180,17 @@ void cSnmpDevQuery::nodeNameChange(const QString &name)
     ui->pushButtonSave->setDisabled(true);
 }
 
+void cSnmpDevQuery::on_lineEditName_textChanged(const QString &s)
+{
+    ui->pushButtonQuery->setEnabled(!a.isNull() && !s.isEmpty());
+}
 
 void cSnmpDevQuery::on_comboBoxIp_currentIndexChanged(const QString &arg1)
 {
-    a.setAddress(arg1);
-    ui->pushButtonQuery->setEnabled(!a.isNull() && !arg1.isEmpty());
+    ipTextChanged(arg1);
 }
 
 void cSnmpDevQuery::on_comboBoxIp_currentTextChanged(const QString &arg1)
 {
-    a.setAddress(arg1);
-    ui->pushButtonQuery->setEnabled(!a.isNull() && !arg1.isEmpty());
+    ipTextChanged(arg1);
 }

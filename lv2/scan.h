@@ -28,8 +28,8 @@ protected:
     const QString& token(QIODevice& __f);
 };
 
-EXT_ bool setPortsBySnmp(cSnmpDevice &node, enum eEx __ex = EX_ERROR, QString *pEs = NULL);
-EXT_ int setSysBySnmp(cSnmpDevice &node, enum eEx __ex = EX_ERROR, QString *pEs = NULL);
+EXT_ bool setPortsBySnmp(cSnmpDevice &node, enum eEx __ex = EX_ERROR, QString *pEs = NULL, QHostAddress *ip = NULL);
+EXT_ int setSysBySnmp(cSnmpDevice &node, enum eEx __ex = EX_ERROR, QString *pEs = NULL, QHostAddress *ip = NULL);
 
 EXT_ QString lookup(const QHostAddress& ha, enum eEx __ex = EX_ERROR);
 

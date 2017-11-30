@@ -3192,10 +3192,10 @@ int cSnmpDevice::snmpVersion() const
     return -1;  // Inactive
 }
 
-bool cSnmpDevice::setBySnmp(const QString& __com, eEx __ex, QString *__pEs)
+bool cSnmpDevice::setBySnmp(const QString& __com, eEx __ex, QString *__pEs, QHostAddress *ip)
 {
-    QString errMsgX;
-    QString *pEs = __pEs == NULL ? &errMsgX :__pEs;
+    QString msgDummy;
+    QString *pEs = __pEs == NULL ? &msgDummy :__pEs;
 #ifdef SNMP_IS_EXISTS
     QString community = __com;
     if (community.isEmpty()) {
@@ -3206,7 +3206,10 @@ bool cSnmpDevice::setBySnmp(const QString& __com, eEx __ex, QString *__pEs)
         }
     }
     setName(_sCommunityRd, community);
-    if (ports.isEmpty()) {
+    if (ip != NULL && !ip->isNull()) {
+        ;
+    }
+    else if (ports.isEmpty()) {
         if (isNullId()) {
             if (__ex != EX_IGNORE) EXCEPTION(EPROGFAIL);
             return false;
@@ -3217,7 +3220,7 @@ bool cSnmpDevice::setBySnmp(const QString& __com, eEx __ex, QString *__pEs)
             return false;
         }
     }
-    if (setSysBySnmp(*this, __ex, pEs) > 0 && setPortsBySnmp(*this, __ex, pEs)) {
+    if (setSysBySnmp(*this, __ex, pEs, ip) > 0 && setPortsBySnmp(*this, __ex, pEs, ip)) {
         if (isNull(_sNodeType)) {   // Ha nics típus beállítva
             qlonglong nt = enum2set(NT_HOST, NT_SNMP);
             if (ports.size() > 7) nt |= enum2set(NT_SWITCH); // több mint 7 port, meghasaljuk, hogy switch

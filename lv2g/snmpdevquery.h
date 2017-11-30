@@ -15,10 +15,11 @@ public:
     explicit cSnmpDevQuery(QMdiArea *parent = 0);
     ~cSnmpDevQuery();
     static const enum ePrivilegeLevel rights;
+    void ipTextChanged(const QString &s);
 private slots:
     void on_pushButtonSave_clicked();
     void on_pushButtonQuery_clicked();
-    void on_lineEditIp_textChanged(const QString &s);
+    void on_lineEditName_textChanged(const QString &s);
     void nodeNameChange(const QString &name);
     void on_comboBoxIp_currentIndexChanged(const QString &arg1);
     void on_comboBoxIp_currentTextChanged(const QString &arg1);
