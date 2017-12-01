@@ -578,8 +578,9 @@ int cSetWidget::set(const QVariant& v)
         if (pAB != NULL) pAB->setChecked(v.isNull());
         _bits = _colDescr.toId(_value);
         if (_bits < 0) _bits = 0;
-        for (int id = 0; id < nid && NULL != (pAB = pButtons->button(id)) ; id++) {
-            pAB->setChecked(enum2set(id) & _bits);
+        for (int id = 0; id < nid ; id++) {
+            if (NULL != (pAB = pButtons->button(id)))
+                pAB->setChecked(enum2set(id) & _bits);
         }
     }
     return r;
@@ -597,7 +598,10 @@ void cSetWidget::setFromEdit(int id)
     int n =_colDescr.enumType().enumValues.size();
     if (id >= n) {
         for (int i = 0; i < n; ++i) {
-            if (_bits & enum2set(i)) pButtons->button(i)->setChecked(false);
+            if (_bits & enum2set(i)) {
+                QAbstractButton *pAB = pButtons->button(i);
+                if (pAB != NULL) pAB->setChecked(false);
+            }
         }
         _bits = 0;
         setFromWidget(_colDescr.set(QVariant(), dummy));
