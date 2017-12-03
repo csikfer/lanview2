@@ -128,6 +128,7 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
 {
     pSample = NULL;
     pnp = NULL;
+    pit = NULL;
     pif = NULL;
     pip = NULL;
     isModify = false;
@@ -136,6 +137,8 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     pUi->setupUi(this);
     pIpEditWidget = new cIpEditWidget(iTab(AT_DYNAMIC, AT_FIXIP));
     pUi->verticalLayoutIp->insertWidget(1, pIpEditWidget);
+    pMacValidator = new cMacValidator(true, this);
+    pUi->lineEditPMAC->setValidator(pMacValidator);
     // small cosmetics
     QList<int> sizes;
     sizes << 300 << 500;
@@ -177,16 +180,17 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     connect(pSelLinked, SIGNAL(changedLink(qlonglong,int,int)), this, SLOT(linkChanged(qlonglong,int,int)));
     // on_lineEditPName_textChanged(bool)
     // on_comboBoxPType_currentIndexChanged(QString)
+    connect(pIpEditWidget, SIGNAL(changed(QHostAddress,int)), this, SLOT(addressChanged(QHostAddress,int)));
 
     pif = new cInterface;
     pnp = pif;
     node.ports << pnp;
-    const cIfType& ift = cIfType::ifType(pUi->comboBoxPType->currentText());
-    pif->setId(_sIfTypeId, ift.getId());
+    pit = &cIfType::ifType(pUi->comboBoxPType->currentText());
+    pif->setId(_sIfTypeId, pit->getId());
     pif->setName(pUi->lineEditPName->text());
     pip = pIpEditWidget->get();
     pif->addresses << pip;
-    portIsLinkage = ift.isLinkage();
+    portIsLinkage = pit->isLinkage();
     bbNode.end();
 }
 
@@ -289,20 +293,75 @@ void cWorkstation::setStatPortName(bool f, QStringList& sErrs, QStringList& sInf
 void cWorkstation::setStatPortType(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk)
 {
     if (!f) return;
-
+    (void)f;
+    (void)sErrs;
+    (void)sInfs;
+    (void)isOk;
 }
 
 
 void cWorkstation::setStatIp(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk)
 {
-    if (!f) return;
-
+    if (!f || pip == NULL) return;
+    int state = pIpEditWidget->state();
+    if (state & cIpEditWidget::IES_ADDRESS_TYPE_IS_NULL) {
+        sErrs << htmlError(trUtf8("Nincs megadva az IP cím típusa."));
+        isOk = false;
+    }
+    if (state & cIpEditWidget::IES_SUBNET_IS_NULL) {
+        sErrs << htmlError(trUtf8("Nincs megadva alhálózat, vagy VLAN."));
+    }
+    if (state & cIpEditWidget::IES_ADDRESS_IS_INVALID) {
+        sErrs << htmlError(trUtf8("Hibás, vagy hiányos IP címet adott meg."));
+        isOk = false;
+        return;
+    }
+    if (state & cIpEditWidget::IES_ADDRESS_IS_NULL) {
+        QString msg = trUtf8("Nincs megadva IP cím.");
+        if (pip->getId(_sAddrType) == AT_DYNAMIC) {
+            sErrs << htmlWarning(msg);
+        }
+        else {
+            msg += trUtf8(" A cím megadása a 'dynamic' típus kivételével kötelező.");
+            sErrs << htmlError(msg);
+            isOk = false;
+        }
+        return;
+    }
+    cNode n;
+    if (pip->getId(_sAddrType) != AT_PRIVATE && n.fetchByIp(*pq, pip->address(), EX_IGNORE)) {
+        if (node.getId() == NULL_ID || node.getId() != n.getId()) {
+            sErrs << htmlError(trUtf8("A megadott IP címmel már létezik egy eszköz! A címnek, a 'privat' típus kivépelével, egyedinek kell lennie."));
+            sInfs << htmlReportNode(*pq, n, trUtf8("A megadott címmel bejegyzett %1 nevű (%2 típusú) eszköz : "), false);
+            isOk = false;
+        }
+    }
 }
 
 void cWorkstation::setStatPortMac(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk)
 {
-    if (!f) return;
-
+    if (!f || pif == NULL) return;
+    QString sMac = pUi->lineEditPMAC->text();
+    if (sMac.isEmpty()) {
+        sErrs << htmlWarning(trUtf8("Nincs megadva a MAC."));
+        return;
+    }
+    cMac mac = pif->mac();
+    if (mac.isEmpty()) {
+        sErrs << htmlWarning(trUtf8("A megadott MAC hibás."));
+        isOk = false;
+        return;
+    }
+    cNode n;
+    if (n.fetchByMac(*pq, mac)) {
+        if (node.getId() == NULL_ID || node.getId() != n.getId()) {
+            sErrs << htmlError(trUtf8("A megadott MAC-kal már létezik egy eszköz! Két különböző eszköznek nem lehet azonos MAC-je."));
+            sInfs << htmlReportNode(*pq, n, trUtf8("A megadott MAC-kel bejegyzett %1 nevű (%2 típusú) eszköz : "), false);
+            isOk = false;
+        }
+    }
+    QHostAddress a = cArp::mac2ip(*pq, mac, EX_IGNORE);
+    if (!a.isNull() && pIpEditWidget->state() & cIpEditWidget::IES_ADDRESS_IS_NULL) pIpEditWidget->set(a);
 }
 
 
@@ -391,7 +450,8 @@ void cWorkstation::node2gui()
     if (0 == pnp->chkObjType<cInterface>(EX_IGNORE)) pif = pnp->reconvert<cInterface>();
     pUi->lineEditPName->setText(pnp->getName());
     pUi->lineEditPNote->setText(pnp->getNote());
-    QString sIfType = cIfType::ifTypeName(pnp->getId(__sIfTypeId));
+    pit = &cIfType::ifType(pnp->getId(__sIfTypeId));
+    QString sIfType = pit->getName();
     _setCurrentIndex(sIfType, pUi->comboBoxPType, EX_IGNORE);
     pUi->lineEditPTag->setText(pnp->getName(_sPortTag));
     pUi->lineEditPMAC->setText(pif == NULL ? _sNul : pif->getName(_sHwAddress));
@@ -462,16 +522,16 @@ void cWorkstation::on_lineEditPName_textChanged(const QString &arg1)
 
 void cWorkstation::on_comboBoxPType_currentIndexChanged(const QString &arg1)
 {
-    const cIfType& ifType = cIfType::ifType(arg1);  // New port type (ifType)
-    QString ot = ifType.getName(_sIfTypeObjType);  // New object type name
+    pit = &cIfType::ifType(arg1);  // New port type (ifType)
+    QString ot = pit->getName(_sIfTypeObjType);  // New object type name
     bool isInterface;
     if      (ot == _sNPort)     isInterface = false;    // new type is interface
     else if (ot == _sInterface) isInterface = true;     // new type is passive port
-    else                        EXCEPTION(EDATA, 0, ifType.identifying(false));
+    else                        EXCEPTION(EDATA, 0, pit->identifying(false));
     bool changeType = isInterface == (pif == NULL);     // Changed interface object típe?
-    bool isLinkage  = ifType.isLinkage();               // New port type is linkable?
+    bool isLinkage  = pit->isLinkage();               // New port type is linkable?
     bool togleLink  = isLinkage != portIsLinkage;       // Change link ?
-    pnp->setId(_sIfTypeId, ifType.getId());
+    pnp->setId(_sIfTypeId, pit->getId());
     if (!(togleLink || changeType)) return;             // No any other change
     bbPortType.begin();
     if (changeType) { // Change port object type
@@ -505,6 +565,29 @@ void cWorkstation::on_comboBoxPType_currentIndexChanged(const QString &arg1)
         }
         pSelLinked->setEnabled(isLinkage);
     }
-
     bbPortType.end();
+}
+
+void cWorkstation::addressChanged(const QHostAddress& _a, int _st)
+{
+    if (pip != NULL) {
+        pIpEditWidget->get(pip);
+        bbIp.enforce();
+    }
+    else {
+        if (!pIpEditWidget->isDisabled()) EXCEPTION(EPROGFAIL);
+    }
+}
+
+void cWorkstation::on_lineEditPMAC_textChanged(const QString &arg1)
+{
+    (void)arg1;
+    if (pif != NULL) {
+        if (arg1.isEmpty()) pif->clear(_sHwAddress);
+        else pif->setMac(_sHwAddress, cMac(arg1));
+        bbIp.enforce();
+    }
+    else {
+        if (pUi->lineEditPMAC->isEnabled()) EXCEPTION(EPROGFAIL);
+    }
 }

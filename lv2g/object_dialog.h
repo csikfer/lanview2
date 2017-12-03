@@ -121,8 +121,10 @@ class LV2GSHARED_EXPORT cIpEditWidget : public QWidget {
 public:
     cIpEditWidget(const tIntVector &_types = tIntVector(), QWidget *_par = NULL);
     ~cIpEditWidget();
-    void set(cIpAddress *po);
+    void set(const cIpAddress *po);
+    void set(const QHostAddress &a);
     cIpAddress *get() const;
+    cIpAddress *get(cIpAddress *po) const;
     enum eState {
         IES_OK                  = 0,
         IES_ADDRESS_IS_NULL     = 1,
@@ -132,6 +134,7 @@ public:
         IES_IS_NULL = IES_ADDRESS_IS_NULL | IES_ADDRESS_TYPE_IS_NULL | IES_SUBNET_IS_NULL
     };
     int state() const { return _state; }
+    bool isDisabled() { return disabled; }
 private:
     int _state;
     Ui::editIp *pUi;
@@ -154,7 +157,7 @@ private slots:
 signals:
 //    void vlanIdChanged(qlonglong _vid);
 //    void subNetIdChanged(qlonglong _sid);
-    void changedState(int _st);
+    void changed(const QHostAddress& _a, int _st);
 };
 
 namespace Ui { class enumValsWidget; }

@@ -610,7 +610,7 @@ cIpEditWidget::~cIpEditWidget()
     delete pq;
 }
 
-void cIpEditWidget::set(cIpAddress *po)
+void cIpEditWidget::set(const cIpAddress *po)
 {
     disableSignals = true;
     _state = 0;
@@ -628,9 +628,22 @@ void cIpEditWidget::set(cIpAddress *po)
     disableSignals = false;
 }
 
+void cIpEditWidget::set(const QHostAddress &a)
+{
+    pUi->lineEditAddress->setText(a.toString());
+}
+
 cIpAddress *cIpEditWidget::get() const
 {
     cIpAddress *po = new cIpAddress(actAddress, pUi->comboBoxIpType->currentText());
+    po->setNote(pUi->lineEditIpNote->text());
+    po->setId(pSelectSubNet->currentId());
+    return po;
+}
+
+cIpAddress *cIpEditWidget::get(cIpAddress *po) const
+{
+    po->setAddress(actAddress, pUi->comboBoxIpType->currentText());
     po->setNote(pUi->lineEditIpNote->text());
     po->setId(pSelectSubNet->currentId());
     return po;
@@ -671,12 +684,13 @@ void cIpEditWidget::on_comboBoxIpType_currentIndexChanged(int index)
             return; // state unchanged
         }
     }
-    changedState(_state);
+    changed(actAddress, _state);
 }
 
 void cIpEditWidget::on_lineEditAddress_textChanged(const QString &arg1)
 {
     int oldState = _state;
+    QHostAddress oldAddress = actAddress;
     _state &= ~(IES_ADDRESS_IS_INVALID | IES_ADDRESS_IS_NULL);
     if (arg1.isEmpty()) {
         actAddress.clear();
@@ -687,7 +701,7 @@ void cIpEditWidget::on_lineEditAddress_textChanged(const QString &arg1)
         if (actAddress.isNull()) _state |= IES_ADDRESS_IS_INVALID;
         else pSelectSubNet->setCurrentByAddress(actAddress);
     }
-    if (oldState != _state) changedState(_state);
+    if (oldState != _state || oldAddress != actAddress) changed(actAddress, _state);
 }
 
 void cIpEditWidget::_subNetIdChanged(qlonglong _id)
@@ -708,7 +722,7 @@ void cIpEditWidget::_subNetIdChanged(qlonglong _id)
             return; // state unchanged
         }
     }
-    changedState(_state);
+    changed(actAddress, _state);
 }
 
 

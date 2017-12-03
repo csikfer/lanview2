@@ -193,7 +193,7 @@ QString htmlReportByMac(QSqlQuery& q, const QString& sMac)
         text += htmlReportNode(q, node);
     }
     else {
-        text += QObject::trUtf8("Nincs bejegyzett hálózati elem ezzel a MAC-el");
+        text += QObject::trUtf8("Nincs bejegyzett hálózati elem ezzel a MAC-kel");
     }
     text += sHtmlLine;
     /* ** ARP ** */
@@ -201,10 +201,10 @@ QString htmlReportByMac(QSqlQuery& q, const QString& sMac)
     par << mac.toString();
     QString tab = query2html(q, _sArps, "hwaddress = ? ORDER BY last_time", par, true);
     if (tab.isEmpty()) {
-        text += QObject::trUtf8("Nincs találat az arps táblában a megadott MAC-el");
+        text += QObject::trUtf8("Nincs találat az arps táblában a megadott MAC-kel");
     }
     else {
-        text += QObject::trUtf8("Találatok a MAC - IP (arps) táblában táblában :");
+        text += QObject::trUtf8("Találatok a MAC - IP (arps) táblában :");
         text += tab;
     }
     text += sHtmlLine;
@@ -233,9 +233,54 @@ QString htmlReportByMac(QSqlQuery& q, const QString& sMac)
         text += tab + sHtmlLine;
     }
     // MACTAB LOG
-
+    par.pop_back(); // MAC 1*
+    tab = query2html(q, "mactab_logs", "hwaddress = ? ORDER BY date_of", par, true);
+    if (!tab.isEmpty()) {
+        text += QObject::trUtf8("A MAC mozgása a címtáblákban (mactab_logs) :");
+        text += tab + sHtmlLine;
+    }
     return text;
 }
+
+QString htmlReportByIp(QSqlQuery& q, const QString& addr)
+{
+    QString text;
+    QHostAddress a(addr);
+    if (a.isNull()) {
+        text = QObject::trUtf8("A '%1' nem valós IP cím!").arg(addr);
+        return text;
+    }
+    cNode node;
+    if (node.fetchByIp(q, a, EX_IGNORE)) {
+        text += htmlReportNode(q, node);
+    }
+    else {
+        text += QObject::trUtf8("Nincs bejegyzett hálózati elem ezzel a IP címmel");
+    }
+    text += sHtmlLine;
+    /* ** ARP ** */
+    cMac mac = cArp::ip2mac(q, a, EX_IGNORE);
+    if (mac.isEmpty()) {
+        text += QObject::trUtf8("Nincs találat az arps táblában a megadott IP címmel");
+    }
+    else {
+        text += QObject::trUtf8("Találat a MAC - IP (arps) táblában táblában : %1").arg(mac.toString());
+    }
+    text += sHtmlLine;
+    // LOG
+    text += QObject::trUtf8("Napló bejegyzések:");
+    text += sHtmlLine;
+    // ARP LOG
+    QVariantList par;
+    par << a.toString();
+    QString tab = query2html(q, "arp_logs", "ipaddress = ? ORDER BY date_of", par, true);
+    if (!tab.isEmpty()) {
+        text += QObject::trUtf8("IP - MAC változások (arp_logs) :");
+        text += tab + sHtmlLine;
+    }
+    return text;
+}
+
 
 QString linksHtmlTable(QSqlQuery& q, tRecordList<cPhsLink>& list, bool _swap)
 {

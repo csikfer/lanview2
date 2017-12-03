@@ -59,9 +59,22 @@ private:
         cBatchBlocker   bbPortMac;
      cBatchBlocker   bbLink;
 
+    /// Egy QLineEdit mezőben üres adatra való figyelmeztetés.
+    /// Ha meg lett adva az fn mező név paraméter, akkor megviszgálja, hogy egyedi-e az érték a nodes táblában.
+    /// @param pLineEdit A QLineEdit widget poinere
+    /// @param pLabel A QLabel pointere, a hiba ill. figyelmeztető üzenet kiírásához.
+    /// @param fn Opcionális mező (tábla oszlop) név, ha az egyediséget is vizsgálni kell.
+    /// @param sErrs Hiba sorok referencia, a figyelmeztető hiba és/vagy figyelmeztető üzenet sorok ehhez a listához
+    ///             lesznek hozzáfűzve.
+    /// @param sInfs Hiba sorok referencia, a figyelmeztető információs üzenet sorok ehhez a listához
+    ///             lesznek hozzáfűzve.
+    /// @param isOk Hiba esetén értéke false lessz (meg van adva az fn, és nem egyedi az érték).
     void msgEmpty(QLineEdit * pLineEdit, QLabel *pLabel, const QString &fn, QStringList& sErrs, QStringList& sInfs, bool &isOk);
 
+    /// Az állpot kiértékelése a node-ra.
+    /// Üres metódus, a cBatchBlocker hívja, az alá tartozó kiértékelő funkciókók tevékenységén túl nincs további funkciója.
     void setStatNode(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
+    /// Az állpot kiértékelése a node nevével kapcsolatban.
       void setStatNodeName(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
       void setStatNodeSerial(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
       void setStatNodeInventory(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
@@ -83,6 +96,7 @@ private:
     QButtonGroup    *pModifyButtons;
     QButtonGroup    *pLinkTypeButtons;
     cIpEditWidget   *pIpEditWidget;
+    cMacValidator   *pMacValidator;
 
     QSqlQuery *pq;
     /// Kiválasztott workstation objektum (modosítandó eredetije vagy minta)
@@ -90,9 +104,10 @@ private:
     /// A szerkesztett workstation objektum
     cNode       node;   ///< A munkaállomás objektum
     cNPort *    pnp;    ///< A munkaállomás egy portjára pointer
+    const cIfType *pit; ///< A munkaállomás egy portjának a típus leírója.
     cInterface *pif;    ///< Ha a munkaállomás portja egy interface, akkor arra egy pointer
     cIpAddress *pip;    ///< Ha a munkaállomás portja egy interface, akkor az ip cím objektumra pointer
-    bool        portIsLinkage;  ///< Ha a port linkelhető (fizikailag )satlakoztatható
+    bool        portIsLinkage;  ///< Ha a port linkelhető (fizikailag) csatlakoztatható
     cPhsLink    pl;     ///< A fizikai link
 private slots:
     void on_radioButtonMod_toggled(bool checked);           // connected
@@ -101,6 +116,8 @@ private slots:
     void linkChanged(qlonglong _pid, int _lt, int _sh);
     void on_lineEditPName_textChanged(const QString &arg1);
     void on_comboBoxPType_currentIndexChanged(const QString &arg1);
+    void addressChanged(const QHostAddress& _a, int _st);
+    void on_lineEditPMAC_textChanged(const QString &arg1);
 };
 
 #endif // CWORKSTATION_H

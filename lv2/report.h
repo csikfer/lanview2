@@ -83,6 +83,7 @@ inline QString query2html(QSqlQuery q, const QString& _shapeName, const QString&
 
 EXT_ QString htmlReportNode(QSqlQuery& q, cPatch& node, const QString& _sTitle = QString(),bool ports = true);
 EXT_ QString htmlReportByMac(QSqlQuery& q, const QString& aMac);
+EXT_ QString htmlReportByIp(QSqlQuery& q, const QString& addr);
 
 EXT_ QString linksHtmlTable(QSqlQuery& q, tRecordList<cPhsLink>& list, bool _swap = false);
 
