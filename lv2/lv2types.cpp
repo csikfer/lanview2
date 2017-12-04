@@ -839,6 +839,7 @@ tIntVector   iTab(int a, int b, int c, int d, int e, int f, int g, int h)
     case 4:     r[3] = d;
     case 3:     r[2] = c;
     case 2:     r[1] = b;
+                r[0] = a;
     }
     return r;
 }

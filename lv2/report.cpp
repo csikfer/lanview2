@@ -62,6 +62,7 @@ QString query2html(QSqlQuery q, cTableShape &_shape, const QString& _where, cons
     return list2html(q, list, _shape, shrt);
 }
 
+// Át kéne írni, hogy a table_shapes rekordok alapján írja ki a riportot, ne fixen.
 QString htmlReportNode(QSqlQuery& q, cPatch& node, const QString& _sTitle, bool ports)
 {
     QString text;
@@ -73,9 +74,15 @@ QString htmlReportNode(QSqlQuery& q, cPatch& node, const QString& _sTitle, bool 
                     QObject::trUtf8("Bejegyzett patch panel, vagy csatlakozó : %1"):
                     QObject::trUtf8("Bejegyzett hálózati elem (%2) : %1");
     }
-    text += htmlBold(sTitle.arg(node.getName(), tablename));
+    text += htmlWarning(sTitle.arg(node.getName(), tablename)); // bold
+    QString s = node.getNote();
+    if (!s.isEmpty()) text += htmlInfo(QObject::trUtf8("Megjegyzés : %1").arg(s));
+    qlonglong pid = node.getId(_sPlaceId);
+    if (pid <= 1) text += htmlInfo(QObject::trUtf8("Az eszköz helye ismeretlen"));
+    else text += htmlInfo(QObject::trUtf8("Helye : %1").arg(cPlace().getNameById(q, pid)));
     /* -- PARAM -- */
-    if (node.fetchParams(q)) {
+    if (ports && node.fetchParams(q)) {
+        text += htmlInfo(QObject::trUtf8("Eszköz paraméterek :"));
         text += sHtmlTabBeg + sHtmlRowBeg;
         text += sHtmlTh.arg(QObject::trUtf8("Paraméter típus"));
         text += sHtmlTh.arg(QObject::trUtf8("Érték"));
@@ -94,6 +101,7 @@ QString htmlReportNode(QSqlQuery& q, cPatch& node, const QString& _sTitle, bool 
     }
     /* -- PORTS -- */
     if (ports && node.fetchPorts(q)) {
+        text += htmlInfo(QObject::trUtf8("Portok :"));
         node.sortPortsByIndex();
         text += sHtmlTabBeg + sHtmlRowBeg;
         text += sHtmlTh.arg(QObject::trUtf8("port"));

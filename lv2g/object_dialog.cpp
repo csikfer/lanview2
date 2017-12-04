@@ -600,8 +600,9 @@ cIpEditWidget::cIpEditWidget(const tIntVector& _types, QWidget *_par) : QWidget(
     pSelectSubNet = new cSelectSubNet(pUi->comboBoxSubNetAddr, pUi->comboBoxSubNet);
     pINetValidator = new cINetValidator(true, this);
     pUi->lineEditAddress->setValidator(pINetValidator);
-    connect(pSelectVlan, SIGNAL(changedId(qlonglong)), pSelectSubNet, SLOT(setCurrentByVlan(qlonglong)));
-    connect(pSelectSubNet, SIGNAL(changedId(qlonglong)), pSelectVlan, SLOT(setCurrentBySubNet(qlonglong)));
+    connect(pSelectVlan,   SIGNAL(changedId(qlonglong)), pSelectSubNet, SLOT(setCurrentByVlan(qlonglong)));
+    connect(pSelectSubNet, SIGNAL(changedId(qlonglong)), pSelectVlan,   SLOT(setCurrentBySubNet(qlonglong)));
+    connect(pSelectSubNet, SIGNAL(changedId(qlonglong)), this,          SLOT(_subNetIdChanged(qlonglong)));
     _state = IES_IS_NULL;
 }
 
@@ -668,22 +669,7 @@ void cIpEditWidget::setAllDisabled(bool f)
 
 void cIpEditWidget::on_comboBoxIpType_currentIndexChanged(int index)
 {
-    if (_state & IES_ADDRESS_TYPE_IS_NULL) {
-        if (index != 0) {
-            _state &= ~ IES_ADDRESS_TYPE_IS_NULL;
-        }
-        else {
-            return; // state unchanged
-        }
-    }
-    else {
-        if (index == 0) {
-            _state |=   IES_ADDRESS_TYPE_IS_NULL;
-        }
-        else {
-            return; // state unchanged
-        }
-    }
+    (void)index;
     changed(actAddress, _state);
 }
 

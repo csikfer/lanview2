@@ -8,7 +8,6 @@
 #include "workstation.h"
 #include "ui_wstform.h"
 #include "ui_phslinkform.h"
-#include "report.h"
 
 /* ************************************************************************************************* */
 
@@ -59,12 +58,12 @@ void cWorkstation::cBatchBlocker::referState()
 {
     cBatchBlocker *pRoot = this;
     while (pRoot->pParent != NULL) pRoot = pRoot->pParent;
-    bool ok = getStat();
+    bool ok = pRoot->getStat();
     pOwner->pUi->pushButtonSave->setEnabled(ok);
     QStringList l;
-    l = getInfos();
+    l = pRoot->getInfos();
     pOwner->pUi->textEditMsg->setHtml(l.join(sHtmlLine));
-    l = getErrors();
+    l = pRoot->getErrors();
     pOwner->pUi->textEditErr->setHtml(l.join(sHtmlLine));
 }
 
@@ -72,9 +71,9 @@ void cWorkstation::cBatchBlocker::setState(bool f)
 {
     if (!f) return;
     sErrors.clear(); sInfos.clear(); isOk = true;
-    (pOwner->*pFSet)(f, sErrors, sInfos, isOk);
+    (pOwner->*pFSet)(true, sErrors, sInfos, isOk);
     foreach (cBatchBlocker *pbb, childList) {
-        pbb->setState();
+        pbb->setState(true);
     }
 }
 
@@ -103,7 +102,7 @@ bool cWorkstation::cBatchBlocker::getStat() const
     if (!isOk) return false;
     foreach (cBatchBlocker *p, childList) {
         if (!p->test()) EXCEPTION(EPROGFAIL);   // :-O
-        if (!p->isOk) return false;
+        if (!p->getStat()) return false;
     }
     return true;
 }
@@ -116,7 +115,7 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
      bbNodeName(this, &cWorkstation::setStatNodeName, &bbNode),
      bbNodeSerial(this, &cWorkstation::setStatNodeSerial, &bbNode),
      bbNodeInventory(this, &cWorkstation::setStatNodeInventory, &bbNode),
-     bbNodeType(this, &cWorkstation::setStatNodeType, &bbNode),
+     bbNodeModel(this, &cWorkstation::setStatNodeType, &bbNode),
      bbPort(this, &cWorkstation::setStatPort, &bbNode),
       bbPortName(this, &cWorkstation::setStatPortName, &bbPort),
       bbPortType(this, &cWorkstation::setStatPortType, &bbPort),
@@ -175,10 +174,11 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     pSelPlace->setSlave(pSelLinked);
     pSelLinked->refresh();
     // on_radioButtonMod_toggled(bool)
+    // on_lineEditName_textChanged(QString)
     connect(pSelNode,   SIGNAL(nodeIdChanged(qlonglong)),       this, SLOT(selectedNode(qlonglong)));
     // on_checkBoxPlaceEqu_toggled(bool)
     connect(pSelLinked, SIGNAL(changedLink(qlonglong,int,int)), this, SLOT(linkChanged(qlonglong,int,int)));
-    // on_lineEditPName_textChanged(bool)
+    // on_lineEditPName_textChanged(QString)
     // on_comboBoxPType_currentIndexChanged(QString)
     connect(pIpEditWidget, SIGNAL(changed(QHostAddress,int)), this, SLOT(addressChanged(QHostAddress,int)));
 
@@ -214,7 +214,7 @@ void cWorkstation::msgEmpty(QLineEdit * pLineEdit, QLabel *pLabel, const QString
         if (n.completion(*pq) && !(isModify && node.getId() == n.getId())) {
             cPatch *pn = cPatch::getNodeObjById(*pq, n.getId());
             sErrs << htmlError(QObject::trUtf8("A megadott %1 nem egyedi!").arg(t));
-            sInfs << htmlReportNode(*pq, *pn, trUtf8("A %2 (%3) eszköznek azonos a %1-a : ").arg(t), false);
+            sInfs << htmlReportNode(*pq, *pn, trUtf8("A %2 (%3) eszköznek azonos a %1-a.").arg(t), false);
             delete pn;
             isOk = false;
         }
@@ -243,7 +243,7 @@ void cWorkstation::setStatNodeName(bool f, QStringList& sErrs, QStringList& sInf
     if (pn != NULL) {
         if (!(isModify && node.getId() == pn->getId())) { // Name is not unique
             sErrs << htmlError(trUtf8("A megadott néven már létezik egy eszköz! A névnek egyedinek kell lennie."));
-            sInfs << htmlReportNode(*pq, *pn, trUtf8("A %1 megadott néven bejegyzett (%2 típusú) eszköz : "), false);
+            sInfs << htmlReportNode(*pq, *pn, trUtf8("A %1 megadott néven bejegyzett (%2 típusú) eszköz : "), true);
         }
         delete pn;
         return;
@@ -304,10 +304,6 @@ void cWorkstation::setStatIp(bool f, QStringList& sErrs, QStringList& sInfs, boo
 {
     if (!f || pip == NULL) return;
     int state = pIpEditWidget->state();
-    if (state & cIpEditWidget::IES_ADDRESS_TYPE_IS_NULL) {
-        sErrs << htmlError(trUtf8("Nincs megadva az IP cím típusa."));
-        isOk = false;
-    }
     if (state & cIpEditWidget::IES_SUBNET_IS_NULL) {
         sErrs << htmlError(trUtf8("Nincs megadva alhálózat, vagy VLAN."));
     }
@@ -318,8 +314,8 @@ void cWorkstation::setStatIp(bool f, QStringList& sErrs, QStringList& sInfs, boo
     }
     if (state & cIpEditWidget::IES_ADDRESS_IS_NULL) {
         QString msg = trUtf8("Nincs megadva IP cím.");
-        if (pip->getId(_sAddrType) == AT_DYNAMIC) {
-            sErrs << htmlWarning(msg);
+        if (pip->getId(_sIpAddressType) == AT_DYNAMIC) {
+            sErrs << htmlInfo(msg);
         }
         else {
             msg += trUtf8(" A cím megadása a 'dynamic' típus kivételével kötelező.");
@@ -329,10 +325,10 @@ void cWorkstation::setStatIp(bool f, QStringList& sErrs, QStringList& sInfs, boo
         return;
     }
     cNode n;
-    if (pip->getId(_sAddrType) != AT_PRIVATE && n.fetchByIp(*pq, pip->address(), EX_IGNORE)) {
+    if (pip->getId(_sIpAddressType) != AT_PRIVATE && n.fetchByIp(*pq, pip->address(), EX_IGNORE)) {
         if (node.getId() == NULL_ID || node.getId() != n.getId()) {
             sErrs << htmlError(trUtf8("A megadott IP címmel már létezik egy eszköz! A címnek, a 'privat' típus kivépelével, egyedinek kell lennie."));
-            sInfs << htmlReportNode(*pq, n, trUtf8("A megadott címmel bejegyzett %1 nevű (%2 típusú) eszköz : "), false);
+            sInfs << htmlReportNode(*pq, n, trUtf8("A megadott címmel %1 nevű (%2 típusú) eszköz van bejegyezve."), false);
             isOk = false;
         }
     }
@@ -356,7 +352,7 @@ void cWorkstation::setStatPortMac(bool f, QStringList& sErrs, QStringList& sInfs
     if (n.fetchByMac(*pq, mac)) {
         if (node.getId() == NULL_ID || node.getId() != n.getId()) {
             sErrs << htmlError(trUtf8("A megadott MAC-kal már létezik egy eszköz! Két különböző eszköznek nem lehet azonos MAC-je."));
-            sInfs << htmlReportNode(*pq, n, trUtf8("A megadott MAC-kel bejegyzett %1 nevű (%2 típusú) eszköz : "), false);
+            sInfs << htmlReportNode(*pq, n, trUtf8("A megadott MAC-kel a %1 nevű (%2 típusú) eszköz van bejegyezve."), false);
             isOk = false;
         }
     }
@@ -590,4 +586,51 @@ void cWorkstation::on_lineEditPMAC_textChanged(const QString &arg1)
     else {
         if (pUi->lineEditPMAC->isEnabled()) EXCEPTION(EPROGFAIL);
     }
+}
+
+void cWorkstation::on_lineEditName_textChanged(const QString &arg1)
+{
+    (void)arg1;
+    bbNodeName.enforce(true);
+}
+
+void cWorkstation::on_lineEditSerial_textChanged(const QString &arg1)
+{
+    (void)arg1;
+    bbNodeSerial.enforce(true);
+}
+
+void cWorkstation::on_lineEditInventory_textChanged(const QString &arg1)
+{
+    (void)arg1;
+    bbNodeInventory.enforce(true);
+}
+
+void cWorkstation::on_lineEditModelName_textChanged(const QString &arg1)
+{
+    (void)arg1;
+    bbNodeModel.enforce(true);
+}
+
+void cWorkstation::on_lineEditModelNumber_textChanged(const QString &arg1)
+{
+    (void)arg1;
+    bbNodeModel.enforce(true);
+}
+
+void cWorkstation::on_toolButtonErrRefr_clicked()
+{
+    bbNode.enforce(true);
+}
+
+void cWorkstation::on_toolButtonInfRefr_clicked()
+{
+    bbNode.referState();
+}
+
+void cWorkstation::on_toolButtonReportMAC_clicked()
+{
+    QString sMac = pUi->lineEditPMAC->text();
+    if (sMac.isEmpty()) return;
+    pUi->textEditMsg->setHtml(htmlReportByMac(*pq, sMac));
 }

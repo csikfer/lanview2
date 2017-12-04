@@ -51,7 +51,7 @@ private:
       cBatchBlocker   bbNodeName;
       cBatchBlocker   bbNodeSerial;
       cBatchBlocker   bbNodeInventory;
-      cBatchBlocker   bbNodeType;
+      cBatchBlocker   bbNodeModel;
       cBatchBlocker   bbPort;
         cBatchBlocker   bbPortName;
         cBatchBlocker   bbPortType;
@@ -118,6 +118,14 @@ private slots:
     void on_comboBoxPType_currentIndexChanged(const QString &arg1);
     void addressChanged(const QHostAddress& _a, int _st);
     void on_lineEditPMAC_textChanged(const QString &arg1);
+    void on_lineEditName_textChanged(const QString &arg1);
+    void on_lineEditSerial_textChanged(const QString &arg1);
+    void on_lineEditInventory_textChanged(const QString &arg1);
+    void on_lineEditModelName_textChanged(const QString &arg1);
+    void on_lineEditModelNumber_textChanged(const QString &arg1);
+    void on_toolButtonErrRefr_clicked();
+    void on_toolButtonInfRefr_clicked();
+    void on_toolButtonReportMAC_clicked();
 };
 
 #endif // CWORKSTATION_H

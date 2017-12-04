@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1323</width>
-    <height>965</height>
+    <height>976</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -867,14 +867,35 @@
      <widget class="QWidget" name="layoutWidget_5">
       <layout class="QVBoxLayout" name="verticalLayout_5">
        <item>
-        <widget class="QLabel" name="labelWarn">
-         <property name="styleSheet">
-          <string notr="true">QLabel { background-color: rgb(255,128,0); color :rgb() ;}</string>
+        <layout class="QHBoxLayout" name="horizontalLayout_7">
+         <property name="topMargin">
+          <number>0</number>
          </property>
-         <property name="text">
-          <string>Hibaüzenetek, figyelmeztetések :</string>
+         <property name="bottomMargin">
+          <number>0</number>
          </property>
-        </widget>
+         <item>
+          <widget class="QLabel" name="labelWarn">
+           <property name="styleSheet">
+            <string notr="true">QLabel { background-color: rgb(255,128,0); color :rgb() ;}</string>
+           </property>
+           <property name="text">
+            <string>Hibaüzenetek, figyelmeztetések :</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonErrRefr">
+           <property name="text">
+            <string>...</string>
+           </property>
+           <property name="icon">
+            <iconset resource="lv2g.qrc">
+             <normaloff>:/icons/refresh.ico</normaloff>:/icons/refresh.ico</iconset>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
         <widget class="QTextEdit" name="textEditErr"/>
@@ -884,14 +905,35 @@
      <widget class="QWidget" name="layoutWidget_3">
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
-        <widget class="QLabel" name="labelInf">
-         <property name="styleSheet">
-          <string notr="true">QLabel { background-color: rgb(0, 255, 0); color :rgb(0,0,0) ;}</string>
+        <layout class="QHBoxLayout" name="horizontalLayout_5">
+         <property name="topMargin">
+          <number>0</number>
          </property>
-         <property name="text">
-          <string>Információk :</string>
+         <property name="bottomMargin">
+          <number>0</number>
          </property>
-        </widget>
+         <item>
+          <widget class="QLabel" name="labelInf">
+           <property name="styleSheet">
+            <string notr="true">QLabel { background-color: rgb(0, 255, 0); color :rgb(0,0,0) ;}</string>
+           </property>
+           <property name="text">
+            <string>Információk :</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonInfRefr">
+           <property name="text">
+            <string>...</string>
+           </property>
+           <property name="icon">
+            <iconset resource="lv2g.qrc">
+             <normaloff>:/icons/refresh.ico</normaloff>:/icons/refresh.ico</iconset>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
         <widget class="QTextEdit" name="textEditMsg">
