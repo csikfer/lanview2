@@ -1927,6 +1927,7 @@ void exploreByAddress(cMac _mac, QHostAddress _ip, cSnmpDevice& _start)
             expWarning(msg);
             return;
         }
+        expHtmlLine();
         cSnmpDevice dev(_start);
         int cnt = 0;
         while (cnt++ < MAXLINK) {    // Keresés a cím táblákban

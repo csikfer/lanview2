@@ -50,6 +50,7 @@ private slots:
     void mac2ip();
     void expLine(QString s);
     void finished();
+    void on_pushButtonFindIp_clicked();
 };
 
 

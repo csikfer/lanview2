@@ -385,7 +385,9 @@ void cWorkstation::setStatLink(bool f, QStringList& sErrs, QStringList& sInfs, b
     if (link.collisions(*pq, list, lpid, type, sh)) {
         if (isModify) {   // Modosítás esetén saját magunkkal nem ütközünk
             int ix = -1;
-            if (node.getId() != NULL_ID) ix = list.indexOf(_sPortId2, node.getId());
+            if (pnp->getId() != NULL_ID) {
+                ix = list.indexOf(_sPortId2, pnp->get(pnp->idIndex()));
+            }
             if (ix >= 0) delete list.takeAt(ix);
         }
     }

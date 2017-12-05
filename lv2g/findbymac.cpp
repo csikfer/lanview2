@@ -100,6 +100,7 @@ void cFindByMac::setSwitchs()
 void cFindByMac::setButtons()
 {
     pUi->pushButtonFindMac->setEnabled(fMAC);
+    pUi->pushButtonFindIp->setEnabled(fIP);
     pUi->pushButtonExplore->setEnabled(fMAC && fIP && fSw);
     pUi->toolButtonMAC2IP->setEnabled(fMAC);
     pUi->toolButtonIP2MAC->setEnabled(fIP);
@@ -181,4 +182,11 @@ void cFindByMac::finished()
     pUi->pushButtonClear->setDisabled(false);
     pUi->pushButtonFindMac->setDisabled(false);
     pUi->pushButtonSave->setDisabled(false);
+}
+
+void cFindByMac::on_pushButtonFindIp_clicked()
+{
+    QString sIp = pUi->comboBoxIP->currentText();
+    QString text = htmlReportByIp(*pq, sIp);
+    pUi->textEdit->setHtml(text);
 }

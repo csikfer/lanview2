@@ -105,4 +105,8 @@ static inline void expBold(const QString& text, bool chgBreaks = false, bool esc
     cExportQueue::push(htmlBold(text, chgBreaks, esc));
 }
 
+static inline void expHtmlLine() {
+    cExportQueue::push(sHtmlLine);
+}
+
 #endif // REPORT_H

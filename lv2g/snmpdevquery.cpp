@@ -101,6 +101,7 @@ void cSnmpDevQuery::on_pushButtonQuery_clicked()
     cError * pe = NULL;
     QString name = ui->lineEditName->text();
     QString comm = ui->lineEditCom->text();
+    pDev->setName(_sSnmpVer, ui->radioButtonSnmpV1->isChecked() ? "1" : "2c");
     if (name.isEmpty()) return;
     cExportQueue::init(false);
     ui->textEdit->setHtml(htmlWarning(trUtf8("Lekérdezés indítása, kérem várjon!")));
