@@ -678,6 +678,7 @@ const QString &cTableShape::getFieldDialogTitle(QSqlQuery& q, const QString& _sn
             fs.setId(_sTableShapeId, ts.getId());
             fs.setName(_fn);
             if (fs.completion(q) == 1) {
+                fs.fetchText(q);
                 r = fs.getText(cTableShapeField::LTX_DIALOG_TITLE, _fn);
             }
             else {
