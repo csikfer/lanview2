@@ -713,7 +713,7 @@ cEnumComboWidget::cEnumComboWidget(const cTableShape& _tm, const cTableShapeFiel
     pModel->joinWith(pCB);
     pCB->setEditable(false);                  // Nem editálható, választás csak a listából
     setWidget();
-    connect(pCB, SIGNAL(activated(int)), this, SLOT(setFromEdit(int)));
+    connect(pCB, SIGNAL(currentIndexChanged(int)), this, SLOT(setFromEdit(int)));
 }
 
 cEnumComboWidget::~cEnumComboWidget()
@@ -730,8 +730,12 @@ void cEnumComboWidget::setWidget()
         pComboBox->setCurrentIndex(ix);
     }
     else {
-        if (nulltype != NT_NOT_NULL) eval = 0;
-        else                         eval = NULL_ID;
+        if (nulltype == NT_NOT_NULL) {
+            setFromEdit(0);
+        }
+        else {
+            eval = NULL_ID;
+        }
         pComboBox->setCurrentIndex(0);
     }
 }
@@ -747,12 +751,12 @@ int cEnumComboWidget::set(const QVariant& v)
     return r;
 }
 
-void cEnumComboWidget::setFromEdit(int id)
+void cEnumComboWidget::setFromEdit(int index)
 {
-    qlonglong newEval = id;
+    qlonglong newEval = index;
     if (nulltype != NT_NOT_NULL) {
-        if (id == 0) newEval = NULL_ID;
-        else         newEval--;
+        if (index == 0) newEval = NULL_ID;
+        else            newEval--;
     }
     if (eval == newEval) return;
     qlonglong v = newEval;
