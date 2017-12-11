@@ -15,3 +15,8 @@ INSERT INTO port_params (param_type_id, port_id, param_value)
         WHERE 'switch'      = ANY (s.node_type)
           AND 'workstation' = ANY (w.node_type) )
     ON CONFLICT DO NOTHING;
+    
+
+-- Ennek nem itt kéne lennie, de már késő (illet volna egy verzió váltás)
+ALTER TYPE nodetype ADD VALUE 'windows';
+ALTER TYPE nodetype ADD VALUE 'server';
