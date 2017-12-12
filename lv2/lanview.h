@@ -82,7 +82,7 @@ enum ePrivilegeLevel {
 class lanView;
 /// A hiba objektum tartalmának a kiírása a app_errs táblába.
 /// @param pe A hiba objektum pointere
-/// @param __t A hibát generáló thread neve. Opcionális
+/// @param _instance A lanView objektum pointere, opcionális
 /// @return Ha kiírta az adatbázisba a rekordot, akkor a rekord id-vel tér vissza, egyébként NULL_ID-vel
 EXT_ qlonglong sendError(const cError *pe, lanView *_instance = NULL);
 
@@ -441,7 +441,7 @@ protected slots:
 
 #define INSERROR(ec, ...) { \
     cError *pe = new cError(__FILE__, __LINE__,__PRETTY_FUNCTION__,eError::ec); \
-    lanView::sendError(pe); \
+    sendError(pe); \
     delete pe; \
 }
 

@@ -484,17 +484,17 @@ bool cImage::save(const QString& __fn, eEx __ex)
 
 int imageType(const QString& __n, eEx __ex)
 {
-    if (__n == _sBMP) return IT_BMP;
-    if (__n == _sGIF) return IT_GIF;
-    if (__n == _sJPG) return IT_JPG;
-    if (__n == _sJPEG)return IT_JPEG;
-    if (__n == _sPNG) return IT_PNG;
-    if (__n == _sPBM) return IT_PBM;
-    if (__n == _sPGM) return IT_PGM;
-    if (__n == _sPPM) return IT_PPM;
-    if (__n == _sXBM) return IT_XBM;
-    if (__n == _sXPM) return IT_XPM;
-    if (__n == _sBIN) return IT_BIN;
+    if (0 == __n.compare(_sBMP, Qt::CaseInsensitive)) return IT_BMP;
+    if (0 == __n.compare(_sGIF, Qt::CaseInsensitive)) return IT_GIF;
+    if (0 == __n.compare(_sJPG, Qt::CaseInsensitive)) return IT_JPG;
+    if (0 == __n.compare(_sJPEG,Qt::CaseInsensitive))return IT_JPEG;
+    if (0 == __n.compare(_sPNG, Qt::CaseInsensitive)) return IT_PNG;
+    if (0 == __n.compare(_sPBM, Qt::CaseInsensitive)) return IT_PBM;
+    if (0 == __n.compare(_sPGM, Qt::CaseInsensitive)) return IT_PGM;
+    if (0 == __n.compare(_sPPM, Qt::CaseInsensitive)) return IT_PPM;
+    if (0 == __n.compare(_sXBM, Qt::CaseInsensitive)) return IT_XBM;
+    if (0 == __n.compare(_sXPM, Qt::CaseInsensitive)) return IT_XPM;
+    if (0 == __n.compare(_sBIN, Qt::CaseInsensitive)) return IT_BIN;
     if (__ex) EXCEPTION(EDATA, -1, __n);
     return ENUM_INVALID;
 }
@@ -703,10 +703,10 @@ const QString& subNetType(int __at, eEx __ex)
 
 int subNetType(const QString& __at, eEx __ex)
 {
-    if (__at == _sPrimary)  return NT_PRIMARY;
-    if (__at == _sSecondary)return NT_SECONDARY;
-    if (__at == _sPseudo)   return NT_PSEUDO;
-    if (__at == _sPrivate)  return NT_PRIVATE;
+    if (0 == __at.compare(_sPrimary,   Qt::CaseInsensitive)) return NT_PRIMARY;
+    if (0 == __at.compare(_sSecondary, Qt::CaseInsensitive)) return NT_SECONDARY;
+    if (0 == __at.compare(_sPseudo,    Qt::CaseInsensitive)) return NT_PSEUDO;
+    if (0 == __at.compare(_sPrivate,   Qt::CaseInsensitive)) return NT_PRIVATE;
     if (__ex) EXCEPTION(EDATA,-1,__at);
     return ENUM_INVALID;
 }
@@ -810,6 +810,32 @@ bool cIpAddress::thisIsExternal(QSqlQuery& q)
     _set(_ixIpAddressType, QVariant(_sExternal));
     return true;
 }
+
+eTristate cIpAddress::thisIsJoint(QSqlQuery &q, qlonglong _nodeId)
+{
+    cIpAddress o;
+    if (isNull(_sAddress)) return TS_NULL;
+    o = address();
+    if (o.completion(q) == 0) return TS_NULL;
+    if (_nodeId != NULL_ID) {   // Lehet saját cím is?
+        QSqlQuery qq = getQuery();
+        cNPort p;
+        do {
+            p.setById(qq, o.getId(_sPortId));
+            // Ha nem saját cím, megvan az egy vizsgálandó azonos cím
+            if (p.getId(_sNodeId) != _nodeId) break;
+        } while (o.next(q));
+        // Volt nem saját cím?
+        if (o.isEmpty_()) return TS_NULL;
+    }
+    // Csak egy rekordot vizsgálunk, ha több van akkor is
+    if (o.getId(_sIpAddressType) == AT_JOINT) {
+        setId(_sIpAddressType, AT_JOINT);
+        return TS_TRUE;
+    }
+    return TS_FALSE;
+}
+
 QString cIpAddress::lookup(const QHostAddress& ha, eEx __ex)
 {
     QHostInfo hi = QHostInfo::fromName(ha.toString());
@@ -863,6 +889,7 @@ const QString& addrType(int __at, eEx __ex)
     case AT_PSEUDO: return _sPseudo;
     case AT_PRIVATE:return _sPrivate;
     case AT_EXTERNAL:return _sExternal;
+    case AT_JOINT:  return _sJoint;
     default: if (__ex) EXCEPTION(EDATA, __at);
     }
     return _sNul;
@@ -870,11 +897,12 @@ const QString& addrType(int __at, eEx __ex)
 
 int addrType(const QString& __at, eEx __ex)
 {
-    if (__at == _sFixIp)   return AT_FIXIP;
-    if (__at == _sDynamic) return AT_DYNAMIC;
-    if (__at == _sPseudo)  return AT_PSEUDO;
-    if (__at == _sPrivate) return AT_PRIVATE;
-    if (__at == _sExternal)return AT_EXTERNAL;
+    if (0 == __at.compare(_sFixIp,   Qt::CaseInsensitive)) return AT_FIXIP;
+    if (0 == __at.compare(_sDynamic, Qt::CaseInsensitive)) return AT_DYNAMIC;
+    if (0 == __at.compare(_sPseudo,  Qt::CaseInsensitive)) return AT_PSEUDO;
+    if (0 == __at.compare(_sPrivate, Qt::CaseInsensitive)) return AT_PRIVATE;
+    if (0 == __at.compare(_sExternal,Qt::CaseInsensitive)) return AT_EXTERNAL;
+    if (0 == __at.compare(_sJoint,   Qt::CaseInsensitive)) return AT_JOINT;
     if (__ex) EXCEPTION(EDATA, -1, __at);
     return ENUM_INVALID;
 }
@@ -1671,8 +1699,8 @@ cIpAddress& cInterface::addIpAddress(const QHostAddress& __a, const QString& __t
     // if (addresses.indexOf(cIpAddress::_ixAddress, __a.get(cIpAddress::_ixAddress))) EXCEPTION(EDATA);
     cIpAddress *p = new cIpAddress();
     *p = __a;
-    p->setName(_sIpAddressType, __t);
-    p->setName(_sIpAddressNote, __d);
+    if (!__t.isEmpty()) p->setName(_sIpAddressType, __t);
+    if (!__d.isEmpty()) p->setName(_sIpAddressNote, __d);
     addresses <<  p;
     //PDEB(VERBOSE) << "Added : " << p->toString() << " size : " << addresses.size();
     return *p;
@@ -2239,6 +2267,7 @@ int nodeType(const QString& __n, eEx __ex)
     if (0 == __n.compare(_sUps,         Qt::CaseInsensitive)) return NT_UPS;
     if (0 == __n.compare(_sWindows,     Qt::CaseInsensitive)) return NT_WINDOWS;
     if (0 == __n.compare(_sServer,      Qt::CaseInsensitive)) return NT_SERVER;
+    if (0 == __n.compare(_sCluster,     Qt::CaseInsensitive)) return NT_CLUSTER;
     if (__ex != EX_IGNORE)   EXCEPTION(EDATA, -1, __n);
     return ENUM_INVALID;
 }
@@ -2264,6 +2293,7 @@ const QString& nodeType(int __e, eEx __ex)
     case NT_UPS:        return _sUps;
     case NT_WINDOWS:    return _sWindows;
     case NT_SERVER:     return _sServer;
+    case NT_CLUSTER:    return _sCluster;
     }
     if (__ex != EX_IGNORE)   EXCEPTION(EDATA, __e);
     return _sNul;
@@ -2297,15 +2327,18 @@ cNode& cNode::clone(const cRecord &__o)
     clear();
     __cp(__o);
     set(__o);
+    bDelCollisionByMac = false;
+    bDelCollisionByIp  = false;
+    containerValid     = 0;
+    ports.clear();
+    params.clear();
     if (typeid(__o) != typeid(cRecordAny)) {
         const cNode& o = *dynamic_cast<const cNode*>(&__o);
-        ports.clear();
-        params.clear();
         ports.append(o.ports);
         params.append(o.params);
         bDelCollisionByMac = o.bDelCollisionByMac;
         bDelCollisionByIp  = o.bDelCollisionByIp;
-        containerValid = o.containerValid;
+        containerValid     = o.containerValid;
     }
     return *this;
 }
@@ -3073,23 +3106,22 @@ int cNode::delCollisionByIp(QSqlQuery& __q)
             while (j.hasNext()) {
                 cIpAddress *pip = j.next();
                 qlonglong type = pip->getId(_sIpAddressType);
-                if (type != AT_DYNAMIC && type != AT_PRIVATE) {
+                if (type != AT_DYNAMIC && type != AT_PRIVATE && type != AT_JOINT) {
                     ips << pip->address();
                 }
             }
         }
         if (!ips.isEmpty()) {
-            QString sql;
+            QString sql =
+                    "DELETE FROM nodes WHERE node_id IN "
+                    "(SELECT node_id FROM interfaces JOIN ip_addresses USING(port_id)"
+                       " WHERE  address = ? AND ip_address_type NOT IN ('dynamic', 'private', 'joint')";
             QVariant id = get(idIndex());
             if (id.isNull()) {
-                sql = "DELETE FROM nodes WHERE node_id IN "
-                        "(SELECT node_id FROM interfaces JOIN ip_addresses USING(port_id)"
-                        " WHERE address = ?)";
+                sql += ")";
             }
             else {
-                sql = "DELETE FROM nodes WHERE node_id IN "
-                        "(SELECT node_id FROM interfaces JOIN ip_addresses USING(port_id)"
-                        " WHERE address = ? AND node_id <> ?)";
+                sql += " AND node_id <> ?)";
             }
             foreach (QHostAddress ip, ips) {
                 execSql(__q, sql, ip.toString(), id);
@@ -3132,10 +3164,13 @@ cSnmpDevice::cSnmpDevice(const QString& __n, const QString &__d)
 cSnmpDevice& cSnmpDevice::clone(const cRecord& __o)
 {
     copy(__o);
+    ports.clear();
+    params.clear();
+    bDelCollisionByMac = false;
+    bDelCollisionByIp  = false;
+    containerValid = 0;
     if (typeid(cRecordAny) != typeid(__o)) {
         const cSnmpDevice& o = *dynamic_cast<const cSnmpDevice*>(&__o);
-        ports.clear();
-        params.clear();
         ports.append(o.ports);
         params.append(o.params);
         bDelCollisionByMac = o.bDelCollisionByMac;

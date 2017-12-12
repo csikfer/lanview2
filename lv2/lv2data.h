@@ -67,7 +67,8 @@ enum eAddressType {
     AT_PRIVATE,         ///< Csak lokálisan használt valós cím, ütközhet bármilyen egyébb IP címmel.
     AT_EXTERNAL,        ///< Külső cím (fix cím, de nincs hozzá subnet
     AT_DYNAMIC,         ///< dinamikus IP cím
-    AT_PSEUDO           ///< Egyedi nem valós IP cím, csak azonosításra
+    AT_PSEUDO,          ///< Egyedi nem valós IP cím, csak azonosításra
+    AT_JOINT             ///< Közös cím (cluster)
 };
 
 /// Cím típus stringgel tér vissza, a megadott konstans alapján.
@@ -201,7 +202,8 @@ enum eNodeType {
     NT_CONTROLLER,
     NT_UPS,
     NT_WINDOWS,
-    NT_SERVER
+    NT_SERVER,
+    NT_CLUSTER
 };
 
 /// Node típus név konverzió
@@ -581,6 +583,18 @@ public:
     /// Ha nincs valós cím az objektumban akkor nem csinál semmit.
     /// @return true, ha a típust 'external'-ba állította, egyébként false.
     bool thisIsExternal(QSqlQuery &q);
+    /// \brief thisIsJoint
+    /// Ha talál ugyan ilyen címet, aminek a típusa 'joint', akkor a típust 'joint'-ra állítja.
+    /// \param q
+    /// \param _nodeId  Ha egy beregisztrált elem cím rekordja, akkor annak ID-je (önmagával nem ütközhet)
+    /// \return  TS_NULL, ha nem talált ugyan ilyen címet, TS_FALSE, ha talált, de az nem volt 'joint' típusú,
+    ///          végül, ha talált címet, az 'joint' típusú volt, és az objektum típusát is erre állította, akkor TS_TRUE.
+    eTristate thisIsJoint(QSqlQuery &q, qlonglong _nodeId = NULL_ID);
+    ///
+    /// \brief lookupAll
+    /// \param hn
+    /// \param __ex
+    /// \return
     static QList<QHostAddress> lookupAll(const QString& hn, enum eEx __ex = EX_ERROR);
     static QString lookup(const QHostAddress& ha, enum eEx __ex = EX_ERROR);
     static QHostAddress lookup(const QString& hn, enum eEx __ex = EX_ERROR);
@@ -982,12 +996,16 @@ public:
     cIpAddress& addIpAddress(const cIpAddress& __a);
     /// Egy cím hozzáadása az interfészhez.
     /// @param __a Az ip cím.
-    /// @param __t Az IP cím típusa, alapértelmezett a _sFixIp
-    /// @param __d Cím rekord megjegyzés mező (alapértelmezetten üres)
-    cIpAddress& addIpAddress(const QHostAddress& __a, const QString& __t = _sFixIp, const QString& __d = _sNul);
-    cIpAddress& addIpAddress(const QHostAddress& __a, int __t = AT_FIXIP, const QString& __d = _sNul)
+    /// @param __t Az IP cím típusa, alapértelmezett a NULL
+    /// @param __d Cím rekord megjegyzés mező, alapértelmezett a NULL
+    cIpAddress& addIpAddress(const QHostAddress& __a, const QString& __t = _sNul, const QString& __d = _sNul);
+    /// Egy cím hozzáadása az interfészhez.
+    /// @param __a Az ip cím.
+    /// @param __t Az IP cím típusa (numerikus), alapértelmezett a NULL, minden negatív érték NULL-ként van értelmezve.
+    /// @param __d Cím rekord megjegyzés mező, alapértelmezett a NULL
+    cIpAddress& addIpAddress(const QHostAddress& __a, int __t, const QString& __d = _sNul)
     {
-        return addIpAddress(__a, addrType(__t), __d);
+        return addIpAddress(__a, __t < 0 ? _sNul : addrType(__t), __d);
     }
 
     /// Értékadása a hwaddress mezőnek.
@@ -1097,7 +1115,7 @@ protected:
     explicit cPatch(no_init_&) : cRecord(), ports(this), params(this), pShares(NULL)
     {
         cPatch::descr();
-        // containerValid = 0;
+        containerValid = 0;
     }
     cNPort *portSetParam(cNPort * __port, const QString& __par, const QVariant &__val);
 public:
@@ -1287,7 +1305,10 @@ néhány felesleges komponenst, de igy nem kell eltérni az adatbázisban defini
 class LV2SHARED_EXPORT cNode : public cPatch {
     CRECORD(cNode);
 protected:
-    explicit cNode(no_init_& _dummy) : cPatch(_dummy) { cNode::descr(); }
+    explicit cNode(no_init_& _dummy) : cPatch(_dummy) {
+        cNode::descr();
+        bDelCollisionByIp = bDelCollisionByMac = false;
+    }
 public:
     cNode(const QString& __name, const QString& __note);
 //  cNode& operator=(const cNode& __o);

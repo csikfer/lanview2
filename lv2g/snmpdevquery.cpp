@@ -102,6 +102,8 @@ void cSnmpDevQuery::on_pushButtonQuery_clicked()
     QString name = ui->lineEditName->text();
     QString comm = ui->lineEditCom->text();
     pDev->setName(_sSnmpVer, ui->radioButtonSnmpV1->isChecked() ? "1" : "2c");
+    qlonglong type = pTypeWidget->getId() | ENUM2SET2(NT_SNMP, NT_HOST);
+    pDev->setId(_sNodeType, type);
     if (name.isEmpty()) return;
     cExportQueue::init(false);
     ui->textEdit->setHtml(htmlWarning(trUtf8("Lekérdezés indítása, kérem várjon!")));
@@ -121,6 +123,8 @@ void cSnmpDevQuery::on_pushButtonQuery_clicked()
         f = false;
     }
     ui->textEdit->setHtml(cExportQueue::toText(false, true));
+    type = pDev->getId(_sNodeType);
+    pTypeWidget->setId(type);
     ui->pushButtonSave->setEnabled(f);
 }
 

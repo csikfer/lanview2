@@ -362,6 +362,7 @@ STRDEF(Nodes,"nodes")
   STRDEF(Ups, "ups")
   STRDEF(Windows, "windows")
   STRDEF(Server, "server")
+  STRDEF(Cluster, "cluster")
   dnl virtual
  STRDEF(InventoryNumber, "inventory_number")
  STRDEF(SerialNumber, "serial_number")
@@ -423,6 +424,7 @@ STRDEF(IpAddresses, "ip_addresses")
   STRDEF(External, "external")
   STRDEF(Dynamic, "dynamic")
   STRDEF(Pseudo, "pseudo")
+  STRDEF(Joint, "joint")
  STRDEF(Preferred,"preferred")
  dnl subnet_id
  dnl port_id

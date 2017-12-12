@@ -138,6 +138,7 @@ void cError::exception(void)
         else {
             std::cout << m.toStdString() << std::endl << mm.toStdString() << std::endl;
         }
+        sendError(this);
         exit(mErrorCode);
     }
 }

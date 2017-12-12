@@ -280,6 +280,9 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip)
     QHostAddress hostAddr = ip == NULL ? node.getIpAddress() : *ip;
     // Kell lennie legalább egy IP címnek!!
     bool    found = false;
+    // Illene megtalálni azt az IP-t amivel lekérdezünk.
+    bool    foundMyIp = false;
+    bool    foundJoint = false;
     // A gyátrói baromságok kezeléséhez kell
     QString sysdescr = node.getName(_sSysDescr);
     // A portot töröljük, azt majd a lekérdezés teljes adatatartalommal felveszi
@@ -328,7 +331,7 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip)
     PDEB(VVERBOSE) << "*************************************************" << endl;
     // Ha nincs IP címünk, az gáz
     if (!found) EX(EDATA, 0, QString("IP not found"));
-    found = false;  // A tábla feldolgozása után is kell lennie!
+    found = false;  // A tábla feldolgozása után is kell lennie! Az sem jó, ha eldobtuk
     QSqlQuery q = getQuery();
     int n = tab.rows();
     int i;
@@ -399,11 +402,27 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip)
         if (mac.isValid())  pPort->set(_sHwAddress, mac.toString());
         if (!addr.isNull()) {   // Van IP címünk
             cInterface *pIf = pPort->reconvert<cInterface>();
-            cIpAddress& pa = pIf->addIpAddress(addr, _sFixIp);
-            pa.thisIsExternal(q);    // Ez lehet külső cím is !!
+            cIpAddress& pa = pIf->addIpAddress(addr);
+            if (pa.thisIsExternal(q)) {  // Ez lehet külső cím is !! Ha nincs hozzá subnet
+                expWarning(QObject::trUtf8("A %1 cím külső cim lesz, mert nincs hozzá sunbet.").arg(addr.toString()));
+            }
+            else {
+                switch (pa.thisIsJoint(q, node.getId())) {
+                case TS_NULL:   // Nincs címütközés, OK
+                    break;
+                case TS_FALSE:  // Cím ütközés !!!
+                    expError(QObject::trUtf8("%1 címmel már van bejegyzett eszköz!").arg(addr.toString()));
+                    break;
+                case TS_TRUE:   // Ütközik, de a típus 'joint'
+                    expInfo(QObject::trUtf8("%1 címmel már van bejegyzett eszköz. A cím típusa 'joint' lessz.").arg(addr.toString()));
+                    foundJoint = true;
+                    break;
+                }
+            }
             // A paraméterként megadott címet preferáltnak vesszük
             if (addr == hostAddr) {   // Ez az
                 pa.setId(_sPreferred, 0);
+                foundMyIp = true;
             }
             found = true;
         }
@@ -460,7 +479,22 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip)
                 if (mac.isValid())  pPort->set(_sHwAddress, mac.toString());
                 cInterface *pIf = pPort->reconvert<cInterface>();
                 cIpAddress& pa = pIf->addIpAddress(addr, _sFixIp);
-                pa.thisIsExternal(q);    // Ez lehet külső cím is !!
+                if (pa.thisIsExternal(q)) {  // Ez lehet külső cím is !! Ha nincs hozzá subnet
+                    expWarning(QObject::trUtf8("A %1 cím külső cim lesz, mert nincs hozzá sunbet.").arg(addr.toString()));
+                }
+                else {
+                    switch (pa.thisIsJoint(q, node.getId())) {
+                    case TS_NULL:   // Nincs címütközés, OK
+                        break;
+                    case TS_FALSE:  // Cím ütközés !!!
+                        expError(QObject::trUtf8("%1 címmel már van bejegyzett eszköz!").arg(addr.toString()));
+                        break;
+                    case TS_TRUE:   // Ütközik, de a típus 'joint'
+                        expInfo(QObject::trUtf8("%1 címmel már van bejegyzett eszköz. A cím típusa 'joint' lessz.").arg(addr.toString()));
+                        foundJoint = true;
+                        break;
+                    }
+                }
                 // A paraméterként megadott címet preferáltnak vesszük
                 if (addr == hostAddr) {   // Ez az
                     pa.setId(_sPreferred, 0);
@@ -478,6 +512,13 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip)
         }
     }
     if (!found) EX(EDATA, -1, QString("IP is not found"));
+    if (!foundMyIp) {
+        expWarning(QObject::trUtf8("A lekérdezés nem adta vissza a lekérdezéshez használlt %1 IP címet.").arg(hostAddr.toString()));
+    }
+    if (foundJoint && !node.getBool(_sNodeType, NT_CLUSTER)) {
+        expWarning(QObject::trUtf8("Az eszköznél nem volt megadva a 'cluster' kapcsoló, ugyanakkor találtunk 'joint' típusú címet."));
+        node.enum2setOn(_sNodeType, NT_CLUSTER);
+    }
     _DBGFNL() << "OK, node : " << node.toString() << endl;
     return true;
 }
