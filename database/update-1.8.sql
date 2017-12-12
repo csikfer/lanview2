@@ -8,6 +8,10 @@ ALTER TYPE nodetype ADD VALUE 'cluster';
 -- Ez egy SonicWall HA Cluster-nél derült ki, nem igazán detektálható a cím típusa, ill. a privat címeket el sem árulja
 ALTER TYPE addresstype ADD VALUE 'joint';
 
+CREATE INDEX ip_addresses_address_index
+  ON public.ip_addresses
+  USING btree (address);
+
 
 -- Ellenőrzi, hogy a address (ip cím) mező rendben van-e
 -- Nem ütközik más címmel
@@ -60,12 +64,12 @@ BEGIN
                     IF ipa.ip_address_type = 'dynamic' THEN
                     -- Ütköző dinamikust töröljük.
                         UPDATE ip_addresses SET address = NULL WHERE ip_address_id = ipa.ip_address_id;
-                    ELSIF ipa.ip_address_type = 'joint' AND (nip OR NEW.ip_address_type = 'join') THEN
+                    ELSIF ipa.ip_address_type = 'joint' AND (nip OR NEW.ip_address_type = 'joint') THEN
                     -- Ha közös címként van megadva a másik, ...
                         NEW.ip_address_type := 'joint';
                     ELSIF ipa.ip_address_type <> 'private' THEN
                     -- Minden más esetben ha nem privattal ütközik az hiba
-                        PERFORM error('IdNotUni', n, CAST(NEW.address AS TEXT), 'check_ip_address()', TG_TABLE_NAME, TG_OP);
+                        PERFORM error('IdNotUni', 0, CAST(NEW.address AS TEXT), 'check_ip_address()', TG_TABLE_NAME, TG_OP);
                     END IF;
                 END IF;
             END LOOP;
