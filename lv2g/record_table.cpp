@@ -105,7 +105,11 @@ void cRecordTableFilter::setFilter(int i)
 
 int cRecordTableFilter::fieldType()
 {
-    return field.pColDescr->eColType;
+    int r = field.pColDescr->eColType;
+    if (field.pColDescr->fKeyType == cColStaticDescr::FT_NONE) return r;
+    if ((r & ~cColStaticDescr::FT_ARRAY) != cColStaticDescr::FT_INTEGER) EXCEPTION(EDATA, r);
+    if (field.pColDescr->fKeyType == cColStaticDescr::FT_TEXT_ID) return cColStaticDescr::FT_TEXT;
+    return cColStaticDescr::FT_TEXT | (r & cColStaticDescr::FT_ARRAY);
 }
 
 const cEnumVal *cRecordTableFilter::pActType()

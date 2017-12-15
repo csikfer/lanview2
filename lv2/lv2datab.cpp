@@ -3772,7 +3772,7 @@ QString cRecord::toString() const
         else           s +=  " = " + debVariantToString(get(i)) + ";";
     }
     s.chop(1);
-    s + QChar('}');
+    s += QChar('}');
     return s;
 }
 

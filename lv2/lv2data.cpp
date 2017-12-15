@@ -3073,18 +3073,24 @@ int cNode::delCollisionByMac(QSqlQuery &__q)
             QVariant id = get(idIndex());
             if (id.isNull()) {
                 sql = "DELETE FROM nodes WHERE node_id IN "
-                        "(SELECT DISTINCT(node_id) FROM interfaces WHERE hwaddress = ?)";
+                        "(SELECT DISTINCT(node_id) FROM interfaces WHERE hwaddress = ?) "
+                      "RETURNING *";
             }
             else {
                 sql = "DELETE FROM nodes WHERE node_id IN "
-                        "(SELECT DISTINCT(node_id) FROM interfaces WHERE hwaddress = ? AND node_id <> ?)";
+                        "(SELECT DISTINCT(node_id) FROM interfaces WHERE hwaddress = ? AND node_id <> ?) "
+                      "RETURNING *";
             }
             foreach (cMac mac, macs) {
                 execSql(__q, sql, mac.toString(), id);
                 int nn = __q.numRowsAffected();
                 if (nn) {
                     n += nn;
-                    PDEB(INFO) << "Delete node for collision " << mac.toString() << " mac" << endl;
+                    cNode o;
+                    o.set(__q);
+                    QString msg = trUtf8("Delete %1 node for collision MAC : %2").arg(o.toString(), mac.toString());
+                    PDEB(INFO) << msg << endl;
+                    APPMEMO(__q, msg, RS_WARNING);
                 }
             }
         }
@@ -3095,8 +3101,8 @@ int cNode::delCollisionByMac(QSqlQuery &__q)
 int cNode::delCollisionByIp(QSqlQuery& __q)
 {
     int n = -1;
-    QList<QHostAddress> ips;
     if (bDelCollisionByIp) {
+        QList<QHostAddress> ips;    // Saját egyedi IP címek listája
         QListIterator<cNPort *> i(ports);
         n = 0;
         while (i.hasNext()) {
@@ -3123,12 +3129,17 @@ int cNode::delCollisionByIp(QSqlQuery& __q)
             else {
                 sql += " AND node_id <> ?)";
             }
+            sql += " RETURNING *";
             foreach (QHostAddress ip, ips) {
                 execSql(__q, sql, ip.toString(), id);
                 int nn = __q.numRowsAffected();
                 if (nn) {
                     n += nn;
-                    PDEB(INFO) << "Delete node for collision " << ip.toString() << " IP" << endl;
+                    cNode o;
+                    o.set(__q);
+                    QString msg = trUtf8("Delete %1 node for collision IP : %2").arg(o.toString(), ip.toString());
+                    PDEB(INFO) << msg << endl;
+                    APPMEMO(__q, msg, RS_WARNING);
                 }
             }
         }

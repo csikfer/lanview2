@@ -965,8 +965,9 @@ void cEnumVal::fetchEnumVals()
             }
         }
         if (e == NULL_IX || !isContIx(*pActV, (e +1))) {
-            QString em = trUtf8("Wrong 'enum_vals' objekt : ") + ev.toString();
+            QString em = trUtf8("Wrong 'enum_vals' objekt : %1 . Delete record.") + ev.toString();
             APPMEMO(q2, em, RS_WARNING);
+            ev.remove(q2);
             continue;   // Drop
         }
         cEnumVal *p;
