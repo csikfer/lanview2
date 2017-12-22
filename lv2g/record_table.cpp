@@ -46,8 +46,9 @@ qlonglong cRecordTableFilter::type2filter(int _type, bool _null)
         map[cColStaticDescr::FT_INET]       = map[cColStaticDescr::FT_MAC];
         map[cColStaticDescr::FT_CIDR]       = map[cColStaticDescr::FT_TEXT];
     }
-    qlonglong m = map[_type] | ENUM2SET2(FT_NO, FT_SQL_WHERE);
-    if (_null) m |= ENUM2SET(FT_NULL);
+    qlonglong m = map[_type] | ENUM2SET(FT_NO);
+    if (lanView::getInstance()->isAuthorized(PL_ADMIN)) m |= ENUM2SET(FT_SQL_WHERE);
+    if (_null)                                          m |= ENUM2SET(FT_NULL);
     return m;
 }
 
@@ -1742,7 +1743,7 @@ bool cRecordsViewBase::batchEdit(int logicalindex)
         const cTableShapeField& sf = *pTableShape->shapeFields[shapeFieldIndexList[i]];
         cFieldEditBase *feb = cFieldEditBase::createFieldWidget(*pTableShape, sf, rfr, false, NULL);
         febList << feb;
-        pEd->verticalLayout->insertWidget(i * 2, feb->pWidget());
+        pEd->verticalLayout->insertWidget(i * 2, feb);
         QLabel *pLabel = new QLabel(sf.getText(cTableShapeField::LTX_DIALOG_TITLE));
         pEd->verticalLayout->insertWidget(i * 2, pLabel);
     }

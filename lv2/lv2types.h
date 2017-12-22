@@ -77,6 +77,8 @@ static inline eTristate inverse(eTristate v) {
     return TS_NULL;
 }
 
+static inline eTristate bool2ts(bool f) { return f ? TS_TRUE : TS_FALSE; }
+
 
 /// Hiba string
 EXT_ QString sInvalidEnum();

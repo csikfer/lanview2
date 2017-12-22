@@ -9,6 +9,217 @@
 #include "ui_wstform.h"
 #include "ui_phslinkform.h"
 
+
+cSetDialog::cSetDialog(QString _tn, bool _tristate, qlonglong _excl, qlonglong _def, QWidget * par)
+    : QDialog(par)
+    , enumType(cColEnumType::get(_tn))
+{
+    pLayout = new QVBoxLayout;
+    setLayout(pLayout);
+    tristate = _tristate;
+    on = off = 0;
+    def = _def;
+    pCheckBoxs = new QButtonGroup(this);
+    pCheckBoxs->setExclusive(false);
+    pGrid = new QGridLayout;
+    pLayout->addLayout(pGrid);
+    pButtons = new cDialogButtons(ENUM2SET2(DBT_OK, DBT_CANCEL), 0, this);
+    pLayout->addWidget(pButtons->pWidget());
+    int i, n = enumType.enumValues.size(), row = 0, col = 0;
+    qlonglong m = 1;
+    int maxrow = lv2g::getInstance()->dialogRows;
+    QCheckBox *p;
+    for (i = 0; i < n; ++i, m <<= 1) {
+        if (m & _excl) continue;
+        QString e = enumType.enum2str(i);
+        p = new QCheckBox(cEnumVal::viewShort(_tn, i, e));
+        p->setTristate(tristate);
+        p->setCheckState(tristate ? Qt::PartiallyChecked : Qt::Unchecked);
+        pCheckBoxs->addButton(p, i);
+        if (row >= maxrow) {
+            ++col;
+            row = 0;
+        }
+        pGrid->addWidget(p, row, col);
+        ++row;
+    }
+    int dce = def == 0 ? DC_NULL : DC_DEFAULT;
+    p = new QCheckBox(cEnumVal::viewShort(_sDatacharacter, dce, dataCharacter(dce)));
+    dcSetD(p, dce);
+    p->setTristate(false);
+    p->setChecked(true);
+    pCheckBoxs->addButton(p, i);
+    if (row >= maxrow) {
+        ++col;
+        row = 0;
+    }
+    pGrid->addWidget(p, row, col);
+    if (def != 0) {
+        set(def);
+    }
+
+    connect(pCheckBoxs, SIGNAL(buttonClicked(int)), this, SLOT(clickedCheckBox(int)));
+    connect(pButtons,   SIGNAL(buttonClicked(int)), this, SLOT(clickedButton(int)));
+}
+
+void cSetDialog::set(qlonglong _on, qlonglong _off)
+{
+    on  = _on;
+    off = _off;
+    int i, n = enumType.enumValues.size();
+    QAbstractButton *pp;
+    bool isNul = on == 0 && off == 0;
+    if (isNul && def != 0) {
+        on = def;
+        isNul = false;
+    }
+    qlonglong m = 1;
+    for (i = 0; i < n; ++i, m <<= 1) {
+        pp = pCheckBoxs->button(i);
+        if (pp == NULL) {
+            if (m & on) EXCEPTION(EPROGFAIL, i);
+            continue;
+        }
+        if (tristate) {
+            QCheckBox *p = qobject_cast<QCheckBox *>(pp);
+            if (p  == NULL) EXCEPTION(EPROGFAIL, i);
+            if      (on  & m) p->setCheckState(Qt::Checked);
+            else if (off & m) p->setCheckState(Qt::Unchecked);
+            else              p->setCheckState(Qt::PartiallyChecked);
+        }
+        else {
+            pp->setChecked(on & m);
+        }
+    }
+    pp = pCheckBoxs->button(n);
+    if (pp == NULL) EXCEPTION(EPROGFAIL, i);
+    pp->setChecked(isNul);
+}
+
+QString cSetDialog::toString()
+{
+    QString r;
+    if (tristate) {
+        QStringList sl;
+        if (on != 0) {
+            sl = enumType.set2lst(on);
+            for (int i = 0; i < sl.size(); ++i) sl[i].prepend(QChar('+'));
+            r = sl.join(_sCommaSp);
+            if (off != 0) r += _sCommaSp;
+        }
+        sl = enumType.set2lst(off);
+        for (int i = 0; i < sl.size(); ++i) sl[i].prepend(QChar('-'));
+        r += sl.join(_sCommaSp);
+    }
+    else {
+        QStringList sl = enumType.set2lst(on);
+        r = sl.join(_sCommaSp);
+    }
+    return r;
+}
+
+/// Az állapot alapján egy szűrési feltételstringet állít elő.
+/// @param _fn A mező neve a feltételben
+/// @param _addOff Az off maszkhoz hozzáadandó bitek
+/// @param _addOn Az on maszkhoz hozzáadandó bitek
+QString cSetDialog::toWhere(const QString& _fn, qlonglong _addOff, qlonglong _addOn)
+{
+    QStringList wl;
+    qlonglong m = on | _addOn;
+    if (m != 0) {
+        QString ons = quoted(stringListToSql(enumType.set2lst(m)).toString());
+        wl << QString("%1 @> %2::%3[]").arg(_fn, ons, enumType);
+    }
+    m = off | _addOff;
+    if (m != 0) {
+        QString offs = quoted(stringListToSql(enumType.set2lst(m)).toString());
+        wl << QString("NOT %1 && %2::%3[]").arg(_fn, offs, enumType);
+    }
+    return wl.join(" AND ");
+}
+
+void cSetDialog::clickedCheckBox(int id)
+{
+    int n = enumType.enumValues.size();
+    if (id == n) { // NULL
+        set(0, 0);
+    }
+    else {
+        QAbstractButton *pp = pCheckBoxs->button(id);
+        if (pp == NULL) EXCEPTION(EPROGFAIL, id);
+        qlonglong m = enum2set(id);
+        if (tristate) {
+            QCheckBox *p = qobject_cast<QCheckBox *>(pp);
+            if (p  == NULL) EXCEPTION(EPROGFAIL, id);
+            switch (p->checkState()) {
+            case Qt::Checked:           on |=  m; off &= ~m; break;
+            case Qt::Unchecked:         on &= ~m; off |=  m; break;
+            case Qt::PartiallyChecked:  on &= ~m; off &= ~m; break;
+            default:                    EXCEPTION(EPROGFAIL, id);
+            }
+        }
+        else {
+            if (pp->isChecked()) {
+                on |=  m;
+                if (collisoins.find(id) != collisoins.end()) {
+                    on &= ~collisoins[id];
+                    autoset();
+                    set(on);
+                }
+                else {
+                    bool corr = false;
+                    foreach (int e, collisoins.keys()) {
+                        if (m & collisoins[e]) {    // rule?
+                            if (on & enum2set(e)) { // collision (reverse)
+                                on &= ~enum2set(e);
+                                corr = true;
+                            }
+                        }
+                    }
+                    if (corr) {
+                        autoset();
+                        set(on);
+                    }
+                }
+            }
+            else {
+                on &= ~m;
+                if (autoset()) set(on);
+            }
+        }
+        bool isNull = on == 0 && off == 0;
+        if (isNull && def != 0) {
+            set(def);
+        }
+        else {
+            pp = pCheckBoxs->button(n);
+            if (pp == NULL) EXCEPTION(EPROGFAIL, id);
+            pp->setChecked(isNull);
+        }
+    }
+    changedState(on, off);
+}
+
+bool cSetDialog::autoset()
+{
+    foreach (int e, autosets.keys()) {
+        if (0 == (autosets[e] & on)) {
+            on |= ENUM2SET(e);
+            return true;
+        }
+    }
+    return false;
+}
+
+void cSetDialog::clickedButton(int id)
+{
+    switch (id) {
+    case DBT_OK:        accept();   break;
+    case DBT_CANCEL:    reject();   break;
+    }
+}
+
+
 /* ************************************************************************************************* */
 
 const enum ePrivilegeLevel cWorkstation::rights = PL_OPERATOR;
@@ -112,19 +323,31 @@ bool cWorkstation::cBatchBlocker::getStat() const
 cWorkstation::cWorkstation(QMdiArea *parent) :
     cIntSubObj(parent),
     bbNode(this, &cWorkstation::setStatNode),
-     bbNodeName(this, &cWorkstation::setStatNodeName, &bbNode),
-     bbNodeSerial(this, &cWorkstation::setStatNodeSerial, &bbNode),
-     bbNodeInventory(this, &cWorkstation::setStatNodeInventory, &bbNode),
-     bbNodeModel(this, &cWorkstation::setStatNodeType, &bbNode),
-     bbPort(this, &cWorkstation::setStatPort, &bbNode),
-      bbPortName(this, &cWorkstation::setStatPortName, &bbPort),
-      bbPortType(this, &cWorkstation::setStatPortType, &bbPort),
-       bbPortMac(this, &cWorkstation::setStatPortMac, &bbPortType),
-       bbIp(this, &cWorkstation::setStatIp, &bbPortType),
-       bbLink(this, &cWorkstation::setStatLink, &bbPortType),
+    bbNodeName(this, &cWorkstation::setStatNodeName, &bbNode),
+    bbNodeSerial(this, &cWorkstation::setStatNodeSerial, &bbNode),
+    bbNodeInventory(this, &cWorkstation::setStatNodeInventory, &bbNode),
+    bbNodeModel(this, &cWorkstation::setStatNodeType, &bbNode),
+    bbPort(this, &cWorkstation::setStatPort, &bbNode),
+    bbPortName(this, &cWorkstation::setStatPortName, &bbPort),
+    bbPortType(this, &cWorkstation::setStatPortType, &bbPort),
+    bbIp(this, &cWorkstation::setStatIp, &bbPortType),
+    bbPortMac(this, &cWorkstation::setStatPortMac, &bbPortType),
+    bbLink(this, &cWorkstation::setStatLink, &bbPortType),
     pUi(new Ui::wstWidget),
     pq(newQuery())
 {
+    filtTypeOn = ENUM2SET(NT_WORKSTATION);
+    filtTypeOff= 0;
+    nodeType   = ENUM2SET2(NT_HOST, NT_WORKSTATION);
+    excludedNodeType = ENUM2SET4(NT_PATCH, NT_HUB, NT_SNMP, NT_VIRTUAL) | ENUM2SET3(NT_SWITCH, NT_GATEWAY, NT_CLUSTER);
+    pSetDialogFiltType = new cSetDialog(_sNodetype, true, excludedNodeType, 0, this);
+    pSetDialogFiltType->set(filtTypeOn, filtTypeOff);
+    pSetDialogType     = new cSetDialog(_sNodetype, false, excludedNodeType, ENUM2SET2(NT_HOST, NT_WORKSTATION), this);
+    pSetDialogType->set(nodeType);
+    pSetDialogType->addCollision(NT_HOST, ENUM2SET(NT_NODE));
+    pSetDialogType->addCollision(NT_NODE, ENUM2SET4(NT_HOST, NT_AP, NT_SERVER, NT_WINDOWS));
+    pSetDialogType->addAutoset(NT_HOST, ENUM2SET2(NT_NODE, NT_HOST));
+    excludedNodeType &= ~ENUM2SET(NT_PATCH); // nem kell
     pSample = NULL;
     pnp = NULL;
     pit = NULL;
@@ -136,14 +359,16 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     pUi->setupUi(this);
     pIpEditWidget = new cIpEditWidget(iTab(AT_DYNAMIC, AT_FIXIP));
     pUi->verticalLayoutIp->insertWidget(1, pIpEditWidget);
+    pIpEditWidget->showToolBoxs(true, true, true);
+    pIpEditWidget->enableToolBoxs(true, true, true);
     pMacValidator = new cMacValidator(true, this);
     pUi->lineEditPMAC->setValidator(pMacValidator);
     // small cosmetics
     QList<int> sizes;
-    sizes << 300 << 500;
+    sizes << 450 << 750;
     pUi->splitterMsg->setSizes(sizes);
-    sizes.pop_back();
-    sizes << 300 << 300 << 300;
+    sizes.clear();
+    sizes << 300 << 300 << 300 << 300;
     pUi->splitterWorkstation->setSizes(sizes);
     // Button groups
     pModifyButtons = new QButtonGroup(this);
@@ -154,6 +379,9 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     pLinkTypeButtons->addButton(pUi->radioButtonLinkFront, LT_FRONT);
     pLinkTypeButtons->addButton(pUi->radioButtonLinkBack,  LT_BACK);
 
+    // Set
+    pUi->lineEditNodeTypeFilt->setText(pSetDialogFiltType->toString());
+    pUi->lineEditNodeType->setText(pSetDialogType->toString());
     // Select objects
     pSelNode     = new cSelectNode(pUi->comboBoxFilterZone, pUi->comboBoxFilterPlace, pUi->comboBoxNode,
                                    pUi->lineEditFilterPlace, pUi->lineEditFilterPattern, _sNul, _sNul, this);
@@ -164,23 +392,17 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     // csak az egy portos hálózati elemek kellenek
     static const QString sNodeConstFilt = "1 = (SELECT count(*) FROM nports AS p WHERE nodes.node_id = p.node_id)";
     pnm->setConstFilter(sNodeConstFilt, FT_SQL_WHERE);
+    pnm->setFilter(pSetDialogFiltType->toWhere(_sNodeType), OT_DEFAULT, FT_SQL_WHERE);
     pSelNode->setNodeModel(pnm);
     pSelNode->refresh();
     pSelPlace    = new cSelectPlace(pUi->comboBoxZone, pUi->comboBoxPlace, pUi->lineEditPlacePat, _sNul, this);
+    pSelNode->setSlave(pSelPlace, false);
     pSelLinked   = new cSelectLinkedPort(pUi->comboBoxLinkZone, pUi->comboBoxLinkPlace, pUi->comboBoxLinkNode,
                                    pUi->comboBoxLinkPort, pLinkTypeButtons, pUi->comboBoxLinkPortShare, iTab(ES_, ES_A, ES_B),
                                    pUi->lineEditLinkPlacePat, NULL, _sNul, _sNul, this);
     pSelPlace->refresh();
     pSelPlace->setSlave(pSelLinked);
     pSelLinked->refresh();
-    // on_radioButtonMod_toggled(bool)
-    // on_lineEditName_textChanged(QString)
-    connect(pSelNode,   SIGNAL(nodeIdChanged(qlonglong)),       this, SLOT(selectedNode(qlonglong)));
-    // on_checkBoxPlaceEqu_toggled(bool)
-    connect(pSelLinked, SIGNAL(changedLink(qlonglong,int,int)), this, SLOT(linkChanged(qlonglong,int,int)));
-    // on_lineEditPName_textChanged(QString)
-    // on_comboBoxPType_currentIndexChanged(QString)
-    connect(pIpEditWidget, SIGNAL(changed(QHostAddress,int)), this, SLOT(addressChanged(QHostAddress,int)));
 
     pif = new cInterface;
     pnp = pif;
@@ -192,6 +414,12 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     pif->addresses << pip;
     portIsLinkage = pit->isLinkage();
     bbNode.end();
+
+    connect(pSelNode,      SIGNAL(nodeIdChanged(qlonglong)),       this, SLOT(selectedNode(qlonglong)));
+    connect(pSelLinked,    SIGNAL(changedLink(qlonglong,int,int)), this, SLOT(linkChanged(qlonglong,int,int)));
+    connect(pIpEditWidget, SIGNAL(changed(QHostAddress,int)),      this, SLOT(addressChanged(QHostAddress,int)));
+    connect(pIpEditWidget, SIGNAL(info_clicked()),                 this, SLOT(ip_info()));
+    connect(pIpEditWidget, SIGNAL(query_clicked()),                this, SLOT(ip_query()));
 }
 
 cWorkstation::~cWorkstation()
@@ -461,6 +689,7 @@ void cWorkstation::node2gui()
     }
     // link
     bool link = pl.isExist(*pq, pid, LT_TERM);
+    pSelLinked->setExcludedNode(node.getId());
     pSelLinked->setLink(pl);
     if (link) {
         qlonglong plid = pSelLinked->currentPlaceId();
@@ -471,21 +700,19 @@ void cWorkstation::node2gui()
             pUi->checkBoxPlaceEqu->setChecked(false);
         }
     }
+    pUi->radioButtonMod->setChecked(true);
     bbNode.end(true);
 }
 
 // SLOTS:
 
-void cWorkstation::on_radioButtonMod_toggled(bool checked)
-{
-    isModify = checked;
-    bbNode.enforce();
-}
-
 void cWorkstation::selectedNode(qlonglong id)
 {
     pDelete(pSample);
-    if (id == NULL_ID) return;
+    if (id == NULL_ID) {
+        pUi->radioButtonNew->setChecked(true);
+        return;
+    }
     qlonglong nid = pSelNode->currentNodeId();
     pSample = cPatch::getNodeObjById(*pq, nid)->reconvert<cNode>();
     node.clear();
@@ -497,12 +724,6 @@ void cWorkstation::selectedNode(qlonglong id)
     node2gui();
 }
 
-void cWorkstation::on_checkBoxPlaceEqu_toggled(bool checked)
-{
-    pSelPlace->setSlave(checked ? pSelLinked : NULL);   // -> linkedNodeIdChanged();
-}
-
-
 void cWorkstation::linkChanged(qlonglong _pid, int _lt, int _sh)
 {
     (void)_pid;
@@ -511,6 +732,63 @@ void cWorkstation::linkChanged(qlonglong _pid, int _lt, int _sh)
     bbLink.enforce(true);
 }
 
+void cWorkstation::addressChanged(const QHostAddress& _a, int _st)
+{
+    (void)_a;
+    (void)_st;
+    if (pip != NULL) {
+        pIpEditWidget->get(pip);
+        bbIp.enforce();
+    }
+    else {
+        if (!pIpEditWidget->isDisabled()) EXCEPTION(EPROGFAIL);
+    }
+}
+
+void cWorkstation::ip_info()
+{
+    const QHostAddress& a = pIpEditWidget->getAddress();
+    QString info = htmlReportByIp(*pq, a.toString());
+    pUi->textEditMsg->setHtml(info);
+}
+
+void cWorkstation::ip_go()
+{
+
+}
+
+void cWorkstation::ip_query()
+{
+    if (pif != NULL) {
+        cMac mac = pif->mac();
+        if (mac.isValid()) {
+            QList<QHostAddress> al = cArp::mac2ips(*pq, mac);
+            switch (al.size()) {
+            default:
+                pUi->textEditMsg->append(trUtf8("A MAC-hez tőbb cím is tartozik, az első lessz beállítva."));
+            case 1:
+                pIpEditWidget->set(al.first());
+                addressChanged(al.first(), AT_DYNAMIC);
+                return;
+            case 0:
+                break;
+            }
+        }
+        pUi->textEditMsg->append(trUtf8("A MAC-hez tartozó IP cím megállpítása sikertelen."));
+    }
+}
+
+
+void cWorkstation::on_radioButtonMod_toggled(bool checked)
+{
+    isModify = checked;
+    bbNode.enforce();
+}
+
+void cWorkstation::on_checkBoxPlaceEqu_toggled(bool checked)
+{
+    pSelPlace->setSlave(checked ? pSelLinked : NULL);   // -> linkedNodeIdChanged();
+}
 
 void cWorkstation::on_lineEditPName_textChanged(const QString &arg1)
 {
@@ -552,6 +830,7 @@ void cWorkstation::on_comboBoxPType_currentIndexChanged(const QString &arg1)
             pip = NULL;
         }
         pUi->lineEditPMAC->setEnabled(isInterface);
+        pUi->toolButtonIP2MAC->setEnabled(isInterface);
         pIpEditWidget->setAllDisabled(!isInterface);
     }
     if (togleLink) {
@@ -566,24 +845,13 @@ void cWorkstation::on_comboBoxPType_currentIndexChanged(const QString &arg1)
     bbPortType.end();
 }
 
-void cWorkstation::addressChanged(const QHostAddress& _a, int _st)
-{
-    if (pip != NULL) {
-        pIpEditWidget->get(pip);
-        bbIp.enforce();
-    }
-    else {
-        if (!pIpEditWidget->isDisabled()) EXCEPTION(EPROGFAIL);
-    }
-}
-
 void cWorkstation::on_lineEditPMAC_textChanged(const QString &arg1)
 {
     (void)arg1;
     if (pif != NULL) {
         if (arg1.isEmpty()) pif->clear(_sHwAddress);
         else pif->setMac(_sHwAddress, cMac(arg1));
-        bbIp.enforce();
+        bbPortMac.enforce();
     }
     else {
         if (pUi->lineEditPMAC->isEnabled()) EXCEPTION(EPROGFAIL);
@@ -635,4 +903,104 @@ void cWorkstation::on_toolButtonReportMAC_clicked()
     QString sMac = pUi->lineEditPMAC->text();
     if (sMac.isEmpty()) return;
     pUi->textEditMsg->setHtml(htmlReportByMac(*pq, sMac));
+}
+
+void cWorkstation::on_toolButtonNodeTypeFilt_clicked()
+{
+    pSetDialogFiltType->set(filtTypeOn, filtTypeOff);
+    if (pSetDialogFiltType->exec() == QDialog::Accepted) {
+        pSelNode->setNodeFilter(pSetDialogFiltType->toWhere(_sNodeType, excludedNodeType), OT_DEFAULT, FT_SQL_WHERE);
+        filtTypeOn = pSetDialogFiltType->getOn();
+        filtTypeOff= pSetDialogFiltType->getOff();
+        pUi->lineEditNodeTypeFilt->setText(pSetDialogFiltType->toString());
+    }
+}
+
+void cWorkstation::on_toolButtonNodeType_clicked()
+{
+    pSetDialogFiltType->set(nodeType);
+    if (pSetDialogType->exec() == QDialog::Accepted) {
+        nodeType = pSetDialogType->getOn();
+        pUi->lineEditNodeType->setText(pSetDialogType->toString());
+    }
+}
+
+void cWorkstation::on_toolButtonIP2MAC_clicked()
+{
+    if (pip != NULL) {
+        QHostAddress a = pip->address();
+        if (!a.isNull()) {
+            cMac mac = cArp::ip2mac(*pq, a);
+            if (mac.isValid()) {
+                pUi->lineEditPMAC->setText(mac.toString());
+                return;
+            }
+        }
+        pUi->textEditMsg->append(trUtf8("A MAC cím megállpítása az IP címből sikertelen."));
+    }
+}
+
+void cWorkstation::on_toolButtonAddPlace_clicked()
+{
+    qlonglong pid = pSelPlace->insertPlace();
+    if (pid == NULL_ID) return;
+    pSelNode->refresh();
+    pUi->checkBoxPlaceEqu->setChecked(false);
+    pSelLinked->refresh();
+    pSelPlace->setCurrentPlace(pid);
+}
+
+void cWorkstation::on_toolButtonSelectByMAC_clicked()
+{
+    if (pif != NULL) {
+        bool set = false;
+        cMac mac = pif->mac();
+        if (mac.isValid()) {
+            cNode n;
+            if (1 == n.fetchByMac(*pq, mac, EX_ERROR)) {        // Egy port
+                if (1 != n.fetchPorts(*pq, CV_PORTS_ADDRESSES)) {
+                    pUi->textEditMsg->append(htmlError("A MAC alapján kiválasztott eszköznek nem egy portja van, ezzel az űrlappal nem kezelhető."));
+                    return;
+                }
+                cNPort *p = n.ports.first();
+                cInterface *pi = p->reconvert<cInterface>();
+                if (pi->addresses.size() > 1) {                 // Max egy cím
+                    pUi->textEditMsg->append(htmlError("A MAC alapján kiválasztott eszköznek nem egy csak egy IP címe van, ezzel az űrlappal nem kezelhető."));
+                    return;
+                }
+                pSelNode->setCurrentNode(n.getId());
+                set = n.getId() == pSelNode->currentNodeId();
+                if (!set) {     // Mégegy próba, töröljük a típus szűrőt
+                    pUi->lineEditNodeTypeFilt->setText(_sNul);
+                    pSelNode->setNodeFilter(pSetDialogFiltType->toWhere(_sNul, excludedNodeType), OT_DEFAULT, FT_NO);
+                    filtTypeOn = filtTypeOff = 0;
+                    pSelNode->setCurrentNode(n.getId());
+                    set = n.getId() == pSelNode->currentNodeId();
+                }
+            }
+        }
+        if (!set) {
+            pUi->textEditMsg->append("A MAC alapján nem sikerült beolvasni az eszköz adatokat.");
+        }
+    }
+}
+
+void cWorkstation::on_toolButtonInfoLnkNode_clicked()
+{
+    qlonglong lnid = pSelLinked->currentNodeId();
+    if (lnid != NULL_ID) {
+        cPatch *pn = cPatch::getNodeObjById(*pq, lnid, EX_IGNORE);
+        if (pn != NULL) {
+            QString s = htmlReportNode(*pq, *pn);
+            pUi->textEditMsg->setHtml(s);
+            delete pn;
+        }
+    }
+}
+
+void cWorkstation::on_toolButtonAddLnkNode_clicked()
+{
+    cPatch sample;
+    sample.setId(_sPlaceId, pSelLinked->currentPlaceId());
+    pSelLinked->insertPatch(&sample);
 }

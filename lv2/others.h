@@ -164,6 +164,11 @@ public:
     /// @return Egy string, a paraméter érték, ha nincs ilyen paraméter, akkor a NULL string,
     ///         ha viszont nincs paraméternek értéke, akkor egy üres string
     QString value(const QString &_nm) const { return QMap<QString, QString>::value(_nm.toLower()); }
+    ///
+    static QMap<QString, QStringList> value2map(const QString &s);
+    static QMap<int, qlonglong> mapEnum(QMap<QString, QStringList> smap, const QStringList& enums);
+    QMap<QString, QStringList> sMapValue(const QString &_nm) const { return value2map(value(_nm)); }
+    QMap<int, qlonglong> eMapValue(const QString &_nm, const QStringList& enums) const { return mapEnum(sMapValue(_nm), enums); }
     /// Megkeresi a megadott nevű paramétert.
     /// @param _nm A paraméter neve (kisbetüssé lesz konvertálva)
     /// @return Ha létezik ilyen nevű paraméter (értéke lehet üresÖ, akkor true
@@ -177,7 +182,7 @@ public:
 /// Egy QVariant érték konvertálása numerikussá (qlonglong).
 /// @param v A konvertálandó adat, ha nem konvertálható (és nem null) akkor dob egy kizárást.
 /// @param _ex Ha értéke true, akkor a NULL érték hibát dob, egyébként a def vagy annak alapértelmezett értékével NULL:ID-vel tér vissza.
-/// @param def Ha engedélyezett a null érték, akkor ezzrl térvissza, ha nincs megadva, akkor NULL:ID-vel
+/// @param def Ha v null, akkor ezzel térvissza, ha nincs megadva, akkor NULL_ID-vel
 /// @return A konvertált vagy alapértelmezett érték.
 EXT_ qlonglong variantToId(const QVariant& v, enum eEx __ex = EX_ERROR, qlonglong def = NULL_ID);
 

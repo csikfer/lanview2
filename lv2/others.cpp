@@ -96,6 +96,67 @@ bool cFeatures::split(const QString& __ms, eEx __ex)
     return true;
 }
 
+/// Egy string stringList map-á felbontása:
+/// <key>[<v1>,<v2>...],<key2>[<v2>...]
+QMap<QString, QStringList> cFeatures::value2map(const QString& s)
+{
+    QMap<QString, QStringList>  r;
+    if (s.isEmpty()) return r;
+    QStringList sl = s.split(',');
+    QStringList keyAndFirst = sl.first().split('[');
+    if (keyAndFirst.size() != 2) EXCEPTION(EDATA, 0, s);
+    QString key = keyAndFirst.first().simplified(); // first key
+    sl[0] = keyAndFirst.at(1);
+    int i = 0, n = sl.size() -1;    // last index
+    QString v;
+    QStringList vl;
+    for (;;++i) {
+        v = sl[i].simplified();
+        if (i >= n) {                       // Last value for splitted strig
+            if (v.endsWith(']')) v.chop(0);     // Last value on list (close list)
+            else EXCEPTION(EDATA, 0, s);        // No closed list!!
+            vl << v;
+            r[key] = vl;
+            break;
+        }
+        else {                              // Non last value for splitted strig
+            if (v.endsWith(']')) {              // Last value on list (close list)
+                v.chop(0);
+                vl << v;
+                r[key] = vl;
+                vl.clear();
+                v = sl[i +1].simplified();
+                keyAndFirst = v.split('[');
+                if (keyAndFirst.size() != 2) EXCEPTION(EDATA, 0, s);
+                key = keyAndFirst.first().simplified(); // next key
+                sl[i +1] = keyAndFirst.at(1);      // Next part is first value on list
+            }
+            else {
+                vl << v;
+            }
+        }
+    }
+    return r;
+}
+
+QMap<int, qlonglong> cFeatures::mapEnum(QMap<QString, QStringList> smap, const QStringList& enums)
+{
+    QMap<int, qlonglong>    r;
+    foreach (QString se, smap.keys()) {
+        int e = enums.indexOf(se);
+        if (e < 0) EXCEPTION(EDATA,0,se);
+        qlonglong m = 0;
+        foreach (QString ev, smap[se]) {
+            int i = enums.indexOf(ev);
+            if (i < 0) EXCEPTION(EDATA,0,ev);
+            m |= enum2set(i);
+        }
+        r[e] = m;
+    }
+    return r;
+}
+
+
 QString cFeatures::join() const
 {
     QString r = QChar(':');

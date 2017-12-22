@@ -452,23 +452,22 @@ void cRecordDialog::init()
 
         }
         fields.append(pFW);
-        QWidget * pw = pFW->pWidget();
         qlonglong stretch = mf.feature(mCat(_sStretch, _sVertical), 0);
         if (stretch > 0) {
-            QSizePolicy sp = pw->sizePolicy();
+            QSizePolicy sp = pFW->sizePolicy();
             sp.setVerticalStretch(stretch);
-            pw->setSizePolicy(sp);
+            pFW->setSizePolicy(sp);
         }
-        pw->setObjectName(mf.getName());
+        pFW->setObjectName(mf.getName());
         PDEB(VVERBOSE) << "Add row to form : " << mf.getName() << " widget : " << typeid(*pFW).name() << QChar('/') << fieldWidgetType(pFW->wType()) << endl;
-        int h = pFW->height();
+        int h = pFW->rowNumber();
         cnt += h;
         if (cnt > maxFields) {
             cnt = h;
             pFormLayout = new QFormLayout;  // !!!
             pSplitter->addWidget(_frame(pFormLayout, _pWidget));
         }
-        pFormLayout->addRow(mf.getText(cTableShapeField::LTX_DIALOG_TITLE, mf.getName()), pw);
+        pFormLayout->addRow(mf.getText(cTableShapeField::LTX_DIALOG_TITLE, mf.getName()), pFW);
         /* hülyeség
         if (pFW->isText()) {
             pFW->setName(_pRecord->getText(mf.getName()));

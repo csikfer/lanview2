@@ -8,6 +8,39 @@
 #include "lv2widgets.h"
 #include "object_dialog.h"
 
+class cSetDialog : public QDialog {
+    Q_OBJECT
+public:
+    cSetDialog(QString _tn, bool _tristate, qlonglong _excl, qlonglong _def, QWidget * par);
+    void set(qlonglong _on, qlonglong _off = 0);
+    void addCollision(int e, qlonglong m) { collisoins[e] = m; }
+    void addAutoset(int e, qlonglong m) { autosets[e] = m; }
+    qlonglong   getOn()  { return on; }
+    qlonglong   getOff() { return off; }
+    QString toString();
+    QString toWhere(const QString& _fn, qlonglong _addOff = 0, qlonglong _addOn = 0);
+private:
+    bool autoset();
+    const cColEnumType& enumType;
+    bool            tristate;
+    QVBoxLayout   * pLayout;
+    QGridLayout   * pGrid;
+    cDialogButtons* pButtons;
+    QButtonGroup  * pCheckBoxs;
+    qlonglong       on;
+    qlonglong       off;
+    qlonglong       def;
+    QMap<int, qlonglong> collisoins;
+    QMap<int, qlonglong> autosets;
+private slots:
+    void clickedCheckBox(int id);
+    void clickedButton(int id);
+signals:
+    void changedState(qlonglong _on, qlonglong _off);
+};
+
+
+
 namespace Ui {
     class wstWidget;
 }
@@ -48,16 +81,16 @@ private:
         bool            isOk;
     };
     cBatchBlocker   bbNode;
-      cBatchBlocker   bbNodeName;
-      cBatchBlocker   bbNodeSerial;
-      cBatchBlocker   bbNodeInventory;
-      cBatchBlocker   bbNodeModel;
-      cBatchBlocker   bbPort;
-        cBatchBlocker   bbPortName;
-        cBatchBlocker   bbPortType;
-          cBatchBlocker   bbIp;
-        cBatchBlocker   bbPortMac;
-     cBatchBlocker   bbLink;
+    cBatchBlocker   bbNodeName;
+    cBatchBlocker   bbNodeSerial;
+    cBatchBlocker   bbNodeInventory;
+    cBatchBlocker   bbNodeModel;
+    cBatchBlocker   bbPort;
+    cBatchBlocker   bbPortName;
+    cBatchBlocker   bbPortType;
+    cBatchBlocker   bbIp;
+    cBatchBlocker   bbPortMac;
+    cBatchBlocker   bbLink;
 
     /// Egy QLineEdit mezőben üres adatra való figyelmeztetés.
     /// Ha meg lett adva az fn mező név paraméter, akkor megviszgálja, hogy egyedi-e az érték a nodes táblában.
@@ -71,7 +104,7 @@ private:
     /// @param isOk Hiba esetén értéke false lessz (meg van adva az fn, és nem egyedi az érték).
     void msgEmpty(QLineEdit * pLineEdit, QLabel *pLabel, const QString &fn, QStringList& sErrs, QStringList& sInfs, bool &isOk);
 
-    /// Az állpot kiértékelése a node-ra.
+    /// Az állapot kiértékelése a node-ra.
     /// Üres metódus, a cBatchBlocker hívja, az alá tartozó kiértékelő funkciókók tevékenységén túl nincs további funkciója.
     void setStatNode(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
     /// Az állpot kiértékelése a node nevével kapcsolatban.
@@ -97,6 +130,11 @@ private:
     QButtonGroup    *pLinkTypeButtons;
     cIpEditWidget   *pIpEditWidget;
     cMacValidator   *pMacValidator;
+    cSetDialog      *pSetDialogFiltType;
+    qlonglong       excludedNodeType;
+    qlonglong       filtTypeOn, filtTypeOff;
+    cSetDialog      *pSetDialogType;
+    qlonglong       nodeType;
 
     QSqlQuery *pq;
     /// Kiválasztott workstation objektum (modosítandó eredetije vagy minta)
@@ -110,13 +148,16 @@ private:
     bool        portIsLinkage;  ///< Ha a port linkelhető (fizikailag) csatlakoztatható
     cPhsLink    pl;     ///< A fizikai link
 private slots:
-    void on_radioButtonMod_toggled(bool checked);           // connected
     void selectedNode(qlonglong id);
-    void on_checkBoxPlaceEqu_toggled(bool checked);         // connected
     void linkChanged(qlonglong _pid, int _lt, int _sh);
+    void addressChanged(const QHostAddress& _a, int _st);
+    void ip_info();
+    void ip_go();
+    void ip_query();
+    void on_radioButtonMod_toggled(bool checked);
+    void on_checkBoxPlaceEqu_toggled(bool checked);
     void on_lineEditPName_textChanged(const QString &arg1);
     void on_comboBoxPType_currentIndexChanged(const QString &arg1);
-    void addressChanged(const QHostAddress& _a, int _st);
     void on_lineEditPMAC_textChanged(const QString &arg1);
     void on_lineEditName_textChanged(const QString &arg1);
     void on_lineEditSerial_textChanged(const QString &arg1);
@@ -126,6 +167,13 @@ private slots:
     void on_toolButtonErrRefr_clicked();
     void on_toolButtonInfRefr_clicked();
     void on_toolButtonReportMAC_clicked();
+    void on_toolButtonNodeTypeFilt_clicked();
+    void on_toolButtonNodeType_clicked();
+    void on_toolButtonIP2MAC_clicked();
+    void on_toolButtonAddPlace_clicked();
+    void on_toolButtonSelectByMAC_clicked();
+    void on_toolButtonInfoLnkNode_clicked();
+    void on_toolButtonAddLnkNode_clicked();
 };
 
 #endif // CWORKSTATION_H

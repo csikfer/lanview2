@@ -40,5 +40,8 @@
         <file>icons/system-restart.ico</file>
         <file>icons/network-wired.ico</file>
         <file>icons/document-properties.ico</file>
+        <file>icons/system-search-2.ico</file>
+        <file>icons/go-jump.ico</file>
+        <file>icons/go-first-3.ico</file>
     </qresource>
 </RCC>

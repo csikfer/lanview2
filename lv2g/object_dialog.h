@@ -125,6 +125,7 @@ public:
     void set(const QHostAddress &a);
     cIpAddress *get() const;
     cIpAddress *get(cIpAddress *po) const;
+    const QHostAddress& getAddress() { return actAddress; }
     enum eState {
         IES_OK                  = 0,
         IES_ADDRESS_IS_NULL     = 1,
@@ -135,6 +136,8 @@ public:
     };
     int state() const { return _state; }
     bool isDisabled() { return disabled; }
+    void showToolBoxs(bool _info, bool _go, bool _query);
+    void enableToolBoxs(bool _info, bool _go, bool _query);
 private:
     int _state;
     Ui::editIp *pUi;
@@ -147,17 +150,27 @@ private:
     QHostAddress actAddress;
     bool disableSignals;
     bool disabled;
+    bool disabled_info;
+    bool disabled_go;
+    bool disabled_query;
 
 public slots:
     void setAllDisabled(bool f = true);
 private slots:
+    void _subNetIdChanged(qlonglong _id);
     void on_comboBoxIpType_currentIndexChanged(int index);
     void on_lineEditAddress_textChanged(const QString &arg1);
-    void _subNetIdChanged(qlonglong _id);
+    void on_toolButtonQuery_clicked();
+    void on_toolButtonInfo_clicked();
+    void on_toolButtonGo_clicked();
+
 signals:
 //    void vlanIdChanged(qlonglong _vid);
 //    void subNetIdChanged(qlonglong _sid);
     void changed(const QHostAddress& _a, int _st);
+    void query_clicked();
+    void info_clicked();
+    void go_clicked();
 };
 
 namespace Ui { class enumValsWidget; }

@@ -61,22 +61,25 @@ QValidator::State cINetValidator::validate(QString &input, int &pos) const
     input.remove(QChar(' '));
     if (input.isEmpty()) return nullable ? Acceptable : Intermediate;
     QHostAddress    a(input);
-    if (!a.isNull()) return Acceptable;
+    bool isNull = a.isNull();   // IPV4 esetén hiányos címet is elfogad; IPV6 ?
     if (input.contains(':')) {  // IPV6
         QRegExp re("^[:\\dABCDEF]+$", Qt::CaseInsensitive);
         if (!re.exactMatch(input)) return Invalid;
-        return Intermediate;
+        return isNull ? Intermediate : Acceptable;  // ??
     }
     else {                      // IPV4
         QStringList nl = input.split('.');
         if (nl.size() > 4) return Invalid;
         bool ok;
         foreach (QString n, nl) {
-            if (n.isEmpty()) continue;
+            if (n.isEmpty()) {
+                isNull = true;
+                continue;
+            }
             int i = n.toInt(&ok);
             if (i < 0 || i > 255 || !ok) return Invalid;
         }
-        return Intermediate;
+        return isNull || nl.size() != 4 ? Intermediate : Acceptable;
     }
 }
 

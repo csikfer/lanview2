@@ -585,7 +585,7 @@ int setSysBySnmp(cSnmpDevice &node, eEx __ex, QString *pEs, QHostAddress *ip)
         cSelect sel;
         QSqlQuery q = getQuery();
         sel.choice(q, "snmp.node_type", node.getName(_sSysDescr));
-        const cColEnumType* pnte = cColEnumType::fetchOrGet(q, "nodetype");
+        const cColEnumType* pnte = cColEnumType::fetchOrGet(q, _sNodetype);
         if (!sel.isEmpty()) {
             QString s = sel.getName(_sChoice);
             if (!s.isEmpty()) {

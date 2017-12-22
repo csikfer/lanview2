@@ -22,6 +22,12 @@
 #include "imagedrv.h"
 #include "lv2link.h"
 
+static inline qlonglong bitByButton(QAbstractButton *p, qlonglong m)
+{
+    if (p == NULL) EXCEPTION(EPROGFAIL);
+    return p->isChecked() ? m : 0;
+}
+
 /// @class tBatchBlocker
 /// Egy objektumban szabályozza a kimeneti signálok kiadását, megakadályozandó,
 /// hogy egy több lépéses műveletsoron bellül azok kiadásra kerüljenek a részeredményekkel.
@@ -196,14 +202,15 @@ class cRecordDialogBase;
 enum eLV2WidgetFlags {
     FEB_EDIT      = 0,
     FEB_READ_ONLY = 1,
-    FEB_INSERT    = 2
+    FEB_INSERT    = 2,
+    FEB_YET_EDIT  = 4
 };
 
 /// @class cFieldEditBase
 /// @brief Bázis objekktum a mező megjelenítő/módosító widget-ekhez
 /// Az objektum nem a QWidget leszármazotja, a konkrét megjelenítéshez létrehozott widget
 /// pointere egy adattag.
-class LV2GSHARED_EXPORT cFieldEditBase : public QObject {
+class LV2GSHARED_EXPORT cFieldEditBase : public QWidget {
     friend class cRecordDialog;
     Q_OBJECT
 public:
@@ -211,8 +218,8 @@ public:
     /// @param _tm A rekord megjelenítését leíró objektum referenciája
     /// @param _tf A mező megjelenítését leíró objektum referenciája
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
-    /// @param _fl
-    /// @param parent A parent widget pointere
+    /// @param _fl Flag-ek : eLV2WidgetFlags
+    /// @param parent A parent widget/dialógus objektum pointere
     cFieldEditBase(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase* _par);
     /// Destruktor
     ~cFieldEditBase();
@@ -237,9 +244,6 @@ public:
     virtual int setName(const QString& v);
     /// Ha a widget readOnly true-vel, ha szerkeszthető, akkor false-val tér vissza
     bool isReadOnly() const { return _readOnly; }
-    ///
-    QWidget&    widget()    { return *_pWidget; }
-    QWidget    *pWidget()   { return  _pWidget; }
     /// Egy megfelelő típusú 'widget' objektum létrehozása
     /// @param _tm A tábla megjelenítését/szerkesztését leíró objektum
     /// @param _tf A mező megjelenítését/szerkesztését leíró objektum
@@ -254,16 +258,10 @@ public:
     operator qlonglong() const  { return getId(); }
     /// A Widget-ben megjelenített értéket adja vissza, QString-é konvertálva, Konvertáló függvény a mező leíró objektum szerint.
     operator QString() const    { return getName(); }
-    // / A widgethez rendelt rekord objektum mező értékével tér vissza, ha nincs mező rendelve a widgethez, akkor dob egy kizárást.
-    // / @return A mező értéke, ahogyan azt a rekord objektum tárolja.
-//  QVariant fieldValue()                   { if (_pFieldRef == NULL) EXCEPTION(EPROGFAIL); return *_pFieldRef; }
-    // / A widgethez rendelt rekord objektum mező értékével tér vissza, ha nincs mező rendelve a widgethez, akkor dob egy kizárást.
-    // / @return A mező értéke, stringgé konvertálva, a mező leíró szerint stringgé konvertálva.
-//  QString fieldToName()                   { if (_pFieldRef == NULL) EXCEPTION(EPROGFAIL); return (QString)*_pFieldRef; }
     /// A widgethez rendelt mező objektum inexével a rekordban tér vissza, ha nincs mező rendelve a widgethez, akkor dob egy kizárást.
     int fieldIndex() const { return _colDescr.fieldIndex(); }
     /// A widget magassága ~sor. Az alap metódus 1-et ad vissza.
-    virtual int height();
+    int rowNumber() { return _height; }
     /// Parent objektum (opcionális, ha nincs dialógus parent, akkor NULL)
     cRecordDialogBase *_pParentDialog;
     /// A mező leíró objektum referenciája
@@ -275,22 +273,45 @@ public:
     ///
     const cRecStaticDescr& _recDescr;
 protected:
+    /// Az érték beállítása awidget felöl
+    /// @param v A widget-ban mgadott új érték
     void setFromWidget(QVariant v);
+    /// Beállítja ai _isDisabledEdit flag-et, ha tsf értéke nem TS_NULL.
+    /// Ezután, ha a pEditWidget nem null, akkor hívja a setDisabled metódusát az _isDisabledEdit -e.
+    virtual void disableEditWidget(eTristate tsf = TS_NULL);
+    /// Beállítja ai _isDisabledEdit flag-et f-re.
+    /// Ezután, ha a pEditWidget nem null, akkor hívja a setDisabled metódusát az _isDisabledEdit -e.
+    void disableEditWidget(bool f) { disableEditWidget(f ? TS_TRUE : TS_FALSE); }
+    /// Ha _readOnly hamis, akkor opcionálisan létrehozza a NULL vagy default nyomógombot (QToolButton).
+    /// Beállítja a nyomógomb kinézetét, és ha nem paraméterként adtuk meg a gomb pointerét, akkor
+    /// hozzáadja a pLayout pointerű Layout-hoz is.
+    /// Ha _readOnly igaz, akkor egy QLabel objektumot allokál. Ezt csak akkor adja hozá a pLayout
+    /// pointerű Layout-hoz, ha p NULL volt.
+    /// @param isNull Ha igaz akkor a nyomógomb checked állpotú lessz.
+    /// @param p Ha értéke NULL, akkor a metódus allokálja meg a nyomógomb objektumot, ha nem null,
+    /// akkor az a használandó objektumra mutat. Ha viszont _readOnly igaz, törli az objektumot.
+    /// @return A nyomógomb, vagy a cimke pointerével tér vissza.
+    QWidget *setupNullButton(bool isNull = false, QAbstractButton * p = NULL);
     /// A parent dialógusban egy másik mező szerkesztő objektumot keresi meg a .
     /// @param __fn A keresett mező leíró neve (cTableShapeField.getName())
     /// @param __ex Ha értéke nem EX_IGNORE és nincs parent, vagy men találja az objektumot, akkor kizárást dob.
     /// @return A talált objektum pointere, vagy NULL.
     cFieldEditBase * anotherField(const QString& __fn, eEx __ex = EX_ERROR);
-//  cRecordFieldRef    *_pFieldRef;     ///< A mező referencia objektum pointere
+    QLayout            *pLayout;        ///< Main layout
+    QAbstractButton    *pNullButton;    ///< NULL button or default button or NULL pointer
+    QLabel             *pNullLabel;      ///< NULL (or default) indicate label
+    QWidget            *pEditWidget;
+    int                 _height;        ///< A Widget hozzávetőleges magassága (karakter) sorokban
     bool                _readOnly;      ///< Ha nem szerkeszthető, akkor értéke true
     bool                _nullable;      ///< Amező értéke NULL is lehet
     bool                _hasDefault;    ///< Ha a mezó rendelkezik alapértelmezett értékkel, akkor true
     bool                _hasAuto;
-    bool                _isInsert;      ///< Ha egy új rekord, akkor true, ha modosítás, akkor false
+    bool                _isInsert;      ///< Ha egy új rekord, akkor true, ha modosítás, akkor false. Az alapérték is false;
+    bool                _isDisabledEdit;
     int                 _dcNull;        ///< Ha megadható NULL érték, akkor annak a megjelenése (NULL vagy Default)
     eFieldWidgetType    _wType;         ///< A widget típusa (a leszármazott objektumot azonosítja)
     QVariant            _value;         ///< A mező aktuális értéke
-    QWidget            *_pWidget;       ///< A megjelenítéshez létrejozptt QWidget (valós widget objektum pointere)
+    QSize               iconSize;
     QSqlQuery          *pq;             ///< Amennyiben szükslges a megjelenítéshez adatbázis hozzáférés, akkor a QSqlQuery objektum pointere.
     cEnumVal            enumVal;
     QFont               font;
@@ -300,15 +321,16 @@ protected:
     QFont               defFont;
     QColor              defBgColor;
     QColor              defFgColor;
+    static QIcon        iconNull;
+    static QIcon        iconDefault;
+    QIcon               actNullIcon;
 public:
     bool isText()   { return _wType == FEW_LTEXT || _wType == FEW_LTEXT_LONG; }
-/*
-protected slots:
-    void modRec();                  ///< A rekord módosult, aktualizálandó a megjelenítés
-    void modField(int ix);          ///< A mező módosult, aktualizálandó a megjelenítés
-*/
 signals:
     void changedValue(cFieldEditBase * pSndr);
+protected slots:
+    virtual void togleNull(bool f);
+    virtual void setFromEdit();
 };
 
 /// @class cNullWidget
@@ -338,14 +360,15 @@ public:
     cSetWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase* _par);
     ~cSetWidget();
     virtual int set(const QVariant& v);
-    virtual int height();
 protected:
     /// A radio-button-okat kezelő obkeltum
     QButtonGroup   *pButtons;
     /// Az aktuális érték (aradio-button-hoz rendelt bit a radio-button állapota.
     qlonglong       _bits;
-    int             _height;
     qlonglong       _hiddens;
+    QMap<int, qlonglong> _collisoins;
+    QMap<int, qlonglong> _autosets;
+
 private slots:
     /// A megadot id-jű (sorszám) radio-button értéke megváltozott
     void setFromEdit(int id);
@@ -366,12 +389,10 @@ public:
     cEnumRadioWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase* _par);
     ~cEnumRadioWidget();
     virtual int set(const QVariant& v);
-    virtual int height();
 protected:
     /// A radio-button-okat kezelő obkeltum
     QButtonGroup   *pButtons;
     /// A radio-button-okat tartalamzó layer.
-    QBoxLayout     *pLayout;
     qlonglong       eval;
 private slots:
     void setFromEdit(int id);
@@ -393,6 +414,7 @@ public:
     virtual int set(const QVariant& v);
 protected:
     void setWidget();
+    QComboBox *pComboBox;
     qlonglong  eval;
     eNullType  nulltype;
 private slots:
@@ -415,29 +437,15 @@ public:
     cFieldLineWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef _fr, int _fl, cRecordDialogBase* _par);
     ~cFieldLineWidget();
     virtual int set(const QVariant& v);
-    virtual int height();
 protected:
     /// Védett konstruktor. cArrayWidget osztályhoz.
     /// Nem lehet ReadOnly, adat szinkronizálás csak a valid slot-on keresztül.
     /// Csak olyan adat típus engedélyezett, aminél az Array típus kezelve vean.
     cFieldLineWidget(const cColStaticDescr& _cd, QWidget * par);
-    /// Az eredeti widget pointerrel tér visszta
-    QLineEdit *pLineEdit() {
-        QLineEdit *pLE = qobject_cast<QLineEdit *>(pWidget());
-        if (pLE == NULL) EXCEPTION(EPROGFAIL);
-        return pLE;
-    }
-    QPlainTextEdit *pTextEdit() {
-        QPlainTextEdit *pTE = qobject_cast<QPlainTextEdit *>(pWidget());
-        if (pTE == NULL) EXCEPTION(EPROGFAIL);
-        return pTE;
-    }
+    QLineEdit *pLineEdit;
+    QPlainTextEdit *pPlainTextEdit;
     /// Ha  ez egy jelszó
     bool    isPwd;
-signals:
-    void valid();
-private slots:
-    void setFromEdit();
 };
 
 class Ui_arrayEd;
@@ -453,8 +461,8 @@ public:
     cArrayWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase *_par);
     ~cArrayWidget();
     virtual int set(const QVariant& v);
-    virtual int height();
 protected:
+    void disableEditWidget(eTristate tsf);
     void setButtons();
     Ui_arrayEd       *pUi;
     cStringListModel *pModel;
@@ -488,7 +496,6 @@ public:
     cPolygonWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase* _par);
     ~cPolygonWidget();
     virtual int set(const QVariant& v);
-    virtual int height();
 protected:
     enum ePic {
         NO_ANY_PIC,
@@ -580,10 +587,13 @@ public:
     /// Konstruktor.
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
     /// @param _par A parent pointere
-    cDateWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, cRecordDialogBase* _par);
+    cDateWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef _fr, cRecordDialogBase* _par);
     ~cDateWidget();
     virtual int set(const QVariant& v);
+protected:
+    QDateEdit * pDateEdit;
 private slots:
+    void setFromEdit();
     void setFromEdit(QDate d);
 };
 
@@ -595,10 +605,13 @@ public:
     /// Konstruktor.
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
     /// @param par A parent widget pointere
-    cTimeWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, cRecordDialogBase* _par);
+    cTimeWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef _fr, cRecordDialogBase* _par);
     ~cTimeWidget();
     virtual int set(const QVariant& v);
+protected:
+    QTimeEdit *pTimeEdit;
 private slots:
+    void setFromEdit();
     void setFromEdit(QTime d);
 };
 
@@ -610,10 +623,13 @@ public:
     /// Konstruktor.
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
     /// @param parent A parent widget pointere
-    cDateTimeWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, cRecordDialogBase* _par);
+    cDateTimeWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef _fr, cRecordDialogBase* _par);
     ~cDateTimeWidget();
     virtual int set(const QVariant& v);
+protected:
+    QDateTimeEdit * pDateTimeEdit;
 private slots:
+    void setFromEdit();
     void setFromEdit(QDateTime d);
 };
 
@@ -625,16 +641,16 @@ public:
     /// Konstruktor.
     /// @param __fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
     /// @param parent A parent widget pointere
-    cIntervalWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase* _par);
+    cIntervalWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef _fr, int _fl, cRecordDialogBase* _par);
     ~cIntervalWidget();
     virtual int set(const QVariant& v);
 protected:
+    void disableEditWidget(eTristate tsf);
     void view();
     qlonglong getFromWideget() const;
-    QHBoxLayout    *pLayout;
-    QLineEdit      *pLineEdDay;
+    QLineEdit      *pLineEditDay;
     QLabel         *pLabelDay;
-    QTimeEdit      *pTimeEd;
+    QTimeEdit      *pTimeEdit;
     QIntValidator  *pValidatorDay;
 private slots:
     void setFromEdit();
@@ -747,13 +763,10 @@ public:
     cFontFamilyWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef __fr, cRecordDialogBase* _par);
     ~cFontFamilyWidget();
     virtual int set(const QVariant& v);
-private:
-    QIcon           iconNull;
-    QIcon           iconNotNull;
-    QToolButton    *pToolButtonNull;
+protected:
+    void setFromEdit();
     QFontComboBox  *pFontComboBox;
 private slots:
-    void togleNull(bool f);
     void changeFont(const QFont&);
 };
 
@@ -769,36 +782,28 @@ public:
     ~cFontAttrWidget();
     virtual int set(const QVariant& v);
     static const QString sEnumTypeName;
-private:
+protected:
+    void setupFlagWidget(bool f, const QIcon& icon, QLabel *& pLabel, QToolButton *& pButton);
+    void disableEditWidget(eTristate tsf);
+    void setFromEdit();
     const cColEnumType *pEnumType;
-    QIcon           iconNull;
-    QIcon           iconNotNull;
-    QIcon           iconBold;
-    QIcon           iconBoldNo;
-    QIcon           iconItalic;
-    QIcon           iconItalicNo;
-    QIcon           iconUnderline;
-    QIcon           iconUnderlineNo;
-    QIcon           iconStrikeout;
-    QIcon           iconStrikeoutNo;
-
-    QToolButton    *pToolButtonNull;
+    static QIcon    iconBold;
+    static QIcon    iconItalic;
+    static QIcon    iconUnderline;
+    static QIcon    iconStrikeout;
     QToolButton    *pToolButtonBold;
     QToolButton    *pToolButtonItalic;
     QToolButton    *pToolButtonUnderline;
     QToolButton    *pToolButtonStrikeout;
-    QLabel         *pLabelNull;
     QLabel         *pLabelBold;
     QLabel         *pLabelItalic;
     QLabel         *pLabelUnderline;
     QLabel         *pLabelStrikeout;
     QLineEdit      *pLine;
     qlonglong       m;
-    QSize           iconSize;
 private slots:
-    void togleNull(bool f);
     void togleBoold(bool f);
-    void togleItelic(bool f);
+    void togleItalic(bool f);
     void togleUnderline(bool f);
     void togleStrikeout(bool f);
 };
@@ -817,10 +822,11 @@ public:
     cLTextWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef _fr, int _ti, int _fl, cRecordDialogBase* _par);
     ~cLTextWidget();
     virtual int set(const QVariant& v);
-    virtual int height();
 protected:
+    QLineEdit *pLineEdit;
+    QPlainTextEdit *pPlainTextEdit;
     int textIndex;
-    /// Az eredeti widget pointerrel tér visszta
+/*    /// Az eredeti widget pointerrel tér visszta
     QLineEdit *pLineEdit() {
         QLineEdit *pLE = qobject_cast<QLineEdit *>(pWidget());
         if (pLE == NULL) EXCEPTION(EPROGFAIL);
@@ -830,9 +836,7 @@ protected:
         QTextEdit *pTE = qobject_cast<QTextEdit *>(pWidget());
         if (pTE == NULL) EXCEPTION(EPROGFAIL);
         return pTE;
-    }
-signals:
-    void valid();
+    }*/
 private slots:
     void setFromEdit();
 };
@@ -866,9 +870,15 @@ public:
     /// minden változás szinkronízáva less a megadott objektum irányába.
     /// Ha a _pSlave egy NULL pointer, akkor az aktuális szinkronizálás törlődik,
     /// az edig szinkronizált objektum widgetjei engedélyezve lesznek.
-    void setSlave(cSelectPlace *_pSlave);
+    /// @param disabled Ha pSlave nem NULL, és értéke true (vagy nem adtuk meg), akkor letiltja a pSlave elemeit.
+    void setSlave(cSelectPlace *_pSlave, bool disabled = true);
     /// Letiltja a widgeteket
     void setDisablePlaceWidgets(bool f = true);
+    /// Egy hely, helyiség objektum beillesztése az adatbázisba, és a listába.
+    /// Egy dialógus ablakot jelenít meg, az objektum felvételéhez, a minta név azonos a tábla névvel : "places".
+    /// Az aktuális hely az új objektum lessz, vagy ha cancel-t nyom, akkor nincs változás.
+    /// @return Az új objektum ID, vagy NULL_ID.
+    qlonglong insertPlace();
 protected:
     tBatchBlocker<cSelectPlace>   bbPlace;
     /// A két kimeneti signal hívása az aktuális hely név ill. ID-vel.
@@ -888,7 +898,6 @@ public slots:
     /// A kimeneti signal-t csak akkor küldi el, ha az aktuális
     /// hely azonosítü place_id megváltozott, és ha f értéke true (ez az alapértelmezett).
     virtual void refresh(bool f = true);
-    void insertPlace();
     void setCurrentZone(qlonglong _zid);
     void setCurrentPlace(qlonglong _pid);
 private slots:
@@ -928,6 +937,10 @@ public:
     /// Lecseréli a node lista modelt. Lekérdezi a listát, nincs kimeneti signal.
     /// Ha _nullable értéke nem TS_NULL, akkor beállítja a nullable adattag értékét is.
     void setNodeModel(cRecordListModel *  _pNodeModel, eTristate _nullable = TS_NULL);
+    void setNodeFilter(const QVariant& _par, eOrderType __o, eFilterType __f) {
+        pModelNode->setFilter(_par, __o , __f);
+    }
+
     /// Az összes QComboBox objektumon kiválasztja az első elemet.
     /// Ha az aktuális node megváltozott kiküldi a signal-okat, ha az f értéke true.
     void reset(bool f = true);
@@ -938,11 +951,14 @@ public:
     QString currentNodeName() const { return pModelNode->at(pComboBoxNode->currentIndex()); }
     /// Lekérdezi az aktuális node ID-t
     qlonglong currentNodeId() const { return pModelNode->atId(pComboBoxNode->currentIndex()); }
-    void setIdFilter();
+    void setLocalityFilter();
+    void setExcludedNode(qlonglong _nid = NULL_ID);
+    qlonglong insertPatch(cPatch *pSample = NULL);
 public slots:
     /// Frissíti a listákat, az ős objektumban is (zone, place).
     /// hely azonosítü place_id megváltozott, és ha f értéke true (ez az alapértelmezett).
     virtual void refresh(bool f = true);
+    void setCurrentNode(qlonglong _nid);
 protected:
     tBatchBlocker<cSelectNode>  bbNode;
     bool emitChangeNode(bool f = true);
@@ -996,7 +1012,7 @@ private:
     int         lastLinkType;
     int         lastShare;
     qlonglong   lastPortId;
-    bool        lockSlots;
+    int         lockSlots;
 public slots:
     void setLink(cPhsLink& _lnk);
 private slots:

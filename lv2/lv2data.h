@@ -1415,7 +1415,7 @@ public:
     /// @param a A keresett IP cím
     /// @param __ex Ha több host-nak van azonos címem akkor ha értéke true, kizárást dob, egyébként false -val tér vissza.
     /// @return Ha van egy és csakis egy találat, ill. beolvasott rekord, akkor true, egyébként false
-    bool fetchByIp(QSqlQuery& q, const QHostAddress& a, enum eEx __ex = EX_ERROR);
+    int fetchByIp(QSqlQuery& q, const QHostAddress& a, enum eEx __ex = EX_ERROR);
     /// Törli a ports konténert.
     /// Beolvas egy portot, amelyhez a megadott ip cím tartozik, az egy IP cím rekorddal együtt.
     bool fetchOnePortByIp(QSqlQuery& q, const QHostAddress& a, enum eEx __ex = EX_ERROR);
@@ -1425,8 +1425,8 @@ public:
     /// csak a parentben szerepel, akkor nem fog beolvasni semmit, vagyis nem lessz találat.
     /// @param q Az adatbázisműveletekhez használt objektum
     /// @param a A keresett MAC
-    /// @return true, ha sikerült beolvasni egy rekordot.
-    bool fetchByMac(QSqlQuery& q, const cMac& a);
+    /// @return a találatok száma.
+    int fetchByMac(QSqlQuery& q, const cMac& a, eEx __ex = EX_WARNING);
     /// A saját cNode objektum adatait tölti be az adatbázisból.
     /// Ha meg van adva a HOSTNAME környezeti változó, akkor az ebben megadott nevű rekordot próbálja meg beolvasni.
     /// Ha nincs megadva a környezeti változó, vagy neincs ilyen nevű rekord, akkor lekérdezi a saját ip címeket,

@@ -6,98 +6,83 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1323</width>
-    <height>976</height>
+    <width>1505</width>
+    <height>1225</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0,0,0,1,0">
+  <layout class="QVBoxLayout" name="verticalLayout_4" stretch="0,0,0,0,0,1,0">
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,0,1">
+    <layout class="QHBoxLayout" name="horizontalLayout_6">
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
      <item>
-      <layout class="QVBoxLayout" name="verticalLayout_4" stretch="0,0,0">
-       <item>
-        <widget class="QLabel" name="labelNewMod">
-         <property name="text">
-          <string>Az űrlap funkciója :</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_6">
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <item>
-          <widget class="QRadioButton" name="radioButtonMod">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="text">
-            <string>Regisztrált eszköz adatainak a módosítása</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="radioButtonNew">
-           <property name="text">
-            <string>Új eszköz felvétele</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_3">
-         <item>
-          <widget class="QLabel" name="labelNodeType">
-           <property name="text">
-            <string>Az eszköz típusa : </string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="lineEditNodeType">
-           <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A megadott típus egyrészt szűrési feltétel a sablon vagy modosítandó eszköz kiválasztásához. Másrészt az új eszközöknél ez a típus lessz beállítva.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-           <property name="text">
-            <string>host, workstation</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="pushButtonNodeType">
-           <property name="text">
-            <string>Más típus</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <widget class="Line" name="line_3">
-       <property name="orientation">
-        <enum>Qt::Vertical</enum>
+      <widget class="QLabel" name="labelNewMod">
+       <property name="text">
+        <string>Az űrlap funkciója :</string>
        </property>
       </widget>
      </item>
      <item>
-      <layout class="QVBoxLayout" name="verticalLayoutFilter">
+      <widget class="QRadioButton" name="radioButtonMod">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Regisztrált eszköz adatainak a módosítása</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="radioButtonNew">
+       <property name="text">
+        <string>Új eszköz felvétele</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QSplitter" name="splitterWorkstation">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <widget class="QFrame" name="frameFilter">
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0">
        <item>
         <widget class="QLabel" name="label_4">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QLabel { background-color: rgb(192, 192, 192); color :rgb(0,0,0) ;}</string>
+         </property>
          <property name="text">
-          <string>Szűrők a sablon vagy modosítandó eszköz kiválasztásához :</string>
+          <string>Szűrők, kiválasztása</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -105,37 +90,13 @@
         </widget>
        </item>
        <item>
-        <layout class="QGridLayout" name="gridLayout_2" rowstretch="0,0,0" columnstretch="0,1,0,1">
-         <item row="2" column="1">
-          <widget class="QComboBox" name="comboBoxFilterPlace">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="2">
-          <widget class="QLabel" name="labelFilterPattern">
-           <property name="text">
-            <string>Eszköz név minta :</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="2">
-          <widget class="QLabel" name="label">
-           <property name="text">
-            <string>Hely név minta :</string>
-           </property>
-          </widget>
-         </item>
+        <layout class="QFormLayout" name="formLayout_2">
          <item row="0" column="0">
           <widget class="QLabel" name="labelFilterZone">
            <property name="text">
             <string>Zóna :</string>
            </property>
           </widget>
-         </item>
-         <item row="2" column="3">
-          <widget class="QLineEdit" name="lineEditFilterPattern"/>
          </item>
          <item row="0" column="1">
           <widget class="QComboBox" name="comboBoxFilterZone">
@@ -144,6 +105,16 @@
            </property>
           </widget>
          </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>Hely név minta :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="lineEditFilterPlace"/>
+         </item>
          <item row="2" column="0">
           <widget class="QLabel" name="labelFilterPlace">
            <property name="text">
@@ -151,202 +122,318 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="3">
-          <widget class="QLineEdit" name="lineEditFilterPlace"/>
+         <item row="2" column="1">
+          <widget class="QComboBox" name="comboBoxFilterPlace">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="labelFilterPattern">
+           <property name="text">
+            <string>Eszköz név minta :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QLineEdit" name="lineEditFilterPattern"/>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="labelNodeTypeFilt">
+           <property name="text">
+            <string>Az eszköz típusa : </string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <layout class="QHBoxLayout" name="horizontalLayout_3">
+           <item>
+            <widget class="QLineEdit" name="lineEditNodeTypeFilt">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A megadott típus egyrészt szűrési feltétel a sablon vagy modosítandó eszköz kiválasztásához. Másrészt az új eszközöknél ez a típus lessz beállítva.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="text">
+              <string>+workstation</string>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QToolButton" name="toolButtonNodeTypeFilt">
+             <property name="text">
+              <string>...</string>
+             </property>
+             <property name="icon">
+              <iconset resource="lv2g.qrc">
+               <normaloff>:/icons/edit.ico</normaloff>:/icons/edit.ico</iconset>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item row="7" column="0">
+          <widget class="QLabel" name="labelPlacePat">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">QLabel { background-color: rgb(0, 0, 0); color :rgb(255,255,255) ;}</string>
+           </property>
+           <property name="text">
+            <string>Hely név minta:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="0">
+          <widget class="QLabel" name="labelZone">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">QLabel { background-color: rgb(0, 0, 0); color :rgb(255,255,255) ;}</string>
+           </property>
+           <property name="text">
+            <string>Zóna :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="1">
+          <widget class="QComboBox" name="comboBoxZone"/>
+         </item>
+         <item row="7" column="1">
+          <widget class="QLineEdit" name="lineEditPlacePat"/>
+         </item>
+         <item row="5" column="1">
+          <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
          </item>
         </layout>
        </item>
       </layout>
-     </item>
-    </layout>
-   </item>
-   <item>
-    <widget class="QSplitter" name="splitterWorkstation">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <widget class="QWidget" name="layoutWidget_6">
-      <layout class="QVBoxLayout" name="verticalLayout_6">
+     </widget>
+     <widget class="QFrame" name="frameNode">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_7">
        <item>
-        <widget class="QFrame" name="frameNode">
+        <widget class="QLabel" name="labelWorkstation">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
-         <property name="frameShape">
-          <enum>QFrame::StyledPanel</enum>
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <italic>false</italic>
+           <bold>true</bold>
+          </font>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_7">
-          <item>
-           <widget class="QLabel" name="labelWorkstation">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="font">
-             <font>
-              <weight>75</weight>
-              <italic>false</italic>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="autoFillBackground">
-             <bool>false</bool>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">QLabel { background-color: rgb(0, 0, 0); color :rgb(255,255,255) ;}</string>
-            </property>
-            <property name="frameShape">
-             <enum>QFrame::NoFrame</enum>
-            </property>
-            <property name="text">
-             <string>Hálózati eszköz :</string>
-            </property>
-            <property name="textFormat">
-             <enum>Qt::PlainText</enum>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <layout class="QFormLayout" name="formLayout">
-            <item row="0" column="0">
-             <widget class="QLabel" name="labelName">
-              <property name="font">
-               <font>
-                <weight>50</weight>
-                <italic>true</italic>
-                <bold>false</bold>
-               </font>
-              </property>
-              <property name="text">
-               <string>Eszköz, mint sablon :</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <widget class="QComboBox" name="comboBoxNode">
-              <property name="editable">
-               <bool>false</bool>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QLabel" name="labelNewName">
-              <property name="font">
-               <font>
-                <weight>75</weight>
-                <bold>true</bold>
-               </font>
-              </property>
-              <property name="text">
-               <string>Új név :</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="1">
-             <widget class="QLineEdit" name="lineEditName"/>
-            </item>
-            <item row="2" column="0">
-             <widget class="QLabel" name="labelNote">
-              <property name="text">
-               <string>Megjegyzés :</string>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="1">
-             <widget class="QLineEdit" name="lineEditNote"/>
-            </item>
-            <item row="3" column="0">
-             <widget class="QLabel" name="labelZone">
-              <property name="font">
-               <font>
-                <weight>75</weight>
-                <bold>true</bold>
-               </font>
-              </property>
-              <property name="text">
-               <string>Zóna :</string>
-              </property>
-             </widget>
-            </item>
-            <item row="3" column="1">
-             <widget class="QComboBox" name="comboBoxZone"/>
-            </item>
-            <item row="5" column="0">
-             <widget class="QLabel" name="labelPlace">
-              <property name="font">
-               <font>
-                <weight>75</weight>
-                <bold>true</bold>
-               </font>
-              </property>
-              <property name="text">
-               <string>Az eszköz helye :</string>
-              </property>
-             </widget>
-            </item>
-            <item row="5" column="1">
-             <layout class="QHBoxLayout" name="horizontalLayoutPlace">
-              <item>
-               <widget class="QComboBox" name="comboBoxPlace">
-                <property name="editable">
-                 <bool>false</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QToolButton" name="toolButtonAddPlace">
-                <property name="text">
-                 <string>+</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item row="6" column="0">
-             <widget class="QLabel" name="labelSerial">
-              <property name="text">
-               <string>Széria szám :</string>
-              </property>
-             </widget>
-            </item>
-            <item row="6" column="1">
-             <widget class="QLineEdit" name="lineEditSerial"/>
-            </item>
-            <item row="7" column="0">
-             <widget class="QLabel" name="labelInventory">
-              <property name="text">
-               <string>Leltári szám :</string>
-              </property>
-             </widget>
-            </item>
-            <item row="7" column="1">
-             <widget class="QLineEdit" name="lineEditInventory"/>
-            </item>
-            <item row="4" column="1">
-             <widget class="QLineEdit" name="lineEditPlacePat"/>
-            </item>
-            <item row="4" column="0">
-             <widget class="QLabel" name="labelPlacePat">
-              <property name="text">
-               <string>Hely név minta (szűrő):</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-         </layout>
+         <property name="autoFillBackground">
+          <bool>false</bool>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QLabel { background-color: rgb(0, 0, 0); color :rgb(255,255,255) ;}</string>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::NoFrame</enum>
+         </property>
+         <property name="text">
+          <string>Hálózati eszköz :</string>
+         </property>
+         <property name="textFormat">
+          <enum>Qt::PlainText</enum>
+         </property>
         </widget>
+       </item>
+       <item>
+        <layout class="QFormLayout" name="formLayoutNode">
+         <item row="2" column="0">
+          <widget class="QLabel" name="labelNewName">
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>Új név :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QLineEdit" name="lineEditName"/>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="labelNote">
+           <property name="text">
+            <string>Megjegyzés :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <widget class="QLineEdit" name="lineEditNote"/>
+         </item>
+         <item row="9" column="0">
+          <widget class="QLabel" name="labelPlace">
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>Az eszköz helye :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="9" column="1">
+          <layout class="QHBoxLayout" name="horizontalLayoutPlace">
+           <item>
+            <widget class="QComboBox" name="comboBoxPlace">
+             <property name="editable">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QToolButton" name="toolButtonAddPlace">
+             <property name="text">
+              <string>+</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item row="10" column="0">
+          <widget class="QLabel" name="labelSerial">
+           <property name="text">
+            <string>Széria szám :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="10" column="1">
+          <widget class="QLineEdit" name="lineEditSerial"/>
+         </item>
+         <item row="11" column="0">
+          <widget class="QLabel" name="labelInventory">
+           <property name="text">
+            <string>Leltári szám :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="11" column="1">
+          <widget class="QLineEdit" name="lineEditInventory"/>
+         </item>
+         <item row="12" column="0">
+          <widget class="QLabel" name="labelModelName">
+           <property name="text">
+            <string>Model név :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="12" column="1">
+          <widget class="QLineEdit" name="lineEditModelName"/>
+         </item>
+         <item row="13" column="0">
+          <widget class="QLabel" name="labelModelNumber">
+           <property name="text">
+            <string>Model szám :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="13" column="1">
+          <widget class="QLineEdit" name="lineEditModelNumber"/>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="labelName">
+           <property name="font">
+            <font>
+             <weight>50</weight>
+             <italic>true</italic>
+             <bold>false</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>Eszköz, mint sablon :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QComboBox" name="comboBoxNode">
+           <property name="editable">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="labelNodeType">
+           <property name="text">
+            <string>Típus :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <layout class="QHBoxLayout" name="horizontalLayout">
+           <item>
+            <widget class="QLineEdit" name="lineEditNodeType">
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QToolButton" name="toolButtonNodeType">
+             <property name="text">
+              <string>...</string>
+             </property>
+             <property name="icon">
+              <iconset resource="lv2g.qrc">
+               <normaloff>:/icons/edit.ico</normaloff>:/icons/edit.ico</iconset>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
        </item>
       </layout>
      </widget>
@@ -463,6 +550,12 @@
          </item>
          <item row="4" column="0">
           <widget class="QLabel" name="labelPMAC">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="font">
             <font>
              <weight>75</weight>
@@ -474,67 +567,66 @@
            </property>
           </widget>
          </item>
-         <item row="8" column="0">
-          <widget class="QLabel" name="labelModelName">
-           <property name="text">
-            <string>Model név :</string>
-           </property>
-          </widget>
-         </item>
-         <item row="8" column="1">
-          <widget class="QLineEdit" name="lineEditModelName"/>
-         </item>
-         <item row="9" column="0">
-          <widget class="QLabel" name="labelModelNumber">
-           <property name="text">
-            <string>Model szám :</string>
-           </property>
-          </widget>
-         </item>
-         <item row="9" column="1">
-          <widget class="QLineEdit" name="lineEditModelNumber"/>
-         </item>
-         <item row="6" column="1">
-          <widget class="QLabel" name="label_2">
-           <property name="styleSheet">
-            <string notr="true">QLabel { background-color: rgb(0, 0, 0); color :rgb(255,255,255) ;}</string>
-           </property>
-           <property name="text">
-            <string>Eszköz (folyt.)</string>
-           </property>
-          </widget>
-         </item>
-         <item row="5" column="1">
-          <spacer name="verticalSpacer">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-           <property name="sizeType">
-            <enum>QSizePolicy::Maximum</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>20</width>
-             <height>10</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
          <item row="4" column="1">
-          <layout class="QHBoxLayout" name="horizontalLayout_4">
+          <layout class="QVBoxLayout" name="verticalLayout_6">
            <item>
             <widget class="QLineEdit" name="lineEditPMAC"/>
            </item>
            <item>
-            <widget class="QToolButton" name="toolButtonReportMAC">
-             <property name="text">
-              <string/>
+            <layout class="QHBoxLayout" name="horizontalLayout_8">
+             <property name="topMargin">
+              <number>0</number>
              </property>
-             <property name="icon">
-              <iconset resource="lv2g.qrc">
-               <normaloff>:/icons/document-properties.ico</normaloff>:/icons/document-properties.ico</iconset>
+             <property name="bottomMargin">
+              <number>0</number>
              </property>
-            </widget>
+             <item>
+              <widget class="QToolButton" name="toolButtonIP2MAC">
+               <property name="text">
+                <string>...</string>
+               </property>
+               <property name="icon">
+                <iconset resource="lv2g.qrc">
+                 <normaloff>:/icons/zoom.ico</normaloff>:/icons/zoom.ico</iconset>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QToolButton" name="toolButtonSelectByMAC">
+               <property name="text">
+                <string>...</string>
+               </property>
+               <property name="icon">
+                <iconset resource="lv2g.qrc">
+                 <normaloff>:/icons/go-jump.ico</normaloff>:/icons/go-jump.ico</iconset>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QToolButton" name="toolButtonReportMAC">
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="lv2g.qrc">
+                 <normaloff>:/icons/document-properties.ico</normaloff>:/icons/document-properties.ico</iconset>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_2">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
            </item>
           </layout>
          </item>
@@ -825,13 +917,20 @@
         <item row="1" column="2">
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
-           <widget class="QToolButton" name="toolButtonAddPatch">
+           <widget class="QToolButton" name="toolButtonAddLnkNode">
+            <property name="text">
+             <string>+</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="toolButtonInfoLnkNode">
             <property name="text">
              <string>+</string>
             </property>
             <property name="icon">
              <iconset resource="lv2g.qrc">
-              <normaloff>:/icons/network-wired.ico</normaloff>:/icons/network-wired.ico</iconset>
+              <normaloff>:/icons/document-properties.ico</normaloff>:/icons/document-properties.ico</iconset>
             </property>
            </widget>
           </item>
@@ -986,20 +1085,50 @@
   </layout>
  </widget>
  <tabstops>
+  <tabstop>radioButtonMod</tabstop>
+  <tabstop>radioButtonNew</tabstop>
+  <tabstop>comboBoxFilterZone</tabstop>
+  <tabstop>lineEditFilterPlace</tabstop>
+  <tabstop>comboBoxFilterPlace</tabstop>
+  <tabstop>lineEditFilterPattern</tabstop>
+  <tabstop>lineEditNodeTypeFilt</tabstop>
+  <tabstop>comboBoxZone</tabstop>
+  <tabstop>lineEditPlacePat</tabstop>
   <tabstop>comboBoxNode</tabstop>
   <tabstop>lineEditName</tabstop>
+  <tabstop>lineEditNodeType</tabstop>
+  <tabstop>toolButtonNodeType</tabstop>
   <tabstop>lineEditNote</tabstop>
-  <tabstop>comboBoxZone</tabstop>
   <tabstop>comboBoxPlace</tabstop>
+  <tabstop>toolButtonAddPlace</tabstop>
   <tabstop>lineEditSerial</tabstop>
   <tabstop>lineEditInventory</tabstop>
+  <tabstop>lineEditModelName</tabstop>
+  <tabstop>lineEditModelNumber</tabstop>
   <tabstop>lineEditPName</tabstop>
   <tabstop>comboBoxPType</tabstop>
   <tabstop>lineEditPNote</tabstop>
   <tabstop>lineEditPTag</tabstop>
   <tabstop>comboBoxLinkZone</tabstop>
+  <tabstop>lineEditLinkPlacePat</tabstop>
+  <tabstop>comboBoxLinkPlace</tabstop>
+  <tabstop>checkBoxPlaceEqu</tabstop>
+  <tabstop>comboBoxLinkNode</tabstop>
+  <tabstop>toolButtonAddLnkNode</tabstop>
+  <tabstop>comboBoxLinkPort</tabstop>
+  <tabstop>comboBoxLinkPortShare</tabstop>
+  <tabstop>lineEditLinkNodeType</tabstop>
+  <tabstop>lineEditLinkNote</tabstop>
+  <tabstop>radioButtonLinkTerm</tabstop>
+  <tabstop>radioButtonLinkFront</tabstop>
+  <tabstop>radioButtonLinkBack</tabstop>
+  <tabstop>toolButtonErrRefr</tabstop>
+  <tabstop>toolButtonInfRefr</tabstop>
+  <tabstop>textEditErr</tabstop>
   <tabstop>textEditMsg</tabstop>
   <tabstop>pushButtonSave</tabstop>
+  <tabstop>toolButtonInfoLnkNode</tabstop>
+  <tabstop>toolButtonNodeTypeFilt</tabstop>
  </tabstops>
  <resources>
   <include location="lv2g.qrc"/>

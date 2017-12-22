@@ -2578,21 +2578,21 @@ cNPort *cNode::addSensors(const QString& __np, int __noff, int __from, int __to,
     return p;
 }
 
-bool cNode::fetchByIp(QSqlQuery& q, const QHostAddress& a, eEx __ex)
+int cNode::fetchByIp(QSqlQuery& q, const QHostAddress& a, eEx __ex)
 {
     clear();
     QString sql = QString("SELECT DISTINCT %1.* FROM %1 JOIN interfaces USING(node_id) JOIN ip_addresses USING(port_id) WHERE address = ?").arg(tableName());
     QString as = hostAddressToString(a);
     if (execSql(q, sql, as)) {
         set(q);
-        if (q.next()) {
-            if (__ex) EXCEPTION(AMBIGUOUS,0, trUtf8("A %1 IP nem egyedi").arg(a.toString()));
-            return false;
+        int n = q.size();
+        if (n > 1) {
+            if (__ex >= EX_WARNING) EXCEPTION(AMBIGUOUS,0, trUtf8("A %1 IP nem egyedi").arg(a.toString()));
         }
-        return true;
+        return n;
     }
     if (__ex) EXCEPTION(EFOUND,0, trUtf8("A %1 IP.").arg(a.toString()));
-    return false;
+    return 0;
 }
 
 bool cNode::fetchOnePortByIp(QSqlQuery& q, const QHostAddress& a, eEx __ex)
@@ -2622,16 +2622,17 @@ bool cNode::fetchOnePortByIp(QSqlQuery& q, const QHostAddress& a, eEx __ex)
     return false;
 }
 
-bool cNode::fetchByMac(QSqlQuery& q, const cMac& a)
+int cNode::fetchByMac(QSqlQuery& q, const cMac& a, eEx __ex)
 {
     clear();
     QString sql = QString("SELECT DISTINCT %1.* FROM %1 JOIN interfaces USING(node_id) WHERE hwaddress = ?").arg(tableName());
     if (execSql(q, sql, a.toString())) {
+        int n = q.size();
         set(q);
-        if (q.next()) EXCEPTION(AMBIGUOUS,0, trUtf8("A %1 MAC nem egyedi").arg(a.toString()));
-        return true;
+        if (n > 1 && __ex >= EX_WARNING) EXCEPTION(AMBIGUOUS,0, trUtf8("A %1 MAC nem egyedi").arg(a.toString()));
+        return n;
     }
-    return false;
+    return 0;
 }
 
 bool cNode::fetchSelf(QSqlQuery& q, eEx __ex)

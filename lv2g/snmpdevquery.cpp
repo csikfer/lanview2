@@ -30,7 +30,7 @@ cSnmpDevQuery::cSnmpDevQuery(QMdiArea *parent) :
     cRecordListModel *pNodeModel = new cRecordListModel(_sSnmpDevices);
     pSelectNode->setNodeModel(pNodeModel, TS_TRUE);
     pSelectNode->reset();
-    ui->formLayoutType->setWidget(0, QFormLayout::FieldRole, pTypeWidget->pWidget());
+    ui->formLayoutType->setWidget(0, QFormLayout::FieldRole, pTypeWidget);
 
     // on_pushButtonSave_clicked()
     // on_pushButtonQuery_clicked()

@@ -600,6 +600,8 @@ cIpEditWidget::cIpEditWidget(const tIntVector& _types, QWidget *_par) : QWidget(
     pSelectSubNet = new cSelectSubNet(pUi->comboBoxSubNetAddr, pUi->comboBoxSubNet);
     pINetValidator = new cINetValidator(true, this);
     pUi->lineEditAddress->setValidator(pINetValidator);
+    showToolBoxs(false, false, false);    // Az Info és Query toolBox-ot alapértelmezetten eltüntetjük.
+    pUi->toolButtonQuery->hide();
     connect(pSelectVlan,   SIGNAL(changedId(qlonglong)), pSelectSubNet, SLOT(setCurrentByVlan(qlonglong)));
     connect(pSelectSubNet, SIGNAL(changedId(qlonglong)), pSelectVlan,   SLOT(setCurrentBySubNet(qlonglong)));
     connect(pSelectSubNet, SIGNAL(changedId(qlonglong)), this,          SLOT(_subNetIdChanged(qlonglong)));
@@ -650,6 +652,27 @@ cIpAddress *cIpEditWidget::get(cIpAddress *po) const
     return po;
 }
 
+void cIpEditWidget::showToolBoxs(bool _info, bool _go, bool _query)
+{
+    if (_info)  pUi->toolButtonInfo->show();
+    else        pUi->toolButtonInfo->hide();
+    if (_go)    pUi->toolButtonGo->show();
+    else        pUi->toolButtonGo->hide();
+    if (_query) pUi->toolButtonQuery->show();
+    else        pUi->toolButtonQuery->hide();
+}
+
+void cIpEditWidget::enableToolBoxs(bool _info, bool _go, bool _query)
+{
+    disabled_info = !_info;
+    disabled_go   = !_go;
+    disabled_query= !_query;
+    pUi->toolButtonInfo->setDisabled(disabled_info);
+    pUi->toolButtonGo->setDisabled(disabled_go);
+    pUi->toolButtonQuery->setDisabled(disabled_query);
+}
+
+
 // SLOTS
 void cIpEditWidget::setAllDisabled(bool f)
 {
@@ -664,30 +687,10 @@ void cIpEditWidget::setAllDisabled(bool f)
     pUi->comboBoxIpType->setDisabled(f);
     pUi->comboBoxSubNet->setDisabled(f);
     pUi->comboBoxSubNetAddr->setDisabled(f);
+    pUi->toolButtonInfo->setDisabled(disabled_info || f);
+    pUi->toolButtonGo->setDisabled(disabled_go || f);
+    pUi->toolButtonQuery->setDisabled(disabled_query || f);
     disableSignals = false;
-}
-
-void cIpEditWidget::on_comboBoxIpType_currentIndexChanged(int index)
-{
-    (void)index;
-    changed(actAddress, _state);
-}
-
-void cIpEditWidget::on_lineEditAddress_textChanged(const QString &arg1)
-{
-    int oldState = _state;
-    QHostAddress oldAddress = actAddress;
-    _state &= ~(IES_ADDRESS_IS_INVALID | IES_ADDRESS_IS_NULL);
-    if (arg1.isEmpty()) {
-        actAddress.clear();
-        _state |= IES_ADDRESS_IS_NULL;
-    }
-    else {
-        actAddress.setAddress(arg1);
-        if (actAddress.isNull()) _state |= IES_ADDRESS_IS_INVALID;
-        else pSelectSubNet->setCurrentByAddress(actAddress);
-    }
-    if (oldState != _state || oldAddress != actAddress) changed(actAddress, _state);
 }
 
 void cIpEditWidget::_subNetIdChanged(qlonglong _id)
@@ -711,6 +714,51 @@ void cIpEditWidget::_subNetIdChanged(qlonglong _id)
     changed(actAddress, _state);
 }
 
+void cIpEditWidget::on_comboBoxIpType_currentIndexChanged(int index)
+{
+    (void)index;
+    changed(actAddress, _state);
+}
+
+void cIpEditWidget::on_lineEditAddress_textChanged(const QString &arg1)
+{
+    int oldState = _state;
+    QHostAddress oldAddress = actAddress;
+    _state &= ~(IES_ADDRESS_IS_INVALID | IES_ADDRESS_IS_NULL);
+    if (arg1.isEmpty()) {
+        actAddress.clear();
+        _state |= IES_ADDRESS_IS_NULL;
+    }
+    else {
+        int dummy;
+        QString sa = arg1;
+        if (QValidator::Acceptable == pINetValidator->validate(sa, dummy)) {
+            actAddress.setAddress(arg1);
+            if (actAddress.isNull()) EXCEPTION(EPROGFAIL);
+            pSelectSubNet->setCurrentByAddress(actAddress);
+        }
+        else {
+            _state |= IES_ADDRESS_IS_INVALID;
+            actAddress.clear();
+        }
+    }
+    if (oldState != _state || oldAddress != actAddress) changed(actAddress, _state);
+}
+
+void cIpEditWidget::on_toolButtonQuery_clicked()
+{
+    emit query_clicked();
+}
+
+void cIpEditWidget::on_toolButtonInfo_clicked()
+{
+    emit info_clicked();
+}
+
+void cIpEditWidget::on_toolButtonGo_clicked()
+{
+    emit go_clicked();
+}
 
 /* ********************************************************************************************** */
 
@@ -743,13 +791,13 @@ cEnumValRow::cEnumValRow(QSqlQuery& q, const QString& _val, int _row, cEnumValsE
     t = rec.getText(cEnumVal::LTX_VIEW_LONG, _val);
     setTableItemText(t,  pTableWidget, row, CEV_LONG);
     pBgColorWidget = new cColorWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sBgColor), rec[_sBgColor], false, NULL);
-    pTableWidget->setCellWidget(row, CEV_BG_COLOR, pBgColorWidget->pWidget());
+    pTableWidget->setCellWidget(row, CEV_BG_COLOR, pBgColorWidget);
     pFgColorWidget = new cColorWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sFgColor), rec[_sFgColor], false, NULL);
-    pTableWidget->setCellWidget(row, CEV_FG_COLOR, pFgColorWidget->pWidget());
+    pTableWidget->setCellWidget(row, CEV_FG_COLOR, pFgColorWidget);
     pFntFamWidget  = new cFontFamilyWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sFontFamily), rec[_sFontFamily], NULL);
-    pTableWidget->setCellWidget(row, CEV_FNT_FAM, pFntFamWidget->pWidget());
+    pTableWidget->setCellWidget(row, CEV_FNT_FAM, pFntFamWidget);
     pFntAttWidget  = new cFontAttrWidget(*parent->pShape, *parent->pShape->shapeFields.get(_sFontAttr), rec[_sFontAttr], false, NULL);
-    pTableWidget->setCellWidget(row, CEV_FNT_ATT, pFntAttWidget->pWidget());
+    pTableWidget->setCellWidget(row, CEV_FNT_ATT, pFntAttWidget);
     setTableItemText(rec.getName(_sEnumValNote),  pTableWidget, row, CEV_NOTE);
     t = rec.getText(cEnumVal::LTX_TOOL_TIP);
     setTableItemText(t,  pTableWidget, row, CEV_TOOL_TIP);
@@ -811,19 +859,19 @@ cEnumValsEditWidget::cEnumValsEditWidget(QWidget *parent)
     // VAL
     pWidgetValBgColor = new cColorWidget(*pShape, *pShape->shapeFields.get(_sBgColor), val[_sBgColor], false, NULL);
     pWidgetValBgColor->setParent(this);
-    formSetField(pUi->formLayoutVal, pUi->labelValBgColor, pWidgetValBgColor->pWidget());
+    formSetField(pUi->formLayoutVal, pUi->labelValBgColor, pWidgetValBgColor);
 
     pWidgetValFgColor = new cColorWidget(*pShape, *pShape->shapeFields.get(_sFgColor), val[_sFgColor], false, NULL);
     pWidgetValFgColor->setParent(this);
-    formSetField(pUi->formLayoutVal, pUi->labelValFgColor, pWidgetValFgColor->pWidget());
+    formSetField(pUi->formLayoutVal, pUi->labelValFgColor, pWidgetValFgColor);
 
     pWidgetValFntFam  = new cFontFamilyWidget(*pShape, *pShape->shapeFields.get(_sFontFamily), val[_sFontFamily], NULL);
     pWidgetValFntFam->setParent(this);
-    formSetField(pUi->formLayoutVal, pUi->labelValFontFamily, pWidgetValFntFam->pWidget());
+    formSetField(pUi->formLayoutVal, pUi->labelValFontFamily, pWidgetValFntFam);
 
     pWidgetValFntAtt  = new cFontAttrWidget(*pShape, *pShape->shapeFields.get(_sFontAttr), val[_sFontAttr], false, NULL);
     pWidgetValFntAtt->setParent(this);
-    formSetField(pUi->formLayoutVal, pUi->labelValFontAttr, pWidgetValFntAtt->pWidget());
+    formSetField(pUi->formLayoutVal, pUi->labelValFontAttr, pWidgetValFntAtt);
 
     connect(pUi->comboBoxValType,  SIGNAL(currentIndexChanged(QString)), this, SLOT(setEnumValType(QString)));
     connect(pUi->comboBoxValVal,   SIGNAL(currentIndexChanged(QString)), this, SLOT(setEnumValVal(QString)));
@@ -837,35 +885,35 @@ cEnumValsEditWidget::cEnumValsEditWidget(QWidget *parent)
         // true
     pWidgetTrueBgColor = new cColorWidget(*pShape, *pShape->shapeFields.get(_sBgColor), boolTrue[_sBgColor], false, NULL);
     pWidgetTrueBgColor->setParent(this);
-    formSetField(pUi->formLayoutTrue, pUi->labelTrueBgColor, pWidgetTrueBgColor->pWidget());
+    formSetField(pUi->formLayoutTrue, pUi->labelTrueBgColor, pWidgetTrueBgColor);
 
     pWidgetTrueFgColor = new cColorWidget(*pShape, *pShape->shapeFields.get(_sFgColor), boolTrue[_sFgColor], false, NULL);
     pWidgetTrueFgColor->setParent(this);
-    formSetField(pUi->formLayoutTrue, pUi->labelTrueFgColor, pWidgetTrueFgColor->pWidget());
+    formSetField(pUi->formLayoutTrue, pUi->labelTrueFgColor, pWidgetTrueFgColor);
 
     pWidgetTrueFntFam  = new cFontFamilyWidget(*pShape, *pShape->shapeFields.get(_sFontFamily), boolTrue[_sFontFamily], NULL);
     pWidgetTrueFntFam->setParent(this);
-    formSetField(pUi->formLayoutTrue, pUi->labelTrueFontFam, pWidgetTrueFntFam->pWidget());
+    formSetField(pUi->formLayoutTrue, pUi->labelTrueFontFam, pWidgetTrueFntFam);
 
     pWidgetTrueFntAtt  = new cFontAttrWidget(*pShape, *pShape->shapeFields.get(_sFontAttr), boolTrue[_sFontAttr], false, NULL);
     pWidgetTrueFntAtt->setParent(this);
-    formSetField(pUi->formLayoutTrue, pUi->labelTrueFntAtt, pWidgetTrueFntAtt->pWidget());
+    formSetField(pUi->formLayoutTrue, pUi->labelTrueFntAtt, pWidgetTrueFntAtt);
         // false
     pWidgetFalseBgColor = new cColorWidget(*pShape, *pShape->shapeFields.get(_sBgColor), boolFalse[_sBgColor], false, NULL);
     pWidgetFalseBgColor->setParent(this);
-    formSetField(pUi->formLayoutFalse, pUi->labelFalseBgColor, pWidgetFalseBgColor->pWidget());
+    formSetField(pUi->formLayoutFalse, pUi->labelFalseBgColor, pWidgetFalseBgColor);
 
     pWidgetFalseFgColor = new cColorWidget(*pShape, *pShape->shapeFields.get(_sFgColor), boolFalse[_sFgColor], false, NULL);
     pWidgetFalseFgColor->setParent(this);
-    formSetField(pUi->formLayoutFalse, pUi->labelFalseFgColor, pWidgetFalseFgColor->pWidget());
+    formSetField(pUi->formLayoutFalse, pUi->labelFalseFgColor, pWidgetFalseFgColor);
 
     pWidgetFalseFntFam  = new cFontFamilyWidget(*pShape, *pShape->shapeFields.get(_sFontFamily), boolFalse[_sFontFamily], NULL);
     pWidgetFalseFntFam->setParent(this);
-    formSetField(pUi->formLayoutFalse, pUi->labelFalseFntFam, pWidgetFalseFntFam->pWidget());
+    formSetField(pUi->formLayoutFalse, pUi->labelFalseFntFam, pWidgetFalseFntFam);
 
     pWidgetFalseFntAtt  = new cFontAttrWidget(*pShape, *pShape->shapeFields.get(_sFontAttr), boolFalse[_sFontAttr], false, NULL);
     pWidgetFalseFntAtt->setParent(this);
-    formSetField(pUi->formLayoutFalse, pUi->labelFalseFntAtt, pWidgetFalseFntAtt->pWidget());
+    formSetField(pUi->formLayoutFalse, pUi->labelFalseFntAtt, pWidgetFalseFntAtt);
 
     connect(pUi->comboBoxBoolTable, SIGNAL(currentIndexChanged(QString)), this, SLOT(setBoolTable(QString)));
     connect(pUi->comboBoxBoolField, SIGNAL(currentIndexChanged(QString)), this, SLOT(setBoolField(QString)));

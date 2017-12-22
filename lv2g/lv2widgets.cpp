@@ -2,6 +2,7 @@
 #include "lv2validator.h"
 #include "lv2link.h"
 #include "record_dialog.h"
+#include "object_dialog.h"
 #include "ui_polygoned.h"
 #include "ui_arrayed.h"
 #include "ui_fkeyed.h"
@@ -207,42 +208,56 @@ inline bool fieldIsReadOnly(const cTableShape &_tm, const cTableShapeField &_tf,
     return false;
 }
 
+QIcon        cFieldEditBase::iconNull;
+QIcon        cFieldEditBase::iconDefault;
+
 cFieldEditBase::cFieldEditBase(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef _fr, int _fl, cRecordDialogBase *_par)
-    : QObject(_par)
+    : QWidget(_par->pWidget())
     , _pParentDialog(_par)
     , _colDescr(_fr.descr())
     , _tableShape(_tm)
     , _fieldShape(_tf)
     , _recDescr(_fr.record().descr())
     , _value()
+    , iconSize(24,24)
 {
+    if (iconNull.isNull()) {
+        iconNull.   addFile("://dialog-no.ico",           QSize(), QIcon::Normal, QIcon::On);
+        iconNull.   addFile("://dialog-no-off.png",       QSize(), QIcon::Normal, QIcon::Off);
+        iconDefault.addFile(":/icons/go-first-3.ico",     QSize(), QIcon::Normal, QIcon::On);
+        iconDefault.addFile(":/icons/go-first-3-off.png", QSize(), QIcon::Normal, QIcon::Off);
+    }
+    pLayout     = NULL;
+    pNullButton = NULL;
+    pNullLabel  = NULL;
+    pEditWidget = NULL;
     _wType      = FEW_UNKNOWN;
-    _readOnly   = (_fl & FEB_READ_ONLY) || fieldIsReadOnly(_tm, _tf, _fr);
+    _readOnly   = (0 == (_fl & FEB_YET_EDIT)) && ((_fl & FEB_READ_ONLY) || fieldIsReadOnly(_tm, _tf, _fr));
     _value      = _fr;
-    _pWidget    = NULL;
     pq          = newQuery();
     _nullable   = _fr.isNullable();
     _hasDefault = _fr.descr().colDefault.isNull() == false;
     _hasAuto    = _fr.recDescr().autoIncrement()[_fr.index()];
     _isInsert   = (_fl & FEB_INSERT);      // ??!
     _dcNull     = DC_INVALID;
+    _height     = 1;
     if (_isInsert && _hasDefault) {
-        _dcNull = DC_DEFAULT;       // Megadható NULL, mert van alapértelmezett érték
+        _dcNull = DC_DEFAULT;       // can be NULL because it has a default value
     }
     else if (_hasAuto) {
-        _dcNull = DC_AUTO;          // Automatikus érték
+        _dcNull = DC_AUTO;          // Auto (read only)
+        _hasDefault = true;
     }
     else if (_nullable) {
-        _dcNull = DC_NULL;          // Lehet NULL a mező
+        _dcNull = DC_NULL;          // can be NULL
     }
-
+    actNullIcon = _hasDefault ? iconDefault : iconNull;
     _DBGFNL() << VDEB(_nullable) << VDEB(_hasDefault) << VDEB(_isInsert) << " Index = " << fieldIndex() << " _value = " << debVariantToString(_value) << endl;
- }
+}
 
 cFieldEditBase::~cFieldEditBase()
 {
-    if (pq         != NULL) delete pq;
- // if (_pWidget   != NULL) delete _pWidget;
+    if (pq != NULL) delete pq;
 }
 
 QVariant cFieldEditBase::get() const
@@ -269,6 +284,13 @@ int cFieldEditBase::set(const QVariant& _v)
     if (st & ES_DEFECTIVE) return -1;
     if (v == _value) return 0;
     _value = v;
+    if (pNullButton != NULL || pNullLabel != NULL) {
+        bool isNull = v.isNull();
+        if (pNullButton != NULL) pNullButton->setChecked(isNull);
+        else pNullLabel->setPixmap(iconNull.pixmap(iconSize, QIcon::Normal, isNull ? QIcon::Off : QIcon::On));
+        disableEditWidget(isNull);
+        if (isNull) return 1;
+    }
     changedValue(this);
     return 1;
 }
@@ -293,6 +315,38 @@ void cFieldEditBase::setFromWidget(QVariant v)
     changedValue(this);
 }
 
+void cFieldEditBase::disableEditWidget(eTristate tsf)
+{
+    setBool(_isDisabledEdit, tsf);
+    if (pEditWidget != NULL) {
+        pEditWidget->setDisabled(_isDisabledEdit || _readOnly);
+    }
+}
+
+QWidget *cFieldEditBase::setupNullButton(bool isNull, QAbstractButton * p)
+{
+    if (_readOnly) {
+        if (p != NULL) delete p;    // nem kell, mert csak egy cimke lessz
+        pNullLabel = new QLabel;
+        pNullLabel->setPixmap(iconNull.pixmap(iconSize, QIcon::Normal, isNull ? QIcon::Off : QIcon::On));
+        if (p == NULL) {
+            pLayout->addWidget(pNullLabel);
+        }
+        return pNullLabel;
+    }
+    else {
+        pNullButton = p == NULL ? new QToolButton : p;
+        pNullButton->setIcon(actNullIcon);
+        pNullButton->setCheckable(true);
+        pNullButton->setChecked(isNull);
+        if (p == NULL) {
+            pLayout->addWidget(pNullButton);
+        }
+        connect(pNullButton, SIGNAL(toggled(bool)), this, SLOT(togleNull(bool)));
+        return pNullButton;
+    }
+}
+
 cFieldEditBase * cFieldEditBase::anotherField(const QString& __fn, eEx __ex)
 {
     if (_pParentDialog == NULL) {
@@ -311,23 +365,6 @@ cFieldEditBase * cFieldEditBase::anotherField(const QString& __fn, eEx __ex)
     }
     return p;
 }
-
-/* / SLOT
-void cFieldEditBase::modRec()
-{
-    _DBGFN() << QChar('/') << _recDescr << endl;
-    if (_value != fieldValue()) {
-        bool r = set(fieldValue());
-        PDEB(VVERBOSE) << "Sync to widget field #" << _pFieldRef->index() << VDEB(_value) << " TO " << fieldToName() << (r ? " OK" : " FAILED") << endl;
-    }
-}
-
-void cFieldEditBase::modField(int ix)
-{
-    _DBGFN() << QChar('/') << _recDescr << endl;
-    if (ix == _pFieldRef->index()) modRec();
-}
-*/
 
 cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef _fr, int _fl, cRecordDialogBase *_par)
 {
@@ -477,9 +514,34 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
     }
 }
 
-int cFieldEditBase::height()
+void cFieldEditBase::togleNull(bool f)
 {
-    return 1;
+    disableEditWidget(f);
+    setFromEdit();
+}
+
+// Alap változat, ha az edit widget QLineEdit, vagy pPlainTextEdit, ha nem kizárást dob
+void cFieldEditBase::setFromEdit()
+{
+    QVariant v;
+    if (pNullButton != NULL && pNullButton->isChecked()) {
+        ; // NULL/Default
+    }
+    else {
+        if (pEditWidget == NULL) EXCEPTION(EPROGFAIL);
+        QString s;
+        QLineEdit *pLineEdit = qobject_cast<QLineEdit *>(pEditWidget);
+        if (pLineEdit != NULL) {
+            s = pLineEdit->text();
+        }
+        else {
+            QPlainTextEdit *pPlainTextEdit = qobject_cast<QPlainTextEdit *>(pEditWidget);
+            if (pPlainTextEdit == NULL) EXCEPTION(EPROGFAIL);
+            s = pPlainTextEdit->toPlainText();
+        }
+        v = s;
+    }
+    setFromWidget(v);
 }
 
 /* **************************************** cNullWidget **************************************** */
@@ -488,10 +550,12 @@ cNullWidget::cNullWidget(const cTableShape &_tm, const cTableShapeField &_tf, cR
 {
     _DBGOBJ() << _tf.identifying() << endl;
     _wType = FEW_NULL;
-    QLineEdit *pL = new QLineEdit(_par == NULL ? NULL : _par->pWidget());
-    _pWidget = pL;
-    pL->setReadOnly(true);
-    dcSetShort(pL, DC_NOT_PERMIT);
+    QLineEdit *pLineEdit = new QLineEdit;
+    pLineEdit->setReadOnly(true);
+    dcSetShort(pLineEdit, DC_NOT_PERMIT);
+    pLayout = new QHBoxLayout;
+    setLayout(pLayout);
+    pLayout->addWidget(pLineEdit);
 }
 
 cNullWidget::~cNullWidget()
@@ -517,20 +581,22 @@ cSetWidget::cSetWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRec
         _hiddens = _colDescr.enumType().lst2set(slh);
     }
     if (_dcNull != DC_INVALID) ++rows;
+    _autosets   = _fieldShape.features().eMapValue("autoset",   _colDescr.enumType().enumValues);
+    _collisoins = _fieldShape.features().eMapValue("collision", _colDescr.enumType().enumValues);
     rows = (rows + cols -1) / cols;
     _height = rows;
-    _pWidget  = new QWidget(_par == NULL ? NULL : _par->pWidget());
-    pButtons  = new QButtonGroup(pWidget());
+    pButtons  = new QButtonGroup(this);
     QVBoxLayout *pVLayout   = new QVBoxLayout;
     QHBoxLayout *pHLayout   = NULL;
     pButtons->setExclusive(false);      // SET, több opció is kiválasztható
     if (cols > 1) {
-        pHLayout = new QHBoxLayout;
-        widget().setLayout(pHLayout);
+        pLayout = pHLayout = new QHBoxLayout;
+        setLayout(pHLayout);
         pHLayout->addLayout(pVLayout);
     }
     else {
-        widget().setLayout(pVLayout);
+        pLayout = pVLayout;
+        setLayout(pVLayout);
     }
     _bits = _colDescr.toId(_value);
     int i, id;
@@ -540,7 +606,7 @@ cSetWidget::cSetWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRec
             pVLayout   = new QVBoxLayout;
             pHLayout->addLayout(pVLayout);
         }
-        QCheckBox *pCheckBox = new QCheckBox(pWidget());
+        QCheckBox *pCheckBox = new QCheckBox(this);
         enumSetShort(pCheckBox, _colDescr.enumType(), id, _colDescr.enumType().enum2str(id), _tf.getId(_sFieldFlags));
         pButtons->addButton(pCheckBox, id);
         pVLayout->addWidget(pCheckBox);
@@ -553,7 +619,7 @@ cSetWidget::cSetWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRec
             pVLayout   = new QVBoxLayout;
             pHLayout->addLayout(pVLayout);
         }
-        QCheckBox *pCheckBox = new QCheckBox(pWidget());
+        QCheckBox *pCheckBox = new QCheckBox(this);
         dcSetShort(pCheckBox, _dcNull);
         pButtons->addButton(pCheckBox, id);
         pVLayout->addWidget(pCheckBox);
@@ -586,11 +652,6 @@ int cSetWidget::set(const QVariant& v)
     return r;
 }
 
-int cSetWidget::height()
-{
-    return _height;
-}
-
 void cSetWidget::setFromEdit(int id)
 {
     _DBGFNL() << id << endl;
@@ -621,21 +682,22 @@ cEnumRadioWidget::cEnumRadioWidget(const cTableShape& _tm, const cTableShapeFiel
     : cFieldEditBase(_tm, _tf, __fr, _fl, _par)
 {
     _wType = FEW_ENUM_RADIO;
-    _pWidget = new QWidget(_par == NULL ? NULL : _par->pWidget());
     bool vert = _fieldShape.isFeature("horizontal");
-    pButtons  = new QButtonGroup(pWidget());
+    pButtons  = new QButtonGroup(this);
     if (vert) {
         pLayout = new QHBoxLayout;
+        _height = _colDescr.enumType().enumValues.size();
+        if (_dcNull != DC_INVALID) ++_height;
     }
     else {
         pLayout = new QVBoxLayout;
     }
     pButtons->setExclusive(true);
-    widget().setLayout(pLayout);
+    setLayout(pLayout);
     int id = 0;
     eval = _colDescr.toId(_value);
     for (id = 0; id < _colDescr.enumType().enumValues.size(); ++id) {
-        QRadioButton *pRadioButton = new QRadioButton(pWidget());
+        QRadioButton *pRadioButton = new QRadioButton(this);
         enumSetShort(pRadioButton, _colDescr.enumType(), id, _colDescr.enumType().enum2str(id), _tf.getId(_sFieldFlags));
         pButtons->addButton(pRadioButton, id);
         pLayout->addWidget(pRadioButton);
@@ -643,7 +705,7 @@ cEnumRadioWidget::cEnumRadioWidget(const cTableShape& _tm, const cTableShapeFiel
         pRadioButton->setDisabled(_readOnly);
     }
     if (_dcNull != DC_INVALID) {
-        QRadioButton *pRadioButton = new QRadioButton(pWidget());
+        QRadioButton *pRadioButton = new QRadioButton(this);
         dcSetShort(pRadioButton, _dcNull);
         pButtons->addButton(pRadioButton, id);
         pLayout->addWidget(pRadioButton);
@@ -671,11 +733,6 @@ int cEnumRadioWidget::set(const QVariant& v)
         }
     }
     return r;
-}
-
-int cEnumRadioWidget::height()
-{
-    return pButtons->buttons().size();
 }
 
 void cEnumRadioWidget::setFromEdit(int id)
@@ -706,14 +763,16 @@ cEnumComboWidget::cEnumComboWidget(const cTableShape& _tm, const cTableShapeFiel
     if (_readOnly && _par != NULL) EXCEPTION(EPROGFAIL, 0, _tf.identifying() + "\n" + __fr.record().identifying());
     eval = getId();
     _wType = FEW_ENUM_COMBO;
-    QComboBox *pCB = new QComboBox(_par == NULL ? NULL : _par->pWidget());
-    _pWidget = pCB;
+    pComboBox = new QComboBox;
+    pLayout = new QHBoxLayout;
+    setLayout(pLayout);
+    pLayout->addWidget(pComboBox);
     nulltype = _dcNull == DC_INVALID ? NT_NOT_NULL : (eNullType)_dcNull;
     cEnumListModel *pModel = new cEnumListModel(&_colDescr.enumType(), nulltype);
-    pModel->joinWith(pCB);
-    pCB->setEditable(false);                  // Nem editálható, választás csak a listából
+    pModel->joinWith(pComboBox);
+    pComboBox->setEditable(false);                  // Nem editálható, választás csak a listából
     setWidget();
-    connect(pCB, SIGNAL(currentIndexChanged(int)), this, SLOT(setFromEdit(int)));
+    connect(pComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(setFromEdit(int)));
 }
 
 cEnumComboWidget::~cEnumComboWidget()
@@ -723,7 +782,6 @@ cEnumComboWidget::~cEnumComboWidget()
 
 void cEnumComboWidget::setWidget()
 {
-    QComboBox *pComboBox = (QComboBox *)_pWidget;
     if (isContIx(_colDescr.enumType().enumValues, eval)) {
         int ix = eval;
         if (nulltype != NT_NOT_NULL) ++ix;
@@ -762,7 +820,6 @@ void cEnumComboWidget::setFromEdit(int index)
     qlonglong v = newEval;
     qlonglong dummy;
     setFromWidget(_colDescr.set(QVariant(v), dummy));
-    //QComboBox *pCB = dynamic_cast<QComboBox *>(_pWidget);
 
 }
 
@@ -771,47 +828,58 @@ void cEnumComboWidget::setFromEdit(int index)
 cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef _fr, int _fl, cRecordDialogBase *_par)
     : cFieldEditBase(_tm, _tf, _fr, _fl, _par)
 {
-    QLineEdit *pLE = NULL;
-    QPlainTextEdit *pTE = NULL;
+    pLineEdit      = NULL;
+    pPlainTextEdit = NULL;
+    pNullButton    = NULL;
     isPwd = false;
+    pLayout = new QHBoxLayout;
+    setLayout(pLayout);
     if (_colDescr.eColType == cColStaticDescr::FT_TEXT && _fieldShape.getBool(_sFieldFlags, FF_HUGE)) {
         _wType = FEW_LINES;  // Widget típus azonosító
-        pTE = new QPlainTextEdit(_par == NULL ? NULL : _par->pWidget());
-        _pWidget = pTE;
+        pEditWidget = pPlainTextEdit = new QPlainTextEdit;
+        pLayout->addWidget(pPlainTextEdit);
+        _height = 4;
     }
     else {
         _wType = FEW_LINE;  // Widget típus azonosító
-        pLE = new QLineEdit(_par == NULL ? NULL : _par->pWidget());
-        _pWidget = pLE;
-        isPwd = _fieldShape.getBool(_sFieldFlags, FF_PASSWD);
+        pEditWidget = pLineEdit = new QLineEdit;
+        pLayout->addWidget(pLineEdit);
+        isPwd = _fieldShape.getBool(_sFieldFlags, FF_PASSWD);   // Password?
     }
-    bool nullable = _colDescr.isNullable;
+    if (_colDescr.eColType == cColStaticDescr::FT_TEXT) {
+        if (_nullable || _hasDefault) {
+            bool isNull = _fr.isNull();
+            setupNullButton(isNull);
+            cFieldEditBase::disableEditWidget(isNull);
+        }
+    }
+
     QString tx;
     if (_readOnly == false) {
         tx = _fr.toString();
         _value = QVariant(tx);
         switch (_colDescr.eColType) {
-        case cColStaticDescr::FT_INTEGER:   pLE->setValidator(new cIntValidator( nullable, pLE));   break;
-        case cColStaticDescr::FT_REAL:      pLE->setValidator(new cRealValidator(nullable, pLE));   break;
-        case cColStaticDescr::FT_TEXT:                                                              break;
-        case cColStaticDescr::FT_MAC:       pLE->setValidator(new cMacValidator( nullable, pLE));   break;
-        case cColStaticDescr::FT_INET:      pLE->setValidator(new cINetValidator(nullable, pLE));   break;
-        case cColStaticDescr::FT_CIDR:      pLE->setValidator(new cCidrValidator(nullable, pLE));   break;
+        case cColStaticDescr::FT_INTEGER:   pLineEdit->setValidator(new cIntValidator( _nullable, pLineEdit));   break;
+        case cColStaticDescr::FT_REAL:      pLineEdit->setValidator(new cRealValidator(_nullable, pLineEdit));   break;
+        case cColStaticDescr::FT_TEXT:      /* no validator */                                                  break;
+        case cColStaticDescr::FT_MAC:       pLineEdit->setValidator(new cMacValidator( _nullable, pLineEdit));   break;
+        case cColStaticDescr::FT_INET:      pLineEdit->setValidator(new cINetValidator(_nullable, pLineEdit));   break;
+        case cColStaticDescr::FT_CIDR:      pLineEdit->setValidator(new cCidrValidator(_nullable, pLineEdit));   break;
         default:    EXCEPTION(ENOTSUPP);
         }
         if (isPwd) {
-            pLE->setEchoMode(QLineEdit::Password);
-            pLE->setText("");
+            pLineEdit->setEchoMode(QLineEdit::Password);
+            pLineEdit->setText("");
             _value.clear();
-            connect(pLE, SIGNAL(editingFinished()),  this, SLOT(setFromEdit()));
+            connect(pLineEdit, SIGNAL(editingFinished()),  this, SLOT(setFromEdit()));
         }
-        else if (pLE != NULL){
-            pLE->setText(_fr);
-            connect(pLE, SIGNAL(editingFinished()),  this, SLOT(setFromEdit()));
+        else if (pLineEdit != NULL){
+            pLineEdit->setText(_fr);
+            connect(pLineEdit, SIGNAL(editingFinished()),  this, SLOT(setFromEdit()));
         }
         else {
-            pTE->setPlainText(_fr);
-            connect(pTE, SIGNAL(textChanged()),  this, SLOT(setFromEdit()));
+            pPlainTextEdit->setPlainText(_fr);
+            connect(pPlainTextEdit, SIGNAL(textChanged()),  this, SLOT(setFromEdit()));
         }
     }
     else {
@@ -821,17 +889,17 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
         }
         else if (_isInsert) {
             if (_wType == FEW_LINE) {
-                if      (_hasAuto)    dcSetShort(pLE, DC_AUTO);
-                else if (_hasDefault) dcSetShort(pLE, DC_DEFAULT);;
+                if      (_hasAuto)    dcSetShort(pLineEdit, DC_AUTO);
+                else if (_hasDefault) dcSetShort(pLineEdit, DC_DEFAULT);;
             }
         }
         if (_wType == FEW_LINE) {
-            pLE->setText(tx);
-            pLE->setReadOnly(true);
+            pLineEdit->setText(tx);
+            pLineEdit->setReadOnly(true);
         }
         else {
-            pTE->setPlainText(tx);
-            pTE->setReadOnly(true);
+            pPlainTextEdit->setPlainText(tx);
+            pPlainTextEdit->setReadOnly(true);
         }
     }
 }
@@ -844,11 +912,11 @@ cFieldLineWidget::~cFieldLineWidget()
 int cFieldLineWidget::set(const QVariant& v)
 {
     if (isPwd) {
-        pLineEdit()->setText(_sNul);
+        pLineEdit->setText(_sNul);
         return 0;
     }
     int r = cFieldEditBase::set(v);
-    if (1 == r) {
+    if (1 == r && !_isDisabledEdit) {
         QString txt;
         if (_readOnly == false) {
             txt = _colDescr.toName(_value);
@@ -856,44 +924,24 @@ int cFieldLineWidget::set(const QVariant& v)
         else {
             txt = _colDescr.toView(*pq, _value);
         }
-        if (_wType == FEW_LINE) pLineEdit()->setText(txt);
-        else                    pTextEdit()->setPlainText(txt);
+        if (_wType == FEW_LINE) pLineEdit->setText(txt);
+        else                    pPlainTextEdit->setPlainText(txt);
     }
     return r;
 }
 
-int cFieldLineWidget::height()
-{
-    if (_wType == FEW_LINE) return 1;
-    else                    return 4;
-}
-
-void cFieldLineWidget::setFromEdit()
-{
-    QString  s;
-    if (_wType == FEW_LINE) s = pLineEdit()->text();
-    else                    s = pTextEdit()->toPlainText();
-    QVariant v; // NULL
-    if (!s.isEmpty() || !(isPwd || _nullable || (_isInsert && _hasDefault))) {
-        v = QVariant(s);
-    }
-    setFromWidget(v);
-    valid();
-}
-
-
 /* **************************************** cArrayWidget ****************************************  */
 
 
-cArrayWidget::cArrayWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase *_par)
-    : cFieldEditBase(_tm, _tf, __fr, _fl, _par)
+cArrayWidget::cArrayWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef _fr, int _fl, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, _fr, _fl, _par)
     , last()
 {
     _wType   = FEW_ARRAY;
+    _height  = 4;
 
-    _pWidget = new QWidget(_par == NULL ? NULL : _par->pWidget());
     pUi      = new Ui_arrayEd;
-    pUi->setupUi(_pWidget);
+    pUi->setupUi(this);
 
     selectedNum = 0;
 
@@ -904,8 +952,15 @@ cArrayWidget::cArrayWidget(const cTableShape& _tm, const cTableShapeField &_tf, 
     pUi->pushButtonMod->setDisabled(_readOnly);
     pUi->pushButtonDel->setDisabled(_readOnly);
     pUi->pushButtonClr->setDisabled(_readOnly);
+    if (_nullable || _hasDefault) {
+        bool isNull = _fr.isNull();
+        setupNullButton(isNull, new QPushButton);
+        cFieldEditBase::disableEditWidget(isNull);
+        pUi->gridLayout->addWidget(pNullButton, 3, 1);
+    }
 
-    pModel = new cStringListModel(pWidget());
+
+    pModel = new cStringListModel(this);
     pModel->setStringList(_value.toStringList());
     pUi->listView->setModel(pModel);
     pUi->listView->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -929,32 +984,34 @@ cArrayWidget::~cArrayWidget()
 int cArrayWidget::set(const QVariant& v)
 {
     int r = cFieldEditBase::set(v);
-    if (1 == r) {
+    if (1 == r && !_isDisabledEdit) {
         pModel->setStringList(_value.toStringList());
-        setButtons();
     }
+    setButtons();
     return r;
-}
-
-int cArrayWidget::height()
-{
-    return 6;
 }
 
 void cArrayWidget::setButtons()
 {
-    bool eArr = pModel->isEmpty();
-    bool eLin = pUi->lineEdit->text().isEmpty();
-    bool sing = selectedNum == 1;
-    bool any  = selectedNum > 0;
+    bool eArr = _readOnly || _isDisabledEdit || pModel->isEmpty();
+    bool eLin = _readOnly || _isDisabledEdit || pUi->lineEdit->text().isEmpty();
+    bool sing = _readOnly || _isDisabledEdit || selectedNum == 1;
+    bool any  = _readOnly || _isDisabledEdit || selectedNum > 0;
 
-    pUi->pushButtonAdd ->setDisabled(eLin         || _readOnly);
-    pUi->pushButtonIns ->setDisabled(eLin || sing || _readOnly);
-    pUi->pushButtonUp  ->setDisabled(        any  || _readOnly);
-    pUi->pushButtonDown->setDisabled(        any  || _readOnly);
-    pUi->pushButtonMod ->setDisabled(eLin || sing || _readOnly);
-    pUi->pushButtonDel ->setDisabled(eArr         || _readOnly);
-    pUi->pushButtonClr ->setDisabled(eArr         || _readOnly);
+    pUi->pushButtonAdd ->setDisabled(eLin        );
+    pUi->pushButtonIns ->setDisabled(eLin || sing);
+    pUi->pushButtonUp  ->setDisabled(        any );
+    pUi->pushButtonDown->setDisabled(        any );
+    pUi->pushButtonMod ->setDisabled(eLin || sing);
+    pUi->pushButtonDel ->setDisabled(eArr        );
+    pUi->pushButtonClr ->setDisabled(eArr        );
+}
+
+void cArrayWidget::disableEditWidget(eTristate tsf)
+{
+    cFieldEditBase::disableEditWidget(tsf);
+    setButtons();
+    pUi->lineEdit->setDisabled(_isDisabledEdit);
 }
 
 // cArrayWidget SLOTS
@@ -1079,6 +1136,7 @@ cPolygonWidget::cPolygonWidget(const cTableShape& _tm, const cTableShapeField &_
     , xPrev(), yPrev()
 {
     _wType = FEW_POLYGON;
+    _height = 5;
 
     pMapWin = NULL;
     pCImage = NULL;
@@ -1087,9 +1145,8 @@ cPolygonWidget::cPolygonWidget(const cTableShape& _tm, const cTableShapeField &_
     selectedRowNum = 0;
     xOk = yOk = xyOk = false ;
 
-    _pWidget = new QWidget(_par == NULL ? NULL : _par->pWidget());
     pUi = new Ui_polygonEd;
-    pUi->setupUi(_pWidget);
+    pUi->setupUi(this);
 
     pUi->lineEditX->setDisabled(_readOnly);
     pUi->lineEditY->setDisabled(_readOnly);
@@ -1163,11 +1220,6 @@ int cPolygonWidget::set(const QVariant& v)
     }
     getImage();    // Feltételezi, hogy az rekord ID ha van elöbb lett megadva
     return r;
-}
-
-int cPolygonWidget::height()
-{
-    return 6;
 }
 
 /// Ha a feltételek teljesülnek, akkor kitölti a pCImage objektumot.
@@ -1462,12 +1514,11 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
 {
     if (_readOnly && _par != NULL) EXCEPTION(EPROGFAIL, 0, _tf.identifying() + "\n" + __fr.record().identifying());
     _wType = FEW_FKEY;
-    _pWidget = new QWidget(_par == NULL ? NULL : _par->pWidget());
     pUi = new Ui_fKeyEd;
-    pUi->setupUi(_pWidget);
+    pUi->setupUi(this);
 
     pRDescr = cRecStaticDescr::get(_colDescr.fKeyTable, _colDescr.fKeySchema);
-    pModel = new cRecordListModel(*pRDescr, pWidget());
+    pModel = new cRecordListModel(*pRDescr, this);
     pModel->nullable = _colDescr.isNullable;
     pModel->setToNameF(_colDescr.fnToName);
     QString owner = _fieldShape.feature(_sOwner);   //
@@ -1634,13 +1685,20 @@ void cFKeyWidget::modifyOwnerId(cFieldEditBase* pof)
 /* **************************************** cDateWidget ****************************************  */
 
 
-cDateWidget::cDateWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, cRecordDialogBase *_par)
-    : cFieldEditBase(_tm, _tf, __fr, false, _par)
+cDateWidget::cDateWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef _fr, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, _fr, false, _par)
 {
     _wType = FEW_DATE;
-    QDateEdit * pDE = new QDateEdit(_par == NULL ? NULL : _par->pWidget());
-    _pWidget = pDE;
-    connect(pDE, SIGNAL(dateChanged(QDate)),  this, SLOT(setFromEdit(QDate)));
+    pLayout = new QHBoxLayout;
+    setLayout(pLayout);
+    pEditWidget = pDateEdit = new QDateEdit;
+    pLayout->addWidget(this);
+    if (_nullable || _hasDefault) {
+        bool isNull = _fr.isNull();
+        setupNullButton(isNull);
+        cFieldEditBase::disableEditWidget(isNull);
+    }
+    connect(pDateEdit, SIGNAL(dateChanged(QDate)),  this, SLOT(setFromEdit(QDate)));
 }
 
 cDateWidget::~cDateWidget()
@@ -1651,11 +1709,22 @@ cDateWidget::~cDateWidget()
 int cDateWidget::set(const QVariant& v)
 {
     bool r = cFieldEditBase::set(v);
-    if (r == 1) {
-        QDateEdit * pDE = (QDateEdit *)_pWidget;
-        pDE->setDate(_value.toDate());
+    if (r == 1 && !_isDisabledEdit) {
+        pDateEdit->setDate(_value.toDate());
     }
     return r;
+}
+
+void cDateWidget::setFromEdit()
+{
+    QVariant v;
+    if (pNullButton != NULL && pNullButton->isChecked()) {
+        ;
+    }
+    else {
+        v = pDateEdit->date();
+    }
+    setFromWidget(v);
 }
 
 void cDateWidget::setFromEdit(QDate d)
@@ -1665,14 +1734,21 @@ void cDateWidget::setFromEdit(QDate d)
 
 /* **************************************** cTimeWidget ****************************************  */
 
-cTimeWidget::cTimeWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, cRecordDialogBase *_par)
-    : cFieldEditBase(_tm, _tf, __fr, false, _par)
+cTimeWidget::cTimeWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef _fr, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, _fr, false, _par)
 {
-    if (_readOnly && _par != NULL) EXCEPTION(EPROGFAIL, 0, _tf.identifying() + "\n" + __fr.record().identifying());
+    if (_readOnly && _par != NULL) EXCEPTION(EPROGFAIL, 0, _tf.identifying() + "\n" + _fr.record().identifying());
     _wType = FEW_TIME;
-    QTimeEdit * pTE = new QTimeEdit(_par == NULL ? NULL : _par->pWidget());
-    _pWidget = pTE;
-    connect(pTE, SIGNAL(TimeChanged(QTime)),  this, SLOT(setFromEdit(QTime)));
+    pLayout = new QHBoxLayout;
+    setLayout(pLayout);
+    pEditWidget = pTimeEdit = new QTimeEdit;
+    pLayout->addWidget(this);
+    if (_nullable || _hasDefault) {
+        bool isNull = _fr.isNull();
+        setupNullButton(isNull);
+        cFieldEditBase::disableEditWidget(isNull);
+    }
+    connect(pTimeEdit, SIGNAL(TimeChanged(QTime)),  this, SLOT(setFromEdit(QTime)));
 }
 
 cTimeWidget::~cTimeWidget()
@@ -1683,11 +1759,22 @@ cTimeWidget::~cTimeWidget()
 int cTimeWidget::set(const QVariant& v)
 {
     bool r = cFieldEditBase::set(v);
-    if (r == 1) {
-        QTimeEdit * pTE = (QTimeEdit *)_pWidget;
-        pTE->setTime(_value.toTime());
+    if (r == 1 && !_isDisabledEdit) {
+        pTimeEdit->setTime(_value.toTime());
     }
     return r;
+}
+
+void cTimeWidget::setFromEdit()
+{
+    QVariant v;
+    if (pNullButton != NULL && pNullButton->isChecked()) {
+        ;
+    }
+    else {
+        v = pTimeEdit->time();
+    }
+    setFromWidget(v);
 }
 
 void cTimeWidget::setFromEdit(QTime d)
@@ -1697,14 +1784,21 @@ void cTimeWidget::setFromEdit(QTime d)
 
 /* **************************************** cDateTimeWidget ****************************************  */
 
-cDateTimeWidget::cDateTimeWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, cRecordDialogBase *_par)
-    : cFieldEditBase(_tm, _tf, __fr,false, _par)
+cDateTimeWidget::cDateTimeWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef _fr, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, _fr,false, _par)
 {
-    if (_readOnly && _par != NULL) EXCEPTION(EPROGFAIL, 0, _tf.identifying() + "\n" + __fr.record().identifying());
+    if (_readOnly && _par != NULL) EXCEPTION(EPROGFAIL, 0, _tf.identifying() + "\n" + _fr.record().identifying());
+    pLayout = new QHBoxLayout;
+    setLayout(pLayout);
     _wType = FEW_DATE_TIME;
-    QDateTimeEdit * pDTE = new QDateTimeEdit(_par == NULL ? NULL : _par->pWidget());
-    _pWidget = pDTE;
-    connect(pDTE, SIGNAL(dateTimeChanged(QDateTime)),  this, SLOT(setFromEdit(QDateTime)));
+    pEditWidget = pDateTimeEdit = new QDateTimeEdit;
+    pLayout->addWidget(this);
+    if (_nullable || _hasDefault) {
+        bool isNull = _fr.isNull();
+        setupNullButton(isNull);
+        cFieldEditBase::disableEditWidget(isNull);
+    }
+    connect(pDateTimeEdit, SIGNAL(dateTimeChanged(QDateTime)),  this, SLOT(setFromEdit(QDateTime)));
 }
 
 cDateTimeWidget::~cDateTimeWidget()
@@ -1715,11 +1809,22 @@ cDateTimeWidget::~cDateTimeWidget()
 int cDateTimeWidget::set(const QVariant& v)
 {
     bool r = cFieldEditBase::set(v);
-    if (r == 1) {
-        QDateTimeEdit * pDTE = (QDateTimeEdit *)_pWidget;
-        pDTE->setDateTime(_value.toDateTime());
+    if (r == 1 && !_isDisabledEdit) {
+        pDateTimeEdit->setDateTime(_value.toDateTime());
     }
     return r;
+}
+
+void cDateTimeWidget::setFromEdit()
+{
+    QVariant v;
+    if (pNullButton != NULL && pNullButton->isChecked()) {
+        ;
+    }
+    else {
+        v = pDateTimeEdit->dateTime();
+    }
+    setFromWidget(v);
 }
 
 void cDateTimeWidget::setFromEdit(QDateTime d)
@@ -1730,32 +1835,36 @@ void cDateTimeWidget::setFromEdit(QDateTime d)
 /* **************************************** cIntervalWidget ****************************************  */
 
 
-cIntervalWidget::cIntervalWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase *_par)
-    : cFieldEditBase(_tm, _tf, __fr, _fl, _par)
+cIntervalWidget::cIntervalWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef _fr, int _fl, cRecordDialogBase *_par)
+    : cFieldEditBase(_tm, _tf, _fr, _fl, _par)
 {
     _wType = FEW_INTERVAL;
-    _pWidget = new QWidget(_par == NULL ? NULL : _par->pWidget());
     pLayout = new QHBoxLayout;
-    _pWidget->setLayout(pLayout);
-    pLineEdDay = new QLineEdit(_pWidget);
-    pLayout->addWidget(pLineEdDay);
-    pLabelDay = new QLabel(tr(" Nap "), _pWidget);
+    setLayout(pLayout);
+    pLineEditDay = new QLineEdit;
+    pLayout->addWidget(pLineEditDay);
+    pLabelDay = new QLabel(tr(" Nap "));
     pLayout->addWidget(pLabelDay);
-    pTimeEd = new QTimeEdit(_pWidget);
-    pLayout->addWidget(pTimeEd);
-    pTimeEd->setDisplayFormat("HH:mm:ss.zzz");
+    pTimeEdit = new QTimeEdit;
+    pLayout->addWidget(pTimeEdit);
+    pTimeEdit->setDisplayFormat("HH:mm:ss.zzz");
     if (_readOnly) {
         pValidatorDay = NULL;
         view();
-        pLineEdDay->setReadOnly(true);
-        pTimeEd->setReadOnly(true);
+        pLineEditDay->setReadOnly(true);
+        pTimeEdit->setReadOnly(true);
     }
     else {
-        pValidatorDay = new QIntValidator(0, 9999, _pWidget);
-        pLineEdDay->setValidator(pValidatorDay);
+        pValidatorDay = new QIntValidator(0, 9999, this);
+        pLineEditDay->setValidator(pValidatorDay);
         view();
-        connect(pLineEdDay, SIGNAL(editingFinished()),  this, SLOT(setFromEdit()));
-        connect(pTimeEd,    SIGNAL(editingFinished()),  this, SLOT(setFromEdit()));
+        connect(pLineEditDay, SIGNAL(editingFinished()),  this, SLOT(setFromEdit()));
+        connect(pTimeEdit,    SIGNAL(editingFinished()),  this, SLOT(setFromEdit()));
+    }
+    if (_nullable || _hasDefault) {
+        bool isNull = _fr.isNull();
+        setupNullButton(isNull);
+        cIntervalWidget::disableEditWidget(bool2ts(isNull));
     }
 }
 
@@ -1764,11 +1873,19 @@ cIntervalWidget::~cIntervalWidget()
     ;
 }
 
+void cIntervalWidget::disableEditWidget(eTristate tsf)
+{
+    setBool(_isDisabledEdit, tsf);
+    pLineEditDay->setDisabled(_isDisabledEdit);
+    pLabelDay->setDisabled(_isDisabledEdit);
+    pTimeEdit->setDisabled(_isDisabledEdit);
+}
+
 qlonglong cIntervalWidget::getFromWideget() const
 {
-    QTime t = pTimeEd->time();
+    QTime t = pTimeEdit->time();
     qlonglong r;
-    r = pLineEdDay->text().toInt();
+    r = pLineEditDay->text().toInt();
     r = (r *   24) + t.hour();
     r = (r *   60) + t.minute();
     r = (r *   60) + t.second();
@@ -1779,7 +1896,7 @@ qlonglong cIntervalWidget::getFromWideget() const
 int cIntervalWidget::set(const QVariant& v)
 {
     bool r = cFieldEditBase::set(v);
-    if (r == 1) view();
+    if (r == 1 && !_isDisabledEdit) view();
     return r;
 }
 
@@ -1792,12 +1909,12 @@ void cIntervalWidget::view()
         int minute = v %   60; v /=   60;
         int hour   = v %   24; v /=   24;
         QTime t(hour, minute, sec, msec);
-        pTimeEd->setTime(t);
-        pLineEdDay->setText(QString::number(v));
+        pTimeEdit->setTime(t);
+        pLineEditDay->setText(QString::number(v));
     }
     else {
-        pTimeEd->clear();
-        pLineEdDay->clear();
+        pTimeEdit->clear();
+        pLineEditDay->clear();
     }
 }
 
@@ -1839,14 +1956,13 @@ void cBinaryWidget::_init()
     const cRecStaticDescr& cidescr = cImage().descr();
     isCImage   = _recDescr == cidescr;     // éppen egy cImage objektumot szerkesztünk
 
-    _pWidget        = new QWidget(_pParentDialog == NULL ? NULL :_pParentDialog->pWidget());
-    pLayout         = new QHBoxLayout;
-    _pWidget->setLayout(pLayout);
-    pRadioButtonNULL    = new QRadioButton(_sNULL, _pWidget);
+    pLayout = new QHBoxLayout;
+    setLayout(pLayout);
+    pRadioButtonNULL = new QRadioButton(_sNULL, this);
     pRadioButtonNULL->setDisabled(_readOnly);
     pLayout->addWidget(pRadioButtonNULL);
     if (!_readOnly) {
-        pLoadButton  = new QPushButton(trUtf8("Betölt"), _pWidget);
+        pLoadButton  = new QPushButton(trUtf8("Betölt"));
         pLayout->addWidget(pLoadButton);
         connect(pRadioButtonNULL, SIGNAL(clicked(bool)), this, SLOT(nullChecked(bool)));
         connect(pLoadButton, SIGNAL(pressed()), this, SLOT(loadDataFromFile()));
@@ -1922,11 +2038,11 @@ int cBinaryWidget::set(const QVariant& v)
 
 void cBinaryWidget::loadDataFromFile()
 {
-    QString fn = QFileDialog::getOpenFileName(pWidget());
+    QString fn = QFileDialog::getOpenFileName(this);
     if (fn.isEmpty()) return;
     QFile f(fn);
     if (f.open(QIODevice::ReadOnly) == false && f.isReadable() == false) {
-        QMessageBox::warning(pWidget(), dcViewShort(DC_ERROR), trUtf8("A megadott %1 nevű fájl nem olvasható").arg(fn));
+        QMessageBox::warning(this, dcViewShort(DC_ERROR), trUtf8("A megadott %1 nevű fájl nem olvasható").arg(fn));
         return;
     }
     data = f.readAll();
@@ -2010,9 +2126,8 @@ cFKeyArrayWidget::cFKeyArrayWidget(const cTableShape& _tm, const cTableShapeFiel
     _wType   = FEW_FKEY_ARRAY;
 
     pFRecModel = NULL;
-    _pWidget = new QWidget(_par == NULL ? NULL : _par->pWidget());
     pUi      = new Ui_fKeyArrayEd;
-    pUi->setupUi(_pWidget);
+    pUi->setupUi(this);
 
     selectedNum = 0;
 
@@ -2023,7 +2138,7 @@ cFKeyArrayWidget::cFKeyArrayWidget(const cTableShape& _tm, const cTableShapeFiel
     pUi->pushButtonDel->setDisabled(_readOnly);
     pUi->pushButtonClr->setDisabled(_readOnly);
 
-    pArrayModel = new cStringListModel(pWidget());
+    pArrayModel = new cStringListModel(this);
     pRDescr = cRecStaticDescr::get(_colDescr.fKeyTable, _colDescr.fKeySchema);
     cRecordAny  r(pRDescr);
     foreach (QVariant vId, _value.toList()) {
@@ -2034,7 +2149,7 @@ cFKeyArrayWidget::cFKeyArrayWidget(const cTableShape& _tm, const cTableShapeFiel
     pUi->listView->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
     if (!_readOnly) {
-        pFRecModel  = new cRecordListModel(*pRDescr, pWidget());
+        pFRecModel  = new cRecordListModel(*pRDescr, this);
         pFRecModel->joinWith(pUi->comboBox);
         pFRecModel->setFilter();
         pUi->comboBox->setCurrentIndex(0);
@@ -2178,28 +2293,29 @@ void cFKeyArrayWidget::doubleClickRow(const QModelIndex & index)
 /* **************************************** cColorWidget ****************************************  */
 
 
+// EGYEDI!!!! Javítandó!!!!
 cColorWidget::cColorWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase *_par)
     : cFieldEditBase(_tm, _tf, __fr, _fl, _par), pixmap(24, 24)
 {
     _wType = FEW_COLOR;
-    _pWidget = new QWidget(_par == NULL ? NULL : _par->pWidget());
-    QHBoxLayout *pLayout = new QHBoxLayout;
-    _pWidget->setLayout(pLayout);
+    QHBoxLayout *pHBLayout = new QHBoxLayout;
+    pLayout = pHBLayout;
+    setLayout(pHBLayout);
     pLineEdit = new QLineEdit(_value.toString());
     pLineEdit->setReadOnly(_fl);
-    pLayout->addWidget(pLineEdit, 1);
+    pHBLayout->addWidget(pLineEdit, 1);
     pLabel = new QLabel;
-    pLayout->addWidget(pLabel);
+    pHBLayout->addWidget(pLabel);
     if (!_readOnly) {
         QToolButton *pButton = new QToolButton;
         pButton->setIcon(QIcon("://colorize.ico"));
-        pLayout->addWidget(pButton, 0);
+        pHBLayout->addWidget(pButton, 0);
         connect(pLineEdit, SIGNAL(textChanged(QString)),  this, SLOT(setFromEdit(QString)));
         connect(pButton,   SIGNAL(pressed()),             this, SLOT(colorDialog()));
         sTitle = trUtf8("Szín kiválasztása");
     }
     setColor(_value.toString());
-    pLayout->addStretch();
+    pHBLayout->addStretch();
 }
 
 cColorWidget::~cColorWidget()
@@ -2239,7 +2355,7 @@ void cColorWidget::setFromEdit(const QString& text)
 
 void cColorWidget::colorDialog()
 {
-    QColor c = QColorDialog::getColor(color, pWidget(), sTitle);
+    QColor c = QColorDialog::getColor(color, this, sTitle);
     if (c.isValid()) {
         pLineEdit->setText(c.name());
     }
@@ -2250,27 +2366,21 @@ void cColorWidget::colorDialog()
 
 cFontFamilyWidget::cFontFamilyWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, cRecordDialogBase *_par)
     : cFieldEditBase(_tm, _tf, __fr, false, _par)
-    , iconNull("://dialog-no.ico"), iconNotNull("://dialog-no-off.png")
 {
     if (_readOnly && _par != NULL) EXCEPTION(EPROGFAIL, 0, _tf.identifying() + "\n" + __fr.record().identifying());
     _wType = FEW_FONT_FAMILY;
-    _pWidget = new QWidget(_par == NULL ? NULL : _par->pWidget());
-    QHBoxLayout *pLayout = new QHBoxLayout;
-    _pWidget->setLayout(pLayout);
-    bool isNull = __fr.isNull();
-    pToolButtonNull = new QToolButton;
-    pToolButtonNull->setIcon(isNull ? iconNull : iconNotNull);
-    pToolButtonNull->setIcon(iconNull);
-    pToolButtonNull->setCheckable(true);
-    pToolButtonNull->setChecked(isNull);
-    pLayout->addWidget(pToolButtonNull);
-
-    pFontComboBox = new QFontComboBox;
-    pFontComboBox->setDisabled(isNull);
-    if (!isNull) pFontComboBox->setCurrentFont(QFont((QString)__fr));
+    QHBoxLayout *pHBLayout = new QHBoxLayout;
+    pLayout = pHBLayout;
+    setLayout(pHBLayout);
+    pEditWidget = pFontComboBox = new QFontComboBox;
     pLayout->addWidget(pFontComboBox);
-    pLayout->addStretch(0);
-    connect(pToolButtonNull, SIGNAL(toggled(bool)),             this, SLOT(togleNull(bool)));
+    bool isNull = __fr.isNull();
+    if (_nullable || _hasDefault) {
+        setupNullButton(isNull);
+        cFieldEditBase::disableEditWidget(isNull);
+    }
+    if (!isNull) pFontComboBox->setCurrentFont(QFont((QString)__fr));
+    pHBLayout->addStretch(0);
     connect(pFontComboBox,   SIGNAL(currentFontChanged(QFont)), this, SLOT(changeFont(QFont)));
 }
 
@@ -2283,20 +2393,10 @@ cFontFamilyWidget::~cFontFamilyWidget()
 int cFontFamilyWidget::set(const QVariant& v)
 {
     bool r = cFieldEditBase::set(v);
-    if (r == 1) {
-        bool isNull = v.isNull();
-        pToolButtonNull->setChecked(isNull);
-        pFontComboBox->setDisabled(isNull);
-        if (!isNull) pFontComboBox->setCurrentFont(QFont(v.toString()));
+    if (r == 1 && _isDisabledEdit) {
+        pFontComboBox->setCurrentFont(QFont(v.toString()));
     }
     return r;
-}
-
-void cFontFamilyWidget::togleNull(bool f)
-{
-    pFontComboBox->setDisabled(f);
-    setFromWidget(f ? QVariant(pFontComboBox->currentText()) : QVariant());
-    pToolButtonNull->setIcon(f ? iconNull : iconNotNull);
 }
 
 void cFontFamilyWidget::changeFont(const QFont&)
@@ -2304,117 +2404,67 @@ void cFontFamilyWidget::changeFont(const QFont&)
     setFromWidget(QVariant(pFontComboBox->currentText()));
 }
 
+void cFontFamilyWidget::setFromEdit()
+{
+    QVariant v;
+    if (pNullButton != NULL && pNullButton->isChecked()) {
+        ; // NULL/Default
+    }
+    else {
+        v = QVariant(pFontComboBox->currentText());
+    }
+    setFromWidget(v);
+}
+
 
 /* **************************************** cFontAttrWidget ****************************************  */
 
 const QString cFontAttrWidget::sEnumTypeName = "fontattr";
+QIcon         cFontAttrWidget::iconBold;
+QIcon         cFontAttrWidget::iconItalic;
+QIcon         cFontAttrWidget::iconUnderline;
+QIcon         cFontAttrWidget::iconStrikeout;
 
 cFontAttrWidget::cFontAttrWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase *_par)
     : cFieldEditBase(_tm, _tf, __fr, _fl, _par)
-    , iconNull("://dialog-no.ico"), iconNotNull("://dialog-no-off.png")
-    , iconBold("://icons/format-text-bold.ico"), iconBoldNo("://icons/format-text-bold-no.png")
-    , iconItalic("://icons/format-text-italic.ico"), iconItalicNo("://icons/format-text-italic-no.png")
-    , iconUnderline("://icons/format-text-underline.ico"), iconUnderlineNo("://icons/format-text-underline-no.png")
-    , iconStrikeout("://icons/format-text-strikethrough.ico"), iconStrikeoutNo("://icons/format-text-strikethrough-no.png")
-    , iconSize(22,22)
 {
+    if (iconBold.isNull()) {
+        iconBold.     addFile("://icons/format-text-bold.ico",             QSize(), QIcon::Normal, QIcon::On);
+        iconBold.     addFile("://icons/format-text-bold-no.png",          QSize(), QIcon::Normal, QIcon::Off);
+        iconItalic.   addFile("://icons/format-text-italic.ico",           QSize(), QIcon::Normal, QIcon::On);
+        iconItalic.   addFile("://icons/format-text-italic-no.png",        QSize(), QIcon::Normal, QIcon::Off);
+        iconUnderline.addFile("://icons/format-text-underline.ico",        QSize(), QIcon::Normal, QIcon::On);
+        iconUnderline.addFile("://icons/format-text-underline-no.png",     QSize(), QIcon::Normal, QIcon::Off);
+        iconStrikeout.addFile("://icons/format-text-strikethrough.ico",    QSize(), QIcon::Normal, QIcon::On);
+        iconStrikeout.addFile("://icons/format-text-strikethrough-no.png", QSize(), QIcon::Normal, QIcon::Off);
+    }
     _wType = FEW_FONT_ATTR;
     bool isNull = __fr.isNull();
     m = isNull ? 0 : (qlonglong)__fr;
-    _pWidget = new QWidget(_par == NULL ? NULL : _par->pWidget());
-    QHBoxLayout *pLayout = new QHBoxLayout;
-    _pWidget->setLayout(pLayout);
-    QWidget *pW;
-    QIcon icon = isNull ? iconNull : iconNotNull;
-    if (_readOnly) {
-        pW = pLabelNull = new QLabel;
-        pLabelNull->setPixmap(icon.pixmap(iconSize));
-        pToolButtonNull = NULL;
-    }
-    else {
-        pW = pToolButtonNull = new QToolButton();
-        pToolButtonNull->setIcon(icon);
-        pToolButtonNull->setCheckable(true);
-        pToolButtonNull->setChecked(isNull);
-        pLabelNull = NULL;
-    }
-    pLayout->addWidget(pW);
+    QHBoxLayout *pHBLayout = new QHBoxLayout;
+    pLayout = pHBLayout;
+    setLayout(pLayout);
+    setupNullButton(isNull);
+    cFontAttrWidget::disableEditWidget(bool2ts(isNull));
 
     bool f = m & ENUM2SET(FA_BOOLD);
-    icon = f ? iconBold : iconBoldNo;
-    if (_readOnly) {
-        pW = pLabelBold = new QLabel;
-        pLabelBold->setPixmap(icon.pixmap(iconSize));
-        pToolButtonBold = NULL;
-    }
-    else {
-        pW = pToolButtonBold = new QToolButton();
-        pToolButtonBold->setIcon(icon);
-        pToolButtonBold->setCheckable(true);
-        pToolButtonBold->setChecked(f);
-        pToolButtonBold->setDisabled(isNull);
-        pLabelBold = NULL;
-    }
-    pLayout->addWidget(pW);
+    setupFlagWidget(f, iconBold, pLabelBold, pToolButtonBold);
 
     f = m & ENUM2SET(FA_ITALIC);
-    icon = f ? iconItalic : iconItalicNo;
-    if (_readOnly) {
-        pW = pLabelItalic = new QLabel;
-        pLabelItalic->setPixmap(icon.pixmap(iconSize));
-        pToolButtonItalic = NULL;
-    }
-    else {
-        pW = pToolButtonItalic = new QToolButton();
-        pToolButtonItalic->setIcon(icon);
-        pToolButtonItalic->setCheckable(true);
-        pToolButtonItalic->setChecked(f);
-        pToolButtonItalic->setDisabled(isNull);
-        pLabelItalic = NULL;
-    }
-    pLayout->addWidget(pW);
+    setupFlagWidget(f, iconItalic, pLabelItalic, pToolButtonItalic);
 
     f = m & ENUM2SET(FA_UNDERLINE);
-    icon = f ? iconUnderline : iconUnderlineNo;
-    if (_readOnly) {
-        pW = pLabelUnderline = new QLabel;
-        pLabelUnderline->setPixmap(icon.pixmap(iconSize));
-        pToolButtonUnderline = NULL;
-    }
-    else {
-        pW = pToolButtonUnderline  = new QToolButton();
-        pToolButtonUnderline->setIcon(icon);
-        pToolButtonUnderline->setCheckable(true);
-        pToolButtonUnderline->setChecked(f);
-        pToolButtonUnderline->setDisabled(isNull);
-        pLabelUnderline = NULL;
-    }
-    pLayout->addWidget(pW);
+    setupFlagWidget(f, iconUnderline, pLabelUnderline, pToolButtonUnderline);
 
     f = m & ENUM2SET(FA_STRIKEOUT);
-    icon = f ? iconStrikeout : iconStrikeoutNo;
-    if (_readOnly) {
-        pW = pLabelStrikeout = new QLabel;
-        pLabelStrikeout->setPixmap(icon.pixmap(iconSize));
-        pToolButtonStrikeout = NULL;
-    }
-    else {
-        pW = pToolButtonStrikeout  = new QToolButton();
-        pToolButtonStrikeout->setIcon(icon);
-        pToolButtonStrikeout->setCheckable(true);
-        pToolButtonStrikeout->setChecked(f);
-        pToolButtonStrikeout->setDisabled(isNull);
-        pLabelStrikeout = NULL;
-    }
-    pLayout->addWidget(pW);
-    pLayout->addStretch(0);
+    setupFlagWidget(f, iconStrikeout, pLabelStrikeout, pToolButtonStrikeout);
+    pHBLayout->addStretch(0);
 
     QSqlQuery q = getQuery();
     pEnumType = cColEnumType::fetchOrGet(q, sEnumTypeName);
     if (!_readOnly) {
-        connect(pToolButtonNull,      SIGNAL(toggled(bool)), this, SLOT(togleNull(bool)));
         connect(pToolButtonBold,      SIGNAL(toggled(bool)), this, SLOT(togleBoold(bool)));
-        connect(pToolButtonItalic,    SIGNAL(toggled(bool)), this, SLOT(togleItelic(bool)));
+        connect(pToolButtonItalic,    SIGNAL(toggled(bool)), this, SLOT(togleItalic(bool)));
         connect(pToolButtonUnderline, SIGNAL(toggled(bool)), this, SLOT(togleUnderline(bool)));
         connect(pToolButtonStrikeout, SIGNAL(toggled(bool)), this, SLOT(togleStrikeout(bool)));
     }
@@ -2429,42 +2479,70 @@ cFontAttrWidget::~cFontAttrWidget()
 int cFontAttrWidget::set(const QVariant& v)
 {
     bool r = cFieldEditBase::set(v);
-    if (r == 1) {
-        bool isNull = v.isNull();
+    if (r == 1 && !_isDisabledEdit) {
         if (_readOnly) {
             m = pEnumType->lst2set(v.toStringList());
-            pLabelNull->     setPixmap((isNull                     ? iconNull      : iconNotNull    ).pixmap(iconSize));
-            pLabelBold->     setPixmap((m & ENUM2SET(FA_BOOLD)     ? iconBold      : iconBoldNo     ).pixmap(iconSize));
-            pLabelItalic->   setPixmap((m & ENUM2SET(FA_ITALIC)    ? iconItalic    : iconItalicNo   ).pixmap(iconSize));
-            pLabelUnderline->setPixmap((m & ENUM2SET(FA_UNDERLINE) ? iconUnderline : iconUnderlineNo).pixmap(iconSize));
-            pLabelStrikeout->setPixmap((m & ENUM2SET(FA_STRIKEOUT) ? iconStrikeout : iconStrikeoutNo).pixmap(iconSize));
+            pLabelBold->     setPixmap(iconBold.     pixmap(iconSize, QIcon::Normal, m & ENUM2SET(FA_BOOLD)     ? QIcon::On : QIcon::Off));
+            pLabelItalic->   setPixmap(iconItalic.   pixmap(iconSize, QIcon::Normal, m & ENUM2SET(FA_ITALIC)    ? QIcon::On : QIcon::Off));
+            pLabelUnderline->setPixmap(iconUnderline.pixmap(iconSize, QIcon::Normal, m & ENUM2SET(FA_UNDERLINE) ? QIcon::On : QIcon::Off));
+            pLabelStrikeout->setPixmap(iconStrikeout.pixmap(iconSize, QIcon::Normal, m & ENUM2SET(FA_STRIKEOUT) ? QIcon::On : QIcon::Off));
         }
         else {
-            if (!isNull) {
-                m = pEnumType->lst2set(v.toStringList());
-                pToolButtonBold->setChecked(m & ENUM2SET(FA_BOOLD));
-                pToolButtonItalic->setChecked(m & ENUM2SET(FA_ITALIC));
-                pToolButtonUnderline->setChecked(m & ENUM2SET(FA_UNDERLINE));
-                pToolButtonStrikeout->setChecked(m & ENUM2SET(FA_STRIKEOUT));
-            }
-            pToolButtonBold->setDisabled(isNull);
-            pToolButtonItalic->setDisabled(isNull);
-            pToolButtonUnderline->setDisabled(isNull);
-            pToolButtonStrikeout->setDisabled(isNull);
+            m = pEnumType->lst2set(v.toStringList());
+            pToolButtonBold     ->setChecked(m & ENUM2SET(FA_BOOLD));
+            pToolButtonItalic   ->setChecked(m & ENUM2SET(FA_ITALIC));
+            pToolButtonUnderline->setChecked(m & ENUM2SET(FA_UNDERLINE));
+            pToolButtonStrikeout->setChecked(m & ENUM2SET(FA_STRIKEOUT));
         }
     }
     return r;
 }
 
-void cFontAttrWidget::togleNull(bool f)
+void cFontAttrWidget::setupFlagWidget(bool f, const QIcon& icon, QLabel *& pLabel, QToolButton *& pButton)
 {
-    setFromWidget(f ? QVariant() : QVariant(m));
-    pToolButtonNull->setIcon(f ? iconNull : iconNotNull);
+    if (_readOnly) {
+        pLabel = new QLabel;
+        pButton = NULL;
+        pLabel->setPixmap(icon.pixmap(iconSize, QIcon::Normal, f ? QIcon::On : QIcon::Off));
+        pLayout->addWidget(pLabel);
+    }
+    else {
+        pLabel = NULL;
+        pButton = new QToolButton();
+        pToolButtonBold->setIcon(icon);
+        pToolButtonBold->setCheckable(true);
+        pToolButtonBold->setChecked(f);
+        pLayout->addWidget(pButton);
+    }
+}
+
+void cFontAttrWidget::disableEditWidget(eTristate tsf)
+{
+    setBool(_isDisabledEdit, tsf);
+    bool f = _readOnly || _isDisabledEdit;
     pToolButtonBold->setDisabled(f);
     pToolButtonItalic->setDisabled(f);
     pToolButtonUnderline->setDisabled(f);
     pToolButtonStrikeout->setDisabled(f);
 }
+
+void cFontAttrWidget::setFromEdit()
+{
+    QVariant v;
+    if (pNullButton != NULL && pNullButton->isChecked()) {
+        ; // NULL/Default
+    }
+    else {
+        qlonglong m = 0;
+        m |= bitByButton(pToolButtonBold,      ENUM2SET(FA_BOOLD));
+        m |= bitByButton(pToolButtonItalic,    ENUM2SET(FA_ITALIC));
+        m |= bitByButton(pToolButtonUnderline, ENUM2SET(FA_UNDERLINE));
+        m |= bitByButton(pToolButtonStrikeout, ENUM2SET(FA_STRIKEOUT));
+        v = m;
+    }
+    setFromWidget(v);
+}
+
 
 void cFontAttrWidget::togleBoold(bool f)
 {
@@ -2472,16 +2550,14 @@ void cFontAttrWidget::togleBoold(bool f)
     if (f) m |=  ENUM2SET(FA_BOOLD);
     else   m &= ~ENUM2SET(FA_BOOLD);
     setFromWidget(QVariant(m));
-    pToolButtonBold->setIcon(f ? iconBold : iconBoldNo);
 }
 
-void cFontAttrWidget::togleItelic(bool f)
+void cFontAttrWidget::togleItalic(bool f)
 {
     if (f == ((bool)(m & ENUM2SET(FA_ITALIC)))) return;
     if (f) m |=  ENUM2SET(FA_ITALIC);
     else   m &= ~ENUM2SET(FA_ITALIC);
     setFromWidget(QVariant(m));
-    pToolButtonItalic->setIcon(f ? iconItalic : iconItalicNo);
 }
 
 void cFontAttrWidget::togleUnderline(bool f)
@@ -2490,7 +2566,6 @@ void cFontAttrWidget::togleUnderline(bool f)
     if (f) m |=  ENUM2SET(FA_UNDERLINE);
     else   m &= ~ENUM2SET(FA_UNDERLINE);
     setFromWidget(QVariant(m));
-    pToolButtonUnderline->setIcon(f ? iconUnderline : iconUnderlineNo);
 }
 
 void cFontAttrWidget::togleStrikeout(bool f)
@@ -2499,7 +2574,6 @@ void cFontAttrWidget::togleStrikeout(bool f)
     if (f) m |=  ENUM2SET(FA_STRIKEOUT);
     else   m &= ~ENUM2SET(FA_STRIKEOUT);
     setFromWidget(QVariant(m));
-    pToolButtonStrikeout->setIcon(f ? iconStrikeout : iconStrikeoutNo);
 }
 
 /* **** **** */
@@ -2517,23 +2591,26 @@ cLTextWidget::cLTextWidget(const cTableShape &_tm, const cTableShapeField& _tf, 
     _hasAuto    = false;
     _dcNull     = DC_INVALID;
 
-    QLineEdit *pLE = NULL;
-    QTextEdit *pTE = NULL;
+
+    pLineEdit = NULL;
+    pPlainTextEdit = NULL;
+    pLayout = new QHBoxLayout;
+    setLayout(pLayout);
     if (_fieldShape.getBool(_sFieldFlags, FF_HUGE)) {
         _wType = FEW_LTEXT_LONG;  // Widget típus azonosító
-        pTE = new QTextEdit(_par == NULL ? NULL : _par->pWidget());
-        _pWidget = pTE;
-        pTE->setText(_value.toString());
-        pTE->setReadOnly(_readOnly);
-        connect(pTE, SIGNAL(textChanged()),  this, SLOT(setFromEdit()));
+        pPlainTextEdit = new QPlainTextEdit;
+        pLayout->addWidget(pPlainTextEdit);
+        pPlainTextEdit->setPlainText(_value.toString());
+        pPlainTextEdit->setReadOnly(_readOnly);
+        connect(pPlainTextEdit, SIGNAL(textChanged()),  this, SLOT(setFromEdit()));
     }
     else {
         _wType = FEW_LTEXT;  // Widget típus azonosító
-        pLE = new QLineEdit(_par == NULL ? NULL : _par->pWidget());
-        _pWidget = pLE;
-        pLE->setText(_value.toString());
-        pLE->setReadOnly(_readOnly);
-        connect(pLE, SIGNAL(editingFinished()),  this, SLOT(setFromEdit()));
+        pLineEdit = new QLineEdit;
+        pLayout->addWidget(pLineEdit);
+        pLineEdit->setText(_value.toString());
+        pLineEdit->setReadOnly(_readOnly);
+        connect(pLineEdit, SIGNAL(editingFinished()),  this, SLOT(setFromEdit()));
     }
 }
 
@@ -2548,28 +2625,21 @@ int cLTextWidget::set(const QVariant& v)
     if (t == _value.toString()) return 0;
     _value = t;
     changedValue(this);
-    if (_wType == FEW_LTEXT) pLineEdit()->setText(t);
-    else                     pTextEdit()->setText(t);
+    if (_wType == FEW_LTEXT) pLineEdit->setText(t);
+    else                     pPlainTextEdit->setPlainText(t);
     return 1;
-}
-
-int cLTextWidget::height()
-{
-    if (_wType == FEW_LTEXT) return 1;
-    else                     return 4;
 }
 
 void cLTextWidget::setFromEdit()
 {
     QString  s;
-    if (_wType == FEW_LTEXT) s = pLineEdit()->text();
-    else                     s = pTextEdit()->toHtml();
+    if (_wType == FEW_LTEXT) s = pLineEdit->text();
+    else                     s = pPlainTextEdit->toPlainText();
     QVariant v; // NULL
     if (!s.isEmpty()) {
         v = QVariant(s);
     }
     setFromWidget(v);
-    valid();
 }
 
 
@@ -2617,7 +2687,7 @@ void cSelectPlace::copyCurrents(const cSelectPlace &_o)
     bbPlace.end(pid != currentPlaceId());
 }
 
-void cSelectPlace::setSlave(cSelectPlace *_pSlave)
+void cSelectPlace::setSlave(cSelectPlace *_pSlave, bool disabled)
 {
     if (_pSlave == NULL) {
         if (pSlave != NULL) pSlave->setDisablePlaceWidgets(false);
@@ -2627,7 +2697,7 @@ void cSelectPlace::setSlave(cSelectPlace *_pSlave)
         if (pSlave != NULL && pSlave != _pSlave) EXCEPTION(EPROGFAIL);
         pSlave = _pSlave;
         pSlave->copyCurrents(*this);
-        pSlave->setDisablePlaceWidgets(true);
+        pSlave->setDisablePlaceWidgets(disabled);
     }
 }
 
@@ -2674,11 +2744,13 @@ void cSelectPlace::refresh(bool f)
     bbPlace.end(f && pid != currentPlaceId());
 }
 
-void cSelectPlace::insertPlace()
+/// Egy új helyiség objektum adatlap megjelkenítése, és az objektum beillesztése az adatbázisba.
+/// @return Ha a művelet sikeres, akkor az új objektum ID-je, ha nem akkor NULL_ID.
+qlonglong cSelectPlace::insertPlace()
 {
     QSqlQuery q = getQuery();
     cRecord *p = recordDialog(q, _sPlaces, qobject_cast<QWidget *>(parent()));
-    if (p == NULL) return;
+    if (p == NULL) return NULL_ID;
     qlonglong pid = p->getId();
     delete p;
     bbPlace.begin();
@@ -2693,6 +2765,7 @@ void cSelectPlace::insertPlace()
         pSlave->bbPlace.end();
     }
     bbPlace.end();
+    return pid;
 }
 
 void cSelectPlace::setCurrentZone(qlonglong _zid)
@@ -2706,7 +2779,7 @@ void cSelectPlace::setCurrentPlace(qlonglong _pid)
 {
     if (_pid == currentPlaceId()) return;
     bbPlace.begin();
-    if (_pid == NULL_ID) {
+    if (_pid == NULL_ID || _pid == UNKNOWN_PLACE_ID) {  // Az 'unknown' nincs a listában! ==> NULL
         if (pModelPlace->nullable) {
             pComboBoxPLace->setCurrentIndex(0);  // -> on_comboBoxZone_currentIndexChanged(ix)
         }
@@ -2829,7 +2902,7 @@ void cSelectNode::nodeSetNull(bool _sig)
     bbNode.end(_sig);
 }
 
-void cSelectNode::setIdFilter()
+void cSelectNode::setLocalityFilter()
 {
     qlonglong pid = currentPlaceId();
     if (pid != NULL_ID) {
@@ -2840,12 +2913,22 @@ void cSelectNode::setIdFilter()
     }
 }
 
+void cSelectNode::setExcludedNode(qlonglong _nid)
+{
+    if (_nid == NULL_ID) {
+        pModelNode->setFilter(QVariant(), OT_DEFAULT, FT_NO);
+    }
+    else {
+        pModelNode->setFilter(QString("node_id <> %1").arg(_nid), OT_DEFAULT, FT_SQL_WHERE);
+    }
+}
+
 void cSelectNode::refresh(bool f)
 {
     qlonglong nid = currentNodeId();
     bbNode.begin();
     cSelectPlace::refresh();
-    setIdFilter();
+    setLocalityFilter();
     bbNode.end(f && nid != currentNodeId());
 }
 
@@ -2865,10 +2948,38 @@ void cSelectNode::setPlaceId(qlonglong pid, bool _sig)
     setCurrentPlace(pid);
     bbPlace.end(false);
     bbNode.begin();
-    setIdFilter();
+    setLocalityFilter();
     pComboBoxNode->setCurrentIndex(0);
     on_comboBoxNode_currenstIndexChanged(0);
     bbNode.end(_sig);
+}
+
+void cSelectNode::setCurrentNode(qlonglong _nid)
+{
+    if (_nid == currentNodeId()) return;
+    bbNode.begin();
+    int ix = pModelNode->indexOf(_nid);
+    if (ix < 0) {   // Ha nincs az aktuális listában
+        setCurrentZone(ALL_PLACE_GROUP_ID);
+        setCurrentPlace(NULL_ID);
+        setPlaceId(NULL_ID);
+        refresh(false);
+        ix = pModelNode->indexOf(_nid);
+    }
+    if (ix >= 0) pComboBoxNode->setCurrentIndex(ix);
+    bbNode.end();
+}
+
+qlonglong cSelectNode::insertPatch(cPatch *pSample)
+{
+    QSqlQuery q = getQuery();
+    cPatch *p = patchInsertDialog(q, qobject_cast<QWidget *>(parent()), pSample);
+    if (p == NULL) return NULL_ID;  // cancel
+    qlonglong pid = p->getId();
+    delete p;
+    pModelNode->setFilter();
+    setCurrentNode(pid);
+    return pid;
 }
 
 void cSelectNode::on_lineEditNodeFilt_textChanged(const QString& s)
@@ -2910,7 +3021,7 @@ cSelectLinkedPort::cSelectLinkedPort(QComboBox *_pZone, QComboBox *_pPlace, QCom
             QWidget *_par)
     : cSelectNode(_pZone, _pPlace, _pNode, _pPlaceFilt, _pNodeFilt, _placeConstFilt, _nodeConstFilt, _par)
 {
-    lockSlots = false;
+    lockSlots = 0;
     pq = newQuery();
     pComboBoxPort    = _pPort;
     pComboBoxShare   = _pShare;
@@ -2952,7 +3063,7 @@ void cSelectLinkedPort::setLink(cPhsLink& _lnk)
     pComboBoxNode->setCurrentIndex(ix);
 
     ix = pModelPort->indexOf(pid);
-    if (ix <= 0) EXCEPTION(EPROGFAIL);
+    if (ix < 0) EXCEPTION(EPROGFAIL);
     pComboBoxPort->setCurrentIndex(ix);
 
     ix = 0;
@@ -2974,8 +3085,7 @@ void cSelectLinkedPort::setLink(cPhsLink& _lnk)
 
 void cSelectLinkedPort::setNodeId(qlonglong _nid)
 {
-    pModelPort->setOwnerId(_nid);
-    pComboBoxPort->setCurrentIndex(0);
+    lockSlots++;
     bool nodeIsNull = _nid == NULL_ID;
     pComboBoxPort->setDisabled(nodeIsNull);
     if (!nodeIsNull) {
@@ -2983,14 +3093,31 @@ void cSelectLinkedPort::setNodeId(qlonglong _nid)
         p.setId(_nid);
         qlonglong toid = p.fetchTableOId(*pq);  // Type?
         isPatch = toid == p.tableoid();
+        if (isPatch) {
+            if (lastLinkType == LT_TERM) {
+                pButtonGroupType->button(LT_FRONT)->setChecked(true);
+                lastLinkType = LT_FRONT;
+            }
+        }
+        else {
+            if (lastLinkType != LT_TERM) {
+                pButtonGroupType->button(LT_TERM)->setChecked(true);
+                lastLinkType = LT_TERM;
+            }
+        }
     }
+    pModelPort->setOwnerId(_nid);
+    pComboBoxPort->setCurrentIndex(0);
+    lockSlots--;
+    if (lockSlots == 0) setPortIdByIndex(0);
+    else if (lockSlots < 0) EXCEPTION(EPROGFAIL);
 }
 
 void cSelectLinkedPort::setPortIdByIndex(int ix)
 {
     qlonglong pid = pModelPort->atId(ix);
     if (pid == lastPortId) return;
-    lockSlots = true;
+    lockSlots++;
     lastPortId = pid;
     bool portIsNull = pid == NULL_ID;
     if (!portIsNull) {
@@ -3014,8 +3141,9 @@ void cSelectLinkedPort::setPortIdByIndex(int ix)
         pButtonGroupType->button(LT_BACK) ->setDisabled(true);
         pComboBoxShare->setDisabled(true);
     }
-    lockSlots = false;
-    changedLink(pid, lastLinkType, lastShare);
+    lockSlots--;
+    if (lockSlots == 0) changedLink(pid, lastLinkType, lastShare);
+    else if (lockSlots < 0) EXCEPTION(EPROGFAIL);
 }
 
 void cSelectLinkedPort::setLinkTypeByButtons(int _id)
@@ -3030,7 +3158,8 @@ void cSelectLinkedPort::changedShareType(int ix)
     int sh = pModelShare->atInt(ix);
     if (lastShare == sh) return;
     lastShare = sh;
-    changedLink(currentPortId(), lastLinkType, lastShare);
+    if (lockSlots == 0) changedLink(currentPortId(), lastLinkType, lastShare);
+    else if (lockSlots < 0) EXCEPTION(EPROGFAIL);
 }
 
 /* ********************************************************************************* */
