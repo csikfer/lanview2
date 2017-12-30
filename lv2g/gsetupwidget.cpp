@@ -41,6 +41,8 @@ void cGSetupWidget::applicate()
         v = lv2g::sHorizontal;
         lv2g::getInstance()->defaultSplitOrientation = Qt::Horizontal;
     }
+    lv2g::getInstance()->nativeMenubar = pUi->checkBoxNatMenu->isChecked();
+
     qset.setValue(lv2g::sDefaultSplitOrientation, v);
     lv2g::getInstance()->maxRows = pUi->spinBoxMaxRows->value();
     qset.setValue(lv2g::sMaxRows, lv2g::getInstance()->maxRows);
@@ -48,7 +50,7 @@ void cGSetupWidget::applicate()
     qset.setValue(lv2g::sDialogRows, lv2g::getInstance()->dialogRows);
     lv2g::getInstance()->soundFileAlarm = pUi->lineEditAlarm->text();
     qset.setValue(lv2g::sSoundFileAlarm, lv2g::getInstance()->soundFileAlarm);
-    qset.setValue(lv2g::sNativeMenubar, QVariant(lv2g::getInstance()->nativeMenubar ? _sFalse : _sTrue));
+    qset.setValue(lv2g::sNativeMenubar, QVariant(lv2g::getInstance()->nativeMenubar ? _sTrue : _sFalse));
     qset.sync();
     QSettings::Status st = qset.status();
     if (QSettings::NoError != st) {

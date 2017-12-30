@@ -117,6 +117,8 @@ EXT_ QStringList set2lst(const QString&(&f)(int e, eEx __ex), qlonglong _set, en
 /// Megvizsgálja hogy a set ként értelmezett s bitmap-ban az e-vel reprezentált enumerációs érték be van-e állítva
 static inline bool isOn(qlonglong s, int e)   { return 0 != (s & enum2set(e)); }
 
+EXT_ int onCount(qlonglong _set);
+
 /// Egy pointer felszabadítása, és a pointer változó nullázása, feltéve ha a pointer nem NULL.
 template <class T> void pDelete(T *& p) {
     if (p != NULL) {
@@ -164,14 +166,19 @@ public:
     /// @return Egy string, a paraméter érték, ha nincs ilyen paraméter, akkor a NULL string,
     ///         ha viszont nincs paraméternek értéke, akkor egy üres string
     QString value(const QString &_nm) const { return QMap<QString, QString>::value(_nm.toLower()); }
+    QStringList slValue(const QString &_nm) const { return value2list(value(_nm)); }
     ///
+    static QStringList value2list(const QString &s) { return s.split(QRegExp("\\s*,\\s*")); }
+    static qlonglong value2set(const QString &s, const QStringList& enums);
+    QStringList sListValue(const QString &_nm) const;
+    qlonglong eValue(const QString &_nm, const QStringList& enums) const;
     static QMap<QString, QStringList> value2map(const QString &s);
     static QMap<int, qlonglong> mapEnum(QMap<QString, QStringList> smap, const QStringList& enums);
-    QMap<QString, QStringList> sMapValue(const QString &_nm) const { return value2map(value(_nm)); }
-    QMap<int, qlonglong> eMapValue(const QString &_nm, const QStringList& enums) const { return mapEnum(sMapValue(_nm), enums); }
+    QMap<QString, QStringList> sMapValue(const QString &_nm) const;
+    QMap<int, qlonglong> eMapValue(const QString &_nm, const QStringList& enums) const;
     /// Megkeresi a megadott nevű paramétert.
     /// @param _nm A paraméter neve (kisbetüssé lesz konvertálva)
-    /// @return Ha létezik ilyen nevű paraméter (értéke lehet üresÖ, akkor true
+    /// @return Ha létezik ilyen nevű paraméter (értéke lehet üres, akkor true
     bool contains(const QString &_nm) const { return QMap<QString, QString>::contains(_nm.toLower()); }
     /// A features mező értékének az előállítása.
     /// @param __map a forrás konténer
@@ -260,6 +267,9 @@ inline QString msgCat(const QString msg1, const QString& msg2, const QString& se
     r += msg2;
     return r;
 }
+
+/* ******************************  ****************************** */
+QVariantList list_longlong2variant(const QList<qlonglong>& v);
 
 #endif // OTHERS_H
 

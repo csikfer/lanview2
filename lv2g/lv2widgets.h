@@ -170,6 +170,16 @@ public slots:
 
 };
 
+/// @class cROToolButton
+/// "Read only" QToolButton
+class cROToolButton : public QToolButton {
+public:
+    cROToolButton(QWidget *par = NULL) : QToolButton(par) { ; }
+protected:
+    void mousePressEvent(QMouseEvent *e);
+    void mouseReleaseEvent(QMouseEvent *e);
+};
+
 enum eFieldWidgetType {
     FEW_UNKNOWN = -1,   ///< ismeretlen/inicializálatlan/hibajelzés
     FEW_SET     =  0,   ///< cSetWidget
@@ -177,6 +187,7 @@ enum eFieldWidgetType {
     FEW_ENUM_RADIO,     ///< cEnumRadioWidget
     FEW_LINE,           ///< cFieldLineWidget
     FEW_LINES,          ///< cFieldLineWidget/long text
+    FEW_SPIN_BOX,       ///<
     FEW_ARRAY,          ///< cArrayWidget
     FEW_FKEY_ARRAY,     ///< cFKeyArrayWidget
     FEW_POLYGON,        ///< cPolygonWidget
@@ -273,7 +284,7 @@ public:
     ///
     const cRecStaticDescr& _recDescr;
 protected:
-    /// Az érték beállítása awidget felöl
+    /// Az érték beállítása a widget felöl
     /// @param v A widget-ban mgadott új érték
     void setFromWidget(QVariant v);
     /// Beállítja ai _isDisabledEdit flag-et, ha tsf értéke nem TS_NULL.
@@ -299,7 +310,6 @@ protected:
     cFieldEditBase * anotherField(const QString& __fn, eEx __ex = EX_ERROR);
     QLayout            *pLayout;        ///< Main layout
     QAbstractButton    *pNullButton;    ///< NULL button or default button or NULL pointer
-    QLabel             *pNullLabel;      ///< NULL (or default) indicate label
     QWidget            *pEditWidget;
     int                 _height;        ///< A Widget hozzávetőleges magassága (karakter) sorokban
     bool                _readOnly;      ///< Ha nem szerkeszthető, akkor értéke true
@@ -307,7 +317,7 @@ protected:
     bool                _hasDefault;    ///< Ha a mezó rendelkezik alapértelmezett értékkel, akkor true
     bool                _hasAuto;
     bool                _isInsert;      ///< Ha egy új rekord, akkor true, ha modosítás, akkor false. Az alapérték is false;
-    bool                _isDisabledEdit;
+    bool                _actValueIsNULL;
     int                 _dcNull;        ///< Ha megadható NULL érték, akkor annak a megjelenése (NULL vagy Default)
     eFieldWidgetType    _wType;         ///< A widget típusa (a leszármazott objektumot azonosítja)
     QVariant            _value;         ///< A mező aktuális értéke
@@ -346,6 +356,8 @@ public:
     ~cNullWidget();
 };
 
+_GEX bool setWidgetAutoset(qlonglong& on, const QMap<int, qlonglong> autosets);
+_GEX void nextColLayout(QHBoxLayout *pHLayout, QVBoxLayout *&pVLayout, int rows, int n);
 /// @class cSetWidget
 /// @brief Egy set típusú (enumerációs tömb) adatmező megjelenítése, ill. szerkesztésére
 /// használlható QWidget osztály. A megjelenítés/szerkesztés radio-button-okon keresztül történik.
@@ -359,14 +371,18 @@ public:
     /// @param parent A parent widget pointere
     cSetWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase* _par);
     ~cSetWidget();
+    void setChecked();
     virtual int set(const QVariant& v);
 protected:
     /// A radio-button-okat kezelő obkeltum
     QButtonGroup   *pButtons;
     /// Az aktuális érték (aradio-button-hoz rendelt bit a radio-button állapota.
-    qlonglong       _bits;
-    qlonglong       _hiddens;
-    QMap<int, qlonglong> _collisoins;
+    qlonglong           _bits;
+    int                 _nId;
+    bool                _isNull;
+    qlonglong           _defaults;
+    qlonglong           _hiddens;
+    QMap<int, qlonglong> _collisions;
     QMap<int, qlonglong> _autosets;
 
 private slots:
@@ -425,7 +441,7 @@ class cArrayWidget;
 
 /// @class cFieldLineWidget
 /// Egy adatmező megjelenítése és módosítása
-/// Megjelenítés egy QLineEdit -el
+/// Megjelenítés egy QLineEdit vagy QPlainTextEdit -tel
 class LV2GSHARED_EXPORT cFieldLineWidget : public cFieldEditBase {
     friend class cArrayWidget;
     Q_OBJECT
@@ -447,6 +463,28 @@ protected:
     /// Ha  ez egy jelszó
     bool    isPwd;
 };
+
+/// @class cFieldSpinBoxWidget
+/// Egy adatmező megjelenítése és módosítása
+/// Megjelenítés egy QSpinBox -szal
+class LV2GSHARED_EXPORT cFieldSpinBoxWidget : public cFieldEditBase {
+    Q_OBJECT
+public:
+    /// Konstruktor
+    /// @param _fr A rekord egy mezőjére mutató referencia objektum (nem objektum referencia!)
+    /// @param _fl
+    /// @param parent A parent widget pointere
+    cFieldSpinBoxWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef _fr, int _fl, cRecordDialogBase* _par);
+    ~cFieldSpinBoxWidget();
+    virtual int set(const QVariant& v);
+protected:
+    QSpinBox *pSpinBox;
+protected slots:
+    void setFromEdit();
+    void setFromEdit(int i);
+
+};
+
 
 class Ui_arrayEd;
 /// @class cArrayWidget
@@ -471,6 +509,7 @@ protected:
     QModelIndex actIndex;
     int         selectedNum;
 private slots:
+    void setFromEdit();
     void selectionChanged(QModelIndex cur, QModelIndex);
     void changed(QString _t);
     void addRow();
@@ -562,17 +601,21 @@ public:
     virtual int set(const QVariant& v);
 protected:
     bool setWidget();
+    void setButtons();
+    void disableEditWidget(eTristate tsf);
     Ui_fKeyEd          *pUi;
     cRecordListModel   *pModel;
     /// A távoli kulcs által mutatott tábla leíró objektumára muatat
     const cRecStaticDescr *pRDescr;
     /// A távoli kulcs által mutatott tábla rekord dialógus leíró objektum.
     cTableShape *   pTableShape;
+    qlonglong       actId;
     /// A távoli kulcs által mutatott táblában a saját ID-t tartalmazó mező indexe
     int             owner_ix;
     qlonglong       ownerId;
-private slots:
+protected slots:
     void setFromEdit(int i);
+    void setFromEdit();
 //  void _edited(QString _txt);
     void insertF();
     void modifyF();
@@ -708,16 +751,18 @@ public:
     virtual int set(const QVariant& v);
 protected:
     void setButtons();
+    virtual void disableEditWidget(eTristate tsf);
     Ui_fKeyArrayEd   *pUi;
     QStringList       valueView;
     cStringListModel *pArrayModel;
+    QList<qlonglong>  ids;
     const cRecStaticDescr  *pRDescr;
     cRecordListModel *pFRecModel;
     /// Az inzertálandó adat legutoljára elfogadott értéke.
     QString     last;
     QModelIndex actIndex;
     int         selectedNum;
-private slots:
+protected slots:
     void selectionChanged(QModelIndex cur, QModelIndex);
     void addRow();
     void insRow();
@@ -726,6 +771,7 @@ private slots:
     void delRow();
     void clrRows();
     void doubleClickRow(const QModelIndex & index);
+    void setFromEdit();
 };
 
 /// @class cColorWidget
@@ -826,17 +872,6 @@ protected:
     QLineEdit *pLineEdit;
     QPlainTextEdit *pPlainTextEdit;
     int textIndex;
-/*    /// Az eredeti widget pointerrel tér visszta
-    QLineEdit *pLineEdit() {
-        QLineEdit *pLE = qobject_cast<QLineEdit *>(pWidget());
-        if (pLE == NULL) EXCEPTION(EPROGFAIL);
-        return pLE;
-    }
-    QTextEdit *pTextEdit() {
-        QTextEdit *pTE = qobject_cast<QTextEdit *>(pWidget());
-        if (pTE == NULL) EXCEPTION(EPROGFAIL);
-        return pTE;
-    }*/
 private slots:
     void setFromEdit();
 };

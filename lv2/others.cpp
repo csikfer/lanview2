@@ -25,6 +25,16 @@ QStringList set2lst(const QString&(&f)(int, eEx), qlonglong _set, eEx __ex)
     }
     return r;
 }
+
+int onCount(qlonglong _set)
+{
+    int r = 0;
+    for (qlonglong m = 1; _set >= m; m <<= 1)  {
+        if (_set & m) ++r;
+    }
+    return r;
+}
+
 const QString   nullString;
 
 QString nameAndNumber(const QString& __pat, int __num, char __c)
@@ -96,6 +106,53 @@ bool cFeatures::split(const QString& __ms, eEx __ex)
     return true;
 }
 
+qlonglong cFeatures::value2set(const QString &s, const QStringList& enums)
+{
+    qlonglong m = 0;
+    QStringList sl = value2list(s);
+    foreach (QString ev, sl) {
+        int i = enums.indexOf(ev);
+        if (i < 0) EXCEPTION(EDATA,0,ev);
+        m |= enum2set(i);
+    }
+    return m;
+}
+
+QStringList cFeatures::sListValue(const QString &_nm) const
+{
+    QStringList sl;
+    if (contains(_nm)) {
+        sl = value2list(value(_nm));
+    }
+    return sl;
+}
+qlonglong cFeatures::eValue(const QString &_nm, const QStringList& enums) const
+{
+    qlonglong r = 0;
+    if (contains(_nm)) {
+        r = value2set(value(_nm), enums);
+    }
+    return r;
+}
+
+QMap<QString, QStringList> cFeatures::sMapValue(const QString &_nm) const
+{
+    QMap<QString, QStringList> r;
+    if (contains(_nm)) {
+        r =  value2map(value(_nm));
+    }
+    return r;
+}
+QMap<int, qlonglong> cFeatures::eMapValue(const QString &_nm, const QStringList& enums) const
+{
+    QMap<int, qlonglong>  r;
+    if (contains(_nm)) {
+        r = mapEnum(sMapValue(_nm), enums);
+    }
+    return r;
+}
+
+
 /// Egy string stringList map-á felbontása:
 /// <key>[<v1>,<v2>...],<key2>[<v2>...]
 QMap<QString, QStringList> cFeatures::value2map(const QString& s)
@@ -113,7 +170,7 @@ QMap<QString, QStringList> cFeatures::value2map(const QString& s)
     for (;;++i) {
         v = sl[i].simplified();
         if (i >= n) {                       // Last value for splitted strig
-            if (v.endsWith(']')) v.chop(0);     // Last value on list (close list)
+            if (v.endsWith(']')) v.chop(1);     // Last value on list (close list)
             else EXCEPTION(EDATA, 0, s);        // No closed list!!
             vl << v;
             r[key] = vl;
@@ -121,7 +178,7 @@ QMap<QString, QStringList> cFeatures::value2map(const QString& s)
         }
         else {                              // Non last value for splitted strig
             if (v.endsWith(']')) {              // Last value on list (close list)
-                v.chop(0);
+                v.chop(1);
                 vl << v;
                 r[key] = vl;
                 vl.clear();
@@ -308,6 +365,15 @@ QString getParName(QString::const_iterator& i, const QString::const_iterator& e,
         else {
             break;
         }
+    }
+    return r;
+}
+
+QVariantList list_longlong2variant(const QList<qlonglong> &v)
+{
+    QVariantList r;
+    foreach (qlonglong i, v) {
+        r << QVariant(i);
     }
     return r;
 }

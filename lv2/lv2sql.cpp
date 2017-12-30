@@ -1,5 +1,13 @@
 #include "lanview.h"
 
+QString unTypeQuoted(const QString& _s)
+{
+    QString s = _s;
+    int ix = s.lastIndexOf("::");
+    if (ix > 0) s = s.mid(0, ix);
+    return unQuoted(s);
+}
+
 QSqlDatabase *  getSqlDb(void)
 {
     if (lanView::instance == NULL) EXCEPTION(EPROGFAIL, -1, "lanView::instance is NULL.");

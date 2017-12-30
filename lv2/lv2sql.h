@@ -54,6 +54,8 @@ static inline QString unQuoted(const QString& name)
     return name;
 }
 
+EXT_ QString unTypeQuoted(const QString& _s);
+
 /*!
 Összefűzi a két stringet, a két érték közé beszúrva egy '.' karaktert.
 Majd kettős idézőjeleket szúr az első karakter elé, és az utolsó után.

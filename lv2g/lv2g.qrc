@@ -26,9 +26,9 @@
         <file>icons/copy.ico</file>
         <file>icons/check.ico</file>
         <file>net.ico</file>
-        <file>colorize.ico</file>
-        <file>dialog-no.ico</file>
-        <file>dialog-no-off.png</file>
+        <file>icons/colorize.ico</file>
+        <file>icons/dialog-no.ico</file>
+        <file>icons/dialog-no-off.png</file>
         <file>icons/format-text-bold-no.png</file>
         <file>icons/format-text-bold.ico</file>
         <file>icons/format-text-italic-no.png</file>
@@ -43,5 +43,6 @@
         <file>icons/system-search-2.ico</file>
         <file>icons/go-jump.ico</file>
         <file>icons/go-first-3.ico</file>
+        <file>icons/go-first-3-no.png</file>
     </qresource>
 </RCC>

@@ -164,6 +164,24 @@ void cImageWidget::zoomOut()
    ************************************** cFieldEditBase **************************************
    ******************************************************************************************** */
 
+void cROToolButton::mousePressEvent(QMouseEvent *e)
+{
+    (void)e;
+}
+
+void cROToolButton::mouseReleaseEvent(QMouseEvent *e)
+{
+    (void)e;
+}
+
+static const QString _sRadioButtons = "radioButtons";
+static const QString _sSpinBox      = "spinBox";
+static const QString _sHide         = "hide";
+static const QString _sAutoset      = "autoset";
+static const QString _sCollision    = "collision";
+static const QString _sColumn       = "column";
+static const QString _sMap          = "map";
+
 QString fieldWidgetType(int _t)
 {
     switch (_t) {
@@ -172,7 +190,8 @@ QString fieldWidgetType(int _t)
     case FEW_ENUM_COMBO:    return "cEnumComboWidget";
     case FEW_ENUM_RADIO:    return "cEnumRadioWidget";
     case FEW_LINE:          return "cFieldLineWidget";
-    case FEW_LINES:          return "cFieldLineWidget/long";
+    case FEW_LINES:         return "cFieldLineWidget/long";
+    case FEW_SPIN_BOX:      return "cFieldSpinBoxWidget";
     case FEW_ARRAY:         return "cArrayWidget";
     case FEW_FKEY_ARRAY:    return "cFKeyArrayWidget";
     case FEW_POLYGON:       return "cPolygonWidget";
@@ -186,6 +205,8 @@ QString fieldWidgetType(int _t)
     case FEW_COLOR:         return "cColorWidget";
     case FEW_FONT_FAMILY:   return "cFontFamilyWidget";
     case FEW_FONT_ATTR:     return "cFontAttrWidget";
+    case FEW_LTEXT:         return "cLTextWidget";
+    case FEW_LTEXT_LONG:    return "cLTextWidget/long";
     default:                return sInvalidEnum();
     }
 }
@@ -219,21 +240,21 @@ cFieldEditBase::cFieldEditBase(const cTableShape &_tm, const cTableShapeField &_
     , _fieldShape(_tf)
     , _recDescr(_fr.record().descr())
     , _value()
-    , iconSize(24,24)
+    , iconSize(20,20)
 {
     if (iconNull.isNull()) {
-        iconNull.   addFile("://dialog-no.ico",           QSize(), QIcon::Normal, QIcon::On);
-        iconNull.   addFile("://dialog-no-off.png",       QSize(), QIcon::Normal, QIcon::Off);
-        iconDefault.addFile(":/icons/go-first-3.ico",     QSize(), QIcon::Normal, QIcon::On);
-        iconDefault.addFile(":/icons/go-first-3-off.png", QSize(), QIcon::Normal, QIcon::Off);
+        iconNull.   addFile(":/icons/dialog-no.ico",     QSize(), QIcon::Normal, QIcon::On);
+        iconNull.   addFile(":/icons/dialog-no-off.png", QSize(), QIcon::Normal, QIcon::Off);
+        iconDefault.addFile(":/icons/go-first-3.ico",    QSize(), QIcon::Normal, QIcon::On);
+        iconDefault.addFile(":/icons/go-first-3-no.png", QSize(), QIcon::Normal, QIcon::Off);
     }
     pLayout     = NULL;
     pNullButton = NULL;
-    pNullLabel  = NULL;
     pEditWidget = NULL;
     _wType      = FEW_UNKNOWN;
     _readOnly   = (0 == (_fl & FEB_YET_EDIT)) && ((_fl & FEB_READ_ONLY) || fieldIsReadOnly(_tm, _tf, _fr));
     _value      = _fr;
+    _actValueIsNULL = _fr.isNull();
     pq          = newQuery();
     _nullable   = _fr.isNullable();
     _hasDefault = _fr.descr().colDefault.isNull() == false;
@@ -284,12 +305,10 @@ int cFieldEditBase::set(const QVariant& _v)
     if (st & ES_DEFECTIVE) return -1;
     if (v == _value) return 0;
     _value = v;
-    if (pNullButton != NULL || pNullLabel != NULL) {
-        bool isNull = v.isNull();
-        if (pNullButton != NULL) pNullButton->setChecked(isNull);
-        else pNullLabel->setPixmap(iconNull.pixmap(iconSize, QIcon::Normal, isNull ? QIcon::Off : QIcon::On));
-        disableEditWidget(isNull);
-        if (isNull) return 1;
+    _actValueIsNULL = v.isNull();
+    if (pNullButton != NULL) {
+        pNullButton->setChecked(_actValueIsNULL);
+        disableEditWidget(_actValueIsNULL);
     }
     changedValue(this);
     return 1;
@@ -317,9 +336,9 @@ void cFieldEditBase::setFromWidget(QVariant v)
 
 void cFieldEditBase::disableEditWidget(eTristate tsf)
 {
-    setBool(_isDisabledEdit, tsf);
+    setBool(_actValueIsNULL, tsf);
     if (pEditWidget != NULL) {
-        pEditWidget->setDisabled(_isDisabledEdit || _readOnly);
+        pEditWidget->setDisabled(_actValueIsNULL);
     }
 }
 
@@ -327,24 +346,21 @@ QWidget *cFieldEditBase::setupNullButton(bool isNull, QAbstractButton * p)
 {
     if (_readOnly) {
         if (p != NULL) delete p;    // nem kell, mert csak egy cimke lessz
-        pNullLabel = new QLabel;
-        pNullLabel->setPixmap(iconNull.pixmap(iconSize, QIcon::Normal, isNull ? QIcon::Off : QIcon::On));
-        if (p == NULL) {
-            pLayout->addWidget(pNullLabel);
-        }
-        return pNullLabel;
+        pNullButton = new cROToolButton;
     }
     else {
         pNullButton = p == NULL ? new QToolButton : p;
-        pNullButton->setIcon(actNullIcon);
-        pNullButton->setCheckable(true);
-        pNullButton->setChecked(isNull);
-        if (p == NULL) {
-            pLayout->addWidget(pNullButton);
-        }
-        connect(pNullButton, SIGNAL(toggled(bool)), this, SLOT(togleNull(bool)));
-        return pNullButton;
     }
+    pNullButton->setIcon(actNullIcon);
+    pNullButton->setCheckable(true);
+    pNullButton->setChecked(isNull);
+    if (p == NULL) {
+        pLayout->addWidget(pNullButton);
+    }
+    if (!_readOnly) {
+        connect(pNullButton, SIGNAL(clicked(bool)), this, SLOT(togleNull(bool)));
+    }
+    return pNullButton;
 }
 
 cFieldEditBase * cFieldEditBase::anotherField(const QString& __fn, eEx __ex)
@@ -380,7 +396,6 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
     bool ro = (_fl & FEB_READ_ONLY) || fieldIsReadOnly(_tm, _tf, _fr);
     qlonglong fieldFlags = _tf.getId(_sFieldFlags);
     int fl = ro ? (_fl | FEB_READ_ONLY) : _fl;
-    static const QString sRadioButtons = "radioButtons";
     if (ro) {       // Néhány widget-nek nincs read-only módja, azok helyett read-only esetén egy soros megj.
         switch (et) {
         // ReadOnly esetén a felsoroltak kivételével egysoros megjelenítés
@@ -397,7 +412,7 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
             goto if_ro_cFieldLineWidget;
         case cColStaticDescr::FT_BOOLEAN:
         case cColStaticDescr::FT_ENUM:
-            if (_tf.isFeature(sRadioButtons)) break;
+            if (_tf.isFeature(_sRadioButtons)) break;
             goto if_ro_cFieldLineWidget;
         if_ro_cFieldLineWidget:
         default: {
@@ -413,6 +428,11 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
         if (_fr.descr().fKeyType != cColStaticDescr::FT_NONE) {     // Ha ez egy idegen kulcs
             cFKeyWidget *p = new cFKeyWidget(_tm, _tf, _fr, _par);
             _DBGFNL() << " new cFKeyWidget" << endl;
+            return p;
+        }
+        if (_tf.isFeature(_sSpinBox)) {
+            cFieldSpinBoxWidget *p = new cFieldSpinBoxWidget(_tm, _tf, _fr, fl, _par);
+            _DBGFNL() << " new cFieldSpinBoxWidget" << endl;
             return p;
         }
         goto case_FieldLineWidget;                                  // Egy soros text...
@@ -441,7 +461,7 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
     }
     case cColStaticDescr::FT_BOOLEAN:                               // Enumeráció (spec esete) -ként kezeljük
     case cColStaticDescr::FT_ENUM: {                                // Enumeráció mint radio-button-ok
-        if (_tf.isFeature(sRadioButtons)) {
+        if (_tf.isFeature(_sRadioButtons)) {
             cEnumRadioWidget *p = new cEnumRadioWidget(_tm, _tf, _fr, ro, _par);
             _DBGFNL() << " new cEnumRadioWidget" << endl;
             return p;
@@ -563,6 +583,27 @@ cNullWidget::~cNullWidget()
     DBGOBJ();
 }
 
+/* **************************************** .......... **************************************** */
+
+bool setWidgetAutoset(qlonglong& on, const QMap<int, qlonglong> autosets)
+{
+    foreach (int e, autosets.keys()) {
+        if (0 == (autosets[e] & on)) {
+            on |= ENUM2SET(e);
+            return true;
+        }
+    }
+    return false;
+}
+
+void nextColLayout(QHBoxLayout *pHLayout, QVBoxLayout *& pVLayout, int rows, int n)
+{
+    if (pHLayout != NULL && n != 0 && (n % rows) == 0) {
+        pVLayout   = new QVBoxLayout;
+        pHLayout->addLayout(pVLayout);
+    }
+}
+
 /* **************************************** cSetWidget **************************************** */
 
 cSetWidget::cSetWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase *_par)
@@ -570,19 +611,27 @@ cSetWidget::cSetWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRec
 {
     _DBGOBJ() << _tf.identifying() << endl;
     _wType = FEW_SET;
-    int cols, rows;
-    cols = _fieldShape.feature("column", 1);
-    rows = _colDescr.enumType().enumValues.size();
-    _hiddens = 0;
-    QString sHide = _fieldShape.feature("hide");
-    if (!sHide.isEmpty()) {
-        QStringList slh = sHide.split(QRegExp(",\\s*"));
-        rows -= slh.size();
-        _hiddens = _colDescr.enumType().lst2set(slh);
+    _hiddens    = _fieldShape.features().eValue(_sHide, _colDescr.enumType().enumValues);
+    _autosets   = _fieldShape.features().eMapValue(_sAutoset,   _colDescr.enumType().enumValues);
+    _collisions = _fieldShape.features().eMapValue(_sCollision, _colDescr.enumType().enumValues);
+    if (_fieldShape.isFeature(_sDefault)) {
+        _defaults = _fieldShape.features().eValue(_sDefault, _colDescr.enumType().enumValues);
+        _dcNull = DC_DEFAULT;
     }
+    else if (_hasDefault) {
+        QString s = _colDescr.colDefault;
+        s = unTypeQuoted(s);
+        _defaults = _colDescr.toId(_colDescr.fromSql(s));
+        _dcNull = DC_DEFAULT;
+    }
+    else {
+        _defaults = 0;
+    }
+    _nId = _colDescr.enumType().enumValues.size();
+    int cols, rows;
+    cols = _fieldShape.feature(_sColumn, 1);
+    rows = _nId - onCount(_hiddens);
     if (_dcNull != DC_INVALID) ++rows;
-    _autosets   = _fieldShape.features().eMapValue("autoset",   _colDescr.enumType().enumValues);
-    _collisoins = _fieldShape.features().eMapValue("collision", _colDescr.enumType().enumValues);
     rows = (rows + cols -1) / cols;
     _height = rows;
     pButtons  = new QButtonGroup(this);
@@ -599,13 +648,12 @@ cSetWidget::cSetWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRec
         setLayout(pVLayout);
     }
     _bits = _colDescr.toId(_value);
-    int i, id;
-    for (i = id = 0; id < _colDescr.enumType().enumValues.size(); ++id) {
+    _isNull = __fr.isNull();
+    int i,      // sequence number
+        id;     // enum value
+    for (i = id = 0; id < _nId; ++id) {
         if (ENUM2SET(id) & _hiddens) continue;
-        if (pHLayout != NULL && i != 0 && (i % rows) == 0) {
-            pVLayout   = new QVBoxLayout;
-            pHLayout->addLayout(pVLayout);
-        }
+        nextColLayout(pHLayout, pVLayout, rows, i);
         QCheckBox *pCheckBox = new QCheckBox(this);
         enumSetShort(pCheckBox, _colDescr.enumType(), id, _colDescr.enumType().enum2str(id), _tf.getId(_sFieldFlags));
         pButtons->addButton(pCheckBox, id);
@@ -615,15 +663,12 @@ cSetWidget::cSetWidget(const cTableShape& _tm, const cTableShapeField& _tf, cRec
         ++i;
     }
     if (_dcNull != DC_INVALID) {
-        if (pHLayout != NULL && (id % rows) == 0) {
-            pVLayout   = new QVBoxLayout;
-            pHLayout->addLayout(pVLayout);
-        }
+        nextColLayout(pHLayout, pVLayout, rows, i);
         QCheckBox *pCheckBox = new QCheckBox(this);
         dcSetShort(pCheckBox, _dcNull);
         pButtons->addButton(pCheckBox, id);
         pVLayout->addWidget(pCheckBox);
-        pCheckBox->setChecked(__fr.isNull());
+        pCheckBox->setChecked(_isNull);
         pCheckBox->setDisabled(_readOnly);
     }
     connect(pButtons, SIGNAL(buttonClicked(int)), this, SLOT(setFromEdit(int)));
@@ -634,20 +679,37 @@ cSetWidget::~cSetWidget()
     ;
 }
 
+
+void cSetWidget::setChecked()
+{
+    if (_bits < 0) {
+        _bits   = 0;
+        _isNull = true;
+    }
+    if (_isNull && _defaults != 0) {
+        _bits = _defaults;
+    }
+    QAbstractButton * pAbstractButton;
+    int id;
+    for (id = 0; id < _nId ; id++) {
+        pAbstractButton = pButtons->button(id);
+        if (NULL != pAbstractButton) {
+            pAbstractButton->setChecked(enum2set(id) & _bits);
+        }
+    }
+    pAbstractButton = pButtons->button(id);
+    if (NULL != pAbstractButton) {
+        pAbstractButton->setChecked(_isNull);
+    }
+}
+
 int cSetWidget::set(const QVariant& v)
 {
     _DBGFN() << debVariantToString(v) << endl;
     int r = 1 == cFieldEditBase::set(v);
     if (r) {
-        int nid = _colDescr.enumType().enumValues.size();
-        QAbstractButton *pAB = pButtons->button(nid);
-        if (pAB != NULL) pAB->setChecked(v.isNull());
         _bits = _colDescr.toId(_value);
-        if (_bits < 0) _bits = 0;
-        for (int id = 0; id < nid ; id++) {
-            if (NULL != (pAB = pButtons->button(id)))
-                pAB->setChecked(enum2set(id) & _bits);
-        }
+        setChecked();
     }
     return r;
 }
@@ -655,24 +717,52 @@ int cSetWidget::set(const QVariant& v)
 void cSetWidget::setFromEdit(int id)
 {
     _DBGFNL() << id << endl;
-    qlonglong dummy;
-    int n =_colDescr.enumType().enumValues.size();
-    if (id >= n) {
-        for (int i = 0; i < n; ++i) {
-            if (_bits & enum2set(i)) {
-                QAbstractButton *pAB = pButtons->button(i);
-                if (pAB != NULL) pAB->setChecked(false);
-            }
-        }
-        _bits = 0;
-        setFromWidget(_colDescr.set(QVariant(), dummy));
+
+    QAbstractButton *pButton =  pButtons->button(id);
+    if (pButton == NULL) EXCEPTION(EPROGFAIL, id);
+    if (id == _nId) { // NULL
+        _isNull = pButton->isChecked();
+        setChecked();
     }
     else {
-        _bits ^= enum2set(id);
-        setFromWidget(_colDescr.set(QVariant(_bits), dummy));
-        QAbstractButton *p = pButtons->button(n);
-        if (p != NULL && p->isChecked()) p->setChecked(false);
+        qlonglong m = enum2set(id);
+        if (pButton->isChecked()) {
+            _bits |=  m;
+            if (_collisions.find(id) != _collisions.end()) {
+                _bits &= ~_collisions[id];
+                setWidgetAutoset(_bits, _autosets);
+            }
+            else {
+                bool corr = false;
+                foreach (int e, _collisions.keys()) {
+                    if (m & _collisions[e]) {    // rule?
+                        if (_bits & enum2set(e)) { // collision (reverse)
+                            _bits &= ~enum2set(e);
+                            corr = true;
+                        }
+                    }
+                }
+                if (corr) {
+                    setWidgetAutoset(_bits, _autosets);
+                }
+            }
+        }
+        else {
+            _bits &= ~m;
+            setWidgetAutoset(_bits, _autosets);
+        }
+        _isNull = _bits == 0;
+        if (_isNull && _defaults != 0) {
+            _bits = _defaults;
+        }
+        else {
+            pButton = pButtons->button(_nId);
+            if (pButton != NULL) pButton->setChecked(_isNull);
+        }
     }
+    setChecked();
+    qlonglong dummy;
+    set(_colDescr.set(QVariant(_bits), dummy));
 }
 
 
@@ -830,13 +920,15 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
 {
     pLineEdit      = NULL;
     pPlainTextEdit = NULL;
-    pNullButton    = NULL;
     isPwd = false;
     pLayout = new QHBoxLayout;
     setLayout(pLayout);
     if (_colDescr.eColType == cColStaticDescr::FT_TEXT && _fieldShape.getBool(_sFieldFlags, FF_HUGE)) {
         _wType = FEW_LINES;  // Widget típus azonosító
         pEditWidget = pPlainTextEdit = new QPlainTextEdit;
+        QSizePolicy spol = pPlainTextEdit->sizePolicy();
+        spol.setVerticalPolicy(QSizePolicy::MinimumExpanding);
+        pPlainTextEdit->setSizePolicy(spol);
         pLayout->addWidget(pPlainTextEdit);
         _height = 4;
     }
@@ -846,13 +938,13 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
         pLayout->addWidget(pLineEdit);
         isPwd = _fieldShape.getBool(_sFieldFlags, FF_PASSWD);   // Password?
     }
-    if (_colDescr.eColType == cColStaticDescr::FT_TEXT) {
+//    if (_colDescr.eColType == cColStaticDescr::FT_TEXT) {
         if (_nullable || _hasDefault) {
             bool isNull = _fr.isNull();
             setupNullButton(isNull);
             cFieldEditBase::disableEditWidget(isNull);
         }
-    }
+//    }
 
     QString tx;
     if (_readOnly == false) {
@@ -916,7 +1008,7 @@ int cFieldLineWidget::set(const QVariant& v)
         return 0;
     }
     int r = cFieldEditBase::set(v);
-    if (1 == r && !_isDisabledEdit) {
+    if (1 == r && !_actValueIsNULL) {
         QString txt;
         if (_readOnly == false) {
             txt = _colDescr.toName(_value);
@@ -928,6 +1020,69 @@ int cFieldLineWidget::set(const QVariant& v)
         else                    pPlainTextEdit->setPlainText(txt);
     }
     return r;
+}
+
+/* **************************************** cFieldSpinBoxWidget ****************************************  */
+
+cFieldSpinBoxWidget::cFieldSpinBoxWidget(const cTableShape &_tm, const cTableShapeField& _tf, cRecordFieldRef _fr, int _fl, cRecordDialogBase* _par)
+: cFieldEditBase(_tm, _tf, _fr, _fl, _par)
+{
+    _wType = FEW_SPIN_BOX;
+    pLayout = new QHBoxLayout;
+    setLayout(pLayout);
+    pEditWidget = pSpinBox = new QSpinBox;
+    QStringList minmax = _tf.features().slValue(_sSpinBox);
+    if (minmax.size()) {
+        bool ok;
+        int i = minmax.first().toInt(&ok);
+        if (ok) {
+            pSpinBox->setMinimum(i);
+        }
+        if (minmax.size() > 1) {
+            i = minmax.at(1).toInt(&ok);
+            if (ok) {
+                pSpinBox->setMaximum(i);
+            }
+        }
+    }
+    pLayout->addWidget(pSpinBox);
+    if (_nullable || _hasDefault) {
+        bool isNull = _fr.isNull();
+        setupNullButton(isNull);
+        cFieldEditBase::disableEditWidget(isNull);
+    }
+    connect(pSpinBox, SIGNAL(valueChanged(int)),  this, SLOT(setFromEdit(int)));
+}
+
+cFieldSpinBoxWidget::~cFieldSpinBoxWidget()
+{
+
+}
+
+int cFieldSpinBoxWidget::set(const QVariant& v)
+{
+    bool r = cFieldEditBase::set(v);
+    if (r == 1 && !_actValueIsNULL) {
+        pSpinBox->setValue(_value.toInt());
+    }
+    return r;
+}
+
+void cFieldSpinBoxWidget::setFromEdit()
+{
+    QVariant v;
+    if (pNullButton != NULL && pNullButton->isChecked()) {
+        ;
+    }
+    else {
+        v = pSpinBox->value();
+    }
+    setFromWidget(v);
+}
+
+void cFieldSpinBoxWidget::setFromEdit(int i)
+{
+    setFromWidget(QVariant(i));
 }
 
 /* **************************************** cArrayWidget ****************************************  */
@@ -942,6 +1097,7 @@ cArrayWidget::cArrayWidget(const cTableShape& _tm, const cTableShapeField &_tf, 
 
     pUi      = new Ui_arrayEd;
     pUi->setupUi(this);
+    pEditWidget = pUi->listView;
 
     selectedNum = 0;
 
@@ -952,18 +1108,18 @@ cArrayWidget::cArrayWidget(const cTableShape& _tm, const cTableShapeField &_tf, 
     pUi->pushButtonMod->setDisabled(_readOnly);
     pUi->pushButtonDel->setDisabled(_readOnly);
     pUi->pushButtonClr->setDisabled(_readOnly);
-    if (_nullable || _hasDefault) {
-        bool isNull = _fr.isNull();
-        setupNullButton(isNull, new QPushButton);
-        cFieldEditBase::disableEditWidget(isNull);
-        pUi->gridLayout->addWidget(pNullButton, 3, 1);
-    }
-
 
     pModel = new cStringListModel(this);
     pModel->setStringList(_value.toStringList());
     pUi->listView->setModel(pModel);
     pUi->listView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+    if (_nullable || _hasDefault) {
+        bool isNull = _fr.isNull();
+        setupNullButton(isNull, new QPushButton);
+        cArrayWidget::disableEditWidget(bool2ts(isNull));
+        pUi->gridLayout->addWidget(pNullButton, 3, 1);
+    }
 
     if (!_readOnly) {
         connect(pUi->pushButtonAdd, SIGNAL(pressed()), this, SLOT(addRow()));
@@ -984,7 +1140,7 @@ cArrayWidget::~cArrayWidget()
 int cArrayWidget::set(const QVariant& v)
 {
     int r = cFieldEditBase::set(v);
-    if (1 == r && !_isDisabledEdit) {
+    if (1 == r && !_actValueIsNULL) {
         pModel->setStringList(_value.toStringList());
     }
     setButtons();
@@ -993,10 +1149,10 @@ int cArrayWidget::set(const QVariant& v)
 
 void cArrayWidget::setButtons()
 {
-    bool eArr = _readOnly || _isDisabledEdit || pModel->isEmpty();
-    bool eLin = _readOnly || _isDisabledEdit || pUi->lineEdit->text().isEmpty();
-    bool sing = _readOnly || _isDisabledEdit || selectedNum == 1;
-    bool any  = _readOnly || _isDisabledEdit || selectedNum > 0;
+    bool eArr = _readOnly || _actValueIsNULL || pModel->isEmpty();
+    bool eLin = _readOnly || _actValueIsNULL || pUi->lineEdit->text().isEmpty();
+    bool sing = _readOnly || _actValueIsNULL || selectedNum != 1;
+    bool any  = _readOnly || _actValueIsNULL || selectedNum == 0;
 
     pUi->pushButtonAdd ->setDisabled(eLin        );
     pUi->pushButtonIns ->setDisabled(eLin || sing);
@@ -1011,11 +1167,23 @@ void cArrayWidget::disableEditWidget(eTristate tsf)
 {
     cFieldEditBase::disableEditWidget(tsf);
     setButtons();
-    pUi->lineEdit->setDisabled(_isDisabledEdit);
+    pUi->lineEdit->setDisabled(_actValueIsNULL || _readOnly);
 }
 
 // cArrayWidget SLOTS
 
+void cArrayWidget::setFromEdit()
+{
+    QVariant v;
+    if (pNullButton != NULL && pNullButton->isChecked()) {
+        ; // NULL/Default
+    }
+    else {
+        qlonglong dummy;
+        v = _colDescr.set(pModel->stringList(), dummy);
+    }
+    setFromWidget(v);
+}
 void cArrayWidget::selectionChanged(QModelIndex cur, QModelIndex)
 {
     DBGFN();
@@ -1170,7 +1338,7 @@ cPolygonWidget::cPolygonWidget(const cTableShape& _tm, const cTableShapeField &_
     }
     // Másik lehetőség, a features-ben van egy függvénynevünk, ami a rekord id-alapján megadja az image id-t
     else {
-        id2imageFun = _tableShape.feature("map");  // Meg van adva a image id-t visszaadó függvlny neve ?
+        id2imageFun = _tableShape.feature(_sMap);  // Meg van adva a image id-t visszaadó függvlny neve ?
         if (id2imageFun.isEmpty() == false) {
             cFieldEditBase *p = anotherField(_recDescr.idName());
             connect(p, SIGNAL(changedValue(cFieldEditBase*)), this, SLOT(changeId(cFieldEditBase*)));
@@ -1517,9 +1685,10 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
     pUi = new Ui_fKeyEd;
     pUi->setupUi(this);
 
+    pLayout = layout();
+    pEditWidget = pUi->comboBox;
     pRDescr = cRecStaticDescr::get(_colDescr.fKeyTable, _colDescr.fKeySchema);
     pModel = new cRecordListModel(*pRDescr, this);
-    pModel->nullable = _colDescr.isNullable;
     pModel->setToNameF(_colDescr.fnToName);
     QString owner = _fieldShape.feature(_sOwner);   //
     if (!owner.isEmpty()) {
@@ -1564,7 +1733,7 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
     pModel->setFilter(_sNul, OT_ASC, FT_NO);
     pModel->joinWith(pUi->comboBox);
     pUi->pushButtonEdit->setDisabled(true);
-    _value = pModel->atId(0);
+    // ?? _value = pModel->atId(0);
     pTableShape = new cTableShape();
     // Dialógus leíró neve a feature mezőben
     QString tsn = _fieldShape.feature(_sDialog);
@@ -1584,6 +1753,13 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
         pUi->pushButtonNew->setDisabled(true);
     }
 
+    actId = (qlonglong)__fr;
+    if (_nullable || _hasDefault) {
+        bool isNull = __fr.isNull();
+        setupNullButton(isNull);
+        cFieldEditBase::disableEditWidget(isNull);
+    }
+    // Az aktuális érték megjelenítése
     setWidget();
 
     connect(pUi->comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(setFromEdit(int)));
@@ -1597,11 +1773,13 @@ cFKeyWidget::~cFKeyWidget()
 
 bool cFKeyWidget::setWidget()
 {
-    qlonglong id = _colDescr.toId(_value);
-    pUi->pushButtonEdit->setDisabled(pTableShape == NULL || id == NULL_ID);
-    int ix = pModel->indexOf(id);
-    if (ix < 0) return false;
-    pUi->comboBox->setCurrentIndex(ix);
+    setButtons();
+    if (pNullButton != NULL) pNullButton->setChecked(_actValueIsNULL);
+    if (!_actValueIsNULL) {
+        int ix = pModel->indexOf(actId);
+        if (ix < 0) return false;
+        pUi->comboBox->setCurrentIndex(ix);
+    }
     return true;
 }
 
@@ -1609,6 +1787,7 @@ bool cFKeyWidget::setWidget()
 {
     int r = cFieldEditBase::set(v);
     if (1 == r) {
+        actId = _colDescr.toId(_value);
         if (!setWidget()) r = -1;
     }
     return r;
@@ -1619,6 +1798,32 @@ void cFKeyWidget::setFromEdit(int i)
     qlonglong id = pModel->atId(i);
     setFromWidget(id);
     // pUi->comboBox()->setCurrentIndex(i);
+}
+
+void cFKeyWidget::setButtons()
+{
+    bool f = _readOnly || pTableShape == NULL;
+    pUi->pushButtonEdit->setDisabled(_actValueIsNULL || f);
+    pUi->pushButtonNew->setDisabled(f);
+}
+
+void cFKeyWidget::disableEditWidget(eTristate tsf)
+{
+    cFieldEditBase::disableEditWidget(tsf);
+    setButtons();
+}
+
+void cFKeyWidget::setFromEdit()
+{
+    QVariant v;
+    if (pNullButton != NULL && pNullButton->isChecked()) {
+        ; // NULL/Default
+    }
+    else {
+        int ix = pUi->comboBox->currentIndex();
+        v = pModel->atId(ix);
+    }
+    setFromWidget(v);
 }
 
 /*
@@ -1682,17 +1887,18 @@ void cFKeyWidget::modifyOwnerId(cFieldEditBase* pof)
     setFromEdit(0);
 }
 
+
 /* **************************************** cDateWidget ****************************************  */
 
 
 cDateWidget::cDateWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef _fr, cRecordDialogBase *_par)
-    : cFieldEditBase(_tm, _tf, _fr, false, _par)
+    : cFieldEditBase(_tm, _tf, _fr, 0, _par)
 {
     _wType = FEW_DATE;
     pLayout = new QHBoxLayout;
     setLayout(pLayout);
     pEditWidget = pDateEdit = new QDateEdit;
-    pLayout->addWidget(this);
+    pLayout->addWidget(pDateEdit);
     if (_nullable || _hasDefault) {
         bool isNull = _fr.isNull();
         setupNullButton(isNull);
@@ -1709,7 +1915,7 @@ cDateWidget::~cDateWidget()
 int cDateWidget::set(const QVariant& v)
 {
     bool r = cFieldEditBase::set(v);
-    if (r == 1 && !_isDisabledEdit) {
+    if (r == 1 && !_actValueIsNULL) {
         pDateEdit->setDate(_value.toDate());
     }
     return r;
@@ -1742,7 +1948,7 @@ cTimeWidget::cTimeWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
     pLayout = new QHBoxLayout;
     setLayout(pLayout);
     pEditWidget = pTimeEdit = new QTimeEdit;
-    pLayout->addWidget(this);
+    pLayout->addWidget(pTimeEdit);
     if (_nullable || _hasDefault) {
         bool isNull = _fr.isNull();
         setupNullButton(isNull);
@@ -1759,7 +1965,7 @@ cTimeWidget::~cTimeWidget()
 int cTimeWidget::set(const QVariant& v)
 {
     bool r = cFieldEditBase::set(v);
-    if (r == 1 && !_isDisabledEdit) {
+    if (r == 1 && !_actValueIsNULL) {
         pTimeEdit->setTime(_value.toTime());
     }
     return r;
@@ -1792,7 +1998,7 @@ cDateTimeWidget::cDateTimeWidget(const cTableShape& _tm, const cTableShapeField 
     setLayout(pLayout);
     _wType = FEW_DATE_TIME;
     pEditWidget = pDateTimeEdit = new QDateTimeEdit;
-    pLayout->addWidget(this);
+    pLayout->addWidget(pEditWidget);
     if (_nullable || _hasDefault) {
         bool isNull = _fr.isNull();
         setupNullButton(isNull);
@@ -1809,7 +2015,7 @@ cDateTimeWidget::~cDateTimeWidget()
 int cDateTimeWidget::set(const QVariant& v)
 {
     bool r = cFieldEditBase::set(v);
-    if (r == 1 && !_isDisabledEdit) {
+    if (r == 1 && !_actValueIsNULL) {
         pDateTimeEdit->setDateTime(_value.toDateTime());
     }
     return r;
@@ -1875,10 +2081,10 @@ cIntervalWidget::~cIntervalWidget()
 
 void cIntervalWidget::disableEditWidget(eTristate tsf)
 {
-    setBool(_isDisabledEdit, tsf);
-    pLineEditDay->setDisabled(_isDisabledEdit);
-    pLabelDay->setDisabled(_isDisabledEdit);
-    pTimeEdit->setDisabled(_isDisabledEdit);
+    setBool(_actValueIsNULL, tsf);
+    pLineEditDay->setDisabled(_actValueIsNULL);
+    pLabelDay->setDisabled(_actValueIsNULL);
+    pTimeEdit->setDisabled(_actValueIsNULL);
 }
 
 qlonglong cIntervalWidget::getFromWideget() const
@@ -1896,7 +2102,7 @@ qlonglong cIntervalWidget::getFromWideget() const
 int cIntervalWidget::set(const QVariant& v)
 {
     bool r = cFieldEditBase::set(v);
-    if (r == 1 && !_isDisabledEdit) view();
+    if (r == 1 && !_actValueIsNULL) view();
     return r;
 }
 
@@ -2124,10 +2330,12 @@ cFKeyArrayWidget::cFKeyArrayWidget(const cTableShape& _tm, const cTableShapeFiel
     , last()
 {
     _wType   = FEW_FKEY_ARRAY;
+    _height = 4;
 
     pFRecModel = NULL;
     pUi      = new Ui_fKeyArrayEd;
     pUi->setupUi(this);
+    pEditWidget = pUi->listView;
 
     selectedNum = 0;
 
@@ -2142,11 +2350,21 @@ cFKeyArrayWidget::cFKeyArrayWidget(const cTableShape& _tm, const cTableShapeFiel
     pRDescr = cRecStaticDescr::get(_colDescr.fKeyTable, _colDescr.fKeySchema);
     cRecordAny  r(pRDescr);
     foreach (QVariant vId, _value.toList()) {
-        valueView << r.getNameById(*pq, vId.toLongLong());
+        qlonglong id = vId.toLongLong();
+        valueView << r.getNameById(*pq, id);
+        ids       << id;
     }
     pArrayModel->setStringList(valueView);
     pUi->listView->setModel(pArrayModel);
     pUi->listView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+    if (_nullable || _hasDefault) {
+        bool isNull = __fr.isNull();
+        setupNullButton(isNull, new QPushButton);
+        cFKeyArrayWidget::disableEditWidget(bool2ts(isNull));
+        pUi->gridLayoutButtons->addWidget(pNullButton, 4, 1);
+        ++_height;
+    }
 
     if (!_readOnly) {
         pFRecModel  = new cRecordListModel(*pRDescr, this);
@@ -2170,31 +2388,44 @@ cFKeyArrayWidget::~cFKeyArrayWidget()
 int cFKeyArrayWidget::set(const QVariant& v)
 {
     int r = cFieldEditBase::set(v);
-    if (1 == r) {
+    if (1 == r && !_actValueIsNULL) {
         valueView.clear();
         cRecordAny  r(pRDescr);
         foreach (QVariant vId, _value.toList()) {
-            valueView << r.getNameById(*pq, vId.toLongLong());
+            qlonglong id = vId.toLongLong();
+            valueView << r.getNameById(*pq, id);
+            ids       << id;
         }
         pArrayModel->setStringList(valueView);
-        setButtons();
     }
+    setButtons();
     return r;
 }
 
 void cFKeyArrayWidget::setButtons()
 {
-    bool eArr = pArrayModel->isEmpty();
-    bool sing = selectedNum == 1;
-    bool any  = selectedNum > 0;
+    bool f    = _readOnly || _actValueIsNULL;
+    bool eArr = f || pArrayModel->isEmpty();
+    bool sing = f || selectedNum != 1;
+    bool any  = _readOnly || _actValueIsNULL || selectedNum == 0;
 
-    pUi->pushButtonAdd ->setDisabled(                _readOnly);
-    pUi->pushButtonIns ->setDisabled(        sing || _readOnly);
-    pUi->pushButtonUp  ->setDisabled(        any  || _readOnly);
-    pUi->pushButtonDown->setDisabled(        any  || _readOnly);
-    pUi->pushButtonDel ->setDisabled(eArr         || _readOnly);
-    pUi->pushButtonClr ->setDisabled(eArr         || _readOnly);
+    pUi->pushButtonAdd ->setDisabled(eArr);
+    pUi->pushButtonIns ->setDisabled(eArr || sing);
+    pUi->pushButtonUp  ->setDisabled(true);
+    pUi->pushButtonDown->setDisabled(true);
+    pUi->pushButtonDel ->setDisabled(any);
+    pUi->pushButtonClr ->setDisabled(f);
+    pUi->pushButtonNew ->setDisabled(f);
+    pUi->pushButtonEdit->setDisabled(eArr);
 }
+
+void cFKeyArrayWidget::disableEditWidget(eTristate tsf)
+{
+    cFieldEditBase::disableEditWidget(tsf);
+    setButtons();
+    pUi->comboBox->setDisabled(_actValueIsNULL || _readOnly);
+}
+
 
 // cFKeyArrayWidget SLOTS
 
@@ -2218,9 +2449,8 @@ void cFKeyArrayWidget::addRow()
     qlonglong id = pFRecModel->atId(ix);
     QString   nm = pFRecModel->at(ix);
     *pArrayModel << nm;
-    QVariantList nv = _value.toList();
-    nv << id;
-    setFromWidget(nv);
+    ids          << id;
+    setFromEdit();
     setButtons();
 }
 
@@ -2231,9 +2461,8 @@ void cFKeyArrayWidget::insRow()
     QString   nm = pFRecModel->at(ix);
     int row = actIndex.row();
     pArrayModel->insert(nm, row);
-    QVariantList nv = _value.toList();
-    nv.insert(row, id);
-    setFromWidget(nv);
+    ids.insert(row, id);
+    setFromEdit();
     setButtons();
 }
 
@@ -2256,25 +2485,25 @@ void cFKeyArrayWidget::downRow()
 void cFKeyArrayWidget::delRow()
 {
     QModelIndexList mil = pUi->listView->selectionModel()->selectedIndexes();
-    QVariantList nv = _value.toList();
     if (mil.size() > 0) {
         pArrayModel->remove(mil);
         QVector<int> rows = mil2rowsDesc(mil);
         foreach (int ix, rows) {
-            nv.removeAt(ix);
+            ids.removeAt(ix);
         }
     }
     else {
         pArrayModel->pop_back();
-        nv.pop_back();
+        ids.pop_back();
     }
-    setFromWidget(nv);
+    setFromEdit();
     setButtons();
 }
 
 void cFKeyArrayWidget::clrRows()
 {
     pArrayModel->clear();
+    ids.clear();
     setFromWidget(QVariantList());
     setButtons();
 }
@@ -2288,6 +2517,11 @@ void cFKeyArrayWidget::doubleClickRow(const QModelIndex & index)
     if (isContIx(sl, row)) {
         pUi->lineEdit->setText(sl.at(row));
     }*/
+}
+
+void cFKeyArrayWidget::setFromEdit()
+{
+    setFromWidget(list_longlong2variant(ids));
 }
 
 /* **************************************** cColorWidget ****************************************  */
@@ -2308,7 +2542,7 @@ cColorWidget::cColorWidget(const cTableShape& _tm, const cTableShapeField &_tf, 
     pHBLayout->addWidget(pLabel);
     if (!_readOnly) {
         QToolButton *pButton = new QToolButton;
-        pButton->setIcon(QIcon("://colorize.ico"));
+        pButton->setIcon(QIcon(":/icons/colorize.ico"));
         pHBLayout->addWidget(pButton, 0);
         connect(pLineEdit, SIGNAL(textChanged(QString)),  this, SLOT(setFromEdit(QString)));
         connect(pButton,   SIGNAL(pressed()),             this, SLOT(colorDialog()));
@@ -2331,7 +2565,7 @@ void cColorWidget::setColor(const QString& text)
         pLabel->setPixmap(pixmap);
     }
     else {
-        QIcon icon("://dialog-no.ico");
+        QIcon icon(":/icons/dialog-no.ico");
         pLabel->setPixmap(icon.pixmap(pixmap.size()));
     }
 }
@@ -2393,7 +2627,7 @@ cFontFamilyWidget::~cFontFamilyWidget()
 int cFontFamilyWidget::set(const QVariant& v)
 {
     bool r = cFieldEditBase::set(v);
-    if (r == 1 && _isDisabledEdit) {
+    if (r == 1 && _actValueIsNULL) {
         pFontComboBox->setCurrentFont(QFont(v.toString()));
     }
     return r;
@@ -2479,7 +2713,7 @@ cFontAttrWidget::~cFontAttrWidget()
 int cFontAttrWidget::set(const QVariant& v)
 {
     bool r = cFieldEditBase::set(v);
-    if (r == 1 && !_isDisabledEdit) {
+    if (r == 1 && !_actValueIsNULL) {
         if (_readOnly) {
             m = pEnumType->lst2set(v.toStringList());
             pLabelBold->     setPixmap(iconBold.     pixmap(iconSize, QIcon::Normal, m & ENUM2SET(FA_BOOLD)     ? QIcon::On : QIcon::Off));
@@ -2518,8 +2752,8 @@ void cFontAttrWidget::setupFlagWidget(bool f, const QIcon& icon, QLabel *& pLabe
 
 void cFontAttrWidget::disableEditWidget(eTristate tsf)
 {
-    setBool(_isDisabledEdit, tsf);
-    bool f = _readOnly || _isDisabledEdit;
+    setBool(_actValueIsNULL, tsf);
+    bool f = _readOnly || _actValueIsNULL;
     pToolButtonBold->setDisabled(f);
     pToolButtonItalic->setDisabled(f);
     pToolButtonUnderline->setDisabled(f);

@@ -9,7 +9,6 @@
 #include "ui_wstform.h"
 #include "ui_phslinkform.h"
 
-
 cSetDialog::cSetDialog(QString _tn, bool _tristate, qlonglong _excl, qlonglong _def, QWidget * par)
     : QDialog(par)
     , enumType(cColEnumType::get(_tn))
