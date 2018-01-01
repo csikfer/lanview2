@@ -71,11 +71,13 @@ protected:
 
 class cRecordDialogInh;
 class cRecordsViewBase;
+class cFKeyWidget;
 /// @class cRecordDialogBase
 /// @brief Rekord szerkesztés dialógus alap objektum
 /// Konkrét megjelenítést nem tartalmaz.
 class LV2GSHARED_EXPORT cRecordDialogBase : public QObject {
     friend class cRecordDialogInh;
+    friend class cFKeyWidget;
     Q_OBJECT
 public:
     /// Konstruktor

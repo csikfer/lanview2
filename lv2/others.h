@@ -168,7 +168,7 @@ public:
     QString value(const QString &_nm) const { return QMap<QString, QString>::value(_nm.toLower()); }
     QStringList slValue(const QString &_nm) const { return value2list(value(_nm)); }
     ///
-    static QStringList value2list(const QString &s) { return s.split(QRegExp("\\s*,\\s*")); }
+    static QStringList value2list(const QString &s);
     static qlonglong value2set(const QString &s, const QStringList& enums);
     QStringList sListValue(const QString &_nm) const;
     qlonglong eValue(const QString &_nm, const QStringList& enums) const;

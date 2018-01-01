@@ -277,14 +277,14 @@ public:
     int indexOf(const QString __s)  { return nameList.indexOf(__s); }
     /// A megadott ID-jű elem indexe a listában, vagy -1 ha nincs ilyen elem
     int indexOf(qlonglong __id)     { return idList.indexOf(__id); }
-    QString at(int __i)             { return __i < 0 || __i >= nameList.size() ? QString() : nameList[__i]; }
+    QString at(int __i) const       { return __i < 0 || __i >= nameList.size() ? QString() : nameList[__i]; }
     /// A megadott sorszámú elem ID-je, vagy NULL_ID, ha nincs ilyen sorszámú elem.
-    qlonglong atId(int __i)         { return __i < 0 || __i >= idList.size() ? NULL_ID : idList[__i]; }
+    qlonglong atId(int __i) const   { return __i < 0 || __i >= idList.size() ? NULL_ID : idList[__i]; }
     /// A megadott sorszámú elem neve, vagy üres string, ha nincs ilyen sorszámú elem.
     qlonglong idOf(const QString& __s);
     /// Az ID alapján adja vissza a nevet a listából
     QString nameOf(qlonglong __id);
-    QString atView(int __i)         { return __i < 0 || __i >= viewList.size() ? QString() : viewList[__i]; }
+    QString atView(int __i) const   { return __i < 0 || __i >= viewList.size() ? QString() : viewList[__i]; }
     ///
     cRecordListModel& copy(const cRecordListModel& _o);
     /// Ha értéke true, akkor a lista első eleme NULL (a név üres, az ID pedig NULL_ID)

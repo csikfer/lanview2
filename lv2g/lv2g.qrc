@@ -44,5 +44,6 @@
         <file>icons/go-jump.ico</file>
         <file>icons/go-first-3.ico</file>
         <file>icons/go-first-3-no.png</file>
+        <file>icons/filter.ico</file>
     </qresource>
 </RCC>

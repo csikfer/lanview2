@@ -181,6 +181,8 @@ static const QString _sAutoset      = "autoset";
 static const QString _sCollision    = "collision";
 static const QString _sColumn       = "column";
 static const QString _sMap          = "map";
+static const QString _sFilter       = "filter";
+// _sRefine
 
 QString fieldWidgetType(int _t)
 {
@@ -926,9 +928,9 @@ cFieldLineWidget::cFieldLineWidget(const cTableShape& _tm, const cTableShapeFiel
     if (_colDescr.eColType == cColStaticDescr::FT_TEXT && _fieldShape.getBool(_sFieldFlags, FF_HUGE)) {
         _wType = FEW_LINES;  // Widget típus azonosító
         pEditWidget = pPlainTextEdit = new QPlainTextEdit;
-        QSizePolicy spol = pPlainTextEdit->sizePolicy();
-        spol.setVerticalPolicy(QSizePolicy::MinimumExpanding);
-        pPlainTextEdit->setSizePolicy(spol);
+//        QSizePolicy spol = pPlainTextEdit->sizePolicy();
+//        spol.setVerticalPolicy(QSizePolicy::MinimumExpanding);
+//        pPlainTextEdit->setSizePolicy(spol);
         pLayout->addWidget(pPlainTextEdit);
         _height = 4;
     }
@@ -1682,14 +1684,17 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
 {
     if (_readOnly && _par != NULL) EXCEPTION(EPROGFAIL, 0, _tf.identifying() + "\n" + __fr.record().identifying());
     _wType = FEW_FKEY;
+    _filter = _tf.isFeature(_sFilter);
+    _height = _filter ? 2 : 1;
     pUi = new Ui_fKeyEd;
     pUi->setupUi(this);
 
-    pLayout = layout();
+    pLayout = pUi->horizontalLayout;    // A NULL gombot ebbe rakjuk
     pEditWidget = pUi->comboBox;
     pRDescr = cRecStaticDescr::get(_colDescr.fKeyTable, _colDescr.fKeySchema);
     pModel = new cRecordListModel(*pRDescr, this);
-    pModel->setToNameF(_colDescr.fnToName);
+    // Ha nincs név mező...
+    if (pRDescr->nameIndex(EX_IGNORE) < 0) pModel->setToNameF(_colDescr.fnToName);
     QString owner = _fieldShape.feature(_sOwner);   //
     if (!owner.isEmpty()) {
         if (0 == owner.compare(_sSelf, Qt::CaseInsensitive)) {  // TREE
@@ -1730,7 +1735,8 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
             if (it >= pDialog->fields.end()) EXCEPTION(EDATA);
         }
     }
-    pModel->setFilter(_sNul, OT_ASC, FT_NO);
+    setConstFilter();
+    // pModel->setFilter(_sNul, OT_ASC, FT_NO); // Ez a default, felesleges kiadni még egy query-t
     pModel->joinWith(pUi->comboBox);
     pUi->pushButtonEdit->setDisabled(true);
     // ?? _value = pModel->atId(0);
@@ -1760,10 +1766,11 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
         cFieldEditBase::disableEditWidget(isNull);
     }
     // Az aktuális érték megjelenítése
-    setWidget();
+    // setWidget();
+    first = true;
 
     connect(pUi->comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(setFromEdit(int)));
-    //connect(pUi->comboBox, SIGNAL(editTextChanged(QString)), this, SLOT(_edited(QString)));
+    connect(pUi->lineEditFilter, SIGNAL(textChanged(QString)), this, SLOT(setFilter(QString)));
 }
 
 cFKeyWidget::~cFKeyWidget()
@@ -1786,10 +1793,14 @@ bool cFKeyWidget::setWidget()
  int cFKeyWidget::set(const QVariant& v)
 {
     int r = cFieldEditBase::set(v);
-    if (1 == r) {
+    if (first || 1 == r) {
+        if (setConstFilter() || first) {   // Más mező is változhatott ??!!
+            pModel->setFilter();
+        }
         actId = _colDescr.toId(_value);
         if (!setWidget()) r = -1;
     }
+    first = false;
     return r;
 }
 
@@ -1811,6 +1822,42 @@ void cFKeyWidget::disableEditWidget(eTristate tsf)
 {
     cFieldEditBase::disableEditWidget(tsf);
     setButtons();
+    bool f = _filter && !_actValueIsNULL;
+    pUi->label->setVisible(f);
+    pUi->lineEditFilter->setVisible(f);
+    pUi->lineEditFilter->setDisabled(_actValueIsNULL);
+}
+
+bool cFKeyWidget::setConstFilter()
+{
+    if (_pParentDialog != NULL) {
+        QStringList constFilter = _fieldShape.features().slValue(_sRefine);
+        if (!constFilter.isEmpty() && !constFilter.first().isEmpty()) {
+            const cRecord *pr = _pParentDialog->_pRecord;
+            QString sql = constFilter.first();
+            constFilter.pop_front();
+            foreach (QString s, constFilter) {
+                if (s.isEmpty()) EXCEPTION(EDATA);
+                switch (s[0].toLatin1()) {
+                case '#':   // int
+                    s = s.mid(1);
+                    s = pr->isNull(s) ? _sNULL : QString::number(pr->getId(s));
+                    break;
+                case '&':   // string
+                    s = s.mid(1);
+                    s = pr->isNull(s) ? _sNULL : quoted(pr->getName(s));
+                    break;
+                default:
+                    s = pr->getName();
+                    break;
+                }
+                sql = sql.arg(s);
+            }
+            pModel->setConstFilter(sql, FT_SQL_WHERE);
+            return true;
+        }
+    }
+    return false;
 }
 
 void cFKeyWidget::setFromEdit()
@@ -1826,16 +1873,23 @@ void cFKeyWidget::setFromEdit()
     setFromWidget(v);
 }
 
-/*
-void cFKeyWidget::_edited(QString _txt)
+void cFKeyWidget::setFilter(const QString& _s)
 {
-    while (!pModel->setFilter(_txt, OT_ASC, FT_BEGIN)) {
-        if (_txt.size() == 0) break;
-        _txt.chop(1);
-        pComboBox()->
+    qlonglong id;
+    int ix = pUi->comboBox->currentIndex();
+    id = pModel->atId(ix);
+    if (_s.isNull()) {
+        pModel->setFilter(QVariant(), OT_DEFAULT, FT_NO);
     }
-
-}*/
+    else {
+        QString s = _s;
+        if (!s.contains('?') && !s.contains('%')) s = '%' + s + '%';
+        pModel->setFilter(s, OT_DEFAULT, FT_LIKE);
+    }
+    ix = pModel->indexOf(id);
+    if (ix >= 0) pUi->comboBox->setCurrentIndex(ix);
+    setFromEdit();
+}
 
 /// Egy tulajdosnság kulcs mezőben vagyunk.
 /// Be szertnénk szúrni egy tulajdonság rekordot

@@ -603,6 +603,7 @@ protected:
     bool setWidget();
     void setButtons();
     void disableEditWidget(eTristate tsf);
+    bool setConstFilter();
     Ui_fKeyEd          *pUi;
     cRecordListModel   *pModel;
     /// A távoli kulcs által mutatott tábla leíró objektumára muatat
@@ -613,13 +614,15 @@ protected:
     /// A távoli kulcs által mutatott táblában a saját ID-t tartalmazó mező indexe
     int             owner_ix;
     qlonglong       ownerId;
+    bool            first;
+    bool            _filter;
 protected slots:
     void setFromEdit(int i);
     void setFromEdit();
-//  void _edited(QString _txt);
     void insertF();
     void modifyF();
     void modifyOwnerId(cFieldEditBase* pof);
+    void setFilter(const QString &_s);
 };
 
 /// @class cDateWidget

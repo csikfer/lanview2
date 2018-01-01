@@ -94,16 +94,28 @@ bool cFeatures::split(const QString& __ms, eEx __ex)
     foreach (QString s, sl) {
         QStringList pv = splitBy(s, QChar('='));
         if (pv.count()  > 2) {
-            if (__ex) EXCEPTION(EDATA, -1, msg);
-            DERR() << msg << endl;
-            return false;
+            pv[1] = pv.mid(1).join(QChar('='));
         }
         QString key = pv[0].toLower();
-        QString val = pv.count() == 2 ? pv[1] : _sNul;
+        QString val = pv.count() >= 2 ? pv[1] : _sNul;
         if (val == "!") remove(key);        // Törli (ha van)
         else            (*this)[key] = val;
     }
     return true;
+}
+
+QStringList cFeatures::value2list(const QString &s)
+{
+    QStringList r = s.split(QRegExp("\\s*,\\s*"));
+    for (int i = 0; i < r.size(); ++i) {
+        while (r.at(i).endsWith(QChar('\\'))) {
+            if ((i +1) >= r.size()) EXCEPTION(EDATA, 0, s);
+            r[i].chop(1);
+            r[i] += QChar(',') + r[i +1];
+            r.removeAt(i +1);
+        }
+    }
+    return r;
 }
 
 qlonglong cFeatures::value2set(const QString &s, const QStringList& enums)

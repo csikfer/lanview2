@@ -354,7 +354,7 @@ QVariant cRecordListModel::data(const QModelIndex &index, int role) const
         return dcRole(DC_NULL, role);
     }
     if (role == Qt::DisplayRole) {
-        return viewList[row];
+        return atView(row);
     }
     return dcRole(dcData, role);
 }
@@ -501,15 +501,19 @@ QString cRecordListModel::_order(const QString& nameName, const QString& idName)
 
 QString cRecordListModel::select()
 {
-    QString fn, nn, view;
-    QString in = pDescr->columnNameQ(pDescr->idIndex());
+    QString se,             // Select fiels: [<exp> AS] <name>
+            fe,             // Name expression
+            nc,             // Name for column
+            view;           // Optional view field
+    QString in = pDescr->columnNameQ(pDescr->idIndex());    // ID name
     if (toNameFName.isEmpty()) {
-        nn = pDescr->nameName();
+        se = nc = fe = pDescr->nameName();
         dcData = DC_NAME;
     }
     else {
-        fn = toNameFName + QChar('(') + in +QChar(')') + QChar(' ');
-        nn = quotedString(_sName);
+        fe = toNameFName + QChar('(') + in + QChar(')');
+        nc = quotedString(_sName);
+        se = fe + " AS " + nc;
         dcData = DC_DATA;
     }
     if (!viewExpr.isEmpty()) {
@@ -517,9 +521,9 @@ QString cRecordListModel::select()
         dcData = DC_DERIVED;
     }
     QString sOnly = only ? " ONLY " : _sNul;
-    QString sql = "SELECT " + in + QChar(',') + fn + nn + view + " FROM " + sOnly + pDescr->tableName();
-    sql += where(nn);
-    sql += _order(nn, pDescr->idName());
+    QString sql = "SELECT " + in + QChar(',') + se + view + " FROM " + sOnly + pDescr->fullTableNameQ();
+    sql += where(fe);
+    sql += _order(nc, in);
     PDEB(VERBOSE) << "SQL : \"" << sql << "\"" << endl;
     return sql;
 }
