@@ -235,11 +235,11 @@ private:
     char    dummy;
 };
 /// Egy dummy osztály dummy példány, hogy lehessen referencia az osztályra.
-extern no_init_ _no_init_;
+EXT_ no_init_ _no_init_;
 
 /* ******************************  ****************************** */
 
-void writeRollLog(QFile& __log, const QByteArray& __data, qlonglong __size, int __arc);
+EXT_ void writeRollLog(QFile& __log, const QByteArray& __data, qlonglong __size, int __arc);
 
 template <class C, class T> T avarage(C c) {
     T r;
@@ -254,7 +254,7 @@ template <class C, class T> T avarage(C c) {
 #define INDENT_SIZE 4
 static inline QString indentSp(int n) { return QString(n * INDENT_SIZE, QChar(' ')); }
 
-QString hrmlFrame(const QString &title, const QString& body);
+EXT_ QString hrmlFrame(const QString &title, const QString& body);
 
 /// Paraméter név
 EXT_ QString getParName(QString::const_iterator& i, const QString::const_iterator& e, bool _point = true, enum eEx __ex = EX_ERROR);
@@ -269,7 +269,7 @@ inline QString msgCat(const QString msg1, const QString& msg2, const QString& se
 }
 
 /* ******************************  ****************************** */
-QVariantList list_longlong2variant(const QList<qlonglong>& v);
+EXT_ QVariantList list_longlong2variant(const QList<qlonglong>& v);
 
 #endif // OTHERS_H
 
