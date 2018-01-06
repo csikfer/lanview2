@@ -89,7 +89,9 @@ public:
 
     /// Main window object pointer
     static cMainWindow *    pMainWindow;
-protected:
+
+    static QIcon        iconNull;
+    static QIcon        iconDefault;
 };
 
 _GEX int defaultDataCharter(const cRecStaticDescr& __d, int __ix);

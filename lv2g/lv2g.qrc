@@ -45,5 +45,6 @@
         <file>icons/go-first-3.ico</file>
         <file>icons/go-first-3-no.png</file>
         <file>icons/filter.ico</file>
+        <file>icons/services.ico</file>
     </qresource>
 </RCC>

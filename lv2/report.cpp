@@ -12,6 +12,8 @@ const QString sHtmlTd     = "<td> %1 </td>";
 const QString sHtmlBold   = "<b>%1</b>";
 const QString sHtmlVoid   = " - ";
 const QString sHtmlBr     = "<br>";
+const QString sHtmlBRed   = "<b><span style=\"color:red\"> %1 </span></b>";
+const QString sHtmlBGreen = "<b><span style=\"color:green\"> %1 </span></b>";
 
 
 QString toHtml(const QString& text, bool chgBreaks, bool esc)
@@ -112,18 +114,20 @@ QString htmlReportNode(QSqlQuery& q, cPatch& node, const QString& _sTitle, bool 
         text += sHtmlTh.arg(QObject::trUtf8("Fizikai link"));
         if (!isPatch) text += sHtmlTh.arg(QObject::trUtf8("Logikai link"));
         if (!isPatch) text += sHtmlTh.arg(QObject::trUtf8("LLDP link"));
+        if (!isPatch) text += sHtmlTh.arg(QObject::trUtf8("MAC tab"));
         text += sHtmlRowEnd;
         QListIterator<cNPort *> li(node.ports);
         while (li.hasNext()) {
             cNPort * p = li.next();
+            cInterface *pif = NULL;
             text += sHtmlRowBeg;
             text += sHtmlTd.arg(p->getName());
             text += sHtmlTd.arg(cIfType::ifTypeName(p->getId(_sIfTypeId)));
             // Columns: port, típus, MAC|Shared, IP|S.p., DNS|-
             if (p->descr() == cInterface::_descr_cInterface()) {  // Interface
                 QString ips, dns;
-                cInterface *i = p->reconvert<cInterface>();
-                QListIterator<cIpAddress *> ii(i->addresses);
+                pif = p->reconvert<cInterface>();
+                QListIterator<cIpAddress *> ii(pif->addresses);
                 while (ii.hasNext()) {
                     cIpAddress * ia = ii.next();
                     ips += sHtmlBold.arg(ia->view(q, _sAddress)) + "/" + ia->getName(_sIpAddressType) + _sCommaSp;
@@ -132,7 +136,7 @@ QString htmlReportNode(QSqlQuery& q, cPatch& node, const QString& _sTitle, bool 
                 }
                 ips.chop(_sCommaSp.size());
                 dns.chop(_sCommaSp.size());
-                text += sHtmlTd.arg(i->mac().toString());
+                text += sHtmlTd.arg(pif->mac().toString());
                 text += sHtmlTd.arg(ips);
                 text += sHtmlTd.arg(dns);
             }
@@ -153,7 +157,7 @@ QString htmlReportNode(QSqlQuery& q, cPatch& node, const QString& _sTitle, bool 
                  text += sHtmlTd.arg(sHtmlVoid);
             }
             qlonglong pid = p->getId();
-            /// Columns: PhsLink, LogLink|-, LLDP|-
+            /// Columns: PhsLink, LogLink|-, LLDP|-, MACTab|-
             if (isPatch) {
                 cPhsLink pl;
                 pl.setId(_sPortId1, pid);
@@ -169,15 +173,49 @@ QString htmlReportNode(QSqlQuery& q, cPatch& node, const QString& _sTitle, bool 
                 text += sHtmlTd.arg(sl.isEmpty() ? sHtmlVoid : sl.join(sHtmlBr));
             }
             else {
-                qlonglong lp;
-                lp = LinkGetLinked<cPhsLink>(q, pid);
-                text += sHtmlTd.arg(lp == NULL_ID ? sHtmlVoid : cNPort::getFullNameById(q, lp));
-                lp = LinkGetLinked<cLogLink>(q, pid);
-                text += sHtmlTd.arg(lp == NULL_ID ? sHtmlVoid : cNPort::getFullNameById(q, lp));
-                lp = LinkGetLinked<cLldpLink>(q, pid);
-                text += sHtmlTd.arg(lp == NULL_ID ? sHtmlVoid : cNPort::getFullNameById(q, lp));
+                qlonglong plp = LinkGetLinked<cPhsLink>(q, pid);    // -> phisical link
+                qlonglong llp = LinkGetLinked<cLogLink>(q, pid);    // -> logical link
+                qlonglong ldp = LinkGetLinked<cLldpLink>(q, pid);   // -> LLDP
+                qlonglong mtp = NULL_ID;                            // -> MacTab port
+                if (pif != NULL) {
+                    cMacTab mt;
+                    mt.setMac(_sHwAddress, pif->getMac(_sHwAddress));
+                    if (mt.completion(q)) {
+                        mtp = mt.getId(_sPortId);
+                    }
+                }
+                // phisical
+                text += sHtmlTd.arg(plp == NULL_ID ? sHtmlVoid : cNPort::getFullNameById(q, plp));
+                // logical
+                if (llp == NULL_ID) text += sHtmlTd.arg(sHtmlVoid);
+                else {
+                    QString n = cNPort::getFullNameById(q, llp);
+                    if (mtp != NULL_ID) {
+                        if (mtp != llp) n = sHtmlBRed.arg(n);
+                        else            n = sHtmlBGreen.arg(n);
+                    }
+                    text += sHtmlTd.arg(n);
+                }
+                // lldp
+                if (ldp == NULL_ID) text += sHtmlTd.arg(sHtmlVoid);
+                else {
+                    QString n = cNPort::getFullNameById(q, ldp);
+                    if (llp != NULL_ID) {
+                        if (llp != ldp) n = sHtmlBRed.arg(n);
+                        else            n = sHtmlBGreen.arg(n);
+                    }
+                    text += sHtmlTd.arg(n);
+                }
+                // mac tab
+                if (mtp != NULL_ID) {
+                    QString n = cNPort::getFullNameById(q, mtp);
+                    if (llp != NULL_ID) {
+                        if (mtp != llp) n = sHtmlBRed.arg(n);
+                        else            n = sHtmlBGreen.arg(n);
+                    }
+                    text += sHtmlTd.arg(n);
+                }
             }
-
             text += sHtmlRowEnd;
         }
         text += sHtmlTabEnd;
@@ -243,7 +281,7 @@ QString htmlReportByMac(QSqlQuery& q, const QString& sMac)
     mt.setMac(_sHwAddress, mac);
     if (mt.completion(q)) {
         text += QObject::trUtf8("Találat a switch cím táblában : <b>%1</b> (%2 - %3; %4)").arg(
-                    cNPort::getFullNameById(q, mt.getId(_sPortId)),
+                    cNPort::getFullNameById(q, mt.getId(_sPortId)), // Switch port full name
                     mt.view(q, _sFirstTime),
                     mt.view(q, _sLastTime),
                     mt.view(q, _sMacTabState));

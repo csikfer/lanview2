@@ -14,6 +14,9 @@ EXT_ const QString sHtmlTh;
 EXT_ const QString sHtmlTd;
 EXT_ const QString sHtmlBold;
 EXT_ const QString sHtmlBr;
+EXT_ const QString sHtmlBRed;
+EXT_ const QString sHtmlBGreen;
+
 
 static inline QString tag(const QString& t) {
     QString r = "<" + t;
@@ -36,6 +39,9 @@ static inline QString htmlInfo(const QString& text, bool chgBreaks = false, bool
 }
 static inline QString htmlError(const QString& text, bool chgBreaks = false, bool esc = true) {
     return "<div style=\"color:red\"><b>" + toHtml(text, chgBreaks, esc) + "</b></div>";
+}
+static inline QString htmlGrInf(const QString& text, bool chgBreaks = false, bool esc = true) {
+    return "<div style=\"color:green\"><b>" + toHtml(text, chgBreaks, esc) + "</b></div>";
 }
 static inline QString htmlItalic(const QString& text, bool chgBreaks = false, bool esc = true) {
     return "<i>" + toHtml(text, chgBreaks, esc) + "</i>";

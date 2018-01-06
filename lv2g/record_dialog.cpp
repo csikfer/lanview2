@@ -665,8 +665,9 @@ void cRecordDialogInh::restore(const cRecord *_pRec)
 /// @param pPar parent widgewt pointere
 /// @param pSample minta rekord
 /// @param ro Read-only flag, ha igaz, akkor csak a pSample megjelenítése történik, nincs OK gomb.
-cRecord * recordDialog(QSqlQuery& q, const QString& sn, QWidget *pPar, const cRecord *pSample, bool ro)
+cRecord * recordDialog(QSqlQuery& q, const QString& sn, QWidget *pPar, const cRecord *pSample, bool ro, bool edit)
 {
+    if ((ro || edit) && pSample == NULL) EXCEPTION(EENODATA);
     cTableShape shape;
     if (!shape.fetchByName(q, sn)) {
         shape.setName(_sTableName, sn);
@@ -686,19 +687,34 @@ cRecord * recordDialog(QSqlQuery& q, const QString& sn, QWidget *pPar, const cRe
         buttons = enum2set(DBT_OK, DBT_CANCEL);
     }
     cRecordDialog   rd(shape, buttons, true, NULL, NULL, pPar);  // A rekord szerkesztő dialógus
-    rd.restore(pSample);
+    if (pSample != NULL) {
+        if (edit && pSample->idIndex(EX_IGNORE) != NULL_IX && !pSample->isNullId()) {
+            cRecord *pr = pSample->dup();
+            pr->clearId();
+            rd.restore(pSample);
+            delete pr;
+        }
+        else {
+            rd.restore(pSample);
+        }
+    }
     while (true) {
         int r = rd.exec(false);
         if (r == DBT_CANCEL || ro) return NULL;
         if (!rd.accept()) continue;
-        if (!cErrorMessageBox::condMsgBox(rd.record().tryInsert(q))) continue;
+        if (edit) {
+            if (!cErrorMessageBox::condMsgBox(rd.record().tryUpdateById(q))) continue;
+        }
+        else {
+            if (!cErrorMessageBox::condMsgBox(rd.record().tryInsert(q))) continue;
+        }
         break;
     }
     rd.close();
     return rd.record().dup();
 }
 
-/// Dialógus ablak megjelenítése egy rekord beillesztéséhez. Hasonló a recordInsertDialog() híváshoz,
+/// Dialógus ablak megjelenítése egy rekord beillesztéséhez. Hasonló a recordDialog() híváshoz,
 /// de a name alapján más egyedi dialógust hív:
 /// | name         | hívott függvény neve |
 /// |--------------|----------------------|

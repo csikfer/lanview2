@@ -21,7 +21,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_4" stretch="0,0,0,0,0,1,0">
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_6">
+    <layout class="QHBoxLayout" name="horizontalLayout_6" stretch="10,10,10,1,1,1">
      <property name="leftMargin">
       <number>0</number>
      </property>
@@ -43,6 +43,10 @@
        <property name="text">
         <string>Regisztrált eszköz adatainak a módosítása</string>
        </property>
+       <property name="icon">
+        <iconset resource="lv2g.qrc">
+         <normaloff>:/icons/edit.ico</normaloff>:/icons/edit.ico</iconset>
+       </property>
       </widget>
      </item>
      <item>
@@ -50,8 +54,50 @@
        <property name="text">
         <string>Új eszköz felvétele</string>
        </property>
+       <property name="icon">
+        <iconset resource="lv2g.qrc">
+         <normaloff>:/icons/add.ico</normaloff>:/icons/add.ico</iconset>
+       </property>
        <property name="checked">
         <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="lineEditID">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonDelete">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Törlés</string>
+       </property>
+       <property name="icon">
+        <iconset resource="lv2g.qrc">
+         <normaloff>:/icons/delete.ico</normaloff>:/icons/delete.ico</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonGoServices">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Szolgáltatások</string>
+       </property>
+       <property name="icon">
+        <iconset resource="lv2g.qrc">
+         <normaloff>:/icons/services.ico</normaloff>:/icons/services.ico</iconset>
        </property>
       </widget>
      </item>
@@ -286,103 +332,6 @@
        </item>
        <item>
         <layout class="QFormLayout" name="formLayoutNode">
-         <item row="2" column="0">
-          <widget class="QLabel" name="labelNewName">
-           <property name="font">
-            <font>
-             <weight>75</weight>
-             <bold>true</bold>
-            </font>
-           </property>
-           <property name="text">
-            <string>Új név :</string>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1">
-          <widget class="QLineEdit" name="lineEditName"/>
-         </item>
-         <item row="4" column="0">
-          <widget class="QLabel" name="labelNote">
-           <property name="text">
-            <string>Megjegyzés :</string>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="1">
-          <widget class="QLineEdit" name="lineEditNote"/>
-         </item>
-         <item row="9" column="0">
-          <widget class="QLabel" name="labelPlace">
-           <property name="font">
-            <font>
-             <weight>75</weight>
-             <bold>true</bold>
-            </font>
-           </property>
-           <property name="text">
-            <string>Az eszköz helye :</string>
-           </property>
-          </widget>
-         </item>
-         <item row="9" column="1">
-          <layout class="QHBoxLayout" name="horizontalLayoutPlace">
-           <item>
-            <widget class="QComboBox" name="comboBoxPlace">
-             <property name="editable">
-              <bool>false</bool>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QToolButton" name="toolButtonAddPlace">
-             <property name="text">
-              <string>+</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item row="10" column="0">
-          <widget class="QLabel" name="labelSerial">
-           <property name="text">
-            <string>Széria szám :</string>
-           </property>
-          </widget>
-         </item>
-         <item row="10" column="1">
-          <widget class="QLineEdit" name="lineEditSerial"/>
-         </item>
-         <item row="11" column="0">
-          <widget class="QLabel" name="labelInventory">
-           <property name="text">
-            <string>Leltári szám :</string>
-           </property>
-          </widget>
-         </item>
-         <item row="11" column="1">
-          <widget class="QLineEdit" name="lineEditInventory"/>
-         </item>
-         <item row="12" column="0">
-          <widget class="QLabel" name="labelModelName">
-           <property name="text">
-            <string>Model név :</string>
-           </property>
-          </widget>
-         </item>
-         <item row="12" column="1">
-          <widget class="QLineEdit" name="lineEditModelName"/>
-         </item>
-         <item row="13" column="0">
-          <widget class="QLabel" name="labelModelNumber">
-           <property name="text">
-            <string>Model szám :</string>
-           </property>
-          </widget>
-         </item>
-         <item row="13" column="1">
-          <widget class="QLineEdit" name="lineEditModelNumber"/>
-         </item>
          <item row="1" column="0">
           <widget class="QLabel" name="labelName">
            <property name="font">
@@ -403,6 +352,22 @@
             <bool>false</bool>
            </property>
           </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="labelNewName">
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>Új név :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QLineEdit" name="lineEditName"/>
          </item>
          <item row="3" column="0">
           <widget class="QLabel" name="labelNodeType">
@@ -432,6 +397,76 @@
             </widget>
            </item>
           </layout>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="labelNote">
+           <property name="text">
+            <string>Megjegyzés :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="9" column="1">
+          <layout class="QHBoxLayout" name="horizontalLayoutPlace">
+           <item>
+            <widget class="QComboBox" name="comboBoxPlace">
+             <property name="editable">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QToolButton" name="toolButtonAddPlace">
+             <property name="text">
+              <string>+</string>
+             </property>
+             <property name="icon">
+              <iconset resource="lv2g.qrc">
+               <normaloff>:/icons/add.ico</normaloff>:/icons/add.ico</iconset>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item row="10" column="0">
+          <widget class="QLabel" name="labelSerial">
+           <property name="text">
+            <string>Széria szám :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="11" column="0">
+          <widget class="QLabel" name="labelInventory">
+           <property name="text">
+            <string>Leltári szám :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="12" column="0">
+          <widget class="QLabel" name="labelModelName">
+           <property name="text">
+            <string>Model név :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="13" column="0">
+          <widget class="QLabel" name="labelModelNumber">
+           <property name="text">
+            <string>Model szám :</string>
+           </property>
+          </widget>
+         </item>
+         <item row="9" column="0">
+          <widget class="QLabel" name="labelPlace">
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>Az eszköz helye :</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>
@@ -535,18 +570,12 @@
            </property>
           </widget>
          </item>
-         <item row="2" column="1">
-          <widget class="QLineEdit" name="lineEditPNote"/>
-         </item>
          <item row="3" column="0">
           <widget class="QLabel" name="labelPTag">
            <property name="text">
             <string>Cimke :</string>
            </property>
           </widget>
-         </item>
-         <item row="3" column="1">
-          <widget class="QLineEdit" name="lineEditPTag"/>
          </item>
          <item row="4" column="0">
           <widget class="QLabel" name="labelPMAC">
@@ -582,17 +611,9 @@
              </property>
              <item>
               <widget class="QToolButton" name="toolButtonIP2MAC">
-               <property name="text">
-                <string>...</string>
+               <property name="toolTip">
+                <string>A MAC beállítása az IP cím alapján, az adatbázis 'arps' táblája alapján.</string>
                </property>
-               <property name="icon">
-                <iconset resource="lv2g.qrc">
-                 <normaloff>:/icons/zoom.ico</normaloff>:/icons/zoom.ico</iconset>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QToolButton" name="toolButtonSelectByMAC">
                <property name="text">
                 <string>...</string>
                </property>
@@ -603,7 +624,24 @@
               </widget>
              </item>
              <item>
+              <widget class="QToolButton" name="toolButtonSelectByMAC">
+               <property name="toolTip">
+                <string>Az eszköz (minta) kiválasztása az MAC cím alapján.</string>
+               </property>
+               <property name="text">
+                <string>...</string>
+               </property>
+               <property name="icon">
+                <iconset resource="lv2g.qrc">
+                 <normaloff>:/icons/down.ico</normaloff>:/icons/down.ico</iconset>
+               </property>
+              </widget>
+             </item>
+             <item>
               <widget class="QToolButton" name="toolButtonReportMAC">
+               <property name="toolTip">
+                <string>Infó az MAC cím alapján.</string>
+               </property>
                <property name="text">
                 <string/>
                </property>
@@ -872,19 +910,6 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="6">
-         <widget class="QCheckBox" name="checkBoxPlaceEqu">
-          <property name="enabled">
-           <bool>true</bool>
-          </property>
-          <property name="text">
-           <string>Hely azonos</string>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
         <item row="2" column="5">
          <widget class="QRadioButton" name="radioButtonLinkFront">
           <property name="enabled">
@@ -921,6 +946,10 @@
             <property name="text">
              <string>+</string>
             </property>
+            <property name="icon">
+             <iconset resource="lv2g.qrc">
+              <normaloff>:/icons/add.ico</normaloff>:/icons/add.ico</iconset>
+            </property>
            </widget>
           </item>
           <item>
@@ -945,6 +974,23 @@
            </widget>
           </item>
          </layout>
+        </item>
+        <item row="0" column="6">
+         <widget class="QPushButton" name="pushButtonPlaceEqu">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="text">
+           <string>Hely azonos</string>
+          </property>
+          <property name="icon">
+           <iconset resource="lv2g.qrc">
+            <normaloff>:/icons/down.ico</normaloff>:/icons/down.ico</iconset>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -1065,6 +1111,10 @@
        <property name="text">
         <string>Ment</string>
        </property>
+       <property name="icon">
+        <iconset resource="lv2g.qrc">
+         <normaloff>:/icons/save.ico</normaloff>:/icons/save.ico</iconset>
+       </property>
       </widget>
      </item>
      <item>
@@ -1098,21 +1148,14 @@
   <tabstop>lineEditName</tabstop>
   <tabstop>lineEditNodeType</tabstop>
   <tabstop>toolButtonNodeType</tabstop>
-  <tabstop>lineEditNote</tabstop>
   <tabstop>comboBoxPlace</tabstop>
   <tabstop>toolButtonAddPlace</tabstop>
-  <tabstop>lineEditSerial</tabstop>
-  <tabstop>lineEditInventory</tabstop>
-  <tabstop>lineEditModelName</tabstop>
-  <tabstop>lineEditModelNumber</tabstop>
   <tabstop>lineEditPName</tabstop>
   <tabstop>comboBoxPType</tabstop>
-  <tabstop>lineEditPNote</tabstop>
-  <tabstop>lineEditPTag</tabstop>
   <tabstop>comboBoxLinkZone</tabstop>
   <tabstop>lineEditLinkPlacePat</tabstop>
   <tabstop>comboBoxLinkPlace</tabstop>
-  <tabstop>checkBoxPlaceEqu</tabstop>
+  <tabstop>pushButtonPlaceEqu</tabstop>
   <tabstop>comboBoxLinkNode</tabstop>
   <tabstop>toolButtonAddLnkNode</tabstop>
   <tabstop>comboBoxLinkPort</tabstop>

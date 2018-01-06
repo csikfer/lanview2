@@ -91,6 +91,39 @@ signals:
     void languageIdChanged(int id);
 };
 
+/// \brief setFormEditWidget
+/// Egy QFormLayout -ban megkeresi a _lw pointerű cimke widgetet, és ugyanebbe a sorban elhelyezi a _ew widgetet mint érték.
+/// \param _fl A QFormLayout pointere, amiben el kell helyezni a _ew widgetet.
+/// \param _lw A keresett cimke widget
+/// \param _ew Az elhelyezendő mező widget
+/// \param __ex Ha értéke nem EX_IGNORE, akkor hiba esetén, vagyis, ha nem találja az _lw widgetet, vagy az nem cimke (LabelRole), akkor kizárást dob.
+/// \return Ha nincs hiba, akkor true.
+_GEX bool setFormEditWidget(QFormLayout *_fl, QWidget *_lw, QWidget *_ew, eEx __ex = EX_ERROR);
+
+class cLineWidget : public QWidget {
+    Q_OBJECT
+public:
+    cLineWidget(QWidget *par = NULL, bool _ro = false, bool _horizontal = true);
+    QLayout     * const pLayout;
+    QLineEdit   * const pLineEdit;
+    QToolButton * const pNullButton;
+
+    void setNullIcon (const QIcon& icon) { pNullButton->setIcon(icon); }
+    void set(const QVariant& val);
+    bool isNull()  { return pNullButton->isChecked(); }
+    QVariant get() { return isNull() ? QVariant() : QVariant(pLineEdit->text()); }
+private:
+    QVariant val;
+private slots:
+    void on_NullButton_togled(bool f);
+    void on_LineEdit_textChanged(const QString& s);
+public slots:
+    void setDisabled(bool f);
+    void setEnabled(bool f) { setDisabled(!f); }
+signals:
+    void changed(const QVariant& val);
+};
+
 inline static QFrame *line(int __w, int __mw, QWidget *par = NULL)
 {
     QFrame *line = new QFrame(par);
@@ -331,8 +364,6 @@ protected:
     QFont               defFont;
     QColor              defBgColor;
     QColor              defFgColor;
-    static QIcon        iconNull;
-    static QIcon        iconDefault;
     QIcon               actNullIcon;
 public:
     bool isText()   { return _wType == FEW_LTEXT || _wType == FEW_LTEXT_LONG; }
@@ -478,11 +509,12 @@ public:
     ~cFieldSpinBoxWidget();
     virtual int set(const QVariant& v);
 protected:
-    QSpinBox *pSpinBox;
+    QSpinBox *      pSpinBox;
+    QDoubleSpinBox *pDoubleSpinBox;
 protected slots:
     void setFromEdit();
     void setFromEdit(int i);
-
+    void setFromEdit(double d);
 };
 
 
@@ -587,6 +619,7 @@ private slots:
 };
 
 class Ui_fKeyEd;
+class cSelectPlace;
 
 /// @class cFKeyWidget
 /// Egy távoli kulcs mező megjelenítése, és szerkesztése
@@ -605,7 +638,8 @@ protected:
     void disableEditWidget(eTristate tsf);
     bool setConstFilter();
     Ui_fKeyEd          *pUi;
-    cRecordListModel   *pModel;
+    cRecordListModel   *pModel;         // No special filter (selector)
+    cSelectPlace       *pSelectPlace;   // Place: filtered by zone
     /// A távoli kulcs által mutatott tábla leíró objektumára muatat
     const cRecStaticDescr *pRDescr;
     /// A távoli kulcs által mutatott tábla rekord dialógus leíró objektum.
@@ -615,9 +649,11 @@ protected:
     int             owner_ix;
     qlonglong       ownerId;
     bool            first;
-    bool            _filter;
+    enum eFilter { F_NO = 0, F_SIMPLE, F_PLACE };
+    int            _filter;
 protected slots:
     void setFromEdit(int i);
+    void setFromEdit(qlonglong id);
     void setFromEdit();
     void insertF();
     void modifyF();
@@ -917,6 +953,13 @@ public:
     /// Az aktuális hely az új objektum lessz, vagy ha cancel-t nyom, akkor nincs változás.
     /// @return Az új objektum ID, vagy NULL_ID.
     qlonglong insertPlace();
+    /// Az aktuális hely, helyiség objektum modosításe.
+    /// Egy dialógus ablakot jelenít meg, az objektum modosításához.
+    /// @return Az objektum ID, vagy NULL_ID.
+    qlonglong editCurrentPlace();
+    QComboBox *comboBoxZone() const { return pComboBoxZone; }
+    QComboBox *comboBoxPlace() const { return pComboBoxPLace; }
+    QLineEdit *lineEditPlaceFilt() const { return pLineEditPlaceFilt; }
 protected:
     tBatchBlocker<cSelectPlace>   bbPlace;
     /// A két kimeneti signal hívása az aktuális hely név ill. ID-vel.
@@ -1058,6 +1101,7 @@ private slots:
     void setPortIdByIndex(int ix);
     void setLinkTypeByButtons(int _id);
     void changedShareType(int ix);
+    void portChanged(int ix);
 signals:
     void changedLink(qlonglong _pid, int _lt, int _sh);
 };

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>279</width>
-    <height>225</height>
+    <width>445</width>
+    <height>356</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -51,7 +51,7 @@
          </property>
          <property name="icon">
           <iconset resource="lv2g.qrc">
-           <normaloff>:/icons/zoom.ico</normaloff>:/icons/zoom.ico</iconset>
+           <normaloff>:/icons/go-jump.ico</normaloff>:/icons/go-jump.ico</iconset>
          </property>
         </widget>
        </item>
@@ -65,7 +65,7 @@
          </property>
          <property name="icon">
           <iconset resource="lv2g.qrc">
-           <normaloff>:/icons/go-jump.ico</normaloff>:/icons/go-jump.ico</iconset>
+           <normaloff>:/icons/down.ico</normaloff>:/icons/down.ico</iconset>
          </property>
         </widget>
        </item>
@@ -73,6 +73,9 @@
         <widget class="QToolButton" name="toolButtonInfo">
          <property name="enabled">
           <bool>false</bool>
+         </property>
+         <property name="toolTip">
+          <string>Infó az IP címről.</string>
          </property>
          <property name="text">
           <string>...</string>
@@ -122,9 +125,6 @@
       <string>Megjegyzés :</string>
      </property>
     </widget>
-   </item>
-   <item row="2" column="1">
-    <widget class="QLineEdit" name="lineEditIpNote"/>
    </item>
    <item row="3" column="0">
     <widget class="QLabel" name="labelSubNet">

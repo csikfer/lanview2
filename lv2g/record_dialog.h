@@ -231,7 +231,7 @@ private:
 
 /* ************************************************************************** */
 
-_GEX cRecord * recordDialog(QSqlQuery& q, const QString& sn, QWidget *pPar = NULL, const cRecord *pSample = NULL, bool ro = false);
+_GEX cRecord * recordDialog(QSqlQuery& q, const QString& sn, QWidget *pPar = NULL, const cRecord *pSample = NULL, bool ro = false, bool edit = false);
 
 static inline QString getTableItemText(QTableWidget *pW, int row, int col) {
     QString r;

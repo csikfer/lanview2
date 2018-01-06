@@ -594,6 +594,8 @@ cIpEditWidget::cIpEditWidget(const tIntVector& _types, QWidget *_par) : QWidget(
     pq = newQuery();
     pUi = new Ui::editIp;
     pUi->setupUi(this);
+    pEditNote = new cLineWidget;
+    setFormEditWidget(pUi->formLayout, pUi->labelIpNote, pEditNote);
     pModelIpType = new cEnumListModel("addresstype", NT_NOT_NULL, _types);
     pModelIpType->joinWith(pUi->comboBoxIpType);
     pSelectVlan = new cSelectVlan(pUi->comboBoxVLanId, pUi->comboBoxVLan);
@@ -627,7 +629,7 @@ void cIpEditWidget::set(const cIpAddress *po)
     qlonglong snid = po->getId(_sSubNetId);
     pSelectSubNet->setCurrentBySubNet(snid);
     if (snid == NULL_ID) _state |= IES_SUBNET_IS_NULL;
-    pUi->lineEditIpNote->setText(po->getNote());
+    pEditNote->set(po->get(po->noteIndex()));
     disableSignals = false;
 }
 
@@ -636,33 +638,22 @@ void cIpEditWidget::set(const QHostAddress &a)
     pUi->lineEditAddress->setText(a.toString());
 }
 
-cIpAddress *cIpEditWidget::get() const
-{
-    cIpAddress *po = new cIpAddress(actAddress, pUi->comboBoxIpType->currentText());
-    po->setNote(pUi->lineEditIpNote->text());
-    po->setId(pSelectSubNet->currentId());
-    return po;
-}
-
 cIpAddress *cIpEditWidget::get(cIpAddress *po) const
 {
     po->setAddress(actAddress, pUi->comboBoxIpType->currentText());
-    po->setNote(pUi->lineEditIpNote->text());
     po->setId(pSelectSubNet->currentId());
+    po->set(po->noteIndex(), pEditNote->get());
     return po;
 }
 
 void cIpEditWidget::showToolBoxs(bool _info, bool _go, bool _query)
 {
-    if (_info)  pUi->toolButtonInfo->show();
-    else        pUi->toolButtonInfo->hide();
-    if (_go)    pUi->toolButtonGo->show();
-    else        pUi->toolButtonGo->hide();
-    if (_query) pUi->toolButtonQuery->show();
-    else        pUi->toolButtonQuery->hide();
+    pUi->toolButtonInfo->setVisible(_info);
+    pUi->toolButtonGo->setVisible(_go);
+    pUi->toolButtonQuery->setVisible(_query);
 }
 
-void cIpEditWidget::enableToolBoxs(bool _info, bool _go, bool _query)
+void cIpEditWidget::enableToolButtons(bool _info, bool _go, bool _query)
 {
     disabled_info = !_info;
     disabled_go   = !_go;
@@ -685,6 +676,7 @@ void cIpEditWidget::setAllDisabled(bool f)
     }
     pUi->lineEditAddress->setDisabled(f);
     pUi->comboBoxIpType->setDisabled(f);
+    pEditNote->setDisabled(f);
     pUi->comboBoxSubNet->setDisabled(f);
     pUi->comboBoxSubNetAddr->setDisabled(f);
     pUi->toolButtonInfo->setDisabled(disabled_info || f);

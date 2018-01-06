@@ -70,6 +70,7 @@ public:
     cHSOperate(QMdiArea *par);
     ~cHSOperate();
     static const enum ePrivilegeLevel rights;
+    int queryNodeServices(qlonglong _nid);
 protected:
     void setButton();
     bool    lockSetButton;
@@ -93,7 +94,6 @@ protected:
     static const QString _sql;
     static const QString _ord;
 
-protected:
     virtual void timerEvent(QTimerEvent *event);
     /// találatok megjelenítése
     void refreshTable();

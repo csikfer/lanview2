@@ -263,6 +263,8 @@ enum eTableColumnIx {
     TC_COUNT
 };
 
+/* *************************************************************************************** */
+
 cHSOperate::cHSOperate(QMdiArea *par)
     : cIntSubObj(par)
 {
@@ -424,6 +426,21 @@ cHSOperate::~cHSOperate()
 {
     delete pq;
     delete pq2;
+}
+
+int cHSOperate::queryNodeServices(qlonglong _nid)
+{
+    pUi->checkBoxPlace->setChecked(false);
+    pUi->checkBoxService->setChecked(false);
+    pUi->checkBoxNode->setChecked(true);
+    pUi->lineEditNodePattern->setText(_sNul);
+    pNodeModel->setFilter(QVariant(), OT_DEFAULT, FT_NO);
+    int ix = pNodeModel->indexOf(_nid);
+    if (ix < 0) return false;
+    pUi->comboBoxNodeSelect->setCurrentIndex(ix);
+    pUi->radioButtonNodeSelect->setChecked(true);
+    fetchByFilter();
+    return actState()->rows.size();
 }
 
 void cHSOperate::timerEvent(QTimerEvent *event)
@@ -612,7 +629,7 @@ void cHSOperate::fetchByFilter()
             qlonglong id = pNodeModel->atId(i);
             if (id == NULL_ID) return;
             else {
-                where << " ns.node_id = ?";
+                where << " n.node_id = ?";
                 bind  << id;
             }
         }

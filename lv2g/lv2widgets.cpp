@@ -30,7 +30,76 @@ void cSelectLanguage::_languageChanged(int ix)
     languageIdChanged(pModel->atId(ix));
 }
 
-/* **************************************** cImageWindows ****************************************  */
+/* ***************************************** cLineWidget ***************************************** */
+
+bool setFormEditWidget(QFormLayout *_fl, QWidget *_lw, QWidget *_ew, eEx __ex)
+{
+    int row;
+    QFormLayout::ItemRole role;
+    _fl->getWidgetPosition(_lw, &row, &role);
+    if (row < 0 || role != QFormLayout::LabelRole) {
+        if (__ex != EX_IGNORE) EXCEPTION(EDATA, row);
+        return false;
+    }
+    _fl->setWidget(row, QFormLayout::FieldRole, _ew);
+    return true;
+}
+
+
+cLineWidget::cLineWidget(QWidget *par, bool _ro, bool _horizontal)
+    : QWidget(par)
+    , pLayout(_horizontal ? (QLayout *)new QHBoxLayout : (QLayout *)new QVBoxLayout)
+    , pLineEdit(new QLineEdit)
+    , pNullButton(_ro ? (QToolButton *) new cROToolButton : new QToolButton)
+{
+    pLineEdit->setReadOnly(_ro);
+    pNullButton->setIcon(lv2g::iconNull);
+    pNullButton->setCheckable(true);
+    pLayout->setMargin(0);
+    setLayout(pLayout);
+    pLayout->addWidget(pLineEdit);
+    pLayout->addWidget(pNullButton);
+    if (!_ro) {
+        connect(pLineEdit, SIGNAL(textChanged(QString)), this, SLOT(on_LineEdit_textChanged(QString)));
+        connect(pNullButton, SIGNAL(toggled(bool)),      this, SLOT(on_NullButton_togled(bool)));
+    }
+}
+
+void cLineWidget::set(const QVariant& _val)
+{
+    val = _val;
+    bool _isNull = !_val.isValid();
+    pNullButton->setChecked(_isNull);
+    pLineEdit->setDisabled(_isNull);
+    pLineEdit->setText(_val.toString());
+}
+
+void cLineWidget::setDisabled(bool _f)
+{
+    pLineEdit->setDisabled(_f || isNull());
+    pNullButton->setDisabled(_f);
+}
+
+void cLineWidget::on_NullButton_togled(bool f)
+{
+    pLineEdit->setDisabled(f);
+    QVariant newVal = get();
+    if (val == newVal) return;
+    val = newVal;
+    changed(val);
+}
+
+void cLineWidget::on_LineEdit_textChanged(const QString& s)
+{
+    (void)s;
+    QVariant newVal = get();
+    if (val == newVal) return;
+    val = newVal;
+    changed(val);
+}
+
+
+/* **************************************** cImageWindows **************************************** */
 
 cImageWidget::cImageWidget(QWidget *__par)
     : QScrollArea(__par)
@@ -231,9 +300,6 @@ inline bool fieldIsReadOnly(const cTableShape &_tm, const cTableShapeField &_tf,
     return false;
 }
 
-QIcon        cFieldEditBase::iconNull;
-QIcon        cFieldEditBase::iconDefault;
-
 cFieldEditBase::cFieldEditBase(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef _fr, int _fl, cRecordDialogBase *_par)
     : QWidget(_par->pWidget())
     , _pParentDialog(_par)
@@ -244,12 +310,6 @@ cFieldEditBase::cFieldEditBase(const cTableShape &_tm, const cTableShapeField &_
     , _value()
     , iconSize(20,20)
 {
-    if (iconNull.isNull()) {
-        iconNull.   addFile(":/icons/dialog-no.ico",     QSize(), QIcon::Normal, QIcon::On);
-        iconNull.   addFile(":/icons/dialog-no-off.png", QSize(), QIcon::Normal, QIcon::Off);
-        iconDefault.addFile(":/icons/go-first-3.ico",    QSize(), QIcon::Normal, QIcon::On);
-        iconDefault.addFile(":/icons/go-first-3-no.png", QSize(), QIcon::Normal, QIcon::Off);
-    }
     pLayout     = NULL;
     pNullButton = NULL;
     pEditWidget = NULL;
@@ -274,7 +334,7 @@ cFieldEditBase::cFieldEditBase(const cTableShape &_tm, const cTableShapeField &_
     else if (_nullable) {
         _dcNull = DC_NULL;          // can be NULL
     }
-    actNullIcon = _hasDefault ? iconDefault : iconNull;
+    actNullIcon = _hasDefault ? lv2g::iconDefault : lv2g::iconNull;
     _DBGFNL() << VDEB(_nullable) << VDEB(_hasDefault) << VDEB(_isInsert) << " Index = " << fieldIndex() << " _value = " << debVariantToString(_value) << endl;
 }
 
@@ -452,11 +512,16 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
         }
         goto case_FieldLineWidget;                                  // Egy soros text...
     // Egy soros bevitel (LineEdit) kivételek vége
-    case_FieldLineWidget:
     case cColStaticDescr::FT_REAL:
+        if (_tf.isFeature(_sSpinBox)) {
+            cFieldSpinBoxWidget *p = new cFieldSpinBoxWidget(_tm, _tf, _fr, fl, _par);
+            _DBGFNL() << " new cFieldSpinBoxWidget/double" << endl;
+            return p;
+        }
     case cColStaticDescr::FT_MAC:
     case cColStaticDescr::FT_INET:
     case cColStaticDescr::FT_CIDR: {
+    case_FieldLineWidget:
         cFieldLineWidget *p = new cFieldLineWidget(_tm, _tf, _fr, ro, _par);
         _DBGFNL() << " new cFieldLineWidget" << endl;
         return p;
@@ -1030,30 +1095,62 @@ cFieldSpinBoxWidget::cFieldSpinBoxWidget(const cTableShape &_tm, const cTableSha
 : cFieldEditBase(_tm, _tf, _fr, _fl, _par)
 {
     _wType = FEW_SPIN_BOX;
+    pSpinBox = NULL;
+    pDoubleSpinBox = NULL;
     pLayout = new QHBoxLayout;
     setLayout(pLayout);
-    pEditWidget = pSpinBox = new QSpinBox;
     QStringList minmax = _tf.features().slValue(_sSpinBox);
-    if (minmax.size()) {
-        bool ok;
-        int i = minmax.first().toInt(&ok);
-        if (ok) {
-            pSpinBox->setMinimum(i);
-        }
-        if (minmax.size() > 1) {
-            i = minmax.at(1).toInt(&ok);
-            if (ok) {
-                pSpinBox->setMaximum(i);
+    switch (_colDescr.eColType) {
+    case cColStaticDescr::FT_INTEGER:
+        pEditWidget = pSpinBox = new QSpinBox;
+        if (minmax.size()) {
+            bool ok;
+            int i = minmax.first().toInt(&ok);
+            if (ok) {                           // Set minimum
+                pSpinBox->setMinimum(i);
+            }
+            if (minmax.size() > 1) {
+                i = minmax.at(1).toInt(&ok);
+                if (ok) {                       // Set maximum
+                    pSpinBox->setMaximum(i);
+                }
             }
         }
+        break;
+    case cColStaticDescr::FT_REAL:
+        pEditWidget = pDoubleSpinBox = new QDoubleSpinBox;
+        if (minmax.size()) {
+            bool ok;
+            double d = minmax.first().toDouble(&ok);
+            if (ok) {                           // Set minimum
+                pDoubleSpinBox->setMinimum(d);
+            }
+            if (minmax.size() > 1) {
+                d = minmax.at(1).toDouble(&ok);
+                if (ok) {                       // Set maximum
+                    pDoubleSpinBox->setMaximum(d);
+                }
+                if (minmax.size() > 2) {
+                    int i = minmax.at(2).toInt(&ok);
+                    if (ok) {                   // Set Decimal
+                        pDoubleSpinBox->setDecimals(i);
+                    }
+                }
+            }
+        }
+        break;
+    default:
+        EXCEPTION(EPROGFAIL);
     }
+
     pLayout->addWidget(pSpinBox);
     if (_nullable || _hasDefault) {
         bool isNull = _fr.isNull();
         setupNullButton(isNull);
         cFieldEditBase::disableEditWidget(isNull);
     }
-    connect(pSpinBox, SIGNAL(valueChanged(int)),  this, SLOT(setFromEdit(int)));
+    if (pSpinBox != NULL) connect(pSpinBox, SIGNAL(valueChanged(int)),    this, SLOT(setFromEdit(int)));
+    else            connect(pDoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setFromEdit(double)));
 }
 
 cFieldSpinBoxWidget::~cFieldSpinBoxWidget()
@@ -1065,7 +1162,10 @@ int cFieldSpinBoxWidget::set(const QVariant& v)
 {
     bool r = cFieldEditBase::set(v);
     if (r == 1 && !_actValueIsNULL) {
-        pSpinBox->setValue(_value.toInt());
+        bool ok = false;
+        if (pSpinBox != NULL) pSpinBox->setValue(_value.toInt(&ok));
+        else            pDoubleSpinBox->setValue(_value.toDouble(&ok));
+        if (!ok) return -1;
     }
     return r;
 }
@@ -1077,7 +1177,8 @@ void cFieldSpinBoxWidget::setFromEdit()
         ;
     }
     else {
-        v = pSpinBox->value();
+        if (pSpinBox != NULL) v = pSpinBox->value();
+        else            v = pDoubleSpinBox->value();
     }
     setFromWidget(v);
 }
@@ -1085,6 +1186,11 @@ void cFieldSpinBoxWidget::setFromEdit()
 void cFieldSpinBoxWidget::setFromEdit(int i)
 {
     setFromWidget(QVariant(i));
+}
+
+void cFieldSpinBoxWidget::setFromEdit(double d)
+{
+    setFromWidget(QVariant(d));
 }
 
 /* **************************************** cArrayWidget ****************************************  */
@@ -1684,10 +1790,12 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
 {
     if (_readOnly && _par != NULL) EXCEPTION(EPROGFAIL, 0, _tf.identifying() + "\n" + __fr.record().identifying());
     _wType = FEW_FKEY;
-    _filter = _tf.isFeature(_sFilter);
-    _height = _filter ? 2 : 1;
+    _filter = F_NO;
+    _height = 1;
     pUi = new Ui_fKeyEd;
     pUi->setupUi(this);
+    pModel       = NULL;
+    pSelectPlace = NULL;
 
     pLayout = pUi->horizontalLayout;    // A NULL gombot ebbe rakjuk
     pEditWidget = pUi->comboBox;
@@ -1734,12 +1842,34 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
             }
             if (it >= pDialog->fields.end()) EXCEPTION(EDATA);
         }
+        setConstFilter();   // 'refine' allowed, special filter not allowed
+        if (_tf.isFeature(_sFilter)) {
+            _filter = F_SIMPLE;
+            _height = 2;
+        }
     }
-    setConstFilter();
-    // pModel->setFilter(_sNul, OT_ASC, FT_NO); // Ez a default, felesleges kiadni még egy query-t
-    pModel->joinWith(pUi->comboBox);
+    else if (_tf.isFeature(_sFilter) && !_tf.isFeature(_sRefine)) {     // Special filters ?
+        QString sFilter = _tf.feature(_sFilter);
+        if (sFilter.isEmpty()) {    // Az ui-ban definiált egyszerű szűrő
+            _filter = F_SIMPLE;
+            _height = 2;
+        }
+        else if (0 == sFilter.compare(_sPlaces, Qt::CaseInsensitive)) {
+            _filter = F_PLACE;
+            _height = 2;
+            pDelete(pModel);    // this does not have to be
+            QComboBox *pComboBoxZone = new QComboBox;   // Zone
+            QLayoutItem * pli = pUi->gridLayout->replaceWidget(pUi->label, pComboBoxZone);
+            if (pli == NULL) EXCEPTION(EPROGFAIL);
+            delete pUi->label;
+            pSelectPlace = new cSelectPlace(pComboBoxZone, pUi->comboBox, pUi->lineEditFilter, _sNul, this);
+        }
+    }
+    if (pModel != NULL) {
+        // pModel->setFilter(_sNul, OT_ASC, FT_NO); // Ez a default, felesleges kiadni még egy query-t
+        pModel->joinWith(pUi->comboBox);
+    }
     pUi->pushButtonEdit->setDisabled(true);
-    // ?? _value = pModel->atId(0);
     pTableShape = new cTableShape();
     // Dialógus leíró neve a feature mezőben
     QString tsn = _fieldShape.feature(_sDialog);
@@ -1769,8 +1899,17 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
     // setWidget();
     first = true;
 
-    connect(pUi->comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(setFromEdit(int)));
-    connect(pUi->lineEditFilter, SIGNAL(textChanged(QString)), this, SLOT(setFilter(QString)));
+    switch (_filter) {
+    case F_SIMPLE:
+        connect(pUi->lineEditFilter, SIGNAL(textChanged(QString)), this, SLOT(setFilter(QString)));
+        /* continue! */
+    case F_NO:
+        connect(pUi->comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(setFromEdit(int)));
+        break;
+    case F_PLACE:
+        connect(pSelectPlace, SIGNAL(placeIdChanged(qlonglong)), this, SLOT(setFromEdit(qlonglong)));
+        break;
+    }
 }
 
 cFKeyWidget::~cFKeyWidget()
@@ -1783,9 +1922,17 @@ bool cFKeyWidget::setWidget()
     setButtons();
     if (pNullButton != NULL) pNullButton->setChecked(_actValueIsNULL);
     if (!_actValueIsNULL) {
-        int ix = pModel->indexOf(actId);
-        if (ix < 0) return false;
-        pUi->comboBox->setCurrentIndex(ix);
+        if (pModel != NULL) {
+            int ix = pModel->indexOf(actId);
+            if (ix < 0) return false;
+            pUi->comboBox->setCurrentIndex(ix);
+        }
+        else if (pSelectPlace != NULL) {
+            pSelectPlace->setCurrentPlace(actId);
+        }
+        else {
+            EXCEPTION(EPROGFAIL);
+        }
     }
     return true;
 }
@@ -1794,10 +1941,13 @@ bool cFKeyWidget::setWidget()
 {
     int r = cFieldEditBase::set(v);
     if (first || 1 == r) {
-        if (setConstFilter() || first) {   // Más mező is változhatott ??!!
+        if (pModel != NULL && (setConstFilter() || first)) {   // Más mező is változhatott ??!!
             pModel->setFilter();
         }
         actId = _colDescr.toId(_value);
+        if (first && pSelectPlace != NULL) {
+            pSelectPlace->refresh();
+        }
         if (!setWidget()) r = -1;
     }
     first = false;
@@ -1806,9 +1956,15 @@ bool cFKeyWidget::setWidget()
 
 void cFKeyWidget::setFromEdit(int i)
 {
+    if (pModel == NULL) EXCEPTION(EPROGFAIL);
     qlonglong id = pModel->atId(i);
     setFromWidget(id);
     // pUi->comboBox()->setCurrentIndex(i);
+}
+
+void cFKeyWidget::setFromEdit(qlonglong id)
+{
+    setFromWidget(id);
 }
 
 void cFKeyWidget::setButtons()
@@ -1822,10 +1978,26 @@ void cFKeyWidget::disableEditWidget(eTristate tsf)
 {
     cFieldEditBase::disableEditWidget(tsf);
     setButtons();
-    bool f = _filter && !_actValueIsNULL;
-    pUi->label->setVisible(f);
-    pUi->lineEditFilter->setVisible(f);
-    pUi->lineEditFilter->setDisabled(_actValueIsNULL);
+    switch (_filter) {
+    case F_NO:
+        pUi->label->hide();
+        pUi->lineEditFilter->hide();
+        break;
+    case F_SIMPLE:
+        pUi->label->setVisible(!_actValueIsNULL);
+        pUi->lineEditFilter->setVisible(!_actValueIsNULL);
+        pUi->lineEditFilter->setDisabled(_actValueIsNULL);
+        break;
+    case F_PLACE:
+        if (pSelectPlace == NULL) EXCEPTION(EPROGFAIL);
+        pSelectPlace->comboBoxZone()->setVisible(!_actValueIsNULL);
+        pSelectPlace->comboBoxZone()->setDisabled(_actValueIsNULL);
+        pUi->lineEditFilter->setVisible(!_actValueIsNULL);
+        pUi->lineEditFilter->setDisabled(_actValueIsNULL);
+        break;
+    default:
+        EXCEPTION(EPROGFAIL);
+    }
 }
 
 bool cFKeyWidget::setConstFilter()
@@ -1853,6 +2025,7 @@ bool cFKeyWidget::setConstFilter()
                 }
                 sql = sql.arg(s);
             }
+            if (pModel == NULL) EXCEPTION(EPROGFAIL);
             pModel->setConstFilter(sql, FT_SQL_WHERE);
             return true;
         }
@@ -1867,14 +2040,23 @@ void cFKeyWidget::setFromEdit()
         ; // NULL/Default
     }
     else {
-        int ix = pUi->comboBox->currentIndex();
-        v = pModel->atId(ix);
+        if (pModel != NULL) {
+            int ix = pUi->comboBox->currentIndex();
+            v = pModel->atId(ix);
+        }
+        else if (pSelectPlace != NULL) {
+            v = pSelectPlace->currentPlaceId();
+        }
+        else {
+            EXCEPTION(EPROGFAIL);
+        }
     }
     setFromWidget(v);
 }
 
 void cFKeyWidget::setFilter(const QString& _s)
 {
+    if(pModel == NULL) EXCEPTION(EPROGFAIL);
     qlonglong id;
     int ix = pUi->comboBox->currentIndex();
     id = pModel->atId(ix);
@@ -1895,46 +2077,61 @@ void cFKeyWidget::setFilter(const QString& _s)
 /// Be szertnénk szúrni egy tulajdonság rekordot
 void cFKeyWidget::insertF()
 {
-    cRecordDialog *pDialog = new cRecordDialog(*pTableShape, ENUM2SET2(DBT_OK, DBT_CANCEL), true, _pParentDialog);
-    while (1) {
-        int keyId = pDialog->exec(false);
-        if (keyId == DBT_CANCEL) break;
-        if (!pDialog->accept()) continue;
-        if (!cErrorMessageBox::condMsgBox(pDialog->record().tryInsert(*pq))) continue;
-        pModel->setFilter(_sNul, OT_ASC, FT_NO);    // Refresh combo box
-        pUi->comboBox->setCurrentIndex(pModel->indexOf(pDialog->record().getId()));
-        break;
+    if (pModel != NULL) {
+        cRecordDialog *pDialog = new cRecordDialog(*pTableShape, ENUM2SET2(DBT_OK, DBT_CANCEL), true, _pParentDialog);
+        while (1) {
+            int keyId = pDialog->exec(false);
+            if (keyId == DBT_CANCEL) break;
+            if (!pDialog->accept()) continue;
+            if (!cErrorMessageBox::condMsgBox(pDialog->record().tryInsert(*pq))) continue;
+            pModel->setFilter(_sNul, OT_ASC, FT_NO);    // Refresh combo box
+            pUi->comboBox->setCurrentIndex(pModel->indexOf(pDialog->record().getId()));
+            break;
+        }
+        pDialog->close();
+        delete pDialog;
     }
-    pDialog->close();
-    delete pDialog;
-    return;
+    else if (pSelectPlace != NULL) {
+        pSelectPlace->insertPlace();
+    }
+    else {
+        EXCEPTION(EPROGFAIL);
+    }
 }
 
 void cFKeyWidget::modifyF()
 {
-    cRecordAny rec(pRDescr);
-    cRecordDialog *pDialog = new cRecordDialog(*pTableShape, ENUM2SET2(DBT_OK, DBT_CANCEL), true, _pParentDialog);
-    int cix = pUi->comboBox->currentIndex();
-    qlonglong id = pModel->atId(cix);
-    if (!rec.fetchById(*pq, id)) return;
-    pDialog->restore(&rec);
-    while (1) {
-        int keyId = pDialog->exec(false);
-        if (keyId == DBT_CANCEL) break;
-        if (!pDialog->accept()) continue;
-        if (!cErrorMessageBox::condMsgBox(pDialog->record().tryUpdateById(*pq))) continue;
-        pModel->setFilter(_sNul, OT_ASC, FT_NO);    // Refresh combo box
-        pUi->comboBox->setCurrentIndex(pModel->indexOf(rec.getId()));
-        break;
+    if (pModel != NULL) {
+        cRecordAny rec(pRDescr);
+        cRecordDialog *pDialog = new cRecordDialog(*pTableShape, ENUM2SET2(DBT_OK, DBT_CANCEL), true, _pParentDialog);
+        int cix = pUi->comboBox->currentIndex();
+        qlonglong id = pModel->atId(cix);
+        if (!rec.fetchById(*pq, id)) return;
+        pDialog->restore(&rec);
+        while (1) {
+            int keyId = pDialog->exec(false);
+            if (keyId == DBT_CANCEL) break;
+            if (!pDialog->accept()) continue;
+            if (!cErrorMessageBox::condMsgBox(pDialog->record().tryUpdateById(*pq))) continue;
+            pModel->setFilter(_sNul, OT_ASC, FT_NO);    // Refresh combo box
+            pUi->comboBox->setCurrentIndex(pModel->indexOf(rec.getId()));
+            break;
+        }
+        pDialog->close();
+        delete pDialog;
     }
-    pDialog->close();
-    delete pDialog;
-    return;
+    else if (pSelectPlace != NULL) {
+        pSelectPlace->editCurrentPlace();
+    }
+    else {
+        EXCEPTION(EPROGFAIL);
+    }
 }
 
 // Megváltozott az owner id
 void cFKeyWidget::modifyOwnerId(cFieldEditBase* pof)
 {
+    if (pModel == NULL) EXCEPTION(EPROGFAIL);
     ownerId = pof->getId();
     pModel->setOwnerId(ownerId);
     pUi->comboBox->setCurrentIndex(0);
@@ -3056,6 +3253,32 @@ qlonglong cSelectPlace::insertPlace()
     return pid;
 }
 
+qlonglong cSelectPlace::editCurrentPlace()
+{
+    qlonglong pid = currentPlaceId();
+    if (pid <= ROOT_PLACE_ID) return NULL_ID;   // A NULL, unknown, root nem editálható
+    QSqlQuery q = getQuery();
+    cPlace place;
+    place.setById(q, pid);
+    cRecord *p = recordDialog(q, _sPlaces, qobject_cast<QWidget *>(parent()), &place, false, true);
+    if (p == NULL) return NULL_ID;
+    pid = p->getId();
+    delete p;
+    bbPlace.begin();
+    if (pSlave != NULL) {
+        pSlave->bbPlace.begin();
+    }
+    pModelPlace->setFilter();
+    setCurrentPlace(pid);
+    if (pSlave) {
+        pSlave->pModelPlace->setFilter();
+        pSlave->setCurrentPlace(pid);
+        pSlave->bbPlace.end();
+    }
+    bbPlace.end();
+    return pid;
+}
+
 void cSelectPlace::setCurrentZone(qlonglong _zid)
 {
     int ix = pModelZone->indexOf(_zid);
@@ -3324,8 +3547,9 @@ cSelectLinkedPort::cSelectLinkedPort(QComboBox *_pZone, QComboBox *_pPlace, QCom
     lastShare    = pModelShare->atInt(0);
     lastPortId   = 0;   // Mindegy mennyi, csak ne NULL_ID legyen
     setNodeId(NULL_ID);
-    connect(this, SIGNAL(nodeIdChanged(qlonglong)), this, SLOT(setNodeId(qlonglong)));
-    connect(pButtonGroupType, SIGNAL(buttonClicked(int)), this, SLOT(setLinkTypeByButtons(int)));
+    connect(this,          SIGNAL(nodeIdChanged(qlonglong)), this, SLOT(setNodeId(qlonglong)));
+    connect(pButtonGroupType,    SIGNAL(buttonClicked(int)), this, SLOT(setLinkTypeByButtons(int)));
+    connect(pComboBoxPort, SIGNAL(currentIndexChanged(int)), this, SLOT(portChanged(int)));
 }
 
 cSelectLinkedPort::~cSelectLinkedPort()
@@ -3448,6 +3672,12 @@ void cSelectLinkedPort::changedShareType(int ix)
     lastShare = sh;
     if (lockSlots == 0) changedLink(currentPortId(), lastLinkType, lastShare);
     else if (lockSlots < 0) EXCEPTION(EPROGFAIL);
+}
+
+void cSelectLinkedPort::portChanged(int ix)
+{
+    if (lockSlots) return;
+    changedLink(pModelPort->atId(ix), lastLinkType, lastShare);
 }
 
 /* ********************************************************************************* */

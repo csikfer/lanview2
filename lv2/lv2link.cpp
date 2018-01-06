@@ -193,6 +193,7 @@ bool cPhsLink::addIfCollision(QSqlQuery &q, tRecordList<cPhsLink>& list, qlonglo
 }
 
 /// A porthoz magadandó fizikai link mely más fizikai linkekkel ütközik ? Az ütköző link rekordokat beolvassa.
+/// Az objektumot mint átmeneti tárolót használja az ütköző rekordok beolvasásához, vagy a tartalmát törli.
 /// @param __q
 /// @param list Az ütköző link rekordok konténere (kimenet). Nem törli a konténert, hanem hozzáadja a találatokat.
 /// @param __pid A port ID

@@ -123,8 +123,8 @@ public:
     ~cIpEditWidget();
     void set(const cIpAddress *po);
     void set(const QHostAddress &a);
-    cIpAddress *get() const;
     cIpAddress *get(cIpAddress *po) const;
+    cIpAddress *get() const { return get(new cIpAddress); }
     const QHostAddress& getAddress() { return actAddress; }
     enum eState {
         IES_OK                  = 0,
@@ -137,10 +137,14 @@ public:
     int state() const { return _state; }
     bool isDisabled() { return disabled; }
     void showToolBoxs(bool _info, bool _go, bool _query);
-    void enableToolBoxs(bool _info, bool _go, bool _query);
+    void enableToolButtons(bool _info, bool _go, bool _query);
+    void setInfoToolTip(const QString& _tt) { pUi->toolButtonInfo->setToolTip(_tt); }
+    void setGoToolTip(const QString& _tt)   { pUi->toolButtonGo->setToolTip(_tt); }
+    void setQueryToolTip(const QString& _tt){ pUi->toolButtonQuery->setToolTip(_tt); }
 private:
     int _state;
     Ui::editIp *pUi;
+    cLineWidget *pEditNote;
     QSqlQuery * pq;
     qlonglong   ipTypes;
     cSelectVlan *pSelectVlan;

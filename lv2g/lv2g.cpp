@@ -16,6 +16,10 @@ const QString lv2g::sHorizontal             = "Horizontal";
 const QString lv2g::sVertical               = "Vertical";
 const QString lv2g::sNativeMenubar          = "nativeMenubar";
 
+QIcon         lv2g::iconNull;
+QIcon         lv2g::iconDefault;
+
+
 lv2g::lv2g() :
     lanView()//,
 //    pDesign(0)
@@ -28,12 +32,11 @@ lv2g::lv2g() :
         new cMainWindow;
         zoneId = NULL_ID;
         #include "errcodes.h"
-//        pDesign = new lv2gDesign(this);
         if (dbIsOpen()) {
             switch (cLogOn::logOn(zoneNeeded ? &zoneId : NULL, pMainWindow)) {
             case LR_OK:         break;
             case LR_INVALID:    EXCEPTION(ELOGON, LR_INVALID, trUtf8("Tul sok hibás bejelentkezési próbálkozás."));
-            case LR_CANCEL:     EXCEPTION(ELOGON, LR_CANCEL, trUtf8("Mégsem."));
+            case LR_CANCEL:     // EXCEPTION(ELOGON, LR_CANCEL, trUtf8("Mégsem."));
             default:            EXCEPTION(EOK);
             }
             QSqlQuery q = getQuery();
@@ -62,6 +65,11 @@ lv2g::lv2g() :
         cEnumVal::enumForce(q, _sText2Type);
 
     }
+    // Init icons...
+    iconNull.   addFile(":/icons/dialog-no.ico",     QSize(), QIcon::Normal, QIcon::On);
+    iconNull.   addFile(":/icons/dialog-no-off.png", QSize(), QIcon::Normal, QIcon::Off);
+    iconDefault.addFile(":/icons/go-first-3.ico",    QSize(), QIcon::Normal, QIcon::On);
+    iconDefault.addFile(":/icons/go-first-3-no.png", QSize(), QIcon::Normal, QIcon::Off);
 }
 
 lv2g::~lv2g()

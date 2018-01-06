@@ -94,7 +94,7 @@ private:
 
     /// Egy QLineEdit mezőben üres adatra való figyelmeztetés.
     /// Ha meg lett adva az fn mező név paraméter, akkor megviszgálja, hogy egyedi-e az érték a nodes táblában.
-    /// @param pLineEdit A QLineEdit widget poinere
+    /// @param val A vizsgált érték
     /// @param pLabel A QLabel pointere, a hiba ill. figyelmeztető üzenet kiírásához.
     /// @param fn Opcionális mező (tábla oszlop) név, ha az egyediséget is vizsgálni kell.
     /// @param sErrs Hiba sorok referencia, a figyelmeztető hiba és/vagy figyelmeztető üzenet sorok ehhez a listához
@@ -102,7 +102,7 @@ private:
     /// @param sInfs Hiba sorok referencia, a figyelmeztető információs üzenet sorok ehhez a listához
     ///             lesznek hozzáfűzve.
     /// @param isOk Hiba esetén értéke false lessz (meg van adva az fn, és nem egyedi az érték).
-    void msgEmpty(QLineEdit * pLineEdit, QLabel *pLabel, const QString &fn, QStringList& sErrs, QStringList& sInfs, bool &isOk);
+    void msgEmpty(const QVariant &val, QLabel *pLabel, const QString &fn, QStringList& sErrs, QStringList& sInfs, bool &isOk);
 
     /// Az állapot kiértékelése a node-ra.
     /// Üres metódus, a cBatchBlocker hívja, az alá tartozó kiértékelő funkciókók tevékenységén túl nincs további funkciója.
@@ -119,7 +119,8 @@ private:
         void setStatPortMac(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
       void setStatLink(bool f, QStringList& sErrs, QStringList& sInfs, bool& isOk);
 
-    void node2gui();
+    void node2gui(bool setModOn);
+    bool setModButtons(qlonglong _id);
 
     bool isModify;
     Ui::wstWidget   *pUi;
@@ -128,6 +129,13 @@ private:
     cSelectLinkedPort *pSelLinked;  /// A linkelt port, ill. az eszköz kiválasztáse
     QButtonGroup    *pModifyButtons;
     QButtonGroup    *pLinkTypeButtons;
+    cLineWidget     *pEditNote;
+    cLineWidget     *pEditSerialNumber;
+    cLineWidget     *pEditInventoryNumber;
+    cLineWidget     *pEditModelNumber;
+    cLineWidget     *pEditModelName;
+    cLineWidget     *pEditPNote;
+    cLineWidget     *pEditPTag;
     cIpEditWidget   *pIpEditWidget;
     cMacValidator   *pMacValidator;
     cSetDialog      *pSetDialogFiltType;
@@ -155,15 +163,14 @@ private slots:
     void ip_go();
     void ip_query();
     void on_radioButtonMod_toggled(bool checked);
-    void on_checkBoxPlaceEqu_toggled(bool checked);
     void on_lineEditPName_textChanged(const QString &arg1);
     void on_comboBoxPType_currentIndexChanged(const QString &arg1);
     void on_lineEditPMAC_textChanged(const QString &arg1);
     void on_lineEditName_textChanged(const QString &arg1);
-    void on_lineEditSerial_textChanged(const QString &arg1);
-    void on_lineEditInventory_textChanged(const QString &arg1);
-    void on_lineEditModelName_textChanged(const QString &arg1);
-    void on_lineEditModelNumber_textChanged(const QString &arg1);
+    void serialNumberChanged(const QVariant &arg1);
+    void inventoryNumberChanged(const QVariant &arg1);
+    void modelNameChanged(const QVariant &arg1);
+    void modelNumberChanged(const QVariant &arg1);
     void on_toolButtonErrRefr_clicked();
     void on_toolButtonInfRefr_clicked();
     void on_toolButtonReportMAC_clicked();
@@ -174,6 +181,10 @@ private slots:
     void on_toolButtonSelectByMAC_clicked();
     void on_toolButtonInfoLnkNode_clicked();
     void on_toolButtonAddLnkNode_clicked();
+    void on_pushButtonDelete_clicked();
+    void on_pushButtonGoServices_clicked();
+    void on_pushButtonSave_clicked();
+    void on_pushButtonPlaceEqu_clicked();
 };
 
 #endif // CWORKSTATION_H
