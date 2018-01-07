@@ -416,14 +416,14 @@ cWorkstation::cWorkstation(QMdiArea *parent) :
     pnm->setConstFilter(sNodeConstFilt, FT_SQL_WHERE);
     pnm->setFilter(pSetDialogFiltType->toWhere(_sNodeType), OT_DEFAULT, FT_SQL_WHERE);
     pSelNode->setNodeModel(pnm);
-    pSelNode->refresh();
+    pSelNode->refresh(false);
     pSelPlace    = new cSelectPlace(pUi->comboBoxZone, pUi->comboBoxPlace, pUi->lineEditPlacePat, _sNul, this);
     pSelNode->setSlave(pSelPlace, false);
     pSelLinked   = new cSelectLinkedPort(pUi->comboBoxLinkZone, pUi->comboBoxLinkPlace, pUi->comboBoxLinkNode,
                                    pUi->comboBoxLinkPort, pLinkTypeButtons, pUi->comboBoxLinkPortShare, iTab(ES_, ES_A, ES_B),
                                    pUi->lineEditLinkPlacePat, NULL, _sNul, _sNul, this);
-    pSelPlace->refresh();
-    pSelLinked->refresh();
+    pSelPlace->refresh(false);
+    pSelLinked->refresh(false);
 
     pif = new cInterface;
     pnp = pif;
@@ -835,11 +835,11 @@ bool cWorkstation::setModButtons(qlonglong _id)
 
 void cWorkstation::selectedNode(qlonglong id)
 {
-    bbNode.begin();
     pDelete(pSample);
     if (id == NULL_ID) {
         return;
     }
+    bbNode.begin();
     qlonglong nid = pSelNode->currentNodeId();
     pSample = cPatch::getNodeObjById(*pq, nid)->reconvert<cNode>();
     node.clear();
@@ -1138,8 +1138,8 @@ void cWorkstation::on_toolButtonAddPlace_clicked()
 {
     qlonglong pid = pSelPlace->insertPlace();
     if (pid == NULL_ID) return;
-    pSelNode->refresh();
-    pSelLinked->refresh();
+    pSelNode->refresh(false);
+    pSelLinked->refresh(false);
     pSelPlace->setCurrentPlace(pid);
 }
 
@@ -1237,7 +1237,7 @@ void cWorkstation::on_pushButtonDelete_clicked()
             if (pip != NULL) pip->clearId();
             node.ports.clearId();
             node.clearId(); // A konténerekben töröltük az ID-ket először, igy azokat nem törli!
-            pSelNode->refresh();
+            pSelNode->refresh(false);
             pSelNode->setCurrentNode(NULL_ID);
             setModButtons(NULL_ID);
         }
@@ -1325,6 +1325,8 @@ void cWorkstation::on_pushButtonSave_clicked()
     else {
         sqlRollback(*pq, _sWorkstation);
     }
+    pSelNode->refresh(false);
+    pSelLinked->refresh(false);
     node2gui(true);
     pUi->textEditMsg->append(trUtf8("A bevitt adatok sikeresen el lettek mentve."));
 }

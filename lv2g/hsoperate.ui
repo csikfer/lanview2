@@ -244,7 +244,7 @@
            <string>Szolgáltatás</string>
           </property>
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A szolgáltatás neve.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A szolgáltatásvagy tevékenység neve.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </column>
          <column>
@@ -260,7 +260,7 @@
            <string>Ext.</string>
           </property>
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A protokolt, vagy matódust azonosító opcionális szolgáltatások neve(i).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A protokolt, és/vagy matódust azonosító opcionális szolgáltatások neve(i).&lt;/p&gt;&lt;p&gt;Az elemen egy kettősklikk megjeleníti a teljes szolgáltatás példányt (nem szerkeszthető),&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </column>
          <column>
@@ -268,7 +268,7 @@
            <string>Hely</string>
           </property>
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A hoszt helyének a helyiség neve.&lt;/p&gt;&lt;p&gt;Ha nincs megadva, akkor 'unknown'.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Az eszköz helye, a hely vagy helyiség neve.&lt;/p&gt;&lt;p&gt;Ha nincs megadva, akkor 'unknown'.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </column>
          <column>
@@ -282,6 +282,9 @@
          <column>
           <property name="text">
            <string>-tól</string>
+          </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Ha a riasztás tiltásának van kezdeti időpontja.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </column>
          <column>

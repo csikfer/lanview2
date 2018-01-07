@@ -28,7 +28,11 @@ lv2g::lv2g() :
     try {
         // Ubuntu 16.04 Unity-ben  nincs (nem jelenik meg) a natív menü
         nativeMenubar = str2bool(pSet->value(sNativeMenubar).toString(), EX_IGNORE);
-        if (!nativeMenubar) QApplication::setAttribute(Qt::AA_DontUseNativeMenuBar);
+        PDEB(VVERBOSE) << VDEB(nativeMenubar) << endl;
+        if (!nativeMenubar) {
+            PDEB(VVERBOSE) << "Disable native menubar..." << endl;
+            QApplication::setAttribute(Qt::AA_DontUseNativeMenuBar, true);
+        }
         new cMainWindow;
         zoneId = NULL_ID;
         #include "errcodes.h"

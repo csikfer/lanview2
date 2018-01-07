@@ -41,7 +41,7 @@ void cGSetupWidget::applicate()
         v = lv2g::sHorizontal;
         lv2g::getInstance()->defaultSplitOrientation = Qt::Horizontal;
     }
-    lv2g::getInstance()->nativeMenubar = pUi->checkBoxNatMenu->isChecked();
+    lv2g::getInstance()->nativeMenubar = !pUi->checkBoxNatMenu->isChecked();
 
     qset.setValue(lv2g::sDefaultSplitOrientation, v);
     lv2g::getInstance()->maxRows = pUi->spinBoxMaxRows->value();
