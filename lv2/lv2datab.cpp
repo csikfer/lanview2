@@ -3565,8 +3565,10 @@ int cRecord::update(QSqlQuery& __q, bool __only, const QBitArray& __set, const Q
     QBitArray bset  = __set;
     QBitArray where = __where;
     if (where.size() == 0) where = primaryKey();
-    if (bset.count(true) == 0) {
-        bset = QBitArray(cols(), true) & ~where;      // Változott, nem csak a beállított értékeket updateli alapértelmezetten
+    if (bset.count(true) == 0) {    // Alapértelmezett ?
+        bset = QBitArray(cols(), true) & ~where;    // Amire keresünk azt nem modosítjuk
+        int tixix = descr().textIdIndex(EX_IGNORE);
+        if (tixix >= 0) bset.clearBit(tixix);       // Szöveg indexet sem bántjuk!!!
     }
     if (bset.count(true) == 0) EXCEPTION(EDATA);
     QString sql = QString(__only ? "UPDATE ONLY %1 SET" : "UPDATE %1 SET").arg(fullTableNameQ());
@@ -3629,16 +3631,16 @@ cError *cRecord::tryUpdateById(QSqlQuery& __q, eTristate __tr)
     eTristate tr = trFlag(__tr);
     if (tr == TS_TRUE) sqlBegin(__q, tableName());
     try {
-        QStringList savedTexts;
-        if (pTextList != NULL) savedTexts = *pTextList; // The update will delete it.
+        // QStringList savedTexts;
+        // if (pTextList != NULL) savedTexts = *pTextList; // The update will delete it.
         n = update(__q, true);
         if (n != 1) {
             EXCEPTION(EOID);
         }
-        if (!savedTexts.isEmpty()) {
-            pTextList = new QStringList(savedTexts);
-            saveText(__q);
-        }
+        //if (!savedTexts.isEmpty()) {
+        //    pTextList = new QStringList(savedTexts);
+        //    saveText(__q);
+        //}
     }
     CATCHS(pe);
     if (tr == TS_TRUE) {
@@ -3648,7 +3650,7 @@ cError *cRecord::tryUpdateById(QSqlQuery& __q, eTristate __tr)
     return pe;
 }
 
-bool cRecord::updateByName(QSqlQuery &__q, const QString& _name, const QString& _fn, const QVariant& val, eEx __ex)
+bool cRecord::updateFieldByName(QSqlQuery &__q, const QString& _name, const QString& _fn, const QVariant& val, eEx __ex)
 {
     setName(_name);
     int ix = toIndex(_fn);
@@ -3656,7 +3658,7 @@ bool cRecord::updateByName(QSqlQuery &__q, const QString& _name, const QString& 
     return update(__q, false, _bit(ix), _bit(nameIndex()), __ex);
 }
 
-bool cRecord::updateById(QSqlQuery &__q, qlonglong _id, const QString& _fn, const QVariant& val, eEx __ex)
+bool cRecord::updateFieldById(QSqlQuery &__q, qlonglong _id, const QString& _fn, const QVariant& val, eEx __ex)
 {
     setId(_id);
     int ix = toIndex(_fn);

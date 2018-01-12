@@ -16,6 +16,11 @@ public:
 class LV2SHARED_EXPORT cAlarmMsg  : public cRecord {
     CRECORD(cAlarmMsg);
 public:
+    enum eTextIndex {
+        LTX_MESSAGE = 0,
+        LTX_SHORT_MSG
+    };
+
     static void replace(QSqlQuery& __q, qlonglong __stid, const QString& __stats, const QString& __shortMsg, const QString& __msg);
     static void replaces(QSqlQuery& __q, qlonglong __stid, const QStringList& __stats, const QString& __shortMsg, const QString& __msg);
     static void replaces(QSqlQuery& __q, const QString& __stn, const QStringList& __stats, const QString& __shortMsg, const QString& __msg)

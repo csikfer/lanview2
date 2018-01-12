@@ -4,6 +4,7 @@
 #include "record_link.h"
 #include "cerrormessagebox.h"
 #include "tableexportdialog.h"
+#include "lv2validator.h"
 
 
 Ui::noRightsForm * noRightsSetup(QWidget *_pWidget, qlonglong _need, const QString& _obj, const QString& _html)
@@ -273,9 +274,69 @@ QString cRecordTableFilter::where(QVariantList& qparams)
     return r;
 }
 
+template <class V> void cRecordTableFilter::tSetValidator()
+{
+    if (dialog.pLineEdit1 != NULL) {
+        pValidator1 = new V;
+        dialog.pLineEdit1->setValidator(pValidator1);
+    }
+    if (dialog.pLineEdit2 != NULL) {
+        pValidator2 = new V;
+        dialog.pLineEdit2->setValidator(pValidator2);
+    }
+}
+
+void cRecordTableFilter::setValidatorRegExp(const QString& _re)
+{
+    QRegExp re(_re);
+    QRegExpValidator *prev;
+    if (dialog.pLineEdit1 != NULL) {
+        prev = new QRegExpValidator(re);
+        pValidator1 = prev;
+        dialog.pLineEdit1->setValidator(pValidator1);
+    }
+    if (dialog.pLineEdit2 != NULL) {
+        prev = new QRegExpValidator(re);
+        pValidator2 = prev;
+        dialog.pLineEdit2->setValidator(pValidator2);
+    }
+}
+
+
 void cRecordTableFilter::setValidator(int i)
 {
-
+    switch (i) {
+    case T2T_INT:
+    case T2T_COUNT:
+        tSetValidator<QIntValidator>();
+        break;
+    case T2T_REAL:
+        tSetValidator<QDoubleValidator>();
+        break;
+    case T2T_TIME:
+        setValidatorRegExp(QString("^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$"));
+        break;
+    case T2T_DATE:
+        setValidatorRegExp(QString("^20\\d\\d[-/](0[1-9]|1[012])[-/](0[1-9]|[12][0-9]|3[01])$"));
+        break;
+    case T2T_DATETIME:
+        setValidatorRegExp(QString("^20\\d\\d[-/](0[1-9]|1[012])[-/](0[1-9]|[12][0-9]|3[01])[ T]([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$"));
+        break;
+    case T2T_INTERVAL:
+        setValidatorRegExp(QString("^(\\d+[Dd]ays?)?\\s*([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9](\\.\\d+)?$"));
+        break;
+    case T2T_INET:
+        tSetValidator<cINetValidator>();
+        break;
+    case T2T_MAC:
+        tSetValidator<cMacValidator>();
+        break;
+    case T2T_TEXT:
+    default:
+        pDelete(pValidator1);
+        pDelete(pValidator2);
+        break;
+    }
 }
 
 void cRecordTableFilter::changedParam1(const QString& s)

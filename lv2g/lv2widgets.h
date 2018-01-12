@@ -205,12 +205,26 @@ public slots:
 
 /// @class cROToolButton
 /// "Read only" QToolButton
-class cROToolButton : public QToolButton {
+class LV2GSHARED_EXPORT cROToolButton : public QToolButton {
 public:
     cROToolButton(QWidget *par = NULL) : QToolButton(par) { ; }
 protected:
     void mousePressEvent(QMouseEvent *e);
     void mouseReleaseEvent(QMouseEvent *e);
+};
+
+class LV2GSHARED_EXPORT cValidRTButton : public cROToolButton {
+    Q_OBJECT
+public:
+    cValidRTButton(QWidget *par = NULL);
+    static QIcon unknown;
+    static QIcon invalid;
+    static QIcon intermediate;
+    static QIcon acceptable;
+
+public slots:
+    void setState(QValidator::State _vst);
+    void setStateOff();
 };
 
 enum eFieldWidgetType {

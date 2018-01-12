@@ -230,7 +230,6 @@ void cImageWidget::zoomOut()
 }
 
 /* ********************************************************************************************
-   ************************************** cFieldEditBase **************************************
    ******************************************************************************************** */
 
 void cROToolButton::mousePressEvent(QMouseEvent *e)
@@ -242,6 +241,43 @@ void cROToolButton::mouseReleaseEvent(QMouseEvent *e)
 {
     (void)e;
 }
+
+QIcon cValidRTButton::unknown;
+QIcon cValidRTButton::invalid;
+QIcon cValidRTButton::intermediate;
+QIcon cValidRTButton::acceptable;
+
+cValidRTButton::cValidRTButton(QWidget *par)
+    : cROToolButton(par)
+{
+    if (invalid.isNull()) {
+        unknown     = QIcon("");
+        invalid     = QIcon("");
+        intermediate= QIcon("");
+        acceptable  = QIcon("");
+    }
+    setStateOff();
+}
+
+void cValidRTButton::setState(QValidator::State _vst)
+{
+    setChecked(true);
+    switch (_vst) {
+    case QValidator::Invalid:       setIcon(invalid);       break;
+    case QValidator::Intermediate:  setIcon(intermediate);  break;
+    case QValidator::Acceptable:    setIcon(acceptable);    break;
+    }
+}
+
+void cValidRTButton::setStateOff()
+{
+    setChecked(false);
+    setIcon(unknown);
+}
+
+/* ********************************************************************************************
+   ************************************** cFieldEditBase **************************************
+   ******************************************************************************************** */
 
 static const QString _sRadioButtons = "radioButtons";
 static const QString _sSpinBox      = "spinBox";

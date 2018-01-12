@@ -419,39 +419,37 @@ bool cTableShape::setDefaults(QSqlQuery& q, bool _disable_tree)
 
 void cTableShape::setTitle(const QStringList& _tt)
 {
-    /* !!!
-    QString n = getName();
     if (_tt.size() > 0) {
+        QString n = getName();
         if (_tt.at(0).size() > 0) {
             if (_tt.at(0) != _sAt) n = _tt.at(0);
-            setName(_sTableTitle, n);
+            setText(LTX_TABLE_TITLE, n);
         }
 
         if (_tt.size() > 1) {
             if (_tt.at(1).size() > 0) {
                 if (_tt.at(1) != _sAt) n = _tt.at(1);
-                setName(_sDialogTitle, n);
+                setText(LTX_DIALOG_TITLE, n);
             }
 
             if (_tt.size() > 2) {
                 if (_tt.at(2).size() > 0) {
                     if (_tt.at(2) != _sAt) n = _tt.at(2);
-                    setName(_sDialogTabTitle, n);
+                    setText(LTX_DIALOG_TAB_TITLE, n);
                 }
                 if (_tt.size() > 3) {
                     if (_tt.at(3).size() > 0) {
                         if (_tt.at(3) != _sAt) n = _tt.at(3);
-                        setName(_sMemberTitle, n);
+                        setText(LTX_MEMBER_TITLE, n);
                     }
                     if (_tt.size() > 4 && _tt.at(4).size() > 0) {
                         if (_tt.at(4) != _sAt) n = _tt.at(4);
-                        setName(_sNotMemberTitle, n);
+                        setText(LTX_NOT_MEMBER_TITLE, n);
                     }
                 }
             }
         }
     }
-    */
 }
 
 bool cTableShape::fset(const QString& _fn, const QString& _fpn, const QVariant& _v, eEx __ex)
@@ -758,18 +756,16 @@ void cTableShapeField::clearToEnd()
 
 void cTableShapeField::setTitle(const QStringList& _tt)
 {
-    /* !!!
     QString n = getName();
     if (_tt.size() > 0 && _tt.at(0).size() > 0) {
         if (_tt.at(0) != _sAt) n = _tt.at(0);
-        setName(_sTableTitle, n);
+        setText(LTX_TABLE_TITLE, n);
 
         if (_tt.size() > 1 && _tt.at(1).size() > 0) {
             if (_tt.at(1) != _sAt) n = _tt.at(1);
-            setName(_sDialogTitle, n);
+            setText(LTX_DIALOG_TITLE, n);
         }
     }
-    */
 }
 
 bool cTableShapeField::fetchByNames(QSqlQuery& q, const QString& tsn, const QString& fn, eEx __ex)

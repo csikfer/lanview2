@@ -31,11 +31,11 @@ void cAlarmMsg::replace(QSqlQuery& __q, qlonglong __stid, const QString& __stat,
     o.setId(_sServiceTypeId, __stid);
     o.setName(_sStatus, __stat);
     bool e = o.fetchQuery(__q);
-    // !!!
-    // o.setName(_sMessage, __msg);
-    // o.setName(_sShortMsg, __shortMsg);
+    o.setText(LTX_MESSAGE, __msg);
+    o.setText(LTX_SHORT_MSG, __shortMsg);
     if (e) o.update(__q, false);
     else   o.insert(__q);
+    o.saveText(__q);
 }
 
 void cAlarmMsg::replaces(QSqlQuery& __q, qlonglong __stid, const QStringList& __stats, const QString& __shortMsg, const QString& __msg)

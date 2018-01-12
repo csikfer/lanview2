@@ -898,37 +898,32 @@ static void newMenuItem(const QString& _n, const QString& _sn, const char * typ)
 
 static void setMenuTitle(const QStringList& _tt)
 {
-    /* Improve, replace!
-
-    QString n = actMenuItem().getName();
     if (_tt.size() > 0 && _tt.at(0).size() > 0) {
+        QString n = actMenuItem().getName();
+        actMenuItem().fetchText(qq());
         if (_tt.at(0) != _sAt) n = _tt.at(0);
-        actMenuItem().setName(_sMenuTitle, n);
+        actMenuItem().setText(cMenuItem::LTX_MENU_TITLE, n);
 
         if (_tt.size() > 1 && _tt.at(1).size() > 0) {
             if (_tt.at(1) != _sAt) n = _tt.at(1);
-            actMenuItem().setName(_sTabTitle,  n);
+            actMenuItem().setText(cMenuItem::LTX_TAB_TITLE,  n);
         }
-
-        actMenuItem().update(qq(), false, actMenuItem().mask(_sMenuTitle, _sTabTitle));
+        actMenuItem().saveText(qq());
     }
-    */
 }
 
 static void setMenuToolTip(const QString& _tt)
 {
-    /* Improve, replace!
-    actMenuItem().setName(_sToolTip, _tt);
-    actMenuItem().update(qq(), false, actMenuItem().mask(_sToolTip));
-    */
+    actMenuItem().fetchText(qq());
+    actMenuItem().setText(cMenuItem::LTX_TOOL_TIP, _tt);
+    actMenuItem().saveText(qq());
 }
 
 static void setMenuWhatsThis(const QString& _wt)
 {
-    /* Improve, replace!
-    actMenuItem().setName(_sWhatsThis, _wt);
-    actMenuItem().update(qq(), false, actMenuItem().mask(_sWhatsThis));
-    */
+    actMenuItem().fetchText(qq());
+    actMenuItem().setText(cMenuItem::LTX_WHATS_THIS, _wt);
+    actMenuItem().saveText(qq());
 }
 
 static void setMenuRights(const QString& _wt)

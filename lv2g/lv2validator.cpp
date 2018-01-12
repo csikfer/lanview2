@@ -11,10 +11,12 @@ QValidator::State cIntValidator::validate(QString &input, int &pos) const
 {
     (void)pos;
     input.remove(QChar(' '));
-    if (input.isEmpty()) return nullable ? Acceptable : Intermediate;
+    if (input.isEmpty()) return setState(nullable ? Acceptable : Intermediate);
     bool ok;
-    (void)input.toLongLong(&ok);
-    return ok ? Acceptable : Invalid;
+    qlonglong i = input.toLongLong(&ok);
+    if (ok) ok = i >= min;
+    if (ok) ok = i <= max;
+    return setState(ok ? Acceptable : Invalid);
 }
 
 void cRealValidator::fixup(QString &input) const
@@ -26,10 +28,12 @@ QValidator::State cRealValidator::validate(QString &input, int &pos) const
 {
     (void)pos;
     input.remove(QChar(' '));
-    if (input.isEmpty()) return nullable ? Acceptable : Intermediate;
+    if (input.isEmpty()) return setState(nullable ? Acceptable : Intermediate);
     bool ok;
-    (void)input.toDouble(&ok);
-    return ok ? Acceptable : Invalid;
+    double r = input.toDouble(&ok);
+    if (ok) ok = r >= min;
+    if (ok) ok = r <= max;
+    return setState(ok ? Acceptable : Invalid);
 }
 
 
@@ -42,12 +46,12 @@ QValidator::State cMacValidator::validate(QString &input, int &pos) const
 {
     (void)pos;
     input.remove(QChar(' '));
-    if (input.isEmpty()) return nullable ? Acceptable : Intermediate;
+    if (input.isEmpty()) return setState(nullable ? Acceptable : Intermediate);
     cMac    mac(input);
-    if (mac.isValid()) return Acceptable;
+    if (mac.isValid()) return setState(Acceptable);
     QRegExp re("^[\\-:\\dABCDEF]+$", Qt::CaseInsensitive);
-    if (!re.exactMatch(input)) return Invalid;
-    return Intermediate;
+    if (!re.exactMatch(input)) return setState(Invalid);
+    return setState(Intermediate);
 }
 
 void cINetValidator::fixup(QString &input) const
@@ -59,17 +63,17 @@ QValidator::State cINetValidator::validate(QString &input, int &pos) const
 {
     (void)pos;
     input.remove(QChar(' '));
-    if (input.isEmpty()) return nullable ? Acceptable : Intermediate;
+    if (input.isEmpty()) return setState(nullable ? Acceptable : Intermediate);
     QHostAddress    a(input);
     bool isNull = a.isNull();   // IPV4 esetén hiányos címet is elfogad; IPV6 ?
     if (input.contains(':')) {  // IPV6
         QRegExp re("^[:\\dABCDEF]+$", Qt::CaseInsensitive);
-        if (!re.exactMatch(input)) return Invalid;
-        return isNull ? Intermediate : Acceptable;  // ??
+        if (!re.exactMatch(input)) return setState(Invalid);
+        return setState(isNull ? Intermediate : Acceptable);  // ??
     }
     else {                      // IPV4
         QStringList nl = input.split('.');
-        if (nl.size() > 4) return Invalid;
+        if (nl.size() > 4) return setState(Invalid);
         bool ok;
         foreach (QString n, nl) {
             if (n.isEmpty()) {
@@ -77,9 +81,9 @@ QValidator::State cINetValidator::validate(QString &input, int &pos) const
                 continue;
             }
             int i = n.toInt(&ok);
-            if (i < 0 || i > 255 || !ok) return Invalid;
+            if (i < 0 || i > 255 || !ok) return setState(Invalid);
         }
-        return isNull || nl.size() != 4 ? Intermediate : Acceptable;
+        return setState(isNull || nl.size() != 4 ? Intermediate : Acceptable);
     }
 }
 
@@ -92,12 +96,12 @@ QValidator::State cCidrValidator::validate(QString &input, int &pos) const
 {
     (void)pos;
     input.remove(QChar(' '));
-    if (input.isEmpty()) return nullable ? Acceptable : Intermediate;
+    if (input.isEmpty()) return setState(nullable ? Acceptable : Intermediate);
     netAddress    n(input);
-    if (n.isValid()) return Acceptable;
+    if (n.isValid()) return setState(Acceptable);
     QRegExp re("^[\\./:\\dABCDEF]+$", Qt::CaseInsensitive);
-    if (!re.exactMatch(input)) return Invalid;
-    return Intermediate;
+    if (!re.exactMatch(input)) return setState(Invalid);
+    return setState(Intermediate);
 }
 
 /* -------------------------- */

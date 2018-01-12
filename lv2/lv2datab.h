@@ -1729,8 +1729,8 @@ public:
     cError *tryUpdateById(QSqlQuery& __q, eTristate __tr = TS_NULL);
 
     ///
-    bool updateByName(QSqlQuery &__q, const QString& _name, const QString& _fn, const QVariant& val, eEx __ex = EX_NOOP);
-    bool updateById(QSqlQuery &__q, qlonglong _id, const QString& _fn, const QVariant& val, eEx __ex = EX_NOOP);
+    bool updateFieldByName(QSqlQuery &__q, const QString& _name, const QString& _fn, const QVariant& val, eEx __ex = EX_NOOP);
+    bool updateFieldById(QSqlQuery &__q, qlonglong _id, const QString& _fn, const QVariant& val, eEx __ex = EX_NOOP);
     /// Beállítja a 'flag' nevű mező értékét a kiválasztott rekordokban. Az objektum értéke nem változik.
     /// @param __q A művelethez használt QSqlQuery objektum.
     /// @param __flag A flag mezőbe beállítandó érték, alapértelmezettem true.

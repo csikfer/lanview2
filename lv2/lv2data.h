@@ -1350,10 +1350,10 @@ public:
     virtual void updateShared(QSqlQuery& q, int __a, int __ab, int __b, int __bb, bool __cd);
 
     static bool setSeralNumber(QSqlQuery& q, const QString& name, const QString& sn, eEx __ex = EX_NOOP) {
-        return cNode().updateByName(q, name, _sSerialNumber, sn, __ex);
+        return cNode().updateFieldByName(q, name, _sSerialNumber, sn, __ex);
     }
     static bool setInventoryNumber(QSqlQuery& q, const QString& name, const QString& in, eEx __ex = EX_NOOP) {
-        return cNode().updateByName(q, name, _sInventoryNumber, in, __ex);
+        return cNode().updateFieldByName(q, name, _sInventoryNumber, in, __ex);
     }
 
     /// Kiírja a ports konténer tartalmát is
