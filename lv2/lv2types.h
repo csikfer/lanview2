@@ -886,27 +886,39 @@ EXT_ int textName2ix(QSqlQuery &q, const QString& _t, const QString& _n, eEx __e
 /// @enum eFilterType
 /// Szűrési metódusok
 enum eFilterType {
-    FT_UNKNOWN = -1, ///< ismeretlen, csak hibajelzésre
+    FT_UNKNOWN = 0, ///< ismeretlen, csak hibajelzésre
     FT_NO,
-    FT_BEGIN ,   ///< Szó eleji eggyezés (ua. mint az FF_LIKE, de a pattern végéhezhez hozzá lessz fűzve egy '%')
+    FT_BEGIN ,   ///< Szó eleji eggyezés (ua. mint az FF_LIKE, de a pattern végéhez hozzá lessz fűzve egy '%')
     FT_LIKE,     ///< Szűrés a LIKE operátorral
     FT_SIMILAR,  ///< Szűrés a SIMILAR operátorral
     FT_REGEXP,   ///< Szűrés reguláris kifejezéssel kisbetű-nagy betű érzékeny
-    FT_EQUAL,
-    FT_LITLE,    ///< Numerikus mező a magadott kisebb nagyobb
-    FT_BIG,      ///< Numerikus mező a magadott értéknél nagyobb
-    FT_INTERVAL, ///< Numerikus mező értéke a magadott tartományban
-    FT_BOOLEAN,  ///< Szűrés igaz, vagy hamis értékre
-    FT_ENUM,
+    FT_EQUAL,    ///< A magadott értékkel egyenlő
+    FT_LITLE,    ///< A magadott értéknél kisebb
+    FT_BIG,      ///< A magadott értéknél nagyobb
+    FT_INTERVAL, ///< A magadott tartományban
+    FT_BOOLEAN,  ///< Szűrés igaz, vagy hamis értékre (boolean típusú adat esetén)
+    FT_ENUM,     ///< Az FT_EQUAL-al azonos, de a paraméter értékkészlete azonos az enumerációs típussal.
     FT_SET,
-    FT_NULL,
+    FT_NULL,     ///< A mező NULL, vagy nem NULL
     FT_SQL_WHERE,///< SQL WHERE ...
     // A további konstansokat a string konvertáló függvény nem kezeli!
     FT_DEFAULT,  ///< Az előző, vagy az alapértelmezett metódus megtartása (a string konvertáló függvény nem kezeli!)
-    FT_FKEY_ID   ///< Szűrés a tulajdonos, vagy valamilyen tulajdonság objektum ID-je alapján (a string konvertáló függvény nem kezeli!)
+    FT_FKEY_ID,  ///< Szűrés a tulajdonos, vagy valamilyen tulajdonság objektum ID-je alapján (a string konvertáló függvény nem kezeli!)
+    // Szűrő típus maszk
+    FT_TYPE_MASK = 0x007f,
+    // A feltétel invertálása
+    FT_INVERSE   = 0x0080,
+    // Text típusú adatoknál az összehasonlítás elött adat konverzió kijelölése, FT_EQUAL, FT_LITLE, FT_BIG, FT_INTERVAL esetén
+    FT_CAST_TO_INT      = 0x0100,
+    FT_CAST_TO_REAL     = 0x0200,
+    FT_CAST_TO_DATE     = 0x0300,
+    FT_CAST_TO_TIME     = 0x0400,
+    FT_CAST_TO_DATETIME = 0x0500,
+    FT_CAST_TO_INTERVAL = 0x0600,
+    FT_CAS_TO_MASK      = 0x0f00
 };
 /// Konverziós függvény a eFilterType enumerációs típushoz
-/// @param n Az enumerációs értéket reprezentáló string az adatbázisban
+/// @param n Az enumerációs értéket reprezentáló string
 /// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs név esetén kizárást dob.
 /// @return Az enumerációs névhez tartozó enumerációs konstans, vagy FT_UNKNOWN, ha ismeretlen a név, és __ex = EX_IGNORE.
 EXT_ int filterType(const QString& n, eEx __ex = EX_ERROR);

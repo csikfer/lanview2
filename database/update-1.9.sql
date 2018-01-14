@@ -10,7 +10,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
-CREATE OR REPLACE FUNCTION cast_to_double(text, double precision DEFAULT NULL) RETURNS double precision AS $$
+CREATE OR REPLACE FUNCTION cast_to_real(text, double precision DEFAULT NULL) RETURNS double precision AS $$
 BEGIN
     RETURN cast($1 as double precision);
 EXCEPTION
@@ -23,7 +23,7 @@ CREATE OR REPLACE FUNCTION cast_to_date(text, date DEFAULT NULL) RETURNS date AS
 BEGIN
     RETURN cast($1 as date);
 EXCEPTION
-    WHEN invalid_text_representation THEN
+    WHEN invalid_datetime_format THEN
         RETURN $2;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
@@ -32,7 +32,7 @@ CREATE OR REPLACE FUNCTION cast_to_time(text, time DEFAULT NULL) RETURNS time AS
 BEGIN
     RETURN cast($1 as time);
 EXCEPTION
-    WHEN invalid_text_representation THEN
+    WHEN invalid_datetime_format THEN
         RETURN $2;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
@@ -41,7 +41,7 @@ CREATE OR REPLACE FUNCTION cast_to_datetime(text, timestamp DEFAULT NULL) RETURN
 BEGIN
     RETURN cast($1 as timestamp);
 EXCEPTION
-    WHEN invalid_text_representation THEN
+    WHEN invalid_datetime_format THEN
         RETURN $2;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
@@ -50,7 +50,7 @@ CREATE OR REPLACE FUNCTION cast_to_interval(text, interval DEFAULT NULL) RETURNS
 BEGIN
     RETURN cast($1 as interval);
 EXCEPTION
-    WHEN invalid_text_representation THEN
+    WHEN invalid_datetime_format THEN
         RETURN $2;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;

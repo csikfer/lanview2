@@ -41,18 +41,6 @@ public:
     virtual bool toEnd(int i);
     virtual void clearToEnd();
     RECACHEHED(cService, service)
-    /*
-    /// Konténer ill. gyorstár a cService rekordoknak.
-    /// Nem frissül automatikusan, ha változik az adattábla.
-    static tRecordList<cService> services;
-public:
-    /// Egy services objektumot ad vissza a név alapján.
-    /// Ha nincs ilyen nevű szervíz, akkor dob egy kizárást, vagy egy öres obbjektummal tér vissza.
-    static const cService *service(QSqlQuery &__q, const QString& __nm, enum eEx __ex = EX_ERROR);
-    /// Egy services objektumot ad vissza az ID alapján, ha nincs ilyen nevű típus, akkor dob egy kizárást.
-    static const cService *service(QSqlQuery &__q, qlonglong __id, enum eEx __ex = EX_ERROR);
-    static void resetCacheData() { services.clear(); }
-    */
     static qlonglong name2id(QSqlQuery &__q, const QString& __nm, enum eEx __ex = EX_ERROR) {
         const cService *p = service(__q, __nm, __ex);
         return p == NULL ? NULL_ID : p->getId();
