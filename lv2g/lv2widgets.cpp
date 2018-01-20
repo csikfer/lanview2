@@ -337,7 +337,7 @@ inline bool fieldIsReadOnly(const cTableShape &_tm, const cTableShapeField &_tf,
 }
 
 cFieldEditBase::cFieldEditBase(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef _fr, int _fl, cRecordDialogBase *_par)
-    : QWidget(_par->pWidget())
+    : QWidget(_par == NULL ? NULL : _par->pWidget())
     , _pParentDialog(_par)
     , _colDescr(_fr.descr())
     , _tableShape(_tm)
@@ -2119,7 +2119,7 @@ void cFKeyWidget::insertF()
             int keyId = pDialog->exec(false);
             if (keyId == DBT_CANCEL) break;
             if (!pDialog->accept()) continue;
-            if (!cErrorMessageBox::condMsgBox(pDialog->record().tryInsert(*pq))) continue;
+            if (!cErrorMessageBox::condMsgBox(pDialog->record().tryInsert(*pq, TS_NULL, true))) continue;
             pModel->setFilter(_sNul, OT_ASC, FT_NO);    // Refresh combo box
             pUi->comboBox->setCurrentIndex(pModel->indexOf(pDialog->record().getId()));
             break;
@@ -2148,7 +2148,7 @@ void cFKeyWidget::modifyF()
             int keyId = pDialog->exec(false);
             if (keyId == DBT_CANCEL) break;
             if (!pDialog->accept()) continue;
-            if (!cErrorMessageBox::condMsgBox(pDialog->record().tryUpdateById(*pq))) continue;
+            if (!cErrorMessageBox::condMsgBox(pDialog->record().tryUpdateById(*pq, TS_NULL, true))) continue;
             pModel->setFilter(_sNul, OT_ASC, FT_NO);    // Refresh combo box
             pUi->comboBox->setCurrentIndex(pModel->indexOf(rec.getId()));
             break;
@@ -2616,13 +2616,16 @@ cFKeyArrayWidget::cFKeyArrayWidget(const cTableShape& _tm, const cTableShapeFiel
     : cFieldEditBase(_tm, _tf, __fr, _fl, _par)
     , last()
 {
-    _wType   = FEW_FKEY_ARRAY;
+    _wType  = FEW_FKEY_ARRAY;
     _height = 4;
+    unique  = true;
+    if (str2tristate(_tf.feature(_sUnique), EX_IGNORE) == TS_FALSE) unique = false;
 
-    pFRecModel = NULL;
-    pUi      = new Ui_fKeyArrayEd;
+    pFRecModel  = NULL;
+    pUi         = new Ui_fKeyArrayEd;
     pUi->setupUi(this);
     pEditWidget = pUi->listView;
+    pLayout     = pUi->horizontalLayout;
 
     selectedNum = 0;
 
@@ -2647,10 +2650,8 @@ cFKeyArrayWidget::cFKeyArrayWidget(const cTableShape& _tm, const cTableShapeFiel
 
     if (_nullable || _hasDefault) {
         bool isNull = __fr.isNull();
-        setupNullButton(isNull, new QPushButton);
+        setupNullButton(isNull);
         cFKeyArrayWidget::disableEditWidget(bool2ts(isNull));
-        pUi->gridLayoutButtons->addWidget(pNullButton, 4, 1);
-        ++_height;
     }
 
     if (!_readOnly) {
@@ -2691,19 +2692,21 @@ int cFKeyArrayWidget::set(const QVariant& v)
 
 void cFKeyArrayWidget::setButtons()
 {
-    bool f    = _readOnly || _actValueIsNULL;
-    bool eArr = f || pArrayModel->isEmpty();
-    bool sing = f || selectedNum != 1;
-    bool any  = _readOnly || _actValueIsNULL || selectedNum == 0;
-
-    pUi->pushButtonAdd ->setDisabled(eArr);
-    pUi->pushButtonIns ->setDisabled(eArr || sing);
-    pUi->pushButtonUp  ->setDisabled(true);
-    pUi->pushButtonDown->setDisabled(true);
-    pUi->pushButtonDel ->setDisabled(any);
-    pUi->pushButtonClr ->setDisabled(f);
-    pUi->pushButtonNew ->setDisabled(f);
-    pUi->pushButtonEdit->setDisabled(eArr);
+    bool disa = _readOnly || _actValueIsNULL;
+    bool add  = !disa;
+    if (add) {
+        qlonglong id = pFRecModel->currendId();
+        add = id != NULL_ID;
+        add = add && !(unique && ids.contains(id));
+    }
+    pUi->pushButtonAdd ->setEnabled(add);
+    pUi->pushButtonIns ->setEnabled(add && selectedNum == 1);
+    pUi->pushButtonUp  ->setDisabled(true); // nem működik
+    pUi->pushButtonDown->setDisabled(true); // nem működik
+    pUi->pushButtonDel ->setDisabled(disa || selectedNum == 0);
+    pUi->pushButtonClr ->setDisabled(disa || ids.isEmpty());
+    pUi->pushButtonNew ->setDisabled(disa);
+    pUi->pushButtonEdit->setDisabled(disa || selectedNum != 1);
 }
 
 void cFKeyArrayWidget::disableEditWidget(eTristate tsf)
@@ -2965,21 +2968,24 @@ cFontAttrWidget::cFontAttrWidget(const cTableShape& _tm, const cTableShapeField 
     QHBoxLayout *pHBLayout = new QHBoxLayout;
     pLayout = pHBLayout;
     setLayout(pLayout);
-    setupNullButton(isNull);
-    cFontAttrWidget::disableEditWidget(bool2ts(isNull));
 
-    bool f = m & ENUM2SET(FA_BOOLD);
-    setupFlagWidget(f, iconBold, pLabelBold, pToolButtonBold);
+    bool f;
+    f = 0 != (m & ENUM2SET(FA_BOOLD));
+    setupFlagWidget(f, iconBold, pToolButtonBold);
 
-    f = m & ENUM2SET(FA_ITALIC);
-    setupFlagWidget(f, iconItalic, pLabelItalic, pToolButtonItalic);
+    f = 0 != (m & ENUM2SET(FA_ITALIC));
+    setupFlagWidget(f, iconItalic, pToolButtonItalic);
 
-    f = m & ENUM2SET(FA_UNDERLINE);
-    setupFlagWidget(f, iconUnderline, pLabelUnderline, pToolButtonUnderline);
+    f = 0 != (m & ENUM2SET(FA_UNDERLINE));
+    setupFlagWidget(f, iconUnderline, pToolButtonUnderline);
 
-    f = m & ENUM2SET(FA_STRIKEOUT);
-    setupFlagWidget(f, iconStrikeout, pLabelStrikeout, pToolButtonStrikeout);
+    f = 0 != (m & ENUM2SET(FA_STRIKEOUT));
+    setupFlagWidget(f, iconStrikeout, pToolButtonStrikeout);
     pHBLayout->addStretch(0);
+
+    setupNullButton(isNull);
+
+    cFontAttrWidget::disableEditWidget(bool2ts(isNull));
 
     QSqlQuery q = getQuery();
     pEnumType = cColEnumType::fetchOrGet(q, sEnumTypeName);
@@ -3001,40 +3007,22 @@ int cFontAttrWidget::set(const QVariant& v)
 {
     bool r = cFieldEditBase::set(v);
     if (r == 1 && !_actValueIsNULL) {
-        if (_readOnly) {
-            m = pEnumType->lst2set(v.toStringList());
-            pLabelBold->     setPixmap(iconBold.     pixmap(iconSize, QIcon::Normal, m & ENUM2SET(FA_BOOLD)     ? QIcon::On : QIcon::Off));
-            pLabelItalic->   setPixmap(iconItalic.   pixmap(iconSize, QIcon::Normal, m & ENUM2SET(FA_ITALIC)    ? QIcon::On : QIcon::Off));
-            pLabelUnderline->setPixmap(iconUnderline.pixmap(iconSize, QIcon::Normal, m & ENUM2SET(FA_UNDERLINE) ? QIcon::On : QIcon::Off));
-            pLabelStrikeout->setPixmap(iconStrikeout.pixmap(iconSize, QIcon::Normal, m & ENUM2SET(FA_STRIKEOUT) ? QIcon::On : QIcon::Off));
-        }
-        else {
-            m = pEnumType->lst2set(v.toStringList());
-            pToolButtonBold     ->setChecked(m & ENUM2SET(FA_BOOLD));
-            pToolButtonItalic   ->setChecked(m & ENUM2SET(FA_ITALIC));
-            pToolButtonUnderline->setChecked(m & ENUM2SET(FA_UNDERLINE));
-            pToolButtonStrikeout->setChecked(m & ENUM2SET(FA_STRIKEOUT));
-        }
+        m = pEnumType->lst2set(v.toStringList());
+        pToolButtonBold     ->setChecked(m & ENUM2SET(FA_BOOLD));
+        pToolButtonItalic   ->setChecked(m & ENUM2SET(FA_ITALIC));
+        pToolButtonUnderline->setChecked(m & ENUM2SET(FA_UNDERLINE));
+        pToolButtonStrikeout->setChecked(m & ENUM2SET(FA_STRIKEOUT));
     }
     return r;
 }
 
-void cFontAttrWidget::setupFlagWidget(bool f, const QIcon& icon, QLabel *& pLabel, QToolButton *& pButton)
+void cFontAttrWidget::setupFlagWidget(bool f, const QIcon& icon, QToolButton *& pButton)
 {
-    if (_readOnly) {
-        pLabel = new QLabel;
-        pButton = NULL;
-        pLabel->setPixmap(icon.pixmap(iconSize, QIcon::Normal, f ? QIcon::On : QIcon::Off));
-        pLayout->addWidget(pLabel);
-    }
-    else {
-        pLabel = NULL;
-        pButton = new QToolButton();
-        pToolButtonBold->setIcon(icon);
-        pToolButtonBold->setCheckable(true);
-        pToolButtonBold->setChecked(f);
-        pLayout->addWidget(pButton);
-    }
+    pButton = _readOnly ? new cROToolButton() : new QToolButton();
+    pButton->setIcon(icon);
+    pButton->setCheckable(true);
+    pButton->setChecked(f);
+    pLayout->addWidget(pButton);
 }
 
 void cFontAttrWidget::disableEditWidget(eTristate tsf)

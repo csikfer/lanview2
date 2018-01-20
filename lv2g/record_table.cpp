@@ -24,7 +24,7 @@ Ui::noRightsForm * noRightsSetup(QWidget *_pWidget, qlonglong _need, const QStri
 
 /* ***************************************************************************************************** */
 
-qlonglong cRecordTableFilter::type2filter(int _type, bool _null)
+qlonglong cRecordTableFilter::type2filter()
 {
     static QMap<int, qlonglong> map;
     if (map.isEmpty()) {
@@ -47,9 +47,20 @@ qlonglong cRecordTableFilter::type2filter(int _type, bool _null)
         map[cColStaticDescr::FT_INET]       = map[cColStaticDescr::FT_MAC];
         map[cColStaticDescr::FT_CIDR]       = map[cColStaticDescr::FT_TEXT];
     }
-    qlonglong m = map[_type] | ENUM2SET(FT_NO);
+    int ft = fieldType();
+    qlonglong m = map[ft] | ENUM2SET(FT_NO);
     if (lanView::getInstance()->isAuthorized(PL_ADMIN)) m |= ENUM2SET(FT_SQL_WHERE);
-    if (_null)                                          m |= ENUM2SET(FT_NULL);
+    if (field.pColDescr->isNullable)                    m |= ENUM2SET(FT_NULL);
+    // CAST TO ?
+    if (ft == cColStaticDescr::FT_TEXT) {
+        QStringList tt = field.shapeField.features().sListValue("cast");
+        if (!tt.isEmpty()) {
+            QSqlQuery q = getQuery();
+            const cColEnumType *pTypeEnum = cColEnumType::fetchOrGet(q, _sParamTypeType);
+            qlonglong ts = pTypeEnum->lst2set(tt);
+            m = filterSetAndTypeSet(m, ts);
+        }
+    }
     return m;
 }
 
@@ -58,26 +69,28 @@ cRecordTableFilter::cRecordTableFilter(cRecordTableFODialog &_par, cRecordTableC
     , field(_rtc)
     , dialog(_par)
     , param1(), param2()
-    , typeList()
+    , filterTypeList()
 {
     closed1 = closed2 = true;
     inverse = false;
     any     = true;
     csi     = false;
-    toType  = T2T_UNKNOWN;
+    toType  = ENUM_INVALID;
     setOn   = -1;
     setOff  =  0;
     pValidator1 = pValidator2 = NULL;
     if (field.pColDescr == NULL) {
-        types = 0;
+        toTypes  = filtTypesEx = filtTypes = 0;
     }
     else {
-        types = type2filter(fieldType(), field.pColDescr->isNullable);   // Filter types (SET)
+        filtTypesEx = type2filter();            // Filter types + type casts (SET + SET)
+        filtTypes   = pullFilter(filtTypesEx);  // Filter types (SET)
+        toTypes     = pullType(filtTypesEx);    // type casts (SET)
     }
     qlonglong m, i;
-    for (i = 0, m = 1; m < types; m <<= 1, ++i) {
-        if (types & m) {
-            typeList << &cEnumVal::enumVal(_sFiltertype, i);
+    for (i = 0, m = 1; m < filtTypes; m <<= 1, ++i) {
+        if (filtTypes & m) {
+            filterTypeList << &cEnumVal::enumVal(_sFiltertype, i);
         }
     }
     iFilter = 0;   // No selected filter
@@ -97,7 +110,7 @@ void cRecordTableFilter::setFilter(int i)
         inverse = false;
         csi     = false;
         any     = true;
-        toType  = T2T_UNKNOWN;
+        toType  =  ENUM_INVALID;
         setOn   = -1;
         setOff  =  0;
         pValidator1 = pValidator2 = NULL;
@@ -114,41 +127,41 @@ int cRecordTableFilter::fieldType()
     return cColStaticDescr::FT_TEXT | (r & cColStaticDescr::FT_ARRAY);
 }
 
-const cEnumVal *cRecordTableFilter::pActType()
+const cEnumVal *cRecordTableFilter::pActFilterType()
 {
-    if (!isContIx(typeList, iFilter)) EXCEPTION(EPROGFAIL, iFilter);
-    return typeList.at(iFilter);
+    if (!isContIx(filterTypeList, iFilter)) EXCEPTION(EPROGFAIL, iFilter);
+    return filterTypeList.at(iFilter);
 }
 
-inline QString arrayAnyAll(bool af, bool any, QString o, QString n, int t = T2T_UNKNOWN)
+inline QString arrayAnyAll(bool isArray, bool any, QString o, QString n, int t = ENUM_INVALID)
 {
     QString r;
-    if (af) {
+    if (isArray) {
         r = any ? "0 < " : QString("array_length(%1, 1) = ").arg(n);
         r += QString("(SELECT COUNT(*) FROM unnest(%1) AS col WHERE ").arg(n);
         switch (t) {
-        case T2T_UNKNOWN:   r += QString("col %1 ?)").arg(o);                   break;
-        case T2T_TEXT:      r += QString("col::text %1 ?)").arg(o);             break;
-        default:            r += text2FnName(t) + QString("(col) %1 ?)").arg(o);break;
+        case ENUM_INVALID:  r += QString("col %1 ?)").arg(o);                   break;
+        case PT_TEXT:       r += QString("col::text %1 ?)").arg(o);             break;
+        default:            r += nameToCast(t) + QString("(col) %1 ?)").arg(o);break;
         }
     }
     else {
         switch (t) {
-        case T2T_UNKNOWN:   r = n;                              break;
-        case T2T_TEXT:      r = n + "::text";                   break;
-        default:            r = fnCatParms(text2FnName(t), n);  break;
+        case ENUM_INVALID:  r = n;                              break;
+        case PT_TEXT:       r = n + "::text";                   break;
+        default:            r = fnCatParms(nameToCast(t), n);  break;
         }
         r += QString(" %1 ?").arg(o);
     }
     return r;
 }
 
-QString cRecordTableFilter::whereLike(const QString& n, bool af)
+QString cRecordTableFilter::whereLike(const QString& n, bool isArray)
 {
     QString o = "LIKE";
     if (csi)     o.prepend('I');
     if (inverse) o.prepend("NOT ");
-    return arrayAnyAll(af, any, o, n, T2T_TEXT);
+    return arrayAnyAll(isArray, any, o, n, PT_TEXT);
 }
 
 QString cRecordTableFilter::whereLitle(const QString& n, bool af, bool inv, bool clo)
@@ -199,70 +212,90 @@ QString cRecordTableFilter::where(QVariantList& qparams)
 {
     QString r;
     if (field.pColDescr == NULL) return r;      // !!!
-    int eFilter;
-    if (iFilter >= 0 && (eFilter = typeList.at(iFilter)->toInt()) != FT_NO) {
-        bool af = 0 != (fieldType() & cColStaticDescr::FT_ARRAY);
-        QString n  = field.pColDescr->colNameQ();
-        // Egész, lehet ID is, van név konverzió
-        if (field.pColDescr->eColType == cColStaticDescr::FT_INTEGER && !field.pColDescr->fnToName.isEmpty()) {
-            n = field.pColDescr->fnToName + "(" + n + ")";
+    int eFilter;    // Filter típus azonostó (ha van)
+    if (iFilter >= 0 && (eFilter = filterTypeList.at(iFilter)->toInt()) != FT_NO) {
+        bool      isArray = false;                      // A set-et nem tömbként kezeljük.
+        QString   colName = field.pColDescr->colNameQ();// Mező név, vagy kifelyezés
+        switch (field.pColDescr->eColType) {
+        case cColStaticDescr::FT_TEXT_ARRAY:
+            isArray = true;
+        case cColStaticDescr::FT_TEXT:
+            // toType = ????;
+            break;
+        case cColStaticDescr::FT_INTEGER:
+            // Egész, lehet ID is, van név konverzió ?
+            if (!field.pColDescr->fnToName.isEmpty()) {
+                colName = field.pColDescr->fnToName + "(" + colName + ")";
+            }
+            break;
+        case cColStaticDescr::FT_INTEGER_ARRAY:
+            // Egész tömb, lehet ID is, van név konverzió ?
+            if (!field.pColDescr->fnToName.isEmpty()) {
+                colName = "(SELECT array_agg(" + fnCatParms(field.pColDescr->fnToName, colName) + ") FROM unnest(" + colName + "))";
+            }
+            isArray = true;
+            break;
+        case cColStaticDescr::FT_REAL_ARRAY:
+            isArray = true;
+            break;
+        default:    break;
         }
         QString o;
         switch (eFilter) {
         case FT_BEGIN:
-            r = whereLike(n, af);
+            r = whereLike(colName, isArray);
             qparams << QVariant(param1.toString() + "%");
             break;
         case FT_LIKE:
-            r = whereLike(n, af);
+            r = whereLike(colName, isArray);
             qparams << param1;
             break;
         case FT_SIMILAR:
             o = "SIMILAR TO";
             if (inverse) o.prepend(r);
-            r = arrayAnyAll(af, any, o, n, T2T_TEXT);
+            r = arrayAnyAll(isArray, any, o, colName, PT_TEXT);
             qparams << param1;
             break;
         case FT_REGEXP:
             o = "~";
             if (csi)   o.append('*');
             if (inverse) o.prepend('!');
-            r = arrayAnyAll(af, any, o, n, T2T_TEXT);
+            r = arrayAnyAll(isArray, any, o, colName, PT_TEXT);
             qparams << param1;
             break;
         case FT_EQUAL:
             o = inverse ? "<>" : "=";
-            r = arrayAnyAll(af, any, o, n, toType);
+            r = arrayAnyAll(isArray, any, o, colName, toType);
             qparams << param1;
             break;
         case FT_LITLE:
-            r = whereLitle(n, af, inverse, closed2);
+            r = whereLitle(colName, isArray, inverse, closed2);
             qparams << param2;
             break;
         case FT_BIG:
-            r = whereLitle(n, af, !inverse, !closed1);
+            r = whereLitle(colName, isArray, !inverse, !closed1);
             qparams << param1;
             break;
         case FT_INTERVAL:
-            r = whereLitle(n, af, !inverse, !closed1);
+            r = whereLitle(colName, isArray, !inverse, !closed1);
             qparams << param1;
             r += " AND ";
-            r += whereLitle(n, af, inverse, closed2);
+            r += whereLitle(colName, isArray, inverse, closed2);
             qparams << param2;
             break;
         case FT_BOOLEAN:
             if (inverse) r = "NOT ";
-            r += n + "::boolean";
+            r += colName + "::boolean";
             break;
         case FT_ENUM:
-            r = whereEnum(n, qparams);
+            r = whereEnum(colName, qparams);
             break;
         case FT_SET:
-            r = whereSet(n, qparams);
+            r = whereSet(colName, qparams);
             break;
         case FT_NULL:
-            if (af) r = QString("array_lenght(%1, 1) %2 0").arg(n, inverse ? "<>" : "=");
-            else    r = n + (inverse ? " IS NOT NULL" : " IS NULL");
+            if (isArray) r = QString("array_lenght(%1, 1) %2 0").arg(colName, inverse ? "<>" : "=");
+            else    r = colName + (inverse ? " IS NOT NULL" : " IS NULL");
             break;
         case FT_SQL_WHERE:
             r = param1.toString();
@@ -306,32 +339,31 @@ void cRecordTableFilter::setValidatorRegExp(const QString& _re)
 void cRecordTableFilter::setValidator(int i)
 {
     switch (i) {
-    case T2T_INT:
-    case T2T_COUNT:
+    case PT_INTEGER:
         tSetValidator<QIntValidator>();
         break;
-    case T2T_REAL:
+    case PT_REAL:
         tSetValidator<QDoubleValidator>();
         break;
-    case T2T_TIME:
+    case PT_TIME:
         setValidatorRegExp(QString("^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$"));
         break;
-    case T2T_DATE:
+    case PT_DATE:
         setValidatorRegExp(QString("^20\\d\\d[-/](0[1-9]|1[012])[-/](0[1-9]|[12][0-9]|3[01])$"));
         break;
-    case T2T_DATETIME:
+    case PT_DATETIME:
         setValidatorRegExp(QString("^20\\d\\d[-/](0[1-9]|1[012])[-/](0[1-9]|[12][0-9]|3[01])[ T]([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$"));
         break;
-    case T2T_INTERVAL:
+    case PT_INTERVAL:
         setValidatorRegExp(QString("^(\\d+[Dd]ays?)?\\s*([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9](\\.\\d+)?$"));
         break;
-    case T2T_INET:
+    case PT_INET:
         tSetValidator<cINetValidator>();
         break;
-    case T2T_MAC:
+    case PT_MAC:
         tSetValidator<cMacValidator>();
         break;
-    case T2T_TEXT:
+    case PT_TEXT:
     default:
         pDelete(pValidator1);
         pDelete(pValidator2);
@@ -508,6 +540,7 @@ cRecordTableFODialog::cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase &_rt)
     pTextEdit = NULL;
     pLineEdit1 = NULL;
     pLineEdit2 = NULL;
+    pToTypeModel = NULL;
     (void)*pq;
     pForm = new Ui::dialogTabFiltOrd();
     pForm->setupUi(this);
@@ -525,7 +558,7 @@ cRecordTableFODialog::cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase &_rt)
         }
 //        if (recordView.disableFilters == false) {
             cRecordTableFilter *pFilt = new cRecordTableFilter(*this, **i);
-            if (pFilt->types == 0) {
+            if (pFilt->filtTypes == 0) {
                 delete pFilt;
                 continue;
             }
@@ -609,7 +642,7 @@ void cRecordTableFODialog::setGridLayoutOrder()
 QComboBox * cRecordTableFODialog::comboBoxAnyAll()
 {
     QComboBox *p = new QComboBox(this);
-    p->addItem(trUtf8("A tömb egy elemére"));
+    p->addItem(trUtf8("A tömb legalább egy elemére"));
     p->addItem(trUtf8("A tömb összes elemére"));
     connect(p, SIGNAL(currentIndexChanged(int)), &filter(), SLOT(changedAnyAll(int)));
     return p;
@@ -631,11 +664,12 @@ void cRecordTableFODialog::setFilterDialog()
     pTextEdit = NULL;   // Long text (param1)
     pLineEdit1 = NULL;  // Filter param1
     pLineEdit2 = NULL;  // Filter param2
+    pToTypeModel = NULL;
     QLabel *pLabel = NULL;
     QCheckBox *pCheckBoxI = NULL;
     if (iSelFilterCol < 0 || iSelFilterType < 0) return;    // skeep
     filter().setFilter(iSelFilterType);
-    const cEnumVal *pType = filter().pActType();
+    const cEnumVal *pType = filter().pActFilterType();
     QString s = pType->getText(cEnumVal::LTX_VIEW_LONG);
     PDEB(VERBOSE) << QString("%1 : Filter #%2/%3 :")
                      .arg(recordView.tableShape().getName()).arg(iSelFilterCol).arg(iSelFilterType)
@@ -763,16 +797,18 @@ void cRecordTableFODialog::setFilterDialogComp(int fType, int dType)
         pGrid->addWidget(comboBoxAnyAll(), row, 1);
         row++;
     }
-    if (t == cColStaticDescr::FT_TEXT) {
+    if ((t & ~cColStaticDescr::FT_ARRAY) == cColStaticDescr::FT_TEXT && filter().toTypes != 0) {
         QComboBox *pComboBoxTy = new QComboBox();
-        pComboBoxTy->addItems(filter().pTex2Type()->enumValues);
+        qlonglong tt = filter().toTypes;
+        QSqlQuery q = getQuery();
+        const cColEnumType *pParamTypeType = cColEnumType::fetchOrGet(q, "paramtype");
+        pToTypeModel = new cEnumListModel(pParamTypeType, NT_NOT_NULL, pParamTypeType->lst2lst(pParamTypeType->set2lst(tt)));
+        pToTypeModel->joinWith(pComboBoxTy);
         pComboBoxTy->setCurrentIndex(0);
+        pGrid->addWidget(new QLabel(sLabelTy), row, 0);
         pGrid->addWidget(pComboBoxTy, row, 1);
-        connect(pComboBoxTy, SIGNAL(currentIndexChanged(int)), &filter(), SLOT(changedToType(int)));
-        filter().changedToType(0);
-    }
-    else {
-
+        connect(pToTypeModel, SIGNAL(currentEnumChanged(int)), &filter(), SLOT(changedToType(int)));
+        filter().changedToType(pToTypeModel->atInt(0));
     }
 }
 
@@ -827,7 +863,7 @@ void cRecordTableFODialog::filtCol(int _c)
         pForm->lineEditCol->setText(filter().field.shapeField.getText(cTableShapeField::LTX_DIALOG_TITLE,
                                                                       filter().field.shapeField.getName()));
         QStringList items;
-        foreach (const cEnumVal *pe, pSelFilter->typeList) {
+        foreach (const cEnumVal *pe, pSelFilter->filterTypeList) {
             items << pe->getText(cEnumVal::LTX_VIEW_SHORT, pe->getName());
         }
         pForm->comboBoxFilt->clear();
@@ -883,6 +919,9 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
                     enumTypeName = mCat(recDescr.tableName(), *pColDescr);
                 }
             }
+        }
+        else if (fieldFlags & ENUM2SET2(FF_BG_COLOR, FF_FG_COLOR)) {
+            enumTypeName = _sEquSp; // maga a mező a szín
         }
     }
 }

@@ -766,12 +766,11 @@ cEnumValRow::cEnumValRow(QSqlQuery& q, const QString& _val, int _row, cEnumValsE
     QString t;
     switch (r) {
     case 1:     // Beolvasva
+        rec.fetchText(q);
         break;
     case 0:     // Még nincs az adatbázisban  Set default
         rec.setName(_sEnumTypeName, parent->enumTypeTypeName);
         rec.setName(_sEnumValName, _val);
-        // rec.setName(_sViewShort,   _val);
-        // rec.setName(_sViewLong,    _val);
         break;
     default:
         EXCEPTION(AMBIGUOUS, r, mCat(parent->enumTypeTypeName, _val));
@@ -799,15 +798,16 @@ void cEnumValRow::save(QSqlQuery& q)
 {
     rec.clearId();
     // !!!
-//    rec[_sViewShort]   = getTableItemText(pTableWidget, row, CEV_SHORT);
-//    rec[_sViewLong]    = getTableItemText(pTableWidget, row, CEV_LONG);
+    rec.setText(cEnumVal::LTX_VIEW_SHORT, getTableItemText(pTableWidget, row, CEV_SHORT));
+    rec.setText(cEnumVal::LTX_VIEW_LONG,  getTableItemText(pTableWidget, row, CEV_LONG));
+    rec.setText(cEnumVal::LTX_TOOL_TIP,   getTableItemText(pTableWidget, row, CEV_TOOL_TIP));
     rec[_sBgColor]     = pBgColorWidget->get();
     rec[_sFgColor]     = pFgColorWidget->get();
     rec[_sFontFamily]  = pFntFamWidget->get();
     rec[_sFontAttr]    = pFntAttWidget->get();
     rec[_sEnumValNote] = getTableItemText(pTableWidget, row, CEV_NOTE);
-//    rec[_sToolTip]     = getTableItemText(pTableWidget, row, CEV_TOOL_TIP);
     rec.replace(q);
+    rec.saveText(q);
 }
 
 cEnumValsEditWidget::cEnumValsEditWidget(QWidget *parent)
@@ -933,30 +933,29 @@ bool cEnumValsEditWidget::saveValue()
     val[_sEnumValNote]  = pUi->lineEditValValNote->text();
     val[_sBgColor]      = pWidgetValBgColor->get();
     val[_sFgColor]      = pWidgetValFgColor->get();
-    // !!!
-//    val[_sViewShort]    = pUi->lineEditValShort->text();
-//    val[_sViewLong]     = pUi->lineEditValLong->text();
-//    val[_sToolTip]      = pUi->textEditValValTolTip->toPlainText();
+    val.setText(cEnumVal::LTX_VIEW_SHORT, pUi->lineEditValShort->text());
+    val.setText(cEnumVal::LTX_VIEW_LONG,  pUi->lineEditValLong->text());
+    val.setText(cEnumVal::LTX_TOOL_TIP,   pUi->textEditValValTolTip->toPlainText());
     val[_sFontFamily]   = pWidgetValFntFam->get();
     val[_sFontAttr]     = pWidgetValFntAtt->get();
 
-    return cErrorMessageBox::condMsgBox(val.tryReplace(*pq));
+    return cErrorMessageBox::condMsgBox(val.tryReplace(*pq, TS_NULL, true));
 }
 
 bool cEnumValsEditWidget::saveType()
 {
     type.clearId();
     type[_sEnumValNote]  = pUi->lineEditTypeTypeNote->text();
-    // !!!
-//    type[_sViewShort]    = pUi->lineEditTypeShort->text();
-//    type[_sViewLong]     = pUi->lineEditTypeLong->text();
-//    type[_sToolTip]      = pUi->textEditTypeTypeToolTip->toPlainText();
+    type.setText(cEnumVal::LTX_VIEW_SHORT, pUi->lineEditTypeShort->text());
+    type.setText(cEnumVal::LTX_VIEW_LONG,  pUi->lineEditTypeLong->text());
+    type.setText(cEnumVal::LTX_TOOL_TIP,   pUi->textEditTypeTypeToolTip->toPlainText());
 
     cError *pe = NULL;
     static const QString tn = "cEnumValsEdit";
     sqlBegin(*pq, tn);
     try {
         type.replace(*pq);
+        type.saveText(*pq);
         foreach (cEnumValRow *p, rows) {
             p->save(*pq);
         }
@@ -979,19 +978,18 @@ bool cEnumValsEditWidget::saveBoolean()
     boolType[_sEnumValName]  = _sNul;
     boolType[_sEnumValNote]  = pUi->lineEditBoolTypeNote->text();
     boolType[_sEnumTypeName] = type;
-    // !!!
-//    boolType[_sViewShort]    = pUi->lineEditBoolTypeShort->text();
-//    boolType[_sViewLong]     = pUi->lineEditBoolTypeLong->text();
-//    boolType[_sToolTip]      = pUi->textEditBoolToolTip->toPlainText();
+    boolType.setText(cEnumVal::LTX_VIEW_SHORT, pUi->lineEditBoolTypeShort->text());
+    boolType.setText(cEnumVal::LTX_VIEW_LONG,  pUi->lineEditBoolTypeLong->text());
+    boolType.setText(cEnumVal::LTX_TOOL_TIP,   pUi->textEditBoolToolTip->toPlainText());
 
     boolTrue[_sEnumValName]  = _sTrue;
     boolTrue[_sEnumValNote]  = pUi->lineEditTrueNote->text();
     boolTrue[_sEnumTypeName] = type;
     boolTrue[_sBgColor]      = pWidgetTrueBgColor->get();
     boolTrue[_sFgColor]      = pWidgetTrueFgColor->get();
-//    boolTrue[_sViewShort]    = pUi->lineEditTrueShort->text();
-//    boolTrue[_sViewLong]     = pUi->lineEditTrueLong->text();
-//    boolTrue[_sToolTip]      = pUi->textEditTrueToolTip->toPlainText();
+    boolTrue.setText(cEnumVal::LTX_VIEW_SHORT, pUi->lineEditTrueShort->text());
+    boolTrue.setText(cEnumVal::LTX_VIEW_LONG,  pUi->lineEditTrueLong->text());
+    boolTrue.setText(cEnumVal::LTX_TOOL_TIP,   pUi->textEditTrueToolTip->toPlainText());
     boolTrue[_sFontFamily]   = pWidgetTrueFntFam->get();
     boolTrue[_sFontAttr]     = pWidgetTrueFntAtt->get();
 
@@ -1000,9 +998,9 @@ bool cEnumValsEditWidget::saveBoolean()
     boolFalse[_sEnumTypeName]= type;
     boolFalse[_sBgColor]     = pWidgetFalseBgColor->get();
     boolFalse[_sFgColor]     = pWidgetFalseFgColor->get();
-//    boolFalse[_sViewShort]   = pUi->lineEditFalseShort->text();
-//    boolFalse[_sViewLong]    = pUi->lineEditFalseLong->text();
-//    boolFalse[_sToolTip]     = pUi->textEditFalseToolTip->toPlainText();
+    boolFalse.setText(cEnumVal::LTX_VIEW_SHORT, pUi->lineEditFalseShort->text());
+    boolFalse.setText(cEnumVal::LTX_VIEW_LONG,  pUi->lineEditFalseLong->text());
+    boolFalse.setText(cEnumVal::LTX_TOOL_TIP,   pUi->textEditFalseToolTip->toPlainText());
     boolFalse[_sFontFamily]  = pWidgetFalseFntFam->get();
     boolFalse[_sFontAttr]    = pWidgetFalseFntAtt->get();
 
@@ -1011,8 +1009,11 @@ bool cEnumValsEditWidget::saveBoolean()
     sqlBegin(*pq, tn);
     try {
         boolType.replace(*pq);
+        boolType.saveText(*pq);
         boolTrue.replace(*pq);
+        boolTrue.saveText(*pq);
         boolFalse.replace(*pq);
+        boolFalse.saveText(*pq);
         sqlCommit(*pq, tn);
     }
     CATCHS(pe);
@@ -1066,8 +1067,8 @@ void cEnumValsEditWidget::setEnumValVal(const QString& _ev)
     case 0:     // Not found (az enumVal-t törölte a completion() metódus)
         val[_sEnumValName]  = ev;
         val[_sEnumTypeName] = enumValTypeName;
-//        val[_sViewShort]    = ev;
-//        val[_sViewLong]     = ev;
+        val.setText(cEnumVal::LTX_VIEW_SHORT, ev);
+        val.setText(cEnumVal::LTX_VIEW_LONG,  ev);
         break;
     default:    EXCEPTION(AMBIGUOUS, n, val.identifying());
     }
@@ -1103,8 +1104,8 @@ void cEnumValsEditWidget::setEnumTypeType(const QString& etn)
     case 0:     // Not found (törölte a completion() metódus)
         type[_sEnumValName]  = _sNul;
         type[_sEnumTypeName] = enumTypeTypeName;
-//        type[_sViewShort]    = enumTypeTypeName;
-//        type[_sViewLong]     = enumTypeTypeName;
+        type.setText(cEnumVal::LTX_VIEW_SHORT, enumTypeTypeName);
+        type.setText(cEnumVal::LTX_VIEW_LONG,  enumTypeTypeName);
         break;
     default:    EXCEPTION(AMBIGUOUS, n, type.identifying());
     }
@@ -1174,8 +1175,8 @@ void cEnumValsEditWidget::setBoolField(const QString& fn)
     case 0:     // not found
         boolTrue.setName(_sEnumTypeName, typeName);
         boolTrue.setName(_sEnumValName,  _sTrue);
-//        boolTrue.setName(_sViewShort, langBool(true));
-//        boolTrue.setName(_sViewLong, langBool(true));
+        boolTrue.setText(cEnumVal::LTX_VIEW_SHORT, langBool(true));
+        boolTrue.setText(cEnumVal::LTX_VIEW_LONG,  langBool(true));
     }
     t = boolTrue.getText(cEnumVal::LTX_VIEW_SHORT, _sTrue);
     pUi->lineEditTrueShort->setText(t);
@@ -1199,8 +1200,8 @@ void cEnumValsEditWidget::setBoolField(const QString& fn)
     case 0:     // not found
         boolFalse.setName(_sEnumTypeName, typeName);
         boolFalse.setName(_sEnumValName,  _sFalse);
-//        boolFalse.setName(_sViewShort, langBool(false));
-//        boolFalse.setName(_sViewLong, langBool(false));
+        boolFalse.setText(cEnumVal::LTX_VIEW_SHORT, langBool(false));
+        boolFalse.setText(cEnumVal::LTX_VIEW_LONG,  langBool(false));
     }
     t = boolFalse.getText(cEnumVal::LTX_VIEW_SHORT, _sFalse);
     pUi->lineEditFalseShort->setText(t);

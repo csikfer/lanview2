@@ -190,10 +190,10 @@ public:
         FT_BOOLEAN,             ///< bináris érték (boolean)
         FT_POLYGON,             ///< poligon (polygon)
         FT_ENUM,                ///< enumerációs típus
-        FT_SET          = FT_ENUM + FT_ARRAY,       ///< set típus, ami az adatbázisban egy enumerációs tömb
-        FT_INTEGER_ARRAY= FT_INTEGER + FT_ARRAY,    ///< egész tömb
-        FT_REAL_ARRAY   = FT_REAL + FT_ARRAY,       ///< lebegőpontos tömb
-        FT_TEXT_ARRAY   = FT_TEXT + FT_ARRAY,       ///< Söveg tömb
+        FT_SET          = FT_ENUM    + FT_ARRAY, ///< set típus, ami az adatbázisban egy enumerációs tömb
+        FT_INTEGER_ARRAY= FT_INTEGER + FT_ARRAY, ///< egész tömb
+        FT_REAL_ARRAY   = FT_REAL    + FT_ARRAY, ///< lebegőpontos tömb
+        FT_TEXT_ARRAY   = FT_TEXT    + FT_ARRAY, ///< Söveg tömb
         FT_MAC    = 0x00000100L,///< MAC cím
         FT_INET,                ///< hálózati cím
         FT_CIDR,                ///< Hálózati címtartomány
@@ -1505,6 +1505,7 @@ public:
     /// A rekord kiírását, és visszaolvasását egy SQL paranccsal valósítja meg "INSERT ... RETURNING *"
     /// Ha van név és deleted mező, és létezik egy azonos nevű de deleted = true rekord, akkor azt az
     /// update metódussal fellülírja. (teszelni kéne, hogy ez így valóban jól müködik-e)
+    /// A saveText() metódus nem kerül meghívásra!
     /// @param __q Az inzert utasítás ezel az objektummal lesz kiadva
     /// @param __ex Ha értéke true (ez az alapértelmezés), akkor kizárást dob, ha adat hiba van, ill. nem történt meg az insert
     /// @exception cError* Hiba esetén dob egy kizárást, ha _ex értéke true ...
@@ -1512,14 +1513,16 @@ public:
     virtual bool insert(QSqlQuery& __q, enum eEx __ex = EX_ERROR);
     /// Hasonló az insert() metódushoz. Ha az insert metódus kizárást dobott, akkor a hiba objektum pointerével tér vissza.
     /// Ha rendben megtörtépnt a művelet, akkor NULL pointerrel.
-    /// Manti a nyelvi szövegeket is ha vannak (saveText() metódust is hívja)
-    cError *tryInsert(QSqlQuery& __q, eTristate __tr = TS_NULL);
+    /// Manti a nyelvi szövegeket is ha vannak éa a text paraméter true (saveText() metódust is hívja)
+    cError *tryInsert(QSqlQuery& __q, eTristate __tr = TS_NULL, bool text = false);
     /// Fellülír egy létező rekordot. A rekord azonosítása a nameKeyMask() alapján. A rekordot visszaolvassa.
     /// Ha a felülírás sikertelen, (nincs érintett rekord) és __ex értéke true, akkor dob egy kizárást.
+    /// A nyelvi szövegeket nem modosítja! Nem hívja a saveText() metódust.
     virtual bool rewrite(QSqlQuery& __q, enum eEx __ex = EX_ERROR);
     /// Fellülír egy létező rekordot. A rekord azonosítása a nameKeyMask() alapján. A rekordot visszaolvassa.
     /// Ha rendben megtörtépnt a művelet, akkor NULL pointerrel, egyébként a hiba objektum pointerével tér vissza.
-    cError *tryRewrite(QSqlQuery& __q, eTristate __tr = TS_NULL);
+    /// Ha text értéke true, akkor menti a nyelvi szövegeket, ha text_id nem változott.
+    cError *tryRewrite(QSqlQuery& __q, eTristate __tr = TS_NULL, bool text = false);
 
     /// Sablon metódus, egy járulékos tábla tartozik a rekordhoz, ami az objektum tulajdona
     /// @param __ch Gyerek objektum konténer
@@ -1593,7 +1596,7 @@ public:
     virtual int replace(QSqlQuery& __q, enum eEx __ex = EX_ERROR);
     /// Hasonló az replace() metódushoz. Ha a replace metódus kizárást dobott, akkor a hiba objektum pointerével tér vissza.
     /// Ha rendben megtörtépnt a művelet, akkor NULL pointerrel.
-    cError *tryReplace(QSqlQuery& __q, eTristate __tr = TS_NULL);
+    cError *tryReplace(QSqlQuery& __q, eTristate __tr = TS_NULL, bool text = false);
     /// Egy WHERE stringet állít össze a következőképpen.
     /// A feltételben azok a mezők fognak szerepelni, melyek indexének megfelelő bit az __fm tömbben igaz.
     /// A feltétel, ha a mező NULL, akkor \<mező név\> IS NULL, ha nem NULL, akkor ha isLike() a mező indexére igaz,
@@ -1726,7 +1729,7 @@ public:
     /// Try blokkban frissíti egy rekord tartalmát, az azonosító az ID, minden egyébb mezőt frissít az objektum tartalma alapján.
     /// Akkor is hibával tér vissza, ha nem csak egy rekordot modosított.
     /// Kiírja a nyelvi szövegeket is, ha tartoznak ilyenek az objektumban, és a pTextList nem NULL.
-    cError *tryUpdateById(QSqlQuery& __q, eTristate __tr = TS_NULL);
+    cError *tryUpdateById(QSqlQuery& __q, eTristate __tr = TS_NULL, bool text = false);
 
     ///
     bool updateFieldByName(QSqlQuery &__q, const QString& _name, const QString& _fn, const QVariant& val, eEx __ex = EX_NOOP);
@@ -2190,7 +2193,8 @@ protected:
     cRecord& _clear(int __ix);
     /// Törli az adatmezőket, és újra létrehozza üres tartalommal. A _stat-ot ES_EMPTY-re állítja.
     /// @param __d Tábla leíró objektum
-    cRecord& _set(const cRecStaticDescr& __d);
+    /// @param clear_text Ha értéke true (ez az alapértelmezett) akkor törli a nyelvi szövegeket is, ha voltak.
+    cRecord& _set(const cRecStaticDescr& __d, bool clear_text = true);
     /// Létrehozza az összes mezőt sorrendben, és feltölti (a mezőnevek alapján) az __r-ben lévő tartalommal.
     /// Nem hív virtuális metódust.
     /// Ha _r olyan mezőt tartalmaz, melyet az objektum nem, akkor az figyelmen kívül lesz hagyva.
@@ -2242,7 +2246,13 @@ signals:
     void cleared();
 // Localization
 protected:
+    /// Pointer a nyelvi szövegekre ha vannak, és beolvasásra kerültek, egyébbként NULL pointer.
     QStringList    *pTextList;
+    /// Törli a nyelvi szövegeket
+    void delTextList();
+    /// Feltételessen törli a nyelvi szövegeket
+    /// @param _ix A modosított mező indexe, ha értéke nem NULL_IX, akkor egyeznie kell a text_id mező indexszel, ha nem nincs törlés.
+    /// @param _tid Az új text_id mező érték, ha nem egyezik a régi értékkel, vagy mindkettő nem NULL, akkor törlöl.
     void        condDelTextList(int _ix = NULL_IX, const QVariant& _tid = QVariant());
 public:
     qlonglong   getTextId(eEx __ex = EX_ERROR) { int ix = descr().textIdIndex(__ex); return 0 > ix ? NULL_ID : getId(ix); }

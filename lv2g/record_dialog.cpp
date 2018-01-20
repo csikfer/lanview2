@@ -656,8 +656,8 @@ void cRecordDialogInh::restore(const cRecord *_pRec)
 
 /* ************************************************************************* */
 
-/// Dialógus ablak megjelenítése egy rekord beillesztéséhez. Ha megnyomták az OK gombot, akkor
-/// beilleszti az adatbázisba a rekordot, az új rekord objektum pointerével tér vissza.
+/// Dialógus ablak megjelenítése egy rekord beillesztéséhez, vagy szerkesztéséhez. Ha megnyomták az OK gombot, akkor
+/// beilleszti vagy modosítja az adatbázisba a rekordot, az új rekord objektum pointerével tér vissza.
 /// Csak olvasható objektum esetén, vagy ha "mégse" gombot nyomtuk meg, akkor NULL pointerrel tér vissza.
 /// A dialógus ablak megjelenését, tartalmát és működését a megadott rekord leíró és table_shape rekord definiálja.
 /// @param q
@@ -665,6 +665,7 @@ void cRecordDialogInh::restore(const cRecord *_pRec)
 /// @param pPar parent widgewt pointere
 /// @param pSample minta rekord
 /// @param ro Read-only flag, ha igaz, akkor csak a pSample megjelenítése történik, nincs OK gomb.
+/// @param edit Ha értéke true, akkor rekord modosítás történik, ekkor pSample tartalmazza a modosítandó létező rekordot, és nem lehet NULL.
 cRecord * recordDialog(QSqlQuery& q, const QString& sn, QWidget *pPar, const cRecord *pSample, bool ro, bool edit)
 {
     if ((ro || edit) && pSample == NULL) EXCEPTION(EENODATA);
@@ -703,10 +704,10 @@ cRecord * recordDialog(QSqlQuery& q, const QString& sn, QWidget *pPar, const cRe
         if (r == DBT_CANCEL || ro) return NULL;
         if (!rd.accept()) continue;
         if (edit) {
-            if (!cErrorMessageBox::condMsgBox(rd.record().tryUpdateById(q))) continue;
+            if (!cErrorMessageBox::condMsgBox(rd.record().tryUpdateById(q, TS_NULL, true))) continue;
         }
         else {
-            if (!cErrorMessageBox::condMsgBox(rd.record().tryInsert(q))) continue;
+            if (!cErrorMessageBox::condMsgBox(rd.record().tryInsert(q, TS_NULL, true))) continue;
         }
         break;
     }

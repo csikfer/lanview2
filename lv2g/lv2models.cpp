@@ -598,11 +598,19 @@ void cRecordListModel::joinWith(QComboBox *_pComboBox)
     nullPalette.setColor(QPalette::ButtonText, dcFgColor(DC_NULL));
     nullPalette.setColor(QPalette::Button, dcBgColor(DC_NULL));
     nullFont  = dcFont(DC_NULL);
-    connect(pComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(currentIndex(int)));
+    connect(pComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(changeCurrentIndex(int)));
     pComboBox->setModel(this);
 }
 
-void cRecordListModel::currentIndex(int i)
+qlonglong cRecordListModel::currendId()
+{
+    if (pComboBox == NULL) EXCEPTION(EPROGFAIL);
+    int ix = pComboBox->currentIndex();
+    return atId(ix);
+}
+
+
+void cRecordListModel::changeCurrentIndex(int i)
 {
     if (nullable && i == 0) {
         pComboBox->setPalette(nullPalette);
@@ -880,6 +888,7 @@ void cEnumListModel::currentIndex(int i)
     if (!ev.isNull(cEnumVal::ixFgColor())) pal.setColor(QPalette::ButtonText, fgColorByEnum(type, eval));
     pComboBox->setPalette(pal);
     pComboBox->setFont(fontByEnum(type, eval));
+    emit currentEnumChanged(atInt(i));
 }
 
 

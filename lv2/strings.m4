@@ -18,6 +18,7 @@ STRDEF(Space, " ")
 STRDEF(Semicolon, ";")
 STRDEF(SemicolonNl, ";\n")
 STRDEF(BraceBeginNl, "{\n")
+STRDEF(Unique, "unique")
 
 
 dnl Megosztás típusok
@@ -79,10 +80,6 @@ STRDEF(Filtertype, "filtertype")
  STRDEF(Enum, "enum")
  STRDEF(Set, "set")
  STRDEF(Proc, "proc")
- STRDEF(NotBegin, "notbegin")
-STRDEF(Text2Type, "text2type")
- dnl bigin', double precision, time, date, timestamp, interval, inet
- STRDEF(Macaddr, "macaddr")
 
 dnl Thread nevek
 STRDEF(MainThread, "mainThread")
@@ -195,15 +192,17 @@ STRDEF(ParamTypes, "param_types")
  STRDEF(ParamTypeNote, "param_type_note")
  STRDEF(ParamTypeType, "param_type_type")
   dnl boolean
-  STRDEF(BigInt, "bigint")
-  STRDEF(DoublePrecision, "double precision")
+  STRDEF(Integer, "integer")
+  STRDEF(Real, "real")
   STRDEF(Text, "text")
   STRDEF(Interval, "interval")
   STRDEF(Date, "date")
   STRDEF(Time, "time")
-  STRDEF(Timestamp, "timestamp")
+  STRDEF(DateTime, "datetime")
   STRDEF(INet, "inet")
-  dnl ByteA
+  STRDEF(Cidr, "cidr")
+  STRDEF(Point, "point")
+  dnl mac, ByteA
  STRDEF(ParamTypeDim, "param_type_dim")
 STRDEF(SysParams, "sys_params")
  STRDEF(SysParamId, "sys_param_id")

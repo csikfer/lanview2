@@ -74,7 +74,19 @@ QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const 
     if (!bTxt && pr->isNull(fix)) {  // A mező értéke NULL
         return dcRole(DC_NULL,    role);
     }
-    const QString& et = column.enumTypeName;
+    // Az opcionális mező dekorációs típus neve (vagy egy " = " string)
+    QString et = column.enumTypeName;
+    if (et == _sEquSp) {    // A mező tartalma a szín
+        QString c = pr->getName(fix);
+        if (!bTxt && !c.isEmpty()) switch (role) {
+        case Qt::TextColorRole:
+        case Qt::BackgroundRole:
+            return QColor(c);
+        case Qt::DisplayRole:
+            return QVariant();
+        }
+        et.clear();
+    }
     if (et.isEmpty()) {
         if (role == Qt::DisplayRole) return bTxt ? pr->getText(fix) : pr->view(*pq, fix);
         return dcRole(column.dataCharacter, role);
@@ -151,7 +163,7 @@ cRecord *cRecordViewModelBase::qGetRecord(QSqlQuery& q)
 
 int cRecordViewModelBase::updateRec(const QModelIndex& mi, cRecord *pRec)
 {
-    if (!cErrorMessageBox::condMsgBox(pRec->tryUpdateById(*pq))) {
+    if (!cErrorMessageBox::condMsgBox(pRec->tryUpdateById(*pq, TS_NULL, true))) {
         return 0;
     }
     PDEB(VVERBOSE) << "Update returned : " << pRec->toString() << endl;
@@ -167,7 +179,7 @@ bool cRecordViewModelBase::insertRec(cRecord *pRec)
 
 bool cRecordViewModelBase::SqlInsert(QSqlQuery& q, cRecord *pRec)
 {
-    if (!cErrorMessageBox::condMsgBox(pRec->tryInsert(q))) {
+    if (!cErrorMessageBox::condMsgBox(pRec->tryInsert(q, TS_NULL, true))) {
         return false;
     }
     return true;

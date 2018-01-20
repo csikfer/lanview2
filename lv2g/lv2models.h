@@ -303,7 +303,11 @@ public:
     bool                only;
     eDataCharacter      dcData;
     const cRecStaticDescr * pDescr;  ///< A rekord leíró
+    /// A model és egy QComboBox widget összekapcsolása. Lehetővé teszi, hogy a widget dekorációt a kiválasztott elem alapján
+    /// állítsa be a modell.
     void joinWith(QComboBox *_pComboBox);
+    /// A kurrens ID lekérdezése. Csa akkor hívható, ha a modelt a joinWith metódussal összerendeltük egy comboBox-al.
+    qlonglong currendId();
 protected:
     QString _where(QString s = QString());
     QString where(const QString &nameName);
@@ -331,7 +335,7 @@ private:
     QFont       font;
     QFont       nullFont;
 private slots:
-    void currentIndex(int i);
+    void changeCurrentIndex(int i);
 };
 
 
@@ -416,6 +420,8 @@ protected:
     QPalette palette;
 private slots:
     void currentIndex(int i);
+signals:
+    void currentEnumChanged(int e);
 };
 
 #endif // LV2MODELS_H

@@ -41,8 +41,7 @@ public:
     QString             where(QVariantList &qparams);
     void setFilter(int i);
     int fieldType();                ///< A mező (oszlop) típusa
-    const cEnumVal *pActType();     ///< Filter type
-    const cColEnumType *pTex2Type() { QSqlQuery q = getQuery(); return cColEnumType::fetchOrGet(q, _sText2Type); }
+    const cEnumVal *pActFilterType();///< Filter type
     cRecordTableColumn& field;      ///< A megjelenítés mező (oszlop) leírója
     cRecordTableFODialog &dialog;   ///< A szűrési feltétel megadásának a dialógusa
     int                 iFilter;    ///< A kiválasztott szűrő leíró indexe vagy -1, ha nincs aktív szűrő
@@ -50,19 +49,21 @@ public:
     bool                closed1;    ///< Ha a szűrési paraméter egy értékhatár, akkor ha true. akkor zárt intervallumként kell értelmezni.
     QVariant            param2;     ///< Szűrés (opcionális) paramétere, ha két paraméter van
     bool                closed2;    ///< Ha a második szűrési paraméter egy értékhatár, akkor ha true. akkor zárt intervallumként kell értelmezni.
-    qlonglong           types;      ///< A szűrés típusa, reláció a paraméter(ek)el
-    bool                inverse;
+    int                 toType;
+    qlonglong           filtTypesEx;///< A szűrés típusa, reláció a paraméter(ek)el, és típus konverzió (SET + SET)
+    qlonglong           filtTypes;  ///< A szűrés típusa, reláció a paraméter(ek)el
+    qlonglong           toTypes;
+    bool                inverse;    ///< Inverse
     bool                any;        ///< ARRAY all/any
     bool                csi;        ///< Case insensitive
-    int                 toType;
-    qlonglong           setOn;
-    qlonglong           setOff;
+    qlonglong           setOn;      ///< SET típus esetén bekapcsolva
+    qlonglong           setOff;     ///< SET típus esetén kikapcsolva
     QValidator *        pValidator1;
     QValidator *        pValidator2;
-    QList<const cEnumVal *> typeList;   ///< A választható szűrés típusok
-    static qlonglong type2filter(int _type, bool _nul);
+    QList<const cEnumVal *> filterTypeList;   ///< A választható szűrés típusok
+    qlonglong   type2filter();      ///< A lehetséges szűrő típusok, és a TEXT-hez rendelt lehetséges típuskonverziók (SET + SET)
 private:
-    QString whereLike(const QString &n, bool af);
+    QString whereLike(const QString &n, bool isArray);
     QString whereLitle(const QString& n, bool af, bool inv, bool clo);
     QString whereEnum(const QString &n, QVariantList& qparams);
     QString whereSet(const QString &n, QVariantList& qparams);
@@ -85,8 +86,6 @@ public slots:
 @class cRecordTableOrd
 @brief
 A tábla megjelenítésnél a rendezés funkciókat ellátó objektum.
-
-
  */
 class LV2GSHARED_EXPORT cRecordTableOrd : public QObject {
     friend class cRecordTableFODialog;
@@ -161,6 +160,7 @@ public:
     QPlainTextEdit *            pTextEdit;
     QLineEdit *                 pLineEdit1;
     QLineEdit *                 pLineEdit2;
+    cEnumListModel *            pToTypeModel;
 private:
     int indexOf(cRecordTableOrd * _po);
     void setGridLayoutOrder();

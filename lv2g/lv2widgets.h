@@ -806,15 +806,16 @@ protected:
     void setButtons();
     virtual void disableEditWidget(eTristate tsf);
     Ui_fKeyArrayEd   *pUi;
-    QStringList       valueView;
-    cStringListModel *pArrayModel;
-    QList<qlonglong>  ids;
-    const cRecStaticDescr  *pRDescr;
-    cRecordListModel *pFRecModel;
+    QStringList       valueView;    ///< Adat/név lista
+    cStringListModel *pArrayModel;  ///< lista model (Adat/név lista)
+    QList<qlonglong>  ids;          ///< Adat/id lista
+    const cRecStaticDescr *pRDescr; ///< Rekord leíró (hivatkozott objektum)
+    cRecordListModel *pFRecModel;   ///< Model a ComboBox-hoz
     /// Az inzertálandó adat legutoljára elfogadott értéke.
     QString     last;
-    QModelIndex actIndex;
-    int         selectedNum;
+    QModelIndex actIndex;       ///< A listában az aktuális elem indexe
+    int         selectedNum;    ///< A listában a kijelölt elemek száma
+    bool        unique;         ///< A lista elemek egyediek (alapértelmezés)
 protected slots:
     void selectionChanged(QModelIndex cur, QModelIndex);
     void addRow();
@@ -882,7 +883,7 @@ public:
     virtual int set(const QVariant& v);
     static const QString sEnumTypeName;
 protected:
-    void setupFlagWidget(bool f, const QIcon& icon, QLabel *& pLabel, QToolButton *& pButton);
+    void setupFlagWidget(bool f, const QIcon& icon, QToolButton *& pButton);
     void disableEditWidget(eTristate tsf);
     void setFromEdit();
     const cColEnumType *pEnumType;
@@ -894,10 +895,6 @@ protected:
     QToolButton    *pToolButtonItalic;
     QToolButton    *pToolButtonUnderline;
     QToolButton    *pToolButtonStrikeout;
-    QLabel         *pLabelBold;
-    QLabel         *pLabelItalic;
-    QLabel         *pLabelUnderline;
-    QLabel         *pLabelStrikeout;
     QLineEdit      *pLine;
     qlonglong       m;
 private slots:

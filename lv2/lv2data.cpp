@@ -92,39 +92,7 @@ const QString& reasons(int _r, eEx __ex)
 }
 
 /* ------------------------------ param_types ------------------------------ */
-int paramTypeType(const QString& __n, eEx __ex)
-{
-    if (0 == __n.compare(_sBoolean,   Qt::CaseInsensitive))         return PT_BOOLEAN;
-    if (0 == __n.compare(_sBigInt,    Qt::CaseInsensitive))         return PT_BIGINT;
-    if (0 == __n.compare(_sDoublePrecision, Qt::CaseInsensitive))   return PT_DOUBLE_PRECISION;
-    if (0 == __n.compare(_sText,      Qt::CaseInsensitive))         return PT_TEXT;
-    if (0 == __n.compare(_sInterval,  Qt::CaseInsensitive))         return PT_INTERVAL;
-    if (0 == __n.compare(_sDate,      Qt::CaseInsensitive))         return PT_DATE;
-    if (0 == __n.compare(_sTime,      Qt::CaseInsensitive))         return PT_TIME;
-    if (0 == __n.compare(_sTimestamp, Qt::CaseInsensitive))         return PT_TIMESTAMP;
-    if (0 == __n.compare(_sINet,      Qt::CaseInsensitive))         return PT_INET;
-    if (0 == __n.compare(_sByteA,     Qt::CaseInsensitive))         return PT_BYTEA;
-    if (__ex != EX_IGNORE)  EXCEPTION(EDATA, -1, __n);
-    return ENUM_INVALID;
-}
-
-const QString& paramTypeType(int __e, eEx __ex)
-{
-    switch (__e) {
-    case PT_BOOLEAN:            return _sBoolean;
-    case PT_BIGINT:             return _sBigInt;
-    case PT_DOUBLE_PRECISION:   return _sDoublePrecision;
-    case PT_TEXT:               return _sText;
-    case PT_INTERVAL:           return _sInterval;
-    case PT_DATE:               return _sDate;
-    case PT_TIME:               return _sTime;
-    case PT_TIMESTAMP:          return _sTimestamp;
-    case PT_INET:               return _sINet;
-    case PT_BYTEA:              return _sByteA;
-    }
-    if (__ex != EX_IGNORE)   EXCEPTION(EDATA, __e);
-    return _sNul;
-}
+// paramTypeType() -> lv2types
 
 tRecordList<cParamType>  cParamType::paramTypes;
 cParamType *cParamType::pNull;
@@ -189,11 +157,11 @@ QString cParamType::paramToString(eParamType __t, const QVariant& __v, eEx __ex)
             ok = true;
             break;
         }
-        case PT_BIGINT:
+        case PT_INTEGER:
             ok = __v.canConvert(QVariant::LongLong);
             if (ok) r = QString::number(__v.toLongLong());
             break;
-        case PT_DOUBLE_PRECISION:
+        case PT_REAL:
             ok = __v.canConvert(QVariant::Double);
             if (ok) r = QString::number(__v.toDouble());
             break;
@@ -212,7 +180,9 @@ QString cParamType::paramToString(eParamType __t, const QVariant& __v, eEx __ex)
             }
             break;
         }
-        case PT_INET: {
+        case PT_INET:
+        case PT_CIDR:
+        {
             int mtid = __v.userType();
             if (mtid == _UMTID_netAddress) {
                 r = __v.value<netAddress>().toString();
@@ -244,12 +214,14 @@ QVariant cParamType::paramFromString(eParamType __t, QString& __v, eEx __ex)
     }
     else {
         switch ((int)__t) {
-        case PT_TEXT:               r = QVariant(__v);                   break;
-        case PT_BOOLEAN:            r = QVariant(str2bool(__v));         break;
-        case PT_BIGINT:             r = QVariant(__v.toLongLong(&ok));   break;
-        case PT_DOUBLE_PRECISION:   r = QVariant(__v.toDouble(&ok));
-        case PT_INTERVAL:           r = QVariant(parseTimeInterval(__v, &ok));   break;
-        case PT_INET: {
+        case PT_TEXT:       r = QVariant(__v);                   break;
+        case PT_BOOLEAN:    r = QVariant(str2bool(__v));         break;
+        case PT_INTEGER:    r = QVariant(__v.toLongLong(&ok));   break;
+        case PT_REAL:       r = QVariant(__v.toDouble(&ok));
+        case PT_INTERVAL:   r = QVariant(parseTimeInterval(__v, &ok));   break;
+        case PT_INET:
+        case PT_CIDR:
+        {
             netAddress  na;
             ok = na.setr(__v).isValid();
             if (ok) r = QVariant::fromValue(na);
@@ -487,7 +459,7 @@ int imageType(const QString& __n, eEx __ex)
     if (0 == __n.compare(_sBMP, Qt::CaseInsensitive)) return IT_BMP;
     if (0 == __n.compare(_sGIF, Qt::CaseInsensitive)) return IT_GIF;
     if (0 == __n.compare(_sJPG, Qt::CaseInsensitive)) return IT_JPG;
-    if (0 == __n.compare(_sJPEG,Qt::CaseInsensitive))return IT_JPEG;
+    if (0 == __n.compare(_sJPEG,Qt::CaseInsensitive)) return IT_JPEG;
     if (0 == __n.compare(_sPNG, Qt::CaseInsensitive)) return IT_PNG;
     if (0 == __n.compare(_sPBM, Qt::CaseInsensitive)) return IT_PBM;
     if (0 == __n.compare(_sPGM, Qt::CaseInsensitive)) return IT_PGM;

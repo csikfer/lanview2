@@ -2799,7 +2799,7 @@ cRecord& cRecord::_clear()
     _fields.clear();
     _stat = ES_NULL;
     _likeMask.clear();
-    condDelTextList();
+    delTextList();
     return *this;
 }
 
@@ -2850,13 +2850,13 @@ bool cRecord::toEnd(int i)
     return false;
 }
 
-cRecord& cRecord::_set(const cRecStaticDescr& __d)
+cRecord& cRecord::_set(const cRecStaticDescr& __d, bool clear_text)
 {
     _fields.clear();
     int i, n = __d.cols();
     for (i = 0; i < n; i++) _fields << QVariant();
     _stat = ES_EMPTY;
-    condDelTextList();
+    if (clear_text) condDelTextList();
     return *this;
 }
 
@@ -2944,7 +2944,7 @@ cRecord& cRecord::_set(const QSqlRecord& __r, const cRecStaticDescr& __d, int* _
         int ix = __d.toIndex(__r.fieldName(i), EX_IGNORE);
         if (ix >= 0) ixv[ix] = i;
     }
-    _set(__d);  // isEmpty() == true
+    _set(__d, false);  // isEmpty() == true, no clear texts
     if (ixv.count(invalid) == ixv.size()) {
         DWAR() << QObject::trUtf8("Nincs egy keresett mező sem a forrás rekordban.") << endl;
         return *this;   // Nincs egy mező sem, üres rekordal térünk vissza
@@ -2972,6 +2972,7 @@ cRecord& cRecord::_set(const QSqlRecord& __r, const cRecStaticDescr& __d, int* _
                 _setDefectivFieldBit(ix);
             }
         }
+        condDelTextList(ix, f); // Ha megváltozott a text ID, akkor törli a nyelvi szövegeket, ha voltak.
    }
     if (cnt == m) {
         if (_stat & ES_INCOMPLETE) _stat  = ES_DEFECTIVE;
@@ -2996,7 +2997,7 @@ bool cRecord::_copy(const cRecord &__o, const cRecStaticDescr &d)
         if (!d.isIndex((ii))) continue;     // A cél rekordban nincs ilyen mező
         if (__o.isNull(i))    continue;     // vagy null a forrás mező
         QVariant v = __o.get(i);
-        condDelTextList(ii, v);
+        delTextList();
         _set(ii, v);
         m = true;
     }
@@ -3024,7 +3025,7 @@ void cRecord::fieldsCopy(const cRecord& __o, const QBitArray& __m)
     for (int i = 0; i < n; i++) {
         if (__m[i]) {
             QVariant v = __o.get(i);
-            condDelTextList(i, v);
+            condDelTextList(i);
             set(i, v);
         }
     }
@@ -3258,17 +3259,14 @@ bool cRecord::insert(QSqlQuery& __q, eEx _ex)
     return false;
 }
 
-cError *cRecord::tryInsert(QSqlQuery &__q, eTristate __tr)
+cError *cRecord::tryInsert(QSqlQuery &__q, eTristate __tr, bool text)
 {
     cError *pe = NULL;
     eTristate tr = trFlag(__tr);
     if (tr == TS_TRUE) sqlBegin(__q, tableName());
     try {
-        QStringList savedTexts;
-        if (pTextList != NULL) savedTexts = *pTextList; // The update will delete it.
         insert(__q, EX_ERROR);
-        if (!savedTexts.isEmpty()) {
-            pTextList = new QStringList(savedTexts);
+        if (text) {
             saveText(__q);
         }
     }
@@ -3307,13 +3305,14 @@ bool cRecord::rewrite(QSqlQuery &__q, eEx __ex)
     return false;
 }
 
-cError *cRecord::tryRewrite(QSqlQuery& __q, eTristate __tr)
+cError *cRecord::tryRewrite(QSqlQuery& __q, eTristate __tr, bool text)
 {
     cError *pe = NULL;
     eTristate tr = trFlag(__tr);
     if (tr == TS_TRUE) sqlBegin(__q, tableName());
     try {
         rewrite(__q, EX_ERROR);
+        if (text) saveText(__q);
     }
     CATCHS(pe);
     if (tr == TS_TRUE) {
@@ -3342,18 +3341,32 @@ int cRecord::replace(QSqlQuery& __q, eEx __ex)
     else                     return insert( __q, __ex) ? R_INSERT : R_ERROR; // Ha nincs, akkor insert
 }
 
-cError *cRecord::tryReplace(QSqlQuery& __q, eTristate __tr)
+cError *cRecord::tryReplace(QSqlQuery& __q, eTristate __tr, bool text)
 {
     cError *pe = NULL;
     eTristate tr = trFlag(__tr);
+    QStringList texts;
+    if (text && pTextList != NULL) {
+        texts = *pTextList;
+        pDelete(pTextList);
+    }
     if (tr == TS_TRUE) sqlBegin(__q, tableName());
     try {
         replace(__q, EX_ERROR);
+        if (text && !texts.isEmpty()) {
+            pTextList = new QStringList(texts);
+            saveText(__q);
+        }
     }
     CATCHS(pe);
     if (tr == TS_TRUE) {
         if (pe == NULL) sqlCommit(__q, tableName());
-        else            sqlRollback(__q, tableName());
+        else {
+            sqlRollback(__q, tableName());
+            if (text && !texts.isEmpty()) {
+                pTextList = new QStringList(texts);
+            }
+        }
     }
     return pe;
 }
@@ -3624,23 +3637,20 @@ cError *cRecord::tryUpdate(QSqlQuery& __q, bool __only, const QBitArray& __set, 
     return pe;
 }
 
-cError *cRecord::tryUpdateById(QSqlQuery& __q, eTristate __tr)
+cError *cRecord::tryUpdateById(QSqlQuery& __q, eTristate __tr, bool text)
 {
     cError *pe = NULL;
     int n = 0;
     eTristate tr = trFlag(__tr);
     if (tr == TS_TRUE) sqlBegin(__q, tableName());
     try {
-        // QStringList savedTexts;
-        // if (pTextList != NULL) savedTexts = *pTextList; // The update will delete it.
         n = update(__q, true);
         if (n != 1) {
             EXCEPTION(EOID);
         }
-        //if (!savedTexts.isEmpty()) {
-        //    pTextList = new QStringList(savedTexts);
-        //    saveText(__q);
-        //}
+        if (text) {
+            saveText(__q);
+        }
     }
     CATCHS(pe);
     if (tr == TS_TRUE) {
@@ -3980,6 +3990,13 @@ QString cRecord::show(bool t) const
     return identifying(t);
 }
 
+void cRecord::delTextList()
+{
+    if (pTextList == NULL) return;  // There is no list, there is nothing to delete
+    pDelete(pTextList);
+    setContainerValid(0, CV_LL_TEXT);
+}
+
 void cRecord::condDelTextList(int _ix, const QVariant& _tid)
 {
     if (pTextList == NULL) return;  // There is no list, there is nothing to delete
@@ -3988,18 +4005,11 @@ void cRecord::condDelTextList(int _ix, const QVariant& _tid)
         EXCEPTION(EPROGFAIL, 0, trUtf8("If there is no text_id, there could be no list : %1").arg(identifying()));
     }
     if (_ix != NULL_IX && _ix != tix) return;   // no change text id
-    if (_ix == NULL_IX || _tid.isNull()) {    // text_id is NULL
-        pDelete(pTextList);
-        setContainerValid(0, CV_LL_TEXT);
-    }
-    else {
-        qlonglong oldTid = getId(tix);              // Old text id
-        bool      ok;
-        qlonglong newTid = _tid.toLongLong(&ok);    // New text_id
-        if (!ok || oldTid != newTid) {              // Changed text_id (or new value is invalid)
-            pDelete(pTextList);
-            setContainerValid(0, CV_LL_TEXT);
-        }
+    qlonglong oldTid = getId(tix);              // Old text id
+    bool      ok = true;
+    qlonglong newTid = _tid.isNull() ? NULL_ID : _tid.toLongLong(&ok);    // New text_id
+    if (!ok || oldTid != newTid) {              // Changed text_id (or new value is invalid)
+        delTextList();
     }
 }
 
@@ -4024,9 +4034,13 @@ cRecord&    cRecord::setText(int _tix, const QString& _t)
 {
     int tidix = descr().textIdIndex();
     const cColEnumType *pet = colDescr(tidix).pEnumType;
+    if (pet == NULL) EXCEPTION(EPROGFAIL, tidix, trUtf8("No text field list, missing enum; Object : %1").arg(identifying()));
     int s = pet->enumValues.size();
-    if (pTextList == NULL) pTextList = new QStringList;
-    while (pTextList->size() < s) *pTextList << _sNul;
+    if (pTextList == NULL) {
+        pTextList = new QStringList;
+        while (pTextList->size() < s) *pTextList << _sNul;
+    }
+    if (!isContIx(*pTextList, _tix)) EXCEPTION(ENOINDEX, _tix, identifying());
     (*pTextList)[_tix] = _t;
     return *this;
 }
@@ -4034,10 +4048,9 @@ cRecord&    cRecord::setText(int _tix, const QString& _t)
 cRecord&    cRecord::setText(const QString& _tn, const QString& _t)
 {
     int tidix = descr().textIdIndex();
-    const cColStaticDescr& cd = colDescr(tidix);
-    const cColEnumType *pcet = cd.pEnumType;
-    if (pcet == NULL) EXCEPTION(EPROGFAIL, 0, trUtf8("No text field list, missing enum; Object : %1").arg(identifying()));
-    int tix = pcet->str2enum(_tn);
+    const cColEnumType *pet = colDescr(tidix).pEnumType;
+    if (pet == NULL) EXCEPTION(EPROGFAIL, tidix, trUtf8("No text field list, missing enum; Object : %1").arg(identifying()));
+    int tix = pet->str2enum(_tn);
     return setText(tix, _t);
 }
 
@@ -4051,6 +4064,11 @@ bool cRecord::fetchText(QSqlQuery& _q, bool __force)
     if (tid == NULL_ID) return false;
     pTextList = new QStringList;
     *pTextList = textId2texts(_q, tid, tableName());
+    const cColEnumType *pet = colDescr(tidix).pEnumType;
+    if (pet == NULL) EXCEPTION(EPROGFAIL, tidix, trUtf8("No text field list, missing enum; Object : %1").arg(identifying()));
+    int s = pet->enumValues.size();
+    if (pTextList->size() > s) *pTextList = pTextList->mid(0, s);
+    else while (pTextList->size() < s) *pTextList << _sNul;
     containerValid |= CV_LL_TEXT;
     return !pTextList->isEmpty();
 }

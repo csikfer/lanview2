@@ -41,6 +41,8 @@ Név string literállá konvertálása.
  */
 #define _STR(s)     __STR(s)
 
+#define ENUM_INVALID    -1
+
 enum eTristate {
     TS_NULL = -1,
     TS_FALSE=  0,
@@ -883,40 +885,36 @@ EXT_ QString textId2text(QSqlQuery& q, int id, const QString& _table, int index 
 EXT_ QStringList textId2texts(QSqlQuery& q, int id, const QString& _table);
 EXT_ int textName2ix(QSqlQuery &q, const QString& _t, const QString& _n, eEx __ex = EX_ERROR);
 
-/// @enum eFilterType
-/// Szűrési metódusok
-enum eFilterType {
-    FT_UNKNOWN = 0, ///< ismeretlen, csak hibajelzésre
-    FT_NO,
-    FT_BEGIN ,   ///< Szó eleji eggyezés (ua. mint az FF_LIKE, de a pattern végéhez hozzá lessz fűzve egy '%')
-    FT_LIKE,     ///< Szűrés a LIKE operátorral
-    FT_SIMILAR,  ///< Szűrés a SIMILAR operátorral
-    FT_REGEXP,   ///< Szűrés reguláris kifejezéssel kisbetű-nagy betű érzékeny
-    FT_EQUAL,    ///< A magadott értékkel egyenlő
-    FT_LITLE,    ///< A magadott értéknél kisebb
-    FT_BIG,      ///< A magadott értéknél nagyobb
-    FT_INTERVAL, ///< A magadott tartományban
-    FT_BOOLEAN,  ///< Szűrés igaz, vagy hamis értékre (boolean típusú adat esetén)
-    FT_ENUM,     ///< Az FT_EQUAL-al azonos, de a paraméter értékkészlete azonos az enumerációs típussal.
-    FT_SET,
-    FT_NULL,     ///< A mező NULL, vagy nem NULL
-    FT_SQL_WHERE,///< SQL WHERE ...
-    // A további konstansokat a string konvertáló függvény nem kezeli!
-    FT_DEFAULT,  ///< Az előző, vagy az alapértelmezett metódus megtartása (a string konvertáló függvény nem kezeli!)
-    FT_FKEY_ID,  ///< Szűrés a tulajdonos, vagy valamilyen tulajdonság objektum ID-je alapján (a string konvertáló függvény nem kezeli!)
-    // Szűrő típus maszk
-    FT_TYPE_MASK = 0x007f,
-    // A feltétel invertálása
-    FT_INVERSE   = 0x0080,
-    // Text típusú adatoknál az összehasonlítás elött adat konverzió kijelölése, FT_EQUAL, FT_LITLE, FT_BIG, FT_INTERVAL esetén
-    FT_CAST_TO_INT      = 0x0100,
-    FT_CAST_TO_REAL     = 0x0200,
-    FT_CAST_TO_DATE     = 0x0300,
-    FT_CAST_TO_TIME     = 0x0400,
-    FT_CAST_TO_DATETIME = 0x0500,
-    FT_CAST_TO_INTERVAL = 0x0600,
-    FT_CAS_TO_MASK      = 0x0f00
+/// @enum eParamTypes
+/// Paraméter adattípus konstansok
+enum eParamType {
+    PT_TEXT,        ///< szöveg
+    PT_BOOLEAN,     ///< boolean típus
+    PT_INTEGER,     ///< 8byte egész szám
+    PT_REAL,        ///< duplapontosságú lebegőpontos szám
+    PT_DATE,        ///< dátum
+    PT_TIME,        ///< időpont (egy napon bellül)
+    PT_DATETIME,    ///< időpont dátummal
+    PT_INTERVAL,    ///< idő intervallum
+    PT_INET,        ///< Hálózati cím
+    PT_CIDR,        ///< Cím tartomány
+    PT_MAC,         ///< MAC
+    PT_POINT,       ///< koordináta
+    PT_BYTEA,       ///< bináris adat
+    PT_SIZE         ///< Csak a lehetséges értékek számát jelzi
 };
+
+/// Paraméter típus név konverzió
+/// @param __n A paraméter típus neve (SQL enumerációs érték)
+/// @param __ex Ha értéke true, és nem valós típusnevet adtunk meg, akkor dob egy kizárást.
+/// @return A típus konstanssal tér vissza, ha nincs ilyen típus, és __ex értéke false, akkor a PT_INVALID konstanssal.
+EXT_ int paramTypeType(const QString& __n, enum eEx __ex = EX_ERROR);
+/// Paraméter típus név konverzió
+/// @param __e A paraméter típus konstans
+/// @param __ex Ha értéke true, és nem valós típus konstanst adtunk meg, akkor dob egy kizárást.
+/// @return A típus névvel tér vissza, ha nincs ilyen típus, és __ex értéke false, akkor egy üres stringgel.
+EXT_ const QString& paramTypeType(int __e, enum eEx __ex = EX_ERROR);
+
 /// Konverziós függvény a eFilterType enumerációs típushoz
 /// @param n Az enumerációs értéket reprezentáló string
 /// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs név esetén kizárást dob.
@@ -928,32 +926,66 @@ EXT_ int filterType(const QString& n, eEx __ex = EX_ERROR);
 /// @return Az enumerációs konstanshoz tartozó enumerációs név, vagy üres string, ha ismeretlen a konstams, és __ex  = EX_IGNORE.
 EXT_ const QString&   filterType(int e, eEx __ex = EX_ERROR);
 
-enum eText2Type {
-    T2T_UNKNOWN = -1, ///< ismeretlen, csak hibajelzésre
-    T2T_INT,
-    T2T_REAL,
-    T2T_TIME,
-    T2T_DATE,
-    T2T_DATETIME,
-    T2T_INTERVAL,
-    T2T_INET,
-    T2T_MAC,
-    T2T_COUNT,
-    T2T_TEXT
+/// @enum eFilterType
+/// Szűrési metódusok
+enum eFilterType {
+    FT_DEFAULT = -1, ///< Az előző, vagy az alapértelmezett metódus megtartása (a string konvertáló függvény nem kezeli!)
+    FT_UNKNOWN = -1, ///< ismeretlen, csak hibajelzésre
+    FT_NO,
+    FT_BEGIN ,   ///< Szó eleji eggyezés (ua. mint az FF_LIKE, de a pattern végéhez hozzá lessz fűzve egy '%')
+    FT_LIKE,     ///< Szűrés a LIKE operátorral
+    FT_SIMILAR,  ///< Szűrés a SIMILAR operátorral
+    FT_REGEXP,   ///< Szűrés reguláris kifejezéssel kisbetű-nagy betű érzékeny
+    FT_EQUAL,    ///< A magadott értékkel egyenlő
+    FT_LITLE,    ///< A magadott értéknél kisebb
+    FT_BIG,      ///< A magadott értéknél nagyobb
+    FT_INTERVAL, ///< A magadott tartományban
+    FT_BOOLEAN,  ///< Szűrés igaz, vagy hamis értékre (boolean típusú adat esetén)
+    FT_ENUM,     ///< Az FT_EQUAL-al azonos, de a paraméter értékkészlete azonos az enumerációs típussal.
+    FT_SET,      ///< Enumerációs tömb, egy érték kizárása és/vagy megkövetelése mint tőmb elem
+    FT_NULL,     ///< A mező NULL, vagy nem NULL
+    FT_SQL_WHERE,///< SQL WHERE ...
+    // A további konstansokat a string konvertáló függvény nem kezeli!
+    FT_FKEY_ID,  ///< Szűrés a tulajdonos, vagy valamilyen tulajdonság objektum ID-je alapján (a string konvertáló függvény nem kezeli!)
+    FT_SIZE      ///< Csak a lehetséges értékek számát jelzi
 };
 
-/// Konverziós függvény a eText2Type enumerációs típushoz
-/// @param n Az enumerációs értéket reprezentáló string az adatbázisban
-/// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs név esetén kizárást dob.
-/// @return Az enumerációs névhez tartozó enumerációs konstans, vagy FT_UNKNOWN, ha ismeretlen a név, és __ex = EX_IGNORE.
-EXT_ int text2Type(const QString& n, eEx __ex = EX_ERROR);
-/// Konverziós függvény a eFilterType enumerációs típushoz
-/// @param e Az enumerációs konstans
-/// @param __ex hibakezekés: ha __ex igaz, akkor ismeretlen enumerációs konstans esetén kizárást dob.
-/// @return Az enumerációs konstanshoz tartozó enumerációs név, vagy üres string, ha ismeretlen a konstams, és __ex  = EX_IGNORE.
-EXT_ const QString&   text2Type(int e, eEx __ex = EX_ERROR);
+/// A típus konverziós függvény neve. A függvény (aminek a nevét visszaadja) ha nem konvertálható a
+/// text típusú forrás adat, akkor nem dob kizárást, hanem NULL-lal tér vissza, vagy az opcionális alapértelmezett értékkel.
+/// @param __e A cél típus azonosítója, eParamType.
+/// @param __ex Ismeretlen típus azonosító esetén kizárást dob, ha értéke nem EX_IGNORE. Továbbá, ha értéke EX_WARNING vagy nagyobb, akkor
+/// ha __e értékéhez nem tartozik függvény (PT_TEXT, PT_BYTEA) szintén kizárást dob.
+/// @return A keresett függvény név, vagy egy üres string, ha nincs ilyen függvény (PT_TEXT, PT_BYTEA vagy imeretlen azonosító).
+EXT_ QString nameToCast(int __e, eEx __ex = EX_ERROR);
+inline QString nameToCast(const QString& __e, eEx __ex = EX_ERROR) { return nameToCast(paramTypeType(__e, __ex)); }
 
-EXT_ QString text2FnName(const QString& e);
-inline QString text2FnName(int e) { return text2FnName(text2Type(e, EX_WARNING)); }
+/// Az eFilterType és eParamType enumerációkból egy összetett set képzése.
+/// A típus konverziók lehetősége mindíg csak a TEXT típusra vonatkoznak.
+inline static qlonglong filterSetAndTypeSet(qlonglong ftSet, qlonglong ptSet)
+{
+    qlonglong r = ftSet;
+    r |= ptSet << FT_SIZE;
+    return r;
+}
+/// Az eFilterType enumeráció értékből és eParamType enumeráció setjéböl egy összetett érték képzése.
+inline static qlonglong filterEnumAndTypeSet(int ftEnum, qlonglong ptSet)
+{
+    qlonglong r = ftEnum;
+    r |= ptSet << FT_SIZE;
+    return r;
+}
+/// Egy összevont értékből az eFilterType típusú enumerációs vagy set érték kivonása.
+/// Az, hogy enum vagy set értéket kapun-e attol függ, hogy a forrás adatba mit raktunk.
+/// Ha filterSetAndTypeSet() -el állítottuk össze, akkor set, ha filterEnumAndTypeSet(),
+/// akkor enum értéket kapunk vissza.
+inline static qlonglong pullFilter(qlonglong setSet)
+{
+    return setSet & ((1 << FT_SIZE) -1);
+}
+/// Egy összevont értékből az eParemType típusú set érték kivonása.
+inline static qlonglong pullType(qlonglong setSet)
+{
+    return setSet >> FT_SIZE;
+}
 
 #endif //LV2TYPES_H_INCLUDED

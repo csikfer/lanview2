@@ -156,32 +156,6 @@ EXT_ const QString&   imageType(int __e, enum eEx __ex = EX_ERROR);
 /// @return A típus konstans, ha nem megengedett névvel hívtuk, és __ex false volt, akkor -1
 EXT_ const char *    _imageType(int __e, enum eEx __ex = EX_ERROR);
 
-/// @enum eParamType
-/// Paraméter adattípus konstansok
-enum eParamType {
-    PT_BOOLEAN,             ///< boolean típus
-    PT_BIGINT,              ///< 8bype egész szám
-    PT_DOUBLE_PRECISION,    ///< duplapontosságú lebegőpontos szám
-    PT_TEXT,                ///< szöveg
-    PT_INTERVAL,            ///< idő intervallum
-    PT_DATE,                ///< dátum
-    PT_TIME,                ///< időpont (egy napon bellül)
-    PT_TIMESTAMP,           ///< időpont dátummal
-    PT_INET,                ///< Hálózati cím, vagy cím tartomány
-    PT_BYTEA                ///< bináris adat
-};
-
-/// Paraméter típus név konverzió
-/// @param __n A paraméter típus neve (SQL enumerációs érték)
-/// @param __ex Ha értéke true, és nem valós típusnevet adtunk meg, akkor dob egy kizárást.
-/// @return A típus konstanssal tér vissza, ha nincs ilyen típus, és __ex értéke false, akkor a PT_INVALID konstanssal.
-EXT_ int paramTypeType(const QString& __n, enum eEx __ex = EX_ERROR);
-/// Paraméter típus név konverzió
-/// @param __e A paraméter típus konstans
-/// @param __ex Ha értéke true, és nem valós típus konstanst adtunk meg, akkor dob egy kizárást.
-/// @return A típus névvel tér vissza, ha nincs ilyen típus, és __ex értéke false, akkor egy üres stringgel.
-EXT_ const QString& paramTypeType(int __e, enum eEx __ex = EX_ERROR);
-
 /// @enum eNodeType
 /// Hálózati elemek típus azonosítók (set)
 enum eNodeType {
@@ -308,7 +282,7 @@ public:
         execSqlFunction(_q, "set_bool_sys_param", QVariant(__nm), QVariant(_val), QVariant(_tn));
         return (enum eReasons)reasons(_q.value(0).toString());
     }
-    static enum eReasons setIntSysParam(QSqlQuery& _q, const QString& __nm, qlonglong _val, const QString& _tn = _sBigInt) {
+    static enum eReasons setIntSysParam(QSqlQuery& _q, const QString& __nm, qlonglong _val, const QString& _tn = _sInteger) {
         execSqlFunction(_q, "set_int_sys_param", QVariant(__nm), QVariant(_val), QVariant(_tn));
         return (enum eReasons)reasons(_q.value(0).toString());
     }

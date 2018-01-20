@@ -1057,6 +1057,46 @@ int textName2ix(QSqlQuery &q, const QString& _t, const QString& _n, eEx __ex)
     return ix;
 }
 
+int paramTypeType(const QString& __n, eEx __ex)
+{
+    if (0 == __n.compare(_sText,    Qt::CaseInsensitive))   return PT_TEXT;
+    if (0 == __n.compare(_sBoolean, Qt::CaseInsensitive))   return PT_BOOLEAN;
+    if (0 == __n.compare(_sInteger, Qt::CaseInsensitive))   return PT_INTEGER;
+    if (0 == __n.compare(_sReal,    Qt::CaseInsensitive))   return PT_REAL;
+    if (0 == __n.compare(_sInterval,Qt::CaseInsensitive))   return PT_INTERVAL;
+    if (0 == __n.compare(_sDate,    Qt::CaseInsensitive))   return PT_DATE;
+    if (0 == __n.compare(_sTime,    Qt::CaseInsensitive))   return PT_TIME;
+    if (0 == __n.compare(_sDateTime,Qt::CaseInsensitive))   return PT_DATETIME;
+    if (0 == __n.compare(_sINet,    Qt::CaseInsensitive))   return PT_INET;
+    if (0 == __n.compare(_sCidr,    Qt::CaseInsensitive))   return PT_CIDR;
+    if (0 == __n.compare(_sMac,     Qt::CaseInsensitive))   return PT_MAC;
+    if (0 == __n.compare(_sPoint,   Qt::CaseInsensitive))   return PT_POINT;
+    if (0 == __n.compare(_sByteA,   Qt::CaseInsensitive))   return PT_BYTEA;
+    if (__ex != EX_IGNORE)  EXCEPTION(EDATA, -1, __n);
+    return ENUM_INVALID;
+}
+
+const QString& paramTypeType(int __e, eEx __ex)
+{
+    switch (__e) {
+    case PT_TEXT:       return _sText;
+    case PT_BOOLEAN:    return _sBoolean;
+    case PT_INTEGER:    return _sInteger;
+    case PT_REAL:       return _sReal;
+    case PT_INTERVAL:   return _sInterval;
+    case PT_DATE:       return _sDate;
+    case PT_TIME:       return _sTime;
+    case PT_DATETIME:   return _sDateTime;
+    case PT_INET:       return _sINet;
+    case PT_CIDR:       return _sCidr;
+    case PT_MAC:        return _sMac;
+    case PT_POINT:      return _sPoint;
+    case PT_BYTEA:      return _sByteA;
+    }
+    if (__ex != EX_IGNORE)   EXCEPTION(EDATA, __e);
+    return _sNul;
+}
+
 
 int filterType(const QString& n, eEx __ex)
 {
@@ -1101,47 +1141,26 @@ const QString& filterType(int e, eEx __ex)
     return _sNul;
 }
 
-int text2Type(const QString& n, eEx __ex)
+QString nameToCast(int __e, eEx __ex)
 {
-    if (0 == n.compare(_sBigInt,            Qt::CaseInsensitive)) return T2T_INT;
-    if (0 == n.compare(_sDoublePrecision,   Qt::CaseInsensitive)) return T2T_REAL;
-    if (0 == n.compare(_sTime,              Qt::CaseInsensitive)) return T2T_TIME;
-    if (0 == n.compare(_sDate,              Qt::CaseInsensitive)) return T2T_DATE;
-    if (0 == n.compare(_sTimestamp,         Qt::CaseInsensitive)) return T2T_DATETIME;
-    if (0 == n.compare(_sInterval,          Qt::CaseInsensitive)) return T2T_INTERVAL;
-    if (0 == n.compare(_sINet,              Qt::CaseInsensitive)) return T2T_INET;
-    if (0 == n.compare(_sMacaddr,           Qt::CaseInsensitive)) return T2T_MAC;
-    if (__ex >  EX_ERROR)  EXCEPTION(EENUMVAL, -1, n);
-    if (0 == n.compare(_sText,              Qt::CaseInsensitive)) return T2T_TEXT;
-    if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, -1, n);
-    return FT_UNKNOWN;
-}
-
-const QString& text2Type(int e, eEx __ex)
-{
-    switch(e) {
-    case T2T_INT:       return _sBigInt;
-    case T2T_REAL:      return _sDoublePrecision;
-    case T2T_TIME:      return _sTime;
-    case T2T_DATE:      return _sDate;
-    case T2T_DATETIME:  return _sTimestamp;
-    case T2T_INTERVAL:  return _sInterval;
-    case T2T_INET:      return _sINet;
-    case T2T_MAC:       return _sMacaddr;
-    case T2T_TEXT:
-        if (__ex > EX_ERROR) EXCEPTION(EENUMVAL, e);
-        return _sText;
-    default:            break;
+    switch (__e) {
+    case PT_TEXT:
+    case PT_BYTEA:
+        if (__ex >= EX_WARNING)   EXCEPTION(EDATA, __e);
+        return _sNul;
+    case PT_BOOLEAN:    return "cast_to_boolean";
+    case PT_INTEGER:    return "cast_to_integer";
+    case PT_REAL:       return "cast_to_real";
+    case PT_DATE:       return "cast_to_date";
+    case PT_TIME:       return "cast_to_time";
+    case PT_DATETIME:   return "cast_to_datetime";
+    case PT_INTERVAL:   return "cast_to_interval";
+    case PT_INET:       return "cast_to_inet";
+    case PT_CIDR:       return "cast_to_cidr";
+    case PT_MAC:        return "cast_to_mac";
+    case PT_POINT:      return "cast_to_point";
     }
-    if (__ex != EX_IGNORE) EXCEPTION(EENUMVAL, e);
+    if (__ex != EX_IGNORE)   EXCEPTION(EDATA, __e);
     return _sNul;
-}
-
-QString text2FnName(const QString& e)
-{
-    (void)text2Type(e, EX_WARNING);
-    static const QChar sp = QChar(' ');
-    QString r = e.contains(sp) ? e.split(sp).first() : e;
-    return "text2" + r;
 }
 

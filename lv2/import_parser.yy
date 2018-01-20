@@ -1510,7 +1510,7 @@ void  setSysParam(QString *pt, QString *pn, QVariant *pv)
         ok = pv->userType() == QVariant::Bool;
         if (ok)   cSysParam::setBoolSysParam(qq(), *pn, pv->toBool());
         break;
-    case PT_BIGINT:
+    case PT_INTEGER:
         i = pv->toLongLong(&ok);
         if (ok) cSysParam::setIntSysParam(qq(), *pn, i);
         break;

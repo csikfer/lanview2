@@ -54,8 +54,6 @@ static inline QString langFileName(const QString& an, const QString& ln)
     return ls;
 }
 
-#define ENUM_INVALID    -1
-
 enum eIPV6Pol {
     IPV6_UNKNOWN = -1,
     IPV6_IGNORED =  0,
