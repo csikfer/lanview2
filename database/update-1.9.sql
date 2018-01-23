@@ -1,9 +1,9 @@
 ﻿-- bugfixes
-ALTER TABLE nports      DROP CONSTRAINT IF EXISTS nports_check_reference_node_id;
-ALTER TABLE node_params DROP CONSTRAINT IF EXISTS node_param_value_check_reference_node_id;
+DROP TRIGGER IF EXISTS nports_check_reference_node_id           ON nports;
+DROP TRIGGER IF EXISTS node_param_value_check_reference_node_id ON node_params;
 
-ALTER TABLE port_params DROP CONSTRAINT IF EXISTS port_params_check_reference_port_id;
-ALTER TABLE port_params DROP CONSTRAINT IF EXISTS port_param_value_check_reference_port_id;
+DROP TRIGGER IF EXISTS port_params_check_reference_port_id      ON port_params;
+DROP TRIGGER IF EXISTS port_param_value_check_reference_port_id ON port_params;
 
 -- A perl függvények, és triggerek is valamikor (jó régen) elvesztek. Talán a CREATE LANGUAGE maradhatott el egy reinstallnál ?
 CREATE OR REPLACE PROCEDURAL LANGUAGE plperl;
@@ -98,7 +98,7 @@ $gid     a group azonisítója (id)';
 
 CREATE INDEX place_group_places_place_id_index       ON place_group_places USING btree (place_id);
 CREATE INDEX place_group_places_place_group_id_index ON place_group_places USING btree (place_group_id);
-ALTER TABLE places DROP CONSTRAINT IF EXISTS add_place_to_all_group;
+DROP TRIGGER IF EXISTS add_place_to_all_group ON places;
 CREATE TRIGGER add_place_to_all_group AFTER INSERT ON places
     FOR EACH ROW EXECUTE PROCEDURE add_member_to_all_group('place_group_places', 'place_id', 'place_group_id', 1);
 
@@ -284,5 +284,15 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 
 ALTER TABLE service_vars  DROP CONSTRAINT IF EXISTS service_vars_check_value;
 CREATE TRIGGER service_vars_check_value  BEFORE INSERT OR UPDATE ON service_vars  FOR EACH ROW EXECUTE PROCEDURE check_before_service_value();
+
+-- BUGFIX!
+DROP TRIGGER IF EXISTS alarm_delete_alarms          ON alarms;
+DROP TRIGGER IF EXISTS disabled_alarm_delete_alarms ON disabled_alarms;
+CREATE TRIGGER alarm_delete_alarms           BEFORE DELETE ON alarms            FOR EACH ROW EXECUTE PROCEDURE delete_alarms();
+CREATE TRIGGER disabled_alarm_delete_alarms  BEFORE DELETE ON disabled_alarms   FOR EACH ROW EXECUTE PROCEDURE delete_alarms();
+CREATE TRIGGER interfaces_check_reference_node_id    BEFORE UPDATE OR INSERT ON interfaces    FOR EACH ROW EXECUTE PROCEDURE check_reference_node_id('false', 'nodes');
+ALTER TABLE port_vlans DROP CONSTRAINT port_vlans_port_id_fkey;
+CREATE TRIGGER port_vlans_check_reference_port_id    BEFORE UPDATE OR INSERT ON port_vlans FOR EACH ROW EXECUTE PROCEDURE check_reference_port_id('false', 'nports', 'pports');
+-- END BUGFIX
 
 SELECT set_db_version(1, 9);

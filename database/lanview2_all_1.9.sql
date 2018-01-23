@@ -23,6 +23,15 @@ CREATE SCHEMA test;
 ALTER SCHEMA test OWNER TO lanview2;
 
 --
+-- Name: plperl; Type: PROCEDURAL LANGUAGE; Schema: -; Owner: lanview2
+--
+
+CREATE OR REPLACE PROCEDURAL LANGUAGE plperl;
+
+
+ALTER PROCEDURAL LANGUAGE plperl OWNER TO lanview2;
+
+--
 -- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
 --
 
@@ -702,15 +711,18 @@ desc    Csökkenő sorrend.';
 --
 
 CREATE TYPE paramtype AS ENUM (
-    'boolean',
-    'bigint',
-    'double precision',
     'text',
-    'interval',
+    'boolean',
+    'integer',
+    'real',
     'date',
     'time',
-    'timestamp',
+    'datetime',
+    'interval',
     'inet',
+    'cidr',
+    'mac',
+    'point',
     'bytea'
 );
 
@@ -1137,24 +1149,6 @@ CREATE TYPE templatetype AS ENUM (
 ALTER TYPE templatetype OWNER TO lanview2;
 
 --
--- Name: text2type; Type: TYPE; Schema: public; Owner: lanview2
---
-
-CREATE TYPE text2type AS ENUM (
-    'bigint',
-    'double precision',
-    'time',
-    'date',
-    'timestamp',
-    'interval',
-    'inet',
-    'macaddr'
-);
-
-
-ALTER TYPE text2type OWNER TO lanview2;
-
---
 -- Name: unusualfkeytype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
@@ -1247,6 +1241,35 @@ tagged      címkézett
 untagged    nem címkézett, közvetlen
 virtual     
 hard        logikailag egyenértékeű az untagged-del';
+
+
+--
+-- Name: add_member_to_all_group(); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION add_member_to_all_group() RETURNS trigger
+    LANGUAGE plperl
+    AS $_X$
+    ($table, $midname, $gidname, $gid) = @{$_TD->{args}};
+    $mid = $_TD->{new}->{$midname};
+    spi_exec_query("INSERT INTO $table ($gidname, $midname) VALUES ( $gid, $mid) ON CONFLICT DO NOTHING");
+    return;
+$_X$;
+
+
+ALTER FUNCTION public.add_member_to_all_group() OWNER TO lanview2;
+
+--
+-- Name: FUNCTION add_member_to_all_group(); Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON FUNCTION add_member_to_all_group() IS 'Létrehoz egy kapcsoló tábla rekordot, egy group ás tag között (ha az INSERT-ben valamelyik szabály nem teljesül, akkor nem csinál semmit).
+Vagyis egy megadott objektumot betesz egy megadott csoportba
+Paraméterek (sorrendben):
+$table   tábla név, A kapcsoló tábla neve,
+$midname a member azonosító (id) neve a kapcsoló, és a member táblában (feltételezzük, hogy azonos),
+$gidname a group azonosító (id) neve a kapcsoló táblában,
+$gid     a group azonisítója (id)';
 
 
 --
@@ -1524,6 +1547,240 @@ Nincs visszatérési érték.';
 
 
 --
+-- Name: cast_to_bigint(text, bigint); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION cast_to_bigint(text, bigint DEFAULT NULL::bigint) RETURNS bigint
+    LANGUAGE plpgsql IMMUTABLE
+    AS $_$
+BEGIN
+    RETURN cast($1 as bigint);
+EXCEPTION
+    WHEN invalid_text_representation THEN
+        RETURN $2;
+END;
+$_$;
+
+
+ALTER FUNCTION public.cast_to_bigint(text, bigint) OWNER TO lanview2;
+
+--
+-- Name: cast_to_boolean(text, boolean); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION cast_to_boolean(text, boolean DEFAULT NULL::boolean) RETURNS boolean
+    LANGUAGE plpgsql IMMUTABLE
+    AS $_$
+BEGIN
+    RETURN cast($1 as boolean);
+EXCEPTION
+    WHEN invalid_text_representation THEN
+        RETURN $2;
+END;
+$_$;
+
+
+ALTER FUNCTION public.cast_to_boolean(text, boolean) OWNER TO lanview2;
+
+--
+-- Name: cast_to_cidr(text, cidr); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION cast_to_cidr(text, cidr DEFAULT NULL::cidr) RETURNS cidr
+    LANGUAGE plpgsql IMMUTABLE
+    AS $_$
+BEGIN
+    RETURN cast($1 as cidr);
+EXCEPTION
+    WHEN invalid_text_representation THEN
+        RETURN $2;
+END;
+$_$;
+
+
+ALTER FUNCTION public.cast_to_cidr(text, cidr) OWNER TO lanview2;
+
+--
+-- Name: cast_to_date(text, date); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION cast_to_date(text, date DEFAULT NULL::date) RETURNS date
+    LANGUAGE plpgsql IMMUTABLE
+    AS $_$
+BEGIN
+    RETURN cast($1 as date);
+EXCEPTION
+    WHEN invalid_datetime_format THEN
+        RETURN $2;
+END;
+$_$;
+
+
+ALTER FUNCTION public.cast_to_date(text, date) OWNER TO lanview2;
+
+--
+-- Name: cast_to_datetime(text, timestamp without time zone); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION cast_to_datetime(text, timestamp without time zone DEFAULT NULL::timestamp without time zone) RETURNS timestamp without time zone
+    LANGUAGE plpgsql IMMUTABLE
+    AS $_$
+BEGIN
+    RETURN cast($1 as timestamp);
+EXCEPTION
+    WHEN invalid_datetime_format THEN
+        RETURN $2;
+END;
+$_$;
+
+
+ALTER FUNCTION public.cast_to_datetime(text, timestamp without time zone) OWNER TO lanview2;
+
+--
+-- Name: cast_to_double(text, double precision); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION cast_to_double(text, double precision DEFAULT NULL::double precision) RETURNS double precision
+    LANGUAGE plpgsql IMMUTABLE
+    AS $_$
+BEGIN
+    RETURN cast($1 as double precision);
+EXCEPTION
+    WHEN invalid_text_representation THEN
+        RETURN $2;
+END;
+$_$;
+
+
+ALTER FUNCTION public.cast_to_double(text, double precision) OWNER TO lanview2;
+
+--
+-- Name: cast_to_inet(text, inet); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION cast_to_inet(text, inet DEFAULT NULL::inet) RETURNS inet
+    LANGUAGE plpgsql IMMUTABLE
+    AS $_$
+BEGIN
+    RETURN cast($1 as inet);
+EXCEPTION
+    WHEN invalid_text_representation THEN
+        RETURN $2;
+END;
+$_$;
+
+
+ALTER FUNCTION public.cast_to_inet(text, inet) OWNER TO lanview2;
+
+--
+-- Name: cast_to_integer(text, bigint); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION cast_to_integer(text, bigint DEFAULT NULL::bigint) RETURNS bigint
+    LANGUAGE plpgsql IMMUTABLE
+    AS $_$
+BEGIN
+    RETURN cast($1 as bigint);
+EXCEPTION
+    WHEN invalid_text_representation THEN
+        RETURN $2;
+END;
+$_$;
+
+
+ALTER FUNCTION public.cast_to_integer(text, bigint) OWNER TO lanview2;
+
+--
+-- Name: cast_to_interval(text, interval); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION cast_to_interval(text, interval DEFAULT NULL::interval) RETURNS interval
+    LANGUAGE plpgsql IMMUTABLE
+    AS $_$
+BEGIN
+    RETURN cast($1 as interval);
+EXCEPTION
+    WHEN invalid_datetime_format THEN
+        RETURN $2;
+END;
+$_$;
+
+
+ALTER FUNCTION public.cast_to_interval(text, interval) OWNER TO lanview2;
+
+--
+-- Name: cast_to_mac(text, macaddr); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION cast_to_mac(text, macaddr DEFAULT NULL::macaddr) RETURNS macaddr
+    LANGUAGE plpgsql IMMUTABLE
+    AS $_$
+BEGIN
+    RETURN cast($1 as macaddr);
+EXCEPTION
+    WHEN invalid_text_representation THEN
+        RETURN $2;
+END;
+$_$;
+
+
+ALTER FUNCTION public.cast_to_mac(text, macaddr) OWNER TO lanview2;
+
+--
+-- Name: cast_to_point(text, point); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION cast_to_point(text, point DEFAULT NULL::point) RETURNS point
+    LANGUAGE plpgsql IMMUTABLE
+    AS $_$
+BEGIN
+    RETURN cast($1 as point);
+EXCEPTION
+    WHEN invalid_text_representation THEN
+        RETURN $2;
+END;
+$_$;
+
+
+ALTER FUNCTION public.cast_to_point(text, point) OWNER TO lanview2;
+
+--
+-- Name: cast_to_real(text, double precision); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION cast_to_real(text, double precision DEFAULT NULL::double precision) RETURNS double precision
+    LANGUAGE plpgsql IMMUTABLE
+    AS $_$
+BEGIN
+    RETURN cast($1 as double precision);
+EXCEPTION
+    WHEN invalid_text_representation THEN
+        RETURN $2;
+END;
+$_$;
+
+
+ALTER FUNCTION public.cast_to_real(text, double precision) OWNER TO lanview2;
+
+--
+-- Name: cast_to_time(text, time without time zone); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION cast_to_time(text, time without time zone DEFAULT NULL::time without time zone) RETURNS time without time zone
+    LANGUAGE plpgsql IMMUTABLE
+    AS $_$
+BEGIN
+    RETURN cast($1 as time);
+EXCEPTION
+    WHEN invalid_datetime_format THEN
+        RETURN $2;
+END;
+$_$;
+
+
+ALTER FUNCTION public.cast_to_time(text, time without time zone) OWNER TO lanview2;
+
+--
 -- Name: check_after_localization_text(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
@@ -1600,6 +1857,46 @@ $$;
 
 
 ALTER FUNCTION public.check_alarm_id_on_host_services() OWNER TO lanview2;
+
+--
+-- Name: check_before_param_value(); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION check_before_param_value() RETURNS trigger
+    LANGUAGE plpgsql IMMUTABLE
+    AS $$
+DECLARE
+    pt  paramtype;
+BEGIN
+    SELECT param_type_type INTO pt FROM param_types WHERE param_type_id = NEW.param_type_id;
+    NEW.param_value = check_paramtype(NEW.param_value, pt);
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.check_before_param_value() OWNER TO lanview2;
+
+--
+-- Name: check_before_service_value(); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION check_before_service_value() RETURNS trigger
+    LANGUAGE plpgsql IMMUTABLE
+    AS $$
+DECLARE
+    tid bigint;
+    pt  paramtype;
+BEGIN
+    SELECT param_type_id   INTO tid FROM service_var_types WHERE service_var_type_id = NEW.service_var_type_id;
+    SELECT param_type_type INTO pt  FROM param_types       WHERE param_type_id = tid;
+    NEW.param_value = check_paramtype(NEW.param_value, pt);
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.check_before_service_value() OWNER TO lanview2;
 
 --
 -- Name: check_host_services(); Type: FUNCTION; Schema: public; Owner: lanview2
@@ -1954,6 +2251,35 @@ $$;
 ALTER FUNCTION public.check_log_links() OWNER TO lanview2;
 
 --
+-- Name: check_paramtype(text, paramtype); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION check_paramtype(v text, t paramtype) RETURNS text
+    LANGUAGE plpgsql IMMUTABLE
+    AS $$
+BEGIN
+    RETURN CASE t
+        WHEN 'text'     THEN v
+        WHEN 'boolean'  THEN CASE v::boolean WHEN true THEN 'true' ELSE 'false' END
+        WHEN 'integer'  THEN v::bigint::text
+        WHEN 'real'     THEN v::double precision::text
+        WHEN 'date'     THEN v::date::text
+        WHEN 'time'     THEN v::time::text
+        WHEN 'datetime' THEN v::timestamp::text
+        WHEN 'interval' THEN v::interval::text
+        WHEN 'inet'     THEN v::inet::text
+        WHEN 'cidr'     THEN v::cidr::text
+        WHEN 'mac'      THEN v::macaddr::text
+        WHEN 'point'    THEN v::point::text
+        WHEN 'bytea'    THEN v
+    END;
+END;
+$$;
+
+
+ALTER FUNCTION public.check_paramtype(v text, t paramtype) OWNER TO lanview2;
+
+--
 -- Name: check_phs_shared(bigint, portshare, phslinktype, bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
@@ -1992,6 +2318,103 @@ $_$;
 
 
 ALTER FUNCTION public.check_phs_shared(bigint, portshare, phslinktype, bigint) OWNER TO lanview2;
+
+--
+-- Name: check_reference_node_id(); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION check_reference_node_id() RETURNS trigger
+    LANGUAGE plperl
+    AS $_X$
+    ($null, $inTable, $outTable) = @{$_TD->{args}};
+    if ((defined($null) && $null && !defined($_TD->{new}{node_id}))
+     || ($_TD->{new}{node_id} == $_TD->{old}{node_id})) { return; } # O.K.
+    if (!defined($inTable)) { $inTable = 'patchs'; }
+    $rv = spi_exec_query('SELECT COUNT(*) FROM ' . $inTable .' WHERE node_id = ' . $_TD->{new}{node_id});
+    $nn  = $rv->{rows}[0]->{count};
+    if ($nn == 0) {
+        spi_exec_query("SELECT error('InvRef', $_TD->{new}{node_id}, '$inTable', 'check_reference_node_id()', '$_TD->{table_name}', '$_TD->{event}');");
+        return "SKIP";
+    }
+    if ($nn != 1) {
+        spi_exec_query("SELECT error('DataError', $_TD->{new}{node_id}, '$inTable', 'check_reference_node_id()', '$_TD->{table_name}', '$_TD->{event}');");
+        return "SKIP";
+    }
+    if (defined($outTable) && $outTable) {
+        $rv = spi_exec_query('SELECT COUNT(*) FROM ONLY ' . $outTable .' WHERE node_id = ' . $_TD->{new}{node_id});
+        $nn  = $rv->{rows}[0]->{count};
+        if ($nn != 0) {
+            spi_exec_query("SELECT error('DataError', $_TD->{new}{node_id}, '$inTable', 'check_reference_node_id()', '$_TD->{table_name}', '$_TD->{event}');");
+            return "SKIP";
+        }
+    }
+    return;
+$_X$;
+
+
+ALTER FUNCTION public.check_reference_node_id() OWNER TO lanview2;
+
+--
+-- Name: FUNCTION check_reference_node_id(); Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON FUNCTION check_reference_node_id() IS 'Ellenőrzi, hogy a node_id mező valóban egy node rekordra mutat-e.
+Ha az opcionális első paraméter true, akkor megengedi a NULL értéket is.
+Ha megadjuk a második paramétert, akkor az a tábla neve, amelyikben és amelyik leszármazottai között szerepelnie kell a node rekordnak
+Ha a paraméter nincs megadva, akkor az összes node táblában keres (patchs)
+Ha megadjuk a harmadik paramétert akkor az itt megadott táblában nem szerepelhet a node_id (ONLY !!)';
+
+
+--
+-- Name: check_reference_port_id(); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION check_reference_port_id() RETURNS trigger
+    LANGUAGE plperl
+    AS $_X$
+    ($null, $inTable, $exTable) = @{$_TD->{args}};
+    if ((defined($null) && $null && !defined($_TD->{new}{port_id}))
+     || ($_TD->{new}{port_id} == $_TD->{old}{port_id})) { return; } # O.K.
+    if (!defined($inTable)) { $inTable = 'nports'; }
+    $rv = spi_exec_query('SELECT COUNT(*) FROM ' . $inTable .' WHERE port_id = ' . $_TD->{new}{port_id});
+    if( $rv->{status} ne SPI_OK_SELECT) {
+        spi_exec_query("SELECT error('DataError', 'Status not SPI_OK_SELECT, but $rv->{status}', '$_TD->{table_name}', '$_TD->{event}');");
+    }
+    $nn  = $rv->{rows}[0]->{count};
+    if ($nn == 0) {
+        spi_exec_query("SELECT error('InvRef', $_TD->{new}{port_id}, '$inTable.port_id', 'check_reference_port_id()', '$_TD->{table_name}', '$_TD->{event}');");
+        return "SKIP";
+    }
+    if ($nn != 1) {
+        spi_exec_query("SELECT error('DataError', $_TD->{new}{port_id}, '$inTable.port_id', 'check_reference_port_id()', '$_TD->{table_name}', '$_TD->{event}');");
+        return "SKIP";
+    }
+    if (defined($exTable) && $exTable) {
+        $rv = spi_exec_query("SELECT COUNT(*) FROM $exTable WHERE port_id = $_TD->{new}{port_id}");
+        $nn = $rv->{rows}[0]->{count};
+        if ($nn != 0) {
+            $cmd = "SELECT error('InvRef', $_TD->{new}{port_id}, '$exTable' ,'check_reference_port_id()', '$_TD->{table_name}', '$_TD->{event}');";
+            # elog(NOTICE, $cmd);
+            spi_exec_query($cmd);
+            return "SKIP";
+        }
+    }
+    return;
+$_X$;
+
+
+ALTER FUNCTION public.check_reference_port_id() OWNER TO lanview2;
+
+--
+-- Name: FUNCTION check_reference_port_id(); Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON FUNCTION check_reference_port_id() IS 'Ellenőrzi, hogy a port_id mező valóban egy port rekordra mutat-e.
+Ha az opcionális első paraméter true, akkor megengedi a NULL értéket is.
+Ha megadjuk a második paramétert, akkor az a tábla neve, amelyikben és amelyik leszármazottai között szerepelnie kell a port rekordnak
+Ha a paraméter nincs megadva, akkor az összes port táblában keres (nport)
+Ha mega van adva egy harmadik paraméter, akkor az egy tábla név, melyben nem szerpelhet a rekord (csak "pport" lehet)';
+
 
 --
 -- Name: check_shared(portshare, portshare); Type: FUNCTION; Schema: public; Owner: lanview2
@@ -6473,48 +6896,6 @@ $_$;
 ALTER FUNCTION public.table_shape_name2id(text) OWNER TO lanview2;
 
 --
--- Name: text2bigint(text, bigint); Type: FUNCTION; Schema: public; Owner: lanview2
---
-
-CREATE FUNCTION text2bigint(val text, def bigint DEFAULT NULL::bigint) RETURNS bigint
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    IF val IS NULL THEN
-        RETURN def;
-    END IF;
-    RETURN val::bigint;
-    EXCEPTION
-        WHEN OTHERS THEN
-            RETURN def;
-END;
-$$;
-
-
-ALTER FUNCTION public.text2bigint(val text, def bigint) OWNER TO lanview2;
-
---
--- Name: text2date(text, date); Type: FUNCTION; Schema: public; Owner: lanview2
---
-
-CREATE FUNCTION text2date(val text, def date DEFAULT NULL::date) RETURNS date
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    IF val IS NULL THEN
-        RETURN def;
-    END IF;
-    RETURN val::date;
-    EXCEPTION
-        WHEN OTHERS THEN
-            RETURN def;
-END;
-$$;
-
-
-ALTER FUNCTION public.text2date(val text, def date) OWNER TO lanview2;
-
---
 -- Name: text2double(text, double precision); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
@@ -6534,111 +6915,6 @@ $$;
 
 
 ALTER FUNCTION public.text2double(val text, def double precision) OWNER TO lanview2;
-
---
--- Name: text2inet(text, inet); Type: FUNCTION; Schema: public; Owner: lanview2
---
-
-CREATE FUNCTION text2inet(val text, def inet DEFAULT NULL::inet) RETURNS inet
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    IF val IS NULL THEN
-        RETURN def;
-    END IF;
-    RETURN val::inet;
-    EXCEPTION
-        WHEN OTHERS THEN
-            RETURN def;
-END;
-$$;
-
-
-ALTER FUNCTION public.text2inet(val text, def inet) OWNER TO lanview2;
-
---
--- Name: text2interval(text, interval); Type: FUNCTION; Schema: public; Owner: lanview2
---
-
-CREATE FUNCTION text2interval(val text, def interval DEFAULT NULL::interval) RETURNS interval
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    IF val IS NULL THEN
-        RETURN def;
-    END IF;
-    RETURN val::interval;
-    EXCEPTION
-        WHEN OTHERS THEN
-            RETURN def;
-END;
-$$;
-
-
-ALTER FUNCTION public.text2interval(val text, def interval) OWNER TO lanview2;
-
---
--- Name: text2macaddr(text, macaddr); Type: FUNCTION; Schema: public; Owner: lanview2
---
-
-CREATE FUNCTION text2macaddr(val text, def macaddr DEFAULT NULL::macaddr) RETURNS macaddr
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    IF val IS NULL THEN
-        RETURN def;
-    END IF;
-    RETURN val::macaddr;
-    EXCEPTION
-        WHEN OTHERS THEN
-            RETURN def;
-END;
-$$;
-
-
-ALTER FUNCTION public.text2macaddr(val text, def macaddr) OWNER TO lanview2;
-
---
--- Name: text2time(text, time without time zone); Type: FUNCTION; Schema: public; Owner: lanview2
---
-
-CREATE FUNCTION text2time(val text, def time without time zone DEFAULT NULL::time without time zone) RETURNS time without time zone
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    IF val IS NULL THEN
-        RETURN def;
-    END IF;
-    RETURN val::time;
-    EXCEPTION
-        WHEN OTHERS THEN
-            RETURN def;
-END;
-$$;
-
-
-ALTER FUNCTION public.text2time(val text, def time without time zone) OWNER TO lanview2;
-
---
--- Name: text2timestamp(text, timestamp without time zone); Type: FUNCTION; Schema: public; Owner: lanview2
---
-
-CREATE FUNCTION text2timestamp(val text, def timestamp without time zone DEFAULT NULL::timestamp without time zone) RETURNS timestamp without time zone
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    IF val IS NULL THEN
-        RETURN def;
-    END IF;
-    RETURN val::timestamp;
-    EXCEPTION
-        WHEN OTHERS THEN
-            RETURN def;
-END;
-$$;
-
-
-ALTER FUNCTION public.text2timestamp(val text, def timestamp without time zone) OWNER TO lanview2;
 
 --
 -- Name: alarms; Type: TABLE; Schema: public; Owner: lanview2
@@ -12181,7 +12457,7 @@ COPY alarms (alarm_id, host_service_id, daemon_id, first_status, max_status, las
 -- Name: alarms_alarm_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('alarms_alarm_id_seq', 69631, true);
+SELECT pg_catalog.setval('alarms_alarm_id_seq', 73574, true);
 
 
 --
@@ -12196,7 +12472,7 @@ COPY app_errs (applog_id, date_of, app_name, node_id, pid, app_ver, lib_ver, use
 -- Name: app_errs_applog_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('app_errs_applog_id_seq', 111421, true);
+SELECT pg_catalog.setval('app_errs_applog_id_seq', 196460, true);
 
 
 --
@@ -12211,7 +12487,7 @@ COPY app_memos (app_memo_id, date_of, app_name, pid, thread_name, app_ver, lib_v
 -- Name: app_memos_app_memo_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('app_memos_app_memo_id_seq', 11805, true);
+SELECT pg_catalog.setval('app_memos_app_memo_id_seq', 11870, true);
 
 
 --
@@ -12226,7 +12502,7 @@ COPY arp_logs (arp_log_id, reason, date_of, ipaddress, hwaddress_new, hwaddress_
 -- Name: arp_logs_arp_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('arp_logs_arp_log_id_seq', 12758, true);
+SELECT pg_catalog.setval('arp_logs_arp_log_id_seq', 13508, true);
 
 
 --
@@ -12249,7 +12525,7 @@ COPY db_errs (dblog_id, date_of, error_id, user_id, table_name, trigger_op, err_
 -- Name: db_errs_dblog_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('db_errs_dblog_id_seq', 113238, true);
+SELECT pg_catalog.setval('db_errs_dblog_id_seq', 131362, true);
 
 
 --
@@ -12389,22 +12665,14 @@ COPY enum_vals (enum_val_id, enum_val_name, enum_val_note, enum_type_name, bg_co
 1883	like	Minta illesztés a LIKE operátorral	filtertype	\N	\N	\N	\N	135
 1884	similar	Minta illesztés a SIMILAR operátorral	filtertype	\N	\N	\N	\N	136
 1885	regexp	Minta illesztés reguláris kifelyezéssel, nagybetű érzékeny	filtertype	\N	\N	\N	\N	137
-1886	regexpi	Minta illesztés reguláris kifelyezéssel, nem nagybetű érzékeny	filtertype	\N	\N	\N	\N	138
 1887	big	Csak egy értéknél nagyobbakat	filtertype	\N	\N	\N	\N	139
 1888	litle	Csak egy értéknél kisebbeket	filtertype	\N	\N	\N	\N	140
 1889	interval	Csak a megadott két érték közöttiek	filtertype	\N	\N	\N	\N	141
-1890	proc	Szűrés egy magadott SQL függvénnyel	filtertype	\N	\N	\N	\N	142
 1891	SQL	A szürési feltétel megadása SQL nyelven	filtertype	\N	\N	\N	\N	143
 1961	boolean	\N	filtertype	\N	\N	\N	\N	144
-1962	notbegin	\N	filtertype	\N	\N	\N	\N	145
-1963	notlike	\N	filtertype	\N	\N	\N	\N	146
-1964	notsimilar	\N	filtertype	\N	\N	\N	\N	147
-1965	notregexp	\N	filtertype	\N	\N	\N	\N	148
 1968			alarms.noalarm	\N	\N	\N	\N	149
 1969	true	igen	alarms.noalarm	#d3d7cf	\N	\N	\N	150
 1970	false	nem	alarms.noalarm	#fce94f	\N	\N	\N	151
-1966	notregexpi	\N	filtertype	\N	\N	\N	\N	152
-1967	notinterval	\N	filtertype	\N	\N	\N	\N	153
 \.
 
 
@@ -12594,7 +12862,7 @@ COPY host_service_logs (host_service_log_id, host_service_id, date_of, old_state
 -- Name: host_service_logs_host_service_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('host_service_logs_host_service_log_id_seq', 1925369, true);
+SELECT pg_catalog.setval('host_service_logs_host_service_log_id_seq', 2069957, true);
 
 
 --
@@ -12786,6 +13054,7 @@ COPY localizations (text_id, table_for_text, language_id, texts) FROM stdin;
 11	alarm_messages	1	{"Az érzékelő ill. port állapota változó, billeg. A további riasztások letiltva.",Billeg}
 12	alarm_messages	1	{"Az érzékelő ill port állpota ismeretlen, hibás, az eszköz jelenléte nem ismert",Ismeretlen}
 13	errors	1	{O.K.,Ok}
+491	table_shape_fields	2	{max_check_attempts,max_check_attempts,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
 15	errors	1	{"Restart program or service ",ReStart}
 16	errors	1	{"Info ",Info}
 17	errors	1	{"Parameter(s) warning ",WParams}
@@ -12910,22 +13179,16 @@ COPY localizations (text_id, table_for_text, language_id, texts) FROM stdin;
 135	enum_vals	1	{"Minta illesztés a LIKE operátorral",like,NULL}
 136	enum_vals	1	{"Minta illesztés a SIMILAR operátorral",similar,NULL}
 137	enum_vals	1	{"Minta illesztés reguláris kifelyezéssel, nagybetű érzékeny",regexp,NULL}
-138	enum_vals	1	{"Minta illesztés reguláris kifelyezéssel, nem nagybetű érzékeny",regexpi,NULL}
+703	table_shape_fields	2	{"Egyébb modosítók","Egyébb modosítók (features)",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
 139	enum_vals	1	{"Csak egy értéknél nagyobbakat",big,NULL}
 140	enum_vals	1	{"Csak egy értéknél kisebbeket",litle,NULL}
 141	enum_vals	1	{"Csak a megadott két érték közöttiek",interval,NULL}
-142	enum_vals	1	{"Szűrés egy magadott SQL függvénnyel",proc,NULL}
 143	enum_vals	1	{"A szürési feltétel megadása SQL nyelven",SQL,NULL}
 144	enum_vals	1	{"Szűrés logikai értékre",boolean,NULL}
-145	enum_vals	1	{"Szó eleji nem egyezés",notbegin,NULL}
-146	enum_vals	1	{"Like minta illesztés, nincs egyezés.",notlike,NULL}
-147	enum_vals	1	{"Similar minta illesztés, nincs egyezés.",notsimilar,NULL}
-148	enum_vals	1	{"Reguláris kifejezés, nincs egyezés.",notregexp,NULL}
+810	table_shape_fields	2	{superior_host_service_id,superior_host_service_id,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
 149	enum_vals	1	{"","",""}
 150	enum_vals	1	{"Nincs valós riasztás",rejtett,""}
 151	enum_vals	1	{riaszt,riaszt,""}
-152	enum_vals	1	{"Reguláris kifejezés, nem nagybetű érzékeny, nincs egyezés.",notregexpi,NULL}
-153	enum_vals	1	{"A megadott értékhatáron kívüliek.",notinterval,NULL}
 154	menu_items	1	{fájl,file,NULL,NULL}
 155	menu_items	1	{Beállítások,Beállítások,NULL,NULL}
 156	menu_items	1	{"GUI Beállítások","GUI Beállítások",NULL,NULL}
@@ -13043,7 +13306,6 @@ COPY localizations (text_id, table_for_text, language_id, texts) FROM stdin;
 268	table_shapes	1	{timeperiods,timeperiods,timeperiods,NULL,NULL}
 269	table_shapes	1	{tpows,"Rész időintervallum",tpows,"Tag rész időintervallumok","Nem tag rész időintervallumok"}
 332	table_shape_fields	1	{NULL,"A riasztást megnézte, kiválasztotta",NULL,NULL}
-336	table_shape_fields	1	{NULL,"Hely ID",NULL,NULL}
 270	table_shapes	1	{"Nem nyugtázott riasztások",NULL,"Még nem nyugtázott riasztás",NULL,NULL}
 271	table_shapes	1	{user_events,user_events,user_events,NULL,NULL}
 272	table_shapes	1	{"Riasztási események","Riasztási esemény",alarms_tree,NULL,NULL}
@@ -13053,6 +13315,7 @@ COPY localizations (text_id, table_for_text, language_id, texts) FROM stdin;
 277	table_shapes	1	{sys_params,sys_params,sys_params,NULL,NULL}
 278	table_shapes	1	{unusual_fkeys,unusual_fkeys,unusual_fkeys,NULL,NULL}
 279	table_shapes	1	{alarm_messages,alarm_messages,alarm_messages,NULL,NULL}
+370	table_shape_fields	2	{Hely,"Az eszköz helye",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
 281	table_shapes	1	{enum_vals,enum_vals,enum_vals,NULL,NULL}
 282	table_shapes	1	{fkey_types,fkey_types,fkey_types,NULL,NULL}
 283	table_shapes	1	{mactab_logs,mactab_logs,mactab_logs,NULL,NULL}
@@ -13105,8 +13368,10 @@ COPY localizations (text_id, table_for_text, language_id, texts) FROM stdin;
 330	table_shape_fields	1	{NULL,"On-line értesítendő felhasználók",NULL,NULL}
 331	table_shape_fields	1	{NULL,"Az üzenetet látta, láthatta",NULL,NULL}
 273	table_shapes	1	{"Helyek, helyiségek","Hely, helyiség",places,"Csoportoknak tagja","Csoportoknak nem tagja",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
+863	table_shape_fields	2	{Hely,"Az eszköz helye",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
 334	table_shape_fields	1	{Szolg.példány,"Szolgáltatőás példány teljes név",NULL,NULL}
 335	table_shape_fields	1	{Eszköz,"Eszköz neve",NULL,NULL}
+336	table_shape_fields	1	{NULL,"Hely ID",NULL,NULL}
 337	table_shape_fields	1	{NULL,"\\"szülő\\" szolgáltatás példány",NULL,NULL}
 338	table_shape_fields	1	{Kezdete,"A riasztás kezdete",NULL,NULL}
 339	table_shape_fields	1	{Vége,"A riasztási állpot vége",NULL,NULL}
@@ -13257,6 +13522,7 @@ COPY localizations (text_id, table_for_text, language_id, texts) FROM stdin;
 484	table_shape_fields	1	{sysuptime,sysuptime,NULL,NULL}
 485	table_shape_fields	1	{syscontact,syscontact,NULL,NULL}
 486	table_shape_fields	1	{sysname,sysname,NULL,NULL}
+994	table_shape_fields	1	{Minta,"A minta",NULL,NULL}
 487	table_shape_fields	1	{syslocation,syslocation,NULL,NULL}
 488	table_shape_fields	1	{sysservices,sysservices,NULL,NULL}
 489	table_shape_fields	1	{vendorname,vendorname,NULL,NULL}
@@ -13764,7 +14030,6 @@ COPY localizations (text_id, table_for_text, language_id, texts) FROM stdin;
 991	table_shape_fields	1	{Index,"Port index",NULL,NULL}
 992	table_shape_fields	1	{"Paraméter típus név","Paraméter típus név",NULL,NULL}
 993	table_shape_fields	1	{expired,expired,NULL,NULL}
-994	table_shape_fields	1	{Minta,"A minta",NULL,NULL}
 995	table_shape_fields	1	{Érték,"Minta azonosító, találati érték",NULL,NULL}
 996	table_shape_fields	1	{Név,Név,NULL,NULL}
 997	table_shape_fields	1	{old_hard_state,old_hard_state,NULL,NULL}
@@ -13823,9 +14088,9 @@ COPY localizations (text_id, table_for_text, language_id, texts) FROM stdin;
 640	table_shape_fields	2	{last_time_old,last_time_old,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
 641	table_shape_fields	2	{acknowledged,acknowledged,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
 715	table_shape_fields	2	{upper_menu_item_id,upper_menu_item_id,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
-839	table_shape_fields	2	{Típus,"Az eszköz típusa",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
 203	menu_items	2	{"Keresés cím szerint","Keresés cím szerint",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
 280	table_shapes	2	{"Helyek, helyiségek","Hely helyiség",places_tree,"Csoportoknak tagja","Csoportoknak nem tagja",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
+839	table_shape_fields	2	{Típus,"Az eszköz típusa",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
 280	table_shapes	1	{"Helyek, helyiségek","Hely helyiség",places_tree,"Csoportoknak tagja","Csoportoknak nem tagja",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
 \.
 
@@ -13865,7 +14130,7 @@ COPY mactab_logs (mactab_log_id, hwaddress, reason, be_void, date_of, port_id_ol
 -- Name: mactab_logs_mactab_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('mactab_logs_mactab_log_id_seq', 406192, true);
+SELECT pg_catalog.setval('mactab_logs_mactab_log_id_seq', 414520, true);
 
 
 --
@@ -36665,13 +36930,13 @@ e4:47:90:00:00:00	GUANGDONG OPPO MOBILE TELECOMMUNICATIONS CORP.,LTD	GUANGDONG O
 
 COPY param_types (param_type_id, param_type_name, param_type_note, param_type_type, param_type_dim) FROM stdin;
 1	boolean	\N	boolean	\N
-2	bigint	\N	bigint	\N
-3	double precision	\N	double precision	\N
+2	bigint	\N	integer	\N
+3	double precision	\N	real	\N
 4	text	\N	text	\N
 5	interval	\N	interval	\N
 6	date	\N	date	\N
 7	time	\N	time	\N
-8	timestamp	\N	timestamp	\N
+8	timestamp	\N	datetime	\N
 9	inet	\N	inet	\N
 10	bytea	\N	bytea	\N
 11	search_domain	System paraméter: Search domain names(s)	text	\N
@@ -36679,10 +36944,10 @@ COPY param_types (param_type_id, param_type_name, param_type_note, param_type_ty
 15	query_mac_tab	Port paraméter: Bejegyzett uplink, de a portnak a mactab táblába való felvétele.	boolean	\N
 16	link_is_invisible_for_LLDP	Port paraméter: Az LLDP számára láthatatlan link (hibaüzenet elnyomása).	boolean	\N
 17	battery_changed	Elem akkumlátor csere utolsó időpontja	date	\N
-22	bps	Bitsebesség	bigint	bps
-23	bytes	Byte-ok	bigint	Byte
-24	bypes_per_sec	Bytes/sec	bigint	byte/s
-25	packets	\N	bigint	\N
+22	bps	Bitsebesség	integer	bps
+23	bytes	Byte-ok	integer	Byte
+24	bypes_per_sec	Bytes/sec	integer	byte/s
+25	packets	\N	integer	\N
 \.
 
 
@@ -37039,8 +37304,8 @@ COPY sys_params (sys_param_id, sys_param_name, sys_param_note, param_type_id, pa
 20	export_list	Az exports menüpontban kiexportálható táblák litája.	4	enum_vals,object_syntaxs,patchs,places,table_shapes,users,services
 22	default_language	\N	2	2
 23	failower_language	\N	2	1
-1	version_minor	\N	2	8
 21	ticet_reapeat_time	Ha ennél régebbi az azonos tiket riasztás, akkor új riasztás	5	14 days
+1	version_minor	\N	2	9
 \.
 
 
@@ -37107,6 +37372,7 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27065	place_name	\N	2436	60	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	347
 27073	event_note	\N	2436	140	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	348
 27119	node_id	node_id	2441	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	349
+27320	max_check_attempts	max_check_attempts	2455	110	\N	no	\N	{batch_edit}	\N	\N	:spinbox=1,10:	\N	\N	f	491
 27136	port_id	port_id	2444	1000	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	351
 27124	features	features	2441	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	352
 27125	deleted	deleted	2441	70	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	353
@@ -37126,7 +37392,6 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27161	deleted	deleted	2446	80	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	367
 27162	flag	flag	2446	90	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	f	368
 27163	node_id	node_id	2447	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	369
-27167	place_id	place_id	2447	50	{no,asc,desc}	no	30	{batch_edit}	\N	\N	\N	\N	\N	f	370
 27168	features	features	2447	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	371
 27141	node_id	node_id	2444	60	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	372
 27143	deleted	deleted	2444	80	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	373
@@ -37186,7 +37451,7 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27202	hwaddress	hwaddress	2450	50	\N	no	\N	{}	\N	\N	\N	\N	\N	f	427
 27442	sql_bounds	sql_bounds	2468	240	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	428
 27209	service_id	service_id	2451	30	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	f	429
-27778	raw_value	raw_value	2498	120	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	556
+27323	timeperiod_id	timeperiod_id	2455	140	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	494
 27218	superior_host_service_id	superior_host_service_id	2451	120	{no,asc,desc}	no	60	{table_hide}	\N	\N	\N	\N	\N	f	430
 27210	port_id	port_id	2451	40	{no,asc,desc}	asc	30	{}	\N	\N	:owner=node_id:	\N	\N	f	431
 27214	delegate_host_state	delegate_host_state	2451	80	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	432
@@ -37248,10 +37513,8 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27308	sysservices	sysservices	2454	180	\N	no	\N	{}	\N	\N	\N	\N	\N	f	488
 27309	vendorname	vendorname	2454	190	\N	no	\N	{}	\N	\N	\N	\N	\N	f	489
 27316	superior_service_mask	superior_service_mask	2455	70	\N	no	\N	{}	\N	\N	\N	\N	\N	f	490
-27320	max_check_attempts	max_check_attempts	2455	110	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	491
 27321	normal_check_interval	normal_check_interval	2455	120	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	492
 27322	retry_check_interval	retry_check_interval	2455	130	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	493
-27323	timeperiod_id	timeperiod_id	2455	140	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	494
 27324	flapping_interval	flapping_interval	2455	150	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	495
 27325	flapping_max_change	flapping_max_change	2455	160	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	496
 27326	deleted	deleted	2455	170	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	497
@@ -37313,6 +37576,7 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27777	features	features	2498	110	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	553
 27372	begin_time	begin_time	2462	50	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	f	554
 27373	end_time	end_time	2462	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	555
+27778	raw_value	raw_value	2498	120	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	556
 27779	delegate_service_state	delegate_service_state	2498	130	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	557
 27377	user_event_id	user_event_id	2464	100	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	558
 27385	alarm_id	alarm_id	2465	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	559
@@ -37384,7 +37648,9 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27483	iana_id_link	iana_id_link	2471	80	\N	no	\N	{}	\N	\N	\N	\N	\N	f	626
 27484	if_name_prefix	if_name_prefix	2471	90	\N	no	\N	{}	\N	\N	\N	\N	\N	f	627
 27294	node_type	node_type	2454	40	{no,asc,desc}	no	40	{batch_edit}	\N	\N	:column=2:hide=patch,node,hub:	\N	\N	f	607
+27166	node_type	node_type	2447	40	\N	no	\N	{batch_edit}	\N	{node}	:column=2:default=host:hide=patch,snmp:autoset=host[host,node]:collision=host[node],node[host]:	\N	admin	f	839
 27495	arp_log_id	arp_log_id	2473	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	631
+27167	place_id	place_id	2447	50	{no,asc,desc}	no	30	{batch_edit}	\N	\N	:filter:	\N	\N	f	370
 27506	node_id	node_id	2474	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	642
 27754	rrd_beat_id	rrd_beat_id	2497	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	643
 27508	port_id	port_id	2474	30	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	644
@@ -37410,10 +37676,12 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27503	first_time_old	first_time_old	2473	90	\N	no	\N	{}	\N	\N	\N	\N	\N	f	639
 27504	last_time_old	last_time_old	2473	100	\N	no	\N	{}	\N	\N	\N	\N	\N	f	640
 27505	acknowledged	acknowledged	2473	110	\N	no	\N	{}	\N	\N	\N	\N	\N	f	641
+27295	place_id	place_id	2454	50	{no,asc,desc}	no	30	{batch_edit}	\N	\N	:filter:	\N	\N	f	863
 27520	mactab_log_id	mactab_log_id	2475	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	657
 27522	reason	reason	2475	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	658
 27509	port_name	port_name	2474	40	{no,asc,desc}	no	30	{read_only}	\N	\N	\N	\N	\N	f	660
 27761	delegate_service_state	delegate_service_state	2497	130	{no,asc,desc}	no	60	{batch_edit}	\N	\N	\N	\N	\N	f	661
+27571	features	features	2480	140	{no,asc,desc}	no	140	{huge}	\N	\N	\N	\N	\N	f	703
 27521	hwaddress	hwaddress	2475	20	{no,asc,desc}	no	\N	{}	\N	\N	\N	\N	\N	f	666
 27523	be_void	be_void	2475	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	667
 27526	mactab_state_old	mactab_state_old	2475	70	\N	no	\N	{}	\N	\N	\N	\N	\N	f	668
@@ -37451,7 +37719,6 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27566	ord_init_type	ord_init_type	2480	90	{no,asc,desc}	no	90	{}	\N	\N	\N	\N	\N	f	700
 27567	ord_init_sequence_number	ord_init_sequence_number	2480	100	{no,asc,desc}	no	100	{}	\N	\N	\N	\N	\N	f	701
 27569	expression	expression	2480	120	{no,asc,desc}	no	120	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	f	702
-27571	features	features	2480	140	{no,asc,desc}	no	140	{}	\N	\N	\N	\N	\N	f	703
 27494	ports_by_hwa	ports_by_hwa	2472	100	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	659
 27486	hwaddress	hwaddress	2472	20	{no,asc,desc}	no	20	{read_only}	\N	\N	\N	\N	\N	f	663
 27488	host_service_id	host_service_id	2472	40	\N	no	\N	{read_only,HTML}	\N	\N	\N	\N	\N	f	628
@@ -37497,7 +37764,6 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27646	serv_notif_switchs	serv_notif_switchs	2487	180	\N	no	\N	{}	\N	\N	\N	\N	\N	f	743
 27647	host_notif_cmd	host_notif_cmd	2487	190	\N	no	\N	{}	\N	\N	\N	\N	\N	f	744
 27648	serv_notif_cmd	serv_notif_cmd	2487	200	\N	no	\N	{}	\N	\N	\N	\N	\N	f	745
-27467	old_state	old_state	2470	40	\N	no	\N	{}	\N	\N	:color:	\N	\N	f	808
 27649	place_group_id	place_group_id	2488	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	746
 27650	place_group_name	place_group_name	2488	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	747
 27651	place_group_note	place_group_note	2488	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	748
@@ -37560,8 +37826,8 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27203	port_ostat	port_ostat	2450	60	\N	no	\N	{read_only}	\N	unknown	:color:	\N	\N	f	805
 27197	iftype_id	iftype_id	2450	200	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	f	806
 27233	state_msg	state_msg	2451	46	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	807
+27467	old_state	old_state	2470	40	\N	no	\N	{}	\N	\N	:color:	\N	\N	f	808
 27710	first_time	first_time	2440	60	{no,asc,desc}	no	60	{}	\N	\N	\N	\N	\N	f	809
-27253	superior_host_service_id	superior_host_service_id	2452	120	{no,asc,desc}	no	60	{batch_edit}	\N	\N	\N	\N	\N	f	810
 27711	last_time	last_time	2440	70	{no,asc,desc}	no	70	{}	\N	\N	\N	\N	\N	f	811
 27706	ifdescr	ifdescr	2450	240	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	812
 27296	features	features	2454	70	\N	no	\N	{}	\N	\N	\N	\N	\N	f	813
@@ -37597,7 +37863,7 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27311	service_name	service_name	2455	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	845
 27286	set_type	set_type	2453	100	{no,asc,desc}	no	50	{read_only}	\N	\N	\N	\N	\N	f	846
 27493	node_by_hwa	node_by_hwa	2472	90	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	816
-27166	node_type	node_type	2447	40	\N	no	\N	{batch_edit}	\N	{node}	:column=2:hide=patch,host,snmp:	\N	admin	f	839
+27253	superior_host_service_id	superior_host_service_id	2452	120	{no,asc,desc}	no	60	{batch_edit}	\N	\N	:refine=service_id2name(service_id) ~  COALESCE( (SELECT superior_service_mask FROM services WHERE service_id = %1)\\,'.+'),#service_id:	\N	\N	f	810
 27263	offline_group_ids	offline_group_ids	2452	220	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	847
 27111	node_name2	\N	2439	30	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	848
 27115	port_index1	\N	2440	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	849
@@ -37614,7 +37880,6 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27683	features	features	2492	80	{no,asc,desc}	no	70	{}	\N	\N	\N	\N	\N	f	860
 27287	r_node_name	r_node_name	2453	110	{no,asc,desc}	no	30	{read_only}	\N	\N	\N	\N	\N	f	861
 27406	end_time	end_time	2466	110	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	862
-27295	place_id	place_id	2454	50	{no,asc,desc}	no	30	{batch_edit}	\N	\N	\N	\N	\N	f	863
 27586	table_name	table_name	2481	100	{no,asc,desc}	no	100	{}	\N	\N	\N	\N	\N	f	864
 27594	view_rights	view_rights	2481	180	{no,asc,desc}	no	180	{}	\N	\N	\N	\N	\N	f	865
 27630	user_name	user_name	2487	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	866
@@ -38045,7 +38310,7 @@ COPY user_events (user_event_id, created, happened, user_id, alarm_id, event_typ
 -- Name: user_events_user_event_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('user_events_user_event_id_seq', 167108, true);
+SELECT pg_catalog.setval('user_events_user_event_id_seq', 167109, true);
 
 
 --
@@ -39298,6 +39563,20 @@ CREATE INDEX nports_node_id_index ON nports USING btree (node_id);
 
 
 --
+-- Name: place_group_places_place_group_id_index; Type: INDEX; Schema: public; Owner: lanview2
+--
+
+CREATE INDEX place_group_places_place_group_id_index ON place_group_places USING btree (place_group_id);
+
+
+--
+-- Name: place_group_places_place_id_index; Type: INDEX; Schema: public; Owner: lanview2
+--
+
+CREATE INDEX place_group_places_place_id_index ON place_group_places USING btree (place_id);
+
+
+--
 -- Name: port_params_port_id_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
@@ -39361,6 +39640,13 @@ CREATE INDEX user_events_happened_index ON user_events USING btree (happened);
 
 
 --
+-- Name: add_place_to_all_group; Type: TRIGGER; Schema: public; Owner: lanview2
+--
+
+CREATE TRIGGER add_place_to_all_group AFTER INSERT ON places FOR EACH ROW EXECUTE PROCEDURE add_member_to_all_group('place_group_places', 'place_id', 'place_group_id', '1');
+
+
+--
 -- Name: alarm_check_unique_alarm_id; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
@@ -39371,7 +39657,7 @@ CREATE TRIGGER alarm_check_unique_alarm_id BEFORE INSERT OR UPDATE ON alarms FOR
 -- Name: alarm_delete_alarms; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER alarm_delete_alarms AFTER DELETE ON alarms FOR EACH ROW EXECUTE PROCEDURE delete_alarms();
+CREATE TRIGGER alarm_delete_alarms BEFORE DELETE ON alarms FOR EACH ROW EXECUTE PROCEDURE delete_alarms();
 
 
 --
@@ -39451,7 +39737,7 @@ CREATE TRIGGER disabled_alarm_check_unique_alarm_id BEFORE INSERT OR UPDATE ON d
 -- Name: disabled_alarm_delete_alarms; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER disabled_alarm_delete_alarms AFTER DELETE ON disabled_alarms FOR EACH ROW EXECUTE PROCEDURE delete_alarms();
+CREATE TRIGGER disabled_alarm_delete_alarms BEFORE DELETE ON disabled_alarms FOR EACH ROW EXECUTE PROCEDURE delete_alarms();
 
 
 --
@@ -39511,6 +39797,13 @@ CREATE TRIGGER interfaces_check_before_update BEFORE UPDATE ON interfaces FOR EA
 
 
 --
+-- Name: interfaces_check_reference_node_id; Type: TRIGGER; Schema: public; Owner: lanview2
+--
+
+CREATE TRIGGER interfaces_check_reference_node_id BEFORE INSERT OR UPDATE ON interfaces FOR EACH ROW EXECUTE PROCEDURE check_reference_node_id('false', 'nodes');
+
+
+--
 -- Name: interfaces_delete_port_post; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
@@ -39543,6 +39836,20 @@ CREATE TRIGGER log_links_table_check_log_links BEFORE INSERT OR UPDATE ON log_li
 --
 
 CREATE TRIGGER menu_items_delete_record_text AFTER DELETE ON menu_items FOR EACH ROW EXECUTE PROCEDURE delete_record_text();
+
+
+--
+-- Name: node_param_check_value; Type: TRIGGER; Schema: public; Owner: lanview2
+--
+
+CREATE TRIGGER node_param_check_value BEFORE INSERT OR UPDATE ON node_params FOR EACH ROW EXECUTE PROCEDURE check_before_param_value();
+
+
+--
+-- Name: node_param_value_check_reference_node_id; Type: TRIGGER; Schema: public; Owner: lanview2
+--
+
+CREATE TRIGGER node_param_value_check_reference_node_id BEFORE INSERT OR UPDATE ON node_params FOR EACH ROW EXECUTE PROCEDURE check_reference_node_id('false', 'patchs');
 
 
 --
@@ -39588,6 +39895,13 @@ CREATE TRIGGER nports_check_before_update BEFORE UPDATE ON nports FOR EACH ROW E
 
 
 --
+-- Name: nports_check_reference_node_id; Type: TRIGGER; Schema: public; Owner: lanview2
+--
+
+CREATE TRIGGER nports_check_reference_node_id BEFORE INSERT OR UPDATE ON nports FOR EACH ROW EXECUTE PROCEDURE check_reference_node_id('false', 'nodes');
+
+
+--
 -- Name: nports_delete_port_post; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
@@ -39623,6 +39937,27 @@ CREATE TRIGGER patchs_restrict_modfy_node_id_before_update BEFORE UPDATE ON patc
 
 
 --
+-- Name: port_param_check_value; Type: TRIGGER; Schema: public; Owner: lanview2
+--
+
+CREATE TRIGGER port_param_check_value BEFORE INSERT OR UPDATE ON port_params FOR EACH ROW EXECUTE PROCEDURE check_before_param_value();
+
+
+--
+-- Name: port_params_check_reference_port_id; Type: TRIGGER; Schema: public; Owner: lanview2
+--
+
+CREATE TRIGGER port_params_check_reference_port_id BEFORE INSERT OR UPDATE ON port_params FOR EACH ROW EXECUTE PROCEDURE check_reference_port_id();
+
+
+--
+-- Name: port_vlans_check_reference_port_id; Type: TRIGGER; Schema: public; Owner: lanview2
+--
+
+CREATE TRIGGER port_vlans_check_reference_port_id BEFORE INSERT OR UPDATE ON port_vlans FOR EACH ROW EXECUTE PROCEDURE check_reference_port_id('false', 'nports', 'pports');
+
+
+--
 -- Name: post_insert_phs_links; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
@@ -39648,6 +39983,13 @@ CREATE TRIGGER pports_check_before_update BEFORE UPDATE ON pports FOR EACH ROW E
 --
 
 CREATE TRIGGER pports_delete_port_post AFTER DELETE ON pports FOR EACH ROW EXECUTE PROCEDURE delete_port_post();
+
+
+--
+-- Name: service_vars_check_value; Type: TRIGGER; Schema: public; Owner: lanview2
+--
+
+CREATE TRIGGER service_vars_check_value BEFORE INSERT OR UPDATE ON service_vars FOR EACH ROW EXECUTE PROCEDURE check_before_service_value();
 
 
 --
@@ -39690,6 +40032,13 @@ CREATE TRIGGER snmpdevices_restrict_modfy_node_id_before_update BEFORE UPDATE ON
 --
 
 CREATE TRIGGER subnets_check_before_update_trigger BEFORE UPDATE ON subnets FOR EACH ROW EXECUTE PROCEDURE subnet_check_before_update();
+
+
+--
+-- Name: sys_param_check_value; Type: TRIGGER; Schema: public; Owner: lanview2
+--
+
+CREATE TRIGGER sys_param_check_value BEFORE INSERT OR UPDATE ON sys_params FOR EACH ROW EXECUTE PROCEDURE check_before_param_value();
 
 
 --
@@ -40199,14 +40548,6 @@ ALTER TABLE ONLY places
 
 ALTER TABLE ONLY port_params
     ADD CONSTRAINT port_params_param_type_id_fkey FOREIGN KEY (param_type_id) REFERENCES param_types(param_type_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
-
-
---
--- Name: port_vlans_port_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
---
-
-ALTER TABLE ONLY port_vlans
-    ADD CONSTRAINT port_vlans_port_id_fkey FOREIGN KEY (port_id) REFERENCES interfaces(port_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
