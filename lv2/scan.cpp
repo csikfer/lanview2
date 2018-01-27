@@ -498,6 +498,7 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip)
                 // A paraméterként megadott címet preferáltnak vesszük
                 if (addr == hostAddr) {   // Ez az
                     pa.setId(_sPreferred, 0);
+                    foundMyIp = true;
                 }
                 PDEB(VVERBOSE) << "Insert port : " << pPort->toString() << endl;
                 node.ports << pPort;

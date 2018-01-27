@@ -128,7 +128,7 @@ void cError::exception(void)
         PDEB(EXCEPT) << m << endl;
         cDebug::flushAll();
     }
-    throw(this);
+   throw(this);
     {
         QString mm = QObject::trUtf8("Exception (throw) is not working, exit.");
         if (cDebug::getInstance() != NULL) {
