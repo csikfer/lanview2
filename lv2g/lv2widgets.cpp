@@ -1938,9 +1938,13 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
     switch (_filter) {
     case F_SIMPLE:
         connect(pUi->lineEditFilter, SIGNAL(textChanged(QString)), this, SLOT(setFilter(QString)));
-        /* continue! */
+        connect(pUi->comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(setFromEdit(int)));
+        break;
     case F_NO:
         connect(pUi->comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(setFromEdit(int)));
+        pUi->lineEditFilter->hide();
+        pUi->label->hide();
+        pModel->setFilter(_sNul, OT_ASC, FT_NO);
         break;
     case F_PLACE:
         connect(pSelectPlace, SIGNAL(placeIdChanged(qlonglong)), this, SLOT(setFromEdit(qlonglong)));

@@ -110,11 +110,11 @@ INCLUDEPATH += ../lv2
 msvc:LIBS += -lSecur32
 LIBS += -L../lv2 -llv2
 
-exists(../../zodiacgraph) {
-    INCLUDEPATH += ../../zodiacgraph
-    LIBS += -L../../zodiacgraph.build -lzodiacgraph
-    DEFINES += ZODIACGRAPH
-}
+#exists(../../zodiacgraph) {
+#    INCLUDEPATH += ../../zodiacgraph
+#    LIBS += -L../../zodiacgraph.build -lzodiacgraph
+#    DEFINES += ZODIACGRAPH
+#}
 
 unix:{
     exists(/usr/include/net-snmp) {
