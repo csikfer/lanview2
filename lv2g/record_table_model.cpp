@@ -174,7 +174,11 @@ bool cRecordViewModelBase::insertRec(cRecord *pRec)
 {
     bool r = SqlInsert(*pq, pRec);
     PDEB(VVERBOSE) << QString("Insert returned : %1; record : %2").arg(r).arg(pRec->toString()) << endl;
-    return r && insertRow(pRec);
+    if (!insertRow(pRec)) {
+        QMessageBox::warning(NULL, cEnumVal::viewLong(_sDatacharacter, DC_WARNING, dataCharacter(DC_WARNING)),
+                             QObject::trUtf8("A megjelenítés frissítése sikertelen, kérem frissítse a megjelenítést!"));
+    }
+    return r;
 }
 
 bool cRecordViewModelBase::SqlInsert(QSqlQuery& q, cRecord *pRec)

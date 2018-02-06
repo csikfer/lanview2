@@ -475,9 +475,12 @@ public:
     virtual int set(const QVariant& v);
 protected:
     void setWidget();
+    virtual void togleNull(bool f);
     QComboBox *pComboBox;
+    cEnumListModel *pModel;
     qlonglong  eval;
-    eNullType  nulltype;
+    qlonglong  evalDef;
+//    eNullType  nulltype;
 private slots:
     void setFromEdit(int id);
 };

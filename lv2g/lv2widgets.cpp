@@ -360,7 +360,7 @@ cFieldEditBase::cFieldEditBase(const cTableShape &_tm, const cTableShapeField &_
     _isInsert   = (_fl & FEB_INSERT);      // ??!
     _dcNull     = DC_INVALID;
     _height     = 1;
-    if (_isInsert && _hasDefault) {
+    if (_hasDefault) {
         _dcNull = DC_DEFAULT;       // can be NULL because it has a default value
     }
     else if (_hasAuto) {
@@ -960,8 +960,12 @@ cEnumComboWidget::cEnumComboWidget(const cTableShape& _tm, const cTableShapeFiel
     pLayout = new QHBoxLayout;
     setLayout(pLayout);
     pLayout->addWidget(pComboBox);
-    nulltype = _dcNull == DC_INVALID ? NT_NOT_NULL : (eNullType)_dcNull;
-    cEnumListModel *pModel = new cEnumListModel(&_colDescr.enumType(), nulltype);
+    setupNullButton();
+    evalDef = ENUM_INVALID;
+    if (_hasDefault) {
+        evalDef = _colDescr.enumType().str2enum(_colDescr.colDefault);
+    }
+    pModel = new cEnumListModel(&_colDescr.enumType());
     pModel->joinWith(pComboBox);
     pComboBox->setEditable(false);                  // Nem editálható, választás csak a listából
     setWidget();
@@ -975,19 +979,38 @@ cEnumComboWidget::~cEnumComboWidget()
 
 void cEnumComboWidget::setWidget()
 {
-    if (isContIx(_colDescr.enumType().enumValues, eval)) {
-        int ix = eval;
-        if (nulltype != NT_NOT_NULL) ++ix;
-        pComboBox->setCurrentIndex(ix);
+    if (eval < 0 && evalDef >= 0) eval = evalDef;
+    if (eval < 0 && pNullButton != NULL) {
+        pNullButton->setChecked(true);
     }
     else {
-        if (nulltype == NT_NOT_NULL) {
-            setFromEdit(0);
+        if (pNullButton != NULL) {
+            pNullButton->setChecked(false);
         }
-        else {
-            eval = NULL_ID;
+        int ix = pModel->indexOf(eval);
+        if (ix < 0) ix = 0;
+        pComboBox->setCurrentIndex(ix);
+    }
+}
+
+void cEnumComboWidget::togleNull(bool f)
+{
+    if (evalDef != ENUM_INVALID) {
+        if (f) {
+            int ix = pModel->indexOf(evalDef);
+            pComboBox->setCurrentIndex(ix);
+            pNullButton->setChecked(false);
         }
-        pComboBox->setCurrentIndex(0);
+        return;
+    }
+    disableEditWidget(f);
+    if (f) {
+        eval = NULL_ID;
+        setFromWidget(QVariant());
+    }
+    else {
+        int ix = pComboBox->currentIndex();
+        setFromEdit(ix);
     }
 }
 
@@ -1004,16 +1027,11 @@ int cEnumComboWidget::set(const QVariant& v)
 
 void cEnumComboWidget::setFromEdit(int index)
 {
-    qlonglong newEval = index;
-    if (nulltype != NT_NOT_NULL) {
-        if (index == 0) newEval = NULL_ID;
-        else            newEval--;
-    }
+    qlonglong newEval = pModel->atInt(index);
     if (eval == newEval) return;
     qlonglong v = newEval;
     qlonglong dummy;
     setFromWidget(_colDescr.set(QVariant(v), dummy));
-
 }
 
 /* **************************************** cFieldLineWidget ****************************************  */

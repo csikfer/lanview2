@@ -235,13 +235,25 @@ QStringList cColEnumType::set2lst(qlonglong b, eEx __ex) const
     return r;
 }
 
-qlonglong cColEnumType::str2enum(const QString& s, eEx __ex) const
+qlonglong cColEnumType::str2enum(const QString& _s, eEx __ex) const
 {
+    QString s = _s;
+    if (s.endsWith("::" + *this)) { // '<value>'::<type>
+        s.chop(this->size() + 2);
+        s = unQuoted(s);
+    }
     for (int i = 0; i < enumValues.size(); ++i) {
         if (0 == enumValues[i].compare(s, Qt::CaseInsensitive)) return i;
     }
-    if (__ex) EXCEPTION(EDATA, -1, QObject::trUtf8("Nem megengedett enumerációs érték : %1.%2").arg(*this).arg(s));
-    return -1;
+    if (0 == this->compare(_sBoolean)) {    // type is boolean ?
+        switch (str2tristate(s, EX_IGNORE)) {
+        case TS_TRUE:   return 1;
+        case TS_FALSE:  return 0;
+        default:        break;
+        }
+    }
+    if (__ex != EX_IGNORE) EXCEPTION(EDATA, -1, QObject::trUtf8("Nem megengedett enumerációs érték : %1.%2").arg(*this).arg(_s));
+    return ENUM_INVALID;
 
 }
 qlonglong cColEnumType::str2set(const QString& s, eEx __ex) const
