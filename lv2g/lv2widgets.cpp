@@ -782,7 +782,6 @@ cSetWidget::~cSetWidget()
     ;
 }
 
-
 void cSetWidget::setChecked()
 {
     if (_bits < 0) {
@@ -811,6 +810,7 @@ int cSetWidget::set(const QVariant& v)
     _DBGFN() << debVariantToString(v) << endl;
     int r = 1 == cFieldEditBase::set(v);
     if (r) {
+        _isNull = _value.isNull();
         _bits = _colDescr.toId(_value);
         setChecked();
     }
@@ -985,7 +985,7 @@ void cEnumComboWidget::setWidget()
     }
     else {
         if (pNullButton != NULL) {
-            pNullButton->setChecked(false);
+            pNullButton->setChecked(eval == evalDef);
         }
         int ix = pModel->indexOf(eval);
         if (ix < 0) ix = 0;
@@ -995,11 +995,15 @@ void cEnumComboWidget::setWidget()
 
 void cEnumComboWidget::togleNull(bool f)
 {
-    if (evalDef != ENUM_INVALID) {
+    // _DBGFN() << _colDescr << VDEB(f) << endl;
+    if (evalDef > ENUM_INVALID) {
         if (f) {
             int ix = pModel->indexOf(evalDef);
             pComboBox->setCurrentIndex(ix);
-            pNullButton->setChecked(false);
+            // PDEB(INFO) << VDEB(eval) << VDEB(evalDef) << endl;
+        }
+        else {
+            if (eval == evalDef) pNullButton->setChecked(true);
         }
         return;
     }
@@ -1027,8 +1031,15 @@ int cEnumComboWidget::set(const QVariant& v)
 
 void cEnumComboWidget::setFromEdit(int index)
 {
+    //_DBGFN() << VDEB(index);
     qlonglong newEval = pModel->atInt(index);
-    if (eval == newEval) return;
+    if (eval == newEval) {
+        //PDEB(INFO) << "no change: " << VDEB(eval) << endl;
+        return;
+    }
+    //PDEB(INFO) << VDEB(eval) << " := " << newEval << endl;
+    eval = newEval;
+    if (pNullButton != NULL && evalDef > ENUM_INVALID) pNullButton->setChecked(eval == evalDef);
     qlonglong v = newEval;
     qlonglong dummy;
     setFromWidget(_colDescr.set(QVariant(v), dummy));
@@ -1949,9 +1960,6 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
         setupNullButton(isNull);
         cFieldEditBase::disableEditWidget(isNull);
     }
-    // Az aktuális érték megjelenítése
-    // setWidget();
-    first = true;
 
     switch (_filter) {
     case F_SIMPLE:
@@ -1968,6 +1976,14 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
         connect(pSelectPlace, SIGNAL(placeIdChanged(qlonglong)), this, SLOT(setFromEdit(qlonglong)));
         break;
     }
+    if (_readOnly) {
+        pUi->toolButtonRefresh->hide();
+    }
+    else {
+        connect(pUi->toolButtonRefresh, SIGNAL(clicked()), this, SLOT(refresh()));
+    }
+    // Az aktuális érték megjelenítése
+    setWidget();
 }
 
 cFKeyWidget::~cFKeyWidget()
@@ -1995,21 +2011,33 @@ bool cFKeyWidget::setWidget()
     return true;
 }
 
- int cFKeyWidget::set(const QVariant& v)
+int cFKeyWidget::set(const QVariant& v)
 {
     int r = cFieldEditBase::set(v);
-    if (first || 1 == r) {
-        if (pModel != NULL && (setConstFilter() || first)) {   // Más mező is változhatott ??!!
+    if (1 == r) {
+        _refresh();
+        if (pModel != NULL) {
             pModel->setFilter();
         }
         actId = _colDescr.toId(_value);
-        if (first && pSelectPlace != NULL) {
+        if (pSelectPlace != NULL) {
             pSelectPlace->refresh();
         }
         if (!setWidget()) r = -1;
     }
-    first = false;
     return r;
+}
+
+QString cFKeyWidget::getName()
+{
+    if (pModel != NULL) {
+        return pModel->currendName();
+    }
+    if (pSelectPlace != NULL) {
+        return pSelectPlace->currentPlaceName();
+    }
+    EXCEPTION(EPROGFAIL);
+    return _sNul;
 }
 
 void cFKeyWidget::setFromEdit(int i)
@@ -2194,6 +2222,53 @@ void cFKeyWidget::modifyOwnerId(cFieldEditBase* pof)
     pModel->setOwnerId(ownerId);
     pUi->comboBox->setCurrentIndex(0);
     setFromEdit(0);
+}
+
+void cFKeyWidget::_refresh()
+{
+    if (_pParentDialog != NULL) {
+        QStringList constFilter = _fieldShape.features().slValue(_sRefine);
+        if (!constFilter.isEmpty() && !constFilter.first().isEmpty()) {
+            QString sql = constFilter.first();
+            constFilter.pop_front();
+            foreach (QString s, constFilter) {
+                if (s.isEmpty()) EXCEPTION(EDATA);
+                qlonglong id;
+                switch (s[0].toLatin1()) {
+                case '#':   // int
+                    s = s.mid(1);
+                    id = (*_pParentDialog)[s]->getId();
+                    s = id == NULL_ID ? _sNULL : QString::number(id);
+                    break;
+                case '&':   // string
+                    s = s.mid(1);
+                    if ((*_pParentDialog)[s]->get().isNull()) {
+                        s = _sNULL;
+                    }
+                    else {
+                        s = (*_pParentDialog)[s]->getName();
+                    }
+                    break;
+                default:
+                    s = (*_pParentDialog)[s]->getName();
+                    break;
+                }
+                sql = sql.arg(s);
+            }
+            if (pModel == NULL) EXCEPTION(EPROGFAIL);
+            pModel->setConstFilter(sql, FT_SQL_WHERE);
+        }
+    }
+    pModel->setFilter();
+}
+
+void cFKeyWidget::refresh()
+{
+    qlonglong id = pModel->currendId();
+    _refresh();
+    int ix = pModel->indexOf(id);
+    if (ix < 0) ix = 0;
+    pUi->comboBox->setCurrentIndex(ix);
 }
 
 

@@ -609,6 +609,13 @@ qlonglong cRecordListModel::currendId()
     return atId(ix);
 }
 
+QString cRecordListModel::currendName()
+{
+    if (pComboBox == NULL) EXCEPTION(EPROGFAIL);
+    int ix = pComboBox->currentIndex();
+    return at(ix);
+}
+
 
 void cRecordListModel::changeCurrentIndex(int i)
 {

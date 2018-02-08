@@ -308,6 +308,7 @@ public:
     void joinWith(QComboBox *_pComboBox);
     /// A kurrens ID lekérdezése. Csa akkor hívható, ha a modelt a joinWith metódussal összerendeltük egy comboBox-al.
     qlonglong currendId();
+    QString currendName();
 protected:
     QString _where(QString s = QString());
     QString where(const QString &nameName);

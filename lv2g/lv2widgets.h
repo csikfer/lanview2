@@ -649,11 +649,13 @@ public:
     cFKeyWidget(const cTableShape &_tm, const cTableShapeField &_tf, cRecordFieldRef __fr, cRecordDialogBase *_par);
     ~cFKeyWidget();
     virtual int set(const QVariant& v);
+    virtual QString getName();
 protected:
     bool setWidget();
     void setButtons();
     void disableEditWidget(eTristate tsf);
     bool setConstFilter();
+    void _refresh();
     Ui_fKeyEd          *pUi;
     cRecordListModel   *pModel;         // No special filter (selector)
     cSelectPlace       *pSelectPlace;   // Place: filtered by zone
@@ -665,7 +667,6 @@ protected:
     /// A távoli kulcs által mutatott táblában a saját ID-t tartalmazó mező indexe
     int             owner_ix;
     qlonglong       ownerId;
-    bool            first;
     enum eFilter { F_NO = 0, F_SIMPLE, F_PLACE };
     int            _filter;
 protected slots:
@@ -676,6 +677,7 @@ protected slots:
     void modifyF();
     void modifyOwnerId(cFieldEditBase* pof);
     void setFilter(const QString &_s);
+    void refresh();
 };
 
 /// @class cDateWidget
