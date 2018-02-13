@@ -80,6 +80,10 @@ cErrorMessageBox::cErrorMessageBox(cError *_pe, QWidget *parent, const QString& 
         IR("Adat sor", _pe->mDataLine);
         _R("Adat megjegyzés", _pe->mDataMsg);
     }
+    if (!_pe->slBackTrace.isEmpty()) {
+        QString bt = QString("\n") + _pe->slBackTrace.join("\n");
+        _R("Stack : ", bt);
+    }
 }
 
 void cErrorMessageBox::pushed(int id)

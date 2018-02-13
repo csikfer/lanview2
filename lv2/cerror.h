@@ -32,6 +32,21 @@
 Hibakezelést segítő objektumok, függvények és makrók.
 */
 
+#define DEFAULT_BACKTRACE_SIZE 16
+
+class LV2SHARED_EXPORT cBacTrace : public QStringList {
+public:
+    cBacTrace(int _size = DEFAULT_BACKTRACE_SIZE);
+    ~cBacTrace();
+private:
+#if defined(Q_CC_GNU)
+    int     size;
+    void ** buffer;
+    char ** symbols;
+#endif
+};
+
+
 /*!
 @def LSTXGET(__lst, __ix, __v)
 Egy elem lekérése egy lista/vektor -ból
@@ -284,6 +299,7 @@ Az adattagok inicializálása után hívja a circulation() metódust
     QString mDataMsg;               ///< Source file name
     QString mDataName;              ///< Source file name
     QThread *pThread;               ///< A hibaobjektumot létrehozó szál
+    QStringList slBackTrace;
 
     static QList<cError *> errorList;
     static int errCount() { return errorList.size(); }

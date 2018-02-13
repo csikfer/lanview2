@@ -483,11 +483,9 @@ void cRecordDialog::init()
 void cRecordDialog::restore(const cRecord *_pRec)
 {
     pDelete(_pRecord);
+    _pRecord = new cRecordAny(&rDescr);;
     if (_pRec != NULL) {
-        _pRecord = new cRecordAny(*_pRec);
-    }
-    else {
-        _pRecord = new cRecordAny(&rDescr);
+        _pRecord->set(*_pRec);
     }
     int i, n = fields.size();
     for (i = 0; i < n; i++) {
@@ -723,12 +721,24 @@ cRecord *objectDialog(const QString& name, QSqlQuery& q, QWidget *pPar, cRecord 
     edit = edit || ro;
     if (0 == name.compare("cPatchDialog", Qt::CaseInsensitive)) {
         cPatch *pSample = NULL;
+        bool data = false;
         if (_pSample != NULL) {
             pSample = new cPatch;
-            pSample->setById(q, _pSample->getId());
-            pSample->fetchPorts(q);
+            if (_pSample->getId() != NULL_ID) {
+                pSample->setById(q, _pSample->getId());
+                pSample->fetchPorts(q);
+                data = true;
+            }
+            else if (!_pSample->getName().isEmpty()) {
+                pSample->setByName(q, _pSample->getName());
+                pSample->fetchPorts(q);
+                data = true;
+            }
+            else {
+                pSample->set(*_pSample);
+            }
         }
-        else {
+        if (!data) {
             if (edit || ro) EXCEPTION(EPROGFAIL);
         }
         cRecord *pRec;

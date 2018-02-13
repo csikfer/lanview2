@@ -21,6 +21,33 @@
 #include "cdebug.h"
 #include "cerror.h"
 #include <iostream>
+#if defined(Q_CC_GNU)
+#include <execinfo.h>
+#endif
+
+cBacTrace::cBacTrace(int _size) : QStringList()
+{
+#if defined(Q_CC_GNU)
+    buffer = (void **)malloc(sizeof(void *) * _size);
+    size   = backtrace(buffer, _size);
+    symbols= backtrace_symbols(buffer, size);
+    for (int i = 0; i < size; ++i) {
+        *this << QString(symbols[i]);
+    }
+#else
+    (void)_size;
+#endif
+}
+
+cBacTrace::~cBacTrace()
+{
+#if defined(Q_CC_GNU)
+    free(buffer);
+    free(symbols);
+#endif
+}
+
+
 class lanView;
 extern qlonglong sendError(const cError *pe, lanView *_instance = NULL);
 
@@ -128,7 +155,8 @@ void cError::exception(void)
         PDEB(EXCEPT) << m << endl;
         cDebug::flushAll();
     }
-   throw(this);
+    slBackTrace = cBacTrace();
+    throw(this);
     {
         QString mm = QObject::trUtf8("Exception (throw) is not working, exit.");
         if (cDebug::getInstance() != NULL) {
@@ -205,6 +233,9 @@ QString cError::msg(void) const
         if (mDataLine >= 0) {
             r += QString("DATA : %1[%2] :\n").arg(mDataName).arg(mDataLine) + mDataMsg;
         }
+    }
+    if (!slBackTrace.isEmpty()) {
+        r += QString("\n") +  slBackTrace.join("\n");
     }
     return r;
 }

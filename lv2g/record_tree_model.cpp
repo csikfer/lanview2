@@ -326,9 +326,19 @@ int cRecordTreeModel::checkUpdateRow(const QModelIndex& mi, cRecord * pRec, QMod
 {
     cTreeNode *pn = nodeFromIndex(mi);  // A modosított elem (node)
     if (pn->parent == NULL || pn->pData == NULL) EXCEPTION(EPROGFAIL);
-    int ixPId = pRec->descr().ixToParent();     // Az ősre mutató ID mező indexe
-    qlonglong old_pid = pn->pData->getId(ixPId);    // Régi parent ID
-    qlonglong new_pid = pRec->getId(ixPId);         // Új parent ID
+    int ixPId = pRec->descr().ixToParent(EX_IGNORE);// Az ősre mutató ID mező indexe
+    qlonglong old_pid = NULL_ID;
+    qlonglong new_pid = NULL_ID;
+    if (ixPId < 0) {
+        int tit = tableShape.getId(_sTableInheritType);
+        if (tit == TIT_NO || tit == TIT_ONLY) {
+            EXCEPTION(EDATA, -1, tableShape.identifying(false));
+        }
+    }
+    else {
+        old_pid = pn->pData->getId(ixPId);    // Régi parent ID
+        new_pid = pRec->getId(ixPId);         // Új parent ID
+    }
     if (old_pid == new_pid) {   // A modosítottat ugyanode kell visszarakni
         return 1;   // OK, A fát nem kell átrendezni
     }

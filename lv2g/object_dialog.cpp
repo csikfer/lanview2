@@ -423,8 +423,7 @@ void cPatchDialog::addPorts()
     QTableWidgetItem *pItem;
     for (int i = from; i <= to; i++, row++) {
         QString name = nameAndNumber(namePattern, i + nameOffs);
-        QString tag;
-        if (!tagPattern.isEmpty()) tag = nameAndNumber(tagPattern, i + tagOffs);
+        QString tag  = nameAndNumber(tagPattern, i + tagOffs);
         pItem = new QTableWidgetItem(name);
         pUi->tableWidgetPorts->setItem(row, CPP_NAME, pItem);
         pItem = new QTableWidgetItem(QString::number(i));
