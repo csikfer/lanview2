@@ -23,30 +23,45 @@
 #include <iostream>
 #if defined(Q_CC_GNU)
 #include <execinfo.h>
+#elif 0 && defined(Q_CC_MSVC)
+#include <Windows.h>
+#include <WinBase.h>
+#include <DbgHelp.h>
 #endif
 
-cBacTrace::cBacTrace(int _size) : QStringList()
+cBackTrace::cBackTrace(int _size) : QStringList()
 {
+    void ** buffer;
 #if defined(Q_CC_GNU)
+    int     size;
+    char ** symbols;
     buffer = (void **)malloc(sizeof(void *) * _size);
     size   = backtrace(buffer, _size);
     symbols= backtrace_symbols(buffer, size);
     for (int i = 0; i < size; ++i) {
         *this << QString(symbols[i]);
     }
+    free(buffer);
+    free(symbols);
+#elif 0 && defined(Q_CC_MSVC)
+    unsigned short frames;
+    SYMBOL_INFO    symbol;
+    HANDLE         process;
+    buffer = (void **)malloc(sizeof(void *) * _size);
+    process = GetCurrentProcess();
+    SymInitialize(process, NULL, TRUE );
+    frames = CaptureStackBackTrace( 0, (DWORD)_size, buffer, NULL );
+    for(int i = 0; i < frames; i++) {
+        SymFromAddr( process, ( DWORD64 )( buffer[ i ] ), 0, &symbol );
+        *this << QString(symbol.Name);
+    }
+    SymCleanup(process);
+    free(buffer);
 #else
+    (void)buffer;
     (void)_size;
 #endif
 }
-
-cBacTrace::~cBacTrace()
-{
-#if defined(Q_CC_GNU)
-    free(buffer);
-    free(symbols);
-#endif
-}
-
 
 class lanView;
 extern qlonglong sendError(const cError *pe, lanView *_instance = NULL);
@@ -155,7 +170,7 @@ void cError::exception(void)
         PDEB(EXCEPT) << m << endl;
         cDebug::flushAll();
     }
-    slBackTrace = cBacTrace();
+    slBackTrace = cBackTrace();
     throw(this);
     {
         QString mm = QObject::trUtf8("Exception (throw) is not working, exit.");

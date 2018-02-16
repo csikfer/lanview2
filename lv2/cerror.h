@@ -26,7 +26,6 @@
 #include <QSqlError>
 #include <QSqlQuery>
 
-
 /*!
 @file cerror.h
 Hibakezelést segítő objektumok, függvények és makrók.
@@ -34,16 +33,9 @@ Hibakezelést segítő objektumok, függvények és makrók.
 
 #define DEFAULT_BACKTRACE_SIZE 16
 
-class LV2SHARED_EXPORT cBacTrace : public QStringList {
+class LV2SHARED_EXPORT cBackTrace : public QStringList {
 public:
-    cBacTrace(int _size = DEFAULT_BACKTRACE_SIZE);
-    ~cBacTrace();
-private:
-#if defined(Q_CC_GNU)
-    int     size;
-    void ** buffer;
-    char ** symbols;
-#endif
+    cBackTrace(int _size = DEFAULT_BACKTRACE_SIZE);
 };
 
 
