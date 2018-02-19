@@ -81,8 +81,8 @@ cErrorMessageBox::cErrorMessageBox(cError *_pe, QWidget *parent, const QString& 
         _R("Adat megjegyzés", _pe->mDataMsg);
     }
     if (!_pe->slBackTrace.isEmpty()) {
-        QString bt = QString("\n") + _pe->slBackTrace.join("\n");
-        _R("Stack : ", bt);
+        QString bt = _pe->slBackTrace.join("\n");
+        _R("Stack", bt);
     }
 }
 
