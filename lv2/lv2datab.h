@@ -2258,8 +2258,10 @@ public:
     qlonglong   getTextId(eEx __ex = EX_ERROR) { int ix = descr().textIdIndex(__ex); return 0 > ix ? NULL_ID : getId(ix); }
     QString     getText(int _tix, const QString& _d = QString()) const;
     QString     getText(const QString& _tn, const QString& _d = QString()) const;
+    QStringList getTexts() const { return pTextList == NULL ? QStringList() : *pTextList; }
     cRecord&    setText(int _tix, const QString& _t);
     cRecord&    setText(const QString& _tn, const QString& _t);
+    cRecord&    setTexts(const QStringList& _txts);
     bool fetchText(QSqlQuery& _q, bool __force = true);
     void saveText(QSqlQuery& _q);
     qlonglong   containerValid;

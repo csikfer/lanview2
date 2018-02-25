@@ -3595,7 +3595,10 @@ int cRecord::update(QSqlQuery& __q, bool __only, const QBitArray& __set, const Q
         int tixix = descr().textIdIndex(EX_IGNORE);
         if (tixix >= 0) bset.clearBit(tixix);       // Szöveg indexet sem bántjuk!!!
     }
-    if (bset.count(true) == 0) EXCEPTION(EDATA);
+    if (bset.count(true) == 0) {    // A nyelvi szövegek miatt előfordulhat!
+        if (__ex >= EX_WARNING) EXCEPTION(EDATA);
+        return 0;
+    }
     QString sql = QString(__only ? "UPDATE ONLY %1 SET" : "UPDATE %1 SET").arg(fullTableNameQ());
     int i,j;
     for (i = 0; i < bset.size(); i++) {
@@ -3656,9 +3659,9 @@ cError *cRecord::tryUpdateById(QSqlQuery& __q, eTristate __tr, bool text)
     eTristate tr = trFlag(__tr);
     if (tr == TS_TRUE) sqlBegin(__q, tableName());
     try {
-        n = update(__q, true);
-        if (n != 1) {
-            EXCEPTION(EOID);
+        n = update(__q, true, QBitArray(), QBitArray(), text ? EX_ERROR : EX_NOOP);
+        if (n > 1) {
+            EXCEPTION(EOID, n, identifying());
         }
         if (text) {
             saveText(__q);
@@ -4066,6 +4069,20 @@ cRecord&    cRecord::setText(const QString& _tn, const QString& _t)
     return setText(tix, _t);
 }
 
+cRecord&    cRecord::setTexts(const QStringList& _txts)
+{
+    if (_txts.isEmpty()) {
+        pDelete(pTextList);
+    }
+    else if (pTextList == NULL) {
+        pTextList = new QStringList(_txts);
+    }
+    else {
+        *pTextList = _txts;
+    }
+    return *this;
+}
+
 bool cRecord::fetchText(QSqlQuery& _q, bool __force)
 {
     if (!__force && pTextList != NULL && !pTextList->isEmpty()) return true;
@@ -4099,7 +4116,7 @@ void cRecord::saveText(QSqlQuery& _q)
         tid = _q.value(0).toLongLong(&ok);
         if (!ok) EXCEPTION(EPROGFAIL, getId(), identifying());
     }
-    int n = colDescr(tidix).pEnumType->size();
+    int n = colDescr(tidix).pEnumType->enumValues.size();
     QString qs;
     QVariantList vl;
     vl << tid << tableName();

@@ -486,6 +486,7 @@ void cRecordDialog::restore(const cRecord *_pRec)
     _pRecord = new cRecordAny(&rDescr);;
     if (_pRec != NULL) {
         _pRecord->set(*_pRec);
+        _pRecord->setTexts(_pRec->getTexts());
     }
     int i, n = fields.size();
     for (i = 0; i < n; i++) {
