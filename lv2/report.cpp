@@ -64,7 +64,6 @@ QString query2html(QSqlQuery q, cTableShape &_shape, const QString& _where, cons
     return list2html(q, list, _shape, shrt);
 }
 
-// Át kéne írni, hogy a table_shapes rekordok alapján írja ki a riportot, ne fixen.
 QString htmlReportNode(QSqlQuery& q, cPatch& node, const QString& _sTitle, bool ports)
 {
     QString text;
@@ -105,8 +104,11 @@ QString htmlReportNode(QSqlQuery& q, cPatch& node, const QString& _sTitle, bool 
     if (ports && node.fetchPorts(q)) {
         text += htmlInfo(QObject::trUtf8("Portok :"));
         node.sortPortsByIndex();
+        // Table header
         text += sHtmlTabBeg + sHtmlRowBeg;
+        text += sHtmlTh.arg(QObject::trUtf8("#"));
         text += sHtmlTh.arg(QObject::trUtf8("Port"));
+        text += sHtmlTh.arg(QObject::trUtf8("Cimke"));
         text += sHtmlTh.arg(QObject::trUtf8("Típus"));
         text += sHtmlTh.arg(isPatch ? QObject::trUtf8("Shared") : QObject::trUtf8("MAC"));
         text += sHtmlTh.arg(isPatch ? QObject::trUtf8("S.p.")   : QObject::trUtf8("IP cím(ek)"));
@@ -116,12 +118,15 @@ QString htmlReportNode(QSqlQuery& q, cPatch& node, const QString& _sTitle, bool 
         if (!isPatch) text += sHtmlTh.arg(QObject::trUtf8("LLDP link"));
         if (!isPatch) text += sHtmlTh.arg(QObject::trUtf8("MAC tab"));
         text += sHtmlRowEnd;
+        // Table data
         QListIterator<cNPort *> li(node.ports);
         while (li.hasNext()) {
             cNPort * p = li.next();
             cInterface *pif = NULL;
             text += sHtmlRowBeg;
+            text += sHtmlTd.arg(p->getName(_sPortIndex));
             text += sHtmlTd.arg(p->getName());
+            text += sHtmlTd.arg(p->getName(_sPortTag));
             text += sHtmlTd.arg(cIfType::ifTypeName(p->getId(_sIfTypeId)));
             // Columns: port, típus, MAC|Shared, IP|S.p., DNS|-
             if (p->descr() == cInterface::_descr_cInterface()) {  // Interface

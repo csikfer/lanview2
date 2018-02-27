@@ -89,6 +89,7 @@ public:
 
     /// Main window object pointer
     static cMainWindow *    pMainWindow;
+    static QSplashScreen *  pSplash;
 
     static QIcon        iconNull;
     static QIcon        iconDefault;

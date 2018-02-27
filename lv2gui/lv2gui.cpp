@@ -23,6 +23,8 @@ int main(int argc, char * argv[])
 
     SETAPP();
     lanView::gui = true;
+    lv2g::pSplash = new QSplashScreen(QPixmap("://splash.png"));
+    lv2g::pSplash->show();
     lanView::snmpNeeded = false;
     if (0 <= findArg(QChar('s'),QString("setup"), arguments)) {
         lv2Gui::_setup = true;
@@ -76,6 +78,9 @@ int main(int argc, char * argv[])
                 mo.pMainWindow->setGeometry(geom);
                 mo.pMainWindow->adjustSize();
                 break;
+            }
+            if (mo.pSplash != NULL) {
+                mo.pSplash->finish(mo.pMainWindow);
             }
             foreach (QString a, slAutoOpen) {
                 QMap<QString, QAction *>::iterator i = cMenuAction::actionsMap.find(a);

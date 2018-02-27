@@ -6,6 +6,7 @@
 #include "QFileDialog"
 
 cMainWindow *    lv2g::pMainWindow = NULL;
+QSplashScreen *  lv2g::pSplash = NULL;
 bool lv2g::logonNeeded = false;
 bool lv2g::zoneNeeded  = true;
 const QString lv2g::sDefaultSplitOrientation= "defaultSplitOrientation";
@@ -33,7 +34,7 @@ lv2g::lv2g() :
             PDEB(VVERBOSE) << "Disable native menubar..." << endl;
             QApplication::setAttribute(Qt::AA_DontUseNativeMenuBar, true);
         }
-        new cMainWindow;
+        new cMainWindow;    // -> lv2g::pMainWindow
         zoneId = NULL_ID;
         #include "errcodes.h"
         if (dbIsOpen()) {
