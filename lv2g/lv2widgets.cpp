@@ -2016,9 +2016,6 @@ int cFKeyWidget::set(const QVariant& v)
     int r = cFieldEditBase::set(v);
     if (1 == r) {
         _refresh();
-        if (pModel != NULL) {
-            pModel->setFilter();
-        }
         actId = _colDescr.toId(_value);
         if (pSelectPlace != NULL) {
             pSelectPlace->refresh();
@@ -2259,7 +2256,9 @@ void cFKeyWidget::_refresh()
             pModel->setConstFilter(sql, FT_SQL_WHERE);
         }
     }
+    pUi->comboBox->blockSignals(true);
     pModel->setFilter();
+    pUi->comboBox->blockSignals(false);
 }
 
 void cFKeyWidget::refresh()

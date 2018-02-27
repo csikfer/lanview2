@@ -150,10 +150,10 @@ void cRecordLink::modify(eEx __ex)
     else {
         cLinkDialog dialog(false, this);
         int r;
-        do {
+        while (true) {
             dialog.exec();
             r = dialog.result();
-            if (DBT_CANCEL != r) {
+            if (DBT_CANCEL != r && r != DBT_CLOSE) {
                 cPhsLink link;
                 if (dialog.get(link)) { // insert
                     if (!cErrorMessageBox::condMsgBox(link.tryInsert(*pq))) continue;
@@ -162,8 +162,13 @@ void cRecordLink::modify(eEx __ex)
                     if (!cErrorMessageBox::condMsgBox(link.tryReplace(*pq))) continue;
                 }
                 refresh(false);
+                if (r == DBT_NEXT) {
+                    dialog.changed();
+                    continue;
+                }
             }
-        } while (r == DBT_NEXT);
+            break;
+        }
     }
 }
 

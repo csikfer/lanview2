@@ -2716,10 +2716,12 @@ QList<QHostAddress> cNode::fetchAllIpAddress(QSqlQuery& q, qlonglong __id) const
     PDEB(VERBOSE) << VDEB(id) << endl;
     if (execSql(q, sql, id)) do {
         QVariant v = q.value(0);
-        QHostAddress a;
-        a.setAddress(v.toString());
-        if (a.isNull()) EXCEPTION(EDATA);
-        r << a;
+        if (!v.isNull()) {
+            QHostAddress a;
+            a.setAddress(v.toString());
+            if (a.isNull()) EXCEPTION(EDATA);
+            r << a;
+        }
     } while (q.next());
     return r;
 }

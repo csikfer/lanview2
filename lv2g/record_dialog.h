@@ -17,8 +17,8 @@ _GEX int _setPlaceComboBoxs(qlonglong pid, QComboBox *pComboBoxZone, QComboBox *
 /// @enum eDialogButtons
 /// @brief A dialógus ablakokban kezelt nyomógombok típusait reprezentáló enumerációs konstansok.
 enum eDialogButtons {
-    DBT_OK = 0,         ///< OK
-    DBT_CLOSE,          ///< Close
+    DBT_CLOSE = 0,      ///< Close
+    DBT_OK,             ///< OK
     DBT_REFRESH,        ///< Ablak tartalmának a frissítése
     DBT_INSERT,         ///< Beszúrás
     DBT_SIMILAR,        ///< Beszúrás, az aktív rekordhoz hasonlót (azzal inicializált dialóg)

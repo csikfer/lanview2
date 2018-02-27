@@ -61,9 +61,9 @@ protected:
     bool            imperfect;  /// Hiányos
     bool            exists;     /// Létezik
     qlonglong       linkId;     /// Ha létezik, akkor az utolsó
-
-private slots:
+public slots:
     void changed();
+private slots:
     void collisionsTogled(bool f);
     void saveNote();
     void modifyNote();
