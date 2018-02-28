@@ -25,7 +25,6 @@
         <file>icons/zoom.ico</file>
         <file>icons/copy.ico</file>
         <file>icons/check.ico</file>
-        <file>net.ico</file>
         <file>icons/colorize.ico</file>
         <file>icons/dialog-no.ico</file>
         <file>icons/dialog-no-off.png</file>
@@ -47,5 +46,6 @@
         <file>icons/filter.ico</file>
         <file>icons/services.ico</file>
         <file>splash.png</file>
+        <file>icons/LanView2.ico</file>
     </qresource>
 </RCC>
