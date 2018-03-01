@@ -356,7 +356,7 @@ public:
     virtual cRecord *nextRow(QModelIndex *pMi, int _upRes = 1)   = 0;
     virtual cRecord *prevRow(QModelIndex *pMi, int _upRes = 1)   = 0;
     virtual void selectRow(const QModelIndex& mi)   = 0;
-    qlonglong   actId() { cRecord *p = actRecord(); return p == NULL ? NULL_ID : p->getId(); }
+    qlonglong   actId(eEx __ex = EX_ERROR);
 
     void initView();
     void initShape(cTableShape *pts = NULL);

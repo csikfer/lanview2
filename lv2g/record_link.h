@@ -20,12 +20,15 @@ public:
     virtual void init();
     virtual QStringList where(QVariantList& qParams);
     virtual void buttonPressed(int id);
-    virtual void insert(bool _similar = false);
-    virtual void modify(enum eEx __ex = EX_ERROR);
-    void lldp2phs();
+    /// Edit dialog
+    /// @param _similar Ha igaz, akkor az aktuális rekord a minta.
+    void edit(bool _similar = false, eEx __ex = EX_ERROR);
+    // void lldp2phs();
     enum eLinkType {
         LT_PHISICAL, LT_LOGICAL, LT_LLDP
     }   linkType;
+private slots:
+    void modifyByIndex(const QModelIndex & index);
 };
 
 class phsLinkWidget;
@@ -37,10 +40,12 @@ class LV2GSHARED_EXPORT cLinkDialog : public QDialog {
     Q_OBJECT
 public:
     /// Konstruktor
-    /// @param parent Az szülő objektum pointere
-    cLinkDialog(bool isInsert, cRecordLink * __parent = NULL);
+    /// @param __parent Az szülő objektum pointere
+    cLinkDialog(bool __similar, cRecordLink * __parent = NULL);
     ~cLinkDialog();
     bool get(cPhsLink& link);
+    bool next();
+    bool prev();
 protected:
     void init();
 
@@ -53,7 +58,8 @@ protected:
     cRecordLink *   parent;
     QSqlQuery *     pq;
     cRecord *       pActRecord;
-    qlonglong       parentOwnerId;
+    qlonglong       parentNodeId;
+    qlonglong       parentPortId;
     phsLinkWidget * pLink1;
     phsLinkWidget * pLink2;
     cDialogButtons *pButtons;

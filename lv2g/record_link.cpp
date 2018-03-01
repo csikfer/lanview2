@@ -30,7 +30,7 @@ void cRecordLink::init()
     buttons << DBT_SPACER << DBT_REFRESH << DBT_FIRST << DBT_PREV << DBT_NEXT << DBT_LAST;
     buttons << DBT_SPACER;
     if (!isNoDelete) buttons << DBT_DELETE;
-    if (!isReadOnly) buttons << DBT_MODIFY;
+    if (!isReadOnly) buttons << DBT_SIMILAR;
     if (!isNoInsert) buttons << DBT_INSERT;
     flags = 0;
     if (pUpper != NULL) shapeType |= ENUM2SET(TS_CHILD);
@@ -98,17 +98,17 @@ void cRecordLink::buttonPressed(int id)
 {
     _DBGFN() << " #" << id << endl;
     switch (id) {
-    case DBT_CLOSE:     close();    break;
-    case DBT_REFRESH:   refresh();  break;
-    case DBT_INSERT:    insert();   break;
-    case DBT_MODIFY:    modify();   break;
-    case DBT_FIRST:     first();    break;
-    case DBT_PREV:      prev();     break;
-    case DBT_NEXT:      next();     break;
-    case DBT_LAST:      last();     break;
-    case DBT_DELETE:    remove();   break;
-    case DBT_COPY:      copy();     break;
-    case DBT_COMPLETE:  lldp2phs(); break;
+    case DBT_CLOSE:     close();        break;
+    case DBT_REFRESH:   refresh();      break;
+    case DBT_INSERT:    edit();         break;
+    case DBT_SIMILAR:   edit(true);     break;
+    case DBT_FIRST:     first();        break;
+    case DBT_PREV:      prev();         break;
+    case DBT_NEXT:      next();         break;
+    case DBT_LAST:      last();         break;
+    case DBT_DELETE:    remove();       break;
+    case DBT_COPY:      copy();         break;
+    // case DBT_COMPLETE:  lldp2phs();     break;
     default:
         DWAR() << "Invalid button id : " << id << endl;
         break;
@@ -118,19 +118,25 @@ void cRecordLink::buttonPressed(int id)
 }
 
 
-void cRecordLink::insert(bool _similar)
+void cRecordLink::edit(bool _similar, eEx __ex)
 {
     (void)_similar;     // Itt nincs
     if (isReadOnly) {
+        if (_similar) cRecordTable::modify(__ex);
         return;
     }
-    cLinkDialog dialog(true, this);
+    cLinkDialog dialog(_similar, this);
     int r;
-    do {
+    cPhsLink link;
+    while (true) {
         dialog.exec();
         r = dialog.result();
-        if (DBT_CANCEL != r) {
-            cPhsLink link;
+        switch (r) {
+        case DBT_CLOSE:
+        case DBT_CANCEL:
+            break;
+        case DBT_SAVE:
+        case DBT_OK:
             if (dialog.get(link)) { // insert
                 if (!cErrorMessageBox::condMsgBox(link.tryInsert(*pq))) continue;
             }
@@ -138,58 +144,70 @@ void cRecordLink::insert(bool _similar)
                 if (!cErrorMessageBox::condMsgBox(link.tryReplace(*pq))) continue;
             }
             refresh(false);
-        }
-    } while (r == DBT_NEXT);
-}
-
-void cRecordLink::modify(eEx __ex)
-{
-    if (isReadOnly) {
-        cRecordTable::modify(__ex);
-    }
-    else {
-        cLinkDialog dialog(false, this);
-        int r;
-        while (true) {
-            dialog.exec();
-            r = dialog.result();
-            if (DBT_CANCEL != r && r != DBT_CLOSE) {
-                cPhsLink link;
-                if (dialog.get(link)) { // insert
-                    if (!cErrorMessageBox::condMsgBox(link.tryInsert(*pq))) continue;
-                }
-                else {                  // replace
-                    if (!cErrorMessageBox::condMsgBox(link.tryReplace(*pq))) continue;
-                }
-                refresh(false);
-                if (r == DBT_NEXT) {
-                    dialog.changed();
-                    continue;
-                }
+            if (r == DBT_SAVE) {
+                dialog.changed();
+                link.clear();
+                continue;
             }
             break;
+        case DBT_NEXT:
+            dialog.next();
+            continue;
+        case DBT_PREV:
+            dialog.prev();
+            continue;
+        default:
+            EXCEPTION(EPROGFAIL, r);
         }
+        break;
     }
 }
 
-void cRecordLink::lldp2phs()
+/* void cRecordLink::lldp2phs()
 {
     if (isReadOnly || linkType != LT_LLDP) return;
     cRecord *pa = actRecord();
     if (pa == NULL) return;
     modify();
+}*/
+
+void cRecordLink::modifyByIndex(const QModelIndex & index)
+{
+    (void)index;
+    edit(true);
 }
 
-cLinkDialog::cLinkDialog(bool isInsert, cRecordLink * __parent)
+
+cLinkDialog::cLinkDialog(bool __similar, cRecordLink * __parent)
     : QDialog(__parent == NULL ? NULL : __parent->pWidget())
 {
-    parent = __parent;
+    parent        = __parent;
     pActRecord    = NULL;
-    parentOwnerId = NULL_ID;
+    parentNodeId  = NULL_ID;
+    parentPortId  = NULL_ID;
     pq = newQuery();
     if (parent != NULL) {
-        if (!isInsert) pActRecord = parent->actRecord();
-        parentOwnerId = parent->owner_id;
+        if (!__similar) {
+            cRecordsViewBase *pParentParent = parent->pUpper;   // A parent tábla perent-je
+            if (pParentParent != NULL) {
+                cRecord *pActParRec = pParentParent->actRecord();    // Az aktuális rekord
+                if (pActParRec != NULL) {
+                    if (pActParRec->descr() >= cPatch::_descr_cPatch()) {       // node ?
+                        parentNodeId = pActParRec->getId();
+                    }
+                    else if (pActParRec->descr() >= cNPort::_descr_cNPort()) {  // port ?
+                        parentPortId = pActParRec->getId();
+                        parentNodeId = pActParRec->getId(_sNodeId);
+                    }
+                    else {
+                        EXCEPTION(EPROGFAIL, 0, pActParRec->identifying());
+                    }
+                }
+            }
+        }
+        else {
+            pActRecord = parent->actRecord();
+        }
     }
     pLink1 = new phsLinkWidget(this);
     pLink2 = new phsLinkWidget(this);
@@ -239,7 +257,7 @@ cLinkDialog::cLinkDialog(bool isInsert, cRecordLink * __parent)
      pVBoxL->addWidget(line());
 
       tIntVector buttons;
-      buttons << DBT_SPACER << DBT_SAVE << DBT_NEXT << DBT_SPACER << DBT_CANCEL;
+      buttons << DBT_SPACER << DBT_OK << DBT_SAVE << DBT_PREV << DBT_NEXT << DBT_SPACER << DBT_CANCEL;
       pButtons = new cDialogButtons(buttons);
       pVBoxL->addWidget(pButtons->pWidget());
 
@@ -282,6 +300,19 @@ bool cLinkDialog::get(cPhsLink& link)
     return insertOnly;
 }
 
+bool cLinkDialog::next()
+{
+    bool r = pLink1->next();
+    return pLink2->next() && r;
+}
+
+bool cLinkDialog::prev()
+{
+    bool r = pLink1->prev();
+    return pLink2->prev() && r;
+}
+
+
 void cLinkDialog::changed()
 {
     insertOnly = false;
@@ -322,8 +353,9 @@ void cLinkDialog::changed()
         if (rows == 1) {
             exists = true;
             linkId = link.getId();
-            pButtons->disableExcept();
-            pTextEditCollisions->setText(trUtf8("A megadott link létezik."));
+            pButtons->disable(ENUM2SET2(DBT_SAVE, DBT_OK));
+            pButtons->enable(ENUM2SET2(DBT_NEXT, DBT_PREV));
+            pTextEditCollisions->setText(trUtf8("Mentett, létező link."));
             pCheckBoxCollisions->setChecked(false);
             pCheckBoxCollisions->setCheckable(false);
             pTextEditNote->setText(link.getNote());
@@ -346,7 +378,7 @@ void cLinkDialog::changed()
     }
     else {
         msg += trUtf8("ütközö/törlendő linkek :");
-        pButtons->disableExcept();
+        pButtons->disableExcept(ENUM2SET4(DBT_CANCEL, DBT_CLOSE, DBT_NEXT, DBT_PREV));
         pCheckBoxCollisions->setChecked(false);
         pCheckBoxCollisions->setCheckable(true);
         pTextEditCollisions->setText(msg);

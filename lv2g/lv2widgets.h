@@ -1056,6 +1056,7 @@ public slots:
     /// hely azonosítü place_id megváltozott, és ha f értéke true (ez az alapértelmezett).
     virtual void refresh(bool f = true);
     void setCurrentNode(qlonglong _nid);
+    void setPlaceId(qlonglong pid, bool _sig = true);
 protected:
     tBatchBlocker<cSelectNode>  bbNode;
     bool emitChangeNode(bool f = true);
@@ -1064,7 +1065,6 @@ protected:
     const QString       constFilterNode;
     cRecordListModel *  pModelNode;
 private slots:
-    void setPlaceId(qlonglong pid, bool _sig = false);
     void on_lineEditNodeFilt_textChanged(const QString& s);
     void on_comboBoxNode_currenstIndexChanged(int ix);
     void on_comboBoxZone_currenstIndexChanged(int);

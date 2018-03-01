@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>763</width>
-    <height>143</height>
+    <width>881</width>
+    <height>187</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,21 +15,18 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <layout class="QGridLayout" name="gridLayout" columnstretch="1,1,1,1,1">
-     <item row="1" column="0">
-      <widget class="QLabel" name="labelNode">
+    <layout class="QGridLayout" name="gridLayout" columnstretch="1,1,1,1,1,0,0">
+     <item row="0" column="2">
+      <widget class="QLabel" name="labelPlacePattern">
        <property name="text">
-        <string>Hálózati elem</string>
+        <string>Minta :</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
       </widget>
      </item>
-     <item row="1" column="1">
-      <widget class="QComboBox" name="comboBoxNode"/>
-     </item>
-     <item row="1" column="2">
+     <item row="1" column="4">
       <widget class="QLabel" name="labelPort">
        <property name="text">
         <string>Port :</string>
@@ -39,7 +36,7 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="2">
+     <item row="2" column="4">
       <widget class="QLabel" name="labelPortShare">
        <property name="text">
         <string>Megosztás :</string>
@@ -49,7 +46,20 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="3">
+     <item row="1" column="6">
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="0" column="5">
       <widget class="QComboBox" name="comboBoxPlace"/>
      </item>
      <item row="0" column="1">
@@ -65,7 +75,7 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="2">
+     <item row="0" column="4">
       <widget class="QLabel" name="labelPlace">
        <property name="text">
         <string>Hely :</string>
@@ -75,7 +85,7 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="3">
+     <item row="2" column="5">
       <widget class="QComboBox" name="comboBoxPortShare">
        <item>
         <property name="text">
@@ -124,46 +134,62 @@
        </item>
       </widget>
      </item>
-     <item row="1" column="3">
+     <item row="1" column="5">
       <widget class="QComboBox" name="comboBoxPort"/>
      </item>
-     <item row="2" column="0">
-      <widget class="QLabel" name="labelNodeType">
-       <property name="text">
-        <string>Típusa :</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="1">
-      <widget class="QLineEdit" name="lineEditNodeType">
-       <property name="readOnly">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="4">
-      <spacer name="horizontalSpacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item row="0" column="4">
+     <item row="0" column="6">
       <widget class="QCheckBox" name="checkBoxPlaceEqu">
        <property name="text">
         <string>Azonos</string>
        </property>
        <property name="checked">
         <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="3">
+      <widget class="QLineEdit" name="lineEditPlacePattern"/>
+     </item>
+     <item row="1" column="3">
+      <widget class="QComboBox" name="comboBoxNode"/>
+     </item>
+     <item row="1" column="1">
+      <widget class="QLineEdit" name="lineEditNodePattern"/>
+     </item>
+     <item row="1" column="2">
+      <widget class="QLabel" name="labelNode">
+       <property name="text">
+        <string>Hálózati elem</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="labelNodePattern">
+       <property name="text">
+        <string>Minta :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="3">
+      <widget class="QLineEdit" name="lineEditNodeType">
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="2">
+      <widget class="QLabel" name="labelNodeType">
+       <property name="text">
+        <string>Típusa :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
       </widget>
      </item>

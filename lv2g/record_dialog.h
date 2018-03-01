@@ -54,6 +54,7 @@ public:
     cDialogButtons(const tIntVector& buttons, QWidget *par = NULL);
     QWidget& widget()   { return *_pWidget; }
     QWidget *pWidget()  { return _pWidget; }
+    void enable(qlonglong __idSet);
     void enabeAll();
     void disable(qlonglong __idSet);
     void disableExcept(qlonglong __idSet = ENUM2SET2(DBT_CANCEL, DBT_CLOSE));

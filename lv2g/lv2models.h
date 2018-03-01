@@ -250,6 +250,9 @@ public:
     ///             a megadott id mező értéke, a második paraméter pedig a megadott ID paraméter. A föggvény egy boolean értéket ad vissza.
     ///             Csak egyszer kell megadni, az objektum megjegyzi, ha törölni akarjuk, akkor az "=" stringet kell megadni.
     void _setOwnerId(qlonglong _oid, const QString& _fn = QString(), eTristate _nullIsAll = TS_NULL, const QString& _chkFn = QString());
+    ///
+    void _setOrder(eOrderType _ot, int _ix) { order = _ot; ordIndex = _ix; }
+    void _setOrder(eOrderType _ot, const QString& _fn) { _setOrder(_ot, pDescr->toIndex(_fn)); }
     /// Beállítja az owner ID-re szűrést, és frissít.
     void setOwnerId(qlonglong _oid, const QString& _fn = QString(), eTristate _nullIsAll = TS_NULL, const QString& _chkFn = QString())
     {
@@ -293,7 +296,7 @@ public:
     /// Ha ID-re szűrés is van megadva, és automatikusan nem megállapítható, hogy melyik mezőről van szó
     /// (nincs owner, vagy parant), akkor az id mező neve. NULL-ra van inicializálva.
     QString             sFkeyName;
-    /// Eg yopcionális függvénxy név, iz ID-re szűréshez, amit az egyenlőség operátor helyett lehet használni.
+    /// Egy opcionális függvény név, az ID-re szűréshez, amit az egyenlőség operátor helyett lehet használni.
     QString             sOwnCheck;
     /// Ha Ha ID-re szűrés van megadva, és az ID értéke NULL, akkor ha értéke igaz, akkor az az
     /// összes rekordot jelenti szűrés nélkül. Ha értéke hamis, akkor nincs egyetlen rekord sem, ami illeszkedik.
@@ -312,10 +315,11 @@ public:
 protected:
     QString _where(QString s = QString());
     QString where(const QString &nameName);
-    QString _order(const QString& nameName, const QString& idName);
+    QString _order(const QString& nameName);
     QString select();
     void setPattern(const QVariant& _par);
     enum eOrderType     order;      ///< Az aktuális rendezés típusa
+    int                 ordIndex;   ///< A rendezés erre az indexű mezőre történik (negatív, ha az alapértelmezett név a rendezés aléapja)
     enum eFilterType    filter;     ///< Az aktuális szűrés típusa
     QString             pattern;    ///< Minta, szűrés paramétere
     QString             cnstFlt;    ///< A konstans szűrő (SQL kifejezés)

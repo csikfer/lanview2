@@ -1436,6 +1436,15 @@ void cRecordsViewBase::truncate()
     }
 }
 
+qlonglong cRecordsViewBase::actId(eEx __ex)
+{
+    cRecord *p = actRecord();
+    if (p == NULL) return NULL_ID;
+    if (p->idIndex(__ex) >= 0) return p->getId();
+    return NULL_ID;
+}
+
+
 void cRecordsViewBase::initView()
 {
     tableInhType = (eTableInheritType)pTableShape->getId(_sTableInheritType);
@@ -1468,6 +1477,7 @@ void cRecordsViewBase::initView()
 void cRecordsViewBase::initShape(cTableShape *pts)
 {
     if (pts != NULL) pTableShape = pts;
+    setObjectName(pTableShape->getName());
     if ((pTableShape->containerValid & ~CV_LL_TEXT) == 0) {
         pTableShape->fetchText(*pq);
     }
@@ -1888,7 +1898,7 @@ bool cRecordsViewBase::batchEdit(int logicalindex)
         break;
     }
     delete pDialog;
-    // modosítottunk, majd rolack-eltünk sorokat, frissíteni kell
+    // modosítottunk, frissíteni kell
     if (spoiling) {
         refresh();
     }
@@ -1916,7 +1926,11 @@ void cRecordsViewBase::selectionChanged(QItemSelection,QItemSelection)
             if (selectedRows().size() == 1) _actId = actId();
             foreach (cRecordsViewBase *pRightTable, *pRightTables) {
                 pRightTable->owner_id = _actId;
+                qlonglong __actId = pRightTable->actId();
                 pRightTable->refresh();
+                if (__actId != pRightTable->actId(EX_IGNORE)) {
+                    pRightTable->selectionChanged(QItemSelection(), QItemSelection());
+                }
             }
         }
     }

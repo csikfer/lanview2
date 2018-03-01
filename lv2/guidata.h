@@ -73,8 +73,7 @@ enum eOrderType {
     OT_ASC,         ///< Rendezés növekvő sorrendbe
     OT_DESC,        ///< Rendezés csökkenő sorrendbe
     OT_DEFAULT,     ///< Az előző, vagy az alapértelmezett metódus megtartása (a string konvertáló függvény nem kezeli!)
-    OT_NEXT,        ///< A következő metódus (NO->INC->DEC) (a string konvertáló függvény nem kezeli!)
-    OT_ID_ASC       ///< Növekvő sorrend az ID alapján, csak a cRecordListModel -ben (a string konvertáló függvény nem kezeli!)
+    OT_NEXT         ///< A következő metódus (NO->INC->DEC) (a string konvertáló függvény nem kezeli!)
 };
 /// Konverziós függvény a eOrderType enumerációs típushoz
 /// @param n Az enumerációs értéket reprezentáló string az adatbázisban

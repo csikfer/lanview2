@@ -38,7 +38,7 @@ cBackTrace::cBackTrace(int _size) : QStringList()
     buffer = (void **)malloc(sizeof(void *) * _size);
     size   = backtrace(buffer, _size);
     symbols= backtrace_symbols(buffer, size);
-    for (int i = 0; i < size; ++i) {
+    for (int i = 2; i < size; ++i) {    // cBackTrace, és cError nem kell.
         *this << QString(symbols[i]);
     }
     free(buffer);
@@ -51,7 +51,7 @@ cBackTrace::cBackTrace(int _size) : QStringList()
     process = GetCurrentProcess();
     SymInitialize(process, NULL, TRUE );
     frames = CaptureStackBackTrace( 0, (DWORD)_size, buffer, NULL );
-    for(int i = 0; i < frames; i++) {
+    for(int i = 2; i < frames; i++) {
         SymFromAddr( process, ( DWORD64 )( buffer[ i ] ), 0, &symbol );
         *this << QString(symbol.Name);
     }

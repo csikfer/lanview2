@@ -205,6 +205,13 @@ void cDialogButtons::init(int buttons, QBoxLayout *pL)
     }
 }
 
+void cDialogButtons::enable(qlonglong __idSet)
+{
+    foreach (QAbstractButton *p, buttons()) {
+        if (__idSet & enum2set(id(p))) p->setEnabled(true);
+    }
+}
+
 void cDialogButtons::enabeAll()
 {
     foreach (QAbstractButton *p, buttons()) {
@@ -215,7 +222,7 @@ void cDialogButtons::enabeAll()
 void cDialogButtons::disable(qlonglong __idSet)
 {
     foreach (QAbstractButton *p, buttons()) {
-        if (__idSet && enum2set(id(p))) p->setDisabled(true);
+        if (__idSet & enum2set(id(p))) p->setDisabled(true);
     }
 }
 

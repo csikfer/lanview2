@@ -311,6 +311,7 @@ cRecordListModel::cRecordListModel(const cRecStaticDescr& __d, QObject * __par)
     , pDescr(&__d), pattern(), cnstFlt(), nameList(), viewList(), idList()
 {
     order = OT_ASC;
+    ordIndex = NULL_IX;
     filter = FT_NO;
     pq = newQuery();
     setStringList(viewList);
@@ -324,6 +325,7 @@ cRecordListModel::cRecordListModel(const QString& __t, const QString& __s, QObje
     , pDescr(cRecStaticDescr::get(__t, __s)), pattern(), cnstFlt(), nameList(), viewList(), idList()
 {
     order = OT_ASC;
+    ordIndex = NULL_IX;
     filter = FT_NO;
     pq = newQuery();
     setStringList(viewList);
@@ -486,14 +488,18 @@ QString cRecordListModel::where(const QString& nameName)
     return _where(w);
 }
 
-QString cRecordListModel::_order(const QString& nameName, const QString& idName)
+QString cRecordListModel::_order(const QString& nameName)
 {
     QString o;
+    if (order == OT_NO) return o;
+    QString fn = nameName;
+    if (ordIndex >= 0) {
+        fn = pDescr->columnName(ordIndex);
+    }
     switch (order) {
     case OT_NO:     break;
-    case OT_ASC:    o = " ORDER BY " + nameName;             break;
-    case OT_DESC:   o = " ORDER BY " + nameName + " DESC";   break;
-    case OT_ID_ASC: o = " ORDER BY " + idName;               break;
+    case OT_ASC:    o = " ORDER BY " + fn;             break;
+    case OT_DESC:   o = " ORDER BY " + fn + " DESC";   break;
     default:    EXCEPTION(EPROGFAIL);  // lehetetlen, de warningol
     }
     return o;
@@ -523,7 +529,7 @@ QString cRecordListModel::select()
     QString sOnly = only ? " ONLY " : _sNul;
     QString sql = "SELECT " + in + QChar(',') + se + view + " FROM " + sOnly + pDescr->fullTableNameQ();
     sql += where(fe);
-    sql += _order(nc, in);
+    sql += _order(nc);
     PDEB(VERBOSE) << "SQL : \"" << sql << "\"" << endl;
     return sql;
 }
@@ -648,7 +654,7 @@ bool cZoneListModel::setFilter(const QVariant &_par, eOrderType __o, eFilterType
 
     QString sql = "SELECT place_group_id , place_group_name  FROM place_groups ";
     sql += where(_sPlaceGroupName);
-    sql += _order(_sPlaceGroupName, _sPlaceGroupId);
+    sql += _order(_sPlaceGroupName);
 
     PDEB(SQL) << "SQL : " << sql << endl;
     if (!pq->exec(sql)) SQLPREPERR(*pq, sql);
@@ -720,7 +726,7 @@ bool cPlacesInZoneModel::setFilter(const QVariant& _par, enum eOrderType __o, en
         sql = sqlSelect.arg(zoneId);
     }
     sql += where(_sPlaceName);
-    sql += _order(_sPlaceName, _sPlaceId);
+    sql += _order(_sPlaceName);
     PDEB(VERBOSE) << "SQL : \"" << sql << "\"" << endl;
     if (!pq->exec(sql)) SQLPREPERR(*pq, sql);
     bool r = pq->first();

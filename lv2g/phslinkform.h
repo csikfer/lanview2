@@ -17,53 +17,29 @@ class phsLinkWidget : public QWidget
 public:
     void setFirst(bool f);
     void init();
-    qlonglong getPortId() const;
-    ePhsLinkType getLinkType() const;
-    ePortShare   getPortShare() const;
+    qlonglong   getPortId() const   { return pSelectPort->currentPortId(); }
+    ePhsLinkType getLinkType() const{ return (ePhsLinkType)pSelectPort->currentType(); }
+    ePortShare  getPortShare() const{ return (ePortShare)pSelectPort->currentShare(); }
+    bool next();
+    bool prev();
 protected:
     phsLinkWidget(cLinkDialog * par);
     ~phsLinkWidget();
-    void placeFilter();
-    bool nodeFilter();
-    bool portFilter();
-    void uiSetLinkType();
-    void uiSetShared();
-
-    bool firstGetPlace();
-    bool firstGetNode();
-    bool firstGetPort();
-
-    enum eState { INIT, SET, READY } stat;
     Ui::phsLinkForm *   pUi;
-    cLinkDialog *       parent;
+    cLinkDialog *       parent;     // Link dalog object
     QSqlQuery *         pq;
-    cPatch              node;
-    cNPort *            pPrt;
-    cPlaceGroup         pgrp;
-    cPlace              plac;
-    qlonglong           linkType;
-    QString             shared;
-    QButtonGroup *      pButtonsLinkType;
-    cRecordListModel   *pModelZone;
-    cRecordListModel   *pModelPlace;
-    cRecordListModel   *pModelNode;
-    cRecordListModel   *pModelPort;
-    cRecordListModel   *pModelPortShare;
-    phsLinkWidget  *    pOther;
+    QButtonGroup *      pButtonsLinkType;   //Link típus : term, back, front
+    cSelectLinkedPort * pSelectPort;        // Select port
+    phsLinkWidget  *    pOther;             // A másik (linkelt) port
 
-    bool                first;
-    QString             sPortIdX;
-    QString             sNodeIdX;
-    QString             sPhsLinkTypeX;
+    bool                first;              // Primary
+    QString             sPortIdX;           // Port index name
+    QString             sNodeIdX;           // Node id name
+    QString             sPhsLinkTypeX;      //
     QString             sPortSharedX;
 private slots:
-    void changeLinkType(int id, bool f);
     void toglePlaceEqu(bool f);
-    void zoneCurrentIndex(int i);
-    void placeCurrentIndex(int i);
-    void nodeCurrentIndex(int i);
-    void portCurrentIndex(int i);
-    void portShareCurrentText(const QString &s);
+    void change(qlonglong, int, int);
 signals:
     void changed();
 };
