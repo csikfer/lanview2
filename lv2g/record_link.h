@@ -51,6 +51,7 @@ protected:
 
     QLabel*         pLabelCollisions;
     QCheckBox *     pCheckBoxCollisions;
+    QToolButton *   pToolButtonRfresh;
     QTextEdit *     pTextEditCollisions;
     QTextEdit *     pTextEditNote;
     QPushButton *   pPushButtonNote;
@@ -73,6 +74,7 @@ private slots:
     void collisionsTogled(bool f);
     void saveNote();
     void modifyNote();
+    void buttonPressed(int kid);
 };
 
 #endif // RECORD_LINK

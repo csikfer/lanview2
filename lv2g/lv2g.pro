@@ -42,7 +42,8 @@ SOURCES += \
     deducepatch.cpp \
     tableexportdialog.cpp \
     linkgraph.cpp \
-    snmpdevquery.cpp
+    snmpdevquery.cpp \
+    popupreport.cpp
 
 HEADERS +=\
     lv2g_global.h \
@@ -77,7 +78,8 @@ HEADERS +=\
     deducepatch.h \
     tableexportdialog.h \
     linkgraph.h \
-    snmpdevquery.h
+    snmpdevquery.h \
+    popupreport.h
 
 FORMS += \
     column_filter.ui \

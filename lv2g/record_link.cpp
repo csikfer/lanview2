@@ -150,12 +150,6 @@ void cRecordLink::edit(bool _similar, eEx __ex)
                 continue;
             }
             break;
-        case DBT_NEXT:
-            dialog.next();
-            continue;
-        case DBT_PREV:
-            dialog.prev();
-            continue;
         default:
             EXCEPTION(EPROGFAIL, r);
         }
@@ -242,12 +236,15 @@ cLinkDialog::cLinkDialog(bool __similar, cRecordLink * __parent)
 
        pLabelCollisions      = new QLabel(trUtf8("Ütköző linkek :"));
        pCheckBoxCollisions   = new QCheckBox(trUtf8("Automatikus törlés"));
+       pToolButtonRfresh     = new QToolButton();
+       pToolButtonRfresh->setIcon(QIcon(":/icons/refresh.ico"));
        pCheckBoxCollisions->setChecked(false);
        pTextEditCollisions   = new QTextEdit;
        pTextEditCollisions->setReadOnly(true);
       pVBoxL2 = new QVBoxLayout;
       pVBoxL2->addWidget(pLabelCollisions);
       pVBoxL2->addWidget(pCheckBoxCollisions);
+      pVBoxL2->addWidget(pToolButtonRfresh);
       pVBoxL2->addStretch();
      pHBoxL = new QHBoxLayout;
      pHBoxL->addLayout(pVBoxL2);
@@ -261,12 +258,13 @@ cLinkDialog::cLinkDialog(bool __similar, cRecordLink * __parent)
       pButtons = new cDialogButtons(buttons);
       pVBoxL->addWidget(pButtons->pWidget());
 
-    connect(pButtons,           SIGNAL(buttonPressed(int)), this, SLOT(done(int)));
+    connect(pButtons,           SIGNAL(buttonPressed(int)), this, SLOT(buttonPressed(int)));
     connect(pLink1,             SIGNAL(changed()),          this, SLOT(changed()));
     connect(pLink2,             SIGNAL(changed()),          this, SLOT(changed()));
     connect(pCheckBoxCollisions,SIGNAL(toggled(bool)),      this, SLOT(collisionsTogled(bool)));
     connect(pTextEditNote,      SIGNAL(textChanged()),      this, SLOT(modifyNote()));
     connect(pPushButtonNote,    SIGNAL(pressed()),          this, SLOT(saveNote()));
+    connect(pToolButtonRfresh,  SIGNAL(pressed()),          this, SLOT(changed()));
 
     insertOnly = false;
     init();
@@ -425,5 +423,25 @@ void cLinkDialog::saveNote()
 void cLinkDialog::modifyNote()
 {
     pPushButtonNote->setEnabled(exists);
+}
+
+void cLinkDialog::buttonPressed(int kid)
+{
+    switch (kid) {
+    case DBT_CLOSE:
+    case DBT_CANCEL:
+    case DBT_SAVE:
+    case DBT_OK:
+        done(kid);
+        break;
+    case DBT_NEXT:
+        next();
+        break;
+    case DBT_PREV:
+        prev();
+        break;
+    default:
+        EXCEPTION(EPROGFAIL, kid);
+    }
 }
 

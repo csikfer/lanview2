@@ -79,17 +79,43 @@ QString list2html(QSqlQuery& q, const tRecordList<R>& list, cTableShape& shape, 
     return htmlTable(head, data);
 }
 
-QString query2html(QSqlQuery q, cTableShape& _shape, const QString& _where, const QVariantList &_par = QVariantList(), bool shrt = true);
-inline QString query2html(QSqlQuery q, const QString& _shapeName, const QString& _where, const QVariantList &_par = QVariantList(), bool shrt = true)
+/// Rekordok beolvasása és HTML formátumú táblázat késítése.
+/// @param q Query objektum az adatbázis eléréshez
+/// @param _shape A megjelenítést leíró objektum
+/// @param _where A szűrési feltétel
+/// @param _par A szűrési feltétel paraméterei
+/// @param shrt A rendezés SQL string, ha üres, akkor a név mezőre van rendezés, ha értéke '!', akkor nincs rendezés.
+QString query2html(QSqlQuery q, cTableShape& _shape, const QString& _where, const QVariantList &_par = QVariantList(), const QString& shrt = QString());
+/// Rekordok beolvasása és HTML formátumú táblázat késítése.
+/// @param q Query objektum az adatbázis eléréshez
+/// @param _shapeName A megjelenítést leíró objektum (cTableShape / table_shapes) neve
+/// @param _where A szűrési feltétel
+/// @param _par A szűrési feltétel paraméterei
+/// @param shrt A rendezés SQL string, ha üres, akkor a név mezőre van rendezés, ha értéke '!', akkor nincs rendezés.
+inline QString query2html(QSqlQuery q, const QString& _shapeName, const QString& _where, const QVariantList &_par = QVariantList(), const QString& shrt = QString())
 {
     cTableShape shape;
     shape.setByName(q, _shapeName);
     return query2html(q, shape, _where, _par, shrt);
 }
 
+/// HTML riport egy node-ról
+/// @param q Query objektum az adatbázis eléréshez
+/// @param node Az objektum amiről a riportot kell készíteni
+/// @param _sTitle Egy opcionális címsor.
+/// @param ports Ha értéke true, akkor feltételezi a függvény, hogy a portok már beolvasásra kerültek, ha false, akkor beolvassa a portokat.
 EXT_ QString htmlReportNode(QSqlQuery& q, cPatch& node, const QString& _sTitle = QString(),bool ports = true);
-EXT_ QString htmlReportByMac(QSqlQuery& q, const QString& aMac);
-EXT_ QString htmlReportByIp(QSqlQuery& q, const QString& addr);
+/// HTML riport egy beolvasott címtábláról
+/// @param mactab A konténer, amiről a riport készül
+EXT_ QString htmlReportMacTab(QSqlQuery& q, const QMap<qlonglong, QList<cMac> >& mactab);
+/// HTML riport egy MAC alapján
+/// @param q Query objektum az adatbázis eléréshez
+/// @param sMac A keresett MAC
+EXT_ QString htmlReportByMac(QSqlQuery& q, const QString& sMac);
+/// HTML riport egy IP alapján
+/// @param q Query objektum az adatbázis eléréshez
+/// @param aAddr A keresett IP
+EXT_ QString htmlReportByIp(QSqlQuery& q, const QString& sAddr);
 
 EXT_ QString linksHtmlTable(QSqlQuery& q, tRecordList<cPhsLink>& list, bool _swap = false);
 

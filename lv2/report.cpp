@@ -51,17 +51,27 @@ QString htmlTable(QStringList head, QList<QStringList> matrix)
     return table;
 }
 
-QString query2html(QSqlQuery q, cTableShape &_shape, const QString& _where, const QVariantList& _par, bool shrt)
+QString query2html(QSqlQuery q, cTableShape &_shape, const QString& _where, const QVariantList& _par, const QString& shrt)
 {
     cRecordAny rec(_shape.getName(_sTableName));
     tRecordList<cRecordAny> list;
-    QString sql = QString("SELECT * FROM %1 WHERE ").arg(rec.tableName()) + _where;
+    QString ord = shrt;
+    if (ord.isEmpty()) {        // Default: order by name
+        ord = QString(" ORDER BY %1 ASC").arg(rec.nameName());
+    }
+    else if (ord == "!") {      // No order
+        ord.clear();
+    }
+    else {
+        ord.prepend(" ");
+    }
+    QString sql = QString("SELECT * FROM %1 WHERE ").arg(rec.tableName()) + _where + ord;
     if (execSql(q, sql, _par)) do {
         rec.set(q);
         list << rec;
     } while (q.next());
     if (list.isEmpty()) return QString();
-    return list2html(q, list, _shape, shrt);
+    return list2html(q, list, _shape, false);
 }
 
 QString htmlReportNode(QSqlQuery& q, cPatch& node, const QString& _sTitle, bool ports)
@@ -109,14 +119,14 @@ QString htmlReportNode(QSqlQuery& q, cPatch& node, const QString& _sTitle, bool 
         text += sHtmlTh.arg(QObject::trUtf8("#"));
         text += sHtmlTh.arg(QObject::trUtf8("Port"));
         text += sHtmlTh.arg(QObject::trUtf8("Cimke"));
-        text += sHtmlTh.arg(QObject::trUtf8("Típus"));
+        if (!isPatch) text += sHtmlTh.arg(QObject::trUtf8("Típus"));
         text += sHtmlTh.arg(isPatch ? QObject::trUtf8("Shared") : QObject::trUtf8("MAC"));
         text += sHtmlTh.arg(isPatch ? QObject::trUtf8("S.p.")   : QObject::trUtf8("IP cím(ek)"));
         if (!isPatch) text += sHtmlTh.arg(QObject::trUtf8("DNS név"));
         text += sHtmlTh.arg(QObject::trUtf8("Fizikai link"));
         if (!isPatch) text += sHtmlTh.arg(QObject::trUtf8("Logikai link"));
         if (!isPatch) text += sHtmlTh.arg(QObject::trUtf8("LLDP link"));
-        if (!isPatch) text += sHtmlTh.arg(QObject::trUtf8("MAC tab"));
+        if (!isPatch) text += sHtmlTh.arg(QObject::trUtf8("MAC in mactab"));
         text += sHtmlRowEnd;
         // Table data
         QListIterator<cNPort *> li(node.ports);
@@ -127,7 +137,7 @@ QString htmlReportNode(QSqlQuery& q, cPatch& node, const QString& _sTitle, bool 
             text += sHtmlTd.arg(p->getName(_sPortIndex));
             text += sHtmlTd.arg(p->getName());
             text += sHtmlTd.arg(p->getName(_sPortTag));
-            text += sHtmlTd.arg(cIfType::ifTypeName(p->getId(_sIfTypeId)));
+            if (!isPatch) text += sHtmlTd.arg(cIfType::ifTypeName(p->getId(_sIfTypeId)));
             // Columns: port, típus, MAC|Shared, IP|S.p., DNS|-
             if (p->descr() == cInterface::_descr_cInterface()) {  // Interface
                 QString ips, dns;
@@ -181,8 +191,8 @@ QString htmlReportNode(QSqlQuery& q, cPatch& node, const QString& _sTitle, bool 
                 qlonglong plp = LinkGetLinked<cPhsLink>(q, pid);    // -> phisical link
                 qlonglong llp = LinkGetLinked<cLogLink>(q, pid);    // -> logical link
                 qlonglong ldp = LinkGetLinked<cLldpLink>(q, pid);   // -> LLDP
-                qlonglong mtp = NULL_ID;                            // -> MacTab port
-                if (pif != NULL) {
+                qlonglong mtp = NULL_ID;                            // -> port ID: MAC in MacTab
+                if (pif != NULL) {  // Interface ?
                     cMacTab mt;
                     mt.setMac(_sHwAddress, pif->getMac(_sHwAddress));
                     if (mt.completion(q)) {
@@ -272,7 +282,7 @@ QString htmlReportByMac(QSqlQuery& q, const QString& sMac)
     /* ** ARP ** */
     QVariantList par;
     par << mac.toString();
-    QString tab = query2html(q, _sArps, "hwaddress = ? ORDER BY last_time", par, true);
+    QString tab = query2html(q, _sArps, "hwaddress = ? ORDER BY last_time", par);
     if (tab.isEmpty()) {
         text += QObject::trUtf8("Nincs találat az arps táblában a megadott MAC-kel");
     }
@@ -281,7 +291,7 @@ QString htmlReportByMac(QSqlQuery& q, const QString& sMac)
         text += tab;
     }
     text += sHtmlLine;
-    /* ** MAC TAB** */
+    /* ** MAC TAB ** */
     cMacTab mt;
     mt.setMac(_sHwAddress, mac);
     if (mt.completion(q)) {
@@ -300,14 +310,14 @@ QString htmlReportByMac(QSqlQuery& q, const QString& sMac)
     text += sHtmlLine;
     // ARP LOG
     par << par.first(); // MAC 2*
-    tab = query2html(q, "arp_logs", "hwaddress_new = ? OR hwaddress_old = ? ORDER BY date_of", par, true);
+    tab = query2html(q, "arp_logs", "hwaddress_new = ? OR hwaddress_old = ? ORDER BY date_of", par);
     if (!tab.isEmpty()) {
         text += QObject::trUtf8("MAC - IP változások (arp_logs) :");
         text += tab + sHtmlLine;
     }
     // MACTAB LOG
     par.pop_back(); // MAC 1*
-    tab = query2html(q, "mactab_logs", "hwaddress = ? ORDER BY date_of", par, true);
+    tab = query2html(q, "mactab_logs", "hwaddress = ? ORDER BY date_of", par);
     if (!tab.isEmpty()) {
         text += QObject::trUtf8("A MAC mozgása a címtáblákban (mactab_logs) :");
         text += tab + sHtmlLine;
@@ -315,12 +325,12 @@ QString htmlReportByMac(QSqlQuery& q, const QString& sMac)
     return text;
 }
 
-QString htmlReportByIp(QSqlQuery& q, const QString& addr)
+QString htmlReportByIp(QSqlQuery& q, const QString& sAddr)
 {
     QString text;
-    QHostAddress a(addr);
+    QHostAddress a(sAddr);
     if (a.isNull()) {
-        text = QObject::trUtf8("A '%1' nem valós IP cím!").arg(addr);
+        text = QObject::trUtf8("A '%1' nem valós IP cím!").arg(sAddr);
         return text;
     }
     cNode node;
@@ -357,7 +367,7 @@ QString htmlReportByIp(QSqlQuery& q, const QString& addr)
     // ARP LOG
     QVariantList par;
     par << a.toString();
-    QString tab = query2html(q, "arp_logs", "ipaddress = ? ORDER BY date_of", par, true);
+    QString tab = query2html(q, "arp_logs", "ipaddress = ? ORDER BY date_of", par);
     if (!tab.isEmpty()) {
         text += QObject::trUtf8("IP - MAC változások (arp_logs) :");
         text += tab + sHtmlLine;

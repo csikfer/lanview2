@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <layout class="QGridLayout" name="gridLayout" columnstretch="1,1,1,1,1,0,0">
+    <layout class="QGridLayout" name="gridLayout" columnstretch="1,1,1,1,1,1,1">
      <item row="0" column="2">
       <widget class="QLabel" name="labelPlacePattern">
        <property name="text">
@@ -45,19 +45,6 @@
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
       </widget>
-     </item>
-     <item row="1" column="6">
-      <spacer name="horizontalSpacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
      </item>
      <item row="0" column="5">
       <widget class="QComboBox" name="comboBoxPlace"/>
@@ -193,6 +180,30 @@
        </property>
       </widget>
      </item>
+     <item row="2" column="6">
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="1" column="6">
+      <widget class="QToolButton" name="toolButton">
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="lv2g.qrc">
+         <normaloff>:/icons/document-properties.ico</normaloff>:/icons/document-properties.ico</iconset>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>
@@ -245,6 +256,8 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="lv2g.qrc"/>
+ </resources>
  <connections/>
 </ui>

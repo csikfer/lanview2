@@ -1926,7 +1926,7 @@ void cRecordsViewBase::selectionChanged(QItemSelection,QItemSelection)
             if (selectedRows().size() == 1) _actId = actId();
             foreach (cRecordsViewBase *pRightTable, *pRightTables) {
                 pRightTable->owner_id = _actId;
-                qlonglong __actId = pRightTable->actId();
+                qlonglong __actId = pRightTable->actId(EX_IGNORE);
                 pRightTable->refresh();
                 if (__actId != pRightTable->actId(EX_IGNORE)) {
                     pRightTable->selectionChanged(QItemSelection(), QItemSelection());

@@ -40,6 +40,8 @@ protected:
 private slots:
     void toglePlaceEqu(bool f);
     void change(qlonglong, int, int);
+    void on_toolButton_clicked();
+
 signals:
     void changed();
 };

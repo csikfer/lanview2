@@ -477,3 +477,4 @@ QString condAddJoker(const QString& pat)
     if (!pat.contains(QRegExp(re))) return joker + pat + joker;
     return pat;
 }
+

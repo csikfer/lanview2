@@ -1,6 +1,7 @@
 #include "lv2g.h"
 #include "phslinkform.h"
 #include "ui_phslinkform.h"
+#include "popupreport.h"
 
 phsLinkWidget::phsLinkWidget(cLinkDialog * par) :  QWidget(par)
 {
@@ -124,4 +125,9 @@ void phsLinkWidget::change(qlonglong, int, int)
     changed();
 }
 
-
+void phsLinkWidget::on_toolButton_clicked()
+{
+    qlonglong nid = pSelectPort->currentNodeId();
+    if (nid == NULL_ID) return;
+    popupReportNode(this, *pq, nid);
+}
