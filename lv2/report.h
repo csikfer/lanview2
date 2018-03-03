@@ -85,7 +85,7 @@ QString list2html(QSqlQuery& q, const tRecordList<R>& list, cTableShape& shape, 
 /// @param _where A szűrési feltétel
 /// @param _par A szűrési feltétel paraméterei
 /// @param shrt A rendezés SQL string, ha üres, akkor a név mezőre van rendezés, ha értéke '!', akkor nincs rendezés.
-QString query2html(QSqlQuery q, cTableShape& _shape, const QString& _where, const QVariantList &_par = QVariantList(), const QString& shrt = QString());
+EXT_ QString query2html(QSqlQuery q, cTableShape& _shape, const QString& _where, const QVariantList &_par = QVariantList(), const QString& shrt = QString());
 /// Rekordok beolvasása és HTML formátumú táblázat késítése.
 /// @param q Query objektum az adatbázis eléréshez
 /// @param _shapeName A megjelenítést leíró objektum (cTableShape / table_shapes) neve
