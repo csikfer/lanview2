@@ -99,15 +99,27 @@ inline QString query2html(QSqlQuery q, const QString& _shapeName, const QString&
     return query2html(q, shape, _where, _par, shrt);
 }
 
+// Node report flags
+#define NODE_REPORT_SERVICES    0x00010000;
+
+/// Node report title
+/// @param t Type: NOT_PATCH, NOT_NODE, or NOT_SNMPDEVICE.
+/// @param n node object
+EXT_ QString titleNode(QSqlQuery& q, const cRecord& n);
+/// Node report title
+/// @param n node object, original type!
+EXT_ QString titleNode(const cRecord& n);
+/// Node report title by real type
+/// @param n node object
+EXT_ QString titleNode(int t, const cRecord& n);
+/// Empty string
+EXT_ QString __sDefault__;
 /// HTML riport egy node-ról
 /// @param q Query objektum az adatbázis eléréshez
 /// @param node Az objektum amiről a riportot kell készíteni
 /// @param _sTitle Egy opcionális címsor.
-/// @param ports Ha értéke true, akkor feltételezi a függvény, hogy a portok már beolvasásra kerültek, ha false, akkor beolvassa a portokat.
-EXT_ QString htmlReportNode(QSqlQuery& q, cPatch& node, const QString& _sTitle = QString(),bool ports = true);
-/// HTML riport egy beolvasott címtábláról
-/// @param mactab A konténer, amiről a riport készül
-EXT_ QString htmlReportMacTab(QSqlQuery& q, const QMap<qlonglong, QList<cMac> >& mactab);
+/// @param flags
+EXT_ QString htmlReportNode(QSqlQuery& q, cRecord& node, QString& _sTitle = __sDefault__, qlonglong flags = -1);
 /// HTML riport egy MAC alapján
 /// @param q Query objektum az adatbázis eléréshez
 /// @param sMac A keresett MAC

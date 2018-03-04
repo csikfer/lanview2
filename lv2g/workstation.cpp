@@ -4,7 +4,7 @@
 #include "lv2link.h"
 #include "record_dialog.h"
 #include "object_dialog.h"
-#include "report.h"
+#include "popupreport.h"
 #include "workstation.h"
 #include "ui_wstform.h"
 #include "ui_phslinkform.h"
@@ -480,7 +480,8 @@ void cWorkstation::msgEmpty(const QVariant& val, QLabel *pLabel, const QString& 
         if (n.completion(*pq) && !(isModify && node.getId() == n.getId())) {
             cPatch *pn = cPatch::getNodeObjById(*pq, n.getId());
             sErrs << htmlError(QObject::trUtf8("A megadott %1 nem egyedi!").arg(t));
-            sInfs << htmlReportNode(*pq, *pn, trUtf8("A %2 (%3) eszköznek azonos a %1-a.").arg(t), false);
+            QString t = trUtf8("A %2 (%3) eszköznek azonos a %1-a.").arg(t);
+            sInfs << htmlReportNode(*pq, *pn, t, 0);
             delete pn;
             isOk = false;
         }
@@ -510,7 +511,8 @@ void cWorkstation::setStatNodeName(bool f, QStringList& sErrs, QStringList& sInf
     if (pn != NULL) {
         if (!(isModify && node.getId() == pn->getId())) { // Name is not unique
             sErrs << htmlError(trUtf8("A megadott néven már létezik egy eszköz! A névnek egyedinek kell lennie."));
-            sInfs << htmlReportNode(*pq, *pn, trUtf8("A %1 megadott néven bejegyzett (%2 típusú) eszköz : "), true);
+            QString t = trUtf8("A %1 megadott néven bejegyzett (%2 típusú) eszköz : ");
+            sInfs << htmlReportNode(*pq, *pn, t, CV_PORTS);
         }
         delete pn;
         return;
@@ -595,7 +597,8 @@ void cWorkstation::setStatIp(bool f, QStringList& sErrs, QStringList& sInfs, boo
     if (pip->getId(_sIpAddressType) != AT_PRIVATE && n.fetchByIp(*pq, pip->address(), EX_IGNORE)) {
         if (node.getId() != NULL_ID && (!isModify || node.getId() != n.getId())) {
             sErrs << htmlError(trUtf8("A megadott IP címmel már létezik egy eszköz! A címnek, a 'privat' típus kivépelével, egyedinek kell lennie."));
-            sInfs << htmlReportNode(*pq, n, trUtf8("A megadott címmel %1 nevű (%2 típusú) eszköz van bejegyezve."), false);
+            QString t = trUtf8("A megadott címmel %1 nevű (%2 típusú) eszköz van bejegyezve.");
+            sInfs << htmlReportNode(*pq, n, t, 0);
             isOk = false;
         }
     }
@@ -619,7 +622,8 @@ void cWorkstation::setStatPortMac(bool f, QStringList& sErrs, QStringList& sInfs
     if (n.fetchByMac(*pq, mac)) {
         if (node.getId() != NULL_ID && (!isModify || node.getId() != n.getId())) {
             sErrs << htmlError(trUtf8("A megadott MAC-kal már létezik egy eszköz! Két különböző eszköznek nem lehet azonos MAC-je."));
-            sInfs << htmlReportNode(*pq, n, trUtf8("A megadott MAC-kel a %1 nevű (%2 típusú) eszköz van bejegyezve."), false);
+            QString t = trUtf8("A megadott MAC-kel a %1 nevű (%2 típusú) eszköz van bejegyezve.");
+            sInfs << htmlReportNode(*pq, n, t, 0);
             isOk = false;
         }
     }
@@ -652,7 +656,8 @@ void cWorkstation::setStatLink(bool f, QStringList& sErrs, QStringList& sInfs, b
         }
         cPatch *pn = cPatch::getNodeObjById(*pq, lnid);
         sErrs << htmlError(trUtf8("Nincs megadva a linkelt eszköz portja."));
-        sInfs << htmlReportNode(*pq, *pn, trUtf8("A következő eszköz egy portjára csatlakozna : %2 "));
+        QString t = trUtf8("A következő eszköz egy portjára csatlakozna : %2 ");
+        sInfs << htmlReportNode(*pq, *pn, t);
         delete pn;
         isOk = false;
         return;
@@ -878,8 +883,7 @@ void cWorkstation::addressChanged(const QHostAddress& _a, int _st)
 void cWorkstation::ip_info()
 {
     const QHostAddress& a = pIpEditWidget->getAddress();
-    QString info = htmlReportByIp(*pq, a.toString());
-    pUi->textEditMsg->append(info);
+    popupReportByIp(this, *pq, a.toString());
 }
 
 void cWorkstation::ip_go()
@@ -1095,8 +1099,7 @@ void cWorkstation::on_toolButtonInfRefr_clicked()
 void cWorkstation::on_toolButtonReportMAC_clicked()
 {
     QString sMac = pUi->lineEditPMAC->text();
-    if (sMac.isEmpty()) return;
-    pUi->textEditMsg->append(htmlReportByMac(*pq, sMac));
+    popupReportByMAC(this, *pq, sMac);
 }
 
 void cWorkstation::on_toolButtonNodeTypeFilt_clicked()
@@ -1204,12 +1207,7 @@ void cWorkstation::on_toolButtonInfoLnkNode_clicked()
 {
     qlonglong lnid = pSelLinked->currentNodeId();
     if (lnid != NULL_ID) {
-        cPatch *pn = cPatch::getNodeObjById(*pq, lnid, EX_IGNORE);
-        if (pn != NULL) {
-            QString s = htmlReportNode(*pq, *pn);
-            pUi->textEditMsg->append(s);
-            delete pn;
-        }
+        popupReportNode(this, *pq, lnid);
     }
 }
 

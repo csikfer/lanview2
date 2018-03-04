@@ -3297,6 +3297,60 @@ int cSnmpDevice::open(QSqlQuery& q, cSnmp& snmp, eEx __ex, QString *pEMsg) const
 }
 
 
+int nodeObjectType(QSqlQuery& q, const cRecord& o, eEx __ex)
+{
+    int r;
+    qlonglong toid = o.fetchTableOId(q);
+    if      (toid == cPatch::     _descr_cPatch()     .tableoid()) r = NOT_PATCH;
+    else if (toid == cNode::      _descr_cNode()      .tableoid()) r = NOT_NODE;
+    else if (toid == cSnmpDevice::_descr_cSnmpDevice().tableoid()) r = NOT_SNMPDEVICE;
+    else    {
+        if (__ex != EX_IGNORE) EXCEPTION(EDATA, 0, o.identifying());
+        return NOT_INVALID;
+    }
+    if (typeid(o) == typeid(cRecordAny)) {
+        r |= NOT_ANY;
+    }
+    if (toid != o.tableoid()) {
+        r |= NOT_NEQ;
+    }
+    return r;
+}
+
+cPatch * nodeToOrigin(QSqlQuery& q, const cRecord *po, int *pt)
+{
+    int t = nodeObjectType(q, *po);
+    if (t == NOT_INVALID) EXCEPTION(EDATA, 0, po->identifying());
+    if ((t & ~NOT_TMSK) == 0) return NULL;
+    cPatch *r = NULL;
+    if (t & NOT_NEQ) {   // Is parent obj., convert to real type
+        switch (t & NOT_TMSK) {
+        case NOT_PATCH:
+            EXCEPTION(EPROGFAIL, 0, po->identifying()); // Incredible
+            break;
+        case NOT_NODE:
+        case NOT_SNMPDEVICE:
+            r = cPatch::getNodeObjById(q, po->getId());
+            break;
+        }
+    }
+    else if (t & NOT_ANY) {   // Is cRecordAny, convert to real type
+        switch (t & NOT_TMSK) {
+        case NOT_PATCH:
+            r = new cPatch;
+            break;
+        case NOT_NODE:
+            r = new cNode;
+            break;
+        case NOT_SNMPDEVICE:
+            r = new cSnmpDevice;
+            break;
+        }
+        r->copy(*po);
+    }
+    if (pt != NULL) *pt = t;
+    return r;
+}
 
 /* ----------------------------------------------------------------- */
 

@@ -1500,6 +1500,21 @@ public:
     int open(QSqlQuery &q, cSnmp& snmp, enum eEx __ex = EX_ERROR, QString *pEMsg = NULL) const;
 };
 
+enum sNodeObjectType {
+    NOT_INVALID,        ///< Az eredeti rekord nem a patchs tábla leszármazotja
+    NOT_PATCH,          ///< Az eredeti rekord a patchs
+    NOT_NODE,           ///< Az eredeti rekord a nodes
+    NOT_SNMPDEVICE,     ///< Az eredeti rekord az snmpdeices
+    NOT_TMSK= 0x00F,    ///< Eredeti típus maszk
+    NOT_ANY = 0x010,    ///< Ez egy cRecordAny objektum
+    NOT_NEQ = 0x020     ///< A rekord típusa és az objektum típusa nem azonos
+};
+EXT_ int nodeObjectType(QSqlQuery& q, const cRecord& o, eEx __ex = EX_ERROR);
+/// Feltételes objektum allokálás, ha a típus nem egyezik a rekord eredeti típusával, vagy egy cRecordAny objektum.
+/// @param po Forrás objektum pointere
+/// @param pt Opcionális pointer, a típusvizsgálat eredményének (sNodeObjectType).
+EXT_ cPatch * nodeToOrigin(QSqlQuery& q, const cRecord *po, int *pt = NULL);
+
 /* ---------------------------------------------------------------- */
 class LV2SHARED_EXPORT cImportTemplate : public cRecord {
     CRECORD(cImportTemplate);

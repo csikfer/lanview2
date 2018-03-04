@@ -1806,7 +1806,9 @@ public:
     /// Csak a tableoid mezőt olvassa be, a megadott mezők alapján.
     /// Ha a megadott, vagyis értékkel rendelkező mezők nem egyértelműen azonosítanak egy rekordot,
     /// akkor ha __ex igaz dob egy kizárást, ill. ha __ex hamis, akkor NULL_ID-vel tér vissza.
-    /// Ha egy leszármazott tábla rekordját azonosítjuk, akkor a visszaadott érték nem lessz azonos a tableoid() álltal visszaadottal.
+    /// Ha egy leszármazott tábla rekordját azonosítjuk, akkor a visszaadott érték nem lessz feltétlenül
+    /// azonos a tableoid() álltal visszaadottal. Ha egy ős objektumba olvastunk be egy leszármazott rekordot,
+    /// akkor a visszaadott érték a rekord valódi típusának megfelelő OID-t adja vissza.
     qlonglong fetchTableOId(QSqlQuery& __q, enum eEx __ex = EX_ERROR) const;
     /// Megvizsgálja, hogy a kitöltött mezők alapján a hozzá tartozó rekord egyértelműen meghatározott-e.
     /// Vagyis ki kell töltve lennie legalább egy kulcs mező csoportnak, vagy a primary kulcs mező(k)nek.

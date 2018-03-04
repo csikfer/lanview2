@@ -22,20 +22,41 @@ QWidget * popupReportWindow(QObject* _par, const QString& _text, const QString& 
 
 QWidget * popupReportNode(QObject *par, QSqlQuery& q, qlonglong nid)
 {
+    cPatch *po = cPatch::getNodeObjById(q, nid);
+    QWidget *r = popupReportNode(par, q, po);
+    delete po;
+    return r;
+}
+
+QWidget * popupReportNode(QObject *par, QSqlQuery& q, cRecord *po)
+{
     QString msg1, msg2;
-    cPatch *pn = cPatch::getNodeObjById(q, nid);
-    QString title = QObject::trUtf8("") + pn->getName() + " #" + QString::number(pn->getId()) + " ";
-    if      (pn->descr() == cPatch::     _descr_cPatch())      title += QObject::trUtf8("Patch port vagy fali csatlakozó");
-    else if (pn->descr() == cNode::      _descr_cNode())       title += QObject::trUtf8("Passzív vagy aktív hálózati eszköz");
-    else if (pn->descr() == cSnmpDevice::_descr_cSnmpDevice()) title += QObject::trUtf8("Aktív SNMP eszköz");
-    pn->fetchPorts(q);
-    msg1 = htmlReportNode(q, *pn, _sNul, true);
+    QString title = "?";
+
+    msg1 = htmlReportNode(q, *po, title, -1);
     QVariantList bind;
-    bind << nid;
+    bind << po->getId();
     msg2 = query2html(q, "mactab_node", "node_id = ?", bind, "ORDER BY port_index ASC");
     if (!msg2.isEmpty()) {
         msg2 = htmlBold(QObject::trUtf8("Cím tábla :")) + msg2;
     }
-    delete pn;
     return popupReportWindow(par, msg1 + msg2, title);
+}
+
+QWidget * popupReportByIp(QObject *par, QSqlQuery& q, const QString& sIp)
+{
+    QString msg, title;
+    title = QObject::trUtf8("Riport a %1 IP cím alapján").arg(sIp);
+    msg = htmlReportByIp(q, sIp);
+    if (msg.isEmpty()) return NULL;
+    return popupReportWindow(par, msg, title);
+}
+
+QWidget * popupReportByMAC(QObject *par, QSqlQuery& q, const QString& sMAC)
+{
+    QString msg, title;
+    title = QObject::trUtf8("Riport a %1 MAC alapján").arg(sMAC);
+    msg = htmlReportByMac(q, sMAC);
+    if (msg.isEmpty()) return NULL;
+    return popupReportWindow(par, msg, title);
 }

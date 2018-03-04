@@ -56,8 +56,9 @@ QString query2html(QSqlQuery q, cTableShape &_shape, const QString& _where, cons
     cRecordAny rec(_shape.getName(_sTableName));
     tRecordList<cRecordAny> list;
     QString ord = shrt;
-    if (ord.isEmpty()) {        // Default: order by name
-        ord = QString(" ORDER BY %1 ASC").arg(rec.nameName());
+    if (ord.isEmpty()) {        // Default: order by name, if exixst name
+        QString nameName = rec.nameName(EX_IGNORE);
+        if (!nameName.isEmpty())ord = QString(" ORDER BY %1 ASC").arg(nameName);
     }
     else if (ord == "!") {      // No order
         ord.clear();
@@ -74,25 +75,78 @@ QString query2html(QSqlQuery q, cTableShape &_shape, const QString& _where, cons
     return list2html(q, list, _shape, false);
 }
 
-QString htmlReportNode(QSqlQuery& q, cPatch& node, const QString& _sTitle, bool ports)
+QString titleNode(int t, const cRecord& n)
+{
+    QString title = n.getName() + " #" + QString::number(n.getId()) + " ";
+    switch(t) {
+    case NOT_PATCH:
+        title += QObject::trUtf8("Patch port vagy fali csatlakozó");
+        break;
+    case NOT_NODE:
+        title += QObject::trUtf8("Passzív vagy aktív hálózati eszköz");
+        break;
+    case NOT_SNMPDEVICE:
+        title += QObject::trUtf8("Aktív SNMP eszköz");
+        break;
+    default:
+        EXCEPTION(EDATA, 0, n.identifying());
+        break;
+    }
+    return title;
+}
+
+QString titleNode(const cRecord& n)
+{
+    int t = NOT_INVALID;
+    qlonglong toid = n.tableoid();
+    if      (toid == cPatch::     _descr_cPatch()     .tableoid()) t = NOT_PATCH;
+    else if (toid == cNode::      _descr_cNode()      .tableoid()) t = NOT_NODE;
+    else if (toid == cSnmpDevice::_descr_cSnmpDevice().tableoid()) t = NOT_SNMPDEVICE;
+    else    EXCEPTION(EDATA, 0, n.identifying());
+    return titleNode(t ,n);
+}
+
+QString titleNode(QSqlQuery &q, const cRecord& n)
+{
+    int t = nodeObjectType(q, n);
+    t &= ~(NOT_ANY | NOT_NEQ);
+    return titleNode(t ,n);
+}
+
+QString __sDefault__;
+
+QString htmlReportNode(QSqlQuery& q, cRecord& _node, QString& _sTitle, qlonglong flags)
 {
     QString text;
-    QString tablename = node.getOriginalDescr(q)->tableName();
-    bool isPatch = tablename == _sPatchs;
-    QString sTitle = _sTitle;
-    if (sTitle.isNull()) {
-        sTitle = isPatch ?
-                    QObject::trUtf8("Bejegyzett patch panel, vagy csatlakozó : %1"):
-                    QObject::trUtf8("Bejegyzett hálózati elem (%2) : %1");
+    cPatch *po   = nodeToOrigin(q, &_node);
+    cPatch& node = *(po == NULL ? dynamic_cast<cPatch *>(&_node) : dynamic_cast<cPatch *>(po));
+    if (po != NULL) {
+        if (flags &  CV_PORTS)       node.fetchPorts(q);
+        if (flags &  CV_NODE_PARAMS) node.fetchParams(q);
     }
-    text += htmlWarning(sTitle.arg(node.getName(), tablename)); // bold
-    QString s = node.getNote();
+    QString tablename = node.tableName();
+    bool isPatch = tablename == _sPatchs;
+    if (_sTitle.isNull()) {      // Default title
+        text += htmlWarning(titleNode(node)); // bold
+    }
+    else if (_sTitle == "?") {   // Query default title
+        _sTitle = titleNode(node);
+    }
+    else {
+        text += htmlWarning(_sTitle.arg(node.getName(), tablename));
+    }
+    if (!isPatch) {
+        text += htmlInfo(QObject::trUtf8("Típus jelzők : %1").arg(node.getName(_sNodeType)));
+        text += htmlInfo(QObject::trUtf8("Állapota : %1").arg(node.getName(_sNodeStat)));
+    }
+    QString s = _node.getNote();
     if (!s.isEmpty()) text += htmlInfo(QObject::trUtf8("Megjegyzés : %1").arg(s));
-    qlonglong pid = node.getId(_sPlaceId);
+    qlonglong pid = _node.getId(_sPlaceId);
     if (pid <= 1) text += htmlInfo(QObject::trUtf8("Az eszköz helye ismeretlen"));
     else text += htmlInfo(QObject::trUtf8("Helye : %1").arg(cPlace().getNameById(q, pid)));
     /* -- PARAM -- */
-    if (ports && node.fetchParams(q)) {
+    if (flags & CV_NODE_PARAMS) {
+        if ((node.containerValid & CV_NODE_PARAMS) == 0) node.fetchParams(q);
         text += htmlInfo(QObject::trUtf8("Eszköz paraméterek :"));
         text += sHtmlTabBeg + sHtmlRowBeg;
         text += sHtmlTh.arg(QObject::trUtf8("Paraméter típus"));
@@ -111,7 +165,8 @@ QString htmlReportNode(QSqlQuery& q, cPatch& node, const QString& _sTitle, bool 
         text += sHtmlTabEnd;
     }
     /* -- PORTS -- */
-    if (ports && node.fetchPorts(q)) {
+    if (flags & CV_PORTS) {
+        if ((node.containerValid & CV_PORTS) == 0) node.fetchPorts(q);
         text += htmlInfo(QObject::trUtf8("Portok :"));
         node.sortPortsByIndex();
         // Table header
@@ -235,9 +290,10 @@ QString htmlReportNode(QSqlQuery& q, cPatch& node, const QString& _sTitle, bool 
         }
         text += sHtmlTabEnd;
     }
-    else if (ports) {
+    else if (flags) {
         text += sHtmlBr + sHtmlBr + QObject::trUtf8("Nincs egyetlen portja sem az adatbázisban az eszköznek.") + "</b>";
     }
+    pDelete(po);
     return text;
 }
 
