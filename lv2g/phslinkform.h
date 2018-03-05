@@ -17,9 +17,11 @@ class phsLinkWidget : public QWidget
 public:
     void setFirst(bool f);
     void init();
-    qlonglong   getPortId() const   { return pSelectPort->currentPortId(); }
-    ePhsLinkType getLinkType() const{ return (ePhsLinkType)pSelectPort->currentType(); }
-    ePortShare  getPortShare() const{ return (ePortShare)pSelectPort->currentShare(); }
+    qlonglong    getPortId() const   { return pSelectPort->currentPortId(); }
+    ePhsLinkType getLinkType() const { return (ePhsLinkType)pSelectPort->currentType(); }
+    ePortShare   getPortShare() const{ return (ePortShare)pSelectPort->currentShare(); }
+    qlonglong    getPlaceId() const  { return pSelectPort->currentPlaceId(); }
+    qlonglong    getNodeId() const   { return pSelectPort->currentNodeId(); }
     bool next();
     bool prev();
 protected:
@@ -33,14 +35,11 @@ protected:
     phsLinkWidget  *    pOther;             // A másik (linkelt) port
 
     bool                first;              // Primary
-    QString             sPortIdX;           // Port index name
-    QString             sNodeIdX;           // Node id name
-    QString             sPhsLinkTypeX;      //
-    QString             sPortSharedX;
 private slots:
     void toglePlaceEqu(bool f);
-    void change(qlonglong, int, int);
-    void on_toolButton_clicked();
+    void change(qlonglong, int _lt, int);
+    void on_toolButtonInfo_clicked();
+    void on_toolButtonStep_clicked();
 
 signals:
     void changed();

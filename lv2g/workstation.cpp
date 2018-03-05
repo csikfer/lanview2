@@ -481,7 +481,7 @@ void cWorkstation::msgEmpty(const QVariant& val, QLabel *pLabel, const QString& 
             cPatch *pn = cPatch::getNodeObjById(*pq, n.getId());
             sErrs << htmlError(QObject::trUtf8("A megadott %1 nem egyedi!").arg(t));
             QString t = trUtf8("A %2 (%3) eszköznek azonos a %1-a.").arg(t);
-            sInfs << htmlReportNode(*pq, *pn, t, 0);
+            sInfs << htmlPair2Text(htmlReportNode(*pq, *pn, t, 0));
             delete pn;
             isOk = false;
         }
@@ -512,7 +512,7 @@ void cWorkstation::setStatNodeName(bool f, QStringList& sErrs, QStringList& sInf
         if (!(isModify && node.getId() == pn->getId())) { // Name is not unique
             sErrs << htmlError(trUtf8("A megadott néven már létezik egy eszköz! A névnek egyedinek kell lennie."));
             QString t = trUtf8("A %1 megadott néven bejegyzett (%2 típusú) eszköz : ");
-            sInfs << htmlReportNode(*pq, *pn, t, CV_PORTS);
+            sInfs << htmlPair2Text(htmlReportNode(*pq, *pn, t, CV_PORTS));
         }
         delete pn;
         return;
@@ -598,7 +598,7 @@ void cWorkstation::setStatIp(bool f, QStringList& sErrs, QStringList& sInfs, boo
         if (node.getId() != NULL_ID && (!isModify || node.getId() != n.getId())) {
             sErrs << htmlError(trUtf8("A megadott IP címmel már létezik egy eszköz! A címnek, a 'privat' típus kivépelével, egyedinek kell lennie."));
             QString t = trUtf8("A megadott címmel %1 nevű (%2 típusú) eszköz van bejegyezve.");
-            sInfs << htmlReportNode(*pq, n, t, 0);
+            sInfs << htmlPair2Text(htmlReportNode(*pq, n, t, 0));
             isOk = false;
         }
     }
@@ -623,7 +623,7 @@ void cWorkstation::setStatPortMac(bool f, QStringList& sErrs, QStringList& sInfs
         if (node.getId() != NULL_ID && (!isModify || node.getId() != n.getId())) {
             sErrs << htmlError(trUtf8("A megadott MAC-kal már létezik egy eszköz! Két különböző eszköznek nem lehet azonos MAC-je."));
             QString t = trUtf8("A megadott MAC-kel a %1 nevű (%2 típusú) eszköz van bejegyezve.");
-            sInfs << htmlReportNode(*pq, n, t, 0);
+            sInfs << htmlPair2Text(htmlReportNode(*pq, n, t, 0));
             isOk = false;
         }
     }
@@ -657,7 +657,7 @@ void cWorkstation::setStatLink(bool f, QStringList& sErrs, QStringList& sInfs, b
         cPatch *pn = cPatch::getNodeObjById(*pq, lnid);
         sErrs << htmlError(trUtf8("Nincs megadva a linkelt eszköz portja."));
         QString t = trUtf8("A következő eszköz egy portjára csatlakozna : %2 ");
-        sInfs << htmlReportNode(*pq, *pn, t);
+        sInfs << htmlPair2Text(htmlReportNode(*pq, *pn, t));
         delete pn;
         isOk = false;
         return;

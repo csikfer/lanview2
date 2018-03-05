@@ -194,7 +194,10 @@
       </spacer>
      </item>
      <item row="1" column="6">
-      <widget class="QToolButton" name="toolButton">
+      <widget class="QToolButton" name="toolButtonInfo">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Egy riport ablak megjelenítése a hálózati elemről, ill. patch panel vagy fali csatlakozóról.&lt;/p&gt;&lt;p&gt;A megosztásokat figyelmen kívül hagyja!&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>...</string>
        </property>
@@ -207,7 +210,7 @@
     </layout>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,1,1,1,1">
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,1,1,1,1,0">
      <item>
       <widget class="QLabel" name="labelLinkType">
        <property name="text">
@@ -251,6 +254,20 @@
         </size>
        </property>
       </spacer>
+     </item>
+     <item>
+      <widget class="QToolButton" name="toolButtonStep">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Lépés a linkek láncán.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="lv2g.qrc">
+         <normaloff>:/icons/next.ico</normaloff>:/icons/next.ico</iconset>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>

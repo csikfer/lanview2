@@ -112,14 +112,18 @@ EXT_ QString titleNode(const cRecord& n);
 /// Node report title by real type
 /// @param n node object
 EXT_ QString titleNode(int t, const cRecord& n);
-/// Empty string
-EXT_ QString __sDefault__;
 /// HTML riport egy node-ról
 /// @param q Query objektum az adatbázis eléréshez
 /// @param node Az objektum amiről a riportot kell készíteni
 /// @param _sTitle Egy opcionális címsor.
 /// @param flags
-EXT_ QString htmlReportNode(QSqlQuery& q, cRecord& node, QString& _sTitle = __sDefault__, qlonglong flags = -1);
+EXT_ tStringPair htmlReportNode(QSqlQuery& q, cRecord& node, const QString& _sTitle = QString(), qlonglong flags = -1);
+/// Egy címsort és egy szöveg törzset tartalmazó string párból fűz össze egy stringet.
+/// A címsor bold lesz.
+inline QString htmlPair2Text(const tStringPair& sp) {
+    return htmlWarning(sp.first) + sp.second;
+}
+
 /// HTML riport egy MAC alapján
 /// @param q Query objektum az adatbázis eléréshez
 /// @param sMac A keresett MAC

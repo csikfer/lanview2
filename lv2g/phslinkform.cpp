@@ -37,29 +37,31 @@ void phsLinkWidget::setFirst(bool f)
     QString s;
     if (f) {
         setObjectName("first");
-        s = "1";
-        sPhsLinkTypeX = _sPhsLinkType1;
         pUi->checkBoxPlaceEqu->hide();
     }
     else {
         setObjectName("last");
-        s = "2";
-        sPhsLinkTypeX = _sPhsLinkType2;
         connect(pUi->checkBoxPlaceEqu, SIGNAL(toggled(bool)),  this, SLOT(toglePlaceEqu(bool)));
     }
-    sPortIdX     = _sPortId     + s;
-    sNodeIdX     = _sNodeId     + s;
-    sPortSharedX = _sPortShared + s;
 }
 
 void phsLinkWidget::init()
 {
     cPhsLink l;
     if (parent->pActRecord != NULL) {
-        // set by act record
+        // set by act record, copy eq. field (phs_links_shape -> phs_links)
         l.set(*parent->pActRecord);
+        // phs_links.port_shared <- phs_links_shape.port_shared1 or phs_links_shape.port_shared2
+        QString sFn = _sPortShared;
+        if (l.getId(_sPhsLinkType1) == LT_FRONT) sFn += "1";
+        else                                     sFn += "2";
+        l.setName(_sPortShared, parent->pActRecord->getName(sFn));
         if (first) l.swap();
         pSelectPort->setLink(l);
+        if (!first) {
+            bool equ = getPlaceId() == pOther->getPlaceId();
+            pUi->checkBoxPlaceEqu->setChecked(equ);
+        }
     }
     else {
         if (first) {
@@ -84,10 +86,17 @@ void phsLinkWidget::init()
             else if (nid != NULL_ID) {
                 pSelectPort->setCurrentNode(nid);
             }
+        }
+        else {
             pUi->checkBoxPlaceEqu->setChecked(true);
         }
     }
-    if (!first) toglePlaceEqu(pUi->checkBoxPlaceEqu->isChecked());
+    if (pSelectPort->isPatch() && pSelectPort->currentPortId() != NULL_ID) {
+        pUi->toolButtonStep->show();
+    }
+    else {
+        pUi->toolButtonStep->hide();
+    }
 }
 
 bool phsLinkWidget::next()
@@ -120,14 +129,47 @@ void phsLinkWidget::toglePlaceEqu(bool f)
     changed();
 }
 
-void phsLinkWidget::change(qlonglong, int, int)
+void phsLinkWidget::change(qlonglong, int _lt, int)
 {
+    if (LT_UNKNOWN == _lt || LT_TERM == _lt ) pUi->toolButtonStep->hide();
+    else                                      pUi->toolButtonStep->show();
+    qlonglong nid = pSelectPort->currentNodeId();
+    pUi->toolButtonInfo->setDisabled(nid == NULL_ID);
     changed();
 }
 
-void phsLinkWidget::on_toolButton_clicked()
+void phsLinkWidget::on_toolButtonInfo_clicked()
 {
     qlonglong nid = pSelectPort->currentNodeId();
     if (nid == NULL_ID) return;
     popupReportNode(this, *pq, nid);
+}
+
+void phsLinkWidget::on_toolButtonStep_clicked()
+{
+    qlonglong pid = pSelectPort->currentPortId();
+    if (pSelectPort->isPatch() && pid != NULL_ID) {
+        int plt;
+        switch (getLinkType()) {
+        case LT_FRONT:  plt = LT_BACK;  break;
+        case LT_BACK:   plt = LT_FRONT; break;
+        default:        EXCEPTION(EDATA, getLinkType());
+        }
+        cPhsLink l, ll;
+        if (first) {
+            l.setId(_sPortId1,      pid);
+            l.setId(_sPhsLinkType1, plt);
+        }
+        else {
+            l.setId(_sPortId2,      pid);
+            l.setId(_sPhsLinkType2, plt);
+        }
+        ll.set(l);
+        if (ll.completion(*pq)) l.set(ll);
+        phsLinkWidget *pFirst = first ? this   : pOther;
+        phsLinkWidget *pLast  = first ? pOther : this;
+        pFirst->pSelectPort->setLink(l);
+        l.swap();
+        pLast->pSelectPort->setLink(l);
+    }
 }

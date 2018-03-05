@@ -15,6 +15,7 @@ cMainWindow::cMainWindow(QWidget *parent) :
     setWindowTitle(title);
     setWindowIcon(QIcon("://icons/LanView2.ico"));
     pMdiArea = new QMdiArea(this);
+    pMdiArea->setBackground(QBrush(QImage(":/LanView2.png")));
     pMdiArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     pMdiArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     pMdiArea->setDocumentMode(true);

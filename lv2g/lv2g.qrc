@@ -47,5 +47,6 @@
         <file>icons/services.ico</file>
         <file>splash.png</file>
         <file>icons/LanView2.ico</file>
+        <file>LanView2.png</file>
     </qresource>
 </RCC>

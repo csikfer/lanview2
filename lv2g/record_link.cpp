@@ -256,7 +256,12 @@ cLinkDialog::cLinkDialog(bool __similar, cRecordLink * __parent)
       tIntVector buttons;
       buttons << DBT_SPACER << DBT_OK << DBT_SAVE << DBT_PREV << DBT_NEXT << DBT_SPACER << DBT_CANCEL;
       pButtons = new cDialogButtons(buttons);
+      pButtons->button(DBT_PREV)->setToolTip(trUtf8("A port indexek léptetése lefelé."));
+      pButtons->button(DBT_NEXT)->setToolTip(trUtf8("A port indexek léptetése felfelé."));
       pVBoxL->addWidget(pButtons->pWidget());
+
+    insertOnly = false;
+    init();
 
     connect(pButtons,           SIGNAL(buttonPressed(int)), this, SLOT(buttonPressed(int)));
     connect(pLink1,             SIGNAL(changed()),          this, SLOT(changed()));
@@ -266,8 +271,7 @@ cLinkDialog::cLinkDialog(bool __similar, cRecordLink * __parent)
     connect(pPushButtonNote,    SIGNAL(pressed()),          this, SLOT(saveNote()));
     connect(pToolButtonRfresh,  SIGNAL(pressed()),          this, SLOT(changed()));
 
-    insertOnly = false;
-    init();
+    changed();
 }
 
 cLinkDialog::~cLinkDialog()
@@ -279,7 +283,6 @@ void cLinkDialog::init()
 {
     pLink1->init();
     pLink2->init();
-    changed();
 }
 
 bool cLinkDialog::get(cPhsLink& link)

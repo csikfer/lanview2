@@ -3668,6 +3668,7 @@ cSelectLinkedPort::cSelectLinkedPort(QComboBox *_pZone, QComboBox *_pPlace, QCom
     : cSelectNode(_pZone, _pPlace, _pNode, _pPlaceFilt, _pNodeFilt, _placeConstFilt, _nodeConstFilt, _par)
 {
     lockSlots = 0;
+    _isPatch = false;
     pq = newQuery();
     pComboBoxPort    = _pPort;
     pComboBoxShare   = _pShare;
@@ -3709,26 +3710,29 @@ void cSelectLinkedPort::setLink(cPhsLink& _lnk)
     int ix = pModelNode->indexOf(pn->getId());
     if (ix <= 0) EXCEPTION(EPROGFAIL);
     pComboBoxNode->setCurrentIndex(ix);
-
+    _isPatch = pn->tableoid() == cPatch::_descr_cPatch().tableoid();
     ix = pModelPort->indexOf(pid);
     if (ix < 0) EXCEPTION(EPROGFAIL);
     pComboBoxPort->setCurrentIndex(ix);
 
-    ix = 0;
-    if (isPatch) {
+    ix = 0;     // Share value index (comboBox)
+    if (_isPatch) {
         ix = pModelShare->indexOf(_lnk.getId(_sPortShared));
         if (ix < 0) EXCEPTION(EPROGFAIL);
     }
     lastShare = pModelShare->atInt(ix);
+    lastLinkType = (int)_lnk.getId(_sPhsLinkType2);
     pComboBoxShare->setCurrentIndex(ix);
-    pComboBoxShare->setEnabled(isPatch);
+    if ((lastLinkType == LT_TERM) == _isPatch) {
+        QString msg = trUtf8("Database or program error. Port %1:%2, link type is %3.").arg(pn->getName(), p.getName(), linkType(lastLinkType, EX_IGNORE));
+        EXCEPTION(EDATA, lastLinkType, msg);
+    }
+    pComboBoxShare->setEnabled(lastLinkType == LT_FRONT);
 
-    pButtonGroupType->button(_lnk.getId(_sPhsLinkType2))->setChecked(true);
-    bool isPatch = pn->tableoid() == cPatch::_descr_cPatch().tableoid();
-    pButtonGroupType->button(LT_TERM)->setDisabled(isPatch);
-    pButtonGroupType->button(LT_FRONT)->setEnabled(isPatch);
-    pButtonGroupType->button(LT_BACK)->setEnabled(isPatch);
-    pComboBoxShare->setEnabled(isPatch);
+    pButtonGroupType->button(lastLinkType)->setChecked(true);
+    pButtonGroupType->button(LT_TERM)->setDisabled(_isPatch);
+    pButtonGroupType->button(LT_FRONT)->setEnabled(_isPatch);
+    pButtonGroupType->button(LT_BACK)->setEnabled(_isPatch);
 }
 
 void cSelectLinkedPort::setNodeId(qlonglong _nid)
@@ -3740,8 +3744,8 @@ void cSelectLinkedPort::setNodeId(qlonglong _nid)
         cPatch p;
         p.setId(_nid);
         qlonglong toid = p.fetchTableOId(*pq);  // Type?
-        isPatch = toid == p.tableoid();
-        if (isPatch) {
+        _isPatch = toid == p.tableoid();
+        if (_isPatch) {
             if (lastLinkType == LT_TERM) {
                 pButtonGroupType->button(LT_FRONT)->setChecked(true);
                 lastLinkType = LT_FRONT;
@@ -3769,7 +3773,7 @@ void cSelectLinkedPort::setPortIdByIndex(int ix)
     lastPortId = pid;
     bool portIsNull = pid == NULL_ID;
     if (!portIsNull) {
-        if (isPatch) {
+        if (_isPatch) {
             if (lastLinkType == LT_TERM) lastLinkType = LT_FRONT;
         }
         else {
@@ -3778,10 +3782,10 @@ void cSelectLinkedPort::setPortIdByIndex(int ix)
             pComboBoxShare->setCurrentIndex(0);
         }
         pButtonGroupType->button(lastLinkType)->setChecked(true);
-        pButtonGroupType->button(LT_TERM)->setDisabled(isPatch);
-        pButtonGroupType->button(LT_FRONT)->setEnabled(isPatch);
-        pButtonGroupType->button(LT_BACK)->setEnabled(isPatch);
-        pComboBoxShare->setEnabled(isPatch);
+        pButtonGroupType->button(LT_TERM)->setDisabled(_isPatch);
+        pButtonGroupType->button(LT_FRONT)->setEnabled(_isPatch);
+        pButtonGroupType->button(LT_BACK)->setEnabled(_isPatch);
+        pComboBoxShare->setEnabled(_isPatch);
     }
     else {
         pButtonGroupType->button(LT_TERM) ->setDisabled(true);

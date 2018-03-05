@@ -1098,6 +1098,7 @@ public:
     qlonglong currentPortId() const { return pModelPort->atId(pComboBoxPort->currentIndex()); }
     int       currentType()   const { return lastLinkType; }
     int       currentShare()  const { return lastShare; }
+    bool      isPatch()       const { return _isPatch; }
 private:
     QSqlQuery *     pq;
     QComboBox *     pComboBoxPort;
@@ -1105,7 +1106,7 @@ private:
     QButtonGroup *  pButtonGroupType;
     cEnumListModel *pModelShare;
     cRecordListModel *pModelPort;
-    bool        isPatch;
+    bool        _isPatch;
     int         lastLinkType;
     int         lastShare;
     qlonglong   lastPortId;

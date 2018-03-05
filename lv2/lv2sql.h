@@ -146,11 +146,11 @@ EXT_ QString toSqlName(const QString& _n);
 
 #if 1
 #define _EXECSQL(Q) \
-    PDEB(SQL) << dQuoted(Q.lastQuery()) << endl; \
+    PDEB(SQL) << dQuoted(Q.lastQuery()) << "Bound : " << _sql_err_bound(Q) << endl; \
     if (!(Q).exec()) SQLQUERYERR(Q);
 
 #define EXECSQL(Q, S) \
-    PDEB(SQL) << dQuoted(S) << endl; \
+    PDEB(SQL) << dQuoted(S) << "Bound : " << _sql_err_bound(Q) << endl; \
     if (!(Q).exec(S)) SQLPREPERR(Q, S);
 #else
 #define _EXECSQL(Q) \

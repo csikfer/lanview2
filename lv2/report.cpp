@@ -115,9 +115,10 @@ QString titleNode(QSqlQuery &q, const cRecord& n)
 
 QString __sDefault__;
 
-QString htmlReportNode(QSqlQuery& q, cRecord& _node, QString& _sTitle, qlonglong flags)
+tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle, qlonglong flags)
 {
     QString text;
+    QString title;
     cPatch *po   = nodeToOrigin(q, &_node);
     cPatch& node = *(po == NULL ? dynamic_cast<cPatch *>(&_node) : dynamic_cast<cPatch *>(po));
     if (po != NULL) {
@@ -126,14 +127,12 @@ QString htmlReportNode(QSqlQuery& q, cRecord& _node, QString& _sTitle, qlonglong
     }
     QString tablename = node.tableName();
     bool isPatch = tablename == _sPatchs;
-    if (_sTitle.isNull()) {      // Default title
-        text += htmlWarning(titleNode(node)); // bold
-    }
-    else if (_sTitle == "?") {   // Query default title
-        _sTitle = titleNode(node);
+    title = _sTitle;
+    if (title.isNull()) {      // Default title
+        title = titleNode(node);
     }
     else {
-        text += htmlWarning(_sTitle.arg(node.getName(), tablename));
+        title = _sTitle.arg(node.getName(), tablename);
     }
     if (!isPatch) {
         text += htmlInfo(QObject::trUtf8("Típus jelzők : %1").arg(node.getName(_sNodeType)));
@@ -294,7 +293,7 @@ QString htmlReportNode(QSqlQuery& q, cRecord& _node, QString& _sTitle, qlonglong
         text += sHtmlBr + sHtmlBr + QObject::trUtf8("Nincs egyetlen portja sem az adatbázisban az eszköznek.") + "</b>";
     }
     pDelete(po);
-    return text;
+    return tStringPair(title, text);
 }
 
 QString htmlReportByMac(QSqlQuery& q, const QString& sMac)
@@ -324,14 +323,14 @@ QString htmlReportByMac(QSqlQuery& q, const QString& sMac)
         text += sHtmlLine;
         break;
     case 1:
-        text += htmlReportNode(q, node);
+        text += htmlPair2Text(htmlReportNode(q, node));
         text += sHtmlLine;
         break;
     default:    // ??????
         text += htmlWarning("Ezzel az MAC címmel több hálózati elem is be van jegyezve.");
         do {
             QSqlQuery qq = getQuery();
-            text += htmlReportNode(qq, node);
+            text += htmlPair2Text(htmlReportNode(qq, node));
             text += sHtmlLine;
         } while(node.next(q));
     }
@@ -393,7 +392,7 @@ QString htmlReportByIp(QSqlQuery& q, const QString& sAddr)
     int n = node.fetchByIp(q, a, EX_IGNORE);
     switch (n) {
     case 1:
-        text += htmlReportNode(q, node);
+        text += htmlPair2Text(htmlReportNode(q, node));
         text += sHtmlLine;
         break;
     case 0:
@@ -404,7 +403,7 @@ QString htmlReportByIp(QSqlQuery& q, const QString& sAddr)
         text += htmlWarning("Ezzel az IP címmel több hálózati elem is be van jegyezve.");
         do {
             QSqlQuery qq = getQuery();
-            text += htmlReportNode(qq, node);
+            text += htmlPair2Text(htmlReportNode(qq, node));
             text += sHtmlLine;
         } while(node.next(q));
     }

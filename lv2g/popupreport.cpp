@@ -30,17 +30,17 @@ QWidget * popupReportNode(QObject *par, QSqlQuery& q, qlonglong nid)
 
 QWidget * popupReportNode(QObject *par, QSqlQuery& q, cRecord *po)
 {
-    QString msg1, msg2;
-    QString title = "?";
+    tStringPair msg1;
+    QString msg2;
 
-    msg1 = htmlReportNode(q, *po, title, -1);
+    msg1 = htmlReportNode(q, *po);
     QVariantList bind;
     bind << po->getId();
     msg2 = query2html(q, "mactab_node", "node_id = ?", bind, "ORDER BY port_index ASC");
     if (!msg2.isEmpty()) {
         msg2 = htmlBold(QObject::trUtf8("Cím tábla :")) + msg2;
     }
-    return popupReportWindow(par, msg1 + msg2, title);
+    return popupReportWindow(par, msg1.second + msg2, msg1.first);
 }
 
 QWidget * popupReportByIp(QObject *par, QSqlQuery& q, const QString& sIp)
