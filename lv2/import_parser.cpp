@@ -126,9 +126,7 @@ void	cImportParseThread::run()
     else {
         importFileNm = "[stream]";
         pImportInputStream = new QTextStream(pSrc);
-        PDEB(INFO) << QObject::trUtf8("Start parsing ...") << endl;
         importParse(IPS_THREAD);
-        PDEB(INFO) << QObject::trUtf8("End parse.") << endl;
     }
     downImportParser();
     PDEB(INFO) << QObject::trUtf8("End parser ((thread)).") << endl;

@@ -10,7 +10,7 @@ A rendszer dokumentációja a project fájlok között: LanView2.odt
 Egy rövide leírás, és egy prezentáció: lv2pre.odt lanview.pptx
 
 Az interpreter dokumentációja : import/import_man.odt 
-Az API dokumentáció pedig : http://svn.kkfk.bgf.hu/lanview2.doc/html/ címen.
+Az API dokumentáció pedig : http://svn.kkfk.bgf.hu/lanview2.doc/LanView2_API/ címen.
 Az adatbázis dokumentáció : http://svn.kkfk.bgf.hu/lanview2.doc/database/ cimen.
 (Sajnos az postgresql_autodoc csak egy bekezdést kezel egy megjegyzésnél, nálam meg több bekezdés is van, ezért ezek osszefolynak.)
 
