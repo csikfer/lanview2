@@ -40,6 +40,7 @@ enum eDialogButtons {
     DBT_RECEIPT,        ///< Üzenet, esemény nyugtázása
     DBT_TRUNCATE,       ///< Az összes rekord törlése
     DBT_COMPLETE,       ///< Kiegészít, ...
+    DBT_REPORT,         ///< Riport
 //  DBT_TOOLS,          ///< Segédeszköz, egyedi dalogus megjelenítése
     DBT_BUTTON_NUMBERS, ///< Nem egy nyomógombot reprezentál, hanem azok számát
     DBT_SPACER,         ///< Nem nyomogomb, spacer

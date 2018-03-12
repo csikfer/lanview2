@@ -23,8 +23,10 @@ void cRecordTree::init()
     pTreeView  = NULL;
     // Az alapértelmezett gombok:
     buttons << DBT_CLOSE << DBT_SPACER;
-    if (pTableShape->isFeature("button.copy")) {
-        buttons << DBT_COPY << DBT_SPACER;
+    if (pTableShape->isFeature(_sButtonCopy) || pTableShape->isFeature(_sReport)) {
+        buttons << DBT_COPY;
+        if (pTableShape->isFeature(_sButtonCopy)) buttons << DBT_COPY;
+        if (pTableShape->isFeature(_sReport))     buttons << DBT_REPORT;
     }
     buttons << DBT_EXPAND << DBT_REFRESH << DBT_ROOT << DBT_RESTORE;
     if (isReadOnly == false) {

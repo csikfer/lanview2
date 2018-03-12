@@ -5,6 +5,7 @@
 #include "cerrormessagebox.h"
 #include "tableexportdialog.h"
 #include "lv2validator.h"
+#include "popupreport.h"
 
 
 Ui::noRightsForm * noRightsSetup(QWidget *_pWidget, qlonglong _need, const QString& _obj, const QString& _html)
@@ -1043,6 +1044,7 @@ void cRecordsViewBase::buttonPressed(int id)
     case DBT_COPY:      copy();         break;
     case DBT_RECEIPT:   receipt();      break;
     case DBT_TRUNCATE:  truncate();     break;
+    case DBT_REPORT:    report();       break;
     default:
         DWAR() << "Invalid button id : " << id << endl;
         break;
@@ -1436,6 +1438,16 @@ void cRecordsViewBase::truncate()
     }
 }
 
+void cRecordsViewBase::report()
+{
+    QModelIndexList mil = selectedRows();
+    cRecord *po = actRecord();
+    if (po == NULL) return;
+    QString name = pTableShape->feature(_sReport);
+    tStringPair sp = htmlReport(*pq, *po, name);
+    popupReportWindow(_pWidget, sp.second, sp.first);
+}
+
 qlonglong cRecordsViewBase::actId(eEx __ex)
 {
     cRecord *p = actRecord();
@@ -1727,8 +1739,9 @@ void cRecordTable::setEditButtons()
         buttonDisable(DBT_SIMILAR, fi || n != 1);
     }
     buttonDisable(DBT_DELETE,  isNoDelete || n <  1 );
-    buttonDisable(DBT_RECEIPT, n < 1);
-    buttonDisable(DBT_COPY,    n < 1);
+    buttonDisable(DBT_RECEIPT, n <  1);
+    buttonDisable(DBT_COPY,    n <  1);
+    buttonDisable(DBT_REPORT,  n != 1);
 }
 
 
@@ -1973,8 +1986,10 @@ void cRecordTable::init()
     pTableView = NULL;
     // Az alapértelmezett gombok:
     buttons << DBT_CLOSE << DBT_SPACER;
-    if (pTableShape->isFeature("button.copy")) {
-        buttons << DBT_COPY << DBT_SPACER;
+    if (pTableShape->isFeature(_sButtonCopy) || pTableShape->isFeature(_sReport)) {
+        if (pTableShape->isFeature(_sButtonCopy)) buttons << DBT_COPY;
+        if (pTableShape->isFeature(_sReport))     buttons << DBT_REPORT;
+        buttons << DBT_SPACER;
     }
     buttons << DBT_REFRESH << DBT_FIRST << DBT_PREV << DBT_NEXT << DBT_LAST;
     if (recDescr().toIndex(_sAcknowledged, EX_IGNORE) >= 0)  {

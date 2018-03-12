@@ -99,6 +99,9 @@ inline QString query2html(QSqlQuery q, const QString& _shapeName, const QString&
     return query2html(q, shape, _where, _par, shrt);
 }
 
+EXT_ QString sReportPlace(QSqlQuery& q, qlonglong _pid, bool parents = true, bool zones = true, bool cat = true);
+
+
 // Node report flags
 #define NODE_REPORT_SERVICES    0x00010000;
 
@@ -156,5 +159,8 @@ static inline void expBold(const QString& text, bool chgBreaks = false, bool esc
 static inline void expHtmlLine() {
     cExportQueue::push(sHtmlLine);
 }
+
+
+EXT_ tStringPair htmlReport(QSqlQuery& q, cRecord& o, const QString& _name = _sNul);
 
 #endif // REPORT_H

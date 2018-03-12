@@ -75,6 +75,55 @@ QString query2html(QSqlQuery q, cTableShape &_shape, const QString& _where, cons
     return list2html(q, list, _shape, false);
 }
 
+/* *********************************************************************************************** */
+
+QString sReportPlace(QSqlQuery& q, qlonglong _pid, bool parents, bool zones, bool cat)
+{
+    QString r;
+    cPlace  place;
+    place.setById(q, _pid);
+    r = place.getName();
+    if (parents) {
+        qlonglong pid = place.getId(_sParentId);
+        cPlace ppl;
+        while (pid != NULL_ID && pid != ROOT_PLACE_ID) {
+            ppl.setById(q, pid);
+            r.prepend(ppl.getName() + " / ");
+            pid = ppl.getId(_sParentId);
+        }
+    }
+    r.prepend(QObject::trUtf8("Hely : "));
+    if (zones) {
+        QString sql = "SELECT place_group_name FROM place_groups WHERE place_group_id > 1 AND is_place_in_zone(?, place_group_id)";
+        if (execSql(q, sql, _pid)) {
+            r += QObject::trUtf8(" Zónák : ");
+            do {
+                r += q.value(0).toString() + ", ";
+            } while (q.next());
+            r.chop(2);
+        }
+        else {
+            r += QObject::trUtf8(" A hely nem része egyetlen zónának sem.");
+        }
+    }
+    if (cat) {
+        QString sql = "SELECT place_group_name FROM place_groups JOIN place_group_places USING(place_group_id) WHERE place_group_type = 'category' AND place_id = ?";
+        if (execSql(q, sql, _pid)) {
+            r += QObject::trUtf8(" Kategória : ");
+            do {
+                r += q.value(0).toString() + ", ";
+            } while (q.next());
+            r.chop(2);
+        }
+        else {
+            r += QObject::trUtf8(" Nincs kategória.");
+        }
+    }
+    return r;
+}
+
+/* ------------------------------------------------------------------------------------------------ */
+
 QString titleNode(int t, const cRecord& n)
 {
     QString title = n.getName() + " #" + QString::number(n.getId()) + " ";
@@ -113,8 +162,6 @@ QString titleNode(QSqlQuery &q, const cRecord& n)
     return titleNode(t ,n);
 }
 
-QString __sDefault__;
-
 tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle, qlonglong flags)
 {
     QString text;
@@ -142,7 +189,7 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
     if (!s.isEmpty()) text += htmlInfo(QObject::trUtf8("Megjegyzés : %1").arg(s));
     qlonglong pid = _node.getId(_sPlaceId);
     if (pid <= 1) text += htmlInfo(QObject::trUtf8("Az eszköz helye ismeretlen"));
-    else text += htmlInfo(QObject::trUtf8("Helye : %1").arg(cPlace().getNameById(q, pid)));
+    else text += htmlInfo(sReportPlace(q, pid));
     /* -- PARAM -- */
     if (flags & CV_NODE_PARAMS) {
         if ((node.containerValid & CV_NODE_PARAMS) == 0) node.fetchParams(q);
@@ -430,7 +477,6 @@ QString htmlReportByIp(QSqlQuery& q, const QString& sAddr)
     return text;
 }
 
-
 QString linksHtmlTable(QSqlQuery& q, tRecordList<cPhsLink>& list, bool _swap)
 {
     QString table;
@@ -512,4 +558,16 @@ bool linkColisionTest(QSqlQuery& q, bool& exists, const cPhsLink& _pl, QString& 
     }
     _DBGFNL() << r << endl;
     return r;
+}
+
+/* ************************************************************************************************ */
+
+tStringPair htmlReport(QSqlQuery& q, cRecord& o, const QString& _name)
+{
+    QString name = _name.isEmpty() ? o.tableName() : _name;
+    if (name == _sPatchs || name == _sNodes || name == _sSnmpDevices) {
+        return htmlReportNode(q, o);
+    }
+    EXCEPTION(EDATA, 0, QObject::trUtf8("Invalid report type : name = %1; Object : %2").arg(_name, o.identifying()));
+    return tStringPair();
 }

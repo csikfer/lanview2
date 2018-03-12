@@ -339,6 +339,7 @@ public:
     ///
     virtual void receipt();
     virtual void truncate();
+    virtual void report();
 
     virtual void setEditButtons() = 0;
     /// Nem kötelezően implementálandü virtuális metódus. Alapértelmezetten nem csinál semmit.

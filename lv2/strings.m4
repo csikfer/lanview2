@@ -167,6 +167,11 @@ STRDEF(Timeout, "timeout")
 STRDEF(Ambiguous, "ambiguous")
 STRDEF(Close, "close")
 
+dnl Features
+STRDEF(ButtonCopy, "button.copy")
+STRDEF(Report, "report")
+
+
 dnl Tábla és mező nevek
 STRDEF(Languages, "languages")
  STRDEF(LanguageId, "language_id")
