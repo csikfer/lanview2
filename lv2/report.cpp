@@ -43,7 +43,7 @@ QString htmlTable(QStringList head, QList<QStringList> matrix)
 {
     QString table;
     table += "\n<table border=\"1\"> ";
-    table += htmlTableLine(head, "th");
+    if (!head.isEmpty()) table += htmlTableLine(head, "th");
     foreach (QStringList line, matrix) {
         table += htmlTableLine(line, "td");
     }
@@ -94,7 +94,7 @@ QString sReportPlace(QSqlQuery& q, qlonglong _pid, bool parents, bool zones, boo
     }
     r.prepend(QObject::trUtf8("Hely : "));
     if (zones) {
-        QString sql = "SELECT place_group_name FROM place_groups WHERE place_group_id > 1 AND is_place_in_zone(?, place_group_id)";
+        const static QString sql = "SELECT place_group_name FROM place_groups WHERE place_group_id > 1 AND is_place_in_zone(?, place_group_id)";
         if (execSql(q, sql, _pid)) {
             r += QObject::trUtf8(" Zónák : ");
             do {
@@ -107,7 +107,7 @@ QString sReportPlace(QSqlQuery& q, qlonglong _pid, bool parents, bool zones, boo
         }
     }
     if (cat) {
-        QString sql = "SELECT place_group_name FROM place_groups JOIN place_group_places USING(place_group_id) WHERE place_group_type = 'category' AND place_id = ?";
+        const static QString sql = "SELECT place_group_name FROM place_groups JOIN place_group_places USING(place_group_id) WHERE place_group_type = 'category' AND place_id = ?";
         if (execSql(q, sql, _pid)) {
             r += QObject::trUtf8(" Kategória : ");
             do {
@@ -121,6 +121,61 @@ QString sReportPlace(QSqlQuery& q, qlonglong _pid, bool parents, bool zones, boo
     }
     return r;
 }
+
+tStringPair htmlReportPlace(QSqlQuery& q, cRecord& o)
+{
+    qlonglong pid = o.getId();
+    cTableShape shape;
+    shape.setByName(q, _sPlaces);
+    QString t = QObject::trUtf8("%1 hely vagy helyiség riport.").arg(o.getName());
+    QString html = htmlInfo(sReportPlace(q, pid));
+    // Groups
+    const static QString sql_pg = "SELECT place_groups.* FROM place_group_places JOIN place_groups USING (place_group_id) WHERE place_id = ?";
+    if (execSql(q, sql_pg, pid)) {
+        html += htmlInfo(QObject::trUtf8("Csoport tagságok :"));
+        cPlaceGroup pg;
+        tRecordList<cPlaceGroup>    pgl;
+        pg.set(q);
+        do {
+            pgl << pg;
+        } while(pg.next(q));
+        shape.setByName(_sPlaceGroups);
+        html += list2html(q, pgl, shape);
+    }
+    else {
+        html += htmlInfo(QObject::trUtf8("A hely ill. helyiség nem tagja egy csoportnak sem."));
+    }
+    // pachs + nodes
+    tRecordList<cPatch> patchs;
+    patchs.fetch(q, true, _sPlaceId, pid);
+    tRecordList<cNode>  nodes;
+    nodes.fetch(q, false, _sPlaceId, pid);
+    if (patchs.isEmpty() && nodes.isEmpty()) {
+        html += htmlInfo(QObject::trUtf8("A helyiségben nincsenek eszközök."));
+    }
+    else {
+        html += htmlInfo(QObject::trUtf8("A helyiségben lévő eszközök."));
+        if (!patchs.isEmpty()) {
+            html += htmlInfo(QObject::trUtf8("Patch penelek, vagy fali csatlakozók :"));
+            shape.setByName(_sPatchs);
+            html += list2html(q, patchs, shape);
+        }
+        if (!patchs.isEmpty()) {
+            html += htmlInfo(QObject::trUtf8("Hálózati eszközök :"));
+            shape.setByName(_sNodes);
+            html += list2html(q, nodes, shape);
+        }
+    }
+    tRecordList<cUser>  users;
+    users.fetch(q, false, _sPlaceId, pid);
+    if (!patchs.isEmpty()) {
+        html += htmlInfo(QObject::trUtf8("Felhasználók :"));
+        shape.setByName(_sUsers);
+        html += list2html(q, users, shape);
+    }
+    return tStringPair(t, html);
+}
+
 
 /* ------------------------------------------------------------------------------------------------ */
 
@@ -567,6 +622,9 @@ tStringPair htmlReport(QSqlQuery& q, cRecord& o, const QString& _name)
     QString name = _name.isEmpty() ? o.tableName() : _name;
     if (name == _sPatchs || name == _sNodes || name == _sSnmpDevices) {
         return htmlReportNode(q, o);
+    }
+    if (name == _sPlaces) {
+        return htmlReportPlace(q, o);
     }
     EXCEPTION(EDATA, 0, QObject::trUtf8("Invalid report type : name = %1; Object : %2").arg(_name, o.identifying()));
     return tStringPair();

@@ -89,6 +89,7 @@ void phsLinkWidget::init()
         }
         else {
             pUi->checkBoxPlaceEqu->setChecked(true);
+            pOther->pSelectPort->setSlave(pSelectPort);
         }
     }
     if (pSelectPort->isPatch() && pSelectPort->currentPortId() != NULL_ID) {

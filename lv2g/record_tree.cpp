@@ -291,6 +291,7 @@ void cRecordTree::buttonPressed(int id)
     case DBT_ROOT:      setRoot();      break;
     case DBT_RESTORE:   restoreRoot();  break;
     case DBT_EXPAND:    expand();       break;
+    case DBT_REPORT:    report();       break;
     default:
         DWAR() << "Invalid button id : " << id << endl;
         break;

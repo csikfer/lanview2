@@ -33,7 +33,6 @@ protected:
     QButtonGroup *      pButtonsLinkType;   //Link típus : term, back, front
     cSelectLinkedPort * pSelectPort;        // Select port
     phsLinkWidget  *    pOther;             // A másik (linkelt) port
-
     bool                first;              // Primary
 private slots:
     void toglePlaceEqu(bool f);

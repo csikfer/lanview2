@@ -4,6 +4,7 @@
 #include "lv2data.h"
 #include "guidata.h"
 #include "lv2link.h"
+#include "lv2user.h"
 
 EXT_ const QString sHtmlLine;
 EXT_ const QString sHtmlTabBeg;
@@ -53,6 +54,13 @@ static inline QString htmlBold(const QString& text, bool chgBreaks = false, bool
 EXT_ QString htmlTableLine(const QStringList& fl, const QString& ft = "td");
 EXT_ QString htmlTable(QStringList head, QList<QStringList> matrix);
 
+/// Egy rekord set HTML szöveggé konvertálása a tábla megjelenítés leíró alapján
+/// @param q Az adatbázis műveletekhez használható query objektum.
+/// @param list A rekord ill. objektum lista
+/// @param shape A megjelenítést leíró objektum.
+/// @param shrt Az oszlopok láthatóságának a forráas: true esetén (ez az alapértelmezés) akkor jelenik meg az oszlop,
+/// ha az oszlop leíróban a FF_HTML flag igaz, false esetén a feltétel ugyan az mint a grafikus megjelenítésnél:
+/// az oszlop nem jelenik meg, ha a FF_TABLE_HIDE igaz.
 template <class R>
 QString list2html(QSqlQuery& q, const tRecordList<R>& list, cTableShape& shape, bool shrt = true)
 {
@@ -79,6 +87,34 @@ QString list2html(QSqlQuery& q, const tRecordList<R>& list, cTableShape& shape, 
     return htmlTable(head, data);
 }
 
+/// Egy rekord ill. objektum HTML szöveggé konvertálása a tábla megjelenítés leíró alapján
+/// @param q Az adatbázis műveletekhez használható query objektum.
+/// @param o A rekord ill. objektum.
+/// @param shape A megjelenítést leíró objektum.
+/// @param shrt A mező láthatóságának a forráas: true esetén (ez az alapértelmezés) akkor jelenik meg a mező,
+/// ha az mező (oszlop) leíróban a FF_HTML flag igaz, false esetén a feltétel ugyan az mint a grafikus megjelenítésnél:
+/// az mező nem jelenik meg, ha a FF_DIALOG_HIDE igaz.
+template <class R>
+QString rec2html(QSqlQuery& q, const R& o, cTableShape& shape, bool shrt = true)
+{
+    if (shape.shapeFields.isEmpty()) shape.fetchFields(q);
+    QList<QStringList> data;
+    int i, j;
+    int n = shape.shapeFields.size();
+    for (i = 0; i < n; ++i) {   // Fields (COLUMNS)
+        const cTableShapeField& fs = *shape.shapeFields.at(i);
+        if (shrt ? !fs.getBool(_sFieldFlags, FF_HTML) : fs.getBool(_sFieldFlags, FF_TABLE_HIDE)) {
+            continue;
+        }
+        QString fn = fs.getName(_sTableShapeFieldName);
+        QStringList row;
+        row << fs.getText(cTableShapeField::LTX_DIALOG_TITLE, fs.getName());
+        row << o.view(q, fn);
+        data << row;
+    }
+    return htmlTable(QStringList(), data);
+}
+
 /// Rekordok beolvasása és HTML formátumú táblázat késítése.
 /// @param q Query objektum az adatbázis eléréshez
 /// @param _shape A megjelenítést leíró objektum
@@ -100,7 +136,7 @@ inline QString query2html(QSqlQuery q, const QString& _shapeName, const QString&
 }
 
 EXT_ QString sReportPlace(QSqlQuery& q, qlonglong _pid, bool parents = true, bool zones = true, bool cat = true);
-
+EXT_ tStringPair htmlReportPlace(QSqlQuery& q, cRecord& o);
 
 // Node report flags
 #define NODE_REPORT_SERVICES    0x00010000;
