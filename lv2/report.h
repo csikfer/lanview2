@@ -137,6 +137,12 @@ inline QString query2html(QSqlQuery q, const QString& _shapeName, const QString&
 
 EXT_ QString sReportPlace(QSqlQuery& q, qlonglong _pid, bool parents = true, bool zones = true, bool cat = true);
 EXT_ tStringPair htmlReportPlace(QSqlQuery& q, cRecord& o);
+inline tStringPair htmlReportPlace(QSqlQuery& q, qlonglong pid)
+{
+    cPlace o;
+    o.setById(q, pid);
+    return htmlReportPlace(q, o);
+}
 
 // Node report flags
 #define NODE_REPORT_SERVICES    0x00010000;

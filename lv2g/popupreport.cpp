@@ -1,12 +1,12 @@
 #include "popupreport.h"
 
-QWidget * popupReportWindow(QObject* _par, const QString& _text, const QString& _title)
+QWidget * popupReportWindow(QWidget* _par, const QString& _text, const QString& _title)
 {
     QString title = _title.isEmpty() ? QObject::trUtf8("Riport") : _title;
-    QWidget *p = new QWidget(NULL, Qt::Window);
-    p->QObject::setParent(_par);
+    QWidget *p = new QWidget(_par, Qt::Window);
     p->setWindowTitle(title);
     QVBoxLayout *pVLayout = new QVBoxLayout;
+    p->setLayout(pVLayout);
     pVLayout->addWidget(new QTextEdit(_text), 1);
     QHBoxLayout *pHLayout = new QHBoxLayout;
     pVLayout->addLayout(pHLayout, 0);
@@ -15,12 +15,11 @@ QWidget * popupReportWindow(QObject* _par, const QString& _text, const QString& 
     QObject::connect(pButton, SIGNAL(clicked()), p, SLOT(deleteLater()));
     pHLayout->addWidget(pButton);
     pHLayout->addStretch();
-    p->setLayout(pVLayout);
     p->show();
     return p;
 }
 
-QWidget * popupReportNode(QObject *par, QSqlQuery& q, qlonglong nid)
+QWidget * popupReportNode(QWidget *par, QSqlQuery& q, qlonglong nid)
 {
     cPatch *po = cPatch::getNodeObjById(q, nid);
     QWidget *r = popupReportNode(par, q, po);
@@ -28,7 +27,7 @@ QWidget * popupReportNode(QObject *par, QSqlQuery& q, qlonglong nid)
     return r;
 }
 
-QWidget * popupReportNode(QObject *par, QSqlQuery& q, cRecord *po)
+QWidget * popupReportNode(QWidget *par, QSqlQuery& q, cRecord *po)
 {
     tStringPair msg1;
     QString msg2;
@@ -43,7 +42,7 @@ QWidget * popupReportNode(QObject *par, QSqlQuery& q, cRecord *po)
     return popupReportWindow(par, msg1.second + msg2, msg1.first);
 }
 
-QWidget * popupReportByIp(QObject *par, QSqlQuery& q, const QString& sIp)
+QWidget * popupReportByIp(QWidget *par, QSqlQuery& q, const QString& sIp)
 {
     QString msg, title;
     title = QObject::trUtf8("Riport a %1 IP cím alapján").arg(sIp);
@@ -52,7 +51,7 @@ QWidget * popupReportByIp(QObject *par, QSqlQuery& q, const QString& sIp)
     return popupReportWindow(par, msg, title);
 }
 
-QWidget * popupReportByMAC(QObject *par, QSqlQuery& q, const QString& sMAC)
+QWidget * popupReportByMAC(QWidget *par, QSqlQuery& q, const QString& sMAC)
 {
     QString msg, title;
     title = QObject::trUtf8("Riport a %1 MAC alapján").arg(sMAC);

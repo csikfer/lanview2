@@ -963,12 +963,7 @@ public:
     /// @param disabled Ha pSlave nem NULL, és értéke true (vagy nem adtuk meg), akkor letiltja a pSlave elemeit.
     void setSlave(cSelectPlace *_pSlave, bool disabled = true);
     /// Letiltja a widgeteket
-    void setDisablePlaceWidgets(bool f = true);
-    /// Egy hely, helyiség objektum beillesztése az adatbázisba, és a listába.
-    /// Egy dialógus ablakot jelenít meg, az objektum felvételéhez, a minta név azonos a tábla névvel : "places".
-    /// Az aktuális hely az új objektum lessz, vagy ha cancel-t nyom, akkor nincs változás.
-    /// @return Az új objektum ID, vagy NULL_ID.
-    qlonglong insertPlace();
+    virtual void setDisableWidgets(bool f = true);
     /// Az aktuális hely, helyiség objektum modosításe.
     /// Egy dialógus ablakot jelenít meg, az objektum modosításához.
     /// @return Az objektum ID, vagy NULL_ID.
@@ -976,6 +971,9 @@ public:
     QComboBox *comboBoxZone() const { return pComboBoxZone; }
     QComboBox *comboBoxPlace() const { return pComboBoxPLace; }
     QLineEdit *lineEditPlaceFilt() const { return pLineEditPlaceFilt; }
+    void setPlaceInsertButton(QAbstractButton * p);
+    void setPlaceRefreshButton(QAbstractButton * p);
+    void setPlaceInfoButton(QAbstractButton * p);
 protected:
     tBatchBlocker<cSelectPlace>   bbPlace;
     /// A két kimeneti signal hívása az aktuális hely név ill. ID-vel.
@@ -988,15 +986,29 @@ protected:
     cZoneListModel     *pModelZone;
     cPlacesInZoneModel *pModelPlace;
     cSelectPlace *      pSlave;
+    QAbstractButton *   pButtonPlaceInsert;
+    QAbstractButton *   pButtonPlaceRefresh;
+    QAbstractButton *   pButtonPlaceInfo;
 public slots:
-    virtual void setEnabled(bool f = true);
-    virtual void setDisabled(bool f = true);
+    /// Egy hely, helyiség objektum beillesztése az adatbázisba, és a listába.
+    /// Egy dialógus ablakot jelenít meg, az objektum felvételéhez, a minta név azonos a tábla névvel : "places".
+    /// Az aktuális hely az új objektum lessz, vagy ha cancel-t nyom, akkor nincs változás.
+    /// @return Az új objektum ID, vagy NULL_ID.
+    qlonglong insertPlace();
+    /// Az objektumhoz rendelt widgetek engedélyezése, vagy tiltása.
+    void setEnabled(bool f = true);
+    /// Az objektumhoz rendelt widgetek tiltása vagy engedélyezése.
+    void setDisabled(bool f = true);
     /// Frissíti a lekérdezett listákat.
     /// A kimeneti signal-t csak akkor küldi el, ha az aktuális
     /// hely azonosítü place_id megváltozott, és ha f értéke true (ez az alapértelmezett).
     virtual void refresh(bool f = true);
+    /// Az aktuális zóna beállítása
     void setCurrentZone(qlonglong _zid);
+    /// Az aktuális hely beállítása
     void setCurrentPlace(qlonglong _pid);
+    /// popup report
+    void placeReport();
 private slots:
     void on_comboBoxZone_currentIndexChanged(int ix);
     void on_comboBoxPlace_currentIndexChanged(int ix);
@@ -1050,13 +1062,11 @@ public:
     qlonglong currentNodeId() const { return pModelNode->atId(pComboBoxNode->currentIndex()); }
     void setLocalityFilter();
     void setExcludedNode(qlonglong _nid = NULL_ID);
-    qlonglong insertPatch(cPatch *pSample = NULL);
-public slots:
-    /// Frissíti a listákat, az ős objektumban is (zone, place).
-    /// hely azonosítü place_id megváltozott, és ha f értéke true (ez az alapértelmezett).
-    virtual void refresh(bool f = true);
-    void setCurrentNode(qlonglong _nid);
-    void setPlaceId(qlonglong pid, bool _sig = true);
+    void setPatchInsertButton(QAbstractButton * p);
+    void setNodeRefreshButton(QAbstractButton * p);
+    void setNodeInfoButton(QAbstractButton * p);
+    /// Letiltja a widgeteket
+    virtual void setDisableWidgets(bool f = true);
 protected:
     tBatchBlocker<cSelectNode>  bbNode;
     bool emitChangeNode(bool f = true);
@@ -1064,6 +1074,22 @@ protected:
     QLineEdit *         pLineEditNodeFilt;
     const QString       constFilterNode;
     cRecordListModel *  pModelNode;
+    QAbstractButton *   pButtonPatchInsert;
+    QAbstractButton *   pButtonNodeRefresh;
+    QAbstractButton *   pButtonNodeInfo;
+public slots:
+    qlonglong insertPatch(cPatch *pSample = NULL);
+    /// Frissíti a listákat, az ős objektumban is (zone, place).
+    /// hely azonosítü place_id megváltozott, és ha f értéke true (ez az alapértelmezett).
+    virtual void refresh(bool f = true);
+    void setCurrentNode(qlonglong _nid);
+    void setPlaceId(qlonglong pid, bool _sig = true);
+    /// Az objektumhoz rendelt widgetek engedélyezése, vagy tiltása.
+    void setEnabled(bool f = true);
+    /// Az objektumhoz rendelt widgetek tiltása vagy engedélyezése.
+    void setDisabled(bool f = true);
+    /// Popup riport az aktuális node-ról
+    void nodeReport();
 private slots:
     void on_lineEditNodeFilt_textChanged(const QString& s);
     void on_comboBoxNode_currenstIndexChanged(int ix);

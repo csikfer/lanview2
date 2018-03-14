@@ -323,22 +323,24 @@ cDeducePatch::cDeducePatch(QMdiArea *par)
     pUi->setupUi(this);
     static const QString sql = "'patch' = SOME (node_type)";
     nid = nid2 = NULL_ID;
-    pSelNode  = new cSelectNode(pUi->comboBoxZone,  pUi->comboBoxPlace,  pUi->comboBoxPatch,NULL,  NULL, QString(), sql);
+    pSelNode  = new cSelectNode(pUi->comboBoxZone,  pUi->comboBoxPlace,  pUi->comboBoxPatch, pUi->lineEditPlacePattern, pUi->lineEditPatchPattern, QString(), sql);
+    pSelNode->setPatchInsertButton(pUi->toolButtonPatchAdd);
+    pSelNode->setPlaceInsertButton(pUi->toolButtonPlaceAdd);
+    pSelNode->setNodeRefreshButton(pUi->toolButtonRefresh);
+    pSelNode->setPlaceInfoButton(pUi->toolButtonPlaceInfo);
+    pSelNode->setNodeInfoButton(pUi->toolButtonPatchInfo);
     pSelNode->refresh(false);
     pSelNode->setParent(this);
     connect(pSelNode, SIGNAL(nodeIdChanged(qlonglong)), this, SLOT(changeNode(qlonglong)));
-    pSelNode2 = new cSelectNode(pUi->comboBoxZone2, pUi->comboBoxPlace2, pUi->comboBoxPatch2, NULL, NULL, QString(), sql);
+    pSelNode2 = new cSelectNode(pUi->comboBoxZone2, pUi->comboBoxPlace2, pUi->comboBoxPatch2, pUi->lineEditPlacePattern2, pUi->lineEditPatchPattern2, QString(), sql);
+    pSelNode2->setPatchInsertButton(pUi->toolButtonPatchAdd2);
+    pSelNode2->setPlaceInsertButton(pUi->toolButtonPlaceAdd2);
+    pSelNode2->setNodeRefreshButton(pUi->toolButtonRefresh2);
+    pSelNode2->setPlaceInfoButton(pUi->toolButtonPlaceInfo2);
+    pSelNode2->setNodeInfoButton(pUi->toolButtonPatchInfo2);
     pSelNode2->refresh(false);
     pSelNode2->setParent(this);
     connect(pSelNode2, SIGNAL(nodeIdChanged(qlonglong)), this, SLOT(changeNode2(qlonglong)));
-
-    connect(pUi->radioButtonLLDP, SIGNAL(pressed()), this, SLOT(setMethodeLLDP()));
-    connect(pUi->radioButtonMAC,  SIGNAL(pressed()), this, SLOT(setMethodeMAC()));
-    connect(pUi->radioButtonTag,  SIGNAL(pressed()), this, SLOT(setMethodeTag()));
-
-    connect(pUi->pushButtonStart,SIGNAL(clicked()),  this, SLOT(start()));
-    connect(pUi->pushButtonSave, SIGNAL(clicked()),  this, SLOT(save()));
-
     methode = DPM_MAC;
     pUi->radioButtonMAC->setChecked(true);
 }
@@ -461,7 +463,29 @@ void cDeducePatch::changeNode2(qlonglong id)
     setButtons();
 }
 
-void cDeducePatch::start()
+void cDeducePatch::on_radioButtonLLDP_pressed()
+{
+    methode = DPM_LLDP;
+    clearTable();
+    setButtons();
+    pSelNode2->setDisabled();
+}
+void cDeducePatch::on_radioButtonMAC_pressed()
+{
+    methode = DPM_MAC;
+    clearTable();
+    setButtons();
+    pSelNode2->setDisabled();
+}
+void cDeducePatch::on_radioButtonTag_pressed()
+{
+    methode = DPM_TAG;
+    clearTable();
+    setButtons();
+    pSelNode2->setEnabled();
+}
+
+void cDeducePatch::on_pushButtonStart_clicked()
 {
     QSqlQuery q = getQuery();
     bool f = (nid != NULL_ID) && (methode != DPM_TAG || nid2 != NULL_ID);
@@ -482,7 +506,7 @@ void cDeducePatch::start()
     setButtons();
 }
 
-void cDeducePatch::save()
+void cDeducePatch::on_pushButtonSave_clicked()
 {
     QString msg = trUtf8(
                 "Valóban menti a kijelölt linkeket?\n"
@@ -509,5 +533,5 @@ void cDeducePatch::save()
         cErrorMessageBox::messageBox(pe, this);
         delete pe;
     }
-    start();
+    on_pushButtonStart_clicked();   // Refresh
 }

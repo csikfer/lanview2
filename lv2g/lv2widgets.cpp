@@ -8,6 +8,8 @@
 #include "ui_fkeyed.h"
 #include "ui_fkeyarrayed.h"
 
+#include "popupreport.h"
+
 /* Language */
 
 cSelectLanguage::cSelectLanguage(QComboBox *_pComboBox, QObject *_pPar)
@@ -3258,6 +3260,7 @@ cSelectPlace::cSelectPlace(QComboBox *_pZone, QComboBox *_pPLace, QLineEdit *_pF
     , pLineEditPlaceFilt(_pFilt)
     , constFilterPlace(_constFilt)
 {
+    pButtonPlaceInsert = pButtonPlaceRefresh = pButtonPlaceInfo = NULL;
     pSlave = NULL;
     pModelZone = new cZoneListModel(this);
     pModelZone->joinWith(pComboBoxZone);
@@ -3295,29 +3298,52 @@ void cSelectPlace::copyCurrents(const cSelectPlace &_o)
 void cSelectPlace::setSlave(cSelectPlace *_pSlave, bool disabled)
 {
     if (_pSlave == NULL) {
-        if (pSlave != NULL) pSlave->setDisablePlaceWidgets(false);
+        if (pSlave != NULL) pSlave->setDisableWidgets(false);
         pSlave = NULL;
     }
     else {
         if (pSlave != NULL && pSlave != _pSlave) EXCEPTION(EPROGFAIL);
         pSlave = _pSlave;
         pSlave->copyCurrents(*this);
-        pSlave->setDisablePlaceWidgets(disabled);
+        pSlave->setDisableWidgets(disabled);
     }
 }
 
-void cSelectPlace::setDisablePlaceWidgets(bool f)
+void cSelectPlace::setDisableWidgets(bool f)
 {
     pComboBoxZone->setDisabled(f);
     if (pLineEditPlaceFilt != NULL) pLineEditPlaceFilt->setDisabled(f);
     pComboBoxPLace->setDisabled(f);
+    if (pButtonPlaceInsert != NULL) pButtonPlaceInsert->setDisabled(f);
+    if (pButtonPlaceRefresh != NULL) pButtonPlaceRefresh->setDisabled(f);
+    if (pButtonPlaceInfo    != NULL) pButtonPlaceInfo->setDisabled(f || currentPlaceId() == NULL_ID);
 }
+
+void cSelectPlace::setPlaceInsertButton(QAbstractButton * p)
+{
+    pButtonPlaceInsert = p;
+    connect(p, SIGNAL(clicked()), this, SLOT(insertPlace()));
+}
+
+void cSelectPlace::setPlaceRefreshButton(QAbstractButton * p)
+{
+    pButtonPlaceRefresh = p;
+    connect(p, SIGNAL(clicked()), this, SLOT(refresh()));
+}
+
+void cSelectPlace::setPlaceInfoButton(QAbstractButton * p)
+{
+    pButtonPlaceInfo = p;
+    connect(p, SIGNAL(clicked()), this, SLOT(placeReport()));
+}
+
 
 bool cSelectPlace::emitChangePlace(bool f)
 {
     if (f && bbPlace.test()) {
         placeNameChanged(currentPlaceName());
         placeIdChanged(currentPlaceId());
+        if (pButtonPlaceInfo != NULL) pButtonPlaceInfo->setDisabled(currentPlaceId() == NULL_ID);
         return true;
     }
     return false;
@@ -3326,12 +3352,12 @@ bool cSelectPlace::emitChangePlace(bool f)
 
 void cSelectPlace::setEnabled(bool f)
 {
-    setDisablePlaceWidgets(!f);
+    setDisableWidgets(!f);
 }
 
 void cSelectPlace::setDisabled(bool f)
 {
-    setDisablePlaceWidgets(f);
+    setDisableWidgets(f);
 }
 
 void cSelectPlace::refresh(bool f)
@@ -3453,6 +3479,15 @@ void cSelectPlace::setCurrentPlace(qlonglong _pid)
     bbPlace.end();
 }
 
+void cSelectPlace::placeReport()
+{
+    qlonglong pid = currentPlaceId();
+    if (pid == NULL_ID) return;
+    QSqlQuery q = getQuery();
+    tStringPair r = htmlReportPlace(q, pid);
+    popupReportWindow((QWidget *)this->parent(), r.second, r.first);
+}
+
 void cSelectPlace::on_comboBoxZone_currentIndexChanged(int ix)
 {
     if (ix < 0) {
@@ -3507,6 +3542,7 @@ cSelectNode::cSelectNode(QComboBox *_pZone, QComboBox *_pPlace, QComboBox *_pNod
     , pLineEditNodeFilt(_pNodeFilt)
     , constFilterNode(_nodeConstFilt)
 {
+    pButtonPatchInsert = pButtonNodeRefresh = pButtonNodeInfo = NULL;
     pModelNode = NULL;
     setNodeModel(new cRecordListModel(cPatch().descr(), this), TS_TRUE);
     connect(this, SIGNAL(placeIdChanged(qlonglong)), this, SLOT(setPlaceId(qlonglong)));
@@ -3526,6 +3562,7 @@ void cSelectNode::setNodeModel(cRecordListModel *  _pNodeModel, eTristate _nulla
     pDelete(pModelNode);    // ?
     pModelNode = _pNodeModel;
     pModelNode->setOwnerId(currentPlaceId(), _sPlaceId, TS_TRUE);
+    pModelNode->setConstFilter(constFilterNode, FT_SQL_WHERE);
     bbNode.end(false);
 }
 
@@ -3567,6 +3604,35 @@ void cSelectNode::setExcludedNode(qlonglong _nid)
     }
 }
 
+void cSelectNode::setPatchInsertButton(QAbstractButton * p)
+{
+    pButtonPatchInsert = p;
+    connect(p, SIGNAL(clicked()), this, SLOT(insertPatch()));
+}
+
+void cSelectNode::setNodeRefreshButton(QAbstractButton * p)
+{
+    pButtonNodeRefresh = p;
+    connect(p, SIGNAL(clicked()), this, SLOT(refresh()));
+}
+
+void cSelectNode::setNodeInfoButton(QAbstractButton * p)
+{
+    pButtonNodeInfo = p;
+    connect(p, SIGNAL(clicked()), this, SLOT(nodeReport()));
+}
+
+
+void cSelectNode::setDisableWidgets(bool f)
+{
+    cSelectPlace::setDisableWidgets(f);
+    if (pLineEditNodeFilt != NULL) pLineEditNodeFilt->setDisabled(f);
+    pComboBoxNode->setDisabled(f);
+    if (pButtonNodeRefresh != NULL) pButtonNodeRefresh->setDisabled(f);
+    if (pButtonPatchInsert != NULL) pButtonPatchInsert->setDisabled(f);
+    if (pButtonNodeInfo    != NULL) pButtonNodeInfo->setDisabled(f || currentNodeId() == NULL_ID);
+}
+
 void cSelectNode::refresh(bool f)
 {
     qlonglong nid = currentNodeId();
@@ -3581,6 +3647,7 @@ bool cSelectNode::emitChangeNode(bool f)
     if (f && bbNode.test()) {
         nodeIdChanged(currentNodeId());
         nodeNameChanged(currentNodeName());
+        if (pButtonNodeInfo != NULL) pButtonNodeInfo->setDisabled(currentNodeId() == NULL_ID);
         return true;
     }
     return false;
@@ -3598,6 +3665,24 @@ void cSelectNode::setPlaceId(qlonglong pid, bool _sig)
     pComboBoxNode->setCurrentIndex(0);
     on_comboBoxNode_currenstIndexChanged(0);
     bbNode.end(_sig);
+}
+
+void cSelectNode::setEnabled(bool f)
+{
+    setDisableWidgets(!f);
+}
+
+void cSelectNode::setDisabled(bool f)
+{
+    setDisableWidgets(f);
+}
+
+void cSelectNode::nodeReport()
+{
+    qlonglong nid = currentNodeId();
+    if (nid == NULL_ID) return;
+    QSqlQuery q = getQuery();
+    popupReportNode((QWidget *)this->parent(), q, nid);
 }
 
 void cSelectNode::setCurrentNode(qlonglong _nid)

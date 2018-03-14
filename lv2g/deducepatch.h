@@ -48,7 +48,7 @@ public:
 protected:
     void setButtons();
     void clearTable();
-    void byLLDP(QSqlQuery &q);
+    void byLLDP(QSqlQuery& q);
     void byMAC(QSqlQuery& q);
     void byTag(QSqlQuery& q);
     bool findLink(cPhsLink& pl);
@@ -59,14 +59,14 @@ protected:
     enum eDeducePatchMeth { DPM_LLDP, DPM_MAC, DPM_TAG } methode;
     qlonglong   nid, nid2;
     cPatch      patch;
-protected slots:
+private slots:
     void changeNode(qlonglong id);
     void changeNode2(qlonglong id);
-    void setMethodeLLDP() { methode = DPM_LLDP; clearTable(); setButtons(); }
-    void setMethodeMAC()  { methode = DPM_MAC;  clearTable(); setButtons(); }
-    void setMethodeTag()  { methode = DPM_TAG;  clearTable(); setButtons(); }
-    void start();
-    void save();
+    void on_radioButtonLLDP_pressed();
+    void on_radioButtonMAC_pressed();
+    void on_radioButtonTag_pressed();
+    void on_pushButtonStart_clicked();
+    void on_pushButtonSave_clicked();
 };
 
 #endif // DEDUCEPATCH_H

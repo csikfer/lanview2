@@ -6,18 +6,21 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1074</width>
-    <height>468</height>
+    <width>1346</width>
+    <height>848</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout" stretch="0,1">
+  <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout">
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
       <layout class="QGridLayout" name="gridLayoutLeft">
+       <item row="1" column="1">
+        <widget class="QLineEdit" name="lineEditPlacePattern"/>
+       </item>
        <item row="0" column="0">
         <widget class="QLabel" name="labelZone">
          <property name="text">
@@ -25,35 +28,119 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="1">
-        <widget class="QComboBox" name="comboBoxZone">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
+       <item row="2" column="0">
         <widget class="QLabel" name="labelPlace">
          <property name="text">
           <string>Hely :</string>
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
-        <widget class="QComboBox" name="comboBoxPlace"/>
-       </item>
-       <item row="2" column="0">
+       <item row="4" column="0">
         <widget class="QLabel" name="labelPatch">
          <property name="text">
           <string>Panel :</string>
          </property>
         </widget>
        </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="labelPlacePattern">
+         <property name="text">
+          <string>Hely név minta :</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <layout class="QHBoxLayout" name="horizontalLayoutPatch">
+         <item>
+          <widget class="QComboBox" name="comboBoxPatch"/>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonPatchAdd">
+           <property name="text">
+            <string>...</string>
+           </property>
+           <property name="icon">
+            <iconset resource="lv2g.qrc">
+             <normaloff>:/icons/add.ico</normaloff>:/icons/add.ico</iconset>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonPatchInfo">
+           <property name="text">
+            <string>...</string>
+           </property>
+           <property name="icon">
+            <iconset resource="lv2g.qrc">
+             <normaloff>:/icons/document-properties.ico</normaloff>:/icons/document-properties.ico</iconset>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="3" column="1">
+        <widget class="QLineEdit" name="lineEditPatchPattern"/>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="labelPatchPattern">
+         <property name="text">
+          <string>Név minta :</string>
+         </property>
+        </widget>
+       </item>
        <item row="2" column="1">
-        <widget class="QComboBox" name="comboBoxPatch"/>
+        <layout class="QHBoxLayout" name="horizontalLayoutPlace">
+         <item>
+          <widget class="QComboBox" name="comboBoxPlace"/>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonPlaceAdd">
+           <property name="text">
+            <string>...</string>
+           </property>
+           <property name="icon">
+            <iconset resource="lv2g.qrc">
+             <normaloff>:/icons/add.ico</normaloff>:/icons/add.ico</iconset>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonPlaceInfo">
+           <property name="text">
+            <string>...</string>
+           </property>
+           <property name="icon">
+            <iconset resource="lv2g.qrc">
+             <normaloff>:/icons/document-properties.ico</normaloff>:/icons/document-properties.ico</iconset>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="0" column="1">
+        <layout class="QHBoxLayout" name="horizontalLayoutZone">
+         <item>
+          <widget class="QComboBox" name="comboBoxZone">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonRefresh">
+           <property name="text">
+            <string>...</string>
+           </property>
+           <property name="icon">
+            <iconset resource="lv2g.qrc">
+             <normaloff>:/icons/refresh.ico</normaloff>:/icons/refresh.ico</iconset>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
       </layout>
      </item>
@@ -155,34 +242,7 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="1">
-        <widget class="QComboBox" name="comboBoxZone2">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QComboBox" name="comboBoxPatch2">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QComboBox" name="comboBoxPlace2">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
+       <item row="4" column="0">
         <widget class="QLabel" name="labelPatch2">
          <property name="enabled">
           <bool>false</bool>
@@ -192,7 +252,7 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
+       <item row="2" column="0">
         <widget class="QLabel" name="labelPlace2">
          <property name="enabled">
           <bool>false</bool>
@@ -201,6 +261,135 @@
           <string>Hely :</string>
          </property>
         </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLineEdit" name="lineEditPlacePattern2"/>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="labelPlacePattern2">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>Hely név minta :</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="labelPatchPattern2">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>Név minta :</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QLineEdit" name="lineEditPatchPattern2"/>
+       </item>
+       <item row="2" column="1">
+        <layout class="QHBoxLayout" name="horizontalLayoutPatch2">
+         <item>
+          <widget class="QComboBox" name="comboBoxPlace2">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonPlaceAdd2">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>...</string>
+           </property>
+           <property name="icon">
+            <iconset resource="lv2g.qrc">
+             <normaloff>:/icons/add.ico</normaloff>:/icons/add.ico</iconset>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonPlaceInfo2">
+           <property name="text">
+            <string>...</string>
+           </property>
+           <property name="icon">
+            <iconset resource="lv2g.qrc">
+             <normaloff>:/icons/document-properties.ico</normaloff>:/icons/document-properties.ico</iconset>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="4" column="1">
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <widget class="QComboBox" name="comboBoxPatch2">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonPatchAdd2">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>...</string>
+           </property>
+           <property name="icon">
+            <iconset resource="lv2g.qrc">
+             <normaloff>:/icons/add.ico</normaloff>:/icons/add.ico</iconset>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonPatchInfo2">
+           <property name="text">
+            <string>...</string>
+           </property>
+           <property name="icon">
+            <iconset resource="lv2g.qrc">
+             <normaloff>:/icons/document-properties.ico</normaloff>:/icons/document-properties.ico</iconset>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="0" column="1">
+        <layout class="QHBoxLayout" name="horizontalLayoutZone2">
+         <item>
+          <widget class="QComboBox" name="comboBoxZone2">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonRefresh2">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>...</string>
+           </property>
+           <property name="icon">
+            <iconset resource="lv2g.qrc">
+             <normaloff>:/icons/refresh.ico</normaloff>:/icons/refresh.ico</iconset>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
       </layout>
      </item>
@@ -218,20 +407,32 @@
       <property name="text">
        <string>Végponti port</string>
       </property>
+      <property name="toolTip">
+       <string>A végponti eszköz neve és portja.</string>
+      </property>
      </column>
      <column>
       <property name="text">
        <string>Megosztás</string>
+      </property>
+      <property name="toolTip">
+       <string>Külső, eéőlapi megosztás típusa.</string>
       </property>
      </column>
      <column>
       <property name="text">
        <string>Patch port</string>
       </property>
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A bal oldali csatlakozó vagy patch panel portja.&lt;/p&gt;&lt;p&gt;Zárójelben a hátlapi megosztás típusa, és nem A típus esetén az A típusú port neve, amivel osztozik a kábelen.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
      </column>
      <column>
       <property name="text">
        <string>Állapot</string>
+      </property>
+      <property name="toolTip">
+       <string>Mi alapján történt a találat.</string>
       </property>
       <property name="whatsThis">
        <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0 Transitional//EN&quot;&gt;
@@ -294,104 +495,23 @@ LLDP alapján, ütközés a címtáblával.&lt;/p&gt;
     </widget>
    </item>
   </layout>
+  <zorder>tableWidget</zorder>
+  <zorder>comboBoxPatch</zorder>
+  <zorder>toolButtonPatchAdd</zorder>
+  <zorder>comboBoxPlace</zorder>
+  <zorder>toolButtonPlaceAdd</zorder>
+  <zorder>lineEditPatchPattern2</zorder>
+  <zorder>comboBoxPlace2</zorder>
+  <zorder>toolButtonPlaceAdd2</zorder>
+  <zorder>comboBoxPatch2</zorder>
+  <zorder>toolButtonPatchAdd2</zorder>
+  <zorder>toolButtonRefresh</zorder>
+  <zorder>toolButtonRefresh2</zorder>
+  <zorder>comboBoxZone</zorder>
+  <zorder>comboBoxZone2</zorder>
  </widget>
- <resources/>
- <connections>
-  <connection>
-   <sender>radioButtonTag</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>comboBoxZone2</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>550</x>
-     <y>138</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>1179</x>
-     <y>39</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>radioButtonTag</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>comboBoxPlace2</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>550</x>
-     <y>138</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>1179</x>
-     <y>88</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>radioButtonTag</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>comboBoxPatch2</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>550</x>
-     <y>138</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>1179</x>
-     <y>137</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>radioButtonTag</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>labelZone2</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>550</x>
-     <y>138</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>1070</x>
-     <y>39</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>radioButtonTag</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>labelPatch2</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>550</x>
-     <y>138</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>1070</x>
-     <y>137</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>radioButtonTag</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>labelPlace2</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>550</x>
-     <y>138</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>1070</x>
-     <y>88</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <resources>
+  <include location="lv2g.qrc"/>
+ </resources>
+ <connections/>
 </ui>
