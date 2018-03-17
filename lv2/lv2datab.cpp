@@ -3861,7 +3861,30 @@ int cRecord::updateFieldByNames(QSqlQuery& q, const QStringList& _nl, const QStr
         execSql(q, sql, v, n);
         if (q.numRowsAffected() == 1) ++r;
         else {
-            DERR() << trUtf8("Record %1 not updated (not found) name = %2").arg(fullTableName(), n);
+            DERR() << trUtf8("Record not updated, name = %1; %2 = %3 : %4").
+                      arg(n, _fn, debVariantToString(_v), identifying());
+        }
+    }
+    return r;
+}
+
+int cRecord::addValueArrayFieldByNames(QSqlQuery& q, const QStringList& _nl, const QString& _fn, const QVariant& _v) const
+{
+    int r = 0;
+    QString nfn = nameName();
+    const QString sql = QString("UPDATE %1 SET %2 = array_append(%3, ?) WHERE %4 = ?").arg(fullTableNameQ(), _fn, _fn, nfn);
+    int ix = toIndex(_fn);
+    const cColStaticDescr& cd = colDescr(ix);
+    QVariant v;
+    qlonglong st;
+    v = cd.set(_v, st);     // Conversion to local format
+    v = cd.toSql(v);        // Conversion to SQL
+    foreach (QString n, _nl) {
+        execSql(q, sql, v, n);
+        if (q.numRowsAffected() == 1) ++r;
+        else {
+            DERR() << trUtf8("Record not updated, name = %1; %2 += %3 : %4").
+                      arg(n, _fn, debVariantToString(_v), identifying());
         }
     }
     return r;
@@ -4256,3 +4279,8 @@ int cRecordAny::updateFieldByIds(QSqlQuery& q, const cRecStaticDescr * _p, const
     return ra.cRecord::updateFieldByIds(q, _il, _fn, _v);
 }
 
+int cRecordAny::addValueArrayFieldByNames(QSqlQuery& q, const cRecStaticDescr * _p, const QStringList &_nl, const QString& _fn, const QVariant& _v)
+{
+    cRecordAny ra(_p);
+    return ra.cRecord::addValueArrayFieldByNames(q, _nl, _fn, _v);
+}

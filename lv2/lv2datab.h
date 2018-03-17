@@ -1647,7 +1647,7 @@ public:
     /// Ha a megadott maszk (__fn) paraméter men üres, de minden eleme false, akkor a tábla összes sora ki lesz szelektálva.
     /// @param __q Az QSqlQuery objektum referenciája, amivel a lekérdezést végezzük.
     /// @param __only Ha megadjuk és értéke true, akkor a származtatott táblákban nem keres.
-    /// @param __fn A mező(k) maszk, alapértelmezése üres, ekkor a használt maszk az elsődleges kulcs mező(k).
+    /// @param __fm A mező(k) maszk, alapértelmezése üres, ekkor a használt maszk az elsődleges kulcs mező(k). Lásd még a whereString() metódust.
     /// @param __ord Mely mezők szerint legyenek rendezve a találatok ( a vektor elemei mező indexek, a záró elem -1)
     /// @param __lim Limit. Ha értéke 0, akkor nincs.
     /// @param __off Ofszet. Ha értéke 0, akkor nincs.
@@ -1656,9 +1656,9 @@ public:
     /// Beolvassa az adatbázisból azt a rekordot/rekordokat, amik a megadott mező maszk esetén egyeznek az
     /// objektumban tárolt mező(k) érték(ek)kel.
     /// Az első rekordot beolvassa az objektumba, ill ha nincs egyetlen rekord, akkor törli az objektumot.
-    /// Kilépés után a lekérdezés eredménye elveszik, kivéve az első rekordot, amit az objektum tartalmaz.
+    /// Kilépés után a lekérdezés eredménye a __q által hivatkozott QSqlRecord objektumban marad. Kurzor az első rekordon.
     /// @param __only Ha megadjuk és értéke true, akkor a származtatott táblákban nem keres.
-    /// @param __fn A mező(k) maszk, alapértelmezése üres, ekkor a használt maszk az elsődleges kulcs mező(k). Lásd még a whereString() metódust.
+    /// @param __fm A mező(k) maszk, alapértelmezése üres, ekkor a használt maszk az elsődleges kulcs mező(k). Lásd még a whereString() metódust.
     /// @param __ord Mely mezők szerint legyenek rendezve a találatok ( a vektor elemei mező indexek, a záró elem -1)
     /// @param __lim Limit. Ha értéke 0, akkor nincs.
     /// @param __off Ofszet. Ha értéke 0, akkor nincs.
@@ -2110,21 +2110,38 @@ public:
         _cp(o);
         return *this;
     }
+    /// Egy mező értékének a beállítása a megadott rekordokban.
+    /// @param q
+    /// @param _nl A beállítandó rekordok név mező értékeinek a listája.
+    /// @param _fn A beállítandó mező neve
+    /// @param _v A beállítandó érték.
     int updateFieldByNames(QSqlQuery& q, const QStringList& _nl, const QString& _fn, const QVariant& _v) const;
+    ///
+    int addValueArrayFieldByNames(QSqlQuery& q, const QStringList& _nl, const QString& _fn, const QVariant& _v) const;
+    /// Egy mező értékének a beállítása a megadott rekordokban.
+    /// @param q
+    /// @param _il A beállítandó rekordok ID mezői értékeinek a listája.
+    /// @param _fn A beállítandó mező neve
+    /// @param _v A beállítandó érték.
     int updateFieldByIds(QSqlQuery& q, const QList<qlonglong>& _il, const QString& _fn, const QVariant& _v) const;
+    /// Egy mező értékének a beállítása a megadott rekordokban.
+    /// @param q
+    /// @param _nl A beállítandó rekordok név mezőinek a listája.
+    /// @param _fi A beállítandó mező idexe
+    /// @param _v A beállítandó érték.
     int updateFieldByNames(QSqlQuery& q, const QStringList& _nl, int _fi, const QVariant& _v) const
     {
         return updateFieldByNames(q, _nl, columnName(_fi), _v);
     }
+    /// Egy mező értékének a beállítása a megadott rekordokban.
+    /// @param q
+    /// @param _il A beállítandó rekordok ID mezői értékeinek a listája.
+    /// @param _fi A beállítandó mező indexe
+    /// @param _v A beállítandó érték.
     int updateFieldByIds(QSqlQuery& q, const QList<qlonglong>& _il, int _fi, const QVariant& _v) const
     {
         return updateFieldByIds(q, _il, columnName(_fi), _v);
     }
-
-    QString sStrFieldLine(const QString& _kw, const QString& _fn, int _indent = 1) {
-        return indentSp(_indent) + _kw + " " + quotedString(getName(_fn)) + _sSemicolonNl;
-    }
-
     bool isEmpty(int _ix) const;
     /// Áltaéános rekord azonosító szöveg. Pl. hibaüzeneteknél az objektum beazonosításához.
     /// @param t A típust is beteszi a kimenetbe, ha igaz. Alapértelmezetten igaz.
@@ -2436,6 +2453,8 @@ public:
     QString columnName() const { return descr().colName(); }
     /// A teljes (tábla névvel kiegészített) mező névvel tér vissza
     QString fullColumnName() const { return recDescr().fullColumnName(columnName()); }
+    ///
+    QString view(QSqlQuery& q) { return _pRecord->view(q, _index); }
 };
 TSTREAMO(cRecordFieldConstRef)
 
@@ -2498,7 +2517,7 @@ public:
     /// A hivatkozott mező értéke stringként, lásd még a cRecord::getName(int) metódust.
     QString toString() const    { return *this; }
     /// A hivatkozott mező értéke stringként, lásd még a cRecord::view(QSqlQuery&, int) metódust.
-    QString view(QSqlQuery& q)  { return _record.view(q, _index); }
+    QString view(QSqlQuery& q) const { return _record.view(q, _index); }
     /// Ha a mező értéke NULL, akkor true-val tér vissza
     bool isNull() const         { return _record.isNull(_index); }
     /// Ha a mező értéke az adatbázisban modosítható, akkor true-val tér vissza
@@ -2586,6 +2605,7 @@ public:
     ///
     static int updateFieldByNames(QSqlQuery& q, const cRecStaticDescr * _p, const QStringList& _nl, const QString& _fn, const QVariant& _v);
     static int updateFieldByIds(QSqlQuery& q, const cRecStaticDescr * _p, const QList<qlonglong>& _il, const QString& _fn, const QVariant& _v);
+    static int addValueArrayFieldByNames(QSqlQuery& q, const cRecStaticDescr * _p, const QStringList& _nl, const QString& _fn, const QVariant& _v);
 protected:
     const cRecStaticDescr *pStaticDescr;
 };

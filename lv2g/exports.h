@@ -1,7 +1,6 @@
 #ifndef EXPORTS_H
 #define EXPORTS_H
 #include "lv2g.h"
-#include "lv2syntax.h"
 #if defined(LV2G_LIBRARY)
 #include "ui_exports.h"
 #else
@@ -22,7 +21,7 @@ private:
     void disable(bool f);
     Ui::Exports *pUi;
     bool isStop;
-    cExportThread *pThread;
+//    cExportThread *pThread;
     QString lineFragment;
 protected slots:
     void start();

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1346</width>
-    <height>848</height>
+    <width>838</width>
+    <height>620</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -67,6 +67,9 @@
          </item>
          <item>
           <widget class="QToolButton" name="toolButtonPatchInfo">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="text">
             <string>...</string>
            </property>
@@ -106,6 +109,9 @@
          </item>
          <item>
           <widget class="QToolButton" name="toolButtonPlaceInfo">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="text">
             <string>...</string>
            </property>
@@ -313,6 +319,9 @@
          </item>
          <item>
           <widget class="QToolButton" name="toolButtonPlaceInfo2">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="text">
             <string>...</string>
            </property>
@@ -349,6 +358,9 @@
          </item>
          <item>
           <widget class="QToolButton" name="toolButtonPatchInfo2">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="text">
             <string>...</string>
            </property>
@@ -495,20 +507,6 @@ LLDP alapján, ütközés a címtáblával.&lt;/p&gt;
     </widget>
    </item>
   </layout>
-  <zorder>tableWidget</zorder>
-  <zorder>comboBoxPatch</zorder>
-  <zorder>toolButtonPatchAdd</zorder>
-  <zorder>comboBoxPlace</zorder>
-  <zorder>toolButtonPlaceAdd</zorder>
-  <zorder>lineEditPatchPattern2</zorder>
-  <zorder>comboBoxPlace2</zorder>
-  <zorder>toolButtonPlaceAdd2</zorder>
-  <zorder>comboBoxPatch2</zorder>
-  <zorder>toolButtonPatchAdd2</zorder>
-  <zorder>toolButtonRefresh</zorder>
-  <zorder>toolButtonRefresh2</zorder>
-  <zorder>comboBoxZone</zorder>
-  <zorder>comboBoxZone2</zorder>
  </widget>
  <resources>
   <include location="lv2g.qrc"/>

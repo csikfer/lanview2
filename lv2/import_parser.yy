@@ -1496,41 +1496,6 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
     }
 }
 
-void  setSysParam(QString *pt, QString *pn, QVariant *pv)
-{
-    qlonglong tt = paramTypeType(*pt, EX_IGNORE);   // Lehet típus név is, nem csak alap típus
-    bool ok = true;
-    qlonglong i;
-    switch (tt) {
-    case PT_TEXT:
-        ok = pv->userType() == QVariant::String;
-        if (ok) cSysParam::setTextSysParam(qq(), *pn, pv->toString());
-        break;
-    case PT_BOOLEAN:
-        ok = pv->userType() == QVariant::Bool;
-        if (ok)   cSysParam::setBoolSysParam(qq(), *pn, pv->toBool());
-        break;
-    case PT_INTEGER:
-        i = pv->toLongLong(&ok);
-        if (ok) cSysParam::setIntSysParam(qq(), *pn, i);
-        break;
-    case PT_INTERVAL:
-        ok = pv->userType() == QVariant::String;
-        if (ok) cSysParam::setSysParam(qq(), *pn, pv->toString(), _sInterval);
-        else {
-            i = pv->toLongLong(&ok);
-            if (ok) cSysParam::setSysParam(qq(), *pn, i, _sInterval);
-        }
-        break;
-    default:
-        cSysParam::setSysParam(qq(), *pn, *pv, *pt);
-        break;
-    }
-    if (!ok) yyerror(QObject::trUtf8("Invalid data."));
-    delete pn;
-    delete pv;
-    delete pt;
-}
 %}
 
 %union {
@@ -1999,7 +1964,7 @@ params  : ptype
 ptype   : PARAM_T str str_z TYPE_T str str_z ';'{ cParamType::insertNew(qq(), sp2s($2), sp2s($3), paramTypeType(sp2s($5)), sp2s($6)); }
         ;
 // Renddszerparaméterek definiálása
-syspar  : SYS_T str PARAM_T str '=' value ';'   { setSysParam($2, $4, $6); }
+syspar  : SYS_T str PARAM_T str '=' value ';'   { cSysParam::setSysParam(qq(), sp2s($4), vp2v($6), sp2s($2)); }
         ;
 // VLAN definíciók
 vlan    : VLAN_T int str str_z      {
@@ -2727,9 +2692,11 @@ modify  : SET_T str '[' strs ']' '.' str '=' value ';'
                 { cRecordAny::updateFieldByNames(qq(), cRecStaticDescr::get(sp2s($2)), slp2sl($4), sp2s($7), vp2v($9)); }
         | SET_T str '.' str '[' strs ']' '.' str '=' value ';'
                 { cRecordAny::updateFieldByNames(qq(), cRecStaticDescr::get(sp2s($4), sp2s($2)), slp2sl($6), sp2s($9), vp2v($11)); }
+        | SET_T str '.' str '[' strs ']' '.' str '+' '=' value ';'
+                { cRecordAny::addValueArrayFieldByNames(qq(), cRecStaticDescr::get(sp2s($4), sp2s($2)), slp2sl($6), sp2s($9), vp2v($12)); }
         | SET_T IFTYPE_T '[' str ']' '.' NAME_T PREFIX_T '=' str ';'
-                                    { cIfType().setByName(qq(), sp2s($4)).setName(_sIfNamePrefix, sp2s($10)).update(qq(), false);
-                                      lanView::resetCacheData(); }
+                 { cIfType().setByName(qq(), sp2s($4)).setName(_sIfNamePrefix, sp2s($10)).update(qq(), false);
+                   lanView::resetCacheData(); }
         | SET_T ALERT_T SERVICE_T srvid ';'     { alertServiceId = $4; }
         | SET_T SUPERIOR_T hsid TO_T hsss ';'   { $5->sets(_sSuperiorHostServiceId, $3); delete $5; }
         | SET_T NODE_T str SERIAL_T NUMBER_T str ';'    { cNode::setSeralNumber(qq(), sp2s($3), sp2s($6)); }
