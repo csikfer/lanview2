@@ -69,11 +69,13 @@ QString cExport::value(QSqlQuery& q, const cRecordFieldRef &fr, bool sp)
         r = fr.view(q);
         break;
     case cColStaticDescr::FT_TEXT_ARRAY:
-    case cColStaticDescr::FT_SET:
-        foreach (QString s, ((QVariant&)fr).toStringList()) {
+    case cColStaticDescr::FT_SET: {
+        QVariant v = fr;
+        foreach (QString s, v.toStringList()) {
             r += dQuoted(s) + ", ";
         }
         r.chop(2);
+    }
         break;
     case cColStaticDescr::FT_INTEGER_ARRAY:
         if (fk) {
@@ -197,5 +199,5 @@ QString cExport::_export(QSqlQuery &q, cTableShape& o)
 
 QString cExport::_export(QSqlQuery &q, cTableShapeField& o)
 {
-
+    return QString();
 }
