@@ -534,7 +534,6 @@ protected slots:
     void setFromEdit(double d);
 };
 
-
 class Ui_arrayEd;
 /// @class cArrayWidget
 /// Egy tömb adatmező megjelenítése és módosítása
@@ -636,6 +635,7 @@ private slots:
 };
 
 class Ui_fKeyEd;
+class Ui_placeEd;
 class cSelectPlace;
 
 /// @class cFKeyWidget
@@ -656,9 +656,12 @@ protected:
     void disableEditWidget(eTristate tsf);
     bool setConstFilter();
     void _refresh();
-    Ui_fKeyEd          *pUi;
-    cRecordListModel   *pModel;         // No special filter (selector)
-    cSelectPlace       *pSelectPlace;   // Place: filtered by zone
+    Ui_fKeyEd          *pUi;            ///< Alap form távoli kulcshoz
+    Ui_placeEd         *pUiPlace;       ///< Form egy hely kiválasztásához.
+    cRecordListModel   *pModel;         ///< No special filter (selector)
+    cSelectPlace       *pSelectPlace;
+    QAbstractButton    *pButtonEdit;
+    QAbstractButton    *pButtonAdd;
     /// A távoli kulcs által mutatott tábla leíró objektumára muatat
     const cRecStaticDescr *pRDescr;
     /// A távoli kulcs által mutatott tábla rekord dialógus leíró objektum.
@@ -679,6 +682,7 @@ protected slots:
     void setFilter(const QString &_s);
     void refresh();
 };
+
 
 /// @class cDateWidget
 /// Egy dátun megjelenítése ill. szerkesztése
@@ -972,6 +976,7 @@ public:
     QComboBox *comboBoxPlace() const { return pComboBoxPLace; }
     QLineEdit *lineEditPlaceFilt() const { return pLineEditPlaceFilt; }
     void setPlaceInsertButton(QAbstractButton * p);
+    void setPlaceEditButton(QAbstractButton * p);
     void setPlaceRefreshButton(QAbstractButton * p);
     void setPlaceInfoButton(QAbstractButton * p);
 protected:
@@ -987,6 +992,7 @@ protected:
     cPlacesInZoneModel *pModelPlace;
     cSelectPlace *      pSlave;
     QAbstractButton *   pButtonPlaceInsert;
+    QAbstractButton *   pButtonPlaceEdit;
     QAbstractButton *   pButtonPlaceRefresh;
     QAbstractButton *   pButtonPlaceInfo;
 public slots:
@@ -995,6 +1001,7 @@ public slots:
     /// Az aktuális hely az új objektum lessz, vagy ha cancel-t nyom, akkor nincs változás.
     /// @return Az új objektum ID, vagy NULL_ID.
     qlonglong insertPlace();
+    bool editPlace();
     /// Az objektumhoz rendelt widgetek engedélyezése, vagy tiltása.
     void setEnabled(bool f = true);
     /// Az objektumhoz rendelt widgetek tiltása vagy engedélyezése.
@@ -1091,6 +1098,7 @@ public slots:
     /// Popup riport az aktuális node-ról
     void nodeReport();
 private slots:
+    void on_buttonPatchInsert_clicked();
     void on_lineEditNodeFilt_textChanged(const QString& s);
     void on_comboBoxNode_currenstIndexChanged(int ix);
     void on_comboBoxZone_currenstIndexChanged(int);

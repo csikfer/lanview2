@@ -1881,7 +1881,7 @@ int cPatch::fetchPorts(QSqlQuery& __q, int flags)
     // A ports objektum fetch metódusa csak azonos rekord típusok esetén jó. Igaz, hogy egy típus van, de az nam az alap típus.
     cPPort p;
     p.setId(ports.ixOwnerId, getId());
-    if (p.completion(__q)) do {
+    if (p.fetch(__q, true, p.mask(ports.ixOwnerId), p.iTab(_sPortIndex))) do {
         ports << p;
         ++n;
     } while (p.next(__q));
@@ -2431,7 +2431,7 @@ int  cNode::fetchPorts(QSqlQuery& __q, int flags)
     // A ports objektum fetch metódusa csak azonos rekord típusok esetén jó...
     QSqlQuery q = getQuery(); // A copy construktor vagy másolás az nem jó!! (shadow copy)
     QString sql = "SELECT tableoid, port_id FROM nports WHERE node_id = ? AND NOT deleted"
-                  " ORDER BY port_index NULLS LAST";
+                  " ORDER BY port_index NULLS LAST, port_name";
     if (execSql(__q, sql, getId())) do {
         qlonglong tableoid = variantToId(__q.value(0));
         qlonglong port_id  = variantToId(__q.value(1));

@@ -106,7 +106,8 @@ FORMS += \
     deducepatch.ui \
     tableexportdialog.ui \
     snmpdevquery.ui \
-    edit_ip.ui
+    edit_ip.ui \
+    place_ed.ui
 INCLUDEPATH += ../lv2
 #unix:LIBS += -lsnmp
 msvc:LIBS += -lSecur32

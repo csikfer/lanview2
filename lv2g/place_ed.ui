@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>placeEd</class>
+ <widget class="QWidget" name="placeEd">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>498</width>
+    <height>105</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout1" stretch="0,1,0,0,0">
+     <item>
+      <widget class="QLabel" name="labelZone">
+       <property name="text">
+        <string>Zóna :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="comboBoxZone"/>
+     </item>
+     <item>
+      <widget class="QToolButton" name="toolButtonZoneInfo">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Egy riport ablak megjelenítése a hálózati elemről, ill. patch panel vagy fali csatlakozóról.&lt;/p&gt;&lt;p&gt;A megosztásokat figyelmen kívül hagyja!&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="lv2g.qrc">
+         <normaloff>:/icons/document-properties.ico</normaloff>:/icons/document-properties.ico</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="labelPlacePattern">
+       <property name="text">
+        <string>Minta :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="lineEditPlacePattern"/>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout2">
+     <item>
+      <widget class="QComboBox" name="comboBoxPlace"/>
+     </item>
+     <item>
+      <widget class="QToolButton" name="toolButtonPlaceAdd">
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="lv2g.qrc">
+         <normaloff>:/icons/add.ico</normaloff>:/icons/add.ico</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="toolButtonRefresh">
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="lv2g.qrc">
+         <normaloff>:/icons/refresh.ico</normaloff>:/icons/refresh.ico</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="toolButtonPlaceEdit">
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="lv2g.qrc">
+         <normaloff>:/icons/edit.ico</normaloff>:/icons/edit.ico</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="toolButtonPlaceInfo">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Egy riport ablak megjelenítése a hálózati elemről, ill. patch panel vagy fali csatlakozóról.&lt;/p&gt;&lt;p&gt;A megosztásokat figyelmen kívül hagyja!&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="lv2g.qrc">
+         <normaloff>:/icons/document-properties.ico</normaloff>:/icons/document-properties.ico</iconset>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="lv2g.qrc"/>
+ </resources>
+ <connections/>
+</ui>

@@ -6,40 +6,62 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>478</width>
-    <height>106</height>
+    <width>439</width>
+    <height>105</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
-    <widget class="QComboBox" name="comboBox">
-     <property name="editable">
-      <bool>false</bool>
-     </property>
-     <property name="currentText">
-      <string notr="true"/>
-     </property>
-     <property name="insertPolicy">
-      <enum>QComboBox::NoInsert</enum>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="1">
-    <layout class="QHBoxLayout" name="horizontalLayout">
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout1">
      <item>
-      <widget class="QPushButton" name="pushButtonEdit">
+      <widget class="QLabel" name="label">
        <property name="text">
-        <string>Részletek</string>
+        <string>Szűrés :</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButtonNew">
+      <widget class="QLineEdit" name="lineEditFilter"/>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout2">
+     <item>
+      <widget class="QComboBox" name="comboBox">
+       <property name="editable">
+        <bool>false</bool>
+       </property>
+       <property name="currentText">
+        <string notr="true"/>
+       </property>
+       <property name="insertPolicy">
+        <enum>QComboBox::NoInsert</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="toolButtonEdit">
        <property name="text">
-        <string>Új</string>
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="lv2g.qrc">
+         <normaloff>:/icons/edit.ico</normaloff>:/icons/edit.ico</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="toolButtonAdd">
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="lv2g.qrc">
+         <normaloff>:/icons/add.ico</normaloff>:/icons/add.ico</iconset>
        </property>
       </widget>
      </item>
@@ -55,16 +77,6 @@
       </widget>
      </item>
     </layout>
-   </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="label">
-     <property name="text">
-      <string>Szűrés :</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="1">
-    <widget class="QLineEdit" name="lineEditFilter"/>
    </item>
   </layout>
  </widget>

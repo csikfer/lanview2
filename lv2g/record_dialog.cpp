@@ -666,33 +666,25 @@ void cRecordDialogInh::restore(const cRecord *_pRec)
 /// Csak olvasható objektum esetén, vagy ha "mégse" gombot nyomtuk meg, akkor NULL pointerrel tér vissza.
 /// A dialógus ablak megjelenését, tartalmát és működését a megadott rekord leíró és table_shape rekord definiálja.
 /// @param q
-/// @param sn A table_shape (a megjelenítést leíró) rekord neve
+/// @param ts A table_shape objektum (beolvasott mező leírókkal, text-eket beolvassa, ha kell)
 /// @param pPar parent widgewt pointere
 /// @param pSample minta rekord
 /// @param ro Read-only flag, ha igaz, akkor csak a pSample megjelenítése történik, nincs OK gomb.
 /// @param edit Ha értéke true, akkor rekord modosítás történik, ekkor pSample tartalmazza a modosítandó létező rekordot, és nem lehet NULL.
-cRecord * recordDialog(QSqlQuery& q, const QString& sn, QWidget *pPar, const cRecord *pSample, bool ro, bool edit)
+_GEX cRecord * recordDialog(QSqlQuery& q, cTableShape& ts, QWidget *pPar, const cRecord *pSample , bool ro, bool edit)
 {
     if ((ro || edit) && pSample == NULL) EXCEPTION(EENODATA);
-    cTableShape shape;
-    if (!shape.fetchByName(q, sn)) {
-        shape.setName(_sTableName, sn);
-        int n = shape.completion(q);
-        if (n == 0) EXCEPTION(EDATA, 0, sn);
-        if (n >  1) EXCEPTION(AMBIGUOUS, n, sn);
-    }
-    if (ro) shape.enum2setOn(_sTableShapeType, TS_READ_ONLY);
-    shape.fetchText(q);
-    shape.fetchFields(q);
+    if (ro) ts.enum2setOn(_sTableShapeType, TS_READ_ONLY);
+    ts.fetchText(q, false);
     // A dialógusban megjelenítendő nyomógombok. (Csak az explicit read-only van lekezelve!!))
     int buttons;
-    if (shape.getBool(_sTableShapeType, TS_READ_ONLY)) {
+    if (ts.getBool(_sTableShapeType, TS_READ_ONLY)) {
         buttons = enum2set(DBT_CANCEL);
     }
     else {
         buttons = enum2set(DBT_OK, DBT_CANCEL);
     }
-    cRecordDialog   rd(shape, buttons, true, NULL, NULL, pPar);  // A rekord szerkesztő dialógus
+    cRecordDialog   rd(ts, buttons, true, NULL, NULL, pPar);  // A rekord szerkesztő dialógus
     if (pSample != NULL) {
         if (edit && pSample->idIndex(EX_IGNORE) != NULL_IX && !pSample->isNullId()) {
             cRecord *pr = pSample->dup();
@@ -718,6 +710,30 @@ cRecord * recordDialog(QSqlQuery& q, const QString& sn, QWidget *pPar, const cRe
     }
     rd.close();
     return rd.record().dup();
+
+}
+
+/// Dialógus ablak megjelenítése egy rekord beillesztéséhez, vagy szerkesztéséhez. Ha megnyomták az OK gombot, akkor
+/// beilleszti vagy modosítja az adatbázisba a rekordot, az új rekord objektum pointerével tér vissza.
+/// Csak olvasható objektum esetén, vagy ha "mégse" gombot nyomtuk meg, akkor NULL pointerrel tér vissza.
+/// A dialógus ablak megjelenését, tartalmát és működését a megadott rekord leíró és table_shape rekord definiálja.
+/// @param q
+/// @param sn A table_shape (a megjelenítést leíró) rekord neve
+/// @param pPar parent widgewt pointere
+/// @param pSample minta rekord
+/// @param ro Read-only flag, ha igaz, akkor csak a pSample megjelenítése történik, nincs OK gomb.
+/// @param edit Ha értéke true, akkor rekord modosítás történik, ekkor pSample tartalmazza a modosítandó létező rekordot, és nem lehet NULL.
+cRecord * recordDialog(QSqlQuery& q, const QString& sn, QWidget *pPar, const cRecord *pSample, bool ro, bool edit)
+{
+    cTableShape shape;
+    if (!shape.fetchByName(q, sn)) {
+        shape.setName(_sTableName, sn);
+        int n = shape.completion(q);
+        if (n == 0) EXCEPTION(EDATA, 0, sn);
+        if (n >  1) EXCEPTION(AMBIGUOUS, n, sn);
+    }
+    shape.fetchFields(q);
+    return recordDialog(q, shape, pPar, pSample, ro, edit);
 }
 
 /// Dialógus ablak megjelenítése egy rekord beillesztéséhez. Hasonló a recordDialog() híváshoz,
