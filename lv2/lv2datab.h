@@ -645,12 +645,12 @@ public:
     /// Ellenörzi a megadott mező/oszlop indexet.
     /// @param i Az ellenőrizendő index érték
     /// @param __ex
-    /// @return i értékével tér vissza.
+    /// @return i értékével tér vissza, ha nem index, akkor NULL_IX-el
     /// @exception cError* Ha i értéke nem lehet index, akkor dob egy kizárást
     int chkIndex(int i, eEx __ex = EX_ERROR) const {
         if (isIndex(i)) return i;
         if (__ex) EXCEPTION(ENOINDEX, i, fullTableName());
-        return -1;
+        return NULL_IX;
     }
     /// A megadott indexű mező nevével tér vissza.
     /// @exception cError * Ha i értéke nem lehet index. és __ex nem EX_IGNORE (alapértelmezett), akkor dob egy kizárást.
@@ -1128,7 +1128,7 @@ public:
     /// Tisztán virtuális függvényt hív, konstruktorból nem hívható.
     /// @exception cError* Ha a paraméter értéke az aktuálisan lehetséges index értéktartományon kívül van dob egy kizárást.
     /// @param A viszgálandó index érték
-    /// @return Az index értékkel tér vissza.
+    /// @return Az index értékkel tér vissza, ha nem index, akkor NULL_IX-el
     int chkIndex(int i, eEx __ex = EX_ERROR) const   { descr().chkIndex(i, __ex); return i; }
     /// A megadott mező névhez tartozó mező indexel tér vissza.
     /// Ha a mező név tartalmazza a séma nevet vagy a tábla nevet, akkor azokat ellenőrzi,
@@ -1319,7 +1319,7 @@ public:
     /// Feltételezve, hogy a megadott indexű mező egy MAC, annk értékével tér vissza.
     cMac    getMac(int __i, enum eEx __ex = EX_ERROR) const;
     /// Feltételezve, hogy a megadott nevű mező egy MAC, annk értékével tér vissza.
-    cMac    getMac(const QString& __n, enum eEx __ex = EX_ERROR) const { return getMac(toIndex(__n, __ex)); }
+    cMac    getMac(const QString& __n, enum eEx __ex = EX_ERROR) const { return getMac(toIndex(__n, __ex), __ex); }
     /// Az megjegyzés/cím mező értékével tér vissza, ha van, egyébként dob egy kizárást
     QString getNote() const                        { return getName(noteIndex()); }
     /// Ha a megjegyzés/cím mező nem NULL, akkor azzal, egyébként a névvel tér vissza.

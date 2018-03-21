@@ -270,8 +270,18 @@ cDPRow::cDPRow(QSqlQuery& q, cDeducePatch *par, int _row, bool unique, cPPort& p
     int fl, fr;                         // Bal és jobb oldali linkek száma
     _pl.setId(_sPortId1, ppl.getId()).completion(q);        // minta
     fl = pll.set(q);                                        // Bal oldali linkek
+    int ix = pll.indexOf(_sPortId2, ppr.get(ppr.idIndex()));// Saját portra mutató link
+    if (ix >= 0) {
+        delete pll.pullAt(ix);
+        --fl;
+    }
     _pl.clear().setId(_sPortId1, ppr.getId()).completion(q);// minta
     fr = plr.set(q);                                        // Jobb oldali linkek
+    ix = plr.indexOf(_sPortId2, ppr.get(ppl.idIndex()));// Saját portra mutató link
+    if (ix >= 0) {
+        delete plr.pullAt(ix);
+        --fr;
+    }
     QString slp, srp; // Jobb és bal oldali következő link teljes port név/nevek
     QString sls, srs; // Jobb és bal oldali következő link megosztás(ok)
     eTristate bMac = TS_FALSE;

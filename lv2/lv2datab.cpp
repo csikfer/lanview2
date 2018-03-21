@@ -3136,13 +3136,16 @@ void cRecord::setContainerValid(qlonglong __set, qlonglong __clr)
 
 cMac    cRecord::getMac(int __i, eEx __ex) const
 {
-    int t = colDescr(__i).eColType;
     cMac r;
+    if (NULL_IX == chkIndex(__i, __ex)) return r;
+    int t = colDescr(__i).eColType;
     if (t == cColStaticDescr::FT_MAC) {
         if (!isNull(__i)) r = get(__i).value<cMac>();
         return r;
     }
-    if (__ex) EXCEPTION(EDATA, t, trUtf8("A %1 mező típusa nem MAC :\n").arg(fullColumnName(columnName(__i))) + identifying());
+    if (__ex != EX_IGNORE) {
+        EXCEPTION(EDATA, t, trUtf8("A %1 mező típusa nem MAC :\n").arg(fullColumnName(columnName(__i))) + identifying());
+    }
     return r;
 }
 
