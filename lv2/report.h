@@ -30,25 +30,76 @@ static inline QString tag(const QString& t, const QString& p) {
     return r +">";
 }
 
+/// Feltételes szöveg HTML konverzió
+/// @param text A konvertálandó szöveg
+/// @param chgBreaks Ha igaz, akkor a sor töréseket kicseréli a "<br>" stringre,
+///         elötte törli a többszörös soremeléseket, vagy szóközöket, tabulátorokat.
+/// @param esc Ha igaz, akkor a szöveget konvertálja a QString::toHtmlEscaped() metódussal.
+/// @return A konverált szöveg.
 EXT_ QString toHtml(const QString& text, bool chgBreaks = false, bool esc = true);
 
+/// HTML konverzió
+/// @param text A konvertálandó szöveg
+/// @param chgBreaks Ha igaz, akkor a sor töréseket kicseréli a "<br>" stringre,
+///         elötte törli a többszörös soremeléseket, vagy szóközöket, tabulátorokat.
+/// @param esc Ha igaz, akkor a szöveget konvertálja a QString::toHtmlEscaped() metódussal.
+/// @return Széles karakterű bekezdés, a konvertált szöveggel
 static inline QString htmlWarning(const QString& text, bool chgBreaks = false, bool esc = true) {
     return "<div><b>" + toHtml(text, chgBreaks, esc) + "</b></div>";
 }
+/// HTML konverzió
+/// @param text A konvertálandó szöveg
+/// @param chgBreaks Ha igaz, akkor a sor töréseket kicseréli a "<br>" stringre,
+///         elötte törli a többszörös soremeléseket, vagy szóközöket, tabulátorokat.
+/// @param esc Ha igaz, akkor a szöveget konvertálja a QString::toHtmlEscaped() metódussal.
+/// @return Normál bekezdés, a konvertált szöveggel
 static inline QString htmlInfo(const QString& text, bool chgBreaks = false, bool esc = true) {
     return "<div>" + toHtml(text, chgBreaks, esc) + "</div>";
 }
+/// HTML konverzió
+/// @param text A konvertálandó szöveg
+/// @param chgBreaks Ha igaz, akkor a sor töréseket kicseréli a "<br>" stringre,
+///         elötte törli a többszörös soremeléseket, vagy szóközöket, tabulátorokat.
+/// @param esc Ha igaz, akkor a szöveget konvertálja a QString::toHtmlEscaped() metódussal.
+/// @return Széles karakterű, és piros betű színű bekezdés, a konvertált szöveggel
 static inline QString htmlError(const QString& text, bool chgBreaks = false, bool esc = true) {
     return "<div style=\"color:red\"><b>" + toHtml(text, chgBreaks, esc) + "</b></div>";
 }
+/// HTML konverzió
+/// @param text A konvertálandó szöveg
+/// @param chgBreaks Ha igaz, akkor a sor töréseket kicseréli a "<br>" stringre,
+///         elötte törli a többszörös soremeléseket, vagy szóközöket, tabulátorokat.
+/// @param esc Ha igaz, akkor a szöveget konvertálja a QString::toHtmlEscaped() metódussal.
+/// @return Széles karakterű, és zöld betü színű bekezdés, a konvertált szöveggel
 static inline QString htmlGrInf(const QString& text, bool chgBreaks = false, bool esc = true) {
     return "<div style=\"color:green\"><b>" + toHtml(text, chgBreaks, esc) + "</b></div>";
 }
+/// HTML konverzió
+/// @param text A konvertálandó szöveg
+/// @param chgBreaks Ha igaz, akkor a sor töréseket kicseréli a "<br>" stringre,
+///         elötte törli a többszörös soremeléseket, vagy szóközöket, tabulátorokat.
+/// @param esc Ha igaz, akkor a szöveget konvertálja a QString::toHtmlEscaped() metódussal.
+/// @return Italic (nem bekezdés!) konvertált szöveggel
 static inline QString htmlItalic(const QString& text, bool chgBreaks = false, bool esc = true) {
     return "<i>" + toHtml(text, chgBreaks, esc) + "</i>";
 }
+/// HTML konverzió
+/// @param text A konvertálandó szöveg
+/// @param chgBreaks Ha igaz, akkor a sor töréseket kicseréli a "<br>" stringre,
+///         elötte törli a többszörös soremeléseket, vagy szóközöket, tabulátorokat.
+/// @param esc Ha igaz, akkor a szöveget konvertálja a QString::toHtmlEscaped() metódussal.
+/// @return Széles karakter (nem bekezdés!) konvertált szöveggel
 static inline QString htmlBold(const QString& text, bool chgBreaks = false, bool esc = true) {
     return "<b>" + toHtml(text, chgBreaks, esc) + "</b>";
+}
+/// HTML konverzió
+/// @param text A konvertálandó szöveg
+/// @param chgBreaks Ha igaz, akkor a sor töréseket kicseréli a "<br>" stringre,
+///         elötte törli a többszörös soremeléseket, vagy szóközöket, tabulátorokat.
+/// @param esc Ha igaz, akkor a szöveget konvertálja a QString::toHtmlEscaped() metódussal.
+/// @return Áthúzott karakter (nem bekezdés!) konvertált szöveggel
+static inline QString htmlStrikethrough(const QString& text, bool chgBreaks = false, bool esc = true) {
+    return "<s>" + toHtml(text, chgBreaks, esc) + "</s>";
 }
 
 EXT_ QString htmlTableLine(const QStringList& fl, const QString& ft = "td");

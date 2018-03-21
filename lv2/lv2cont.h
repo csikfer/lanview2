@@ -600,6 +600,19 @@ public:
         }
         return r;
     }
+    /// Egy lekérdezés alapján feltölti a konténert. Nem üríti a konténert, a beolvasott objektumok hozzáadódnak a meglévőkhöz.
+    /// @return A konténerbe került objektumok száma.
+    int set(QSqlQuery& q) {
+        if (q.first() == false) return 0;
+        int i = 0;
+        do {
+            ++i;
+            T *p = new T;
+            p->set(q);
+            *this << p;
+        } while (q.next());
+        return i;
+    }
 };
 
 template<class T> QTextStream& operator<<(QTextStream& __t, const tRecordList<T>& __v)

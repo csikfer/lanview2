@@ -3276,7 +3276,7 @@ cSelectPlace::cSelectPlace(QComboBox *_pZone, QComboBox *_pPLace, QLineEdit *_pF
     , pLineEditPlaceFilt(_pFilt)
     , constFilterPlace(_constFilt)
 {
-    pButtonPlaceInsert = pButtonPlaceRefresh = pButtonPlaceInfo = NULL;
+    pButtonPlaceInsert = pButtonPlaceRefresh = pButtonPlaceInfo = pButtonPlaceEdit = NULL;
     pSlave = NULL;
     pModelZone = new cZoneListModel(this);
     pModelZone->joinWith(pComboBoxZone);

@@ -441,6 +441,11 @@
      </column>
      <column>
       <property name="text">
+       <string>Tag</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
        <string>Állapot</string>
       </property>
       <property name="toolTip">
@@ -479,6 +484,11 @@ LLDP alapján, ütközés a címtáblával.&lt;/p&gt;
      <column>
       <property name="text">
        <string>Mentés</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Tag</string>
       </property>
      </column>
      <column>

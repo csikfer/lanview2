@@ -81,6 +81,24 @@ static inline eTristate inverse(eTristate v) {
 
 static inline eTristate bool2ts(bool f) { return f ? TS_TRUE : TS_FALSE; }
 
+static inline eTristate anyTrue(eTristate a, eTristate b)  { return (a == TS_TRUE  || b == TS_TRUE)  ? TS_TRUE  : TS_NULL; }
+static inline eTristate anyFalse(eTristate a, eTristate b) { return (a == TS_FALSE || b == TS_FALSE) ? TS_FALSE : TS_NULL; }
+static inline eTristate tsAnd(eTristate a, eTristate b) {
+    switch (a) {
+    case TS_NULL:   return b;
+    case TS_FALSE:  return TS_FALSE;
+    case TS_TRUE:   return b == TS_NULL ? TS_TRUE : b;
+    }
+    return TS_NULL;
+}
+static inline eTristate tsOr(eTristate a, eTristate b) {
+    switch (a) {
+    case TS_NULL:   return b;
+    case TS_TRUE:   return TS_TRUE;
+    case TS_FALSE:  return b == TS_NULL ? TS_FALSE : b;
+    }
+    return TS_NULL;
+}
 
 /// Hiba string
 EXT_ QString sInvalidEnum();
