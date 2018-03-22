@@ -168,7 +168,7 @@ tStringPair htmlReportPlace(QSqlQuery& q, cRecord& o)
     }
     tRecordList<cUser>  users;
     users.fetch(q, false, _sPlaceId, pid);
-    if (!patchs.isEmpty()) {
+    if (!users.isEmpty()) {
         html += htmlInfo(QObject::trUtf8("Felhasználók :"));
         shape.setByName(_sUsers);
         html += list2html(q, users, shape);
@@ -248,22 +248,27 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
     /* -- PARAM -- */
     if (flags & CV_NODE_PARAMS) {
         if ((node.containerValid & CV_NODE_PARAMS) == 0) node.fetchParams(q);
-        text += htmlInfo(QObject::trUtf8("Eszköz paraméterek :"));
-        text += sHtmlTabBeg + sHtmlRowBeg;
-        text += sHtmlTh.arg(QObject::trUtf8("Paraméter típus"));
-        text += sHtmlTh.arg(QObject::trUtf8("Érték"));
-        text += sHtmlTh.arg(QObject::trUtf8("Dim."));
-        text += sHtmlRowEnd;
-        QListIterator<cNodeParam *> li(node.params);
-        while (li.hasNext()) {
-             cNodeParam * p = li.next();
-             text += sHtmlRowBeg;
-             text += sHtmlTd.arg(p->name());
-             text += sHtmlTd.arg(p->value().toString());
-             text += sHtmlTd.arg(p->dim());
-             text += sHtmlRowEnd;
+        if (node.params.isEmpty()) {
+            text += htmlInfo(QObject::trUtf8("Eszköz paraméterek nincsenek."));
         }
-        text += sHtmlTabEnd;
+        else {
+            text += htmlInfo(QObject::trUtf8("Eszköz paraméterek :"));
+            text += sHtmlTabBeg + sHtmlRowBeg;
+            text += sHtmlTh.arg(QObject::trUtf8("Paraméter típus"));
+            text += sHtmlTh.arg(QObject::trUtf8("Érték"));
+            text += sHtmlTh.arg(QObject::trUtf8("Dim."));
+            text += sHtmlRowEnd;
+            QListIterator<cNodeParam *> li(node.params);
+            while (li.hasNext()) {
+                 cNodeParam * p = li.next();
+                 text += sHtmlRowBeg;
+                 text += sHtmlTd.arg(p->name());
+                 text += sHtmlTd.arg(p->value().toString());
+                 text += sHtmlTd.arg(p->dim());
+                 text += sHtmlRowEnd;
+            }
+            text += sHtmlTabEnd;
+        }
     }
     /* -- PORTS -- */
     if (flags & CV_PORTS) {
@@ -279,10 +284,16 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
         text += sHtmlTh.arg(isPatch ? QObject::trUtf8("Shared") : QObject::trUtf8("MAC"));
         text += sHtmlTh.arg(isPatch ? QObject::trUtf8("S.p.")   : QObject::trUtf8("IP cím(ek)"));
         if (!isPatch) text += sHtmlTh.arg(QObject::trUtf8("DNS név"));
-        text += sHtmlTh.arg(QObject::trUtf8("Fizikai link"));
-        if (!isPatch) text += sHtmlTh.arg(QObject::trUtf8("Logikai link"));
-        if (!isPatch) text += sHtmlTh.arg(QObject::trUtf8("LLDP link"));
-        if (!isPatch) text += sHtmlTh.arg(QObject::trUtf8("MAC in mactab"));
+        if (isPatch) {
+            text += sHtmlTh.arg(QObject::trUtf8("Előlapi link"));
+            text += sHtmlTh.arg(QObject::trUtf8("Hátlapi link"));
+        }
+        else {
+            text += sHtmlTh.arg(QObject::trUtf8("Fizikai link"));
+            text += sHtmlTh.arg(QObject::trUtf8("Logikai link"));
+            text += sHtmlTh.arg(QObject::trUtf8("LLDP link"));
+            text += sHtmlTh.arg(QObject::trUtf8("MAC in mactab"));
+        }
         text += sHtmlRowEnd;
         // Table data
         QListIterator<cNPort *> li(node.ports);
@@ -331,9 +342,25 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
             /// Columns: PhsLink, LogLink|-, LLDP|-, MACTab|-
             if (isPatch) {
                 cPhsLink pl;
+                // Előlapi link(ek)
                 pl.setId(_sPortId1, pid);
+                pl.setId(_sPhsLinkType1, LT_FRONT);
                 int n = pl.completion(q);
                 QStringList sl;
+                if (n > 0) {
+                    do {
+                        QString sh = pl.getName(_sPortShared);
+                        QString sp = cNPort::getFullNameById(q, pl.getId(_sPortId2));
+                        sl << (sh.isEmpty() ? sp : (sh + ":" + sp));
+                    } while (pl.next(q));
+                }
+                text += sHtmlTd.arg(sl.isEmpty() ? sHtmlVoid : sl.join(sHtmlBr));
+                // Hátlapi link
+                pl.clear();
+                pl.setId(_sPortId1, pid);
+                pl.setId(_sPhsLinkType1, LT_BACK);
+                n = pl.completion(q);
+                sl.clear();
                 if (n > 0) {
                     do {
                         QString sh = pl.getName(_sPortShared);

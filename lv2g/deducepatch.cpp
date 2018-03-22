@@ -218,21 +218,29 @@ static void portNameAndShare(QSqlQuery& q, QString& names, QString& shares, cons
     }
 }
 
-static QTextEdit *newTextEdit(const QString& txt, const QString& tt = QString())
+QTextEdit *cDPRow::newTextEdit(const QString& txt, int *pw, const QString& tt)
 {
     QTextEdit *p = new QTextEdit(txt);
+    if (!tt.isEmpty()) {
+        p->setToolTip(tt);
+    }
     p->setReadOnly(true);
     p->setLineWrapMode(QTextEdit::NoWrap);
-    if (!tt.isEmpty()) p->setToolTip(tt);
     QSizeF sf = p->document()->size();
     QSize  s;
-    s.setHeight((int)(sf.height() + 10));
+    s.setHeight((int)(sf.height() + 1));
     s.setWidth((int)sf.width() + 2);
     p->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     p->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     p->setFrameStyle(QFrame::NoFrame);
     p->setMaximumSize(s);
     p->resize(s);
+    if (pw != NULL) {
+        *pw = std::max(*pw, s.width());
+    }
+    if (pTable->rowHeight(row) < s.height()) {
+        pTable->setRowHeight(row, s.height());
+    }
     return p;
 }
 
@@ -270,14 +278,14 @@ cDPRow::cDPRow(QSqlQuery& q, cDeducePatch *par, int _row, bool unique, cPPort& p
     int fl, fr;                         // Bal és jobb oldali linkek száma
     _pl.setId(_sPortId1, ppl.getId()).completion(q);        // minta
     fl = pll.set(q);                                        // Bal oldali linkek
-    int ix = pll.indexOf(_sPortId2, ppr.get(ppr.idIndex()));// Saját portra mutató link
+    int ix = pll.indexOf(_sPortId2, ppr.get(ppr.idIndex()));// Saját portra mutató link törlendő!
     if (ix >= 0) {
         delete pll.pullAt(ix);
         --fl;
     }
     _pl.clear().setId(_sPortId1, ppr.getId()).completion(q);// minta
     fr = plr.set(q);                                        // Jobb oldali linkek
-    ix = plr.indexOf(_sPortId2, ppr.get(ppl.idIndex()));// Saját portra mutató link
+    ix = plr.indexOf(_sPortId2, ppl.get(ppl.idIndex()));    // Saját portra mutató link törlendő!
     if (ix >= 0) {
         delete plr.pullAt(ix);
         --fr;
@@ -382,10 +390,10 @@ cDPRow::cDPRow(QSqlQuery& q, cDeducePatch *par, int _row, bool unique, cPPort& p
     QTextEdit *pTextEdit;
     QString s;
     //...
-    pTextEdit = newTextEdit(state, sToolTip);
+    pTextEdit = newTextEdit(state, NULL, sToolTip);
     pTable->setCellWidget(row, CX_STATE, pTextEdit);
 
-    pTextEdit = newTextEdit(slp);
+    pTextEdit = newTextEdit(slp, &parent->nleft);
     pTable->setCellWidget(row, CX_NPORT_LEFT, pTextEdit);
 
     pTextEdit = newTextEdit(sls);
@@ -434,7 +442,7 @@ cDPRow::cDPRow(QSqlQuery& q, cDeducePatch *par, int _row, bool unique, cPPort& p
     pTextEdit = newTextEdit(srs);
     pTable->setCellWidget(row, CX_SHARE_RIGHT, pTextEdit);
 
-    pTextEdit = newTextEdit(srp);
+    pTextEdit = newTextEdit(srp, &parent->nright);
     pTable->setCellWidget(row, CX_NPORT_RIGHT, pTextEdit);
 }
 
@@ -543,6 +551,7 @@ void cDeducePatch::byMAC(QSqlQuery& q)
             delete pnp;
         }
     }
+    pUi->tableWidget->resizeColumnsToContents();
 }
 
 void cDeducePatch::byTag(QSqlQuery &q)
@@ -557,6 +566,7 @@ void cDeducePatch::byTag(QSqlQuery &q)
     QString tag;
     bool unique;
     int ix;
+    nleft = nright = 0;
     QListIterator<cNPort *> i(patch.ports);
     for (int i = 0; i < patch.ports.size(); ++i ) {
         ppl = patch.ports.at(i)->reconvert<cPPort>();
@@ -572,7 +582,12 @@ void cDeducePatch::byTag(QSqlQuery &q)
         }
     }
     pUi->tableWidget->resizeColumnsToContents();
-    pUi->tableWidget->resizeRowsToContents();
+    if (pUi->tableWidget->columnWidth(CX_NPORT_LEFT) < nleft) {
+        pUi->tableWidget->setColumnWidth(CX_NPORT_LEFT, nleft);
+    }
+    if (pUi->tableWidget->columnWidth(CX_NPORT_RIGHT) < nright) {
+        pUi->tableWidget->setColumnWidth(CX_NPORT_RIGHT, nright);
+    }
 }
 
 bool cDeducePatch::findLink(cPhsLink& pl)
@@ -636,7 +651,6 @@ void cDeducePatch::on_pushButtonStart_clicked()
     case DPM_TAG:   byTag(q);   break;
     default:        EXCEPTION(EPROGFAIL);
     }
-    pUi->tableWidget->resizeColumnsToContents();
     setButtons();
 }
 

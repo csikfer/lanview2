@@ -11,6 +11,7 @@ class cDeducePatch;
 class LV2GSHARED_EXPORT cDPRow : public QObject {
     Q_OBJECT
 public:
+    /// Konstruktor táblázat egy sora. Cím tábla szerinti keresés.
     /// @param par parent objektum
     /// @param _row sor index a táblában
     /// @param il Bal oldali interfész port (linkelt a bal oldali patch porttal)
@@ -18,7 +19,14 @@ public:
     /// @param pll Fizikai link objektum il és ppl között.
     /// @param plr Jobb oldali patch porthoz tartozó végponti front link objektum
     cDPRow(QSqlQuery& q, cDeducePatch *par, int _row, cMacTab& mt, cNPort& il, cPPort& ppl, cPhsLink& pll, cPhsLink& plr);
+    /// Konstruktor táblázat egy sora. Cím tábla szerinti keresés.
+    /// @param par parent objektum
+    /// @param _row sor index a táblában
+    /// @param unique
+    /// @param ppl Bal oldali patch port objektum
+    /// @param ppr Jobb oldali patch port objektum
     cDPRow(QSqlQuery& q, cDeducePatch *par, int _row, bool unique, cPPort& ppl, cPPort& ppr);
+    QTextEdit *newTextEdit(const QString& txt, int *pw = NULL, const QString& tt = QString());
     cDeducePatch * parent;
     QTableWidget * pTable;
     const int      row;
@@ -59,6 +67,7 @@ protected:
     enum eDeducePatchMeth { DPM_LLDP, DPM_MAC, DPM_TAG } methode;
     qlonglong   nid, nid2;
     cPatch      patch;
+    int         nleft, nright;  /// Az első és utolsó oszlop szélessége
 private slots:
     void changeNode(qlonglong id);
     void changeNode2(qlonglong id);

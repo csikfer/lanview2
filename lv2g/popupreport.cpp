@@ -7,7 +7,8 @@ QWidget * popupReportWindow(QWidget* _par, const QString& _text, const QString& 
     p->setWindowTitle(title);
     QVBoxLayout *pVLayout = new QVBoxLayout;
     p->setLayout(pVLayout);
-    pVLayout->addWidget(new QTextEdit(_text), 1);
+    QTextEdit *pTextEdit = new QTextEdit(_text);
+    pVLayout->addWidget(pTextEdit, 1);
     QHBoxLayout *pHLayout = new QHBoxLayout;
     pVLayout->addLayout(pHLayout, 0);
     pHLayout->addStretch();
@@ -15,7 +16,21 @@ QWidget * popupReportWindow(QWidget* _par, const QString& _text, const QString& 
     QObject::connect(pButton, SIGNAL(clicked()), p, SLOT(deleteLater()));
     pHLayout->addWidget(pButton);
     pHLayout->addStretch();
-    p->show();
+    p->show();      // Enélkül dokumentum méret, és ezzel s
+    QSize  s = QApplication::screens().first()->size();
+    s *= 7; s /= 10;    // 70%
+    // p->resize(s);   // Minimalizáljuk a sorok tördelését
+    pTextEdit->setLineWrapMode(QTextEdit::NoWrap);
+    QSizeF sf = pTextEdit->document()->size();
+    int h, w, sp, bs;
+    sp = pHLayout->spacing();
+    bs = pButton->size().height();
+    h = std::min(s.height(), (int)sf.height());
+    w = std::min(s.width(),  (int)sf.width());
+    // pTextEdit->resize(w, h); // nem műkodik
+    h +=  bs * 2 + sp * 3;
+    w +=  sp * 4 + 8;
+    p->resize(w, h);
     return p;
 }
 
