@@ -38,6 +38,7 @@ lv2g::lv2g() :
         zoneId = NULL_ID;
         #include "errcodes.h"
         if (dbIsOpen()) {
+            splashMessage(QObject::trUtf8("Logon..."));
             switch (cLogOn::logOn(zoneNeeded ? &zoneId : NULL, pMainWindow)) {
             case LR_OK:         break;
             case LR_INVALID:    EXCEPTION(ELOGON, LR_INVALID, trUtf8("Tul sok hibás bejelentkezési próbálkozás."));
@@ -58,6 +59,7 @@ lv2g::lv2g() :
             defaultSplitOrientation = Qt::Vertical;
     } CATCHS(lastError)
     if (dbIsOpen()) {
+        splashMessage(QObject::trUtf8("Ellenörzések, és betöltés ..."));
         QSqlQuery q = getQuery();
         if (!zoneNeeded) zoneId = cPlaceGroup().getIdByName(q, _sAll);
         // Enumeration types that do not appear in the database table. Direct control.
@@ -66,7 +68,6 @@ lv2g::lv2g() :
         // In these types of enumeration, the cEnumVals objects must in any case be necessary.
         cEnumVal::enumForce(q, _sDatacharacter);
         cEnumVal::enumForce(q, _sFiltertype);
-
     }
     // Init icons...
     iconNull.   addFile(":/icons/dialog-no.ico",     QSize(), QIcon::Normal, QIcon::On);
@@ -111,6 +112,7 @@ void lv2g::splashMessage(const QString& msg)
         pSplash->showMessage(msg, Qt::AlignCenter);
         pSplash->repaint();
         QApplication::processEvents(QEventLoop::AllEvents);
+        // Windows-on megjelenik a splash, Ubuntu 16.04-en nem, csak a két ezutáni sorral, de akkor sem biztos.
         // QThread::sleep(1);  // A doksi szerint ez nem kell, de akkor nem jelenik meg, csak késöbb, amikor már minek
         // QApplication::processEvents(QEventLoop::AllEvents);
     }

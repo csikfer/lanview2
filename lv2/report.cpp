@@ -160,7 +160,7 @@ tStringPair htmlReportPlace(QSqlQuery& q, cRecord& o)
             shape.setByName(_sPatchs);
             html += list2html(q, patchs, shape);
         }
-        if (!patchs.isEmpty()) {
+        if (!nodes.isEmpty()) {
             html += htmlInfo(QObject::trUtf8("Hálózati eszközök :"));
             shape.setByName(_sNodes);
             html += list2html(q, nodes, shape);

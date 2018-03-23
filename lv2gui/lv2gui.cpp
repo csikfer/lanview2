@@ -93,7 +93,6 @@ int main(int argc, char * argv[])
                     (*i)->triggered();
                 }
             }
-            lv2g::splashMessage(QObject::trUtf8("OK"));
             app.exec();
         } CATCHS(pe);
     }

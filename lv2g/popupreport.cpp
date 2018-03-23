@@ -28,8 +28,8 @@ QWidget * popupReportWindow(QWidget* _par, const QString& _text, const QString& 
     h = std::min(s.height(), (int)sf.height());
     w = std::min(s.width(),  (int)sf.width());
     // pTextEdit->resize(w, h); // nem műkodik
-    h +=  bs * 2 + sp * 3;
-    w +=  sp * 4 + 8;
+    h +=  bs * 2 + sp * 3 + 8;
+    w +=  sp * 4 + 16;
     p->resize(w, h);
     return p;
 }
