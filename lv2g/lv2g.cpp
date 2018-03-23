@@ -105,6 +105,17 @@ void lv2g::changeZone(QWidget * par)
     }
 }
 
+void lv2g::splashMessage(const QString& msg)
+{
+    if (pSplash != NULL) {
+        pSplash->showMessage(msg, Qt::AlignCenter);
+        pSplash->repaint();
+        QApplication::processEvents(QEventLoop::AllEvents);
+        QThread::sleep(1);  // A doksi szerint ez nem kell, de akkor nem jelenik meg, csak késöbb, amikor már minek
+        QApplication::processEvents(QEventLoop::AllEvents);
+    }
+}
+
 int defaultDataCharter(const cRecStaticDescr& __d, int __ix)
 {
     __d.chkIndex(__ix);

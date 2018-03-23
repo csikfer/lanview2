@@ -25,7 +25,8 @@ int main(int argc, char * argv[])
     lanView::gui = true;
     lv2g::pSplash = new QSplashScreen(QPixmap("://splash.png"));
     lv2g::pSplash->show();
-    app.processEvents();
+    QApplication::processEvents(QEventLoop::AllEvents);
+    lv2g::splashMessage(QObject::trUtf8("Program indítás..."));
     lanView::snmpNeeded = false;
     if (0 <= findArg(QChar('s'),QString("setup"), arguments)) {
         lv2Gui::_setup = true;
@@ -55,6 +56,9 @@ int main(int argc, char * argv[])
 
     lanView::sqlNeeded  = lv2Gui::_setup ? SN_NO_SQL : SN_SQL_TRY;
 
+    if (lanView::sqlNeeded != SN_NO_SQL) {
+        lv2g::splashMessage(QObject::trUtf8("Az adatbázis megnyitása ..."));
+    }
     lv2Gui   mo;
 
     if (mo.lastError) {  // Ha hiba volt, vagy vége
@@ -89,6 +93,7 @@ int main(int argc, char * argv[])
                     (*i)->triggered();
                 }
             }
+            lv2g::splashMessage(QObject::trUtf8("OK"));
             app.exec();
         } CATCHS(pe);
     }

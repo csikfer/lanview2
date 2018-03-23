@@ -90,6 +90,7 @@ public:
     /// Main window object pointer
     static cMainWindow *    pMainWindow;
     static QSplashScreen *  pSplash;
+    static void splashMessage(const QString& msg);
 
     static QIcon        iconNull;
     static QIcon        iconDefault;
