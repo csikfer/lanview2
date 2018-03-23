@@ -25,7 +25,7 @@ int main(int argc, char * argv[])
     lanView::gui = true;
     lv2g::pSplash = new QSplashScreen(QPixmap("://splash.png"));
     lv2g::pSplash->show();
-    QApplication::processEvents(QEventLoop::AllEvents);
+    // QApplication::processEvents(QEventLoop::AllEvents);
     lv2g::splashMessage(QObject::trUtf8("Program indítás..."));
     lanView::snmpNeeded = false;
     if (0 <= findArg(QChar('s'),QString("setup"), arguments)) {

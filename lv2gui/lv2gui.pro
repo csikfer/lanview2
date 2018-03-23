@@ -26,6 +26,6 @@ TRANSLATIONS    = lv2gui_hu.ts \
                   lv2gui_en.ts
 
 CODECFORSRC     = UTF-8
-RC_ICONS = :/icons/LanView2.ico
+#RC_ICONS = :/icons/LanView2.ico
 
 

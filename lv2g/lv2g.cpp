@@ -111,8 +111,8 @@ void lv2g::splashMessage(const QString& msg)
         pSplash->showMessage(msg, Qt::AlignCenter);
         pSplash->repaint();
         QApplication::processEvents(QEventLoop::AllEvents);
-        QThread::sleep(1);  // A doksi szerint ez nem kell, de akkor nem jelenik meg, csak késöbb, amikor már minek
-        QApplication::processEvents(QEventLoop::AllEvents);
+        // QThread::sleep(1);  // A doksi szerint ez nem kell, de akkor nem jelenik meg, csak késöbb, amikor már minek
+        // QApplication::processEvents(QEventLoop::AllEvents);
     }
 }
 
