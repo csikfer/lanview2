@@ -34,8 +34,6 @@ protected:
     cSelectLinkedPort * pSelectPort;        // Select port
     phsLinkWidget  *    pOther;             // A másik (linkelt) port
     bool                first;              // Primary
-public slots:
-    void shareDisabled();
 private slots:
     void toglePlaceEqu(bool f);
     void change(qlonglong, int _lt, int);

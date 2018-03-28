@@ -142,8 +142,17 @@ void phsLinkWidget::change(qlonglong, int _lt, int)
     qlonglong nid = pSelectPort->currentNodeId();
     pUi->toolButtonInfo->setDisabled(nid == NULL_ID);
     if (pSelectPort->currentType() == LT_FRONT && pOther->pSelectPort->currentType() == LT_FRONT) {
+        // Front <--> Front : Share not supported!
         pUi->comboBoxPortShare->setCurrentIndex(0);
         pUi->comboBoxPortShare->setDisabled(true);
+        pOther->pUi->comboBoxPortShare->setCurrentIndex(0);
+        pOther->pUi->comboBoxPortShare->setDisabled(true);
+    }
+    else if (pSelectPort->currentType() == LT_FRONT && pOther->pSelectPort->currentType() == LT_TERM) {
+        pUi->comboBoxPortShare->setDisabled(false);
+    }
+    else if (pSelectPort->currentType() == LT_TERM && pOther->pSelectPort->currentType() == LT_FRONT) {
+        pOther->pUi->comboBoxPortShare->setDisabled(false);
     }
     changed();
 }
