@@ -122,6 +122,11 @@ bool phsLinkWidget::prev()
 
 }
 
+void shareDisabled()
+{
+
+}
+
 
 void phsLinkWidget::toglePlaceEqu(bool f)
 {
@@ -136,6 +141,10 @@ void phsLinkWidget::change(qlonglong, int _lt, int)
     else                                      pUi->toolButtonStep->show();
     qlonglong nid = pSelectPort->currentNodeId();
     pUi->toolButtonInfo->setDisabled(nid == NULL_ID);
+    if (pSelectPort->currentType() == LT_FRONT && pOther->pSelectPort->currentType() == LT_FRONT) {
+        pUi->comboBoxPortShare->setCurrentIndex(0);
+        pUi->comboBoxPortShare->setDisabled(true);
+    }
     changed();
 }
 

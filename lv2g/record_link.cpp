@@ -291,7 +291,9 @@ bool cLinkDialog::get(cPhsLink& link)
     qlonglong pid2 = pLink2->getPortId();
     ePhsLinkType lt1 = pLink1->getLinkType();
     ePhsLinkType lt2 = pLink2->getLinkType();
-    ePortShare   ps  = pLink1->getPortShare();
+    ePortShare   ps  = ES_;
+    if      (lt1 == LT_FRONT && lt2 == LT_TERM)  ps  = pLink1->getPortShare();
+    else if (lt1 == LT_TERM  && lt2 == LT_FRONT) ps  = pLink2->getPortShare();
     link.setId(_sPortId1, pid1);
     link.setId(_sPortId2, pid2);
     link.setId(_sPhsLinkType1, lt1);
@@ -324,7 +326,9 @@ void cLinkDialog::changed()
     qlonglong pid2 = pLink2->getPortId();
     ePhsLinkType lt1 = pLink1->getLinkType();
     ePhsLinkType lt2 = pLink2->getLinkType();
-    ePortShare   ps  = pLink1->getPortShare();
+    ePortShare   ps  = ES_;
+    if      (lt1 == LT_FRONT && lt2 == LT_TERM)  ps  = pLink1->getPortShare();
+    else if (lt1 == LT_TERM  && lt2 == LT_FRONT) ps  = pLink2->getPortShare();
     QString msg;
     if (pid1 == NULL_ID && pid2 == NULL_ID) {
         pButtons->disableExcept();

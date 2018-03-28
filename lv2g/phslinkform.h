@@ -7,7 +7,7 @@
 #include "lv2link.h"
 
 namespace Ui {
-class phsLinkForm;
+    class phsLinkForm;
 }
 
 class phsLinkWidget : public QWidget
@@ -34,12 +34,13 @@ protected:
     cSelectLinkedPort * pSelectPort;        // Select port
     phsLinkWidget  *    pOther;             // A másik (linkelt) port
     bool                first;              // Primary
+public slots:
+    void shareDisabled();
 private slots:
     void toglePlaceEqu(bool f);
     void change(qlonglong, int _lt, int);
     void on_toolButtonInfo_clicked();
     void on_toolButtonStep_clicked();
-
 signals:
     void changed();
 };
