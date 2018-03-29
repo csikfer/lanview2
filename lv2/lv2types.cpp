@@ -821,26 +821,21 @@ QString netAddressList::toString() const
 tIntVector   iTab(int a, int b, int c, int d, int e, int f, int g, int h)
 {
     if (a == NULL_IX) return tIntVector();
-    if (b == NULL_IX) return tIntVector(1, a);
-    int i;
-    if      (c == NULL_IX) i = 2;
-    else if (d == NULL_IX) i = 3;
-    else if (e == NULL_IX) i = 4;
-    else if (f == NULL_IX) i = 5;
-    else if (g == NULL_IX) i = 6;
-    else if (h == NULL_IX) i = 7;
-    else                   i = 8;
-    tIntVector   r(i);
-    switch (i) {
-    case 8:     r[7] = h;
-    case 7:     r[6] = g;
-    case 6:     r[5] = f;
-    case 5:     r[4] = e;
-    case 4:     r[3] = d;
-    case 3:     r[2] = c;
-    case 2:     r[1] = b;
-                r[0] = a;
-    }
+    tIntVector r(1,a);
+    if (b == NULL_IX) return r;
+    r << b;
+    if (c == NULL_IX) return r;
+    r << c;
+    if (d == NULL_IX) return r;
+    r << d;
+    if (e == NULL_IX) return r;
+    r << e;
+    if (f == NULL_IX) return r;
+    r << f;
+    if (g == NULL_IX) return r;
+    r << g;
+    if (h == NULL_IX) return r;
+    r << h;
     return r;
 }
 

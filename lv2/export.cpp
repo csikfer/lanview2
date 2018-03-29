@@ -49,7 +49,8 @@ QString cExport::value(QSqlQuery& q, const cRecordFieldRef &fr, bool sp)
     switch (fr.descr().eColType) {
     case cColStaticDescr::FT_INTEGER:
         if (fk) return str(q, fr, sp);
-        // continue
+        r = QString::number((qlonglong)fr);
+        break;
     case cColStaticDescr::FT_INTERVAL:
         r = QString::number((qlonglong)fr);
         break;
@@ -199,5 +200,8 @@ QString cExport::_export(QSqlQuery &q, cTableShape& o)
 
 QString cExport::_export(QSqlQuery &q, cTableShapeField& o)
 {
+    // Incomplette
+    (void)q;
+    (void)o;
     return QString();
 }

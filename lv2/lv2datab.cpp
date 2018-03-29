@@ -488,14 +488,14 @@ enum cColStaticDescr::eValueCheck cColStaticDescr::check(const QVariant& v, cCol
     case FT_INTEGER:
         if (v.canConvert(QVariant::LongLong)) switch (v.type()) {
         case QVariant::Int:
-        case QVariant::LongLong:    r = VC_OK;
-        default:                    r = VC_CONVERT;
+        case QVariant::LongLong:    r = VC_OK;      break;
+        default:                    r = VC_CONVERT; break;
         }
         return ifExcep(r, acceptable, v);
     case FT_REAL:
         if (v.canConvert(QVariant::Double)) switch (v.type()) {
-        case QVariant::Double:      r = VC_OK;
-        default:                    r = VC_CONVERT;
+        case QVariant::Double:      r = VC_OK;      break;
+        default:                    r = VC_CONVERT; break;
         }
         return ifExcep(r, acceptable, v);
     case FT_BINARY:

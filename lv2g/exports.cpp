@@ -65,6 +65,7 @@ void cExportsWidget::changedName(const QString& tn)
 
 void cExportsWidget::text(const QString& _s)
 {
+    (void)_s;
 }
 
 void cExportsWidget::ready()

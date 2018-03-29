@@ -207,6 +207,7 @@ void cParseWidget::remoteParse(const QString &src)
             break;
         case ES_WAIT:       // Elvileg képtelenség
             EXCEPTION(EPROGFAIL);
+            break;
         default:
             msg = trUtf8("A visszaolvasott állapotjelző értelmezhetetlen: %1").arg(stat);
             break;

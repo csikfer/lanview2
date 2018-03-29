@@ -1123,18 +1123,20 @@ int cQueryParser::load(QSqlQuery& q, qlonglong _sid, bool force, bool thread)
 
     clear().setId(ixServiceId, id).setName(_sParseType, _sPrep);
     n = completion(q);
-    switch(n) {
-    case 0: break;
-    case 1: if (thread) { pPrepCmd = new QString(getName(_sImportExpression)); break; }
-    default:EXCEPTION(EDATA,n, _sPrep); break;
+    if (n == 1 && thread) {
+        pPrepCmd = new QString(getName(_sImportExpression));
+    }
+    else if (n != 0) {
+        EXCEPTION(EDATA,n, _sPrep);
     }
 
     clear().setId(ixServiceId, id).setName(_sParseType, _sPost);
     n = completion(q);
-    switch(n) {
-    case 0:                                                     break;
-    case 1: if (thread) { pPostCmd = new QString(getName(_sImportExpression)); break; }
-    default:EXCEPTION(EDATA,n, _sPost);                         break;
+    if (n == 1 && thread) {
+        pPostCmd = new QString(getName(_sImportExpression));
+    }
+    else if (n != 0) {
+        EXCEPTION(EDATA,n, _sPost);
     }
     return REASON_OK;
 }

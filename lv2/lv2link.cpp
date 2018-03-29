@@ -244,7 +244,7 @@ int cPhsLink::collisions(QSqlQuery& __q, tRecordList<cPhsLink>& list, qlonglong 
                     break;
         case ES_BB: addIfCollision(__q, list, __pid, LT_FRONT, ES_B);
                     addIfCollision(__q, list, __pid, LT_FRONT, ES_BB);
-                    ;
+                    break;
         case ES_C:  addIfCollision(__q, list, __pid, LT_FRONT, ES_C);
                     addIfCollision(__q, list, __pid, LT_FRONT, ES_A);
                     addIfCollision(__q, list, __pid, LT_FRONT, ES_B);
@@ -303,7 +303,7 @@ int cPhsLink::unxlinks(QSqlQuery& __q, qlonglong __pid, ePhsLinkType __t, ePortS
                     break;
         case ES_BB: r  = unlink(__q, __pid, LT_FRONT, ES_B);
                     r += unlink(__q, __pid, LT_FRONT, ES_BB);
-                    ;
+                    break;
         case ES_C:  r  = unlink(__q, __pid, LT_FRONT, ES_C);
                     r += unlink(__q, __pid, LT_FRONT, ES_A);
                     r += unlink(__q, __pid, LT_FRONT, ES_B);

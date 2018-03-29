@@ -40,8 +40,11 @@ lv2g::lv2g() :
         if (dbIsOpen()) {
             splashMessage(QObject::trUtf8("Logon..."));
             switch (cLogOn::logOn(zoneNeeded ? &zoneId : NULL, pMainWindow)) {
-            case LR_OK:         break;
-            case LR_INVALID:    EXCEPTION(ELOGON, LR_INVALID, trUtf8("Tul sok hibás bejelentkezési próbálkozás."));
+            case LR_OK:
+                break;
+            case LR_INVALID:
+                EXCEPTION(ELOGON, LR_INVALID, trUtf8("Tul sok hibás bejelentkezési próbálkozás."));
+                break;  //  warning...
             case LR_CANCEL:     // EXCEPTION(ELOGON, LR_CANCEL, trUtf8("Mégsem."));
             default:            EXCEPTION(EOK);
             }

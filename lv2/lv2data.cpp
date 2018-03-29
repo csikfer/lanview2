@@ -196,6 +196,7 @@ QString cParamType::paramToString(eParamType __t, const QVariant& __v, eEx __ex)
                 r = __v.toString();
                 ok = true;
             }
+            break;
         }
         default:
             EXCEPTION(ENOTSUPP, __t);
@@ -217,7 +218,7 @@ QVariant cParamType::paramFromString(eParamType __t, QString& __v, eEx __ex)
         case PT_TEXT:       r = QVariant(__v);                   break;
         case PT_BOOLEAN:    r = QVariant(str2bool(__v));         break;
         case PT_INTEGER:    r = QVariant(__v.toLongLong(&ok));   break;
-        case PT_REAL:       r = QVariant(__v.toDouble(&ok));
+        case PT_REAL:       r = QVariant(__v.toDouble(&ok));     break;
         case PT_INTERVAL:   r = QVariant(parseTimeInterval(__v, &ok));   break;
         case PT_INET:
         case PT_CIDR:

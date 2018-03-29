@@ -756,6 +756,7 @@ int cInspector::getInspectorProcess(const QString &value)
             EXCEPTION(EDATA, met, trUtf8("Invalid 'process', 'method'\n") + typeErrMsg(q));
           }
         }
+        break; // warning
     }
     default: {
         // Nem OK
@@ -1187,7 +1188,7 @@ enum eNotifSwitch cInspector::parse(int _ec, QIODevice& text)
     switch (inspectorType & IT_METHOD_MASK) {
 //  case IT_METHOD_CUSTOM:
     case IT_METHOD_CARRIED: return RS_STAT_SETTED;
-    case IT_METHOD_MUNIN:   EXCEPTION(EPROGFAIL);
+    case IT_METHOD_MUNIN:   EXCEPTION(EPROGFAIL);   break;
     case IT_METHOD_NAGIOS:  return parse_nagios(_ec, text);
     case IT_METHOD_QPARSE:  return parse_qparse(_ec, text);
     default:

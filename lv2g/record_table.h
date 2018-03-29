@@ -1,8 +1,6 @@
 #ifndef RECORD_TABLE_H
 #define RECORD_TABLE_H
 
-#include    <QModelIndex>
-
 #include    "lv2g.h"
 #include    "record_dialog.h"
 #include    "record_table_model.h"
@@ -17,6 +15,7 @@ namespace Ui {
     class noRightsForm;
 }
 #endif
+#include    <QModelIndex>
 
 /// Nincs jogosultsága form megjelenítése
 Ui::noRightsForm * noRightsSetup(QWidget *_pWidget, qlonglong _need, const QString& _obj, const QString& _html = QString());

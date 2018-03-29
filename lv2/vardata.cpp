@@ -183,6 +183,7 @@ int cServiceVar::setValue(QSqlQuery& q, double val, int& state)
     case SVT_ABSOLUTE:
         if (val < 0) val = - val;
         addMsg("Negált érték.");
+        return updateVar(q, val, state);
     case NULL_ID:
     case SVT_GAUGE:
         return updateVar(q, val, state);
