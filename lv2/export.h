@@ -34,9 +34,11 @@ protected:
     }
 
     QString line(const QString& s) { return QString(actIndent * EXPORT_INDENT_SIZE, QChar(' ')) + s + '\n'; }
+    static QString head(const QString& kw, cRecord &o);
     static QString str(QSqlQuery& q, const cRecordFieldRef& fr, bool sp = true);
     static QString str_z(QSqlQuery& q, const cRecordFieldRef &fr, bool sp = true);
     static QString value(QSqlQuery& q, const cRecordFieldRef &fr, bool sp = true);
+    QString features(cRecord& o);
     QString paramLine(QSqlQuery &q, const QString& kw, const cRecordFieldRef& fr);
     QString lineBeginBlock(const QString& s) { QString r = line(s + " {"); actIndent++; return r; }
     QString lineEndBlock() { actIndent--; return line("}"); }

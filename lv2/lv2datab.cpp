@@ -818,6 +818,38 @@ void cColStaticDescrBool::init()
 
 CDDUPDEF(cColStaticDescrBool)
 /* ....................................................................................................... */
+QVariant stringListToSql(const QStringList& sl)
+{
+    bool    empty = true;
+    QString s = QChar('{');
+    foreach (const QString& si, sl) {
+        s += dQuoted(si) + QChar(',');
+        empty = false;
+    }
+    if (empty == false) s.chop(1);
+    s += QChar('}');
+    return QVariant(s);
+}
+
+QStringList sqlToStringList(const QVariant& v)
+{
+    QString s = v.toString();
+    QStringList sl = s.split(QChar(','),QString::KeepEmptyParts);
+    const   QChar   m('"');
+    for (int i = 0; i < sl.size(); ++i) {
+        s = sl[i];
+        if (s[0] == m) {
+            while (! s.endsWith(m)) {   // Ha szétdaraboltunk egy stringet, újra összerakjuk
+                if (sl.size() <= (i +1)) EXCEPTION(EDBDATA, 8, "Invalid string array : " + s);
+                sl[i] += QChar(',') + (s = sl[i +1]);
+                sl.removeAt(i +1);
+            }
+            s = sl[i] = sl[i].mid(1, sl[i].size() -2);  // Lekapjuk az idézőjelet
+        }
+        if (s.isEmpty()) sl.removeAt(i--);  // Az üres stringek eltávolítása
+    }
+    return sl;
+}
 
 cColStaticDescr::eValueCheck  cColStaticDescrArray::check(const QVariant& v, cColStaticDescr::eValueCheck acceptable) const
 {
@@ -931,36 +963,10 @@ QVariant  cColStaticDescrArray::fromSql(const QVariant& _f) const
         return QVariant(vl);
     }
     // A többiről feltételezzük, hogy string, De kell valamit kezdeni az idézőjelekkel
-    const   QChar   m('"');
-    for (int i = 0; i < sl.size(); ++i) {
-        s = sl[i];
-        if (s[0] == m) {
-            while (! s.endsWith(m)) {   // Ha szétdaraboltunk egy stringet, újra összerakjuk
-                if (sl.size() <= (i +1)) EXCEPTION(EDBDATA, 8, "Invalid string array : " + em);
-                sl[i] += QChar(',') + (s = sl[i +1]);
-                sl.removeAt(i +1);
-            }
-            s = sl[i] = sl[i].mid(1, sl[i].size() -2);  // Lekapjuk az idézőjelet
-        }
-        if (s.isEmpty()) sl.removeAt(i--);  // Az üres stringek eltávolítása
-    }
+    sl = sqlToStringList(_f);
     if (sl.isEmpty() && isNullable) return QVariant();
     return QVariant(sl);
 }
-
-QVariant stringListToSql(const QStringList& sl)
-{
-    bool    empty = true;
-    QString s = QChar('{');
-    foreach (const QString& si, sl) {
-        s += dQuoted(si) + QChar(',');
-        empty = false;
-    }
-    if (empty == false) s.chop(1);
-    s += QChar('}');
-    return QVariant(s);
-}
-
 
 QVariant  cColStaticDescrArray::toSql(const QVariant& _f) const
 {
@@ -2783,6 +2789,90 @@ int cRecStaticDescr::ixToParent(eEx __ex) const
 }
 
 /* ******************************************************************************************************* */
+cLangTexts::cLangTexts(cRecord *_par)
+{
+    parent = _par;
+}
+
+cLangTexts::~cLangTexts()
+{
+    ;
+}
+
+void cLangTexts::setTexts(const QString& _langName, const QStringList& texts)
+{
+    cRecordAny  lang(_sLanguages);
+    qlonglong lid = lang.getIdByName(_langName);
+    setTexts(lid, texts);
+}
+
+/*
+QString cLangTexts::tableName2textTypeName(const QString& _tn)
+{
+    QString r = _tn;
+    if (r.endsWith(QChar('s'))) r.chop(1);
+    int ix;
+    while (0 <= (ix = r.indexOf(QChar('_')))) r.remove(ix, 1);
+    r += "text";
+    return r;
+}
+*/
+void cLangTexts::saveText(QSqlQuery& _q, const QStringList& _texts, cRecord *po, qlonglong lid)
+{
+    int tidix = po->descr().textIdIndex();
+    qlonglong tid = po->getId(tidix);
+    if (tid == NULL_ID) {
+        QString sql = QString(
+            "UPDATE %1 SET text_id = nextval('text_id_sequ') WHERE %2 = ? RETURNING text_id"
+                ).arg(po->tableName(), po->idName());
+        execSql(_q, sql, po->getId());
+        bool ok;
+        tid = _q.value(0).toLongLong(&ok);
+        if (!ok) EXCEPTION(EPROGFAIL, po->getId(), po->identifying());
+        po->setId(tidix, tid);
+    }
+    int n = po->colDescr(tidix).pEnumType->enumValues.size();
+    QString qs;
+    QVariantList vl;
+    vl << tid << po->tableName();
+    if (lid != NULL_ID) vl << lid;
+    QStringList texts = _texts;
+    for (int i = 0; i < n; ++i) {
+        qs += "?,";
+        vl << (isContIx(texts, i) ? texts.at(i) : _sNul);
+    }
+    qs.chop(1);
+    QString sql = QString(
+            "INSERT INTO localizations (text_id, table_for_text, language_id, texts) "
+                " VALUES (?, ?, ?, ARRAY[%1]) "
+            "ON CONFLICT ON CONSTRAINT localizations_pkey DO UPDATE SET texts = EXCLUDED.texts"
+                ).arg(lid == NULL_ID ? "get_language_id()" : "?").arg(qs);
+    execSql(_q, sql, vl);
+}
+
+void cLangTexts::saveTexts(QSqlQuery& q)
+{
+    foreach (qlonglong lid, textMap.keys()) {
+        saveText(q, textMap[lid], parent, lid);
+    }
+}
+
+void cLangTexts::loadTexts(QSqlQuery& q)
+{
+    QString sql = "SELECT language_id, texts FROM localizations WHERE text_id = ? AND table_for_text = ?";
+    textMap.clear();
+    if (execSql(q, sql, parent->get(_sTextId), parent->tableName())) {
+        do {
+            bool ok;
+            qlonglong   lid   = q.value(0).toLongLong(&ok);
+            if (!ok) EXCEPTION(EDATA, 0, parent->identifying());
+            QStringList texts = sqlToStringList(q.value(1));
+            setTexts(lid, texts);
+        } while (q.next());
+    }
+}
+
+/* ******************************************************************************************************* */
 const QVariant  cRecord::_vNul;
 
 cRecord::cRecord() : QObject(), _fields(), _likeMask()
@@ -4131,32 +4221,7 @@ bool cRecord::fetchText(QSqlQuery& _q, bool __force)
 void cRecord::saveText(QSqlQuery& _q)
 {
     if (pTextList == NULL) return;
-    int tidix = descr().textIdIndex();
-    qlonglong tid = getId(tidix);
-    if (tid == NULL_ID) {
-        QString sql = QString(
-            "UPDATE %1 SET text_id = nextval('text_id_sequ') WHERE %2 = ? RETURNING text_id"
-                ).arg(tableName(), idName());
-        execSql(_q, sql, getId());
-        bool ok;
-        tid = _q.value(0).toLongLong(&ok);
-        if (!ok) EXCEPTION(EPROGFAIL, getId(), identifying());
-    }
-    int n = colDescr(tidix).pEnumType->enumValues.size();
-    QString qs;
-    QVariantList vl;
-    vl << tid << tableName();
-    for (int i = 0; i < n; ++i) {
-        qs += "?,";
-        vl << getText(i);
-    }
-    qs.chop(1);
-    QString sql = QString(
-            "INSERT INTO localizations (text_id, table_for_text, language_id, texts) "
-                " VALUES (?, ?, get_language_id(), ARRAY[%1]) "
-            "ON CONFLICT ON CONSTRAINT localizations_pkey DO UPDATE SET texts = EXCLUDED.texts"
-                ).arg(qs);
-    execSql(_q, sql, vl);
+    cLangTexts::saveText(_q, *pTextList, this);
 }
 
 

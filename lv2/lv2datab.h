@@ -393,6 +393,8 @@ CSD_INHERITOR(cColStaticDescrAddr)
 };
 
 EXT_ QVariant stringListToSql(const QStringList& sl);
+EXT_ QStringList sqlToStringList(const QVariant& v);
+
 
 /// @class cColStaticDescrArray
 /// Az ős cColStaticDescr osztályt a általános tömb típus konverziós függvényivel egészíti ki.
@@ -859,7 +861,20 @@ protected:
 };
 TSTREAMO(cRecStaticDescr)
 
-
+class LV2SHARED_EXPORT cLangTexts {
+public:
+    cLangTexts(cRecord *_par);
+    ~cLangTexts();
+    void setTexts(const QString& _langName, const QStringList& texts);
+    void setTexts(const qlonglong _langId, const QStringList& texts) { textMap[_langId] = texts; }
+    // static QString tableName2textTypeName(const QString& _tn);
+    static void saveText(QSqlQuery& q, const QStringList& texts, cRecord *po, qlonglong lid = NULL_ID);
+    void saveTexts(QSqlQuery& q);
+    void loadTexts(QSqlQuery& q);
+protected:
+    cRecord *                       parent;
+    QMap<qlonglong, QStringList>    textMap;
+};
 /* ******************************************************************************************************
    *                                              cRecord                                               *
    ******************************************************************************************************/
@@ -2116,7 +2131,11 @@ public:
     /// @param _fn A beállítandó mező neve
     /// @param _v A beállítandó érték.
     int updateFieldByNames(QSqlQuery& q, const QStringList& _nl, const QString& _fn, const QVariant& _v) const;
-    ///
+    /// Egy array mező tartalmához hozzáad egy értéket a megadott nevű rekordokban. Konstans metódus, csak az adatbázis tartalma változik.
+    /// @param q
+    /// @param _nl A modosítandó rekordok nevei
+    /// @param _fn A mező neve
+    /// @param _v az érték, amit a mező tartalmához hozzá kell adni.
     int addValueArrayFieldByNames(QSqlQuery& q, const QStringList& _nl, const QString& _fn, const QVariant& _v) const;
     /// Egy mező értékének a beállítása a megadott rekordokban.
     /// @param q

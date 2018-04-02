@@ -1,9 +1,20 @@
 #include "export.h"
 
+static const QString _sSp = " ";
+static const QString _sSc = ";";
+
 cExport::cExport(QObject *par) : QObject(par)
 {
     sNoAnyObj = QObject::trUtf8("No any object");
     actIndent = 0;
+}
+
+QString cExport::head(const QString& kw, cRecord& o)
+{
+    QString r = kw + _sSp + dQuoted(o.getName());
+    QString n = o.getNote();
+    if (!n.isEmpty()) r += _sSp + n;
+    return r;
 }
 
 QString cExport::str(QSqlQuery& q, const cRecordFieldRef &fr, bool sp)
@@ -14,7 +25,7 @@ QString cExport::str(QSqlQuery& q, const cRecordFieldRef &fr, bool sp)
     }
     r = str(q, fr);
     r = dQuoted(r);
-    if (sp) r.prepend(" ");
+    if (sp) r.prepend(_sSp);
     return r;
 }
 
@@ -103,7 +114,17 @@ QString cExport::value(QSqlQuery& q, const cRecordFieldRef &fr, bool sp)
         EXCEPTION(EDATA, fr.index(), fr.record().identifying());
         break;
     }
-    if (sp) r.prepend(" ");
+    if (sp) r.prepend(_sSp);
+    return r;
+}
+
+QString cExport::features(cRecord& o)
+{
+    QString s = o.getName(_sFeatures);
+    QString r;
+    if (!s.isEmpty()) {
+        r = line("FEATURES " + dQuoted(s) + _sSc);
+    }
     return r;
 }
 
@@ -111,7 +132,7 @@ QString cExport::paramLine(QSqlQuery& q, const QString& kw, const cRecordFieldRe
 {
     QString r;
     if (!fr.isNull()) {
-        r = line(kw + value(q, fr) + ";");
+        r = line(kw + value(q, fr) + _sSc);
     }
     return r;
 }
@@ -125,7 +146,7 @@ QString cExport::_export(QSqlQuery& q, cParamType& o)
 {
     QString r;
     r  = "PARAM" +  str(q, o[_sParamTypeName]) + str_z(q, o[_sParamTypeNote]);
-    r += " TYPE" + str(q, o[_sParamTypeType]) + str_z(q, o[_sParamTypeDim]) + ";";
+    r += " TYPE" + str(q, o[_sParamTypeType]) + str_z(q, o[_sParamTypeDim]) + _sSc;
     return line(r);
 }
 
@@ -140,7 +161,7 @@ QString cExport::_export(QSqlQuery& q, cSysParam& o)
 {
     QString r;
     r  = "SYS" + str(q, o[_sParamTypeId]) + " PARAM" + str(q, o[_sSysParamName]);
-    r += " =" + value(q, o[_sParamValue]) + ";";
+    r += " =" + value(q, o[_sParamValue]) + _sSc;
     return line(r);
 }
 
@@ -170,20 +191,33 @@ QString cExport::_export(QSqlQuery &q, cTableShape& o)
     r += paramLine(q, "TABLE EDIT RIGHTS",  o[_sEditRights]);
     r += paramLine(q, "TABLE DELETE RIGHTS",o[_sRemoveRights]);
     r += paramLine(q, "TABLE INSERT RIGHTS",o[_sInsertRights]);
+    // Right shapes
     if (!o[_sRightShapeIds]) {
         QVariantList ids = o.get(_sRightShapeIds).toList();
         if (!ids.isEmpty()) {
-            QStringList names;
+            QStringList names;  // jobb oldali már definiált tábla nevek
             foreach (QVariant vid, ids) {
                 QString rn = cTableShape().getNameById(q, vid.toLongLong());
                 if (exportedNames.contains(rn)) {   // defined?
                     names << rn;
                 }
                 else {
-                    divert += "";
+                    divert += QString("SET table_shape[\"%1\"].right_shape_ids += ID TABLE SHAPE (\"%2\")").arg(n).arg(rn);
                 }
             }
+            if (!names.isEmpty()) {
+                r += line(QString("RIGHT SHAPE %1;").arg(quotedStringList(names)));
+            }
         }
+    }
+    if (o.shapeFields.isEmpty()) o.fetchFields(q);
+    for (int i = 0; i < o.shapeFields.size(); ++i) {
+        cTableShapeField& f = *o.shapeFields.at(i);
+        r += lineBeginBlock(head("ADD FIELD ", f));
+        r += features(f);
+        r += paramLine(q, "VIEW RIGHTS",  f[_sViewRights]);
+        r += paramLine(q, "EDIT RIGHTS",  f[_sEditRights]);
+        r += lineEndBlock();
     }
 /*
     r += paramLine(q, "", o[_s]);
@@ -195,6 +229,7 @@ QString cExport::_export(QSqlQuery &q, cTableShape& o)
     r += paramLine(q, "", o[_s]);
 */
     exportedNames << n;
+    r += lineEndBlock();
     return r;
 }
 

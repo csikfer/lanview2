@@ -2565,27 +2565,27 @@ tblmod  : tblmod_h tmodps '}'                           { REPANDDEL(pTableShape)
 tmodps  : tmodp
         | tmodps tmodp
         ;
-tmodp   : SET_T DEFAULTS_T ';'                  { pTableShape->setDefaults(qq()); }
-        | SET_T NO_T TREE_T DEFAULTS_T ';'      { pTableShape->setDefaults(qq(), true); }
-        | SET_T str '=' value ';'               { pTableShape->set(sp2s($2), vp2v($4)); }
-        | TABLE_T TYPE_T tstypes ';'            { pTableShape->setId( _sTableShapeType, $3); }
-        | TABLE_T TYPE_T ON_T tstypes ';'       { pTableShape->setOn( _sTableShapeType, $4); }
-        | TABLE_T TYPE_T OFF_T tstypes ';'      { pTableShape->setOff(_sTableShapeType, $4); }
+tmodp   : SET_T DEFAULTS_T ';'              { pTableShape->setDefaults(qq()); }
+        | SET_T NO_T TREE_T DEFAULTS_T ';'  { pTableShape->setDefaults(qq(), true); }
+        | SET_T str '=' value ';'           { pTableShape->set(sp2s($2), vp2v($4)); }
+        | TYPE_T tstypes ';'                { pTableShape->setId( _sTableShapeType, $2); }
+        | TYPE_T ON_T tstypes ';'           { pTableShape->setOn( _sTableShapeType, $3); }
+        | TYPE_T OFF_T tstypes ';'          { pTableShape->setOff(_sTableShapeType, $3); }
         // title, dialog title, member title (group), not member title (group)
 //        | TABLE_T TITLE_T strs_zz  ';'          { pTableShape->setTitle(slp2sl($3)); }
-        | TABLE_T READ_T ONLY_T bool_on ';'     { pTableShape->enum2setBool(_sTableShapeType, TS_READ_ONLY, $4); }
-        | TABLE_T FEATURES_T str ';'            { pTableShape->set(_sFeatures, sp2s($3)); }
-        | AUTO_T REFRESH_T str ';'              { pTableShape->setName(_sAutoRefresh, sp2s($3)); }
-        | AUTO_T REFRESH_T int ';'              { pTableShape->setId(  _sAutoRefresh,      $3 ); }
-        | RIGHT_T SHAPE_T strs ';'              { pTableShape->addRightShape(*$3); delete $3; }
-        | REFINE_T str ';'                      { pTableShape->setName(_sRefine, sp2s($2)); }
-        | TABLE_T INHERIT_T TYPE_T tsintyp ';'  { pTableShape->setName(_sTableInheritType, sp2s($4)); }
-        | INHERIT_T TABLE_T NAMES_T strs ';'    { pTableShape->set(_sInheritTableNames, slp2vl($4)); }
-        | TABLE_T VIEW_T RIGHTS_T rights ';'    { pTableShape->setName(_sViewRights, sp2s($4)); }
-        | TABLE_T EDIT_T RIGHTS_T rights ';'    { pTableShape->setName(_sEditRights, sp2s($4)); }
-        | TABLE_T DELETE_T RIGHTS_T rights ';'  { pTableShape->setName(_sRemoveRights, sp2s($4)); }
-        | TABLE_T INSERT_T RIGHTS_T rights ';'  { pTableShape->setName(_sInsertRights, sp2s($4)); }
-        | SET_T str '.' str '=' value ';'       { pTableShape->fset(sp2s($2), sp2s($4), vp2v($6)); }
+        | READ_T ONLY_T bool_on ';'         { pTableShape->enum2setBool(_sTableShapeType, TS_READ_ONLY, $3); }
+        | FEATURES_T str ';'                { pTableShape->set(_sFeatures, sp2s($2)); }
+        | AUTO_T REFRESH_T str ';'          { pTableShape->setName(_sAutoRefresh, sp2s($3)); }
+        | AUTO_T REFRESH_T int ';'          { pTableShape->setId(  _sAutoRefresh,      $3 ); }
+        | RIGHT_T SHAPE_T strs ';'          { pTableShape->addRightShape(*$3); delete $3; }
+        | REFINE_T str ';'                  { pTableShape->setName(_sRefine, sp2s($2)); }
+        | INHERIT_T TYPE_T tsintyp ';'      { pTableShape->setName(_sTableInheritType, sp2s($3)); }
+        | INHERIT_T TABLE_T NAMES_T strs ';'{ pTableShape->set(_sInheritTableNames, slp2vl($4)); }
+        | VIEW_T RIGHTS_T rights ';'        { pTableShape->setName(_sViewRights, sp2s($3)); }
+        | EDIT_T RIGHTS_T rights ';'        { pTableShape->setName(_sEditRights, sp2s($3)); }
+        | DELETE_T RIGHTS_T rights ';'      { pTableShape->setName(_sRemoveRights, sp2s($3)); }
+        | INSERT_T RIGHTS_T rights ';'      { pTableShape->setName(_sInsertRights, sp2s($3)); }
+        | SET_T str '.' str '=' value ';'   { pTableShape->fset(sp2s($2), sp2s($4), vp2v($6)); }
         | SET_T '(' strs ')' '.' str '=' value ';'{ pTableShape->fsets(slp2sl($3), sp2s($6), vp2v($8)); }
 //        | FIELD_T str TITLE_T strs_zz ';'       { pTableShape->shapeFields.get(sp2s($2))->setTitle(slp2sl($4)); }
         | FIELD_T str NOTE_T str ';'            { pTableShape->fset(sp2s($2),_sTableShapeFieldNote, sp2s($4)); }
