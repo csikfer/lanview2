@@ -831,13 +831,12 @@ QVariant stringListToSql(const QStringList& sl)
     return QVariant(s);
 }
 
-QStringList sqlToStringList(const QVariant& v)
+QStringList sqlToStringList(const QString& _s)
 {
-    QString s = v.toString();
-    QStringList sl = s.split(QChar(','),QString::KeepEmptyParts);
+    QStringList sl = _s.split(QChar(','), QString::KeepEmptyParts);
     const   QChar   m('"');
     for (int i = 0; i < sl.size(); ++i) {
-        s = sl[i];
+        QString s = sl[i];
         if (s[0] == m) {
             while (! s.endsWith(m)) {   // Ha szétdaraboltunk egy stringet, újra összerakjuk
                 if (sl.size() <= (i +1)) EXCEPTION(EDBDATA, 8, "Invalid string array : " + s);
@@ -963,7 +962,7 @@ QVariant  cColStaticDescrArray::fromSql(const QVariant& _f) const
         return QVariant(vl);
     }
     // A többiről feltételezzük, hogy string, De kell valamit kezdeni az idézőjelekkel
-    sl = sqlToStringList(_f);
+    sl = sqlToStringList(s);
     if (sl.isEmpty() && isNullable) return QVariant();
     return QVariant(sl);
 }
