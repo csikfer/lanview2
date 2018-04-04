@@ -456,15 +456,15 @@ cWorkstation::~cWorkstation()
 void cWorkstation::msgEmpty(const QVariant& val, QLabel *pLabel, const QString& fn, QStringList& sErrs, QStringList& sInfs, bool& isOk)
 {
     bool isNull = val.isNull();
-    bool unique = !fn.isEmpty();
-    QString s = val.toString();
-    QString t = pLabel->text().simplified().toLower();
-    if (t.endsWith(':')) {
-        t.chop(1);
-        t = t.simplified();
+    bool unique = !fn.isEmpty();    // Ha van mező név, akkor egyediségre is vizsgálunk
+    QString sVal = val.toString();
+    QString n = pLabel->text().simplified().toLower();
+    if (n.endsWith(':')) {
+        n.chop(1);
+        n = n.simplified();
     }
-    if (s.isEmpty()) {
-        QString msg = trUtf8("Nincs kitöltve a %1 mező.").arg(t);
+    if (sVal.isEmpty()) {
+        QString msg = trUtf8("Nincs kitöltve a %1 mező.").arg(n);
         if (isNull || !unique) {
             sErrs << htmlWarning(msg);
         }
@@ -475,12 +475,12 @@ void cWorkstation::msgEmpty(const QVariant& val, QLabel *pLabel, const QString& 
         return;
     }
     if (unique) {
-        cPatch n;
-        n.setName(fn, s);
-        if (n.completion(*pq) && !(isModify && node.getId() == n.getId())) {
-            cPatch *pn = cPatch::getNodeObjById(*pq, n.getId());
-            sErrs << htmlError(QObject::trUtf8("A megadott %1 nem egyedi!").arg(t));
-            QString t = trUtf8("A %2 (%3) eszköznek azonos a %1-a.").arg(t);
+        cPatch node;
+        node.setName(fn, sVal); // Azonos mezőérték keresése
+        if (node.completion(*pq) && !(isModify && node.getId() == node.getId())) {  // önmagunkkal nem ütközünk
+            cPatch *pn = cPatch::getNodeObjById(*pq, node.getId());
+            sErrs << htmlError(QObject::trUtf8("A megadott %1 nem egyedi!").arg(n));
+            QString t = trUtf8("A %2 (%3) eszköznek azonos a %1-a.").arg(n);
             sInfs << htmlPair2Text(htmlReportNode(*pq, *pn, t, 0));
             delete pn;
             isOk = false;

@@ -50,6 +50,12 @@ unix {
     import.subdirs = import
     import.depends = lv2
   }
+  !exists(portvlan/miss) {
+    SUBDIRS += portvlan
+    portvlan.subdirs = portvlan
+    portvlan.depends = lv2
+  }
+
 }
 
 !exists(icontsrv/miss) {
