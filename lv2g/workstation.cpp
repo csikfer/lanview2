@@ -949,8 +949,8 @@ void cWorkstation::ip_query()
         cMac mac = pif->mac();
         if (mac.isValid()) {
             QList<QHostAddress> al = cArp::mac2ips(*pq, mac);
-            switch (al.size()) {
-            default: {
+            int n = al.size();
+            if (n > 1) { // Több cím van! Ezt csak jelezzük
                 QString msg = trUtf8("A MAC-hez tőbb cím is tartozik, az első lessz beállítva, eldobott címek : ");
                 foreach (QHostAddress a, al.mid(1)) {
                     msg += a.toString() + ", ";
@@ -958,14 +958,11 @@ void cWorkstation::ip_query()
                 msg.chop(2);
                 pUi->textEditMsg->append(msg);
             }
-            // continue!
-            case 1:
+            if (n >= 1) {   // Az első címet állítjuk be
                 pIpEditWidget->set(al.first());     // Type??
                 addressChanged(al.first(), AT_DYNAMIC);
                 pUi->textEditMsg->append(trUtf8("A %1 MAC alapján beállított IP cím : %2").arg(mac.toString(), al.first().toString()));
                 return;
-            case 0:
-                break;
             }
         }
         pUi->textEditMsg->append(trUtf8("A %1 MAC-hez tartozó IP cím megállpítása sikertelen.").arg(mac.toString()));
