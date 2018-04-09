@@ -131,10 +131,10 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
         int ix = -1;
         if (np.descr() < cInterface::_descr_cInterface()) continue; // buta portok érdektelenek
         np.fetchParams(__q);
-        eTristate queryFlag = np.getBoolParam(queryMacTabTypeId, EX_IGNORE);
-        eTristate suspFlag  = np.getBoolParam(suspectrdUpLinkTypeId, EX_IGNORE);
         // Ha van "query_mac_tab" paraméter, és hamis, akkor tiltott a lekérdezés a portra
+        eTristate queryFlag = np.getBoolParam(queryMacTabTypeId, EX_IGNORE);
         // Ha van "suspected_uplink" paraméter, és igaz, akkor nem foglalkozunk vele (csiki-csuki elkerülése)
+        eTristate suspFlag  = np.getBoolParam(suspectrdUpLinkTypeId, EX_IGNORE);
         if (queryFlag == TS_FALSE || suspFlag == TS_TRUE) {
             PDEB(VERBOSE) << trUtf8("Disable %1 port query, suspFlag = %2, queryFlag = %3").arg(np.getName()).arg((int)suspFlag).arg((int)queryFlag) << endl; 
             continue;
@@ -144,10 +144,26 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
             // Ha ez egy TRUNK tagja, akkor nem érdekes.
             if (!np.isNull(_sPortStapleId)) continue;
             // Ki kéne még hajítani az uplinkeket
-            if (NULL_ID != cLldpLink().getLinked(__q, np.getId())) { // Ez egy LLDP-vel felderített uplink
-                // Ha van "query_mac_tab" paraméter, és igaz, akkor a link ellenére lekérdezzük
-                if (queryFlag != TS_TRUE) continue;
-                PDEB(VERBOSE) << trUtf8("Force query %1 port.").arg(np.getName()) << endl;
+            cLldpLink lldp;
+            if (NULL_ID != lldp.getLinked(__q, np.getId())) { // Ez egy LLDP-vel felderített link
+                // Ha van "query_mac_tab" paraméter, és igaz, akkor a link ellenére (bármi legyen is) lekérdezzük
+                if (queryFlag == TS_TRUE) {
+                    PDEB(VERBOSE) << trUtf8("Force query %1 port.").arg(np.getName()) << endl;
+                }
+                else {
+                    // De ez uplink? Az ellenoldali node-nal lekérdezzük a címtáblát?
+                    const QString sql =
+                            "SELECT COUNT(*)"
+                            " FROM nports"
+                            " JOIN host_services USING(node_id)"
+                            " JOIN services      USING(service_id)"
+                            " WHERE port_id = ? AND service_name = ?";
+                    bool ok = execSql(__q, sql, lldp.get(_sPortId2), "pmac");
+                    int n;
+                    if (ok) n = __q.value(0).toInt(&ok);
+                    if (!ok) EXCEPTION(EDATA, 0, sql);
+                    if (n > 0) continue;    // Uplink, kihagyjuk
+                }
             }
             // mehet a ports konténerbe az indexe
         }
