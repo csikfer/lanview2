@@ -1472,7 +1472,7 @@ void cRecordsViewBase::initView()
     foreach (QString tn, inheritTableList) {
         const cRecStaticDescr * p = cRecStaticDescr::get(tn, schema);
         pInhRecDescr->insert(p->tableoid(), p);
-        sql += "\nUNION\n SELECT tableoid";
+        sql += "\nUNION ALL\n SELECT tableoid";
         const cRecStaticDescr& d = inhRecDescr(tn);
         int i, n = recDescr().cols();
         for (i = 0; i < n; ++i) {   // Végihrohanunk az első tábla mezőin

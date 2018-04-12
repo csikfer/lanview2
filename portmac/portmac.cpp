@@ -53,7 +53,8 @@ void lv2portMac::setup(eTristate _tr)
 
 void lv2portMac::staticInit(QSqlQuery *pq)
 {
-    cDevicePMac::pSrvSnmp   = cService::service(*pq, _sSnmp);
+    cDevicePMac::pSrvSnmp = cService::service(*pq, _sSnmp);
+    cDevicePMac::pSrvPMac = cService::service(*pq, "pmac");
 }
 
 /******************************************************************************/
@@ -90,7 +91,8 @@ int cPortMac::run(QSqlQuery &__q, QString& runMsg)
 
 /******************************************************************************/
 
-const cService *cDevicePMac::pSrvSnmp   = NULL;
+const cService *cDevicePMac::pSrvSnmp = NULL;
+const cService *cDevicePMac::pSrvPMac = NULL;
 cOId    *cDevicePMac::pOId1 = NULL;
 cOId    *cDevicePMac::pOId2 = NULL;
 cOId    *cDevicePMac::pOIdx = NULL;
@@ -154,11 +156,10 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
                     // De ez uplink? Az ellenoldali node-nal lekérdezzük a címtáblát?
                     const QString sql =
                             "SELECT COUNT(*)"
-                            " FROM nports"
+                            " FROM nports AS p"
                             " JOIN host_services USING(node_id)"
-                            " JOIN services      USING(service_id)"
-                            " WHERE port_id = ? AND service_name = ?";
-                    bool ok = execSql(__q, sql, lldp.get(_sPortId2), "pmac");
+                            " WHERE p.port_id = ? AND service_id = ?";
+                    bool ok = execSql(__q, sql, lldp.get(_sPortId2), pSrvPMac->getId());
                     int n;
                     if (ok) n = __q.value(0).toInt(&ok);
                     if (!ok) EXCEPTION(EDATA, 0, sql);

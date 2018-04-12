@@ -188,6 +188,7 @@ public:
         FT_TEXT,                ///< szöveges adat
         FT_BINARY,              ///< bináris (bytea)
         FT_BOOLEAN,             ///< bináris érték (boolean)
+        FT_POINT,               ///< point
         FT_POLYGON,             ///< poligon (polygon)
         FT_ENUM,                ///< enumerációs típus
         FT_SET          = FT_ENUM    + FT_ARRAY, ///< set típus, ami az adatbázisban egy enumerációs tömb
@@ -408,46 +409,51 @@ static inline QStringList sqlToStringList(const QVariant& v)
 }
 
 /// @class cColStaticDescrArray
-/// Az ős cColStaticDescr osztályt a általános tömb típus konverziós függvényivel egészíti ki.
+/// Az ős cColStaticDescr osztályt a általános tömb típus konverziós függvényeivel egészíti ki.
 CSD_INHERITOR(cColStaticDescrArray)
 public:
 virtual QString toView(QSqlQuery& q, const QVariant& _f) const;
 };
 
 /// @class cColStaticDescrPolygon
-/// Az ős cColStaticDescr osztályt a poligon típus konverziós függvényivel egészíti ki.
+/// Az ős cColStaticDescr osztályt a point típus konverziós függvényeivel egészíti ki.
+CSD_INHERITOR(cColStaticDescrPoint)
+};
+
+/// @class cColStaticDescrPolygon
+/// Az ős cColStaticDescr osztályt a poligon típus konverziós függvényeivel egészíti ki.
 CSD_INHERITOR(cColStaticDescrPolygon)
 };
 
 /// @class cColStaticDescrEnum
-/// Az ős cColStaticDescr osztályt automatikusan kezelt enumeráció konverziós függvényivel egészíti ki.
+/// Az ős cColStaticDescr osztályt automatikusan kezelt enumeráció konverziós függvényeivel egészíti ki.
 CSD_INHERITOR(cColStaticDescrEnum)
 };
 
 /// @class cColStaticDescrSet
-/// Az ós cColStaticDescr osztályt automatikusan kezelt set (enumeráció tömb) konverziós függvényivel egészíti ki.
+/// Az ós cColStaticDescr osztályt automatikusan kezelt set (enumeráció tömb) konverziós függvényeivel egészíti ki.
 CSD_INHERITOR(cColStaticDescrSet)
 };
 
 /// @class cColStaticDescrDate
-/// Az ős cColStaticDescr osztályt dátum konverziós függvényivel egészíti ki.
+/// Az ős cColStaticDescr osztályt dátum konverziós függvényeivel egészíti ki.
 /// Nincs implementálva.
 CSD_INHERITOR(cColStaticDescrDate)
 };
 
 /// @class cColStaticDescrTime
-/// Az ós cColStaticDescr osztályt idő konverziós függvényivel egészíti ki.
+/// Az ós cColStaticDescr osztályt idő konverziós függvényeivel egészíti ki.
 CSD_INHERITOR(cColStaticDescrTime)
 };
 
 /// @class cColStaticDescrDateTime
-/// Az ős cColStaticDescr osztályt dátum és idő (timestamp) konverziós függvényivel egészíti ki.
+/// Az ős cColStaticDescr osztályt dátum és idő (timestamp) konverziós függvényeivel egészíti ki.
 /// Mindig QDateTime típusban tárolódik kivéve a NULL, és a NOW, ez utóbbi QString.
 CSD_INHERITOR(cColStaticDescrDateTime)
 };
 
 /// @class cColStaticDescrInterval
-/// Az ős cColStaticDescr osztályt idő intervallum konverziós függvényivel egészíti ki.
+/// Az ős cColStaticDescr osztályt idő intervallum konverziós függvényeivel egészíti ki.
 /// Az intervallum qlonglong-ban tárolódik, és mSec-ben értendő.
 /// Negatív tartomány nincs értelmezve, és az óra:perc:másodperc formán túl csak a napok megadása támogatott.
 CSD_INHERITOR(cColStaticDescrInterval)

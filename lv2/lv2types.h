@@ -837,8 +837,6 @@ TSTREAMO(netAddress)
 TSTREAMO(QHostAddress)
 TSTREAMO(cMac)
 
-
-
 typedef QPair<QString, QString>     tStringPair;
 /// A QPolygonF osztály a GUI része, így nem használlható
 /// Mert vagy nem GUI-val fordítjuk, és akkor elszállhat (pl. a QVariant-ból való kikonvertáláskor)
@@ -867,8 +865,6 @@ Q_DECLARE_METATYPE(cMac)
 Q_DECLARE_METATYPE(netAddress)
 Q_DECLARE_METATYPE(netAddressList)
 
-// EXT_ int _UMTID_QPoint;
-// EXT_ int _UMTID_QPointF;
 EXT_ int _UMTID_tPolygonF;
 EXT_ int _UMTID_QHostAddress;
 EXT_ int _UMTID_cMac;

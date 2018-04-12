@@ -868,8 +868,6 @@ QString QSqlRecordToString(const QSqlRecord& __r)
 }
  /* ***************************************************************************************************** */
 
-// int _UMTID_QPoint        = QMetaType::UnknownType;
-// int _UMTID_QPointF       = QMetaType::UnknownType;
 int _UMTID_tPolygonF     = QMetaType::UnknownType;
 int _UMTID_QHostAddress  = QMetaType::UnknownType;
 int _UMTID_cMac          = QMetaType::UnknownType;
@@ -880,24 +878,18 @@ void initUserMetaTypes()
 {
     if (_UMTID_cMac == QMetaType::UnknownType) {
 
-//        qRegisterMetaType<QPoint>       (__sQPoint);
-//        qRegisterMetaType<QPointF>      (__sQPointF);
         qRegisterMetaType<tPolygonF>     (__sTPolygonF);
         qRegisterMetaType<QHostAddress> (__sQHostAddress);
         qRegisterMetaType<cMac>         (__sCMac);
         qRegisterMetaType<netAddress>   (__sNetAddress);
         qRegisterMetaType<netAddressList>(__sNetAddressList);
 
-//      _UMTID_QPoint          =  QMetaType::type(__sQPoint);
-//      _UMTID_QPointF         =  QMetaType::type(__sQPointF);
         _UMTID_tPolygonF       =  QMetaType::type(__sTPolygonF);
         _UMTID_QHostAddress    =  QMetaType::type(__sQHostAddress);
         _UMTID_cMac            =  QMetaType::type(__sCMac);
         _UMTID_netAddress      =  QMetaType::type(__sNetAddress);
         _UMTID_netAddressList  =  QMetaType::type(__sNetAddressList);
 
-//      if (_UMTID_QPoint         == QMetaType::UnknownType) EXCEPTION(EPROGFAIL, -1, "Nincs QMetaType ID a QPoint típushoz.");
-//      if (_UMTID_QPointF        == QMetaType::UnknownType) EXCEPTION(EPROGFAIL, -1, "Nincs QMetaType ID a QPointF típushoz.");
         if (_UMTID_tPolygonF      == QMetaType::UnknownType) EXCEPTION(EPROGFAIL, -1, "Nincs QMetaType ID a tPolygonF típushoz.");
         if (_UMTID_QHostAddress   == QMetaType::UnknownType) EXCEPTION(EPROGFAIL, -1, "Nincs QMetaType ID a QHostAddress típushoz.");
         if (_UMTID_cMac           == QMetaType::UnknownType) EXCEPTION(EPROGFAIL, -1, "Nincs QMetaType ID a cMac típushoz.");

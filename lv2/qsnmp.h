@@ -333,6 +333,10 @@ class LV2SHARED_EXPORT cSnmp : public netSnmp {
     /// @param reverse Opcionális, ha megadjuk és true, akkor az eredmény QMap-ben felcseréli az érték kulcs párokat. Fordított konverzióhoz.
     /// @return Ha a lekérdezés eredményes, akkor 0.
     int getXIndex(const cOId& xoid, QMap<int, int> &xix, bool reverse = false);
+    /// Bit map-ek lekérdezése
+    /// @param __oid OID: <oid>.<ix> => <bitmap>
+    /// @return Ha a lekérdezés eredményes, akkor 0.
+    int getBitMaps(const cOId& _oid, QMap<int, QBitArray> &maps);
     const netsnmp_variable_list *first(void)    { return actVar = ((response == NULL) ? NULL : response->variables); }
     const netsnmp_variable_list *next(void)     { return actVar = ((actVar   == NULL) ? NULL : actVar->next_variable); }
     static QVariant value(const netsnmp_variable_list * __var);
@@ -352,7 +356,7 @@ class LV2SHARED_EXPORT cSnmp : public netSnmp {
    private:
 /**
  *  Elvégzi az adattagok inicalzálását, pointerek nullázása. stb. snmpObjCnt értékét növeli eggyel, ha értéke
- *  nulla volt, akkor inicializálja a net-snmp rndszert is
+ *  nulla volt, akkor inicializálja a net-snmp rendszert is
  */
     void _init(void);
 /**

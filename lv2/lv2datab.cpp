@@ -648,6 +648,7 @@ void cColStaticDescr::typeDetect()
 {
     TYPEDETECT(_sByteA,    FT_BINARY)
     TYPEDETECT(_sPolygon,  FT_POLYGON)
+    TYPEDETECT(_sPoint,    FT_POINT)
     TYPEDETECT(_sBoolean,  FT_BOOLEAN)
     TYPEDETECT("macaddr",  FT_MAC)
     TYPEDETECT("inet",     FT_INET)
@@ -656,7 +657,7 @@ void cColStaticDescr::typeDetect()
     TYPEDETUDT("date",     FT_DATE)
     TYPEDETUDT("timestamp",FT_DATE_TIME)
     TYPEDETUDT("interval", FT_INTERVAL)
-    if      (pEnumType != NULL)                            eColType = FT_ENUM;
+    if      (pEnumType != NULL)                              eColType = FT_ENUM;
     else if (udtName.contains("int",   Qt::CaseInsensitive)) eColType = FT_INTEGER;
     else if (udtName.contains("real",  Qt::CaseInsensitive)) eColType = FT_REAL;
     else if (udtName.contains("double",Qt::CaseInsensitive)) eColType = FT_REAL;
@@ -1331,6 +1332,78 @@ qlonglong cColStaticDescrSet::toId(const QVariant& _f) const
 
 CDDUPDEF(cColStaticDescrSet)
 
+/* ....................................................................................................... */
+
+cColStaticDescr::eValueCheck  cColStaticDescrPoint::check(const QVariant& _f, cColStaticDescr::eValueCheck acceptable) const
+{
+    int t = _f.userType();
+    cColStaticDescr::eValueCheck r = VC_INVALID;
+    if (_f.isNull() || isNumNull(_f)) r = checkIfNull();
+    else if (t == QVariant::PointF)   r = VC_OK;
+    return ifExcep(r, acceptable, _f);
+}
+
+QVariant  cColStaticDescrPoint::fromSql(const QVariant& _f) const
+{
+    if (_f.isNull()) return _f;
+    QString s = _f.toString();
+    QString em = QObject::trUtf8("Point %1 = %2").arg(colName()).arg(s);
+    // Az egésznek zárójelben kell lennie
+    if (s.at(0) != QChar('(') || !s.endsWith(QChar(')'))) EXCEPTION(EDBDATA, 1, em);
+    s = s.mid(1, s.size() -2);
+    QStringList ss = s.split(QChar(','));
+    if (ss.size() != 2) EXCEPTION(EDBDATA, 1, em);
+    bool okX, okY;
+    qreal x, y;
+    x = ss.first().simplified().toDouble(&okX);
+    y = ss.at(1).simplified().toDouble(&okY);
+    if (!okX || !okY) EXCEPTION(EDBDATA, 1, em);
+    QPointF    pnt(x,y);
+    return QVariant::fromValue(pnt);
+}
+
+QVariant  cColStaticDescrPoint::toSql(const QVariant& _f) const
+{
+    if (_f.isNull()) EXCEPTION(EDATA,-1, QObject::trUtf8("Data is NULL"));
+    int t = _f.userType();
+    if (t != QVariant::PointF) {
+        EXCEPTION(EDATA, t, debVariantToString(_f));
+    }
+    QPointF    pnt = _f.value<QPointF>();
+    QString     s = QString("(%2,%2)").arg(pnt.x(), pnt.y());
+    return QVariant(s);
+}
+
+QVariant  cColStaticDescrPoint::set(const QVariant& _f, qlonglong& str) const
+{
+    // _DBGF() << QChar(' ') << debVariantToString(_f);
+    if (_f.isNull() || isNumNull(_f)) {
+        if (!isNullable && colDefault.isEmpty()) str |= ES_DEFECTIVE;
+        return QVariant();
+    }
+    int t = _f.userType();
+    switch (t) {
+    case QMetaType::QPoint:
+        return QVariant::fromValue(QPointF(_f.value<QPoint>()));
+    case QMetaType::QPointF:
+        return _f;
+    }
+    str |= ES_DEFECTIVE;
+    return QVariant();
+
+}
+QString   cColStaticDescrPoint::toName(const QVariant& _f) const
+{
+    return QVariantToString(_f);
+}
+qlonglong cColStaticDescrPoint::toId(const QVariant& _f) const
+{
+    if (isNull()) return NULL_ID;
+    (void)_f;
+    return 1;
+}
+
+CDDUPDEF(cColStaticDescrPoint)
 /* ....................................................................................................... */
 
 cColStaticDescr::eValueCheck  cColStaticDescrPolygon::check(const QVariant& _f, cColStaticDescr::eValueCheck acceptable) const
@@ -2311,7 +2384,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
             }
         }
         // END Regular and irregular foreign keys detect
-        // A konveziós függvények miatt a megfelelő típuso mező leíró objektumot kell a konténerbe rakni.
+        // A konveziós függvények miatt a megfelelő típusu mező leíró objektumot kell a konténerbe rakni.
         switch (columnDescr.eColType) {
         case cColStaticDescr::FT_DATE:          _columnDescrs << new cColStaticDescrDate(columnDescr);      break;
         case cColStaticDescr::FT_DATE_TIME:     _columnDescrs << new cColStaticDescrDateTime(columnDescr);  break;
@@ -2319,6 +2392,7 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
         case cColStaticDescr::FT_INTERVAL:      _columnDescrs << new cColStaticDescrInterval(columnDescr);  break;
 
         case cColStaticDescr::FT_BOOLEAN:       _columnDescrs << new cColStaticDescrBool(columnDescr);      break;
+        case cColStaticDescr::FT_POINT:         _columnDescrs << new cColStaticDescrPoint(columnDescr);     break;
         case cColStaticDescr::FT_POLYGON:       _columnDescrs << new cColStaticDescrPolygon(columnDescr);   break;
 
         case cColStaticDescr::FT_MAC:

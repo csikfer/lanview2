@@ -93,6 +93,7 @@ STRDEF(CMac, "cMac")
 STRDEF(NetAddress, "netAddress")
 STRDEF(NetAddressList, "netAddressList")
 STRDEF(TPolygonF, "tPolygonF")
+STRDEF(TPointF, "tPointF")
 
 dnl program kapcsolók
 STRDEF(LibVersion, "lib-version")
@@ -146,6 +147,7 @@ dnl PgSQL típus nevek
 STRDEF(ARRAY, "ARRAY")                  dnl tömbök
 STRDEF(USER_DEFINED, "USER-DEFINED")    dnl kreált típus pl. enumeráció
 STRDEF(Polygon,"polygon")
+STRDEF(Point,"point")
 STRDEF(Boolean, "boolean")
 STRDEF(ByteA, "bytea")                  dnl bináris adat
 
@@ -206,8 +208,7 @@ STRDEF(ParamTypes, "param_types")
   STRDEF(DateTime, "datetime")
   STRDEF(INet, "inet")
   STRDEF(Cidr, "cidr")
-  STRDEF(Point, "point")
-  dnl mac, ByteA
+  dnl Point, mac, ByteA
  STRDEF(ParamTypeDim, "param_type_dim")
 STRDEF(SysParams, "sys_params")
  STRDEF(SysParamId, "sys_param_id")

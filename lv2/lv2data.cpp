@@ -2554,7 +2554,7 @@ cNPort *cNode::addSensors(const QString& __np, int __noff, int __from, int __to,
 int cNode::fetchByIp(QSqlQuery& q, const QHostAddress& a, eEx __ex)
 {
     clear();
-    QString sql = QString("SELECT DISTINCT %1.* FROM %1 JOIN interfaces USING(node_id) JOIN ip_addresses USING(port_id) WHERE address = ?").arg(tableName());
+    QString sql = QString("SELECT %1.* FROM %1 JOIN interfaces USING(node_id) JOIN ip_addresses USING(port_id) WHERE address = ?").arg(tableName());
     QString as = hostAddressToString(a);
     if (execSql(q, sql, as)) {
         set(q);
@@ -2598,7 +2598,7 @@ bool cNode::fetchOnePortByIp(QSqlQuery& q, const QHostAddress& a, eEx __ex)
 int cNode::fetchByMac(QSqlQuery& q, const cMac& a, eEx __ex)
 {
     clear();
-    QString sql = QString("SELECT DISTINCT %1.* FROM %1 JOIN interfaces USING(node_id) WHERE hwaddress = ?").arg(tableName());
+    QString sql = QString("SELECT %1.* FROM %1 JOIN interfaces USING(node_id) WHERE hwaddress = ?").arg(tableName());
     if (execSql(q, sql, a.toString())) {
         int n = q.size();
         set(q);

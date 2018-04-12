@@ -53,11 +53,15 @@ int  snmpIfStatus(const QString& __s, eEx __ex)
 
 QBitArray   bitString2Array(u_char *__bs, size_t __os)
 {
-    QBitArray   r;
+    QBitArray   r(__os * 8, false);
     int         i;
     for (i = 0; __os > 0; ++__bs, --__os) {
         u_char  b = *__bs;
-        for (int ii = 8; ii > 0; --ii, ++i, b >>= 1) r.setBit(i, b & 1);    // ?? bit sorrend ?
+        for (int ii = 8; ii > 0; --ii, ++i, b <<= 1) {
+            if (b & 0x80) {
+                r.setBit(i, true);
+            }
+        }
     }
     return r;
 }
@@ -66,7 +70,7 @@ QBitArray   bitString2Array(u_char *__bs, size_t __os)
 
 QVariant *cTable::find(const QString __in, QVariant __ix, const QString __col)
 {
-    // Ha bármelyik megadott oszlo név hiányzik
+    // Ha bármelyik megadott oszlop név hiányzik
     if (contains(__in) == 0 || contains(__col) == 0) return NULL;
     QVariantVector& vv = (*this)[__in];
     int row;
@@ -825,6 +829,37 @@ int cSnmp::getXIndex(const cOId& xoid, QMap<int, int>& xix, bool reverse)
     }
     return 0;
 }
+
+int cSnmp::getBitMaps(const cOId& _oid, QMap<int, QBitArray>& maps)
+{
+    maps.clear();
+    int r = getNext(_oid);
+    if (r != 0) return r;
+    while (_oid < name()) {
+        cOId ko = name() - _oid;
+        if (ko.size() != 1) return -1;
+        int ix = ko.last();
+        QVariant v = value();
+        QBitArray ba;
+        switch (v.userType()) {
+        case QVariant::BitArray:    // ?
+            ba = v.toBitArray();
+            break;
+        case QVariant::ByteArray: {
+            QByteArray a = v.toByteArray();
+            ba = bitString2Array((u_char *)a.data(), a.size());
+            break;
+            }
+        default:
+            return -1;
+        }
+        maps[ix] = ba;
+        r = getNext();
+        if (r) return r;
+    }
+    return 0;
+}
+
 
 QString snmpNotSupMsg()
 {

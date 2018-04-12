@@ -61,6 +61,7 @@ public:
     cSnmp           snmp;
     /// Az "snmp" szolgáltatás protokol típus. A pointert az lv2portStat konstruktora inicializálja.
     static const cService *pSrvSnmp;
+    static const cService *pSrvPMac;
     /// A releváns port objektumok pinterei, indexelve az SNMP id-re
     QMap<int, cInterface *>         ports;
     /// Mac fehér lista ellenörzések a portokra.

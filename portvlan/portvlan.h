@@ -9,17 +9,21 @@
 #include "lv2service.h"
 #include "lv2link.h"
 
-#define APPNAME "portstat"
+#define APPNAME "portvlan"
 #undef  __MODUL_NAME__
 #define __MODUL_NAME__  APP
 
 class lv2portVLan;
 
-class cPortVLan : public cInspector {
+class cPortVLans : public cInspector {
 public:
-    cPortVLan(QSqlQuery& q, const QString& __sn);
-    ~cPortVLan();
+    cPortVLans(QSqlQuery& q, const QString& __sn);
+    ~cPortVLans();
     virtual cInspector * newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong hoid, cInspector *pid);
+    cOId dot1qVlanCurrentEgressPorts;
+    cOId dot1qVlanStaticEgressPorts;
+    cOId dot1qVlanStaticForbiddenEgressPorts;
+    cOId dot1qPvid;
 };
 
 /// @class cDevicePSt
@@ -30,8 +34,6 @@ public:
     cDevicePV(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector *_par);
     /// Destruktor
     ~cDevicePV();
-    ///
-    virtual void postInit(QSqlQuery &_q, const QString &qs);
     /// A lekérdezést végző virtuális metódus.
     /// @par q A lekerdezés eredményét a q objetummal írja az adatbázisba.
     virtual int run(QSqlQuery& q, QString& runMsg);

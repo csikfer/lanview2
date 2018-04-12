@@ -829,8 +829,8 @@ int cInspector::getInspectorType(QSqlQuery& q)
     // Típus:
     inspectorType = 0;
     if (isFeature("auto_transaction")) inspectorType |= IT_AUTO_TRANSACTION;
-    if (isFeature(_sSuperior))            inspectorType |= IT_SUPERIOR;
-    if (pParent == NULL) inspectorType |= IT_MAIN;
+    if (isFeature(_sSuperior))         inspectorType |= IT_SUPERIOR;
+    if (pParent == NULL)               inspectorType |= IT_MAIN;
     int r = getCheckCmd(q);
     switch (r) {
     case  0:        // Nincs program hívás
@@ -1012,7 +1012,7 @@ int cInspector::getCheckCmd(QSqlQuery& q)
             fcmd.setFile(d, checkCmd);
             if (fcmd.isExecutable()) break;      // megtaláltuk
         }
-        if (!fcmd.isExecutable()) EXCEPTION(ENOTFILE, -1, trUtf8("Ismeretlrn %1 parancs a %2 -ben").arg(checkCmd).arg(name()));  // nem volt a path-on sem
+        if (!fcmd.isExecutable()) EXCEPTION(ENOTFILE, -1, trUtf8("Ismeretlen %1 parancs a %2 -ben").arg(checkCmd).arg(name()));  // nem volt a path-on sem
     }
     checkCmd = fcmd.absoluteFilePath();
     _DBGFNL() << "checkCmd = " << quotedString(checkCmd) <<
