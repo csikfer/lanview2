@@ -636,6 +636,7 @@ private slots:
 
 class Ui_fKeyEd;
 class Ui_placeEd;
+class Ui_fKeyPlaceEd;
 class cSelectPlace;
 
 /// @class cFKeyWidget
@@ -658,10 +659,14 @@ protected:
     void _refresh();
     Ui_fKeyEd          *pUi;            ///< Alap form távoli kulcshoz
     Ui_placeEd         *pUiPlace;       ///< Form egy hely kiválasztásához.
+    Ui_fKeyPlaceEd     *pUiRPlace;      ///< Egy hely alapján szűrhető távoli kulcs
+
     cRecordListModel   *pModel;         ///< No special filter (selector)
     cSelectPlace       *pSelectPlace;
     QAbstractButton    *pButtonEdit;
     QAbstractButton    *pButtonAdd;
+    QAbstractButton    *pButtonRefresh;
+    QComboBox          *pComboBox;
     /// A távoli kulcs által mutatott tábla leíró objektumára muatat
     const cRecStaticDescr *pRDescr;
     /// A távoli kulcs által mutatott tábla rekord dialógus leíró objektum.
@@ -670,7 +675,8 @@ protected:
     /// A távoli kulcs által mutatott táblában a saját ID-t tartalmazó mező indexe
     int             owner_ix;
     qlonglong       ownerId;
-    enum eFilter { F_NO = 0, F_SIMPLE, F_PLACE };
+    int             ixRPlaceId; ///< Hivatkozott rekordban a place_id mező indexe.
+    enum eFilter { F_NO = 0, F_SIMPLE, F_PLACE, F_RPLACE };
     int            _filter;
 protected slots:
     void setFromEdit(int i);
@@ -680,6 +686,7 @@ protected slots:
     void modifyF();
     void modifyOwnerId(cFieldEditBase* pof);
     void setFilter(const QString &_s);
+    void setPlace(qlonglong _pid);
     void refresh();
 };
 

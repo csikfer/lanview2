@@ -302,7 +302,7 @@ public:
     /// összes rekordot jelenti szűrés nélkül. Ha értéke hamis, akkor nincs egyetlen rekord sem, ami illeszkedik.
     /// false-ra van inicializálva.
     bool                nullIdIsAll;
-    ///
+    /// Leszármazottak kizárva
     bool                only;
     eDataCharacter      dcData;
     const cRecStaticDescr * pDescr;  ///< A rekord leíró

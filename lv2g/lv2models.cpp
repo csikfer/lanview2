@@ -475,8 +475,8 @@ bool cRecordListModel::setFilter(const QVariant& _par, enum eOrderType __o, enum
 QString cRecordListModel::where(const QString& nameName)
 {
     QString w;
-    switch (filter) {
-    case FT_NO:                                                           break;
+    if (!pattern.isEmpty()) switch (filter) {
+    case FT_NO:                                                                 break;
     case FT_LIKE:       w = nameName + " LIKE " + quoted(pattern);              break;
     case FT_SIMILAR:    w = nameName + " SIMILAR TO " + quoted(pattern);        break;
     case FT_REGEXP:     w = nameName + " ~ " +          quoted(pattern);        break;

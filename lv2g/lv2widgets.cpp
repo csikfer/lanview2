@@ -7,6 +7,7 @@
 #include "ui_arrayed.h"
 #include "ui_fkeyed.h"
 #include "ui_place_ed.h"
+#include "ui_rplace_ed.h"
 #include "ui_fkeyarrayed.h"
 
 #include "popupreport.h"
@@ -1860,21 +1861,38 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
     _wType = FEW_FKEY;
     _filter = F_NO;
     _height = 1;
+    pUi       = NULL;
+    pUiPlace  = NULL;
+    pUiRPlace = NULL;
+    pModel    = NULL;
+    pRDescr   = NULL;
+    pSelectPlace= NULL;
+    pTableShape = NULL;
+    owner_ix = NULL_IX;
+    ownerId  = NULL_ID;
+    ixRPlaceId= NULL_IX;
+
+    QString fkTable = _colDescr.fKeyTable;
+    pRDescr = cRecStaticDescr::get(fkTable);
     if (_tf.isFeature(_sFilter)) {
         QString sFilter = _tf.feature(_sFilter);
+        _height = 2;
         if (sFilter.isEmpty()) {    // Az ui-ban definiált egyszerű szűrő
             _filter = F_SIMPLE;
         }
         else if (0 == sFilter.compare(_sPlaces, Qt::CaseInsensitive)) {
-            _filter = F_PLACE;
-            if (_sPlaces != _colDescr.fKeyTable) EXCEPTION(EDATA, 0, trUtf8("A filter=palces feature ebben az esetben nem támogatott : %1").arg(_tf.identifying(false)));
+            if (_sPlaces == fkTable) {  // A helyiség táblában, zóna, és minta szerinti szűrés
+                _filter = F_PLACE;
+            }
+            else {                      // Hely szerinti szűrés, ha az objektum tartalmaz hely infót (place_id mezőt)
+                ixRPlaceId = pRDescr->toIndex(_sPlaceId, EX_IGNORE);
+                if (ixRPlaceId == NULL_IX) EXCEPTION(EDATA, 0, trUtf8("A filter=palces feature ebben az esetben nem támogatott : %1").arg(_tf.identifying(false)));
+                _filter = F_RPLACE;
+                _height = 3;
+            }
         }
-        _height = 2;
     }
     if (_filter == F_PLACE) {
-        pUi = NULL;
-        pModel = NULL;
-        pRDescr = NULL;
         pUiPlace = new Ui_placeEd;
         pUiPlace->setupUi(this);
         pLayout = pUiPlace->horizontalLayout2;    // A NULL gombot ebbe rakjuk
@@ -1884,27 +1902,42 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
         pSelectPlace->setPlaceEditButton(pUiPlace->toolButtonPlaceEdit);
         pSelectPlace->setPlaceInfoButton(pUiPlace->toolButtonPlaceInfo);
 
-        pEditWidget = pUiPlace->comboBoxPlace;
+        pEditWidget = pComboBox = pUiPlace->comboBoxPlace;
         pButtonEdit = pUiPlace->toolButtonPlaceEdit;
         pButtonAdd  = pUiPlace->toolButtonPlaceAdd;
+        pButtonRefresh= pUiPlace->toolButtonRefresh;
+    }
+    else if (_filter == F_RPLACE) {
+        pUiRPlace = new Ui_fKeyPlaceEd;
+        pUiRPlace->setupUi(this);
+        pLayout = pUiRPlace->horizontalLayout2;    // A NULL gombot ebbe rakjuk
+        pSelectPlace = new cSelectPlace(pUiRPlace->comboBoxZone, pUiRPlace->comboBoxPlace, pUiRPlace->lineEditPlacePattern, _sNul, this);
+        pSelectPlace->setPlaceRefreshButton(pUiRPlace->toolButtonPlaceRefresh);
+        pSelectPlace->setPlaceInsertButton(pUiRPlace->toolButtonPlaceAdd);
+        pSelectPlace->setPlaceEditButton(pUiRPlace->toolButtonPlaceEdit);
+        pSelectPlace->setPlaceInfoButton(pUiRPlace->toolButtonPlaceInfo);
 
-        pTableShape = NULL;
+        pEditWidget = pComboBox = pUiRPlace->comboBox;
+        pButtonEdit = pUiRPlace->toolButtonEdit;
+        pButtonAdd  = pUiRPlace->toolButtonAdd;
+        pButtonRefresh= pUiRPlace->toolButtonRefresh;
+
     }
     else {
-        pUiPlace = NULL;
-        pSelectPlace = NULL;
         pUi = new Ui_fKeyEd;
         pUi->setupUi(this);
         pLayout = pUi->horizontalLayout2;    // A NULL gombot ebbe rakjuk
-        pRDescr = cRecStaticDescr::get(_colDescr.fKeyTable, _colDescr.fKeySchema);
+        pEditWidget = pComboBox = pUi->comboBox;
+        pButtonEdit = pUi->toolButtonEdit;
+        pButtonAdd  = pUi->toolButtonAdd;
+        pButtonRefresh= pUi->toolButtonRefresh;
+        pUi->toolButtonEdit->setDisabled(true);
+    }
+    if (_filter != F_PLACE) {
         pModel = new cRecordListModel(*pRDescr, this);
         // Ha nincs név mező...
         if (pRDescr->nameIndex(EX_IGNORE) < 0) pModel->setToNameF(_colDescr.fnToName);
-        pModel->joinWith(pUi->comboBox);;
-        pEditWidget = pUi->comboBox;
-        pButtonEdit = pUi->toolButtonEdit;
-        pButtonAdd  = pUi->toolButtonAdd;
-        pUi->toolButtonEdit->setDisabled(true);
+        pModel->joinWith(pComboBox);;
 
         pTableShape = new cTableShape();
         // Dialógus leíró neve a feature mezőben
@@ -1916,16 +1949,16 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
             qlonglong tit = pTableShape->getId(_sTableInheritType);
             if (tit != TIT_NO && tit != TIT_ONLY) EXCEPTION(EDATA);
             pTableShape->fetchFields(*pq);
-            pUi->toolButtonAdd->setEnabled(true);
-            connect(pUi->toolButtonEdit, SIGNAL(pressed()), this, SLOT(modifyF()));
-            connect(pUi->toolButtonAdd,  SIGNAL(pressed()), this, SLOT(insertF()));
+            pButtonAdd->setEnabled(true);
+            connect(pButtonEdit, SIGNAL(pressed()), this, SLOT(modifyF()));
+            connect(pButtonAdd,  SIGNAL(pressed()), this, SLOT(insertF()));
         }
         else {
             pDelete(pTableShape);
-            pUi->toolButtonAdd->setDisabled(true);
-            pUi->toolButtonAdd->setDisabled(true);
+            pButtonAdd->setDisabled(true);
+            pButtonAdd->setDisabled(true);
         }
-        connect(pUi->toolButtonRefresh, SIGNAL(clicked()), this, SLOT(refresh()));
+        connect(pButtonRefresh, SIGNAL(clicked()), this, SLOT(refresh()));
     }
 
     QString owner = _fieldShape.feature(_sOwner);   //
@@ -1983,18 +2016,26 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
     }
 
     switch (_filter) {
-    case F_SIMPLE:
+    case F_SIMPLE:      // Egyszerű szúrés minta alapján
         connect(pUi->lineEditFilter, SIGNAL(textChanged(QString)), this, SLOT(setFilter(QString)));
-        connect(pUi->comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(setFromEdit(int)));
+        connect(pComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(setFromEdit(int)));
+        pModel->setFilter(_sNul, OT_ASC, FT_LIKE);
         break;
-    case F_NO:
-        connect(pUi->comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(setFromEdit(int)));
+    case F_NO:          // Nincs szűrés (a felesleges mezők eltüntetése)
+        connect(pComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(setFromEdit(int)));
         pUi->lineEditFilter->hide();
         pUi->label->hide();
         pModel->setFilter(_sNul, OT_ASC, FT_NO);
         break;
-    case F_PLACE:
+    case F_PLACE:       // Szűrés: hely
         connect(pSelectPlace, SIGNAL(placeIdChanged(qlonglong)), this, SLOT(setFromEdit(qlonglong)));
+        break;
+    case F_RPLACE:      // Szűrés: hely közvetett
+        connect(pSelectPlace, SIGNAL(placeIdChanged(qlonglong)), this, SLOT(setPlace(qlonglong)));
+        connect(pUiRPlace->lineEditPattern, SIGNAL(textChanged(QString)), this, SLOT(setFilter(QString)));
+        connect(pComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(setFromEdit(int)));
+        pModel->_setOwnerId(pSelectPlace->currentPlaceId(), _sPlaceId, TS_TRUE, "is_parent_place");
+        pModel->setFilter(_sNul, OT_ASC, FT_LIKE);
         break;
     }
     // Az aktuális érték megjelenítése
@@ -2014,7 +2055,7 @@ bool cFKeyWidget::setWidget()
         if (pModel != NULL) {
             int ix = pModel->indexOf(actId);
             if (ix < 0) return false;
-            pUi->comboBox->setCurrentIndex(ix);
+            pComboBox->setCurrentIndex(ix);
         }
         else if (pSelectPlace != NULL) {
             pSelectPlace->setCurrentPlace(actId);
@@ -2079,6 +2120,10 @@ void cFKeyWidget::setButtons()
         pUiPlace->toolButtonPlaceEdit->setDisabled(_actValueIsNULL || f);
         pUiPlace->toolButtonPlaceAdd->setDisabled(f);
         break;
+    case F_RPLACE:
+        pUiRPlace->toolButtonPlaceEdit->setDisabled(_actValueIsNULL || f);
+        pUiRPlace->toolButtonPlaceAdd->setDisabled(f);
+        break;
     }
 }
 
@@ -2098,6 +2143,11 @@ void cFKeyWidget::disableEditWidget(eTristate tsf)
     case F_PLACE:
         if (pSelectPlace == NULL) EXCEPTION(EPROGFAIL);
         pSelectPlace->setDisabled(_actValueIsNULL);
+        break;
+    case F_RPLACE:
+        if (pSelectPlace == NULL) EXCEPTION(EPROGFAIL);
+        pSelectPlace->setDisabled(_actValueIsNULL);
+        pUiRPlace->lineEditPattern->setDisabled(_actValueIsNULL);
         break;
     default:
         EXCEPTION(EPROGFAIL);
@@ -2146,7 +2196,7 @@ void cFKeyWidget::setFromEdit()
     }
     else {
         if (pModel != NULL) {
-            int ix = pUi->comboBox->currentIndex();
+            int ix = pComboBox->currentIndex();
             v = pModel->atId(ix);
         }
         else if (pSelectPlace != NULL) {
@@ -2175,6 +2225,18 @@ void cFKeyWidget::setFilter(const QString& _s)
     }
     ix = pModel->indexOf(id);
     if (ix >= 0) pUi->comboBox->setCurrentIndex(ix);
+    setFromEdit();
+}
+
+void cFKeyWidget::setPlace(qlonglong _pid)
+{
+    if(pModel == NULL) EXCEPTION(EPROGFAIL);
+    qlonglong id;
+    int ix = pComboBox->currentIndex();
+    id = pModel->atId(ix);
+    pModel->setOwnerId(_pid, _sPlaceId, TS_TRUE);
+    ix = pModel->indexOf(id);
+    if (ix >= 0) pComboBox->setCurrentIndex(ix);
     setFromEdit();
 }
 
@@ -2239,10 +2301,10 @@ void cFKeyWidget::modifyOwnerId(cFieldEditBase* pof)
 
 void cFKeyWidget::_refresh()
 {
-    if (pUi == NULL) EXCEPTION(EPROGFAIL);
     if (_pParentDialog != NULL) {
         QStringList constFilter = _fieldShape.features().slValue(_sRefine);
         if (!constFilter.isEmpty() && !constFilter.first().isEmpty()) {
+            if (pUi == NULL) EXCEPTION(EPROGFAIL);
             QString sql = constFilter.first();
             constFilter.pop_front();
             foreach (QString s, constFilter) {
@@ -2273,19 +2335,19 @@ void cFKeyWidget::_refresh()
             pModel->setConstFilter(sql, FT_SQL_WHERE);
         }
     }
-    pUi->comboBox->blockSignals(true);
+    pComboBox->blockSignals(true);
     pModel->setFilter();
-    pUi->comboBox->blockSignals(false);
+    pComboBox->blockSignals(false);
 }
 
 void cFKeyWidget::refresh()
 {
-    if (pUi == NULL) EXCEPTION(EPROGFAIL);
+    if (pModel == NULL) EXCEPTION(EPROGFAIL);
     qlonglong id = pModel->currendId();
     _refresh();
     int ix = pModel->indexOf(id);
     if (ix < 0) ix = 0;
-    pUi->comboBox->setCurrentIndex(ix);
+    pComboBox->setCurrentIndex(ix);
 }
 
 

@@ -86,7 +86,7 @@ INSERT INTO services(service_name, superior_service_mask, check_cmd, features,
                      1, '00:05:00', '00:30:00' , 5);
 INSERT INTO services(service_name, superior_service_mask, features,
                      max_check_attempts, normal_check_interval, retry_check_interval, flapping_interval, flapping_max_change)
-            VALUES  ('pvlan', 'portvlan', ':timing=timed:delay=1000', 3, '00:30:00', '00:05:00', '03:00:00', 4 );
+            VALUES  ('pvlan', 'portvlan', ':timing=timed:delay=1000:', 3, '00:30:00', '00:05:00', '03:00:00', 4 );
             
 ALTER TABLE patchs ADD COLUMN location point DEFAULT NULL;
 

@@ -2917,7 +2917,7 @@ void cLangTexts::saveText(QSqlQuery& _q, const QStringList& _texts, cRecord *po,
     qs.chop(1);
     QString sql = QString(
             "INSERT INTO localizations (text_id, table_for_text, language_id, texts) "
-                " VALUES (?, ?, ?, ARRAY[%1]) "
+                " VALUES (?, ?, %1, ARRAY[%2]) "
             "ON CONFLICT ON CONSTRAINT localizations_pkey DO UPDATE SET texts = EXCLUDED.texts"
                 ).arg(lid == NULL_ID ? "get_language_id()" : "?").arg(qs);
     execSql(_q, sql, vl);
