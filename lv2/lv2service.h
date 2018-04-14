@@ -229,7 +229,7 @@ public:
     /// @param q Superior tulajdonság esetén az alárendeltek beolvasásához használt objektum, a setSubs-nak adja át
     /// @param qs Szintén az opcionális alárendeltek beolvasásáoz egy opcionális query string, a setSubs második paramétere.
     virtual void postInit(QSqlQuery &q, const QString &qs = QString());
-    /// A thread inicializáló rutinjában meghívorr metódus, az objektum egyedi initje
+    /// A thread inicializáló rutinjában meghívott metódus, az objektum egyedi initje
     /// Alapértelmezetten egy üres (azonnal visszatér) metódus.
     virtual void threadPreInit();
     /// Beolvassa a szolgáltatás példányhoz tartozó változókat

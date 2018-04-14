@@ -90,4 +90,13 @@ INSERT INTO services(service_name, superior_service_mask, features,
             
 ALTER TABLE patchs ADD COLUMN location point DEFAULT NULL;
 
+-- ************************************************* BUGFIX! *********************************************************************
+
+INSERT INTO unusual_fkeys
+  ( table_name,   column_name, unusual_fkeys_type, f_table_name, f_column_name, f_inherited_tables) VALUES
+  ( 'port_vlans', 'port_id',   'owner',            'nports',     'port_id',     '{interfaces}');
+  
+-- *********************************************** END BUGFIX! *******************************************************************
+  
+  
 SELECT set_db_version(1, 12);

@@ -728,7 +728,7 @@ class LV2SHARED_EXPORT cNPort : public cRecord {
     CRECORD(cNPort);
 protected:
     /// Konstruktor a leszámazottak számára.
-    explicit cNPort(no_init_& __dummy) : cRecord(), params(this) {
+    explicit cNPort(no_init_& __dummy) : cRecord(), params(this, _sNul) {
         (void)__dummy;
         cNPort::descr();
     }
@@ -1086,7 +1086,7 @@ class LV2SHARED_EXPORT cPatch : public cRecord {
     CRECORD(cPatch);
 protected:
     /// Konstruktor a leszármazott osztályokhoz
-    explicit cPatch(no_init_&) : cRecord(), ports(this), params(this), pShares(NULL)
+    explicit cPatch(no_init_&) : cRecord(), ports(this, _sNul), params(this, _sNul), pShares(NULL)
     {
         cPatch::descr();
         containerValid = 0;

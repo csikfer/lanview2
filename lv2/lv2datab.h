@@ -869,7 +869,12 @@ public:
     /// Nyomkövetési információkhoz.
     QString toString() const;
     /// A tulajdonosra mutató távoli kulcs mező megkeresése
+    /// Ha a rekordban több távoli kulcs van, akkor az owner típusú indexével tér vissza.
+    /// Ha nincs owner típusú, akkor a property típusú indexével, feltéve hogy csak egy van.
+    /// Több távoli kulcs mező esetén, vagy ha ismert az idegen tábla, akkor a metódus másik változatát kell hívni.
     int ixToOwner(enum eEx __ex = EX_ERROR) const;
+    ///
+    int ixToOwner(const QString sFTable, enum eEx __ex = EX_ERROR) const;
     /// Az önmagára mutató távoli kulcs mező megkeresése
     int ixToParent(enum eEx __ex = EX_ERROR) const;
 protected:
@@ -1147,7 +1152,12 @@ public:
     virtual bool toEnd(int i);
     /// Lekérdezi egy mező értékét. A távoli kulcsokat megkisérli névvé konvertálni.
     /// Mindíg egy ember álltal értelmezhető értékkel (próbál) visszatérni.
-    virtual QString view(QSqlQuery &q, int __i) const;
+    /// Ha megadjuk a pFeatures paramétert, akkor ha a konténerben létezik "view.function" kulcs, akkor annak az értéke
+    /// egy SQL függvény kell legyen, melynek egy paraétere a mező érték, és ekkor a metódus a függvény visszatérési értékét adja vissza.
+    /// @param q Ha adatbázisműveletre van szükség, akkor az ezen keresztül.
+    /// @param __i A mező indexe
+    /// @param pFeatures Egy opcionális features érték.
+    virtual QString view(QSqlQuery &q, int __i, const cFeatures *pFeatures = NULL) const;
     ///
     virtual bool isContainerValid(qlonglong __mask) const;
     virtual void setContainerValid(qlonglong __set, qlonglong __clr = 0);
@@ -2360,6 +2370,7 @@ template <class R> const cRecStaticDescr *getPDescr(const QString& _tn, const QS
 #define CRECORD(R) \
         friend bool initPDescr<R>(const QString& _tn, const QString& _sn); \
         friend const cRecStaticDescr *getPDescr<R>(const QString& _tn, const QString& _sn); \
+        template <typename R1, typename R2> friend class tOwnRecords; \
     public: \
         R(); \
         R(const R& __o); \

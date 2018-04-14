@@ -88,7 +88,7 @@ QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const 
         et.clear();
     }
     if (et.isEmpty()) {
-        if (role == Qt::DisplayRole) return bTxt ? pr->getText(fix) : pr->view(*pq, fix);
+        if (role == Qt::DisplayRole) return bTxt ? pr->getText(fix) : pr->view(*pq, fix, &column.shapeField.features());
         return dcRole(column.dataCharacter, role);
     }
     int        id = (int)pr->getId(fix);

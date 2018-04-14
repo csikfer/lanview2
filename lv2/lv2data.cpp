@@ -1097,7 +1097,7 @@ qlonglong cNPort::_tableoid_nports     = NULL_ID;
 qlonglong cNPort::_tableoid_pports     = NULL_ID;
 qlonglong cNPort::_tableoid_interfaces = NULL_ID;
 
-cNPort::cNPort() : cRecord(), params(this)
+cNPort::cNPort() : cRecord(), params(this, _sNul)
 {
     // DBGOBJ();
     _set(cNPort::descr());
@@ -1470,8 +1470,8 @@ cPPort& cPPort::clone(const cRecord&__o)
 
 cInterface::cInterface()
     : cNPort(_no_init_)
-    , vlans(this)
-    , addresses(this)
+    , vlans(this, _sInterfaces)
+    , addresses(this, _sNul)
     , trunkMembers()
 {
 //    DBGOBJ();
@@ -1749,8 +1749,8 @@ bool cShareBack::operator==(int __i) const
 
 cPatch::cPatch()
     : cRecord()
-    , ports(this)
-    , params(this)
+    , ports(this, _sNul)
+    , params(this, _sNul)
     , pShares(new QSet<cShareBack>)
 {
     DBGOBJ();

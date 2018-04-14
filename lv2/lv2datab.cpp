@@ -2827,19 +2827,41 @@ QString cRecStaticDescr::toString() const
 
 int cRecStaticDescr::ixToOwner(eEx __ex) const
 {
-    int fix;
-    QList<int> props;
-    for (fix = 0; fix < _columnsNum; ++fix) {          // Az ownerre mutató mezőt keressük
+    int fix;    // A távoli kulcs mező indexe(lesz)
+    QList<int> props;   // A property típusra mutató kulcsok
+    // Elsődlegesen az ownerre mutató mezőt keressük
+    for (fix = 0; fix < _columnsNum; ++fix) {
         const cColStaticDescr& cd = columnDescrs()[fix];
         cColStaticDescr::eFKeyType t = cd.fKeyType;
         if (t == cColStaticDescr::FT_OWNER) break;
         if (t == cColStaticDescr::FT_PROPERTY) props << fix;
 
     }
-    if (fix >= _columnsNum) {
+    if (fix >= _columnsNum) {   // Nem volt owner típus
         if (props.size() == 1) {   // Ha csak egy van, akkor elfogadjuk
-            return props.first();
+            fix = props.first();
         }
+        else {
+            if (__ex) EXCEPTION(EDATA, -1, toString());
+            fix = NULL_IX;
+        }
+    }
+    return fix;
+}
+
+int cRecStaticDescr::ixToOwner(const QString sFTable, enum eEx __ex) const
+{
+    int fix;    // A távoli kulcs mező indexe(lesz)
+    if (sFTable.isEmpty()) return ixToOwner(__ex);
+    for (fix = 0; fix < _columnsNum; ++fix) {
+        const cColStaticDescr& cd = columnDescrs()[fix];
+        cColStaticDescr::eFKeyType t = cd.fKeyType;
+        if (t == cColStaticDescr::FT_OWNER || t == cColStaticDescr::FT_PROPERTY) {
+            // Van tábla nevünk, le tudjuk ellenőrizni jó távoli kulcsot találtunk-e
+            if (cd.fKeyTable == sFTable || cd.fKeyTables.contains(sFTable)) break;
+        }
+    }
+    if (fix >= _columnsNum) {
         if (__ex) EXCEPTION(EDATA, -1, toString());
         return NULL_IX;
     }
@@ -3273,10 +3295,16 @@ const QVariant& cRecord::get(int __i) const
     return _fields[chkIndex(__i)];
 }
 
-QString cRecord::view(QSqlQuery& q, int __i) const
+QString cRecord::view(QSqlQuery& q, int __i, const cFeatures *pFeatures) const
 {
     static const QString  rHaveNo = QObject::trUtf8("[HAVE NO]");
+    static const QString  sVFun   = "view.function";
     if (isIndex(__i) == false) return rHaveNo;
+    if (!isNull(__i) && pFeatures != NULL) {
+        if (pFeatures->keys().contains(sVFun)) {
+            return execSqlTextFunction(q, pFeatures->value(sVFun), get(__i));
+        }
+    }
     return descr()[__i].toView(q, get(__i));
 }
 

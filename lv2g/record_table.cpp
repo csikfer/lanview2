@@ -217,7 +217,13 @@ QString cRecordTableFilter::where(QVariantList& qparams)
     if (iFilter >= 0 && (eFilter = filterTypeList.at(iFilter)->toInt()) != FT_NO) {
         bool      isArray = false;                      // A set-et nem tömbként kezeljük.
         QString   colName = field.pColDescr->colNameQ();// Mező név, vagy kifelyezés
-        switch (field.pColDescr->eColType) {
+        int eColType = field.pColDescr->eColType;
+        QString   viewFunction = field.shapeField.feature("view.function"); // Konverziós függvény a megjelenítésnél
+        if (viewFunction.isEmpty() == false) {
+            eColType = cColStaticDescr::FT_TEXT;    // konvertáltuk a függvénnyel text-re
+            colName  = viewFunction + "(" + colName + ")";
+        }
+        switch (eColType) {
         case cColStaticDescr::FT_TEXT_ARRAY:
             isArray = true;
         case cColStaticDescr::FT_TEXT:
@@ -593,10 +599,12 @@ cRecordTableFODialog::~cRecordTableFODialog()
 QStringList cRecordTableFODialog::where(QVariantList& qparams)
 {
     QStringList r;
-    if (!filters.isEmpty()) foreach (cRecordTableFilter *pF, filters) {
-        QString rw = pF->where(qparams);
-        if (!rw.isEmpty()) {
-            r << rw;
+    if (!filters.isEmpty()) {
+        foreach (cRecordTableFilter *pF, filters) {
+            QString rw = pF->where(qparams);
+            if (!rw.isEmpty()) {
+                r << rw;
+            }
         }
     }
     return r;
@@ -1567,8 +1575,8 @@ int cRecordsViewBase::ixToOwner()
     QString key = mCat(pUpper->pTableShape->getName(), _sOwner);
     QString ofn = pTableShape->feature(key);
     int r;
-    if (ofn.isEmpty()) {    // Ki kell találni
-        r = recDescr().ixToOwner(EX_IGNORE);
+    if (ofn.isEmpty()) {    // Ki kell találni, nincs megadva a features mezőben
+        r = recDescr().ixToOwner(pUpper->recDescr().tableName(), EX_IGNORE);
         if (r < 0) {
             QString msg = trUtf8(
                     "A %1 al tábla nézetben (%2 tábla)\n a tulajdonos objektum táblára "
@@ -1787,6 +1795,7 @@ QStringList cRecordsViewBase::where(QVariantList& qParams)
     QStringList wl;
     int f = flags & (RTF_CHILD | RTF_IGROUP | RTF_NGROUP | RTF_IMEMBER | RTF_NMEMBER);
     if (f) { // A tulaj ID-jére szűrünk, ha van
+        if (pUpper == NULL) EXCEPTION(EPROGFAIL);
         if (owner_id == NULL_ID) {  // A tulajdonos/tag rekord nincs kiválasztva
             wl << _sFalse;      // Ezzel jelezzük, hogy egy üres táblát kell megjeleníteni
             return wl;          // Ez egy üres tábla lessz!!

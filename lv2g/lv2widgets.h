@@ -637,7 +637,9 @@ private slots:
 class Ui_fKeyEd;
 class Ui_placeEd;
 class Ui_fKeyPlaceEd;
+class Ui_fKeyPortEd;
 class cSelectPlace;
+class cSelectNode;
 
 /// @class cFKeyWidget
 /// Egy távoli kulcs mező megjelenítése, és szerkesztése
@@ -660,13 +662,15 @@ protected:
     Ui_fKeyEd          *pUi;            ///< Alap form távoli kulcshoz
     Ui_placeEd         *pUiPlace;       ///< Form egy hely kiválasztásához.
     Ui_fKeyPlaceEd     *pUiRPlace;      ///< Egy hely alapján szűrhető távoli kulcs
+    Ui_fKeyPortEd      *pUiPort;        ///< Form egy port kiválasztásához.
 
-    cRecordListModel   *pModel;         ///< No special filter (selector)
-    cSelectPlace       *pSelectPlace;
-    QAbstractButton    *pButtonEdit;
-    QAbstractButton    *pButtonAdd;
-    QAbstractButton    *pButtonRefresh;
-    QComboBox          *pComboBox;
+    cRecordListModel   *pModel;         ///< record list model
+    cSelectPlace       *pSelectPlace;   ///< Hely kiválasztása
+    cSelectNode        *pSelectNode;    ///< eszköz kiválasztása
+    QAbstractButton    *pButtonEdit;    ///< Hivatkozott objektum modosítása
+    QAbstractButton    *pButtonAdd;     ///< Új hivatkozott objektum
+    QAbstractButton    *pButtonRefresh; ///< Objektum lista frissítése
+    QComboBox          *pComboBox;      ///< Objektum lista comboBox
     /// A távoli kulcs által mutatott tábla leíró objektumára muatat
     const cRecStaticDescr *pRDescr;
     /// A távoli kulcs által mutatott tábla rekord dialógus leíró objektum.
@@ -676,7 +680,15 @@ protected:
     int             owner_ix;
     qlonglong       ownerId;
     int             ixRPlaceId; ///< Hivatkozott rekordban a place_id mező indexe.
-    enum eFilter { F_NO = 0, F_SIMPLE, F_PLACE, F_RPLACE };
+    /// Típus
+    enum eFilter {
+        F_NO = 0,   ///< Nincs szűrési lehetőség, csak egy comboBox az objektumokról.
+        F_SIMPLE,   ///< Egyszerű minta alapján szűrhető a lista
+        F_PLACE,    ///< Egy hely kiválasztása (szűrés minta és zóna alapján)
+        F_RPLACE,   ///< Az objektum lista szűrése zóna, hely, és minta alapján
+        F_PORT      ///< port kiválasztása zóna, hely, eszköz és port név minta alapján.
+    };
+    enum sPortType { P_ALL, P_PATCH, P_NODE, P_SNMP } _pt;
     int            _filter;
 protected slots:
     void setFromEdit(int i);
@@ -687,6 +699,7 @@ protected slots:
     void modifyOwnerId(cFieldEditBase* pof);
     void setFilter(const QString &_s);
     void setPlace(qlonglong _pid);
+    void setNode(qlonglong _nid);
     void refresh();
 };
 

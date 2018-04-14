@@ -305,14 +305,15 @@ public:
     }
     /// Keresés név alapján.
     /// @param __name   A keresett név (csak az owner id-vel együtt egyedi)
-    /// @param __oid Az tulajdonos id
+    /// @param _oid Az tulajdonos id
+    /// @param _ixoid Opcionális mező index: a kulcsmező indexe
     /// @return A listában megtaéállt első lista elem sorszáma, vagy -1, ha nem talállt semmit.
-    int indexOf (const QString& __name, qlonglong _oid) const {
+    int indexOf (const QString& __name, qlonglong _oid, int _ixoid = NULL_IX) const {
         if (QList<T *>::isEmpty()) return -1;
-        const qlonglong ixoid = QList<T *>::first()->descr().ixToOwner();
+        if (_ixoid < 0) _ixoid = QList<T *>::first()->descr().ixToOwner();
         typename QList<T *>::const_iterator    i = QList<T *>::constBegin();
         for (; i < QList<T *>::constEnd(); i++) {
-            if ((*i)->getId(ixoid) == _oid && (*i)->getName() == __name) return i - QList<T *>::constBegin();
+            if ((*i)->getId(_ixoid) == _oid && (*i)->getName() == __name) return i - QList<T *>::constBegin();
         }
         return -1;
     }
@@ -663,11 +664,23 @@ protected:
 public:
     /// Konstruktor, üres konténert hoz létre
     /// @param __po Tulajdonos objektum pointere.
-    tOwnRecords(O *__po) : tRecordList<C>(), ixOwnerId(C().descr().ixToOwner()), pOwner(__po) {
+    /// @remark Az owner id indexét egy C().descr().ixToOwner(tableName) hívással állapitja meg.
+    /// A tábla névet a megadott __po pointerű objektumból kérdezi le, ezért a konstruktort
+    /// a __po pointerű objektum konstruktorából nem hívhatjuk, mert ekkor még a descr() virtuális metódus nem elérhető,
+    /// vagyis az alkalmazás össze fog omlani.
+    tOwnRecords(O *__po) : tRecordList<C>(), ixOwnerId(C().descr().ixToOwner(__po->descr().tableName())), pOwner(__po) {
         if (pOwner == NULL) EXCEPTION(EPROGFAIL);
     }
-    /// Konstruktor (cpy konstruktor helyett)
-    tOwnRecords(O *__po, const tOwnRecords& __c) : tRecordList<C>(), ixOwnerId(C().descr().ixToOwner()), pOwner(__po) {
+    /// Konstruktor, üres konténert hoz létre
+    /// @param __po Tulajdonos objektum pointere.
+    /// @param sTableName A tulajdonos objektum tábla neve, ha üres stringet adunk meg, akkor az ixOwnerId értékét egy
+    ///     paraméter nélküli C::ixToOwner() hívással fogja megállapítani.
+    /// @remark Ez a konstruktor hívható a pOwner pointerű objektum konstruktorából is.
+    tOwnRecords(O *__po, const QString sTableName) : tRecordList<C>(), ixOwnerId(C().descr().ixToOwner(sTableName)), pOwner(__po) {
+        if (pOwner == NULL) EXCEPTION(EPROGFAIL);
+    }
+    /// Konstruktor (copy konstruktor helyett)
+    tOwnRecords(O *__po, const tOwnRecords& __c) : tRecordList<C>(), ixOwnerId(C().descr().ixToOwner(O::_pRecordDescr->tableName())), pOwner(__po) {
         if (pOwner == NULL) EXCEPTION(EPROGFAIL);
         append(__c);
     }

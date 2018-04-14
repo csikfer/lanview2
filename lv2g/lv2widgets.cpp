@@ -8,6 +8,7 @@
 #include "ui_fkeyed.h"
 #include "ui_place_ed.h"
 #include "ui_rplace_ed.h"
+#include "ui_port_ed.h"
 #include "ui_fkeyarrayed.h"
 
 #include "popupreport.h"
@@ -1864,9 +1865,11 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
     pUi       = NULL;
     pUiPlace  = NULL;
     pUiRPlace = NULL;
+    pUiPort   = NULL;
     pModel    = NULL;
     pRDescr   = NULL;
     pSelectPlace= NULL;
+    pSelectNode=NULL;
     pTableShape = NULL;
     owner_ix = NULL_IX;
     ownerId  = NULL_ID;
@@ -1890,6 +1893,21 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
                 _filter = F_RPLACE;
                 _height = 3;
             }
+        }
+        else if (sFilter.startsWith(_sPort + ".")) {
+            QString pt = sFilter.mid(_sPoint.size() + 1);
+            if      (0 == pt.compare(_sAll,  Qt::CaseInsensitive)) _pt = P_ALL;
+            else if (0 == pt.compare(_sNode, Qt::CaseInsensitive)) _pt = P_NODE;
+            else if (0 == pt.compare(_sSnmp, Qt::CaseInsensitive)) _pt = P_SNMP;
+            else if (0 == pt.compare(_sPatch,Qt::CaseInsensitive)) _pt = P_PATCH;
+            else {
+                EXCEPTION(EDATA, 0, trUtf8("Invalid filter sub type : %1; Field shape : %2").arg(sFilter, _tf.identifying(false)));
+            }
+            _filter = F_PORT;
+            _height = 4;
+        }
+        else {
+            EXCEPTION(EDATA, 0, trUtf8("Invalid filter type : %1; Field shape : %2").arg(sFilter, _tf.identifying(false)));
         }
     }
     if (_filter == F_PLACE) {
@@ -1923,6 +1941,22 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
         pButtonRefresh= pUiRPlace->toolButtonRefresh;
 
     }
+    else if (_filter == F_PORT) {
+        pUiPort = new Ui_fKeyPortEd;
+        pUiPort->setupUi(this);
+        pLayout = pUiPort->horizontalLayout2;    // A NULL gombot ebbe rakjuk
+        pSelectNode = new cSelectNode(pUiPort->comboBoxZone, pUiPort->comboBoxPlace, pUiPort->comboBoxNode,
+                                      pUiPort->lineEditPlacePattern, pUiPort->lineEditNodePattern, _sNul, _sNul, this);
+        pSelectNode->setPlaceRefreshButton(pUiPort->toolButtonRefresh);
+        pSelectNode->setPlaceInsertButton(pUiPort->toolButtonPlaceAdd);
+        pSelectNode->setPlaceEditButton(pUiPort->toolButtonPlaceEdit);
+        pSelectNode->setPlaceInfoButton(pUiPort->toolButtonPlaceInfo);
+
+        pEditWidget = pComboBox = pUiPort->comboBox;
+        pButtonEdit = pUiPort->toolButtonEdit;
+        pButtonAdd  = pUiPort->toolButtonAdd;
+        pButtonRefresh= pUiPort->toolButtonRefresh;
+    }
     else {
         pUi = new Ui_fKeyEd;
         pUi->setupUi(this);
@@ -1935,6 +1969,23 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
     }
     if (_filter != F_PLACE) {
         pModel = new cRecordListModel(*pRDescr, this);
+        if (_filter == F_PORT) {
+            switch (_pt) {
+            case P_ALL:
+                break;
+            case P_PATCH:
+                pSelectNode->setNodeModel(new cRecordListModel(_sPatchs), TS_FALSE);
+                break;
+            case P_NODE:
+                pSelectNode->setNodeModel(new cRecordListModel(_sNodes), TS_FALSE);
+                break;
+            case P_SNMP:
+                pSelectNode->setNodeModel(new cRecordListModel(_sSnmpDevices), TS_FALSE);
+                break;
+            default:
+                EXCEPTION(EPROGFAIL);
+            }
+        }
         // Ha nincs név mező...
         if (pRDescr->nameIndex(EX_IGNORE) < 0) pModel->setToNameF(_colDescr.fnToName);
         pModel->joinWith(pComboBox);;
@@ -1968,7 +2019,7 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
             if (_pParentDialog == NULL) {
                 QAPPMEMO(trUtf8("Invalid feature %1.%2 'owner=self', invalid context.").arg(_tableShape.getName(), _fieldShape.getName()), RS_CRITICAL | RS_BREAK);
             }
-            owner_ix = __fr.record().descr().ixToOwner(EX_IGNORE);
+            owner_ix = __fr.record().descr().ixToOwner(EX_IGNORE); // ??????!!!!!
             if (owner_ix < 0) {
                 QAPPMEMO(trUtf8("Invalid feature %1.%2 'owner=self', owner id index not found.").arg(_tableShape.getName(), _fieldShape.getName()), RS_CRITICAL | RS_BREAK);
             }
@@ -2027,14 +2078,20 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
         pUi->label->hide();
         pModel->setFilter(_sNul, OT_ASC, FT_NO);
         break;
-    case F_PLACE:       // Szűrés: hely
+    case F_PLACE:       // Hely
         connect(pSelectPlace, SIGNAL(placeIdChanged(qlonglong)), this, SLOT(setFromEdit(qlonglong)));
         break;
-    case F_RPLACE:      // Szűrés: hely közvetett
+    case F_RPLACE:      // Szűrés: helyre
         connect(pSelectPlace, SIGNAL(placeIdChanged(qlonglong)), this, SLOT(setPlace(qlonglong)));
         connect(pUiRPlace->lineEditPattern, SIGNAL(textChanged(QString)), this, SLOT(setFilter(QString)));
         connect(pComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(setFromEdit(int)));
         pModel->_setOwnerId(pSelectPlace->currentPlaceId(), _sPlaceId, TS_TRUE, "is_parent_place");
+        pModel->setFilter(_sNul, OT_ASC, FT_LIKE);
+        break;
+    case F_PORT:        // Port
+        connect(pSelectNode, SIGNAL(nodeIdChanged(qlonglong)), this, SLOT(setNode(qlonglong)));
+        connect(pUiPort->lineEditPattern, SIGNAL(textChanged(QString)), this, SLOT(setFilter(QString)));
+        connect(pComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(setFromEdit(int)));
         pModel->setFilter(_sNul, OT_ASC, FT_LIKE);
         break;
     }
@@ -2054,7 +2111,20 @@ bool cFKeyWidget::setWidget()
     if (!_actValueIsNULL) {
         if (pModel != NULL) {
             int ix = pModel->indexOf(actId);
-            if (ix < 0) return false;
+            if (ix < 0) {
+                if (pSelectPlace != NULL) {
+                    pSelectPlace->setCurrentZone(ALL_PLACE_GROUP_ID);
+                    pSelectPlace->setCurrentZone(NULL_ID);
+                }
+                else if (pSelectNode) {
+                    cPatch n;
+                    if (!n.fetchById(actId)) return false;
+                    pSelectNode->setCurrentNode(n.getId(_sNodeId));
+                }
+                else return false;
+                ix = pModel->indexOf(actId);
+                if (ix < 0) return false;
+            }
             pComboBox->setCurrentIndex(ix);
         }
         else if (pSelectPlace != NULL) {
@@ -2124,6 +2194,10 @@ void cFKeyWidget::setButtons()
         pUiRPlace->toolButtonPlaceEdit->setDisabled(_actValueIsNULL || f);
         pUiRPlace->toolButtonPlaceAdd->setDisabled(f);
         break;
+    case F_PORT:
+        pUiPort->toolButtonEdit->setDisabled(_actValueIsNULL || f);
+        pUiPort->toolButtonAdd->setDisabled(f);
+        break;
     }
 }
 
@@ -2148,6 +2222,11 @@ void cFKeyWidget::disableEditWidget(eTristate tsf)
         if (pSelectPlace == NULL) EXCEPTION(EPROGFAIL);
         pSelectPlace->setDisabled(_actValueIsNULL);
         pUiRPlace->lineEditPattern->setDisabled(_actValueIsNULL);
+        break;
+    case F_PORT:
+        if (pSelectNode == NULL) EXCEPTION(EPROGFAIL);
+        pSelectNode->setDisabled(_actValueIsNULL);
+        pUiPort->lineEditPattern->setDisabled(_actValueIsNULL);
         break;
     default:
         EXCEPTION(EPROGFAIL);
@@ -2235,6 +2314,18 @@ void cFKeyWidget::setPlace(qlonglong _pid)
     int ix = pComboBox->currentIndex();
     id = pModel->atId(ix);
     pModel->setOwnerId(_pid, _sPlaceId, TS_TRUE);
+    ix = pModel->indexOf(id);
+    if (ix >= 0) pComboBox->setCurrentIndex(ix);
+    setFromEdit();
+}
+
+void cFKeyWidget::setNode(qlonglong _nid)
+{
+    if(pModel == NULL) EXCEPTION(EPROGFAIL);
+    qlonglong id;
+    int ix = pComboBox->currentIndex();
+    id = pModel->atId(ix);
+    pModel->setOwnerId(_nid, _sPortId, TS_TRUE);
     ix = pModel->indexOf(id);
     if (ix >= 0) pComboBox->setCurrentIndex(ix);
     setFromEdit();
