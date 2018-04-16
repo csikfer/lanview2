@@ -35,7 +35,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION update_port_vlan(pid bigint, vid bigint, vt vlantype) RETURNS reasons AS $$
+CREATE OR REPLACE FUNCTION update_port_vlan(pid bigint, vid bigint, vt vlantype, st settype DEFAULT 'query'::settype) RETURNS reasons AS $$
 DECLARE
     rec port_vlans;
     r reasons;
@@ -48,14 +48,14 @@ BEGIN
         ELSE
             r := 'insert';
         END IF;
-        INSERT INTO port_vlans (port_id, vlan_id, vlan_type, flag) VALUES (pid, vid, vt, true);
+        INSERT INTO port_vlans (port_id, vlan_id, vlan_type, set_type, flag) VALUES (pid, vid, vt, st, true);
         RETURN r;
     END IF;
     IF rec.vlan_type = vt THEN
         UPDATE port_vlans SET last_time = now(), flag = true WHERE port_id = pid AND vlan_id = vid;
         RETURN 'unchange';
     END IF;
-    UPDATE port_vlans SET vlan_type = vt, first_time = now(), last_time = now(), flag = true WHERE port_id = pid AND vlan_id = vid;
+    UPDATE port_vlans SET vlan_type = vt, set_type = st, first_time = now(), last_time = now(), flag = true WHERE port_id = pid AND vlan_id = vid;
     INSERT INTO port_vlan_logs(reason, port_id, vlan_id,   old_type, first_time_old, last_time_old, new_type)
                         VALUES('modify', pid,    vid, rec.vlan_type, rec.first_time, rec.last_time, vt);
     RETURN 'modify';
