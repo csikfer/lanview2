@@ -589,11 +589,11 @@ QString cColStaticDescr::fKeyId2name(QSqlQuery& q, qlonglong id, eEx __ex) const
         return textId2text(q, (int)id, pParent->tableName(), 0);
     }
     QString n = QString::number(id);
-    QString r = "#" + n;    // If fail
+    QString r = "[#" + n + "]";    // If fail
     if (fnToName.isEmpty() == false) {
         QString sql = "SELECT " + fnToName + parentheses(n);
-        EXECSQL(q, sql);
-        if (q.first()) return q.value(0).toString();
+        // Ha időközben törölték, akkor hibát dob az exec, ezért nincs további SQL hibavizsgálat
+        if (q.exec(sql) && q.first()) return q.value(0).toString();
         return r;
     }
     if (fKeyTable.isEmpty() == false) {

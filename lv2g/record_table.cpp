@@ -918,7 +918,7 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
             dataAlign |= Qt::AlignRight;
         else if (pColDescr->eColType == cColStaticDescr::FT_REAL)
             dataAlign |= Qt::AlignRight;
-        // 'XX_color' vagy 'font' vagy 'tool_tip' flagesetén kell az enum típusa!
+        // 'XX_color' vagy 'font' vagy 'tool_tip' flag esetén kell az enum típusa!
         if (pColDescr->eColType == cColStaticDescr::FT_ENUM ||pColDescr->eColType == cColStaticDescr::FT_BOOLEAN) {
             if (fieldFlags && ENUM2SET4(FF_BG_COLOR, FF_FG_COLOR, FF_FONT, FF_TOOL_TIP)) {
                 if (pColDescr->eColType == cColStaticDescr::FT_ENUM) {

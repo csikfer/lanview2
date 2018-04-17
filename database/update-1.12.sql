@@ -96,6 +96,103 @@ INSERT INTO unusual_fkeys
   ( table_name,   column_name, unusual_fkeys_type, f_table_name, f_column_name, f_inherited_tables) VALUES
   ( 'port_vlans', 'port_id',   'owner',            'nports',     'port_id',     '{interfaces}');
   
+
+-- *********************************************** BUGFIX! #2 *******************************************************************
+
+-- Ellenőrzi, hogy a address (ip cím) mező rendben van-e
+-- Nem ütközik más címmel
+-- Ha csak a cím változott, és az új cím másik subnet, akkor kizárást dobott, a javított fg. modosítja a subnet_id -t.
+CREATE OR REPLACE FUNCTION check_ip_address() RETURNS TRIGGER AS $$
+DECLARE
+    n   cidr;
+    ipa ip_addresses;
+    nip boolean;
+    snid bigint;
+    cnt integer;
+BEGIN
+ -- RAISE INFO 'check_ip_address() %/% NEW = %',TG_TABLE_NAME, TG_OP , NEW;
+    -- Az új rekordban van ip cím
+    nip := NEW.ip_address_type IS NULL;
+    IF nip THEN
+        IF NEW.address IS NULL OR is_dyn_addr(NEW.address) IS NOT NULL THEN
+            NEW.ip_address_type := 'dynamic';
+        ELSE
+            NEW.ip_address_type := 'fixip';
+        END IF;
+    END IF;
+    IF NEW.address IS NOT NULL THEN
+        -- Nincs subnet (id), keresünk egyet
+        IF NEW.subnet_id IS NULL AND NEW.ip_address_type <> 'external' THEN
+            BEGIN
+                SELECT subnet_id INTO STRICT NEW.subnet_id FROM subnets WHERE netaddr >> NEW.address;
+                EXCEPTION
+                    WHEN NO_DATA_FOUND THEN     -- nem találtunk
+                        PERFORM error('NotFound', -1, 'subnet address for : ' || CAST(NEW.address AS TEXT), 'check_ip_address()', TG_TABLE_NAME, TG_OP);
+                    WHEN TOO_MANY_ROWS THEN     -- több találat is van, nem egyértelmű
+                        PERFORM error('Ambiguous',-1, 'subnet address for : ' || CAST(NEW.address AS TEXT), 'check_ip_address()', TG_TABLE_NAME, TG_OP);
+            END;
+            -- RAISE INFO 'Set subnet id : %', NEW.subnet_id;
+        -- Ha megadtuk a subnet id-t is, akkor a címnek benne kell lennie
+        ELSIF NEW.ip_address_type <> 'external' THEN
+            SELECT netaddr INTO n FROM subnets WHERE subnet_id = NEW.subnet_id;
+            IF NOT FOUND THEN
+                PERFORM error('InvRef', NEW.subnet_id, 'subnet_id', 'check_ip_address()', TG_TABLE_NAME, TG_OP);
+            END IF;
+            IF NOT n >> NEW.address AND TG_OP = 'UPDATE' THEN   -- Update: csak az IP változott, subnet javítása, ha kell
+                IF NEW.subnet_id = OLD.subnet_id AND NEW.address <> OLD.address THEN
+                    SELECT subnet_id INTO snid FROM subnets WHERE netaddr >> NEW.address;
+                    GET DIAGNOSTICS cnt = ROW_COUNT;
+                    IF cnt = 1 THEN
+                        NEW.subnet_id = snid;
+                        SELECT netaddr INTO n FROM subnets WHERE subnet_id = snid;
+                    END IF;
+                END IF;
+            END IF;
+            IF NOT n >> NEW.address THEN
+                PERFORM error('InvalidNAddr', NEW.subnet_id, CAST(n AS TEXT) || '>>' || CAST(NEW.address AS TEXT), 'check_ip_address()', TG_TABLE_NAME, TG_OP);
+            END IF;
+        ELSE
+            -- external típusnál mindíg NULL a subnet_id
+            NEW.subnet_id := NULL;
+        END IF;
+        -- Ha nem private, akkor vizsgáljuk az ütközéseket
+        IF NEW.address IS NOT NULL AND NEW.ip_address_type <> 'private' THEN
+            -- Azonos IP címek?
+            FOR ipa IN SELECT * FROM ip_addresses WHERE NEW.address = address LOOP
+                IF ipa.ip_address_id <> NEW.ip_address_id THEN 
+                    IF ipa.ip_address_type = 'dynamic' THEN
+                    -- Ütköző dinamikust töröljük.
+                        UPDATE ip_addresses SET address = NULL WHERE ip_address_id = ipa.ip_address_id;
+                    ELSIF ipa.ip_address_type = 'joint' AND (nip OR NEW.ip_address_type = 'joint') THEN
+                    -- Ha közös címként van megadva a másik, ...
+                        NEW.ip_address_type := 'joint';
+                    ELSIF ipa.ip_address_type <> 'private' THEN
+                    -- Minden más esetben ha nem privattal ütközik az hiba
+                        PERFORM error('IdNotUni', 0, CAST(NEW.address AS TEXT), 'check_ip_address()', TG_TABLE_NAME, TG_OP);
+                    END IF;
+                END IF;
+            END LOOP;
+        END IF;
+        -- Ha a preferred nincs megadva, akkor az elsőnek megadott cím a preferált
+        IF NEW.preferred IS NULL THEN
+            SELECT 1 + COUNT(*) INTO NEW.preferred FROM interfaces JOIN ip_addresses USING(port_id) WHERE port_id = NEW.port_id AND preferred IS NOT NULL AND address IS NOT NULL;
+        END IF;
+    ELSE
+        -- Cím ként a NULL csak a dynamic típusnál megengedett
+        IF NEW.ip_address_type <> 'dynamic' THEN
+            PERFORM error('DataError', 0, 'NULL ip as non dynamic type', 'check_ip_address()', TG_TABLE_NAME, TG_OP);
+        END IF;
+        -- RAISE INFO 'IP address is NULL';
+    END IF;
+    -- RAISE INFO 'Return, NEW = %', NEW;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Valamiért voltak cím ütközések, a VIEW segít kideríteni (sajnos az okát nem)
+CREATE OR REPLACE VIEW ip_address_cols AS SELECT address, ip_address_type, port_id2full_name(port_id) FROM ip_addresses AS ipa
+       WHERE address IS NOT NULL AND 1 <> (SELECT COUNT(*) FROM ip_addresses AS ict WHERE ict.address = ipa.address);
+  
 -- *********************************************** END BUGFIX! *******************************************************************
   
   
