@@ -193,6 +193,157 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE VIEW ip_address_cols AS SELECT address, ip_address_type, port_id2full_name(port_id) FROM ip_addresses AS ipa
        WHERE address IS NOT NULL AND 1 <> (SELECT COUNT(*) FROM ip_addresses AS ict WHERE ict.address = ipa.address);
   
+CREATE OR REPLACE FUNCTION replace_arp(ipa inet, hwa macaddr, stp settype DEFAULT 'query', hsi bigint DEFAULT NULL) RETURNS reasons AS $$
+DECLARE
+    arp     arps;
+    noipa   boolean := false;
+    joint   boolean := false;
+    oip     ip_addresses;
+    net     cidr;
+    n       integer;
+    t       text;
+BEGIN
+    RAISE INFO 'ARP : % - %; %', ipa, hwa, stp;
+    -- check / update ip_addresses table
+    BEGIN       -- IP -> Get old ip_addresses record
+        SELECT * INTO STRICT oip FROM ip_addresses WHERE address = ipa;
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+                noipa := true;
+                RAISE INFO 'No ip_addresses record.';
+            WHEN TOO_MANY_ROWS THEN
+		RAISE INFO 'More ip_addresses record.';
+                IF 0 < COUNT(*) FROM ip_addresses WHERE address = ipa AND ip_address_type <> 'joint'::addresstype THEN
+                    PERFORM error('DataError', -1, 'address', 'replace_arp(' || ipa::text || ', ' || hwa::text || ')', 'ip_addresses');
+                END IF;
+                RAISE INFO 'ip_addresses records is all join.';
+                joint := true;
+    END;
+    IF joint THEN    -- Check ip_addresses record if joint
+        IF 0 = COUNT(*) FROM ip_addresses JOIN interfaces USING(port_id) WHERE address = ipa AND hwaddress = hwa THEN
+	    -- not found, fake MAC ?
+	    IF 0 = COUNT(*) FROM ip_addresses JOIN port_params USING(port_id) JOIN param_types USING(param_type_id) WHERE param_type_name = 'override_mac' AND address = ipa AND cast_to_mac(param_value) = hwa THEN
+		t := 'IP address (join) missing : ' || ipa::text || ' -- ' || hwa::text || ' type is ' || stp || '. '
+		 || 'The existing IP address record ports names : '
+		 || ARRAY(SELECT ' ' || port_id2full_name(port_id) || ' / ' || hwaddress || ' '  FROM ip_addresses JOIN interfaces USING(port_id) WHERE address = ipa)::text;
+		RAISE WARNING 'Ticket : %', t; 
+		PERFORM ticket_alarm('critical', t, hsi);
+	    END IF;
+        END IF;
+    ELSIF stp = 'config' THEN  -- We assume this is fixip
+        IF noipa THEN   -- not found ip_addresses record
+            RAISE INFO 'Nothing address record (config) : %', ipa;
+            SELECT ip_addresses.* INTO oip FROM ip_addresses JOIN interfaces USING(port_id) WHERE ip_address_type = 'dynamic' AND hwaddress = hwa;
+            GET DIAGNOSTICS n = ROW_COUNT;
+            IF n = 1 THEN   -- One record ?
+		t := 'Modify by config : ' || oip.ip_address_type  || ' -> fixip ; ' || oip.address || ' -> ' || ipa;
+		PERFORM error('DataWarn', oip.ip_address_id, t, 'replace_arp', 'ip_addresses');
+                DECLARE
+                    msg text;
+                    det text;
+                    hnt text;
+                BEGIN 
+                    UPDATE ip_addresses SET address = ipa, ip_address_type = 'fixip' WHERE ip_address_id = oip.ip_address_id;
+                EXCEPTION WHEN OTHERS THEN
+                    GET STACKED DIAGNOSTICS
+                        msg = MESSAGE_TEXT,
+                        det = PG_EXCEPTION_DETAIL,
+                        hnt = PG_EXCEPTION_HINT;
+                    t := 'IP address update error : ' || ipa::text || ' -- ' || hwa::text || ' type is config. '
+                      || 'The existing IP address record port name : ' || port_id2full_name(oip.port_id)
+                      || ' . Message : ' || msg || ' Detail : ' || det || ' Hint : ' hnt;
+                    RAISE WARNING 'Ticket : %', t; 
+                    PERFORM ticket_alarm('critical', t, hsi);
+                END;
+            END IF;
+        ELSE                -- Check ip_addresses record if not joint
+            RAISE INFO 'Address record (config) : % - %', ipa, port_id2full_name(oip.port_id);
+            IF hwa = hwaddress FROM interfaces WHERE port_id = oip.port_id THEN -- Check MAC
+                IF oip.ip_address_type = 'dynamic' THEN
+                    UPDATE ip_addresses SET ip_address_type = 'fixip' WHERE ip_address_id = oip.ip_address_id;
+                END IF;
+            ELSE    -- ip address collision
+                t := 'IP address collision : ' || ipa::text || ' -- ' || hwa::text || ' type is config. '
+                  || 'The existing IP address record port name : ' || port_id2full_name(oip.port_id);
+                RAISE WARNING 'Ticket : %', t; 
+                PERFORM ticket_alarm('critical', t, hsi);
+            END IF;
+        END IF;
+    ELSE    -- stp <> 'config' ( = 'query')
+        IF NOT noipa THEN
+	    RAISE INFO 'Address record (%) : % - %', stp, ipa, port_id2full_name(oip.port_id);
+	    IF hwa <> hwaddress FROM interfaces WHERE port_id = oip.port_id THEN
+		IF oip.ip_address_type = 'dynamic' THEN     -- Clear old dynamic IP
+		    RAISE INFO 'Delete address (%) : % - %', stp, port_id2full_name(oip.port_id), ipa;
+		    UPDATE ip_addresses SET address = NULL WHERE ip_address_id = oip.ip_address_id;
+		    noipa := true;
+		ELSE
+		    t := 'IP address collision : ' || ipa::text || ' -- ' || hwa::text || ' type is ' || stp || '. '
+		      || 'The existing IP address record port name : ' || port_id2full_name(oip.port_id);
+		    RAISE WARNING 'Ticket : %', t; 
+		    PERFORM ticket_alarm('critical', t, hsi);
+		END IF;
+	    END IF;
+	END IF;
+	IF noipa THEN
+	    RAISE INFO 'Nothing address record (%) : %', stp, ipa;
+	    SELECT ip_addresses.* INTO oip FROM ip_addresses JOIN interfaces USING(port_id) WHERE ip_address_type = 'dynamic' AND hwaddress = hwa;
+	    GET DIAGNOSTICS n = ROW_COUNT;
+	    RAISE INFO '% record by hwaddress', n;
+	    IF n = 1 THEN   -- One record ?
+		DECLARE
+		    msg text;
+		    det text;
+		    hnt text;
+		BEGIN
+		    RAISE INFO 'Update ip_address : % -> %', ipa, port_id2full_name(oip.port_id);
+		    UPDATE ip_addresses SET address = ipa WHERE ip_address_id = oip.ip_address_id;
+		EXCEPTION WHEN OTHERS THEN
+		    GET STACKED DIAGNOSTICS
+			msg = MESSAGE_TEXT,
+			det = PG_EXCEPTION_DETAIL,
+			hnt = PG_EXCEPTION_HINT;
+		    t := 'IP address update error : ' || ipa::text || ' -- ' || hwa::text || ' type is ' || stp || '. '
+		      || 'The existing IP address record port name : ' || port_id2full_name(oip.port_id)
+		      || ' . Message : ' || msg || ' Detail : ' || det || ' Hint : ' hnt;
+		    RAISE WARNING 'Ticket : %', t; 
+		    PERFORM ticket_alarm('critical', t, hsi);
+		END;
+	    END IF;
+	END IF;
+    END IF;
+    -- update arps table
+    RAISE INFO 'Get arps record : %', ipa;
+    SELECT * INTO arp FROM arps WHERE ipaddress = ipa;
+    IF NOT FOUND THEN
+        RAISE INFO 'Insert arps: % - %', ipa, hwa;
+        INSERT INTO arps(ipaddress, hwaddress,set_type, host_service_id, arp_note) VALUES (ipa, hwa, stp, hsi, t);
+        RETURN 'insert';
+    ELSE
+        IF arp.hwaddress = hwa THEN
+	    IF arp.set_type < stp THEN
+                RAISE INFO 'Update arps: % - %', ipa, hwa;
+	        UPDATE arps SET set_type = stp, host_service_id = hsi, last_time = CURRENT_TIMESTAMP, arp_note = t WHERE ipaddress = arp.ipaddress;
+		RETURN 'update';
+	    ELSE
+                RAISE INFO 'Touch arps: % - %', ipa, hwa;
+	        UPDATE arps SET last_time = CURRENT_TIMESTAMP, arp_note = t WHERE ipaddress = arp.ipaddress;
+		RETURN 'found';
+	    END IF;
+        ELSE
+            RAISE INFO 'Move arps: % - % -> %', ipa, arp.hwaddress, hwa;
+            UPDATE arps
+                SET hwaddress = hwa,  first_time = CURRENT_TIMESTAMP, set_type = stp, host_service_id = hsi, last_time = CURRENT_TIMESTAMP, arp_note = t
+                WHERE ipaddress = arp.ipaddress;
+            INSERT INTO
+                arp_logs(reason, ipaddress, hwaddress_new, hwaddress_old, set_type_old, host_service_id_old, first_time_old, last_time_old)
+                VALUES( 'move',  ipa,       hwa,           arp.hwaddress, arp.set_type, arp.host_service_id, arp.first_time, arp.last_time);
+            RETURN 'modify';
+        END IF;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
 -- *********************************************** END BUGFIX! *******************************************************************
   
   
