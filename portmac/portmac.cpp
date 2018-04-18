@@ -180,19 +180,28 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
                 if (ix < 0) {
                     if (st == 0) {  // Üres trunk?
                         msg = trUtf8("A %1:%2 trunk-nek nincs egyetlen tagja sem.").arg(host().getName(), np.getName());
-                        APPMEMO(__q, msg, RS_WARNING);
+                        APPMEMO(__q, msg, RS_ON);
                     }
                     break;  // Nincs, vagy nincs több
                 }
                 // port ID
-                qlonglong pid = cLldpLink().getLinked(__q, host().ports[ix]->getId());
+                qlonglong pid = host().ports[ix]->getId();
+                qlonglong pid_lldp = cLldpLink().getLinked(__q, pid);   // LLDP-vel felfedezett link
+                qlonglong pid_log  = cLogLink(). getLinked(__q, pid);   // Logikai (manuálisan rögzített) link
                 // host ID
                 qlonglong hid = NULL_ID;
                 cNPort    lp;
-                if (pid != NULL_ID) {
-                    hid = lp.setById(__q, pid).getId(_sNodeId);
+                if (pid_lldp != NULL_ID && pid_log != NULL_ID && pid_lldp == pid_log) {
+                    msg = trUtf8("A %1:%2 trunk %3 tagjáhozrendelt linkek ellentmondásosak: LLDP : %4; Logikai : %5")
+                            .arg(host().getName(), np.getName(), host().ports[ix]->getName()
+                                 , cNPort::getFullNameById(__q, pid_lldp), cNPort::getFullNameById(__q, pid_log));
+                    APPMEMO(__q, msg, RS_CRITICAL);
+                    pid_log = NULL_ID;  // Az LLDP-t hisszük el.
                 }
-                else {  // Nincs link ? Trunk-nél!
+                if (pid_lldp != NULL_ID || pid_log != NULL_ID) {
+                    hid = lp.setById(__q, pid_lldp == NULL_ID ? pid_log : pid_lldp).getId(_sNodeId);
+                }
+                else {  // Nincs LLDP link ? Trunk-nél!
                     // Ha van "link_is_invisible_for_LLDP" paraméter, és igaz, akkor nem pampogunk a link hiánya miatt
                     eTristate f = host().ports[ix]->getBoolParam(linkIsInvisibleForLLDPTypeId, EX_IGNORE);
                     if (f == TS_TRUE) continue;
