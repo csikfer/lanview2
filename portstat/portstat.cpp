@@ -218,9 +218,6 @@ void cDevicePSt::postInit(QSqlQuery &_q, const QString&)
         else if (lldp_pid != NULL_ID && logl_pid == NULL_ID) {
             wMsg = trUtf8("Nincs logikai link, csak LLDP.");
         }
-        else {
-            EXCEPTION(EPROGFAIL);
-        }
         // Likey linked port ID is lldp_pid
         if (lldp_pid == NULL_ID) continue;  // No likely link
         DM;
