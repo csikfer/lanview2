@@ -5,6 +5,8 @@
 #define VERSION_MINOR   01
 #define VERSION_STR     _STR(VERSION_MAJOR) "." _STR(VERSION_MINOR)
 
+bool appMemoOn = false;
+
 const QString& setAppHelp()
 {
     return _sNul;
@@ -35,6 +37,7 @@ lv2portMac::lv2portMac() : lanView()
         try {
             insertStart(*pQuery);
             subsDbNotif();
+            appMemoOn = cSysParam::getBoolSysParam(*pQuery, "app_memo_on", false);
             setup(TS_FALSE);
         } CATCHS(lastError)
     }
@@ -178,7 +181,7 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
                 // Find trunk members
                 ix = host().ports.indexOf(_sPortStapleId, np.get(_sPortId), st);
                 if (ix < 0) {
-                    if (st == 0) {  // Üres trunk?
+                    if (st == 0 && appMemoOn) {  // Empty trunk
                         msg = trUtf8("A %1:%2 trunk-nek nincs egyetlen tagja sem.").arg(host().getName(), np.getName());
                         APPMEMO(__q, msg, RS_ON);
                     }

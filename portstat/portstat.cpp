@@ -195,34 +195,34 @@ void cDevicePSt::postInit(QSqlQuery &_q, const QString&)
         lldp_pid = lldp.getLinked(_q, pid);  // Az LLDP szerint ?
         logl_pid = logl.getLinked(_q, pid);  // A logikai linkek szerint
         DM;
-        if (lldp_pid != NULL_ID && logl_pid != NULL_ID && lldp_pid != logl_pid) { // Ez egy ellentmondás!!!
+        if (lldp_pid != NULL_ID && logl_pid != NULL_ID && lldp_pid != logl_pid) { // Caveat
             // A probléma leírása :
-            wMsg = trUtf8(
-                        "A %1 port logikai linkje a %2 porthoz, ötközik az LLDP linkkel a %3 porthoz."
-                        " Szolgáltatás példány : %4\n"    )
+            wMsg = trUtf8("A %1 port logikai linkje ütközik az LLDP linkkel."
+                          " Szolgáltatás példány : %2\n")
                     .arg(pInterface->getFullName(_q))
-                    .arg(cNPort::getFullNameById(_q, lldp_pid))
-                    .arg(cNPort::getFullNameById(_q, logl_pid))
                     .arg(hostService.names(_q));
-            wMsg += lldp.show(true) + "\n";
-            wMsg += logl.show(true) + "\n";
+            wMsg += trUtf8("LLDP    : ") + lldp.show(true) + "\n";
+            wMsg += trUtf8("Logikai : ") + logl.show(true) + "\n";
             wMsg += trUtf8("A fizikai linkek lánca :\n");
             wMsg += logl.showChain().join("\n");
-            APPMEMO(_q, wMsg, RS_WARNING);
+            APPMEMO(_q, wMsg, RS_CRITICAL);
             lldp_pid = logl_pid = NULL_ID;   // Nem hisszük el egyiket sem
         }
-        else if (logl_pid != NULL_ID && lldp_pid != logl_pid && lldp_pid == logl_pid) { // Ez a tuti
+        else if (logl_pid != NULL_ID && lldp_pid != NULL_ID && lldp_pid == logl_pid) { // Fine
             wMsg = trUtf8("A log és LLDP link azonos.");
         }
         else if (lldp_pid == NULL_ID && logl_pid != NULL_ID) {
             lldp_pid = logl_pid;     // Ha nincs az LLDP szerint, akkor elhisszük a logikait
-            wMsg = trUtf8("Nincs LLDP link, csak logika.");
+            wMsg = trUtf8("Nincs LLDP link, csak logikai.");
         }
         else if (lldp_pid != NULL_ID && logl_pid == NULL_ID) {
             wMsg = trUtf8("Nincs logikai link, csak LLDP.");
         }
-        // A hihető linkelt port ID az lldp_pid -ben
-        if (lldp_pid == NULL_ID) continue;
+        else {
+            EXCEPTION(EPROGFAIL);
+        }
+        // Likey linked port ID is lldp_pid
+        if (lldp_pid == NULL_ID) continue;  // No likely link
         DM;
         // Passzív objektum,
         cNPort *p = cNPort::getPortObjById(_q, lldp_pid);      // port, .. node
@@ -251,7 +251,7 @@ void cDevicePSt::postInit(QSqlQuery &_q, const QString&)
                 }
             } while (hsc.next(_q));
         }
-        if (n  > 1) EXCEPTION(EPROGFAIL, n); // ez képtelenség
+        if (n  > 1) EXCEPTION(EPROGFAIL, n); // Incredible
         DM;
         if (n == 1) {   // Van, és (most már) egyedi, ha kell javítjuk
             QBitArray sets(hostService.cols(), false);
@@ -266,22 +266,23 @@ void cDevicePSt::postInit(QSqlQuery &_q, const QString&)
             if (shsid != hsid) {
                 int rs;
                 QString msg;
+                if (wMsg.isEmpty() == false || wMsg.endsWith("\n") == false) wMsg += "\n";
                 if (shsid == NULL_ID) {
-                    wMsg += trUtf8(" Gazda szolgáltatás (superior) beállítása : NULL -> %1")
+                    wMsg += trUtf8("Gazda szolgáltatás (superior) beállítása : NULL -> %1")
                             .arg(hostService.names(_q));
                     msg = wMsg;
                     rs = RS_RECOVERED;
                 }
                 else {
-                    wMsg += trUtf8(" Gazda szolgáltatás (superior) csere : %1 -> %2")
+                    wMsg += trUtf8("Gazda szolgáltatás (superior) csere : %1 -> %2")
                             .arg(cHostService::names(_q, shsid))
                             .arg(hostService.names(_q));
                     msg = wMsg + trUtf8("\nAktuális service (%1) státusz : ").arg(hs.names(_q))
-                        + hs.getName(_sHostServiceState) + ", "
+                        + hs.getName(_sHostServiceState) + " ("
                         + hs.getName(_sHardState) + ", "
-                        + hs.getName(_sSoftState) + " utolsó modosítás : "
-                        + hs.getName(_sLastChanged) + " / "
-                        + hs.getName(_sLastTouched);
+                        + hs.getName(_sSoftState) + ") utolsó modosítás : "
+                        + hs.view(_q, _sLastChanged) + " / "
+                        + hs.view(_q, _sLastTouched);
                     // Fordított logika, ha ok a státusz akkor igazán gáz a váltás
                     rs = hs.getId(_sHostServiceState) > RS_WARNING ? RS_WARNING : RS_CRITICAL;
                 }
