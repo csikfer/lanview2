@@ -188,41 +188,15 @@ void cDevicePSt::postInit(QSqlQuery &_q, const QString&)
         cInspector *pRLnkSt  = NULL;    // Al szolgáltatás, ha van. Csak rlinkstat lehet/támogatott (és portvars, amit az elöbb kezeltünk)
         QString wMsg;   // Gyanús dolgok
          // Mivel van linkelve?
-        qlonglong lldp_pid;     // Linkelt port by LLDP
-        qlonglong logl_pid;     // Linkelt port by log_links table
-        cLldpLink lldp;
-        cLogLink  logl;
-        lldp_pid = lldp.getLinked(_q, pid);  // Az LLDP szerint ?
-        logl_pid = logl.getLinked(_q, pid);  // A logikai linkek szerint
-        DM;
-        if (lldp_pid != NULL_ID && logl_pid != NULL_ID && lldp_pid != logl_pid) { // Caveat
-            // A probléma leírása :
-            wMsg = trUtf8("A %1 port logikai linkje ütközik az LLDP linkkel."
-                          " Szolgáltatás példány : %2\n")
-                    .arg(pInterface->getFullName(_q))
-                    .arg(hostService.names(_q));
-            wMsg += trUtf8("LLDP    : ") + lldp.show(true) + "\n";
-            wMsg += trUtf8("Logikai : ") + logl.show(true) + "\n";
-            wMsg += trUtf8("A fizikai linkek lánca :\n");
-            wMsg += logl.showChain().join("\n");
+        qlonglong lpid;
+        eLinkResult lr = getLinkedPort(_q, pid, lpid, wMsg, true);
+        if (lr == LINK_CONFLICT || lr == LINK_RCONFLICT) {
             APPMEMO(_q, wMsg, RS_CRITICAL);
-            lldp_pid = logl_pid = NULL_ID;   // Nem hisszük el egyiket sem
         }
-        else if (logl_pid != NULL_ID && lldp_pid != NULL_ID && lldp_pid == logl_pid) { // Fine
-            wMsg = trUtf8("A log és LLDP link azonos.");
-        }
-        else if (lldp_pid == NULL_ID && logl_pid != NULL_ID) {
-            lldp_pid = logl_pid;     // Ha nincs az LLDP szerint, akkor elhisszük a logikait
-            wMsg = trUtf8("Nincs LLDP link, csak logikai.");
-        }
-        else if (lldp_pid != NULL_ID && logl_pid == NULL_ID) {
-            wMsg = trUtf8("Nincs logikai link, csak LLDP.");
-        }
-        // Likey linked port ID is lldp_pid
-        if (lldp_pid == NULL_ID) continue;  // No likely link
+        if (lpid == NULL_ID) continue;  // No likely link
         DM;
         // Passzív objektum,
-        cNPort *p = cNPort::getPortObjById(_q, lldp_pid);      // port, .. node
+        cNPort *p = cNPort::getPortObjById(_q, lpid);      // port, .. node
         pRLnkSt = new cInspector(this, cNode::getNodeObjById(_q, p->getId(_sNodeId))->reconvert<cNode>(), pRLinkStat, p);
         cHostService& hs = pRLnkSt->hostService;
         DM;
@@ -304,10 +278,10 @@ void cDevicePSt::postInit(QSqlQuery &_q, const QString&)
             hs.setId(_sNodeId, pRLnkSt->nodeId());
             hs.setId(_sServiceId, pRLnkSt->serviceId());
             hs.setId(_sSuperiorHostServiceId, hostServiceId());
-            hs.setId(_sPortId, lldp_pid);
+            hs.setId(_sPortId, lpid);
             hs.setBool(_sFlag, false);
             QString note =
-                    trUtf8("Automatikusan generálva a portstat (%1) által. ")
+                    trUtf8("Automatikusan generálva a portstat (%1) által : \n")
                     .arg(hostService.identifying());
             hs.setNote(note + wMsg);
             // Nem kérünk riasztást az automatikusan generált rekordhoz.

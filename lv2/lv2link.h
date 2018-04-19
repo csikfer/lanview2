@@ -69,6 +69,8 @@ public:
     int unxlinks(QSqlQuery& __q, qlonglong __pid, ePhsLinkType __t, ePortShare __s = ES_) const;
     /// Felcsréli a link irányát
     cPhsLink& swap();
+    /// Az objektumot stringgé konvertálja, ami pl. egy riportban szerepelhet.
+    /// Ha t igaz (alapértelmezetten hamis), akkor kiír egy objetum megnevezést is.
     virtual QString show(bool t = false) const;
     /// A patch porthoz tartozó, vagy köveetkező link
     /// @param pid Patch port ID
@@ -171,6 +173,33 @@ public:
     bool isLinked(QSqlQuery& q, qlonglong __pid1, qlonglong __pid2) { return LinkIsLinked(q, *this, __pid1, __pid2); }
     virtual QString show(bool t) const;
 };
+
+enum eLinkResult {
+    LINK_NOT_FOUND = 0, ///< Nincs se logikai se LLDP link
+    LINK_LLDP_ONLY,     ///< Csak LLDP link van, logikai nincs
+    LINK_LOGIC_ONLY,    ///< Csak logikai link van, LLDP nincs
+    LINK_LLDP_AND_LOGIC,///< Van LLDP és Logikai link, és egyeznek
+    LINK_CONFLICT,      ///< Van LLDP és Logikai link, de nem egyeznek
+    LINK_RCONFLICT      ///< Csak az egyik Link van meg, de az ellenoldalon van (ütköző) másik típusú link.
+};
+
+/// A linkelt port keresése.
+/// @param pid A port ID, amihez a linkelt portot keressük. LLDP és vagy logikai.
+/// @param lpid Ha van hihető link, akkor a port id-adja vissza a referencia változóban, egyébként a NULL_ID-t.
+/// @param _pLldp Ha megadjuk, akkor az LLDP link objektum ebbe lesz beolvasva. Ha a visszaadott érték LINK_RCONFLICT, akkor
+///               a mutatott objektum az ütköző ellenoldali linket fogja tartalmazni.
+/// @param _pLogl Ha megadjuk, akkor az logikai link objektum ebbe lesz beolvasva. Ha a visszaadott érték LINK_RCONFLICT, akkor
+///               a mutatott objektum az ütköző ellenoldali linket fogja tartalmazni.
+/// @return A keresés eredménye.
+EXT_ eLinkResult getLinkedPort(QSqlQuery& q, qlonglong pid, qlonglong& lpid, cLldpLink *_pLldp = NULL, cLogLink *_pLogl = NULL);
+
+/// A linkelt port keresése.
+/// @param pid A port ID, amihez a linkelt portot keressük. LLDP és vagy logikai.
+/// @param lpid Ha van hihető link, akkor a port id-adja vissza a referencia változóban, egyébként a NULL_ID-t.
+/// @param msg A keresés eredménye szövegesen.
+/// @param details Ha igaz akkor a részleteket is kiírja (konkrét link(ek)), ha hamis, akkor csak hiba esetén.
+/// @return A keresés eredménye.
+EXT_ eLinkResult getLinkedPort(QSqlQuery& q, qlonglong pid, qlonglong& lpid, QString& msg, bool details = false);
 
 #endif // LV2LINK
 

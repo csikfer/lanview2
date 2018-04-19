@@ -548,3 +548,110 @@ QString cLldpLink::show(bool t) const
     return r;
 }
 
+/* ----------------------------------------------------------------- */
+
+eLinkResult getLinkedPort(QSqlQuery& q, qlonglong pid, qlonglong& lpid, cLldpLink *_pLldp, cLogLink *_pLogl)
+{
+    cLldpLink *pLldp = _pLldp;
+    cLogLink  *pLogl = _pLogl;
+    if (pLldp == NULL) pLldp = new cLldpLink;
+    if (pLogl == NULL) pLogl = new cLogLink;
+    qlonglong lpid1, lpid2;
+    eLinkResult r;
+
+    lpid1 = pLldp->getLinked(q, pid);
+    lpid2 = pLogl->getLinked(q, pid);
+    if (lpid1 == NULL_ID && lpid2 == NULL_ID) {
+        lpid = NULL_ID;
+        r = LINK_NOT_FOUND;
+    }
+    else if (lpid1 == NULL_ID && lpid2 != NULL_ID) {
+        lpid1 = pLldp->getLinked(q, lpid2);
+        if (lpid1 == NULL_ID) {
+            lpid = lpid2;
+            r = LINK_LOGIC_ONLY;
+        }
+        else {
+            lpid = NULL_ID;
+            r = LINK_RCONFLICT;
+        }
+    }
+    else if (lpid1 != NULL_ID && lpid2 == NULL_ID) {
+        lpid2 = pLogl->getLinked(q, lpid1);
+        if (lpid2 == NULL_ID) {
+            lpid = lpid1;
+            r = LINK_LLDP_ONLY;
+        }
+        else {
+            lpid = NULL_ID;
+            r = LINK_RCONFLICT;
+        }
+    }
+    else if (lpid1 == lpid2) {
+        lpid = lpid1;
+        r = LINK_LLDP_AND_LOGIC;
+    }
+    else {
+        lpid = NULL_ID;
+        r = LINK_CONFLICT;
+    }
+
+    if (_pLldp == NULL) delete pLldp;
+    if (_pLogl == NULL) delete pLogl;
+
+    return r;
+}
+
+eLinkResult getLinkedPort(QSqlQuery& q, qlonglong pid, qlonglong& lpid, QString& msg, bool details)
+{
+    static const QString nl = "\n";
+    cLldpLink lldp;
+    cLogLink  logl;
+    eLinkResult r = getLinkedPort(q, pid, lpid, &lldp, &logl);
+    switch (r) {
+    case LINK_LLDP_AND_LOGIC:
+        msg = QObject::trUtf8("A logikai és az LLDP link azonos.");
+        if (details) {
+            msg += nl;
+            msg += QObject::trUtf8("LLDP és logikai : ") + logl.show(true) + nl;
+            msg += QObject::trUtf8("A fizikai linkek lánca :") + nl;
+            msg += logl.showChain().join(nl);
+
+        }
+        break;
+    case LINK_NOT_FOUND:
+        msg = QObject::trUtf8("Nincs se LLDP, se logikai link.");
+        break;
+    case LINK_LLDP_ONLY:
+        msg = QObject::trUtf8("Nincs logikai link, csak LLDP.");
+        if (details) {
+            msg += nl;
+            msg += QObject::trUtf8("LLDP    : ") + lldp.show(true);
+        }
+        break;
+    case LINK_LOGIC_ONLY:
+        msg = QObject::trUtf8("Nincs LLDP link, csak logikai.");
+        if (details) {
+            msg += nl;
+            msg += QObject::trUtf8("Logikai : ") + logl.show(true) + nl;
+            msg += QObject::trUtf8("A fizikai linkek lánca :") + nl;
+            msg += logl.showChain().join(nl);
+        }
+        break;
+    case LINK_CONFLICT:
+    case LINK_RCONFLICT:
+        msg  = QObject::trUtf8("Az %1 ellentmondás van a logikai és LLDP linkek között.").arg(cNPort::getFullNameById(q, pid)) + nl;
+        msg += QObject::trUtf8("LLDP    : ") + lldp.show(true) + nl;
+        msg += QObject::trUtf8("Logikai : ") + logl.show(true) + nl;
+        msg += QObject::trUtf8("A fizikai linkek lánca :") + nl;
+        msg += logl.showChain().join(nl);
+        break;
+    default:
+        EXCEPTION(EPROGFAIL);
+    }
+    return r;
+}
+
+
+
+
