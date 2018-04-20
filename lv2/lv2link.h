@@ -171,7 +171,7 @@ public:
     /// @return ha a két port linkelve van, akkor true, egyébként false
     /// @exception Ha megadott portokra két találat van a táblában (ami elvileg lehetetlen).
     bool isLinked(QSqlQuery& q, qlonglong __pid1, qlonglong __pid2) { return LinkIsLinked(q, *this, __pid1, __pid2); }
-    virtual QString show(bool t) const;
+    virtual QString show(bool t = false) const;
 };
 
 enum eLinkResult {
@@ -192,6 +192,8 @@ enum eLinkResult {
 ///               a mutatott objektum az ütköző ellenoldali linket fogja tartalmazni.
 /// @return A keresés eredménye.
 EXT_ eLinkResult getLinkedPort(QSqlQuery& q, qlonglong pid, qlonglong& lpid, cLldpLink *_pLldp = NULL, cLogLink *_pLogl = NULL);
+
+EXT_ QString reportComparedLinks(QSqlQuery& q, eLinkResult r, qlonglong pid, const cLldpLink& lldp, const cLogLink& logl, bool details = false);
 
 /// A linkelt port keresése.
 /// @param pid A port ID, amihez a linkelt portot keressük. LLDP és vagy logikai.

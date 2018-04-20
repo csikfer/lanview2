@@ -28,6 +28,9 @@ cParseWidget::cParseWidget(QMdiArea *par)
     pUi->pushButtonParseQP->hide();
     pUi->pushButtonSaveQP->hide();
     pUi->textEditQP->hide();
+    QList<int> sizes;
+    sizes << 0 << 100 << 100;
+    pUi->splitter->setSizes(sizes);
     static const QString sql =
             "SELECT DISTINCT(service_name) FROM query_parsers JOIN services USING (service_id) WHERE parse_type = 'parse'";
     if (execSql(*pq, sql)) {
@@ -312,4 +315,11 @@ void cParseWidget::paramClicked()
 {
     cStringMapEdit d(true, params, this);
     d.dialog().exec();
+}
+
+void cParseWidget::on_checkBoxQP_toggled(bool checked)
+{
+    QList<int> sizes;
+    sizes << (checked ? 100 : 0) << 100 << 100;
+    pUi->splitter->setSizes(sizes);
 }

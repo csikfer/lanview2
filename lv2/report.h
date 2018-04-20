@@ -248,6 +248,9 @@ static inline void expItalic(const QString& text, bool chgBreaks = false, bool e
 static inline void expBold(const QString& text, bool chgBreaks = false, bool esc = true) {
     cExportQueue::push(htmlBold(text, chgBreaks, esc));
 }
+static inline void expGreen(const QString& text, bool chgBreaks = false, bool esc = true) {
+    cExportQueue::push("<div><b><span style=\"color:green\">" + toHtml(text, chgBreaks, esc) + "</span></b></div>");
+}
 
 static inline void expHtmlLine() {
     cExportQueue::push(sHtmlLine);

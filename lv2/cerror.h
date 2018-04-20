@@ -241,6 +241,8 @@ Az adattagok inicializálása után hívja a circulation() metódust
     cError &nested(const char * _mSrcName, int _mSrcLine, const char * _mFuncName);
     /*! Az objektum tartalmát egy stringgé konvertálja. */
     virtual QString msg(void) const;
+    QString shortMsg() { return QObject::trUtf8(" Hiba kód : #%1 / %2").arg(mErrorCode).arg(errorMsg()); }
+    QString longMsg() { return QObject::trUtf8("\n Részletes hibaüzenet:\n%1\n").arg(msg()); }
     /*!
       Minden konstruktor a cError inicializálása után hívja ezt a metódust.
       A metódus feladata, hogy detektálja a töbszörös hibákat, és kivédje ebben az esetben ciklikus hibakezelésből

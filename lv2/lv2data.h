@@ -1599,6 +1599,15 @@ public:
         DWAR() << message << endl; \
     }
 
+/// @macro HEREINWE(o, m, i)
+/// Ugyan az, mint a HEREINW(o,m,i) makró, de még az export queue-be is elküldi az üzenetet
+#define HEREINWE(o, m, i)  { \
+        QString message = m; \
+        HEREIN(o, message, i); \
+        DWAR() << message << endl; \
+        expWarning(message, true); \
+    }
+
 
 class LV2SHARED_EXPORT cAppMemo : public cRecord {
     CRECORD(cAppMemo);

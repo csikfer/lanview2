@@ -1556,12 +1556,18 @@ bool cInterface::insert(QSqlQuery &__q, eEx __ex)
 
 /// Az cInterface nem önálló objektum.
 /// A Hívása elött a cNode törli az összes IP cím rekordot, igy az IP címekhez nem a replace() hanem az insert() metódust kell hívni,
+///
+/// Vlami nem stimmel a port_vlan rekordok kiírásánál, elvileg hasonló mint a port_params, de mégsem működik a rewrite !!!!!!!
+///
 bool cInterface::rewrite(QSqlQuery &__q, eEx __ex)
 {
     bool r = cNPort::rewrite(__q, __ex) && (trunkMembers.size() == updateTrunkMembers(__q, __ex));
     if (!r) return false;
-    r = vlans.replace(__q, __ex);
-    if (!r) return false;
+    if (isContainerValid(CV_PORT_VLANS)) {
+        vlans.setsOwnerId();
+        r = vlans.replace(__q, __ex);
+        if (!r) return false;   // Ha nem sikerült, nincs több dolgunk :(
+    }
     if (addresses.count() > 0) {
         r = 0 < addresses.insert(__q, __ex);
     }
@@ -1574,8 +1580,10 @@ bool cInterface::rewriteById(QSqlQuery &__q, eEx __ex)
 {
     bool r = cNPort::rewriteById(__q, __ex) && (trunkMembers.size() == updateTrunkMembers(__q, __ex));
     if (!r) return false;
-    r = vlans.replaceById(__q, __ex);
-    if (!r) return false;
+    if (isContainerValid(CV_PORT_VLANS)) {
+        r = vlans.replaceById(__q, __ex);
+        if (!r) return false;
+    }
     if (addresses.count() > 0) {
         r = 0 < addresses.insert(__q, __ex);
     }
