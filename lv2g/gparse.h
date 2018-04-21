@@ -37,6 +37,10 @@ private slots:
     void paramClicked();
     void on_checkBoxQP_toggled(bool checked);
 
+    void on_pushButtonRepSave_clicked();
+
+    void on_pushButtonLogSave_clicked();
+
 private:
     void localParse(const QString &src);
     void remoteParse(const QString &src);

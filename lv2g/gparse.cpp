@@ -323,3 +323,13 @@ void cParseWidget::on_checkBoxQP_toggled(bool checked)
     sizes << (checked ? 100 : 0) << 100 << 100;
     pUi->splitter->setSizes(sizes);
 }
+
+void cParseWidget::on_pushButtonRepSave_clicked()
+{
+    textEditToFile(fileName, pUi->textEditResult, this);
+}
+
+void cParseWidget::on_pushButtonLogSave_clicked()
+{
+    textEditToFile(fileName, pUi->textEditLog, this);
+}
