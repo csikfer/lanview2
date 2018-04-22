@@ -415,7 +415,7 @@ public:
 virtual QString toView(QSqlQuery& q, const QVariant& _f) const;
 };
 
-/// @class cColStaticDescrPolygon
+/// @class cColStaticDescrPoint
 /// Az ős cColStaticDescr osztályt a point típus konverziós függvényeivel egészíti ki.
 CSD_INHERITOR(cColStaticDescrPoint)
 };
