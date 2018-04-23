@@ -242,7 +242,9 @@ int cInspectorProcess::startProcess(int startTo, int stopTo)
         }
         PDEB(VVERBOSE) << "Runing and wait for finished ..." << endl;
         if (!waitForFinished(stopTo)) {
-            msg = trUtf8("'waitForFinished(%1)' hiba: '%2'.").arg(stopTo).arg(ProcessError2Message(error()));
+            msg = trUtf8("Start `%1` 'waitForFinished(%1)' error: '%2'.")
+                    .arg(inspector.checkCmd + " " + inspector.checkCmdArgs.join(" "))
+                    .arg(stopTo).arg(ProcessError2Message(error()));
             DERR() << msg << endl;
             inspector.hostService.setState(*inspector.pq, _sUnreachable, msg);
             inspector.internalStat = IS_STOPPED;

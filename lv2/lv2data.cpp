@@ -2737,8 +2737,8 @@ QList<QHostAddress> cNode::fetchAllIpAddress(QSqlQuery& q, qlonglong __id) const
 
 QHostAddress cNode::getIpAddress(QSqlQuery& q)
 {
-    if (containerValid | CV_PORTS) {
-        fetchPorts(q);
+    if ((containerValid & CV_PORTS_ADDRESSES) == 0) {
+        fetchPorts(q, CV_PORTS_ADDRESSES);
     }
     return getIpAddress();
 }
@@ -2761,12 +2761,11 @@ QHostAddress cNode::getIpAddress() const
                 const cIpAddress& ip = **ii;
                 QHostAddress a = ip.address();
                 if (a.isNull()) {
-                    _DBGFNL() << trUtf8(" A %1 elemnek nincsen fix IP címe.").arg(getName()) << endl;
                     continue;
                 }
                 if (ra.isNull() || (!ip.isNull(ixPreferred) && preferred > ip.getId(ixPreferred))) {
                     ra =  a;
-                    if (!ip.isNull(ixPreferred)) preferred = getId(ixPreferred);
+                    if (!ip.isNull(ixPreferred)) preferred = ip.getId(ixPreferred);
                 }
             }
         }
