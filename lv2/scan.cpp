@@ -303,9 +303,25 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip)
     PDEB(VVERBOSE) << "*************************************************" << endl;
     PDEB(VVERBOSE) << "SNMP TABLE : " << endl << tab.toString() << endl;
     PDEB(VVERBOSE) << "*************************************************" << endl;
+    // A getTable() kizárást dob, ha az egyik oszlop nem kérdezhető le, ifName pedig nem mindíg van.
+    tab << _sIfName;
+    cOId oid;
+    oid.set(_sIfMib + _sIfName);
+    // A név oszlop kitöltése, ha van
+    if (0 == snmp.getNext(oid)) do {
+        if (!(snmp.name() > oid)) break;
+        cOId name  = snmp.name();
+        cOId oidIx = name - oid;
+        int i = oidIx.last();
+        QVariant *p = tab.find(_sIfIndex, i, _sIfName);
+        if (oidIx.size() != 1 || p == NULL) {
+            EX(EDATA, i, QString("Not found : %1,%2").arg(_sIfIndex, _sIfName));
+        }
+        p->setValue(snmp.value().toString());
+    } while (0 == snmp.getNext());
     // A getTable() metódus nem tudja lekérdezni az IP címet, ezért ezt az oszlopot külön kérdezzük le.
     tab << _sIpAdEntAddr; // Add ip address (empty column) to table
-    cOId oid(_sIpMib + _sIpAdEntIfIndex);
+    oid.set(_sIpMib + _sIpAdEntIfIndex);
     bool ok;
     // Kitöltjük az IP cím oszlopot
     if (0 == snmp.getNext(oid)) do {
@@ -338,10 +354,13 @@ bool setPortsBySnmp(cSnmpDevice& node, eEx __ex, QString *pEs, QHostAddress *ip)
     // Az SNMP lekérdezés eredmény táblájából legyártjuk a ports konténert
     for (i = 0; i < n; i++) {
         QHostAddress    addr(tab[_sIpAdEntAddr][i].toString());
-        QString         name = tab[_sIfDescr][i].toString();
+        QString         name;
         QString         note;
         QString         ifDescr = name;
         int             ifType = tab[_sIfType][i].toInt(&ok);
+        name = tab[_sIfName][i].toString();
+        // Ha nincs (üres) az ifName, akkor a név az ifDescr lessz.
+        if (name.isEmpty()) name = tab[_sIfDescr][i].toString();
         if (!ok) EX(EDATA, -1, QString("SNMP ifType: '%1'").arg(tab[_sIfType][i].toString()));
         int             ifIndex = tab[_sIfIndex][i].toInt(&ok);
         if (!ok) EX(EDATA, -1, QString("SNMP ifIndex: '%1'").arg(tab[_sIfIndex][i].toString()));

@@ -936,6 +936,7 @@ STRDEF(IfMib, "IF-MIB::")
  STRDEF(IfOutNUcastPkts, "ifOutNUcastPkts")
  STRDEF(IfOutDiscards, "ifOutDiscards")
  STRDEF(IfOutErrors, "ifOutErrors")
+ STRDEF(IfName, "ifName")
 
 STRDEF(IpMib, "IP-MIB::")
  STRDEF(IpAdEntAddr,    "ipAdEntAddr")

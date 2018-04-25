@@ -81,6 +81,8 @@ class LV2SHARED_EXPORT cTable : public QMap<QString, QVariantVector >
     /// @param __com A keresett oszlop neve
     QVariant *find(const QString __in, QVariant __ix, const QString __col);
     /// Egy üres oszlop hozzáadása a konténerhez.
+    /// Ha volt első oszlop, és abban voltak sorok, akkor az új oszlopban is
+    /// ennyi üres sor lessz.
     /// @param __cn Az oszlop neve. Egyedi kell hogy legyen egy konténeren bellül.
     cTable& operator<<(const QString& __cn);
     /// A konténer tartalmár striggé konvertálja.
