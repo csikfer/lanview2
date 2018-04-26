@@ -2,13 +2,14 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 9.5.10
--- Dumped by pg_dump version 9.5.10
+-- Dumped from database version 9.5.12
+-- Dumped by pg_dump version 9.5.12
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
 SET check_function_bodies = false;
 SET client_min_messages = warning;
 SET row_security = off;
@@ -87,13 +88,11 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;
 COMMENT ON EXTENSION pgcrypto IS 'cryptographic functions';
 
 
-SET search_path = public, pg_catalog;
-
 --
 -- Name: addresstype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE addresstype AS ENUM (
+CREATE TYPE public.addresstype AS ENUM (
     'fixip',
     'private',
     'external',
@@ -103,13 +102,13 @@ CREATE TYPE addresstype AS ENUM (
 );
 
 
-ALTER TYPE addresstype OWNER TO lanview2;
+ALTER TYPE public.addresstype OWNER TO lanview2;
 
 --
 -- Name: aggregatetype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE aggregatetype AS ENUM (
+CREATE TYPE public.aggregatetype AS ENUM (
     'AVERAGE',
     'MIN',
     'MAX',
@@ -117,32 +116,32 @@ CREATE TYPE aggregatetype AS ENUM (
 );
 
 
-ALTER TYPE aggregatetype OWNER TO lanview2;
+ALTER TYPE public.aggregatetype OWNER TO lanview2;
 
 --
 -- Name: alarmmessagetext; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE alarmmessagetext AS ENUM (
+CREATE TYPE public.alarmmessagetext AS ENUM (
     'message',
     'short_msg'
 );
 
 
-ALTER TYPE alarmmessagetext OWNER TO lanview2;
+ALTER TYPE public.alarmmessagetext OWNER TO lanview2;
 
 --
 -- Name: TYPE alarmmessagetext; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE alarmmessagetext IS 'In table "error_messages", because of the localization of languages, the names of text fields stored in the "localizations" table.';
+COMMENT ON TYPE public.alarmmessagetext IS 'In table "error_messages", because of the localization of languages, the names of text fields stored in the "localizations" table.';
 
 
 --
 -- Name: datacharacter; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE datacharacter AS ENUM (
+CREATE TYPE public.datacharacter AS ENUM (
     'head',
     'data',
     'id',
@@ -165,13 +164,13 @@ CREATE TYPE datacharacter AS ENUM (
 );
 
 
-ALTER TYPE datacharacter OWNER TO lanview2;
+ALTER TYPE public.datacharacter OWNER TO lanview2;
 
 --
 -- Name: dayofweek; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE dayofweek AS ENUM (
+CREATE TYPE public.dayofweek AS ENUM (
     'sunday',
     'monday',
     'tuesday',
@@ -182,20 +181,20 @@ CREATE TYPE dayofweek AS ENUM (
 );
 
 
-ALTER TYPE dayofweek OWNER TO lanview2;
+ALTER TYPE public.dayofweek OWNER TO lanview2;
 
 --
 -- Name: TYPE dayofweek; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE dayofweek IS 'Date of week enumeration.';
+COMMENT ON TYPE public.dayofweek IS 'Date of week enumeration.';
 
 
 --
 -- Name: drawtype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE drawtype AS ENUM (
+CREATE TYPE public.drawtype AS ENUM (
     'LINE',
     'AREA',
     'STACK',
@@ -203,51 +202,51 @@ CREATE TYPE drawtype AS ENUM (
 );
 
 
-ALTER TYPE drawtype OWNER TO lanview2;
+ALTER TYPE public.drawtype OWNER TO lanview2;
 
 --
 -- Name: enumvaltext; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE enumvaltext AS ENUM (
+CREATE TYPE public.enumvaltext AS ENUM (
     'view_long',
     'view_short',
     'tool_tip'
 );
 
 
-ALTER TYPE enumvaltext OWNER TO lanview2;
+ALTER TYPE public.enumvaltext OWNER TO lanview2;
 
 --
 -- Name: TYPE enumvaltext; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE enumvaltext IS 'In table "enum_vals", because of the localization of languages, the names of text fields stored in the "localizations" table.';
+COMMENT ON TYPE public.enumvaltext IS 'In table "enum_vals", because of the localization of languages, the names of text fields stored in the "localizations" table.';
 
 
 --
 -- Name: errortext; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE errortext AS ENUM (
+CREATE TYPE public.errortext AS ENUM (
     'error_title'
 );
 
 
-ALTER TYPE errortext OWNER TO lanview2;
+ALTER TYPE public.errortext OWNER TO lanview2;
 
 --
 -- Name: TYPE errortext; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE errortext IS 'In table "errors", because of the localization of languages, the names of text fields stored in the "localizations" table.';
+COMMENT ON TYPE public.errortext IS 'In table "errors", because of the localization of languages, the names of text fields stored in the "localizations" table.';
 
 
 --
 -- Name: errtype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE errtype AS ENUM (
+CREATE TYPE public.errtype AS ENUM (
     'Fatal',
     'Error',
     'Warning',
@@ -255,13 +254,13 @@ CREATE TYPE errtype AS ENUM (
 );
 
 
-ALTER TYPE errtype OWNER TO lanview2;
+ALTER TYPE public.errtype OWNER TO lanview2;
 
 --
 -- Name: TYPE errtype; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE errtype IS 'Hiba sújossága
+COMMENT ON TYPE public.errtype IS 'Hiba sújossága
 Fatal   Fatális hiba
 Error   Sújos hiba
 Warning Figyelmeztetés, nincs kizárás
@@ -273,7 +272,7 @@ Ok      Nem hiba, ''Info''
 -- Name: execstate; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE execstate AS ENUM (
+CREATE TYPE public.execstate AS ENUM (
     'wait',
     'execute',
     'ok',
@@ -282,13 +281,13 @@ CREATE TYPE execstate AS ENUM (
 );
 
 
-ALTER TYPE execstate OWNER TO lanview2;
+ALTER TYPE public.execstate OWNER TO lanview2;
 
 --
 -- Name: TYPE execstate; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE execstate IS '
+COMMENT ON TYPE public.execstate IS '
 Az importnak küldött üzenet feldolgozásának az állapota:
 wait    Feldolgozásra várakozik.
 execute Felgolgozás alatt.
@@ -302,18 +301,18 @@ aborted Az import az üzenetet eldobta
 -- Name: fieldattr; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE fieldattr AS ENUM (
+CREATE TYPE public.fieldattr AS ENUM (
     'rewrite_protected'
 );
 
 
-ALTER TYPE fieldattr OWNER TO lanview2;
+ALTER TYPE public.fieldattr OWNER TO lanview2;
 
 --
 -- Name: fieldflag; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE fieldflag AS ENUM (
+CREATE TYPE public.fieldflag AS ENUM (
     'table_hide',
     'dialog_hide',
     'read_only',
@@ -328,13 +327,13 @@ CREATE TYPE fieldflag AS ENUM (
 );
 
 
-ALTER TYPE fieldflag OWNER TO lanview2;
+ALTER TYPE public.fieldflag OWNER TO lanview2;
 
 --
 -- Name: TYPE fieldflag; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE fieldflag IS 'A mező tulajdonságok logokai (igen/nem):
+COMMENT ON TYPE public.fieldflag IS 'A mező tulajdonságok logokai (igen/nem):
 table_hide      A táblázatos megjelenítésnél a mező rejtett
 dialog_hide     A dialógusban (insert, modosít) a mező rejtett
 read_only       A mező nem szerkeszthető
@@ -352,7 +351,7 @@ tool_tip        Tool tip beállítása enum_vals szerint.
 -- Name: filtertype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE filtertype AS ENUM (
+CREATE TYPE public.filtertype AS ENUM (
     'no',
     'begin',
     'like',
@@ -370,13 +369,13 @@ CREATE TYPE filtertype AS ENUM (
 );
 
 
-ALTER TYPE filtertype OWNER TO lanview2;
+ALTER TYPE public.filtertype OWNER TO lanview2;
 
 --
 -- Name: TYPE filtertype; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE filtertype IS '
+COMMENT ON TYPE public.filtertype IS '
 no      no filtering
 begin   The specified string matches the beginning of the search text.
 like    The string specified matches the search string (SQL LIKE operator).
@@ -397,7 +396,7 @@ SQL	Filter by SQL WHERE expression';
 -- Name: fontattr; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE fontattr AS ENUM (
+CREATE TYPE public.fontattr AS ENUM (
     'bold',
     'italic',
     'underline',
@@ -405,13 +404,13 @@ CREATE TYPE fontattr AS ENUM (
 );
 
 
-ALTER TYPE fontattr OWNER TO lanview2;
+ALTER TYPE public.fontattr OWNER TO lanview2;
 
 --
 -- Name: ifstatus; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE ifstatus AS ENUM (
+CREATE TYPE public.ifstatus AS ENUM (
     'up',
     'down',
     'testing',
@@ -426,13 +425,13 @@ CREATE TYPE ifstatus AS ENUM (
 );
 
 
-ALTER TYPE ifstatus OWNER TO lanview2;
+ALTER TYPE public.ifstatus OWNER TO lanview2;
 
 --
 -- Name: TYPE ifstatus; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE ifstatus IS 'Port státuszok:
+COMMENT ON TYPE public.ifstatus IS 'Port státuszok:
 SNMP port statuszok:
     up, down, testing, unknown, dormant, notpresent, lowerlayerdown
 States for IndaContact
@@ -462,7 +461,7 @@ IndaContact port stáruszok kifelytése:
 -- Name: imagetype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE imagetype AS ENUM (
+CREATE TYPE public.imagetype AS ENUM (
     'BMP',
     'GIF',
     'JPG',
@@ -477,38 +476,38 @@ CREATE TYPE imagetype AS ENUM (
 );
 
 
-ALTER TYPE imagetype OWNER TO lanview2;
+ALTER TYPE public.imagetype OWNER TO lanview2;
 
 --
 -- Name: isnoalarm; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE isnoalarm AS ENUM (
+CREATE TYPE public.isnoalarm AS ENUM (
     'on',
     'expired',
     'off'
 );
 
 
-ALTER TYPE isnoalarm OWNER TO lanview2;
+ALTER TYPE public.isnoalarm OWNER TO lanview2;
 
 --
 -- Name: linkdirection; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE linkdirection AS ENUM (
+CREATE TYPE public.linkdirection AS ENUM (
     'Left',
     'Right'
 );
 
 
-ALTER TYPE linkdirection OWNER TO lanview2;
+ALTER TYPE public.linkdirection OWNER TO lanview2;
 
 --
 -- Name: linktype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE linktype AS ENUM (
+CREATE TYPE public.linktype AS ENUM (
     'ptp',
     'bus',
     'patch',
@@ -518,13 +517,13 @@ CREATE TYPE linktype AS ENUM (
 );
 
 
-ALTER TYPE linktype OWNER TO lanview2;
+ALTER TYPE public.linktype OWNER TO lanview2;
 
 --
 -- Name: TYPE linktype; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE linktype IS 'A port típus a link alapján :
+COMMENT ON TYPE public.linktype IS 'A port típus a link alapján :
     ptp         Point to point /pecselhető
     bus         BUS (egyenlőre ugyanúgy kezeljük mint a ptp -t)
     patch       Patch port Frot<-->Back / pecselhető az előlap és a hátlap is
@@ -537,7 +536,7 @@ COMMENT ON TYPE linktype IS 'A port típus a link alapján :
 -- Name: mactabstate; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE mactabstate AS ENUM (
+CREATE TYPE public.mactabstate AS ENUM (
     'likely',
     'arp',
     'oui',
@@ -547,13 +546,13 @@ CREATE TYPE mactabstate AS ENUM (
 );
 
 
-ALTER TYPE mactabstate OWNER TO lanview2;
+ALTER TYPE public.mactabstate OWNER TO lanview2;
 
 --
 -- Name: TYPE mactabstate; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE mactabstate IS 'A cím információ minösítése:
+COMMENT ON TYPE public.mactabstate IS 'A cím információ minösítése:
 likely	Hihető, van ilyen című bejegyzett eszköz.
 arp	Szerepel az arps táblában
 oui	Azonosítható a cím alapján a gyártó (OUI)
@@ -567,7 +566,7 @@ lldp	Megfeleltethető egy LLDP linknek (?!).
 -- Name: menuitemtext; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE menuitemtext AS ENUM (
+CREATE TYPE public.menuitemtext AS ENUM (
     'menu_title',
     'tab_title',
     'tool_tip',
@@ -575,20 +574,20 @@ CREATE TYPE menuitemtext AS ENUM (
 );
 
 
-ALTER TYPE menuitemtext OWNER TO lanview2;
+ALTER TYPE public.menuitemtext OWNER TO lanview2;
 
 --
 -- Name: TYPE menuitemtext; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE menuitemtext IS 'In table "menu_items", because of the localization of languages, the names of text fields stored in the "localizations" table.';
+COMMENT ON TYPE public.menuitemtext IS 'In table "menu_items", because of the localization of languages, the names of text fields stored in the "localizations" table.';
 
 
 --
 -- Name: noalarmtype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE noalarmtype AS ENUM (
+CREATE TYPE public.noalarmtype AS ENUM (
     'off',
     'on',
     'to',
@@ -597,13 +596,13 @@ CREATE TYPE noalarmtype AS ENUM (
 );
 
 
-ALTER TYPE noalarmtype OWNER TO lanview2;
+ALTER TYPE public.noalarmtype OWNER TO lanview2;
 
 --
 -- Name: TYPE noalarmtype; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE noalarmtype IS '
+COMMENT ON TYPE public.noalarmtype IS '
 Riasztás tiltási állapotok:
 "off"     Az alarm-ok nincsenek letiltva;
 "on"      Az alarmok le vannak tiltva;
@@ -616,7 +615,7 @@ Riasztás tiltási állapotok:
 -- Name: nodetype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE nodetype AS ENUM (
+CREATE TYPE public.nodetype AS ENUM (
     'patch',
     'node',
     'host',
@@ -639,13 +638,13 @@ CREATE TYPE nodetype AS ENUM (
 );
 
 
-ALTER TYPE nodetype OWNER TO lanview2;
+ALTER TYPE public.nodetype OWNER TO lanview2;
 
 --
 -- Name: TYPE nodetype; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE nodetype IS '
+COMMENT ON TYPE public.nodetype IS '
 Típus azonosítók
 "patch"         Patch panel, vagy (fali) csatlakozó.
 "node"          Passzív eszköz
@@ -662,7 +661,7 @@ Típus azonosítók
 -- Name: notifswitch; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE notifswitch AS ENUM (
+CREATE TYPE public.notifswitch AS ENUM (
     'on',
     'recovered',
     'warning',
@@ -674,33 +673,33 @@ CREATE TYPE notifswitch AS ENUM (
 );
 
 
-ALTER TYPE notifswitch OWNER TO lanview2;
+ALTER TYPE public.notifswitch OWNER TO lanview2;
 
 --
 -- Name: TYPE notifswitch; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE notifswitch IS 'Notification switch, or host or service status';
+COMMENT ON TYPE public.notifswitch IS 'Notification switch, or host or service status';
 
 
 --
 -- Name: ordtype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE ordtype AS ENUM (
+CREATE TYPE public.ordtype AS ENUM (
     'no',
     'asc',
     'desc'
 );
 
 
-ALTER TYPE ordtype OWNER TO lanview2;
+ALTER TYPE public.ordtype OWNER TO lanview2;
 
 --
 -- Name: TYPE ordtype; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE ordtype IS 'A mező szerinti rendezés lehetséges értékei:
+COMMENT ON TYPE public.ordtype IS 'A mező szerinti rendezés lehetséges értékei:
 no      Nincs rendezés.
 asc     Növekvő sorrend.
 desc    Csökkenő sorrend.';
@@ -710,7 +709,7 @@ desc    Csökkenő sorrend.';
 -- Name: paramtype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE paramtype AS ENUM (
+CREATE TYPE public.paramtype AS ENUM (
     'text',
     'boolean',
     'integer',
@@ -727,26 +726,26 @@ CREATE TYPE paramtype AS ENUM (
 );
 
 
-ALTER TYPE paramtype OWNER TO lanview2;
+ALTER TYPE public.paramtype OWNER TO lanview2;
 
 --
 -- Name: parsertype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE parsertype AS ENUM (
+CREATE TYPE public.parsertype AS ENUM (
     'prep',
     'parse',
     'post'
 );
 
 
-ALTER TYPE parsertype OWNER TO lanview2;
+ALTER TYPE public.parsertype OWNER TO lanview2;
 
 --
 -- Name: patterntype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE patterntype AS ENUM (
+CREATE TYPE public.patterntype AS ENUM (
     'equal',
     'equali',
     'similar',
@@ -756,52 +755,52 @@ CREATE TYPE patterntype AS ENUM (
 );
 
 
-ALTER TYPE patterntype OWNER TO lanview2;
+ALTER TYPE public.patterntype OWNER TO lanview2;
 
 --
 -- Name: phslinktype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE phslinktype AS ENUM (
+CREATE TYPE public.phslinktype AS ENUM (
     'Front',
     'Back',
     'Term'
 );
 
 
-ALTER TYPE phslinktype OWNER TO lanview2;
+ALTER TYPE public.phslinktype OWNER TO lanview2;
 
 --
 -- Name: placegrouptype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE placegrouptype AS ENUM (
+CREATE TYPE public.placegrouptype AS ENUM (
     'group',
     'category',
     'zone'
 );
 
 
-ALTER TYPE placegrouptype OWNER TO lanview2;
+ALTER TYPE public.placegrouptype OWNER TO lanview2;
 
 --
 -- Name: placetype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE placetype AS ENUM (
+CREATE TYPE public.placetype AS ENUM (
     'root',
     'unknown',
     'real'
 );
 
 
-ALTER TYPE placetype OWNER TO lanview2;
+ALTER TYPE public.placetype OWNER TO lanview2;
 
 --
 -- Name: TYPE placetype; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE placetype IS '
+COMMENT ON TYPE public.placetype IS '
 A places rekord típus
 ''root''	Mindenki őse (Az unknown típusnak, és önmagának nem)
 ''unknown''    Ha nem ismert
@@ -813,7 +812,7 @@ A places rekord típus
 -- Name: portobjtype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE portobjtype AS ENUM (
+CREATE TYPE public.portobjtype AS ENUM (
     'nport',
     'pport',
     'interface',
@@ -821,13 +820,13 @@ CREATE TYPE portobjtype AS ENUM (
 );
 
 
-ALTER TYPE portobjtype OWNER TO lanview2;
+ALTER TYPE public.portobjtype OWNER TO lanview2;
 
 --
 -- Name: TYPE portobjtype; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE portobjtype IS 'Az API-ban a rekordot reprezentáló port objektumot definiálja_
+COMMENT ON TYPE public.portobjtype IS 'Az API-ban a rekordot reprezentáló port objektumot definiálja_
     nport,        A port objektum típusa cNPort, tábla nports (passzív port)
     pport,        A port objektum típusa cPPort, tábla pport (patch ports)
     interface,    A port objektum típusa cInterface, tábla interfaces (aktív port)
@@ -838,7 +837,7 @@ COMMENT ON TYPE portobjtype IS 'Az API-ban a rekordot reprezentáló port objekt
 -- Name: portshare; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE portshare AS ENUM (
+CREATE TYPE public.portshare AS ENUM (
     '',
     'A',
     'AA',
@@ -852,13 +851,13 @@ CREATE TYPE portshare AS ENUM (
 );
 
 
-ALTER TYPE portshare OWNER TO lanview2;
+ALTER TYPE public.portshare OWNER TO lanview2;
 
 --
 -- Name: TYPE portshare; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE portshare IS 'Port megosztás típusok:
+COMMENT ON TYPE public.portshare IS 'Port megosztás típusok:
     ''''    1,2,3,4,5,6,7,8  / nincs megosztás
     ''A''   1,2,3,6
     ''AA''  1,2
@@ -875,7 +874,7 @@ COMMENT ON TYPE portshare IS 'Port megosztás típusok:
 -- Name: reasons; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE reasons AS ENUM (
+CREATE TYPE public.reasons AS ENUM (
     'ok',
     'new',
     'insert',
@@ -898,13 +897,13 @@ CREATE TYPE reasons AS ENUM (
 );
 
 
-ALTER TYPE reasons OWNER TO lanview2;
+ALTER TYPE public.reasons OWNER TO lanview2;
 
 --
 -- Name: TYPE reasons; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE reasons IS 'Okok ill. műveletek eredményei
+COMMENT ON TYPE public.reasons IS 'Okok ill. műveletek eredményei
 ';
 
 
@@ -912,7 +911,7 @@ COMMENT ON TYPE reasons IS 'Okok ill. műveletek eredményei
 -- Name: rights; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE rights AS ENUM (
+CREATE TYPE public.rights AS ENUM (
     'none',
     'viewer',
     'indalarm',
@@ -922,13 +921,13 @@ CREATE TYPE rights AS ENUM (
 );
 
 
-ALTER TYPE rights OWNER TO lanview2;
+ALTER TYPE public.rights OWNER TO lanview2;
 
 --
 -- Name: servicevartype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE servicevartype AS ENUM (
+CREATE TYPE public.servicevartype AS ENUM (
     'GAUGE',
     'COUNTER',
     'DCOUNTER',
@@ -939,13 +938,13 @@ CREATE TYPE servicevartype AS ENUM (
 );
 
 
-ALTER TYPE servicevartype OWNER TO lanview2;
+ALTER TYPE public.servicevartype OWNER TO lanview2;
 
 --
 -- Name: settype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE settype AS ENUM (
+CREATE TYPE public.settype AS ENUM (
     'auto',
     'query',
     'config',
@@ -953,13 +952,13 @@ CREATE TYPE settype AS ENUM (
 );
 
 
-ALTER TYPE settype OWNER TO lanview2;
+ALTER TYPE public.settype OWNER TO lanview2;
 
 --
 -- Name: TYPE settype; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE settype IS 'Egy paraméter megállapításának módja:
+COMMENT ON TYPE public.settype IS 'Egy paraméter megállapításának módja:
 auto    autómatikus
 query   lekérdező program töltötte ki
 cpnfig	Konfigurációs állományból importálva
@@ -970,19 +969,19 @@ manual  kézzel megadva';
 -- Name: snmpver; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE snmpver AS ENUM (
+CREATE TYPE public.snmpver AS ENUM (
     '1',
     '2c'
 );
 
 
-ALTER TYPE snmpver OWNER TO lanview2;
+ALTER TYPE public.snmpver OWNER TO lanview2;
 
 --
 -- Name: subnettype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE subnettype AS ENUM (
+CREATE TYPE public.subnettype AS ENUM (
     'primary',
     'secondary',
     'pseudo',
@@ -990,13 +989,13 @@ CREATE TYPE subnettype AS ENUM (
 );
 
 
-ALTER TYPE subnettype OWNER TO lanview2;
+ALTER TYPE public.subnettype OWNER TO lanview2;
 
 --
 -- Name: TYPE subnettype; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE subnettype IS 'Egy subnet típusa
+COMMENT ON TYPE public.subnettype IS 'Egy subnet típusa
     primary     elsődleges (alapértelmezett)
     secondary   másodlagos tartomány azonos vlan-ban, ill.fizikai hálózatban.
     pseudo      nem valós tartomány
@@ -1007,7 +1006,7 @@ COMMENT ON TYPE subnettype IS 'Egy subnet típusa
 -- Name: tablefortext; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE tablefortext AS ENUM (
+CREATE TYPE public.tablefortext AS ENUM (
     'alarm_messages',
     'errors',
     'enum_vals',
@@ -1017,13 +1016,13 @@ CREATE TYPE tablefortext AS ENUM (
 );
 
 
-ALTER TYPE tablefortext OWNER TO lanview2;
+ALTER TYPE public.tablefortext OWNER TO lanview2;
 
 --
 -- Name: tableinherittype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE tableinherittype AS ENUM (
+CREATE TYPE public.tableinherittype AS ENUM (
     'no',
     'only',
     'on',
@@ -1035,13 +1034,13 @@ CREATE TYPE tableinherittype AS ENUM (
 );
 
 
-ALTER TYPE tableinherittype OWNER TO lanview2;
+ALTER TYPE public.tableinherittype OWNER TO lanview2;
 
 --
 -- Name: TYPE tableinherittype; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE tableinherittype IS 'A tábla leszármazottainak és őseinek a kezelése
+COMMENT ON TYPE public.tableinherittype IS 'A tábla leszármazottainak és őseinek a kezelése
 no          Nincs leszármazott
 only        Vannak leszármazottak, de azokat nem jelenítjük meg
 on          A leszármazottakat is meg kell jeleníteni
@@ -1056,7 +1055,7 @@ listed_all  Csak a felsorolt leszármazottak és ősök megjelenítése';
 -- Name: tableshapefieldtext; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE tableshapefieldtext AS ENUM (
+CREATE TYPE public.tableshapefieldtext AS ENUM (
     'table_title',
     'dialog_title',
     'tool_tip',
@@ -1064,20 +1063,20 @@ CREATE TYPE tableshapefieldtext AS ENUM (
 );
 
 
-ALTER TYPE tableshapefieldtext OWNER TO lanview2;
+ALTER TYPE public.tableshapefieldtext OWNER TO lanview2;
 
 --
 -- Name: TYPE tableshapefieldtext; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE tableshapefieldtext IS 'In table "table_shape_fields", because of the localization of languages, the names of text fields stored in the "localizations" table.';
+COMMENT ON TYPE public.tableshapefieldtext IS 'In table "table_shape_fields", because of the localization of languages, the names of text fields stored in the "localizations" table.';
 
 
 --
 -- Name: tableshapetext; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE tableshapetext AS ENUM (
+CREATE TYPE public.tableshapetext AS ENUM (
     'table_title',
     'dialog_title',
     'dialog_tab_title',
@@ -1086,20 +1085,20 @@ CREATE TYPE tableshapetext AS ENUM (
 );
 
 
-ALTER TYPE tableshapetext OWNER TO lanview2;
+ALTER TYPE public.tableshapetext OWNER TO lanview2;
 
 --
 -- Name: TYPE tableshapetext; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE tableshapetext IS 'In table "table_shapes", because of the localization of languages, the names of text fields stored in the "localizations" table.';
+COMMENT ON TYPE public.tableshapetext IS 'In table "table_shapes", because of the localization of languages, the names of text fields stored in the "localizations" table.';
 
 
 --
 -- Name: tableshapetype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE tableshapetype AS ENUM (
+CREATE TYPE public.tableshapetype AS ENUM (
     'simple',
     'tree',
     'bare',
@@ -1114,13 +1113,13 @@ CREATE TYPE tableshapetype AS ENUM (
 );
 
 
-ALTER TYPE tableshapetype OWNER TO lanview2;
+ALTER TYPE public.tableshapetype OWNER TO lanview2;
 
 --
 -- Name: TYPE tableshapetype; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE tableshapetype IS 'table shape típusa:
+COMMENT ON TYPE public.tableshapetype IS 'table shape típusa:
 simple      Egyszerű tábla.
 tree        Fa struktúrájú objektumok
 bare        Fejléc nélküli, beágyzott
@@ -1138,7 +1137,7 @@ read_only   Nem modosítható';
 -- Name: templatetype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE templatetype AS ENUM (
+CREATE TYPE public.templatetype AS ENUM (
     'macros',
     'patchs',
     'nodes',
@@ -1146,13 +1145,13 @@ CREATE TYPE templatetype AS ENUM (
 );
 
 
-ALTER TYPE templatetype OWNER TO lanview2;
+ALTER TYPE public.templatetype OWNER TO lanview2;
 
 --
 -- Name: unusualfkeytype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE unusualfkeytype AS ENUM (
+CREATE TYPE public.unusualfkeytype AS ENUM (
     'property',
     'self',
     'owner',
@@ -1160,13 +1159,13 @@ CREATE TYPE unusualfkeytype AS ENUM (
 );
 
 
-ALTER TYPE unusualfkeytype OWNER TO lanview2;
+ALTER TYPE public.unusualfkeytype OWNER TO lanview2;
 
 --
 -- Name: TYPE unusualfkeytype; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE unusualfkeytype IS 'SQL-supported and non-supported foreign keys types:
+COMMENT ON TYPE public.unusualfkeytype IS 'SQL-supported and non-supported foreign keys types:
 "property"    A foreign key pointing to a property
 "self"        A foreign key pointing to the same type of parent (tree)
 "owner"       The foreign key to the owner
@@ -1177,20 +1176,20 @@ COMMENT ON TYPE unusualfkeytype IS 'SQL-supported and non-supported foreign keys
 -- Name: usereventstate; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE usereventstate AS ENUM (
+CREATE TYPE public.usereventstate AS ENUM (
     'necessary',
     'happened',
     'dropped'
 );
 
 
-ALTER TYPE usereventstate OWNER TO lanview2;
+ALTER TYPE public.usereventstate OWNER TO lanview2;
 
 --
 -- Name: usereventtype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE usereventtype AS ENUM (
+CREATE TYPE public.usereventtype AS ENUM (
     'notice',
     'view',
     'acknowledge',
@@ -1199,20 +1198,20 @@ CREATE TYPE usereventtype AS ENUM (
 );
 
 
-ALTER TYPE usereventtype OWNER TO lanview2;
+ALTER TYPE public.usereventtype OWNER TO lanview2;
 
 --
 -- Name: TYPE usereventtype; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE usereventtype IS 'User Event Types';
+COMMENT ON TYPE public.usereventtype IS 'User Event Types';
 
 
 --
 -- Name: vlantype; Type: TYPE; Schema: public; Owner: lanview2
 --
 
-CREATE TYPE vlantype AS ENUM (
+CREATE TYPE public.vlantype AS ENUM (
     'no',
     'unknown',
     'forbidden',
@@ -1225,13 +1224,13 @@ CREATE TYPE vlantype AS ENUM (
 );
 
 
-ALTER TYPE vlantype OWNER TO lanview2;
+ALTER TYPE public.vlantype OWNER TO lanview2;
 
 --
 -- Name: TYPE vlantype; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TYPE vlantype IS 'Vlan porthoz rendelésének a típusa :
+COMMENT ON TYPE public.vlantype IS 'Vlan porthoz rendelésének a típusa :
 no          nincs hozzárendelés
 unknown     ismeretlen
 forbidden   Tiltott
@@ -1247,7 +1246,7 @@ hard        logikailag egyenértékeű az untagged-del';
 -- Name: add_member_to_all_group(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION add_member_to_all_group() RETURNS trigger
+CREATE FUNCTION public.add_member_to_all_group() RETURNS trigger
     LANGUAGE plperl
     AS $_X$
     ($table, $midname, $gidname, $gid) = @{$_TD->{args}};
@@ -1263,7 +1262,7 @@ ALTER FUNCTION public.add_member_to_all_group() OWNER TO lanview2;
 -- Name: FUNCTION add_member_to_all_group(); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION add_member_to_all_group() IS 'Létrehoz egy kapcsoló tábla rekordot, egy group ás tag között (ha az INSERT-ben valamelyik szabály nem teljesül, akkor nem csinál semmit).
+COMMENT ON FUNCTION public.add_member_to_all_group() IS 'Létrehoz egy kapcsoló tábla rekordot, egy group ás tag között (ha az INSERT-ben valamelyik szabály nem teljesül, akkor nem csinál semmit).
 Vagyis egy megadott objektumot betesz egy megadott csoportba
 Paraméterek (sorrendben):
 $table   tábla név, A kapcsoló tábla neve,
@@ -1276,7 +1275,7 @@ $gid     a group azonisítója (id)';
 -- Name: alarm_id2name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION alarm_id2name(bigint) RETURNS text
+CREATE FUNCTION public.alarm_id2name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -1302,7 +1301,7 @@ ALTER FUNCTION public.alarm_id2name(bigint) OWNER TO lanview2;
 -- Name: FUNCTION alarm_id2name(bigint); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION alarm_id2name(bigint) IS '
+COMMENT ON FUNCTION public.alarm_id2name(bigint) IS '
 Álltatános id2name függvény.
 Az alarms.alarm_id érték alapján egy megjeleníthető stringgel tér vissza.
 Ha nem létezik az azonosító szerinti rekord, akkor hibát dob.
@@ -1310,10 +1309,10 @@ Ha nem létezik az azonosító szerinti rekord, akkor hibát dob.
 
 
 --
--- Name: alarm_message(bigint, notifswitch); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: alarm_message(bigint, public.notifswitch); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION alarm_message(sid bigint, st notifswitch) RETURNS text
+CREATE FUNCTION public.alarm_message(sid bigint, st public.notifswitch) RETURNS text
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -1393,13 +1392,13 @@ END
 $_$;
 
 
-ALTER FUNCTION public.alarm_message(sid bigint, st notifswitch) OWNER TO lanview2;
+ALTER FUNCTION public.alarm_message(sid bigint, st public.notifswitch) OWNER TO lanview2;
 
 --
 -- Name: alarm_notice(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION alarm_notice() RETURNS trigger
+CREATE FUNCTION public.alarm_notice() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -1436,7 +1435,7 @@ ALTER FUNCTION public.alarm_notice() OWNER TO lanview2;
 -- Name: app_err_id2name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION app_err_id2name(bigint) RETURNS text
+CREATE FUNCTION public.app_err_id2name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -1466,10 +1465,10 @@ SET default_with_oids = false;
 -- Name: arps; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE arps (
+CREATE TABLE public.arps (
     ipaddress inet NOT NULL,
     hwaddress macaddr NOT NULL,
-    set_type settype NOT NULL,
+    set_type public.settype NOT NULL,
     host_service_id bigint,
     first_time timestamp without time zone DEFAULT now() NOT NULL,
     last_time timestamp without time zone DEFAULT now() NOT NULL,
@@ -1478,13 +1477,13 @@ CREATE TABLE arps (
 );
 
 
-ALTER TABLE arps OWNER TO lanview2;
+ALTER TABLE public.arps OWNER TO lanview2;
 
 --
 -- Name: TABLE arps; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE arps IS 'Az ARP tábla (vagy DHCP konfig) lekérdezések eredményét tartalmazó tábla.
+COMMENT ON TABLE public.arps IS 'Az ARP tábla (vagy DHCP konfig) lekérdezések eredményét tartalmazó tábla.
 Az adatmanipulációs műveleteket nem közvetlenül, hanem a kezelő függvényeken keresztül kell elvégezni,
 hogy létrejöjjenek a log rekordok is: replace_arp(), arp_remove() és refresh_arps().';
 
@@ -1493,35 +1492,35 @@ hogy létrejöjjenek a log rekordok is: replace_arp(), arp_remove() és refresh_
 -- Name: COLUMN arps.ipaddress; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN arps.ipaddress IS 'A MAC-hoz detektált ip cím, egyedi kulcs.';
+COMMENT ON COLUMN public.arps.ipaddress IS 'A MAC-hoz detektált ip cím, egyedi kulcs.';
 
 
 --
 -- Name: COLUMN arps.hwaddress; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN arps.hwaddress IS 'Az ethernet cím, nem egyedi kulcs.';
+COMMENT ON COLUMN public.arps.hwaddress IS 'Az ethernet cím, nem egyedi kulcs.';
 
 
 --
 -- Name: COLUMN arps.first_time; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN arps.first_time IS 'A rekord létrehozásának az ideje, ill. az első detektálás ideje.';
+COMMENT ON COLUMN public.arps.first_time IS 'A rekord létrehozásának az ideje, ill. az első detektálás ideje.';
 
 
 --
 -- Name: COLUMN arps.last_time; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN arps.last_time IS 'Az legutóbbi detektálás ideje.';
+COMMENT ON COLUMN public.arps.last_time IS 'Az legutóbbi detektálás ideje.';
 
 
 --
--- Name: arp_remove(arps, reasons); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: arp_remove(public.arps, public.reasons); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION arp_remove(a arps, re reasons DEFAULT 'remove'::reasons) RETURNS void
+CREATE FUNCTION public.arp_remove(a public.arps, re public.reasons DEFAULT 'remove'::public.reasons) RETURNS void
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -1533,13 +1532,13 @@ END;
 $$;
 
 
-ALTER FUNCTION public.arp_remove(a arps, re reasons) OWNER TO lanview2;
+ALTER FUNCTION public.arp_remove(a public.arps, re public.reasons) OWNER TO lanview2;
 
 --
--- Name: FUNCTION arp_remove(a arps, re reasons); Type: COMMENT; Schema: public; Owner: lanview2
+-- Name: FUNCTION arp_remove(a public.arps, re public.reasons); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION arp_remove(a arps, re reasons) IS 'Törli a megadott rekordot az arps táblából.
+COMMENT ON FUNCTION public.arp_remove(a public.arps, re public.reasons) IS 'Törli a megadott rekordot az arps táblából.
 Paraméterek
     a   A törlendő rekord.
     re  A log rekordba irandó ok, alapértelmezetten ez a "remove".
@@ -1550,7 +1549,7 @@ Nincs visszatérési érték.';
 -- Name: cast_to_bigint(text, bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION cast_to_bigint(text, bigint DEFAULT NULL::bigint) RETURNS bigint
+CREATE FUNCTION public.cast_to_bigint(text, bigint DEFAULT NULL::bigint) RETURNS bigint
     LANGUAGE plpgsql IMMUTABLE
     AS $_$
 BEGIN
@@ -1568,7 +1567,7 @@ ALTER FUNCTION public.cast_to_bigint(text, bigint) OWNER TO lanview2;
 -- Name: cast_to_boolean(text, boolean); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION cast_to_boolean(text, boolean DEFAULT NULL::boolean) RETURNS boolean
+CREATE FUNCTION public.cast_to_boolean(text, boolean DEFAULT NULL::boolean) RETURNS boolean
     LANGUAGE plpgsql IMMUTABLE
     AS $_$
 BEGIN
@@ -1586,7 +1585,7 @@ ALTER FUNCTION public.cast_to_boolean(text, boolean) OWNER TO lanview2;
 -- Name: cast_to_cidr(text, cidr); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION cast_to_cidr(text, cidr DEFAULT NULL::cidr) RETURNS cidr
+CREATE FUNCTION public.cast_to_cidr(text, cidr DEFAULT NULL::cidr) RETURNS cidr
     LANGUAGE plpgsql IMMUTABLE
     AS $_$
 BEGIN
@@ -1604,7 +1603,7 @@ ALTER FUNCTION public.cast_to_cidr(text, cidr) OWNER TO lanview2;
 -- Name: cast_to_date(text, date); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION cast_to_date(text, date DEFAULT NULL::date) RETURNS date
+CREATE FUNCTION public.cast_to_date(text, date DEFAULT NULL::date) RETURNS date
     LANGUAGE plpgsql IMMUTABLE
     AS $_$
 BEGIN
@@ -1622,7 +1621,7 @@ ALTER FUNCTION public.cast_to_date(text, date) OWNER TO lanview2;
 -- Name: cast_to_datetime(text, timestamp without time zone); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION cast_to_datetime(text, timestamp without time zone DEFAULT NULL::timestamp without time zone) RETURNS timestamp without time zone
+CREATE FUNCTION public.cast_to_datetime(text, timestamp without time zone DEFAULT NULL::timestamp without time zone) RETURNS timestamp without time zone
     LANGUAGE plpgsql IMMUTABLE
     AS $_$
 BEGIN
@@ -1640,7 +1639,7 @@ ALTER FUNCTION public.cast_to_datetime(text, timestamp without time zone) OWNER 
 -- Name: cast_to_double(text, double precision); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION cast_to_double(text, double precision DEFAULT NULL::double precision) RETURNS double precision
+CREATE FUNCTION public.cast_to_double(text, double precision DEFAULT NULL::double precision) RETURNS double precision
     LANGUAGE plpgsql IMMUTABLE
     AS $_$
 BEGIN
@@ -1658,7 +1657,7 @@ ALTER FUNCTION public.cast_to_double(text, double precision) OWNER TO lanview2;
 -- Name: cast_to_inet(text, inet); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION cast_to_inet(text, inet DEFAULT NULL::inet) RETURNS inet
+CREATE FUNCTION public.cast_to_inet(text, inet DEFAULT NULL::inet) RETURNS inet
     LANGUAGE plpgsql IMMUTABLE
     AS $_$
 BEGIN
@@ -1676,7 +1675,7 @@ ALTER FUNCTION public.cast_to_inet(text, inet) OWNER TO lanview2;
 -- Name: cast_to_integer(text, bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION cast_to_integer(text, bigint DEFAULT NULL::bigint) RETURNS bigint
+CREATE FUNCTION public.cast_to_integer(text, bigint DEFAULT NULL::bigint) RETURNS bigint
     LANGUAGE plpgsql IMMUTABLE
     AS $_$
 BEGIN
@@ -1694,7 +1693,7 @@ ALTER FUNCTION public.cast_to_integer(text, bigint) OWNER TO lanview2;
 -- Name: cast_to_interval(text, interval); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION cast_to_interval(text, interval DEFAULT NULL::interval) RETURNS interval
+CREATE FUNCTION public.cast_to_interval(text, interval DEFAULT NULL::interval) RETURNS interval
     LANGUAGE plpgsql IMMUTABLE
     AS $_$
 BEGIN
@@ -1712,7 +1711,7 @@ ALTER FUNCTION public.cast_to_interval(text, interval) OWNER TO lanview2;
 -- Name: cast_to_mac(text, macaddr); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION cast_to_mac(text, macaddr DEFAULT NULL::macaddr) RETURNS macaddr
+CREATE FUNCTION public.cast_to_mac(text, macaddr DEFAULT NULL::macaddr) RETURNS macaddr
     LANGUAGE plpgsql IMMUTABLE
     AS $_$
 BEGIN
@@ -1730,7 +1729,7 @@ ALTER FUNCTION public.cast_to_mac(text, macaddr) OWNER TO lanview2;
 -- Name: cast_to_point(text, point); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION cast_to_point(text, point DEFAULT NULL::point) RETURNS point
+CREATE FUNCTION public.cast_to_point(text, point DEFAULT NULL::point) RETURNS point
     LANGUAGE plpgsql IMMUTABLE
     AS $_$
 BEGIN
@@ -1748,7 +1747,7 @@ ALTER FUNCTION public.cast_to_point(text, point) OWNER TO lanview2;
 -- Name: cast_to_real(text, double precision); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION cast_to_real(text, double precision DEFAULT NULL::double precision) RETURNS double precision
+CREATE FUNCTION public.cast_to_real(text, double precision DEFAULT NULL::double precision) RETURNS double precision
     LANGUAGE plpgsql IMMUTABLE
     AS $_$
 BEGIN
@@ -1766,7 +1765,7 @@ ALTER FUNCTION public.cast_to_real(text, double precision) OWNER TO lanview2;
 -- Name: cast_to_time(text, time without time zone); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION cast_to_time(text, time without time zone DEFAULT NULL::time without time zone) RETURNS time without time zone
+CREATE FUNCTION public.cast_to_time(text, time without time zone DEFAULT NULL::time without time zone) RETURNS time without time zone
     LANGUAGE plpgsql IMMUTABLE
     AS $_$
 BEGIN
@@ -1784,7 +1783,7 @@ ALTER FUNCTION public.cast_to_time(text, time without time zone) OWNER TO lanvie
 -- Name: check_after_localization_text(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION check_after_localization_text() RETURNS trigger
+CREATE FUNCTION public.check_after_localization_text() RETURNS trigger
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -1820,7 +1819,7 @@ ALTER FUNCTION public.check_after_localization_text() OWNER TO lanview2;
 -- Name: check_alarm_id_on_host_service_logs(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION check_alarm_id_on_host_service_logs() RETURNS trigger
+CREATE FUNCTION public.check_alarm_id_on_host_service_logs() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -1841,7 +1840,7 @@ ALTER FUNCTION public.check_alarm_id_on_host_service_logs() OWNER TO lanview2;
 -- Name: check_alarm_id_on_host_services(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION check_alarm_id_on_host_services() RETURNS trigger
+CREATE FUNCTION public.check_alarm_id_on_host_services() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -1862,7 +1861,7 @@ ALTER FUNCTION public.check_alarm_id_on_host_services() OWNER TO lanview2;
 -- Name: check_before_param_value(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION check_before_param_value() RETURNS trigger
+CREATE FUNCTION public.check_before_param_value() RETURNS trigger
     LANGUAGE plpgsql IMMUTABLE
     AS $$
 DECLARE
@@ -1881,16 +1880,23 @@ ALTER FUNCTION public.check_before_param_value() OWNER TO lanview2;
 -- Name: check_before_service_value(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION check_before_service_value() RETURNS trigger
+CREATE FUNCTION public.check_before_service_value() RETURNS trigger
     LANGUAGE plpgsql IMMUTABLE
     AS $$
 DECLARE
     tid bigint;
     pt  paramtype;
 BEGIN
-    SELECT param_type_id   INTO tid FROM service_var_types WHERE service_var_type_id = NEW.service_var_type_id;
-    SELECT param_type_type INTO pt  FROM param_types       WHERE param_type_id = tid;
-    NEW.param_value = check_paramtype(NEW.param_value, pt);
+    IF NEW.service_var_value IS NOT NULL THEN
+        SELECT param_type_id     INTO tid FROM service_var_types WHERE service_var_type_id = NEW.service_var_type_id;
+        SELECT param_type_type   INTO pt  FROM param_types       WHERE param_type_id = tid;
+        NEW.service_var_value = check_paramtype(NEW.service_var_value, pt);
+    END IF;
+    IF NEW.raw_value         IS NOT NULL THEN
+        SELECT raw_param_type_id INTO tid FROM service_var_types WHERE service_var_type_id = NEW.service_var_type_id;
+        SELECT param_type_type   INTO pt  FROM param_types       WHERE param_type_id = tid;
+        NEW.raw_value         = check_paramtype(NEW.raw_value, pt);
+    END IF;
     RETURN NEW;
 END;
 $$;
@@ -1902,7 +1908,7 @@ ALTER FUNCTION public.check_before_service_value() OWNER TO lanview2;
 -- Name: check_host_services(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION check_host_services() RETURNS trigger
+CREATE FUNCTION public.check_host_services() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -1999,7 +2005,7 @@ ALTER FUNCTION public.check_host_services() OWNER TO lanview2;
 -- Name: FUNCTION check_host_services(); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION check_host_services() IS '
+COMMENT ON FUNCTION public.check_host_services() IS '
 A host_services rekord ellenörző trigger függvény:
 A rekord ID-t nem engedi modosítani.
 Ellenörzi, hogy a node_id valóban egy nodes vagy snmpdevices rekordot azonosít-e.
@@ -2019,7 +2025,7 @@ megváltozott, akkor ellenörzi, hogy megfelel-e a services.superior_service_mas
 -- Name: check_insert_menu_items(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION check_insert_menu_items() RETURNS trigger
+CREATE FUNCTION public.check_insert_menu_items() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -2047,7 +2053,7 @@ ALTER FUNCTION public.check_insert_menu_items() OWNER TO lanview2;
 -- Name: check_insert_phs_links(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION check_insert_phs_links() RETURNS trigger
+CREATE FUNCTION public.check_insert_phs_links() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -2105,7 +2111,7 @@ ALTER FUNCTION public.check_insert_phs_links() OWNER TO lanview2;
 -- Name: check_interface(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION check_interface() RETURNS trigger
+CREATE FUNCTION public.check_interface() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -2130,32 +2136,39 @@ ALTER FUNCTION public.check_interface() OWNER TO lanview2;
 -- Name: FUNCTION check_interface(); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION check_interface() IS 'Különböző node_id esetén nem lehet két azonos MAC';
+COMMENT ON FUNCTION public.check_interface() IS 'Különböző node_id esetén nem lehet két azonos MAC';
 
 
 --
 -- Name: check_ip_address(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION check_ip_address() RETURNS trigger
+CREATE FUNCTION public.check_ip_address() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 DECLARE
     n   cidr;
     ipa ip_addresses;
-    nip boolean;
+    nip boolean;    -- IP address type IS NULL
+    snid bigint;
+    cnt integer;
 BEGIN
- -- RAISE INFO 'check_ip_address() %/% NEW = %',TG_TABLE_NAME, TG_OP , NEW;
-    -- Az új rekordban van ip cím
+    RAISE INFO 'check_ip_address() %/% NEW = %',TG_TABLE_NAME, TG_OP , NEW;
+    -- Az új rekordban van ip cím ?
     nip := NEW.ip_address_type IS NULL;
     IF nip THEN
-        IF NEW.address IS NULL OR is_dyn_addr(NEW.address) THEN
+        IF NEW.address IS NULL OR is_dyn_addr(NEW.address) IS NOT NULL THEN
             NEW.ip_address_type := 'dynamic';
         ELSE
             NEW.ip_address_type := 'fixip';
         END IF;
     END IF;
     IF NEW.address IS NOT NULL THEN
+        -- Check subnet_id
+        IF NEW.subnet_id IS NOT NULL AND (SELECT NEW.address << netaddr FROM subnets WHERE subnet_id = NEW.subnet_id) THEN
+            RAISE INFO 'Clear subnet id : %', NEW.subnet_id;
+            NEW.subnet_id := NULL;  -- Clear invalid subnet_id
+        END IF;
         -- Nincs subnet (id), keresünk egyet
         IF NEW.subnet_id IS NULL AND NEW.ip_address_type <> 'external' THEN
             BEGIN
@@ -2166,16 +2179,7 @@ BEGIN
                     WHEN TOO_MANY_ROWS THEN     -- több találat is van, nem egyértelmű
                         PERFORM error('Ambiguous',-1, 'subnet address for : ' || CAST(NEW.address AS TEXT), 'check_ip_address()', TG_TABLE_NAME, TG_OP);
             END;
-            -- RAISE INFO 'Set subnet id : %', NEW.subnet_id;
-        -- Ha megadtuk a subnet id-t is, akkor a címnek benne kell lennie
-        ELSIF NEW.ip_address_type <> 'external' THEN
-            SELECT netaddr INTO n FROM subnets WHERE subnet_id = NEW.subnet_id;
-            IF NOT FOUND THEN
-                PERFORM error('InvRef', NEW.subnet_id, 'subnet_id', 'check_ip_address()', TG_TABLE_NAME, TG_OP);
-            END IF;
-            IF NOT n >> NEW.address THEN
-                PERFORM error('InvalidNAddr', NEW.subnet_id, CAST(n AS TEXT) || '>>' || CAST(NEW.address AS TEXT), 'check_ip_address()', TG_TABLE_NAME, TG_OP);
-            END IF;
+            RAISE INFO 'Set subnet id : %', NEW.subnet_id;
         ELSE
             -- external típusnál mindíg NULL a subnet_id
             NEW.subnet_id := NULL;
@@ -2221,7 +2225,7 @@ ALTER FUNCTION public.check_ip_address() OWNER TO lanview2;
 -- Name: check_log_links(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION check_log_links() RETURNS trigger
+CREATE FUNCTION public.check_log_links() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -2251,10 +2255,10 @@ $$;
 ALTER FUNCTION public.check_log_links() OWNER TO lanview2;
 
 --
--- Name: check_paramtype(text, paramtype); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: check_paramtype(text, public.paramtype); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION check_paramtype(v text, t paramtype) RETURNS text
+CREATE FUNCTION public.check_paramtype(v text, t public.paramtype) RETURNS text
     LANGUAGE plpgsql IMMUTABLE
     AS $$
 BEGIN
@@ -2277,13 +2281,13 @@ END;
 $$;
 
 
-ALTER FUNCTION public.check_paramtype(v text, t paramtype) OWNER TO lanview2;
+ALTER FUNCTION public.check_paramtype(v text, t public.paramtype) OWNER TO lanview2;
 
 --
--- Name: check_phs_shared(bigint, portshare, phslinktype, bigint); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: check_phs_shared(bigint, public.portshare, public.phslinktype, bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION check_phs_shared(bigint, portshare, phslinktype, bigint) RETURNS void
+CREATE FUNCTION public.check_phs_shared(bigint, public.portshare, public.phslinktype, bigint) RETURNS void
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -2317,13 +2321,13 @@ END;
 $_$;
 
 
-ALTER FUNCTION public.check_phs_shared(bigint, portshare, phslinktype, bigint) OWNER TO lanview2;
+ALTER FUNCTION public.check_phs_shared(bigint, public.portshare, public.phslinktype, bigint) OWNER TO lanview2;
 
 --
 -- Name: check_reference_node_id(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION check_reference_node_id() RETURNS trigger
+CREATE FUNCTION public.check_reference_node_id() RETURNS trigger
     LANGUAGE plperl
     AS $_X$
     ($null, $inTable, $outTable) = @{$_TD->{args}};
@@ -2358,7 +2362,7 @@ ALTER FUNCTION public.check_reference_node_id() OWNER TO lanview2;
 -- Name: FUNCTION check_reference_node_id(); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION check_reference_node_id() IS 'Ellenőrzi, hogy a node_id mező valóban egy node rekordra mutat-e.
+COMMENT ON FUNCTION public.check_reference_node_id() IS 'Ellenőrzi, hogy a node_id mező valóban egy node rekordra mutat-e.
 Ha az opcionális első paraméter true, akkor megengedi a NULL értéket is.
 Ha megadjuk a második paramétert, akkor az a tábla neve, amelyikben és amelyik leszármazottai között szerepelnie kell a node rekordnak
 Ha a paraméter nincs megadva, akkor az összes node táblában keres (patchs)
@@ -2369,7 +2373,7 @@ Ha megadjuk a harmadik paramétert akkor az itt megadott táblában nem szerepel
 -- Name: check_reference_port_id(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION check_reference_port_id() RETURNS trigger
+CREATE FUNCTION public.check_reference_port_id() RETURNS trigger
     LANGUAGE plperl
     AS $_X$
     ($null, $inTable, $exTable) = @{$_TD->{args}};
@@ -2409,7 +2413,7 @@ ALTER FUNCTION public.check_reference_port_id() OWNER TO lanview2;
 -- Name: FUNCTION check_reference_port_id(); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION check_reference_port_id() IS 'Ellenőrzi, hogy a port_id mező valóban egy port rekordra mutat-e.
+COMMENT ON FUNCTION public.check_reference_port_id() IS 'Ellenőrzi, hogy a port_id mező valóban egy port rekordra mutat-e.
 Ha az opcionális első paraméter true, akkor megengedi a NULL értéket is.
 Ha megadjuk a második paramétert, akkor az a tábla neve, amelyikben és amelyik leszármazottai között szerepelnie kell a port rekordnak
 Ha a paraméter nincs megadva, akkor az összes port táblában keres (nport)
@@ -2417,10 +2421,10 @@ Ha mega van adva egy harmadik paraméter, akkor az egy tábla név, melyben nem 
 
 
 --
--- Name: check_shared(portshare, portshare); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: check_shared(public.portshare, public.portshare); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION check_shared(portshare, portshare) RETURNS boolean
+CREATE FUNCTION public.check_shared(public.portshare, public.portshare) RETURNS boolean
     LANGUAGE plpgsql
     AS $_$
 BEGIN
@@ -2442,20 +2446,20 @@ END;
 $_$;
 
 
-ALTER FUNCTION public.check_shared(portshare, portshare) OWNER TO lanview2;
+ALTER FUNCTION public.check_shared(public.portshare, public.portshare) OWNER TO lanview2;
 
 --
--- Name: FUNCTION check_shared(portshare, portshare); Type: COMMENT; Schema: public; Owner: lanview2
+-- Name: FUNCTION check_shared(public.portshare, public.portshare); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION check_shared(portshare, portshare) IS 'Megvizsgálja, hogy a megadott két megosztás típus átfedi-e egymást,ha nem akkor igazzal tér vissza.';
+COMMENT ON FUNCTION public.check_shared(public.portshare, public.portshare) IS 'Megvizsgálja, hogy a megadott két megosztás típus átfedi-e egymást,ha nem akkor igazzal tér vissza.';
 
 
 --
 -- Name: host_services; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE host_services (
+CREATE TABLE public.host_services (
     host_service_id bigint NOT NULL,
     node_id bigint NOT NULL,
     service_id bigint NOT NULL,
@@ -2474,14 +2478,14 @@ CREATE TABLE host_services (
     timeperiod_id bigint,
     flapping_interval interval,
     flapping_max_change integer,
-    noalarm_flag noalarmtype DEFAULT 'off'::noalarmtype NOT NULL,
+    noalarm_flag public.noalarmtype DEFAULT 'off'::public.noalarmtype NOT NULL,
     noalarm_from timestamp without time zone,
     noalarm_to timestamp without time zone,
     offline_group_ids bigint[],
     online_group_ids bigint[],
-    host_service_state notifswitch DEFAULT 'unknown'::notifswitch NOT NULL,
-    soft_state notifswitch DEFAULT 'unknown'::notifswitch NOT NULL,
-    hard_state notifswitch DEFAULT 'unknown'::notifswitch NOT NULL,
+    host_service_state public.notifswitch DEFAULT 'unknown'::public.notifswitch NOT NULL,
+    soft_state public.notifswitch DEFAULT 'unknown'::public.notifswitch NOT NULL,
+    hard_state public.notifswitch DEFAULT 'unknown'::public.notifswitch NOT NULL,
     state_msg text,
     check_attempts integer DEFAULT 0 NOT NULL,
     last_changed timestamp without time zone,
@@ -2496,209 +2500,209 @@ CREATE TABLE host_services (
 );
 
 
-ALTER TABLE host_services OWNER TO lanview2;
+ALTER TABLE public.host_services OWNER TO lanview2;
 
 --
 -- Name: TABLE host_services; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE host_services IS 'A szolgáltatás-node összerendelések, ill. a konkrét szolgáltatások vagy ellenörzés utasítások táblája, és azok állpota.';
+COMMENT ON TABLE public.host_services IS 'A szolgáltatás-node összerendelések, ill. a konkrét szolgáltatások vagy ellenörzés utasítások táblája, és azok állpota.';
 
 
 --
 -- Name: COLUMN host_services.host_service_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN host_services.host_service_id IS 'Egyedi azonosító';
+COMMENT ON COLUMN public.host_services.host_service_id IS 'Egyedi azonosító';
 
 
 --
 -- Name: COLUMN host_services.node_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN host_services.node_id IS 'A node ill. host azonosítója, amin a szolgáltatás, vagy az ellenörzés fut.';
+COMMENT ON COLUMN public.host_services.node_id IS 'A node ill. host azonosítója, amin a szolgáltatás, vagy az ellenörzés fut.';
 
 
 --
 -- Name: COLUMN host_services.service_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN host_services.service_id IS 'A szolgáltatást, vagy az ellenörzés típusát azonosító ID';
+COMMENT ON COLUMN public.host_services.service_id IS 'A szolgáltatást, vagy az ellenörzés típusát azonosító ID';
 
 
 --
 -- Name: COLUMN host_services.port_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN host_services.port_id IS 'Opcionális port azonosító, ha a szolgáltatás ill. ellenörzés egy porthoz rendelt.';
+COMMENT ON COLUMN public.host_services.port_id IS 'Opcionális port azonosító, ha a szolgáltatás ill. ellenörzés egy porthoz rendelt.';
 
 
 --
 -- Name: COLUMN host_services.host_service_note; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN host_services.host_service_note IS 'Megjegyzés / leírás.';
+COMMENT ON COLUMN public.host_services.host_service_note IS 'Megjegyzés / leírás.';
 
 
 --
 -- Name: COLUMN host_services.prime_service_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN host_services.prime_service_id IS 'Az ellenőrzés elsődleges módszerét azonosító, szervíz típus ID';
+COMMENT ON COLUMN public.host_services.prime_service_id IS 'Az ellenőrzés elsődleges módszerét azonosító, szervíz típus ID';
 
 
 --
 -- Name: COLUMN host_services.proto_service_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN host_services.proto_service_id IS 'Az ellenőrzés módszerének opcionális további azonosítása (protokol), szervíz típus ID';
+COMMENT ON COLUMN public.host_services.proto_service_id IS 'Az ellenőrzés módszerének opcionális további azonosítása (protokol), szervíz típus ID';
 
 
 --
 -- Name: COLUMN host_services.delegate_host_state; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN host_services.delegate_host_state IS 'Értéke igaz, ha a szolgáltatás állapotát örökli a node is.';
+COMMENT ON COLUMN public.host_services.delegate_host_state IS 'Értéke igaz, ha a szolgáltatás állapotát örökli a node is.';
 
 
 --
 -- Name: COLUMN host_services.check_cmd; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN host_services.check_cmd IS 'Egy opcionális parancs.';
+COMMENT ON COLUMN public.host_services.check_cmd IS 'Egy opcionális parancs.';
 
 
 --
 -- Name: COLUMN host_services.features; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN host_services.features IS 'További paraméterek. Ld.: services.features . Ha értéke nem NULL, akkor fellülbírálja a service_id -hez tartozó services.features értékét';
+COMMENT ON COLUMN public.host_services.features IS 'További paraméterek. Ld.: services.features . Ha értéke nem NULL, akkor fellülbírálja a service_id -hez tartozó services.features értékét';
 
 
 --
 -- Name: COLUMN host_services.superior_host_service_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN host_services.superior_host_service_id IS 'Szülő szolgáltatás. Az ellenörzés a szülőn keresztül hajtódik végre, ill. az végzi.';
+COMMENT ON COLUMN public.host_services.superior_host_service_id IS 'Szülő szolgáltatás. Az ellenörzés a szülőn keresztül hajtódik végre, ill. az végzi.';
 
 
 --
 -- Name: COLUMN host_services.max_check_attempts; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN host_services.max_check_attempts IS 'Hibás eredmények maximális száma, a riasztás kiadása elött.';
+COMMENT ON COLUMN public.host_services.max_check_attempts IS 'Hibás eredmények maximális száma, a riasztás kiadása elött.';
 
 
 --
 -- Name: COLUMN host_services.normal_check_interval; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN host_services.normal_check_interval IS 'Ellenörzések ütemezése másodpercben, ha nincs hiba.';
+COMMENT ON COLUMN public.host_services.normal_check_interval IS 'Ellenörzések ütemezése másodpercben, ha nincs hiba.';
 
 
 --
 -- Name: COLUMN host_services.retry_check_interval; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN host_services.retry_check_interval IS 'Ellenörzések ütemezése, hiba esetén a riasztás kiadásáig.';
+COMMENT ON COLUMN public.host_services.retry_check_interval IS 'Ellenörzések ütemezése, hiba esetén a riasztás kiadásáig.';
 
 
 --
 -- Name: COLUMN host_services.timeperiod_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN host_services.timeperiod_id IS 'Az ellenörzések időtartománya.';
+COMMENT ON COLUMN public.host_services.timeperiod_id IS 'Az ellenörzések időtartománya.';
 
 
 --
 -- Name: COLUMN host_services.noalarm_flag; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN host_services.noalarm_flag IS 'A riasztás tiltásának az állapota';
+COMMENT ON COLUMN public.host_services.noalarm_flag IS 'A riasztás tiltásának az állapota';
 
 
 --
 -- Name: COLUMN host_services.noalarm_from; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN host_services.noalarm_from IS 'Ha a tiltáshoz kezdő időpont tartozik, akkor a tiltás kezdete.';
+COMMENT ON COLUMN public.host_services.noalarm_from IS 'Ha a tiltáshoz kezdő időpont tartozik, akkor a tiltás kezdete.';
 
 
 --
 -- Name: COLUMN host_services.noalarm_to; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN host_services.noalarm_to IS 'Ha a tiltáshoz záró időpont tartozik, akkor a tiltás vége.';
+COMMENT ON COLUMN public.host_services.noalarm_to IS 'Ha a tiltáshoz záró időpont tartozik, akkor a tiltás vége.';
 
 
 --
 -- Name: COLUMN host_services.host_service_state; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN host_services.host_service_state IS 'A szolgáltatás állapota, álltalában azonos a hard_state-val, kiegészítve a recovered, és flapping állapottal.';
+COMMENT ON COLUMN public.host_services.host_service_state IS 'A szolgáltatás állapota, álltalában azonos a hard_state-val, kiegészítve a recovered, és flapping állapottal.';
 
 
 --
 -- Name: COLUMN host_services.soft_state; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN host_services.soft_state IS 'A szolgálltatás utolsó ellenörzés szerinti állapota.';
+COMMENT ON COLUMN public.host_services.soft_state IS 'A szolgálltatás utolsó ellenörzés szerinti állapota.';
 
 
 --
 -- Name: COLUMN host_services.hard_state; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN host_services.hard_state IS 'A szolgálltatás elfogadott állapota.';
+COMMENT ON COLUMN public.host_services.hard_state IS 'A szolgálltatás elfogadott állapota.';
 
 
 --
 -- Name: COLUMN host_services.state_msg; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN host_services.state_msg IS 'Az aktuális állapothoz tartozó opcionális állapot üzenet';
+COMMENT ON COLUMN public.host_services.state_msg IS 'Az aktuális állapothoz tartozó opcionális állapot üzenet';
 
 
 --
 -- Name: COLUMN host_services.check_attempts; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN host_services.check_attempts IS 'Hiba számláló.';
+COMMENT ON COLUMN public.host_services.check_attempts IS 'Hiba számláló.';
 
 
 --
 -- Name: COLUMN host_services.last_changed; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN host_services.last_changed IS 'Utolsó állapot változás időpontja.';
+COMMENT ON COLUMN public.host_services.last_changed IS 'Utolsó állapot változás időpontja.';
 
 
 --
 -- Name: COLUMN host_services.last_touched; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN host_services.last_touched IS 'Utolsó ellenözzés időpontja';
+COMMENT ON COLUMN public.host_services.last_touched IS 'Utolsó ellenözzés időpontja';
 
 
 --
 -- Name: COLUMN host_services.act_alarm_log_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN host_services.act_alarm_log_id IS 'Riasztási állapot esetén az aktuális riasztás log rekord ID-je';
+COMMENT ON COLUMN public.host_services.act_alarm_log_id IS 'Riasztási állapot esetén az aktuális riasztás log rekord ID-je';
 
 
 --
 -- Name: COLUMN host_services.last_alarm_log_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN host_services.last_alarm_log_id IS 'Az utolsó riasztás log rekord ID-je';
+COMMENT ON COLUMN public.host_services.last_alarm_log_id IS 'Az utolsó riasztás log rekord ID-je';
 
 
 --
--- Name: check_superior_service(host_services); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: check_superior_service(public.host_services); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION check_superior_service(_hs host_services) RETURNS bigint
+CREATE FUNCTION public.check_superior_service(_hs public.host_services) RETURNS bigint
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -2727,13 +2731,13 @@ END
 $$;
 
 
-ALTER FUNCTION public.check_superior_service(_hs host_services) OWNER TO lanview2;
+ALTER FUNCTION public.check_superior_service(_hs public.host_services) OWNER TO lanview2;
 
 --
--- Name: FUNCTION check_superior_service(_hs host_services); Type: COMMENT; Schema: public; Owner: lanview2
+-- Name: FUNCTION check_superior_service(_hs public.host_services); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION check_superior_service(_hs host_services) IS 'Ha egy függő szervízről van szó, akkor a felsőbb szintű szolgáltatások között keres egy ismert és
+COMMENT ON FUNCTION public.check_superior_service(_hs public.host_services) IS 'Ha egy függő szervízről van szó, akkor a felsőbb szintű szolgáltatások között keres egy ismert és
  warning-nál magsabszintű riasztási állapotút, és annak az azonosítójával tér vissza.
  Egyébként ill. ha nincs találat, akkor NULL-al tér vissza.';
 
@@ -2742,7 +2746,7 @@ COMMENT ON FUNCTION check_superior_service(_hs host_services) IS 'Ha egy függő
 -- Name: check_table_shape(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION check_table_shape() RETURNS trigger
+CREATE FUNCTION public.check_table_shape() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -2772,7 +2776,7 @@ ALTER FUNCTION public.check_table_shape() OWNER TO lanview2;
 -- Name: check_unique_alarm_id(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION check_unique_alarm_id() RETURNS trigger
+CREATE FUNCTION public.check_unique_alarm_id() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -2796,7 +2800,7 @@ ALTER FUNCTION public.check_unique_alarm_id() OWNER TO lanview2;
 -- Name: chk_flapping(bigint, interval, integer); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION chk_flapping(hsid bigint, tflapp interval, iflapp integer) RETURNS boolean
+CREATE FUNCTION public.chk_flapping(hsid bigint, tflapp interval, iflapp integer) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -2813,7 +2817,7 @@ ALTER FUNCTION public.chk_flapping(hsid bigint, tflapp interval, iflapp integer)
 -- Name: FUNCTION chk_flapping(hsid bigint, tflapp interval, iflapp integer); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION chk_flapping(hsid bigint, tflapp interval, iflapp integer) IS 'Ellenörzi, hogy az állpotváltozások billegésnek (flapping) nubősülnek-e.
+COMMENT ON FUNCTION public.chk_flapping(hsid bigint, tflapp interval, iflapp integer) IS 'Ellenörzi, hogy az állpotváltozások billegésnek (flapping) nubősülnek-e.
  Vagyis a megadott időintervallumban (tflapp) a hsid azonosítójü szolgáltatás állpota
  töbszőr változott mint iflapp. Ha igen igazzal, egyébként hamis értékkel tér vissza.';
 
@@ -2822,7 +2826,7 @@ COMMENT ON FUNCTION chk_flapping(hsid bigint, tflapp interval, iflapp integer) I
 -- Name: compare_db_version(integer, integer); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION compare_db_version(major integer, minor integer) RETURNS integer
+CREATE FUNCTION public.compare_db_version(major integer, minor integer) RETURNS integer
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -2854,7 +2858,7 @@ ALTER FUNCTION public.compare_db_version(major integer, minor integer) OWNER TO 
 -- Name: crypt_user_password(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION crypt_user_password() RETURNS trigger
+CREATE FUNCTION public.crypt_user_password() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -2882,14 +2886,14 @@ ALTER FUNCTION public.crypt_user_password() OWNER TO lanview2;
 -- Name: FUNCTION crypt_user_password(); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION crypt_user_password() IS 'Trigger függvény az users táblához. Titkosítja a passwd mwzőt, ha meg van adva, vagy változott.';
+COMMENT ON FUNCTION public.crypt_user_password() IS 'Trigger függvény az users táblához. Titkosítja a passwd mwzőt, ha meg van adva, vagy változott.';
 
 
 --
--- Name: current_mactab_stat(bigint, macaddr, mactabstate[]); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: current_mactab_stat(bigint, macaddr, public.mactabstate[]); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION current_mactab_stat(pid bigint, mac macaddr, mst mactabstate[] DEFAULT '{}'::mactabstate[]) RETURNS mactabstate[]
+CREATE FUNCTION public.current_mactab_stat(pid bigint, mac macaddr, mst public.mactabstate[] DEFAULT '{}'::public.mactabstate[]) RETURNS public.mactabstate[]
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -2919,13 +2923,13 @@ END;
 $$;
 
 
-ALTER FUNCTION public.current_mactab_stat(pid bigint, mac macaddr, mst mactabstate[]) OWNER TO lanview2;
+ALTER FUNCTION public.current_mactab_stat(pid bigint, mac macaddr, mst public.mactabstate[]) OWNER TO lanview2;
 
 --
 -- Name: db_err_id2name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION db_err_id2name(bigint) RETURNS text
+CREATE FUNCTION public.db_err_id2name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -2948,7 +2952,7 @@ ALTER FUNCTION public.db_err_id2name(bigint) OWNER TO lanview2;
 -- Name: db_error_chk_reapeat(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION db_error_chk_reapeat() RETURNS trigger
+CREATE FUNCTION public.db_error_chk_reapeat() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -2982,14 +2986,14 @@ ALTER FUNCTION public.db_error_chk_reapeat() OWNER TO lanview2;
 -- Name: FUNCTION db_error_chk_reapeat(); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION db_error_chk_reapeat() IS 'Trigger függvény az db_ers táblához, hogy ne legyenek ismételt rekordok.';
+COMMENT ON FUNCTION public.db_error_chk_reapeat() IS 'Trigger függvény az db_ers táblához, hogy ne legyenek ismételt rekordok.';
 
 
 --
 -- Name: delete_alarms(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION delete_alarms() RETURNS trigger
+CREATE FUNCTION public.delete_alarms() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -3008,7 +3012,7 @@ ALTER FUNCTION public.delete_alarms() OWNER TO lanview2;
 -- Name: delete_node_post(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION delete_node_post() RETURNS trigger
+CREATE FUNCTION public.delete_node_post() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -3026,13 +3030,14 @@ ALTER FUNCTION public.delete_node_post() OWNER TO lanview2;
 -- Name: delete_port_post(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION delete_port_post() RETURNS trigger
+CREATE FUNCTION public.delete_port_post() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
     DELETE FROM port_params       WHERE port_id = OLD.port_id;
     DELETE FROM host_services     WHERE port_id = OLD.port_id;
     DELETE FROM port_vlans        WHERE port_id = OLD.port_id;
+    DELETE FROM port_vlan_logs    WHERE port_id = OLD.port_id;
     DELETE FROM mactab            WHERE port_id = OLD.port_id;
     DELETE FROM phs_links_table   WHERE port_id1 = OLD.port_id OR port_id2 = OLD.port_id;
     DELETE FROM lldp_links_table  WHERE port_id1 = OLD.port_id OR port_id2 = OLD.port_id;
@@ -3047,7 +3052,7 @@ ALTER FUNCTION public.delete_port_post() OWNER TO lanview2;
 -- Name: delete_record_text(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION delete_record_text() RETURNS trigger
+CREATE FUNCTION public.delete_record_text() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -3060,10 +3065,10 @@ $$;
 ALTER FUNCTION public.delete_record_text() OWNER TO lanview2;
 
 --
--- Name: dow2int(dayofweek); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: dow2int(public.dayofweek); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION dow2int(dayofweek) RETURNS integer
+CREATE FUNCTION public.dow2int(public.dayofweek) RETURNS integer
     LANGUAGE plpgsql
     AS $_$
 BEGIN
@@ -3081,13 +3086,13 @@ END;
 $_$;
 
 
-ALTER FUNCTION public.dow2int(dayofweek) OWNER TO lanview2;
+ALTER FUNCTION public.dow2int(public.dayofweek) OWNER TO lanview2;
 
 --
 -- Name: enum_name2note(text, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION enum_name2note(text, text DEFAULT NULL::text) RETURNS text
+CREATE FUNCTION public.enum_name2note(text, text DEFAULT NULL::text) RETURNS text
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -3119,7 +3124,7 @@ ALTER FUNCTION public.enum_name2note(text, text) OWNER TO lanview2;
 -- Name: FUNCTION enum_name2note(text, text); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION enum_name2note(text, text) IS 'Egy enumerációs értékhez tartozó note stringet kéri le
+COMMENT ON FUNCTION public.enum_name2note(text, text) IS 'Egy enumerációs értékhez tartozó note stringet kéri le
 Paraméterek:
     $1 Az enumerációs érték.
     $2 Az enumerációs típus neve opcionális.
@@ -3131,7 +3136,7 @@ Ha nem adtuk meg az enumerációs típust, és az enumerációs értékre több 
 -- Name: error(text, bigint, text, text, text, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION error(text, bigint DEFAULT '-1'::integer, text DEFAULT 'nil'::text, text DEFAULT 'nil'::text, text DEFAULT 'nil'::text, text DEFAULT 'no'::text) RETURNS boolean
+CREATE FUNCTION public.error(text, bigint DEFAULT '-1'::integer, text DEFAULT 'nil'::text, text DEFAULT 'nil'::text, text DEFAULT 'nil'::text, text DEFAULT 'no'::text) RETURNS boolean
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -3188,14 +3193,14 @@ ALTER FUNCTION public.error(text, bigint, text, text, text, text) OWNER TO lanvi
 -- Name: FUNCTION error(text, bigint, text, text, text, text); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION error(text, bigint, text, text, text, text) IS 'Egy hiba rekord rögzítése. Egy adatbázis tartalmi hiba rögzítése, ha az egy aplikációban derült ki, ill. azt az app a függvény hívással jelzi.';
+COMMENT ON FUNCTION public.error(text, bigint, text, text, text, text) IS 'Egy hiba rekord rögzítése. Egy adatbázis tartalmi hiba rögzítése, ha az egy aplikációban derült ki, ill. azt az app a függvény hívással jelzi.';
 
 
 --
 -- Name: text_id_sequ; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE text_id_sequ
+CREATE SEQUENCE public.text_id_sequ
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -3203,63 +3208,63 @@ CREATE SEQUENCE text_id_sequ
     CACHE 1;
 
 
-ALTER TABLE text_id_sequ OWNER TO lanview2;
+ALTER TABLE public.text_id_sequ OWNER TO lanview2;
 
 --
 -- Name: errors; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE errors (
+CREATE TABLE public.errors (
     error_id bigint NOT NULL,
     error_name text NOT NULL,
     error_note text,
-    error_type errtype NOT NULL,
-    text_id bigint DEFAULT nextval('text_id_sequ'::regclass) NOT NULL
+    error_type public.errtype NOT NULL,
+    text_id bigint DEFAULT nextval('public.text_id_sequ'::regclass) NOT NULL
 );
 
 
-ALTER TABLE errors OWNER TO lanview2;
+ALTER TABLE public.errors OWNER TO lanview2;
 
 --
 -- Name: TABLE errors; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE errors IS 'Adatbázis műveletek közben keletkező hiba típusok táblája.';
+COMMENT ON TABLE public.errors IS 'Adatbázis műveletek közben keletkező hiba típusok táblája.';
 
 
 --
 -- Name: COLUMN errors.error_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN errors.error_id IS 'Hiba típus ID.';
+COMMENT ON COLUMN public.errors.error_id IS 'Hiba típus ID.';
 
 
 --
 -- Name: COLUMN errors.error_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN errors.error_name IS 'Hiba típus név.';
+COMMENT ON COLUMN public.errors.error_name IS 'Hiba típus név.';
 
 
 --
 -- Name: COLUMN errors.error_note; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN errors.error_note IS 'Hiba típus leírása, hiba üzenet szövege.';
+COMMENT ON COLUMN public.errors.error_note IS 'Hiba típus leírása, hiba üzenet szövege.';
 
 
 --
 -- Name: COLUMN errors.error_type; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN errors.error_type IS 'Hiba sújossága.';
+COMMENT ON COLUMN public.errors.error_type IS 'Hiba sújossága.';
 
 
 --
 -- Name: error_by_id(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION error_by_id(bigint) RETURNS errors
+CREATE FUNCTION public.error_by_id(bigint) RETURNS public.errors
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -3283,14 +3288,14 @@ ALTER FUNCTION public.error_by_id(bigint) OWNER TO lanview2;
 -- Name: FUNCTION error_by_id(bigint); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION error_by_id(bigint) IS 'Egy hiba tipus rekord beolvasása a hiba tipus azonosító alapján';
+COMMENT ON FUNCTION public.error_by_id(bigint) IS 'Egy hiba tipus rekord beolvasása a hiba tipus azonosító alapján';
 
 
 --
 -- Name: error_by_name(text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION error_by_name(text) RETURNS errors
+CREATE FUNCTION public.error_by_name(text) RETURNS public.errors
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -3315,14 +3320,14 @@ ALTER FUNCTION public.error_by_name(text) OWNER TO lanview2;
 -- Name: FUNCTION error_by_name(text); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION error_by_name(text) IS 'Egy hiba típus rekord beolvasása a hiba típus név alapján';
+COMMENT ON FUNCTION public.error_by_name(text) IS 'Egy hiba típus rekord beolvasása a hiba típus név alapján';
 
 
 --
 -- Name: error_id2name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION error_id2name(bigint) RETURNS text
+CREATE FUNCTION public.error_id2name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$ DECLARE name text; BEGIN IF $1 IS NULL THEN RETURN NULL;  END IF; SELECT error_name INTO name FROM errors WHERE error_id = $1; IF NOT FOUND THEN PERFORM error('IdNotFound', $1, 'error_id', 'error_id2name', 'errors'); END IF; RETURN name; END $_$;
 
@@ -3333,7 +3338,7 @@ ALTER FUNCTION public.error_id2name(bigint) OWNER TO lanview2;
 -- Name: error_name2id(text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION error_name2id(text) RETURNS bigint
+CREATE FUNCTION public.error_name2id(text) RETURNS bigint
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -3351,14 +3356,14 @@ ALTER FUNCTION public.error_name2id(text) OWNER TO lanview2;
 -- Name: FUNCTION error_name2id(text); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION error_name2id(text) IS 'Hiba tipus azonosító a név alapján';
+COMMENT ON FUNCTION public.error_name2id(text) IS 'Hiba tipus azonosító a név alapján';
 
 
 --
 -- Name: error_name2note(text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION error_name2note(text) RETURNS text
+CREATE FUNCTION public.error_name2note(text) RETURNS text
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -3376,14 +3381,56 @@ ALTER FUNCTION public.error_name2note(text) OWNER TO lanview2;
 -- Name: FUNCTION error_name2note(text); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION error_name2note(text) IS 'Hiba tipus leírás a név alapján';
+COMMENT ON FUNCTION public.error_name2note(text) IS 'Hiba tipus leírás a név alapján';
 
+
+--
+-- Name: expired_offline_alarm(); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION public.expired_offline_alarm() RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    t interval;
+BEGIN
+    t := now() - get_interval_sys_param('user_message_timeout');
+    IF NOT NULL t THEN
+        UPDATE user_events SET event_state = 'dropped', happened = now()
+            WHERE event_type = 'sendmail' AND event_state = 'necessary' AND created < t;
+    END IF;
+END
+$$;
+
+
+ALTER FUNCTION public.expired_offline_alarm() OWNER TO lanview2;
+
+--
+-- Name: expired_online_alarm(); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION public.expired_online_alarm() RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    t timestamp;
+BEGIN
+    t := now() - get_interval_sys_param('user_notice_timeout');
+    IF NOT NULL t THEN
+        UPDATE user_events SET event_state = 'dropped', happened = now()
+            WHERE event_type = 'notice' AND event_state = 'necessary' AND created < t;
+    END IF;
+END
+$$;
+
+
+ALTER FUNCTION public.expired_online_alarm() OWNER TO lanview2;
 
 --
 -- Name: expired_online_alarm(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION expired_online_alarm(did bigint) RETURNS void
+CREATE FUNCTION public.expired_online_alarm(did bigint) RETURNS void
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -3399,10 +3446,10 @@ $$;
 ALTER FUNCTION public.expired_online_alarm(did bigint) OWNER TO lanview2;
 
 --
--- Name: find_superior(host_services, text, text); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: find_superior(public.host_services, text, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION find_superior(hsrv host_services, _hsnm text DEFAULT NULL::text, _ptyp text DEFAULT NULL::text) RETURNS host_services
+CREATE FUNCTION public.find_superior(hsrv public.host_services, _hsnm text DEFAULT NULL::text, _ptyp text DEFAULT NULL::text) RETURNS public.host_services
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -3465,13 +3512,13 @@ END
 $$;
 
 
-ALTER FUNCTION public.find_superior(hsrv host_services, _hsnm text, _ptyp text) OWNER TO lanview2;
+ALTER FUNCTION public.find_superior(hsrv public.host_services, _hsnm text, _ptyp text) OWNER TO lanview2;
 
 --
 -- Name: first_node_id2name(bigint[]); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION first_node_id2name(bigint[]) RETURNS text
+CREATE FUNCTION public.first_node_id2name(bigint[]) RETURNS text
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -3488,7 +3535,7 @@ ALTER FUNCTION public.first_node_id2name(bigint[]) OWNER TO lanview2;
 -- Name: get_bool_node_param(bigint, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION get_bool_node_param(pid bigint, tname text DEFAULT 'boolean'::text) RETURNS boolean
+CREATE FUNCTION public.get_bool_node_param(pid bigint, tname text DEFAULT 'boolean'::text) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -3504,37 +3551,14 @@ $$;
 ALTER FUNCTION public.get_bool_node_param(pid bigint, tname text) OWNER TO lanview2;
 
 --
--- Name: get_bool_port_param(bigint, text); Type: FUNCTION; Schema: public; Owner: lanview2
---
-
-CREATE FUNCTION get_bool_port_param(pid bigint, tname text DEFAULT 'boolean'::text) RETURNS boolean
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    IF get_str_port_param(pid,tname)::boolean THEN
-        RETURN true;
-    ELSE
-        RETURN false;
-    END IF;
-END
-$$;
-
-
-ALTER FUNCTION public.get_bool_port_param(pid bigint, tname text) OWNER TO lanview2;
-
---
 -- Name: get_bool_sys_param(text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION get_bool_sys_param(pname text) RETURNS boolean
+CREATE FUNCTION public.get_bool_sys_param(pname text) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 BEGIN
-    IF get_text_sys_param(pname)::boolean THEN
-        RETURN true;
-    ELSE
-        RETURN false;
-    END IF;
+    RETURN cast_to_boolean(get_text_sys_param(pname));
 END
 $$;
 
@@ -3545,7 +3569,7 @@ ALTER FUNCTION public.get_bool_sys_param(pname text) OWNER TO lanview2;
 -- Name: get_image(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION get_image(pid bigint) RETURNS bigint
+CREATE FUNCTION public.get_image(pid bigint) RETURNS bigint
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -3566,7 +3590,7 @@ ALTER FUNCTION public.get_image(pid bigint) OWNER TO lanview2;
 -- Name: FUNCTION get_image(pid bigint); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION get_image(pid bigint) IS 'Lekéri a rekord vagy a legközelebbi parent image_id-jét. Addig megy a gyökér felé, amíg nem NULL értéket talál,
+COMMENT ON FUNCTION public.get_image(pid bigint) IS 'Lekéri a rekord vagy a legközelebbi parent image_id-jét. Addig megy a gyökér felé, amíg nem NULL értéket talál,
 vagy nincs több parent.';
 
 
@@ -3574,7 +3598,7 @@ vagy nincs több parent.';
 -- Name: get_int_node_param(bigint, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION get_int_node_param(pid bigint, tname text DEFAULT 'bigint'::text) RETURNS bigint
+CREATE FUNCTION public.get_int_node_param(pid bigint, tname text DEFAULT 'bigint'::text) RETURNS bigint
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -3586,29 +3610,14 @@ $$;
 ALTER FUNCTION public.get_int_node_param(pid bigint, tname text) OWNER TO lanview2;
 
 --
--- Name: get_int_port_param(bigint, text); Type: FUNCTION; Schema: public; Owner: lanview2
---
-
-CREATE FUNCTION get_int_port_param(pid bigint, tname text DEFAULT 'bigint'::text) RETURNS bigint
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    RETURN get_str_port_param(pid,tname)::bigint;
-END
-$$;
-
-
-ALTER FUNCTION public.get_int_port_param(pid bigint, tname text) OWNER TO lanview2;
-
---
 -- Name: get_int_sys_param(text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION get_int_sys_param(pname text) RETURNS bigint
+CREATE FUNCTION public.get_int_sys_param(pname text) RETURNS bigint
     LANGUAGE plpgsql
     AS $$
 BEGIN
-    RETURN get_text_sys_param(pname)::bigint;
+    RETURN cast_to_integer(get_text_sys_param(pname));
 END
 $$;
 
@@ -3619,7 +3628,7 @@ ALTER FUNCTION public.get_int_sys_param(pname text) OWNER TO lanview2;
 -- Name: get_interval_node_param(bigint, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION get_interval_node_param(pid bigint, tname text DEFAULT 'interval'::text) RETURNS interval
+CREATE FUNCTION public.get_interval_node_param(pid bigint, tname text DEFAULT 'interval'::text) RETURNS interval
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -3631,29 +3640,14 @@ $$;
 ALTER FUNCTION public.get_interval_node_param(pid bigint, tname text) OWNER TO lanview2;
 
 --
--- Name: get_interval_port_param(bigint, text); Type: FUNCTION; Schema: public; Owner: lanview2
---
-
-CREATE FUNCTION get_interval_port_param(pid bigint, tname text DEFAULT 'interval'::text) RETURNS interval
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    RETURN get_str_port_param(pname,tname)::interval;
-END
-$$;
-
-
-ALTER FUNCTION public.get_interval_port_param(pid bigint, tname text) OWNER TO lanview2;
-
---
 -- Name: get_interval_sys_param(text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION get_interval_sys_param(pname text) RETURNS interval
+CREATE FUNCTION public.get_interval_sys_param(pname text) RETURNS interval
     LANGUAGE plpgsql
     AS $$
 BEGIN
-    RETURN get_text_sys_param(pname)::interval;
+    RETURN cast_to_interval(get_text_sys_param(pname));
 END
 $$;
 
@@ -3664,7 +3658,7 @@ ALTER FUNCTION public.get_interval_sys_param(pname text) OWNER TO lanview2;
 -- Name: get_language_id(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION get_language_id() RETURNS integer
+CREATE FUNCTION public.get_language_id() RETURNS integer
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -3682,7 +3676,7 @@ ALTER FUNCTION public.get_language_id() OWNER TO lanview2;
 -- Name: get_parent_image(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION get_parent_image(idr bigint) RETURNS bigint
+CREATE FUNCTION public.get_parent_image(idr bigint) RETURNS bigint
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -3718,7 +3712,7 @@ ALTER FUNCTION public.get_parent_image(idr bigint) OWNER TO lanview2;
 -- Name: FUNCTION get_parent_image(idr bigint); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION get_parent_image(idr bigint) IS 'Lekéri a legközelebbi parent image_id-jét. Addig megy a gyökér felé, amíg nem NULL értéket talál,
+COMMENT ON FUNCTION public.get_parent_image(idr bigint) IS 'Lekéri a legközelebbi parent image_id-jét. Addig megy a gyökér felé, amíg nem NULL értéket talál,
 vagy nincs több parent.';
 
 
@@ -3726,7 +3720,7 @@ vagy nincs több parent.';
 -- Name: get_str_node_param(bigint, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION get_str_node_param(pid bigint, tname text DEFAULT 'text'::text) RETURNS text
+CREATE FUNCTION public.get_str_node_param(pid bigint, tname text DEFAULT 'text'::text) RETURNS text
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -3749,36 +3743,10 @@ $$;
 ALTER FUNCTION public.get_str_node_param(pid bigint, tname text) OWNER TO lanview2;
 
 --
--- Name: get_str_port_param(bigint, text); Type: FUNCTION; Schema: public; Owner: lanview2
---
-
-CREATE FUNCTION get_str_port_param(pid bigint, tname text DEFAULT 'text'::text) RETURNS text
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-    res text;
-    type_id bigint;
-BEGIN
-    SELECT param_type_id INTO type_id FROM param_types WHERE param_type_name = tname;
-    IF NOT FOUND THEN
-        RETURN NULL;
-    END IF;
-    SELECT param_value INTO res FROM port_params WHERE port_id = pid AND param_type_id = type_id;
-    IF NOT FOUND THEN
-        RETURN NULL;
-    END IF;
-    RETURN res;
-END
-$$;
-
-
-ALTER FUNCTION public.get_str_port_param(pid bigint, tname text) OWNER TO lanview2;
-
---
 -- Name: get_text_sys_param(text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION get_text_sys_param(pname text) RETURNS text
+CREATE FUNCTION public.get_text_sys_param(pname text) RETURNS text
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -3799,7 +3767,7 @@ ALTER FUNCTION public.get_text_sys_param(pname text) OWNER TO lanview2;
 -- Name: group_id2name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION group_id2name(bigint) RETURNS text
+CREATE FUNCTION public.group_id2name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$ DECLARE name text; BEGIN IF $1 IS NULL THEN RETURN NULL;  END IF; SELECT group_name INTO name FROM groups WHERE group_id = $1; IF NOT FOUND THEN PERFORM error('IdNotFound', $1, 'group_id', 'group_id2name', 'groups'); END IF; RETURN name; END $_$;
 
@@ -3810,7 +3778,7 @@ ALTER FUNCTION public.group_id2name(bigint) OWNER TO lanview2;
 -- Name: group_name2id(text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION group_name2id(text) RETURNS bigint
+CREATE FUNCTION public.group_name2id(text) RETURNS bigint
     LANGUAGE plpgsql
     AS $_$
 BEGIN
@@ -3825,7 +3793,7 @@ ALTER FUNCTION public.group_name2id(text) OWNER TO lanview2;
 -- Name: host_service_id2name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION host_service_id2name(bigint) RETURNS text
+CREATE FUNCTION public.host_service_id2name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -3870,14 +3838,14 @@ ALTER FUNCTION public.host_service_id2name(bigint) OWNER TO lanview2;
 -- Name: FUNCTION host_service_id2name(bigint); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION host_service_id2name(bigint) IS 'A host_service_id -ből a hivatkozott rekord alapján előállít egy egyedi nevet.';
+COMMENT ON FUNCTION public.host_service_id2name(bigint) IS 'A host_service_id -ből a hivatkozott rekord alapján előállít egy egyedi nevet.';
 
 
 --
 -- Name: iftype_id2name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION iftype_id2name(bigint) RETURNS text
+CREATE FUNCTION public.iftype_id2name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$ DECLARE name text; BEGIN IF $1 IS NULL THEN RETURN NULL;  END IF; SELECT iftype_name INTO name FROM iftypes WHERE iftype_id = $1; IF NOT FOUND THEN PERFORM error('IdNotFound', $1, 'iftype_id', 'iftype_id2name', 'iftypes'); END IF; RETURN name; END $_$;
 
@@ -3888,7 +3856,7 @@ ALTER FUNCTION public.iftype_id2name(bigint) OWNER TO lanview2;
 -- Name: iftype_name2id(text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION iftype_name2id(itn text) RETURNS bigint
+CREATE FUNCTION public.iftype_name2id(itn text) RETURNS bigint
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -3911,7 +3879,7 @@ ALTER FUNCTION public.iftype_name2id(itn text) OWNER TO lanview2;
 -- Name: image_id2name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION image_id2name(bigint) RETURNS text
+CREATE FUNCTION public.image_id2name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$ DECLARE name text; BEGIN IF $1 IS NULL THEN RETURN NULL;  END IF; SELECT image_name INTO name FROM images WHERE image_id = $1; IF NOT FOUND THEN PERFORM error('IdNotFound', $1, 'image_id', 'image_id2name', 'images'); END IF; RETURN name; END $_$;
 
@@ -3922,7 +3890,7 @@ ALTER FUNCTION public.image_id2name(bigint) OWNER TO lanview2;
 -- Name: db_errs; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE db_errs (
+CREATE TABLE public.db_errs (
     dblog_id bigint NOT NULL,
     date_of timestamp without time zone DEFAULT now() NOT NULL,
     error_id bigint NOT NULL,
@@ -3938,13 +3906,13 @@ CREATE TABLE db_errs (
 );
 
 
-ALTER TABLE db_errs OWNER TO lanview2;
+ALTER TABLE public.db_errs OWNER TO lanview2;
 
 --
 -- Name: TABLE db_errs; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE db_errs IS 'Adatbázis műveletek közben keletkező hiba események táblája.
+COMMENT ON TABLE public.db_errs IS 'Adatbázis műveletek közben keletkező hiba események táblája.
 A rekord az erroer(...) függvénnyel hozható létre, függetlenül az aktuális tranzakciótól';
 
 
@@ -3952,77 +3920,77 @@ A rekord az erroer(...) függvénnyel hozható létre, függetlenül az aktuáli
 -- Name: COLUMN db_errs.date_of; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN db_errs.date_of IS 'Az esemény bekövetkeztének az időpontja';
+COMMENT ON COLUMN public.db_errs.date_of IS 'Az esemény bekövetkeztének az időpontja';
 
 
 --
 -- Name: COLUMN db_errs.error_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN db_errs.error_id IS 'A hiba azonosító';
+COMMENT ON COLUMN public.db_errs.error_id IS 'A hiba azonosító';
 
 
 --
 -- Name: COLUMN db_errs.user_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN db_errs.user_id IS 'A hiba bekövetkezésekor az aktuális kapcsolathoz tartozó felhasználó azonosítója';
+COMMENT ON COLUMN public.db_errs.user_id IS 'A hiba bekövetkezésekor az aktuális kapcsolathoz tartozó felhasználó azonosítója';
 
 
 --
 -- Name: COLUMN db_errs.table_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN db_errs.table_name IS 'A hib a eseményhez kapcsolódó tábla neve.';
+COMMENT ON COLUMN public.db_errs.table_name IS 'A hib a eseményhez kapcsolódó tábla neve.';
 
 
 --
 -- Name: COLUMN db_errs.trigger_op; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN db_errs.trigger_op IS 'Ha a hiba egy TRIGGER függvényben keletkezett, akko a triggert kiváltó esemény neve.';
+COMMENT ON COLUMN public.db_errs.trigger_op IS 'Ha a hiba egy TRIGGER függvényben keletkezett, akko a triggert kiváltó esemény neve.';
 
 
 --
 -- Name: COLUMN db_errs.err_subcode; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN db_errs.err_subcode IS 'Másodlagos hiba kód, vagy numerikus hiba paraméter.';
+COMMENT ON COLUMN public.db_errs.err_subcode IS 'Másodlagos hiba kód, vagy numerikus hiba paraméter.';
 
 
 --
 -- Name: COLUMN db_errs.err_msg; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN db_errs.err_msg IS 'Másodlagos hiba üzenet, vagy szöveges hiba paraméter.';
+COMMENT ON COLUMN public.db_errs.err_msg IS 'Másodlagos hiba üzenet, vagy szöveges hiba paraméter.';
 
 
 --
 -- Name: COLUMN db_errs.func_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN db_errs.func_name IS 'Az aktuális függvény neve, ahol a hiba történt.';
+COMMENT ON COLUMN public.db_errs.func_name IS 'Az aktuális függvény neve, ahol a hiba történt.';
 
 
 --
 -- Name: COLUMN db_errs.reapeat; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN db_errs.reapeat IS 'Ha kétszer nyugtázatlan azonos rekord keletkezne, akkor csak ez a számláló inkrementálódik.';
+COMMENT ON COLUMN public.db_errs.reapeat IS 'Ha kétszer nyugtázatlan azonos rekord keletkezne, akkor csak ez a számláló inkrementálódik.';
 
 
 --
 -- Name: COLUMN db_errs.date_of_last; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN db_errs.date_of_last IS 'Ha reapeat értéke 0, akkor azonos date_of-al, reapeat inkrementálásakor az aktuális idő kerül a mezőbe.';
+COMMENT ON COLUMN public.db_errs.date_of_last IS 'Ha reapeat értéke 0, akkor azonos date_of-al, reapeat inkrementálásakor az aktuális idő kerül a mezőbe.';
 
 
 --
 -- Name: insert_error(text, bigint, text, text, text, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION insert_error(text, bigint DEFAULT '-1'::integer, text DEFAULT 'nil'::text, text DEFAULT 'nil'::text, text DEFAULT 'nil'::text, text DEFAULT 'ext'::text) RETURNS db_errs
+CREATE FUNCTION public.insert_error(text, bigint DEFAULT '-1'::integer, text DEFAULT 'nil'::text, text DEFAULT 'nil'::text, text DEFAULT 'nil'::text, text DEFAULT 'ext'::text) RETURNS public.db_errs
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -4061,7 +4029,7 @@ ALTER FUNCTION public.insert_error(text, bigint, text, text, text, text) OWNER T
 -- Name: int2dow(integer); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION int2dow(integer) RETURNS dayofweek
+CREATE FUNCTION public.int2dow(integer) RETURNS public.dayofweek
     LANGUAGE plpgsql
     AS $_$
 BEGIN
@@ -4085,7 +4053,7 @@ ALTER FUNCTION public.int2dow(integer) OWNER TO lanview2;
 -- Name: is_content_arp(macaddr); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION is_content_arp(mac macaddr) RETURNS boolean
+CREATE FUNCTION public.is_content_arp(mac macaddr) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -4100,7 +4068,7 @@ ALTER FUNCTION public.is_content_arp(mac macaddr) OWNER TO lanview2;
 -- Name: FUNCTION is_content_arp(mac macaddr); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION is_content_arp(mac macaddr) IS 'Megvizsgálja, hogy a paraméterként megadott MAC által azonosítptt arps rekord létezik-e.
+COMMENT ON FUNCTION public.is_content_arp(mac macaddr) IS 'Megvizsgálja, hogy a paraméterként megadott MAC által azonosítptt arps rekord létezik-e.
 Ha igen true-val, ellenkező esetben false-val tér vissza.';
 
 
@@ -4108,7 +4076,7 @@ Ha igen true-val, ellenkező esetben false-val tér vissza.';
 -- Name: is_content_oui(macaddr); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION is_content_oui(mac macaddr) RETURNS boolean
+CREATE FUNCTION public.is_content_oui(mac macaddr) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -4123,7 +4091,7 @@ ALTER FUNCTION public.is_content_oui(mac macaddr) OWNER TO lanview2;
 -- Name: FUNCTION is_content_oui(mac macaddr); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION is_content_oui(mac macaddr) IS 'Megvizsgálja, hogy a paraméterként megadott MAC első 3 byte-ja által azonosítptt OUI rekord létezik-e.
+COMMENT ON FUNCTION public.is_content_oui(mac macaddr) IS 'Megvizsgálja, hogy a paraméterként megadott MAC első 3 byte-ja által azonosítptt OUI rekord létezik-e.
 Ha igen true-val, ellenkező esetben false-val tér vissza.';
 
 
@@ -4131,17 +4099,17 @@ Ha igen true-val, ellenkező esetben false-val tér vissza.';
 -- Name: is_dyn_addr(inet); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION is_dyn_addr(inet) RETURNS bigint
+CREATE FUNCTION public.is_dyn_addr(inet) RETURNS bigint
     LANGUAGE plpgsql
     AS $_$
 DECLARE
     id  bigint;
 BEGIN
-    SELECT dyn_addr_ranges_id INTO id FROM dyn_addr_ranges WHERE exclude = false AND begin_address <= $1 AND $1 <= end_address;
+    SELECT dyn_addr_range_id INTO id FROM dyn_addr_ranges WHERE exclude = false AND begin_address <= $1 AND $1 <= end_address;
     IF NOT FOUND THEN
         RETURN NULL;
     END IF;
-    SELECT dyn_addr_ranges_id         FROM dyn_addr_ranges WHERE exclude = true  AND begin_address <= $1 AND $1 <= end_address;
+    SELECT dyn_addr_range_id         FROM dyn_addr_ranges WHERE exclude = true  AND begin_address <= $1 AND $1 <= end_address;
     IF FOUND THEN
         RETURN NULL;
     END IF;
@@ -4156,7 +4124,7 @@ ALTER FUNCTION public.is_dyn_addr(inet) OWNER TO lanview2;
 -- Name: is_linked(bigint, macaddr); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION is_linked(pid bigint, mac macaddr) RETURNS boolean
+CREATE FUNCTION public.is_linked(pid bigint, mac macaddr) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -4181,7 +4149,7 @@ ALTER FUNCTION public.is_linked(pid bigint, mac macaddr) OWNER TO lanview2;
 -- Name: FUNCTION is_linked(pid bigint, mac macaddr); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION is_linked(pid bigint, mac macaddr) IS '
+COMMENT ON FUNCTION public.is_linked(pid bigint, mac macaddr) IS '
 Megvizsgálja, hogy a port címtábla lekérdezés eredményeként kapott MAC címnek megfelelő log_links táblabejegyzés is létezik-e.
 Paraméterek:
     pid A port id, melynek a címtáblájából a MAC származik.
@@ -4193,10 +4161,10 @@ Visszaadott érték:
 
 
 --
--- Name: is_noalarm(noalarmtype, timestamp without time zone, timestamp without time zone, timestamp without time zone); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: is_noalarm(public.noalarmtype, timestamp without time zone, timestamp without time zone, timestamp without time zone); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION is_noalarm(flg noalarmtype, tm_from timestamp without time zone, tm_to timestamp without time zone, tm timestamp without time zone DEFAULT now()) RETURNS isnoalarm
+CREATE FUNCTION public.is_noalarm(flg public.noalarmtype, tm_from timestamp without time zone, tm_to timestamp without time zone, tm timestamp without time zone DEFAULT now()) RETURNS public.isnoalarm
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -4212,13 +4180,13 @@ END
 $$;
 
 
-ALTER FUNCTION public.is_noalarm(flg noalarmtype, tm_from timestamp without time zone, tm_to timestamp without time zone, tm timestamp without time zone) OWNER TO lanview2;
+ALTER FUNCTION public.is_noalarm(flg public.noalarmtype, tm_from timestamp without time zone, tm_to timestamp without time zone, tm timestamp without time zone) OWNER TO lanview2;
 
 --
 -- Name: is_parent_place(bigint, bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION is_parent_place(idr bigint, idq bigint) RETURNS boolean
+CREATE FUNCTION public.is_parent_place(idr bigint, idq bigint) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -4249,14 +4217,14 @@ ALTER FUNCTION public.is_parent_place(idr bigint, idq bigint) OWNER TO lanview2;
 -- Name: FUNCTION is_parent_place(idr bigint, idq bigint); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION is_parent_place(idr bigint, idq bigint) IS 'Lekérdezi, hogy az idr azonosítójú places rekord parentje-e az idq-azonosítójúnak.';
+COMMENT ON FUNCTION public.is_parent_place(idr bigint, idq bigint) IS 'Lekérdezi, hogy az idr azonosítójú places rekord parentje-e az idq-azonosítójúnak.';
 
 
 --
 -- Name: is_place_in_zone(bigint, bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION is_place_in_zone(idr bigint, idq bigint) RETURNS boolean
+CREATE FUNCTION public.is_place_in_zone(idr bigint, idq bigint) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -4281,7 +4249,7 @@ ALTER FUNCTION public.is_place_in_zone(idr bigint, idq bigint) OWNER TO lanview2
 -- Name: FUNCTION is_place_in_zone(idr bigint, idq bigint); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION is_place_in_zone(idr bigint, idq bigint) IS 'Lekérdezi, hogy az idr azonosítójú places tagja-e az grn-nevű place_groups zónának,
+COMMENT ON FUNCTION public.is_place_in_zone(idr bigint, idq bigint) IS 'Lekérdezi, hogy az idr azonosítójú places tagja-e az grn-nevű place_groups zónának,
 vagy valamelyik parentje tag-e';
 
 
@@ -4289,7 +4257,7 @@ vagy valamelyik parentje tag-e';
 -- Name: language_id2code(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION language_id2code(lid bigint) RETURNS text
+CREATE FUNCTION public.language_id2code(lid bigint) RETURNS text
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -4310,7 +4278,7 @@ ALTER FUNCTION public.language_id2code(lid bigint) OWNER TO lanview2;
 -- Name: language_id2name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION language_id2name(bigint) RETURNS text
+CREATE FUNCTION public.language_id2name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$ DECLARE name text; BEGIN IF $1 IS NULL THEN RETURN NULL;  END IF; SELECT language_name INTO name FROM languages WHERE language_id = $1; IF NOT FOUND THEN PERFORM error('IdNotFound', $1, 'language_id', 'language_id2name', 'languages'); END IF; RETURN name; END $_$;
 
@@ -4318,10 +4286,10 @@ CREATE FUNCTION language_id2name(bigint) RETURNS text
 ALTER FUNCTION public.language_id2name(bigint) OWNER TO lanview2;
 
 --
--- Name: link_type(bigint, bigint, linktype); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: link_type(bigint, bigint, public.linktype); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION link_type(bigint, bigint, linktype) RETURNS linktype
+CREATE FUNCTION public.link_type(bigint, bigint, public.linktype) RETURNS public.linktype
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -4349,13 +4317,13 @@ END;
 $_$;
 
 
-ALTER FUNCTION public.link_type(bigint, bigint, linktype) OWNER TO lanview2;
+ALTER FUNCTION public.link_type(bigint, bigint, public.linktype) OWNER TO lanview2;
 
 --
--- Name: link_type12(linktype, linktype); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: link_type12(public.linktype, public.linktype); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION link_type12(linktype, linktype) RETURNS linktype
+CREATE FUNCTION public.link_type12(public.linktype, public.linktype) RETURNS public.linktype
     LANGUAGE plpgsql
     AS $_$
 BEGIN
@@ -4367,27 +4335,27 @@ END;
 $_$;
 
 
-ALTER FUNCTION public.link_type12(linktype, linktype) OWNER TO lanview2;
+ALTER FUNCTION public.link_type12(public.linktype, public.linktype) OWNER TO lanview2;
 
 --
 -- Name: localizations; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE localizations (
+CREATE TABLE public.localizations (
     text_id bigint NOT NULL,
-    table_for_text tablefortext NOT NULL,
+    table_for_text public.tablefortext NOT NULL,
     language_id integer NOT NULL,
     texts text[] NOT NULL
 );
 
 
-ALTER TABLE localizations OWNER TO lanview2;
+ALTER TABLE public.localizations OWNER TO lanview2;
 
 --
--- Name: localization_texts(bigint, tablefortext); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: localization_texts(bigint, public.tablefortext); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION localization_texts(tid bigint, tft tablefortext) RETURNS localizations
+CREATE FUNCTION public.localization_texts(tid bigint, tft public.tablefortext) RETURNS public.localizations
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -4428,38 +4396,38 @@ END;
 $$;
 
 
-ALTER FUNCTION public.localization_texts(tid bigint, tft tablefortext) OWNER TO lanview2;
+ALTER FUNCTION public.localization_texts(tid bigint, tft public.tablefortext) OWNER TO lanview2;
 
 --
 -- Name: mactab; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE mactab (
+CREATE TABLE public.mactab (
     hwaddress macaddr NOT NULL,
     port_id bigint NOT NULL,
-    mactab_state mactabstate[] DEFAULT '{}'::mactabstate[],
+    mactab_state public.mactabstate[] DEFAULT '{}'::public.mactabstate[],
     first_time timestamp without time zone DEFAULT now(),
     last_time timestamp without time zone DEFAULT now(),
     state_updated_time timestamp without time zone DEFAULT now(),
-    set_type settype DEFAULT 'manual'::settype NOT NULL,
+    set_type public.settype DEFAULT 'manual'::public.settype NOT NULL,
     CONSTRAINT mactab_check_mac CHECK ((NOT ((hwaddress = '00:00:00:00:00:00'::macaddr) OR (hwaddress = 'ff:ff:ff:ff:ff:ff'::macaddr))))
 );
 
 
-ALTER TABLE mactab OWNER TO lanview2;
+ALTER TABLE public.mactab OWNER TO lanview2;
 
 --
 -- Name: TABLE mactab; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE mactab IS 'Port címtábla lekérdezések eredményét tartalmazó tábla. Az adatmanipulációs műveletek a függvényeket keresztűl lehet elvégezni : replace_mactab()';
+COMMENT ON TABLE public.mactab IS 'Port címtábla lekérdezések eredményét tartalmazó tábla. Az adatmanipulációs műveletek a függvényeket keresztűl lehet elvégezni : replace_mactab()';
 
 
 --
--- Name: mactab_changestat(mactab, mactabstate[], settype, boolean); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: mactab_changestat(public.mactab, public.mactabstate[], public.settype, boolean); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION mactab_changestat(mt mactab, mst mactabstate[], typ settype DEFAULT NULL::settype, rt boolean DEFAULT false) RETURNS reasons
+CREATE FUNCTION public.mactab_changestat(mt public.mactab, mst public.mactabstate[], typ public.settype DEFAULT NULL::public.settype, rt boolean DEFAULT false) RETURNS public.reasons
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -4486,13 +4454,13 @@ END;
 $$;
 
 
-ALTER FUNCTION public.mactab_changestat(mt mactab, mst mactabstate[], typ settype, rt boolean) OWNER TO lanview2;
+ALTER FUNCTION public.mactab_changestat(mt public.mactab, mst public.mactabstate[], typ public.settype, rt boolean) OWNER TO lanview2;
 
 --
--- Name: mactab_move(mactab, bigint, macaddr, settype, mactabstate[]); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: mactab_move(public.mactab, bigint, macaddr, public.settype, public.mactabstate[]); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION mactab_move(mt mactab, pid bigint, mac macaddr, typ settype, mst mactabstate[]) RETURNS void
+CREATE FUNCTION public.mactab_move(mt public.mactab, pid bigint, mac macaddr, typ public.settype, mst public.mactabstate[]) RETURNS void
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -4504,13 +4472,13 @@ END;
 $$;
 
 
-ALTER FUNCTION public.mactab_move(mt mactab, pid bigint, mac macaddr, typ settype, mst mactabstate[]) OWNER TO lanview2;
+ALTER FUNCTION public.mactab_move(mt public.mactab, pid bigint, mac macaddr, typ public.settype, mst public.mactabstate[]) OWNER TO lanview2;
 
 --
--- Name: mactab_remove(mactab, reasons); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: mactab_remove(public.mactab, public.reasons); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION mactab_remove(mt mactab, re reasons DEFAULT 'remove'::reasons) RETURNS void
+CREATE FUNCTION public.mactab_remove(mt public.mactab, re public.reasons DEFAULT 'remove'::public.reasons) RETURNS void
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -4521,13 +4489,13 @@ END;
 $$;
 
 
-ALTER FUNCTION public.mactab_remove(mt mactab, re reasons) OWNER TO lanview2;
+ALTER FUNCTION public.mactab_remove(mt public.mactab, re public.reasons) OWNER TO lanview2;
 
 --
 -- Name: menu_item_id2name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION menu_item_id2name(bigint) RETURNS text
+CREATE FUNCTION public.menu_item_id2name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$ DECLARE name text; BEGIN IF $1 IS NULL THEN RETURN NULL;  END IF; SELECT menu_item_name INTO name FROM menu_items WHERE menu_item_id = $1; IF NOT FOUND THEN PERFORM error('IdNotFound', $1, 'menu_item_id', 'menu_item_id2name', 'menu_items'); END IF; RETURN name; END $_$;
 
@@ -4535,10 +4503,10 @@ CREATE FUNCTION menu_item_id2name(bigint) RETURNS text
 ALTER FUNCTION public.menu_item_id2name(bigint) OWNER TO lanview2;
 
 --
--- Name: min_shared(portshare, portshare); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: min_shared(public.portshare, public.portshare); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION min_shared(portshare, portshare) RETURNS portshare
+CREATE FUNCTION public.min_shared(public.portshare, public.portshare) RETURNS public.portshare
     LANGUAGE plpgsql
     AS $_$
 BEGIN
@@ -4561,20 +4529,20 @@ END;
 $_$;
 
 
-ALTER FUNCTION public.min_shared(portshare, portshare) OWNER TO lanview2;
+ALTER FUNCTION public.min_shared(public.portshare, public.portshare) OWNER TO lanview2;
 
 --
--- Name: FUNCTION min_shared(portshare, portshare); Type: COMMENT; Schema: public; Owner: lanview2
+-- Name: FUNCTION min_shared(public.portshare, public.portshare); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION min_shared(portshare, portshare) IS 'Legkisebb SHARE meghatározása, ha a két share kombináció nem ad semmilyen összeköttetést, akkor NC';
+COMMENT ON FUNCTION public.min_shared(public.portshare, public.portshare) IS 'Legkisebb SHARE meghatározása, ha a két share kombináció nem ad semmilyen összeköttetést, akkor NC';
 
 
 --
 -- Name: names2language_id(character varying, character varying); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION names2language_id(c character varying, l character varying) RETURNS integer
+CREATE FUNCTION public.names2language_id(c character varying, l character varying) RETURNS integer
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -4592,10 +4560,10 @@ $$;
 ALTER FUNCTION public.names2language_id(c character varying, l character varying) OWNER TO lanview2;
 
 --
--- Name: next_dow(dayofweek); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: next_dow(public.dayofweek); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION next_dow(dayofweek) RETURNS dayofweek
+CREATE FUNCTION public.next_dow(public.dayofweek) RETURNS public.dayofweek
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -4611,21 +4579,21 @@ END;
 $_$;
 
 
-ALTER FUNCTION public.next_dow(dayofweek) OWNER TO lanview2;
+ALTER FUNCTION public.next_dow(public.dayofweek) OWNER TO lanview2;
 
 --
 -- Name: phs_links_table; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE phs_links_table (
+CREATE TABLE public.phs_links_table (
     phs_link_id bigint NOT NULL,
     port_id1 bigint NOT NULL,
     port_id2 bigint NOT NULL,
-    phs_link_type1 phslinktype NOT NULL,
-    phs_link_type2 phslinktype NOT NULL,
+    phs_link_type1 public.phslinktype NOT NULL,
+    phs_link_type2 public.phslinktype NOT NULL,
     phs_link_note text,
-    port_shared portshare DEFAULT ''::portshare NOT NULL,
-    link_type linktype NOT NULL,
+    port_shared public.portshare DEFAULT ''::public.portshare NOT NULL,
+    link_type public.linktype NOT NULL,
     create_time timestamp without time zone DEFAULT now() NOT NULL,
     create_user_id bigint,
     modify_time timestamp without time zone DEFAULT now() NOT NULL,
@@ -4634,104 +4602,104 @@ CREATE TABLE phs_links_table (
 );
 
 
-ALTER TABLE phs_links_table OWNER TO lanview2;
+ALTER TABLE public.phs_links_table OWNER TO lanview2;
 
 --
 -- Name: TABLE phs_links_table; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE phs_links_table IS 'Phisical Links Table';
+COMMENT ON TABLE public.phs_links_table IS 'Phisical Links Table';
 
 
 --
 -- Name: COLUMN phs_links_table.phs_link_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN phs_links_table.phs_link_id IS 'Unique ID for phisical links';
+COMMENT ON COLUMN public.phs_links_table.phs_link_id IS 'Unique ID for phisical links';
 
 
 --
 -- Name: COLUMN phs_links_table.port_id1; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN phs_links_table.port_id1 IS 'Port''s ID(1) which connects to physical link';
+COMMENT ON COLUMN public.phs_links_table.port_id1 IS 'Port''s ID(1) which connects to physical link';
 
 
 --
 -- Name: COLUMN phs_links_table.port_id2; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN phs_links_table.port_id2 IS 'Port''s ID(2) which connects to physical link';
+COMMENT ON COLUMN public.phs_links_table.port_id2 IS 'Port''s ID(2) which connects to physical link';
 
 
 --
 -- Name: COLUMN phs_links_table.phs_link_type1; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN phs_links_table.phs_link_type1 IS 'Link típusa(1), végpont ''Term'', patch panel előlap ''Front'', vagy hátlap ''Back''';
+COMMENT ON COLUMN public.phs_links_table.phs_link_type1 IS 'Link típusa(1), végpont ''Term'', patch panel előlap ''Front'', vagy hátlap ''Back''';
 
 
 --
 -- Name: COLUMN phs_links_table.phs_link_type2; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN phs_links_table.phs_link_type2 IS 'Link típusa(2), végpont ''Term'', patch panel előlap ''Front'', vagy hátlap ''Back''';
+COMMENT ON COLUMN public.phs_links_table.phs_link_type2 IS 'Link típusa(2), végpont ''Term'', patch panel előlap ''Front'', vagy hátlap ''Back''';
 
 
 --
 -- Name: COLUMN phs_links_table.phs_link_note; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN phs_links_table.phs_link_note IS 'noteiption';
+COMMENT ON COLUMN public.phs_links_table.phs_link_note IS 'noteiption';
 
 
 --
 -- Name: COLUMN phs_links_table.port_shared; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN phs_links_table.port_shared IS 'Mindíg a ''Front'' patch portra vonatkozik, ha mindkettő ''Back'' patch port, akkor csak '''' lehet, vagyis a megosztás tiltott';
+COMMENT ON COLUMN public.phs_links_table.port_shared IS 'Mindíg a ''Front'' patch portra vonatkozik, ha mindkettő ''Back'' patch port, akkor csak '''' lehet, vagyis a megosztás tiltott';
 
 
 --
 -- Name: COLUMN phs_links_table.create_time; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN phs_links_table.create_time IS 'Time setting up the physical link';
+COMMENT ON COLUMN public.phs_links_table.create_time IS 'Time setting up the physical link';
 
 
 --
 -- Name: COLUMN phs_links_table.create_user_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN phs_links_table.create_user_id IS 'User ID for who set this physical link';
+COMMENT ON COLUMN public.phs_links_table.create_user_id IS 'User ID for who set this physical link';
 
 
 --
 -- Name: COLUMN phs_links_table.modify_time; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN phs_links_table.modify_time IS 'Time modified the physical link';
+COMMENT ON COLUMN public.phs_links_table.modify_time IS 'Time modified the physical link';
 
 
 --
 -- Name: COLUMN phs_links_table.modify_user_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN phs_links_table.modify_user_id IS 'User ID for who modified the physical link';
+COMMENT ON COLUMN public.phs_links_table.modify_user_id IS 'User ID for who modified the physical link';
 
 
 --
 -- Name: COLUMN phs_links_table.forward; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN phs_links_table.forward IS 'értéke mindíg true, a phs_link VIEW táblában van jelentősége, ott a plussz (reverse) soroknál false.';
+COMMENT ON COLUMN public.phs_links_table.forward IS 'értéke mindíg true, a phs_link VIEW táblában van jelentősége, ott a plussz (reverse) soroknál false.';
 
 
 --
 -- Name: phs_links; Type: VIEW; Schema: public; Owner: lanview2
 --
 
-CREATE VIEW phs_links AS
+CREATE VIEW public.phs_links AS
  SELECT phs_links_table.phs_link_id,
     phs_links_table.port_id1,
     phs_links_table.port_id2,
@@ -4745,7 +4713,7 @@ CREATE VIEW phs_links AS
     phs_links_table.modify_time,
     phs_links_table.modify_user_id,
     true AS forward
-   FROM phs_links_table
+   FROM public.phs_links_table
 UNION
  SELECT phs_links_table.phs_link_id,
     phs_links_table.port_id2 AS port_id1,
@@ -4760,23 +4728,23 @@ UNION
     phs_links_table.modify_time,
     phs_links_table.modify_user_id,
     false AS forward
-   FROM phs_links_table;
+   FROM public.phs_links_table;
 
 
-ALTER TABLE phs_links OWNER TO lanview2;
+ALTER TABLE public.phs_links OWNER TO lanview2;
 
 --
 -- Name: VIEW phs_links; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON VIEW phs_links IS 'Symmetric View Table for physical links';
+COMMENT ON VIEW public.phs_links IS 'Symmetric View Table for physical links';
 
 
 --
--- Name: next_phs_link(phs_links, portshare, linkdirection); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: next_phs_link(public.phs_links, public.portshare, public.linkdirection); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION next_phs_link(rec phs_links, sh portshare, dir linkdirection) RETURNS phs_links
+CREATE FUNCTION public.next_phs_link(rec public.phs_links, sh public.portshare, dir public.linkdirection) RETURNS public.phs_links
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -4795,13 +4763,13 @@ END;
 $$;
 
 
-ALTER FUNCTION public.next_phs_link(rec phs_links, sh portshare, dir linkdirection) OWNER TO lanview2;
+ALTER FUNCTION public.next_phs_link(rec public.phs_links, sh public.portshare, dir public.linkdirection) OWNER TO lanview2;
 
 --
--- Name: next_phs_link(bigint, bigint, phslinktype, portshare); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: next_phs_link(bigint, bigint, public.phslinktype, public.portshare); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION next_phs_link(lid bigint, pid bigint, link_type phslinktype, sh portshare) RETURNS phs_links
+CREATE FUNCTION public.next_phs_link(lid bigint, pid bigint, link_type public.phslinktype, sh public.portshare) RETURNS public.phs_links
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -4881,13 +4849,13 @@ END;
 $$;
 
 
-ALTER FUNCTION public.next_phs_link(lid bigint, pid bigint, link_type phslinktype, sh portshare) OWNER TO lanview2;
+ALTER FUNCTION public.next_phs_link(lid bigint, pid bigint, link_type public.phslinktype, sh public.portshare) OWNER TO lanview2;
 
 --
 -- Name: node_check_before_insert(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION node_check_before_insert() RETURNS trigger
+CREATE FUNCTION public.node_check_before_insert() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -4933,7 +4901,7 @@ ALTER FUNCTION public.node_check_before_insert() OWNER TO lanview2;
 -- Name: node_check_before_update(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION node_check_before_update() RETURNS trigger
+CREATE FUNCTION public.node_check_before_update() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -4971,7 +4939,7 @@ ALTER FUNCTION public.node_check_before_update() OWNER TO lanview2;
 -- Name: node_id2name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION node_id2name(bigint) RETURNS text
+CREATE FUNCTION public.node_id2name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -4995,7 +4963,7 @@ ALTER FUNCTION public.node_id2name(bigint) OWNER TO lanview2;
 -- Name: node_id2table_name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION node_id2table_name(bigint) RETURNS text
+CREATE FUNCTION public.node_id2table_name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$
 BEGIN
@@ -5010,7 +4978,7 @@ ALTER FUNCTION public.node_id2table_name(bigint) OWNER TO lanview2;
 -- Name: node_name2id(text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION node_name2id(text) RETURNS bigint
+CREATE FUNCTION public.node_name2id(text) RETURNS bigint
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -5031,7 +4999,7 @@ ALTER FUNCTION public.node_name2id(text) OWNER TO lanview2;
 -- Name: param_type_id2name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION param_type_id2name(bigint) RETURNS text
+CREATE FUNCTION public.param_type_id2name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$ DECLARE name text; BEGIN IF $1 IS NULL THEN RETURN NULL;  END IF; SELECT param_type_name INTO name FROM param_types WHERE param_type_id = $1; IF NOT FOUND THEN PERFORM error('IdNotFound', $1, 'param_type_id', 'param_type_id2name', 'param_types'); END IF; RETURN name; END $_$;
 
@@ -5042,7 +5010,7 @@ ALTER FUNCTION public.param_type_id2name(bigint) OWNER TO lanview2;
 -- Name: param_type_name2id(text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION param_type_name2id(text) RETURNS bigint
+CREATE FUNCTION public.param_type_name2id(text) RETURNS bigint
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -5060,10 +5028,10 @@ $_$;
 ALTER FUNCTION public.param_type_name2id(text) OWNER TO lanview2;
 
 --
--- Name: phs_link_type(bigint, phslinktype); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: phs_link_type(bigint, public.phslinktype); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION phs_link_type(bigint, phslinktype) RETURNS phslinktype
+CREATE FUNCTION public.phs_link_type(bigint, public.phslinktype) RETURNS public.phslinktype
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -5098,13 +5066,13 @@ END;
 $_$;
 
 
-ALTER FUNCTION public.phs_link_type(bigint, phslinktype) OWNER TO lanview2;
+ALTER FUNCTION public.phs_link_type(bigint, public.phslinktype) OWNER TO lanview2;
 
 --
 -- Name: place_group_id2name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION place_group_id2name(bigint) RETURNS text
+CREATE FUNCTION public.place_group_id2name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$ DECLARE name text; BEGIN IF $1 IS NULL THEN RETURN NULL;  END IF; SELECT place_group_name INTO name FROM place_groups WHERE place_group_id = $1; IF NOT FOUND THEN PERFORM error('IdNotFound', $1, 'place_group_id', 'place_group_id2name', 'place_groups'); END IF; RETURN name; END $_$;
 
@@ -5115,7 +5083,7 @@ ALTER FUNCTION public.place_group_id2name(bigint) OWNER TO lanview2;
 -- Name: place_id2name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION place_id2name(bigint) RETURNS text
+CREATE FUNCTION public.place_id2name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$ DECLARE name text; BEGIN IF $1 IS NULL THEN RETURN NULL;  END IF; SELECT place_name INTO name FROM places WHERE place_id = $1; IF NOT FOUND THEN PERFORM error('IdNotFound', $1, 'place_id', 'place_id2name', 'places'); END IF; RETURN name; END $_$;
 
@@ -5126,7 +5094,7 @@ ALTER FUNCTION public.place_id2name(bigint) OWNER TO lanview2;
 -- Name: place_name2id(text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION place_name2id(text) RETURNS bigint
+CREATE FUNCTION public.place_name2id(text) RETURNS bigint
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -5147,7 +5115,7 @@ ALTER FUNCTION public.place_name2id(text) OWNER TO lanview2;
 -- Name: port_check_before_insert(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION port_check_before_insert() RETURNS trigger
+CREATE FUNCTION public.port_check_before_insert() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -5180,7 +5148,7 @@ ALTER FUNCTION public.port_check_before_insert() OWNER TO lanview2;
 -- Name: port_check_before_update(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION port_check_before_update() RETURNS trigger
+CREATE FUNCTION public.port_check_before_update() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -5209,7 +5177,7 @@ ALTER FUNCTION public.port_check_before_update() OWNER TO lanview2;
 -- Name: port_id2full_name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION port_id2full_name(bigint) RETURNS text
+CREATE FUNCTION public.port_id2full_name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -5233,7 +5201,7 @@ ALTER FUNCTION public.port_id2full_name(bigint) OWNER TO lanview2;
 -- Name: port_id2name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION port_id2name(bigint) RETURNS text
+CREATE FUNCTION public.port_id2name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -5257,7 +5225,7 @@ ALTER FUNCTION public.port_id2name(bigint) OWNER TO lanview2;
 -- Name: port_id2table_name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION port_id2table_name(bigint) RETURNS text
+CREATE FUNCTION public.port_id2table_name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$
 BEGIN
@@ -5272,7 +5240,7 @@ ALTER FUNCTION public.port_id2table_name(bigint) OWNER TO lanview2;
 -- Name: post_insert_phs_links(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION post_insert_phs_links() RETURNS trigger
+CREATE FUNCTION public.post_insert_phs_links() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -5425,7 +5393,7 @@ ALTER FUNCTION public.post_insert_phs_links() OWNER TO lanview2;
 -- Name: protocol_id2name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION protocol_id2name(bigint) RETURNS text
+CREATE FUNCTION public.protocol_id2name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$ DECLARE name text; BEGIN IF $1 IS NULL THEN RETURN NULL;  END IF; SELECT protocol_name INTO name FROM ipprotocols WHERE protocol_id = $1; IF NOT FOUND THEN PERFORM error('IdNotFound', $1, 'protocol_id', 'protocol_id2name', 'ipprotocols'); END IF; RETURN name; END $_$;
 
@@ -5436,15 +5404,17 @@ ALTER FUNCTION public.protocol_id2name(bigint) OWNER TO lanview2;
 -- Name: refresh_arps(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION refresh_arps() RETURNS integer
+CREATE FUNCTION public.refresh_arps() RETURNS integer
     LANGUAGE plpgsql
     AS $$
 DECLARE
     a  arps;
     ret integer := 0;
+    t timestamp;
 BEGIN
+    t := now() - get_interval_sys_param('arps_expire_interval');
     FOR a IN SELECT * FROM arps
-        WHERE  set_type < 'config'::settype AND last_time < (CURRENT_TIMESTAMP - get_interval_sys_param('arps_expire_interval'))
+        WHERE  set_type < 'config'::settype AND last_time < t
     LOOP
         PERFORM arp_remove(a, 'expired');
         ret := ret +1;
@@ -5460,7 +5430,7 @@ ALTER FUNCTION public.refresh_arps() OWNER TO lanview2;
 -- Name: FUNCTION refresh_arps(); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION refresh_arps() IS 'Törli azokat a rekordokat az arps táblából, melyeknél a last_time értéke túl régi.
+COMMENT ON FUNCTION public.refresh_arps() IS 'Törli azokat a rekordokat az arps táblából, melyeknél a last_time értéke túl régi.
 A lejárati időintervallumot a "arps_expire_interval" rendszerváltozó tartalmazza.
 Visszatérési érték a törölt rekordok száma. A törlés oka "expired"lessz.';
 
@@ -5469,26 +5439,34 @@ Visszatérési érték a törölt rekordok száma. A törlés oka "expired"lessz
 -- Name: refresh_mactab(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION refresh_mactab() RETURNS integer
+CREATE FUNCTION public.refresh_mactab() RETURNS integer
     LANGUAGE plpgsql
     AS $$
 DECLARE
     mt  mactab;
     ret integer := 0;
+    t1 timestamp;
+    t2 timestamp;
+    t3 timestamp;
 BEGIN
+    t1 := now() - get_interval_sys_param('mactab_check_stat_interval');
     FOR mt IN SELECT * FROM mactab
-        WHERE  state_updated_time < (now() - get_interval_sys_param('mactab_check_stat_interval'))
+        WHERE  state_updated_time < t1
     LOOP
         IF 'update' = mactab_changestat(mt, current_mactab_stat(mt.port_id, mt.hwaddress, mt.mactab_state)) THEN
             ret := ret + 1;
         END IF;
     END LOOP;
     
+    t1 := now() - get_interval_sys_param('mactab_suspect_expire_interval');
+    t2 := now() - get_interval_sys_param('mactab_expire_interval');
+    t3 := now() - get_interval_sys_param('mactab_reliable_expire_interval');
     FOR mt IN SELECT * FROM mactab
-        WHERE ( last_time < (now() - get_interval_sys_param('mactab_suspect_expire_interval'))  AND mactab_state && ARRAY['suspect']::mactabstate[] )
-           OR ( last_time < (now() - get_interval_sys_param('mactab_expire_interval'))      AND NOT mactab_state && ARRAY['arp','likely']::mactabstate[] )
-           OR ( last_time < (now() - get_interval_sys_param('mactab_reliable_expire_interval')))
+        WHERE ( last_time < t1  AND     mactab_state && ARRAY['suspect']     ::mactabstate[] )
+           OR ( last_time < t2  AND NOT mactab_state && ARRAY['arp','likely']::mactabstate[] )
+           OR ( last_time < t3)
     LOOP
+	RAISE INFO 'Remove (expired) : %', mt;
         PERFORM mactab_remove(mt, 'expired');
         ret := ret +1;
     END LOOP;
@@ -5497,22 +5475,14 @@ BEGIN
 	FROM mactab
 	JOIN port_params USING(port_id)
 	JOIN param_types USING(param_type_id)
-	WHERE (param_type_name = 'query_mac_tab'    AND NOT param_value::boolean) 
-	   OR (param_type_name = 'suspected_uplink' AND param_value::boolean) 
+	WHERE (param_type_name = 'query_mac_tab'    AND NOT cast_to_boolean(param_value, true)) 
+	   OR (param_type_name = 'suspected_uplink' AND     cast_to_boolean(param_value, false)) 
     LOOP
+	RAISE INFO 'Remove (discard) : %', mt;
         PERFORM mactab_remove(mt, 'discard');
         ret := ret +1;
     END LOOP;
-    
-    FOR mt IN SELECT mactab.*
- 	FROM mactab
-	JOIN lldp_links ON port_id = port_id1
-	WHERE NOT get_bool_port_param(port_id, 'query_mac_tab')
-    LOOP
-        PERFORM mactab_remove(mt, 'discard');
-        ret := ret +1;
-    END LOOP;
-   
+
     RETURN ret;
 END;
 $$;
@@ -5524,7 +5494,7 @@ ALTER FUNCTION public.refresh_mactab() OWNER TO lanview2;
 -- Name: FUNCTION refresh_mactab(); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION refresh_mactab() IS 'Frissíti a mactab tábla rekordokban a mactab_state mezőket.
+COMMENT ON FUNCTION public.refresh_mactab() IS 'Frissíti a mactab tábla rekordokban a mactab_state mezőket.
 Törli azokat a rekordokat a mactab táblából, melyeknál a last_time értéke túl régi.
 A lejárati időintervallumokat a "mactab_suspect_expire_interval", "mactab_reliable_expire_interval"
 és "mactab_expire_interval" rendszerváltozó tartalmazza.
@@ -5538,18 +5508,18 @@ Visszatérési érték a törölt rekordok száma. ';
 
 
 --
--- Name: replace_arp(inet, macaddr, settype, bigint); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: replace_arp(inet, macaddr, public.settype, bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION replace_arp(ipa inet, hwa macaddr, stp settype DEFAULT 'query'::settype, hsi bigint DEFAULT NULL::bigint) RETURNS reasons
+CREATE FUNCTION public.replace_arp(ipa inet, hwa macaddr, stp public.settype DEFAULT 'query'::public.settype, hsi bigint DEFAULT NULL::bigint) RETURNS public.reasons
     LANGUAGE plpgsql
     AS $$
 DECLARE
     arp     arps;
-    newip   boolean := false;
+    noipa   boolean := false;
+    joint   boolean := false;
     oip     ip_addresses;
     net     cidr;
-    sni     bigint;
     n       integer;
     t       text;
 BEGIN
@@ -5559,12 +5529,29 @@ BEGIN
         SELECT * INTO STRICT oip FROM ip_addresses WHERE address = ipa;
         EXCEPTION
             WHEN NO_DATA_FOUND THEN
-                newip := true;
+                noipa := true;
+                RAISE INFO 'No ip_addresses record.';
             WHEN TOO_MANY_ROWS THEN
-                PERFORM error('DataError', -1, 'address', 'replace_arp(' || ipa::text || ', ' || hwa::text || ')', 'ip_addresses');
+		RAISE INFO 'More ip_addresses record.';
+                IF 0 < COUNT(*) FROM ip_addresses WHERE address = ipa AND ip_address_type <> 'joint'::addresstype THEN
+                    PERFORM error('DataError', -1, 'address', 'replace_arp(' || ipa::text || ', ' || hwa::text || ')', 'ip_addresses');
+                END IF;
+                RAISE INFO 'ip_addresses records is all join.';
+                joint := true;
     END;
-    IF stp = 'config' THEN  -- We assume this is fixip
-        IF newip THEN   -- NEW ip_addresses record
+    IF joint THEN    -- Check ip_addresses record if joint
+        IF 0 = COUNT(*) FROM ip_addresses JOIN interfaces USING(port_id) WHERE address = ipa AND hwaddress = hwa THEN
+	    -- not found, fake MAC ?
+	    IF 0 = COUNT(*) FROM ip_addresses JOIN port_params USING(port_id) JOIN param_types USING(param_type_id) WHERE param_type_name = 'override_mac' AND address = ipa AND cast_to_mac(param_value) = hwa THEN
+		t := 'IP address (join) missing : ' || ipa::text || ' -- ' || hwa::text || ' type is ' || stp || '. '
+		 || 'The existing IP address record ports names : '
+		 || ARRAY(SELECT ' ' || port_id2full_name(port_id) || ' / ' || hwaddress || ' '  FROM ip_addresses JOIN interfaces USING(port_id) WHERE address = ipa)::text;
+		RAISE WARNING 'Ticket : %', t; 
+		PERFORM ticket_alarm('critical', t, hsi);
+	    END IF;
+        END IF;
+    ELSIF stp = 'config' THEN  -- We assume this is fixip
+        IF noipa THEN   -- not found ip_addresses record
             RAISE INFO 'Nothing address record (config) : %', ipa;
             SELECT ip_addresses.* INTO oip FROM ip_addresses JOIN interfaces USING(port_id) WHERE ip_address_type = 'dynamic' AND hwaddress = hwa;
             GET DIAGNOSTICS n = ROW_COUNT;
@@ -5585,10 +5572,11 @@ BEGIN
                     t := 'IP address update error : ' || ipa::text || ' -- ' || hwa::text || ' type is config. '
                       || 'The existing IP address record port name : ' || port_id2full_name(oip.port_id)
                       || ' . Message : ' || msg || ' Detail : ' || det || ' Hint : ' hnt;
+                    RAISE WARNING 'Ticket : %', t; 
                     PERFORM ticket_alarm('critical', t, hsi);
                 END;
             END IF;
-        ELSE            -- Check ip_addresses record
+        ELSE                -- Check ip_addresses record if not joint
             RAISE INFO 'Address record (config) : % - %', ipa, port_id2full_name(oip.port_id);
             IF hwa = hwaddress FROM interfaces WHERE port_id = oip.port_id THEN -- Check MAC
                 IF oip.ip_address_type = 'dynamic' THEN
@@ -5597,46 +5585,52 @@ BEGIN
             ELSE    -- ip address collision
                 t := 'IP address collision : ' || ipa::text || ' -- ' || hwa::text || ' type is config. '
                   || 'The existing IP address record port name : ' || port_id2full_name(oip.port_id);
+                RAISE WARNING 'Ticket : %', t; 
                 PERFORM ticket_alarm('critical', t, hsi);
             END IF;
         END IF;
-    ELSE
-        IF newip THEN   -- NEW ip_addresses record
-            RAISE INFO 'Nothing address record (%) : %', stp, ipa;
-            SELECT ip_addresses.* INTO oip FROM ip_addresses JOIN interfaces USING(port_id) WHERE ip_address_type = 'dynamic' AND hwaddress = hwa;
-            GET DIAGNOSTICS n = ROW_COUNT;
-            RAISE INFO '% record by hwaddress', n;
-            IF n = 1 THEN   -- One record ?
-                DECLARE
-                    msg text;
-                    det text;
-                    hnt text;
-                BEGIN
-                    RAISE INFO 'Update ip_address : % -> %', ipa, port_id2full_name(oip.port_id);
-                    UPDATE ip_addresses SET address = ipa WHERE ip_address_id = oip.ip_address_id;
-                EXCEPTION WHEN OTHERS THEN
-                    GET STACKED DIAGNOSTICS
-                        msg = MESSAGE_TEXT,
-                        det = PG_EXCEPTION_DETAIL,
-                        hnt = PG_EXCEPTION_HINT;
-                    t := 'IP address update error : ' || ipa::text || ' -- ' || hwa::text || ' type is query. '
-                      || 'The existing IP address record port name : ' || port_id2full_name(oip.port_id)
-                      || ' . Message : ' || msg || ' Detail : ' || det || ' Hint : ' hnt;
-                    PERFORM ticket_alarm('critical', t, hsi);
-                END;
-            END IF;
-        ELSE
-            RAISE INFO 'Address record (%) : % - %', stp, ipa, port_id2full_name(oip.port_id);
-            IF hwa <> hwaddress FROM interfaces WHERE port_id = oip.port_id THEN
-                IF oip.ip_address_type = 'dynamic' THEN     -- Clear old dynamic IP
-                    UPDATE ip_addresses SET address = NULL WHERE ip_address_id = oip.ip_address_id;
-                ELSE
-                    t := 'IP address collision : ' || ipa::text || ' -- ' || hwa::text || ' type is query. '
-                      || 'The existing IP address record port name : ' || port_id2full_name(oip.port_id);
-                    PERFORM ticket_alarm('critical', t, hsi);
-                END IF;
-            END IF;
-        END IF;
+    ELSE    -- stp <> 'config' ( = 'query')
+        IF NOT noipa THEN
+	    RAISE INFO 'Address record (%) : % - %', stp, ipa, port_id2full_name(oip.port_id);
+	    IF hwa <> hwaddress FROM interfaces WHERE port_id = oip.port_id THEN
+		IF oip.ip_address_type = 'dynamic' THEN     -- Clear old dynamic IP
+		    RAISE INFO 'Delete address (%) : % - %', stp, port_id2full_name(oip.port_id), ipa;
+		    UPDATE ip_addresses SET address = NULL WHERE ip_address_id = oip.ip_address_id;
+		    noipa := true;
+		ELSE
+		    t := 'IP address collision : ' || ipa::text || ' -- ' || hwa::text || ' type is ' || stp || '. '
+		      || 'The existing IP address record port name : ' || port_id2full_name(oip.port_id);
+		    RAISE WARNING 'Ticket : %', t; 
+		    PERFORM ticket_alarm('critical', t, hsi);
+		END IF;
+	    END IF;
+	END IF;
+	IF noipa THEN
+	    RAISE INFO 'Nothing address record (%) : %', stp, ipa;
+	    SELECT ip_addresses.* INTO oip FROM ip_addresses JOIN interfaces USING(port_id) WHERE ip_address_type = 'dynamic' AND hwaddress = hwa;
+	    GET DIAGNOSTICS n = ROW_COUNT;
+	    RAISE INFO '% record by hwaddress', n;
+	    IF n = 1 THEN   -- One record ?
+		DECLARE
+		    msg text;
+		    det text;
+		    hnt text;
+		BEGIN
+		    RAISE INFO 'Update ip_address : % -> %', ipa, port_id2full_name(oip.port_id);
+		    UPDATE ip_addresses SET address = ipa WHERE ip_address_id = oip.ip_address_id;
+		EXCEPTION WHEN OTHERS THEN
+		    GET STACKED DIAGNOSTICS
+			msg = MESSAGE_TEXT,
+			det = PG_EXCEPTION_DETAIL,
+			hnt = PG_EXCEPTION_HINT;
+		    t := 'IP address update error : ' || ipa::text || ' -- ' || hwa::text || ' type is ' || stp || '. '
+		      || 'The existing IP address record port name : ' || port_id2full_name(oip.port_id)
+		      || ' . Message : ' || msg || ' Detail : ' || det || ' Hint : ' hnt;
+		    RAISE WARNING 'Ticket : %', t; 
+		    PERFORM ticket_alarm('critical', t, hsi);
+		END;
+	    END IF;
+	END IF;
     END IF;
     -- update arps table
     RAISE INFO 'Get arps record : %', ipa;
@@ -5671,13 +5665,13 @@ END;
 $$;
 
 
-ALTER FUNCTION public.replace_arp(ipa inet, hwa macaddr, stp settype, hsi bigint) OWNER TO lanview2;
+ALTER FUNCTION public.replace_arp(ipa inet, hwa macaddr, stp public.settype, hsi bigint) OWNER TO lanview2;
 
 --
--- Name: FUNCTION replace_arp(ipa inet, hwa macaddr, stp settype, hsi bigint); Type: COMMENT; Schema: public; Owner: lanview2
+-- Name: FUNCTION replace_arp(ipa inet, hwa macaddr, stp public.settype, hsi bigint); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION replace_arp(ipa inet, hwa macaddr, stp settype, hsi bigint) IS 'A detektált MAC - IP cím pár alapján modosítja az arps táblát, és kezeli a napló táblát is
+COMMENT ON FUNCTION public.replace_arp(ipa inet, hwa macaddr, stp public.settype, hsi bigint) IS 'A detektált MAC - IP cím pár alapján modosítja az arps táblát, és kezeli a napló táblát is
 Ellenörzi, és frissíti az ip_addresses táblát is (ha stp = "config", akkor feltételezi, hogy ez egy fixip típusú cím)
 Ha ütközést észlel, akkor létrehoz egy alarms rekordot (szolgáltatás : ticket, host_service_id = 0).
 Paraméterek:
@@ -5696,7 +5690,7 @@ Visszatérési érték:
 -- Name: replace_dyn_addr_range(inet, inet, bigint, boolean, bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION replace_dyn_addr_range(baddr inet, eaddr inet, hsid bigint DEFAULT NULL::bigint, excl boolean DEFAULT false, snid bigint DEFAULT NULL::bigint) RETURNS reasons
+CREATE FUNCTION public.replace_dyn_addr_range(baddr inet, eaddr inet, hsid bigint DEFAULT NULL::bigint, excl boolean DEFAULT false, snid bigint DEFAULT NULL::bigint) RETURNS public.reasons
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -5790,20 +5784,24 @@ $$;
 ALTER FUNCTION public.replace_dyn_addr_range(baddr inet, eaddr inet, hsid bigint, excl boolean, snid bigint) OWNER TO lanview2;
 
 --
--- Name: replace_mactab(bigint, macaddr, settype, mactabstate[]); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: replace_mactab(bigint, macaddr, public.settype, public.mactabstate[]); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION replace_mactab(pid bigint, mac macaddr, typ settype DEFAULT 'query'::settype, mst mactabstate[] DEFAULT '{}'::mactabstate[]) RETURNS reasons
+CREATE FUNCTION public.replace_mactab(pid bigint, mac macaddr, typ public.settype DEFAULT 'query'::public.settype, mst public.mactabstate[] DEFAULT '{}'::public.mactabstate[]) RETURNS public.reasons
     LANGUAGE plpgsql
     AS $$
 DECLARE
     mt       mactab;
-    pname_di CONSTANT text      := 'suspected_uplink';
+    pdiid    bigint;
     maxct    CONSTANT bigint    := get_int_sys_param('mactab_move_check_count');
     mv       CONSTANT reasons   := 'move';
     btm      CONSTANT timestamp := CURRENT_TIMESTAMP - get_interval_sys_param('mactab_move_check_interval');
 BEGIN
-    IF get_bool_port_param(pid, pname_di) THEN
+    SELECT param_type_id INTO pdiid FROM param_types WHERE param_type_name = 'suspected_uplink';
+    IF NOT FOUND THEN
+         PERFORM error('NameNotFound', -1, 'suspected_uplink', 'replace_mactab(bigint,macaddr,settype,mactabstate[])', 'param_types');
+    END IF;
+    IF  cast_to_boolean(param_value, false) FROM port_params WHERE port_id = pid AND param_type_id = pdiid THEN
         RETURN 'discard';
     END IF;
     mst := current_mactab_stat(pid, mac, mst);
@@ -5813,22 +5811,23 @@ BEGIN
         RETURN 'insert';
     ELSE
         IF mt.port_id = pid THEN
+            -- No changed, refresh state
             RETURN mactab_changestat(mt, mst, typ, true);
         ELSE
-            IF maxct < COUNT(*) FROM mactab_logs WHERE date_of > btm AND hwaddress = mac AND reason = mv THEN
-                -- Csiki-csuki van, az egyik port valójában uplink?
-                IF get_bool_port_param(mt.port_id, pname_di)
-                 OR ((SELECT COUNT(*) FROM mactab_logs WHERE date_of > btm AND port_id_old = pid        AND reason = mv)
-                   < (SELECT COUNT(*) FROM mactab_logs WHERE date_of > btm AND port_id_old = mt.port_id AND reason = mv))
+            -- The old port not suspect and to many change
+            IF NOT cast_to_boolean(param_value, false) FROM port_params WHERE port_id = mt.port_id AND param_type_id = pdiid
+             AND maxct < (SELECT COUNT(*) FROM mactab_logs WHERE date_of > btm AND hwaddress = mac AND reason = mv) THEN
+                IF (SELECT COUNT(*) FROM mactab_logs WHERE date_of > btm AND port_id_old = pid        AND reason = mv)
+                 < (SELECT COUNT(*) FROM mactab_logs WHERE date_of > btm AND port_id_old = mt.port_id AND reason = mv)
                 THEN    -- Nem az új pid a gyanús
                     PERFORM mactab_move(mt, pid, mac, typ, mst);
-                    PERFORM set_bool_port_param(mt.port_id, true, pname_di);
+                    INSERT INTO port_params(mt.port_id, param_type_id, param_value) VALUES (pid, pdiid, 't');
                     UPDATE mactab_logs SET be_void = true WHERE date_of > btm AND port_id_old = mt.port_id AND reason = mv AND hwaddress = mac;
-                    RETURN 'restore';
-                ELSE
-                    PERFORM set_bool_port_param(pid, true, pname_di);
-                    UPDATE mactab_logs SET be_void = true WHERE date_of > btm AND port_id_old = pid        AND reason = mv AND hwaddress = mac;
                     RETURN 'modify';
+                ELSE
+                    INSERT INTO port_params(port_id, param_type_id, param_value) VALUES (pid, pdiid, 't');
+                    UPDATE mactab_logs SET be_void = true WHERE date_of > btm AND port_id_old = pid        AND reason = mv AND hwaddress = mac;
+                    RETURN 'restore';
                 END IF;
             ELSE
                 -- Egy másik porton jelent meg a MAC
@@ -5841,13 +5840,13 @@ END;
 $$;
 
 
-ALTER FUNCTION public.replace_mactab(pid bigint, mac macaddr, typ settype, mst mactabstate[]) OWNER TO lanview2;
+ALTER FUNCTION public.replace_mactab(pid bigint, mac macaddr, typ public.settype, mst public.mactabstate[]) OWNER TO lanview2;
 
 --
--- Name: FUNCTION replace_mactab(pid bigint, mac macaddr, typ settype, mst mactabstate[]); Type: COMMENT; Schema: public; Owner: lanview2
+-- Name: FUNCTION replace_mactab(pid bigint, mac macaddr, typ public.settype, mst public.mactabstate[]); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION replace_mactab(pid bigint, mac macaddr, typ settype, mst mactabstate[]) IS '
+COMMENT ON FUNCTION public.replace_mactab(pid bigint, mac macaddr, typ public.settype, mst public.mactabstate[]) IS '
 Egy (switch) port és mac (cím tábla) összerendelés létrehozása, vagy módosítása.
 Paraméterek:
   pid   A (switch) port ID.
@@ -5873,7 +5872,7 @@ Visszaadott érték:
 -- Name: replace_oui(macaddr, text, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION replace_oui(noui macaddr, nname text, nnote text) RETURNS reasons
+CREATE FUNCTION public.replace_oui(noui macaddr, nname text, nnote text) RETURNS public.reasons
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -5899,7 +5898,7 @@ ALTER FUNCTION public.replace_oui(noui macaddr, nname text, nnote text) OWNER TO
 -- Name: FUNCTION replace_oui(noui macaddr, nname text, nnote text); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION replace_oui(noui macaddr, nname text, nnote text) IS 'OUI rekord beszúrása, vagy modosítása.
+COMMENT ON FUNCTION public.replace_oui(noui macaddr, nname text, nnote text) IS 'OUI rekord beszúrása, vagy modosítása.
 Visszatérési értékek:
     Ha nem történt változás, akkor "unchange".
     Ha módosítva lett egy rekord, akkor "modify".
@@ -5910,7 +5909,7 @@ Visszatérési értékek:
 -- Name: restrict_modfy_node_id_before_update(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION restrict_modfy_node_id_before_update() RETURNS trigger
+CREATE FUNCTION public.restrict_modfy_node_id_before_update() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -5925,15 +5924,42 @@ $$;
 ALTER FUNCTION public.restrict_modfy_node_id_before_update() OWNER TO lanview2;
 
 --
+-- Name: rm_unmarked_port_vlan(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION public.rm_unmarked_port_vlan(nid bigint) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    rec port_vlans;
+    n integer;
+BEGIN
+    n := 0;
+    FOR rec IN SELECT port_vlans.* FROM port_vlans JOIN nports USING(port_id) WHERE port_vlans.flag = false AND node_id = nid LOOP
+        n := n + 1;
+        INSERT INTO port_vlan_logs(reason,       port_id,     vlan_id,      old_type, first_time_old, last_time_old)
+                            VALUES('remove', rec.port_id, rec.vlan_id, rec.vlan_type, rec.first_time, rec.last_time);
+        DELETE FROM port_vlans WHERE port_vlan_id = rec.port_vlan_id;
+        
+    END LOOP;
+    RETURN n;
+END;
+$$;
+
+
+ALTER FUNCTION public.rm_unmarked_port_vlan(nid bigint) OWNER TO lanview2;
+
+--
 -- Name: service_cron(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION service_cron(did bigint) RETURNS void
+CREATE FUNCTION public.service_cron(did bigint) RETURNS void
     LANGUAGE plpgsql
     AS $$
 BEGIN
     PERFORM services_heartbeat(did);
-    PERFORM expired_online_alarm(did);
+    PERFORM expired_online_alarm();
+    PERFORM expired_offline_alarm();
     PERFORM refresh_mactab();
     PERFORM refresh_arps();
 END
@@ -5946,7 +5972,7 @@ ALTER FUNCTION public.service_cron(did bigint) OWNER TO lanview2;
 -- Name: service_id2name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION service_id2name(bigint) RETURNS text
+CREATE FUNCTION public.service_id2name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -5971,7 +5997,7 @@ ALTER FUNCTION public.service_id2name(bigint) OWNER TO lanview2;
 -- Name: service_name2id(text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION service_name2id(text) RETURNS bigint
+CREATE FUNCTION public.service_name2id(text) RETURNS bigint
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -5993,7 +6019,7 @@ ALTER FUNCTION public.service_name2id(text) OWNER TO lanview2;
 -- Name: service_type_id2name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION service_type_id2name(bigint) RETURNS text
+CREATE FUNCTION public.service_type_id2name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$ DECLARE name text; BEGIN IF $1 IS NULL THEN RETURN NULL;  END IF; SELECT service_type_name INTO name FROM service_types WHERE service_type_id = $1; IF NOT FOUND THEN PERFORM error('IdNotFound', $1, 'service_type_id', 'service_type_id2name', 'service_types'); END IF; RETURN name; END $_$;
 
@@ -6004,7 +6030,7 @@ ALTER FUNCTION public.service_type_id2name(bigint) OWNER TO lanview2;
 -- Name: service_var_type_id2name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION service_var_type_id2name(bigint) RETURNS text
+CREATE FUNCTION public.service_var_type_id2name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$ DECLARE name text; BEGIN IF $1 IS NULL THEN RETURN NULL;  END IF; SELECT service_var_type_name INTO name FROM service_var_types WHERE service_var_type_id = $1; IF NOT FOUND THEN PERFORM error('IdNotFound', $1, 'service_var_type_id', 'service_var_type_id2name', 'service_var_types'); END IF; RETURN name; END $_$;
 
@@ -6015,7 +6041,7 @@ ALTER FUNCTION public.service_var_type_id2name(bigint) OWNER TO lanview2;
 -- Name: services_heartbeat(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION services_heartbeat(did bigint) RETURNS void
+CREATE FUNCTION public.services_heartbeat(did bigint) RETURNS void
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -6043,7 +6069,7 @@ ALTER FUNCTION public.services_heartbeat(did bigint) OWNER TO lanview2;
 -- Name: set_bool_node_param(bigint, boolean, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION set_bool_node_param(pid bigint, boolval boolean, tname text DEFAULT 'boolean'::text) RETURNS reasons
+CREATE FUNCTION public.set_bool_node_param(pid bigint, boolval boolean, tname text DEFAULT 'boolean'::text) RETURNS public.reasons
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -6058,7 +6084,7 @@ ALTER FUNCTION public.set_bool_node_param(pid bigint, boolval boolean, tname tex
 -- Name: set_bool_port_param(bigint, boolean, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION set_bool_port_param(pid bigint, boolval boolean, tname text DEFAULT 'boolean'::text) RETURNS reasons
+CREATE FUNCTION public.set_bool_port_param(pid bigint, boolval boolean, tname text DEFAULT 'boolean'::text) RETURNS public.reasons
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -6073,7 +6099,7 @@ ALTER FUNCTION public.set_bool_port_param(pid bigint, boolval boolean, tname tex
 -- Name: set_bool_sys_param(text, boolean, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION set_bool_sys_param(pname text, boolval boolean DEFAULT true, tname text DEFAULT 'boolean'::text) RETURNS reasons
+CREATE FUNCTION public.set_bool_sys_param(pname text, boolval boolean DEFAULT true, tname text DEFAULT 'boolean'::text) RETURNS public.reasons
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -6088,7 +6114,7 @@ ALTER FUNCTION public.set_bool_sys_param(pname text, boolval boolean, tname text
 -- Name: set_db_version(integer, integer); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION set_db_version(major integer, minor integer) RETURNS reasons
+CREATE FUNCTION public.set_db_version(major integer, minor integer) RETURNS public.reasons
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -6101,10 +6127,10 @@ $$;
 ALTER FUNCTION public.set_db_version(major integer, minor integer) OWNER TO lanview2;
 
 --
--- Name: set_host_status(host_services); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: set_host_status(public.host_services); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION set_host_status(hs host_services) RETURNS void
+CREATE FUNCTION public.set_host_status(hs public.host_services) RETURNS void
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -6117,20 +6143,20 @@ END
 $$;
 
 
-ALTER FUNCTION public.set_host_status(hs host_services) OWNER TO lanview2;
+ALTER FUNCTION public.set_host_status(hs public.host_services) OWNER TO lanview2;
 
 --
--- Name: FUNCTION set_host_status(hs host_services); Type: COMMENT; Schema: public; Owner: lanview2
+-- Name: FUNCTION set_host_status(hs public.host_services); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION set_host_status(hs host_services) IS 'Beállítja a node állapotás a szervíz állapot (hard_state) alapján, amennyiben a szervíz rekordban a delegate_host_stat igaz.';
+COMMENT ON FUNCTION public.set_host_status(hs public.host_services) IS 'Beállítja a node állapotás a szervíz állapot (hard_state) alapján, amennyiben a szervíz rekordban a delegate_host_stat igaz.';
 
 
 --
 -- Name: set_image_hash_if_null(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION set_image_hash_if_null() RETURNS trigger
+CREATE FUNCTION public.set_image_hash_if_null() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -6148,7 +6174,7 @@ ALTER FUNCTION public.set_image_hash_if_null() OWNER TO lanview2;
 -- Name: set_int_node_param(bigint, bigint, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION set_int_node_param(pid bigint, intval bigint, tname text DEFAULT 'bigint'::text) RETURNS reasons
+CREATE FUNCTION public.set_int_node_param(pid bigint, intval bigint, tname text DEFAULT 'bigint'::text) RETURNS public.reasons
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -6163,7 +6189,7 @@ ALTER FUNCTION public.set_int_node_param(pid bigint, intval bigint, tname text) 
 -- Name: set_int_port_param(bigint, bigint, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION set_int_port_param(pid bigint, intval bigint, tname text DEFAULT 'bigint'::text) RETURNS reasons
+CREATE FUNCTION public.set_int_port_param(pid bigint, intval bigint, tname text DEFAULT 'bigint'::text) RETURNS public.reasons
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -6178,7 +6204,7 @@ ALTER FUNCTION public.set_int_port_param(pid bigint, intval bigint, tname text) 
 -- Name: set_int_sys_param(text, bigint, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION set_int_sys_param(pname text, intval bigint, tname text DEFAULT 'bigint'::text) RETURNS reasons
+CREATE FUNCTION public.set_int_sys_param(pname text, intval bigint, tname text DEFAULT 'bigint'::text) RETURNS public.reasons
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -6193,7 +6219,7 @@ ALTER FUNCTION public.set_int_sys_param(pname text, intval bigint, tname text) O
 -- Name: set_interval_node_param(bigint, interval, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION set_interval_node_param(pid bigint, ival interval, tname text DEFAULT 'interval'::text) RETURNS reasons
+CREATE FUNCTION public.set_interval_node_param(pid bigint, ival interval, tname text DEFAULT 'interval'::text) RETURNS public.reasons
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -6208,7 +6234,7 @@ ALTER FUNCTION public.set_interval_node_param(pid bigint, ival interval, tname t
 -- Name: set_interval_port_param(bigint, interval, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION set_interval_port_param(pid bigint, ival interval, tname text DEFAULT 'interval'::text) RETURNS reasons
+CREATE FUNCTION public.set_interval_port_param(pid bigint, ival interval, tname text DEFAULT 'interval'::text) RETURNS public.reasons
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -6223,7 +6249,7 @@ ALTER FUNCTION public.set_interval_port_param(pid bigint, ival interval, tname t
 -- Name: set_interval_sys_param(text, interval, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION set_interval_sys_param(pname text, ival interval, tname text DEFAULT 'interval'::text) RETURNS reasons
+CREATE FUNCTION public.set_interval_sys_param(pname text, ival interval, tname text DEFAULT 'interval'::text) RETURNS public.reasons
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -6238,7 +6264,7 @@ ALTER FUNCTION public.set_interval_sys_param(pname text, ival interval, tname te
 -- Name: set_language(integer); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION set_language(id integer) RETURNS integer
+CREATE FUNCTION public.set_language(id integer) RETURNS integer
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -6254,7 +6280,7 @@ ALTER FUNCTION public.set_language(id integer) OWNER TO lanview2;
 -- Name: set_language(character varying, character varying); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION set_language(l character varying, c character varying DEFAULT NULL::character varying) RETURNS integer
+CREATE FUNCTION public.set_language(l character varying, c character varying DEFAULT NULL::character varying) RETURNS integer
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -6280,21 +6306,21 @@ $$;
 ALTER FUNCTION public.set_language(l character varying, c character varying) OWNER TO lanview2;
 
 --
--- Name: set_service_stat(bigint, notifswitch, text, bigint, boolean); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: set_service_stat(bigint, public.notifswitch, text, bigint, boolean); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION set_service_stat(hsid bigint, state notifswitch, note text DEFAULT ''::text, dmid bigint DEFAULT NULL::bigint, forced boolean DEFAULT false) RETURNS host_services
+CREATE FUNCTION public.set_service_stat(hsid bigint, state public.notifswitch, note text DEFAULT ''::text, dmid bigint DEFAULT NULL::bigint, forced boolean DEFAULT false) RETURNS public.host_services
     LANGUAGE plpgsql
     AS $$
 DECLARE
-    hs          host_services;  -- Az új host_services rekord
-    old_hs      host_services;  -- A régi
-    s           services;       -- A hozzá tartozó services rekord
-    na          isnoalarm;      -- Alarm tiltás állpota
-    sup         bigint;
-    tflapp      interval;       -- Flapping figyelés időablakának a hossza
-    iflapp      integer;        -- Az isőablakon bellüli státuszváltozások száma
-    alid        bigint;
+    hs          host_services;  -- New host services record
+    old_hs      host_services;  -- Old host_services record
+    s           services;       -- Services rekord
+    na          isnoalarm;      -- Alarm barring status
+    sup         bigint;         -- Superior host_service_id
+    tflapp      interval;       -- Flapping detection time window
+    iflapp      integer;        -- Changes in the state within the time window
+    alid        bigint;         -- Actual alarm record ID
     aldo        reasons := 'unknown';
 BEGIN
     hs := touch_host_service(hsid);
@@ -6302,56 +6328,62 @@ BEGIN
     IF NOT FOUND THEN
         PERFORM error('IdNotFound', hs.service_id, 'service_id', 'set_service_stat()', 'services');
     END IF;
-    IF state = hs.host_service_state AND state = hs.hard_state AND state = hs.soft_state THEN   -- Ha nincs változás
-        RETURN hs;
+    IF state = hs.host_service_state AND state = hs.hard_state AND state = hs.soft_state THEN
+        RETURN hs;  -- No change in status
     END IF;
     old_hs := hs;
-    alid := old_hs.act_alarm_log_id;
     CASE state
         WHEN 'on','recovered' THEN
-            hs.host_service_state := state;
-            hs.hard_state := 'on';
-            hs.soft_state := 'on';
+            state := 'on';
+            IF old_hs.host_service_state > 'recovered' THEN
+                hs.host_service_state := 'recovered';
+            ELSE
+                hs.host_service_state := state;
+            END IF;
+            hs.hard_state := state;
+            hs.soft_state := state;
             hs.check_attempts := 0;
         WHEN 'warning', 'unreachable','down','unknown','critical' THEN
-            IF hs.hard_state <> 'on' THEN   -- nem most rommlott el
+            IF hs.hard_state <> 'on' THEN   -- So far it was bad
                 hs.hard_state := state;
                 hs.soft_state := state;
                 hs.host_service_state := state;
                 hs.check_attempts := 0;
-            ELSE                            -- most vagy nem rég romlott el, hihető?
-                IF hs.soft_state = 'on' THEN
-                    hs.check_attempts := 1; -- pont most lett rossz, kezdünk számolni
+            ELSE
+                IF old_hs.soft_state = 'on' THEN    -- Is this the first mistake?
+                    hs.check_attempts := 1;     -- Yes. ￼Let's start counting
                 ELSE
-                    hs.check_attempts := hs.check_attempts + 1; -- tovább számolunk
+                    hs.check_attempts := hs.check_attempts + 1; -- No. We continue to count
                 END IF;
                 hs.soft_state := state;
                 IF hs.max_check_attempts IS NULL THEN
-                    IF s.max_check_attempts IS NULL THEN
+                    IF s.max_check_attempts IS NULL THEN    -- Missing default value
                         PERFORM error('WNotFound', hs.host_service_id, 'max_check_attempts', 'set_service_stat()');
-                        hs.max_check_attempts := 1;
+                        hs.max_check_attempts := 1;         -- Then be 1
                     ELSE
                         hs.max_check_attempts := s.max_check_attempts;
                     END IF;
                 END IF;
-                IF forced OR hs.check_attempts >= hs.max_check_attempts THEN  -- Elhisszük, hogy baj van
+                IF forced OR hs.check_attempts >= hs.max_check_attempts THEN  -- It is definitely a problem
                     hs.hard_state := state;
                     hs.host_service_state := state;
                     hs.check_attempts := 0;
                 END IF;
             END IF;
         ELSE
-            PERFORM error('Params', state, 'notifswitch', 'set_service_stat()');    -- kilép!
+            PERFORM error('Params', state, 'notifswitch', 'set_service_stat()'); -- exception!
     END CASE;
     tflapp := COALESCE(hs.flapping_interval, s.flapping_interval);
     iflapp := COALESCE(hs.flapping_max_change, s.flapping_max_change);
     IF chk_flapping(hsid, tflapp, iflapp) THEN
         hs.host_service_state := 'flapping';
     END IF;
+    -- delegate status
     PERFORM set_host_status(hs);
     sup := check_superior_service(hs);
+    -- Disable alarms status?
     na := is_noalarm(hs.noalarm_flag, hs.noalarm_from, hs.noalarm_to);
-    IF na = 'expired' THEN  -- Lejárt, töröljük a noalarm attributumokat, ne zavarjon
+    IF na = 'expired' THEN  -- If it has expired, it will be deleted
         hs.noalarm_flag := 'off';
         hs.noalarm_from := NULL;
         hs.noalarm_to   := NULL;
@@ -6361,30 +6393,17 @@ BEGIN
         hs.last_changed = CURRENT_TIMESTAMP;
     END IF;
     -- Alarm
+    alid := old_hs.act_alarm_log_id;
     CASE
-        -- Riasztás lezárása
-        WHEN hs.host_service_state = 'recovered' THEN
-            IF hs.act_alarm_log_id IS NULL THEN
-                -- PERFORM error('DataWarn', hsid, 'act_alarm_log_id', 'set_service_stat()', 'host_services');
-                RAISE INFO 'Status is recovered and alarm record not set.';
-            ELSE
-                RAISE INFO 'Close alarms record';
-                UPDATE alarms SET
-                        end_time = CURRENT_TIMESTAMP
-                    WHERE alarm_id = hs.act_alarm_log_id AND end_time IS NULL;
-                IF NOT FOUND THEN
-                    PERFORM error('DataWarn', hs.act_alarm_log_id, 'end_time', 'set_service_stat()', 'alarms');
-                ELSE
-                    hs.last_alarm_log_id := hs.last_alarm_log_id;
-                END IF;
-                hs.act_alarm_log_id := NULL;
-            END IF;
+        WHEN state = 'on' AND alid IS NOT NULL THEN
+            RAISE INFO 'Close %1 alarms record.', alid;
+            UPDATE alarms SET end_time = CURRENT_TIMESTAMP WHERE alarm_id = alid;
+            hs.act_alarm_log_id := NULL;
             aldo := 'close';
-        -- Új riasztás,
-        WHEN (old_hs.host_service_state < 'warning' OR old_hs.host_service_state = 'unknown')
-         AND hs.host_service_state >= 'warning' THEN
-            RAISE INFO 'New alarms record';
-            IF na = 'on' THEN 
+        WHEN (old_hs.host_service_state < 'warning' OR old_hs.host_service_state = 'unknown') -- old: ok or unknown
+         AND hs.host_service_state >= 'warning' THEN                                          -- new: not ok
+            RAISE INFO 'New alarms record.';
+            IF na = 'on' THEN -- Alarm is disabled?
                 INSERT INTO disabled_alarms (host_service_id, daemon_id, first_status, max_status, last_status, event_note, superior_alarm_id, noalarm)
                     VALUES(hsid, dmid, hs.host_service_state, hs.host_service_state, hs.host_service_state, note, sup, true )
                     RETURNING alarm_id INTO hs.act_alarm_log_id;
@@ -6395,25 +6414,25 @@ BEGIN
             END IF;
             aldo := 'new';
             alid := hs.act_alarm_log_id;
-        -- A helyzet fokozódik
+            hs.last_alarm_log_id := alid;
         WHEN old_hs.host_service_state < hs.host_service_state OR old_hs.host_service_state = 'unknown' THEN
-        RAISE INFO 'Update alarms record Up';
+        RAISE INFO 'The situation is worse. Update %1 alarms record.', alid;
             UPDATE alarms SET
                     max_status  = hs.host_service_state,
                     last_status = hs.host_service_state,
                     superior_alarm_id = sup
-                WHERE alarm_id = hs.act_alarm_log_id;
+                WHERE alarm_id = alid;
             aldo := 'modify';
         -- Alacsonyabb szint, de marad a riasztás
         WHEN old_hs.host_service_state < hs.host_service_state THEN
-            RAISE INFO 'Update alarms record Down';
+            RAISE INFO 'The situation is better. Update % alarms record', alid;
             UPDATE alarms SET
                     last_status = hs.host_service_state,
                     superior_alarm_id = sup
-                WHERE alarm_id = hs.act_alarm_log_id;
+                WHERE alarm_id = alid;
             aldo := 'modify';
         ELSE
-            RAISE INFO 'No mod alarms, old_hs = %, hs = %' ,old_hs, hs;
+            RAISE INFO 'No mod % alarm.' , alid;
             aldo := 'unchange';
     END CASE;
     UPDATE host_services SET
@@ -6447,13 +6466,13 @@ END
 $$;
 
 
-ALTER FUNCTION public.set_service_stat(hsid bigint, state notifswitch, note text, dmid bigint, forced boolean) OWNER TO lanview2;
+ALTER FUNCTION public.set_service_stat(hsid bigint, state public.notifswitch, note text, dmid bigint, forced boolean) OWNER TO lanview2;
 
 --
 -- Name: set_str_node_param(bigint, text, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION set_str_node_param(pid bigint, txtval text, tname text DEFAULT 'text'::text) RETURNS reasons
+CREATE FUNCTION public.set_str_node_param(pid bigint, txtval text, tname text DEFAULT 'text'::text) RETURNS public.reasons
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -6482,7 +6501,7 @@ ALTER FUNCTION public.set_str_node_param(pid bigint, txtval text, tname text) OW
 -- Name: set_str_port_param(bigint, text, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION set_str_port_param(pid bigint, txtval text, tname text DEFAULT 'text'::text) RETURNS reasons
+CREATE FUNCTION public.set_str_port_param(pid bigint, txtval text, tname text DEFAULT 'text'::text) RETURNS public.reasons
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -6511,7 +6530,7 @@ ALTER FUNCTION public.set_str_port_param(pid bigint, txtval text, tname text) OW
 -- Name: set_superior(bigint, text, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION set_superior(hsid bigint, hsnm text DEFAULT NULL::text, ptyp text DEFAULT NULL::text) RETURNS boolean
+CREATE FUNCTION public.set_superior(hsid bigint, hsnm text DEFAULT NULL::text, ptyp text DEFAULT NULL::text) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -6543,7 +6562,7 @@ ALTER FUNCTION public.set_superior(hsid bigint, hsnm text, ptyp text) OWNER TO l
 -- Name: set_text_sys_param(text, text, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION set_text_sys_param(pname text, txtval text, tname text DEFAULT 'text'::text) RETURNS reasons
+CREATE FUNCTION public.set_text_sys_param(pname text, txtval text, tname text DEFAULT 'text'::text) RETURNS public.reasons
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -6578,7 +6597,7 @@ ALTER FUNCTION public.set_text_sys_param(pname text, txtval text, tname text) OW
 -- Name: FUNCTION set_text_sys_param(pname text, txtval text, tname text); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION set_text_sys_param(pname text, txtval text, tname text) IS '
+COMMENT ON FUNCTION public.set_text_sys_param(pname text, txtval text, tname text) IS '
 Egy rendszer paraméter (sys_params tábla egy rekordja) értékének, és adat típusának a megadása.
 A függvény paraméterei
   pname   A paraméter neve
@@ -6597,7 +6616,7 @@ Visszatérési érték:
 -- Name: users; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE users (
+CREATE TABLE public.users (
     user_id bigint NOT NULL,
     user_name text NOT NULL,
     user_note text,
@@ -6614,27 +6633,27 @@ CREATE TABLE users (
     features text,
     host_notif_period bigint DEFAULT 0,
     serv_notif_period bigint DEFAULT 0,
-    host_notif_switchs notifswitch[] DEFAULT '{unreachable,down,recovered,unknown,critical}'::notifswitch[] NOT NULL,
-    serv_notif_switchs notifswitch[] DEFAULT '{unreachable,down,recovered,unknown,critical}'::notifswitch[] NOT NULL,
+    host_notif_switchs public.notifswitch[] DEFAULT '{unreachable,down,recovered,unknown,critical}'::public.notifswitch[] NOT NULL,
+    serv_notif_switchs public.notifswitch[] DEFAULT '{unreachable,down,recovered,unknown,critical}'::public.notifswitch[] NOT NULL,
     host_notif_cmd text,
     serv_notif_cmd text
 );
 
 
-ALTER TABLE users OWNER TO lanview2;
+ALTER TABLE public.users OWNER TO lanview2;
 
 --
 -- Name: TABLE users; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE users IS 'Users and contact table';
+COMMENT ON TABLE public.users IS 'Users and contact table';
 
 
 --
 -- Name: set_user_id(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION set_user_id(bigint DEFAULT NULL::bigint) RETURNS users
+CREATE FUNCTION public.set_user_id(bigint DEFAULT NULL::bigint) RETURNS public.users
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -6664,7 +6683,7 @@ ALTER FUNCTION public.set_user_id(bigint) OWNER TO lanview2;
 -- Name: set_user_name(text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION set_user_name(text) RETURNS users
+CREATE FUNCTION public.set_user_name(text) RETURNS public.users
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -6691,10 +6710,10 @@ $_$;
 ALTER FUNCTION public.set_user_name(text) OWNER TO lanview2;
 
 --
--- Name: shares_filt(portshare[], portshare); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: shares_filt(public.portshare[], public.portshare); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION shares_filt(shares portshare[], sh portshare) RETURNS portshare[]
+CREATE FUNCTION public.shares_filt(shares public.portshare[], sh public.portshare) RETURNS public.portshare[]
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -6711,20 +6730,20 @@ END;
 $$;
 
 
-ALTER FUNCTION public.shares_filt(shares portshare[], sh portshare) OWNER TO lanview2;
+ALTER FUNCTION public.shares_filt(shares public.portshare[], sh public.portshare) OWNER TO lanview2;
 
 --
--- Name: FUNCTION shares_filt(shares portshare[], sh portshare); Type: COMMENT; Schema: public; Owner: lanview2
+-- Name: FUNCTION shares_filt(shares public.portshare[], sh public.portshare); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION shares_filt(shares portshare[], sh portshare) IS 'Egy portshare tömbnek azon elemeivel tér vissza, melyek nem ütköznek a második paraméterrel';
+COMMENT ON FUNCTION public.shares_filt(shares public.portshare[], sh public.portshare) IS 'Egy portshare tömbnek azon elemeivel tér vissza, melyek nem ütköznek a második paraméterrel';
 
 
 --
 -- Name: subnet_check_before_update(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION subnet_check_before_update() RETURNS trigger
+CREATE FUNCTION public.subnet_check_before_update() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -6744,14 +6763,14 @@ ALTER FUNCTION public.subnet_check_before_update() OWNER TO lanview2;
 -- Name: FUNCTION subnet_check_before_update(); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION subnet_check_before_update() IS 'Trigger függvény, megakadályozza a subnets táblában az ID módosítását.';
+COMMENT ON FUNCTION public.subnet_check_before_update() IS 'Trigger függvény, megakadályozza a subnets táblában az ID módosítását.';
 
 
 --
 -- Name: subnet_id2name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION subnet_id2name(bigint) RETURNS text
+CREATE FUNCTION public.subnet_id2name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$ DECLARE name text; BEGIN IF $1 IS NULL THEN RETURN NULL;  END IF; SELECT subnet_name INTO name FROM subnets WHERE subnet_id = $1; IF NOT FOUND THEN PERFORM error('IdNotFound', $1, 'subnet_id', 'subnet_id2name', 'subnets'); END IF; RETURN name; END $_$;
 
@@ -6762,7 +6781,7 @@ ALTER FUNCTION public.subnet_id2name(bigint) OWNER TO lanview2;
 -- Name: table_is_exists(text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION table_is_exists(text) RETURNS boolean
+CREATE FUNCTION public.table_is_exists(text) RETURNS boolean
     LANGUAGE plpgsql
     AS $_$
 BEGIN
@@ -6777,14 +6796,14 @@ ALTER FUNCTION public.table_is_exists(text) OWNER TO lanview2;
 -- Name: FUNCTION table_is_exists(text); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION table_is_exists(text) IS 'Ha a paraméterként megadott bevű tábla létezik, akkor igaz értékkel, egyébként hamis értékkel tér vissza';
+COMMENT ON FUNCTION public.table_is_exists(text) IS 'Ha a paraméterként megadott bevű tábla létezik, akkor igaz értékkel, egyébként hamis értékkel tér vissza';
 
 
 --
 -- Name: table_or_view_is_exists(text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION table_or_view_is_exists(text) RETURNS boolean
+CREATE FUNCTION public.table_or_view_is_exists(text) RETURNS boolean
     LANGUAGE plpgsql
     AS $_$
 BEGIN
@@ -6799,14 +6818,14 @@ ALTER FUNCTION public.table_or_view_is_exists(text) OWNER TO lanview2;
 -- Name: FUNCTION table_or_view_is_exists(text); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION table_or_view_is_exists(text) IS 'Ha a paraméterként megadott bevű tábla vagy nézet tábla létezik, akkor igaz értékkel, egyébként hamis értékkel tér vissza';
+COMMENT ON FUNCTION public.table_or_view_is_exists(text) IS 'Ha a paraméterként megadott bevű tábla vagy nézet tábla létezik, akkor igaz értékkel, egyébként hamis értékkel tér vissza';
 
 
 --
 -- Name: table_shape_field_id2name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION table_shape_field_id2name(bigint) RETURNS text
+CREATE FUNCTION public.table_shape_field_id2name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$ DECLARE name text; BEGIN IF $1 IS NULL THEN RETURN NULL;  END IF; SELECT table_shape_field_name INTO name FROM table_shape_fields WHERE table_shape_field_id = $1; IF NOT FOUND THEN PERFORM error('IdNotFound', $1, 'table_shape_field_id', 'table_shape_field_id2name', 'table_shape_fields'); END IF; RETURN name; END $_$;
 
@@ -6817,7 +6836,7 @@ ALTER FUNCTION public.table_shape_field_id2name(bigint) OWNER TO lanview2;
 -- Name: table_shape_field_name2id(text, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION table_shape_field_name2id(text, text) RETURNS bigint
+CREATE FUNCTION public.table_shape_field_name2id(text, text) RETURNS bigint
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -6838,7 +6857,7 @@ ALTER FUNCTION public.table_shape_field_name2id(text, text) OWNER TO lanview2;
 -- Name: table_shape_id2name(bigint[]); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION table_shape_id2name(bigint[]) RETURNS text
+CREATE FUNCTION public.table_shape_id2name(bigint[]) RETURNS text
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -6867,7 +6886,7 @@ ALTER FUNCTION public.table_shape_id2name(bigint[]) OWNER TO lanview2;
 -- Name: table_shape_id2name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION table_shape_id2name(bigint) RETURNS text
+CREATE FUNCTION public.table_shape_id2name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$ DECLARE name text; BEGIN IF $1 IS NULL THEN RETURN NULL;  END IF; SELECT table_shape_name INTO name FROM table_shapes WHERE table_shape_id = $1; IF NOT FOUND THEN PERFORM error('IdNotFound', $1, 'table_shape_id', 'table_shape_id2name', 'table_shapes'); END IF; RETURN name; END $_$;
 
@@ -6878,7 +6897,7 @@ ALTER FUNCTION public.table_shape_id2name(bigint) OWNER TO lanview2;
 -- Name: table_shape_name2id(text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION table_shape_name2id(text) RETURNS bigint
+CREATE FUNCTION public.table_shape_name2id(text) RETURNS bigint
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -6899,7 +6918,7 @@ ALTER FUNCTION public.table_shape_name2id(text) OWNER TO lanview2;
 -- Name: text2double(text, double precision); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION text2double(val text, def double precision DEFAULT NULL::double precision) RETURNS double precision
+CREATE FUNCTION public.text2double(val text, def double precision DEFAULT NULL::double precision) RETURNS double precision
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -6920,13 +6939,13 @@ ALTER FUNCTION public.text2double(val text, def double precision) OWNER TO lanvi
 -- Name: alarms; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE alarms (
+CREATE TABLE public.alarms (
     alarm_id bigint NOT NULL,
     host_service_id bigint NOT NULL,
     daemon_id bigint,
-    first_status notifswitch NOT NULL,
-    max_status notifswitch NOT NULL,
-    last_status notifswitch NOT NULL,
+    first_status public.notifswitch NOT NULL,
+    max_status public.notifswitch NOT NULL,
+    last_status public.notifswitch NOT NULL,
     begin_time timestamp without time zone DEFAULT now() NOT NULL,
     event_note text,
     superior_alarm_id bigint,
@@ -6936,83 +6955,83 @@ CREATE TABLE alarms (
 );
 
 
-ALTER TABLE alarms OWNER TO lanview2;
+ALTER TABLE public.alarms OWNER TO lanview2;
 
 --
 -- Name: TABLE alarms; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE alarms IS 'Riasztási események táblája';
+COMMENT ON TABLE public.alarms IS 'Riasztási események táblája';
 
 
 --
 -- Name: COLUMN alarms.host_service_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN alarms.host_service_id IS 'A riasztást kiváltó szervíz azonosítója';
+COMMENT ON COLUMN public.alarms.host_service_id IS 'A riasztást kiváltó szervíz azonosítója';
 
 
 --
 -- Name: COLUMN alarms.first_status; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN alarms.first_status IS 'A riasztás keletkezésekori állapot';
+COMMENT ON COLUMN public.alarms.first_status IS 'A riasztás keletkezésekori állapot';
 
 
 --
 -- Name: COLUMN alarms.max_status; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN alarms.max_status IS 'A riasztás ideje alatti legsújosabb állapot.';
+COMMENT ON COLUMN public.alarms.max_status IS 'A riasztás ideje alatti legsújosabb állapot.';
 
 
 --
 -- Name: COLUMN alarms.last_status; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN alarms.last_status IS 'Az utolsó statusz a riastás vége elött';
+COMMENT ON COLUMN public.alarms.last_status IS 'Az utolsó statusz a riastás vége elött';
 
 
 --
 -- Name: COLUMN alarms.begin_time; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN alarms.begin_time IS 'A riasztás kezdetánek az időpontja';
+COMMENT ON COLUMN public.alarms.begin_time IS 'A riasztás kezdetánek az időpontja';
 
 
 --
 -- Name: COLUMN alarms.event_note; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN alarms.event_note IS 'A risztást létrehozó üzenete, ha van';
+COMMENT ON COLUMN public.alarms.event_note IS 'A risztást létrehozó üzenete, ha van';
 
 
 --
 -- Name: COLUMN alarms.superior_alarm_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN alarms.superior_alarm_id IS 'Ha egy függő szervíz váltotta ki a riasztást, és a felsőbb szintű szolgáltatás is roasztási állpotban van, akkor annak a riasztásnak az azonosítója.';
+COMMENT ON COLUMN public.alarms.superior_alarm_id IS 'Ha egy függő szervíz váltotta ki a riasztást, és a felsőbb szintű szolgáltatás is roasztási állpotban van, akkor annak a riasztásnak az azonosítója.';
 
 
 --
 -- Name: COLUMN alarms.noalarm; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN alarms.noalarm IS 'Ha az értesítés riasztásról le van tíltva, akkor értéke true.';
+COMMENT ON COLUMN public.alarms.noalarm IS 'Ha az értesítés riasztásról le van tíltva, akkor értéke true.';
 
 
 --
 -- Name: COLUMN alarms.end_time; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN alarms.end_time IS 'A riasztás végének az időpontja';
+COMMENT ON COLUMN public.alarms.end_time IS 'A riasztás végének az időpontja';
 
 
 --
--- Name: ticket_alarm(notifswitch, text, bigint, bigint, notifswitch, notifswitch); Type: FUNCTION; Schema: public; Owner: lanview2
+-- Name: ticket_alarm(public.notifswitch, text, bigint, bigint, public.notifswitch, public.notifswitch); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION ticket_alarm(lst notifswitch, msg text, did bigint DEFAULT NULL::bigint, aid bigint DEFAULT NULL::bigint, fst notifswitch DEFAULT NULL::notifswitch, mst notifswitch DEFAULT NULL::notifswitch) RETURNS alarms
+CREATE FUNCTION public.ticket_alarm(lst public.notifswitch, msg text, did bigint DEFAULT NULL::bigint, aid bigint DEFAULT NULL::bigint, fst public.notifswitch DEFAULT NULL::public.notifswitch, mst public.notifswitch DEFAULT NULL::public.notifswitch) RETURNS public.alarms
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -7061,13 +7080,13 @@ END;
 $$;
 
 
-ALTER FUNCTION public.ticket_alarm(lst notifswitch, msg text, did bigint, aid bigint, fst notifswitch, mst notifswitch) OWNER TO lanview2;
+ALTER FUNCTION public.ticket_alarm(lst public.notifswitch, msg text, did bigint, aid bigint, fst public.notifswitch, mst public.notifswitch) OWNER TO lanview2;
 
 --
 -- Name: time_in_timeperiod(bigint, timestamp without time zone); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION time_in_timeperiod(bigint, timestamp without time zone DEFAULT now()) RETURNS boolean
+CREATE FUNCTION public.time_in_timeperiod(bigint, timestamp without time zone DEFAULT now()) RETURNS boolean
     LANGUAGE plpgsql
     AS $_$
 BEGIN
@@ -7090,7 +7109,7 @@ ALTER FUNCTION public.time_in_timeperiod(bigint, timestamp without time zone) OW
 -- Name: timeperiod_id2name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION timeperiod_id2name(bigint) RETURNS text
+CREATE FUNCTION public.timeperiod_id2name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$ DECLARE name text; BEGIN IF $1 IS NULL THEN RETURN NULL;  END IF; SELECT timeperiod_name INTO name FROM timeperiods WHERE timeperiod_id = $1; IF NOT FOUND THEN PERFORM error('IdNotFound', $1, 'timeperiod_id', 'timeperiod_id2name', 'timeperiods'); END IF; RETURN name; END $_$;
 
@@ -7101,7 +7120,7 @@ ALTER FUNCTION public.timeperiod_id2name(bigint) OWNER TO lanview2;
 -- Name: timeperiod_name2id(text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION timeperiod_name2id(text) RETURNS bigint
+CREATE FUNCTION public.timeperiod_name2id(text) RETURNS bigint
     LANGUAGE plpgsql
     AS $_$
 BEGIN
@@ -7116,7 +7135,7 @@ ALTER FUNCTION public.timeperiod_name2id(text) OWNER TO lanview2;
 -- Name: timeperiod_next_on_time(bigint, timestamp without time zone); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION timeperiod_next_on_time(bigint, timestamp without time zone DEFAULT now()) RETURNS timestamp without time zone
+CREATE FUNCTION public.timeperiod_next_on_time(bigint, timestamp without time zone DEFAULT now()) RETURNS timestamp without time zone
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -7169,25 +7188,25 @@ ALTER FUNCTION public.timeperiod_next_on_time(bigint, timestamp without time zon
 -- Name: selects; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE selects (
+CREATE TABLE public.selects (
     select_id bigint NOT NULL,
     select_type text NOT NULL,
     select_note text,
     precedence integer NOT NULL,
     pattern text NOT NULL,
-    pattern_type patterntype NOT NULL,
+    pattern_type public.patterntype NOT NULL,
     choice text NOT NULL,
     features text
 );
 
 
-ALTER TABLE selects OWNER TO lanview2;
+ALTER TABLE public.selects OWNER TO lanview2;
 
 --
 -- Name: to_choose(text, text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION to_choose(sval text, stype text, OUT rec selects) RETURNS selects
+CREATE FUNCTION public.to_choose(sval text, stype text, OUT rec public.selects) RETURNS public.selects
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -7204,13 +7223,13 @@ END
 $$;
 
 
-ALTER FUNCTION public.to_choose(sval text, stype text, OUT rec selects) OWNER TO lanview2;
+ALTER FUNCTION public.to_choose(sval text, stype text, OUT rec public.selects) OWNER TO lanview2;
 
 --
 -- Name: touch_host_service(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION touch_host_service(hsid bigint) RETURNS host_services
+CREATE FUNCTION public.touch_host_service(hsid bigint) RETURNS public.host_services
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -7232,7 +7251,7 @@ ALTER FUNCTION public.touch_host_service(hsid bigint) OWNER TO lanview2;
 -- Name: FUNCTION touch_host_service(hsid bigint); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION touch_host_service(hsid bigint) IS 'A megadott azonosítójú host_services rekordban a last_touched mezőt az aktuális időpontra változtatja,
+COMMENT ON FUNCTION public.touch_host_service(hsid bigint) IS 'A megadott azonosítójú host_services rekordban a last_touched mezőt az aktuális időpontra változtatja,
  és a módosított rekord tartalomával tér vissza';
 
 
@@ -7240,7 +7259,7 @@ COMMENT ON FUNCTION touch_host_service(hsid bigint) IS 'A megadott azonosítój�
 -- Name: tpow_name2id(text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION tpow_name2id(text) RETURNS bigint
+CREATE FUNCTION public.tpow_name2id(text) RETURNS bigint
     LANGUAGE plpgsql
     AS $_$
 DECLARE
@@ -7261,7 +7280,7 @@ ALTER FUNCTION public.tpow_name2id(text) OWNER TO lanview2;
 -- Name: truncate_disabled_alarms(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION truncate_disabled_alarms() RETURNS trigger
+CREATE FUNCTION public.truncate_disabled_alarms() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -7277,10 +7296,46 @@ $$;
 ALTER FUNCTION public.truncate_disabled_alarms() OWNER TO lanview2;
 
 --
+-- Name: update_port_vlan(bigint, bigint, public.vlantype, public.settype); Type: FUNCTION; Schema: public; Owner: lanview2
+--
+
+CREATE FUNCTION public.update_port_vlan(pid bigint, vid bigint, vt public.vlantype, st public.settype DEFAULT 'query'::public.settype) RETURNS public.reasons
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    rec port_vlans;
+    r reasons;
+BEGIN
+    SELECT * INTO rec FROM port_vlans WHERE port_id = pid AND vlan_id = vid;
+    IF NOT FOUND THEN
+        IF 0 = COUNT(*) FROM vlans WHERE vlan_id = vid THEN
+            INSERT INTO vlans(vlan_id, vlan_name) VALUES(vid, 'AUTO_INSERTED_VLAN' || vid::text);
+            r := 'new';
+        ELSE
+            r := 'insert';
+        END IF;
+        INSERT INTO port_vlans (port_id, vlan_id, vlan_type, set_type, flag) VALUES (pid, vid, vt, st, true);
+        RETURN r;
+    END IF;
+    IF rec.vlan_type = vt THEN
+        UPDATE port_vlans SET last_time = now(), flag = true WHERE port_id = pid AND vlan_id = vid;
+        RETURN 'unchange';
+    END IF;
+    UPDATE port_vlans SET vlan_type = vt, set_type = st, first_time = now(), last_time = now(), flag = true WHERE port_id = pid AND vlan_id = vid;
+    INSERT INTO port_vlan_logs(reason, port_id, vlan_id,   old_type, first_time_old, last_time_old, new_type)
+                        VALUES('modify', pid,    vid, rec.vlan_type, rec.first_time, rec.last_time, vt);
+    RETURN 'modify';
+END;
+$$;
+
+
+ALTER FUNCTION public.update_port_vlan(pid bigint, vid bigint, vt public.vlantype, st public.settype) OWNER TO lanview2;
+
+--
 -- Name: user_events_before(); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION user_events_before() RETURNS trigger
+CREATE FUNCTION public.user_events_before() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -7298,7 +7353,7 @@ ALTER FUNCTION public.user_events_before() OWNER TO lanview2;
 -- Name: user_id2name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION user_id2name(bigint) RETURNS text
+CREATE FUNCTION public.user_id2name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$ DECLARE name text; BEGIN IF $1 IS NULL THEN RETURN NULL;  END IF; SELECT user_name INTO name FROM users WHERE user_id = $1; IF NOT FOUND THEN PERFORM error('IdNotFound', $1, 'user_id', 'user_id2name', 'users'); END IF; RETURN name; END $_$;
 
@@ -7309,7 +7364,7 @@ ALTER FUNCTION public.user_id2name(bigint) OWNER TO lanview2;
 -- Name: user_is_any_groups_member(bigint, bigint[]); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION user_is_any_groups_member(uid bigint, gids bigint[]) RETURNS boolean
+CREATE FUNCTION public.user_is_any_groups_member(uid bigint, gids bigint[]) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -7334,7 +7389,7 @@ ALTER FUNCTION public.user_is_any_groups_member(uid bigint, gids bigint[]) OWNER
 -- Name: user_is_group_member(bigint, bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION user_is_group_member(uid bigint, gid bigint) RETURNS boolean
+CREATE FUNCTION public.user_is_group_member(uid bigint, gid bigint) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -7349,7 +7404,7 @@ ALTER FUNCTION public.user_is_group_member(uid bigint, gid bigint) OWNER TO lanv
 -- Name: user_name2id(text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION user_name2id(text) RETURNS bigint
+CREATE FUNCTION public.user_name2id(text) RETURNS bigint
     LANGUAGE plpgsql
     AS $_$
 BEGIN
@@ -7364,7 +7419,7 @@ ALTER FUNCTION public.user_name2id(text) OWNER TO lanview2;
 -- Name: view_is_exists(text); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION view_is_exists(text) RETURNS boolean
+CREATE FUNCTION public.view_is_exists(text) RETURNS boolean
     LANGUAGE plpgsql
     AS $_$
 BEGIN
@@ -7379,14 +7434,14 @@ ALTER FUNCTION public.view_is_exists(text) OWNER TO lanview2;
 -- Name: FUNCTION view_is_exists(text); Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON FUNCTION view_is_exists(text) IS 'Ha a paraméterként megadott bevű nézet tábla létezik, akkor igaz értékkel, egyébként hamis értékkel tér vissza';
+COMMENT ON FUNCTION public.view_is_exists(text) IS 'Ha a paraméterként megadott bevű nézet tábla létezik, akkor igaz értékkel, egyébként hamis értékkel tér vissza';
 
 
 --
 -- Name: vlan_id2name(bigint); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION vlan_id2name(bigint) RETURNS text
+CREATE FUNCTION public.vlan_id2name(bigint) RETURNS text
     LANGUAGE plpgsql
     AS $_$ DECLARE name text; BEGIN IF $1 IS NULL THEN RETURN NULL;  END IF; SELECT vlan_name INTO name FROM vlans WHERE vlan_id = $1; IF NOT FOUND THEN PERFORM error('IdNotFound', $1, 'vlan_id', 'vlan_id2name', 'vlans'); END IF; RETURN name; END $_$;
 
@@ -7397,7 +7452,7 @@ ALTER FUNCTION public.vlan_id2name(bigint) OWNER TO lanview2;
 -- Name: xor(boolean, boolean); Type: FUNCTION; Schema: public; Owner: lanview2
 --
 
-CREATE FUNCTION xor(boolean, boolean) RETURNS boolean
+CREATE FUNCTION public.xor(boolean, boolean) RETURNS boolean
     LANGUAGE plpgsql
     AS $_$
 BEGIN
@@ -7412,41 +7467,41 @@ ALTER FUNCTION public.xor(boolean, boolean) OWNER TO lanview2;
 -- Name: alarm_messages; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE alarm_messages (
+CREATE TABLE public.alarm_messages (
     service_type_id bigint NOT NULL,
-    status notifswitch NOT NULL,
-    text_id bigint DEFAULT nextval('text_id_sequ'::regclass) NOT NULL
+    status public.notifswitch NOT NULL,
+    text_id bigint DEFAULT nextval('public.text_id_sequ'::regclass) NOT NULL
 );
 
 
-ALTER TABLE alarm_messages OWNER TO lanview2;
+ALTER TABLE public.alarm_messages OWNER TO lanview2;
 
 --
 -- Name: TABLE alarm_messages; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE alarm_messages IS 'Riasztási üzenetek táblája.';
+COMMENT ON TABLE public.alarm_messages IS 'Riasztási üzenetek táblája.';
 
 
 --
 -- Name: COLUMN alarm_messages.service_type_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN alarm_messages.service_type_id IS 'Melyik szervíz típushoz/csoporthoz tartozik a riasztási üzenet.';
+COMMENT ON COLUMN public.alarm_messages.service_type_id IS 'Melyik szervíz típushoz/csoporthoz tartozik a riasztási üzenet.';
 
 
 --
 -- Name: COLUMN alarm_messages.status; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN alarm_messages.status IS 'Milyen állapothoz tartozik a riasztási üzenet.';
+COMMENT ON COLUMN public.alarm_messages.status IS 'Milyen állapothoz tartozik a riasztási üzenet.';
 
 
 --
 -- Name: alarms_alarm_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE alarms_alarm_id_seq
+CREATE SEQUENCE public.alarms_alarm_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -7454,20 +7509,20 @@ CREATE SEQUENCE alarms_alarm_id_seq
     CACHE 1;
 
 
-ALTER TABLE alarms_alarm_id_seq OWNER TO lanview2;
+ALTER TABLE public.alarms_alarm_id_seq OWNER TO lanview2;
 
 --
 -- Name: alarms_alarm_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE alarms_alarm_id_seq OWNED BY alarms.alarm_id;
+ALTER SEQUENCE public.alarms_alarm_id_seq OWNED BY public.alarms.alarm_id;
 
 
 --
 -- Name: app_errs; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE app_errs (
+CREATE TABLE public.app_errs (
     applog_id bigint NOT NULL,
     date_of timestamp without time zone DEFAULT now() NOT NULL,
     app_name text,
@@ -7496,17 +7551,18 @@ CREATE TABLE app_errs (
     data_pos integer,
     data_msg text,
     data_name text,
-    acknowledged boolean DEFAULT false
+    acknowledged boolean DEFAULT false,
+    back_stack text
 );
 
 
-ALTER TABLE app_errs OWNER TO lanview2;
+ALTER TABLE public.app_errs OWNER TO lanview2;
 
 --
 -- Name: TABLE app_errs; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE app_errs IS 'Aplication errors log table
+COMMENT ON TABLE public.app_errs IS 'Aplication errors log table
 Program hiba esetén jön létre (C++ Qt alkalmazás/szerver) egy cError*
 típusu kizárás generálásakor, ha a program képes a rekordot létrehozni.
 A rekord a cError objektum alapján kerül kitöltésre.';
@@ -7516,105 +7572,105 @@ A rekord a cError objektum alapján kerül kitöltésre.';
 -- Name: COLUMN app_errs.applog_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN app_errs.applog_id IS 'Unique ID for app_errs';
+COMMENT ON COLUMN public.app_errs.applog_id IS 'Unique ID for app_errs';
 
 
 --
 -- Name: COLUMN app_errs.date_of; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN app_errs.date_of IS 'Record timestamp';
+COMMENT ON COLUMN public.app_errs.date_of IS 'Record timestamp';
 
 
 --
 -- Name: COLUMN app_errs.app_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN app_errs.app_name IS 'Aplication name';
+COMMENT ON COLUMN public.app_errs.app_name IS 'Aplication name';
 
 
 --
 -- Name: COLUMN app_errs.node_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN app_errs.node_id IS 'Host azonosító, vagy NULL ha nem ismert,';
+COMMENT ON COLUMN public.app_errs.node_id IS 'Host azonosító, vagy NULL ha nem ismert,';
 
 
 --
 -- Name: COLUMN app_errs.pid; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN app_errs.pid IS 'Aplication process PID number';
+COMMENT ON COLUMN public.app_errs.pid IS 'Aplication process PID number';
 
 
 --
 -- Name: COLUMN app_errs.app_ver; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN app_errs.app_ver IS 'Aplication version identifier';
+COMMENT ON COLUMN public.app_errs.app_ver IS 'Aplication version identifier';
 
 
 --
 -- Name: COLUMN app_errs.lib_ver; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN app_errs.lib_ver IS 'liblv2 version identifier';
+COMMENT ON COLUMN public.app_errs.lib_ver IS 'liblv2 version identifier';
 
 
 --
 -- Name: COLUMN app_errs.func_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN app_errs.func_name IS 'Function full name.';
+COMMENT ON COLUMN public.app_errs.func_name IS 'Function full name.';
 
 
 --
 -- Name: COLUMN app_errs.src_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN app_errs.src_name IS 'Code source name.';
+COMMENT ON COLUMN public.app_errs.src_name IS 'Code source name.';
 
 
 --
 -- Name: COLUMN app_errs.src_line; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN app_errs.src_line IS 'Code source line number.';
+COMMENT ON COLUMN public.app_errs.src_line IS 'Code source line number.';
 
 
 --
 -- Name: COLUMN app_errs.err_code; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN app_errs.err_code IS 'Error code';
+COMMENT ON COLUMN public.app_errs.err_code IS 'Error code';
 
 
 --
 -- Name: COLUMN app_errs.err_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN app_errs.err_name IS 'Error symbolic code';
+COMMENT ON COLUMN public.app_errs.err_name IS 'Error symbolic code';
 
 
 --
 -- Name: COLUMN app_errs.err_subcode; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN app_errs.err_subcode IS 'Error sub code, or integer parameter';
+COMMENT ON COLUMN public.app_errs.err_subcode IS 'Error sub code, or integer parameter';
 
 
 --
 -- Name: COLUMN app_errs.thread_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN app_errs.thread_name IS 'Aplication thread identifier (optional)';
+COMMENT ON COLUMN public.app_errs.thread_name IS 'Aplication thread identifier (optional)';
 
 
 --
 -- Name: app_errs_applog_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE app_errs_applog_id_seq
+CREATE SEQUENCE public.app_errs_applog_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -7622,20 +7678,20 @@ CREATE SEQUENCE app_errs_applog_id_seq
     CACHE 1;
 
 
-ALTER TABLE app_errs_applog_id_seq OWNER TO lanview2;
+ALTER TABLE public.app_errs_applog_id_seq OWNER TO lanview2;
 
 --
 -- Name: app_errs_applog_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE app_errs_applog_id_seq OWNED BY app_errs.applog_id;
+ALTER SEQUENCE public.app_errs_applog_id_seq OWNED BY public.app_errs.applog_id;
 
 
 --
 -- Name: app_memos; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE app_memos (
+CREATE TABLE public.app_memos (
     app_memo_id bigint NOT NULL,
     date_of timestamp without time zone DEFAULT now() NOT NULL,
     app_name text,
@@ -7649,19 +7705,19 @@ CREATE TABLE app_memos (
     node_id bigint,
     host_service_id bigint,
     user_id bigint,
-    importance notifswitch DEFAULT 'unknown'::notifswitch,
+    importance public.notifswitch DEFAULT 'unknown'::public.notifswitch,
     memo text NOT NULL,
     acknowledged boolean DEFAULT false
 );
 
 
-ALTER TABLE app_memos OWNER TO lanview2;
+ALTER TABLE public.app_memos OWNER TO lanview2;
 
 --
 -- Name: app_memos_app_memo_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE app_memos_app_memo_id_seq
+CREATE SEQUENCE public.app_memos_app_memo_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -7669,27 +7725,27 @@ CREATE SEQUENCE app_memos_app_memo_id_seq
     CACHE 1;
 
 
-ALTER TABLE app_memos_app_memo_id_seq OWNER TO lanview2;
+ALTER TABLE public.app_memos_app_memo_id_seq OWNER TO lanview2;
 
 --
 -- Name: app_memos_app_memo_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE app_memos_app_memo_id_seq OWNED BY app_memos.app_memo_id;
+ALTER SEQUENCE public.app_memos_app_memo_id_seq OWNED BY public.app_memos.app_memo_id;
 
 
 --
 -- Name: arp_logs; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE arp_logs (
+CREATE TABLE public.arp_logs (
     arp_log_id bigint NOT NULL,
-    reason reasons NOT NULL,
+    reason public.reasons NOT NULL,
     date_of timestamp without time zone DEFAULT now() NOT NULL,
     ipaddress inet,
     hwaddress_new macaddr,
     hwaddress_old macaddr,
-    set_type_old settype NOT NULL,
+    set_type_old public.settype NOT NULL,
     host_service_id_old bigint,
     first_time_old timestamp without time zone,
     last_time_old timestamp without time zone,
@@ -7697,20 +7753,20 @@ CREATE TABLE arp_logs (
 );
 
 
-ALTER TABLE arp_logs OWNER TO lanview2;
+ALTER TABLE public.arp_logs OWNER TO lanview2;
 
 --
 -- Name: TABLE arp_logs; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE arp_logs IS 'Az arps tábla változásainag a napló táblája.';
+COMMENT ON TABLE public.arp_logs IS 'Az arps tábla változásainag a napló táblája.';
 
 
 --
 -- Name: arp_logs_arp_log_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE arp_logs_arp_log_id_seq
+CREATE SEQUENCE public.arp_logs_arp_log_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -7718,20 +7774,20 @@ CREATE SEQUENCE arp_logs_arp_log_id_seq
     CACHE 1;
 
 
-ALTER TABLE arp_logs_arp_log_id_seq OWNER TO lanview2;
+ALTER TABLE public.arp_logs_arp_log_id_seq OWNER TO lanview2;
 
 --
 -- Name: arp_logs_arp_log_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE arp_logs_arp_log_id_seq OWNED BY arp_logs.arp_log_id;
+ALTER SEQUENCE public.arp_logs_arp_log_id_seq OWNED BY public.arp_logs.arp_log_id;
 
 
 --
 -- Name: nports; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE nports (
+CREATE TABLE public.nports (
     port_id bigint NOT NULL,
     port_name text NOT NULL,
     port_note text,
@@ -7744,127 +7800,127 @@ CREATE TABLE nports (
 );
 
 
-ALTER TABLE nports OWNER TO lanview2;
+ALTER TABLE public.nports OWNER TO lanview2;
 
 --
 -- Name: TABLE nports; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE nports IS 'Passzív portok táblája, az összes port típus őse';
+COMMENT ON TABLE public.nports IS 'Passzív portok táblája, az összes port típus őse';
 
 
 --
 -- Name: COLUMN nports.port_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN nports.port_id IS 'Egyedi port azonosító, az összes port típusra (leszármazottra) egyedi';
+COMMENT ON COLUMN public.nports.port_id IS 'Egyedi port azonosító, az összes port típusra (leszármazottra) egyedi';
 
 
 --
 -- Name: COLUMN nports.port_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN nports.port_name IS 'A port neve, csak egy nodon bellül (azonos node_id) kell egyedinek lennie';
+COMMENT ON COLUMN public.nports.port_name IS 'A port neve, csak egy nodon bellül (azonos node_id) kell egyedinek lennie';
 
 
 --
 -- Name: COLUMN nports.port_note; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN nports.port_note IS 'Description for network port';
+COMMENT ON COLUMN public.nports.port_note IS 'Description for network port';
 
 
 --
 -- Name: COLUMN nports.port_tag; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN nports.port_tag IS 'Opcionális cimke ill. név.';
+COMMENT ON COLUMN public.nports.port_tag IS 'Opcionális cimke ill. név.';
 
 
 --
 -- Name: COLUMN nports.iftype_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN nports.iftype_id IS 'A típus leíró rekord azonosítója.';
+COMMENT ON COLUMN public.nports.iftype_id IS 'A típus leíró rekord azonosítója.';
 
 
 --
 -- Name: COLUMN nports.node_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN nports.node_id IS 'Csomópont azonosító, idegen kulcs a tulajdonos nodes vagy bármelyi leszármazottja rekordjára';
+COMMENT ON COLUMN public.nports.node_id IS 'Csomópont azonosító, idegen kulcs a tulajdonos nodes vagy bármelyi leszármazottja rekordjára';
 
 
 --
 -- Name: COLUMN nports.port_index; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN nports.port_index IS 'Opcionális port index. Egyes leszármazottaknál kötelező, ha meg van adva, akkor a port_name -hez hasonlóan egyedinek kell lennie.';
+COMMENT ON COLUMN public.nports.port_index IS 'Opcionális port index. Egyes leszármazottaknál kötelező, ha meg van adva, akkor a port_name -hez hasonlóan egyedinek kell lennie.';
 
 
 --
 -- Name: COLUMN nports.deleted; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN nports.deleted IS 'Ha igaz, akkor a port logikailag törölve lett.';
+COMMENT ON COLUMN public.nports.deleted IS 'Ha igaz, akkor a port logikailag törölve lett.';
 
 
 --
 -- Name: interfaces; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE interfaces (
+CREATE TABLE public.interfaces (
     hwaddress macaddr,
-    port_ostat ifstatus DEFAULT 'unknown'::ifstatus NOT NULL,
-    port_astat ifstatus,
+    port_ostat public.ifstatus DEFAULT 'unknown'::public.ifstatus NOT NULL,
+    port_astat public.ifstatus,
     port_staple_id bigint,
     dualface_type bigint,
     ifdescr text,
     stat_last_modify timestamp without time zone,
     CONSTRAINT interfaces_check_mac CHECK ((NOT ((hwaddress = '00:00:00:00:00:00'::macaddr) OR (hwaddress = 'ff:ff:ff:ff:ff:ff'::macaddr))))
 )
-INHERITS (nports);
+INHERITS (public.nports);
 
 
-ALTER TABLE interfaces OWNER TO lanview2;
+ALTER TABLE public.interfaces OWNER TO lanview2;
 
 --
 -- Name: TABLE interfaces; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE interfaces IS 'Network Interfaces Table';
+COMMENT ON TABLE public.interfaces IS 'Network Interfaces Table';
 
 
 --
 -- Name: COLUMN interfaces.port_index; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN interfaces.port_index IS 'SNMP port id, vagy port index, SNMP eszköz esetén az eszközön bellül egyedinek kell lennie.';
+COMMENT ON COLUMN public.interfaces.port_index IS 'SNMP port id, vagy port index, SNMP eszköz esetén az eszközön bellül egyedinek kell lennie.';
 
 
 --
 -- Name: COLUMN interfaces.port_staple_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN interfaces.port_staple_id IS 'Trönkölt vagy bridzselt port esetén a trönk ill. a bridzs port ID-je';
+COMMENT ON COLUMN public.interfaces.port_staple_id IS 'Trönkölt vagy bridzselt port esetén a trönk ill. a bridzs port ID-je';
 
 
 --
 -- Name: COLUMN interfaces.dualface_type; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN interfaces.dualface_type IS 'Dualface port esetén a másik típus azonosító.';
+COMMENT ON COLUMN public.interfaces.dualface_type IS 'Dualface port esetén a másik típus azonosító.';
 
 
 --
 -- Name: ip_addresses; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE ip_addresses (
+CREATE TABLE public.ip_addresses (
     ip_address_id bigint NOT NULL,
     ip_address_note text,
     address inet,
-    ip_address_type addresstype NOT NULL,
+    ip_address_type public.addresstype NOT NULL,
     preferred integer,
     subnet_id bigint,
     port_id bigint NOT NULL,
@@ -7872,48 +7928,48 @@ CREATE TABLE ip_addresses (
 );
 
 
-ALTER TABLE ip_addresses OWNER TO lanview2;
+ALTER TABLE public.ip_addresses OWNER TO lanview2;
 
 --
 -- Name: TABLE ip_addresses; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE ip_addresses IS 'IP címek';
+COMMENT ON TABLE public.ip_addresses IS 'IP címek';
 
 
 --
 -- Name: COLUMN ip_addresses.address; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN ip_addresses.address IS 'Az IP cím (nem tartomány)';
+COMMENT ON COLUMN public.ip_addresses.address IS 'Az IP cím (nem tartomány)';
 
 
 --
 -- Name: COLUMN ip_addresses.ip_address_type; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN ip_addresses.ip_address_type IS 'A cím típusa';
+COMMENT ON COLUMN public.ip_addresses.ip_address_type IS 'A cím típusa';
 
 
 --
 -- Name: COLUMN ip_addresses.preferred; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN ip_addresses.preferred IS 'Cím keresésnél egy opcionális sorrendet definiál, a kisebb érték az preferált.';
+COMMENT ON COLUMN public.ip_addresses.preferred IS 'Cím keresésnél egy opcionális sorrendet definiál, a kisebb érték az preferált.';
 
 
 --
 -- Name: COLUMN ip_addresses.port_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN ip_addresses.port_id IS 'A tulajdonos port, melyhez a cím tartozik';
+COMMENT ON COLUMN public.ip_addresses.port_id IS 'A tulajdonos port, melyhez a cím tartozik';
 
 
 --
 -- Name: arps_shape; Type: VIEW; Schema: public; Owner: lanview2
 --
 
-CREATE VIEW arps_shape AS
+CREATE VIEW public.arps_shape AS
  SELECT a.ipaddress,
     a.hwaddress,
     a.set_type,
@@ -7921,22 +7977,22 @@ CREATE VIEW arps_shape AS
     a.first_time,
     a.last_time,
     a.arp_note,
-    port_id2full_name(ip.port_id) AS port_by_ipa,
-    first_node_id2name(array_agg(ih.node_id)) AS node_by_hwa,
-    array_agg(port_id2name(ih.port_id)) AS ports_by_hwa
-   FROM ((arps a
-     LEFT JOIN interfaces ih USING (hwaddress))
-     LEFT JOIN ip_addresses ip ON ((ip.address = a.ipaddress)))
+    public.port_id2full_name(ip.port_id) AS port_by_ipa,
+    public.first_node_id2name(array_agg(ih.node_id)) AS node_by_hwa,
+    array_agg(public.port_id2name(ih.port_id)) AS ports_by_hwa
+   FROM ((public.arps a
+     LEFT JOIN public.interfaces ih USING (hwaddress))
+     LEFT JOIN public.ip_addresses ip ON ((ip.address = a.ipaddress)))
   GROUP BY a.ipaddress, a.hwaddress, a.set_type, a.host_service_id, a.first_time, a.last_time, a.arp_note, ip.port_id;
 
 
-ALTER TABLE arps_shape OWNER TO lanview2;
+ALTER TABLE public.arps_shape OWNER TO lanview2;
 
 --
 -- Name: db_errors; Type: VIEW; Schema: public; Owner: lanview2
 --
 
-CREATE VIEW db_errors AS
+CREATE VIEW public.db_errors AS
  SELECT db_errs.date_of,
     db_errs.reapeat,
     errors.error_name,
@@ -7948,17 +8004,17 @@ CREATE VIEW db_errors AS
     db_errs.err_subcode,
     db_errs.err_msg,
     db_errs.func_name
-   FROM (db_errs
-     JOIN errors USING (error_id));
+   FROM (public.db_errs
+     JOIN public.errors USING (error_id));
 
 
-ALTER TABLE db_errors OWNER TO lanview2;
+ALTER TABLE public.db_errors OWNER TO lanview2;
 
 --
 -- Name: db_errs_dblog_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE db_errs_dblog_id_seq
+CREATE SEQUENCE public.db_errs_dblog_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -7966,32 +8022,32 @@ CREATE SEQUENCE db_errs_dblog_id_seq
     CACHE 1;
 
 
-ALTER TABLE db_errs_dblog_id_seq OWNER TO lanview2;
+ALTER TABLE public.db_errs_dblog_id_seq OWNER TO lanview2;
 
 --
 -- Name: db_errs_dblog_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE db_errs_dblog_id_seq OWNED BY db_errs.dblog_id;
+ALTER SEQUENCE public.db_errs_dblog_id_seq OWNED BY public.db_errs.dblog_id;
 
 
 --
 -- Name: disabled_alarms; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE disabled_alarms (
+CREATE TABLE public.disabled_alarms (
     CONSTRAINT disabled_alarms_noalarm_check CHECK (noalarm) NO INHERIT
 )
-INHERITS (alarms);
+INHERITS (public.alarms);
 
 
-ALTER TABLE disabled_alarms OWNER TO lanview2;
+ALTER TABLE public.disabled_alarms OWNER TO lanview2;
 
 --
 -- Name: dyn_addr_ranges; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE dyn_addr_ranges (
+CREATE TABLE public.dyn_addr_ranges (
     dyn_addr_range_id bigint NOT NULL,
     dyn_addr_range_note text,
     exclude boolean DEFAULT false,
@@ -8004,13 +8060,13 @@ CREATE TABLE dyn_addr_ranges (
 );
 
 
-ALTER TABLE dyn_addr_ranges OWNER TO lanview2;
+ALTER TABLE public.dyn_addr_ranges OWNER TO lanview2;
 
 --
 -- Name: dyn_addr_ranges_dyn_addr_range_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE dyn_addr_ranges_dyn_addr_range_id_seq
+CREATE SEQUENCE public.dyn_addr_ranges_dyn_addr_range_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -8018,37 +8074,37 @@ CREATE SEQUENCE dyn_addr_ranges_dyn_addr_range_id_seq
     CACHE 1;
 
 
-ALTER TABLE dyn_addr_ranges_dyn_addr_range_id_seq OWNER TO lanview2;
+ALTER TABLE public.dyn_addr_ranges_dyn_addr_range_id_seq OWNER TO lanview2;
 
 --
 -- Name: dyn_addr_ranges_dyn_addr_range_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE dyn_addr_ranges_dyn_addr_range_id_seq OWNED BY dyn_addr_ranges.dyn_addr_range_id;
+ALTER SEQUENCE public.dyn_addr_ranges_dyn_addr_range_id_seq OWNED BY public.dyn_addr_ranges.dyn_addr_range_id;
 
 
 --
 -- Name: dyn_ipaddress_logs; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE dyn_ipaddress_logs (
+CREATE TABLE public.dyn_ipaddress_logs (
     dyn_ipaddress_log_id bigint NOT NULL,
     date_of timestamp without time zone DEFAULT now() NOT NULL,
     ipaddress_new inet,
     ipaddress_old inet,
-    set_type settype NOT NULL,
+    set_type public.settype NOT NULL,
     port_id bigint NOT NULL,
     acknowledged boolean DEFAULT false
 );
 
 
-ALTER TABLE dyn_ipaddress_logs OWNER TO lanview2;
+ALTER TABLE public.dyn_ipaddress_logs OWNER TO lanview2;
 
 --
 -- Name: dyn_ipaddress_logs_dyn_ipaddress_log_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE dyn_ipaddress_logs_dyn_ipaddress_log_id_seq
+CREATE SEQUENCE public.dyn_ipaddress_logs_dyn_ipaddress_log_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -8056,20 +8112,20 @@ CREATE SEQUENCE dyn_ipaddress_logs_dyn_ipaddress_log_id_seq
     CACHE 1;
 
 
-ALTER TABLE dyn_ipaddress_logs_dyn_ipaddress_log_id_seq OWNER TO lanview2;
+ALTER TABLE public.dyn_ipaddress_logs_dyn_ipaddress_log_id_seq OWNER TO lanview2;
 
 --
 -- Name: dyn_ipaddress_logs_dyn_ipaddress_log_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE dyn_ipaddress_logs_dyn_ipaddress_log_id_seq OWNED BY dyn_ipaddress_logs.dyn_ipaddress_log_id;
+ALTER SEQUENCE public.dyn_ipaddress_logs_dyn_ipaddress_log_id_seq OWNED BY public.dyn_ipaddress_logs.dyn_ipaddress_log_id;
 
 
 --
 -- Name: enum_vals; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE enum_vals (
+CREATE TABLE public.enum_vals (
     enum_val_id bigint NOT NULL,
     enum_val_name text NOT NULL,
     enum_val_note text,
@@ -8077,46 +8133,47 @@ CREATE TABLE enum_vals (
     bg_color text,
     fg_color text,
     font_family text,
-    font_attr fontattr[],
-    text_id bigint DEFAULT nextval('text_id_sequ'::regclass) NOT NULL
+    font_attr public.fontattr[],
+    text_id bigint DEFAULT nextval('public.text_id_sequ'::regclass) NOT NULL,
+    icon text
 );
 
 
-ALTER TABLE enum_vals OWNER TO lanview2;
+ALTER TABLE public.enum_vals OWNER TO lanview2;
 
 --
 -- Name: TABLE enum_vals; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE enum_vals IS 'Enumerációs értékek megjelenítését segítő tábla.';
+COMMENT ON TABLE public.enum_vals IS 'Enumerációs értékek megjelenítését segítő tábla.';
 
 
 --
 -- Name: COLUMN enum_vals.enum_val_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN enum_vals.enum_val_name IS 'Az enumerációs típus egy lehetséges értéke';
+COMMENT ON COLUMN public.enum_vals.enum_val_name IS 'Az enumerációs típus egy lehetséges értéke';
 
 
 --
 -- Name: COLUMN enum_vals.enum_val_note; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN enum_vals.enum_val_note IS 'Az enumerációs értékhez tartozó leírás, megjelenítednó szöveg';
+COMMENT ON COLUMN public.enum_vals.enum_val_note IS 'Az enumerációs értékhez tartozó leírás, megjelenítednó szöveg';
 
 
 --
 -- Name: COLUMN enum_vals.enum_type_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN enum_vals.enum_type_name IS 'Az enumerációs típusnak a neve';
+COMMENT ON COLUMN public.enum_vals.enum_type_name IS 'Az enumerációs típusnak a neve';
 
 
 --
 -- Name: enum_vals_enum_val_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE enum_vals_enum_val_id_seq
+CREATE SEQUENCE public.enum_vals_enum_val_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -8124,20 +8181,20 @@ CREATE SEQUENCE enum_vals_enum_val_id_seq
     CACHE 1;
 
 
-ALTER TABLE enum_vals_enum_val_id_seq OWNER TO lanview2;
+ALTER TABLE public.enum_vals_enum_val_id_seq OWNER TO lanview2;
 
 --
 -- Name: enum_vals_enum_val_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE enum_vals_enum_val_id_seq OWNED BY enum_vals.enum_val_id;
+ALTER SEQUENCE public.enum_vals_enum_val_id_seq OWNED BY public.enum_vals.enum_val_id;
 
 
 --
 -- Name: errors_error_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE errors_error_id_seq
+CREATE SEQUENCE public.errors_error_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -8145,34 +8202,34 @@ CREATE SEQUENCE errors_error_id_seq
     CACHE 1;
 
 
-ALTER TABLE errors_error_id_seq OWNER TO lanview2;
+ALTER TABLE public.errors_error_id_seq OWNER TO lanview2;
 
 --
 -- Name: errors_error_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE errors_error_id_seq OWNED BY errors.error_id;
+ALTER SEQUENCE public.errors_error_id_seq OWNED BY public.errors.error_id;
 
 
 --
 -- Name: field_attrs; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE field_attrs (
+CREATE TABLE public.field_attrs (
     field_attr_id bigint NOT NULL,
     table_name text NOT NULL,
     field_name text NOT NULL,
-    attrs fieldattr[] NOT NULL
+    attrs public.fieldattr[] NOT NULL
 );
 
 
-ALTER TABLE field_attrs OWNER TO lanview2;
+ALTER TABLE public.field_attrs OWNER TO lanview2;
 
 --
 -- Name: field_attrs_field_attr_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE field_attrs_field_attr_id_seq
+CREATE SEQUENCE public.field_attrs_field_attr_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -8180,70 +8237,70 @@ CREATE SEQUENCE field_attrs_field_attr_id_seq
     CACHE 1;
 
 
-ALTER TABLE field_attrs_field_attr_id_seq OWNER TO lanview2;
+ALTER TABLE public.field_attrs_field_attr_id_seq OWNER TO lanview2;
 
 --
 -- Name: field_attrs_field_attr_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE field_attrs_field_attr_id_seq OWNED BY field_attrs.field_attr_id;
+ALTER SEQUENCE public.field_attrs_field_attr_id_seq OWNED BY public.field_attrs.field_attr_id;
 
 
 --
 -- Name: fkey_types; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE fkey_types (
+CREATE TABLE public.fkey_types (
     fkey_type_id bigint NOT NULL,
     table_schema text DEFAULT 'public'::text NOT NULL,
     table_name text NOT NULL,
     column_name text NOT NULL,
-    unusual_fkeys_type unusualfkeytype DEFAULT 'owner'::unusualfkeytype NOT NULL
+    unusual_fkeys_type public.unusualfkeytype DEFAULT 'owner'::public.unusualfkeytype NOT NULL
 );
 
 
-ALTER TABLE fkey_types OWNER TO lanview2;
+ALTER TABLE public.fkey_types OWNER TO lanview2;
 
 --
 -- Name: TABLE fkey_types; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE fkey_types IS 'The table defining the type of foreign keys (for non property ties)';
+COMMENT ON TABLE public.fkey_types IS 'The table defining the type of foreign keys (for non property ties)';
 
 
 --
 -- Name: COLUMN fkey_types.table_schema; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN fkey_types.table_schema IS 'The name of the foreign key scheme';
+COMMENT ON COLUMN public.fkey_types.table_schema IS 'The name of the foreign key scheme';
 
 
 --
 -- Name: COLUMN fkey_types.table_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN fkey_types.table_name IS 'The name of the foreign key table';
+COMMENT ON COLUMN public.fkey_types.table_name IS 'The name of the foreign key table';
 
 
 --
 -- Name: COLUMN fkey_types.column_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN fkey_types.column_name IS 'The name of the foreign key, or enum type name if type is text';
+COMMENT ON COLUMN public.fkey_types.column_name IS 'The name of the foreign key, or enum type name if type is text';
 
 
 --
 -- Name: COLUMN fkey_types.unusual_fkeys_type; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN fkey_types.unusual_fkeys_type IS 'The remote key type';
+COMMENT ON COLUMN public.fkey_types.unusual_fkeys_type IS 'The remote key type';
 
 
 --
 -- Name: fkey_types_fkey_type_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE fkey_types_fkey_type_id_seq
+CREATE SEQUENCE public.fkey_types_fkey_type_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -8251,38 +8308,38 @@ CREATE SEQUENCE fkey_types_fkey_type_id_seq
     CACHE 1;
 
 
-ALTER TABLE fkey_types_fkey_type_id_seq OWNER TO lanview2;
+ALTER TABLE public.fkey_types_fkey_type_id_seq OWNER TO lanview2;
 
 --
 -- Name: fkey_types_fkey_type_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE fkey_types_fkey_type_id_seq OWNED BY fkey_types.fkey_type_id;
+ALTER SEQUENCE public.fkey_types_fkey_type_id_seq OWNED BY public.fkey_types.fkey_type_id;
 
 
 --
 -- Name: graph_vars; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE graph_vars (
+CREATE TABLE public.graph_vars (
     graph_var_id bigint NOT NULL,
     graph_var_note text,
     graph_id bigint NOT NULL,
     service_var_id bigint NOT NULL,
-    draw_type drawtype DEFAULT 'LINE'::drawtype NOT NULL,
+    draw_type public.drawtype DEFAULT 'LINE'::public.drawtype NOT NULL,
     sequence_number integer NOT NULL,
     features text,
     deleted boolean DEFAULT false NOT NULL
 );
 
 
-ALTER TABLE graph_vars OWNER TO lanview2;
+ALTER TABLE public.graph_vars OWNER TO lanview2;
 
 --
 -- Name: graph_vars_graph_var_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE graph_vars_graph_var_id_seq
+CREATE SEQUENCE public.graph_vars_graph_var_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -8290,20 +8347,20 @@ CREATE SEQUENCE graph_vars_graph_var_id_seq
     CACHE 1;
 
 
-ALTER TABLE graph_vars_graph_var_id_seq OWNER TO lanview2;
+ALTER TABLE public.graph_vars_graph_var_id_seq OWNER TO lanview2;
 
 --
 -- Name: graph_vars_graph_var_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE graph_vars_graph_var_id_seq OWNED BY graph_vars.graph_var_id;
+ALTER SEQUENCE public.graph_vars_graph_var_id_seq OWNED BY public.graph_vars.graph_var_id;
 
 
 --
 -- Name: graphs; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE graphs (
+CREATE TABLE public.graphs (
     graph_id bigint NOT NULL,
     graph_name text,
     graph_note text,
@@ -8314,13 +8371,13 @@ CREATE TABLE graphs (
 );
 
 
-ALTER TABLE graphs OWNER TO lanview2;
+ALTER TABLE public.graphs OWNER TO lanview2;
 
 --
 -- Name: graphs_graph_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE graphs_graph_id_seq
+CREATE SEQUENCE public.graphs_graph_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -8328,54 +8385,54 @@ CREATE SEQUENCE graphs_graph_id_seq
     CACHE 1;
 
 
-ALTER TABLE graphs_graph_id_seq OWNER TO lanview2;
+ALTER TABLE public.graphs_graph_id_seq OWNER TO lanview2;
 
 --
 -- Name: graphs_graph_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE graphs_graph_id_seq OWNED BY graphs.graph_id;
+ALTER SEQUENCE public.graphs_graph_id_seq OWNED BY public.graphs.graph_id;
 
 
 --
 -- Name: group_users; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE group_users (
+CREATE TABLE public.group_users (
     group_user_id bigint NOT NULL,
     group_id bigint,
     user_id bigint
 );
 
 
-ALTER TABLE group_users OWNER TO lanview2;
+ALTER TABLE public.group_users OWNER TO lanview2;
 
 --
 -- Name: TABLE group_users; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE group_users IS 'Group members table';
+COMMENT ON TABLE public.group_users IS 'Group members table';
 
 
 --
 -- Name: COLUMN group_users.group_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN group_users.group_id IS 'Group ID';
+COMMENT ON COLUMN public.group_users.group_id IS 'Group ID';
 
 
 --
 -- Name: COLUMN group_users.user_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN group_users.user_id IS 'User ID';
+COMMENT ON COLUMN public.group_users.user_id IS 'User ID';
 
 
 --
 -- Name: group_users_group_user_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE group_users_group_user_id_seq
+CREATE SEQUENCE public.group_users_group_user_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -8383,71 +8440,71 @@ CREATE SEQUENCE group_users_group_user_id_seq
     CACHE 1;
 
 
-ALTER TABLE group_users_group_user_id_seq OWNER TO lanview2;
+ALTER TABLE public.group_users_group_user_id_seq OWNER TO lanview2;
 
 --
 -- Name: group_users_group_user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE group_users_group_user_id_seq OWNED BY group_users.group_user_id;
+ALTER SEQUENCE public.group_users_group_user_id_seq OWNED BY public.group_users.group_user_id;
 
 
 --
 -- Name: groups; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE groups (
+CREATE TABLE public.groups (
     group_id bigint NOT NULL,
     group_name text NOT NULL,
     group_note text,
-    group_rights rights DEFAULT 'viewer'::rights,
+    group_rights public.rights DEFAULT 'viewer'::public.rights,
     place_group_id bigint,
     features text
 );
 
 
-ALTER TABLE groups OWNER TO lanview2;
+ALTER TABLE public.groups OWNER TO lanview2;
 
 --
 -- Name: TABLE groups; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE groups IS 'User groups';
+COMMENT ON TABLE public.groups IS 'User groups';
 
 
 --
 -- Name: COLUMN groups.group_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN groups.group_id IS 'Group ID';
+COMMENT ON COLUMN public.groups.group_id IS 'Group ID';
 
 
 --
 -- Name: COLUMN groups.group_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN groups.group_name IS 'Group name';
+COMMENT ON COLUMN public.groups.group_name IS 'Group name';
 
 
 --
 -- Name: COLUMN groups.group_rights; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN groups.group_rights IS 'User rights';
+COMMENT ON COLUMN public.groups.group_rights IS 'User rights';
 
 
 --
 -- Name: COLUMN groups.place_group_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN groups.place_group_id IS 'Zone';
+COMMENT ON COLUMN public.groups.place_group_id IS 'Zone';
 
 
 --
 -- Name: groups_group_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE groups_group_id_seq
+CREATE SEQUENCE public.groups_group_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -8455,51 +8512,51 @@ CREATE SEQUENCE groups_group_id_seq
     CACHE 1;
 
 
-ALTER TABLE groups_group_id_seq OWNER TO lanview2;
+ALTER TABLE public.groups_group_id_seq OWNER TO lanview2;
 
 --
 -- Name: groups_group_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE groups_group_id_seq OWNED BY groups.group_id;
+ALTER SEQUENCE public.groups_group_id_seq OWNED BY public.groups.group_id;
 
 
 --
 -- Name: host_service_logs; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE host_service_logs (
+CREATE TABLE public.host_service_logs (
     host_service_log_id bigint NOT NULL,
     host_service_id bigint,
     date_of timestamp without time zone DEFAULT now() NOT NULL,
-    old_state notifswitch NOT NULL,
-    old_soft_state notifswitch NOT NULL,
-    old_hard_state notifswitch NOT NULL,
-    new_state notifswitch NOT NULL,
-    new_soft_state notifswitch NOT NULL,
-    new_hard_state notifswitch NOT NULL,
+    old_state public.notifswitch NOT NULL,
+    old_soft_state public.notifswitch NOT NULL,
+    old_hard_state public.notifswitch NOT NULL,
+    new_state public.notifswitch NOT NULL,
+    new_soft_state public.notifswitch NOT NULL,
+    new_hard_state public.notifswitch NOT NULL,
     event_note text,
     superior_alarm_id bigint,
     noalarm boolean NOT NULL,
     alarm_id bigint,
-    alarm_do reasons DEFAULT 'unknown'::reasons NOT NULL
+    alarm_do public.reasons DEFAULT 'unknown'::public.reasons NOT NULL
 );
 
 
-ALTER TABLE host_service_logs OWNER TO lanview2;
+ALTER TABLE public.host_service_logs OWNER TO lanview2;
 
 --
 -- Name: TABLE host_service_logs; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE host_service_logs IS 'Host szervízek státusz változásainak a log táblája';
+COMMENT ON TABLE public.host_service_logs IS 'Host szervízek státusz változásainak a log táblája';
 
 
 --
 -- Name: host_service_logs_host_service_log_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE host_service_logs_host_service_log_id_seq
+CREATE SEQUENCE public.host_service_logs_host_service_log_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -8507,27 +8564,27 @@ CREATE SEQUENCE host_service_logs_host_service_log_id_seq
     CACHE 1;
 
 
-ALTER TABLE host_service_logs_host_service_log_id_seq OWNER TO lanview2;
+ALTER TABLE public.host_service_logs_host_service_log_id_seq OWNER TO lanview2;
 
 --
 -- Name: host_service_logs_host_service_log_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE host_service_logs_host_service_log_id_seq OWNED BY host_service_logs.host_service_log_id;
+ALTER SEQUENCE public.host_service_logs_host_service_log_id_seq OWNED BY public.host_service_logs.host_service_log_id;
 
 
 --
 -- Name: host_service_noalarms; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE host_service_noalarms (
+CREATE TABLE public.host_service_noalarms (
     host_service_noalarm_id bigint NOT NULL,
     date_of timestamp without time zone DEFAULT now(),
     host_service_id bigint,
-    noalarm_flag noalarmtype NOT NULL,
+    noalarm_flag public.noalarmtype NOT NULL,
     noalarm_from timestamp without time zone,
     noalarm_to timestamp without time zone,
-    noalarm_flag_old noalarmtype NOT NULL,
+    noalarm_flag_old public.noalarmtype NOT NULL,
     noalarm_from_old timestamp without time zone,
     noalarm_to_old timestamp without time zone,
     user_id bigint,
@@ -8535,13 +8592,13 @@ CREATE TABLE host_service_noalarms (
 );
 
 
-ALTER TABLE host_service_noalarms OWNER TO lanview2;
+ALTER TABLE public.host_service_noalarms OWNER TO lanview2;
 
 --
 -- Name: host_service_noalarms_host_service_noalarm_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE host_service_noalarms_host_service_noalarm_id_seq
+CREATE SEQUENCE public.host_service_noalarms_host_service_noalarm_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -8549,20 +8606,20 @@ CREATE SEQUENCE host_service_noalarms_host_service_noalarm_id_seq
     CACHE 1;
 
 
-ALTER TABLE host_service_noalarms_host_service_noalarm_id_seq OWNER TO lanview2;
+ALTER TABLE public.host_service_noalarms_host_service_noalarm_id_seq OWNER TO lanview2;
 
 --
 -- Name: host_service_noalarms_host_service_noalarm_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE host_service_noalarms_host_service_noalarm_id_seq OWNED BY host_service_noalarms.host_service_noalarm_id;
+ALTER SEQUENCE public.host_service_noalarms_host_service_noalarm_id_seq OWNED BY public.host_service_noalarms.host_service_noalarm_id;
 
 
 --
 -- Name: host_services_host_service_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE host_services_host_service_id_seq
+CREATE SEQUENCE public.host_services_host_service_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -8570,109 +8627,109 @@ CREATE SEQUENCE host_services_host_service_id_seq
     CACHE 1;
 
 
-ALTER TABLE host_services_host_service_id_seq OWNER TO lanview2;
+ALTER TABLE public.host_services_host_service_id_seq OWNER TO lanview2;
 
 --
 -- Name: host_services_host_service_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE host_services_host_service_id_seq OWNED BY host_services.host_service_id;
+ALTER SEQUENCE public.host_services_host_service_id_seq OWNED BY public.host_services.host_service_id;
 
 
 --
 -- Name: iftypes; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE iftypes (
+CREATE TABLE public.iftypes (
     iftype_id bigint NOT NULL,
     iftype_name text NOT NULL,
     iftype_note text,
     iftype_iana_id integer DEFAULT 1 NOT NULL,
-    iftype_link_type linktype DEFAULT 'unknown'::linktype NOT NULL,
-    iftype_obj_type portobjtype DEFAULT 'unknown'::portobjtype NOT NULL,
+    iftype_link_type public.linktype DEFAULT 'unknown'::public.linktype NOT NULL,
+    iftype_obj_type public.portobjtype DEFAULT 'unknown'::public.portobjtype NOT NULL,
     preferred boolean DEFAULT false,
     iana_id_link integer,
     if_name_prefix text
 );
 
 
-ALTER TABLE iftypes OWNER TO lanview2;
+ALTER TABLE public.iftypes OWNER TO lanview2;
 
 --
 -- Name: TABLE iftypes; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE iftypes IS 'Network Interfaces (ports) típus leíró rekord.';
+COMMENT ON TABLE public.iftypes IS 'Network Interfaces (ports) típus leíró rekord.';
 
 
 --
 -- Name: COLUMN iftypes.iftype_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN iftypes.iftype_id IS 'Unique ID for interface''s type';
+COMMENT ON COLUMN public.iftypes.iftype_id IS 'Unique ID for interface''s type';
 
 
 --
 -- Name: COLUMN iftypes.iftype_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN iftypes.iftype_name IS 'Interface type''s name';
+COMMENT ON COLUMN public.iftypes.iftype_name IS 'Interface type''s name';
 
 
 --
 -- Name: COLUMN iftypes.iftype_note; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN iftypes.iftype_note IS 'Interface type''s noteiption';
+COMMENT ON COLUMN public.iftypes.iftype_note IS 'Interface type''s noteiption';
 
 
 --
 -- Name: COLUMN iftypes.iftype_iana_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN iftypes.iftype_iana_id IS 'Protocoll Types id assigned by IANA';
+COMMENT ON COLUMN public.iftypes.iftype_iana_id IS 'Protocoll Types id assigned by IANA';
 
 
 --
 -- Name: COLUMN iftypes.iftype_link_type; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN iftypes.iftype_link_type IS 'A porton értelmezhető link típusa';
+COMMENT ON COLUMN public.iftypes.iftype_link_type IS 'A porton értelmezhető link típusa';
 
 
 --
 -- Name: COLUMN iftypes.iftype_obj_type; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN iftypes.iftype_obj_type IS 'A portot reprezentáló API objektum típusa.';
+COMMENT ON COLUMN public.iftypes.iftype_obj_type IS 'A portot reprezentáló API objektum típusa.';
 
 
 --
 -- Name: COLUMN iftypes.preferred; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN iftypes.preferred IS 'Ha az iana id alapján keresünk, csak az ''f'' érték esetén van találat a rekordra.';
+COMMENT ON COLUMN public.iftypes.preferred IS 'Ha az iana id alapján keresünk, csak az ''f'' érték esetén van találat a rekordra.';
 
 
 --
 -- Name: COLUMN iftypes.iana_id_link; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN iftypes.iana_id_link IS 'Elavult ID esetén a helyette használandü iana ID-t tartalmazza';
+COMMENT ON COLUMN public.iftypes.iana_id_link IS 'Elavult ID esetén a helyette használandü iana ID-t tartalmazza';
 
 
 --
 -- Name: COLUMN iftypes.if_name_prefix; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN iftypes.if_name_prefix IS 'Egy opcionális prefix az interfész nevekhez';
+COMMENT ON COLUMN public.iftypes.if_name_prefix IS 'Egy opcionális prefix az interfész nevekhez';
 
 
 --
 -- Name: iftypes_iftype_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE iftypes_iftype_id_seq
+CREATE SEQUENCE public.iftypes_iftype_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -8680,93 +8737,93 @@ CREATE SEQUENCE iftypes_iftype_id_seq
     CACHE 1;
 
 
-ALTER TABLE iftypes_iftype_id_seq OWNER TO lanview2;
+ALTER TABLE public.iftypes_iftype_id_seq OWNER TO lanview2;
 
 --
 -- Name: iftypes_iftype_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE iftypes_iftype_id_seq OWNED BY iftypes.iftype_id;
+ALTER SEQUENCE public.iftypes_iftype_id_seq OWNED BY public.iftypes.iftype_id;
 
 
 --
 -- Name: images; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE images (
+CREATE TABLE public.images (
     image_id bigint NOT NULL,
     image_name text NOT NULL,
     image_note text,
-    image_type imagetype DEFAULT 'PNG'::imagetype NOT NULL,
+    image_type public.imagetype DEFAULT 'PNG'::public.imagetype NOT NULL,
     image_sub_type text,
     image_data bytea NOT NULL,
     image_hash bytea NOT NULL
 );
 
 
-ALTER TABLE images OWNER TO lanview2;
+ALTER TABLE public.images OWNER TO lanview2;
 
 --
 -- Name: TABLE images; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE images IS 'Bináris adatokat, tipikusan képeket tartalmazó tábla';
+COMMENT ON TABLE public.images IS 'Bináris adatokat, tipikusan képeket tartalmazó tábla';
 
 
 --
 -- Name: COLUMN images.image_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN images.image_id IS 'A kép ill bináris adathamaz egyedi azonosítója';
+COMMENT ON COLUMN public.images.image_id IS 'A kép ill bináris adathamaz egyedi azonosítója';
 
 
 --
 -- Name: COLUMN images.image_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN images.image_name IS 'A kép ill bináris adathamaz egyedi neve';
+COMMENT ON COLUMN public.images.image_name IS 'A kép ill bináris adathamaz egyedi neve';
 
 
 --
 -- Name: COLUMN images.image_note; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN images.image_note IS 'A kép ill bináris adathamaz opcionális megjegyzés, leírás';
+COMMENT ON COLUMN public.images.image_note IS 'A kép ill bináris adathamaz opcionális megjegyzés, leírás';
 
 
 --
 -- Name: COLUMN images.image_type; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN images.image_type IS 'A kép ill bináris adathamaz típusa, a kezelt kép formátumok, vagy BIN';
+COMMENT ON COLUMN public.images.image_type IS 'A kép ill bináris adathamaz típusa, a kezelt kép formátumok, vagy BIN';
 
 
 --
 -- Name: COLUMN images.image_sub_type; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN images.image_sub_type IS 'Bináris adathamaz esetén (image_type = BIN) egy opcionális típus azonosító string';
+COMMENT ON COLUMN public.images.image_sub_type IS 'Bináris adathamaz esetén (image_type = BIN) egy opcionális típus azonosító string';
 
 
 --
 -- Name: COLUMN images.image_data; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN images.image_data IS 'A kép ill bináris adathamaz.';
+COMMENT ON COLUMN public.images.image_data IS 'A kép ill bináris adathamaz.';
 
 
 --
 -- Name: COLUMN images.image_hash; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN images.image_hash IS 'A kép ill bináris adathamaz SHA512 HASH. NULL esetén a trigger függvény autómatikusan meggenerálja';
+COMMENT ON COLUMN public.images.image_hash IS 'A kép ill bináris adathamaz SHA512 HASH. NULL esetén a trigger függvény autómatikusan meggenerálja';
 
 
 --
 -- Name: images_image_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE images_image_id_seq
+CREATE SEQUENCE public.images_image_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -8774,77 +8831,77 @@ CREATE SEQUENCE images_image_id_seq
     CACHE 1;
 
 
-ALTER TABLE images_image_id_seq OWNER TO lanview2;
+ALTER TABLE public.images_image_id_seq OWNER TO lanview2;
 
 --
 -- Name: images_image_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE images_image_id_seq OWNED BY images.image_id;
+ALTER SEQUENCE public.images_image_id_seq OWNED BY public.images.image_id;
 
 
 --
 -- Name: import_templates; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE import_templates (
+CREATE TABLE public.import_templates (
     import_template_id bigint NOT NULL,
     template_name text NOT NULL,
-    template_type templatetype NOT NULL,
+    template_type public.templatetype NOT NULL,
     template_note text,
     template_text text NOT NULL
 );
 
 
-ALTER TABLE import_templates OWNER TO lanview2;
+ALTER TABLE public.import_templates OWNER TO lanview2;
 
 --
 -- Name: TABLE import_templates; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE import_templates IS 'Az importban mentett makrók és egyébb minták táblája.';
+COMMENT ON TABLE public.import_templates IS 'Az importban mentett makrók és egyébb minták táblája.';
 
 
 --
 -- Name: COLUMN import_templates.import_template_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN import_templates.import_template_id IS 'Egyedi rekord azonosító.';
+COMMENT ON COLUMN public.import_templates.import_template_id IS 'Egyedi rekord azonosító.';
 
 
 --
 -- Name: COLUMN import_templates.template_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN import_templates.template_name IS 'A minta vagy makró neve';
+COMMENT ON COLUMN public.import_templates.template_name IS 'A minta vagy makró neve';
 
 
 --
 -- Name: COLUMN import_templates.template_type; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN import_templates.template_type IS 'A template típusa (macros, patchs,...)';
+COMMENT ON COLUMN public.import_templates.template_type IS 'A template típusa (macros, patchs,...)';
 
 
 --
 -- Name: COLUMN import_templates.template_note; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN import_templates.template_note IS 'Opcionális megjegyzés';
+COMMENT ON COLUMN public.import_templates.template_note IS 'Opcionális megjegyzés';
 
 
 --
 -- Name: COLUMN import_templates.template_text; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN import_templates.template_text IS 'A makró vagy minta tartalma.';
+COMMENT ON COLUMN public.import_templates.template_text IS 'A makró vagy minta tartalma.';
 
 
 --
 -- Name: import_templates_import_template_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE import_templates_import_template_id_seq
+CREATE SEQUENCE public.import_templates_import_template_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -8852,20 +8909,20 @@ CREATE SEQUENCE import_templates_import_template_id_seq
     CACHE 1;
 
 
-ALTER TABLE import_templates_import_template_id_seq OWNER TO lanview2;
+ALTER TABLE public.import_templates_import_template_id_seq OWNER TO lanview2;
 
 --
 -- Name: import_templates_import_template_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE import_templates_import_template_id_seq OWNED BY import_templates.import_template_id;
+ALTER SEQUENCE public.import_templates_import_template_id_seq OWNED BY public.import_templates.import_template_id;
 
 
 --
 -- Name: imports; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE imports (
+CREATE TABLE public.imports (
     import_id bigint NOT NULL,
     target_id bigint,
     date_of timestamp without time zone DEFAULT now() NOT NULL,
@@ -8873,114 +8930,115 @@ CREATE TABLE imports (
     node_id bigint NOT NULL,
     app_name text,
     import_text text NOT NULL,
-    exec_state execstate DEFAULT 'wait'::execstate NOT NULL,
+    exec_state public.execstate DEFAULT 'wait'::public.execstate NOT NULL,
     pid bigint,
     started timestamp without time zone,
     ended timestamp without time zone,
     result_msg text,
     applog_id bigint,
-    out_msg text
+    out_msg text,
+    exp_msg text
 );
 
 
-ALTER TABLE imports OWNER TO lanview2;
+ALTER TABLE public.imports OWNER TO lanview2;
 
 --
 -- Name: TABLE imports; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE imports IS 'Az import számára küldött feldolgozandó források táblája.';
+COMMENT ON TABLE public.imports IS 'Az import számára küldött feldolgozandó források táblája.';
 
 
 --
 -- Name: COLUMN imports.import_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN imports.import_id IS 'Egyedi rekord azonosító.';
+COMMENT ON COLUMN public.imports.import_id IS 'Egyedi rekord azonosító.';
 
 
 --
 -- Name: COLUMN imports.date_of; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN imports.date_of IS 'A rekord létrehozásának az időpontja.';
+COMMENT ON COLUMN public.imports.date_of IS 'A rekord létrehozásának az időpontja.';
 
 
 --
 -- Name: COLUMN imports.user_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN imports.user_id IS 'Felhasználói azonosító, aki a feldolgozást kezdeményezte.';
+COMMENT ON COLUMN public.imports.user_id IS 'Felhasználói azonosító, aki a feldolgozást kezdeményezte.';
 
 
 --
 -- Name: COLUMN imports.node_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN imports.node_id IS 'A munkaállomás azonosítója, ahonnan a feldolgozást kezdeményezték.';
+COMMENT ON COLUMN public.imports.node_id IS 'A munkaállomás azonosítója, ahonnan a feldolgozást kezdeményezték.';
 
 
 --
 -- Name: COLUMN imports.app_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN imports.app_name IS 'Az applikáció neve, ahonnan a feldogozást kezdeményezték.';
+COMMENT ON COLUMN public.imports.app_name IS 'Az applikáció neve, ahonnan a feldogozást kezdeményezték.';
 
 
 --
 -- Name: COLUMN imports.import_text; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN imports.import_text IS 'A feldolgozandó szöveg.';
+COMMENT ON COLUMN public.imports.import_text IS 'A feldolgozandó szöveg.';
 
 
 --
 -- Name: COLUMN imports.exec_state; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN imports.exec_state IS 'A feldolgozás állapota.';
+COMMENT ON COLUMN public.imports.exec_state IS 'A feldolgozás állapota.';
 
 
 --
 -- Name: COLUMN imports.pid; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN imports.pid IS 'A feldolgozást végző import példány PID-je.';
+COMMENT ON COLUMN public.imports.pid IS 'A feldolgozást végző import példány PID-je.';
 
 
 --
 -- Name: COLUMN imports.started; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN imports.started IS 'A feldolgozás megkezdésének az időpontja.';
+COMMENT ON COLUMN public.imports.started IS 'A feldolgozás megkezdésének az időpontja.';
 
 
 --
 -- Name: COLUMN imports.ended; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN imports.ended IS 'A feldolgozás befejezésének az időpontja.';
+COMMENT ON COLUMN public.imports.ended IS 'A feldolgozás befejezésének az időpontja.';
 
 
 --
 -- Name: COLUMN imports.result_msg; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN imports.result_msg IS 'Az import válasza a feldolgozásra (hibaüzenet, megjegyzés, stb.).';
+COMMENT ON COLUMN public.imports.result_msg IS 'Az import válasza a feldolgozásra (hibaüzenet, megjegyzés, stb.).';
 
 
 --
 -- Name: COLUMN imports.applog_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN imports.applog_id IS 'Ha feldolgozáskor hiba rekord készült, akkor annak az azonosítója.';
+COMMENT ON COLUMN public.imports.applog_id IS 'Ha feldolgozáskor hiba rekord készült, akkor annak az azonosítója.';
 
 
 --
 -- Name: imports_import_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE imports_import_id_seq
+CREATE SEQUENCE public.imports_import_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -8988,20 +9046,36 @@ CREATE SEQUENCE imports_import_id_seq
     CACHE 1;
 
 
-ALTER TABLE imports_import_id_seq OWNER TO lanview2;
+ALTER TABLE public.imports_import_id_seq OWNER TO lanview2;
 
 --
 -- Name: imports_import_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE imports_import_id_seq OWNED BY imports.import_id;
+ALTER SEQUENCE public.imports_import_id_seq OWNED BY public.imports.import_id;
 
+
+--
+-- Name: ip_address_cols; Type: VIEW; Schema: public; Owner: lanview2
+--
+
+CREATE VIEW public.ip_address_cols AS
+ SELECT ipa.address,
+    ipa.ip_address_type,
+    public.port_id2full_name(ipa.port_id) AS port_id2full_name
+   FROM public.ip_addresses ipa
+  WHERE ((ipa.address IS NOT NULL) AND (1 <> ( SELECT count(*) AS count
+           FROM public.ip_addresses ict
+          WHERE (ict.address = ipa.address))));
+
+
+ALTER TABLE public.ip_address_cols OWNER TO lanview2;
 
 --
 -- Name: ipaddresses_ip_address_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE ipaddresses_ip_address_id_seq
+CREATE SEQUENCE public.ipaddresses_ip_address_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -9009,20 +9083,20 @@ CREATE SEQUENCE ipaddresses_ip_address_id_seq
     CACHE 1;
 
 
-ALTER TABLE ipaddresses_ip_address_id_seq OWNER TO lanview2;
+ALTER TABLE public.ipaddresses_ip_address_id_seq OWNER TO lanview2;
 
 --
 -- Name: ipaddresses_ip_address_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE ipaddresses_ip_address_id_seq OWNED BY ip_addresses.ip_address_id;
+ALTER SEQUENCE public.ipaddresses_ip_address_id_seq OWNED BY public.ip_addresses.ip_address_id;
 
 
 --
 -- Name: languages; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE languages (
+CREATE TABLE public.languages (
     language_id integer NOT NULL,
     language_name text NOT NULL,
     lang_id integer NOT NULL,
@@ -9035,48 +9109,48 @@ CREATE TABLE languages (
 );
 
 
-ALTER TABLE languages OWNER TO lanview2;
+ALTER TABLE public.languages OWNER TO lanview2;
 
 --
 -- Name: COLUMN languages.lang_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN languages.lang_id IS 'Qt enum QLocale::Language';
+COMMENT ON COLUMN public.languages.lang_id IS 'Qt enum QLocale::Language';
 
 
 --
 -- Name: COLUMN languages.country_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN languages.country_id IS 'Qt enum QLocale::Country';
+COMMENT ON COLUMN public.languages.country_id IS 'Qt enum QLocale::Country';
 
 
 --
 -- Name: COLUMN languages.country_a2; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN languages.country_a2 IS 'ISO Alpha-2';
+COMMENT ON COLUMN public.languages.country_a2 IS 'ISO Alpha-2';
 
 
 --
 -- Name: COLUMN languages.lang_2; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN languages.lang_2 IS 'ISO 639-1';
+COMMENT ON COLUMN public.languages.lang_2 IS 'ISO 639-1';
 
 
 --
 -- Name: COLUMN languages.lang_3; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN languages.lang_3 IS 'ISO 639-5';
+COMMENT ON COLUMN public.languages.lang_3 IS 'ISO 639-5';
 
 
 --
 -- Name: languages_language_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE languages_language_id_seq
+CREATE SEQUENCE public.languages_language_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -9084,20 +9158,20 @@ CREATE SEQUENCE languages_language_id_seq
     CACHE 1;
 
 
-ALTER TABLE languages_language_id_seq OWNER TO lanview2;
+ALTER TABLE public.languages_language_id_seq OWNER TO lanview2;
 
 --
 -- Name: languages_language_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE languages_language_id_seq OWNED BY languages.language_id;
+ALTER SEQUENCE public.languages_language_id_seq OWNED BY public.languages.language_id;
 
 
 --
 -- Name: lldp_links_table; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE lldp_links_table (
+CREATE TABLE public.lldp_links_table (
     lldp_link_id bigint NOT NULL,
     port_id1 bigint NOT NULL,
     port_id2 bigint NOT NULL,
@@ -9106,105 +9180,106 @@ CREATE TABLE lldp_links_table (
 );
 
 
-ALTER TABLE lldp_links_table OWNER TO lanview2;
+ALTER TABLE public.lldp_links_table OWNER TO lanview2;
 
 --
 -- Name: lldp_links; Type: VIEW; Schema: public; Owner: lanview2
 --
 
-CREATE VIEW lldp_links AS
+CREATE VIEW public.lldp_links AS
  SELECT lldp_links_table.lldp_link_id,
     lldp_links_table.port_id1,
     lldp_links_table.port_id2,
     lldp_links_table.first_time,
     lldp_links_table.last_time
-   FROM lldp_links_table
+   FROM public.lldp_links_table
 UNION
  SELECT lldp_links_table.lldp_link_id,
     lldp_links_table.port_id2 AS port_id1,
     lldp_links_table.port_id1 AS port_id2,
     lldp_links_table.first_time,
     lldp_links_table.last_time
-   FROM lldp_links_table;
+   FROM public.lldp_links_table;
 
 
-ALTER TABLE lldp_links OWNER TO lanview2;
+ALTER TABLE public.lldp_links OWNER TO lanview2;
 
 --
 -- Name: VIEW lldp_links; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON VIEW lldp_links IS 'Symmetric View Table for LLDP links';
+COMMENT ON VIEW public.lldp_links IS 'Symmetric View Table for LLDP links';
 
 
 --
 -- Name: patchs; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE patchs (
+CREATE TABLE public.patchs (
     node_id bigint NOT NULL,
     node_name text NOT NULL,
     node_note text,
-    node_type nodetype[],
+    node_type public.nodetype[],
     place_id bigint DEFAULT 0,
     features text,
     deleted boolean DEFAULT false NOT NULL,
     inventory_number text,
     serial_number text,
     model_number text,
-    model_name text
+    model_name text,
+    location point
 );
 
 
-ALTER TABLE patchs OWNER TO lanview2;
+ALTER TABLE public.patchs OWNER TO lanview2;
 
 --
 -- Name: TABLE patchs; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE patchs IS 'Patch panel/csatlakozók/kapcsolódási pont tábla';
+COMMENT ON TABLE public.patchs IS 'Patch panel/csatlakozók/kapcsolódási pont tábla';
 
 
 --
 -- Name: COLUMN patchs.node_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN patchs.node_id IS 'Unique ID for node. Az összes leszármazottra és az ősre is egyedi.';
+COMMENT ON COLUMN public.patchs.node_id IS 'Unique ID for node. Az összes leszármazottra és az ősre is egyedi.';
 
 
 --
 -- Name: COLUMN patchs.node_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN patchs.node_name IS 'Unique Name of the node. Az összes leszármazottra és az ősre is egyedi.';
+COMMENT ON COLUMN public.patchs.node_name IS 'Unique Name of the node. Az összes leszármazottra és az ősre is egyedi.';
 
 
 --
 -- Name: COLUMN patchs.node_note; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN patchs.node_note IS 'Descrition of the node';
+COMMENT ON COLUMN public.patchs.node_note IS 'Descrition of the node';
 
 
 --
 -- Name: COLUMN patchs.node_type; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN patchs.node_type IS 'A hálózati elem típusa, a patch típusú rekord esetén mindíg "patch", a trigger állítja be.';
+COMMENT ON COLUMN public.patchs.node_type IS 'A hálózati elem típusa, a patch típusú rekord esetén mindíg "patch", a trigger állítja be.';
 
 
 --
 -- Name: COLUMN patchs.place_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN patchs.place_id IS 'Az eszköz helyét azonosító "opcionális" távoli kulcs. Alapértelmezett hely a ''unknown''.';
+COMMENT ON COLUMN public.patchs.place_id IS 'Az eszköz helyét azonosító "opcionális" távoli kulcs. Alapértelmezett hely a ''unknown''.';
 
 
 --
 -- Name: lldp_links_shape; Type: VIEW; Schema: public; Owner: lanview2
 --
 
-CREATE VIEW lldp_links_shape AS
+CREATE VIEW public.lldp_links_shape AS
  SELECT lldp_links.lldp_link_id,
     lldp_links.port_id1,
     n1.node_id AS node_id1,
@@ -9220,27 +9295,27 @@ CREATE VIEW lldp_links_shape AS
     ((n2.node_name || ':'::text) || p2.port_name) AS port_full_name2,
     lldp_links.first_time,
     lldp_links.last_time
-   FROM ((lldp_links
-     JOIN (nports p1
-     JOIN patchs n1 USING (node_id)) ON ((p1.port_id = lldp_links.port_id1)))
-     JOIN (nports p2
-     JOIN patchs n2 USING (node_id)) ON ((p2.port_id = lldp_links.port_id2)));
+   FROM ((public.lldp_links
+     JOIN (public.nports p1
+     JOIN public.patchs n1 USING (node_id)) ON ((p1.port_id = lldp_links.port_id1)))
+     JOIN (public.nports p2
+     JOIN public.patchs n2 USING (node_id)) ON ((p2.port_id = lldp_links.port_id2)));
 
 
-ALTER TABLE lldp_links_shape OWNER TO lanview2;
+ALTER TABLE public.lldp_links_shape OWNER TO lanview2;
 
 --
 -- Name: VIEW lldp_links_shape; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON VIEW lldp_links_shape IS 'Symmetric View Table for lldp links with shape';
+COMMENT ON VIEW public.lldp_links_shape IS 'Symmetric View Table for lldp links with shape';
 
 
 --
 -- Name: lldp_links_table_lldp_link_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE lldp_links_table_lldp_link_id_seq
+CREATE SEQUENCE public.lldp_links_table_lldp_link_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -9248,20 +9323,20 @@ CREATE SEQUENCE lldp_links_table_lldp_link_id_seq
     CACHE 1;
 
 
-ALTER TABLE lldp_links_table_lldp_link_id_seq OWNER TO lanview2;
+ALTER TABLE public.lldp_links_table_lldp_link_id_seq OWNER TO lanview2;
 
 --
 -- Name: lldp_links_table_lldp_link_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE lldp_links_table_lldp_link_id_seq OWNED BY lldp_links_table.lldp_link_id;
+ALTER SEQUENCE public.lldp_links_table_lldp_link_id_seq OWNED BY public.lldp_links_table.lldp_link_id;
 
 
 --
 -- Name: lldp_named_links; Type: VIEW; Schema: public; Owner: lanview2
 --
 
-CREATE VIEW lldp_named_links AS
+CREATE VIEW public.lldp_named_links AS
  SELECT lldp_links.lldp_link_id,
     lldp_links.port_id1,
     n1.node_name AS node_name1,
@@ -9271,93 +9346,93 @@ CREATE VIEW lldp_named_links AS
     p2.port_name AS port_name2,
     lldp_links.first_time,
     lldp_links.last_time
-   FROM ((lldp_links
-     JOIN (nports p1
-     JOIN patchs n1 USING (node_id)) ON ((p1.port_id = lldp_links.port_id1)))
-     JOIN (nports p2
-     JOIN patchs n2 USING (node_id)) ON ((p2.port_id = lldp_links.port_id2)));
+   FROM ((public.lldp_links
+     JOIN (public.nports p1
+     JOIN public.patchs n1 USING (node_id)) ON ((p1.port_id = lldp_links.port_id1)))
+     JOIN (public.nports p2
+     JOIN public.patchs n2 USING (node_id)) ON ((p2.port_id = lldp_links.port_id2)));
 
 
-ALTER TABLE lldp_named_links OWNER TO lanview2;
+ALTER TABLE public.lldp_named_links OWNER TO lanview2;
 
 --
 -- Name: VIEW lldp_named_links; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON VIEW lldp_named_links IS 'Symmetric View Table for lldp links with name fields';
+COMMENT ON VIEW public.lldp_named_links IS 'Symmetric View Table for lldp links with name fields';
 
 
 --
 -- Name: log_links_table; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE log_links_table (
+CREATE TABLE public.log_links_table (
     log_link_id bigint NOT NULL,
     port_id1 bigint NOT NULL,
     port_id2 bigint NOT NULL,
     log_link_note text,
-    link_type linktype NOT NULL,
+    link_type public.linktype NOT NULL,
     phs_link_chain bigint[] NOT NULL,
-    share_result portshare DEFAULT ''::portshare NOT NULL
+    share_result public.portshare DEFAULT ''::public.portshare NOT NULL
 );
 
 
-ALTER TABLE log_links_table OWNER TO lanview2;
+ALTER TABLE public.log_links_table OWNER TO lanview2;
 
 --
 -- Name: TABLE log_links_table; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE log_links_table IS 'Logical Links Table';
+COMMENT ON TABLE public.log_links_table IS 'Logical Links Table';
 
 
 --
 -- Name: COLUMN log_links_table.log_link_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN log_links_table.log_link_id IS 'Unique ID for logical links';
+COMMENT ON COLUMN public.log_links_table.log_link_id IS 'Unique ID for logical links';
 
 
 --
 -- Name: COLUMN log_links_table.port_id1; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN log_links_table.port_id1 IS 'Interface''s ID which connects to logical links';
+COMMENT ON COLUMN public.log_links_table.port_id1 IS 'Interface''s ID which connects to logical links';
 
 
 --
 -- Name: COLUMN log_links_table.port_id2; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN log_links_table.port_id2 IS 'Interface''s ID which connects to logical links';
+COMMENT ON COLUMN public.log_links_table.port_id2 IS 'Interface''s ID which connects to logical links';
 
 
 --
 -- Name: COLUMN log_links_table.log_link_note; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN log_links_table.log_link_note IS 'noteiption';
+COMMENT ON COLUMN public.log_links_table.log_link_note IS 'noteiption';
 
 
 --
 -- Name: COLUMN log_links_table.phs_link_chain; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN log_links_table.phs_link_chain IS 'Physical links chain.';
+COMMENT ON COLUMN public.log_links_table.phs_link_chain IS 'Physical links chain.';
 
 
 --
 -- Name: COLUMN log_links_table.share_result; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN log_links_table.share_result IS 'Ha az útvonalban megsoztás van, megadja az összeköttetés milyenségét';
+COMMENT ON COLUMN public.log_links_table.share_result IS 'Ha az útvonalban megsoztás van, megadja az összeköttetés milyenségét';
 
 
 --
 -- Name: log_links; Type: VIEW; Schema: public; Owner: lanview2
 --
 
-CREATE VIEW log_links AS
+CREATE VIEW public.log_links AS
  SELECT log_links_table.log_link_id,
     log_links_table.port_id1,
     log_links_table.port_id2,
@@ -9365,7 +9440,7 @@ CREATE VIEW log_links AS
     log_links_table.link_type,
     log_links_table.phs_link_chain,
     log_links_table.share_result
-   FROM log_links_table
+   FROM public.log_links_table
 UNION
  SELECT log_links_table.log_link_id,
     log_links_table.port_id2 AS port_id1,
@@ -9374,23 +9449,23 @@ UNION
     log_links_table.link_type,
     log_links_table.phs_link_chain,
     log_links_table.share_result
-   FROM log_links_table;
+   FROM public.log_links_table;
 
 
-ALTER TABLE log_links OWNER TO lanview2;
+ALTER TABLE public.log_links OWNER TO lanview2;
 
 --
 -- Name: VIEW log_links; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON VIEW log_links IS 'Symmetric View Table for logical links';
+COMMENT ON VIEW public.log_links IS 'Symmetric View Table for logical links';
 
 
 --
 -- Name: log_links_shape; Type: VIEW; Schema: public; Owner: lanview2
 --
 
-CREATE VIEW log_links_shape AS
+CREATE VIEW public.log_links_shape AS
  SELECT log_links.log_link_id,
     log_links.port_id1,
     n1.node_id AS node_id1,
@@ -9408,27 +9483,27 @@ CREATE VIEW log_links_shape AS
     log_links.link_type,
     log_links.phs_link_chain,
     log_links.share_result
-   FROM ((log_links
-     JOIN (nports p1
-     JOIN patchs n1 USING (node_id)) ON ((p1.port_id = log_links.port_id1)))
-     JOIN (nports p2
-     JOIN patchs n2 USING (node_id)) ON ((p2.port_id = log_links.port_id2)));
+   FROM ((public.log_links
+     JOIN (public.nports p1
+     JOIN public.patchs n1 USING (node_id)) ON ((p1.port_id = log_links.port_id1)))
+     JOIN (public.nports p2
+     JOIN public.patchs n2 USING (node_id)) ON ((p2.port_id = log_links.port_id2)));
 
 
-ALTER TABLE log_links_shape OWNER TO lanview2;
+ALTER TABLE public.log_links_shape OWNER TO lanview2;
 
 --
 -- Name: VIEW log_links_shape; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON VIEW log_links_shape IS 'Symmetric View Table for logical links with shape';
+COMMENT ON VIEW public.log_links_shape IS 'Symmetric View Table for logical links with shape';
 
 
 --
 -- Name: log_links_table_log_link_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE log_links_table_log_link_id_seq
+CREATE SEQUENCE public.log_links_table_log_link_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -9436,20 +9511,20 @@ CREATE SEQUENCE log_links_table_log_link_id_seq
     CACHE 1;
 
 
-ALTER TABLE log_links_table_log_link_id_seq OWNER TO lanview2;
+ALTER TABLE public.log_links_table_log_link_id_seq OWNER TO lanview2;
 
 --
 -- Name: log_links_table_log_link_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE log_links_table_log_link_id_seq OWNED BY log_links_table.log_link_id;
+ALTER SEQUENCE public.log_links_table_log_link_id_seq OWNED BY public.log_links_table.log_link_id;
 
 
 --
 -- Name: log_named_links; Type: VIEW; Schema: public; Owner: lanview2
 --
 
-CREATE VIEW log_named_links AS
+CREATE VIEW public.log_named_links AS
  SELECT log_links.log_link_id,
     log_links.port_id1,
     n1.node_name AS node_name1,
@@ -9461,65 +9536,65 @@ CREATE VIEW log_named_links AS
     log_links.link_type,
     log_links.phs_link_chain,
     log_links.share_result
-   FROM ((log_links
-     JOIN (nports p1
-     JOIN patchs n1 USING (node_id)) ON ((p1.port_id = log_links.port_id1)))
-     JOIN (nports p2
-     JOIN patchs n2 USING (node_id)) ON ((p2.port_id = log_links.port_id2)));
+   FROM ((public.log_links
+     JOIN (public.nports p1
+     JOIN public.patchs n1 USING (node_id)) ON ((p1.port_id = log_links.port_id1)))
+     JOIN (public.nports p2
+     JOIN public.patchs n2 USING (node_id)) ON ((p2.port_id = log_links.port_id2)));
 
 
-ALTER TABLE log_named_links OWNER TO lanview2;
+ALTER TABLE public.log_named_links OWNER TO lanview2;
 
 --
 -- Name: VIEW log_named_links; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON VIEW log_named_links IS 'Symmetric View Table for logical links with name fields';
+COMMENT ON VIEW public.log_named_links IS 'Symmetric View Table for logical links with name fields';
 
 
 --
 -- Name: mactab_logs; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE mactab_logs (
+CREATE TABLE public.mactab_logs (
     mactab_log_id bigint NOT NULL,
     hwaddress macaddr NOT NULL,
-    reason reasons NOT NULL,
+    reason public.reasons NOT NULL,
     be_void boolean DEFAULT false NOT NULL,
     date_of timestamp without time zone DEFAULT now() NOT NULL,
     port_id_old bigint,
-    mactab_state_old mactabstate[],
+    mactab_state_old public.mactabstate[],
     first_time_old timestamp without time zone NOT NULL,
     last_time_old timestamp without time zone NOT NULL,
-    set_type_old settype NOT NULL,
+    set_type_old public.settype NOT NULL,
     port_id_new bigint,
-    mactab_state_new mactabstate[],
-    set_type_new settype,
+    mactab_state_new public.mactabstate[],
+    set_type_new public.settype,
     acknowledged boolean DEFAULT false
 );
 
 
-ALTER TABLE mactab_logs OWNER TO lanview2;
+ALTER TABLE public.mactab_logs OWNER TO lanview2;
 
 --
 -- Name: TABLE mactab_logs; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE mactab_logs IS 'Port cím tábla rekordok változása';
+COMMENT ON TABLE public.mactab_logs IS 'Port cím tábla rekordok változása';
 
 
 --
 -- Name: COLUMN mactab_logs.hwaddress; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN mactab_logs.hwaddress IS 'A változáshoz tartozó MAC';
+COMMENT ON COLUMN public.mactab_logs.hwaddress IS 'A változáshoz tartozó MAC';
 
 
 --
 -- Name: COLUMN mactab_logs.reason; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN mactab_logs.reason IS 'A változás típusa:
+COMMENT ON COLUMN public.mactab_logs.reason IS 'A változás típusa:
     move        A MAC egy másik port címtáblájában jelent meg
     modify      Állpotváltozás
     remove      A bejegyzés törölve lett.
@@ -9530,28 +9605,28 @@ COMMENT ON COLUMN mactab_logs.reason IS 'A változás típusa:
 -- Name: COLUMN mactab_logs.be_void; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN mactab_logs.be_void IS 'Nem releváns log rekord, nem valós mozgás eredménye.';
+COMMENT ON COLUMN public.mactab_logs.be_void IS 'Nem releváns log rekord, nem valós mozgás eredménye.';
 
 
 --
 -- Name: COLUMN mactab_logs.date_of; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN mactab_logs.date_of IS 'A bejegyzés időpontja';
+COMMENT ON COLUMN public.mactab_logs.date_of IS 'A bejegyzés időpontja';
 
 
 --
 -- Name: COLUMN mactab_logs.port_id_old; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN mactab_logs.port_id_old IS 'Az eredeti portmac bejegyzéshez tartozó port_id érték, vagy NULL';
+COMMENT ON COLUMN public.mactab_logs.port_id_old IS 'Az eredeti portmac bejegyzéshez tartozó port_id érték, vagy NULL';
 
 
 --
 -- Name: mactab_logs_mactab_log_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE mactab_logs_mactab_log_id_seq
+CREATE SEQUENCE public.mactab_logs_mactab_log_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -9559,57 +9634,58 @@ CREATE SEQUENCE mactab_logs_mactab_log_id_seq
     CACHE 1;
 
 
-ALTER TABLE mactab_logs_mactab_log_id_seq OWNER TO lanview2;
+ALTER TABLE public.mactab_logs_mactab_log_id_seq OWNER TO lanview2;
 
 --
 -- Name: mactab_logs_mactab_log_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE mactab_logs_mactab_log_id_seq OWNED BY mactab_logs.mactab_log_id;
+ALTER SEQUENCE public.mactab_logs_mactab_log_id_seq OWNED BY public.mactab_logs.mactab_log_id;
 
 
 --
 -- Name: nodes; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE nodes (
-    node_stat notifswitch
+CREATE TABLE public.nodes (
+    node_stat public.notifswitch
 )
-INHERITS (patchs);
+INHERITS (public.patchs);
 
 
-ALTER TABLE nodes OWNER TO lanview2;
+ALTER TABLE public.nodes OWNER TO lanview2;
 
 --
 -- Name: TABLE nodes; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE nodes IS 'Passzív vagy aktív hálózati elemek táblája';
+COMMENT ON TABLE public.nodes IS 'Passzív vagy aktív hálózati elemek táblája';
 
 
 --
 -- Name: COLUMN nodes.node_type; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN nodes.node_type IS 'Típus azonosítók. ha NULL, akkor a trigger f. {node}-ra állítja.';
+COMMENT ON COLUMN public.nodes.node_type IS 'Típus azonosítók. ha NULL, akkor a trigger f. {node}-ra állítja.';
 
 
 --
 -- Name: COLUMN nodes.node_stat; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN nodes.node_stat IS 'Az eszköz állapota.';
+COMMENT ON COLUMN public.nodes.node_stat IS 'Az eszköz állapota.';
 
 
 --
 -- Name: mactab_shape; Type: VIEW; Schema: public; Owner: lanview2
 --
 
-CREATE VIEW mactab_shape AS
+CREATE VIEW public.mactab_shape AS
  SELECT n.node_id,
     n.node_name,
     t.port_id,
     p.port_name,
+    p.port_index,
     t.hwaddress,
     t.mactab_state,
     t.first_time,
@@ -9617,101 +9693,101 @@ CREATE VIEW mactab_shape AS
     t.state_updated_time,
     t.set_type,
     r.node_name AS r_node_name,
-    port_id2name(i.port_id) AS r_port_name,
+    public.port_id2name(i.port_id) AS r_port_name,
     ARRAY( SELECT (arps.ipaddress)::text AS ipaddress
-           FROM arps
+           FROM public.arps
           WHERE (arps.hwaddress = t.hwaddress)) AS ipaddrs_by_arp,
     ARRAY( SELECT (ip_addresses.address)::text AS address
-           FROM ip_addresses
+           FROM public.ip_addresses
           WHERE (ip_addresses.port_id = i.port_id)) AS ipaddrs_by_rif
-   FROM ((((mactab t
-     JOIN nports p USING (port_id))
-     JOIN nodes n USING (node_id))
-     LEFT JOIN interfaces i USING (hwaddress))
-     LEFT JOIN nodes r ON ((r.node_id = i.node_id)));
+   FROM ((((public.mactab t
+     JOIN public.nports p USING (port_id))
+     JOIN public.nodes n USING (node_id))
+     LEFT JOIN public.interfaces i USING (hwaddress))
+     LEFT JOIN public.nodes r ON ((r.node_id = i.node_id)));
 
 
-ALTER TABLE mactab_shape OWNER TO lanview2;
+ALTER TABLE public.mactab_shape OWNER TO lanview2;
 
 --
 -- Name: menu_items; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE menu_items (
+CREATE TABLE public.menu_items (
     menu_item_id bigint NOT NULL,
     menu_item_name text NOT NULL,
     app_name text NOT NULL,
     upper_menu_item_id bigint,
     item_sequence_number integer,
     features text,
-    menu_rights rights DEFAULT 'none'::rights NOT NULL,
-    text_id bigint DEFAULT nextval('text_id_sequ'::regclass) NOT NULL
+    menu_rights public.rights DEFAULT 'none'::public.rights NOT NULL,
+    text_id bigint DEFAULT nextval('public.text_id_sequ'::regclass) NOT NULL
 );
 
 
-ALTER TABLE menu_items OWNER TO lanview2;
+ALTER TABLE public.menu_items OWNER TO lanview2;
 
 --
 -- Name: TABLE menu_items; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE menu_items IS 'GUI menü elemek definíciója';
+COMMENT ON TABLE public.menu_items IS 'GUI menü elemek definíciója';
 
 
 --
 -- Name: COLUMN menu_items.menu_item_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN menu_items.menu_item_id IS 'Menü elem egyedi azonosító';
+COMMENT ON COLUMN public.menu_items.menu_item_id IS 'Menü elem egyedi azonosító';
 
 
 --
 -- Name: COLUMN menu_items.menu_item_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN menu_items.menu_item_name IS 'Applikáción bellül egyedi név';
+COMMENT ON COLUMN public.menu_items.menu_item_name IS 'Applikáción bellül egyedi név';
 
 
 --
 -- Name: COLUMN menu_items.app_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN menu_items.app_name IS 'Aplikáció név, melyhez a menü elem tartozik.';
+COMMENT ON COLUMN public.menu_items.app_name IS 'Aplikáció név, melyhez a menü elem tartozik.';
 
 
 --
 -- Name: COLUMN menu_items.upper_menu_item_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN menu_items.upper_menu_item_id IS 'Al menű esetén az elemet tartalmazó felsőbb szintű menü elem azonosítója.';
+COMMENT ON COLUMN public.menu_items.upper_menu_item_id IS 'Al menű esetén az elemet tartalmazó felsőbb szintű menü elem azonosítója.';
 
 
 --
 -- Name: COLUMN menu_items.item_sequence_number; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN menu_items.item_sequence_number IS 'A sorrendet meghatározó szám';
+COMMENT ON COLUMN public.menu_items.item_sequence_number IS 'A sorrendet meghatározó szám';
 
 
 --
 -- Name: COLUMN menu_items.features; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN menu_items.features IS 'Járulékos paraméterek (a menü elem típusát határozza meg): ":shape=<név>:", ":exec=<név>:", ":own=<név>:", ...';
+COMMENT ON COLUMN public.menu_items.features IS 'Járulékos paraméterek (a menü elem típusát határozza meg): ":shape=<név>:", ":exec=<név>:", ":own=<név>:", ...';
 
 
 --
 -- Name: COLUMN menu_items.menu_rights; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN menu_items.menu_rights IS 'Milyen minimális jogosutságnál jelenik meg az elem. Ha ez a végrajtandó elemnél ilyen paraméter nem létezik.';
+COMMENT ON COLUMN public.menu_items.menu_rights IS 'Milyen minimális jogosutságnál jelenik meg az elem. Ha ez a végrajtandó elemnél ilyen paraméter nem létezik.';
 
 
 --
 -- Name: menu_items_menu_item_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE menu_items_menu_item_id_seq
+CREATE SEQUENCE public.menu_items_menu_item_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -9719,20 +9795,116 @@ CREATE SEQUENCE menu_items_menu_item_id_seq
     CACHE 1;
 
 
-ALTER TABLE menu_items_menu_item_id_seq OWNER TO lanview2;
+ALTER TABLE public.menu_items_menu_item_id_seq OWNER TO lanview2;
 
 --
 -- Name: menu_items_menu_item_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE menu_items_menu_item_id_seq OWNED BY menu_items.menu_item_id;
+ALTER SEQUENCE public.menu_items_menu_item_id_seq OWNED BY public.menu_items.menu_item_id;
 
+
+--
+-- Name: port_vlans; Type: TABLE; Schema: public; Owner: lanview2
+--
+
+CREATE TABLE public.port_vlans (
+    port_vlan_id bigint NOT NULL,
+    port_id bigint,
+    vlan_id bigint,
+    first_time timestamp without time zone DEFAULT now(),
+    last_time timestamp without time zone DEFAULT now(),
+    vlan_type public.vlantype DEFAULT 'untagged'::public.vlantype NOT NULL,
+    set_type public.settype DEFAULT 'manual'::public.settype NOT NULL,
+    flag boolean DEFAULT false
+);
+
+
+ALTER TABLE public.port_vlans OWNER TO lanview2;
+
+--
+-- Name: TABLE port_vlans; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON TABLE public.port_vlans IS 'port és vlan összerendelések táblája';
+
+
+--
+-- Name: vlans; Type: TABLE; Schema: public; Owner: lanview2
+--
+
+CREATE TABLE public.vlans (
+    vlan_id bigint NOT NULL,
+    vlan_name text NOT NULL,
+    vlan_note text,
+    vlan_stat boolean DEFAULT true NOT NULL,
+    flag boolean DEFAULT false
+);
+
+
+ALTER TABLE public.vlans OWNER TO lanview2;
+
+--
+-- Name: TABLE vlans; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON TABLE public.vlans IS 'VLANs Table';
+
+
+--
+-- Name: COLUMN vlans.vlan_id; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.vlans.vlan_id IS 'Unique ID for vlans. (802,1q ID)';
+
+
+--
+-- Name: COLUMN vlans.vlan_name; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.vlans.vlan_name IS 'Name of VLAN';
+
+
+--
+-- Name: COLUMN vlans.vlan_note; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.vlans.vlan_note IS 'Description for VLAN';
+
+
+--
+-- Name: COLUMN vlans.vlan_stat; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.vlans.vlan_stat IS 'State of VLAN (On/Off)';
+
+
+--
+-- Name: named_port_vlans; Type: VIEW; Schema: public; Owner: lanview2
+--
+
+CREATE VIEW public.named_port_vlans AS
+ SELECT port_vlans.port_vlan_id,
+    nports.node_id,
+    nodes.node_name,
+    port_vlans.port_id,
+    nports.port_name,
+    port_vlans.vlan_id,
+    vlans.vlan_name,
+    port_vlans.vlan_type
+   FROM (((public.port_vlans
+     JOIN public.vlans USING (vlan_id))
+     JOIN public.nports USING (port_id))
+     JOIN public.nodes USING (node_id));
+
+
+ALTER TABLE public.named_port_vlans OWNER TO lanview2;
 
 --
 -- Name: node_params; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE node_params (
+CREATE TABLE public.node_params (
     node_param_id bigint NOT NULL,
     param_type_id bigint NOT NULL,
     node_id bigint NOT NULL,
@@ -9741,48 +9913,48 @@ CREATE TABLE node_params (
 );
 
 
-ALTER TABLE node_params OWNER TO lanview2;
+ALTER TABLE public.node_params OWNER TO lanview2;
 
 --
 -- Name: TABLE node_params; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE node_params IS 'Nod extra paraméter értékek.';
+COMMENT ON TABLE public.node_params IS 'Nod extra paraméter értékek.';
 
 
 --
 -- Name: COLUMN node_params.node_param_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN node_params.node_param_id IS 'A paraméter érték egyedi azonosítója.';
+COMMENT ON COLUMN public.node_params.node_param_id IS 'A paraméter érték egyedi azonosítója.';
 
 
 --
 -- Name: COLUMN node_params.param_type_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN node_params.param_type_id IS 'A paraméter tulajdonságait definiáló param_types rekord azonosítója.';
+COMMENT ON COLUMN public.node_params.param_type_id IS 'A paraméter tulajdonságait definiáló param_types rekord azonosítója.';
 
 
 --
 -- Name: COLUMN node_params.node_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN node_params.node_id IS 'A tulajdonos node rekordjának az azonosítója.';
+COMMENT ON COLUMN public.node_params.node_id IS 'A tulajdonos node rekordjának az azonosítója.';
 
 
 --
 -- Name: COLUMN node_params.param_value; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN node_params.param_value IS 'A parméter érték.';
+COMMENT ON COLUMN public.node_params.param_value IS 'A parméter érték.';
 
 
 --
 -- Name: node_params_node_param_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE node_params_node_param_id_seq
+CREATE SEQUENCE public.node_params_node_param_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -9790,20 +9962,20 @@ CREATE SEQUENCE node_params_node_param_id_seq
     CACHE 1;
 
 
-ALTER TABLE node_params_node_param_id_seq OWNER TO lanview2;
+ALTER TABLE public.node_params_node_param_id_seq OWNER TO lanview2;
 
 --
 -- Name: node_params_node_param_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE node_params_node_param_id_seq OWNED BY node_params.node_param_id;
+ALTER SEQUENCE public.node_params_node_param_id_seq OWNED BY public.node_params.node_param_id;
 
 
 --
 -- Name: nports_port_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE nports_port_id_seq
+CREATE SEQUENCE public.nports_port_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -9811,20 +9983,20 @@ CREATE SEQUENCE nports_port_id_seq
     CACHE 1;
 
 
-ALTER TABLE nports_port_id_seq OWNER TO lanview2;
+ALTER TABLE public.nports_port_id_seq OWNER TO lanview2;
 
 --
 -- Name: nports_port_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE nports_port_id_seq OWNED BY nports.port_id;
+ALTER SEQUENCE public.nports_port_id_seq OWNED BY public.nports.port_id;
 
 
 --
 -- Name: object_syntaxs; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE object_syntaxs (
+CREATE TABLE public.object_syntaxs (
     object_syntax_id bigint NOT NULL,
     object_syntax_name text NOT NULL,
     sentence text NOT NULL,
@@ -9833,13 +10005,13 @@ CREATE TABLE object_syntaxs (
 );
 
 
-ALTER TABLE object_syntaxs OWNER TO lanview2;
+ALTER TABLE public.object_syntaxs OWNER TO lanview2;
 
 --
 -- Name: object_syntaxs_object_syntax_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE object_syntaxs_object_syntax_id_seq
+CREATE SEQUENCE public.object_syntaxs_object_syntax_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -9847,58 +10019,58 @@ CREATE SEQUENCE object_syntaxs_object_syntax_id_seq
     CACHE 1;
 
 
-ALTER TABLE object_syntaxs_object_syntax_id_seq OWNER TO lanview2;
+ALTER TABLE public.object_syntaxs_object_syntax_id_seq OWNER TO lanview2;
 
 --
 -- Name: object_syntaxs_object_syntax_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE object_syntaxs_object_syntax_id_seq OWNED BY object_syntaxs.object_syntax_id;
+ALTER SEQUENCE public.object_syntaxs_object_syntax_id_seq OWNED BY public.object_syntaxs.object_syntax_id;
 
 
 --
 -- Name: user_events; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE user_events (
+CREATE TABLE public.user_events (
     user_event_id bigint NOT NULL,
     created timestamp without time zone DEFAULT now() NOT NULL,
     happened timestamp without time zone,
     user_id bigint NOT NULL,
     alarm_id bigint NOT NULL,
-    event_type usereventtype NOT NULL,
-    event_state usereventstate DEFAULT 'necessary'::usereventstate,
+    event_type public.usereventtype NOT NULL,
+    event_state public.usereventstate DEFAULT 'necessary'::public.usereventstate,
     user_event_note text
 );
 
 
-ALTER TABLE user_events OWNER TO lanview2;
+ALTER TABLE public.user_events OWNER TO lanview2;
 
 --
 -- Name: online_alarms; Type: VIEW; Schema: public; Owner: lanview2
 --
 
-CREATE VIEW online_alarms AS
+CREATE VIEW public.online_alarms AS
  SELECT user_events.alarm_id,
     array_agg(user_events.user_id) AS online_user_ids
-   FROM (user_events
-     JOIN alarms USING (alarm_id))
-  WHERE ((user_events.event_type = 'notice'::usereventtype) AND (user_events.event_state <> 'dropped'::usereventstate))
+   FROM (public.user_events
+     JOIN public.alarms USING (alarm_id))
+  WHERE ((user_events.event_type = 'notice'::public.usereventtype) AND (user_events.event_state <> 'dropped'::public.usereventstate))
   GROUP BY user_events.alarm_id, alarms.begin_time
   ORDER BY alarms.begin_time;
 
 
-ALTER TABLE online_alarms OWNER TO lanview2;
+ALTER TABLE public.online_alarms OWNER TO lanview2;
 
 --
 -- Name: places; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE places (
+CREATE TABLE public.places (
     place_id bigint NOT NULL,
     place_name text NOT NULL,
     place_note text,
-    place_type placetype DEFAULT 'real'::placetype,
+    place_type public.placetype DEFAULT 'real'::public.placetype,
     parent_id bigint,
     image_id bigint,
     frame polygon,
@@ -9906,62 +10078,62 @@ CREATE TABLE places (
 );
 
 
-ALTER TABLE places OWNER TO lanview2;
+ALTER TABLE public.places OWNER TO lanview2;
 
 --
 -- Name: TABLE places; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE places IS 'Helyiségek, helyek leírói a térképen ill. alaprajzon';
+COMMENT ON TABLE public.places IS 'Helyiségek, helyek leírói a térképen ill. alaprajzon';
 
 
 --
 -- Name: COLUMN places.place_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN places.place_id IS 'A térkép ill. alaprajz azososítója ID';
+COMMENT ON COLUMN public.places.place_id IS 'A térkép ill. alaprajz azososítója ID';
 
 
 --
 -- Name: COLUMN places.place_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN places.place_name IS 'A térkép ill. alaprajz azososítója név';
+COMMENT ON COLUMN public.places.place_name IS 'A térkép ill. alaprajz azososítója név';
 
 
 --
 -- Name: COLUMN places.parent_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN places.parent_id IS 'A térkép ill. alaprajz szülő, ha nincs szülő, akkor NULL';
+COMMENT ON COLUMN public.places.parent_id IS 'A térkép ill. alaprajz szülő, ha nincs szülő, akkor NULL';
 
 
 --
 -- Name: COLUMN places.image_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN places.image_id IS 'Opcionális térkép/alaprajz kép ID';
+COMMENT ON COLUMN public.places.image_id IS 'Opcionális térkép/alaprajz kép ID';
 
 
 --
 -- Name: COLUMN places.frame; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN places.frame IS 'Határoló poligon/pozició a szülőn';
+COMMENT ON COLUMN public.places.frame IS 'Határoló poligon/pozició a szülőn';
 
 
 --
 -- Name: COLUMN places.tels; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN places.tels IS 'Telefonszámok a helyiségben';
+COMMENT ON COLUMN public.places.tels IS 'Telefonszámok a helyiségben';
 
 
 --
 -- Name: services; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE services (
+CREATE TABLE public.services (
     service_id bigint NOT NULL,
     service_name text NOT NULL,
     service_note text,
@@ -9984,55 +10156,55 @@ CREATE TABLE services (
 );
 
 
-ALTER TABLE services OWNER TO lanview2;
+ALTER TABLE public.services OWNER TO lanview2;
 
 --
 -- Name: TABLE services; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE services IS 'Services table';
+COMMENT ON TABLE public.services IS 'Services table';
 
 
 --
 -- Name: COLUMN services.service_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN services.service_id IS 'ID egyedi azonosító';
+COMMENT ON COLUMN public.services.service_id IS 'ID egyedi azonosító';
 
 
 --
 -- Name: COLUMN services.service_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN services.service_name IS 'Szervice name (egyedi)';
+COMMENT ON COLUMN public.services.service_name IS 'Szervice name (egyedi)';
 
 
 --
 -- Name: COLUMN services.service_note; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN services.service_note IS 'Megjegyzés';
+COMMENT ON COLUMN public.services.service_note IS 'Megjegyzés';
 
 
 --
 -- Name: COLUMN services.port; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN services.port IS 'Default (TCP, UDP, ...) port number. or NULL';
+COMMENT ON COLUMN public.services.port IS 'Default (TCP, UDP, ...) port number. or NULL';
 
 
 --
 -- Name: COLUMN services.check_cmd; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN services.check_cmd IS 'Default check command';
+COMMENT ON COLUMN public.services.check_cmd IS 'Default check command';
 
 
 --
 -- Name: COLUMN services.features; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN services.features IS 'Default paraméter lista (szeparátor a kettőspont, paraméter szeparátor az ''='', első és utolsó karakter a szeparátor):\n
+COMMENT ON COLUMN public.services.features IS 'Default paraméter lista (szeparátor a kettőspont, paraméter szeparátor az ''='', első és utolsó karakter a szeparátor):\n
 timing
     custom      Belső időzítés (alapértelmezett)
     timed       Időzített
@@ -10070,45 +10242,45 @@ udp         Alternatív UDP port megadása, paraméter a port száma
 -- Name: COLUMN services.max_check_attempts; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN services.max_check_attempts IS 'Hibás eredmények maximális száma, a riasztás kiadása elött. Alapértelmezett érték.';
+COMMENT ON COLUMN public.services.max_check_attempts IS 'Hibás eredmények maximális száma, a riasztás kiadása elött. Alapértelmezett érték.';
 
 
 --
 -- Name: COLUMN services.normal_check_interval; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN services.normal_check_interval IS 'Ellenörzések ütemezése, ha nincs hiba. Alapértelmezett érték.';
+COMMENT ON COLUMN public.services.normal_check_interval IS 'Ellenörzések ütemezése, ha nincs hiba. Alapértelmezett érték.';
 
 
 --
 -- Name: COLUMN services.retry_check_interval; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN services.retry_check_interval IS 'Ellenörzések ütemezése, hiba esetén a riasztás kiadásáig. Alapértelmezett érték.';
+COMMENT ON COLUMN public.services.retry_check_interval IS 'Ellenörzések ütemezése, hiba esetén a riasztás kiadásáig. Alapértelmezett érték.';
 
 
 --
 -- Name: online_alarm_acks; Type: VIEW; Schema: public; Owner: lanview2
 --
 
-CREATE VIEW online_alarm_acks AS
+CREATE VIEW public.online_alarm_acks AS
  WITH oaa AS (
          SELECT e.alarm_id,
             e.online_user_ids,
             ( SELECT array_agg(user_events.user_id) AS array_agg
-                   FROM user_events
-                  WHERE ((user_events.alarm_id = e.alarm_id) AND (user_events.user_id = ANY (e.online_user_ids)) AND (user_events.event_type = 'notice'::usereventtype) AND (user_events.event_state = 'happened'::usereventstate))) AS notice_user_ids,
+                   FROM public.user_events
+                  WHERE ((user_events.alarm_id = e.alarm_id) AND (user_events.user_id = ANY (e.online_user_ids)) AND (user_events.event_type = 'notice'::public.usereventtype) AND (user_events.event_state = 'happened'::public.usereventstate))) AS notice_user_ids,
             ( SELECT array_agg(user_events.user_id) AS array_agg
-                   FROM user_events
-                  WHERE ((user_events.alarm_id = e.alarm_id) AND (user_events.user_id = ANY (e.online_user_ids)) AND (user_events.event_type = 'view'::usereventtype))) AS view_user_ids,
+                   FROM public.user_events
+                  WHERE ((user_events.alarm_id = e.alarm_id) AND (user_events.user_id = ANY (e.online_user_ids)) AND (user_events.event_type = 'view'::public.usereventtype))) AS view_user_ids,
             ( SELECT array_agg(user_events.user_id) AS array_agg
-                   FROM user_events
-                  WHERE ((user_events.alarm_id = e.alarm_id) AND (user_events.event_type = 'acknowledge'::usereventtype))) AS ack_user_ids
-           FROM online_alarms e
+                   FROM public.user_events
+                  WHERE ((user_events.alarm_id = e.alarm_id) AND (user_events.event_type = 'acknowledge'::public.usereventtype))) AS ack_user_ids
+           FROM public.online_alarms e
         )
  SELECT oaa.alarm_id AS online_alarm_ack_id,
     alarms.host_service_id,
-    host_service_id2name(alarms.host_service_id) AS host_service_name,
+    public.host_service_id2name(alarms.host_service_id) AS host_service_name,
     n.node_name,
     p.place_name,
     n.place_id,
@@ -10118,40 +10290,40 @@ CREATE VIEW online_alarm_acks AS
     alarms.max_status,
     alarms.last_status,
     alarms.event_note,
-    alarm_message(alarms.host_service_id, alarms.max_status) AS msg,
+    public.alarm_message(alarms.host_service_id, alarms.max_status) AS msg,
     oaa.online_user_ids,
     oaa.notice_user_ids,
     oaa.view_user_ids,
     oaa.ack_user_ids,
     ( SELECT string_agg(user_events.user_event_note, '\n'::text) AS string_agg
-           FROM user_events
-          WHERE ((user_events.alarm_id = oaa.alarm_id) AND (user_events.event_type = 'acknowledge'::usereventtype))) AS ack_user_note
+           FROM public.user_events
+          WHERE ((user_events.alarm_id = oaa.alarm_id) AND (user_events.event_type = 'acknowledge'::public.usereventtype))) AS ack_user_note
    FROM (((((oaa
-     JOIN alarms USING (alarm_id))
-     JOIN host_services h USING (host_service_id))
-     JOIN services s USING (service_id))
-     JOIN nodes n USING (node_id))
-     JOIN places p USING (place_id))
+     JOIN public.alarms USING (alarm_id))
+     JOIN public.host_services h USING (host_service_id))
+     JOIN public.services s USING (service_id))
+     JOIN public.nodes n USING (node_id))
+     JOIN public.places p USING (place_id))
   WHERE ((alarms.end_time IS NULL) AND (0 < array_length(oaa.ack_user_ids, 1)));
 
 
-ALTER TABLE online_alarm_acks OWNER TO lanview2;
+ALTER TABLE public.online_alarm_acks OWNER TO lanview2;
 
 --
 -- Name: VIEW online_alarm_acks; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON VIEW online_alarm_acks IS 'On-line nyugtázott, még aktív riasztások';
+COMMENT ON VIEW public.online_alarm_acks IS 'On-line nyugtázott, még aktív riasztások';
 
 
 --
 -- Name: online_alarm_unacks; Type: VIEW; Schema: public; Owner: lanview2
 --
 
-CREATE VIEW online_alarm_unacks AS
+CREATE VIEW public.online_alarm_unacks AS
  SELECT online_alarms.alarm_id AS online_alarm_unack_id,
     alarms.host_service_id,
-    host_service_id2name(alarms.host_service_id) AS host_service_name,
+    public.host_service_id2name(alarms.host_service_id) AS host_service_name,
     n.node_name,
     p.place_name,
     n.place_id,
@@ -10162,32 +10334,32 @@ CREATE VIEW online_alarm_unacks AS
     alarms.max_status,
     alarms.last_status,
     alarms.event_note,
-    alarm_message(alarms.host_service_id, alarms.max_status) AS msg,
+    public.alarm_message(alarms.host_service_id, alarms.max_status) AS msg,
     online_alarms.online_user_ids,
     ( SELECT array_agg(user_events.user_id) AS array_agg
-           FROM user_events
-          WHERE ((user_events.alarm_id = alarms.alarm_id) AND (user_events.event_type = 'notice'::usereventtype) AND (user_events.user_id = ANY (online_alarms.online_user_ids)) AND (user_events.event_state = 'happened'::usereventstate))) AS notice_user_ids,
+           FROM public.user_events
+          WHERE ((user_events.alarm_id = alarms.alarm_id) AND (user_events.event_type = 'notice'::public.usereventtype) AND (user_events.user_id = ANY (online_alarms.online_user_ids)) AND (user_events.event_state = 'happened'::public.usereventstate))) AS notice_user_ids,
     ( SELECT array_agg(user_events.user_id) AS array_agg
-           FROM user_events
-          WHERE ((user_events.alarm_id = alarms.alarm_id) AND (user_events.event_type = 'view'::usereventtype) AND (user_events.user_id = ANY (online_alarms.online_user_ids)))) AS view_user_ids
-   FROM (((((online_alarms
-     JOIN alarms USING (alarm_id))
-     JOIN host_services h USING (host_service_id))
-     JOIN services s USING (service_id))
-     JOIN nodes n USING (node_id))
-     JOIN places p USING (place_id))
+           FROM public.user_events
+          WHERE ((user_events.alarm_id = alarms.alarm_id) AND (user_events.event_type = 'view'::public.usereventtype) AND (user_events.user_id = ANY (online_alarms.online_user_ids)))) AS view_user_ids
+   FROM (((((public.online_alarms
+     JOIN public.alarms USING (alarm_id))
+     JOIN public.host_services h USING (host_service_id))
+     JOIN public.services s USING (service_id))
+     JOIN public.nodes n USING (node_id))
+     JOIN public.places p USING (place_id))
   WHERE (0 = ( SELECT count(*) AS count
-           FROM user_events
-          WHERE ((user_events.alarm_id = alarms.alarm_id) AND (user_events.event_type = 'acknowledge'::usereventtype))));
+           FROM public.user_events
+          WHERE ((user_events.alarm_id = alarms.alarm_id) AND (user_events.event_type = 'acknowledge'::public.usereventtype))));
 
 
-ALTER TABLE online_alarm_unacks OWNER TO lanview2;
+ALTER TABLE public.online_alarm_unacks OWNER TO lanview2;
 
 --
 -- Name: sys_params; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE sys_params (
+CREATE TABLE public.sys_params (
     sys_param_id bigint NOT NULL,
     sys_param_name text NOT NULL,
     sys_param_note text,
@@ -10196,13 +10368,13 @@ CREATE TABLE sys_params (
 );
 
 
-ALTER TABLE sys_params OWNER TO lanview2;
+ALTER TABLE public.sys_params OWNER TO lanview2;
 
 --
 -- Name: online_alarms_noack; Type: VIEW; Schema: public; Owner: lanview2
 --
 
-CREATE VIEW online_alarms_noack AS
+CREATE VIEW public.online_alarms_noack AS
  WITH a AS (
          SELECT a_1.alarm_id,
             a_1.host_service_id,
@@ -10216,18 +10388,18 @@ CREATE VIEW online_alarms_noack AS
             a_1.noalarm,
             a_1.end_time,
             ARRAY( SELECT user_events.user_id
-                   FROM user_events
-                  WHERE ((user_events.alarm_id = a_1.alarm_id) AND (user_events.event_type = 'notice'::usereventtype) AND (user_events.event_state <> 'dropped'::usereventstate))) AS online_user_ids
-           FROM alarms a_1
+                   FROM public.user_events
+                  WHERE ((user_events.alarm_id = a_1.alarm_id) AND (user_events.event_type = 'notice'::public.usereventtype) AND (user_events.event_state <> 'dropped'::public.usereventstate))) AS online_user_ids
+           FROM public.alarms a_1
           WHERE ((NOT a_1.noalarm) AND (0 = ( SELECT count(*) AS count
-                   FROM user_events
-                  WHERE ((user_events.alarm_id = a_1.alarm_id) AND (user_events.event_type = 'acknowledge'::usereventtype)))) AND COALESCE(((a_1.end_time + (( SELECT sys_params.param_value
-                   FROM sys_params
+                   FROM public.user_events
+                  WHERE ((user_events.alarm_id = a_1.alarm_id) AND (user_events.event_type = 'acknowledge'::public.usereventtype)))) AND COALESCE(((a_1.end_time + (( SELECT sys_params.param_value
+                   FROM public.sys_params
                   WHERE (sys_params.sys_param_name = 'user_notice_timeout'::text)))::interval) > now()), true))
         )
  SELECT a.alarm_id AS online_alarm_id,
     a.host_service_id,
-    host_service_id2name(a.host_service_id) AS host_service_name,
+    public.host_service_id2name(a.host_service_id) AS host_service_name,
     n.node_name,
     p.place_name,
     n.place_id,
@@ -10237,113 +10409,113 @@ CREATE VIEW online_alarms_noack AS
     a.first_status,
     a.max_status,
     a.last_status,
-    alarm_message(a.host_service_id, a.max_status) AS msg,
+    public.alarm_message(a.host_service_id, a.max_status) AS msg,
     a.online_user_ids,
     ( SELECT array_agg(user_events.user_id) AS array_agg
-           FROM user_events
-          WHERE ((user_events.alarm_id = a.alarm_id) AND (user_events.event_type = 'notice'::usereventtype) AND (user_events.event_state = 'happened'::usereventstate))) AS notice_user_ids,
+           FROM public.user_events
+          WHERE ((user_events.alarm_id = a.alarm_id) AND (user_events.event_type = 'notice'::public.usereventtype) AND (user_events.event_state = 'happened'::public.usereventstate))) AS notice_user_ids,
     ( SELECT array_agg(user_events.user_id) AS array_agg
-           FROM user_events
-          WHERE ((user_events.alarm_id = a.alarm_id) AND (user_events.event_type = 'view'::usereventtype))) AS view_user_ids
+           FROM public.user_events
+          WHERE ((user_events.alarm_id = a.alarm_id) AND (user_events.event_type = 'view'::public.usereventtype))) AS view_user_ids
    FROM ((((a
-     JOIN host_services h USING (host_service_id))
-     JOIN services s USING (service_id))
-     JOIN nodes n USING (node_id))
-     JOIN places p USING (place_id))
+     JOIN public.host_services h USING (host_service_id))
+     JOIN public.services s USING (service_id))
+     JOIN public.nodes n USING (node_id))
+     JOIN public.places p USING (place_id))
   WHERE (0 < array_length(a.online_user_ids, 1));
 
 
-ALTER TABLE online_alarms_noack OWNER TO lanview2;
+ALTER TABLE public.online_alarms_noack OWNER TO lanview2;
 
 --
 -- Name: VIEW online_alarms_noack; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON VIEW online_alarms_noack IS 'On-line nem nyugtázott riasztások';
+COMMENT ON VIEW public.online_alarms_noack IS 'On-line nem nyugtázott riasztások';
 
 
 --
 -- Name: ouis; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE ouis (
+CREATE TABLE public.ouis (
     oui macaddr NOT NULL,
     oui_name text NOT NULL,
     oui_note text
 );
 
 
-ALTER TABLE ouis OWNER TO lanview2;
+ALTER TABLE public.ouis OWNER TO lanview2;
 
 --
 -- Name: TABLE ouis; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE ouis IS 'Organizational Unique Identifier';
+COMMENT ON TABLE public.ouis IS 'Organizational Unique Identifier';
 
 
 --
 -- Name: param_types; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE param_types (
+CREATE TABLE public.param_types (
     param_type_id bigint NOT NULL,
     param_type_name text NOT NULL,
     param_type_note text,
-    param_type_type paramtype NOT NULL,
+    param_type_type public.paramtype NOT NULL,
     param_type_dim text
 );
 
 
-ALTER TABLE param_types OWNER TO lanview2;
+ALTER TABLE public.param_types OWNER TO lanview2;
 
 --
 -- Name: TABLE param_types; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE param_types IS 'Paraméterek deklarálása (név, típus, dimenzió)';
+COMMENT ON TABLE public.param_types IS 'Paraméterek deklarálása (név, típus, dimenzió)';
 
 
 --
 -- Name: COLUMN param_types.param_type_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN param_types.param_type_id IS 'A paraméter típus leíró egyedi azonosítója.';
+COMMENT ON COLUMN public.param_types.param_type_id IS 'A paraméter típus leíró egyedi azonosítója.';
 
 
 --
 -- Name: COLUMN param_types.param_type_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN param_types.param_type_name IS 'A paraméter típus neve.';
+COMMENT ON COLUMN public.param_types.param_type_name IS 'A paraméter típus neve.';
 
 
 --
 -- Name: COLUMN param_types.param_type_note; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN param_types.param_type_note IS 'A paraméterhez egy magyarázó szöveg';
+COMMENT ON COLUMN public.param_types.param_type_note IS 'A paraméterhez egy magyarázó szöveg';
 
 
 --
 -- Name: COLUMN param_types.param_type_type; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN param_types.param_type_type IS 'Típus azonosító';
+COMMENT ON COLUMN public.param_types.param_type_type IS 'Típus azonosító';
 
 
 --
 -- Name: COLUMN param_types.param_type_dim; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN param_types.param_type_dim IS 'Egy opcionális dimenzió';
+COMMENT ON COLUMN public.param_types.param_type_dim IS 'Egy opcionális dimenzió';
 
 
 --
 -- Name: param_types_param_type_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE param_types_param_type_id_seq
+CREATE SEQUENCE public.param_types_param_type_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -10351,20 +10523,20 @@ CREATE SEQUENCE param_types_param_type_id_seq
     CACHE 1;
 
 
-ALTER TABLE param_types_param_type_id_seq OWNER TO lanview2;
+ALTER TABLE public.param_types_param_type_id_seq OWNER TO lanview2;
 
 --
 -- Name: param_types_param_type_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE param_types_param_type_id_seq OWNED BY param_types.param_type_id;
+ALTER SEQUENCE public.param_types_param_type_id_seq OWNED BY public.param_types.param_type_id;
 
 
 --
 -- Name: patchable_ports; Type: VIEW; Schema: public; Owner: lanview2
 --
 
-CREATE VIEW patchable_ports AS
+CREATE VIEW public.patchable_ports AS
  SELECT nports.port_id AS patchable_port_id,
     nports.port_name,
     nports.port_note,
@@ -10373,18 +10545,18 @@ CREATE VIEW patchable_ports AS
     nports.node_id,
     nports.port_index,
     nports.deleted
-   FROM (nports
-     JOIN iftypes USING (iftype_id))
-  WHERE (iftypes.iftype_link_type = ANY (ARRAY['ptp'::linktype, 'bus'::linktype, 'patch'::linktype]));
+   FROM (public.nports
+     JOIN public.iftypes USING (iftype_id))
+  WHERE (iftypes.iftype_link_type = ANY (ARRAY['ptp'::public.linktype, 'bus'::public.linktype, 'patch'::public.linktype]));
 
 
-ALTER TABLE patchable_ports OWNER TO lanview2;
+ALTER TABLE public.patchable_ports OWNER TO lanview2;
 
 --
 -- Name: patchs_node_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE patchs_node_id_seq
+CREATE SEQUENCE public.patchs_node_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -10392,42 +10564,44 @@ CREATE SEQUENCE patchs_node_id_seq
     CACHE 1;
 
 
-ALTER TABLE patchs_node_id_seq OWNER TO lanview2;
+ALTER TABLE public.patchs_node_id_seq OWNER TO lanview2;
 
 --
 -- Name: patchs_node_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE patchs_node_id_seq OWNED BY patchs.node_id;
+ALTER SEQUENCE public.patchs_node_id_seq OWNED BY public.patchs.node_id;
 
 
 --
 -- Name: phs_links_shape; Type: VIEW; Schema: public; Owner: lanview2
 --
 
-CREATE VIEW phs_links_shape AS
+CREATE VIEW public.phs_links_shape AS
  SELECT phs_links.phs_link_id,
     phs_links.port_id1,
     n1.node_id AS node_id1,
     n1.node_name AS node_name1,
     p1.port_name AS port_name1,
     p1.port_index AS port_index1,
+    p1.port_tag AS port_tag1,
     ((n1.node_name || ':'::text) || p1.port_name) AS port_full_name1,
     phs_links.phs_link_type1,
         CASE
-            WHEN (phs_links.phs_link_type1 = 'Front'::phslinktype) THEN phs_links.port_shared
-            ELSE ''::portshare
+            WHEN (phs_links.phs_link_type1 = 'Front'::public.phslinktype) THEN phs_links.port_shared
+            ELSE ''::public.portshare
         END AS port_shared1,
     phs_links.port_id2,
     n2.node_id AS node_id2,
     n2.node_name AS node_name2,
     p2.port_name AS port_name2,
     p2.port_index AS port_index2,
+    p2.port_tag AS port_tag2,
     ((n2.node_name || ':'::text) || p2.port_name) AS port_full_name2,
     phs_links.phs_link_type2,
         CASE
-            WHEN (phs_links.phs_link_type2 = 'Front'::phslinktype) THEN phs_links.port_shared
-            ELSE ''::portshare
+            WHEN (phs_links.phs_link_type2 = 'Front'::public.phslinktype) THEN phs_links.port_shared
+            ELSE ''::public.portshare
         END AS port_shared2,
     phs_links.phs_link_note,
     phs_links.link_type,
@@ -10436,20 +10610,27 @@ CREATE VIEW phs_links_shape AS
     phs_links.modify_time,
     phs_links.modify_user_id,
     phs_links.forward
-   FROM ((phs_links
-     JOIN (nports p1
-     JOIN patchs n1 USING (node_id)) ON ((p1.port_id = phs_links.port_id1)))
-     JOIN (nports p2
-     JOIN patchs n2 USING (node_id)) ON ((p2.port_id = phs_links.port_id2)));
+   FROM ((public.phs_links
+     JOIN (public.nports p1
+     JOIN public.patchs n1 USING (node_id)) ON ((p1.port_id = phs_links.port_id1)))
+     JOIN (public.nports p2
+     JOIN public.patchs n2 USING (node_id)) ON ((p2.port_id = phs_links.port_id2)));
 
 
-ALTER TABLE phs_links_shape OWNER TO lanview2;
+ALTER TABLE public.phs_links_shape OWNER TO lanview2;
+
+--
+-- Name: VIEW phs_links_shape; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON VIEW public.phs_links_shape IS 'Symmetric View Table for physical links with shape';
+
 
 --
 -- Name: phs_links_table_phs_link_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE phs_links_table_phs_link_id_seq
+CREATE SEQUENCE public.phs_links_table_phs_link_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -10457,20 +10638,20 @@ CREATE SEQUENCE phs_links_table_phs_link_id_seq
     CACHE 1;
 
 
-ALTER TABLE phs_links_table_phs_link_id_seq OWNER TO lanview2;
+ALTER TABLE public.phs_links_table_phs_link_id_seq OWNER TO lanview2;
 
 --
 -- Name: phs_links_table_phs_link_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE phs_links_table_phs_link_id_seq OWNED BY phs_links_table.phs_link_id;
+ALTER SEQUENCE public.phs_links_table_phs_link_id_seq OWNED BY public.phs_links_table.phs_link_id;
 
 
 --
 -- Name: phs_named_links; Type: VIEW; Schema: public; Owner: lanview2
 --
 
-CREATE VIEW phs_named_links AS
+CREATE VIEW public.phs_named_links AS
  SELECT phs_links.phs_link_id,
     phs_links.port_id1,
     n1.node_name AS node_name1,
@@ -10488,40 +10669,40 @@ CREATE VIEW phs_named_links AS
     phs_links.modify_time,
     phs_links.modify_user_id,
     phs_links.forward
-   FROM ((phs_links
-     JOIN (nports p1
-     JOIN patchs n1 USING (node_id)) ON ((p1.port_id = phs_links.port_id1)))
-     JOIN (nports p2
-     JOIN patchs n2 USING (node_id)) ON ((p2.port_id = phs_links.port_id2)));
+   FROM ((public.phs_links
+     JOIN (public.nports p1
+     JOIN public.patchs n1 USING (node_id)) ON ((p1.port_id = phs_links.port_id1)))
+     JOIN (public.nports p2
+     JOIN public.patchs n2 USING (node_id)) ON ((p2.port_id = phs_links.port_id2)));
 
 
-ALTER TABLE phs_named_links OWNER TO lanview2;
+ALTER TABLE public.phs_named_links OWNER TO lanview2;
 
 --
 -- Name: VIEW phs_named_links; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON VIEW phs_named_links IS 'Symmetric View Table for physical links with name fields';
+COMMENT ON VIEW public.phs_named_links IS 'Symmetric View Table for physical links with name fields';
 
 
 --
 -- Name: place_group_places; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE place_group_places (
+CREATE TABLE public.place_group_places (
     place_group_place_id bigint NOT NULL,
     place_group_id bigint,
     place_id bigint
 );
 
 
-ALTER TABLE place_group_places OWNER TO lanview2;
+ALTER TABLE public.place_group_places OWNER TO lanview2;
 
 --
 -- Name: place_group_places_place_group_place_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE place_group_places_place_group_place_id_seq
+CREATE SEQUENCE public.place_group_places_place_group_place_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -10529,62 +10710,62 @@ CREATE SEQUENCE place_group_places_place_group_place_id_seq
     CACHE 1;
 
 
-ALTER TABLE place_group_places_place_group_place_id_seq OWNER TO lanview2;
+ALTER TABLE public.place_group_places_place_group_place_id_seq OWNER TO lanview2;
 
 --
 -- Name: place_group_places_place_group_place_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE place_group_places_place_group_place_id_seq OWNED BY place_group_places.place_group_place_id;
+ALTER SEQUENCE public.place_group_places_place_group_place_id_seq OWNED BY public.place_group_places.place_group_place_id;
 
 
 --
 -- Name: place_groups; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE place_groups (
+CREATE TABLE public.place_groups (
     place_group_id bigint NOT NULL,
     place_group_name text NOT NULL,
     place_group_note text,
-    place_group_type placegrouptype DEFAULT 'group'::placegrouptype
+    place_group_type public.placegrouptype DEFAULT 'group'::public.placegrouptype
 );
 
 
-ALTER TABLE place_groups OWNER TO lanview2;
+ALTER TABLE public.place_groups OWNER TO lanview2;
 
 --
 -- Name: TABLE place_groups; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE place_groups IS 'Helyiségek, helyek csoportjai. Zónák.';
+COMMENT ON TABLE public.place_groups IS 'Helyiségek, helyek csoportjai. Zónák.';
 
 
 --
 -- Name: COLUMN place_groups.place_group_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN place_groups.place_group_id IS 'Csoport azososítója ID';
+COMMENT ON COLUMN public.place_groups.place_group_id IS 'Csoport azososítója ID';
 
 
 --
 -- Name: COLUMN place_groups.place_group_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN place_groups.place_group_name IS 'Csoport azososító neve';
+COMMENT ON COLUMN public.place_groups.place_group_name IS 'Csoport azososító neve';
 
 
 --
 -- Name: COLUMN place_groups.place_group_note; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN place_groups.place_group_note IS 'Megjegyzés';
+COMMENT ON COLUMN public.place_groups.place_group_note IS 'Megjegyzés';
 
 
 --
 -- Name: place_groups_place_group_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE place_groups_place_group_id_seq
+CREATE SEQUENCE public.place_groups_place_group_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -10592,20 +10773,20 @@ CREATE SEQUENCE place_groups_place_group_id_seq
     CACHE 1;
 
 
-ALTER TABLE place_groups_place_group_id_seq OWNER TO lanview2;
+ALTER TABLE public.place_groups_place_group_id_seq OWNER TO lanview2;
 
 --
 -- Name: place_groups_place_group_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE place_groups_place_group_id_seq OWNED BY place_groups.place_group_id;
+ALTER SEQUENCE public.place_groups_place_group_id_seq OWNED BY public.place_groups.place_group_id;
 
 
 --
 -- Name: places_place_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE places_place_id_seq
+CREATE SEQUENCE public.places_place_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -10613,20 +10794,20 @@ CREATE SEQUENCE places_place_id_seq
     CACHE 1;
 
 
-ALTER TABLE places_place_id_seq OWNER TO lanview2;
+ALTER TABLE public.places_place_id_seq OWNER TO lanview2;
 
 --
 -- Name: places_place_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE places_place_id_seq OWNED BY places.place_id;
+ALTER SEQUENCE public.places_place_id_seq OWNED BY public.places.place_id;
 
 
 --
 -- Name: port_params; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE port_params (
+CREATE TABLE public.port_params (
     port_param_id bigint NOT NULL,
     param_type_id bigint NOT NULL,
     port_id bigint NOT NULL,
@@ -10635,48 +10816,48 @@ CREATE TABLE port_params (
 );
 
 
-ALTER TABLE port_params OWNER TO lanview2;
+ALTER TABLE public.port_params OWNER TO lanview2;
 
 --
 -- Name: TABLE port_params; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE port_params IS 'Port extra paraméter értékek.';
+COMMENT ON TABLE public.port_params IS 'Port extra paraméter értékek.';
 
 
 --
 -- Name: COLUMN port_params.port_param_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN port_params.port_param_id IS 'A paraméter érték egyedi azonosítója.';
+COMMENT ON COLUMN public.port_params.port_param_id IS 'A paraméter érték egyedi azonosítója.';
 
 
 --
 -- Name: COLUMN port_params.param_type_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN port_params.param_type_id IS 'A paraméter tulajdonságait definiáló param_types rekord azonosítója.';
+COMMENT ON COLUMN public.port_params.param_type_id IS 'A paraméter tulajdonságait definiáló param_types rekord azonosítója.';
 
 
 --
 -- Name: COLUMN port_params.port_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN port_params.port_id IS 'A tulajdonos port rekordjának az azonosítója.';
+COMMENT ON COLUMN public.port_params.port_id IS 'A tulajdonos port rekordjának az azonosítója.';
 
 
 --
 -- Name: COLUMN port_params.param_value; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN port_params.param_value IS 'A parméter érték.';
+COMMENT ON COLUMN public.port_params.param_value IS 'A parméter érték.';
 
 
 --
 -- Name: port_params_port_param_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE port_params_port_param_id_seq
+CREATE SEQUENCE public.port_params_port_param_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -10684,45 +10865,61 @@ CREATE SEQUENCE port_params_port_param_id_seq
     CACHE 1;
 
 
-ALTER TABLE port_params_port_param_id_seq OWNER TO lanview2;
+ALTER TABLE public.port_params_port_param_id_seq OWNER TO lanview2;
 
 --
 -- Name: port_params_port_param_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE port_params_port_param_id_seq OWNED BY port_params.port_param_id;
+ALTER SEQUENCE public.port_params_port_param_id_seq OWNED BY public.port_params.port_param_id;
 
 
 --
--- Name: port_vlans; Type: TABLE; Schema: public; Owner: lanview2
+-- Name: port_vlan_logs; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE port_vlans (
-    port_vlan_id bigint NOT NULL,
-    port_id bigint,
-    vlan_id bigint,
-    first_time timestamp without time zone DEFAULT now(),
-    last_time timestamp without time zone DEFAULT now(),
-    vlan_type vlantype DEFAULT 'untagged'::vlantype NOT NULL,
-    set_type settype DEFAULT 'manual'::settype NOT NULL,
-    flag boolean DEFAULT false
+CREATE TABLE public.port_vlan_logs (
+    port_vlan_log_id bigint NOT NULL,
+    date_of timestamp without time zone DEFAULT now() NOT NULL,
+    reason public.reasons NOT NULL,
+    port_id bigint NOT NULL,
+    vlan_id bigint NOT NULL,
+    old_type public.vlantype NOT NULL,
+    first_time_old timestamp without time zone,
+    last_time_old timestamp without time zone,
+    new_type public.vlantype,
+    acknowledged boolean DEFAULT false
 );
 
 
-ALTER TABLE port_vlans OWNER TO lanview2;
+ALTER TABLE public.port_vlan_logs OWNER TO lanview2;
 
 --
--- Name: TABLE port_vlans; Type: COMMENT; Schema: public; Owner: lanview2
+-- Name: port_vlan_logs_port_vlan_log_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE port_vlans IS 'port és vlan összerendelések táblája';
+CREATE SEQUENCE public.port_vlan_logs_port_vlan_log_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.port_vlan_logs_port_vlan_log_id_seq OWNER TO lanview2;
+
+--
+-- Name: port_vlan_logs_port_vlan_log_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
+--
+
+ALTER SEQUENCE public.port_vlan_logs_port_vlan_log_id_seq OWNED BY public.port_vlan_logs.port_vlan_log_id;
 
 
 --
 -- Name: port_vlans_port_vlan_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE port_vlans_port_vlan_id_seq
+CREATE SEQUENCE public.port_vlans_port_vlan_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -10730,20 +10927,20 @@ CREATE SEQUENCE port_vlans_port_vlan_id_seq
     CACHE 1;
 
 
-ALTER TABLE port_vlans_port_vlan_id_seq OWNER TO lanview2;
+ALTER TABLE public.port_vlans_port_vlan_id_seq OWNER TO lanview2;
 
 --
 -- Name: port_vlans_port_vlan_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE port_vlans_port_vlan_id_seq OWNED BY port_vlans.port_vlan_id;
+ALTER SEQUENCE public.port_vlans_port_vlan_id_seq OWNED BY public.port_vlans.port_vlan_id;
 
 
 --
 -- Name: service_vars; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE service_vars (
+CREATE TABLE public.service_vars (
     service_var_id bigint NOT NULL,
     service_var_name text NOT NULL,
     service_var_note text,
@@ -10751,7 +10948,7 @@ CREATE TABLE service_vars (
     host_service_id bigint NOT NULL,
     rrd_beat_id bigint,
     service_var_value text,
-    var_state notifswitch DEFAULT 'unknown'::notifswitch,
+    var_state public.notifswitch DEFAULT 'unknown'::public.notifswitch,
     last_time timestamp without time zone,
     features text,
     deleted boolean DEFAULT false NOT NULL,
@@ -10761,13 +10958,13 @@ CREATE TABLE service_vars (
 );
 
 
-ALTER TABLE service_vars OWNER TO lanview2;
+ALTER TABLE public.service_vars OWNER TO lanview2;
 
 --
 -- Name: portvars; Type: VIEW; Schema: public; Owner: lanview2
 --
 
-CREATE VIEW portvars AS
+CREATE VIEW public.portvars AS
  SELECT service_vars.service_var_id AS portvar_id,
     service_vars.service_var_name,
     service_vars.service_var_note,
@@ -10782,92 +10979,92 @@ CREATE VIEW portvars AS
     service_vars.raw_value,
     service_vars.delegate_service_state,
     service_vars.state_msg
-   FROM (service_vars
-     JOIN host_services USING (host_service_id))
+   FROM (public.service_vars
+     JOIN public.host_services USING (host_service_id))
   WHERE (NOT service_vars.deleted);
 
 
-ALTER TABLE portvars OWNER TO lanview2;
+ALTER TABLE public.portvars OWNER TO lanview2;
 
 --
 -- Name: pports; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE pports (
-    shared_cable portshare DEFAULT ''::portshare NOT NULL,
+CREATE TABLE public.pports (
+    shared_cable public.portshare DEFAULT ''::public.portshare NOT NULL,
     shared_port_id bigint
 )
-INHERITS (nports);
+INHERITS (public.nports);
 
 
-ALTER TABLE pports OWNER TO lanview2;
+ALTER TABLE public.pports OWNER TO lanview2;
 
 --
 -- Name: TABLE pports; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE pports IS 'Patch panel/ csatlakozók port tábla';
+COMMENT ON TABLE public.pports IS 'Patch panel/ csatlakozók port tábla';
 
 
 --
 -- Name: COLUMN pports.port_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN pports.port_id IS 'Egyedi azonosító,az ősre és annak összes leszármazottjára is.';
+COMMENT ON COLUMN public.pports.port_id IS 'Egyedi azonosító,az ősre és annak összes leszármazottjára is.';
 
 
 --
 -- Name: COLUMN pports.port_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN pports.port_name IS 'Egy eszközön belül (azonos node_id) egyedi név.';
+COMMENT ON COLUMN public.pports.port_name IS 'Egy eszközön belül (azonos node_id) egyedi név.';
 
 
 --
 -- Name: COLUMN pports.port_index; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN pports.port_index IS 'A port sorszáma a panelon, csatlakozón.';
+COMMENT ON COLUMN public.pports.port_index IS 'A port sorszáma a panelon, csatlakozón.';
 
 
 --
 -- Name: COLUMN pports.shared_cable; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN pports.shared_cable IS 'Ha az UTP fali kábel megosztva van bekötve. Hátlapon!';
+COMMENT ON COLUMN public.pports.shared_cable IS 'Ha az UTP fali kábel megosztva van bekötve. Hátlapon!';
 
 
 --
 -- Name: COLUMN pports.shared_port_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN pports.shared_port_id IS 'Melyik másik porttal van megosztva a fali kábel bekötése. Hátlapon! Az "A" ill. "AA" megosztások esetén NULL, a többi erre mutat.';
+COMMENT ON COLUMN public.pports.shared_port_id IS 'Melyik másik porttal van megosztva a fali kábel bekötése. Hátlapon! Az "A" ill. "AA" megosztások esetén NULL, a többi erre mutat.';
 
 
 --
 -- Name: query_parsers; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE query_parsers (
+CREATE TABLE public.query_parsers (
     query_parser_id bigint NOT NULL,
     query_parser_note text,
     service_id bigint NOT NULL,
-    parse_type parsertype DEFAULT 'parse'::parsertype,
+    parse_type public.parsertype DEFAULT 'parse'::public.parsertype,
     item_sequence_number integer,
     case_sensitive boolean DEFAULT false,
     regular_expression text,
     import_expression text NOT NULL,
-    CONSTRAINT check_expression CHECK ((((parse_type = 'parse'::parsertype) AND (regular_expression IS NOT NULL)) OR ((parse_type <> 'parse'::parsertype) AND (regular_expression IS NULL))))
+    CONSTRAINT check_expression CHECK ((((parse_type = 'parse'::public.parsertype) AND (regular_expression IS NOT NULL)) OR ((parse_type <> 'parse'::public.parsertype) AND (regular_expression IS NULL))))
 );
 
 
-ALTER TABLE query_parsers OWNER TO lanview2;
+ALTER TABLE public.query_parsers OWNER TO lanview2;
 
 --
 -- Name: query_parsers_query_parser_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE query_parsers_query_parser_id_seq
+CREATE SEQUENCE public.query_parsers_query_parser_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -10875,20 +11072,20 @@ CREATE SEQUENCE query_parsers_query_parser_id_seq
     CACHE 1;
 
 
-ALTER TABLE query_parsers_query_parser_id_seq OWNER TO lanview2;
+ALTER TABLE public.query_parsers_query_parser_id_seq OWNER TO lanview2;
 
 --
 -- Name: query_parsers_query_parser_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE query_parsers_query_parser_id_seq OWNED BY query_parsers.query_parser_id;
+ALTER SEQUENCE public.query_parsers_query_parser_id_seq OWNED BY public.query_parsers.query_parser_id;
 
 
 --
 -- Name: rrd_beats; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE rrd_beats (
+CREATE TABLE public.rrd_beats (
     rrd_beat_id bigint NOT NULL,
     rrd_beat_name text NOT NULL,
     rrd_beat_note text,
@@ -10896,23 +11093,23 @@ CREATE TABLE rrd_beats (
     heartbeat interval NOT NULL,
     daily_step integer,
     daily_size integer,
-    daily_aggregates aggregatetype[] DEFAULT ARRAY[]::aggregatetype[] NOT NULL,
+    daily_aggregates public.aggregatetype[] DEFAULT ARRAY[]::public.aggregatetype[] NOT NULL,
     weekly_step integer,
     weekly_size integer,
-    weekly_aggregates aggregatetype[] DEFAULT ARRAY[]::aggregatetype[] NOT NULL,
+    weekly_aggregates public.aggregatetype[] DEFAULT ARRAY[]::public.aggregatetype[] NOT NULL,
     monthly_step integer,
     monthly_size integer,
-    monthly_aggregates aggregatetype[] DEFAULT ARRAY[]::aggregatetype[] NOT NULL,
+    monthly_aggregates public.aggregatetype[] DEFAULT ARRAY[]::public.aggregatetype[] NOT NULL,
     yearly_step integer,
     yearly_size integer,
-    yearly_aggregates aggregatetype[] DEFAULT ARRAY[]::aggregatetype[] NOT NULL,
+    yearly_aggregates public.aggregatetype[] DEFAULT ARRAY[]::public.aggregatetype[] NOT NULL,
     features text,
     deleted boolean DEFAULT false NOT NULL,
     CONSTRAINT rrd_beats_check CHECK ((heartbeat > step)),
-    CONSTRAINT rrd_beats_check1 CHECK (((daily_aggregates = ARRAY[]::aggregatetype[]) = (daily_step IS NULL))),
-    CONSTRAINT rrd_beats_check2 CHECK (((weekly_aggregates = ARRAY[]::aggregatetype[]) = (weekly_step IS NULL))),
-    CONSTRAINT rrd_beats_check3 CHECK (((monthly_aggregates = ARRAY[]::aggregatetype[]) = (monthly_step IS NULL))),
-    CONSTRAINT rrd_beats_check4 CHECK (((yearly_aggregates = ARRAY[]::aggregatetype[]) = (yearly_step IS NULL))),
+    CONSTRAINT rrd_beats_check1 CHECK (((daily_aggregates = ARRAY[]::public.aggregatetype[]) = (daily_step IS NULL))),
+    CONSTRAINT rrd_beats_check2 CHECK (((weekly_aggregates = ARRAY[]::public.aggregatetype[]) = (weekly_step IS NULL))),
+    CONSTRAINT rrd_beats_check3 CHECK (((monthly_aggregates = ARRAY[]::public.aggregatetype[]) = (monthly_step IS NULL))),
+    CONSTRAINT rrd_beats_check4 CHECK (((yearly_aggregates = ARRAY[]::public.aggregatetype[]) = (yearly_step IS NULL))),
     CONSTRAINT rrd_beats_daily_size_check CHECK ((daily_size > 0)),
     CONSTRAINT rrd_beats_daily_step_check CHECK ((daily_step > 0)),
     CONSTRAINT rrd_beats_monthly_size_check CHECK ((monthly_size > 0)),
@@ -10925,13 +11122,13 @@ CREATE TABLE rrd_beats (
 );
 
 
-ALTER TABLE rrd_beats OWNER TO lanview2;
+ALTER TABLE public.rrd_beats OWNER TO lanview2;
 
 --
 -- Name: rrd_beats_rrd_beat_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE rrd_beats_rrd_beat_id_seq
+CREATE SEQUENCE public.rrd_beats_rrd_beat_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -10939,20 +11136,20 @@ CREATE SEQUENCE rrd_beats_rrd_beat_id_seq
     CACHE 1;
 
 
-ALTER TABLE rrd_beats_rrd_beat_id_seq OWNER TO lanview2;
+ALTER TABLE public.rrd_beats_rrd_beat_id_seq OWNER TO lanview2;
 
 --
 -- Name: rrd_beats_rrd_beat_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE rrd_beats_rrd_beat_id_seq OWNED BY rrd_beats.rrd_beat_id;
+ALTER SEQUENCE public.rrd_beats_rrd_beat_id_seq OWNED BY public.rrd_beats.rrd_beat_id;
 
 
 --
 -- Name: selects_select_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE selects_select_id_seq
+CREATE SEQUENCE public.selects_select_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -10960,61 +11157,61 @@ CREATE SEQUENCE selects_select_id_seq
     CACHE 1;
 
 
-ALTER TABLE selects_select_id_seq OWNER TO lanview2;
+ALTER TABLE public.selects_select_id_seq OWNER TO lanview2;
 
 --
 -- Name: selects_select_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE selects_select_id_seq OWNED BY selects.select_id;
+ALTER SEQUENCE public.selects_select_id_seq OWNED BY public.selects.select_id;
 
 
 --
 -- Name: service_types; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE service_types (
+CREATE TABLE public.service_types (
     service_type_id bigint NOT NULL,
     service_type_name text,
     service_type_note text
 );
 
 
-ALTER TABLE service_types OWNER TO lanview2;
+ALTER TABLE public.service_types OWNER TO lanview2;
 
 --
 -- Name: TABLE service_types; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE service_types IS 'A service objektumok csoportosítását teszi lehetővé, egy rekord csak egy csoportba tartozhat./ Ez mire kellett ? Lehet, hogy törölni kéne.';
+COMMENT ON TABLE public.service_types IS 'A service objektumok csoportosítását teszi lehetővé, egy rekord csak egy csoportba tartozhat./ Ez mire kellett ? Lehet, hogy törölni kéne.';
 
 
 --
 -- Name: COLUMN service_types.service_type_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN service_types.service_type_id IS 'service csoport ill. típus azonosító.';
+COMMENT ON COLUMN public.service_types.service_type_id IS 'service csoport ill. típus azonosító.';
 
 
 --
 -- Name: COLUMN service_types.service_type_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN service_types.service_type_name IS 'service csoport ill. típus név.';
+COMMENT ON COLUMN public.service_types.service_type_name IS 'service csoport ill. típus név.';
 
 
 --
 -- Name: COLUMN service_types.service_type_note; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN service_types.service_type_note IS 'Megjegyzés.';
+COMMENT ON COLUMN public.service_types.service_type_note IS 'Megjegyzés.';
 
 
 --
 -- Name: service_types_service_type_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE service_types_service_type_id_seq
+CREATE SEQUENCE public.service_types_service_type_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -11022,49 +11219,57 @@ CREATE SEQUENCE service_types_service_type_id_seq
     CACHE 1;
 
 
-ALTER TABLE service_types_service_type_id_seq OWNER TO lanview2;
+ALTER TABLE public.service_types_service_type_id_seq OWNER TO lanview2;
 
 --
 -- Name: service_types_service_type_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE service_types_service_type_id_seq OWNED BY service_types.service_type_id;
+ALTER SEQUENCE public.service_types_service_type_id_seq OWNED BY public.service_types.service_type_id;
 
 
 --
 -- Name: service_var_types; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE service_var_types (
+CREATE TABLE public.service_var_types (
     service_var_type_id bigint NOT NULL,
     service_var_type_name text NOT NULL,
     service_var_type_note text,
     param_type_id bigint NOT NULL,
-    service_var_type servicevartype,
-    plausibility_type filtertype,
+    service_var_type public.servicevartype,
+    plausibility_type public.filtertype,
     plausibility_param1 text,
     plausibility_param2 text,
-    warning_type filtertype,
+    warning_type public.filtertype,
     warning_param1 text,
     warning_param2 text,
-    critical_type filtertype,
+    critical_type public.filtertype,
     critical_param1 text,
     critical_param2 text,
     features text,
     deleted boolean DEFAULT false NOT NULL,
     plausibility_inverse boolean DEFAULT false NOT NULL,
     warning_inverse boolean DEFAULT false NOT NULL,
-    critical_inverse boolean DEFAULT false NOT NULL
+    critical_inverse boolean DEFAULT false NOT NULL,
+    raw_param_type_id bigint NOT NULL
 );
 
 
-ALTER TABLE service_var_types OWNER TO lanview2;
+ALTER TABLE public.service_var_types OWNER TO lanview2;
+
+--
+-- Name: COLUMN service_var_types.raw_param_type_id; Type: COMMENT; Schema: public; Owner: lanview2
+--
+
+COMMENT ON COLUMN public.service_var_types.raw_param_type_id IS 'A host_service_vars.raw_value adat típusa, ami nem feltétlenül azonos a változó típusával.';
+
 
 --
 -- Name: service_var_types_service_var_type_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE service_var_types_service_var_type_id_seq
+CREATE SEQUENCE public.service_var_types_service_var_type_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -11072,20 +11277,20 @@ CREATE SEQUENCE service_var_types_service_var_type_id_seq
     CACHE 1;
 
 
-ALTER TABLE service_var_types_service_var_type_id_seq OWNER TO lanview2;
+ALTER TABLE public.service_var_types_service_var_type_id_seq OWNER TO lanview2;
 
 --
 -- Name: service_var_types_service_var_type_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE service_var_types_service_var_type_id_seq OWNED BY service_var_types.service_var_type_id;
+ALTER SEQUENCE public.service_var_types_service_var_type_id_seq OWNED BY public.service_var_types.service_var_type_id;
 
 
 --
 -- Name: service_vars_service_var_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE service_vars_service_var_id_seq
+CREATE SEQUENCE public.service_vars_service_var_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -11093,20 +11298,20 @@ CREATE SEQUENCE service_vars_service_var_id_seq
     CACHE 1;
 
 
-ALTER TABLE service_vars_service_var_id_seq OWNER TO lanview2;
+ALTER TABLE public.service_vars_service_var_id_seq OWNER TO lanview2;
 
 --
 -- Name: service_vars_service_var_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE service_vars_service_var_id_seq OWNED BY service_vars.service_var_id;
+ALTER SEQUENCE public.service_vars_service_var_id_seq OWNED BY public.service_vars.service_var_id;
 
 
 --
 -- Name: services_service_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE services_service_id_seq
+CREATE SEQUENCE public.services_service_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -11114,23 +11319,23 @@ CREATE SEQUENCE services_service_id_seq
     CACHE 1;
 
 
-ALTER TABLE services_service_id_seq OWNER TO lanview2;
+ALTER TABLE public.services_service_id_seq OWNER TO lanview2;
 
 --
 -- Name: services_service_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE services_service_id_seq OWNED BY services.service_id;
+ALTER SEQUENCE public.services_service_id_seq OWNED BY public.services.service_id;
 
 
 --
 -- Name: snmpdevices; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE snmpdevices (
+CREATE TABLE public.snmpdevices (
     community_rd text DEFAULT 'public'::text NOT NULL,
     community_wr text,
-    snmp_ver snmpver DEFAULT '2c'::snmpver NOT NULL,
+    snmp_ver public.snmpver DEFAULT '2c'::public.snmpver NOT NULL,
     sysdescr text,
     sysobjectid text,
     sysuptime bigint,
@@ -11140,81 +11345,81 @@ CREATE TABLE snmpdevices (
     sysservices smallint,
     vendorname text
 )
-INHERITS (nodes);
+INHERITS (public.nodes);
 
 
-ALTER TABLE snmpdevices OWNER TO lanview2;
+ALTER TABLE public.snmpdevices OWNER TO lanview2;
 
 --
 -- Name: subnets; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE subnets (
+CREATE TABLE public.subnets (
     subnet_id bigint NOT NULL,
     subnet_name text NOT NULL,
     subnet_note text,
     netaddr cidr NOT NULL,
     vlan_id bigint,
-    subnet_type subnettype DEFAULT 'primary'::subnettype NOT NULL
+    subnet_type public.subnettype DEFAULT 'primary'::public.subnettype NOT NULL
 );
 
 
-ALTER TABLE subnets OWNER TO lanview2;
+ALTER TABLE public.subnets OWNER TO lanview2;
 
 --
 -- Name: TABLE subnets; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE subnets IS 'Alhálózatok táblája.';
+COMMENT ON TABLE public.subnets IS 'Alhálózatok táblája.';
 
 
 --
 -- Name: COLUMN subnets.subnet_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN subnets.subnet_id IS 'Alhálózat egyedi azonosító.';
+COMMENT ON COLUMN public.subnets.subnet_id IS 'Alhálózat egyedi azonosító.';
 
 
 --
 -- Name: COLUMN subnets.subnet_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN subnets.subnet_name IS 'Az alhálózat egyedi neve.';
+COMMENT ON COLUMN public.subnets.subnet_name IS 'Az alhálózat egyedi neve.';
 
 
 --
 -- Name: COLUMN subnets.subnet_note; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN subnets.subnet_note IS 'Az alhálózat leírása, ill. megjegyzés';
+COMMENT ON COLUMN public.subnets.subnet_note IS 'Az alhálózat leírása, ill. megjegyzés';
 
 
 --
 -- Name: COLUMN subnets.netaddr; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN subnets.netaddr IS 'A hálózati cím és maszk.';
+COMMENT ON COLUMN public.subnets.netaddr IS 'A hálózati cím és maszk.';
 
 
 --
 -- Name: COLUMN subnets.vlan_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN subnets.vlan_id IS 'A VLAN azonosítója, ha az alhálózat VLAN-hoz rendelhető.';
+COMMENT ON COLUMN public.subnets.vlan_id IS 'A VLAN azonosítója, ha az alhálózat VLAN-hoz rendelhető.';
 
 
 --
 -- Name: COLUMN subnets.subnet_type; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN subnets.subnet_type IS 'Az alhálózat típusa.';
+COMMENT ON COLUMN public.subnets.subnet_type IS 'Az alhálózat típusa.';
 
 
 --
 -- Name: subnets_subnet_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE subnets_subnet_id_seq
+CREATE SEQUENCE public.subnets_subnet_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -11222,20 +11427,20 @@ CREATE SEQUENCE subnets_subnet_id_seq
     CACHE 1;
 
 
-ALTER TABLE subnets_subnet_id_seq OWNER TO lanview2;
+ALTER TABLE public.subnets_subnet_id_seq OWNER TO lanview2;
 
 --
 -- Name: subnets_subnet_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE subnets_subnet_id_seq OWNED BY subnets.subnet_id;
+ALTER SEQUENCE public.subnets_subnet_id_seq OWNED BY public.subnets.subnet_id;
 
 
 --
 -- Name: sys_params_sys_param_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE sys_params_sys_param_id_seq
+CREATE SEQUENCE public.sys_params_sys_param_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -11243,151 +11448,151 @@ CREATE SEQUENCE sys_params_sys_param_id_seq
     CACHE 1;
 
 
-ALTER TABLE sys_params_sys_param_id_seq OWNER TO lanview2;
+ALTER TABLE public.sys_params_sys_param_id_seq OWNER TO lanview2;
 
 --
 -- Name: sys_params_sys_param_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE sys_params_sys_param_id_seq OWNED BY sys_params.sys_param_id;
+ALTER SEQUENCE public.sys_params_sys_param_id_seq OWNED BY public.sys_params.sys_param_id;
 
 
 --
 -- Name: table_shape_fields; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE table_shape_fields (
+CREATE TABLE public.table_shape_fields (
     table_shape_field_id bigint NOT NULL,
     table_shape_field_name text NOT NULL,
     table_shape_field_note text,
     table_shape_id bigint NOT NULL,
     field_sequence_number integer NOT NULL,
-    ord_types ordtype[],
-    ord_init_type ordtype DEFAULT 'no'::ordtype,
+    ord_types public.ordtype[],
+    ord_init_type public.ordtype DEFAULT 'no'::public.ordtype,
     ord_init_sequence_number integer,
-    field_flags fieldflag[] DEFAULT '{}'::fieldflag[],
+    field_flags public.fieldflag[] DEFAULT '{}'::public.fieldflag[],
     expression text,
     default_value text,
     features text,
-    view_rights rights,
-    edit_rights rights,
+    view_rights public.rights,
+    edit_rights public.rights,
     flag boolean DEFAULT false,
-    text_id bigint DEFAULT nextval('text_id_sequ'::regclass) NOT NULL
+    text_id bigint DEFAULT nextval('public.text_id_sequ'::regclass) NOT NULL
 );
 
 
-ALTER TABLE table_shape_fields OWNER TO lanview2;
+ALTER TABLE public.table_shape_fields OWNER TO lanview2;
 
 --
 -- Name: TABLE table_shape_fields; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE table_shape_fields IS 'Tábla shape oszlop leíró tábla';
+COMMENT ON TABLE public.table_shape_fields IS 'Tábla shape oszlop leíró tábla';
 
 
 --
 -- Name: COLUMN table_shape_fields.table_shape_field_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN table_shape_fields.table_shape_field_id IS 'Egyedi azonosító ID';
+COMMENT ON COLUMN public.table_shape_fields.table_shape_field_id IS 'Egyedi azonosító ID';
 
 
 --
 -- Name: COLUMN table_shape_fields.table_shape_field_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN table_shape_fields.table_shape_field_name IS 'Mező név, a query-ben használt név.';
+COMMENT ON COLUMN public.table_shape_fields.table_shape_field_name IS 'Mező név, a query-ben használt név.';
 
 
 --
 -- Name: COLUMN table_shape_fields.table_shape_field_note; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN table_shape_fields.table_shape_field_note IS 'A mező dialog box-ban megjelenő neve';
+COMMENT ON COLUMN public.table_shape_fields.table_shape_field_note IS 'A mező dialog box-ban megjelenő neve';
 
 
 --
 -- Name: COLUMN table_shape_fields.table_shape_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN table_shape_fields.table_shape_id IS 'Távoli kulcs a tulajdonos rekordra.';
+COMMENT ON COLUMN public.table_shape_fields.table_shape_id IS 'Távoli kulcs a tulajdonos rekordra.';
 
 
 --
 -- Name: COLUMN table_shape_fields.field_sequence_number; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN table_shape_fields.field_sequence_number IS 'A mező sorrendje a táblázatban / dialog boxban';
+COMMENT ON COLUMN public.table_shape_fields.field_sequence_number IS 'A mező sorrendje a táblázatban / dialog boxban';
 
 
 --
 -- Name: COLUMN table_shape_fields.ord_types; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN table_shape_fields.ord_types IS 'A mező rendezési lehetőségei';
+COMMENT ON COLUMN public.table_shape_fields.ord_types IS 'A mező rendezési lehetőségei';
 
 
 --
 -- Name: COLUMN table_shape_fields.ord_init_type; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN table_shape_fields.ord_init_type IS 'Opcionális, a mező érték szerinti rendezés alap beállítása.';
+COMMENT ON COLUMN public.table_shape_fields.ord_init_type IS 'Opcionális, a mező érték szerinti rendezés alap beállítása.';
 
 
 --
 -- Name: COLUMN table_shape_fields.ord_init_sequence_number; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN table_shape_fields.ord_init_sequence_number IS 'Opcionális, a mező érték szerinti rendezés alap sorrendje.';
+COMMENT ON COLUMN public.table_shape_fields.ord_init_sequence_number IS 'Opcionális, a mező érték szerinti rendezés alap sorrendje.';
 
 
 --
 -- Name: COLUMN table_shape_fields.field_flags; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN table_shape_fields.field_flags IS 'A mező fleg-ek';
+COMMENT ON COLUMN public.table_shape_fields.field_flags IS 'A mező fleg-ek';
 
 
 --
 -- Name: COLUMN table_shape_fields.expression; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN table_shape_fields.expression IS 'Egy opcionális SQL kifelyezés a mező értékére';
+COMMENT ON COLUMN public.table_shape_fields.expression IS 'Egy opcionális SQL kifelyezés a mező értékére';
 
 
 --
 -- Name: COLUMN table_shape_fields.default_value; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN table_shape_fields.default_value IS 'Egy opcionális default érték.';
+COMMENT ON COLUMN public.table_shape_fields.default_value IS 'Egy opcionális default érték.';
 
 
 --
 -- Name: COLUMN table_shape_fields.features; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN table_shape_fields.features IS 'További paraméterek.';
+COMMENT ON COLUMN public.table_shape_fields.features IS 'További paraméterek.';
 
 
 --
 -- Name: COLUMN table_shape_fields.view_rights; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN table_shape_fields.view_rights IS 'Minimális jogosultsági szint a mező megtekintéséhez, NULL esetén a táblánál magadottak az érvényesek';
+COMMENT ON COLUMN public.table_shape_fields.view_rights IS 'Minimális jogosultsági szint a mező megtekintéséhez, NULL esetén a táblánál magadottak az érvényesek';
 
 
 --
 -- Name: COLUMN table_shape_fields.edit_rights; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN table_shape_fields.edit_rights IS 'Minimális jogosultsági szint a mező szerkestéséhez, NULL esetén a táblánál magadottak az érvényesek';
+COMMENT ON COLUMN public.table_shape_fields.edit_rights IS 'Minimális jogosultsági szint a mező szerkestéséhez, NULL esetén a táblánál magadottak az érvényesek';
 
 
 --
 -- Name: table_shape_fields_table_shape_field_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE table_shape_fields_table_shape_field_id_seq
+CREATE SEQUENCE public.table_shape_fields_table_shape_field_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -11395,139 +11600,139 @@ CREATE SEQUENCE table_shape_fields_table_shape_field_id_seq
     CACHE 1;
 
 
-ALTER TABLE table_shape_fields_table_shape_field_id_seq OWNER TO lanview2;
+ALTER TABLE public.table_shape_fields_table_shape_field_id_seq OWNER TO lanview2;
 
 --
 -- Name: table_shape_fields_table_shape_field_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE table_shape_fields_table_shape_field_id_seq OWNED BY table_shape_fields.table_shape_field_id;
+ALTER SEQUENCE public.table_shape_fields_table_shape_field_id_seq OWNED BY public.table_shape_fields.table_shape_field_id;
 
 
 --
 -- Name: table_shapes; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE table_shapes (
+CREATE TABLE public.table_shapes (
     table_shape_id bigint NOT NULL,
     table_shape_name text NOT NULL,
     table_shape_note text,
-    table_shape_type tableshapetype[] DEFAULT '{simple}'::tableshapetype[],
+    table_shape_type public.tableshapetype[] DEFAULT '{simple}'::public.tableshapetype[],
     table_name text NOT NULL,
     schema_name text DEFAULT 'public'::text NOT NULL,
-    table_inherit_type tableinherittype DEFAULT 'no'::tableinherittype,
+    table_inherit_type public.tableinherittype DEFAULT 'no'::public.tableinherittype,
     inherit_table_names text[],
     refine text,
     features text,
     right_shape_ids bigint[],
     auto_refresh interval,
-    view_rights rights DEFAULT 'viewer'::rights,
-    edit_rights rights DEFAULT 'operator'::rights,
-    insert_rights rights DEFAULT 'operator'::rights,
-    remove_rights rights DEFAULT 'admin'::rights,
+    view_rights public.rights DEFAULT 'viewer'::public.rights,
+    edit_rights public.rights DEFAULT 'operator'::public.rights,
+    insert_rights public.rights DEFAULT 'operator'::public.rights,
+    remove_rights public.rights DEFAULT 'admin'::public.rights,
     style_sheet text,
-    text_id bigint DEFAULT nextval('text_id_sequ'::regclass) NOT NULL
+    text_id bigint DEFAULT nextval('public.text_id_sequ'::regclass) NOT NULL
 );
 
 
-ALTER TABLE table_shapes OWNER TO lanview2;
+ALTER TABLE public.table_shapes OWNER TO lanview2;
 
 --
 -- Name: TABLE table_shapes; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE table_shapes IS 'Tábla megjelenítő lírók (Qt GUI) táblája';
+COMMENT ON TABLE public.table_shapes IS 'Tábla megjelenítő lírók (Qt GUI) táblája';
 
 
 --
 -- Name: COLUMN table_shapes.table_shape_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN table_shapes.table_shape_id IS 'Egyedi azonosító ID';
+COMMENT ON COLUMN public.table_shapes.table_shape_id IS 'Egyedi azonosító ID';
 
 
 --
 -- Name: COLUMN table_shapes.table_shape_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN table_shapes.table_shape_name IS 'A shape neve, egyedi azonosító';
+COMMENT ON COLUMN public.table_shapes.table_shape_name IS 'A shape neve, egyedi azonosító';
 
 
 --
 -- Name: COLUMN table_shapes.table_shape_note; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN table_shapes.table_shape_note IS 'A shape leírása ill. megjegyzés.';
+COMMENT ON COLUMN public.table_shapes.table_shape_note IS 'A shape leírása ill. megjegyzés.';
 
 
 --
 -- Name: COLUMN table_shapes.table_shape_type; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN table_shapes.table_shape_type IS 'A megjelenítés típusa.';
+COMMENT ON COLUMN public.table_shapes.table_shape_type IS 'A megjelenítés típusa.';
 
 
 --
 -- Name: COLUMN table_shapes.table_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN table_shapes.table_name IS 'A shape álltal megjelenítendő tábla neve';
+COMMENT ON COLUMN public.table_shapes.table_name IS 'A shape álltal megjelenítendő tábla neve';
 
 
 --
 -- Name: COLUMN table_shapes.refine; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN table_shapes.refine IS 'Egy opcionális feltétel, ha a táblának csak egy részhalmaza kell (WHERE clause)';
+COMMENT ON COLUMN public.table_shapes.refine IS 'Egy opcionális feltétel, ha a táblának csak egy részhalmaza kell (WHERE clause)';
 
 
 --
 -- Name: COLUMN table_shapes.features; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN table_shapes.features IS 'További paraméterek.';
+COMMENT ON COLUMN public.table_shapes.features IS 'További paraméterek.';
 
 
 --
 -- Name: COLUMN table_shapes.right_shape_ids; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN table_shapes.right_shape_ids IS 'A jobb oldali, gyerek, vagy csoport táblákat megjelenítő leírókra mutatnak az elemei';
+COMMENT ON COLUMN public.table_shapes.right_shape_ids IS 'A jobb oldali, gyerek, vagy csoport táblákat megjelenítő leírókra mutatnak az elemei';
 
 
 --
 -- Name: COLUMN table_shapes.view_rights; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN table_shapes.view_rights IS 'Minimális jogosultsági szint a táblába megtekintéséhez';
+COMMENT ON COLUMN public.table_shapes.view_rights IS 'Minimális jogosultsági szint a táblába megtekintéséhez';
 
 
 --
 -- Name: COLUMN table_shapes.edit_rights; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN table_shapes.edit_rights IS 'Minimális jogosultsági szint a tábábla szerkesztéséhez';
+COMMENT ON COLUMN public.table_shapes.edit_rights IS 'Minimális jogosultsági szint a tábábla szerkesztéséhez';
 
 
 --
 -- Name: COLUMN table_shapes.insert_rights; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN table_shapes.insert_rights IS 'Minimális jogosultsági szint a táblába való beszúráshoz';
+COMMENT ON COLUMN public.table_shapes.insert_rights IS 'Minimális jogosultsági szint a táblába való beszúráshoz';
 
 
 --
 -- Name: COLUMN table_shapes.remove_rights; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN table_shapes.remove_rights IS 'Minimális jogosultsági szint a tábából való törléshez';
+COMMENT ON COLUMN public.table_shapes.remove_rights IS 'Minimális jogosultsági szint a tábából való törléshez';
 
 
 --
 -- Name: table_shapes_table_shape_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE table_shapes_table_shape_id_seq
+CREATE SEQUENCE public.table_shapes_table_shape_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -11535,54 +11740,54 @@ CREATE SEQUENCE table_shapes_table_shape_id_seq
     CACHE 1;
 
 
-ALTER TABLE table_shapes_table_shape_id_seq OWNER TO lanview2;
+ALTER TABLE public.table_shapes_table_shape_id_seq OWNER TO lanview2;
 
 --
 -- Name: table_shapes_table_shape_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE table_shapes_table_shape_id_seq OWNED BY table_shapes.table_shape_id;
+ALTER SEQUENCE public.table_shapes_table_shape_id_seq OWNED BY public.table_shapes.table_shape_id;
 
 
 --
 -- Name: timeperiod_tpows; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE timeperiod_tpows (
+CREATE TABLE public.timeperiod_tpows (
     timeperiod_tpow_id bigint NOT NULL,
     tpow_id bigint,
     timeperiod_id bigint
 );
 
 
-ALTER TABLE timeperiod_tpows OWNER TO lanview2;
+ALTER TABLE public.timeperiod_tpows OWNER TO lanview2;
 
 --
 -- Name: TABLE timeperiod_tpows; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE timeperiod_tpows IS 'Time periods and tpows kapcsoló tábla';
+COMMENT ON TABLE public.timeperiod_tpows IS 'Time periods and tpows kapcsoló tábla';
 
 
 --
 -- Name: COLUMN timeperiod_tpows.tpow_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN timeperiod_tpows.tpow_id IS 'Unique ID';
+COMMENT ON COLUMN public.timeperiod_tpows.tpow_id IS 'Unique ID';
 
 
 --
 -- Name: COLUMN timeperiod_tpows.timeperiod_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN timeperiod_tpows.timeperiod_id IS 'Unique ID';
+COMMENT ON COLUMN public.timeperiod_tpows.timeperiod_id IS 'Unique ID';
 
 
 --
 -- Name: timeperiod_tpows_timeperiod_tpow_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE timeperiod_tpows_timeperiod_tpow_id_seq
+CREATE SEQUENCE public.timeperiod_tpows_timeperiod_tpow_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -11590,54 +11795,54 @@ CREATE SEQUENCE timeperiod_tpows_timeperiod_tpow_id_seq
     CACHE 1;
 
 
-ALTER TABLE timeperiod_tpows_timeperiod_tpow_id_seq OWNER TO lanview2;
+ALTER TABLE public.timeperiod_tpows_timeperiod_tpow_id_seq OWNER TO lanview2;
 
 --
 -- Name: timeperiod_tpows_timeperiod_tpow_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE timeperiod_tpows_timeperiod_tpow_id_seq OWNED BY timeperiod_tpows.timeperiod_tpow_id;
+ALTER SEQUENCE public.timeperiod_tpows_timeperiod_tpow_id_seq OWNED BY public.timeperiod_tpows.timeperiod_tpow_id;
 
 
 --
 -- Name: timeperiods; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE timeperiods (
+CREATE TABLE public.timeperiods (
     timeperiod_id bigint NOT NULL,
     timeperiod_name text NOT NULL,
     timeperiod_note text
 );
 
 
-ALTER TABLE timeperiods OWNER TO lanview2;
+ALTER TABLE public.timeperiods OWNER TO lanview2;
 
 --
 -- Name: TABLE timeperiods; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE timeperiods IS 'Time periods';
+COMMENT ON TABLE public.timeperiods IS 'Time periods';
 
 
 --
 -- Name: COLUMN timeperiods.timeperiod_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN timeperiods.timeperiod_id IS 'Unique ID';
+COMMENT ON COLUMN public.timeperiods.timeperiod_id IS 'Unique ID';
 
 
 --
 -- Name: COLUMN timeperiods.timeperiod_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN timeperiods.timeperiod_name IS 'Unique name for time periods';
+COMMENT ON COLUMN public.timeperiods.timeperiod_name IS 'Unique name for time periods';
 
 
 --
 -- Name: timeperiods_timeperiod_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE timeperiods_timeperiod_id_seq
+CREATE SEQUENCE public.timeperiods_timeperiod_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -11645,78 +11850,78 @@ CREATE SEQUENCE timeperiods_timeperiod_id_seq
     CACHE 1;
 
 
-ALTER TABLE timeperiods_timeperiod_id_seq OWNER TO lanview2;
+ALTER TABLE public.timeperiods_timeperiod_id_seq OWNER TO lanview2;
 
 --
 -- Name: timeperiods_timeperiod_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE timeperiods_timeperiod_id_seq OWNED BY timeperiods.timeperiod_id;
+ALTER SEQUENCE public.timeperiods_timeperiod_id_seq OWNED BY public.timeperiods.timeperiod_id;
 
 
 --
 -- Name: tpows; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE tpows (
+CREATE TABLE public.tpows (
     tpow_id bigint NOT NULL,
     tpow_name text NOT NULL,
     tpow_note text,
-    dow dayofweek NOT NULL,
+    dow public.dayofweek NOT NULL,
     begin_time time without time zone DEFAULT '00:00:00'::time without time zone NOT NULL,
     end_time time without time zone DEFAULT '24:00:00'::time without time zone NOT NULL
 );
 
 
-ALTER TABLE tpows OWNER TO lanview2;
+ALTER TABLE public.tpows OWNER TO lanview2;
 
 --
 -- Name: TABLE tpows; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE tpows IS 'One time period of week';
+COMMENT ON TABLE public.tpows IS 'One time period of week';
 
 
 --
 -- Name: COLUMN tpows.tpow_id; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN tpows.tpow_id IS 'Unique ID';
+COMMENT ON COLUMN public.tpows.tpow_id IS 'Unique ID';
 
 
 --
 -- Name: COLUMN tpows.tpow_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN tpows.tpow_name IS 'Unique name for time intervall of week';
+COMMENT ON COLUMN public.tpows.tpow_name IS 'Unique name for time intervall of week';
 
 
 --
 -- Name: COLUMN tpows.dow; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN tpows.dow IS 'Day of week';
+COMMENT ON COLUMN public.tpows.dow IS 'Day of week';
 
 
 --
 -- Name: COLUMN tpows.begin_time; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN tpows.begin_time IS 'Begin time';
+COMMENT ON COLUMN public.tpows.begin_time IS 'Begin time';
 
 
 --
 -- Name: COLUMN tpows.end_time; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN tpows.end_time IS 'End time';
+COMMENT ON COLUMN public.tpows.end_time IS 'End time';
 
 
 --
 -- Name: tpows_tpow_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE tpows_tpow_id_seq
+CREATE SEQUENCE public.tpows_tpow_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -11724,25 +11929,25 @@ CREATE SEQUENCE tpows_tpow_id_seq
     CACHE 1;
 
 
-ALTER TABLE tpows_tpow_id_seq OWNER TO lanview2;
+ALTER TABLE public.tpows_tpow_id_seq OWNER TO lanview2;
 
 --
 -- Name: tpows_tpow_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE tpows_tpow_id_seq OWNED BY tpows.tpow_id;
+ALTER SEQUENCE public.tpows_tpow_id_seq OWNED BY public.tpows.tpow_id;
 
 
 --
 -- Name: unusual_fkeys; Type: TABLE; Schema: public; Owner: lanview2
 --
 
-CREATE TABLE unusual_fkeys (
+CREATE TABLE public.unusual_fkeys (
     unusual_fkey_id bigint NOT NULL,
     table_schema text DEFAULT 'public'::text NOT NULL,
     table_name text NOT NULL,
     column_name text NOT NULL,
-    unusual_fkeys_type unusualfkeytype DEFAULT 'property'::unusualfkeytype NOT NULL,
+    unusual_fkeys_type public.unusualfkeytype DEFAULT 'property'::public.unusualfkeytype NOT NULL,
     f_table_schema text DEFAULT 'public'::text NOT NULL,
     f_table_name text NOT NULL,
     f_column_name text NOT NULL,
@@ -11750,69 +11955,69 @@ CREATE TABLE unusual_fkeys (
 );
 
 
-ALTER TABLE unusual_fkeys OWNER TO lanview2;
+ALTER TABLE public.unusual_fkeys OWNER TO lanview2;
 
 --
 -- Name: TABLE unusual_fkeys; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TABLE unusual_fkeys IS 'Az öröklödéshez kapcsolódó távoli kulcsok definíciói';
+COMMENT ON TABLE public.unusual_fkeys IS 'Az öröklödéshez kapcsolódó távoli kulcsok definíciói';
 
 
 --
 -- Name: COLUMN unusual_fkeys.table_schema; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN unusual_fkeys.table_schema IS 'A tábla séma neve, melyben a hivatkozó mezőt definiáljuk';
+COMMENT ON COLUMN public.unusual_fkeys.table_schema IS 'A tábla séma neve, melyben a hivatkozó mezőt definiáljuk';
 
 
 --
 -- Name: COLUMN unusual_fkeys.table_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN unusual_fkeys.table_name IS 'A tábla neve, melyben a hivatkozó mezőt definiáljuk';
+COMMENT ON COLUMN public.unusual_fkeys.table_name IS 'A tábla neve, melyben a hivatkozó mezőt definiáljuk';
 
 
 --
 -- Name: COLUMN unusual_fkeys.column_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN unusual_fkeys.column_name IS 'A hivatkozó/mutató mező neve';
+COMMENT ON COLUMN public.unusual_fkeys.column_name IS 'A hivatkozó/mutató mező neve';
 
 
 --
 -- Name: COLUMN unusual_fkeys.unusual_fkeys_type; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN unusual_fkeys.unusual_fkeys_type IS 'A hivatkozás típusa';
+COMMENT ON COLUMN public.unusual_fkeys.unusual_fkeys_type IS 'A hivatkozás típusa';
 
 
 --
 -- Name: COLUMN unusual_fkeys.f_table_schema; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN unusual_fkeys.f_table_schema IS 'A hivatkozott tábla elsődleges kulcsmezóje, ill. a hivatkozott mező';
+COMMENT ON COLUMN public.unusual_fkeys.f_table_schema IS 'A hivatkozott tábla elsődleges kulcsmezóje, ill. a hivatkozott mező';
 
 
 --
 -- Name: COLUMN unusual_fkeys.f_table_name; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN unusual_fkeys.f_table_name IS 'A hivatkozott tábla neve';
+COMMENT ON COLUMN public.unusual_fkeys.f_table_name IS 'A hivatkozott tábla neve';
 
 
 --
 -- Name: COLUMN unusual_fkeys.f_inherited_tables; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON COLUMN unusual_fkeys.f_inherited_tables IS 'Azon leszármazott táblák nevei, melyekre még vonatkozhat a hivatkozás (a séma név azonos)';
+COMMENT ON COLUMN public.unusual_fkeys.f_inherited_tables IS 'Azon leszármazott táblák nevei, melyekre még vonatkozhat a hivatkozás (a séma név azonos)';
 
 
 --
 -- Name: unusual_fkeys_unusual_fkey_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE unusual_fkeys_unusual_fkey_id_seq
+CREATE SEQUENCE public.unusual_fkeys_unusual_fkey_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -11820,20 +12025,20 @@ CREATE SEQUENCE unusual_fkeys_unusual_fkey_id_seq
     CACHE 1;
 
 
-ALTER TABLE unusual_fkeys_unusual_fkey_id_seq OWNER TO lanview2;
+ALTER TABLE public.unusual_fkeys_unusual_fkey_id_seq OWNER TO lanview2;
 
 --
 -- Name: unusual_fkeys_unusual_fkey_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE unusual_fkeys_unusual_fkey_id_seq OWNED BY unusual_fkeys.unusual_fkey_id;
+ALTER SEQUENCE public.unusual_fkeys_unusual_fkey_id_seq OWNED BY public.unusual_fkeys.unusual_fkey_id;
 
 
 --
 -- Name: user_events_user_event_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE user_events_user_event_id_seq
+CREATE SEQUENCE public.user_events_user_event_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -11841,20 +12046,20 @@ CREATE SEQUENCE user_events_user_event_id_seq
     CACHE 1;
 
 
-ALTER TABLE user_events_user_event_id_seq OWNER TO lanview2;
+ALTER TABLE public.user_events_user_event_id_seq OWNER TO lanview2;
 
 --
 -- Name: user_events_user_event_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE user_events_user_event_id_seq OWNED BY user_events.user_event_id;
+ALTER SEQUENCE public.user_events_user_event_id_seq OWNED BY public.user_events.user_event_id;
 
 
 --
 -- Name: users_user_id_seq; Type: SEQUENCE; Schema: public; Owner: lanview2
 --
 
-CREATE SEQUENCE users_user_id_seq
+CREATE SEQUENCE public.users_user_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -11862,574 +12067,531 @@ CREATE SEQUENCE users_user_id_seq
     CACHE 1;
 
 
-ALTER TABLE users_user_id_seq OWNER TO lanview2;
+ALTER TABLE public.users_user_id_seq OWNER TO lanview2;
 
 --
 -- Name: users_user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lanview2
 --
 
-ALTER SEQUENCE users_user_id_seq OWNED BY users.user_id;
-
-
---
--- Name: vlans; Type: TABLE; Schema: public; Owner: lanview2
---
-
-CREATE TABLE vlans (
-    vlan_id bigint NOT NULL,
-    vlan_name text NOT NULL,
-    vlan_note text,
-    vlan_stat boolean DEFAULT true NOT NULL,
-    flag boolean DEFAULT false
-);
-
-
-ALTER TABLE vlans OWNER TO lanview2;
-
---
--- Name: TABLE vlans; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON TABLE vlans IS 'VLANs Table';
-
-
---
--- Name: COLUMN vlans.vlan_id; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN vlans.vlan_id IS 'Unique ID for vlans. (802,1q ID)';
-
-
---
--- Name: COLUMN vlans.vlan_name; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN vlans.vlan_name IS 'Name of VLAN';
-
-
---
--- Name: COLUMN vlans.vlan_note; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN vlans.vlan_note IS 'Description for VLAN';
-
-
---
--- Name: COLUMN vlans.vlan_stat; Type: COMMENT; Schema: public; Owner: lanview2
---
-
-COMMENT ON COLUMN vlans.vlan_stat IS 'State of VLAN (On/Off)';
+ALTER SEQUENCE public.users_user_id_seq OWNED BY public.users.user_id;
 
 
 --
 -- Name: alarm_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY alarms ALTER COLUMN alarm_id SET DEFAULT nextval('alarms_alarm_id_seq'::regclass);
+ALTER TABLE ONLY public.alarms ALTER COLUMN alarm_id SET DEFAULT nextval('public.alarms_alarm_id_seq'::regclass);
 
 
 --
 -- Name: applog_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY app_errs ALTER COLUMN applog_id SET DEFAULT nextval('app_errs_applog_id_seq'::regclass);
+ALTER TABLE ONLY public.app_errs ALTER COLUMN applog_id SET DEFAULT nextval('public.app_errs_applog_id_seq'::regclass);
 
 
 --
 -- Name: app_memo_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY app_memos ALTER COLUMN app_memo_id SET DEFAULT nextval('app_memos_app_memo_id_seq'::regclass);
+ALTER TABLE ONLY public.app_memos ALTER COLUMN app_memo_id SET DEFAULT nextval('public.app_memos_app_memo_id_seq'::regclass);
 
 
 --
 -- Name: arp_log_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY arp_logs ALTER COLUMN arp_log_id SET DEFAULT nextval('arp_logs_arp_log_id_seq'::regclass);
+ALTER TABLE ONLY public.arp_logs ALTER COLUMN arp_log_id SET DEFAULT nextval('public.arp_logs_arp_log_id_seq'::regclass);
 
 
 --
 -- Name: dblog_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY db_errs ALTER COLUMN dblog_id SET DEFAULT nextval('db_errs_dblog_id_seq'::regclass);
+ALTER TABLE ONLY public.db_errs ALTER COLUMN dblog_id SET DEFAULT nextval('public.db_errs_dblog_id_seq'::regclass);
 
 
 --
 -- Name: alarm_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY disabled_alarms ALTER COLUMN alarm_id SET DEFAULT nextval('alarms_alarm_id_seq'::regclass);
+ALTER TABLE ONLY public.disabled_alarms ALTER COLUMN alarm_id SET DEFAULT nextval('public.alarms_alarm_id_seq'::regclass);
 
 
 --
 -- Name: begin_time; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY disabled_alarms ALTER COLUMN begin_time SET DEFAULT now();
+ALTER TABLE ONLY public.disabled_alarms ALTER COLUMN begin_time SET DEFAULT now();
 
 
 --
 -- Name: dyn_addr_range_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY dyn_addr_ranges ALTER COLUMN dyn_addr_range_id SET DEFAULT nextval('dyn_addr_ranges_dyn_addr_range_id_seq'::regclass);
+ALTER TABLE ONLY public.dyn_addr_ranges ALTER COLUMN dyn_addr_range_id SET DEFAULT nextval('public.dyn_addr_ranges_dyn_addr_range_id_seq'::regclass);
 
 
 --
 -- Name: dyn_ipaddress_log_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY dyn_ipaddress_logs ALTER COLUMN dyn_ipaddress_log_id SET DEFAULT nextval('dyn_ipaddress_logs_dyn_ipaddress_log_id_seq'::regclass);
+ALTER TABLE ONLY public.dyn_ipaddress_logs ALTER COLUMN dyn_ipaddress_log_id SET DEFAULT nextval('public.dyn_ipaddress_logs_dyn_ipaddress_log_id_seq'::regclass);
 
 
 --
 -- Name: enum_val_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY enum_vals ALTER COLUMN enum_val_id SET DEFAULT nextval('enum_vals_enum_val_id_seq'::regclass);
+ALTER TABLE ONLY public.enum_vals ALTER COLUMN enum_val_id SET DEFAULT nextval('public.enum_vals_enum_val_id_seq'::regclass);
 
 
 --
 -- Name: error_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY errors ALTER COLUMN error_id SET DEFAULT nextval('errors_error_id_seq'::regclass);
+ALTER TABLE ONLY public.errors ALTER COLUMN error_id SET DEFAULT nextval('public.errors_error_id_seq'::regclass);
 
 
 --
 -- Name: field_attr_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY field_attrs ALTER COLUMN field_attr_id SET DEFAULT nextval('field_attrs_field_attr_id_seq'::regclass);
+ALTER TABLE ONLY public.field_attrs ALTER COLUMN field_attr_id SET DEFAULT nextval('public.field_attrs_field_attr_id_seq'::regclass);
 
 
 --
 -- Name: fkey_type_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY fkey_types ALTER COLUMN fkey_type_id SET DEFAULT nextval('fkey_types_fkey_type_id_seq'::regclass);
+ALTER TABLE ONLY public.fkey_types ALTER COLUMN fkey_type_id SET DEFAULT nextval('public.fkey_types_fkey_type_id_seq'::regclass);
 
 
 --
 -- Name: graph_var_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY graph_vars ALTER COLUMN graph_var_id SET DEFAULT nextval('graph_vars_graph_var_id_seq'::regclass);
+ALTER TABLE ONLY public.graph_vars ALTER COLUMN graph_var_id SET DEFAULT nextval('public.graph_vars_graph_var_id_seq'::regclass);
 
 
 --
 -- Name: graph_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY graphs ALTER COLUMN graph_id SET DEFAULT nextval('graphs_graph_id_seq'::regclass);
+ALTER TABLE ONLY public.graphs ALTER COLUMN graph_id SET DEFAULT nextval('public.graphs_graph_id_seq'::regclass);
 
 
 --
 -- Name: group_user_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY group_users ALTER COLUMN group_user_id SET DEFAULT nextval('group_users_group_user_id_seq'::regclass);
+ALTER TABLE ONLY public.group_users ALTER COLUMN group_user_id SET DEFAULT nextval('public.group_users_group_user_id_seq'::regclass);
 
 
 --
 -- Name: group_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY groups ALTER COLUMN group_id SET DEFAULT nextval('groups_group_id_seq'::regclass);
+ALTER TABLE ONLY public.groups ALTER COLUMN group_id SET DEFAULT nextval('public.groups_group_id_seq'::regclass);
 
 
 --
 -- Name: host_service_log_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY host_service_logs ALTER COLUMN host_service_log_id SET DEFAULT nextval('host_service_logs_host_service_log_id_seq'::regclass);
+ALTER TABLE ONLY public.host_service_logs ALTER COLUMN host_service_log_id SET DEFAULT nextval('public.host_service_logs_host_service_log_id_seq'::regclass);
 
 
 --
 -- Name: host_service_noalarm_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY host_service_noalarms ALTER COLUMN host_service_noalarm_id SET DEFAULT nextval('host_service_noalarms_host_service_noalarm_id_seq'::regclass);
+ALTER TABLE ONLY public.host_service_noalarms ALTER COLUMN host_service_noalarm_id SET DEFAULT nextval('public.host_service_noalarms_host_service_noalarm_id_seq'::regclass);
 
 
 --
 -- Name: host_service_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY host_services ALTER COLUMN host_service_id SET DEFAULT nextval('host_services_host_service_id_seq'::regclass);
+ALTER TABLE ONLY public.host_services ALTER COLUMN host_service_id SET DEFAULT nextval('public.host_services_host_service_id_seq'::regclass);
 
 
 --
 -- Name: iftype_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY iftypes ALTER COLUMN iftype_id SET DEFAULT nextval('iftypes_iftype_id_seq'::regclass);
+ALTER TABLE ONLY public.iftypes ALTER COLUMN iftype_id SET DEFAULT nextval('public.iftypes_iftype_id_seq'::regclass);
 
 
 --
 -- Name: image_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY images ALTER COLUMN image_id SET DEFAULT nextval('images_image_id_seq'::regclass);
+ALTER TABLE ONLY public.images ALTER COLUMN image_id SET DEFAULT nextval('public.images_image_id_seq'::regclass);
 
 
 --
 -- Name: import_template_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY import_templates ALTER COLUMN import_template_id SET DEFAULT nextval('import_templates_import_template_id_seq'::regclass);
+ALTER TABLE ONLY public.import_templates ALTER COLUMN import_template_id SET DEFAULT nextval('public.import_templates_import_template_id_seq'::regclass);
 
 
 --
 -- Name: import_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY imports ALTER COLUMN import_id SET DEFAULT nextval('imports_import_id_seq'::regclass);
+ALTER TABLE ONLY public.imports ALTER COLUMN import_id SET DEFAULT nextval('public.imports_import_id_seq'::regclass);
 
 
 --
 -- Name: port_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY interfaces ALTER COLUMN port_id SET DEFAULT nextval('nports_port_id_seq'::regclass);
+ALTER TABLE ONLY public.interfaces ALTER COLUMN port_id SET DEFAULT nextval('public.nports_port_id_seq'::regclass);
 
 
 --
 -- Name: iftype_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY interfaces ALTER COLUMN iftype_id SET DEFAULT 0;
+ALTER TABLE ONLY public.interfaces ALTER COLUMN iftype_id SET DEFAULT 0;
 
 
 --
 -- Name: deleted; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY interfaces ALTER COLUMN deleted SET DEFAULT false;
+ALTER TABLE ONLY public.interfaces ALTER COLUMN deleted SET DEFAULT false;
 
 
 --
 -- Name: flag; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY interfaces ALTER COLUMN flag SET DEFAULT false;
+ALTER TABLE ONLY public.interfaces ALTER COLUMN flag SET DEFAULT false;
 
 
 --
 -- Name: ip_address_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY ip_addresses ALTER COLUMN ip_address_id SET DEFAULT nextval('ipaddresses_ip_address_id_seq'::regclass);
+ALTER TABLE ONLY public.ip_addresses ALTER COLUMN ip_address_id SET DEFAULT nextval('public.ipaddresses_ip_address_id_seq'::regclass);
 
 
 --
 -- Name: language_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY languages ALTER COLUMN language_id SET DEFAULT nextval('languages_language_id_seq'::regclass);
+ALTER TABLE ONLY public.languages ALTER COLUMN language_id SET DEFAULT nextval('public.languages_language_id_seq'::regclass);
 
 
 --
 -- Name: lldp_link_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY lldp_links_table ALTER COLUMN lldp_link_id SET DEFAULT nextval('lldp_links_table_lldp_link_id_seq'::regclass);
+ALTER TABLE ONLY public.lldp_links_table ALTER COLUMN lldp_link_id SET DEFAULT nextval('public.lldp_links_table_lldp_link_id_seq'::regclass);
 
 
 --
 -- Name: log_link_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY log_links_table ALTER COLUMN log_link_id SET DEFAULT nextval('log_links_table_log_link_id_seq'::regclass);
+ALTER TABLE ONLY public.log_links_table ALTER COLUMN log_link_id SET DEFAULT nextval('public.log_links_table_log_link_id_seq'::regclass);
 
 
 --
 -- Name: mactab_log_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY mactab_logs ALTER COLUMN mactab_log_id SET DEFAULT nextval('mactab_logs_mactab_log_id_seq'::regclass);
+ALTER TABLE ONLY public.mactab_logs ALTER COLUMN mactab_log_id SET DEFAULT nextval('public.mactab_logs_mactab_log_id_seq'::regclass);
 
 
 --
 -- Name: menu_item_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY menu_items ALTER COLUMN menu_item_id SET DEFAULT nextval('menu_items_menu_item_id_seq'::regclass);
+ALTER TABLE ONLY public.menu_items ALTER COLUMN menu_item_id SET DEFAULT nextval('public.menu_items_menu_item_id_seq'::regclass);
 
 
 --
 -- Name: node_param_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY node_params ALTER COLUMN node_param_id SET DEFAULT nextval('node_params_node_param_id_seq'::regclass);
+ALTER TABLE ONLY public.node_params ALTER COLUMN node_param_id SET DEFAULT nextval('public.node_params_node_param_id_seq'::regclass);
 
 
 --
 -- Name: node_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY nodes ALTER COLUMN node_id SET DEFAULT nextval('patchs_node_id_seq'::regclass);
+ALTER TABLE ONLY public.nodes ALTER COLUMN node_id SET DEFAULT nextval('public.patchs_node_id_seq'::regclass);
 
 
 --
 -- Name: place_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY nodes ALTER COLUMN place_id SET DEFAULT 0;
+ALTER TABLE ONLY public.nodes ALTER COLUMN place_id SET DEFAULT 0;
 
 
 --
 -- Name: deleted; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY nodes ALTER COLUMN deleted SET DEFAULT false;
+ALTER TABLE ONLY public.nodes ALTER COLUMN deleted SET DEFAULT false;
 
 
 --
 -- Name: port_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY nports ALTER COLUMN port_id SET DEFAULT nextval('nports_port_id_seq'::regclass);
+ALTER TABLE ONLY public.nports ALTER COLUMN port_id SET DEFAULT nextval('public.nports_port_id_seq'::regclass);
 
 
 --
 -- Name: object_syntax_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY object_syntaxs ALTER COLUMN object_syntax_id SET DEFAULT nextval('object_syntaxs_object_syntax_id_seq'::regclass);
+ALTER TABLE ONLY public.object_syntaxs ALTER COLUMN object_syntax_id SET DEFAULT nextval('public.object_syntaxs_object_syntax_id_seq'::regclass);
 
 
 --
 -- Name: param_type_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY param_types ALTER COLUMN param_type_id SET DEFAULT nextval('param_types_param_type_id_seq'::regclass);
+ALTER TABLE ONLY public.param_types ALTER COLUMN param_type_id SET DEFAULT nextval('public.param_types_param_type_id_seq'::regclass);
 
 
 --
 -- Name: node_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY patchs ALTER COLUMN node_id SET DEFAULT nextval('patchs_node_id_seq'::regclass);
+ALTER TABLE ONLY public.patchs ALTER COLUMN node_id SET DEFAULT nextval('public.patchs_node_id_seq'::regclass);
 
 
 --
 -- Name: phs_link_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY phs_links_table ALTER COLUMN phs_link_id SET DEFAULT nextval('phs_links_table_phs_link_id_seq'::regclass);
+ALTER TABLE ONLY public.phs_links_table ALTER COLUMN phs_link_id SET DEFAULT nextval('public.phs_links_table_phs_link_id_seq'::regclass);
 
 
 --
 -- Name: place_group_place_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY place_group_places ALTER COLUMN place_group_place_id SET DEFAULT nextval('place_group_places_place_group_place_id_seq'::regclass);
+ALTER TABLE ONLY public.place_group_places ALTER COLUMN place_group_place_id SET DEFAULT nextval('public.place_group_places_place_group_place_id_seq'::regclass);
 
 
 --
 -- Name: place_group_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY place_groups ALTER COLUMN place_group_id SET DEFAULT nextval('place_groups_place_group_id_seq'::regclass);
+ALTER TABLE ONLY public.place_groups ALTER COLUMN place_group_id SET DEFAULT nextval('public.place_groups_place_group_id_seq'::regclass);
 
 
 --
 -- Name: place_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY places ALTER COLUMN place_id SET DEFAULT nextval('places_place_id_seq'::regclass);
+ALTER TABLE ONLY public.places ALTER COLUMN place_id SET DEFAULT nextval('public.places_place_id_seq'::regclass);
 
 
 --
 -- Name: port_param_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY port_params ALTER COLUMN port_param_id SET DEFAULT nextval('port_params_port_param_id_seq'::regclass);
+ALTER TABLE ONLY public.port_params ALTER COLUMN port_param_id SET DEFAULT nextval('public.port_params_port_param_id_seq'::regclass);
+
+
+--
+-- Name: port_vlan_log_id; Type: DEFAULT; Schema: public; Owner: lanview2
+--
+
+ALTER TABLE ONLY public.port_vlan_logs ALTER COLUMN port_vlan_log_id SET DEFAULT nextval('public.port_vlan_logs_port_vlan_log_id_seq'::regclass);
 
 
 --
 -- Name: port_vlan_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY port_vlans ALTER COLUMN port_vlan_id SET DEFAULT nextval('port_vlans_port_vlan_id_seq'::regclass);
+ALTER TABLE ONLY public.port_vlans ALTER COLUMN port_vlan_id SET DEFAULT nextval('public.port_vlans_port_vlan_id_seq'::regclass);
 
 
 --
 -- Name: port_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY pports ALTER COLUMN port_id SET DEFAULT nextval('nports_port_id_seq'::regclass);
+ALTER TABLE ONLY public.pports ALTER COLUMN port_id SET DEFAULT nextval('public.nports_port_id_seq'::regclass);
 
 
 --
 -- Name: iftype_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY pports ALTER COLUMN iftype_id SET DEFAULT 0;
+ALTER TABLE ONLY public.pports ALTER COLUMN iftype_id SET DEFAULT 0;
 
 
 --
 -- Name: deleted; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY pports ALTER COLUMN deleted SET DEFAULT false;
+ALTER TABLE ONLY public.pports ALTER COLUMN deleted SET DEFAULT false;
 
 
 --
 -- Name: flag; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY pports ALTER COLUMN flag SET DEFAULT false;
+ALTER TABLE ONLY public.pports ALTER COLUMN flag SET DEFAULT false;
 
 
 --
 -- Name: query_parser_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY query_parsers ALTER COLUMN query_parser_id SET DEFAULT nextval('query_parsers_query_parser_id_seq'::regclass);
+ALTER TABLE ONLY public.query_parsers ALTER COLUMN query_parser_id SET DEFAULT nextval('public.query_parsers_query_parser_id_seq'::regclass);
 
 
 --
 -- Name: rrd_beat_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY rrd_beats ALTER COLUMN rrd_beat_id SET DEFAULT nextval('rrd_beats_rrd_beat_id_seq'::regclass);
+ALTER TABLE ONLY public.rrd_beats ALTER COLUMN rrd_beat_id SET DEFAULT nextval('public.rrd_beats_rrd_beat_id_seq'::regclass);
 
 
 --
 -- Name: select_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY selects ALTER COLUMN select_id SET DEFAULT nextval('selects_select_id_seq'::regclass);
+ALTER TABLE ONLY public.selects ALTER COLUMN select_id SET DEFAULT nextval('public.selects_select_id_seq'::regclass);
 
 
 --
 -- Name: service_type_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY service_types ALTER COLUMN service_type_id SET DEFAULT nextval('service_types_service_type_id_seq'::regclass);
+ALTER TABLE ONLY public.service_types ALTER COLUMN service_type_id SET DEFAULT nextval('public.service_types_service_type_id_seq'::regclass);
 
 
 --
 -- Name: service_var_type_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY service_var_types ALTER COLUMN service_var_type_id SET DEFAULT nextval('service_var_types_service_var_type_id_seq'::regclass);
+ALTER TABLE ONLY public.service_var_types ALTER COLUMN service_var_type_id SET DEFAULT nextval('public.service_var_types_service_var_type_id_seq'::regclass);
 
 
 --
 -- Name: service_var_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY service_vars ALTER COLUMN service_var_id SET DEFAULT nextval('service_vars_service_var_id_seq'::regclass);
+ALTER TABLE ONLY public.service_vars ALTER COLUMN service_var_id SET DEFAULT nextval('public.service_vars_service_var_id_seq'::regclass);
 
 
 --
 -- Name: service_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY services ALTER COLUMN service_id SET DEFAULT nextval('services_service_id_seq'::regclass);
+ALTER TABLE ONLY public.services ALTER COLUMN service_id SET DEFAULT nextval('public.services_service_id_seq'::regclass);
 
 
 --
 -- Name: node_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY snmpdevices ALTER COLUMN node_id SET DEFAULT nextval('patchs_node_id_seq'::regclass);
+ALTER TABLE ONLY public.snmpdevices ALTER COLUMN node_id SET DEFAULT nextval('public.patchs_node_id_seq'::regclass);
 
 
 --
 -- Name: place_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY snmpdevices ALTER COLUMN place_id SET DEFAULT 0;
+ALTER TABLE ONLY public.snmpdevices ALTER COLUMN place_id SET DEFAULT 0;
 
 
 --
 -- Name: deleted; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY snmpdevices ALTER COLUMN deleted SET DEFAULT false;
+ALTER TABLE ONLY public.snmpdevices ALTER COLUMN deleted SET DEFAULT false;
 
 
 --
 -- Name: subnet_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY subnets ALTER COLUMN subnet_id SET DEFAULT nextval('subnets_subnet_id_seq'::regclass);
+ALTER TABLE ONLY public.subnets ALTER COLUMN subnet_id SET DEFAULT nextval('public.subnets_subnet_id_seq'::regclass);
 
 
 --
 -- Name: sys_param_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY sys_params ALTER COLUMN sys_param_id SET DEFAULT nextval('sys_params_sys_param_id_seq'::regclass);
+ALTER TABLE ONLY public.sys_params ALTER COLUMN sys_param_id SET DEFAULT nextval('public.sys_params_sys_param_id_seq'::regclass);
 
 
 --
 -- Name: table_shape_field_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY table_shape_fields ALTER COLUMN table_shape_field_id SET DEFAULT nextval('table_shape_fields_table_shape_field_id_seq'::regclass);
+ALTER TABLE ONLY public.table_shape_fields ALTER COLUMN table_shape_field_id SET DEFAULT nextval('public.table_shape_fields_table_shape_field_id_seq'::regclass);
 
 
 --
 -- Name: table_shape_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY table_shapes ALTER COLUMN table_shape_id SET DEFAULT nextval('table_shapes_table_shape_id_seq'::regclass);
+ALTER TABLE ONLY public.table_shapes ALTER COLUMN table_shape_id SET DEFAULT nextval('public.table_shapes_table_shape_id_seq'::regclass);
 
 
 --
 -- Name: timeperiod_tpow_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY timeperiod_tpows ALTER COLUMN timeperiod_tpow_id SET DEFAULT nextval('timeperiod_tpows_timeperiod_tpow_id_seq'::regclass);
+ALTER TABLE ONLY public.timeperiod_tpows ALTER COLUMN timeperiod_tpow_id SET DEFAULT nextval('public.timeperiod_tpows_timeperiod_tpow_id_seq'::regclass);
 
 
 --
 -- Name: timeperiod_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY timeperiods ALTER COLUMN timeperiod_id SET DEFAULT nextval('timeperiods_timeperiod_id_seq'::regclass);
+ALTER TABLE ONLY public.timeperiods ALTER COLUMN timeperiod_id SET DEFAULT nextval('public.timeperiods_timeperiod_id_seq'::regclass);
 
 
 --
 -- Name: tpow_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY tpows ALTER COLUMN tpow_id SET DEFAULT nextval('tpows_tpow_id_seq'::regclass);
+ALTER TABLE ONLY public.tpows ALTER COLUMN tpow_id SET DEFAULT nextval('public.tpows_tpow_id_seq'::regclass);
 
 
 --
 -- Name: unusual_fkey_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY unusual_fkeys ALTER COLUMN unusual_fkey_id SET DEFAULT nextval('unusual_fkeys_unusual_fkey_id_seq'::regclass);
+ALTER TABLE ONLY public.unusual_fkeys ALTER COLUMN unusual_fkey_id SET DEFAULT nextval('public.unusual_fkeys_unusual_fkey_id_seq'::regclass);
 
 
 --
 -- Name: user_event_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY user_events ALTER COLUMN user_event_id SET DEFAULT nextval('user_events_user_event_id_seq'::regclass);
+ALTER TABLE ONLY public.user_events ALTER COLUMN user_event_id SET DEFAULT nextval('public.user_events_user_event_id_seq'::regclass);
 
 
 --
 -- Name: user_id; Type: DEFAULT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY users ALTER COLUMN user_id SET DEFAULT nextval('users_user_id_seq'::regclass);
+ALTER TABLE ONLY public.users ALTER COLUMN user_id SET DEFAULT nextval('public.users_user_id_seq'::regclass);
 
 
 --
 -- Data for Name: alarm_messages; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY alarm_messages (service_type_id, status, text_id) FROM stdin;
+COPY public.alarm_messages (service_type_id, status, text_id) FROM stdin;
 20	down	1
 20	unreachable	2
 20	critical	3
@@ -12449,7 +12611,7 @@ COPY alarm_messages (service_type_id, status, text_id) FROM stdin;
 -- Data for Name: alarms; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY alarms (alarm_id, host_service_id, daemon_id, first_status, max_status, last_status, begin_time, event_note, superior_alarm_id, noalarm, end_time) FROM stdin;
+COPY public.alarms (alarm_id, host_service_id, daemon_id, first_status, max_status, last_status, begin_time, event_note, superior_alarm_id, noalarm, end_time) FROM stdin;
 \.
 
 
@@ -12457,14 +12619,14 @@ COPY alarms (alarm_id, host_service_id, daemon_id, first_status, max_status, las
 -- Name: alarms_alarm_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('alarms_alarm_id_seq', 73574, true);
+SELECT pg_catalog.setval('public.alarms_alarm_id_seq', 79789, true);
 
 
 --
 -- Data for Name: app_errs; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY app_errs (applog_id, date_of, app_name, node_id, pid, app_ver, lib_ver, user_id, service_id, func_name, src_name, src_line, err_code, err_name, err_subcode, err_syscode, err_submsg, thread_name, sql_err_num, sql_err_type, sql_driver_text, sql_db_text, sql_query, sql_bounds, data_line, data_pos, data_msg, data_name, acknowledged) FROM stdin;
+COPY public.app_errs (applog_id, date_of, app_name, node_id, pid, app_ver, lib_ver, user_id, service_id, func_name, src_name, src_line, err_code, err_name, err_subcode, err_syscode, err_submsg, thread_name, sql_err_num, sql_err_type, sql_driver_text, sql_db_text, sql_query, sql_bounds, data_line, data_pos, data_msg, data_name, acknowledged, back_stack) FROM stdin;
 \.
 
 
@@ -12472,14 +12634,14 @@ COPY app_errs (applog_id, date_of, app_name, node_id, pid, app_ver, lib_ver, use
 -- Name: app_errs_applog_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('app_errs_applog_id_seq', 196460, true);
+SELECT pg_catalog.setval('public.app_errs_applog_id_seq', 914955, true);
 
 
 --
 -- Data for Name: app_memos; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY app_memos (app_memo_id, date_of, app_name, pid, thread_name, app_ver, lib_ver, func_name, src_name, src_line, node_id, host_service_id, user_id, importance, memo, acknowledged) FROM stdin;
+COPY public.app_memos (app_memo_id, date_of, app_name, pid, thread_name, app_ver, lib_ver, func_name, src_name, src_line, node_id, host_service_id, user_id, importance, memo, acknowledged) FROM stdin;
 \.
 
 
@@ -12487,14 +12649,14 @@ COPY app_memos (app_memo_id, date_of, app_name, pid, thread_name, app_ver, lib_v
 -- Name: app_memos_app_memo_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('app_memos_app_memo_id_seq', 11870, true);
+SELECT pg_catalog.setval('public.app_memos_app_memo_id_seq', 14128, true);
 
 
 --
 -- Data for Name: arp_logs; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY arp_logs (arp_log_id, reason, date_of, ipaddress, hwaddress_new, hwaddress_old, set_type_old, host_service_id_old, first_time_old, last_time_old, acknowledged) FROM stdin;
+COPY public.arp_logs (arp_log_id, reason, date_of, ipaddress, hwaddress_new, hwaddress_old, set_type_old, host_service_id_old, first_time_old, last_time_old, acknowledged) FROM stdin;
 \.
 
 
@@ -12502,14 +12664,14 @@ COPY arp_logs (arp_log_id, reason, date_of, ipaddress, hwaddress_new, hwaddress_
 -- Name: arp_logs_arp_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('arp_logs_arp_log_id_seq', 13508, true);
+SELECT pg_catalog.setval('public.arp_logs_arp_log_id_seq', 14551, true);
 
 
 --
 -- Data for Name: arps; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY arps (ipaddress, hwaddress, set_type, host_service_id, first_time, last_time, arp_note) FROM stdin;
+COPY public.arps (ipaddress, hwaddress, set_type, host_service_id, first_time, last_time, arp_note) FROM stdin;
 \.
 
 
@@ -12517,7 +12679,7 @@ COPY arps (ipaddress, hwaddress, set_type, host_service_id, first_time, last_tim
 -- Data for Name: db_errs; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY db_errs (dblog_id, date_of, error_id, user_id, table_name, trigger_op, err_subcode, err_msg, func_name, reapeat, date_of_last, acknowledged) FROM stdin;
+COPY public.db_errs (dblog_id, date_of, error_id, user_id, table_name, trigger_op, err_subcode, err_msg, func_name, reapeat, date_of_last, acknowledged) FROM stdin;
 \.
 
 
@@ -12525,14 +12687,14 @@ COPY db_errs (dblog_id, date_of, error_id, user_id, table_name, trigger_op, err_
 -- Name: db_errs_dblog_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('db_errs_dblog_id_seq', 131362, true);
+SELECT pg_catalog.setval('public.db_errs_dblog_id_seq', 153841, true);
 
 
 --
 -- Data for Name: disabled_alarms; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY disabled_alarms (alarm_id, host_service_id, daemon_id, first_status, max_status, last_status, begin_time, event_note, superior_alarm_id, noalarm, end_time) FROM stdin;
+COPY public.disabled_alarms (alarm_id, host_service_id, daemon_id, first_status, max_status, last_status, begin_time, event_note, superior_alarm_id, noalarm, end_time) FROM stdin;
 \.
 
 
@@ -12540,7 +12702,7 @@ COPY disabled_alarms (alarm_id, host_service_id, daemon_id, first_status, max_st
 -- Data for Name: dyn_addr_ranges; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY dyn_addr_ranges (dyn_addr_range_id, dyn_addr_range_note, exclude, begin_address, end_address, subnet_id, host_service_id, last_time, flag) FROM stdin;
+COPY public.dyn_addr_ranges (dyn_addr_range_id, dyn_addr_range_note, exclude, begin_address, end_address, subnet_id, host_service_id, last_time, flag) FROM stdin;
 \.
 
 
@@ -12548,14 +12710,14 @@ COPY dyn_addr_ranges (dyn_addr_range_id, dyn_addr_range_note, exclude, begin_add
 -- Name: dyn_addr_ranges_dyn_addr_range_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('dyn_addr_ranges_dyn_addr_range_id_seq', 87, true);
+SELECT pg_catalog.setval('public.dyn_addr_ranges_dyn_addr_range_id_seq', 87, true);
 
 
 --
 -- Data for Name: dyn_ipaddress_logs; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY dyn_ipaddress_logs (dyn_ipaddress_log_id, date_of, ipaddress_new, ipaddress_old, set_type, port_id, acknowledged) FROM stdin;
+COPY public.dyn_ipaddress_logs (dyn_ipaddress_log_id, date_of, ipaddress_new, ipaddress_old, set_type, port_id, acknowledged) FROM stdin;
 \.
 
 
@@ -12563,116 +12725,119 @@ COPY dyn_ipaddress_logs (dyn_ipaddress_log_id, date_of, ipaddress_new, ipaddress
 -- Name: dyn_ipaddress_logs_dyn_ipaddress_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('dyn_ipaddress_logs_dyn_ipaddress_log_id_seq', 9214, true);
+SELECT pg_catalog.setval('public.dyn_ipaddress_logs_dyn_ipaddress_log_id_seq', 9214, true);
 
 
 --
 -- Data for Name: enum_vals; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY enum_vals (enum_val_id, enum_val_name, enum_val_note, enum_type_name, bg_color, fg_color, font_family, font_attr, text_id) FROM stdin;
-1868	on	rendben	notifswitch	#00ff00	\N	\N	{underline}	44
-1934	pseudo		addresstype	\N	#c800c8	\N	{strikeout}	45
-1933	dynamic	\N	addresstype	\N	#d28800	\N	{italic}	46
-1861	sunday	vasárnap	dayofweek	red	\N	\N	\N	47
-1867	saturday	szombat	dayofweek	yellow	\N	\N	\N	48
-1900	on	Letiltva	noalarmtype	red	\N	\N	\N	49
-1869	recovered	helyreállt	notifswitch	#aaff00	\N	\N	\N	50
-1870	warning	figyelmeztetés	notifswitch	yellow	\N	\N	\N	51
-1959		datacharacter	datacharacter	\N	\N	\N	\N	52
-1905	head	\N	datacharacter	\N	#000000	\N	\N	53
-1906	data	\N	datacharacter	\N	#000000	\N	{}	54
-1871	critical	kritikus	notifswitch	red	\N	\N	\N	55
-1872	unreachable	nem válaszol	notifswitch	#c00000	\N	\N	\N	56
-1873	down	kikapcsolva	notifswitch	#ffaa00	\N	\N	\N	57
-1907	id	\N	datacharacter	\N	#aa0000	\N	{underline}	58
-1908	name	\N	datacharacter	\N	#005500	\N	{bold}	59
-1909	primary	\N	datacharacter	\N	#000000	\N	{}	60
-1910	key	\N	datacharacter	\N	#5500ff	\N	{}	61
-1911	fname	\N	datacharacter	\N	#000000	\N	{}	62
-1912	derived	\N	datacharacter	\N	#aa00ff	\N	{italic}	63
-1913	tree	\N	datacharacter	\N	#000000	\N	{}	64
-1914	foreign	\N	datacharacter	\N	#5500ff	\N	{}	65
-1915	null	\N	datacharacter	\N	#ff55ff	\N	{strikeout}	66
-1916	default	\N	datacharacter	\N	#ff55ff	\N	{italic,strikeout}	67
-1917	auto	\N	datacharacter	\N	#ff55ff	\N	{italic,strikeout}	68
-1918	info	\N	datacharacter	\N	#000000	\N	{}	69
-1919	warning	\N	datacharacter	\N	#ffaa00	\N	{bold}	70
-1920	error	\N	datacharacter	\N	#ff0000	\N	{bold,underline}	71
-1943	simple	\N	tableshapetype	\N	\N	\N	\N	72
-1944	tree	\N	tableshapetype	\N	\N	\N	\N	73
-1945	bare	\N	tableshapetype	\N	\N	\N	\N	74
-1946	owner	\N	tableshapetype	\N	\N	\N	\N	75
-1947	child	\N	tableshapetype	\N	\N	\N	\N	76
-1948	link	\N	tableshapetype	\N	\N	\N	\N	77
-1949	dialog	\N	tableshapetype	\N	\N	\N	\N	78
-1950	table	\N	tableshapetype	\N	\N	\N	\N	79
-1951	member	\N	tableshapetype	\N	\N	\N	\N	80
-1862	monday	hétfő	dayofweek	\N	\N	\N	\N	81
-1863	tuesday	kedd	dayofweek	\N	\N	\N	\N	82
-1864	wednesday	szerda	dayofweek	\N	\N	\N	\N	83
-1865	thursday	csütörtök	dayofweek	\N	\N	\N	\N	84
-1866	friday	péntek	dayofweek	\N	\N	\N	\N	85
-1952	group	\N	tableshapetype	\N	\N	\N	\N	86
-1953	read_only	\N	tableshapetype	\N	\N	\N	\N	87
-1954	Fatal	\N	errtype	#ff0000	\N	\N	\N	88
-1955	Error	\N	errtype	#ffaa7f	\N	\N	\N	89
-1956	Warning	\N	errtype	#ffff00	\N	\N	\N	90
-1899	off	Engedélyezve	noalarmtype	#00ff00	\N	\N	\N	91
-1957	Ok	\N	errtype	#00ff00	\N	\N	\N	92
-1958		addresstype	addresstype	\N	\N	\N	\N	93
-1904	fixip		addresstype	\N	\N	\N	{bold,underline}	94
-1931	private	\N	addresstype	\N	#00007f	\N	{strikeout}	95
-1932	external	\N	addresstype	\N	#aa0000	\N	{bold}	96
-1879	operator	operátor	rights	#ffaa00	\N	\N	\N	97
-1877	viewer	megfigyelő	rights	#aaff00	\N	\N	\N	98
-1876	none	jogosulatlan	rights	#00ff00	\N	\N	\N	99
-1896	real	Valós hely	placetype	\N	\N	\N	\N	100
-1895	false	A host_services.disabled boolean mező igaz értékéhez rendelt szín	host_services.disabled	#00ff00	\N	\N	{italic}	101
-1940	listed	\N	tableinherittype	\N	\N	\N	\N	102
-1878	indalarm	rendész	rights	yellow	\N	\N	\N	103
-1941	listed_rev	\N	tableinherittype	\N	\N	\N	\N	104
-1880	admin	adminisztrátor	rights	red	\N	\N	\N	105
-1881	system	rendszer	rights	magenta	\N	\N	\N	106
-1897	unknown	Ismeretlen	placetype	yellow	\N	\N	\N	107
-1901	to	Időpontig tilt.	noalarmtype	yellow	\N	\N	\N	108
-1902	from	Időponttól tilt.	noalarmtype	yellow	\N	\N	\N	109
-1903	from_to	Intrval. tilt.	noalarmtype	yellow	\N	\N	\N	110
-1898	root	Gyökér o.	placetype	cyan	\N	\N	\N	111
-1942	listed_all	\N	tableinherittype	\N	\N	\N	\N	112
-1923			iftypes.preferred	\N	\N	\N	\N	113
-1924	true	igen	iftypes.preferred	\N	\N	\N	{underline}	114
-1925	false	igen	iftypes.preferred	\N	#0000ff	\N	{italic}	115
-1921	not_permit		datacharacter	\N	#ff0000	Ubuntu	{strikeout}	116
-1926			host_services.disabled	\N	\N	\N	\N	117
-1894	true	A host_services.disabled boolean mező igaz értékéhez rendelt szín	host_services.disabled	yellow	\N	\N	{underline}	118
-1922	have_no	\N	datacharacter	\N	#ff55ff	\N	{strikeout}	119
-1960		filtertype	filtertype	\N	\N	\N	\N	120
-1882	begin	Szó eleji egyezés	filtertype	\N	\N	\N	\N	121
-1930			services.disabled	\N	\N	\N	\N	122
-1892	true	A services.disabled boolean mező igaz értékéhez rendelt szín	services.disabled	#ffa050	\N	\N	\N	123
-1893	false	A services.disabled boolean mező igaz értékéhez rendelt szín	services.disabled	#7fff00	\N	\N	\N	124
-1927			services.deleted	\N	\N	\N	\N	125
-1928	true		services.deleted	\N	\N	\N	\N	126
-1929	false		services.deleted	\N	\N	\N	\N	127
-1874	flapping	billeg	notifswitch	magenta	\N	\N	\N	128
-1875	unknown	ismeretlen	notifswitch	#c0c0c0	\N	\N	{strikeout}	129
-1935	no	\N	tableinherittype	\N	\N	\N	\N	130
-1936	only	\N	tableinherittype	\N	\N	\N	\N	131
-1937	on	\N	tableinherittype	\N	\N	\N	\N	132
-1938	all	\N	tableinherittype	\N	\N	\N	\N	133
-1939	reverse	\N	tableinherittype	\N	\N	\N	\N	134
-1883	like	Minta illesztés a LIKE operátorral	filtertype	\N	\N	\N	\N	135
-1884	similar	Minta illesztés a SIMILAR operátorral	filtertype	\N	\N	\N	\N	136
-1885	regexp	Minta illesztés reguláris kifelyezéssel, nagybetű érzékeny	filtertype	\N	\N	\N	\N	137
-1887	big	Csak egy értéknél nagyobbakat	filtertype	\N	\N	\N	\N	139
-1888	litle	Csak egy értéknél kisebbeket	filtertype	\N	\N	\N	\N	140
-1889	interval	Csak a megadott két érték közöttiek	filtertype	\N	\N	\N	\N	141
-1891	SQL	A szürési feltétel megadása SQL nyelven	filtertype	\N	\N	\N	\N	143
-1961	boolean	\N	filtertype	\N	\N	\N	\N	144
-1968			alarms.noalarm	\N	\N	\N	\N	149
-1969	true	igen	alarms.noalarm	#d3d7cf	\N	\N	\N	150
-1970	false	nem	alarms.noalarm	#fce94f	\N	\N	\N	151
+COPY public.enum_vals (enum_val_id, enum_val_name, enum_val_note, enum_type_name, bg_color, fg_color, font_family, font_attr, text_id, icon) FROM stdin;
+1868	on	rendben	notifswitch	#00ff00	\N	\N	{underline}	44	\N
+1934	pseudo		addresstype	\N	#c800c8	\N	{strikeout}	45	\N
+1933	dynamic	\N	addresstype	\N	#d28800	\N	{italic}	46	\N
+1861	sunday	vasárnap	dayofweek	red	\N	\N	\N	47	\N
+1867	saturday	szombat	dayofweek	yellow	\N	\N	\N	48	\N
+1900	on	Letiltva	noalarmtype	red	\N	\N	\N	49	\N
+1869	recovered	helyreállt	notifswitch	#aaff00	\N	\N	\N	50	\N
+1870	warning	figyelmeztetés	notifswitch	yellow	\N	\N	\N	51	\N
+1959		datacharacter	datacharacter	\N	\N	\N	\N	52	\N
+1905	head	\N	datacharacter	\N	#000000	\N	\N	53	\N
+1906	data	\N	datacharacter	\N	#000000	\N	{}	54	\N
+1871	critical	kritikus	notifswitch	red	\N	\N	\N	55	\N
+1872	unreachable	nem válaszol	notifswitch	#c00000	\N	\N	\N	56	\N
+1873	down	kikapcsolva	notifswitch	#ffaa00	\N	\N	\N	57	\N
+1907	id	\N	datacharacter	\N	#aa0000	\N	{underline}	58	\N
+1908	name	\N	datacharacter	\N	#005500	\N	{bold}	59	\N
+1909	primary	\N	datacharacter	\N	#000000	\N	{}	60	\N
+1910	key	\N	datacharacter	\N	#5500ff	\N	{}	61	\N
+1911	fname	\N	datacharacter	\N	#000000	\N	{}	62	\N
+1912	derived	\N	datacharacter	\N	#aa00ff	\N	{italic}	63	\N
+1913	tree	\N	datacharacter	\N	#000000	\N	{}	64	\N
+1914	foreign	\N	datacharacter	\N	#5500ff	\N	{}	65	\N
+1915	null	\N	datacharacter	\N	#ff55ff	\N	{strikeout}	66	\N
+1916	default	\N	datacharacter	\N	#ff55ff	\N	{italic,strikeout}	67	\N
+1917	auto	\N	datacharacter	\N	#ff55ff	\N	{italic,strikeout}	68	\N
+1918	info	\N	datacharacter	\N	#000000	\N	{}	69	\N
+1919	warning	\N	datacharacter	\N	#ffaa00	\N	{bold}	70	\N
+1920	error	\N	datacharacter	\N	#ff0000	\N	{bold,underline}	71	\N
+1943	simple	\N	tableshapetype	\N	\N	\N	\N	72	\N
+1944	tree	\N	tableshapetype	\N	\N	\N	\N	73	\N
+1945	bare	\N	tableshapetype	\N	\N	\N	\N	74	\N
+1946	owner	\N	tableshapetype	\N	\N	\N	\N	75	\N
+1947	child	\N	tableshapetype	\N	\N	\N	\N	76	\N
+1948	link	\N	tableshapetype	\N	\N	\N	\N	77	\N
+1949	dialog	\N	tableshapetype	\N	\N	\N	\N	78	\N
+1950	table	\N	tableshapetype	\N	\N	\N	\N	79	\N
+1951	member	\N	tableshapetype	\N	\N	\N	\N	80	\N
+1862	monday	hétfő	dayofweek	\N	\N	\N	\N	81	\N
+1863	tuesday	kedd	dayofweek	\N	\N	\N	\N	82	\N
+1864	wednesday	szerda	dayofweek	\N	\N	\N	\N	83	\N
+1865	thursday	csütörtök	dayofweek	\N	\N	\N	\N	84	\N
+1866	friday	péntek	dayofweek	\N	\N	\N	\N	85	\N
+1952	group	\N	tableshapetype	\N	\N	\N	\N	86	\N
+1953	read_only	\N	tableshapetype	\N	\N	\N	\N	87	\N
+1954	Fatal	\N	errtype	#ff0000	\N	\N	\N	88	\N
+1955	Error	\N	errtype	#ffaa7f	\N	\N	\N	89	\N
+1956	Warning	\N	errtype	#ffff00	\N	\N	\N	90	\N
+1899	off	Engedélyezve	noalarmtype	#00ff00	\N	\N	\N	91	\N
+1957	Ok	\N	errtype	#00ff00	\N	\N	\N	92	\N
+1958		addresstype	addresstype	\N	\N	\N	\N	93	\N
+1904	fixip		addresstype	\N	\N	\N	{bold,underline}	94	\N
+1931	private	\N	addresstype	\N	#00007f	\N	{strikeout}	95	\N
+1932	external	\N	addresstype	\N	#aa0000	\N	{bold}	96	\N
+1879	operator	operátor	rights	#ffaa00	\N	\N	\N	97	\N
+1877	viewer	megfigyelő	rights	#aaff00	\N	\N	\N	98	\N
+1876	none	jogosulatlan	rights	#00ff00	\N	\N	\N	99	\N
+1896	real	Valós hely	placetype	\N	\N	\N	\N	100	\N
+1895	false	A host_services.disabled boolean mező igaz értékéhez rendelt szín	host_services.disabled	#00ff00	\N	\N	{italic}	101	\N
+1940	listed	\N	tableinherittype	\N	\N	\N	\N	102	\N
+1878	indalarm	rendész	rights	yellow	\N	\N	\N	103	\N
+1941	listed_rev	\N	tableinherittype	\N	\N	\N	\N	104	\N
+1880	admin	adminisztrátor	rights	red	\N	\N	\N	105	\N
+1881	system	rendszer	rights	magenta	\N	\N	\N	106	\N
+1897	unknown	Ismeretlen	placetype	yellow	\N	\N	\N	107	\N
+1901	to	Időpontig tilt.	noalarmtype	yellow	\N	\N	\N	108	\N
+1902	from	Időponttól tilt.	noalarmtype	yellow	\N	\N	\N	109	\N
+1903	from_to	Intrval. tilt.	noalarmtype	yellow	\N	\N	\N	110	\N
+1898	root	Gyökér o.	placetype	cyan	\N	\N	\N	111	\N
+1942	listed_all	\N	tableinherittype	\N	\N	\N	\N	112	\N
+1923			iftypes.preferred	\N	\N	\N	\N	113	\N
+1924	true	igen	iftypes.preferred	\N	\N	\N	{underline}	114	\N
+1925	false	igen	iftypes.preferred	\N	#0000ff	\N	{italic}	115	\N
+1921	not_permit		datacharacter	\N	#ff0000	Ubuntu	{strikeout}	116	\N
+1926			host_services.disabled	\N	\N	\N	\N	117	\N
+1894	true	A host_services.disabled boolean mező igaz értékéhez rendelt szín	host_services.disabled	yellow	\N	\N	{underline}	118	\N
+1922	have_no	\N	datacharacter	\N	#ff55ff	\N	{strikeout}	119	\N
+1960		filtertype	filtertype	\N	\N	\N	\N	120	\N
+1882	begin	Szó eleji egyezés	filtertype	\N	\N	\N	\N	121	\N
+1930			services.disabled	\N	\N	\N	\N	122	\N
+1892	true	A services.disabled boolean mező igaz értékéhez rendelt szín	services.disabled	#ffa050	\N	\N	\N	123	\N
+1893	false	A services.disabled boolean mező igaz értékéhez rendelt szín	services.disabled	#7fff00	\N	\N	\N	124	\N
+1927			services.deleted	\N	\N	\N	\N	125	\N
+1928	true		services.deleted	\N	\N	\N	\N	126	\N
+1929	false		services.deleted	\N	\N	\N	\N	127	\N
+1874	flapping	billeg	notifswitch	magenta	\N	\N	\N	128	\N
+1875	unknown	ismeretlen	notifswitch	#c0c0c0	\N	\N	{strikeout}	129	\N
+1935	no	\N	tableinherittype	\N	\N	\N	\N	130	\N
+1936	only	\N	tableinherittype	\N	\N	\N	\N	131	\N
+1937	on	\N	tableinherittype	\N	\N	\N	\N	132	\N
+1938	all	\N	tableinherittype	\N	\N	\N	\N	133	\N
+1939	reverse	\N	tableinherittype	\N	\N	\N	\N	134	\N
+1883	like	Minta illesztés a LIKE operátorral	filtertype	\N	\N	\N	\N	135	\N
+1884	similar	Minta illesztés a SIMILAR operátorral	filtertype	\N	\N	\N	\N	136	\N
+1885	regexp	Minta illesztés reguláris kifelyezéssel, nagybetű érzékeny	filtertype	\N	\N	\N	\N	137	\N
+1887	big	Csak egy értéknél nagyobbakat	filtertype	\N	\N	\N	\N	139	\N
+1888	litle	Csak egy értéknél kisebbeket	filtertype	\N	\N	\N	\N	140	\N
+1889	interval	Csak a megadott két érték közöttiek	filtertype	\N	\N	\N	\N	141	\N
+1891	SQL	A szürési feltétel megadása SQL nyelven	filtertype	\N	\N	\N	\N	143	\N
+1961	boolean	\N	filtertype	\N	\N	\N	\N	144	\N
+1968			alarms.noalarm	\N	\N	\N	\N	149	\N
+1969	true	igen	alarms.noalarm	#d3d7cf	\N	\N	\N	150	\N
+1970	false	nem	alarms.noalarm	#fce94f	\N	\N	\N	151	\N
+1971			app_memos.acknowledged	\N	\N	\N	\N	1059	\N
+1972	true		app_memos.acknowledged	#dfdfdf	\N	\N	\N	1060	\N
+1973	false		app_memos.acknowledged	#ffffc0	\N	\N	\N	1061	\N
 \.
 
 
@@ -12680,14 +12845,14 @@ COPY enum_vals (enum_val_id, enum_val_name, enum_val_note, enum_type_name, bg_co
 -- Name: enum_vals_enum_val_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('enum_vals_enum_val_id_seq', 1970, true);
+SELECT pg_catalog.setval('public.enum_vals_enum_val_id_seq', 1973, true);
 
 
 --
 -- Data for Name: errors; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY errors (error_id, error_name, error_note, error_type, text_id) FROM stdin;
+COPY public.errors (error_id, error_name, error_note, error_type, text_id) FROM stdin;
 0	Ok	O.K.	Ok	13
 1	Start	Start program or service 	Ok	14
 2	ReStart	Restart program or service 	Ok	15
@@ -12726,14 +12891,14 @@ COPY errors (error_id, error_name, error_note, error_type, text_id) FROM stdin;
 -- Name: errors_error_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('errors_error_id_seq', 30, true);
+SELECT pg_catalog.setval('public.errors_error_id_seq', 30, true);
 
 
 --
 -- Data for Name: field_attrs; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY field_attrs (field_attr_id, table_name, field_name, attrs) FROM stdin;
+COPY public.field_attrs (field_attr_id, table_name, field_name, attrs) FROM stdin;
 1	patchs	place_id	{rewrite_protected}
 2	nodes	inventory_number	{rewrite_protected}
 3	nodes	serial_number	{rewrite_protected}
@@ -12748,14 +12913,14 @@ COPY field_attrs (field_attr_id, table_name, field_name, attrs) FROM stdin;
 -- Name: field_attrs_field_attr_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('field_attrs_field_attr_id_seq', 7, true);
+SELECT pg_catalog.setval('public.field_attrs_field_attr_id_seq', 7, true);
 
 
 --
 -- Data for Name: fkey_types; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY fkey_types (fkey_type_id, table_schema, table_name, column_name, unusual_fkeys_type) FROM stdin;
+COPY public.fkey_types (fkey_type_id, table_schema, table_name, column_name, unusual_fkeys_type) FROM stdin;
 1	public	pports	node_id	owner
 2	public	port_vlans	port_id	owner
 4	public	table_shape_fields	table_shape_id	owner
@@ -12776,14 +12941,14 @@ COPY fkey_types (fkey_type_id, table_schema, table_name, column_name, unusual_fk
 -- Name: fkey_types_fkey_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('fkey_types_fkey_type_id_seq', 17, true);
+SELECT pg_catalog.setval('public.fkey_types_fkey_type_id_seq', 17, true);
 
 
 --
 -- Data for Name: graph_vars; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY graph_vars (graph_var_id, graph_var_note, graph_id, service_var_id, draw_type, sequence_number, features, deleted) FROM stdin;
+COPY public.graph_vars (graph_var_id, graph_var_note, graph_id, service_var_id, draw_type, sequence_number, features, deleted) FROM stdin;
 \.
 
 
@@ -12791,14 +12956,14 @@ COPY graph_vars (graph_var_id, graph_var_note, graph_id, service_var_id, draw_ty
 -- Name: graph_vars_graph_var_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('graph_vars_graph_var_id_seq', 1, false);
+SELECT pg_catalog.setval('public.graph_vars_graph_var_id_seq', 1, false);
 
 
 --
 -- Data for Name: graphs; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY graphs (graph_id, graph_name, graph_note, graph_title, rrd_beat_id, features, deleted) FROM stdin;
+COPY public.graphs (graph_id, graph_name, graph_note, graph_title, rrd_beat_id, features, deleted) FROM stdin;
 \.
 
 
@@ -12806,20 +12971,19 @@ COPY graphs (graph_id, graph_name, graph_note, graph_title, rrd_beat_id, feature
 -- Name: graphs_graph_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('graphs_graph_id_seq', 1, false);
+SELECT pg_catalog.setval('public.graphs_graph_id_seq', 1, false);
 
 
 --
 -- Data for Name: group_users; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY group_users (group_user_id, group_id, user_id) FROM stdin;
-1	0	1
-2	1	2
-3	2	3
-4	4	4
-7	2	2
-12	3	9
+COPY public.group_users (group_user_id, group_id, user_id) FROM stdin;
+32	0	1
+33	1	2
+34	2	3
+35	2	2
+36	4	4
 \.
 
 
@@ -12827,19 +12991,19 @@ COPY group_users (group_user_id, group_id, user_id) FROM stdin;
 -- Name: group_users_group_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('group_users_group_user_id_seq', 26, true);
+SELECT pg_catalog.setval('public.group_users_group_user_id_seq', 36, true);
 
 
 --
 -- Data for Name: groups; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY groups (group_id, group_name, group_note, group_rights, place_group_id, features) FROM stdin;
+COPY public.groups (group_id, group_name, group_note, group_rights, place_group_id, features) FROM stdin;
 0	system	system	system	\N	\N
+1	admin	Administrators	admin	\N	\N
+2	operator	Operators	operator	\N	\N
 3	indalarm	IndAlarm users	indalarm	\N	\N
 4	viewer	Viewers	viewer	\N	\N
-1	admin	Administrators	admin	\N	\N
-2	operator	Operators	operator	1	\N
 \.
 
 
@@ -12847,14 +13011,14 @@ COPY groups (group_id, group_name, group_note, group_rights, place_group_id, fea
 -- Name: groups_group_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('groups_group_id_seq', 13, true);
+SELECT pg_catalog.setval('public.groups_group_id_seq', 5, true);
 
 
 --
 -- Data for Name: host_service_logs; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY host_service_logs (host_service_log_id, host_service_id, date_of, old_state, old_soft_state, old_hard_state, new_state, new_soft_state, new_hard_state, event_note, superior_alarm_id, noalarm, alarm_id, alarm_do) FROM stdin;
+COPY public.host_service_logs (host_service_log_id, host_service_id, date_of, old_state, old_soft_state, old_hard_state, new_state, new_soft_state, new_hard_state, event_note, superior_alarm_id, noalarm, alarm_id, alarm_do) FROM stdin;
 \.
 
 
@@ -12862,14 +13026,14 @@ COPY host_service_logs (host_service_log_id, host_service_id, date_of, old_state
 -- Name: host_service_logs_host_service_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('host_service_logs_host_service_log_id_seq', 2069957, true);
+SELECT pg_catalog.setval('public.host_service_logs_host_service_log_id_seq', 2960317, true);
 
 
 --
 -- Data for Name: host_service_noalarms; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY host_service_noalarms (host_service_noalarm_id, date_of, host_service_id, noalarm_flag, noalarm_from, noalarm_to, noalarm_flag_old, noalarm_from_old, noalarm_to_old, user_id, msg) FROM stdin;
+COPY public.host_service_noalarms (host_service_noalarm_id, date_of, host_service_id, noalarm_flag, noalarm_from, noalarm_to, noalarm_flag_old, noalarm_from_old, noalarm_to_old, user_id, msg) FROM stdin;
 \.
 
 
@@ -12877,14 +13041,14 @@ COPY host_service_noalarms (host_service_noalarm_id, date_of, host_service_id, n
 -- Name: host_service_noalarms_host_service_noalarm_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('host_service_noalarms_host_service_noalarm_id_seq', 885, true);
+SELECT pg_catalog.setval('public.host_service_noalarms_host_service_noalarm_id_seq', 885, true);
 
 
 --
 -- Data for Name: host_services; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY host_services (host_service_id, node_id, service_id, port_id, host_service_note, prime_service_id, proto_service_id, delegate_host_state, check_cmd, features, disabled, superior_host_service_id, max_check_attempts, normal_check_interval, retry_check_interval, timeperiod_id, flapping_interval, flapping_max_change, noalarm_flag, noalarm_from, noalarm_to, offline_group_ids, online_group_ids, host_service_state, soft_state, hard_state, state_msg, check_attempts, last_changed, last_touched, act_alarm_log_id, last_alarm_log_id, deleted, last_noalarm_msg, heartbeat_time, flag) FROM stdin;
+COPY public.host_services (host_service_id, node_id, service_id, port_id, host_service_note, prime_service_id, proto_service_id, delegate_host_state, check_cmd, features, disabled, superior_host_service_id, max_check_attempts, normal_check_interval, retry_check_interval, timeperiod_id, flapping_interval, flapping_max_change, noalarm_flag, noalarm_from, noalarm_to, offline_group_ids, online_group_ids, host_service_state, soft_state, hard_state, state_msg, check_attempts, last_changed, last_touched, act_alarm_log_id, last_alarm_log_id, deleted, last_noalarm_msg, heartbeat_time, flag) FROM stdin;
 \.
 
 
@@ -12892,14 +13056,14 @@ COPY host_services (host_service_id, node_id, service_id, port_id, host_service_
 -- Name: host_services_host_service_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('host_services_host_service_id_seq', 5045, true);
+SELECT pg_catalog.setval('public.host_services_host_service_id_seq', 5281, true);
 
 
 --
 -- Data for Name: iftypes; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY iftypes (iftype_id, iftype_name, iftype_note, iftype_iana_id, iftype_link_type, iftype_obj_type, preferred, iana_id_link, if_name_prefix) FROM stdin;
+COPY public.iftypes (iftype_id, iftype_name, iftype_note, iftype_iana_id, iftype_link_type, iftype_obj_type, preferred, iana_id_link, if_name_prefix) FROM stdin;
 0	unknown	Unknown pseudo type	1	unknown	unknown	f	\N	\N
 1	attach	Érzékelő kapcsolódási pont	1	ptp	nport	f	\N	\N
 2	bus	hub port	1	bus	nport	f	\N	\N
@@ -12924,6 +13088,8 @@ COPY iftypes (iftype_id, iftype_name, iftype_note, iftype_iana_id, iftype_link_t
 23	ieee8023adLag	Bridge Aggregation (HP/3com)	161	unknown	unknown	f	54	\N
 14	virtual	VLan (ProCurve)	53	logical	interface	t	\N	virt@
 17	tunnel	Encapsulation interface	131	logical	interface	t	\N	\N
+24	fibreChannel	Fibre Channel	56	ptp	interface	t	\N	\N
+25	any_ptp	\N	1	ptp	nport	f	\N	\N
 \.
 
 
@@ -12931,14 +13097,14 @@ COPY iftypes (iftype_id, iftype_name, iftype_note, iftype_iana_id, iftype_link_t
 -- Name: iftypes_iftype_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('iftypes_iftype_id_seq', 23, true);
+SELECT pg_catalog.setval('public.iftypes_iftype_id_seq', 25, true);
 
 
 --
 -- Data for Name: images; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY images (image_id, image_name, image_note, image_type, image_sub_type, image_data, image_hash) FROM stdin;
+COPY public.images (image_id, image_name, image_note, image_type, image_sub_type, image_data, image_hash) FROM stdin;
 \.
 
 
@@ -12946,14 +13112,14 @@ COPY images (image_id, image_name, image_note, image_type, image_sub_type, image
 -- Name: images_image_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('images_image_id_seq', 20, true);
+SELECT pg_catalog.setval('public.images_image_id_seq', 24, true);
 
 
 --
 -- Data for Name: import_templates; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY import_templates (import_template_id, template_name, template_type, template_note, template_text) FROM stdin;
+COPY public.import_templates (import_template_id, template_name, template_type, template_note, template_text) FROM stdin;
 \.
 
 
@@ -12961,14 +13127,14 @@ COPY import_templates (import_template_id, template_name, template_type, templat
 -- Name: import_templates_import_template_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('import_templates_import_template_id_seq', 46, true);
+SELECT pg_catalog.setval('public.import_templates_import_template_id_seq', 46, true);
 
 
 --
 -- Data for Name: imports; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY imports (import_id, target_id, date_of, user_id, node_id, app_name, import_text, exec_state, pid, started, ended, result_msg, applog_id, out_msg) FROM stdin;
+COPY public.imports (import_id, target_id, date_of, user_id, node_id, app_name, import_text, exec_state, pid, started, ended, result_msg, applog_id, out_msg, exp_msg) FROM stdin;
 \.
 
 
@@ -12976,14 +13142,14 @@ COPY imports (import_id, target_id, date_of, user_id, node_id, app_name, import_
 -- Name: imports_import_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('imports_import_id_seq', 15, true);
+SELECT pg_catalog.setval('public.imports_import_id_seq', 15, true);
 
 
 --
 -- Data for Name: interfaces; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY interfaces (port_id, port_name, port_note, port_tag, iftype_id, node_id, port_index, deleted, flag, hwaddress, port_ostat, port_astat, port_staple_id, dualface_type, ifdescr, stat_last_modify) FROM stdin;
+COPY public.interfaces (port_id, port_name, port_note, port_tag, iftype_id, node_id, port_index, deleted, flag, hwaddress, port_ostat, port_astat, port_staple_id, dualface_type, ifdescr, stat_last_modify) FROM stdin;
 \.
 
 
@@ -12991,7 +13157,7 @@ COPY interfaces (port_id, port_name, port_note, port_tag, iftype_id, node_id, po
 -- Data for Name: ip_addresses; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY ip_addresses (ip_address_id, ip_address_note, address, ip_address_type, preferred, subnet_id, port_id, flag) FROM stdin;
+COPY public.ip_addresses (ip_address_id, ip_address_note, address, ip_address_type, preferred, subnet_id, port_id, flag) FROM stdin;
 \.
 
 
@@ -12999,18 +13165,18 @@ COPY ip_addresses (ip_address_id, ip_address_note, address, ip_address_type, pre
 -- Name: ipaddresses_ip_address_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('ipaddresses_ip_address_id_seq', 6329, true);
+SELECT pg_catalog.setval('public.ipaddresses_ip_address_id_seq', 6369, true);
 
 
 --
 -- Data for Name: languages; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY languages (language_id, language_name, lang_id, country_id, country_a2, lang_2, lang_3, flag_image, next_id) FROM stdin;
+COPY public.languages (language_id, language_name, lang_id, country_id, country_a2, lang_2, lang_3, flag_image, next_id) FROM stdin;
 1	Magyar	50	98	HU	hu	hun	\N	\N
 2	US English	31	225	US	en	eng	\N	\N
-3	Deutsch	42	82	DE	de	deu	\N	\N
 4	UK English	31	224	GB	en	eng	\N	2
+3	Deutsch	42	82	DE	de	deu	\N	\N
 \.
 
 
@@ -13018,14 +13184,14 @@ COPY languages (language_id, language_name, lang_id, country_id, country_a2, lan
 -- Name: languages_language_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('languages_language_id_seq', 4, true);
+SELECT pg_catalog.setval('public.languages_language_id_seq', 4, true);
 
 
 --
 -- Data for Name: lldp_links_table; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY lldp_links_table (lldp_link_id, port_id1, port_id2, first_time, last_time) FROM stdin;
+COPY public.lldp_links_table (lldp_link_id, port_id1, port_id2, first_time, last_time) FROM stdin;
 \.
 
 
@@ -13033,18 +13199,18 @@ COPY lldp_links_table (lldp_link_id, port_id1, port_id2, first_time, last_time) 
 -- Name: lldp_links_table_lldp_link_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('lldp_links_table_lldp_link_id_seq', 3035, true);
+SELECT pg_catalog.setval('public.lldp_links_table_lldp_link_id_seq', 3077, true);
 
 
 --
 -- Data for Name: localizations; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY localizations (text_id, table_for_text, language_id, texts) FROM stdin;
+COPY public.localizations (text_id, table_for_text, language_id, texts) FROM stdin;
 1	alarm_messages	1	{"A kontroller nem üzemel, az érzékelők állapota ismeretlen. Nincs védelem!",Kikapcsolva.}
 2	alarm_messages	1	{"A kontroller nem elérhető, az érzékelő adatok nem megbízhatóak. Nincs védelem!","Nem elérhető."}
 3	alarm_messages	1	{"Kontroller hiba, az érzékelők állpota ismeretlen. Nincs védelem!","Kritikus hiba."}
-4	alarm_messages	1	{"A kontroller hibát jelzett, az érzékelő adatok nem megbízhatóak. A védelem nem megbízható!","Kontroller hiba"}
+284	table_shapes	2	{"Aktív és passzív hálózati elemek","Aktív vagy passzív hálózati elem","Aktív SNMP eszköz",NULL,NULL}
 5	alarm_messages	1	{"A kontroller állpota ismeretlen. Nincs védelem!",Ismeretlen}
 6	alarm_messages	1	{"A kontroller ismételt hibát jelzett, az érzékelő adatok nem megbízhatóak. A védelem nem megbízható!",Billeg}
 7	alarm_messages	1	{"Az érzékelés letíltva, állapot ismeretlen",Letíltva}
@@ -13054,7 +13220,7 @@ COPY localizations (text_id, table_for_text, language_id, texts) FROM stdin;
 11	alarm_messages	1	{"Az érzékelő ill. port állapota változó, billeg. A további riasztások letiltva.",Billeg}
 12	alarm_messages	1	{"Az érzékelő ill port állpota ismeretlen, hibás, az eszköz jelenléte nem ismert",Ismeretlen}
 13	errors	1	{O.K.,Ok}
-491	table_shape_fields	2	{max_check_attempts,max_check_attempts,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
+948	table_shape_fields	2	{node_id,node_id,NULL,NULL}
 15	errors	1	{"Restart program or service ",ReStart}
 16	errors	1	{"Info ",Info}
 17	errors	1	{"Parameter(s) warning ",WParams}
@@ -13315,7 +13481,7 @@ COPY localizations (text_id, table_for_text, language_id, texts) FROM stdin;
 277	table_shapes	1	{sys_params,sys_params,sys_params,NULL,NULL}
 278	table_shapes	1	{unusual_fkeys,unusual_fkeys,unusual_fkeys,NULL,NULL}
 279	table_shapes	1	{alarm_messages,alarm_messages,alarm_messages,NULL,NULL}
-370	table_shape_fields	2	{Hely,"Az eszköz helye",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
+411	table_shape_fields	2	{node,"Hálózati elem",NULL,NULL}
 281	table_shapes	1	{enum_vals,enum_vals,enum_vals,NULL,NULL}
 282	table_shapes	1	{fkey_types,fkey_types,fkey_types,NULL,NULL}
 283	table_shapes	1	{mactab_logs,mactab_logs,mactab_logs,NULL,NULL}
@@ -13368,7 +13534,6 @@ COPY localizations (text_id, table_for_text, language_id, texts) FROM stdin;
 330	table_shape_fields	1	{NULL,"On-line értesítendő felhasználók",NULL,NULL}
 331	table_shape_fields	1	{NULL,"Az üzenetet látta, láthatta",NULL,NULL}
 273	table_shapes	1	{"Helyek, helyiségek","Hely, helyiség",places,"Csoportoknak tagja","Csoportoknak nem tagja",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
-863	table_shape_fields	2	{Hely,"Az eszköz helye",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
 334	table_shape_fields	1	{Szolg.példány,"Szolgáltatőás példány teljes név",NULL,NULL}
 335	table_shape_fields	1	{Eszköz,"Eszköz neve",NULL,NULL}
 336	table_shape_fields	1	{NULL,"Hely ID",NULL,NULL}
@@ -13376,6 +13541,7 @@ COPY localizations (text_id, table_for_text, language_id, texts) FROM stdin;
 338	table_shape_fields	1	{Kezdete,"A riasztás kezdete",NULL,NULL}
 339	table_shape_fields	1	{Vége,"A riasztási állpot vége",NULL,NULL}
 340	table_shape_fields	1	{NULL,"Állapot a riasztás kezdetekor",NULL,NULL}
+863	table_shape_fields	2	{Hely,"Az eszköz helye",NULL,NULL}
 341	table_shape_fields	1	{NULL,"Leg kritikusabb állapot",NULL,NULL}
 342	table_shape_fields	1	{NULL,"Utolsó kritikus állpot",NULL,NULL}
 343	table_shape_fields	1	{Üzenet,"Riasztási üzenet",NULL,NULL}
@@ -14056,13 +14222,13 @@ COPY localizations (text_id, table_for_text, language_id, texts) FROM stdin;
 1018	table_shape_fields	1	{időpontja,"Az esemény időpontja",NULL,NULL}
 1019	table_shapes	2	{Nyelvek,Nyelv,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
 1029	table_shapes	2	{"lokalizációs szövegek","lokalizációs szöveg\n",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
-261	table_shapes	2	{"Pach panelek és fali csatlakozók","Pach panel vagy fali csatlakozó",patchs,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
+880	table_shape_fields	2	{service_id,service_id,NULL,NULL}
 1034	menu_items	2	{Nyelvek,Nyelvek,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
 1035	menu_items	2	{"lokalizációs szövegek","lokalizációs szöveg","<!DOCTYPE HTML PUBLIC \\"-//W3C//DTD HTML 4.0//EN\\" \\"http://www.w3.org/TR/REC-html40/strict.dtd\\">\n<html><head><meta name=\\"qrichtext\\" content=\\"1\\" /><style type=\\"text/css\\">\np, li { white-space: pre-wrap; }\n</style></head><body style=\\" font-family:'Ubuntu'; font-size:11pt; font-weight:400; font-style:normal;\\">\n<p style=\\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\">A nyelvi szövegek a táblázatos megjelenítésnél ugyan úgy mint a többi szlop megjelenik a táblázatban, de ilyenkor csak az aktuális (vagy alapértelmezett, vagy talált) nelvi szöveg.</p>\n<p style=\\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\">Ebben a táblában viszont az összes szöveg listázásra kerül.</p></body></html>",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
 14	errors	2	{"Start program or service ",Start}
-1031	table_shape_fields	2	{NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
-1030	table_shape_fields	2	{NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
-1032	table_shape_fields	2	{NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
+3	alarm_messages	2	{"Controller error. No protection.",critical}
+4	alarm_messages	1	{"A kontroller hibát jelzett, az érzékelő adatok nem megbízhatóak. A védelem nem megbízható!","Kontroller hiba"}
+280	table_shapes	2	{"Helyek, helyiségek","Hely helyiség",places_tree,"Csoportoknak tagja","Csoportoknak nem tagja"}
 297	table_shapes	2	{"Solgáltatás változók teljes lista","Szolgáltatás változó",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
 649	table_shape_fields	2	{raw_value,raw_value,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
 632	table_shape_fields	1	{reason,reason,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
@@ -14088,10 +14254,90 @@ COPY localizations (text_id, table_for_text, language_id, texts) FROM stdin;
 640	table_shape_fields	2	{last_time_old,last_time_old,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
 641	table_shape_fields	2	{acknowledged,acknowledged,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
 715	table_shape_fields	2	{upper_menu_item_id,upper_menu_item_id,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
-203	menu_items	2	{"Keresés cím szerint","Keresés cím szerint",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
-280	table_shapes	2	{"Helyek, helyiségek","Hely helyiség",places_tree,"Csoportoknak tagja","Csoportoknak nem tagja",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
-839	table_shape_fields	2	{Típus,"Az eszköz típusa",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
 280	table_shapes	1	{"Helyek, helyiségek","Hely helyiség",places_tree,"Csoportoknak tagja","Csoportoknak nem tagja",NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
+839	table_shape_fields	2	{Típus,"Az eszköz típusa",NULL,NULL}
+203	menu_items	2	{"Keresés cím szerint","Keresés cím szerint","NULL","NULL"}
+240	table_shapes	2	{vlans,vlans,vlans,NULL,NULL}
+928	table_shape_fields	2	{soft_state,soft_state,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
+801	table_shape_fields	2	{soft_state,soft_state,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
+242	table_shapes	2	{"Riasztási események","Riasztási esemény",alarms,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
+430	table_shape_fields	2	{superior_host_service_id,superior_host_service_id,"NULL","NULL"}
+469	table_shape_fields	2	{hard_state,hard_state,"NULL","NULL"}
+491	table_shape_fields	2	{max_check_attempts,max_check_attempts,"NULL","NULL"}
+778	table_shape_fields	2	{Állapot,Állapot,"NULL","NULL"}
+987	table_shape_fields	2	{host_service_state,host_service_state,"NULL","NULL"}
+999	table_shape_fields	2	{hard_state,hard_state,"NULL","NULL","NULL"}
+5	alarm_messages	2	{"Controller state is unknown. No protection.",Unknown}
+261	table_shapes	2	{"Pach panelek és fali csatlakozók","Pach panel vagy fali csatlakozó",patchs,NULL,NULL}
+273	table_shapes	2	{"Helyek, helyiségek","Hely, helyiség",places,"Csoportoknak tagja","Csoportoknak nem tagja"}
+288	table_shapes	2	{places_topol,places_topol,places_topol,NULL,NULL}
+370	table_shape_fields	2	{Hely,"Az eszköz helye",NULL,NULL}
+429	table_shape_fields	2	{service,service,NULL,NULL}
+1050	table_shapes	2	{"Portok VLAN kiosztása","Port - VLAN öszerendelés",NULL,NULL,NULL}
+747	table_shape_fields	2	{Név,"Egyedi név",NULL,NULL}
+748	table_shape_fields	2	{Megjegyzés,Megjegyzés,NULL,NULL}
+749	table_shape_fields	2	{Típus,"A csoport típusa",NULL,NULL}
+746	table_shape_fields	2	{ID,"Egyedi azonosító",NULL,NULL}
+730	table_shape_fields	2	{ID,"Egyedi azonosító",NULL,NULL}
+866	table_shape_fields	2	{Név,"Felhasználó név",NULL,NULL}
+947	table_shape_fields	2	{Megj.,Megjegyzés,NULL,NULL}
+731	table_shape_fields	2	{passwd,passwd,NULL,NULL}
+733	table_shape_fields	2	{"Helyi azonosítók","Helyi azonosítók",NULL,NULL}
+1012	table_shape_fields	2	{"Vezeték név","Vezeték név",NULL,NULL}
+910	table_shape_fields	2	{Utónév,last_name,NULL,NULL}
+735	table_shape_fields	2	{Nyelv,Nyelv,NULL,NULL}
+736	table_shape_fields	2	{Telefon,Telefonszám(ok),NULL,NULL}
+737	table_shape_fields	2	{Cím,Cím,NULL,NULL}
+843	table_shape_fields	2	{Hely,Hely,NULL,NULL}
+993	table_shape_fields	2	{Lejár,Lejár,NULL,NULL}
+738	table_shape_fields	2	{Eng.,Engedélyezve,NULL,NULL}
+739	table_shape_fields	2	{features,features,NULL,NULL}
+740	table_shape_fields	2	{host_notif_period,host_notif_period,NULL,NULL}
+741	table_shape_fields	2	{serv_notif_period,serv_notif_period,NULL,NULL}
+742	table_shape_fields	2	{host_notif_switchs,host_notif_switchs,NULL,NULL}
+743	table_shape_fields	2	{serv_notif_switchs,serv_notif_switchs,NULL,NULL}
+744	table_shape_fields	2	{host_notif_cmd,host_notif_cmd,NULL,NULL}
+745	table_shape_fields	2	{serv_notif_cmd,serv_notif_cmd,NULL,NULL}
+362	table_shape_fields	2	{ID,"Egyedi azonosító",NULL,NULL}
+834	table_shape_fields	2	{Név,Név,NULL,NULL}
+972	table_shape_fields	2	{Megjegyzés,Megjegyzés,NULL,NULL}
+800	table_shape_fields	2	{NULL,NULL,NULL,NULL}
+871	table_shape_fields	2	{Hely,Hely,NULL,NULL}
+363	table_shape_fields	2	{"Egyébb paraméterek","Egyébb paraméterek",NULL,NULL}
+364	table_shape_fields	2	{deleted,deleted,NULL,NULL}
+593	table_shape_fields	2	{Lelt.sám,"Leltári szám",NULL,NULL}
+594	table_shape_fields	2	{SN,"Széria szám",NULL,NULL}
+595	table_shape_fields	2	{Mod.szám,"Model szám",NULL,NULL}
+596	table_shape_fields	2	{Model,"Model név",NULL,NULL}
+369	table_shape_fields	2	{ID,"Egyedi azonosító",NULL,NULL}
+960	table_shape_fields	2	{Név,"Eszköz (host) neve",NULL,NULL}
+888	table_shape_fields	2	{Állapot,"Az eszköz állpota",NULL,NULL}
+990	table_shape_fields	2	{Megjegyzés,Megjegyzés,NULL,NULL}
+765	table_shape_fields	2	{SN,"Széria szám",NULL,NULL}
+723	table_shape_fields	2	{Lelt.sz.,"Leltári szám",NULL,NULL}
+583	table_shape_fields	2	{"Model szám","Model szám",NULL,NULL}
+584	table_shape_fields	2	{"Model név","Model név",NULL,NULL}
+371	table_shape_fields	2	{paraméterek,"Egyébb paraméterek",NULL,NULL}
+359	table_shape_fields	2	{deleted,deleted,NULL,NULL}
+1055	table_shape_fields	2	{Legutóbb,Utoljára,NULL,NULL}
+1054	table_shape_fields	2	{Először,"Első alkalom",NULL,NULL}
+1053	table_shape_fields	2	{Vlan,Vlan,NULL,NULL}
+1051	table_shape_fields	2	{NULL,NULL,NULL,NULL}
+1057	table_shape_fields	2	{Forrás,Forrás,NULL,NULL}
+1058	table_shape_fields	2	{NULL,NULL,NULL,NULL}
+1052	table_shape_fields	2	{Port,Port,NULL,NULL}
+1056	table_shape_fields	2	{Típus,Típus,NULL,NULL}
+294	table_shapes	2	{"Hálózati interfészek és portok","Hálózati interfész vagy passzív port","Aktív port vagy interfész",NULL,NULL}
+526	table_shape_fields	2	{service_var_note,service_var_note,NULL,NULL}
+524	table_shape_fields	2	{portvar_id,portvar_id,NULL,NULL}
+538	table_shape_fields	2	{service_var_value,service_var_value,NULL,NULL}
+556	table_shape_fields	2	{raw_value,raw_value,NULL,NULL}
+525	table_shape_fields	2	{service_var_name,service_var_name,NULL,NULL}
+531	table_shape_fields	2	{service_var_type_id,service_var_type_id,NULL,NULL}
+243	table_shapes	2	{app_memos,app_memos,app_memos,NULL,NULL}
+1059	enum_vals	2	{"","",""}
+1060	enum_vals	2	{igen,igen,""}
+1061	enum_vals	2	{nem,nem,""}
 \.
 
 
@@ -14099,7 +14345,7 @@ COPY localizations (text_id, table_for_text, language_id, texts) FROM stdin;
 -- Data for Name: log_links_table; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY log_links_table (log_link_id, port_id1, port_id2, log_link_note, link_type, phs_link_chain, share_result) FROM stdin;
+COPY public.log_links_table (log_link_id, port_id1, port_id2, log_link_note, link_type, phs_link_chain, share_result) FROM stdin;
 \.
 
 
@@ -14107,14 +14353,14 @@ COPY log_links_table (log_link_id, port_id1, port_id2, log_link_note, link_type,
 -- Name: log_links_table_log_link_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('log_links_table_log_link_id_seq', 679, true);
+SELECT pg_catalog.setval('public.log_links_table_log_link_id_seq', 775, true);
 
 
 --
 -- Data for Name: mactab; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY mactab (hwaddress, port_id, mactab_state, first_time, last_time, state_updated_time, set_type) FROM stdin;
+COPY public.mactab (hwaddress, port_id, mactab_state, first_time, last_time, state_updated_time, set_type) FROM stdin;
 \.
 
 
@@ -14122,7 +14368,7 @@ COPY mactab (hwaddress, port_id, mactab_state, first_time, last_time, state_upda
 -- Data for Name: mactab_logs; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY mactab_logs (mactab_log_id, hwaddress, reason, be_void, date_of, port_id_old, mactab_state_old, first_time_old, last_time_old, set_type_old, port_id_new, mactab_state_new, set_type_new, acknowledged) FROM stdin;
+COPY public.mactab_logs (mactab_log_id, hwaddress, reason, be_void, date_of, port_id_old, mactab_state_old, first_time_old, last_time_old, set_type_old, port_id_new, mactab_state_new, set_type_new, acknowledged) FROM stdin;
 \.
 
 
@@ -14130,14 +14376,14 @@ COPY mactab_logs (mactab_log_id, hwaddress, reason, be_void, date_of, port_id_ol
 -- Name: mactab_logs_mactab_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('mactab_logs_mactab_log_id_seq', 414520, true);
+SELECT pg_catalog.setval('public.mactab_logs_mactab_log_id_seq', 667745, true);
 
 
 --
 -- Data for Name: menu_items; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY menu_items (menu_item_id, menu_item_name, app_name, upper_menu_item_id, item_sequence_number, features, menu_rights, text_id) FROM stdin;
+COPY public.menu_items (menu_item_id, menu_item_name, app_name, upper_menu_item_id, item_sequence_number, features, menu_rights, text_id) FROM stdin;
 1559	file	lv2gui	\N	10	:sub:	none	154
 1560	setup	lv2gui	1559	10	:own=setup:	none	155
 1561	gsetup	lv2gui	1559	20	:own=gsetup:	none	156
@@ -14230,14 +14476,14 @@ COPY menu_items (menu_item_id, menu_item_name, app_name, upper_menu_item_id, ite
 -- Name: menu_items_menu_item_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('menu_items_menu_item_id_seq', 1654, true);
+SELECT pg_catalog.setval('public.menu_items_menu_item_id_seq', 1654, true);
 
 
 --
 -- Data for Name: node_params; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY node_params (node_param_id, param_type_id, node_id, param_value, flag) FROM stdin;
+COPY public.node_params (node_param_id, param_type_id, node_id, param_value, flag) FROM stdin;
 \.
 
 
@@ -14245,14 +14491,14 @@ COPY node_params (node_param_id, param_type_id, node_id, param_value, flag) FROM
 -- Name: node_params_node_param_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('node_params_node_param_id_seq', 94, true);
+SELECT pg_catalog.setval('public.node_params_node_param_id_seq', 94, true);
 
 
 --
 -- Data for Name: nodes; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY nodes (node_id, node_name, node_note, node_type, place_id, features, deleted, inventory_number, serial_number, model_number, model_name, node_stat) FROM stdin;
+COPY public.nodes (node_id, node_name, node_note, node_type, place_id, features, deleted, inventory_number, serial_number, model_number, model_name, location, node_stat) FROM stdin;
 \.
 
 
@@ -14260,7 +14506,7 @@ COPY nodes (node_id, node_name, node_note, node_type, place_id, features, delete
 -- Data for Name: nports; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY nports (port_id, port_name, port_note, port_tag, iftype_id, node_id, port_index, deleted, flag) FROM stdin;
+COPY public.nports (port_id, port_name, port_note, port_tag, iftype_id, node_id, port_index, deleted, flag) FROM stdin;
 \.
 
 
@@ -14268,14 +14514,14 @@ COPY nports (port_id, port_name, port_note, port_tag, iftype_id, node_id, port_i
 -- Name: nports_port_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('nports_port_id_seq', 23446, true);
+SELECT pg_catalog.setval('public.nports_port_id_seq', 23733, true);
 
 
 --
 -- Data for Name: object_syntaxs; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY object_syntaxs (object_syntax_id, object_syntax_name, sentence, features, listed) FROM stdin;
+COPY public.object_syntaxs (object_syntax_id, object_syntax_name, sentence, features, listed) FROM stdin;
 15	places	0PLACE $NAME $NOTE \\\\\n0{:;\n1?!R:PARENT $PARENT;\n1?V:$image_id:IMAGE $1;\n1?V:$frame:FRAME $1;\n1?V:$tels:TEL $1;\n0}\n1@TREE\n	:tree=parent_id:root=1:	f
 14	enum_vals.enum_type_name	\n0NAME $enum_val_name $NOTE {\n1TITLE $view_short, $view_long;\n1?V:$bg_color:   BGCOLOR $1;\n1?V:$fg_color:   FGCOLOR $1;\n1?V:$font_family:FONT $1;\n1?V:$font_attr:  FONT ATTR $1;\n1?V:$tool_tip:   TOOL TIP $1;\n}	\N	f
 11	enum_vals	0ENUM $enum_type_name $NOTE {\n1TITLE $view_short, $view_long;\n1?N:$tool_tip:TOOL TIP $1;\n1@GROUP\n}	:group=enum_type_name:head=enum_val_name:	f
@@ -14292,14 +14538,14 @@ COPY object_syntaxs (object_syntax_id, object_syntax_name, sentence, features, l
 -- Name: object_syntaxs_object_syntax_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('object_syntaxs_object_syntax_id_seq', 17, true);
+SELECT pg_catalog.setval('public.object_syntaxs_object_syntax_id_seq', 17, true);
 
 
 --
 -- Data for Name: ouis; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY ouis (oui, oui_name, oui_note) FROM stdin;
+COPY public.ouis (oui, oui_name, oui_note) FROM stdin;
 e0:43:db:00:00:00	Shenzhen ViewAt Technology Co.,Ltd.	Shenzhen ViewAt Technology Co.,Ltd.\n9A,Microprofit,6th Gaoxin South Road, High-Tech Industrial Park, Nanshan, Shenzhen, CHINA.\nshenzhen guangdong 518057\nCN
 24:05:f5:00:00:00	Integrated Device Technology (Malaysia) Sdn. Bhd.	Integrated Device Technology (Malaysia) Sdn. Bhd.\nPhase 3, Bayan Lepas FIZ\nBayan Lepas Penang 11900\nMY
 2c:30:33:00:00:00	NETGEAR	NETGEAR\n350 East Plumeria Drive\nSan Jose null 95134\nUS
@@ -36928,7 +37174,7 @@ e4:47:90:00:00:00	GUANGDONG OPPO MOBILE TELECOMMUNICATIONS CORP.,LTD	GUANGDONG O
 -- Data for Name: param_types; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY param_types (param_type_id, param_type_name, param_type_note, param_type_type, param_type_dim) FROM stdin;
+COPY public.param_types (param_type_id, param_type_name, param_type_note, param_type_type, param_type_dim) FROM stdin;
 1	boolean	\N	boolean	\N
 2	bigint	\N	integer	\N
 3	double precision	\N	real	\N
@@ -36946,8 +37192,10 @@ COPY param_types (param_type_id, param_type_name, param_type_note, param_type_ty
 17	battery_changed	Elem akkumlátor csere utolsó időpontja	date	\N
 22	bps	Bitsebesség	integer	bps
 23	bytes	Byte-ok	integer	Byte
-24	bypes_per_sec	Bytes/sec	integer	byte/s
+27	override_mac	\N	mac	\N
 25	packets	\N	integer	\N
+24	bytes_per_sec	Bytes/sec	real	byte/s
+26	packets_per_sec	packets/sec	real	pkt/s
 \.
 
 
@@ -36955,14 +37203,14 @@ COPY param_types (param_type_id, param_type_name, param_type_note, param_type_ty
 -- Name: param_types_param_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('param_types_param_type_id_seq', 25, true);
+SELECT pg_catalog.setval('public.param_types_param_type_id_seq', 27, true);
 
 
 --
 -- Data for Name: patchs; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY patchs (node_id, node_name, node_note, node_type, place_id, features, deleted, inventory_number, serial_number, model_number, model_name) FROM stdin;
+COPY public.patchs (node_id, node_name, node_note, node_type, place_id, features, deleted, inventory_number, serial_number, model_number, model_name, location) FROM stdin;
 \.
 
 
@@ -36970,14 +37218,14 @@ COPY patchs (node_id, node_name, node_note, node_type, place_id, features, delet
 -- Name: patchs_node_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('patchs_node_id_seq', 3173, true);
+SELECT pg_catalog.setval('public.patchs_node_id_seq', 3273, true);
 
 
 --
 -- Data for Name: phs_links_table; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY phs_links_table (phs_link_id, port_id1, port_id2, phs_link_type1, phs_link_type2, phs_link_note, port_shared, link_type, create_time, create_user_id, modify_time, modify_user_id, forward) FROM stdin;
+COPY public.phs_links_table (phs_link_id, port_id1, port_id2, phs_link_type1, phs_link_type2, phs_link_note, port_shared, link_type, create_time, create_user_id, modify_time, modify_user_id, forward) FROM stdin;
 \.
 
 
@@ -36985,14 +37233,14 @@ COPY phs_links_table (phs_link_id, port_id1, port_id2, phs_link_type1, phs_link_
 -- Name: phs_links_table_phs_link_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('phs_links_table_phs_link_id_seq', 5985, true);
+SELECT pg_catalog.setval('public.phs_links_table_phs_link_id_seq', 6447, true);
 
 
 --
 -- Data for Name: place_group_places; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY place_group_places (place_group_place_id, place_group_id, place_id) FROM stdin;
+COPY public.place_group_places (place_group_place_id, place_group_id, place_id) FROM stdin;
 1	1	0
 2	1	1
 \.
@@ -37002,14 +37250,14 @@ COPY place_group_places (place_group_place_id, place_group_id, place_id) FROM st
 -- Name: place_group_places_place_group_place_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('place_group_places_place_group_place_id_seq', 1328, true);
+SELECT pg_catalog.setval('public.place_group_places_place_group_place_id_seq', 1381, true);
 
 
 --
 -- Data for Name: place_groups; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY place_groups (place_group_id, place_group_name, place_group_note, place_group_type) FROM stdin;
+COPY public.place_groups (place_group_id, place_group_name, place_group_note, place_group_type) FROM stdin;
 1	all	Teljes zóna	zone
 0	none	No any location	group
 17	guestroom	Vendégszoba	category
@@ -37025,14 +37273,14 @@ COPY place_groups (place_group_id, place_group_name, place_group_note, place_gro
 -- Name: place_groups_place_group_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('place_groups_place_group_id_seq', 25, true);
+SELECT pg_catalog.setval('public.place_groups_place_group_id_seq', 26, true);
 
 
 --
 -- Data for Name: places; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY places (place_id, place_name, place_note, place_type, parent_id, image_id, frame, tels) FROM stdin;
+COPY public.places (place_id, place_name, place_note, place_type, parent_id, image_id, frame, tels) FROM stdin;
 0	unknown	unknown pseudo location	unknown	\N	\N	\N	\N
 1	root	root pseudo location	root	\N	\N	\N	\N
 \.
@@ -37042,14 +37290,14 @@ COPY places (place_id, place_name, place_note, place_type, parent_id, image_id, 
 -- Name: places_place_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('places_place_id_seq', 1011, true);
+SELECT pg_catalog.setval('public.places_place_id_seq', 1026, true);
 
 
 --
 -- Data for Name: port_params; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY port_params (port_param_id, param_type_id, port_id, param_value, flag) FROM stdin;
+COPY public.port_params (port_param_id, param_type_id, port_id, param_value, flag) FROM stdin;
 \.
 
 
@@ -37057,14 +37305,29 @@ COPY port_params (port_param_id, param_type_id, port_id, param_value, flag) FROM
 -- Name: port_params_port_param_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('port_params_port_param_id_seq', 779, true);
+SELECT pg_catalog.setval('public.port_params_port_param_id_seq', 826, true);
+
+
+--
+-- Data for Name: port_vlan_logs; Type: TABLE DATA; Schema: public; Owner: lanview2
+--
+
+COPY public.port_vlan_logs (port_vlan_log_id, date_of, reason, port_id, vlan_id, old_type, first_time_old, last_time_old, new_type, acknowledged) FROM stdin;
+\.
+
+
+--
+-- Name: port_vlan_logs_port_vlan_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
+--
+
+SELECT pg_catalog.setval('public.port_vlan_logs_port_vlan_log_id_seq', 76, true);
 
 
 --
 -- Data for Name: port_vlans; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY port_vlans (port_vlan_id, port_id, vlan_id, first_time, last_time, vlan_type, set_type, flag) FROM stdin;
+COPY public.port_vlans (port_vlan_id, port_id, vlan_id, first_time, last_time, vlan_type, set_type, flag) FROM stdin;
 \.
 
 
@@ -37072,14 +37335,14 @@ COPY port_vlans (port_vlan_id, port_id, vlan_id, first_time, last_time, vlan_typ
 -- Name: port_vlans_port_vlan_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('port_vlans_port_vlan_id_seq', 60, true);
+SELECT pg_catalog.setval('public.port_vlans_port_vlan_id_seq', 1838, true);
 
 
 --
 -- Data for Name: pports; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY pports (port_id, port_name, port_note, port_tag, iftype_id, node_id, port_index, deleted, flag, shared_cable, shared_port_id) FROM stdin;
+COPY public.pports (port_id, port_name, port_note, port_tag, iftype_id, node_id, port_index, deleted, flag, shared_cable, shared_port_id) FROM stdin;
 \.
 
 
@@ -37087,7 +37350,7 @@ COPY pports (port_id, port_name, port_note, port_tag, iftype_id, node_id, port_i
 -- Data for Name: query_parsers; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY query_parsers (query_parser_id, query_parser_note, service_id, parse_type, item_sequence_number, case_sensitive, regular_expression, import_expression) FROM stdin;
+COPY public.query_parsers (query_parser_id, query_parser_note, service_id, parse_type, item_sequence_number, case_sensitive, regular_expression, import_expression) FROM stdin;
 12	\N	100	parse	30	f	Dhcp\\s+Server\\s+\\\\+([\\w\\-\\.]+)\\sScope\\s+[\\d\\.\\:]+\\s+Add\\s+reservedip\\s+([\\d\\.\\:]+)\\s+([\\dA-F]+)\\s+(.*)	REPLACE ARP $2 MAC("$3") config $host_service_id $$note$$$4$$note$$;
 10	\N	100	parse	10	f	Dhcp\\s+Server\\s+\\\\+([\\w\\-\\.]+)\\sScope\\s+[\\d\\.\\:]+\\s+Add\\s+iprange\\s+([\\d\\.\\:]+)\\s+([\\d\\.\\:]+)	REPLACE DYNAMIC ADDRESS RANGE $2 TO $3 $host_service_id;
 11	\N	100	parse	20	f	Dhcp\\s+Server\\s+\\\\+([\\w\\-\\.]+)\\sScope\\s+[\\d\\.\\:]+\\s+Add\\s+excluderange\\s+([\\d\\.\\:]+)\\s+([\\d\\.\\:]+)	REPLACE DYNAMIC ADDRESS RANGE EXCLUDE $2 TO $3 $host_service_id;
@@ -37098,14 +37361,14 @@ COPY query_parsers (query_parser_id, query_parser_note, service_id, parse_type, 
 -- Name: query_parsers_query_parser_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('query_parsers_query_parser_id_seq', 15, true);
+SELECT pg_catalog.setval('public.query_parsers_query_parser_id_seq', 15, true);
 
 
 --
 -- Data for Name: rrd_beats; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY rrd_beats (rrd_beat_id, rrd_beat_name, rrd_beat_note, step, heartbeat, daily_step, daily_size, daily_aggregates, weekly_step, weekly_size, weekly_aggregates, monthly_step, monthly_size, monthly_aggregates, yearly_step, yearly_size, yearly_aggregates, features, deleted) FROM stdin;
+COPY public.rrd_beats (rrd_beat_id, rrd_beat_name, rrd_beat_note, step, heartbeat, daily_step, daily_size, daily_aggregates, weekly_step, weekly_size, weekly_aggregates, monthly_step, monthly_size, monthly_aggregates, yearly_step, yearly_size, yearly_aggregates, features, deleted) FROM stdin;
 0	std5min	Normál 5 percenkénti lekérdezés	05:00:00	10:00:00	1	400	{AVERAGE}	6	400	{AVERAGE,MIN,MAX}	24	400	{AVERAGE,MIN,MAX}	288	400	{AVERAGE,MIN,MAX}	\N	f
 1	std1min	Normál 1 percenkénti lekérdezés	01:00:00	05:00:00	5	400	{AVERAGE,MIN,MAX}	30	400	{AVERAGE,MIN,MAX}	120	400	{AVERAGE,MIN,MAX}	1440	400	{AVERAGE,MIN,MAX}	\N	f
 \.
@@ -37115,14 +37378,14 @@ COPY rrd_beats (rrd_beat_id, rrd_beat_name, rrd_beat_note, step, heartbeat, dail
 -- Name: rrd_beats_rrd_beat_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('rrd_beats_rrd_beat_id_seq', 1, true);
+SELECT pg_catalog.setval('public.rrd_beats_rrd_beat_id_seq', 1, true);
 
 
 --
 -- Data for Name: selects; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY selects (select_id, select_type, select_note, precedence, pattern, pattern_type, choice, features) FROM stdin;
+COPY public.selects (select_id, select_type, select_note, precedence, pattern, pattern_type, choice, features) FROM stdin;
 19	lldp.descr	Empty	10		equal	Empty	\N
 20	lldp.descr	HP ProCurve 1700	20	PROCURVE J%V(A|B).0%	similar	ProCurveWeb	\N
 21	lldp.descr	HP ProCurve 1800	30	PROCURVE J%P(A|B).0%	similar	ProCurveWeb	\N
@@ -37140,6 +37403,7 @@ COPY selects (select_id, select_type, select_note, precedence, pattern, pattern_
 34	snmp.node_type	\N	40	Canon	regexpi	printer	\N
 35	snmp.node_type	\N	50	Epson	regexpi	printer	\N
 36	snmp.node_type	\N	60	OKI	regexp	printer	\N
+37	lldp.descr	BSD	990	%BSD%	similar	Linux	\N
 \.
 
 
@@ -37147,14 +37411,14 @@ COPY selects (select_id, select_type, select_note, precedence, pattern, pattern_
 -- Name: selects_select_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('selects_select_id_seq', 36, true);
+SELECT pg_catalog.setval('public.selects_select_id_seq', 37, true);
 
 
 --
 -- Data for Name: service_types; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY service_types (service_type_id, service_type_name, service_type_note) FROM stdin;
+COPY public.service_types (service_type_id, service_type_name, service_type_note) FROM stdin;
 -1	unmarked	\N
 0	ticket	Hiba jegy
 20	life_contr	Jelenlét érzékelés kontroller
@@ -37167,23 +37431,23 @@ COPY service_types (service_type_id, service_type_name, service_type_note) FROM 
 -- Name: service_types_service_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('service_types_service_type_id_seq', 26, true);
+SELECT pg_catalog.setval('public.service_types_service_type_id_seq', 26, true);
 
 
 --
 -- Data for Name: service_var_types; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY service_var_types (service_var_type_id, service_var_type_name, service_var_type_note, param_type_id, service_var_type, plausibility_type, plausibility_param1, plausibility_param2, warning_type, warning_param1, warning_param2, critical_type, critical_param1, critical_param2, features, deleted, plausibility_inverse, warning_inverse, critical_inverse) FROM stdin;
-2	ifspeed.fast	Fast ethernet port átviteli sebessége	22	\N	big	1	\N	\N	\N	\N	litle	100000000	\N	\N	f	f	f	f
-3	ifspeed.gig	Ethernet gigabit port átviteli sebessége	22	\N	big	1	\N	\N	\N	\N	litle	1000000000	\N	\N	f	f	f	f
-8	ifoutoctets	Output bytes	23	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	f	f	f	f
-10	ifouterror	Input error packets	25	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	f	f	f	f
-4	ifspeed.10g	Ethernet 10G port átviteli sebessége	22	\N	big	1	\N	\N	\N	\N	litle	4294967295	\N	\N	f	f	f	f
-7	ifbytes	Input/output bytes	23	COUNTER	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	f	f	f	f
-9	ifpacks	Input/output packets	25	COUNTER	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	f	f	f	f
-5	ifspeed	Ethernet port átviteli sebessége	22	\N	big	1	\N	\N	\N	\N	\N	\N	\N	\N	f	f	f	f
-6	ifmtu	MTU	23	\N	interval	48	10240	\N	\N	\N	\N	\N	\N	\N	f	f	f	f
+COPY public.service_var_types (service_var_type_id, service_var_type_name, service_var_type_note, param_type_id, service_var_type, plausibility_type, plausibility_param1, plausibility_param2, warning_type, warning_param1, warning_param2, critical_type, critical_param1, critical_param2, features, deleted, plausibility_inverse, warning_inverse, critical_inverse, raw_param_type_id) FROM stdin;
+2	ifspeed.fast	Fast ethernet port átviteli sebessége	22	\N	big	1	\N	\N	\N	\N	litle	100000000	\N	\N	f	f	f	f	22
+3	ifspeed.gig	Ethernet gigabit port átviteli sebessége	22	\N	big	1	\N	\N	\N	\N	litle	1000000000	\N	\N	f	f	f	f	22
+8	ifoutoctets	Output bytes	23	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	f	f	f	f	23
+10	ifouterror	Input error packets	25	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	f	f	f	f	25
+4	ifspeed.10g	Ethernet 10G port átviteli sebessége	22	\N	big	1	\N	\N	\N	\N	litle	4294967295	\N	\N	f	f	f	f	22
+5	ifspeed	Ethernet port átviteli sebessége	22	\N	big	1	\N	\N	\N	\N	\N	\N	\N	\N	f	f	f	f	22
+6	ifmtu	MTU	23	\N	interval	48	10240	\N	\N	\N	\N	\N	\N	\N	f	f	f	f	23
+7	ifbytes	Input/output bytes	24	COUNTER	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	f	f	f	f	23
+9	ifpacks	Input/output packets	26	COUNTER	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	f	f	f	f	25
 \.
 
 
@@ -37191,14 +37455,14 @@ COPY service_var_types (service_var_type_id, service_var_type_name, service_var_
 -- Name: service_var_types_service_var_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('service_var_types_service_var_type_id_seq', 10, true);
+SELECT pg_catalog.setval('public.service_var_types_service_var_type_id_seq', 10, true);
 
 
 --
 -- Data for Name: service_vars; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY service_vars (service_var_id, service_var_name, service_var_note, service_var_type_id, host_service_id, rrd_beat_id, service_var_value, var_state, last_time, features, deleted, raw_value, delegate_service_state, state_msg) FROM stdin;
+COPY public.service_vars (service_var_id, service_var_name, service_var_note, service_var_type_id, host_service_id, rrd_beat_id, service_var_value, var_state, last_time, features, deleted, raw_value, delegate_service_state, state_msg) FROM stdin;
 \.
 
 
@@ -37206,15 +37470,14 @@ COPY service_vars (service_var_id, service_var_name, service_var_note, service_v
 -- Name: service_vars_service_var_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('service_vars_service_var_id_seq', 38544, true);
+SELECT pg_catalog.setval('public.service_vars_service_var_id_seq', 39624, true);
 
 
 --
 -- Data for Name: services; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY services (service_id, service_name, service_note, service_type_id, port, superior_service_mask, check_cmd, features, disabled, max_check_attempts, normal_check_interval, retry_check_interval, timeperiod_id, flapping_interval, flapping_max_change, deleted, offline_group_ids, online_group_ids, heartbeat_time) FROM stdin;
-88	import	import daemon	-1	\N	lv2d	import $S -D	:process=respawn:timing=custom:	f	\N	00:05:00	\N	0	00:30:00	15	f	\N	\N	\N
+COPY public.services (service_id, service_name, service_note, service_type_id, port, superior_service_mask, check_cmd, features, disabled, max_check_attempts, normal_check_interval, retry_check_interval, timeperiod_id, flapping_interval, flapping_max_change, deleted, offline_group_ids, online_group_ids, heartbeat_time) FROM stdin;
 76	local	local service	-1	\N	\N	\N	:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
 77	ssh	ssh	-1	22	\N	\N	:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
 79	tcp.rs	TCP serial port gateway	-1	4001	\N	\N	:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
@@ -37223,32 +37486,35 @@ COPY services (service_id, service_name, service_note, service_type_id, port, su
 100	win.dhcp.conf.parser	Query Parser (inferior)	-1	\N	\N	\N	:timing=polling:method=parser:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
 99	win.dhcp.conf	DHCP konfiguráció a netsh-n keresztül	-1	\N	\N	netsh dhcp server \\\\$node dump all	:timing=polling:method=qparse:comment=#:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
 82	arp.proc	ARP fájl a proc-ban, local vagy ssh-n keresztül	-1	\N	\N	\N	:file=/proc/net/arp:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
-91	rlinkstat	Jelenlét, a switch port állapota alapján	25	\N	pstat	\N	:timing=passive:iftype=ethernet:	f	2	\N	\N	0	00:30:00	15	f	\N	{6,1}	00:10:00
 81	dhcp.conf	DHCP config fájl, local vagy ssh-n keresztül	-1	\N	\N	\N	:file=/etc/dhcp/dhcpd.conf:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
-98	attached	IndAlarm Contact védett eszköz	25	\N	indalarmif	\N	:timing=passive:iftype=attach:	f	1	00:00:00	00:00:00	0	00:30:00	15	f	\N	{6,1}	00:01:00
-95	indalarmif1ma	IndAlarm Contact V1 Master	20	\N	rs485	\N	:iftype=rs485:timing=timed:timeout=1000:	f	3	00:00:10	00:00:10	0	00:30:00	15	f	{1}	{1,6}	\N
-104	http	Check http server	26	80	lv2d	/usr/lib/nagios/plugins/check_http -H $address -p $port -u $uri	:timing=timed:method=nagios:uri=/:	f	2	00:05:00	00:01:00	0	01:00:00	4	f	{1,2}	{2,1}	00:10:00
-89	portstat	Device port status query daemon	-1	\N	lv2d	portstat $S  -R $host_service_id	:process=continue:timing=passive:superior:logrot=500M,8:method=inspector:	f	\N	00:05:00	\N	0	00:30:00	15	f	\N	\N	\N
-105	http.proxy	Check http proxy server	26	3128	http	check_http_proxy --proxy=$address:$port --url=http://$parent.address:$parent.port$parent.uri	:timing=timed:method=nagios:uri=/:	f	2	00:05:00	00:01:00	0	00:01:00	4	f	{1,2}	{1,2}	00:10:00
-112	rightmac	MAC cím fehér lista	-1	\N	pmac	\N	:timing=passíve:	f	2	\N	\N	0	01:00:00	15	f	{1}	\N	\N
 106	nil-1	Csak az azonos funkciójú példányok megkülöngöztetésére szolgál	-1	\N	\N	\N	:	t	\N	\N	\N	0	00:00:00	0	f	\N	\N	\N
-85	arpd	Arp daemon	-1	\N	lv2d	arpd $S  -R $host_service_id	:process=continue:timing=passive:superior:logrot=500M,8:method=inspector:	f	\N	00:10:00	\N	0	00:30:00	15	f	\N	\N	00:30:00
 0	ticket	Hiba jegy	0	\N	\N	\N	:	t	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
-86	arp	ARP tábla lekérdezése	-1	\N	arpd	\N	:timing=timed:	f	3	00:05:00	00:01:00	0	00:30:00	15	f	\N	\N	00:30:00
-111	portvars	Port változók	-1	\N	pstat	\N	:timing=passive:	f	2	\N	\N	0	00:30:00	15	f	{1,2}	{}	00:10:00
 -1	nil	A NULL-t reprezentálja, de összehasonlítható	-1	\N	\N	\N	:	t	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
-90	pstat	Query port status by <protocol>	-1	\N	portstat	\N	:timing=timed:	f	2	00:00:30	00:00:30	0	00:30:00	15	f	\N	\N	\N
-87	icontsrv	icontsrv daemon	-1	\N	lv2d	icontsrv $S	:process=continue:timing=passive:superior:logrot=500M,4:method=inspector:	f	\N	00:01:00	00:01:00	0	00:30:00	15	f	\N	\N	\N
 109	nil-2	Csak az azonos funkciójú példányok megkülöngöztetésére szolgál	-1	\N	\N	\N	:	t	\N	\N	\N	0	00:00:00	0	f	\N	\N	\N
 110	nil-3	Csak az azonos funkciójú példányok megkülöngöztetésére szolgál	-1	\N	\N	\N	:	t	\N	\N	\N	0	00:00:00	0	f	\N	\N	\N
-92	portmac	Device port address table query daemon	-1	\N	lv2d	portmac $S -R $host_service_id	:process=continue:timing=passive:superior:logrot=500M,8:method=inspector:	f	\N	00:05:00	\N	0	00:30:00	15	f	\N	\N	\N
-96	indalarmif1sl	IndAlarm Contact V1 Slave	20	\N	indalarmif1ma	\N	:iftype=iic:timing=timed:superior:timeout=1000:	f	3	00:00:10	00:00:10	0	00:30:00	15	f	{1}	{6,1}	\N
-97	indalarmif2	IndAlarm Contact V2	20	\N	rs485	\N	:iftype=rs485:timing=timed:timeout=1000:	f	3	00:00:10	00:00:10	0	00:30:00	15	f	\N	{1,6}	\N
-94	rs485	RS485 BUS interface or gateway	20	\N	icontsrv	\N	:timing=thread,passive:superior:timeout=60000:	f	\N	00:05:00	00:05:00	0	00:30:00	15	f	\N	\N	00:30:00
-93	pmac	Query port address table by <protocol>	-1	\N	portmac	\N	:timing=timed:superior:	f	2	00:05:00	00:01:00	0	00:30:00	15	f	\N	\N	\N
 78	snmp	SNMP	-1	161	\N	\N	:	f	\N	\N	\N	0	00:30:00	15	f	\N	\N	\N
-103	syscron	System cron	-1	\N	lv2d	\N	:timing=timed,thread:delay=600000:	f	\N	00:10:00	00:10:00	0	01:00:00	5	f	\N	\N	\N
 102	DHCP	DHCP monitorozás	26	\N	\N	dhtest -i $interface -m $interface.hwaddress -D -T 5 -W -a -A $server -G $gw	:method=nagios:	f	2	00:05:00	00:01:00	0	04:00:00	8	f	{1}	{1}	00:30:00
+112	rightmac	MAC cím fehér lista	-1	\N	^pmac$	\N	:timing=passíve:	f	2	\N	\N	0	01:00:00	15	f	{1}	\N	\N
+114	pvlan	\N	-1	\N	^portvlan$	\N	:timing=timed:delay=1000:	f	3	00:30:00	00:05:00	0	03:00:00	4	f	\N	\N	\N
+105	http.proxy	Check http proxy server	26	3128	^http$	check_http_proxy --proxy=$address:$port --url=http://$parent.address:$parent.port$parent.uri	:timing=timed:method=nagios:uri=/:	f	2	00:05:00	00:01:00	0	00:01:00	4	f	{1,2}	{1,2}	00:10:00
+86	arp	ARP tábla lekérdezése	-1	\N	^arpd$	\N	:timing=timed:	f	3	00:05:00	00:01:00	0	00:30:00	15	f	\N	\N	00:30:00
+85	arpd	Arp daemon	-1	\N	^lv2d$	arpd $S  -R $host_service_id	:process=continue:timing=passive:superior:logrot=500M,8:method=inspector:	f	\N	00:10:00	\N	0	00:30:00	15	f	\N	\N	00:30:00
+98	attached	IndAlarm Contact védett eszköz	25	\N	^indalarmif	\N	:timing=passive:iftype=attach:	f	1	00:00:00	00:00:00	0	00:30:00	15	f	\N	{6,1}	00:01:00
+104	http	Check http server	26	80	^lv2d$	/usr/lib/nagios/plugins/check_http -H $address -p $port -u $uri	:timing=timed:method=nagios:uri=/:	f	2	00:05:00	00:01:00	0	01:00:00	4	f	{1,2}	{2,1}	00:10:00
+87	icontsrv	icontsrv daemon	-1	\N	^lv2d$	icontsrv $S	:process=continue:timing=passive:superior:logrot=500M,4:method=inspector:	f	\N	00:01:00	00:01:00	0	00:30:00	15	f	\N	\N	\N
+88	import	import daemon	-1	\N	^lv2d$	import $S -D	:process=respawn:timing=custom:	f	\N	00:05:00	\N	0	00:30:00	15	f	\N	\N	\N
+96	indalarmif1sl	IndAlarm Contact V1 Slave	20	\N	^indalarmif1ma$	\N	:iftype=iic:timing=timed:superior:timeout=1000:	f	3	00:00:10	00:00:10	0	00:30:00	15	f	{1}	{6,1}	\N
+97	indalarmif2	IndAlarm Contact V2	20	\N	^rs485$	\N	:iftype=rs485:timing=timed:timeout=1000:	f	3	00:00:10	00:00:10	0	00:30:00	15	f	\N	{1,6}	\N
+95	indalarmif1ma	IndAlarm Contact V1 Master	20	\N	^rs485$	\N	:iftype=rs485:timing=timed:timeout=1000:	f	3	00:00:10	00:00:10	0	00:30:00	15	f	{1}	{1,6}	\N
+93	pmac	Query port address table by <protocol>	-1	\N	^portmac$	\N	:timing=timed:superior:	f	2	00:05:00	00:01:00	0	00:30:00	15	f	\N	\N	\N
+92	portmac	Device port address table query daemon	-1	\N	^lv2d$	portmac $S -R $host_service_id	:process=continue:timing=passive:superior:logrot=500M,8:method=inspector:	f	\N	00:05:00	\N	0	00:30:00	15	f	\N	\N	\N
+89	portstat	Device port status query daemon	-1	\N	^lv2d$	portstat $S  -R $host_service_id	:process=continue:timing=passive:superior:logrot=500M,8:method=inspector:	f	\N	00:05:00	\N	0	00:30:00	15	f	\N	\N	\N
+111	portvars	Port változók	-1	\N	^pstat$	\N	:timing=passive:	f	2	\N	\N	0	00:30:00	15	f	{1,2}	{}	00:10:00
+113	portvlan	\N	-1	\N	^lv2d$	portvlan $S -R $host_service_id	:process=continue:timing=passive:superior:logrot=500M,8:method=inspector:	f	1	00:05:00	\N	0	00:30:00	5	f	\N	\N	\N
+90	pstat	Query port status by <protocol>	-1	\N	^portstat$	\N	:timing=timed:	f	2	00:02:00	00:00:30	0	00:50:00	15	f	\N	\N	\N
+91	rlinkstat	Jelenlét, a switch port állapota alapján	25	\N	^pstat$	\N	:timing=passive:iftype=ethernet:	f	2	\N	\N	0	00:30:00	15	f	\N	{6,1}	00:10:00
+94	rs485	RS485 BUS interface or gateway	20	\N	^icontsrv$	\N	:timing=thread,passive:superior:timeout=60000:	f	\N	00:05:00	00:05:00	0	00:30:00	15	f	\N	\N	00:30:00
+103	syscron	System cron	-1	\N	^lv2d$	\N	:timing=timed,thread:delay=600000:	f	\N	00:10:00	00:10:00	0	01:00:00	5	f	\N	\N	\N
 \.
 
 
@@ -37256,14 +37522,14 @@ COPY services (service_id, service_name, service_note, service_type_id, port, su
 -- Name: services_service_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('services_service_id_seq', 112, true);
+SELECT pg_catalog.setval('public.services_service_id_seq', 114, true);
 
 
 --
 -- Data for Name: snmpdevices; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY snmpdevices (node_id, node_name, node_note, node_type, place_id, features, deleted, inventory_number, serial_number, model_number, model_name, node_stat, community_rd, community_wr, snmp_ver, sysdescr, sysobjectid, sysuptime, syscontact, sysname, syslocation, sysservices, vendorname) FROM stdin;
+COPY public.snmpdevices (node_id, node_name, node_note, node_type, place_id, features, deleted, inventory_number, serial_number, model_number, model_name, location, node_stat, community_rd, community_wr, snmp_ver, sysdescr, sysobjectid, sysuptime, syscontact, sysname, syslocation, sysservices, vendorname) FROM stdin;
 \.
 
 
@@ -37271,7 +37537,7 @@ COPY snmpdevices (node_id, node_name, node_note, node_type, place_id, features, 
 -- Data for Name: subnets; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY subnets (subnet_id, subnet_name, subnet_note, netaddr, vlan_id, subnet_type) FROM stdin;
+COPY public.subnets (subnet_id, subnet_name, subnet_note, netaddr, vlan_id, subnet_type) FROM stdin;
 \.
 
 
@@ -37279,14 +37545,14 @@ COPY subnets (subnet_id, subnet_name, subnet_note, netaddr, vlan_id, subnet_type
 -- Name: subnets_subnet_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('subnets_subnet_id_seq', 201, true);
+SELECT pg_catalog.setval('public.subnets_subnet_id_seq', 201, true);
 
 
 --
 -- Data for Name: sys_params; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY sys_params (sys_param_id, sys_param_name, sys_param_note, param_type_id, param_value) FROM stdin;
+COPY public.sys_params (sys_param_id, sys_param_name, sys_param_note, param_type_id, param_value) FROM stdin;
 2	version_major	\N	2	1
 3	oui_list_url_MA-L	MA-L Public list	4	http://standards-oui.ieee.org/oui.txt
 4	arps_expire_interval	Az arps táblában ennyi idő mulva törlődik egy rekord, ha nem frissül a last_time mező	5	21 days
@@ -37305,7 +37571,8 @@ COPY sys_params (sys_param_id, sys_param_name, sys_param_note, param_type_id, pa
 22	default_language	\N	2	2
 23	failower_language	\N	2	1
 21	ticet_reapeat_time	Ha ennél régebbi az azonos tiket riasztás, akkor új riasztás	5	14 days
-1	version_minor	\N	2	9
+1	version_minor	\N	2	12
+24	restartable_services	Azon szolgáltatások listájy, melyek újraindíthatóak.	4	lv2d,portmac, portstat, arpd, icontsrv, portvlan
 \.
 
 
@@ -37313,14 +37580,14 @@ COPY sys_params (sys_param_id, sys_param_name, sys_param_note, param_type_id, pa
 -- Name: sys_params_sys_param_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('sys_params_sys_param_id_seq', 23, true);
+SELECT pg_catalog.setval('public.sys_params_sys_param_id_seq', 24, true);
 
 
 --
 -- Data for Name: table_shape_fields; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_shape_field_note, table_shape_id, field_sequence_number, ord_types, ord_init_type, ord_init_sequence_number, field_flags, expression, default_value, features, view_rights, edit_rights, flag, text_id) FROM stdin;
+COPY public.table_shape_fields (table_shape_field_id, table_shape_field_name, table_shape_field_note, table_shape_id, field_sequence_number, ord_types, ord_init_type, ord_init_sequence_number, field_flags, expression, default_value, features, view_rights, edit_rights, flag, text_id) FROM stdin;
 27800	node_name1	\N	2438	5	{no,asc,desc}	no	5	{}	\N	\N	\N	\N	\N	f	299
 27801	node_name1	\N	2439	5	{no,asc,desc}	no	5	{}	\N	\N	\N	\N	\N	f	300
 27798	node_name1	\N	2440	5	{no,asc,desc}	no	5	{}	\N	\N	\N	\N	\N	f	301
@@ -37381,18 +37648,17 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27128	node_id	node_id	2442	30	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	356
 27130	flag	flag	2442	50	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	f	357
 27131	port_param_id	port_param_id	2443	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	358
-27169	deleted	deleted	2447	70	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	359
 27133	port_id	port_id	2443	30	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	360
 27135	flag	flag	2443	50	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	f	361
-27147	node_id	node_id	2445	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	362
-27152	features	features	2445	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	363
-27153	deleted	deleted	2445	70	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	364
 27154	port_id	port_id	2446	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	365
 27159	node_id	node_id	2446	60	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	366
+27152	features	\N	2445	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	363
+27153	deleted	\N	2445	70	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	364
+27169	deleted	\N	2447	70	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	359
+27769	service_var_note	service_var_note	2498	200	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	526
 27161	deleted	deleted	2446	80	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	367
 27162	flag	flag	2446	90	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	f	368
-27163	node_id	node_id	2447	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	369
-27168	features	features	2447	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	371
+27208	node_id	node_id	2451	20	{no,asc,desc}	asc	10	{}	\N	\N	:filter=places:	\N	\N	f	411
 27141	node_id	node_id	2444	60	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	372
 27143	deleted	deleted	2444	80	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	373
 27171	ip_address_id	ip_address_id	2448	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	374
@@ -37432,7 +37698,6 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27227	noalarm_to	noalarm_to	2451	210	\N	no	\N	{}	\N	\N	\N	\N	\N	f	408
 27228	offline_group_ids	offline_group_ids	2451	220	\N	no	\N	{}	\N	\N	\N	\N	\N	f	409
 27229	online_group_ids	online_group_ids	2451	230	\N	no	\N	{}	\N	\N	\N	\N	\N	f	410
-27208	node_id	node_id	2451	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	411
 27234	check_attempts	check_attempts	2451	280	\N	no	\N	{}	\N	\N	\N	\N	\N	f	412
 27235	last_changed	last_changed	2451	290	{no,asc,desc}	no	100	{}	\N	\N	\N	\N	\N	f	413
 27225	noalarm_flag	noalarm_flag	2451	190	\N	no	\N	{bg_color,fg_color}	\N	\N	:color:	\N	\N	f	414
@@ -37450,9 +37715,10 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27199	port_index	port_index	2450	40	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	426
 27202	hwaddress	hwaddress	2450	50	\N	no	\N	{}	\N	\N	\N	\N	\N	f	427
 27442	sql_bounds	sql_bounds	2468	240	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	428
-27209	service_id	service_id	2451	30	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	f	429
 27323	timeperiod_id	timeperiod_id	2455	140	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	494
-27218	superior_host_service_id	superior_host_service_id	2451	120	{no,asc,desc}	no	60	{table_hide}	\N	\N	\N	\N	\N	f	430
+27168	features	\N	2447	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	371
+27209	service_id	service_id	2451	30	{no,asc,desc}	asc	20	{}	\N	\N	:filter:	\N	\N	f	429
+27834	port_tag1	\N	2438	25	\N	no	\N	{}	\N	\N	\N	\N	\N	f	1045
 27210	port_id	port_id	2451	40	{no,asc,desc}	asc	30	{}	\N	\N	:owner=node_id:	\N	\N	f	431
 27214	delegate_host_state	delegate_host_state	2451	80	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	432
 27236	last_touched	last_touched	2451	300	{no,asc,desc}	no	110	{}	\N	\N	\N	\N	\N	f	433
@@ -37491,7 +37757,6 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27245	port_id	port_id	2452	40	{no,asc,desc}	asc	30	{}	\N	\N	:owner=node_id:	\N	\N	f	466
 27249	delegate_host_state	delegate_host_state	2452	80	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	467
 27251	features	features	2452	100	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	468
-27232	hard_state	hard_state	2451	260	{no,asc,desc}	no	90	{bg_color}	\N	\N	:color:	\N	\N	f	469
 27239	deleted	deleted	2451	330	\N	no	\N	{table_hide,dialog_hide,read_only,bg_color,fg_color}	\N	\N	\N	\N	\N	f	470
 27274	deleted	deleted	2452	330	\N	no	\N	{table_hide,dialog_hide,read_only,bg_color,fg_color}	\N	\N	\N	\N	\N	f	471
 27257	timeperiod_id	timeperiod_id	2452	160	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	472
@@ -37515,6 +37780,8 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27316	superior_service_mask	superior_service_mask	2455	70	\N	no	\N	{}	\N	\N	\N	\N	\N	f	490
 27321	normal_check_interval	normal_check_interval	2455	120	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	492
 27322	retry_check_interval	retry_check_interval	2455	130	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	493
+27232	hard_state	hard_state	2451	260	{no,asc,desc}	no	90	{bg_color}	\N	unknown	:color:	\N	\N	f	469
+27835	port_tag2	\N	2438	85	\N	no	\N	{}	\N	\N	\N	\N	\N	f	1046
 27324	flapping_interval	flapping_interval	2455	150	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	495
 27325	flapping_max_change	flapping_max_change	2455	160	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	496
 27326	deleted	deleted	2455	170	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	497
@@ -37544,21 +37811,16 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27764	ack_user_note	\N	2437	190	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	521
 27765	alarm_id	\N	2470	130	\N	no	\N	{}	\N	\N	\N	\N	\N	f	522
 27766	alarm_do	\N	2470	140	\N	no	\N	{}	\N	\N	\N	\N	\N	f	523
-27767	portvar_id	portvar_id	2498	10	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	524
-27768	service_var_name	service_var_name	2498	20	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	525
-27769	service_var_note	service_var_note	2498	30	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	526
 27301	snmp_ver	snmp_ver	2454	110	\N	no	\N	{batch_edit}	\N	\N	:horizontal:	\N	\N	f	527
 27346	subnet_type	subnet_type	2458	60	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	528
 27746	service_var_value	\N	2495	25	\N	no	\N	{}	\N	\N	\N	\N	\N	f	529
 27473	event_note	event_note	2470	100	{no,asc,desc}	no	30	{huge}	\N	\N	\N	\N	\N	f	530
-27770	service_var_type_id	service_var_type_id	2498	40	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	531
 27350	vlan_stat	vlan_stat	2459	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	532
 27351	flag	flag	2459	50	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	f	533
 27352	image_id	image_id	2460	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	534
 27771	host_service_id	host_service_id	2498	50	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	535
 27772	port_id	port_id	2498	60	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	536
 27773	rrd_beat_id	rrd_beat_id	2498	70	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	537
-27774	service_var_value	service_var_value	2498	80	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	538
 27357	image_data	image_data	2460	60	\N	no	\N	{table_hide}	\N	\N	\N	\N	\N	f	539
 27358	image_hash	image_hash	2460	70	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	540
 27359	dyn_addr_range_id	dyn_addr_range_id	2461	10	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	f	541
@@ -37576,8 +37838,11 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27777	features	features	2498	110	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	553
 27372	begin_time	begin_time	2462	50	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	f	554
 27373	end_time	end_time	2462	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	555
-27778	raw_value	raw_value	2498	120	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	556
 27779	delegate_service_state	delegate_service_state	2498	130	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	557
+27767	portvar_id	portvar_id	2498	10	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	524
+27774	service_var_value	service_var_value	2498	42	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	538
+27778	raw_value	raw_value	2498	44	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	556
+27768	service_var_name	service_var_name	2498	20	{no,asc,desc}	asc	10	{read_only}	\N	\N	\N	\N	\N	f	525
 27377	user_event_id	user_event_id	2464	100	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	558
 27385	alarm_id	alarm_id	2465	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	559
 27386	host_service_id	host_service_id	2465	20	\N	no	\N	{}	\N	\N	\N	\N	\N	f	560
@@ -37603,8 +37868,6 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27781	state_msg	\N	2498	140	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	580
 27782	state_msg	\N	2497	140	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	581
 27783	features	\N	2491	40	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	582
-27784	model_number	Model szám	2447	57	{no,asc,desc}	no	50	{batch_edit}	\N	\N	\N	\N	\N	f	583
-27786	model_name	Model név	2447	58	{no,asc,desc}	no	60	{batch_edit}	\N	\N	\N	\N	\N	f	584
 27790	model_name	Model név	2441	45	{no,asc,desc}	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	585
 27424	app_ver	app_ver	2468	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	586
 27425	lib_ver	lib_ver	2468	70	\N	no	\N	{}	\N	\N	\N	\N	\N	f	587
@@ -37613,10 +37876,6 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27789	model_number	Model szám	2441	44	{no,asc,desc}	no	44	{batch_edit}	\N	\N	\N	\N	\N	f	590
 27791	model_number	\N	2454	57	{no,asc,desc}	no	57	{batch_edit}	\N	\N	\N	\N	\N	f	591
 27792	model_name	\N	2454	58	{no,asc,desc}	no	58	{batch_edit}	\N	\N	\N	\N	\N	f	592
-27793	inventory_number	\N	2445	80	{no,asc,desc}	no	80	{}	\N	\N	\N	\N	\N	f	593
-27794	serial_number	\N	2445	90	{no,asc,desc}	no	90	{}	\N	\N	\N	\N	\N	f	594
-27795	model_number	\N	2445	100	{no,asc,desc}	no	100	{batch_edit}	\N	\N	\N	\N	\N	f	595
-27797	model_name	\N	2445	110	{no,asc,desc}	no	110	{batch_edit}	\N	\N	\N	\N	\N	f	596
 27297	deleted	deleted	2454	1000	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	597
 27437	sql_err_num	sql_err_num	2468	190	\N	no	\N	{}	\N	\N	\N	\N	\N	f	598
 27438	sql_err_type	sql_err_type	2468	200	\N	no	\N	{}	\N	\N	\N	\N	\N	f	599
@@ -37640,6 +37899,11 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27751	service_var_note	service_var_note	2497	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	618
 27476	iftype_id	iftype_id	2471	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	619
 27477	iftype_name	iftype_name	2471	20	\N	no	\N	{}	\N	\N	\N	\N	\N	f	620
+27794	serial_number	\N	2445	90	{no,asc,desc}	no	90	{}	\N	\N	\N	\N	\N	f	594
+27797	model_name	\N	2445	110	{no,asc,desc}	no	110	{batch_edit}	\N	\N	\N	\N	\N	f	596
+27784	model_number	\N	2447	57	{no,asc,desc}	no	50	{batch_edit,HTML}	\N	\N	\N	\N	\N	f	583
+27786	model_name	\N	2447	58	{no,asc,desc}	no	60	{batch_edit,HTML}	\N	\N	\N	\N	\N	f	584
+27841	vlan_id	\N	2503	30	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	1053
 27478	iftype_note	iftype_note	2471	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	621
 27479	iftype_iana_id	iftype_iana_id	2471	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	622
 27480	iftype_link_type	iftype_link_type	2471	50	\N	no	\N	{}	\N	\N	\N	\N	\N	f	623
@@ -37648,9 +37912,7 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27483	iana_id_link	iana_id_link	2471	80	\N	no	\N	{}	\N	\N	\N	\N	\N	f	626
 27484	if_name_prefix	if_name_prefix	2471	90	\N	no	\N	{}	\N	\N	\N	\N	\N	f	627
 27294	node_type	node_type	2454	40	{no,asc,desc}	no	40	{batch_edit}	\N	\N	:column=2:hide=patch,node,hub:	\N	\N	f	607
-27166	node_type	node_type	2447	40	\N	no	\N	{batch_edit}	\N	{node}	:column=2:default=host:hide=patch,snmp:autoset=host[host,node]:collision=host[node],node[host]:	\N	admin	f	839
 27495	arp_log_id	arp_log_id	2473	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	631
-27167	place_id	place_id	2447	50	{no,asc,desc}	no	30	{batch_edit}	\N	\N	:filter:	\N	\N	f	370
 27506	node_id	node_id	2474	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	642
 27754	rrd_beat_id	rrd_beat_id	2497	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	643
 27508	port_id	port_id	2474	30	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	644
@@ -37676,7 +37938,6 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27503	first_time_old	first_time_old	2473	90	\N	no	\N	{}	\N	\N	\N	\N	\N	f	639
 27504	last_time_old	last_time_old	2473	100	\N	no	\N	{}	\N	\N	\N	\N	\N	f	640
 27505	acknowledged	acknowledged	2473	110	\N	no	\N	{}	\N	\N	\N	\N	\N	f	641
-27295	place_id	place_id	2454	50	{no,asc,desc}	no	30	{batch_edit}	\N	\N	:filter:	\N	\N	f	863
 27520	mactab_log_id	mactab_log_id	2475	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	657
 27522	reason	reason	2475	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	658
 27509	port_name	port_name	2474	40	{no,asc,desc}	no	30	{read_only}	\N	\N	\N	\N	\N	f	660
@@ -37702,6 +37963,8 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27542	column_name	column_name	2477	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	683
 27543	unusual_fkeys_type	unusual_fkeys_type	2477	50	\N	no	\N	{}	\N	\N	\N	\N	\N	f	684
 27544	f_table_schema	f_table_schema	2477	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	685
+27295	place_id	place_id	2454	50	{no,asc,desc}	no	30	{batch_edit}	\N	\N	:filter=places:	\N	\N	f	863
+27167	place_id	\N	2447	50	{no,asc,desc}	no	30	{batch_edit,HTML}	\N	\N	:filter=places:	\N	\N	f	370
 27545	f_table_name	f_table_name	2477	70	\N	no	\N	{}	\N	\N	\N	\N	\N	f	686
 27546	f_column_name	f_column_name	2477	80	\N	no	\N	{}	\N	\N	\N	\N	\N	f	687
 27547	f_inherited_tables	f_inherited_tables	2477	90	\N	no	\N	{}	\N	\N	\N	\N	\N	f	688
@@ -37741,33 +38004,25 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27605	features	features	2482	80	\N	no	\N	{}	\N	\N	\N	\N	\N	f	720
 27608	menu_rights	menu_rights	2482	110	\N	no	\N	{}	\N	\N	\N	\N	\N	f	721
 27609	enum_val_id	enum_val_id	2483	10	{no,asc,desc}	asc	10	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	722
-27675	inventory_number	\N	2447	56	{no,asc,desc}	no	\N	{}	\N	\N	\N	\N	\N	f	723
 27592	right_shape_ids	right_shape_ids	2481	160	{no}	no	230	{}	\N	\N	\N	\N	\N	f	724
 27623	group_id	group_id	2486	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	725
 27624	group_name	group_name	2486	20	\N	no	\N	{}	\N	\N	\N	\N	\N	f	726
 27625	group_note	group_note	2486	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	727
 27627	place_group_id	place_group_id	2486	50	\N	no	\N	{}	\N	\N	\N	\N	\N	f	728
 27628	features	features	2486	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	729
-27629	user_id	user_id	2487	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	730
-27632	passwd	passwd	2487	40	\N	no	\N	{table_hide,passwd}	\N	\N	\N	\N	\N	f	731
 27611	enum_val_note	enum_val_note	2483	40	{no,asc,desc}	asc	40	{}	\N	\N	\N	\N	\N	f	732
-27633	domain_users	domain_users	2487	50	\N	no	\N	{}	\N	\N	\N	\N	\N	f	733
 27670	object_syntax_name	object_syntax_name	2491	20	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	734
-27636	language	language	2487	80	\N	no	\N	{}	\N	\N	\N	\N	\N	f	735
-27637	tels	tels	2487	90	\N	no	\N	{}	\N	\N	\N	\N	\N	f	736
-27638	addresses	addresses	2487	100	\N	no	\N	{}	\N	\N	\N	\N	\N	f	737
-27641	enabled	enabled	2487	130	\N	no	\N	{}	\N	\N	\N	\N	\N	f	738
+27632	passwd	\N	2487	40	\N	no	\N	{table_hide,passwd}	\N	\N	\N	\N	\N	f	731
+27633	domain_users	\N	2487	50	\N	no	\N	{HTML}	\N	\N	\N	\N	\N	f	733
+27636	language	\N	2487	80	\N	no	\N	{HTML}	\N	\N	\N	\N	\N	f	735
+27637	tels	\N	2487	90	\N	no	\N	{HTML}	\N	\N	\N	\N	\N	f	736
+27638	addresses	\N	2487	100	\N	no	\N	{}	\N	\N	\N	\N	\N	f	737
+27641	enabled	\N	2487	130	\N	no	\N	{HTML}	\N	\N	\N	\N	\N	f	738
 27642	features	features	2487	140	\N	no	\N	{}	\N	\N	\N	\N	\N	f	739
 27643	host_notif_period	host_notif_period	2487	150	\N	no	\N	{}	\N	\N	\N	\N	\N	f	740
-27644	serv_notif_period	serv_notif_period	2487	160	\N	no	\N	{}	\N	\N	\N	\N	\N	f	741
 27645	host_notif_switchs	host_notif_switchs	2487	170	\N	no	\N	{}	\N	\N	\N	\N	\N	f	742
 27646	serv_notif_switchs	serv_notif_switchs	2487	180	\N	no	\N	{}	\N	\N	\N	\N	\N	f	743
-27647	host_notif_cmd	host_notif_cmd	2487	190	\N	no	\N	{}	\N	\N	\N	\N	\N	f	744
-27648	serv_notif_cmd	serv_notif_cmd	2487	200	\N	no	\N	{}	\N	\N	\N	\N	\N	f	745
-27649	place_group_id	place_group_id	2488	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	746
-27650	place_group_name	place_group_name	2488	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	747
-27651	place_group_note	place_group_note	2488	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	748
-27652	place_group_type	place_group_type	2488	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	749
+27675	inventory_number	\N	2447	56	{no,asc,desc}	no	\N	{HTML}	\N	\N	\N	\N	\N	f	723
 27607	whats_this	whats_this	2482	100	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	750
 27654	place_name	place_name	2489	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	751
 27655	place_note	place_note	2489	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	752
@@ -37783,7 +38038,6 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27671	sentence	sentence	2491	30	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	762
 27672	serial_number	\N	2454	53	{no,asc,desc}	no	\N	{}	\N	\N	\N	\N	\N	f	763
 27673	inventory_number	\N	2454	56	{no,asc,desc}	no	\N	{}	\N	\N	\N	\N	\N	f	764
-27674	serial_number	\N	2447	53	{no,asc,desc}	no	\N	{}	\N	\N	\N	\N	\N	f	765
 27606	tool_tip	tool_tip	2482	90	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	766
 27661	place_id	place_id	2490	10	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	767
 27666	image_id	image_id	2490	60	\N	no	\N	{}	\N	\N	\N	\N	\N	f	768
@@ -37796,7 +38050,6 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27563	table_shape_id	table_shape_id	2480	60	{no,asc,desc}	no	60	{table_hide,read_only}	\N	\N	\N	\N	\N	f	775
 27558	table_shape_field_id	table_shape_field_id	2480	10	{no,asc,desc}	no	10	{table_hide,read_only}	\N	\N	\N	\N	\N	f	776
 27676	select_id	select_id	2492	10	\N	no	\N	{table_hide,dialog_hide,read_only}	\N	\N	\N	\N	\N	f	777
-27230	host_service_state	host_service_state	2451	42	{no,asc,desc}	no	70	{}	\N	\N	:color:	\N	\N	f	778
 27089	first_status	\N	2437	110	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	779
 27061	host_service_id	\N	2436	20	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	780
 27419	applog_id	applog_id	2468	10	{no,asc,desc}	no	100	{read_only}	\N	\N	\N	\N	\N	f	781
@@ -37818,12 +38071,20 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27699	view_long	view_long	2483	90	\N	no	\N	{}	\N	\N	\N	\N	\N	f	797
 27697	font_family	\N	2483	70	\N	no	\N	{}	\N	\N	:font_family:	\N	\N	f	798
 27700	font_attr	\N	2483	75	\N	no	\N	{}	\N	\N	:font_family:	\N	\N	f	799
-27150	node_type	node_type	2445	40	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	f	800
-27231	soft_state	soft_state	2451	44	{no,asc,desc}	no	44	{bg_color}	\N	\N	:color:	\N	\N	f	801
+27836	back_stack	\N	2468	300	\N	no	\N	{}	\N	\N	\N	\N	\N	f	1047
 27695	bg_color	\N	2483	50	\N	no	50	{bg_color}	\N	\N	:color:	\N	\N	f	802
 27696	fg_color	\N	2483	60	\N	no	\N	{fg_color}	\N	\N	:color:	\N	\N	f	803
 27701	style_sheet	\N	2481	300	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	804
 27203	port_ostat	port_ostat	2450	60	\N	no	\N	{read_only}	\N	unknown	:color:	\N	\N	f	805
+27230	host_service_state	host_service_state	2451	42	{no,asc,desc}	no	70	{}	\N	unknown	:color:	\N	\N	f	778
+27837	icon	\N	2483	100	\N	no	\N	{}	\N	\N	\N	\N	\N	f	1048
+27647	host_notif_cmd	host_notif_cmd	2487	190	\N	no	\N	{}	\N	\N	\N	\N	\N	f	744
+27651	place_group_note	\N	2488	30	\N	no	\N	{HTML}	\N	\N	\N	\N	\N	f	748
+27652	place_group_type	\N	2488	40	\N	no	\N	{HTML}	\N	\N	\N	\N	\N	f	749
+27648	serv_notif_cmd	serv_notif_cmd	2487	200	\N	no	\N	{}	\N	\N	\N	\N	\N	f	745
+27674	serial_number	\N	2447	53	{no,asc,desc}	no	\N	{HTML}	\N	\N	\N	\N	\N	f	765
+27150	node_type	Mindíg 'patch'	2445	40	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	f	800
+27839	port_vlan_id	port_vlan_id	2503	1000	\N	no	\N	{table_hide,read_only}	\N	\N	\N	\N	\N	f	1051
 27197	iftype_id	iftype_id	2450	200	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	f	806
 27233	state_msg	state_msg	2451	46	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	807
 27467	old_state	old_state	2470	40	\N	no	\N	{}	\N	\N	:color:	\N	\N	f	808
@@ -37850,7 +38111,6 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27116	node_name2	\N	2440	30	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	831
 27456	src_name	src_name	2469	90	\N	no	\N	{}	\N	\N	\N	\N	\N	f	832
 27370	tpow_note	tpow_note	2462	30	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	833
-27148	node_name	node_name	2445	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	834
 27108	link_type	\N	2438	110	\N	no	\N	{}	\N	\N	\N	\N	\N	f	835
 27280	port_name	port_name	2453	40	{no,asc,desc}	asc	10	{read_only}	\N	\N	\N	\N	\N	f	836
 27463	acknowledged	acknowledged	2469	160	\N	no	\N	{}	\N	\N	\N	\N	\N	f	837
@@ -37858,7 +38118,6 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27298	node_stat	node_stat	2454	25	\N	no	\N	{}	\N	\N	\N	\N	\N	f	840
 27102	phs_link_note	\N	2438	50	\N	no	\N	{}	\N	\N	\N	\N	\N	f	841
 27507	node_name	node_name	2474	20	{no,asc,desc}	no	20	{read_only}	\N	\N	\N	\N	\N	f	842
-27639	place_id	place_id	2487	110	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	f	843
 27617	param_type_dim	param_type_dim	2484	50	{no,asc,desc}	asc	50	{}	\N	\N	\N	\N	\N	f	844
 27311	service_name	service_name	2455	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	845
 27286	set_type	set_type	2453	100	{no,asc,desc}	no	50	{read_only}	\N	\N	\N	\N	\N	f	846
@@ -37880,14 +38139,15 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27683	features	features	2492	80	{no,asc,desc}	no	70	{}	\N	\N	\N	\N	\N	f	860
 27287	r_node_name	r_node_name	2453	110	{no,asc,desc}	no	30	{read_only}	\N	\N	\N	\N	\N	f	861
 27406	end_time	end_time	2466	110	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	862
+27838	port_index	\N	2453	25	\N	no	\N	{}	\N	\N	\N	\N	\N	f	1049
+27148	node_name	\N	2445	20	{no,asc,desc}	asc	10	{HTML}	\N	\N	\N	\N	\N	f	834
 27586	table_name	table_name	2481	100	{no,asc,desc}	no	100	{}	\N	\N	\N	\N	\N	f	864
 27594	view_rights	view_rights	2481	180	{no,asc,desc}	no	180	{}	\N	\N	\N	\N	\N	f	865
-27630	user_name	user_name	2487	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	866
+27244	service_id	service_id	2452	30	{no,asc,desc}	asc	20	{}	\N	\N	:filter:	\N	\N	f	880
 27457	src_line	src_line	2469	100	\N	no	\N	{}	\N	\N	\N	\N	\N	f	867
 27471	new_soft_state	new_soft_state	2470	80	\N	no	\N	{}	\N	\N	:color:	\N	\N	f	868
 27354	image_note	image_note	2460	30	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	869
 27101	port_shared1	\N	2438	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	870
-27151	place_id	place_id	2445	50	{no,asc,desc}	no	30	{batch_edit}	\N	\N	\N	\N	\N	f	871
 27422	node_id	node_id	2468	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	872
 27410	user_id	user_id	2467	40	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	873
 27472	new_hard_state	new_hard_state	2470	90	\N	no	\N	{}	\N	\N	:color:	\N	\N	f	874
@@ -37896,7 +38156,6 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27687	upper_menu_item_id	upper_menu_item_id	2493	40	{no,asc,desc}	asc	\N	{}	\N	\N	\N	\N	\N	f	877
 27403	event_note	event_note	2466	80	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	878
 27678	select_note	select_note	2492	30	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	879
-27244	service_id	service_id	2452	30	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	f	880
 27379	happened	happened	2464	30	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	881
 27405	noalarm	noalarm	2466	100	\N	no	\N	{}	\N	\N	\N	\N	\N	f	882
 27349	vlan_note	vlan_note	2459	30	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	883
@@ -37904,7 +38163,6 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27458	node_id	node_id	2469	110	\N	no	\N	{}	\N	\N	\N	\N	\N	f	885
 27137	port_name	port_name	2444	20	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	886
 27117	port_name2	\N	2440	40	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	887
-27170	node_stat	node_stat	2447	25	{no,asc,desc}	no	40	{read_only}	\N	unknown	:color:	\N	admin	f	888
 27100	phs_link_type1	\N	2438	30	{no,asc,desc}	asc	30	{}	\N	\N	\N	\N	\N	f	889
 27103	node_name2	\N	2438	60	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	890
 27104	port_name2	\N	2438	70	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	f	891
@@ -37926,7 +38184,6 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27398	daemon_id	daemon_id	2466	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	907
 27318	features	features	2455	90	\N	no	\N	{}	\N	\N	\N	\N	\N	f	908
 27339	regular_expression	regular_expression	2457	70	\N	no	\N	{}	\N	\N	\N	\N	\N	f	909
-27635	last_name	last_name	2487	70	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	910
 27465	host_service_id	host_service_id	2470	20	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	911
 27122	node_type	node_type	2441	40	\N	no	\N	{}	\N	\N	\N	\N	\N	f	912
 27283	first_time	first_time	2453	70	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	913
@@ -37939,12 +38196,15 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27575	edit_rights	edit_rights	2480	180	{no,asc,desc}	no	180	{}	\N	\N	\N	\N	\N	f	920
 27596	insert_rights	insert_rights	2481	200	{no,asc,desc}	no	200	{}	\N	\N	\N	\N	\N	f	921
 27118	port_index2	\N	2440	50	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	f	922
+27635	last_name	Utónév	2487	70	{no,asc,desc}	no	20	{HTML}	\N	\N	\N	\N	\N	f	910
+27170	node_stat	\N	2447	25	{no,asc,desc}	no	40	{read_only,HTML}	\N	unknown	:color:	\N	admin	f	888
+27151	place_id	\N	2445	50	{no,asc,desc}	no	30	{batch_edit,HTML}	\N	\N	\N	\N	\N	f	871
 27127	param_type_id	param_type_id	2442	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	923
 27400	max_status	max_status	2466	50	\N	no	\N	{}	\N	\N	\N	\N	\N	f	924
 27427	service_id	service_id	2468	90	\N	no	\N	{}	\N	\N	\N	\N	\N	f	925
 27110	port_index1	\N	2439	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	926
 27114	port_name1	\N	2440	10	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	927
-27266	soft_state	soft_state	2452	44	{no,asc,desc}	no	80	{bg_color}	\N	\N	:color:	\N	\N	f	928
+27243	node_id	node_id	2452	20	{no,asc,desc}	asc	10	{batch_edit}	\N	\N	:filter=places:	\N	\N	f	948
 27426	user_id	user_id	2468	80	\N	no	\N	{}	\N	\N	\N	\N	\N	f	929
 27428	func_name	func_name	2468	100	\N	no	\N	{}	\N	\N	\N	\N	\N	f	930
 27353	image_name	image_name	2460	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	931
@@ -37963,8 +38223,6 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27369	tpow_name	tpow_name	2462	20	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	944
 27511	mactab_state	mactab_state	2474	60	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	945
 27578	table_shape_name	table_shape_name	2481	20	{no,asc,desc}	asc	220	{}	\N	\N	\N	\N	\N	f	946
-27631	user_note	user_note	2487	30	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	947
-27243	node_id	node_id	2452	20	{no,asc,desc}	asc	10	{batch_edit}	\N	\N	\N	\N	\N	f	948
 27466	date_of	date_of	2470	30	{no,asc,desc}	desc	10	{}	\N	\N	\N	\N	\N	f	949
 27595	edit_rights	edit_rights	2481	190	{no,asc,desc}	no	190	{}	\N	\N	\N	\N	\N	f	950
 27460	user_id	user_id	2469	130	\N	no	\N	{}	\N	\N	\N	\N	\N	f	951
@@ -37976,7 +38234,6 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27418	acknowledged	acknowledged	2467	120	{no,asc,desc}	no	110	{}	\N	\N	\N	\N	\N	f	957
 27449	date_of	date_of	2469	20	{no,asc,desc}	desc	10	{}	\N	\N	\N	\N	\N	f	958
 27145	shared_cable	shared_cable	2444	100	\N	no	\N	{}	\N	\N	\N	\N	\N	f	959
-27164	node_name	node_name	2447	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	960
 27510	hwaddress	hwaddress	2474	50	{no,asc,desc}	asc	10	{read_only}	\N	\N	\N	\N	\N	f	961
 27312	service_note	service_note	2455	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	962
 27421	app_name	app_name	2468	30	\N	no	\N	{}	\N	\N	\N	\N	\N	f	963
@@ -37988,7 +38245,6 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27475	noalarm	noalarm	2470	120	{no,asc,desc}	no	50	{}	\N	\N	:color:	\N	\N	f	969
 27517	r_port_name	r_port_name	2474	120	{no,asc,desc}	no	50	{read_only}	\N	\N	\N	\N	\N	f	970
 27615	param_type_note	param_type_note	2484	30	{no,asc,desc}	asc	30	{}	\N	\N	\N	\N	\N	f	971
-27149	node_note	node_note	2445	30	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	972
 27662	place_name	place_name	2490	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	973
 27347	vlan_id	vlan_id	2459	10	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	974
 27668	tels	tels	2490	80	\N	no	\N	{table_hide}	\N	\N	\N	\N	\N	f	975
@@ -37997,25 +38253,24 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27681	pattern_type	pattern_type	2492	60	{no,asc,desc}	no	50	{}	\N	\N	\N	\N	\N	f	978
 27264	online_group_ids	online_group_ids	2452	230	\N	no	\N	{batch_edit}	\N	\N	\N	\N	\N	f	979
 27285	state_updated_time	state_updated_time	2453	90	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	980
+27631	user_note	\N	2487	30	{no,asc,desc}	no	40	{HTML}	\N	\N	\N	\N	\N	f	947
+27149	node_note	\N	2445	30	{no,asc,desc}	no	20	{HTML}	\N	\N	\N	\N	\N	f	972
+27164	node_name	\N	2447	20	{no,asc,desc}	asc	10	{HTML}	\N	\N	\N	\N	\N	f	960
 27356	image_sub_type	image_sub_type	2460	50	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	981
 27513	last_time	last_time	2474	80	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	982
 27432	err_name	err_name	2468	140	\N	no	\N	{}	\N	\N	\N	\N	\N	f	983
 27685	menu_item_name	menu_item_name	2493	20	\N	no	\N	{}	\N	\N	\N	\N	\N	f	984
 27516	r_node_name	r_node_name	2474	110	{no,asc,desc}	no	40	{read_only}	\N	\N	\N	\N	\N	f	985
 27281	hwaddress	hwaddress	2453	50	{no,asc,desc}	no	20	{read_only}	\N	\N	\N	\N	\N	f	986
-27265	host_service_state	host_service_state	2452	42	{no,asc,desc}	no	70	{}	\N	\N	:color:	\N	\N	f	987
 27292	node_name	node_name	2454	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	988
 27156	port_note	port_note	2446	30	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	989
-27165	node_note	node_note	2447	30	{no,asc,desc}	no	20	{}	\N	\N	\N	\N	\N	f	990
 27099	port_index1	\N	2438	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	991
 27614	param_type_name	param_type_name	2484	20	{no,asc,desc}	asc	20	{}	\N	\N	\N	\N	\N	f	992
-27640	expired	expired	2487	120	{no,asc,desc}	no	60	{}	\N	\N	\N	\N	\N	f	993
 27680	pattern	pattern	2492	50	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	994
 27682	choice	choice	2492	70	{no,asc,desc}	no	60	{}	\N	\N	\N	\N	\N	f	995
 27155	port_name	port_name	2446	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	996
 27469	old_hard_state	old_hard_state	2470	60	\N	no	\N	{}	\N	\N	:color:	\N	\N	f	997
 27579	table_shape_note	table_shape_note	2481	30	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	998
-27267	hard_state	hard_state	2452	260	{no,asc,desc}	no	90	{bg_color}	\N	\N	:color:	\N	\N	f	999
 27248	proto_service_id	proto_service_id	2452	70	{no,asc,desc}	no	50	{batch_edit}	\N	\N	\N	\N	\N	f	1000
 27123	place_id	place_id	2441	50	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	1001
 27284	last_time	last_time	2453	80	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	1002
@@ -38028,7 +38283,6 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27417	date_of_last	date_of_last	2467	110	{no,asc,desc}	no	100	{}	\N	\N	\N	\N	\N	f	1009
 27440	sql_db_text	sql_db_text	2468	220	\N	no	\N	{huge}	\N	\N	\N	\N	\N	f	1010
 27664	place_type	place_type	2490	40	\N	no	\N	{read_only}	\N	real	\N	\N	\N	f	1011
-27634	first_name	first_name	2487	60	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	1012
 27677	select_type	select_type	2492	20	{no,asc,desc}	asc	10	{}	\N	\N	\N	\N	\N	f	1013
 27448	app_memo_id	app_memo_id	2469	10	\N	no	\N	{read_only}	\N	\N	\N	\N	\N	f	1014
 27468	old_soft_state	old_soft_state	2470	50	\N	no	\N	{}	\N	\N	:color:	\N	\N	f	1015
@@ -38053,6 +38307,33 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 27490	last_time	last_time	2472	60	{no,asc,desc}	no	40	{read_only,HTML}	\N	\N	\N	\N	\N	f	665
 27498	ipaddress	ipaddress	2473	40	\N	no	\N	{HTML}	\N	\N	\N	\N	\N	f	634
 27601	upper_menu_item_id	upper_menu_item_id	2482	40	\N	no	\N	{table_hide}	\N	\N	\N	\N	\N	f	715
+27833	raw_param_type_id	\N	2494	45	\N	no	\N	{}	\N	\N	\N	\N	\N	f	1044
+27218	superior_host_service_id	superior_host_service_id	2451	120	{no,asc,desc}	no	60	{table_hide}	\N	\N	:refine=service_id2name(service_id) ~  COALESCE( (SELECT superior_service_mask FROM services WHERE service_id = %1)\\,'.+'),#service_id:	\N	\N	f	430
+27267	hard_state	hard_state	2452	260	{no,asc,desc}	no	90	{bg_color}	\N	unknown	:color:	\N	\N	f	999
+27634	first_name	\N	2487	60	{no,asc,desc}	no	30	{HTML}	\N	\N	\N	\N	\N	f	1012
+27640	expired	\N	2487	120	{no,asc,desc}	no	60	{HTML}	\N	\N	\N	\N	\N	f	993
+27165	node_note	\N	2447	30	{no,asc,desc}	no	20	{HTML}	\N	\N	\N	\N	\N	f	990
+27266	soft_state	soft_state	2452	44	{no,asc,desc}	no	80	{bg_color}	\N	unknown	:color:	\N	\N	f	928
+27265	host_service_state	host_service_state	2452	42	{no,asc,desc}	no	70	{}	\N	unknown	:color:	\N	\N	f	987
+27231	soft_state	soft_state	2451	44	{no,asc,desc}	no	44	{bg_color}	\N	unknown	:color:	\N	\N	f	801
+27650	place_group_name	\N	2488	20	{no,asc,desc}	asc	10	{HTML}	\N	\N	\N	\N	\N	f	747
+27649	place_group_id	\N	2488	10	\N	no	\N	{table_hide,read_only,HTML}	\N	\N	\N	\N	\N	f	746
+27629	user_id	\N	2487	10	\N	no	\N	{table_hide,read_only,HTML}	\N	\N	\N	\N	\N	f	730
+27630	user_name	\N	2487	20	{no,asc,desc}	asc	10	{HTML}	\N	\N	\N	\N	\N	f	866
+27639	place_id	\N	2487	110	{no,asc,desc}	no	50	{HTML}	\N	\N	\N	\N	\N	f	843
+27644	serv_notif_period	serv_notif_period	2487	160	\N	no	\N	{}	\N	\N	\N	\N	\N	f	741
+27147	node_id	\N	2445	10	\N	no	\N	{table_hide,read_only,HTML}	\N	\N	\N	\N	\N	f	362
+27793	inventory_number	\N	2445	80	{no,asc,desc}	no	80	{}	\N	\N	\N	\N	\N	f	593
+27795	model_number	\N	2445	100	{no,asc,desc}	no	100	{batch_edit}	\N	\N	\N	\N	\N	f	595
+27163	node_id	\N	2447	10	\N	no	\N	{table_hide,read_only,HTML}	\N	\N	\N	\N	\N	f	369
+27166	node_type	\N	2447	40	\N	no	\N	{batch_edit,HTML}	\N	{node}	:column=2:default=host:hide=patch,snmp:autoset=host[host,node]:collision=host[node],node[host]:	\N	admin	f	839
+27846	flag	flag	2503	80	\N	no	\N	{table_hide,dialog_hide}	\N	\N	\N	\N	\N	f	1058
+27845	set_type	set_type	2503	70	{no,asc,desc}	no	60	{}	\N	\N	\N	\N	\N	f	1057
+27840	port_id	\N	2503	20	{no,asc,desc}	no	10	{}	\N	\N	:view.function=port_id2full_name:	\N	\N	f	1052
+27842	first_time	\N	2503	40	{no,asc,desc}	no	40	{}	\N	\N	\N	\N	\N	f	1054
+27843	last_time	\N	2503	50	\N	no	50	{}	\N	\N	\N	\N	\N	f	1055
+27844	vlan_type	vlan_type	2503	60	{no,asc,desc}	no	30	{}	\N	\N	\N	\N	\N	f	1056
+27770	service_var_type_id	service_var_type_id	2498	40	{no,asc,desc}	no	20	{read_only}	\N	\N	\N	\N	\N	f	531
 \.
 
 
@@ -38060,21 +38341,19 @@ COPY table_shape_fields (table_shape_field_id, table_shape_field_name, table_sha
 -- Name: table_shape_fields_table_shape_field_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('table_shape_fields_table_shape_field_id_seq', 27832, true);
+SELECT pg_catalog.setval('public.table_shape_fields_table_shape_field_id_seq', 27846, true);
 
 
 --
 -- Data for Name: table_shapes; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY table_shapes (table_shape_id, table_shape_name, table_shape_note, table_shape_type, table_name, schema_name, table_inherit_type, inherit_table_names, refine, features, right_shape_ids, auto_refresh, view_rights, edit_rights, insert_rights, remove_rights, style_sheet, text_id) FROM stdin;
+COPY public.table_shapes (table_shape_id, table_shape_name, table_shape_note, table_shape_type, table_name, schema_name, table_inherit_type, inherit_table_names, refine, features, right_shape_ids, auto_refresh, view_rights, edit_rights, insert_rights, remove_rights, style_sheet, text_id) FROM stdin;
 2440	lldp_links	LLDP linkek	{link}	lldp_links_shape	public	no	\N	\N	\N	\N	\N	viewer	system	system	operator	\N	237
 2438	phs_links	Fizikai linkek	{link}	phs_links_shape	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	operator	\N	238
 2439	log_links	Logikai linkek	{link,read_only}	log_links_shape	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	admin	\N	239
-2459	vlans	VLAN-ok	{owner}	vlans	public	no	\N		:button.copy:	{2458}	\N	viewer	operator	operator	operator	\N	240
 2471	iftypes	Port típusok	{simple}	iftypes	public	no	\N		\N	\N	\N	viewer	system	system	system	\N	241
-2466	alarms	Riasztások (tábla)	{owner}	alarms	public	no	\N	\N	:button.copy:bg_color=noalarm:	{2464}	\N	indalarm	admin	system	admin	\N	242
-2469	app_memos	Applikáció napló	{simple}	app_memos	public	no	\N	\N	:dialog.height=13:	\N	\N	viewer	system	system	admin		243
+2490	places	Helyiségek (tábla)	{member}	places	public	no	\N	\N	:map=get_parent_image:button.copy:report:	{2488}	\N	viewer	operator	operator	operator	\N	273
 2451	host_services_tree	A hostokhoz rendelt szervíz példányok (fa)	{tree,owner}	host_services	public	no	\N	\N	:button.copy:bg_color=host_service_state:snmpdevices.owner=node_id:	{2495}	\N	viewer	operator	operator	admin	\N	244
 2473	arp_logs	ARP lekérdezés napló.	{simple,read_only}	arp_logs	public	no	\N		\N	\N	\N	viewer	system	system	operator	\N	245
 2468	app_errs	Applikáció hiba napló	{simple}	app_errs	public	no	\N		\N	\N	\N	viewer	system	system	admin	\N	246
@@ -38091,7 +38370,6 @@ COPY table_shapes (table_shape_id, table_shape_name, table_shape_note, table_sha
 2442	node_params	Eszköz paraméterek	{child}	node_params	public	no	\N		\N	\N	\N	viewer	operator	operator	operator	\N	258
 2447	nodes	Passzív, felügyeletbe bevont elemek (Csak dialógus!)	{dialog}	nodes	public	only	\N		\N	\N	\N	viewer	operator	operator	operator	\N	259
 2446	nports	Passzív portok (Csak dialógus!)	{dialog}	nports	public	no	\N		\N	\N	\N	viewer	operator	operator	operator	\N	260
-2490	places	Helyiségek (tábla)	{member}	places	public	no	\N	\N	:map=get_parent_image:button.copy:	{2488}	\N	viewer	operator	operator	operator	\N	273
 2443	port_params	Port paraméterek	{child}	port_params	public	no	\N		\N	\N	\N	viewer	operator	operator	operator	\N	262
 2444	pports	Pach panel és fali csatlakozó portok	{owner,child}	pports	public	only	\N		:button.copy:	{2443,2438}	\N	viewer	operator	operator	operator	\N	263
 2457	query_parsers	Lekérdezés értelmezések	{simple}	query_parsers	public	no	\N		\N	\N	\N	operator	system	system	system	\N	264
@@ -38113,25 +38391,29 @@ COPY table_shapes (table_shape_id, table_shape_name, table_shape_note, table_sha
 2483	enum_vals	Enumerációs értékek	{simple}	enum_vals	public	no	\N		\N	\N	\N	viewer	admin	admin	admin	\N	281
 2476	fkey_types	Távoli kulcs típusok	{simple,read_only}	fkey_types	public	no	\N		\N	\N	\N	operator	system	system	system	\N	282
 2475	mactab_logs	Port címtábla lekérdezés napló	{simple,read_only}	mactab_logs	public	no	\N		\N	\N	\N	viewer	operator	operator	admin	\N	283
-2454	snmpdevices	Hálózati elemek	{owner}	snmpdevices	public	listed_rev	{nodes}	\N	:button.copy:	{2450,2442,2438,2439,2440,2452,2453,2451}	\N	viewer	operator	operator	operator	\N	284
+2503	port_vlans	\N	{simple}	port_vlans	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	admin	\N	1050
+2459	vlans	VLAN-ok	{owner}	vlans	public	no	\N	\N	:button.copy:	{2458,2503}	\N	viewer	operator	operator	operator	\N	240
+2469	app_memos	Applikáció napló	{simple}	app_memos	public	no	\N	\N	:dialog.height=13:bg_color=acknowledged:	\N	\N	viewer	system	system	admin	\N	243
 2491	object_syntaxs	Objektum szintaxisok	{simple}	object_syntaxs	public	no	\N		\N	\N	\N	operator	system	system	system	\N	285
 2484	param_types	Paraméter típus leírók	{simple}	param_types	public	no	\N		\N	\N	\N	viewer	admin	admin	admin	\N	286
 2488	place_groups	Hely csoportok, kategóriák és zónák	{group}	place_groups	public	no	\N		\N	{2490}	\N	viewer	operator	operator	operator	\N	287
-2496	places_topol	Helyek fa és a helységben lévő objektumok	{tree,owner}	places	public	no	\N	\N	\N	{2441,2445,2454,2487}	\N	viewer	operator	operator	admin	\N	288
 2487	users	felhasználók	{member}	users	public	no	\N	\N	:places_topol.owner=place_id:	{2486}	\N	operator	admin	admin	admin	\N	289
 2498	portvars	\N	{child}	portvars	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	admin	\N	290
 2480	table_shape_fields	Tábla mezők megjelenítése	{child}	table_shape_fields	public	no	\N		\N	\N	\N	operator	admin	admin	admin	\N	291
 2481	table_shapes	Adattábla megjelenítő leíró	{owner}	table_shapes	public	no	\N		\N	{2480}	\N	operator	admin	admin	admin	\N	292
 2494	service_var_types	\N	{simple}	service_var_types	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	admin	\N	293
-2450	hostports	Hálózati interfészek, portok (fa)	{tree,owner,child}	interfaces	public	listed_rev	{nports}	\N	:button.copy:	{2448,2443,2449,2438,2439,2440,2498}	\N	viewer	operator	operator	operator	\N	294
 2493	menu_items_tab	Menu elemek táblázat	{simple}	menu_items	public	no	\N	\N	\N	\N	\N	viewer	admin	admin	admin	\N	295
 2495	service_vars	\N	{child}	service_vars	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	admin	\N	296
 2437	aaalarms	Nyugtázott aktív riasztások	{bare,read_only}	online_alarm_acks	public	no	\N	? = ANY (online_user_ids)  AND is_place_in_zone(place_id, ?):user_id:place_group_id	\N	\N	00:05:00	indalarm	system	system	system	\N	298
 2500	languages	\N	{simple}	languages	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	admin	\N	1019
 2501	localizations	\N	{simple}	localizations	public	no	\N	\N	\N	\N	\N	viewer	operator	operator	admin	\N	1029
-2445	patchs	Pach panelek és fali csatlakozók	{owner}	patchs	public	only	\N	\N	:button.copy:insert=cPatchDialog:	{2444,2442,2438}	\N	viewer	operator	operator	operator	\N	261
 2497	allsrvvars	Solgáltatás változók teljes lista	{simple}	service_vars	public	no	\N	\N	:button.copy:	\N	\N	viewer	operator	operator	admin	\N	297
-2489	places_tree	Helyiségek (fa)	{tree,member}	places	public	no	\N	\N	:map=get_parent_image:	{2488}	\N	viewer	operator	operator	admin	\N	280
+2466	alarms	Riasztások (tábla)	{owner}	alarms	public	no	\N	\N	:button.copy:bg_color=noalarm:	{2464}	\N	indalarm	system	system	admin	\N	242
+2454	snmpdevices	Hálózati elemek	{owner}	snmpdevices	public	listed_rev	{nodes}	\N	:button.copy:report:	{2450,2442,2438,2439,2440,2452,2453,2451}	\N	viewer	operator	operator	operator	\N	284
+2445	patchs	Pach panelek és fali csatlakozók	{owner}	patchs	public	only	\N	\N	:button.copy:insert=cPatchDialog:report:	{2444,2442,2438}	\N	viewer	operator	operator	operator	\N	261
+2489	places_tree	Helyiségek (fa)	{tree,member}	places	public	no	\N	\N	:map=get_parent_image:report:	{2488}	\N	viewer	operator	operator	admin	\N	280
+2496	places_topol	Helyek fa és a helységben lévő objektumok	{tree,owner}	places	public	no	\N	\N	:report:	{2441,2445,2454,2487}	\N	viewer	operator	operator	admin	\N	288
+2450	hostports	Hálózati interfészek, portok (fa)	{tree,owner,child}	interfaces	public	listed_rev	{nports}	\N	:button.copy:	{2448,2443,2449,2438,2439,2440,2498,2503}	\N	viewer	operator	operator	operator	\N	294
 \.
 
 
@@ -38139,21 +38421,21 @@ COPY table_shapes (table_shape_id, table_shape_name, table_shape_note, table_sha
 -- Name: table_shapes_table_shape_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('table_shapes_table_shape_id_seq', 2502, true);
+SELECT pg_catalog.setval('public.table_shapes_table_shape_id_seq', 2503, true);
 
 
 --
 -- Name: text_id_sequ; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('text_id_sequ', 1043, true);
+SELECT pg_catalog.setval('public.text_id_sequ', 1061, true);
 
 
 --
 -- Data for Name: timeperiod_tpows; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY timeperiod_tpows (timeperiod_tpow_id, tpow_id, timeperiod_id) FROM stdin;
+COPY public.timeperiod_tpows (timeperiod_tpow_id, tpow_id, timeperiod_id) FROM stdin;
 1	1	0
 2	2	0
 3	3	0
@@ -38184,14 +38466,14 @@ COPY timeperiod_tpows (timeperiod_tpow_id, tpow_id, timeperiod_id) FROM stdin;
 -- Name: timeperiod_tpows_timeperiod_tpow_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('timeperiod_tpows_timeperiod_tpow_id_seq', 96, true);
+SELECT pg_catalog.setval('public.timeperiod_tpows_timeperiod_tpow_id_seq', 96, true);
 
 
 --
 -- Data for Name: timeperiods; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY timeperiods (timeperiod_id, timeperiod_name, timeperiod_note) FROM stdin;
+COPY public.timeperiods (timeperiod_id, timeperiod_name, timeperiod_note) FROM stdin;
 -1	never	At no time
 0	always	All the time
 10	worktime	Munkaidőben
@@ -38204,14 +38486,14 @@ COPY timeperiods (timeperiod_id, timeperiod_name, timeperiod_note) FROM stdin;
 -- Name: timeperiods_timeperiod_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('timeperiods_timeperiod_id_seq', 12, true);
+SELECT pg_catalog.setval('public.timeperiods_timeperiod_id_seq', 12, true);
 
 
 --
 -- Data for Name: tpows; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY tpows (tpow_id, tpow_name, tpow_note, dow, begin_time, end_time) FROM stdin;
+COPY public.tpows (tpow_id, tpow_name, tpow_note, dow, begin_time, end_time) FROM stdin;
 1	all_sun	On Sundays all day	sunday	00:00:00	24:00:00
 2	all_mon	On Mondays all day	monday	00:00:00	24:00:00
 3	all_tue	On Tuesdays all day	tuesday	00:00:00	24:00:00
@@ -38242,14 +38524,14 @@ COPY tpows (tpow_id, tpow_name, tpow_note, dow, begin_time, end_time) FROM stdin
 -- Name: tpows_tpow_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('tpows_tpow_id_seq', 97, true);
+SELECT pg_catalog.setval('public.tpows_tpow_id_seq', 97, true);
 
 
 --
 -- Data for Name: unusual_fkeys; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY unusual_fkeys (unusual_fkey_id, table_schema, table_name, column_name, unusual_fkeys_type, f_table_schema, f_table_name, f_column_name, f_inherited_tables) FROM stdin;
+COPY public.unusual_fkeys (unusual_fkey_id, table_schema, table_name, column_name, unusual_fkeys_type, f_table_schema, f_table_name, f_column_name, f_inherited_tables) FROM stdin;
 1	public	nports	node_id	owner	public	nodes	node_id	{nodes,snmpdevices}
 2	public	port_params	port_id	owner	public	nports	port_id	{nports,pports,interfaces}
 3	public	node_params	node_id	owner	public	patchs	node_id	{patchs,nodes,snmpdevices}
@@ -38288,6 +38570,7 @@ COPY unusual_fkeys (unusual_fkey_id, table_schema, table_name, column_name, unus
 52	public	portvars	port_id	owner	public	nports	port_id	{nports,interfaces}
 53	public	portvars	service_var_type_id	property	public	service_var_types	service_var_type_id	\N
 54	public	portvars	host_service_id	property	public	host_services	host_service_id	\N
+60	public	port_vlans	port_id	owner	public	nports	port_id	{interfaces}
 \.
 
 
@@ -38295,14 +38578,14 @@ COPY unusual_fkeys (unusual_fkey_id, table_schema, table_name, column_name, unus
 -- Name: unusual_fkeys_unusual_fkey_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('unusual_fkeys_unusual_fkey_id_seq', 59, true);
+SELECT pg_catalog.setval('public.unusual_fkeys_unusual_fkey_id_seq', 60, true);
 
 
 --
 -- Data for Name: user_events; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY user_events (user_event_id, created, happened, user_id, alarm_id, event_type, event_state, user_event_note) FROM stdin;
+COPY public.user_events (user_event_id, created, happened, user_id, alarm_id, event_type, event_state, user_event_note) FROM stdin;
 \.
 
 
@@ -38310,20 +38593,19 @@ COPY user_events (user_event_id, created, happened, user_id, alarm_id, event_typ
 -- Name: user_events_user_event_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('user_events_user_event_id_seq', 167109, true);
+SELECT pg_catalog.setval('public.user_events_user_event_id_seq', 169044, true);
 
 
 --
 -- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY users (user_id, user_name, user_note, passwd, domain_users, first_name, last_name, language, tels, addresses, place_id, expired, enabled, features, host_notif_period, serv_notif_period, host_notif_switchs, serv_notif_switchs, host_notif_cmd, serv_notif_cmd) FROM stdin;
-3	operator	Operator	$1$thZfO8ie$YqjHOCmP9/beFmvFe60fl.	\N	\N	\N	\N	\N	\N	\N	\N	t	\N	0	0	{unreachable,down,recovered,unknown,critical}	{unreachable,down,recovered,unknown,critical}	\N	\N
-9	test	\N	$1$0PFSZzeD$OU6mlGOdA0zl/FZxbfoOg1	\N	\N	\N	\N	\N	\N	\N	\N	t	\N	0	0	{unreachable,down,recovered,unknown,critical}	{unreachable,down,recovered,unknown,critical}	\N	\N
-1	system	system	\N	\N	\N	\N	\N	\N	\N	\N	\N	f	\N	-1	-1	{}	{}	\N	\N
-2	admin	Administrator	$1$B4tmoTn.$DuKgfEAo6TZjqy9YvWVPf/	\N	\N	\N	\N	\N	\N	\N	\N	t	\N	0	0	{recovered,critical,unreachable,down,unknown}	{recovered,critical,unreachable,down,unknown}	\N	\N
-4	viewer	Viewer	$1$SriYVAd2$JNOOsjlWnm2jyqmmd8v/l/	\N	\N	\N	\N	\N	\N	\N	\N	t	\N	0	0	{recovered,critical,unreachable,down,unknown}	{recovered,critical,unreachable,down,unknown}	\N	\N
-0	nobody	Unknown user	$1$OsvJLtFt$tGhQAMQpUTMNxAJIF.Utl0	\N	\N	\N	\N	\N	\N	\N	\N	t	\N	0	0	{recovered,critical,unreachable,down,unknown}	{recovered,critical,unreachable,down,unknown}	\N	\N
+COPY public.users (user_id, user_name, user_note, passwd, domain_users, first_name, last_name, language, tels, addresses, place_id, expired, enabled, features, host_notif_period, serv_notif_period, host_notif_switchs, serv_notif_switchs, host_notif_cmd, serv_notif_cmd) FROM stdin;
+0	nobody	Unknown user	\N	\N	\N	\N	\N	\N	\N	\N	\N	t	\N	0	0	{unreachable,down,recovered,unknown,critical}	{unreachable,down,recovered,unknown,critical}	\N	\N
+1	system	system	\N	\N	\N	\N	\N	\N	\N	\N	\N	t	\N	0	0	{unreachable,down,recovered,unknown,critical}	{unreachable,down,recovered,unknown,critical}	\N	\N
+2	admin	Administrator	$1$V2WebfoX$.VtXUukouvc3ejHvnBMdL.	\N	\N	\N	\N	\N	\N	\N	\N	t	\N	0	0	{unreachable,down,recovered,unknown,critical}	{unreachable,down,recovered,unknown,critical}	\N	\N
+3	operator	Operator	$1$FHxrK/7m$IPGZ4JRUp/bkgRb7Mn5b30	\N	\N	\N	\N	\N	\N	\N	\N	t	\N	0	0	{unreachable,down,recovered,unknown,critical}	{unreachable,down,recovered,unknown,critical}	\N	\N
+4	viewer	Viewer	\N	\N	\N	\N	\N	\N	\N	\N	\N	t	\N	0	0	{unreachable,down,recovered,unknown,critical}	{unreachable,down,recovered,unknown,critical}	\N	\N
 \.
 
 
@@ -38331,14 +38613,14 @@ COPY users (user_id, user_name, user_note, passwd, domain_users, first_name, las
 -- Name: users_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: lanview2
 --
 
-SELECT pg_catalog.setval('users_user_id_seq', 16, true);
+SELECT pg_catalog.setval('public.users_user_id_seq', 5, true);
 
 
 --
 -- Data for Name: vlans; Type: TABLE DATA; Schema: public; Owner: lanview2
 --
 
-COPY vlans (vlan_id, vlan_name, vlan_note, vlan_stat, flag) FROM stdin;
+COPY public.vlans (vlan_id, vlan_name, vlan_note, vlan_stat, flag) FROM stdin;
 \.
 
 
@@ -38346,7 +38628,7 @@ COPY vlans (vlan_id, vlan_name, vlan_note, vlan_stat, flag) FROM stdin;
 -- Name: alarm_messages_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY alarm_messages
+ALTER TABLE ONLY public.alarm_messages
     ADD CONSTRAINT alarm_messages_pkey PRIMARY KEY (service_type_id, status);
 
 
@@ -38354,7 +38636,7 @@ ALTER TABLE ONLY alarm_messages
 -- Name: alarms_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY alarms
+ALTER TABLE ONLY public.alarms
     ADD CONSTRAINT alarms_pkey PRIMARY KEY (alarm_id);
 
 
@@ -38362,7 +38644,7 @@ ALTER TABLE ONLY alarms
 -- Name: app_errs_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY app_errs
+ALTER TABLE ONLY public.app_errs
     ADD CONSTRAINT app_errs_pkey PRIMARY KEY (applog_id);
 
 
@@ -38370,7 +38652,7 @@ ALTER TABLE ONLY app_errs
 -- Name: app_memos_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY app_memos
+ALTER TABLE ONLY public.app_memos
     ADD CONSTRAINT app_memos_pkey PRIMARY KEY (app_memo_id);
 
 
@@ -38378,7 +38660,7 @@ ALTER TABLE ONLY app_memos
 -- Name: arp_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY arp_logs
+ALTER TABLE ONLY public.arp_logs
     ADD CONSTRAINT arp_logs_pkey PRIMARY KEY (arp_log_id);
 
 
@@ -38386,7 +38668,7 @@ ALTER TABLE ONLY arp_logs
 -- Name: arps_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY arps
+ALTER TABLE ONLY public.arps
     ADD CONSTRAINT arps_pkey PRIMARY KEY (ipaddress);
 
 
@@ -38394,7 +38676,7 @@ ALTER TABLE ONLY arps
 -- Name: db_errs_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY db_errs
+ALTER TABLE ONLY public.db_errs
     ADD CONSTRAINT db_errs_pkey PRIMARY KEY (dblog_id);
 
 
@@ -38402,7 +38684,7 @@ ALTER TABLE ONLY db_errs
 -- Name: disabled_alarms_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY disabled_alarms
+ALTER TABLE ONLY public.disabled_alarms
     ADD CONSTRAINT disabled_alarms_pkey PRIMARY KEY (alarm_id);
 
 
@@ -38410,7 +38692,7 @@ ALTER TABLE ONLY disabled_alarms
 -- Name: dyn_addr_ranges_begin_address_exclude_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY dyn_addr_ranges
+ALTER TABLE ONLY public.dyn_addr_ranges
     ADD CONSTRAINT dyn_addr_ranges_begin_address_exclude_key UNIQUE (begin_address, exclude);
 
 
@@ -38418,7 +38700,7 @@ ALTER TABLE ONLY dyn_addr_ranges
 -- Name: dyn_addr_ranges_end_address_exclude_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY dyn_addr_ranges
+ALTER TABLE ONLY public.dyn_addr_ranges
     ADD CONSTRAINT dyn_addr_ranges_end_address_exclude_key UNIQUE (end_address, exclude);
 
 
@@ -38426,7 +38708,7 @@ ALTER TABLE ONLY dyn_addr_ranges
 -- Name: dyn_addr_ranges_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY dyn_addr_ranges
+ALTER TABLE ONLY public.dyn_addr_ranges
     ADD CONSTRAINT dyn_addr_ranges_pkey PRIMARY KEY (dyn_addr_range_id);
 
 
@@ -38434,7 +38716,7 @@ ALTER TABLE ONLY dyn_addr_ranges
 -- Name: dyn_ipaddress_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY dyn_ipaddress_logs
+ALTER TABLE ONLY public.dyn_ipaddress_logs
     ADD CONSTRAINT dyn_ipaddress_logs_pkey PRIMARY KEY (dyn_ipaddress_log_id);
 
 
@@ -38442,7 +38724,7 @@ ALTER TABLE ONLY dyn_ipaddress_logs
 -- Name: enum_vals_enum_type_name_enum_val_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY enum_vals
+ALTER TABLE ONLY public.enum_vals
     ADD CONSTRAINT enum_vals_enum_type_name_enum_val_name_key UNIQUE (enum_type_name, enum_val_name);
 
 
@@ -38450,7 +38732,7 @@ ALTER TABLE ONLY enum_vals
 -- Name: enum_vals_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY enum_vals
+ALTER TABLE ONLY public.enum_vals
     ADD CONSTRAINT enum_vals_pkey PRIMARY KEY (enum_val_id);
 
 
@@ -38458,7 +38740,7 @@ ALTER TABLE ONLY enum_vals
 -- Name: errors_error_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY errors
+ALTER TABLE ONLY public.errors
     ADD CONSTRAINT errors_error_name_key UNIQUE (error_name);
 
 
@@ -38466,7 +38748,7 @@ ALTER TABLE ONLY errors
 -- Name: errors_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY errors
+ALTER TABLE ONLY public.errors
     ADD CONSTRAINT errors_pkey PRIMARY KEY (error_id);
 
 
@@ -38474,7 +38756,7 @@ ALTER TABLE ONLY errors
 -- Name: field_attrs_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY field_attrs
+ALTER TABLE ONLY public.field_attrs
     ADD CONSTRAINT field_attrs_pkey PRIMARY KEY (field_attr_id);
 
 
@@ -38482,7 +38764,7 @@ ALTER TABLE ONLY field_attrs
 -- Name: field_attrs_table_name_field_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY field_attrs
+ALTER TABLE ONLY public.field_attrs
     ADD CONSTRAINT field_attrs_table_name_field_name_key UNIQUE (table_name, field_name);
 
 
@@ -38490,7 +38772,7 @@ ALTER TABLE ONLY field_attrs
 -- Name: fkey_types_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY fkey_types
+ALTER TABLE ONLY public.fkey_types
     ADD CONSTRAINT fkey_types_pkey PRIMARY KEY (fkey_type_id);
 
 
@@ -38498,7 +38780,7 @@ ALTER TABLE ONLY fkey_types
 -- Name: fkey_types_table_schema_table_name_column_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY fkey_types
+ALTER TABLE ONLY public.fkey_types
     ADD CONSTRAINT fkey_types_table_schema_table_name_column_name_key UNIQUE (table_schema, table_name, column_name);
 
 
@@ -38506,7 +38788,7 @@ ALTER TABLE ONLY fkey_types
 -- Name: graph_vars_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY graph_vars
+ALTER TABLE ONLY public.graph_vars
     ADD CONSTRAINT graph_vars_pkey PRIMARY KEY (graph_var_id);
 
 
@@ -38514,7 +38796,7 @@ ALTER TABLE ONLY graph_vars
 -- Name: graphs_graph_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY graphs
+ALTER TABLE ONLY public.graphs
     ADD CONSTRAINT graphs_graph_name_key UNIQUE (graph_name);
 
 
@@ -38522,7 +38804,7 @@ ALTER TABLE ONLY graphs
 -- Name: graphs_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY graphs
+ALTER TABLE ONLY public.graphs
     ADD CONSTRAINT graphs_pkey PRIMARY KEY (graph_id);
 
 
@@ -38530,7 +38812,7 @@ ALTER TABLE ONLY graphs
 -- Name: group_users_group_id_user_id_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY group_users
+ALTER TABLE ONLY public.group_users
     ADD CONSTRAINT group_users_group_id_user_id_key UNIQUE (group_id, user_id);
 
 
@@ -38538,7 +38820,7 @@ ALTER TABLE ONLY group_users
 -- Name: group_users_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY group_users
+ALTER TABLE ONLY public.group_users
     ADD CONSTRAINT group_users_pkey PRIMARY KEY (group_user_id);
 
 
@@ -38546,7 +38828,7 @@ ALTER TABLE ONLY group_users
 -- Name: groups_group_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY groups
+ALTER TABLE ONLY public.groups
     ADD CONSTRAINT groups_group_name_key UNIQUE (group_name);
 
 
@@ -38554,7 +38836,7 @@ ALTER TABLE ONLY groups
 -- Name: groups_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY groups
+ALTER TABLE ONLY public.groups
     ADD CONSTRAINT groups_pkey PRIMARY KEY (group_id);
 
 
@@ -38562,7 +38844,7 @@ ALTER TABLE ONLY groups
 -- Name: host_service_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY host_service_logs
+ALTER TABLE ONLY public.host_service_logs
     ADD CONSTRAINT host_service_logs_pkey PRIMARY KEY (host_service_log_id);
 
 
@@ -38570,7 +38852,7 @@ ALTER TABLE ONLY host_service_logs
 -- Name: host_service_noalarms_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY host_service_noalarms
+ALTER TABLE ONLY public.host_service_noalarms
     ADD CONSTRAINT host_service_noalarms_pkey PRIMARY KEY (host_service_noalarm_id);
 
 
@@ -38578,7 +38860,7 @@ ALTER TABLE ONLY host_service_noalarms
 -- Name: host_services_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY host_services
+ALTER TABLE ONLY public.host_services
     ADD CONSTRAINT host_services_pkey PRIMARY KEY (host_service_id);
 
 
@@ -38586,7 +38868,7 @@ ALTER TABLE ONLY host_services
 -- Name: iftypes_iftype_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY iftypes
+ALTER TABLE ONLY public.iftypes
     ADD CONSTRAINT iftypes_iftype_name_key UNIQUE (iftype_name);
 
 
@@ -38594,7 +38876,7 @@ ALTER TABLE ONLY iftypes
 -- Name: iftypes_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY iftypes
+ALTER TABLE ONLY public.iftypes
     ADD CONSTRAINT iftypes_pkey PRIMARY KEY (iftype_id);
 
 
@@ -38602,7 +38884,7 @@ ALTER TABLE ONLY iftypes
 -- Name: images_image_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY images
+ALTER TABLE ONLY public.images
     ADD CONSTRAINT images_image_name_key UNIQUE (image_name);
 
 
@@ -38610,7 +38892,7 @@ ALTER TABLE ONLY images
 -- Name: images_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY images
+ALTER TABLE ONLY public.images
     ADD CONSTRAINT images_pkey PRIMARY KEY (image_id);
 
 
@@ -38618,7 +38900,7 @@ ALTER TABLE ONLY images
 -- Name: import_templates_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY import_templates
+ALTER TABLE ONLY public.import_templates
     ADD CONSTRAINT import_templates_pkey PRIMARY KEY (import_template_id);
 
 
@@ -38626,7 +38908,7 @@ ALTER TABLE ONLY import_templates
 -- Name: import_templates_template_type_template_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY import_templates
+ALTER TABLE ONLY public.import_templates
     ADD CONSTRAINT import_templates_template_type_template_name_key UNIQUE (template_type, template_name);
 
 
@@ -38634,7 +38916,7 @@ ALTER TABLE ONLY import_templates
 -- Name: imports_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY imports
+ALTER TABLE ONLY public.imports
     ADD CONSTRAINT imports_pkey PRIMARY KEY (import_id);
 
 
@@ -38642,7 +38924,7 @@ ALTER TABLE ONLY imports
 -- Name: interfaces_node_id_port_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY interfaces
+ALTER TABLE ONLY public.interfaces
     ADD CONSTRAINT interfaces_node_id_port_name_key UNIQUE (node_id, port_name);
 
 
@@ -38650,7 +38932,7 @@ ALTER TABLE ONLY interfaces
 -- Name: interfaces_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY interfaces
+ALTER TABLE ONLY public.interfaces
     ADD CONSTRAINT interfaces_pkey PRIMARY KEY (port_id);
 
 
@@ -38658,7 +38940,7 @@ ALTER TABLE ONLY interfaces
 -- Name: ipaddresses_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY ip_addresses
+ALTER TABLE ONLY public.ip_addresses
     ADD CONSTRAINT ipaddresses_pkey PRIMARY KEY (ip_address_id);
 
 
@@ -38666,7 +38948,7 @@ ALTER TABLE ONLY ip_addresses
 -- Name: languages_country_a2_lang_2_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY languages
+ALTER TABLE ONLY public.languages
     ADD CONSTRAINT languages_country_a2_lang_2_key UNIQUE (country_a2, lang_2);
 
 
@@ -38674,7 +38956,7 @@ ALTER TABLE ONLY languages
 -- Name: languages_country_a2_lang_3_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY languages
+ALTER TABLE ONLY public.languages
     ADD CONSTRAINT languages_country_a2_lang_3_key UNIQUE (country_a2, lang_3);
 
 
@@ -38682,7 +38964,7 @@ ALTER TABLE ONLY languages
 -- Name: languages_lang_id_country_id_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY languages
+ALTER TABLE ONLY public.languages
     ADD CONSTRAINT languages_lang_id_country_id_key UNIQUE (lang_id, country_id);
 
 
@@ -38690,7 +38972,7 @@ ALTER TABLE ONLY languages
 -- Name: languages_language_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY languages
+ALTER TABLE ONLY public.languages
     ADD CONSTRAINT languages_language_name_key UNIQUE (language_name);
 
 
@@ -38698,7 +38980,7 @@ ALTER TABLE ONLY languages
 -- Name: languages_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY languages
+ALTER TABLE ONLY public.languages
     ADD CONSTRAINT languages_pkey PRIMARY KEY (language_id);
 
 
@@ -38706,7 +38988,7 @@ ALTER TABLE ONLY languages
 -- Name: lldp_links_table_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY lldp_links_table
+ALTER TABLE ONLY public.lldp_links_table
     ADD CONSTRAINT lldp_links_table_pkey PRIMARY KEY (lldp_link_id);
 
 
@@ -38714,7 +38996,7 @@ ALTER TABLE ONLY lldp_links_table
 -- Name: lldp_links_table_port_id1; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY lldp_links_table
+ALTER TABLE ONLY public.lldp_links_table
     ADD CONSTRAINT lldp_links_table_port_id1 UNIQUE (port_id1);
 
 
@@ -38722,7 +39004,7 @@ ALTER TABLE ONLY lldp_links_table
 -- Name: lldp_links_table_port_id2; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY lldp_links_table
+ALTER TABLE ONLY public.lldp_links_table
     ADD CONSTRAINT lldp_links_table_port_id2 UNIQUE (port_id2);
 
 
@@ -38730,7 +39012,7 @@ ALTER TABLE ONLY lldp_links_table
 -- Name: localizations_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY localizations
+ALTER TABLE ONLY public.localizations
     ADD CONSTRAINT localizations_pkey PRIMARY KEY (text_id, language_id);
 
 
@@ -38738,7 +39020,7 @@ ALTER TABLE ONLY localizations
 -- Name: log_links_table_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY log_links_table
+ALTER TABLE ONLY public.log_links_table
     ADD CONSTRAINT log_links_table_pkey PRIMARY KEY (log_link_id);
 
 
@@ -38746,7 +39028,7 @@ ALTER TABLE ONLY log_links_table
 -- Name: log_links_table_port_id1_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY log_links_table
+ALTER TABLE ONLY public.log_links_table
     ADD CONSTRAINT log_links_table_port_id1_key UNIQUE (port_id1);
 
 
@@ -38754,7 +39036,7 @@ ALTER TABLE ONLY log_links_table
 -- Name: log_links_table_port_id2_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY log_links_table
+ALTER TABLE ONLY public.log_links_table
     ADD CONSTRAINT log_links_table_port_id2_key UNIQUE (port_id2);
 
 
@@ -38762,7 +39044,7 @@ ALTER TABLE ONLY log_links_table
 -- Name: mactab_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY mactab_logs
+ALTER TABLE ONLY public.mactab_logs
     ADD CONSTRAINT mactab_logs_pkey PRIMARY KEY (mactab_log_id);
 
 
@@ -38770,7 +39052,7 @@ ALTER TABLE ONLY mactab_logs
 -- Name: mactab_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY mactab
+ALTER TABLE ONLY public.mactab
     ADD CONSTRAINT mactab_pkey PRIMARY KEY (hwaddress);
 
 
@@ -38778,7 +39060,7 @@ ALTER TABLE ONLY mactab
 -- Name: menu_items_app_name_menu_item_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY menu_items
+ALTER TABLE ONLY public.menu_items
     ADD CONSTRAINT menu_items_app_name_menu_item_name_key UNIQUE (app_name, menu_item_name);
 
 
@@ -38786,7 +39068,7 @@ ALTER TABLE ONLY menu_items
 -- Name: menu_items_app_name_upper_menu_item_id_item_sequence_number_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY menu_items
+ALTER TABLE ONLY public.menu_items
     ADD CONSTRAINT menu_items_app_name_upper_menu_item_id_item_sequence_number_key UNIQUE (app_name, upper_menu_item_id, item_sequence_number);
 
 
@@ -38794,7 +39076,7 @@ ALTER TABLE ONLY menu_items
 -- Name: menu_items_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY menu_items
+ALTER TABLE ONLY public.menu_items
     ADD CONSTRAINT menu_items_pkey PRIMARY KEY (menu_item_id);
 
 
@@ -38802,7 +39084,7 @@ ALTER TABLE ONLY menu_items
 -- Name: node_params_param_type_id_node_id_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY node_params
+ALTER TABLE ONLY public.node_params
     ADD CONSTRAINT node_params_param_type_id_node_id_key UNIQUE (param_type_id, node_id);
 
 
@@ -38810,7 +39092,7 @@ ALTER TABLE ONLY node_params
 -- Name: node_params_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY node_params
+ALTER TABLE ONLY public.node_params
     ADD CONSTRAINT node_params_pkey PRIMARY KEY (node_param_id);
 
 
@@ -38818,7 +39100,7 @@ ALTER TABLE ONLY node_params
 -- Name: nodes_node_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY nodes
+ALTER TABLE ONLY public.nodes
     ADD CONSTRAINT nodes_node_name_key UNIQUE (node_name);
 
 
@@ -38826,7 +39108,7 @@ ALTER TABLE ONLY nodes
 -- Name: nodes_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY nodes
+ALTER TABLE ONLY public.nodes
     ADD CONSTRAINT nodes_pkey PRIMARY KEY (node_id);
 
 
@@ -38834,7 +39116,7 @@ ALTER TABLE ONLY nodes
 -- Name: nports_node_id_port_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY nports
+ALTER TABLE ONLY public.nports
     ADD CONSTRAINT nports_node_id_port_name_key UNIQUE (node_id, port_name);
 
 
@@ -38842,7 +39124,7 @@ ALTER TABLE ONLY nports
 -- Name: nports_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY nports
+ALTER TABLE ONLY public.nports
     ADD CONSTRAINT nports_pkey PRIMARY KEY (port_id);
 
 
@@ -38850,7 +39132,7 @@ ALTER TABLE ONLY nports
 -- Name: object_syntaxs_object_syntax_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY object_syntaxs
+ALTER TABLE ONLY public.object_syntaxs
     ADD CONSTRAINT object_syntaxs_object_syntax_name_key UNIQUE (object_syntax_name);
 
 
@@ -38858,7 +39140,7 @@ ALTER TABLE ONLY object_syntaxs
 -- Name: object_syntaxs_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY object_syntaxs
+ALTER TABLE ONLY public.object_syntaxs
     ADD CONSTRAINT object_syntaxs_pkey PRIMARY KEY (object_syntax_id);
 
 
@@ -38866,7 +39148,7 @@ ALTER TABLE ONLY object_syntaxs
 -- Name: ouis_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY ouis
+ALTER TABLE ONLY public.ouis
     ADD CONSTRAINT ouis_pkey PRIMARY KEY (oui);
 
 
@@ -38874,7 +39156,7 @@ ALTER TABLE ONLY ouis
 -- Name: param_types_param_type_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY param_types
+ALTER TABLE ONLY public.param_types
     ADD CONSTRAINT param_types_param_type_name_key UNIQUE (param_type_name);
 
 
@@ -38882,7 +39164,7 @@ ALTER TABLE ONLY param_types
 -- Name: param_types_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY param_types
+ALTER TABLE ONLY public.param_types
     ADD CONSTRAINT param_types_pkey PRIMARY KEY (param_type_id);
 
 
@@ -38890,7 +39172,7 @@ ALTER TABLE ONLY param_types
 -- Name: patchs_node_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY patchs
+ALTER TABLE ONLY public.patchs
     ADD CONSTRAINT patchs_node_name_key UNIQUE (node_name);
 
 
@@ -38898,7 +39180,7 @@ ALTER TABLE ONLY patchs
 -- Name: patchs_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY patchs
+ALTER TABLE ONLY public.patchs
     ADD CONSTRAINT patchs_pkey PRIMARY KEY (node_id);
 
 
@@ -38906,7 +39188,7 @@ ALTER TABLE ONLY patchs
 -- Name: phs_links_table_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY phs_links_table
+ALTER TABLE ONLY public.phs_links_table
     ADD CONSTRAINT phs_links_table_pkey PRIMARY KEY (phs_link_id);
 
 
@@ -38914,7 +39196,7 @@ ALTER TABLE ONLY phs_links_table
 -- Name: place_group_places_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY place_group_places
+ALTER TABLE ONLY public.place_group_places
     ADD CONSTRAINT place_group_places_pkey PRIMARY KEY (place_group_place_id);
 
 
@@ -38922,7 +39204,7 @@ ALTER TABLE ONLY place_group_places
 -- Name: place_group_places_place_group_id_place_id_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY place_group_places
+ALTER TABLE ONLY public.place_group_places
     ADD CONSTRAINT place_group_places_place_group_id_place_id_key UNIQUE (place_group_id, place_id);
 
 
@@ -38930,7 +39212,7 @@ ALTER TABLE ONLY place_group_places
 -- Name: place_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY place_groups
+ALTER TABLE ONLY public.place_groups
     ADD CONSTRAINT place_groups_pkey PRIMARY KEY (place_group_id);
 
 
@@ -38938,7 +39220,7 @@ ALTER TABLE ONLY place_groups
 -- Name: place_groups_place_group_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY place_groups
+ALTER TABLE ONLY public.place_groups
     ADD CONSTRAINT place_groups_place_group_name_key UNIQUE (place_group_name);
 
 
@@ -38946,7 +39228,7 @@ ALTER TABLE ONLY place_groups
 -- Name: places_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY places
+ALTER TABLE ONLY public.places
     ADD CONSTRAINT places_pkey PRIMARY KEY (place_id);
 
 
@@ -38954,7 +39236,7 @@ ALTER TABLE ONLY places
 -- Name: places_place_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY places
+ALTER TABLE ONLY public.places
     ADD CONSTRAINT places_place_name_key UNIQUE (place_name);
 
 
@@ -38962,7 +39244,7 @@ ALTER TABLE ONLY places
 -- Name: port_params_param_type_id_port_id_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY port_params
+ALTER TABLE ONLY public.port_params
     ADD CONSTRAINT port_params_param_type_id_port_id_key UNIQUE (param_type_id, port_id);
 
 
@@ -38970,15 +39252,23 @@ ALTER TABLE ONLY port_params
 -- Name: port_params_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY port_params
+ALTER TABLE ONLY public.port_params
     ADD CONSTRAINT port_params_pkey PRIMARY KEY (port_param_id);
+
+
+--
+-- Name: port_vlan_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
+--
+
+ALTER TABLE ONLY public.port_vlan_logs
+    ADD CONSTRAINT port_vlan_logs_pkey PRIMARY KEY (port_vlan_log_id);
 
 
 --
 -- Name: port_vlans_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY port_vlans
+ALTER TABLE ONLY public.port_vlans
     ADD CONSTRAINT port_vlans_pkey PRIMARY KEY (port_vlan_id);
 
 
@@ -38986,7 +39276,7 @@ ALTER TABLE ONLY port_vlans
 -- Name: port_vlans_port_id_vlan_id_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY port_vlans
+ALTER TABLE ONLY public.port_vlans
     ADD CONSTRAINT port_vlans_port_id_vlan_id_key UNIQUE (port_id, vlan_id);
 
 
@@ -38994,7 +39284,7 @@ ALTER TABLE ONLY port_vlans
 -- Name: pports_node_id_port_index_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY pports
+ALTER TABLE ONLY public.pports
     ADD CONSTRAINT pports_node_id_port_index_key UNIQUE (node_id, port_index);
 
 
@@ -39002,7 +39292,7 @@ ALTER TABLE ONLY pports
 -- Name: pports_node_id_port_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY pports
+ALTER TABLE ONLY public.pports
     ADD CONSTRAINT pports_node_id_port_name_key UNIQUE (node_id, port_name);
 
 
@@ -39010,7 +39300,7 @@ ALTER TABLE ONLY pports
 -- Name: pports_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY pports
+ALTER TABLE ONLY public.pports
     ADD CONSTRAINT pports_pkey PRIMARY KEY (port_id);
 
 
@@ -39018,7 +39308,7 @@ ALTER TABLE ONLY pports
 -- Name: query_parsers_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY query_parsers
+ALTER TABLE ONLY public.query_parsers
     ADD CONSTRAINT query_parsers_pkey PRIMARY KEY (query_parser_id);
 
 
@@ -39026,7 +39316,7 @@ ALTER TABLE ONLY query_parsers
 -- Name: rrd_beats_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY rrd_beats
+ALTER TABLE ONLY public.rrd_beats
     ADD CONSTRAINT rrd_beats_pkey PRIMARY KEY (rrd_beat_id);
 
 
@@ -39034,7 +39324,7 @@ ALTER TABLE ONLY rrd_beats
 -- Name: rrd_beats_rrd_beat_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY rrd_beats
+ALTER TABLE ONLY public.rrd_beats
     ADD CONSTRAINT rrd_beats_rrd_beat_name_key UNIQUE (rrd_beat_name);
 
 
@@ -39042,7 +39332,7 @@ ALTER TABLE ONLY rrd_beats
 -- Name: selects_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY selects
+ALTER TABLE ONLY public.selects
     ADD CONSTRAINT selects_pkey PRIMARY KEY (select_id);
 
 
@@ -39050,7 +39340,7 @@ ALTER TABLE ONLY selects
 -- Name: selects_select_type_precedence_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY selects
+ALTER TABLE ONLY public.selects
     ADD CONSTRAINT selects_select_type_precedence_key UNIQUE (select_type, precedence);
 
 
@@ -39058,7 +39348,7 @@ ALTER TABLE ONLY selects
 -- Name: service_types_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY service_types
+ALTER TABLE ONLY public.service_types
     ADD CONSTRAINT service_types_pkey PRIMARY KEY (service_type_id);
 
 
@@ -39066,7 +39356,7 @@ ALTER TABLE ONLY service_types
 -- Name: service_types_service_type_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY service_types
+ALTER TABLE ONLY public.service_types
     ADD CONSTRAINT service_types_service_type_name_key UNIQUE (service_type_name);
 
 
@@ -39074,7 +39364,7 @@ ALTER TABLE ONLY service_types
 -- Name: service_var_types_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY service_var_types
+ALTER TABLE ONLY public.service_var_types
     ADD CONSTRAINT service_var_types_pkey PRIMARY KEY (service_var_type_id);
 
 
@@ -39082,7 +39372,7 @@ ALTER TABLE ONLY service_var_types
 -- Name: service_var_types_service_var_type_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY service_var_types
+ALTER TABLE ONLY public.service_var_types
     ADD CONSTRAINT service_var_types_service_var_type_name_key UNIQUE (service_var_type_name);
 
 
@@ -39090,7 +39380,7 @@ ALTER TABLE ONLY service_var_types
 -- Name: service_vars_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY service_vars
+ALTER TABLE ONLY public.service_vars
     ADD CONSTRAINT service_vars_pkey PRIMARY KEY (service_var_id);
 
 
@@ -39098,7 +39388,7 @@ ALTER TABLE ONLY service_vars
 -- Name: service_vars_service_var_name_host_service_id_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY service_vars
+ALTER TABLE ONLY public.service_vars
     ADD CONSTRAINT service_vars_service_var_name_host_service_id_key UNIQUE (service_var_name, host_service_id);
 
 
@@ -39106,7 +39396,7 @@ ALTER TABLE ONLY service_vars
 -- Name: services_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY services
+ALTER TABLE ONLY public.services
     ADD CONSTRAINT services_pkey PRIMARY KEY (service_id);
 
 
@@ -39114,7 +39404,7 @@ ALTER TABLE ONLY services
 -- Name: services_service_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY services
+ALTER TABLE ONLY public.services
     ADD CONSTRAINT services_service_name_key UNIQUE (service_name);
 
 
@@ -39122,7 +39412,7 @@ ALTER TABLE ONLY services
 -- Name: snmpdevices_node_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY snmpdevices
+ALTER TABLE ONLY public.snmpdevices
     ADD CONSTRAINT snmpdevices_node_name_key UNIQUE (node_name);
 
 
@@ -39130,7 +39420,7 @@ ALTER TABLE ONLY snmpdevices
 -- Name: snmpdevices_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY snmpdevices
+ALTER TABLE ONLY public.snmpdevices
     ADD CONSTRAINT snmpdevices_pkey PRIMARY KEY (node_id);
 
 
@@ -39138,7 +39428,7 @@ ALTER TABLE ONLY snmpdevices
 -- Name: subnets_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY subnets
+ALTER TABLE ONLY public.subnets
     ADD CONSTRAINT subnets_pkey PRIMARY KEY (subnet_id);
 
 
@@ -39146,7 +39436,7 @@ ALTER TABLE ONLY subnets
 -- Name: subnets_subnet_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY subnets
+ALTER TABLE ONLY public.subnets
     ADD CONSTRAINT subnets_subnet_name_key UNIQUE (subnet_name);
 
 
@@ -39154,7 +39444,7 @@ ALTER TABLE ONLY subnets
 -- Name: sys_params_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY sys_params
+ALTER TABLE ONLY public.sys_params
     ADD CONSTRAINT sys_params_pkey PRIMARY KEY (sys_param_id);
 
 
@@ -39162,7 +39452,7 @@ ALTER TABLE ONLY sys_params
 -- Name: sys_params_sys_param_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY sys_params
+ALTER TABLE ONLY public.sys_params
     ADD CONSTRAINT sys_params_sys_param_name_key UNIQUE (sys_param_name);
 
 
@@ -39170,7 +39460,7 @@ ALTER TABLE ONLY sys_params
 -- Name: table_shape_fields_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY table_shape_fields
+ALTER TABLE ONLY public.table_shape_fields
     ADD CONSTRAINT table_shape_fields_pkey PRIMARY KEY (table_shape_field_id);
 
 
@@ -39178,7 +39468,7 @@ ALTER TABLE ONLY table_shape_fields
 -- Name: table_shape_fields_table_shape_id_table_shape_field_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY table_shape_fields
+ALTER TABLE ONLY public.table_shape_fields
     ADD CONSTRAINT table_shape_fields_table_shape_id_table_shape_field_name_key UNIQUE (table_shape_id, table_shape_field_name);
 
 
@@ -39186,7 +39476,7 @@ ALTER TABLE ONLY table_shape_fields
 -- Name: table_shapes_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY table_shapes
+ALTER TABLE ONLY public.table_shapes
     ADD CONSTRAINT table_shapes_pkey PRIMARY KEY (table_shape_id);
 
 
@@ -39194,7 +39484,7 @@ ALTER TABLE ONLY table_shapes
 -- Name: table_shapes_table_shape_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY table_shapes
+ALTER TABLE ONLY public.table_shapes
     ADD CONSTRAINT table_shapes_table_shape_name_key UNIQUE (table_shape_name);
 
 
@@ -39202,7 +39492,7 @@ ALTER TABLE ONLY table_shapes
 -- Name: timeperiod_tpows_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY timeperiod_tpows
+ALTER TABLE ONLY public.timeperiod_tpows
     ADD CONSTRAINT timeperiod_tpows_pkey PRIMARY KEY (timeperiod_tpow_id);
 
 
@@ -39210,7 +39500,7 @@ ALTER TABLE ONLY timeperiod_tpows
 -- Name: timeperiod_tpows_tpow_id_timeperiod_id_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY timeperiod_tpows
+ALTER TABLE ONLY public.timeperiod_tpows
     ADD CONSTRAINT timeperiod_tpows_tpow_id_timeperiod_id_key UNIQUE (tpow_id, timeperiod_id);
 
 
@@ -39218,7 +39508,7 @@ ALTER TABLE ONLY timeperiod_tpows
 -- Name: timeperiods_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY timeperiods
+ALTER TABLE ONLY public.timeperiods
     ADD CONSTRAINT timeperiods_pkey PRIMARY KEY (timeperiod_id);
 
 
@@ -39226,7 +39516,7 @@ ALTER TABLE ONLY timeperiods
 -- Name: timeperiods_timeperiod_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY timeperiods
+ALTER TABLE ONLY public.timeperiods
     ADD CONSTRAINT timeperiods_timeperiod_name_key UNIQUE (timeperiod_name);
 
 
@@ -39234,7 +39524,7 @@ ALTER TABLE ONLY timeperiods
 -- Name: tpows_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY tpows
+ALTER TABLE ONLY public.tpows
     ADD CONSTRAINT tpows_pkey PRIMARY KEY (tpow_id);
 
 
@@ -39242,7 +39532,7 @@ ALTER TABLE ONLY tpows
 -- Name: tpows_tpow_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY tpows
+ALTER TABLE ONLY public.tpows
     ADD CONSTRAINT tpows_tpow_name_key UNIQUE (tpow_name);
 
 
@@ -39250,7 +39540,7 @@ ALTER TABLE ONLY tpows
 -- Name: unusual_fkeys_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY unusual_fkeys
+ALTER TABLE ONLY public.unusual_fkeys
     ADD CONSTRAINT unusual_fkeys_pkey PRIMARY KEY (unusual_fkey_id);
 
 
@@ -39258,7 +39548,7 @@ ALTER TABLE ONLY unusual_fkeys
 -- Name: unusual_fkeys_table_schema_table_name_column_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY unusual_fkeys
+ALTER TABLE ONLY public.unusual_fkeys
     ADD CONSTRAINT unusual_fkeys_table_schema_table_name_column_name_key UNIQUE (table_schema, table_name, column_name);
 
 
@@ -39266,7 +39556,7 @@ ALTER TABLE ONLY unusual_fkeys
 -- Name: user_events_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY user_events
+ALTER TABLE ONLY public.user_events
     ADD CONSTRAINT user_events_pkey PRIMARY KEY (user_event_id);
 
 
@@ -39274,7 +39564,7 @@ ALTER TABLE ONLY user_events
 -- Name: user_events_user_id_alarm_id_event_type_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY user_events
+ALTER TABLE ONLY public.user_events
     ADD CONSTRAINT user_events_user_id_alarm_id_event_type_key UNIQUE (user_id, alarm_id, event_type);
 
 
@@ -39282,7 +39572,7 @@ ALTER TABLE ONLY user_events
 -- Name: users_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY users
+ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_pkey PRIMARY KEY (user_id);
 
 
@@ -39290,7 +39580,7 @@ ALTER TABLE ONLY users
 -- Name: users_user_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY users
+ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_user_name_key UNIQUE (user_name);
 
 
@@ -39298,7 +39588,7 @@ ALTER TABLE ONLY users
 -- Name: vlans_pkey; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY vlans
+ALTER TABLE ONLY public.vlans
     ADD CONSTRAINT vlans_pkey PRIMARY KEY (vlan_id);
 
 
@@ -39306,7 +39596,7 @@ ALTER TABLE ONLY vlans
 -- Name: vlans_vlan_name_key; Type: CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY vlans
+ALTER TABLE ONLY public.vlans
     ADD CONSTRAINT vlans_vlan_name_key UNIQUE (vlan_name);
 
 
@@ -39314,413 +39604,434 @@ ALTER TABLE ONLY vlans
 -- Name: alarms_begin_time_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX alarms_begin_time_index ON alarms USING btree (begin_time);
+CREATE INDEX alarms_begin_time_index ON public.alarms USING btree (begin_time);
 
 
 --
 -- Name: alarms_end_time_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX alarms_end_time_index ON alarms USING btree (end_time);
+CREATE INDEX alarms_end_time_index ON public.alarms USING btree (end_time);
 
 
 --
 -- Name: alarms_host_service_id; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX alarms_host_service_id ON alarms USING btree (host_service_id);
+CREATE INDEX alarms_host_service_id ON public.alarms USING btree (host_service_id);
 
 
 --
 -- Name: app_errs_date_of_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX app_errs_date_of_index ON app_errs USING btree (date_of);
+CREATE INDEX app_errs_date_of_index ON public.app_errs USING btree (date_of);
 
 
 --
 -- Name: app_memos_date_of_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX app_memos_date_of_index ON app_memos USING btree (date_of);
+CREATE INDEX app_memos_date_of_index ON public.app_memos USING btree (date_of);
 
 
 --
 -- Name: arp_logs_date_of_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX arp_logs_date_of_index ON arp_logs USING btree (date_of);
+CREATE INDEX arp_logs_date_of_index ON public.arp_logs USING btree (date_of);
 
 
 --
 -- Name: arps_first_time_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX arps_first_time_index ON arps USING btree (first_time);
+CREATE INDEX arps_first_time_index ON public.arps USING btree (first_time);
 
 
 --
 -- Name: arps_hwaddress_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX arps_hwaddress_index ON arps USING btree (hwaddress);
+CREATE INDEX arps_hwaddress_index ON public.arps USING btree (hwaddress);
 
 
 --
 -- Name: arps_last_time_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX arps_last_time_index ON arps USING btree (last_time);
+CREATE INDEX arps_last_time_index ON public.arps USING btree (last_time);
 
 
 --
 -- Name: db_errs_date_of_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX db_errs_date_of_index ON db_errs USING btree (date_of);
+CREATE INDEX db_errs_date_of_index ON public.db_errs USING btree (date_of);
 
 
 --
 -- Name: db_errs_date_of_last_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX db_errs_date_of_last_index ON db_errs USING btree (date_of_last);
+CREATE INDEX db_errs_date_of_last_index ON public.db_errs USING btree (date_of_last);
 
 
 --
 -- Name: disabled_alarms_begin_time_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX disabled_alarms_begin_time_index ON disabled_alarms USING btree (begin_time);
+CREATE INDEX disabled_alarms_begin_time_index ON public.disabled_alarms USING btree (begin_time);
 
 
 --
 -- Name: disabled_alarms_end_time_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX disabled_alarms_end_time_index ON disabled_alarms USING btree (end_time);
+CREATE INDEX disabled_alarms_end_time_index ON public.disabled_alarms USING btree (end_time);
 
 
 --
 -- Name: disabled_alarms_host_service_id; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX disabled_alarms_host_service_id ON disabled_alarms USING btree (host_service_id);
+CREATE INDEX disabled_alarms_host_service_id ON public.disabled_alarms USING btree (host_service_id);
 
 
 --
 -- Name: dyn_ipaddress_logs_date_of_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX dyn_ipaddress_logs_date_of_index ON dyn_ipaddress_logs USING btree (date_of);
+CREATE INDEX dyn_ipaddress_logs_date_of_index ON public.dyn_ipaddress_logs USING btree (date_of);
 
 
 --
 -- Name: host_service_logs_alarm_id; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX host_service_logs_alarm_id ON host_service_logs USING btree (alarm_id);
+CREATE INDEX host_service_logs_alarm_id ON public.host_service_logs USING btree (alarm_id);
 
 
 --
 -- Name: host_service_logs_date_of_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX host_service_logs_date_of_index ON host_service_logs USING btree (date_of);
+CREATE INDEX host_service_logs_date_of_index ON public.host_service_logs USING btree (date_of);
 
 
 --
 -- Name: host_service_logs_superior_alarm_id; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX host_service_logs_superior_alarm_id ON host_service_logs USING btree (superior_alarm_id);
+CREATE INDEX host_service_logs_superior_alarm_id ON public.host_service_logs USING btree (superior_alarm_id);
 
 
 --
 -- Name: host_services_act_alarm_log_id; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX host_services_act_alarm_log_id ON host_services USING btree (act_alarm_log_id);
+CREATE INDEX host_services_act_alarm_log_id ON public.host_services USING btree (act_alarm_log_id);
 
 
 --
 -- Name: host_services_last_alarm_log_id; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX host_services_last_alarm_log_id ON host_services USING btree (last_alarm_log_id);
+CREATE INDEX host_services_last_alarm_log_id ON public.host_services USING btree (last_alarm_log_id);
 
 
 --
 -- Name: host_services_last_touched; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX host_services_last_touched ON host_services USING btree (last_touched);
+CREATE INDEX host_services_last_touched ON public.host_services USING btree (last_touched);
 
 
 --
 -- Name: host_services_node_id; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX host_services_node_id ON host_services USING btree (node_id);
+CREATE INDEX host_services_node_id ON public.host_services USING btree (node_id);
 
 
 --
 -- Name: host_services_port_subservices_key; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE UNIQUE INDEX host_services_port_subservices_key ON host_services USING btree (node_id, service_id, (COALESCE(port_id, ('-1'::integer)::bigint)), prime_service_id, proto_service_id);
+CREATE UNIQUE INDEX host_services_port_subservices_key ON public.host_services USING btree (node_id, service_id, (COALESCE(port_id, ('-1'::integer)::bigint)), prime_service_id, proto_service_id);
 
 
 --
 -- Name: host_services_service_id; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX host_services_service_id ON host_services USING btree (service_id);
+CREATE INDEX host_services_service_id ON public.host_services USING btree (service_id);
 
 
 --
 -- Name: host_services_superior_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX host_services_superior_index ON host_services USING btree (superior_host_service_id);
+CREATE INDEX host_services_superior_index ON public.host_services USING btree (superior_host_service_id);
 
 
 --
 -- Name: interfaces_node_id_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX interfaces_node_id_index ON interfaces USING btree (node_id);
+CREATE INDEX interfaces_node_id_index ON public.interfaces USING btree (node_id);
 
 
 --
 -- Name: ip_addresses_port_id_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX ip_addresses_port_id_index ON ip_addresses USING btree (port_id);
+CREATE INDEX ip_addresses_port_id_index ON public.ip_addresses USING btree (port_id);
 
 
 --
 -- Name: localization_texts_text_id_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX localization_texts_text_id_index ON localizations USING btree (text_id, table_for_text);
+CREATE INDEX localization_texts_text_id_index ON public.localizations USING btree (text_id, table_for_text);
 
 
 --
 -- Name: mactab_first_time_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX mactab_first_time_index ON mactab USING btree (first_time);
+CREATE INDEX mactab_first_time_index ON public.mactab USING btree (first_time);
 
 
 --
 -- Name: mactab_last_time_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX mactab_last_time_index ON mactab USING btree (last_time);
+CREATE INDEX mactab_last_time_index ON public.mactab USING btree (last_time);
 
 
 --
 -- Name: mactab_logs_date_of_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX mactab_logs_date_of_index ON mactab_logs USING btree (date_of);
+CREATE INDEX mactab_logs_date_of_index ON public.mactab_logs USING btree (date_of);
 
 
 --
 -- Name: mactab_logs_hwaddress_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX mactab_logs_hwaddress_index ON mactab_logs USING btree (hwaddress);
+CREATE INDEX mactab_logs_hwaddress_index ON public.mactab_logs USING btree (hwaddress);
 
 
 --
 -- Name: mactab_port_id_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX mactab_port_id_index ON mactab USING btree (port_id);
+CREATE INDEX mactab_port_id_index ON public.mactab USING btree (port_id);
 
 
 --
 -- Name: mactab_state_updated_time_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX mactab_state_updated_time_index ON mactab USING btree (state_updated_time);
+CREATE INDEX mactab_state_updated_time_index ON public.mactab USING btree (state_updated_time);
 
 
 --
 -- Name: node_params_node_id_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX node_params_node_id_index ON node_params USING btree (node_id);
+CREATE INDEX node_params_node_id_index ON public.node_params USING btree (node_id);
 
 
 --
 -- Name: nports_node_id_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX nports_node_id_index ON nports USING btree (node_id);
+CREATE INDEX nports_node_id_index ON public.nports USING btree (node_id);
 
 
 --
 -- Name: place_group_places_place_group_id_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX place_group_places_place_group_id_index ON place_group_places USING btree (place_group_id);
+CREATE INDEX place_group_places_place_group_id_index ON public.place_group_places USING btree (place_group_id);
 
 
 --
 -- Name: place_group_places_place_id_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX place_group_places_place_id_index ON place_group_places USING btree (place_id);
+CREATE INDEX place_group_places_place_id_index ON public.place_group_places USING btree (place_id);
 
 
 --
 -- Name: port_params_port_id_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX port_params_port_id_index ON port_params USING btree (port_id);
+CREATE INDEX port_params_port_id_index ON public.port_params USING btree (port_id);
+
+
+--
+-- Name: port_vlan_logs_date_of_index; Type: INDEX; Schema: public; Owner: lanview2
+--
+
+CREATE INDEX port_vlan_logs_date_of_index ON public.port_vlan_logs USING btree (date_of);
+
+
+--
+-- Name: port_vlan_logs_port_id; Type: INDEX; Schema: public; Owner: lanview2
+--
+
+CREATE INDEX port_vlan_logs_port_id ON public.port_vlan_logs USING btree (port_id);
+
+
+--
+-- Name: port_vlan_logs_vlan_id; Type: INDEX; Schema: public; Owner: lanview2
+--
+
+CREATE INDEX port_vlan_logs_vlan_id ON public.port_vlan_logs USING btree (vlan_id);
 
 
 --
 -- Name: port_vlans_port_id_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX port_vlans_port_id_index ON port_vlans USING btree (port_id);
+CREATE INDEX port_vlans_port_id_index ON public.port_vlans USING btree (port_id);
 
 
 --
 -- Name: pports_node_id_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX pports_node_id_index ON pports USING btree (node_id);
+CREATE INDEX pports_node_id_index ON public.pports USING btree (node_id);
 
 
 --
 -- Name: selects_select_type_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX selects_select_type_index ON selects USING btree (select_type);
+CREATE INDEX selects_select_type_index ON public.selects USING btree (select_type);
 
 
 --
 -- Name: service_vars_host_service_id_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX service_vars_host_service_id_index ON service_vars USING btree (host_service_id);
+CREATE INDEX service_vars_host_service_id_index ON public.service_vars USING btree (host_service_id);
 
 
 --
 -- Name: table_shape_fields_shape_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX table_shape_fields_shape_index ON table_shape_fields USING btree (table_shape_id);
+CREATE INDEX table_shape_fields_shape_index ON public.table_shape_fields USING btree (table_shape_id);
 
 
 --
 -- Name: user_events_alarm_id_event_type_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX user_events_alarm_id_event_type_index ON user_events USING btree (alarm_id, event_type);
+CREATE INDEX user_events_alarm_id_event_type_index ON public.user_events USING btree (alarm_id, event_type);
 
 
 --
 -- Name: user_events_created_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX user_events_created_index ON user_events USING btree (created);
+CREATE INDEX user_events_created_index ON public.user_events USING btree (created);
 
 
 --
 -- Name: user_events_happened_index; Type: INDEX; Schema: public; Owner: lanview2
 --
 
-CREATE INDEX user_events_happened_index ON user_events USING btree (happened);
+CREATE INDEX user_events_happened_index ON public.user_events USING btree (happened);
 
 
 --
 -- Name: add_place_to_all_group; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER add_place_to_all_group AFTER INSERT ON places FOR EACH ROW EXECUTE PROCEDURE add_member_to_all_group('place_group_places', 'place_id', 'place_group_id', '1');
+CREATE TRIGGER add_place_to_all_group AFTER INSERT ON public.places FOR EACH ROW EXECUTE PROCEDURE public.add_member_to_all_group('place_group_places', 'place_id', 'place_group_id', '1');
 
 
 --
 -- Name: alarm_check_unique_alarm_id; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER alarm_check_unique_alarm_id BEFORE INSERT OR UPDATE ON alarms FOR EACH ROW EXECUTE PROCEDURE check_unique_alarm_id();
+CREATE TRIGGER alarm_check_unique_alarm_id BEFORE INSERT OR UPDATE ON public.alarms FOR EACH ROW EXECUTE PROCEDURE public.check_unique_alarm_id();
 
 
 --
 -- Name: alarm_delete_alarms; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER alarm_delete_alarms BEFORE DELETE ON alarms FOR EACH ROW EXECUTE PROCEDURE delete_alarms();
+CREATE TRIGGER alarm_delete_alarms BEFORE DELETE ON public.alarms FOR EACH ROW EXECUTE PROCEDURE public.delete_alarms();
 
 
 --
 -- Name: alarm_messages_delete_record_text; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER alarm_messages_delete_record_text AFTER DELETE ON errors FOR EACH ROW EXECUTE PROCEDURE delete_record_text();
+CREATE TRIGGER alarm_messages_delete_record_text AFTER DELETE ON public.errors FOR EACH ROW EXECUTE PROCEDURE public.delete_record_text();
 
 
 --
 -- Name: alarms_after_insert_or_update; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER alarms_after_insert_or_update AFTER INSERT OR UPDATE ON alarms FOR EACH ROW EXECUTE PROCEDURE alarm_notice();
+CREATE TRIGGER alarms_after_insert_or_update AFTER INSERT OR UPDATE ON public.alarms FOR EACH ROW EXECUTE PROCEDURE public.alarm_notice();
 
 
 --
 -- Name: check_after_localization_text_trigger; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER check_after_localization_text_trigger AFTER INSERT OR UPDATE ON localizations FOR EACH ROW EXECUTE PROCEDURE check_after_localization_text();
+CREATE TRIGGER check_after_localization_text_trigger AFTER INSERT OR UPDATE ON public.localizations FOR EACH ROW EXECUTE PROCEDURE public.check_after_localization_text();
 
 
 --
 -- Name: check_insert_menu_items; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER check_insert_menu_items BEFORE INSERT ON menu_items FOR EACH ROW EXECUTE PROCEDURE check_insert_menu_items();
+CREATE TRIGGER check_insert_menu_items BEFORE INSERT ON public.menu_items FOR EACH ROW EXECUTE PROCEDURE public.check_insert_menu_items();
 
 
 --
 -- Name: check_insert_phs_links; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER check_insert_phs_links BEFORE INSERT OR UPDATE ON phs_links_table FOR EACH ROW EXECUTE PROCEDURE check_insert_phs_links();
+CREATE TRIGGER check_insert_phs_links BEFORE INSERT OR UPDATE ON public.phs_links_table FOR EACH ROW EXECUTE PROCEDURE public.check_insert_phs_links();
 
 
 --
 -- Name: check_table_shape; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER check_table_shape BEFORE INSERT OR UPDATE ON table_shapes FOR EACH ROW EXECUTE PROCEDURE check_table_shape();
+CREATE TRIGGER check_table_shape BEFORE INSERT OR UPDATE ON public.table_shapes FOR EACH ROW EXECUTE PROCEDURE public.check_table_shape();
 
 
 --
 -- Name: crypt_password; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER crypt_password BEFORE INSERT OR UPDATE ON users FOR EACH ROW EXECUTE PROCEDURE crypt_user_password();
+CREATE TRIGGER crypt_password BEFORE INSERT OR UPDATE ON public.users FOR EACH ROW EXECUTE PROCEDURE public.crypt_user_password();
 
 
 --
 -- Name: db_errors_before_insert; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER db_errors_before_insert BEFORE INSERT ON db_errs FOR EACH ROW EXECUTE PROCEDURE db_error_chk_reapeat();
+CREATE TRIGGER db_errors_before_insert BEFORE INSERT ON public.db_errs FOR EACH ROW EXECUTE PROCEDURE public.db_error_chk_reapeat();
 
 
 --
 -- Name: TRIGGER db_errors_before_insert ON db_errs; Type: COMMENT; Schema: public; Owner: lanview2
 --
 
-COMMENT ON TRIGGER db_errors_before_insert ON db_errs IS 'Ha két azonos nyugtázatlan rekordot kéne rögzíteni (date_of és reapeat mezők kivételével),
+COMMENT ON TRIGGER db_errors_before_insert ON public.db_errs IS 'Ha két azonos nyugtázatlan rekordot kéne rögzíteni (date_of és reapeat mezők kivételével),
 akkor a megelőző rekordnak csak a reapeat mezője lessz inkrementálva, és a date_of_last aktualizálva,
 az új rekord viszont nem kerül rögzítésre.
 Ha az új rekordban az acknowledged mező igaz, akkor mindenképpen rógzítve lessz az új rekord';
@@ -39730,988 +40041,1004 @@ Ha az új rekordban az acknowledged mező igaz, akkor mindenképpen rógzítve l
 -- Name: disabled_alarm_check_unique_alarm_id; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER disabled_alarm_check_unique_alarm_id BEFORE INSERT OR UPDATE ON disabled_alarms FOR EACH ROW EXECUTE PROCEDURE check_unique_alarm_id();
+CREATE TRIGGER disabled_alarm_check_unique_alarm_id BEFORE INSERT OR UPDATE ON public.disabled_alarms FOR EACH ROW EXECUTE PROCEDURE public.check_unique_alarm_id();
 
 
 --
 -- Name: disabled_alarm_delete_alarms; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER disabled_alarm_delete_alarms BEFORE DELETE ON disabled_alarms FOR EACH ROW EXECUTE PROCEDURE delete_alarms();
+CREATE TRIGGER disabled_alarm_delete_alarms BEFORE DELETE ON public.disabled_alarms FOR EACH ROW EXECUTE PROCEDURE public.delete_alarms();
 
 
 --
 -- Name: disabled_alarm_truncate_alarms; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER disabled_alarm_truncate_alarms BEFORE TRUNCATE ON disabled_alarms FOR EACH STATEMENT EXECUTE PROCEDURE truncate_disabled_alarms();
+CREATE TRIGGER disabled_alarm_truncate_alarms BEFORE TRUNCATE ON public.disabled_alarms FOR EACH STATEMENT EXECUTE PROCEDURE public.truncate_disabled_alarms();
 
 
 --
 -- Name: enum_vals_delete_record_text; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER enum_vals_delete_record_text AFTER DELETE ON enum_vals FOR EACH ROW EXECUTE PROCEDURE delete_record_text();
+CREATE TRIGGER enum_vals_delete_record_text AFTER DELETE ON public.enum_vals FOR EACH ROW EXECUTE PROCEDURE public.delete_record_text();
 
 
 --
 -- Name: errors_delete_record_text; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER errors_delete_record_text AFTER DELETE ON errors FOR EACH ROW EXECUTE PROCEDURE delete_record_text();
+CREATE TRIGGER errors_delete_record_text AFTER DELETE ON public.errors FOR EACH ROW EXECUTE PROCEDURE public.delete_record_text();
 
 
 --
 -- Name: host_services_check_reference_node_id; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER host_services_check_reference_node_id BEFORE INSERT OR UPDATE ON host_services FOR EACH ROW EXECUTE PROCEDURE check_host_services();
+CREATE TRIGGER host_services_check_reference_node_id BEFORE INSERT OR UPDATE ON public.host_services FOR EACH ROW EXECUTE PROCEDURE public.check_host_services();
 
 
 --
 -- Name: hs_check_alarm_id_on_host_service_logs; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER hs_check_alarm_id_on_host_service_logs BEFORE INSERT OR UPDATE ON host_service_logs FOR EACH ROW EXECUTE PROCEDURE check_alarm_id_on_host_service_logs();
+CREATE TRIGGER hs_check_alarm_id_on_host_service_logs BEFORE INSERT OR UPDATE ON public.host_service_logs FOR EACH ROW EXECUTE PROCEDURE public.check_alarm_id_on_host_service_logs();
 
 
 --
 -- Name: hs_check_alarm_id_on_host_services; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER hs_check_alarm_id_on_host_services BEFORE INSERT OR UPDATE ON host_services FOR EACH ROW EXECUTE PROCEDURE check_alarm_id_on_host_services();
+CREATE TRIGGER hs_check_alarm_id_on_host_services BEFORE INSERT OR UPDATE ON public.host_services FOR EACH ROW EXECUTE PROCEDURE public.check_alarm_id_on_host_services();
 
 
 --
 -- Name: interfaces_check_before_insert; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER interfaces_check_before_insert BEFORE INSERT ON interfaces FOR EACH ROW EXECUTE PROCEDURE port_check_before_insert();
+CREATE TRIGGER interfaces_check_before_insert BEFORE INSERT ON public.interfaces FOR EACH ROW EXECUTE PROCEDURE public.port_check_before_insert();
 
 
 --
 -- Name: interfaces_check_before_update; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER interfaces_check_before_update BEFORE UPDATE ON interfaces FOR EACH ROW EXECUTE PROCEDURE port_check_before_update();
+CREATE TRIGGER interfaces_check_before_update BEFORE UPDATE ON public.interfaces FOR EACH ROW EXECUTE PROCEDURE public.port_check_before_update();
 
 
 --
 -- Name: interfaces_check_reference_node_id; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER interfaces_check_reference_node_id BEFORE INSERT OR UPDATE ON interfaces FOR EACH ROW EXECUTE PROCEDURE check_reference_node_id('false', 'nodes');
+CREATE TRIGGER interfaces_check_reference_node_id BEFORE INSERT OR UPDATE ON public.interfaces FOR EACH ROW EXECUTE PROCEDURE public.check_reference_node_id('false', 'nodes');
 
 
 --
 -- Name: interfaces_delete_port_post; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER interfaces_delete_port_post AFTER DELETE ON interfaces FOR EACH ROW EXECUTE PROCEDURE delete_port_post();
+CREATE TRIGGER interfaces_delete_port_post AFTER DELETE ON public.interfaces FOR EACH ROW EXECUTE PROCEDURE public.delete_port_post();
 
 
 --
 -- Name: intergaces_check_interface; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER intergaces_check_interface BEFORE INSERT OR UPDATE ON interfaces FOR EACH ROW EXECUTE PROCEDURE check_interface();
+CREATE TRIGGER intergaces_check_interface BEFORE INSERT OR UPDATE ON public.interfaces FOR EACH ROW EXECUTE PROCEDURE public.check_interface();
 
 
 --
 -- Name: ipaddresses_check_before_modify_trigger; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER ipaddresses_check_before_modify_trigger BEFORE INSERT OR UPDATE ON ip_addresses FOR EACH ROW EXECUTE PROCEDURE check_ip_address();
+CREATE TRIGGER ipaddresses_check_before_modify_trigger BEFORE INSERT OR UPDATE ON public.ip_addresses FOR EACH ROW EXECUTE PROCEDURE public.check_ip_address();
 
 
 --
 -- Name: log_links_table_check_log_links; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER log_links_table_check_log_links BEFORE INSERT OR UPDATE ON log_links_table FOR EACH ROW EXECUTE PROCEDURE check_log_links();
+CREATE TRIGGER log_links_table_check_log_links BEFORE INSERT OR UPDATE ON public.log_links_table FOR EACH ROW EXECUTE PROCEDURE public.check_log_links();
 
 
 --
 -- Name: menu_items_delete_record_text; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER menu_items_delete_record_text AFTER DELETE ON menu_items FOR EACH ROW EXECUTE PROCEDURE delete_record_text();
+CREATE TRIGGER menu_items_delete_record_text AFTER DELETE ON public.menu_items FOR EACH ROW EXECUTE PROCEDURE public.delete_record_text();
 
 
 --
 -- Name: node_param_check_value; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER node_param_check_value BEFORE INSERT OR UPDATE ON node_params FOR EACH ROW EXECUTE PROCEDURE check_before_param_value();
+CREATE TRIGGER node_param_check_value BEFORE INSERT OR UPDATE ON public.node_params FOR EACH ROW EXECUTE PROCEDURE public.check_before_param_value();
 
 
 --
 -- Name: node_param_value_check_reference_node_id; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER node_param_value_check_reference_node_id BEFORE INSERT OR UPDATE ON node_params FOR EACH ROW EXECUTE PROCEDURE check_reference_node_id('false', 'patchs');
+CREATE TRIGGER node_param_value_check_reference_node_id BEFORE INSERT OR UPDATE ON public.node_params FOR EACH ROW EXECUTE PROCEDURE public.check_reference_node_id('false', 'patchs');
 
 
 --
 -- Name: nodes_check_before_update; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER nodes_check_before_update BEFORE UPDATE ON nodes FOR EACH ROW EXECUTE PROCEDURE node_check_before_update();
+CREATE TRIGGER nodes_check_before_update BEFORE UPDATE ON public.nodes FOR EACH ROW EXECUTE PROCEDURE public.node_check_before_update();
 
 
 --
 -- Name: nodes_check_node_id_before_insert; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER nodes_check_node_id_before_insert BEFORE INSERT ON nodes FOR EACH ROW EXECUTE PROCEDURE node_check_before_insert();
+CREATE TRIGGER nodes_check_node_id_before_insert BEFORE INSERT ON public.nodes FOR EACH ROW EXECUTE PROCEDURE public.node_check_before_insert();
 
 
 --
 -- Name: nodes_delete_node_post; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER nodes_delete_node_post AFTER DELETE ON nodes FOR EACH ROW EXECUTE PROCEDURE delete_node_post();
+CREATE TRIGGER nodes_delete_node_post AFTER DELETE ON public.nodes FOR EACH ROW EXECUTE PROCEDURE public.delete_node_post();
 
 
 --
 -- Name: nodes_restrict_modfy_node_id_before_update; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER nodes_restrict_modfy_node_id_before_update BEFORE UPDATE ON nodes FOR EACH ROW EXECUTE PROCEDURE restrict_modfy_node_id_before_update();
+CREATE TRIGGER nodes_restrict_modfy_node_id_before_update BEFORE UPDATE ON public.nodes FOR EACH ROW EXECUTE PROCEDURE public.restrict_modfy_node_id_before_update();
 
 
 --
 -- Name: nports_check_before_insert; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER nports_check_before_insert BEFORE INSERT ON nports FOR EACH ROW EXECUTE PROCEDURE port_check_before_insert();
+CREATE TRIGGER nports_check_before_insert BEFORE INSERT ON public.nports FOR EACH ROW EXECUTE PROCEDURE public.port_check_before_insert();
 
 
 --
 -- Name: nports_check_before_update; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER nports_check_before_update BEFORE UPDATE ON nports FOR EACH ROW EXECUTE PROCEDURE port_check_before_update();
+CREATE TRIGGER nports_check_before_update BEFORE UPDATE ON public.nports FOR EACH ROW EXECUTE PROCEDURE public.port_check_before_update();
 
 
 --
 -- Name: nports_check_reference_node_id; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER nports_check_reference_node_id BEFORE INSERT OR UPDATE ON nports FOR EACH ROW EXECUTE PROCEDURE check_reference_node_id('false', 'nodes');
+CREATE TRIGGER nports_check_reference_node_id BEFORE INSERT OR UPDATE ON public.nports FOR EACH ROW EXECUTE PROCEDURE public.check_reference_node_id('false', 'nodes');
 
 
 --
 -- Name: nports_delete_port_post; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER nports_delete_port_post AFTER DELETE ON nports FOR EACH ROW EXECUTE PROCEDURE delete_port_post();
+CREATE TRIGGER nports_delete_port_post AFTER DELETE ON public.nports FOR EACH ROW EXECUTE PROCEDURE public.delete_port_post();
 
 
 --
 -- Name: patchs_check_before_update; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER patchs_check_before_update BEFORE UPDATE ON patchs FOR EACH ROW EXECUTE PROCEDURE node_check_before_update();
+CREATE TRIGGER patchs_check_before_update BEFORE UPDATE ON public.patchs FOR EACH ROW EXECUTE PROCEDURE public.node_check_before_update();
 
 
 --
 -- Name: patchs_check_node_id_before_insert; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER patchs_check_node_id_before_insert BEFORE INSERT ON patchs FOR EACH ROW EXECUTE PROCEDURE node_check_before_insert();
+CREATE TRIGGER patchs_check_node_id_before_insert BEFORE INSERT ON public.patchs FOR EACH ROW EXECUTE PROCEDURE public.node_check_before_insert();
 
 
 --
 -- Name: patchs_delete_patch_post; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER patchs_delete_patch_post AFTER DELETE ON patchs FOR EACH ROW EXECUTE PROCEDURE delete_node_post();
+CREATE TRIGGER patchs_delete_patch_post AFTER DELETE ON public.patchs FOR EACH ROW EXECUTE PROCEDURE public.delete_node_post();
 
 
 --
 -- Name: patchs_restrict_modfy_node_id_before_update; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER patchs_restrict_modfy_node_id_before_update BEFORE UPDATE ON patchs FOR EACH ROW EXECUTE PROCEDURE restrict_modfy_node_id_before_update();
+CREATE TRIGGER patchs_restrict_modfy_node_id_before_update BEFORE UPDATE ON public.patchs FOR EACH ROW EXECUTE PROCEDURE public.restrict_modfy_node_id_before_update();
 
 
 --
 -- Name: port_param_check_value; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER port_param_check_value BEFORE INSERT OR UPDATE ON port_params FOR EACH ROW EXECUTE PROCEDURE check_before_param_value();
+CREATE TRIGGER port_param_check_value BEFORE INSERT OR UPDATE ON public.port_params FOR EACH ROW EXECUTE PROCEDURE public.check_before_param_value();
 
 
 --
 -- Name: port_params_check_reference_port_id; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER port_params_check_reference_port_id BEFORE INSERT OR UPDATE ON port_params FOR EACH ROW EXECUTE PROCEDURE check_reference_port_id();
+CREATE TRIGGER port_params_check_reference_port_id BEFORE INSERT OR UPDATE ON public.port_params FOR EACH ROW EXECUTE PROCEDURE public.check_reference_port_id();
 
 
 --
 -- Name: port_vlans_check_reference_port_id; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER port_vlans_check_reference_port_id BEFORE INSERT OR UPDATE ON port_vlans FOR EACH ROW EXECUTE PROCEDURE check_reference_port_id('false', 'nports', 'pports');
+CREATE TRIGGER port_vlans_check_reference_port_id BEFORE INSERT OR UPDATE ON public.port_vlans FOR EACH ROW EXECUTE PROCEDURE public.check_reference_port_id('false', 'nports', 'pports');
 
 
 --
 -- Name: post_insert_phs_links; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER post_insert_phs_links AFTER INSERT OR DELETE OR UPDATE ON phs_links_table FOR EACH ROW EXECUTE PROCEDURE post_insert_phs_links();
+CREATE TRIGGER post_insert_phs_links AFTER INSERT OR DELETE OR UPDATE ON public.phs_links_table FOR EACH ROW EXECUTE PROCEDURE public.post_insert_phs_links();
 
 
 --
 -- Name: pports_check_before_insert; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER pports_check_before_insert BEFORE INSERT ON pports FOR EACH ROW EXECUTE PROCEDURE port_check_before_insert();
+CREATE TRIGGER pports_check_before_insert BEFORE INSERT ON public.pports FOR EACH ROW EXECUTE PROCEDURE public.port_check_before_insert();
 
 
 --
 -- Name: pports_check_before_update; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER pports_check_before_update BEFORE UPDATE ON pports FOR EACH ROW EXECUTE PROCEDURE port_check_before_update();
+CREATE TRIGGER pports_check_before_update BEFORE UPDATE ON public.pports FOR EACH ROW EXECUTE PROCEDURE public.port_check_before_update();
 
 
 --
 -- Name: pports_delete_port_post; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER pports_delete_port_post AFTER DELETE ON pports FOR EACH ROW EXECUTE PROCEDURE delete_port_post();
+CREATE TRIGGER pports_delete_port_post AFTER DELETE ON public.pports FOR EACH ROW EXECUTE PROCEDURE public.delete_port_post();
 
 
 --
 -- Name: service_vars_check_value; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER service_vars_check_value BEFORE INSERT OR UPDATE ON service_vars FOR EACH ROW EXECUTE PROCEDURE check_before_service_value();
+CREATE TRIGGER service_vars_check_value BEFORE INSERT OR UPDATE ON public.service_vars FOR EACH ROW EXECUTE PROCEDURE public.check_before_service_value();
 
 
 --
 -- Name: set_image_hash_if_null; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER set_image_hash_if_null BEFORE INSERT OR UPDATE ON images FOR EACH ROW EXECUTE PROCEDURE set_image_hash_if_null();
+CREATE TRIGGER set_image_hash_if_null BEFORE INSERT OR UPDATE ON public.images FOR EACH ROW EXECUTE PROCEDURE public.set_image_hash_if_null();
 
 
 --
 -- Name: snmpdevices_check_before_update; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER snmpdevices_check_before_update BEFORE UPDATE ON snmpdevices FOR EACH ROW EXECUTE PROCEDURE node_check_before_update();
+CREATE TRIGGER snmpdevices_check_before_update BEFORE UPDATE ON public.snmpdevices FOR EACH ROW EXECUTE PROCEDURE public.node_check_before_update();
 
 
 --
 -- Name: snmpdevices_check_node_id_before_insert; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER snmpdevices_check_node_id_before_insert BEFORE INSERT ON snmpdevices FOR EACH ROW EXECUTE PROCEDURE node_check_before_insert();
+CREATE TRIGGER snmpdevices_check_node_id_before_insert BEFORE INSERT ON public.snmpdevices FOR EACH ROW EXECUTE PROCEDURE public.node_check_before_insert();
 
 
 --
 -- Name: snmpdevices_delete_node_post; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER snmpdevices_delete_node_post AFTER DELETE ON snmpdevices FOR EACH ROW EXECUTE PROCEDURE delete_node_post();
+CREATE TRIGGER snmpdevices_delete_node_post AFTER DELETE ON public.snmpdevices FOR EACH ROW EXECUTE PROCEDURE public.delete_node_post();
 
 
 --
 -- Name: snmpdevices_restrict_modfy_node_id_before_update; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER snmpdevices_restrict_modfy_node_id_before_update BEFORE UPDATE ON snmpdevices FOR EACH ROW EXECUTE PROCEDURE restrict_modfy_node_id_before_update();
+CREATE TRIGGER snmpdevices_restrict_modfy_node_id_before_update BEFORE UPDATE ON public.snmpdevices FOR EACH ROW EXECUTE PROCEDURE public.restrict_modfy_node_id_before_update();
 
 
 --
 -- Name: subnets_check_before_update_trigger; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER subnets_check_before_update_trigger BEFORE UPDATE ON subnets FOR EACH ROW EXECUTE PROCEDURE subnet_check_before_update();
+CREATE TRIGGER subnets_check_before_update_trigger BEFORE UPDATE ON public.subnets FOR EACH ROW EXECUTE PROCEDURE public.subnet_check_before_update();
 
 
 --
 -- Name: sys_param_check_value; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER sys_param_check_value BEFORE INSERT OR UPDATE ON sys_params FOR EACH ROW EXECUTE PROCEDURE check_before_param_value();
+CREATE TRIGGER sys_param_check_value BEFORE INSERT OR UPDATE ON public.sys_params FOR EACH ROW EXECUTE PROCEDURE public.check_before_param_value();
 
 
 --
 -- Name: table_shape_fields_delete_record_text; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER table_shape_fields_delete_record_text AFTER DELETE ON table_shape_fields FOR EACH ROW EXECUTE PROCEDURE delete_record_text();
+CREATE TRIGGER table_shape_fields_delete_record_text AFTER DELETE ON public.table_shape_fields FOR EACH ROW EXECUTE PROCEDURE public.delete_record_text();
 
 
 --
 -- Name: table_shapes_delete_record_text; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER table_shapes_delete_record_text AFTER DELETE ON table_shapes FOR EACH ROW EXECUTE PROCEDURE delete_record_text();
+CREATE TRIGGER table_shapes_delete_record_text AFTER DELETE ON public.table_shapes FOR EACH ROW EXECUTE PROCEDURE public.delete_record_text();
 
 
 --
 -- Name: user_events_before_insert_or_update; Type: TRIGGER; Schema: public; Owner: lanview2
 --
 
-CREATE TRIGGER user_events_before_insert_or_update BEFORE INSERT OR UPDATE ON user_events FOR EACH ROW EXECUTE PROCEDURE user_events_before();
+CREATE TRIGGER user_events_before_insert_or_update BEFORE INSERT OR UPDATE ON public.user_events FOR EACH ROW EXECUTE PROCEDURE public.user_events_before();
 
 
 --
 -- Name: alarm_messages_service_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY alarm_messages
-    ADD CONSTRAINT alarm_messages_service_type_id_fkey FOREIGN KEY (service_type_id) REFERENCES service_types(service_type_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.alarm_messages
+    ADD CONSTRAINT alarm_messages_service_type_id_fkey FOREIGN KEY (service_type_id) REFERENCES public.service_types(service_type_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: alarms_daemon_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY alarms
-    ADD CONSTRAINT alarms_daemon_id_fkey FOREIGN KEY (daemon_id) REFERENCES host_services(host_service_id) ON UPDATE RESTRICT ON DELETE SET NULL;
+ALTER TABLE ONLY public.alarms
+    ADD CONSTRAINT alarms_daemon_id_fkey FOREIGN KEY (daemon_id) REFERENCES public.host_services(host_service_id) ON UPDATE RESTRICT ON DELETE SET NULL;
 
 
 --
 -- Name: alarms_host_service_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY alarms
-    ADD CONSTRAINT alarms_host_service_id_fkey FOREIGN KEY (host_service_id) REFERENCES host_services(host_service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.alarms
+    ADD CONSTRAINT alarms_host_service_id_fkey FOREIGN KEY (host_service_id) REFERENCES public.host_services(host_service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: alarms_superior_alarm_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY alarms
-    ADD CONSTRAINT alarms_superior_alarm_id_fkey FOREIGN KEY (superior_alarm_id) REFERENCES alarms(alarm_id) ON UPDATE RESTRICT ON DELETE SET NULL;
+ALTER TABLE ONLY public.alarms
+    ADD CONSTRAINT alarms_superior_alarm_id_fkey FOREIGN KEY (superior_alarm_id) REFERENCES public.alarms(alarm_id) ON UPDATE RESTRICT ON DELETE SET NULL;
 
 
 --
 -- Name: app_errs_service_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY app_errs
-    ADD CONSTRAINT app_errs_service_id_fkey FOREIGN KEY (service_id) REFERENCES services(service_id) ON UPDATE RESTRICT ON DELETE SET NULL;
+ALTER TABLE ONLY public.app_errs
+    ADD CONSTRAINT app_errs_service_id_fkey FOREIGN KEY (service_id) REFERENCES public.services(service_id) ON UPDATE RESTRICT ON DELETE SET NULL;
 
 
 --
 -- Name: app_errs_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY app_errs
-    ADD CONSTRAINT app_errs_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(user_id) ON UPDATE RESTRICT ON DELETE SET NULL;
+ALTER TABLE ONLY public.app_errs
+    ADD CONSTRAINT app_errs_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON UPDATE RESTRICT ON DELETE SET NULL;
 
 
 --
 -- Name: app_memos_host_service_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY app_memos
-    ADD CONSTRAINT app_memos_host_service_id_fkey FOREIGN KEY (host_service_id) REFERENCES host_services(host_service_id) ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.app_memos
+    ADD CONSTRAINT app_memos_host_service_id_fkey FOREIGN KEY (host_service_id) REFERENCES public.host_services(host_service_id) ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: app_memos_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY app_memos
-    ADD CONSTRAINT app_memos_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(user_id) ON UPDATE RESTRICT ON DELETE SET NULL;
+ALTER TABLE ONLY public.app_memos
+    ADD CONSTRAINT app_memos_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON UPDATE RESTRICT ON DELETE SET NULL;
 
 
 --
 -- Name: arp_logs_host_service_id_old_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY arp_logs
-    ADD CONSTRAINT arp_logs_host_service_id_old_fkey FOREIGN KEY (host_service_id_old) REFERENCES host_services(host_service_id) ON UPDATE RESTRICT ON DELETE SET NULL;
+ALTER TABLE ONLY public.arp_logs
+    ADD CONSTRAINT arp_logs_host_service_id_old_fkey FOREIGN KEY (host_service_id_old) REFERENCES public.host_services(host_service_id) ON UPDATE RESTRICT ON DELETE SET NULL;
 
 
 --
 -- Name: arps_host_service_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY arps
-    ADD CONSTRAINT arps_host_service_id_fkey FOREIGN KEY (host_service_id) REFERENCES host_services(host_service_id) ON UPDATE RESTRICT ON DELETE SET NULL;
+ALTER TABLE ONLY public.arps
+    ADD CONSTRAINT arps_host_service_id_fkey FOREIGN KEY (host_service_id) REFERENCES public.host_services(host_service_id) ON UPDATE RESTRICT ON DELETE SET NULL;
 
 
 --
 -- Name: db_errs_error_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY db_errs
-    ADD CONSTRAINT db_errs_error_id_fkey FOREIGN KEY (error_id) REFERENCES errors(error_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
+ALTER TABLE ONLY public.db_errs
+    ADD CONSTRAINT db_errs_error_id_fkey FOREIGN KEY (error_id) REFERENCES public.errors(error_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 
 --
 -- Name: disabled_alarms_daemon_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY disabled_alarms
-    ADD CONSTRAINT disabled_alarms_daemon_id_fkey FOREIGN KEY (daemon_id) REFERENCES host_services(host_service_id) ON UPDATE RESTRICT ON DELETE SET NULL;
+ALTER TABLE ONLY public.disabled_alarms
+    ADD CONSTRAINT disabled_alarms_daemon_id_fkey FOREIGN KEY (daemon_id) REFERENCES public.host_services(host_service_id) ON UPDATE RESTRICT ON DELETE SET NULL;
 
 
 --
 -- Name: disabled_alarms_host_service_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY disabled_alarms
-    ADD CONSTRAINT disabled_alarms_host_service_id_fkey FOREIGN KEY (host_service_id) REFERENCES host_services(host_service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.disabled_alarms
+    ADD CONSTRAINT disabled_alarms_host_service_id_fkey FOREIGN KEY (host_service_id) REFERENCES public.host_services(host_service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: disabled_alarms_superior_alarm_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY disabled_alarms
-    ADD CONSTRAINT disabled_alarms_superior_alarm_id_fkey FOREIGN KEY (superior_alarm_id) REFERENCES alarms(alarm_id) ON UPDATE RESTRICT ON DELETE SET NULL;
+ALTER TABLE ONLY public.disabled_alarms
+    ADD CONSTRAINT disabled_alarms_superior_alarm_id_fkey FOREIGN KEY (superior_alarm_id) REFERENCES public.alarms(alarm_id) ON UPDATE RESTRICT ON DELETE SET NULL;
 
 
 --
 -- Name: dyn_addr_ranges_host_service_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY dyn_addr_ranges
-    ADD CONSTRAINT dyn_addr_ranges_host_service_id_fkey FOREIGN KEY (host_service_id) REFERENCES host_services(host_service_id) ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.dyn_addr_ranges
+    ADD CONSTRAINT dyn_addr_ranges_host_service_id_fkey FOREIGN KEY (host_service_id) REFERENCES public.host_services(host_service_id) ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: dyn_addr_ranges_subnet_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY dyn_addr_ranges
-    ADD CONSTRAINT dyn_addr_ranges_subnet_id_fkey FOREIGN KEY (subnet_id) REFERENCES subnets(subnet_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.dyn_addr_ranges
+    ADD CONSTRAINT dyn_addr_ranges_subnet_id_fkey FOREIGN KEY (subnet_id) REFERENCES public.subnets(subnet_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: dyn_ipaddress_logs_port_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY dyn_ipaddress_logs
-    ADD CONSTRAINT dyn_ipaddress_logs_port_id_fkey FOREIGN KEY (port_id) REFERENCES interfaces(port_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.dyn_ipaddress_logs
+    ADD CONSTRAINT dyn_ipaddress_logs_port_id_fkey FOREIGN KEY (port_id) REFERENCES public.interfaces(port_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: graph_vars_graph_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY graph_vars
-    ADD CONSTRAINT graph_vars_graph_id_fkey FOREIGN KEY (graph_id) REFERENCES graphs(graph_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.graph_vars
+    ADD CONSTRAINT graph_vars_graph_id_fkey FOREIGN KEY (graph_id) REFERENCES public.graphs(graph_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: graph_vars_service_var_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY graph_vars
-    ADD CONSTRAINT graph_vars_service_var_id_fkey FOREIGN KEY (service_var_id) REFERENCES service_vars(service_var_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.graph_vars
+    ADD CONSTRAINT graph_vars_service_var_id_fkey FOREIGN KEY (service_var_id) REFERENCES public.service_vars(service_var_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: graphs_rrd_beat_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY graphs
-    ADD CONSTRAINT graphs_rrd_beat_id_fkey FOREIGN KEY (rrd_beat_id) REFERENCES rrd_beats(rrd_beat_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
+ALTER TABLE ONLY public.graphs
+    ADD CONSTRAINT graphs_rrd_beat_id_fkey FOREIGN KEY (rrd_beat_id) REFERENCES public.rrd_beats(rrd_beat_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 
 --
 -- Name: group_users_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY group_users
-    ADD CONSTRAINT group_users_group_id_fkey FOREIGN KEY (group_id) REFERENCES groups(group_id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE;
+ALTER TABLE ONLY public.group_users
+    ADD CONSTRAINT group_users_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(group_id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
 -- Name: group_users_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY group_users
-    ADD CONSTRAINT group_users_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(user_id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE;
+ALTER TABLE ONLY public.group_users
+    ADD CONSTRAINT group_users_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id) MATCH FULL ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
 -- Name: groups_place_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY groups
-    ADD CONSTRAINT groups_place_group_id_fkey FOREIGN KEY (place_group_id) REFERENCES place_groups(place_group_id) ON UPDATE RESTRICT ON DELETE RESTRICT;
+ALTER TABLE ONLY public.groups
+    ADD CONSTRAINT groups_place_group_id_fkey FOREIGN KEY (place_group_id) REFERENCES public.place_groups(place_group_id) ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 
 --
 -- Name: host_service_logs_host_service_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY host_service_logs
-    ADD CONSTRAINT host_service_logs_host_service_id_fkey FOREIGN KEY (host_service_id) REFERENCES host_services(host_service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.host_service_logs
+    ADD CONSTRAINT host_service_logs_host_service_id_fkey FOREIGN KEY (host_service_id) REFERENCES public.host_services(host_service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: host_service_noalarms_host_service_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY host_service_noalarms
-    ADD CONSTRAINT host_service_noalarms_host_service_id_fkey FOREIGN KEY (host_service_id) REFERENCES host_services(host_service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.host_service_noalarms
+    ADD CONSTRAINT host_service_noalarms_host_service_id_fkey FOREIGN KEY (host_service_id) REFERENCES public.host_services(host_service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: host_service_noalarms_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY host_service_noalarms
-    ADD CONSTRAINT host_service_noalarms_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(user_id);
+ALTER TABLE ONLY public.host_service_noalarms
+    ADD CONSTRAINT host_service_noalarms_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id);
 
 
 --
 -- Name: host_services_prime_service_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY host_services
-    ADD CONSTRAINT host_services_prime_service_id_fkey FOREIGN KEY (prime_service_id) REFERENCES services(service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
+ALTER TABLE ONLY public.host_services
+    ADD CONSTRAINT host_services_prime_service_id_fkey FOREIGN KEY (prime_service_id) REFERENCES public.services(service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 
 --
 -- Name: host_services_proto_service_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY host_services
-    ADD CONSTRAINT host_services_proto_service_id_fkey FOREIGN KEY (proto_service_id) REFERENCES services(service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
+ALTER TABLE ONLY public.host_services
+    ADD CONSTRAINT host_services_proto_service_id_fkey FOREIGN KEY (proto_service_id) REFERENCES public.services(service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 
 --
 -- Name: host_services_service_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY host_services
-    ADD CONSTRAINT host_services_service_id_fkey FOREIGN KEY (service_id) REFERENCES services(service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.host_services
+    ADD CONSTRAINT host_services_service_id_fkey FOREIGN KEY (service_id) REFERENCES public.services(service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: host_services_superior_host_service_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY host_services
-    ADD CONSTRAINT host_services_superior_host_service_id_fkey FOREIGN KEY (superior_host_service_id) REFERENCES host_services(host_service_id) ON UPDATE RESTRICT ON DELETE SET NULL;
+ALTER TABLE ONLY public.host_services
+    ADD CONSTRAINT host_services_superior_host_service_id_fkey FOREIGN KEY (superior_host_service_id) REFERENCES public.host_services(host_service_id) ON UPDATE RESTRICT ON DELETE SET NULL;
 
 
 --
 -- Name: host_services_timeperiod_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY host_services
-    ADD CONSTRAINT host_services_timeperiod_id_fkey FOREIGN KEY (timeperiod_id) REFERENCES timeperiods(timeperiod_id) ON UPDATE RESTRICT ON DELETE RESTRICT;
+ALTER TABLE ONLY public.host_services
+    ADD CONSTRAINT host_services_timeperiod_id_fkey FOREIGN KEY (timeperiod_id) REFERENCES public.timeperiods(timeperiod_id) ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 
 --
 -- Name: imports_applog_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY imports
-    ADD CONSTRAINT imports_applog_id_fkey FOREIGN KEY (applog_id) REFERENCES app_errs(applog_id) ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.imports
+    ADD CONSTRAINT imports_applog_id_fkey FOREIGN KEY (applog_id) REFERENCES public.app_errs(applog_id) ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: imports_node_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY imports
-    ADD CONSTRAINT imports_node_id_fkey FOREIGN KEY (node_id) REFERENCES nodes(node_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.imports
+    ADD CONSTRAINT imports_node_id_fkey FOREIGN KEY (node_id) REFERENCES public.nodes(node_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: imports_target_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY imports
-    ADD CONSTRAINT imports_target_id_fkey FOREIGN KEY (target_id) REFERENCES host_services(host_service_id) ON UPDATE RESTRICT ON DELETE SET NULL;
+ALTER TABLE ONLY public.imports
+    ADD CONSTRAINT imports_target_id_fkey FOREIGN KEY (target_id) REFERENCES public.host_services(host_service_id) ON UPDATE RESTRICT ON DELETE SET NULL;
 
 
 --
 -- Name: imports_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY imports
-    ADD CONSTRAINT imports_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(user_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.imports
+    ADD CONSTRAINT imports_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: interfaces_dualface_type_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY interfaces
-    ADD CONSTRAINT interfaces_dualface_type_fkey FOREIGN KEY (dualface_type) REFERENCES iftypes(iftype_id) ON UPDATE RESTRICT ON DELETE RESTRICT;
+ALTER TABLE ONLY public.interfaces
+    ADD CONSTRAINT interfaces_dualface_type_fkey FOREIGN KEY (dualface_type) REFERENCES public.iftypes(iftype_id) ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 
 --
 -- Name: interfaces_iftype_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY interfaces
-    ADD CONSTRAINT interfaces_iftype_id_fkey FOREIGN KEY (iftype_id) REFERENCES iftypes(iftype_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
+ALTER TABLE ONLY public.interfaces
+    ADD CONSTRAINT interfaces_iftype_id_fkey FOREIGN KEY (iftype_id) REFERENCES public.iftypes(iftype_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 
 --
 -- Name: interfaces_port_staple_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY interfaces
-    ADD CONSTRAINT interfaces_port_staple_id_fkey FOREIGN KEY (port_staple_id) REFERENCES interfaces(port_id) ON UPDATE RESTRICT ON DELETE SET NULL;
+ALTER TABLE ONLY public.interfaces
+    ADD CONSTRAINT interfaces_port_staple_id_fkey FOREIGN KEY (port_staple_id) REFERENCES public.interfaces(port_id) ON UPDATE RESTRICT ON DELETE SET NULL;
 
 
 --
 -- Name: ipaddresses_port_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY ip_addresses
-    ADD CONSTRAINT ipaddresses_port_id_fkey FOREIGN KEY (port_id) REFERENCES interfaces(port_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.ip_addresses
+    ADD CONSTRAINT ipaddresses_port_id_fkey FOREIGN KEY (port_id) REFERENCES public.interfaces(port_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: ipaddresses_subnet_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY ip_addresses
-    ADD CONSTRAINT ipaddresses_subnet_id_fkey FOREIGN KEY (subnet_id) REFERENCES subnets(subnet_id) ON UPDATE RESTRICT ON DELETE RESTRICT;
+ALTER TABLE ONLY public.ip_addresses
+    ADD CONSTRAINT ipaddresses_subnet_id_fkey FOREIGN KEY (subnet_id) REFERENCES public.subnets(subnet_id) ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 
 --
 -- Name: languages_flag_image_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY languages
-    ADD CONSTRAINT languages_flag_image_fkey FOREIGN KEY (flag_image) REFERENCES images(image_id) ON UPDATE RESTRICT ON DELETE SET NULL;
+ALTER TABLE ONLY public.languages
+    ADD CONSTRAINT languages_flag_image_fkey FOREIGN KEY (flag_image) REFERENCES public.images(image_id) ON UPDATE RESTRICT ON DELETE SET NULL;
 
 
 --
 -- Name: languages_next_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY languages
-    ADD CONSTRAINT languages_next_id_fkey FOREIGN KEY (next_id) REFERENCES languages(language_id) ON UPDATE RESTRICT ON DELETE SET NULL;
+ALTER TABLE ONLY public.languages
+    ADD CONSTRAINT languages_next_id_fkey FOREIGN KEY (next_id) REFERENCES public.languages(language_id) ON UPDATE RESTRICT ON DELETE SET NULL;
 
 
 --
 -- Name: lldp_links_table_port_id1_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY lldp_links_table
-    ADD CONSTRAINT lldp_links_table_port_id1_fkey FOREIGN KEY (port_id1) REFERENCES interfaces(port_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.lldp_links_table
+    ADD CONSTRAINT lldp_links_table_port_id1_fkey FOREIGN KEY (port_id1) REFERENCES public.interfaces(port_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: lldp_links_table_port_id2_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY lldp_links_table
-    ADD CONSTRAINT lldp_links_table_port_id2_fkey FOREIGN KEY (port_id2) REFERENCES interfaces(port_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.lldp_links_table
+    ADD CONSTRAINT lldp_links_table_port_id2_fkey FOREIGN KEY (port_id2) REFERENCES public.interfaces(port_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: localizations_language_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY localizations
-    ADD CONSTRAINT localizations_language_id_fkey FOREIGN KEY (language_id) REFERENCES languages(language_id) ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.localizations
+    ADD CONSTRAINT localizations_language_id_fkey FOREIGN KEY (language_id) REFERENCES public.languages(language_id) ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: mactab_logs_port_id_new_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY mactab_logs
-    ADD CONSTRAINT mactab_logs_port_id_new_fkey FOREIGN KEY (port_id_new) REFERENCES interfaces(port_id) ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.mactab_logs
+    ADD CONSTRAINT mactab_logs_port_id_new_fkey FOREIGN KEY (port_id_new) REFERENCES public.interfaces(port_id) ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: mactab_logs_port_id_old_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY mactab_logs
-    ADD CONSTRAINT mactab_logs_port_id_old_fkey FOREIGN KEY (port_id_old) REFERENCES interfaces(port_id) ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.mactab_logs
+    ADD CONSTRAINT mactab_logs_port_id_old_fkey FOREIGN KEY (port_id_old) REFERENCES public.interfaces(port_id) ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: mactab_port_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY mactab
-    ADD CONSTRAINT mactab_port_id_fkey FOREIGN KEY (port_id) REFERENCES interfaces(port_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.mactab
+    ADD CONSTRAINT mactab_port_id_fkey FOREIGN KEY (port_id) REFERENCES public.interfaces(port_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: menu_items_upper_menu_item_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY menu_items
-    ADD CONSTRAINT menu_items_upper_menu_item_id_fkey FOREIGN KEY (upper_menu_item_id) REFERENCES menu_items(menu_item_id) ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.menu_items
+    ADD CONSTRAINT menu_items_upper_menu_item_id_fkey FOREIGN KEY (upper_menu_item_id) REFERENCES public.menu_items(menu_item_id) ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: node_params_param_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY node_params
-    ADD CONSTRAINT node_params_param_type_id_fkey FOREIGN KEY (param_type_id) REFERENCES param_types(param_type_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
+ALTER TABLE ONLY public.node_params
+    ADD CONSTRAINT node_params_param_type_id_fkey FOREIGN KEY (param_type_id) REFERENCES public.param_types(param_type_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 
 --
 -- Name: nodes_place_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY nodes
-    ADD CONSTRAINT nodes_place_id_fkey FOREIGN KEY (place_id) REFERENCES places(place_id) MATCH FULL ON UPDATE CASCADE ON DELETE SET DEFAULT;
+ALTER TABLE ONLY public.nodes
+    ADD CONSTRAINT nodes_place_id_fkey FOREIGN KEY (place_id) REFERENCES public.places(place_id) MATCH FULL ON UPDATE CASCADE ON DELETE SET DEFAULT;
 
 
 --
 -- Name: nports_iftype_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY nports
-    ADD CONSTRAINT nports_iftype_id_fkey FOREIGN KEY (iftype_id) REFERENCES iftypes(iftype_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
+ALTER TABLE ONLY public.nports
+    ADD CONSTRAINT nports_iftype_id_fkey FOREIGN KEY (iftype_id) REFERENCES public.iftypes(iftype_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 
 --
 -- Name: patchports; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY pports
-    ADD CONSTRAINT patchports FOREIGN KEY (node_id) REFERENCES patchs(node_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.pports
+    ADD CONSTRAINT patchports FOREIGN KEY (node_id) REFERENCES public.patchs(node_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: patchs_place_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY patchs
-    ADD CONSTRAINT patchs_place_id_fkey FOREIGN KEY (place_id) REFERENCES places(place_id) MATCH FULL ON UPDATE RESTRICT ON DELETE SET DEFAULT;
+ALTER TABLE ONLY public.patchs
+    ADD CONSTRAINT patchs_place_id_fkey FOREIGN KEY (place_id) REFERENCES public.places(place_id) MATCH FULL ON UPDATE RESTRICT ON DELETE SET DEFAULT;
 
 
 --
 -- Name: phs_links_table_create_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY phs_links_table
-    ADD CONSTRAINT phs_links_table_create_user_id_fkey FOREIGN KEY (create_user_id) REFERENCES users(user_id) ON UPDATE RESTRICT ON DELETE SET NULL;
+ALTER TABLE ONLY public.phs_links_table
+    ADD CONSTRAINT phs_links_table_create_user_id_fkey FOREIGN KEY (create_user_id) REFERENCES public.users(user_id) ON UPDATE RESTRICT ON DELETE SET NULL;
 
 
 --
 -- Name: phs_links_table_modify_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY phs_links_table
-    ADD CONSTRAINT phs_links_table_modify_user_id_fkey FOREIGN KEY (modify_user_id) REFERENCES users(user_id) ON UPDATE RESTRICT ON DELETE SET NULL;
+ALTER TABLE ONLY public.phs_links_table
+    ADD CONSTRAINT phs_links_table_modify_user_id_fkey FOREIGN KEY (modify_user_id) REFERENCES public.users(user_id) ON UPDATE RESTRICT ON DELETE SET NULL;
 
 
 --
 -- Name: place_group_places_place_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY place_group_places
-    ADD CONSTRAINT place_group_places_place_group_id_fkey FOREIGN KEY (place_group_id) REFERENCES place_groups(place_group_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.place_group_places
+    ADD CONSTRAINT place_group_places_place_group_id_fkey FOREIGN KEY (place_group_id) REFERENCES public.place_groups(place_group_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: place_group_places_place_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY place_group_places
-    ADD CONSTRAINT place_group_places_place_id_fkey FOREIGN KEY (place_id) REFERENCES places(place_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.place_group_places
+    ADD CONSTRAINT place_group_places_place_id_fkey FOREIGN KEY (place_id) REFERENCES public.places(place_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: places_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY places
-    ADD CONSTRAINT places_image_id_fkey FOREIGN KEY (image_id) REFERENCES images(image_id) ON UPDATE RESTRICT ON DELETE SET NULL;
+ALTER TABLE ONLY public.places
+    ADD CONSTRAINT places_image_id_fkey FOREIGN KEY (image_id) REFERENCES public.images(image_id) ON UPDATE RESTRICT ON DELETE SET NULL;
 
 
 --
 -- Name: places_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY places
-    ADD CONSTRAINT places_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES places(place_id) ON UPDATE RESTRICT ON DELETE RESTRICT;
+ALTER TABLE ONLY public.places
+    ADD CONSTRAINT places_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.places(place_id) ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 
 --
 -- Name: port_params_param_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY port_params
-    ADD CONSTRAINT port_params_param_type_id_fkey FOREIGN KEY (param_type_id) REFERENCES param_types(param_type_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
+ALTER TABLE ONLY public.port_params
+    ADD CONSTRAINT port_params_param_type_id_fkey FOREIGN KEY (param_type_id) REFERENCES public.param_types(param_type_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
+
+
+--
+-- Name: port_vlan_logs_vlan_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
+--
+
+ALTER TABLE ONLY public.port_vlan_logs
+    ADD CONSTRAINT port_vlan_logs_vlan_id_fkey FOREIGN KEY (vlan_id) REFERENCES public.vlans(vlan_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: port_vlans_vlan_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY port_vlans
-    ADD CONSTRAINT port_vlans_vlan_id_fkey FOREIGN KEY (vlan_id) REFERENCES vlans(vlan_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.port_vlans
+    ADD CONSTRAINT port_vlans_vlan_id_fkey FOREIGN KEY (vlan_id) REFERENCES public.vlans(vlan_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: pport_iftype_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY pports
-    ADD CONSTRAINT pport_iftype_id_fkey FOREIGN KEY (iftype_id) REFERENCES iftypes(iftype_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
+ALTER TABLE ONLY public.pports
+    ADD CONSTRAINT pport_iftype_id_fkey FOREIGN KEY (iftype_id) REFERENCES public.iftypes(iftype_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 
 --
 -- Name: pports_shared_port_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY pports
-    ADD CONSTRAINT pports_shared_port_id_fkey FOREIGN KEY (shared_port_id) REFERENCES pports(port_id);
+ALTER TABLE ONLY public.pports
+    ADD CONSTRAINT pports_shared_port_id_fkey FOREIGN KEY (shared_port_id) REFERENCES public.pports(port_id);
 
 
 --
 -- Name: query_parsers_service_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY query_parsers
-    ADD CONSTRAINT query_parsers_service_id_fkey FOREIGN KEY (service_id) REFERENCES services(service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.query_parsers
+    ADD CONSTRAINT query_parsers_service_id_fkey FOREIGN KEY (service_id) REFERENCES public.services(service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: service_var_types_param_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY service_var_types
-    ADD CONSTRAINT service_var_types_param_type_id_fkey FOREIGN KEY (param_type_id) REFERENCES param_types(param_type_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
+ALTER TABLE ONLY public.service_var_types
+    ADD CONSTRAINT service_var_types_param_type_id_fkey FOREIGN KEY (param_type_id) REFERENCES public.param_types(param_type_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
+
+
+--
+-- Name: service_var_types_raw_param_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
+--
+
+ALTER TABLE ONLY public.service_var_types
+    ADD CONSTRAINT service_var_types_raw_param_type_id_fkey FOREIGN KEY (raw_param_type_id) REFERENCES public.param_types(param_type_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 
 --
 -- Name: service_vars_host_service_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY service_vars
-    ADD CONSTRAINT service_vars_host_service_id_fkey FOREIGN KEY (host_service_id) REFERENCES host_services(host_service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.service_vars
+    ADD CONSTRAINT service_vars_host_service_id_fkey FOREIGN KEY (host_service_id) REFERENCES public.host_services(host_service_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: service_vars_service_var_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY service_vars
-    ADD CONSTRAINT service_vars_service_var_type_id_fkey FOREIGN KEY (service_var_type_id) REFERENCES service_var_types(service_var_type_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
+ALTER TABLE ONLY public.service_vars
+    ADD CONSTRAINT service_vars_service_var_type_id_fkey FOREIGN KEY (service_var_type_id) REFERENCES public.service_var_types(service_var_type_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 
 --
 -- Name: services_service_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY services
-    ADD CONSTRAINT services_service_type_id_fkey FOREIGN KEY (service_type_id) REFERENCES service_types(service_type_id) MATCH FULL ON UPDATE RESTRICT ON DELETE SET DEFAULT;
+ALTER TABLE ONLY public.services
+    ADD CONSTRAINT services_service_type_id_fkey FOREIGN KEY (service_type_id) REFERENCES public.service_types(service_type_id) MATCH FULL ON UPDATE RESTRICT ON DELETE SET DEFAULT;
 
 
 --
 -- Name: services_timeperiod_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY services
-    ADD CONSTRAINT services_timeperiod_id_fkey FOREIGN KEY (timeperiod_id) REFERENCES timeperiods(timeperiod_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
+ALTER TABLE ONLY public.services
+    ADD CONSTRAINT services_timeperiod_id_fkey FOREIGN KEY (timeperiod_id) REFERENCES public.timeperiods(timeperiod_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 
 --
 -- Name: snmpdevices_place_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY snmpdevices
-    ADD CONSTRAINT snmpdevices_place_id_fkey FOREIGN KEY (place_id) REFERENCES places(place_id) MATCH FULL ON UPDATE RESTRICT ON DELETE SET DEFAULT;
+ALTER TABLE ONLY public.snmpdevices
+    ADD CONSTRAINT snmpdevices_place_id_fkey FOREIGN KEY (place_id) REFERENCES public.places(place_id) MATCH FULL ON UPDATE RESTRICT ON DELETE SET DEFAULT;
 
 
 --
 -- Name: subnets_vlan_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY subnets
-    ADD CONSTRAINT subnets_vlan_id_fkey FOREIGN KEY (vlan_id) REFERENCES vlans(vlan_id) ON UPDATE RESTRICT ON DELETE RESTRICT;
+ALTER TABLE ONLY public.subnets
+    ADD CONSTRAINT subnets_vlan_id_fkey FOREIGN KEY (vlan_id) REFERENCES public.vlans(vlan_id) ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 
 --
 -- Name: sys_params_param_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY sys_params
-    ADD CONSTRAINT sys_params_param_type_id_fkey FOREIGN KEY (param_type_id) REFERENCES param_types(param_type_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
+ALTER TABLE ONLY public.sys_params
+    ADD CONSTRAINT sys_params_param_type_id_fkey FOREIGN KEY (param_type_id) REFERENCES public.param_types(param_type_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 
 --
 -- Name: table_shape_fields_table_shape_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY table_shape_fields
-    ADD CONSTRAINT table_shape_fields_table_shape_id_fkey FOREIGN KEY (table_shape_id) REFERENCES table_shapes(table_shape_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.table_shape_fields
+    ADD CONSTRAINT table_shape_fields_table_shape_id_fkey FOREIGN KEY (table_shape_id) REFERENCES public.table_shapes(table_shape_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: timeperiod_tpows_timeperiod_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY timeperiod_tpows
-    ADD CONSTRAINT timeperiod_tpows_timeperiod_id_fkey FOREIGN KEY (timeperiod_id) REFERENCES timeperiods(timeperiod_id) MATCH FULL ON UPDATE CASCADE ON DELETE RESTRICT;
+ALTER TABLE ONLY public.timeperiod_tpows
+    ADD CONSTRAINT timeperiod_tpows_timeperiod_id_fkey FOREIGN KEY (timeperiod_id) REFERENCES public.timeperiods(timeperiod_id) MATCH FULL ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
 -- Name: timeperiod_tpows_tpow_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY timeperiod_tpows
-    ADD CONSTRAINT timeperiod_tpows_tpow_id_fkey FOREIGN KEY (tpow_id) REFERENCES tpows(tpow_id) MATCH FULL ON UPDATE CASCADE ON DELETE RESTRICT;
+ALTER TABLE ONLY public.timeperiod_tpows
+    ADD CONSTRAINT timeperiod_tpows_tpow_id_fkey FOREIGN KEY (tpow_id) REFERENCES public.tpows(tpow_id) MATCH FULL ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
 -- Name: user_events_alarm_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY user_events
-    ADD CONSTRAINT user_events_alarm_id_fkey FOREIGN KEY (alarm_id) REFERENCES alarms(alarm_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.user_events
+    ADD CONSTRAINT user_events_alarm_id_fkey FOREIGN KEY (alarm_id) REFERENCES public.alarms(alarm_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: user_events_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY user_events
-    ADD CONSTRAINT user_events_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(user_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
+ALTER TABLE ONLY public.user_events
+    ADD CONSTRAINT user_events_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id) MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE;
 
 
 --
 -- Name: users_host_notif_period_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY users
-    ADD CONSTRAINT users_host_notif_period_fkey FOREIGN KEY (host_notif_period) REFERENCES timeperiods(timeperiod_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_host_notif_period_fkey FOREIGN KEY (host_notif_period) REFERENCES public.timeperiods(timeperiod_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 
 --
 -- Name: users_place_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY users
-    ADD CONSTRAINT users_place_id_fkey FOREIGN KEY (place_id) REFERENCES places(place_id) ON UPDATE RESTRICT ON DELETE RESTRICT;
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_place_id_fkey FOREIGN KEY (place_id) REFERENCES public.places(place_id) ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 
 --
 -- Name: users_serv_notif_period_fkey; Type: FK CONSTRAINT; Schema: public; Owner: lanview2
 --
 
-ALTER TABLE ONLY users
-    ADD CONSTRAINT users_serv_notif_period_fkey FOREIGN KEY (serv_notif_period) REFERENCES timeperiods(timeperiod_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_serv_notif_period_fkey FOREIGN KEY (serv_notif_period) REFERENCES public.timeperiods(timeperiod_id) MATCH FULL ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 
 --
--- Name: public; Type: ACL; Schema: -; Owner: postgres
+-- Name: SCHEMA public; Type: ACL; Schema: -; Owner: postgres
 --
 
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
