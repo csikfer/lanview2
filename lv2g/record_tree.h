@@ -44,6 +44,7 @@ public:
     cRecordTreeModel *  pTreeModel() const { return static_cast<cRecordTreeModel *>(pModel); }
     QTreeView *         pTreeView;
     virtual void buttonPressed(int id);
+    virtual void hideColumn(int ix, bool f = true);
 };
 
 

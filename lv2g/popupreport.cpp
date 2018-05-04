@@ -1,22 +1,26 @@
 #include "popupreport.h"
 
-QWidget * popupReportWindow(QWidget* _par, const QString& _text, const QString& _title)
+cPopupReportWindow::cPopupReportWindow(QWidget* _par, const QString& _text, const QString& _title)
+    : QWidget(_par, Qt::Window)
 {
-    QString title = _title.isEmpty() ? QObject::trUtf8("Riport") : _title;
-    QWidget *p = new QWidget(_par, Qt::Window);
-    p->setWindowTitle(title);
-    QVBoxLayout *pVLayout = new QVBoxLayout;
-    p->setLayout(pVLayout);
-    QTextEdit *pTextEdit = new QTextEdit(_text);
+    QString title = _title.isEmpty() ? trUtf8("Report") : _title;
+    setWindowTitle(title);
+    pVLayout = new QVBoxLayout;
+    setLayout(pVLayout);
+    pTextEdit = new QTextEdit(_text);
     pVLayout->addWidget(pTextEdit, 1);
-    QHBoxLayout *pHLayout = new QHBoxLayout;
+    pHLayout = new QHBoxLayout;
     pVLayout->addLayout(pHLayout, 0);
     pHLayout->addStretch();
-    QPushButton *pButton = new QPushButton(QObject::trUtf8("Bezár"));
-    QObject::connect(pButton, SIGNAL(clicked()), p, SLOT(deleteLater()));
-    pHLayout->addWidget(pButton);
+    pButtonSave = new QPushButton(trUtf8("Save"));
+    connect(pButtonSave, SIGNAL(clicked()), this, SLOT(save()));
+    pHLayout->addWidget(pButtonSave);
     pHLayout->addStretch();
-    p->show();      // Enélkül dokumentum méret, és ezzel s
+    pButtonClose = new QPushButton(trUtf8("Close"));
+    connect(pButtonClose, SIGNAL(clicked()), this, SLOT(deleteLater()));
+    pHLayout->addWidget(pButtonClose);
+    pHLayout->addStretch();
+    show();      // Enélkül dokumentum méret, és ezzel s
     QSize  s = QApplication::screens().first()->size();
     s *= 7; s /= 10;    // 70%
     // p->resize(s);   // Minimalizáljuk a sorok tördelését
@@ -24,14 +28,24 @@ QWidget * popupReportWindow(QWidget* _par, const QString& _text, const QString& 
     QSizeF sf = pTextEdit->document()->size();
     int h, w, sp, bs;
     sp = pHLayout->spacing();
-    bs = pButton->size().height();
+    bs = pButtonClose->size().height();
     h = std::min(s.height(), (int)sf.height());
     w = std::min(s.width(),  (int)sf.width());
     // pTextEdit->resize(w, h); // nem műkodik
     h +=  bs * 2 + sp * 3 + 8;
     w +=  sp * 4 + 16;
-    p->resize(w, h);
-    return p;
+    resize(w, h);
+}
+
+void cPopupReportWindow::save()
+{
+    static QString fn;
+    textEditToFile(fn, pTextEdit, this);
+}
+
+QWidget * popupReportWindow(QWidget* _par, const QString& _text, const QString& _title)
+{
+    return new cPopupReportWindow(_par, _text, _title);
 }
 
 QWidget * popupReportNode(QWidget *par, QSqlQuery& q, qlonglong nid)

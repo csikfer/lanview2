@@ -4,6 +4,7 @@
 #include    "lv2g.h"
 #include    "record_dialog.h"
 #include    "record_table_model.h"
+#include    "QTableWidget"
 
 #if defined(LV2G_LIBRARY)
 #include    "ui_column_filter.h"
@@ -22,6 +23,7 @@ Ui::noRightsForm * noRightsSetup(QWidget *_pWidget, qlonglong _need, const QStri
 
 class cRecordTable;
 class cRecordTableColumn;
+class cRecordTableHideRows;
 class cRecordTableFODialog;
 
 /*!
@@ -132,6 +134,33 @@ private slots:
     void _chageStat(int st);
 };
 
+class LV2GSHARED_EXPORT cRecordTableHideRow : public QObject {
+    Q_OBJECT
+public:
+    cRecordTableHideRow(int row, cRecordTableHideRows * _par);
+    QString     name;
+    QString     title;
+    QCheckBox   *pCheckBoxTab;
+    QCheckBox   *pCheckBoxText;
+    cRecordTableHideRows *pParent;
+    cRecordTableColumn   *pColumn;
+    static int columns();
+    static QString colTitle(int i);
+private slots:
+    void on_checkBox_togle(bool);
+};
+
+class LV2GSHARED_EXPORT cRecordTableHideRows : public QTableWidget {
+    friend class cRecordTableFODialog;
+    Q_OBJECT
+public:
+    cRecordTableHideRows(cRecordTableFODialog *_par);
+    cRecordTableFODialog *pParent;
+public slots:
+    void refresh();
+};
+
+
 class cRecordsViewBase;
 /// Szűrések és rendezés dialógus.
 /// A rendezés és szűrések állpota
@@ -140,7 +169,7 @@ class LV2GSHARED_EXPORT cRecordTableFODialog : public QDialog {
 public:
     cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase&_rt);
     ~cRecordTableFODialog();
-    const cRecordsViewBase&      recordView;
+    cRecordsViewBase&           recordView;
     /// A szűrési feltételeknek megfeleő SQL feltételek litáját adja vissza
     /// A szükslges paramétereket (bind) hozzáadja a qparams konténerhez.
     QStringList where(QVariantList &qparams);
@@ -371,6 +400,8 @@ public:
 
     bool enabledBatchEdit(const cTableShapeField& tsf);
     virtual bool batchEdit(int logicalindex);
+    virtual void hideColumn(int ix, bool f = true) = 0;
+    void hideColumns(void);
 public slots:
     /// Megnyomtak egy gombot.
     /// @param id A megnyomott gomb azonosítója
@@ -454,6 +485,7 @@ public:
     QTableView     *pTableView;
     virtual void init();
     virtual void initSimple(QWidget *pW);
+    virtual void hideColumn(int ix, bool f = true);
     void _refresh(bool all = true);
     // void refresh_lst_rev();
     cRecord *record(int i);

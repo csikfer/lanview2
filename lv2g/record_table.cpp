@@ -537,6 +537,98 @@ void cEnumCheckBox::_chageStat(int st)
     }
 }
 
+/* ***************************************************************************************************** */
+
+enum eHideRowsColumns {
+    HRC_NAME, HRC_TITLE, HRC_HIDE_TAB, HRC_HIDE_TEXT,
+    HRC_COLUMNS
+};
+
+cRecordTableHideRow::cRecordTableHideRow(int row, cRecordTableHideRows * _par) : QObject(_par)
+{
+    QTableWidgetItem *pi;
+    pParent = _par;
+    pColumn = pParent->pParent->recordView.fields[row];
+
+    name  = pColumn->shapeField.getName();
+    pi = new QTableWidgetItem(name);
+    pParent->setItem(row, HRC_NAME, pi);
+
+    title = pColumn->shapeField.getText(cTableShapeField::LTX_TABLE_TITLE, name);
+    pi = new QTableWidgetItem(title);
+    pParent->setItem(row, HRC_TITLE, pi);
+
+    pCheckBoxTab   = new QCheckBox;
+    pCheckBoxTab->setChecked(0 == (pColumn->fieldFlags & ENUM2SET(FF_TABLE_HIDE)));
+    connect(pCheckBoxTab, SIGNAL(toggled(bool)), this, SLOT(on_checkBox_togle(bool)));
+    pParent->setCellWidget(row, HRC_HIDE_TAB, pCheckBoxTab);
+
+    pCheckBoxText  = new QCheckBox;
+    pCheckBoxText->setChecked(0 != (pColumn->fieldFlags & ENUM2SET(FF_HTML)));
+    connect(pCheckBoxText, SIGNAL(toggled(bool)), this, SLOT(on_checkBox_togle(bool)));
+    pParent->setCellWidget(row, HRC_HIDE_TEXT, pCheckBoxText);
+}
+
+void cRecordTableHideRow::on_checkBox_togle(bool)
+{
+    qlonglong& ff = pColumn->fieldFlags;
+    if (pCheckBoxTab->isChecked()) {
+        ff &= ~ENUM2SET(FF_TABLE_HIDE);
+    }
+    else {
+        ff |=  ENUM2SET(FF_TABLE_HIDE);
+    }
+    if (pCheckBoxText->isChecked()) {
+        ff |=  ENUM2SET(FF_HTML);
+    }
+    else {
+        ff &= ~ENUM2SET(FF_HTML);
+    }
+    pParent->refresh();
+}
+
+int cRecordTableHideRow::columns()
+{
+    return HRC_COLUMNS;
+}
+
+QString cRecordTableHideRow::colTitle(int i)
+{
+    switch (i) {
+    case HRC_NAME:      return trUtf8("Mező név");
+    case HRC_TITLE:     return trUtf8("Oszlop név");
+    case HRC_HIDE_TAB:  return trUtf8("Táblában");
+    case HRC_HIDE_TEXT: return trUtf8("Exportban");
+    default:            EXCEPTION(EPROGFAIL);
+    }
+    return QString();
+}
+
+/* ----------------------------------------------------------------------------------------------------- */
+
+cRecordTableHideRows::cRecordTableHideRows(cRecordTableFODialog *_par)
+    : QTableWidget()
+{
+    pParent = _par;
+    int n = pParent->recordView.fields.size();
+    int cols = cRecordTableHideRow::columns();
+    setColumnCount(cols);
+    setRowCount(n);
+    QStringList hl;
+    for (int col = 0; col < cols; ++col) {
+        hl << cRecordTableHideRow::colTitle(col);
+    }
+    setHorizontalHeaderLabels(hl);
+    for (int row = 0; row < n; ++row) {
+        new cRecordTableHideRow(row, this);
+    }
+}
+
+void cRecordTableHideRows::refresh()
+{
+    pParent->recordView.hideColumns();
+}
+
 /* ----------------------------------------------------------------------------------------------------- */
 
 cRecordTableFODialog::cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase &_rt)
@@ -589,6 +681,7 @@ cRecordTableFODialog::cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase &_rt)
     connect(pForm->comboBoxFilt,   SIGNAL(currentIndexChanged(int)),   this, SLOT(filtType(int)));
     filtCol(filters.isEmpty() ? -1 : 0);
     pForm->pushButton_Default->setDisabled(true);   // Nincs implementálva !
+    pForm->tabWidget->addTab(new cRecordTableHideRows(this), trUtf8("Oszlopok láthatósága"));
 }
 
 cRecordTableFODialog::~cRecordTableFODialog()
@@ -920,7 +1013,7 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
             dataAlign |= Qt::AlignRight;
         // 'XX_color' vagy 'font' vagy 'tool_tip' flag esetén kell az enum típusa!
         if (pColDescr->eColType == cColStaticDescr::FT_ENUM ||pColDescr->eColType == cColStaticDescr::FT_BOOLEAN) {
-            if (fieldFlags && ENUM2SET4(FF_BG_COLOR, FF_FG_COLOR, FF_FONT, FF_TOOL_TIP)) {
+            if (fieldFlags & ENUM2SET4(FF_BG_COLOR, FF_FG_COLOR, FF_FONT, FF_TOOL_TIP)) {
                 if (pColDescr->eColType == cColStaticDescr::FT_ENUM) {
                     enumTypeName = pColDescr->enumType();
                 }
@@ -1852,7 +1945,7 @@ bool cRecordsViewBase::batchEdit(int logicalindex)
     QList<int> dataFieldIndexList;
     QList<int> shapeFieldIndexList;
     dataFieldIndexList  << pModel->_col2field[logicalindex];
-    shapeFieldIndexList << pModel->_col2shape[logicalindex];
+    shapeFieldIndexList << logicalindex;
     const cTableShapeField& tsf = *pTableShape->shapeFields[shapeFieldIndexList.first()];
     if (!enabledBatchEdit(tsf)) return true;
     QModelIndexList mil = selectedRows();
@@ -1964,6 +2057,13 @@ void cRecordsViewBase::modifyByIndex(const QModelIndex & index)
     //selectRow(index);
     (void)index;
     modify(EX_IGNORE);
+}
+
+void cRecordsViewBase::hideColumns(void)
+{
+    for (int i = 0; i < fields.size(); ++i) {
+        hideColumn(i, field(i).fieldFlags & ENUM2SET(FF_TABLE_HIDE));
+    }
 }
 
 /* ----------------------------------------------------------------------------------------------------- */
@@ -2135,6 +2235,20 @@ void cRecordTable::initSimple(QWidget * pW)
     connect(pTableView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
     if (pFODialog != NULL) EXCEPTION(EPROGFAIL);
     pFODialog = new cRecordTableFODialog(pq, *this);
+    // A model konstruktorban nem megy az oszlopok eltüntetése, így mégegyszer...
+    for (int i = 0; i < fields.size(); ++i) {
+        hideColumn(i, field(i).fieldFlags & ENUM2SET(FF_TABLE_HIDE));
+    }
+}
+
+void cRecordTable::hideColumn(int ix, bool f)
+{
+    if (f) {
+        pTableView->hideColumn(ix);
+    }
+    else {
+        pTableView->showColumn(ix);
+    }
 }
 
 void cRecordTable::empty()
@@ -2272,8 +2386,7 @@ void cRecordTable::copy()
     QString r;
     switch (w) {
     case TEW_NAME:
-        if (t == TET_CLIP && f == TEF_CSV) cRecordsViewBase::copy();
-        else EXCEPTION(EPROGFAIL);
+        cRecordsViewBase::copy();
         return;
     case TEW_SELECTED:
         switch (f) {
@@ -2327,6 +2440,9 @@ void cRecordTable::copy()
         }
     }
         break;
+    case TET_WIN:
+        popupReportWindow(this->pWidget(), r, tableShape().getText(cTableShape::LTX_TABLE_TITLE));
+        break;
     default:
         EXCEPTION(EPROGFAIL);
     }
@@ -2360,6 +2476,11 @@ void cRecordTable::_refresh(bool all)
     foreach (QVariant v, qParams) pTabQuery->bindValue(i++, v);
     if (!pTabQuery->exec()) SQLQUERYERR(*pTabQuery);
     pTableModel()->setRecords(*pTabQuery, all);
+
+    // for (int i = 0; i < fields.size(); ++i) {
+    //     hideColumn(i, field(i).fieldFlags & ENUM2SET(FF_TABLE_HIDE));
+    // }
+
     pTableView->resizeColumnsToContents();
 }
 

@@ -22,8 +22,6 @@ public:
 
     cRecord *qGetRecord(QSqlQuery& q);
 
-    /// Kereszt index: Tábla oszlop - megjelenítő leíró, mező leíró index
-    tIntVector                   _col2shape;
     /// Kereszt index: Tábla oszlop - adat mező index
     tIntVector                   _col2field;
     /// A rekord sorszámok kijelzése (default tue)

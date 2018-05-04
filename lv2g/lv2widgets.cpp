@@ -2178,25 +2178,25 @@ void cFKeyWidget::setFromEdit(qlonglong id)
 
 void cFKeyWidget::setButtons()
 {
-    bool f = _readOnly;
+    bool disa = _readOnly;
     switch (_filter) {
     case F_NO:
     case F_SIMPLE:
-        f = f || pTableShape == NULL;
-        pUi->toolButtonEdit->setDisabled(_actValueIsNULL || f);
-        pUi->toolButtonAdd->setDisabled(f);
+        disa = disa || pTableShape == NULL;
+        pUi->toolButtonEdit->setDisabled(_actValueIsNULL || disa || !lanView::isAuthorized(pTableShape->getId(_sViewRights)));
+        pUi->toolButtonAdd->setDisabled(                    disa || !lanView::isAuthorized(pTableShape->getId(_sInsertRights)));
         break;
-    case F_PLACE:
-        pUiPlace->toolButtonPlaceEdit->setDisabled(_actValueIsNULL || f);
-        pUiPlace->toolButtonPlaceAdd->setDisabled(f);
+    case F_PLACE:           // Rights ???!!!
+        pUiPlace->toolButtonPlaceEdit->setDisabled(_actValueIsNULL || disa);
+        pUiPlace->toolButtonPlaceAdd->setDisabled(disa);
         break;
     case F_RPLACE:
-        pUiRPlace->toolButtonPlaceEdit->setDisabled(_actValueIsNULL || f);
-        pUiRPlace->toolButtonPlaceAdd->setDisabled(f);
+        pUiRPlace->toolButtonPlaceEdit->setDisabled(_actValueIsNULL || disa);
+        pUiRPlace->toolButtonPlaceAdd->setDisabled(disa);
         break;
     case F_PORT:
-        pUiPort->toolButtonEdit->setDisabled(_actValueIsNULL || f);
-        pUiPort->toolButtonAdd->setDisabled(f);
+        pUiPort->toolButtonEdit->setDisabled(_actValueIsNULL || disa);
+        pUiPort->toolButtonAdd->setDisabled(disa);
         break;
     }
 }
@@ -2335,7 +2335,7 @@ void cFKeyWidget::setNode(qlonglong _nid)
 /// Be szertnénk szúrni egy tulajdonság rekordot
 void cFKeyWidget::insertF()
 {
-    if (pModel != NULL) {
+    if (pModel != NULL && pTableShape != NULL && lanView::isAuthorized(pTableShape->getId(_sInsertRights))) {
         cRecordDialog *pDialog = new cRecordDialog(*pTableShape, ENUM2SET2(DBT_OK, DBT_CANCEL), true, _pParentDialog);
         while (1) {
             int keyId = pDialog->exec(false);
@@ -2349,14 +2349,14 @@ void cFKeyWidget::insertF()
         pDialog->close();
         delete pDialog;
     }
-    else {
-        EXCEPTION(EPROGFAIL);
-    }
+//    else {
+//        EXCEPTION(EPROGFAIL);
+//    }
 }
 
 void cFKeyWidget::modifyF()
 {
-    if (pModel != NULL) {
+    if (pModel != NULL && pTableShape != NULL && lanView::isAuthorized(pTableShape->getId(_sViewRights))) {
         cRecordAny rec(pRDescr);
         cRecordDialog *pDialog = new cRecordDialog(*pTableShape, ENUM2SET2(DBT_OK, DBT_CANCEL), true, _pParentDialog);
         int cix = pUi->comboBox->currentIndex();
@@ -2375,9 +2375,9 @@ void cFKeyWidget::modifyF()
         pDialog->close();
         delete pDialog;
     }
-    else {
-        EXCEPTION(EPROGFAIL);
-    }
+//    else {
+//        EXCEPTION(EPROGFAIL);
+//    }
 }
 
 // Megváltozott az owner id
@@ -2889,12 +2889,14 @@ cFKeyArrayWidget::cFKeyArrayWidget(const cTableShape& _tm, const cTableShapeFiel
     if (str2tristate(_tf.feature(_sUnique), EX_IGNORE) == TS_FALSE) unique = false;
 
     pFRecModel  = NULL;
+    pTableShape = NULL;
     pUi         = new Ui_fKeyArrayEd;
     pUi->setupUi(this);
     pEditWidget = pUi->listView;
     pLayout     = pUi->horizontalLayout;
 
     selectedNum = 0;
+    actRow      = NULL_IX;
 
     pUi->pushButtonAdd->setDisabled(_readOnly);
     pUi->pushButtonIns->setDisabled(_readOnly);
@@ -2915,6 +2917,22 @@ cFKeyArrayWidget::cFKeyArrayWidget(const cTableShape& _tm, const cTableShapeFiel
     pUi->listView->setModel(pArrayModel);
     pUi->listView->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
+
+    pTableShape = new cTableShape();
+    // Dialógus leíró neve a feature mezőben
+    QString tsn = _fieldShape.feature(_sDialog);
+    // ha ott nincs megadva, akkor a megjelenítő neve azonos a tulajdonság rekord nevével
+    if (tsn.isEmpty()) tsn = _colDescr.fKeyTable;
+    if (pTableShape->fetchByName(tsn)) {   // Ha meg tudjuk jeleníteni
+        // Nem lehet öröklés !!
+        qlonglong tit = pTableShape->getId(_sTableInheritType);
+        if (tit != TIT_NO && tit != TIT_ONLY) EXCEPTION(EDATA);
+        pTableShape->fetchFields(*pq);
+    }
+    else {
+        pDelete(pTableShape);
+    }
+
     if (_nullable || _hasDefault) {
         bool isNull = __fr.isNull();
         setupNullButton(isNull);
@@ -2927,17 +2945,13 @@ cFKeyArrayWidget::cFKeyArrayWidget(const cTableShape& _tm, const cTableShapeFiel
         pFRecModel->setFilter();
         pUi->comboBox->setCurrentIndex(0);
 
-        connect(pUi->pushButtonAdd, SIGNAL(pressed()), this, SLOT(addRow()));
-        connect(pUi->pushButtonDel, SIGNAL(pressed()), this, SLOT(delRow()));
-        connect(pUi->pushButtonClr, SIGNAL(pressed()), this, SLOT(clrRows()));
-        connect(pUi->listView->selectionModel(), SIGNAL(currentRowChanged(QModelIndex,QModelIndex)), this, SLOT(selectionChanged(QModelIndex,QModelIndex)));
-        connect(pUi->listView, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(doubleClickRow(QModelIndex)));
+        connect(pUi->listView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
     }
 }
 
 cFKeyArrayWidget::~cFKeyArrayWidget()
 {
-    ;
+    pDelete(pTableShape);
 }
 
 int cFKeyArrayWidget::set(const QVariant& v)
@@ -2966,14 +2980,20 @@ void cFKeyArrayWidget::setButtons()
         add = id != NULL_ID;
         add = add && !(unique && ids.contains(id));
     }
+    bool up = !disa && selectedNum == 1;
+    bool down = up;
+    if (up) {
+        up   = actRow > 0;
+        down = actRow < (ids.size() -1);
+    }
     pUi->pushButtonAdd ->setEnabled(add);
     pUi->pushButtonIns ->setEnabled(add && selectedNum == 1);
-    pUi->pushButtonUp  ->setDisabled(true); // nem működik
-    pUi->pushButtonDown->setDisabled(true); // nem működik
+    pUi->pushButtonUp  ->setEnabled(up);
+    pUi->pushButtonDown->setEnabled(down);
     pUi->pushButtonDel ->setDisabled(disa || selectedNum == 0);
     pUi->pushButtonClr ->setDisabled(disa || ids.isEmpty());
-    pUi->pushButtonNew ->setDisabled(disa);
-    pUi->pushButtonEdit->setDisabled(disa || selectedNum != 1);
+    pUi->pushButtonNew ->setDisabled(disa || pTableShape == NULL || !lanView::isAuthorized(pTableShape->getId(_sInsertRights)));
+    pUi->pushButtonEdit->setDisabled(disa || pTableShape == NULL || !lanView::isAuthorized(pTableShape->getId(_sViewRights)));
 }
 
 void cFKeyArrayWidget::disableEditWidget(eTristate tsf)
@@ -2986,21 +3006,26 @@ void cFKeyArrayWidget::disableEditWidget(eTristate tsf)
 
 // cFKeyArrayWidget SLOTS
 
-void cFKeyArrayWidget::selectionChanged(QModelIndex cur, QModelIndex)
+void cFKeyArrayWidget::selectionChanged(QItemSelection, QItemSelection)
 {
-    DBGFN();
-    if (cur.isValid()) {
-        actIndex = cur;
-        PDEB(INFO) << "Current row = " << actIndex.row() << endl;
+    QModelIndexList mil = pUi->listView->selectionModel()->selectedRows();
+    selectedNum = mil.size();
+    if (selectedNum == 1) {
+        actRow = mil.first().row();
     }
     else {
-        actIndex = QModelIndex();
-        PDEB(INFO) << "No current row." << endl;
+        actRow = NULL_IX;
     }
     setButtons();
 }
 
-void cFKeyArrayWidget::addRow()
+void cFKeyArrayWidget::on_comboBox_currentIndexChanged(int)
+{
+    setButtons();
+}
+
+
+void cFKeyArrayWidget::on_pushButtonAdd_pressed()
 {
     int ix = pUi->comboBox->currentIndex();
     qlonglong id = pFRecModel->atId(ix);
@@ -3011,35 +3036,45 @@ void cFKeyArrayWidget::addRow()
     setButtons();
 }
 
-void cFKeyArrayWidget::insRow()
+void cFKeyArrayWidget::on_pushButtonIns_pressed()
 {
+    if (actRow < 0) return;
     int ix = pUi->comboBox->currentIndex();
     qlonglong id = pFRecModel->atId(ix);
     QString   nm = pFRecModel->at(ix);
-    int row = actIndex.row();
-    pArrayModel->insert(nm, row);
-    ids.insert(row, id);
+    pArrayModel->insert(nm, actRow);
+    ids.insert(actRow, id);
     setFromEdit();
     setButtons();
 }
 
-void cFKeyArrayWidget::upRow()
-{ /*
-    QModelIndexList mil = pUi->listView->selectionModel()->selectedRows();
-    pModel->up(mil);
-    setFromWidget(pModel->stringList());
-    setButtons(); */
+void cFKeyArrayWidget::on_pushButtonUp_pressed()
+{
+    if (actRow < 1) return;
+    std::swap(ids[actRow],       ids[actRow -1]);
+    std::swap(valueView[actRow], valueView[actRow -1]);
+    pArrayModel->setStringList(valueView);
+    QModelIndex mi = pArrayModel->index(actRow, 0);
+    pUi->listView->selectionModel()->select(mi, QItemSelectionModel::Deselect);
+    mi = pArrayModel->index(actRow -1, 0);
+    pUi->listView->selectionModel()->select(mi, QItemSelectionModel::Select);
 }
 
-void cFKeyArrayWidget::downRow()
-{ /*
-    QModelIndexList mil = pUi->listView->selectionModel()->selectedRows();
-    pModel->down(mil);
-    setFromWidget(pModel->stringList());
-    setButtons(); */
+void cFKeyArrayWidget::on_pushButtonDown_pressed()
+{
+    if (actRow < 0) return;
+    int n = ids.size();
+    if (actRow >= (n -1)) return;
+    std::swap(ids[actRow],       ids[actRow +1]);
+    std::swap(valueView[actRow], valueView[actRow +1]);
+    pArrayModel->setStringList(valueView);
+    QModelIndex mi = pArrayModel->index(actRow, 0);
+    pUi->listView->selectionModel()->select(mi, QItemSelectionModel::Deselect);
+    mi = pArrayModel->index(actRow +1, 0);
+    pUi->listView->selectionModel()->select(mi, QItemSelectionModel::Select);
 }
 
-void cFKeyArrayWidget::delRow()
+void cFKeyArrayWidget::on_pushButtonDel_pressed()
 {
     QModelIndexList mil = pUi->listView->selectionModel()->selectedIndexes();
     if (mil.size() > 0) {
@@ -3057,7 +3092,7 @@ void cFKeyArrayWidget::delRow()
     setButtons();
 }
 
-void cFKeyArrayWidget::clrRows()
+void cFKeyArrayWidget::on_pushButtonClr_pressed()
 {
     pArrayModel->clear();
     ids.clear();
@@ -3065,15 +3100,57 @@ void cFKeyArrayWidget::clrRows()
     setButtons();
 }
 
-void cFKeyArrayWidget::doubleClickRow(const QModelIndex & index)
+void cFKeyArrayWidget::on_pushButtonNew_pressed()
 {
-    (void)index;
-    /*
-    const QStringList& sl = pModel->stringList();
+    if (pTableShape != NULL && lanView::isAuthorized(pTableShape->getId(_sInsertRights))) {
+        cRecordDialog *pDialog = new cRecordDialog(*pTableShape, ENUM2SET2(DBT_OK, DBT_CANCEL), true, _pParentDialog);
+        while (1) {
+            int keyId = pDialog->exec(false);
+            if (keyId == DBT_CANCEL) break;
+            if (!pDialog->accept()) continue;
+            if (!cErrorMessageBox::condMsgBox(pDialog->record().tryInsert(*pq, TS_NULL, true))) continue;
+            pFRecModel->setFilter(_sNul, OT_ASC, FT_NO);    // Refresh combo box
+            pUi->comboBox->setCurrentIndex(pFRecModel->indexOf(pDialog->record().getId()));
+            break;
+        }
+        pDialog->close();
+        delete pDialog;
+    }
+}
+
+void cFKeyArrayWidget::on_pushButtonEdit_pressed()
+{
+    if (pTableShape != NULL && lanView::isAuthorized(pTableShape->getId(_sInsertRights))) {
+        cRecordDialog *pDialog = new cRecordDialog(*pTableShape, ENUM2SET2(DBT_OK, DBT_CANCEL), true, _pParentDialog);
+        cRecordAny rec(pRDescr);
+        int cix = pUi->comboBox->currentIndex();
+        qlonglong id = pFRecModel->atId(cix);
+        if (!rec.fetchById(*pq, id)) return;
+        rec.fetchText(*pq);
+        pDialog->restore(&rec);
+        while (1) {
+            int keyId = pDialog->exec(false);
+            if (keyId == DBT_CANCEL) break;
+            if (!pDialog->accept()) continue;
+            if (!cErrorMessageBox::condMsgBox(pDialog->record().tryUpdateById(*pq, TS_NULL, true))) continue;
+            pFRecModel->setFilter(_sNul, OT_ASC, FT_NO);    // Refresh combo box
+            pUi->comboBox->setCurrentIndex(pFRecModel->indexOf(pDialog->record().getId()));
+            break;
+        }
+        pDialog->close();
+        delete pDialog;
+    }
+
+}
+
+void cFKeyArrayWidget::on_listView_doubleClicked(const QModelIndex & index)
+{
     int row = index.row();
-    if (isContIx(sl, row)) {
-        pUi->lineEdit->setText(sl.at(row));
-    }*/
+    int ix;
+    if (isContIx(ids, row) && 0 <= (ix = pFRecModel->indexOf(ids[row]))) {
+        pUi->comboBox->setCurrentIndex(ix);
+        on_pushButtonEdit_pressed();
+    }
 }
 
 void cFKeyArrayWidget::setFromEdit()

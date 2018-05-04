@@ -840,20 +840,24 @@ protected:
     QList<qlonglong>  ids;          ///< Adat/id lista
     const cRecStaticDescr *pRDescr; ///< Rekord leíró (hivatkozott objektum)
     cRecordListModel *pFRecModel;   ///< Model a ComboBox-hoz
+    cTableShape *pTableShape;
     /// Az inzertálandó adat legutoljára elfogadott értéke.
     QString     last;
-    QModelIndex actIndex;       ///< A listában az aktuális elem indexe
+    int         actRow;       ///< A listában az aktuális elem/sor indexe
     int         selectedNum;    ///< A listában a kijelölt elemek száma
     bool        unique;         ///< A lista elemek egyediek (alapértelmezés)
 protected slots:
-    void selectionChanged(QModelIndex cur, QModelIndex);
-    void addRow();
-    void insRow();
-    void upRow();
-    void downRow();
-    void delRow();
-    void clrRows();
-    void doubleClickRow(const QModelIndex & index);
+    void selectionChanged(QItemSelection,QItemSelection);
+    void on_comboBox_currentIndexChanged(int);
+    void on_pushButtonAdd_pressed();
+    void on_pushButtonIns_pressed();
+    void on_pushButtonUp_pressed();
+    void on_pushButtonDown_pressed();
+    void on_pushButtonDel_pressed();
+    void on_pushButtonClr_pressed();
+    void on_pushButtonNew_pressed();
+    void on_pushButtonEdit_pressed();
+    void on_listView_doubleClicked(const QModelIndex & index);
     void setFromEdit();
 };
 

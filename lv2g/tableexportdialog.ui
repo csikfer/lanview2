@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>341</width>
-    <height>260</height>
+    <width>415</width>
+    <height>342</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -85,6 +85,13 @@
           </property>
           <property name="text">
            <string>Fájlba</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="radioButtonWin">
+          <property name="text">
+           <string>Ablakba</string>
           </property>
          </widget>
         </item>

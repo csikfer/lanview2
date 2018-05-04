@@ -146,15 +146,14 @@ QVariant    cRecordTreeModel::data(const QModelIndex & index, int role) const
     int col = index.column();
     if (col >= _col2field.size())   return r;
     int fix = _col2field[col];  // Mező index a rekordbam
-    int mix = _col2shape[col];  // Index a leíróban
     cRecord *pr = node->pData;
-    cRecordTableColumn * pColumn = columns[mix];
+    cRecordTableColumn * pColumn = columns[col];
     bool bTxt = pColumn->textIndex != NULL_IX;
     if (!bTxt && recDescr != pr->descr()) { // A mező sorrend nem feltétlenül azonos (öröklés)
         const QString& fn = recDescr.columnName(fix);
         fix = pr->toIndex(fn, EX_IGNORE);   // Nem biztos, hogy van ilyen mező (ős)
     }
-    return _data(fix, *columns[mix], pr, role, bTxt);
+    return _data(fix, *columns[col], pr, role, bTxt);
 }
 
 QVariant    cRecordTreeModel::headerData(int section, Qt::Orientation orientation, int role) const

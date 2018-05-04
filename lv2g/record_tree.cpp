@@ -148,6 +148,11 @@ void cRecordTree::initSimple(QWidget *pW)
     connect(pTreeView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
     if (pFODialog != NULL) EXCEPTION(EPROGFAIL);
     pFODialog = new cRecordTableFODialog(pq, *this);
+    // A model konstruktorban nem megy az oszlopok eltüntetése, így mégegyszer...
+    for (int i = 0; i < fields.size(); ++i) {
+        hideColumn(i, field(i).fieldFlags & ENUM2SET(FF_TABLE_HIDE));
+    }
+
 }
 
 bool cRecordTree::queryNodeChildrens(QSqlQuery& q, cTreeNode *pn)
@@ -335,4 +340,10 @@ void cRecordTree::expand()
     QModelIndex mi = actIndex();
     if (mi.isValid()) pTreeView->setExpanded(mi, true);
     else              pTreeView->expandAll();
+}
+
+void cRecordTree::hideColumn(int ix, bool f)
+{
+    if (f) pTreeView->hideColumn(ix);
+    else   pTreeView->showColumn(ix);
 }

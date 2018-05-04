@@ -6,7 +6,7 @@
 QString cRecordViewModelBase::sIrrevocable;
 
 cRecordViewModelBase::cRecordViewModelBase(cRecordsViewBase& _rt)
-    : _col2shape(), _col2field()
+    : _col2field()
     , recordView(_rt)
     , recDescr(_rt.recDescr())
     , tableShape(_rt.tableShape())
@@ -44,15 +44,13 @@ cRecordViewModelBase::cRecordViewModelBase(cRecordsViewBase& _rt)
     int i, n = columns.size();
     for (i = 0; i < n; ++i) {
         const cRecordTableColumn&  column = *columns[i];
-        if (column.shapeField.getBool(_sFieldFlags, FF_TABLE_HIDE)) {   // Ha aem kel megjeleníteni
-            PDEB(VVERBOSE) << "Hidden field : " << columns[i]->shapeField.getName(_sTableShapeFieldName) << endl;
-            continue;
+        if (column.fieldFlags & ENUM2SET(FF_TABLE_HIDE)) {   // Ha nem kel megjeleníteni
+            // PDEB(VVERBOSE) << "Hidden field : " << columns[i]->shapeField.getName(_sTableShapeFieldName) << endl;
+            recordView.hideColumn(i);   // Ez itt valamiért hatástalan, nem tüntet el egyetlen oszlopot sem.
         }
-        _col2shape << i;
         _col2field << column.fieldIndex;
-        PDEB(VVERBOSE) << "Visible field : " << column.shapeField.getName(_sTableShapeFieldName) << endl;
     }
-    PDEB(VVERBOSE) << "X tabs : " << tIntVectorToString(_col2field) << QChar(' ') << tIntVectorToString(_col2shape) << endl;
+    PDEB(VVERBOSE) << "X tab : " << tIntVectorToString(_col2field) << endl;
 }
 
 cRecordViewModelBase::~cRecordViewModelBase()
@@ -121,18 +119,15 @@ QVariant cRecordViewModelBase::_headerData(int section, Qt::Orientation orientat
         }
         break;
     case Qt::Horizontal:
-        if (section < _col2shape.size()) {
-            int mix = _col2shape[section];
-            switch (role) {
-            case Qt::DisplayRole:
-                if (_viewHeader) r = columns[mix]->header;
-                break;
-            default:
-                return dcRole(DC_HEAD, role);
-                break;
-            }
+        switch (role) {
+        case Qt::DisplayRole:
+            if (_viewHeader) r = columns[section]->header;
+            break;
+        default:
+            return dcRole(DC_HEAD, role);
+            break;
         }
-    break;
+        break;
     }
 //    _DBGFNL() << " = " << quotedString(r.toString()) << endl;
     return r;
@@ -224,22 +219,20 @@ QVariant cRecordTableModel::data(const QModelIndex &index, int role) const
     if (col >= _col2field.size())   return r;
     const cRecord *pr = _records.at(row);
     int fix = _col2field[col];  // Mező index a (fő)rekordbam
-    int mix = _col2shape[col];  // Index a leíróban (shape)
-    cRecordTableColumn * pColumn = columns[mix];
+    cRecordTableColumn * pColumn = columns[col];
     bool bTxt = pColumn->textIndex != NULL_IX;
     if (!bTxt && recDescr != pr->descr()) { // A mező sorrend nem feltétlenül azonos (öröklés miatt)
         const QString& fn = recDescr.columnName(fix);
         fix = pr->toIndex(fn, EX_IGNORE);   // Nem biztos, hogy van ilyen mező (ős)
     }
-    return _data(fix, *columns[mix], pr, role, bTxt);
+    return _data(fix, *columns[col], pr, role, bTxt);
 }
 
 QVariant cRecordTableModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if (orientation == Qt::Horizontal && role == Qt::ForegroundRole) {
-        int mix = _col2shape[section];  // Index a leíróban (shape)
         cRecordTable& rt = (cRecordTable&)recordView;
-        if (rt.enabledBatchEdit(*rt.pTableShape->shapeFields[mix])) {
+        if (rt.enabledBatchEdit(*rt.pTableShape->shapeFields[section])) {
             return QColor(Qt::blue);
         }
     }
@@ -412,26 +405,31 @@ QString             cRecordTableModel::toHtml()
 
 QList<QStringList>  cRecordTableModel::toStringTable(QModelIndexList mil)
 {
-    int rows    = rowCount(QModelIndex());
-    int columns = columnCount(QModelIndex());
+    int rownums = rowCount(QModelIndex());
+    int colnums = columnCount(QModelIndex());
     int col, row;
     QList<int> selectedRows;
     foreach (QModelIndex mi, mil) {
         row = mi.row();
         if (!selectedRows.contains(row)) selectedRows << row;
     }
+    const tRecordTableColumns& columns = recordView.fields;
     QList<QStringList> r;
     QStringList lrow;
-    for (col = 0; col <columns; ++col) {
-        lrow << headerData(col, Qt::Horizontal, Qt::DisplayRole).toString();
+    for (col = 0; col <colnums; ++col) {
+        if (columns.at(col)->fieldFlags & ENUM2SET(FF_HTML)) {
+            lrow << headerData(col, Qt::Horizontal, Qt::DisplayRole).toString();
+        }
     }
     r << lrow;
-    for (row = 0; row < rows; ++row) {
+    for (row = 0; row < rownums; ++row) {
         if (!selectedRows.contains(row)) continue;
         lrow.clear();
-        for (col = 0; col <columns; ++col) {
-            QModelIndex mi = index(row, col);
-            lrow << data(mi, Qt::DisplayRole).toString();
+        for (col = 0; col <colnums; ++col) {
+            if (columns.at(col)->fieldFlags & ENUM2SET(FF_HTML)) {
+                QModelIndex mi = index(row, col);
+                lrow << data(mi, Qt::DisplayRole).toString();
+            }
         }
         r << lrow;
     }

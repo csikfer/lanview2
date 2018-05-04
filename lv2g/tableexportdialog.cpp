@@ -18,6 +18,7 @@ cTableExportDialog::~cTableExportDialog()
 enum eTableExportTarget cTableExportDialog::target() const
 {
     if (ui->radioButtonClip->isChecked()) return TET_CLIP;
+    if (ui->radioButtonWin->isChecked())  return TET_WIN;
     return TET_FILE;
 }
 enum eTableExportWhat   cTableExportDialog::what() const
