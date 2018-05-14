@@ -238,6 +238,18 @@ int cServiceVar::setValue(QSqlQuery& q, qlonglong _hsid, const QString& _name, c
     return RS_UNREACHABLE;
 }
 
+int cServiceVar::setValues(QSqlQuery& q, qlonglong _hsid, const QStringList& _names, const QVariantList& vals)
+{
+    int r = RS_ON;
+    int n = _names.size();
+    n = std::min(n, vals.size());
+    for (int i = 0; i < n; ++i) {
+        int rr = setValue(q, _hsid, _names.at(i), vals.at(i));
+        if (r < rr) r = rr;
+    }
+    return r;
+}
+
 void cServiceVar::preSetValue(const QString& val)
 {
     oldStateMsg = getName(_ixStateMsg);

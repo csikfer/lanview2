@@ -1249,7 +1249,7 @@ void cRecordsViewBase::insert(bool _similar)
                 bool ok = rd.accept();
                 if (ok) {
                     cRecord *pRec = rd.record().dup();
-                    ok = pModel->insertRec(pRec);   // A pointer a pModel tulajdona lesz
+                    ok = pModel->insertRec(pRec);   // A pointer a pModel tulajdona lesz, ha OK
                     if (!ok) pDelete(pRec);
                     else if (flags & RTF_IGROUP) {    // Group, tagja listába van a beillesztés?
                         ok = cGroupAny(*pRec, *(pUpper->actRecord())).insert(*pq, EX_IGNORE);

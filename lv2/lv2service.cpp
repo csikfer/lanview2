@@ -649,7 +649,7 @@ void cInspector::setSubs(QSqlQuery& q, const QString& qs)
     } while (q.next());
     // Ha nem vettünk fel egy elemet sem, és lett volna, de hiba miatt nem vettük fel, akkor kizárást dobunk.
     if (!ok && pSubordinates->size() == 0) {
-        EXCEPTION(EDATA);
+        EXCEPTION(EDATA, 0, trUtf8("Due to the initialization errors of the subservice, all subservices have been dropped."));
     }
 }
 

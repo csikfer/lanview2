@@ -75,6 +75,7 @@ public:
     int setValue(QSqlQuery& q, double val, int& state);
     int setValue(QSqlQuery& q, qulonglong val, int& state);
     static int setValue(QSqlQuery& q, qlonglong _hsid, const QString& _name, const QVariant& val);
+    static int setValues(QSqlQuery& q, qlonglong _hsid, const QStringList& _names, const QVariantList& vals);
 protected:
     void preSetValue(const QString& val);
     int setCounter(QSqlQuery &q, qulonglong val, int svt, int& state);

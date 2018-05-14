@@ -167,9 +167,9 @@ int cRecordViewModelBase::updateRec(const QModelIndex& mi, cRecord *pRec)
 
 bool cRecordViewModelBase::insertRec(cRecord *pRec)
 {
-    bool r = SqlInsert(*pq, pRec);
+    bool r = SqlInsert(*pq, pRec);  // Insert, if error, view error message box
     PDEB(VVERBOSE) << QString("Insert returned : %1; record : %2").arg(r).arg(pRec->toString()) << endl;
-    if (!insertRow(pRec)) {
+    if (r && !insertRow(pRec)) {    // Insert ok and view error
         QMessageBox::warning(NULL, cEnumVal::viewLong(_sDatacharacter, DC_WARNING, dataCharacter(DC_WARNING)),
                              QObject::trUtf8("A megjelenítés frissítése sikertelen, kérem frissítse a megjelenítést!"));
     }

@@ -2724,6 +2724,13 @@ if      : IFDEF_T  ifdef                        { yyskip(!$2);  }
         | IFNDEF_T ifdef                        { yyskip($2);; }
         | SET_T REPLACE_T ';'                   { globalReplaceFlag = true; }
         | SET_T INSERT_T ';'                    { globalReplaceFlag = false; }
+        | SET_T HOST_T SERVICE_T fhs VAR_T strs '=' vals ';'    { ivars[_sState] = cServiceVar::setValues(qq(), $4, slp2sl($6), vlp2vl($8)); }
+        | SET_T HOST_T SERVICE_T fhs STATE_T int str_z ';'      { pHostService = new cHostService();
+                                                                  pHostService->setById(qq(), $4);
+                                                                  pHostService->setState(qq(), notifSwitch($6), sp2s($7));
+                                                                  pDelete(pHostService);
+                                                                }
+
         ;
 ifdef   : PLACE_T str                   { $$ = NULL_ID != cPlace().     getIdByName(qq(), sp2s($2), EX_IGNORE); }
         | PLACE_T GROUP_T str           { $$ = NULL_ID != cPlaceGroup().getIdByName(qq(), sp2s($3), EX_IGNORE); }
