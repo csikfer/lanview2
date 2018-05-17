@@ -111,7 +111,6 @@ void	cImportParseThread::run()
     DBGFN();
     // Alaphelyzetbe állítjuk a sorpuffert, és a szemforokat
     reset();
-    importFileNm = "[queue]";
     if (importParserStat != IPS_READY || pImportInputStream != NULL) {
         if (pImportLastError == NULL) pImportLastError = NEWCERROR(ESTAT);
         DERR() << VDEB(importParserStat) << _sCommaSp << VDEBPTR(pImportInputStream) << endl;
@@ -120,6 +119,7 @@ void	cImportParseThread::run()
     PDEB(INFO) << QObject::trUtf8("Start parser (thread) ...") << endl;
     initImportParser();
     if (pSrc == NULL) {     // Fordítás a queue-n keresztül
+        importFileNm = "[queue]";
         importParse(IPS_THREAD);
         if (parseReady.available() == 0) parseReady.release();
     }

@@ -28,8 +28,8 @@ void cSysInspector::timerEvent(QTimerEvent *e)
 {
     _DBGFN() << name() << endl;
     if (serviceId() != syscronId) {
-	cInspector::timerEvent(e);
-	return;
+        cInspector::timerEvent(e);
+        return;
     }
     internalStat = IS_RUN;
     statMsg.clear();

@@ -244,23 +244,25 @@ int importParse(eImportParserStat _st)
     if (importParserStat != IPS_READY || _st == IPS_READY)
         EXCEPTION(EPROGFAIL, (int)importParserStat);
     importParserStat = _st;
+    PDEB(VERBOSE) << VDEB(importParserStat) << endl;
     // static const QString tn = "YYParser";
     int i = -1;
     try {
         // sqlBegin(qq(), tn);
         i = yyparse();
-    }
-    CATCHS(pImportLastError)
+    } CATCHS(pImportLastError)
     if (pImportLastError != NULL) {
         // sqlRollback(qq(), tn);
         pImportLastError->mDataLine = importLineNo;
         pImportLastError->mDataName = importFileNm;
         pImportLastError->mDataMsg  = "lastLine : " + quotedString(lastLine) + "\n macbuff : " + quotedString(macbuff);
+        PDEB(DERROR) << pImportLastError->msg() << endl;
     }
     else {
         // sqlCommit(qq(), tn);
     }
     importParserStat = IPS_READY;
+    PDEB(VERBOSE) << VDEB(importParserStat) << endl;
     return i;
 }
 
@@ -2724,8 +2726,8 @@ if      : IFDEF_T  ifdef                        { yyskip(!$2);  }
         | IFNDEF_T ifdef                        { yyskip($2);; }
         | SET_T REPLACE_T ';'                   { globalReplaceFlag = true; }
         | SET_T INSERT_T ';'                    { globalReplaceFlag = false; }
-        | SET_T HOST_T SERVICE_T fhs VAR_T strs '=' vals ';'    { ivars[_sState] = cServiceVar::setValues(qq(), $4, slp2sl($6), vlp2vl($8)); }
-        | SET_T HOST_T SERVICE_T fhs STATE_T int str_z ';'      { pHostService = new cHostService();
+        | SET_T HOST_T SERVICE_T hsid VAR_T strs '=' vals ';'    { ivars[_sState] = cServiceVar::setValues(qq(), $4, slp2sl($6), vlp2vl($8)); }
+        | SET_T HOST_T SERVICE_T hsid STATE_T int str_z ';'      { pHostService = new cHostService();
                                                                   pHostService->setById(qq(), $4);
                                                                   pHostService->setState(qq(), notifSwitch($6), sp2s($7));
                                                                   pDelete(pHostService);

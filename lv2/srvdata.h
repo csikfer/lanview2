@@ -334,29 +334,35 @@ class LV2SHARED_EXPORT cQueryParser : public cRecord {
 public:
     static void _insert(QSqlQuery& q, qlonglong _sid, const QString& _ty, bool _cs, const QString& _re, const QString& _cmd, const QString& _not, qlonglong _seq);
     void setInspector(cInspector *pInsp);       /// Inspector mod, közvetlen végrehajtás
-    void setMaps(tStringMap *pVM);   /// Csak fordítás, az interpretert nem hívja. A kimeneti szöveget a getText() adja vissza.
+    /// Csak fordítás, az interpretert nem hívja. A kimeneti szöveget a getText() adja vissza.
+    /// A konténer a behelyettesítésekhez egy változó listát ad, mivel ilyenkor pInspector értéke NULL, így az azon keresztüli behelyettesítések nem elérhetőek.
+    void setMaps(tStringMap *pVM);
     int prep(cError *&pe);
     int parse(QString src, cError *&pe);
     int post(cError *&pe);
     /// Beolvassa az összes megadott _sid -hez tartozó rekordot, és létrehozza, és kitölti a pListCmd és pListRExp kontlnereket,
     /// valamit a pPrepCmd és pPostCmd stringeket.
-    /// Ha a thread értéke true, akkor kltrejozza, és elindítja a pParserThread -et is.
+    /// Ha a thread értéke true, akkor beolvassa a prep és post parancsokat is.
     /// @param force Akkor is beolvassa a rekordokat, ha a konténerek léteznek, és _sid nem változott.
     int load(QSqlQuery& q, qlonglong _sid = NULL_ID, bool force = true, bool thread = true);
     int delByServiceName(QSqlQuery &q, const QString &__n, bool __pat);
+    /// Közvetett végrehajtás esetén a végrehalytandó parancsoka szövegét adja vissza.
+    /// Közvetett végrehajtás esetén pText nem lehet NULL, és pParserThread -nek az értéke NULL.
     QString getText() { CHKNULL(pText); return *pText; }
+    cQueryParser *newChild(cInspector * _isp);
 protected:
     QString getParValue(const QString& name, const QStringList &args);
     QString substitutions(const QString& _cmd, const QStringList& args);
     int execute(cError *&pe, const QString& _cmd, const QStringList& args = QStringList());
-    QStringList         *pListCmd;
-    QList<QRegExp>      *pListRExp;
-    QString             *pPrepCmd;
-    QString             *pPostCmd;
-    cInspector          *pInspector;
-    cImportParseThread  *pParserThread;
-    tStringMap          *pVarMap;
-    QString             *pText;
+    bool                slave;
+    QStringList         *pListCmd;          ///< interpreter parancsok listája
+    QList<QRegExp>      *pListRExp;         ///< Reguláris kifelyezések listája (sorrend azonos mint a pListCmd-ben)
+    QString             *pPrepCmd;          ///< prepare (indító) parancs, ha van, egyébként NULL
+    QString             *pPostCmd;          ///< post (záró) parancs, ha van, egyébként NULL
+    cInspector          *pInspector;        ///< Tulajdonos pointere, ha egy szálban fut az interpreter
+    cImportParseThread  *pParserThread;     ///< Az interpreter szál pointere, vagy NULL
+    tStringMap          *pVarMap;           ///< Változó lista, ha az interpreter nem egy szálban fut, és csak közvetlen végrehajtás van.
+    QString             *pText;             ///< Nem közvetlen végrahajtás esetén a végrehalytandó parancsok ide kerólnek, egyébként null.
 };
 
 #endif // SRVDATA

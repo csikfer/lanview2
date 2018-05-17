@@ -487,10 +487,9 @@ void cInspector::down()
         pDelete( pInspectorThread);
     }
     pDelete(pProcess);
-    if (inspectorType & IT_OWNER_QUERY_PARSER) {
+    if (inspectorType & IT_METHOD_PARSER) {
         PDEB(VVERBOSE) << trUtf8("%1: Free QParser : %2").arg(name()).arg((qlonglong)pQparser) << endl;
         pDelete(pQparser);
-        inspectorType &= ~IT_OWNER_QUERY_PARSER;
     }
     else pQparser = NULL;
     pDelete(pq);
@@ -751,6 +750,8 @@ int cInspector::getInspectorProcess(const QString &value)
         case IT_METHOD_MUNIN:
         case IT_METHOD_QPARSE:
         case IT_METHOD_QPARSE | IT_METHOD_PARSER:
+        case IT_METHOD_QPARSE | IT_METHOD_CARRIED:
+        case IT_METHOD_QPARSE | IT_METHOD_PARSER | IT_METHOD_CARRIED:
             return r | met;
         default: {
             // Nem OK
@@ -789,6 +790,8 @@ int cInspector::getInspectorMethod(const QString &value)
     case IT_METHOD_QPARSE:
     case IT_METHOD_PARSER:
     case IT_METHOD_QPARSE | IT_METHOD_PARSER:
+    case IT_METHOD_QPARSE | IT_METHOD_CARRIED:
+    case IT_METHOD_QPARSE | IT_METHOD_PARSER | IT_METHOD_CARRIED:
     case IT_METHOD_INSPECTOR:
         break;    // O.K.
     default: {
@@ -1192,6 +1195,7 @@ enum eNotifSwitch cInspector::parse(int _ec, QIODevice& text)
     case IT_METHOD_CARRIED: return RS_STAT_SETTED;
     case IT_METHOD_MUNIN:   EXCEPTION(EPROGFAIL);   break;
     case IT_METHOD_NAGIOS:  return parse_nagios(_ec, text);
+    case IT_METHOD_QPARSE | IT_METHOD_CARRIED:
     case IT_METHOD_QPARSE:  return parse_qparse(_ec, text);
     default:
         EXCEPTION(ENOTSUPP, inspectorType, name());
@@ -1226,22 +1230,24 @@ enum eNotifSwitch cInspector::parse_qparse(int _ec, QIODevice& text)
             if (pQparser != NULL) break;     // Megtaláltuk
         }
         if (pQparser == NULL) EXCEPTION(EFOUND,0,name());
-        if (inspectorType & IT_OWNER_QUERY_PARSER)EXCEPTION(EPROGFAIL,0,name());
+        pQparser = pQparser->newChild(this);
     }
     pQparser->setInspector(this);   // A kliens beállítása...
     QString t;
     bool ok = false;
+    // A text soronkénti feldolgozása
     while (false == (t = QString::fromUtf8(text.readLine())).isEmpty()) {
         t = t.simplified();
         if (t.isEmpty()) continue;      // üres
-        if (!comment.isEmpty() && 0 == t.indexOf(comment)) continue;
+        if (!comment.isEmpty() && 0 == t.indexOf(comment)) continue;    // Van kommnt jel. és az első karakter az
         cError *pe = NULL;
         int r = pQparser->parse(t, pe);
-        ok = ok || r == REASON_OK;      // Ha semmire sem volt találat
+        // Ha semmire sem volt találat
         if (r == R_NOTFOUND) {
             PDEB(VVERBOSE) << "DROP : " << quotedString(t) << endl;
             continue;  // Nincs minta a sorra, nem foglalkozunk vele
         }
+        // Találat, és hiba
         if (r != REASON_OK) {
             if (pe == NULL) {
                 DERR() << _sUnKnown << VDEB(r) << endl;
@@ -1250,10 +1256,12 @@ enum eNotifSwitch cInspector::parse_qparse(int _ec, QIODevice& text)
             DERR() << pe->msg() << endl;
             pe->exception();
         }
+        ok = ok || r == REASON_OK;
         PDEB(VVERBOSE) << "MATCH : " << quotedString(t) << endl;
     }
     _DBGFNL() << name() << " : " << (ok ? "OK" : "INVALID") << endl;
-    return ok ? RS_ON : RS_INVALID;
+    if (ok) return (inspectorType & IT_METHOD_CARRIED) ? RS_STAT_SETTED : RS_ON;
+    return RS_INVALID;
 }
 
 enum eNotifSwitch cInspector::munin(QSqlQuery& q, QString& runMsg)
@@ -1280,11 +1288,10 @@ void cInspector::start()
         internalStat = IS_RUN;
         pQparser = new cQueryParser();
         PDEB(VVERBOSE) << trUtf8("%1: Alloc QParser : %2").arg(name()).arg((qlonglong)pQparser) << endl;
-        inspectorType |= IT_OWNER_QUERY_PARSER;
         int r = pQparser->load(*pq, serviceId(), true);
         if (R_NOTFOUND == r && NULL != pPrimeService) r = pQparser->load(*pq, primeServiceId(), true);
         if (R_NOTFOUND == r && NULL != pProtoService) r = pQparser->load(*pq, protoServiceId(), true);
-        if (R_NOTFOUND == r) EXCEPTION(EFOUND);
+        if (R_NOTFOUND == r) inspectorType |= IT_PURE_PARSER;
         cError *pe = NULL;
         pQparser->setInspector(this);
         pQparser->prep(pe);
@@ -1430,7 +1437,7 @@ void cInspector::drop(eEx __ex)
         }
         timerStat = TS_STOP;
     }
-    if (inspectorType & IT_OWNER_QUERY_PARSER) {
+    if (inspectorType & IT_METHOD_PARSER) {
         if (pQparser == NULL) {
             if(__ex != EX_IGNORE) EXCEPTION(EPROGFAIL, (qlonglong)pQparser, name());
         }
@@ -1440,7 +1447,6 @@ void cInspector::drop(eEx __ex)
             if (pe != NULL) DERR() << pe->msg() << endl;
             PDEB(VVERBOSE) << trUtf8("%1: Free QParser : %2").arg(name()).arg((qlonglong)pQparser) << endl;
             pDelete(pQparser);
-            inspectorType &= ~IT_OWNER_QUERY_PARSER;
             if (pSubordinates != NULL) {
                 // Az gyerkőcöknél is törölni kell, feltételezzük, hogy 1*-es a mélység, és csak ez az egy parser van a rész fában.
                 foreach (cInspector *pi, *pSubordinates) {
