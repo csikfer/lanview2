@@ -2694,10 +2694,12 @@ modify  : SET_T str '[' strs ']' '.' str '=' value ';'
                 { cRecordAny::updateFieldByNames(qq(), cRecStaticDescr::get(sp2s($2)), slp2sl($4), sp2s($7), vp2v($9)); }
         | SET_T str '.' str '[' strs ']' '.' str '=' value ';'
                 { cRecordAny::updateFieldByNames(qq(), cRecStaticDescr::get(sp2s($4), sp2s($2)), slp2sl($6), sp2s($9), vp2v($11)); }
+        | SET_T str '[' strs ']' '.' str '+' '=' value ';'
+                { cRecordAny::addValueArrayFieldByNames(qq(), cRecStaticDescr::get(sp2s($2)), slp2sl($4), sp2s($7), vp2v($10)); }
         | SET_T str '.' str '[' strs ']' '.' str '+' '=' value ';'
                 { cRecordAny::addValueArrayFieldByNames(qq(), cRecStaticDescr::get(sp2s($4), sp2s($2)), slp2sl($6), sp2s($9), vp2v($12)); }
-        | SET_T IFTYPE_T '[' str ']' '.' NAME_T PREFIX_T '=' str ';'
-                 { cIfType().setByName(qq(), sp2s($4)).setName(_sIfNamePrefix, sp2s($10)).update(qq(), false);
+        | SET_T IFTYPE_T str NAME_T PREFIX_T str ';'
+                 { cIfType().setByName(qq(), sp2s($3)).setName(_sIfNamePrefix, sp2s($6)).update(qq(), false);
                    lanView::resetCacheData(); }
         | SET_T ALERT_T SERVICE_T srvid ';'     { alertServiceId = $4; }
         | SET_T SUPERIOR_T hsid TO_T hsss ';'   { $5->sets(_sSuperiorHostServiceId, $3); delete $5; }
@@ -2715,24 +2717,23 @@ modify  : SET_T str '[' strs ']' '.' str '=' value ';'
         | DISABLE_T USER_T str ';'              { cUser().setByName(qq(), sp2s($3)).setBool(_sDisabled, true).update(qq(), true); }
         | ENABLE_T  USER_T str ';'              { cUser().setByName(qq(), sp2s($3)).setBool(_sDisabled, false).update(qq(), true); }
         // Összes csoporttag letiltása/engedélyezése
-        | DISABLE_T USER_T str GROUP_T ':'      { cGroupUser().disableMemberByGroup(qq(), sp2s($3), true); }
-        | ENABLE_T  USER_T str GROUP_T ':'      { cGroupUser().disableMemberByGroup(qq(), sp2s($3), false); }
+        | DISABLE_T USER_T str GROUP_T ';'      { cGroupUser().disableMemberByGroup(qq(), sp2s($3), true); }
+        | ENABLE_T  USER_T str GROUP_T ';'      { cGroupUser().disableMemberByGroup(qq(), sp2s($3), false); }
         | DISABLE_T SERVICE_T str ';'           { cService().setByName(qq(), sp2s($3)).setBool(_sDisabled, true).update(qq(), false); }
         | ENABLE_T  SERVICE_T str ';'           { cService().setByName(qq(), sp2s($3)).setBool(_sDisabled, false).update(qq(), false); }
         | DISABLE_T HOST_T SERVICE_T hsid ';'   { cHostService().setById(qq(), $4).setBool(_sDisabled, true).update(qq(), false); }
         | ENABLE_T  HOST_T SERVICE_T hsid ';'   { cHostService().setById(qq(), $4).setBool(_sDisabled, false).update(qq(), false); }
-        ;
-if      : IFDEF_T  ifdef                        { yyskip(!$2);  }
-        | IFNDEF_T ifdef                        { yyskip($2);; }
         | SET_T REPLACE_T ';'                   { globalReplaceFlag = true; }
         | SET_T INSERT_T ';'                    { globalReplaceFlag = false; }
         | SET_T HOST_T SERVICE_T hsid VAR_T strs '=' vals ';'    { ivars[_sState] = cServiceVar::setValues(qq(), $4, slp2sl($6), vlp2vl($8)); }
         | SET_T HOST_T SERVICE_T hsid STATE_T int str_z ';'      { pHostService = new cHostService();
-                                                                  pHostService->setById(qq(), $4);
-                                                                  pHostService->setState(qq(), notifSwitch($6), sp2s($7));
-                                                                  pDelete(pHostService);
-                                                                }
-
+                                                                      pHostService->setById(qq(), $4);
+                                                                      pHostService->setState(qq(), notifSwitch($6), sp2s($7));
+                                                                      pDelete(pHostService);
+                                                                 }
+        ;
+if      : IFDEF_T  ifdef                        { yyskip(!$2);  }
+        | IFNDEF_T ifdef                        { yyskip($2);; }
         ;
 ifdef   : PLACE_T str                   { $$ = NULL_ID != cPlace().     getIdByName(qq(), sp2s($2), EX_IGNORE); }
         | PLACE_T GROUP_T str           { $$ = NULL_ID != cPlaceGroup().getIdByName(qq(), sp2s($3), EX_IGNORE); }
