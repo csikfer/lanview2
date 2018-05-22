@@ -528,14 +528,14 @@ void lanView::setSelfObjects()
     if (pDb != NULL && pDb->isOpen()) {
         if (!isMainThread()) EXCEPTION(EPROGFAIL);
         pSelfNode = new cNode;
-        if (selfHostServiceId != NULL_ID) {
+        if (selfHostServiceId != NULL_ID) {                     // ID set by command parameter
             pSelfHostService = new cHostService();
             pSelfHostService->setById(*pQuery, selfHostServiceId);
             pSelfNode->setById(*pQuery, pSelfHostService->getId(_sNodeId));
             pSelfService = cService::service(*pQuery, pSelfHostService->getId(_sServiceId));
             setSelfStateF = true;
         }
-        else if (pSelfNode->fetchSelf(*pQuery, EX_IGNORE)) {
+        else if (pSelfNode->fetchSelf(*pQuery, EX_IGNORE)) {    // Service name == app name
             pSelfService = cService::service(*pQuery, appName, EX_IGNORE);
             if (pSelfService != NULL) {
                 pSelfHostService = new cHostService();
@@ -544,12 +544,12 @@ void lanView::setSelfObjects()
                 if (1 == pSelfHostService->completion(*pQuery)) {
                     setSelfStateF = true;
                 }
-                else {// Nincs, vagy nem egyértelmű
+                else {                                  // not found or unclear
                     pDelete(pSelfHostService);
                 }
             }
         }
-        else {
+        else {                                                  // unknown node
             pDelete(pSelfNode);
         }
     }

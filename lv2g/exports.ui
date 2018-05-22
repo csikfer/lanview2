@@ -102,5 +102,22 @@
   </layout>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>pushButtonClear</sender>
+   <signal>clicked()</signal>
+   <receiver>textEdit</receiver>
+   <slot>clear()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>49</x>
+     <y>770</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>593</x>
+     <y>396</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

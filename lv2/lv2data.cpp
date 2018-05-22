@@ -2675,22 +2675,28 @@ cInterface * cNode::portSetVlan(int __port_index, qlonglong __vlanId, enum eVlan
     return p;
 }
 
-cInterface *cNode::portSetVlans(const QString& __port, const QList<qlonglong>& _ids)
+cInterface *cNode::portSetVlans(const QString& __port, const QVariantList& _ids)
 {
     cInterface *p = getPort(__port)->reconvert<cInterface>();
     enum eVlanType t = VT_UNTAGGED;
-    foreach(qlonglong id, _ids) {
+    foreach(QVariant v, _ids) {
+        bool ok;
+        qlonglong id = v.toLongLong(&ok);
+        EXCEPTION(EDATA);
         p->joinVlan(id, t, ST_MANUAL);
         t = VT_TAGGED;
     }
     return p;
 }
 
-cInterface *cNode::portSetVlans(int __port_index, const QList<qlonglong>& _ids)
+cInterface *cNode::portSetVlans(int __port_index, const QVariantList& _ids)
 {
     cInterface *p = getPort(__port_index)->reconvert<cInterface>();
     enum eVlanType t = VT_UNTAGGED;
-    foreach(qlonglong id, _ids) {
+    foreach(QVariant v, _ids) {
+        bool ok;
+        qlonglong id = v.toLongLong(&ok);
+        EXCEPTION(EDATA);
         p->joinVlan(id, t, ST_MANUAL);
         t = VT_TAGGED;
     }

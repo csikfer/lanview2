@@ -15,23 +15,16 @@
 
 class lv2portStat;
 
-class cPortStat : public cInspector {
-public:
-    cPortStat(QSqlQuery& q, const QString& __sn);
-    ~cPortStat();
-    virtual cInspector * newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong hoid, cInspector *pid);
-};
-
 /// @class cDevicePSt
 /// Az egy lekérdezendő eszközt reprezentál
-class cDevicePSt : public cInspector {
+class cDevPortStat : public cInspector {
 public:
     /// Konstruktor
-    cDevicePSt(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector *_par);
+    cDevPortStat(QSqlQuery& __q, const QString& _an);
     /// Destruktor
-    ~cDevicePSt();
+    ~cDevPortStat();
     ///
-    virtual void postInit(QSqlQuery &_q, const QString &qs);
+    virtual void postInit(QSqlQuery &_q, const QString &qs = QString());
     void varsInit(QSqlQuery &_q, cInterface *pInterface);
     /// A lekérdezést végző virtuális metódus.
     /// @par q A lekerdezés eredményét a q objetummal írja az adatbázisba.
@@ -52,20 +45,6 @@ public:
     static int ixPortOStat;
     static int ixPortAStat;
     static int ixIfdescr;
-    /*
-    static int ixIfmtu;
-    static int ixIfspeed;
-    static int ixIfinoctets;
-    static int ixIfinucastpkts;
-    static int ixIfinnucastpkts;
-    static int ixIfindiscards;
-    static int ixIfinerrors;
-    static int ixIfoutoctets;
-    static int ixIfoutucastpkts;
-    static int ixIfoutnucastpkts;
-    static int ixIfoutdiscards;
-    static int ixIfouterrors;
-    */
     static int ixStatLastModify;
 };
 

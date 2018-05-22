@@ -164,10 +164,15 @@ class LV2SHARED_EXPORT cInspector : public QObject {
     friend class cInspectorThread;
     Q_OBJECT
 public:
-    /// Üres konstruktor
+    /// Ha a _par értéke NULL, és a lanView::pSelfHostService nem NULL, akkor a lanView::pSelfHostService alapján inicializálja az objektumot.
+    /// Egyébként üres konstruktor.
     cInspector(cInspector *_par = NULL);
     /// Konstruktor
-    /// A hostService adattagban csak a megadott objektumok ID-jét írja be.
+    /// @param __par    Pointer of parent object.
+    /// @param pN   Host object pointer, the created object releases it.
+    /// @param pS   Service object pointer, the created object releases it.
+    /// @param pP   Port object pointer or NULL, the created object releases it.
+    /// A hostService adattagban csak a megadott objektumok ID-jét írja be, nem olvassa be a többi mezőt, nem ellenörzi a létezését.
     cInspector(cInspector * __par, cNode *pN, const cService *pS, cNPort *pP = NULL);
     /// Az objektumot mint saját szolgálltatás tölti fel
     /// @param q Az adatbázis művelethez használható QSqlQuery objektum referenciája.

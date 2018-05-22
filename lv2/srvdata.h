@@ -30,6 +30,7 @@ public:
     }
 };
 
+#define UNMARKED_SERVICE_TYPE_ID    -1LL
 
 class cHostService;
 
@@ -49,8 +50,10 @@ public:
         const cService *p = service(__q, __id, __ex);
         return p == NULL ? _sNul : p->getName();
     }
-    static const qlonglong nilId;
 };
+
+#define NIL_SERVICE_ID   -1LL
+#define TICKET_SERVICE_ID 0LL
 
 enum eNoalarmType {
     NAT_OFF     =  0,   ///< A riasztás nincs letiltva

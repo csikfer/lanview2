@@ -380,7 +380,22 @@ cInspector::cInspector(cInspector * __par)
 {
     _DBGFN() << " parent : " << (__par == NULL ? "NULL" : __par->name()) << endl;
     preInit(__par);
-    inspectorType = IT_TIMING_PASSIVE;
+    if (__par != NULL || lanView::getInstance()->pSelfHostService == NULL) {
+        inspectorType = IT_TIMING_PASSIVE;
+    }
+    else {
+        QSqlQuery q = getQuery();
+        hostService.set(*(lanView::getInstance()->pSelfHostService));
+        pNode    = cPatch::getNodeObjById(q, hostService.getId(_sNodeId))->reconvert<cNode>();
+        qlonglong pid = hostService.getId(_sPortId);
+        if (pid != NULL_ID) {
+            pPort = cNPort::getPortObjById(q, pid);
+        }
+        pService = lanView::getInstance()->pSelfService;
+        pPrimeService = hostService.getPrimeService(q);
+        pProtoService = hostService.getProtoService(q);
+        getInspectorType(q);
+    }
 }
 
 cInspector::cInspector(cInspector * __par, cNode *pN, const cService *pS, cNPort *pP)

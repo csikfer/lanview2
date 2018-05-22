@@ -38,12 +38,12 @@ SOURCES += \
     findbymac.cpp \
     workstation.cpp \
     object_dialog.cpp \
-    exports.cpp \
     deducepatch.cpp \
     tableexportdialog.cpp \
     linkgraph.cpp \
     snmpdevquery.cpp \
-    popupreport.cpp
+    popupreport.cpp \
+    gexports.cpp
 
 HEADERS +=\
     lv2g_global.h \
@@ -74,12 +74,12 @@ HEADERS +=\
     findbymac.h \
     workstation.h \
     object_dialog.h \
-    exports.h \
     deducepatch.h \
     tableexportdialog.h \
     linkgraph.h \
     snmpdevquery.h \
-    popupreport.h
+    popupreport.h \
+    gexports.h
 
 FORMS += \
     column_filter.ui \

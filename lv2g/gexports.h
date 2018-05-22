@@ -25,12 +25,8 @@ private:
     QString lineFragment;
 protected slots:
     void start();
-    void stop();
     void save();
-    void changedText();
     void changedName(const QString &tn);
-    void text(const QString &_s);
-    void ready();
 };
 
 #endif // EXPORTS_H

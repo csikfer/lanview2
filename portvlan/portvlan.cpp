@@ -113,7 +113,7 @@ cDevicePV::cDevicePV(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __ta
     , snmp()
 {
     // Ha nincs megadva protocol szervíz ('nil'), akkor SNMP device esetén az az SNMP lesz
-    if (protoServiceId() == cService::nilId && __tableoid == cSnmpDevice().tableoid()) {
+    if (protoServiceId() == NIL_SERVICE_ID && __tableoid == cSnmpDevice().tableoid()) {
         hostService.set(_sProtoServiceId, pSrvSnmp->getId());
         QSqlQuery q2 = getQuery();
         hostService.update(q2, false, hostService.mask(_sProtoServiceId));

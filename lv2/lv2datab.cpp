@@ -819,6 +819,9 @@ void cColStaticDescrBool::init()
 
 CDDUPDEF(cColStaticDescrBool)
 /* ....................................................................................................... */
+const QVariant cColStaticDescrArray::emptyVariantList = QVariant(QVariantList());
+const QVariant cColStaticDescrArray::emptyStringList  = QVariant(QStringList());
+
 QVariant stringListToSql(const QStringList& sl)
 {
     bool    empty = true;

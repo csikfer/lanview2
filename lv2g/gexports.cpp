@@ -1,4 +1,5 @@
-#include "exports.h"
+#include "gexports.h"
+#include "export.h"
 #include "cerrormessagebox.h"
 #include <QRegExp>
 
@@ -11,15 +12,15 @@ cExportsWidget::cExportsWidget(QMdiArea *par)
 //    pThread = NULL;
     isStop  = false;
     QSqlQuery q = getQuery();
-    QStringList ol = cSysParam::getTextSysParam(q, "export_list").split(",");
+    QStringList ol;
+    ol << _sParamTypes << _sSysParams << _sServices << _sQueryParsers;
     pUi->setupUi(this);
     pUi->comboBoxTable->addItems(ol);
     bool empty = ol.isEmpty();
-    pUi->pushButtonSave->setDisabled(empty);
+    pUi->pushButtonStop->setDisabled(true);
     if (!empty) changedName(ol.first());
     connect(pUi->pushButtonExport, SIGNAL(clicked()),     this, SLOT(start()));
     connect(pUi->pushButtonSave,   SIGNAL(clicked()),     this, SLOT(save()));
-    connect(pUi->textEdit,         SIGNAL(textChanged()), this, SLOT(changedText()));
     connect(pUi->comboBoxTable,    SIGNAL(currentTextChanged(QString)), this, SLOT(changedName(QString)));
 }
 
@@ -39,35 +40,30 @@ void cExportsWidget::disable(bool f)
 
 void cExportsWidget::start()
 {
+    pUi->pushButtonExport->setDisabled(true);
+    QString tn = pUi->comboBoxTable->currentText();
+    QString r;
+    cExport e;
+    if      (0 == tn.compare(_sParamTypes))     r = e.paramType(EX_IGNORE);
+    else if (0 == tn.compare(_sSysParams))      r = e.sysParams(EX_IGNORE);
+    else if (0 == tn.compare(_sServices))       r = e.services(EX_IGNORE);
+    else if (0 == tn.compare(_sQueryParsers))   r = e.queryParser(EX_IGNORE);
+    if (r.isEmpty()) r = trUtf8("// %1 is empty.").arg(tn);
+    pUi->textEdit->append(r);
 }
-
-void cExportsWidget::stop()
-{
-}
-
 
 void cExportsWidget::save()
 {
     textToFile(fileName, pUi->textEdit->toPlainText(), this);
 }
 
-void cExportsWidget::changedText()
-{
-    pUi->pushButtonSave->setDisabled(pUi->textEdit->toPlainText().isEmpty());
-}
-
 void cExportsWidget::changedName(const QString& tn)
 {
+    QSqlQuery q = getQuery();
     cTableShape ts;
-    ts.setByName(tn);
+    ts.setByName(q, tn);
+    ts.fetchText(q);
     pUi->lineEditTableTitle->setText(ts.getText(cTableShape::LTX_TABLE_TITLE));
+    pUi->pushButtonExport->setDisabled(false);
 }
 
-void cExportsWidget::text(const QString& _s)
-{
-    (void)_s;
-}
-
-void cExportsWidget::ready()
-{
-}

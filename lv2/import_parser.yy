@@ -1504,7 +1504,7 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
     void *              u;
     qlonglong           i;
     intList *           il;
-    QList<qlonglong> *  idl;
+    QVariantList *      ids;
     bool                b;
     QString *           s;
     QStringList *       sl;
@@ -1549,7 +1549,7 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
 %token      REPLACE_T RANGE_T EXCLUDE_T PREP_T POST_T CASE_T RECTANGLE_T
 %token      DELETED_T PARAMS_T DOMAIN_T VAR_T PLAUSIBILITY_T CRITICAL_T
 %token      DIALOG_T AUTO_T FLAG_T TREE_T NOTIFY_T WARNING_T
-%token      REFRESH_T SQL_T CATEGORY_T ZONE_T
+%token      REFRESH_T SQL_T CATEGORY_T ZONE_T HEARTBEAT_T GROUPS_T
 
 %token <i>  INTEGER_V
 %token <r>  FLOAT_V
@@ -1574,7 +1574,7 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
 %type  <ip> ip
 %type  <pnt> point
 %type  <pol> frame points rectangle
-%type  <idl> vlan_ids
+%type  <ids> vlan_ids grpids
 %type  <ss>  ip_qq ip_q ip_a
 %type  <mac> mac
 %type  <sh>  snmph
@@ -1741,25 +1741,27 @@ srvid   : str                                   { $$ = cService().getIdByName(qq
 srvtid  : str                                   { $$ = cServiceType().getIdByName(qq(),*$1); delete $1; }
         ;
 // Név alapján a timeperiods rekord ID-t adja vissza
-tmpid   : str                                   { $$ = cTimePeriod().getIdByName(qq(), *$1); delete $1; }
+tmpid   : str                       { $$ = cTimePeriod().getIdByName(qq(), *$1); delete $1; }
         ;
-snet_id : str                                   { $$ = cSubNet().getIdByName(qq(), sp2s($1)); }
-        | ip                                    { cSubNet n; int i = n.getByAddress(qq(), *$1); delete $1;
-                                                  if (i < 0) yyerror("Not found.");
-                                                  if (i > 1) yyerror("Ambiguous.");
-                                                  $$ = n.getId(); }
+snet_id : str                       { $$ = cSubNet().getIdByName(qq(), sp2s($1)); }
+        | ip                        { cSubNet n; int i = n.getByAddress(qq(), *$1); delete $1;
+                                      if (i < 0) yyerror("Not found.");
+                                      if (i > 1) yyerror("Ambiguous.");
+                                      $$ = n.getId(); }
         ;
-ift_id  : str                                   { $$ = cIfType::ifTypeId(*$1); delete $1; }
+ift_id  : str                       { $$ = cIfType::ifTypeId(*$1); delete $1; }
         ;
-image_id: str                                   { $$ = cImage().getIdByName(sp2s($1)); }
+image_id: str                       { $$ = cImage().getIdByName(sp2s($1)); }
         ;
-plg_id  : str                                   { $$ = cPlaceGroup().getIdByName(sp2s($1)); }
+plg_id  : str                       { $$ = cPlaceGroup().getIdByName(sp2s($1)); }
         ;
-usr_id  : str                                   { $$ = cGroup().getIdByName(sp2s($1)); }
+usr_id  : str                       { $$ = cGroup().getIdByName(sp2s($1)); }
         ;
 // Név alapján a groups (felhasználói csoport) rekord ID-t adja vissza
-grpid   : str                                   { $$ = cGroup().getIdByName(qq(), *$1); delete $1; }
+grpid   : str                       { $$ = cGroup().getIdByName(qq(), *$1); delete $1; }
         ;
+grpids  : grpid                     { *($$ = new QVariantList) << $1; }
+        | grpids ',' grpid          { *($$ = $1) << $3; }
 /* */
 iexpr   : int_                      { $$ = $1; }
         | '-' iexpr  %prec NEG      { $$ = -$2; }
@@ -2325,7 +2327,7 @@ vlan_t  : str                                   { $$ = (qlonglong)vlanType(sp2s(
 set_t   : str                                   { $$ = (qlonglong)setType(sp2s($1)); }
         |                                       { $$ = (qlonglong)ST_MANUAL; }
         ;
-vlan_ids: vlan_id                               { *($$ = new QList<qlonglong>()) << $1; }
+vlan_ids: vlan_id                               { *($$ = new QVariantList) << $1; }
         | vlan_ids ',' vlan_id                  { *($$ = $1) << $3; }
         ;
 name_q  : str                                   { $$ = $1; }
@@ -2412,8 +2414,14 @@ srv_p   : SUPERIOR_T SERVICE_T MASK_T str ';'   { (*pService)[_sSuperiorServiceM
         | FLAPPING_T INTERVAL_T int ';'         { (*pService)[_sFlappingInterval]    = $3 * 1000; }
         | FLAPPING_T MAX_T CHANGE_T int ';'     { (*pService)[_sFlappingMaxChange]   = $4; }
         | SET_T str '=' value ';'               { (*pService)[*$2] = *$4; delete $2; delete $4; }
-        | TYPE_T str ';'                        { (*pService)[*$2] = cServiceType().getIdByName(qq(), sp2s($2)); delete $2; }
+        | TYPE_T str ';'                        { (*pService)[_sServiceTypeId] = cServiceType().getIdByName(qq(), sp2s($2)); }
         | bool_on DISABLE_T ';'                 { (*pService)[_sDisabled] = $1; }
+        | PORT_T int ';'                        { (*pService)[_sPort] = $2; }
+        | TIME_T PERIODS_T tmpid ';'            { pService->set(_sTimePeriodId, $3); }
+        | OFF_T LINE_T GROUPS_T grpids ';'      { pService->set(_sOffLineGroupIds, *$4); delete $4; }
+        | ON_T LINE_T GROUPS_T grpids ';'       { pService->set(_sOnLineGroupIds, *$4); delete $4; }
+        | HEARTBEAT_T TIME_T str ';'            { (*pService)[_sHeartbeatTime] = *$3; delete $3; }
+        | HEARTBEAT_T TIME_T int ';'            { (*pService)[_sHeartbeatTime] = $3 * 1000; }
         ;
 srvmsgs : srvmsg
         | srvmsgs srvmsg
@@ -2447,10 +2455,12 @@ hsrv_p  : PRIME_T SERVICE_T srvid ';'           { pHostService->set(_sPrimeServi
         | FLAPPING_T INTERVAL_T value ';'       { pHostService->set(_sFlappingInterval, *$3); delete $3; }
         | FLAPPING_T MAX_T CHANGE_T int ';'     { pHostService->set(_sFlappingMaxChange,  $4); }
         | TIME_T PERIODS_T tmpid ';'            { pHostService->set(_sTimePeriodId, $3); }
-        | OFF_T LINE_T GROUP_T grpid ';'        { pHostService->set(_sOffLineGroupId, $4); }
-        | ON_T LINE_T GROUP_T grpid ';'         { pHostService->set(_sOnLineGroupId, $4); }
+        | OFF_T LINE_T GROUPS_T grpids ';'      { pHostService->set(_sOffLineGroupIds, *$4); delete $4; }
+        | ON_T LINE_T GROUPS_T grpids ';'       { pHostService->set(_sOnLineGroupIds, *$4); delete $4; }
         | SET_T str '=' value ';'               { pHostService->set(*$2, *$4); delete $2; delete $4; }
         | bool_on DISABLE_T ';'                 { pHostService->set(_sDisabled,  $1); }
+        | HEARTBEAT_T TIME_T str ';'            { (*pHostService)[_sHeartbeatTime] = *$3; delete $3; }
+        | HEARTBEAT_T TIME_T int ';'            { (*pHostService)[_sHeartbeatTime] = $3 * 1000; }
         ;
 // host_services rekordok előkotrása, a kifelyezés értéke a kapott rekord szám, az első rekord a megallokált pHostService2-be
 // pHostService2-nek NULL-nak kell lennie. Több rekord a qq()-val kérhető be, ha el nem rontjuk a tartalmát.
@@ -2970,7 +2980,7 @@ static int yylex(void)
         TOK(REPLACE) TOK(RANGE) TOK(EXCLUDE) TOK(PREP) TOK(POST) TOK(CASE) TOK(RECTANGLE)
         TOK(DELETED) TOK(PARAMS) TOK(DOMAIN) TOK(VAR) TOK(PLAUSIBILITY) TOK(CRITICAL)
         TOK(DIALOG) TOK(AUTO) TOK(FLAG) TOK(TREE) TOK(NOTIFY) TOK(WARNING)
-        TOK(REFRESH) TOK(SQL) TOK(CATEGORY) TOK(ZONE)
+        TOK(REFRESH) TOK(SQL) TOK(CATEGORY) TOK(ZONE) TOK(HEARTBEAT) TOK(GROUPS)
         { "WST",    WORKSTATION_T }, // rövidítések
         { "ATC",    ATTACHED_T },
         { "INT",    INTEGER_T },

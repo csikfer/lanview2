@@ -33,8 +33,15 @@ int main (int argc, char * argv[])
 lv2portStat::lv2portStat() : lanView()
 {
     pSelfInspector = NULL;
+    // Nem a futtató eszköz, hanem a cél eszköz van benne, mivel a szervízpéldány alapján lett kitöltve, és nem lehet NULL
     if (lastError == NULL) {
         try {
+            if (pSelfNode == NULL) {
+                EXCEPTION(EDATA);
+            }
+            pDelete(pSelfNode);
+            pSelfNode = new cNode();
+            pSelfNode->fetchSelf(*pQuery);
             insertStart(*pQuery);
             subsDbNotif();
             setup();
@@ -49,97 +56,56 @@ lv2portStat::~lv2portStat()
 
 void lv2portStat::staticInit(QSqlQuery *pq)
 {
-    cDevicePSt::pRLinkStat = cService::service(*pq, "rlinkstat");
-    cDevicePSt::pPortVars  = cService::service(*pq, "portvars");
-    cDevicePSt::pSrvSnmp   = cService::service(*pq, _sSnmp);
+    cDevPortStat::pRLinkStat = cService::service(*pq, "rlinkstat");
+    cDevPortStat::pPortVars  = cService::service(*pq, "portvars");
+    cDevPortStat::pSrvSnmp   = cService::service(*pq, _sSnmp);
     cInterface i;
-    cDevicePSt::ixPortOStat         = i.toIndex(_sPortOStat);
-    cDevicePSt::ixPortAStat         = i.toIndex(_sPortAStat);
-    cDevicePSt::ixIfdescr           = i.toIndex(_sIfDescr.toLower());
-    /*
-    cDevicePSt::ixIfmtu             = i.toIndex(_sIfMtu.toLower());
-    cDevicePSt::ixIfspeed           = i.toIndex(_sIfSpeed.toLower());
-    cDevicePSt::ixIfinoctets        = i.toIndex(_sIfInOctets.toLower());
-    cDevicePSt::ixIfinucastpkts     = i.toIndex(_sIfInUcastPkts.toLower());
-    cDevicePSt::ixIfinnucastpkts    = i.toIndex(_sIfInUcastPkts.toLower());
-    cDevicePSt::ixIfindiscards      = i.toIndex(_sIfInDiscards.toLower());
-    cDevicePSt::ixIfinerrors        = i.toIndex(_sIfInErrors.toLower());
-    cDevicePSt::ixIfoutoctets       = i.toIndex(_sIfOutOctets.toLower());
-    cDevicePSt::ixIfoutucastpkts    = i.toIndex(_sIfOutUcastPkts.toLower());
-    cDevicePSt::ixIfoutnucastpkts   = i.toIndex(_sIfOutNUcastPkts.toLower());
-    cDevicePSt::ixIfoutdiscards     = i.toIndex(_sIfOutDiscards.toLower());
-    cDevicePSt::ixIfouterrors       = i.toIndex(_sIfOutErrors.toLower());
-    */
-    cDevicePSt::ixStatLastModify    = i.toIndex(_sStatLastModify);
+    cDevPortStat::ixPortOStat         = i.toIndex(_sPortOStat);
+    cDevPortStat::ixPortAStat         = i.toIndex(_sPortAStat);
+    cDevPortStat::ixIfdescr           = i.toIndex(_sIfDescr.toLower());
+    cDevPortStat::ixStatLastModify    = i.toIndex(_sStatLastModify);
 }
 
 void lv2portStat::setup(eTristate _tr)
 {
     staticInit(pQuery);
-    lanView::tSetup<cPortStat>(_tr);
+    lanView::tSetup<cDevPortStat>(_tr);
 }
 
 
 /******************************************************************************/
 
-cPortStat::cPortStat(QSqlQuery& q, const QString& __sn)
-    : cInspector(q, __sn)
-{
-    ;
-}
-
-cPortStat::~cPortStat()
-{
-    ;
-}
-
-cInspector * cPortStat::newSubordinate(QSqlQuery &q, qlonglong hsid, qlonglong hoid, cInspector *pid)
-{
-    return new cDevicePSt(q, hsid, hoid, pid);
-}
-
-/******************************************************************************/
-
-const cService *cDevicePSt::pRLinkStat = NULL;
-const cService *cDevicePSt::pPortVars  = NULL;
-const cService *cDevicePSt::pSrvSnmp   = NULL;
-int cDevicePSt::ixPortOStat = NULL_IX;
-int cDevicePSt::ixPortAStat = NULL_IX;
-int cDevicePSt::ixIfdescr = NULL_IX;
-/*
-int cDevicePSt::ixIfmtu = NULL_IX;
-int cDevicePSt::ixIfspeed = NULL_IX;
-int cDevicePSt::ixIfinoctets = NULL_IX;
-int cDevicePSt::ixIfinucastpkts = NULL_IX;
-int cDevicePSt::ixIfinnucastpkts = NULL_IX;
-int cDevicePSt::ixIfindiscards = NULL_IX;
-int cDevicePSt::ixIfinerrors = NULL_IX;
-int cDevicePSt::ixIfoutoctets = NULL_IX;
-int cDevicePSt::ixIfoutucastpkts = NULL_IX;
-int cDevicePSt::ixIfoutnucastpkts = NULL_IX;
-int cDevicePSt::ixIfoutdiscards = NULL_IX;
-int cDevicePSt::ixIfouterrors = NULL_IX;
-*/
-int cDevicePSt::ixStatLastModify = NULL_IX;
+const cService *cDevPortStat::pRLinkStat = NULL;
+const cService *cDevPortStat::pPortVars  = NULL;
+const cService *cDevPortStat::pSrvSnmp   = NULL;
+int cDevPortStat::ixPortOStat = NULL_IX;
+int cDevPortStat::ixPortAStat = NULL_IX;
+int cDevPortStat::ixIfdescr = NULL_IX;
+int cDevPortStat::ixStatLastModify = NULL_IX;
 
 
-cDevicePSt::cDevicePSt(QSqlQuery& __q, qlonglong __host_service_id, qlonglong __tableoid, cInspector * _par)
-    : cInspector(__q, __host_service_id, __tableoid, _par)
+cDevPortStat::cDevPortStat(QSqlQuery& __q, const QString &_an)
+    : cInspector(NULL)
     , snmp()
 {
+    (void)_an;
+    if (hostService.isNull() || pNode == NULL || pService == NULL) {
+        EXCEPTION(EDATA);
+    }
+
     // Ha nincs megadva protocol szervíz ('nil'), akkor SNMP device esetén az az SNMP lessz
-    if (protoServiceId() == cService::nilId && __tableoid == cSnmpDevice().tableoid()) {
+    if (protoServiceId() == NIL_SERVICE_ID && pNode->chkObjType<cSnmpDevice>()) {
         hostService.set(_sProtoServiceId, pSrvSnmp->getId());
-        QSqlQuery q2 = getQuery();
-        hostService.update(q2, false, hostService.mask(_sProtoServiceId));
-        pProtoService = hostService.getProtoService(q2);
+        hostService.update(__q, false, hostService.mask(_sProtoServiceId));
+        pProtoService = hostService.getProtoService(__q);
     }
     /// Csak az SNMP lekérdezés támogatott (egyenlőre)
-    if (protoServiceId() != pSrvSnmp->getId())
-        EXCEPTION(EDATA, protoServiceId(), QObject::trUtf8("Nem megfelelő proto_service_id!"));
+    if (protoServiceId() != pSrvSnmp->getId()) {
+        EXCEPTION(EDATA, protoServiceId(), QObject::trUtf8("Nem támogatott proto_service_id, vagy eszköz típus!"));
+    }
 }
 
-cDevicePSt::~cDevicePSt()
+cDevPortStat::~cDevPortStat()
 {
     ;
 }
@@ -147,7 +113,7 @@ cDevicePSt::~cDevicePSt()
 #define _DM PDEB(VVERBOSE)
 #define DM  _DM << endl;
 
-void cDevicePSt::postInit(QSqlQuery &_q, const QString&)
+void cDevPortStat::postInit(QSqlQuery &_q, const QString&)
 {
     DBGFN();
     cInspector::postInit(_q);
@@ -209,7 +175,7 @@ void cDevicePSt::postInit(QSqlQuery &_q, const QString&)
             cHostService hsc = hs;
             hs.clear();
             do {
-                if (hsc.getId(_sPrimeServiceId) != cService::nilId || hsc.getId(_sProtoServiceId) != cService::nilId) {
+                if (hsc.getId(_sPrimeServiceId) != NIL_SERVICE_ID || hsc.getId(_sProtoServiceId) != NIL_SERVICE_ID) {
                     QString msg = trUtf8("Hibás host_service objektum : %1\n"
                                      "A rekord törlő gazda (superior) szolgáltatás : %2"
                                      ).arg(hsc.names(_q), hostService.names(_q));
@@ -304,7 +270,7 @@ void cDevicePSt::postInit(QSqlQuery &_q, const QString&)
     DM;
 }
 
-void cDevicePSt::varsInit(QSqlQuery &_q, cInterface *pInterface)
+void cDevPortStat::varsInit(QSqlQuery &_q, cInterface *pInterface)
 {
     qlonglong pid = pInterface->getId();
     // Passzív objektum, hostService adattag csak részben inicializálva
@@ -318,8 +284,8 @@ void cDevicePSt::varsInit(QSqlQuery &_q, cInterface *pInterface)
         hs.setId(_sNodeId,    host().getId());
         hs.setId(_sPortId,    pid);
         hs.setId(_sSuperiorHostServiceId, hostServiceId());
-        hs.setId(_sPrimeServiceId, cService::nilId);
-        hs.setId(_sProtoServiceId, cService::nilId);
+        hs.setId(_sPrimeServiceId, NIL_SERVICE_ID);
+        hs.setId(_sProtoServiceId, NIL_SERVICE_ID);
         hs.setName(_sNoalarmFlag, _sOn);    // Tiltott alarm
         hs.insert(_q);
     }
@@ -372,7 +338,7 @@ static void setString(QString s, int ix, cInterface& iface, QBitArray& mask)
     }
 }
 
-int cDevicePSt::run(QSqlQuery& q, QString &runMsg)
+int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
 {
     enum eNotifSwitch rs = RS_ON;
     _DBGFN() << QChar(' ') << name() << endl;

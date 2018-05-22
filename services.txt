@@ -1,0 +1,67 @@
+// Update #634
+
+
+SERVICE "parser" "Query Parser (pure)" {
+    SUPERIOR SERVICE MASK "^lv2d$";
+    FEATURES ":timing=passive:method=parser:superior:";
+    NORMAL CHECK INTERVAL 300;
+    OFF LINE GROUPS "admin";
+}
+SERVICE "owfs" "Temp by OWFS" {
+    SUPERIOR SERVICE MASK "^parser$";
+    COMMAND "owget /$id/temperature";
+    FEATURES ":method=qparse,carried:timing=timed:";
+    MAX CHECK ATTEMPTS 2;
+    NORMAL CHECK INTERVAL 300;
+    RETRY CHECK INTERVAL 60;
+    OFF LINE GROUPS "admin";
+}
+
+SERVICE "portstat" "Device port status query daemon" {
+    SUPERIOR SERVICE MASK "^lv2d$";
+    FEATURES ":timing=passive:superior:";
+    NORMAL CHECK INTERVAL 60;
+}
+SERVICE "portvars" "Port változók" {
+    SUPERIOR SERVICE MASK "^pstat$";
+    FEATURES ":timing=passive:";
+    MAX CHECK ATTEMPTS 2;
+    HEARTBEAT TIME 60;
+}
+SERVICE "pstat" "Query port status by <protocol>" {
+    SUPERIOR SERVICE MASK "^portstat$";
+    COMMAND "portstat $S  -R $host_service_id";
+    FEATURES ":process=continue:timing=timed:logrot=500M,8:method=inspector:";
+    MAX CHECK ATTEMPTS 2;
+    NORMAL CHECK INTERVAL 30;
+    RETRY CHECK INTERVAL 10;
+    FLAPPING INTERVAL 30;
+}
+
+SERVICE "portvlan" {
+    SUPERIOR SERVICE MASK "^lv2d$";
+    COMMAND "portvlan $S -R $host_service_id";
+    FEATURES ":process=continue:timing=passive:superior:logrot=500M,8:method=inspector:";
+    MAX CHECK ATTEMPTS 1;
+    NORMAL CHECK INTERVAL 300;
+    FLAPPING MAX CHANGE 5;
+}
+SERVICE "pvlan" {
+    SUPERIOR SERVICE MASK "^portvlan$";
+    FEATURES ":timing=timed:delay=1000:";
+    MAX CHECK ATTEMPTS 3;
+    NORMAL CHECK INTERVAL 1800;
+    RETRY CHECK INTERVAL 300;
+    FLAPPING INTERVAL 10800;
+    FLAPPING MAX CHANGE 4;
+}
+
+SERVICE "syscron" "System cron" {
+    SUPERIOR SERVICE MASK "^lv2d$";
+    FEATURES ":timing=timed,thread:delay=600000:";
+    NORMAL CHECK INTERVAL 600;
+    RETRY CHECK INTERVAL 600;
+    FLAPPING INTERVAL 3600;
+    FLAPPING MAX CHANGE 5;
+}
+

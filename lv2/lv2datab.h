@@ -412,7 +412,9 @@ static inline QStringList sqlToStringList(const QVariant& v)
 /// Az ős cColStaticDescr osztályt a általános tömb típus konverziós függvényeivel egészíti ki.
 CSD_INHERITOR(cColStaticDescrArray)
 public:
-virtual QString toView(QSqlQuery& q, const QVariant& _f) const;
+    virtual QString toView(QSqlQuery& q, const QVariant& _f) const;
+    static const QVariant emptyVariantList;
+    static const QVariant emptyStringList;
 };
 
 /// @class cColStaticDescrPoint

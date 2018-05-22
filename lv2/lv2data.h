@@ -368,8 +368,8 @@ public:
 
 typedef tGroup<cTimePeriod, cTpow> tTimePeriodTpow;
 
-#define NEVER_TIMEPERIOD_ID     -1
-#define ALWAYS_TIMEPERIOD_ID     0
+#define NEVER_TIMEPERIOD_ID     -1LL
+#define ALWAYS_TIMEPERIOD_ID     0LL
 
 /* ******************************  ****************************** */
 
@@ -1417,8 +1417,8 @@ public:
     cInterface *portSetVlan(const QString& __port, qlonglong __vlanId, enum eVlanType __t, enum eSetType __st = ST_MANUAL);
     cInterface *portSetVlan(int __port_index, qlonglong __vlanId, enum eVlanType __t, enum eSetType __st = ST_MANUAL);
     ///
-    cInterface *portSetVlans(const QString& __port, const QList<qlonglong>& _ids);
-    cInterface *portSetVlans(int __port_index, const QList<qlonglong>& _ids);
+    cInterface *portSetVlans(const QString& __port, const QVariantList &_ids);
+    cInterface *portSetVlans(int __port_index, const QVariantList &_ids);
     /// A beolvasott port és cím rekoedokból kikeresi az első címet.
     QHostAddress getIpAddress() const;
     /// Ha nincsenek beolvasva a portok, akkor beolvassa azokat.

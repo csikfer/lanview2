@@ -5,7 +5,7 @@
 #include "setup.h"
 #include "gsetupwidget.h"
 #include "gparse.h"
-#include "exports.h"
+#include "gexports.h"
 #include "hsoperate.h"
 #include "findbymac.h"
 #include "apierrcodes.h"

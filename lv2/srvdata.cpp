@@ -66,14 +66,11 @@ cService::~cService()
 }
 
 int             cService::_ixFeatures   = NULL_IX;
-const qlonglong cService::nilId         = -1;
 
 const cRecStaticDescr&  cService::descr() const
 {
     if (initPDescr<cService>(_sServices)) {
         _ixFeatures = _descr_cService().toIndex(_sFeatures);
-        qlonglong id = _pRecordDescr->getIdByName(_sNil);
-        if (nilId != id) EXCEPTION(EDATA, id, _sNil);
     }
     return *_pRecordDescr;
 }
@@ -382,7 +379,7 @@ int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString&
     }
     // protocol service
     if (__pron.isEmpty()) {
-        where += QString("AND proto_service_id = %1 ").arg(cService::nilId);
+        where += QString("AND proto_service_id = %1 ").arg(NIL_SERVICE_ID);
     }
     else {
         sql   += "JOIN services AS prot  ON prot.service_id = hs.proto_service_id ";
@@ -391,7 +388,7 @@ int cHostService::fetchByNames(QSqlQuery& q, const QString &__hn, const QString&
     }
     // prime service
     if (__prin.isEmpty()) {
-        where += QString("AND prime_service_id = %1 ").arg(cService::nilId);
+        where += QString("AND prime_service_id = %1 ").arg(NIL_SERVICE_ID);
     }
     else {
         sql   += "JOIN services AS prim  ON prim.service_id = hs.prime_service_id ";
@@ -651,7 +648,7 @@ QString cAlarm::htmlText(QSqlQuery& q, qlonglong _id)
     a.setById(q, _id);
     QString text;   // HTML text
 
-    if (0 == a.getId(_sHostServiceId)       // Ticket (ID = 0)
+    if (TICKET_SERVICE_ID == a.getId(_sHostServiceId)
      && !a.isNull(_sSuperiorAlarmId)) {     // Riasztáshoz csatolt ticket
         // Az eredeti riasztás a ticket-hez
         isTicket = true;
