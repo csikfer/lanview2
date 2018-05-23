@@ -66,7 +66,7 @@ QWidget * popupReportNode(QWidget *par, QSqlQuery& q, cRecord *po)
     bind << po->getId();
     msg2 = query2html(q, "mactab_node", "node_id = ?", bind, "ORDER BY port_index ASC");
     if (!msg2.isEmpty()) {
-        msg2 = htmlBold(QObject::trUtf8("Cím tábla :")) + msg2;
+        msg2 = toHhtmlBold(QObject::trUtf8("Cím tábla :")) + msg2;
     }
     return popupReportWindow(par, msg1.second + msg2, msg1.first);
 }

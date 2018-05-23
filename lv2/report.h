@@ -47,6 +47,7 @@ EXT_ QString toHtml(const QString& text, bool chgBreaks = false, bool esc = true
 static inline QString htmlWarning(const QString& text, bool chgBreaks = false, bool esc = true) {
     return "<div><b>" + toHtml(text, chgBreaks, esc) + "</b></div>";
 }
+#define htmlBold htmlWarning
 /// HTML konverzió
 /// @param text A konvertálandó szöveg
 /// @param chgBreaks Ha igaz, akkor a sor töréseket kicseréli a "<br>" stringre,
@@ -80,7 +81,7 @@ static inline QString htmlGrInf(const QString& text, bool chgBreaks = false, boo
 ///         elötte törli a többszörös soremeléseket, vagy szóközöket, tabulátorokat.
 /// @param esc Ha igaz, akkor a szöveget konvertálja a QString::toHtmlEscaped() metódussal.
 /// @return Italic (nem bekezdés!) konvertált szöveggel
-static inline QString htmlItalic(const QString& text, bool chgBreaks = false, bool esc = true) {
+static inline QString toHtmlItalic(const QString& text, bool chgBreaks = false, bool esc = true) {
     return "<i>" + toHtml(text, chgBreaks, esc) + "</i>";
 }
 /// HTML konverzió
@@ -89,7 +90,7 @@ static inline QString htmlItalic(const QString& text, bool chgBreaks = false, bo
 ///         elötte törli a többszörös soremeléseket, vagy szóközöket, tabulátorokat.
 /// @param esc Ha igaz, akkor a szöveget konvertálja a QString::toHtmlEscaped() metódussal.
 /// @return Széles karakter (nem bekezdés!) konvertált szöveggel
-static inline QString htmlBold(const QString& text, bool chgBreaks = false, bool esc = true) {
+static inline QString toHhtmlBold(const QString& text, bool chgBreaks = false, bool esc = true) {
     return "<b>" + toHtml(text, chgBreaks, esc) + "</b>";
 }
 /// HTML konverzió
@@ -98,7 +99,7 @@ static inline QString htmlBold(const QString& text, bool chgBreaks = false, bool
 ///         elötte törli a többszörös soremeléseket, vagy szóközöket, tabulátorokat.
 /// @param esc Ha igaz, akkor a szöveget konvertálja a QString::toHtmlEscaped() metódussal.
 /// @return Áthúzott karakter (nem bekezdés!) konvertált szöveggel
-static inline QString htmlStrikethrough(const QString& text, bool chgBreaks = false, bool esc = true) {
+static inline QString toHtmlStrikethrough(const QString& text, bool chgBreaks = false, bool esc = true) {
     return "<s>" + toHtml(text, chgBreaks, esc) + "</s>";
 }
 
@@ -243,10 +244,10 @@ static inline void expError(const QString& text, bool chgBreaks = false, bool es
     cExportQueue::push(htmlError(text, chgBreaks, esc));
 }
 static inline void expItalic(const QString& text, bool chgBreaks = false, bool esc = true) {
-    cExportQueue::push(htmlItalic(text, chgBreaks, esc));
+    cExportQueue::push(toHtmlItalic(text, chgBreaks, esc));
 }
 static inline void expBold(const QString& text, bool chgBreaks = false, bool esc = true) {
-    cExportQueue::push(htmlBold(text, chgBreaks, esc));
+    cExportQueue::push(toHhtmlBold(text, chgBreaks, esc));
 }
 static inline void expGreen(const QString& text, bool chgBreaks = false, bool esc = true) {
     cExportQueue::push("<div><b><span style=\"color:green\">" + toHtml(text, chgBreaks, esc) + "</span></b></div>");

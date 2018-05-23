@@ -646,12 +646,22 @@ bool linkColisionTest(QSqlQuery& q, bool& exists, const cPhsLink& _pl, QString& 
 
 tStringPair htmlReport(QSqlQuery& q, cRecord& o, const cTableShape& shape)
 {
+    static QString s = " : ";
     QString t = QObject::trUtf8("%1 riport.").arg(shape.getText(cTableShape::LTX_DIALOG_TITLE));
     QString html;
     foreach (cTableShapeField * pf, (QList<cTableShapeField *>)shape.shapeFields) {
-        if (pf->getBool(_sFieldFlags, FF_HTML)) {
-            html += htmlWarning(pf->getText(cTableShapeField::LTX_DIALOG_TITLE));   // bold
-            html += htmlInfo(o.view(q, pf->getName()), true);
+        static const int ixFieldFlag = pf->toIndex(_sFieldFlags);
+        if (pf->getBool(ixFieldFlag, FF_HTML)) {
+            bool huge = pf->getBool(ixFieldFlag, FF_HUGE);
+            QString t = pf->getText(cTableShapeField::LTX_DIALOG_TITLE) + s;
+            QString v = o.view(q, pf->getName());
+            if (huge) {
+                html += htmlWarning(t);   // bold
+                html += htmlInfo(v, true);
+            }
+            else {
+                html += htmlInfo(toHhtmlBold(t) + toHtml(v), false, false);
+            }
         }
     }
     return tStringPair(t, html);
