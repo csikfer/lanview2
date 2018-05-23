@@ -256,7 +256,7 @@ static inline void expHtmlLine() {
     cExportQueue::push(sHtmlLine);
 }
 
-
-EXT_ tStringPair htmlReport(QSqlQuery& q, cRecord& o, const QString& _name = _sNul);
+EXT_ tStringPair htmlReport(QSqlQuery& q, cRecord& o, const cTableShape& shape);
+EXT_ tStringPair htmlReport(QSqlQuery& q, cRecord& o, const QString& _name = _sNul, const cTableShape *pShape = NULL);
 
 #endif // REPORT_H

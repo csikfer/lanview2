@@ -560,31 +560,36 @@ cRecordTableHideRow::cRecordTableHideRow(int row, cRecordTableHideRows * _par) :
 
     pCheckBoxTab   = new QCheckBox;
     pCheckBoxTab->setChecked(0 == (pColumn->fieldFlags & ENUM2SET(FF_TABLE_HIDE)));
-    connect(pCheckBoxTab, SIGNAL(toggled(bool)), this, SLOT(on_checkBox_togle(bool)));
+    connect(pCheckBoxTab, SIGNAL(toggled(bool)), this, SLOT(on_checkBoxTab_togle(bool)));
     pParent->setCellWidget(row, HRC_HIDE_TAB, pCheckBoxTab);
 
-    pCheckBoxText  = new QCheckBox;
-    pCheckBoxText->setChecked(0 != (pColumn->fieldFlags & ENUM2SET(FF_HTML)));
-    connect(pCheckBoxText, SIGNAL(toggled(bool)), this, SLOT(on_checkBox_togle(bool)));
-    pParent->setCellWidget(row, HRC_HIDE_TEXT, pCheckBoxText);
+    pCheckBoxHTML  = new QCheckBox;
+    pCheckBoxHTML->setChecked(0 != (pColumn->fieldFlags & ENUM2SET(FF_HTML)));
+    connect(pCheckBoxHTML, SIGNAL(toggled(bool)), this, SLOT(on_checkBoxHTML_togle(bool)));
+    pParent->setCellWidget(row, HRC_HIDE_TEXT, pCheckBoxHTML);
 }
 
-void cRecordTableHideRow::on_checkBox_togle(bool)
+void cRecordTableHideRow::on_checkBoxTab_togle(bool st)
 {
-    qlonglong& ff = pColumn->fieldFlags;
-    if (pCheckBoxTab->isChecked()) {
-        ff &= ~ENUM2SET(FF_TABLE_HIDE);
+    qlonglong& ffTable = pColumn->fieldFlags;
+    if (st) {
+        ffTable &= ~ENUM2SET(FF_TABLE_HIDE);
     }
     else {
-        ff |=  ENUM2SET(FF_TABLE_HIDE);
-    }
-    if (pCheckBoxText->isChecked()) {
-        ff |=  ENUM2SET(FF_HTML);
-    }
-    else {
-        ff &= ~ENUM2SET(FF_HTML);
+        ffTable |=  ENUM2SET(FF_TABLE_HIDE);
     }
     pParent->refresh();
+}
+
+void cRecordTableHideRow::on_checkBoxHTML_togle(bool st)
+{
+    cTableShapeField& f = pColumn->shapeField;   // HTML
+    if (st) {
+        f.setOn(_sFieldFlags, ENUM2SET(FF_HTML));
+    }
+    else {
+        f.setOff(_sFieldFlags, ENUM2SET(FF_HTML));
+    }
 }
 
 int cRecordTableHideRow::columns()
@@ -1542,11 +1547,12 @@ void cRecordsViewBase::truncate()
 void cRecordsViewBase::report()
 {
     QModelIndexList mil = selectedRows();
-    cRecord *po = actRecord();
-    if (po == NULL) return;
-    QString name = pTableShape->feature(_sReport);
-    tStringPair sp = htmlReport(*pq, *po, name);
-    popupReportWindow(_pWidget, sp.second, sp.first);
+    if (mil.size() == 1) {       // Report single record
+        cRecord *po = actRecord();
+        QString name = pTableShape->feature(_sReport);
+        tStringPair sp = htmlReport(*pq, *po, name, pTableShape);
+        popupReportWindow(_pWidget, sp.second, sp.first);
+    }
 }
 
 qlonglong cRecordsViewBase::actId(eEx __ex)
@@ -1842,7 +1848,6 @@ void cRecordTable::setEditButtons()
     buttonDisable(DBT_DELETE,  isNoDelete || n <  1 );
     buttonDisable(DBT_RECEIPT, n <  1);
     buttonDisable(DBT_COPY,    n <  1);
-    buttonDisable(DBT_REPORT,  n != 1);
 }
 
 
@@ -2447,6 +2452,26 @@ void cRecordTable::copy()
         EXCEPTION(EPROGFAIL);
     }
 }
+
+void cRecordTable::report()
+{
+    tStringPair sp;
+    QModelIndexList mil = selectedRows();
+    if (mil.size() == 1) {       // Report single record
+        cRecordsViewBase::report();
+        return;
+    }
+    if (mil.size() > 0) {   // Report selected multiple record
+        sp.first  = pTableShape->getText(cTableShape::LTX_TABLE_TITLE);
+        sp.second = pTableModel()->toHtml(mil);
+    }
+    else {
+        sp.first  = pTableShape->getText(cTableShape::LTX_TABLE_TITLE);
+        sp.second = pTableModel()->toHtml();
+    }
+    popupReportWindow(_pWidget, sp.second, sp.first);
+}
+
 
 void cRecordTable::_refresh(bool all)
 {

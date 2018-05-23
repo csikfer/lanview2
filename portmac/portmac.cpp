@@ -194,17 +194,17 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
                 // host ID
                 qlonglong hid = NULL_ID;
                 cNPort    lp;
-                if (pid_lldp != NULL_ID && pid_log != NULL_ID && pid_lldp == pid_log) {
+                if (pid_lldp != NULL_ID && pid_log != NULL_ID && pid_lldp != pid_log) { // Antagonism.
                     msg = trUtf8("A %1:%2 trunk %3 tagjáhozrendelt linkek ellentmondásosak: LLDP : %4; Logikai : %5")
                             .arg(host().getName(), np.getName(), host().ports[ix]->getName()
                                  , cNPort::getFullNameById(__q, pid_lldp), cNPort::getFullNameById(__q, pid_log));
                     APPMEMO(__q, msg, RS_CRITICAL);
                     pid_log = NULL_ID;  // Az LLDP-t hisszük el.
                 }
-                if (pid_lldp != NULL_ID || pid_log != NULL_ID) {
+                if (pid_lldp != NULL_ID || pid_log != NULL_ID) {                        // Agreement.
                     hid = lp.setById(__q, pid_lldp == NULL_ID ? pid_log : pid_lldp).getId(_sNodeId);
                 }
-                else {  // Nincs LLDP link ? Trunk-nél!
+                else {                                                                  // No information about LLDP
                     // Ha van "link_is_invisible_for_LLDP" paraméter, és igaz, akkor nem pampogunk a link hiánya miatt
                     eTristate f = host().ports[ix]->getBoolParam(linkIsInvisibleForLLDPTypeId, EX_IGNORE);
                     if (f == TS_TRUE) continue;

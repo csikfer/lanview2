@@ -141,13 +141,14 @@ public:
     QString     name;
     QString     title;
     QCheckBox   *pCheckBoxTab;
-    QCheckBox   *pCheckBoxText;
+    QCheckBox   *pCheckBoxHTML;
     cRecordTableHideRows *pParent;
     cRecordTableColumn   *pColumn;
     static int columns();
     static QString colTitle(int i);
 private slots:
-    void on_checkBox_togle(bool);
+    void on_checkBoxTab_togle(bool st);
+    void on_checkBoxHTML_togle(bool st);
 };
 
 class LV2GSHARED_EXPORT cRecordTableHideRows : public QTableWidget {
@@ -474,6 +475,7 @@ public:
     void putIn();
     void takeOut();
     void copy();
+    void report();
 
 
     void setEditButtons();

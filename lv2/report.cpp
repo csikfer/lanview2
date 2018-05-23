@@ -644,15 +644,37 @@ bool linkColisionTest(QSqlQuery& q, bool& exists, const cPhsLink& _pl, QString& 
 
 /* ************************************************************************************************ */
 
-tStringPair htmlReport(QSqlQuery& q, cRecord& o, const QString& _name)
+tStringPair htmlReport(QSqlQuery& q, cRecord& o, const cTableShape& shape)
+{
+    QString t = QObject::trUtf8("%1 riport.").arg(shape.getText(cTableShape::LTX_DIALOG_TITLE));
+    QString html;
+    foreach (cTableShapeField * pf, (QList<cTableShapeField *>)shape.shapeFields) {
+        if (pf->getBool(_sFieldFlags, FF_HTML)) {
+            html += htmlWarning(pf->getText(cTableShapeField::LTX_DIALOG_TITLE));   // bold
+            html += htmlInfo(o.view(q, pf->getName()), true);
+        }
+    }
+    return tStringPair(t, html);
+
+}
+
+tStringPair htmlReport(QSqlQuery& q, cRecord& o, const QString& _name, const cTableShape * pShape)
 {
     QString name = _name.isEmpty() ? o.tableName() : _name;
+    // Custom
     if (name == _sPatchs || name == _sNodes || name == _sSnmpDevices) {
         return htmlReportNode(q, o);
     }
     if (name == _sPlaces) {
         return htmlReportPlace(q, o);
     }
-    EXCEPTION(EDATA, 0, QObject::trUtf8("Invalid report type : name = %1; Object : %2").arg(_name, o.identifying()));
-    return tStringPair();
+    // General
+    cTableShape shape;
+    if (pShape == NULL) {
+        shape.setByName(q, name);
+        shape.fetchFields(q);
+        shape.fetchText(q);
+        pShape = &shape;
+    }
+    return htmlReport(q, o, *pShape);
 }
