@@ -119,21 +119,21 @@ QString list2html(QSqlQuery& q, const tRecordList<R>& list, cTableShape& shape, 
     if (shape.shapeFields.isEmpty()) shape.fetchFields(q);
     QStringList head;
     QList<QStringList> data;
-    int i, j;
-    int n = shape.shapeFields.size();
-    int m = list.size();
-    for (i = 0; i < m; ++i) {
+    int col, row;
+    int cols = shape.shapeFields.size();
+    int rows = list.size();
+    for (col = 0; col < rows; ++col) {
         data << QStringList();
     }
-    for (i = 0; i < n; ++i) {   // COLUMNS
-        const cTableShapeField& fs = *shape.shapeFields.at(i);
+    for (col = 0; col < cols; ++col) {   // COLUMNS
+        const cTableShapeField& fs = *shape.shapeFields.at(col);
         if (shrt ? !fs.getBool(_sFieldFlags, FF_HTML) : fs.getBool(_sFieldFlags, FF_TABLE_HIDE)) {
             continue;
         }
         head << fs.getText(cTableShapeField::LTX_TABLE_TITLE, fs.getName());
         QString fn = fs.getName(_sTableShapeFieldName);
-        for (j = 0; j < m; ++j) {   // ROWS
-            data[j] << list.at(j)->view(q, fn);
+        for (row = 0; row < rows; ++row) {   // ROWS
+            data[row] << list.at(row)->view(q, fn);
         }
     }
     return htmlTable(head, data);

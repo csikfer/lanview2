@@ -661,8 +661,6 @@ QString cAlarm::htmlText(QSqlQuery& q, qlonglong _id)
     cNode  node;     node. setById(q, hs.         getId(_sNodeId));
     cPlace place;    place.setById(q, node.       getId(_sPlaceId));
     const cService *pSrv = cService::service(q,hs.getId(_sServiceId), EX_IGNORE);
-    tOwnRecords<cServiceVar, cHostService> vars(&hs);
-    int n = vars.fetch(q);
     QString aMsg = execSqlTextFunction(q, "alarm_message", hs.getId(), a.get(_sMaxStatus));
     text += _sBr + trUtf8("Riasztási állpot kezdete") + " : <b>" + pTargetRec->view(q, _sBeginTime) + "</b>";
     text += _sBr + trUtf8("A hállózati elem helye")   + " : <b>" + place.getName() + "</b>, <i>" + place.getNote() + "</i>";
@@ -670,8 +668,10 @@ QString cAlarm::htmlText(QSqlQuery& q, qlonglong _id)
     text += _sBr + trUtf8("Szolgáltatás neve")        + " : <b>" + pSrv->getName() + "</b>, <i>" + pSrv->getNote() + "</i>";
     text += _sBr + trUtf8("Riasztás oka")          + " : <b><i>" + aMsg + "</i></b>";
     text += _sBr + trUtf8("Csatolt üzenet")        + " : <b><i>" + pTargetRec->getName(_sEventNote) + "</i></b>";
+    tOwnRecords<cServiceVar, cHostService> vars(&hs);
+    int n = vars.fetch(q);
     if (n)  {
-        cTableShape *pShape = NULL;
+        static cTableShape *pShape = NULL;
         if (pShape == NULL) {
             pShape = new cTableShape;
             pShape->setByName(q, _sServiceVars);
