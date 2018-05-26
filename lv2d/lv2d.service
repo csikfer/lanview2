@@ -6,6 +6,7 @@ After=postgresql@9.5-main.service
 Type=simple
 User=lanview2
 ExecStart=/usr/local/bin/lv2d -L /var/local/lanview2/log/lv2d.log
+Restart=always
 
 [Install]
 WantedBy=multi-user.target
