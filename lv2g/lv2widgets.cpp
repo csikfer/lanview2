@@ -2292,7 +2292,7 @@ void cFKeyWidget::setFilter(const QString& _s)
 {
     if(pModel == NULL) EXCEPTION(EPROGFAIL);
     qlonglong id;
-    int ix = pUi->comboBox->currentIndex();
+    int ix = pComboBox->currentIndex();
     id = pModel->atId(ix);
     if (_s.isNull()) {
         pModel->setFilter(QVariant(), OT_DEFAULT, FT_NO);
