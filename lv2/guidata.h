@@ -210,6 +210,8 @@ public:
     virtual void toEnd();
     virtual bool toEnd(int i);
     virtual void clearToEnd();
+    virtual bool insert(QSqlQuery &__q, eEx __ex = EX_ERROR);
+    virtual bool rewrite(QSqlQuery &__q, eEx __ex = EX_ERROR);
     void setTitle(const QStringList& _tt);
     bool fetchByNames(QSqlQuery& q, const QString& tsn, const QString& fn, eEx __ex = EX_ERROR);
     static qlonglong getIdByNames(QSqlQuery& q, const QString& tsn, const QString& fn);

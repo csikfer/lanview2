@@ -242,6 +242,7 @@ QString cExport::_export(QSqlQuery &q, cTableShape& o)
     r += paramLine(q, "REFINE",             o[_sRefine]);
     r += paramLine(q, "TABLE INHERIT TYPE", o[_sTableInheritType]);
     r += paramLine(q, "INHERIT TABLE NAMES",o[_sInheritTableNames]);
+    r += paramLine(q, "STYLE SHEET ",       o[_sStyleSheet]);
     r += paramLine(q, "TABLE VIEW RIGHTS",  o[_sViewRights]);
     r += paramLine(q, "TABLE EDIT RIGHTS",  o[_sEditRights]);
     r += paramLine(q, "TABLE DELETE RIGHTS",o[_sRemoveRights]);
@@ -270,19 +271,13 @@ QString cExport::_export(QSqlQuery &q, cTableShape& o)
         cTableShapeField& f = *o.shapeFields.at(i);
         r += lineBeginBlock(head("ADD FIELD ", f));
         r += features(f);
+        r += paramLine(q, "EXPRESSION",   f[_sExpression]);
+        r += paramLine(q, "FLAG",         f[_sFieldFlags]);
+        r += paramLine(q, "DEFAULT VALUE",f[_sDefaultValue]);
         r += paramLine(q, "VIEW RIGHTS",  f[_sViewRights]);
         r += paramLine(q, "EDIT RIGHTS",  f[_sEditRights]);
         r += lineEndBlock();
     }
-/*
-    r += paramLine(q, "", o[_s]);
-    r += paramLine(q, "", o[_s]);
-    r += paramLine(q, "", o[_s]);
-    r += paramLine(q, "", o[_s]);
-    r += paramLine(q, "", o[_s]);
-    r += paramLine(q, "", o[_s]);
-    r += paramLine(q, "", o[_s]);
-*/
     exportedNames << n;
     r += lineEndBlock();
     return r;

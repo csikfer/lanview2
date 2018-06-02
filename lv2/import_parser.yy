@@ -10,6 +10,7 @@
 #include "import_parser.h"
 #include "scan.h"
 #include "vardata.h"
+#include "export.h"
 
 #define  YYERROR_VERBOSE
 
@@ -1540,8 +1541,8 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
 %token      MASK_T LIST_T VLANS_T ID_T DYNAMIC_T FIXIP_T PRIVATE_T PING_T
 %token      NOTIF_T ALL_T RIGHTS_T REMOVE_T SUB_T FEATURES_T MAC_T EXTERNAL_T
 %token      LINK_T LLDP_T SCAN_T TABLE_T FIELD_T SHAPE_T TITLE_T REFINE_T
-%token      DEFAULTS_T ENUM_T RIGHT_T VIEW_T INSERT_T EDIT_T
-%token      INHERIT_T NAMES_T VALUE_T DEFAULT_T
+%token      DEFAULTS_T ENUM_T RIGHT_T VIEW_T INSERT_T EDIT_T LANG_T TEXT_T
+%token      INHERIT_T NAMES_T VALUE_T DEFAULT_T STYLE_T SHEET_T
 %token      ORD_T SEQUENCE_T MENU_T GUI_T OWN_T TOOL_T TIP_T WHATS_T THIS_T
 %token      EXEC_T TAG_T REAL_T ENABLE_T SERIAL_T INVENTORY_T NUMBER_T
 %token      DATE_T DISABLE_T EXPRESSION_T PREFIX_T RESET_T CACHE_T
@@ -2583,8 +2584,9 @@ tmodp   : SET_T DEFAULTS_T ';'              { pTableShape->setDefaults(qq()); }
         | TYPE_T tstypes ';'                { pTableShape->setId( _sTableShapeType, $2); }
         | TYPE_T ON_T tstypes ';'           { pTableShape->setOn( _sTableShapeType, $3); }
         | TYPE_T OFF_T tstypes ';'          { pTableShape->setOff(_sTableShapeType, $3); }
+        | STYLE_T SHEET_T str ';'           { pTableShape->setName(_sStyleSheet, sp2s($3)); }
         // title, dialog title, member title (group), not member title (group)
-//        | TABLE_T TITLE_T strs_zz  ';'          { pTableShape->setTitle(slp2sl($3)); }
+        | TABLE_T TITLE_T strs_zz  ';'      { pTableShape->setTitle(slp2sl($3)); }
         | READ_T ONLY_T bool_on ';'         { pTableShape->enum2setBool(_sTableShapeType, TS_READ_ONLY, $3); }
         | FEATURES_T str ';'                { pTableShape->set(_sFeatures, sp2s($2)); }
         | AUTO_T REFRESH_T str ';'          { pTableShape->setName(_sAutoRefresh, sp2s($3)); }
@@ -2599,7 +2601,7 @@ tmodp   : SET_T DEFAULTS_T ';'              { pTableShape->setDefaults(qq()); }
         | INSERT_T RIGHTS_T rights ';'      { pTableShape->setName(_sInsertRights, sp2s($3)); }
         | SET_T str '.' str '=' value ';'   { pTableShape->fset(sp2s($2), sp2s($4), vp2v($6)); }
         | SET_T '(' strs ')' '.' str '=' value ';'{ pTableShape->fsets(slp2sl($3), sp2s($6), vp2v($8)); }
-//        | FIELD_T str TITLE_T strs_zz ';'       { pTableShape->shapeFields.get(sp2s($2))->setTitle(slp2sl($4)); }
+        | FIELD_T str TITLE_T strs_zz ';'       { pTableShape->shapeFields.get(sp2s($2))->setTitle(slp2sl($4)); }
         | FIELD_T str NOTE_T str ';'            { pTableShape->fset(sp2s($2),_sTableShapeFieldNote, sp2s($4)); }
         | FIELD_T strs VIEW_T RIGHTS_T rights ';'{pTableShape->fsets(slp2sl($2), _sViewRights, sp2s($5)); }
         | FIELD_T strs EDIT_T RIGHTS_T rights ';'{pTableShape->fsets(slp2sl($2), _sEditRights, sp2s($5)); }
@@ -2621,8 +2623,8 @@ tmodp   : SET_T DEFAULTS_T ';'              { pTableShape->setDefaults(qq()); }
                                                   delete $2;
                                                 }
         | FIELD_T str DEFAULT_T VALUE_T str ';' { pTableShape->fset(sp2s($2), _sDefaultValue, sp2s($5)); }
-//        | FIELD_T str TOOL_T TIP_T str ';'      { pTableShape->fset(sp2s($2), _sToolTip, sp2s($5)); }
-//        | FIELD_T str WHATS_T THIS_T str ';'    { pTableShape->fset(sp2s($2), _sWhatsThis, sp2s($5)); }
+        | FIELD_T str TOOL_T TIP_T str ';'      { pTableShape->shapeFields.get(sp2s($2))->setText(cTableShapeField::LTX_TOOL_TIP,   sp2s($5)); }
+        | FIELD_T str WHATS_T THIS_T str ';'    { pTableShape->shapeFields.get(sp2s($2))->setText(cTableShapeField::LTX_WHATS_THIS, sp2s($5)); }
         | FIELD_T SEQUENCE_T int0 strs ';'      { pTableShape->setFieldSeq(slp2sl($4), $3); }
         | FIELD_T strs ORD_T strs ';'           { pTableShape->setOrders(*$2, *$4); delete $2; delete $4; }
         | FIELD_T '*'  ORD_T strs ';'           { pTableShape->setAllOrders(*$4); delete $4; }
@@ -2656,7 +2658,7 @@ fmodps  : fmodp
         | fmodps fmodp
         ;
 fmodp   : SET_T str '=' value ';'       { pTableShapeField->set(sp2s($2), vp2v($4)); }
-//        | TITLE_T strs_zz ';'           { pTableShapeField->setTitle(slp2sl($2)); }
+        | TITLE_T strs_zz ';'           { pTableShapeField->setTitle(slp2sl($2)); }
         | NOTE_T str ';'                { pTableShapeField->setName(_sTableShapeFieldNote, sp2s($2)); }
         | VIEW_T RIGHTS_T rights ';'    { pTableShapeField->setName(_sViewRights, sp2s($3)); }
         | EDIT_T RIGHTS_T rights ';'    { pTableShapeField->setName(_sEditRights, sp2s($3)); }
@@ -2666,8 +2668,8 @@ fmodp   : SET_T str '=' value ';'       { pTableShapeField->set(sp2s($2), vp2v($
         | FLAG_T ON_T fflags ';'        { pTableShapeField->setOn(_sFieldFlags, $3); }
         | FLAG_T OFF_T fflags ';'       { pTableShapeField->setOff(_sFieldFlags, $3); }
         | DEFAULT_T VALUE_T str ';'     { pTableShapeField->setName(_sDefaultValue, sp2s($3)); }
-//        | TOOL_T TIP_T str ';'          { pTableShapeField->setBool(_sToolTip, $3); }
-//        | WHATS_T THIS_T str ';'        { pTableShapeField->setBool(_sWhatsThis, $3); }
+        | TOOL_T TIP_T str ';'          { pTableShapeField->setText(cTableShapeField::LTX_TOOL_TIP, sp2s($3)); }
+        | WHATS_T THIS_T str ';'        { pTableShapeField->setText(cTableShapeField::LTX_WHATS_THIS, sp2s($3)); }
         ;
 appmenu : GUI_T str                     { pMenuApp = $2;}
             '{' menus '}'               { pDelete(pMenuApp); }
@@ -2794,9 +2796,12 @@ reparp  : REPLACE_T ARP_T ip mac str hsid str_z ';'
               delete $3; delete $4; }
         ;
 exports : print
+        | lang
         ;
 print   : PRINT_T str ';'               { cExportQueue::push(*$2); delete $2; }
-        | EXPORT_T SERVICE_T str ';'    {  }
+        | EXPORT_T SERVICE_T ';'        { cExportQueue::push(cExport().services()); }
+        ;
+lang    : LANG_T str
         ;
 %%
 
@@ -2971,8 +2976,8 @@ static int yylex(void)
         TOK(MASK) TOK(LIST) TOK(VLANS) TOK(ID) TOK(DYNAMIC) TOK(FIXIP) TOK(PRIVATE) TOK(PING)
         TOK(NOTIF) TOK(ALL) TOK(RIGHTS) TOK(REMOVE) TOK(SUB) TOK(FEATURES) TOK(MAC) TOK(EXTERNAL)
         TOK(LINK) TOK(LLDP) TOK(SCAN) TOK(TABLE) TOK(FIELD) TOK(SHAPE) TOK(TITLE) TOK(REFINE)
-        TOK(DEFAULTS) TOK(ENUM) TOK(RIGHT) TOK(VIEW) TOK(INSERT) TOK(EDIT)
-        TOK(INHERIT) TOK(NAMES) TOK(VALUE) TOK(DEFAULT)
+        TOK(DEFAULTS) TOK(ENUM) TOK(RIGHT) TOK(VIEW) TOK(INSERT) TOK(EDIT) TOK(LANG) TOK(TEXT)
+        TOK(INHERIT) TOK(NAMES) TOK(VALUE) TOK(DEFAULT) TOK(STYLE) TOK(SHEET)
         TOK(ORD) TOK(SEQUENCE) TOK(MENU) TOK(GUI) TOK(OWN) TOK(TOOL) TOK(TIP) TOK(WHATS) TOK(THIS)
         TOK(EXEC) TOK(TAG) TOK(ENABLE) TOK(SERIAL) TOK(INVENTORY) TOK(NUMBER)
         TOK(DATE) TOK(DISABLE) TOK(EXPRESSION) TOK(PREFIX) TOK(RESET) TOK(CACHE)

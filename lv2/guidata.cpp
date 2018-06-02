@@ -273,6 +273,7 @@ void cTableShape::clearToEnd()
 bool cTableShape::insert(QSqlQuery &__q, eEx __ex)
 {
     if (!cRecord::insert(__q, __ex)) return false;
+    saveText(__q);
     if (shapeFields.count()) {
         // if (getBool(_sIsReadOnly)) shapeFields.sets(_sIsReadOnly, QVariant(true));
         int i = shapeFields.insert(__q, __ex);
@@ -282,7 +283,9 @@ bool cTableShape::insert(QSqlQuery &__q, eEx __ex)
 }
 bool cTableShape::rewrite(QSqlQuery &__q, eEx __ex)
 {
-    return tRewrite(__q, shapeFields, 0, __ex);
+    bool r = tRewrite(__q, shapeFields, 0, __ex);
+    if (r) saveText(__q);
+    return r;
 }
 
 /// A típus mezőnek lehetnek olyan értékei is, melyek az adatbázisban nem szerepelnek,
@@ -338,11 +341,9 @@ bool cTableShape::setDefaults(QSqlQuery& q, bool _disable_tree)
 {
     bool r = true;
     QString n = getName();
-    /* !!!
-    setName(_sTableTitle, n);
-    setName(_sDialogTitle, n);
-    setName(_sDialogTabTitle, n);
-    */
+    setName(LTX_TABLE_TITLE, n);
+    setName(LTX_DIALOG_TITLE, n);
+    setName(LTX_DIALOG_TAB_TITLE, n);
     int type = ENUM2SET(TS_SIMPLE);
     const cRecStaticDescr& rDescr = *cRecStaticDescr::get(getName(_sTableName), getName(_sSchemaName));
     shapeFields.clear();
@@ -352,8 +353,8 @@ bool cTableShape::setDefaults(QSqlQuery& q, bool _disable_tree)
         cTableShapeField fm;
         fm.setName(cDescr); // mező név a rekordban
         fm.setName(_sTableShapeFieldNote, cDescr);
-        // fm.setName(_sTableTitle, cDescr);
-        // fm.setName(_sDialogTitle, cDescr);
+        fm.setName(cTableShapeField::LTX_TABLE_TITLE, cDescr);
+        fm.setName(cTableShapeField::LTX_DIALOG_TITLE, cDescr);
         fm.setId(_sFieldSequenceNumber, (i + 1) * 10);  // mezők megjelenítési sorrendje
         bool ro = !cDescr.isUpdatable;
         bool hide = false;
@@ -626,10 +627,8 @@ cTableShapeField *cTableShape::addField(const QString& _name, const QString& _no
     }
     cTableShapeField *p = new cTableShapeField();
     p->setName(_name);
-    /* !!!
-    p->setName(_sTableTitle, _name);
-    p->setName(_sDialogTitle, _name);
-    */
+    p->setText(cTableShapeField::LTX_TABLE_TITLE, _name);
+    p->setText(cTableShapeField::LTX_DIALOG_TITLE, _name);
     if (_note.size()) p->setName(_sTableShapeFieldNote, _note);
     qlonglong seq = 0;
     QListIterator<cTableShapeField *> i(shapeFields);
@@ -753,6 +752,20 @@ void cTableShapeField::clearToEnd()
 {
     pDelete(_pFeatures);
 }
+
+bool cTableShapeField::insert(QSqlQuery &__q, eEx __ex)
+{
+    bool r = cRecord::insert(__q, __ex);
+    if (r) saveText(__q);
+    return r;
+}
+bool cTableShapeField::rewrite(QSqlQuery &__q, eEx __ex)
+{
+    bool r = cRecord::rewrite(__q, __ex);
+    if (r) saveText(__q);
+    return r;
+}
+
 
 void cTableShapeField::setTitle(const QStringList& _tt)
 {

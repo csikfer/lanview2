@@ -2915,6 +2915,7 @@ QString cLangTexts::tableName2textTypeName(const QString& _tn)
     return r;
 }
 */
+
 void cLangTexts::saveText(QSqlQuery& _q, const QStringList& _texts, cRecord *po, qlonglong lid)
 {
     int tidix = po->descr().textIdIndex();
