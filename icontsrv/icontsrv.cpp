@@ -159,10 +159,6 @@ void cGateway::setSubs(QSqlQuery &q, const QString &)
         }
     } while (q.next());
 
-}
-
-void cGateway::threadPreInit()
-{
     if (0 == protoServiceName().compare(_sLocal, Qt::CaseInsensitive)) {
         type = EP_LOCAL;
         getSerialParams();
@@ -174,6 +170,17 @@ void cGateway::threadPreInit()
     else {
         EXCEPTION(ENOTSUPP, protoServiceId(), QObject::trUtf8("A megadott proto_service nem támogatptt"))
     }
+
+}
+
+void cGateway::preInit()
+{
+    ;
+}
+
+void cGateway::threadPreInit()
+{
+    ;
 }
 
 int cGateway::run(QSqlQuery &q, QString &runMsg)
