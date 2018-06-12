@@ -1559,6 +1559,8 @@ qlonglong cRecordsViewBase::actId(eEx __ex)
 {
     cRecord *p = actRecord();
     if (p == NULL) return NULL_ID;
+    int ix;
+    if (idName.isEmpty() == false && (ix = p->toIndex(idName, __ex))) return p->getId(ix);
     if (p->idIndex(__ex) >= 0) return p->getId();
     return NULL_ID;
 }
@@ -1643,6 +1645,7 @@ void cRecordsViewBase::initShape(cTableShape *pts)
             shapeType = (shapeType & ~ENUM2SET(TS_SIMPLE)) | ENUM2SET(TS_CHILD);
         }
     }
+    idName = pTableShape->feature("id");
 }
 
 cRecordsViewBase *cRecordsViewBase::newRecordView(cTableShape *pts, cRecordsViewBase * own, QWidget *par)
@@ -2099,7 +2102,7 @@ void cRecordTable::init()
     pTimer = NULL;
     pTableView = NULL;
     // Az alapértelmezett gombok:
-    buttons << DBT_CLOSE << DBT_SPACER;
+    buttons << DBT_SPACER;
     if (pTableShape->isFeature(_sButtonCopy) || pTableShape->isFeature(_sReport)) {
         if (pTableShape->isFeature(_sButtonCopy)) buttons << DBT_COPY;
         if (pTableShape->isFeature(_sReport))     buttons << DBT_REPORT;

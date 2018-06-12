@@ -4457,3 +4457,115 @@ int cRecordAny::addValueArrayFieldByNames(QSqlQuery& q, const cRecStaticDescr * 
     cRecordAny ra(_p);
     return ra.cRecord::addValueArrayFieldByNames(q, _nl, _fn, _v);
 }
+
+/* ******************************************************************************************************************* */
+
+DEFAULTCRECDEF(cLanguage, _sLanguages)
+
+cLanguage::cLanguage(const QString& _name, const QString& _lc, const QString& _l3, qlonglong _flagId, qlonglong _nextId)
+    : cRecord()
+{
+    // Check
+    QRegExp p_lc("^([a-z]{2})_([A-Z]{2})$");
+    QRegExp p_l3("^[a-z]{3}$");
+    bool e = false;
+    QLocale::Language lan;
+    QLocale::Country  cou;
+    if (!p_lc.exactMatch(_lc) || !p_l3.exactMatch(_l3)) {
+        e = true;
+    }
+    else {
+        QLocale l = QLocale(_lc);
+        lan = l.language();
+        cou = l.country();
+        e = lan == QLocale::AnyLanguage || lan == QLocale::C;
+    }
+    if (e) {
+        EXCEPTION(EDATA, 0, _name + _sCommaSp + _lc + _sCommaSp + _l3);
+    }
+    const cRecStaticDescr& d = cLanguage::descr();
+    // Set empty object / create fields
+    _set(d);
+    // Set fields
+    _fields[d.nameIndex()]      = _name;
+    _fields[d.toIndex(_sLang3)] = _l3;
+    if (_nextId != NULL_ID) _fields[d.toIndex(_sNextId)]    = _nextId;
+    if (_flagId != NULL_ID) _fields[d.toIndex(_sFlagImage)] = _flagId;
+    _fields[d.toIndex(_sLang2)]     = p_lc.cap(1);
+    _fields[d.toIndex(_sCountryA2)] = p_lc.cap(2);
+    _fields[d.toIndex(_sLangId)]    = (qlonglong)lan;
+    _fields[d.toIndex(_sCountryId)] = (qlonglong)cou;
+}
+
+
+cLanguage& cLanguage::setByLocale(QSqlQuery& _q, const QLocale &_l)
+{
+    QLocale::Language language = _l.language();
+    QLocale::Country  country  = _l.country();
+    clear();
+    setId(_sLangId,    language);
+    switch (completion(_q)) {
+    case 1:
+        return *this;
+    case 0:
+        break;
+    default:
+        clear();
+        break;
+    }
+    setId(_sLangId,    language);
+    setId(_sCountryId, country);
+    switch (completion(_q)) {
+    case 1:
+        return *this;
+    case 0:
+        break;
+    default:
+        EXCEPTION(EDATA);
+        break;
+    }
+    return setFromLocale(_l);
+}
+
+cLanguage& cLanguage::setFromLocale(const QLocale &_l)
+{
+    QLocale::Language language = _l.language();
+    QLocale::Country  country  = _l.country();
+    clear();
+    setId(_sLangId,    language);
+    setId(_sCountryId, country);
+    setName(QLocale::languageToString(language));
+    QString n = _l.name();
+    QStringList nn = n.split(_sUndeline);
+    if (nn.size() >= 2 && nn.at(0).size() == 2 && nn.at(1).size() == 2) {
+        setName(_sLang2, nn.at(0));
+        setName(_sCountryA2, nn.at(1));
+    }
+    // Alpha-3 ???????
+    return *this;
+}
+
+QLocale cLanguage::locale(eEx __ex)
+{
+    qlonglong l = getId(_sLangId);
+    qlonglong c = getId(_sCountryId);
+    if (l == NULL_ID || c == NULL_ID) {
+        if (__ex != EX_IGNORE) EXCEPTION(EDATA, -1, identifying(false));
+        return QLocale();
+    }
+    QLocale::Language language = (QLocale::Language)l;
+    QLocale::Country  country  = (QLocale::Country)c;
+    return QLocale(language, country);
+}
+
+void cLanguage::newLanguage(QSqlQuery& q, const QString& _name, const QString& _lc, const QString& _l3, qlonglong _flagId, qlonglong _nextId)
+{
+    cLanguage o(_name, _lc, _l3, _flagId, _nextId);
+    o.insert(q);
+}
+
+void cLanguage::repLanguage(QSqlQuery& q, const QString& _name, const QString& _lc, const QString& _l3, qlonglong _flagId, qlonglong _nextId)
+{
+    cLanguage o(_name, _lc, _l3, _flagId, _nextId);
+    o.replace(q);
+}

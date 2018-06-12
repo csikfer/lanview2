@@ -1,6 +1,6 @@
 BEGIN;  -- Version 1.12 ==> 1.13
 
-CREATE VIEW named_host_services AS
+CREATE OR REPLACE VIEW named_host_services AS
   SELECT 
     hs.host_service_id,
     hs.node_id,
@@ -51,6 +51,14 @@ CREATE VIEW named_host_services AS
   JOIN services AS s   USING(service_id) 
   JOIN services AS pri ON pri.service_id = hs.prime_service_id
   JOIN services AS pro ON pro.service_id = hs.proto_service_id;
+  
+  
+CREATE OR REPLACE VIEW vlan_list_by_host AS
+  SELECT DISTINCT   node_id, vlan_id, node_name, vlan_name, vlan_note, vlan_stat
+  FROM port_vlans AS pv
+  JOIN nports     AS p  USING(port_id)
+  JOIN vlans      AS v  USING(vlan_id)
+  JOIN nodes      AS n  USING(node_id);
   
   
 SELECT set_db_version(1, 13);

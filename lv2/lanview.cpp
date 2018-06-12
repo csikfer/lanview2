@@ -173,11 +173,11 @@ void dbOpenPost(QSqlQuery& q, int n)
 {
     QString nn = lanView::appName;
     if (n > 0) {
-        setLanguage(q, lanView::getInstance()->langId);
+        setLanguage(q, lanView::getInstance()->languageId);
         if (lanView::getInstance()->pUser != NULL) {
             if (!q.exec(QString("SELECT set_user_id(%1)").arg(lanView::getInstance()->pUser->getId()))) SQLQUERYERR(q);
         }
-        nn += "_" + QString::number(n);
+        nn += _sUnderline + QString::number(n);
     }
     EXECSQL(q, QString("SET application_name TO '%1'").arg(nn));
     settingIntParameter(q, "lock_timeout");
@@ -206,9 +206,11 @@ lanView::lanView()
     pSelfInspector = NULL;
     selfHostServiceId = NULL_ID;
     pQuery = NULL;
+    pLanguage = NULL;
+    pLocale   = NULL;
 
     try {
-        cError::init(); // Hiba stringek feltöltése.
+        cError::init(); // Set error strings
         initUserMetaTypes();
 
         if (testSelfName.isEmpty()) {
@@ -272,34 +274,34 @@ lanView::lanView()
         }
         // Language
         bool lok;
-        langId = pSet->value(_sLangId).toInt(&lok);
-        if (!lok) langId = NULL_IX; // int !
-        if (lok && pQuery != NULL) {
-            setLanguage(*pQuery, langId);
-            sLang = getLanguage(*pQuery, langId);
-        }
-        if (sLang.isEmpty()) {
-            sLang = getEnvVar("LANG");
-            if (!sLang.isEmpty()) {
-                int i = sLang.indexOf(QChar('.'));
-                if (i > 0) sLang = sLang.mid(0,i);
+        languageId = pSet->value(_sLangId).toInt(&lok);
+        if (!lok) languageId = NULL_ID;
+        pLocale   = new QLocale;
+        if (pQuery != NULL) {
+            pLanguage = new cLanguage;
+            if (languageId != NULL_ID) {
+                if (pLanguage->fetchById(*pQuery, languageId)) {
+                    *pLocale = pLanguage->locale();
+                    QLocale::setDefault(*pLocale);
+                }
+                else {
+                    pLanguage->setByLocale(*pQuery, *pLocale);
+                    languageId = NULL_ID;
+                }
             }
         }
-        if (!lok && pQuery != NULL && !sLang.isEmpty()) {
-            QStringList sl = sLang.split("_");
-            if (sl.size() < 2) sl << _sNul;
-            langId = setLanguage(*pQuery, sl.first(), sl.at(1));
+        else {
+            pLanguage = NULL;
         }
-        if (!sLang.isEmpty()) {
-            libTranslator = new QTranslator(this);
-            if (libTranslator->load(libName + "_" + sLang, homeDir)
-             || libTranslator->load(libName + "_" + sLang, binPath)) {
-                QCoreApplication::installTranslator(libTranslator);
-            }
-            else {
-                delete libTranslator;
-                libTranslator = NULL;
-            }
+
+        libTranslator = new QTranslator(this);
+        if (libTranslator->load(*pLocale, libName, _sUnderline, homeDir)
+         || libTranslator->load(*pLocale, libName, _sUnderline, binPath)) {
+            QCoreApplication::installTranslator(libTranslator);
+        }
+        else {
+            delete libTranslator;
+            libTranslator = NULL;
         }
         instAppTransl();
         // SNMP init, ha kell
@@ -620,18 +622,18 @@ void lanView::parseArg(void)
 
 void lanView::instAppTransl()
 {
-    if (sLang.isEmpty()) {
+    if (pLocale == NULL) {
         appTranslator = NULL;
-        DERR() << QObject::trUtf8("Application language file not loaded, language string id is empty.") << endl;
+        DERR() << QObject::trUtf8("Application language file not loaded, locale object pointer is NULL.") << endl;
         return;
     }
     appTranslator = new QTranslator(this);
-    if (appTranslator->load(langFileName(appName, sLang), homeDir)
-     || appTranslator->load(langFileName(appName, sLang), binPath)) {
+    if (appTranslator->load(*pLocale, appName, _sUndeline, homeDir)
+     || appTranslator->load(*pLocale, appName, _sUndeline, binPath)) {
         QCoreApplication::installTranslator(appTranslator);
     }
     else {
-        DERR() << QObject::trUtf8("Application language file not loaded : %1/%2").arg(appName).arg(sLang) << endl;
+        DERR() << QObject::trUtf8("Application language file not loaded : %1/%2").arg(appName).arg(pLocale->name()) << endl;
         delete appTranslator;
         appTranslator = NULL;
     }

@@ -122,24 +122,24 @@ EXT_ QString dump(const QByteArray& __a);
 /// @brief Egy típust a NULL értéllel kiegészítő template osztály.
 ///
 /// Nem használt
-template<class T> class cNullable {
+template<class T> class tNullable {
 protected:
     T       _v;
     bool    _null;
 public:
-    cNullable()             : _v()      { _null = true;  }
-    cNullable(const T& __t) : _v(__t)   { _null = false; }
+    tNullable()             : _v()      { _null = true;  }
+    tNullable(const T& __t) : _v(__t)   { _null = false; }
     bool isNull() const                 { return _null; }
     bool isEmpty() const                { return _null; }
-    cNullable& clear(void)              { _null = true; return *this; }
-    cNullable& operator=(const T& __o)          { _v = __o;    _null = false;     return *this; }
-    cNullable& operator=(const cNullable& __o)  { _v = __o._v; _null = __o._null; return *this; }
-    bool operator <(const cNullable& __o) const { return *this && __o && _v < __o._v;  }
-    bool operator<=(const cNullable& __o) const { return *this && __o && _v <= __o._v; }
-    bool operator >(const cNullable& __o) const { return *this && __o && _v > __o._v;  }
-    bool operator>=(const cNullable& __o) const { return *this && __o && _v >= __o._v; }
-    bool operator==(const cNullable& __o) const { return *this && __o && _v == __o._v; }
-    bool operator!=(const cNullable& __o) const { return *this && __o && _v != __o._v; }
+    tNullable& clear(void)              { _null = true; return *this; }
+    tNullable& operator=(const T& __o)          { _v = __o;    _null = false;     return *this; }
+    tNullable& operator=(const tNullable& __o)  { _v = __o._v; _null = __o._null; return *this; }
+    bool operator <(const tNullable& __o) const { return *this && __o && _v < __o._v;  }
+    bool operator<=(const tNullable& __o) const { return *this && __o && _v <= __o._v; }
+    bool operator >(const tNullable& __o) const { return *this && __o && _v > __o._v;  }
+    bool operator>=(const tNullable& __o) const { return *this && __o && _v >= __o._v; }
+    bool operator==(const tNullable& __o) const { return *this && __o && _v == __o._v; }
+    bool operator!=(const tNullable& __o) const { return *this && __o && _v != __o._v; }
     bool operator !() const             { return _null; }
     operator T () const                 { if (isNull()) EXCEPTION(EDATA); return _v; }
     operator bool() const               { return !_null; }

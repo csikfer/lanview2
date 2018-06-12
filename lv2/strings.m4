@@ -1,5 +1,6 @@
 dnl Gyakran használlt stringek
 STRDEF(Nul,   "")
+STRDEF(Underline, "_")
 STRDEF(MinusMinus, "--")
 STRDEF(True,  "true")
 STRDEF(False, "false")

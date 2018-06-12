@@ -320,6 +320,8 @@ public:
     qlonglong   owner_id;
     /// Ha van parent objektum (rekord) és ismert.
     qlonglong   parent_id;
+    /// ID index
+    QString         idName;
     /// A dialogus ablak megnyitásához allokál egy objektumot a megadott record tábla név alapján
     /// Hiba esetén dob egy kizárást.
     static cTableShape *   getInhShape(QSqlQuery &q, cTableShape *pTableShape, const QString& _tn, bool ro = false);

@@ -15,13 +15,13 @@
 #define  YYERROR_VERBOSE
 
 /// A parser hiba függvénye. A hiba üzenettel dob egy kizárást.
-static int yyerror(QString em)
+static inline int yyerror(QString em)
 {
     EXCEPTION(EPARSE, -1, em);
     return -1;
 }
 /// A parser hiba függvénye. A hiba üzenettel dob egy kizárást.
-static int yyerror(const char * em)
+static inline int yyerror(const char * em)
 {
     return yyerror(QString(em));
 }
@@ -302,8 +302,6 @@ public:
     }
 };
 
-#define UNKNOWN_PLACE_ID 0LL
-
 typedef QList<tStringPair> QStringPairList;
 
 typedef QList<qlonglong> intList;
@@ -372,7 +370,7 @@ static  qlonglong       id;
 
 unsigned long yyflags = 0;
 
-static cTableShapeField *pTableShapeField;
+static cTableShapeField *pTableShapeField = NULL;
 
 void initImportParser()
 {
@@ -759,9 +757,9 @@ const QString&  cLink::chkShare(int __s)
     static QStringList  shares;
     if (shares.size() == 0) {
         shares << _sNul;
-        shares << QString("A") << QString("AA") << QString("AB");
-        shares << QString("B") << QString("BA") << QString("BB");
-        shares << QString("C") << QString("D");
+        shares << QString(_sA) << QString(_sAA) << QString(_sAB);
+        shares << QString(_sB) << QString(_sBA) << QString(_sBB);
+        shares << QString(_sC) << QString(_sD);
     }
     if (__s >= shares.size() || __s < 0 ) yyerror(QObject::trUtf8("Invalid share value."));
     return shares[__s];
@@ -867,10 +865,11 @@ static void newMenuMenu(const QString& _n)
         p->setId(_sUpperMenuItemId, actMenuItem().getId());
     }
     // Improve, replace!
-    // p->setName(_sMenuTitle, _n);
-    // p->setName(_sTabTitle, _n);
+    p->setText(cMenuItem::LTX_MENU_TITLE, _n);
+    p->setName(cMenuItem::LTX_TAB_TITLE, _n);
     p->setName(_sFeatures, ":sub:");
     p->insert(qq());
+    p->saveText(qq());
     menuItems << p;
 }
 
@@ -892,10 +891,11 @@ static void newMenuItem(const QString& _n, const QString& _sn, const char * typ)
     p->set(_sAppName, *pMenuApp);
     p->setId(_sUpperMenuItemId, actMenuItem().getId());
     // Improve, replace!
-    // p->setName(_sMenuTitle, _n);
-    // p->setName(_sTabTitle, _n);
+    p->setText(cMenuItem::LTX_MENU_TITLE, _n);
+    p->setName(cMenuItem::LTX_TAB_TITLE, _n);
     p->setName(_sFeatures, QString(typ).arg(_sn));
     p->insert(qq());
+    p->saveText(qq());
     menuItems << p;
 }
 
@@ -1080,15 +1080,15 @@ static enum ePortShare s2share(QString * __ps)
         s = *__ps;
         delete __ps;
     }
-    if (s == "")   return ES_;
-    if (s == "A")  return ES_A;
-    if (s == "AA") return ES_AA;
-    if (s == "AB") return ES_AB;
-    if (s == "B")  return ES_B;
-    if (s == "BA") return ES_BA;
-    if (s == "BB") return ES_BB;
-    if (s == "C")  return ES_C;
-    if (s == "D")  return ES_D;
+    if (s.isEmpty())return ES_;
+    if (s == _sA)   return ES_A;
+    if (s == _sAA)  return ES_AA;
+    if (s == _sAB)  return ES_AB;
+    if (s == _sB)   return ES_B;
+    if (s == _sBA)  return ES_BA;
+    if (s == _sBB)  return ES_BB;
+    if (s == _sC)   return ES_C;
+    if (s == _sD)   return ES_D;
     yyerror(QString(QObject::trUtf8("Helytelen megosztás típus : %1")).arg(s));
     return ES_;     // Hogy ne pofázzon a fordító
 }
@@ -1268,7 +1268,7 @@ static void patchCopy(QStringList *pExl, QStringList *pInc, QString *pSrc)
         }
         delete pInc;
     }
-    else EXCEPTION(EPROGFAIL, 0, "Parser erroro");  // Mindkét lista nem adható meg
+    else EXCEPTION(EPROGFAIL, 0, "Parser error");  // Mindkét lista nem adható meg
     pPatch->fieldsCopy(src, mask);
     if (ports) {
         src.fetchPorts(qq());
@@ -1527,7 +1527,7 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
 %token      VLAN_T SUBNET_T PORTS_T PORT_T NAME_T SHARED_T SENSORS_T
 %token      PLACE_T PATCH_T SWITCH_T NODE_T HOST_T ADDRESS_T
 %token      PARENT_T IMAGE_T FRAME_T TEL_T NOTE_T MESSAGE_T
-%token      PARAM_T TEMPLATE_T COPY_T FROM_T NULL_T TERM_T
+%token      PARAM_T TEMPLATE_T COPY_T FROM_T NULL_T TERM_T NEXT_T
 %token      INCLUDE_T PSEUDO_T OFFS_T IFTYPE_T WRITE_T RE_T SYS_T
 %token      ADD_T READ_T UPDATE_T ARPS_T ARP_T SERVER_T FILE_T BY_T
 %token      SNMP_T SSH_T COMMUNITY_T DHCPD_T LOCAL_T PROC_T CONFIG_T
@@ -1557,8 +1557,8 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
 %token <s>  STRING_V NAME_V
 %token <mac> MAC_V 
 %token <ip> IPV4_V IPV6_V
-%type  <i>  int int_ iexpr lnktype shar offs ix_z vlan_t set_t srvtid
-%type  <i>  vlan_id place_id iptype iptype_a pix pix_z image_id tmod int0 replace
+%type  <i>  int int_ iexpr lnktype shar offs ix_z vlan_t set_t srvtid lnx
+%type  <i>  vlan_id place_id iptype iptype_a pix pix_z image_id image_idz tmod int0 replace
 %type  <i>  fhs hsid srvid grpid tmpid node_id port_id snet_id ift_id plg_id
 %type  <i>  usr_id ftmod p_seq lnktypez fflags fflag tstypes tstype pgtype
 %type  <i>  node_h node_ts
@@ -1753,6 +1753,9 @@ snet_id : str                       { $$ = cSubNet().getIdByName(qq(), sp2s($1))
 ift_id  : str                       { $$ = cIfType::ifTypeId(*$1); delete $1; }
         ;
 image_id: str                       { $$ = cImage().getIdByName(sp2s($1)); }
+        ;
+image_idz : image_id                { $$ = $1; }
+        |                           { $$ = NULL_ID; }
         ;
 plg_id  : str                       { $$ = cPlaceGroup().getIdByName(sp2s($1)); }
         ;
@@ -2801,8 +2804,12 @@ exports : print
 print   : PRINT_T str ';'               { cExportQueue::push(*$2); delete $2; }
         | EXPORT_T SERVICE_T ';'        { cExportQueue::push(cExport().services()); }
         ;
-lang    : LANG_T str
+lang    : LANG_T replfl str str str image_idz lnx ';'  { if ($2) cLanguage::repLanguage(qq(), sp2s($3), sp2s($4), sp2s($5), $6, $7);
+                                                         else    cLanguage::newLanguage(qq(), sp2s($3), sp2s($4), sp2s($5), $6, $7);
+                                                       }
         ;
+lnx     : NEXT_T str                    { $$ = cLanguage().getIdByName(qq(), sp2s($2)); }
+        |                               { $$ = NULL_ID; }
 %%
 
 static inline bool isXDigit(QChar __c) {
@@ -2960,9 +2967,9 @@ static int yylex(void)
     } sToken[] = {
         TOK(MACRO) TOK(FOR) TOK(DO) TOK(TO) TOK(SET) TOK(CLEAR) TOK(SYNTAX)
         TOK(VLAN) TOK(SUBNET) TOK(PORTS) TOK(PORT) TOK(NAME) TOK(SHARED) TOK(SENSORS)
-        TOK(PLACE) TOK(PATCH) TOK(NODE) TOK(HOST) TOK(ADDRESS)
+        TOK(PLACE) TOK(PATCH) TOK(SWITCH) TOK(NODE) TOK(HOST) TOK(ADDRESS)
         TOK(PARENT) TOK(IMAGE) TOK(FRAME) TOK(TEL) TOK(NOTE) TOK(MESSAGE)
-        TOK(PARAM) TOK(TEMPLATE) TOK(COPY) TOK(FROM) TOK(NULL) TOK(TERM)
+        TOK(PARAM) TOK(TEMPLATE) TOK(COPY) TOK(FROM) TOK(NULL) TOK(TERM) TOK(NEXT)
         TOK(INCLUDE) TOK(PSEUDO) TOK(OFFS) TOK(IFTYPE) TOK(WRITE) TOK(RE) TOK(SYS)
         TOK(ADD) TOK(READ) TOK(UPDATE) TOK(ARPS) TOK(ARP) TOK(SERVER) TOK(FILE) TOK(BY)
         TOK(SNMP) TOK(SSH) TOK(COMMUNITY) TOK(DHCPD) TOK(LOCAL) TOK(PROC) TOK(CONFIG)

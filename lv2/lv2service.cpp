@@ -980,6 +980,13 @@ int cInspector::getCheckCmd(QSqlQuery& q)
             separator = c;
             continue;
         }
+        if (c == '\\') {
+            if (i != checkCmd.constEnd()) {
+                arg += *i;
+                ++i;
+            }
+            continue;
+        }
         if (c == '$') {
             if (i->toLatin1() == '$') {
                 ++i;

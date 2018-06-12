@@ -2424,12 +2424,7 @@ bool cNode::rewriteById(QSqlQuery &__q, eEx __ex)
     // Ütköző objektumok feltételes törlése
     delCollisionByIp(__q);
     delCollisionByMac(__q);
-    if (ports.size() > 0 && ports.first()->isNullId()) {
-        if (!tRewrite(__q, ports, CV_PORTS, params, CV_NODE_PARAMS, __ex)) return false;
-    }
-    else {
-        if (!tRewriteById(__q, ports, CV_PORTS, params, CV_NODE_PARAMS, __ex)) return false;
-    }
+    if (!tRewriteById(__q, ports, CV_PORTS, params, CV_NODE_PARAMS, __ex)) return false;
     return true;
 }
 

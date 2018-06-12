@@ -27,7 +27,14 @@ void cRecordLink::init()
     isReadOnly = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sEditRights));
 
     // Az alapértelmezett gombok:
-    buttons << DBT_SPACER << DBT_REFRESH << DBT_FIRST << DBT_PREV << DBT_NEXT << DBT_LAST;
+    buttons << DBT_SPACER;
+    if (pTableShape->isFeature(_sButtonCopy) || pTableShape->isFeature(_sReport)) {
+        if (pTableShape->isFeature(_sButtonCopy)) buttons << DBT_COPY;
+        if (pTableShape->isFeature(_sReport))     buttons << DBT_REPORT;
+        buttons << DBT_SPACER;
+    }
+
+    buttons << DBT_REFRESH << DBT_FIRST << DBT_PREV << DBT_NEXT << DBT_LAST;
     buttons << DBT_SPACER;
     if (!isNoDelete) buttons << DBT_DELETE;
     if (!isReadOnly) buttons << DBT_SIMILAR;
@@ -108,6 +115,7 @@ void cRecordLink::buttonPressed(int id)
     case DBT_LAST:      last();         break;
     case DBT_DELETE:    remove();       break;
     case DBT_COPY:      copy();         break;
+    case DBT_REPORT:    report();       break;
     // case DBT_COMPLETE:  lldp2phs();     break;
     default:
         DWAR() << "Invalid button id : " << id << endl;

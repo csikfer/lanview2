@@ -1607,7 +1607,7 @@ public:
         if (!r) return false;   // Ha nem sikerült, nincs több dolgunk :(
         if (__m == 0 || isContainerValid(__m)) {
             __ch.setsOwnerId();
-            r = __ch.replaceById(__q, __ex);
+            r = __ch.replace(__q, __ex);
         }
         return r;
     }
@@ -1618,12 +1618,12 @@ public:
         if (!r) return false;   // Ha nem sikerült, nincs több dolgunk :(
         if (__m1 == 0 || isContainerValid(__m1)) {
             __ch1.setsOwnerId();
-            r =__ch1.replaceById(__q, __ex);
+            r =__ch1.replace(__q, __ex);
             if (!r) return false;   // Ha nem sikerült, nincs több dolgunk :(
         }
         if (__m2 == 0 || isContainerValid(__m2)) {
             __ch2.setsOwnerId();
-            r = __ch2.replaceById(__q, __ex);
+            r = __ch2.replace(__q, __ex);
         }
         return r;
     }
@@ -2791,5 +2791,17 @@ public: \
     bool  isFeature(const QString &_nm) const { return features().contains(_nm); } \
     R& joinFeature() { _JoinFeatureT<R>(*this); return *this;  } \
     qlonglong feature(const QString &_nm, qlonglong _def) const { return intFeature(*this, _nm, _def); }
+
+
+class LV2SHARED_EXPORT cLanguage : public cRecord {
+    CRECORD(cLanguage);
+public:
+    cLanguage(const QString& _name, const QString& _lc, const QString& _l3, qlonglong _flagId, qlonglong _nextId);
+    cLanguage& setByLocale(QSqlQuery &_q, const QLocale& _l = QLocale::system());
+    cLanguage& setFromLocale(const QLocale& _l = QLocale::system());
+    QLocale locale(eEx __ex = EX_ERROR);
+    static void newLanguage(QSqlQuery &q, const QString& _name, const QString& _lc, const QString& _l3, qlonglong _flagId, qlonglong _nextId);
+    static void repLanguage(QSqlQuery &q, const QString& _name, const QString& _lc, const QString& _l3, qlonglong _flagId, qlonglong _nextId);
+};
 
 #endif // LV2DATAB_H

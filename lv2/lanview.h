@@ -46,14 +46,6 @@ EXT_ int findArg(const QChar& __c, const QString& __s, const QStringList &args);
 /// @return A két program kapcsoló változat valamelyikével megeggyező paraméter indexe a listában, vagy -1, ha nincs ilyen kapcsoló.
 EXT_ int findArg(char __c, const char * __s, int argc, char * argv[]);
 
-static inline QString langFileName(const QString& an, const QString& ln)
-{
-    QString ls;
-    ls = an + "_" + ln /*.mid(0,2) + ".qm"*/;
-    PDEB(VVERBOSE) << "App lang. file name : " << ls << endl;
-    return ls;
-}
-
 enum eIPV6Pol {
     IPV6_UNKNOWN = -1,
     IPV6_IGNORED =  0,
@@ -192,7 +184,7 @@ EXT_ bool checkDbVersion(QSqlQuery& q, QString& msg);
 EXT_ void settingIntParameter(QSqlQuery& q, const QString& pname);
 EXT_ void dbOpenPost(QSqlQuery& q, int n = 0);
 
-
+class cLanguage;
 class cUser;
 class cNode;
 class cService;
@@ -359,8 +351,7 @@ public:
     cError         *lastError;  ///< Pointer to last error object or NULL
     cError         *nonFatal;   ///< Init, nem fatális hiba
     QStringList     args;       ///< Argumentum lista
-    int             langId;     ///< Language ID
-    QString         sLang;      ///< Language string id
+    qlonglong       languageId; ///< Language ID
     QTranslator    *libTranslator;  ///< translator az API-hoz
     QTranslator    *appTranslator;  ///< translator az APP-hoz
 
@@ -372,6 +363,8 @@ public:
     qlonglong       selfHostServiceId;  ///< Ha megadták a saját gyökér hostService rekord ID-je, vagy null_id;
     cInspector     *pSelfInspector;
     QSqlQuery      *pQuery;
+    cLanguage      *pLanguage;
+    QLocale        *pLocale;
 
 
     static QString    appName;          ///< Az APP neve
