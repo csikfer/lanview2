@@ -127,7 +127,7 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
     // Csinálunk a releváns portokhoz egy index táblát
     QMap<int,int>   rxix;   // Kereszt index tábla, a lekérdezésnél használlt indexekre konvertáláshoz
     snmpDev().open(__q, snmp);
-    int r = snmp.getXIndex(*pOIdx, rxix);
+    int r = snmp.getXIndex(*pOIdx, rxix, true);
     if (r) {
         EXCEPTION(ESNMP, r, trUtf8("A kereszt index tábla lekérdezése sikertelen : %1").arg(name()));
     }
