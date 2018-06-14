@@ -80,12 +80,12 @@ const cService *cDevPortStat::pPortVars  = NULL;
 const cService *cDevPortStat::pSrvSnmp   = NULL;
 int cDevPortStat::ixPortOStat = NULL_IX;
 int cDevPortStat::ixPortAStat = NULL_IX;
-int cDevPortStat::ixIfdescr = NULL_IX;
+int cDevPortStat::ixIfdescr   = NULL_IX;
 int cDevPortStat::ixStatLastModify = NULL_IX;
 
 
 cDevPortStat::cDevPortStat(QSqlQuery& __q, const QString &_an)
-    : cInspector(NULL)
+    : cInspector(NULL)  // Self host service
     , snmp()
 {
     (void)_an;
@@ -94,7 +94,9 @@ cDevPortStat::cDevPortStat(QSqlQuery& __q, const QString &_an)
     }
 
     // Ha nincs megadva protocol szervíz ('nil'), akkor SNMP device esetén az az SNMP lessz
-    if (protoServiceId() == NIL_SERVICE_ID && pNode->chkObjType<cSnmpDevice>()) {
+    qlonglong psid = protoServiceId();
+    bool isSnmpDev = 0 == pNode->chkObjType<cSnmpDevice>();
+    if (psid == NIL_SERVICE_ID && isSnmpDev) {
         hostService.set(_sProtoServiceId, pSrvSnmp->getId());
         hostService.update(__q, false, hostService.mask(_sProtoServiceId));
         pProtoService = hostService.getProtoService(__q);
@@ -102,8 +104,8 @@ cDevPortStat::cDevPortStat(QSqlQuery& __q, const QString &_an)
     /// Csak az SNMP lekérdezés támogatott (egyenlőre)
     if (protoServiceId() != pSrvSnmp->getId()) {
         EXCEPTION(EDATA, protoServiceId(),
-               QObject::trUtf8("Nem támogatott proto_service : %1 , vagy eszköz (%2) típus a %3 példányban")
-                  .arg(protoService().getName(), node().getName(), name())    );
+               QObject::trUtf8("Nem támogatott proto_service : %1 , vagy eszköz (%2) típus a %3 példányban.")
+                  .arg(protoService().getName(), node().identifying(), name())    );
     }
 }
 
