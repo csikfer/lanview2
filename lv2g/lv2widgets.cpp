@@ -2359,7 +2359,7 @@ void cFKeyWidget::modifyF()
     if (pModel != NULL && pTableShape != NULL && lanView::isAuthorized(pTableShape->getId(_sViewRights))) {
         cRecordAny rec(pRDescr);
         cRecordDialog *pDialog = new cRecordDialog(*pTableShape, ENUM2SET2(DBT_OK, DBT_CANCEL), true, _pParentDialog);
-        int cix = pUi->comboBox->currentIndex();
+        int cix = pComboBox->currentIndex();
         qlonglong id = pModel->atId(cix);
         if (!rec.fetchById(*pq, id)) return;
         pDialog->restore(&rec);
@@ -2369,7 +2369,7 @@ void cFKeyWidget::modifyF()
             if (!pDialog->accept()) continue;
             if (!cErrorMessageBox::condMsgBox(pDialog->record().tryUpdateById(*pq, TS_NULL, true))) continue;
             pModel->setFilter(_sNul, OT_ASC, FT_NO);    // Refresh combo box
-            pUi->comboBox->setCurrentIndex(pModel->indexOf(rec.getId()));
+            pComboBox->setCurrentIndex(pModel->indexOf(rec.getId()));
             break;
         }
         pDialog->close();
@@ -2386,7 +2386,7 @@ void cFKeyWidget::modifyOwnerId(cFieldEditBase* pof)
     if (pModel == NULL) EXCEPTION(EPROGFAIL);
     ownerId = pof->getId();
     pModel->setOwnerId(ownerId);
-    pUi->comboBox->setCurrentIndex(0);
+    pComboBox->setCurrentIndex(0);
     setFromEdit(0);
 }
 
@@ -2643,13 +2643,15 @@ void cIntervalWidget::disableEditWidget(eTristate tsf)
 
 qlonglong cIntervalWidget::getFromWideget() const
 {
-    QTime t = pTimeEdit->time();
-    qlonglong r;
-    r = pLineEditDay->text().toInt();
-    r = (r *   24) + t.hour();
-    r = (r *   60) + t.minute();
-    r = (r *   60) + t.second();
-    r = (r * 1000) + t.msec();
+    qlonglong r = NULL_ID;
+    if (!_actValueIsNULL) {
+        QTime t = pTimeEdit->time();
+        r = pLineEditDay->text().toInt();
+        r = (r *   24) + t.hour();
+        r = (r *   60) + t.minute();
+        r = (r *   60) + t.second();
+        r = (r * 1000) + t.msec();
+    }
     return r;
 }
 

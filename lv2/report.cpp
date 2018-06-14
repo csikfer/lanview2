@@ -217,6 +217,7 @@ QString titleNode(QSqlQuery &q, const cRecord& n)
     return titleNode(t ,n);
 }
 
+// Hiányos, kéne használni a tableShape rekordot
 tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle, qlonglong flags)
 {
     QString text;
@@ -245,6 +246,10 @@ tStringPair htmlReportNode(QSqlQuery& q, cRecord& _node, const QString& _sTitle,
     qlonglong pid = _node.getId(_sPlaceId);
     if (pid <= 1) text += htmlInfo(QObject::trUtf8("Az eszköz helye ismeretlen"));
     else text += htmlInfo(sReportPlace(q, pid));
+    if (!_node.isNull(_sSerialNumber))    text += htmlInfo(QObject::trUtf8("Gyári szám : ")   + _node.getName(_sSerialNumber));
+    if (!_node.isNull(_sInventoryNumber)) text += htmlInfo(QObject::trUtf8("Leltári szám : ") + _node.getName(_sInventoryNumber));
+    if (!_node.isNull(_sModelName))       text += htmlInfo(QObject::trUtf8("Model név : ")    + _node.getName(_sModelName));
+    if (!_node.isNull(_sModelNumber))     text += htmlInfo(QObject::trUtf8("Model szám : ")   + _node.getName(_sModelNumber));
     /* -- PARAM -- */
     if (flags & CV_NODE_PARAMS) {
         if ((node.containerValid & CV_NODE_PARAMS) == 0) node.fetchParams(q);

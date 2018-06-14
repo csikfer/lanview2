@@ -90,8 +90,10 @@ public:
     ///             akkor abba is.
     /// @param __did Daemon host_service_id, opcionális
     /// @return Az objektum referenciája, aktualizálva az aktuális rekord értékkel.
-    /// @exception Bármilyen hiba esetén dob egy kizázást cError * -al.
-    cHostService& setState(QSqlQuery& __q, const QString& __st, const QString& __note = QString(), qlonglong __did = NULL_ID);
+    ///         Ha (már) nem létezik a megadott szolgáltzatás példány, akkor nem dob kizárást, hanem a 'deleted' mezőt true-ra állítja,
+    ///         ezzel jelezve, hogy a példány már nem létezik.
+    /// @exception Bármilyen egyéb hiba esetén dob egy kizázást cError * -al.
+    cHostService& setState(QSqlQuery& __q, const QString& __st, const QString& __note = QString(), qlonglong __did = NULL_ID, bool _resetIfDeleted = true);
     /// A hálózati elem, és a szolgáltatás típus neve alapján olvassa be egy rekordot.
     /// Ha több rekord is létezik, akkor az első kerül beolvasásra.
     /// @param q Az adatbázis művelethez használlt objektum.
@@ -159,10 +161,10 @@ public:
     /// Rekord azonosító nevekből képez egy stringet: node[:port].szolgáltatás alakban.
     /// Az eredmény stringet az ID alapján kérdezi le az adatbázisból. Csak az ID mezőnek kell kitöltve lennie,
     /// az objektum többi mezőjének az értéke érdektelen az eredmény szempontjából.
-    QString names(QSqlQuery& q);
+    QString fullName(QSqlQuery& q, eEx __ex = EX_ERROR) const;
     /// Rekord azonosító nevekből képez egy stringet: node[:port].szolgáltatés alakban.
     /// Az eredmény stringet a megadott ID alapján kérdezi le az adatbázisból.
-    static QString names(QSqlQuery& q, qlonglong __id);
+    static QString fullName(QSqlQuery& q, qlonglong __id, eEx __ex = EX_ERROR);
     /// A prime_service_id mező álltal hivatkozott cService objektummal tér vissza.
     /// Ha a mező ártéke NULL, akkor egy NULL pointerrel tér vissza.
     /// @param __q Az esetleges SQL lekérdezéshez használlt objektum (ha már be van olvasva a keresett objektum, akkor nem fordul az adatbázishoz)

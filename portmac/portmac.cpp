@@ -104,7 +104,7 @@ cDevicePMac::cDevicePMac(QSqlQuery& __q, qlonglong __host_service_id, qlonglong 
     : cInspector(__q, __host_service_id, __tableoid, _par)
     , snmp()
 {
-    _DBGFN() << hostService.names(__q) << endl;
+    _DBGFN() << hostService.fullName(__q, EX_IGNORE) << endl;
     QString msg;
     static const qlonglong suspectrdUpLinkTypeId        = cParamType().getIdByName(__q, _sSuspectedUplink);
     static const qlonglong queryMacTabTypeId            = cParamType().getIdByName(__q, _sQueryMacTab);

@@ -239,10 +239,17 @@ int cHostService::replace(QSqlQuery &__q, eEx __ex)
 }
 
 #define _MAX_TRY_   5
-cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const QString& __note, qlonglong __did)
+cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const QString& __note, qlonglong __did, bool _resetIfDeleted)
 {
-    QString sNames = names(__q);
-    _DBGFN() << sNames << VDEB(__st) << VDEB(__note) << endl;
+    static const QString _sHostServiceId2Name = "host_service_id2name";
+    QString sFulName = execSqlTextFunction(__q, _sHostServiceId2Name, getId());
+    if (sFulName.isEmpty()) {   // Törölték?
+        APPMEMO(__q, trUtf8("Host service record not found : %1").arg(identifying(false)), RS_CRITICAL);
+        setBool(_sDeleted, true);
+        if (_resetIfDeleted) lanView::getInstance()->reSet();
+        return *this;
+    }
+    _DBGFN() << sFulName << VDEB(__st) << VDEB(__note) << endl;
     QVariant did;
     QString sql;
     if (__did != NULL_ID) {
@@ -254,10 +261,10 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
     }
     sql = sql.arg(_sSetServiceStat);
     bool tf = trFlag(TS_NULL) == TS_TRUE;
-    sNames = toSqlName(sNames);
+    sFulName = toSqlName(sFulName);
     int cnt = 0;
     while (true) {
-        if (tf) sqlBegin(__q, sNames);
+        if (tf) sqlBegin(__q, sFulName);
         int r = _execSql(__q, sql, getId(), __st, __note, did);
         switch (r) {
         case 0:         // Nincs adat ?!
@@ -267,18 +274,18 @@ cHostService&  cHostService::setState(QSqlQuery& __q, const QString& __st, const
             break;
         case 1:         // OK
             set(__q);
-            if (tf) sqlCommit(__q, sNames);
+            if (tf) sqlCommit(__q, sFulName);
             _DBGFNL() << toString() << endl;
             return *this;
         case -1:    // prepare error
         case -2:    // exec error
             QSqlError le = __q.lastError();
-            if (tf) sqlRollback(__q, sNames);
+            if (tf) sqlRollback(__q, sFulName);
             QString s = le.databaseText().split('\n').first();  // első sor
             cnt++;
             // deadlock ?
             if (s.contains("deadlock", Qt::CaseInsensitive) || cnt <= _MAX_TRY_) {
-                DERR() << trUtf8("Set stat %1 to %2 SQL PREPARE ERROR #%3 try #%4\n").arg(__st, sNames).arg(le.number()).arg(cnt)
+                DERR() << trUtf8("Set stat %1 to %2 SQL PREPARE ERROR #%3 try #%4\n").arg(__st, sFulName).arg(le.number()).arg(cnt)
                     << trUtf8("driverText   : ") << le.driverText() << "\n"
                     << trUtf8("databaseText : ") << le.databaseText() << endl;
                 QThread::msleep(200);
@@ -507,17 +514,26 @@ QVariant cHostService::value(QSqlQuery& q, const cService& s, const QString& f)
     return get(f);
 }
 
-QString cHostService::names(QSqlQuery& q)
+QString cHostService::fullName(QSqlQuery& q, eEx __ex) const
 {
-    execSqlFunction(q, "host_service_id2name", getId());
-    QString r = q.value(0).toString();
-    return r;
+    return fullName(q, getId(), __ex);
 }
 
-QString cHostService::names(QSqlQuery& q, qlonglong __id)
+QString cHostService::fullName(QSqlQuery& q, qlonglong __id, eEx __ex)
 {
-    execSqlFunction(q, "host_service_id2name", __id);
-    QString r = q.value(0).toString();
+    QString r;
+    if (execSqlFunction(q, "host_service_id2name", __id)) {
+        r = q.value(0).toString();
+    }
+    if (r.isEmpty()) {
+        if (__ex != EX_IGNORE) EXCEPTION(EFOUND, __id, trUtf8("Ismeretlen host_service_id"));
+        if (__id == NULL_ID) {
+            r = cColStaticDescr::rNul;
+        }
+        else {
+            r = trUtf8("Invalid or deleted #%1").arg(__id);
+        }
+    }
     return r;
 }
 

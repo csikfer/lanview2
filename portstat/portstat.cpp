@@ -101,7 +101,9 @@ cDevPortStat::cDevPortStat(QSqlQuery& __q, const QString &_an)
     }
     /// Csak az SNMP lekérdezés támogatott (egyenlőre)
     if (protoServiceId() != pSrvSnmp->getId()) {
-        EXCEPTION(EDATA, protoServiceId(), QObject::trUtf8("Nem támogatott proto_service_id, vagy eszköz típus!"));
+        EXCEPTION(EDATA, protoServiceId(),
+               QObject::trUtf8("Nem támogatott proto_service : %1 , vagy eszköz (%2) típus a %3 példányban")
+                  .arg(protoService().getName(), node().getName(), name())    );
     }
 }
 
@@ -178,7 +180,7 @@ void cDevPortStat::postInit(QSqlQuery &_q, const QString&)
                 if (hsc.getId(_sPrimeServiceId) != NIL_SERVICE_ID || hsc.getId(_sProtoServiceId) != NIL_SERVICE_ID) {
                     QString msg = trUtf8("Hibás host_service objektum : %1\n"
                                      "A rekord törlő gazda (superior) szolgáltatás : %2"
-                                     ).arg(hsc.names(_q), hostService.names(_q));
+                                     ).arg(hsc.fullName(_q, EX_IGNORE), hostService.fullName(_q, EX_IGNORE));
                     hsc.remove(qq);
                     APPMEMO(qq, msg, RS_WARNING);
                     --n;
@@ -206,15 +208,15 @@ void cDevPortStat::postInit(QSqlQuery &_q, const QString&)
                 if (wMsg.isEmpty() == false || wMsg.endsWith("\n") == false) wMsg += "\n";
                 if (shsid == NULL_ID) {
                     wMsg += trUtf8("Gazda szolgáltatás (superior) beállítása : NULL -> %1")
-                            .arg(hostService.names(_q));
+                            .arg(hostService.fullName(_q, EX_IGNORE));
                     msg = wMsg;
                     rs = RS_RECOVERED;
                 }
                 else {
                     wMsg += trUtf8("Gazda szolgáltatás (superior) csere : %1 -> %2")
-                            .arg(cHostService::names(_q, shsid))
-                            .arg(hostService.names(_q));
-                    msg = wMsg + trUtf8("\nAktuális service (%1) státusz : ").arg(hs.names(_q))
+                            .arg(cHostService::fullName(_q, shsid, EX_IGNORE))
+                            .arg(hostService.fullName(_q, EX_IGNORE));
+                    msg = wMsg + trUtf8("\nAktuális service (%1) státusz : ").arg(hs.fullName(_q, EX_IGNORE))
                         + hs.getName(_sHostServiceState) + " ("
                         + hs.getName(_sHardState) + ", "
                         + hs.getName(_sSoftState) + ") utolsó modosítás : "
@@ -260,7 +262,7 @@ void cDevPortStat::postInit(QSqlQuery &_q, const QString&)
     DM;
     hsfWhereBits.setBit(hsf.toIndex(_sFlag));   // Ha maradt a true flag, akkor leválasztjuk
     hsf.clear(_sSuperiorHostServiceId);
-    QString msg = trUtf8("Leválasztva %1 ről.").arg(hostService.names(_q));
+    QString msg = trUtf8("Leválasztva %1 ről.").arg(hostService.fullName(_q, EX_IGNORE));
     hsf.setNote(msg);
     int un = hsf.update(_q, false, hsf.mask(_sSuperiorHostServiceId, _sHostServiceNote), hsfWhereBits, EX_ERROR);
     if (un > 0) {
@@ -357,7 +359,7 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
         runMsg = trUtf8("SNMP get table error : %1 in %2 host, from %3 parent service.")
                 .arg(snmp.emsg)
                 .arg(name())
-                .arg(parid == NULL_ID ? "NULL" : cHostService::names(q, parid));
+                .arg(parid == NULL_ID ? "NULL" : cHostService::fullName(q, parid, EX_IGNORE));
         return RS_UNREACHABLE;
     }
     int n = tab.rows();
@@ -377,7 +379,7 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
                     .arg(ifDescr)
                     .arg(debVariantToString(v))
                     .arg(name())
-                    .arg(parid == NULL_ID ? "NULL" : cHostService::names(q, parid));
+                    .arg(parid == NULL_ID ? "NULL" : cHostService::fullName(q, parid, EX_IGNORE));
         }
 
         int ix = host().ports.indexOf(_sPortIndex, QVariant(ifIndex));
@@ -429,7 +431,7 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
             QString msg = trUtf8("Az update visszatérési érték %1 hiba, Service : %2, interface : %3")
                     .arg(un)
                     .arg(iface.identifying(false))
-                    .arg(hostService.names(q));
+                    .arg(hostService.fullName(q, EX_IGNORE));
             APPMEMO(q, msg, RS_CRITICAL);
         }
         // Ha van kapcsolódó portvars al szolgáltatás:

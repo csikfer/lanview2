@@ -167,11 +167,7 @@ void cArpTable::getByDhcpdConf(QIODevice& __f, qlonglong _hid)
             if (b.isNull() || e.isNull() || b.protocol() != e.protocol()
               || (b.protocol() == QAbstractSocket::IPv4Protocol && b.toIPv4Address() >= e.toIPv4Address())) {
                 DERR() << "Dynamic range : " << sb << " > " << se << endl;
-                QString hs = QObject::trUtf8("nincs megadva");
-                if (_hid != NULL_ID) {
-                    hs = cHostService::names(q, _hid);
-                }
-                QString m = QObject::trUtf8("Invalid dynamic range from %1 to %2, HostService : %3").arg(sb,se,hs);
+                QString m = QObject::trUtf8("Invalid dynamic range from %1 to %2, HostService : %3").arg(sb, se, cHostService::fullName(q, _hid, EX_IGNORE));
                 APPMEMO(q, m, RS_CRITICAL);
                 continue;
             }

@@ -338,6 +338,8 @@ public:
     bool    flag;
     /// Változók, ha vannak, vagy NULL.
     tOwnRecords<cServiceVar, cHostService>    *pVars;
+    ///
+    bool isDeleted() const { return hostService.getBool(hostService.deletedIndex()); }
 protected:
     /// A lekérdezés típusát azonosító services rekord objektum pointere, vagy NULL ha ismeretlen, vagy még nincs beállítva.
     /// Nem kell/szabad felszabadítani a pointert!
