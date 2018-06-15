@@ -52,13 +52,18 @@ CREATE OR REPLACE VIEW named_host_services AS
   JOIN services AS pri ON pri.service_id = hs.prime_service_id
   JOIN services AS pro ON pro.service_id = hs.proto_service_id;
   
-  
+CREATE OR REPLACE VIEW node_port_vlans AS
+  SELECT node_id, port_id, port_name, port_index, vlan_id, vlan_name, vlan_note, vlan_type
+  FROM port_vlans
+  JOIN nports     USING(port_id)
+  JOIN vlans      USING(vlan_id);
+
 CREATE OR REPLACE VIEW vlan_list_by_host AS
   SELECT DISTINCT   node_id, vlan_id, node_name, vlan_name, vlan_note, vlan_stat
-  FROM port_vlans AS pv
-  JOIN nports     AS p  USING(port_id)
-  JOIN vlans      AS v  USING(vlan_id)
-  JOIN nodes      AS n  USING(node_id);
+  FROM port_vlans 
+  JOIN nports     USING(port_id)
+  JOIN vlans      USING(vlan_id)
+  JOIN nodes      USING(node_id);
   
   
 CREATE OR REPLACE FUNCTION host_service_id2name(bigint) RETURNS TEXT AS $$
@@ -195,6 +200,11 @@ BEGIN
     RETURN rname || ' / #' || $1;
 END;
 $$ LANGUAGE plpgsql;
+
+ALTER TYPE fieldflag ADD VALUE 'raw';
+ALTER TABLE table_shape_fields DROP CONSTRAINT table_shape_fields_table_shape_id_table_shape_field_name_key;
+CREATE INDEX table_shape_fields_table_shape_id_index ON table_shape_fields(table_shape_id);
+
   
 SELECT set_db_version(1, 13);
 END;

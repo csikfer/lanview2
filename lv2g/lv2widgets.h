@@ -843,6 +843,7 @@ protected:
     cTableShape *pTableShape;
     /// Az inzertálandó adat legutoljára elfogadott értéke.
     QString     last;
+    cRecordAny  ra;
     int         actRow;       ///< A listában az aktuális elem/sor indexe
     int         selectedNum;    ///< A listában a kijelölt elemek száma
     bool        unique;         ///< A lista elemek egyediek (alapértelmezés)

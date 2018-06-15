@@ -3303,12 +3303,14 @@ QString cRecord::view(QSqlQuery& q, int __i, const cFeatures *pFeatures) const
 {
     static const QString  rHaveNo = QObject::trUtf8("[HAVE NO]");
     static const QString  sVFun   = "view.function";
-    if (isIndex(__i) == false) return rHaveNo;
+    bool raw = pFeatures != NULL && pFeatures->contains(_sRaw);
+    if (isIndex(__i) == false) return raw ? _sNul :  rHaveNo;
     if (!isNull(__i) && pFeatures != NULL) {
         if (pFeatures->keys().contains(sVFun)) {
             return execSqlTextFunction(q, pFeatures->value(sVFun), get(__i));
         }
     }
+    if (raw) return getName(__i);
     return descr()[__i].toView(q, get(__i));
 }
 

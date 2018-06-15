@@ -113,6 +113,7 @@ int fieldFlag(const QString& n, eEx __ex)
     if (0 == n.compare(_sFont,      Qt::CaseInsensitive)) return FF_FONT;
     if (0 == n.compare(_sToolTip,   Qt::CaseInsensitive)) return FF_TOOL_TIP;
     if (0 == n.compare(_sHTML,      Qt::CaseInsensitive)) return FF_HTML;
+    if (0 == n.compare(_sRaw,       Qt::CaseInsensitive)) return FF_RAW;
     if (__ex) EXCEPTION(EENUMVAL, -1, n);
     return FF_UNKNOWN;
 }
@@ -131,6 +132,7 @@ const QString& fieldFlag(int e, eEx __ex)
     case FF_FONT:       return _sFont;
     case FF_TOOL_TIP:   return _sToolTip;
     case FF_HTML:       return _sHTML;
+    case FF_RAW:        return _sRaw;
     default:            break;
     }
     if (__ex) EXCEPTION(EENUMVAL, e);

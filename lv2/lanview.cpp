@@ -8,11 +8,11 @@
 
 
 #define VERSION_MAJOR   0
-#define VERSION_MINOR   94
+#define VERSION_MINOR   95
 #define VERSION_STR     _STR(VERSION_MAJOR) "." _STR(VERSION_MINOR) "(" _STR(REVISION) ")"
 
 #define DB_VERSION_MAJOR 1
-#define DB_VERSION_MINOR 12
+#define DB_VERSION_MINOR 13
 
 // ****************************************************************************************************************
 int findArg(char __c, const char * __s, int argc, char * argv[])

@@ -118,10 +118,9 @@ public:
 
     int size() const                            { return _records.size(); }
     int isEmpty() const                         { return _records.isEmpty(); }
-    QList<QStringList>  toStringTable();
     QString             toCSV();
     QString             toHtml();
-    QList<QStringList>  toStringTable(QModelIndexList mil);
+    QList<QStringList>  toStringTable(const QModelIndexList mil = QModelIndexList());
     QString             toCSV(QModelIndexList mil);
     QString             toHtml(QModelIndexList mil);
     tRecords                    _records;

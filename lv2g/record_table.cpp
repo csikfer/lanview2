@@ -571,24 +571,24 @@ cRecordTableHideRow::cRecordTableHideRow(int row, cRecordTableHideRows * _par) :
 
 void cRecordTableHideRow::on_checkBoxTab_togle(bool st)
 {
-    qlonglong& ffTable = pColumn->fieldFlags;
+    qlonglong& ff = pColumn->fieldFlags;
     if (st) {
-        ffTable &= ~ENUM2SET(FF_TABLE_HIDE);
+        ff &= ~ENUM2SET(FF_TABLE_HIDE);
     }
     else {
-        ffTable |=  ENUM2SET(FF_TABLE_HIDE);
+        ff |=  ENUM2SET(FF_TABLE_HIDE);
     }
     pParent->refresh();
 }
 
 void cRecordTableHideRow::on_checkBoxHTML_togle(bool st)
 {
-    cTableShapeField& f = pColumn->shapeField;   // HTML
+    qlonglong& ff = pColumn->fieldFlags;
     if (st) {
-        f.setOn(_sFieldFlags, ENUM2SET(FF_HTML));
+        ff |=  ENUM2SET(FF_HTML);
     }
     else {
-        f.setOff(_sFieldFlags, ENUM2SET(FF_HTML));
+        ff &= ~ENUM2SET(FF_HTML);
     }
 }
 
@@ -1030,6 +1030,9 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
         else if (fieldFlags & ENUM2SET2(FF_BG_COLOR, FF_FG_COLOR)) {
             enumTypeName = _sEquSp; // maga a mező a szín
         }
+    }
+    if (sf.getBool(_sFieldFlags, FF_RAW) && !sf.isFeature(_sRaw)) {
+        sf.features().insert(_sRaw, _sNul);         // Megjelenítésnél a features-eket kapja meg a view() metódus.
     }
 }
 

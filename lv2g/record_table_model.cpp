@@ -358,28 +358,6 @@ void cRecordTableModel::clear()
     q.clear();
 }
 
-QList<QStringList>  cRecordTableModel::toStringTable()
-{
-    QList<QStringList> r;
-    int rows    = rowCount(QModelIndex());
-    int columns = columnCount(QModelIndex());
-    int col, row;
-    QStringList lrow;
-    for (col = 0; col <columns; ++col) {
-        lrow << headerData(col, Qt::Horizontal, Qt::DisplayRole).toString();
-    }
-    r << lrow;
-    for (row = 0; row < rows; ++row) {
-        lrow.clear();
-        for (col = 0; col <columns; ++col) {
-            QModelIndex mi = index(row, col);
-            lrow << data(mi, Qt::DisplayRole).toString();
-        }
-        r << lrow;
-    }
-    return r;
-}
-
 QString             cRecordTableModel::toCSV()
 {
     QString r;
@@ -403,7 +381,7 @@ QString             cRecordTableModel::toHtml()
     return r;
 }
 
-QList<QStringList>  cRecordTableModel::toStringTable(QModelIndexList mil)
+QList<QStringList>  cRecordTableModel::toStringTable(const QModelIndexList mil)
 {
     int rownums = rowCount(QModelIndex());
     int colnums = columnCount(QModelIndex());
@@ -423,7 +401,7 @@ QList<QStringList>  cRecordTableModel::toStringTable(QModelIndexList mil)
     }
     r << lrow;
     for (row = 0; row < rownums; ++row) {
-        if (!selectedRows.contains(row)) continue;
+        if (selectedRows.isEmpty() || !selectedRows.contains(row)) continue;
         lrow.clear();
         for (col = 0; col <colnums; ++col) {
             if (columns.at(col)->fieldFlags & ENUM2SET(FF_HTML)) {

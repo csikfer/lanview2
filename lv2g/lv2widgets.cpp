@@ -528,7 +528,7 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
     switch (et) {
     // adattípus és a kivételek szerinti szerkesztő objektum típus kiválasztás.
     case cColStaticDescr::FT_INTEGER:
-        if (_fr.descr().fKeyType != cColStaticDescr::FT_NONE) {     // Ha ez egy idegen kulcs
+        if (_tf.getBool(_sFieldFlags, FF_RAW) == false && _fr.descr().fKeyType != cColStaticDescr::FT_NONE) {     // Ha ez egy idegen kulcs
             cFKeyWidget *p = new cFKeyWidget(_tm, _tf, _fr, _par);
             _DBGFNL() << " new cFKeyWidget" << endl;
             return p;
@@ -599,7 +599,7 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
         return p;
     }
     case cColStaticDescr::FT_INTEGER_ARRAY:
-        if (_fr.descr().fKeyType != cColStaticDescr::FT_NONE) {     // nem szám, hanem a hivatkozott rekordok kezelése
+        if (_tf.getBool(_sFieldFlags, FF_RAW) == false && _fr.descr().fKeyType != cColStaticDescr::FT_NONE) {     // nem szám, hanem a hivatkozott rekordok kezelése
             cFKeyArrayWidget *p = new cFKeyArrayWidget(_tm, _tf, _fr, ro, _par);
             _DBGFNL() << " new cFKeyArrayWidget" << endl;
             return p;
@@ -1895,7 +1895,7 @@ cFKeyWidget::cFKeyWidget(const cTableShape& _tm, const cTableShapeField& _tf, cR
             }
         }
         else if (sFilter.startsWith(_sPort + ".")) {
-            QString pt = sFilter.mid(_sPoint.size() + 1);
+            QString pt = sFilter.mid(_sPort.size() + 1);
             if      (0 == pt.compare(_sAll,  Qt::CaseInsensitive)) _pt = P_ALL;
             else if (0 == pt.compare(_sNode, Qt::CaseInsensitive)) _pt = P_NODE;
             else if (0 == pt.compare(_sSnmp, Qt::CaseInsensitive)) _pt = P_SNMP;
@@ -2110,21 +2110,33 @@ bool cFKeyWidget::setWidget()
     if (pNullButton != NULL) pNullButton->setChecked(_actValueIsNULL);
     if (!_actValueIsNULL) {
         if (pModel != NULL) {
-            int ix = pModel->indexOf(actId);
-            if (ix < 0) {
-                if (pSelectPlace != NULL) {
-                    pSelectPlace->setCurrentZone(ALL_PLACE_GROUP_ID);
-                    pSelectPlace->setCurrentZone(NULL_ID);
-                }
-                else if (pSelectNode) {
-                    cPatch n;
-                    if (!n.fetchById(actId)) return false;
-                    pSelectNode->setCurrentNode(n.getId(_sNodeId));
-                }
-                else return false;
+            int ix;
+            if (_filter == F_PORT) {
+                QSqlQuery q = getQuery();
+                cNPort po;
+                po.setById(q, actId);
+                qlonglong nid = po.getId(_sNodeId);
+                pSelectNode->setCurrentNode(nid);
+                pModel->setOwnerId(nid, _sNodeId, TS_TRUE);
                 ix = pModel->indexOf(actId);
-                if (ix < 0) return false;
             }
+            else {
+                ix = pModel->indexOf(actId);
+                if (ix < 0) {
+                    if (pSelectPlace != NULL) {
+                        pSelectPlace->setCurrentZone(ALL_PLACE_GROUP_ID);
+                        pSelectPlace->setCurrentZone(NULL_ID);
+                    }
+                    else if (pSelectNode) {
+                        cPatch n;
+                        if (!n.fetchById(actId)) return false;
+                        pSelectNode->setCurrentNode(n.getId(_sNodeId));
+                    }
+                    else return false;
+                    ix = pModel->indexOf(actId);
+                }
+            }
+            if (ix < 0) return false;
             pComboBox->setCurrentIndex(ix);
         }
         else if (pSelectPlace != NULL) {
@@ -2325,7 +2337,7 @@ void cFKeyWidget::setNode(qlonglong _nid)
     qlonglong id;
     int ix = pComboBox->currentIndex();
     id = pModel->atId(ix);
-    pModel->setOwnerId(_nid, _sPortId, TS_TRUE);
+    pModel->setOwnerId(_nid, _sNodeId, TS_TRUE);
     ix = pModel->indexOf(id);
     if (ix >= 0) pComboBox->setCurrentIndex(ix);
     setFromEdit();
@@ -2883,7 +2895,9 @@ void cBinaryWidget::destroyedImage(QObject *p)
 
 cFKeyArrayWidget::cFKeyArrayWidget(const cTableShape& _tm, const cTableShapeField &_tf, cRecordFieldRef __fr, int _fl, cRecordDialogBase *_par)
     : cFieldEditBase(_tm, _tf, __fr, _fl, _par)
+    , pRDescr(cRecStaticDescr::get(_colDescr.fKeyTable, _colDescr.fKeySchema))
     , last()
+    , ra(pRDescr)
 {
     _wType  = FEW_FKEY_ARRAY;
     _height = 4;
@@ -2908,11 +2922,9 @@ cFKeyArrayWidget::cFKeyArrayWidget(const cTableShape& _tm, const cTableShapeFiel
     pUi->pushButtonClr->setDisabled(_readOnly);
 
     pArrayModel = new cStringListModel(this);
-    pRDescr = cRecStaticDescr::get(_colDescr.fKeyTable, _colDescr.fKeySchema);
-    cRecordAny  r(pRDescr);
     foreach (QVariant vId, _value.toList()) {
         qlonglong id = vId.toLongLong();
-        valueView << r.getNameById(*pq, id);
+        valueView << ra.getNameById(*pq, id);
         ids       << id;
     }
     pArrayModel->setStringList(valueView);
@@ -2961,10 +2973,9 @@ int cFKeyArrayWidget::set(const QVariant& v)
     int r = cFieldEditBase::set(v);
     if (1 == r && !_actValueIsNULL) {
         valueView.clear();
-        cRecordAny  r(pRDescr);
         foreach (QVariant vId, _value.toList()) {
             qlonglong id = vId.toLongLong();
-            valueView << r.getNameById(*pq, id);
+            valueView << ra.getNameById(*pq, id);
             ids       << id;
         }
         pArrayModel->setStringList(valueView);
@@ -3034,6 +3045,7 @@ void cFKeyArrayWidget::on_pushButtonAdd_pressed()
     QString   nm = pFRecModel->at(ix);
     *pArrayModel << nm;
     ids          << id;
+    valueView    << ra.getNameById(*pq, id);
     setFromEdit();
     setButtons();
 }
@@ -3046,6 +3058,7 @@ void cFKeyArrayWidget::on_pushButtonIns_pressed()
     QString   nm = pFRecModel->at(ix);
     pArrayModel->insert(nm, actRow);
     ids.insert(actRow, id);
+    valueView.insert(actRow, ra.getNameById(*pq, id));
     setFromEdit();
     setButtons();
 }
@@ -3084,11 +3097,13 @@ void cFKeyArrayWidget::on_pushButtonDel_pressed()
         QVector<int> rows = mil2rowsDesc(mil);
         foreach (int ix, rows) {
             ids.removeAt(ix);
+            valueView.removeAt(ix);
         }
     }
     else {
         pArrayModel->pop_back();
         ids.pop_back();
+        valueView.pop_back();
     }
     setFromEdit();
     setButtons();
@@ -3098,6 +3113,7 @@ void cFKeyArrayWidget::on_pushButtonClr_pressed()
 {
     pArrayModel->clear();
     ids.clear();
+    valueView.clear();
     setFromWidget(QVariantList());
     setButtons();
 }
