@@ -1,6 +1,7 @@
 BEGIN;  -- Version 1.12 ==> 1.13
 
-CREATE OR REPLACE VIEW named_host_services AS
+DROP VIEW named_host_services;
+CREATE VIEW named_host_services AS
   SELECT 
     hs.host_service_id,
     hs.node_id,
@@ -52,13 +53,15 @@ CREATE OR REPLACE VIEW named_host_services AS
   JOIN services AS pri ON pri.service_id = hs.prime_service_id
   JOIN services AS pro ON pro.service_id = hs.proto_service_id;
   
-CREATE OR REPLACE VIEW node_port_vlans AS
+DROP VIEW node_port_vlans;
+CREATE VIEW node_port_vlans AS
   SELECT node_id, port_id, port_name, port_index, vlan_id, vlan_name, vlan_note, vlan_type
   FROM port_vlans
   JOIN nports     USING(port_id)
   JOIN vlans      USING(vlan_id);
 
-CREATE OR REPLACE VIEW vlan_list_by_host AS
+DROP VIEW vlan_list_by_host;
+CREATE VIEW vlan_list_by_host AS
   SELECT DISTINCT   node_id, vlan_id, node_name, vlan_name, vlan_note, vlan_stat
   FROM port_vlans 
   JOIN nports     USING(port_id)
@@ -205,6 +208,52 @@ ALTER TYPE fieldflag ADD VALUE 'raw';
 ALTER TABLE table_shape_fields DROP CONSTRAINT table_shape_fields_table_shape_id_table_shape_field_name_key;
 CREATE INDEX table_shape_fields_table_shape_id_index ON table_shape_fields(table_shape_id);
 
+############################### ++++
+
+ALTER TABLE interfaces ADD COLUMN port_stat notifswitch DEFAULT 'unknown';
+
+ALTER TABLE service_vars ADD COLUMN delegate_port_state boolean NOT NULL DEFAULT false;
+
+DROP VIEW portvars;
+CREATE VIEW portvars AS 
+ SELECT
+    sv.service_var_id AS portvar_id,
+    sv.service_var_name,
+    sv.service_var_note,
+    sv.service_var_type_id,
+    sv.host_service_id,
+    hs.port_id,
+    sv.delegate_port_state,
+    sv.rrd_beat_id,
+    sv.service_var_value,
+    sv.var_state,
+    sv.last_time,
+    sv.features,
+    sv.raw_value,
+    sv.delegate_service_state,
+    sv.state_msg
+   FROM service_vars AS sv
+     JOIN host_services AS hs USING (host_service_id)
+   WHERE NOT sv.deleted AND NOT hs.deleted AND hs.port_id IS NOT NULL;
+
+CREATE OR REPLACE FUNCTION check_before_service_value() RETURNS TRIGGER AS $$
+DECLARE
+    tid bigint;
+    pt  paramtype;
+    pid bigint;
+BEGIN
+    SELECT param_type_id   INTO tid FROM service_var_types WHERE service_var_type_id = NEW.service_var_type_id;
+    SELECT param_type_type INTO pt  FROM param_types       WHERE param_type_id = tid;
+    NEW.param_value = check_paramtype(NEW.param_value, pt);
+    IF TG_OP = 'UPDATE' AND delegate_port_state THEN
+        SELECT port_id INTO pid FROM host_services WHERE host_service_id = NEW.host_service_id;
+        IF FOUND THEN
+            UPDATE interfaces SET port_stat = var_state WHERE port_id = pid;
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
   
 SELECT set_db_version(1, 13);
 END;
