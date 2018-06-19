@@ -164,8 +164,8 @@ int cDevicePV::run(QSqlQuery& q, QString &runMsg)
     QMap<int, int>          pvidMap;
     const cPortVLans& par = dynamic_cast<const cPortVLans&>(parent());
     int r;
-    if (0 != (r = snmp.getBitMaps(par.dot1qVlanCurrentEgressPorts, currentMaps))
-     || 0 != (r = snmp.getBitMaps(par.dot1qVlanStaticEgressPorts, staticMaps))
+    if (0 != (r = snmp.getBitMaps(par.dot1qVlanCurrentEgressPorts,         currentMaps))
+     || 0 != (r = snmp.getBitMaps(par.dot1qVlanStaticEgressPorts,          staticMaps))
      || 0 != (r = snmp.getBitMaps(par.dot1qVlanStaticForbiddenEgressPorts, forbidMaps))
      || 0 != (r = snmp.getXIndex( par.dot1qPvid, pvidMap))) {
         runMsg = trUtf8("SNMP '%1' error : #%2/%3, '%4'.")
@@ -178,14 +178,14 @@ int cDevicePV::run(QSqlQuery& q, QString &runMsg)
         int ctVlan = 0, ctUnchg = 0, ctMod = 0, ctNew = 0, ctIns = 0, ctUnkn = 0, ctRm = 0;
         for (int vid = MIN_VLAN_ID; vid < MAX_VLAN_ID; ++vid) {
             if (currentMaps.contains(vid) || staticMaps.contains(vid)) {    // Van ilyen VLAN ?
-                ++ctVlan;
+                ++ctVlan;   // Számláló. Talált VLAN-ok száma
                 if (node().ports.isEmpty()) node().fetchPorts(q);
                 tRecordList<cNPort>::iterator i, n = node().ports.end();
                 QString vstat;
                 for (i = node().ports.begin(); i != n; ++i) {
                     int pix = (*i)->getId(_sPortIndex);
                     if      (pvidMap.contains(pix) && pvidMap[pix] == vid)  vstat = _sUntagged;
-                    else if (maps2bool(staticMaps,  vid, pix))              vstat = _sUntagged;
+                    else if (maps2bool(staticMaps,  vid, pix))              vstat = _sTagged;
                     else if (maps2bool(currentMaps, vid, pix))              vstat = _sTagged;
                     else if (maps2bool(forbidMaps,  vid, pix))              vstat = _sForbidden;
                     else    continue;

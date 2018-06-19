@@ -238,14 +238,20 @@ CREATE VIEW portvars AS
 
 CREATE OR REPLACE FUNCTION check_before_service_value() RETURNS TRIGGER AS $$
 DECLARE
-    tid bigint;
+    tids record;
     pt  paramtype;
     pid bigint;
 BEGIN
-    SELECT param_type_id   INTO tid FROM service_var_types WHERE service_var_type_id = NEW.service_var_type_id;
-    SELECT param_type_type INTO pt  FROM param_types       WHERE param_type_id = tid;
-    NEW.param_value = check_paramtype(NEW.param_value, pt);
-    IF TG_OP = 'UPDATE' AND delegate_port_state THEN
+    SELECT param_type_id, raw_param_type_id INTO tids FROM service_var_types WHERE service_var_type_id = NEW.service_var_type_id;
+    IF NEW.service_var_value IS NOT NULL THEN
+        SELECT param_type_type INTO pt FROM param_types WHERE param_type_id = tids.param_type_id;
+        NEW.service_var_value := check_paramtype(NEW.service_var_value, pt);
+    END IF;
+    IF NEW.raw_value IS NOT NULL THEN
+        SELECT param_type_type INTO pt FROM param_types WHERE param_type_id = tids.raw_param_type_id;
+        NEW.raw_value         := check_paramtype(NEW.raw_value, pt);
+    END IF;
+    IF TG_OP = 'UPDATE' AND NEW.delegate_port_state THEN
         SELECT port_id INTO pid FROM host_services WHERE host_service_id = NEW.host_service_id;
         IF FOUND THEN
             UPDATE interfaces SET port_stat = var_state WHERE port_id = pid;
