@@ -185,6 +185,8 @@ private slots:
     void on_pushButtonGoServices_clicked();
     void on_pushButtonSave_clicked();
     void on_pushButtonPlaceEqu_clicked();
+    void on_toolButtonEditLinkNode_clicked();
+    void on_toolButtonEditPlace_clicked();
 };
 
 #endif // CWORKSTATION_H

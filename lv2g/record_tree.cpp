@@ -128,6 +128,9 @@ void cRecordTree::initSimple(QWidget *pW)
         }
     }
     pMainLayout->addWidget(pTreeView);
+
+    // PDEB(VERBOSE) << "Indent : " << pTreeView->indentation() << endl;
+
     pMainLayout->addWidget(pButtons->pWidget());
     pTreeView->setModel(pTreeModel());
     pTreeView->setSelectionBehavior(QAbstractItemView::SelectRows);     // Csak sor jelölhető ki
@@ -152,6 +155,10 @@ void cRecordTree::initSimple(QWidget *pW)
     for (int i = 0; i < fields.size(); ++i) {
         hideColumn(i, field(i).fieldFlags & ENUM2SET(FF_TABLE_HIDE));
     }
+    // PDEB(VERBOSE) << "Indent : " << pTreeView->indentation() << endl;
+    // pTreeView->resetIndentation();
+    // PDEB(VERBOSE) << "Indent : " << pTreeView->indentation() << endl;
+    pTreeView->setRootIsDecorated(true);
 
 }
 
@@ -281,6 +288,9 @@ void cRecordTree::_refresh(bool first)
     for (int i = 0; i < pTreeModel()->columnCount(); ++i) {
         pTreeView->resizeColumnToContents(i);
     }
+//    PDEB(VERBOSE) << "Indent : " << pTreeView->indentation() << endl;
+//    pTreeView->resetIndentation();
+//    PDEB(VERBOSE) << "Indent : " << pTreeView->indentation() << endl;
 }
 
 void cRecordTree::buttonPressed(int id)

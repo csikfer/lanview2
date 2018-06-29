@@ -1330,3 +1330,13 @@ void cWorkstation::on_pushButtonPlaceEqu_clicked()
 {
     pSelLinked->cSelectPlace::copyCurrents(*pSelPlace);
 }
+
+void cWorkstation::on_toolButtonEditLinkNode_clicked()
+{
+
+}
+
+void cWorkstation::on_toolButtonEditPlace_clicked()
+{
+
+}

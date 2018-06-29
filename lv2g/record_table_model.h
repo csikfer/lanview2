@@ -32,7 +32,7 @@ public:
     int                         _firstRowNumber;
     /// A maximálisan megjelenítendő sorok száma (default 100)
     int                         _maxRows;
-    /// Egy áltatlánosan használlt lekérdező objektum.
+    /// Egy általánosan használlt lekérdező objektum.
     QSqlQuery                 * pq;
     /// A megjelenító view objektum
     cRecordsViewBase&      recordView;
@@ -56,7 +56,7 @@ public:
     void setFirstRowNumber(int _fn)             { _firstRowNumber = _fn;  }
 
     /// A model hederData() virtuális metódus alap algoritmusa
-    QVariant _headerData(int section, Qt::Orientation orientation, int role) const;
+    QVariant _headerData(const QAbstractItemModel * pModel, int section, Qt::Orientation orientation, int role) const;
 
     virtual void removeRecords(const QModelIndexList& mil) = 0;
     virtual bool removeRec(const QModelIndex & mi) = 0;

@@ -158,7 +158,7 @@ QVariant    cRecordTreeModel::data(const QModelIndex & index, int role) const
 
 QVariant    cRecordTreeModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
-    return _headerData(section, orientation, role);
+    return _headerData(this, section, orientation, role);
 }
 
 Qt::ItemFlags cRecordTreeModel::flags(const QModelIndex &index) const

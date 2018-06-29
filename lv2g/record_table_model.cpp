@@ -101,7 +101,7 @@ QVariant cRecordViewModelBase::_data(int fix, cRecordTableColumn& column, const 
     }
 }
 
-QVariant cRecordViewModelBase::_headerData(int section, Qt::Orientation orientation, int role) const
+QVariant cRecordViewModelBase::_headerData(const QAbstractItemModel *pModel, int section, Qt::Orientation orientation, int role) const
 {
 //    _DBGFN() << VDEB(section) << VDEB(orientation) << VDEB(role) << endl;
     QVariant r;
@@ -109,7 +109,8 @@ QVariant cRecordViewModelBase::_headerData(int section, Qt::Orientation orientat
     case Qt::Vertical:
         switch (role) {
         case Qt::DisplayRole:
-            if (_viewRowNumbers) r = QVariant(section + _firstRowNumber +1) ;
+            if (_viewRowNumbers) return QVariant(section + _firstRowNumber +1) ;
+            return r;
             break;
         case Qt::TextAlignmentRole:
         case Qt::ForegroundRole:
@@ -121,7 +122,8 @@ QVariant cRecordViewModelBase::_headerData(int section, Qt::Orientation orientat
     case Qt::Horizontal:
         switch (role) {
         case Qt::DisplayRole:
-            if (_viewHeader) r = columns[section]->header;
+            if (_viewHeader) return columns[section]->header;
+            return r;
             break;
         default:
             return dcRole(DC_HEAD, role);
@@ -130,6 +132,7 @@ QVariant cRecordViewModelBase::_headerData(int section, Qt::Orientation orientat
         break;
     }
 //    _DBGFNL() << " = " << quotedString(r.toString()) << endl;
+    r = pModel->QAbstractItemModel::headerData(section, orientation, role);
     return r;
 }
 
@@ -236,7 +239,7 @@ QVariant cRecordTableModel::headerData(int section, Qt::Orientation orientation,
             return QColor(Qt::blue);
         }
     }
-    return _headerData(section, orientation, role);
+    return _headerData(this, section, orientation, role);
 }
 
 cRecord *cRecordTableModel::record(const QModelIndex &index)
