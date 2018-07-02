@@ -142,6 +142,7 @@ qlonglong sendError(const cError *pe, lanView *_instance)
     fields.add("data_pos",      pe->mDataPos);
     fields.add("data_msg",      pe->mDataMsg);
     fields.add("data_name",     pe->mDataName);
+    fields.add("back_stack",    pe->slBackTrace.join('\n'));
 
     QString sql ="INSERT INTO app_errs (" + fields.names().join(", ") + ") VALUES (" + fields.quotes() + ") RETURNING applog_id";
     if (! q.prepare(sql)) {

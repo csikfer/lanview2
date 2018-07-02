@@ -36,3 +36,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION is_dyn_addr(inet) IS 'Ellenőrzi, hogy a paraméterként megadott IP cím része-e egy dinamikus IP tartománynak';
+
+-- Az lldp_link rekord törlése, ha egy azonos log_link rekordot törlünk.
+CREATE OR REPLACE FUNCTION delete_lldp_link() RETURNS TRIGGER AS $$
+BEGIN
+    DELETE FROM lldp_links_table
+        WHERE (port_id1 = OLD.port_id1 AND port_id2 = OLD.port_id2)
+           OR (port_id1 = OLD.port_id2 AND port_id2 = OLD.port_id1);
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE TRIGGER delete_log_links_table BEFORE DELETE ON log_links_table FOR EACH ROW EXECUTE PROCEDURE delete_lldp_link();

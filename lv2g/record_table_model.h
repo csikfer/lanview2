@@ -64,7 +64,7 @@ public:
     virtual cRecord *record(const QModelIndex &mi) = 0;
     virtual void clear() = 0;
 
-    /// A megadott sorhoz tartozó rekord objektum pointert lecseréli. A megjelenített táblát frissíti.
+    /// A megadott sorhoz tartozó rekordot lecseréli. A megjelenített táblát frissíti.
     /// A megadott új adattartalommal frissíti az adatbázis tábla megfelelő rekordját.
     /// A régi pointer felszabadítja, a paraméterként megadottat, pedig szintén ő szabadítja fel, ha már nem kell.
     /// @return ha elvégezte a műveletet true, ha olyan sort adunk meg, ami nem létezik, akkor false.
