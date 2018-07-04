@@ -323,6 +323,28 @@ bool cLinkDialog::prev()
     return pLink2->prev() && r;
 }
 
+static bool checkShare(QSqlQuery& _q, qlonglong _pid, ePhsLinkType _lt, ePortShare _sh, QString& _msg)
+{
+    if (_pid == NULL_ID)  return true;  // imperfect
+    if (_lt  != LT_FRONT) return false;
+    cPPort pp;
+    pp.setById(_q, _pid);
+    ePortShare sc = (ePortShare)pp.getId(_sSharedCable);
+    switch (sc) {
+    case ES_:
+        break;
+    case ES_NC:
+        _msg += QObject::trUtf8("A megadott %1 portnál a hátlap nincs bekötve.<br>").arg(pp.getFullName(_q));
+        return true;        // imperfect
+    default:
+        if (shareResultant(_sh, sc) == ES_NC) {
+            _msg += QObject::trUtf8("A megadott %1 port megosztása nem használható (nincs összeköttetés egy érpáron sem).<br>").arg(pp.getFullName(_q));
+            return true;    // imperfect
+        }
+        break;
+    }
+    return false;
+}
 
 void cLinkDialog::changed()
 {
@@ -377,6 +399,8 @@ void cLinkDialog::changed()
         if (rows > 0) EXCEPTION(AMBIGUOUS, rows, link.toString());
         imperfect = false;
     }
+    imperfect = checkShare(*pq, pid1, lt1, ps, msg) || imperfect;
+    imperfect = checkShare(*pq, pid2, lt2, ps, msg) || imperfect;
     tRecordList<cPhsLink>   list;
     if (pid1 != NULL_ID) link.collisions(*pq, list, pid1, lt1, ps);
     if (pid2 != NULL_ID) link.collisions(*pq, list, pid2, lt2, ps);

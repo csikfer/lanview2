@@ -878,7 +878,8 @@ enum ePortShare {
     ES_A,   ES_AA, ES_AB,
     ES_B,   ES_BA, ES_BB,
     ES_C,   ES_D,
-    ES_NC
+    ES_NC,
+    ES_COUNT
 };
 
 /// A portshare SQL enumeráció típusból  a ePortShare típusba konverziós függvény.
@@ -893,6 +894,8 @@ EXT_ int portShare(const QString& _n, enum eEx __ex = EX_ERROR);
 /// @return A konstansnak megfelelő SQL érték, vagy üres string, mivel ez azonos egy SQL értékkel,
 ///         ezért hiba detektálásra a visszaadott érték alkalmatlan.
 EXT_ const QString& portShare(int _i, enum eEx __ex = EX_ERROR);
+
+EXT_ ePortShare shareResultant(ePortShare _sh1, ePortShare _sh2);
 
 /*!
 @class cPPort
