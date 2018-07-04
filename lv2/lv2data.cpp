@@ -3263,8 +3263,9 @@ bool cSnmpDevice::setBySnmp(const QString& __com, eEx __ex, QString *__pEs, QHos
     if (__pEs == NULL) expError(*pEs, true);
 #else // SNMP_IS_EXISTS
     (void)__com;
-    if (pEs != NULL) *pEs = snmpNotSupMsg();
+    (void)ip;
     if (__ex != EX_IGNORE) EXCEPTION(ENOTSUPP, -1, snmpNotSupMsg());
+    if (pEs != NULL) *pEs = snmpNotSupMsg();
 #endif // SNMP_IS_EXISTS
     return false;
 }
@@ -3301,6 +3302,7 @@ int cSnmpDevice::open(QSqlQuery& q, cSnmp& snmp, eEx __ex, QString *pEMsg) const
     (void)snmp;
     (void)q;
     if (__ex != EX_IGNORE) EXCEPTION(ENOTSUPP, -1, snmpNotSupMsg());
+    if (pEMsg != NULL) *pEMsg = snmpNotSupMsg();
     return -1;
 #endif // SNMP_IS_EXISTS
 }
