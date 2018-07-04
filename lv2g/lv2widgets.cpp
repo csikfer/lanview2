@@ -559,6 +559,7 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
             _DBGFNL() << " new cFieldSpinBoxWidget/double" << endl;
             return p;
         }
+        // Continue
     case cColStaticDescr::FT_MAC:
     case cColStaticDescr::FT_INET:
     case cColStaticDescr::FT_CIDR: {
@@ -604,7 +605,7 @@ cFieldEditBase *cFieldEditBase::createFieldWidget(const cTableShape& _tm, const 
             _DBGFNL() << " new cFKeyArrayWidget" << endl;
             return p;
         }
-        // Nincs break; !!
+        // Contnue
     case cColStaticDescr::FT_REAL_ARRAY:
     case cColStaticDescr::FT_TEXT_ARRAY: {
          cArrayWidget *p = new cArrayWidget(_tm, _tf, _fr, ro, _par);

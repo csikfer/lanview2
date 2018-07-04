@@ -740,6 +740,7 @@ void cHSOperate::set()
                         hs.clear(_sNoalarmTo);
                         rec.setValue(RX_FROM, pUi->dateTimeEditTo->dateTime());
                         rec.setValue(RX_TO,  QVariant());
+                        break;
                     case NAT_FROM:
                         hs.clear(_sNoalarmFrom);
                         hs.set(_sNoalarmTo, pUi->dateTimeEditTo->dateTime());
@@ -751,6 +752,7 @@ void cHSOperate::set()
                         hs.set(_sNoalarmTo, pUi->dateTimeEditTo->dateTime());
                         rec.setValue(RX_FROM, pUi->dateTimeEditTo->dateTime());
                         rec.setValue(RX_TO,  pUi->dateTimeEditTo->dateTime());
+                        break;
                     default:
                         EXCEPTION(EPROGFAIL);
                         break;

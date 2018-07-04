@@ -292,8 +292,10 @@ void cPatchDialog::updateSharedIndexs()
                             break;
                         case ES_BA:
                             collision = ssh == ES_B || ssh == ES_C || ssh == ES_D;
+                            break;
                         case ES_BB:
                             collision = ssh == ES_B;
+                            break;
                         case ES_C:
                         case ES_D:
                             collision = ssh == ES_B || ssh == ES_AB;

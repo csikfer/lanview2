@@ -2151,6 +2151,7 @@ void cRecordTable::init()
         break;
     case ENUM2SET2(TS_OWNER, TS_MEMBER):
         flags = RTF_OVNER;
+        // Continue
     case ENUM2SET(TS_MEMBER):
         if (pUpper != NULL) EXCEPTION(EDATA);
         flags |= RTF_MASTER | RTF_MEMBER;
@@ -2158,6 +2159,7 @@ void cRecordTable::init()
         break;
     case ENUM2SET2(TS_OWNER, TS_GROUP):
         flags = RTF_OVNER;
+        // Continue
     case ENUM2SET(TS_GROUP):
         if (pUpper != NULL) EXCEPTION(EDATA);
         flags |= RTF_MASTER | RTF_GROUP;
