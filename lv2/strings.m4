@@ -48,6 +48,9 @@ STRDEF(Params, "params")
 STRDEF(Reset, "reset")
 STRDEF(Color, "color")
 
+STRDEF(ViewFunc, "view.func")
+STRDEF(ViewExpr, "view.expr")
+
 dnl eDataCharacter ENUM
 STRDEF(Datacharacter, "datacharacter")
  STRDEF(Head, "head")

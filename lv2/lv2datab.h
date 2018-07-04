@@ -1154,8 +1154,10 @@ public:
     virtual bool toEnd(int i);
     /// Lekérdezi egy mező értékét. A távoli kulcsokat megkisérli névvé konvertálni.
     /// Mindíg egy ember álltal értelmezhető értékkel (próbál) visszatérni.
-    /// Ha megadjuk a pFeatures paramétert, akkor ha a konténerben létezik "view.function" kulcs, akkor annak az értéke
+    /// Ha megadjuk a pFeatures paramétert, akkor ha a konténerben létezik "view.func" kulcs, akkor annak az értéke
     /// egy SQL függvény kell legyen, melynek egy paraétere a mező érték, és ekkor a metódus a függvény visszatérési értékét adja vissza.
+    /// Ha megadjuk a pFeatures paramétert, akkor ha a konténerben létezik "view.expr" kulcs, akkor annak az értéke
+    /// egy SQL kifelyezés kell legyen, melynek egy paraétere a mező érték, és ekkor a metódus a kifelyezés értékét adja vissza.
     /// @param q Ha adatbázisműveletre van szükség, akkor az ezen keresztül.
     /// @param __i A mező indexe
     /// @param pFeatures Egy opcionális features érték.

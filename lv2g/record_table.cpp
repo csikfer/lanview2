@@ -208,7 +208,6 @@ QString cRecordTableFilter::whereSet(const QString &n, QVariantList& qparams)
     return sl.join(" AND ");
 }
 
-
 QString cRecordTableFilter::where(QVariantList& qparams)
 {
     QString r;
@@ -218,11 +217,7 @@ QString cRecordTableFilter::where(QVariantList& qparams)
         bool      isArray = false;                      // A set-et nem tömbként kezeljük.
         QString   colName = field.pColDescr->colNameQ();// Mező név, vagy kifelyezés
         int eColType = field.pColDescr->eColType;
-        QString   viewFunction = field.shapeField.feature("view.function"); // Konverziós függvény a megjelenítésnél
-        if (viewFunction.isEmpty() == false) {
-            eColType = cColStaticDescr::FT_TEXT;    // konvertáltuk a függvénnyel text-re
-            colName  = viewFunction + "(" + colName + ")";
-        }
+        field.colExpr(colName, &eColType);   // Konverziós függvény, vagy kifelyezés az oszlopra
         switch (eColType) {
         case cColStaticDescr::FT_TEXT_ARRAY:
             isArray = true;
@@ -473,7 +468,10 @@ QString cRecordTableOrd::ord()
     default:        EXCEPTION(EPROGFAIL);
     }
     const cColStaticDescr& colDescr =  *field.pColDescr;
-    if (colDescr.fKeyType == cColStaticDescr::FT_NONE) r = colDescr.colNameQ() + r;
+    QString colName = colDescr.colNameQ();
+    if (field.colExpr(colName) || colDescr.fKeyType == cColStaticDescr::FT_NONE) {
+        r = colName + r;
+    }
     else {
         if (colDescr.fnToName.isEmpty()) EXCEPTION(EDATA, -1, QObject::trUtf8("Az ID->név konverziós függvény nincs definiálva."));
         r = colDescr.fnToName + QChar('(') + colDescr.colNameQ() + QChar(')') + r;
@@ -1034,6 +1032,24 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
     if (sf.getBool(_sFieldFlags, FF_RAW) && !sf.isFeature(_sRaw)) {
         sf.features().insert(_sRaw, _sNul);         // Megjelenítésnél a features-eket kapja meg a view() metódus.
     }
+}
+
+bool cRecordTableColumn::colExpr(QString& _name, int *pEColType)
+{
+    QString s;
+    s = shapeField.feature(_sViewFunc); // Konverziós függvény a megjelenítésnél
+    if (s.isEmpty() == false) {
+        if (pEColType != NULL) *pEColType = cColStaticDescr::FT_TEXT;    // konvertáltuk a függvénnyel text-re
+        _name = s + "(" + pColDescr->colNameQ() + ")";
+        return true;
+    }
+    s = shapeField.feature(_sViewExpr); // Konverziós SQL kifelyezés a megjelenítésnél
+    if (s.isEmpty() == false) {
+        if (pEColType != NULL) *pEColType = cColStaticDescr::FT_TEXT;    // konvertáltuk a kifelyxezéssel text-re
+        _name = s.replace("?", pColDescr->colNameQ());
+        return true;
+    }
+    return false;
 }
 
 /* ***************************************************************************************************** */

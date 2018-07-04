@@ -47,3 +47,22 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 CREATE TRIGGER delete_log_links_table BEFORE DELETE ON log_links_table FOR EACH ROW EXECUTE PROCEDURE delete_lldp_link();
+
+-- Egy VIEW a mactab_logs megjelenítéséhez
+CREATE OR REPLACE FUNCTION mac2node_name(mac macaddr) RETURNS text AS $$
+DECLARE
+    nn text;
+BEGIN
+    SELECT node_name INTO nn 
+        FROM interfaces
+        JOIN nodes USING(node_Id)
+        WHERE hwaddress = mac
+        LIMIT 1;
+    IF NOT FOUND THEN
+        RETURN NULL;
+    END IF;
+    RETURN nn;
+END;
+$$ LANGUAGE plpgsql;
+
+

@@ -156,7 +156,7 @@ public:
     /// A magic string paramétereket és értékeket tartalmazó string, a kezdő és záró karakter, valamint a szaeparátor
     /// a kettőspont. A paraméter név és érték szeparátor az egyenlőségjel. Pl.:
     /// ':par1:par2=val2:par3:par4=val4:
-    /// Ha a paraméter érték a felkiáltójel, akkor az adott kulcs türülve lessz.
+    /// Ha a paraméter érték a felkiáltójel, akkor az adott kulcs törölve lessz.
     /// @param __ms A feldolgozandó paraméter string
     /// @param __ex Nem megfelelő formátumú string esetén kizárást dob.
     /// @return true, ha nincs hiba. Hiba esetén (ha __ex = EX_IGNORE) false.
