@@ -573,14 +573,14 @@ cPatch * patchEditDialog(QSqlQuery& q, QWidget *pPar, cPatch * pSample, bool ro)
     dialog.setPatch(pSample);
     qlonglong id = pSample->getId();
     if (id == NULL_ID) EXCEPTION(EDATA);
-    cPatch *p;
+    cPatch *p = NULL;
     while (true) {
         int r = dialog.exec();
         if (r != QDialog::Accepted) return NULL;
         p = dialog.getPatch();
         if (p == NULL) continue;
         if (!cErrorMessageBox::condMsgBox(p->setId(id).tryUpdateById(q))) {
-            delete p;
+            pDelete(p);
             continue;
         }
         break;

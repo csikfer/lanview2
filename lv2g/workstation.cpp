@@ -1333,10 +1333,20 @@ void cWorkstation::on_pushButtonPlaceEqu_clicked()
 
 void cWorkstation::on_toolButtonEditLinkNode_clicked()
 {
-
+    qlonglong id = pSelLinked->currentNodeId();
+    if (id != NULL_ID && pSelLinked->isPatch()) {
+        cPatch patch;
+        patch.setById(*pq, id);
+        patch.fetchPorts(*pq);
+        cPatch *p = patchEditDialog(*pq, this, &patch);
+        if (p != NULL) {
+            pSelLinked->refresh();
+            pDelete(p);
+        }
+    }
 }
 
 void cWorkstation::on_toolButtonEditPlace_clicked()
 {
-
+    pSelPlace->editCurrentPlace();
 }

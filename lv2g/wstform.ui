@@ -781,7 +781,7 @@
         <item row="0" column="5">
          <widget class="QComboBox" name="comboBoxLinkPlace">
           <property name="enabled">
-           <bool>false</bool>
+           <bool>true</bool>
           </property>
          </widget>
         </item>
@@ -818,7 +818,7 @@
         <item row="0" column="1">
          <widget class="QComboBox" name="comboBoxLinkZone">
           <property name="enabled">
-           <bool>false</bool>
+           <bool>true</bool>
           </property>
          </widget>
         </item>
