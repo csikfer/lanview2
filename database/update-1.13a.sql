@@ -65,4 +65,28 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Az adatbázis hiba rekordban nem jelenik meg az user neve, csak az ID, mert hiányzik az fkey def.
+ALTER TABLE db_errs ALTER COLUMN user_id DROP NOT NULL;
+ALTER TABLE db_errs ADD CONSTRAINT db_errs_user_id_fkey FOREIGN KEY (user_id)
+      REFERENCES public.users (user_id) MATCH SIMPLE
+      ON UPDATE RESTRICT ON DELETE SET NULL;
 
+-- Melyik címtáblában van a port
+
+CREATE OR REPLACE VIEW port_in_mactab AS
+    SELECT
+        i.port_id AS port_id,
+        n.node_id AS node_id,
+        i.port_name AS port_name,
+        n.node_name || ':' || i.port_name AS port_full_name,
+        m.port_id AS mactab_port_id,
+        port_id2full_name(m.port_id) AS mactab_port_full_name,
+        m.mactab_state,
+        m.first_time,
+        m.last_time,
+        m.set_type
+    FROM mactab     AS m
+    JOIN interfaces AS i USING(hwaddress)
+    JOIN nodes      AS n USING(node_id);
+    
+    

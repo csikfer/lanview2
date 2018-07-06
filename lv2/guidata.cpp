@@ -343,9 +343,9 @@ bool cTableShape::setDefaults(QSqlQuery& q, bool _disable_tree)
 {
     bool r = true;
     QString n = getName();
-    setName(LTX_TABLE_TITLE, n);
-    setName(LTX_DIALOG_TITLE, n);
-    setName(LTX_DIALOG_TAB_TITLE, n);
+    setText(LTX_TABLE_TITLE, n);
+    setText(LTX_DIALOG_TITLE, n);
+    setText(LTX_DIALOG_TAB_TITLE, n);
     int type = ENUM2SET(TS_SIMPLE);
     const cRecStaticDescr& rDescr = *cRecStaticDescr::get(getName(_sTableName), getName(_sSchemaName));
     shapeFields.clear();
@@ -355,8 +355,8 @@ bool cTableShape::setDefaults(QSqlQuery& q, bool _disable_tree)
         cTableShapeField fm;
         fm.setName(cDescr); // mező név a rekordban
         fm.setName(_sTableShapeFieldNote, cDescr);
-        fm.setName(cTableShapeField::LTX_TABLE_TITLE, cDescr);
-        fm.setName(cTableShapeField::LTX_DIALOG_TITLE, cDescr);
+        fm.setText(cTableShapeField::LTX_TABLE_TITLE, cDescr);
+        fm.setText(cTableShapeField::LTX_DIALOG_TITLE, cDescr);
         fm.setId(_sFieldSequenceNumber, (i + 1) * 10);  // mezők megjelenítési sorrendje
         bool ro = !cDescr.isUpdatable;
         bool hide = false;
