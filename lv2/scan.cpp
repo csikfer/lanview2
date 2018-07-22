@@ -37,23 +37,24 @@ cArpTable& cArpTable::getBySnmp(cSnmp& __snmp)
     return *this;
 }
 
-void cArpTable::getByProcFile(QIODevice& __f)
+int cArpTable::getByProcFile(QIODevice& __f)
 {
     DBGFN();
     QTextStream str(&__f);
-    str.readLine(); // Fejléc
+    str.readLine(); // Drop header
     QString line;
+    int r;
     while ((line = str.readLine()).isEmpty() == false) {
         QStringList fl = line.split(QRegExp("\\s+"));
         QHostAddress addr(fl[0]);
         if (addr.isNull()) {
             DWAR() << "Invalid IP address: " << fl[0] << " ARP line : '" << line << "' is dropped." << endl;
-            continue;
+            return -1;
         }
         cMac mac(fl[3]);
         if (!mac) {
             DWAR() << "Invalid MAC address: " << fl[3] << " ARP line : '" << line << "' is dropped." << endl;
-            continue;
+            return -1;
         }
         // PDEB(VVERBOSE) << line << " : " << fl[0] << "/" << fl[3] << " : " << addr.toString() << "/" << mac.toString() << endl;
         if (mac.isEmpty()) {
@@ -62,22 +63,23 @@ void cArpTable::getByProcFile(QIODevice& __f)
         }
         PDEB(INFO) << "insert(" << addr.toString() << QChar(',') << mac.toString() << ")" << endl;
         insert(addr, mac);
+        ++r;
     }
+    return r;
 }
-cArpTable& cArpTable::getByLocalProcFile(const QString& __f)
+int cArpTable::getByLocalProcFile(const QString& __f)
 {
     _DBGFN() << "@(" << __f << QChar(',') << endl;
     QFile procFile(__f.isEmpty() ? "/proc/net/arp" : __f);
     if (!procFile.open(QIODevice::ReadOnly | QIODevice::Text)) EXCEPTION(EFOPEN, -1, procFile.fileName());
-    getByProcFile(procFile);
-    return *this;
+    return getByProcFile(procFile);
 }
 
 /// Az ARP tábla lekérdezése a proc fájlrendszeren keresztül, egy távoli gépen SSH-val
 /// @param __h A távoli hoszt név, vagy ip cím
 /// @param __f A fájl neve a proc fájlrendszerben
 /// @param __ru Opcionális, a felhasználó név a távoli gépen.
-cArpTable& cArpTable::getBySshProcFile(const QString& __h, const QString& __f, const QString& __ru)
+int cArpTable::getBySshProcFile(const QString& __h, const QString& __f, const QString& __ru)
 {
     //_DBGFN() << " @(" << VDEB(__h) << QChar(',') << VDEB(__f) << QChar(',') << VDEB(__ru) << QChar(')') << endl;
     QString     ru;
@@ -88,8 +90,7 @@ cArpTable& cArpTable::getBySshProcFile(const QString& __h, const QString& __f, c
     proc.start(cmd, QIODevice::ReadOnly);
     if (false == proc.waitForStarted(  2000)
      || false == proc.waitForFinished(10000)) EXCEPTION(ETO, -1, cmd);
-    getByProcFile(proc);
-    return *this;
+    return getByProcFile(proc);
 }
 
 const QString& cArpTable::token(QIODevice& __f)
@@ -120,10 +121,10 @@ const QString& cArpTable::token(QIODevice& __f)
 #define GETOKEN()   if ((tok = token(__f)).isEmpty()) break;
 #define CHKTOK(s)   if (tok != s) continue;
 
-/// dhcp.comf fájl tartalmának az értelmezése
+/// Parse dhcp.comf file
 /// @param __f A fájl tartalma
 /// @param _hid host_service_id opcionális
-void cArpTable::getByDhcpdConf(QIODevice& __f, qlonglong _hid)
+int cArpTable::getByDhcpdConf(QIODevice& __f, qlonglong _hid)
 {
     //DBGFN();
     static const QString _shost           = "host";
@@ -135,9 +136,10 @@ void cArpTable::getByDhcpdConf(QIODevice& __f, qlonglong _hid)
     QString tok;
     QVariant hId;
     if (_hid != NULL_ID) hId = _hid;
+    int r = 0;
     while (true) {
         tok = token(__f);
-        if (tok.isEmpty()) return;
+        if (tok.isEmpty()) return r;
         if (tok == _shost) {
             GETOKEN();  // név
             GETOKEN();  CHKTOK("{");
@@ -158,6 +160,7 @@ void cArpTable::getByDhcpdConf(QIODevice& __f, qlonglong _hid)
             PDEB(VERBOSE) << "add : " << addr.toString() << " / " << mac.toString() << endl;
 
             insert(addr, mac);
+            ++r;
         }
         else if (tok == _srange) {
             QSqlQuery q = getQuery();
@@ -171,24 +174,31 @@ void cArpTable::getByDhcpdConf(QIODevice& __f, qlonglong _hid)
                 APPMEMO(q, m, RS_CRITICAL);
                 continue;
             }
-            QString r = execSqlTextFunction(q,"replace_dyn_addr_range", b.toString(), e.toString(), hId);
-            PDEB(INFO) << "Dynamic range " << b.toString() << " < " << e.toString() << "repl. result: " << r << endl;
+            QString s = execSqlTextFunction(q,"replace_dyn_addr_range", b.toString(), e.toString(), hId);
+            PDEB(INFO) << "Dynamic range " << b.toString() << " < " << e.toString() << "repl. result: " << s << endl;
+            ++r;
         }
     }
-    return;
+    return -1;
 }
 
-cArpTable& cArpTable::getByLocalDhcpdConf(const QString& __f, qlonglong _hid)
+/// @param __f File name, optional.
+/// @param _hid host_service_id opcional
+/// @return Number of results or -1 if there was an error.
+int cArpTable::getByLocalDhcpdConf(const QString& __f, qlonglong _hid)
 {
     //_DBGFN() << " @(" << __f << ")" << endl;
     QFile dhcpdConf(__f.isEmpty() ? "/etc/dhcp3/dhcpd.conf" : __f);
     if (!dhcpdConf.open(QIODevice::ReadOnly | QIODevice::Text)) EXCEPTION(EFOPEN, -1, dhcpdConf.fileName());
-    getByDhcpdConf(dhcpdConf, _hid);
-    return *this;
+    return getByDhcpdConf(dhcpdConf, _hid);
 }
 
-/// @param _hid host_service_id opcionális
-cArpTable& cArpTable::getBySshDhcpdConf(const QString& __h, const QString& __f, const QString& __ru, qlonglong _hid)
+/// @param __h Host address
+/// @param __f File name, optional.
+/// @param __ru Remote user name, optional
+/// @param _hid host_service_id opcional
+/// @return Number of results or -1 if there was an error.
+int cArpTable::getBySshDhcpdConf(const QString& __h, const QString& __f, const QString& __ru, qlonglong _hid)
 {
     //_DBGFN() << " @(" << VDEB(__h) << QChar(',') << VDEB(__f) << QChar(',') << VDEB(__ru) << QChar(')') << endl;
     QString     ru;
@@ -199,8 +209,7 @@ cArpTable& cArpTable::getBySshDhcpdConf(const QString& __h, const QString& __f, 
     proc.start(cmd, QIODevice::ReadOnly);
     if (false == proc.waitForStarted(  2000)
      || false == proc.waitForFinished(10000)) EXCEPTION(ETO, -1, cmd);
-    getByDhcpdConf(proc, _hid);
-    return *this;
+    return getByDhcpdConf(proc, _hid);
 }
 
 

@@ -13,18 +13,18 @@ public:
     cArpTable() : QMap<QHostAddress, cMac>() { ; }
     cArpTable(const cArpTable& __o) : QMap<QHostAddress, cMac>(__o) { ; }
     cArpTable& getBySnmp(cSnmp& __snmp);
-    cArpTable& getByLocalProcFile(const QString& __f = QString());
-    cArpTable& getBySshProcFile(const QString& __h, const QString& __f = QString(), const QString& __ru = QString());
-    cArpTable& getByLocalDhcpdConf(const QString& __f = QString(), qlonglong _hid = NULL_ID);
-    cArpTable& getBySshDhcpdConf(const QString& __h, const QString& __f = QString(), const QString& __ru = QString(), qlonglong _hid = NULL_ID);
+    int getByLocalProcFile(const QString& __f = QString());
+    int getBySshProcFile(const QString& __h, const QString& __f = QString(), const QString& __ru = QString());
+    int getByLocalDhcpdConf(const QString& __f = QString(), qlonglong _hid = NULL_ID);
+    int getBySshDhcpdConf(const QString& __h, const QString& __f = QString(), const QString& __ru = QString(), qlonglong _hid = NULL_ID);
     cArpTable& getFromDb(QSqlQuery& __q);
     QList<QHostAddress> operator[](const cMac& __a) const;
     cMac operator[](const QHostAddress& __a) const { return QMap<QHostAddress, cMac>::operator [](__a); }
     cArpTable& operator<<(const cArp& __arp);
     QString toString() const;
 protected:
-    void getByProcFile(QIODevice& __f);
-    void getByDhcpdConf(QIODevice& __f, qlonglong _hid = NULL_ID);
+    int getByProcFile(QIODevice& __f);
+    int getByDhcpdConf(QIODevice& __f, qlonglong _hid = NULL_ID);
     const QString& token(QIODevice& __f);
 };
 

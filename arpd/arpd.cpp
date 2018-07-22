@@ -135,6 +135,7 @@ int cDeviceArp::run(QSqlQuery& q, QString& runMsg)
     _DBGFN() << QChar(' ') << name() << endl;
     int setType = ENUM_INVALID;
     cArpTable at;
+    int r = 1;
     if (*pPSSnmp == protoService()) {
         setType = ST_QUERY;     // SNMP lekérdezés:
         at.getBySnmp(*pSnmp);
@@ -142,27 +143,29 @@ int cDeviceArp::run(QSqlQuery& q, QString& runMsg)
     else if (*pPSDhcpConf == primeService()) {
         setType = ST_CONFIG;    // DHCP: dhcpd.conf fájl
         if    (*pPSLocal == protoService()) {
-            at.getByLocalDhcpdConf(*pFileName, hostServiceId());
+            r = at.getByLocalDhcpdConf(*pFileName, hostServiceId());
         }
         else if (*pPSSsh == protoService()) {
-            at.getBySshDhcpdConf(host().getIpAddress().toString(), *pFileName, *pRemoteUser, hostServiceId());
+            r = at.getBySshDhcpdConf(host().getIpAddress().toString(), *pFileName, *pRemoteUser, hostServiceId());
         }
         else EXCEPTION(EDATA);
     }
     else if (*pPSArpProc == primeService()) {
         setType = ST_QUERY;     // proc file
         if    (*pPSLocal == protoService()) {
-            at.getByLocalProcFile(*pFileName);
+            r = at.getByLocalProcFile(*pFileName);
         }
         else if (*pPSSsh == protoService()) {
-            at.getBySshProcFile(host().getIpAddress().toString(), *pFileName, *pRemoteUser);
+            r = at.getBySshProcFile(host().getIpAddress().toString(), *pFileName, *pRemoteUser);
         }
         else EXCEPTION(EDATA);
     }
     else EXCEPTION(EDATA);
     cArp::replaces(q, at, setType, hostServiceId());
     DBGFNL();
-    // Ha senki nem dobott kizárást, akkor minden OK
+    // Ha senki nem dobott kizárást ...
+    if (r <  0) return RS_CRITICAL;
+    if (r == 0) return RS_WARNING;
     return RS_ON;
 }
 
