@@ -43,7 +43,7 @@ int cArpTable::getByProcFile(QIODevice& __f, QString *pEMsg)
     QTextStream str(&__f);
     str.readLine(); // Drop header
     QString line;
-    int r;
+    int r = 0;
     while ((line = str.readLine()).isEmpty() == false) {
         QStringList fl = line.split(QRegExp("\\s+"));
         QHostAddress addr(fl[0]);
