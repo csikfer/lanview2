@@ -55,6 +55,10 @@ int cArpTable::getByProcFile(QIODevice& __f, QString *pEMsg)
             return -1;
         }
         cMac mac(fl[3]);
+        if (mac.isEmpty()) {
+            // PDEB(VVERBOSE) << "Dropp NULL MAC..." << endl;
+            continue;
+        }
         if (!mac) {
             em = QObject::trUtf8("Invalid MAC address: %1 ARP #%2 line : '%3'.").arg(fl[3]).arg(r).arg(line);
             DWAR() << em << endl;
@@ -62,10 +66,6 @@ int cArpTable::getByProcFile(QIODevice& __f, QString *pEMsg)
             return -1;
         }
         // PDEB(VVERBOSE) << line << " : " << fl[0] << "/" << fl[3] << " : " << addr.toString() << "/" << mac.toString() << endl;
-        if (mac.isEmpty()) {
-            // PDEB(VVERBOSE) << "Dropp NULL MAC..." << endl;
-            continue;
-        }
         PDEB(INFO) << "insert(" << addr.toString() << QChar(',') << mac.toString() << ")" << endl;
         insert(addr, mac);
         ++r;
