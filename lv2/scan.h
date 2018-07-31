@@ -13,8 +13,8 @@ public:
     cArpTable() : QMap<QHostAddress, cMac>() { ; }
     cArpTable(const cArpTable& __o) : QMap<QHostAddress, cMac>(__o) { ; }
     cArpTable& getBySnmp(cSnmp& __snmp);
-    int getByLocalProcFile(const QString& __f = QString());
-    int getBySshProcFile(const QString& __h, const QString& __f = QString(), const QString& __ru = QString());
+    int getByLocalProcFile(const QString& __f = QString(), QString *pEMsg = NULL);
+    int getBySshProcFile(const QString& __h, const QString& __f = QString(), const QString& __ru = QString(), QString *pEMsg = NULL);
     int getByLocalDhcpdConf(const QString& __f = QString(), qlonglong _hid = NULL_ID);
     int getBySshDhcpdConf(const QString& __h, const QString& __f = QString(), const QString& __ru = QString(), qlonglong _hid = NULL_ID);
     cArpTable& getFromDb(QSqlQuery& __q);
@@ -23,7 +23,7 @@ public:
     cArpTable& operator<<(const cArp& __arp);
     QString toString() const;
 protected:
-    int getByProcFile(QIODevice& __f);
+    int getByProcFile(QIODevice& __f, QString *pEMsg = NULL);
     int getByDhcpdConf(QIODevice& __f, qlonglong _hid = NULL_ID);
     const QString& token(QIODevice& __f);
 };

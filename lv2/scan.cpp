@@ -37,7 +37,7 @@ cArpTable& cArpTable::getBySnmp(cSnmp& __snmp)
     return *this;
 }
 
-int cArpTable::getByProcFile(QIODevice& __f)
+int cArpTable::getByProcFile(QIODevice& __f, QString *pEMsg)
 {
     DBGFN();
     QTextStream str(&__f);
@@ -47,13 +47,18 @@ int cArpTable::getByProcFile(QIODevice& __f)
     while ((line = str.readLine()).isEmpty() == false) {
         QStringList fl = line.split(QRegExp("\\s+"));
         QHostAddress addr(fl[0]);
+        QString em;
         if (addr.isNull()) {
-            DWAR() << "Invalid IP address: " << fl[0] << " ARP line : '" << line << "' is dropped." << endl;
+            em = QObject::trUtf8("Invalid IP address: %1 ARP #%2 line : '%3'.").arg(fl[0]).arg(r).arg(line);
+            DWAR() << em << endl;
+            if (pEMsg != NULL) *pEMsg = em;
             return -1;
         }
         cMac mac(fl[3]);
         if (!mac) {
-            DWAR() << "Invalid MAC address: " << fl[3] << " ARP line : '" << line << "' is dropped." << endl;
+            em = QObject::trUtf8("Invalid MAC address: %1 ARP #%2 line : '%3'.").arg(fl[3]).arg(r).arg(line);
+            DWAR() << em << endl;
+            if (pEMsg != NULL) *pEMsg = em;
             return -1;
         }
         // PDEB(VVERBOSE) << line << " : " << fl[0] << "/" << fl[3] << " : " << addr.toString() << "/" << mac.toString() << endl;
@@ -65,21 +70,22 @@ int cArpTable::getByProcFile(QIODevice& __f)
         insert(addr, mac);
         ++r;
     }
+    if (pEMsg != NULL) *pEMsg = QObject::trUtf8("Pcessed %1 line(s).").arg(r);
     return r;
 }
-int cArpTable::getByLocalProcFile(const QString& __f)
+int cArpTable::getByLocalProcFile(const QString& __f, QString *pEMsg)
 {
     _DBGFN() << "@(" << __f << QChar(',') << endl;
     QFile procFile(__f.isEmpty() ? "/proc/net/arp" : __f);
     if (!procFile.open(QIODevice::ReadOnly | QIODevice::Text)) EXCEPTION(EFOPEN, -1, procFile.fileName());
-    return getByProcFile(procFile);
+    return getByProcFile(procFile, pEMsg);
 }
 
 /// Az ARP tábla lekérdezése a proc fájlrendszeren keresztül, egy távoli gépen SSH-val
 /// @param __h A távoli hoszt név, vagy ip cím
 /// @param __f A fájl neve a proc fájlrendszerben
 /// @param __ru Opcionális, a felhasználó név a távoli gépen.
-int cArpTable::getBySshProcFile(const QString& __h, const QString& __f, const QString& __ru)
+int cArpTable::getBySshProcFile(const QString& __h, const QString& __f, const QString& __ru, QString *pEMsg)
 {
     //_DBGFN() << " @(" << VDEB(__h) << QChar(',') << VDEB(__f) << QChar(',') << VDEB(__ru) << QChar(')') << endl;
     QString     ru;
@@ -90,7 +96,7 @@ int cArpTable::getBySshProcFile(const QString& __h, const QString& __f, const QS
     proc.start(cmd, QIODevice::ReadOnly);
     if (false == proc.waitForStarted(  2000)
      || false == proc.waitForFinished(10000)) EXCEPTION(ETO, -1, cmd);
-    return getByProcFile(proc);
+    return getByProcFile(proc, pEMsg);
 }
 
 const QString& cArpTable::token(QIODevice& __f)

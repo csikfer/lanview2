@@ -2620,7 +2620,7 @@ bool cNode::fetchOnePortByIp(QSqlQuery& q, const QHostAddress& a, eEx __ex)
 int cNode::fetchByMac(QSqlQuery& q, const cMac& a, eEx __ex)
 {
     clear();
-    QString sql = QString("SELECT %1.* FROM %1 JOIN interfaces USING(node_id) WHERE hwaddress = ?").arg(tableName());
+    QString sql = QString("SELECT DISTINCT ON (node_id) %1.* FROM %1 JOIN interfaces USING(node_id) WHERE hwaddress = ?").arg(tableName());
     if (execSql(q, sql, a.toString())) {
         int n = q.size();
         set(q);

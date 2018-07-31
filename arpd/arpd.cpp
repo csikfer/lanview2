@@ -131,7 +131,6 @@ cDeviceArp::~cDeviceArp()
 
 int cDeviceArp::run(QSqlQuery& q, QString& runMsg)
 {
-    (void)runMsg;
     _DBGFN() << QChar(' ') << name() << endl;
     int setType = ENUM_INVALID;
     cArpTable at;
@@ -153,10 +152,10 @@ int cDeviceArp::run(QSqlQuery& q, QString& runMsg)
     else if (*pPSArpProc == primeService()) {
         setType = ST_QUERY;     // proc file
         if    (*pPSLocal == protoService()) {
-            r = at.getByLocalProcFile(*pFileName);
+            r = at.getByLocalProcFile(*pFileName, &runMsg);
         }
         else if (*pPSSsh == protoService()) {
-            r = at.getBySshProcFile(host().getIpAddress().toString(), *pFileName, *pRemoteUser);
+            r = at.getBySshProcFile(host().getIpAddress().toString(), *pFileName, *pRemoteUser, &runMsg);
         }
         else EXCEPTION(EDATA);
     }
