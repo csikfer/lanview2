@@ -83,7 +83,23 @@ protected:
     int updateVar(QSqlQuery& q, qulonglong val, int& state);
     int updateVar(QSqlQuery& q, double val, int& state);
     int noValue(QSqlQuery& q, int& state);
+    /// Egy egész típusú értékre a megadott feltétel alkalmazása
+    /// @param val A viszgálandó érték
+    /// @param ft A feltétel típusa Lsd.: eFilterType csak az egész számra értelmezhető feltételek adhatóak meg.
+    /// @param _p1 A feltétel első paramétere.
+    /// @param _p2 A feltétel második paramétere.
+    /// @param _inverse Az eredményt invertálni kell, ha igaz.
+    /// @return Ha nincs összehasonlítási feltétel, akkor TS_NULL. Egyébként az összehasonlítás eredménye.
+    /// Szintén TS_NULL-al tér vissza, ha egy szükséges paraméter nem konvertálható egész számmá.
     eTristate checkIntValue(qulonglong val, qlonglong ft, const QVariant &_p1, const QVariant &_p2, bool _inverse);
+    /// Egy valós típusú értékre a megadott feltétel alkalmazása
+    /// @param val A viszgálandó érték
+    /// @param ft A feltétel típusa Lsd.: eFilterType csak az egész számra értelmezhető feltételek adhatóak meg.
+    /// @param _p1 A feltétel első paramétere.
+    /// @param _p2 A feltétel második paramétere.
+    /// @param _inverse Az eredményt invertálni kell, ha igaz.
+    /// @return Ha nincs összehasonlítási feltétel, akkor TS_NULL. Egyébként az összehasonlítás eredménye.
+    /// Szintén TS_NULL-al tér vissza, ha egy szükséges paraméter nem konvertálható számmá.
     eTristate checkRealValue(qulonglong val, qlonglong ft, const QVariant& _p1, const QVariant& _p2, bool _inverse);
     void addMsg(const QString& _msg) {
         QString msg = getName(_ixStateMsg);

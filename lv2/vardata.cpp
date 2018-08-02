@@ -393,13 +393,13 @@ eTristate cServiceVar::checkIntValue(qulonglong val, qlonglong ft, const QVarian
         r = !ok1 ? TS_NULL : (val == p1) ? TS_TRUE : TS_FALSE;
         break;
     case FT_LITLE:
-        r = !ok1 ? TS_NULL : (val <= p1) ? TS_TRUE : TS_FALSE;
+        r = !ok1 ? TS_NULL : (val < p1) ? TS_TRUE : TS_FALSE;
         break;
     case FT_BIG:
-        r = !ok1 ? TS_NULL : (val >= p1) ? TS_TRUE : TS_FALSE;
+        r = !ok1 ? TS_NULL : (val > p1) ? TS_TRUE : TS_FALSE;
         break;
     case FT_INTERVAL:
-        r = !(ok1 && ok2) ? TS_NULL : (val >= p1 && val <= p2) ? TS_TRUE : TS_FALSE;
+        r = !(ok1 && ok2) ? TS_NULL : (val > p1 && val < p2) ? TS_TRUE : TS_FALSE;
         break;
     default:                EXCEPTION(EDATA, ft, identifying());
     }
