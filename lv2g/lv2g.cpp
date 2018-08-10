@@ -251,7 +251,7 @@ const QColor& bgColorByEnum(const QString& __t, int e)
             if (!o.isNull(cEnumVal::ixBgColor())) {
                 v[i] = QColor(o.getName(cEnumVal::ixBgColor()));
             }
-            PDEB(VVERBOSE) << "BG Color : " << __t << "#" << i << " = " << v[i].name() << endl;
+            // PDEB(VVERBOSE) << "BG Color : " << __t << "#" << i << " = " << v[i].name() << endl;
         }
         colorCache[__t] = v;
         return v[e +1];
