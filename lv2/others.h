@@ -265,6 +265,14 @@ inline QString msgCat(const QString msg1, const QString& msg2, const QString& se
     return r;
 }
 
+inline const QString& msgAppend(QString *pMsg, const QString& m)
+{
+    if (pMsg != NULL) {
+        if (!pMsg->isEmpty()) *pMsg += QChar('\n');
+        *pMsg += m;
+    }
+    return m;
+}
 /* ******************************  ****************************** */
 EXT_ QVariantList list_longlong2variant(const QList<qlonglong>& v);
 

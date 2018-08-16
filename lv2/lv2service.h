@@ -278,9 +278,9 @@ public:
     /// Egy változó objektum elöszedése, név szerint
     cServiceVar *getServiceVar(const QString& name);
     /// Szervíz változó értékének a beállításe
-    int setServiceVar(QSqlQuery& q, const QString& name, qulonglong val, int &state);
+    int setServiceVar(QSqlQuery& q, const QString& name, qulonglong val, int &state, QString *pMsg = NULL);
     /// Szervíz változó értékének a beállításe
-    int setServiceVar(QSqlQuery& q, const QString& name, double val, int &state);
+    int setServiceVar(QSqlQuery& q, const QString& name, double val, int &state, QString *pMsg = NULL);
     // Adattagok
     /// Objektum típus
     int inspectorType;

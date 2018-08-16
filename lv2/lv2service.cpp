@@ -1636,24 +1636,25 @@ cServiceVar *cInspector::getServiceVar(const QString& name)
     return pVars->get(name, EX_IGNORE);
 }
 
-int cInspector::setServiceVar(QSqlQuery& q, const QString& name, qulonglong val, int &state)
+int cInspector::setServiceVar(QSqlQuery& q, const QString& name, qulonglong val, int &state, QString *pMsg)
 {
     cServiceVar *pVar = getServiceVar(name);
     if (pVar == NULL) {
-        DWAR() << trUtf8("Service var %1 not fod.").arg(name) << endl;
+        DWAR() << msgAppend(pMsg, trUtf8("Service var %1 not found, value = %2").arg(name).arg(val)) << endl;
+
         return RS_UNREACHABLE;
     }
-    return pVar->setValue(q, val, state);
+    return pVar->setValue(q, val, state, pMsg);
 }
 
-int cInspector::setServiceVar(QSqlQuery& q, const QString& name, double val, int &state)
+int cInspector::setServiceVar(QSqlQuery& q, const QString& name, double val, int &state, QString *pMsg)
 {
     cServiceVar *pVar = getServiceVar(name);
     if (pVar == NULL) {
-        DWAR() << trUtf8("ASrvice var %1 not fod.").arg(name) << endl;
+        DWAR() << msgAppend(pMsg, trUtf8("Service var %1 not found, value = %2.").arg(name).arg(val)) << endl;
         return RS_UNREACHABLE;
     }
-    return pVar->setValue(q, val, state);
+    return pVar->setValue(q, val, state, pMsg);
 }
 
 /* ********************************************************************************** */

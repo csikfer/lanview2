@@ -113,6 +113,7 @@ int cServiceVar::_ixFeatures         = NULL_IX;
 int cServiceVar::_ixServiceVarTypeId = NULL_IX;
 int cServiceVar::_ixServiceVarValue  = NULL_IX;
 int cServiceVar::_ixStateMsg         = NULL_IX;
+int cServiceVar::_ixVarState         = NULL_IX;
 QBitArray                   cServiceVar::updateMask;
 tRecordList<cServiceVar>    cServiceVar::serviceVars;
 QMap<qlonglong, qlonglong>  cServiceVar::heartbeats;
@@ -138,8 +139,9 @@ const cRecStaticDescr&  cServiceVar::descr() const
         _ixServiceVarTypeId = _descr_cServiceVar().toIndex(_sServiceVarTypeId);
         _ixServiceVarValue  = _descr_cServiceVar().toIndex(_sServiceVarValue);
         _ixStateMsg         = _descr_cServiceVar().toIndex(_sStateMsg);
-        updateMask = _descr_cServiceVar().mask(_sVarState, _sLastTime, _sRawValue)
-                   | _descr_cServiceVar().mask(_ixServiceVarValue, _ixStateMsg);
+        _ixVarState         = _descr_cServiceVar().toIndex(_sVarState);
+        updateMask = _descr_cServiceVar().mask(_sLastTime, _sRawValue)
+                   | _descr_cServiceVar().mask(_ixVarState, _ixServiceVarValue, _ixStateMsg);
     }
     return *_pRecordDescr;
 }
@@ -175,50 +177,64 @@ const cServiceVarType *cServiceVar::varType(QSqlQuery& q, eEx __ex)
     return pVarType;
 }
 
-int cServiceVar::setValue(QSqlQuery& q, double val, int& state)
+int cServiceVar::setValue(QSqlQuery& q, double val, int& state, QString *pMsg)
 {
     preSetValue(QString::number(val));
     qlonglong svt = varType(q)->getId(_sServiceVarType);
+    int r = RS_INVALID;
     switch (svt) {
     case SVT_ABSOLUTE:
-        if (val < 0) val = - val;
-        addMsg("Negált érték.");
-        return updateVar(q, val, state);
+        if (val < 0) {
+            val = - val;
+            addMsg("Negált érték.");
+        }
+        r = updateVar(q, val, state);
+        break;
     case NULL_ID:
     case SVT_GAUGE:
-        return updateVar(q, val, state);
+        r = updateVar(q, val, state);
+        break;
     case SVT_COUNTER:
     case SVT_DCOUNTER:
-        return setCounter(q, (qulonglong)(val + 0.5), (int)svt, state);
+        r = setCounter(q, (qulonglong)(val + 0.5), (int)svt, state);
+        break;
     case SVT_DERIVE:
     case SVT_DDERIVE:
-         return setDerive(q, val, state);
+         r = setDerive(q, val, state);
+        break;
     case SVT_COMPUTE:
     default:
         EXCEPTION(EDATA, svt, identifying(false));
     }
-    return RS_INVALID;
+    QString m = getName(_ixStateMsg);
+    if (!m.isEmpty()) msgAppend(pMsg, trUtf8("Service variable %1 => '%2' ; %3 : \n").arg(val).arg(getName().arg(view(q, _ixVarState))) + m);
+    return r;
 }
 
-int cServiceVar::setValue(QSqlQuery& q, qulonglong val, int &state)
+int cServiceVar::setValue(QSqlQuery& q, qulonglong val, int &state, QString *pMsg)
 {
     preSetValue(QString::number(val));
     qlonglong svt = varType(q)->getId(_sServiceVarType);
+    int r = RS_INVALID;
     switch (svt) {
     case SVT_ABSOLUTE:
     case NULL_ID:
     case SVT_GAUGE:
-        return updateVar(q, val, state);
+        r = updateVar(q, val, state);
+        break;
     case SVT_COUNTER:
     case SVT_DCOUNTER:
     case SVT_DERIVE:
     case SVT_DDERIVE:
-         return setCounter(q, val, (int)svt, state);
+         r = setCounter(q, val, (int)svt, state);
+        break;
     case SVT_COMPUTE:
     default:
         EXCEPTION(EDATA, svt, identifying(false));
     }
-    return RS_INVALID;
+    QString m = getName(_ixStateMsg);
+    if (!m.isEmpty()) msgAppend(pMsg, trUtf8("Service variable %1 => '%2' ; %3 : \n").arg(val).arg(getName().arg(view(q, _ixVarState))) + m);
+    return r;
 }
 
 int cServiceVar::setValue(QSqlQuery& q, qlonglong _hsid, const QString& _name, const QVariant& val)
@@ -332,7 +348,7 @@ int cServiceVar::updateVar(QSqlQuery& q, qulonglong val, int &state)
         rs = RS_WARNING;
     }
     if (getBool(_sDelegateServiceState) && state < rs) state = rs;
-    setId(_sVarState, rs);
+    setId(_ixVarState, rs);
     setName(_ixServiceVarValue, QString::number(val));
     update(q, false, updateMask);
     return rs;
@@ -352,7 +368,7 @@ int cServiceVar::updateVar(QSqlQuery& q, double val, int& state)
         rs = RS_WARNING;
     }
     if (getBool(_sDelegateServiceState) && state < rs) state = rs;
-    setId(_sVarState, rs);
+    setId(_ixVarState, rs);
     setName(_ixServiceVarValue, QString::number(val));
     update(q, false, updateMask);
     return rs;
@@ -363,7 +379,7 @@ int cServiceVar::noValue(QSqlQuery& q, int &state)
     qlonglong hbt = heartbeat(q, EX_ERROR);
     if (lastLast.isNull() || isNull(_ixServiceVarValue)
      || (hbt != NULL_ID && hbt < lastLast.msecsTo(QDateTime::currentDateTime()))) {
-        setId(_sVarState, RS_UNREACHABLE);
+        setId(_ixVarState, RS_UNREACHABLE);
         clear(_ixServiceVarValue);
         update(q, false, updateMask);
         if (getBool(_sDelegateServiceState)) state = RS_UNREACHABLE;

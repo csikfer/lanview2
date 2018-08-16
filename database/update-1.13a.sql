@@ -164,3 +164,27 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Hibajavítás (2018.08.17.)
+
+CREATE OR REPLACE FUNCTION set_host_status(hs host_services) RETURNS VOID AS $$
+DECLARE
+    st notifswitch;
+    ost notifswitch;
+BEGIN
+    IF hs.delegate_host_state THEN
+        st := hs.hard_state;
+        SELECT hard_state INTO ost FROM host_services WHERE node_id = hs.node_id AND delegate_host_state AND host_service_id <> hs.host_service_id; 
+        IF NOT FOUND THEN
+            ost := 'on';
+        END IF;
+        IF st >= ost THEN
+            UPDATE nodes SET node_stat = st WHERE node_id = hs.node_id;
+        END IF;
+    END IF;
+END
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION set_host_status(host_services) IS
+'Beállítja a node állapotás a szervíz állapot (hard_state) alapján, amennyiben a szervíz rekordban a delegate_host_state igaz.
+és nincs ojan szervíz példány, aminél delegate_host_state szintén igaz, és az állapota nem rosszabb (nagyobb), vagy azonos.';
+
