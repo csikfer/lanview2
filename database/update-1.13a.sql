@@ -174,7 +174,9 @@ DECLARE
 BEGIN
     IF hs.delegate_host_state THEN
         st := hs.hard_state;
-        SELECT hard_state INTO ost FROM host_services WHERE node_id = hs.node_id AND delegate_host_state AND host_service_id <> hs.host_service_id; 
+        SELECT hard_state INTO ost FROM host_services
+                WHERE node_id = hs.node_id AND delegate_host_state AND host_service_id <> hs.host_service_id
+                ORDER BY hard_state DESC limit 1;
         IF NOT FOUND THEN
             ost := 'on';
         END IF;
