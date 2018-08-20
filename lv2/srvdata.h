@@ -44,11 +44,11 @@ public:
     RECACHEHED(cService, service)
     static qlonglong name2id(QSqlQuery &__q, const QString& __nm, enum eEx __ex = EX_ERROR) {
         const cService *p = service(__q, __nm, __ex);
-        return p == NULL ? NULL_ID : p->getId();
+        return p == nullptr ? NULL_ID : p->getId();
     }
     static QString id2name(QSqlQuery &__q, qlonglong __id, enum eEx __ex = EX_ERROR) {
         const cService *p = service(__q, __id, __ex);
-        return p == NULL ? _sNul : p->getName();
+        return p == nullptr ? _sNul : p->getName();
     }
 };
 
@@ -177,7 +177,7 @@ public:
         qlonglong id = getId(_sPrimeServiceId);
         if (id == NULL_ID) {
             if (__ex == EX_WARNING) EXCEPTION(EDATA);
-            return NULL;
+            return nullptr;
         }
         return cService::service(__q, id, __ex);
     }
@@ -193,7 +193,7 @@ public:
         qlonglong id = getId(_sProtoServiceId);
         if (id == NULL_ID) {
             if (__ex == EX_WARNING) EXCEPTION(EDATA);
-            return NULL;
+            return nullptr;
         }
         return cService::service(__q, id, __ex);
     }

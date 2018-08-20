@@ -579,8 +579,8 @@ protected:
     int                 _flagIndex;
     ///
     int                 _textIdIndex;
-    /// A tábla tulajdonságát leíró adatrekord kerül ide beolvasásra
-    QSqlRecord          _tableRecord;
+    // / A tábla tulajdonságát leíró adatrekord kerül ide beolvasásra
+    // QSqlRecord          _tableRecord;
     /// A tábla oszlopainak tulajdonságait leíró adatrekordok kerülnek ide beolvasásra.
     QList<QSqlRecord>   _columnRecords;
     /// Az adattábla oszlopait leíró objektumok listája

@@ -72,8 +72,8 @@ public:
     virtual void toEnd();
     virtual bool toEnd(int _ix);
     const cServiceVarType * varType(QSqlQuery& q, eEx __ex = EX_ERROR);
-    int setValue(QSqlQuery& q, double val, int& state, QString *pMsg = NULL);
-    int setValue(QSqlQuery& q, qulonglong val, int& state, QString *pMsg = NULL);
+    int setValue(QSqlQuery& q, double val, int& state, QString *pMsg = nullptr);
+    int setValue(QSqlQuery& q, qulonglong val, int& state, QString *pMsg = nullptr);
     static int setValue(QSqlQuery& q, qlonglong _hsid, const QString& _name, const QVariant& val);
     static int setValues(QSqlQuery& q, qlonglong _hsid, const QStringList& _names, const QVariantList& vals);
 protected:

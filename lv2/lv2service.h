@@ -166,14 +166,14 @@ class LV2SHARED_EXPORT cInspector : public QObject {
 public:
     /// Ha a _par értéke NULL, és a lanView::pSelfHostService nem NULL, akkor a lanView::pSelfHostService alapján inicializálja az objektumot.
     /// Egyébként üres konstruktor.
-    cInspector(cInspector *_par = NULL);
+    cInspector(cInspector *_par = nullptr);
     /// Konstruktor
     /// @param __par    Pointer of parent object.
     /// @param pN   Host object pointer, the created object releases it.
     /// @param pS   Service object pointer, the created object releases it.
     /// @param pP   Port object pointer or NULL, the created object releases it.
     /// A hostService adattagban csak a megadott objektumok ID-jét írja be, nem olvassa be a többi mezőt, nem ellenörzi a létezését.
-    cInspector(cInspector * __par, cNode *pN, const cService *pS, cNPort *pP = NULL);
+    cInspector(cInspector * __par, cNode *pN, const cService *pS, cNPort *pP = nullptr);
     /// Az objektumot mint saját szolgálltatás tölti fel
     /// @param q Az adatbázis művelethez használható QSqlQuery objektum referenciája.
     /// @param sn A szolgáltatás neve
@@ -185,7 +185,7 @@ public:
     /// @param __host_service_id host_services rekord ID, vagy NULL, ha a szükséges mezőket már lekérdeztők a __q -val.
     /// @param __tableoid A node rekord tábla OID-je (node  tényleges típusát azonosítja), alapértelmezett (NULL_ID esetén) a nodes tábla.
     /// @param __par A parent, vagy NULL
-    cInspector(QSqlQuery& q, qlonglong __host_service_id = NULL_ID, qlonglong __tableoid = NULL_ID, cInspector * __par = NULL);
+    cInspector(QSqlQuery& q, qlonglong __host_service_id = NULL_ID, qlonglong __tableoid = NULL_ID, cInspector * __par = nullptr);
     /// Destruktor
     virtual ~cInspector();
 
@@ -219,7 +219,7 @@ public:
     /// @param _hsid host_service_id
     /// @param _toid A node objektum típusát azonosító tableoid
     /// @param _par A parent objekrum
-    virtual cInspector *newSubordinate(QSqlQuery& q, qlonglong _hsid, qlonglong _toid = NULL_ID, cInspector *_par = NULL);
+    virtual cInspector *newSubordinate(QSqlQuery& q, qlonglong _hsid, qlonglong _toid = NULL_ID, cInspector *_par = nullptr);
     /// A QThread objektum ill. az abból származtatott objektum allokálása. Az alap metódus egy cInspectorThread objektumot allokál.
     /// Amennyiben a szervíz a 'syscron', akkor a megallokált objektum a cSysCronThread (Win: not supported).
     virtual cInspectorThread *newThread();
@@ -252,7 +252,7 @@ public:
     cFeatures& splitFeature(enum eEx __ex = EX_ERROR);
     /// Visszaadja a pMagicMap által mutatott konténer referenciáját. Ha pMagicMap értéke NULL, akkor hívja a splitMagic() metódust, ami megallokálja
     /// és feltölti a konténert.
-    cFeatures& features(enum eEx __ex = EX_ERROR)   { if (_pFeatures == NULL) splitFeature(__ex); return *_pFeatures; }
+    cFeatures& features(enum eEx __ex = EX_ERROR)   { if (_pFeatures == nullptr) splitFeature(__ex); return *_pFeatures; }
     /// A megadott kulcs alapján visszaadja a magicMap konténerből a paraméter értéket a név alapján. Ha a konténer nincs megallokálva, akkor megallokálja
     /// és feltölti.
     /// @return Egy string, a paraméter érték, ha nincs ilyen paraméter, akkor a NULL string, ha viszont nincs paraméternek értéke, akkor egy üres string
@@ -278,9 +278,9 @@ public:
     /// Egy változó objektum elöszedése, név szerint
     cServiceVar *getServiceVar(const QString& name);
     /// Szervíz változó értékének a beállításe
-    int setServiceVar(QSqlQuery& q, const QString& name, qulonglong val, int &state, QString *pMsg = NULL);
+    int setServiceVar(QSqlQuery& q, const QString& name, qulonglong val, int &state, QString *pMsg = nullptr);
     /// Szervíz változó értékének a beállításe
-    int setServiceVar(QSqlQuery& q, const QString& name, double val, int &state, QString *pMsg = NULL);
+    int setServiceVar(QSqlQuery& q, const QString& name, double val, int &state, QString *pMsg = nullptr);
     // Adattagok
     /// Objektum típus
     int inspectorType;
@@ -355,9 +355,9 @@ public:
     /// @param __ex Ha értéke true, és nem ismert a szolgáltatás objektum (pService értéke NULL) akkor dob egy kizárást
     /// @return A szolgáltatás objektum referenciája, ha __ex értéke false, és nem ismert a szolgáltatés, akkor egy üres objektum őpintere.
     const cService *service(enum eEx __ex = EX_ERROR) const {
-        if (pService == NULL) {
+        if (pService == nullptr) {
             if (__ex) EXCEPTION(EDATA);
-            return NULL;
+            return nullptr;
         }
         return pService;
     }
@@ -387,44 +387,44 @@ public:
     /// @return A szolgáltatás objektum referenciája.
     const cService& service(const cService * _ps)  { return *(pService = _ps); }
     ///
-    const cNode& node() const           { if (pNode == NULL) EXCEPTION(EDATA); return *pNode; }
-    cNode& node()                       { if (pNode == NULL) EXCEPTION(EDATA); return *pNode; }
-    const cNode& host() const           { if (pNode == NULL || !(pNode->descr() >= cNode().descr()) ) EXCEPTION(EDATA); return *(dynamic_cast<const cNode*>(pNode)); }
-    cNode& host()                       { if (pNode == NULL || !(pNode->descr() >= cNode().descr()) ) EXCEPTION(EDATA); return *(dynamic_cast<cNode*>(pNode)); }
-    const cSnmpDevice& snmpDev() const  { if (pNode == NULL || !(pNode->descr() >= cSnmpDevice().descr()) ) EXCEPTION(EDATA); return *(dynamic_cast<const cSnmpDevice*>(pNode)); }
-    cSnmpDevice& snmpDev()              { if (pNode == NULL || !(pNode->descr() >= cSnmpDevice().descr()) ) EXCEPTION(EDATA); return *(dynamic_cast<cSnmpDevice*>(pNode)); }
-    const cInspector& parent() const{if (pParent == NULL) EXCEPTION(EDATA); return *pParent; }
-    cInspector& parent()                { if (pParent == NULL) EXCEPTION(EDATA); return *pParent; }
+    const cNode& node() const           { if (pNode == nullptr) EXCEPTION(EDATA); return *pNode; }
+    cNode& node()                       { if (pNode == nullptr) EXCEPTION(EDATA); return *pNode; }
+    const cNode& host() const           { if (pNode == nullptr || !(pNode->descr() >= cNode().descr()) ) EXCEPTION(EDATA); return *(dynamic_cast<const cNode*>(pNode)); }
+    cNode& host()                       { if (pNode == nullptr || !(pNode->descr() >= cNode().descr()) ) EXCEPTION(EDATA); return *(dynamic_cast<cNode*>(pNode)); }
+    const cSnmpDevice& snmpDev() const  { if (pNode == nullptr || !(pNode->descr() >= cSnmpDevice().descr()) ) EXCEPTION(EDATA); return *(dynamic_cast<const cSnmpDevice*>(pNode)); }
+    cSnmpDevice& snmpDev()              { if (pNode == nullptr || !(pNode->descr() >= cSnmpDevice().descr()) ) EXCEPTION(EDATA); return *(dynamic_cast<cSnmpDevice*>(pNode)); }
+    const cInspector& parent() const{if (pParent == nullptr) EXCEPTION(EDATA); return *pParent; }
+    cInspector& parent()                { if (pParent == nullptr) EXCEPTION(EDATA); return *pParent; }
     template <class T> static qlonglong getIdT(const T *p, enum eEx __ex = EX_ERROR) {
-        if (p == NULL) {
+        if (p == nullptr) {
             if (__ex) EXCEPTION(EDATA);
             return NULL_ID;
         }
         return p->getId();
     }
-    const cNPort& nPort() const         { if (pPort == NULL) EXCEPTION(EDATA); return *pPort; }
-    cNPort& nPort()                     { if (pPort == NULL) EXCEPTION(EDATA); return *pPort; }
-    const cInterface& interface() const { if (pPort == NULL) EXCEPTION(EDATA); return *pPort->creconvert<cInterface>(); }
-    cInterface& interface()             { if (pPort == NULL) EXCEPTION(EDATA); return *pPort->reconvert<cInterface>(); }
+    const cNPort& nPort() const         { if (pPort == nullptr) EXCEPTION(EDATA); return *pPort; }
+    cNPort& nPort()                     { if (pPort == nullptr) EXCEPTION(EDATA); return *pPort; }
+    const cInterface& interface() const { if (pPort == nullptr) EXCEPTION(EDATA); return *pPort->creconvert<cInterface>(); }
+    cInterface& interface()             { if (pPort == nullptr) EXCEPTION(EDATA); return *pPort->reconvert<cInterface>(); }
     qlonglong nodeId(enum eEx __ex = EX_ERROR) const     { return getIdT<cNode>(pNode, __ex); }
     qlonglong serviceId(enum eEx __ex = EX_ERROR) const  { return getIdT<cService>(pService, __ex); }
     qlonglong hostServiceId() const              { return hostService.getId(); }
     qlonglong parentId(enum eEx __ex = EX_ERROR) const {
-        if (pParent == NULL) {
+        if (pParent == nullptr) {
             if (__ex) EXCEPTION(EDATA);
             return NULL_ID;
         }
         return pParent->hostServiceId();
     }
     qlonglong portId() const            { return nPort().getId(); }
-    const cService& primeService() const{ if (pPrimeService == NULL) EXCEPTION(EDATA); return *pPrimeService; }
+    const cService& primeService() const{ if (pPrimeService == nullptr) EXCEPTION(EDATA); return *pPrimeService; }
     qlonglong primeServiceId() const    { return primeService().getId(); }
     QString primeServiceName() const    { return primeService().getName(); }
-    const cService& protoService() const{ if (pProtoService == NULL) EXCEPTION(EDATA); return *pProtoService; }
+    const cService& protoService() const{ if (pProtoService == nullptr) EXCEPTION(EDATA); return *pProtoService; }
     qlonglong protoServiceId() const    { return protoService().getId(); }
     QString protoServiceName() const    { return protoService().getName(); }
     QString name() const;
-    QString getParValue(QSqlQuery &q, const QString& name, bool *pOk = NULL);
+    QString getParValue(QSqlQuery &q, const QString& name, bool *pOk = nullptr);
 
     ///
     int timing() const { return inspectorType & IT_TIMING_MASK; }
@@ -450,7 +450,7 @@ public:
     /// Hiba esetén kozárást dob: A checkThread(this) false-val tért vissza, de a pInspectorThread pointer NULL, vagy nem az aktuális thread
     QObject *useParent() {
         if (checkThread(this)) return this;
-        if (pInspectorThread == NULL || (QThread *)pInspectorThread != QThread::currentThread()) {
+        if (pInspectorThread == nullptr || (QThread *)pInspectorThread != QThread::currentThread()) {
             EXCEPTION(EPROGFAIL, 0, name());
         }
         return &pInspectorThread->acceptor;

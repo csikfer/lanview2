@@ -155,7 +155,7 @@ class LV2SHARED_EXPORT cOId : public QVector<oid>, public netSnmp {
     cOId&   set(const char * __oid);
     cOId&   set(const QString& __oid)       { return set(__oid.toStdString().c_str()); }
     cOId&   set(const cOId& __oid)          { return set(__oid.data(), __oid.oidSize); }
-    cOId&   clear()                         { return set(NULL, 0); }
+    cOId&   clear()                         { return set(nullptr, 0); }
     /// Ha az objektum mérete megfelelő, és a hiba státus nulla, akkor true-val tér vissza.
     /// Ha az objektum méretét jelző érték nagyobb, mint a konténer, akkor dob egy kizárást.
     virtual operator bool() const;
@@ -339,8 +339,8 @@ class LV2SHARED_EXPORT cSnmp : public netSnmp {
     /// @param __oid OID: <oid>.<ix> => <bitmap>
     /// @return Ha a lekérdezés eredményes, akkor 0.
     int getBitMaps(const cOId& _oid, QMap<int, QBitArray> &maps);
-    const netsnmp_variable_list *first(void)    { return actVar = ((response == NULL) ? NULL : response->variables); }
-    const netsnmp_variable_list *next(void)     { return actVar = ((actVar   == NULL) ? NULL : actVar->next_variable); }
+    const netsnmp_variable_list *first(void)    { return actVar = ((response == nullptr) ? nullptr : response->variables); }
+    const netsnmp_variable_list *next(void)     { return actVar = ((actVar   == nullptr) ? nullptr : actVar->next_variable); }
     static QVariant value(const netsnmp_variable_list * __var);
     static cOId name(const netsnmp_variable_list * __var);
     static int type(const netsnmp_variable_list * __var);
@@ -349,7 +349,7 @@ class LV2SHARED_EXPORT cSnmp : public netSnmp {
     int type(void) const                        { return actVar->type; }
     QVariantVector  values();
     cOIdVector names();
-    bool isOpened() const                       { return ss != NULL;  }
+    bool isOpened() const                       { return ss != nullptr;  }
     const netsnmp_variable_list *var() const    { return actVar; }
     operator bool() const                       { return status == 0; }
     bool operator!() const                      { return status != 0; }

@@ -64,7 +64,7 @@ cBackTrace::cBackTrace(int _size) : QStringList()
 }
 
 class lanView;
-extern qlonglong sendError(const cError *pe, lanView *_instance = NULL);
+extern qlonglong sendError(const cError *pe, lanView *_instance = nullptr);
 
 QList<cError *> cError::errorList;
 int         cError::mMaxErrCount= 6;
@@ -166,7 +166,7 @@ void cError::circulation()
 void cError::exception(void)
 {
     QString m = QObject::trUtf8("throw this : %1").arg(msg());
-    if (cDebug::getInstance() != NULL) {
+    if (cDebug::getInstance() != nullptr) {
         PDEB(EXCEPT) << m << endl;
         cDebug::flushAll();
     }
@@ -174,7 +174,7 @@ void cError::exception(void)
     throw(this);
     {
         QString mm = QObject::trUtf8("Exception (throw) is not working, exit.");
-        if (cDebug::getInstance() != NULL) {
+        if (cDebug::getInstance() != nullptr) {
             if (!ONDB(EXCEPT)) cDebug::cout() << m << endl;
             cDebug::cout() << mm << endl;
         }

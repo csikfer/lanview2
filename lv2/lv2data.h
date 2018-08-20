@@ -244,7 +244,7 @@ public:
 protected:
     /// Ha nincs feltöltve az paramTypes adattag , akkor feltölti az adatbázisból,
     /// Vagyis hívja a void fetchParamTypes(QSqlQuery& __q); metódust.
-    static void checkParamTypes() { if (pNull == NULL) { QSqlQuery q = getQuery(); fetchParamTypes(q); } }
+    static void checkParamTypes() { if (pNull == nullptr) { QSqlQuery q = getQuery(); fetchParamTypes(q); } }
 };
 
 class LV2SHARED_EXPORT cSysParam  : public cRecord {
@@ -460,7 +460,7 @@ public:
     /// @return Az új rekord id-je.
     static qlonglong insertNew(QSqlQuery q, const QString& __n, const QString& __d, int _type);
     static qlonglong replaceNew(QSqlQuery q, const QString& __n, const QString& __d, int _type);
-    static QStringList getAllZones(QSqlQuery q, QList<qlonglong> *pIds = NULL, eEx __ex = EX_ERROR);
+    static QStringList getAllZones(QSqlQuery q, QList<qlonglong> *pIds = nullptr, eEx __ex = EX_ERROR);
 };
 
 typedef tGroup<cPlaceGroup, cPlace> cGroupPlace;
@@ -701,7 +701,7 @@ public:
 protected:
     /// Ha nincs feltöltve az ifTypes adattag , akkor feltölti az adatbázisból,
     /// Vagyis hívja a void fetchIfTypes(QSqlQuery& __q); metódust.
-    static void checkIfTypes() { if (pNull == NULL) { QSqlQuery q = getQuery(); fetchIfTypes(q); } }
+    static void checkIfTypes() { if (pNull == nullptr) { QSqlQuery q = getQuery(); fetchIfTypes(q); } }
 };
 
 /* ======================================================================== */
@@ -1089,7 +1089,7 @@ class LV2SHARED_EXPORT cPatch : public cRecord {
     CRECORD(cPatch);
 protected:
     /// Konstruktor a leszármazott osztályokhoz
-    explicit cPatch(no_init_&) : cRecord(), ports(this, _sNul), params(this, _sNul), pShares(NULL)
+    explicit cPatch(no_init_&) : cRecord(), ports(this, _sNul), params(this, _sNul), pShares(nullptr)
     {
         cPatch::descr();
         containerValid = 0;
@@ -1226,7 +1226,7 @@ public:
     /// Ha pShare értéke NULL, akkor ezt egy leszármazottból hívtuk, ahol ez a hívás nem támogatott,
     /// ezért a metódus dob egy kizárást.
     QSet<cShareBack>& shares() {
-        if (pShares == NULL) EXCEPTION(ENOTSUPP);
+        if (pShares == nullptr) EXCEPTION(ENOTSUPP);
         return *pShares;
     }
 
@@ -1264,7 +1264,7 @@ template<class P> static inline P * getObjByIdT(QSqlQuery& q, qlonglong  __id, e
     if (p->completion(q) != 1) {
         delete p;
         if (__ex) EXCEPTION(EDATA);
-        return NULL;
+        return nullptr;
     }
     return p;
 }
@@ -1491,7 +1491,7 @@ public:
     /// Az SNMP verzió konstanst adja vissza (net-snmp híváshoz)
     int snmpVersion() const;
     /// SNMP lekérdezésekkel feltölti az objektumot
-    bool setBySnmp(const QString& __com = _sNul, enum eEx __ex = EX_ERROR, QString *__pEs = NULL, QHostAddress *ip = NULL);
+    bool setBySnmp(const QString& __com = _sNul, enum eEx __ex = EX_ERROR, QString *__pEs = nullptr, QHostAddress *ip = nullptr);
     /// Inicializálja az SNMP session-t. És próbaképpen lekéri a SNMPv2-MIB::sysDescr -t.
     /// Sorra végigveszi az eszköz IP címeit, ha nem sikerül a lekérdezés.
     /// Ha a próba lekérdezés sikertelen, és elfogytak a címek, akkor ha __ex értéke
@@ -1500,7 +1500,7 @@ public:
     /// @param snmp Az SNMP modul objektum.
     /// @param __ex Ha értéke nem EX_IGNORE, akkor hiba esetén kizárást dob.
     /// @return Az SNMP hiba kód (siker esetén 0).
-    int open(QSqlQuery &q, cSnmp& snmp, enum eEx __ex = EX_ERROR, QString *pEMsg = NULL) const;
+    int open(QSqlQuery &q, cSnmp& snmp, enum eEx __ex = EX_ERROR, QString *pEMsg = nullptr) const;
 };
 
 enum sNodeObjectType {
@@ -1516,7 +1516,7 @@ EXT_ int nodeObjectType(QSqlQuery& q, const cRecord& o, eEx __ex = EX_ERROR);
 /// Feltételes objektum allokálás, ha a típus nem egyezik a rekord eredeti típusával, vagy egy cRecordAny objektum.
 /// @param po Forrás objektum pointere
 /// @param pt Opcionális pointer, a típusvizsgálat eredményének (sNodeObjectType).
-EXT_ cPatch * nodeToOrigin(QSqlQuery& q, const cRecord *po, int *pt = NULL);
+EXT_ cPatch * nodeToOrigin(QSqlQuery& q, const cRecord *po, int *pt = nullptr);
 
 /* ---------------------------------------------------------------- */
 class LV2SHARED_EXPORT cImportTemplate : public cRecord {

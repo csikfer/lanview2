@@ -73,7 +73,7 @@ int findArg(const QChar& __c, const QString& __s, const QStringList &args)
 
 /// Default debug level
 qlonglong lanView::debugDefault = DEFDEB;
-lanView  *lanView::instance     = NULL;
+lanView  *lanView::instance     = nullptr;
 #if defined(Q_OS_UNIX) || defined(Q_OS_LINUX)
 bool      lanView::snmpNeeded   = true;
 #else
@@ -104,12 +104,12 @@ bool       lanView::setupTransactionFlag = false;
 qlonglong sendError(const cError *pe, lanView *_instance)
 {
     // Ha nem is volt hiba, akkor kész.
-    if (pe == NULL || pe->mErrorCode == eError::EOK) {
+    if (pe == nullptr || pe->mErrorCode == eError::EOK) {
         return NULL_ID;
     }
     // Ha van nyitott adatbázis, csinálunk egy hiba rekordot
-    lanView * pInst = _instance == NULL ? lanView::instance : _instance;
-    if (pInst == NULL || pInst->pDb == NULL || !pInst->pDb->isOpen()) {
+    lanView * pInst = _instance == nullptr ? lanView::instance : _instance;
+    if (pInst == nullptr || pInst->pDb == nullptr || !pInst->pDb->isOpen()) {
         return NULL_ID;
     }
     QSqlQuery   q(*pInst->pDb);
@@ -117,12 +117,12 @@ qlonglong sendError(const cError *pe, lanView *_instance)
     // sqlBegin(q);
     cNamedList  fields;
     fields.add(_sAppName,       lanView::appName);
-    if (pInst->pSelfNode != NULL && !pInst->pSelfNode->isNullId()) fields.add(_sNodeId, pInst->pSelfNode->getId());
+    if (pInst->pSelfNode != nullptr && !pInst->pSelfNode->isNullId()) fields.add(_sNodeId, pInst->pSelfNode->getId());
     fields.add(_sPid,           QCoreApplication::applicationPid());
     fields.add(_sAppVer,        lanView::appVersion);
     fields.add(_sLibVer,        lanView::libVersion);
-    if (pInst->pUser != NULL && !pInst->pUser->isNullId()) fields.add(_sUserId, pInst->user().getId());
-    if (pInst->pSelfService != NULL && !pInst->pSelfService->isNullId()) fields.add(_sServiceId, pInst->pSelfService->getId());
+    if (pInst->pUser != nullptr && !pInst->pUser->isNullId()) fields.add(_sUserId, pInst->user().getId());
+    if (pInst->pSelfService != nullptr && !pInst->pSelfService->isNullId()) fields.add(_sServiceId, pInst->pSelfService->getId());
     fields.add(_sFuncName,      pe->mFuncName);
     fields.add(_sSrcName,       pe->mSrcName);
     fields.add(_sSrcLine,       pe->mSrcLine);
@@ -175,7 +175,7 @@ void dbOpenPost(QSqlQuery& q, int n)
     QString nn = lanView::appName;
     if (n > 0) {
         setLanguage(q, lanView::getInstance()->languageId);
-        if (lanView::getInstance()->pUser != NULL) {
+        if (lanView::getInstance()->pUser != nullptr) {
             if (!q.exec(QString("SELECT set_user_id(%1)").arg(lanView::getInstance()->pUser->getId()))) SQLQUERYERR(q);
         }
         nn += _sUnderline + QString::number(n);
@@ -190,25 +190,25 @@ lanView::lanView()
 {
     // DBGFN();
     debug       = debugDefault;
-    pSet        = NULL;
-    lastError   = NULL;
-    nonFatal    = NULL;
-    pDb         = NULL;
+    pSet        = nullptr;
+    lastError   = nullptr;
+    nonFatal    = nullptr;
+    pDb         = nullptr;
 #ifdef MUST_USIGNAL
-    unixSignals = NULL;
+    unixSignals = nullptr;
 #endif // MUST_USIGNAL
-    libTranslator= NULL;
-    appTranslator = NULL;
-    pSelfNode = NULL;
-    pSelfService = NULL;
-    pSelfHostService = NULL;
-    pUser = NULL;
+    libTranslator= nullptr;
+    appTranslator = nullptr;
+    pSelfNode = nullptr;
+    pSelfService = nullptr;
+    pSelfHostService = nullptr;
+    pUser = nullptr;
     setSelfStateF = false;
-    pSelfInspector = NULL;
+    pSelfInspector = nullptr;
     selfHostServiceId = NULL_ID;
-    pQuery = NULL;
-    pLanguage = NULL;
-    pLocale   = NULL;
+    pQuery = nullptr;
+    pLanguage = nullptr;
+    pLocale   = nullptr;
 
     try {
         cError::init(); // Set error strings
@@ -261,7 +261,7 @@ lanView::lanView()
         cXSignal::setupUnixSignalHandlers();
         connect(unixSignals, SIGNAL(qsignal(int)), this, SLOT(uSigSlot(int)));
 #endif // MUST_USIGNAL
-        if (instance != NULL) EXCEPTION(EPROGFAIL,-1,QObject::trUtf8("A lanView objektumból csak egy példány lehet."))
+        if (instance != nullptr) EXCEPTION(EPROGFAIL,-1,QObject::trUtf8("A lanView objektumból csak egy példány lehet."))
         instance = this;
         // Connect database, if need
         if (sqlNeeded != SN_NO_SQL) {
@@ -278,7 +278,7 @@ lanView::lanView()
         languageId = pSet->value(_sLangId).toInt(&lok);
         if (!lok) languageId = NULL_ID;
         pLocale   = new QLocale;
-        if (pQuery != NULL) {
+        if (pQuery != nullptr) {
             pLanguage = new cLanguage;
             if (languageId != NULL_ID) {
                 if (pLanguage->fetchById(*pQuery, languageId)) {
@@ -292,7 +292,7 @@ lanView::lanView()
             }
         }
         else {
-            pLanguage = NULL;
+            pLanguage = nullptr;
         }
 
         libTranslator = new QTranslator(this);
@@ -302,7 +302,7 @@ lanView::lanView()
         }
         else {
             delete libTranslator;
-            libTranslator = NULL;
+            libTranslator = nullptr;
         }
         instAppTransl();
         // SNMP init, ha kell
@@ -348,17 +348,17 @@ static void rollback_all(const QString& n, QSqlDatabase * pdb, QStringList& l)
 
 lanView::~lanView()
 {
-    instance = NULL;    // "Kifelé" már nincs objektum
+    instance = nullptr;    // "Kifelé" már nincs objektum
     PDEB(OBJECT) << QObject::trUtf8("delete (lanView *)%1").arg((qulonglong)this) << endl;
     // fő szál tranzakciói (nem kéne lennie, ha mégis, akkor rolback mindegyikre)
     rollback_all("main", pDb, mainTrasactions);
     // Ha volt hiba objektumunk, töröljük. Elötte kiírjuk a hibaüzenetet, ha tényleg hiba volt
-    if (lastError != NULL && lastError->mErrorCode != eError::EOK) {    // Hiba volt
+    if (lastError != nullptr && lastError->mErrorCode != eError::EOK) {    // Hiba volt
         PDEB(DERROR) << lastError->msg() << endl;         // A Hiba üzenet
         qlonglong eid = sendError(lastError, this);
         // Hibát kiírtuk, ki kell írni a staust is? (ha nem sikerült a hiba kiírása, kár a statussal próbálkozni)
         if (eid != NULL_ID && setSelfStateF) {
-            if (pSelfHostService != NULL && pQuery != NULL) {
+            if (pSelfHostService != nullptr && pQuery != nullptr) {
                 try {
                     pSelfHostService->setState(*pQuery, _sCritical, lastError->msg(), NULL_ID, false);
                 } catch(...) {
@@ -366,18 +366,18 @@ lanView::~lanView()
                 }
             }
             else {
-                if (pSelfHostService == NULL) DERR() << trUtf8("A pSelfHostService pointer értéke NULL.") << endl;
-                if (pQuery           == NULL) DERR() << trUtf8("A pQuery pointer értéke NULL.") << endl;
+                if (pSelfHostService == nullptr) DERR() << trUtf8("A pSelfHostService pointer értéke NULL.") << endl;
+                if (pQuery           == nullptr) DERR() << trUtf8("A pQuery pointer értéke NULL.") << endl;
             }
         }
         setSelfStateF = false;
     }
     else if (setSelfStateF) {
-        if (pSelfHostService != NULL && pQuery != NULL) {
+        if (pSelfHostService != nullptr && pQuery != nullptr) {
             try {
                 int rs = RS_ON;
                 QString n;
-                if (lastError != NULL) {
+                if (lastError != nullptr) {
                     rs = lastError->mErrorSubCode;      // Ide kéne rakni a kiírandó staust
                     n  = lastError->mErrorSubMsg;       // A megjegyzés a status-hoz
                 }
@@ -408,7 +408,7 @@ lanView::~lanView()
     threadMutex.lock();
     for (QMap<QString, QSqlDatabase *>::iterator i = dbThreadMap.begin(); i != dbThreadMap.end(); i++) {
         QSqlDatabase * pdb = i.value();
-        if (pdb != NULL){
+        if (pdb != nullptr){
             if (pdb->isValid()) {
                 if (pdb->isOpen()) {
                     rollback_all(i.key(), pdb, trasactionsThreadMap[i.key()]);
@@ -430,19 +430,19 @@ lanView::~lanView()
     pDelete(pQuery);
     closeDatabase();
     // Töröljük a QSettings objektumunkat
-    if (pSet != NULL) {
+    if (pSet != nullptr) {
         pSet->sync();
         delete pSet;
-        pSet = NULL;
+        pSet = nullptr;
     }
 #ifdef SNMP_IS_EXISTS
     netSnmp::down();
 #endif // SNMP_IS_EXISTS
-    if (appTranslator != NULL) {
+    if (appTranslator != nullptr) {
         QCoreApplication::removeTranslator(appTranslator);
         delete appTranslator;
     }
-    if (libTranslator != NULL) {
+    if (libTranslator != nullptr) {
         QCoreApplication::removeTranslator(libTranslator);
         delete libTranslator;
     }
@@ -507,20 +507,20 @@ bool lanView::openDatabase(eEx __ex)
 
 void lanView::closeDatabase()
 {
-    if (pDb != NULL){
+    if (pDb != nullptr){
         if (pDb->isValid()) {
             if (pDb->isOpen()) {
                 pDb->close();
                 PDEB(SQL) << QObject::trUtf8("Close database.") << endl;
             }
             delete pDb;
-            pDb = NULL;
+            pDb = nullptr;
             QSqlDatabase::removeDatabase(_sQPSql);
             PDEB(SQL) << QObject::trUtf8("Remove database object.") << endl;
         }
         else {
             delete pDb;
-            pDb = NULL;
+            pDb = nullptr;
         }
         PDEB(SQL) << QObject::trUtf8("pDb deleted.") << endl;
     }
@@ -528,7 +528,7 @@ void lanView::closeDatabase()
 
 void lanView::setSelfObjects()
 {
-    if (pDb != NULL && pDb->isOpen()) {
+    if (pDb != nullptr && pDb->isOpen()) {
         if (!isMainThread()) EXCEPTION(EPROGFAIL);
         pSelfNode = new cNode;
         if (selfHostServiceId != NULL_ID) {                     // ID set by command parameter
@@ -540,7 +540,7 @@ void lanView::setSelfObjects()
         }
         else if (pSelfNode->fetchSelf(*pQuery, EX_IGNORE)) {    // Service name == app name
             pSelfService = cService::service(*pQuery, appName, EX_IGNORE);
-            if (pSelfService != NULL) {
+            if (pSelfService != nullptr) {
                 pSelfHostService = new cHostService();
                 pSelfHostService->setId(_sNodeId,    pSelfNode->getId());
                 pSelfHostService->setId(_sServiceId, pSelfService->getId());
@@ -623,8 +623,8 @@ void lanView::parseArg(void)
 
 void lanView::instAppTransl()
 {
-    if (pLocale == NULL) {
-        appTranslator = NULL;
+    if (pLocale == nullptr) {
+        appTranslator = nullptr;
         DERR() << QObject::trUtf8("Application language file not loaded, locale object pointer is NULL.") << endl;
         return;
     }
@@ -636,7 +636,7 @@ void lanView::instAppTransl()
     else {
         DERR() << QObject::trUtf8("Application language file not loaded : %1/%2").arg(appName).arg(pLocale->name()) << endl;
         delete appTranslator;
-        appTranslator = NULL;
+        appTranslator = nullptr;
     }
 }
 
@@ -660,7 +660,7 @@ void lanView::reSet()
         setSelfObjects();
         setup();
     } CATCHS(lastError)
-    if (lastError != NULL) QCoreApplication::exit(lastError->mErrorCode);
+    if (lastError != nullptr) QCoreApplication::exit(lastError->mErrorCode);
 }
 
 void lanView::setup(eTristate _tr)
@@ -671,7 +671,7 @@ void lanView::setup(eTristate _tr)
 void lanView::down()
 {
     pDelete(pSelfNode);
-    pSelfService = NULL;    // cache!
+    pSelfService = nullptr;    // cache!
     pDelete(pSelfHostService);
     pDelete(pSelfInspector);
 }
@@ -730,7 +730,7 @@ bool lanView::subsDbNotif(const QString& __n, eEx __ex)
 {
     static bool first = true;
     QString e;
-    if (pDb != NULL && pDb->driver()->hasFeature(QSqlDriver::EventNotifications)) {
+    if (pDb != nullptr && pDb->driver()->hasFeature(QSqlDriver::EventNotifications)) {
         QString name = __n.isEmpty() ? appName : __n;
         if (!first && pDb->driver()->subscribedToNotifications().contains(name)) {
             PDEB(INFO) << "Already subscribed NOTIF " << name << endl;
@@ -759,28 +759,28 @@ bool lanView::subsDbNotif(const QString& __n, eEx __ex)
 
 const cUser *lanView::setUser(const QString& un, const QString& pw, eEx __ex)
 {
-    if (instance == NULL) EXCEPTION(EPROGFAIL);
+    if (instance == nullptr) EXCEPTION(EPROGFAIL);
     QSqlQuery q = getQuery();
-    if (instance->pUser != NULL) pDelete(instance->pUser);
+    if (instance->pUser != nullptr) pDelete(instance->pUser);
     instance->pUser = new cUser();
     if (!instance->pUser->checkPasswordAndFetch(q, pw, un)) {
         pDelete(instance->pUser);
         if (__ex)  EXCEPTION(EFOUND,-1,trUtf8("Ismeretlen felhasználó, vagy nem megfelelő jelszó"));
-        return NULL;
+        return nullptr;
     }
     if (!q.exec(QString("SELECT set_user_id(%1)").arg(instance->pUser->getId()))) SQLQUERYERR(q);
     return instance->pUser;
 }
 const cUser *lanView::setUser(const QString& un, eEx __ex)
 {
-    if (instance == NULL) EXCEPTION(EPROGFAIL);
+    if (instance == nullptr) EXCEPTION(EPROGFAIL);
     QSqlQuery q = getQuery();
-    if (instance->pUser != NULL) pDelete(instance->pUser);
+    if (instance->pUser != nullptr) pDelete(instance->pUser);
     instance->pUser = new cUser();
     if (!instance->pUser->fetchByName(q, un)) {
         pDelete(instance->pUser);
         if (__ex)  EXCEPTION(EFOUND,-1,trUtf8("Ismeretlen felhasználó : %1").arg(un));
-        return NULL;
+        return nullptr;
     }
     if (q.exec(QString("SELECT set_user_id(%1)").arg(instance->pUser->getId()))) SQLQUERYERR(q);
     return instance->pUser;
@@ -788,14 +788,14 @@ const cUser *lanView::setUser(const QString& un, eEx __ex)
 
 const cUser *lanView::setUser(qlonglong uid, eEx __ex)
 {
-    if (instance == NULL) EXCEPTION(EPROGFAIL);
+    if (instance == nullptr) EXCEPTION(EPROGFAIL);
     QSqlQuery q = getQuery();
-    if (instance->pUser != NULL) pDelete(instance->pUser);
+    if (instance->pUser != nullptr) pDelete(instance->pUser);
     instance->pUser = new cUser();
     if (!instance->pUser->fetchById(q,uid)) {
         pDelete(instance->pUser);
         if (__ex)  EXCEPTION(EFOUND, uid, trUtf8("Ismeretlen felhasználó azonosító"));
-        return NULL;
+        return nullptr;
     }
     if (!q.exec(QString("SELECT set_user_id(%1)").arg(uid))) SQLQUERYERR(q);
     instance->pUser->getRights(q);
@@ -804,9 +804,9 @@ const cUser *lanView::setUser(qlonglong uid, eEx __ex)
 
 const cUser *lanView::setUser(cUser *__pUser)
 {
-    if (instance == NULL) EXCEPTION(EPROGFAIL);
+    if (instance == nullptr) EXCEPTION(EPROGFAIL);
     if (!(__pUser->_stat < 0 || __pUser->_stat & ES_COMPLETE)) EXCEPTION(EDATA,__pUser->_stat, "Invalid __pUser object :" + __pUser->toString());
-    if (instance->pUser != NULL) pDelete(instance->pUser);
+    if (instance->pUser != nullptr) pDelete(instance->pUser);
     instance->pUser = __pUser;
     return instance->pUser;
 }
@@ -814,14 +814,14 @@ const cUser *lanView::setUser(cUser *__pUser)
 
 const cUser& lanView::user()
 {
-    if (instance == NULL || instance->pUser == NULL) EXCEPTION(EPROGFAIL);
+    if (instance == nullptr || instance->pUser == nullptr) EXCEPTION(EPROGFAIL);
     return *instance->pUser;
 }
 
 qlonglong lanView::getUserId(eEx __ex)
 {
-    if (instance == NULL) EXCEPTION(EPROGFAIL);
-    if (instance->pUser == NULL) {
+    if (instance == nullptr) EXCEPTION(EPROGFAIL);
+    if (instance->pUser == nullptr) {
         if (__ex != EX_IGNORE) EXCEPTION(EFOUND);
         return NULL_ID;
     }
@@ -848,7 +848,7 @@ void lanView::resetCacheData()
     cIfType::fetchIfTypes(q);
     cService::resetCacheData();
     cTableShape::resetCacheData();
-    if (instance->pUser != NULL) {
+    if (instance->pUser != nullptr) {
         instance->pUser->setById(q);
         instance->pUser->getRights(q);
     }
@@ -907,7 +907,7 @@ cLv2QApp::~cLv2QApp()
 
 bool cLv2QApp::notify(QObject * receiver, QEvent * event)
 {
-    static cError *lastError = NULL;
+    static cError *lastError = nullptr;
     try {
         return QCoreApplication::notify(receiver, event);
     }
@@ -968,7 +968,7 @@ bool callFromInterpreter()
 
 #define IMPQUEUEMAXWAIT 1000
 
-cExportQueue *cExportQueue::_pForParser = NULL;
+cExportQueue *cExportQueue::_pForParser = nullptr;
 QMutex cExportQueue::staticMutex;
 QMap<QString, cExportQueue *>    cExportQueue::intMap;
 
@@ -976,16 +976,16 @@ cExportQueue *cExportQueue::_pInstanceByThread()
 {
     QString tn = currentThreadName();
     QMap<QString, cExportQueue *>::iterator it = intMap.find(tn);
-    if (it == intMap.end()) return NULL;
+    if (it == intMap.end()) return nullptr;
     return it.value();
 }
 
 cExportQueue *cExportQueue::pInstance()
 {
-    cExportQueue *r = NULL;
+    cExportQueue *r = nullptr;
     if (!staticMutex.tryLock(IMPQUEUEMAXWAIT)) EXCEPTION(ETO);
     if (callFromInterpreter()) {
-        if (_pForParser == NULL) _pForParser = new cExportQueue;
+        if (_pForParser == nullptr) _pForParser = new cExportQueue;
         r = _pForParser;
     }
     else {
@@ -1014,7 +1014,7 @@ cExportQueue::~cExportQueue()
 void cExportQueue::push(const QString &s)
 {
     cExportQueue *r = pInstance();
-    if (r == NULL) return;
+    if (r == nullptr) return;
     if (!r->tryLock(IMPQUEUEMAXWAIT)) EXCEPTION(ETO);
     r->enqueue(s);
     r->unlock();
@@ -1024,7 +1024,7 @@ void cExportQueue::push(const QString &s)
 void cExportQueue::push(const QStringList &sl)
 {
     cExportQueue *r = pInstance();
-    if (r == NULL) return;
+    if (r == nullptr) return;
     foreach (QString s, sl) {
         if (!r->tryLock(IMPQUEUEMAXWAIT)) EXCEPTION(ETO);
         r->enqueue(s);
@@ -1062,7 +1062,7 @@ QString cExportQueue::toText(bool fromInterpret, bool _clr)
     }
     staticMutex.unlock();
     QString s;
-    if (p != NULL) {
+    if (p != nullptr) {
         if (!p->tryLock(IMPQUEUEMAXWAIT)) EXCEPTION(ETO);
         s = p->join("\n");
         if (!fromInterpret && _clr) {
@@ -1085,7 +1085,7 @@ cExportQueue *cExportQueue::init(bool fromInterpret)
     cExportQueue *p;
     if (!staticMutex.tryLock(IMPQUEUEMAXWAIT)) EXCEPTION(ETO);
     if (fromInterpret) {
-        if (_pForParser != NULL) {
+        if (_pForParser != nullptr) {
             delete _pForParser;
         }
         _pForParser = p = new cExportQueue;

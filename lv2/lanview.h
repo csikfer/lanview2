@@ -74,7 +74,7 @@ class lanView;
 /// @param pe A hiba objektum pointere
 /// @param _instance A lanView objektum pointere, opcionális
 /// @return Ha kiírta az adatbázisba a rekordot, akkor a rekord id-vel tér vissza, egyébként NULL_ID-vel
-EXT_ qlonglong sendError(const cError *pe, lanView *_instance = NULL);
+EXT_ qlonglong sendError(const cError *pe, lanView *_instance = nullptr);
 
 /*!
 @class lanView
@@ -253,7 +253,7 @@ public:
         T *p = new T(*pQuery, appName); // Saját (fő) inspector objektum
         pSelfInspector = p;
         p->postInit(*pQuery);           // init
-        if (p->passive() && (p->pSubordinates == NULL || p->pSubordinates->isEmpty())) EXCEPTION(NOTODO);
+        if (p->passive() && (p->pSubordinates == nullptr || p->pSubordinates->isEmpty())) EXCEPTION(NOTODO);
         if (setupTransactionFlag) {
             sqlCommit(*pQuery, tn);
         }
@@ -285,12 +285,12 @@ public:
     void setSelfObjects();
     /// Ha létre lett hozva a lanView (vagy laszármazotjának) a példánya, akkor annak a pointervel tér vissza, ha nem
     /// akkor dob egy kizárást.
-    static lanView*    getInstance(void) { if (instance == NULL) EXCEPTION(EPROGFAIL); return instance; }
+    static lanView*    getInstance(void) { if (instance == nullptr) EXCEPTION(EPROGFAIL); return instance; }
     /// Ha létre lett hozva a lanView (vagy laszármazotjának) a példánya, akkor true-val egyébként false-val tér vissza.
-    static bool        exist(void) { return instance != NULL; }
+    static bool        exist(void) { return instance != nullptr; }
     /// Megvizsgálja, hogy az adatbázist megnyitották-e.
     static bool dbIsOpen() {
-        return instance != NULL && instance->pDb != NULL && instance->pDb->isOpen();
+        return instance != nullptr && instance->pDb != nullptr && instance->pDb->isOpen();
     }
     /// A megadott felhasználói név alapján betölti a magadott users rekordott,
     /// de elötte ellenörzi a megadott jelszót, hogy helyes-e.
@@ -322,9 +322,9 @@ public:
     /// Ha még nem példányosítottuk a lanView osztályt, vagy a pUser egy NULL pointer, akkor dob egy kizárást.
     static const cUser& user();
     static qlonglong getUserId(eEx __ex);
-    static cNode&          selfNode()        { cNode        *p = getInstance()->pSelfNode;        if (p == NULL) EXCEPTION(EPROGFAIL); return *p; }
-    static const cService& selfService()     {const cService*p = getInstance()->pSelfService;     if (p == NULL) EXCEPTION(EPROGFAIL); return *p; }
-    static cHostService&   selfHostService() { cHostService *p = getInstance()->pSelfHostService; if (p == NULL) EXCEPTION(EPROGFAIL); return *p; }
+    static cNode&          selfNode()        { cNode        *p = getInstance()->pSelfNode;        if (p == nullptr) EXCEPTION(EPROGFAIL); return *p; }
+    static const cService& selfService()     {const cService*p = getInstance()->pSelfService;     if (p == nullptr) EXCEPTION(EPROGFAIL); return *p; }
+    static cHostService&   selfHostService() { cHostService *p = getInstance()->pSelfHostService; if (p == nullptr) EXCEPTION(EPROGFAIL); return *p; }
     /// Ellenörzi az aktuális felhasználó jogosultsági szintjét
     static bool isAuthorized(enum ePrivilegeLevel pl);
     /// Ellenörzi az aktuális felhasználó jogosultsági szintjét

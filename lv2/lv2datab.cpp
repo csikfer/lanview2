@@ -167,7 +167,7 @@ cColEnumType::cColEnumType(qlonglong id, const QString &name, const QStringList 
     , typeId(id)
     , enumValues(values)
 {
-    if (find(name) != NULL) EXCEPTION(EPROGFAIL, id, name);
+    if (find(name) != nullptr) EXCEPTION(EPROGFAIL, id, name);
     colEnumTypes.insert(*this);
 }
 
@@ -189,7 +189,7 @@ const cColEnumType *cColEnumType::fetchOrGet(QSqlQuery& q, const QString& name, 
 {
 
     const cColEnumType *r = find(name);
-    if (r != NULL) return r;        // Ha a típust már beolvastuk
+    if (r != nullptr) return r;        // Ha a típust már beolvastuk
     QString sql = QString(
                 "SELECT pg_enum.enumlabel, pg_enum.enumtypid FROM  pg_catalog.pg_enum JOIN pg_catalog.pg_type ON pg_type.oid = pg_enum.enumtypid "
                 "WHERE pg_type.typname = '%1' ORDER BY pg_enum.enumsortorder ASC").arg(name);
@@ -203,7 +203,7 @@ const cColEnumType *cColEnumType::fetchOrGet(QSqlQuery& q, const QString& name, 
         return new cColEnumType(id, name, vals);
     }
     if (__ex) EXCEPTION(EDATA, -1, QObject::trUtf8("Ismeretlrn enumerációs típus név: %1").arg(name));
-    return NULL;
+    return nullptr;
 }
 
 bool cColEnumType::check(const QStringList& v) const
@@ -296,14 +296,14 @@ QStringList cColEnumType::lst2lst(const tIntVector& _lst, enum eEx __ex) const
 const cColEnumType *cColEnumType::find(const QString& name)
 {
      QSet<cColEnumType>::const_iterator i = colEnumTypes.find(cColEnumType(name));
-     if (i == colEnumTypes.constEnd()) return NULL;
+     if (i == colEnumTypes.constEnd()) return nullptr;
      return &(*i);
 }
 
 const cColEnumType& cColEnumType::get(const QString& name)
 {
     const cColEnumType *p = find(name);
-    if (p == NULL) EXCEPTION(EDATA, -1, name);
+    if (p == nullptr) EXCEPTION(EDATA, -1, name);
     return *p;
 }
 
@@ -311,11 +311,11 @@ QString     cColEnumType::normalize(const QString& nm, bool *pok) const
 {
     foreach (QString e, enumValues) {
         if (0 == e.compare(nm, Qt::CaseInsensitive)) {
-            if (pok != NULL) *pok = true;
+            if (pok != nullptr) *pok = true;
             return e;
         }
     }
-    if (pok != NULL) *pok = false;
+    if (pok != nullptr) *pok = false;
     return QString();
 }
 
@@ -328,7 +328,7 @@ QStringList cColEnumType::normalize(const QStringList& lst, bool *pok) const
         if (b == 0) ok = false;
         else        r |= b;
     }
-    if (pok != NULL) *pok = ok;
+    if (pok != nullptr) *pok = ok;
     return set2lst(r);
 }
 
@@ -383,11 +383,11 @@ cColStaticDescr::cColStaticDescr(const cRecStaticDescr *_p, int __t)
     isNullable  = false;
     pos =  ordPos = -1;
     eColType = __t;
-    pEnumType = NULL;
+    pEnumType = nullptr;
     chrMaxLenghr = -1;
     isUpdatable = false;
     fKeyType = FT_NONE;
-    pFRec    = NULL;
+    pFRec    = nullptr;
 }
 
 cColStaticDescr::cColStaticDescr(const cColStaticDescr& __o)
@@ -449,7 +449,7 @@ QString cColStaticDescr::toString() const
     r += QChar(' ') + colType;
     if (chrMaxLenghr > 0) r += QString("(%1)").arg(chrMaxLenghr);
     r +=  "/" + udtName;
-    if (pEnumType != NULL)     r += QChar('{') + pEnumType->enumValues.join(_sCommaSp) + QChar('}');
+    if (pEnumType != nullptr)     r += QChar('{') + pEnumType->enumValues.join(_sCommaSp) + QChar('}');
     if (!isNullable)           r += " NOT NULL ";
     if (!colDefault.isNull()) {
         r += " DEFAULT " + colDefault;
@@ -472,7 +472,7 @@ QString cColStaticDescr::allToString() const
         }
     }
     if (fnToName.size() > 0) ", fnToName = " + fnToName;
-    if (pFRec != NULL) ", pFRec : " + pFRec->tableName();
+    if (pFRec != nullptr) ", pFRec : " + pFRec->tableName();
     return r;
 }
 
@@ -597,7 +597,7 @@ QString cColStaticDescr::fKeyId2name(QSqlQuery& q, qlonglong id, eEx __ex) const
         return r;
     }
     if (fKeyTable.isEmpty() == false) {
-        if (pFRec == NULL) {
+        if (pFRec == nullptr) {
             // Sajnos itt trükközni kell, mivel ezt máskor nem tehetjük meg, ill veszélyes, macerás, de itt meg konstans a pointer
             // A következő sor az objektum feltöltésekor, ahol még írható, akár végtelen rekurzióhoz is vezethet.
             // A rekurzió detektálása megvan, de kivédeni kellene, nem elég eszrevenni.
@@ -657,7 +657,7 @@ void cColStaticDescr::typeDetect()
     TYPEDETUDT("date",     FT_DATE)
     TYPEDETUDT("timestamp",FT_DATE_TIME)
     TYPEDETUDT("interval", FT_INTERVAL)
-    if      (pEnumType != NULL)                              eColType = FT_ENUM;
+    if      (pEnumType != nullptr)                              eColType = FT_ENUM;
     else if (udtName.contains("int",   Qt::CaseInsensitive)) eColType = FT_INTEGER;
     else if (udtName.contains("real",  Qt::CaseInsensitive)) eColType = FT_REAL;
     else if (udtName.contains("double",Qt::CaseInsensitive)) eColType = FT_REAL;
@@ -672,7 +672,7 @@ void cColStaticDescr::typeDetect()
 
 void cColStaticDescr::checkEnum(tE2S e2s, tS2E s2e, const char *src, int lin, const char *fn) const
 {
-    if (pEnumType == NULL) {       // Ez nem is enum.
+    if (pEnumType == nullptr) {       // Ez nem is enum.
         cError::exception(src, lin, fn, eError::EPROGFAIL,
                           1, QObject::trUtf8("A %1 mező men enumerációs típusú.").arg(colName()));
     }
@@ -811,7 +811,7 @@ void cColStaticDescrBool::init()
     QStringList enumVals;
     enumVals << langBool(false);
     enumVals << langBool(true);
-    if (pt == NULL) {
+    if (pt == nullptr) {
         pt = new cColEnumType(NULL_ID, _sBoolean, enumVals);
     }
     pEnumType = pt;
@@ -1137,7 +1137,7 @@ CDDUPDEF(cColStaticDescrArray)
 cColStaticDescr::eValueCheck  cColStaticDescrEnum::check(const QVariant& v, cColStaticDescr::eValueCheck acceptable) const
 {
     eValueCheck r = VC_INVALID;
-    if (pEnumType == NULL) EXCEPTION(EPROGFAIL);
+    if (pEnumType == nullptr) EXCEPTION(EPROGFAIL);
     if (v.isNull() || isNumNull(v)) r = checkIfNull();
     else {
         int t = v.userType();
@@ -1883,7 +1883,7 @@ CDDUPDEF(cColStaticDescrDateTime)
 qlonglong parseTimeInterval(const QString& s, bool *pOk)
 {
     if (s.isEmpty()) {
-        if (pOk != NULL) *pOk = false;
+        if (pOk != nullptr) *pOk = false;
         return NULL_ID;
     }
     QStringList sl = s.split(QChar(' '));
@@ -1906,7 +1906,7 @@ qlonglong parseTimeInterval(const QString& s, bool *pOk)
             ok = ok && ok2 && ok3;
         }
     }
-    if (pOk != NULL) *pOk = ok;
+    if (pOk != nullptr) *pOk = ok;
     return ok ? r : NULL_ID;
 }
 
@@ -2075,11 +2075,11 @@ const cColStaticDescr& cColStaticDescrList::operator[](int i) const
 }
 
 QString cColStaticDescrList::fullColName(const QString& _col) const {
-    if (pParent == NULL) return mCat(_sNULL, _col);
+    if (pParent == nullptr) return mCat(_sNULL, _col);
     return mCat(pParent->tableName(), _col);
 }
 QString cColStaticDescrList::tableName() const {
-    if (pParent == NULL) return _sNULL;
+    if (pParent == nullptr) return _sNULL;
     return pParent->tableName();
 }
 
@@ -2092,7 +2092,7 @@ cRecStaticDescr::cRecStaticDescr(const QString &__t, const QString &__s)
     : _schemaName()
     , _tableName()
     , _viewName()
-    , _tableRecord()
+    // , _tableRecord()
     , _columnDescrs(this)
     , _primaryKeyMask()
     , _nameKeyMask()
@@ -2109,13 +2109,13 @@ cRecStaticDescr::cRecStaticDescr(const QString &__t, const QString &__s)
     addMap();
     // Only now can we get it right, or maybe we'll call id-> name conversion functions
     int i, n = cols();
-    QSqlQuery *pq = NULL;
+    QSqlQuery *pq = nullptr;
     for (i = 0; i < n; ++i) {
         const cColStaticDescr& cd = colDescr(i);
         if (cd.fKeyType != cColStaticDescr::FT_NONE     // If is foreign key
          && cd.fKeyType != cColStaticDescr::FT_TEXT_ID  // but not a language text
          && cd.fnToName.isEmpty()) {                    // and there is no conversion function yet
-            if (pq == NULL) pq = newQuery();
+            if (pq == nullptr) pq = newQuery();
             const_cast<cColStaticDescr *>(&cd)->fnToName = checkId2Name(*pq, cd.fKeyTable, cd.fKeySchema);
         }
     }
@@ -2183,16 +2183,16 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
     } while(pq->next());
 
     // *********************** get table record
-    sql = "SELECT * FROM information_schema.tables WHERE table_schema = ? AND table_name = ?";
+    sql = "SELECT table_type FROM information_schema.tables WHERE table_schema = ? AND table_name = ?";
     if (!pq->prepare(sql)) SQLPREPERR(*pq, sql);
     pq->bindValue(0, _schemaName);
     pq->bindValue(1, _tableName);
     if (!pq->exec()) SQLQUERYERR(*pq);
     if (!pq->first()) EXCEPTION(EDBDATA, 0, QObject::trUtf8("Table %1.%2 not found.").arg(_schemaName, _tableName));
-    _tableRecord = pq->record();
+    // _tableRecord = pq->record();
+    QString n = pq->value(0).toString();    // table_type
     if (pq->next()) EXCEPTION(EDBDATA, 0, QObject::trUtf8("Table : %1,%2.").arg(_schemaName, _tableName));
 
-    QString n = _tableRecord.value("table_type").toString();
     if      (n == "BASE TABLE")
         _tableType = TT_BASE_TABLE;
     else if (n == "VIEW") {
@@ -2212,7 +2212,13 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
     // PDEB(INFO) << QObject::trUtf8("%1 table is %2").arg(fullTableName()).arg(n) << endl;
 
     // ************************ get columns records
-    sql = "SELECT * FROM information_schema.columns WHERE table_schema = ? AND table_name = ? ORDER BY ordinal_position";
+    enum { IX_COLUMN_NAME, IX_ORDINAL_POSITION, IX_COLMN_DFAULT, IX_DATA_TYPE, IX_UDT_NAME, IX_CHARACTER_MAXIMUM_LENGHT,
+           IX_IS_NULLABLE, IX_IS_UPDATABLE };
+    sql = "SELECT column_name, ordinal_position, column_default, data_type, udt_name, character_maximum_length,"
+                 " is_nullable, is_updatable"
+          " FROM information_schema.columns"
+          " WHERE table_schema = ? AND table_name = ?"
+          " ORDER BY ordinal_position";
     if (!pq->prepare(sql)) SQLPREPERR(*pq, sql);
     pq->bindValue(0, _schemaName);
     pq->bindValue(1, _tableName);
@@ -2227,17 +2233,17 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
     do {
         ++i;    // Vigyázz, fizikus index! (1,2,...)
         cColStaticDescr columnDescr(this);
-        columnDescr.colName() = pq->record().value("column_name").toString();
+        columnDescr.colName() = pq->value(IX_COLUMN_NAME).toString();
         columnDescr.pos       = i;
-        columnDescr.ordPos    = pq->record().value("ordinal_position").toInt();
-        columnDescr.colDefault= pq->record().value("column_default").toString();
+        columnDescr.ordPos    = pq->value(IX_ORDINAL_POSITION).toInt();
+        columnDescr.colDefault= pq->value(IX_COLMN_DFAULT).toString();
         // PDEB(VVERBOSE) << "colDefault : " <<  (columnDescr.colDefault.isNull() ? "NULL" : dQuoted(columnDescr.colDefault)) << endl;
-        columnDescr.colType   = pq->record().value("data_type").toString();
-        columnDescr.udtName   = pq->record().value("udt_name").toString();
-        QVariant cml = pq->record().value("character_maximum_length");
+        columnDescr.colType   = pq->value(IX_DATA_TYPE).toString();
+        columnDescr.udtName   = pq->value(IX_UDT_NAME).toString();
+        QVariant cml = pq->value(IX_CHARACTER_MAXIMUM_LENGHT);
         columnDescr.chrMaxLenghr = cml.canConvert(QVariant::Int) ? cml.toInt() : -1;
-        columnDescr.isNullable= pq->record().value("is_nullable").toString() == QString("YES");
-        columnDescr.isUpdatable=pq->record().value("is_updatable").toString() == QString("YES");
+        columnDescr.isNullable= strIsBool(pq->value(IX_IS_NULLABLE).toString());
+        columnDescr.isUpdatable=strIsBool(pq->value(IX_IS_UPDATABLE).toString());
         _isUpdatable = _isUpdatable || columnDescr.isUpdatable;
         // PDEB(INFO) << fullTableName() << " field #" << i << QChar('/') << columnDescr.ordPos << " : " << columnDescr.toString() << endl;
         // Is auto increment ?
@@ -2416,12 +2422,13 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
     if (_columnsNum != i) EXCEPTION(EPROGFAIL, -1, "Nem egyértelmű mező szám");
     if ((_tableType & TT_VIEW_TABLE) == 0) {    // Nézettáblánál nincsenek explicit kulcsok
         // ************************ get key_column_usage records
-        /* sql = "SELECT * FROM information_schema.key_column_usage WHERE table_schema = ? AND table_name = ?"; */
-        sql = "SELECT * FROM information_schema.key_column_usage "
-                       "JOIN information_schema.table_constraints "
-                         "USING(constraint_name) "
-                  "WHERE information_schema.key_column_usage.table_schema = ? "
-                    "AND information_schema.key_column_usage.table_name = ?";
+        enum { IX_COLUMN_NAME, IX_CONSTAINT_NAME, IX_CONSTRAINT_TYPE };
+        sql = "SELECT column_name, constraint_name, constraint_type"
+                 " FROM information_schema.key_column_usage AS kcu"
+                 " JOIN information_schema.table_constraints AS tc"
+                    " USING(constraint_name)"
+                 " WHERE kcu.table_schema = ?"
+                 " AND   kcu.table_name = ?";
         if (!pq->prepare(sql)) SQLPREPERR(*pq, sql);
         pq->bindValue(0, _schemaName);
         pq->bindValue(1, _tableName);
@@ -2431,9 +2438,9 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
             // CONSTRAINT név /_uniqueMasks index
             QMap<QString, int>  map;
             do {
-                QString constraintName = pq->record().value("constraint_name").toString();
-                QString columnName     = pq->record().value("column_name").toString();
-                QString constraintType = pq->record().value("constraint_type").toString();
+                QString constraintName = pq->value(IX_CONSTAINT_NAME).toString();
+                QString columnName     = pq->value(IX_COLUMN_NAME).toString();
+                QString constraintType = pq->value(IX_CONSTRAINT_TYPE).toString();
                 i = toIndex(columnName, EX_IGNORE);
                 if (i < 0) EXCEPTION(EDBDATA,0, QObject::trUtf8("Invalid column name : %1").arg(fullColumnName(columnName)));
                 if     (constraintType == "PRIMARY KEY") {
@@ -2565,7 +2572,7 @@ int cRecStaticDescr::toIndex(const QString& __n, eEx __ex) const
 
 const cRecStaticDescr *cRecStaticDescr::get(qlonglong _oid, bool find_only)
 {
-    cRecStaticDescr *p = NULL;
+    cRecStaticDescr *p = nullptr;
     QMap<qlonglong, cRecStaticDescr *>::iterator    i;
     _mapMutex.lock();
     if ((i = _recDescrMap.find(_oid)) != _recDescrMap.end()) {
@@ -2581,7 +2588,7 @@ const cRecStaticDescr *cRecStaticDescr::get(qlonglong _oid, bool find_only)
     // Ha nem találjuk, létre kell hozni ?
     if (find_only) {    // Nem. Csak kerestünk
         // PDEB(VVERBOSE) << QObject::trUtf8("Not found rdescr %1.%2").arg(tsn.first).arg(tsn.second) << endl;
-        return NULL;
+        return nullptr;
     }
     if (_setReCallCnt >= 10) EXCEPTION(EPROGFAIL);
     // PDEB(VERBOSE) << QObject::trUtf8("Init rdescr obj. %1.%2").arg(tsn.first).arg(tsn.second) << endl;
@@ -2596,7 +2603,7 @@ const cRecStaticDescr *cRecStaticDescr::get(const QString& _t, const QString& _s
     eEx ex = find_only ? EX_IGNORE : EX_ERROR;
     qlonglong tableOId = ::tableoid(*pq, _t, schemaoid(*pq, _s), ex);
     delete pq;
-    return tableOId == NULL_ID ? NULL : get(tableOId, find_only);
+    return tableOId == NULL_ID ? nullptr : get(tableOId, find_only);
 }
 
 bool cRecStaticDescr::isKey(int i) const
@@ -2652,7 +2659,7 @@ QString cRecStaticDescr::checkId2Name(QSqlQuery& q) const
 QString cRecStaticDescr::checkId2Name(QSqlQuery& q, const QString& _tn, const QString& _sn, eEx __ex)
 {
     const cRecStaticDescr *pDescr = get(_tn, _sn, __ex == EX_IGNORE);
-    if (pDescr == NULL) {
+    if (pDescr == nullptr) {
         if (__ex) EXCEPTION(EPROGFAIL); // Lehetetlen
         return QString();
     }
@@ -2979,7 +2986,7 @@ cRecord::cRecord() : QObject(), _fields(), _likeMask()
    // _DBGFN() << QChar(' ') << VDEBPTR(this) << endl;
     _deletedBehavior = NO_EFFECT ;
     _stat = ES_NULL;
-    pTextList = NULL;
+    pTextList = nullptr;
     containerValid  = 0;
 }
 
@@ -3123,7 +3130,7 @@ cRecord& cRecord::_set(const QSqlRecord& __r, const cRecStaticDescr& __d, int* _
         n = __size;
     }
     int first = 0;                  // Első elem a forrásból
-    if (_fromp != NULL) {           // Ha nem az elején kezdjük
+    if (_fromp != nullptr) {           // Ha nem az elején kezdjük
         first = *_fromp;
         if (__size > 0) {           // A következő szelet első eleme
             *_fromp = n += first;
@@ -3235,7 +3242,7 @@ void cRecord::fieldsCopy(const cRecord& __o, const QBitArray& __m)
 void cRecord::fieldsCopy(QSqlQuery& __q, QString *pName, const QBitArray& __m)
 {
     cRecord *pOld = newObj();
-    if (pName == NULL && pName->isEmpty()) {
+    if (pName == nullptr && pName->isEmpty()) {
         pOld->setByName(__q, getName());
     }
     else {
@@ -3302,9 +3309,9 @@ const QVariant& cRecord::get(int __i) const
 QString cRecord::view(QSqlQuery& q, int __i, const cFeatures *pFeatures) const
 {
     static const QString  rHaveNo = QObject::trUtf8("[HAVE NO]");
-    bool raw = pFeatures != NULL && pFeatures->contains(_sRaw);
+    bool raw = pFeatures != nullptr && pFeatures->contains(_sRaw);
     if (isIndex(__i) == false) return raw ? _sNul :  rHaveNo;
-    if (!isNull(__i) && pFeatures != NULL) {
+    if (!isNull(__i) && pFeatures != nullptr) {
         if (pFeatures->keys().contains(_sViewFunc)) {
             return execSqlTextFunction(q, pFeatures->value(_sViewFunc), descr()[__i].toSql(get(__i)));
         }
@@ -3479,7 +3486,7 @@ bool cRecord::insert(QSqlQuery& __q, eEx _ex)
 
 cError *cRecord::tryInsert(QSqlQuery &__q, eTristate __tr, bool text)
 {
-    cError *pe = NULL;
+    cError *pe = nullptr;
     eTristate tr = trFlag(__tr);
     if (tr == TS_TRUE) sqlBegin(__q, tableName());
     try {
@@ -3490,7 +3497,7 @@ cError *cRecord::tryInsert(QSqlQuery &__q, eTristate __tr, bool text)
     }
     CATCHS(pe);
     if (tr == TS_TRUE) {
-        if (pe == NULL) sqlCommit(__q, tableName());
+        if (pe == nullptr) sqlCommit(__q, tableName());
         else            sqlRollback(__q, tableName());
     }
     return pe;
@@ -3525,7 +3532,7 @@ bool cRecord::rewrite(QSqlQuery &__q, eEx __ex)
 
 cError *cRecord::tryRewrite(QSqlQuery& __q, eTristate __tr, bool text)
 {
-    cError *pe = NULL;
+    cError *pe = nullptr;
     eTristate tr = trFlag(__tr);
     if (tr == TS_TRUE) sqlBegin(__q, tableName());
     try {
@@ -3534,7 +3541,7 @@ cError *cRecord::tryRewrite(QSqlQuery& __q, eTristate __tr, bool text)
     }
     CATCHS(pe);
     if (tr == TS_TRUE) {
-        if (pe == NULL) sqlCommit(__q, tableName());
+        if (pe == nullptr) sqlCommit(__q, tableName());
         else            sqlRollback(__q, tableName());
     }
     return pe;
@@ -3561,10 +3568,10 @@ int cRecord::replace(QSqlQuery& __q, eEx __ex)
 
 cError *cRecord::tryReplace(QSqlQuery& __q, eTristate __tr, bool text)
 {
-    cError *pe = NULL;
+    cError *pe = nullptr;
     eTristate tr = trFlag(__tr);
     QStringList texts;
-    if (text && pTextList != NULL) {
+    if (text && pTextList != nullptr) {
         texts = *pTextList;
         pDelete(pTextList);
     }
@@ -3578,7 +3585,7 @@ cError *cRecord::tryReplace(QSqlQuery& __q, eTristate __tr, bool text)
     }
     CATCHS(pe);
     if (tr == TS_TRUE) {
-        if (pe == NULL) sqlCommit(__q, tableName());
+        if (pe == nullptr) sqlCommit(__q, tableName());
         else {
             sqlRollback(__q, tableName());
             if (text && !texts.isEmpty()) {
@@ -3844,7 +3851,7 @@ int cRecord::update(QSqlQuery& __q, bool __only, const QBitArray& __set, const Q
 
 cError *cRecord::tryUpdate(QSqlQuery& __q, bool __only, const QBitArray& __set, const QBitArray& __where, eTristate __tr)
 {
-    cError *pe = NULL;
+    cError *pe = nullptr;
     eTristate tr = trFlag(__tr);
     if (tr == TS_TRUE) sqlBegin(__q, tableName());
     try {
@@ -3852,7 +3859,7 @@ cError *cRecord::tryUpdate(QSqlQuery& __q, bool __only, const QBitArray& __set, 
     }
     CATCHS(pe);
     if (tr == TS_TRUE) {
-        if (pe == NULL) sqlCommit(__q, tableName());
+        if (pe == nullptr) sqlCommit(__q, tableName());
         else            sqlRollback(__q, tableName());
     }
     return pe;
@@ -3860,7 +3867,7 @@ cError *cRecord::tryUpdate(QSqlQuery& __q, bool __only, const QBitArray& __set, 
 
 cError *cRecord::tryUpdateById(QSqlQuery& __q, eTristate __tr, bool text)
 {
-    cError *pe = NULL;
+    cError *pe = nullptr;
     int n = 0;
     eTristate tr = trFlag(__tr);
     if (tr == TS_TRUE) sqlBegin(__q, tableName());
@@ -3875,7 +3882,7 @@ cError *cRecord::tryUpdateById(QSqlQuery& __q, eTristate __tr, bool text)
     }
     CATCHS(pe);
     if (tr == TS_TRUE) {
-        if (pe == NULL) sqlCommit(__q, tableName());
+        if (pe == nullptr) sqlCommit(__q, tableName());
         else            sqlRollback(__q, tableName());
     }
     return pe;
@@ -3945,7 +3952,7 @@ int cRecord::remove(QSqlQuery& __q, bool __only, const QBitArray& _fm, eEx __ex)
 
 cError *cRecord::tryRemove(QSqlQuery& __q, bool __only, const QBitArray& _fm, eTristate __tr)
 {
-    cError *pe = NULL;
+    cError *pe = nullptr;
     eTristate tr = trFlag(__tr);
     if (tr == TS_TRUE) sqlBegin(__q, tableName());
     try {
@@ -3953,7 +3960,7 @@ cError *cRecord::tryRemove(QSqlQuery& __q, bool __only, const QBitArray& _fm, eT
     }
     CATCHS(pe);
     if (tr == TS_TRUE) {
-        if (pe == NULL) sqlCommit(__q, tableName());
+        if (pe == nullptr) sqlCommit(__q, tableName());
         else            sqlRollback(__q, tableName());
     }
     return pe;
@@ -4204,7 +4211,7 @@ QString cRecord::identifying(bool t) const
             if (pCd->fKeyType == cColStaticDescr::FT_OWNER) {
                 const cRecStaticDescr *pRd = cRecStaticDescr::get(pCd->fKeyTable, pCd->fKeySchema, true);
                 record += trUtf8(" Tulajdonos : ");
-                if (pRd == NULL) {
+                if (pRd == nullptr) {
                     record += trUtf8(" jelenleg nem megállapítható (tábla : %1)").arg(dQuotedCat(pCd->fKeyTable, pCd->fKeySchema));
                 }
                 else {
@@ -4236,14 +4243,14 @@ QString cRecord::show(bool t) const
 
 void cRecord::delTextList()
 {
-    if (pTextList == NULL) return;  // There is no list, there is nothing to delete
+    if (pTextList == nullptr) return;  // There is no list, there is nothing to delete
     pDelete(pTextList);
     setContainerValid(0, CV_LL_TEXT);
 }
 
 void cRecord::condDelTextList(int _ix, const QVariant& _tid)
 {
-    if (pTextList == NULL) return;  // There is no list, there is nothing to delete
+    if (pTextList == nullptr) return;  // There is no list, there is nothing to delete
     int tix = descr()._textIdIndex;
     if (tix < 0) {  // :-O
         EXCEPTION(EPROGFAIL, 0, trUtf8("If there is no text_id, there could be no list : %1").arg(identifying()));
@@ -4260,7 +4267,7 @@ void cRecord::condDelTextList(int _ix, const QVariant& _tid)
 QString cRecord::getText(int _tix, const QString& _d) const
 {
     QString r;
-    if (pTextList != NULL && isContIx(*pTextList, _tix)) r = pTextList->at(_tix);
+    if (pTextList != nullptr && isContIx(*pTextList, _tix)) r = pTextList->at(_tix);
     return r.isEmpty() ? _d : r;
 }
 
@@ -4269,7 +4276,7 @@ QString cRecord::getText(const QString& _tn, const QString& _d) const
     int tidix = descr().textIdIndex();
     const cColStaticDescr& cd = colDescr(tidix);
     const cColEnumType *pcet = cd.pEnumType;
-    if (pcet == NULL) EXCEPTION(EPROGFAIL, 0, trUtf8("No text field list, missing enum; Object : %1").arg(identifying()));
+    if (pcet == nullptr) EXCEPTION(EPROGFAIL, 0, trUtf8("No text field list, missing enum; Object : %1").arg(identifying()));
     int tix = pcet->str2enum(_tn);
     return getText(tix, _d);
 }
@@ -4278,9 +4285,9 @@ cRecord&    cRecord::setText(int _tix, const QString& _t)
 {
     int tidix = descr().textIdIndex();
     const cColEnumType *pet = colDescr(tidix).pEnumType;
-    if (pet == NULL) EXCEPTION(EPROGFAIL, tidix, trUtf8("No text field list, missing enum; Object : %1").arg(identifying()));
+    if (pet == nullptr) EXCEPTION(EPROGFAIL, tidix, trUtf8("No text field list, missing enum; Object : %1").arg(identifying()));
     int s = pet->enumValues.size();
-    if (pTextList == NULL) {
+    if (pTextList == nullptr) {
         pTextList = new QStringList;
         while (pTextList->size() < s) *pTextList << _sNul;
     }
@@ -4293,7 +4300,7 @@ cRecord&    cRecord::setText(const QString& _tn, const QString& _t)
 {
     int tidix = descr().textIdIndex();
     const cColEnumType *pet = colDescr(tidix).pEnumType;
-    if (pet == NULL) EXCEPTION(EPROGFAIL, tidix, trUtf8("No text field list, missing enum; Object : %1").arg(identifying()));
+    if (pet == nullptr) EXCEPTION(EPROGFAIL, tidix, trUtf8("No text field list, missing enum; Object : %1").arg(identifying()));
     int tix = pet->str2enum(_tn);
     return setText(tix, _t);
 }
@@ -4303,7 +4310,7 @@ cRecord&    cRecord::setTexts(const QStringList& _txts)
     if (_txts.isEmpty()) {
         pDelete(pTextList);
     }
-    else if (pTextList == NULL) {
+    else if (pTextList == nullptr) {
         pTextList = new QStringList(_txts);
     }
     else {
@@ -4314,7 +4321,7 @@ cRecord&    cRecord::setTexts(const QStringList& _txts)
 
 bool cRecord::fetchText(QSqlQuery& _q, bool __force)
 {
-    if (!__force && pTextList != NULL && !pTextList->isEmpty()) return true;
+    if (!__force && pTextList != nullptr && !pTextList->isEmpty()) return true;
     int tidix = descr().textIdIndex();
     qlonglong tid = getId(tidix);
     pDelete(pTextList);
@@ -4323,7 +4330,7 @@ bool cRecord::fetchText(QSqlQuery& _q, bool __force)
     pTextList = new QStringList;
     *pTextList = textId2texts(_q, tid, tableName());
     const cColEnumType *pet = colDescr(tidix).pEnumType;
-    if (pet == NULL) EXCEPTION(EPROGFAIL, tidix, trUtf8("No text field list, missing enum; Object : %1").arg(identifying()));
+    if (pet == nullptr) EXCEPTION(EPROGFAIL, tidix, trUtf8("No text field list, missing enum; Object : %1").arg(identifying()));
     int s = pet->enumValues.size();
     if (pTextList->size() > s) *pTextList = pTextList->mid(0, s);
     else while (pTextList->size() < s) *pTextList << _sNul;
@@ -4333,7 +4340,7 @@ bool cRecord::fetchText(QSqlQuery& _q, bool __force)
 
 void cRecord::saveText(QSqlQuery& _q)
 {
-    if (pTextList == NULL) return;
+    if (pTextList == nullptr) return;
     cLangTexts::saveText(_q, *pTextList, this);
 }
 
@@ -4353,7 +4360,7 @@ no_init_ _no_init_;
 /* ******************************************************************************************************* */
 cRecordAny::cRecordAny() : cRecord()
 {
-    pStaticDescr = NULL;
+    pStaticDescr = nullptr;
     _stat = ES_FACELESS;
 }
 
@@ -4387,7 +4394,7 @@ cRecordAny::~cRecordAny()
 cRecordAny& cRecordAny::setType(const QString& _tn, const QString& _sn, eEx __ex)
 {
     pStaticDescr = cRecStaticDescr::get(_tn, _sn, __ex == EX_IGNORE);
-    if (pStaticDescr == NULL) {
+    if (pStaticDescr == nullptr) {
         _clear();
         _stat = ES_FACELESS;
     }
@@ -4413,7 +4420,7 @@ cRecordAny& cRecordAny::setType(const cRecStaticDescr *_pd)
 
 const cRecStaticDescr& cRecordAny::descr() const
 {
-    if (pStaticDescr == NULL) EXCEPTION(EPROGFAIL,-1,QObject::trUtf8("Nincs beállítva az adat típus."));
+    if (pStaticDescr == nullptr) EXCEPTION(EPROGFAIL,-1,QObject::trUtf8("Nincs beállítva az adat típus."));
     return *pStaticDescr;
 }
 
@@ -4443,7 +4450,7 @@ cRecordAny& cRecordAny::operator=(const cRecord& __o)
 cRecordAny& cRecordAny::clearType()
 {
     _clear();
-    pStaticDescr = NULL;
+    pStaticDescr = nullptr;
     _stat = ES_FACELESS;
     return *this;
 }

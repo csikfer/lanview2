@@ -218,7 +218,7 @@ public:
         return QList<T *>::count();
     }
     ///
-    int fetchByNamePattern(QSqlQuery& __q, const QString& __pat, bool __only = false, T *p = NULL)
+    int fetchByNamePattern(QSqlQuery& __q, const QString& __pat, bool __only = false, T *p = nullptr)
     {
         if (!p) p = new T();
         else    p->clear();
@@ -450,7 +450,7 @@ public:
     T *get(qlonglong __id, eEx __ex = EX_ERROR) const {
         int i = indexOf(__id);
         if (i < 0) {
-            if (__ex == EX_IGNORE) return NULL;
+            if (__ex == EX_IGNORE) return nullptr;
             EXCEPTION(EFOUND, __id, QObject::trUtf8("Keresés a rekord ID alapján: %1 = %2").arg(T().idName()).arg(__id));
         }
         return QList<T *>::at(i);
@@ -462,7 +462,7 @@ public:
     T *get(const QString& __nm, eEx __ex = EX_ERROR) const {
         int i = indexOf(__nm);
         if (i < 0) {
-            if (__ex == EX_IGNORE) return NULL;
+            if (__ex == EX_IGNORE) return nullptr;
             EXCEPTION(EFOUND, 0, QObject::trUtf8("Keresés a rekord név alapján: %1 = %2").arg(T().nameName()).arg(__nm));
         }
         return QList<T *>::at(i);
@@ -475,7 +475,7 @@ public:
     T *get(const QString& __fn, const QVariant& __v, eEx __ex = EX_ERROR) const {
         int i = indexOf(__fn, __v);
         if (i < 0) {
-            if (__ex == EX_IGNORE) return NULL;
+            if (__ex == EX_IGNORE) return nullptr;
             EXCEPTION(EFOUND, 0, QObject::trUtf8("Keresés a %1 nevű mezőérték alapján: %2").arg(__fn).arg(debVariantToString(__v)));
         }
         return QList<T *>::at(i);
@@ -488,7 +488,7 @@ public:
     T *get(int __ix, const QVariant& __v, eEx __ex = EX_ERROR) const {
         int i = indexOf(__ix, __v);
         if (i < 0) {
-            if (__ex == EX_IGNORE) return NULL;
+            if (__ex == EX_IGNORE) return nullptr;
             EXCEPTION(EFOUND, __ix, QObject::trUtf8("Keresés a %1 indexű mezőérték alapján: %2").arg(__ix).arg(debVariantToString(__v)));
         }
         return QList<T *>::at(i);
@@ -497,7 +497,7 @@ public:
     /// Ha a konténer üres, akkor dob egy kizárást, ha __ex nem EX_IGNORE, vagy NULL pointerrel tér vissza, ha __ex hamis.
     T *pop_back(eEx __ex = EX_ERROR)  {
         if (list().size() < 1) {
-            if (__ex == EX_IGNORE) return NULL;
+            if (__ex == EX_IGNORE) return nullptr;
             EXCEPTION(EFOUND, 0);
         }
         T *p = QList<T *>::back();
@@ -508,7 +508,7 @@ public:
     /// Ha a konténer üres, akkor dob egy kizárást, ha __ex nem EX_IGNORE, vagy NULL pointerrel tér vissza, ha __ex hamis.
     T *pop_front(eEx __ex = EX_ERROR) {
         if (list().size() < 1) {
-            if (__ex == EX_IGNORE) return NULL;
+            if (__ex == EX_IGNORE) return nullptr;
             EXCEPTION(EFOUND, 0);
         }
         T *p = QList<T *>::front();
@@ -521,7 +521,7 @@ public:
     /// @param __ex Opcionális flag, ha nem EX_IGNORE (ez az alapértelmezés) akkor ha nincs találat, dob egy kizárást.
     T *pullAt(int __ix, eEx __ex = EX_ERROR) {
         if (list().size() <= __ix) {
-            if (__ex == EX_IGNORE) return NULL;
+            if (__ex == EX_IGNORE) return nullptr;
             EXCEPTION(EFOUND, __ix);
         }
         T *p = QList<T *>::at(__ix);
@@ -535,7 +535,7 @@ public:
     T *pull(qlonglong __id, eEx __ex = EX_ERROR) {
         int ix = indexOf(__id);
         if (0 > ix) {
-            if (__ex == EX_IGNORE) return NULL;
+            if (__ex == EX_IGNORE) return nullptr;
             EXCEPTION(EFOUND, __ex);
         }
         T *p = QList<T *>::at(ix);
@@ -549,7 +549,7 @@ public:
     T *pull(const QString __name, eEx __ex = EX_ERROR) {
         int ix = indexOf(__name);
         if (0 > ix) {
-            if (__ex == EX_IGNORE) return NULL;
+            if (__ex == EX_IGNORE) return nullptr;
             EXCEPTION(EFOUND, __ex);
         }
         T *p = QList<T *>::at(ix);
@@ -564,7 +564,7 @@ public:
     T *pull(const QString __fname, const QVariant& __val, eEx __ex = EX_ERROR) {
         int ix = indexOf(__fname, __val);
         if (0 > ix) {
-            if (__ex == EX_IGNORE) return NULL;
+            if (__ex == EX_IGNORE) return nullptr;
             EXCEPTION(EFOUND, __ex);
         }
         T *p = QList<T *>::at(ix);
@@ -579,7 +579,7 @@ public:
     T *pull(int __fix, const QVariant& __val, eEx __ex = EX_ERROR) {
         int ix = indexOf(__fix, __val);
         if (0 > ix) {
-            if (__ex == EX_IGNORE) return NULL;
+            if (__ex == EX_IGNORE) return nullptr;
             EXCEPTION(EFOUND, __ex);
         }
         T *p = QList<T *>::at(ix);
@@ -669,7 +669,7 @@ public:
     /// a __po pointerű objektum konstruktorából nem hívhatjuk, mert ekkor még a descr() virtuális metódus nem elérhető,
     /// vagyis az alkalmazás össze fog omlani.
     tOwnRecords(O *__po) : tRecordList<C>(), ixOwnerId(C().descr().ixToOwner(__po->descr().tableName())), pOwner(__po) {
-        if (pOwner == NULL) EXCEPTION(EPROGFAIL);
+        if (pOwner == nullptr) EXCEPTION(EPROGFAIL);
     }
     /// Konstruktor, üres konténert hoz létre
     /// @param __po Tulajdonos objektum pointere.
@@ -677,11 +677,11 @@ public:
     ///     paraméter nélküli C::ixToOwner() hívással fogja megállapítani.
     /// @remark Ez a konstruktor hívható a pOwner pointerű objektum konstruktorából is.
     tOwnRecords(O *__po, const QString sTableName) : tRecordList<C>(), ixOwnerId(C().descr().ixToOwner(sTableName)), pOwner(__po) {
-        if (pOwner == NULL) EXCEPTION(EPROGFAIL);
+        if (pOwner == nullptr) EXCEPTION(EPROGFAIL);
     }
     /// Konstruktor (copy konstruktor helyett)
     tOwnRecords(O *__po, const tOwnRecords& __c) : tRecordList<C>(), ixOwnerId(C().descr().ixToOwner(O::_pRecordDescr->tableName())), pOwner(__po) {
-        if (pOwner == NULL) EXCEPTION(EPROGFAIL);
+        if (pOwner == nullptr) EXCEPTION(EPROGFAIL);
         append(__c);
     }
     /// Copy konstruktor. Nem támogatott
@@ -804,13 +804,13 @@ public:
     }
 
     int mark(QSqlQuery &__q) const {
-        if (pOwner == NULL) EXCEPTION(EPROGFAIL);
+        if (pOwner == nullptr) EXCEPTION(EPROGFAIL);
         qlonglong oid = pOwner->getId();
         C o;
         return o.setId(ixOwnerId, oid).mark(__q, o.mask(ixOwnerId), true);
     }
     int removeMarked(QSqlQuery& __q) const {
-        if (pOwner == NULL) EXCEPTION(EPROGFAIL);
+        if (pOwner == nullptr) EXCEPTION(EPROGFAIL);
         qlonglong oid = pOwner->getId();
         C o;
         return o.setId(ixOwnerId, oid).removeMarked(__q, o.mask(ixOwnerId));
