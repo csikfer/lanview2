@@ -268,7 +268,6 @@ int cServiceVar::setValues(QSqlQuery& q, qlonglong _hsid, const QStringList& _na
 
 void cServiceVar::preSetValue(const QString& val)
 {
-    oldStateMsg = getName(_ixStateMsg);
     clear(_ixStateMsg);
     setName(_sRawValue, val);
     lastLast = get(_sLastTime).toDateTime();
@@ -384,12 +383,9 @@ int cServiceVar::noValue(QSqlQuery& q, int &state)
         update(q, false, updateMask);
         if (getBool(_sDelegateServiceState)) state = RS_UNREACHABLE;
     }
-    else {  // Nincs adat, türelmi idő nem járt le, csak az eredeti üzenethez csapjuk hozzá a dátumot, és az okot.
-        oldStateMsg += "\n" + QDateTime::currentDateTime().toString() + "\n";
-        oldStateMsg += getName(_ixStateMsg);
-        setName(_ixStateMsg, oldStateMsg);
-        update(q, false, _bit(_ixStateMsg));
-    }
+    // else {  // Nincs adat, türelmi idő nem járt le
+    //     ;
+    // }
     return RS_UNREACHABLE;
 }
 

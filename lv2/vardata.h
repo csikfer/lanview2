@@ -108,7 +108,6 @@ protected:
     }
     static tRecordList<cServiceVar>     serviceVars;  ///< Cache
     static QMap<qlonglong, qlonglong>   heartbeats;   ///< Heartbeat cache
-    QString oldStateMsg;        ///< Az előző állpot üzenet
     const cServiceVarType *pVarType;
     double      lastValue;      ///< Derived esetén az előző érték
     qulonglong  lastCount;      ///< Ha számláló a lekérdezett érték, akkor az előző érték

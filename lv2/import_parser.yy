@@ -1000,6 +1000,7 @@ static void yyskip(bool b)
 }
 
 static int yylex(void);
+static void strReplace(QString * s, QString * src, QString *trg);
 static void forLoopMac(QString *_in, QVariantList *_lst);
 static void forLoop(QString *_in, QVariantList *_lst);
 static QStringList *listLoop(QString *m, qlonglong fr, qlonglong to, qlonglong st);
@@ -1523,7 +1524,7 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
     cHostServices *     hss;
 }
 
-%token      MACRO_T FOR_T DO_T TO_T SET_T CLEAR_T SYNTAX_T
+%token      MACRO_T FOR_T DO_T TO_T SET_T CLEAR_T
 %token      VLAN_T SUBNET_T PORTS_T PORT_T NAME_T SHARED_T SENSORS_T
 %token      PLACE_T PATCH_T SWITCH_T NODE_T HOST_T ADDRESS_T
 %token      PARENT_T IMAGE_T FRAME_T TEL_T NOTE_T MESSAGE_T
@@ -1625,12 +1626,7 @@ macro   : MACRO_T            NAME_V str ';'                 { templates.set (_sM
         | TEMPLATE_T NODE_T  NAME_V str ';'                 { templates.set (_sNodes,  sp2s($3), sp2s($4));           }
         | TEMPLATE_T NODE_T  NAME_V str SAVE_T str_z ';'    { templates.save(_sNodes,  sp2s($3), sp2s($4), sp2s($6)); }
         | for_m
-        | SYNTAX_T replfl str str str_z bool_on ';'         { cRecordAny o(_sObjectSyntaxs);
-                                                              o.setName(sp2s($3)).setName(_sSentence, sp2s($4));
-                                                              if (!$5->isEmpty()) o.setName(_sFeatures, *$5);
-                                                              delete $5;
-                                                              if ($2) o.replace(qq()); else o.insert(qq());
-                                                            }
+        | REPLACE_T str '/' str '/' str '/'                 { strReplace($2, $4, $6); }
         ;
 // Ciklusok
 for_m   : FOR_T vals  DO_T MACRO_T NAME_V ';'               { forLoopMac($5, $2); }
@@ -2501,8 +2497,6 @@ hsss    : hss                                   { $$ = $1; }
         ;
 srvars  : SERVICE_T VAR_T TYPE_T replace str str_z  { REPOBJ(pServiceVarType, cServiceVarType(), $4, $5, $6); }
          '{' varts '}'                              { REPANDDEL(pServiceVarType); }
-//      | HOST_T SERVICE_T hsid VAR_T replace str str_z TYPE_T str ';'
-        | HOST_T SERVICE_T hsid VAR_T str '=' value ';' { cServiceVar::setValue(qq(), $3, sp2s($5), vp2v($7)); }
         ;
 varts   : vart
         | varts vart
@@ -2965,7 +2959,7 @@ static int yylex(void)
         const char *name;
         int         value;
     } sToken[] = {
-        TOK(MACRO) TOK(FOR) TOK(DO) TOK(TO) TOK(SET) TOK(CLEAR) TOK(SYNTAX)
+        TOK(MACRO) TOK(FOR) TOK(DO) TOK(TO) TOK(SET) TOK(CLEAR)
         TOK(VLAN) TOK(SUBNET) TOK(PORTS) TOK(PORT) TOK(NAME) TOK(SHARED) TOK(SENSORS)
         TOK(PLACE) TOK(PATCH) TOK(SWITCH) TOK(NODE) TOK(HOST) TOK(ADDRESS)
         TOK(PARENT) TOK(IMAGE) TOK(FRAME) TOK(TEL) TOK(NOTE) TOK(MESSAGE)
@@ -3188,6 +3182,19 @@ recall:
 }
 
 /* */
+
+static void strReplace(QString * s, QString * src, QString *trg)
+{
+    QString r = *s;
+    delete s;
+    QRegExp re(*src);
+    if (!re.isValid()) yyerror(QObject::trUtf8("Invalid regexp : %1").arg(*src));
+    delete src;
+    r.replace(re, *trg);
+    delete trg;
+    insertCode(r);
+}
+
 static void forLoopMac(QString *_in, QVariantList *_lst)
 {
     QString s;
