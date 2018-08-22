@@ -125,7 +125,7 @@ cMenuAction::~cMenuAction()
 
 void cMenuAction::initRecordTable()
 {
-     pIntSubObj = new cTableSubWin(objectName(), pMdiArea);
+     pIntSubObj = new cTableSubWin(objectName(), pMdiArea, pMenuItem->features());
      connect(pIntSubObj,             SIGNAL(closeIt()),   this, SLOT(removeIt()));
      connect(pIntSubObj->pSubWindow, SIGNAL(destroyed()), this, SLOT(destroyedChild()));
 }
@@ -192,7 +192,7 @@ void cMenuAction::displayIt()
     else {
         // Tábla, több példányos
         if (MAT_SHAPE == type && pMenuItem->isFeature("multi")) {
-            cIntSubObj *p = new cTableSubWin(objectName(), pMdiArea);
+            cIntSubObj *p = new cTableSubWin(objectName(), pMdiArea, pMenuItem->features());
             QString t = pMenuItem->getText(cMenuItem::LTX_TAB_TITLE, pMenuItem->getName());
             p->setWindowTitle(t + QString(" (%1)").arg(++cnt));
             connect(p, SIGNAL(closeIt()), this, SLOT(deleteLater()));
@@ -249,7 +249,7 @@ void  cMenuAction::executeIt()
     }
 }
 
-cTableSubWin::cTableSubWin(const QString& shape, QMdiArea * pMdiArea)
+cTableSubWin::cTableSubWin(const QString& shape, QMdiArea * pMdiArea, const cFeatures &_f)
     : cIntSubObj(pMdiArea)
 {
     pTableShape = NULL;
@@ -257,6 +257,7 @@ cTableSubWin::cTableSubWin(const QString& shape, QMdiArea * pMdiArea)
     pTableShape = new cTableShape();
     pTableShape->setParent(this);
     pTableShape->setByName(shape);
+    pTableShape->features().unite(_f);
     pRecordsView = cRecordsViewBase::newRecordView(pTableShape, NULL, this);
     QHBoxLayout *pHBL = new QHBoxLayout;
     pWidget()->setLayout(pHBL);

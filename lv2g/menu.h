@@ -99,7 +99,7 @@ public slots:
 
 class LV2GSHARED_EXPORT cTableSubWin : public cIntSubObj {
 public:
-    cTableSubWin(const QString& shape, QMdiArea * pMdiArea);
+    cTableSubWin(const QString& shape, QMdiArea * pMdiArea, const cFeatures& _f = cFeatures());
     /// Táblát jelenítünk meg, annak a leírója (több tábla esetén a fő tábláé)
     cTableShape     *pTableShape;
     /// A megjelenítést végző objektum

@@ -1889,9 +1889,11 @@ void cRecordsViewBase::setButtons()
 QStringList cRecordsViewBase::refineWhere(QVariantList& qParams)
 {
     QStringList r;
-    if (! pTableShape->isNull(_sRefine)) {  // Ha megadtak egy általános érvényű szűrőt
-        QString refine = pTableShape->getName(_sRefine);
-        if (refine.isEmpty()) return r;     // Mégsincs megadva, üres
+    QString refine = tableShape().feature(_sRefine);    // A feature változó, ha van fellülírja a refine mező értékét.
+    if (refine.isEmpty()) {
+        refine = tableShape().getName(_sRefine);
+    }
+    if (! refine.isEmpty()) {  // Ha megadtak egy általános érvényű szűrőt
         QStringList rl = splitBy(refine);
         r << rl.at(0);
         if ((rl.at(0).count(QChar('?')) + 1) != rl.size())
