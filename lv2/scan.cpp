@@ -714,6 +714,7 @@ protected:
     cLldpLink   lnk;            ///< Link objektum
     QMap<int, rowData>  rRows;
     QString choice;
+    QString lPrefix;
 
     static QStringList  sOids;      ///< Az SNMP lekérdezésnél használt kiindulási objektum név lista
     static cOIdVector   oids;       ///< Az SNMP lekérdezésnél használt kiindulási objektum lista
@@ -784,7 +785,7 @@ bool cLldpScan::updateLink(cAppMemo &em)
     QString es, ls;
 
     if (lId == NULL_ID || rId == NULL_ID) {
-        es = QObject::trUtf8("LLDP link (%1) update failed.").arg(tl);
+        es = lPrefix + QObject::trUtf8("LLDP link (%1) update failed.").arg(tl);
         if (lId == NULL_ID) es += QObject::trUtf8(" Local port ID is NULL.");
         if (rId == NULL_ID) es += QObject::trUtf8(" Remote port ID is NULL.");
         HEREINWE(em, es, RS_WARNING);
@@ -807,17 +808,17 @@ bool cLldpScan::updateLink(cAppMemo &em)
         r = lnk.touch(q);
         switch (r) {
         case 0:
-            es = QObject::trUtf8("A %1 link időbéllyegének a modosítása sikertelen.").arg(tl);
+            es = lPrefix + QObject::trUtf8("A %1 link időbéllyegének a modosítása sikertelen.").arg(tl);
             break;
         case 1:
-            es = QObject::trUtf8("Regisztrált link %1, időbélyeg frissítve.").arg(tl);
+            es = lPrefix + QObject::trUtf8("Regisztrált link %1, időbélyeg frissítve.").arg(tl);
             PDEB(INFO) << es << endl;
             if (confirm)        expGreen(es);
             else if (collision) expError(es);   // RED
             else                expInfo(es);
             return true;
         default:
-            es = QObject::trUtf8("Az %1 link időbéllyegének a modosítása. Értelmezhetetlen eredmény : %2").arg(tl).arg(r);
+            es = lPrefix + QObject::trUtf8("Az %1 link időbéllyegének a modosítása. Értelmezhetetlen eredmény : %2").arg(tl).arg(r);
             break;
         }
         HEREINWE(em, es, RS_WARNING);
@@ -826,19 +827,19 @@ bool cLldpScan::updateLink(cAppMemo &em)
 
     if (NULL_ID != lnk.getLinked(q, lId)) {
         ls = lnk.show();
-        es = QObject::trUtf8("Régi link %1 eltávolítása (lokális port).").arg(ls);
+        es = lPrefix + QObject::trUtf8("Régi link %1 eltávolítása (lokális port).").arg(ls);
         PDEB(INFO) << es << endl;
         expInfo(es);
         r = lnk.remove(q);
         switch (r) {
         case 0:
-            es = QObject::trUtf8("Régi LLDP link (L : %1) törlése sikertelen.").arg(ls);
+            es = lPrefix + QObject::trUtf8("Régi LLDP link (L : %1) törlése sikertelen.").arg(ls);
             HEREINWE(em, es, RS_WARNING);
             return false;
         case 1:
             break;
         default:
-            es = QObject::trUtf8("Régi LLDP link (L : %1) törlése. Értelmezhetetlen eredmény : %2").arg(ls).arg(r);
+            es = lPrefix + QObject::trUtf8("Régi LLDP link (L : %1) törlése. Értelmezhetetlen eredmény : %2").arg(ls).arg(r);
             HEREINWE(em, es, RS_WARNING);
             return false;
         }
@@ -851,13 +852,13 @@ bool cLldpScan::updateLink(cAppMemo &em)
         r = lnk.remove(q);
         switch (r) {
         case 0:
-            es = QObject::trUtf8("Régi LLDP link (R : %1) törlése sikertelen.").arg(ls);
+            es = lPrefix + QObject::trUtf8("Régi LLDP link (R : %1) törlése sikertelen.").arg(ls);
             HEREINWE(em, es, RS_WARNING);
             return false;
         case 1:
             break;
         default:
-            es = QObject::trUtf8("Régi LLDP link (R) törlése. Értelmezhetetlen eredmény : %1").arg(ls).arg(r);
+            es = lPrefix + QObject::trUtf8("Régi LLDP link (R) törlése. Értelmezhetetlen eredmény : %1").arg(ls).arg(r);
             HEREINWE(em, es, RS_WARNING);
             return false;
         }
@@ -866,14 +867,14 @@ bool cLldpScan::updateLink(cAppMemo &em)
     lnk.setId(_sPortId1, lId);
     lnk.setId(_sPortId2, rId);
     if (lnk.insert(q)) {
-        es = QObject::trUtf8("Új link : %1 .").arg(tl);
+        es = lPrefix + QObject::trUtf8("Új link : %1 .").arg(tl);
         PDEB(INFO) << es << endl;
         if (confirm)        expGreen(es);
         else if (collision) expError(es);   // RED
         else                expInfo(es);
         return true;
     }
-    es = QObject::trUtf8("Az új LLDP link ( %1 ) kiírása sikertelen.").arg(tl);
+    es = lPrefix + QObject::trUtf8("Az új LLDP link ( %1 ) kiírása sikertelen.").arg(tl);
     HEREINWE(em, es, RS_WARNING);
     return false;
 }
@@ -1011,6 +1012,7 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
         goto scanByLldpDevRow_error;
     }
     lPort.clone(*plp);
+    lPrefix = lPort.getName() + " ==> ";
 
     // A távoli eszköz címe megvan?
     if (row.addr.isNull()) {
@@ -1020,9 +1022,7 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
             if (r) return;
         }
         else {
-            HEREINWE(em, QObject::trUtf8("Hiányzik, vagy nem értelmezhető a %1:%2 portra csatlakozó távoli eszköz IP címe.")
-                        .arg(pDev->getName(), lPort.getName())
-                    , RS_WARNING);
+            HEREINWE(em, lPrefix + QObject::trUtf8("Hiányzik, vagy nem értelmezhető a távoli eszköz IP címe."), RS_WARNING);
         }
         goto scanByLldpDevRow_error;
     }
@@ -1041,16 +1041,16 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
         else if (nidByIp == NULL_ID) {  // Nem találtuk IP alapján
             nid = nidByMac;
             pp = cPatch::getNodeObjById(q, nid, EX_ERROR);
-            HEREINWE(em, QObject::trUtf8("A %1 indexű lokális porthoz tartozó eszköz MAC alapján :\n%2\nIp cím alapján nics találat")
-                   .arg(port_ix).arg(pp->identifying()), RS_WARNING);
+            HEREINWE(em, lPrefix + QObject::trUtf8("A távoli eszköz %1/%2 MAC alapján :\n\t%3\n\tA %4 IP cím alapján nics találat")
+                   .arg(row.cmac.toString(), row.pmac.toString(), pp->identifying(), row.addr.toString()), RS_WARNING);
             memo(em, q, port_ix, row);
         }
         else if (nidByMac == NULL_ID) { // Nem találtuk a cím alapján
             nid = nidByIp;
             pp = cPatch::getNodeObjById(q, nid, EX_ERROR);
             if (choice.compare(_s3Com, Qt::CaseInsensitive) != 0) { // 3Com-nal egy fiktív MAC-ot ad, amire nem lessz találat.
-                HEREINWE(em, QObject::trUtf8("A %1 indexű lokális porthoz tartozó eszköz IP cím alapján :\n%2\nMAC alapján nics találat")
-                       .arg(port_ix).arg(pp->identifying()), RS_WARNING);
+                HEREINWE(em, lPrefix + QObject::trUtf8("A távoli eszköz %1 IP cím alapján :\n\t%2\n\tA %3/%4 MAC alapján nics találat")
+                       .arg(row.addr.toString(), pp->identifying(), row.cmac.toString(), row.pmac.toString()), RS_WARNING);
                 memo(em, q, port_ix, row);
             }
         }
@@ -1075,11 +1075,11 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
                     }
                 }
             }
-            mm = QObject::trUtf8(
-                       "A %1 indexű lokális porthoz tartozó eszköz MAC alapján :\n%2\n"
-                       "Nem egyezik az Ip cím alapján talált eszközzel :\n%3\n"
+            mm = lPrefix + QObject::trUtf8(
+                       "Nem egyezik a MAC alapján : %1\n\t"
+                       "az IP alapján talált eszközzel :\n%2\n\t"
                        )
-                   .arg(port_ix).arg(pp->identifying()).arg(port_ix).arg(pp2->identifying());
+                   .arg(pp->identifying()).arg(port_ix).arg(pp2->identifying());
             pDelete(pp2);
             if (rIpPort.isNull()) { // töröltük
                 mm += QObject::trUtf8("Az Ip alapján talált eszközön az IP cím törölve lessz!");
@@ -1100,7 +1100,7 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
         }
         // Exist, and not node, patch ???!!!
         else if (0 != pp->chkObjType<cNode>(EX_IGNORE)) {
-            HEREINWE(em, QObject::trUtf8("A %1 indexű lokális porthoz tartozó eszköz típusa patch !?.").arg(port_ix), RS_WARNING);
+            HEREINWE(em, lPrefix + QObject::trUtf8("A % talált eszköz típusa patch !?.").arg(pp->getName()), RS_WARNING);
             goto scanByLldpDevRow_error;
         }
         // Exist, and node.
@@ -1124,7 +1124,7 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
         f.close();
     }
 #endif
-
+    lPrefix += QChar('[') + choice + "] ";
     if      (0 == choice.compare(_sProCurve,    Qt::CaseInsensitive)) r = rowProCurve(q, snmp, row, em);
     else if (0 == choice.compare(_sProCurveWeb, Qt::CaseInsensitive)) r = rowProCurveWeb(q, snmp, row, em);
     else if (0 == choice.compare(_s3Com,        Qt::CaseInsensitive)) r = row3COM(q, snmp, row, em);
@@ -1132,7 +1132,7 @@ void cLldpScan::scanByLldpDevRow(QSqlQuery& q, cSnmp& snmp, int port_ix, rowData
     else if (0 == choice.compare(_sHPAPC,       Qt::CaseInsensitive)) r = rowHPAPC(q, snmp, row, em);
     else if (0 == choice.compare(_sLinux,       Qt::CaseInsensitive)) r = rowLinux(q, snmp, row, em);
     else {
-        HEREINWE(em, QObject::trUtf8("A távoli eszköz '%1' descriptora alapján az adatfeldogozás módja nem ismert.").arg(row.descr), RS_WARNING);
+        HEREINWE(em, lPrefix + QObject::trUtf8("Az eszköz '%1' descriptora alapján az adatfeldogozás módja ismeretlen.").arg(row.descr), RS_WARNING);
         r = false;
     }
     if (!r) goto scanByLldpDevRow_error;
@@ -1211,6 +1211,7 @@ void cLldpScan::scanByLldpDev(QSqlQuery& q)
     rRows.clear();
     bool first = true;
     while(1) {
+        lPrefix.clear();
         // SNMP Get Next
         r = snmpGetNext(snmp, first, oids);
         if (r) {
@@ -1240,6 +1241,8 @@ void cLldpScan::scanByLldpDev(QSqlQuery& q)
         RemSysDesc  = snmp.value().toString();      // lldpRemSysDesc
         NEXTSNMPDATA(LLDP_REM_SNAME);
         RemSysName  = snmp.value().toString();      // lldpRemSysName
+
+        lPrefix = QObject::trUtf8("[#%1] ==> ").arg(index);
 
 #if LLDP_WRITE_CSV
         {
@@ -1329,28 +1332,28 @@ void cLldpScan::scanByLldpDev(QSqlQuery& q)
         }
         /* - */
         continue;
-scanByLldpDev_error:
-        {
-            QList<QHostAddress> al = pDev->fetchAllIpAddress(q);
-            QString sa;
-            if (al.isEmpty()) sa = QObject::trUtf8("Nincs IP cím");
-            else {
-                foreach (QHostAddress a, al) {
-                    sa += a.toString() + ", ";
+scanByLldpDev_error: // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                {
+                    QList<QHostAddress> al = pDev->fetchAllIpAddress(q);
+                    QString sa;
+                    if (al.isEmpty()) sa = QObject::trUtf8("Nincs IP cím");
+                    else {
+                        foreach (QHostAddress a, al) {
+                            sa += a.toString() + ", ";
+                        }
+                        sa.chop(2);
+                    }
+                    QString ln = QObject::trUtf8("\nLocal node %1 (%2)").arg(pDev->getName()).arg(sa);
+                    QString line = "\nSNMP LINE : ";
+                    snmp.first();   line += snmp.name().toString() + ", ";
+                    snmp.next();    line += snmp.name().toNumString() + ", ";
+                    snmp.next();    line += snmp.name().toString() + " = " + snmp.value().toString() + ", ";
+                    snmp.next();    line += snmp.name().toNumString() + "\n";
+                    em += ln + line;
+                    APPMEMO(q, em, RS_CRITICAL);
+                    DERR() << em << endl;
                 }
-                sa.chop(2);
-            }
-            QString ln = QObject::trUtf8("\nLocal node %1 (%2)").arg(pDev->getName()).arg(sa);
-            QString line = "\nSNMP LINE : ";
-            snmp.first();   line += snmp.name().toString() + ", ";
-            snmp.next();    line += snmp.name().toNumString() + ", ";
-            snmp.next();    line += snmp.name().toString() + " = " + snmp.value().toString() + ", ";
-            snmp.next();    line += snmp.name().toNumString() + "\n";
-            em += ln + line;
-            APPMEMO(q, em, RS_CRITICAL);
-            DERR() << em << endl;
-        }
-        return;
+                return;     // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     }
     /* IP */
     static cOIdVector aoi;
@@ -1398,22 +1401,22 @@ scanByLldpDev_error:
         // IPV6 ????
         continue;
 scanByLldpDev_errorA:
-        {
-            QList<QHostAddress> al = pDev->fetchAllIpAddress(q);
-            QString sa;
-            if (al.isEmpty()) sa = QObject::trUtf8("Nincs IP cím");
-            else {
-                foreach (QHostAddress a, al) {
-                    sa += a.toString() + ", ";
+                {   // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                    QList<QHostAddress> al = pDev->fetchAllIpAddress(q);
+                    QString sa;
+                    if (al.isEmpty()) sa = QObject::trUtf8("Nincs IP cím");
+                    else {
+                        foreach (QHostAddress a, al) {
+                            sa += a.toString() + ", ";
+                        }
+                        sa.chop(2);
+                    }
+                    QString ln = QObject::trUtf8("\nLocal node %1 (%2)").arg(pDev->getName()).arg(sa);
+                    em += ln;
+                    APPMEMO(q, em, RS_CRITICAL);
+                    DERR() << em << endl;
                 }
-                sa.chop(2);
-            }
-            QString ln = QObject::trUtf8("\nLocal node %1 (%2)").arg(pDev->getName()).arg(sa);
-            em += ln;
-            APPMEMO(q, em, RS_CRITICAL);
-            DERR() << em << endl;
-        }
-        return;
+                return; // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     }
     /* ************************************************ */
     if (rRows.isEmpty()) return;
@@ -1442,11 +1445,11 @@ bool cLldpScan::setRPortFromIx(cAppMemo &em)
 {
     cNPort *pp = rDev.ports.get(_sPortIndex, rPortIx, EX_IGNORE);
     if (pp == NULL) {
-        HEREINWE(em, QObject::trUtf8("Nincs %1 indexű távoli port.").arg(rPortIx), RS_WARNING);
+        HEREINWE(em, lPrefix + QObject::trUtf8("Nincs %1 indexű távoli port.").arg(rPortIx), RS_WARNING);
         return false;
     }
     if (pp->chkObjType<cInterface>(EX_IGNORE)) {
-        HEREINWE(em, QObject::trUtf8("A %1 indexű távoli port %2 típusa nem megfelelő.").arg(rPortIx).arg(typeid(*pp).name()), RS_WARNING);
+        HEREINWE(em, lPrefix + QObject::trUtf8("A %1 indexű távoli port %2 típusa nem megfelelő.").arg(rPortIx).arg(typeid(*pp).name()), RS_WARNING);
         return false;
     }
     rPort.clone(*pp);
@@ -1459,7 +1462,7 @@ bool cLldpScan::setRPortFromIx(cAppMemo &em)
 bool cLldpScan::setRPortFromMac(rowData &row, cAppMemo &em)
 {
     if (0 == rHost.ports.size() && 0 == rHost.fetchPorts(q, CV_PORTS_ADDRESSES)) {
-        HEREINWE(em, QObject::trUtf8("Talált, és regisztrált '%1'-nek nincs egy portja sem.").arg(row.name), RS_WARNING);
+        HEREINWE(em, lPrefix + QObject::trUtf8("Talált, és regisztrált '%1'-nek nincs egy portja sem.").arg(row.name), RS_WARNING);
         return false;
     }
     for (int i = 0; i < rHost.ports.size(); ++i) {
@@ -1472,7 +1475,7 @@ bool cLldpScan::setRPortFromMac(rowData &row, cAppMemo &em)
             return true;
         }
     }
-    HEREINWE(em, QObject::trUtf8("Talált, és regisztrált '%1'-nek nincs megfelelő portja %2 címmel.").arg(row.name, row.cmac.toString()), RS_WARNING);
+    HEREINWE(em, lPrefix + QObject::trUtf8("Talált, és regisztrált '%1'-nek nincs megfelelő portja %2 címmel.").arg(row.name, row.cmac.toString()), RS_WARNING);
     return false;
 }
 
@@ -1481,30 +1484,30 @@ int cLldpScan::portDescr2Ix(QSqlQuery &q, cSnmp &snmp, QHostAddress ha, const QS
     _DBGFN() << "@(,," << ha.toString() << ", " << pdescr << ",)" << endl;
     (void)q;
     if (pdescr.isEmpty()) {
-        HEREINWE(em, QObject::trUtf8("Hiányzik a port azonosító név."), RS_CRITICAL);
+        HEREINWE(em, lPrefix + QObject::trUtf8("Hiányzik a port azonosító név."), RS_CRITICAL);
         return -1;
     }
     int r = snmp.open(ha.toString());
     if (r) {
-        HEREINWE(em, QObject::trUtf8("Port index keresése. Az SNMP megnyitás sikertelen #%1").arg(r), RS_WARNING);
+        HEREINWE(em, lPrefix + QObject::trUtf8("Port index keresése. Az SNMP megnyitás sikertelen #%1").arg(r), RS_WARNING);
         return -1;
     }
     cOId oid(_sIfMib + _sIfDescr);
     if (oid.isEmpty()) EXCEPTION(ESNMP,0,_sIfMib + _sIfDescr);
     r = snmp.getNext(oid);
     if (r) {
-        HEREINWE(em, QObject::trUtf8("Port index %1 keresése. Sikertelen SNMP (%2, first) lekérdezés #%3").arg(pdescr, ha.toString()).arg(r), RS_WARNING);
+        HEREINWE(em, lPrefix + QObject::trUtf8("Port index %1 keresése. Sikertelen SNMP (%2, first) lekérdezés #%3").arg(pdescr, ha.toString()).arg(r), RS_WARNING);
         return -1;
     }
     do {
         if (NULL == snmp.first()) {
-            HEREINWE(em, QObject::trUtf8("Port index %1 keresése. No SNMP (%2) data").arg(pdescr, ha.toString()), RS_WARNING);
+            HEREINWE(em, lPrefix + QObject::trUtf8("Port index %1 keresése. No SNMP (%2) data").arg(pdescr, ha.toString()), RS_WARNING);
             return -1;
         }
         cOId o = snmp.name();
         PDEB(VVERBOSE) << o.toString() << " = " << debVariantToString(snmp.value()) << endl;
         if (!(oid < o)) {
-            HEREINWE(em, QObject::trUtf8("Port index keresése. Nincs %1 nevű port (%2).").arg(pdescr, ha.toString()), RS_WARNING);
+            HEREINWE(em, lPrefix + QObject::trUtf8("Port index keresése. Nincs %1 nevű port (%2).").arg(pdescr, ha.toString()), RS_WARNING);
             return -1;
         }
         /* - */
@@ -1520,7 +1523,7 @@ int cLldpScan::portDescr2Ix(QSqlQuery &q, cSnmp &snmp, QHostAddress ha, const QS
         }
         r = snmp.getNext();
         if (r) {
-            HEREINWE(em, QObject::trUtf8("Port index keresése. Sikertelen SNMP (next) lekérdezés #%1").arg(r), RS_WARNING);
+            HEREINWE(em, lPrefix + QObject::trUtf8("Port index keresése. Sikertelen SNMP (next) lekérdezés #%1").arg(r), RS_WARNING);
             return -1;
         }
     } while (true);
@@ -1534,13 +1537,13 @@ bool cLldpScan::rowTail(QSqlQuery &q, const QString& ma, const tStringPair& ip, 
         rDev.asmbNode(q, _sLOOKUP, NULL, &ip, &ma, _sNul, NULL_ID, EX_IGNORE);
         rDev.setNote(QObject::trUtf8("By LLDP scan."));
         if (!rDev.setBySnmp(_sNul, EX_IGNORE, &es)) {
-            HEREINWE(em, QObject::trUtf8("A %1 MAC és %2 IP című eszköz SNMP felderítése sikertelen :\n%3\n").arg(ma, ip.first, es), RS_WARNING);
+            HEREINWE(em, lPrefix + QObject::trUtf8("A %1 MAC és %2 IP című eszköz SNMP felderítése sikertelen :\n%3\n").arg(ma, ip.first, es), RS_WARNING);
             return false;
         }
         rDev.containerValid = CV_PORTS | CV_PORTS_ADDRESSES;
         pe = rDev.tryInsert(q);
         if (pe != NULL) {
-            es = QObject::trUtf8("A %1 MAC és %2 IP című SNMP %3 felderített eszköz mentése sikertelen.").arg(ma, ip.first, rDev.getName());
+            es = lPrefix + QObject::trUtf8("A %1 MAC és %2 IP című SNMP %3 felderített eszköz mentése sikertelen.").arg(ma, ip.first, rDev.getName());
             expError(es + pe->shortMsg());
             HEREINW(em, es + pe->longMsg(), RS_WARNING);
             pDelete(pe);
@@ -1555,7 +1558,7 @@ bool cLldpScan::rowTail(QSqlQuery &q, const QString& ma, const tStringPair& ip, 
         if (!setted.contains(rDev.getId())) {
             pe = rDev.tryRewrite(q);
             if (pe != NULL) {
-                es = QObject::trUtf8("A %1 MAC és %2 IP című %3 SNMP felderített eszköz frissítése sikertelen.").arg(ma, ip.first, rDev.getName());
+                es = lPrefix + QObject::trUtf8("A %1 MAC és %2 IP című %3 SNMP felderített eszköz frissítése sikertelen.").arg(ma, ip.first, rDev.getName());
                 expError(es + pe->shortMsg());
                 HEREINW(em, es + pe->longMsg(), RS_WARNING);
                 pDelete(pe);
@@ -1582,14 +1585,14 @@ bool cLldpScan::rowProCurve(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& e
     (void)snmp;
 
     if (!row.cmac.isValid()) {
-        HEREINWE(em, QObject::trUtf8("Hiányzik az eszköz azonosító MAC cím."), RS_WARNING);
+        HEREINWE(em, lPrefix + QObject::trUtf8("Hiányzik az eszköz azonosító MAC cím."), RS_WARNING);
         return false;
     }
     rPortIx = row.pname.toInt(&ok);         // A port név = index
     if (!ok) {
         rPortIx = row.pdescr.toInt(&ok);    // vagy port descr = index (pl.: 1820-Gx)
         if (!ok) {
-            HEREINWE(em, QObject::trUtf8("A '%1' nem értelmezhető port indexként.").arg(row.pname), RS_WARNING);
+            HEREINWE(em, lPrefix + QObject::trUtf8("A '%1' nem értelmezhető port indexként.").arg(row.pname), RS_WARNING);
             return false;
         }
     }
@@ -1597,7 +1600,7 @@ bool cLldpScan::rowProCurve(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& e
     if (exists) {
         qlonglong id = rDev.getId();
         if (id == NULL_ID) {
-            HEREINWE(em, QObject::trUtf8("A távoli IP-hez tartozó node létezik, de nem egy SNMP eszköz."), RS_WARNING);
+            HEREINWE(em, lPrefix + QObject::trUtf8("A távoli IP-hez tartozó node létezik, de nem egy SNMP eszköz."), RS_WARNING);
             return false;
         }
         // Frissítettük már ?
@@ -1623,22 +1626,22 @@ bool cLldpScan::rowProCurveWeb(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo
     cNPort     *pp;
 
     if (!row.cmac.isValid()) {
-        HEREINWE(em, QObject::trUtf8("Hiányzik az eszköz azonosító MAC cím."), RS_WARNING);
+        HEREINWE(em, lPrefix + QObject::trUtf8("Hiányzik az eszköz azonosító MAC cím."), RS_WARNING);
         return false;
     }
     if (row.pname.isEmpty()) {
-        HEREINWE(em, QObject::trUtf8("Hiányzik a távoli port azonosító név cím."), RS_WARNING);
+        HEREINWE(em, lPrefix + QObject::trUtf8("Hiányzik a távoli port azonosító név."), RS_WARNING);
         return false;
     }
     exists = !rHost.isEmpty();
     if (exists) {
         if (rDev.isEmpty()) {
-            HEREINWE(em, QObject::trUtf8("A távoli IP-hez tartozó node létezik, de nem egy SNMP eszköz."), RS_WARNING);
+            HEREINWE(em, lPrefix + QObject::trUtf8("A távoli IP-hez tartozó node létezik, de nem egy SNMP eszköz."), RS_WARNING);
             return false;
         }
         pp = rHost.ports.get(_sPortName, row.pdescr, EX_IGNORE);
         if (pp == NULL) {
-            HEREINWE(em, QObject::trUtf8("Nincs %1 nevű távoli port.").arg(row.pname), RS_WARNING);
+            HEREINWE(em, lPrefix + QObject::trUtf8("Nincs %1 nevű távoli port.").arg(row.pname), RS_WARNING);
             return false;
         }
         rPortIx = pp->getId(_sPortIndex);
@@ -1664,22 +1667,22 @@ bool cLldpScan::row3COM(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& em)
     cNPort     *pp;
 
     if (!row.cmac.isValid()) {
-        HEREINWE(em, QObject::trUtf8("Hiányzik az eszköz azonosító MAC cím."), RS_WARNING);
+        HEREINWE(em, lPrefix + QObject::trUtf8("Hiányzik az eszköz azonosító MAC cím."), RS_WARNING);
         return false;
     }
     if (row.pname.isEmpty()) {
-        HEREINWE(em, QObject::trUtf8("Hiányzik a távoli port azonosító név."), RS_WARNING);
+        HEREINWE(em, lPrefix + QObject::trUtf8("Hiányzik a távoli port azonosító név."), RS_WARNING);
         return false;
     }
     exists = !rHost.isEmpty();
     if (exists) {
         if (rDev.isEmpty()) {
-            HEREINWE(em, QObject::trUtf8("A távoli IP-hez tartozó node létezik, de nem egy SNMP eszköz."), RS_WARNING);
+            HEREINWE(em, lPrefix + QObject::trUtf8("A távoli IP-hez tartozó node létezik, de nem egy SNMP eszköz."), RS_WARNING);
             return false;
         }
         pp = rHost.ports.get(_sPortName, row.pname, EX_IGNORE);
         if (pp == NULL) {
-            HEREINWE(em, QObject::trUtf8("Nincs %1 nevű távoli port.").arg(row.pname), RS_WARNING);
+            HEREINWE(em, lPrefix + QObject::trUtf8("Nincs %1 nevű távoli port.").arg(row.pname), RS_WARNING);
             return false;
         }
         rPortIx = pp->getId(_sPortIndex);
@@ -1718,18 +1721,18 @@ bool cLldpScan::rowCisco(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em)
 
     // MAC nincs
     if (row.pname.isEmpty()) {
-        HEREINWE(em, QObject::trUtf8("Hiányzik a távoli port azonosító név."), RS_WARNING);
+        HEREINWE(em, lPrefix + QObject::trUtf8("Hiányzik a távoli port azonosító név."), RS_WARNING);
         return false;
     }
     exists = !rHost.isEmpty();
     if (exists) {
         if (rDev.isEmpty()) {
-            HEREINWE(em, QObject::trUtf8("A távoli IP-hez tartozó node létezik, de nem egy SNMP eszköz."), RS_WARNING);
+            HEREINWE(em, lPrefix + QObject::trUtf8("A távoli IP-hez tartozó node létezik, de nem egy SNMP eszköz."), RS_WARNING);
             return false;
         }
         pp = rHost.ports.get(_sPortName, row.pname, EX_IGNORE);
         if (pp == NULL) {
-            HEREINWE(em, QObject::trUtf8("Nincs %1 nevű távoli port.").arg(row.pname), RS_WARNING);
+            HEREINWE(em, lPrefix + QObject::trUtf8("Nincs %1 nevű távoli port.").arg(row.pname), RS_WARNING);
             return false;
         }
         rPortIx = pp->getId(_sPortIndex);
@@ -1754,7 +1757,7 @@ bool cLldpScan::rowHPAPC(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& em)
 {
     (void)snmp;
     if (!(row.pmac.isValid() && row.cmac.isValid())) {
-        HEREINWE(em, QObject::trUtf8("Hiányzik a távoli port vagy eszköz azonosító."), RS_WARNING);
+        HEREINWE(em, lPrefix + QObject::trUtf8("Hiányzik a távoli port vagy eszköz azonosító."), RS_WARNING);
         return false;
     }
     bool exists = !rHost.isEmpty();
@@ -1762,7 +1765,7 @@ bool cLldpScan::rowHPAPC(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& em)
         if (rHost.getName().compare(row.name, Qt::CaseInsensitive) == 0 || rHost.getName().startsWith(row.name + ".")) {
             return setRPortFromMac(row, em);
         }
-        HEREINWE(em, QObject::trUtf8("Név ütjözés. Talált '%1', azonos címmekkel bejegyzett '%2'. Az eszköz át lessz nevezve.").arg(row.name, rHost.getName()), RS_WARNING);
+        HEREINWE(em, lPrefix + QObject::trUtf8("Név ütjözés. Talált '%1', azonos címmekkel bejegyzett '%2'. Az eszköz át lessz nevezve.").arg(row.name, rHost.getName()), RS_WARNING);
         rHost.setName(row.name);
         rHost.update(q, false, _bit(rHost.nameIndex()));
         return setRPortFromMac(row, em);
@@ -1787,7 +1790,7 @@ bool cLldpScan::rowHPAPC(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& em)
     rHost.setId(_sNodeType, enum2set(NT_HOST, NT_AP));
     cError *pe = rHost.tryInsert(q);
     if (pe != NULL) {
-        QString se = QObject::trUtf8("A %1 MAC és %2 IP című felderített eszköz %3 kiírása sikertelen.").arg(row.pmac, row.addr.toString(), rHost.getName());
+        QString se = lPrefix + QObject::trUtf8("A %1 MAC és %2 IP című felderített eszköz %3 kiírása sikertelen.").arg(row.pmac, row.addr.toString(), rHost.getName());
         expError(se + pe->shortMsg());
         HEREINW(em, se + pe->longMsg(), RS_WARNING);
         pDelete(pe);
@@ -1799,7 +1802,7 @@ bool cLldpScan::rowHPAPC(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& em)
             execSqlFunction(q, "set_str_node_param", rHost.getId(), row.clocal, _sSerialNumber);
         }
     }
-    expInfo(QObject::trUtf8("Inserted AP (HP) : %1").arg(rHost.getName()));
+    expInfo(lPrefix + QObject::trUtf8("Inserted AP (HP) : %1").arg(rHost.getName()));
     rPort.clone(*pi);
     return true;
 }
@@ -1809,7 +1812,7 @@ bool cLldpScan::rowLinux(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em)
     cNPort     *pp;
     (void)snmp;
     if (!(row.pmac.isValid() && row.cmac.isValid())) {
-        HEREINWE(em, QObject::trUtf8("Hiányzik a távoli port vagy eszköz azonosító MAC."), RS_WARNING);
+        HEREINWE(em, lPrefix + QObject::trUtf8("Hiányzik a távoli port vagy eszköz azonosító MAC."), RS_WARNING);
         return false;
     }
     bool exists = !rHost.isEmpty();
@@ -1817,19 +1820,19 @@ bool cLldpScan::rowLinux(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em)
         if (rHost.getName().compare(row.name, Qt::CaseInsensitive) == 0 || rHost.getName().startsWith(row.name + ".")) {
             pp = rHost.ports.get(_sPortName, row.pdescr, EX_IGNORE);
             if (pp == NULL) {
-                HEREINWE(em, QObject::trUtf8("Nincs %1 nevű port a %2 távoli eszközön.").arg(row.pdescr, rHost.getName()), RS_WARNING);
+                HEREINWE(em, lPrefix + QObject::trUtf8("Nincs %1 nevű port a %2 távoli eszközön.").arg(row.pdescr, rHost.getName()), RS_WARNING);
                 return false;
             }
             rPortIx = pp->getId(_sPortIndex);
             // A MAC alapján nem biztos, hogy azonosítható
             if (pp->chkObjType<cInterface>(EX_IGNORE)) {
-                HEREINWE(em, QObject::trUtf8("A %1 indexű távoli port %2 típusa nem megfelelő.").arg(rPortIx).arg(typeid(*pp).name()), RS_WARNING);
+                HEREINWE(em, lPrefix + QObject::trUtf8("A %1 indexű távoli port %2 típusa nem megfelelő.").arg(rPortIx).arg(typeid(*pp).name()), RS_WARNING);
                 return false;
             }
             rPort.clone(*pp->reconvert<cInterface>());
             return true;
         }
-        HEREINWE(em, QObject::trUtf8("Név ütjözés. Talált '%1', azonos címmel bejegyzett '%2'").arg(row.name, rHost.getName()), RS_WARNING);
+        HEREINWE(em, lPrefix + QObject::trUtf8("Név ütjözés. Talált '%1', azonos címmel bejegyzett '%2'").arg(row.name, rHost.getName()), RS_WARNING);
         return false;
     }
 
@@ -1847,13 +1850,13 @@ bool cLldpScan::rowLinux(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em)
     pi->addIpAddress(row.addr, cDynAddrRange::isDynamic(q, row.addr), "By LLDP");
     cError *pe = rHost.tryInsert(q);
     if (pe != NULL) {
-        QString se = QObject::trUtf8("A %1 MAC és %2 IP című felderített eszköz %3 kiírása sikertelen").arg(row.pmac, row.addr.toString(), rHost.getName());
+        QString se = lPrefix + QObject::trUtf8("A %1 MAC és %2 IP című felderített eszköz %3 kiírása sikertelen").arg(row.pmac, row.addr.toString(), rHost.getName());
         expError(se + pe->shortMsg());
         HEREINW(em, se + pe->longMsg(), RS_WARNING);
         pDelete(pe);
         return false;
     }
-    expInfo(QObject::trUtf8("Inserted Linux host : %1").arg(rHost.getName()));
+    expInfo(lPrefix + QObject::trUtf8("Inserted Linux host : %1").arg(rHost.getName()));
     rPort.clone(*pi);
     return true;
 }
@@ -1866,7 +1869,7 @@ bool cLldpScan::rowEmpty(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em)
     cMac mac = row.pmac;
     if (!mac) mac = row.cmac;
     if (!mac)  {
-        HEREINWE(em, QObject::trUtf8("Hiányzik a távoli port vagy eszköz azonosító MAC."), RS_WARNING);
+        HEREINWE(em, lPrefix + QObject::trUtf8("Hiányzik a távoli port vagy eszköz azonosító MAC."), RS_WARNING);
         return false;
     }
     // Keresünk egy portot az egy szem MAC alapján
@@ -1877,7 +1880,7 @@ bool cLldpScan::rowEmpty(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em)
         return setRPortFromMac(row, em);
     }
     if (r > 1)  {
-        HEREINWE(em, QObject::trUtf8("A %1 MAC nem azonosít egyértelmüen egy portot.").arg(mac.toString()), RS_WARNING);
+        HEREINWE(em, lPrefix + QObject::trUtf8("A %1 MAC nem azonosít egyértelmüen egy portot.").arg(mac.toString()), RS_WARNING);
         return false;
     }
     // Nincs ilyen node, keresünk egy IP címet az ARP lekérdezésekben
@@ -1891,10 +1894,10 @@ bool cLldpScan::rowEmpty(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em)
                 s += a.toString() + ", ";
             }
             s.chop(2);
-            HEREINWE(em, QObject::trUtf8("A %1 MAC címhez nem azonosítható egyértelmüen IP cím (%2).").arg(mac.toString(),s), RS_WARNING);
+            HEREINWE(em, lPrefix + QObject::trUtf8("A %1 MAC címhez nem azonosítható egyértelmüen IP cím (%2).").arg(mac.toString(),s), RS_WARNING);
         }
         else {  // nincs találat
-            HEREINWE(em, QObject::trUtf8("A %1 MAC címhez nem azonosítható IP cím.").arg(mac.toString()), RS_WARNING);
+            HEREINWE(em, lPrefix + QObject::trUtf8("A %1 MAC címhez nem azonosítható IP cím.").arg(mac.toString()), RS_WARNING);
         }
         return false;
     }
@@ -1915,14 +1918,14 @@ bool cLldpScan::rowEmpty(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em)
     pi->addIpAddress(a, cDynAddrRange::isDynamic(q, a), note);
     cError *pe = rHost.tryInsert(q);
     if (pe != NULL) {
-        QString se = QObject::trUtf8("A %1 MAC és %2 IP című felderített eszköz %3 kiírása sikertelen.")
+        QString se = lPrefix + QObject::trUtf8("A %1 MAC és %2 IP című felderített eszköz %3 kiírása sikertelen.")
                 .arg(row.pmac, a.toString(), rHost.getName());
         expError(se + pe->shortMsg());
         HEREINW(em, se + pe->longMsg(), RS_WARNING);
         pDelete(pe);
         return false;
     }
-    expInfo(QObject::trUtf8("Inserted any host : %1").arg(rHost.getName()));
+    expInfo(lPrefix + QObject::trUtf8("Inserted any host : %1").arg(rHost.getName()));
     rPort.clone(*pi);
     return true;
 }

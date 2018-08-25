@@ -253,6 +253,13 @@ static inline void expGreen(const QString& text, bool chgBreaks = false, bool es
     cExportQueue::push("<div><b><span style=\"color:green\">" + toHtml(text, chgBreaks, esc) + "</span></b></div>");
 }
 
+static inline void expText(int _r, const QString& text, bool chgBreaks = false, bool esc = true) {
+    int r = _r & RS_STAT_MASK;
+    if      (r  < RS_WARNING) expInfo(text, chgBreaks, esc);
+    else if (r == RS_WARNING) expWarning(text, chgBreaks, esc);
+    else                      expError(text, chgBreaks, esc);
+}
+
 static inline void expHtmlLine() {
     cExportQueue::push(sHtmlLine);
 }
