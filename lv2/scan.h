@@ -13,8 +13,8 @@ public:
     cArpTable() : QMap<QHostAddress, cMac>() { ; }
     cArpTable(const cArpTable& __o) : QMap<QHostAddress, cMac>(__o) { ; }
     cArpTable& getBySnmp(cSnmp& __snmp);
-    int getByLocalProcFile(const QString& __f = QString(), QString *pEMsg = NULL);
-    int getBySshProcFile(const QString& __h, const QString& __f = QString(), const QString& __ru = QString(), QString *pEMsg = NULL);
+    int getByLocalProcFile(const QString& __f = QString(), QString *pEMsg = nullptr);
+    int getBySshProcFile(const QString& __h, const QString& __f = QString(), const QString& __ru = QString(), QString *pEMsg = nullptr);
     int getByLocalDhcpdConf(const QString& __f = QString(), qlonglong _hid = NULL_ID);
     int getBySshDhcpdConf(const QString& __h, const QString& __f = QString(), const QString& __ru = QString(), qlonglong _hid = NULL_ID);
     cArpTable& getFromDb(QSqlQuery& __q);
@@ -23,13 +23,13 @@ public:
     cArpTable& operator<<(const cArp& __arp);
     QString toString() const;
 protected:
-    int getByProcFile(QIODevice& __f, QString *pEMsg = NULL);
+    int getByProcFile(QIODevice& __f, QString *pEMsg = nullptr);
     int getByDhcpdConf(QIODevice& __f, qlonglong _hid = NULL_ID);
     const QString& token(QIODevice& __f);
 };
 
-EXT_ bool setPortsBySnmp(cSnmpDevice &node, enum eEx __ex = EX_ERROR, QString *pEs = NULL, QHostAddress *ip = NULL);
-EXT_ int setSysBySnmp(cSnmpDevice &node, enum eEx __ex = EX_ERROR, QString *pEs = NULL, QHostAddress *ip = NULL);
+EXT_ bool setPortsBySnmp(cSnmpDevice &node, enum eEx __ex = EX_ERROR, QString *pEs = nullptr, QHostAddress *ip = nullptr);
+EXT_ int setSysBySnmp(cSnmpDevice &node, enum eEx __ex = EX_ERROR, QString *pEs = nullptr, QHostAddress *ip = nullptr);
 
 EXT_ QString lookup(const QHostAddress& ha, enum eEx __ex = EX_ERROR);
 
@@ -42,6 +42,7 @@ EXT_ QString lookup(const QHostAddress& ha, enum eEx __ex = EX_ERROR);
 /// @param __dev A kiíndulási eszköz, adatbázisban rögzített, onnen feltöltött objektum.
 EXT_ void scanByLldp(QSqlQuery q, const cSnmpDevice& __dev, bool _parser = false);
 
+/// Egy eszköz szomszédainak a felfedezése
 EXT_ void lldpInfo(QSqlQuery q, const cSnmpDevice& __dev, bool _parser);
 
 /// Egy eszköz helyének a közvetlen lekérdezése a switch-ek címtáblái alapján

@@ -27,8 +27,8 @@ static inline int yyerror(const char * em)
 }
 
 static void insertCode(const QString& __txt);
-static QSqlQuery      *piq = NULL;
-static inline QSqlQuery& qq() { if (piq == NULL) EXCEPTION(EPROGFAIL); return *piq; }
+static QSqlQuery      *piq = nullptr;
+static inline QSqlQuery& qq() { if (piq == nullptr) EXCEPTION(EPROGFAIL); return *piq; }
 
 class cHostServices : public tRecordList<cHostService> {
 public:
@@ -62,7 +62,7 @@ public:
 
     cHostServices(QSqlQuery& q, cHostService *&_p) : tRecordList<cHostService>(_p)
     {
-        _p = NULL;
+        _p = nullptr;
         while (true) {
             cHostService *p = new cHostService;
             if (!p->next(q)) {
@@ -74,7 +74,7 @@ public:
     }
     void cat(cHostServices *pp) {
         cHostService *p;
-        while (NULL != (p = pp->pop_front(EX_IGNORE))) pp->append(p);
+        while (nullptr != (p = pp->pop_front(EX_IGNORE))) pp->append(p);
         delete pp;
     }
 };
@@ -193,7 +193,7 @@ public:
 };
 
 class  cArpServerDefs;
-static cArpServerDefs *pArpServerDefs = NULL;
+static cArpServerDefs *pArpServerDefs = nullptr;
 /// Kód beinzertálása a macbuff-ba.
 /// Makró jellegű parancsok a macbuff aktuális tartalma elé inzertálják a makrü kifejtés eredményét.
 static void insertCode(const QString& __txt);
@@ -212,28 +212,28 @@ static qlonglong        actVlanId = -1;
 static QString          actVlanName;
 static QString          actVlanNote;
 static int              netType = ENUM_INVALID; // firstSubNet = ;
-static cPatch *         pPatch = NULL;
-static cImage *         pImage = NULL;
-static cPlace *         pPlace = NULL;
-static cUser *          pUser = NULL;
-static cGroup *         pGroup = NULL;
-static cLink      *     pLink = NULL;
-static cService   *     pService = NULL;
-static cHostService*    pHostService = NULL;
-static cHostService*    pHostService2 = NULL;
-static cServiceVarType* pServiceVarType = NULL;
-static cTableShape *    pTableShape = NULL;
+static cPatch *         pPatch = nullptr;
+static cImage *         pImage = nullptr;
+static cPlace *         pPlace = nullptr;
+static cUser *          pUser = nullptr;
+static cGroup *         pGroup = nullptr;
+static cLink      *     pLink = nullptr;
+static cService   *     pService = nullptr;
+static cHostService*    pHostService = nullptr;
+static cHostService*    pHostService2 = nullptr;
+static cServiceVarType* pServiceVarType = nullptr;
+static cTableShape *    pTableShape = nullptr;
 static qlonglong        alertServiceId = NULL_ID;
 static QMap<QString, qlonglong>    ivars;
 static QMap<QString, QString>      svars;
 static QMap<QString, QVariantList> avars;
-static QSqlQuery  *     pq2 = NULL;
+static QSqlQuery  *     pq2 = nullptr;
 static bool             breakParse = false;
 static tRecordList<cMenuItem>   menuItems;
 /// A parser
 static int yyparse();
 /// A parser utolsó hibajelentése, NULL, ha nincs hiba
-cError *pImportLastError = NULL;
+cError *pImportLastError = nullptr;
 
 /// A parse() hívása a hiba elkapásával.
 /// Hiba esetén a hiba objektumba menti a parser következő állpotváltozóit:
@@ -252,7 +252,7 @@ int importParse(eImportParserStat _st)
         // sqlBegin(qq(), tn);
         i = yyparse();
     } CATCHS(pImportLastError)
-    if (pImportLastError != NULL) {
+    if (pImportLastError != nullptr) {
         // sqlRollback(qq(), tn);
         pImportLastError->mDataLine = importLineNo;
         pImportLastError->mDataName = importFileNm;
@@ -313,7 +313,7 @@ public:
         newFile = __o.newFile;
         oldPos = __o.oldPos;
     }
-    c_yyFile() : oldFileName() { oldStream = NULL; newFile = NULL; }
+    c_yyFile() : oldFileName() { oldStream = nullptr; newFile = nullptr; }
     static void inc(QString *__f);
     static void eoi();
     static int size() { return stack.size(); }
@@ -370,12 +370,12 @@ static  qlonglong       id;
 
 unsigned long yyflags = 0;
 
-static cTableShapeField *pTableShapeField = NULL;
+static cTableShapeField *pTableShapeField = nullptr;
 
 void initImportParser()
 {
     breakParse = false;
-    if (pArpServerDefs == NULL)
+    if (pArpServerDefs == nullptr)
         pArpServerDefs = new cArpServerDefs();
     // notifswitch tömb = SET, minden on-ba, visszaolvasás listaként
     pDelete(piq);
@@ -446,7 +446,7 @@ bool isBreakImportParser(bool __ex)
 
 QSqlQuery& qq2()
 {
-    if (pq2 == NULL) pq2 = newQuery();
+    if (pq2 == nullptr) pq2 = newQuery();
     return *pq2;
 }
 
@@ -490,12 +490,12 @@ static inline const QString& nextNetType() {
 }
 
 static inline cNode& node() {
-    if (pPatch == NULL) EXCEPTION(EPROGFAIL);
+    if (pPatch == nullptr) EXCEPTION(EPROGFAIL);
     return *pPatch->reconvert<cNode>();
 }
 
 static inline cSnmpDevice& snmpdev() {
-    if (pPatch == NULL) EXCEPTION(EPROGFAIL);
+    if (pPatch == nullptr) EXCEPTION(EPROGFAIL);
     return *pPatch->reconvert<cSnmpDevice>();
 }
 
@@ -698,7 +698,7 @@ void cLink::replace(QString * __note, QStringList * __srv)
     lnk[_sPhsLinkType2] = phsLinkType2;
     lnk[_sPortShared]   = share;
     lnk[_sPhsLinkNote]  = *__note;
-    if (__srv != NULL) {    // Volt Alert
+    if (__srv != nullptr) {    // Volt Alert
         cHostService    hose;
         cService        se;
         cNode           ho;
@@ -847,7 +847,7 @@ static cTableShape * newTableShape(QString *pTbl, QString * pMod, const QString 
 }
 
 
-static QString *pMenuApp = NULL;
+static QString *pMenuApp = nullptr;
 static cMenuItem& actMenuItem()
 {
     if (menuItems.isEmpty()) EXCEPTION(EPROGFAIL);
@@ -857,7 +857,7 @@ static cMenuItem& actMenuItem()
 /// Menü objektum létrehozása. Almenüi lesznek
 static void newMenuMenu(const QString& _n)
 {
-    if (pMenuApp == NULL) EXCEPTION(EPROGFAIL);
+    if (pMenuApp == nullptr) EXCEPTION(EPROGFAIL);
     cMenuItem *p = new cMenuItem;
     p->setName(_n);
     p->setName(_sAppName, *pMenuApp);
@@ -885,7 +885,7 @@ static void delMenuItem()
 /// @param typ Minta string a features mezőhöz (paraméter _n
 static void newMenuItem(const QString& _n, const QString& _sn, const char * typ)
 {
-    if (pMenuApp == NULL) EXCEPTION(EPROGFAIL);
+    if (pMenuApp == nullptr) EXCEPTION(EPROGFAIL);
     cMenuItem *p = new cMenuItem;
     p->setName(_n);
     p->set(_sAppName, *pMenuApp);
@@ -945,7 +945,7 @@ QString yygetline()
 {
     isBreakImportParser(true);
     ++importLineNo;
-    if (pImportInputStream != NULL) return pImportInputStream->readLine();
+    if (pImportInputStream != nullptr) return pImportInputStream->readLine();
     if (importParserStat != IPS_THREAD) EXCEPTION(EPROGFAIL);
     return cImportParseThread::instance().pop();
 }
@@ -1077,7 +1077,7 @@ static QString * sTime(qlonglong h, qlonglong m, qlonglong s = 0)
 static enum ePortShare s2share(QString * __ps)
 {
     QString s;
-    if (__ps != NULL) {
+    if (__ps != nullptr) {
         s = *__ps;
         delete __ps;
     }
@@ -1174,7 +1174,7 @@ static QString *toddef(QString * name, QString *  day, QString * fr, QString *  
 }
 
 static void setLastPort(QString * np, qlonglong ix) {
-    if (np != NULL && np->size() > 0) svars[sPortNm] = *np;
+    if (np != nullptr && np->size() > 0) svars[sPortNm] = *np;
     else                              svars.remove(sPortNm);
     if (ix != NULL_IX)                ivars[sPortIx] = ix;
     else                              ivars.remove(sPortIx);
@@ -1195,14 +1195,14 @@ static void setLastPort(cNPort *p)
 }
 
 inline static cNPort * setLastPort(qlonglong ix) {
-    if (pPatch == NULL) EXCEPTION(EPROGFAIL);
+    if (pPatch == nullptr) EXCEPTION(EPROGFAIL);
     cNPort * p = pPatch->ports.get(cNPort::ixPortIndex(), QVariant(ix));
     setLastPort(p);
     return p;
 }
 
 inline static cNPort * setLastPort(const QString& n) {
-    if (pPatch == NULL) EXCEPTION(EPROGFAIL);
+    if (pPatch == nullptr) EXCEPTION(EPROGFAIL);
     cNPort * p = pPatch->ports.get(_sPortName, QVariant(n));
     setLastPort(p);
     return p;
@@ -1212,7 +1212,7 @@ inline static cNPort * setLastPort(const QString& n) {
 /// indexe a pPatch->ports konténerben
 static int portName2SeqN(const QString& n)
 {
-    if (pPatch == NULL) EXCEPTION(EPROGFAIL);
+    if (pPatch == nullptr) EXCEPTION(EPROGFAIL);
     int r = pPatch->ports.indexOf(_sPortName,  QVariant(n));
     if (r < 0) yyerror(QObject::trUtf8("Nincs %1 nevű port.").arg(n));
     setLastPort(n, r);
@@ -1223,7 +1223,7 @@ static int portName2SeqN(const QString& n)
 /// indexe a pPatch->ports konténerben
 static int portIndex2SeqN(qlonglong ix)
 {
-    if (pPatch == NULL) EXCEPTION(EPROGFAIL);
+    if (pPatch == nullptr) EXCEPTION(EPROGFAIL);
     int r = pPatch->ports.indexOf(_sPortIndex,  QVariant(ix));
     if (r < 0) yyerror(QObject::trUtf8("Nincs %1 indexű port.").arg(ix));
     setLastPort(pPatch->ports[r]);
@@ -1237,11 +1237,11 @@ static void patchCopy(QStringList *pExl, QStringList *pInc, QString *pSrc)
     delete pSrc;
     QBitArray mask;
     bool ports = false, params = false;
-    if (pExl == NULL && pInc == NULL) { // Üres listák, mindent másolunk;
+    if (pExl == nullptr && pInc == nullptr) { // Üres listák, mindent másolunk;
         mask = ~pPatch->mask(_sNodeId, _sNodeName);
         ports = params = true;
     }
-    else if (pInc == NULL) {            // Kihagyandók listája van megadva
+    else if (pInc == nullptr) {            // Kihagyandók listája van megadva
         mask = ~pPatch->mask(_sNodeId, _sNodeName);
         ports = params = true;
         foreach (QString fn, *pExl) {
@@ -1255,7 +1255,7 @@ static void patchCopy(QStringList *pExl, QStringList *pInc, QString *pSrc)
         }
         delete pExl;
     }
-    else if (pExl == NULL) {            // A Másolandók listája van megadva
+    else if (pExl == nullptr) {            // A Másolandók listája van megadva
         mask.resize(pPatch->cols());
         ports = params = false;
         foreach (QString fn, *pExl) {
@@ -1330,20 +1330,20 @@ void setReplace(int er)
 }
 
 #define NEWOBJ(p, t) \
-    if (p != NULL) EXCEPTION(EPROGFAIL, 0,"NEWOBJ(" _STR(p) ", " _STR(t) ") : pointer is not null"); \
+    if (p != nullptr) EXCEPTION(EPROGFAIL, 0,"NEWOBJ(" _STR(p) ", " _STR(t) ") : pointer is not null"); \
     isReplace = false; \
     p = new t;
 //  if (p->stat == ES_DEFECTIVE) yyerror("Nincs elegendő adat, vagy kétértelműség.")
 
 #define INSERTANDDEL(p) \
-    if (p == NULL) EXCEPTION(EPROGFAIL, 0, "Parser Error: " _STR(p) " pointer is null"); \
-    if (p == NULL) EXCEPTION(EPROGFAIL, 0, "Parser Error: isReplace is true, in INSERTANDDEL(p) macro."); \
+    if (p == nullptr) EXCEPTION(EPROGFAIL, 0, "Parser Error: " _STR(p) " pointer is null"); \
+    if (p == nullptr) EXCEPTION(EPROGFAIL, 0, "Parser Error: isReplace is true, in INSERTANDDEL(p) macro."); \
     p->insert(qq()); \
     pDelete(p); \
-    setLastPort(NULL, NULL_IX)  // Törli
+    setLastPort(nullptr, NULL_IX)  // Törli
 
 #define DELOBJ(p) \
-    if (p == NULL) EXCEPTION(EPROGFAIL, 0, "Parser error : " _STR(p) " pointer is null"); \
+    if (p == nullptr) EXCEPTION(EPROGFAIL, 0, "Parser error : " _STR(p) " pointer is null"); \
     pDelete(p)
 
 #define INSREC(T, dn, n, d) \
@@ -1358,20 +1358,20 @@ void setReplace(int er)
 /// @param pno  Opcionális, megjegyzés mező értéke, vagy NULL
 #define REPOBJ(p, t, r, pnm, pno) \
     setReplace(r); \
-    if (p != NULL) EXCEPTION(EPROGFAIL, 0,"Parser error: REPOBJ(" _STR(p) ", " _STR(t) ", " + *pnm + ") : pointer is not null"); \
+    if (p != nullptr) EXCEPTION(EPROGFAIL, 0,"Parser error: REPOBJ(" _STR(p) ", " _STR(t) ", " + *pnm + ") : pointer is not null"); \
     p = new t; \
     p->setName(*pnm); \
-    if (pno != NULL) { \
+    if (pno != nullptr) { \
         if(!pno->isEmpty()) p->setNote(*pno); \
         delete pno; \
     } \
     delete pnm;
 
 #define REPANDDEL(p) \
-    if (p == NULL) yyerror("Parser erroro: " _STR(p) " is null"); \
+    if (p == nullptr) yyerror("Parser erroro: " _STR(p) " is null"); \
     if (isReplace) p->replace(qq()); else p->insert(qq()); \
     pDelete(p); \
-    setLastPort(NULL, NULL_IX)  // Törli
+    setLastPort(nullptr, NULL_IX)  // Törli
 
 /// Egy új node/host vagy snmp eszköz létrehozása (a paraméterként megadott pointereket felszabadítja)
 /// @param name Az eszköz nevére mutató pointer, vagy a "LOOKUP" stringre mutató pointer.
@@ -1387,23 +1387,23 @@ static void newHost(qlonglong t, QString *name, tStringPair *ip, QString *mac, Q
     else                       pNode = new cNode();
     pPatch = pNode;
     pNode->setId(_sNodeType, t);
-    if (ip == NULL) {
+    if (ip == nullptr) {
         pNode->setName(*name);
-        if (d != NULL) pNode->setNote(*d);
-        setLastPort(NULL, NULL_IX);
+        if (d != nullptr) pNode->setNote(*d);
+        setLastPort(nullptr, NULL_IX);
     }
     else {
-        pNode->asmbNode(qq(), *name, NULL, ip, mac, *d, gPlace());
+        pNode->asmbNode(qq(), *name, nullptr, ip, mac, *d, gPlace());
         setLastPort(pNode->ports.first());
     }
     pDelete(name); pDelete(ip); pDelete(mac); pDelete(d);
 }
 
-static void yySqlExec(const QString& _cmd, QVariantList *pvl = NULL, QVariantList * _ret = NULL)
+static void yySqlExec(const QString& _cmd, QVariantList *pvl = nullptr, QVariantList * _ret = nullptr)
 {
     QSqlQuery q = qq();
     PDEB(INFO) << "SQL : " << _cmd << endl;
-    if (pvl == NULL) {
+    if (pvl == nullptr) {
         if (!q.exec(_cmd)) SQLPREPERR(q, _cmd);
     }
     else {
@@ -1416,7 +1416,7 @@ static void yySqlExec(const QString& _cmd, QVariantList *pvl = NULL, QVariantLis
         delete pvl;
         if (!q.exec()) SQLQUERYERR(q);
     }
-    if (_ret != NULL) {
+    if (_ret != nullptr) {
         _ret->clear();
         if (!q.first()) return;
         int n = q.record().count();
@@ -1816,7 +1816,7 @@ vals    : value                     { $$ = new QVariantList(); *$$ << *$1; delet
         | vals ',' value            { $$ = $1;                 *$$ << *$3; delete $3; }
         | vals ',' list_m           { $$ = $1;                 *$$ << slp2vl($3); }
         | vals ',' list_i           { $$ = $1; foreach (qlonglong i, *$3) *$$ << QVariant(i); delete $3; }
-        | SQL_T '(' str ')'         { yySqlExec(sp2s($3),NULL, $$ = new QVariantList); }
+        | SQL_T '(' str ')'         { yySqlExec(sp2s($3),nullptr, $$ = new QVariantList); }
         | SQL_T '(' str ',' vals ')'{ yySqlExec(sp2s($3),  $5, $$ = new QVariantList); }
         | '@' str                   { $$ = new QVariantList(varray(sp2s($2))); }
         ;
@@ -1882,7 +1882,7 @@ user_p  : NOTE_T str ';'                        { pUser->setNote(sp2s($2)); }
         | COPY_T usrfns copy_from ';'           { pUser->fieldsCopy(qq(), $3,  pUser->mask(slp2sl($2))); pDelete($3); }
         | COPY_T EXCEPT_T usrfns copy_from ';'  { pUser->fieldsCopy(qq(), $4, ~(pUser->mask(_sUserId, _sUserName) | pUser->mask(slp2sl($3)))); pDelete($4); }
         ;
-copy_from:                                      { $$ = NULL; }
+copy_from:                                      { $$ = nullptr; }
         | FROM_T str                            { $$ = $2; }
         ;
 nsws    : ALL_T                                 { $$ = new QStringList(cUser().descr()[_sHostNotifSwitchs].enumType().enumValues); }
@@ -2137,9 +2137,9 @@ patch_p : NOTE_T str ';'                        { pPatch->setName(_sNodeNote, sp
                                                   pPatch->params.clear(); }
         | CLEAR_T clrpfns ';'
         | PLACE_T ';'                           { pPatch->setId(_sPlaceId, gPlace()); }
-        | COPY_T FROM_T str ';'                 { patchCopy(NULL, NULL, $3); }
-        | COPY_T ptcfns FROM_T str ';'          { patchCopy(NULL, $2, $4); }
-        | COPY_T EXCEPT_T usrfns FROM_T str ';' { patchCopy($3, NULL, $5); }
+        | COPY_T FROM_T str ';'                 { patchCopy(nullptr, nullptr, $3); }
+        | COPY_T ptcfns FROM_T str ';'          { patchCopy(nullptr, $2, $4); }
+        | COPY_T EXCEPT_T usrfns FROM_T str ';' { patchCopy($3, nullptr, $5); }
         ;
 // Opcionális offsett, alapértelmezetten 0
 offs    : OFFS_T int                    { $$ = $2; }
@@ -2221,7 +2221,7 @@ node_h  : NODE_T replace node_ts                { $$ = $3; setReplace($2); }
 node_ts :                                       { $$ = ENUM2SET(NT_NODE); }
         | '(' strs ')'                          { $$ = 0; foreach (QString s, *$2) { $$ |= ENUM2SET(nodeType(s)); } delete $2; }
         ;
-node    : node_h str str_z                          { newHost($1, NULL, NULL, $2, $3); pPatch->containerValid = CV_ALL_NODE; }
+node    : node_h str str_z                          { newHost($1, nullptr, nullptr, $2, $3); pPatch->containerValid = CV_ALL_NODE; }
                 node_cf node_e                      { REPANDDEL(pPatch); }
         | ATTACHED_T replfl str str_z ';'           { if ($2) replaceAttachedNode(sp2s($3), sp2s($4));
                                                       else        newAttachedNode(sp2s($3), sp2s($4)); }
@@ -2233,6 +2233,7 @@ node    : node_h str str_z                          { newHost($1, NULL, NULL, $2
         | WORKSTATION_T replfl str mac str_z ';'    { if ($2) replaceWorkstation(sp2s($3), *$4, sp2s($5));
                                                       else        newWorkstation(sp2s($3), *$4, sp2s($5));
                                                       delete $4; }
+        | SNMP_T NODE_T str REFRESH_T ';'           { pPatch = cSnmpDevice::refresh(qq(), sp2s($3)); pDelete(pPatch); }
         ;
 node_e  : '{' node_ps '}'
         | ';'
@@ -2290,7 +2291,7 @@ ip_q    : ips iptype                            { $$ = new tStringPair(sp2s($1),
         ;
 ip_qq   : ips iptype                            { $$ = new tStringPair(sp2s($1),  addrType($2)); }
         | DYNAMIC_T                             { $$ = new tStringPair(QString(), _sDynamic); }
-        | NULL_T                                { $$ = NULL; }
+        | NULL_T                                { $$ = nullptr; }
         | ARP_T                                 { $$ = new tStringPair(_sARP,     _sFixIp); }
         ;
 ip_a    : ips iptype_a                          { $$ = new tStringPair(sp2s($1),  addrType($2)); }
@@ -2302,13 +2303,13 @@ mac     : MAC_V                                 { $$ = $1; }
         ;
 mac_q   : mac                                   { $$ = new QString($1->toString()); delete $1; }
         | ARP_T                                 { $$ = new QString(_sARP); }
-        | NULL_T                                { $$ = NULL; }
+        | NULL_T                                { $$ = nullptr; }
         ;
 mac_qq  : mac                                   { $$ = new QVariant($1->toString()); delete $1; }       // MAC mint literal
         | '<' '@'                               { $$ = new QVariant(vint(sPortIx)); }                   // MAC azonos az előző port MAC-jával
         | '<' int                               { $$ = new QVariant($2); }                              // Azonos egy megadott indexű port MAC-jával
         | ARP_T                                 { $$ = new QVariant(_sARP); }                           // Az IP címbőé kell kitalálni az "ARP"-al
-        | NULL_T                                { $$ = NULL; }                                          // A MAC NULL lessz
+        | NULL_T                                { $$ = nullptr; }                                          // A MAC NULL lessz
         ;
 iptype  :                                       { $$ = AT_FIXIP;   }
         | '/' FIXIP_T                           { $$ = AT_FIXIP;   }
@@ -2378,7 +2379,7 @@ rport   : str_z ':' str shar                        { pLink->right($1, $3, $4); 
         | WORKSTATION_T '(' str mac str_z ')'       { pLink->workstation($3,$4, $5); }
         | ATTACHED_T '(' str str_z ')'              { pLink->attached($3, $4); }
         ;
-alert   :                                           { $$ = NULL; }
+alert   :                                           { $$ = nullptr; }
         /* ALERT ([<service_name> [, <host_service_descr>[, <host_service_alarm_msg>[, <node_alarm_msg>]]]]) */
         | ALERT_T '(' strs_z ')'                    { $$ = $3; }
         ;
@@ -2628,9 +2629,9 @@ tmodp   : SET_T DEFAULTS_T ';'              { pTableShape->setDefaults(qq()); }
         | FIELD_T ORD_T SEQUENCE_T int0 strs ';'{ pTableShape->setOrdSeq(slp2sl($5), $4); }
         | ADD_T FIELD_T str str_z ';'           { pTableShape->addField(sp2s($3), sp2s($4)); }
         | ADD_T FIELD_T str str_z '{'           { pTableShapeField = pTableShape->addField(sp2s($3), sp2s($4)); }
-            fmodps '}'                          { pTableShapeField = NULL; }
+            fmodps '}'                          { pTableShapeField = nullptr; }
         | FIELD_T str '{'                       { pTableShapeField = pTableShape->shapeFields.get(sp2s($2)); }
-            fmodps '}'                          { pTableShapeField = NULL; }
+            fmodps '}'                          { pTableShapeField = nullptr; }
         ;
 tstypes : tstype                                { $$ = $1; }
         | tstypes ',' tstype                    { $$ = $1 | $3; }
@@ -2901,7 +2902,7 @@ static QString *yygetstr2(const QString& mn)
     // PDEB(VVERBOSE) << ee << QChar(' ') << *ps;
     delete ps;
     yyerror(ee);    // az yyerror() olyan mintha visszatérne, pedig dehogy.
-    return NULL;
+    return nullptr;
 }
 
 /// LEX: Cím típusú adat beolvasása
@@ -2997,11 +2998,11 @@ static int yylex(void)
         { "DEL",    DELETE_T },
         { "EXPR",   EXPRESSION_T },
         { "CAT",    CATEGORY_T },
-        { NULL, 0 }
+        { nullptr, 0 }
     };
     // DBGFN();
 recall:
-    yylval.u = NULL;
+    yylval.u = nullptr;
     QChar     c;
     // Elvalaszto karakterek és kommentek atlepese
     // Fajl vege eseten vege

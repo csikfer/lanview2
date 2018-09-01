@@ -120,7 +120,7 @@ QMap<qlonglong, qlonglong>  cServiceVar::heartbeats;
 
 cServiceVar::cServiceVar() : cRecord()
 {
-    pVarType = NULL;
+    pVarType = nullptr;
     lastCount = 0;
     _set(cServiceVar::descr());
 }
@@ -150,7 +150,7 @@ CRECDEFD(cServiceVar)
 
 void cServiceVar::clearToEnd()
 {
-    pVarType = NULL;
+    pVarType = nullptr;
     lastCount = 0;
     lastTime = QDateTime();
 }
@@ -163,7 +163,7 @@ void cServiceVar::toEnd()
 bool cServiceVar::toEnd(int _ix)
 {
     if (_ix == _ixServiceVarTypeId) {
-        if (pVarType != NULL && getId(_ixServiceVarTypeId) != pVarType->getId()) pVarType = NULL;
+        if (pVarType != nullptr && getId(_ixServiceVarTypeId) != pVarType->getId()) pVarType = nullptr;
         return true;
     }
     return false;
@@ -171,7 +171,7 @@ bool cServiceVar::toEnd(int _ix)
 
 const cServiceVarType *cServiceVar::varType(QSqlQuery& q, eEx __ex)
 {
-    if (pVarType == NULL || pVarType->getId() != getId(_ixServiceVarTypeId)) {
+    if (pVarType == nullptr || pVarType->getId() != getId(_ixServiceVarTypeId)) {
         pVarType = cServiceVarType::srvartype(q, getId(_ixServiceVarTypeId), __ex);
     }
     return pVarType;

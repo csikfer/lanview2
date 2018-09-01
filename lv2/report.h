@@ -265,6 +265,6 @@ static inline void expHtmlLine() {
 }
 
 EXT_ tStringPair htmlReport(QSqlQuery& q, cRecord& o, const cTableShape& shape);
-EXT_ tStringPair htmlReport(QSqlQuery& q, cRecord& o, const QString& _name = _sNul, const cTableShape *pShape = NULL);
+EXT_ tStringPair htmlReport(QSqlQuery& q, cRecord& o, const QString& _name = _sNul, const cTableShape *pShape = nullptr);
 
 #endif // REPORT_H

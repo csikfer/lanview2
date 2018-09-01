@@ -191,7 +191,7 @@ enum eLinkResult {
 /// @param _pLogl Ha megadjuk, akkor az logikai link objektum ebbe lesz beolvasva. Ha a visszaadott érték LINK_RCONFLICT, akkor
 ///               a mutatott objektum az ütköző ellenoldali linket fogja tartalmazni.
 /// @return A keresés eredménye.
-EXT_ eLinkResult getLinkedPort(QSqlQuery& q, qlonglong pid, qlonglong& lpid, cLldpLink *_pLldp = NULL, cLogLink *_pLogl = NULL);
+EXT_ eLinkResult getLinkedPort(QSqlQuery& q, qlonglong pid, qlonglong& lpid, cLldpLink *_pLldp = nullptr, cLogLink *_pLogl = nullptr);
 
 EXT_ QString reportComparedLinks(QSqlQuery& q, eLinkResult r, qlonglong pid, const cLldpLink& lldp, const cLogLink& logl, bool details = false);
 

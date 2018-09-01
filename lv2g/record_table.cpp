@@ -79,8 +79,8 @@ cRecordTableFilter::cRecordTableFilter(cRecordTableFODialog &_par, cRecordTableC
     toType  = ENUM_INVALID;
     setOn   = -1;
     setOff  =  0;
-    pValidator1 = pValidator2 = NULL;
-    if (field.pColDescr == NULL) {
+    pValidator1 = pValidator2 = nullptr;
+    if (field.pColDescr == nullptr) {
         toTypes  = filtTypesEx = filtTypes = 0;
     }
     else {
@@ -114,7 +114,7 @@ void cRecordTableFilter::setFilter(int i)
         toType  =  ENUM_INVALID;
         setOn   = -1;
         setOff  =  0;
-        pValidator1 = pValidator2 = NULL;
+        pValidator1 = pValidator2 = nullptr;
     }
     iFilter = i;
 }
@@ -211,7 +211,7 @@ QString cRecordTableFilter::whereSet(const QString &n, QVariantList& qparams)
 QString cRecordTableFilter::where(QVariantList& qparams)
 {
     QString r;
-    if (field.pColDescr == NULL) return r;      // !!!
+    if (field.pColDescr == nullptr) return r;      // !!!
     int eFilter;    // Filter típus azonostó (ha van)
     if (iFilter >= 0 && (eFilter = filterTypeList.at(iFilter)->toInt()) != FT_NO) {
         bool      isArray = false;                      // A set-et nem tömbként kezeljük.
@@ -311,11 +311,11 @@ QString cRecordTableFilter::where(QVariantList& qparams)
 
 template <class V> void cRecordTableFilter::tSetValidator()
 {
-    if (dialog.pLineEdit1 != NULL) {
+    if (dialog.pLineEdit1 != nullptr) {
         pValidator1 = new V;
         dialog.pLineEdit1->setValidator(pValidator1);
     }
-    if (dialog.pLineEdit2 != NULL) {
+    if (dialog.pLineEdit2 != nullptr) {
         pValidator2 = new V;
         dialog.pLineEdit2->setValidator(pValidator2);
     }
@@ -325,12 +325,12 @@ void cRecordTableFilter::setValidatorRegExp(const QString& _re)
 {
     QRegExp re(_re);
     QRegExpValidator *prev;
-    if (dialog.pLineEdit1 != NULL) {
+    if (dialog.pLineEdit1 != nullptr) {
         prev = new QRegExpValidator(re);
         pValidator1 = prev;
         dialog.pLineEdit1->setValidator(pValidator1);
     }
-    if (dialog.pLineEdit2 != NULL) {
+    if (dialog.pLineEdit2 != nullptr) {
         prev = new QRegExpValidator(re);
         pValidator2 = prev;
         dialog.pLineEdit2->setValidator(pValidator2);
@@ -418,7 +418,7 @@ void cRecordTableFilter::changedAnyAll(int i)
 void cRecordTableFilter::changedText()
 {
     QPlainTextEdit *pTextEdit = dialog.pTextEdit;
-    if (pTextEdit != NULL) {
+    if (pTextEdit != nullptr) {
         param1 = pTextEdit->toPlainText();
     }
     else {
@@ -498,8 +498,8 @@ cEnumCheckBox::cEnumCheckBox(int _e, qlonglong* _pOn, qlonglong* _pOff, const QS
     m    = ENUM2SET(_e);
     pOn  = _pOn;
     pOff = _pOff;
-    setTristate(pOff != NULL);
-    if (pOff == NULL) {
+    setTristate(pOff != nullptr);
+    if (pOff == nullptr) {
         setChecked(m & *pOn);
     }
     else {
@@ -519,7 +519,7 @@ cEnumCheckBox::cEnumCheckBox(int _e, qlonglong* _pOn, qlonglong* _pOff, const QS
 
 void cEnumCheckBox::_chageStat(int st)
 {
-    if (pOff == NULL) { // ENUM
+    if (pOff == nullptr) { // ENUM
         switch (st) {
         case Qt::Checked:           *pOn |=  m;             break;
         case Qt::Unchecked:         *pOn &= ~m;             break;
@@ -639,10 +639,10 @@ cRecordTableFODialog::cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase &_rt)
     , recordView(_rt)
     , filters(), ords()
 {
-    pTextEdit = NULL;
-    pLineEdit1 = NULL;
-    pLineEdit2 = NULL;
-    pToTypeModel = NULL;
+    pTextEdit = nullptr;
+    pLineEdit1 = nullptr;
+    pLineEdit2 = nullptr;
+    pToTypeModel = nullptr;
     (void)*pq;
     pForm = new Ui::dialogTabFiltOrd();
     pForm->setupUi(this);
@@ -678,7 +678,7 @@ cRecordTableFODialog::cRecordTableFODialog(QSqlQuery *pq, cRecordsViewBase &_rt)
     setGridLayoutOrder();
     iSelFilterCol  = -1;
     iSelFilterType = -1;
-    pSelFilter = NULL;
+    pSelFilter = nullptr;
     pForm->comboBoxCol->setCurrentIndex(0);
     connect(pForm->comboBoxCol,    SIGNAL(currentIndexChanged(int)),   this, SLOT(filtCol(int)));
     connect(pForm->comboBoxFilt,   SIGNAL(currentIndexChanged(int)),   this, SLOT(filtType(int)));
@@ -761,17 +761,17 @@ void cRecordTableFODialog::setFilterDialog()
     int i;
     while (0 < (i = pGrid->count())) {  // Clear grid layout
         QLayoutItem *p = pGrid->itemAt(i -1);
-        if (p != NULL && p->widget() != NULL) delete p->widget();
+        if (p != nullptr && p->widget() != nullptr) delete p->widget();
     }
     if (sCheckInverse.isEmpty()) {
         sCheckInverse = QObject::trUtf8("Fordított logika");
     }
-    pTextEdit = NULL;   // Long text (param1)
-    pLineEdit1 = NULL;  // Filter param1
-    pLineEdit2 = NULL;  // Filter param2
-    pToTypeModel = NULL;
-    QLabel *pLabel = NULL;
-    QCheckBox *pCheckBoxI = NULL;
+    pTextEdit = nullptr;   // Long text (param1)
+    pLineEdit1 = nullptr;  // Filter param1
+    pLineEdit2 = nullptr;  // Filter param2
+    pToTypeModel = nullptr;
+    QLabel *pLabel = nullptr;
+    QCheckBox *pCheckBoxI = nullptr;
     if (iSelFilterCol < 0 || iSelFilterType < 0) return;    // skeep
     filter().setFilter(iSelFilterType);
     const cEnumVal *pType = filter().pActFilterType();
@@ -854,10 +854,10 @@ void cRecordTableFODialog::setFilterDialogComp(int fType, int dType)
     static const QString sCheckEq = trUtf8("vagy egyenlő");
     static const QString sLabelTy = trUtf8("Típus mint :");
     int row = 0;
-    QLabel *   pLabel1     = NULL;
-    QLabel *   pLabel2     = NULL;
-    QCheckBox *pCheckBoxEq1= NULL;
-    QCheckBox *pCheckBoxEq2= NULL;
+    QLabel *   pLabel1     = nullptr;
+    QLabel *   pLabel2     = nullptr;
+    QCheckBox *pCheckBoxEq1= nullptr;
+    QCheckBox *pCheckBoxEq2= nullptr;
     QCheckBox *pCheckBoxI  = new QCheckBox(sCheckInverse);;
     QGridLayout *pGrid = pForm->gridLayoutFilter;
     switch (fType) {
@@ -877,17 +877,17 @@ void cRecordTableFODialog::setFilterDialogComp(int fType, int dType)
         pLineEdit2  = new QLineEdit(filter().param2.toString());
         pCheckBoxEq2= new QCheckBox(sCheckEq);
     }
-    if (pLabel1 != NULL) {
+    if (pLabel1 != nullptr) {
         pGrid->addWidget(pLabel1,     row, 0);
         pGrid->addWidget(pLineEdit1,  row, 1);
         connect(pLineEdit1, SIGNAL(textChanged(QString)), &filter(), SLOT(changedParam1(QString)));
-        if (pCheckBoxEq1 != NULL) { // If operator is '=', then pCheckBoxEq1 is NULL
+        if (pCheckBoxEq1 != nullptr) { // If operator is '=', then pCheckBoxEq1 is NULL
             pGrid->addWidget(pCheckBoxEq1, row, 2);
             connect(pCheckBoxEq1, SIGNAL(toggled(bool)), &filter(), SLOT(togledClosed1(bool)));
         }
         row++;
     }
-    if (pLabel2 != NULL) {
+    if (pLabel2 != nullptr) {
         pGrid->addWidget(pLabel2,    row, 0);
         pGrid->addWidget(pLineEdit2, row, 1);
         connect(pLineEdit2, SIGNAL(textChanged(QString)), &filter(), SLOT(changedParam2(QString)));
@@ -924,7 +924,7 @@ void cRecordTableFODialog::setFilterDialogEnum(const cColEnumType &et, bool _enu
     int i;
     for (i = 0; i < et.enumValues.size(); ++i) {
         QString t = cEnumVal::viewShort(et, i, et.enum2str(i));
-        cEnumCheckBox *p = new cEnumCheckBox(i, &f.setOn, _enum ? NULL : &f.setOff, t);
+        cEnumCheckBox *p = new cEnumCheckBox(i, &f.setOn, _enum ? nullptr : &f.setOff, t);
         pGrid->addWidget(p, i, 0);
     }
     QCheckBox *pCheckBoxI  = new QCheckBox(sCheckInverse);;
@@ -995,15 +995,15 @@ cRecordTableColumn::cRecordTableColumn(cTableShapeField &sf, cRecordsViewBase &t
     , defaultDc(cEnumVal::enumVal(_sDatacharacter, dataCharacter))
 {
     fieldIndex = recDescr.toIndex(sf.getName(), EX_IGNORE);
-    pColDescr  = NULL;
+    pColDescr  = nullptr;
     textIndex  = NULL_IX;
-    pTextEnum  = NULL;
+    pTextEnum  = nullptr;
     headAlign  = Qt::AlignVCenter | Qt::AlignHCenter;
     dataAlign  = Qt::AlignVCenter;
     fieldFlags = shapeField.getId(_sFieldFlags);
     if (fieldIndex == NULL_IX) {
         pTextEnum = recDescr.colDescr(recDescr.textIdIndex()).pEnumType;
-        if (pTextEnum == NULL) EXCEPTION(EDATA);
+        if (pTextEnum == nullptr) EXCEPTION(EDATA);
         textIndex = pTextEnum->str2enum(sf.getName());
         dataCharacter = DC_TEXT;
     }
@@ -1039,13 +1039,13 @@ bool cRecordTableColumn::colExpr(QString& _name, int *pEColType)
     QString s;
     s = shapeField.feature(_sViewFunc); // Konverziós függvény a megjelenítésnél
     if (s.isEmpty() == false) {
-        if (pEColType != NULL) *pEColType = cColStaticDescr::FT_TEXT;    // konvertáltuk a függvénnyel text-re
+        if (pEColType != nullptr) *pEColType = cColStaticDescr::FT_TEXT;    // konvertáltuk a függvénnyel text-re
         _name = s + "(" + pColDescr->colNameQ() + ")";
         return true;
     }
     s = shapeField.feature(_sViewExpr); // Konverziós SQL kifelyezés a megjelenítésnél
     if (s.isEmpty() == false) {
-        if (pEColType != NULL) *pEColType = cColStaticDescr::FT_TEXT;    // konvertáltuk a kifelyxezéssel text-re
+        if (pEColType != nullptr) *pEColType = cColStaticDescr::FT_TEXT;    // konvertáltuk a kifelyxezéssel text-re
         _name = s.replace("?", pColDescr->colNameQ());
         return true;
     }
@@ -1065,24 +1065,24 @@ cRecordsViewBase::cRecordsViewBase(bool _isDialog, QWidget *par)
     isReadOnly = false;
     pq = newQuery();
     pTabQuery = newQuery();
-    pTableShape = NULL;
-    pModel = NULL;
-    pUpper = NULL;
-    pMaster = NULL;
-    pRecDescr = NULL;
-    _pWidget = NULL;
-    pMasterSplitter = NULL;
-    pButtons = NULL;
-    pMainLayout = NULL;
-    pLeftWidget = NULL;
-    pRightTables = NULL;
-    pRightTabWidget = NULL;
-    pFODialog   = NULL;
+    pTableShape = nullptr;
+    pModel = nullptr;
+    pUpper = nullptr;
+    pMaster = nullptr;
+    pRecDescr = nullptr;
+    _pWidget = nullptr;
+    pMasterSplitter = nullptr;
+    pButtons = nullptr;
+    pMainLayout = nullptr;
+    pLeftWidget = nullptr;
+    pRightTables = nullptr;
+    pRightTabWidget = nullptr;
+    pFODialog   = nullptr;
     owner_id = NULL_ID;
     parent_id= NULL_ID;
-    pInhRecDescr = NULL;
+    pInhRecDescr = nullptr;
     tableInhType = TIT_NO;
-    pRecordDialog = NULL;
+    pRecordDialog = nullptr;
     _pWidget = isDialog ? new QDialog(par) : new QWidget(par);
 //    disableFilters = false; // alapértelmezetten vannak szűrők
 }
@@ -1104,7 +1104,7 @@ QDialog& cRecordsViewBase::dialog()
 void cRecordsViewBase::buttonDisable(int id, bool d)
 {
     QAbstractButton * p = pButtons->button(id);
-    if (p == NULL) {
+    if (p == nullptr) {
         // EXCEPTION(EDATA, id);
         return;
     }
@@ -1127,26 +1127,26 @@ cTableShape * cRecordsViewBase::getInhShape(QSqlQuery& q, cTableShape *pTableSha
         return p;
     }
     EXCEPTION(EDATA);
-    return NULL;
+    return nullptr;
 }
 
 const cRecStaticDescr& cRecordsViewBase::inhRecDescr(qlonglong i) const
 {
-    if (pInhRecDescr == NULL) EXCEPTION(EPROGFAIL);
+    if (pInhRecDescr == nullptr) EXCEPTION(EPROGFAIL);
     if (pInhRecDescr->find(i) == pInhRecDescr->constEnd()) EXCEPTION(EDATA, i);
     return *pInhRecDescr->value(i);
 }
 
 const cRecStaticDescr& cRecordsViewBase::inhRecDescr(const QString& tn) const
 {
-    if (pInhRecDescr == NULL) EXCEPTION(EPROGFAIL);
+    if (pInhRecDescr == nullptr) EXCEPTION(EPROGFAIL);
     QMap<qlonglong,const cRecStaticDescr *>::const_iterator i, e = pInhRecDescr->constEnd();
     for (i = pInhRecDescr->constBegin(); i != e; ++i) {
         const cRecStaticDescr& r = **i;
         if (r.tableName() == tn) return r;
     }
     EXCEPTION(EDATA, -1, tn);
-    return *(const cRecStaticDescr *)NULL;    // Csak hogy ne ugasson a fordító
+    return *(const cRecStaticDescr *)nullptr;    // Csak hogy ne ugasson a fordító
 }
 
 void cRecordsViewBase::buttonPressed(int id)
@@ -1181,7 +1181,7 @@ void cRecordsViewBase::buttonPressed(int id)
 
 void cRecordsViewBase::close(int r)
 {
-    if (pRecordDialog != NULL) {
+    if (pRecordDialog != nullptr) {
         pRecordDialog->_pressed(DBT_CANCEL);
     }
     if (isDialog) dynamic_cast<QDialog *>(_pWidget)->done(r);
@@ -1191,7 +1191,7 @@ void cRecordsViewBase::close(int r)
 void cRecordsViewBase::refresh(bool first)
 {
     _DBGFN() << VDEB(first) << endl;
-    cError *pe = NULL;
+    cError *pe = nullptr;
     try {
         switch (tableInhType) {
         case TIT_NO:
@@ -1205,7 +1205,7 @@ void cRecordsViewBase::refresh(bool first)
             break;
         }
     } CATCHS(pe)
-    if (pe != NULL) {
+    if (pe != nullptr) {
         cErrorMessageBox::messageBox(pe, pWidget());
         delete pe;
         pModel->clear();
@@ -1217,10 +1217,10 @@ void cRecordsViewBase::insert(bool _similar)
 {
     QString sInsertDialog = pTableShape->feature(_sInsert);
     if (flags & RTF_CHILD) {
-        if (pUpper == NULL) EXCEPTION(EPROGFAIL);
+        if (pUpper == nullptr) EXCEPTION(EPROGFAIL);
         if (owner_id == NULL_ID) return;
     }
-    if (pRecordDialog != NULL) {
+    if (pRecordDialog != nullptr) {
         pDelete(pRecordDialog); // !!!???
         // EXCEPTION(EPROGFAIL);
     }
@@ -1228,12 +1228,12 @@ void cRecordsViewBase::insert(bool _similar)
     // Ha TREE, akkor a default parent a kiszelektált sor,
     if (flags & RTF_TREE) {
         cRecord *pARec = actRecord();
-        if (pARec != NULL) {    // ha van kiszelektált (egy) sor
+        if (pARec != nullptr) {    // ha van kiszelektált (egy) sor
             parent_id = pARec->getId();
         }
     }
     if (!sInsertDialog.isEmpty()) {
-        cRecord *pRec = NULL;
+        cRecord *pRec = nullptr;
         cRecordAny sample;
         if (_similar) {
             sample = *actRecord();
@@ -1245,7 +1245,7 @@ void cRecordsViewBase::insert(bool _similar)
             pRec = &sample;
         }
         pRec = objectDialog(sInsertDialog, *pq, this->pWidget(), pRec);
-        if (pRec == NULL) return;
+        if (pRec == nullptr) return;
         pDelete(pRec);
         refresh();
         return;
@@ -1255,11 +1255,11 @@ void cRecordsViewBase::insert(bool _similar)
     switch (tableInhType) {
     case TIT_NO:
     case TIT_ONLY: {
-        cRecordDialog   rd(*pTableShape, buttons, true, NULL, this, pWidget());  // A rekord szerkesztő dialógus
+        cRecordDialog   rd(*pTableShape, buttons, true, nullptr, this, pWidget());  // A rekord szerkesztő dialógus
         pRecordDialog = &rd;
         if (_similar) {
             cRecord *pRec = actRecord();    // pointer az aktuális rekordra, a beolvasott/megjelenített rekord listában
-            if (pRec != NULL) {
+            if (pRec != nullptr) {
                 cRecord *pR = pRec->dup();
                 QBitArray c = pR->autoIncrement();
                 pR->clear(c);
@@ -1298,11 +1298,11 @@ void cRecordsViewBase::insert(bool _similar)
     }   break;      // switch
     case TIT_LISTED_REV: {
         tRecordList<cTableShape> *pShapes = getShapes();
-        cRecordDialogInh rd(*pTableShape, *pShapes, buttons, true, NULL, this, pWidget());
+        cRecordDialogInh rd(*pTableShape, *pShapes, buttons, true, nullptr, this, pWidget());
         pRecordDialog = &rd;
         if (_similar) {
             cRecord *pRec = actRecord();    // pointer az aktuális rekordra, a beolvasott/megjelenített rekord listában
-            if (pRec != NULL) {
+            if (pRec != nullptr) {
                 cRecord *pR = pRec->dup();  // Lemásoljuk
                 QBitArray c = pR->autoIncrement();
                 pR->clear(c);               // Töröljük az "auto increment" típusú mezőket
@@ -1335,25 +1335,25 @@ void cRecordsViewBase::insert(bool _similar)
     default:
         EXCEPTION(ENOTSUPP);
     }
-    pRecordDialog = NULL;
+    pRecordDialog = nullptr;
 }
 
 void cRecordsViewBase::modify(eEx __ex)
 {
     QModelIndex index = actIndex();
     if (index.isValid() == false) return;
-    if (pRecordDialog != NULL) {
+    if (pRecordDialog != nullptr) {
         // ESC-el lépett ki, Kideríteni mi ez, becsukja az ablakot, de nem lép ki a loop-bol.
         pDelete(pRecordDialog);
         // EXCEPTION(EPROGFAIL);
     }
 
     cRecord *pRec = actRecord(index);    // pointer az aktuális rekordra, a beolvasott/megjelenített rekord listában
-    if (pRec == NULL) return;
+    if (pRec == nullptr) return;
     QString sModifyDialog = pTableShape->feature(_sModify);
     if (!sModifyDialog.isEmpty()) {
         pRec = objectDialog(sModifyDialog, *pq, this->pWidget(), pRec, isReadOnly, true);
-        if (pRec == NULL) return;
+        if (pRec == nullptr) return;
         pDelete(pRec);
         refresh();
         return;
@@ -1371,31 +1371,31 @@ void cRecordsViewBase::modify(eEx __ex)
         }
     }
 
-    cRecordDialogBase *pRd  = NULL;
-    cRecordDialogInh * pRdt = NULL;
-    cTableShape *    pShape = NULL;
-    tRecordList<cTableShape> * pShapes = NULL;
+    cRecordDialogBase *pRd  = nullptr;
+    cRecordDialogInh * pRdt = nullptr;
+    cTableShape *    pShape = nullptr;
+    tRecordList<cTableShape> * pShapes = nullptr;
 
     // Létrehozzuk a dialogot
     switch (tableInhType) {
     case TIT_NO:
     case TIT_ONLY:
         pShape = getInhShape(pTableShape, pRec->descr());
-        pRd = new cRecordDialog(*pShape, buttons, true, NULL, this, pWidget());
+        pRd = new cRecordDialog(*pShape, buttons, true, nullptr, this, pWidget());
         pRecordDialog = pRd;
         break;
     case TIT_LISTED_REV: {
         pShapes = getShapes();
-        pRdt = new cRecordDialogInh(*pTableShape, *pShapes, buttons, true, NULL, this, pWidget());
+        pRdt = new cRecordDialogInh(*pTableShape, *pShapes, buttons, true, nullptr, this, pWidget());
         pRecordDialog = pRdt;
         if (pRdt->disabled()) {
             pRd = pRdt;     // Mégsincs tab widget
-            pRdt= NULL;     // nincs választás, csak egy üzenet
+            pRdt= nullptr;     // nincs választás, csak egy üzenet
         }
     }   break;
     default:
         pDelete(pRec);
-        pRecordDialog = NULL;
+        pRecordDialog = nullptr;
         if (__ex > EX_IGNORE) {
             EXCEPTION(ENOTSUPP);
         }
@@ -1405,7 +1405,7 @@ void cRecordsViewBase::modify(eEx __ex)
     int id = DBT_NEXT;
     while (1) {
         // Hívjuk a megfelelő dialogot
-        if (pRdt != NULL) {
+        if (pRdt != nullptr) {
             int i, n = pShapes->size();
             bool e = false;
             for (i = 0; i < n; i++) {   // Csak egy tabot engedélyezünk !
@@ -1421,7 +1421,7 @@ void cRecordsViewBase::modify(eEx __ex)
             pRd = pRdt->actPDialog();
         }
         pRd->restore(pRec);     // lemásolja a dialogus saját adatterületére
-        if (pRdt != NULL) id = pRdt->exec(false);
+        if (pRdt != nullptr) id = pRdt->exec(false);
         else              id =  pRd->exec(false);
         if (pRd->disabled()) id = DBT_CANCEL;
         // Ellenörzés, következő/előző, vagy kilép
@@ -1440,7 +1440,7 @@ void cRecordsViewBase::modify(eEx __ex)
                         continue;
                     }
                     // Nincs felszabadítva, de már nem a mienk (betettük a rekord listába, régi elem felszabadítva)
-                    pRec = NULL;
+                    pRec = nullptr;
                 }
                 else {
                     pDelete(pRec);
@@ -1467,7 +1467,7 @@ void cRecordsViewBase::modify(eEx __ex)
                         continue;
                     }
                     // Nincs felszabadítva, de már nem a mienk (betettük a rekord listába, régi elem felszabadítva)
-                    pRec = NULL;
+                    pRec = nullptr;
                 }
             }
             // pRec == NULL
@@ -1485,7 +1485,7 @@ void cRecordsViewBase::modify(eEx __ex)
             else {                      // Az előző szerkesztése
                 pRec = prevRow(&index, updateResult);
             }
-            if (pRec == NULL) break;    // Nem volt előző/következő
+            if (pRec == nullptr) break;    // Nem volt előző/következő
 
             continue;
         }
@@ -1498,12 +1498,12 @@ void cRecordsViewBase::modify(eEx __ex)
         }
         break;
     }
-    if (pRdt == NULL) pDelete(pRd);
+    if (pRdt == nullptr) pDelete(pRd);
     else              pDelete(pRdt);
     pDelete(pShape);
     pDelete(pShapes);
     pDelete(pRec);
-    pRecordDialog = NULL;
+    pRecordDialog = nullptr;
 }
 
 void cRecordsViewBase::first() { EXCEPTION(ENOTSUPP); }
@@ -1529,7 +1529,7 @@ void cRecordsViewBase::copy()
         QString list;
         foreach (QModelIndex mi, mil) {
             cRecord *pr = pModel->record(mi);
-            if (pr == NULL) continue;
+            if (pr == nullptr) continue;
             list += quotedString(pr->getName()) + ", ";
         }
         list.chop(2);
@@ -1577,7 +1577,7 @@ void cRecordsViewBase::report()
 qlonglong cRecordsViewBase::actId(eEx __ex)
 {
     cRecord *p = actRecord();
-    if (p == NULL) return NULL_ID;
+    if (p == nullptr) return NULL_ID;
     int ix;
     if (idName.isEmpty() == false && (ix = p->toIndex(idName, __ex))) return p->getId(ix);
     if (p->idIndex(__ex) >= 0) return p->getId();
@@ -1616,7 +1616,7 @@ void cRecordsViewBase::initView()
 
 void cRecordsViewBase::initShape(cTableShape *pts)
 {
-    if (pts != NULL) pTableShape = pts;
+    if (pts != nullptr) pTableShape = pts;
     setObjectName(pTableShape->getName());
     if ((pTableShape->containerValid & ~CV_LL_TEXT) == 0) {
         pTableShape->fetchText(*pq);
@@ -1643,12 +1643,12 @@ void cRecordsViewBase::initShape(cTableShape *pts)
 
     tTableShapeFields::iterator i, n = pTableShape->shapeFields.end();
     for (i = pTableShape->shapeFields.begin(); i != n; ++i) {
-        cError *pe = NULL;
-        cRecordTableColumn *p = NULL;
+        cError *pe = nullptr;
+        cRecordTableColumn *p = nullptr;
         try {
             p = new cRecordTableColumn(**i, *this);
         } CATCHS(pe)
-        if (pe == NULL) {
+        if (pe == nullptr) {
             fields << p;
         }
         else {
@@ -1658,7 +1658,7 @@ void cRecordsViewBase::initShape(cTableShape *pts)
     }
     initView();
     // Ha egy egyszerű táblát használnánk al táblaként, nem szívózunk, beállítjuk
-    if (pUpper != NULL) {
+    if (pUpper != nullptr) {
         qlonglong st = shapeType & ~ENUM2SET2(TS_TABLE, TS_READ_ONLY);
         if (st == ENUM2SET(TS_SIMPLE) || st == ENUM2SET(TS_TREE)) {
             shapeType = (shapeType & ~ENUM2SET(TS_SIMPLE)) | ENUM2SET(TS_CHILD);
@@ -1671,10 +1671,10 @@ cRecordsViewBase *cRecordsViewBase::newRecordView(cTableShape *pts, cRecordsView
 {
     cRecordsViewBase *r;
     qlonglong type = pts->getId(_sTableShapeType);
-    if ((type & ENUM2SET(TS_MEMBER)) && own != NULL) { // EXCEPTION(ENOTSUPP);
+    if ((type & ENUM2SET(TS_MEMBER)) && own != nullptr) { // EXCEPTION(ENOTSUPP);
         pts->setId(_sTableShapeType, type &~ENUM2SET(TS_MEMBER));   // Inkább töröljük
     }
-    if ((type & ENUM2SET(TS_GROUP))  && own != NULL) { // EXCEPTION(ENOTSUPP);
+    if ((type & ENUM2SET(TS_GROUP))  && own != nullptr) { // EXCEPTION(ENOTSUPP);
         pts->setId(_sTableShapeType, type &~ENUM2SET(TS_GROUP));
     }
     if (type & ENUM2SET(TS_TREE)) {
@@ -1692,7 +1692,7 @@ cRecordsViewBase *cRecordsViewBase::newRecordView(cTableShape *pts, cRecordsView
 
 int cRecordsViewBase::ixToOwner()
 {
-    if (pUpper == NULL) EXCEPTION(EPROGFAIL);
+    if (pUpper == nullptr) EXCEPTION(EPROGFAIL);
     QString key = mCat(pUpper->pTableShape->getName(), _sOwner);
     QString ofn = pTableShape->feature(key);
     int r;
@@ -1778,13 +1778,13 @@ void cRecordsViewBase::rightTabs(QVariantList& vlids)
 /// \diafile    record_table3.dia "Több child tábla" width=8cm
 void cRecordsViewBase::initMaster()
 {
-    cRecordsViewBase *pRightTable = NULL;
+    cRecordsViewBase *pRightTable = nullptr;
     qlonglong id;
     QVariantList vlids;
     bool ok;
 
     pMasterLayout = new QHBoxLayout(_pWidget);
-    if (pUpper == NULL) pMasterSplitter = new QSplitter(lv2g::getInstance()->defaultSplitOrientation);
+    if (pUpper == nullptr) pMasterSplitter = new QSplitter(lv2g::getInstance()->defaultSplitOrientation);
     else                pMasterSplitter = new QSplitter(Qt::Horizontal);
     pMasterLayout->addWidget(pMasterSplitter);
 
@@ -1827,7 +1827,7 @@ void cRecordsViewBase::initGroup(QVariantList& vlids)
         it = ENUM2SET(TS_IMEMBER);
         nt = ENUM2SET(TS_NMEMBER);
     }
-    cRecordsViewBase *prvb = NULL;
+    cRecordsViewBase *prvb = nullptr;
     cTableShape *pts = new cTableShape();
     bool ok = false;
     qlonglong id = NULL_ID; // comp. warning
@@ -1851,7 +1851,7 @@ void cRecordsViewBase::initGroup(QVariantList& vlids)
 
 QStringList cRecordsViewBase::filterWhere(QVariantList& qParams)
 {
-    if (pFODialog != NULL) return pFODialog->where(qParams);
+    if (pFODialog != nullptr) return pFODialog->where(qParams);
     return QStringList();
 }
 
@@ -1917,7 +1917,7 @@ QStringList cRecordsViewBase::where(QVariantList& qParams)
     QStringList wl;
     int f = flags & (RTF_CHILD | RTF_IGROUP | RTF_NGROUP | RTF_IMEMBER | RTF_NMEMBER);
     if (f) { // A tulaj ID-jére szűrünk, ha van
-        if (pUpper == NULL) EXCEPTION(EPROGFAIL);
+        if (pUpper == nullptr) EXCEPTION(EPROGFAIL);
         if (owner_id == NULL_ID) {  // A tulajdonos/tag rekord nincs kiválasztva
             wl << _sFalse;      // Ezzel jelezzük, hogy egy üres táblát kell megjeleníteni
             return wl;          // Ez egy üres tábla lessz!!
@@ -2002,7 +2002,7 @@ bool cRecordsViewBase::batchEdit(int logicalindex)
     for (int i = 0; i < dataFieldIndexList.size(); ++i) {
         cRecordFieldRef rfr = rec[dataFieldIndexList[i]];
         const cTableShapeField& sf = *pTableShape->shapeFields[shapeFieldIndexList[i]];
-        cFieldEditBase *feb = cFieldEditBase::createFieldWidget(*pTableShape, sf, rfr, false, NULL);
+        cFieldEditBase *feb = cFieldEditBase::createFieldWidget(*pTableShape, sf, rfr, false, nullptr);
         febList << feb;
         pEd->verticalLayout->insertWidget(i * 2, feb);
         QLabel *pLabel = new QLabel(sf.getText(cTableShapeField::LTX_DIALOG_TITLE));
@@ -2013,7 +2013,7 @@ bool cRecordsViewBase::batchEdit(int logicalindex)
     static const QString tn = "batchEdit";
     while (pDialog->exec() == QDialog::Accepted) {
         sqlBegin(*pq, tn);
-        cError  *pe = NULL;
+        cError  *pe = nullptr;
         bool first = true;
         foreach (QModelIndex mi, mil) {
             selectRow(mi);
@@ -2025,13 +2025,13 @@ bool cRecordsViewBase::batchEdit(int logicalindex)
                 }
                 ar->update(*pq, false, setMask);
             } CATCHS(pe);
-            if (pe != NULL) {
+            if (pe != nullptr) {
                 spoiling = !first;
                 break;
             }
             first = false;
         }
-        if (pe != NULL) {
+        if (pe != nullptr) {
             cErrorMessageBox::messageBox(pe, pDialog);
             pDelete(pe);
             sqlRollback(*pq, tn);
@@ -2053,7 +2053,7 @@ bool cRecordsViewBase::batchEdit(int logicalindex)
 void cRecordsViewBase::clickedHeader(int logicalindex)
 {
     if (batchEdit(logicalindex)) {
-        if (pFODialog == NULL) EXCEPTION(EPROGFAIL);
+        if (pFODialog == nullptr) EXCEPTION(EPROGFAIL);
         int r = pFODialog->exec();
         if (r == DBT_OK) refresh();
     }
@@ -2063,7 +2063,7 @@ void cRecordsViewBase::selectionChanged(QItemSelection,QItemSelection)
 {
     if (flags & (RTF_OVNER | RTF_MEMBER | RTF_GROUP)) {
         qlonglong _actId = NULL_ID;
-        if (pRightTables == NULL) {                              // A konstruktorból hívva még lehet NULL
+        if (pRightTables == nullptr) {                              // A konstruktorból hívva még lehet NULL
             if (selectedRows().size() > 0)EXCEPTION(EPROGFAIL); // Ha van kijelölt sor, nem valószínű hogy konstruktorban vagyunk.
         }
         else {
@@ -2109,7 +2109,7 @@ cRecordTable::cRecordTable(cTableShape *pts, bool _isDialog, cRecordsViewBase *_
     : cRecordsViewBase(_isDialog, par)
 {
     pMaster = pUpper = _upper;
-    if (pMaster != NULL && pUpper->pMaster != NULL) pMaster = pUpper->pMaster;
+    if (pMaster != nullptr && pUpper->pMaster != nullptr) pMaster = pUpper->pMaster;
     initShape(pts);
 }
 
@@ -2120,8 +2120,8 @@ cRecordTable::~cRecordTable()
 
 void cRecordTable::init()
 {
-    pTimer = NULL;
-    pTableView = NULL;
+    pTimer = nullptr;
+    pTableView = nullptr;
     // Az alapértelmezett gombok:
     buttons << DBT_SPACER;
     if (pTableShape->isFeature(_sButtonCopy) || pTableShape->isFeature(_sReport)) {
@@ -2137,17 +2137,17 @@ void cRecordTable::init()
         buttons << DBT_BREAK << DBT_SPACER << DBT_DELETE << DBT_INSERT << DBT_SIMILAR << DBT_MODIFY;
     }
     flags = 0;
-    if (pUpper != NULL && shapeType < ENUM2SET(TS_LINK)) shapeType |= ENUM2SET(TS_CHILD);
+    if (pUpper != nullptr && shapeType < ENUM2SET(TS_LINK)) shapeType |= ENUM2SET(TS_CHILD);
     switch (shapeType & ~ENUM2SET2(TS_TABLE, TS_READ_ONLY)) {
     case ENUM2SET(TS_BARE):
-        if (pUpper != NULL) EXCEPTION(EDATA);
+        if (pUpper != nullptr) EXCEPTION(EDATA);
         flags = RTF_SLAVE;
         buttons.pop_front();    // A close nem kell
         initSimple(_pWidget);
         break;
     case 0:
     case ENUM2SET(TS_SIMPLE):
-        if (pUpper != NULL) EXCEPTION(EDATA);
+        if (pUpper != nullptr) EXCEPTION(EDATA);
         flags = RTF_SINGLE;
         initSimple(_pWidget);
         break;
@@ -2155,7 +2155,7 @@ void cRecordTable::init()
         flags = RTF_OVNER;
         // Continue
     case ENUM2SET(TS_MEMBER):
-        if (pUpper != NULL) EXCEPTION(EDATA);
+        if (pUpper != nullptr) EXCEPTION(EDATA);
         flags |= RTF_MASTER | RTF_MEMBER;
         initMaster();
         break;
@@ -2163,12 +2163,12 @@ void cRecordTable::init()
         flags = RTF_OVNER;
         // Continue
     case ENUM2SET(TS_GROUP):
-        if (pUpper != NULL) EXCEPTION(EDATA);
+        if (pUpper != nullptr) EXCEPTION(EDATA);
         flags |= RTF_MASTER | RTF_GROUP;
         initMaster();
         break;
     case ENUM2SET(TS_OWNER):
-        if (pUpper != NULL) EXCEPTION(EDATA);
+        if (pUpper != nullptr) EXCEPTION(EDATA);
         flags = RTF_MASTER | RTF_OVNER;
         initMaster();
         break;
@@ -2176,7 +2176,7 @@ void cRecordTable::init()
     case ENUM2SET(TS_NGROUP):
     case ENUM2SET(TS_IMEMBER):
     case ENUM2SET(TS_NMEMBER):
-        if (pUpper == NULL) EXCEPTION(EDATA);
+        if (pUpper == nullptr) EXCEPTION(EDATA);
         if (tableInhType != TIT_NO && tableInhType != TIT_ONLY) EXCEPTION(EDATA);
         buttons.clear();
         buttons << DBT_REFRESH << DBT_FIRST << DBT_PREV << DBT_NEXT << DBT_LAST << DBT_SPACER;
@@ -2204,14 +2204,14 @@ void cRecordTable::init()
         break;
     case ENUM2SET(TS_CHILD):
     case ENUM2SET2(TS_CHILD, TS_LINK):
-        if (pUpper == NULL) EXCEPTION(EDATA);
+        if (pUpper == nullptr) EXCEPTION(EDATA);
         flags = RTF_SLAVE | RTF_CHILD;
         buttons.pop_front();    // A close nem kell
         initSimple(_pWidget);
         break;
     case ENUM2SET2(TS_OWNER, TS_CHILD):
         flags = RTF_OVNER | RTF_SLAVE | RTF_CHILD;
-        if (pUpper == NULL) EXCEPTION(EDATA);
+        if (pUpper == nullptr) EXCEPTION(EDATA);
         buttons.pop_front();    // A close nem kell
         initMaster();
         break;
@@ -2264,7 +2264,7 @@ void cRecordTable::initSimple(QWidget * pW)
 
     connect(pButtons,    SIGNAL(buttonPressed(int)),   this, SLOT(buttonPressed(int)));
     connect(pTableView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(selectionChanged(QItemSelection,QItemSelection)));
-    if (pFODialog != NULL) EXCEPTION(EPROGFAIL);
+    if (pFODialog != nullptr) EXCEPTION(EPROGFAIL);
     pFODialog = new cRecordTableFODialog(pq, *this);
     // A model konstruktorban nem megy az oszlopok eltüntetése, így mégegyszer...
     for (int i = 0; i < fields.size(); ++i) {
@@ -2315,20 +2315,20 @@ void cRecordTable::last()
 
 void cRecordTable::putIn()
 {
-    if (pUpper == NULL || pUpper->pRightTables == NULL || pUpper->pRightTables->size() < 2) EXCEPTION(EPROGFAIL);
+    if (pUpper == nullptr || pUpper->pRightTables == nullptr || pUpper->pRightTables->size() < 2) EXCEPTION(EPROGFAIL);
 
-    cRecord *pM = NULL;
-    cRecord *pG = NULL;
+    cRecord *pM = nullptr;
+    cRecord *pG = nullptr;
     if (((flags & RTF_NGROUP) != 0)) {
         pM = pUpper->actRecord();
-        if (pM == NULL) {
+        if (pM == nullptr) {
             DERR() << trUtf8("Nincs kijelölve a tag rekord a baloldalon!") << endl;
             return;
         }
     }
     else if (((flags & RTF_NMEMBER) != 0)) {
         pG = pUpper->actRecord();
-        if (pG == NULL) {
+        if (pG == nullptr) {
             DERR() << trUtf8("Nincs kijelölve a csoport rekord a baloldalon!") << endl;
             return;
         }
@@ -2361,20 +2361,20 @@ void cRecordTable::putIn()
 
 void cRecordTable::takeOut()
 {
-    if (pUpper == NULL || pUpper->pRightTables == NULL || pUpper->pRightTables->size() < 2) EXCEPTION(EPROGFAIL);
+    if (pUpper == nullptr || pUpper->pRightTables == nullptr || pUpper->pRightTables->size() < 2) EXCEPTION(EPROGFAIL);
 
-    cRecord *pM = NULL;
-    cRecord *pG = NULL;
+    cRecord *pM = nullptr;
+    cRecord *pG = nullptr;
     if (((flags & RTF_IGROUP) != 0)) {
         pM = pUpper->actRecord();
-        if (pM == NULL) {
+        if (pM == nullptr) {
             DERR() << trUtf8("Nincs kijelölve a tag rekord a baloldalon!") << endl;
             return;
         }
     }
     else if (((flags & RTF_IMEMBER) != 0)) {
         pG = pUpper->actRecord();
-        if (pG == NULL) {
+        if (pG == nullptr) {
             DERR() << trUtf8("Nincs kijelölve a csoport rekord a baloldalon!") << endl;
             return;
         }
@@ -2516,7 +2516,7 @@ void cRecordTable::_refresh(bool all)
         sql += " WHERE " + wl.join(" AND ");
     }
 
-    if (pFODialog != NULL) {
+    if (pFODialog != nullptr) {
         QString ord = pFODialog->ord();
         if (!ord.isEmpty()) sql += " ORDER BY " + ord;
     }
@@ -2572,33 +2572,33 @@ cRecord *cRecordTable::actRecord(const QModelIndex &_mi)
     QModelIndex mi = _mi;
     if (!mi.isValid()) mi = actIndex();
     if (mi.isValid() && isContIx(pTableModel()->records(), mi.row())) return pTableModel()->records()[mi.row()];
-    return NULL;
+    return nullptr;
 }
 
 cRecord *cRecordTable::nextRow(QModelIndex *pMi, int _upRes)
 {
     (void)_upRes;
-    if (pMi->isValid() == false) return NULL;    // Nincs aktív
+    if (pMi->isValid() == false) return nullptr;    // Nincs aktív
     int row = pMi->row();
     row++;
     if (row == pTableModel()->size()) {
-        if (!pTableModel()->qNextResult()) return NULL; // Az utolsó volt, nincs következő, kész
+        if (!pTableModel()->qNextResult()) return nullptr; // Az utolsó volt, nincs következő, kész
         pTableModel()->qNext();   // Lapozunk
         row = 0;
     }
     else if (!isContIx(pTableModel()->records(), row)) {
         DWAR() << "Invalid row : " << row << endl;
         *pMi = QModelIndex();
-        return NULL;
+        return nullptr;
     }
     *pMi = pTableModel()->index(row, pMi->column());
     if (!pMi->isValid()) {
         DWAR() << "Invalid index : " << row << endl;
-        return NULL;
+        return nullptr;
     }
     selectRow(*pMi);
     cRecord *pRec = actRecord(*pMi);
-    if (pRec == NULL) return NULL;
+    if (pRec == nullptr) return nullptr;
     pRec = pRec->dup();
     return pRec;
 }
@@ -2606,27 +2606,27 @@ cRecord *cRecordTable::nextRow(QModelIndex *pMi, int _upRes)
 cRecord *cRecordTable::prevRow(QModelIndex *pMi, int _upRes)
 {
     (void)_upRes;
-    if (pMi->isValid() == false) return NULL;    // Nincs aktív
+    if (pMi->isValid() == false) return nullptr;    // Nincs aktív
     int row = pMi->row();
     row--;
     if (row == -1) {
-        if (!pTableModel()->qPrevResult()) return NULL; // Az első volt , nincs előző, kész
+        if (!pTableModel()->qPrevResult()) return nullptr; // Az első volt , nincs előző, kész
         pTableModel()->qPrev();   // Lapozunk
         row = pTableModel()->size() -1;
     }
     else if (!isContIx(pTableModel()->records(), row)) {
         DWAR() << "Invalid row : " << row << endl;
         *pMi = QModelIndex();
-        return NULL;
+        return nullptr;
     }
     *pMi = pTableModel()->index(row, pMi->column());
     if (!pMi->isValid()) {
         DWAR() << "Invalid index : " << row << endl;
-        return NULL;
+        return nullptr;
     }
     selectRow(*pMi);
     cRecord *pRec = actRecord(*pMi);
-    if (pRec == NULL) return NULL;
+    if (pRec == nullptr) return nullptr;
     pRec = pRec->dup();
     return pRec;
 }
@@ -2640,7 +2640,7 @@ void cRecordTable::selectRow(const QModelIndex& mi)
 
 void cRecordTable::refresh(bool all)
 {
-    if (pTimer != NULL) pTimer->start();    // Auto refres (re)start
+    if (pTimer != nullptr) pTimer->start();    // Auto refres (re)start
     QList<qlonglong>    actIdList;
     int row;
     // Ha nem első init, és van ID-je a rekordnak, akkor megjegyezzük az aktív ID-jét
@@ -2697,7 +2697,7 @@ cRecord *cRecordTable::record(QModelIndex mi)
 void cRecordTable::autoRefresh()
 {
     QAbstractButton *pb = pButtons->button(DBT_REFRESH);
-    if (pb == NULL) EXCEPTION(EPROGFAIL);
+    if (pb == nullptr) EXCEPTION(EPROGFAIL);
     pb->animateClick(500); // 0.5 sec
     refresh(false);
 }

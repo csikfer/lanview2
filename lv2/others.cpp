@@ -290,7 +290,7 @@ QString getEnvVar(const char * cnm)
     return r;
 #elif defined(Q_CC_GNU)
     const char * v = getenv(cnm);
-    if (v == NULL) return QString();
+    if (v == nullptr) return QString();
     return QString::fromLatin1(v);
 #endif
 }

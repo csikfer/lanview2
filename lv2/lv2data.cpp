@@ -3326,6 +3326,54 @@ int cSnmpDevice::open(QSqlQuery& q, cSnmp& snmp, eEx __ex, QString *pEMsg) const
 #endif // SNMP_IS_EXISTS
 }
 
+cSnmpDevice * cSnmpDevice::refresh(QSqlQuery& q, const QString& _name, eEx __ex, QString *pEMsg)
+{
+    cSnmpDevice *p = new cSnmpDevice;
+    if (!p->fetchByName(q, _name)) {
+        delete p;
+        if (__ex != EX_IGNORE) EXCEPTION(ENONAME, 0, _name);
+        if (pEMsg != nullptr) msgCat(*pEMsg, trUtf8("%1 SNMP device not found").arg(_name), _sNl);
+        return nullptr;
+    }
+    cSnmpDevice *r = p->refresh(q);
+    if (r == nullptr) delete p;
+    return r;
+}
+
+cSnmpDevice * cSnmpDevice::refresh(QSqlQuery& q, qlonglong _id, eEx __ex, QString *pEMsg)
+{
+    cSnmpDevice *p = new cSnmpDevice;
+    if (!p->fetchById(q, _id)) {
+        delete p;
+        if (__ex != EX_IGNORE) EXCEPTION(EOID, _id);
+        if (pEMsg != nullptr) msgCat(*pEMsg, trUtf8("SNMP device ID %1 not found").arg(_id), _sNl);
+        return nullptr;
+    }
+    cSnmpDevice *r = p->refresh(q);
+    if (r == nullptr) delete p;
+    return r;
+}
+
+cSnmpDevice * cSnmpDevice::refresh(QSqlQuery& q, eEx __ex, QString *pEMsg)
+{
+    QString em;
+    QList<QHostAddress> al = fetchAllIpAddress(q);
+    foreach (QHostAddress a, al) {
+        if (setBySnmp(_sNul, EX_IGNORE, &em, &a)) {
+            if (pEMsg != nullptr) msgCat(*pEMsg, em, _sNl);
+            if (R_ERROR == replace(q, EX_ERROR)) {
+                if (pEMsg != nullptr) msgCat(*pEMsg, "Replace error." , _sNl);
+                return nullptr;
+            }
+            return this;
+        }
+    }
+    if (__ex != EX_IGNORE) {
+        EXCEPTION(ESNMP, 0, em);
+    }
+    if (pEMsg != nullptr) msgCat(*pEMsg, em, _sNl);
+    return nullptr;
+}
 
 int nodeObjectType(QSqlQuery& q, const cRecord& o, eEx __ex)
 {

@@ -71,14 +71,14 @@ QBitArray   bitString2Array(u_char *__bs, size_t __os)
 QVariant *cTable::find(const QString __in, QVariant __ix, const QString __col)
 {
     // Ha bármelyik megadott oszlop név hiányzik
-    if (contains(__in) == 0 || contains(__col) == 0) return NULL;
+    if (contains(__in) == 0 || contains(__col) == 0) return nullptr;
     QVariantVector& vv = (*this)[__in];
     int row;
     for (row = 0; row < vv.size(); row++) {
         if (vv[row] == __ix) break;
     }
     // Nem találtuk a megadott index értéket
-    if (row >= vv.size()) return NULL;
+    if (row >= vv.size()) return nullptr;
     return &((*this)[__col][row]);
 }
 
@@ -464,12 +464,12 @@ cSnmp::cSnmp(const QString& __host, const QString& __com, int __ver) : netSnmp()
 
 void cSnmp::_init(void)
 {
-    ss   = NULL;
-    pdu  = response = NULL;
+    ss   = nullptr;
+    pdu  = response = nullptr;
     //vars = NULL;
     count  = 0;
     memset(&session,0,sizeof(session));
-    actVar = NULL;
+    actVar = nullptr;
 }
 
 cSnmp::~cSnmp()
@@ -482,13 +482,13 @@ void  cSnmp::_clear(void)
 {
     if (session.peername)  SNMP_FREE(session.peername);
     if (session.community) SNMP_FREE(session.community);
-    session.peername = NULL;
-    session.community = NULL;
+    session.peername = nullptr;
+    session.community = nullptr;
     session.community_len = 0;
     if (response) snmp_free_pdu(response);
     if (ss)       snmp_close(ss);
-    response = pdu = NULL;
-    ss = NULL;
+    response = pdu = nullptr;
+    ss = nullptr;
     clrStat();
 }
 
@@ -503,7 +503,7 @@ int cSnmp::open(const char * __host, const char * __com, int __ver)
     session.community       = (u_char *)strdup(__com);
     session.community_len   = strlen(__com);
     ss = snmp_open(&session);
-    return setStat(ss == NULL, __PRETTY_FUNCTION__);
+    return setStat(ss == nullptr, __PRETTY_FUNCTION__);
 }
 
 int cSnmp::open(const QString& __host, const QString& __com, int __ver)
@@ -517,7 +517,7 @@ QVariant cSnmp::value(const netsnmp_variable_list * __var)
     //static const char * snmpType = "SNMP variable type";
     QVariant    r;
     qulonglong  ul;
-    if (NULL != __var) {
+    if (nullptr != __var) {
         // PDEB(VVERBOSE) << " type = # " << (int)__var->type << "; ";
         switch (__var->type) {
             case ASN_BOOLEAN: //         ((u_char)0x01)
@@ -597,7 +597,7 @@ QVariant cSnmp::value(const netsnmp_variable_list * __var)
 QVariantVector  cSnmp::values()
 {
     QVariantVector  vv;
-    for (first(); actVar != NULL; next()) {
+    for (first(); actVar != nullptr; next()) {
         vv << value();
     }
     return vv;
@@ -606,7 +606,7 @@ QVariantVector  cSnmp::values()
 cOId cSnmp::name(const netsnmp_variable_list * __var)
 {
     cOId r;
-    if (__var != NULL) {
+    if (__var != nullptr) {
         r.set(__var->name, __var->name_length);
     }
     return r;
@@ -615,7 +615,7 @@ cOId cSnmp::name(const netsnmp_variable_list * __var)
 cOIdVector cSnmp::names()
 {
     cOIdVector r;
-    for (first(); actVar != NULL; next()) {
+    for (first(); actVar != nullptr; next()) {
         r << name();
     }
     return r;
@@ -624,16 +624,16 @@ cOIdVector cSnmp::names()
 
 int cSnmp::type(const netsnmp_variable_list * __var)
 {
-    return __var == NULL ? -1 : __var->type;
+    return __var == nullptr ? -1 : __var->type;
 }
 
 
 int cSnmp::__get(void)
 {
-    if (response != NULL) {
+    if (response != nullptr) {
         snmp_free_pdu(response);
-        response = NULL;
-        actVar = NULL;
+        response = nullptr;
+        actVar = nullptr;
     }
     status = snmp_synch_response(ss, pdu, &response);
     if (status == STAT_SUCCESS && response->errstat == SNMP_ERR_NOERROR) {
@@ -720,17 +720,17 @@ int cSnmp::getNext(void)
 {
     int r;
     // Ez csak egy eredményes get vagy getNext után hívható.
-    if (response == NULL || response->variables == NULL) EXCEPTION(EPROGFAIL);
+    if (response == nullptr || response->variables == nullptr) EXCEPTION(EPROGFAIL);
     const netsnmp_variable_list *vl = response->variables;
-    if (vl->next_variable == NULL) {     // Egy elem
+    if (vl->next_variable == nullptr) {     // Egy elem
         cOId    o(vl->name, vl->name_length);
         r = getNext(o);
     }
     else {                      // Több elem
         int n, i;
-        for (n = 0; vl != NULL; vl = vl->next_variable) ++n; // megszámoljuk
+        for (n = 0; vl != nullptr; vl = vl->next_variable) ++n; // megszámoljuk
         cOIdVector ov(n);
-        for (i = 0, vl = response->variables; vl != NULL; vl = vl->next_variable, ++i) ov[i].set(vl->name, vl->name_length);
+        for (i = 0, vl = response->variables; vl != nullptr; vl = vl->next_variable, ++i) ov[i].set(vl->name, vl->name_length);
         r = getNext(ov);
     }
     return r;
@@ -774,7 +774,7 @@ int cSnmp::getTable(const cOIdVector& Ids, const QStringList& columns, cTable& r
     first();
     while (true) {
         for (int i = 0; i < ncol; ++i) {
-            if (actVar == NULL) EXCEPTION(EPROGFAIL);
+            if (actVar == nullptr) EXCEPTION(EPROGFAIL);
             const QString&  col = columns[i];   // Oszlop név
             const cOId&     oib = Ids[i];       // Oszlop bázis ID
             const cOId      oia = name();       // cella ID
@@ -800,7 +800,7 @@ int cSnmp::getTable(const cOIdVector& Ids, const QStringList& columns, cTable& r
             }
             next();
         }
-        if (actVar != NULL) EXCEPTION(EPROGFAIL);
+        if (actVar != nullptr) EXCEPTION(EPROGFAIL);
         if (getNext()) return 1;
     }
     return 1;
