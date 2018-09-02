@@ -27,16 +27,16 @@ int main (int argc, char * argv[])
     // A továbbiakban a timer ütemében történnek az események
     int r = app.exec();
     PDEB(INFO) << QObject::trUtf8("Event loop is exited.") << endl;
-    exit(mo.lastError == NULL ? r : mo.lastError->mErrorCode);
+    exit(mo.lastError == nullptr ? r : mo.lastError->mErrorCode);
 }
 
 lv2portStat::lv2portStat() : lanView()
 {
-    pSelfInspector = NULL;
+    pSelfInspector = nullptr;
     // Nem a futtató eszköz, hanem a cél eszköz van benne, mivel a szervízpéldány alapján lett kitöltve, és nem lehet NULL
-    if (lastError == NULL) {
+    if (lastError == nullptr) {
         try {
-            if (pSelfNode == NULL) {
+            if (pSelfNode == nullptr) {
                 EXCEPTION(EDATA);
             }
             pDelete(pSelfNode);
@@ -75,9 +75,9 @@ void lv2portStat::setup(eTristate _tr)
 
 /******************************************************************************/
 
-const cService *cDevPortStat::pRLinkStat = NULL;
-const cService *cDevPortStat::pPortVars  = NULL;
-const cService *cDevPortStat::pSrvSnmp   = NULL;
+const cService *cDevPortStat::pRLinkStat = nullptr;
+const cService *cDevPortStat::pPortVars  = nullptr;
+const cService *cDevPortStat::pSrvSnmp   = nullptr;
 int cDevPortStat::ixPortOStat = NULL_IX;
 int cDevPortStat::ixPortAStat = NULL_IX;
 int cDevPortStat::ixIfdescr   = NULL_IX;
@@ -85,11 +85,11 @@ int cDevPortStat::ixStatLastModify = NULL_IX;
 
 
 cDevPortStat::cDevPortStat(QSqlQuery& __q, const QString &_an)
-    : cInspector(NULL)  // Self host service
+    : cInspector(nullptr)  // Self host service
     , snmp()
 {
     (void)_an;
-    if (hostService.isNull() || pNode == NULL || pService == NULL) {
+    if (hostService.isNull() || pNode == nullptr || pService == nullptr) {
         EXCEPTION(EDATA);
     }
 
@@ -121,7 +121,7 @@ void cDevPortStat::postInit(QSqlQuery &_q, const QString&)
 {
     DBGFN();
     cInspector::postInit(_q);
-    if (pSubordinates != NULL)
+    if (pSubordinates != nullptr)
         EXCEPTION(EDATA, -1,
                   trUtf8("A 'superior=custom'' nem volt megadva? (feature = %1) :\n%2")
                   .arg(dQuoted(hostService.getName(_sFeatures)))
@@ -155,7 +155,7 @@ void cDevPortStat::postInit(QSqlQuery &_q, const QString&)
         DM;
         varsInit(_q, pInterface);
         DM;
-        cInspector *pRLnkSt  = NULL;    // Al szolgáltatás, ha van. Csak rlinkstat lehet/támogatott (és portvars, amit az elöbb kezeltünk)
+        cInspector *pRLnkSt  = nullptr;    // Al szolgáltatás, ha van. Csak rlinkstat lehet/támogatott (és portvars, amit az elöbb kezeltünk)
         QString wMsg;   // Gyanús dolgok
          // Mivel van linkelve?
         qlonglong lpid;
@@ -301,7 +301,7 @@ void cDevPortStat::varsInit(QSqlQuery &_q, cInterface *pInterface)
     DM;
     pPVars->pVars = pPVars->fetchVars(_q);  // Fetch variables
     DM;
-    if (pPVars->pVars == NULL) {
+    if (pPVars->pVars == nullptr) {
         DM;
         pPVars->pVars = new tOwnRecords<cServiceVar, cHostService>(&(pPVars->hostService));
     }
@@ -321,7 +321,7 @@ void cDevPortStat::varsInit(QSqlQuery &_q, cInterface *pInterface)
     for (int i = 0; i < n; ++i) {
         const QString& name = vnames.at(i);
         cServiceVar *pVar = pPVars->pVars->get(name, EX_IGNORE);
-        if (pVar == NULL) {
+        if (pVar == nullptr) {
             pVar = new cServiceVar;
             pVar->setName(name);
             pVar->setId(_sServiceVarTypeId, cServiceVarType().getIdByName(_q, vtypes.at(i)));
@@ -367,7 +367,7 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
     int n = tab.rows();
     int i;
     foreach (cInspector *ps, *pSubordinates) {
-        if (ps != NULL) ps->flag = false;   // A státuszt még nem állítottuk be.
+        if (ps != nullptr) ps->flag = false;   // A státuszt még nem állítottuk be.
     }
     for (i = 0; i < n; i++) {
         bool    ok;
@@ -462,7 +462,7 @@ int cDevPortStat::run(QSqlQuery& q, QString &runMsg)
         }
     }
     foreach (cInspector *ps, *pSubordinates) {
-        if (ps != NULL && ps->flag == false) {   // be lett állítva státusz ??? Ha még nem:
+        if (ps != nullptr && ps->flag == false) {   // be lett állítva státusz ??? Ha még nem:
             ps->hostService.setState(q, _sUnreachable, trUtf8("No data") , parid);
         }
     }

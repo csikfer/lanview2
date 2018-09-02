@@ -144,10 +144,10 @@ EXT_ QString quotedStringList(const QStringList& __sl, const QChar &__q = QChar(
 #define VDEBTOSTR(n) " " #n " = " << debVariantToString(n)
 
 template <class T> QString debPToString(T *p) {
-    if (p == NULL) return "[NULL]";
+    if (p == nullptr) return "[NULL]";
     return quotedString(p->toString());
 }
-inline static QString debPString(QString *p) { return p == NULL ? "[NULL]" : quotedString(*p); }
+inline static QString debPString(QString *p) { return p == nullptr ? "[NULL]" : quotedString(*p); }
 
 /// @def VDEBPTOSTR(n)
 /// Kiíratásnál használható makró, egy pointer változó nevének és értékének a kiíratásához.
@@ -448,7 +448,7 @@ class LV2SHARED_EXPORT cDebug {
     static qlonglong set(qlonglong __m) { chk(); return instance->mMask  =  __m; }
     //! Ha van aktuális cDebug objektum, akkor törli.
     //! A disables statikus adattagot true-ra állítja
-    static void end(void) { if (instance) { delete instance; instance = NULL; }; disabled = true; }
+    static void end(void) { if (instance) { delete instance; instance = nullptr; }; disabled = true; }
     /// Az aktuális cDebug objektum pointerének a lekérdezése.
     /// @return Az aktuális cDebug pointer. Ha nincs objektum, akkor NULL
     static cDebug *getInstance(void) { return instance; }

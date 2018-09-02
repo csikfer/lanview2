@@ -121,9 +121,9 @@ EXT_ int onCount(qlonglong _set);
 
 /// Egy pointer felszabadítása, és a pointer változó nullázása, feltéve ha a pointer nem NULL.
 template <class T> void pDelete(T *& p) {
-    if (p != NULL) {
+    if (p != nullptr) {
         delete p;
-        p = NULL;
+        p = nullptr;
     }
 }
 
@@ -267,7 +267,7 @@ inline QString msgCat(const QString msg1, const QString& msg2, const QString& se
 
 inline const QString& msgAppend(QString *pMsg, const QString& m)
 {
-    if (pMsg != NULL) {
+    if (pMsg != nullptr) {
         if (!pMsg->isEmpty()) *pMsg += QChar('\n');
         *pMsg += m;
     }

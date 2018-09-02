@@ -140,8 +140,8 @@ public:
     qlonglong lst2set(const QStringList& s, enum eEx __ex = EX_ERROR) const;
     tIntVector lst2lst(const QStringList& _lst, enum eEx __ex = EX_ERROR) const;
     QStringList lst2lst(const tIntVector& _lst, enum eEx __ex = EX_ERROR) const;
-    QString     normalize(const QString& nm, bool *pok = NULL) const;
-    QStringList normalize(const QStringList& lst, bool *pok = NULL) const;
+    QString     normalize(const QString& nm, bool *pok = nullptr) const;
+    QStringList normalize(const QStringList& lst, bool *pok = nullptr) const;
     void checkEnum(tE2S e2s, tS2E s2e) const;
     static void checkEnum(QSqlQuery &q, const QString &_type, tE2S e2s, tS2E s2e);
 private:
@@ -306,7 +306,7 @@ public:
     /// Enumerációs ill. set típus esetén a leíró pointere, vagy NULL pointer
     const cColEnumType *pEnumType;
     /// Enumerációs ill. set típus leíró referenciája, ha nincs dob egy kizárást.
-    const cColEnumType& enumType() const { if (pEnumType == NULL) EXCEPTION(EDATA); return *pEnumType; }
+    const cColEnumType& enumType() const { if (pEnumType == nullptr) EXCEPTION(EDATA); return *pEnumType; }
     /// Enumerációs ill. set típus leíró pointere, vagy NULL
     const cColEnumType *getPEnumType() const { return pEnumType; }
     /// A mező (oszlop) típusa, lásd: eFieldType
@@ -464,7 +464,7 @@ CSD_INHERITOR(cColStaticDescrInterval)
 /// Egy adatbázisból beolvasott bool értéket kovertál stringgé
 inline static const QString& boolFromSql(const QVariant& __f) { return __f.isNull() ? _sNul : str2bool(__f.toString(), EX_IGNORE) ? _sTrue : _sFalse; }
 /// Egy adatbázisból beolvasott text típusú tömb értéket konvertálja string listává
-inline static QStringList stringArrayFromSql(const QVariant& __f) { return cColStaticDescrArray(NULL, cColStaticDescr::FT_TEXT | cColStaticDescr::FT_ARRAY).fromSql(__f).toStringList(); }
+inline static QStringList stringArrayFromSql(const QVariant& __f) { return cColStaticDescrArray(nullptr, cColStaticDescr::FT_TEXT | cColStaticDescr::FT_ARRAY).fromSql(__f).toStringList(); }
 /// Egy adatbázisból beolvasott text típusú tömb értéket konvertálja string listává, majd a join()-al egy stringgé.
 /// @param __f Akonvertálandó, adatbázisból kiolvasott nyers adat.
 /// @param __s Szeparátor a joint() híváshoz.
@@ -1161,7 +1161,7 @@ public:
     /// @param q Ha adatbázisműveletre van szükség, akkor az ezen keresztül.
     /// @param __i A mező indexe
     /// @param pFeatures Egy opcionális features érték.
-    virtual QString view(QSqlQuery &q, int __i, const cFeatures *pFeatures = NULL) const;
+    virtual QString view(QSqlQuery &q, int __i, const cFeatures *pFeatures = nullptr) const;
     ///
     virtual bool isContainerValid(qlonglong __mask) const;
     virtual void setContainerValid(qlonglong __set, qlonglong __clr = 0);
@@ -1318,7 +1318,7 @@ public:
     /// @param __r Forrás rekord objektum. A mezők név szerint lesznek azonosítva.
     /// @param __fromp Ha nem NULL, akkor a *__fromp indextől végzi a feltöltést, visszatéréskor az első nem olvasott mező indexe
     /// @param __size Ha értéke pozitív, akkor össz. ennyi mezőt fog olvasni, ha negatív, vagy nincs megadva, akkor az objektum mező száma.
-    cRecord& set(const QSqlRecord& __r, int* __fromp = NULL, int __size = -1);
+    cRecord& set(const QSqlRecord& __r, int* __fromp = nullptr, int __size = -1);
     /// Beállítja a megadott indexű mező értékét, majd hívja a toEnd(__i) metódust. Ha az objektum NULL, akkor feltölti elöszőr a _fields-t NULL értékekkel.
     /// @param __i A mező indexe, ha nem egy valós mező indexe, akkor dob egy kizárást.
     /// @param __v A megadott mező új értéke, az értéket elöszőr konvertálja a mező leíró set() virtuális metódusával.
@@ -1331,7 +1331,7 @@ public:
     /// @return Az objektumra mutató referencia
     cRecord& set(const QString& __fn, const QVariant& __v) { return set(chkIndex(toIndex(__fn)), __v); }
     /// Hasonló a set(const QSqlRecord& __r); híváshoz, a rekord a query aktuális rekordja.
-    cRecord& set(const QSqlQuery& __q, int * __fromp = NULL, int __size = -1)   { return set(__q.record(), __fromp, __size);   }
+    cRecord& set(const QSqlQuery& __q, int * __fromp = nullptr, int __size = -1)   { return set(__q.record(), __fromp, __size);   }
     /// A megadott indexű mező értékének a lekérdezése. Az indexet ellenőrzi, ha nem megfelelő dob egy kizárást
     /// A mező értékére egy referenciát ad vissza, ez a referencia csak addig valós, amíg nem hajtunk végre
     /// az objektumon egy olyan metódust, amely ujra kreálja a _fields adat konténert. Azon értékadó műveletek, melyek
@@ -2204,7 +2204,7 @@ public:
 protected:
     QString objectExportLine(QSqlQuery& q, int _indent, QString& line) const;
     QString getCondString(QSqlQuery& q, QString::const_iterator& i, const QString::const_iterator& e) const;
-    QString parseString(QSqlQuery& q, const QString& __src, const QStringList &__pl, int __indent, int *__pIx = NULL) const;
+    QString parseString(QSqlQuery& q, const QString& __src, const QStringList &__pl, int __indent, int *__pIx = nullptr) const;
     int parseParams(QSqlQuery& q, QStringList &pl, int ss) const;
 
     qlonglong _defectiveFieldMask() const {
@@ -2246,7 +2246,7 @@ protected:
         _fields = __o._fields;
         __cp(__o);
         pDelete(pTextList);
-        if (__o.pTextList != NULL) pTextList = new QStringList(*__o.pTextList);
+        if (__o.pTextList != nullptr) pTextList = new QStringList(*__o.pTextList);
     }
     /// Átmásolja a paraméterként megadott objektum mezőit. Előtte nem törli az objektum mező adatait.
     /// Ha a forrás olyan mezőt tartalmaz, amit a cél nem, akkor azokat figyelmen kívül hagyja.
@@ -2275,7 +2275,7 @@ protected:
     /// @param __fromp Egy sorszámra mutató pointer, ha nem null, akkor a beolvasott rekord első figyelembevett eleme az itt megadott sorszámú.
     ///              a sorszám értéke a függvény visszatértekor az utolsó felhasznált mező sorszáma +1 lessz, ha nem NULL a pointer.
     /// @param __size Ha értéke nem -1, akkor a beolvasott rekordból csak ennyi mező lesz figyelembe véve.
-    cRecord& _set(const QSqlRecord& __r, const cRecStaticDescr& __d, int* __fromp = NULL, int __size = -1);
+    cRecord& _set(const QSqlRecord& __r, const cRecStaticDescr& __d, int* __fromp = nullptr, int __size = -1);
     /// Beállítja a megadott sorszámú mező értékét. Az objektum, ill. a _field konténer nem lehet üres, egyébként dob egy kizárást.
     /// Nem hív virtuális metódust, így a toEnd() metódusokat sem, így egyéb adatott nem módosít, a státust sem.
     cRecord& _set(int __i, const QVariant& __v) { if (isNull()) EXCEPTION(EPROGFAIL); _fields[__i] =  __v; return *this; }
@@ -2327,7 +2327,7 @@ public:
     qlonglong   getTextId(eEx __ex = EX_ERROR) { int ix = descr().textIdIndex(__ex); return 0 > ix ? NULL_ID : getId(ix); }
     QString     getText(int _tix, const QString& _d = QString()) const;
     QString     getText(const QString& _tn, const QString& _d = QString()) const;
-    QStringList getTexts() const { return pTextList == NULL ? QStringList() : *pTextList; }
+    QStringList getTexts() const { return pTextList == nullptr ? QStringList() : *pTextList; }
     cRecord&    setText(int _tix, const QString& _t);
     cRecord&    setText(const QString& _tn, const QString& _t);
     cRecord&    setTexts(const QStringList& _txts);
@@ -2350,7 +2350,7 @@ inline static uint qHash(const cRecord& key) { return qHash(key.getId(0)); }
 /// @return Ha inicializálni kellett a pointert, akkor true.
 template <class R> bool initPDescr(const QString& _tn, const QString& _sn = _sPublic)
 {
-    if (R::_pRecordDescr == NULL) {
+    if (R::_pRecordDescr == nullptr) {
         R::_pRecordDescr = cRecStaticDescr::get(_tn, _sn);
         return true;
     }
@@ -2383,7 +2383,7 @@ template <class R> const cRecStaticDescr *getPDescr(const QString& _tn, const QS
         virtual cRecord *newObj() const; \
         virtual cRecord *dup()const; \
         virtual R& clone(const cRecord& __o); \
-        static const cRecStaticDescr& _descr_##R() { if (R::_pRecordDescr == NULL) R().descr(); return *R::_pRecordDescr; } \
+        static const cRecStaticDescr& _descr_##R() { if (R::_pRecordDescr == nullptr) R().descr(); return *R::_pRecordDescr; } \
     protected: \
         static const cRecStaticDescr * _pRecordDescr
 
@@ -2409,7 +2409,7 @@ template <class R> const cRecStaticDescr *getPDescr(const QString& _tn, const QS
 /// A cRecord leszármazottakban a newObj() és dup() virtuális metódusokat definiáló makró
 /// @param R Az osztály neve, melyhez a metódusok tartoznak
 #define CRECDEFNC(R) \
-    const cRecStaticDescr * R::_pRecordDescr = NULL; \
+    const cRecStaticDescr * R::_pRecordDescr = nullptr; \
     cRecord *R::newObj() const { return new R(); }   \
     cRecord *R::dup()const     { return new R(*this); } \
 
@@ -2674,7 +2674,7 @@ protected:
 /// @return Ha hibás a features mező, akkor false-val tér vissza, feltéve, hogy nem dobott kizárást (lásd: __ex)
 template <class R> bool _SplitFeatureT(R& o, eEx __ex = EX_ERROR)
 {
-    if (o._pFeatures == NULL) o._pFeatures = new cFeatures();
+    if (o._pFeatures == nullptr) o._pFeatures = new cFeatures();
     else {
         if (__ex >= EX_WARNING) EXCEPTION(EREDO);
         o._pFeatures->clear();
@@ -2698,7 +2698,7 @@ template <class R> bool _SplitFeatureT(R& o, eEx __ex = EX_ERROR)
 /// @relates cRecord
 template <class R> void _JoinFeatureT(R& o)
 {
-    if (o._pFeatures == NULL ) return;
+    if (o._pFeatures == nullptr ) return;
     QString prop;
     prop = o._pFeatures->join();
     if (o.getName(R::ixFeatures()) != prop) { // Nem túl hatékony (sorrend változhat), de bonyi lenne.
@@ -2787,8 +2787,8 @@ protected: \
     cFeatures *_pFeatures; \
 public: \
     cFeatures&  splitFeature(eEx __ex = EX_ERROR) { _SplitFeatureT<R>(*this, __ex); return *_pFeatures; } \
-    const cFeatures&  features(eEx __ex = EX_ERROR) const { if (_pFeatures == NULL) const_cast<R *>(this)->splitFeature(__ex); return *_pFeatures; } \
-    cFeatures&  features(eEx __ex = EX_ERROR) { if (_pFeatures == NULL) this->splitFeature(__ex); return *_pFeatures; } \
+    const cFeatures&  features(eEx __ex = EX_ERROR) const { if (_pFeatures == nullptr) const_cast<R *>(this)->splitFeature(__ex); return *_pFeatures; } \
+    cFeatures&  features(eEx __ex = EX_ERROR) { if (_pFeatures == nullptr) this->splitFeature(__ex); return *_pFeatures; } \
     QString feature(const QString &_nm) const { return features().value(_nm); } \
     bool  isFeature(const QString &_nm) const { return features().contains(_nm); } \
     R& joinFeature() { _JoinFeatureT<R>(*this); return *this;  } \

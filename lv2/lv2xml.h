@@ -11,7 +11,7 @@ class LV2SHARED_EXPORT processXml : public QObject, public QDomDocument {
     Q_OBJECT
 public:
     /// Konstruktor
-    processXml(QObject *parent = NULL);
+    processXml(QObject *parent = nullptr);
     /// Konstruktor.
     /// létrehoz egy QProcess objektumot, és elindítja a __cmd parancsal.
     /// Csatlakoztat 3 slotot a Qprocess objektumra (finish, error, readyRead).
@@ -20,7 +20,7 @@ public:
     /// mentódusát, ha ez true-val tér vissza, akkor törli a belső változót.
     /// @param __cmd    A végrehajtandó parancs, és paraméterei
     /// @param parent   Szülő objektum
-    processXml(QString __cmd, QObject *parent = NULL);
+    processXml(QString __cmd, QObject *parent = nullptr);
     /// destruktor
     /// @throw cError* Ha a parancs még fut, és nem sikerül leállítani (időkorlát = 1 sec)
     virtual ~processXml();
