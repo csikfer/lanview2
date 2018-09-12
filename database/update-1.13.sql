@@ -1,4 +1,4 @@
-BEGIN;  -- Version 1.12 ==> 1.13
+﻿--BEGIN;  -- Version 1.12 ==> 1.13
 
 DROP VIEW named_host_services;
 CREATE VIEW named_host_services AS
@@ -208,7 +208,7 @@ ALTER TYPE fieldflag ADD VALUE 'raw';
 ALTER TABLE table_shape_fields DROP CONSTRAINT table_shape_fields_table_shape_id_table_shape_field_name_key;
 CREATE INDEX table_shape_fields_table_shape_id_index ON table_shape_fields(table_shape_id);
 
-############################### ++++
+-- ++++
 
 ALTER TABLE interfaces ADD COLUMN port_stat notifswitch DEFAULT 'unknown';
 
@@ -262,4 +262,4 @@ END;
 $$ LANGUAGE plpgsql;
   
 SELECT set_db_version(1, 13);
-END;
+-- END;
