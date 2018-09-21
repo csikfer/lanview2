@@ -2558,6 +2558,7 @@ delete  : DELETE_T PLACE_T strs ';'             { foreach (QString s, *$3) { cPl
         | DELETE_T NODE_T strs PARAM_T str ';'  { delNodesParam(slp2sl($3), sp2s($5)); }
         ;
 scan    : SCAN_T LLDP_T snmph ';'               { scanByLldp(qq(), *$3, true); delete $3; }
+        | LLDP_T snmph ';'                      { lldpInfo(qq(), *$2, true); delete $2; }
         | SCAN_T SNMP_T snmph SET_T ';'         { if ($3->setBySnmp()) $3->rewrite(qq());  delete $3; }
         ;
 snmph   : str                                   { if (!($$ = new cSnmpDevice())->fetchByName(qq(), sp2s($1))) yyerror("ismeretlen SNMP eszköz név"); }

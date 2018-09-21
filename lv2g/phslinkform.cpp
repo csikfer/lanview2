@@ -122,12 +122,6 @@ bool phsLinkWidget::prev()
 
 }
 
-void shareDisabled()
-{
-
-}
-
-
 void phsLinkWidget::toglePlaceEqu(bool f)
 {
     if (first) EXCEPTION(EPROGFAIL);

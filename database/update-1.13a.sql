@@ -359,3 +359,104 @@ BEGIN
     RETURN hs;
 END
 $$ LANGUAGE plpgsql;
+
+-- Hibajavítás 2018.09.05 A konverziós fügvények nem kazelik a NULL értéket, hiába van default érték, NULL-t adnak vissza
+
+CREATE OR REPLACE FUNCTION cast_to_boolean(text, boolean DEFAULT NULL) RETURNS boolean AS $$
+BEGIN
+    RETURN COALESCE(cast($1 as boolean), $2);
+EXCEPTION
+    WHEN invalid_text_representation THEN
+        RETURN $2;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION cast_to_integer(text, bigint DEFAULT NULL) RETURNS bigint AS $$
+BEGIN
+    RETURN COALESCE(cast($1 as bigint), $2);
+EXCEPTION
+    WHEN invalid_text_representation THEN
+        RETURN $2;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION cast_to_real(text, double precision DEFAULT NULL) RETURNS double precision AS $$
+BEGIN
+    RETURN COALESCE(cast($1 as double precision), $2);
+EXCEPTION
+    WHEN invalid_text_representation THEN
+        RETURN $2;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION cast_to_date(text, date DEFAULT NULL) RETURNS date AS $$
+BEGIN
+    RETURN COALESCE(cast($1 as date), $2);
+EXCEPTION
+    WHEN invalid_datetime_format THEN
+        RETURN $2;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION cast_to_time(text, time DEFAULT NULL) RETURNS time AS $$
+BEGIN
+    RETURN COALESCE(cast($1 as time), $2);
+EXCEPTION
+    WHEN invalid_datetime_format THEN
+        RETURN $2;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION cast_to_datetime(text, timestamp DEFAULT NULL) RETURNS timestamp AS $$
+BEGIN
+    RETURN COALESCE(cast($1 as timestamp), $2);
+EXCEPTION
+    WHEN invalid_datetime_format THEN
+        RETURN $2;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION cast_to_interval(text, interval DEFAULT NULL) RETURNS interval AS $$
+BEGIN
+    RETURN COALESCE(cast($1 as interval), $2);
+EXCEPTION
+    WHEN invalid_datetime_format THEN
+        RETURN $2;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION cast_to_inet(text, inet DEFAULT NULL) RETURNS inet AS $$
+BEGIN
+    RETURN COALESCE(cast($1 as inet), $2);
+EXCEPTION
+    WHEN invalid_text_representation THEN
+        RETURN $2;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION cast_to_cidr(text, cidr DEFAULT NULL) RETURNS cidr AS $$
+BEGIN
+    RETURN COALESCE(cast($1 as cidr), $2);
+EXCEPTION
+    WHEN invalid_text_representation THEN
+        RETURN $2;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION cast_to_mac(text, macaddr DEFAULT NULL) RETURNS macaddr AS $$
+BEGIN
+    RETURN COALESCE(cast($1 as macaddr), $2);
+EXCEPTION
+    WHEN invalid_text_representation THEN
+        RETURN $2;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION cast_to_point(text, point DEFAULT NULL) RETURNS point AS $$
+BEGIN
+    RETURN COALESCE(cast($1 as point), $2);
+EXCEPTION
+    WHEN invalid_text_representation THEN
+        RETURN $2;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
