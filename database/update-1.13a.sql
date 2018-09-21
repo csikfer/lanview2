@@ -1,4 +1,4 @@
-p -- Hibajavítás
+﻿-- Hibajavítás
 
 -- Nem lehet törölni sunet-et
 CREATE OR REPLACE FUNCTION subnet_delete_before() RETURNS TRIGGER AS $$
