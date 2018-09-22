@@ -177,7 +177,7 @@ public:
     /// A rendezési utasítás az SQL select-ben
     QString                     ord();
     /// Az aktuálisan kivállasztott filter objektummal tér vissza (?)
-    cRecordTableFilter&         filter() { if (pSelFilter == NULL) EXCEPTION(EPROGFAIL); return *pSelFilter; }
+    cRecordTableFilter&         filter() { if (pSelFilter == nullptr) EXCEPTION(EPROGFAIL); return *pSelFilter; }
     QList<cRecordTableFilter *> filters;
     cRecordTableFilter *        pSelFilter;
     /// A dialógusban a szűrésnél aktuálisan kiválasztott oszlop index
@@ -211,7 +211,7 @@ private slots:
 class LV2GSHARED_EXPORT cRecordTableColumn {
 public:
     cRecordTableColumn(cTableShapeField& sf, cRecordsViewBase &table);
-    bool colExpr(QString &_name, int *pEColType = NULL);
+    bool colExpr(QString &_name, int *pEColType = nullptr);
     cTableShapeField&       shapeField;
     const cRecStaticDescr&  recDescr;
     int                     fieldIndex;
@@ -392,7 +392,7 @@ public:
     qlonglong   actId(eEx __ex = EX_ERROR);
 
     void initView();
-    void initShape(cTableShape *pts = NULL);
+    void initShape(cTableShape *pts = nullptr);
     void initMaster();
     void initGroup(QVariantList &vlids);
     /// Inicializálja az adattábla megjelenítését.
@@ -418,8 +418,8 @@ public slots:
 signals:
     void closeIt();
 public:
-    static cRecordsViewBase *newRecordView(cTableShape * pts, cRecordsViewBase * own = NULL, QWidget *par = NULL);
-    static cRecordsViewBase *newRecordView(QSqlQuery &q, qlonglong shapeId, cRecordsViewBase * own = NULL, QWidget *par = NULL);
+    static cRecordsViewBase *newRecordView(cTableShape * pts, cRecordsViewBase * own = nullptr, QWidget *par = nullptr);
+    static cRecordsViewBase *newRecordView(QSqlQuery &q, qlonglong shapeId, cRecordsViewBase * own = nullptr, QWidget *par = nullptr);
     /// Az owner-re mutató ID mező indexét keressük.
     /// Alapesetben ez kiderül a rekord idegen kulcsokból.
     /// De megadható a features mezőben is, ha ez az idegen kilcsmezőkkel nem lehetséges, nem egyértelmű:
@@ -444,20 +444,20 @@ public:
     /// @param _mn A tábla megjelenítését leíró rekord neve (table_shapes.table_shape_name)
     /// @param _isDialog Ha igaz, akkor a megjelenítés egy dialog ablakban.
     /// @param par A szülő widget pointere, vagy NULL
-    cRecordTable(const QString& _mn, bool _isDialog, QWidget * par = NULL);
+    cRecordTable(const QString& _mn, bool _isDialog, QWidget * par = nullptr);
     /// Konstruktor
     /// Fő, al, vagy önálló tábla megjelenítése, már beolvasott leíró
     /// @param pts A tábla megjelenítését leíró objektum pointere
     /// @param _isDialog Ha igaz, akkor a megjelenítés egy dialog ablakban.
     /// @param par A szülő widget pointere, vagy NULL
-    cRecordTable(cTableShape *pts, bool _isDialog, cRecordsViewBase *_upper = NULL, QWidget * par = NULL);
+    cRecordTable(cTableShape *pts, bool _isDialog, cRecordsViewBase *_upper = nullptr, QWidget * par = nullptr);
     /// destruktor
     ~cRecordTable();
     cRecordTableModel *pTableModel() const { return static_cast<cRecordTableModel *>(pModel); }
     cRecord *recordAt(int i, eEx __ex = EX_ERROR) const {
         if (!isContIx(pTableModel()->records(), i)) {
             if (__ex != EX_IGNORE) EXCEPTION(ENOINDEX, i);
-            return NULL;
+            return nullptr;
         }
         return pTableModel()->records()[i];
     }

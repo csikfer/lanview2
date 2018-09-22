@@ -23,7 +23,7 @@ protected:
 class LV2GSHARED_EXPORT cGrPolygonItem  : public QGraphicsPolygonItem  {
     friend class cGrNodeItem;
 public:
-    cGrPolygonItem(const QPolygonF& _pol, QGraphicsItem * _par = NULL);
+    cGrPolygonItem(const QPolygonF& _pol, QGraphicsItem * _par = nullptr);
     void editBegin();
     void editEnd();
     bool isEditing() { return editing; }
@@ -58,7 +58,7 @@ class LV2GSHARED_EXPORT cImagePolygonWidget : public QGraphicsView
     friend class cGrPixmapItem;
     Q_OBJECT
 public:
-    cImagePolygonWidget(bool _e, QWidget *_par = NULL);
+    cImagePolygonWidget(bool _e, QWidget *_par = nullptr);
 
     /// Az ablak tartaémának a betöltése egy cImage objektumból (háttér)
     /// Ha a képet nem sikerül betülteni, akkor kizárást dob.

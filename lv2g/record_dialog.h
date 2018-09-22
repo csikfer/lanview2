@@ -52,8 +52,8 @@ enum eDialogButtons {
 /// @brief A dialogus ablakokban nyomodombok kezelése
 class LV2GSHARED_EXPORT cDialogButtons : public QButtonGroup {
 public:
-    cDialogButtons(qlonglong buttons, qlonglong buttons2 = 0, QWidget *par = NULL);
-    cDialogButtons(const tIntVector& buttons, QWidget *par = NULL);
+    cDialogButtons(qlonglong buttons, qlonglong buttons2 = 0, QWidget *par = nullptr);
+    cDialogButtons(const tIntVector& buttons, QWidget *par = nullptr);
     QWidget& widget()   { return *_pWidget; }
     QWidget *pWidget()  { return _pWidget; }
     void enable(qlonglong __idSet);
@@ -90,7 +90,7 @@ public:
     /// @param ownTab Ha a parent egy táblázat (vagy tree) megjelenítő
     /// @param ownDialog Ha egy cRecordDialogInh része, akkor a szülő objektum pointere, vagy a hívó egy cRecoedDialog obj.
     /// @param par Az szülő widget opcionális parent pointere
-    cRecordDialogBase(const cTableShape &__tm, qlonglong _buttons, bool dialog = true, cRecordDialogBase * ownDialog = NULL, cRecordsViewBase  * ownTab = NULL, QWidget *par = NULL);
+    cRecordDialogBase(const cTableShape &__tm, qlonglong _buttons, bool dialog = true, cRecordDialogBase * ownDialog = nullptr, cRecordsViewBase  * ownTab = nullptr, QWidget *par = nullptr);
     /// destruktor
     ~cRecordDialogBase();
     virtual cRecord& record();
@@ -124,7 +124,7 @@ public:
     ///
 
     virtual cFieldEditBase * operator[](const QString& __fn) = 0;
-    virtual void restore(const cRecord *_pRec = NULL) = 0;
+    virtual void restore(const cRecord *_pRec = nullptr) = 0;
     virtual bool accept() = 0;
 public slots:
     /// Hiba ablakunk van, megnyomták a close gombot...
@@ -171,9 +171,9 @@ public:
     /// @param _buttons A megjelenítendő nyomógombok bit maszkja
     /// @param dialog Ha a dialóus ablakot QDialog-ból kell létrehozni, akkor true, ha fals, akkor QWidget-ből.
     /// @param parent Az szülő widget opcionális parent pointere
-    cRecordDialog(const cTableShape &__tm, qlonglong _buttons, bool dialog = true, cRecordDialogBase *ownDialog = NULL, cRecordsViewBase  * ownTab = NULL, QWidget * parent = NULL);
+    cRecordDialog(const cTableShape &__tm, qlonglong _buttons, bool dialog = true, cRecordDialogBase *ownDialog = nullptr, cRecordsViewBase  * ownTab = nullptr, QWidget * parent = nullptr);
     /// A rekord adattag tartalmának a megjelenítése/megjelenítés visszaállítása
-    virtual void restore(const cRecord *_pRec = NULL);
+    virtual void restore(const cRecord *_pRec = nullptr);
     /// A megjelenített értékek kiolvasása
     virtual bool accept();
     virtual cFieldEditBase * operator[](const QString& __fn);
@@ -205,7 +205,7 @@ public:
     /// @param _pid Parent rekord ID , ha nincs parent, vagy nincs megadva, akkor értéke NULL_ID
     /// @param dialog Ha a dialóus ablakot QDialog-ból kell létrehozni, akkor true, ha fals, akkor QWidget-ből.
     /// @param parent Az szülő widget opcionális pointere
-    cRecordDialogInh(const cTableShape &_tm, tRecordList<cTableShape>& _tms, qlonglong _buttons, bool dialog = true, cRecordDialogBase *ownDialog = NULL, cRecordsViewBase  * ownTab = NULL, QWidget * parent = NULL);
+    cRecordDialogInh(const cTableShape &_tm, tRecordList<cTableShape>& _tms, qlonglong _buttons, bool dialog = true, cRecordDialogBase *ownDialog = nullptr, cRecordsViewBase  * ownTab = nullptr, QWidget * parent = nullptr);
     ~cRecordDialogInh();
     ///
     virtual cRecord& record();
@@ -223,7 +223,7 @@ public:
     void setTabEnabled(int index, bool enable) { pTabWidget->setTabEnabled(index, enable); }
     tRecordList<cTableShape>&tabDescriptors;
     virtual cFieldEditBase * operator[](const QString& __fn);
-    virtual void restore(const cRecord *_pRec = NULL);
+    virtual void restore(const cRecord *_pRec = nullptr);
 protected:
     QVBoxLayout            *pVBoxLayout;
     QTabWidget             *pTabWidget;
@@ -234,19 +234,19 @@ private:
 
 /* ************************************************************************** */
 
-_GEX cRecord * recordDialog(QSqlQuery& q, cTableShape& ts, QWidget *pPar = NULL, const cRecord *pSample = NULL, bool ro = false, bool edit = false);
-_GEX cRecord * recordDialog(QSqlQuery& q, const QString& sn, QWidget *pPar = NULL, const cRecord *pSample = NULL, bool ro = false, bool edit = false);
+_GEX cRecord * recordDialog(QSqlQuery& q, cTableShape& ts, QWidget *pPar = nullptr, const cRecord *pSample = nullptr, bool ro = false, bool edit = false);
+_GEX cRecord * recordDialog(QSqlQuery& q, const QString& sn, QWidget *pPar = nullptr, const cRecord *pSample = nullptr, bool ro = false, bool edit = false);
 
 static inline QString getTableItemText(QTableWidget *pW, int row, int col) {
     QString r;
     QTableWidgetItem *pItem = pW->item(row, col);
-    if (pItem != NULL) r = pItem->text();
+    if (pItem != nullptr) r = pItem->text();
     return r;
 }
 
 static inline QTableWidgetItem * setTableItemText(const QString& text, QTableWidget *pW, int row, int col) {
     QTableWidgetItem *pItem = pW->item(row, col);
-    if (pItem == NULL) {
+    if (pItem == nullptr) {
         pItem = new QTableWidgetItem(text);
         pW->setItem(row, col, pItem);
     }
@@ -259,7 +259,7 @@ static inline QTableWidgetItem * setTableItemText(const QString& text, QTableWid
 static inline int getTableItemComboBoxCurrentIndex(QTableWidget *pW, int row, int col)
 {
     QWidget *pWidget = pW->cellWidget(row, col);
-    if (pWidget == NULL) return -1;
+    if (pWidget == nullptr) return -1;
     if (!pWidget->inherits("QComboBox")) EXCEPTION(EDATA,0, QObject::trUtf8("A %1 objektum nem konvertálható QComboBox pointerré").
                                                    arg(typeid(pWidget).name()));
     QComboBox *pComboBox = qobject_cast<QComboBox *>(pWidget);
@@ -268,6 +268,6 @@ static inline int getTableItemComboBoxCurrentIndex(QTableWidget *pW, int row, in
 
 /* ************************************************************************** */
 
-_GEX cRecord *objectDialog(const QString& name, QSqlQuery& q, QWidget *pPar, cRecord * _pSample = NULL, bool ro = false, bool edit = false);
+_GEX cRecord *objectDialog(const QString& name, QSqlQuery& q, QWidget *pPar, cRecord * _pSample = nullptr, bool ro = false, bool edit = false);
 
 #endif // RECORD_DIALOG_H

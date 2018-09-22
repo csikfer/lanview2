@@ -69,7 +69,7 @@ public:
     lv2g();
     ~lv2g();
     static lv2g*    getInstance(void) { return (lv2g *)lanView::getInstance(); }
-    void            changeZone(QWidget * par = NULL);
+    void            changeZone(QWidget * par = nullptr);
     static bool     logonNeeded;
     static bool     zoneNeeded;
     qlonglong       zoneId;
@@ -101,14 +101,14 @@ _GEX int defaultDataCharter(const cRecStaticDescr& __d, int __ix);
 // typedef QList<QHBoxLayout *> hBoxLayoutList;
 // typedef QList<QLabel *>     labelList;
 
-static inline QWidget *newFrame(int _st, QWidget * p = NULL)
+static inline QWidget *newFrame(int _st, QWidget * p = nullptr)
 {
     QFrame *pFrame = new QFrame(p);
     pFrame->setFrameStyle(_st);
     return pFrame;
 }
-static inline QWidget *newHLine(QWidget * p = NULL) { return newFrame(QFrame::HLine, p); }
-static inline QWidget *newVLine(QWidget * p = NULL) { return newFrame(QFrame::VLine, p); }
+static inline QWidget *newHLine(QWidget * p = nullptr) { return newFrame(QFrame::HLine, p); }
+static inline QWidget *newVLine(QWidget * p = nullptr) { return newFrame(QFrame::VLine, p); }
 
 class cMenuAction;
 // A  megjelenítéshez egy segéd osztály,
@@ -266,9 +266,9 @@ _GEX QVariant enumRole(const cEnumVal& ev, int role, int e = NULL_IX);
 _GEX QVariant enumRole(const QString& _t, int id, int role, const QString& dData);
 _GEX QVariant dcRole(int id, int role);
 
-_GEX bool textToFile(QString &fileName, const QString& text, QWidget *par = NULL);
-_GEX bool textFromFile(QString &fileName, QString &text, QWidget * par = NULL);
-_GEX bool textEditToFile(QString &fileName, const QTextEdit *pTE, QWidget * par = NULL);
+_GEX bool textToFile(QString &fileName, const QString& text, QWidget *par = nullptr);
+_GEX bool textFromFile(QString &fileName, QString &text, QWidget * par = nullptr);
+_GEX bool textEditToFile(QString &fileName, const QTextEdit *pTE, QWidget * par = nullptr);
 
 _GEX QString condAddJoker(const QString& pat);
 

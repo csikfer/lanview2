@@ -16,7 +16,7 @@ class LV2GSHARED_EXPORT cStringListModel: public QAbstractListModel {
 public:
     /// Konstruktor
     /// Az elemek sorszámozását kikapcsolja.
-    cStringListModel(QObject *__par = NULL);
+    cStringListModel(QObject *__par = nullptr);
     /// A _stringList konténer adattag méretét adja vissza
     virtual int rowCount(const QModelIndex &parent) const;
     /// Egy oszlopos megjelenítés (esetleg egy sorszám oszlop, mint heder), mindíg 1-el tér vissza.
@@ -105,7 +105,7 @@ protected:
 class LV2GSHARED_EXPORT cStringListDecModel: public QAbstractListModel {
 public:
     /// Konstruktor
-    cStringListDecModel(QObject *__par = NULL);
+    cStringListDecModel(QObject *__par = nullptr);
     ~cStringListDecModel();
     /// A _stringList konténer adattag méretét adja vissza
     virtual int rowCount(const QModelIndex &parent) const;
@@ -139,7 +139,7 @@ protected:
 /// Model: polygon pontjainak megjelenítése egy QTableView objektummal
 class LV2GSHARED_EXPORT cPolygonTableModel : public QAbstractTableModel {
 public:
-    cPolygonTableModel(QObject *__par = NULL);
+    cPolygonTableModel(QObject *__par = nullptr);
     virtual int rowCount(const QModelIndex &parent) const;
     virtual int columnCount(const QModelIndex &parent) const;
     virtual QVariant data(const QModelIndex &index, int role) const;
@@ -228,7 +228,7 @@ public:
     /// A lista feltöltése a setPattern() metódussal lehetséges.
     /// @param __d A rekord leíró objektum
     /// @param _par Parent
-    cRecordListModel(const cRecStaticDescr& __d, QObject * __par = NULL);
+    cRecordListModel(const cRecStaticDescr& __d, QObject * __par = nullptr);
     /// Konstruktor.
     /// Eltárolja a statikus descriptor objektumot (referencia).
     /// A szűrés típusát FT_BEGIN -re állítja, a pattern üres lessz, a megjelenített lista is üres lessz.
@@ -237,7 +237,7 @@ public:
     /// @param __t A rekord tábla név
     /// @param __s Az opcionális schema név
     /// @param _par Parent
-    cRecordListModel(const QString& __t, const QString& __s = QString(), QObject * __par = NULL);
+    cRecordListModel(const QString& __t, const QString& __s = QString(), QObject * __par = nullptr);
     ~cRecordListModel();
 //  void changeRecDescr(cRecStaticDescr * _descr);
     virtual QVariant data(const QModelIndex &index, int role) const;
@@ -354,7 +354,7 @@ public:
     /// Az objektum egy saját QSqlQuery objektumot allokál a lekérdezésekhez.
     /// A lista modosítása a setPattern() metódussal lehetséges.
     /// @param _par Parent
-    cZoneListModel(QObject * __par = NULL);
+    cZoneListModel(QObject * __par = nullptr);
     /// Szűrési feltételek megadása, és a lista frissítése
     /// @param _par A szűrő paramétere, a zóna ID-je
     /// @param __o A lista rendezésének a típusa
@@ -375,7 +375,7 @@ public:
     /// Az objektum egy saját QSqlQuery objektumot allokál a lekérdezésekhez.
     /// A lista modosítása a setPattern() metódussal lehetséges.
     /// @param _par Parent
-    cPlacesInZoneModel(QObject * __par = NULL);
+    cPlacesInZoneModel(QObject * __par = nullptr);
     /// Szűrési feltételek megadása, és/vagy a lista frissítése
     /// @param _par A szűrő paramétere, a zóna ID-je
     /// @param __o A lista rendezésének a típusa
@@ -402,9 +402,9 @@ enum eNullType {
 class LV2GSHARED_EXPORT cEnumListModel : public QAbstractListModel {
     Q_OBJECT
 public:
-    cEnumListModel(QObject * __par = NULL) : QAbstractListModel(__par) { pType = NULL; pq = NULL; pComboBox = NULL, nullType = NT_NOT_NULL; }
-    cEnumListModel(const QString& __t, eNullType _nullable = NT_NOT_NULL, const tIntVector &_eList = tIntVector(), QObject * __par = NULL);
-    cEnumListModel(const cColEnumType *_pType, eNullType _nullable = NT_NOT_NULL, const tIntVector &_eList = tIntVector(), QObject * __par = NULL);
+    cEnumListModel(QObject * __par = nullptr) : QAbstractListModel(__par) { pType = nullptr; pq = nullptr; pComboBox = nullptr, nullType = NT_NOT_NULL; }
+    cEnumListModel(const QString& __t, eNullType _nullable = NT_NOT_NULL, const tIntVector &_eList = tIntVector(), QObject * __par = nullptr);
+    cEnumListModel(const cColEnumType *_pType, eNullType _nullable = NT_NOT_NULL, const tIntVector &_eList = tIntVector(), QObject * __par = nullptr);
     ~cEnumListModel();
     int setEnum(const QString& __t, eNullType _nullable = NT_NOT_NULL, const tIntVector& _eList = tIntVector(), eEx __ex = EX_ERROR);
     int setEnum(const cColEnumType *_pType, eNullType _nullable = NT_NOT_NULL, const tIntVector& _eList = tIntVector(), eEx __ex = EX_ERROR);

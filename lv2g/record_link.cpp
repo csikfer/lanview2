@@ -1,5 +1,6 @@
 #include "phslinkform.h"
 #include "lv2link.h"
+#include "report.h"
 
 cRecordLink::cRecordLink(cTableShape *pts, bool _isDialog, cRecordsViewBase *_upper, QWidget * par)
     : cRecordTable(pts, _isDialog, _upper, par)
@@ -18,8 +19,8 @@ cRecordLink::~cRecordLink()
 
 void cRecordLink::init()
 {
-    pTimer = NULL;
-    pTableView = NULL;
+    pTimer = nullptr;
+    pTableView = nullptr;
     // A read-only flag eket újra ki kell értékelni! (most mind true)
     isReadOnly = pTableShape->getBool(_sTableShapeType, TS_READ_ONLY);
     isNoDelete = isReadOnly || false == lanView::isAuthorized(pTableShape->getId(_sRemoveRights));
@@ -40,10 +41,10 @@ void cRecordLink::init()
     if (!isReadOnly) buttons << DBT_SIMILAR;
     if (!isNoInsert) buttons << DBT_INSERT;
     flags = 0;
-    if (pUpper != NULL) shapeType |= ENUM2SET(TS_CHILD);
+    if (pUpper != nullptr) shapeType |= ENUM2SET(TS_CHILD);
     switch (shapeType) {
     case ENUM2SET2(TS_CHILD, TS_LINK):
-        if (pUpper == NULL) EXCEPTION(EDATA);
+        if (pUpper == nullptr) EXCEPTION(EDATA);
         flags = RTF_SLAVE | RTF_CHILD;
         initSimple(_pWidget);
         break;
@@ -85,7 +86,7 @@ void cRecordLink::init()
 QStringList cRecordLink::where(QVariantList& qParams)
 {
     QStringList wl;
-    if (pUpper != NULL) {
+    if (pUpper != nullptr) {
         int ofix;
         // node or port ?
         if (pUpper->pRecDescr->isFieldName(_sPortId)) {
@@ -181,19 +182,19 @@ void cRecordLink::modifyByIndex(const QModelIndex & index)
 
 
 cLinkDialog::cLinkDialog(bool __similar, cRecordLink * __parent)
-    : QDialog(__parent == NULL ? NULL : __parent->pWidget())
+    : QDialog(__parent == nullptr ? nullptr : __parent->pWidget())
 {
     parent        = __parent;
-    pActRecord    = NULL;
+    pActRecord    = nullptr;
     parentNodeId  = NULL_ID;
     parentPortId  = NULL_ID;
     pq = newQuery();
-    if (parent != NULL) {
+    if (parent != nullptr) {
         if (!__similar) {
             cRecordsViewBase *pParentParent = parent->pUpper;   // A parent tábla perent-je
-            if (pParentParent != NULL) {
+            if (pParentParent != nullptr) {
                 cRecord *pActParRec = pParentParent->actRecord();    // Az aktuális rekord
-                if (pActParRec != NULL) {
+                if (pActParRec != nullptr) {
                     if (pActParRec->descr() >= cPatch::_descr_cPatch()) {       // node ?
                         parentNodeId = pActParRec->getId();
                     }
@@ -334,11 +335,11 @@ static bool checkShare(QSqlQuery& _q, qlonglong _pid, ePhsLinkType _lt, ePortSha
     case ES_:
         break;
     case ES_NC:
-        _msg += QObject::trUtf8("A megadott %1 portnál a hátlap nincs bekötve.<br>").arg(pp.getFullName(_q));
+        _msg += htmlError(QObject::trUtf8("A megadott %1 portnál a hátlap nincs bekötve.\n").arg(pp.getFullName(_q)), true);
         return true;        // imperfect
     default:
         if (shareResultant(_sh, sc) == ES_NC) {
-            _msg += QObject::trUtf8("A megadott %1 port megosztása nem használható (nincs összeköttetés egy érpáron sem).<br>").arg(pp.getFullName(_q));
+            _msg += htmlError(QObject::trUtf8("A megadott %1 port megosztása nem használható (nincs összeköttetés egy érpáron sem).<br>").arg(pp.getFullName(_q)), true);
             return true;    // imperfect
         }
         break;
@@ -362,21 +363,24 @@ void cLinkDialog::changed()
     QString msg;
     if (pid1 == NULL_ID && pid2 == NULL_ID) {
         pButtons->disableExcept();
-        pTextEditCollisions->setText(trUtf8("Nincs megadva egy port sem."));
+        msg = trUtf8("Nincs megadva egy port sem.");
+        pTextEditCollisions->setText(htmlWarning(msg));
         pCheckBoxCollisions->setChecked(false);
         pCheckBoxCollisions->setCheckable(false);
         return;
     }
     if (pid1 == pid2) {
         pButtons->disableExcept();
-        pTextEditCollisions->setText(trUtf8("A két oldal azonos."));
+        msg = trUtf8("A két oldal azonos.");
+        pTextEditCollisions->setText(htmlError(msg));
         pCheckBoxCollisions->setChecked(false);
         pCheckBoxCollisions->setCheckable(false);
         return;
     }
     if (pid1 == NULL_ID || pid2 == NULL_ID) {
         pButtons->disableExcept();
-        msg = trUtf8("Csak a link egyik fele van megadva.<br>");
+        msg = trUtf8("Csak a link egyik fele van megadva.\n");
+        msg = htmlWarning(msg, true);
     }
     else {
         link.setId(_sPortId1, pid1);
@@ -399,6 +403,12 @@ void cLinkDialog::changed()
         if (rows > 0) EXCEPTION(AMBIGUOUS, rows, link.toString());
         imperfect = false;
     }
+    // LLDP report
+    cLldpLink lldp;
+    qlonglong lldpid;
+    if (pid1 != NULL_ID && NULL_ID != (lldpid = lldp.getLinked(*pq, pid1))) {
+
+    }
     imperfect = checkShare(*pq, pid1, lt1, ps, msg) || imperfect;
     imperfect = checkShare(*pq, pid2, lt2, ps, msg) || imperfect;
     tRecordList<cPhsLink>   list;
@@ -408,7 +418,7 @@ void cLinkDialog::changed()
         insertOnly = true;
         if (imperfect) pButtons->disableExcept();
         else           pButtons->enabeAll();
-        msg += trUtf8("Nincs ütközö/törlendő link.");
+        msg += htmlGrInf(trUtf8("Nincs ütközö/törlendő link."));
         pCheckBoxCollisions->setChecked(false);
         pCheckBoxCollisions->setCheckable(false);
         pTextEditCollisions->setText(msg);

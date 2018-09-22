@@ -14,7 +14,7 @@ public:
     /// @param _mn A tábla megjelenítését leíró objektum pointere
     /// @param _isDialog Ha igaz, akkor a megjelenítés egy dialog ablakban.
     /// @param par A szülő widget pointere, vagy NULL
-    cRecordLink(cTableShape *pts, bool _isDialog, cRecordsViewBase *_upper = NULL, QWidget * par = NULL);
+    cRecordLink(cTableShape *pts, bool _isDialog, cRecordsViewBase *_upper = nullptr, QWidget * par = nullptr);
     /// destruktor
     ~cRecordLink();
     virtual void init();
@@ -41,7 +41,7 @@ class LV2GSHARED_EXPORT cLinkDialog : public QDialog {
 public:
     /// Konstruktor
     /// @param __parent Az szülő objektum pointere
-    cLinkDialog(bool __similar, cRecordLink * __parent = NULL);
+    cLinkDialog(bool __similar, cRecordLink * __parent = nullptr);
     ~cLinkDialog();
     bool get(cPhsLink& link);
     bool next();
@@ -69,6 +69,7 @@ protected:
     bool            exists;     /// Létezik
     qlonglong       linkId;     /// Ha létezik, akkor az utolsó
 public slots:
+    /// Változás esetén az állapot beállítása, és a riport megjelenítése.
     void changed();
 private slots:
     void collisionsTogled(bool f);

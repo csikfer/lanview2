@@ -24,7 +24,7 @@
 
 static inline qlonglong bitByButton(QAbstractButton *p, qlonglong m)
 {
-    if (p == NULL) EXCEPTION(EPROGFAIL);
+    if (p == nullptr) EXCEPTION(EPROGFAIL);
     return p->isChecked() ? m : 0;
 }
 
@@ -103,7 +103,7 @@ _GEX bool setFormEditWidget(QFormLayout *_fl, QWidget *_lw, QWidget *_ew, eEx __
 class cLineWidget : public QWidget {
     Q_OBJECT
 public:
-    cLineWidget(QWidget *par = NULL, bool _ro = false, bool _horizontal = true);
+    cLineWidget(QWidget *par = nullptr, bool _ro = false, bool _horizontal = true);
     QLayout     * const pLayout;
     QLineEdit   * const pLineEdit;
     QToolButton * const pNullButton;
@@ -124,7 +124,7 @@ signals:
     void changed(const QVariant& val);
 };
 
-inline static QFrame *line(int __w, int __mw, QWidget *par = NULL)
+inline static QFrame *line(int __w, int __mw, QWidget *par = nullptr)
 {
     QFrame *line = new QFrame(par);
     line->setLineWidth(__w);
@@ -134,7 +134,7 @@ inline static QFrame *line(int __w, int __mw, QWidget *par = NULL)
     return line;
 }
 
-inline static QFrame *line(QWidget *par = NULL)
+inline static QFrame *line(QWidget *par = nullptr)
 {
     QFrame *line = new QFrame(par);
     line->setFrameShape(QFrame::HLine);
@@ -149,7 +149,7 @@ class LV2GSHARED_EXPORT cImageWidget : public QScrollArea {
 public:
     /// Konstruktor
     /// @par __par Szülő widget pointere
-    cImageWidget(QWidget *__par = NULL);
+    cImageWidget(QWidget *__par = nullptr);
     /// Destruktor
     ~cImageWidget();
     /// Az ablak tartalmának a betöltése egy kép fájlból, és az ablak megjelenítése
@@ -207,7 +207,7 @@ public slots:
 /// "Read only" QToolButton
 class LV2GSHARED_EXPORT cROToolButton : public QToolButton {
 public:
-    cROToolButton(QWidget *par = NULL) : QToolButton(par) { ; }
+    cROToolButton(QWidget *par = nullptr) : QToolButton(par) { ; }
 protected:
     void mousePressEvent(QMouseEvent *e);
     void mouseReleaseEvent(QMouseEvent *e);
@@ -216,7 +216,7 @@ protected:
 class LV2GSHARED_EXPORT cValidRTButton : public cROToolButton {
     Q_OBJECT
 public:
-    cValidRTButton(QWidget *par = NULL);
+    cValidRTButton(QWidget *par = nullptr);
     static QIcon unknown;
     static QIcon invalid;
     static QIcon intermediate;
@@ -349,7 +349,7 @@ protected:
     /// @param p Ha értéke NULL, akkor a metódus allokálja meg a nyomógomb objektumot, ha nem null,
     /// akkor az a használandó objektumra mutat. Ha viszont _readOnly igaz, törli az objektumot.
     /// @return A nyomógomb, vagy a cimke pointerével tér vissza.
-    QWidget *setupNullButton(bool isNull = false, QAbstractButton * p = NULL);
+    QWidget *setupNullButton(bool isNull = false, QAbstractButton * p = nullptr);
     /// A parent dialógusban egy másik mező szerkesztő objektumot keresi meg a .
     /// @param __fn A keresett mező leíró neve (cTableShapeField.getName())
     /// @param __ex Ha értéke nem EX_IGNORE és nincs parent, vagy men találja az objektumot, akkor kizárást dob.
@@ -974,7 +974,7 @@ public:
     /// A zóna kiválasztásánál nincs szűrési lehetőség, bármelyik zóna kiválasztható lessz,
     /// az aktuális kiválasztott zóna pedig az "all" lessz.
     /// A hely kiválasztásakor, a NULL megengedett, és ez lessz az aktuálisan kiválasztott.
-    cSelectPlace(QComboBox *_pZone, QComboBox *_pPLace, QLineEdit *_pFilt = NULL, const QString& _constFilt = QString(), QWidget *_par = NULL);
+    cSelectPlace(QComboBox *_pZone, QComboBox *_pPLace, QLineEdit *_pFilt = nullptr, const QString& _constFilt = QString(), QWidget *_par = nullptr);
     /// Az aktuálisan kiválasztott zóna neve
     QString currentZoneName()  const { return pModelZone->at(pComboBoxZone->currentIndex()); }
     /// Az aktuálisan kiválasztott zóna ID-je
@@ -1072,9 +1072,9 @@ public:
     /// elem miatt. Ezért a konstruktor után vagy a modelt lecserélő setNodeModel(); metódust,
     /// vagy a refresh(); metódust még meg kell hívni.
     cSelectNode(QComboBox *_pZone, QComboBox *_pPlace, QComboBox *_pNode,
-                QLineEdit *_pPlaceFilt = NULL, QLineEdit *_pNodeFilt = NULL,
+                QLineEdit *_pPlaceFilt = nullptr, QLineEdit *_pNodeFilt = nullptr,
                 const QString& _placeConstFilt = QString(), const QString& _nodeConstFilt = QString(),
-                QWidget *_par = NULL);
+                QWidget *_par = nullptr);
     /// Lecseréli a node lista modelt. Lekérdezi a listát, nincs kimeneti signal.
     /// Ha _nullable értéke nem TS_NULL, akkor beállítja a nullable adattag értékét is.
     void setNodeModel(cRecordListModel *  _pNodeModel, eTristate _nullable = TS_NULL);
@@ -1110,7 +1110,7 @@ protected:
     QAbstractButton *   pButtonNodeRefresh;
     QAbstractButton *   pButtonNodeInfo;
 public slots:
-    qlonglong insertPatch(cPatch *pSample = NULL);
+    qlonglong insertPatch(cPatch *pSample = nullptr);
     /// Frissíti a listákat, az ős objektumban is (zone, place).
     /// hely azonosítü place_id megváltozott, és ha f értéke true (ez az alapértelmezett).
     virtual void refresh(bool f = true);
@@ -1150,9 +1150,9 @@ public:
     /// @param _par Parent objektum
     cSelectLinkedPort(QComboBox *_pZone, QComboBox *_pPlace, QComboBox *_pNode,
                 QComboBox *_pPort, QButtonGroup *_Type, QComboBox *_pShare, const tIntVector& _shList = tIntVector(),
-                QLineEdit *_pPlaceFilt = NULL, QLineEdit *_pNodeFilt = NULL,
+                QLineEdit *_pPlaceFilt = nullptr, QLineEdit *_pNodeFilt = nullptr,
                 const QString& _placeConstFilt = QString(), const QString& _nodeConstFilt = QString(),
-                QWidget *_par = NULL);
+                QWidget *_par = nullptr);
     ~cSelectLinkedPort();
     qlonglong currentPortId() const { return pModelPort->atId(pComboBoxPort->currentIndex()); }
     int       currentType()   const { return lastLinkType; }
@@ -1185,7 +1185,7 @@ signals:
 class LV2GSHARED_EXPORT cSelectVlan : public QObject {
     Q_OBJECT
 public:
-    cSelectVlan(QComboBox *_pComboBoxId, QComboBox *_pComboBoxName, QWidget *_par = NULL);
+    cSelectVlan(QComboBox *_pComboBoxId, QComboBox *_pComboBoxName, QWidget *_par = nullptr);
     ~cSelectVlan();
 public slots:
     void setCurrentByVlan(qlonglong _vid);
@@ -1216,7 +1216,7 @@ signals:
 class LV2GSHARED_EXPORT cSelectSubNet : public QObject {
     Q_OBJECT
 public:
-    cSelectSubNet(QComboBox *_pComboBoxNet, QComboBox *_pComboBoxName, QWidget *_par = NULL);
+    cSelectSubNet(QComboBox *_pComboBoxNet, QComboBox *_pComboBoxName, QWidget *_par = nullptr);
     ~cSelectSubNet();
     qlonglong currentId();
 public slots:
@@ -1253,7 +1253,7 @@ class cDialogButtons;
 class LV2GSHARED_EXPORT cStringMapEdit : public QObject {
     Q_OBJECT
 public:
-    cStringMapEdit(bool _isDialog, tStringMap& _map, QWidget *par = NULL);
+    cStringMapEdit(bool _isDialog, tStringMap& _map, QWidget *par = nullptr);
     ~cStringMapEdit();
     QWidget& widget() { return *_pWidget; }
     QWidget *pWidget() { return _pWidget; }
