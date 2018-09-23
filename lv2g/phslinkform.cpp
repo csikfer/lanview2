@@ -2,6 +2,7 @@
 #include "phslinkform.h"
 #include "ui_phslinkform.h"
 #include "popupreport.h"
+#include "object_dialog.h"
 
 phsLinkWidget::phsLinkWidget(cLinkDialog * par) :  QWidget(par)
 {
@@ -38,10 +39,12 @@ void phsLinkWidget::setFirst(bool f)
     if (f) {
         setObjectName("first");
         pUi->checkBoxPlaceEqu->hide();
+        pUi->toolButtonAdd->hide();
     }
     else {
         setObjectName("last");
         connect(pUi->checkBoxPlaceEqu, SIGNAL(toggled(bool)),  this, SLOT(toglePlaceEqu(bool)));
+
     }
 }
 
@@ -186,3 +189,15 @@ void phsLinkWidget::on_toolButtonStep_clicked()
         pLast->pSelectPort->setLink(l);
     }
 }
+
+void phsLinkWidget::on_toolButtonAdd_clicked()
+{
+    cPatch sample;
+    sample.setId(_sPlaceId, pSelectPort->currentPlaceId());
+    cPatch *p = patchInsertDialog(*pq, this, &sample);
+    if (p != NULL) {
+        pSelectPort->setCurrentNode(p->getId());
+        delete p;
+    }
+}
+

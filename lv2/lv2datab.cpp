@@ -3732,7 +3732,7 @@ int cRecord::existId(QSqlQuery& q, qlonglong __id) const
     return ok ? n : -1;
 }
 
-bool cRecord::existByNameKey(QSqlQuery& __q)
+bool cRecord::existByNameKey(QSqlQuery& __q) const
 {
     QBitArray m = nameKeyMask() & areNull();
     // kitöltetlen mező a kulcsban?

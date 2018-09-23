@@ -1781,8 +1781,12 @@ bool cLldpScan::rowHPAPC(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& em)
         if (rHost.getName().compare(row.name, Qt::CaseInsensitive) == 0 || rHost.getName().startsWith(row.name + ".")) {
             return setRPortFromMac(row, em);
         }
-        HEREINWE(em, lPrefix + QObject::trUtf8("Név ütjözés. Talált '%1', azonos címmekkel bejegyzett '%2'. Az eszköz át lessz nevezve.").arg(row.name, rHost.getName()), RS_WARNING);
         rHost.setName(row.name);
+        HEREINWE(em, lPrefix + QObject::trUtf8("Név ütjözés. Talált '%1', azonos címmekkel bejegyzett '%2'. Az eszköz át lessz nevezve.").arg(row.name, rHost.getName()), RS_WARNING);
+        while (rHost.existByNameKey(q)) {   // New name collision?
+            HEREINWE(em, QObject::trUtf8("Név ütközés. A '%1', létezik, új elem átnevezve.").arg(rHost.getName()), RS_WARNING);
+            rHost.setName(rHost.getName() + "-new");
+        }
         rHost.update(q, false, _bit(rHost.nameIndex()));
         return setRPortFromMac(row, em);
     }
@@ -1791,14 +1795,14 @@ bool cLldpScan::rowHPAPC(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo& em)
     if (n.isEmpty()) n = "node-" + row.cmac.toString().remove(char(':'));
     rHost.clear();
     rDev.clear();
+    rHost.setName(n);
 
-    if (rHost.fetchByName(n)) { // Név szerint sincs ?
-        HEREINWE(em, QObject::trUtf8("Név ütjözés. A '%1', létezik, nem a  '%2' címmel.").arg(n, row.addr.toString()), RS_WARNING);
-        return false;
+    while (rHost.existByNameKey(q)) { // Név szerint sincs ?
+        HEREINWE(em, QObject::trUtf8("Név ütközés. A '%1', létezik, nem a  '%2' címmel, új elem átnevezve.").arg(rHost.getName(), row.addr.toString()), RS_WARNING);
+        rHost.setName(rHost.getName() + "-new");
     }
 
-    rHost.setName(n);
-    rHost.setName(_sNodeNote, row.descr);
+    rHost.setNote(row.descr);
     rHost.addPort(_sEthernet, row.pdescr, row.pname, 1);
     cInterface *pi = rHost.ports.first()->reconvert<cInterface>();
     *pi = row.cmac;

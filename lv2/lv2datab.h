@@ -1843,7 +1843,7 @@ public:
     /// Ha olyan mező alapján kell keresni, amely nincs kitöltve (NULL) azt kitölti az alapértelmezése szerint.
     /// Hívja a nemeKeyMask() metódust, ha egy a maszkban szereplő mező értéke NULL, és nincs alapértelmezett
     /// értéke, akkor is kizárást dob. Ha a lekérdezés szerint egynél több rekordot talál az is kizárást eredményez.
-    bool existByNameKey(QSqlQuery& __q);
+    bool existByNameKey(QSqlQuery& __q) const;
     /// Hasonló a fetch() metódushoz, de csak a rekordok számát kérdezi le, konstans metódus
     int rows(bool __only = false, const QBitArray& __fm = QBitArray()) const { QSqlQuery q = getQuery(); return rows(q, __only, __fm);  }
     /// Az objektum típusnak megfelelő tableoid-vel tér vissza.

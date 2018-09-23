@@ -403,12 +403,6 @@ void cLinkDialog::changed()
         if (rows > 0) EXCEPTION(AMBIGUOUS, rows, link.toString());
         imperfect = false;
     }
-    // LLDP report
-    cLldpLink lldp;
-    qlonglong lldpid;
-    if (pid1 != NULL_ID && NULL_ID != (lldpid = lldp.getLinked(*pq, pid1))) {
-
-    }
     imperfect = checkShare(*pq, pid1, lt1, ps, msg) || imperfect;
     imperfect = checkShare(*pq, pid2, lt2, ps, msg) || imperfect;
     tRecordList<cPhsLink>   list;
@@ -424,7 +418,7 @@ void cLinkDialog::changed()
         pTextEditCollisions->setText(msg);
     }
     else {
-        msg += trUtf8("ütközö/törlendő linkek :");
+        msg += htmlError(trUtf8("ütközö/törlendő linkek :"));
         pButtons->disableExcept(ENUM2SET4(DBT_CANCEL, DBT_CLOSE, DBT_NEXT, DBT_PREV));
         pCheckBoxCollisions->setChecked(false);
         pCheckBoxCollisions->setCheckable(true);

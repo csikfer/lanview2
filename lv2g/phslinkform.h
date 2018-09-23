@@ -39,6 +39,7 @@ private slots:
     void change(qlonglong, int _lt, int);
     void on_toolButtonInfo_clicked();
     void on_toolButtonStep_clicked();
+    void on_toolButtonAdd_clicked();
 signals:
     void changed();
 };
