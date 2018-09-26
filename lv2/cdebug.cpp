@@ -59,7 +59,7 @@ QString quotedString(const QString& __s, const QChar& __q)
     return r + __q;
 }
 
-EXT_ QString quotedStringList(const QStringList& __sl, const QChar &__q , const QChar &__s)
+QString quotedStringList(const QStringList& __sl, const QChar &__q , const QChar &__s)
 {
     QString r;
     foreach (QString s, __sl) {
@@ -69,6 +69,15 @@ EXT_ QString quotedStringList(const QStringList& __sl, const QChar &__q , const 
     return r;
 }
 
+QString quotedVariantList(const QVariantList& __sl, const QChar &__q, const QChar &__s)
+{
+    QString r;
+    foreach (QVariant v, __sl) {
+        r += quotedString(v.toString(), __q) + __s;
+    }
+    r.chop(1);
+    return r;
+}
 
 cDebug *cDebug::instance = NULL;
 bool    cDebug::disabled = false;

@@ -42,6 +42,7 @@ inline static QString currentThreadName()
 
 EXT_ QString quotedString(const QString& __s, const QChar &__q = QChar('"'));
 EXT_ QString quotedStringList(const QStringList& __sl, const QChar &__q = QChar('"'), const QChar &__s = QChar(','));
+EXT_ QString quotedVariantList(const QVariantList& __sl, const QChar &__q = QChar('"'), const QChar &__s = QChar(','));
 
 /// @def ONDB(mask)
 /// Segéd makró, a debug maszkot kiegészíti a modul információval.

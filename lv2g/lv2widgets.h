@@ -247,7 +247,7 @@ enum eFieldWidgetType {
     FEW_NULL,           ///< cNullWidget
     FEW_COLOR,          ///< cColorWidget
     FEW_FONT_FAMILY,    ///< cFontFamilyWidget
-    FEW_FONT_ATTR,       ///< cFontAttrWidget
+    FEW_FONT_ATTR,      ///< cFontAttrWidget
     FEW_LTEXT,
     FEW_LTEXT_LONG
 };

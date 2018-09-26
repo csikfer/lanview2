@@ -2242,8 +2242,8 @@ void cRecStaticDescr::_set(const QString& __t, const QString& __s)
         columnDescr.udtName   = pq->value(IX_UDT_NAME).toString();
         QVariant cml = pq->value(IX_CHARACTER_MAXIMUM_LENGHT);
         columnDescr.chrMaxLenghr = cml.canConvert(QVariant::Int) ? cml.toInt() : -1;
-        columnDescr.isNullable= strIsBool(pq->value(IX_IS_NULLABLE).toString());
-        columnDescr.isUpdatable=strIsBool(pq->value(IX_IS_UPDATABLE).toString());
+        columnDescr.isNullable= str2bool(pq->value(IX_IS_NULLABLE).toString());
+        columnDescr.isUpdatable=str2bool(pq->value(IX_IS_UPDATABLE).toString());
         _isUpdatable = _isUpdatable || columnDescr.isUpdatable;
         // PDEB(INFO) << fullTableName() << " field #" << i << QChar('/') << columnDescr.ordPos << " : " << columnDescr.toString() << endl;
         // Is auto increment ?

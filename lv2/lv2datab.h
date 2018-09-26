@@ -356,8 +356,6 @@ class LV2SHARED_EXPORT cColStaticDescrBool : public cColStaticDescr {
 public:
     /// A konstruktor kitölti a enumType pointert is, hogy enumerációként is kezelhető legyen
     cColStaticDescrBool(const cColStaticDescr& __o) : cColStaticDescr(__o) { init(); }
-    /// A konstruktor kitölti a enumType pointert is, hogy enumerációként is kezelhető legyen
-    cColStaticDescrBool(cRecStaticDescr *_p, int t) : cColStaticDescr(_p, t) { init(); }
     enum cColStaticDescr::eValueCheck  check(const QVariant& v, cColStaticDescr::eValueCheck acceptable = cColStaticDescr::VC_INVALID) const;
     virtual QVariant  fromSql(const QVariant& __f) const;
     virtual QVariant  toSql(const QVariant& __f) const;
@@ -378,7 +376,6 @@ private:
     class LV2SHARED_EXPORT T : public cColStaticDescr { \
     friend class cRecStaticDescr; \
       public: \
-        T(cRecStaticDescr *_p, int t) : cColStaticDescr(_p, t) { ; } \
         T(const cColStaticDescr& __o) : cColStaticDescr(__o) { ; } \
         virtual enum cColStaticDescr::eValueCheck check(const QVariant& v, cColStaticDescr::eValueCheck acceptable = cColStaticDescr::VC_INVALID) const; \
         virtual QVariant  fromSql(const QVariant& __f) const; \
@@ -464,7 +461,11 @@ CSD_INHERITOR(cColStaticDescrInterval)
 /// Egy adatbázisból beolvasott bool értéket kovertál stringgé
 inline static const QString& boolFromSql(const QVariant& __f) { return __f.isNull() ? _sNul : str2bool(__f.toString(), EX_IGNORE) ? _sTrue : _sFalse; }
 /// Egy adatbázisból beolvasott text típusú tömb értéket konvertálja string listává
-inline static QStringList stringArrayFromSql(const QVariant& __f) { return cColStaticDescrArray(nullptr, cColStaticDescr::FT_TEXT | cColStaticDescr::FT_ARRAY).fromSql(__f).toStringList(); }
+inline static QStringList stringArrayFromSql(const QVariant& __f)
+{
+    cColStaticDescr csd(nullptr, cColStaticDescr::FT_TEXT | cColStaticDescr::FT_ARRAY);
+    return cColStaticDescrArray(csd).fromSql(__f).toStringList();
+}
 /// Egy adatbázisból beolvasott text típusú tömb értéket konvertálja string listává, majd a join()-al egy stringgé.
 /// @param __f Akonvertálandó, adatbázisból kiolvasott nyers adat.
 /// @param __s Szeparátor a joint() híváshoz.

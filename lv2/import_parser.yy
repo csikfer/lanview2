@@ -230,6 +230,7 @@ static QMap<QString, QVariantList> avars;
 static QSqlQuery  *     pq2 = nullptr;
 static bool             breakParse = false;
 static tRecordList<cMenuItem>   menuItems;
+static bool             bSkeep = false;
 /// A parser
 static int yyparse();
 /// A parser utolsó hibajelentése, NULL, ha nincs hiba
@@ -375,6 +376,7 @@ static cTableShapeField *pTableShapeField = nullptr;
 void initImportParser()
 {
     breakParse = false;
+    bSkeep     = false;
     if (pArpServerDefs == nullptr)
         pArpServerDefs = new cArpServerDefs();
     // notifswitch tömb = SET, minden on-ba, visszaolvasás listaként
@@ -426,6 +428,7 @@ void downImportParser()
 
     c_yyFile::dropp();
     breakParse = false;
+    bSkeep     = false;
 }
 
 void breakImportParser()
@@ -979,30 +982,10 @@ static inline void yyunget(const QChar& _c) {
     macbuff.insert(0,_c);
 }
 
-/// A sor maradékát eldobja.
-/// megnézi hány space típuso karakterrel kezdődő sor, és eldobja az összes következő sort,
-/// amelyik nem kezdődik több space típuső karakterrel, vagy üres.
-static void yyskip(bool b)
-{
-    macbuff.clear();
-    if (!b) return;
-    QRegExp ns("\\S");      // Az első nem space karakter kereséséhez
-    QRegExp as("^\\s*$");   // Csak space karakter
-    int n = lastLine.indexOf(ns);
-    if (n < 0) yyerror(QObject::trUtf8("Indent error ?"));
-    do {
-        lastLine = yygetline();
-        PDEB(INFO) << "yyskip : \"" << lastLine << "\"" << endl;
-        if (lastLine.isNull()) break;               // fájl vége
-        if (lastLine.indexOf(as) == 0) continue;    // Üres sor
-    } while (n < lastLine.indexOf(ns));
-    macbuff = lastLine;
-}
-
 static int yylex(void);
 static void strReplace(QString * s, QString * src, QString *trg);
-static void forLoopMac(QString *_in, QVariantList *_lst);
-static void forLoop(QString *_in, QVariantList *_lst);
+static void forLoopMac(QString *_in, QVariantList *_lst, int step = 1);
+static void forLoop(QString *_in, QVariantList *_lst, int step = 1);
 static QStringList *listLoop(QString *m, qlonglong fr, qlonglong to, qlonglong st);
 static intList *listLoop(qlonglong fr, qlonglong to, qlonglong st);
 
@@ -1350,7 +1333,6 @@ void setReplace(int er)
     T  o; o.setName(*n)[dn] = *d; \
     o.insert(qq()); delete n; delete d;
 
-/// @def REPOBJ
 /// @param p    Az objektum pointer változó
 /// @param t    At objektum típusa
 /// @param r    Ha hamis, akkor új objektumot hozunk létre, ha igaz, akkor ha létezik, modosítjuk.
@@ -1367,11 +1349,24 @@ void setReplace(int er)
     } \
     delete pnm;
 
-#define REPANDDEL(p) \
-    if (p == nullptr) yyerror("Parser erroro: " _STR(p) " is null"); \
-    if (isReplace) p->replace(qq()); else p->insert(qq()); \
-    pDelete(p); \
-    setLastPort(nullptr, NULL_IX)  // Törli
+/// Egy definiált/modosított objektum kiírása, és az objektum törlése
+template <class R> void writeAndDel(R *& p)
+{
+    if (p == nullptr) yyerror(QObject::trUtf8("Null pointer in %1.").arg(__PRETTY_FUNCTION__));
+    QString emsg;
+    if (isReplace) {
+        emsg = QObject::trUtf8("Replace object : ");
+        p->replace(qq());
+    }
+    else {
+        emsg = QObject::trUtf8("Insert object : ");
+        p->insert(qq());
+    }
+    emsg += p->identifying();
+    cExportQueue::push(emsg);
+    pDelete(p);
+    setLastPort(nullptr, NULL_IX);  // Törli
+}
 
 /// Egy új node/host vagy snmp eszköz létrehozása (a paraméterként megadott pointereket felszabadítja)
 /// @param name Az eszköz nevére mutató pointer, vagy a "LOOKUP" stringre mutató pointer.
@@ -1524,7 +1519,7 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
     cHostServices *     hss;
 }
 
-%token      MACRO_T FOR_T DO_T TO_T SET_T CLEAR_T
+%token      MACRO_T FOR_T DO_T TO_T SET_T CLEAR_T OR_T AND_T DEFINED_T
 %token      VLAN_T SUBNET_T PORTS_T PORT_T NAME_T SHARED_T SENSORS_T
 %token      PLACE_T PATCH_T SWITCH_T NODE_T HOST_T ADDRESS_T
 %token      PARENT_T IMAGE_T FRAME_T TEL_T NOTE_T MESSAGE_T
@@ -1547,11 +1542,12 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
 %token      ORD_T SEQUENCE_T MENU_T GUI_T OWN_T TOOL_T TIP_T WHATS_T THIS_T
 %token      EXEC_T TAG_T REAL_T ENABLE_T SERIAL_T INVENTORY_T NUMBER_T
 %token      DATE_T DISABLE_T EXPRESSION_T PREFIX_T RESET_T CACHE_T
-%token      DATA_T IANA_T IFDEF_T IFNDEF_T NC_T QUERY_T PARSER_T
+%token      DATA_T IANA_T IFDEF_T IFNDEF_T NC_T QUERY_T PARSER_T IF_T
 %token      REPLACE_T RANGE_T EXCLUDE_T PREP_T POST_T CASE_T RECTANGLE_T
 %token      DELETED_T PARAMS_T DOMAIN_T VAR_T PLAUSIBILITY_T CRITICAL_T
 %token      DIALOG_T AUTO_T FLAG_T TREE_T NOTIFY_T WARNING_T
 %token      REFRESH_T SQL_T CATEGORY_T ZONE_T HEARTBEAT_T GROUPS_T
+%token      END_T ELSE_T
 
 %token <i>  INTEGER_V
 %token <r>  FLOAT_V
@@ -1564,7 +1560,7 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
 %type  <i>  usr_id ftmod p_seq lnktypez fflags fflag tstypes tstype pgtype
 %type  <i>  node_h node_ts
 %type  <il> list_i p_seqs p_seqsl // ints
-%type  <b>  bool bool_on ifdef exclude cases replfl
+%type  <b>  bool_ bool_on bool ifdef exclude cases replfl
 %type  <r>  /* real */ num fexpr
 %type  <s>  str str_ str_z str_zz name_q time tod _toddef sexpr pnm mac_q ha nsw ips rights
 %type  <s>  imgty tsintyp usrfn usrgfn plfn ptcfn copy_from
@@ -1582,6 +1578,10 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
 %type  <sh>  snmph
 %type  <hss> hss hsss
 
+%left  NOT_T
+%left  OR_T
+%left  AND_T
+%left  '!'
 %left  '^'
 %left  '+' '-' '|'
 %left  '*' '/' '&'
@@ -1617,6 +1617,7 @@ command : INCLUDE_T str ';'                               { c_yyFile::inc($2); }
         | if
         | replaces
         | exports
+        | ';'
         ;
 // Makró vagy makró jellegű definíciók
 macro   : MACRO_T            NAME_V str ';'                 { templates.set (_sMacros, sp2s($2), sp2s($3));           }
@@ -1629,8 +1630,10 @@ macro   : MACRO_T            NAME_V str ';'                 { templates.set (_sM
         | REPLACE_T str '/' str '/' str '/'                 { strReplace($2, $4, $6); }
         ;
 // Ciklusok
-for_m   : FOR_T vals  DO_T MACRO_T NAME_V ';'               { forLoopMac($5, $2); }
-        | FOR_T vals  DO_T str ';'                          { forLoop($4, $2); }
+for_m   : FOR_T vals DO_T MACRO_T NAME_V ';'                { forLoopMac($5, $2); }
+        | FOR_T vals DO_T str ';'                           { forLoop($4, $2); }
+        | STEP_T int FOR_T vals DO_T MACRO_T NAME_V ';'     { forLoopMac($7, $4, $2); }
+        | STEP_T int FOR_T vals DO_T str ';'                { forLoop($6, $4, $2); }
         ;
 // Listák
 list_m  : LIST_T iexpr TO_T iexpr MASK_T str                { $$ = listLoop($6, $2, $4, 1);  }
@@ -1656,7 +1659,7 @@ str_    : STRING_V                              {
         | NULL_T                                { $$ = new QString(); }
         | STRING_T '(' iexpr ')'                { $$ = new QString(QString::number($3)); }
         | MASK_T  '(' sexpr ',' iexpr ')'       { $$ = new QString(nameAndNumber(sp2s($3), (int)$5)); }
-        | MACRO_T '(' sexpr ')'                 { $$ = new QString(templates._get(_sMacros, sp2s($3))); }
+        | STRING_T MACRO_T '(' sexpr ')'        { $$ = new QString(templates._get(_sMacros, sp2s($4))); }
         | PATCH_T TEMPLATE_T '(' sexpr ')'      { $$ = new QString(templates._get(_sPatchs, sp2s($4))); }
         | NODE_T  TEMPLATE_T '(' sexpr ')'      { $$ = new QString(templates._get(_sNodes,  sp2s($4))); }
         ;
@@ -1798,6 +1801,28 @@ fexpr   : FLOAT_V                   { $$ = $1; }
         | '(' fexpr ')'             { $$ = $2; }
         | FLOAT_T '(' iexpr ')'     { $$ = $3; }
         ;
+bool_   : ON_T                      { $$ = true; }
+        | YES_T                     { $$ = true; }
+        | TRUE_T                    { $$ = true; }
+        | OFF_T                     { $$ = false; }
+        | NO_T                      { $$ = false; }
+        | FALSE_T                   { $$ = false; }
+        ;
+bool    : bool_                     { $$ = $1; }
+        | NOT_T bool                { $$ = !$2; }
+        | bool AND_T bool           { $$ = $1 && $3; }
+        | bool OR_T  bool           { $$ = $1 || $3; }
+        | sexpr '=' '=' sexpr       { $$ = 0 == $1->compare(*$4); delete $1; delete $4; }
+        | sexpr '!' '=' sexpr       { $$ = 0 != $1->compare(*$4); delete $1; delete $4; }
+        | iexpr '=' '=' iexpr       { $$ = $1 == $4; }
+        | iexpr '!' '=' iexpr       { $$ = $1 != $4; }
+        | DEFINED_T ifdef           { $$ = $2; }
+        | sexpr '~' '~' sexpr       { QRegExp r(sp2s($4)); $$ = r.indexIn(sp2s($1)) >= 0; }
+        | sexpr '~' '=' sexpr       { QRegExp r(sp2s($4)); $$ = r.exactMatch(sp2s($1)); }
+        ;
+bool_on :                           { $$ = true; }
+        | bool_                     { $$ = $1; }
+        ;
 value   : iexpr                     { $$ = new QVariant($1); }
         | fexpr                     { $$ = new QVariant($1); }
         | str                       { $$ = sp2vp($1);}
@@ -1823,12 +1848,6 @@ vals    : value                     { $$ = new QVariantList(); *$$ << *$1; delet
 num     : iexpr                     { $$ = $1; }
         | fexpr                     { $$ = $1; }
         ;
-bool    : ON_T                      { $$ = true; }  | YES_T     { $$ = true; }  | TRUE_T    { $$ = true; }
-        | OFF_T                     { $$ = false; } | NO_T      { $$ = false; } | FALSE_T   { $$ = false; }
-        ;
-bool_on :                           { $$ = true; }
-        | bool                      { $$ = $1; }
-        ;
 replace :                           { $$ = REPLACE_DEF; }
         | REPLACE_T                 { $$ = REPLACE_ON;  }
         | INSERT_T                  { $$ = REPLACE_OFF; }
@@ -1841,13 +1860,13 @@ replfl  : replace                   { switch ($1) {
                                     }
 // felhasználók, felhesználói csoportok definíciója.
 user    : USER_T replace str str_z              { REPOBJ(pUser, cUser(), $2, $3, $4); pUser->setId(_sPlaceId, gPlace()); }
-            user_e                              { REPANDDEL(pUser); }
+            user_e                              { writeAndDel(pUser); }
         | USER_T GROUP_T str str_z              { REPOBJ(pGroup, cGroup(), REPLACE_DEF, $3, $4); }
-            ugrp_e                              { REPANDDEL(pGroup); }
+            ugrp_e                              { writeAndDel(pGroup); }
         | USER_T GROUP_T REPLACE_T str str_z    { REPOBJ(pGroup, cGroup(), REPLACE_ON, $4, $5); }
-            ugrp_e                              { REPANDDEL(pGroup); }
+            ugrp_e                              { writeAndDel(pGroup); }
         | USER_T GROUP_T INSERT_T str str_z     { REPOBJ(pGroup, cGroup(), REPLACE_OFF, $4, $5); }
-            ugrp_e                              { REPANDDEL(pGroup); }
+            ugrp_e                              { writeAndDel(pGroup); }
 //  Felhasználói csoportagság kezelése
         | USER_T GROUP_T str ADD_T str ';'      { cGroupUser gu(qq(), *$3, *$5); if (!gu.test(qq())) gu.insert(qq()); delete $3; delete $5; }
         | USER_T GROUP_T str REMOVE_T str ';'   { cGroupUser gu(qq(), *$3, *$5); if (gu.test(qq())) gu.remove(qq()); delete $3; delete $5; }
@@ -2017,7 +2036,7 @@ ips     : ip                        { $$ = new QString($1->toString()); delete $
         ;
 // Image definíciók
 image   : IMAGE_T replace str str_z { REPOBJ(pImage, cImage(), $2, $3, $4); }
-            image_e                 { REPANDDEL(pImage); }
+            image_e                 { writeAndDel(pImage); }
         ;
 image_e : '{' image_ps '}'
         ;
@@ -2037,7 +2056,7 @@ imgty   : str                       { $$ = $1;
         ;
 // Helyiség definíciók
 place   : PLACE_T replace str str_z             { REPOBJ(pPlace, cPlace, $2, $3, $4); pPlace->setId(_sParentId, globalPlaceId); }
-          place_e                               { REPANDDEL(pPlace); }
+          place_e                               { writeAndDel(pPlace); }
         | PLACE_T GROUP_T str str_z pgtype ';'  { if (globalReplaceFlag) cPlaceGroup::replaceNew(qq(), sp2s($3), sp2s($4), $5);
                                                   else                   cPlaceGroup::insertNew( qq(), sp2s($3), sp2s($4), $5); }
         | PLACE_T GROUP_T REPLACE_T str str_z pgtype ';'{cPlaceGroup::replaceNew(qq(), sp2s($4), sp2s($5), $6); }
@@ -2093,7 +2112,7 @@ nodes   : patch
         | node
 patch   : patch_h                               { if (pPatch->isNull(_sPlaceId)) pPatch->setId(_sPlaceId, gPlace());
                                                   pPatch->containerValid = CV_ALL_PATCH; }
-          patch_e                               { REPANDDEL(pPatch); }
+          patch_e                               { writeAndDel(pPatch); }
         | ADD_T PATCH_T str PORT_T              { NEWOBJ(pPatch, cPatch); pPatch->setByName(sp2s($3)); }
           apport                                { DELOBJ(pPatch); }
         ;
@@ -2221,15 +2240,15 @@ node_h  : NODE_T replace node_ts                { $$ = $3; setReplace($2); }
 node_ts :                                       { $$ = ENUM2SET(NT_NODE); }
         | '(' strs ')'                          { $$ = 0; foreach (QString s, *$2) { $$ |= ENUM2SET(nodeType(s)); } delete $2; }
         ;
-node    : node_h str str_z                          { newHost($1, nullptr, nullptr, $2, $3); pPatch->containerValid = CV_ALL_NODE; }
-                node_cf node_e                      { REPANDDEL(pPatch); }
+node    : node_h str str_z                          { newHost($1, $2, nullptr, nullptr, $3); pPatch->containerValid = CV_ALL_NODE; }
+                node_cf node_e                      { writeAndDel(pPatch); }
         | ATTACHED_T replfl str str_z ';'           { if ($2) replaceAttachedNode(sp2s($3), sp2s($4));
                                                       else        newAttachedNode(sp2s($3), sp2s($4)); }
         | ATTACHED_T replfl str str_z FROM_T int TO_T int ';'
                                                     { if ($2) replaceAttachedNodes(sp2s($3), sp2s($4), $6, $8);
                                                       else        newAttachedNodes(sp2s($3), sp2s($4), $6, $8);}
         | node_h name_q ip_q mac_q str_z            { newHost($1, $2, $3, $4, $5); pPatch->containerValid = CV_ALL_HOST; }
-            node_cf node_e                          { REPANDDEL(pPatch); }
+            node_cf node_e                          { writeAndDel(pPatch); }
         | WORKSTATION_T replfl str mac str_z ';'    { if ($2) replaceWorkstation(sp2s($3), *$4, sp2s($5));
                                                       else        newWorkstation(sp2s($3), *$4, sp2s($5));
                                                       delete $4; }
@@ -2242,8 +2261,9 @@ node_ps : node_p node_ps
         | 
         ;
 node_cf :
-        | TEMPLATE_T str                        { templates.get(_sNodes, sp2s($2)); }
-                node_ps
+        | TEMPLATE_T str    { templates.get(_sNodes, sp2s($2)); }   node_ps
+        | READ_T            { node().setByName(qq());           node().fetchAllChilds(qq()); }
+        | READ_T str        { node().setByName(qq(), sp2s($2)); node().fetchAllChilds(qq()); }
         ;
 node_p  : NOTE_T str ';'                        { node().setName(_sNodeNote, sp2s($2)); }
         | PLACE_T place_id ';'                  { node().setId(_sPlaceId, $2); }
@@ -2254,6 +2274,8 @@ node_p  : NOTE_T str ';'                        { node().setName(_sNodeNote, sp2
         | ADD_T PORTS_T str offs FROM_T int TO_T int offs str ';'
                                                 { setLastPort(node().addPorts(sp2s($3), sp2s($10), $9, $6, $8, $4)); }
         | ADD_T PORT_T pix_z str str str_z ';'  { setLastPort(node().addPort(sp2s($4), sp2s($5), sp2s($6), $3)); }
+        | DELETE_T PORT_T str ';'               { cNPort *p = node().ports.pull(sp2s($3), EX_IGNORE); pDelete(p); }
+        | DELETE_T PORT_T int ';'               { cNPort *p = node().ports.pull(_sPortIndex, QVariant($3), EX_IGNORE); pDelete(p); }
         | PORT_T pix TYPE_T ix_z str str str_z ';' { setLastPort(node().portModType($2, sp2s($5), sp2s($6), sp2s($7), $4)); }
         | PORT_T pix NAME_T str str_z ';'       { setLastPort(node().portModName($2, sp2s($4), sp2s($5))); }
         | PORT_T pix NOTE_T strs ';'            { setLastPort(node().portSet($2, _sPortNote, slp2vl($4))); }
@@ -2265,6 +2287,7 @@ node_p  : NOTE_T str ';'                        { node().setName(_sNodeNote, sp2
         | PORT_T pnm PARAM_T str '=' value ';'  { setLastPort(node().portSetParam(sp2s($2), sp2s($4), vp2v($6))); }
         | PORT_T pix PARAM_T str '=' vals ';'   { setLastPort(node().portSetParam($2, sp2s($4), vlp2vl($6))); }
         /* host */
+        | DELETE_T PORT_T mac ';'               { cNPort *p; while (NULL != (p = node().ports.pull(_sHwAddress, QVariant::fromValue(*$3), EX_IGNORE))) { delete p; } delete $3; }
         | ADD_T PORT_T pix_z str str ip_qq mac_qq str_z ';' { setLastPort(hostAddPort((int)$3, $4,$5,$6,$7,$8)); }
         | PORT_T pnm ADD_T ADDRESS_T ip_a str_z ';'         { setLastPort(portAddAddress($2, $5, $6)); }
         | PORT_T pix ADD_T ADDRESS_T ip_a str_z ';'         { setLastPort(portAddAddress((int)$2, $5, $6)); }
@@ -2392,7 +2415,7 @@ srv     : service
         | srvars
         ;
 service : SERVICE_T replace str str_z           { REPOBJ(pService, cService(), $2, $3, $4); }
-          srvend                                { REPANDDEL(pService); }
+          srvend                                { writeAndDel(pService); }
         | SERVICE_T TYPE_T str str_z ';'        { cServiceType::insertNew(qq(), sp2s($3), sp2s($4)); }
         | MESSAGE_T str str SERVICE_T TYPE_T srvtid nsws ';'    { cAlarmMsg::replaces(qq(), $6, slp2sl($7), sp2s($2), sp2s($3)); }
         | SERVICE_T TYPE_T srvtid MESSAGE_T  '{'                { id = $3; }    srvmsgs '}'
@@ -2497,7 +2520,7 @@ hsss    : hss                                   { $$ = $1; }
         | hsss ',' hss                          { ($$ = $1)->cat($3); }
         ;
 srvars  : SERVICE_T VAR_T TYPE_T replace str str_z  { REPOBJ(pServiceVarType, cServiceVarType(), $4, $5, $6); }
-         '{' varts '}'                              { REPANDDEL(pServiceVarType); }
+         '{' varts '}'                              { writeAndDel(pServiceVarType); }
         ;
 varts   : vart
         | varts vart
@@ -2572,7 +2595,7 @@ tblmod_h: TABLE_T str SHAPE_T replace str str_z '{'     { pTableShape = newTable
         | TABLE_T SHAPE_T replace str str_z  COPY_T FROM_T str '{'
                                                         { REPOBJ(pTableShape, cTableShape, $3, $4, $5); copyTableShape($8); }
         ;
-tblmod  : tblmod_h tmodps '}'                           { REPANDDEL(pTableShape); }
+tblmod  : tblmod_h tmodps '}'                           { writeAndDel(pTableShape); }
         ;
 tmodps  : tmodp
         | tmodps tmodp
@@ -2607,7 +2630,7 @@ tmodp   : SET_T DEFAULTS_T ';'              { pTableShape->setDefaults(qq()); }
         | FIELD_T strs FEATURES_T str ';'       { pTableShape->fsets(slp2sl($2), _sFeatures, sp2s($4)); }
         | FIELD_T str EXPRESSION_T str ';'      { pTableShape->fset(sp2s($2), _sExpression, sp2s($4)); }
         | FIELD_T strs FLAG_T fflags ';'        { pTableShape->fsets(slp2sl($2), _sFieldFlags, $4); }
-        | FIELD_T strs FLAG_T bool fflags ';'   { foreach (QString fn, *$2) {
+        | FIELD_T strs FLAG_T bool_ fflags ';'  { foreach (QString fn, *$2) {
                                                       cTableShapeField *pTS = pTableShape->shapeFields.get(fn);
                                                       qlonglong f = pTS->getBigInt(_sFieldFlags);
                                                       if ($4) f |=  $5;
@@ -2743,8 +2766,9 @@ modify  : SET_T str '[' strs ']' '.' str '=' value ';'
                                                                       pDelete(pHostService);
                                                                  }
         ;
-if      : IFDEF_T  ifdef                        { yyskip(!$2);  }
-        | IFNDEF_T ifdef                        { yyskip($2);; }
+if      : IFDEF_T  ifdef                { bSkeep = !$2; }
+        | IFNDEF_T ifdef                { bSkeep =  $2; }
+        | IF_T '(' bool ')'             { bSkeep = !$3; }
         ;
 ifdef   : PLACE_T str                   { $$ = NULL_ID != cPlace().     getIdByName(qq(), sp2s($2), EX_IGNORE); }
         | PLACE_T GROUP_T str           { $$ = NULL_ID != cPlaceGroup().getIdByName(qq(), sp2s($3), EX_IGNORE); }
@@ -2753,6 +2777,7 @@ ifdef   : PLACE_T str                   { $$ = NULL_ID != cPlace().     getIdByN
         | GROUP_T str                   { $$ = NULL_ID != cGroup().     getIdByName(qq(), sp2s($2), EX_IGNORE); }
         | PATCH_T str                   { $$ = NULL_ID != cPatch().     getIdByName(qq(), sp2s($2), EX_IGNORE); }
         | NODE_T  str                   { $$ = NULL_ID != cNode().      getIdByName(qq(), sp2s($2), EX_IGNORE); }
+        | PORT_T str ':' str            { $$ = NULL_ID != cNPort(). getPortIdByName(qq(), sp2s($4), sp2s($2), EX_IGNORE); }
         | VLAN_T  str                   { $$ = NULL_ID != cVLan().      getIdByName(qq(), sp2s($2), EX_IGNORE); }
         | SUBNET_T str                  { $$ = NULL_ID != cSubNet().    getIdByName(qq(), sp2s($2), EX_IGNORE); }
         | TABLE_T SHAPE_T str           { $$ = NULL_ID != cTableShape().getIdByName(qq(), sp2s($3), EX_IGNORE); }
@@ -2776,7 +2801,7 @@ qpari   : cases str str str_z ';'   { cQueryParser::_insert(qq(), ivars[_sServic
         | PREP_T str str_z ';'      { cQueryParser::_insert(qq(), ivars[_sServiceId], _sPrep, false, _sNul, sp2s($2), sp2s($3), NULL_ID); }
         | POST_T str str_z ';'      { cQueryParser::_insert(qq(), ivars[_sServiceId], _sPost, false, _sNul, sp2s($2), sp2s($3), NULL_ID); }
         ;
-cases   : CASE_T bool               { $$ = $2; }
+cases   : CASE_T bool_               { $$ = $2; }
         |                           { $$ = false; }
         ;
 replaces: iprange
@@ -2952,7 +2977,7 @@ static int isAddress(const QString& __s)
 }
 
 #define TOK(t)  { #t, t##_T },
-static int yylex(void)
+static int _yylex(void)
 {
     // Egy karakteres tokenek
     static const char cToken[] = "=+-*(),;|&<>^{}[]:.#@";
@@ -2961,7 +2986,7 @@ static int yylex(void)
         const char *name;
         int         value;
     } sToken[] = {
-        TOK(MACRO) TOK(FOR) TOK(DO) TOK(TO) TOK(SET) TOK(CLEAR)
+        TOK(MACRO) TOK(FOR) TOK(DO) TOK(TO) TOK(SET) TOK(CLEAR) TOK(OR) TOK(AND) TOK(NOT) TOK(DEFINED)
         TOK(VLAN) TOK(SUBNET) TOK(PORTS) TOK(PORT) TOK(NAME) TOK(SHARED) TOK(SENSORS)
         TOK(PLACE) TOK(PATCH) TOK(SWITCH) TOK(NODE) TOK(HOST) TOK(ADDRESS)
         TOK(PARENT) TOK(IMAGE) TOK(FRAME) TOK(TEL) TOK(NOTE) TOK(MESSAGE)
@@ -2984,7 +3009,7 @@ static int yylex(void)
         TOK(ORD) TOK(SEQUENCE) TOK(MENU) TOK(GUI) TOK(OWN) TOK(TOOL) TOK(TIP) TOK(WHATS) TOK(THIS)
         TOK(EXEC) TOK(TAG) TOK(ENABLE) TOK(SERIAL) TOK(INVENTORY) TOK(NUMBER)
         TOK(DATE) TOK(DISABLE) TOK(EXPRESSION) TOK(PREFIX) TOK(RESET) TOK(CACHE)
-        TOK(DATA) TOK(IANA) TOK(IFDEF) TOK(IFNDEF) TOK(NC) TOK(QUERY) TOK(PARSER)
+        TOK(DATA) TOK(IANA) TOK(IFDEF) TOK(IFNDEF) TOK(NC) TOK(QUERY) TOK(PARSER) TOK(IF)
         TOK(REPLACE) TOK(RANGE) TOK(EXCLUDE) TOK(PREP) TOK(POST) TOK(CASE) TOK(RECTANGLE)
         TOK(DELETED) TOK(PARAMS) TOK(DOMAIN) TOK(VAR) TOK(PLAUSIBILITY) TOK(CRITICAL)
         TOK(DIALOG) TOK(AUTO) TOK(FLAG) TOK(TREE) TOK(NOTIFY) TOK(WARNING)
@@ -2999,6 +3024,7 @@ static int yylex(void)
         { "DEL",    DELETE_T },
         { "EXPR",   EXPRESSION_T },
         { "CAT",    CATEGORY_T },
+        TOK(END) TOK(ELSE)
         { nullptr, 0 }
     };
     // DBGFN();
@@ -3183,6 +3209,27 @@ recall:
     return NAME_V;
 }
 
+static int yylex(void)
+{
+    while (true) {
+        int r = _yylex();
+        switch(r) {
+        case 0:
+            return r;
+        case END_T:
+            bSkeep = false;
+            continue;
+        case ELSE_T:
+            bSkeep = !bSkeep;
+            continue;
+        default:
+            break;
+        }
+        if (bSkeep) continue;
+        return r;
+    }
+}
+
 /* */
 
 static void strReplace(QString * s, QString * src, QString *trg)
@@ -3197,23 +3244,26 @@ static void strReplace(QString * s, QString * src, QString *trg)
     insertCode(r);
 }
 
-static void forLoopMac(QString *_in, QVariantList *_lst)
+static void forLoopMac(QString *_in, QVariantList *_lst, int step)
 {
     QString s;
-    foreach (QVariant v, *_lst) {
-        s += QChar('$') + *_in + QChar('(') + v.toString() + ") ";
+    int n = _lst->size();
+    for (int i = 0; (i + step -1) < n; i += step) {
+        s += QChar('$') + *_in + QChar('(');
+        s += quotedVariantList(_lst->mid(i, step));
+        s += QChar(')');
     }
     // PDEB(VVERBOSE) << "forLoopMac inserted : " << dQuoted(s) << endl;
     insertCode(s);
     delete _in; delete _lst;
 }
 
-static void forLoop(QString *_in, QVariantList *_lst)
+static void forLoop(QString *_in, QVariantList *_lst, int step)
 {
     QString *pmm = new QString("__");
     templates.set (_sMacros, *pmm, *_in);
     delete _in;
-    forLoopMac(pmm, _lst);
+    forLoopMac(pmm, _lst, step);
 }
 
 static QStringList *listLoop(QString *m, qlonglong fr, qlonglong to, qlonglong st)

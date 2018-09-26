@@ -1350,3 +1350,11 @@ void cWorkstation::on_toolButtonEditPlace_clicked()
 {
     pSelPlace->editCurrentPlace();
 }
+
+void cWorkstation::on_toolButtonInfoNode_clicked()
+{
+    qlonglong nid = pSelNode->currentNodeId();
+    if (nid != NULL_ID) {
+        popupReportNode(this, *pq, nid);
+    }
+}

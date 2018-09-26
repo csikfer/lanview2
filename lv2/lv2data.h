@@ -1305,6 +1305,7 @@ public:
     /// Ha megadjuk a flags paramétert, akkor a eContainerValid típusú konstans(ok)al adható meg, mely konténer adattagokat kell feltölteni.
     /// A CV_PORTS -ot nem kell megadni.
     virtual int  fetchPorts(QSqlQuery& __q, int flags = 0);
+    int fetchAllChilds(QSqlQuery& __q) { return fetchParams(__q) + fetchPorts(__q, -1); }
     /// A név alapján visszaadja a rekord ID-t, az objektum értéke nem változik.
     /// Ha a node típusban be lett állítva a host bit, akkor ha nincs találat a névre, akkor
     /// a keresett nevet kiegészíti a kereső domain nevekkel, és az így kapott nevekkel végrehajt mégegy keresést.

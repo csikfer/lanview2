@@ -347,11 +347,26 @@
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QComboBox" name="comboBoxNode">
-           <property name="editable">
-            <bool>false</bool>
-           </property>
-          </widget>
+          <layout class="QHBoxLayout" name="horizontalLayoutNode">
+           <item>
+            <widget class="QComboBox" name="comboBoxNode">
+             <property name="editable">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QToolButton" name="toolButtonInfoNode">
+             <property name="text">
+              <string>+</string>
+             </property>
+             <property name="icon">
+              <iconset resource="lv2g.qrc">
+               <normaloff>:/icons/document-properties.ico</normaloff>:/icons/document-properties.ico</iconset>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
          <item row="2" column="0">
           <widget class="QLabel" name="labelNewName">
@@ -405,7 +420,7 @@
            </property>
           </widget>
          </item>
-         <item row="9" column="1">
+         <item row="5" column="1">
           <layout class="QHBoxLayout" name="horizontalLayoutPlace">
            <item>
             <widget class="QComboBox" name="comboBoxPlace">
@@ -438,35 +453,35 @@
            </item>
           </layout>
          </item>
-         <item row="10" column="0">
+         <item row="6" column="0">
           <widget class="QLabel" name="labelSerial">
            <property name="text">
             <string>Széria szám :</string>
            </property>
           </widget>
          </item>
-         <item row="11" column="0">
+         <item row="7" column="0">
           <widget class="QLabel" name="labelInventory">
            <property name="text">
             <string>Leltári szám :</string>
            </property>
           </widget>
          </item>
-         <item row="12" column="0">
+         <item row="8" column="0">
           <widget class="QLabel" name="labelModelName">
            <property name="text">
             <string>Model név :</string>
            </property>
           </widget>
          </item>
-         <item row="13" column="0">
+         <item row="9" column="0">
           <widget class="QLabel" name="labelModelNumber">
            <property name="text">
             <string>Model szám :</string>
            </property>
           </widget>
          </item>
-         <item row="9" column="0">
+         <item row="5" column="0">
           <widget class="QLabel" name="labelPlace">
            <property name="font">
             <font>
