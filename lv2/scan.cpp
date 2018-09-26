@@ -651,7 +651,7 @@ QString lookup(const QHostAddress& ha, eEx __ex)
 /// az LLDP címén a tisztellt gyártók/szabványalkotók kitaláltak.
 /// Vagy jobban meg kéne érteni a szarrá bonyolított rendszert.
 class cLldpScan {
-    friend void ::scanByLldp(QSqlQuery q, const cSnmpDevice& __dev, bool _parser);
+    friend void ::scanByLldp(QSqlQuery& q, const cSnmpDevice& __dev, bool _parser);
     friend LV2SHARED_EXPORT void ::lldpInfo(QSqlQuery q, const cSnmpDevice& __dev, bool _parser);
     friend int  snmpNextField(int n, cSnmp& snmp, QString& em, int& _ix);
     friend void staticAddOid(QString __cs, int i);
@@ -1950,12 +1950,12 @@ bool cLldpScan::rowEmpty(QSqlQuery &q, cSnmp &snmp, rowData &row, cAppMemo &em)
     return true;
 }
 
-void scanByLldp(QSqlQuery q, const cSnmpDevice& __dev, bool _parser)
+void scanByLldp(QSqlQuery& q, const cSnmpDevice& __dev, bool _parser)
 {
     cLldpScan(q, _parser).scanByLldp(q, __dev);
 }
 
-void lldpInfo(QSqlQuery q, const cSnmpDevice& __dev, bool _parser)
+void lldpInfo(QSqlQuery& q, const cSnmpDevice& __dev, bool _parser)
 {
     cLldpScan o(q, _parser);
     cSnmpDevice *pDev = dynamic_cast<cSnmpDevice *>(__dev.dup());

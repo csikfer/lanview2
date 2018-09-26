@@ -40,10 +40,10 @@ EXT_ QString lookup(const QHostAddress& ha, enum eEx __ex = EX_ERROR);
 /// Az objektum neve az IP cím alapján a DNS-szerver álltal visszaadott név.
 /// @param q Az adatbázis műveletekhez használlható query objektum
 /// @param __dev A kiíndulási eszköz, adatbázisban rögzített, onnen feltöltött objektum.
-EXT_ void scanByLldp(QSqlQuery q, const cSnmpDevice& __dev, bool _parser = false);
+EXT_ void scanByLldp(QSqlQuery& q, const cSnmpDevice& __dev, bool _parser = false);
 
 /// Egy eszköz szomszédainak a felfedezése
-EXT_ void lldpInfo(QSqlQuery q, const cSnmpDevice& __dev, bool _parser);
+EXT_ void lldpInfo(QSqlQuery& q, const cSnmpDevice& __dev, bool _parser);
 
 /// Egy eszköz helyének a közvetlen lekérdezése a switch-ek címtáblái alapján
 /// @param _mac A keresett eszköz MAC-je
@@ -61,8 +61,8 @@ public:
 };
 
 
-inline void scanByLldp(QSqlQuery, const cSnmpDevice&, bool _parser = false) { (void)_parser; EXCEPTION(ENOTSUPP); }
-
+inline void scanByLldp(QSqlQuery&, const cSnmpDevice&, bool _parser = false) { (void)_parser; EXCEPTION(ENOTSUPP); }
+inline void lldpInfo(QSqlQuery&, const cSnmpDevice&, bool _parser = false) { (void)_parser; EXCEPTION(ENOTSUPP); }
 inline void exploreByAddress(cMac, QHostAddress, cSnmpDevice&) { EXCEPTION(ENOTSUPP); }
 
 #endif // SNMP_IS_EXIST
