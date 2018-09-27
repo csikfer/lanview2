@@ -652,7 +652,7 @@ QString lookup(const QHostAddress& ha, eEx __ex)
 /// Vagy jobban meg kéne érteni a szarrá bonyolított rendszert.
 class cLldpScan {
     friend void ::scanByLldp(QSqlQuery& q, const cSnmpDevice& __dev, bool _parser);
-    friend LV2SHARED_EXPORT void ::lldpInfo(QSqlQuery q, const cSnmpDevice& __dev, bool _parser);
+    friend LV2SHARED_EXPORT void ::lldpInfo(QSqlQuery& q, const cSnmpDevice& __dev, bool _parser);
     friend int  snmpNextField(int n, cSnmp& snmp, QString& em, int& _ix);
     friend void staticAddOid(QString __cs, int i);
 protected:
