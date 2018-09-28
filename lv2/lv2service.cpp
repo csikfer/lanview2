@@ -167,7 +167,7 @@ cInspectorProcess::cInspectorProcess(cInspector *pp)
     }
     else ok = false;
     if (!ok) {
-        reStartMax = cSysParam::getIntSysParam(*inspector.pq, _sRestartMax, DEF_RESTART_MAX);
+        reStartMax = cSysParam::getIntegerSysParam(*inspector.pq, _sRestartMax, DEF_RESTART_MAX);
     }
 
     errCntClearTime = inspector.interval * 5;

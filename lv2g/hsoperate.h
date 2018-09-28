@@ -74,7 +74,7 @@ public:
 protected:
     void setButton();
     bool    lockSetButton;
-    Ui_hostServiceOp *pUi;
+    Ui::hostServiceOp *pUi;
     QButtonGroup   *pButtonGroupPlace;
     QButtonGroup   *pButtonGroupService;
     QButtonGroup   *pButtonGroupNode;
@@ -106,6 +106,8 @@ protected:
     int lastAlramButtonId;
     QString sStart;
     QString sStop;
+    qlonglong minIntervalMs;
+    QDateTime now;
 protected slots:
     void refresh();
     /// Al példányok megjelenítése
@@ -139,9 +141,18 @@ protected slots:
     // refresh
     void startRefresh();
     void changeRefreshInterval(int v);
-    void changeDataTime(QDateTime&);
     //
     void changeJustify();
+private slots:
+    void on_dateTimeEditFrom_dateTimeChanged(const QDateTime &dateTime);
+    void on_dateTimeEditTo_dateTimeChanged(const QDateTime &dateTime);
+    void on_toolButtonDateFrom_clicked();
+    void on_toolButtonRstFrom_clicked();
+    void on_toolButtonDateTo_clicked();
+    void on_toolButtonRstTo_clicked();
+
+    void on_toolButtonIntervalDef_clicked();
+
 private:
     void setCell(int row, int col, QTableWidgetItem * pi) {
         if (pi != NULL) {

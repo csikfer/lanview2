@@ -11,6 +11,7 @@
 #include "scan.h"
 #include "vardata.h"
 #include "export.h"
+#include <QStringList>
 
 #define  YYERROR_VERBOSE
 
@@ -988,6 +989,7 @@ static void forLoopMac(QString *_in, QVariantList *_lst, int step = 1);
 static void forLoop(QString *_in, QVariantList *_lst, int step = 1);
 static QStringList *listLoop(QString *m, qlonglong fr, qlonglong to, qlonglong st);
 static intList *listLoop(qlonglong fr, qlonglong to, qlonglong st);
+static QString getAllTokens(bool sort = true);
 
 
 static inline QVariant *sp2vp(QString * __s)
@@ -1537,17 +1539,17 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
 %token      MASK_T LIST_T VLANS_T ID_T DYNAMIC_T FIXIP_T PRIVATE_T PING_T
 %token      NOTIF_T ALL_T RIGHTS_T REMOVE_T SUB_T FEATURES_T MAC_T EXTERNAL_T
 %token      LINK_T LLDP_T SCAN_T TABLE_T FIELD_T SHAPE_T TITLE_T REFINE_T
-%token      DEFAULTS_T ENUM_T RIGHT_T VIEW_T INSERT_T EDIT_T LANG_T TEXT_T
+%token      DEFAULTS_T ENUM_T RIGHT_T VIEW_T INSERT_T EDIT_T LANG_T
 %token      INHERIT_T NAMES_T VALUE_T DEFAULT_T STYLE_T SHEET_T
 %token      ORD_T SEQUENCE_T MENU_T GUI_T OWN_T TOOL_T TIP_T WHATS_T THIS_T
-%token      EXEC_T TAG_T REAL_T ENABLE_T SERIAL_T INVENTORY_T NUMBER_T
-%token      DATE_T DISABLE_T EXPRESSION_T PREFIX_T RESET_T CACHE_T
+%token      EXEC_T TAG_T ENABLE_T SERIAL_T INVENTORY_T NUMBER_T
+%token      DISABLE_T EXPRESSION_T PREFIX_T RESET_T CACHE_T
 %token      DATA_T IANA_T IFDEF_T IFNDEF_T NC_T QUERY_T PARSER_T IF_T
 %token      REPLACE_T RANGE_T EXCLUDE_T PREP_T POST_T CASE_T RECTANGLE_T
 %token      DELETED_T PARAMS_T DOMAIN_T VAR_T PLAUSIBILITY_T CRITICAL_T
-%token      DIALOG_T AUTO_T FLAG_T TREE_T NOTIFY_T WARNING_T
+%token      AUTO_T FLAG_T TREE_T NOTIFY_T WARNING_T
 %token      REFRESH_T SQL_T CATEGORY_T ZONE_T HEARTBEAT_T GROUPS_T
-%token      END_T ELSE_T
+%token      END_T ELSE_T TOKEN_T
 
 %token <i>  INTEGER_V
 %token <r>  FLOAT_V
@@ -2824,6 +2826,7 @@ exports : print
         ;
 print   : PRINT_T str ';'               { cExportQueue::push(*$2); delete $2; }
         | EXPORT_T SERVICE_T ';'        { cExportQueue::push(cExport().services()); }
+        | PRINT_T ALL_T TOKEN_T ';'     { cExportQueue::push(getAllTokens(true)); }
         ;
 lang    : LANG_T replfl str str str image_idz lnx ';'  { if ($2) cLanguage::repLanguage(qq(), sp2s($3), sp2s($4), sp2s($5), $6, $7);
                                                          else    cLanguage::newLanguage(qq(), sp2s($3), sp2s($4), sp2s($5), $6, $7);
@@ -2976,57 +2979,59 @@ static int isAddress(const QString& __s)
     return 0;
 }
 
+// Egy karakteres tokenek
+static const char yyTokenChars[] = "=+-*(),;|&<>^{}[]:.#@";
 #define TOK(t)  { #t, t##_T },
+// Tokenek
+static const struct token {
+    const char *name;
+    int         value;
+} yyTokenList[] = {
+    TOK(MACRO) TOK(FOR) TOK(DO) TOK(TO) TOK(SET) TOK(CLEAR) TOK(OR) TOK(AND) TOK(NOT) TOK(DEFINED)
+    TOK(VLAN) TOK(SUBNET) TOK(PORTS) TOK(PORT) TOK(NAME) TOK(SHARED) TOK(SENSORS)
+    TOK(PLACE) TOK(PATCH) TOK(SWITCH) TOK(NODE) TOK(HOST) TOK(ADDRESS)
+    TOK(PARENT) TOK(IMAGE) TOK(FRAME) TOK(TEL) TOK(NOTE) TOK(MESSAGE)
+    TOK(PARAM) TOK(TEMPLATE) TOK(COPY) TOK(FROM) TOK(NULL) TOK(TERM) TOK(NEXT)
+    TOK(INCLUDE) TOK(PSEUDO) TOK(OFFS) TOK(IFTYPE) TOK(WRITE) TOK(RE) TOK(SYS)
+    TOK(ADD) TOK(READ) TOK(UPDATE) TOK(ARPS) TOK(ARP) TOK(SERVER) TOK(FILE) TOK(BY)
+    TOK(SNMP) TOK(SSH) TOK(COMMUNITY) TOK(DHCPD) TOK(LOCAL) TOK(PROC) TOK(CONFIG)
+    TOK(ATTACHED) TOK(LOOKUP) TOK(WORKSTATION) TOK(LINKS) TOK(BACK) TOK(FRONT)
+    TOK(IP) TOK(COMMAND) TOK(SERVICE) TOK(PRIME) TOK(PRINT) TOK(EXPORT)
+    TOK(MAX) TOK(CHECK) TOK(ATTEMPTS) TOK(NORMAL) TOK(INTERVAL) TOK(RETRY)
+    TOK(FLAPPING) TOK(CHANGE) { "TRUE", TRUE_T },{ "FALSE", FALSE_T }, TOK(ON) TOK(OFF) TOK(YES) TOK(NO)
+    TOK(DELEGATE) TOK(STATE) TOK(SUPERIOR) TOK(TIME) TOK(PERIODS) TOK(LINE) TOK(GROUP)
+    TOK(USER) TOK(DAY) TOK(OF) TOK(PERIOD) TOK(PROTOCOL) TOK(ALERT) TOK(INTEGER) TOK(FLOAT)
+    TOK(DELETE) TOK(ONLY) TOK(STRING) TOK(SAVE) TOK(TYPE) TOK(STEP) TOK(EXCEPT)
+    TOK(MASK) TOK(LIST) TOK(VLANS) TOK(ID) TOK(DYNAMIC) TOK(FIXIP) TOK(PRIVATE) TOK(PING)
+    TOK(NOTIF) TOK(ALL) TOK(RIGHTS) TOK(REMOVE) TOK(SUB) TOK(FEATURES) TOK(MAC) TOK(EXTERNAL)
+    TOK(LINK) TOK(LLDP) TOK(SCAN) TOK(TABLE) TOK(FIELD) TOK(SHAPE) TOK(TITLE) TOK(REFINE)
+    TOK(DEFAULTS) TOK(ENUM) TOK(RIGHT) TOK(VIEW) TOK(INSERT) TOK(EDIT) TOK(LANG)
+    TOK(INHERIT) TOK(NAMES) TOK(VALUE) TOK(DEFAULT) TOK(STYLE) TOK(SHEET)
+    TOK(ORD) TOK(SEQUENCE) TOK(MENU) TOK(GUI) TOK(OWN) TOK(TOOL) TOK(TIP) TOK(WHATS) TOK(THIS)
+    TOK(EXEC) TOK(TAG) TOK(ENABLE) TOK(SERIAL) TOK(INVENTORY) TOK(NUMBER)
+    TOK(DISABLE) TOK(EXPRESSION) TOK(PREFIX) TOK(RESET) TOK(CACHE)
+    TOK(DATA) TOK(IANA) TOK(IFDEF) TOK(IFNDEF) TOK(NC) TOK(QUERY) TOK(PARSER) TOK(IF)
+    TOK(REPLACE) TOK(RANGE) TOK(EXCLUDE) TOK(PREP) TOK(POST) TOK(CASE) TOK(RECTANGLE)
+    TOK(DELETED) TOK(PARAMS) TOK(DOMAIN) TOK(VAR) TOK(PLAUSIBILITY) TOK(CRITICAL)
+    TOK(AUTO) TOK(FLAG) TOK(TREE) TOK(NOTIFY) TOK(WARNING)
+    TOK(REFRESH) TOK(SQL) TOK(CATEGORY) TOK(ZONE) TOK(HEARTBEAT) TOK(GROUPS)
+    TOK(TOKEN)
+    { "WST",    WORKSTATION_T }, // rövidítések
+    { "ATC",    ATTACHED_T },
+    { "INT",    INTEGER_T },
+    { "MSG",    MESSAGE_T },
+    { "CMD",    COMMAND_T },
+    { "PROTO",  PROTOCOL_T },
+    { "SEQ",    SEQUENCE_T },
+    { "DEL",    DELETE_T },
+    { "EXPR",   EXPRESSION_T },
+    { "CAT",    CATEGORY_T },
+    TOK(END) TOK(ELSE)
+    { nullptr, 0 }
+};
+
 static int _yylex(void)
 {
-    // Egy karakteres tokenek
-    static const char cToken[] = "=+-*(),;|&<>^{}[]:.#@";
-    // Tokenek
-    static const struct token {
-        const char *name;
-        int         value;
-    } sToken[] = {
-        TOK(MACRO) TOK(FOR) TOK(DO) TOK(TO) TOK(SET) TOK(CLEAR) TOK(OR) TOK(AND) TOK(NOT) TOK(DEFINED)
-        TOK(VLAN) TOK(SUBNET) TOK(PORTS) TOK(PORT) TOK(NAME) TOK(SHARED) TOK(SENSORS)
-        TOK(PLACE) TOK(PATCH) TOK(SWITCH) TOK(NODE) TOK(HOST) TOK(ADDRESS)
-        TOK(PARENT) TOK(IMAGE) TOK(FRAME) TOK(TEL) TOK(NOTE) TOK(MESSAGE)
-        TOK(PARAM) TOK(TEMPLATE) TOK(COPY) TOK(FROM) TOK(NULL) TOK(TERM) TOK(NEXT)
-        TOK(INCLUDE) TOK(PSEUDO) TOK(OFFS) TOK(IFTYPE) TOK(WRITE) TOK(RE) TOK(SYS)
-        TOK(ADD) TOK(READ) TOK(UPDATE) TOK(ARPS) TOK(ARP) TOK(SERVER) TOK(FILE) TOK(BY)
-        TOK(SNMP) TOK(SSH) TOK(COMMUNITY) TOK(DHCPD) TOK(LOCAL) TOK(PROC) TOK(CONFIG)
-        TOK(ATTACHED) TOK(LOOKUP) TOK(WORKSTATION) TOK(LINKS) TOK(BACK) TOK(FRONT)
-        TOK(IP) TOK(COMMAND) TOK(SERVICE) TOK(PRIME) TOK(PRINT) TOK(EXPORT)
-        TOK(MAX) TOK(CHECK) TOK(ATTEMPTS) TOK(NORMAL) TOK(INTERVAL) TOK(RETRY)
-        TOK(FLAPPING) TOK(CHANGE) { "TRUE", TRUE_T },{ "FALSE", FALSE_T }, TOK(ON) TOK(OFF) TOK(YES) TOK(NO)
-        TOK(DELEGATE) TOK(STATE) TOK(SUPERIOR) TOK(TIME) TOK(PERIODS) TOK(LINE) TOK(GROUP)
-        TOK(USER) TOK(DAY) TOK(OF) TOK(PERIOD) TOK(PROTOCOL) TOK(ALERT) TOK(INTEGER) TOK(FLOAT)
-        TOK(DELETE) TOK(ONLY) TOK(STRING) TOK(SAVE) TOK(TYPE) TOK(STEP) TOK(EXCEPT)
-        TOK(MASK) TOK(LIST) TOK(VLANS) TOK(ID) TOK(DYNAMIC) TOK(FIXIP) TOK(PRIVATE) TOK(PING)
-        TOK(NOTIF) TOK(ALL) TOK(RIGHTS) TOK(REMOVE) TOK(SUB) TOK(FEATURES) TOK(MAC) TOK(EXTERNAL)
-        TOK(LINK) TOK(LLDP) TOK(SCAN) TOK(TABLE) TOK(FIELD) TOK(SHAPE) TOK(TITLE) TOK(REFINE)
-        TOK(DEFAULTS) TOK(ENUM) TOK(RIGHT) TOK(VIEW) TOK(INSERT) TOK(EDIT) TOK(LANG) TOK(TEXT)
-        TOK(INHERIT) TOK(NAMES) TOK(VALUE) TOK(DEFAULT) TOK(STYLE) TOK(SHEET)
-        TOK(ORD) TOK(SEQUENCE) TOK(MENU) TOK(GUI) TOK(OWN) TOK(TOOL) TOK(TIP) TOK(WHATS) TOK(THIS)
-        TOK(EXEC) TOK(TAG) TOK(ENABLE) TOK(SERIAL) TOK(INVENTORY) TOK(NUMBER)
-        TOK(DATE) TOK(DISABLE) TOK(EXPRESSION) TOK(PREFIX) TOK(RESET) TOK(CACHE)
-        TOK(DATA) TOK(IANA) TOK(IFDEF) TOK(IFNDEF) TOK(NC) TOK(QUERY) TOK(PARSER) TOK(IF)
-        TOK(REPLACE) TOK(RANGE) TOK(EXCLUDE) TOK(PREP) TOK(POST) TOK(CASE) TOK(RECTANGLE)
-        TOK(DELETED) TOK(PARAMS) TOK(DOMAIN) TOK(VAR) TOK(PLAUSIBILITY) TOK(CRITICAL)
-        TOK(DIALOG) TOK(AUTO) TOK(FLAG) TOK(TREE) TOK(NOTIFY) TOK(WARNING)
-        TOK(REFRESH) TOK(SQL) TOK(CATEGORY) TOK(ZONE) TOK(HEARTBEAT) TOK(GROUPS)
-        { "WST",    WORKSTATION_T }, // rövidítések
-        { "ATC",    ATTACHED_T },
-        { "INT",    INTEGER_T },
-        { "MSG",    MESSAGE_T },
-        { "CMD",    COMMAND_T },
-        { "PROTO",  PROTOCOL_T },
-        { "SEQ",    SEQUENCE_T },
-        { "DEL",    DELETE_T },
-        { "EXPR",   EXPRESSION_T },
-        { "CAT",    CATEGORY_T },
-        TOK(END) TOK(ELSE)
-        { nullptr, 0 }
-    };
     // DBGFN();
 recall:
     yylval.u = nullptr;
@@ -3181,7 +3186,7 @@ recall:
         return STRING_V;
     }
     // Egybetus tokenek
-    if (strchr(cToken, c.toLatin1())) {
+    if (strchr(yyTokenChars, c.toLatin1())) {
         int r;
         if (c == QChar(':') && 0 != (r = isAddress(":"))) return r;
         int ct = c.toLatin1();
@@ -3196,7 +3201,7 @@ recall:
     int r;
     if (!c.isNull()) yyunget(c);
     if (sp->isEmpty()) yyerror("Invalid character");
-    for (const struct token *p = sToken; p->name; p++) {
+    for (const struct token *p = yyTokenList; p->name; p++) {
         if (p->name == *sp) {
             // PDEB(VVERBOSE) << "ylex TOKEN : " << *sp << endl;
             delete sp;
@@ -3231,6 +3236,17 @@ static int yylex(void)
 }
 
 /* */
+
+static QString getAllTokens(bool sort)
+{
+    QStringList r;
+    for (const struct token *p = yyTokenList; p->name; p++) {
+        r << QString(p->name);
+    }
+    if (sort) r.sort();
+    QChar sep = ' ';
+    return r.join(sep);
+}
 
 static void strReplace(QString * s, QString * src, QString *trg)
 {

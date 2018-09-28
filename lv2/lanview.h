@@ -402,6 +402,7 @@ public:
     /// Elsődleges a kapcsolóval magadott érték, aztán lanview konstruktora előtt beállított,
     /// majd a környezeti változóként megadott, végül a konfigurációs állományban megadott érték.
     static QString          testSelfName;
+    static QString          sDateTimeForm;
 
     static eIPV4Pol         ipv4Pol;    ///< IPV4 cím kezelési policy (nincs kifejtve!)
     static eIPV6Pol         ipv6Pol;    ///< IPV6 cím kezelési policy (nincs kifejtve!)

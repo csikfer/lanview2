@@ -282,7 +282,7 @@ public:
         execSqlFunction(_q, "set_bool_sys_param", QVariant(__nm), QVariant(_val), QVariant(_tn));
         return (enum eReasons)reasons(_q.value(0).toString());
     }
-    static enum eReasons setIntSysParam(QSqlQuery& _q, const QString& __nm, qlonglong _val, const QString& _tn = _sInteger) {
+    static enum eReasons setIntegerSysParam(QSqlQuery& _q, const QString& __nm, qlonglong _val, const QString& _tn = _sInteger) {
         execSqlFunction(_q, "set_int_sys_param", QVariant(__nm), QVariant(_val), QVariant(_tn));
         return (enum eReasons)reasons(_q.value(0).toString());
     }
@@ -318,7 +318,7 @@ public:
         }
         return __def;
     }
-    static qlonglong getIntSysParam(QSqlQuery& _q, const QString& _nm, qlonglong __def = 0) {
+    static qlonglong getIntegerSysParam(QSqlQuery& _q, const QString& _nm, qlonglong __def = 0) {
         cSysParam   po;
         if (po.fetchByName(_q, _nm)) {
             bool ok;
@@ -334,6 +334,17 @@ public:
             return str2bool(r);
         }
         return __def;
+    }
+    /// Az idő intervallumot egy qlonglong -ban tároljuk, és mSec-ben értendő.
+    /// Bármilyen hiba esetén a default-al tér vissza.
+    static qlonglong getIntervalSysParam(QSqlQuery& _q, const QString& _nm, qlonglong __def = 0) {
+        cSysParam   po;
+        qlonglong r = __def;
+        if (po.fetchByName(_q, _nm)) {
+            QVariant v = po.value(EX_IGNORE);
+            if (variantIsInteger(v)) r = v.toLongLong();
+        }
+        return r;
     }
     STATICIX(cSysParam, ParamTypeId)
     STATICIX(cSysParam, ParamValue)

@@ -1856,11 +1856,10 @@ QVariant  cColStaticDescrDateTime::set(const QVariant& _f, qlonglong& str) const
 
 QString   cColStaticDescrDateTime::toName(const QVariant& _f) const
 {
-    static const QString _tmstmpFrm = "yyyy-MM-dd HH:mm:ss";
  //   _DBGFN() << "@(" << _f.typeName() << _sCommaSp << _f.toString() << endl;
     if (_f.isNull()) return QString();
     if (variantIsString(_f)) return _f.toString();  // NOW
-    return _f.toDateTime().toString(_tmstmpFrm);
+    return _f.toDateTime().toString(lanView::sDateTimeForm);
 }
 qlonglong cColStaticDescrDateTime::toId(const QVariant& _f) const
 {

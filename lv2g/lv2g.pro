@@ -43,7 +43,8 @@ SOURCES += \
     linkgraph.cpp \
     snmpdevquery.cpp \
     popupreport.cpp \
-    gexports.cpp
+    gexports.cpp \
+    pickers.cpp
 
 HEADERS +=\
     lv2g_global.h \
@@ -79,7 +80,8 @@ HEADERS +=\
     linkgraph.h \
     snmpdevquery.h \
     popupreport.h \
-    gexports.h
+    gexports.h \
+    pickers.h
 
 FORMS += \
     column_filter.ui \
@@ -109,7 +111,8 @@ FORMS += \
     edit_ip.ui \
     place_ed.ui \
     rplace_ed.ui \
-    port_ed.ui
+    port_ed.ui \
+    datetimedialog.ui
 INCLUDEPATH += ../lv2
 #unix:LIBS += -lsnmp
 msvc:LIBS += -lSecur32

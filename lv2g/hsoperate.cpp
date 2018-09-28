@@ -4,6 +4,9 @@
 #include "record_tree.h"
 #include "lv2user.h"
 
+#include "pickers.h"
+
+
 const enum ePrivilegeLevel cHSOperate::rights = PL_VIEWER;
 
 enum ePermit {
@@ -268,12 +271,15 @@ enum eTableColumnIx {
 
 /* *************************************************************************************** */
 
+QString _sMinInterval = "DisableAlarmMinInterval";
+
 cHSOperate::cHSOperate(QMdiArea *par)
     : cIntSubObj(par)
 {
     pq  = newQuery();
+    minIntervalMs = cSysParam::getIntervalSysParam(*pq, _sMinInterval, 1800000LL);  // default 1800sec (30m)
     pq2 = newQuery();
-    pUi = new Ui_hostServiceOp;
+    pUi = new Ui::hostServiceOp;
     stateIx = -1;
     refreshTime = 0;
     timerId = -1;
@@ -377,10 +383,14 @@ cHSOperate::cHSOperate(QMdiArea *par)
             connect(pUi->checkBoxEnable,  SIGNAL(toggled(bool)), this, SLOT(enable(bool)));
             connect(pUi->checkBoxClrStat, SIGNAL(toggled(bool)), this, SLOT(clrStat(bool)));
         }
-        pUi->dateTimeEditFrom->setMaximumDateTime(QDateTime::currentDateTime());
-        pUi->dateTimeEditTo->setMaximumDateTime(QDateTime::currentDateTime());
-        connect(pUi->dateTimeEditFrom, SIGNAL(dateTimeChanged(QDateTime)), this, SLOT(changeDataTime(QDateTime&)));
-        connect(pUi->dateTimeEditTo, SIGNAL(dateTimeChanged(QDateTime)), this, SLOT(changeDataTime(QDateTime&)));
+        pUi->dateTimeEditFrom->setDisplayFormat(lanView::sDateTimeForm);
+        pUi->dateTimeEditTo->setDisplayFormat(lanView::sDateTimeForm);
+        now = QDateTime::currentDateTime();
+        QDateTime dt = now.addMSecs(minIntervalMs);
+        pUi->dateTimeEditFrom->setMinimumDateTime(now);
+        pUi->dateTimeEditTo->setMinimumDateTime(dt);
+        pUi->dateTimeEditFrom->setDateTime(now);
+        pUi->dateTimeEditTo->setDateTime(dt);
     }
 
     connect(pUi->comboBoxZone,      SIGNAL(currentIndexChanged(int)), this, SLOT(zoneChanged(int)));
@@ -803,29 +813,28 @@ void cHSOperate::setButton()
         pUi->pushButtonSet->setEnabled(false);
         return;
     }
+    bool bFrom = false, bTo = false;
     switch (lastAlramButtonId) {
     case NAT_FROM:
-        pUi->dateTimeEditFrom->setEnabled(true);
-        pUi->dateTimeEditTo->setEnabled(false);
-        pUi->dateTimeEditFrom->setMinimumDateTime(QDateTime::currentDateTime());
+        bFrom = true;
         break;
     case NAT_TO:
-        pUi->dateTimeEditFrom->setEnabled(false);
-        pUi->dateTimeEditTo->setEnabled(true);
-        pUi->dateTimeEditTo->setMinimumDateTime(QDateTime::currentDateTime());
+        bTo = true;
         break;
     case NAT_FROM_TO:
-        pUi->dateTimeEditFrom->setEnabled(true);
-        pUi->dateTimeEditTo->setEnabled(true);
-        pUi->dateTimeEditFrom->setMinimumDateTime(QDateTime::currentDateTime());
-        pUi->dateTimeEditTo->setMinimumDateTime(pUi->dateTimeEditFrom->dateTime());
-        pUi->dateTimeEditFrom->setMaximumDateTime(pUi->dateTimeEditTo->dateTime());
+        bFrom = bTo = true;
         break;
     default:
-        pUi->dateTimeEditFrom->setEnabled(false);
-        pUi->dateTimeEditTo->setEnabled(false);
         break;
     }
+    pUi->dateTimeEditFrom->  setEnabled(bFrom);
+    pUi->dateTimeEditTo->    setEnabled(bTo);
+    pUi->toolButtonRstFrom-> setEnabled(bFrom);
+    pUi->toolButtonRstTo->   setEnabled(bTo);
+    pUi->toolButtonDateFrom->setEnabled(bFrom);
+    pUi->toolButtonDateTo->  setEnabled(bTo);
+    pUi->toolButtonIntervalDef->setEnabled(bTo && bFrom);
+
     if (states.isEmpty()) {
         pUi->pushButtonSet->setEnabled(false);
         return;
@@ -1143,13 +1152,71 @@ void cHSOperate::changeRefreshInterval(int v)
     }
 }
 
-void cHSOperate::changeDataTime(QDateTime&)
-{
-    pUi->dateTimeEditTo->setMinimumDateTime(pUi->dateTimeEditFrom->dateTime());
-    pUi->dateTimeEditFrom->setMaximumDateTime(pUi->dateTimeEditTo->dateTime());
-}
-
 void cHSOperate::changeJustify()
 {
     setButton();
+}
+
+void cHSOperate::on_dateTimeEditFrom_dateTimeChanged(const QDateTime &dateTime)
+{
+    if (lastAlramButtonId == NAT_FROM_TO) {
+        QDateTime dt = dateTime.addMSecs(minIntervalMs);
+        if (dt > pUi->dateTimeEditTo->dateTime()) pUi->dateTimeEditTo->setDateTime(dt);
+    }
+}
+
+void cHSOperate::on_dateTimeEditTo_dateTimeChanged(const QDateTime &dateTime)
+{
+    if (lastAlramButtonId == NAT_FROM_TO) {
+        QDateTime dt = dateTime.addMSecs(- minIntervalMs);
+        if (dt < pUi->dateTimeEditFrom->dateTime()) pUi->dateTimeEditFrom->setDateTime(dt);
+    }
+}
+
+/// Dialog noalarm from
+void cHSOperate::on_toolButtonDateFrom_clicked()
+{
+    QDateTime newFrom;
+    QDateTime from = pUi->dateTimeEditFrom->dateTime();
+    now = QDateTime::currentDateTime();
+    newFrom = cDateTimeDialog::popup(from, now, now);
+    if (newFrom.isValid()) {
+        pUi->dateTimeEditFrom->setDateTime(newFrom);
+    }
+}
+
+/// Reset noalarm from
+void cHSOperate::on_toolButtonRstFrom_clicked()
+{
+    now = QDateTime::currentDateTime();
+    pUi->dateTimeEditFrom->setDateTime(now);
+}
+
+void cHSOperate::on_toolButtonDateTo_clicked()
+{
+    QDateTime newTo;
+    QDateTime to = pUi->dateTimeEditTo->dateTime();
+    QDateTime def;
+    if (lastAlramButtonId == NAT_FROM_TO) def = pUi->dateTimeEditFrom->dateTime().addMSecs(minIntervalMs);
+    else                                  def = now.addMSecs(minIntervalMs);
+    now = QDateTime::currentDateTime();
+    newTo = cDateTimeDialog::popup(to, now.addMSecs(minIntervalMs), def);
+    if (newTo.isValid()) {
+        pUi->dateTimeEditFrom->setDateTime(newTo);
+    }
+}
+
+void cHSOperate::on_toolButtonRstTo_clicked()
+{
+    QDateTime dt = pUi->dateTimeEditFrom->dateTime();
+    dt = dt.addMSecs(minIntervalMs);
+    pUi->dateTimeEditTo->setDateTime(dt);
+}
+
+void cHSOperate::on_toolButtonIntervalDef_clicked()
+{
+    now = QDateTime::currentDateTime();
+    pUi->dateTimeEditFrom->setDateTime(now);
+    QDateTime dt = now.addMSecs(minIntervalMs);
+    pUi->dateTimeEditTo->setDateTime(dt);
 }

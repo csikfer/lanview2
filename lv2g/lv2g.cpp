@@ -49,10 +49,10 @@ lv2g::lv2g() :
             default:            EXCEPTION(EOK);
             }
             QSqlQuery q = getQuery();
-            maxRows = (int)cSysParam::getIntSysParam(q, sMaxRows, 100);
+            maxRows = (int)cSysParam::getIntegerSysParam(q, sMaxRows, 100);
             bool ok;
             maxRows = pSet->value(sMaxRows, maxRows).toInt(&ok);
-            if (!ok) maxRows = (int)cSysParam::getIntSysParam(q, sMaxRows, 100);
+            if (!ok) maxRows = (int)cSysParam::getIntegerSysParam(q, sMaxRows, 100);
             dialogRows = pSet->value(sDialogRows, 16).toInt();
             soundFileAlarm = pSet->value(sSoundFileAlarm).toString();
         }

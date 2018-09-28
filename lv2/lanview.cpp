@@ -97,6 +97,7 @@ short      lanView::appVersionMinor;
 short      lanView::appVersionMajor;
 QString    lanView::appVersion;
 QString    lanView::testSelfName;
+QString    lanView::sDateTimeForm("yyyy-MM-dd HH:mm:ss");
 eIPV4Pol   lanView::ipv4Pol = IPV4_STRICT;
 eIPV6Pol   lanView::ipv6Pol = IPV6_PERMISSIVE;
 bool       lanView::setupTransactionFlag = false;
@@ -163,7 +164,7 @@ qlonglong sendError(const cError *pe, lanView *_instance)
 
 void settingIntParameter(QSqlQuery& q, const QString& pname)
 {
-    int i = cSysParam::getIntSysParam(q, pname);
+    int i = cSysParam::getIntegerSysParam(q, pname);
     if (i > 0) {
         QString sql = QString("SET %1 TO %2").arg(pname).arg(i);
         EXECSQL(q, sql);
@@ -183,6 +184,7 @@ void dbOpenPost(QSqlQuery& q, int n)
     EXECSQL(q, QString("SET application_name TO '%1'").arg(nn));
     settingIntParameter(q, "lock_timeout");
     settingIntParameter(q, "statement_timeout");
+    lanView::sDateTimeForm = cSysParam::getTextSysParam(q, "date_time_form", lanView::sDateTimeForm);
 }
 
 lanView::lanView()
@@ -265,7 +267,7 @@ lanView::lanView()
         instance = this;
         // Connect database, if need
         if (sqlNeeded != SN_NO_SQL) {
-            if (openDatabase(bool2ex(sqlNeeded == SN_SQL_NEED))) {
+            if (openDatabase(bool2ex(sqlNeeded == SN_SQL_NEED ? EX_ERROR : EX_IGNORE))) {
                 pQuery = newQuery();
                 dbOpenPost(*pQuery);
                 // A reasons típus nem tartozik olyan táblához amihez osztály is van definiálva, külön csekkoljuk

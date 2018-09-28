@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1505</width>
-    <height>1225</height>
+    <height>862</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -488,6 +488,9 @@
              <weight>75</weight>
              <bold>true</bold>
             </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">QLabel { background-color: rgb(0, 0, 0); color :rgb(255,255,255) ;}</string>
            </property>
            <property name="text">
             <string>Az eszköz helye :</string>

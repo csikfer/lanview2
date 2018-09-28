@@ -48,5 +48,7 @@
         <file>splash.png</file>
         <file>icons/LanView2.ico</file>
         <file>LanView2.png</file>
+        <file>icons/view-calendar.ico</file>
+        <file>icons/edit-history.ico</file>
     </qresource>
 </RCC>
