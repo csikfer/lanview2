@@ -1547,7 +1547,7 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
 %token      DATA_T IANA_T IFDEF_T IFNDEF_T NC_T QUERY_T PARSER_T IF_T
 %token      REPLACE_T RANGE_T EXCLUDE_T PREP_T POST_T CASE_T RECTANGLE_T
 %token      DELETED_T PARAMS_T DOMAIN_T VAR_T PLAUSIBILITY_T CRITICAL_T
-%token      AUTO_T FLAG_T TREE_T NOTIFY_T WARNING_T
+%token      AUTO_T FLAG_T TREE_T NOTIFY_T WARNING_T PREFERED_T
 %token      REFRESH_T SQL_T CATEGORY_T ZONE_T HEARTBEAT_T GROUPS_T
 %token      END_T ELSE_T TOKEN_T
 
@@ -1562,7 +1562,7 @@ static void delNodesParam(const QStringList& __nodes, const QString& __ptype)
 %type  <i>  usr_id ftmod p_seq lnktypez fflags fflag tstypes tstype pgtype
 %type  <i>  node_h node_ts
 %type  <il> list_i p_seqs p_seqsl // ints
-%type  <b>  bool_ bool_on bool ifdef exclude cases replfl
+%type  <b>  bool_ bool_on bool ifdef exclude cases replfl prefered
 %type  <r>  /* real */ num fexpr
 %type  <s>  str str_ str_z str_zz name_q time tod _toddef sexpr pnm mac_q ha nsw ips rights
 %type  <s>  imgty tsintyp usrfn usrgfn plfn ptcfn copy_from
@@ -2107,8 +2107,13 @@ pgtype  :                           { $$ = PG_GROUP; }
         | CATEGORY_T                { $$ = PG_CATEGORY; }
         | ZONE_T                    { $$ = PG_ZONE; }
         ;
-iftype  : IFTYPE_T str str_z  IANA_T int TO_T int ';'
-                                    { cIfType::insertNew(qq(), sp2s($2), sp2s($3), (int)$5, (int)$7); }
+iftype  : IFTYPE_T replace str str_z IANA_T int str str prefered ';'
+                                    { cIfType::insertNew(qq(), $2, sp2s($3), sp2s($4), (int)$6, sp2s($7), sp2s($8), $9); }
+        | IFTYPE_T replace str str_z IANA_T int TO_T int ';'
+                                    { cIfType::insertNew(qq(), $2, sp2s($3), sp2s($4), (int)$6, (int)$8); }
+        ;
+prefered:                           { $$ = false; }
+        | PREFERED_T                { $$ = true; }
         ;
 nodes   : patch
         | node
@@ -2264,8 +2269,7 @@ node_ps : node_p node_ps
         ;
 node_cf :
         | TEMPLATE_T str    { templates.get(_sNodes, sp2s($2)); }   node_ps
-        | READ_T            { node().setByName(qq());           node().fetchAllChilds(qq()); }
-        | READ_T str        { node().setByName(qq(), sp2s($2)); node().fetchAllChilds(qq()); }
+        | READ_T            { node().setByName(qq()); node().fetchAllChilds(qq()); }
         ;
 node_p  : NOTE_T str ';'                        { node().setName(_sNodeNote, sp2s($2)); }
         | PLACE_T place_id ';'                  { node().setId(_sPlaceId, $2); }
@@ -3013,7 +3017,7 @@ static const struct token {
     TOK(DATA) TOK(IANA) TOK(IFDEF) TOK(IFNDEF) TOK(NC) TOK(QUERY) TOK(PARSER) TOK(IF)
     TOK(REPLACE) TOK(RANGE) TOK(EXCLUDE) TOK(PREP) TOK(POST) TOK(CASE) TOK(RECTANGLE)
     TOK(DELETED) TOK(PARAMS) TOK(DOMAIN) TOK(VAR) TOK(PLAUSIBILITY) TOK(CRITICAL)
-    TOK(AUTO) TOK(FLAG) TOK(TREE) TOK(NOTIFY) TOK(WARNING)
+    TOK(AUTO) TOK(FLAG) TOK(TREE) TOK(NOTIFY) TOK(WARNING) TOK(PREFERED)
     TOK(REFRESH) TOK(SQL) TOK(CATEGORY) TOK(ZONE) TOK(HEARTBEAT) TOK(GROUPS)
     TOK(TOKEN)
     { "WST",    WORKSTATION_T }, // rövidítések

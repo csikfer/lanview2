@@ -147,6 +147,16 @@ QString cExport::value(QSqlQuery& q, const cRecordFieldRef &fr, bool sp)
     return r;
 }
 
+QString cExport::optVal(const QString& kw, QSqlQuery& q, const cRecordFieldRef &fr, bool sp)
+{
+    QString r;
+    if (!fr.isNull()) {
+        r = kw + value(q, fr, true);
+        if (sp) r.prepend(_sSp);
+    }
+    return r;
+}
+
 QString cExport::features(cRecord& o)
 {
     QString s = o.getName(_sFeatures);
@@ -215,9 +225,38 @@ QString cExport::sysParams(eEx __ex)
 QString cExport::_export(QSqlQuery& q, cSysParam& o)
 {
     QString r;
-    r  = "SYS" + str(o[_sParamTypeId]) + " PARAM" + str(o[_sSysParamName]);
+    r  = "SYS" + value(q, o[_sParamTypeId]) + " PARAM" + str(o[_sSysParamName]);
     r += " =" + value(q, o[_sParamValue]) + _sSc;
     return line(r);
+}
+
+QString cExport::ifType(eEx __ex)
+{
+    cIfType o;
+    return sympleExport(o, o.toIndex(_sIfTypeIanaId), __ex);
+}
+QString cExport::_export(QSqlQuery &q, cIfType& o)
+{
+    (void)q;
+    QString r;
+    static const QString kw = "IFTYPE";
+    r  = head(kw, o) + " IANA " + o.getName(_sIfTypeIanaId);
+    if (o.isNull(_sIanaIdLink)) {
+        r += _sSp + o.getName(_sIfTypeObjType) + _sSp + o.getName(_sIfTypeLinkType);
+        if (o.getBool(_sPreferred)) r += " PREFERED";
+    }
+    else {
+        r += " TO " + o.getName(_sIanaIdLink);
+    }
+    r += _sSc;
+    r = line(r);
+    if (!o.isNull(_sIfNamePrefix)) {
+        QString prefix = o.getName(_sIfNamePrefix);
+        if (!prefix.isEmpty()) {
+            r += line("SET " + head(kw, o) + " NAME PREFIX " + quotedString(prefix) + _sSc);
+        }
+    }
+    return r;
 }
 
 QString cExport::tableShapes(eEx __ex)

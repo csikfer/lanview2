@@ -66,7 +66,7 @@
     </layout>
    </item>
    <item>
-    <widget class="QTextEdit" name="textEdit"/>
+    <widget class="QPlainTextEdit" name="plainTextEdit"/>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -106,16 +106,16 @@
   <connection>
    <sender>pushButtonClear</sender>
    <signal>clicked()</signal>
-   <receiver>textEdit</receiver>
+   <receiver>plainTextEdit</receiver>
    <slot>clear()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>49</x>
-     <y>770</y>
+     <x>46</x>
+     <y>775</y>
     </hint>
     <hint type="destinationlabel">
      <x>593</x>
-     <y>396</y>
+     <y>397</y>
     </hint>
    </hints>
   </connection>

@@ -646,8 +646,8 @@ enum eLinkType {
     LT_UNKNOWN          ///< Nincs link / nem pecselhető
 };
 
-EXT_ int linkType(const QString& __n, eEx __ex);
-EXT_ const QString&  linkType(int __e, eEx __ex);
+EXT_ int linkType(const QString& __n, eEx __ex = EX_ERROR);
+EXT_ const QString&  linkType(int __e, eEx __ex = EX_ERROR);
 
 enum ePortObjType {
     PO_NPORT = 0,
@@ -656,8 +656,8 @@ enum ePortObjType {
     PO_UNKNOWN
 };
 
-EXT_ int portObjeType(const QString& __n, eEx __ex);
-EXT_ const QString&  portObjeType(int __e, eEx __ex);
+EXT_ int portObjeType(const QString& __n, eEx __ex = EX_ERROR);
+EXT_ const QString&  portObjeType(int __e, eEx __ex = EX_ERROR);
 
 class LV2SHARED_EXPORT cIfType : public cRecord {
     CRECORD(cIfType);
@@ -669,7 +669,8 @@ public:
     /// hogy ott is megjelenhesen az új adat, mivel ezzel kikényszerítjük a tábla újraolvasását
     virtual bool update(QSqlQuery &__q, bool __only, const QBitArray &__set = QBitArray(), const QBitArray &__where = QBitArray(), enum eEx __ex = EX_ERROR);
     ///
-    static qlonglong insertNew(QSqlQuery &__q, const QString& __nm, const QString& __no, int __iid, int __lid);
+    static qlonglong insertNew(QSqlQuery &__q, bool _ir, const QString& __nm, const QString& __no, int __iid, int __lid);
+    static qlonglong insertNew(QSqlQuery &__q, bool _ir, const QString& __nm, const QString& __no, int __iid, const QString& __ot, const QString& __lt, bool _pr);
 protected:
     /// Az összes if_types rekordot tartalmazó konténer
     /// Nem frissül automatikusan, ha változik az adattábla.

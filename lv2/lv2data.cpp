@@ -1012,14 +1012,29 @@ bool cIfType::update(QSqlQuery &__q, bool __only, const QBitArray &__set, const 
     return false;
 }
 
-qlonglong cIfType::insertNew(QSqlQuery &__q, const QString& __nm, const QString& __no, int __iid, int __lid)
+qlonglong cIfType::insertNew(QSqlQuery &__q, bool _ir, const QString& __nm, const QString& __no, int __iid, int __lid)
 {
     cIfType it;
     it.setName(                __nm);
     it.setName(_sIfTypeNote,   __no);
     it.setId(  _sIfTypeIanaId, __iid);
     it.setId(  _sIanaIdLink,   __lid);
-    it.insert(__q);
+    if (_ir) it.replace(__q);
+    else     it.insert(__q);
+    return it.getId();
+}
+
+qlonglong cIfType::insertNew(QSqlQuery &__q, bool _ir, const QString& __nm, const QString& __no, int __iid, const QString& __ot, const QString& __lt, bool _pr)
+{
+    cIfType it;
+    it.setName(                __nm);
+    it.setName(_sIfTypeNote,   __no);
+    it.setId(  _sIfTypeIanaId, __iid);
+    it.setId(  _sIfTypeObjType, portObjeType(__ot));
+    it.setId(  _sIfTypeLinkType,linkType(__lt));
+    it.setBool(_sPreferred,    _pr);
+    if (_ir) it.replace(__q);
+    else     it.insert(__q);
     return it.getId();
 }
 
