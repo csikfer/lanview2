@@ -58,7 +58,6 @@ protected:
     static QString str(const cRecordFieldRef& fr, bool sp = true);
     static QString str_z(const cRecordFieldRef &fr, bool sp = true);
     static QString value(QSqlQuery& q, const cRecordFieldRef &fr, bool sp = true);
-    static QString optVal(const QString &kw, QSqlQuery& q, const cRecordFieldRef &fr, bool sp = true);
     QString features(cRecord& o);
     QString paramLine(QSqlQuery &q, const QString& kw, const cRecordFieldRef& fr, const QVariant &_def = QVariant());
     QString flag(const QString& kw, const cRecordFieldRef& fr, bool inverse = false);
@@ -74,7 +73,9 @@ public:
     QString _export(QSqlQuery &q, cIfType& o);
     QString tableShapes(eEx __ex = EX_NOOP);
     QString _export(QSqlQuery &q, cTableShape& o);
-    QString _export(QSqlQuery &q, cTableShapeField& o);
+    QString menuItems(eEx __ex = EX_NOOP);
+    QString menuItems(const QString& _app, qlonglong upperMenuItemId, eEx __ex = EX_NOOP);
+    QString _export(QSqlQuery &q, cMenuItem &o);
     QString services(eEx __ex = EX_NOOP);
     QString _export(QSqlQuery &q, cService& o);
     QString queryParser(eEx __ex = EX_NOOP);

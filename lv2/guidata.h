@@ -220,6 +220,7 @@ public:
 protected:
     static cRecStaticDescr  _staticDescr;
     STATICIX(cTableShapeField, TableShapeId)
+    STATICIX(cTableShapeField, FieldFlags)
 };
 
 enum eFontAttr {

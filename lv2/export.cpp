@@ -147,16 +147,6 @@ QString cExport::value(QSqlQuery& q, const cRecordFieldRef &fr, bool sp)
     return r;
 }
 
-QString cExport::optVal(const QString& kw, QSqlQuery& q, const cRecordFieldRef &fr, bool sp)
-{
-    QString r;
-    if (!fr.isNull()) {
-        r = kw + value(q, fr, true);
-        if (sp) r.prepend(_sSp);
-    }
-    return r;
-}
-
 QString cExport::features(cRecord& o)
 {
     QString s = o.getName(_sFeatures);
@@ -322,12 +312,79 @@ QString cExport::_export(QSqlQuery &q, cTableShape& o)
     return r;
 }
 
-QString cExport::_export(QSqlQuery &q, cTableShapeField& o)
+QString cExport::menuItems(eEx __ex)
 {
-    // Incomplette
+    static const QString sql = " SELECT DISTINCT(app_name) FROM menu_item ORDER BY app_name ASC";
+    QSqlQuery q = getQuery();
+    QString r;
+    if (execSql(q, sql)) {
+        do {
+            QString sAppName = q.value(0).toString();
+            r += menuItems(sAppName, NULL_ID, __ex);
+        } while (q.next());
+    }
+    else {
+        if (__ex >= EX_NOOP) EXCEPTION(EDATA, 0, sNoAnyObj);
+    }
+    return r;
+}
+
+QString cExport::menuItems(const QString& _app, qlonglong upperMenuItemId, eEx __ex)
+{
+    QSqlQuery q = getQuery();
+    QSqlQuery q2 = getQuery();
+    QString r;
+    bool ff;
+    if (upperMenuItemId == NULL_ID) {   // root items
+        static const QString sql = " SELECT * FROM menu_item WHERE app_name = ? AND upper_nemu_item_id IS NULL ORDER BY item_sequence_number ASC";
+        ff = execSql(q, sql, _app);
+        if (ff) r = "GUI " + quotedString(_app);
+        r = lineBeginBlock(r);
+    }
+    else {                              // Child items
+        static const QString sql = " SELECT * FROM menu_item WHERE upper_nemu_item_id = ? ORDER BY item_sequence_number ASC";
+        ff = execSql(q, sql, upperMenuItemId);
+
+    }
+    if (ff) {
+        do {
+            cMenuItem o;
+            o.set(q);
+            if (_app != o.getName(_sAppName)) APPMEMO(q2, QObject::trUtf8("App name is %1 : menu item %2, invalid app name : %3").arg(_app, o.identifying(false), o.getName(_sAppName)), RS_CRITICAL);
+            r += _export(q2, o);
+        } while (q.next());
+        if (upperMenuItemId == NULL_ID) {   // root items
+            r += lineEndBlock();
+        }
+    }
+    else {
+        if (__ex >= EX_NOOP) EXCEPTION(EDATA, 0, sNoAnyObj);
+    }
+    return r;
+
+}
+
+QString cExport::_export(QSqlQuery &q, cMenuItem &o)
+{
     (void)q;
-    (void)o;
-    return QString();
+    QString r;
+    cFeatures f = o.features();
+    if (f.contains("sub")) {
+        /* ?? */ ;
+    }
+    else if (f.contains("shape")) {
+        /* ?? */ ;
+    }
+    else if (f.contains("own")) {
+        /* ?? */ ;
+    }
+    else if (f.contains("exec")) {
+        /* ?? */ ;
+    }
+    else {
+        EXCEPTION(EDATA, 0, o.toString());
+    }
+    return r;
 }
 
 

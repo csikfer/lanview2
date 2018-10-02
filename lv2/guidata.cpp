@@ -696,6 +696,7 @@ const QString &cTableShape::getFieldDialogTitle(QSqlQuery& q, const QString& _sn
 
 int cTableShapeField::_ixTableShapeId = NULL_IX;
 int cTableShapeField::_ixFeatures = NULL_IX;
+int cTableShapeField::_ixFieldFlags = NULL_IX;
 
 cTableShapeField::cTableShapeField() : cRecord()
 {
@@ -727,6 +728,7 @@ const cRecStaticDescr&  cTableShapeField::descr() const
     if (initPDescr<cTableShapeField>(_sTableShapeFields)) {
         STFIELDIX(cTableShapeField, Features);
         STFIELDIX(cTableShapeField, TableShapeId);
+        STFIELDIX(cTableShapeField, FieldFlags);
         CHKENUM(_sOrdTypes,   orderType);
         CHKENUM(_sFieldFlags, fieldFlag);
     }

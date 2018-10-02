@@ -469,7 +469,7 @@ QString cRecordTableOrd::ord()
     }
     const cColStaticDescr& colDescr =  *field.pColDescr;
     QString colName = colDescr.colNameQ();
-    if (field.colExpr(colName) || colDescr.fKeyType == cColStaticDescr::FT_NONE) {
+    if (field.shapeField.getBool(cTableShapeField::ixFieldFlags(), FF_RAW) || field.colExpr(colName) || colDescr.fKeyType == cColStaticDescr::FT_NONE) {
         r = colName + r;
     }
     else {
